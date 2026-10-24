@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-place="hamilton" data-feeds="gdt,fx,power,weather"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-place="hamilton" data-feeds="gdt,fx,power"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>Dairy Plant Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -21,7 +21,7 @@ h2{margin:2px 0 4px;font-size:clamp(20px,2.6vw,27px);line-height:1.1;letter-spac
 .sub{margin:0;max-width:78ch}
 a{color:var(--ink);text-underline-offset:2px}
 .main{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(290px,1fr);gap:14px}
-.stagebox{position:relative;border-radius:14px;overflow:hidden;background:#EAE4DC;min-height:460px}
+.stagebox{position:relative;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#D6E4EA,#F6F1EC);min-height:460px}
 #scene{display:block;width:100%;min-height:460px;touch-action:none}
 .views{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;right:12px}
 .views button{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 10px;font:500 11.5px var(--mono);cursor:pointer}
@@ -170,7 +170,7 @@ footer p{margin:0 0 4px}
 
   <div class="main">
     <div class="stagebox" id="stagebox">
-      <canvas id="scene" aria-label="3D model of a dairy plant with tankers, silos, evaporators, a spray dryer, boilers and a rail siding. Hover or tap a part for its live number; Explore lists every part."></canvas>
+      <canvas id="scene" aria-label="3D view of a dairy plant with tankers, silos, evaporators, a spray dryer, boilers and a rail siding"></canvas>
       <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="all" aria-pressed="true">Whole site</button><button type="button" data-view="dryer">Evaporator and dryer</button><button type="button" data-view="energy">Boilers</button><button type="button" data-view="above">From above</button></div>
       <div id="tags"></div>
       <div class="hud" id="hud"><span class="dots" id="hudDots"></span><span id="hudText">AI layer off</span></div>
@@ -320,7 +320,7 @@ function draw(j){const want=(document.documentElement.dataset.feeds||"").split("
   $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
   $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
   try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
-function HOOK(j,ok,u){const x=ok("fx");if(x&&window.__dairy&&x.values.rates.USD)window.__dairy.setFx(x.values.rates.USD,"ECB reference rate, "+x.period);const w=ok("weather");if(w&&window.__dairy&&window.__dairy.setLiveWeather)window.__dairy.setLiveWeather(w.values,w.source&&w.source.name);}
+function HOOK(j,ok,u){const x=ok("fx");if(x&&window.__dairy&&x.values.rates.USD)window.__dairy.setFx(x.values.rates.USD,"ECB reference rate, "+x.period);}
 window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
 if(window.__assemblLive)draw(window.__assemblLive);
 })();
@@ -332,10 +332,9 @@ if(window.__assemblLive)draw(window.__assemblLive);
   </footer>
 </div>
 
-<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
-<link rel="stylesheet" href="/assets/twin/1/stage.css">
-<script type="module">
-import {THREE,createStage,nzDate,clamp,smooth,calm} from "/assets/twin/1/stage.js";
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
 (()=>{
 const $=id=>document.getElementById(id),fmt=(n,d=0)=>Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
 const money=n=>{const s=n<0?"−":"";n=Math.abs(n);return s+(n>=1e9?"$"+fmt(n/1e9,2)+"b":n>=1e8?"$"+fmt(n/1e6,0)+"m":n>=1e6?"$"+fmt(n/1e6,2)+"m":n>=1e3?"$"+fmt(n/1e3,0)+"k":"$"+fmt(n))};
@@ -429,129 +428,89 @@ const CASES=[
  {k:"Up to 10%",n:"Powder line, Iowa, USA",t:"Real-time moisture and density predictions stopped jars being overfilled: up to 10% less powder per jar.",u:"https://www.controlglobal.com/manage/data-analytics/article/55320797/nestle-plant-uses-artificial-intelligence-to-take-on-new-capabilities",w:"Company and vendor"}
 ];
 
-// ---------------- scene: an architect's maquette of the plant on the shared twin stage (/assets/twin/1).
-// Card and steel under the real Waikato sun for the month and hour you choose; colour only where something carries a number.
+// ---------------- scene
 const canvas=$("scene"),box=$("stagebox");
-function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=Math.round(h)+"px"}
-sizeCanvas();
-const stage=createStage({id:"dairy",canvas,box,place:"hamilton",extent:50,controls:{minDistance:14,maxDistance:170},ao:{radius:2.4},tilt:4,
-  onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
-const {M,geo}=stage;
-const grp=(x=0,y=0,z=0,parent)=>{const g=new THREE.Group();g.position.set(x,y,z);(parent||stage.root).add(g);return g};
-const put=(g,mat,x,y,z,o={})=>stage.mesh(g,mat,[x,y,z],o);
-// rounded bends for orthogonal pipe runs, so a flow and its pipe share one curve
-function bends(pts,r=0.9){const P=pts.map(p=>new THREE.Vector3(...p)),out=[P[0]];for(let i=1;i<P.length-1;i++){const a=P[i-1],b=P[i],c=P[i+1],da=Math.min(r,a.distanceTo(b)/2.2),dc=Math.min(r,b.distanceTo(c)/2.2);
-  out.push(b.clone().add(a.clone().sub(b).setLength(da)),b.clone().add(c.clone().sub(b).setLength(dc)))}out.push(P[P.length-1]);return out}
-// materials that carry data (colours are refreshed from the page's CSS in applyTheme)
-const DM={milk:M.data(0x4F7C93,0.2),elec:M.data(0x3F7E9C,0),coal:M.tint(0x2E2A2C,{roughness:1}),chips:M.tint(0xB08A5A,{roughness:1}),gas:M.tint(0xC9CDD2,{metalness:.4,roughness:.4}),
-  wmp:M.tint(0xB86A55,{roughness:.7}),alt:M.tint(0x4F7C93,{roughness:.7}),live:M.data(0xD9822B,0.5),ink:M.tint(0x492B3E,{roughness:.6}),alert:M.data(0xB3261E,0.35),track:M.tint(0xD9D1C7,{roughness:1}),
-  warn:new THREE.MeshBasicMaterial({color:0xB3261E,transparent:true,opacity:.85,depthWrite:false}),foul:M.tint(0xA9773F,{transparent:true,opacity:.62,roughness:.9}),
-  cone:new THREE.MeshBasicMaterial({color:0xD9822B,transparent:true,opacity:.12,depthWrite:false,side:THREE.DoubleSide}),
-  ribbon:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.55,side:THREE.DoubleSide,depthWrite:false}),aiLine:new THREE.LineBasicMaterial({color:0xD9822B,transparent:true,opacity:.9}),
-  cab:M.tint(0x7A6676,{roughness:.6}),brick:M.tint(0xB89484,{roughness:.9}),tree:M.tint(0xA3B894,{roughness:1}),tree2:M.tint(0x92A886,{roughness:1}),
-  storeGlass:new THREE.MeshPhysicalMaterial({color:0xEDEFF1,roughness:.15,transparent:true,opacity:.4,depthWrite:false}),bag:M.tint(0xE6DCC8,{roughness:.8})};
-const G={};
-// the plinth, pasture and roads
-put(new THREE.CylinderGeometry(48,48.8,1.1,128),M.card2,0,-0.55,0,{cast:false});
-put(new THREE.CylinderGeometry(47.5,47.5,0.08,128),M.felt,0,0.04,0,{cast:false});
-put(geo.rbox(72,0.12,8.6,0.05),M.road,2,0.1,24.25,{cast:false});put(geo.rbox(69,0.02,0.16,0.008),M.card,2,0.17,24.25,{cast:false});
-put(geo.rbox(6,0.12,10,0.05),M.road,-30,0.1,16.6,{cast:false});
-// tanker reception
-G.rec=grp(-30,0,8);put(geo.rbox(12,4,9),M.card,0,2,0,{parent:G.rec});put(geo.rbox(12.6,0.4,9.6),M.roof,0,4.2,0,{parent:G.rec});
-put(geo.rbox(5,2.6,0.2,0.05),M.dark,0,1.3,4.55,{parent:G.rec});put(geo.rbox(10,0.5,0.08,0.02),M.window,0,3.35,4.55,{parent:G.rec});
-// silos (two rows of four) with a catwalk over the tops
-G.silos=grp();const SILO=[];for(let r=0;r<2;r++)for(let c=0;c<4;c++)SILO.push(put(geo.tank(1.8,13,"cone",1.2),M.steel,-19+c*4.2,0,6+r*4.4,{parent:G.silos}));
-put(geo.rbox(16.2,0.25,1.6,0.08),M.dark,-12.7,14.35,8.2,{parent:G.silos});
-// process hall
-G.hall=grp(-4,0,-4);put(geo.rbox(16,7,12),M.card,0,3.5,0,{parent:G.hall});put(geo.rbox(16.6,0.5,12.6),M.roof,0,7.25,0,{parent:G.hall});put(geo.rbox(13,0.9,0.08,0.03),M.window,0,5,6.04,{parent:G.hall});
-// evaporator: four tall effects on a service platform
-G.evap=grp();const EVAP=[];for(let i=0;i<4;i++)EVAP.push(put(geo.tank(1.1,18,"dome",0.8),M.steel,8+i*2.8,0,0,{parent:G.evap}));
-put(geo.rbox(11.6,0.3,3.2,0.1),M.dark,12.2,12,0,{parent:G.evap});
-// spray dryer: the tall building, its stepped roof, exhaust stack and cyclones
-G.dryer=grp(22,0,-4);put(geo.rbox(10,24,10),M.card,0,12,0,{parent:G.dryer});put(geo.rbox(7,3,7),M.card2,0,25.5,0,{parent:G.dryer});
-put(geo.cyl(1.1,8),M.steel,3.5,28,0,{parent:G.dryer});[-3,0,3].forEach(x=>put(geo.rbox(0.9,18,0.08,0.03),M.window,x,12,5.04,{parent:G.dryer}));
-[-3,-6.4].forEach(z=>put(geo.tank(1.3,7,"cone",1.4),M.steel,7.4,0,z,{parent:G.dryer}));
-// the dryer's main fan (predictive maintenance watches it)
-G.fan=grp(29,0,3);put(new THREE.CylinderGeometry(1.25,1.25,1.6,24),M.dark,0,1.35,0,{parent:G.fan,rot:[0,0,Math.PI/2]});put(geo.rbox(1.4,1.2,1.2,0.12),M.steel,1.5,1.2,0,{parent:G.fan});
-// conveyor from the dryer to the packing store, the store and its loading doors
-put(geo.rbox(1.8,0.35,8.4,0.1),M.dark,21,1.1,-13,{});
-G.store=grp(6,0,-22);put(geo.rbox(34,8,10),M.card,0,4,0,{parent:G.store});put(geo.gable(10,34.6,2.4),M.roof,0,8,0,{parent:G.store,rot:[0,Math.PI/2,0]});
-put(geo.rbox(30,0.8,0.08,0.03),M.window,0,6.2,5.04,{parent:G.store});[-12,-4,4,12].forEach(x=>put(geo.rbox(3.2,3.4,0.12,0.05),M.dark,x,1.7,-5.06,{parent:G.store}));
-// rail siding: ballast, rails and up to twelve wagons of two containers (colour = which product the plan makes)
-G.rail=grp(0,0,-30.3);put(geo.rbox(70,0.14,3.4,0.05),M.road,0,0.08,0,{parent:G.rail,cast:false});[-0.72,0.72].forEach(z=>put(geo.rbox(69,0.14,0.16,0.04),M.steel,0,0.24,z,{parent:G.rail}));
-G.wag=grp(0,0,-30.3);const wagons=[],wagBoxes=[];for(let i=0;i<12;i++){const g=grp(-33+i*6,0,0,G.wag);put(geo.rbox(5.8,0.4,1.9,0.08),M.dark,0,0.62,0,{parent:g});
-  wagBoxes[i]=[-1.45,1.45].map(x=>put(geo.rbox(2.75,2.4,2.3,0.08),DM.wmp,x,2.02,0,{parent:g}));g.visible=false;wagons.push(g)}
-// heat: the coal (or gas, or wood) boiler house with its stack and fuel pile, the electrode boiler and its substation
-G.coal=grp(-30,0,-14);put(geo.rbox(12,9,10),M.card2,0,4.5,0,{parent:G.coal});put(geo.rbox(12.6,0.5,10.6),M.roof,0,9.25,0,{parent:G.coal});
-put(geo.rbox(12.08,2.2,10.08,0.05),DM.brick,0,1.1,0,{parent:G.coal});put(geo.cyl(1.3,26),DM.brick,-4,13,-4,{parent:G.coal});
-G.pile=grp(-30,0,-24.5);const pile=put(new THREE.ConeGeometry(3.4,2.6,20),DM.coal,0,1.3,0,{parent:G.pile});
-const gasSkid=put(geo.capsule(0.9,3.4),DM.gas,0,1.1,0,{parent:G.pile,rot:[0,0,Math.PI/2]});gasSkid.visible=false;
-G.eb=grp(-38,0,-1);put(geo.rbox(8,7,7),M.card,0,3.5,0,{parent:G.eb});put(geo.rbox(8.4,0.4,7.4),M.roof,0,7.2,0,{parent:G.eb});
-const ebBand=put(geo.rbox(8.16,0.6,7.16,0.05),DM.elec,0,5.6,0,{parent:G.eb});
-G.sub=grp(-41.5,0,9);put(geo.rbox(10,0.1,4,0.04),M.road,0,0.08,0,{parent:G.sub,cast:false});for(let i=0;i<3;i++)put(geo.rbox(2,2.4,2,0.15),M.dark,-3+i*3,1.2,0,{parent:G.sub});
-G.grid=grp();const pylon=(x,z)=>{const g=grp(x,0,z,G.grid);put(geo.rbox(0.5,15,0.5,0.1),M.steel,0,7.5,0,{parent:g});put(geo.rbox(5,0.3,0.3,0.08),M.steel,0,14.6,0,{parent:g});put(geo.rbox(3.4,0.25,0.25,0.06),M.steel,0,12.6,0,{parent:g})};
-pylon(-34,32);pylon(-42,19);
-// condensate pond: water boiled off the milk is recovered and treated
-G.pond=grp(34,0,-20);put(new THREE.CylinderGeometry(4.2,4.2,0.12,48),M.water,0,0.1,0,{parent:G.pond,cast:false});put(new THREE.TorusGeometry(4.25,0.14,6,48),M.card2,0,0.14,0,{parent:G.pond,rot:[Math.PI/2,0,0]});
-// felt trees: a shelter belt round the edge of the site
-[[40,10,1],[42,3,.8],[41,-5,1.1],[38.5,-12,.9],[-45.5,16,.8],[-20,-38.5,1],[-8,-40.5,1.2],[6,-40.5,.9],[19,-38,1.1],[29,-35,.8],[0,34.5,1],[12,33.5,1.1],[-12,34.5,.9],[24,33,.8],[34,26,1],[-44,-14,.9]].forEach(([x,z,s],i)=>{
-  const g=grp(x,0,z);put(geo.cyl(0.22,2.2),M.timber,0,1.1,0,{parent:g});put(geo.sphere(1.5*s,1),i%2?DM.tree:DM.tree2,0,2.2+1.2*s,0,{parent:g});put(geo.sphere(1.05*s,1),i%2?DM.tree2:DM.tree,0.6*s,3.2+1.4*s,0.3*s,{parent:g})});
-// milk tankers
-const tankers=[];for(let i=0;i<8;i++){const g=grp();put(geo.capsule(1.05,5.1),M.steel,-1,1.95,0,{parent:g,rot:[0,0,Math.PI/2]});put(geo.rbox(2.2,2.4,2.3,0.25),DM.cab,3.8,1.6,0,{parent:g});
-  put(geo.rbox(0.08,0.8,1.9,0.03),M.window,4.92,2.1,0,{parent:g});put(geo.rbox(9.4,0.4,1.6,0.1),M.dark,0.3,0.55,0,{parent:g});tankers.push({g,u:i/8})}
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0,0);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,0.5,600);
+const controls=new THREE.OrbitControls(camera,canvas);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.46;controls.minDistance=14;controls.maxDistance=160;controls.enablePan=false;
+const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.85},o));
+const M={plinth:std(),ground:std(),road:std(),floor:std(),wall:std(),steel:std({color:0xDCE2E6,metalness:.35,roughness:.4}),white:std({color:0xF5F3F0,roughness:.5}),dark:std({color:0x3A3540}),rail:std({color:0x6B6268}),
+  tanker:std({color:0xEDEFF1,metalness:.4,roughness:.3}),cab:std({color:0x2E5E8A}),box:std({color:0xC25E45}),box2:std({color:0x4F7C93}),brick:std({color:0xB07A5E}),coalPile:std({color:0x2A2628}),wood:std({color:0xB08A5A}),glow:std({color:0x6FB0CF,emissive:0x3F7E9C,emissiveIntensity:0}),line:new THREE.LineBasicMaterial({transparent:true,opacity:.45}),
+  foul:std({color:0xA9773F,transparent:true,opacity:.62,roughness:.9}),ai:std({color:0xD9822B,emissive:0xD9822B,emissiveIntensity:.55,transparent:true,opacity:.9}),aiLine:new THREE.LineBasicMaterial({color:0xD9822B,transparent:true,opacity:.9}),
+  heat:std({color:0xD9822B,emissive:0xB0601A,emissiveIntensity:.5}),cone:new THREE.MeshBasicMaterial({color:0xD9822B,transparent:true,opacity:.12,depthWrite:false,side:THREE.DoubleSide}),
+  ribbon:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.55,side:THREE.DoubleSide,depthWrite:false}),warn:new THREE.MeshBasicMaterial({color:0xB3261E,transparent:true,opacity:.85,depthWrite:false})};
+scene.add(new THREE.HemisphereLight(0xffffff,0xa99ca4,.62));
+const sun=new THREE.DirectionalLight(0xfff1dd,.68);sun.position.set(-30,60,40);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-50,right:50,top:50,bottom:-50,near:1,far:200});sun.shadow.bias=-0.0006;scene.add(sun);
+function add(m,cast=true,recv=true){m.castShadow=cast;m.receiveShadow=recv;scene.add(m);return m}
+function boxM(w,h,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return add(m)}
+function cyl(r,h,mat,x,y,z,seg=24){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),mat);m.position.set(x,y,z);return add(m)}
+function edges(m){const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),M.line);e.position.copy(m.position);e.rotation.copy(m.rotation);scene.add(e)}
+add(new THREE.Mesh(new THREE.CylinderGeometry(48,48.5,1,96),M.plinth),false,true).position.set(0,-0.51,0);
+add(new THREE.Mesh(new THREE.CylinderGeometry(47.8,47.8,0.04,96),M.ground),false,true).position.set(0,0,0);
+boxM(90,0.05,6,M.road,0,0.03,22);boxM(6,0.05,20,M.road,-30,0.03,13);
+// reception, silos, process hall
+const rec=boxM(12,4,9,M.wall,-30,2,8);edges(rec);
+const SILO=[];for(let r=0;r<2;r++)for(let c=0;c<4;c++){const s=cyl(1.8,13,M.steel,-19+c*4.2,6.5,6+r*4.4);SILO.push(s);const cap=new THREE.Mesh(new THREE.ConeGeometry(1.8,1.2,24),M.steel);cap.position.set(s.position.x,13.6,s.position.z);add(cap)}
+const hall=boxM(16,7,12,M.wall,-4,3.5,-4);edges(hall);
+// evaporator (four tall effects) and the spray dryer tower
+const EVAP=[];for(let i=0;i<4;i++){EVAP.push(cyl(1.1,18,M.steel,8+i*2.8,9,0));}
+const dryer=boxM(10,26,10,M.white,22,13,-4);edges(dryer);const cone=new THREE.Mesh(new THREE.ConeGeometry(4.2,6,24),M.steel);cone.rotation.x=Math.PI;cone.position.set(22,5,-4);add(cone);
+cyl(1.2,6,M.steel,27.5,29,-4); // exhaust stack
+// pipes between units
+const pipeMat=M.steel;[[[-13,10,8],[-4,7.5,-4]],[[-4,7.5,-4],[8,17,0]],[[16.4,17,0],[22,24,-4]]].forEach(([a,b])=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),L=A.distanceTo(B);const p=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,L,10),pipeMat);p.position.copy(A).add(B).multiplyScalar(0.5);p.lookAt(B);p.rotateX(Math.PI/2);add(p)});
+// packing store and rail
+const store=boxM(34,8,10,M.wall,6,4,-22);edges(store);
+for(let i=0;i<2;i++)boxM(80,0.15,0.2,M.rail,0,0.1,-31+i*1.4);
+const wagons=[];for(let i=0;i<24;i++){const g=new THREE.Group();const f=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.4,1.9),M.dark);f.position.y=0.6;const b=new THREE.Mesh(new THREE.BoxGeometry(6,2.5,2.4),i%3?M.box:M.box2);b.position.y=2.05;g.add(f,b);g.traverse(o=>o.castShadow=true);g.visible=false;g.userData.b=b;scene.add(g);wagons.push(g)}
+// boilers: coal house with stack and pile, electrode boiler with substation
+const bh=boxM(12,9,10,M.brick,-30,4.5,-14);edges(bh);cyl(1.3,26,M.brick,-34,13,-18);
+const pile=new THREE.Mesh(new THREE.ConeGeometry(4,3,16),M.coalPile);pile.position.set(-22,1.5,-30);add(pile);
+const eb=boxM(8,7,7,M.white,-38,3.5,-1);edges(eb);const ebGlow=new THREE.Mesh(new THREE.BoxGeometry(8.2,0.6,7.2),M.glow);ebGlow.position.set(-38,6.2,-1);scene.add(ebGlow);
+for(let i=0;i<3;i++)boxM(2,2.4,2,M.dark,-42+i*3,1.2,6);
+const pyl=[[-40,0,14],[-44,0,30]];pyl.forEach(([x,,z])=>{boxM(0.4,16,0.4,M.rail,x,8,z);boxM(5,0.3,0.3,M.rail,x,15,z)});
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-44,15,30),new THREE.Vector3(-40,15,14),new THREE.Vector3(-41,6,6)]),M.line));
+// tankers on the road
+const tankers=[];for(let i=0;i<8;i++){const g=new THREE.Group();const tank=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,7,16),M.tanker);tank.rotation.z=Math.PI/2;tank.position.set(-1,1.9,0);const cab=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.4,2.3),M.cab);cab.position.set(3.8,1.6,0);
+  g.add(tank,cab);g.traverse(o=>o.castShadow=true);scene.add(g);tankers.push({g,u:i/8})}
 
-// ---------------- flows on the GPU, each riding its own pipe
-const FL={};
-function piped(name,pts,o,r=0.3,mat=M.steel){const f=stage.flow(Object.assign({points:bends(pts),jitter:0.04},o));FL[name]=f;
-  if(r)stage.add(new THREE.Mesh(new THREE.TubeGeometry(f.curve,Math.max(40,Math.round(f.length*3)),r,8,false),mat));return f}
-piped("milk",[[-24.8,3.2,8],[-22.6,3.2,8],[-22.6,15,8],[-3,15,8],[-3,15,1],[-3,7.4,1]],{count:120,color:0x4F7C93,size:0.62,speed:8});
-piped("conc",[[4.2,5.5,0.8],[5.6,5.5,0.8],[5.6,20.4,0.8],[16.6,20.4,0.8],[16.6,25.6,0.8],[16.6,25.6,-4],[18.6,25.6,-4]],{count:100,color:0x4F7C93,size:0.56,speed:6});
-piped("powder",[[21,1.6,-9.3],[21,1.6,-16.7]],{count:9,shape:"box",color:0xE6DCC8,glow:0,size:0.62,speed:1.6,jitter:0},0);
-piped("elecHeat",[[-33.8,5.2,-1],[-31.5,5.2,-1],[-31.5,9.8,-1],[6.6,9.8,-1]],{count:110,color:0x3F7E9C,size:0.5,speed:9});
-piped("coalHeat",[[-23.8,6.5,-12],[-21.5,6.5,-12],[-21.5,9.8,-12],[-21.5,9.8,-2.2],[6.6,9.8,-2.2]],{count:110,color:0x6B6268,size:0.5,speed:9});
-piped("grid",[[-34,14.4,32],[-38,13.1,25.5],[-42,14.4,19],[-42,6,12.5],[-41.5,2.6,9.6],[-40,0.45,7.4],[-40,0.45,2.8]],{count:90,color:0x3F7E9C,size:0.36,speed:11,jitter:0},0.06,M.dark);
-[-28,-20,5.2].forEach(x=>put(geo.rbox(0.3,9.6,1.8,0.06),M.dark,x,4.8,-1.6,{}));// pipe-rack posts
-
-// ---------------- the dryer's day: a ring on the ground round the dryer, filled for the hours it runs, with the 22-hour limit marked
-const RING={c:[22,-4],r0:7.5,r1:8.3};
-put(new THREE.RingGeometry(RING.r0,RING.r1,96),DM.track,RING.c[0],0.12,RING.c[1],{rot:[-Math.PI/2,0,0],cast:false});
-const hoursArc=put(new THREE.RingGeometry(RING.r0,RING.r1,96,1,0,0.01),DM.ink,RING.c[0],0.15,RING.c[1],{rot:[-Math.PI/2,0,0],cast:false});
-const limA=Math.PI/2-22/24*Math.PI*2,limTick=put(geo.rbox(1.5,0.5,0.28,0.06),DM.alert,RING.c[0]+Math.cos(limA)*(RING.r0+RING.r1)/2,0.3,RING.c[1]-Math.sin(limA)*(RING.r0+RING.r1)/2,{rot:[0,limA,0]});
-const ghostArc=put(new THREE.RingGeometry(RING.r1+0.15,RING.r1+0.75,96,1,0,0.01),stage.ghostMaterial(),RING.c[0],0.18,RING.c[1],{rot:[-Math.PI/2,0,0],cast:false});ghostArc.visible=false;
-function setArc(m,hrs,r0,r1){const len=Math.max(0.01,Math.min(1,hrs/24))*Math.PI*2;if(m.userData.len&&Math.abs(m.userData.len-len)<0.004)return;m.userData.len=len;m.geometry.dispose();m.geometry=new THREE.RingGeometry(r0,r1,96,1,Math.PI/2-len,len)}
-const ghostWag=wagons.map(w=>{const g=stage.ghost(w);g.position.copy(w.position);return g});
-
-// ---------------- AI objects in the scene (hidden until their tool is on; orange always means an AI tool is acting)
+// ---------------- AI objects in the scene (hidden until their tool is on)
 const AIOBJ={};
-AIOBJ.foul=EVAP.map(e=>{const m=put(new THREE.CylinderGeometry(1.17,1.17,1,24,1,true),DM.foul,e.position.x,0.5,e.position.z,{cast:false});m.scale.y=0.001;m.visible=false;return m});
-AIOBJ.ring=[0,1].map(()=>{const m=put(new THREE.TorusGeometry(7.4,0.16,8,96),DM.live,22,19,-4,{rot:[Math.PI/2,0,0],cast:false});m.visible=false;return m});
-AIOBJ.warn=put(new THREE.TorusGeometry(2.2,0.22,8,40),DM.warn,29,0.3,3,{rot:[Math.PI/2,0,0],cast:false});AIOBJ.warn.visible=false;
-AIOBJ.route=grp();[[[38,.32,22],[-30,.32,22],[-30,.32,12.6]],[[-30,.32,12.6],[-30,.32,26.5],[38,.32,26.5]]].forEach(p=>put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bends(p,1.4),false,"centripetal",0.3),160,0.12,6,false),DM.live,0,0,0,{parent:AIOBJ.route,cast:false}));AIOBJ.route.visible=false;
-AIOBJ.store=put(geo.cyl(2,9),DM.storeGlass,-43,4.5,-9,{cast:false});AIOBJ.store.visible=false;
-AIOBJ.fill=put(geo.cyl(1.8,1),DM.live,-43,0.5,-9,{cast:false});AIOBJ.fill.visible=false;
-AIOBJ.nir=[[5.6,12.8,0.8],[21,2.9,-13]].map(p=>{const g=grp(...p);put(geo.sphere(0.55,2),DM.live,0,0,0,{parent:g,cast:false});const r=put(new THREE.TorusGeometry(1,0.08,6,32),DM.live,0,0,0,{parent:g,cast:false,rot:[Math.PI/2,0,0]});g.userData.r=r;g.visible=false;return g});
-AIOBJ.cam=grp(21,0,-13);put(geo.rbox(1.4,0.9,1.1,0.12),M.dark,0,6.6,0,{parent:AIOBJ.cam});AIOBJ.cam.userData.c=put(new THREE.ConeGeometry(1.9,4.9,24,1,true),DM.cone,0,3.7,0,{parent:AIOBJ.cam,cast:false});AIOBJ.cam.visible=false;
-// illustrative price ribbon behind the site
-const RIB_N=96,RIB_W=56;{const g=new THREE.BufferGeometry(),pos=new Float32Array((RIB_N+1)*2*3),col=new Float32Array((RIB_N+1)*2*3),idx=[];for(let i=0;i<RIB_N;i++){const a=i*2,b=a+1,c=a+2,d=a+3;idx.push(a,b,c,b,d,c)}
-  g.setIndex(idx);g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(col,3));AIOBJ.rib=new THREE.Mesh(g,DM.ribbon);AIOBJ.rib.visible=false;AIOBJ.rib.frustumCulled=false;stage.root.add(AIOBJ.rib);
-  const lg=new THREE.BufferGeometry();lg.setAttribute("position",new THREE.BufferAttribute(new Float32Array((RIB_N+1)*3),3));AIOBJ.ribTop=new THREE.Line(lg,DM.aiLine);AIOBJ.ribTop.visible=false;AIOBJ.ribTop.frustumCulled=false;stage.root.add(AIOBJ.ribTop)}
+// fouling sleeves on each evaporator effect
+AIOBJ.foul=EVAP.map(e=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(1.17,1.17,1,24,1,true),M.foul);m.position.set(e.position.x,0.5,e.position.z);m.scale.y=0.001;scene.add(m);return m});
+// dryer control: two rings marking the moisture band, tight when the controller is on
+AIOBJ.ring=[0,1].map(i=>{const m=new THREE.Mesh(new THREE.TorusGeometry(6.4,0.16,8,64),M.ai);m.rotation.x=Math.PI/2;m.position.set(22,19,-4);m.visible=false;scene.add(m);return m});
+// predictive maintenance marker at the dryer's main fan
+AIOBJ.fan=boxM(2.4,2.4,2.4,M.dark,29,1.2,3);
+AIOBJ.warn=new THREE.Mesh(new THREE.TorusGeometry(2.2,0.22,8,40),M.warn);AIOBJ.warn.rotation.x=Math.PI/2;AIOBJ.warn.position.set(29,0.3,3);AIOBJ.warn.visible=false;scene.add(AIOBJ.warn);
+// tanker route line
+{const P=[[46,22],[-30,22],[-30,12.5],[-30,26.5],[46,26.5]].map(([x,z])=>new THREE.Vector3(x,0.22,z));AIOBJ.route=new THREE.Line(new THREE.BufferGeometry().setFromPoints(P),M.aiLine);AIOBJ.route.visible=false;scene.add(AIOBJ.route)}
+// hot-water heat store beside the electrode boiler
+AIOBJ.store=cyl(2,9,std({color:0xEDEFF1,metalness:.3,roughness:.4,transparent:true,opacity:.45}),-43,4.5,-9);AIOBJ.store.visible=false;
+AIOBJ.fill=cyl(1.8,1,M.heat,-43,0.5,-9);AIOBJ.fill.visible=false;
+// NIR sensor beacons on the process line
+AIOBJ.nir=[[2.5,12.75,-2],[16,5,-13]].map(p=>{const g=new THREE.Group();const s=new THREE.Mesh(new THREE.SphereGeometry(0.55,16,12),M.ai);const r=new THREE.Mesh(new THREE.TorusGeometry(1,0.08,6,32),M.ai);g.add(s,r);g.position.set(...p);g.visible=false;g.userData.r=r;scene.add(g);return g});
+// vision camera over the packing line
+AIOBJ.cam=new THREE.Group();{const b=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.9,1.1),M.dark);b.position.y=7.4;const c=new THREE.Mesh(new THREE.ConeGeometry(2.4,6.6,24,1,true),M.cone);c.position.y=3.9;AIOBJ.cam.add(b,c);AIOBJ.cam.userData.c=c;AIOBJ.cam.position.set(6,0,-15.2);AIOBJ.cam.visible=false;scene.add(AIOBJ.cam)}
+// illustrative price ribbon behind the store
+const RIB_N=96,RIB_W=74;{const g=new THREE.BufferGeometry(),pos=new Float32Array((RIB_N+1)*2*3),col=new Float32Array((RIB_N+1)*2*3),idx=[];for(let i=0;i<RIB_N;i++){const a=i*2,b=a+1,c=a+2,d=a+3;idx.push(a,b,c,b,d,c)}
+  g.setIndex(idx);g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(col,3));AIOBJ.rib=new THREE.Mesh(g,M.ribbon);AIOBJ.rib.visible=false;AIOBJ.rib.frustumCulled=false;scene.add(AIOBJ.rib);
+  const lg=new THREE.BufferGeometry();lg.setAttribute("position",new THREE.BufferAttribute(new Float32Array((RIB_N+1)*3),3));AIOBJ.ribTop=new THREE.Line(lg,M.aiLine);AIOBJ.ribTop.visible=false;AIOBJ.ribTop.frustumCulled=false;scene.add(AIOBJ.ribTop)}
 
-// ---------------- particles (CPU, few): water vapour off the evaporator and dryer, smoke from the boiler stack, cleaning water during a clean
-const PN=1400,pGeo=new THREE.BufferGeometry(),pPos=new Float32Array(PN*3),pCol=new Float32Array(PN*3),pA=new Float32Array(PN),pSz=new Float32Array(PN),pVel=new Float32Array(PN*3),pLife=new Float32Array(PN),pMax=new Float32Array(PN).fill(1);
+// particles: milk flowing (blue), water vapour (white) off the evaporator and dryer, smoke (grey) from the coal stack, cleaning water (blue) during a clean
+const PN=1800,pGeo=new THREE.BufferGeometry(),pPos=new Float32Array(PN*3),pCol=new Float32Array(PN*3),pA=new Float32Array(PN),pSz=new Float32Array(PN),pVel=new Float32Array(PN*3),pLife=new Float32Array(PN),pMax=new Float32Array(PN).fill(1);
 pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));pGeo.setAttribute("pcolor",new THREE.BufferAttribute(pCol,3));pGeo.setAttribute("alpha",new THREE.BufferAttribute(pA,1));pGeo.setAttribute("size",new THREE.BufferAttribute(pSz,1));
 const pMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{scale:{value:300}},vertexShader:"attribute vec3 pcolor;attribute float alpha;attribute float size;varying vec3 vC;varying float vA;uniform float scale;void main(){vC=pcolor;vA=alpha;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=size*scale/-mv.z;gl_Position=projectionMatrix*mv;}",
-  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;gl_FragColor=vec4(vC,vA*smoothstep(0.5,0.1,r));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"});
-const pts=new THREE.Points(pGeo,pMat);pts.frustumCulled=false;stage.root.add(pts);
+  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;gl_FragColor=vec4(vC,vA*smoothstep(0.5,0.1,r));}"});
+const pts=new THREE.Points(pGeo,pMat);pts.frustumCulled=false;scene.add(pts);
 let pi=0;function emit(p,v,life,c,size){const i=pi;pi=(pi+1)%PN;pPos.set(p,i*3);pVel.set(v,i*3);pCol.set([c.r,c.g,c.b],i*3);pLife[i]=life;pMax[i]=life;pSz[i]=size}
 const acc={};function rate(k,n,dt,fn){acc[k]=(acc[k]||0)+Math.min(n,160)*dt;while(acc[k]>=1){fn();acc[k]-=1}}
+const PATH=[[-30,4.5,8],[-17,13,8],[-4,7.5,-4],[9,18,0],[22,26,-4],[22,6,-4],[10,4,-22],[10,1.5,-30]].map(a=>new THREE.Vector3(...a));
+const segL=PATH.slice(1).map((p,i)=>p.distanceTo(PATH[i])),pathL=segL.reduce((a,b)=>a+b);
 let C={};const RED=new THREE.Color(0xB3261E);let VIEW="all";
-function applyTheme(){const css=getComputedStyle(document.documentElement),c=n=>new THREE.Color(css.getPropertyValue(n).trim()||"#999");
-  const live=c("--live"),milk=c("--milk"),elec=c("--elec"),ink=c("--ink");
-  [DM.live.color,DM.live.emissive,DM.cone.color,DM.aiLine.color].forEach(x=>x.copy(live));DM.foul.color.copy(c("--foul"));DM.ink.color.copy(ink);
-  DM.milk.color.copy(milk);DM.milk.emissive.copy(milk);DM.alt.color.copy(milk);DM.elec.color.copy(elec);DM.elec.emissive.copy(elec);
-  FL.milk.set({color:milk});FL.conc.set({color:milk});FL.elecHeat.set({color:elec});FL.grid.set({color:elec});
-  C={milk,steam:new THREE.Color(stage.dark()?0xDDE6EE:0xffffff),smoke:new THREE.Color(0x6B6268),live,cip:elec};
-  drawSeason()}
+function applyTheme(){const css=getComputedStyle(document.documentElement),c=n=>new THREE.Color(css.getPropertyValue(n).trim()||"#999");M.plinth.color=c("--scene-plinth");M.ground.color=c("--scene-ground");M.road.color=c("--scene-road");M.wall.color=c("--scene-wall");M.line.color=c("--scene-edge");
+  const live=c("--live");[M.ai.color,M.ai.emissive,M.aiLine.color,M.heat.color,M.cone.color].forEach(x=>x.copy(live));M.foul.color.copy(c("--foul"));
+  C={milk:c("--milk"),steam:new THREE.Color(0xffffff),smoke:new THREE.Color(0x6B6268),live,cip:c("--elec")};const dark=document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);box.style.background=dark?"linear-gradient(180deg,#241D33,#1A0D18)":"linear-gradient(180deg,#D6E4EA,#F6F1EC)";if(dark)C.steam=new THREE.Color(0xDDE6EE);drawSeason()}
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
 
 // ---------------- plant-time state for the AI behaviours (1 real second = 1 plant hour)
 const P={h:6,foul:0,run:0,cip:0,cipLeft:0,maint:{ph:0,state:"ok",t:0},dryWob:0,mixT:0,supplyT:0,qualT:0,visT:7,visFlash:0,ribPhase:0,dr:false,store:0.7,stop:0};
@@ -564,111 +523,75 @@ function ribVal(x,ph){return 0.5+0.28*Math.sin(x*0.19+ph*0.5)+0.16*Math.sin(x*0.
 
 // ---------------- live
 let D=dayOf(S.m);
-P.h=9.5;// plant time starts mid-morning (1 real second = 1 plant hour)
-let hold=null,holdBeforeGrid=null,lastGrid=false;// hold = a fixed hour for the light (tap the dial centre); the cold-morning test holds 07:30
-const LIVEWX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.4,0.15],src:"",at:""};
-const WX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.4,0.15]};let frost=0;
-const WINTER=[1,1,0.9,0.6,0.3,0.1,0,0,0,0.1,0.35,0.7];// how frosty a still morning gets, June to May
-const FROST=new THREE.Color(0xEEF1F3);
-const lightHour=()=>hold!=null?hold:P.h%24;
-let ebMW=0,gridNow=0,heatE=0,heatB=0,stoppedNow=false,cleaningNow=false,intensityNow=0;
-function anim(dt){const on=AI.on,intensity=D.t/(DRYER_TPH*24);intensityNow=intensity;P.h+=dt;
+function anim(dt){const on=AI.on,intensity=D.t/(DRYER_TPH*24);P.h+=dt;
   // ---- predictive maintenance cycle (60 plant hours): without the tool, a bearing fails at hour 34 and the dryer stops 5 h
   const mc=P.maint;mc.ph+=dt;if(mc.ph>=60){mc.ph-=60;mc.state="ok"}
   if(on.maint){if(mc.state==="ok"&&mc.ph>18&&mc.ph<30){mc.state="warn";log("Fan bearing wear predicted 16 hours ahead. Fix booked for the 02:00 low-intake window.","Recommended · planner approved")}
     if(mc.state==="warn"&&mc.ph>=30){mc.state="fixed";log("Planned bearing swap done in 40 minutes. No unplanned stop.","Done by maintenance team")}
     if(mc.state==="stop")mc.state="ok"}
   else{if(mc.state==="ok"&&mc.ph>34&&mc.ph<39){mc.state="stop";log("Unplanned dryer stop: fan bearing failed with no warning. Milk waits in the silos.","No tool on",true)}if(mc.state==="stop"&&mc.ph>=39)mc.state="ok";if(mc.state!=="stop"&&mc.state!=="ok"&&mc.ph<1)mc.state="ok"}
-  const stopped=!on.maint&&mc.state==="stop";stoppedNow=stopped;
-  AIOBJ.warn.visible=!!(stopped||(on.maint&&mc.state==="warn"));if(AIOBJ.warn.visible){const k=1+0.18*Math.sin(P.h*6);AIOBJ.warn.scale.set(k,k,k);DM.warn.color.set(stopped?0xB3261E:0xD9822B)}
+  const stopped=!on.maint&&mc.state==="stop";
+  AIOBJ.warn.visible=stopped||(on.maint&&mc.state==="warn");if(AIOBJ.warn.visible){const k=1+0.18*Math.sin(P.h*6);AIOBJ.warn.scale.set(k,k,k);M.warn.color.set(stopped?0xB3261E:0xD9822B)}
   // ---- evaporator fouling and cleaning
   const runLen=on.cip?23:20,cipLen=on.cip?3.2:4;
   if(P.cipLeft>0){P.cipLeft-=dt;P.foul=Math.max(0,P.foul-dt/cipLen*1.2);if(P.cipLeft<=0){P.cipLeft=0;P.foul=0;P.run=0}}
   else{P.run+=dt*(intensity>0.02?1:0.3);P.foul=Math.min(1,P.run/24);if(P.run>=runLen){P.cipLeft=cipLen;log(on.cip?`Evaporator clean started after ${runLen} h: predicted fouling limit reached. Clean will stop on sensor reading.`:`Evaporator clean started after ${runLen} h on the fixed timer.`,on.cip?"Recommended · shift lead confirmed":"Fixed schedule")}}
-  const cleaning=P.cipLeft>0;cleaningNow=cleaning;AIOBJ.foul.forEach((m,i)=>{const f=Math.max(0.001,P.foul*(0.92+i*0.03));m.scale.y=f*18;m.position.y=f*9;m.visible=P.foul>0.01});
-  if(cleaning)rate("cip",70,dt,()=>{const i=Math.floor(Math.random()*4),a=Math.random()*6.28,x=EVAP[i].position.x;emit([x+Math.cos(a)*1.3,0.5+Math.random()*2,Math.sin(a)*1.3],[-Math.sin(a)*1.2,4+Math.random()*3,Math.cos(a)*1.2],3.4,C.cip,0.7)});
-  // ---- water vapour off the evaporator (not while cleaning)
-  if(!cleaning)rate("steamE",intensity*60,dt,()=>{const i=Math.floor(Math.random()*4);emit([EVAP[i].position.x+(Math.random()-.5),19.1,(Math.random()-.5)],[(Math.random()-.5)*.6+WX.wind[0],2.2+Math.random(),(Math.random()-.5)*.6+WX.wind[1]],3,C.steam,1.0)});
+  const cleaning=P.cipLeft>0;AIOBJ.foul.forEach((m,i)=>{const f=Math.max(0.001,P.foul*(0.92+i*0.03));m.scale.y=f*18;m.position.y=f*9;m.visible=P.foul>0.01});
+  if(cleaning)rate("cip",70,dt,()=>{const i=Math.floor(Math.random()*4),a=Math.random()*6.28;emit([8+i*2.8+Math.cos(a)*1.3,0.5+Math.random()*2,Math.sin(a)*1.3],[-Math.sin(a)*1.2,4+Math.random()*3,Math.cos(a)*1.2],3.4,C.cip,0.7)});
+  // ---- milk along the process path
+  rate("milk",intensity*90*(stopped?0.25:1),dt,()=>{emit([PATH[0].x,PATH[0].y,PATH[0].z],[0,0,0],pathL/9,C.milk,0.55)});
+  if(!cleaning)rate("steamE",intensity*60,dt,()=>{const i=Math.floor(Math.random()*4);emit([8+i*2.8+(Math.random()-.5),18.4,(Math.random()-.5)],[(Math.random()-.5)*.6,2.2+Math.random(),(Math.random()-.5)*.6],3,C.steam,1.0)});
   // ---- dryer plume: wobbles under manual control, steady with advanced control
   P.dryWob+=dt;const wob=on.dryer?0.05*Math.sin(P.dryWob*1.3):0.5*Math.sin(P.dryWob*1.7)+0.25*Math.sin(P.dryWob*4.3+1);
-  if(!stopped)rate("steamD",intensity*70*Math.max(0.15,1+wob),dt,()=>emit([25.5+(Math.random()-.5),32.3,-4+(Math.random()-.5)],[(Math.random()-.5)*(on.dryer?.5:1.4)+WX.wind[0]*1.5,(2.8+Math.random())*(1+wob*0.5),(Math.random()-.5)*(on.dryer?.5:1.4)+WX.wind[1]*1.5],3.2,C.steam,1.3));
+  if(!stopped)rate("steamD",intensity*70*Math.max(0.15,1+wob),dt,()=>emit([27.5+(Math.random()-.5),32.2,-4+(Math.random()-.5)],[(Math.random()-.5)*(on.dryer?.5:1.4),(2.8+Math.random())*(1+wob*0.5),(Math.random()-.5)*(on.dryer?.5:1.4)],3.2,C.steam,1.3));
   AIOBJ.ring.forEach((r,i)=>{r.visible=!!on.dryer;r.position.y=19+(i?0.55:-0.55);r.rotation.z+=dt*0.2});
-  // ---- heat right now: the electrode boiler (off in the grid emergency, eased off when power is dear) and the backup boilers
-  const run=intensity>0.02?1:0.2;ebMW=S.grid?0:Math.min(D.runMW||0,S.eb)*(P.dr?0.25:1)*run;
-  heatE=D.runMW?Math.min(1,ebMW/D.runMW):0;const heatScale=intensity>0.02?clamp(intensity*1.3,0.15,1):0.04;heatB=(1-heatE)*heatScale;heatE*=heatScale;
-  gridNow=ebMW+KWH_PER_T*D.t/1000/Math.max(1,D.hrs);
-  const smokeK={coal:1,bio:0.6,gas:0.25}[S.backup],smokeC=S.backup==="coal"?C.smoke:S.backup==="bio"?new THREE.Color(0x9A8F8A):C.steam;
-  rate("smoke",heatB*60*smokeK,dt,()=>emit([-34+(Math.random()-.5),26.3,-18+(Math.random()-.5)],[0.6*WX.wind[0]/0.4+(Math.random()-.5)*.6,2+Math.random(),0.6*WX.wind[1]/0.4+(Math.random()-.5)*.6],4,smokeC,1.4));
+  const coalShare=S.backup==="coal"?1-D.elecFrac*(P.dr?0.3:1):0;rate("smoke",intensity*coalShare*60,dt,()=>emit([-34+(Math.random()-.5),26.3,-18+(Math.random()-.5)],[0.6+(Math.random()-.5)*.6,2+Math.random(),(Math.random()-.5)*.6],4,C.smoke,1.4));
   for(let i=0;i<PN;i++){if(pLife[i]<=0){pA[i]=0;continue}pLife[i]-=dt;const t=1-pLife[i]/pMax[i];
-    pPos[i*3]+=pVel[i*3]*dt;pPos[i*3+1]+=pVel[i*3+1]*dt;pPos[i*3+2]+=pVel[i*3+2]*dt;pSz[i]*=1+dt*0.35;pA[i]=Math.min(1,t*6)*(1-t)*0.7}
+    if(pSz[i]===0.55){let s=t*pathL,k=0;while(k<segL.length-1&&s>segL[k]){s-=segL[k];k++}const a=PATH[k],b=PATH[k+1],f=Math.min(1,s/segL[k]);pPos[i*3]=a.x+(b.x-a.x)*f;pPos[i*3+1]=a.y+(b.y-a.y)*f;pPos[i*3+2]=a.z+(b.z-a.z)*f;pA[i]=0.95}
+    else{pPos[i*3]+=pVel[i*3]*dt;pPos[i*3+1]+=pVel[i*3+1]*dt;pPos[i*3+2]+=pVel[i*3+2]*dt;pSz[i]*=1+dt*0.35;pA[i]=Math.min(1,t*6)*(1-t)*0.7}}
   ["position","pcolor","alpha","size"].forEach(k=>pGeo.attributes[k].needsUpdate=true);
-  // ---- flows: milk in, concentrate up to the dryer, powder out, heat and grid power
-  const mk=clamp(intensity*1.2,0.03,1);FL.milk.set({rate:mk*(stopped?0.25:1)});FL.conc.set({rate:cleaning?0:mk*(stopped?0.1:0.85)});FL.powder.set({rate:stopped?0:clamp(intensity*1.3,0.12,1)});
-  FL.elecHeat.set({rate:heatE});FL.coalHeat.set({rate:heatB,color:S.backup==="coal"?0x6B6268:S.backup==="gas"?0x8E8A9A:0xA9773F});FL.grid.set({rate:clamp(gridNow/40,0.02,1)});
-  ebBand.material.emissiveIntensity=S.eb?Math.min(1,ebMW/30)*0.9:0;
-  pile.visible=S.backup!=="gas";gasSkid.visible=S.backup==="gas";pile.material=S.backup==="bio"?DM.chips:DM.coal;
-  // ---- the dryer's day ring
-  setArc(hoursArc,D.hrs,RING.r0,RING.r1);hoursArc.material=D.over>0?DM.alert:DM.ink;
-  // ---- tankers: evenly spaced and fewer kilometres when routing is on. They arrive from the edge of the model and leave the same way.
+  // ---- tankers: evenly spaced and fewer kilometres when routing is on
   const base=Math.max(1,Math.min(8,Math.round(D.tankers/20))),onRoad=on.supply?Math.max(1,Math.round(base*0.93)):base;AIOBJ.route.visible=!!on.supply;
-  tankers.forEach((tk,i)=>{tk.g.visible=i<onRoad;tk.u=(tk.u+dt*0.035)%1;const u=on.supply?(tk.u-i/8+i/onRoad+1)%1:tk.u,g=tk.g;
-    if(u<0.6){g.position.set(38-u/0.6*68,0,22);g.rotation.y=Math.PI}
-    else if(u<0.7){const f=smooth(0,1,(u-0.6)/0.1);g.position.set(-30,0,22-f*9.4);g.rotation.y=Math.PI/2}
-    else if(u<0.8){const f=smooth(0,1,(u-0.7)/0.1);g.position.set(-30,0,12.6+f*13.9);g.rotation.y=Math.PI/2}
-    else{const f=(u-0.8)/0.2;g.position.set(-30+f*68,0,26.5);g.rotation.y=0}
-    g.scale.setScalar(Math.max(0.001,smooth(0,0.035,u)*(1-smooth(0.965,1,u))))});
+  tankers.forEach((tk,i)=>{tk.g.visible=i<onRoad;tk.u=(tk.u+dt*0.035)%1;const u=on.supply?(tk.u-i/8+i/onRoad+1)%1:tk.u;
+    if(u<0.6){tk.g.position.set(46-u/0.6*76,0,22);tk.g.rotation.y=Math.PI}else if(u<0.8){const f=(u-0.6)/0.2;tk.g.position.set(-30,0,22-f*10);tk.g.rotation.y=Math.PI/2}else{const f=(u-0.8)/0.2;tk.g.position.set(-30+f*76,0,26.5);tk.g.rotation.y=0}});
   if(on.supply){P.supplyT+=dt;if(P.supplyT>=20){P.supplyT=0;const f=D.L/1e6*(1+(Math.random()-.5)*0.02);log(`Tomorrow's milk forecast ${fmt(f,2)} M litres (±1.5%). ${fmt(D.tankers)} tanker runs re-sequenced, 7% fewer km.`,"Recommended · dispatcher approved")}}
-  // ---- product mix: container colours follow the plan, price ribbon scrolls
+  // ---- product mix: wagon colours follow the plan, price ribbon scrolls
   const R=streamReturns(),altShare=on.mix?(R[0].k==="wmp"?0.12:0.42):0.25;
-  const nb=Math.min(12,Math.ceil(D.boxes/2));wagons.forEach((w,i)=>{w.visible=i<nb;wagBoxes[i].forEach((b,k)=>b.material=(((i*2+k)*0.618)%1)<altShare?DM.alt:DM.wmp)});
+  const nb=Math.min(24,Math.round(D.boxes/2));wagons.forEach((w,i)=>{w.visible=i<nb;w.position.set(-36+i*6.6,0,-30.3);w.userData.b.material=((i*0.618)%1)<altShare?M.box2:M.box});
   AIOBJ.rib.visible=AIOBJ.ribTop.visible=!!on.mix;
   if(on.mix){P.ribPhase+=dt;const pos=AIOBJ.rib.geometry.attributes.position.array,col=AIOBJ.rib.geometry.attributes.color.array,top=AIOBJ.ribTop.geometry.attributes.position.array,cA=C.live,cB=C.milk;
-    for(let i=0;i<=RIB_N;i++){const x=-RIB_W/2+i*RIB_W/RIB_N,v=ribVal(i,P.ribPhase),y=12+v*6,cc=v>0.55?cA:cB;pos.set([x,12,-36,x,y,-36],i*6);col.set([cc.r,cc.g,cc.b,cc.r,cc.g,cc.b],i*6);top.set([x,y,-36],i*3)}
+    for(let i=0;i<=RIB_N;i++){const x=-RIB_W/2+i*RIB_W/RIB_N,v=ribVal(i,P.ribPhase),y=11+v*6,cc=v>0.55?cA:cB;pos.set([x,11,-37,x,y,-37],i*6);col.set([cc.r,cc.g,cc.b,cc.r,cc.g,cc.b],i*6);top.set([x,y,-37],i*3)}
     AIOBJ.rib.geometry.attributes.position.needsUpdate=AIOBJ.rib.geometry.attributes.color.needsUpdate=AIOBJ.ribTop.geometry.attributes.position.needsUpdate=true;
     P.mixT+=dt;if(P.mixT>=26){P.mixT=0;log(`Weekly re-plan: ${R[0].name} returns $${fmt(R[0].net-R[1].net,2)}/kgMS more than ${R[1].name} at these prices. Moving up to 10% of next week's milk.`,"Recommended · planning team approved")}}
   // ---- electricity demand response with a hot-water store
   const pr=price(P.h),wasDR=P.dr;P.dr=!!on.energy&&S.eb>0&&!S.grid&&pr>230;AIOBJ.store.visible=AIOBJ.fill.visible=!!on.energy;
   if(on.energy){P.store=Math.min(1,Math.max(0.08,P.store+(P.dr?-0.12:0.05)*dt));AIOBJ.fill.scale.y=P.store*8.6;AIOBJ.fill.position.y=0.2+P.store*4.3;
     if(P.dr&&!wasDR)log(`Power price $${fmt(pr)}/MWh. Electrode boiler eased to ${fmt(S.eb*0.25)} MW; hot-water store carries the load.`,"Acted within agreed limits");if(!P.dr&&wasDR)log("Price back down. Electrode boiler back to full and recharging the store.","Acted within agreed limits")}
+  M.glow.emissiveIntensity=S.grid?0:Math.min(1,S.eb/40)*(intensity>0.02?1:0.2)*(P.dr?0.25:1);
   // ---- inline quality beacons
-  AIOBJ.nir.forEach((g,i)=>{g.visible=!!on.quality;const k=1+((P.h*0.8+i*0.5)%1)*1.6;g.userData.r.scale.set(k,k,k)});
+  AIOBJ.nir.forEach((g,i)=>{g.visible=!!on.quality;const k=1+((P.h*0.8+i*0.5)%1)*1.6;g.userData.r.scale.set(k,k,k);g.userData.r.rotation.x=Math.PI/2});
   if(on.quality){P.qualT+=dt;if(P.qualT>=17){P.qualT=0;log(`Batch ${2000+Math.floor(P.h/6)} predicted in spec (fat, protein, moisture). Cleared for release in 2 days, pending lab confirmation.`,"Recommended · quality team decides")}}
   // ---- vision QA
   AIOBJ.cam.visible=!!on.vision;if(on.vision){P.visT-=dt;P.visFlash=Math.max(0,P.visFlash-dt);if(P.visT<=0){P.visT=11+Math.random()*6;P.visFlash=1.2;log("Bag with a creased seal caught on camera and moved to the hold lane.","Acted within limits · person checks")}
-    DM.cone.opacity=0.12+P.visFlash*0.35;DM.cone.color.copy(P.visFlash>0?RED:C.live)}
+    M.cone.opacity=0.12+P.visFlash*0.35;M.cone.color.copy(P.visFlash>0?RED:C.live)}
   if(on.dryer){P.dryLog=(P.dryLog||0)+dt;if(P.dryLog>=15){P.dryLog=0;log("Dryer moisture held at 3.00% ± 0.06 through a humidity change. Setpoints moved inside operator limits.","Acted within limits")}}
 }
-// ---------------- light, weather and the cold-morning test (runs every frame, also while the AI clock is advanced by hand)
-function sky(dt){
-  if(S.grid!==lastGrid){if(S.grid){holdBeforeGrid=hold;hold=7.5}else if(hold===7.5)hold=holdBeforeGrid;lastGrid=S.grid}
-  const h=lightHour(),yr=S.m>=7?2027:2026;stage.setClock(nzDate(yr,(S.m+5)%12,15,h));
-  const tgt=S.grid?{rain:0,cloud:0.18,fog:0.6,wet:0,wind:[0.02,0.01]}:LIVEWX,k=Math.min(1,dt*1.2);
-  ["rain","cloud","fog","wet"].forEach(n=>WX[n]+=(tgt[n]-WX[n])*k);WX.wind[0]+=(tgt.wind[0]-WX.wind[0])*k;WX.wind[1]+=(tgt.wind[1]-WX.wind[1])*k;stage.setWeather(WX);
-  frost+=((S.grid?WINTER[S.m]:0)-frost)*k;const lk=stage.look();M.felt.color.set(lk.felt).lerp(FROST,frost*0.85);M.roof.color.set(lk.roof).lerp(FROST,frost*0.6);
-  pMat.uniforms.scale.value=stage.pointScale}
-// ---------------- labels on the model (a tag hides when its part is pinned, or when it would cover the controls)
-const tagsEl=$("tags"),tg=[0,1,2,3,4,5,6,7,8].map(()=>{const e=document.createElement("div");e.className="tag";tagsEl.appendChild(e);return e});const v3=new THREE.Vector3();
-const TAGP=[[-30,6,8],[-13,16.4,8],[12.2,21,0],[22,28.6,-4],[-38,9,-1],[6,11.5,-22],[29,4,3],[0,19,-36],[22,0.6,4.9]];
-const TAGPICK=["Tanker reception","Silos","Evaporator","Spray dryer","Electrode boiler","Packing store","Dryer fan",null,null];
-let CMP=null;// the month shown as a ghost (Compare)
+// ---------------- labels and panels
+const tagsEl=$("tags"),tg=[0,1,2,3,4,5,6,7].map(()=>{const e=document.createElement("div");e.className="tag";tagsEl.appendChild(e);return e});const v3=new THREE.Vector3();
+const TAGP=[[-30,6,8],[-13,16,8],[11.5,13,1.5],[22,28,-4],[-38,9,-1],[6,10,-17],[29,4,3],[22,19,-37]];
 function tags(){const w=canvas.clientWidth,h=canvas.clientHeight,on=AI.on,mc=P.maint;
-  const pinned=new Set([...box.querySelectorAll(".tw-pins .tw-card")].map(e=>e.getAttribute("aria-label")));
-  const show=[true,!(on.supply&&w<560),true,true,true,!!(on.quality||on.vision)&&VIEW!=="dryer",AIOBJ.warn.visible,!!on.mix,CMP!=null].map((s,i)=>s&&!pinned.has(TAGPICK[i]));
-  TAGP.forEach((p,i)=>{v3.set(...p);const s=stage.project(v3),el=tg[i];if(!show[i]||!s.visible||s.x<40||s.x>w-40||s.y<46||s.y>h-36){el.hidden=true;return}el.hidden=false;el.style.left=s.x+"px";el.style.top=s.y+"px"});
+  const show=[true,!(on.supply&&w<560),true,true,true,!!(on.quality||on.vision)&&VIEW!=="dryer",AIOBJ.warn.visible,!!on.mix];
+  TAGP.forEach((p,i)=>{v3.set(...p).project(camera);const el=tg[i],x=(v3.x+1)/2*w,y=(1-v3.y)/2*h;if(!show[i]||v3.z>1||x<40||x>w-40||y<46||y>h-36){el.hidden=true;return}el.hidden=false;el.style.left=x+"px";el.style.top=y+"px"});
   tg[0].className="tag"+(on.supply?" hl":"");tg[0].innerHTML=`<b>Tanker reception</b><br><span class="m">${fmt(D.tankers)} loads a day</span>${on.supply?`<br><span class="a">forecast ±1.5% · 7% fewer km</span>`:""}`;
   tg[1].innerHTML=`<b>Silos</b><br><span class="m">${fmt(D.L/1e6,2)} M litres</span>`;
   tg[2].className="tag"+(on.cip?" hl":"");tg[2].innerHTML=`<b>Evaporator</b><br>${P.cipLeft>0?`<span class="a">cleaning · ${fmt(P.cipLeft,1)} h left</span>`:`<span class="m">fouling ${fmt(P.foul*100)}% · run ${fmt(P.run,0)} of ${on.cip?23:20} h</span>`}`;
   tg[3].className="tag"+(on.dryer?" hl":"");tg[3].innerHTML=`<b>Spray dryer</b><br><span class="m">${fmt(D.hrs,1)} h · ${fmt(D.t)} t powder</span><br>${!on.maint&&mc.state==="stop"?`<span class="r">stopped: fan bearing failed</span>`:on.dryer?`<span class="a">moisture 3.00% ± 0.06</span>`:`<span class="m">moisture 2.85% ± 0.20</span>`}`;
-  tg[4].className="tag"+(on.energy?" hl":"");tg[4].innerHTML=`<b>Electrode boiler</b><br><span class="${S.grid?"r":"m"}">${S.grid?"off: grid emergency":S.eb?(P.dr?fmt(S.eb*0.25)+" of "+S.eb+" MW":fmt(ebMW)+" of "+S.eb+" MW"):"none"}</span>${on.energy&&S.eb?`<br><span class="a">power $${fmt(price(P.h))}/MWh · store ${fmt(P.store*100)}%</span>`:""}`;
+  tg[4].className="tag"+(on.energy?" hl":"");tg[4].innerHTML=`<b>Electrode boiler</b><br><span class="m">${S.grid?"off: grid emergency":S.eb?(P.dr?fmt(S.eb*0.25)+" of "+S.eb+" MW":S.eb+" MW"):"none"}</span>${on.energy&&S.eb?`<br><span class="a">power $${fmt(price(P.h))}/MWh · store ${fmt(P.store*100)}%</span>`:""}`;
   tg[5].className="tag hl";tg[5].innerHTML=`<b>Packing and store</b>${on.quality?`<br><span class="a">release 5 → 2 days</span>`:""}${on.vision?`<br><span class="a">camera checks every bag</span>`:""}`;
   tg[7].className="tag hl";tg[7].innerHTML=`<b>Price signal</b> <span class="m">illustrative</span><br><span class="a">orange: butter or AMF pays more</span>`;
   tg[6].className="tag";tg[6].innerHTML=on.maint?`<b>Dryer fan</b><br><span class="a">bearing wear predicted · fix booked</span>`:`<b>Dryer fan</b><br><span class="r">failed · unplanned stop</span>`;
-  if(CMP!=null){const g=dayOf(CMP);tg[8].className="tag";tg[8].innerHTML=`<b>Ghost: ${MONTHS[CMP]}</b><br><span class="m">dryer ${fmt(g.hrs,1)} h · ${fmt(g.boxes)} containers</span><br><span class="m">now: ${fmt(D.hrs,1)} h · ${fmt(D.boxes)}</span>`}
-  const kept=[...box.querySelectorAll(".views,.hud,.tw-tools,.tw-dialwrap,.tw-tour:not([hidden]),.tw-following:not([hidden]),.badge")].map(e=>e.getBoundingClientRect());
-  [3,8,2,4,0,6,7,5,1].forEach(i=>{const el=tg[i];if(el.hidden)return;let r=el.getBoundingClientRect();const lx=parseFloat(el.style.left),half=r.width/2,nx=Math.min(w-half-6,Math.max(half+6,lx));if(nx!==lx){el.style.left=nx+"px";r=el.getBoundingClientRect()}if(kept.some(k=>r.left<k.right+4&&r.right>k.left-4&&r.top<k.bottom+4&&r.bottom>k.top-4)){el.hidden=true;return}kept.push(r)});
+  const kept=[box.querySelector(".views").getBoundingClientRect(),$("hud").getBoundingClientRect()];[3,2,4,0,6,7,5,1].forEach(i=>{const el=tg[i];if(el.hidden)return;let r=el.getBoundingClientRect();const lx=parseFloat(el.style.left),half=r.width/2,nx=Math.min(w-half-6,Math.max(half+6,lx));if(nx!==lx){el.style.left=nx+"px";r=el.getBoundingClientRect()}if(kept.some(k=>r.left<k.right+4&&r.right>k.left-4&&r.top<k.bottom+4&&r.bottom>k.top-4)){el.hidden=true;return}kept.push(r)});
 }
-function setMonth(i){i=(i+12)%12;S.m=i;$("month").value=i;$("monthV").textContent=MONTHS[i];update()}
-function setGrid(on){S.grid=!!on;$("grid").checked=S.grid;update()}
 function drawSeason(){const W=320,max=13.5;let o=`<line x1="0" x2="${W}" y1="88.5" y2="88.5" stroke="var(--line)"/>`;SHARE.forEach((v,i)=>{const bw=W/12-4,x=i*(W/12)+2,bh=v/max*76*S.vol,r=Math.min(3,bh/2),cur=i===S.m;
   o+=`<path d="M${x} 88V${88-bh+r}q0-${r} ${r}-${r}h${bw-2*r}q${r} 0 ${r} ${r}V88z" fill="${cur?"var(--live)":"var(--rose)"}" opacity="${cur?1:.35}"><title>${MONTHS[i]}: ${fmt(v*S.vol,1)}% of a normal season's milk</title></path><text class="t-ax" x="${x+bw/2}" y="104" text-anchor="middle"${cur?' style="fill:var(--ink);font-weight:500"':""}>${MONTHS[i][0]}</text>`;
   if(cur)o+=`<text class="t-ink" x="0" y="-4"><tspan style="font-weight:500">${MONTHS[i]}: ${fmt(v*S.vol,1)}%</tspan><tspan class="t-ax" dx="6">of a normal season's milk</tspan></text>`});
@@ -754,66 +677,24 @@ R_("month","m",v=>MONTHS[v]);R_("vol","vol",v=>Math.round(v*100)+"%",v=>+v/100);
 $("backup").onchange=e=>{S.backup=e.target.value;update()};$("grid").onchange=e=>{S.grid=e.target.checked;update()};
 $("allOn").onclick=()=>{TOOLS.forEach(t=>AI.on[t.id]=true);if(P.maint.state==="stop")P.maint.state="ok";log("All eight tools switched on. Each keeps its own authority level.","People stay in charge");renderAI()};
 $("allOff").onclick=()=>{TOOLS.forEach(t=>AI.on[t.id]=false);log("All tools switched off. The plant runs on its normal controls.","Manual");renderAI()};
-// ---------------- camera, touch, tour, compare, sound and the time dial
-const VIEWS={above:{p:[14,132,78],t:[-2,0,-6]},all:{p:[60,64,98],t:[0,2,-4]},dryer:{p:[40,30,34],t:[16,12,-3]},energy:{p:[-12,22,30],t:[-34,6,-8]}};stage.views=VIEWS;
-function setView(n){if(!VIEWS[n])return;VIEW=n;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));stage.flyTo(VIEWS[n])}
-document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));
-const SIM="Simulated",bkName=()=>({coal:"Coal",gas:"Gas",bio:"Wood biomass"}[S.backup]);
-const pk=(obj,spec)=>stage.pickable(obj,Object.assign({truth:SIM},spec));
-pk(G.rec,{title:"Tanker reception",view:{p:[-2,26,46],t:[-26,3,10]},hint:"milk arriving today",panel:"#milk",value:()=>`${fmt(D.tankers)} tanker loads today<br><span class="m">${fmt(D.L/1e6,2)} M litres · about 28,000 L a load</span>`,source:"Monthly milk shares: DCANZ 2022/23"});
-pk(G.silos,{title:"Silos",view:{p:[4,32,44],t:[-13,8,8]},hint:"raw milk waiting",panel:"#milk",value:()=>`${fmt(D.L/1e6,2)} M litres today<br><span class="m">${fmt(D.L*KGMS_PER_L/1e3)}k kg of milk solids</span>`});
-pk(G.evap,{title:"Evaporator",view:{p:[34,32,34],t:[11,11,0]},hint:"boils water off the milk",panel:"#water",value:()=>`${fmt(D.water)} t of water boiled off today<br>${P.cipLeft>0?`<span class="a">cleaning · ${fmt(P.cipLeft,1)} h left</span>`:`<span class="m">fouling ${fmt(P.foul*100)}% · run ${fmt(P.run,0)} of ${AI.on.cip?23:20} h</span>`}`});
-pk(G.dryer,{title:"Spray dryer",hint:"the plant's bottleneck",panel:"#dryViz",value:()=>`${fmt(D.hrs,1)} of 24 h · ${fmt(D.t)} t powder<br>${D.over>0?`<span class="r">${fmt(D.over)} t over the 22-hour limit</span>`:`<span class="m">${fmt(22-D.hrs,1)} h below the 22-hour limit</span>`}`,view:VIEWS.dryer});
-pk(G.fan,{title:"Dryer fan",view:{p:[44,14,22],t:[29,1,3]},hint:"watched for bearing wear",panel:'[data-ai="maint"]',value:()=>P.maint.state==="stop"&&!AI.on.maint?`<span class="r">failed · unplanned stop</span>`:AI.on.maint?`<span class="a">${P.maint.state==="warn"?"wear predicted · fix booked":"healthy · watched"}</span>`:`<span class="m">no monitoring: fails without warning about once a season</span>`});
-pk(G.eb,{title:"Electrode boiler",view:{p:[-16,18,26],t:[-38,4,-1]},hint:"heat from electricity",panel:"#heatViz",value:()=>S.grid?`<span class="r">off for the morning: grid emergency</span>`:S.eb?`${fmt(ebMW,1)} of ${S.eb} MW now<br><span class="m">${fmt(D.elecFrac*100)}% of today's heat</span>`:`<span class="m">none (raise it in Boilers and the grid)</span>`});
-pk(G.coal,{title:"Backup boilers",view:{p:[-4,28,10],t:[-30,10,-16]},hint:"coal, gas or wood",panel:"#co2Viz",value:()=>`${bkName()} · ${fmt((1-D.elecFrac)*100)}% of today's heat<br><span class="m">${fmt(D.co2)} t CO₂ today</span>`,truth:"Estimate",source:"Emission factors: MfE and estimates (see notes)"});
-pk(G.grid,{title:"Grid connection",view:{p:[-10,26,52],t:[-38,8,18]},hint:"power for the boiler and plant",panel:"#gridMW",value:()=>`${fmt(gridNow,1)} MW from the grid now<br>${S.grid?`<span class="r">electrode boilers off: the grid asked big users to cut load</span>`:`<span class="m">electrode boiler ${fmt(ebMW,1)} MW · plant ${fmt(gridNow-ebMW,1)} MW</span>`}`,source:"Record national demand 7,415 MW, 6 Aug 2026"});
-pk(G.store,{title:"Packing store",view:{p:[34,26,12],t:[6,4,-22]},hint:"bags, then containers",panel:"#boxes",value:()=>`${fmt(D.t)} t packed today<br><span class="m">release ${AI.on.quality?"2":"5"} days after packing</span>`});
-pk(G.wag,{title:"Rail siding",view:{p:[16,22,-66],t:[0,1,-30]},hint:"containers to the port",panel:"#boxes",value:()=>`${fmt(D.boxes)} containers today<br><span class="m">${Math.min(12,Math.ceil(D.boxes/2))} wagons shown${D.boxes>24?" (the model's siding holds 12)":""}</span>`});
-pk(G.pond,{title:"Condensate pond",view:{p:[54,22,4],t:[34,0,-20]},hint:"water recovered from the milk",panel:"#water",value:()=>`${fmt(D.water)} t of water boiled off today<br><span class="m">mostly recovered as condensate and treated</span>`});
-pk(tankers[0].g,{title:"Milk tanker",hint:"follow one round the loop",follow:true,followOffset:[0,2,0],value:()=>`about 28,000 L a load<br><span class="m">${fmt(D.tankers)} loads today across the fleet</span>`});
-// guided tour: six stops, the camera and a short note in step
-let tourGrid=null;
-stage.tour.set([
-  {title:"Milk arrives",view:{p:[8,32,62],t:[-22,4,6]},pin:()=>G.rec.userData.twPick,get text(){return `In <b>${MONTHS[S.m]}</b> about <b>${fmt(D.tankers)} tanker loads</b> a day pull into reception: ${fmt(D.L/1e6,2)} million litres. Watch the milk (blue) climb to the silos and on into the plant.`}},
-  {title:"Boiling off the water",view:{p:[44,36,44],t:[12,11,-2]},pin:()=>G.evap.userData.twPick,get text(){return `The evaporator boils off about <b>${fmt(D.water)} tonnes</b> of water today before the milk reaches the dryer. Steam rises from the tops; every 20 hours or so it stops to be cleaned.`}},
-  {title:"October meets the dryer's limit",view:"dryer",do:()=>setMonth(4),pin:()=>G.dryer.userData.twPick,get text(){return `In October the dryer needs <b>${fmt(dayOf(4).hrs,1)} hours</b> a day. The ring on the ground fills for every hour it runs; the red mark is the 22-hour limit. Turn the outer ring of the dial to change the month.`}},
-  {title:"Where the heat comes from",view:{p:[-2,30,44],t:[-30,6,-6]},pin:()=>G.eb.userData.twPick,get text(){return `Electricity (blue) and ${bkName().toLowerCase()} (grey) heat flow along the pipe rack. Today about <b>${fmt(D.elecFrac*100)}%</b> of the heat is electric, from a ${S.eb} MW electrode boiler.`}},
-  {title:"A cold, still morning",view:{p:[4,38,66],t:[-32,6,8]},do:()=>{if(tourGrid==null)tourGrid=S.grid;setMonth(2);setGrid(true)},pin:()=>G.grid.userData.twPick,get text(){return `August, 07:30, frost and fog. National demand peaks (a record <b>7,415 MW</b> on 6 Aug 2026) and the grid asks big users to cut load. The electrode boiler switches off, the grid flow drops and the ${bkName().toLowerCase()} boilers carry the morning.`}},
-  {title:"Now switch on the AI",view:"all",do:()=>{setGrid(tourGrid||false);tourGrid=null},text:"Eight tools sit below the model. Switch one on and the plant answers: a steadier dryer plume, longer evaporator runs, re-planned tankers. Orange always means an AI tool is acting, and the ledger shows what it's worth."}
-],"A season at the plant");
-stage.tour.onEnd=()=>{if(tourGrid!=null){setGrid(tourGrid);tourGrid=null}};
-// compare: a ghost of another month's dryer hours and trains over the live scene
-let CMP_ID=null;
-stage.compare({label:"Compare",options:[{id:"4",label:"October peak",short:"Oct",note:"The busiest month"},{id:"prev",label:"The month before",short:"before"},{id:"next",label:"The month after",short:"after"},{id:"0",label:"June, the quietest",short:"Jun",note:"Maintenance season"}],
-  onChange:id=>{CMP=id==null?null:id==="prev"?(S.m+11)%12:id==="next"?(S.m+1)%12:+id;CMP_ID=id}});
-function ghosts(){if(CMP_ID==="prev")CMP=(S.m+11)%12;else if(CMP_ID==="next")CMP=(S.m+1)%12;const on=CMP!=null;ghostArc.visible=on;
-  if(on){const g=dayOf(CMP);setArc(ghostArc,g.hrs,RING.r1+0.15,RING.r1+0.75);const n=Math.min(12,Math.ceil(g.boxes/2));ghostWag.forEach((w,i)=>w.visible=i<n)}else ghostWag.forEach(w=>w.visible=false)}
-// sound (off until asked for): the dryer's hum, steam, the boiler's roar, wind and rain
-stage.sound.layer("dryer",{type:"hum",freq:52,gain:0.2}).layer("steam",{type:"noise",f:1300,q:0.6,gain:0.14}).layer("boiler",{type:"noise",f:170,q:0.9,gain:0.26}).layer("wind",{type:"wind",gain:0.1}).layer("rain",{type:"rain",gain:0.18});
-function sounds(){const s=stage.sound;if(!s.on)return;s.set("dryer",stoppedNow?0:clamp(intensityNow*1.3,0.1,1));s.set("steam",cleaningNow?0.2:clamp(intensityNow*1.2,0.05,1));s.set("boiler",clamp(heatB*1.2,0,1));s.set("wind",S.grid?0:clamp(Math.hypot(...WX.wind)*0.9,0,1));s.set("rain",WX.rain)}
-// the time dial: outer ring = the season (bar = that month's milk), inner hand = plant time; tap the centre to hold the light
-stage.dial({months:{labels:MONTHS,short:MONTHS.map(m=>m.slice(0,3)),values:()=>SHARE.map(v=>v*S.vol),get:()=>S.m,set:i=>setMonth(i),title:"Month of the season (bar length is that month's milk)"},
-  day:{get:lightHour,set:h=>{hold=h},held:()=>hold!=null,title:"Plant time of day",marks:[{h:2,c:"var(--rose)",t:"02:00 low-intake window"},{h:8,c:"var(--live)",t:"Morning power price peak (illustrative)"},{h:18.5,c:"var(--live)",t:"Evening power price peak (illustrative)"}]},
-  onCenter:()=>{hold=hold==null?lightHour():null}});
-// the badge says what is simulated and what is live
-const badge=box.querySelector(".badge");let badgeTxt="";
-function badgeNow(){const t="SIMULATED"+(S.grid?" · COLD-MORNING TEST":LIVEWX.src?" · WEATHER LIVE, HAMILTON":"");if(t!==badgeTxt){badgeTxt=t;badge.textContent=t;badge.title=LIVEWX.src&&!S.grid?`Rain, cloud and wind from ${LIVEWX.src}${LIVEWX.at?", "+LIVEWX.at:""}. Everything else is simulated.`:"Simulated plant, public information only"}}
-// ---------------- the loop (the stage draws; this moves plant time, light, weather and labels)
-const RATE=calm?0.25:1;let tagT=0;
-stage.onFrame((dt)=>{anim(dt*RATE);sky(dt);ghosts();sounds();badgeNow();tagT+=dt;if(tagT>0.3){tagT=0;tags()}});
-buildAgents();update();
-stage.start(VIEWS.all);sky(1);ghosts();tags();
+// ---------------- camera and loop
+function resize(){const w=box.clientWidth,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?46:34;camera.updateProjectionMatrix();pMat.uniforms.scale.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360))}
+addEventListener("resize",resize);
+const VIEWS={above:{p:[16,118,70],t:[-4,0,-9]},all:{p:[44,52,74],t:[0,4,-2]},dryer:{p:[40,30,34],t:[16,12,-3]},energy:{p:[-12,22,30],t:[-34,6,-8]}};
+let camGoal=null;function setView(n){VIEW=n;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));const v=VIEWS[n],t=new THREE.Vector3(...v.t),p=new THREE.Vector3(...v.p);if(camera.aspect<1)p.sub(t).multiplyScalar(1.3).add(t);camGoal={p,t}}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));controls.addEventListener("start",()=>camGoal=null);
+let last=performance.now(),visible=true,pt=0;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(visible){anim(dt);if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.1)camGoal=null}
+  controls.update();renderer.render(scene,camera);pt+=dt;if(pt>0.3){pt=0;tags()}}requestAnimationFrame(frame)}
+buildAgents();resize();applyTheme();setView("all");camera.position.copy(camGoal.p);controls.target.copy(camGoal.t);camGoal=null;update();tags();
 const ALIAS={mix:"mix",product:"mix",optimiser:"mix",dryer:"dryer",apc:"dryer",cip:"cip",fouling:"cip",evaporator:"cip",maint:"maint",maintenance:"maint",pdm:"maint",supply:"supply",routing:"supply",tankers:"supply",energy:"energy",dr:"energy",demand:"energy",quality:"quality",nir:"quality",release:"quality",vision:"vision",qa:"vision"};
-window.__dairy=Object.assign(window.__dairy||{},{S,setView,update,set:(k,v)=>{if(k==="m")return setMonth(+v);if(k==="grid")return setGrid(v);S[k]=v;update()},
+window.__dairy=Object.assign(window.__dairy||{},{S,setView,update,set:(k,v)=>{S[k]=v;update()},
   ai:(name,on=true)=>{if(name==="all"){TOOLS.forEach(t=>AI.on[t.id]=!!on);renderAI();return}const id=ALIAS[String(name).toLowerCase()];if(!id)throw new Error("Unknown AI tool: "+name);setAI(id,on)},
   aiSelect:id=>{AI.sel=ALIAS[id]||id;renderAI()},aiPrices:k=>{if(PRICES[k]){AI.prices=k;renderAI()}},
   aiState:()=>({on:{...AI.on},prices:AI.prices,total:lastR&&{...lastR.tot,perKgMScents:(lastR.tot.rev+lastR.tot.cost)/lastR.A.kgms*100,kgms:lastR.A.kgms},rows:lastR&&Object.fromEntries(Object.entries(lastR.res).map(([k,v])=>[k,{rev:v.rev,cost:v.cost,t:v.t,gj:v.gj,co2:v.co2}]))}),
-  advance:h=>{for(let i=0;i<Math.round(h*10);i++)anim(0.1);sky(1);tags()},planHour:()=>P.h,tools:TOOLS.map(t=>t.id),
-  hold:h=>{hold=h==null?null:+h},tour:i=>stage.tour.start(i||0),compare:m=>{CMP_ID=m==null?null:String(m);CMP=m==null?null:+m},
-  setLiveWeather:(v,src)=>{if(!v)return;const mm=+v.rainMm||0;LIVEWX.rain=mm<=0?0:Math.min(1,0.25+mm*0.35);LIVEWX.cloud=Math.min(1,(+v.cloudPct||0)/100);LIVEWX.wet=Math.max(LIVEWX.rain,(+v.today?.rainMm||0)>2?0.35:0);
-    const s=Math.min(1,(+v.windKmh||0)/40);LIVEWX.wind=[0.15+0.6*s,0.05+0.25*s];LIVEWX.fog=(+v.humidity||0)>96&&(+v.windKmh||0)<6?0.35:0;LIVEWX.src=src||"Open-Meteo";LIVEWX.at=v.at?new Date(v.at).toLocaleTimeString("en-NZ",{hour:"numeric",minute:"2-digit"}):""},
-  stage});
+  advance:h=>{for(let i=0;i<Math.round(h*10);i++)anim(0.1);tags()},planHour:()=>P.h,
+  tools:TOOLS.map(t=>t.id)});
+requestAnimationFrame(frame);
 })();
 </script>
 

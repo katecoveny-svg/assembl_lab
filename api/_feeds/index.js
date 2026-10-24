@@ -2,11 +2,13 @@
 import { fetchWeather, fetchAir } from "./weather.js";
 import { fetchPower, fetchGenmix } from "./power.js";
 import { fetchFuel } from "./fuel.js";
-import { fetchFpi, fetchFoodPrices } from "./statsnz.js";
+import { fetchFpi, fetchFoodPrices, fetchRts } from "./statsnz.js";
 import { fetchFx, fetchGdt } from "./markets.js";
 import { fetchCalendar } from "./calendar.js";
-import { fetchEd, fetchUrgentCare, fetchWastewater } from "./health.js";
+import { fetchEd, fetchUrgentCare, fetchWastewater, fetchEdHistory } from "./health.js";
 import { fetchAttendance, fetchVehicles } from "./people.js";
+import { fetchFootprint } from "./linz.js";
+import { fetchGrocery } from "./grocery.js";
 import { CADENCE_TTL } from "./util.js";
 
 export const FEEDS = {
@@ -25,11 +27,15 @@ export const FEEDS = {
   wastewater: { fetch: fetchWastewater, cadence: "weekly" },
   attendance: { fetch: fetchAttendance, cadence: "quarterly" },
   vehicles: { fetch: fetchVehicles, cadence: "monthly" },
+  footprint: { fetch: fetchFootprint, cadence: "daily" }, // LINZ building outlines near lat/lon (or the place)
+  grocery: { fetch: fetchGrocery, cadence: "annual" }, // Commerce Commission Annual Grocery Report: snapshot, not fetched
+  rts: { fetch: fetchRts, cadence: "quarterly" }, // Stats NZ Retail Trade Survey, supermarket and hardware
+  edhistory: { fetch: fetchEdHistory, cadence: "quarterly" }, // national 6-hour series since the Sept 2023 baseline
 };
 
 // Run the requested feeds in parallel. One failing feed returns {id, error} and never fails the others.
 export async function runFeeds(ids, params) {
-  const want = [...new Set(ids)].filter((id) => FEEDS[id]).slice(0, 16);
+  const want = [...new Set(ids)].filter((id) => FEEDS[id]).slice(0, 20);
   const settled = await Promise.allSettled(want.map((id) => FEEDS[id].fetch(params)));
   const feeds = {};
   settled.forEach((s, i) => { feeds[want[i]] = s.status === "fulfilled" ? s.value : { id: want[i], error: String(s.reason?.message || s.reason).slice(0, 200) }; });

@@ -62,6 +62,7 @@ export const CADENCE_TTL = { // seconds the edge may serve a cached copy, then r
   fortnightly: { sMaxAge: 21600, swr: 604800 },
   monthly: { sMaxAge: 43200, swr: 2592000 },
   quarterly: { sMaxAge: 86400, swr: 2592000 },
+  annual: { sMaxAge: 86400, swr: 2592000 }, // snapshots: the edge still revalidates daily so an updated JSON reaches readers within a day
 };
 
 // The uniform envelope every feed returns.

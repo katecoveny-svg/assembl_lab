@@ -3,9 +3,11 @@
 //     quarterly district factsheets (~120 KB) and national factsheet (~70 KB), found via the publications pages. CC BY 4.0.
 // urgentcare: Pegasus 24 Hour Surgery (Christchurch) public wait-time page, live. Urgent care, not a hospital ED.
 // wastewater: PHF Science COVID-19 in wastewater (GitHub, weekly, CC BY 4.0). A respiratory signal, not hospitalisations.
+import { createRequire } from "node:module";
 import { getText, getBuffer, envelope, memo, round, nzToday, splitCSV } from "./util.js";
 import { docxParagraphs } from "./zip.js";
 import { DISTRICTS, REGIONS, districtKey } from "./places.js";
+const ED_HISTORY = createRequire(import.meta.url)("./snapshots/edhistory.json");
 
 const HNZ = "https://www.healthnz.govt.nz";
 const fyOf = (t) => (t.month >= 7 ? t.year : t.year - 1); // 2025 → "2025-26"
@@ -93,6 +95,70 @@ async function edData() {
 export async function fetchEd({ district }) {
   const d = await edData();
   return buildEd(d.cur, d.prev, d.nat, district, d.urls);
+}
+
+// edhistory: the national quarterly series back to the September 2023 baseline, for the target trend line.
+// The quarters come from ./snapshots/edhistory.json (DPMC and Health NZ factsheets, copied by hand with their URLs and
+// the retrieval date: there is no machine-readable series and the DPMC PDFs are not parsed here). At run time we append
+// any newer quarter from the Health NZ national factsheet, and read the ten-year same-quarter series from Health NZ's
+// "5 and 10 years of results" accessible document when the publications page links one.
+// "Q4 25/26" → { quarter:"Q4 2025/26", end:"2026-06", label:"Apr–Jun 2026" }
+export function quarterInfo(q) {
+  const m = String(q).match(/^Q([1-4])\s+(\d{2})\/(\d{2})$/); if (!m) return null;
+  const n = +m[1], fy = 2000 + +m[2]; const endMonth = [9, 12, 3, 6][n - 1]; const y = n <= 2 ? fy : fy + 1;
+  const lab = ["Jul–Sep", "Oct–Dec", "Jan–Mar", "Apr–Jun"][n - 1];
+  return { quarter: `Q${n} ${fy}/${String((fy + 1) % 100).padStart(2, "0")}`, end: `${y}-${String(endMonth).padStart(2, "0")}`, label: `${lab} ${y}` };
+}
+// "5 and 10 years of results" paragraphs → { quarter:"Q4", years:[...], pct:[...] } for the ED target, or null
+export function parseTenYear(paras) {
+  const i = paras.findIndex((p) => /^Shorter stays in emergency departments/i.test(p));
+  if (i < 0) return null;
+  for (let k = i + 1; k < Math.min(i + 8, paras.length); k++) {
+    const m = paras[k].match(/^Q([1-4]) results \(last 10 years\):\s*(.+)$/i); if (!m) continue;
+    const pairs = [...m[2].matchAll(/([\d.]+)%\s+in\s+(\d{4}\/\d{2})/g)];
+    if (pairs.length >= 5) return { quarter: `Q${m[1]}`, years: pairs.map((p) => p[2]), pct: pairs.map((p) => +p[1]) };
+  }
+  return null;
+}
+export function buildEdHistory(snap, nat, tenYear, urls = {}) {
+  const series = snap.series.map((s) => ({ quarter: s.quarter, label: s.label, end: s.end, pct: s.pct, source: s.source, url: s.url, ...(s.note ? { note: s.note } : {}) }));
+  let appended = null;
+  for (const q of [nat?.yearAgo, nat?.latest].filter(Boolean)) {
+    const info = quarterInfo(q.q); if (!info || !isFinite(q.pct)) continue;
+    if (!series.some((s) => s.end === info.end)) { const row = { ...info, pct: q.pct, source: "Health NZ national health targets factsheet (accessible)", url: urls.national || snap.sources.healthnz.url }; series.push(row); appended = row; }
+  }
+  series.sort((a, b) => a.end.localeCompare(b.end));
+  const latest = series.at(-1), first = series[0];
+  const yearAgo = series.find((s) => s.end === `${+latest.end.slice(0, 4) - 1}${latest.end.slice(4)}`) || null;
+  const longRun = { ...snap.longRun };
+  if (tenYear) longRun[tenYear.quarter] = { years: tenYear.years, pct: tenYear.pct, url: urls.tenYear || snap.sources.healthnz.url, live: true };
+  const e = envelope({
+    id: "edhistory", label: "Shorter stays in ED, national, each quarter since the baseline", value: latest.pct, unit: "% seen within 6 hours",
+    asOf: latest.end, period: `${latest.quarter} (${latest.label})`,
+    values: { target: snap.target, milestones: snap.milestones, baseline: snap.baseline, series, latest, yearAgo,
+      gapToTargetPts: round(snap.target.pct - latest.pct, 1), changeSinceBaselinePts: round(latest.pct - first.pct, 1),
+      longRun, appendedFromHealthNZ: appended ? appended.quarter : null, snapshotRetrieved: snap.retrieved, sources: snap.sources },
+    cadence: "quarterly", live: false,
+    source: { name: "DPMC Government Targets factsheets and Health NZ health target factsheets", url: snap.sources.dpmc.url },
+    note: `Quarters up to ${snap.series.at(-1).quarter} were copied from the published factsheets on ${snap.retrieved}; anything later comes from the Health NZ national factsheet at run time. First-published results: later revisions can differ by about 0.1.`,
+  });
+  return e;
+}
+export async function fetchEdHistory() {
+  return memo("edhistory", 6 * 3600e3, async () => {
+    let nat = null, urls = {};
+    try { const d = await edData(); nat = d.nat; urls.national = d.urls.national; } catch (e) { /* snapshot only */ }
+    let tenYear = null;
+    try {
+      const t = nzToday(); const fy = fyOf(t);
+      for (const y of [fy, fy - 1]) {
+        const perf = await getText(`${HNZ}/publications/health-targets-performance-resources-${fyLabel(y)}`).catch(() => "");
+        const links = docLinks(perf, /5-and-10-years-of-results-accessible[^/]*\.docx$/i).sort().reverse();
+        if (links.length) { urls.tenYear = links[0]; tenYear = parseTenYear(docxParagraphs(await getBuffer(links[0]))); break; }
+      }
+    } catch (e) { /* long-run series optional */ }
+    return buildEdHistory(ED_HISTORY, nat, tenYear, urls);
+  });
 }
 
 // Pegasus 24 Hour Surgery: "Estimated Wait – For Less Urgent Patients 4 Hours … 29 Patients Waiting … 2 Time-Critical Patients … 10 Patients Receiving Treatment … Last updated: 7:52 PM, 23 Oct 2026"

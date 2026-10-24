@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en-NZ" data-place="auckland" data-feeds="power,genmix,weather,calendar" data-feeds="power,genmix,weather,calendar">
+<meta charset="utf-8">
+<title>Energy Retailer Journey Twin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the street on its plinth with the customer's phone beside it; the four lanes and where their time goes; a year of the cohort;
+   the levers; the proof ledger; where AI helps and how far it may act; connecting a retailer's exports; the figures used.
+   Glass cards over a cool teal light field (a dusk street in dark mode). Token names match the sibling twins so the chart kit drops in. */
+:root{
+  --paper:#FBFCFC; --chalk:#EFF3F4; --ink:#16343F; --deep:#0A2129; --body:#4A6069; --rose:#6D8792; --line:rgba(22,52,63,.13); --line-2:rgba(22,52,63,.22);
+  --field-1:#E3EFF2; --field-2:#ECEFF7; --field-3:#FBF0E4;
+  --glass:rgba(251,252,252,.72); --glass-solid:#FBFCFC; --glass-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 0 1px rgba(22,52,63,.08),0 24px 48px -30px rgba(10,33,41,.38),0 2px 6px -3px rgba(10,33,41,.12);
+  --head-grad:linear-gradient(96deg,#0A2129 0%,#16343F 48%,#3F7E9C 100%); --act-bg:#0A2129; --act-ink:#EFF3F4; --act-hi:rgba(255,255,255,.22);
+  --live:#D9822B; --good:#2F7D5B; --alert:#B3261E; --cool:#3F7E9C; --data:#1E7A4C; --est:#8C6D3F; --src:#3B6C8E; --vendor:#7B5C8E;
+  --j1:#0070a6; --j2:#cf7b26; --j3:#7d4b92; --j4:#429c5a;
+  --scene-plinth:#DCE3E4; --scene-ground:#AFC79A; --scene-road:#8A9399; --scene-path:#D9D3C7; --scene-wall:#EEE9E1; --scene-roof:#C2CBD0; --scene-edge:#16343F; --scene-centre:#DCE6EA; --scene-engine:#21303A;
+  --sky-day-1:#CFE3EC; --sky-day-2:#F5F7F6; --sky-dusk-1:#E9C9B5; --sky-dusk-2:#F4E3D6; --sky-night-1:#1B2733; --sky-night-2:#3A4A58;
+  --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace; --ease:cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0B1A20; --chalk:#122630; --ink:#EAF2F4; --deep:#EAF2F4; --body:#C3D2D7; --rose:#8FAAB4; --line:rgba(234,242,244,.10); --line-2:rgba(234,242,244,.2);
+  --field-1:#12303A; --field-2:#13202F; --field-3:#2B2217; --glass:rgba(20,40,50,.62); --glass-solid:#13262E;
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.06),0 30px 60px -34px rgba(0,0,0,.85),0 2px 8px -4px rgba(0,0,0,.5);
+  --head-grad:linear-gradient(96deg,#FBFCFC 0%,#D8E6EA 46%,#8FC3DB 100%); --act-bg:#EAF2F4; --act-ink:#0A2129; --act-hi:rgba(255,255,255,.6);
+  --live:#F0A24A; --good:#7FC6A0; --alert:#F07A6E; --cool:#74B4D2; --data:#5CCB8E; --est:#D2AE73; --src:#7FB2D6; --vendor:#B593C8;
+  --j1:#2b88c0; --j2:#d17c28; --j3:#8e57a5; --j4:#4ca563;
+  --scene-plinth:#1B2A31; --scene-ground:#2F4030; --scene-road:#3A444B; --scene-path:#4A4F52; --scene-wall:#55606A; --scene-roof:#56636B; --scene-edge:#EAF2F4; --scene-centre:#3A4C57; --scene-engine:#0E171C;
+  --sky-day-1:#2E4659; --sky-day-2:#1E2A33; --sky-dusk-1:#5A3A44; --sky-dusk-2:#2E2230; --sky-night-1:#0A1017; --sky-night-2:#1A2630; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0B1A20; --chalk:#122630; --ink:#EAF2F4; --deep:#EAF2F4; --body:#C3D2D7; --rose:#8FAAB4; --line:rgba(234,242,244,.10); --line-2:rgba(234,242,244,.2);
+  --field-1:#12303A; --field-2:#13202F; --field-3:#2B2217; --glass:rgba(20,40,50,.62); --glass-solid:#13262E;
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.06),0 30px 60px -34px rgba(0,0,0,.85),0 2px 8px -4px rgba(0,0,0,.5);
+  --head-grad:linear-gradient(96deg,#FBFCFC 0%,#D8E6EA 46%,#8FC3DB 100%); --act-bg:#EAF2F4; --act-ink:#0A2129; --act-hi:rgba(255,255,255,.6);
+  --live:#F0A24A; --good:#7FC6A0; --alert:#F07A6E; --cool:#74B4D2; --data:#5CCB8E; --est:#D2AE73; --src:#7FB2D6; --vendor:#B593C8;
+  --j1:#2b88c0; --j2:#d17c28; --j3:#8e57a5; --j4:#4ca563;
+  --scene-plinth:#1B2A31; --scene-ground:#2F4030; --scene-road:#3A444B; --scene-path:#4A4F52; --scene-wall:#55606A; --scene-roof:#56636B; --scene-edge:#EAF2F4; --scene-centre:#3A4C57; --scene-engine:#0E171C;
+  --sky-day-1:#2E4659; --sky-day-2:#1E2A33; --sky-dusk-1:#5A3A44; --sky-dusk-2:#2E2230; --sky-night-1:#0A1017; --sky-night-2:#1A2630; color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{background:var(--paper);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--display);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 44px;min-height:100vh;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(60vw 50vh at 8% -6%,var(--field-1),transparent 70%),radial-gradient(55vw 60vh at 100% 12%,var(--field-2),transparent 70%),radial-gradient(70vw 50vh at 40% 110%,var(--field-3),transparent 70%),var(--paper)}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:16px;min-width:0}
+.glass{background:var(--glass);border-radius:20px;box-shadow:var(--glass-shadow);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);min-width:0;position:relative}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:var(--glass-solid)}}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--rose)}
+h1{margin:4px 0 6px;font-size:clamp(28px,4.2vw,46px);line-height:1.02;letter-spacing:-.03em;font-weight:600;text-wrap:balance;color:var(--ink);background:var(--head-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h2{margin:2px 0 6px;font-size:clamp(21px,2.5vw,28px);line-height:1.1;letter-spacing:-.02em;font-weight:600;color:var(--ink);text-wrap:balance}
+h3{margin:0;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;align-items:baseline}
+.sub{margin:0;color:var(--body);max-width:72ch}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.modes{display:inline-flex;border-radius:999px;padding:3px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.modes button{appearance:none;border:0;background:transparent;color:var(--ink);font:600 14px var(--display);padding:8px 16px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+.modes button[aria-pressed="true"]{background:var(--act-bg);color:var(--act-ink);box-shadow:inset 0 1px 0 var(--act-hi)}
+.bar{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;padding:8px 10px 8px 16px;border-radius:999px}
+.time{font-family:var(--mono);font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:15ch}
+.seg{display:inline-flex;border-radius:999px;padding:2px;background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink);font:500 11.5px var(--mono);padding:5px 10px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--act-bg);color:var(--act-ink)}
+.btn{appearance:none;border:0;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);border-radius:999px;padding:7px 13px;font:500 12px var(--mono);cursor:pointer;transition:transform .15s var(--ease),background .2s}
+.btn:hover{background:color-mix(in srgb,var(--ink) 13%,transparent)}.btn:active{transform:scale(.97)}
+.btn.solid{background:var(--act-bg);color:var(--act-ink)}
+select{font:500 12px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--ink) 7%,transparent);border:0;border-radius:999px;padding:6px 10px;max-width:100%}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible,label:focus-within{outline:2px solid var(--rose);outline-offset:2px}
+.wxchip{font:500 11px var(--mono);color:var(--body);display:inline-flex;gap:6px;align-items:center}
+.wxchip i{width:8px;height:8px;border-radius:50%;background:var(--rose);display:inline-block}.wxchip.live i{background:var(--data)}.wxchip.err i{background:var(--alert)}
+.main{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,1fr);gap:16px;align-items:start}
+.stagebox{position:relative;border-radius:20px;overflow:hidden;background:linear-gradient(180deg,var(--sky-day-1),var(--sky-day-2));min-height:440px;box-shadow:var(--glass-shadow)}
+#scene{display:block;width:100%;min-height:440px;touch-action:none;cursor:grab}#scene:active{cursor:grabbing}
+.views{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px);z-index:2}
+.views button{appearance:none;border:0;background:color-mix(in srgb,var(--paper) 82%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);border-radius:999px;padding:5px 11px;font:500 11.5px var(--mono);cursor:pointer;box-shadow:0 0 0 1px var(--line)}
+.views button[aria-pressed="true"]{background:var(--act-bg);color:var(--act-ink)}
+.tag{position:absolute;pointer-events:none;transform:translate(-50%,-100%);font:500 11px/1.35 var(--mono);color:var(--ink);background:color-mix(in srgb,var(--paper) 90%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:8px;padding:4px 8px;white-space:nowrap;z-index:1;box-shadow:0 0 0 1px var(--line),0 6px 16px -10px rgba(0,0,0,.4)}
+.tag b{font-family:var(--display);font-weight:600}.tag .m{color:var(--rose)}.tag.wait{box-shadow:0 0 0 1.5px var(--live)}.tag.j{box-shadow:0 0 0 1.5px var(--jc)}
+.badge{position:absolute;right:12px;bottom:12px;font:500 10.5px var(--mono);letter-spacing:.06em;color:var(--ink);background:color-mix(in srgb,var(--paper) 86%,transparent);border-radius:6px;padding:3px 7px;box-shadow:0 0 0 1px var(--line)}
+.key{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 130px);font:10.5px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--paper) 86%,transparent);border-radius:10px;padding:5px 9px;box-shadow:0 0 0 1px var(--line)}
+.key span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:var(--k)}
+.side{display:grid;gap:12px;align-content:start;min-width:0}
+.card{padding:14px 16px;display:grid;gap:10px;align-content:start}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}.kv.three{grid-template-columns:repeat(3,minmax(0,1fr))}.kv.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kv>div{display:grid;gap:1px;align-content:start;min-width:0}
+.kv .v{font:500 19px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}.kv .v.good{color:var(--good)}.kv .v.warn{color:var(--live)}.kv .v.bad{color:var(--alert)}
+.kv .l{font-size:12px;color:var(--body);line-height:1.3}
+.lab{font:500 9.5px/1.3 var(--mono);letter-spacing:.04em;color:var(--rose);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.lab::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--rose);flex:none}
+.lab.src{color:var(--src)}.lab.src::before{background:var(--src)}.lab.est{color:var(--est)}.lab.est::before{background:var(--est)}.lab.data{color:var(--data)}.lab.data::before{background:var(--data)}
+.lab.lprop{color:var(--live)}.lab.lprop::before{background:var(--live)}.lab.vendor{color:var(--vendor)}.lab.vendor::before{background:var(--vendor)}.lab.live{color:var(--data)}.lab.live::before{background:var(--data)}
+.prop{font:600 10px var(--mono);letter-spacing:.08em;color:var(--live);border:1.2px dashed var(--live);border-radius:5px;padding:1px 6px;white-space:nowrap;vertical-align:1px}
+section{display:grid;gap:14px;margin-top:22px}
+.shead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px 30px;flex-wrap:wrap}.shead p{margin:4px 0 0;max-width:70ch}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.levers{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.lever{padding:14px 16px;display:grid;gap:6px;cursor:pointer;transition:box-shadow .2s}
+.lever input{position:absolute;opacity:0;pointer-events:none}
+.lever .hd{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.lever .nm{font-weight:600;color:var(--ink);font-size:15px;line-height:1.25}
+.sw{flex:none;width:36px;height:21px;border-radius:999px;background:color-mix(in srgb,var(--ink) 16%,transparent);position:relative;transition:background .2s}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:15px;height:15px;border-radius:50%;background:var(--paper);transition:transform .2s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.lever input:checked + .hd .sw{background:var(--live)}.lever input:checked + .hd .sw::after{transform:translateX(15px)}
+.lever.on{box-shadow:var(--glass-shadow),0 0 0 1.5px var(--live)}
+.lever small{color:var(--body);font-size:12.5px;line-height:1.4}
+.lever .gain{font:500 12px var(--mono);color:var(--ink)}
+.lever .jn{font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--jc)}
+.row{display:grid;gap:4px}.row label{font-size:12.5px;color:var(--body);display:flex;justify-content:space-between;gap:8px}.row label b{color:var(--ink);font:500 12.5px var(--mono)}
+input[type=range]{width:100%;accent-color:var(--live)}
+.insight{font-size:15px;color:var(--ink);margin:0;text-wrap:pretty}.insight b{font-family:var(--mono);font-weight:500}
+.note{font-size:12.5px;color:var(--rose);margin:0}
+svg{display:block;width:100%;height:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose);border-top:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.tot td{font-weight:600;color:var(--ink);border-top:1.5px solid var(--line-2)}
+td .s{display:block;font-size:11.5px;color:var(--rose)}
+.scroll{overflow-x:auto;max-width:100%}
+.proofbig{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.proofbig div{display:grid;gap:2px;align-content:start;border-top:2px solid var(--ink);padding-top:8px}
+.proofbig .v{font:500 24px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}.proofbig .w{font:11px var(--mono);color:var(--body)}.proofbig .l{font-size:12.5px;color:var(--ink)}
+.notes{margin:0;padding-left:18px;font-size:12.5px;display:grid;gap:4px}
+.auth{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.auth div{border-radius:12px;padding:10px 12px;background:color-mix(in srgb,var(--ink) 5%,transparent);display:grid;gap:3px;align-content:start}
+.auth b{color:var(--ink);font-size:13.5px}.auth span{font-size:12px}
+.lvl{display:inline-flex;gap:3px}.lvl i{width:14px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 12%,transparent)}.lvl i.on{background:var(--live)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{appearance:none;border:0;background:transparent;color:var(--rose);padding:8px 12px;font:600 13.5px var(--display);cursor:pointer;border-radius:999px}
+.tabs button[aria-selected="true"]{color:var(--act-ink);background:var(--act-bg)}
+.drop{border:1.5px dashed var(--rose);border-radius:16px;padding:24px 18px;text-align:center;display:grid;gap:6px;justify-items:center;cursor:pointer;position:relative}
+.drop.over{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,transparent)}.drop b{color:var(--ink);font-size:16px}
+.file{padding:14px 16px;display:grid;gap:10px}
+.file header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}.file header b{color:var(--ink);font-family:var(--mono);font-weight:500;overflow-wrap:anywhere}
+.maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px 12px}
+.maps label{display:grid;gap:3px;font:500 11px var(--mono);color:var(--rose)}.maps label.req span::after{content:" *";color:var(--alert)}
+.maps select{border-radius:8px;width:100%}
+.report{font-size:13px;display:grid;gap:4px}.report .ok{color:var(--good)}.report .bad{color:var(--alert)}.report .warn{color:var(--est)}
+.status{font:500 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;border-radius:6px;padding:2px 6px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--rose)}.status.on{background:var(--data);color:#fff}
+textarea{width:100%;min-height:120px;font:11.5px/1.45 var(--mono);border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--body);padding:8px;resize:vertical}
+details{border-top:1px solid var(--line);padding-top:8px}summary{cursor:pointer;color:var(--ink);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips button{appearance:none;border:0;background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink);border-radius:999px;padding:5px 10px;font:500 12px var(--mono);cursor:pointer}.chips button[aria-pressed="true"]{background:var(--act-bg);color:var(--act-ink)}
+.yd{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.yd div{display:grid;gap:1px}.yd .v{font:500 18px var(--mono);color:var(--data)}.yd .l{font-size:12px}
+.arch text{font-family:var(--display)}
+#proofTable{min-width:640px}#aiTable{min-width:760px}#yearTable{min-width:640px}
+footer{font-size:12px;color:var(--rose);display:grid;gap:6px;max-width:110ch;margin-top:20px}footer p{margin:0}
+footer .sign{font:600 20px var(--display);color:var(--ink);letter-spacing:-.02em}
+/* ---- the lanes: nine stages across, one row per journey, the live stage lit */
+.lanes{display:grid;gap:10px;min-width:0}
+.lane{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr);gap:6px 12px;align-items:center;min-width:0}
+.lane .ln{font-size:13px;color:var(--ink);font-weight:600;line-height:1.2;display:grid;gap:2px}.lane .ln small{font:500 10.5px var(--mono);color:var(--rose);font-weight:400}
+.lane .ln::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--jc);margin-right:6px;vertical-align:-1px}
+.stg{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;min-width:0}
+.stg i{display:block;height:22px;border-radius:5px;background:color-mix(in srgb,var(--ink) 7%,transparent);position:relative;overflow:hidden}
+.stg i.done{background:color-mix(in srgb,var(--jc) 35%,transparent)}
+.stg i.at{background:var(--jc);box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--jc)}
+.stg i.at.wait{background:repeating-linear-gradient(135deg,var(--jc) 0 6px,color-mix(in srgb,var(--jc) 55%,var(--paper)) 6px 12px)}
+.stg i.at::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--p,0%);background:rgba(255,255,255,.35)}
+.stghd{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr);gap:6px 12px}
+.stghd .stg span{font:500 9.5px var(--mono);letter-spacing:.02em;color:var(--rose);text-transform:uppercase;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media (max-width:700px){.lane,.stghd{grid-template-columns:1fr}.stghd .stg span{font-size:8px}}
+/* ---- the customer's phone */
+.phone{display:grid;gap:10px;justify-items:center}
+.phone .hdr{display:flex;justify-content:space-between;align-items:center;width:100%;gap:8px;flex-wrap:wrap}
+.ptabs{display:flex;gap:3px;flex-wrap:wrap}.ptabs button{appearance:none;border:0;background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink);border-radius:999px;padding:4px 9px;font:500 11px var(--mono);cursor:pointer}
+.ptabs button[aria-pressed="true"]{background:var(--jc);color:#fff}
+.shell{width:min(100%,290px);aspect-ratio:9/16.5;border-radius:34px;background:var(--deep);padding:10px;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 24px 50px -24px rgba(0,0,0,.6);position:relative}
+.scr{position:absolute;inset:10px;border-radius:26px;background:var(--paper);overflow:hidden;display:grid;grid-template-rows:auto 1fr;color:var(--ink)}
+.scr .sb{display:flex;justify-content:space-between;padding:10px 18px 0;font:500 11px var(--mono);color:var(--body)}
+.scr .sb::before{content:"";position:absolute;left:50%;top:9px;width:84px;height:22px;margin-left:-42px;border-radius:12px;background:var(--deep)}
+.scr .bd{padding:18px 16px 16px;display:grid;gap:10px;align-content:start;overflow:hidden}
+.scr .app{font:500 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose)}
+.scr h4{margin:0;font:600 17px/1.2 var(--display);letter-spacing:-.01em;color:var(--ink);text-wrap:balance}
+.scr p{margin:0;font-size:12.5px;line-height:1.4;color:var(--body)}
+.scr .step{display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:start;font-size:12px;color:var(--body)}
+.scr .step i{width:10px;height:10px;border-radius:50%;margin-top:4px;background:color-mix(in srgb,var(--ink) 15%,transparent)}.scr .step i.on{background:var(--jc)}.scr .step i.now{background:var(--live);box-shadow:0 0 0 3px color-mix(in srgb,var(--live) 25%,transparent)}
+.scr .step b{color:var(--ink);font-weight:600}
+.scr .tile{border-radius:12px;padding:9px 11px;background:color-mix(in srgb,var(--ink) 5%,transparent);display:grid;gap:2px}
+.scr .tile .v{font:500 18px var(--mono);color:var(--ink)}.scr .tile .l{font-size:11px;color:var(--body)}
+.scr .cmp{display:grid;gap:5px}.scr .cmp div{display:grid;grid-template-columns:1fr auto;gap:8px;font-size:12px;color:var(--ink);align-items:center}
+.scr .cmp div span:last-child{font:500 12px var(--mono)}.scr .cmp div.pick{color:var(--jc);font-weight:600}
+.scr .cta{margin-top:auto;border-radius:12px;padding:10px;background:var(--act-bg);color:var(--act-ink);font:600 13px var(--display);text-align:center}
+.scr .spin{width:34px;height:34px;border-radius:50%;border:3px solid color-mix(in srgb,var(--ink) 12%,transparent);border-top-color:var(--rose);justify-self:center;margin:30px 0 8px;animation:spin 1.1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.scr .spin{animation:none}}
+.scr .bar2{height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 10%,transparent);position:relative;overflow:hidden}.scr .bar2 i{position:absolute;left:0;top:0;bottom:0;width:var(--p);background:var(--jc)}
+.scr .live{font:500 10px var(--mono);color:var(--data)}
+.scr .ai{border-left:3px solid var(--live);padding-left:9px}
+.pfoot{display:flex;justify-content:space-between;width:100%;gap:8px;align-items:center;flex-wrap:wrap}
+.pfoot .sim{font:500 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose)}
+.ptog{display:inline-flex;border-radius:999px;padding:2px;background:color-mix(in srgb,var(--ink) 7%,transparent)}.ptog button{appearance:none;border:0;background:transparent;color:var(--ink);font:500 11px var(--mono);padding:4px 9px;border-radius:999px;cursor:pointer}.ptog button[aria-pressed="true"]{background:var(--act-bg);color:var(--act-ink)}
+/* ---- live feed tiles */
+.feeds{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.feed{display:grid;gap:2px;border-top:2px solid var(--line-2);padding-top:7px}.feed .v{font:500 18px var(--mono);color:var(--ink)}.feed .l{font-size:12px;color:var(--body)}
+@media (max-width:1050px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+@media (max-width:900px){.main{grid-template-columns:1fr}.stagebox,#scene{min-height:400px}.auth{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:620px){.proofbig{grid-template-columns:repeat(2,minmax(0,1fr))}.kv.four{grid-template-columns:repeat(2,minmax(0,1fr))}.bar{border-radius:18px}.auth{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.kv .v{font-size:16px}.tag{font-size:10px;padding:2px 6px}.key{display:none}.time{min-width:0}.proofbig .v{font-size:20px}.views button{padding:4px 9px;font-size:11px}.modes button{padding:7px 12px;font-size:13px}.auth{grid-template-columns:1fr}.kv.three{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* ---- visual summaries (vz): bars, stacks, tiles, truth chips, table disclosures. Colours validated with the dataviz six checks on this page's surfaces. */
+:root{--vz1:#0070a6;--vz2:#cf7b26;--vz3:#7d4b92;--vz4:#429c5a;--vz0:#BDB3B5;--vz0-ink:#1d1418;--vz-up:var(--good,#3F7A55);--vz-down:var(--alert,#B3261E);
+  --vz-track:color-mix(in srgb,var(--ink) 7%,transparent);--vz-axis:color-mix(in srgb,var(--ink) 30%,transparent);--vz-surface:var(--paper);
+  --vz-src:var(--src,#3B6C8E);--vz-est:var(--est,#8C6D3F);--vz-sim:var(--rose);--vz-prop:var(--prop,var(--live,#C9772E));--vz-vendor:var(--vendor,#7B5C8E);--vz-data:var(--data,#1E7A4C);--vz-fc:var(--dom,#3F7E9C)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--vz1:#2b88c0;--vz2:#d17c28;--vz3:#8e57a5;--vz4:#4ca563;--vz0:#6E6266;--vz0-ink:#fff}}
+:root[data-theme="dark"]{--vz1:#2b88c0;--vz2:#d17c28;--vz3:#8e57a5;--vz4:#4ca563;--vz0:#6E6266;--vz0-ink:#fff}
+.vz{display:grid;gap:10px;min-width:0}
+.vz-h{font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;align-items:baseline;margin:0}
+/* horizontal bars, including diverging around zero */
+.vz-rows{display:grid;gap:7px;min-width:0}
+.vz-row{display:grid;grid-template-columns:minmax(0,var(--vz-lw,13em)) minmax(0,1fr) var(--vz-vw,7.5em);gap:4px 12px;align-items:center;font-size:12.5px;color:var(--ink);min-width:0}
+.vz-row>.l{min-width:0;line-height:1.25}.vz-row>.l small{display:block;color:var(--rose);font-size:11px}
+.vz-row>.v{font:500 12.5px var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;color:var(--ink)}
+.vz-row>.v small{display:block;font-size:10.5px;color:var(--rose);font-weight:400}
+.vz-row.tot{border-top:1.5px solid var(--vz-axis);padding-top:8px;font-weight:600}
+.vz-tr{position:relative;height:16px;border-radius:4px;background:var(--vz-track);min-width:0}
+.vz-tr.zero::before{content:"";position:absolute;left:var(--z,0%);top:-4px;bottom:-4px;width:1px;background:var(--vz-axis)}
+.vz-b{position:absolute;top:2px;bottom:2px;border-radius:0 4px 4px 0;background:var(--c,var(--vz1));min-width:2px}
+.vz-b.neg{border-radius:4px 0 0 4px}.vz-b.mid{border-radius:0}
+.vz-b.thin{top:5px;bottom:5px;opacity:.55}
+.vz-tk{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;border-radius:1px;background:var(--ink);box-shadow:0 0 0 2px var(--vz-surface)}
+.vz-band{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--vz-src) 22%,transparent);border-radius:3px}
+.vz-dot{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:var(--c,var(--vz2));box-shadow:0 0 0 2px var(--vz-surface)}
+.vz-dot.hollow{background:var(--vz-surface);box-shadow:inset 0 0 0 1.6px var(--ink),0 0 0 2px var(--vz-surface)}
+@media (max-width:560px){.vz-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l v" "t t"}.vz-row>.l{grid-area:l}.vz-row>.v{grid-area:v}.vz-row>.vz-tr{grid-area:t}}
+.vz-tr.dumb{background:none}.vz-tr.dumb::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--vz-track);z-index:-1}
+.vz-dl{position:absolute;top:50%;height:2px;margin-top:-1px;background:var(--vz-axis)}
+/* ordered columns (months) */
+.vz-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px;align-items:end;min-width:0}
+.vz-col{display:grid;grid-template-rows:auto var(--h) auto;gap:3px;min-width:0;text-align:center}
+.vz-cb{position:relative;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;height:var(--h);border-bottom:1px solid var(--vz-axis)}
+.vz-cs{display:block;width:min(100%,24px);background:var(--c);min-height:1px;flex:none}.vz-cs:last-child{border-radius:4px 4px 0 0}
+.vz-ctk{position:absolute;left:50%;width:min(100%,30px);transform:translateX(-50%);height:2px;margin-bottom:-1px;background:var(--ink);box-shadow:0 0 0 1.5px var(--vz-surface);border-radius:1px}
+.vz-cv{font:500 10px var(--mono);color:var(--ink);min-height:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.vz-cl{font:500 10px var(--mono);color:var(--rose);white-space:nowrap;overflow:hidden}
+/* 100% stacks */
+.vz-stk{display:grid;gap:8px;min-width:0}
+.vz-sr{display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 12px;align-items:center;min-width:0}
+.vz-sr>.l{font-size:12.5px;color:var(--ink);line-height:1.2}.vz-sr>.l small{display:block;font:10.5px var(--mono);color:var(--rose)}
+.vz-bar100{position:relative;display:flex;gap:2px;height:30px;min-width:0}
+.vz-seg{position:relative;flex:none;height:100%;background:var(--c);display:flex;align-items:center;justify-content:center;overflow:visible;min-width:2px}
+.vz-seg:first-child{border-radius:4px 0 0 4px}.vz-seg:last-child{border-radius:0 4px 4px 0}
+.vz-seg span{font:500 11px var(--mono);color:#fff;white-space:nowrap;padding:0 4px;pointer-events:none}
+.vz-seg.dk span{color:var(--vz0-ink)}.vz-seg.nolab span{visibility:hidden}
+.vz-mk{position:absolute;top:-5px;bottom:-5px;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 2px var(--vz-surface);border-radius:1px;pointer-events:none}
+@media (max-width:560px){.vz-sr{grid-template-columns:minmax(0,1fr)}}
+/* legend, keys, chips */
+.vz-lg{display:flex;flex-wrap:wrap;gap:4px 14px;font:11px var(--mono);color:var(--body);margin:0}
+.vz-lg i{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:-1px}
+.vz-lg i.ln{height:2px;width:14px;border-radius:1px;vertical-align:3px}.vz-lg i.tk{width:2px;height:12px;background:var(--ink);vertical-align:-2px}
+.vz-lg i.ring{border-radius:50%;background:var(--vz-surface);box-shadow:inset 0 0 0 1.6px var(--ink)}.vz-lg i.dot{border-radius:50%}
+.vz-chips{display:flex;flex-wrap:wrap;gap:6px}
+.vz-chip{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 10px 4px 8px;font:500 11.5px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--c) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
+.vz-chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.vz-chip b{font-weight:600;font-family:var(--display);font-size:13px}
+button.vz-chip{appearance:none;border:0;cursor:pointer}button.vz-chip[aria-pressed="true"]{background:color-mix(in srgb,var(--c) 26%,transparent);box-shadow:inset 0 0 0 1.5px var(--c)}
+.vz-split{display:flex;gap:2px;height:10px;min-width:0}.vz-split i{display:block;height:100%;background:var(--c);flex:none}.vz-split i:first-child{border-radius:3px 0 0 3px}.vz-split i:last-child{border-radius:0 3px 3px 0}
+.vz-fl{display:grid;gap:5px}
+.vz-fi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline;font-size:12.5px;color:var(--ink);padding:6px 0;border-top:1px solid var(--line)}
+.vz-fi .s{grid-column:1/-1;font-size:11.5px;color:var(--rose)}.vz-fi a{color:var(--ink)}
+/* stat tiles */
+.vz-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.vz-tile{display:grid;gap:3px;align-content:start;min-width:0;border-top:2px solid var(--ink);padding-top:8px}
+.vz-tile .v{font:600 24px/1.1 var(--display);letter-spacing:-.01em;color:var(--ink)}
+.vz-tile .l{font-size:12.5px;color:var(--ink);line-height:1.3}
+.vz-tile .d{font:500 11.5px var(--mono);color:var(--body)}.vz-tile .d.up{color:var(--vz-up)}.vz-tile .d.down{color:var(--vz-down)}
+.vz-tile .vz-tr{height:12px;margin-top:4px}
+/* disclosure for the detail table */
+details.vz-more{border-top:1px solid var(--line);padding-top:8px;margin-top:2px;min-width:0;max-width:100%}
+details.vz-more>summary{cursor:pointer;font:500 12px/1.45 var(--mono);color:var(--ink);list-style:none;display:block}
+details.vz-more>summary::-webkit-details-marker{display:none}
+details.vz-more>summary::before{content:"";display:inline-block;margin:0 10px 1px 2px;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+details.vz-more[open]>summary::before{transform:rotate(45deg)}
+details.vz-more>summary .vz-n{color:var(--rose)}
+details.vz-more[open]>summary{margin-bottom:8px}
+/* tooltip */
+.vz-tip{position:fixed;z-index:50;pointer-events:none;max-width:260px;background:var(--paper);color:var(--body);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.35;box-shadow:0 0 0 1px var(--line),0 12px 28px -14px rgba(0,0,0,.45);opacity:0;transition:opacity .12s}
+.vz-tip.on{opacity:1}.vz-tip b{display:block;font:600 14px var(--display);color:var(--ink)}
+[data-tip]{cursor:default}[data-tip]:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+.vz-hit:hover,.vz-hit:focus-visible{filter:brightness(1.08) saturate(1.1)}
+@media (prefers-reduced-motion:no-preference){.vz-b,.vz-seg,.vz-dot{transition:left .35s cubic-bezier(.2,.7,.2,1),width .35s cubic-bezier(.2,.7,.2,1),flex-basis .35s cubic-bezier(.2,.7,.2,1)}}
+.vz-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.ai-lad{display:grid;gap:0}
+.ai-lad .hd,.ai-lad .r{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(5,minmax(0,.5fr)) minmax(0,1.5fr);gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.ai-lad .hd{border-top:0;font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose);padding-top:0;align-items:end}
+.ai-lad .hd span:nth-child(n+2):nth-child(-n+6){text-align:center}
+.ai-lad .n{color:var(--ink);font-weight:600;font-size:13px;line-height:1.25}.ai-lad .n small{display:none;font:500 10.5px var(--mono);color:var(--rose);font-weight:400}
+.ai-lad .c{height:14px;border-radius:4px;background:var(--vz-track)}.ai-lad .c.on{background:color-mix(in srgb,var(--live) 45%,transparent)}.ai-lad .c.at{background:var(--live);box-shadow:0 0 0 2px var(--vz-surface)}
+.ai-lad .ev{display:flex;flex-wrap:wrap;gap:4px}.ai-lad .ev .vz-chip{font-size:10.5px;padding:2px 8px 2px 6px}
+@media (max-width:620px){.ai-lad .hd{display:none}.ai-lad .r{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.ai-lad .n,.ai-lad .ev{grid-column:1/-1}.ai-lad .n small{display:block}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="eyebrow">Energy retailer journey twin · independent assembl concept</div>
+      <h1 id="title">Four journeys through one power company</h1>
+      <p class="sub" id="lede">A generic New Zealand electricity retailer, not a real one, seen from eight homes on one street: a household switching in, one moving house, one opening a bill 40% higher than last month's, and one plugging in a new EV. Each journey runs the same nine stages. The part that matters most is the wait, and what the customer sees while they wait.</p>
+    </div>
+    <div class="modes" role="group" aria-label="The retailer as it is, or with every proposed lever on"><button type="button" data-mode="asis" aria-pressed="true">As it is</button><button type="button" data-mode="all" aria-pressed="false">Every lever on</button></div>
+  </div>
+  <div class="bar glass">
+    <span class="time" id="clock"></span>
+    <select id="monthSel" aria-label="Month of the year"></select>
+    <div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="1">1 h/s</button><button type="button" data-speed="6" aria-pressed="true">6 h/s</button><button type="button" data-speed="24">1 day/s</button></div>
+    <button class="btn" type="button" id="pause">Pause</button>
+    <button class="btn" type="button" id="restart">Restart the journeys</button>
+    <span class="wxchip" id="wxChip"><i></i><span id="wxText">Snapshot: Auckland 17.3 °C · wholesale 11.4 c/kWh · grid 98% renewable</span></span>
+  </div>
+
+  <div class="main">
+    <div class="stagebox" id="stagebox">
+      <canvas id="scene" aria-label="3D street of eight homes with the retailer's contact centre and billing engine behind them; each home runs one of four customer journeys, and messages travel between the homes, the centre, the billing engine and the industry registry"></canvas>
+      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="street" aria-pressed="true">The street</button><button type="button" data-view="switchin">Switching in</button><button type="button" data-view="move">Moving house</button><button type="button" data-view="shock">Bill shock</button><button type="button" data-view="ev">EV plan</button><button type="button" data-view="centre">Contact centre</button><button type="button" data-view="billing">Billing engine</button></div>
+      <div id="tags"></div>
+      <div class="key" aria-hidden="true"><span style="--k:var(--j1)">switching in</span><span style="--k:var(--j2)">moving house</span><span style="--k:var(--j3)">bill shock</span><span style="--k:var(--j4)">EV / time-of-use</span><span style="--k:var(--live)">waiting</span></div>
+      <div class="badge" id="badge">SIMULATED</div>
+    </div>
+    <div class="side">
+      <div class="card glass phone">
+        <div class="hdr"><h3><span>What the customer sees</span></h3><div class="ptabs" id="ptabs" role="group" aria-label="Which customer's phone"></div></div>
+        <div class="shell"><div class="scr" id="scr"><div class="sb"><span id="scrTime">9:41</span><span>●●●</span></div><div class="bd" id="scrBody"></div></div></div>
+        <div class="pfoot"><span class="sim">Simulated · a phone, not a product</span><div class="ptog" role="group" aria-label="The wait as it is, or with assembl"><button type="button" data-pv="asis" aria-pressed="true">As it is</button><button type="button" data-pv="with">With assembl</button></div></div>
+        <p class="note" id="phoneNote"></p>
+      </div>
+      <div class="card glass">
+        <h3><span>Right now on the street</span><span id="nowLab" class="lab">Simulated</span></h3>
+        <div class="kv" id="nowGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="lanes">
+    <div class="shead"><div><span class="eyebrow">The lanes</span><h2>Nine stages, four journeys, and where the time goes</h2><p>Every journey runs entry, intent, context, recommendation, commitment, action, wait, fulfilment and resolution. The striped block is a wait the customer can see. Below, the hours each stage takes as the retailer is (hollow) and with its levers on (filled).</p></div></div>
+    <div class="grid2">
+      <div class="card glass"><h3><span>Live, on the street</span><span id="laneClock"></span></h3><div class="stghd"><span></span><div class="stg" id="stgHd"></div></div><div class="lanes" id="laneGrid"></div></div>
+      <div class="card glass"><h3><span>Days from entry to resolution</span><span class="lab est">Estimates</span></h3><div class="vz" id="timeViz"></div><p class="insight" id="timeText"></p></div>
+    </div>
+  </section>
+
+  <section id="year">
+    <div class="shead"><div><span class="eyebrow">The year</span><h2 id="yearH">Two thousand households, twelve months</h2><p>The cohort is billed every month with Auckland's seasons in the usage. Switch-ins, moves, bill shocks and plan changes happen at the rates on the sources list, and each one costs the retailer contacts, back-office work, and sometimes the customer.</p></div></div>
+    <div class="card glass"><div class="vz-tiles" id="yearTiles"></div></div>
+    <div class="grid2">
+      <div class="card glass"><h3><span>Bills that shock, by month</span><span id="shockH"></span></h3><div class="vz" id="shockViz"></div><p class="insight" id="shockText"></p></div>
+      <div class="card glass"><h3><span>What each journey costs the retailer a year</span><span class="lab">Simulated</span></h3><div class="vz" id="costViz"></div><details class="vz-more"><summary>Show the table <span class="vz-n">volumes, contacts, customers lost, cost</span></summary><div class="scroll"><table id="yearTable"></table></div></details></div>
+    </div>
+  </section>
+
+  <section id="levers">
+    <div class="shead"><div><span class="eyebrow">What if</span><h2>Five changes to try</h2><p>All <span class="prop">PROPOSED</span>. Switch any on and the year runs again for the whole cohort. The dollar figure on each is that change on its own against the retailer as it is: cost to serve saved, plus the margin kept when a customer stays, less any wholesale saving.</p></div>
+      <button class="btn solid" type="button" id="applyAll">Switch all of them on</button></div>
+    <div class="levers" id="leverGrid"></div>
+    <div class="grid3">
+      <div class="card glass"><h3><span>The settings</span><span class="lab est">Estimates</span></h3>
+        <div class="row"><label for="callCost">Cost of a call <b id="callCostV">$9.50</b></label><input id="callCost" type="range" min="5" max="18" step="0.5" value="9.5"></div>
+        <div class="row"><label for="tenure">Years of margin counted when a customer stays <b id="tenureV">2.0</b></label><input id="tenure" type="range" min="1" max="4" step="0.5" value="2"></div>
+        <div class="row"><label for="margin">Retailer margin on a bill <b id="marginV">12.5%</b></label><input id="margin" type="range" min="0.06" max="0.2" step="0.005" value="0.125"></div>
+        <p class="note">None of these three are public for any NZ retailer. Move them to your own and the ledger follows.</p>
+      </div>
+      <div class="card glass"><h3><span>Customers lost through the journeys</span><span class="lab">Simulated</span></h3><div class="vz" id="churnViz"></div><p class="insight" id="churnText"></p></div>
+      <div class="card glass"><h3><span>Contacts a year, by journey</span><span class="lab">Simulated</span></h3><div class="vz" id="callViz"></div><p class="insight" id="callText"></p></div>
+    </div>
+  </section>
+
+  <section id="proof">
+    <div class="shead"><div><span class="eyebrow">Proof ledger</span><h2>What the changes are worth</h2><p id="proofP"></p></div></div>
+    <div class="card glass">
+      <div class="proofbig" id="proofBig"></div>
+      <div class="vz" id="proofViz"></div>
+      <details class="vz-more"><summary>Show the table</summary><div class="scroll"><table id="proofTable"></table></div></details>
+      <ol class="notes" id="proofNotes"></ol>
+    </div>
+  </section>
+
+  <section id="ai">
+    <div class="shead"><div><span class="eyebrow">AI and automation</span><h2>Where an agent helps, and how far it may act</h2><p>Five levels of authority, set per job by the retailer. Nothing here is running today: each row is a <span class="prop">PROPOSED</span> assembl concept. The evidence column says who measured the result, and whether anyone checked it independently. Credit decisions, disconnection and any change to a customer's price stay with people.</p></div></div>
+    <div class="auth" id="authKey"></div>
+    <div class="card glass"><h3><span>Seven jobs, how far each may act</span><span class="prop">PROPOSED</span></h3><div class="vz" id="aiViz"></div><details class="vz-more"><summary>Show the table <span class="vz-n">what each job observes, drafts, recommends and may do</span></summary><div class="scroll"><table id="aiTable"></table></div></details></div>
+  </section>
+
+  <section id="connect">
+    <div class="shead"><div><span class="eyebrow">Connect your data</span><h2>Switch the twin from simulated to yours</h2><p>Start with exports the retailer already has: a billing extract, a CRM contact log, and the switch and move event log. Files are read inside this browser tab. Nothing is uploaded or sent anywhere, and columns that look like personal information are ignored on load.</p></div></div>
+    <div class="tabs" role="tablist"><button role="tab" type="button" id="tabUp" aria-selected="true" aria-controls="panelUp">Upload exports</button><button role="tab" type="button" id="tabLive" aria-selected="false" aria-controls="panelLive">Live layer</button></div>
+    <div id="panelUp" role="tabpanel" aria-labelledby="tabUp" style="display:grid;gap:12px">
+      <label class="drop glass" id="drop" for="fileIn"><b>Drop CSV exports here, or choose files</b><span class="note">Billing extract, CRM contacts, switch and move events. Columns are matched to the contract automatically, and you confirm the mapping.</span>
+        <input type="file" id="fileIn" accept=".csv,.txt,text/csv" multiple style="position:absolute;width:1px;height:1px;opacity:0"></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" type="button" id="loadSamples">Load the sample exports</button><button class="btn" type="button" id="resetData">Back to simulated</button><span class="note" id="dataState">No files yet. Every figure is simulated, a source or an estimate.</span></div>
+      <div id="files" style="display:grid;gap:12px"></div>
+      <div class="card glass" id="yourData" hidden><h3><span>Your data</span><span id="ydRange"></span></h3><div class="yd" id="ydGrid"></div><p class="note" id="ydNote"></p></div>
+      <details><summary>Sample CSVs to copy (made-up numbers, no real customers)</summary>
+        <p class="note">Generated in this page from the simulated cohort, so a demo never touches real data. The billing file carries a customer name column and two broken rows, and the contacts file an agent name column, to show the mapping, validation and privacy steps.</p>
+        <div class="chips" id="sampleChips" style="margin:8px 0"></div><textarea id="sampleText" readonly aria-label="Sample CSV"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="btn" type="button" id="copySample">Copy to clipboard</button><span class="note" id="copyState"></span></div></details>
+      <details><summary>The data contract: three tables</summary><div id="contractView" class="scroll"></div></details>
+    </div>
+    <div id="panelLive" role="tabpanel" aria-labelledby="tabLive" hidden style="display:grid;gap:12px">
+      <div class="card glass"><h3><span>Public feeds this page listens for</span><span id="feedState" class="lab">Snapshot in use</span></h3>
+        <div class="feeds" id="feedTiles"></div>
+        <div class="scroll"><table id="feedTable"></table></div>
+        <p class="note">The lab site sends these on a window event (<code>assembl:live</code>). Standing alone, this page uses a snapshot taken on 23 October 2026 and says so. No retailer system is connected.</p></div>
+      <div class="card glass"><h3><span class="prop">PROPOSED · NOT CONNECTED</span><span>architecture for discussion</span></h3>
+        <svg class="arch" id="arch" viewBox="0 0 980 300" role="img" aria-label="Proposed architecture: billing and CRM systems, the industry registry, a read-only connector, the assembl runtime with approvals and an audit log, and the twin"></svg>
+        <p class="note">Read-only by design: the connector reads bills, contacts and switch events and never writes to billing. Anything that changes a customer's plan, price or payment goes through the authority levels above.</p></div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <div class="shead"><div><span class="eyebrow">Sources</span><h2>Figures used, and how far to trust them</h2></div></div>
+    <div class="card glass"><div class="vz" id="srcViz"></div><details class="vz-more"><summary>Show the table <span class="vz-n" id="srcN"></span></summary><div class="scroll"><table id="srcTable"></table></div></details></div>
+  </section>
+
+<style>
+.alf{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:8px 0 12px;font-family:var(--mono,"IBM Plex Mono",ui-monospace,monospace);font-size:11.5px;color:var(--rose,#6D8792);min-width:0}
+.alf-h{font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--live,#D9822B) 16%,transparent);color:var(--live,#D9822B);white-space:nowrap}
+.alf-i{border:1px solid var(--line,#E4DADD);border-radius:14px;padding:3px 10px;color:var(--body,#4A6069);max-width:100%;line-height:1.5}
+.alf-i b{color:var(--ink,#16343F);font-weight:500}
+.alf-i a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent)}
+.alf-i em{font-style:normal;font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px;margin-left:5px;vertical-align:1px}
+.alf-i em.lv{color:var(--good,#2F7D5B)}.alf-i em.lp{color:var(--live,#D9822B)}
+.alf-note{flex-basis:100%;font-size:11px}
+</style>
+<div class="alf" id="assemblLive" hidden><span class="alf-h">Live and latest</span><span id="assemblLiveItems" style="display:contents"></span><span class="alf-note" id="assemblLiveNote"></span></div>
+<script>
+/* Live and latest chips: filled by the lab's /feeds.js ("assembl:live"). Each chip says Live or Latest published, the period and the source. */
+(()=>{
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>n==null||!isFinite(n)?"–":Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const F={
+  weather:e=>{const v=e.values;return `<b>${esc(v.place.split(" ").slice(-1)[0])} ${fmt(v.tempC)}°C</b> · ${fmt(v.today.minC)}–${fmt(v.today.maxC)}°C today · rain ${fmt(v.today.rainChancePct)}%`},
+  power:e=>{const v=e.values;return `<b>Wholesale power ${fmt(v.avgCentsPerKWh,1)}c/kWh</b> avg · ${fmt(v.minCents,1)}–${fmt(v.maxCents,1)}c · ${esc(v.node)} · before lines, retail and GST`},
+  genmix:e=>{const s=e.values.sharePct;return `<b>Grid ${fmt(e.values.renewablePct,1)}% renewable</b> · hydro ${fmt(s.hydro)}% · geothermal ${fmt(s.geothermal)}% · wind ${fmt(s.wind)}%`},
+  calendar:e=>{const v=e.values;let t=v.publicHoliday?`<b>${esc(v.publicHoliday.name)}</b> today`:v.weekend?`<b>Weekend</b>`:`<b>Working ${esc(v.weekday)}</b>`;if(v.school&&v.school.label)t+=` · ${esc(v.school.label)}`;if(v.nextPublicHoliday)t+=` · ${esc(v.nextPublicHoliday.name)} in ${v.nextPublicHoliday.daysAway} day${v.nextPublicHoliday.daysAway===1?"":"s"}`;return t},
+};
+const ok=(j,id)=>j&&j.feeds&&j.feeds[id]&&!j.feeds[id].error?j.feeds[id]:null;
+function draw(j){const want=(document.documentElement.dataset.feeds||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const ids=want.length?want:Object.keys(j.feeds||{});const out=[];let missing=[];
+  for(const id of ids){const e=ok(j,id);if(!e){missing.push(id);continue}const f=F[id];if(!f)continue;let body;try{body=f(e)}catch(err){continue}
+    out.push(`<span class="alf-i" title="${esc(e.label)}">${body} · <a href="${esc(e.source.url)}" target="_blank" rel="noopener">${esc(e.source.name)}</a>${e.source.name.includes(e.period)?"":" · "+esc(e.period)}<em class="${e.truth==="Live"?"lv":"lp"}">${e.truth==="Live"?"Live":"Latest published"}</em></span>`)}
+  const el=$("assemblLive");if(!el)return;if(!out.length||j.snapshot){el.hidden=true;return}
+  $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
+  $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");}
+window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
+if(window.__assemblLive)draw(window.__assemblLive);
+})();
+</script>
+  <footer>
+    <span class="sign">assembl</span>
+    <p><span class="lab">Simulated</span> A generic, fictional retailer and a fictional street, not real ones. The cohort of 2,000 households is generated from a fixed seed, so the same settings always give the same numbers. Household usage, plans, how many move, switch or get a shock, how often each calls, what a call costs, what a kept customer is worth, and how much each lever changes are estimates. Public benchmarks are labelled with their source and the date retrieved. The phone is a sketch of what a customer could see, not a product.</p>
+    <p>Independent assembl concept. Simulated data unless explicitly stated otherwise.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// A generic, fictional New Zealand electricity retailer seen through four customer journeys: switching in, moving house,
+// a high-bill shock, and going onto an EV or time-of-use plan. A cohort of 2,000 simulated households is run month by month
+// over a year. Deterministic: the cohort and every draw come from a fixed seed, so switching a lever changes outcomes, not
+// the customers. Sources are noted beside each figure; anything not sourced is an Estimate for illustration.
+const ENERGY = (() => {
+  const N = 2000, MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  // ---- seasonality. Auckland monthly mean temperature (NIWA 1991-2020 via Figure.NZ; the home twin's table). Household demand rises
+  // with the heating need below 16 degrees (shape: Estimate). Wholesale price shape by month: Estimate anchored to the lab's power feed.
+  const TEMP = [20.0, 20.5, 18.9, 16.6, 14.2, 12.1, 11.2, 11.7, 13.1, 14.6, 16.2, 18.5];
+  const heat = TEMP.map(t => Math.max(0, 16 - t)), heatMean = heat.reduce((a, b) => a + b) / 12;
+  const USE_IDX = heat.map(h => 0.86 + 0.14 * (h / heatMean));               // mean 1.0; July about 1.5 x February (Estimate)
+  // wholesale price index by month (Estimate: dry-year winter premium); scaled to the live feed's daily average when one arrives
+  const WHOLESALE_IDX = [0.82, 0.84, 0.9, 0.98, 1.1, 1.22, 1.26, 1.2, 1.04, 0.95, 0.86, 0.83];
+  // monthly flows (share of the year): switching peaks after summer bills and in spring (Estimate, shape only);
+  // moves peak over summer (Estimate); EV and time-of-use interest is flat with a small winter lift (Estimate)
+  const SWITCH_SEAS = [1.08, 1.12, 1.1, 1.02, 0.96, 0.9, 0.92, 0.96, 1.0, 1.02, 0.98, 0.94];
+  const MOVE_SEAS = [1.3, 1.15, 1.0, 0.95, 0.9, 0.8, 0.8, 0.85, 0.95, 1.0, 1.1, 1.2];
+  const TOU_SEAS = [0.9, 0.9, 0.95, 1.0, 1.1, 1.15, 1.15, 1.1, 1.0, 0.95, 0.9, 0.9];
+
+  // ---- the retailer's economics (every figure an Estimate unless noted)
+  const P = {
+    dailyCharge: 2.1, anytime: 0.31, touPeak: 0.42, touOff: 0.24, touNight: 0.17,  // $/kWh incl GST; MBIE QSDEP average all-in about 38c with lines (Source, home twin)
+    margin: 0.125,                     // retailer gross margin on a bill (Estimate)
+    tenureYears: 2.0,                  // years of margin counted when a customer is kept (Estimate, conservative)
+    call: 9.5, digital: 0.4, backOffice: 18, complaint: 120, disputeCase: 450, // $ per contact or case (Estimate; Utilities Disputes case fees are charged to the retailer)
+    aiExplain: 0.08, aiCap: 400,       // $ per bill explanation and the monthly spend cap (Estimate, Proposed)
+    annualSwitchRate: 0.18,            // Source (computed): April 2026 switches about 34,100 x 12 over about 2.3m ICPs (Electricity Authority EMI)
+    annualMoveRate: 0.12,              // Estimate: households that move house in a year
+    evShare: 0.06, touAsIs: 0.18,      // Estimate: EV households in the cohort; Source: 26% believe they are on time-of-use, which the EA says overstates uptake
+    vulnerable: 0.16,                  // Source: 16% say their bill is not very or not at all affordable (EA Consumer Perceptions 2025)
+    switchDaysAsIs: 7, switchDaysLever: 5, // calendar days customer waits for confirmation as is; Code steps are 5 business days (Source)
+  };
+  // ---- the four journeys. Stages are the same nine words in every lane; what differs is who does the work, how long each takes
+  // (hours of elapsed time, as is and with the levers on), and what the customer sees while waiting.
+  const STAGES = ["entry", "intent", "context", "recommendation", "commitment", "action", "wait", "fulfilment", "resolution"];
+  const J = {
+    switchin: { n: "Switching in", short: "Switch in", c: "var(--j1)", levers: ["instant"],
+      stages: [
+        { k: "entry", t: "Lands from a comparison site", h: 0.2, hl: 0.2, where: "home", ch: "web" },
+        { k: "intent", t: "Wants a cheaper, simpler plan", h: 0.1, hl: 0.1, where: "home", ch: "web" },
+        { k: "context", t: "Address, ICP and usage found; credit check", h: 6, hl: 0.05, where: "billing", ch: "web", wait: true },
+        { k: "recommendation", t: "Three plans against last year's usage", h: 0.2, hl: 0.2, where: "billing", ch: "web" },
+        { k: "commitment", t: "Signs up", h: 0.1, hl: 0.1, where: "home", ch: "web" },
+        { k: "action", t: "Switch request sent to the registry", h: 2, hl: 0.05, where: "registry", ch: "web" },
+        { k: "wait", t: "Losing retailer responds; switch read taken", h: 24 * P.switchDaysAsIs, hl: 24 * P.switchDaysLever, where: "registry", ch: "web", wait: true },
+        { k: "fulfilment", t: "Supply starts; welcome and first estimate", h: 24, hl: 2, where: "home", ch: "web" },
+        { k: "resolution", t: "First bill lands as estimated", h: 24 * 30, hl: 24 * 30, where: "home", ch: "web" }] },
+    move: { n: "Moving house", short: "Move", c: "var(--j2)", levers: ["selfserve"],
+      stages: [
+        { k: "entry", t: "Rings two days before moving", h: 0.3, hl: 0.1, where: "centre", ch: "phone" },
+        { k: "intent", t: "Close the old place, open the new", h: 0.1, hl: 0.05, where: "centre", ch: "phone" },
+        { k: "context", t: "New address, ICP lookup, move date", h: 0.3, hl: 0.1, where: "centre", ch: "phone" },
+        { k: "recommendation", t: "Same plan, or one that suits the new place", h: 0.1, hl: 0.1, where: "centre", ch: "phone" },
+        { k: "commitment", t: "Confirms both dates", h: 0.1, hl: 0.05, where: "home", ch: "phone" },
+        { k: "action", t: "Final read requested; new ICP registered", h: 4, hl: 0.5, where: "billing", ch: "phone" },
+        { k: "wait", t: "Waiting for the final read and the move day", h: 48, hl: 48, where: "billing", ch: "phone", wait: true },
+        { k: "fulfilment", t: "Power on at the new place; final bill", h: 24, hl: 4, where: "home", ch: "phone" },
+        { k: "resolution", t: "One clean final bill, one clean first bill", h: 24 * 14, hl: 24 * 7, where: "home", ch: "phone" }] },
+    shock: { n: "A high-bill shock", short: "Bill shock", c: "var(--j3)", levers: ["alerts", "explainer"],
+      stages: [
+        { k: "entry", t: "A bill lands 40% higher than last month", h: 0.1, hl: 0.1, where: "billing", ch: "app" },
+        { k: "intent", t: "Why so high, and is it right?", h: 2, hl: 0.2, where: "home", ch: "phone" },
+        { k: "context", t: "Usage by day, weather, the plan, the reads", h: 0.4, hl: 0.05, where: "centre", ch: "phone" },
+        { k: "recommendation", t: "Explain the bill; offer a payment plan or a better plan", h: 0.2, hl: 0.1, where: "centre", ch: "phone" },
+        { k: "commitment", t: "Agrees a plan, or asks for a re-read", h: 0.1, hl: 0.1, where: "home", ch: "phone" },
+        { k: "action", t: "Re-read or payment plan set up", h: 1, hl: 0.1, where: "billing", ch: "phone" },
+        { k: "wait", t: "Waiting for the re-read or the next bill", h: 24 * 5, hl: 24 * 2, where: "billing", ch: "app", wait: true },
+        { k: "fulfilment", t: "Corrected or confirmed bill", h: 24, hl: 1, where: "home", ch: "app" },
+        { k: "resolution", t: "Paid, on a plan that fits; or lost", h: 24 * 20, hl: 24 * 20, where: "home", ch: "app" }] },
+    ev: { n: "Going onto an EV or time-of-use plan", short: "EV / time-of-use", c: "var(--j4)", levers: ["nudge"],
+      stages: [
+        { k: "entry", t: "A new EV in the driveway; charging overnight", h: 24 * 10, hl: 24 * 2, where: "home", ch: "app" },
+        { k: "intent", t: "Is there a plan for this?", h: 1, hl: 0.1, where: "home", ch: "app" },
+        { k: "context", t: "Half-hour usage shows the overnight load", h: 0.5, hl: 0.05, where: "billing", ch: "app" },
+        { k: "recommendation", t: "EV plan against the current one, on real usage", h: 0.3, hl: 0.1, where: "billing", ch: "app" },
+        { k: "commitment", t: "Accepts the plan", h: 0.1, hl: 0.1, where: "home", ch: "app" },
+        { k: "action", t: "Plan change scheduled for the next cycle", h: 2, hl: 0.05, where: "billing", ch: "app" },
+        { k: "wait", t: "Waiting for the plan to start", h: 24 * 14, hl: 24 * 3, where: "billing", ch: "app", wait: true },
+        { k: "fulfilment", t: "New rates live; charging shifts to night", h: 24, hl: 1, where: "home", ch: "app" },
+        { k: "resolution", t: "First bill on the new plan", h: 24 * 30, hl: 24 * 30, where: "home", ch: "app" }] } };
+  const JOURNEYS = Object.keys(J);
+  // ---- levers, all PROPOSED
+  const LEVERS = [
+    { k: "alerts", n: "Proactive high-bill alerts", j: "shock", t: "Mid-cycle message when usage is tracking 30% over last month, with the likely bill and the three things driving it. The bill still arrives; the shock does not.", eff: "Surprise cut by 45%; calls on the remaining shocks down 40%; churn after a shock down 30% (Estimates)" },
+    { k: "selfserve", n: "Self-serve move-house", j: "move", t: "Close and open in the app in four taps: dates, addresses, a photo of the meter if the read is due. The call centre handles the exceptions only.", eff: "65% of moves go digital; double-billing errors halved; one in four fewer customers lost at the move (Estimates)" },
+    { k: "instant", n: "Instant switch confirmation", j: "switchin", t: "Confirm the switch date at sign-up, from the registry's own rules, instead of a week of silence. Show what is happening while the losing retailer responds.", eff: "Status-chasing calls halved; withdrawn switches down 40%; confirmation on day 0 instead of day 7 (Estimates)" },
+    { k: "nudge", n: "EV plan nudges", j: "ev", t: "When half-hour data shows a new overnight load, offer the EV plan with the saving worked out on that household's own usage.", eff: "Three times more eligible households move to an EV or time-of-use plan; EV owners on the right plan churn at the cohort rate, not 2.5 times it (Estimates)" },
+    { k: "explainer", n: "A capped AI explainer on the bill", j: "shock", t: "Every bill carries a plain-language explanation of what changed and why, drafted by a model from the reads, the weather and the plan, checked against the bill's own arithmetic, with a monthly spend cap.", eff: "40% of 'why is my bill high' calls answered in the app; $0.08 a bill, capped at $400 a month (Estimates)" }];
+  const AS_IS = Object.fromEntries(LEVERS.map(l => [l.k, false])), ALL = Object.fromEntries(LEVERS.map(l => [l.k, true]));
+
+  // ---- deterministic cohort
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  const lognorm = (r, mu, sigma) => { const u = Math.max(1e-9, r()), v = r(); return Math.exp(mu + sigma * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)); };
+  function cohort() { const r = rng(2026), out = [];
+    for (let i = 0; i < N; i++) { const ev = r() < P.evShare, digital = r(), kwh = Math.round(lognorm(r, Math.log(6600), 0.42)) + (ev ? 2400 : 0); // NZ household about 7,000 kWh a year (Estimate from MBIE averages); an EV adds about 2,400 (Estimate)
+      const plan = ev ? (r() < 0.45 ? "ev" : "anytime") : (r() < P.touAsIs ? "tou" : "anytime");
+      out.push({ id: i, kwh, ev, plan, digital, vulnerable: r() < P.vulnerable, elecHeat: r() < 0.72, noise: 0.05 + r() * 0.09 }); }
+    return out; }
+  const C = cohort();
+
+  // ---- bills. Monthly kWh follows the usage index, more for electrically heated homes. Bill shock: this month's bill is 35% and
+  // $60 or more above last month's (Estimate of what people experience as a shock), which happens as autumn turns to winter and at estimates.
+  const monthKwh = (c, m) => c.kwh / 12 * (c.elecHeat ? USE_IDX[m] : 0.5 + 0.5 * USE_IDX[m]);
+  function billFor(c, m, kwh) { const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m], k = kwh ?? monthKwh(c, m);
+    const rate = c.plan === "anytime" ? P.anytime : c.plan === "ev" ? 0.3 * P.touPeak + 0.3 * P.touOff + 0.4 * P.touNight : 0.38 * P.touPeak + 0.42 * P.touOff + 0.2 * P.touNight;
+    return P.dailyCharge * days + k * rate; }
+  // the share of bills that shock in month m, with and without alerts, and the typical jump; cohort-wide, deterministic noise
+  function shocks(m, L) { const r = rng(900 + m); let n = 0, jump = 0, alerted = 0;
+    for (const c of C) { const prev = billFor(c, (m + 11) % 12) * lognorm(r, 0, c.noise), cur = billFor(c, m) * lognorm(r, 0, c.noise) * (r() < 0.06 ? 1.25 : 1); // 6% of bills are estimates that catch up (Estimate)
+      if (cur - prev >= 60 && cur / prev >= 1.35) { n++; jump += cur - prev; if (L.alerts && r() < 0.45) alerted++; } } // 45% of shocks were foreseeable mid-cycle (Estimate)
+    return { n, surprise: n - alerted, alerted, avgJump: n ? jump / n : 0 }; }
+
+  // ---- one month of each journey for the whole cohort. Returns volumes, contacts, costs, customers lost, and the customer's wait.
+  function month(m, L) {
+    const out = {}, r = rng(300 + m), evs = C.filter(c => c.ev), tou = C.filter(c => c.plan !== "anytime").length;
+    // switching in: gains for a retailer holding the cohort's share, as is
+    { const v = Math.round(N * P.annualSwitchRate / 12 * SWITCH_SEAS[m]), chase = L.instant ? 0.22 : 0.45, withdraw = L.instant ? 0.036 : 0.06, creditCalls = L.instant ? 0.05 : 0.12;
+      const calls = v * (chase + creditCalls), digital = v * 3, back = v * (L.instant ? 0.06 : 0.14), lost = v * withdraw;
+      out.switchin = { v, calls, digital, back, lost, waitDays: L.instant ? 0 : P.switchDaysAsIs, doneDays: L.instant ? P.switchDaysLever : P.switchDaysAsIs + 1,
+        cost: calls * P.call + digital * P.digital + back * P.backOffice, value: lost * valueOf(), note: `${v} switch-ins; ${fmt1(v * withdraw)} withdrawn in the wait` }; }
+    // moving house
+    { const v = Math.round(N * P.annualMoveRate / 12 * MOVE_SEAS[m]), dig = L.selfserve ? 0.65 : 0.3, err = L.selfserve ? 0.04 : 0.08, churn = L.selfserve ? 0.1125 : 0.15; // 15% of movers change retailer at the move (Estimate)
+      const calls = v * ((1 - dig) * 1.3 + err * 1.0), digital = v * (dig * 2 + 1), back = v * (err + 0.1), lost = v * churn;
+      out.move = { v, calls, digital, back, lost, waitDays: 2, doneDays: L.selfserve ? 3 : 4, cost: calls * P.call + digital * P.digital + back * P.backOffice, value: lost * valueOf(), note: `${v} moves; ${pct0(dig)} self-served; ${fmt1(v * err)} double-billing errors` }; }
+    // a high-bill shock
+    { const s = shocks(m, L), surprise = s.surprise, soft = s.alerted; let callRate = 0.55; if (L.explainer) callRate *= 0.6;
+      const calls = surprise * callRate + soft * callRate * 0.6, complaints = surprise * 0.04 + soft * 0.02, disputes = complaints * 0.05, churn = (L.alerts ? 0.7 : 1) * 0.09;
+      const lost = s.n * churn * (L.explainer ? 0.92 : 1), explain = L.explainer ? Math.min(P.aiCap, N * P.aiExplain) : 0, digital = s.n * 1.5 + (L.alerts ? soft * 2 : 0), back = s.n * 0.18 + complaints;
+      out.shock = { v: s.n, surprise, alerted: soft, avgJump: s.avgJump, calls, complaints, disputes, digital, back, lost, waitDays: L.explainer || L.alerts ? 2 : 5, doneDays: L.explainer || L.alerts ? 3 : 6,
+        cost: calls * P.call + digital * P.digital + back * P.backOffice + complaints * P.complaint + disputes * P.disputeCase + explain, aiSpend: explain, value: lost * valueOf(),
+        note: `${s.n} bills shocked (${pct1(s.n / N)} of the cohort); ${surprise} were a surprise; ${fmt1(calls)} calls` }; }
+    // EV and time-of-use
+    { const evOff = evs.filter(c => c.plan === "anytime").length, eligibleTou = Math.round((N - evs.length - tou) * 0.35); // 35% of other homes have a shiftable pattern (Estimate)
+      const adopt = (L.nudge ? 3 : 1) * TOU_SEAS[m], v = Math.round(evOff * 0.015 * adopt + eligibleTou * 0.004 * adopt), evChurnExtra = evOff * (0.025 - 0.01) * (L.nudge ? 0.55 : 1); // EV owners off an EV plan churn 2.5% a month vs 1% (Estimate)
+      const calls = v * (L.nudge ? 0.15 : 0.6), digital = v * 4 + (L.nudge ? evOff * 0.5 : 0), back = v * (L.nudge ? 0.03 : 0.12), lost = evChurnExtra;
+      const shiftedKwh = v * 120 + (tou + (L.nudge ? v * 6 : 0)) * 25, wholesaleSave = shiftedKwh * (WH.peak - WH.off) / 100; // kWh moved off the evening peak a month; saving at the live spread (Source for the spread, Estimate for the kWh)
+      out.ev = { v, calls, digital, back, lost, evOff, waitDays: L.nudge ? 3 : 14, doneDays: L.nudge ? 4 : 16, shiftedKwh, wholesaleSave, cost: calls * P.call + digital * P.digital + back * P.backOffice, save: wholesaleSave, value: lost * valueOf(),
+        note: `${v} plan changes; ${evOff} EV owners still on anytime; ${fmt0(shiftedKwh)} kWh moved off the peak` }; }
+    return out; }
+  const valueOf = () => { const bill = C.reduce((a, c) => a + billFor(c, 6) + billFor(c, 0), 0) / C.length * 6; return bill * P.margin * P.tenureYears; }; // margin on an average yearly bill, over the tenure counted
+  // ---- a year, as a table by journey and by month
+  function year(L) { const months = [], tot = {}; for (let m = 0; m < 12; m++) { const o = month(m, L); months.push(o);
+      for (const j of JOURNEYS) { const t = tot[j] = tot[j] || { v: 0, calls: 0, digital: 0, back: 0, lost: 0, cost: 0, value: 0, complaints: 0, disputes: 0, aiSpend: 0, shiftedKwh: 0, wholesaleSave: 0, save: 0, waitDays: 0, doneDays: 0 };
+        for (const k in t) if (k in o[j]) t[k] += k === "waitDays" || k === "doneDays" ? o[j][k] / 12 : o[j][k]; } }
+    const all = JOURNEYS.reduce((a, j) => { for (const k in tot[j]) a[k] = (a[k] || 0) + (k === "waitDays" || k === "doneDays" ? 0 : tot[j][k]); return a; }, {});
+    all.churnPct = all.lost / N; all.callsPer100 = all.calls / N * 100; all.net = all.cost + all.value - all.save; // what the four journeys cost the retailer in a year: cost to serve, margin lost with customers, less wholesale saved
+    all.costPerCustomer = all.cost / N; all.shockRate = tot.shock.v / 12 / N;
+    return { months, byJourney: tot, all, L }; }
+  // ---- the proof ledger: each lever on its own and added last, against the retailer as it is
+  function proof() { const asIs = year(AS_IS), all = year(ALL), base = asIs.all.net, full = all.all.net;
+    const rows = LEVERS.map(l => { const alone = year({ ...AS_IS, [l.k]: true }), without = year({ ...ALL, [l.k]: false });
+      return { k: l.k, n: l.n, j: l.j, alone: base - alone.all.net, last: without.all.net - full, aloneCost: asIs.all.cost - alone.all.cost, aloneValue: asIs.all.value - alone.all.value, aloneSave: alone.all.save - asIs.all.save, lostAlone: asIs.all.lost - alone.all.lost, callsAlone: asIs.all.calls - alone.all.calls, y: alone }; });
+    return { asIs, all, total: base - full, rows }; }
+
+  // ---- the live layer. Snapshot values are replaced when the lab's feeds arrive ("assembl:live").
+  const WH = { avg: 11.39, peak: 17.4, off: 5.0, node: "Otahuhu", date: "2026-10-22", periods: null, renewable: 98.4, mix: { hydro: 61.0, geothermal: 24.1, wind: 11.9 }, tempC: 17.3, truth: { power: "Snapshot", genmix: "Snapshot", weather: "Snapshot", calendar: "Snapshot" } };
+  function feeds(F, live) { if (!F) return WH; const tr = id => live ? F[id].truth : "Snapshot"; const p = F.power && F.power.values, g = F.genmix && F.genmix.values, w = F.weather && F.weather.values;
+    if (p && p.periods && p.periods.length >= 40) { const tp = p.periods, pk = tp.slice(34, 42), off = tp.slice(2, 12); WH.avg = p.avgCentsPerKWh; WH.peak = pk.reduce((a, b) => a + b) / pk.length; WH.off = off.reduce((a, b) => a + b) / off.length; WH.node = p.node; WH.date = p.date; WH.periods = tp; WH.truth.power = tr("power"); }
+    if (g) { WH.renewable = g.renewablePct; WH.mix = g.sharePct || WH.mix; WH.truth.genmix = tr("genmix"); }
+    if (w) { WH.tempC = w.tempC; WH.truth.weather = tr("weather"); } if (F.calendar) WH.truth.calendar = tr("calendar"); return WH; }
+  const FEEDS = [
+    { id: "power", n: "Wholesale price by trading period", use: "Sets the peak-to-offpeak spread the EV lever is valued at; colours the billing engine", src: "Electricity Authority EMI final prices", cadence: "daily, a day in arrears", truth: "Latest published" },
+    { id: "genmix", n: "Generation mix and renewables share", use: "Shown on the customer's phone during the wait; no effect on the figures", src: "Electricity Authority EMI generation by plant", cadence: "monthly", truth: "Latest published" },
+    { id: "weather", n: "Temperature and solar, Auckland", use: "Explains the bill: the explainer and the alert quote the month's temperature", src: "Open-Meteo", cadence: "hourly", truth: "Live" },
+    { id: "calendar", n: "Public and school holidays", use: "Contact centre hours in the scene; move-house peaks around holidays", src: "Nager.Date; Ministry of Education", cadence: "daily", truth: "Live" }];
+
+  // ---- the data contract: three tables a retailer can export from billing and CRM. No names, addresses or bank details are needed.
+  const CONTRACT = {
+    bills: { n: "Billing export", fields: [
+      { k: "account_ref", t: "string", req: 1, syn: ["account_id", "account", "customer_ref", "icp_hash", "account_number", "acct"] },
+      { k: "icp", t: "string", req: 0, syn: ["icp_number", "icp_id", "connection", "point_of_connection"] },
+      { k: "period_start", t: "date", req: 1, syn: ["from", "start", "bill_from", "period_from", "read_from"] },
+      { k: "period_end", t: "date", req: 1, syn: ["to", "end", "bill_to", "period_to", "read_to", "bill_date"] },
+      { k: "kwh", t: "number", req: 1, syn: ["usage", "consumption", "units", "kwh_total", "energy"] },
+      { k: "amount", t: "number", req: 1, syn: ["total", "bill_total", "amount_due", "charges", "value", "total_incl_gst"] },
+      { k: "plan", t: "string", req: 0, syn: ["tariff", "plan_name", "price_plan", "product", "rate_plan"] },
+      { k: "read_type", t: "string", req: 0, syn: ["read", "reading_type", "estimate", "actual_or_estimate", "read_method"] },
+      { k: "region", t: "string", req: 0, syn: ["network", "lines_company", "area", "gxp"] }] },
+    contacts: { n: "CRM contacts", fields: [
+      { k: "contact_id", t: "string", req: 1, syn: ["case_id", "ticket", "interaction_id", "call_id", "id"] },
+      { k: "account_ref", t: "string", req: 0, syn: ["account_id", "account", "customer_ref", "icp_hash", "account_number"] },
+      { k: "contacted_at", t: "datetime", req: 1, syn: ["datetime", "date", "created", "created_at", "timestamp", "start_time"] },
+      { k: "channel", t: "string", req: 1, syn: ["medium", "source", "type", "contact_type", "via"] },
+      { k: "reason", t: "string", req: 1, syn: ["category", "topic", "disposition", "subject", "intent", "wrap_code"] },
+      { k: "outcome", t: "string", req: 0, syn: ["result", "resolution", "status", "disposition_outcome"] },
+      { k: "handle_minutes", t: "number", req: 0, syn: ["duration", "talk_time", "aht", "minutes", "handle_time"] }] },
+    switches: { n: "Switch and move events", fields: [
+      { k: "event_id", t: "string", req: 1, syn: ["switch_id", "id", "request_id", "ref"] },
+      { k: "account_ref", t: "string", req: 0, syn: ["account_id", "account", "customer_ref", "icp_hash"] },
+      { k: "event_type", t: "string", req: 1, syn: ["type", "switch_type", "kind", "direction", "gain_loss"] },
+      { k: "requested_at", t: "datetime", req: 1, syn: ["requested", "created", "created_at", "start", "initiated"] },
+      { k: "completed_at", t: "datetime", req: 0, syn: ["completed", "finished", "effective", "effective_date", "end"] },
+      { k: "status", t: "string", req: 0, syn: ["state", "outcome", "result"] },
+      { k: "channel", t: "string", req: 0, syn: ["source", "medium", "via", "origin"] }] } };
+  const PII = /(^|_)(customer|client|account|holder|first|last|sur|full|given|family|contact|agent|staff)?_?name$|^name$|phone|mobile|cell|e_?mail|address|street|suburb|postcode|card_?(no|number)|birth|^dob$|ird|bank|tax_code|licence|license|passport/;
+  const norm = h => String(h).toLowerCase().replace(/&/g, "_").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  function parseCSV(text) { text = String(text).replace(/^﻿/, ""); const first = text.split(/\r?\n/, 1)[0] || "", cand = [",", ";", "\t", "|"];
+    const delim = cand.map(c => [c, first.split(c).length]).sort((a, b) => b[1] - a[1])[0][0]; const rows = []; let row = [], cell = "", q = false;
+    for (let i = 0; i < text.length; i++) { const c = text[i]; if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; continue; }
+      if (c === '"') q = true; else if (c === delim) { row.push(cell); cell = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); cell = ""; if (row.some(x => x.trim() !== "")) rows.push(row); row = []; } else cell += c; }
+    if (cell !== "" || row.length) { row.push(cell); if (row.some(x => x.trim() !== "")) rows.push(row); }
+    const headers = (rows.shift() || []).map(h => h.trim()); return { headers, rows, delim }; }
+  function scoreField(h, f) { const n = norm(h); if (n === f.k) return 3; if (f.syn.includes(n)) return 2; if (f.syn.some(s => s.length > 3 && n.includes(s)) || n.includes(f.k)) return 1; return 0; }
+  function autoMap(headers, table) { const map = {}, used = new Set(); for (const f of CONTRACT[table].fields) { let best = null, bs = 0; headers.forEach((h, i) => { if (used.has(i)) return; const s = scoreField(h, f); if (s > bs) { bs = s; best = i; } }); if (best != null) { map[f.k] = best; used.add(best); } } return map; }
+  function detectTable(headers) { return Object.keys(CONTRACT).map(t => { const m = autoMap(headers, t), fs = CONTRACT[t].fields, req = fs.filter(f => f.req), hit = req.filter(f => m[f.k] != null).length, opt = fs.filter(f => !f.req && m[f.k] != null).length;
+      return { t, score: hit / req.length + opt * 0.05, complete: hit === req.length, map: m }; }).sort((a, b) => b.score - a.score)[0]; }
+  function parseDate(s) { s = String(s || "").trim(); if (!s) return null; let m, d;
+    if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/))) d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)));
+    else if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})(?:[ T,]+(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?)?/i))) { let y = +m[3]; if (y < 100) y += 2000; let h = +(m[4] || 0); if (m[6]) h = h % 12 + (m[6].toLowerCase() === "pm" ? 12 : 0); d = new Date(Date.UTC(y, +m[2] - 1, +m[1], h, +(m[5] || 0))); if (d.getUTCMonth() !== +m[2] - 1) return null; }
+    else return null; return isNaN(d) ? null : d; }
+  const parseNum = s => { s = String(s ?? "").trim(); if (s === "") return null; const neg = /^\(.*\)$/.test(s) || /^-/.test(s); s = s.replace(/[()$,\s]|NZD|-/gi, ""); if (s === "" || isNaN(+s)) return NaN; return neg ? -+s : +s; };
+  const ymd = d => d.toISOString().slice(0, 10);
+  function validate(parsed, map, table) { const fs = CONTRACT[table].fields, out = [], errs = {}, ex = {}, warn = []; let minD = null, maxD = null; const mapped = new Set(Object.values(map));
+    const pii = parsed.headers.map((h, i) => ({ h, i })).filter(x => !mapped.has(x.i) && PII.test(norm(x.h))).map(x => x.h), ignored = parsed.headers.filter((h, i) => !mapped.has(i) && !pii.includes(h));
+    const missing = fs.filter(f => f.req && map[f.k] == null).map(f => f.k);
+    if (missing.length) return { ok: false, table, rows: [], read: parsed.rows.length, accepted: 0, rejected: parsed.rows.length, missing, pii, ignored, reasons: [], warnings: [] };
+    parsed.rows.forEach((r, ri) => { const o = {}; let bad = null; for (const f of fs) { if (map[f.k] == null) continue; const raw = r[map[f.k]]; let v;
+        if (f.t === "number") { v = parseNum(raw); if (Number.isNaN(v)) { bad = bad || [f.k, raw]; v = null; } }
+        else if (f.t === "date" || f.t === "datetime") { v = parseDate(raw); if (!v && String(raw || "").trim()) bad = bad || [f.k, raw]; if (v) { if (!minD || v < minD) minD = v; if (!maxD || v > maxD) maxD = v; } }
+        else v = String(raw ?? "").trim() || null;
+        if (f.req && (v == null || v === "") && !bad) bad = [f.k, raw == null ? "" : raw]; o[f.k] = v; }
+      if (bad) { const k = bad[0]; errs[k] = (errs[k] || 0) + 1; if (!ex[k]) ex[k] = `row ${ri + 2}: ${k} "${String(bad[1]).slice(0, 24)}" is ${bad[1] === "" ? "empty" : "not a valid " + fs.find(f => f.k === k).t}`; return; } out.push(o); });
+    if (table === "bills") { const neg = out.filter(o => o.period_end < o.period_start).length; if (neg) warn.push(`${neg} bills end before they start`); const big = out.filter(o => o.amount > 3000).length; if (big) warn.push(`${big} bills over $3,000: check the amount column`); }
+    if (table === "switches") { const open = out.filter(o => !o.completed_at).length; if (open) warn.push(`${open} events have no completion time and are treated as still open`); }
+    return { ok: out.length > 0, table, rows: out, read: parsed.rows.length, accepted: out.length, rejected: parsed.rows.length - out.length, missing: [], pii, ignored, reasons: Object.entries(errs).map(([k, n]) => ({ k, n, ex: ex[k] })), warnings: warn, range: minD ? [ymd(minD), ymd(maxD)] : null }; }
+  // what the files say, in the shape the page shows
+  const reasonKey = s => { s = String(s || "").toLowerCase(); if (/bill|high|charge|amount|estimate|usage/.test(s)) return "shock"; if (/mov|final read|new address|connect/.test(s)) return "move"; if (/switch|join|sign|welcome|credit/.test(s)) return "switchin"; if (/ev|time.?of.?use|tou|plan change|tariff/.test(s)) return "ev"; return "other"; };
+  const chanKey = s => { s = String(s || "").toLowerCase(); return /phone|call|voice|ivr/.test(s) ? "phone" : /chat|app|web|email|self|online|digital/.test(s) ? "digital" : "other"; };
+  function fromData(T) { const Y = {}; const B = T.bills, Cc = T.contacts, Sw = T.switches;
+    if (B) { const rows = B.rows, acc = {}; rows.forEach(o => (acc[o.account_ref] = acc[o.account_ref] || []).push(o)); let shocks = 0, pairs = 0, est = 0, kwh = 0, amt = 0;
+      Object.values(acc).forEach(bs => { bs.sort((a, b) => a.period_end - b.period_end); for (let i = 1; i < bs.length; i++) { pairs++; if (bs[i].amount - bs[i - 1].amount >= 60 && bs[i].amount / Math.max(1, bs[i - 1].amount) >= 1.35) shocks++; } });
+      rows.forEach(o => { kwh += o.kwh || 0; amt += o.amount || 0; if (/est/i.test(o.read_type || "")) est++; });
+      Y.bills = { n: rows.length, accounts: Object.keys(acc).length, shockRate: pairs ? shocks / pairs : null, estShare: rows.length ? est / rows.length : null, avgBill: rows.length ? amt / rows.length : null, avgKwh: rows.length ? kwh / rows.length : null, file: B.file, range: B.range }; }
+    if (Cc) { const rows = Cc.rows, by = {}, ch = { phone: 0, digital: 0, other: 0 }; let mins = 0, nm = 0; rows.forEach(o => { const k = reasonKey(o.reason); by[k] = (by[k] || 0) + 1; ch[chanKey(o.channel)]++; if (o.handle_minutes != null) { mins += o.handle_minutes; nm++; } });
+      const days = Cc.range ? Math.max(1, (Date.parse(Cc.range[1]) - Date.parse(Cc.range[0])) / 864e5 + 1) : null;
+      Y.contacts = { n: rows.length, byJourney: by, channel: ch, aht: nm ? mins / nm : null, perMonth: days ? rows.length / days * 30.4 : null, file: Cc.file, range: Cc.range }; }
+    if (Sw) { const rows = Sw.rows, done = rows.filter(o => o.completed_at && o.requested_at), days = done.map(o => (o.completed_at - o.requested_at) / 864e5).sort((a, b) => a - b), q = p => days.length ? days[Math.min(days.length - 1, Math.floor(p * days.length))] : null;
+      const types = {}; rows.forEach(o => { const t = /move|mi/i.test(o.event_type || "") ? "move" : /loss|out|lost/i.test(o.event_type || "") ? "loss" : "gain"; types[t] = (types[t] || 0) + 1; });
+      Y.switches = { n: rows.length, types, medianDays: q(0.5), p90Days: q(0.9), withdrawn: rows.filter(o => /withdr|cancel|reject/i.test(o.status || "")).length, file: Sw.file, range: Sw.range }; }
+    return Object.keys(Y).length ? Y : null; }
+  // made-up sample exports (from the cohort), with deliberate quirks: a customer_name column, two broken rows, NZ date formats
+  function sampleCSV(table) { const r = rng(77), ps = n => String(n).padStart(2, "0"), dmy = d => `${ps(d.getUTCDate())}/${ps(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`, lines = [];
+    if (table === "bills") { lines.push("Account No,Customer Name,ICP,Bill From,Bill To,Usage kWh,Total incl GST,Price Plan,Read Type");
+      for (let i = 0; i < 180; i++) { const c = C[(i * 11) % N]; for (let m = 6; m < 10; m++) { const d0 = new Date(Date.UTC(2026, m, 1)), d1 = new Date(Date.UTC(2026, m + 1, 0)), k = monthKwh(c, m) * lognorm(r, 0, c.noise), est = r() < 0.06;
+        lines.push(`A${100000 + c.id},"${["J. Example", "Sample Household", "Whānau Tauira", "Test Person"][i % 4]}",000${1000000 + c.id * 7},${dmy(d0)},${dmy(d1)},${m === 8 && i === 7 ? "n/a" : k.toFixed(0)},${i === 13 && m === 7 ? "" : billFor(c, m, k).toFixed(2)},${c.plan === "ev" ? "EV Night" : c.plan === "tou" ? "Time of Use" : "Anytime Fixed"},${est ? "Estimate" : "Actual"}`); } } }
+    if (table === "contacts") { lines.push("Case ID,Account,Date/Time,Channel,Wrap Code,Outcome,Talk Time (min),Agent Name"); const reasons = [["High bill query", 0.34], ["Moving house", 0.2], ["Switch status", 0.14], ["Payment arrangement", 0.1], ["Plan change / EV", 0.08], ["Meter read", 0.08], ["Other", 0.06]];
+      for (let i = 0; i < 420; i++) { let u = r(), reason = reasons[reasons.length - 1][0]; for (const [n, p] of reasons) { if (u < p) { reason = n; break; } u -= p; } const d = new Date(Date.UTC(2026, 6 + Math.floor(r() * 4), 1 + Math.floor(r() * 28), 8 + Math.floor(r() * 10), Math.floor(r() * 60)));
+        const ph = r() < 0.68; lines.push(`C${50000 + i},A${100000 + C[Math.floor(r() * N)].id},${dmy(d)} ${ps(d.getUTCHours())}:${ps(d.getUTCMinutes())},${ph ? "Phone" : r() < 0.5 ? "Web chat" : "App"},${reason},${r() < 0.8 ? "Resolved" : "Follow-up"},${ph ? (4 + r() * 12).toFixed(1) : ""},${["A. Agent", "B. Agent", "C. Agent"][i % 3]}`); } }
+    if (table === "switches") { lines.push("Ref,Account,Type,Requested,Completed,Status,Source");
+      for (let i = 0; i < 160; i++) { const t = r() < 0.55 ? "Gain" : r() < 0.6 ? "Move-in" : "Loss", d0 = new Date(Date.UTC(2026, 6 + Math.floor(r() * 4), 1 + Math.floor(r() * 28), 9)), days = t === "Move-in" ? 1 + r() * 3 : 4 + lognorm(r, Math.log(3.5), 0.5), wd = r() < 0.06;
+        const d1 = new Date(d0.getTime() + days * 864e5); lines.push(`S${7000 + i},A${100000 + C[Math.floor(r() * N)].id},${t},${d0.toISOString().slice(0, 16).replace("T", " ")},${wd ? "" : d1.toISOString().slice(0, 16).replace("T", " ")},${wd ? "Withdrawn" : "Completed"},${r() < 0.6 ? "Web" : "Phone"}`); } }
+    return lines.join("\n") + "\n"; }
+
+  // ---- benchmarks and figures used, with their truth label
+  const SRC = [
+    ["Switches a month, all types, New Zealand", "About 34,100 ICPs in April 2026 (gains summed across retailers); about 415,700 in calendar 2016", "src", "Source (computed)", "Electricity Authority EMI, Switching summary, retrieved 24 Oct 2026", "https://www.emi.ea.govt.nz/r/awora"],
+    ["Switch process steps", "Losing retailer must respond no later than 5 business days after the switch notification; switch event reads from smart-meter data where available (Code Amendment ICP Switching 2015, in force 9 Oct 2015)", "src", "Source", "Electricity Authority, Electricity Industry Participation Code amendment, retrieved 24 Oct 2026", "https://www.ea.govt.nz/code-and-compliance/code-amendments/icp-switching/"],
+    ["Saves and win-backs", "Retailers must check the registry for an open switch before contacting the customer (clause 11.15AA)", "src", "Source", "Electricity Authority case study, 2 May 2024, retrieved 24 Oct 2026", "https://www.ea.govt.nz/news/general-news/case-study-retailer-saves-and-win-backs"],
+    ["Complaints to Utilities Disputes", "13,554 formal complaints in 2025/26, up 62%; over 27,000 people sought help; customer service in 52% of cases, billing in 47%", "src", "Source (press report of the annual report)", "Waatea News on the Utilities Disputes 2025/26 annual report, 8 Jul 2026, retrieved 24 Oct 2026", "https://waateanews.com/?p=164036"],
+    ["Satisfaction with the retailer", "74% very or somewhat satisfied; 8% dissatisfied (residential)", "src", "Source", "Electricity Authority, 2025 Consumer Perceptions and Sentiment Survey, 1,005 residential respondents, Jul–Aug 2025, retrieved 24 Oct 2026", "https://www.ea.govt.nz/documents/8628/1314_Electricity_Authority_Report_-_FINAL_11_November_2025.pdf"],
+    ["Switching behaviour", "21% switched in the past two years; 21% likely to switch in the next 12 months; 23% compared but did not switch", "src", "Source", "Electricity Authority, 2025 Consumer Perceptions and Sentiment Survey", "https://www.ea.govt.nz/documents/8628/1314_Electricity_Authority_Report_-_FINAL_11_November_2025.pdf"],
+    ["Affordability", "38% not confident they can manage their bill over six months; 16% say the bill is not very or not at all affordable", "src", "Source", "Electricity Authority, 2025 Consumer Perceptions and Sentiment Survey", "https://www.ea.govt.nz/documents/8628/1314_Electricity_Authority_Report_-_FINAL_11_November_2025.pdf"],
+    ["Time-of-use plans", "26% believe they are on one (the Authority says this overstates uptake); 69% of those on one find adapting easy; 18% not interested", "src", "Source", "Electricity Authority, 2025 Consumer Perceptions and Sentiment Survey", "https://www.ea.govt.nz/documents/8628/1314_Electricity_Authority_Report_-_FINAL_11_November_2025.pdf"],
+    ["Consumer NZ satisfaction survey", "2024: industry average 53% satisfied (8–10 out of 10), best 67%; 10% switched in the past 12 months. 2026: 1,937 respondents, Mar–Apr 2026; scores behind the paywall", "src", "Source", "Consumer NZ, best and worst power companies, 5 Jun 2024 and Jun 2026, retrieved 24 Oct 2026", "https://www.consumer.org.nz/about-us/media-releases/consumer-nz-reveals-the-best-and-worst-power-companies"],
+    ["Wholesale price, Otahuhu", "11.39 c/kWh average, 22 Oct 2026 (interim); evening peak about 17 c, overnight about 5 c", "src", "Source (snapshot of the lab's power feed)", "Electricity Authority EMI final prices", "https://www.emi.ea.govt.nz/Wholesale/Datasets/DispatchAndPricing/FinalEnergyPrices"],
+    ["Renewable share of generation", "98.4% in September 2026: hydro 61%, geothermal 24%, wind 12%", "src", "Source (snapshot of the lab's generation feed)", "Electricity Authority EMI generation by plant", "https://www.emi.ea.govt.nz/Wholesale/Datasets/Generation/Generation_MD"],
+    ["Auckland monthly temperature", "11.2 °C in July to 20.5 °C in February", "src", "Source", "NIWA 1991–2020 normals via Figure.NZ (the home twin's table)", "https://figure.nz/"],
+    ["Cohort size and make-up", "2,000 households; about 7,000 kWh a year each (log-normal); 6% with an EV; 18% on time-of-use as is", "est", "Estimate", "MBIE household averages; EA survey for the time-of-use ceiling", ""],
+    ["What a shock is", "A bill 35% and $60 or more above last month's; 6% of bills are estimates that catch up", "est", "Estimate", "", ""],
+    ["Contacts per journey", "Switch-in 0.57 calls as is; move 1.0; shock 0.55 of surprised customers; EV plan change 0.6", "est", "Estimate", "No public NZ retailer contact data found", ""],
+    ["Cost to serve", "Call $9.50; digital $0.40; back-office exception $18; complaint $120; dispute case $450", "est", "Estimate", "Loaded contact-centre cost; Utilities Disputes fee shape", ""],
+    ["Value of a kept customer", "12.5% margin on the yearly bill over two years, about $790", "est", "Estimate", "Conservative; a real tenure is longer", ""],
+    ["Churn moments", "15% change retailer when they move; 9% leave within three months of a shock; EV owners off an EV plan churn 2.5% a month vs 1%", "est", "Estimate", "", ""],
+    ["Lever effects", "As listed on each lever card", "est", "Estimate (Proposed)", "To be replaced by the retailer's own before-and-after", ""]];
+
+  const fmt0 = n => Math.round(n).toLocaleString("en-NZ"), fmt1 = n => (Math.round(n * 10) / 10).toLocaleString("en-NZ", { minimumFractionDigits: 1, maximumFractionDigits: 1 }), pct0 = x => Math.round(x * 100) + "%", pct1 = x => (Math.round(x * 1000) / 10).toFixed(1) + "%";
+  return { N, MONTHS, TEMP, USE_IDX, WHOLESALE_IDX, P, STAGES, J, JOURNEYS, LEVERS, AS_IS, ALL, C, month, year, proof, shocks, billFor, monthKwh, valueOf, feeds, WH, FEEDS, CONTRACT, SRC, parseCSV, autoMap, detectTable, validate, fromData, sampleCSV, norm };
+})();
+
+</script>
+<script>
+const ENERGY_FEEDS = {"fetchedAt":"2026-10-23T20:00:00+13:00","snapshot":true,"feeds":{"power":{"id":"power","label":"Wholesale power, Otahuhu","value":11.39,"unit":"c/kWh","asOf":"2026-10-22","period":"2026-10-22 (interim)","values":{"node":"Otahuhu","date":"2026-10-22","interim":true,"avgCentsPerKWh":11.39,"minCents":3.13,"maxCents":21.63,"periods":[19.9,17.97,19.85,15.58,13.58,15.47,14.08,11.5,9.38,8.06,16.97,18.64,17.41,19.01,21.63,21.45,15.71,11.42,8.92,7.03,4.63,3.13,5.48,5.04,4.99,5.07,5.26,4.44,5.38,5.83,4.79,5.81,10.36,4.75,4.7,9.61,13.04,15.1,14.12,11.92,14.84,14.11,11.43,14.23,11.02,11.98,11.35,10.56]},"cadence":"daily","live":false,"source":{"name":"Electricity Authority EMI","url":"https://www.emi.ea.govt.nz/Wholesale/Datasets/DispatchAndPricing/FinalEnergyPrices"},"truth":"Latest published","truthLabel":"Latest published · 2026-10-22 (interim)"},"genmix":{"id":"genmix","label":"Electricity generation mix, New Zealand","value":98.4,"unit":"% renewable","asOf":"2026-09","period":"September 2026","values":{"renewablePct":98.4,"sharePct":{"hydro":61.0,"geothermal":24.1,"wind":11.9,"solar":1.0,"coal":0.8,"gas":0.6,"wood":0.4,"other":0.2,"diesel":0.0},"totalGWh":3507},"cadence":"monthly","live":false,"source":{"name":"Electricity Authority EMI, generation output by plant","url":"https://www.emi.ea.govt.nz/Wholesale/Datasets/Generation/Generation_MD"},"truth":"Latest published","truthLabel":"Latest published · September 2026"},"weather":{"id":"weather","label":"Weather now, Auckland","value":17.3,"unit":"°C","asOf":"2026-10-23T20:00","period":"now","values":{"place":"Auckland","at":"2026-10-23T20:00","tempC":17.3,"feelsC":16.1,"humidity":58,"windKmh":5.7,"cloudPct":0,"solarWm2":0.0,"isDay":false,"rainMm":0.0,"today":{"maxC":21.7,"minC":12.9,"rainMm":0.0,"rainChancePct":0},"hourly":{"time":["2026-10-23T00:00","2026-10-23T01:00","2026-10-23T02:00","2026-10-23T03:00","2026-10-23T04:00","2026-10-23T05:00","2026-10-23T06:00","2026-10-23T07:00","2026-10-23T08:00","2026-10-23T09:00","2026-10-23T10:00","2026-10-23T11:00","2026-10-23T12:00","2026-10-23T13:00","2026-10-23T14:00","2026-10-23T15:00","2026-10-23T16:00","2026-10-23T17:00","2026-10-23T18:00","2026-10-23T19:00","2026-10-23T20:00","2026-10-23T21:00","2026-10-23T22:00","2026-10-23T23:00"],"tempC":[14.3,13.8,13.4,13.1,13.0,13.2,13.2,12.9,14.2,15.7,17.1,18.6,19.9,20.6,21.0,21.5,21.7,21.2,20.0,18.5,17.3,16.5,15.8,15.2],"solarWm2":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,11.0,141.0,354.0,572.0,776.0,904.0,973.0,984.0,921.0,797.0,626.0,421.0,202.0,28.0,0.0,0.0,0.0]}},"cadence":"hourly","live":true,"source":{"name":"Open-Meteo (MetService/ECMWF models)","url":"https://open-meteo.com/"},"truth":"Live","truthLabel":"Live"},"calendar":{"id":"calendar","label":"Holidays today, Auckland","value":null,"unit":"","asOf":"2026-10-23","period":"today","values":{"date":"2026-10-23","weekday":"Fri","weekend":false,"publicHoliday":null,"nextPublicHoliday":{"date":"2026-10-26","name":"Labour Day","regional":false,"daysAway":3},"school":{"label":"Term 4","inTerm":true},"region":"Auckland","holidays":[{"date":"2026-01-01","name":"New Year's Day"},{"date":"2026-01-02","name":"Day after New Year's Day"},{"date":"2026-01-26","name":"Auckland/Northland Anniversary Day"},{"date":"2026-02-06","name":"Waitangi Day"},{"date":"2026-04-03","name":"Good Friday"},{"date":"2026-04-06","name":"Easter Monday"},{"date":"2026-04-27","name":"Anzac Day"},{"date":"2026-06-01","name":"King's Birthday"},{"date":"2026-07-10","name":"Matariki"},{"date":"2026-10-26","name":"Labour Day"},{"date":"2026-12-25","name":"Christmas Day"},{"date":"2026-12-28","name":"Boxing Day"}]},"cadence":"daily","live":true,"source":{"name":"Nager.Date public holidays; Ministry of Education term dates","url":"https://www.education.govt.nz/school-terms-and-holidays-dates"},"truth":"Live","truthLabel":"Live"}}};
+</script>
+<script>
+// ---- vz: small visual-summary kit (HTML bars, 100% stacks, truth chips, table disclosures, one tooltip). No libraries.
+// Every mark carries data-tip (read with textContent, never innerHTML) and the numbers stay in visible labels or the table behind "Show the table".
+const VZ = (() => {
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  // one tooltip for the page: first line bold (the value), the rest plain
+  let tip = null;
+  const showTip = (el, x, y) => { const t = el.getAttribute("data-tip"); if (!t) return; if (!tip) { tip = document.createElement("div"); tip.className = "vz-tip"; tip.setAttribute("aria-hidden", "true"); document.body.appendChild(tip); }
+    tip.textContent = ""; t.split("\n").forEach((line, i) => { const n = document.createElement(i ? "div" : "b"); n.textContent = line; tip.appendChild(n); });
+    if (x == null) { const r = el.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top; }
+    tip.classList.add("on"); const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = clamp(x - w / 2, 6, innerWidth - w - 6) + "px"; tip.style.top = (y - h - 12 < 6 ? y + 18 : y - h - 12) + "px"; };
+  const hideTip = () => tip && tip.classList.remove("on");
+  document.addEventListener("pointermove", e => { const el = e.target.closest && e.target.closest("[data-tip]"); if (el) showTip(el, e.clientX, e.clientY); else hideTip(); }, { passive: true });
+  document.addEventListener("focusin", e => { const el = e.target.closest && e.target.closest("[data-tip]"); if (el) showTip(el); });
+  document.addEventListener("focusout", hideTip); addEventListener("scroll", hideTip, { passive: true });
+  const tipAttr = t => t ? ` data-tip="${esc(t)}" tabindex="0"` : "";
+  // nice scale for a set of values (and zero)
+  const extent = (vals, pad = 0.04) => { let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); if (hi === lo) hi = lo + 1; const span = hi - lo; return [lo - (lo < 0 ? span * pad : 0), hi + (hi > 0 ? span * pad : 0)]; };
+  // rows: [{label, sub, value, text, color, tick, tickTip, tip, cls, thin}] ; o: {lo, hi, lw, aria}
+  function rows(list, o = {}) { const vals = list.flatMap(r => [r.value, r.from, r.from != null ? r.from + r.value : null, r.tick, r.segs ? r.segs.reduce((q, g) => q + g.v, 0) : null].filter(v => v != null && isFinite(v)));
+    const ex = extent(vals), lo = o.lo ?? ex[0], hi = o.hi ?? ex[1], X = v => (clamp(v, lo, hi) - lo) / (hi - lo) * 100, z = X(0);
+    return `<div class="vz-rows" ${o.lw ? `style="--vz-lw:${o.lw}${o.vw ? `;--vz-vw:${o.vw}` : ""}"` : ""} ${o.aria ? `role="group" aria-label="${esc(o.aria)}"` : ""}>` + list.map(r => {
+      // a row may carry its own scale (r.lo, r.hi): used by before-and-after dumbbells whose measures have different units
+      const [rl, rh] = r.hi != null ? [r.lo ?? 0, r.hi] : [lo, hi], Xr = v => (clamp(v, rl, rh) - rl) / (rh - rl) * 100, zr = Xr(0);
+      const c = r.color || ((r.value ?? 0) < 0 ? "var(--vz-down)" : "var(--vz-up)");
+      let marks = "";
+      if (r.segs) { let acc = 0; marks = r.segs.filter(g => g.v > 0).map((g, i, arr) => { const x0 = Xr(acc), x1 = Xr(acc += g.v); return `<i class="vz-b vz-hit ${i < arr.length - 1 ? "mid" : ""}" style="left:${x0}%;width:calc(${x1 - x0}% - ${i < arr.length - 1 ? 2 : 0}px);--c:${g.c}"${tipAttr(g.tip)}></i>`; }).join(""); }
+      else if (r.dumb) { const [v0, v1] = r.dumb, x0 = Xr(v0), x1 = Xr(v1); marks = `<i class="vz-dl" style="left:${Math.min(x0, x1)}%;width:${Math.abs(x1 - x0)}%"></i><i class="vz-dot hollow vz-hit" style="left:${x0}%"${tipAttr(r.tip0)}></i><i class="vz-dot vz-hit" style="left:${x1}%;--c:${c}"${tipAttr(r.tip)}></i>`; }
+      else { const v = r.value ?? 0, f0 = r.from ?? 0, xb = Xr(f0), a = Math.min(Xr(f0 + v), xb), w = Math.abs(Xr(f0 + v) - xb), neg = v < 0;
+        marks = `<i class="vz-b vz-hit ${neg ? "neg" : ""} ${r.thin ? "thin" : ""}" style="left:${a}%;width:${w}%;--c:${c}"${tipAttr(r.tip)}></i>${r.tick != null && isFinite(r.tick) ? `<i class="vz-tk" style="left:${Xr(r.tick)}%"${tipAttr(r.tickTip)}></i>` : ""}`; }
+      return `<div class="vz-row ${r.cls || ""}"><span class="l">${r.label}${r.sub ? `<small>${r.sub}</small>` : ""}</span>
+        <span class="vz-tr ${rl < 0 && !r.dumb ? "zero" : ""} ${r.dumb ? "dumb" : ""}" style="--z:${zr}%">${(r.bands || []).map(b => `<i class="vz-band" style="left:${Xr(b[0])}%;width:${Xr(b[1]) - Xr(b[0])}%"></i>`).join("")}${marks}</span>
+        <span class="v">${r.text ?? ""}</span></div>`; }).join("") + `</div>`; }
+  // monthly (or any ordered) columns: list [{label, segs:[{v, c, tip}], tick, tickTip, top}] ; o: {max, h, aria}
+  function cols(list, o = {}) { const tot = c => c.segs.reduce((a, s) => a + Math.max(0, s.v), 0), max = o.max || Math.max(1e-9, ...list.map(tot), ...list.map(c => c.tick || 0));
+    return `<div class="vz-cols" style="--n:${list.length};--h:${o.h || 96}px" ${o.aria ? `role="group" aria-label="${esc(o.aria)}"` : ""}>` + list.map(c => `<div class="vz-col"><span class="vz-cv">${c.top ?? ""}</span><div class="vz-cb">` +
+      c.segs.filter(s => s.v > 0).map(s => `<i class="vz-cs vz-hit" style="height:calc(${s.v / max * 100}% - 2px);--c:${s.c}"${tipAttr(s.tip)}></i>`).join("") +
+      (c.tick != null ? `<i class="vz-ctk" style="bottom:${Math.min(100, c.tick / max * 100)}%"${tipAttr(c.tickTip)}></i>` : "") + `</div><span class="vz-cl">${c.label}</span></div>`).join("") + `</div>`; }
+  // a 100% (or over-100%) stack per row: rows [{label, sub, segs:[{k, v, label, tip}] , marks:[{v, tip}]}]; keys {k:{n, c, dk}}; o.max (default 1)
+  function stack(list, keys, o = {}) { const max = o.max || Math.max(1, ...list.map(r => r.segs.reduce((a, s) => a + Math.max(0, s.v), 0)));
+    return `<div class="vz-stk" ${o.aria ? `role="group" aria-label="${esc(o.aria)}"` : ""}>` + list.map(r => `<div class="vz-sr"><span class="l">${r.label}${r.sub ? `<small>${r.sub}</small>` : ""}</span><div class="vz-bar100">` +
+      r.segs.filter(s => s.v > 0).map(s => { const K = keys[s.k] || {}; return `<i class="vz-seg vz-hit ${K.dk ? "dk" : ""}" style="flex-basis:calc(${s.v / max * 100}% - 2px);width:calc(${s.v / max * 100}% - 2px);--c:${K.c}"${tipAttr(s.tip)}><span>${esc(s.label ?? "")}</span></i>`; }).join("") +
+      (r.marks || []).map(m => `<i class="vz-mk" style="left:${m.v / max * 100}%"${tipAttr(m.tip)}></i>`).join("") + `</div></div>`).join("") + `</div>`; }
+  // hide in-segment labels that do not fit with padding (never clip them)
+  function fit(root) { (root || document).querySelectorAll(".vz-seg").forEach(s => { const sp = s.firstElementChild; s.classList.remove("nolab"); if (sp && sp.textContent && sp.scrollWidth + 6 > s.clientWidth) s.classList.add("nolab"); }); }
+  let fitT; addEventListener("resize", () => { clearTimeout(fitT); fitT = setTimeout(() => fit(), 120); });
+  const legend = items => `<p class="vz-lg">${items.map(([c, n, kind]) => `<span><i class="${kind || ""}" style="--c:${c}"></i>${esc(n)}</span>`).join("")}</p>`;
+  // truth-label chips with counts
+  const chips = groups => `<div class="vz-chips">${groups.map(g => `<span class="vz-chip" style="--c:${g.c}"><b>${g.n}</b>${esc(g.label)}</span>`).join("")}</div>`;
+  // wrap an existing element in a closed disclosure, once; returns the details element
+  function disclose(el, summary, n) { if (!el) return null; const have = el.closest("details.vz-more"); if (have) return have; const d = document.createElement("details"); d.className = "vz-more";
+    const s = document.createElement("summary"); s.innerHTML = `${esc(summary)}${n ? ` <span class="vz-n">${esc(n)}</span>` : ""}`; d.appendChild(s); el.parentNode.insertBefore(d, el); d.appendChild(el); return d; }
+  // a small inline sparkline (svg); values array, current index marked
+  function spark(vals, o = {}) { const w = o.w || 120, h = o.h || 28, n = vals.length, lo = Math.min(...vals), hi = Math.max(...vals), X = i => 6 + i / Math.max(1, n - 1) * (w - 12), Y = v => h - 6 - (hi === lo ? 0.5 : (v - lo) / (hi - lo)) * (h - 12);
+    const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" "), cur = o.cur ?? n - 1;
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="width:${w}px;height:${h}px;display:inline-block;vertical-align:middle" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--vz0)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(cur)}" cy="${Y(vals[cur])}" r="3.5" fill="${o.c || "var(--vz2)"}" stroke="var(--vz-surface)" stroke-width="2"/></svg>`; }
+  return { esc, rows, cols, stack, fit, legend, chips, disclose, spark, extent, tipAttr };
+})();
+
+</script>
+<script>
+// ---- the 3D street: eight homes (the home twin's weatherboard-and-corrugated-iron house, simplified and repeated), a road,
+// the retailer's contact centre and billing engine behind the homes, the industry registry at the back. Messages travel as small
+// packets between a home and whichever building its journey stage is in. Simulated. Built with three r128 and OrbitControls.
+function createStreetScene(canvas, box, K) {
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), lin = n => new THREE.Color(css(n) || "#999").convertSRGBToLinear();
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" }); renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.setClearColor(0x000000, 0); renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+  const SMALL = Math.min(screen.width || 1280, screen.height || 800) < 700;
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  function tex(w, h, draw, o = {}) { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); draw(g, w, h); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (o.repeat) t.repeat.set(o.repeat[0], o.repeat[1]); if (o.srgb !== false) t.encoding = THREE.sRGBEncoding; t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); return t; }
+  const TX = {
+    lawn: tex(256, 256, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); for (let i = 0; i < 2600; i++) { const v = 200 + rnd() * 55; g.fillStyle = `rgba(${v},${v},${v},.9)`; g.fillRect(rnd() * w, rnd() * h, 1.5, 2.5); } }, { repeat: [12, 6] }),
+    boards: tex(16, 256, (g, w, h) => { const n = 10, s = h / n; for (let i = 0; i < n; i++) { const gr = g.createLinearGradient(0, i * s, 0, (i + 1) * s); gr.addColorStop(0, "#fff"); gr.addColorStop(.82, "#f1f1f1"); gr.addColorStop(.9, "#c9c9c9"); gr.addColorStop(1, "#fff"); g.fillStyle = gr; g.fillRect(0, i * s, w, s); } }),
+    boardsBump: tex(16, 256, (g, w, h) => { const n = 10, s = h / n; for (let i = 0; i < n; i++) { const gr = g.createLinearGradient(0, i * s, 0, (i + 1) * s); gr.addColorStop(0, "#fff"); gr.addColorStop(.85, "#888"); gr.addColorStop(1, "#222"); g.fillStyle = gr; g.fillRect(0, i * s, w, s); } }, { srgb: false }),
+    corr: tex(128, 16, (g, w, h) => { for (let x = 0; x < w; x++) { const v = 128 + 120 * Math.sin(x / w * Math.PI * 2 * 8); g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x, 0, 1, h); } }, { srgb: false, repeat: [4, 1] }),
+    corrShade: tex(128, 16, (g, w, h) => { for (let x = 0; x < w; x++) { const v = 238 + 14 * Math.sin(x / w * Math.PI * 2 * 8 + .8); g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x, 0, 1, h); } }, { repeat: [4, 1] }),
+    road: tex(256, 64, (g, w, h) => { g.fillStyle = "#e9e9e9"; g.fillRect(0, 0, w, h); for (let i = 0; i < 1500; i++) { const v = 200 + rnd() * 50; g.fillStyle = `rgba(${v},${v},${v},.8)`; g.fillRect(rnd() * w, rnd() * h, 1.2, 1.2); } g.fillStyle = "#fff"; g.fillRect(0, h / 2 - 1, w * .6, 2); }, { repeat: [10, 1] }),
+    soft: tex(128, 128, (g) => { g.filter = "blur(14px)"; g.fillStyle = "#000"; g.fillRect(30, 30, 68, 68); }, { srgb: false }),
+    round: tex(128, 128, (g, w, h) => { const r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, "rgba(0,0,0,1)"); r.addColorStop(.45, "rgba(0,0,0,.6)"); r.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = r; g.fillRect(0, 0, w, h); }, { srgb: false }),
+    ring: tex(128, 128, (g, w, h) => { g.strokeStyle = "#fff"; g.lineWidth = 7; g.beginPath(); g.arc(64, 64, 54, 0, Math.PI * 2); g.stroke(); }, { srgb: false }) };
+  [TX.soft, TX.round, TX.ring].forEach(t => { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; });
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(32, 1, 0.5, 400); camera.position.set(6, 21, -38);
+  const controls = new THREE.OrbitControls(camera, canvas); controls.target.set(0, 1, 8); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 8; controls.maxDistance = 110; controls.enablePan = false;
+  const std = (o = {}) => new THREE.MeshStandardMaterial(Object.assign({ roughness: .9, metalness: 0 }, o));
+  const mats = { ground: std({ map: TX.lawn, roughness: 1 }), plinth: std({ roughness: .8 }), road: std({ map: TX.road, roughness: .95 }), path: std({ roughness: .95 }), wall: std({ map: TX.boards, bumpMap: TX.boardsBump, bumpScale: .012, roughness: .82 }),
+    roof: std({ map: TX.corrShade, bumpMap: TX.corr, bumpScale: .014, roughness: .55, metalness: .12 }), dark: std({ color: 0x2a2f36, roughness: .4, metalness: .1 }), white: std({ color: 0xf4f1ef, roughness: .5 }), trunk: std({ color: 0x8a7461, roughness: 1 }),
+    tree: std({ flatShading: true, roughness: .95, color: 0x5f8a5a }), tree2: std({ flatShading: true, roughness: .95, color: 0x6f9a62 }), centre: std({ roughness: .7 }), engine: std({ roughness: .35, metalness: .3 }), line: new THREE.LineBasicMaterial({ transparent: true, opacity: .4 }),
+    glass: std({ color: 0xa9cbdc, transparent: true, opacity: .4, roughness: .05, metalness: .1, emissive: 0xFFB36A, emissiveIntensity: 0 }), cap: new THREE.MeshBasicMaterial(), door: std({ color: 0x3f6a7a, roughness: .6 }), truck: std({ color: 0xe8e4dc, roughness: .5 }), car: std({ color: 0x5f7f99, roughness: .35, metalness: .2 }) };
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xb9b0a5, .6); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xfff0dc, 1.15); sun.castShadow = true; const SM = SMALL ? 2048 : 4096; sun.shadow.mapSize.set(SM, SM); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+  Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 160 }); scene.add(sun, sun.target); sun.target.position.set(0, 0, 10);
+  const fill = new THREE.DirectionalLight(0xcfd8ee, .22); fill.position.set(-30, 14, -20); scene.add(fill);
+  function add(m, cast = true, recv = true) { m.castShadow = cast; m.receiveShadow = recv; scene.add(m); return m; }
+  function boxM(w, h, d, mat, x, y, z, cast = true) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return add(m, cast); }
+  const aoMats = {}; function ao(x, z, w, d, y, op = .42, round = false) { const k = op + (round ? "r" : "s"); const m = aoMats[k] || (aoMats[k] = new THREE.MeshBasicMaterial({ map: round ? TX.round : TX.soft, color: 0x0e1b20, transparent: true, opacity: op, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m); p.rotation.x = -Math.PI / 2; p.position.set(x, y, z); p.renderOrder = 1; scene.add(p); return p; }
+
+  // ---- the diorama: plinth, lawn, road, footpath
+  const PC = [0, 0, 9];
+  const plinth = add(new THREE.Mesh(new THREE.CylinderGeometry(33, 33.4, 0.8, 80), mats.plinth), false, true); plinth.position.set(PC[0], -0.41, PC[2]);
+  const lawn = add(new THREE.Mesh(new THREE.CylinderGeometry(32.8, 32.8, 0.04, 80), mats.ground), false, true); lawn.position.set(PC[0], 0, PC[2]);
+  scene.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([...Array(97)].map((_, i) => { const a = i / 96 * Math.PI * 2; return new THREE.Vector3(PC[0] + Math.cos(a) * 33.4, -0.81, PC[2] + Math.sin(a) * 33.4); })), mats.line));
+  boxM(62, 0.05, 6, mats.road, 0, 0.03, 0, false);                 // the road
+  boxM(62, 0.06, 1.4, mats.path, 0, 0.035, 3.9, false);            // footpath, north side
+  boxM(62, 0.06, 1.4, mats.path, 0, 0.035, -3.9, false);
+  function tree(x, z, s) { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.CylinderGeometry(.12 * s, .18 * s, 1.4 * s, 6), mats.trunk); t.position.y = .7 * s;
+    const c1 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1 * s, 0), mats.tree); c1.position.y = 1.9 * s; const c2 = new THREE.Mesh(new THREE.IcosahedronGeometry(.8 * s, 0), mats.tree2); c2.position.set(.5 * s, 2.5 * s, .2 * s); const c3 = new THREE.Mesh(new THREE.IcosahedronGeometry(.6 * s, 0), mats.tree); c3.position.set(-.45 * s, 2.3 * s, -.3 * s);
+    g.add(t, c1, c2, c3); g.traverse(o => { o.castShadow = true; o.receiveShadow = true; }); g.position.set(x, 0, z); g.rotation.y = x * 1.7; scene.add(g); ao(x, z, 3.4 * s, 3.4 * s, 0.045, .38, true); }
+  [[-26, -8, 1.2], [-14, -9, 1.0], [-2, -8.5, 1.3], [10, -9, 1.0], [22, -8, 1.2], [-27, 16, 1.1], [27, 15, 1.1], [-23, 26, .9], [23, 27, 1.0]].forEach(([x, z, s]) => tree(x, z, s));
+  // street lights along the footpath
+  const lampMats = []; [-22, -8, 6, 20].forEach(x => { boxM(0.12, 4.2, 0.12, mats.dark, x, 2.1, 3.4); const m = std({ color: 0xf6eadb, emissive: 0xffb35c, emissiveIntensity: 0 }); const h = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.3), m); h.position.set(x, 4.25, 3.1); scene.add(h); lampMats.push(m); });
+
+  // ---- a home: the home twin's house, simplified (weatherboards, corrugated roof, big front window, door, meter box), facing the road
+  const HOME_X = [17.5, 12.5, 7.5, 2.5, -2.5, -7.5, -12.5, -17.5], HOME_Z = 10.5, homes = [];
+  function house(i) { const x = HOME_X[i], z = HOME_Z, FY = 0.3, W = 3.8, D = 5.0, H = 2.6, g = { x, z, glass: [], warm: [] };
+    boxM(4.6, 0.03, 8.4, mats.ground, x, 0.02, z + 0.4, false);                                   // the lot
+    boxM(1.0, 0.04, 4.2, mats.path, x - 0.6, 0.04, z - D / 2 - 1.9, false);                        // path to the door
+    boxM(2.4, 0.04, 5.4, mats.path, x + 1.5, 0.04, z - D / 2 - 1.3, false); ao(x, z, W + 1.6, D + 1.6, 0.05, .5); // driveway
+    boxM(W + 0.3, FY, D + 0.3, mats.path, x, FY / 2, z, false);                                      // floor slab
+    const body = boxM(W, H, D, mats.wall, x, FY + H / 2, z); body.castShadow = true;
+    const glassM = mats.glass.clone(); g.glass.push(glassM);
+    const win = (wx, wy, wz, w, h, rotY) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), glassM); m.position.set(wx, wy, wz); m.rotation.y = rotY || 0; scene.add(m); const f = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, h + 0.1, 0.04), mats.white); f.position.copy(m.position); f.rotation.y = m.rotation.y; f.position.z += rotY ? 0 : -0.01; scene.add(f); };
+    win(x - 0.9, FY + 1.5, z - D / 2 - 0.04, 1.5, 1.2); win(x + 1.2, FY + 1.5, z - D / 2 - 0.04, 0.9, 0.9);                      // front
+    win(x - W / 2 - 0.04, FY + 1.5, z + 0.8, 1.2, 0.9, Math.PI / 2); win(x + W / 2 + 0.04, FY + 1.5, z - 0.6, 1.2, 0.9, Math.PI / 2);   // sides
+    boxM(0.85, 2.0, 0.08, mats.door, x + 0.2 + 0.05, FY + 1.0, z - D / 2 - 0.03);                      // door
+    boxM(0.3, 0.45, 0.08, mats.white, x + W / 2 + 0.05, FY + 1.3, z - 1.6); g.meter = new THREE.Vector3(x + W / 2 + 0.2, FY + 1.3, z - 1.6); // meter box
+    const pitch = 0.42, half = W / 2 + 0.3, slope = half / Math.cos(pitch), rise = half * Math.tan(pitch), roof = new THREE.Group(); roof.position.set(x, FY + H, z); scene.add(roof);
+    [1, -1].forEach(sg => { const p = new THREE.Mesh(new THREE.BoxGeometry(slope, 0.08, D + 0.5), mats.roof); p.rotation.z = -sg * pitch; p.position.set(sg * Math.cos(pitch) * slope / 2, rise - Math.sin(pitch) * slope / 2, 0); p.castShadow = true; p.receiveShadow = true; roof.add(p); p.add(new THREE.LineSegments(new THREE.EdgesGeometry(p.geometry), mats.line)); });
+    [1, -1].forEach(sz => { const sh = new THREE.Shape(); sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, rise); sh.lineTo(-half, 0); const gbl = new THREE.Mesh(new THREE.ShapeGeometry(sh), mats.wall); gbl.position.set(0, 0, sz * D / 2 * 0.99); roof.add(gbl); });
+    const ridge = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, D + 0.5, 10), mats.roof); ridge.rotation.x = Math.PI / 2; ridge.position.y = rise + 0.02; roof.add(ridge);
+    const chim = boxM(0.4, 0.9, 0.4, mats.dark, x + 1.1, FY + H + rise - 0.2, z + 1.2); chim.castShadow = true;
+    boxM(0.1, 1.0, 0.1, mats.dark, x - 1.9, 0.5, z - D / 2 - 3.6); boxM(0.3, 0.3, 0.3, mats.white, x - 1.9, 1.1, z - D / 2 - 3.6);    // letterbox
+    // porch lamp
+    const warm = std({ color: 0xf6eadb, emissive: 0xffb35c, emissiveIntensity: 0 }); g.warm.push(warm); const pl = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.16), warm); pl.position.set(x + 0.9, FY + 2.3, z - D / 2 - 0.1); scene.add(pl);
+    g.light = new THREE.PointLight(0xffb36a, 0, 7, 2); g.light.position.set(x, FY + 1.6, z); scene.add(g.light);
+    // journey ring on the drive (coloured by the UI), and a wait pulse
+    const ringM = new THREE.MeshBasicMaterial({ map: TX.ring, transparent: true, opacity: .0, depthWrite: false, color: 0xffffff }); const ring = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), ringM); ring.rotation.x = -Math.PI / 2; ring.position.set(x, 0.07, z - D / 2 - 2.4); ring.renderOrder = 2; scene.add(ring); g.ring = ring; g.ringM = ringM;
+    g.anchor = new THREE.Vector3(x, FY + H + rise + 0.9, z); g.front = new THREE.Vector3(x + 0.2, 1.0, z - D / 2 - 0.4); g.drive = new THREE.Vector3(x + 1.5, 0.4, z - D / 2 - 1.6);
+    homes.push(g); return g; }
+  for (let i = 0; i < 8; i++) house(i);
+  // props by journey: a moving truck at the move homes, an EV and a charger at the EV homes
+  function truck(h) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.0, 4.2), mats.truck); b.position.set(0, 1.35, 0.6); const cab = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.3, 1.5), mats.car); cab.position.set(0, 1.0, -2.3);
+    g.add(b, cab); [[-.9, -1.9], [.9, -1.9], [-.9, 1.6], [.9, 1.6]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.4, .4, .3, 14), mats.dark); w.rotation.z = Math.PI / 2; w.position.set(x, .4, z); g.add(w); });
+    g.position.set(h.x + 1.5, 0, h.z - 6.6); g.traverse(o => { o.castShadow = true; }); scene.add(g); ao(h.x + 1.5, h.z - 6.4, 2.8, 6.4, 0.06, .5);
+    [[-1.4, -3.4, .5], [-1.0, -3.0, .4], [-1.6, -2.7, .35]].forEach(([dx, dz, s]) => boxM(s, s, s, mats.truck, h.x + dx, s / 2 + 0.05, h.z + dz)); }
+  function ev(h) { const car = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 4.0), std({ color: 0x7E9DB0, roughness: .35, metalness: .2 })); b.position.y = 0.55; const c = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.45, 2.0), std({ color: 0x2a3340, roughness: .25 })); c.position.set(0, 1.0, -0.2); car.add(b, c);
+    [[-.8, -1.3], [.8, -1.3], [-.8, 1.3], [.8, 1.3]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .2, 14), mats.dark); w.rotation.z = Math.PI / 2; w.position.set(x, .32, z); car.add(w); });
+    car.position.set(h.x + 1.5, 0, h.z - 4.6); car.traverse(o => { o.castShadow = true; }); scene.add(car); ao(h.x + 1.5, h.z - 4.6, 2.3, 4.6, 0.06, .55);
+    boxM(0.18, 1.1, 0.18, mats.white, h.x + 2.5, 0.55, h.z - 2.9); const led = std({ color: 0xffffff, emissive: 0x4ca563, emissiveIntensity: 0 }); const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), led); l.position.set(h.x + 2.5, 1.0, h.z - 3.0); scene.add(l); h.charger = led; }
+  truck(homes[2]); truck(homes[3]); ev(homes[6]); ev(homes[7]);
+
+  // ---- the retailer: contact centre (left, back), billing engine (right, back), the industry registry (far back)
+  const CENTRE = new THREE.Vector3(9, 0, 24), ENGINE = new THREE.Vector3(-9, 0, 24), REGISTRY = new THREE.Vector3(0, 0, 32);
+  { const c = CENTRE; boxM(11, 0.3, 7.5, mats.path, c.x, 0.15, c.z, false); ao(c.x, c.z, 14, 10.5, 0.05, .5);
+    const body = boxM(10, 3.2, 6.5, mats.centre, c.x, 0.3 + 1.6, c.z); body.castShadow = true; boxM(10.4, 0.2, 6.9, mats.dark, c.x, 3.6, c.z);
+    const cg = mats.glass.clone(); mats.centreGlass = cg; for (let i = 0; i < 7; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.06), cg); w.position.set(c.x - 4.2 + i * 1.4, 2.0, c.z - 3.28); scene.add(w); }
+    for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.4, 1.0), cg); w.position.set(c.x - 5.03, 2.0, c.z - 2.2 + i * 1.5); scene.add(w); }
+    boxM(1.6, 2.2, 0.1, mats.door, c.x + 0.6, 1.4, c.z - 3.3); boxM(3.6, 0.5, 0.1, mats.dark, c.x - 2.6, 3.25, c.z - 3.33);
+    const st = std({ color: 0xf6eadb, emissive: 0x74b4d2, emissiveIntensity: .0 }); mats.centreSign = st; const sgn = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.3, 0.06), st); sgn.position.set(c.x - 2.6, 3.25, c.z - 3.4); scene.add(sgn);
+    // headset-and-desk rows hinted as low blocks inside, seen through the roof gap
+    for (let i = 0; i < 3; i++) boxM(6, 0.7, 0.6, mats.white, c.x - 1, 0.65, c.z - 1.6 + i * 1.6);
+    c.anchor = new THREE.Vector3(c.x, 4.6, c.z); c.door = new THREE.Vector3(c.x + 0.6, 1.0, c.z - 3.6); }
+  { const e = ENGINE; boxM(7, 0.3, 7, mats.path, e.x, 0.15, e.z, false); ao(e.x, e.z, 9.5, 9.5, 0.05, .5);
+    const eng = std({ color: 0x21303a, roughness: .35, metalness: .3 }); mats.engineBody = eng; const b = boxM(4.4, 4.4, 4.4, eng, e.x, 0.3 + 2.2, e.z); b.castShadow = true; b.add(new THREE.LineSegments(new THREE.EdgesGeometry(b.geometry), mats.line));
+    const leds = []; for (let r = 0; r < 6; r++) for (let k = 0; k < 8; k++) { const m = std({ color: 0x111111, emissive: 0x4ca563, emissiveIntensity: .6, roughness: .3 }); const l = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.06), m); l.position.set(e.x - 1.6 + k * 0.46, 1.0 + r * 0.66, e.z - 2.24); scene.add(l); leds.push(m); } mats.leds = leds;
+    const cool = std({ color: 0x9aa7ad, roughness: .4, metalness: .5 }); for (let i = 0; i < 3; i++) { const v = new THREE.Mesh(new THREE.CylinderGeometry(.35, .35, .3, 16), cool); v.position.set(e.x - 1.2 + i * 1.2, 4.9, e.z + 0.8); scene.add(v); }
+    boxM(5.2, 0.4, 0.1, mats.dark, e.x, 5.1, e.z - 2.3); e.anchor = new THREE.Vector3(e.x, 5.9, e.z); e.door = new THREE.Vector3(e.x, 1.2, e.z - 2.6); }
+  { const r = REGISTRY; boxM(3, 0.3, 3, mats.path, r.x, 0.15, r.z, false); const t = boxM(1.6, 7, 1.6, mats.white, r.x, 3.8, r.z); t.castShadow = true; boxM(0.1, 2.4, 0.1, mats.dark, r.x, 8.4, r.z); ao(r.x, r.z, 4, 4, 0.05, .5);
+    const rm = std({ color: 0xffffff, emissive: 0xcf7b26, emissiveIntensity: .4 }); mats.regLight = rm; const o = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), rm); o.position.set(r.x, 9.6, r.z); scene.add(o); r.anchor = new THREE.Vector3(r.x, 10.2, r.z); r.door = new THREE.Vector3(r.x, 1.2, r.z - 1.7); }
+  // lane lines on the ground, from each home's meter box to the centre or the engine (journey colour, set by the UI)
+  const laneLines = homes.map(h => { const to = h.x > 0 ? CENTRE : ENGINE; const pts = []; for (let i = 0; i <= 24; i++) { const t = i / 24; pts.push(new THREE.Vector3(h.x + (to.x - h.x) * t, 0.09, h.z + 2.9 + (to.z - 3.6 - h.z - 2.9) * t)); }
+    const m = new THREE.LineBasicMaterial({ color: 0x888888, transparent: true, opacity: .5 }); const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m); scene.add(l); return m; });
+  const link = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(CENTRE.x - 5, 1.5, CENTRE.z), new THREE.Vector3(ENGINE.x + 2.2, 1.5, ENGINE.z)]), mats.line); scene.add(link);
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ENGINE.x, 3, ENGINE.z + 2.2), new THREE.Vector3(REGISTRY.x, 3, REGISTRY.z - 1)]), mats.line));
+
+  // ---- packets: messages between a home and a building, on an arc
+  const PN = 70, packets = [], pGeo = new THREE.SphereGeometry(0.17, 10, 8);
+  for (let i = 0; i < PN; i++) { const m = new THREE.Mesh(pGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .95 })); m.visible = false; scene.add(m); packets.push({ m, t: 1, a: null, b: null, dur: 1, col: null }); }
+  function send(a, b, color, dur = 1.8) { const p = packets.find(p => p.t >= 1); if (!p) return; p.a = a.clone(); p.b = b.clone(); p.t = 0; p.dur = dur; p.m.material.color.set(color); p.m.visible = true; }
+  const acc = {}; function rate(k, perSec, dt, fn) { acc[k] = (acc[k] || 0) + Math.min(perSec, 30) * dt; while (acc[k] >= 1) { fn(); acc[k] -= 1; } }
+  const _v = new THREE.Vector3();
+  function stepPackets(dt) { for (const p of packets) { if (p.t >= 1) { p.m.visible = false; continue; } p.t = Math.min(1, p.t + dt / p.dur); const t = p.t, e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      _v.lerpVectors(p.a, p.b, e); _v.y += Math.sin(t * Math.PI) * (2.2 + p.a.distanceTo(p.b) * 0.08); p.m.position.copy(_v); p.m.material.opacity = t > .9 ? (1 - t) * 9.5 : .95; } }
+  const WHERE = { home: h => h.front, centre: () => CENTRE.door, billing: () => ENGINE.door, registry: () => REGISTRY.door };
+
+  // ---- theme, sky and lights
+  function applyTheme(dark) { mats.ground.color = lin("--scene-ground"); mats.plinth.color = lin("--scene-plinth"); mats.road.color = lin("--scene-road"); mats.path.color = lin("--scene-path"); mats.wall.color = lin("--scene-wall"); mats.roof.color = lin("--scene-roof");
+    mats.centre.color = lin("--scene-centre"); mats.engineBody.color = lin("--scene-engine"); mats.line.color = lin("--scene-edge"); mats.cap.color = lin("--scene-edge"); mats.tree.color = dark ? new THREE.Color(0x3d5a3b) : new THREE.Color(0x5f8a5a); mats.tree2.color = dark ? new THREE.Color(0x4a6a46) : new THREE.Color(0x6f9a62);
+    mats.truck.color = dark ? new THREE.Color(0x9a9a98) : new THREE.Color(0xe8e4dc); hemi.intensity = dark ? .45 : .6; renderer.toneMappingExposure = dark ? .95 : 1.05; }
+  let hourNow = 10, monthNow = 9; const DAYLEN = [14.3, 13.4, 12.3, 11.1, 10.2, 9.7, 9.9, 10.7, 11.8, 12.9, 13.9, 14.5];
+  const sunUp = (m, h) => { const d = DAYLEN[m], rise = 12.7 - d / 2; return h > rise && h < rise + d ? Math.sin(Math.PI * (h - rise) / d) : 0; };
+  function sky(h, m) { const up = sunUp(m, h), dusk = Math.max(0, 1 - Math.abs(up - 0.12) / 0.12) * (up > 0 ? 1 : 0.6), day = Math.min(1, up * 3.2);
+    const mix = (a, b, t) => a.clone().lerp(b, t), d1 = lin("--sky-day-1"), d2 = lin("--sky-day-2"), k1 = lin("--sky-dusk-1"), k2 = lin("--sky-dusk-2"), n1 = lin("--sky-night-1"), n2 = lin("--sky-night-2");
+    const top = mix(mix(n1, k1, dusk), d1, day), bot = mix(mix(n2, k2, dusk), d2, day); box.style.background = `linear-gradient(180deg,#${top.convertLinearToSRGB().getHexString()},#${bot.convertLinearToSRGB().getHexString()})`;
+    const az = (h - 12.7) / 12 * Math.PI; sun.position.set(Math.sin(az) * 40, 12 + up * 40, 10 - Math.cos(az) * 14); sun.intensity = 0.22 + 1.05 * up; sun.color.setHSL(0.08, 0.5, 0.75 + 0.22 * Math.min(1, up * 2)); hemi.intensity = (0.38 + 0.3 * day) * (document.documentElement.dataset.theme === "dark" ? .8 : 1);
+    const night = 1 - day; lampMats.forEach(m => m.emissiveIntensity = night * 2.4); homes.forEach((g, i) => { const on = night * (0.5 + 0.5 * ((i * 7) % 3) / 2); g.glass.forEach(gm => gm.emissiveIntensity = on * 3.2); g.warm.forEach(w => w.emissiveIntensity = night * 2.2); g.light.intensity = on * 1.6; });
+    mats.centreGlass.emissiveIntensity = night * 1.2; mats.centreSign.emissiveIntensity = 0.3 + night * 1.2; return { day, night }; }
+
+  // ---- per-frame state from the UI: homes[i] = {j, color, stage:{where, wait, k}, progress, active}
+  let state = null, elapsed = 0;
+  function update(dt, st) { state = st || state; elapsed += dt; stepPackets(dt); controls.update();
+    if (state) { const sk = sky(state.hour, state.month); hourNow = state.hour; monthNow = state.month;
+      state.homes.forEach((s, i) => { const h = homes[i]; if (!s) return; const c = new THREE.Color(s.color); h.ringM.color.copy(c); laneLines[i].color.copy(c); laneLines[i].opacity = s.active ? .55 : .15;
+        const pulse = s.stage && s.stage.wait ? 0.35 + 0.25 * Math.sin(elapsed * 2.4 + i) : s.active ? 0.6 : 0; h.ringM.opacity = pulse; h.ring.scale.setScalar(s.stage && s.stage.wait ? 1 + 0.12 * Math.sin(elapsed * 2.4 + i) : 1);
+        if (h.charger) h.charger.emissiveIntensity = sk.night > .5 && s.charging ? 1.6 : 0.1;
+        if (s.active && s.stage) { const w = s.stage.where, per = s.stage.wait ? 0.12 : (s.stage.k === "entry" || s.stage.k === "resolution" ? 0.25 : 0.9) * (state.speedFactor || 1);
+          if (w === "centre" || w === "billing") rate("p" + i, per, dt, () => Math.random() < .5 ? send(h.front, WHERE[w](), s.color) : send(WHERE[w](), h.front, s.color));
+          else if (w === "registry") rate("p" + i, per, dt, () => Math.random() < .5 ? send(ENGINE.door, REGISTRY.door, s.color, 1.4) : send(REGISTRY.door, ENGINE.door, s.color, 1.4));
+          else if (s.stage.ch === "app") rate("p" + i, per * 0.5, dt, () => send(ENGINE.door, h.front, s.color)); } });
+      // the billing engine's lights follow the wholesale price for this hour: green cheap, amber dear
+      const tp = state.wholesale ?? 10, k = Math.max(0, Math.min(1, (tp - 4) / 16)); const ec = new THREE.Color().setHSL(0.36 - 0.28 * k, 0.65, 0.5); mats.leds.forEach((m, j) => m.emissive.copy(ec).multiplyScalar(0.5 + 0.5 * ((Math.floor(elapsed * 6) + j * 7) % 5 === 0 ? 0.2 : 1)));
+      mats.regLight.emissiveIntensity = 0.3 + 0.5 * (Math.sin(elapsed * 3) > 0.6 ? 1 : 0); }
+    renderer.render(scene, camera); }
+  // ---- camera views
+  const VIEWS = { street: { pos: [6, 21, -38], tgt: [0, 1, 10] }, switchin: { pos: [15, 8, -2], tgt: [15, 1.5, 10] }, move: { pos: [5, 8, -2], tgt: [5, 1.5, 10] }, shock: { pos: [-5, 8, -2], tgt: [-5, 1.5, 10] }, ev: { pos: [-15, 8, -2], tgt: [-15, 1.5, 10] },
+    centre: { pos: [9, 9, 8], tgt: [9, 2, 24] }, billing: { pos: [-9, 9, 8], tgt: [-9, 2.5, 24] } };
+  let camA = null, viewNow = "street"; function setView(n, instant) { const v = VIEWS[n] || VIEWS.street; viewNow = n; const t1 = new THREE.Vector3(...v.tgt), p1 = new THREE.Vector3(...v.pos); if (camera.aspect < 1.15) p1.sub(t1).multiplyScalar(n === "street" ? 1.55 : 1.25).add(t1); camA = { p0: camera.position.clone(), t0: controls.target.clone(), p1, t1, t: instant ? 1 : 0 }; if (instant) { camera.position.copy(camA.p1); controls.target.copy(camA.t1); camA = null; } }
+  function stepCam(dt) { if (!camA) return; camA.t = Math.min(1, camA.t + dt / 0.9); const e = 1 - Math.pow(1 - camA.t, 3); camera.position.lerpVectors(camA.p0, camA.p1, e); controls.target.lerpVectors(camA.t0, camA.t1, e); if (camA.t >= 1) camA = null; }
+  let lastAspect = 0; function resize() { const w = box.clientWidth, h = Math.max(window.__minH || 440, Math.min(innerHeight * 0.74, w * 0.72)); canvas.style.height = h + "px"; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); if ((lastAspect < 1.15) !== (camera.aspect < 1.15) && lastAspect) setView(viewNow, true); lastAspect = camera.aspect; }
+  addEventListener("resize", resize); resize();
+  // screen position of a world anchor, for the HTML tags
+  const _p = new THREE.Vector3(); function project(v) { _p.copy(v).project(camera); return { x: (_p.x + 1) / 2 * canvas.clientWidth, y: (1 - _p.y) / 2 * canvas.clientHeight, ok: _p.z < 1 && Math.abs(_p.x) < 1.2 && Math.abs(_p.y) < 1.2 }; }
+  return { update, applyTheme, setView, stepCam, resize, project, homes, CENTRE, ENGINE, REGISTRY, send, camera, controls };
+}
+
+</script>
+<script>
+// ---- the page: the street and its clock, the lanes, the customer's phone, the year, the levers, the proof ledger, AI authority,
+// connecting a retailer's exports, the live layer and the sources. Uses ENERGY (model.js), VZ (vz.js) and createStreetScene (scene.js).
+(() => {
+const K = ENERGY, $ = id => document.getElementById(id), esc = VZ.esc;
+const fmt = (n, d = 0) => Number(n).toLocaleString("en-NZ", { maximumFractionDigits: d, minimumFractionDigits: d });
+const money = (n, sign) => { const a = Math.abs(n), s = n < 0 ? "−" : sign && n > 0 ? "+" : ""; return a >= 1e6 ? s + "$" + fmt(a / 1e6, 2) + "m" : a >= 1e5 ? s + "$" + fmt(a / 1000, 0) + "k" : s + "$" + fmt(a); };
+const pct = (x, d = 0) => fmt(x * 100, d) + "%", lab = (c, t) => `<span class="lab ${c}">${esc(t)}</span>`;
+const JC = { switchin: "var(--j1)", move: "var(--j2)", shock: "var(--j3)", ev: "var(--j4)" };
+const S = { levers: { ...K.AS_IS }, month: 9, speed: 6, playing: !matchMedia("(prefers-reduced-motion: reduce)").matches, focus: "switchin", pv: "asis", pvAuto: true, hour: 9.5 };
+let Y = null, A = null, PR = null, DATA = {}, feedsLive = false;
+K.feeds(ENERGY_FEEDS && ENERGY_FEEDS.feeds);
+const WH = K.WH;
+
+// ---------------- 3D
+const tw = createStreetScene($("scene"), $("stagebox"), K);
+const isDark = () => document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+const theme = () => { tw.applyTheme(isDark()); charts(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", theme); new MutationObserver(theme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+tw.applyTheme(isDark());
+function setView(n, instant) { tw.setView(n, instant); document.querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-pressed", x.dataset.view === n ? "true" : "false")); if (K.J[n]) setFocus(n); }
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
+
+// ---------------- the journeys running on the street: two homes per journey, half a cycle apart
+// The clock on the page is the time of day. Each journey runs its own calendar: stage durations are real hours (K.J), shown compressed
+// so a seven-day wait is visibly long without being a seven-day wait.
+const disp = h => 3 + 1.4 * Math.sqrt(h);        // display hours for a stage of h real hours
+const leverOn = j => K.J[j].levers.some(k => S.levers[k]);
+const RUN = [];
+function stages(j) { const on = leverOn(j); return K.J[j].stages.map(s => ({ ...s, dur: on ? s.hl : s.h })); }
+function newRun(i) { const j = K.JOURNEYS[Math.floor(i / 2)], st = stages(j), tot = st.reduce((a, s) => a + disp(s.dur), 0); return { i, j, st, tot, t: ((i % 2) * 0.5 + Math.floor(i / 2) * 0.11) * tot, done: false }; }
+for (let i = 0; i < 8; i++) RUN.push(newRun(i));
+function runState(r) { let t = r.t, idx = 0; for (; idx < r.st.length; idx++) { const d = disp(r.st[idx].dur); if (t < d) return { idx, p: t / d, stage: r.st[idx], realH: r.st.slice(0, idx).reduce((a, s) => a + s.dur, 0) + r.st[idx].dur * (t / d) }; t -= d; }
+  return { idx: r.st.length - 1, p: 1, stage: r.st[r.st.length - 1], realH: r.st.reduce((a, s) => a + s.dur, 0), end: true }; }
+function stepRuns(dtH) { for (const r of RUN) { r.t += dtH; if (r.t >= r.tot + 6) { r.t = 0; r.st = stages(r.j); r.tot = r.st.reduce((a, s) => a + disp(s.dur), 0); } } }
+function restartRuns() { RUN.forEach((r, i) => Object.assign(r, newRun(i))); }
+const dayText = h => { const d = Math.floor(h / 24), hh = Math.floor(h % 24); return h < 24 ? `${fmt(h, h < 2 ? 1 : 0)} h in` : `day ${d + 1}, ${((hh + 11) % 12) + 1}${hh >= 12 ? "pm" : "am"}`; };
+
+// ---------------- labels over the 3D
+const TE = {}; ["h0", "h1", "h2", "h3", "h4", "h5", "h6", "h7", "centre", "billing", "registry"].forEach(id => { const d = document.createElement("div"); d.className = "tag"; d.style.display = "none"; $("tags").appendChild(d); TE[id] = d; });
+function tags() { const W = $("scene").clientWidth, small = W < 560, placed = [];
+  const put = (id, v, html, cls) => { const el = TE[id], pr = tw.project(v); if (!pr.ok || pr.y < 46 || small && !/^h[0246]$|billing/.test(id)) { el.style.display = "none"; return; } let y = pr.y;
+    for (const p of placed) if (Math.abs(p.x - pr.x) < 110 && Math.abs(p.y - y) < 30) y = p.y - 30; placed.push({ x: pr.x, y }); el.style.display = ""; el.style.left = pr.x + "px"; el.style.top = y + "px"; el.innerHTML = html; el.className = "tag " + (cls || ""); };
+  RUN.forEach(r => { const rs = runState(r), h = tw.homes[r.i], j = K.J[r.j]; if (r.i % 2 === 1) { TE["h" + r.i].style.display = "none"; return; }
+    put("h" + r.i, h.anchor, `<b>${esc(j.short)}</b> <span class="m">${esc(rs.stage.k)}${rs.stage.wait ? " · waiting" : ""}</span>`, rs.stage.wait ? "wait" : ""); TE["h" + r.i].style.setProperty("--jc", JC[r.j]); });
+  const m = Y ? Y.months[S.month] : null, calls = m ? (m.switchin.calls + m.move.calls + m.shock.calls + m.ev.calls) / 30 : 0;
+  put("centre", tw.CENTRE.anchor, `<b>Contact centre</b> <span class="m">${fmt(calls, 1)} calls a day · ${S.hour >= 8 && S.hour < 18 ? "open" : "closed"}</span>`);
+  put("billing", tw.ENGINE.anchor, `<b>Billing engine</b> <span class="m">wholesale ${fmt(wholesaleNow(), 1)}c/kWh</span>`);
+  put("registry", tw.REGISTRY.anchor, `<b>Industry registry</b> <span class="m">switch requests</span>`); }
+function wholesaleNow() { const tp = WH.periods; if (!tp) return WH.avg * K.WHOLESALE_IDX[S.month]; const i = Math.min(47, Math.floor(S.hour * 2)); return tp[i] * K.WHOLESALE_IDX[S.month] / K.WHOLESALE_IDX[9]; }
+
+// ---------------- the lanes
+$("stgHd").innerHTML = K.STAGES.map(s => `<span>${s}</span>`).join("");
+function lanes() { $("laneGrid").innerHTML = K.JOURNEYS.map(j => { const r = RUN[K.JOURNEYS.indexOf(j) * 2], rs = runState(r);
+    return `<div class="lane" style="--jc:${JC[j]}"><span class="ln">${esc(K.J[j].n)}<small>${esc(rs.stage.t)} · ${dayText(rs.realH)}${leverOn(j) ? " · levers on" : ""}</small></span><div class="stg" role="img" aria-label="${esc(K.J[j].n)}: at ${rs.stage.k}, ${dayText(rs.realH)}">${r.st.map((s, i) => `<i class="${i < rs.idx ? "done" : i === rs.idx ? "at" + (s.wait ? " wait" : "") : ""}" style="--p:${i === rs.idx ? Math.round(rs.p * 100) : 0}%"${VZ.tipAttr(`${s.k}: ${s.t}\n${s.dur < 1 ? fmt(s.dur * 60) + " minutes" : s.dur < 48 ? fmt(s.dur, 1) + " hours" : fmt(s.dur / 24, 0) + " days"}${s.wait ? " · a wait the customer sees" : ""}`)}></i>`).join("")}</div></div>`; }).join("");
+  $("laneClock").textContent = `${S.playing ? "running" : "paused"} · ${K.MONTHS[S.month]}`; }
+function timeViz() { const rows = K.JOURNEYS.map(j => { const a = K.J[j].stages.reduce((x, s) => x + s.h, 0) / 24, b = K.J[j].stages.reduce((x, s) => x + s.hl, 0) / 24, wa = K.J[j].stages.filter(s => s.wait).reduce((x, s) => x + s.h, 0) / 24, wb = K.J[j].stages.filter(s => s.wait).reduce((x, s) => x + s.hl, 0) / 24;
+    return { label: esc(K.J[j].n), sub: `${fmt(a, 0)} → ${fmt(b, 0)} days end to end`, dumb: [wa, wb], color: JC[j], text: `${fmt(wa, wa < 2 ? 1 : 0)} → ${fmt(wb, wb < 2 ? 1 : 0)} d<small>visible waiting</small>`, tip0: `As it is: ${fmt(wa, 1)} days of visible waiting\n${fmt(a, 1)} days entry to resolution`, tip: `With the levers: ${fmt(wb, 1)} days of visible waiting\n${fmt(b, 1)} days entry to resolution` }; });
+  $("timeViz").innerHTML = `<p class="vz-h"><span>Days the customer waits with nothing to do, or no date</span></p>` + VZ.rows(rows, { lw: "11em", vw: "7.5em", aria: "Days of visible waiting in each journey, as it is and with its levers on" }) + VZ.legend([["", "as it is", "ring"], ["var(--ink)", "with the levers", "dot"]]);
+  $("timeText").innerHTML = `Most of a journey is the resolution stage: the next bill, which no lever moves. What the levers move is the <b>wait</b> the customer can see: a week of silence after a switch request becomes a confirmed date on day 0, a fortnight for a plan change becomes three days.`; }
+
+// ---------------- the customer's phone
+$("ptabs").innerHTML = K.JOURNEYS.map(j => `<button type="button" data-j="${j}" style="--jc:${JC[j]}" aria-pressed="${j === S.focus}">${esc(K.J[j].short)}</button>`).join("");
+$("ptabs").onclick = e => { const b = e.target.closest("button"); if (b) setFocus(b.dataset.j); };
+function setFocus(j) { S.focus = j; document.querySelectorAll("#ptabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.j === j ? "true" : "false")); S.pvAuto = true; phone(true); }
+document.querySelectorAll("[data-pv]").forEach(b => b.onclick = () => { S.pv = b.dataset.pv; S.pvAuto = false; phone(true); });
+const avgBill = m => K.C.reduce((a, c) => a + K.billFor(c, m), 0) / K.N;
+const steps = list => list.map(([s, t, st]) => `<div class="step"><i class="${st}"></i><span>${s ? `<b>${s}</b> ` : ""}${t}</span></div>`).join("");
+const tile = (v, l) => `<div class="tile"><span class="v">${v}</span><span class="l">${l}</span></div>`;
+let lastPhoneKey = "";
+function phone(force) { const j = S.focus, r = RUN[K.JOURNEYS.indexOf(j) * 2], rs = runState(r), with_ = S.pvAuto ? leverOn(j) : S.pv === "with", k = rs.stage.k, key = j + k + with_ + S.month;
+  document.querySelectorAll("[data-pv]").forEach(b => b.setAttribute("aria-pressed", (b.dataset.pv === "with") === with_ ? "true" : "false")); $("scr").style.setProperty("--jc", JC[j]);
+  if (!force && key === lastPhoneKey) { const p = $("scrProg"); if (p) p.style.setProperty("--p", Math.round(rs.p * 100) + "%"); return; } lastPhoneKey = key;
+  const m = S.month, bill = avgBill(m), prev = avgBill((m + 11) % 12), colder = K.TEMP[(m + 11) % 12] - K.TEMP[m], w = with_, body = [];
+  const live = `<span class="live">Grid ${fmt(WH.renewable, 0)}% renewable last month · Auckland ${fmt(WH.tempC, 0)} °C · ${WH.truth.genmix === "Snapshot" ? "snapshot" : "live"} (EMI, Open-Meteo)</span>`;
+  const brand = `<span class="app">Your power company · ${esc(K.J[j].short)}</span>`;
+  if (j === "switchin") {
+    if (k === "entry" || k === "intent") body.push(brand, `<h4>Find a plan that fits</h4>`, `<p>Enter your address and we will read last year's usage from your meter, with your permission.</p>`, tile("7,100 kWh", "a year, a typical 3-bedroom home"), `<div class="cta">Compare plans</div>`);
+    else if (k === "context") body.push(brand, w ? `<h4>Found you</h4><p>3-bedroom, about 7,100 kWh a year from your meter's history. Credit check done.</p>${steps([["Address", "matched to the registry", "on"], ["Usage", "12 months of reads", "on"], ["Credit check", "clear, instant", "on"]])}` : `<h4>Checking a few details</h4><div class="spin" aria-hidden="true"></div><p>This can take up to a day. We will email you.</p>`);
+    else if (k === "recommendation") body.push(brand, `<h4>Three plans on your usage</h4>`, `<div class="cmp"><div class="pick"><span>Anytime, no fixed term</span><span>$${fmt(bill)}/mo</span></div><div><span>Time of use</span><span>$${fmt(bill * 0.96)}/mo</span></div><div><span>Fixed 12 months</span><span>$${fmt(bill * 0.98)}/mo</span></div></div>`, `<p>Estimated from your last 12 months. ${w ? "Switch date if you sign up today: 5 business days, from the industry rules." : ""}</p>`, `<div class="cta">Choose Anytime</div>`);
+    else if (k === "commitment" || k === "action") body.push(brand, w ? `<h4>You switch on ${switchDate(5)}</h4><p>Confirmed now, from the registry's own timing. Your old retailer has five business days to respond; it almost always takes fewer.</p>${steps([["Signed up", "today", "on"], ["Request sent", "to the industry registry", "on"], ["Old retailer responds", "by " + switchDate(5), "now"]])}` : `<h4>You're in</h4><p>Thanks for signing up. We will be in touch once your switch has gone through.</p><div class="spin" aria-hidden="true"></div>`);
+    else if (k === "wait") body.push(brand, w ? `<h4>Switching: day ${Math.min(5, 1 + Math.floor(rs.p * 5))} of 5</h4>${steps([["Requested", "sent to the registry", "on"], ["Old retailer notified", "they have 5 business days", "on"], ["Their response", rs.p < .6 ? "waiting; usually 2–3 days" : "received", rs.p < .6 ? "now" : "on"], ["Switch read", "from your smart meter, nothing to do", rs.p < .6 ? "" : "now"], ["With us from", switchDate(5), ""]])}<div class="bar2" id="scrProg" style="--p:${Math.round(rs.p * 100)}%"><i></i></div>${tile("$" + fmt(bill), "first bill, estimated, 30 days on Anytime")}<p>Your old retailer bills you to the switch day; we start from then. No double billing.</p>${live}` : `<h4>Switch in progress</h4><div class="spin" aria-hidden="true"></div><p>We will email you when it is done. Questions? Call 0800 000 000, 8am to 6pm weekdays.</p><p>Day ${1 + Math.floor(rs.p * 7)} of waiting. No date yet.</p>`);
+    else if (k === "fulfilment") body.push(brand, `<h4>Welcome</h4><p>Your supply is with us from today. First bill in about 30 days, estimated at $${fmt(bill)}.</p>`, w ? steps([["Switch complete", "final read received from your old retailer", "on"], ["Direct debit", "set up, first payment after the first bill", "on"]]) : "");
+    else body.push(brand, `<h4>Your first bill: $${fmt(bill * 0.98)}</h4><p>$${fmt(bill * 0.02)} under the estimate. ${fmt(K.monthKwh(K.C[3], m))} kWh over 30 days, actual reads.</p>${tile("$" + fmt(bill * 0.98), "due in 14 days")}`);
+  } else if (j === "move") {
+    if (k === "entry" || k === "intent" || k === "context" || k === "recommendation") body.push(brand, w ? `<h4>Moving house</h4>${steps([["Moving out", "Sat 31 Oct · final read from the smart meter", "on"], ["Moving in", "Sat 31 Oct · 12 Example Street", k === "entry" ? "now" : "on"], ["Plan", "same plan carried over", k === "recommendation" ? "now" : k === "entry" ? "" : "on"], ["Meter photo", "only if the meter is not smart", ""]])}<div class="cta">Confirm both dates</div>` : `<h4>Moving house?</h4><p>Call us on 0800 000 000 to close your old account and open the new one. Lines open 8am to 6pm, Monday to Friday.</p>${tile("about 12 min", "wait time right now")}<p>${k === "context" ? "You are number " + (5 + Math.floor(rs.p * 8)) + " in the queue." : "Have your new address and move date ready."}</p>`);
+    else if (k === "commitment" || k === "action") body.push(brand, w ? `<h4>Both dates confirmed</h4>${steps([["Old place", "final read Sat 31 Oct, from the meter", "on"], ["New place", "power on from 8am Sat 31 Oct", "on"], ["Final bill", "lands Tue 3 Nov, about $" + fmt(bill * 0.62), ""]])}` : `<h4>Your move is booked</h4><p>Reference MV-48211. Your final bill will follow.</p><div class="spin" aria-hidden="true"></div>`);
+    else if (k === "wait") body.push(brand, w ? `<h4>Two addresses, one screen</h4>${steps([["Old place", "final read due Sat; nothing to do", rs.p < .5 ? "now" : "on"], ["New place", "live from 8am Sat", rs.p < .5 ? "" : "now"], ["Final bill", "about $" + fmt(bill * 0.62) + " for 19 days; lands Tue", ""], ["First bill here", "estimated $" + fmt(bill) + " a month, same plan", ""]])}<div class="bar2" id="scrProg" style="--p:${Math.round(rs.p * 100)}%"><i></i></div><p>Nothing is billed twice: the old account closes on the read, the new one opens on the same day.</p>${live}` : `<h4>Move booked</h4><div class="spin" aria-hidden="true"></div><p>Your final bill will be issued after the final read. If you have not heard from us in five working days, please call.</p>`);
+    else body.push(brand, `<h4>Final bill: $${fmt(bill * 0.62)}</h4><p>19 days at the old place, actual read. ${w ? "Your first bill here is estimated at $" + fmt(bill) + "." : "Your new account is open; the first bill will follow."}</p>${k === "resolution" && !w ? `<p class="ai">One in twelve moves as it is ends with a query about a double charge or a missed read.</p>` : ""}`);
+  } else if (j === "shock") {
+    const hi = bill * 1.42, diff = hi - prev;
+    if (k === "entry") body.push(brand, w && S.levers.alerts ? `<h4>Heads up: this bill is tracking about $${fmt(hi)}</h4><p>$${fmt(diff)} more than last month. ${colder > 0 ? fmt(colder, 1) + " °C colder, heating on about 6 hours more a day." : "Longer month and more heating."} Nothing is wrong with the meter.</p>${tile("$" + fmt(hi), "likely bill, 9 days to go")}<div class="cta">See what you can do</div>` : `<h4>Your bill: $${fmt(hi)}</h4><p>Due in 14 days.</p>${tile("+$" + fmt(diff), "on last month")}`);
+    else if (k === "intent" || k === "context" || k === "recommendation") body.push(brand, w ? `<h4>Why it is $${fmt(diff)} higher</h4><div class="ai">${steps([["31 days", "against 30 last month: about $" + fmt(bill * 0.03), "on"], [fmt(colder, 1) + " °C colder", "heating used about " + fmt(diff / 0.31 * 0.8) + " kWh more", "on"], ["Reads", "actual both months, no estimate", "on"]])}</div><p>Drafted by the explainer from your reads, the weather and your plan, then checked against the bill's arithmetic. Not a billing error.</p>${S.levers.explainer ? `<span class="live">AI explanation · capped at $400 a month across all bills</span>` : ""}<div class="cta">${k === "recommendation" ? "Spread it over 3 payments" : "Talk to a person"}</div>` : `<h4>Why is my bill so high?</h4><p>Call us on 0800 000 000. ${k === "context" ? "You are number " + (9 + Math.floor(rs.p * 10)) + " in the queue." : "Lines are busiest after bills go out."}</p>${tile("about 18 min", "wait time right now")}`);
+    else if (k === "commitment" || k === "action") body.push(brand, w ? `<h4>Payment plan agreed</h4>${steps([["3 payments of $" + fmt(hi / 3), "first on the 27th", "on"], ["Time-of-use estimate", "$" + fmt(bill * 0.04) + " a month less on your pattern", ""]])}` : `<h4>Re-read requested</h4><p>Reference RR-9043. Allow five working days.</p><div class="spin" aria-hidden="true"></div>`);
+    else if (k === "wait") body.push(brand, w ? `<h4>Sorted, and watching</h4>${steps([["Payment plan", "3 × $" + fmt(hi / 3) + ", first on the 27th", "on"], ["Usage this week", fmt(K.monthKwh(K.C[5], m) / 4.3 * 0.93) + " kWh, 7% under last week", "now"], ["Next bill", "tracking about $" + fmt(bill * 1.1), ""]])}<div class="bar2" id="scrProg" style="--p:${Math.round(rs.p * 100)}%"><i></i></div>${tile(fmt(K.TEMP[m], 0) + " °C", "Auckland average this month; the cold is the bill")}${live}` : `<h4>Re-read in progress</h4><div class="spin" aria-hidden="true"></div><p>Allow five working days. Your bill is still due on the due date.</p><p>Day ${1 + Math.floor(rs.p * 5)} of 5.</p>`);
+    else body.push(brand, `<h4>${w ? "Bill confirmed" : "Re-read result"}: $${fmt(hi)}</h4><p>${w ? "The reads were right. You are on a payment plan, and the next bill is tracking lower." : "The reads were right; the bill stands. Due date passed: a reminder has been sent."}</p>`);
+  } else {
+    const cur = bill + 60, evp = cur - 36, tou = cur - 17;
+    if (k === "entry" || k === "intent") body.push(brand, w ? `<h4>Charging an EV overnight?</h4><p>We noticed a new load between 11pm and 6am since the 12th. On our EV plan, this month would have cost <b>$${fmt(evp)}</b>, $36 less.</p>${tile("$36 a month", "estimated saving on your own usage")}<div class="cta">See the EV plan</div>` : `<h4>Your bill: $${fmt(cur)}</h4><p>Due in 14 days.</p>${tile("+$" + fmt(60), "on last month")}`);
+    else if (k === "context" || k === "recommendation") body.push(brand, `<h4>Plans on your last 30 days</h4><div class="cmp"><div><span>Anytime (now)</span><span>$${fmt(cur)}</span></div><div class="pick"><span>EV night · 17c 11pm–7am</span><span>$${fmt(evp)}</span></div><div><span>Time of use</span><span>$${fmt(tou)}</span></div></div><p>${w ? "Worked out from your half-hour reads, not an average household." : "Estimates based on an average household."}</p><div class="cta">Switch to EV night</div>`);
+    else if (k === "commitment" || k === "action") body.push(brand, w ? `<h4>EV night starts ${switchDate(3)}</h4>${steps([["Requested", "today", "on"], ["Starts", switchDate(3) + ", from the next read", "now"], ["Set your charger", "to start after 11pm", ""]])}` : `<h4>Plan change requested</h4><p>New rates apply from your next bill cycle, up to 14 days.</p><div class="spin" aria-hidden="true"></div>`);
+    else if (k === "wait") body.push(brand, w ? `<h4>Starts ${switchDate(3)}</h4>${steps([["Rates", "night 17c 11pm–7am · day 24c · peak 42c 5–9pm", "on"], ["Charger", "set to start at 11pm", "now"], ["First bill on EV night", "estimated $" + fmt(evp), ""]])}<div class="bar2" id="scrProg" style="--p:${Math.round(rs.p * 100)}%"><i></i></div><p>Overnight the grid is cheapest and ${fmt(WH.renewable, 0)}% renewable; charging then moves about 120 kWh a month off the evening peak.</p>${live}` : `<h4>Plan change in progress</h4><div class="spin" aria-hidden="true"></div><p>Up to 14 days. Your current rates apply until then.</p><p>Day ${1 + Math.floor(rs.p * 14)} of waiting.</p>`);
+    else body.push(brand, `<h4>${k === "fulfilment" ? "EV night is live" : "First bill on EV night: $" + fmt(evp)}</h4><p>${k === "fulfilment" ? "New rates from today. Charging after 11pm is 17c a unit." : "$36 less than last month for the same driving. About 120 kWh moved to the night."}</p>`); }
+  $("scrBody").innerHTML = body.join(""); $("scrTime").textContent = `${((Math.floor(S.hour) + 11) % 12) + 1}:${String(Math.floor((S.hour % 1) * 60)).padStart(2, "0")}`;
+  $("phoneNote").innerHTML = `${esc(K.J[j].n)} · <b style="color:var(--ink)">${esc(rs.stage.k)}</b>${rs.stage.wait ? " · a wait the customer sees" : ""} · ${w ? "with assembl: " + K.J[j].levers.map(l => K.LEVERS.find(x => x.k === l).n.replace(/^(A|An) /, "")).join(", ") : "as it is"}. Dollar figures are the cohort's average bill for ${K.MONTHS[m]}, Simulated.`; }
+function switchDate(bd) { const d = new Date(2026, S.month, 20); let n = 0; while (n < bd) { d.setDate(d.getDate() + 1); if (d.getDay() % 6) n++; } return d.toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }); }
+
+// ---------------- right now
+function now() { if (!Y) return; const m = Y.months[S.month], a = A.months[S.month], d = (x, y) => x !== y ? `<span class="s" style="color:var(--rose);font-size:11px">as it is ${fmt(y, y < 10 ? 1 : 0)}</span>` : "";
+  $("nowGrid").innerHTML = [[m.switchin.v, "switch-ins this month", a.switchin.v], [m.move.v, "moves this month", a.move.v], [m.shock.v, "bills that shocked", a.shock.v], [m.ev.v, "EV or time-of-use plan changes", a.ev.v],
+    [fmt(m.switchin.calls + m.move.calls + m.shock.calls + m.ev.calls), "calls to the centre", a.switchin.calls + a.move.calls + a.shock.calls + a.ev.calls], [fmt(m.switchin.lost + m.move.lost + m.shock.lost + m.ev.lost, 1), "customers lost through the four journeys", a.switchin.lost + a.move.lost + a.shock.lost + a.ev.lost]]
+    .map(([v, l, av]) => `<div><span class="v">${typeof v === "number" ? fmt(v) : v}</span><span class="l">${l}${anyLever() ? d(+String(v).replace(/,/g, ""), av) : ""}</span></div>`).join("");
+  $("nowLab").textContent = `Simulated · ${K.MONTHS[S.month]} · ${fmt(K.N)} households`; }
+const anyLever = () => Object.values(S.levers).some(Boolean);
+
+// ---------------- the year
+function recompute() { Y = K.year(S.levers); A = K.year(K.AS_IS); PR = K.proof(); yearTiles(); shockViz(); costViz(); leverCards(); churnViz(); callViz(); proofPanel(); now(); lanes(); timeViz(); phone(true); yourData(); }
+function yearTiles() { const a = A.all, b = Y.all, on = anyLever(), T = (v, l, d, f, good) => `<div class="vz-tile"><span class="v">${f(v)}</span><span class="l">${l}</span>${on ? `<span class="d ${d === 0 ? "" : (d < 0) === good ? "up" : "down"}">${d === 0 ? "no change" : (d > 0 ? "+" : "−") + f(Math.abs(d)).replace(/^\$-/, "$") + " on as it is"}</span>` : `<span class="d">as it is</span>`}</div>`;
+  const wait = y => K.JOURNEYS.reduce((s, j) => s + y.byJourney[j].waitDays * y.byJourney[j].v, 0) / K.JOURNEYS.reduce((s, j) => s + y.byJourney[j].v, 0);
+  $("yearTiles").innerHTML = T(b.churnPct, "of customers lost a year through these four journeys", b.churnPct - a.churnPct, x => pct(x, 1), true) + T(b.callsPer100, "calls to the centre per 100 customers a year", b.callsPer100 - a.callsPer100, x => fmt(x, 0), true) +
+    T(b.shockRate, "of monthly bills that shock" + (S.levers.alerts ? " (foreseen or not)" : ""), b.shockRate - a.shockRate, x => pct(x, 1), true) + T(Y.byJourney.switchin.waitDays, "days a switching customer waits with no date", Y.byJourney.switchin.waitDays - A.byJourney.switchin.waitDays, x => fmt(x, 0), true) +
+    T(wait(Y), "days of visible waiting, averaged over every journey", wait(Y) - wait(A), x => fmt(x, 1), true) + T(b.net, "what the four journeys cost the retailer a year", b.net - a.net, money, true);
+  $("yearH").textContent = `Two thousand households, twelve months${on ? ", with " + Object.values(S.levers).filter(Boolean).length + " lever" + (Object.values(S.levers).filter(Boolean).length > 1 ? "s" : "") + " on" : ""}`; }
+function shockViz() { const cols = Y.months.map((m, i) => ({ label: K.MONTHS[i].slice(0, 3), top: fmt(m.shock.v), segs: [{ v: m.shock.surprise, c: JC.shock, tip: `${fmt(m.shock.surprise)} bills a surprise\n${K.MONTHS[i]} · ${pct(m.shock.v / K.N, 1)} of bills shocked · ${fmt(K.TEMP[i], 1)} °C average` }, { v: m.shock.alerted, c: "color-mix(in srgb,var(--j3) 40%,transparent)", tip: `${fmt(m.shock.alerted)} foreseen by an alert\n${K.MONTHS[i]}` }], tick: anyLever() ? A.months[i].shock.v : null, tickTip: `As it is: ${fmt(A.months[i].shock.v)} bills shocked\n${K.MONTHS[i]}` }));
+  const pk = Y.months.reduce((a, m, i) => m.shock.v > Y.months[a].shock.v ? i : a, 0);
+  $("shockViz").innerHTML = VZ.cols(cols, { h: 110, aria: "Bills that shock each month, surprise and foreseen" }) + VZ.legend([[JC.shock, "a surprise"], ["color-mix(in srgb,var(--j3) 40%,transparent)", "foreseen by an alert"]].concat(anyLever() ? [["", "as it is", "tk"]] : []));
+  $("shockH").textContent = `${fmt(Y.byJourney.shock.v)} a year · peak ${K.MONTHS[pk]}`;
+  $("shockText").innerHTML = `Shocks follow the weather: <b>${fmt(Y.months[4].shock.v + Y.months[5].shock.v)}</b> of the year's <b>${fmt(Y.byJourney.shock.v)}</b> land in May and June, when Auckland drops from ${fmt(K.TEMP[3], 1)} to ${fmt(K.TEMP[5], 1)} °C and the heating comes on. ${S.levers.alerts ? `With alerts, <b>${pct(Y.byJourney.shock.alerted / Y.byJourney.shock.v)}</b> of them are foreseen: the bill is the same, the surprise is gone.` : "A bill that is right can still be a shock, and the shock is what drives the call and the churn."}`; }
+function costViz() { const rows = K.JOURNEYS.map(j => { const b = Y.byJourney[j], a = A.byJourney[j], contact = b.calls * K.P.call + b.digital * K.P.digital, back = b.cost - contact;
+    return { label: esc(K.J[j].n), sub: `${fmt(b.v)} a year`, segs: [{ v: contact, c: JC[j], tip: `${money(contact)} in contacts\n${fmt(b.calls)} calls, ${fmt(b.digital)} digital` }, { v: Math.max(0, back), c: `color-mix(in srgb,${JC[j]} 55%,transparent)`, tip: `${money(back)} back office, complaints${j === "shock" && b.aiSpend ? ", AI explainer " + money(b.aiSpend) : ""}` }, { v: b.value, c: `color-mix(in srgb,${JC[j]} 25%,transparent)`, tip: `${money(b.value)} margin lost with ${fmt(b.lost)} customers\n${money(K.valueOf())} each over ${K.P.tenureYears} years` }],
+      tick: anyLever() ? a.cost + a.value : null, tickTip: `As it is: ${money(a.cost + a.value)}\n${esc(K.J[j].n)}`, text: money(b.cost + b.value - b.save) + (b.save ? `<small>after ${money(b.save)} saved</small>` : "") }; });
+  $("costViz").innerHTML = VZ.rows(rows, { lw: "12em", vw: "9em", aria: "What each journey costs the retailer a year: contacts, back office, and margin lost with customers" }) + VZ.legend([["var(--ink)", "contacts"], ["color-mix(in srgb,var(--ink) 55%,transparent)", "back office and complaints"], ["color-mix(in srgb,var(--ink) 25%,transparent)", "margin lost with customers"]].concat(anyLever() ? [["", "as it is", "tk"]] : []));
+  $("yearTable").innerHTML = `<thead><tr><th>Journey</th><th class="n">A year</th><th class="n">Calls</th><th class="n">Digital</th><th class="n">Customers lost</th><th class="n">Cost to serve</th><th class="n">Margin lost</th><th class="n">Wholesale saved</th><th class="n">Wait, days</th></tr></thead><tbody>${K.JOURNEYS.map(j => { const b = Y.byJourney[j]; return `<tr><td>${esc(K.J[j].n)}</td><td class="n">${fmt(b.v)}</td><td class="n">${fmt(b.calls)}</td><td class="n">${fmt(b.digital)}</td><td class="n">${fmt(b.lost, 1)}</td><td class="n">${money(b.cost)}</td><td class="n">${money(b.value)}</td><td class="n">${b.save ? money(b.save) : "–"}</td><td class="n">${fmt(b.waitDays, 1)}</td></tr>`; }).join("")}<tr class="tot"><td>All four</td><td class="n">${fmt(Y.all.v)}</td><td class="n">${fmt(Y.all.calls)}</td><td class="n">${fmt(Y.all.digital)}</td><td class="n">${fmt(Y.all.lost, 1)}</td><td class="n">${money(Y.all.cost)}</td><td class="n">${money(Y.all.value)}</td><td class="n">${money(Y.all.save)}</td><td class="n"></td></tr></tbody>`; }
+
+// ---------------- levers
+function leverCards() { const g = $("leverGrid"); if (!g.children.length) g.innerHTML = K.LEVERS.map(l => `<label class="lever glass" id="lv-${l.k}" style="--jc:${JC[l.j]}"><input type="checkbox" data-lever="${l.k}"><div class="hd"><span class="nm">${esc(l.n)}</span><span class="sw"></span></div><span class="jn">${esc(K.J[l.j].short)} · <span class="prop">PROPOSED</span></span><small>${esc(l.t)}</small><small style="color:var(--rose)">${esc(l.eff)}</small><span class="gain" data-g></span></label>`).join("");
+  K.LEVERS.forEach(l => { const el = $("lv-" + l.k), r = PR.rows.find(x => x.k === l.k); el.querySelector("input").checked = !!S.levers[l.k]; el.classList.toggle("on", !!S.levers[l.k]); el.querySelector("[data-g]").innerHTML = `${money(r.alone, true)} a year on its own · ${fmt(r.lostAlone, 0)} customers kept · ${fmt(r.callsAlone)} fewer calls`; });
+  $("applyAll").textContent = Object.values(S.levers).every(Boolean) ? "Switch all of them off" : "Switch all of them on"; }
+$("leverGrid").addEventListener("change", e => { const k = e.target.dataset.lever; if (!k) return; S.levers[k] = e.target.checked; S.pvAuto = true; restartRuns(); modes(); recompute(); });
+$("applyAll").onclick = () => { const all = Object.values(S.levers).every(Boolean); K.LEVERS.forEach(l => S.levers[l.k] = !all); S.pvAuto = true; restartRuns(); modes(); recompute(); };
+function modes() { const all = Object.values(S.levers).every(Boolean), none = !anyLever(); document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", (b.dataset.mode === "all" && all) || (b.dataset.mode === "asis" && none) ? "true" : "false")); $("badge").textContent = (Object.keys(DATA).length ? "SIMULATED MOTION · YOUR FIGURES" : "SIMULATED") + (none ? "" : " · LEVERS ON"); }
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { K.LEVERS.forEach(l => S.levers[l.k] = b.dataset.mode === "all"); S.pvAuto = true; restartRuns(); modes(); recompute(); });
+function churnViz() { $("churnViz").innerHTML = VZ.rows(K.JOURNEYS.map(j => ({ label: esc(K.J[j].short), value: Y.byJourney[j].lost, color: JC[j], tick: anyLever() ? A.byJourney[j].lost : null, tickTip: `As it is: ${fmt(A.byJourney[j].lost)} lost\n${esc(K.J[j].n)}`, text: fmt(Y.byJourney[j].lost, 0), tip: `${fmt(Y.byJourney[j].lost, 1)} customers lost a year\n${esc(K.J[j].n)}` })), { lw: "9em", vw: "4em", aria: "Customers lost a year by journey" });
+  $("churnText").innerHTML = `<b>${fmt(Y.all.lost)}</b> of ${fmt(K.N)} leave through these journeys a year (${pct(Y.all.churnPct, 1)}). The bill shock is the biggest door out: a right bill, badly explained, loses ${fmt(Y.byJourney.shock.lost)} customers${anyLever() && A.byJourney.shock.lost !== Y.byJourney.shock.lost ? ` against ${fmt(A.byJourney.shock.lost)} as it is` : ""}. For scale, the Electricity Authority counts about 34,000 switches a month across the whole market (Source).`; }
+function callViz() { $("callViz").innerHTML = VZ.rows(K.JOURNEYS.map(j => ({ label: esc(K.J[j].short), value: Y.byJourney[j].calls, color: JC[j], tick: anyLever() ? A.byJourney[j].calls : null, tickTip: `As it is: ${fmt(A.byJourney[j].calls)} calls\n${esc(K.J[j].n)}`, text: fmt(Y.byJourney[j].calls), tip: `${fmt(Y.byJourney[j].calls)} calls a year · ${fmt(Y.byJourney[j].digital)} digital contacts\n${esc(K.J[j].n)}` })), { lw: "9em", vw: "4em", aria: "Calls a year by journey" });
+  $("callText").innerHTML = `<b>${fmt(Y.all.calls)}</b> calls a year at $${fmt(K.P.call, 2)} each, ${fmt(Y.all.callsPer100, 0)} per 100 customers. Utilities Disputes saw complaints rise 62% in 2025/26, with customer service in 52% of cases (Source): most of those start as a call that went nowhere.`; }
+const bindR = (id, key, lab) => { $(id).oninput = e => { K.P[key] = +e.target.value; $(id + "V").textContent = lab(K.P[key]); }; $(id).onchange = () => recompute(); };
+bindR("callCost", "call", v => "$" + fmt(v, 2)); bindR("tenure", "tenureYears", v => fmt(v, 1)); bindR("margin", "margin", v => pct(v, 1));
+
+// ---------------- proof ledger
+function proofPanel() { const P = PR, a = P.asIs.all, b = P.all.all, kept = a.lost - b.lost, calls = a.calls - b.calls;
+  $("proofBig").innerHTML = [[money(P.total), "saved a year, every lever on", `${money(P.total / K.N, false)} a customer`], [fmt(kept, 0), "customers kept a year", `${pct(a.churnPct, 1)} → ${pct(b.churnPct, 1)} lost`], [fmt(calls), "fewer calls a year", `${fmt(a.callsPer100, 0)} → ${fmt(b.callsPer100, 0)} per 100 customers`], [fmt(P.asIs.byJourney.switchin.waitDays - P.all.byJourney.switchin.waitDays, 0) + " days", "less silence after a switch request", "a date on day 0 instead of day 7"]]
+    .map(([v, l, s]) => `<div><span class="v">${v}</span><span class="l">${l}</span><span class="w">${s}</span></div>`).join("");
+  const sorted = P.rows.slice().sort((x, y) => y.alone - x.alone); let run = 0;
+  $("proofViz").innerHTML = `<p class="vz-h"><span>Saved a year, each change on its own, and the waterfall when they are added in turn</span>${lab("lprop", "Proposed · simulated")}</p>` +
+    VZ.rows(sorted.map(r => { const row = { label: esc(r.n), sub: esc(K.J[r.j].short), value: r.alone, from: run, color: JC[r.j], tick: run + r.last, text: money(r.alone, true) + `<small>${money(r.last, true)} added last</small>`, tip: `${money(r.alone, true)} a year on its own\n${money(r.last, true)} when added last to the other four\n${fmt(r.lostAlone, 0)} customers kept, ${fmt(r.callsAlone)} fewer calls` , tickTip: `Added last: ${money(r.last, true)}\n${r.n}` }; run += r.alone; return row; })
+      .concat([{ label: "All together", value: P.total, color: "var(--ink)", cls: "tot", text: money(P.total, true) + `<small>${money(P.total / K.N)} a customer</small>`, tip: `${money(P.total, true)} a year, every change together\nLess than the sum: alerts and the explainer both work on the same shocks` }]), { lw: "14em", vw: "9.5em", aria: "Saved a year by each proposed change on its own, stacked as a waterfall, with the amount each adds when switched on last, and all changes together" }) +
+    VZ.legend([["var(--j1)", "switching in"], ["var(--j2)", "moving house"], ["var(--j3)", "bill shock"], ["var(--j4)", "EV / time-of-use"], ["", "added last, from the full set", "tk"]]) +
+    `<p class="vz-h" style="margin-top:6px"><span>What the four journeys cost the retailer a year</span><span>cost to serve + margin lost − wholesale saved</span></p>` + VZ.rows([
+      { label: "As it is", value: a.net, color: "var(--vz0)", text: money(a.net) + `<small>${money(a.net / K.N)} a customer</small>`, tip: `${money(a.net)} a year\n${money(a.cost)} to serve, ${money(a.value)} margin lost, ${money(a.save)} wholesale saved` },
+      { label: "Every change", value: b.net, color: "var(--vz4)", text: money(b.net) + `<small>${money(b.net / K.N)} a customer</small>`, tip: `${money(b.net)} a year\n${money(b.cost)} to serve, ${money(b.value)} margin lost, ${money(b.save)} wholesale saved` }], { lw: "14em" });
+  $("proofTable").innerHTML = `<thead><tr><th>Change</th><th class="n">On its own, a year</th><th class="n">Added last</th><th class="n">Cost to serve saved</th><th class="n">Margin kept</th><th class="n">Wholesale saved</th><th class="n">Customers kept</th><th class="n">Fewer calls</th></tr></thead><tbody>${P.rows.map(r => `<tr><td>${esc(r.n)}<span class="s">${esc(K.J[r.j].short)}</span></td><td class="n">${money(r.alone, true)}</td><td class="n">${money(r.last, true)}</td><td class="n">${money(r.aloneCost, true)}</td><td class="n">${money(r.aloneValue, true)}</td><td class="n">${r.aloneSave ? money(r.aloneSave, true) : "–"}</td><td class="n">${fmt(r.lostAlone, 1)}</td><td class="n">${fmt(r.callsAlone)}</td></tr>`).join("")}<tr class="tot"><td>All together</td><td class="n">${money(P.total, true)}</td><td></td><td class="n">${money(a.cost - b.cost, true)}</td><td class="n">${money(a.value - b.value, true)}</td><td class="n">${money(b.save - a.save, true)}</td><td class="n">${fmt(kept, 1)}</td><td class="n">${fmt(calls)}</td></tr></tbody>`;
+  $("proofP").innerHTML = `Every <span class="prop">PROPOSED</span> change, measured against the retailer as it is over the same twelve simulated months and the same ${fmt(K.N)} households. "On its own" switches one change on; "added last" switches it off from the full set. They do not add up, because two of them work on the same bill shocks.`;
+  $("proofNotes").innerHTML = [`Most of the money is margin kept, not calls avoided: a kept customer is worth ${money(K.valueOf())} here (${pct(K.P.margin, 1)} of the yearly bill over ${fmt(K.P.tenureYears, 1)} years, Estimate). Halve that and the ledger roughly halves.`,
+    `The explainer's cost to serve line is small because its $400 a month cap (${money(P.all.byJourney.shock.aiSpend)} a year) offsets most of the calls it answers. Its value is the shock explained before it becomes a complaint.`,
+    `Wait days are the customer's, not the registry's: the Code's five business days for the losing retailer do not change; what changes is that the customer is told the date on day 0 (Source for the Code step, Estimate for the behaviour).`,
+    `These are the twin's results on estimated inputs, not evidence. The proof that counts is the retailer's own before-and-after on its billing and CRM exports, which the connector below is shaped for.`].map(x => `<li>${x}</li>`).join(""); }
+
+// ---------------- AI and automation
+const LEVELS = [["Observe", "Watches and reports. Changes nothing."], ["Draft", "Writes a message or explanation for a person to send, or sends it only inside a fixed template."], ["Recommend", "Suggests a change with its reasons. A person decides."], ["Act with approval", "Prepares the change; it goes ahead when a person, or the customer, approves it."], ["Act within limits", "Acts on its own inside limits the retailer set, and logs every action."]];
+$("authKey").innerHTML = LEVELS.map(([n, t], i) => `<div class="glass"><span class="lvl">${[0, 1, 2, 3, 4].map(j => `<i class="${j <= i ? "on" : ""}"></i>`).join("")}</span><b>${n}</b><span>${t}</span></div>`).join("");
+(function aiTable() { const R = [
+  ["High-bill alert", "Half-hour reads against last month, the weather, the plan", "Who is tracking 30% over, and why", "Sends the alert from a fixed template with the three drivers filled in; never changes the bill", 4, [["", "No independent NZ result found; the twin's figure is simulated"], ["lprop", "Proposed assembl concept"]]],
+    ["Bill explainer", "The bill's lines, the reads, the weather for the period", "A plain-language explanation of what changed", "Drafts the text; the arithmetic is checked against the bill before it shows; capped spend", 1, [["", "Accuracy and tone to be measured on real bills before any customer sees one"], ["lprop", "Proposed; cap and check are the design"]]],
+    ["Switch status and confirmation", "The registry's switch events and the Code's timeframes", "The switch date, and when something has stalled", "Confirms the date at sign-up from the Code's rules; chases the losing retailer when a step is late", 4, [["src", "Code steps are public: 5 business days for the losing retailer's response (Electricity Authority)"]]],
+    ["Move-house exceptions", "Self-serve moves, meter type, reads", "Which moves need a person: no smart meter, disputed read, no access", "Routes the exception to the centre with the facts gathered; a person completes it", 2, [["", "No public NZ result found"]]],
+    ["EV plan nudge", "A new overnight load in half-hour data", "The EV plan with the saving on that household's usage", "Offers the plan in the app; the change happens only when the customer accepts", 3, [["src", "26% believe they are on time-of-use, which the Authority says overstates uptake; 69% of those on one find it easy (EA survey 2025)"]]],
+    ["Payment support", "Missed payments, shock history, the Consumer Care Obligations", "A payment plan or a hardship referral", "Never acts alone: offers are made by a person; disconnection is never automated", 2, [["src", "38% not confident they can manage their bill over six months (EA survey 2025)"], ["", "Consumer Care Obligations are the retailer's; this twin has not checked compliance"]]],
+    ["Complaint triage", "Open complaints, their age, Utilities Disputes deadlines", "Which complaints are about to deadlock, and the pattern behind them", "Flags and summarises; a person responds", 0, [["src", "13,554 formal complaints in 2025/26, up 62% (Utilities Disputes via Waatea News)"]]]];
+  const EVN = { src: ["Independent or source", "var(--vz-src)"], "": ["None found", "var(--vz-sim)"], lprop: ["Proposed concept", "var(--vz-prop)"], vendor: ["Vendor claim", "var(--vz-vendor)"] };
+  const evCount = {}; R.forEach(r => new Set(r[5].map(e => e[0])).forEach(k => evCount[k] = (evCount[k] || 0) + 1));
+  $("aiViz").innerHTML = VZ.chips(Object.keys(EVN).filter(k => evCount[k]).map(k => ({ n: evCount[k], label: (evCount[k] === 1 ? "job: " : "jobs: ") + EVN[k][0].toLowerCase(), c: EVN[k][1] }))) +
+    `<div class="ai-lad" role="table" aria-label="Each job's default authority level and its evidence"><div class="hd" role="row"><span role="columnheader">Job</span>${LEVELS.map(l => `<span role="columnheader">${l[0]}</span>`).join("")}<span role="columnheader">Evidence</span></div>` +
+    R.map(r => `<div class="r" role="row"><span class="n" role="cell">${esc(r[0])}<small>${LEVELS[r[4]][0]}</small></span>${[0, 1, 2, 3, 4].map(j => `<i class="c ${j < r[4] ? "on" : j === r[4] ? "at" : ""}" role="cell" aria-label="${j <= r[4] ? "allowed" : "not allowed"}: ${LEVELS[j][0]}"${j === r[4] ? VZ.tipAttr(`Default: ${LEVELS[j][0]}\n${r[3]}`) : ""}></i>`).join("")}<span class="ev" role="cell">${r[5].map(([c, t]) => `<span class="vz-chip" style="--c:${EVN[c][1]}"${VZ.tipAttr(t)}>${EVN[c][0]}</span>`).join("")}</span></div>`).join("") + `</div>`;
+  $("aiTable").innerHTML = `<thead><tr><th>Job</th><th>Observes</th><th>Drafts or recommends</th><th>Can do, at most</th><th>Default level</th><th>Evidence</th></tr></thead><tbody>${R.map(r => `<tr><td><b style="color:var(--ink)">${esc(r[0])}</b></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td><span class="lvl">${[0, 1, 2, 3, 4].map(j => `<i class="${j <= r[4] ? "on" : ""}"></i>`).join("")}</span><span class="s" style="font-size:11.5px;color:var(--rose);display:block">${LEVELS[r[4]][0]}</span></td><td style="display:grid;gap:4px">${r[5].map(([c, t]) => `<span class="lab ${c}" style="white-space:normal">${esc(t)}</span>`).join("")}</td></tr>`).join("")}</tbody>`; })();
+
+// ---------------- sources
+(function srcTable() { const SRC = K.SRC, G = {}; SRC.forEach(r => (G[r[2]] = G[r[2]] || []).push(r)); const TC = { src: ["Source", "var(--vz-src)"], vendor: ["Vendor claim", "var(--vz-vendor)"], est: ["Estimate", "var(--vz-est)"] };
+  $("srcViz").innerHTML = `<p class="vz-h"><span>${SRC.length} figures, by how far to trust them</span><span>retrieved 24 October 2026</span></p><div class="vz-split" role="img" aria-label="${Object.keys(TC).filter(k => G[k]).map(k => G[k].length + " " + TC[k][0]).join(", ")}">${Object.keys(TC).filter(k => G[k]).map(k => `<i style="width:calc(${G[k].length / SRC.length * 100}% - 2px);--c:${TC[k][1]}"></i>`).join("")}</div>` +
+    VZ.chips(Object.keys(TC).filter(k => G[k]).map(k => ({ n: G[k].length, label: TC[k][0], c: TC[k][1] }))) + `<div class="vz-fl">${Object.keys(TC).filter(k => G[k]).map(k => `<div class="vz-fi"><span>${lab(k, TC[k][0])}</span><span></span><span class="s">${G[k].map(r => esc(r[0])).join(" · ")}</span></div>`).join("")}</div>`;
+  $("srcN").textContent = "figure, value, label and where each comes from";
+  $("srcTable").innerHTML = `<thead><tr><th>Figure</th><th>Value</th><th>Label</th><th>Where it comes from</th></tr></thead><tbody>${SRC.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${lab(r[2], r[3])}</td><td>${r[5] ? `<a href="${r[5]}" target="_blank" rel="noopener" style="color:var(--ink)">${esc(r[4])}</a>` : esc(r[4])}</td></tr>`).join("")}</tbody>`; })();
+
+// ---------------- connect your data
+const TABLES = Object.keys(K.CONTRACT), FILES = [];
+function fromYour() { return Object.keys(DATA).length ? K.fromData(DATA) : null; }
+function dataState() { const n = Object.keys(DATA).length; $("dataState").innerHTML = n ? `<b style="color:var(--data)">${n} table${n > 1 ? "s" : ""} in use:</b> ${Object.values(DATA).map(v => esc(v.file)).join(", ")}. Figures from them say "Your data".` : "No files yet. Every figure is simulated, a source or an estimate."; modes(); yourData(); }
+function yourData() { const Yd = fromYour(); $("yourData").hidden = !Yd; if (!Yd) return; const kpi = (v, l, f, x = "") => `<div><span class="v">${v}</span><span class="l">${l}</span>${x}${lab("data", "Your data · " + f)}</div>`, k = [];
+  if (Yd.bills) { const b = Yd.bills; k.push(kpi(b.shockRate == null ? "–" : pct(b.shockRate, 1), `of consecutive bills shock (twin: ${pct(A.all.shockRate, 1)})`, b.file), kpi(pct(b.estShare, 0), "of bills on an estimated read", b.file), kpi("$" + fmt(b.avgBill), "average bill", b.file), kpi(fmt(b.avgKwh), "kWh a bill, average", b.file), kpi(fmt(b.accounts), "accounts in the file", b.file)); }
+  if (Yd.contacts) { const c = Yd.contacts, tot = c.n || 1; k.push(kpi(fmt(c.perMonth), "contacts a month", c.file), kpi(pct(c.channel.phone / tot), "by phone", c.file), kpi(c.aht ? fmt(c.aht, 1) + " min" : "–", "average handle time", c.file));
+    k.push(`<div style="grid-column:1/-1">${VZ.rows(["shock", "move", "switchin", "ev", "other"].filter(j => c.byJourney[j]).map(j => ({ label: j === "other" ? "Other" : esc(K.J[j].short), value: c.byJourney[j], color: j === "other" ? "var(--vz0)" : JC[j], text: fmt(c.byJourney[j]), tip: `${fmt(c.byJourney[j])} contacts\n${j === "other" ? "not one of the four journeys" : esc(K.J[j].n)} · ${c.file}` })), { lw: "9em", vw: "4em", aria: "Contacts by journey from your file" })}</div>`); }
+  if (Yd.switches) { const s = Yd.switches; k.push(kpi(fmt(s.n), "switch and move events", s.file), kpi(s.medianDays == null ? "–" : fmt(s.medianDays, 1) + " d", `median request to completion (twin: ${fmt(A.byJourney.switchin.doneDays, 0)} d)`, s.file), kpi(s.p90Days == null ? "–" : fmt(s.p90Days, 1) + " d", "90th percentile", s.file), kpi(fmt(s.withdrawn), "withdrawn or cancelled", s.file)); }
+  $("ydGrid").innerHTML = k.join(""); const rg = (Yd.bills || Yd.contacts || Yd.switches).range; $("ydRange").textContent = rg ? `${rg[0]} to ${rg[1]}` : "";
+  $("ydNote").textContent = "Figures are over each file's date range. A shock is a bill 35% and $60 over the previous one for the same account. The street keeps running on simulated households; the figures above are the retailer's own, labelled Your data."; }
+function addFile(name, text, auto) { const parsed = K.parseCSV(text), det = K.detectTable(parsed.headers); const f = { id: FILES.length, name, parsed, table: det.t, map: det.map, report: null, used: false }; FILES.push(f); if (auto && det.complete) applyFile(f, true); renderFiles(); return f; }
+function applyFile(f, quiet) { const r = K.validate(f.parsed, f.map, f.table); f.report = r; if (r.ok) { FILES.forEach(x => { if (x !== f && x.table === f.table) x.used = false; }); f.used = true; DATA[f.table] = { rows: r.rows, file: f.name, range: r.range }; } else f.used = false; if (!quiet) { renderFiles(); dataState(); } }
+function renderFiles() { $("files").innerHTML = FILES.map(f => { const fs = K.CONTRACT[f.table].fields, r = f.report, opts = sel => `<option value="">— not in file —</option>` + f.parsed.headers.map((h, i) => `<option value="${i}" ${sel === i ? "selected" : ""}>${esc(h)}</option>`).join("");
+  return `<div class="file glass" data-id="${f.id}"><header><b>${esc(f.name)}</b><span class="note">${fmt(f.parsed.rows.length)} rows · ${f.parsed.headers.length} columns</span><span class="status ${f.used ? "on" : ""}">${f.used ? "In use" : r ? "Not used" : "Check the mapping"}</span></header>
+    <div class="row"><label>This file is <select data-k="table" style="max-width:260px">${TABLES.map(t => `<option value="${t}" ${t === f.table ? "selected" : ""}>${K.CONTRACT[t].n} (${t})</option>`).join("")}</select></label></div>
+    <div class="maps">${fs.map(x => `<label class="${x.req ? "req" : ""}"><span>${x.k}</span><select data-f="${x.k}">${opts(f.map[x.k])}</select></label>`).join("")}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" type="button" data-act="use">Check and use this file</button><button class="btn" type="button" data-act="remove">Remove</button></div>
+    ${r && !r.missing.length && r.read ? `<div class="vz-split" role="img" aria-label="${fmt(r.accepted)} rows used, ${fmt(r.read - r.accepted)} set aside"><i style="width:calc(${r.accepted / r.read * 100}% - 2px);--c:var(--data)"${VZ.tipAttr(`${fmt(r.accepted)} rows used\nof ${fmt(r.read)} read`)}></i>${r.read > r.accepted ? `<i style="width:max(4px,calc(${(r.read - r.accepted) / r.read * 100}% - 2px));--c:var(--alert)"${VZ.tipAttr(`${fmt(r.read - r.accepted)} rows set aside`)}></i>` : ""}</div>` : ""}
+    ${r ? `<div class="report">${r.missing.length ? `<span class="bad">Missing required columns: ${r.missing.join(", ")}. Map them above.</span>` : `<span class="ok">${fmt(r.accepted)} of ${fmt(r.read)} rows used${r.range ? ` · ${r.range[0]} to ${r.range[1]}` : ""}.</span>`}
+      ${r.rejected && !r.missing.length ? `<span class="bad">${fmt(r.rejected)} rows set aside: ${r.reasons.map(x => `${x.n} × ${esc(x.ex)}`).join("; ")}.</span>` : ""}${r.warnings.map(w => `<span class="warn">${esc(w)}.</span>`).join("")}
+      ${r.pii.length ? `<span class="ok">Ignored as personal information, not needed and not kept: ${r.pii.map(esc).join(", ")}.</span>` : ""}${r.ignored.length ? `<span class="note">Not used: ${r.ignored.map(esc).join(", ")}.</span>` : ""}
+      ${/^sample-/.test(f.name) ? `<span class="note">Sample data made up in this page from the simulated cohort. It is not any retailer's.</span>` : ""}</div>` : ""}</div>`; }).join(""); }
+$("files").addEventListener("change", e => { const card = e.target.closest(".file"); if (!card) return; const f = FILES[+card.dataset.id];
+  if (e.target.dataset.k === "table") { if (f.used) { delete DATA[f.table]; f.used = false; } f.table = e.target.value; f.map = K.autoMap(f.parsed.headers, f.table); f.report = null; renderFiles(); dataState(); return; }
+  const k = e.target.dataset.f; if (k) { const v = e.target.value; if (v === "") delete f.map[k]; else f.map[k] = +v; f.report = null; } });
+$("files").addEventListener("click", e => { const b = e.target.closest("button[data-act]"); if (!b) return; const f = FILES[+b.closest(".file").dataset.id];
+  if (b.dataset.act === "use") applyFile(f); else { if (f.used) delete DATA[f.table]; FILES.splice(FILES.indexOf(f), 1); FILES.forEach((x, i) => x.id = i); renderFiles(); dataState(); } });
+const readFiles = list => Promise.all([...list].map(file => file.text().then(t => [file.name, t]))).then(rs => rs.forEach(([n, t]) => addFile(n, t, false)));
+$("fileIn").onchange = e => readFiles(e.target.files).then(() => { e.target.value = ""; });
+const drop = $("drop"); ["dragenter", "dragover"].forEach(k => drop.addEventListener(k, e => { e.preventDefault(); drop.classList.add("over"); })); ["dragleave", "drop"].forEach(k => drop.addEventListener(k, e => { e.preventDefault(); drop.classList.remove("over"); })); drop.addEventListener("drop", e => readFiles(e.dataTransfer.files));
+const sampleCache = {}, sample = t => sampleCache[t] || (sampleCache[t] = K.sampleCSV(t));
+function loadSamples() { TABLES.forEach(t => { if (!FILES.some(f => f.name === `sample-${t}.csv`)) addFile(`sample-${t}.csv`, sample(t), true); }); renderFiles(); dataState(); }
+$("loadSamples").onclick = loadSamples; $("resetData").onclick = () => { DATA = {}; FILES.length = 0; renderFiles(); dataState(); };
+let sampleT = "bills"; $("sampleChips").innerHTML = TABLES.map(t => `<button type="button" data-t="${t}" aria-pressed="${t === sampleT}">sample-${t}.csv</button>`).join("");
+const showSample = () => { const txt = sample(sampleT), lines = txt.split("\n"); $("sampleText").value = lines.length > 300 ? lines.slice(0, 300).join("\n") + `\n… ${fmt(lines.length - 300)} more rows (Load the sample exports uses all of them)` : txt; document.querySelectorAll("#sampleChips button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === sampleT ? "true" : "false")); $("copyState").textContent = ""; };
+$("sampleChips").onclick = e => { const b = e.target.closest("button"); if (b) { sampleT = b.dataset.t; showSample(); } }; $("sampleChips").closest("details").addEventListener("toggle", e => { if (e.target.open) showSample(); });
+$("copySample").onclick = async () => { try { await navigator.clipboard.writeText(sample(sampleT)); $("copyState").textContent = "Copied. Paste it into a .csv file and drop it above."; } catch (e) { $("sampleText").select(); $("copyState").textContent = "Selected: press Ctrl+C or ⌘C to copy."; } };
+$("contractView").innerHTML = TABLES.map(t => `<h3 style="margin:14px 0 6px">${esc(K.CONTRACT[t].n)} <span>${t}</span></h3><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Also recognised as</th></tr></thead><tbody>${K.CONTRACT[t].fields.map(f => `<tr><td style="font-family:var(--mono)">${f.k}</td><td>${f.t}</td><td>${f.req ? "Yes" : "–"}</td><td class="note">${esc(f.syn.slice(0, 5).join(", "))}</td></tr>`).join("")}</tbody></table>`).join("") +
+  `<p class="note" style="margin-top:10px">No customer names, addresses, phone numbers, emails, bank or card details are needed, and no agent names: an opaque account reference is enough. Columns that look like personal information are ignored on load. Full schema: contract/energy-data.schema.json.</p>`;
+const tabs = [["tabUp", "panelUp"], ["tabLive", "panelLive"]]; tabs.forEach(([t]) => $(t).onclick = () => tabs.forEach(([t2, p2]) => { $(t2).setAttribute("aria-selected", t2 === t ? "true" : "false"); $(p2).hidden = t2 !== t; }));
+(() => { const bx = (x, y, w, h, t, s, st = "var(--line-2)", dash) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="var(--glass)" stroke="${st}" stroke-width="1.5" ${dash ? 'stroke-dasharray="6 5"' : ""}/><text x="${x + 14}" y="${y + 26}" font-size="15" font-weight="600" fill="var(--ink)">${t}</text>${s.map((l, i) => `<text x="${x + 14}" y="${y + 48 + i * 18}" font-size="12.5" fill="var(--body)">${l}</text>`).join("")}`;
+  const ar = (x1, y1, x2, y2) => `<path d="M${x1},${y1} L${x2 - 8},${y2}" stroke="var(--rose)" stroke-width="1.6" fill="none"/><path d="M${x2 - 9},${y2 - 5} L${x2},${y2} L${x2 - 9},${y2 + 5}" fill="var(--rose)"/>`;
+  $("arch").innerHTML = bx(10, 20, 210, 120, "Billing and CRM", ["Bills, reads, plans", "Contacts and outcomes"]) + bx(10, 160, 210, 120, "Industry registry", ["Switch and move events", "Code timeframes"]) +
+    bx(290, 70, 200, 160, "Read-only connector", ["Nightly export or", "vendor API (to verify)", "No write-back"], "var(--live)", true) + bx(560, 40, 200, 220, "assembl runtime", ["Alerts, explainer, nudges", "Switch confirmation", "Approvals by level", "Audit log, spend caps"], "var(--live)", true) +
+    bx(820, 70, 150, 160, "This twin", ["Your data labels", "Proof ledger", "Before and after"]) + ar(220, 80, 290, 130) + ar(220, 220, 290, 170) + ar(490, 150, 560, 150) + ar(760, 150, 820, 150) +
+    `<text x="525" y="292" font-size="12" fill="var(--rose)" text-anchor="middle">EMI prices and generation, Open-Meteo weather and the holiday calendar join here (public, key-less)</text>`; })();
+
+// ---------------- the live layer: feed tiles and the hook
+function feedTiles(F) { const t = (v, l, id) => `<div class="feed"><span class="v">${v}</span><span class="l">${l}</span>${lab(WH.truth[id] === "Snapshot" ? "est" : WH.truth[id] === "Live" ? "live" : "src", WH.truth[id] === "Snapshot" ? "Snapshot · 23 Oct 2026" : WH.truth[id])}</div>`;
+  $("feedTiles").innerHTML = t(fmt(WH.avg, 1) + " c/kWh", `wholesale, ${esc(WH.node)}, ${esc(WH.date)} average`, "power") + t(fmt(WH.peak, 1) + " → " + fmt(WH.off, 1) + " c", "evening peak → overnight, the spread the EV lever is valued at", "power") + t(fmt(WH.renewable, 1) + "%", "renewable generation last month", "genmix") + t(fmt(WH.tempC, 1) + " °C", "Auckland now", "weather") + t(F && F.calendar && F.calendar.values.nextPublicHoliday ? esc(F.calendar.values.nextPublicHoliday.name) : "–", F && F.calendar && F.calendar.values.nextPublicHoliday ? `next public holiday, in ${F.calendar.values.nextPublicHoliday.daysAway} days` : "next public holiday", "calendar");
+  $("feedTable").innerHTML = `<thead><tr><th>Feed id</th><th>What</th><th>How the twin uses it</th><th>Source</th><th>Cadence</th><th>Label</th></tr></thead><tbody>${K.FEEDS.map(f => `<tr><td style="font-family:var(--mono)">${f.id}</td><td>${esc(f.n)}</td><td>${esc(f.use)}</td><td>${esc(f.src)}</td><td>${esc(f.cadence)}</td><td>${lab(WH.truth[f.id] === "Snapshot" ? "est" : WH.truth[f.id] === "Live" ? "live" : "src", WH.truth[f.id])}</td></tr>`).join("")}</tbody>`;
+  $("feedState").className = "lab " + (feedsLive ? "live" : "est"); $("feedState").textContent = feedsLive ? "Live feeds in use" : "Snapshot in use";
+  $("wxChip").className = "wxchip " + (feedsLive ? "live" : ""); $("wxText").textContent = `${feedsLive ? "Live" : "Snapshot"}: Auckland ${fmt(WH.tempC, 1)} °C · wholesale ${fmt(WH.avg, 1)} c/kWh · grid ${fmt(WH.renewable, 0)}% renewable`; }
+feedTiles(ENERGY_FEEDS && ENERGY_FEEDS.feeds);
+window.addEventListener("assembl:live", e => { try { const d = e.detail; if (!d || !d.feeds) return; const want = ["power", "genmix", "weather", "calendar"].filter(id => d.feeds[id] && !d.feeds[id].error); if (!want.length) return; K.feeds(d.feeds, true); feedsLive = true; feedTiles(d.feeds); recompute(); } catch (err) { console.warn("live hook", err); } });
+
+// ---------------- controls and the loop
+const monthSel = $("monthSel"); monthSel.innerHTML = K.MONTHS.map((m, i) => `<option value="${i}" ${i === S.month ? "selected" : ""}>${m}</option>`).join(""); monthSel.onchange = () => { S.month = +monthSel.value; recompute(); };
+function setSpeed(v) { S.speed = v; document.querySelectorAll("[data-speed]").forEach(x => x.setAttribute("aria-pressed", +x.dataset.speed === v ? "true" : "false")); } document.querySelectorAll("[data-speed]").forEach(b => b.onclick = () => setSpeed(+b.dataset.speed));
+function play(on) { S.playing = on == null ? !S.playing : on; $("pause").textContent = S.playing ? "Pause" : "Play"; } $("pause").onclick = () => play(); $("restart").onclick = () => { restartRuns(); phone(true); };
+function clockText() { const hh = Math.floor(S.hour), mm = Math.floor((S.hour - hh) * 60); return `${K.MONTHS[S.month].slice(0, 3)} · ${((hh + 11) % 12) + 1}:${String(mm).padStart(2, "0")} ${hh >= 12 ? "pm" : "am"}`; }
+let last = performance.now(), acc = 0, pacc = 0;
+function frame(nowT) { const dt = Math.min(.1, (nowT - last) / 1000); last = nowT; const dtH = S.playing ? dt * S.speed : 0; S.hour = (S.hour + dtH) % 24; stepRuns(dtH); tw.stepCam(dt);
+  const st = { hour: S.hour, month: S.month, wholesale: wholesaleNow(), speedFactor: Math.min(2, S.speed / 6), homes: RUN.map(r => { const rs = runState(r); return { j: r.j, color: cssVar(JC[r.j]), stage: rs.stage, progress: rs.p, active: !rs.end, charging: r.j === "ev" && rs.idx >= 7 && (S.hour >= 23 || S.hour < 7) }; }) };
+  tw.update(dt, st); acc += dt; pacc += dt; if (acc > 0.25) { acc = 0; tags(); $("clock").textContent = clockText(); lanes(); } if (pacc > 0.5) { pacc = 0; phone(); } requestAnimationFrame(frame); }
+const cssVar = v => { const m = /var\((--[\w-]+)\)/.exec(v); return m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || "#888" : v; };
+recompute(); modes(); setView("street", true); requestAnimationFrame(frame);
+// recorder hooks
+window.__energy = { S, setJourney: setFocus, setView, play, speed: setSpeed, lever: (k, on) => { if (k === "all") K.LEVERS.forEach(l => S.levers[l.k] = on !== false); else S.levers[k] = on == null ? !S.levers[k] : !!on; S.pvAuto = true; restartRuns(); modes(); recompute(); }, state: () => ({ S, runs: RUN.map(r => ({ j: r.j, ...runState(r) })), year: Y, asIs: A, proof: PR }), setMonth: m => { S.month = m; monthSel.value = m; recompute(); }, loadSamples, phone: v => { S.pv = v; S.pvAuto = false; phone(true); }, jump: h => { S.hour = h; }, jumpStage: (j, k, p = 0.4) => { RUN.filter(r => r.j === j).forEach((r, n) => { const idx = r.st.findIndex(s => s.k === k); let t = 0; for (let i = 0; i < idx; i++) t += disp(r.st[i].dur); r.t = t + disp(r.st[idx].dur) * (n ? Math.min(0.95, p + 0.3) : p); }); setFocus(j); lanes(); } };
+})();
+
+</script>
+<script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="energy"></script><script src="/lab/navigation.js" defer></script></html>

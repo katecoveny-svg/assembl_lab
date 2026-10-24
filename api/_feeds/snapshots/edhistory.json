@@ -1,0 +1,31 @@
+{
+  "id": "edhistory",
+  "what": "National quarterly results for the 'Shorter stays in emergency departments' health target (% of ED patients admitted, discharged or transferred within six hours), from the September 2023 baseline. Each quarter is copied by hand from the DPMC Government Targets factsheet that reports it (the factsheet for a quarter carries the result of the quarter before) or from Health NZ's quarterly factsheets. There is no machine-readable series; the DPMC PDFs are not parsed at run time. At run time the feed appends any newer quarter it finds in the Health NZ national factsheet.",
+  "retrieved": "2026-10-25",
+  "target": { "pct": 95, "by": "2030", "label": "95% of patients admitted, discharged or transferred from an ED within six hours" },
+  "milestones": [ { "year": "2025/26", "pct": 77, "source": "Health NZ quarterly factsheets, '2025/26 milestone: 77%'" } ],
+  "baseline": { "quarter": "Q1 2023/24", "label": "July–September 2023", "pct": 68.0 },
+  "sources": {
+    "dpmc": { "name": "DPMC, Government Targets, Target 1 factsheets", "url": "https://www.dpmc.govt.nz/our-programmes/government-targets", "licence": "Crown copyright, CC BY 4.0" },
+    "healthnz": { "name": "Health NZ | Te Whatu Ora, health target factsheets", "url": "https://www.healthnz.govt.nz/publications/health-targets-performance-resources-2025-26", "licence": "CC BY 4.0" }
+  },
+  "series": [
+    { "quarter": "Q1 2023/24", "label": "Jul–Sep 2023", "end": "2023-09", "pct": 68.0, "note": "baseline", "source": "DPMC factsheets, every edition: Baseline (September 2023) 68.0%", "url": "https://www.dpmc.govt.nz/sites/default/files/2024-09/gt-factsheet-target-1-jun24.pdf" },
+    { "quarter": "Q2 2023/24", "label": "Oct–Dec 2023", "end": "2023-12", "pct": 69.7, "source": "Health NZ, Health targets Q2 2025/26 five-year results (chart label; 2024/25 and 2025/26 labels agree with DPMC)", "url": "https://www.healthnz.govt.nz/publications/health-targets-performance-resources-2025-26" },
+    { "quarter": "Q3 2023/24", "label": "Jan–Mar 2024", "end": "2024-03", "pct": 70.1, "note": "DPMC's June 2024 factsheet first published 70.0%; Health NZ's ten-year series carries 70.1%", "source": "Health NZ, Health targets 5 and 10 years of results, Q3 2025/26 (accessible)", "url": "https://static.info.content.health.nz/docs/publications/health-targets-5-and-10-years-of-results-accessible-q3-25-26.docx" },
+    { "quarter": "Q4 2023/24", "label": "Apr–Jun 2024", "end": "2024-06", "pct": 71.2, "source": "DPMC factsheet, quarter ending September 2024: Current (June 2024) 71.2%; Health NZ ten-year series agrees", "url": "https://www.dpmc.govt.nz/sites/default/files/2024-12/gt-factsheet-target-1-sep24.pdf" },
+    { "quarter": "Q1 2024/25", "label": "Jul–Sep 2024", "end": "2024-09", "pct": 67.5, "source": "DPMC factsheet, quarter ending December 2024: Current (September 2024) 67.5%", "url": "https://dpmc.govt.nz/sites/default/files/2025-03/gt-factsheet-target-1-dec24.pdf" },
+    { "quarter": "Q2 2024/25", "label": "Oct–Dec 2024", "end": "2024-12", "pct": 72.1, "source": "DPMC factsheet, quarter ending March 2025: Current (December 2024) 72.1%", "url": "https://www.dpmc.govt.nz/sites/default/files/2025-06/gt-factsheet-target-1-mar25.pdf" },
+    { "quarter": "Q3 2024/25", "label": "Jan–Mar 2025", "end": "2025-03", "pct": 74.2, "source": "DPMC factsheet, quarter ending June 2025: Current (March 2025) 74.2%; Health NZ ten-year series agrees", "url": "https://www.dpmc.govt.nz/sites/default/files/2025-08/gt-factsheet-target-1-jun25.pdf" },
+    { "quarter": "Q4 2024/25", "label": "Apr–Jun 2025", "end": "2025-06", "pct": 73.9, "source": "DPMC factsheet, quarter ending September 2025: Current (June 2025) 73.9%; Health NZ Q4 2025/26 national factsheet agrees", "url": "https://www.dpmc.govt.nz/sites/default/files/2025-11/gt-factsheet-target-1-sep25.pdf" },
+    { "quarter": "Q1 2025/26", "label": "Jul–Sep 2025", "end": "2025-09", "pct": 68.9, "source": "DPMC factsheet, quarter ending December 2025: Current (September 2025) 68.9%", "url": "https://www.dpmc.govt.nz/sites/default/files/2026-03/gt-factsheet-target-1-dec25.pdf" },
+    { "quarter": "Q2 2025/26", "label": "Oct–Dec 2025", "end": "2025-12", "pct": 74.2, "source": "DPMC factsheet, quarter ending March 2026: Current (December 2025) 74.2%", "url": "https://www.dpmc.govt.nz/sites/default/files/2026-06/gt-factsheet-target-1-mar26.pdf" },
+    { "quarter": "Q3 2025/26", "label": "Jan–Mar 2026", "end": "2026-03", "pct": 74.4, "source": "DPMC factsheet, quarter ending June 2026: Current (March 2026) 74.4%; Health NZ Q3 2025/26 factsheet agrees", "url": "https://www.dpmc.govt.nz/sites/default/files/2026-09/gt-factsheet-target-1-jun26.pdf" },
+    { "quarter": "Q4 2025/26", "label": "Apr–Jun 2026", "end": "2026-06", "pct": 76.3, "source": "Health NZ national health targets factsheet, Q4 2025/26 (accessible)", "url": "https://static.info.content.health.nz/docs/publications/health-targets-factsheet-q4-25-26-accessible.docx" }
+  ],
+  "longRun": {
+    "what": "Same quarter each year for ten years, from Health NZ's '5 and 10 years of results' factsheets. First-published results; Health NZ notes they can differ from later statistics.",
+    "Q4": { "years": ["2016/17", "2017/18", "2018/19", "2019/20", "2020/21", "2021/22", "2022/23", "2023/24", "2024/25", "2025/26"], "pct": [90.8, 89.5, 86.2, 89.6, 81.9, 75.9, 71.1, 71.2, 73.9, 76.3], "url": "https://static.info.content.health.nz/docs/publications/health-targets-5-and-10-years-of-results-accessible-q4-25-26.docx" },
+    "Q3": { "years": ["2016/17", "2017/18", "2018/19", "2019/20", "2020/21", "2021/22", "2022/23", "2023/24", "2024/25", "2025/26"], "pct": [92.2, 89.6, 88.4, 86.8, 83.0, 78.2, 71.9, 70.1, 74.2, 74.4], "url": "https://static.info.content.health.nz/docs/publications/health-targets-5-and-10-years-of-results-accessible-q3-25-26.docx" }
+  }
+}
