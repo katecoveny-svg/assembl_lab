@@ -1,0 +1,138 @@
+{
+  "what": "Citable sources behind the assembl lab's twins and the Pursuit pages. Each carries a truth label the way every figure on the site does: Source (an official or peer-reviewed publication), Vendor claim (a supplier's own case study, directional only), Estimate (ours), Simulated (a twin's model output), Proposed (a change not yet made), Your data (what a customer supplies). Retrieved and checked on the date given; re-check before quoting.",
+  "truthLabels": ["Source", "Estimate", "Simulated", "Proposed", "Vendor claim", "Your data"],
+  "retrieved": "2026-10-25",
+  "sources": [
+    {
+      "id": "createasoft-ed-twin",
+      "truth": "Vendor claim",
+      "title": "Improve patient flow, reduce length of stay and optimise providers with Digital Twin Studio",
+      "publisher": "CreateASoft",
+      "url": "https://www.createasoft.com/company/digital-twin-and-simulation-blog/improve-patient-flow-reduce-length-of-stay-and-optimize-providers-with-digital-twin-studio",
+      "figures": {
+        "hospital": "211 beds, 25 ED beds, United States",
+        "dispositionTimeMinutes": -12.7,
+        "inpatientLengthOfStayPct": -11.3,
+        "lowAcuityLengthOfStayPct": -19.45,
+        "leftWithoutBeingSeenPct": -83,
+        "providerEfficiencyPct": 14.2,
+        "savingsUsdPerYear": 11200000,
+        "revenueLiftUsdPerYear": 2500000
+      },
+      "useAs": "The size of prize simulation can point at in an ED. A single vendor-published case: quote as a vendor claim, directional, never as a forecast for a New Zealand hospital.",
+      "feeds": ["ed", "edhistory"]
+    },
+    {
+      "id": "lorraine-three-mode-twin",
+      "truth": "Source",
+      "title": "Toward a digital twin of an emergency department: agent-based architecture with Digital Shadow, Synchronised and Exploratory modes",
+      "publisher": "MDPI Sustainability, vol. 15, no. 4, article 3412 (University of Lorraine)",
+      "url": "https://www.mdpi.com/2071-1050/15/4/3412",
+      "figures": { "modes": ["Digital Shadow (mirrors live state, one-way)", "Synchronised DT (mirrors and predicts between real events at an accelerated clock)", "Exploratory DT (runs ensembles of possible futures for decisions)"] },
+      "useAs": "The maturity ladder the lab's maturity.json uses: model → shadow → twin (synchronised) → exploratory. Peer-reviewed; AnyLogic implementation where each real patient spawns a digital counterpart.",
+      "feeds": []
+    },
+    {
+      "id": "comcom-annual-grocery-report-2025",
+      "truth": "Source",
+      "title": "2025 Annual Grocery Report (Pūrongo ā-Tau mō te Kai)",
+      "publisher": "Commerce Commission | Te Komihana Tauhokohoko",
+      "published": "2026-06-02",
+      "url": "https://www.comcom.govt.nz/assets/Uploads/Annual-Grocery-Report-2025-2-June-2026.pdf",
+      "figures": { "regulatedSharePct": 82, "aucklandSharePct": 71, "bannerSharePct": { "Woolworths": 27, "PAK'nSAVE": 25, "New World": 22 }, "stores": 757, "onlineSharePct": 8, "woolworthsOnlineSharePct": 16 },
+      "useAs": "Market structure for the supermarket twin and any grocery Pursuit page. Annual: the lab serves it as the grocery snapshot feed, labelled Latest published · annual.",
+      "feeds": ["grocery"]
+    },
+    {
+      "id": "mbie-grocery-market-size",
+      "truth": "Source",
+      "title": "Market study into supermarkets: background information (nearly $25 billion spent at supermarkets and grocery stores in the year to March 2023)",
+      "publisher": "Ministry of Business, Innovation and Employment",
+      "url": "https://www.mbie.govt.nz/business-and-employment/business/competition-regulation-and-policy/market-studies/market-study-into-supermarkets/call-for-applications-provision-of-an-external-dispute-resolution-scheme-for-the-grocery-industry/section-2-background-information",
+      "figures": { "marketSizeNzdBillion": 25, "period": "year to March 2023" },
+      "useAs": "Size of the grocery market. Older than the Commission's report; say the year.",
+      "feeds": ["grocery"]
+    },
+    {
+      "id": "dpmc-target-1-factsheets",
+      "truth": "Source",
+      "title": "Government Targets, Target 1: Shorter stays in emergency departments, quarterly factsheets",
+      "publisher": "Department of the Prime Minister and Cabinet",
+      "url": "https://www.dpmc.govt.nz/our-programmes/government-targets",
+      "editions": [
+        { "quarterEnding": "June 2024", "url": "https://www.dpmc.govt.nz/sites/default/files/2024-09/gt-factsheet-target-1-jun24.pdf" },
+        { "quarterEnding": "September 2024", "url": "https://dpmc.govt.nz/sites/default/files/2024-12/gt-factsheet-target-1-sep24.pdf" },
+        { "quarterEnding": "December 2024", "url": "https://dpmc.govt.nz/sites/default/files/2025-03/gt-factsheet-target-1-dec24.pdf" },
+        { "quarterEnding": "March 2025", "url": "https://www.dpmc.govt.nz/sites/default/files/2025-06/gt-factsheet-target-1-mar25.pdf" },
+        { "quarterEnding": "June 2025", "url": "https://www.dpmc.govt.nz/sites/default/files/2025-08/gt-factsheet-target-1-jun25.pdf" },
+        { "quarterEnding": "September 2025", "url": "https://www.dpmc.govt.nz/sites/default/files/2025-11/gt-factsheet-target-1-sep25.pdf" },
+        { "quarterEnding": "December 2025", "url": "https://www.dpmc.govt.nz/sites/default/files/2026-03/gt-factsheet-target-1-dec25.pdf" },
+        { "quarterEnding": "March 2026", "url": "https://www.dpmc.govt.nz/sites/default/files/2026-06/gt-factsheet-target-1-mar26.pdf" },
+        { "quarterEnding": "June 2026", "url": "https://www.dpmc.govt.nz/sites/default/files/2026-09/gt-factsheet-target-1-jun26.pdf" }
+      ],
+      "figures": { "targetPct": 95, "baselineSeptember2023Pct": 68.0, "september2025Pct": 68.9, "march2026Pct": 74.4, "edFlowFundingNzd2025_26": 20000000, "palmerstonNorthEdNzd": 14455000, "fastTrackedBeds2026": 140 },
+      "useAs": "The national scoreboard the ED twin benchmarks against. Each factsheet reports the quarter before the one in its name. The quarterly series lives in the edhistory feed.",
+      "feeds": ["edhistory", "ed"]
+    },
+    {
+      "id": "healthnz-health-target-factsheets",
+      "truth": "Source",
+      "title": "Health targets: quarterly national, regional and district factsheets, and 5 and 10 years of results",
+      "publisher": "Health New Zealand | Te Whatu Ora",
+      "url": "https://www.healthnz.govt.nz/publications/health-targets-performance-resources-2025-26",
+      "licence": "CC BY 4.0",
+      "figures": { "q4_2025_26_nationalPct": 76.3, "q4_2024_25_nationalPct": 73.9, "milestone2025_26Pct": 77, "q4AttendancesQ4_2025_26": 339748 },
+      "useAs": "District and national 6-hour results each quarter (the ed feed) and the ten-year same-quarter series (edhistory).",
+      "feeds": ["ed", "edhistory"]
+    },
+    {
+      "id": "linz-building-outlines",
+      "truth": "Source",
+      "title": "NZ Building Outlines (LINZ Data Service layer 101290)",
+      "publisher": "Toitū Te Whenua Land Information New Zealand",
+      "url": "https://data.linz.govt.nz/layer/101290-nz-building-outlines/",
+      "api": "https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services/LINZ_NZ_Building_Outlines/FeatureServer/0/query",
+      "licence": "CC BY 4.0 (attribution: Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0)",
+      "figures": { "features": 3236141, "minimumAreaM2": 10, "accuracyM": 1, "crs": "NZGD2000 / NZTM 2000 (EPSG:2193)" },
+      "useAs": "The roof outline of any mainland NZ building, for a twin's 3D shell. Refreshed when a region is re-flown, not on a schedule; interiors still need plans or a scan.",
+      "feeds": ["footprint"]
+    },
+    {
+      "id": "statsnz-retail-trade-survey",
+      "truth": "Source",
+      "title": "Retail trade survey, quarterly (sales and stocks by industry and region)",
+      "publisher": "Stats NZ | Tatauranga Aotearoa",
+      "url": "https://www.stats.govt.nz/information-releases/retail-trade-survey-june-2026-quarter/",
+      "licence": "CC BY 4.0",
+      "useAs": "Supermarket and hardware sales by quarter, year-on-year change and sales to stock, for the supermarket and retail twins (the rts feed).",
+      "feeds": ["rts"]
+    },
+    {
+      "id": "tenbensel-ed-target-study",
+      "truth": "Source",
+      "title": "Did the New Zealand six-hour ED target reduce ED length of stay? A mixed-methods study",
+      "publisher": "BMC Health Services Research (via PubMed Central)",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5615466/",
+      "useAs": "Why the target is hard: early gains, later reliance on short-stay units, a floor near 3.5 hours' median stay. A caution against metric artefacts in any ED twin.",
+      "feeds": []
+    },
+    {
+      "id": "pmc-ed-des-review",
+      "truth": "Source",
+      "title": "Systematic review of discrete-event simulation in emergency departments (floor-plan view as step one)",
+      "publisher": "PubMed Central",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5406177/",
+      "useAs": "The nine-step ED simulation method the ED twin follows; the floor plan anchors both model logic and face validation.",
+      "feeds": []
+    },
+    {
+      "id": "mdpi-systems-canadian-eds",
+      "truth": "Source",
+      "title": "Participatory modelling with six Canadian EDs: 3D floor plans as the most effective face-validation technique",
+      "publisher": "MDPI Systems, vol. 11, no. 7, article 362",
+      "url": "https://www.mdpi.com/2079-8954/11/7/362",
+      "useAs": "Evidence that the 3D layer changes the model: clinicians corrected layouts, chair spaces and surge stretchers.",
+      "feeds": []
+    }
+  ]
+}
