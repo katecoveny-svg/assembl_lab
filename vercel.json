@@ -10,7 +10,8 @@
    "includeFiles": "contracts/**"
   },
   "api/live.js": {
-   "maxDuration": 15
+   "maxDuration": 15,
+   "includeFiles": "api/_feeds/snapshots/**"
   },
   "api/ask.js": {
    "maxDuration": 20
