@@ -121,11 +121,13 @@ export function parseTenYear(paras) {
   return null;
 }
 export function buildEdHistory(snap, nat, tenYear, urls = {}) {
-  const series = snap.series.map((s) => ({ quarter: s.quarter, label: s.label, end: s.end, pct: s.pct, source: s.source, url: s.url, ...(s.note ? { note: s.note } : {}) }));
+  // calendar quarter too ("Q3 2023" for Jul–Sep 2023), since DPMC's factsheets and other write-ups use calendar quarters while Health NZ uses financial-year quarters
+  const cal = (end) => `Q${+end.slice(5) / 3} ${end.slice(0, 4)}`;
+  const series = snap.series.map((s) => ({ quarter: s.quarter, calendarQuarter: cal(s.end), label: s.label, end: s.end, pct: s.pct, source: s.source, url: s.url, ...(s.note ? { note: s.note } : {}) }));
   let appended = null;
   for (const q of [nat?.yearAgo, nat?.latest].filter(Boolean)) {
     const info = quarterInfo(q.q); if (!info || !isFinite(q.pct)) continue;
-    if (!series.some((s) => s.end === info.end)) { const row = { ...info, pct: q.pct, source: "Health NZ national health targets factsheet (accessible)", url: urls.national || snap.sources.healthnz.url }; series.push(row); appended = row; }
+    if (!series.some((s) => s.end === info.end)) { const row = { ...info, calendarQuarter: cal(info.end), pct: q.pct, source: "Health NZ national health targets factsheet (accessible)", url: urls.national || snap.sources.healthnz.url }; series.push(row); appended = row; }
   }
   series.sort((a, b) => a.end.localeCompare(b.end));
   const latest = series.at(-1), first = series[0];
@@ -137,7 +139,8 @@ export function buildEdHistory(snap, nat, tenYear, urls = {}) {
     asOf: latest.end, period: `${latest.quarter} (${latest.label})`,
     values: { target: snap.target, milestones: snap.milestones, baseline: snap.baseline, series, latest, yearAgo,
       gapToTargetPts: round(snap.target.pct - latest.pct, 1), changeSinceBaselinePts: round(latest.pct - first.pct, 1),
-      longRun, appendedFromHealthNZ: appended ? appended.quarter : null, snapshotRetrieved: snap.retrieved, sources: snap.sources },
+      longRun, appendedFromHealthNZ: appended ? appended.quarter : null, snapshotRetrieved: snap.retrieved, retrieved: snap.retrieved, sources: snap.sources,
+      snapshot: !(nat || tenYear) }, // true when nothing from Health NZ reached this answer: the hand-copied quarters only
     cadence: "quarterly", live: false,
     source: { name: "DPMC Government Targets factsheets and Health NZ health target factsheets", url: snap.sources.dpmc.url },
     note: `Quarters up to ${snap.series.at(-1).quarter} were copied from the published factsheets on ${snap.retrieved}; anything later comes from the Health NZ national factsheet at run time. First-published results: later revisions can differ by about 0.1.`,

@@ -7,20 +7,92 @@
     "published": "2026-06-02",
     "url": "https://www.comcom.govt.nz/assets/Uploads/Annual-Grocery-Report-2025-2-June-2026.pdf",
     "newsUrl": "https://www.comcom.govt.nz/news-and-media/news-and-events/2026/comcom-releases-state-of-grocery-competition-report/",
-    "dataPeriod": "FY2025; store counts at 1 October 2025",
+    "dataPeriod": "FY2025; store counts after the changes of 1 July 2024 to 1 October 2025",
     "licence": "Crown copyright; Commerce Commission material may be reproduced with attribution"
   },
   "retrieved": "2026-10-25",
   "cadence": "annual",
   "figures": {
-    "regulatedShareNationalPct": { "value": 82, "unit": "% of national grocery retail", "label": "Regulated grocery retailers (Woolworths NZ, Foodstuffs North Island, Foodstuffs South Island), combined share", "note": "Unchanged from the 2024 report", "truth": "Source" },
-    "regulatedShareAucklandPct": { "value": 71, "unit": "%", "label": "Combined share in Auckland, the most competitive market", "truth": "Source" },
-    "bannerSharePct": { "value": { "Woolworths": 27, "PAK'nSAVE": 25, "New World": 22, "Other retailers": 18 }, "unit": "% of national grocery retail, 2025", "label": "Market share by banner", "note": "Figure 5 of the report; Four Square, FreshChoice and SuperValue sit inside the Foodstuffs totals", "truth": "Source" },
-    "stores": { "value": { "Woolworths": 191, "New World": 148, "PAK'nSAVE": 59, "Four Square": 219, "FreshChoice and SuperValue": 78, "total": 757 }, "unit": "stores at 1 October 2025", "label": "Regulated retailers' store networks", "note": "Table 1; New World, PAK'nSAVE and Four Square counts are the North Island and South Island co-operatives added together", "truth": "Source" },
-    "onlineSharePct": { "value": 8, "previous": 7, "unit": "% of regulated retailers' sales revenue, 2025 (7% in 2024)", "label": "Online share of grocery sales", "truth": "Source" },
-    "onlineShareWoolworthsPct": { "value": 16, "unit": "% of Woolworths NZ sales, 2025", "label": "Woolworths NZ online share", "truth": "Source" },
-    "rebatesBillion": { "value": 6, "unit": "NZ$ billion in FY2025, about 26% of combined sales revenue", "label": "Supplier rebates, discounts and payments to the regulated retailers", "truth": "Source" },
-    "marketSizeBillion": { "value": 25, "unit": "NZ$ billion a year, year to March 2023", "label": "Spend at supermarkets and grocery stores", "truth": "Source", "source": { "name": "MBIE, market study into supermarkets, background information", "url": "https://www.mbie.govt.nz/business-and-employment/business/competition-regulation-and-policy/market-studies/market-study-into-supermarkets/call-for-applications-provision-of-an-external-dispute-resolution-scheme-for-the-grocery-industry/section-2-background-information" }, "note": "Not in the Annual Grocery Report; MBIE's figure, older than the rest of this snapshot" },
-    "excessProfitMillionPerYear": { "value": 430, "unit": "NZ$ million a year, 2015 to 2019, about $1 million a day", "label": "Excess profit the Commission estimated the major retailers earned", "truth": "Source", "source": { "name": "Commerce Commission, market study into the retail grocery sector, final report (March 2022)", "url": "https://comcom.govt.nz/regulated-industries/grocery/market-study-into-the-grocery-sector" }, "note": "From the 2022 market study, not the 2025 Annual Grocery Report" }
+    "regulatedShareNationalPct": {
+      "value": 82,
+      "unit": "% of national grocery retail",
+      "label": "Regulated grocery retailers (Woolworths NZ, Foodstuffs North Island, Foodstuffs South Island), combined share",
+      "note": "Unchanged from the 2024 report",
+      "truth": "Source"
+    },
+    "regulatedShareAucklandPct": {
+      "value": 71,
+      "unit": "%",
+      "label": "Combined share in Auckland, the most competitive market",
+      "truth": "Source"
+    },
+    "bannerSharePct": {
+      "value": {
+        "Woolworths": 27,
+        "PAK'nSAVE": 25,
+        "New World": 22,
+        "Other retailers": 18
+      },
+      "unit": "% of national grocery retail, 2025",
+      "label": "Market share by banner",
+      "note": "Figure 5 of the report; Four Square, FreshChoice and SuperValue sit inside the Foodstuffs totals",
+      "truth": "Source"
+    },
+    "stores": {
+      "value": {
+        "Woolworths": 191,
+        "New World": 148,
+        "PAK'nSAVE": 59,
+        "Four Square": 219,
+        "FreshChoice and SuperValue": 78,
+        "On The Spot": 62,
+        "total": 757
+      },
+      "unit": "stores, after the changes of 1 July 2024 to 1 October 2025",
+      "label": "Regulated retailers' store networks",
+      "note": "Table 1: New World (105 + 43), PAK'nSAVE (47 + 12) and Four Square (162 + 57) add the North Island and South Island co-operatives; On The Spot is Foodstuffs South Island's convenience banner; Raeward Fresh closed its last 3 stores. Franchises are included; Gilmours and Trents wholesale are not counted.",
+      "truth": "Source"
+    },
+    "onlineSharePct": {
+      "value": 8,
+      "previous": 7,
+      "unit": "% of regulated retailers' sales revenue, 2025 (7% in 2024)",
+      "label": "Online share of grocery sales",
+      "truth": "Source"
+    },
+    "onlineShareWoolworthsPct": {
+      "value": 16,
+      "unit": "% of Woolworths NZ sales, 2025",
+      "label": "Woolworths NZ online share",
+      "truth": "Source"
+    },
+    "rebatesBillion": {
+      "value": 6,
+      "unit": "NZ$ billion in FY2025, about 26% of combined sales revenue",
+      "label": "Supplier rebates, discounts and payments to the regulated retailers",
+      "truth": "Source"
+    },
+    "marketSizeBillion": {
+      "value": 25,
+      "unit": "NZ$ billion a year, year to March 2023",
+      "label": "Spend at supermarkets and grocery stores",
+      "truth": "Source",
+      "source": {
+        "name": "MBIE, market study into supermarkets, background information",
+        "url": "https://www.mbie.govt.nz/business-and-employment/business/competition-regulation-and-policy/market-studies/market-study-into-supermarkets/call-for-applications-provision-of-an-external-dispute-resolution-scheme-for-the-grocery-industry/section-2-background-information"
+      },
+      "note": "Not in the Annual Grocery Report; MBIE's figure, older than the rest of this snapshot"
+    },
+    "excessProfitMillionPerYear": {
+      "value": 430,
+      "unit": "NZ$ million a year, 2015 to 2019, about $1 million a day",
+      "label": "Excess profit the Commission estimated the major retailers earned",
+      "truth": "Source",
+      "source": {
+        "name": "Commerce Commission, market study into the retail grocery sector, final report (March 2022)",
+        "url": "https://comcom.govt.nz/regulated-industries/grocery/market-study-into-the-grocery-sector"
+      },
+      "note": "From the 2022 market study, not the 2025 Annual Grocery Report"
+    }
   }
 }

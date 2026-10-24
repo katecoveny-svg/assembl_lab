@@ -2,7 +2,8 @@
    The lab build gives each page <html data-feeds="fuel,fpi" data-place="auckland" data-district="waikato">. On load this
    asks /api/live/?feeds=… once (8 s timeout, fails silently), then sets window.__assemblLive and fires a window
    "assembl:live" event with the whole answer as detail: { type:"assembl.feeds", version:2, feeds:{ id: envelope|{id,error} } }.
-   Each envelope carries value, values, unit, period, truth ("Live" | "Latest published"), truthLabel and source {name,url}.
+   Each envelope carries value, values, unit, period, truth ("Live" | "Latest published"), truthLabel, source {name,url} and
+   status ("live" | "cached" | "snapshot": how the answer was obtained; see assemblFeeds.status for the client-side reading).
    Pages listen and update their own tiles; anything missing or failed leaves the page on its built-in snapshot.
    Pages with data-place also get the small LIVE strip (weather and wholesale power) that /live.js used to draw. */
 (function () {
@@ -47,6 +48,23 @@
     srcLink(env, text) { return env && env.source ? `<a href="${env.source.url}" target="_blank" rel="noopener">${text || env.source.name}</a>` : ""; },
     // "LIVE" or "LATEST PUBLISHED" for a chip; pages style it themselves
     chip(env) { return env ? (env.truth === "Live" ? "Live" : "Latest published") : "Snapshot"; },
+    // which rung of the ladder the answer came from: "live" (fetched for this answer), "cached" (an earlier answer kept at
+    // the edge or in a warm function, or the last good one while the upstream is down) or "snapshot" (built in, nothing
+    // fetched: the grocery report, or the ED history when Health NZ did not answer). A missing or failed feed is "fallback":
+    // the page shows its own built-in figures.
+    status(env) {
+      if (!env || env.error) return "fallback";
+      if (env.status === "snapshot") return "snapshot";
+      const age = Date.now() - Date.parse(env.fetchedAt);
+      return env.status === "cached" || env.stale || age > 120e3 ? "cached" : "live";
+    },
+    statusLabel(env) {
+      const st = A.status(env);
+      if (st === "fallback") return "snapshot · built into this page";
+      if (st === "snapshot") return env.statusLabel || "snapshot";
+      const t = new Date(env.fetchedAt).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" });
+      return st === "live" ? "fetched " + t : "cached · fetched " + t + (env.stale ? " · upstream not answering" : "");
+    },
   };
 
   const css = `.alive{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:40;max-width:min(560px,calc(100vw - 24px));

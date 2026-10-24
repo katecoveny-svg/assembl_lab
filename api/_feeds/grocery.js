@@ -11,7 +11,7 @@ export function buildGrocery(snap = SNAP) {
   const e = envelope({
     id: "grocery", label: "NZ grocery market structure (Commerce Commission Annual Grocery Report)",
     value: f.regulatedShareNationalPct.value, unit: "% of grocery retail held by the three regulated retailers",
-    asOf: snap.report.published, period: `${snap.report.title.replace(/ \(.*\)$/, "")}, ${snap.report.published.slice(0, 4)}-${snap.report.published.slice(5, 7)}`,
+    asOf: snap.report.published, period: `${snap.report.title.replace(/ \(.*\)$/, "")}, published ${snap.report.published}`,
     values: {
       regulatedSharePct: f.regulatedShareNationalPct.value, regulatedShareAucklandPct: f.regulatedShareAucklandPct.value,
       bannerSharePct: f.bannerSharePct.value, stores: f.stores.value, onlineSharePct: f.onlineSharePct.value, onlineSharePrevPct: f.onlineSharePct.previous,
@@ -25,7 +25,7 @@ export function buildGrocery(snap = SNAP) {
     source: { name: `${snap.report.publisher}, ${snap.report.title}, ${snap.report.published.slice(0, 4)}`, url: snap.report.url },
     note: `Annual report; figures copied on ${snap.retrieved}, not fetched. Market size is MBIE's older figure and the excess-profit estimate is from the 2022 market study; both are marked separately.`,
   });
-  e.truthLabel = `Latest published · annual · ${snap.report.published.slice(0, 4)} report`;
+  e.truthLabel = `Latest published · annual · ${snap.report.title.match(/^\d{4}/)[0]} report, ${snap.report.published.slice(0, 4)}`;
   return e;
 }
 export async function fetchGrocery() { return buildGrocery(); }

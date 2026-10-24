@@ -6,6 +6,11 @@ import { getText, getBuffer, streamLines, envelope, memo, round, nzToday, MONTHS
 import { unzip } from "./zip.js";
 
 const BASE = "https://www.stats.govt.nz";
+// Optional: a free Stats NZ API subscription key (portal.apis.stats.govt.nz), the same env name the OKComputer reference app
+// reads. It belongs only on api.stats.govt.nz (Aotearoa Data Explorer, SDMX), never on the www downloads, and that route
+// does not replace the CSV and zip downloads until the RTS and SPI dataflow ids are confirmed: today the key only sets
+// values.keyed so a page can say it is configured.
+export const statsKey = () => process.env.STATS_NZ_API_KEY || null;
 const csvUrl = (m, y) => `${BASE}/assets/Uploads/Selected-price-indexes/Selected-price-indexes-${MONTHS[m - 1]}-${y}/Download-data/selected-price-indexes-${MONTHS[m - 1].toLowerCase()}-${y}.csv`;
 const SOURCE = (period, url) => ({ name: `Stats NZ, Selected price indexes: ${period}`, url });
 
@@ -123,7 +128,8 @@ export function rtsCandidates(t = nzToday()) {
     const d = new Date(Date.UTC(t.year, qEndMonth - 1 - 3 * back, 1));
     const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)); // last day of that quarter
     const weeks = (Date.UTC(t.year, t.month - 1, t.day) - end.getTime()) / 6048e5;
-    if (weeks >= 7) out.push({ m: RTS_Q[d.getUTCMonth() / 3], y: d.getUTCFullYear(), period: `${RTS_Q[d.getUTCMonth() / 3]} ${d.getUTCFullYear()} quarter` });
+    const qn = RTS_Q[(d.getUTCMonth() + 1) / 3 - 1];
+    if (weeks >= 7) out.push({ m: qn, y: d.getUTCFullYear(), period: `${qn} ${d.getUTCFullYear()} quarter` });
   }
   return out;
 }
@@ -181,6 +187,6 @@ export function fetchRts() {
     const src = await latestRtsZip();
     const z = unzip(await getBuffer(src.url, { ms: 12000 }));
     const name = z.names.find((n) => /\.csv$/i.test(n)); if (!name) throw new Error("rts: no csv in zip");
-    return parseRts(z.read(name), src);
+    const e = parseRts(z.read(name), src); e.values.keyed = !!statsKey(); e.values.route = "zipped CSV (CC BY 4.0), key-less"; return e;
   });
 }

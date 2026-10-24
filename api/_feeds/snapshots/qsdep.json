@@ -1,0 +1,276 @@
+{
+ "id": "tariffs",
+ "what": "MBIE Quarterly Survey of Domestic Electricity Prices: the modelled residential price for an 8,000 kWh/yr household, incl. GST, split into lines and energy-and-other, for 42 survey locations and New Zealand. Published quarterly as a PDF (mid Feb/May/Aug/Nov); MBIE's site blocks automated fetches, so the figures are copied by hand with the retrieval date. Refresh after the 15 November 2026 survey.",
+ "publisher": "Ministry of Business, Innovation and Employment (MBIE)",
+ "url": "https://www.mbie.govt.nz/assets/Data-Files/Energy/nz-energy-quarterly-and-energy-in-nz/qsdep-report-15Aug2026.pdf",
+ "landing": "https://www.mbie.govt.nz/building-and-energy/energy-and-natural-resources/energy-statistics-and-modelling/energy-statistics/energy-prices/electricity-cost-and-price-monitoring",
+ "licence": "Crown copyright, CC BY 4.0",
+ "surveyDate": "2026-08-15",
+ "retrieved": "2026-10-25",
+ "cadence": "quarterly",
+ "basis": "8,000 kWh/yr",
+ "national": {
+  "location": "New Zealand",
+  "totalCents": 42.1,
+  "linesCents": 16.8,
+  "energyCents": 25.3,
+  "quarterChangePct": 0.3,
+  "quarterChangeCents": 0.11,
+  "linesChangePct": 0.0,
+  "energyChangePct": 0.4
+ },
+ "locations": [
+  {
+   "location": "Kerikeri",
+   "totalCents": 50.62,
+   "linesCents": 23.3,
+   "energyCents": 27.4
+  },
+  {
+   "location": "Whangarei",
+   "totalCents": 44.53,
+   "linesCents": 17.9,
+   "energyCents": 26.6
+  },
+  {
+   "location": "Auckland North Shore",
+   "totalCents": 41.33,
+   "linesCents": 16.1,
+   "energyCents": 25.2
+  },
+  {
+   "location": "Auckland Central",
+   "totalCents": 41.3,
+   "linesCents": 16.1,
+   "energyCents": 25.2
+  },
+  {
+   "location": "Pukekohe",
+   "totalCents": 45.7,
+   "linesCents": 19.8,
+   "energyCents": 25.9
+  },
+  {
+   "location": "Tauranga",
+   "totalCents": 45.01,
+   "linesCents": 15.6,
+   "energyCents": 29.4
+  },
+  {
+   "location": "Hamilton",
+   "totalCents": 39.78,
+   "linesCents": 15.0,
+   "energyCents": 24.8
+  },
+  {
+   "location": "Thames",
+   "totalCents": 44.19,
+   "linesCents": 18.4,
+   "energyCents": 25.7
+  },
+  {
+   "location": "Cambridge",
+   "totalCents": 43.74,
+   "linesCents": 16.6,
+   "energyCents": 27.2
+  },
+  {
+   "location": "Whakatane",
+   "totalCents": 44.04,
+   "linesCents": 17.2,
+   "energyCents": 26.8
+  },
+  {
+   "location": "Rotorua",
+   "totalCents": 42.93,
+   "linesCents": 15.3,
+   "energyCents": 27.6
+  },
+  {
+   "location": "Taupo",
+   "totalCents": 42.16,
+   "linesCents": 15.3,
+   "energyCents": 26.8
+  },
+  {
+   "location": "Gisborne",
+   "totalCents": 48.37,
+   "linesCents": 20.9,
+   "energyCents": 27.5
+  },
+  {
+   "location": "New Plymouth",
+   "totalCents": 43.47,
+   "linesCents": 19.7,
+   "energyCents": 23.8
+  },
+  {
+   "location": "Otorohanga",
+   "totalCents": 45.97,
+   "linesCents": 20.7,
+   "energyCents": 25.3
+  },
+  {
+   "location": "Taumaranui",
+   "totalCents": 45.97,
+   "linesCents": 20.7,
+   "energyCents": 25.3
+  },
+  {
+   "location": "Napier",
+   "totalCents": 41.35,
+   "linesCents": 16.7,
+   "energyCents": 24.7
+  },
+  {
+   "location": "Hawera",
+   "totalCents": 48.41,
+   "linesCents": 24.5,
+   "energyCents": 23.9
+  },
+  {
+   "location": "Waipukurau",
+   "totalCents": 48.65,
+   "linesCents": 24.3,
+   "energyCents": 24.4
+  },
+  {
+   "location": "Whanganui",
+   "totalCents": 44.05,
+   "linesCents": 19.7,
+   "energyCents": 24.4
+  },
+  {
+   "location": "Dannevirke",
+   "totalCents": 46.38,
+   "linesCents": 20.6,
+   "energyCents": 25.8
+  },
+  {
+   "location": "Masterton",
+   "totalCents": 48.27,
+   "linesCents": 24.5,
+   "energyCents": 23.8
+  },
+  {
+   "location": "Palmerston North",
+   "totalCents": 43.08,
+   "linesCents": 19.7,
+   "energyCents": 23.4
+  },
+  {
+   "location": "Paraparaumu",
+   "totalCents": 44.68,
+   "linesCents": 22.7,
+   "energyCents": 22.0
+  },
+  {
+   "location": "Wellington City",
+   "totalCents": 37.2,
+   "linesCents": 12.3,
+   "energyCents": 24.9
+  },
+  {
+   "location": "Nelson",
+   "totalCents": 38.43,
+   "linesCents": 11.5,
+   "energyCents": 27.0
+  },
+  {
+   "location": "Richmond",
+   "totalCents": 38.78,
+   "linesCents": 11.9,
+   "energyCents": 26.9
+  },
+  {
+   "location": "Blenheim",
+   "totalCents": 47.12,
+   "linesCents": 19.0,
+   "energyCents": 28.1
+  },
+  {
+   "location": "Westport",
+   "totalCents": 46.95,
+   "linesCents": 18.2,
+   "energyCents": 28.7
+  },
+  {
+   "location": "Greymouth",
+   "totalCents": 48.53,
+   "linesCents": 19.9,
+   "energyCents": 28.6
+  },
+  {
+   "location": "Rangiora",
+   "totalCents": 45.48,
+   "linesCents": 20.3,
+   "energyCents": 25.2
+  },
+  {
+   "location": "Kaiapoi",
+   "totalCents": 45.1,
+   "linesCents": 20.3,
+   "energyCents": 24.8
+  },
+  {
+   "location": "Christchurch",
+   "totalCents": 38.61,
+   "linesCents": 14.6,
+   "energyCents": 24.0
+  },
+  {
+   "location": "Ashburton",
+   "totalCents": 38.16,
+   "linesCents": 12.3,
+   "energyCents": 25.9
+  },
+  {
+   "location": "Timaru",
+   "totalCents": 43.2,
+   "linesCents": 17.9,
+   "energyCents": 25.3
+  },
+  {
+   "location": "Oamaru",
+   "totalCents": 44.72,
+   "linesCents": 19.2,
+   "energyCents": 25.6
+  },
+  {
+   "location": "Dunedin",
+   "totalCents": 42.49,
+   "linesCents": 16.8,
+   "energyCents": 25.7
+  },
+  {
+   "location": "Queenstown",
+   "totalCents": 42.38,
+   "linesCents": 18.3,
+   "energyCents": 24.1
+  },
+  {
+   "location": "Cromwell",
+   "totalCents": 48.88,
+   "linesCents": 24.7,
+   "energyCents": 24.1
+  },
+  {
+   "location": "Balclutha",
+   "totalCents": 51.0,
+   "linesCents": 25.6,
+   "energyCents": 25.4
+  },
+  {
+   "location": "Winton",
+   "totalCents": 44.17,
+   "linesCents": 19.2,
+   "energyCents": 24.9
+  },
+  {
+   "location": "Invercargill",
+   "totalCents": 39.02,
+   "linesCents": 13.6,
+   "energyCents": 25.5
+  }
+ ]
+}

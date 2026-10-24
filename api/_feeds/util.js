@@ -43,15 +43,34 @@ export async function streamLines(url, onLine, opts = {}) {
   } finally { clearTimeout(t); if (stopped) c.abort(); }
 }
 
-// Small in-memory cache per warm function instance, on top of the edge cache.
-const MEMO = new Map();
-export const clearMemo = () => MEMO.clear();
+// Small in-memory cache per warm function instance, on top of the edge cache. The ladder for each key is
+// fresh memo → live fetch → stale memo (the last good answer, marked stale) → the caller's own snapshot, if it has one.
+const MEMO = new Map(), LAST = new Map();
+export const clearMemo = () => { MEMO.clear(); LAST.clear(); };
 export function memo(key, ttlMs, fn) {
   const hit = MEMO.get(key);
   if (hit && Date.now() - hit.at < ttlMs) return hit.p;
-  const p = fn().catch((e) => { MEMO.delete(key); throw e; });
+  const p = fn().then((v) => { LAST.set(key, v); return v; }).catch((e) => {
+    MEMO.delete(key);
+    const last = LAST.get(key);
+    if (last === undefined) throw e;
+    return last && typeof last === "object" && !Array.isArray(last) ? { ...last, stale: true, staleError: String(e?.message || e).slice(0, 160) } : last;
+  });
   MEMO.set(key, { at: Date.now(), p });
   return p;
+}
+
+// Which rung of the ladder an envelope came from: "live" (fetched in this answer), "cached" (a warm instance's earlier
+// answer, or the last good one after an upstream failure) or "snapshot" (built in, nothing fetched). The edge cache in
+// front of the function is invisible here; /feeds.js compares fetchedAt with the clock as well.
+export function withStatus(e, now = Date.now()) {
+  if (!e || e.error) return e;
+  const snapshot = e.values && e.values.snapshot === true;
+  const age = now - Date.parse(e.fetchedAt);
+  const status = snapshot ? "snapshot" : e.stale || age > 90e3 ? "cached" : "live";
+  const t = (iso) => { try { return new Date(iso).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit" }); } catch (err) { return iso; } };
+  const statusLabel = status === "live" ? "fetched now" : status === "cached" ? `cached · fetched ${t(e.fetchedAt)}${e.stale ? " · upstream not answering" : ""}` : `snapshot · copied ${(e.values && e.values.retrieved) || e.asOf}`;
+  return { ...e, status, statusLabel };
 }
 
 export const CADENCE_TTL = { // seconds the edge may serve a cached copy, then revalidate in the background
@@ -70,7 +89,7 @@ export function envelope({ id, label, value = null, values = null, unit = "", as
   const truth = live ? "Live" : "Latest published";
   return {
     id, label, value, values, unit, asOf, period: period || asOf, fetchedAt: new Date().toISOString(), cadence,
-    source, truth, truthLabel: live ? "Live" : `Latest published · ${period || asOf}`, ...(note ? { note } : {}),
+    source, truth, truthLabel: live ? "Live" : `Latest published · ${period || asOf}`, status: "live", ...(note ? { note } : {}),
   };
 }
 
