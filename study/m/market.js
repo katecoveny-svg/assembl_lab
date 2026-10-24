@@ -76,9 +76,11 @@ function machine(mode){let o=`<rect x="26" y="16" width="370" height="392" rx="2
     let dim=false,badge="";
     if(mode==="needs"){const v=s.sort[i];if(v)badge=`<rect x="${p.x-25}" y="${p.y-46}" width="50" height="18" rx="9" fill="${v===1?MINT:LILAC}" stroke="${INK}"/><text class="mk-s" x="${p.x}" y="${p.y-33}" text-anchor="middle" style="fill:${INK}">${v===1?"NEED":"WANT"}</text>`}
     if(mode==="choice"){const r=s.rank.indexOf(i);if(r>=0){const got=sh.got.includes(i),oc=sh.oc===i;badge=`<circle cx="${p.x+22}" cy="${p.y-30}" r="12" fill="${oc?SUN:got?MINT:"#fff"}" stroke="${INK}" stroke-width="1.4"/><text class="mk-l" x="${p.x+22}" y="${p.y-25.5}" text-anchor="middle" style="fill:${INK}">${r+1}</text>`;dim=got}}
+    const lab=mode==="needs"?`${it.n}, $${it.p}, ${s.sort[i]===1?"sorted as a need":s.sort[i]===2?"sorted as a want":"not sorted yet"}. Press to sort.`:`${it.n}, $${it.p}${s.rank.indexOf(i)>=0?`, ranked ${s.rank.indexOf(i)+1}`:", not ranked"}. Press to rank or unrank.`;
+    o+=`<g tabindex="0" role="button" data-tap="${p.x},${p.y}" aria-label="${lab}"><rect x="${p.x-30}" y="${p.y-50}" width="60" height="108" rx="10" fill="transparent"/>`;
     o+=`<path d="M${p.x-24},${p.y+30} ${[0,1,2,3,4,5].map(k=>`q4,-6 8,0`).join(" ")}" fill="none" stroke="#B9AEB2" stroke-width="2"/>`;
     o+=`<g opacity="${dim?.28:1}">${icon(it.id,p.x,p.y,k)}</g>${badge}`;
-    o+=`<rect x="${p.x-20}" y="${p.y+38}" width="40" height="18" rx="5" fill="#fff" stroke="${INK}" stroke-opacity=".4"/><text class="mk-s" x="${p.x}" y="${p.y+51}" text-anchor="middle" style="fill:${INK}">$${it.p}</text>`});
+    o+=`<rect x="${p.x-20}" y="${p.y+38}" width="40" height="18" rx="5" fill="#fff" stroke="${INK}" stroke-opacity=".4"/><text class="mk-s" x="${p.x}" y="${p.y+51}" text-anchor="middle" style="fill:${INK}">$${it.p}</text></g>`});
   // keypad, coin slot, screen
   o+=`<rect x="314" y="72" width="64" height="40" rx="6" fill="${INK}"/><text class="mk-l" x="346" y="98" text-anchor="middle" style="fill:${SUN}">${mode==="choice"?"$"+sh.left:"$"+s.budget}</text>`;
   for(let r=0;r<4;r++)for(let c=0;c<3;c++)o+=`<circle cx="${328+c*18}" cy="${132+r*20}" r="6.5" fill="#fff" stroke="${INK}" stroke-width="1.2"/>`;
@@ -177,8 +179,9 @@ function inquiryScene(){let o=`<rect width="800" height="420" fill="${CREAM}"/>`
   [-2,-1,0,1,2].forEach(v=>o+=`<line x1="${PX(v)}" x2="${PX(v)}" y1="${ly-10}" y2="${ly+10}" stroke="${INK}" stroke-width="${v?1:2}"/>`);
   o+=`<text class="mk-l" x="60" y="${ly+30}" style="fill:${SKYD}">STRONGLY AGAINST</text><text class="mk-l" x="740" y="${ly+30}" text-anchor="end" style="fill:#B4456F">STRONGLY FOR</text><text class="mk-s mk-desk" x="400" y="${ly+82}" text-anchor="middle" style="fill:${ROSE}">MIDDLE = UNSURE / IT DEPENDS</text>`;
   PEOPLE.forEach(p=>{const x=PX(p.st),y=PY(p.row),on=p.id===s.sel;o+=`<line x1="${x}" x2="${x}" y1="${y+44}" y2="${ly-8}" stroke="${INK}" stroke-opacity=".35" stroke-dasharray="2 3"/>`;
+    o+=`<g tabindex="0" role="button" data-tap="${x},${y+18}" aria-pressed="${on}" aria-label="${p.n}, ${p.who}. Press to hear their perspective."><rect x="${x-38}" y="${y-30}" width="76" height="96" rx="12" fill="transparent"/>`;
     if(on)o+=`<circle cx="${x}" cy="${y+16}" r="34" fill="${SUN}" opacity=".35"/>`;
-    o+=person(x,y,p.c,on?1.12:1,"smile");o+=`<rect x="${x-34}" y="${y+44}" width="68" height="20" rx="10" fill="#fff" stroke="${INK}" stroke-opacity="${on?1:.25}"/><text class="mk-s" x="${x}" y="${y+58}" text-anchor="middle" style="fill:${INK};font-weight:${on?700:500}">${p.n.split(",")[0]}</text>`});
+    o+=person(x,y,p.c,on?1.12:1,"smile");o+=`<rect x="${x-34}" y="${y+44}" width="68" height="20" rx="10" fill="#fff" stroke="${INK}" stroke-opacity="${on?1:.25}"/><text class="mk-s" x="${x}" y="${y+58}" text-anchor="middle" style="fill:${INK};font-weight:${on?700:500}">${p.n.split(",")[0]}</text></g>`});
   // you
   const yx=PX(s.you);o+=`<path d="M${yx},${ly+8} l-12,22 h24z" fill="${INK}"/><rect x="${yx-26}" y="${ly+30}" width="52" height="22" rx="11" fill="${INK}"/><text class="mk-l" x="${yx}" y="${ly+46}" text-anchor="middle" style="fill:#fff">YOU</text>`;
   return o}
@@ -318,7 +321,8 @@ API=StudyKit.mount({kupu:KUPU,
 // ---------- taps on the picture
 const svg=document.getElementById("k-main");
 const pt=e=>{const r=svg.getBoundingClientRect();return[(e.clientX-r.left)/r.width*800,(e.clientY-r.top)/r.height*420]};
-svg.addEventListener("pointerdown",e=>{const[x,y]=pt(e),v=viewNow();
+// every tap target is also a focusable group (role=button, data-tap = the point it stands for), so Enter and Space work too
+function tapAt(x,y){const v=viewNow();
   if(v==="needs"||v==="choice"){let hit=-1;ITEMS.forEach((it,i)=>{const p=slot(i);if(Math.abs(x-p.x)<30&&y>p.y-50&&y<p.y+58)hit=i});
     if(v==="needs"&&hit<0){// tap a sorted item in a bin to move it
       [[1,430],[2,618]].forEach(([val,bx])=>{ITEMS.map((_,i)=>i).filter(i=>s.sort[i]===val).forEach((i,n)=>{const cx=bx+44+(n%2)*78,cy=200+Math.floor(n/2)*58;if(Math.hypot(x-cx,y-cy)<28)hit=i})})}
@@ -327,6 +331,12 @@ svg.addEventListener("pointerdown",e=>{const[x,y]=pt(e),v=viewNow();
     else{const r=s.rank.indexOf(hit);if(r>=0){s.rank.splice(r,1);sfx("whoosh")}else{s.rank.push(hit);const sh=shop();if(sh.got.includes(hit)){sfx("pop");clink()}else sfx("buzz")}}
     kick();return}
   if(v==="inquiry"){let best=null,bd=40;PEOPLE.forEach(p=>{const d=Math.hypot(x-PX(p.st),y-(PY(p.row)+18));if(d<bd){bd=d;best=p}});if(best){s.sel=best.id;s.tool="persp";sfx("pop");API.redraw()}return}
-  if(v==="market"&&x>=G.x0&&x<=G.x1&&y>=G.y1&&y<=G.y0){s.P=Math.max(0.5,Math.min(3,Math.round((G.y0-y)/(G.y0-G.y1)*G.pmax*4)/4));s.settle=false;sfx("tick");API.redraw()}});
+  if(v==="market"&&x>=G.x0&&x<=G.x1&&y>=G.y1&&y<=G.y0){s.P=Math.max(0.5,Math.min(3,Math.round((G.y0-y)/(G.y0-G.y1)*G.pmax*4)/4));s.settle=false;sfx("tick");API.redraw()}}
+svg.addEventListener("pointerdown",e=>{const[x,y]=pt(e);tapAt(x,y)});
+svg.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const g=e.target.closest&&e.target.closest("[data-tap]");if(!g)return;e.preventDefault();const[x,y]=g.dataset.tap.split(",").map(Number);tapAt(x,y)});
+// the drawing is rebuilt on every redraw, so put keyboard focus back on the same target afterwards
+(function(){const st=document.createElement("style");st.textContent="#k-main [data-tap]:focus{outline:none}#k-main [data-tap]:focus-visible>rect:first-of-type{stroke:var(--as-focus);stroke-width:3;fill:rgba(47,111,228,.08)}";document.head.appendChild(st)})();
+const keepFocus=fn=>function(){const a=document.activeElement,g=a&&a.closest&&a.closest("[data-tap]"),key=g&&g.dataset.tap;const r=fn.apply(this,arguments);if(key){const n=svg.querySelector(`[data-tap="${key}"]`);if(n&&n!==document.activeElement)try{n.focus({preventScroll:true})}catch(err){}}return r};
 kick();
+API.redraw=keepFocus(API.redraw);
 })();

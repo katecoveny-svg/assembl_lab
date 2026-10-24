@@ -385,7 +385,9 @@ function mount(cfg){logStudy("open");
     const dk=$("k-deck");dk.hidden=avail.length<2;
     dk.innerHTML=avail.map(([k,l,id,ic])=>`<button type="button" role="tab" data-k="${k}" aria-controls="${id}" aria-selected="${k===deckSel}">${ic}${l}</button>`).join("");
     DECK.forEach(([k,,id])=>{const el=$(id);if(el)el.classList.toggle("off",k!==deckSel)})}
-  $("k-deck").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(!b)return;deckSel=b.dataset.k;sfx("tick");showDeck()});
+  $("k-deck").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(!b)return;deckSel=b.dataset.k;sfx("tick");showDeck();const nb=$("k-deck").querySelector(`[data-k="${deckSel}"]`);nb&&nb.focus()});
+  // arrow keys move between the note tabs, as a tablist should
+  $("k-deck").addEventListener("keydown",e=>{if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft"&&e.key!=="Home"&&e.key!=="End")return;const tabs=[...$("k-deck").querySelectorAll("[data-k]")];const i=tabs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?tabs.length-1:(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[j].click()});
   function setStep(i){step=i;const st=cfg.steps[i];seenSteps.add(i);
     document.querySelectorAll(".step").forEach((b,j)=>{b.setAttribute("aria-current",j===i?"true":"false");b.classList.toggle("done",seenSteps.has(j)&&j!==i)});
     const cur=document.querySelectorAll(".step")[i];if(mounted)try{cur&&cur.scrollIntoView({inline:"nearest",block:"nearest"})}catch(e){}

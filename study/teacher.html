@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>assembly · for teachers and reviewers</title>
+<meta name="description" content="Every assembly study machine with its NZQA standards, curriculum strands, challenge answers, kupu Māori sources, a coverage chart and a review form. Nothing leaves this device.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fredoka:wght@500;600;700&family=Caveat:wght@600;700&display=swap">
+<link rel="stylesheet" href="kit.css">
+<style>
+/* The teacher layer: the same shell tokens as the hub, laid out as a long reference page with a sticky in-page nav.
+   One machine at a time (?machine=<id>) becomes an A4 one-pager with a QR code; print CSS keeps only that sheet. */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;background:var(--as-card);border:1px solid var(--as-line);border-radius:22px;padding:12px 14px 12px 18px;box-shadow:var(--as-shadow)}
+.top .as-lock{display:inline-flex;align-items:baseline;margin-right:auto;text-decoration:none;border-radius:12px}
+.top .as-word{font-size:26px}
+.top nav{display:flex;gap:4px;flex-wrap:wrap}
+.top nav a{color:var(--as-ink);text-decoration:none;font:600 14px var(--as-font);padding:7px 12px;border-radius:999px}
+.top nav a:hover{background:var(--as-mintsoft)}
+.top nav a[aria-current="true"]{background:var(--as-ink);color:var(--as-card)}
+.hero{background:var(--as-card);border:1px solid var(--as-line);border-radius:28px;padding:clamp(18px,3vw,34px);box-shadow:var(--as-shadow);display:grid;gap:10px}
+.hero h1{font-size:clamp(30px,4.6vw,52px);line-height:1.02;max-width:18ch;margin:4px 0 0}
+.hero p{margin:0;max-width:72ch;font-size:16px}
+.hero .cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.notice{display:flex;gap:10px;align-items:flex-start;border:1.5px dashed var(--as-line2);border-radius:18px;padding:10px 14px;font-size:13.5px;color:var(--as-text);max-width:84ch}
+.notice b{color:var(--as-ink)}
+section.block{display:grid;gap:14px;scroll-margin-top:12px}
+section.block>h2{margin:14px 0 0;font:600 clamp(24px,3.2vw,32px)/1.1 var(--as-display);color:var(--as-ink);letter-spacing:-.01em}
+.lede{margin:-6px 0 0;max-width:76ch;color:var(--as-text)}
+.card{min-width:0}
+.card h3{display:flex}
+/* machine table → cards on narrow screens */
+.mtab{width:100%;border-collapse:collapse;background:var(--as-card);border:1px solid var(--as-line);border-radius:22px;overflow:hidden;box-shadow:var(--as-shadow);font-size:14px}
+.mtab th,.mtab td{text-align:left;vertical-align:top;padding:11px 12px;border-top:1px solid var(--as-line)}
+.mtab th{font:600 11.5px var(--as-font);letter-spacing:.07em;text-transform:uppercase;color:var(--as-muted);border-top:0;background:var(--as-soft)}
+.mtab td .nm{display:flex;align-items:center;gap:9px;font:600 15px var(--as-display);color:var(--as-ink)}
+.mtab td .nm i{width:28px;height:28px;border-radius:9px;display:inline-grid;place-items:center;background:var(--acc);color:#fff;flex:none}
+.mtab td .nm i svg{width:17px;height:17px}
+.mtab td .sub{font-size:12.5px;color:var(--as-muted);margin:3px 0 0 37px}
+.mtab ul{margin:0;padding-left:16px;display:grid;gap:3px}
+.mtab .num{font:500 12px var(--as-mono);color:var(--as-muted)}
+.mtab .cnt{white-space:nowrap;font-variant-numeric:tabular-nums}
+.mtab .acts{display:flex;flex-wrap:wrap;gap:6px}
+.mtab .acts .btn{padding:6px 11px;font-size:13px}
+.none{color:var(--as-muted);font-style:italic}
+.pill{display:inline-block;font:600 11px var(--as-font);border-radius:999px;padding:2px 8px;background:var(--as-soft);color:var(--as-text);margin:0 4px 4px 0}
+.pill.ex{background:var(--as-mintsoft);color:var(--as-mintink)}
+.pill.warn{background:#FFF3EE;color:var(--as-warn)}
+@media (max-width:820px){
+  .mtab,.mtab thead,.mtab tbody,.mtab tr,.mtab td{display:block}
+  .mtab thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .mtab tr{border-top:1px solid var(--as-line);padding:6px 0}
+  .mtab tr:first-child{border-top:0}
+  .mtab td{border:0;padding:6px 14px}
+  .mtab td[data-l]::before{content:attr(data-l);display:block;font:600 11px var(--as-font);letter-spacing:.07em;text-transform:uppercase;color:var(--as-muted);margin-bottom:3px}
+}
+/* challenge sheets */
+.mach{padding:0;max-width:none}
+.mach>summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:14px 16px;border-radius:20px}
+.mach>summary::-webkit-details-marker{display:none}
+.mach>summary::before{content:"+";font:600 17px/1 var(--as-mono);color:var(--acc-deep,var(--as-mintink));width:1ch}
+.mach[open]>summary::before{content:"−"}
+.mach>summary:hover{background:var(--acc-soft)}
+.mach>summary b{font:600 17px var(--as-display);color:var(--as-ink)}
+.mach>summary small{font:500 12.5px var(--as-font);color:var(--as-muted)}
+.mach .in{display:grid;gap:12px;padding:0 16px 16px}
+.steps-t{width:100%;border-collapse:collapse;font-size:13.5px}
+.steps-t th{text-align:left;font:600 11px var(--as-font);letter-spacing:.07em;text-transform:uppercase;color:var(--as-muted);padding:6px 8px;border-bottom:1px solid var(--as-line)}
+.steps-t td{vertical-align:top;padding:7px 8px;border-bottom:1px solid var(--as-line)}
+.steps-t td:first-child{white-space:nowrap;font-weight:600;color:var(--as-ink)}
+@media (max-width:620px){.steps-t,.steps-t tbody,.steps-t tr,.steps-t td{display:block}.steps-t thead{display:none}.steps-t td{border:0;padding:3px 0}.steps-t td[data-l]::before{content:attr(data-l) ": ";font-weight:600;color:var(--as-muted)}.steps-t tr{border-bottom:1px solid var(--as-line);padding:8px 0}}
+.q{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 10px;border:1px solid var(--as-line);border-radius:16px;padding:12px 14px;background:var(--as-soft)}
+.q .qn{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;font:600 12.5px var(--as-display)}
+.q .qq{font-size:15px;color:var(--as-ink);font-weight:600}
+.q dl{grid-column:2;margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;font-size:13.5px}
+.q dt{font:600 11px/1.6 var(--as-font);letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted)}
+.q dd{margin:0;min-width:0}
+.q code{display:block;font:12.5px/1.45 var(--as-mono);color:var(--as-ink);background:var(--as-card);border:1px solid var(--as-line);border-radius:10px;padding:7px 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:620px){.q dl{grid-template-columns:1fr}.q dt{margin-top:4px}}
+.legend{font-size:13px;color:var(--as-muted);max-width:80ch}
+/* kupu */
+.ktab{width:100%;border-collapse:collapse;font-size:14px}
+.ktab th{text-align:left;font:600 11px var(--as-font);letter-spacing:.07em;text-transform:uppercase;color:var(--as-muted);padding:6px 8px;border-bottom:1px solid var(--as-line)}
+.ktab td{vertical-align:top;padding:7px 8px;border-bottom:1px dashed var(--as-line)}
+.ktab td b{font:600 15px var(--as-font);color:var(--as-ink)}
+.ktab a.ta{font:600 12px var(--as-font);color:var(--as-mintink);text-decoration:none;white-space:nowrap}
+.ktab a.ta:hover{text-decoration:underline}
+.ktab small{display:block;color:var(--as-muted);font-size:12.5px;max-width:52ch}
+.ev{font:600 11px var(--as-font);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.ev.moe{background:var(--as-mintsoft);color:var(--as-mintink)}
+.ev.ta{background:var(--as-soft);color:var(--as-text)}
+@media (max-width:620px){.ktab,.ktab tbody,.ktab tr,.ktab td{display:block}.ktab thead{display:none}.ktab td{border:0;padding:2px 0}.ktab tr{border-bottom:1px dashed var(--as-line);padding:8px 0}}
+.srcs{display:grid;gap:6px;margin:0;padding-left:18px;font-size:14px}
+/* coverage chart */
+.cov{display:grid;gap:8px}
+.cov .chart{overflow-x:auto;border-radius:12px;-webkit-overflow-scrolling:touch}
+.cov svg{width:100%;min-width:640px;height:auto;display:block}
+.cov .t-lab{font-size:12px;letter-spacing:.02em}
+.gaps ul{margin:4px 0 0;padding-left:18px;font-size:13.5px;display:grid;gap:3px}
+.gaps summary{cursor:pointer;font:600 13px var(--as-font);color:var(--as-plum)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px}
+.kpi{border:1px solid var(--as-line);border-radius:18px;padding:12px 14px;background:var(--as-card)}
+.kpi b{display:block;font:600 30px/1 var(--as-display);color:var(--as-ink);font-variant-numeric:tabular-nums}
+.kpi span{display:block;font-size:12.5px;color:var(--as-muted);margin-top:4px}
+/* review form */
+.rev{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 16px}
+.rev .full{grid-column:1/-1}
+.rev label,.rev legend{font:600 12px var(--as-font);letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);display:block;margin-bottom:5px}
+.rev input[type=text],.rev select,.rev textarea{width:100%;font:15px var(--as-font);color:var(--as-ink);background:var(--as-bg);border:1.5px solid var(--as-line2);border-radius:12px;padding:9px 12px;min-width:0}
+.rev textarea{min-height:120px;resize:vertical;line-height:1.45}
+.rev fieldset{border:0;margin:0;padding:0;min-width:0}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:7px;align-items:center;font:500 14px var(--as-font);color:var(--as-ink);text-transform:none;letter-spacing:0;margin:0}
+.checks input{width:18px;height:18px;accent-color:var(--as-mint);margin:0}
+.stars{display:flex;gap:6px}
+.stars label{margin:0;display:block}
+.stars input{position:absolute;opacity:0;width:1px;height:1px}
+.stars span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1.5px solid var(--as-line2);font:600 15px var(--as-display);color:var(--as-ink);cursor:pointer;background:var(--as-card)}
+.stars input:checked+span{background:var(--as-sun);border-color:var(--as-sun);color:var(--as-onsun)}
+.stars input:focus-visible+span{outline:3px solid var(--as-focus);outline-offset:2px}
+.saved{display:grid;gap:8px}
+.saved li{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;border:1px solid var(--as-line);border-radius:16px;padding:10px 14px;background:var(--as-card);font-size:14px}
+.saved li b{color:var(--as-ink)}
+.saved li .meta{font-size:12.5px;color:var(--as-muted)}
+.saved li p{margin:4px 0 0;grid-column:1/-1;white-space:pre-wrap}
+.export textarea{width:100%;min-height:200px;font:13px/1.5 var(--as-mono);color:var(--as-ink);background:var(--as-bg);border:1.5px solid var(--as-line2);border-radius:14px;padding:12px}
+.status{font:600 13.5px var(--as-font);color:var(--as-good);min-height:1.4em;margin:0}
+@media (max-width:620px){.rev{grid-template-columns:1fr}}
+/* the A4 one-pager */
+.sheet-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sheet{background:#fff;color:#2A2140;border:1px solid var(--as-line);border-radius:22px;box-shadow:var(--as-shadow);padding:clamp(18px,3vw,34px);display:grid;gap:14px;max-width:820px;margin:0 auto;width:100%}
+.sheet header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;border-bottom:2px solid var(--as-ink);padding-bottom:10px}
+.sheet header .ey{font:600 11px var(--as-font);letter-spacing:.08em;text-transform:uppercase;color:var(--as-muted)}
+.sheet h1{font-size:clamp(26px,3.6vw,38px)}
+.sheet .meta{display:flex;flex-wrap:wrap;gap:6px}
+.sheet .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.sheet .box{border:1px solid var(--as-line);border-radius:14px;padding:12px 14px;display:grid;gap:6px;align-content:start;min-width:0}
+.sheet .box h2{margin:0;font:600 11px var(--as-font);letter-spacing:.07em;text-transform:uppercase;color:var(--as-muted)}
+.sheet .box p{margin:0;font-size:14.5px;color:var(--as-ink)}
+.sheet .box ul{margin:0;padding-left:16px;font-size:14px;display:grid;gap:3px}
+.sheet .box.exam{background:var(--acc-soft);border-color:transparent}
+.sheet .box.trap{background:#FFF3EE;border-color:transparent}
+.sheet ol.qs{margin:0;padding-left:0;list-style:none;display:grid;gap:8px;counter-reset:q}
+.sheet ol.qs li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:2px 10px;font-size:14px;color:var(--as-ink)}
+.sheet ol.qs li::before{counter-increment:q;content:counter(q);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font:600 12px var(--as-display)}
+.sheet ol.qs li small{grid-column:2;color:var(--as-muted);font-size:12.5px;overflow-wrap:anywhere}
+.sheet .qr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center}
+.sheet .qr svg{width:124px;height:124px;display:block;border:1px solid var(--as-line);border-radius:10px;padding:6px;background:#fff}
+.sheet .qr .u{font:500 12.5px var(--as-mono);color:var(--as-ink);overflow-wrap:anywhere}
+.sheet .qr p{margin:0;font-size:13px;color:var(--as-text)}
+.sheet footer{border-top:1px solid var(--as-line);padding-top:8px;font-size:11.5px;color:var(--as-muted);display:grid;gap:3px;max-width:none}
+@media (max-width:620px){.sheet .two{grid-template-columns:1fr}.sheet .qr{grid-template-columns:1fr}}
+.hub-foot{border-top:1px solid var(--as-line);padding-top:16px;margin-top:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  @page{size:A4;margin:14mm}
+  html,body{background:#fff;padding:0;font-size:12.5px}
+  .noprint,.top,.hub-foot,.sheet-bar{display:none!important}
+  .wrap{gap:0;max-width:none}
+  .sheet{border:0;box-shadow:none;padding:0;max-width:none;gap:10px}
+  .sheet .box{break-inside:avoid}
+  .sheet h1{font-size:26px}
+  a{color:inherit;text-decoration:none}
+}
+</style></head>
+<body>
+<div class="wrap" id="wrap">
+  <header class="top">
+    <a class="as-lock" href="index.html" id="lock" aria-label="assembly home"></a>
+    <nav aria-label="Sections" id="nav"><a href="#h-mach">Machines</a><a href="#h-chal">Challenges</a><a href="#h-kupu">Kupu Māori</a><a href="#h-cov">Coverage</a><a href="#h-rev">Reviews</a></nav>
+  </header>
+  <main id="main" aria-live="off"></main>
+  <footer class="hub-foot">
+    <p>This page is for teachers and reviewers. Students never see it; it is linked only from the foot of the home page. Reviews you write here are saved in this browser only, and nothing on this page sends anything anywhere.</p>
+    <p>Standard numbers, titles and exam dates come from NZQA's published 2026 timetable; Years 9–10 strands follow the refreshed New Zealand Curriculum. Not made by or endorsed by NZQA or the Ministry of Education.</p>
+    <p class="as-foot" id="foot"></p>
+  </footer>
+</div>
+<script src="data.js"></script>
+<script src="kit.js"></script>
+<script src="teacher-data.js"></script>
+<script src="teacher.js"></script>
+<script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script></body></html>

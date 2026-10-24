@@ -529,7 +529,7 @@ svg.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const 
 // ---- small styles for the challenge inputs (this machine only)
 const st=document.createElement("style");st.textContent=`.wx-sel{margin:4px 0 0 4px;max-width:100%}.wx-opts{display:grid;gap:6px;margin-top:8px}.wx-opt{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:var(--body);border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer;background:var(--paper)}
 .wx-opt:has(input:checked){border-color:var(--ink);background:var(--chalk)}.wx-opt input{accent-color:var(--sun);margin-top:3px;flex:none}.challenge .q i{font-style:normal;color:var(--ink);font-weight:500}
-#k-main [data-a]:focus{outline:none}#k-main [data-a]:focus-visible>rect:first-of-type{stroke:var(--sun);stroke-width:4}`;document.head.appendChild(st);
+#k-main [data-a]:focus{outline:none}#k-main [data-a]:focus-visible>rect:first-of-type{stroke:var(--as-focus);stroke-width:4}`;document.head.appendChild(st);
 try{mq.addEventListener("change",()=>api.redraw())}catch(e){}
 try{document.fonts&&document.fonts.ready.then(()=>api.redraw())}catch(e){}
 })();

@@ -96,6 +96,7 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
 .den-stage{position:sticky;top:12px;display:grid;gap:10px}
 .den-stage .pic{width:min(100%,380px);margin:0 auto;border-radius:50%;filter:drop-shadow(0 18px 28px rgba(36,11,33,.22))}
 .den-stage .pic .allen{cursor:pointer}
+.den-stage .pic:focus-visible{outline:3px solid var(--as-focus);outline-offset:6px}
 .den-stage .who{font:600 22px var(--as-display);color:var(--as-ink);margin:0 4px}
 .den-stage .who small{display:block;font:500 13px var(--as-font);color:var(--as-muted)}
 .den-ctl{display:grid;gap:16px;min-width:0}
@@ -212,7 +213,7 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
     <div class="den-head"><h2 id="h-den"><span id="denName">Allen</span>'s den</h2>
       <p class="lede">Allen is a long-haired dachshund, named after the Allen key every kitset needs. Pass a challenge in a machine to unlock gear; keep a streak going to unlock new places. He's saved on this device.</p></div>
     <div class="den-grid">
-      <div class="den-stage"><div class="pic" id="denPic"></div><p class="who" id="denWho"></p></div>
+      <div class="den-stage"><div class="pic" id="denPic" role="button" tabindex="0" aria-label="Give Allen a wiggle"></div><p class="who" id="denWho"></p></div>
       <form class="den-ctl" id="denCtl" onsubmit="return false"></form>
     </div>
   </section>
@@ -227,7 +228,7 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
   <footer class="hub-foot">
     <p>Free to use. Exam dates are from NZQA's 2026 timetable; check your admission slip, since your school's entries decide what you sit. We link to NZQA for past papers, marking schedules and exemplars instead of copying them, because NZQA restricts reproduction of its assessment material.</p>
     <p>Years 9–10 topics follow the refreshed New Zealand Curriculum: English and maths are in use from 2026; science and social sciences are required from 2027, so schools may still teach older content. Your school sets Year 9 and 10 exams.</p>
-    <p>Not made by or endorsed by NZQA or the Ministry of Education. Teachers: we'd love a review of any machine.</p>
+    <p>Not made by or endorsed by NZQA or the Ministry of Education. <a href="teacher.html">Teachers: review the machines</a>.</p>
     <p class="as-foot" id="foot"></p>
   </footer>
 </div>
@@ -353,7 +354,7 @@ ctl.addEventListener("click",e=>{
     look.bg=pickOne(A.backgrounds.filter(b=>ST.has.has("bg:"+b.id))).id;A.save(look);buildCtl();paint();K.sfx("pop");$("alRand").focus()}
   if(e.target.id==="alReset"){look={...A.defaults,name:look.name,seen:look.seen,minimal:look.minimal,gear:{...A.defaults.gear}};A.save(look);buildCtl();paint();K.sfx("pop");$("alReset").focus()}});
 const wig=()=>{const s=$("denPic").querySelector(".allen");if(!s||matchMedia("(prefers-reduced-motion: reduce)").matches)return;s.classList.remove("wiggle");void s.getBoundingClientRect();s.classList.add("wiggle");K.sfx("yip");setTimeout(()=>s.classList.remove("wiggle"),1100)};
-$("denPic").addEventListener("click",wig);
+$("denPic").addEventListener("click",wig);$("denPic").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();wig()}});
 
 // tabs
 const TABS=[["y9","Year 9",""],["y10","Year 10",""],["l1","Year 11","NCEA L1"],["l2","Year 12","NCEA L2"],["l3","Year 13","NCEA L3"]];
