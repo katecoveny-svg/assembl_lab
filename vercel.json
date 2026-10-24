@@ -1,0 +1,38 @@
+{
+ "cleanUrls": false,
+ "trailingSlash": true,
+ "regions": [
+  "syd1"
+ ],
+ "functions": {
+  "api/read.js": {
+   "maxDuration": 30,
+   "includeFiles": "contracts/**"
+  },
+  "api/live.js": {
+   "maxDuration": 15
+  },
+  "api/ask.js": {
+   "maxDuration": 20
+  }
+ },
+ "headers": [
+  {
+   "source": "/(.*)",
+   "headers": [
+    {
+     "key": "X-Content-Type-Options",
+     "value": "nosniff"
+    },
+    {
+     "key": "Referrer-Policy",
+     "value": "strict-origin-when-cross-origin"
+    },
+    {
+     "key": "Permissions-Policy",
+     "value": "camera=(self), microphone=(), geolocation=()"
+    }
+   ]
+  }
+ ]
+}

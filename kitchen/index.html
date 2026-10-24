@@ -1,0 +1,733 @@
+<!doctype html><html lang="en-NZ" data-feeds="fpi,foodprices"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>The Kitchen Machine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: header; "Snap your fridge" (add → check → plan); household settings; the fridge drawing beside "eat these first" and the two shops; the typed list for a shopping agent. Glass cards over a soft plum light field (dusk in dark mode). */
+:root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--deep:#240B21;--body:#654A4E;--rose:#916A70;--line:rgba(73,43,62,.13);--line-2:rgba(73,43,62,.22);
+  --field-1:#F7ECEE;--field-2:#EEF2EE;--field-3:#FBF4EE;
+  --glass:rgba(255,253,251,.66);--glass-2:rgba(255,253,251,.84);--glass-solid:#FFFDFB;--glass-edge:rgba(255,255,255,.9);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 0 1px rgba(73,43,62,.08),0 24px 48px -30px rgba(36,11,33,.38),0 2px 6px -3px rgba(36,11,33,.12);
+  --bloom:rgba(145,106,112,.30);--head-grad:linear-gradient(96deg,#240B21 0%,#492B3E 48%,#916A70 100%);
+  --act-bg:#240B21;--act-ink:#F5F1F2;--act-hi:rgba(255,255,255,.22);
+  --today:#B4535F;--week:#A0712A;--fine:#4E8466;--good:#3F7A55;--check:#9A6A1F;--est:#7B5C8E;
+  --t-fruit:#F4DDE1;--t-veg:#DDEBDF;--t-dairy:#E2E6F1;--t-meat:#EEDDE5;--t-bakery:#F1E6D7;--t-left:#E7DFF0;--t-other:#EFE9EA;
+  --fridge:#F3F1F1;--fridge-in:#FFFFFF;--shelf:#D9CDD1;--crisper:#E9F1EB;--wood:#E8D6BF;--pantry:#F2E9DC;
+  --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--ease:cubic-bezier(.2,.7,.2,1)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#150912;--chalk:#211220;--ink:#F5F1F2;--deep:#F5F1F2;--body:#D9CBCE;--rose:#B9979D;--line:rgba(245,241,242,.10);--line-2:rgba(245,241,242,.2);
+  --field-1:#2A1226;--field-2:#121A1A;--field-3:#2B1717;--glass:rgba(40,20,36,.56);--glass-2:rgba(46,24,42,.8);--glass-solid:#22121F;--glass-edge:rgba(255,255,255,.12);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.06),0 30px 60px -34px rgba(0,0,0,.85),0 2px 8px -4px rgba(0,0,0,.5);
+  --bloom:rgba(200,150,160,.22);--head-grad:linear-gradient(96deg,#FFFDFB 0%,#EBDCE0 46%,#C9A2A9 100%);--act-bg:#F5F1F2;--act-ink:#240B21;--act-hi:rgba(255,255,255,.6);
+  --today:#EE8C98;--week:#E2B66A;--fine:#86C79F;--good:#86C79F;--check:#E2B66A;--est:#C3A2D6;
+  --t-fruit:#4A2531;--t-veg:#233A2C;--t-dairy:#262D44;--t-meat:#43283A;--t-bakery:#3E3122;--t-left:#33284A;--t-other:#33242F;
+  --fridge:#2A1C27;--fridge-in:#1F141D;--shelf:#4E3A48;--crisper:#1E2C25;--wood:#4A3A2C;--pantry:#33291F;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#150912;--chalk:#211220;--ink:#F5F1F2;--deep:#F5F1F2;--body:#D9CBCE;--rose:#B9979D;--line:rgba(245,241,242,.10);--line-2:rgba(245,241,242,.2);
+  --field-1:#2A1226;--field-2:#121A1A;--field-3:#2B1717;--glass:rgba(40,20,36,.56);--glass-2:rgba(46,24,42,.8);--glass-solid:#22121F;--glass-edge:rgba(255,255,255,.12);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.06),0 30px 60px -34px rgba(0,0,0,.85),0 2px 8px -4px rgba(0,0,0,.5);
+  --bloom:rgba(200,150,160,.22);--head-grad:linear-gradient(96deg,#FFFDFB 0%,#EBDCE0 46%,#C9A2A9 100%);--act-bg:#F5F1F2;--act-ink:#240B21;--act-hi:rgba(255,255,255,.6);
+  --today:#EE8C98;--week:#E2B66A;--fine:#86C79F;--good:#86C79F;--check:#E2B66A;--est:#C3A2D6;
+  --t-fruit:#4A2531;--t-veg:#233A2C;--t-dairy:#262D44;--t-meat:#43283A;--t-bakery:#3E3122;--t-left:#33284A;--t-other:#33242F;
+  --fridge:#2A1C27;--fridge-in:#1F141D;--shelf:#4E3A48;--crisper:#1E2C25;--wood:#4A3A2C;--pantry:#33291F;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--display);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60vw 50vh at 6% -8%,var(--field-1),transparent 70%),radial-gradient(55vw 60vh at 100% 18%,var(--field-2),transparent 70%),radial-gradient(70vw 50vh at 40% 112%,var(--field-3),transparent 70%),var(--paper)}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:18px;min-width:0}
+.glass{background:var(--glass);border-radius:22px;box-shadow:var(--glass-shadow);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);min-width:0;position:relative}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:var(--glass-solid)}}
+.card{padding:18px;overflow:hidden}
+.eyebrow{font:500 11.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--rose)}
+h1{margin:4px 0 8px;font-size:clamp(32px,5.4vw,54px);line-height:1;letter-spacing:-.035em;font-weight:600;text-wrap:balance;color:var(--ink);background:var(--head-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h2{margin:0 0 4px;font-size:clamp(19px,2.3vw,24px);line-height:1.12;letter-spacing:-.02em;color:var(--ink);font-weight:600}
+h2 em{font-style:normal;background:var(--head-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lead{max-width:66ch;margin:0;font-size:16.5px}
+.sub{margin:0;max-width:68ch}
+.lab{display:flex;justify-content:space-between;gap:8px;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose)}
+.settings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 18px;padding:18px}
+.row{display:grid;gap:6px;min-width:0}
+.row label{display:flex;justify-content:space-between;gap:8px;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose)}
+.row label b{color:var(--ink);font-weight:500;text-transform:none}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.inp,select{font:500 14px var(--display);color:var(--ink);background:color-mix(in srgb,var(--paper) 70%,transparent);border:0;box-shadow:inset 0 0 0 1px var(--line-2);border-radius:10px;padding:8px 10px;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--rose) 50%),linear-gradient(135deg,var(--rose) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat;padding-right:26px}
+.inp:focus,select:focus{outline:none;box-shadow:inset 0 0 0 1.5px var(--rose),0 0 0 4px color-mix(in srgb,var(--rose) 18%,transparent)}
+.pills{display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,var(--ink) 7%,transparent);justify-self:start}
+.pill{appearance:none;border:0;background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font:500 13px var(--display);cursor:pointer;transition:background .2s,color .2s}
+.pill[aria-pressed="true"]{background:var(--act-bg);color:var(--act-ink);box-shadow:inset 0 1px 0 var(--act-hi)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,label:focus-within{outline:2px solid var(--rose);outline-offset:2px}
+.act{appearance:none;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 16px;font:500 14px var(--display);color:var(--ink);background:color-mix(in srgb,var(--ink) 7%,transparent);transition:transform .15s var(--ease),background .2s,box-shadow .2s}
+.act:hover{background:color-mix(in srgb,var(--ink) 12%,transparent)}.act:active{transform:scale(.97)}
+.act.primary{background:var(--act-bg);color:var(--act-ink);box-shadow:inset 0 1px 0 var(--act-hi),0 10px 22px -12px color-mix(in srgb,var(--deep) 70%,transparent)}
+.act.ghost{background:transparent;box-shadow:inset 0 0 0 1px var(--line-2)}
+.act.small{padding:7px 12px;font-size:13px}
+.act svg{width:16px;height:16px;flex:none}
+.hint{margin:0;font-size:13px;color:var(--body)}
+.notice{margin:0;border-radius:12px;padding:10px 12px;font-size:13.5px;color:var(--ink);background:color-mix(in srgb,var(--check) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--check) 30%,transparent)}
+/* snap */
+.snap{padding:18px;display:grid;gap:14px;overflow:hidden}
+.snap::after{content:"";position:absolute;right:-120px;top:-160px;width:440px;height:440px;border-radius:50%;background:radial-gradient(closest-side,var(--bloom),transparent);pointer-events:none;opacity:.7}
+.snap>*{position:relative;z-index:1}
+.snap-head{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between;align-items:flex-end}
+.steps{display:flex;gap:6px;list-style:none;margin:0;padding:0;counter-reset:s;flex-wrap:wrap}
+.steps li{counter-increment:s;font:500 11px var(--mono);letter-spacing:.04em;color:var(--rose);padding:5px 10px 5px 6px;border-radius:999px;display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:10px}
+.steps li[aria-current="step"]{background:var(--act-bg);color:var(--act-ink)}.steps li[aria-current="step"]::before{background:var(--act-ink);color:var(--act-bg)}
+.steps li.done{color:var(--ink)}.steps li.done::before{content:"✓";background:color-mix(in srgb,var(--good) 25%,transparent);color:var(--good)}
+.addgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px}
+.drop{border-radius:16px;padding:16px;display:grid;gap:12px;align-content:center;background:color-mix(in srgb,var(--paper) 40%,transparent);border:1.5px dashed var(--line-2);transition:border-color .2s,background .2s}
+.drop.over{border-color:var(--rose);background:color-mix(in srgb,var(--rose) 10%,transparent)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.privacy{display:flex;gap:10px;align-items:flex-start;font-size:13px;margin:0}
+.privacy svg{flex:none;width:18px;height:18px;margin-top:1px;color:var(--rose)}.privacy b{color:var(--ink);font-weight:500}
+.samplecard{border-radius:16px;padding:12px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center;background:color-mix(in srgb,var(--paper) 40%,transparent);box-shadow:inset 0 0 0 1px var(--line)}
+.samplecard img{width:96px;height:auto;border-radius:8px;box-shadow:0 8px 20px -10px rgba(36,11,33,.45);transform:rotate(2deg);transition:transform .3s var(--ease)}
+.samplecard:hover img{transform:rotate(0) scale(1.03)}
+.samplecard p{margin:0 0 8px;font-size:13px}.tagline{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose);display:block;margin-bottom:2px}
+.reading{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:center}
+.thumb{width:120px;aspect-ratio:3/4;border-radius:10px;background:var(--chalk) center/cover no-repeat;box-shadow:0 10px 24px -12px rgba(36,11,33,.5);position:relative;overflow:hidden}
+.thumb::after{content:"";position:absolute;left:0;right:0;top:0;height:var(--p,0%);background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--rose) 35%,transparent));border-bottom:2px solid var(--rose);transition:height .5s var(--ease)}
+.rstat{font-size:16px;color:var(--ink);margin:0 0 6px}
+.found{display:flex;flex-wrap:wrap;gap:6px;min-height:26px}
+.found span{font:500 11px var(--mono);padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--ink);animation:pop .35s var(--ease) both}
+@keyframes pop{from{opacity:0;transform:translateY(4px) scale(.96)}to{opacity:1;transform:none}}
+.items{display:grid;gap:6px}
+.it{display:grid;grid-template-columns:minmax(0,1.6fr) 72px minmax(0,.8fr) minmax(0,1fr) 196px 96px 30px;gap:8px;align-items:center;padding:4px 0}
+.it .use{justify-self:start}.it .conf{justify-self:start}
+.it.head{font:500 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--rose);padding:0}
+.it.low .inp.nm{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--check) 70%,transparent);background:color-mix(in srgb,var(--check) 8%,transparent)}
+.use{display:inline-flex;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.use button{appearance:none;border:0;background:transparent;color:var(--body);font:500 11.5px var(--display);padding:4px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.use button[aria-pressed="true"][data-u="today"]{background:var(--today);color:#fff}.use button[aria-pressed="true"][data-u="this_week"]{background:var(--week);color:#fff}.use button[aria-pressed="true"][data-u="fine"]{background:var(--fine);color:#fff}
+:root[data-theme="dark"] .use button[aria-pressed="true"]{color:#1a0d18}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .use button[aria-pressed="true"]{color:#1a0d18}}
+.x{appearance:none;border:0;background:transparent;color:var(--rose);font:500 18px var(--display);width:30px;height:30px;border-radius:50%;cursor:pointer}.x:hover{background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.conf{font:500 9.5px var(--mono);letter-spacing:.04em;padding:1px 6px;border-radius:999px;white-space:nowrap}
+.conf.hi{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}.conf.mid{background:color-mix(in srgb,var(--check) 18%,transparent);color:var(--check)}.conf.you{background:color-mix(in srgb,var(--est) 16%,transparent);color:var(--est)}
+.conf.blank{visibility:hidden}
+.addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+.rowacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.summary{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;border-radius:16px;padding:12px 14px;background:color-mix(in srgb,var(--paper) 45%,transparent);box-shadow:inset 0 0 0 1px var(--line)}
+.summary p{margin:0;color:var(--ink)}
+/* main */
+.main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start}
+.col{display:grid;gap:18px;min-width:0}
+.scene svg{width:100%;height:auto;display:block}
+@media (min-width:981px){.scene{position:sticky;top:16px}}
+.legendline{font-size:13.5px;margin:4px 0 8px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px 0 2px;vertical-align:0}
+.eat{display:grid;gap:10px}
+.waste{display:flex;gap:14px;align-items:center;border-radius:16px;padding:14px;position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(160deg,color-mix(in srgb,var(--paper) 55%,transparent),color-mix(in srgb,var(--today) 12%,transparent))}
+.waste::before{content:"";position:absolute;z-index:-1;left:-10%;top:-80%;width:60%;height:260%;background:radial-gradient(closest-side,var(--bloom),transparent 75%)}
+.waste .v{font:600 30px/1 var(--display);letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
+.waste p{margin:0;font-size:13.5px}
+.meals{display:grid;gap:8px}
+.meal{border-radius:14px;padding:11px 12px;background:color-mix(in srgb,var(--paper) 45%,transparent);box-shadow:inset 0 0 0 1px var(--line);display:grid;gap:6px;animation:pop .35s var(--ease) both}
+.meal .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.meal .nm{color:var(--ink);font-weight:600}
+.meal .day{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--rose);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font:500 11.5px var(--display);padding:2px 8px;border-radius:999px;color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent);white-space:nowrap}
+.chip.have{background:color-mix(in srgb,var(--fine) 16%,transparent)}.chip.have::before{content:"✓ ";color:var(--fine)}
+.chip.have.soon{background:color-mix(in srgb,var(--today) 15%,transparent)}.chip.have.soon::before{color:var(--today)}
+.chip.buy{background:transparent;box-shadow:inset 0 0 0 1px var(--line-2)}.chip.buy::before{content:"+ ";color:var(--rose)}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:8px 0 12px}
+.week div{border-radius:10px;padding:6px 2px;text-align:center;font:500 10.5px var(--mono);color:var(--rose);background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.week div b{display:block;font:600 13px var(--display);color:var(--ink)}
+.week div.shop{background:var(--act-bg);color:var(--act-ink)}.week div.shop b{color:var(--act-ink)}
+.week div.top{background:color-mix(in srgb,var(--rose) 22%,transparent)}.week div.away{opacity:.55}
+.list{display:grid;gap:0}
+.item{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:10px;align-items:center;font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
+.item i{width:9px;height:9px;border-radius:50%}
+.item .q{font:500 12px var(--mono);color:var(--rose);text-align:right;white-space:nowrap}
+.item .s{font:400 12px var(--mono);color:var(--rose)}
+.item .p{font:500 12.5px var(--mono);color:var(--ink);text-align:right;min-width:56px}
+.item .est{color:var(--est)}
+.totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.totals div{display:grid;border-radius:14px;padding:10px 12px;background:color-mix(in srgb,var(--paper) 45%,transparent);box-shadow:inset 0 0 0 1px var(--line)}
+.totals .v{font:600 24px var(--display);color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.totals .l{font:500 10.5px var(--mono);color:var(--rose);text-transform:uppercase;letter-spacing:.04em}
+.note{font-size:14px}.note b{color:var(--ink)}
+pre{margin:0;background:color-mix(in srgb,var(--paper) 50%,transparent);box-shadow:inset 0 0 0 1px var(--line);border-radius:14px;padding:12px;font:12px/1.5 var(--mono);color:var(--ink);max-height:320px;overflow:auto;white-space:pre}
+.truth{font:500 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--est) 14%,transparent);color:var(--est)}
+.truth.prop{background:color-mix(in srgb,var(--check) 16%,transparent);color:var(--check)}
+.sim{font:500 10px var(--mono);letter-spacing:.06em;color:var(--rose);border-radius:999px;padding:2px 7px;background:color-mix(in srgb,var(--ink) 7%,transparent)}
+footer{font-size:12.5px;color:var(--body);display:grid;gap:6px;max-width:96ch}footer a{color:var(--ink)}
+.roll.flash{text-shadow:0 0 18px var(--bloom)}
+/* data visuals: where the money goes, waste compared, use-by mix and assumption chips, drawn from the live plan */
+.tl{font:500 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--rose)}
+.vz{display:grid;gap:8px;margin:2px 0 12px}
+.vz-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 10px}
+.gbars{display:grid;gap:7px}
+.gb{display:grid;grid-template-columns:minmax(0,112px) minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:13px;color:var(--ink)}
+.gb .trk{height:10px;position:relative}
+.gb .trk i{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--ink);opacity:.78;min-width:2px;transition:width .4s var(--ease)}
+.gb b{font:500 12.5px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.gb small{font:10.5px var(--mono);color:var(--rose)}
+.split{display:flex;gap:2px;height:12px}
+.split i{display:block;height:100%;background:var(--k);min-width:2px;transition:flex-grow .4s var(--ease)}
+.split i:first-child{border-radius:4px 0 0 4px}.split i:last-child{border-radius:0 4px 4px 0}
+.skey{display:flex;flex-wrap:wrap;gap:3px 14px;font:11.5px var(--mono);color:var(--body)}
+.skey span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--k)}
+.skey b{color:var(--ink);font-weight:500}
+.wcmp{display:grid;gap:6px;margin-top:12px}
+.wcmp .lr{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink)}
+.wcmp .lr b{font:500 12.5px var(--mono);white-space:nowrap}
+.wcmp .trk{height:10px;position:relative}
+.wcmp .trk i{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--k);transition:width .4s var(--ease)}
+details.tbl summary{cursor:pointer;font:500 11.5px var(--mono);letter-spacing:.04em;color:var(--ink);padding:6px 0}
+details.tbl[open] summary{margin-bottom:4px}
+.fgroup{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.achip{font:11.5px var(--display);color:var(--body);border-radius:999px;padding:2px 9px;background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.achip b{color:var(--ink);font-weight:500}
+@media (max-width:640px){.gb{grid-template-columns:minmax(0,92px) minmax(0,1fr) 52px}}
+@media (max-width:980px){.settings{grid-template-columns:repeat(2,minmax(0,1fr))}.main{grid-template-columns:1fr}.addgrid{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .settings{grid-template-columns:1fr}.week div{font-size:9px}.week div b{font-size:11.5px}
+  .it{grid-template-columns:64px minmax(0,1fr) minmax(0,1fr) 30px;grid-template-areas:"n n f x" "q u c c" "w w w w"}
+  .it .nm{grid-area:n}.it .qt{grid-area:q}.it .un{grid-area:u}.it .x{grid-area:x}.it .ct{grid-area:c}.it .use{grid-area:w;justify-self:start}.it .conf{grid-area:f;justify-self:end}.it .conf.blank{display:none}.it:has(.conf.blank) .nm{grid-column:1/4}
+  .it.head{display:none}.it+.it{border-top:1px solid var(--line);padding-top:8px}
+  .reading{grid-template-columns:84px minmax(0,1fr)}.thumb{width:84px}
+  .samplecard{grid-template-columns:72px minmax(0,1fr)}.samplecard img{width:72px}
+  .totals .v{font-size:19px}.card,.snap{padding:14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Cost-of-living machine · your kitchen</div>
+    <h1>The kitchen machine</h1>
+    <p class="lead">Show it what's in your fridge. It plans dinners around what needs eating first, then builds a shopping list of only what's missing, priced at Stats NZ averages, ready for your shopping agent.</p>
+  </header>
+
+  <section class="snap glass" id="snap" aria-labelledby="snapH">
+    <div class="snap-head">
+      <div><div class="eyebrow">Snap your fridge</div><h2 id="snapH">Cook from <em>what's already there</em></h2><p class="sub">Photograph the inside of your fridge or pantry. We list what we can see and how soon to use it, you check the list, then the plan uses those first.</p></div>
+      <ol class="steps" id="steps" aria-label="Steps"><li aria-current="step">Add photo</li><li>Check items</li><li>Plan the week</li></ol>
+    </div>
+    <div id="pAdd" class="addgrid">
+      <div class="drop" id="drop">
+        <div class="acts">
+          <label class="act primary" id="snapCam" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take a photo<input type="file" accept="image/*" capture="environment" hidden id="fileCam"></label>
+          <label class="act primary" id="snapPick" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v5h16v-5"/></svg>Upload fridge photo<input type="file" accept="image/*" hidden id="filePick"></label>
+          <button class="act ghost" type="button" id="manualBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add items by hand</button>
+        </div>
+        <p class="hint" id="snapHint">Open the fridge door wide and take one photo from the front. Good light helps.</p>
+        <p class="notice" id="snapMsg" hidden role="status"></p>
+        <p class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg><span><b>Your photo is read once to list the food below, then discarded. We never see faces, notes on the fridge or names on labels.</b> Nothing is stored, and you can fix every item before it's used, in keeping with the NZ Privacy Act 2020.</span></p>
+      </div>
+      <div class="samplecard"><img id="sampleImg" alt="A drawn, made-up fridge with milk, eggs, vegetables, chicken and leftovers"><div><span class="tagline">No photo handy?</span><p>Try a drawn sample fridge. Same steps, nothing real.</p><button class="act" type="button" id="sampleBtn">Try the sample fridge</button></div></div>
+    </div>
+    <div id="pRead" class="reading" hidden aria-live="polite">
+      <div class="thumb" id="readThumb"></div>
+      <div><p class="rstat" id="readStat">Sending to Claude to read…</p><div class="found" id="readFound"></div>
+        <div class="rowacts" style="margin-top:10px"><button class="act ghost small" type="button" id="readStop">Stop</button><span class="hint">Reading usually takes 10 to 40 seconds. The photo is dropped as soon as it's read.</span></div></div>
+    </div>
+    <div id="pReview" hidden>
+      <p class="hint" id="reviewNote" style="margin-bottom:10px"></p>
+      <div class="items">
+        <div class="it head" aria-hidden="true"><span>Item</span><span>Amount</span><span>Unit</span><span>Kind</span><span>Use</span><span></span><span></span></div>
+        <div id="itemList" class="items"></div>
+      </div>
+      <div class="addrow"><button class="act ghost small" type="button" id="addItem">+ Add an item</button><span class="hint">Things in the freezer or pantry count too.</span></div>
+      <div class="rowacts" style="margin-top:14px"><button class="act primary" type="button" id="planBtn">Plan with what's here</button><button class="act ghost" type="button" id="restartBtn">Start again</button><span class="hint" id="planHint"></span></div>
+    </div>
+    <div id="pDone" hidden>
+      <div class="summary"><p id="doneText"></p><div class="rowacts"><button class="act small" type="button" id="editBtn">Edit items</button><button class="act ghost small" type="button" id="clearBtn">Plan without my fridge</button></div></div>
+    </div>
+  </section>
+  <datalist id="foods"></datalist>
+
+  <div class="settings glass">
+    <div class="row"><label for="adults">Adults <b id="adultsV">1</b></label><input id="adults" type="range" min="1" max="4" value="1"></div>
+    <div class="row"><label for="kids">Children (on kids' weeks) <b id="kidsV">2</b></label><input id="kids" type="range" min="0" max="5" value="2"></div>
+    <div class="row"><span class="lab">This week</span><div class="pills" id="weekType"><button class="pill" type="button" data-w="kids" aria-pressed="true">Kids' week</button><button class="pill" type="button" data-w="solo" aria-pressed="false">No-kids week</button></div></div>
+    <div class="row"><span class="lab">Away this weekend</span><div class="pills" id="away"><button class="pill" type="button" data-a="none" aria-pressed="true">Home</button><button class="pill" type="button" data-a="trip" aria-pressed="false">Weekend trip</button></div></div>
+    <div class="row"><label for="mainDay">Main shop</label><select id="mainDay"><option value="6">Sunday</option><option value="5">Saturday</option><option value="0">Monday</option></select></div>
+    <div class="row"><label for="topDay">Top-up shop</label><select id="topDay"><option value="2">Wednesday</option><option value="3">Thursday</option><option value="-1">No top-up (one big shop)</option></select></div>
+    <div class="row"><label for="lunch">Lunchboxes on school days <b id="lunchV">yes</b></label><input id="lunch" type="range" min="0" max="1" value="1"></div>
+    <div class="row" id="tripRow" hidden><label for="premium">Holiday-town price premium <b id="premiumV">10%</b></label><input id="premium" type="range" min="0" max="30" value="10"></div>
+  </div>
+
+  <div class="main">
+    <div class="card glass scene">
+      <h2 id="sceneH">Where it all lives</h2>
+      <p class="legendline" id="sceneNote">Dots show how soon to eat it: <span class="dot" style="background:var(--today)"></span>first few days <span class="dot" style="background:var(--week)"></span>this week <span class="dot" style="background:var(--fine)"></span>plenty of time</p>
+      <svg id="fridge" viewBox="0 0 520 440" role="img" aria-label="A fridge, bench and pantry with this week's food placed where it keeps best"></svg>
+    </div>
+    <div class="col">
+      <div class="card glass eat" id="eatCard" hidden>
+        <h2>Eat these first</h2>
+        <div class="waste" id="waste"></div>
+        <div class="vz" style="margin:0"><div class="vz-h"><span class="lab" style="flex:1">What's here, by how soon to eat it</span><span class="tl" title="From your photo, checked by you">Your data</span></div>
+          <div class="split" id="useSplit" role="img" aria-label=""><i style="--k:var(--today)"></i><i style="--k:var(--week)"></i><i style="--k:var(--fine)"></i></div><div class="skey" id="useKey"></div></div>
+        <div class="lab"><span>Dinners from what's here</span><span>Proposed</span></div>
+        <div class="meals" id="meals"></div>
+        <p class="note" id="alsoSoon"></p>
+      </div>
+      <div class="card glass">
+        <h2 id="shopH">Two smaller shops</h2>
+        <div class="week" id="week"></div>
+        <div class="vz" id="spendViz">
+          <div class="vz-h"><span class="lab" style="flex:1">Where the money goes</span><span class="tl" title="Stats NZ average prices, September 2026; items marked ~ are estimates">Source + estimate</span></div>
+          <div class="gbars" id="gbars" role="img" aria-label=""></div>
+          <div class="split" id="shopSplit" role="img" aria-label="" style="margin-top:6px"><i style="--k:var(--ink)"></i><i style="--k:var(--rose)"></i></div>
+          <div class="skey" id="shopKey"></div>
+        </div>
+        <details class="tbl" id="listBox"><summary id="listSum">Show the full list</summary><div class="list" id="list"></div></details>
+        <div class="totals"><div><span class="v roll" id="tSpend">$0</span><span class="l" id="tSpendL">this week (priced items)</span></div><div><span class="v roll" id="tWaste">$0</span><span class="l" id="tWasteL">likely waste, one big shop</span></div><div><span class="v roll" id="tSave">$0</span><span class="l" id="tSaveL">saved a year by planning</span></div></div>
+        <div class="wcmp" id="wcmp" role="img" aria-label=""></div>
+        <p class="note" id="tripNote" hidden></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card glass">
+    <h2>For your shopping agent</h2>
+    <p class="note" style="margin:4px 0 10px">A typed list your agent can use as it is: what to buy, which shop, where to store it and how soon to use it. With a fridge photo, it lists only what's missing and says what's already there. Nothing is sent anywhere; you copy it.</p>
+    <pre id="json"></pre>
+    <div class="rowacts" style="margin-top:10px"><button class="act primary small" type="button" id="copy">Copy list</button><span class="note" id="copied"></span></div>
+  </div>
+
+
+<style>
+.alf{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:8px 0 12px;font-family:var(--mono,"IBM Plex Mono",ui-monospace,monospace);font-size:11.5px;color:var(--rose,#916A70);min-width:0}
+.alf-h{font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--live,#D9822B) 16%,transparent);color:var(--live,#D9822B);white-space:nowrap}
+.alf-i{border:1px solid var(--line,#E4DADD);border-radius:14px;padding:3px 10px;color:var(--body,#654A4E);max-width:100%;line-height:1.5}
+.alf-i b{color:var(--ink,#492B3E);font-weight:500}
+.alf-i a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent)}
+.alf-i em{font-style:normal;font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px;margin-left:5px;vertical-align:1px}
+.alf-i em.lv{color:var(--good,#3F7A55)}.alf-i em.lp{color:var(--live,#D9822B)}
+.alf-note{flex-basis:100%;font-size:11px}
+</style>
+<div class="alf" id="assemblLive" hidden><span class="alf-h">Live and latest</span><span id="assemblLiveItems" style="display:contents"></span><span class="alf-note" id="assemblLiveNote"></span></div>
+<script>
+/* Live and latest chips: filled by the lab's /feeds.js ("assembl:live"). Each chip says Live or Latest published, the period and the source. */
+(()=>{
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>n==null||!isFinite(n)?"–":Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sign=(n,d=1)=>(n>0?"+":"")+fmt(n,d);
+const F={
+  weather:e=>{const v=e.values;return `<b>${esc(v.place.split(" ").slice(-1)[0])} ${fmt(v.tempC)}°C</b> · ${fmt(v.today.minC)}–${fmt(v.today.maxC)}°C today · rain ${fmt(v.today.rainChancePct)}%`},
+  air:e=>`<b>Air ${esc(e.values.band)}</b> · PM2.5 ${fmt(e.values.pm25,1)} µg/m³`,
+  power:e=>{const v=e.values;return `<b>Wholesale power ${fmt(v.avgCentsPerKWh,1)}c/kWh</b> avg · ${fmt(v.minCents,1)}–${fmt(v.maxCents,1)}c · ${esc(v.node)} · before lines, retail and GST`},
+  genmix:e=>{const s=e.values.sharePct;return `<b>Grid ${fmt(e.values.renewablePct,1)}% renewable</b> · hydro ${fmt(s.hydro)}% · geothermal ${fmt(s.geothermal)}% · wind ${fmt(s.wind)}%`},
+  fuel:e=>{const v=e.values;return `<b>Petrol 91 $${fmt(v.petrol91Dollars,2)}</b> · 95 $${fmt(v.petrol95Dollars,2)} · diesel $${fmt(v.dieselDollars,2)} a litre${v.change91!=null?` · 91 ${sign(v.change91)}c on the week`:""}`},
+  fpi:e=>{const g=Object.fromEntries((e.values.groups||[]).map(x=>[x.name,x.annualPct]));return `<b>Food prices ${sign(e.value)}% a year</b> · fruit and veg ${sign(g["Fruit and vegetables"])}% · grocery ${sign(g["Grocery food"])}% · meat ${sign(g["Meat, poultry and fish"])}%`},
+  foodprices:e=>{const i=e.values.items;const p=k=>i[k]?`$${fmt(i[k].price,2)}`:"–";return `<b>Milk 2 L ${p("milk2l")}</b> · eggs ${p("eggs")} a dozen · bread ${p("bread")} · butter ${p("butter")} · mince ${p("beefMince")}/kg · bananas ${p("bananas")}/kg`},
+  fx:e=>{const r=e.values.rates;return `<b>NZ$1 = US$${fmt(r.USD,3)}</b> · A$${fmt(r.AUD,3)} · ¥${fmt(r.CNY,2)} · £${fmt(r.GBP,3)} · €${fmt(r.EUR,3)}`},
+  gdt:e=>{const v=e.values,w=v.wmp;return `<b>GDT index ${sign(v.changePct)}%</b> at event ${v.event}${w?` · WMP US$${fmt(w.usdPerTonne)}/t (${sign(w.changePct)}%)`:""} · avg US$${fmt(v.avgUsdPerTonne)}/t`},
+  calendar:e=>{const v=e.values;let t=v.publicHoliday?`<b>${esc(v.publicHoliday.name)}</b> today`:v.weekend?`<b>Weekend</b>`:`<b>Working ${esc(v.weekday)}</b>`;if(v.school&&v.school.label)t+=` · ${esc(v.school.label)}`;if(v.nextPublicHoliday)t+=` · ${esc(v.nextPublicHoliday.name)} in ${v.nextPublicHoliday.daysAway} day${v.nextPublicHoliday.daysAway===1?"":"s"}`;return t},
+  ed:e=>{const v=e.values;return `<b>${esc(v.districtName)} ED: ${fmt(v.pct,1)}% seen within 6 h</b> · target 95%${v.national?` · NZ ${fmt(v.national.pct,1)}%`:""}`},
+  urgentcare:e=>{const v=e.values;return `<b>Pegasus urgent care wait ${esc(v.waitText||"–")}</b> · ${fmt(v.waiting)} waiting · Christchurch`},
+  wastewater:e=>{const v=e.values;return `<b>COVID-19 in wastewater ${esc(v.direction)}</b> · ${sign(v.change4wkPct,0)}% over 4 weeks${v.region?` · ${esc(v.region.name)} ${fmt(v.region.copies/1e6,1)}M copies/person/day`:""}`},
+  attendance:e=>{const v=e.values;return `<b>${fmt(v.regularPct,1)}% of students attending regularly</b>${v.yearAgo?` · ${fmt(v.yearAgo.regularPct,1)}% a year earlier`:""}${v.region?` · ${esc(v.region.name)} ${fmt(v.region.regularPct,1)}%`:""} · ${fmt(v.chronicPct,1)}% chronic absence`},
+  vehicles:e=>{const v=e.values;return `<b>${fmt(v.total)} new cars registered</b> · ${fmt(v.evSharePct,1)}% EV or plug-in${v.changePct!=null?` · ${sign(v.changePct)}% on a year ago`:""}`},
+};
+const ok=(j,id)=>j&&j.feeds&&j.feeds[id]&&!j.feeds[id].error?j.feeds[id]:null;
+function draw(j){const want=(document.documentElement.dataset.feeds||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const ids=want.length?want:Object.keys(j.feeds||{});const out=[];let missing=[];
+  for(const id of ids){const e=ok(j,id);if(!e){missing.push(id);continue}const f=F[id];if(!f)continue;let body;try{body=f(e)}catch(err){continue}
+    out.push(`<span class="alf-i" title="${esc(e.label)}">${body} · <a href="${esc(e.source.url)}" target="_blank" rel="noopener">${esc(e.source.name)}</a>${e.source.name.includes(e.period)?"":" · "+esc(e.period)}<em class="${e.truth==="Live"?"lv":"lp"}">${e.truth==="Live"?"Live":"Latest published"}</em></span>`)}
+  const el=$("assemblLive");if(!el)return;if(!out.length){el.hidden=true;return}
+  $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
+  $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
+  try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
+function HOOK(j,ok,u){const fp=ok("foodprices");if(fp&&window.__kitchen&&window.__kitchen.setPrices)window.__kitchen.setPrices(fp.values.items,fp.period);}
+window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
+if(window.__assemblLive)draw(window.__assemblLive);
+})();
+</script>
+  <footer>
+    <div class="fgroup"><span class="tl" id="priceSrc">Source · Stats NZ, Sept 2026 · 15 prices</span><span class="achip">Bananas <b>$4.06/kg</b></span><span class="achip">Apples <b>$4.20/kg</b></span><span class="achip">Kiwifruit <b>$5.89/kg</b></span><span class="achip">Oranges <b>$4.45/kg</b></span><span class="achip">Broccoli <b>$6.37/kg</b></span><span class="achip">Carrots <b>$2.31/kg</b></span><span class="achip">Potatoes <b>$3.27/kg</b></span><span class="achip">Lettuce <b>$4.90</b></span><span class="achip">Tomatoes <b>$10.19/kg</b></span><span class="achip">Milk 2 L <b>$5.05</b></span><span class="achip">Bread 600 g <b>$2.39</b></span><span class="achip">Eggs, dozen <b>$8.37</b></span><span class="achip">Cheese <b>$12.82/kg</b></span><span class="achip">Butter <b>$7.62</b></span><span class="achip">Beef mince <b>$24.77/kg</b></span></div>
+    <div class="fgroup"><span class="tl">Source</span><span class="achip">Storage: Consumer NZ, Love Food Hate Waste</span><span class="achip">Households waste <b>$1,364</b> a year, <b>10.9%</b> (Rabobank–KiwiHarvest, 2025)</span></div>
+    <div class="fgroup"><span class="truth">Estimate</span><span class="achip">Items marked <b>~</b>, incl. every other dinner ingredient</span><span class="achip">"Use within" days</span><span class="truth prop">Your data</span><span class="achip">Holiday-town premium</span></div>
+    <details class="tbl"><summary>All assumptions and sources</summary>
+        <p><span class="sim">SIMULATED</span> Prices are Stats NZ average retail prices for September 2026 where available (on the lab site the latest published month replaces them for the same items) (bananas $4.06/kg, apples $4.20/kg, kiwifruit $5.89/kg, oranges $4.45/kg, broccoli $6.37/kg, carrots $2.31/kg, potatoes $3.27/kg, lettuce $4.90, tomatoes $10.19/kg, milk 2 L $5.05, bread 600 g $2.39, eggs $8.37 a dozen, cheese $12.82/kg, butter $7.62, beef mince $24.77/kg); items marked ~ are estimates, including every dinner ingredient not on that list. Where to store each food follows <a href="https://consumer.org.nz/articles/how-to-keep-your-fruit-and-vegetables-fresh-for-longer" target="_blank" rel="noopener">Consumer NZ</a> and <a href="https://lovefoodhatewaste.co.nz/" target="_blank" rel="noopener">Love Food Hate Waste</a>; "use within" days are typical estimates, as NZ sources don't publish them. NZ households waste about $1,364 of food a year, 10.9% of what they buy (Rabobank–KiwiHarvest survey, 2025); vegetables, bread and fruit are most often wasted. We found no reliable evidence of a "best day" for supermarket markdowns, so this plans around freshness instead. The holiday-town premium is your own estimate.</p>
+    </details>
+    <p><span class="sim">PROPOSED</span> Dinners are suggestions built from what the photo shows; amounts in the fridge are rough. Check dates and smell before you cook.</p>
+    <p>Built by assembl. Independent concept; not affiliated with any supermarket.</p>
+  </footer>
+</div>
+
+<script>
+const READ_CONTRACT = /*READ_CONTRACT:start*/{"version": 1, "kind": "fridge", "type": "assembl.fridge_scan", "prompt": "You are looking at a photo of the inside of a fridge or pantry in a New Zealand home. List the food you can actually see, and reply with ONE JSON object that matches the JSON Schema below. Reply with the JSON object only.\n\nPrivacy rules (these override everything else):\n- Ignore people, faces, pets, handwritten notes, magnets, photos, school notices, letters and anything with a name, address or phone number on it.\n- Skip medicines and prescriptions entirely (they can carry a person's name).\n- Never put personal details in \"name\" or \"note\".\n\nHow to list the food:\n- One entry per kind of food (merge duplicates and add up the quantity). Use plain generic names, not brands.\n- \"quantity\" and \"unit\": your rough estimate of what is there (e.g. 6 each eggs, 1.5 L milk, 0.5 kg mince). Use null when you cannot tell.\n- \"use_by\": \"today\" for things that look past their best, opened leftovers or meat near its date; \"this_week\" for fresh produce, opened dairy and bread; \"fine\" for long-keeping items (condiments, unopened hard cheese, jars, root vegetables).\n- \"confidence\": 0 to 1 for how sure you are of the item. Leave out things you cannot identify at all.\n- Do not invent items that are not visible.\n", "output_schema": {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": "assembl.fridge_scan", "type": "object", "additionalProperties": false, "required": ["type", "version", "items"], "properties": {"type": {"const": "assembl.fridge_scan"}, "version": {"const": 1}, "items": {"type": "array", "maxItems": 60, "items": {"type": "object", "additionalProperties": false, "required": ["name", "quantity", "unit", "category", "use_by", "confidence"], "properties": {"name": {"type": "string", "description": "plain generic food name in NZ English, singular, e.g. 'Broccoli', 'Milk', 'Chicken thighs', 'Leftover curry'"}, "quantity": {"type": ["number", "null"], "description": "rough count or amount you can see"}, "unit": {"enum": ["each", "kg", "g", "L", "ml", "pack", "bunch", "punnet", "loaf", "dozen", "jar", "tub", "bottle", "bag", null]}, "category": {"enum": ["fruit", "veg", "dairy", "meat", "seafood", "bakery", "pantry", "condiment", "leftovers", "drinks", "frozen", "other"]}, "use_by": {"enum": ["today", "this_week", "fine"], "description": "how soon it should be eaten, from what you can see (wilting, ripeness, opened packs, printed dates, leftovers)"}, "confidence": {"type": "number", "minimum": 0, "maximum": 1}, "note": {"type": ["string", "null"], "description": "a few words on why, e.g. 'opened', 'going soft'; never personal details"}}}}, "notes": {"type": ["string", "null"]}}}, "forbidden_keys": ["customer_name", "account_holder", "address", "service_address", "postal_address", "account", "account_number", "account_no", "customer_number", "icp", "icp_number", "meter_number", "email", "phone", "mobile", "payment", "bank_account", "card", "direct_debit", "reference", "dob"], "endpoint": {"path": "/api/read/", "method": "POST", "request": {"kind": "bill | fridge", "image": "data:image/jpeg;base64,... (client downscales to at most 1600 px, JPEG)"}, "response": "The JSON object described by output_schema, nothing else. On failure: HTTP 4xx/5xx with {\"error\": code}.", "server_rules": ["Process the image in memory only; never write it to disk, logs or analytics.", "Keep only the keys defined in output_schema (recursively) and drop everything else; forbidden_keys lists personal fields that must never be added, even as extra keys or confidence entries.", "Time out after 25 s."]}}/*READ_CONTRACT:end*/;
+/*VISION:start*/
+// assembl vision reader: one contract (READ_CONTRACT), two runtimes.
+// A: on claude.ai, the artifact's `sample` capability with images (the viewer's own Claude account).
+// B: on a public site, POST /api/read/ {kind, image} to the site's own server function, which uses the same contract.
+// Photos are downscaled in the browser, read once, and never stored. Only the keys in the contract's schema survive.
+function makeVision(C) {
+  const CLAUDE_HOST = /(^|\.)(claude\.ai|claudeusercontent\.com|anthropic\.com)$/i;
+  const FORBID = new Set((C.forbidden_keys || []).map(k => k.toLowerCase()));
+  const PII = [/\b\d{10}[A-Z]{2}[0-9A-F]{3}\b/i, /[^\s@]+@[^\s@]+\.[a-z]{2,}/i, /\b\d{2}-\d{4}-\d{7}-\d{2,3}\b/, /\b(?:\d{4}[ -]){3}\d{4}\b/, /\b\d{13,19}\b/, /(?:\+64|\b0)[\s-]?(?:2\d|[3-9])[\s-]?\d{3}[\s-]?\d{3,4}\b/];
+  const HIDE = new Set(["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed", "images_unavailable"]);
+  const PROMPT = C.prompt + "\n\nJSON Schema:\n" + JSON.stringify(C.output_schema);
+  let cap = null;
+  function capability() {
+    if (cap) return cap;
+    cap = (async () => {
+      let sample = null;
+      try { sample = window.claude && typeof window.claude.use === "function" ? await window.claude.use("sample") : null; } catch (e) { sample = null; }
+      if (sample) {
+        let lim = null; try { lim = await sample.limits(); } catch (e) { lim = null; }
+        if (lim && lim.images) return { mode: "claude", sample, accept: (lim.images.mediaTypes || []).join(",") || "image/*" };
+        return { mode: "none", reason: "no_images" };
+      }
+      if (/^https?:$/.test(location.protocol) && !CLAUDE_HOST.test(location.hostname || "")) return { mode: "api", accept: "image/*" };
+      return { mode: "none", reason: "no_runtime" };
+    })();
+    return cap;
+  }
+  const disable = reason => { cap = Promise.resolve({ mode: "none", reason }); };
+  // Downscale to at most 1600 px on the long side, as JPEG, in memory.
+  async function downscale(file, max = 1600) {
+    let src = null, w = 0, h = 0, done = () => {};
+    try { src = await createImageBitmap(file, { imageOrientation: "from-image" }); w = src.width; h = src.height; done = () => src.close && src.close(); }
+    catch (e) {
+      const url = URL.createObjectURL(file);
+      try { src = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = url; }); w = src.naturalWidth; h = src.naturalHeight; }
+      catch (e2) { URL.revokeObjectURL(url); throw { code: "image_rejected" }; }
+      done = () => URL.revokeObjectURL(url);
+    }
+    const k = Math.min(1, max / Math.max(w, h)), cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
+    const c = document.createElement("canvas"); c.width = cw; c.height = ch; const g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, cw, ch); g.drawImage(src, 0, 0, cw, ch); done();
+    const blob = await new Promise(ok => c.toBlob(ok, "image/jpeg", 0.86)); c.width = c.height = 0;
+    if (!blob) throw { code: "image_rejected" };
+    return blob;
+  }
+  const toDataURL = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
+  const types = s => [].concat(s && s.type || []);
+  // Keep only what the schema allows (extra keys, e.g. a name or ICP the model added, are dropped); drop personal keys in maps and anything that looks like an ICP, account, card, email or phone number.
+  function clean(v, s) {
+    if (v == null || !s) return null;
+    if (s.const !== undefined) return s.const;
+    if (s.properties) {
+      if (typeof v !== "object" || Array.isArray(v)) return null;
+      const out = {};
+      for (const k of Object.keys(s.properties)) if (k in v) out[k] = clean(v[k], s.properties[k]); // whitelist: only schema keys survive
+      return out;
+    }
+    if (s.items) return Array.isArray(v) ? v.slice(0, s.maxItems || 80).map(x => clean(x, s.items)).filter(x => x != null) : [];
+    if (s.additionalProperties && typeof s.additionalProperties === "object") {
+      if (typeof v !== "object" || Array.isArray(v)) return null;
+      const out = {}; for (const [k, x] of Object.entries(v)) if (!FORBID.has(k.toLowerCase()) && typeof x === "number" && isFinite(x)) out[k] = Math.max(0, Math.min(1, x));
+      return out;
+    }
+    if (s.enum) return s.enum.includes(v) ? v : (typeof v === "string" && s.enum.includes(v.toLowerCase().replace(/[\s-]+/g, "_")) ? v.toLowerCase().replace(/[\s-]+/g, "_") : null);
+    const t = types(s);
+    if ((t.includes("number") || t.includes("integer")) && typeof v === "string") { const n = parseFloat(v.replace(/[^0-9.\-]/g, "")); v = isFinite(n) ? n : null; if (v == null) return null; }
+    if (typeof v === "number") return isFinite(v) && (t.includes("number") || t.includes("integer")) ? (t.includes("integer") && !t.includes("number") ? Math.round(v) : v) : null;
+    if (typeof v === "boolean") return t.includes("boolean") ? v : null;
+    if (typeof v === "string" && t.includes("string")) { const x = v.trim().slice(0, 160); return !x || PII.some(r => r.test(x)) ? null : x; }
+    return null;
+  }
+  async function read(file, opts = {}) {
+    const { signal, onText } = opts, c = await capability();
+    if (c.mode === "none") throw { code: "unavailable" };
+    const blob = await downscale(file);
+    if (signal && signal.aborted) throw { code: "cancelled" };
+    let raw;
+    if (c.mode === "claude") {
+      try { raw = await c.sample.json(PROMPT, { images: [blob], modelTier: "default", signal, onText: onText ? u => onText(u.text) : undefined }); }
+      catch (e) { const code = (e && e.code) || "upstream_error"; if (HIDE.has(code)) disable(code); throw { code }; }
+    } else {
+      const ctl = new AbortController(), stop = () => ctl.abort(); let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, 25000);
+      if (signal) signal.addEventListener("abort", stop);
+      try {
+        const res = await fetch("/api/read/", { method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", signal: ctl.signal, body: JSON.stringify({ kind: C.kind, image: await toDataURL(blob) }) });
+        if (!res.ok) { if ([404, 405, 501].includes(res.status)) disable("api_missing"); throw { code: res.status === 429 ? "rate_limited" : "api_unavailable" }; }
+        raw = await res.json();
+      } catch (e) {
+        if (signal && signal.aborted) throw { code: "cancelled" };
+        if (timedOut) throw { code: "api_timeout" };
+        if (e && e.code) throw e;
+        disable("api_unreachable"); throw { code: "api_unavailable" };
+      } finally { clearTimeout(timer); if (signal) signal.removeEventListener("abort", stop); }
+    }
+    const data = clean(raw, C.output_schema);
+    if (!data) throw { code: "invalid_json" };
+    return { data, via: c.mode };
+  }
+  const noun = C.kind === "bill" ? "bill" : "photo";
+  const COPY = {
+    unavailable: "Photo reading isn't available here. You can type what you see instead.",
+    not_granted: "Photo reading was turned off for this page. You can type what you see instead.",
+    sampling_disabled: "Claude isn't available on this account, so photo reading is off. You can type what you see instead.",
+    images_unavailable: "This view can't send photos to Claude. You can type what you see instead.",
+    rate_limited: "Claude is busy for you right now. Try again in a minute or two, or type it in.",
+    session_expired: "You've been signed out of Claude. Sign in again, then try once more.",
+    image_rejected: "That file didn't open as a photo. Try a JPEG or PNG, or a screenshot.",
+    refused: `Claude couldn't read that ${noun}. Try a clearer photo, or type it in.`,
+    invalid_json: `We couldn't pull clear numbers from that ${noun}. Try a sharper, flatter photo, or type them in.`,
+    empty_completion: `We couldn't pull anything from that ${noun}. Try a sharper photo, or type it in.`,
+    api_unavailable: "Photo reading isn't switched on for this site yet. You can type what you see instead.",
+    api_timeout: "Reading took too long. Try a smaller or clearer photo, or type it in.",
+    upstream_error: "Something went wrong while reading. Try again, or type it in.",
+  };
+  const message = code => COPY[code] || (HIDE.has(code) ? COPY.unavailable : COPY.upstream_error);
+  return { capability, read, clean, message, downscale, contract: C, prompt: PROMPT, hidden: code => HIDE.has(code) || code === "unavailable" || code === "api_unavailable" };
+}
+/*VISION:end*/
+</script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// name, unit, amount per adult per week, kids factor, price per unit (null = unpriced), ~estimate, where, use within (days), group
+const FOOD=[
+ ["Bananas","kg",0.6,1.2,4.06,0,"bench",5,"fruit"],["Apples","kg",0.6,1.3,4.20,0,"fridge",28,"fruit"],["Kiwifruit","kg",0.35,1.2,5.89,0,"bench",10,"fruit"],["Oranges","kg",0.5,1.1,4.45,0,"fridge",14,"fruit"],
+ ["Strawberries","punnet",0.5,1.3,4.50,1,"fridge",3,"fruit"],["Broccoli","kg",0.3,0.7,6.37,0,"crisper",5,"veg"],["Carrots","kg",0.4,0.8,2.31,0,"crisper",21,"veg"],["Lettuce","each",0.4,0.6,4.90,0,"crisper",6,"veg"],
+ ["Tomatoes","kg",0.3,0.6,10.19,0,"bench",5,"veg"],["Courgettes","kg",0.3,0.6,8.99,1,"crisper",6,"veg"],["Asparagus","bunch",0.5,0.3,4.50,1,"fridge",3,"veg"],["Potatoes","kg",0.8,0.8,3.27,0,"pantry",28,"veg"],
+ ["Milk","2 L",0.6,1.5,5.05,0,"door",7,"dairy"],["Eggs","dozen",0.5,0.7,8.37,0,"fridge",28,"dairy"],["Cheese","kg",0.15,0.8,12.82,0,"fridge",21,"dairy"],["Butter","500 g",0.12,0.6,7.62,0,"door",30,"dairy"],
+ ["Bread","600 g loaf",0.6,1.0,2.39,0,"bench",3,"bakery"],["Beef mince","kg",0.3,0.6,24.77,0,"fridge",2,"meat"]];
+// dinner ingredients not in the Stats NZ list: unit, ~price (estimate), where, use within (days), group
+const EXTRA={"Chicken thighs":["kg",16.0,"fridge",2,"meat"],"Sausages":["pack",8.5,"fridge",3,"meat"],"Fish fillets":["kg",26.0,"fridge",2,"seafood"],"Spinach":["bag",4.0,"crisper",4,"veg"],"Onions":["kg",3.0,"pantry",30,"veg"],
+  "Garlic":["each",1.2,"pantry",30,"veg"],"Capsicum":["each",2.5,"crisper",7,"veg"],"Kūmara":["kg",5.0,"pantry",21,"veg"],"Frozen peas":["kg",4.0,"freezer",90,"frozen"],"Lemon":["each",1.0,"fridge",14,"fruit"],
+  "Rice":["kg",3.5,"pantry",365,"pantry"],"Pasta":["500 g",2.0,"pantry",365,"pantry"],"Canned tomatoes":["can",1.5,"pantry",365,"pantry"],"Tortillas":["pack",4.5,"pantry",14,"bakery"],"Yoghurt":["kg tub",6.0,"fridge",10,"dairy"]};
+const ALIAS=[["banana","Bananas"],["apple","Apples"],["kiwi","Kiwifruit"],["orange","Oranges"],["mandarin","Oranges"],["strawberr","Strawberries"],["broccoli","Broccoli"],["carrot","Carrots"],["lettuce","Lettuce"],["cherry tomato","Tomatoes"],["tomato","Tomatoes"],
+  ["courgette","Courgettes"],["zucchini","Courgettes"],["asparagus","Asparagus"],["kumara","Kūmara"],["kūmara","Kūmara"],["sweet potato","Kūmara"],["potato","Potatoes"],["milk","Milk"],["egg","Eggs"],["cheese","Cheese"],["butter","Butter"],["bread","Bread"],["loaf","Bread"],
+  ["mince","Beef mince"],["chicken","Chicken thighs"],["sausage","Sausages"],["fish","Fish fillets"],["spinach","Spinach"],["silverbeet","Spinach"],["onion","Onions"],["garlic","Garlic"],["capsicum","Capsicum"],["pepper","Capsicum"],["pea","Frozen peas"],
+  ["lemon","Lemon"],["rice","Rice"],["pasta","Pasta"],["spaghetti","Pasta"],["canned tomato","Canned tomatoes"],["tinned tomato","Canned tomatoes"],["tortilla","Tortillas"],["wrap","Tortillas"],["yoghurt","Yoghurt"],["yogurt","Yoghurt"]];
+const keyOf=n=>{const s=String(n||"").toLowerCase();if(/leftover/.test(s))return null;for(const [a,k] of ALIAS)if(s.includes(a))return k;return null};
+const INFO=k=>{const f=FOOD.find(x=>x[0]===k);if(f)return{unit:f[1],price:f[4],est:!!f[5],where:f[6],keep:f[7],group:f[8]};const e=EXTRA[k];return e?{unit:e[0],price:e[1],est:true,where:e[2],keep:e[3],group:e[4]}:null};
+// rough conversions from what a photo shows into the shop's unit
+const EACH={Bananas:.18,Apples:.2,Kiwifruit:.1,Oranges:.2,Broccoli:.35,Carrots:.1,Tomatoes:.12,Courgettes:.2,Potatoes:.2,"Beef mince":.5,"Chicken thighs":.5,Cheese:.5,Kūmara:.3,Onions:.15,"Fish fillets":.15,"Frozen peas":1,Rice:1};
+function toUnit(k,qty,unit){if(qty==null)qty=1;const I=INFO(k);if(!I)return qty;const u=(unit||"").toLowerCase(),U=I.unit;
+  if(U==="kg"){if(u==="kg")return qty;if(u==="g")return qty/1000;return qty*(EACH[k]||.25)}
+  if(U==="2 L"){if(u==="l")return qty/2;if(u==="ml")return qty/2000;return qty*.5}
+  if(U==="dozen"){return u==="dozen"?qty:qty/12}
+  if(U==="500 g"){if(u==="g")return qty/500;if(u==="kg")return qty*2;return qty*.5}
+  if(U==="600 g loaf")return u==="g"?qty/600:qty;
+  if(U==="kg tub")return u==="g"?qty/1000:u==="kg"?qty:qty*.5;
+  return qty}
+// weeknight dinners: ingredient, amount per person in the shop's unit
+const RECIPES=[
+ ["Chicken and vege stir-fry",[["Chicken thighs",.13],["Broccoli",.1],["Carrots",.07],["Capsicum",.3],["Garlic",.15],["Rice",.08]]],
+ ["Spinach, tomato and cheese frittata",[["Eggs",.17],["Spinach",.3],["Tomatoes",.08],["Cheese",.03],["Potatoes",.12]]],
+ ["Spaghetti bolognese",[["Beef mince",.12],["Pasta",.25],["Canned tomatoes",.4],["Onions",.05],["Carrots",.05]]],
+ ["Lemon chicken traybake with kūmara",[["Chicken thighs",.15],["Kūmara",.2],["Broccoli",.1],["Lemon",.3],["Onions",.05]]],
+ ["Mince tacos with salad",[["Beef mince",.1],["Tortillas",.3],["Lettuce",.2],["Tomatoes",.08],["Cheese",.03]]],
+ ["Sausages, mash and greens",[["Sausages",.3],["Potatoes",.25],["Butter",.03],["Milk",.05],["Frozen peas",.08]]],
+ ["Fish, wedges and salad",[["Fish fillets",.15],["Potatoes",.25],["Lettuce",.2],["Tomatoes",.08],["Lemon",.25]]],
+ ["Tomato and spinach pasta",[["Pasta",.25],["Tomatoes",.1],["Spinach",.3],["Cheese",.03],["Garlic",.15]]],
+ ["Vege soup and toast",[["Carrots",.1],["Potatoes",.15],["Onions",.06],["Broccoli",.06],["Bread",.15]]]];
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],DAYF=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const S={adults:1,kids:2,week:"kids",away:"none",main:6,top:2,lunch:1,premium:10};
+let SCAN=null; // items on hand after the person checks them: {name,quantity,unit,category,use_by,confidence}
+function people(){const kids=S.week==="kids"?S.kids:0;return {adults:S.adults,kids}}
+function homeDays(){return S.away==="trip"?[1,1,1,1,0.7,0,0.4]:[1,1,1,1,1,1,1]}
+const urg={today:6,this_week:3,fine:1.2};
+const roundQ=(u,x)=>u==="kg"||u==="kg tub"?Math.max(.1,Math.ceil(x*10)/10):u==="2 L"||u==="500 g"?Math.max(.5,Math.ceil(x*2)/2):Math.max(1,Math.ceil(x-0.05));
+function plan(){const P=people(),hd=homeDays(),daysHome=hd.reduce((a,b)=>a+b,0),n=P.adults+P.kids*0.7;
+  const gap=S.top<0?7:((S.top-S.main+7)%7||7);
+  const split=(need,keep,round)=>{let main=need,top=0;if(S.top>=0&&keep<7){const share=Math.min(1,gap/7);main=need*share;top=need-main}return[round(main),round(top)]};
+  if(!SCAN){// the original planner: a typical week of everything, in two shops
+    const items=FOOD.map(([nm,u,per,kf,price,est,where,keep,group])=>{let need=(per*P.adults+per*kf*P.kids)*daysHome/7;if(group==="fruit"&&S.lunch&&P.kids)need*=1.15;
+      const round=x=>u==="kg"?Math.round(x*10)/10:Math.max(x>0.05?0.5:0,Math.round(x*2)/2);const [main,top]=split(need,keep,round);const cost=price?(main+top)*price:0;
+      const late=Math.max(0,1-keep/7),waste=price?need*price*late*0.5:0;return {name:nm,unit:u,est:!!est,price,where,keep,group,main,top,cost,waste}}).filter(i=>i.main+i.top>0);
+    return {items,P,daysHome,meals:[]}}
+  // with a fridge: stock on hand by shop item; dinners chosen to use the most urgent things first
+  const stock={},urgent={};SCAN.forEach(it=>{const k=keyOf(it.name);if(!k)return;stock[k]=(stock[k]||0)+toUnit(k,it.quantity,it.unit);urgent[k]=Math.max(urgent[k]||0,urg[it.use_by]||1)});
+  const left={...stock},nightsHome=Math.round(hd.slice(0,5).reduce((a,b)=>a+b,0)+hd[5]+hd[6]),N=Math.min(5,nightsHome),meals=[],pool=RECIPES.slice();
+  const leftovers=SCAN.filter(i=>/leftover/i.test(i.name));
+  for(let m=0;m<N&&pool.length;m++){let best=null,bs=-1e9;pool.forEach(r=>{let s=0;r[1].forEach(([k,pp])=>{const need=pp*n;if((left[k]||0)>=need*.5)s+=urgent[k]||1.2;else s-=1.4});if(s>bs){bs=s;best=r}});
+    pool.splice(pool.indexOf(best),1);const uses=[],buys=[];let urgency=0;
+    best[1].forEach(([k,pp])=>{const need=pp*n,have=Math.min(left[k]||0,need);if(have>=need*.5){uses.push(k);urgency=Math.max(urgency,urgent[k]||0)}if(need-have>1e-6)buys.push([k,need-have]);left[k]=(left[k]||0)-have});
+    meals.push({name:best[0],uses,buys,urgency})}
+  meals.sort((a,b)=>b.urgency-a.urgency);if(leftovers.length)meals.unshift({name:"Leftovers night: "+leftovers.map(l=>l.name.replace(/^leftover\s*/i,"")).join(" and "),uses:[],buys:[],urgency:9,left:true});
+  const days=[];for(let i=0,d=(S.main+1)%7;days.length<meals.length&&i<14;i++,d=(d+1)%7)if(hd[d]>=0.7||i>=7)days.push(d);meals.forEach((m,i)=>m.day=days[i]??null);
+  // shopping: staples for breakfasts, lunches and snacks, minus what's left after dinners; plus whatever dinners still need
+  const need={},why={};const addNeed=(k,q,w)=>{need[k]=(need[k]||0)+q;if(w)(why[k]=why[k]||new Set()).add(w)};
+  FOOD.forEach(([nm,u,per,kf,price,est,where,keep,group])=>{if(!["fruit","dairy","bakery"].includes(group))return;let q=(per*P.adults+per*kf*P.kids)*daysHome/7;if(group==="fruit"&&S.lunch&&P.kids)q*=1.15;const have=Math.max(0,left[nm]||0),use=Math.min(have,q);left[nm]=have-use;if(q-use>0.04)addNeed(nm,q-use)});
+  meals.forEach(m=>m.buys.forEach(([k,q])=>addNeed(k,q,m.name)));
+  const items=Object.entries(need).map(([k,q])=>{const I=INFO(k);const round=x=>x<=0.001?0:roundQ(I.unit,x);const lateDinner=meals.findIndex(m=>m.buys.some(b=>b[0]===k));
+    let [main,top]=I.keep<7&&S.top>=0&&lateDinner>=Math.ceil(meals.length/2)&&!FOOD.some(f=>f[0]===k&&["fruit","dairy","bakery"].includes(f[8]))?[0,round(q)]:split(q,I.keep,round);
+    if(main+top===0)main=round(q);return {name:k,unit:I.unit,est:I.est,price:I.price,where:I.where,keep:I.keep,group:I.group,main,top,cost:(main+top)*I.price,waste:0,for:why[k]?[...why[k]]:[]}}).filter(i=>i.main+i.top>0)
+    .sort((a,b)=>(a.group>b.group?1:-1));
+  const soonItems=SCAN.filter(i=>i.use_by!=="fine"),soonValue=soonItems.reduce((s,i)=>{const k=keyOf(i.name),I=k&&INFO(k);return s+(I&&I.price?toUnit(k,i.quantity,i.unit)*I.price:/leftover/i.test(i.name)?6:0)},0);
+  const usedKeys=new Set(meals.flatMap(m=>m.uses));const unusedSoon=soonItems.filter(i=>{const k=keyOf(i.name);return !/leftover/i.test(i.name)&&(!k||!usedKeys.has(k))});
+  return {items,P,daysHome,meals,soonItems,soonValue,unusedSoon,stock}}
+const tagColor=keep=>keep<=3?"var(--today)":keep<=7?"var(--week)":"var(--fine)";
+const useColor=u=>u==="today"?"var(--today)":u==="this_week"?"var(--week)":"var(--fine)";
+const tint=g=>({fruit:"var(--t-fruit)",veg:"var(--t-veg)",dairy:"var(--t-dairy)",meat:"var(--t-meat)",seafood:"var(--t-meat)",bakery:"var(--t-bakery)",leftovers:"var(--t-left)"}[g]||"var(--t-other)");
+function wob(x,y,w,h,r=10,seed=1){const j=k=>((Math.sin(seed*91.7+k*12.9)*43758.5)%1)*1.4;return `M${x+r+j(1)},${y+j(2)} L${x+w-r+j(3)},${y+j(4)} Q${x+w},${y} ${x+w+j(5)},${y+r} L${x+w+j(6)},${y+h-r} Q${x+w},${y+h} ${x+w-r},${y+h+j(7)} L${x+r},${y+h+j(8)} Q${x},${y+h} ${x+j(9)},${y+h-r} L${x+j(10)},${y+r} Q${x},${y} ${x+r+j(1)},${y+j(2)}Z`}
+function whereOf(it){const k=keyOf(it.name),I=k&&INFO(k);if(/leftover/i.test(it.name))return"fridge";if(I)return I.where==="freezer"?"pantry":I.where;
+  return{veg:"crisper",fruit:"fridge",dairy:"fridge",meat:"fridge",seafood:"fridge",leftovers:"fridge",drinks:"door",condiment:"door",bakery:"bench",pantry:"pantry",frozen:"pantry"}[it.category]||"fridge"}
+function drawScene(p){let o="";const ink="var(--ink)";
+  o+=`<defs><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient><filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#240B21" flood-opacity=".16"/></filter></defs>`;
+  o+=`<path d="${wob(10,10,250,410,24,3)}" fill="var(--fridge)" stroke="${ink}" stroke-width="2" filter="url(#sh)"/><path d="${wob(10,10,250,410,24,3)}" fill="url(#gl)"/>`;
+  o+=`<path d="${wob(24,26,222,300,14,4)}" fill="var(--fridge-in)" stroke="${ink}" stroke-width="1.5"/>`;
+  [116,206].forEach((y,i)=>o+=`<path d="M30,${y} L240,${y+(i?1:-1)}" stroke="var(--shelf)" stroke-width="3" stroke-linecap="round"/>`);
+  o+=`<path d="${wob(30,260,210,58,10,5)}" fill="var(--crisper)" stroke="${ink}" stroke-width="1.5"/><text x="135" y="312" text-anchor="middle" style="font:500 9.5px var(--mono);fill:var(--rose);letter-spacing:.08em">CRISPER</text>`;
+  o+=`<path d="${wob(24,336,222,74,12,6)}" fill="var(--fridge-in)" stroke="${ink}" stroke-width="1.5"/><text x="135" y="404" text-anchor="middle" style="font:500 9.5px var(--mono);fill:var(--rose);letter-spacing:.08em">DOOR</text>`;
+  o+=`<rect x="236" y="120" width="7" height="70" rx="3.5" fill="${ink}"/>`;
+  o+=`<path d="${wob(282,250,226,20,6,7)}" fill="var(--wood)" stroke="${ink}" stroke-width="1.8"/><text x="395" y="290" text-anchor="middle" style="font:500 9.5px var(--mono);fill:var(--rose);letter-spacing:.08em">BENCH</text>`;
+  o+=`<path d="${wob(300,300,190,120,14,8)}" fill="var(--pantry)" stroke="${ink}" stroke-width="1.8" filter="url(#sh)"/><text x="395" y="412" text-anchor="middle" style="font:500 9.5px var(--mono);fill:var(--rose);letter-spacing:.08em">PANTRY · COOL AND DARK</text>`;
+  const head=SCAN?`${SCAN.length} things here · ${p.soonItems.length} to use soon`:`${p.P.adults+p.P.kids} at home · ${S.week==="kids"?"kids' week":"no-kids week"}`;
+  const sub=SCAN?`DASHED = ON THE SHOPPING LIST`:S.away==="trip"?"AWAY FRI NIGHT TO SUN":"HOME ALL WEEK";
+  o+=`<path d="M300,40 Q395,2 490,40" fill="none" stroke="var(--rose)" stroke-width="1.5" stroke-dasharray="3 5"/><text x="395" y="70" text-anchor="middle" style="font:600 15px var(--display);fill:${ink}">${head}</text><text x="395" y="90" text-anchor="middle" style="font:500 10.5px var(--mono);fill:var(--rose);letter-spacing:.06em">${sub}</text>`;
+  const slots={fridge:{x:36,y:[40,130],w:200,max:8},crisper:{x:36,y:[266],w:200,max:4},door:{x:36,y:[346],w:200,max:4},bench:{x:290,y:[196,142],w:210,max:8},pantry:{x:312,y:[316,356],w:170,max:6}};
+  const tiles=[];
+  if(SCAN){SCAN.forEach(it=>tiles.push({name:it.name,where:whereOf(it),fill:tint(it.category),dot:useColor(it.use_by),have:true}));
+    p.items.forEach(it=>tiles.push({name:it.name,where:it.where==="freezer"?"pantry":it.where,fill:"none",dot:tagColor(it.keep),have:false}))}
+  else p.items.forEach(it=>tiles.push({name:it.name,where:it.where,fill:tint(it.group),dot:tagColor(it.keep),have:true}));
+  const filled={};
+  tiles.forEach((t,i)=>{const s=slots[t.where]||slots.fridge;const k=filled[t.where]||0;const perRow=Math.floor(s.w/50);if(k>=s.max)return;filled[t.where]=k+1;
+    const row=Math.floor(k/perRow),col=k%perRow;const y=(s.y[row]??(s.y[s.y.length-1]+row*44));const x=s.x+col*50+22,yy=y+20;const nm=t.name.length>9?t.name.slice(0,8)+"…":t.name;
+    o+=`<g style="animation:pop .35s var(--ease) ${Math.min(i,20)*25}ms both"><path d="${wob(x-20,yy-18,40,34,10,i+11)}" fill="${t.fill}" stroke="${ink}" stroke-width="${t.have?1.4:1.2}" ${t.have?"":'stroke-dasharray="3 3" opacity=".8"'}/><text x="${x}" y="${yy+3}" text-anchor="middle" style="font:600 8.5px var(--display);fill:${ink}">${esc(nm)}</text>${t.have?`<circle cx="${x+16}" cy="${yy-15}" r="4.5" fill="${t.dot}" stroke="var(--fridge-in)" stroke-width="1.5"/>`:`<text x="${x+16}" y="${yy-11}" text-anchor="middle" style="font:600 11px var(--display);fill:var(--rose)">+</text>`}</g>`});
+  $("fridge").innerHTML=o}
+// numbers roll from the old value to the new one
+const rolls=new WeakMap();
+function roll(el,to,f){const from=rolls.has(el)?rolls.get(el):to;rolls.set(el,to);if(matchMedia("(prefers-reduced-motion: reduce)").matches||Math.abs(from-to)<.5){el.textContent=f(to);return}
+  const t0=performance.now();el.classList.add("flash");const tick=now=>{const k=Math.min(1,(now-t0)/650),e=1-Math.pow(1-k,3);if(rolls.get(el)!==to)return;el.textContent=f(from+(to-from)*e);if(k<1)requestAnimationFrame(tick);else el.classList.remove("flash")};requestAnimationFrame(tick)}
+const usd=v=>"$"+Math.round(v).toLocaleString("en-NZ");
+const qfmt=(q,u)=>/^\d/.test(u)?`${q%1?q.toFixed(1):q} × ${u}`:u==="kg tub"?`${q.toFixed(1)} kg tub`:`${u==="kg"?q.toFixed(1):q%1?q.toFixed(1):q} ${u}`;
+function render(){const p=plan();drawScene(p);
+  $("week").innerHTML=DAYS.map((d,i)=>{const isMain=i===S.main,isTop=i===S.top,away=S.away==="trip"&&(i===5||i===6),meal=p.meals.find(m=>m.day===i);return `<div class="${isMain?"shop":isTop?"top":away?"away":""}"><b>${d}</b>${isMain?"main shop":isTop?"top-up":away?"away":meal?"dinner":"·"}</div>`}).join("");
+  const mainItems=p.items.filter(i=>i.main>0),topItems=p.items.filter(i=>i.top>0);
+  const line=(it,q)=>`<div class="item"><i style="background:${tagColor(it.keep)}"></i><span>${esc(it.name)}${it.est?' <span class="est">~</span>':""} <span class="s">· ${it.where}${it.keep<=7?`, use within ${it.keep} days`:""}${it.for&&it.for.length?` · for ${esc(it.for[0].toLowerCase())}${it.for.length>1?` +${it.for.length-1}`:""}`:""}</span></span><span class="q">${qfmt(q,it.unit)}</span><span class="p">${it.price?"$"+(q*it.price).toFixed(2):"–"}</span></div>`;
+  $("list").innerHTML=(mainItems.length?`<div class="lab" style="margin:4px 0 2px">${DAYS[S.main]} · main shop</div>`+mainItems.map(it=>line(it,it.main)).join(""):"")+(topItems.length?`<div class="lab" style="margin:12px 0 2px">${DAYS[S.top]} · top-up</div>`+topItems.map(it=>line(it,it.top)).join(""):"")+(p.items.length?"":`<p class="note">Nothing to buy: what's here covers the plan.</p>`);
+  const spend=p.items.reduce((a,i)=>a+i.cost,0);
+  {const GN={fruit:"Fruit",veg:"Vegetables",dairy:"Dairy and eggs",meat:"Meat",seafood:"Fish",bakery:"Bread",pantry:"Pantry",frozen:"Frozen",other:"Other"};const g={};p.items.forEach(i=>{const k=GN[i.group]?i.group:"other";g[k]=(g[k]||0)+i.cost});
+    const rows=Object.entries(g).filter(([,v])=>v>0.005).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...rows.map(r=>r[1]));
+    $("spendViz").hidden=!rows.length;
+    $("gbars").innerHTML=rows.map(([k,v])=>`<div class="gb" title="${GN[k]}: $${v.toFixed(2)}"><span>${GN[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><b>$${v.toFixed(0)}</b></div>`).join("");
+    $("gbars").setAttribute("aria-label","Spend by food group: "+rows.map(([k,v])=>`${GN[k]} $${v.toFixed(0)}`).join(", "));
+    const mc=p.items.reduce((a,i)=>a+(i.price?i.main*i.price:0),0),tc=p.items.reduce((a,i)=>a+(i.price?i.top*i.price:0),0);
+    const sp=$("shopSplit").children;sp[0].style.flexGrow=mc;sp[1].style.flexGrow=tc;sp[1].hidden=tc<0.005;
+    $("shopKey").innerHTML=`<span style="--k:var(--ink)">${DAYS[S.main]} main shop <b>$${mc.toFixed(0)}</b></span>`+(tc>0.005?`<span style="--k:var(--rose)">${DAYS[S.top]} top-up <b>$${tc.toFixed(0)}</b></span>`:"");
+    $("shopSplit").setAttribute("aria-label",`Main shop $${mc.toFixed(0)}`+(tc>0.005?`, top-up $${tc.toFixed(0)}`:""));
+    $("listSum").textContent=`Show the full list: ${p.items.length} item${p.items.length===1?"":"s"}, $${spend.toFixed(0)}`}
+  $("shopH").textContent=SCAN?"Only what's missing":"Two smaller shops";
+  if(SCAN){$("tSpendL").textContent="to spend (priced items)";$("tWasteL").textContent="of food here to use soon";$("tSaveL").textContent="dinners from the fridge";
+    roll($("tSpend"),spend,usd);roll($("tWaste"),p.soonValue,usd);roll($("tSave"),p.meals.filter(m=>m.uses.length||m.left).length,v=>String(Math.round(v)))}
+  else{const waste=p.items.reduce((a,i)=>a+i.waste,0);$("tSpendL").textContent="this week (priced items)";$("tWasteL").textContent="likely waste, one big shop";$("tSaveL").textContent="saved a year by planning";
+    roll($("tSpend"),spend,usd);roll($("tWaste"),waste,v=>usd(v)+"/wk");roll($("tSave"),S.top<0?0:waste*52*0.7,usd)}
+  $("wcmp").hidden=!!SCAN;
+  if(!SCAN){const w=p.items.reduce((a,i)=>a+i.waste,0),two=S.top<0?w:w*0.3,mx=Math.max(0.01,w);
+    $("wcmp").innerHTML=`<div class="vz-h"><span class="lab" style="flex:1">Likely waste a week</span><span class="tl">Estimate</span></div><div class="lr"><span>One big shop</span><b>$${w.toFixed(2)}</b></div><div class="trk"><i style="--k:var(--today);width:100%"></i></div><div class="lr"><span>${S.top<0?"Your plan: one big shop":"Two smaller shops"}</span><b>$${two.toFixed(2)}</b></div><div class="trk"><i style="--k:var(--fine);width:${(two/mx*100).toFixed(1)}%"></i></div>`;
+    $("wcmp").setAttribute("aria-label",`Likely waste a week: one big shop $${w.toFixed(2)}; ${S.top<0?"your plan":"two smaller shops"} $${two.toFixed(2)}`)}
+  // eat these first
+  $("eatCard").hidden=!SCAN;
+  if(SCAN){const soon=p.soonItems,today=soon.filter(i=>i.use_by==="today");
+    $("waste").innerHTML=`<span class="v roll" id="wv">${usd(p.soonValue)}</span><p><b>${soon.length?`${soon.length} thing${soon.length>1?"s":""} here need${soon.length>1?"":"s"} eating this week`:"Nothing here is close to its best-before"}</b>${today.length?`, ${today.length} of them today or tomorrow (${today.map(i=>esc(i.name.toLowerCase())).join(", ")})`:""}. The dinners below use them first, so less goes in the bin.</p>`;
+    roll($("wv"),p.soonValue,usd);
+    {const c={today:0,this_week:0,fine:0};SCAN.forEach(i=>c[i.use_by in c?i.use_by:"fine"]++);const u=$("useSplit").children;[c.today,c.this_week,c.fine].forEach((v,i)=>{u[i].style.flexGrow=v;u[i].hidden=!v});
+      $("useKey").innerHTML=`<span style="--k:var(--today)"><b>${c.today}</b> first few days</span><span style="--k:var(--week)"><b>${c.this_week}</b> this week</span><span style="--k:var(--fine)"><b>${c.fine}</b> keeps</span>`;
+      $("useSplit").setAttribute("aria-label",`${c.today} to eat in the first few days, ${c.this_week} this week, ${c.fine} that keep`)}
+    $("meals").innerHTML=p.meals.map(m=>{const have=m.uses.map(k=>{const s=SCAN.find(i=>keyOf(i.name)===k);return`<span class="chip have${s&&s.use_by!=="fine"?" soon":""}">${esc(k)}</span>`}).join("");
+      const buy=m.buys.filter(([k])=>!m.uses.includes(k)).map(([k])=>`<span class="chip buy">${esc(k)}</span>`).join("");
+      return`<div class="meal"><div class="top"><span class="nm">${esc(m.name)}</span><span class="day">${m.day!=null?DAYF[m.day]:"any night"}</span></div><div class="chips">${have}${buy}${m.left?'<span class="chip have soon">from the fridge</span>':""}</div></div>`}).join("");
+    $("alsoSoon").innerHTML=p.unusedSoon.length?`<b>Also use soon:</b> ${p.unusedSoon.map(i=>esc(i.name.toLowerCase())).join(", ")}. Add ${p.unusedSoon.length>1?"them":"it"} to lunches, a smoothie or the freezer.`:""}
+  if(S.away==="trip"){const weekend=p.items.reduce((a,i)=>a+(i.price?(i.main+i.top)/p.daysHome*1.7*i.price:0),0);
+    $("tripNote").hidden=false;$("tripNote").innerHTML=`<b>Weekend away:</b> a weekend's food for ${p.P.adults+p.P.kids} costs about <b>$${weekend.toFixed(0)}</b> here. Bought in a holiday town at ${S.premium}% more, that's about <b>$${(weekend*S.premium/100).toFixed(0)}</b> extra. Pack the long-keeping things (fruit, eggs, cheese, potatoes) from your main shop and buy only bread and fresh salad there.`}else $("tripNote").hidden=true;
+  const it=i=>({name:i.name,qty:+(i._q).toFixed(2),unit:i.unit,store:i.where,useWithinDays:i.keep,estUnitPriceNZD:i.price,priceIsEstimate:i.est,...(i.for&&i.for.length?{forMeals:i.for}:{})});
+  const out={type:"assembl.shopping_list",version:1,weekStarting:"next "+DAYF[S.main],household:{adults:p.P.adults,children:p.P.kids,weekType:S.week==="kids"?"kids":"no-kids",awayWeekend:S.away==="trip"},
+    shops:[{day:DAYS[S.main],kind:"main",items:mainItems.map(i=>it({...i,_q:i.main}))}].concat(topItems.length?[{day:DAYS[S.top],kind:"top-up",items:topItems.map(i=>it({...i,_q:i.top}))}]:[])};
+  if(SCAN){out.basis="fridge_photo_checked_by_person";out.onHand=SCAN.map(i=>({name:i.name,qty:i.quantity,unit:i.unit,category:i.category,useBy:i.use_by}));
+    out.useSoon=p.soonItems.map(i=>i.name);out.meals=p.meals.map(m=>({day:m.day!=null?DAYS[m.day]:null,name:m.name,usesFromFridge:m.uses,needsBuying:m.buys.map(b=>b[0]).filter(k=>!m.uses.includes(k)),status:"proposed"}))}
+  out.notes=["Prefer loose produce so quantities match","Approval needed before checkout"].concat(SCAN?["Buy only the listed items; the rest is already at home"]:[]);
+  out.source="Stats NZ average prices, Sep 2026; ~ items are estimates; storage per Consumer NZ";
+  $("json").textContent=JSON.stringify(out,null,2);window.__last=out}
+// ---------- controls
+const R=(id,key,lab)=>{$(id).oninput=e=>{S[key]=+e.target.value;$(id+"V").textContent=lab(S[key]);render()}};
+R("adults","adults",v=>v);R("kids","kids",v=>v);R("lunch","lunch",v=>v?"yes":"no");R("premium","premium",v=>v+"%");
+document.querySelectorAll("#weekType .pill").forEach(b=>b.onclick=()=>{S.week=b.dataset.w;document.querySelectorAll("#weekType .pill").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));render()});
+document.querySelectorAll("#away .pill").forEach(b=>b.onclick=()=>{S.away=b.dataset.a;$("tripRow").hidden=S.away!=="trip";document.querySelectorAll("#away .pill").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));render()});
+$("mainDay").onchange=e=>{S.main=+e.target.value;render()};$("topDay").onchange=e=>{S.top=+e.target.value;render()};
+$("copy").onclick=()=>{const t=$("json").textContent;const ok=()=>$("copied").textContent="Copied.";const sel=()=>{const r=document.createRange();r.selectNodeContents($("json"));const g=getSelection();g.removeAllRanges();g.addRange(r);$("copied").textContent="Selected: copy it with your keyboard."};try{navigator.clipboard.writeText(t).then(ok,sel)}catch(e){sel()}};
+
+// ---------- snap your fridge
+const VISION=makeVision(READ_CONTRACT);
+const SAMPLE=[["Milk",1.5,"L","dairy","this_week"],["Eggs",6,"each","dairy","fine"],["Broccoli",1,"each","veg","today"],["Carrots",0.6,"kg","veg","fine"],["Spinach",1,"bag","veg","today"],["Tomatoes",4,"each","veg","this_week"],
+  ["Cheese",0.3,"kg","dairy","fine"],["Chicken thighs",0.5,"kg","meat","today"],["Yoghurt",1,"tub","dairy","this_week"],["Leftover curry",1,"tub","leftovers","today"],["Butter",250,"g","dairy","fine"],["Lemon",1,"each","fruit","this_week"]]
+  .map(([name,quantity,unit,category,use_by])=>({name,quantity,unit,category,use_by,confidence:1}));
+function drawSampleFridge(){const W=900,H=1200,c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");const F=(w,s)=>`${w} ${s}px "Instrument Sans", system-ui, sans-serif`;
+  g.fillStyle="#E9ECEE";g.fillRect(0,0,W,H);g.fillStyle="#F8FAFB";g.fillRect(60,60,780,1080);const lg=g.createRadialGradient(450,120,40,450,300,700);lg.addColorStop(0,"rgba(255,250,235,.9)");lg.addColorStop(1,"rgba(255,250,235,0)");g.fillStyle=lg;g.fillRect(60,60,780,1080);
+  g.strokeStyle="#C9D2D6";g.lineWidth=10;[380,680,900].forEach(y=>{g.beginPath();g.moveTo(70,y);g.lineTo(830,y);g.stroke()});
+  const label=(t,x,y,s=22,col="#2b2b2b")=>{g.fillStyle=col;g.font=F(600,s);g.textAlign="center";g.fillText(t,x,y);g.textAlign="left"};
+  const rr=(x,y,w,h,r,fill)=>{g.fillStyle=fill;g.beginPath();g.roundRect?g.roundRect(x,y,w,h,r):g.rect(x,y,w,h);g.fill()};
+  // top shelf: milk, yoghurt, leftover curry, butter
+  rr(110,150,120,220,18,"#FFFFFF");rr(130,120,80,40,8,"#3C78C3");g.strokeStyle="#D0D7DC";g.lineWidth=3;g.strokeRect(110,150,120,220);label("MILK",170,250,26,"#3C78C3");label("2L · ¾ full",170,282,18,"#557");
+  rr(270,250,140,120,16,"#FFF4E8");rr(270,240,140,22,8,"#E7B98A");label("YOGHURT",340,315,20,"#8a5a2b");label("opened",340,340,16,"#8a5a2b");
+  rr(450,260,190,110,14,"rgba(255,255,255,.85)");rr(462,272,166,86,10,"#E8A34B");label("leftover curry",545,320,20,"#5a3510");g.fillStyle="#fff";g.fillRect(470,236,150,30);label("Sun",545,258,18,"#333");
+  rr(680,300,120,70,8,"#F7E7A1");label("BUTTER",740,342,18,"#7a6420");
+  // middle shelf: chicken pack, eggs, cheese, lemon
+  rr(100,560,260,110,10,"#EDEDED");rr(112,572,236,86,8,"#E9A9A0");label("CHICKEN THIGHS",230,610,20,"#6b2a22");label("use by tomorrow",230,640,16,"#6b2a22");
+  rr(400,580,240,90,10,"#D8C3A5");for(let i=0;i<6;i++){g.fillStyle="#F3E6D3";g.beginPath();g.ellipse(430+i*36,600,15,19,0,0,7);g.fill()}label("EGGS ×6",520,660,18,"#5b4630");
+  rr(670,590,130,80,10,"#F3D27A");label("CHEESE",735,638,18,"#6b5212");g.fillStyle="#F2DA4A";g.beginPath();g.ellipse(730,540,38,30,0,0,7);g.fill();label("lemon",730,515,16,"#6b5a12");
+  // crisper: broccoli, carrots, spinach, tomatoes
+  rr(80,700,740,190,20,"rgba(200,225,210,.55)");
+  g.fillStyle="#6E8B3D";for(let i=0;i<7;i++){g.beginPath();g.arc(150+Math.cos(i)*34,770+Math.sin(i*1.7)*22,30,0,7);g.fill()}g.fillStyle="#9CB06A";g.fillRect(138,800,26,60);label("broccoli",150,880,16,"#3c4a1e");
+  g.strokeStyle="#E07A2E";g.lineWidth=18;g.lineCap="round";[[260,760,400,800],[262,790,402,830],[258,820,398,860]].forEach(([a,b,c2,d])=>{g.beginPath();g.moveTo(a,b);g.lineTo(c2,d);g.stroke()});label("carrots",330,885,16,"#7a3a10");
+  rr(450,730,170,140,20,"rgba(120,170,110,.8)");label("SPINACH",535,800,22,"#fff");label("wilting",535,830,16,"#eef");
+  g.fillStyle="#D9402E";[[680,790],[730,780],[705,830],[760,825]].forEach(([x,y])=>{g.beginPath();g.arc(x,y,26,0,7);g.fill()});label("tomatoes",720,880,16,"#7a1a10");
+  // bottom: a drink bottle and a jar
+  rr(140,960,90,160,14,"#BFE3F0");label("water",185,1050,16,"#245");rr(300,1030,110,90,12,"#B5463F");label("jam",355,1085,18,"#fff");
+  g.save();g.translate(W/2,H/2);g.rotate(-0.4);g.fillStyle="rgba(73,43,62,.12)";g.font=F(600,84);g.textAlign="center";g.fillText("SAMPLE FRIDGE · DRAWN",0,0);g.restore();
+  return c}
+let sampleBlob=null;
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{const c=drawSampleFridge();$("sampleImg").src=c.toDataURL("image/jpeg",.8);c.toBlob(b=>{sampleBlob=b},"image/jpeg",.9)});
+let stage=1;
+function setStep(n){stage=n;$("pAdd").hidden=n!==1;$("pRead").hidden=n!==1.5;$("pReview").hidden=n!==2;$("pDone").hidden=n!==3;
+  [...$("steps").children].forEach((li,i)=>{const k=i+1,cur=(n===1.5?1:n)===k;if(cur)li.setAttribute("aria-current","step");else li.removeAttribute("aria-current");li.classList.toggle("done",k<(n===1.5?1:n))})}
+const say=m=>{$("snapMsg").hidden=!m;$("snapMsg").textContent=m||""};
+const coarse=matchMedia("(pointer: coarse)").matches;
+VISION.capability().then(c=>{if(c.mode==="none"){$("snapHint").textContent="Photo reading isn't available here, so add what you have by hand. A few items is plenty to plan around.";return}
+  $("snapPick").hidden=false;$("snapCam").hidden=!coarse;$("fileCam").accept=$("filePick").accept=c.accept||"image/*";[$("snapPick"),$("snapCam")].forEach(el=>el.style.animation="pop .4s var(--ease) both")});
+const hideSnap=()=>{$("snapPick").hidden=true;$("snapCam").hidden=true};
+["fileCam","filePick"].forEach(id=>$(id).addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(f)readFile(f,false)}));
+const drop=$("drop");drop.addEventListener("dragover",e=>{if($("snapPick").hidden)return;e.preventDefault();drop.classList.add("over")});drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+drop.addEventListener("drop",e=>{drop.classList.remove("over");if($("snapPick").hidden)return;e.preventDefault();const f=[...(e.dataTransfer.files||[])].find(x=>/^image\//.test(x.type));if(f)readFile(f,false)});
+let ctl=null,SRC="manual";
+async function readFile(file,isSample){say("");setStep(1.5);const url=URL.createObjectURL(file);$("readThumb").style.backgroundImage=`url(${url})`;$("readThumb").style.setProperty("--p","0%");$("readFound").innerHTML="";$("readStat").textContent="Sending to Claude to read…";
+  const seen=new Set(),shown=new Set();ctl=new AbortController(); // chips show only recognised foods, never free text from the photo
+  const onText=t=>{$("readStat").textContent="Finding food…";for(const m of t.matchAll(/"name"\s*:\s*"([^"]{1,40})"/g)){const n=m[1];if(seen.has(n))continue;seen.add(n);const k=keyOf(n)||(/leftover/i.test(n)?"Leftovers":null);if(k&&!shown.has(k)){shown.add(k);const s=document.createElement("span");s.textContent=k;$("readFound").appendChild(s)}}
+    $("readStat").textContent=`Found ${shown.size} food${shown.size===1?"":"s"} so far…`;$("readThumb").style.setProperty("--p",Math.min(100,shown.size/12*100)+"%")};
+  try{const r=await VISION.read(file,{signal:ctl.signal,onText});$("readThumb").style.setProperty("--p","100%");fillReview(cleanItems(r.data.items||[]),isSample?"sample-read":"read")}
+  catch(e){const code=e&&e.code||"upstream_error";if(code==="cancelled"){setStep(1);return}if(VISION.hidden(code)){hideSnap();fillReview([],"manual",VISION.message(code))}else{setStep(1);say(VISION.message(code))}}
+  finally{URL.revokeObjectURL(url);$("readThumb").style.backgroundImage="none";file=null;ctl=null}}
+// medicines and anything personal never make it into the list
+function cleanItems(items){return items.filter(i=>i&&i.name&&!/prescription|medicine|medication|tablet|pills?\b|capsule/i.test(i.name)).map(i=>({name:i.name,quantity:i.quantity,unit:i.unit,category:i.category||"other",use_by:i.use_by||"this_week",confidence:i.confidence??.8}))}
+$("readStop").onclick=()=>ctl&&ctl.abort();
+$("sampleBtn").onclick=async()=>{const c=await VISION.capability();if(c.mode!=="none"&&sampleBlob)readFile(new File([sampleBlob],"sample-fridge.jpg",{type:"image/jpeg"}),true);
+  else fillReview(SAMPLE.map(x=>({...x})),"sample","Filled in from the sample fridge, as photo reading isn't available here.")};
+$("manualBtn").onclick=()=>fillReview([],"manual");
+const UNITS=["each","kg","g","L","ml","pack","bunch","punnet","loaf","dozen","jar","tub","bottle","bag"],CATS=["fruit","veg","dairy","meat","seafood","bakery","pantry","condiment","leftovers","drinks","frozen","other"];
+$("foods").innerHTML=[...FOOD.map(f=>f[0]),...Object.keys(EXTRA),"Leftovers"].map(n=>`<option value="${esc(n)}">`).join("");
+function itemRow(it,src){const row=document.createElement("div");row.className="it"+(src!=="manual"&&src!=="sample"&&it.confidence<.6?" low":"");const c=it.confidence;
+  const chip=src==="manual"||src==="sample"?`<span class="conf blank">·</span>`:c>=.85?`<span class="conf hi">seen clearly</span>`:`<span class="conf mid">check this</span>`;
+  row.innerHTML=`<input class="inp nm" list="foods" aria-label="Item" value="${esc(it.name)}" placeholder="e.g. Broccoli"><input class="inp qt" inputmode="decimal" aria-label="Amount" value="${esc(it.quantity??"")}" placeholder="1">
+    <select class="un" aria-label="Unit">${UNITS.map(u=>`<option${u===(it.unit||"each")?" selected":""}>${u}</option>`).join("")}</select>
+    <select class="ct" aria-label="Kind">${CATS.map(u=>`<option${u===it.category?" selected":""}>${u}</option>`).join("")}</select>
+    <div class="use" role="group" aria-label="Use">${[["today","Today"],["this_week","This week"],["fine","Fine"]].map(([u,l])=>`<button type="button" data-u="${u}" aria-pressed="${it.use_by===u}">${l}</button>`).join("")}</div>${chip}<button class="x" type="button" aria-label="Remove">×</button>`;
+  const edited=()=>{row.classList.remove("low");const ch=row.querySelector(".conf");if(ch&&!ch.classList.contains("blank")){ch.className="conf you";ch.textContent="edited"}};
+  row.querySelectorAll(".use button").forEach(b=>b.onclick=()=>{row.querySelectorAll(".use button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));edited()});
+  row.querySelector(".nm").addEventListener("change",e=>{const k=keyOf(e.target.value);if(k){const I=INFO(k);row.querySelector(".ct").value=I.group==="frozen"?"frozen":I.group;}else if(/leftover/i.test(e.target.value))row.querySelector(".ct").value="leftovers"});
+  row.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",edited));row.querySelector(".x").onclick=()=>row.remove();return row}
+function fillReview(items,src,note){SRC=src;$("itemList").innerHTML="";items.forEach(it=>$("itemList").appendChild(itemRow(it,src)));if(!items.length)$("itemList").appendChild(itemRow({name:"",use_by:"this_week",category:"veg"},"manual"));
+  const unsure=items.filter(i=>i.confidence<.6).length;
+  $("reviewNote").innerHTML=(note?`<b>${esc(note)}</b> `:"")+(src==="manual"?"Add what you have and how soon it needs eating. Rough amounts are fine.":src==="sample"?"Change anything you like, set how soon to use each, then plan.":`We found <b>${items.length} item${items.length===1?"":"s"}</b>${unsure?`; <b>${unsure}</b> we weren't sure about are highlighted`:""}. Fix names and amounts, set how soon to use each, and remove anything that isn't food.`);
+  $("planHint").textContent="";setStep(2)}
+$("addItem").onclick=()=>{const r=itemRow({name:"",use_by:"this_week",category:"veg"},"manual");$("itemList").appendChild(r);r.querySelector(".nm").focus()};
+function readItems(){return[...$("itemList").children].map(r=>{const q=parseFloat(r.querySelector(".qt").value);const u=r.querySelector(".use button[aria-pressed=true]");
+  return{name:r.querySelector(".nm").value.trim().slice(0,60),quantity:isFinite(q)?q:null,unit:r.querySelector(".un").value,category:r.querySelector(".ct").value,use_by:u?u.dataset.u:"this_week"}}).filter(i=>i.name)}
+$("planBtn").onclick=()=>{const items=readItems();if(!items.length){$("planHint").textContent="Add at least one item, or plan without your fridge.";return}
+  SCAN=items;const soon=items.filter(i=>i.use_by!=="fine").length;$("doneText").innerHTML=`<b>${items.length} things in your fridge</b>, ${soon} to use soon. Dinners and the list below now start from these.`;
+  $("sceneH").textContent="What's here, and what's coming";setStep(3);render();const top=$("eatCard").getBoundingClientRect().top;if(top>innerHeight)$("eatCard").scrollIntoView({behavior:"smooth",block:"start"})};
+$("restartBtn").onclick=()=>{say("");setStep(1)};$("editBtn").onclick=()=>setStep(2);
+$("clearBtn").onclick=()=>{SCAN=null;$("sceneH").textContent="Where it all lives";setStep(1);render()};
+setStep(1);render();
+window.__kitchen={S,plan,render,state:()=>({stage,src:SRC,scan:SCAN}),vision:VISION,last:()=>window.__last,
+  // the lab's latest Stats NZ average prices replace the Sept 2026 snapshot for the same items (same measure, same unit)
+  setPrices:(items,label)=>{const MAP={Bananas:"bananas",Apples:"apples",Kiwifruit:"kiwifruit",Oranges:"oranges",Broccoli:"broccoli",Carrots:"carrots",Tomatoes:"tomatoes",Potatoes:"potatoes",Milk:"milk2l",Eggs:"eggs",Cheese:"cheese",Butter:"butter",Bread:"bread","Beef mince":"beefMince"};
+    let n=0;const chips=[];for(const f of FOOD){const k=MAP[f[0]];const it=k&&items[k];if(!it||!(it.price>0))continue;f[4]=+it.price;n++;chips.push(`<span class="achip">${esc(f[0])}${f[0]==="Milk"?" 2 L":f[0]==="Bread"?" 600 g":f[0]==="Eggs"?", dozen":""} <b>$${f[4].toFixed(2)}${/kg/.test(f[1])?"/kg":""}</b></span>`)}
+    if(!n)return 0;const src=$("priceSrc");if(src){src.textContent=`Latest published · Stats NZ, ${label} · ${n} prices`;const g=src.parentElement;g.querySelectorAll(".achip").forEach(x=>x.remove());g.insertAdjacentHTML("beforeend",chips.join(""))}
+    render();return n}};
+})();
+</script>
+
+<script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="kitchen"></script><script src="/lab/navigation.js" defer></script></body></html>

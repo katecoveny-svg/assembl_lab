@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The claim checker</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"><link rel="stylesheet" href="../kit.css">
+<style>
+/* claim checker: tappable parts of the drawing, and the flip of a hype-word card */
+#k-main [data-act]{cursor:pointer}
+#k-main [data-act]:hover>.hv{opacity:.9}
+.cc-flip{animation:ccflip .42s cubic-bezier(.3,.7,.3,1);transform-box:fill-box;transform-origin:50% 50%}
+@keyframes ccflip{0%{transform:scaleX(.04)}100%{transform:none}}
+.cc-pop{animation:ccpop .35s ease;transform-box:fill-box;transform-origin:50% 50%}
+@keyframes ccpop{0%{transform:scale(.4);opacity:.2}100%{transform:none;opacity:1}}
+/* keep a long select from widening the drawing on phones */
+.playmain{grid-template-columns:minmax(0,1fr)}
+#k-ctl .ctl{max-width:100%;min-width:0}
+#k-ctl select{max-width:100%;min-width:0;text-overflow:ellipsis}
+@media (prefers-reduced-motion:reduce){.cc-flip,.cc-pop{animation:none}}
+</style></head>
+<body><div id="app"></div><script src="../kit.js"></script><script src="claims.js"></script><script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script></body></html>

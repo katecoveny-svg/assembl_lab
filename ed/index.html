@@ -1,0 +1,658 @@
+<!doctype html><html lang="en-NZ" data-feeds="ed,urgentcare,wastewater,calendar,weather" data-district="auckland-district"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Emergency Department Twin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an emergency department on a plinth, the live board beside it; scenarios, the busy clock and "right place" guidance below. */
+:root{
+  --paper:#FFFDFB; --chalk:#F5F1F2; --ink:#492B3E; --body:#654A4E; --rose:#916A70; --line:#E4DADD;
+  --live:#D9822B; --good:#3F7A55; --warn:#A5552F; --alert:#B3261E;
+  --t1:#B3261E; --t2:#D9822B; --t3:#D8AE3F; --t4:#4F8A6E; --t5:#4F7C93; --board:#7B5C8E;
+  --scene-plinth:#E9E1D6; --scene-floor:#F1ECE6; --scene-wall:#F7F3EF; --scene-edge:#492B3E; --scene-furn:#D9CDC7; --scene-ground:#C9D8BC; --scene-path:#E2DAD0;
+  --z-wait:#EFE3D3; --z-cub:#E3ECEF; --z-resus:#F2DEDA; --z-minor:#E5EEE3; --z-triage:#EDE3EE;
+  --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#1A0D18; --chalk:#251522; --ink:#F5F1F2; --body:#D9CCCF; --rose:#A88A90; --line:#3A2636;
+  --live:#F0A24A; --good:#7CC096; --warn:#E39A6A; --alert:#F07A6E;
+  --t1:#F07A6E; --t2:#F0A24A; --t3:#EBC064; --t4:#7CC096; --t5:#6FB0CF; --board:#B08FC4;
+  --scene-plinth:#2A1E28; --scene-floor:#3A2D37; --scene-wall:#4A3946; --scene-edge:#F0E6E8; --scene-furn:#5A4456; --scene-ground:#2C3A27; --scene-path:#3A2F38;
+  --z-wait:#4A3B33; --z-cub:#33414A; --z-resus:#4A3236; --z-minor:#34433A; --z-triage:#423446; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1A0D18; --chalk:#251522; --ink:#F5F1F2; --body:#D9CCCF; --rose:#A88A90; --line:#3A2636;
+  --live:#F0A24A; --good:#7CC096; --warn:#E39A6A; --alert:#F07A6E;
+  --t1:#F07A6E; --t2:#F0A24A; --t3:#EBC064; --t4:#7CC096; --t5:#6FB0CF; --board:#B08FC4;
+  --scene-plinth:#2A1E28; --scene-floor:#3A2D37; --scene-wall:#4A3946; --scene-edge:#F0E6E8; --scene-furn:#5A4456; --scene-ground:#2C3A27; --scene-path:#3A2F38;
+  --z-wait:#4A3B33; --z-cub:#33414A; --z-resus:#4A3236; --z-minor:#34433A; --z-triage:#423446; color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{background:var(--paper);color:var(--body);font-family:var(--display);font-size:14.5px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:14px}
+.sos{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;border:1.5px solid var(--alert);border-radius:12px;padding:10px 14px;color:var(--ink)}
+.sos b{font-family:var(--mono);color:var(--alert);font-size:15px}
+.top{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--rose)}
+h1{margin:2px 0 2px;font-size:clamp(24px,3.6vw,36px);line-height:1.05;letter-spacing:-.02em;color:var(--ink);font-weight:600;text-wrap:balance}
+h2{margin:0 0 4px;font-size:20px;color:var(--ink);letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:0;color:var(--body);max-width:72ch}
+.clock{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.time{font-family:var(--mono);font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:13ch}
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink);font:500 12px var(--mono);padding:6px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn{appearance:none;border:1px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:500 12px var(--mono);cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--live);outline-offset:2px}
+.main{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(290px,1fr);gap:14px}
+.stagebox{position:relative;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#D9E5EA,#F6F1EC);min-height:460px}
+#scene{display:block;width:100%;min-height:460px;touch-action:none}
+.views{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px)}
+.views button{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 10px;font:500 11.5px var(--mono);cursor:pointer}
+.views button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.tag{position:absolute;pointer-events:none;transform:translate(-50%,-100%);font:500 11px/1.35 var(--mono);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 7px;white-space:nowrap}
+.tag .m{color:var(--rose)}.tag.hot{border-color:var(--alert)}
+.legend3d{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - 120px);font:10.5px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--paper) 90%,transparent);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.legend3d span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--k)}
+.badge{position:absolute;right:12px;bottom:12px;font:500 10.5px var(--mono);letter-spacing:.06em;color:var(--rose);background:var(--paper);border:1px solid var(--rose);border-radius:4px;padding:2px 6px}
+.side{display:grid;gap:10px;align-content:start;min-width:0}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper);min-width:0}
+.card h3{margin:0 0 6px;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.big{font-family:var(--mono);font-size:38px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.big small{font-size:13px;color:var(--rose);margin-left:6px}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--line);margin:10px 0 18px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--live)}
+.meter b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.meter em{position:absolute;top:13px;transform:translateX(-50%);font:10px var(--mono);color:var(--rose);font-style:normal;white-space:nowrap}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kv div{display:grid;gap:2px}
+.kv .v{font:500 20px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.kv .v.hot{color:var(--alert)}
+.kv .l{font:10.5px var(--mono);color:var(--rose);letter-spacing:.03em}
+.lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:14px}
+.controls{display:grid;gap:12px;align-content:start}
+.row{display:grid;gap:4px}
+.row label,.lab{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:8px}
+.row label b{color:var(--ink);font-weight:500;text-transform:none}
+select{font:500 13px var(--display);color:var(--ink);background:var(--paper);border:1px solid var(--ink);border-radius:8px;padding:7px 10px;width:100%}
+input[type=range]{width:100%;accent-color:var(--live)}
+.toggle{display:flex;gap:10px;align-items:flex-start;cursor:pointer;color:var(--ink)}
+.toggle input{margin-top:3px;accent-color:var(--live);width:16px;height:16px;flex:none}
+.toggle small{display:block;color:var(--body);font-size:12.5px}
+.insight{font-size:15px;color:var(--ink);margin:0 0 8px;text-wrap:balance}
+.insight b{font-family:var(--mono);font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose);border-top:0}
+td.n,th.n{text-align:right}
+td:first-child{color:var(--ink);font-weight:500}
+tr.best td{background:color-mix(in srgb,var(--good) 12%,transparent)}
+tr.worse td{color:var(--alert)}
+.tablewrap{overflow-x:auto}
+.calc{font:11px var(--mono);color:var(--rose)}
+svg{display:block;width:100%;height:auto}
+.t-ax{font-family:var(--mono);font-size:10.5px;fill:var(--rose)}.t-ink{font-family:var(--mono);font-size:11px;fill:var(--ink)}
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.g{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:4px;align-content:start}
+.g.e{border-color:var(--alert)}
+.g h4{margin:0;font-size:15px;color:var(--ink)}
+.g .num{font:600 18px var(--mono);color:var(--ink);user-select:all}
+.g p{margin:0;font-size:13.5px}
+.g a{color:var(--ink)}
+.sim{font:500 10px var(--mono);letter-spacing:.06em;border:1px solid var(--rose);color:var(--rose);border-radius:4px;padding:1px 5px}
+footer{font-size:12px;color:var(--rose);display:grid;gap:4px;max-width:104ch}
+footer a{color:var(--ink)}
+/* data visuals: bars drawn from the live model, each with a truth chip and a table one click away */
+.tl{font:500 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--rose);color:var(--rose);border-radius:999px;padding:1px 6px;white-space:nowrap}
+.comp{display:flex;gap:2px;height:12px;margin:12px 0 6px}
+.comp i{display:block;height:100%;background:var(--k);min-width:0;transition:flex-grow .4s ease}
+.comp i:first-child{border-radius:4px 0 0 4px}.comp i:last-child{border-radius:0 4px 4px 0}
+.ckey{display:flex;flex-wrap:wrap;gap:3px 12px;font:11px var(--mono);color:var(--body)}
+.ckey span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;background:var(--k)}
+.ckey b{color:var(--ink);font-weight:500}
+.lv{display:grid;gap:12px;margin:4px 0 8px}
+.lv-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font:11px var(--mono);color:var(--rose)}
+.lv-base b{color:var(--ink);font-weight:500}
+.lvr{display:grid;gap:3px}
+.lvr .lr{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:13.5px;color:var(--ink)}
+.lvr .lr b{font:500 13px var(--mono);white-space:nowrap}
+.lvr small{font:11px var(--mono);color:var(--rose)}
+.dv{position:relative;height:12px}
+.dv::before{content:"";position:absolute;left:calc(50% - 1px);top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--ink);opacity:.55;z-index:1}
+.dv i{position:absolute;top:0;bottom:0;transition:width .4s ease}
+.dv i.pos{left:50%;border-radius:0 4px 4px 0;background:var(--good)}
+.dv i.neg{right:50%;border-radius:4px 0 0 4px;background:var(--alert)}
+.dv.one::before{left:0}.dv.one i.pos{left:0}
+.lvr.best .lr span{font-weight:600}
+.lv-ax{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--rose)}
+details.tbl summary{cursor:pointer;font:500 11px var(--mono);letter-spacing:.04em;color:var(--ink);padding:4px 0}
+details.tbl[open] summary{margin-bottom:6px}
+.mix{display:flex;gap:2px;height:16px;margin:4px 0 6px}
+.mix i{display:block;height:100%;background:var(--k)}
+.mix i:first-child{border-radius:4px 0 0 4px}.mix i:last-child{border-radius:0 4px 4px 0}
+.mixbr{display:flex;gap:2px;margin:-2px 0 8px;font:500 11px var(--mono);color:var(--ink)}.mixbr .br{border-top:1.5px solid var(--ink);padding-top:3px;text-align:center;border-radius:0}
+.mixkey{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;font:10.5px var(--mono);color:var(--rose);margin-bottom:12px}
+.mixkey span b{display:block;color:var(--ink);font-weight:500;font-size:12px}
+.mixkey span b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:var(--k)}
+.mixhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 10px;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose);margin-top:4px}
+.feeds{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:2px 0 8px}
+.feed{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.feed .d{width:10px;height:10px;border-radius:50%;background:var(--k);box-shadow:0 0 0 2px var(--paper),0 0 0 3px var(--k)}
+.feed b{color:var(--ink);font-weight:500;font-size:13px}
+.feed span:last-child{grid-column:2;font:11px var(--mono);color:var(--rose)}
+.feedsum{display:flex;flex-wrap:wrap;gap:4px 14px;font:11px var(--mono);color:var(--body);margin-bottom:6px}
+.feedsum span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--k)}
+/* live and latest: real public figures beside the simulation, each with its own truth chip */
+.livecard h2{margin:0}
+.livehead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:10px}
+.livehead .pick{display:grid;gap:3px;min-width:min(100%,300px)}
+.livehead .pick span{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose)}
+.lstate{font:11px var(--mono);color:var(--rose)}
+.lstate i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--rose);margin-right:6px;vertical-align:0}
+.lstate.on i{background:var(--good)}
+.ltiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.lt{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:4px;align-content:start;min-width:0}
+.lt h4{margin:0;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose)}
+.lt .v{font:500 26px var(--mono);color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.lt .v small{font-size:12px;color:var(--rose);margin-left:4px}
+.lt p{margin:0;font-size:13px;color:var(--body)}
+.lt .src{font:10.5px var(--mono);color:var(--rose)}.lt .src a{color:var(--ink)}
+.tl.lv{border-color:var(--good);color:var(--good)}.tl.lp{border-color:var(--live);color:var(--ink)}.tl.sn{border-style:dashed}
+.lt .meter{margin:6px 0 16px}
+.spark{display:block;width:100%;height:34px}
+.nolive{margin:10px 0 0;border:1.5px dashed var(--alert);border-radius:10px;padding:8px 12px;color:var(--ink);font-size:13.5px}
+.nolive b{color:var(--alert)}
+.calrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px;font-size:13px}
+.calrow .toggle{align-items:center}
+.calnote{font:11px var(--mono);color:var(--rose)}
+.ranks{display:grid;gap:3px;margin-top:6px}
+.rk{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 3.4em;gap:6px;align-items:center;font:11px var(--mono);color:var(--body)}
+.rk .bar{height:8px;border-radius:4px;background:var(--line);position:relative;overflow:hidden}
+.rk .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--rose);border-radius:4px}
+.rk.me{color:var(--ink);font-weight:500}.rk.me .bar i{background:var(--live)}
+.rk b{text-align:right;font-weight:500;color:var(--ink)}
+.rk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.comp i,.dv i{transition:none}}
+@media (max-width:520px){.mixkey{font-size:9.5px}.mixkey span b{font-size:11px}}
+@media (max-width:900px){.main,.lower{grid-template-columns:1fr}.stagebox,#scene{min-height:420px}}
+@media (max-width:520px){.big{font-size:30px}.kv .v{font-size:17px}.tag{font-size:10px}.legend3d{display:none}}
+</style>
+
+<div class="wrap">
+  <div class="sos" role="note"><b>In an emergency, call 111.</b><span>Please do not delay calling 111 because you have heard services are busy. This page shows patterns in a simulated hospital; it is not medical advice.</span></div>
+  <div class="top">
+    <div>
+      <div class="eyebrow">Public-good twin · Aotearoa health</div>
+      <h1>Inside a busy emergency department</h1>
+      <p class="sub">A simulated large city ED, minute by minute. See where the queues form, why patients waiting for a ward bed block the whole department, and which changes would get more people seen within six hours.</p>
+    </div>
+    <div class="clock">
+      <span class="time" id="clock"></span>
+      <div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="15">15 min/s</button><button type="button" data-speed="60" aria-pressed="true">1 h/s</button><button type="button" data-speed="180">3 h/s</button></div>
+      <button class="btn" type="button" id="pause">Pause</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="stagebox" id="stagebox">
+      <canvas id="scene" aria-label="3D view of an emergency department with patients moving between the waiting room, triage, cubicles and wards"></canvas>
+      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="all" aria-pressed="true">Whole ED</button><button type="button" data-view="front">Waiting room</button><button type="button" data-view="cubicles">Cubicles</button><button type="button" data-view="ambulance">Ambulance bay</button></div>
+      <div id="tags"></div>
+      <div class="legend3d" aria-hidden="true"><span style="--k:var(--t1)">Triage 1</span><span style="--k:var(--t2)">2</span><span style="--k:var(--t3)">3</span><span style="--k:var(--t4)">4</span><span style="--k:var(--t5)">5</span><span style="--k:var(--board)">waiting for a ward bed</span></div>
+      <div class="badge">SIMULATED</div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h3><span>Seen within 6 hours</span><span>last 24 hours</span></h3>
+        <div class="big" id="p6">0<small>%</small></div>
+        <div class="meter" aria-hidden="true"><i id="p6bar"></i><b style="left:95%"></b><em style="left:95%">target 95%</em><b id="natMark" style="left:74.4%;opacity:.5"></b><em id="natText" style="left:74.4%">NZ 74.4%</em></div>
+      </div>
+      <div class="card">
+        <h3><span>Right now</span><span id="hourBusy"></span></h3>
+        <div class="kv">
+          <div><span class="v" id="inED">0</span><span class="l">people in the ED</span></div>
+          <div><span class="v" id="waiting">0</span><span class="l">waiting to be seen</span></div>
+          <div><span class="v" id="board">0</span><span class="l">waiting for a ward bed</span></div>
+          <div><span class="v" id="ramp">0</span><span class="l">ambulances waiting 15+ min</span></div>
+          <div><span class="v" id="med">0</span><span class="l">median wait to see a doctor</span></div>
+          <div><span class="v" id="long">0</span><span class="l">longest stay so far</span></div>
+        </div>
+        <div class="comp" id="comp" role="img" aria-label=""><i style="--k:var(--live)"></i><i style="--k:var(--rose)"></i><i style="--k:var(--board)"></i></div>
+        <div class="ckey" id="ckey"></div>
+      </div>
+      <div class="card">
+        <h3><span>Arrivals by hour</span><span>estimate</span></h3>
+        <svg id="hours" viewBox="0 0 320 90" role="img" aria-label="Expected arrivals each hour of the day, busiest late morning to evening"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="lower">
+    <div class="card controls">
+      <h3><span>Try a change</span></h3>
+      <div class="row"><label for="surge">Winter surge (flu, RSV, COVID) <b id="surgeV">none</b></label><input id="surge" type="range" min="0" max="0.2" step="0.05" value="0"></div>
+      <div class="row"><label for="shift">Lower-urgency patients who go to urgent care or a GP instead <b id="shiftV">0%</b></label><input id="shift" type="range" min="0" max="0.3" step="0.05" value="0"></div>
+      <div class="row"><label for="doctors">Doctors on the floor <b id="doctorsV">6</b></label><input id="doctors" type="range" min="4" max="10" step="1" value="6"></div>
+      <div class="row"><label for="beds">Extra ward beds <b id="bedsV">none</b></label><input id="beds" type="range" min="0" max="28" step="14" value="0"></div>
+      <label class="toggle"><input type="checkbox" id="ft"><span>Fast-track stream<small>Two dedicated clinicians see triage 4–5 patients in the minors area, with quicker tests.</small></span></label>
+      <label class="toggle"><input type="checkbox" id="early"><span>Ward discharges before 11am<small>Wards send most patients home in the morning instead of mid-afternoon, so beds free up earlier.</small></span></label>
+      <button class="btn" type="button" id="reset">Back to a normal week</button>
+    </div>
+    <div class="card">
+      <h3><span>What would help most</span><span>one simulated week each, same patients</span></h3>
+      <p class="insight" id="insight">Calculating…</p>
+      <div class="lv" id="lv" role="img" aria-label="Change in patients seen within 6 hours for each change, against your settings"></div>
+      <details class="tbl"><summary>Show the table</summary><div class="tablewrap"><table id="ladder"></table></div></details>
+      <p class="calc" id="calc"></p>
+    </div>
+  </div>
+
+  <div class="card livecard" id="livecard">
+    <div class="livehead">
+      <div>
+        <h2>Live and latest</h2>
+        <p class="sub" style="margin-top:2px">Real public figures beside the simulation. Each has its own chip: <span class="tl lv">Live</span> is now, <span class="tl lp">Latest published</span> is the newest official release, <span class="tl sn">Simulated</span> is this page's model.</p>
+      </div>
+      <label class="pick" id="pickWrap" hidden><span>Health NZ district</span><select id="district" aria-label="Health NZ district"></select></label>
+    </div>
+    <div class="lstate" id="lstate"><i></i>Not connected to the lab's feeds: showing the built-in snapshot. On the lab site this panel fills from Health NZ, PHF Science, Open-Meteo and Pegasus Health.</div>
+    <div class="ltiles" id="ltiles" hidden>
+      <div class="lt" id="ltEd"></div>
+      <div class="lt" id="ltWw"></div>
+      <div class="lt" id="ltDay"></div>
+      <div class="lt" id="ltUc"></div>
+    </div>
+    <p class="nolive" id="nolive"><b>No public hospital in New Zealand publishes live ED waiting times.</b> Health NZ publishes a quarterly district figure; the only live waiting figure we could find is an urgent care clinic (Pegasus 24 Hour Surgery, Christchurch). Hong Kong and several Australian states publish live hospital ED waits.</p>
+    <div class="calrow" id="calrow" hidden>
+      <label class="toggle"><input type="checkbox" id="calib"><span>Start the simulation from this district's latest published level <small id="calibNote"></small></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Right place, right time</h2>
+    <p class="sub" style="margin-bottom:10px">About 46% of ED visits are triage 4 or 5: real problems that are usually not life-threatening. If that's you, these can be quicker. If you're unsure, call Healthline.</p>
+    <div class="mixhead"><span>Every 100 ED visits, by triage category</span><span class="tl" title="Ministry of Health national ED data, 2014/15">Source</span></div>
+    <div class="mix" role="img" aria-label="Triage mix: category 1, 0.7%; 2, 11%; 3, 42%; 4, 39.6%; 5, 6.7%. Categories 4 and 5 together are about 46%."><i style="--k:var(--t1);flex:0.7"></i><i style="--k:var(--t2);flex:11"></i><i style="--k:var(--t3);flex:42"></i><i style="--k:var(--t4);flex:39.6"></i><i style="--k:var(--t5);flex:6.7"></i></div>
+    <div class="mixbr" aria-hidden="true"><span style="flex:53.7"></span><span class="br" style="flex:46.3">4 + 5: about 46%</span></div>
+    <div class="mixkey" aria-hidden="true"><span style="--k:var(--t1)"><b>0.7%</b>triage 1</span><span style="--k:var(--t2)"><b>11%</b>triage 2</span><span style="--k:var(--t3)"><b>42%</b>triage 3</span><span style="--k:var(--t4)"><b>39.6%</b>triage 4</span><span style="--k:var(--t5)"><b>6.7%</b>triage 5</span></div>
+    <div class="guide">
+      <div class="g e"><h4>Emergency</h4><span class="num">111</span><p>Chest pain, trouble breathing, severe bleeding, stroke signs, serious injury. Call 111 or go straight to ED.</p></div>
+      <div class="g"><h4>Not sure what to do</h4><span class="num">0800 611 116</span><p>Healthline: free health advice from registered nurses, 24 hours a day, 7 days a week.</p></div>
+      <div class="g"><h4>Urgent but not life-threatening</h4><p>An urgent care clinic: sprains, cuts, fevers, infections. Some show live busyness, such as <a href="https://www.whitecross.co.nz/" target="_blank" rel="noopener">White Cross</a> (Auckland and Northland) and <a href="https://www.pegasus.health.nz/wait-time-dashboard" target="_blank" rel="noopener">Pegasus 24 Hour Surgery</a> (Christchurch).</p></div>
+      <div class="g"><h4>Minor illness</h4><p>A pharmacist can help with many minor ailments without an appointment.</p></div>
+      <div class="g"><h4>Ongoing or non-urgent</h4><p>Your GP or practice nurse. Many practices also offer phone or video appointments.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span>From simulated to live</span><span>public data wired into this page on the lab site</span></h3>
+    <div class="feedsum"><span style="--k:var(--good)"><b>3</b> live</span><span style="--k:var(--live)"><b>2</b> latest published</span><span style="--k:var(--rose)"><b>1</b> not published in NZ</span></div>
+    <div class="feeds">
+      <div class="feed"><span class="d" style="--k:var(--live)"></span><b>Health NZ health targets</b><span>Quarterly · % seen within 6 h, by district</span></div>
+      <div class="feed"><span class="d" style="--k:var(--live)"></span><b>PHF Science wastewater</b><span>Weekly · COVID-19 community signal</span></div>
+      <div class="feed"><span class="d" style="--k:var(--good)"></span><b>Pegasus 24 Hour Surgery</b><span>Live · wait, number waiting (urgent care)</span></div>
+      <div class="feed"><span class="d" style="--k:var(--good)"></span><b>Open-Meteo weather</b><span>Live · at the district's main hospital</span></div>
+      <div class="feed"><span class="d" style="--k:var(--good)"></span><b>Holidays and school terms</b><span>Live · Nager.Date, Ministry of Education</span></div>
+      <div class="feed"><span class="d" style="--k:var(--rose);opacity:.6"></span><b>Public hospital EDs</b><span>No live waits published in NZ</span></div>
+    </div>
+    <details class="tbl"><summary>Show the table</summary><div class="tablewrap"><table>
+      <thead><tr><th>Feed</th><th>What it gives</th><th>How often</th><th>Chip</th></tr></thead>
+      <tbody>
+        <tr><td>Health NZ | Te Whatu Ora health target factsheets</td><td>% of ED patients admitted, discharged or transferred within 6 hours, for each of 20 districts and nationally; attendances</td><td>Quarterly</td><td>Latest published</td></tr>
+        <tr><td>PHF Science (formerly ESR) wastewater</td><td>SARS-CoV-2 genome copies per person per day, national and regional, with reported cases</td><td>Weekly</td><td>Latest published</td></tr>
+        <tr><td>Pegasus 24 Hour Surgery, Christchurch</td><td>Estimated wait, number waiting, patients in treatment. Urgent care, not an ED</td><td>Live (page updates every few minutes)</td><td>Live</td></tr>
+        <tr><td>Open-Meteo</td><td>Temperature, rain and wind at the district's main hospital</td><td>Hourly</td><td>Live</td></tr>
+        <tr><td>Nager.Date and Ministry of Education</td><td>Public holiday today, next holiday, school term or holidays</td><td>Daily</td><td>Live</td></tr>
+        <tr><td>White Cross urgent care</td><td>"Quieter to busier" for 11 clinics: on their website only, no data feed</td><td>Live</td><td>Not wired</td></tr>
+        <tr><td>Public hospital EDs</td><td>No NZ hospital publishes live ED waits; Hong Kong and several Australian states do</td><td>–</td><td>–</td></tr>
+      </tbody></table></div></details>
+  </div>
+
+  <footer>
+    <p><span class="sim">SIMULATED</span> A generic large city ED of about 280 visits a day, not any real hospital. Triage mix (1: 0.7%, 2: 11%, 3: 42%, 4: 39.6%, 5: 6.7%) and the busier Sundays and Mondays are from the Ministry of Health's national ED data (2014/15, the latest detailed public release). The hour-by-hour arrival curve, treatment times, admission rates and staffing are estimates chosen so the baseline lands near the national result when the page was built: 74.4% of ED patients were seen and discharged or admitted within 6 hours in January–March 2026 (Health NZ), against a 95% target. The "Live and latest" panel shows the newest published quarter when the page is on the lab site. Scenario results show direction and size, not forecasts for any hospital.</p>
+    <p>Built by assembl as an independent public-good concept. Not commissioned by, affiliated with or endorsed by Health New Zealand | Te Whatu Ora or any hospital.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// A generic large NZ city emergency department, simulated minute by minute.
+// Public patterns only: triage mix and day-of-week pattern from Ministry of Health "ED use 2014/15";
+// the hour-of-day curve is an estimate from comparable published studies. Not any real hospital.
+const ED = (() => {
+  const TRIAGE = [ // share of arrivals, doctor time (min), tests/observation (min), chance of admission
+    { cat: 1, share: 0.007, doc: 60, obs: 180, admit: 0.65, amb: 0.85 },
+    { cat: 2, share: 0.110, doc: 40, obs: 220, admit: 0.45, amb: 0.55 },
+    { cat: 3, share: 0.420, doc: 30, obs: 200, admit: 0.30, amb: 0.35 },
+    { cat: 4, share: 0.396, doc: 18, obs: 75, admit: 0.03, amb: 0.10 },
+    { cat: 5, share: 0.067, doc: 12, obs: 15, admit: 0.01, amb: 0.04 }];
+  // estimated share of a day's arrivals in each hour (trough 3–6am, plateau 10am–8pm)
+  const HOUR = (() => { const raw = [2.2, 1.8, 1.5, 1.2, 1.1, 1.2, 1.7, 2.6, 3.8, 5.0, 5.8, 6.0, 5.9, 5.8, 5.7, 5.6, 5.5, 5.5, 5.6, 5.4, 4.9, 4.2, 3.4, 2.7]; const s = raw.reduce((a, b) => a + b); return raw.map(x => x / s); })();
+  const DOW = [1.06, 1.0, 0.97, 0.96, 0.99, 0.98, 1.06]; // Mon..Sun (Sun and Mon busiest)
+  // ward discharges by hour (most patients leave the ward in the afternoon)
+  const DISCH_LATE = (() => { const raw = [0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.7, 1.0, 1.4, 1.8, 2.0, 2.0, 1.8, 1.4, 1.0, 0.6, 0.3, 0.1, 0, 0]; const s = raw.reduce((a, b) => a + b); return raw.map(x => x / s); })();
+  const DISCH_EARLY = (() => { const raw = [0, 0, 0, 0, 0, 0, 0, 0, 0.8, 1.6, 2.2, 2.2, 1.8, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4, 0.3, 0.1, 0, 0, 0]; const s = raw.reduce((a, b) => a + b); return raw.map(x => x / s); })();
+  const BASE = { perDay: 280, cubicles: 44, resus: 4, doctors: 6, triageNurses: 2, wardPerDay: 62, surge: 0, shift: 0, fastTrack: false, ftChairs: 14, extraBeds: 0, earlyDischarge: false, wardBuffer: 3 };
+
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1e6) / 1e6; }; }
+  function newState(S, seed = 7) {
+    return { t: 0, rand: rng(seed), id: 0, pts: [], done: [], wardFree: 4, docs: Array.from({ length: S.doctors }, () => ({ busy: 0, p: null })), triageBusy: Array(S.triageNurses).fill(0), arrAcc: 0, ftDocs: [{ p: null }, { p: null }], dischAcc: 0 };
+  }
+  const dayOf = t => Math.floor(t / 1440), hourOf = t => Math.floor((t % 1440) / 60);
+  function arrivalsPerMin(S, t) { const d = dayOf(t) % 7, h = hourOf(t); return S.perDay * (1 + S.surge) * DOW[d] * HOUR[h] / 60; }
+  function pickCat(r) { let x = r, a = 0; for (const c of TRIAGE) { a += c.share; if (x < a) return c; } return TRIAGE[2]; }
+  // one simulated minute
+  function step(S, st) {
+    const R = st.rand, t = st.t;
+    // arrivals (some lower-urgency patients go elsewhere if "right place" is on)
+    st.arrAcc += arrivalsPerMin(S, t);
+    while (st.arrAcc >= 1) { st.arrAcc -= 1; const c = pickCat(R());
+      if (c.cat >= 4 && R() < S.shift) { st.diverted = (st.diverted || 0) + 1; continue; }
+      const amb = R() < c.amb;
+      st.pts.push({ id: ++st.id, cat: c.cat, amb, arr: t, state: "triage", left: 2 + R() * 4, admit: R() < c.admit, docLeft: c.doc * (0.6 + R() * 0.8), obsLeft: c.obs * (0.6 + R() * 0.8), where: null, seenAt: null }); }
+    // ward beds free up through the day
+    const dis = (S.earlyDischarge ? DISCH_EARLY : DISCH_LATE)[hourOf(t)] * (S.wardPerDay + S.extraBeds / 4) / 60;
+    st.dischAcc += dis; while (st.dischAcc >= 1) { st.dischAcc -= 1; st.wardFree += 1; }
+    st.wardFree = Math.min(st.wardFree, S.wardBuffer + S.extraBeds / 7);
+    // triage (two nurses, about 2–6 minutes each)
+    let nurses = S.triageNurses;
+    for (const p of st.pts) { if (p.state !== "triage") continue; if (nurses <= 0) break; nurses--; p.left -= 1; if (p.left <= 0) p.state = "wait"; }
+    // place waiting patients: most urgent first, then longest waiting
+    const inCub = st.pts.filter(p => p.where === "cub").length, inRes = st.pts.filter(p => p.where === "resus").length, inFt = st.pts.filter(p => p.where === "ft").length;
+    let freeCub = S.cubicles - inCub, freeRes = S.resus - inRes, freeFt = S.ftChairs - inFt;
+    const waiting = st.pts.filter(p => p.state === "wait").sort((a, b) => a.cat - b.cat || a.arr - b.arr);
+    for (const p of waiting) {
+      if (p.cat === 1 && freeRes > 0) { p.where = "resus"; freeRes--; p.state = "needdoc"; continue; }
+      if (p.cat >= 4) { if (freeFt > 0) { p.where = "ft"; freeFt--; p.state = "needdoc"; } else if (freeCub > 6) { p.where = "cub"; freeCub--; p.state = "needdoc"; } continue; }
+      if (freeCub > 0) { p.where = "cub"; freeCub--; p.state = "needdoc"; }
+    }
+    // doctors: most urgent patient in a space without a doctor yet
+    const free = st.docs.filter(d => !d.p);
+    if (free.length) { const need = st.pts.filter(p => p.state === "needdoc").sort((a, b) => a.cat - b.cat || a.arr - b.arr);
+      for (const d of free) { const p = need.shift(); if (!p) break; d.p = p; p.state = "doc"; if (p.seenAt == null) p.seenAt = t; } }
+    if (S.fastTrack) for (const d of st.ftDocs) { if (d.p) continue; const p = st.pts.filter(q => q.state === "needdoc" && q.where === "ft").sort((a, b) => a.arr - b.arr)[0]; if (!p) break; d.p = p; p.state = "doc"; p.docLeft *= 0.8; p.obsLeft *= 0.6; if (p.seenAt == null) p.seenAt = t; }
+    for (const d of [...st.docs, ...st.ftDocs]) { const p = d.p; if (!p) continue; p.docLeft -= 1; if (p.docLeft <= 0) { d.p = null; p.state = "obs"; } }
+    // tests and observation, then home or a ward bed
+    for (const p of st.pts) {
+      if (p.state === "obs") { p.obsLeft -= 1; if (p.obsLeft <= 0) p.state = p.admit ? "board" : "out"; p.decided = t; }
+      if (p.state === "board" && st.wardFree >= 1) { st.wardFree -= 1; p.state = "ward"; }
+    }
+    // leave
+    const keep = [];
+    for (const p of st.pts) { if (p.state === "out" || p.state === "ward") { st.done.push({ id: p.id, arr: p.arr, out: t, cat: p.cat, admit: p.state === "ward", seen: p.seenAt }); } else keep.push(p); }
+    st.pts = keep;
+    if (st.done.length > 5000) st.done.splice(0, st.done.length - 5000);
+    st.t++;
+  }
+  function stats(st, windowMin = 1440) {
+    const since = st.t - windowMin, w = st.done.filter(d => d.out >= since);
+    const within6 = w.length ? w.filter(d => d.out - d.arr <= 360).length / w.length : 1;
+    const waits = w.filter(d => d.seen != null).map(d => d.seen - d.arr).sort((a, b) => a - b);
+    const med = waits.length ? waits[Math.floor(waits.length / 2)] : 0;
+    const board = st.pts.filter(p => p.state === "board").length, wait = st.pts.filter(p => p.state === "wait" || p.state === "triage").length;
+    const ramped = st.pts.filter(p => p.amb && (p.state === "wait" || p.state === "triage") && st.t - p.arr > 15).length;
+    const longest = st.pts.reduce((m, p) => Math.max(m, st.t - p.arr), 0);
+    return { within6, med, board, wait, ramped, longest, seen: w.length, inED: st.pts.length };
+  }
+  // a whole simulated week for a scenario, returning daily and overall measures
+  function week(S, seed = 11) {
+    const st = newState(S, seed); for (let i = 0; i < 1440 * 2; i++) step(S, st); // two days to warm up
+    st.done = []; const t0 = st.t; let boardSum = 0, rampSum = 0, n = 0;
+    for (let i = 0; i < 1440 * 7; i++) { step(S, st); if (i % 15 === 0) { const s = stats(st, 1); boardSum += s.board; rampSum += s.ramped; n++; } }
+    const all = st.done.filter(d => d.out >= t0);
+    const within6 = all.length ? all.filter(d => d.out - d.arr <= 360).length / all.length : 1;
+    const waits = all.filter(d => d.seen != null).map(d => d.seen - d.arr).sort((a, b) => a - b);
+    return { within6, medWait: waits.length ? waits[Math.floor(waits.length / 2)] : 0, board: boardSum / n, ramped: rampSum / n, visits: all.length + (st.diverted || 0), diverted: st.diverted || 0 };
+  }
+  return { TRIAGE, HOUR, DOW, BASE, newState, step, stats, week, arrivalsPerMin, hourOf, dayOf };
+})();
+
+
+</script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const S={...ED.BASE};
+let natPct=0.744,speed=60,playing=!matchMedia("(prefers-reduced-motion: reduce)").matches,st=null;
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const fmt=(n,d=0)=>Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const mins=m=>m<60?`${fmt(m)} min`:`${Math.floor(m/60)} h ${String(Math.round(m%60)).padStart(2,"0")}`;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const col=n=>new THREE.Color(css(n)||"#999");
+function start(){st=ED.newState(S,7);st.t=5*1440;while(st.t<7*1440+600)ED.step(S,st)}
+start();
+
+// ---------------- scene
+const canvas=$("scene"),box=$("stagebox");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0,0);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,0.5,500);
+const controls=new THREE.OrbitControls(camera,canvas);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.46;controls.minDistance=10;controls.maxDistance=110;controls.enablePan=false;
+const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.9},o));
+const mats={plinth:std(),ground:std(),floor:std(),wall:std(),furn:std(),path:std(),cap:new THREE.MeshBasicMaterial(),line:new THREE.LineBasicMaterial({transparent:true,opacity:.5}),
+  white:std({color:0xf4f1ef,roughness:.6}),dark:std({color:0x2a2228,roughness:.5}),person:std({color:0xffffff}),head:std({color:0xF2E6DC}),doc:std({color:0xffffff}),docHead:std({color:0x2E6F86}),
+  amb:std({color:0xF4F1EF,roughness:.5}),ambStripe:std({color:0xC8E04B,roughness:.6}),ward:std({transparent:true,opacity:.92}),bedFree:std({color:0x3F7A55,emissive:0x3F7A55,emissiveIntensity:.5})};
+scene.add(new THREE.HemisphereLight(0xffffff,0xa99ca4,.6));
+const sun=new THREE.DirectionalLight(0xfff1dd,.65);sun.position.set(-20,40,30);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-34,right:34,top:34,bottom:-34,near:1,far:150});sun.shadow.bias=-0.0006;scene.add(sun);
+function add(m,cast=true,recv=true){m.castShadow=cast;m.receiveShadow=recv;scene.add(m);return m}
+function boxM(w,h,d,mat,x,y,z,cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return add(m,cast)}
+const FY=0.3,WH=1.4;
+// plinth and grounds
+add(new THREE.Mesh(new THREE.CylinderGeometry(34,34.4,0.8,96),mats.plinth),false,true).position.set(2,-0.41,4);
+add(new THREE.Mesh(new THREE.CylinderGeometry(33.8,33.8,0.04,96),mats.ground),false,true).position.set(2,0,4);
+boxM(9,0.04,30,mats.path,18,0.03,12,false);boxM(3,0.04,14,mats.path,-16,0.03,20,false);
+boxM(42,FY,28,mats.floor,0,FY/2,0,false);
+// zones (tinted floors)
+const ZONES={wait:{x:[-21,-6],z:[3,14],c:"--z-wait",n:"Waiting room"},triage:{x:[-6,1],z:[6,14],c:"--z-triage",n:"Triage"},cub:{x:[-4,13],z:[-14,4],c:"--z-cub",n:"Cubicles"},resus:{x:[13,21],z:[-2,6],c:"--z-resus",n:"Resus"},minor:{x:[-21,-6],z:[-14,1],c:"--z-minor",n:"Minors"}};
+const zoneMesh={};Object.entries(ZONES).forEach(([k,Z])=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(Z.x[1]-Z.x[0]-0.2,Z.z[1]-Z.z[0]-0.2),std({roughness:.95}));m.rotation.x=-Math.PI/2;m.position.set((Z.x[0]+Z.x[1])/2,FY+0.005,(Z.z[0]+Z.z[1])/2);add(m,false,true);zoneMesh[k]=m});
+// cutaway walls with section caps
+function wall(x1,z1,x2,z2,h=WH,t=0.2){const L=Math.hypot(x2-x1,z2-z1),m=new THREE.Mesh(new THREE.BoxGeometry(L,h,t),mats.wall);m.position.set((x1+x2)/2,FY+h/2,(z1+z2)/2);m.rotation.y=-Math.atan2(z2-z1,x2-x1);add(m);
+  const c=new THREE.Mesh(new THREE.BoxGeometry(L,0.04,t+0.01),mats.cap);c.position.set((x1+x2)/2,FY+h+0.02,(z1+z2)/2);c.rotation.y=m.rotation.y;scene.add(c)}
+wall(-21,-14,21,-14);wall(-21,-14,-21,14);wall(21,-14,21,6);wall(-21,14,-18,14);wall(-14,14,10,14);wall(14,14,21,14);wall(21,10,21,14);
+wall(-6,1,-6,3,1);wall(-21,1,-15,1,1);wall(-11,1,-6,1,1);wall(-6,-14,-6,-6,1);wall(13,-14,13,-2,1);wall(13,6,21,6,1);wall(1,6,1,14,1);
+// furniture: seats, triage desk, cubicle beds, resus bays, minors chairs
+const seatGeo=new THREE.BoxGeometry(0.6,0.45,0.6),seats=new THREE.InstancedMesh(seatGeo,mats.furn,40);const dummy=new THREE.Object3D();
+const SEAT=[];for(let r=0;r<5;r++)for(let c=0;c<8;c++){const x=-19.5+c*1.7,z=5+r*1.9;SEAT.push([x,z]);dummy.position.set(x,FY+0.23,z+0.35);dummy.updateMatrix();seats.setMatrixAt(SEAT.length-1,dummy.matrix)}seats.castShadow=true;scene.add(seats);
+boxM(4.5,1,1,mats.white,-2.5,FY+0.5,9.5);
+const CUB=[];{const cols=11,xs=i=>-2.8+i*1.5;const rowsZ=[-12.6,-9.8,-4.6,-1.8];rowsZ.forEach(z=>{for(let i=0;i<cols;i++)CUB.push([xs(i),z])})}
+const bedGeo=new THREE.BoxGeometry(0.9,0.45,2.0),beds=new THREE.InstancedMesh(bedGeo,mats.white,CUB.length);CUB.forEach(([x,z],i)=>{dummy.position.set(x,FY+0.3,z);dummy.updateMatrix();beds.setMatrixAt(i,dummy.matrix)});beds.castShadow=true;scene.add(beds);
+const curtain=new THREE.InstancedMesh(new THREE.BoxGeometry(0.05,1.0,2.2),std({color:0xBFD3DA,transparent:true,opacity:.6}),CUB.length);CUB.forEach(([x,z],i)=>{dummy.position.set(x+0.72,FY+0.5,z);dummy.updateMatrix();curtain.setMatrixAt(i,dummy.matrix)});scene.add(curtain);
+const RES=[[15,-0.5],[18.5,-0.5],[15,3.6],[18.5,3.6]];RES.forEach(([x,z])=>{boxM(1.1,0.5,2.2,mats.white,x,FY+0.3,z);boxM(0.5,1.3,0.5,mats.dark,x+1.1,FY+0.65,z-0.6)});
+const FT=[];for(let r=0;r<2;r++)for(let c=0;c<7;c++)FT.push([-19.4+c*2,-11.5+r*5]);FT.forEach(([x,z])=>boxM(0.8,0.5,0.8,mats.furn,x,FY+0.25,z));
+boxM(4,1,1.2,mats.white,4.5,FY+0.5,1.6); // doctors' station
+// ambulance bay and ambulances
+const ambs=[];for(let i=0;i<10;i++){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(2.1,2.1,4.6),mats.amb);b.position.y=1.25;const s=new THREE.Mesh(new THREE.BoxGeometry(2.12,0.35,4.62),mats.ambStripe);s.position.y=1.0;const c=new THREE.Mesh(new THREE.BoxGeometry(2.0,1.2,1.4),mats.amb);c.position.set(0,0.8,-2.9);g.add(b,s,c);g.traverse(o=>{o.castShadow=true});g.visible=false;scene.add(g);ambs.push(g)}
+// wards: a floating floor above, the free beds glowing
+const ward=new THREE.Group();scene.add(ward);{const slab=new THREE.Mesh(new THREE.BoxGeometry(30,0.3,7),mats.ward);slab.receiveShadow=true;ward.add(slab);const e=new THREE.LineSegments(new THREE.EdgesGeometry(slab.geometry),mats.line);ward.add(e)}
+const wardBeds=[];for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.3,1.6),mats.white);m.position.set(-13.5+i*1.18,0.32,0);ward.add(m);wardBeds.push(m)}
+const freeMarks=new THREE.InstancedMesh(new THREE.SphereGeometry(0.28,12,10),mats.bedFree,40);ward.add(freeMarks);ward.position.set(0,9,-18);
+// people
+const MAXP=260,bodies=new THREE.InstancedMesh(new THREE.CylinderGeometry(.22,.27,1.0,10),mats.person,MAXP),heads=new THREE.InstancedMesh(new THREE.SphereGeometry(.2,12,10),mats.head,MAXP);
+bodies.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXP*3),3);bodies.castShadow=true;scene.add(bodies,heads);
+const halos=new THREE.InstancedMesh(new THREE.TorusGeometry(.48,.07,8,24),std({color:0x7B5C8E,emissive:0x7B5C8E,emissiveIntensity:.4}),MAXP);scene.add(halos);
+const DOCN=12,docB=new THREE.InstancedMesh(new THREE.CylinderGeometry(.2,.25,1.15,10),mats.doc,DOCN),docH=new THREE.InstancedMesh(new THREE.SphereGeometry(.2,12,10),mats.docHead,DOCN);docB.castShadow=true;scene.add(docB,docH);
+let C={};
+function applyTheme(){mats.plinth.color=col("--scene-plinth");mats.ground.color=col("--scene-ground");mats.floor.color=col("--scene-floor");mats.wall.color=col("--scene-wall");mats.furn.color=col("--scene-furn");mats.path.color=col("--scene-path");mats.cap.color=col("--scene-edge");mats.line.color=col("--scene-edge");mats.ward.color=col("--scene-wall");
+  Object.entries(ZONES).forEach(([k,Z])=>zoneMesh[k].material.color=col(Z.c));C={t:[col("--t1"),col("--t2"),col("--t3"),col("--t4"),col("--t5")],board:col("--board")};
+  box.style.background=matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.dataset.theme!=="light"||document.documentElement.dataset.theme==="dark"?"linear-gradient(180deg,#241D33,#1A0D18)":"linear-gradient(180deg,#D6E4EA,#F6F1EC)";drawHours()}
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
+
+// ---------------- where each patient stands
+const vis=new Map(); // id -> {x,y,z,cat,alpha,leaving}
+const slots={cub:new Map(),resus:new Map(),ft:new Map(),wait:new Map(),amb:new Map()};
+function slotFor(area,id,n){const m=slots[area];if(m.has(id))return m.get(id);const used=new Set(m.values());for(let i=0;i<n;i++)if(!used.has(i)){m.set(id,i);return i}return -1}
+function targetFor(p){
+  if(p.state==="triage"){const i=p.id%6;return p.amb?[18-i*0.2,FY,9.8+i*0.7]:[-3.5+(i%3)*1.2,FY,11.8+Math.floor(i/3)*1.0]}
+  if(p.state==="wait"&&!p.where){if(p.amb){const i=slotFor("amb",p.id,40);return ["amb",i]}const i=slotFor("wait",p.id,SEAT.length);if(i<0)return[-12+(p.id%9)*0.9,FY,2.2];const [x,z]=SEAT[i];return [x,FY+0.25,z]}
+  if(p.where==="resus"){const i=slotFor("resus",p.id,4);const [x,z]=RES[Math.max(0,i)];return [x,FY+0.55,z]}
+  if(p.where==="ft"){const i=slotFor("ft",p.id,FT.length);const [x,z]=FT[Math.max(0,i)];return [x,FY+0.25,z]}
+  if(p.where==="cub"){const i=slotFor("cub",p.id,CUB.length);const [x,z]=CUB[Math.max(0,i)];return [x,FY+0.55,z]}
+  return [0,FY,10]}
+function cleanSlots(){const live=new Set(st.pts.map(p=>p.id));for(const [a,m] of Object.entries(slots))for(const id of m.keys()){const p=st.pts.find(q=>q.id===id);if(!live.has(id)||(a==="wait"&&p.where)||(a==="amb"&&(p.where||p.state!=="wait")))m.delete(id)}}
+let leavers=[];
+function syncPeople(dt){cleanSlots();const live=new Set();
+  st.pts.forEach(p=>{live.add(p.id);let v=vis.get(p.id);if(!v){v={x:p.amb?18:-16,y:FY,z:p.amb?16:16,cat:p.cat};vis.set(p.id,v)}let tg=targetFor(p);
+    v.inAmb=false;if(tg[0]==="amb"){v.inAmb=true;tg=[18,FY,16]}
+    v.tx=tg[0];v.ty=tg[1];v.tz=tg[2];v.board=p.state==="board";v.cat=p.cat;v.lying=!!p.where&&p.where!=="ft"});
+  const recent=new Map(st.done.slice(-80).map(d=>[d.id,d.admit]));for(const [id,v] of vis)if(!live.has(id)){vis.delete(id);leavers.push({...v,t:0,toWard:!!recent.get(id),board:false})}
+  leavers.forEach(l=>{l.t+=dt;if(l.toWard){l.tx=l.x;l.ty=9.5;l.tz=-18}else{l.tx=-16;l.ty=FY;l.tz=17}});leavers=leavers.filter(l=>l.t<2.5);
+  let i=0;const k=Math.min(1,dt*4);
+  const put=(v,alpha)=>{if(i>=MAXP)return;v.x+=(v.tx-v.x)*k;v.y+=(v.ty-v.y)*k;v.z+=(v.tz-v.z)*k;const sc=v.inAmb?0:alpha;
+    dummy.position.set(v.x,v.y+(v.lying?0.25:0.5),v.z);dummy.rotation.set(v.lying?Math.PI/2:0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();bodies.setMatrixAt(i,dummy.matrix);
+    dummy.position.set(v.x,v.y+(v.lying?0.25:1.18),v.z+(v.lying?-0.65:0));dummy.rotation.set(0,0,0);dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);
+    bodies.setColorAt(i,C.t[v.cat-1]);
+    dummy.position.set(v.x,v.y+0.62,v.z);dummy.rotation.set(Math.PI/2,0,0);const hs=v.board&&!v.inAmb?alpha:0;dummy.scale.set(hs,hs,hs);dummy.updateMatrix();halos.setMatrixAt(i,dummy.matrix);i++};
+  for(const v of vis.values())put(v,1);leavers.forEach(l=>put(l,Math.max(0,1-l.t/2.5)));
+  dummy.scale.set(0,0,0);dummy.rotation.set(0,0,0);dummy.updateMatrix();for(;i<MAXP;i++){bodies.setMatrixAt(i,dummy.matrix);heads.setMatrixAt(i,dummy.matrix);halos.setMatrixAt(i,dummy.matrix)}
+  bodies.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;halos.instanceMatrix.needsUpdate=true;bodies.instanceColor.needsUpdate=true;
+  // doctors walk to the patient they are seeing
+  const docs=[...st.docs,...(S.fastTrack?st.ftDocs:[])];docs.forEach((d,j)=>{const v=d.p?vis.get(d.p.id):null;const tx=v?v.tx+0.8:3+(j%6)*0.8,tz=v?v.tz+0.4:2.6+Math.floor(j/6)*0.8;d.vx=d.vx??tx;d.vz=d.vz??tz;d.vx+=(tx-d.vx)*k;d.vz+=(tz-d.vz)*k;
+    dummy.scale.set(1,1,1);dummy.position.set(d.vx,FY+0.58,d.vz);dummy.updateMatrix();docB.setMatrixAt(j,dummy.matrix);dummy.position.set(d.vx,FY+1.3,d.vz);dummy.updateMatrix();docH.setMatrixAt(j,dummy.matrix)});
+  dummy.scale.set(0,0,0);dummy.updateMatrix();for(let j=docs.length;j<DOCN;j++){docB.setMatrixAt(j,dummy.matrix);docH.setMatrixAt(j,dummy.matrix)}docB.instanceMatrix.needsUpdate=true;docH.instanceMatrix.needsUpdate=true;
+  // ambulances: one per patient still in the ambulance, queueing down the drive
+  const inAmb=[...vis.values()].filter(v=>v.inAmb).length+st.pts.filter(p=>p.amb&&p.state==="triage").length;
+  ambs.forEach((a,j)=>{a.visible=j<Math.min(10,inAmb);a.position.set(16.5+(j%2)*3,0,16+Math.floor(j/2)*5.6)});
+  // ward: free beds glow
+  const free=Math.max(0,Math.floor(st.wardFree));for(let j=0;j<40;j++){dummy.scale.set(j<free?1:0,j<free?1:0,j<free?1:0);dummy.position.set(-13.5+j*1.18,0.75,0);dummy.updateMatrix();freeMarks.setMatrixAt(j,dummy.matrix)}freeMarks.instanceMatrix.needsUpdate=true}
+
+// ---------------- labels
+const tagsEl=$("tags"),tg=[0,1,2,3,4,5].map(()=>{const d=document.createElement("div");d.className="tag";tagsEl.appendChild(d);return d});const v3=new THREE.Vector3();
+const TAGP=[[-13,2.4,9],[-1,2.4,10],[5,2.6,-6],[17,2.6,2],[-13,2.4,-7],[0,11,-18]];
+function tags(s){const w=canvas.clientWidth,hh=canvas.clientHeight;TAGP.forEach((p,i)=>{v3.set(...p).project(camera);const el=tg[i],x=(v3.x+1)/2*w,y=(1-v3.y)/2*hh;if(v3.z>1||x<40||x>w-40||y<46||y>hh-30){el.hidden=true;return}el.hidden=false;el.style.left=x+"px";el.style.top=y+"px"});
+  const cnt=w=>st.pts.filter(p=>p.where===w).length,wt=st.pts.filter(p=>p.state==="wait"&&!p.amb).length,tri=st.pts.filter(p=>p.state==="triage").length;
+  tg[0].className="tag"+(wt>30?" hot":"");tg[0].innerHTML=`<b>Waiting room</b> ${wt}<br><span class="m">${wt>40?"standing room only":"seats "+Math.min(wt,40)+"/40"}</span>`;
+  tg[1].innerHTML=`<b>Triage</b><br><span class="m">${tri} being assessed</span>`;
+  const c=cnt("cub");tg[2].className="tag"+(c>=S.cubicles?" hot":"");tg[2].innerHTML=`<b>Cubicles</b> ${c}/${S.cubicles}<br><span class="m">${s.board} waiting for a ward bed</span>`;
+  tg[3].innerHTML=`<b>Resus</b> ${cnt("resus")}/4<br><span class="m">most urgent first</span>`;
+  tg[4].innerHTML=`<b>Minors</b> ${cnt("ft")}/${S.ftChairs}<br><span class="m">${S.fastTrack?"fast-track on":"shared doctors"}</span>`;
+  tg[5].className="tag";tg[5].innerHTML=`<b>Wards</b><br><span class="m">${Math.floor(st.wardFree)} bed${Math.floor(st.wardFree)===1?"":"s"} free</span>`}
+
+// ---------------- panels
+function clockText(){const t=st.t,d=ED.dayOf(t)%7,m=t%1440,h=Math.floor(m/60),mm=m%60;return `${DAYS[d]} ${((h+11)%12)+1}:${String(mm).padStart(2,"0")} ${h>=12?"pm":"am"}`}
+function panels(){const s=ED.stats(st);$("clock").textContent=clockText();
+  $("p6").innerHTML=`${fmt(s.within6*100)}<small>%</small>`;$("p6bar").style.width=Math.min(100,s.within6*100)+"%";$("p6bar").style.background=s.within6>=0.95?"var(--good)":s.within6>=natPct?"var(--live)":"var(--alert)";
+  $("inED").textContent=s.inED;$("waiting").textContent=s.wait;$("board").textContent=s.board;$("board").className="v"+(s.board>12?" hot":"");$("ramp").textContent=s.ramped;$("ramp").className="v"+(s.ramped>2?" hot":"");
+  $("med").textContent=mins(s.med);$("long").textContent=mins(s.longest);
+  const tr=Math.max(0,s.inED-s.wait-s.board),cp=[s.wait,tr,s.board];[...$("comp").children].forEach((el,i)=>el.style.flexGrow=cp[i]);
+  $("comp").setAttribute("aria-label",`Of ${s.inED} people in the ED: ${s.wait} waiting to be seen, ${tr} being treated, ${s.board} waiting for a ward bed`);
+  $("ckey").innerHTML=`<span style="--k:var(--live)"><b>${s.wait}</b> waiting</span><span style="--k:var(--rose)"><b>${tr}</b> being treated</span><span style="--k:var(--board)"><b>${s.board}</b> waiting for a ward bed</span>`;
+  const rate=ED.arrivalsPerMin(S,st.t)*60;$("hourBusy").textContent=`${fmt(rate,0)} arrivals this hour`;drawHours();return s}
+function drawHours(){const W=320,H=90,h=ED.HOUR,max=Math.max(...h),cur=st?ED.hourOf(st.t):0;let o="";
+  h.forEach((v,i)=>{const bw=W/24-2,x=i*(W/24)+1,bh=v/max*58;o+=`<rect x="${x}" y="${66-bh}" width="${bw}" height="${bh}" rx="2" fill="${i===cur?"var(--live)":"var(--line)"}"/>`});
+  [0,6,12,18].forEach(i=>o+=`<text class="t-ax" x="${i*(W/24)+2}" y="82">${i===0?"12am":i===12?"12pm":i<12?i+"am":(i-12)+"pm"}</text>`);
+  o+=`<text class="t-ax" x="${W}" y="8" text-anchor="end">Sun &amp; Mon busiest</text>`;$("hours").innerHTML=o}
+// ---------------- scenario ladder (each change on its own, one simulated week)
+let ladderToken=0;
+function ladder(){const tok=++ladderToken;$("insight").textContent="Calculating a simulated week for each change…";$("ladder").innerHTML="";$("lv").style.opacity=.45;
+  const base={...S};const opts=[["Your settings",{}],["10% of lower-urgency patients go elsewhere",{shift:Math.min(0.3,base.shift+0.1)}],["Fast-track stream",{fastTrack:true}],["Two more doctors",{doctors:base.doctors+2}],["Ward discharges before 11am",{earlyDischarge:true}],["A new 28-bed ward",{extraBeds:28}]].filter(([n,ch])=>n==="Your settings"||Object.keys(ch).some(k=>ch[k]!==base[k]));
+  const rows=[];let i=0;
+  const next=()=>{if(tok!==ladderToken)return;if(i>=opts.length){render();return}const [n,ch]=opts[i++];const r=ED.week({...base,...ch},11);rows.push({n,...r});$("calc").textContent=`Simulated ${i} of ${opts.length} weeks`;setTimeout(next,10)};
+  const render=()=>{const b=rows[0];const rest=rows.slice(1).sort((a,c)=>c.within6-a.within6);const best=rest[0];
+    $("ladder").innerHTML=`<thead><tr><th>Change</th><th class="n">Seen in 6 h</th><th class="n">Median wait for a doctor</th><th class="n">Waiting for a ward bed</th></tr></thead><tbody>`+
+      [b,...rest].map(r=>`<tr class="${r===best&&r.within6>b.within6+0.005?"best":""}"><td>${r.n}</td><td class="n">${fmt(r.within6*100)}%${r===b?"":` <span class="calc">${r.within6>=b.within6?"+":"−"}${fmt(Math.abs(r.within6-b.within6)*100)}</span>`}</td><td class="n">${mins(r.medWait)}</td><td class="n">${fmt(r.board,1)} on average</td></tr>`).join("")+`</tbody>`;
+    const span=Math.max(5,...rest.map(r=>Math.abs(r.within6-b.within6)*100)),one=rest.every(r=>r.within6>=b.within6),half=one?100:50;
+    $("lv").innerHTML=`<div class="lv-base"><span>Your settings: <b>${fmt(b.within6*100)}%</b> seen within 6 h · median wait <b>${mins(b.medWait)}</b></span><span class="tl">Simulated</span></div>`+
+      rest.map(r=>{const d=(r.within6-b.within6)*100,w=Math.abs(d)/span*half;return `<div class="lvr${r===best&&d>0.5?" best":""}" title="${r.n}: ${fmt(r.within6*100)}% seen within 6 h"><div class="lr"><span>${r.n}</span><b>${d>=0?"+":"−"}${fmt(Math.abs(d))} pts → ${fmt(r.within6*100)}%</b></div><div class="dv${one?" one":""}"><i class="${d>=0?"pos":"neg"}" style="width:${w.toFixed(1)}%"></i></div><small>median wait ${mins(r.medWait)} · ${fmt(r.board,1)} waiting for a ward bed</small></div>`}).join("")+
+      (one?`<div class="lv-ax"><span>no change from your settings</span><span>more seen within 6 h →</span></div>`:`<div class="lv-ax"><span>← worse</span><span>no change</span><span>better →</span></div>`);
+    $("lv").setAttribute("aria-label",`Patients seen within 6 hours: your settings ${fmt(b.within6*100)}%. `+rest.map(r=>`${r.n}: ${fmt(r.within6*100)}%`).join("; "));
+    $("insight").innerHTML=best?`From your settings, the biggest single gain is <b>${best.n.charAt(0).toLowerCase()+best.n.slice(1)}</b>: about <b>${fmt((best.within6-b.within6)*100)} points</b> more patients seen within 6 hours.${b.board>8?` Patients waiting for ward beds fill about <b>${fmt(b.board)}</b> cubicles on average: the bottleneck is often upstairs, not in the ED.`:""}`:"";
+    $("lv").style.opacity=1;$("calc").textContent="Each row is one simulated week with the same arrivals. Direction and size, not a forecast."};
+  setTimeout(next,30)}
+// ---------------- controls
+const changed=()=>{clearTimeout(window.__lt);window.__lt=setTimeout(ladder,250)};
+const bind=(id,key,lab,num=true)=>{const el=$(id);el.oninput=e=>{S[key]=num?+e.target.value:e.target.checked;if($(id+"V"))$(id+"V").textContent=lab(S[key]);if(key==="doctors")syncDocs()};el.onchange=changed};
+bind("surge","surge",v=>v?"+"+Math.round(v*100)+"% arrivals":"none");bind("shift","shift",v=>Math.round(v*100)+"%");bind("doctors","doctors",v=>v);
+$("beds").oninput=e=>{S.extraBeds=+e.target.value;$("bedsV").textContent=S.extraBeds?"+"+S.extraBeds:"none"};$("beds").onchange=changed;
+$("ft").onchange=e=>{S.fastTrack=e.target.checked;changed()};$("early").onchange=e=>{S.earlyDischarge=e.target.checked;changed()};
+function syncDocs(){while(st.docs.length<S.doctors)st.docs.push({p:null});while(st.docs.length>S.doctors){const d=st.docs.pop();if(d.p)d.p.state="needdoc"}}
+$("reset").onclick=()=>{Object.assign(S,ED.BASE);["surge","shift","doctors","beds"].forEach(id=>{const el=$(id);el.value=id==="doctors"?S.doctors:id==="beds"?0:0});$("ft").checked=false;$("early").checked=false;
+  $("surgeV").textContent="none";$("shiftV").textContent="0%";$("doctorsV").textContent=S.doctors;$("bedsV").textContent="none";syncDocs();ladder()};
+document.querySelectorAll("[data-speed]").forEach(b=>b.onclick=()=>{speed=+b.dataset.speed;document.querySelectorAll("[data-speed]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"))});
+$("pause").onclick=()=>{playing=!playing;$("pause").textContent=playing?"Pause":"Play"};$("pause").textContent=playing?"Pause":"Play";
+// ---------------- camera
+function resize(){const w=box.clientWidth,h=Math.max(window.__minH||420,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?46:34;camera.updateProjectionMatrix()}
+addEventListener("resize",resize);
+const VIEWS={all:{p:[32,40,52],t:[3,1,1]},front:{p:[-12,14,30],t:[-10,0,7]},cubicles:{p:[18,22,14],t:[4,0,-6]},ambulance:{p:[34,14,36],t:[16,0,14]}};
+let camGoal=null;function setView(n){document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));const v=VIEWS[n],t=new THREE.Vector3(...v.t),p=new THREE.Vector3(...v.p);if(camera.aspect<1)p.sub(t).multiplyScalar(1.25).add(t);camGoal={p,t}}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));controls.addEventListener("start",()=>camGoal=null);
+// ---------------- loop
+let last=performance.now(),acc=0,visible=true,panelT=0;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(visible){if(playing){acc+=dt*speed;let n=0;while(acc>=1&&n<400){ED.step(S,st);acc-=1;n++}}
+    syncPeople(dt);if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.1)camGoal=null}
+    controls.update();renderer.render(scene,camera);panelT+=dt;if(panelT>0.25){panelT=0;const s=panels();tags(s)}}
+  requestAnimationFrame(frame)}
+resize();applyTheme();setView("all");camera.position.copy(camGoal.p);controls.target.copy(camGoal.t);camGoal=null;tags(panels());ladder();
+window.__ed={S,setView,speed:v=>speed=v,state:()=>st,restart:()=>{start();syncDocs();ladder()},ladder,natPct:p=>{natPct=p}};
+requestAnimationFrame(frame);
+})();
+</script>
+<script>
+/* Live and latest: fills from the lab's /feeds.js ("assembl:live"); without it the page keeps its snapshot. */
+(()=>{
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ok=(j,id)=>j&&j.feeds&&j.feeds[id]&&!j.feeds[id].error?j.feeds[id]:null;
+const chip=e=>e.truth==="Live"?`<span class="tl lv">Live</span>`:`<span class="tl lp">Latest published</span>`;
+const src=e=>`<span class="src">${esc(e.period)} · <a href="${esc(e.source.url)}" target="_blank" rel="noopener">${esc(e.source.name)}</a></span>`;
+let data=null,picked=false,calibrated=null;
+function spark(tr,key){if(!tr||tr.length<2)return"";const vs=tr.map(x=>+x[key]||0),mx=Math.max(...vs,1),W=240,H=34;
+  const pts=vs.map((v,i)=>`${(i/(vs.length-1)*W).toFixed(1)},${(H-3-(v/mx)*(H-6)).toFixed(1)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--live)" stroke-width="2" stroke-linejoin="round"/></svg>`}
+function render(j){data=j;
+  const ed=ok(j,"ed"),ww=ok(j,"wastewater"),w=ok(j,"weather"),cal=ok(j,"calendar"),uc=ok(j,"urgentcare");
+  const any=ed||ww||w||cal||uc;
+  $("lstate").className="lstate"+(any?" on":"");
+  $("lstate").innerHTML=any?`<i></i>Connected. Fetched ${esc(new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"}))}. Anything missing below is a feed that did not answer; the simulation itself is unaffected.`:`<i></i>The feeds did not answer, so this shows the built-in snapshot.`;
+  $("ltiles").hidden=!any;
+  // district picker, once
+  if(ed&&!picked){picked=true;$("pickWrap").hidden=false;$("district").innerHTML=ed.values.districts.map(d=>`<option value="${d.key}"${d.key===ed.values.district?" selected":""}>${esc(d.name)} · ${esc(d.hospital)}</option>`).join("")}
+  // 1. shorter stays in ED
+  if(ed){const v=ed.values,nat=v.national,pct=v.pct;const prev=v.previous;
+    const ranks=[...v.districts].sort((a,b)=>b.pct-a.pct).map(d=>`<div class="rk${d.key===v.district?" me":""}"><span title="${esc(d.name)}">${esc(d.name)}</span><div class="bar"><i style="width:${d.pct}%"></i></div><b>${fmt(d.pct,1)}%</b></div>`).join("");
+    $("ltEd").innerHTML=`<h4>Seen within 6 hours · ${esc(v.districtName)} ${chip(ed)}</h4><div class="v">${pct==null?"–":fmt(pct,1)}<small>% · target 95%</small></div>
+      <div class="meter" aria-hidden="true"><i style="width:${Math.min(100,pct||0)}%;background:${pct>=95?"var(--good)":pct>=(nat?nat.pct:74.4)?"var(--live)":"var(--alert)"}"></i><b style="left:95%"></b><em style="left:95%">95%</em>${nat?`<b style="left:${nat.pct}%;opacity:.5"></b><em style="left:${nat.pct}%">NZ ${fmt(nat.pct,1)}%</em>`:""}</div>
+      <p>${prev?`${prev.pct<pct?"Up":prev.pct>pct?"Down":"Unchanged"} from ${fmt(prev.pct,1)}% the quarter before.`:""} ${v.attendances?`${fmt(v.attendances)} ED attendances in the district this quarter.`:""} ${nat?`Nationally ${fmt(nat.pct,1)}% (${esc(nat.quarter)}), ${fmt(nat.dailyAttendances)} a day.`:""}</p>
+      ${ed.note?`<p class="calnote">${esc(ed.note)}</p>`:""}
+      <details class="tbl"><summary>All 20 districts</summary><div class="ranks">${ranks}</div></details>${src(ed)}`;
+    if(nat&&window.__ed){window.__ed.natPct(nat.pct/100);$("natMark").style.left=nat.pct+"%";$("natText").style.left=nat.pct+"%";$("natText").textContent=`NZ ${fmt(nat.pct,1)}% (${nat.quarter})`}
+    $("calrow").hidden=pct==null;$("calibNote").textContent=`Scales arrivals so a simulated week lands near ${fmt(pct,1)}% (${v.districtName}, ${ed.period}). Simulated, calibrated to a latest published figure, not a forecast.`;
+    if($("calib").checked&&calibrated!==v.district)calibrate(pct,v.district);
+  } else $("ltEd").innerHTML=`<h4>Seen within 6 hours</h4><p>Health NZ feed did not answer.</p>`;
+  // 2. respiratory signal
+  if(ww){const v=ww.values,r=v.region;
+    $("ltWw").innerHTML=`<h4>COVID-19 in wastewater ${chip(ww)}</h4><div class="v">${esc(v.direction)}<small>${fmt(v.change4wkPct)>0?"+":""}${fmt(v.change4wkPct)}% over 4 weeks</small></div>
+      ${spark(r?r.trend:v.trend,"copies")}<p>${r?`${esc(r.name)} region: ${fmt(r.copies/1e6,1)}M copies per person per day; `:""}national ${fmt(v.copies/1e6,1)}M${v.casesPerDay?`, about ${fmt(v.casesPerDay)} reported cases a day`:""}. A community infection signal that runs ahead of respiratory ED demand; flu and RSV are not published as open data.</p>${src(ww)}`;
+  } else $("ltWw").innerHTML=`<h4>COVID-19 in wastewater</h4><p>PHF Science feed did not answer.</p>`;
+  // 3. today
+  if(w||cal){const wv=w&&w.values,cv=cal&&cal.values;let day="";
+    if(cv){day=cv.publicHoliday?`<b>${esc(cv.publicHoliday.name)}</b> today${cv.publicHoliday.regional?" (regional)":""}.`:cv.weekend?`Weekend.`:`A working ${esc(cv.weekday)}.`;
+      day+=cv.school?` ${esc(cv.school.label)}${cv.school.inTerm===false&&cv.school.backOn?`, schools back ${esc(cv.school.backOn)}`:""}.`:"";
+      if(cv.nextPublicHoliday)day+=` Next public holiday: ${esc(cv.nextPublicHoliday.name)} in ${cv.nextPublicHoliday.daysAway} day${cv.nextPublicHoliday.daysAway===1?"":"s"}.`}
+    $("ltDay").innerHTML=`<h4>Today ${wv?`at ${esc(wv.place)}`:""} ${chip(w||cal)}</h4>${wv?`<div class="v">${fmt(wv.tempC)}<small>°C now · ${fmt(wv.today.minC)}–${fmt(wv.today.maxC)}°C · rain ${fmt(wv.today.rainChancePct)}%</small></div>`:""}<p>${day} Holidays, weekends and cold snaps change who arrives and when; the simulation's week does not yet follow them.</p>${w?src(w):""}${cal?src(cal):""}`;
+  } else $("ltDay").innerHTML=`<h4>Today</h4><p>Weather and calendar feeds did not answer.</p>`;
+  // 4. urgent care, the only live waiting figure in NZ
+  if(uc){const v=uc.values;
+    $("ltUc").innerHTML=`<h4>Pegasus 24 Hour Surgery, Christchurch ${chip(uc)}</h4><div class="v">${v.waitText?esc(v.waitText):"–"}<small>estimated wait, less urgent</small></div><p>${v.waiting!=null?`${v.waiting} waiting`:""}${v.inTreatment!=null?`, ${v.inTreatment} in treatment`:""}${v.timeCritical!=null?`, ${v.timeCritical} time-critical`:""}. Urgent care, not a hospital ED: the only live waiting figure published in New Zealand that we could find.</p>${src(uc)}`;
+    $("nolive").innerHTML=`<b>No public hospital in New Zealand publishes live ED waiting times.</b> Health NZ publishes the quarterly district figure above. The only live waiting figure we found is Pegasus 24 Hour Surgery, an urgent care clinic in Christchurch (last updated ${esc(v.updated||"recently")}). Hong Kong and several Australian states publish live hospital ED waits.`;
+  } else $("ltUc").innerHTML=`<h4>Urgent care, live</h4><p>Pegasus Health's wait-time page did not answer.</p>`;
+}
+// calibrate: scale arrivals so a simulated week lands near the district's latest published figure
+let calTok=0;
+function calibrate(pct,key){const tok=++calTok,E=window.__ed;if(!E)return;const S=E.S,base=ED.BASE.perDay,target=pct/100;const ms=[0.9,0.94,0.97,1.0,1.03,1.06];const res=[];let i=0;
+  $("calibNote").textContent="Simulating weeks to find the arrival rate…";
+  let refined=false;
+  const next=()=>{if(tok!==calTok)return;if(i>=ms.length){const best=res.reduce((a,b)=>Math.abs(b.w-target)<Math.abs(a.w-target)?b:a);
+      if(!refined){refined=true;ms.push(+(best.m-0.02).toFixed(2),+(best.m-0.01).toFixed(2),+(best.m+0.01).toFixed(2),+(best.m+0.02).toFixed(2));setTimeout(next,10);return}
+      S.perDay=Math.round(base*best.m);calibrated=key;E.restart();
+      $("calibNote").textContent=`Arrivals scaled ×${best.m.toFixed(2)} (${S.perDay} a day): a simulated week lands at ${fmt(best.w*100,1)}% against the latest published ${fmt(pct,1)}%. Simulated, calibrated, not a forecast.`;return}
+    const m=ms[i++];res.push({m,w:ED.week({...S,perDay:Math.round(base*m)},11).within6});setTimeout(next,10)};
+  setTimeout(next,20)}
+$("calib").onchange=e=>{const ed=ok(data,"ed");if(e.target.checked&&ed&&ed.values.pct!=null)calibrate(ed.values.pct,ed.values.district);else{calTok++;calibrated=null;if(window.__ed){window.__ed.S.perDay=ED.BASE.perDay;window.__ed.restart()}$("calibNote").textContent=ed?`Scales arrivals so a simulated week lands near ${fmt(ed.values.pct,1)}% (${ed.values.districtName}). Simulated, calibrated to a latest published figure, not a forecast.`:""}};
+$("district").onchange=e=>{const k=e.target.value;if(window.assemblFeeds)window.assemblFeeds.request({district:k,place:k});$("lstate").innerHTML=`<i></i>Fetching ${esc(e.target.selectedOptions[0].textContent)}…`};
+window.addEventListener("assembl:live",e=>{try{render(e.detail)}catch(err){console.error(err)}});
+if(window.__assemblLive)render(window.__assemblLive);
+})();
+</script>
+
+<script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="ed"></script><script src="/lab/navigation.js" defer></script></body></html>

@@ -1,0 +1,1157 @@
+<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fpi,foodprices"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Supermarket Twin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the store on a plinth with the live board beside it; then checkouts, fresh food and refrigeration what-ifs; then the proof, the family basket and the figures used. */
+:root{
+  --paper:#FFFDFB; --chalk:#F5F1F2; --ink:#492B3E; --body:#654A4E; --rose:#916A70; --line:#E4DADD;
+  --live:#D9822B; --good:#3F7A55; --alert:#B3261E; --cool:#3F7E9C; --coldair:#9CCBE0;
+  --c-full:#654A4E; --c-red:#D9822B; --c-resc:#3F7A55; --c-waste:#B3261E;
+  --scene-plinth:#E9E1D6; --scene-floor:#E9E2DA; --scene-wall:#F7F3EF; --scene-edge:#492B3E; --scene-ground:#C9D8BC; --scene-asphalt:#BDB8B8; --scene-yard:#CFC9C6; --scene-case:#F4F2F0; --scene-person:#F2E6DC;
+  --cat-1:#F2C9D2; --cat-2:#CBE7DA; --cat-3:#CADDF0; --cat-4:#DDD2EE; --cat-5:#F5D3BE; --cat-6:#D5E3C4;
+  --sky-day-1:#D6E4EA; --sky-day-2:#F6F1EC; --sky-dusk-1:#E9C9B5; --sky-dusk-2:#F4E3D6; --sky-night-1:#241D33; --sky-night-2:#433548;
+  --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#1A0D18; --chalk:#251522; --ink:#F5F1F2; --body:#D9CCCF; --rose:#A88A90; --line:#3A2636;
+  --live:#F0A24A; --good:#7CC096; --alert:#F07A6E; --cool:#6FB0CF; --coldair:#8CC4DE;
+  --c-full:#B9A3A8; --c-red:#F0A24A; --c-resc:#7CC096; --c-waste:#F07A6E;
+  --scene-plinth:#2A1E28; --scene-floor:#3A2D37; --scene-wall:#4A3946; --scene-edge:#F0E6E8; --scene-ground:#2C3A27; --scene-asphalt:#3C3640; --scene-yard:#352D35; --scene-case:#5A4A56; --scene-person:#E6D6CC;
+  --cat-1:#8A5E69; --cat-2:#4E7466; --cat-3:#4F6A86; --cat-4:#6B5A86; --cat-5:#8A644C; --cat-6:#5E7550;
+  --sky-day-1:#33405A; --sky-day-2:#2A2233; --sky-dusk-1:#5A3A44; --sky-dusk-2:#2E2230; --sky-night-1:#0E0A16; --sky-night-2:#1F1624; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1A0D18; --chalk:#251522; --ink:#F5F1F2; --body:#D9CCCF; --rose:#A88A90; --line:#3A2636;
+  --live:#F0A24A; --good:#7CC096; --alert:#F07A6E; --cool:#6FB0CF; --coldair:#8CC4DE;
+  --c-full:#B9A3A8; --c-red:#F0A24A; --c-resc:#7CC096; --c-waste:#F07A6E;
+  --scene-plinth:#2A1E28; --scene-floor:#3A2D37; --scene-wall:#4A3946; --scene-edge:#F0E6E8; --scene-ground:#2C3A27; --scene-asphalt:#3C3640; --scene-yard:#352D35; --scene-case:#5A4A56; --scene-person:#E6D6CC;
+  --cat-1:#8A5E69; --cat-2:#4E7466; --cat-3:#4F6A86; --cat-4:#6B5A86; --cat-5:#8A644C; --cat-6:#5E7550;
+  --sky-day-1:#33405A; --sky-day-2:#2A2233; --sky-dusk-1:#5A3A44; --sky-dusk-2:#2E2230; --sky-night-1:#0E0A16; --sky-night-2:#1F1624; color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--display);font-size:14.5px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;overflow-x:hidden}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:14px;min-width:0}
+.top{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--rose)}
+h1{margin:2px 0 2px;font-size:clamp(24px,3.6vw,36px);line-height:1.05;letter-spacing:-.02em;color:var(--ink);font-weight:600;text-wrap:balance}
+h2{margin:0 0 4px;font-size:20px;color:var(--ink);letter-spacing:-.01em;text-wrap:balance;font-weight:600}
+.sub{margin:0;color:var(--body);max-width:74ch}
+.clock{display:flex;gap:8px 10px;align-items:center;flex-wrap:wrap}
+.time{font-family:var(--mono);font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:15ch}
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink);font:500 12px var(--mono);padding:6px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn{appearance:none;border:1px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:500 12px var(--mono);cursor:pointer}
+.btn.solid{background:var(--ink);color:var(--paper)}
+select{font:500 12px var(--mono);color:var(--ink);background:var(--paper);border:1px solid var(--ink);border-radius:999px;padding:6px 10px}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--live);outline-offset:2px}
+.hour{display:flex;align-items:center;gap:8px;font:500 11px var(--mono);color:var(--rose)}
+.hour input{width:150px}
+.main{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(290px,1fr);gap:14px}
+.stagebox{position:relative;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,var(--sky-day-1),var(--sky-day-2));min-height:440px}
+#scene{display:block;width:100%;min-height:440px;touch-action:none}
+.views{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px);z-index:2}
+.views button{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 10px;font:500 11.5px var(--mono);cursor:pointer}
+.views button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.tag{position:absolute;pointer-events:none;transform:translate(-50%,-100%);font:500 11px/1.35 var(--mono);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 7px;white-space:nowrap;z-index:1}
+.tag .m{color:var(--rose)}.tag.warn{border-color:var(--live)}.tag.cold{border-color:var(--cool)}.tag.good{border-color:var(--good)}
+.tag::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:7px;background:var(--rose);opacity:.6}
+.badge{position:absolute;right:12px;bottom:12px;font:500 10.5px var(--mono);letter-spacing:.06em;color:var(--rose);background:var(--paper);border:1px solid var(--rose);border-radius:4px;padding:2px 6px}
+.key{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - 120px);font:10.5px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--paper) 90%,transparent);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.key span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:var(--k)}
+.side{display:grid;gap:10px;align-content:start;min-width:0}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper);min-width:0}
+.card h3{margin:0 0 6px;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:4px 8px;flex-wrap:wrap}
+.big{font-family:var(--mono);font-size:34px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.big small{font-size:13px;color:var(--rose);margin-left:6px}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kv.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kv div{display:grid;gap:2px;align-content:start}
+.kv .v{font:500 19px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.kv .v.good{color:var(--good)}.kv .v.warn{color:var(--live)}
+.kv .l{font:10.5px var(--mono);color:var(--rose);letter-spacing:.03em}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:10px 0 8px;background:var(--line)}
+.stack i{display:block;height:100%;transition:width .3s}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px;font:11.5px var(--mono);color:var(--body);font-variant-numeric:tabular-nums}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--k)}
+.legend b{float:right;font-weight:500;color:var(--ink)}
+.row{display:grid;gap:4px}
+.row label{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:8px}
+.row label b{color:var(--ink);font-weight:500;text-transform:none}
+input[type=range]{width:100%;accent-color:var(--live)}
+.toggle{display:flex;gap:10px;align-items:flex-start;cursor:pointer;color:var(--ink)}
+.toggle input{margin-top:3px;accent-color:var(--live);width:16px;height:16px;flex:none}
+.toggle small{display:block;color:var(--body);font-size:12.5px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+.panel{display:grid;gap:12px;align-content:start}
+.insight{font-size:15px;color:var(--ink);margin:0;text-wrap:pretty}
+.insight b{font-family:var(--mono);font-weight:500}
+svg{display:block;width:100%;height:auto}
+.t-ax{font-family:var(--mono);font-size:10px;fill:var(--rose)}.t-ink{font-family:var(--mono);font-size:10.5px;fill:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose);border-top:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+tfoot td{font-weight:600;color:var(--ink)}
+.tablewrap{overflow-x:auto}
+.sim,.prop{font:500 10px var(--mono);letter-spacing:.06em;border:1px solid var(--rose);color:var(--rose);border-radius:4px;padding:1px 5px;white-space:nowrap;vertical-align:1px}
+.prop{border-style:dashed;border-color:var(--live);color:var(--live)}
+.src{font:10.5px var(--mono);color:var(--rose)}
+.proofbig{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:6px 0 4px}
+.proofbig div{display:grid;gap:2px;align-content:start;border-top:2px solid var(--ink);padding-top:8px}
+.proofbig .v{font:500 24px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}
+.proofbig .w{font:11px var(--mono);color:var(--body)}
+.proofbig .l{font-size:12.5px;color:var(--ink)}
+.notes{margin:0;padding-left:18px;font-size:12.5px;display:grid;gap:4px}
+footer{font-size:12px;color:var(--rose);display:grid;gap:4px;max-width:110ch}
+footer p{margin:0}
+@media (max-width:1000px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+@media (max-width:900px){.main{grid-template-columns:1fr}.stagebox,#scene{min-height:400px}}
+@media (max-width:620px){.proofbig{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.big{font-size:28px}.kv .v{font-size:16px}.tag{font-size:10px;padding:2px 5px}.key{display:none}.hour input{width:120px}.time{min-width:0}.proofbig .v{font-size:20px}}
+/* ---- visual summaries (vz): bars, stacks, tiles, truth chips, table disclosures. Colours validated with the dataviz six checks on this page's surfaces. */
+:root{--vz1:#0070a6;--vz2:#cf7b26;--vz3:#7d4b92;--vz4:#429c5a;--vz0:#BDB3B5;--vz0-ink:#1d1418;--vz-up:var(--good,#3F7A55);--vz-down:var(--alert,#B3261E);
+  --vz-track:color-mix(in srgb,var(--ink) 7%,transparent);--vz-axis:color-mix(in srgb,var(--ink) 30%,transparent);--vz-surface:var(--paper);
+  --vz-src:var(--src,#3B6C8E);--vz-est:var(--est,#8C6D3F);--vz-sim:var(--rose);--vz-prop:var(--prop,var(--live,#C9772E));--vz-vendor:var(--vendor,#7B5C8E);--vz-data:var(--data,#1E7A4C);--vz-fc:var(--dom,#3F7E9C)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--vz1:#2b88c0;--vz2:#d17c28;--vz3:#8e57a5;--vz4:#4ca563;--vz0:#6E6266;--vz0-ink:#fff}}
+:root[data-theme="dark"]{--vz1:#2b88c0;--vz2:#d17c28;--vz3:#8e57a5;--vz4:#4ca563;--vz0:#6E6266;--vz0-ink:#fff}
+.vz{display:grid;gap:10px;min-width:0}
+.vz-h{font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);display:flex;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;align-items:baseline;margin:0}
+/* horizontal bars, including diverging around zero */
+.vz-rows{display:grid;gap:7px;min-width:0}
+.vz-row{display:grid;grid-template-columns:minmax(0,var(--vz-lw,13em)) minmax(0,1fr) var(--vz-vw,7.5em);gap:4px 12px;align-items:center;font-size:12.5px;color:var(--ink);min-width:0}
+.vz-row>.l{min-width:0;line-height:1.25}.vz-row>.l small{display:block;color:var(--rose);font-size:11px}
+.vz-row>.v{font:500 12.5px var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;color:var(--ink)}
+.vz-row>.v small{display:block;font-size:10.5px;color:var(--rose);font-weight:400}
+.vz-row.tot{border-top:1.5px solid var(--vz-axis);padding-top:8px;font-weight:600}
+.vz-tr{position:relative;height:16px;border-radius:4px;background:var(--vz-track);min-width:0}
+.vz-tr.zero::before{content:"";position:absolute;left:var(--z,0%);top:-4px;bottom:-4px;width:1px;background:var(--vz-axis)}
+.vz-b{position:absolute;top:2px;bottom:2px;border-radius:0 4px 4px 0;background:var(--c,var(--vz1));min-width:2px}
+.vz-b.neg{border-radius:4px 0 0 4px}.vz-b.mid{border-radius:0}
+.vz-b.thin{top:5px;bottom:5px;opacity:.55}
+.vz-tk{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;border-radius:1px;background:var(--ink);box-shadow:0 0 0 2px var(--vz-surface)}
+.vz-band{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--vz-src) 22%,transparent);border-radius:3px}
+.vz-dot{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:var(--c,var(--vz2));box-shadow:0 0 0 2px var(--vz-surface)}
+.vz-dot.hollow{background:var(--vz-surface);box-shadow:inset 0 0 0 1.6px var(--ink),0 0 0 2px var(--vz-surface)}
+@media (max-width:560px){.vz-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l v" "t t"}.vz-row>.l{grid-area:l}.vz-row>.v{grid-area:v}.vz-row>.vz-tr{grid-area:t}}
+.vz-tr.dumb{background:none}.vz-tr.dumb::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--vz-track);z-index:-1}
+.vz-dl{position:absolute;top:50%;height:2px;margin-top:-1px;background:var(--vz-axis)}
+/* ordered columns (months) */
+.vz-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px;align-items:end;min-width:0}
+.vz-col{display:grid;grid-template-rows:auto var(--h) auto;gap:3px;min-width:0;text-align:center}
+.vz-cb{position:relative;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;height:var(--h);border-bottom:1px solid var(--vz-axis)}
+.vz-cs{display:block;width:min(100%,24px);background:var(--c);min-height:1px;flex:none}.vz-cs:last-child{border-radius:4px 4px 0 0}
+.vz-ctk{position:absolute;left:50%;width:min(100%,30px);transform:translateX(-50%);height:2px;margin-bottom:-1px;background:var(--ink);box-shadow:0 0 0 1.5px var(--vz-surface);border-radius:1px}
+.vz-cv{font:500 10px var(--mono);color:var(--ink);min-height:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.vz-cl{font:500 10px var(--mono);color:var(--rose);white-space:nowrap;overflow:hidden}
+/* 100% stacks */
+.vz-stk{display:grid;gap:8px;min-width:0}
+.vz-sr{display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 12px;align-items:center;min-width:0}
+.vz-sr>.l{font-size:12.5px;color:var(--ink);line-height:1.2}.vz-sr>.l small{display:block;font:10.5px var(--mono);color:var(--rose)}
+.vz-bar100{position:relative;display:flex;gap:2px;height:30px;min-width:0}
+.vz-seg{position:relative;flex:none;height:100%;background:var(--c);display:flex;align-items:center;justify-content:center;overflow:visible;min-width:2px}
+.vz-seg:first-child{border-radius:4px 0 0 4px}.vz-seg:last-child{border-radius:0 4px 4px 0}
+.vz-seg span{font:500 11px var(--mono);color:#fff;white-space:nowrap;padding:0 4px;pointer-events:none}
+.vz-seg.dk span{color:var(--vz0-ink)}.vz-seg.nolab span{visibility:hidden}
+.vz-mk{position:absolute;top:-5px;bottom:-5px;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 2px var(--vz-surface);border-radius:1px;pointer-events:none}
+@media (max-width:560px){.vz-sr{grid-template-columns:minmax(0,1fr)}}
+/* legend, keys, chips */
+.vz-lg{display:flex;flex-wrap:wrap;gap:4px 14px;font:11px var(--mono);color:var(--body);margin:0}
+.vz-lg i{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:-1px}
+.vz-lg i.ln{height:2px;width:14px;border-radius:1px;vertical-align:3px}.vz-lg i.tk{width:2px;height:12px;background:var(--ink);vertical-align:-2px}
+.vz-lg i.ring{border-radius:50%;background:var(--vz-surface);box-shadow:inset 0 0 0 1.6px var(--ink)}.vz-lg i.dot{border-radius:50%}
+.vz-chips{display:flex;flex-wrap:wrap;gap:6px}
+.vz-chip{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 10px 4px 8px;font:500 11.5px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--c) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
+.vz-chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.vz-chip b{font-weight:600;font-family:var(--display);font-size:13px}
+button.vz-chip{appearance:none;border:0;cursor:pointer}button.vz-chip[aria-pressed="true"]{background:color-mix(in srgb,var(--c) 26%,transparent);box-shadow:inset 0 0 0 1.5px var(--c)}
+.vz-split{display:flex;gap:2px;height:10px;min-width:0}.vz-split i{display:block;height:100%;background:var(--c);flex:none}.vz-split i:first-child{border-radius:3px 0 0 3px}.vz-split i:last-child{border-radius:0 3px 3px 0}
+.vz-fl{display:grid;gap:5px}
+.vz-fi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline;font-size:12.5px;color:var(--ink);padding:6px 0;border-top:1px solid var(--line)}
+.vz-fi .s{grid-column:1/-1;font-size:11.5px;color:var(--rose)}.vz-fi a{color:var(--ink)}
+/* stat tiles */
+.vz-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.vz-tile{display:grid;gap:3px;align-content:start;min-width:0;border-top:2px solid var(--ink);padding-top:8px}
+.vz-tile .v{font:600 24px/1.1 var(--display);letter-spacing:-.01em;color:var(--ink)}
+.vz-tile .l{font-size:12.5px;color:var(--ink);line-height:1.3}
+.vz-tile .d{font:500 11.5px var(--mono);color:var(--body)}.vz-tile .d.up{color:var(--vz-up)}.vz-tile .d.down{color:var(--vz-down)}
+.vz-tile .vz-tr{height:12px;margin-top:4px}
+/* disclosure for the detail table */
+details.vz-more{border-top:1px solid var(--line);padding-top:8px;margin-top:2px;min-width:0;max-width:100%}
+details.vz-more>summary{cursor:pointer;font:500 12px/1.45 var(--mono);color:var(--ink);list-style:none;display:block}
+details.vz-more>summary::-webkit-details-marker{display:none}
+details.vz-more>summary::before{content:"";display:inline-block;margin:0 10px 1px 2px;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+details.vz-more[open]>summary::before{transform:rotate(45deg)}
+details.vz-more>summary .vz-n{color:var(--rose)}
+details.vz-more[open]>summary{margin-bottom:8px}
+/* tooltip */
+.vz-tip{position:fixed;z-index:50;pointer-events:none;max-width:260px;background:var(--paper);color:var(--body);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.35;box-shadow:0 0 0 1px var(--line),0 12px 28px -14px rgba(0,0,0,.45);opacity:0;transition:opacity .12s}
+.vz-tip.on{opacity:1}.vz-tip b{display:block;font:600 14px var(--display);color:var(--ink)}
+[data-tip]{cursor:default}[data-tip]:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+.vz-hit:hover,.vz-hit:focus-visible{filter:brightness(1.08) saturate(1.1)}
+@media (prefers-reduced-motion:no-preference){.vz-b,.vz-seg,.vz-dot{transition:left .35s cubic-bezier(.2,.7,.2,1),width .35s cubic-bezier(.2,.7,.2,1),flex-basis .35s cubic-bezier(.2,.7,.2,1)}}
+.vz-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:root{--vz-src:#3B6C8E;--vz-est:#8C6D3F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--vz-src:#7FB2D6;--vz-est:#D2AE73}}
+:root[data-theme="dark"]{--vz-src:#7FB2D6;--vz-est:#D2AE73}
+.lab{font:500 9.5px/1.3 var(--mono);letter-spacing:.04em;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;color:var(--c)}
+.lab::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c);flex:none}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="eyebrow">Supermarket twin · independent concept</div>
+      <h1>A suburban supermarket, running live</h1>
+      <p class="sub">A fictional mid-size New Zealand store, minute by minute: who is shopping, how long the checkout queue is, what happens to the bread and mince that reach their last day, and what the open chillers cost to run.</p>
+    </div>
+    <div class="clock">
+      <span class="time" id="clock"></span>
+      <select id="dow" aria-label="Day of the week"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4" selected>Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select>
+      <div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="1">1 min/s</button><button type="button" data-speed="3" aria-pressed="true">3 min/s</button><button type="button" data-speed="12">12 min/s</button></div>
+      <button class="btn" type="button" id="pause">Pause</button>
+      <label class="hour" for="hour">Time <input id="hour" type="range" min="5" max="23.75" step="0.25" value="17.75"></label>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="stagebox" id="stagebox">
+      <canvas id="scene" aria-label="3D view of a supermarket floor with aisles, fresh produce, bakery, chillers along the back wall, checkouts with queues, and a loading dock"></canvas>
+      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="store" aria-pressed="true">Whole store</button><button type="button" data-view="checkouts">Checkouts</button><button type="button" data-view="fresh">Fresh and waste</button><button type="button" data-view="chillers">Chillers</button></div>
+      <div id="tags"></div>
+      <div class="key" aria-hidden="true"><span style="--k:var(--live)">waiting over 3 min · reduced stock</span><span style="--k:var(--coldair)">cold air leaving open chillers</span><span style="--k:var(--good)">lane open · rescued food</span></div>
+      <div class="badge">SIMULATED</div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h3><span>Right now</span><span id="dayName"></span></h3>
+        <div class="big" id="inStore">0<small>shoppers in store</small></div>
+        <div class="kv" style="margin-top:12px">
+          <div><span class="v" id="inQueue">0</span><span class="l">in a checkout queue</span></div>
+          <div><span class="v" id="lanes">0</span><span class="l">staffed lanes open of 8</span></div>
+          <div><span class="v" id="waitNow">0</span><span class="l">recent wait to be served</span></div>
+          <div><span class="v" id="served">0</span><span class="l">through the tills today</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3><span>Short-dated fresh food</span><span id="mdState"></span></h3>
+        <div class="big" id="atRisk">0<small>kg still on display</small></div>
+        <div class="kv" style="margin-top:12px">
+          <div><span class="v" id="fFull">0</span><span class="l">kg sold at full price</span></div>
+          <div><span class="v warn" id="fRed">0</span><span class="l">kg sold reduced</span></div>
+          <div><span class="v good" id="fResc">–</span><span class="l">kg to food rescue tonight</span></div>
+          <div><span class="v" id="fWaste">–</span><span class="l">kg to waste tonight</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3><span>Power now</span><span id="kwhToday"></span></h3>
+        <div class="big" id="kw">0<small>kW</small></div>
+        <div class="stack" id="pstack"><i style="background:var(--cool)"></i><i style="background:color-mix(in srgb,var(--cool) 55%,var(--line))"></i><i style="background:var(--rose)"></i><i style="background:var(--c-full)"></i><i style="background:var(--live)"></i></div>
+        <div class="legend" id="plegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="card panel">
+      <h3><span>Checkouts</span><span>a week, this setup</span></h3>
+      <div class="row"><label for="shoppers">Shoppers on an average day <b id="shoppersV">1,800</b></label><input id="shoppers" type="range" min="1000" max="2600" step="50" value="1800"></div>
+      <label class="toggle"><input type="checkbox" id="extraLane"><span>Open another staffed lane at the peaks <span class="prop">PROPOSED</span><small>One more lane 11am–2pm and 4–7pm, every day: 42 extra staffed hours a week.</small></span></label>
+      <label class="toggle"><input type="checkbox" id="moreSelf"><span>Two more self-checkouts <span class="prop">PROPOSED</span><small>8 kiosks instead of 6, with the same one attendant.</small></span></label>
+      <svg id="qChart" viewBox="0 0 320 120" role="img" aria-label="Shoppers arriving each hour and the average wait at the checkout, as-is and with this setup"></svg>
+      <div class="kv three"><div><span class="v" id="qAvg">0</span><span class="l">average wait</span></div><div><span class="v" id="qOver">0</span><span class="l">people waiting over 5 min</span></div><div><span class="v" id="qHrs">0</span><span class="l">hours queueing</span></div></div>
+      <p class="insight" id="qText"></p>
+    </div>
+    <div class="card panel">
+      <h3><span>Fresh, bakery, deli and meat</span><span>a week, this setup</span></h3>
+      <div class="row"><label for="mdH">Reduce short-dated food at <b id="mdHV">7pm</b></label><input id="mdH" type="range" min="13" max="21" step="0.5" value="19"></div>
+      <div class="row"><label for="disc">Reduced by <b id="discV">30%</b></label><input id="disc" type="range" min="0.2" max="0.6" step="0.05" value="0.3"></div>
+      <label class="toggle"><input type="checkbox" id="rescue"><span>Food rescue pickup every night <span class="prop">PROPOSED</span><small>As-is, a community food rescue partner collects on Monday, Wednesday and Friday nights.</small></span></label>
+      <svg id="fChart" viewBox="0 0 320 140" role="img" aria-label="Where each department's short-dated food went this week: full price, reduced, rescued or wasted"></svg>
+      <div class="kv three"><div><span class="v" id="wWaste">0</span><span class="l">kg to waste</span></div><div><span class="v good" id="wMeals">0</span><span class="l">meals rescued</span></div><div><span class="v" id="wNet">$0</span><span class="l">recovered vs as-is</span></div></div>
+      <p class="insight" id="fText"></p>
+    </div>
+    <div class="card panel">
+      <h3><span>Refrigeration</span><span>a day, this setup</span></h3>
+      <label class="toggle"><input type="checkbox" id="doors"><span>Fit doors to the open chillers <span class="prop">PROPOSED</span><small>48 m of open multideck cases for dairy, meat, deli and salads. Freezers already have doors.</small></span></label>
+      <div class="row"><label for="price">Electricity price <b id="priceV">29c/kWh</b></label><input id="price" type="range" min="0.2" max="0.4" step="0.01" value="0.29"></div>
+      <svg id="eChart" viewBox="0 0 320 120" role="img" aria-label="Store power through the day, refrigeration and everything else"></svg>
+      <div class="kv three"><div><span class="v" id="eKwh">0</span><span class="l">kWh a day</span></div><div><span class="v" id="eCost">$0</span><span class="l">electricity a year</span></div><div><span class="v" id="eShare">0%</span><span class="l">of it refrigeration</span></div></div>
+      <p class="insight" id="eText"></p>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card panel" id="proofCard">
+      <h3><span>What the proposed changes add up to</span><span><span class="prop">PROPOSED</span> vs the store as it is</span></h3>
+      <p class="insight" id="pText"></p>
+      <div class="proofbig" id="proofBig"></div>
+      <div class="vz" id="proofViz"></div>
+      <details class="vz-more"><summary>Show the table <span class="vz-n">every measure a week and a year, and how</span></summary><div class="tablewrap"><table id="proofTable"></table></div></details>
+      <div><button class="btn solid" type="button" id="applyAll">Show the proposed changes in the store</button></div>
+      <ol class="notes" id="pNotes"></ol>
+    </div>
+    <div class="card panel">
+      <h3><span>A family's weekly shop</span><span>two adults, two school-age children</span></h3>
+      <p class="insight" id="bText"></p>
+      <div class="vz" id="basketViz"></div>
+      <details class="vz-more"><summary>Show the table <span class="vz-n">22 items, quantity and price now and a year ago</span></summary><div class="tablewrap"><table id="basket"></table></div></details>
+      <p class="src">Illustrative. Rows marked S use Stats NZ average prices for September 2025, moved to September 2026 by each food group's annual change. Rows marked E are estimates. A real family's shop varies a lot.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span>Figures used</span><span>source or estimate</span></h3>
+    <div class="vz" id="srcViz"></div>
+    <details class="vz-more"><summary>Show the table <span class="vz-n">figure, value, label and where it comes from</span></summary><div class="tablewrap"><table id="srcTable">
+      <thead><tr><th>Figure</th><th>Value</th><th>Label</th><th>Where it comes from</th></tr></thead>
+      <tbody>
+        <tr><td>Supermarket food discards</td><td>about 160 tonnes per store a year; 15% to food rescue, 46% animal feed, 23% landfill</td><td><span class="lab" data-t="src" style="--c:var(--vz-src)">Source</span></td><td>University of Otago audits of 16 NZ supermarkets in 2017 (Goodman-Smith, 2018)</td></tr>
+        <tr><td>Which food is discarded</td><td>veg 27%, bakery 23%, meat and fish 19%, fruit 17%</td><td><span class="lab" data-t="src" style="--c:var(--vz-src)">Source</span></td><td>Same Otago audits</td></tr>
+        <tr><td>Short-dated fresh food a day in this store</td><td>540 kg on an average day</td><td><span class="lab" data-t="est" style="--c:var(--vz-est)">Estimate</span></td><td>Estimate, set so the as-is store discards about 108 tonnes a year: a mid-size store below the Otago average</td></tr>
+        <tr><td>Meals per kg rescued</td><td>about 2.2</td><td><span class="lab" data-t="src" style="--c:var(--vz-src)">Source</span></td><td>KiwiHarvest's published counters (21.7 million kg, about 48 million meals)</td></tr>
+        <tr><td>Food prices</td><td id="fpiRow">+2.4% in the year to September 2026; grocery +3.0%, meat +3.2%, fruit and veg −1.8%</td><td><span class="lab" data-t="src" style="--c:var(--vz-src)">Source</span></td><td>Stats NZ Selected Price Indexes, September 2026</td></tr>
+        <tr><td>Commercial electricity</td><td>29c/kWh excluding GST</td><td><span class="lab" data-t="est" style="--c:var(--vz-est)">Estimate</span></td><td>Assumption. MBIE's 2024 average across commercial and industrial users was 23.0c; smaller commercial sites pay more</td></tr>
+        <tr><td>Open chiller energy, door saving</td><td>about 15 kWh per metre a day; doors save 40%; $2,200 a metre fitted</td><td><span class="lab" data-t="est" style="--c:var(--vz-est)">Estimate</span></td><td>Estimates in line with published retrofit studies (savings commonly 30–50%)</td></tr>
+        <tr><td>Shoppers by hour and day, basket sizes, till speeds</td><td>1,800 a day, Saturday busiest; 42% trolleys</td><td><span class="lab" data-t="est" style="--c:var(--vz-est)">Estimate</span></td><td>Estimates</td></tr>
+      </tbody>
+    </table></div></details>
+  </div>
+
+
+<style>
+.alf{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:8px 0 12px;font-family:var(--mono,"IBM Plex Mono",ui-monospace,monospace);font-size:11.5px;color:var(--rose,#916A70);min-width:0}
+.alf-h{font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--live,#D9822B) 16%,transparent);color:var(--live,#D9822B);white-space:nowrap}
+.alf-i{border:1px solid var(--line,#E4DADD);border-radius:14px;padding:3px 10px;color:var(--body,#654A4E);max-width:100%;line-height:1.5}
+.alf-i b{color:var(--ink,#492B3E);font-weight:500}
+.alf-i a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent)}
+.alf-i em{font-style:normal;font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px;margin-left:5px;vertical-align:1px}
+.alf-i em.lv{color:var(--good,#3F7A55)}.alf-i em.lp{color:var(--live,#D9822B)}
+.alf-note{flex-basis:100%;font-size:11px}
+</style>
+<div class="alf" id="assemblLive" hidden><span class="alf-h">Live and latest</span><span id="assemblLiveItems" style="display:contents"></span><span class="alf-note" id="assemblLiveNote"></span></div>
+<script>
+/* Live and latest chips: filled by the lab's /feeds.js ("assembl:live"). Each chip says Live or Latest published, the period and the source. */
+(()=>{
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>n==null||!isFinite(n)?"–":Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sign=(n,d=1)=>(n>0?"+":"")+fmt(n,d);
+const F={
+  weather:e=>{const v=e.values;return `<b>${esc(v.place.split(" ").slice(-1)[0])} ${fmt(v.tempC)}°C</b> · ${fmt(v.today.minC)}–${fmt(v.today.maxC)}°C today · rain ${fmt(v.today.rainChancePct)}%`},
+  air:e=>`<b>Air ${esc(e.values.band)}</b> · PM2.5 ${fmt(e.values.pm25,1)} µg/m³`,
+  power:e=>{const v=e.values;return `<b>Wholesale power ${fmt(v.avgCentsPerKWh,1)}c/kWh</b> avg · ${fmt(v.minCents,1)}–${fmt(v.maxCents,1)}c · ${esc(v.node)} · before lines, retail and GST`},
+  genmix:e=>{const s=e.values.sharePct;return `<b>Grid ${fmt(e.values.renewablePct,1)}% renewable</b> · hydro ${fmt(s.hydro)}% · geothermal ${fmt(s.geothermal)}% · wind ${fmt(s.wind)}%`},
+  fuel:e=>{const v=e.values;return `<b>Petrol 91 $${fmt(v.petrol91Dollars,2)}</b> · 95 $${fmt(v.petrol95Dollars,2)} · diesel $${fmt(v.dieselDollars,2)} a litre${v.change91!=null?` · 91 ${sign(v.change91)}c on the week`:""}`},
+  fpi:e=>{const g=Object.fromEntries((e.values.groups||[]).map(x=>[x.name,x.annualPct]));return `<b>Food prices ${sign(e.value)}% a year</b> · fruit and veg ${sign(g["Fruit and vegetables"])}% · grocery ${sign(g["Grocery food"])}% · meat ${sign(g["Meat, poultry and fish"])}%`},
+  foodprices:e=>{const i=e.values.items;const p=k=>i[k]?`$${fmt(i[k].price,2)}`:"–";return `<b>Milk 2 L ${p("milk2l")}</b> · eggs ${p("eggs")} a dozen · bread ${p("bread")} · butter ${p("butter")} · mince ${p("beefMince")}/kg · bananas ${p("bananas")}/kg`},
+  fx:e=>{const r=e.values.rates;return `<b>NZ$1 = US$${fmt(r.USD,3)}</b> · A$${fmt(r.AUD,3)} · ¥${fmt(r.CNY,2)} · £${fmt(r.GBP,3)} · €${fmt(r.EUR,3)}`},
+  gdt:e=>{const v=e.values,w=v.wmp;return `<b>GDT index ${sign(v.changePct)}%</b> at event ${v.event}${w?` · WMP US$${fmt(w.usdPerTonne)}/t (${sign(w.changePct)}%)`:""} · avg US$${fmt(v.avgUsdPerTonne)}/t`},
+  calendar:e=>{const v=e.values;let t=v.publicHoliday?`<b>${esc(v.publicHoliday.name)}</b> today`:v.weekend?`<b>Weekend</b>`:`<b>Working ${esc(v.weekday)}</b>`;if(v.school&&v.school.label)t+=` · ${esc(v.school.label)}`;if(v.nextPublicHoliday)t+=` · ${esc(v.nextPublicHoliday.name)} in ${v.nextPublicHoliday.daysAway} day${v.nextPublicHoliday.daysAway===1?"":"s"}`;return t},
+  ed:e=>{const v=e.values;return `<b>${esc(v.districtName)} ED: ${fmt(v.pct,1)}% seen within 6 h</b> · target 95%${v.national?` · NZ ${fmt(v.national.pct,1)}%`:""}`},
+  urgentcare:e=>{const v=e.values;return `<b>Pegasus urgent care wait ${esc(v.waitText||"–")}</b> · ${fmt(v.waiting)} waiting · Christchurch`},
+  wastewater:e=>{const v=e.values;return `<b>COVID-19 in wastewater ${esc(v.direction)}</b> · ${sign(v.change4wkPct,0)}% over 4 weeks${v.region?` · ${esc(v.region.name)} ${fmt(v.region.copies/1e6,1)}M copies/person/day`:""}`},
+  attendance:e=>{const v=e.values;return `<b>${fmt(v.regularPct,1)}% of students attending regularly</b>${v.yearAgo?` · ${fmt(v.yearAgo.regularPct,1)}% a year earlier`:""}${v.region?` · ${esc(v.region.name)} ${fmt(v.region.regularPct,1)}%`:""} · ${fmt(v.chronicPct,1)}% chronic absence`},
+  vehicles:e=>{const v=e.values;return `<b>${fmt(v.total)} new cars registered</b> · ${fmt(v.evSharePct,1)}% EV or plug-in${v.changePct!=null?` · ${sign(v.changePct)}% on a year ago`:""}`},
+};
+const ok=(j,id)=>j&&j.feeds&&j.feeds[id]&&!j.feeds[id].error?j.feeds[id]:null;
+function draw(j){const want=(document.documentElement.dataset.feeds||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const ids=want.length?want:Object.keys(j.feeds||{});const out=[];let missing=[];
+  for(const id of ids){const e=ok(j,id);if(!e){missing.push(id);continue}const f=F[id];if(!f)continue;let body;try{body=f(e)}catch(err){continue}
+    out.push(`<span class="alf-i" title="${esc(e.label)}">${body} · <a href="${esc(e.source.url)}" target="_blank" rel="noopener">${esc(e.source.name)}</a>${e.source.name.includes(e.period)?"":" · "+esc(e.period)}<em class="${e.truth==="Live"?"lv":"lp"}">${e.truth==="Live"?"Live":"Latest published"}</em></span>`)}
+  const el=$("assemblLive");if(!el)return;if(!out.length){el.hidden=true;return}
+  $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
+  $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
+  try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
+function HOOK(j,ok,u){const f=ok("fpi");if(f){const g=Object.fromEntries((f.values.groups||[]).map(x=>[x.name,x.annualPct]));const el=document.getElementById("fpiRow");if(el)el.innerHTML=`${u.sign(f.value)}% in the year to ${u.esc(f.period)}; grocery ${u.sign(g["Grocery food"])}%, meat ${u.sign(g["Meat, poultry and fish"])}%, fruit and veg ${u.sign(g["Fruit and vegetables"])}% <em style="font-style:normal;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px">Latest published</em>`}}
+window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
+if(window.__assemblLive)draw(window.__assemblLive);
+})();
+</script>
+  <footer>
+    <p><span class="sim">SIMULATED</span> A generic, fictional store, not a real one. Every day is generated from a fixed seed, so the same settings always give the same numbers. Shopper counts, the hourly curve, till speeds, rotas, short-dated volumes, how strongly a markdown lifts sales (30% off sells about 2.2 times as fast), how much a markdown takes from full-price sales (0.35 kg for each reduced kg), what the rescue partner can take, energy by end use, door costs and staff costs are estimates. Door savings leave out the cold-aisle heating that doors also reduce.</p>
+    <p>Independent assembl concept. Not commissioned by, affiliated with or endorsed by any supermarket. Simulated data unless explicitly stated otherwise.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// A generic, fictional mid-size New Zealand suburban supermarket, simulated minute by minute.
+// Deterministic: every day is generated from a seeded RNG, so the same settings always give the same numbers.
+// Sources are noted beside each figure. Anything not sourced is an estimate for illustration.
+const STORE = (() => {
+  /**
+   * @typedef {"produce"|"bakery"|"meat"|"deli"} DeptKey
+   * @typedef {{k:DeptKey,n:string,kg:number,price:number,cost:number,rescue:number}} Dept
+   * @typedef {"produce"|"bakery"|"deli"|"meat"|"dairy"|"freezer"|"a1"|"a2"|"a3"|"a4"|"a5"|"a6"} Zone
+   * @typedef {{id:number,arr:number,trolley:boolean,items:number,spend:number,dwell:number,zones:Zone[],
+   *   phase:"pending"|"shop"|"queue"|"serve"|"gone",self:boolean,lane:number,qAt:number,sStart:number,sEnd:number,svc:number}} Shopper
+   * @typedef {{q:number[],cur:number,left:number}} Till
+   * @typedef {{stock:number,start:number,full:number,reduced:number,revenue:number,cannib:number,rescued:number,waste:number}} DeptState
+   * @typedef {{dow:number,t:number,sh:Shopper[],next:number,lanes:Till[],kiosks:Till[],selfQ:number[],
+   *   fresh:Record<DeptKey,DeptState>,kwh:number,closed:boolean,rescueNight:boolean,R:()=>number}} Day
+   * @typedef {{shoppers:number,selfs:number,extraLane:boolean,moreSelf:boolean,markdownH:number,discount:number,
+   *   rescueNightly:boolean,doors:boolean,openM:number,freezerM:number,price:number,doorCostM:number}} Settings
+   */
+
+  const OPEN = 7 * 60, CLOSE = 22 * 60, DAY_START = 5 * 60, DAY_END = 24 * 60;
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  // Share of a day's shoppers arriving in each hour, 7am–10pm. Estimate: a late-morning bump and an after-work peak.
+  const HOUR = (() => { const raw = Array(24).fill(0);
+    [2.5, 4.0, 5.5, 7.0, 8.0, 8.6, 8.0, 7.0, 7.2, 8.6, 9.4, 8.2, 6.4, 4.6, 3.0].forEach((v, i) => raw[7 + i] = v);
+    const s = raw.reduce((a, b) => a + b); return raw.map(x => x / s); })();
+  // Weekends start earlier and tail off sooner (estimate)
+  const HOUR_WE = (() => { const raw = HOUR.map((v, h) => v * (h >= 9 && h <= 14 ? 1.15 : h >= 17 ? 0.8 : 1)); const s = raw.reduce((a, b) => a + b); return raw.map(x => x / s); })();
+  const hourCurve = dow => dow >= 5 ? HOUR_WE : HOUR;
+  // Day-of-week multiplier, Monday..Sunday (estimate; Saturday busiest). Averages 1.
+  const DOW = [0.92, 0.88, 0.92, 0.98, 1.08, 1.20, 1.02];
+
+  // Staffed lanes open by hour (as-is rota, estimate). 8 lanes are built.
+  const ROTA = [0, 0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 5, 5, 5, 4, 4, 5, 5, 5, 4, 4, 3, 3, 0];
+  const PEAK = [11, 12, 13, 16, 17, 18]; // hours the proposed extra lane opens
+  const LANES_BUILT = 8;
+
+  // Fresh food reaching its last day of sale each day ("at risk"), for a mid-size store.
+  // Category shares follow University of Otago supermarket audits (veg 27%, bakery 23%, meat and fish 19%, fruit 17%);
+  // the kilograms, prices and costs are estimates.
+  /** @type {Dept[]} */
+  const DEPTS = [
+    { k: "produce", n: "Fruit and veg", kg: 260, price: 4.5, cost: 0.68, rescue: 0.6 },
+    { k: "bakery", n: "Bakery", kg: 140, price: 9, cost: 0.55, rescue: 0.8 },
+    { k: "meat", n: "Meat and fish", kg: 85, price: 22, cost: 0.72, rescue: 0.3 },
+    { k: "deli", n: "Deli", kg: 55, price: 18, cost: 0.62, rescue: 0.25 }];
+  const BASE_SELL = 0.40;               // share of at-risk stock that sells at full price by close with no markdown (estimate)
+  const R_SELL = -Math.log(1 - BASE_SELL) / ((CLOSE - OPEN));
+  const ELASTIC = 4;                    // sales rate multiplier per 100% off: 30% off → 2.2× (estimate)
+  const CANNIB = 0.35;                  // each reduced kg replaces 0.35 kg of a full-price sale of fresher stock (estimate)
+  const MEALS_PER_KG = 48.2 / 21.7;     // about 2.2 meals per kg, from KiwiHarvest's published counters
+  const RESCUE_DAYS = [0, 2, 4];        // as-is: the rescue partner collects Monday, Wednesday and Friday nights (estimate)
+  const VAN_KG = 220;                   // most a small chilled van takes in one pickup (estimate)
+
+  /** @type {Settings} */
+  const BASE = { shoppers: 1800, selfs: 6, extraLane: false, moreSelf: false, markdownH: 19, discount: 0.3,
+    rescueNightly: false, doors: false, openM: 48, freezerM: 20, price: 0.29, doorCostM: 2200 };
+  const PROPOSED = { extraLane: true, moreSelf: true, markdownH: 16, rescueNightly: true, doors: true };
+  const AS_IS = { extraLane: false, moreSelf: false, markdownH: 19, rescueNightly: false, doors: false };
+
+  // Shopping zones, in the order people tend to walk the store
+  /** @type {Zone[]} */
+  const ZONES = ["produce", "bakery", "a1", "a2", "a3", "a4", "a5", "a6", "deli", "meat", "dairy", "freezer"];
+
+  function rng(seed) { let s = (seed * 2654435761) >>> 0 || 1; return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1e6) / 1e6; }; }
+  // weekends roster one more lane 9am–6pm and two more 11am–3pm (estimate)
+  // the rota is written for 1,800 shoppers a day and scales with traffic
+  const lanesOpen = (S, h, dow = 0) => { const base = ROTA[h] + (dow >= 5 ? (h >= 11 && h < 15 ? 2 : h >= 9 && h < 18 ? 1 : 0) : 0); if (!base) return 0;
+    return Math.min(LANES_BUILT, Math.max(1, Math.round(base * S.shoppers / BASE.shoppers)) + (S.extraLane && PEAK.includes(h) ? 1 : 0)); };
+  const kioskCount = S => S.selfs + (S.moreSelf ? 2 : 0);
+  const rateNorm = (t, dow) => { const h = Math.floor(t / 60) % 24; return hourCurve(dow)[h] * (CLOSE - OPEN) / 60; }; // averages 1 over opening hours
+
+  /** Build one day: every shopper, their basket and route, decided up front from the seed. */
+  function newDay(S, dow, seed) {
+    const R = rng(seed == null ? 11 + dow * 7 : seed), sh = [];
+    const N = Math.round(S.shoppers * DOW[dow]);
+    let id = 0;
+    for (let h = 7; h < 22; h++) {
+      const n = Math.round(N * hourCurve(dow)[h] + (R() - 0.5));
+      for (let i = 0; i < n; i++) {
+        const trolley = R() < 0.42;
+        const items = trolley ? Math.round(18 + R() * 30 + R() * 14) : Math.round(2 + R() * 9 + R() * 4);
+        const dwell = trolley ? 14 + items * 0.32 + R() * 8 : 4 + items * 0.6 + R() * 4;
+        const nz = trolley ? 7 + Math.floor(R() * 5) : 2 + Math.floor(R() * 3);
+        const pick = ZONES.filter(() => R() < nz / ZONES.length);
+        if (!pick.length) pick.push(ZONES[Math.floor(R() * ZONES.length)]);
+        const arr = h * 60 + R() * (h === 21 ? 35 : 60);
+        sh.push({ id: id++, arr, trolley, items, spend: items * (3.1 + R() * 0.8), dwell, zones: pick,
+          phase: "pending", self: false, lane: -1, qAt: 0, sStart: 0, sEnd: 0, svc: 0 });
+      }
+    }
+    sh.sort((a, b) => a.arr - b.arr); sh.forEach((s, i) => s.id = i);
+    const traffic = DOW[dow] * S.shoppers / BASE.shoppers;
+    /** @type {Record<DeptKey,DeptState>} */
+    const fresh = {};
+    DEPTS.forEach(D => { const kg = D.kg * traffic; fresh[D.k] = { stock: kg, start: kg, full: 0, reduced: 0, revenue: 0, cannib: 0, rescued: 0, waste: 0 }; });
+    return { dow, t: DAY_START, sh, next: 0, lanes: Array.from({ length: LANES_BUILT }, () => ({ q: [], cur: -1, left: 0 })),
+      kiosks: Array.from({ length: 10 }, () => ({ q: [], cur: -1, left: 0 })), selfQ: [], fresh, kwh: 0, closed: false,
+      rescueNight: S.rescueNightly || RESCUE_DAYS.includes(dow), R };
+  }
+
+  const svcTime = (s, self) => self ? 1.4 + s.items * 6.5 / 60 : 1.4 + s.items * 3.8 / 60; // minutes: payment and bagging plus scanning (estimate)
+
+  function chooseTill(S, d, s) {
+    const h = Math.floor(d.t / 60), open = lanesOpen(S, h, d.dow), k = kioskCount(S);
+    let best = -1, bestLen = 1e9;
+    for (let i = 0; i < open; i++) { const L = d.lanes[i], len = L.q.length + (L.cur >= 0 ? 1 : 0); if (len < bestLen) { bestLen = len; best = i; } }
+    const pSelf = s.items <= 12 ? 0.8 : s.items <= 30 ? 0.35 : 0.04;
+    let self = d.R() < pSelf || best < 0;
+    const selfLen = d.selfQ.length / Math.max(1, k);
+    if (!self && s.items <= 30 && bestLen > selfLen + 3) self = true;      // people switch when the lanes back up
+    if (self && s.items > 12 && best >= 0 && selfLen > bestLen + 2) self = false;
+    s.self = self; s.qAt = d.t; s.phase = "queue";
+    if (self) { d.selfQ.push(s.id); s.lane = -1; } else { d.lanes[best].q.push(s.id); s.lane = best; }
+  }
+
+  function serveTill(d, T, queue, self) {
+    let budget = 1;
+    while (budget > 0) {
+      if (T.cur < 0) { if (!queue.length) return; const s = d.sh[queue.shift()]; T.cur = s.id; s.phase = "serve"; s.sStart = d.t + (1 - budget); s.svc = svcTime(s, self); T.left = s.svc; }
+      const use = Math.min(budget, T.left); T.left -= use; budget -= use;
+      if (T.left <= 1e-6) { const s = d.sh[T.cur]; s.phase = "gone"; s.sEnd = d.t + (1 - budget); T.cur = -1; }
+    }
+  }
+
+  /** Energy in kW at a given time of day. Refrigeration runs all night; lights, HVAC and ovens follow the store. Estimates. */
+  function power(S, t) {
+    const h = (t / 60) % 24, open = h >= 7 && h < 22, prep = h >= 5 && h < 7;
+    const openCase = S.openM * 0.62 * (S.doors ? 0.6 : 1);   // about 15 kWh per metre a day open; doors cut 40%
+    const freezer = S.freezerM * 0.42, cool = 12;
+    const lights = open ? 45 : prep ? 25 : 10, hvac = open ? 22 + 10 * Math.sin(Math.PI * (h - 7) / 15) : 8;
+    const bakery = h >= 5 && h < 10 ? 40 : h >= 10 && h < 14 ? 15 : 0, other = open ? 14 : 9;
+    return { openCase, freezer, cool, lights, hvac, bakery, other, refrig: openCase + freezer + cool,
+      total: openCase + freezer + cool + lights + hvac + bakery + other };
+  }
+  function energyDay(S) {
+    let kwh = 0, refrig = 0, openCase = 0; for (let m = 0; m < 1440; m += 15) { const p = power(S, m); kwh += p.total / 4; refrig += p.refrig / 4; openCase += p.openCase / 4; }
+    return { kwh, refrig, openCase, cost: kwh * S.price };
+  }
+
+  /** One simulated minute. */
+  function step(S, d) {
+    const t = d.t, h = Math.floor(t / 60);
+    while (d.next < d.sh.length && d.sh[d.next].arr <= t) d.sh[d.next++].phase = "shop";
+    for (let i = 0; i < d.next; i++) { const s = d.sh[i]; if (s.phase === "shop" && t >= s.arr + s.dwell) chooseTill(S, d, s); }
+    const open = lanesOpen(S, h, d.dow);
+    // a lane that closes stops taking new people but serves its queue; people re-join an open lane if the queue is long
+    for (let i = open; i < LANES_BUILT; i++) { const L = d.lanes[i]; while (L.q.length > 1 && open > 0) { const id = L.q.pop(); const s = d.sh[id]; let b = 0; for (let j = 1; j < open; j++) if (d.lanes[j].q.length < d.lanes[b].q.length) b = j; d.lanes[b].q.push(id); s.lane = b; } }
+    // the person at the back of a long queue moves when another open lane is clearly shorter
+    for (let i = 0; i < open; i++) { const L = d.lanes[i], len = L.q.length + (L.cur >= 0 ? 1 : 0); if (L.q.length < 2) continue;
+      let b = -1, bl = len - 2; for (let j = 0; j < open; j++) { const M = d.lanes[j], ml = M.q.length + (M.cur >= 0 ? 1 : 0); if (j !== i && ml < bl) { bl = ml; b = j; } }
+      if (b >= 0) { const id = L.q.pop(); d.lanes[b].q.push(id); d.sh[id].lane = b; } }
+    d.lanes.forEach(L => serveTill(d, L, L.q, false));
+    const k = kioskCount(S);
+    const none = [];
+    d.kiosks.forEach((K, i) => { serveTill(d, K, i < k ? d.selfQ : none, true); if (K.cur >= 0) d.sh[K.cur].lane = i; });
+    // fresh food: short-dated stock sells in proportion to footfall; faster once it is reduced
+    if (t >= OPEN && t < CLOSE) {
+      const reduced = t >= S.markdownH * 60, mult = reduced ? 1 + ELASTIC * S.discount : 1, rn = rateNorm(t, d.dow);
+      DEPTS.forEach(D => { const f = d.fresh[D.k], sold = f.stock * (1 - Math.exp(-R_SELL * rn * mult));
+        f.stock -= sold; if (reduced) { f.reduced += sold; f.revenue += sold * D.price * (1 - S.discount); f.cannib += sold * CANNIB * D.price * (1 - D.cost); } else { f.full += sold; f.revenue += sold * D.price; } });
+    }
+    // after close: what is left goes to the rescue partner (on pickup nights, if it can be donated) or to waste
+    if (t === CLOSE + 10 && !d.closed) { d.closed = true;
+      const can = DEPTS.reduce((a, D) => a + (d.rescueNight ? d.fresh[D.k].stock * D.rescue : 0), 0), k = can > VAN_KG ? VAN_KG / can : 1;
+      DEPTS.forEach(D => { const f = d.fresh[D.k], r = d.rescueNight ? f.stock * D.rescue * k : 0; f.rescued = r; f.waste = f.stock - r; f.stock = 0; }); }
+    d.kwh += power(S, t).total / 60;
+    d.t++;
+  }
+
+  /** Numbers for a day so far (or a whole day once it has run). */
+  function dayStats(S, d) {
+    const done = d.sh.filter(s => s.phase === "gone"), waits = done.map(s => s.sStart - s.qAt);
+    const waitMin = waits.reduce((a, b) => a + b, 0);
+    const inStore = d.sh.filter(s => s.phase === "shop").length, inQueue = d.sh.filter(s => s.phase === "queue").length;
+    const h = Math.floor(d.t / 60) % 24, lanes = lanesOpen(S, h, d.dow);
+    const qLane = d.lanes.slice(0, Math.max(1, lanes)).reduce((a, L) => a + L.q.length, 0) / Math.max(1, lanes);
+    // wait for someone joining now: rough estimate from queue length and service rates
+    const nowWaitLane = lanes ? (qLane + 0.5) * 2.1 : 0, nowWaitSelf = d.selfQ.length / kioskCount(S) * 1.6;
+    const recent = done.filter(s => s.sStart > d.t - 30), recentWait = recent.length ? recent.reduce((a, s) => a + s.sStart - s.qAt, 0) / recent.length : 0;
+    let fresh = { start: 0, left: 0, full: 0, reduced: 0, revenue: 0, cannib: 0, rescued: 0, waste: 0, costAtRisk: 0, margin: 0 };
+    DEPTS.forEach(D => { const f = d.fresh[D.k]; fresh.start += f.start; fresh.left += f.stock; fresh.full += f.full; fresh.reduced += f.reduced; fresh.revenue += f.revenue; fresh.cannib += f.cannib;
+      fresh.rescued += f.rescued; fresh.waste += f.waste; fresh.costAtRisk += f.start * D.price * D.cost; });
+    fresh.margin = fresh.revenue - fresh.cannib - fresh.costAtRisk; // net of margin lost on full-price sales the markdown replaced
+    return { served: done.length, total: d.sh.length, waitMin, avgWait: done.length ? waitMin / done.length : 0, maxWait: waits.length ? Math.max(...waits) : 0,
+      over5: waits.filter(w => w > 5).length, inStore, inQueue, lanes, kiosks: kioskCount(S), recentWait, nowWaitLane, nowWaitSelf,
+      sales: done.reduce((a, s) => a + s.spend, 0), fresh, kwh: d.kwh, kw: power(S, d.t).total };
+  }
+
+  /** Run a whole day (5am to midnight) and add an hour-by-hour wait profile. */
+  const cache = new Map();
+  function fullDay(S, dow) {
+    const key = JSON.stringify([S.shoppers, S.selfs, S.extraLane, S.moreSelf, S.markdownH, S.discount, S.rescueNightly, S.doors, S.openM, S.freezerM, S.price, dow]);
+    if (cache.has(key)) return cache.get(key);
+    const d = newDay(S, dow); while (d.t < DAY_END) step(S, d);
+    const st = dayStats(S, d), byHour = Array(24).fill(0), nH = Array(24).fill(0), arrH = Array(24).fill(0);
+    d.sh.forEach(s => { const hq = Math.floor(s.qAt / 60); byHour[hq] += s.sStart - s.qAt; nH[hq]++; arrH[Math.floor(s.arr / 60)]++; });
+    st.waitByHour = byHour.map((w, i) => nH[i] ? w / nH[i] : 0); st.arrByHour = arrH; st.rescueNight = d.rescueNight;
+    st.depts = DEPTS.map(D => ({ k: D.k, n: D.n, ...d.fresh[D.k] }));
+    if (cache.size > 400) cache.clear(); cache.set(key, st); return st;
+  }
+
+  /** A whole week, summed. */
+  function week(S) {
+    const w = { shoppers: 0, waitMin: 0, over5: 0, sales: 0, waste: 0, rescued: 0, reduced: 0, revenue: 0, margin: 0, atRisk: 0, kwh: 0, cost: 0, days: [] };
+    const e = energyDay(S);
+    for (let dow = 0; dow < 7; dow++) { const s = fullDay(S, dow); w.days.push(s);
+      w.shoppers += s.served; w.waitMin += s.waitMin; w.over5 += s.over5; w.sales += s.sales; w.waste += s.fresh.waste; w.rescued += s.fresh.rescued;
+      w.reduced += s.fresh.reduced; w.revenue += s.fresh.revenue; w.margin += s.fresh.margin; w.atRisk += s.fresh.start; }
+    w.kwh = e.kwh * 7; w.cost = e.cost * 7; w.avgWait = w.waitMin / Math.max(1, w.shoppers); return w;
+  }
+
+  /** Refrigeration what-if: fit doors to every open multideck chiller. */
+  function doors(S) {
+    const a = energyDay({ ...S, doors: false }), b = energyDay({ ...S, doors: true });
+    const kwhYear = (a.kwh - b.kwh) * 365, saveYear = kwhYear * S.price, capex = S.openM * S.doorCostM;
+    return { kwhDay: a.kwh - b.kwh, kwhYear, saveYear, capex, payback: capex / Math.max(1, saveYear), before: a, after: b };
+  }
+
+  /** The proof: the proposed changes against the as-is store, per week and per year. */
+  function proof(S) {
+    const a = week({ ...S, ...AS_IS }), b = week({ ...S, ...PROPOSED });
+    const wasteKg = a.waste - b.waste, mealsExtra = (b.rescued - a.rescued) * MEALS_PER_KG, kwh = a.kwh - b.kwh, queueMin = a.waitMin - b.waitMin;
+    const laneHours = PEAK.length * 7, laneCost = laneHours * 32; // extra staffed hours a week at about $32 an hour with on-costs (estimate)
+    return { asIs: a, prop: b, week: { wasteKg, meals: mealsExtra, rescuedKg: b.rescued - a.rescued, kwh, queueMin, energy$: kwh * S.price, margin$: b.margin - a.margin, laneCost },
+      year: { wasteKg: wasteKg * 52, meals: mealsExtra * 52, kwh: kwh * 52, queueMin: queueMin * 52, energy$: kwh * S.price * 52, margin$: (b.margin - a.margin) * 52, laneCost: laneCost * 52 } };
+  }
+
+  // A week's shop for a family of four (two adults, two school-age children). Illustrative.
+  // src "S" = Stats NZ average retail price for September 2025, moved to September 2026 by that food group's annual change
+  // (Stats NZ Selected Price Indexes, Sept 2026: grocery +3.0%, meat +3.2%, fruit and veg −1.8%, milk/cheese/eggs −0.6%, oils and fats −8.1%).
+  // src "E" = estimate.
+  const FPI = { grocery: 0.030, meat: 0.032, fv: -0.018, dairy: -0.006, fats: -0.081 };
+  const BASKET = [
+    { n: "Milk, 2 L", q: 5, p: 4.72, g: "dairy", src: "S" },
+    { n: "Bread, white loaf", q: 5, p: 2.08, g: "grocery", src: "S" },
+    { n: "Eggs, dozen", q: 1, p: 10.14, g: "dairy", src: "S" },
+    { n: "Cheese, 1 kg block", q: 1, p: 12.81, g: "dairy", src: "S" },
+    { n: "Butter, 500 g", q: 1, p: 8.53, g: "fats", src: "S" },
+    { n: "Beef mince, 1 kg", q: 2, p: 23.11, g: "meat", src: "S" },
+    { n: "Chicken thighs, 1 kg", q: 2, p: 14.5, g: "meat", src: "E" },
+    { n: "Sausages, 1 kg", q: 1, p: 12.0, g: "meat", src: "E" },
+    { n: "Frozen fish fillets, 1 kg", q: 1, p: 13.0, g: "meat", src: "E" },
+    { n: "Ham and sandwich fillings", q: 1, p: 9.0, g: "meat", src: "E" },
+    { n: "Bananas, 1 kg", q: 2, p: 3.9, g: "fv", src: "E" },
+    { n: "Apples, 1 kg", q: 2, p: 4.2, g: "fv", src: "E" },
+    { n: "Mandarins or oranges, 1.5 kg", q: 1, p: 6.5, g: "fv", src: "E" },
+    { n: "Potatoes, 4 kg bag", q: 1, p: 8.0, g: "fv", src: "E" },
+    { n: "Carrots and onions, 3 kg", q: 1, p: 8.5, g: "fv", src: "E" },
+    { n: "Tomatoes, cucumber, capsicum", q: 1, p: 11.0, g: "fv", src: "E" },
+    { n: "Seasonal greens", q: 3, p: 3.5, g: "fv", src: "E" },
+    { n: "Frozen vegetables, 1 kg", q: 2, p: 4.5, g: "grocery", src: "E" },
+    { n: "Rice and pasta, 2 kg", q: 1, p: 7.5, g: "grocery", src: "E" },
+    { n: "Cereal and oats", q: 2, p: 6.0, g: "grocery", src: "E" },
+    { n: "Yoghurt, 1 kg", q: 2, p: 6.5, g: "dairy", src: "E" },
+    { n: "Canned tomatoes and beans", q: 6, p: 1.6, g: "grocery", src: "E" },
+    { n: "Flour, sugar, oil, sauces", q: 1, p: 12.0, g: "grocery", src: "E" },
+    { n: "Tea and coffee", q: 1, p: 10.0, g: "grocery", src: "E" },
+    { n: "Lunchbox snacks and spreads", q: 1, p: 16.0, g: "grocery", src: "E" }];
+  function basket() {
+    const rows = BASKET.map(b => { const now = b.src === "S" ? b.p * (1 + FPI[b.g]) : b.p, ago = now / (1 + FPI[b.g]);
+      return { ...b, now: now * b.q, ago: ago * b.q }; });
+    const now = rows.reduce((a, r) => a + r.now, 0), ago = rows.reduce((a, r) => a + r.ago, 0);
+    return { rows, now, ago, change: now / ago - 1 };
+  }
+
+  return { OPEN, CLOSE, DAY_START, DAY_END, DAYS, HOUR, HOUR_WE, hourCurve, DOW, ROTA, PEAK, LANES_BUILT, DEPTS, BASE, PROPOSED, AS_IS, ZONES, MEALS_PER_KG, RESCUE_DAYS, VAN_KG,
+    newDay, step, dayStats, fullDay, week, power, energyDay, doors, proof, basket, lanesOpen, kioskCount };
+})();
+
+</script>
+<script>
+(()=>{
+// ---- vz: small visual-summary kit (HTML bars, 100% stacks, truth chips, table disclosures, one tooltip). No libraries.
+// Every mark carries data-tip (read with textContent, never innerHTML) and the numbers stay in visible labels or the table behind "Show the table".
+const VZ = (() => {
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  // one tooltip for the page: first line bold (the value), the rest plain
+  let tip = null;
+  const showTip = (el, x, y) => { const t = el.getAttribute("data-tip"); if (!t) return; if (!tip) { tip = document.createElement("div"); tip.className = "vz-tip"; tip.setAttribute("aria-hidden", "true"); document.body.appendChild(tip); }
+    tip.textContent = ""; t.split("\n").forEach((line, i) => { const n = document.createElement(i ? "div" : "b"); n.textContent = line; tip.appendChild(n); });
+    if (x == null) { const r = el.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top; }
+    tip.classList.add("on"); const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = clamp(x - w / 2, 6, innerWidth - w - 6) + "px"; tip.style.top = (y - h - 12 < 6 ? y + 18 : y - h - 12) + "px"; };
+  const hideTip = () => tip && tip.classList.remove("on");
+  document.addEventListener("pointermove", e => { const el = e.target.closest && e.target.closest("[data-tip]"); if (el) showTip(el, e.clientX, e.clientY); else hideTip(); }, { passive: true });
+  document.addEventListener("focusin", e => { const el = e.target.closest && e.target.closest("[data-tip]"); if (el) showTip(el); });
+  document.addEventListener("focusout", hideTip); addEventListener("scroll", hideTip, { passive: true });
+  const tipAttr = t => t ? ` data-tip="${esc(t)}" tabindex="0"` : "";
+  // nice scale for a set of values (and zero)
+  const extent = (vals, pad = 0.04) => { let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); if (hi === lo) hi = lo + 1; const span = hi - lo; return [lo - (lo < 0 ? span * pad : 0), hi + (hi > 0 ? span * pad : 0)]; };
+  // rows: [{label, sub, value, text, color, tick, tickTip, tip, cls, thin}] ; o: {lo, hi, lw, aria}
+  function rows(list, o = {}) { const vals = list.flatMap(r => [r.value, r.from, r.from != null ? r.from + r.value : null, r.tick, r.segs ? r.segs.reduce((q, g) => q + g.v, 0) : null].filter(v => v != null && isFinite(v)));
+    const ex = extent(vals), lo = o.lo ?? ex[0], hi = o.hi ?? ex[1], X = v => (clamp(v, lo, hi) - lo) / (hi - lo) * 100, z = X(0);
+    return `<div class="vz-rows" ${o.lw ? `style="--vz-lw:${o.lw}${o.vw ? `;--vz-vw:${o.vw}` : ""}"` : ""} ${o.aria ? `role="group" aria-label="${esc(o.aria)}"` : ""}>` + list.map(r => {
+      // a row may carry its own scale (r.lo, r.hi): used by before-and-after dumbbells whose measures have different units
+      const [rl, rh] = r.hi != null ? [r.lo ?? 0, r.hi] : [lo, hi], Xr = v => (clamp(v, rl, rh) - rl) / (rh - rl) * 100, zr = Xr(0);
+      const c = r.color || ((r.value ?? 0) < 0 ? "var(--vz-down)" : "var(--vz-up)");
+      let marks = "";
+      if (r.segs) { let acc = 0; marks = r.segs.filter(g => g.v > 0).map((g, i, arr) => { const x0 = Xr(acc), x1 = Xr(acc += g.v); return `<i class="vz-b vz-hit ${i < arr.length - 1 ? "mid" : ""}" style="left:${x0}%;width:calc(${x1 - x0}% - ${i < arr.length - 1 ? 2 : 0}px);--c:${g.c}"${tipAttr(g.tip)}></i>`; }).join(""); }
+      else if (r.dumb) { const [v0, v1] = r.dumb, x0 = Xr(v0), x1 = Xr(v1); marks = `<i class="vz-dl" style="left:${Math.min(x0, x1)}%;width:${Math.abs(x1 - x0)}%"></i><i class="vz-dot hollow vz-hit" style="left:${x0}%"${tipAttr(r.tip0)}></i><i class="vz-dot vz-hit" style="left:${x1}%;--c:${c}"${tipAttr(r.tip)}></i>`; }
+      else { const v = r.value ?? 0, f0 = r.from ?? 0, xb = Xr(f0), a = Math.min(Xr(f0 + v), xb), w = Math.abs(Xr(f0 + v) - xb), neg = v < 0;
+        marks = `<i class="vz-b vz-hit ${neg ? "neg" : ""} ${r.thin ? "thin" : ""}" style="left:${a}%;width:${w}%;--c:${c}"${tipAttr(r.tip)}></i>${r.tick != null && isFinite(r.tick) ? `<i class="vz-tk" style="left:${Xr(r.tick)}%"${tipAttr(r.tickTip)}></i>` : ""}`; }
+      return `<div class="vz-row ${r.cls || ""}"><span class="l">${r.label}${r.sub ? `<small>${r.sub}</small>` : ""}</span>
+        <span class="vz-tr ${rl < 0 && !r.dumb ? "zero" : ""} ${r.dumb ? "dumb" : ""}" style="--z:${zr}%">${(r.bands || []).map(b => `<i class="vz-band" style="left:${Xr(b[0])}%;width:${Xr(b[1]) - Xr(b[0])}%"></i>`).join("")}${marks}</span>
+        <span class="v">${r.text ?? ""}</span></div>`; }).join("") + `</div>`; }
+  // monthly (or any ordered) columns: list [{label, segs:[{v, c, tip}], tick, tickTip, top}] ; o: {max, h, aria}
+  function cols(list, o = {}) { const tot = c => c.segs.reduce((a, s) => a + Math.max(0, s.v), 0), max = o.max || Math.max(1e-9, ...list.map(tot), ...list.map(c => c.tick || 0));
+    return `<div class="vz-cols" style="--n:${list.length};--h:${o.h || 96}px" ${o.aria ? `role="group" aria-label="${esc(o.aria)}"` : ""}>` + list.map(c => `<div class="vz-col"><span class="vz-cv">${c.top ?? ""}</span><div class="vz-cb">` +
+      c.segs.filter(s => s.v > 0).map(s => `<i class="vz-cs vz-hit" style="height:calc(${s.v / max * 100}% - 2px);--c:${s.c}"${tipAttr(s.tip)}></i>`).join("") +
+      (c.tick != null ? `<i class="vz-ctk" style="bottom:${Math.min(100, c.tick / max * 100)}%"${tipAttr(c.tickTip)}></i>` : "") + `</div><span class="vz-cl">${c.label}</span></div>`).join("") + `</div>`; }
+  // a 100% (or over-100%) stack per row: rows [{label, sub, segs:[{k, v, label, tip}] , marks:[{v, tip}]}]; keys {k:{n, c, dk}}; o.max (default 1)
+  function stack(list, keys, o = {}) { const max = o.max || Math.max(1, ...list.map(r => r.segs.reduce((a, s) => a + Math.max(0, s.v), 0)));
+    return `<div class="vz-stk" ${o.aria ? `role="group" aria-label="${esc(o.aria)}"` : ""}>` + list.map(r => `<div class="vz-sr"><span class="l">${r.label}${r.sub ? `<small>${r.sub}</small>` : ""}</span><div class="vz-bar100">` +
+      r.segs.filter(s => s.v > 0).map(s => { const K = keys[s.k] || {}; return `<i class="vz-seg vz-hit ${K.dk ? "dk" : ""}" style="flex-basis:calc(${s.v / max * 100}% - 2px);width:calc(${s.v / max * 100}% - 2px);--c:${K.c}"${tipAttr(s.tip)}><span>${esc(s.label ?? "")}</span></i>`; }).join("") +
+      (r.marks || []).map(m => `<i class="vz-mk" style="left:${m.v / max * 100}%"${tipAttr(m.tip)}></i>`).join("") + `</div></div>`).join("") + `</div>`; }
+  // hide in-segment labels that do not fit with padding (never clip them)
+  function fit(root) { (root || document).querySelectorAll(".vz-seg").forEach(s => { const sp = s.firstElementChild; s.classList.remove("nolab"); if (sp && sp.textContent && sp.scrollWidth + 6 > s.clientWidth) s.classList.add("nolab"); }); }
+  let fitT; addEventListener("resize", () => { clearTimeout(fitT); fitT = setTimeout(() => fit(), 120); });
+  const legend = items => `<p class="vz-lg">${items.map(([c, n, kind]) => `<span><i class="${kind || ""}" style="--c:${c}"></i>${esc(n)}</span>`).join("")}</p>`;
+  // truth-label chips with counts
+  const chips = groups => `<div class="vz-chips">${groups.map(g => `<span class="vz-chip" style="--c:${g.c}"><b>${g.n}</b>${esc(g.label)}</span>`).join("")}</div>`;
+  // wrap an existing element in a closed disclosure, once; returns the details element
+  function disclose(el, summary, n) { if (!el) return null; const have = el.closest("details.vz-more"); if (have) return have; const d = document.createElement("details"); d.className = "vz-more";
+    const s = document.createElement("summary"); s.innerHTML = `${esc(summary)}${n ? ` <span class="vz-n">${esc(n)}</span>` : ""}`; d.appendChild(s); el.parentNode.insertBefore(d, el); d.appendChild(el); return d; }
+  // a small inline sparkline (svg); values array, current index marked
+  function spark(vals, o = {}) { const w = o.w || 120, h = o.h || 28, n = vals.length, lo = Math.min(...vals), hi = Math.max(...vals), X = i => 6 + i / Math.max(1, n - 1) * (w - 12), Y = v => h - 6 - (hi === lo ? 0.5 : (v - lo) / (hi - lo)) * (h - 12);
+    const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" "), cur = o.cur ?? n - 1;
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="width:${w}px;height:${h}px;display:inline-block;vertical-align:middle" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--vz0)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(cur)}" cy="${Y(vals[cur])}" r="3.5" fill="${o.c || "var(--vz2)"}" stroke="var(--vz-surface)" stroke-width="2"/></svg>`; }
+  return { esc, rows, cols, stack, fit, legend, chips, disclose, spark, extent, tipAttr };
+})();
+const K=STORE,$=id=>document.getElementById(id),S={...K.BASE};
+const fmt=(n,d=0)=>Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const money=n=>{const a=Math.abs(n),s=n<0?"−":"";return a>=1e6?s+"$"+fmt(a/1e6,2)+"m":a>=1e4?s+"$"+fmt(a/1000,0)+"k":s+"$"+fmt(a)};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim(),col=n=>new THREE.Color(css(n)||"#999");
+const hLabel=h=>{const hh=Math.floor(h)%24,mm=Math.round((h-Math.floor(h))*60);return `${((hh+11)%12)+1}${mm?":"+String(mm).padStart(2,"0"):""}${hh>=12?"pm":"am"}`};
+let dow=4,d=K.newDay(S,dow),speed=3,playing=!matchMedia("(prefers-reduced-motion: reduce)").matches,acc=0;
+
+// ---------------- renderer
+const canvas=$("scene"),box=$("stagebox");
+const LITE=/[?&]lite\b/.test(location.search); // test runs only: cheaper rendering in software GL
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!LITE,alpha:true});renderer.setPixelRatio(LITE?1:Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0,0);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,0.5,600);
+const controls=new THREE.OrbitControls(camera,canvas);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.46;controls.minDistance=8;controls.maxDistance=150;controls.enablePan=false;
+const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.9},o));
+const M={plinth:std(),ground:std(),floor:std(),wall:std(),asphalt:std(),yard:std(),case:std({roughness:.55}),cap:new THREE.MeshBasicMaterial(),line:new THREE.LineBasicMaterial({transparent:true,opacity:.45}),
+  white:std({color:0xF4F1EF,roughness:.6}),steel:std({color:0xAEB4BA,roughness:.35,metalness:.55}),dark:std({color:0x3A3438,roughness:.6}),belt:std({color:0x2E2A2D,roughness:.7}),
+  glass:std({color:0xCFE4EE,transparent:true,opacity:.3,roughness:.08,metalness:.1,depthWrite:false}),door:std({color:0xCFE4EE,transparent:true,opacity:0,roughness:.08,metalness:.1,depthWrite:false}),
+  frame:std({color:0x8C949B,roughness:.4,metalness:.4,transparent:true,opacity:0}),canopy:std({color:0xffffff,emissive:0xEAF4FA,emissiveIntensity:.35,roughness:.5}),
+  person:std({color:0xffffff}),head:std(),staff:std({color:0x492B3E}),trolley:std({color:0xD5DADF,metalness:.05,roughness:.45,transparent:true,opacity:.92}),wood:std({color:0xB89C7E}),
+  oven:std({color:0x6A6266,roughness:.45,metalness:.3}),strip:std({color:0xffffff,emissive:0xFFF1DC,emissiveIntensity:0}),lampHead:std({color:0xffffff,emissive:0xFFE2B8,emissiveIntensity:0}),
+  truck:std({color:0xEDEAE6,roughness:.5}),cab:std({color:0x6E7F8C,roughness:.4}),van:std({color:0xF2F0EC,roughness:.5}),bin:std({color:0x56606A,roughness:.6}),binFill:std({color:0x8A7A6E})};
+const hemi=new THREE.HemisphereLight(0xffffff,0xa99ca4,.6);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff1dd,.65);sun.castShadow=true;sun.shadow.mapSize.set(LITE?1024:2048,LITE?1024:2048);Object.assign(sun.shadow.camera,{left:-44,right:44,top:44,bottom:-44,near:1,far:200});sun.shadow.bias=-0.0005;scene.add(sun,sun.target);
+const storeLight=new THREE.DirectionalLight(0xFFE6C8,0);storeLight.position.set(2,30,6);scene.add(storeLight); // the store's own lights after dark (no shadows)
+function add(m,cast=true,recv=true){m.castShadow=cast;m.receiveShadow=recv;scene.add(m);return m}
+function boxM(w,h,d_,mat,x,y,z,cast=true,parent){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d_),mat);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;(parent||scene).add(m);return m}
+const FY=0.3,FZ=3.9,BZ=-12.2;
+
+// ---------------- diorama: plinth, grass, car park, service yard
+const PC=[0,2];
+add(new THREE.Mesh(new THREE.CylinderGeometry(41,41.4,0.8,110),M.plinth),false,true).position.set(PC[0],-0.41,PC[1]);
+add(new THREE.Mesh(new THREE.CylinderGeometry(40.8,40.8,0.04,110),M.ground),false,true).position.set(PC[0],0,PC[1]);
+scene.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([...Array(121)].map((_,i)=>{const a=i/120*Math.PI*2;return new THREE.Vector3(PC[0]+Math.cos(a)*41.4,-0.81,PC[1]+Math.sin(a)*41.4)})),M.line));
+boxM(56,0.05,15,M.asphalt,0,0.03,24,false);   // car park
+boxM(54,0.05,17,M.yard,0,0.03,-24.5,false);   // service yard and dock
+{const pts=[];for(let i=0;i<13;i++){const x=-24+i*4;pts.push(new THREE.Vector3(x,0.07,19.5),new THREE.Vector3(x,0.07,23),new THREE.Vector3(x,0.07,25.5),new THREE.Vector3(x,0.07,29))}scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),M.line))}
+// parked cars (they come and go with the shoppers in store)
+const CARP=[];for(let i=0;i<12;i++){CARP.push([-22+i*4,21.3,0],[-22+i*4,27.2,Math.PI])}
+const PAINT=[0xF2F2F2,0xBFC3C7,0x6E747A,0x2A2D31,0x2E4E7E,0x9E2B2B,0xD8D2C4,0x3E6B52].map(c=>new THREE.Color(c));
+const carB=new THREE.InstancedMesh(new THREE.BoxGeometry(1.8,0.7,3.9),std({roughness:.35,metalness:.25}),CARP.length),carC=new THREE.InstancedMesh(new THREE.BoxGeometry(1.6,0.55,2.0),std({color:0x26313a,roughness:.15}),CARP.length);
+carB.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(CARP.length*3),3);carB.castShadow=true;scene.add(carB,carC);
+// floor slab
+boxM(48,FY,32,M.floor,0,FY/2,0,false);
+function wall(x1,z1,x2,z2,h=2.8,t=0.25){const L=Math.hypot(x2-x1,z2-z1),m=new THREE.Mesh(new THREE.BoxGeometry(L,h,t),M.wall);m.position.set((x1+x2)/2,FY+h/2,(z1+z2)/2);m.rotation.y=-Math.atan2(z2-z1,x2-x1);add(m);
+  const c=new THREE.Mesh(new THREE.BoxGeometry(L,0.04,t+0.01),M.cap);c.position.copy(m.position);c.position.y=FY+h+0.02;c.rotation.y=m.rotation.y;scene.add(c)}
+wall(-24,-16,12.4,-16);wall(13.8,-16,14.6,-16);wall(18.4,-16,24,-16);   // back wall: staff door at x 13, dock door at 14.6–18.4
+wall(-24,-16,-24,16);wall(24,-16,24,16);
+wall(-24,16,-20.5,16,0.5);wall(-16.5,16,-10.5,16,0.5);wall(22.6,16,24,16,0.5);
+for(const x of [-24,-20.5,-16.5,-10.5,22.6,24])boxM(0.14,2.8,0.14,M.frame.clone(),x,FY+1.4,16,false).material.opacity=1;
+// lamp posts in the car park and the yard
+const LAMPS=[[-14,18.6],[2,18.6],[18,18.6],[0,-30],[-16,-28]];const lampDisc=[];
+LAMPS.forEach(([x,z])=>{boxM(0.12,3.6,0.12,M.dark,x,1.8,z);boxM(0.7,0.14,0.32,M.lampHead,x,3.6,z,false);
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(3.6,40),new THREE.MeshBasicMaterial({color:0xFFE2B8,transparent:true,opacity:0,depthWrite:false}));disc.rotation.x=-Math.PI/2;disc.position.set(x,0.08,z);scene.add(disc);lampDisc.push(disc)});
+
+// ---------------- static products: one instanced mesh for every shelf block
+const PROD=[];const PRODC=[];
+function frameXZ(f,lx,lz){const c=Math.cos(f.rot),s=Math.sin(f.rot);return [f.ox+lx*c+lz*s,f.oz-lx*s+lz*c]}
+function fbox(f,w,h,d_,mat,lx,ly,lz,cast=true){const [x,z]=frameXZ(f,lx,lz);const m=boxM(w,h,d_,mat,x,ly,z,cast);m.rotation.y=f.rot;return m}
+function prod(f,lx,ly,lz,w,h,d_,c){const [x,z]=frameXZ(f,lx,lz);PROD.push([x,ly,z,w,h,d_,f.rot]);PRODC.push(c)}
+// category colours (CSS tokens); index into --cat-1..6
+let CAT=[];
+// gondolas (shelving) running front to back
+const GX=[-6,-2.5,1,4.5,8,11.5],GZ0=-10.5,GZ1=3,GL=GZ1-GZ0,GC=(GZ0+GZ1)/2;const gEnds=[];
+GX.forEach((x,gi)=>{boxM(1.2,0.12,GL,M.case,x,FY+0.06,GC);boxM(0.08,1.9,GL,M.case,x,FY+0.95,GC);
+  [1.25,0.85,0.45].forEach(()=>{});
+  for(const side of [-1,1])for(let lv=0;lv<4;lv++){const y=FY+0.32+lv*0.42;boxM(0.5,0.035,GL,M.case,x+side*0.32,y,GC,false);
+    for(let k=0;k<GL/0.62;k++){const z=GZ0+0.35+k*0.62,hh=0.2+((k*7+lv*3+gi)%4)*0.04;PROD.push([x+side*0.33,y+0.02+hh/2,z,0.36,hh,0.5,0]);PRODC.push({cat:gi,v:((k+lv)%3)})}}
+  for(const z of [GZ0-0.12,GZ1+0.12]){const e=boxM(1.26,2.0,0.22,M.case,x,FY+1.0,z);gEnds.push([e,gi])}});
+// chillers: open multideck cases. Back wall run faces +z; left wall run faces +x.
+const RUNS=[{ox:-22,oz:-15.85,rot:0,n:13,cats:["dairy","dairy","dairy","dairy","dairy","meat","meat","meat","meat","deli","deli","deli","deli"]},{ox:-23.85,oz:3,rot:Math.PI/2,n:6,cats:["salad","salad","salad","salad","salad","salad"]}];
+const UL=2.5,CD=1.05;const doorParts=[],coldSrc=[];
+const CHC={dairy:[0xEAF2F8,0xCADDF0,0xF5F1E6],meat:[0xE7B7B9,0xD99A9E,0xF0CFC6],deli:[0xF5D3BE,0xE8C9A8,0xDDD2EE],salad:[0xB9D9A4,0xCBE7DA,0x9CC48A]};
+RUNS.forEach(R=>{for(let u=0;u<R.n;u++){const lx=u*UL+UL/2,cat=R.cats[u];
+  fbox(R,UL-0.04,0.5,CD,M.case,lx,FY+0.25,CD/2);fbox(R,UL-0.04,2.15,0.12,M.case,lx,FY+1.07,0.06);fbox(R,UL-0.04,0.18,CD*0.7,M.case,lx,FY+2.08,CD*0.35);
+  const cp=fbox(R,UL-0.1,0.04,0.06,M.canopy,lx,FY+1.99,CD*0.7,false);
+  [0.95,1.33,1.7].forEach((y,i)=>{const dep=CD*(0.62-i*0.08);fbox(R,UL-0.1,0.03,dep,M.case,lx,FY+y,dep/2+0.12,false);
+    for(let k=0;k<6;k++)prod(R,u*UL+0.25+k*0.4,FY+y+0.12,dep/2+0.12,0.34,0.2,dep*0.8,{hex:CHC[cat][(k+i+u)%3]})});
+  const resv=(R.rot===0&&(u===7||u===11));   // meat and deli "reduced to clear" spaces on the deck
+  if(!resv)for(let k=0;k<6;k++)prod(R,u*UL+0.25+k*0.4,FY+0.6,0.6,0.34,0.18,0.7,{hex:CHC[cat][(k+u)%3]});
+  // doors (fade in when fitted)
+  const g=fbox(R,UL-0.12,1.7,0.04,M.door,lx,FY+1.18,CD+0.02,false);doorParts.push(g);
+  for(let k=0;k<4;k++)doorParts.push(fbox(R,0.05,1.75,0.06,M.frame,u*UL+0.06+k*(UL-0.12)/3,FY+1.18,CD+0.03,false));
+  coldSrc.push({R,x0:u*UL,x1:(u+1)*UL});}
+  const e1=fbox(R,0.1,2.2,CD+0.1,M.case,0,FY+1.1,CD/2),e2=fbox(R,0.1,2.2,CD+0.1,M.case,R.n*UL,FY+1.1,CD/2)});
+// freezers with glass doors on the right wall (faces −x)
+const FR={ox:23.85,oz:-3,rot:-Math.PI/2};
+for(let u=0;u<4;u++){const lx=-u*2.2-1.1;fbox(FR,2.16,2.2,0.95,M.case,lx,FY+1.1,0.48);fbox(FR,2.1,1.85,0.04,M.glass,lx,FY+1.15,0.97,false);
+  for(let lv=0;lv<4;lv++)for(let k=0;k<5;k++)prod(FR,lx-0.85+k*0.42,FY+0.42+lv*0.42,0.85,0.34,0.26,0.1,{hex:[0xDDE9F2,0xCADDF0,0xE8E2EE][(k+lv+u)%3]})}
+// chest freezers (ice cream) at the front left
+for(let i=0;i<2;i++){boxM(4,0.85,1.1,M.case,-14+i*4.6,FY+0.43,8.6);boxM(3.9,0.03,1.0,M.glass,-14+i*4.6,FY+0.88,8.6,false)}
+// produce bins
+const BINS=[];for(const x of [-19.5,-15.5,-11.5])for(const z of [-8.5,-4.5,-0.5])BINS.push([x,z]);
+const PRODUCE=[0x9CC48A,0xD98A6A,0xE8B86B,0xB9D9A4,0xC97B84,0x8FB07A,0xE0A37A,0xA9C77F,0xD9B38C];
+BINS.forEach(([x,z],i)=>{boxM(2.6,0.75,1.4,M.wood,x,FY+0.38,z);for(let a=0;a<6;a++)for(let b=0;b<3;b++){const h=0.1+((a+b+i)%3)*0.05;PROD.push([x-1.05+a*0.42,FY+0.8+h/2,z-0.42+b*0.42,0.36,h,0.36,0]);PRODC.push({hex:PRODUCE[(i+(a>2?1:0))%PRODUCE.length]})}});
+// bakery: ovens in the corner, bread tables
+for(let i=0;i<3;i++){boxM(1.0,1.9,1.1,M.oven,20.6+i*1.1,FY+0.95,-15.2);boxM(0.8,0.6,0.04,M.dark,20.6+i*1.1,FY+1.3,-14.63,false)}
+const ovenGlow=[0,1,2].map(i=>boxM(0.7,0.12,0.05,new THREE.MeshBasicMaterial({color:0xE0894A}),20.6+i*1.1,FY+1.65,-14.6,false));
+boxM(3.2,0.9,0.9,M.white,16.6,FY+0.45,-14.9);
+for(const x of [15.5,19.5]){boxM(2.6,0.85,1.2,M.wood,x,FY+0.43,-10);for(let a=0;a<6;a++)for(let b=0;b<2;b++){PROD.push([x-1.05+a*0.42,FY+0.95,-10.3+b*0.6,0.34,0.18,0.5,0]);PRODC.push({hex:[0xD9A877,0xC88F5E,0xE8C9A0][(a+b)%3]})}}
+// deli counter (glass) with staff behind
+boxM(8,1.0,1.0,M.case,18,FY+0.5,-5.5);boxM(7.9,0.5,0.9,M.glass,18,FY+1.25,-5.45,false);
+for(let a=0;a<16;a++){PROD.push([14.4+a*0.48,FY+1.06,-5.5,0.38,0.12,0.6,0]);PRODC.push({hex:[0xF5D3BE,0xE7B7B9,0xDDD2EE,0xE8D9A8][a%4]})}
+boxM(8,1.9,0.5,M.case,18,FY+0.95,-7.6);
+// staffed checkouts: 8 lanes. Customers walk +z through the lane.
+const LANEX=[...Array(8)].map((_,i)=>-8.6+i*2.6);
+LANEX.forEach(x=>{boxM(0.75,0.9,3.2,M.case,x+0.8,FY+0.45,10.1);boxM(0.5,0.04,2.4,M.belt,x+0.8,FY+0.92,9.8,false);boxM(0.5,0.35,0.4,M.dark,x+0.8,FY+1.1,11.2);boxM(0.06,1.6,0.06,M.dark,x+0.8,FY+1.7,8.6,false)});
+const laneLamp=new THREE.InstancedMesh(new THREE.BoxGeometry(0.34,0.26,0.34),new THREE.MeshBasicMaterial({color:0xffffff}),8);laneLamp.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(24),3);scene.add(laneLamp);
+// self-checkout kiosks: 10 spots, 6 or 8 in use
+const KIOSK=[];for(let r=0;r<2;r++)for(let c=0;c<5;c++)KIOSK.push([14.4+c*1.8,8.6+r*3.0]);
+const kioskOrder=[0,1,2,5,6,7,3,8,4,9];  // the extra two appear at the ends
+const kiosks=new THREE.InstancedMesh(new THREE.BoxGeometry(0.7,1.25,0.55),M.white,10),kScreens=new THREE.InstancedMesh(new THREE.BoxGeometry(0.5,0.34,0.04),new THREE.MeshBasicMaterial({color:0x3F7E9C}),10);kiosks.castShadow=true;scene.add(kiosks,kScreens);
+// short-dated stock: one block per few kg, on its own display in each department
+const DEPTK=["produce","bakery","meat","deli"];
+const RACK={produce:{x:-15.5,z:2.4,y:FY+0.8,unit:8,cols:10,rows:2,base:true},bakery:{x:17.5,z:-8.3,y:FY+0.8,unit:4,cols:10,rows:2,base:true},meat:{x:-4.5,z:-15.3,y:FY+0.55,unit:3,cols:8,rows:2,base:false},deli:{x:5.5,z:-15.3,y:FY+0.55,unit:2,cols:8,rows:2,base:false}};
+Object.values(RACK).forEach(r=>{if(r.base){boxM(r.cols*0.3+0.3,0.75,r.rows*0.3+0.4,M.white,r.x,FY+0.38,r.z)}});
+const MAXR=4*48,rb=new THREE.InstancedMesh(new THREE.BoxGeometry(0.26,0.2,0.26),std({roughness:.6}),MAXR);rb.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXR*3),3);rb.castShadow=true;scene.add(rb);
+// dock: truck, rescue van, waste bin
+const truck=new THREE.Group();{const tr=new THREE.Mesh(new THREE.BoxGeometry(2.5,2.9,7.4),M.truck);tr.position.set(0,1.95,-3.7);const cb=new THREE.Mesh(new THREE.BoxGeometry(2.4,2.2,2.2),M.cab);cb.position.set(0,1.5,-8.6);
+  const st=new THREE.Mesh(new THREE.BoxGeometry(2.52,0.25,7.42),std({color:0x9CC48A}));st.position.set(0,1.0,-3.7);truck.add(tr,cb,st);
+  [[-1.1,-1.2],[1.1,-1.2],[-1.1,-6],[1.1,-6],[-1.1,-8.6],[1.1,-8.6]].forEach(([x,z])=>{const w=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.3,14),M.dark);w.rotation.z=Math.PI/2;w.position.set(x,.45,z);truck.add(w)})}
+truck.traverse(o=>{o.castShadow=true;o.receiveShadow=true});scene.add(truck);
+const van=new THREE.Group();{const b=new THREE.Mesh(new THREE.BoxGeometry(4.8,1.9,2.0),M.van);b.position.set(0,1.3,0);const c=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.9,1.9),M.cab);c.position.set(2.2,1.5,0);
+  const s=new THREE.Mesh(new THREE.BoxGeometry(4.82,0.22,2.02),std({color:0x3F7A55}));s.position.set(0,1.0,0);van.add(b,c,s);
+  [[-1.6,-0.95],[1.6,-0.95],[-1.6,0.95],[1.6,0.95]].forEach(([x,z])=>{const w=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.25,14),M.dark);w.rotation.x=Math.PI/2;w.position.set(x,.38,z);van.add(w)})}
+van.traverse(o=>{o.castShadow=true});scene.add(van);
+const BIN=[21.5,-19.2];boxM(2.6,1.3,1.6,M.bin,BIN[0],0.65,BIN[1]);const binFill=boxM(2.4,1,1.4,M.binFill,BIN[0],1.3,BIN[1],false);
+const MAXB=48,cr=new THREE.InstancedMesh(new THREE.BoxGeometry(0.6,0.4,0.45),std({roughness:.6}),MAXB);cr.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXB*3),3);cr.castShadow=true;scene.add(cr);
+// the instanced product blocks
+const prodMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),std({roughness:.7}),PROD.length);prodMesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(PROD.length*3),3);prodMesh.castShadow=true;prodMesh.receiveShadow=true;scene.add(prodMesh);
+const dm=new THREE.Object3D();PROD.forEach(([x,y,z,w,h,d_,r],i)=>{dm.position.set(x,y,z);dm.rotation.set(0,r,0);dm.scale.set(w,h,d_);dm.updateMatrix();prodMesh.setMatrixAt(i,dm.matrix)});
+
+// ---------------- people
+const MAXP=260,pb=new THREE.InstancedMesh(new THREE.CylinderGeometry(.2,.25,1.0,10),M.person,MAXP),ph=new THREE.InstancedMesh(new THREE.SphereGeometry(.19,12,10),M.head,MAXP);
+pb.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXP*3),3);pb.castShadow=true;scene.add(pb,ph);
+const tro=new THREE.InstancedMesh(new THREE.BoxGeometry(0.56,0.55,0.85),M.trolley,MAXP);tro.castShadow=true;scene.add(tro);
+const MAXS=26,sb=new THREE.InstancedMesh(new THREE.CylinderGeometry(.2,.25,1.05,10),M.staff,MAXS),sh=new THREE.InstancedMesh(new THREE.SphereGeometry(.19,12,10),M.head,MAXS);sb.castShadow=true;scene.add(sb,sh);
+const CLOTHES=[0x8A6F7A,0x5E7C93,0x7E8F6E,0xB59A84,0x5A5458,0xA8786A,0x6F7FA6,0xC9B9A8,0x7A6A8E,0x4F6B63].map(c=>new THREE.Color(c));
+
+// ---------------- cold air: particles leaking out of the open cases
+const PN=1200,pGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(PN*3),pCol=new Float32Array(PN*3),pA=new Float32Array(PN),pSz=new Float32Array(PN),pVel=new Float32Array(PN*3),pLife=new Float32Array(PN),pMax=new Float32Array(PN).fill(1);
+pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));pGeo.setAttribute("pcolor",new THREE.BufferAttribute(pCol,3));pGeo.setAttribute("alpha",new THREE.BufferAttribute(pA,1));pGeo.setAttribute("size",new THREE.BufferAttribute(pSz,1));
+const pMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{scale:{value:300}},
+  vertexShader:"attribute vec3 pcolor;attribute float alpha;attribute float size;varying vec3 vC;varying float vA;uniform float scale;void main(){vC=pcolor;vA=alpha;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=size*scale/-mv.z;gl_Position=projectionMatrix*mv;}",
+  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;gl_FragColor=vec4(vC,vA*smoothstep(0.5,0.1,r));}"});
+const points=new THREE.Points(pGeo,pMat);points.frustumCulled=false;scene.add(points);
+let pi=0;function emit(x,y,z,vx,vy,vz,life,c,size){const i=pi;pi=(pi+1)%PN;pPos.set([x,y,z],i*3);pVel.set([vx,vy,vz],i*3);pCol.set([c.r,c.g,c.b],i*3);pLife[i]=life;pMax[i]=life;pSz[i]=size}
+let coldAcc=0,doorK=0;
+function particles(dt){const rate=(1-doorK)*110+doorK*5;coldAcc+=rate*dt;
+  while(coldAcc>=1){coldAcc-=1;const s=coldSrc[Math.floor(Math.random()*coldSrc.length)];const lx=s.x0+0.1+Math.random()*(UL-0.2),y=FY+0.5+Math.random()*1.4;
+    const [x,z]=frameXZ(s.R,lx,CD+0.08),c=Math.cos(s.R.rot),sn=Math.sin(s.R.rot),out=0.35+Math.random()*0.3;
+    emit(x,y,z,sn*out+(Math.random()-.5)*.12,-0.3-Math.random()*.15,c*out+(Math.random()-.5)*.12,3.4,C.cold,0.42)}
+  for(let i=0;i<PN;i++){if(pLife[i]<=0){pA[i]=0;continue}pLife[i]-=dt;const t=1-pLife[i]/pMax[i];
+    pPos[i*3]+=pVel[i*3]*dt;pPos[i*3+1]=Math.max(FY+0.08,pPos[i*3+1]+pVel[i*3+1]*dt);pPos[i*3+2]+=pVel[i*3+2]*dt;
+    if(pPos[i*3+1]<=FY+0.1){pVel[i*3]*=1.01;pVel[i*3+2]*=1.01}pA[i]=Math.min(1,t*5)*Math.min(1,(1-t)*2.5)*0.75}
+  pGeo.attributes.position.needsUpdate=true;pGeo.attributes.pcolor.needsUpdate=true;pGeo.attributes.alpha.needsUpdate=true;pGeo.attributes.size.needsUpdate=true}
+
+// ---------------- theme
+let C={};
+function applyTheme(){M.plinth.color=col("--scene-plinth");M.ground.color=col("--scene-ground");M.floor.color=col("--scene-floor");M.wall.color=col("--scene-wall");M.asphalt.color=col("--scene-asphalt");M.yard.color=col("--scene-yard");
+  M.case.color=col("--scene-case");M.cap.color=col("--scene-edge");M.line.color=col("--scene-edge");M.head.color=col("--scene-person");
+  CAT=[1,2,3,4,5,6].map(i=>col("--cat-"+i));
+  C={live:col("--live"),good:col("--good"),cool:col("--cool"),cold:col("--coldair"),alert:col("--alert"),off:new THREE.Color(0x8E8689),waste:col("--rose"),
+    sky:["--sky-day-1","--sky-day-2","--sky-dusk-1","--sky-dusk-2","--sky-night-1","--sky-night-2"].map(col),dept:{produce:col("--cat-6"),bakery:col("--cat-5"),meat:col("--cat-1"),deli:col("--cat-4")}};
+  const dark=isDark();const tc=new THREE.Color();
+  PRODC.forEach((p,i)=>{if(p.cat!=null){tc.copy(CAT[p.cat]);if(p.v===1)tc.offsetHSL(0,0,dark?0.06:-0.06);else if(p.v===2)tc.offsetHSL(0,0,dark?-0.05:0.04)}else{tc.setHex(p.hex);if(dark)tc.multiplyScalar(0.62)}prodMesh.setColorAt(i,tc)});prodMesh.instanceColor.needsUpdate=true;
+  gEnds.forEach(([e,gi])=>{e.material=e.material===M.case?std({roughness:.6}):e.material;e.material.color.copy(CAT[gi])});
+  CARP.forEach((_,i)=>carB.setColorAt(i,PAINT[(i*5)%PAINT.length]));carB.instanceColor.needsUpdate=true;
+  skyKey="";charts()}
+const isDark=()=>document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
+let skyKey="";
+function sky(h){const up=Math.sin(Math.PI*(h-6.4)/13.4);const dusk=Math.max(0,1-Math.abs(up-0.08)/0.16)*(up>-0.1?1:0);const day=Math.max(0,Math.min(1,up*3));
+  const top=C.sky[4].clone().lerp(C.sky[0],day).lerp(C.sky[2],dusk*0.4),bot=C.sky[5].clone().lerp(C.sky[1],day).lerp(C.sky[3],dusk*0.45);
+  const k=top.getHexString()+bot.getHexString();if(k!==skyKey){skyKey=k;box.style.background=`linear-gradient(180deg,#${top.getHexString()},#${bot.getHexString()})`}return {day,up}}
+
+// ---------------- shopper routes (the model decides who visits which zones; the page decides where those zones are)
+const CONN=[-21.9,-17.5,-13.5,-9.6,-7.9,-4.25,-0.75,2.75,6.25,9.75,12.8],AISLE=[-7.9,-4.25,-0.75,2.75,6.25,9.75];
+const ORDER=["produce","dairy","meat","a1","a2","a3","a4","a5","a6","bakery","deli","freezer"];
+const hrand=seed=>{let s=(seed*2246822519+0x9E3779B9)>>>0||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return((s>>>0)%1e6)/1e6}};
+function route(P,a,b){if(Math.abs(a.z-b.z)<0.01){P.push({x:b.x,z:b.z});return}
+  let c=CONN[0],best=1e9;CONN.forEach(x=>{const v=Math.abs(a.x-x)+Math.abs(b.x-x);if(v<best){best=v;c=x}});P.push({x:c,z:a.z},{x:c,z:b.z},{x:b.x,z:b.z})}
+function visit(zn,cur,r){const F=(x)=>({x,z:FZ}),B=(x)=>({x,z:BZ});
+  if(zn==="produce"){const px=[-21.9,-17.5,-13.5,-9.6][Math.floor(r()*4)];return{enter:F(px),browse:[{x:px,z:-9.5+r()*10,stop:1}],exit:F(px)}}
+  if(zn==="dairy"){const x=-20.5+r()*9.5;return{enter:B(x),browse:[{x,z:-13.6,stop:1}],exit:B(x)}}
+  if(zn==="meat"){const x=-9.5+r()*9;return{enter:B(x),browse:[{x,z:-13.6,stop:1}],exit:B(x)}}
+  if(zn[0]==="a"){const ax=AISLE[+zn[1]-1],zm=-9+r()*10;return cur.z>-4?{enter:F(ax),browse:[{x:ax,z:zm,stop:1}],exit:B(ax)}:{enter:B(ax),browse:[{x:ax,z:zm,stop:1}],exit:F(ax)}}
+  if(zn==="bakery")return{enter:B(12.8),browse:[{x:15.5+r()*0.6,z:-11.4,stop:1},{x:19.5,z:-11.4,stop:1}],exit:B(12.8)};
+  if(zn==="deli"){const x=15+r()*6;return{enter:F(12.8),browse:[{x:12.8,z:-4.2},{x,z:-4.3,stop:1},{x:12.8,z:-4.2}],exit:F(12.8)}}
+  const fz=-2.5+r()*5;return{enter:F(19.8),browse:[{x:21.9,z:fz,stop:1}],exit:F(19.8)}}
+const paths=new Map();
+function pathFor(s){let P=paths.get(s.id);if(P)return P;const r=hrand(s.id*31+d.dow*7+1);
+  const pts=[{x:-18.6,z:21},{x:-18.6,z:14}];let cur={x:-18.6,z:FZ};pts.push({...cur});
+  ORDER.filter(z=>s.zones.includes(z)).forEach(zn=>{const v=visit(zn,cur,r);route(pts,cur,v.enter);v.browse.forEach(b=>pts.push({...b}));pts.push({...v.exit});cur=v.exit});
+  if(cur.z<0)route(pts,cur,{x:Math.max(-7.9,Math.min(9.75,cur.x)),z:FZ});
+  let L=0;for(let i=1;i<pts.length;i++)L+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);
+  const stops=pts.filter(p=>p.stop).length,walkT=Math.min(s.dwell*0.65,L/40),stopT=stops?(s.dwell-walkT)/stops:0,k=stops?walkT/L:s.dwell/L;
+  let t=0;pts[0].t=0;for(let i=1;i<pts.length;i++){t+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z)*k;pts[i].t=t;if(pts[i].stop){pts[i].t2=t+stopT;t+=stopT}else pts[i].t2=t}
+  P={pts,col:CLOTHES[(s.id*7)%CLOTHES.length]};paths.set(s.id,P);return P}
+function onPath(pts,tm,o){for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];if(tm<=b.t){const u=(tm-a.t2)/Math.max(1e-6,b.t-a.t2);o.x=a.x+(b.x-a.x)*u;o.z=a.z+(b.z-a.z)*u;return}if(tm<=b.t2){o.x=b.x;o.z=b.z;return}}
+  const e=pts[pts.length-1];o.x=e.x;o.z=e.z}
+const vis=new Map(),tmp={x:0,z:0};
+function laneSlot(i,k,n){const sp=Math.min(0.9,5.4/Math.max(1,n));return{x:LANEX[i],z:8.4-k*sp}}
+function selfSlot(k){const row=Math.floor(k/9),c=k%9;return{x:13.6+c*0.95,z:6.5-row*0.9}}
+function kioskSpot(i){const [x,z]=KIOSK[kioskOrder[i]];return{x,z:z-0.85}}
+
+// ---------------- per-frame scene sync
+let simT=0;
+function syncPeople(dt){const qs=new Map();
+  d.lanes.forEach((L,i)=>L.q.forEach((id,k)=>qs.set(id,laneSlot(i,k,L.q.length))));d.selfQ.forEach((id,k)=>qs.set(id,selfSlot(k)));
+  let n=0,staffN=0;const kk=Math.min(1,dt*5);
+  for(let i=0;i<d.next&&n<MAXP;i++){const s=d.sh[i];
+    if(s.phase==="gone"&&simT-s.sEnd>3){vis.delete(s.id);continue}
+    const P=pathFor(s);let v=vis.get(s.id);if(!v){onPath(P.pts,Math.max(0,simT-s.arr),tmp);v={x:tmp.x,z:tmp.z,a:Math.PI,ox:tmp.x,oz:tmp.z};vis.set(s.id,v)}
+    let waitLong=false;
+    if(s.phase==="shop"){onPath(P.pts,simT-s.arr,tmp);v.x=tmp.x;v.z=tmp.z}
+    else if(s.phase==="queue"){const g=qs.get(s.id)||{x:v.x,z:v.z};v.x+=(g.x-v.x)*kk;v.z+=(g.z-v.z)*kk;waitLong=simT-s.qAt>3}
+    else if(s.phase==="serve"){const g=s.self?kioskSpot(Math.max(0,s.lane)):{x:LANEX[Math.max(0,s.lane)],z:9.6};v.x+=(g.x-v.x)*kk;v.z+=(g.z-v.z)*kk}
+    else{const u=(simT-s.sEnd)/3,gx=v.x,gz=u<0.5?14.6:20;v.z+=(gz-v.z)*Math.min(1,dt*2.2);v.x+=(gx-v.x)*kk}
+    const vx=v.x-v.ox,vz=v.z-v.oz;if(vx*vx+vz*vz>1e-5){const a=Math.atan2(vx,vz);let da=a-v.a;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;v.a+=da*Math.min(1,dt*8)}
+    if(s.phase==="queue"||s.phase==="serve")v.a+=(0-v.a)*Math.min(1,dt*4);
+    v.ox=v.x;v.oz=v.z;
+    dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.position.set(v.x,FY+0.5,v.z);dm.updateMatrix();pb.setMatrixAt(n,dm.matrix);pb.setColorAt(n,waitLong?C.live:P.col);
+    dm.position.set(v.x,FY+1.19,v.z);dm.updateMatrix();ph.setMatrixAt(n,dm.matrix);
+    if(s.trolley){dm.position.set(v.x+Math.sin(v.a)*0.72,FY+0.4,v.z+Math.cos(v.a)*0.72);dm.rotation.set(0,v.a,0);dm.updateMatrix();tro.setMatrixAt(n,dm.matrix)}
+    else{dm.scale.set(0,0,0);dm.updateMatrix();tro.setMatrixAt(n,dm.matrix)}
+    n++}
+  dm.rotation.set(0,0,0);dm.scale.set(0,0,0);dm.updateMatrix();for(let i=n;i<MAXP;i++){pb.setMatrixAt(i,dm.matrix);ph.setMatrixAt(i,dm.matrix);tro.setMatrixAt(i,dm.matrix)}
+  pb.instanceMatrix.needsUpdate=true;ph.instanceMatrix.needsUpdate=true;tro.instanceMatrix.needsUpdate=true;pb.instanceColor.needsUpdate=true;
+  // staff
+  const h=simT/60,open=h>=7&&h<22.4,lanesOpen=K.lanesOpen(S,Math.floor(h)%24,dow);const SP=[];
+  d.lanes.forEach((L,i)=>{if(i<lanesOpen||L.cur>=0||L.q.length)SP.push([LANEX[i]+1.4,10.6])});
+  if(open)SP.push([18.2,6.8]);
+  if(h>=5&&h<14){SP.push([20.6+Math.sin(simT*0.21)*1.2,-13.9],[15.5+Math.sin(simT*0.13)*1.4,-8.9])}
+  if(h>=8&&h<20)SP.push([16+Math.sin(simT*0.17)*2,-6.6],[20+Math.sin(simT*0.11+1)*1.4,-6.6]);
+  const mh=S.markdownH;if(h>=mh&&h<mh+0.75){const u=(h-mh)/0.75;const route=[[-15.5,3.3],[-4.5,-13.6],[5.5,-13.6],[17.5,-7.3]];const seg=Math.min(3,Math.floor(u*4)),f=u*4-seg,a=route[seg],b=route[Math.min(3,seg+1)];SP.push([a[0]+(b[0]-a[0])*Math.min(1,f*1.6),a[1]+(b[1]-a[1])*Math.min(1,f*1.6)])}
+  if(h>=22.15&&h<22.75)SP.push([13,-15.2],[13,-17.2]);
+  if((h>=5.5&&h<6.7)||(h>=13.5&&h<14.25))SP.push([16.5,-17.5],[16.5,-13.6]);
+  if(h>=22.5||h<6.9){for(let i=0;i<3;i++)SP.push([AISLE[i*2+1],-8+Math.sin(simT*0.05+i*2)*6])}
+  for(let i=0;i<MAXS;i++){const p=SP[i];dm.rotation.set(0,0,0);dm.scale.setScalar(p?1:0);dm.position.set(p?p[0]:0,FY+0.53,p?p[1]:0);dm.updateMatrix();sb.setMatrixAt(i,dm.matrix);dm.position.y=FY+1.25;dm.updateMatrix();sh.setMatrixAt(i,dm.matrix)}
+  sb.instanceMatrix.needsUpdate=true;sh.instanceMatrix.needsUpdate=true;
+  // lane lamps and kiosks
+  for(let i=0;i<8;i++){dm.scale.set(1,1,1);dm.position.set(LANEX[i]+0.8,FY+2.55,8.6);dm.updateMatrix();laneLamp.setMatrixAt(i,dm.matrix);laneLamp.setColorAt(i,i<lanesOpen&&open?C.good:C.off)}
+  laneLamp.instanceMatrix.needsUpdate=true;laneLamp.instanceColor.needsUpdate=true;
+  const kn=K.kioskCount(S);for(let i=0;i<10;i++){const [x,z]=KIOSK[kioskOrder[i]];const on=i<kn;dm.scale.setScalar(on?1:0);dm.position.set(x,FY+0.63,z);dm.updateMatrix();kiosks.setMatrixAt(i,dm.matrix);dm.position.set(x,FY+1.15,z-0.29);dm.updateMatrix();kScreens.setMatrixAt(i,dm.matrix)}
+  kiosks.instanceMatrix.needsUpdate=true;kScreens.instanceMatrix.needsUpdate=true;
+  // parked cars follow how many people are in the store
+  const inside=d.sh.filter(s=>s.phase==="shop"||s.phase==="queue"||s.phase==="serve").length,cars=Math.min(CARP.length,Math.round(inside*0.32));
+  CARP.forEach(([x,z,r],i)=>{const on=((i*7)%CARP.length)<cars;dm.rotation.set(0,r,0);dm.scale.setScalar(on?1:0);dm.position.set(x,0.45,z);dm.updateMatrix();carB.setMatrixAt(i,dm.matrix);dm.position.set(x,1.05,z+(r?0.2:-0.2));dm.updateMatrix();carC.setMatrixAt(i,dm.matrix)});
+  carB.instanceMatrix.needsUpdate=true;carC.instanceMatrix.needsUpdate=true}
+function syncFresh(){const h=simT/60,reduced=h>=S.markdownH&&h<K.CLOSE/60+0.2;let n=0;
+  DEPTK.forEach(k=>{const r=RACK[k],f=d.fresh[k],cnt=Math.min(r.cols*r.rows*2,Math.ceil(f.stock/r.unit));const per=r.cols*r.rows;
+    for(let i=0;i<cnt;i++){const layer=Math.floor(i/per),j=i%per,c=j%r.cols,rr=Math.floor(j/r.cols);
+      dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.position.set(r.x-(r.cols-1)*0.15+c*0.3,r.y+0.1+layer*0.21,r.z-(r.rows-1)*0.15+rr*0.3);dm.updateMatrix();rb.setMatrixAt(n,dm.matrix);rb.setColorAt(n,reduced?C.live:C.dept[k]);n++}});
+  dm.scale.set(0,0,0);dm.updateMatrix();for(let i=n;i<MAXR;i++)rb.setMatrixAt(i,dm.matrix);rb.instanceMatrix.needsUpdate=true;rb.instanceColor.needsUpdate=true}
+// dock: deliveries, the rescue van and the waste bin
+function syncDock(){const h=simT/60;
+  const tIn=(a,b)=>{if(h<a-0.2||h>b+0.2)return null;return h<a?(a-h)/0.2:h>b?(h-b)/0.2:0};
+  let k=tIn(5.5,6.7);if(k==null)k=tIn(13.5,14.25);truck.visible=k!=null;if(k!=null)truck.position.set(16.5+k*22,0,-19.6-k*2);
+  const night=d.rescueNight,vk=night?tIn(22.05,22.8):null;van.visible=vk!=null;if(vk!=null)van.position.set(7.5-vk*30,0,-21);
+  // pallets in from the truck, crates out at close
+  let n=0;const put=(x,y,z,c,s=1)=>{if(n>=MAXB)return;dm.rotation.set(0,0,0);dm.scale.set(s,s,s);dm.position.set(x,y,z);dm.updateMatrix();cr.setMatrixAt(n,dm.matrix);cr.setColorAt(n,c);n++};
+  const del=(h>=5.5&&h<6.7)||(h>=13.5&&h<14.25);
+  if(del){for(let i=0;i<3;i++){const u=((simT*0.12+i/3)%1);const z=-19.4+u*6.2;put(16.5,0.75+(z>-16?FY:0),z,C.dept[DEPTK[i%4]],1.6)}}
+  const fs=K.DEPTS.reduce((a,D)=>({resc:a.resc+d.fresh[D.k].rescued,waste:a.waste+d.fresh[D.k].waste}),{resc:0,waste:0});
+  if(h>=22.17&&h<22.75){const nr=Math.min(18,Math.round(fs.resc/12)),nw=Math.min(18,Math.round(fs.waste/12)),u0=(h-22.17)/0.58;
+    for(let i=0;i<nr+nw;i++){const u=Math.max(0,Math.min(1,u0*1.6-i/(nr+nw)*0.6));if(u<=0||u>=1)continue;const toVan=i%2===0?i/2<nr:i/2>=nw;const tgt=toVan&&nr?[9.2,-21]:[BIN[0],BIN[1]];
+      const p=u<0.3?[13,-14.8+u/0.3*-2]:[13+(tgt[0]-13)*(u-0.3)/0.7,-16.8+(tgt[1]+16.8)*(u-0.3)/0.7];put(p[0],0.5,p[1],toVan&&nr?C.good:C.waste)}}
+  dm.scale.set(0,0,0);dm.updateMatrix();for(let i=n;i<MAXB;i++)cr.setMatrixAt(i,dm.matrix);cr.instanceMatrix.needsUpdate=true;cr.instanceColor.needsUpdate=true;
+  const fill=h>=22.4?Math.min(1,fs.waste/400):0.05;binFill.scale.y=Math.max(0.02,fill);binFill.position.y=0.15+fill*0.5;
+  ovenGlow.forEach(g=>g.visible=h>=5&&h<14)}
+
+// ---------------- light
+function syncLight(dt){const h=(simT/60)%24,{day,up}=sky(h);const a=(h-6.4)/13.4*Math.PI;
+  sun.position.set(-Math.cos(a)*40,6+44*Math.max(0.05,up),26);sun.intensity=0.08+0.5*day;hemi.intensity=0.3+0.24*day;hemi.color.setRGB(1,1,1).lerp(new THREE.Color(0x8a8fb8),1-day);
+  const storeOn=h>=5&&h<23.3,lit=storeOn?1:0.25,dark=1-day;
+  // store lights: a warm glow on the floor and fittings when the store is lit and it is dark outside
+  storeLight.intensity+=((storeOn?0.62:0.15)*dark-storeLight.intensity)*Math.min(1,dt*3);const glow=(storeOn?0.1:0.04)*dark;M.floor.emissive.setHex(0xFFD9A8);M.floor.emissiveIntensity+=(glow-M.floor.emissiveIntensity)*Math.min(1,dt*3);M.case.emissive.setHex(0xFFE6C4);M.case.emissiveIntensity=M.floor.emissiveIntensity*0.55;
+  M.van.emissive.setHex(0xFFE2B8);M.van.emissiveIntensity=0.25*dark;M.truck.emissive.setHex(0xFFE2B8);M.truck.emissiveIntensity=0.2*dark;
+  M.canopy.emissiveIntensity=0.35+0.5*dark;
+  M.lampHead.emissiveIntensity=dark>0.4?1:0;lampDisc.forEach(x=>x.material.opacity=dark>0.4?0.22*(dark-0.4)/0.6+0.04:0);
+  doorK+=((S.doors?1:0)-doorK)*Math.min(1,dt*2.5);M.door.opacity=doorK*0.34;M.frame.opacity=doorK;doorParts.forEach(p=>p.visible=doorK>0.02)}
+
+// ---------------- labels over the 3D
+const TAGS=[
+  {id:"chk",p:[1,3.4,10.2]},{id:"self",p:[18.2,3.0,10]},{id:"veg",p:[-15.5,2.6,2.4]},{id:"bak",p:[17.5,2.7,-8.3]},
+  {id:"chill",p:[-12,3.6,-15.2]},{id:"meat",p:[-4.5,2.8,-14.6]},{id:"deli",p:[5.5,2.8,-14.6]},{id:"frz",p:[22.6,3.2,-7.4]},{id:"dock",p:[16,4.4,-21]},{id:"bin",p:[21.5,2.4,-19.2]},{id:"van",p:[7.5,3.4,-21]}];
+const VIEWS={store:{p:[19,35,35],t:[1,0,-1.5],tags:["chk","self","veg","bak","chill","dock"]},checkouts:{p:[8,25,25],t:[5,0,6.5],tags:["chk","self"]},
+  fresh:{p:[4,44,13],t:[0,0,-11],tags:["veg","bak","meat","deli","bin","van","dock"]},chillers:{p:[-2,10,-1],t:[-9,1,-14],tags:["chill","meat","deli","frz"]}};
+// portrait screens: steeper angles so the store, not the car park, fills the frame
+const VIEWS_N={store:{p:[7,64,30],t:[1,0,-3]},checkouts:{p:[6,30,22],t:[4,0,6.5]},fresh:{p:[2,58,8],t:[0,0,-10]},chillers:{p:[-3,15,4],t:[-8,1,-14]}};
+let view="store";
+const tagsEl=$("tags"),TE={};TAGS.forEach(t=>{const e=document.createElement("div");e.className="tag";e.hidden=true;tagsEl.appendChild(e);TE[t.id]=e});const v3=new THREE.Vector3();
+function tags(st){const w=canvas.clientWidth,hh=canvas.clientHeight,h=simT/60,fr=d.fresh,red=h>=S.markdownH&&h<22.2,closed=h>=22.2,placed=[];
+  const set=(id,html,cls="")=>{TE[id].innerHTML=html;TE[id].className="tag "+cls};
+  set("chk",`<b>Checkouts</b> ${st.lanes} of 8 lanes<br><span class="m">${st.inQueue?st.inQueue+" queuing · ~"+fmt(st.recentWait,1)+" min wait":"no queue"}</span>`,st.recentWait>3?"warn":"");
+  set("self",`<b>Self-checkout</b> ${st.kiosks}<br><span class="m">${d.selfQ.length} waiting</span>`);
+  const fl=(k,name)=>{const f=fr[k];return closed?`<b>${name}</b><br><span class="m">${fmt(f.rescued)} kg rescued · ${fmt(f.waste)} kg waste</span>`:`<b>${name}</b> ${fmt(f.stock)} kg short-dated<br><span class="m">${red?"reduced "+fmt(S.discount*100)+"%":"full price until "+hLabel(S.markdownH)}</span>`};
+  set("veg",fl("produce","Fruit and veg"),red&&!closed?"warn":"");set("bak",fl("bakery","Bakery"),red&&!closed?"warn":"");set("meat",fl("meat","Meat"),red&&!closed?"warn":"");set("deli",fl("deli","Deli"),red&&!closed?"warn":"");
+  const p=K.power(S,simT);set("chill",`<b>Open chillers</b> 48 m · ${fmt(p.openCase)} kW<br><span class="m">${S.doors?"doors fitted":"no doors · cold air spills"}</span>`,"cold");
+  set("frz",`<b>Freezers</b> doors · ${fmt(p.freezer)} kW`,"cold");
+  const del=(h>=5.3&&h<6.9)||(h>=13.3&&h<14.45);set("dock",`<b>Dock</b><br><span class="m">${del?"delivery unloading":h<5.3?"first delivery 5:30am":h<13.3?"next delivery 1:30pm":"no more deliveries today"}</span>`);
+  const fs=st.fresh;set("bin",`<b>Waste bin</b><br><span class="m">${h>=22.4?fmt(fs.waste)+" kg tonight":"filled at close"}</span>`);
+  set("van",`<b>Food rescue partner</b><br><span class="m">${fmt(fs.rescued)} kg · about ${fmt(fs.rescued*K.MEALS_PER_KG)} meals</span>`,"good");
+  const show=new Set(VIEWS[view].tags);if(!d.rescueNight||h<22.05||h>22.95)show.delete("van");if(h<22.3)show.delete("bin");if(van.visible&&h>=22.05)show.delete("dock");
+  TAGS.forEach(t=>{const el=TE[t.id];if(!show.has(t.id)){el.hidden=true;return}v3.set(...t.p).project(camera);const x=(v3.x+1)/2*w,y=(1-v3.y)/2*hh;
+    if(v3.z>1||x<30||x>w-30||y<48||y>hh-16){el.hidden=true;return}el.hidden=false;el.style.left=x+"px";el.style.top=(y-7)+"px";
+    const bw=el.offsetWidth,bh=el.offsetHeight,r={l:x-bw/2,r:x+bw/2,t:y-7-bh,b:y-7};
+    if(r.t<46){el.hidden=true;return}if(r.l<4){el.style.left=(bw/2+4)+"px";r.l=4;r.r=bw+4}if(r.r>w-4){el.style.left=(w-4-bw/2)+"px";r.r=w-4;r.l=w-4-bw}
+    if(placed.some(q=>r.l<q.r+4&&r.r>q.l-4&&r.t<q.b+3&&r.b>q.t-3)){el.hidden=true;return}placed.push(r)})}
+
+// ---------------- side panels
+function clockText(){const m=Math.floor(simT)%1440,h=Math.floor(m/60),mm=m%60;return `${((h+11)%12)+1}:${String(mm).padStart(2,"0")} ${h>=12?"pm":"am"} · ${h*60+mm>=K.OPEN&&h*60+mm<K.CLOSE?"open":"closed"}`}
+function live(){const st=K.dayStats(S,d),h=simT/60;$("clock").textContent=clockText();$("dayName").textContent=K.DAYS[dow];if(document.activeElement!==$("hour"))$("hour").value=Math.min(23.75,Math.max(5,Math.floor(h*4)/4));
+  $("inStore").innerHTML=`${st.inStore+st.inQueue}<small>shoppers in store</small>`;$("inQueue").textContent=st.inQueue;$("lanes").textContent=st.lanes+(st.kiosks?` + ${st.kiosks} self`:"");
+  $("waitNow").textContent=st.recentWait?fmt(st.recentWait,1)+" min":"–";$("waitNow").className="v"+(st.recentWait>3?" warn":"");$("served").textContent=fmt(st.served);
+  const f=st.fresh,closed=d.closed;$("atRisk").innerHTML=`${fmt(f.left)}<small>kg short-dated left</small>`;$("fFull").textContent=fmt(f.full);$("fRed").textContent=fmt(f.reduced);
+  $("fResc").textContent=closed?fmt(f.rescued):d.rescueNight?"at close":"no pickup";$("fWaste").textContent=closed?fmt(f.waste):"–";
+  $("mdState").textContent=h>=S.markdownH&&h<22.2?`reduced ${fmt(S.discount*100)}%`:`reduce at ${hLabel(S.markdownH)}`;
+  const p=K.power(S,simT);$("kw").innerHTML=`${fmt(p.total)}<small>kW</small>`;
+  const parts=[["Open chillers",p.openCase,"--cool"],["Freezers, coolrooms",p.freezer+p.cool,"--coldair"],["Lights",p.lights,"--rose"],["Heating, air",p.hvac,"--c-full"],["Bakery, other",p.bakery+p.other,"--live"]];
+  [...$("pstack").children].forEach((el,i)=>el.style.width=parts[i][1]/p.total*100+"%");
+  $("plegend").innerHTML=parts.map(x=>`<span style="--k:var(${x[2]})">${x[0]}<b>${fmt(x[1])}</b></span>`).join("");
+  $("kwhToday").textContent=`${fmt(st.kwh)} kWh today`;return st}
+
+// ---------------- what-ifs, proof and charts (whole weeks, from the model)
+let W=null,A=null,PR=null,DR=null;
+function recompute(){A=K.week({...S,...K.AS_IS});W=K.week(S);PR=K.proof(S);DR=K.doors(S);
+  // checkouts
+  $("qAvg").textContent=fmt(W.avgWait,1)+" min";$("qOver").textContent=fmt(W.over5);$("qHrs").textContent=fmt(W.waitMin/60);
+  const dq=A.waitMin-W.waitMin;$("qText").innerHTML=(S.extraLane||S.moreSelf)?`Compared with the store as it is, shoppers spend <b>${fmt(Math.max(0,dq)/60)}</b> fewer hours a week in a queue, and <b>${fmt(Math.max(0,A.over5-W.over5))}</b> fewer people wait more than 5 minutes.${S.extraLane?` The extra lane costs about <b>${money(PR.week.laneCost)}</b> a week in wages.`:""}`:`As it is, Saturday's average wait is <b>${fmt(W.days[5].avgWait,1)} min</b> and the worst wait of the week is <b>${fmt(Math.max(...W.days.map(x=>x.maxWait)))} min</b>. Try the proposed lane or kiosks.`;
+  // fresh
+  const meals=W.rescued*K.MEALS_PER_KG,net=(W.revenue-W.days.reduce((a,x)=>a+x.fresh.cannib,0))-(A.revenue-A.days.reduce((a,x)=>a+x.fresh.cannib,0));
+  $("wWaste").textContent=fmt(W.waste);$("wMeals").textContent=fmt(meals);$("wNet").textContent=Math.abs(net)<1?"–":(net>=0?"+":"")+money(net);
+  const sold=W.atRisk-W.waste-W.rescued;$("fText").innerHTML=`Of <b>${fmt(W.atRisk/1000,1)} t</b> of short-dated food a week, <b>${fmt(sold/W.atRisk*100)}%</b> sells, <b>${fmt(W.rescued/W.atRisk*100)}%</b> goes to food rescue and <b>${fmt(W.waste/W.atRisk*100)}%</b> goes to animal feed, compost or landfill${A.waste-W.waste>1?`: <b>${fmt(A.waste-W.waste)} kg</b> a week less than as-is`:""}.`;
+  // energy
+  const e=K.energyDay(S);$("eKwh").textContent=fmt(e.kwh);$("eCost").textContent=money(e.cost*365);$("eShare").textContent=fmt(e.refrig/e.kwh*100)+"%";
+  $("eText").innerHTML=S.doors?`Doors cut about <b>${fmt(DR.kwhDay)} kWh</b> a day: <b>${money(DR.saveYear)}</b> a year. At about <b>${money(DR.capex)}</b> to fit, they pay back in about <b>${fmt(DR.payback,1)} years</b>.`:`The open chillers alone use about <b>${fmt(DR.before.openCase)} kWh</b> a day, <b>${money(DR.before.openCase*S.price*365)}</b> a year. Doors would save about <b>${fmt(DR.kwhDay)} kWh</b> a day.`;
+  proofPanel();charts()}
+function proofPanel(){const w=PR.week,y=PR.year;
+  const big=[["Food kept out of waste",fmt(y.wasteKg/1000,1)+" t",fmt(w.wasteKg)+" kg a week"],["Extra meals rescued",fmt(y.meals),fmt(w.meals)+" a week"],["Electricity saved",fmt(y.kwh/1000)+" MWh",fmt(w.kwh)+" kWh a week"],["Queueing saved",fmt(y.queueMin/60)+" h",fmt(w.queueMin/60)+" h a week"]];
+  $("proofBig").innerHTML=big.map(([l,v,s])=>`<div><span class="v">${v}</span><span class="l">${l} a year</span><span class="w">${s}</span></div>`).join("");
+  const rows=[["Food kept out of waste",fmt(w.wasteKg)+" kg",fmt(y.wasteKg)+" kg","Earlier markdown, and pickups every night"],
+    ["Extra meals rescued",fmt(w.meals),fmt(y.meals),"Extra kg rescued × 2.2 meals per kg"],
+    ["Electricity saved",fmt(w.kwh)+" kWh",fmt(y.kwh)+" kWh","Doors on 48 m of open chillers"],
+    ["Electricity cost saved",money(w["energy$"]),money(y["energy$"]),`At ${fmt(S.price*100)}c/kWh`],
+    ["Queueing saved",fmt(w.queueMin)+" min",fmt(y.queueMin)+" min","Extra lane at peaks, two more kiosks"],
+    ["Recovered from short-dated food",money(w["margin$"]),money(y["margin$"]),"Net of full-price sales the markdown replaces"],
+    ["Extra lane wages",money(-w.laneCost),money(-y.laneCost),"42 hours a week at about $32 an hour"],
+    ["Chiller doors, one-off","",money(-DR.capex),`Pays back in about ${fmt(DR.payback,1)} years on energy alone`]];
+  $("proofTable").innerHTML=`<thead><tr><th>Measure</th><th class="n">A week</th><th class="n">A year</th><th>How</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td><td class="n">${r[2]}</td><td class="src">${r[3]}</td></tr>`).join("")}</tbody>`;
+  const fl=[["Electricity cost saved",y["energy$"],`${fmt(y.kwh/1000)} MWh at ${fmt(S.price*100)}c/kWh`],["Recovered from short-dated food",y["margin$"],"net of the full-price sales it replaces"],["Extra lane wages",-y.laneCost,"42 hours a week at about $32 an hour"]];let run=0;
+  const wf=fl.map(([l,v,sub])=>{const r={label:l,sub,from:run,value:v,text:(v>=0?"+":"")+money(v),tip:`${(v>=0?"+":"")+money(v)} a year\n${(v>=0?"+":"")+money(v/52)} a week · ${l}`};run+=v;return r});
+  $("proofViz").innerHTML=`<p class="vz-h"><span>Dollars a year, from the store as it is</span><span class="prop">PROPOSED</span></p>`+VZ.rows(wf.concat([{label:"Net a year, running",sub:"before the doors' one-off cost",value:run,color:"var(--ink)",cls:"tot",text:(run>=0?"+":"")+money(run),tip:`${(run>=0?"+":"")+money(run)} a year, running\nenergy and recovered food, less the lane's wages`}]),{lw:"14em",aria:`Waterfall of dollars a year: electricity saved ${money(y["energy$"])}, short-dated food recovered ${money(y["margin$"])}, extra lane wages ${money(-y.laneCost)}, net ${money(run)}`})+
+    VZ.legend([["var(--vz-up)","adds"],["var(--vz-down)","costs"],["var(--ink)","net, running"]])+`<p class="src" style="margin:0">Each bar starts where the one above ended. Not in the running total: the chiller doors, ${money(-DR.capex)} once, paying back in about ${fmt(DR.payback,1)} years on energy alone. Waste, meals, power and queueing are in the tiles above; the lane and kiosks buy shorter queues, not dollars.</p>`;
+  $("pText").innerHTML=`Five changes, all <span class="prop">PROPOSED</span>: reduce short-dated food at <b>4pm</b> instead of 7pm, a food rescue pickup <b>every night</b>, <b>doors</b> on the open chillers, <b>one more lane</b> at the peaks and <b>two more</b> self-checkouts. Against the store as it is, at ${fmt(S.shoppers)} shoppers a day:`;
+  $("pNotes").innerHTML=[`Waste means short-dated food that is not sold or rescued: in Otago's audits most of it went to animal feed or protein reprocessing, and about a quarter to landfill.`,
+    `As-is: reduced by ${fmt(S.discount*100)}% at 7pm, rescue pickups on Monday, Wednesday and Friday nights. Each week is seven simulated days, Monday to Sunday.`,
+    `Meals use KiwiHarvest's own ratio of about 2.2 meals per kg rescued. Electricity leaves out heating saved in the chilled aisles, so it is on the low side.`,
+    `Queueing is the time from joining a queue to being served, summed over every shopper. Yearly figures are 52 simulated weeks.`].map(x=>`<li>${x}</li>`).join("")}
+function charts(){if(!W||!C.live)return;
+  // checkout: arrivals per hour, average wait as-is (dashed) and this setup
+  const day=W.days[dow],dayA=A.days[dow],X=hh=>20+(hh-7)*18.5,maxA=Math.max(...day.arrByHour),maxW=Math.max(4,...day.waitByHour,...dayA.waitByHour);let o="";
+  for(let hh=7;hh<22;hh++){const bh=day.arrByHour[hh]/maxA*70;o+=`<rect x="${X(hh)+2}" y="${90-bh}" width="14.5" height="${bh}" rx="2" fill="var(--line)"/>`}
+  const line=(arr,dash,colr)=>`<polyline fill="none" stroke="${colr}" stroke-width="2" ${dash?'stroke-dasharray="4 3"':""} points="${[...Array(16)].map((_,i)=>{const hh=7+i;return `${X(hh)+9},${90-Math.min(1,arr[hh]/maxW)*70}`}).join(" ")}"/>`;
+  o+=line(dayA.waitByHour,true,"var(--rose)")+line(day.waitByHour,false,"var(--live)");
+  const nowH=simT/60;if(nowH>=7&&nowH<23)o+=`<line x1="${X(nowH)}" x2="${X(nowH)}" y1="14" y2="90" stroke="var(--ink)" stroke-width="1"/>`;
+  [7,10,13,16,19,22].forEach(hh=>o+=`<text class="t-ax" x="${X(hh)}" y="104">${hLabel(hh)}</text>`);
+  o+=`<text class="t-ax" x="0" y="10">${K.DAYS[dow]}: shoppers (bars), wait (line, top ${fmt(maxW,0)} min)</text><text class="t-ax" x="0" y="118"><tspan fill="var(--live)">—</tspan> this setup  <tspan fill="var(--rose)">- -</tspan> as-is</text>`;
+  $("qChart").innerHTML=o;
+  // fresh: per department, stacked bars, week; as-is thin bar above
+  const DN=K.DEPTS,max=Math.max(...DN.map((D,i)=>W.days.reduce((a,x)=>a+x.depts[i].start,0)));o="";
+  const seg=(i,src,y,hgt)=>{const t=src.days.reduce((a,x)=>{const q=x.depts[i];a.full+=q.full;a.red+=q.reduced;a.resc+=q.rescued;a.waste+=q.waste;return a},{full:0,red:0,resc:0,waste:0});let x=86;let s="";
+    [["full","--c-full"],["red","--c-red"],["resc","--c-resc"],["waste","--c-waste"]].forEach(([k,c])=>{const wv=t[k]/max*226;s+=`<rect x="${x}" y="${y}" width="${Math.max(0,wv)}" height="${hgt}" fill="var(${c})"/>`;x+=wv});return s};
+  DN.forEach((D,i)=>{const y=8+i*27;o+=`<text class="t-ink" x="0" y="${y+13}">${D.n}</text>`+seg(i,A,y,4)+seg(i,W,y+6,12)});
+  o+=`<text class="t-ax" x="0" y="122"><tspan fill="var(--c-full)">■</tspan> full price <tspan fill="var(--c-red)">■</tspan> reduced <tspan fill="var(--c-resc)">■</tspan> rescued <tspan fill="var(--c-waste)">■</tspan> waste</text><text class="t-ax" x="0" y="136">thin bar: as-is · thick bar: this setup · a week</text>`;
+  $("fChart").innerHTML=o;
+  // energy: 24 hours, refrigeration and the rest
+  const pts=[...Array(97)].map((_,i)=>K.power(S,i*15)),ptsA=[...Array(97)].map((_,i)=>K.power({...S,doors:false},i*15)),mx=Math.max(...ptsA.map(p=>p.total))*1.08,Xe=i=>20+i*3.1,Y=v=>92-v/mx*78;
+  const area=(f,colr,op)=>`<path d="M${Xe(0)},92 ${pts.map((p,i)=>`L${Xe(i)},${Y(f(p))}`).join(" ")} L${Xe(96)},92 Z" fill="${colr}" opacity="${op}"/>`;
+  o=area(p=>p.total,"var(--rose)",.35)+area(p=>p.refrig,"var(--cool)",.75);
+  if(S.doors)o+=`<polyline fill="none" stroke="var(--rose)" stroke-dasharray="4 3" stroke-width="1.5" points="${ptsA.map((p,i)=>`${Xe(i)},${Y(p.total)}`).join(" ")}"/>`;
+  if(nowH>=0)o+=`<line x1="${Xe(nowH*4%96)}" x2="${Xe(nowH*4%96)}" y1="12" y2="92" stroke="var(--ink)"/>`;
+  [0,6,12,18,24].forEach(hh=>o+=`<text class="t-ax" x="${Xe(hh*4)-6}" y="105">${hh===24?"":hLabel(hh)}</text>`);
+  o+=`<text class="t-ax" x="0" y="9">kW through the day, peak ${fmt(mx/1.08)} kW</text><text class="t-ax" x="0" y="118"><tspan fill="var(--cool)">■</tspan> refrigeration <tspan fill="var(--rose)">■</tspan> everything else${S.doors?" · - - without doors":""}</text>`;
+  $("eChart").innerHTML=o}
+
+// ---------------- the family basket
+function basketPanel(){const b=K.basket();
+  $("basket").innerHTML=`<thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Sept 2026</th><th class="n">A year ago</th></tr></thead><tbody>${b.rows.map(r=>`<tr><td>${r.n} <span class="src">${r.src}</span></td><td class="n">${r.q}</td><td class="n">$${fmt(r.now,2)}</td><td class="n">$${fmt(r.ago,2)}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total</td><td></td><td class="n">$${fmt(b.now,2)}</td><td class="n">$${fmt(b.ago,2)}</td></tr></tfoot>`;
+  const mv=b.rows.map(r=>({r,d:r.now-r.ago})).sort((p,q)=>q.d-p.d),ns=b.rows.filter(r=>r.src==="S").length;
+  $("basketViz").innerHTML=VZ.chips([{n:ns,label:"Stats NZ average prices",c:"var(--vz-src)"},{n:b.rows.length-ns,label:"estimates",c:"var(--vz-est)"}])+`<p class="vz-h" style="margin-top:4px"><span>What moved the basket, a week</span><span>Sept 2026 against a year ago</span></p>`+
+    VZ.rows(mv.map(({r,d})=>({label:`${VZ.esc(r.n)} <span class="lab" style="--c:var(--vz-${r.src==="S"?"src":"est"})">${r.src==="S"?"S":"E"}</span>`,value:d,color:d>=0?"var(--vz-down)":"var(--vz-up)",text:(d>=0?"+":"−")+"$"+fmt(Math.abs(d),2),tip:`${(d>=0?"+":"−")}$${fmt(Math.abs(d),2)} on a year ago\n$${fmt(r.now,2)} now for ${r.q} · ${r.n}`}))
+      .concat([{label:"The whole shop",value:b.now-b.ago,color:"var(--ink)",cls:"tot",text:(b.now>=b.ago?"+":"−")+"$"+fmt(Math.abs(b.now-b.ago),2)+`<small>$${fmt(b.now,2)} a week</small>`,tip:`$${fmt(b.now,2)} a week now\n$${fmt(b.ago,2)} a year ago`}]),{lw:"13em",vw:"6.5em",aria:"Change in price of each item in the weekly shop against a year ago, largest rise first"})+
+    VZ.legend([["var(--vz-down)","dearer"],["var(--vz-up)","cheaper"]]);
+  $("bText").innerHTML=`This illustrative shop comes to about <b>$${fmt(b.now)}</b> a week, <b>${b.change>=0?"+":"−"}${fmt(Math.abs(b.change)*100,1)}%</b> on a year ago: meat and bread up, fruit, veg and butter down. If the family bought its bread, meat and veg reduced at ${fmt(S.discount*100)}% off, the same items would cost about <b>$${fmt(b.rows.filter(r=>["meat","fv"].includes(r.g)||r.n.startsWith("Bread")).reduce((a,r)=>a+r.now,0)*S.discount)}</b> less, if the short-dated food is there when they shop.`}
+
+// ---------------- controls
+const changed=()=>{clearTimeout(window.__rt);window.__rt=setTimeout(recompute,120)};
+$("shoppers").oninput=e=>{S.shoppers=+e.target.value;$("shoppersV").textContent=fmt(S.shoppers)};$("shoppers").onchange=()=>{rebuild();changed()};
+$("mdH").oninput=e=>{S.markdownH=+e.target.value;$("mdHV").textContent=hLabel(S.markdownH);changed()};
+$("disc").oninput=e=>{S.discount=+e.target.value;$("discV").textContent=fmt(S.discount*100)+"%";changed();basketPanel()};
+$("price").oninput=e=>{S.price=+e.target.value;$("priceV").textContent=fmt(S.price*100)+"c/kWh";changed()};
+["extraLane","moreSelf","doors"].forEach(k=>$(k).onchange=e=>{S[k]=e.target.checked;changed();applyLabel()});
+$("rescue").onchange=e=>{S.rescueNightly=e.target.checked;if(!d.closed)d.rescueNight=S.rescueNightly||K.RESCUE_DAYS.includes(dow);changed();applyLabel()};
+function syncInputs(){$("extraLane").checked=S.extraLane;$("moreSelf").checked=S.moreSelf;$("doors").checked=S.doors;$("rescue").checked=S.rescueNightly;$("mdH").value=S.markdownH;$("mdHV").textContent=hLabel(S.markdownH);
+  $("disc").value=S.discount;$("discV").textContent=fmt(S.discount*100)+"%";$("shoppers").value=S.shoppers;$("shoppersV").textContent=fmt(S.shoppers);$("price").value=S.price;$("priceV").textContent=fmt(S.price*100)+"c/kWh"}
+const allOn=()=>Object.entries(K.PROPOSED).every(([k,v])=>S[k]===v);
+function applyLabel(){$("applyAll").textContent=allOn()?"Back to the store as it is":"Show the proposed changes in the store"}
+$("applyAll").onclick=()=>{Object.assign(S,allOn()?K.AS_IS:K.PROPOSED);if(!d.closed)d.rescueNight=S.rescueNightly||K.RESCUE_DAYS.includes(dow);syncInputs();applyLabel();recompute()};
+$("dow").onchange=e=>{dow=+e.target.value;rebuild();recompute()};
+document.querySelectorAll("[data-speed]").forEach(b=>b.onclick=()=>setSpeed(+b.dataset.speed));
+function setSpeed(v){speed=v;document.querySelectorAll("[data-speed]").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.speed===v?"true":"false"))}
+$("pause").onclick=()=>{playing=!playing;$("pause").textContent=playing?"Pause":"Play"};$("pause").textContent=playing?"Pause":"Play";
+// jumping simulates every minute in between, so queues and stock are what they would be
+function jump(h){const target=Math.round(Math.max(5,Math.min(23.98,h))*60);if(target<d.t){d=K.newDay(S,dow);paths.clear();vis.clear()}while(d.t<target)K.step(S,d);simT=d.t;acc=0;vis.clear();charts()}
+function rebuild(){const t=d.t;d=K.newDay(S,dow);paths.clear();vis.clear();while(d.t<t)K.step(S,d);simT=d.t}
+$("hour").oninput=e=>jump(+e.target.value);
+
+// ---------------- camera
+function resize(){const w=box.clientWidth,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.68));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?48:34;camera.updateProjectionMatrix();
+  pMat.uniforms.scale.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360))}
+addEventListener("resize",resize);
+let camGoal=null;function setView(n){if(!VIEWS[n])return;view=n;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));const narrow=camera.aspect<1,v=narrow?VIEWS_N[n]:VIEWS[n],t=new THREE.Vector3(...v.t),p=new THREE.Vector3(...v.p);camGoal={p,t}}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));controls.addEventListener("start",()=>camGoal=null);
+
+// ---------------- loop
+let last=performance.now(),visible=true,pt=0,ct=0;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(visible){if(playing){acc+=dt*speed;while(acc>=1){K.step(S,d);acc-=1;if(d.t>=K.DAY_END){dow=(dow+1)%7;$("dow").value=dow;d=K.newDay(S,dow);paths.clear();vis.clear()}}}
+    simT=d.t+(playing?acc:0);
+    syncPeople(dt);syncFresh();syncDock();syncLight(dt);particles(dt);
+    if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.1)camGoal=null}
+    controls.update();renderer.render(scene,camera);pt+=dt;ct+=dt;if(pt>0.25){pt=0;tags(live())}if(ct>2){ct=0;charts()}}
+  requestAnimationFrame(frame)}
+resize();applyTheme();syncInputs();applyLabel();setView("store");camera.position.copy(camGoal.p);controls.target.copy(camGoal.t);camGoal=null;
+(()=>{const rows=[...document.querySelectorAll("#srcTable tbody tr")].map(tr=>({n:tr.cells[0].textContent,k:tr.querySelector(".lab").dataset.t})),TC={src:["Source","var(--vz-src)"],est:["Estimate","var(--vz-est)"]},ks=Object.keys(TC).filter(k=>rows.some(r=>r.k===k)),c=k=>rows.filter(r=>r.k===k).length;
+  $("srcViz").innerHTML=`<div class="vz-split" role="img" aria-label="${ks.map(k=>c(k)+" "+TC[k][0]).join(", ")}">${ks.map(k=>`<i style="width:calc(${c(k)/rows.length*100}% - 2px);--c:${TC[k][1]}"></i>`).join("")}</div>`+VZ.chips(ks.map(k=>({n:c(k),label:TC[k][0],c:TC[k][1]})))+
+    `<div class="vz-fl">${ks.map(k=>`<div class="vz-fi"><span><span class="lab" style="--c:${TC[k][1]}">${TC[k][0]}</span></span><span></span><span class="s">${rows.filter(r=>r.k===k).map(r=>VZ.esc(r.n)).join(" · ")}</span></div>`).join("")}</div>`})();
+jump(17.75);recompute();basketPanel();syncLight(1);tags(live());
+window.__store={S,setView,recompute,jump,speed:setSpeed,state:()=>d,apply:on=>{Object.assign(S,on?K.PROPOSED:K.AS_IS);if(!d.closed)d.rescueNight=S.rescueNightly||K.RESCUE_DAYS.includes(dow);syncInputs();applyLabel();recompute()}};
+requestAnimationFrame(frame);
+})();
+</script>
+
+<script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="store"></script><script src="/lab/navigation.js" defer></script></body></html>

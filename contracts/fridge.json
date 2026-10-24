@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "kind": "fridge",
+  "type": "assembl.fridge_scan",
+  "prompt": "You are looking at a photo of the inside of a fridge or pantry in a New Zealand home. List the food you can actually see, and reply with ONE JSON object that matches the JSON Schema below. Reply with the JSON object only.\n\nPrivacy rules (these override everything else):\n- Ignore people, faces, pets, handwritten notes, magnets, photos, school notices, letters and anything with a name, address or phone number on it.\n- Skip medicines and prescriptions entirely (they can carry a person's name).\n- Never put personal details in \"name\" or \"note\".\n\nHow to list the food:\n- One entry per kind of food (merge duplicates and add up the quantity). Use plain generic names, not brands.\n- \"quantity\" and \"unit\": your rough estimate of what is there (e.g. 6 each eggs, 1.5 L milk, 0.5 kg mince). Use null when you cannot tell.\n- \"use_by\": \"today\" for things that look past their best, opened leftovers or meat near its date; \"this_week\" for fresh produce, opened dairy and bread; \"fine\" for long-keeping items (condiments, unopened hard cheese, jars, root vegetables).\n- \"confidence\": 0 to 1 for how sure you are of the item. Leave out things you cannot identify at all.\n- Do not invent items that are not visible.\n",
+  "output_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "assembl.fridge_scan",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "type",
+      "version",
+      "items"
+    ],
+    "properties": {
+      "type": {
+        "const": "assembl.fridge_scan"
+      },
+      "version": {
+        "const": 1
+      },
+      "items": {
+        "type": "array",
+        "maxItems": 60,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "quantity",
+            "unit",
+            "category",
+            "use_by",
+            "confidence"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "plain generic food name in NZ English, singular, e.g. 'Broccoli', 'Milk', 'Chicken thighs', 'Leftover curry'"
+            },
+            "quantity": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "rough count or amount you can see"
+            },
+            "unit": {
+              "enum": [
+                "each",
+                "kg",
+                "g",
+                "L",
+                "ml",
+                "pack",
+                "bunch",
+                "punnet",
+                "loaf",
+                "dozen",
+                "jar",
+                "tub",
+                "bottle",
+                "bag",
+                null
+              ]
+            },
+            "category": {
+              "enum": [
+                "fruit",
+                "veg",
+                "dairy",
+                "meat",
+                "seafood",
+                "bakery",
+                "pantry",
+                "condiment",
+                "leftovers",
+                "drinks",
+                "frozen",
+                "other"
+              ]
+            },
+            "use_by": {
+              "enum": [
+                "today",
+                "this_week",
+                "fine"
+              ],
+              "description": "how soon it should be eaten, from what you can see (wilting, ripeness, opened packs, printed dates, leftovers)"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "a few words on why, e.g. 'opened', 'going soft'; never personal details"
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    }
+  },
+  "forbidden_keys": [
+    "customer_name",
+    "account_holder",
+    "address",
+    "service_address",
+    "postal_address",
+    "account",
+    "account_number",
+    "account_no",
+    "customer_number",
+    "icp",
+    "icp_number",
+    "meter_number",
+    "email",
+    "phone",
+    "mobile",
+    "payment",
+    "bank_account",
+    "card",
+    "direct_debit",
+    "reference",
+    "dob"
+  ],
+  "endpoint": {
+    "path": "/api/read/",
+    "method": "POST",
+    "request": {
+      "kind": "bill | fridge",
+      "image": "data:image/jpeg;base64,... (client downscales to at most 1600 px, JPEG)"
+    },
+    "response": "The JSON object described by output_schema, nothing else. On failure: HTTP 4xx/5xx with {\"error\": code}.",
+    "server_rules": [
+      "Process the image in memory only; never write it to disk, logs or analytics.",
+      "Keep only the keys defined in output_schema (recursively) and drop everything else; forbidden_keys lists personal fields that must never be added, even as extra keys or confidence entries.",
+      "Time out after 25 s."
+    ]
+  }
+}

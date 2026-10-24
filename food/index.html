@@ -1,0 +1,261 @@
+<!doctype html><html lang="en-NZ" data-feeds="fpi,foodprices"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Food Flow Aotearoa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an animated flow from shop to fridge to plate, bin or rescue; then your household, the whole country, and where food rescue fits. */
+:root{--paper:#FFFDFB;--ink:#3F2A3A;--body:#5E4A50;--soft:#8E7378;--line:#EADFE2;--pink:#F6C9D3;--pinkD:#D96A8A;--mint:#CDEBDF;--mintD:#3F8F72;--butter:#F8E6B5;--butterD:#B8862B;--sky:#CFE0F4;--skyD:#4A72A8;--lilac:#E3D6F2;--lilacD:#7A5BA6;
+  --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1B1218;--ink:#F6EEF0;--body:#DCCCD0;--soft:#B49AA0;--line:#3A2834;--pink:#5A2E3C;--pinkD:#F29BB3;--mint:#1F4A3C;--mintD:#7FD1AF;--butter:#4E4022;--butterD:#F0C870;--sky:#233A57;--skyD:#8DB5EA;--lilac:#3B2D52;--lilacD:#C2A6EC;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1B1218;--ink:#F6EEF0;--body:#DCCCD0;--soft:#B49AA0;--line:#3A2834;--pink:#5A2E3C;--pinkD:#F29BB3;--mint:#1F4A3C;--mintD:#7FD1AF;--butter:#4E4022;--butterD:#F0C870;--sky:#233A57;--skyD:#8DB5EA;--lilac:#3B2D52;--lilacD:#C2A6EC;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{background:var(--paper);color:var(--body);font-family:var(--display);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:20px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+h1{margin:4px 0 6px;font-size:clamp(30px,6vw,52px);line-height:1;letter-spacing:-.03em;color:var(--ink);font-weight:700;text-wrap:balance}
+h2{margin:0;font-size:clamp(21px,3vw,26px);letter-spacing:-.02em;color:var(--ink);text-wrap:balance}
+.lead{max-width:64ch;margin:0;font-size:17px}
+.card{background:var(--paper);border:2.5px solid var(--ink);border-radius:24px;padding:18px;box-shadow:0 5px 0 var(--ink);display:grid;gap:12px;min-width:0}
+.flow svg{width:100%;height:auto;display:block}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.row{display:grid;gap:6px}
+.row label{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--soft)}
+.row label b{color:var(--ink);font-weight:600;text-transform:none}
+input[type=range]{width:100%;accent-color:var(--pinkD)}
+input:focus-visible,a:focus-visible{outline:3px solid var(--butterD);outline-offset:2px}
+.big{font:700 clamp(34px,6vw,50px)/1 var(--display);color:var(--ink);letter-spacing:-.02em}
+.say{font-size:16px;border-left:4px solid var(--mintD);padding:4px 0 4px 12px}
+.say b{color:var(--ink)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.fact{border:2px solid var(--ink);border-radius:16px;padding:12px 14px;display:grid;gap:2px;background:var(--paper)}
+.fact .n{font:700 24px var(--display);color:var(--ink);letter-spacing:-.01em}
+.fact span{font-size:13.5px}
+.help{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.help a{color:var(--ink)}
+.sim{font:600 10px var(--mono);letter-spacing:.06em;border:1.5px solid var(--soft);border-radius:4px;padding:1px 5px}
+footer{font-size:12.5px;color:var(--soft);display:grid;gap:6px;max-width:96ch}
+footer a{color:var(--ink)}
+/* data visuals: bars, a 52-week strip and truth chips, drawn from the live numbers */
+.tl{font:600 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--soft);color:var(--soft);border-radius:999px;padding:1px 6px;white-space:nowrap}
+.vz{display:grid;gap:8px;min-width:0}
+.vz-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 10px}
+.vz-t{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--soft)}
+.bars{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.bars li{display:grid;gap:4px}
+.bars .lr{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px;color:var(--ink)}
+.bars .lr span{min-width:0}
+.bars .lr b{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bars .lr small{display:block;font-size:12px;color:var(--soft)}
+.trk{position:relative;height:12px;border-radius:0 4px 4px 0}
+.trk i{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;min-width:2px;background:var(--k,var(--skyD));transition:width .35s ease}
+.trk.ctr{margin-block:3px}.trk.ctr::before{content:"";position:absolute;left:calc(50% - 1px);top:-5px;bottom:-5px;width:2px;border-radius:1px;background:var(--ink);z-index:1}
+.trk.ctr i.neg{left:auto;right:50%;border-radius:4px 0 0 4px}
+.trk.ctr i.pos{left:50%}
+.split{display:flex;gap:2px;height:14px}
+.split i{display:block;height:100%;background:var(--k);min-width:2px}
+.split i:first-child{border-radius:4px 0 0 4px}.split i:last-child{border-radius:0 4px 4px 0}
+.key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--body)}
+.key span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--k)}
+.key b{color:var(--ink)}
+.weeks{display:grid;grid-template-columns:repeat(26,minmax(0,1fr));gap:2px}
+.weeks i{display:block;aspect-ratio:1;border-radius:2px;background:var(--line);position:relative;overflow:hidden}
+.weeks i b{position:absolute;inset:0 auto 0 0;background:var(--pinkD)}
+.vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.vcard{border:2px solid var(--ink);border-radius:16px;padding:12px 14px;display:grid;gap:8px;align-content:start;background:var(--paper);min-width:0}
+@media (min-width:900px){.vcard.wide{grid-column:span 2}}
+.vcard .n{font:700 24px var(--display);color:var(--ink);letter-spacing:-.01em}
+.vcard p{margin:0;font-size:13.5px}
+details.more summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:.04em;color:var(--ink)}
+details.more summary:focus-visible{outline:3px solid var(--butterD);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.trk i{transition:none}}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Cost of living · food · Aotearoa</div>
+    <h1>Where our food goes</h1>
+    <p class="lead">New Zealand households bin about a tenth of the food they buy, while food banks and rescue groups work flat out. Follow the food, then see what small changes add up to.</p>
+  </header>
+
+  <section class="card flow" aria-labelledby="f1">
+    <h2 id="f1">From the shop to the plate, the bin, or someone who needs it</h2>
+    <svg id="flow" viewBox="0 0 960 330" role="img" aria-label="Food flowing from supermarkets into homes, where about 89% is eaten and 11% is thrown away, alongside food rescue moving surplus food to charities"></svg>
+  </section>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="f2">
+      <h2 id="f2">Your household</h2>
+      <div class="row"><label for="spend">Food shop a week <b id="spendV">$240</b></label><input id="spend" type="range" min="60" max="600" step="10" value="240"></div>
+      <div class="row"><label for="share">Share that ends up in the bin <b id="shareV">10.9%</b></label><input id="share" type="range" min="0" max="25" step="0.5" value="10.9"></div>
+      <div class="big" id="yourWaste">$1,360</div>
+      <div class="vz">
+        <div class="vz-h"><span class="vz-t">A year of food shops</span><span class="tl" title="From your sliders">Your data</span></div>
+        <div class="weeks" id="weeks" role="img" aria-label=""></div>
+        <div class="key"><span style="--k:var(--pinkD)"><b id="wkBin">5.7</b> weeks' worth binned</span><span style="--k:var(--line)">eaten</span></div>
+      </div>
+      <p class="say" id="yourSay"></p>
+    </section>
+    <section class="card" aria-labelledby="f3">
+      <h2 id="f3">The whole country</h2>
+      <div class="row"><label for="cut">If every household wasted less by <b id="cutV">10%</b></label><input id="cut" type="range" min="0" max="50" step="5" value="10"></div>
+      <div class="big" id="natSave">$300m</div>
+      <ul class="bars" id="natBars" aria-label="National comparison"></ul>
+      <p class="say" id="natSay"></p>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="f4">
+    <h2 id="f4">The numbers behind it</h2>
+    <div class="vcards">
+      <div class="vcard">
+        <div class="vz-h"><span class="vz-t">Binned per household</span><span class="tl" title="Rabobank–KiwiHarvest Food Waste Survey, July 2025">Source</span></div>
+        <span class="n">$1,364 a year</span>
+        <div class="split" role="img" aria-label="10.9% of food bought is binned, 89.1% is eaten"><i style="--k:var(--pinkD);width:10.9%"></i><i style="--k:var(--line);flex:1"></i></div>
+        <div class="key"><span style="--k:var(--pinkD)"><b>10.9%</b> binned</span><span style="--k:var(--line)">89.1% eaten</span></div>
+        <p>That's <b>$3.0 billion</b> of food across NZ households a year.</p>
+      </div>
+      <div class="vcard">
+        <div class="vz-h"><span class="vz-t">Foods people waste most</span><span class="tl" title="Rabobank–KiwiHarvest Food Waste Survey, July 2025">Source</span></div>
+        <ul class="bars" aria-label="Share of people who say they waste each food">
+          <li><div class="lr"><span>Vegetables</span><b>39%</b></div><div class="trk"><i style="--k:var(--mintD);width:39%"></i></div></li>
+          <li><div class="lr"><span>Bread</span><b>28%</b></div><div class="trk"><i style="--k:var(--mintD);width:28%"></i></div></li>
+          <li><div class="lr"><span>Fruit</span><b>24%</b></div><div class="trk"><i style="--k:var(--mintD);width:24%"></i></div></li>
+        </ul>
+        <p>Share of people who say they waste each one.</p>
+      </div>
+      <div class="vcard">
+        <div class="vz-h"><span class="vz-t" id="fpiTitle">Food prices, a year to Sept 2026</span><span class="tl" id="fpiChip" title="Stats NZ Food Price Index, September 2026">Source</span></div>
+        <ul class="bars" id="fpiBars" aria-label="Annual food price change: all food up 2.4%, fruit and vegetables down 1.8%">
+          <li><div class="lr"><span>All food</span><b>+2.4%</b></div><div class="trk ctr"><i class="pos" style="--k:var(--pinkD);width:24%"></i></div></li>
+          <li><div class="lr"><span>Fruit and veg</span><b>−1.8%</b></div><div class="trk ctr"><i class="neg" style="--k:var(--mintD);width:18%"></i></div></li>
+        </ul>
+        <p>Centre line is no change; right is dearer, left is cheaper.</p>
+      </div>
+      <div class="vcard">
+        <div class="vz-h"><span class="vz-t">Who sells our groceries</span><span class="tl" title="Commerce Commission grocery report, June 2026">Source</span></div>
+        <div class="split" role="img" aria-label="The two big supermarket groups hold 82% of the grocery market; everyone else 18%"><i style="--k:var(--skyD);width:82%"></i><i style="--k:var(--line);flex:1"></i></div>
+        <div class="key"><span style="--k:var(--skyD)"><b>82%</b> the two big groups</span><span style="--k:var(--line)">18% everyone else</span></div>
+      </div>
+      <div class="vcard wide">
+        <div class="vz-h"><span class="vz-t">Help given</span><span class="tl" title="KiwiHarvest counter (Oct 2026), MSD September 2026 quarter, Auckland City Mission 2025">Source</span></div>
+        <ul class="bars" aria-label="Food help in New Zealand">
+          <li><div class="lr"><span>Food hardship grants from MSD<small>September 2026 quarter, worth $32.7m</small></span><b>329,286</b></div></li>
+          <li><div class="lr"><span>Food parcels, Auckland City Mission<small>2025, each about four days of food</small></span><b>32,011</b></div></li>
+          <li><div class="lr"><span>Food rescued by KiwiHarvest<small>since it started: about 48 million meals</small></span><b>21.7m kg</b></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="f5">
+    <h2 id="f5">If you need food, or want to help</h2>
+    <div class="help">
+      <p><b>Need food now:</b> Work and Income can help with hardship grants for food. Many schools, churches and community centres run food banks or pātaka kai.</p>
+      <p><b>Have surplus food:</b> food rescue groups such as <a href="https://www.kiwiharvest.org.nz/" target="_blank" rel="noopener">KiwiHarvest</a> and <a href="https://fairfood.org.nz/" target="_blank" rel="noopener">Fair Food</a> collect from businesses and pass it to charities.</p>
+      <p><b>Waste less at home:</b> <a href="https://lovefoodhatewaste.co.nz/" target="_blank" rel="noopener">Love Food Hate Waste</a> has storage tips and recipes for leftovers. Our <a href="https://claude.ai/artifact/W4HoLWEkgDPRvhaY6LHtfH" target="_blank" rel="noopener">kitchen machine</a> plans smaller shops so fragile food gets eaten.</p>
+    </div>
+  </section>
+
+
+<style>
+.alf{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:8px 0 12px;font-family:var(--mono,"IBM Plex Mono",ui-monospace,monospace);font-size:11.5px;color:var(--rose,#916A70);min-width:0}
+.alf-h{font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--live,#D9822B) 16%,transparent);color:var(--live,#D9822B);white-space:nowrap}
+.alf-i{border:1px solid var(--line,#E4DADD);border-radius:14px;padding:3px 10px;color:var(--body,#654A4E);max-width:100%;line-height:1.5}
+.alf-i b{color:var(--ink,#492B3E);font-weight:500}
+.alf-i a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent)}
+.alf-i em{font-style:normal;font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px;margin-left:5px;vertical-align:1px}
+.alf-i em.lv{color:var(--good,#3F7A55)}.alf-i em.lp{color:var(--live,#D9822B)}
+.alf-note{flex-basis:100%;font-size:11px}
+</style>
+<div class="alf" id="assemblLive" hidden><span class="alf-h">Live and latest</span><span id="assemblLiveItems" style="display:contents"></span><span class="alf-note" id="assemblLiveNote"></span></div>
+<script>
+/* Live and latest chips: filled by the lab's /feeds.js ("assembl:live"). Each chip says Live or Latest published, the period and the source. */
+(()=>{
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>n==null||!isFinite(n)?"–":Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sign=(n,d=1)=>(n>0?"+":"")+fmt(n,d);
+const F={
+  weather:e=>{const v=e.values;return `<b>${esc(v.place.split(" ").slice(-1)[0])} ${fmt(v.tempC)}°C</b> · ${fmt(v.today.minC)}–${fmt(v.today.maxC)}°C today · rain ${fmt(v.today.rainChancePct)}%`},
+  air:e=>`<b>Air ${esc(e.values.band)}</b> · PM2.5 ${fmt(e.values.pm25,1)} µg/m³`,
+  power:e=>{const v=e.values;return `<b>Wholesale power ${fmt(v.avgCentsPerKWh,1)}c/kWh</b> avg · ${fmt(v.minCents,1)}–${fmt(v.maxCents,1)}c · ${esc(v.node)} · before lines, retail and GST`},
+  genmix:e=>{const s=e.values.sharePct;return `<b>Grid ${fmt(e.values.renewablePct,1)}% renewable</b> · hydro ${fmt(s.hydro)}% · geothermal ${fmt(s.geothermal)}% · wind ${fmt(s.wind)}%`},
+  fuel:e=>{const v=e.values;return `<b>Petrol 91 $${fmt(v.petrol91Dollars,2)}</b> · 95 $${fmt(v.petrol95Dollars,2)} · diesel $${fmt(v.dieselDollars,2)} a litre${v.change91!=null?` · 91 ${sign(v.change91)}c on the week`:""}`},
+  fpi:e=>{const g=Object.fromEntries((e.values.groups||[]).map(x=>[x.name,x.annualPct]));return `<b>Food prices ${sign(e.value)}% a year</b> · fruit and veg ${sign(g["Fruit and vegetables"])}% · grocery ${sign(g["Grocery food"])}% · meat ${sign(g["Meat, poultry and fish"])}%`},
+  foodprices:e=>{const i=e.values.items;const p=k=>i[k]?`$${fmt(i[k].price,2)}`:"–";return `<b>Milk 2 L ${p("milk2l")}</b> · eggs ${p("eggs")} a dozen · bread ${p("bread")} · butter ${p("butter")} · mince ${p("beefMince")}/kg · bananas ${p("bananas")}/kg`},
+  fx:e=>{const r=e.values.rates;return `<b>NZ$1 = US$${fmt(r.USD,3)}</b> · A$${fmt(r.AUD,3)} · ¥${fmt(r.CNY,2)} · £${fmt(r.GBP,3)} · €${fmt(r.EUR,3)}`},
+  gdt:e=>{const v=e.values,w=v.wmp;return `<b>GDT index ${sign(v.changePct)}%</b> at event ${v.event}${w?` · WMP US$${fmt(w.usdPerTonne)}/t (${sign(w.changePct)}%)`:""} · avg US$${fmt(v.avgUsdPerTonne)}/t`},
+  calendar:e=>{const v=e.values;let t=v.publicHoliday?`<b>${esc(v.publicHoliday.name)}</b> today`:v.weekend?`<b>Weekend</b>`:`<b>Working ${esc(v.weekday)}</b>`;if(v.school&&v.school.label)t+=` · ${esc(v.school.label)}`;if(v.nextPublicHoliday)t+=` · ${esc(v.nextPublicHoliday.name)} in ${v.nextPublicHoliday.daysAway} day${v.nextPublicHoliday.daysAway===1?"":"s"}`;return t},
+  ed:e=>{const v=e.values;return `<b>${esc(v.districtName)} ED: ${fmt(v.pct,1)}% seen within 6 h</b> · target 95%${v.national?` · NZ ${fmt(v.national.pct,1)}%`:""}`},
+  urgentcare:e=>{const v=e.values;return `<b>Pegasus urgent care wait ${esc(v.waitText||"–")}</b> · ${fmt(v.waiting)} waiting · Christchurch`},
+  wastewater:e=>{const v=e.values;return `<b>COVID-19 in wastewater ${esc(v.direction)}</b> · ${sign(v.change4wkPct,0)}% over 4 weeks${v.region?` · ${esc(v.region.name)} ${fmt(v.region.copies/1e6,1)}M copies/person/day`:""}`},
+  attendance:e=>{const v=e.values;return `<b>${fmt(v.regularPct,1)}% of students attending regularly</b>${v.yearAgo?` · ${fmt(v.yearAgo.regularPct,1)}% a year earlier`:""}${v.region?` · ${esc(v.region.name)} ${fmt(v.region.regularPct,1)}%`:""} · ${fmt(v.chronicPct,1)}% chronic absence`},
+  vehicles:e=>{const v=e.values;return `<b>${fmt(v.total)} new cars registered</b> · ${fmt(v.evSharePct,1)}% EV or plug-in${v.changePct!=null?` · ${sign(v.changePct)}% on a year ago`:""}`},
+};
+const ok=(j,id)=>j&&j.feeds&&j.feeds[id]&&!j.feeds[id].error?j.feeds[id]:null;
+function draw(j){const want=(document.documentElement.dataset.feeds||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const ids=want.length?want:Object.keys(j.feeds||{});const out=[];let missing=[];
+  for(const id of ids){const e=ok(j,id);if(!e){missing.push(id);continue}const f=F[id];if(!f)continue;let body;try{body=f(e)}catch(err){continue}
+    out.push(`<span class="alf-i" title="${esc(e.label)}">${body} · <a href="${esc(e.source.url)}" target="_blank" rel="noopener">${esc(e.source.name)}</a>${e.source.name.includes(e.period)?"":" · "+esc(e.period)}<em class="${e.truth==="Live"?"lv":"lp"}">${e.truth==="Live"?"Live":"Latest published"}</em></span>`)}
+  const el=$("assemblLive");if(!el)return;if(!out.length){el.hidden=true;return}
+  $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
+  $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
+  try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
+function HOOK(j,ok,u){const f=ok("fpi");if(f){const g=Object.fromEntries((f.values.groups||[]).map(x=>[x.name,x.annualPct]));const rows=[["All food",f.value,"--pinkD"],["Fruit and veg",g["Fruit and vegetables"],"--mintD"],["Grocery food",g["Grocery food"],"--pinkD"],["Meat, poultry and fish",g["Meat, poultry and fish"],"--pinkD"]].filter(r=>r[1]!=null);
+  const mx=Math.max(5,...rows.map(r=>Math.abs(r[1])));document.getElementById("fpiBars").innerHTML=rows.map(([n,v,c])=>`<li><div class="lr"><span>${u.esc(n)}</span><b>${v>0?"+":v<0?"−":""}${u.fmt(Math.abs(v),1)}%</b></div><div class="trk ctr"><i class="${v>=0?"pos":"neg"}" style="--k:var(${c});width:${(Math.abs(v)/mx*50).toFixed(1)}%"></i></div></li>`).join("");
+  document.getElementById("fpiBars").setAttribute("aria-label","Annual food price change: "+rows.map(r=>`${r[0]} ${u.sign(r[1])}%`).join(", "));
+  document.getElementById("fpiTitle").textContent=`Food prices, a year to ${f.period}`;const c=document.getElementById("fpiChip");c.textContent="Latest published";c.title=`Stats NZ Food Price Index, ${f.period}`}}
+window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
+if(window.__assemblLive)draw(window.__assemblLive);
+})();
+</script>
+  <footer>
+    <p><span class="sim">SIMULATED</span> The flow is an illustration. Household waste figures are from the Rabobank–KiwiHarvest Food Waste Survey (July 2025: $1,364 per household, $3.0 billion nationally, 10.9% of food bought). The number of households (about 2.2 million) is derived from those two figures. Food rescue totals are from KiwiHarvest's and Fair Food's own counters (October 2026); hardship grants from MSD's September 2026 quarter fact sheet; food parcels from Auckland City Mission; prices from Stats NZ's Food Price Index (September 2026; on the lab site the latest published month replaces the food price bars); market share from the Commerce Commission's grocery report (June 2026). Comparisons are about scale, not a claim that money saved in one place would move to another.</p>
+    <p>Built by assembl as an independent concept. Not affiliated with any supermarket, charity or government agency.</p>
+  </footer>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id),fmt=(n,d=0)=>Number(n).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+const NAT=3.0e9,PERHH=1364,HH=NAT/PERHH,MSD_YEAR=32.7e6*4,MEALS_PER_KG=48.2/21.7;
+const S={spend:240,share:10.9,cut:10};
+const money=n=>n>=1e9?"$"+fmt(n/1e9,2)+" billion":n>=1e6?"$"+fmt(n/1e6,0)+"m":"$"+fmt(n);
+function nums(){const yours=S.spend*52*S.share/100,nat=NAT*S.cut/100;
+  $("spendV").textContent="$"+S.spend;$("shareV").textContent=fmt(S.share,1)+"%";$("cutV").textContent=S.cut+"%";
+  $("yourWaste").textContent="$"+fmt(yours)+" a year";
+  $("yourSay").innerHTML=yours>0?`That's about <b>${fmt(yours/S.spend,1)} weeks</b> of food shopping a year that goes in the bin. Cutting it by a third would save about <b>$${fmt(yours/3)}</b>.`:"Nothing wasted. You might be the only one.";
+  $("natSave").textContent=money(nat)+" a year";
+  drawViz(yours,nat);
+  $("natSay").innerHTML=S.cut?`That's about <b>${fmt(nat/MSD_YEAR,1)} times</b> what MSD paid in food hardship grants over a year (about $131m at September's rate).`:"Slide it up to see what a small change adds up to.";}
+// ---- visuals drawn from the same numbers
+function drawViz(yours,nat){const wks=S.spend?yours/S.spend:0;$("wkBin").textContent=fmt(wks,1);
+  $("weeks").setAttribute("aria-label",`52 squares, one per week of food shopping; ${fmt(wks,1)} weeks' worth is binned`);
+  $("weeks").innerHTML=Array.from({length:52},(_,i)=>{const f=Math.max(0,Math.min(1,wks-i));return `<i>${f>0?`<b style="width:${(f*100).toFixed(0)}%"></b>`:""}</i>`}).join("");
+  const rows=[["All household food waste","a year, NZ",NAT,"var(--pinkD)","Source"],["If waste fell by "+S.cut+"%","saved a year",nat,"var(--mintD)","Simulated"],["MSD food hardship grants","a year at September's rate",MSD_YEAR,"var(--skyD)","Source"]];
+  $("natBars").innerHTML=rows.map(([n,sub,v,k,t])=>`<li title="${n}: ${money(v)}"><div class="lr"><span>${n} <span class="tl">${t}</span><small>${sub}</small></span><b>${money(v)}</b></div><div class="trk"><i style="--k:${k};width:${(v/NAT*100).toFixed(2)}%"></i></div></li>`).join("")}
+// ---- the animated flow
+const W=960,H=330;let t=0;
+const STATIONS={shop:{x:110,y:165,label:"Shops",sub:"what we buy"},home:{x:420,y:165,label:"Home",sub:"fridge and pantry"},plate:{x:760,y:70,label:"Eaten",sub:"most of it"},bin:{x:760,y:190,label:"Binned",sub:"at home"},rescue:{x:760,y:285,label:"Rescued",sub:"to charities"}};
+function station(k,c){const s=STATIONS[k];return `<g><rect x="${s.x-62}" y="${s.y-30}" width="124" height="60" rx="18" fill="${c}" stroke="var(--ink)" stroke-width="2.5"/><text x="${s.x}" y="${s.y-4}" text-anchor="middle" style="font:700 16px var(--display);fill:var(--ink)">${s.label}</text><text x="${s.x}" y="${s.y+15}" text-anchor="middle" style="font:500 11px var(--mono);fill:var(--soft)">${s.sub}</text></g>`}
+const lane=(a,b)=>{const A=STATIONS[a],B=STATIONS[b];return {x1:A.x+62,y1:A.y,x2:B.x-62,y2:B.y}};
+const LANES=[["shop","home",1,"var(--mintD)"],["home","plate",0.89-S.share/100*0,"var(--mintD)"],["home","bin",0.109,"var(--pinkD)"],["shop","rescue",0.04,"var(--butterD)"]];
+const dots=[];for(let i=0;i<70;i++)dots.push({lane:i%10<6?0:i%10<8?1:i%10<9?2:3,u:Math.random()});
+function draw(){t+=1/60;const waste=S.share/100*(1-S.cut/100);let o="";
+  LANES.forEach(([a,b,,c],i)=>{const L=lane(a,b);const w=i===2?Math.max(2,waste*90):i===1?Math.max(2,(1-waste)*24):i===3?6:22;
+    o+=`<path d="M${L.x1},${L.y1} C${(L.x1+L.x2)/2},${L.y1} ${(L.x1+L.x2)/2},${L.y2} ${L.x2},${L.y2}" fill="none" stroke="${c}" stroke-opacity=".22" stroke-width="${w}" stroke-linecap="round"/>`});
+  dots.forEach((d,i)=>{const lanes=[0,1,1,1,1,1,1,1,2,3];// route most food to the plate, some to the bin
+    d.u+=0.004+0.002*(i%3);if(d.u>1){d.u=0;d.lane=i%5===0?3:Math.random()<waste?2:Math.random()<0.5?0:1}
+    const [a,b,,c]=LANES[d.lane];const L=lane(a,b),u=d.u,mx=(L.x1+L.x2)/2;
+    const x=Math.pow(1-u,3)*L.x1+3*Math.pow(1-u,2)*u*mx+3*(1-u)*u*u*mx+u*u*u*L.x2,y=Math.pow(1-u,3)*L.y1+3*Math.pow(1-u,2)*u*L.y1+3*(1-u)*u*u*L.y2+u*u*u*L.y2;
+    const shape=i%4;o+=shape===0?`<circle cx="${x}" cy="${y}" r="7" fill="var(--pink)" stroke="var(--ink)" stroke-width="1.5"/>`:shape===1?`<rect x="${x-7}" y="${y-5}" width="14" height="10" rx="4" fill="var(--butter)" stroke="var(--ink)" stroke-width="1.5"/>`:shape===2?`<ellipse cx="${x}" cy="${y}" rx="8" ry="5" fill="var(--mint)" stroke="var(--ink)" stroke-width="1.5"/>`:`<circle cx="${x}" cy="${y}" r="5" fill="var(--sky)" stroke="var(--ink)" stroke-width="1.5"/>`});
+  o+=station("shop","var(--sky)")+station("home","var(--butter)")+station("plate","var(--mint)")+station("bin","var(--pink)")+station("rescue","var(--lilac)");
+  o+=`<text x="${STATIONS.bin.x+72}" y="${STATIONS.bin.y+5}" style="font:700 15px var(--display);fill:var(--pinkD)">${fmt(waste*100,1)}%</text>`;
+  $("flow").innerHTML=o;if(!matchMedia("(prefers-reduced-motion: reduce)").matches)requestAnimationFrame(draw)}
+["spend","share","cut"].forEach(k=>$(k).oninput=e=>{S[k]=+e.target.value;nums()});
+nums();draw();
+})();
+</script>
+
+<script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="food"></script><script src="/lab/navigation.js" defer></script></body></html>

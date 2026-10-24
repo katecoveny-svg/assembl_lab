@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The text studio</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"><link rel="stylesheet" href="../kit.css">
+<style>
+/* text studio: the poem is real HTML inside the drawing (a foreignObject), so it wraps and highlights like a page */
+#k-main .tt{font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+#k-main .td{font-family:"Fredoka","Instrument Sans",system-ui,sans-serif}
+#k-main [data-p],#k-main [data-ans],#k-main [data-line],#k-main [data-go],#k-main [data-dot],#k-main [data-ef]{cursor:pointer}
+.ts-poem{font:500 17px/1.62 "Instrument Sans",system-ui,sans-serif;color:var(--ink);margin:0;padding:0}
+.ts-poem h4{margin:0 0 6px;font:600 24px/1.1 "Fredoka","Instrument Sans",sans-serif;color:var(--ink);letter-spacing:-.01em}
+.ts-poem .by{font:600 11px/1 "Instrument Sans",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:0 0 12px}
+.ts-poem ol{list-style:none;margin:0;padding:0;counter-reset:ln}
+.ts-poem li{counter-increment:ln;position:relative;padding-left:30px;margin:0}
+.ts-poem li::before{content:counter(ln);position:absolute;left:0;top:.28em;width:20px;text-align:right;font:600 11px/1.6 "Instrument Sans",sans-serif;color:var(--rose);opacity:.8}
+.ts-poem li.gap{margin-top:.5em}
+.ts-poem li.dim{color:#B3B0C4}
+.ts-poem li.dim::before{opacity:.45}
+.ts-poem mark{background:transparent;color:inherit;border-radius:6px;padding:1px 2px;margin:0 -2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;transition:background .25s ease}
+.ts-poem mark.on{background:var(--hl);box-shadow:0 0 0 1px var(--hd) inset;cursor:pointer}
+.ts-poem mark.on.pick{box-shadow:0 0 0 2px var(--hd) inset,0 6px 14px -8px var(--hd)}
+.ts-poem mark.cur{background:#FFE9A8;box-shadow:0 0 0 2px #FFB020 inset;animation:tsglow 1.6s ease-in-out infinite}
+.ts-poem mark.cur.done{animation:none;background:var(--hl);box-shadow:0 0 0 2px var(--hd) inset}
+.ts-poem mark.fresh{animation:tslight .6s ease}
+@keyframes tsglow{0%,100%{box-shadow:0 0 0 2px #FFB020 inset}50%{box-shadow:0 0 0 2px #FFB020 inset,0 0 0 6px rgba(255,176,32,.25)}}
+@keyframes tslight{0%{filter:brightness(1.5);transform:scale(1.04)}100%{filter:none;transform:none}}
+.ts-quote{font:500 21px/1.45 "Instrument Sans",system-ui,sans-serif;color:var(--ink);margin:0}
+.ts-quote mark{background:#FFE9A8;color:inherit;border-radius:7px;padding:1px 3px;box-shadow:0 0 0 2px #FFB020 inset;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.ts-quote mark.done{background:var(--hl);box-shadow:0 0 0 2px var(--hd) inset}
+.ts-quote .ctx{display:block;font-size:14.5px;line-height:1.45;color:#A9A6BC}
+.ts-quote .cur{display:block;margin:2px 0}
+.ts-quote .ln{display:block;font:600 11px/1 "Instrument Sans",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin-bottom:8px}
+.ts-sent{font:500 15.5px/1.45 "Instrument Sans",system-ui,sans-serif;color:var(--ink);margin:0}
+.ts-sent b{font-weight:700}
+.ts-sent .slot{border-radius:6px;padding:0 3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.ts-sent .ghost{color:#9A97AE;text-decoration:line-through;text-decoration-color:#E0479E;text-decoration-thickness:2px}
+.ts-sent .ev{display:block;margin-top:8px;font-size:13.5px;color:var(--body)}
+.ts-sent .hole{color:var(--rose);font-weight:600}
+@media (prefers-reduced-motion:reduce){.ts-poem mark.cur,.ts-poem mark.fresh{animation:none}}
+/* long select options must not widen the drawing column (they would push the canvas past the card on phones) */
+.playmain{grid-template-columns:minmax(0,1fr)}
+#k-ctl .ctl{max-width:100%;flex-wrap:wrap}
+#k-ctl select{max-width:min(100%,300px);min-width:0;text-overflow:ellipsis}
+@media (max-width:620px){#k-ctl select{max-width:236px}}
+/* the technique switches carry their highlighter colour */
+#k-ctl .btn.tog.hc{box-shadow:inset 0 -4px 0 var(--hd)}
+#k-ctl .btn.tog.hc[aria-pressed="true"]{background:var(--hl);border-color:var(--hd)}
+#k-ctl .btn.tog.hc[aria-pressed="true"]::before{color:var(--ink)}
+</style></head>
+<body><div id="app"></div><script src="../kit.js"></script><script src="text.js"></script><script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script></body></html>

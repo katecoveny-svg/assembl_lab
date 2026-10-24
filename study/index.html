@@ -1,0 +1,403 @@
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>assembly · study machines</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fredoka:wght@500;600;700&family=Caveat:wght@600;700&display=swap">
+<link rel="stylesheet" href="kit.css">
+<style>
+/* Layout: assembly's front room. A top bar, a hero with Allen and the countdown, the machines on the bench,
+   Allen's den (customise him with gear you've earned), then a year-by-year index of every exam with links out to the real papers. */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;background:var(--as-card);border:1px solid var(--as-line);border-radius:22px;padding:12px 14px 12px 18px;box-shadow:var(--as-shadow)}
+.top .as-lock{display:inline-flex;align-items:baseline;margin-right:auto;text-decoration:none}
+.top .as-word{font-size:26px}
+.top nav{display:flex;gap:4px;flex-wrap:wrap}
+.top nav a{color:var(--as-ink);text-decoration:none;font:600 14px var(--as-font);padding:7px 12px;border-radius:999px}
+.top nav a:hover{background:var(--as-mintsoft)}
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:center;background:var(--as-card);border:1px solid var(--as-line);border-radius:32px;padding:clamp(18px,3.4vw,40px);box-shadow:var(--as-shadow);overflow:hidden;position:relative}
+.hero h1{font-size:clamp(40px,6.6vw,76px);line-height:.98;max-width:11ch;margin:8px 0 14px}
+.hero p{margin:0;max-width:52ch;font-size:16.5px;color:var(--as-text)}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.btn.big{font-size:15px;padding:11px 20px}
+.hero figure{margin:0;position:relative}
+.hero figure a{display:block;width:min(100%,420px);margin:0 auto;border-radius:50%;filter:drop-shadow(0 18px 28px rgba(36,11,33,.22))}
+.hero figure a:hover .ab-dog{transform:translateY(-1.5%)}
+.hero figure a:focus-visible{outline:3px solid var(--as-focus);outline-offset:6px}
+.hero figcaption{display:block;width:max-content;margin:10px 8px 0 auto;font-size:clamp(28px,3vw,36px);transform:rotate(-3deg);color:var(--as-ink)}
+.hero figcaption span{display:block;width:84%;height:7px;margin:2px 0 0 10%;background:var(--as-sun);border-radius:6px;transform:rotate(-2deg)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:14px}
+.count{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:center;border:1px solid var(--as-line);border-radius:24px;padding:16px 20px;background:var(--as-card)}
+.count .num{font:600 60px/1 var(--as-display);color:var(--as-ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.count .txt{font:600 16px/1.3 var(--as-font);color:var(--as-ink)}
+.count .txt span{display:block;color:var(--as-muted);font-size:13.5px;font-weight:500;margin-top:3px}
+.count.streak{background:var(--as-sunsoft);border-color:transparent}
+.count.streak .num{background:var(--as-sun);color:var(--as-onsun);border-radius:20px;padding:6px 14px 8px}
+.miles{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;list-style:none;padding:0}
+.miles li{font:600 12px var(--as-font);color:var(--as-ink);border:1.5px dashed var(--as-line2);border-radius:999px;padding:4px 10px;background:var(--as-card)}
+.miles li.got{border-style:solid;border-color:var(--as-ink);background:var(--as-sun);color:var(--as-onsun)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,262px),1fr));gap:14px}
+.mcard{display:grid;grid-template-rows:auto 1fr auto;gap:10px;border:1px solid var(--as-line);border-radius:24px;background:var(--as-card);padding:12px 12px 14px;text-decoration:none;color:inherit;transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease}
+.mcard:hover{transform:translateY(-3px);border-color:var(--as-mint);box-shadow:var(--as-shadow)}
+.mcard svg{border-radius:16px;background:var(--chalk)}
+.mcard h3{margin:0 2px;font:600 19px/1.15 var(--as-display);color:var(--as-ink)}
+.mcard p{margin:4px 2px 0;font-size:13.5px}
+.mcard .go{font:600 13px var(--as-font);color:var(--as-ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:0 2px}
+.mcard .go b{font-weight:600;background:var(--as-ink);color:var(--as-card);border-radius:999px;padding:5px 12px}
+.gearnote{font:600 12px var(--as-font);color:var(--as-muted);display:inline-flex;gap:6px;align-items:center}
+.gearnote.got{color:var(--as-mintink)}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin:0 2px}
+.tag{font:600 11px var(--as-font);border-radius:999px;padding:3px 9px;color:var(--as-text);background:var(--as-soft)}
+.tag.ex{background:var(--as-mintsoft);color:var(--as-ink)}
+/* machines as little apps, grouped by subject */
+.subjects{display:grid;gap:26px}
+.subj{display:grid;gap:12px}
+.subj h3{margin:0;display:flex;align-items:center;gap:10px;font:600 20px var(--as-display);color:var(--as-ink)}
+.subj h3 i{width:12px;height:12px;border-radius:4px;background:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 18%,transparent)}
+.subj h3 small{font:500 13px var(--as-font);color:var(--as-muted)}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
+.app{display:grid;grid-template-rows:auto 1fr auto;border-radius:24px;background:var(--as-card);border:1px solid var(--as-line);overflow:hidden;text-decoration:none;color:inherit;box-shadow:var(--as-shadow);transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease}
+.app:hover{transform:translateY(-3px);box-shadow:var(--as-lift);border-color:color-mix(in srgb,var(--acc) 40%,#fff)}
+.app-art{position:relative;display:block;background:color-mix(in srgb,var(--acc) 11%,#fff);padding:10px 12px 18px}
+.app-art svg{display:block;width:100%;height:auto}
+.app-ic{position:absolute;left:14px;bottom:-18px;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--acc);color:#fff;box-shadow:0 8px 16px -8px var(--acc),0 0 0 3px var(--as-card)}
+.app-ic svg{width:25px;height:25px}
+.app-ex{position:absolute;right:10px;top:10px;font:700 11px var(--as-font);letter-spacing:.02em;background:var(--as-card);color:var(--as-ink);border-radius:999px;padding:3px 9px;box-shadow:0 2px 6px rgba(42,33,64,.1)}
+.app-body{display:grid;gap:4px;align-content:start;padding:28px 16px 6px}
+.app-body b{font:600 18px/1.15 var(--as-display);color:var(--as-ink)}
+.app-bl{font-size:13.5px;line-height:1.4;color:var(--as-text)}
+.app-foot{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 8px;padding:8px 16px 14px;font:600 12px var(--as-font);color:var(--as-muted);min-width:0}
+.app-foot .yr{white-space:nowrap;flex:none}
+.app-foot .gearnote{font-weight:600;color:var(--as-muted);background:var(--as-soft);border-radius:999px;padding:3px 9px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-foot .gearnote.got{color:var(--as-mintink);background:var(--as-mintsoft)}
+.app-foot .go{flex:none;margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;padding:5px 13px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.app{transition:none}.app:hover{transform:none}}
+@media (max-width:620px){
+  .apps{grid-template-columns:1fr 1fr;gap:10px}
+  .app{border-radius:20px}
+  .app-art{padding:6px 6px 12px}
+  .app-ic{width:34px;height:34px;left:10px;bottom:-14px;border-radius:11px}.app-ic svg{width:20px;height:20px}
+  .app-ex{font-size:9.5px;padding:2px 7px;top:6px;right:6px}
+  .app-body{padding:20px 11px 2px;gap:3px}
+  .app-body b{font-size:15px}
+  .app-bl{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;line-height:1.35}
+  .app-foot{padding:6px 11px 11px}
+  .app-foot .gearnote{display:none}
+  .app-foot .yr{font-size:11px}
+  .app-foot .go{padding:4px 11px}
+  .subj h3{font-size:18px}
+}
+section.block{display:grid;gap:14px}
+section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.1 var(--as-display);color:var(--as-ink);letter-spacing:-.01em}
+.lede{margin:-6px 0 0;max-width:70ch;color:var(--as-text)}
+/* Allen's den */
+.den{background:var(--as-card);border:1px solid var(--as-line);border-radius:32px;padding:clamp(16px,3vw,30px);box-shadow:var(--as-shadow)}
+.den-head{display:grid;gap:6px}
+.den-head h2{margin:0}
+.den-head .script{font-size:26px;color:var(--as-plum)}
+.den-grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:22px;align-items:start}
+.den-stage{position:sticky;top:12px;display:grid;gap:10px}
+.den-stage .pic{width:min(100%,380px);margin:0 auto;border-radius:50%;filter:drop-shadow(0 18px 28px rgba(36,11,33,.22))}
+.den-stage .pic .allen{cursor:pointer}
+.den-stage .who{font:600 22px var(--as-display);color:var(--as-ink);margin:0 4px}
+.den-stage .who small{display:block;font:500 13px var(--as-font);color:var(--as-muted)}
+.den-ctl{display:grid;gap:16px;min-width:0}
+.den-ctl fieldset{border:0;margin:0;padding:0;min-width:0;display:grid;gap:8px}
+.den-ctl legend{font:600 12px var(--as-font);letter-spacing:.08em;text-transform:uppercase;color:var(--as-muted);padding:0;margin-bottom:8px}
+.namebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.namebox input{font:600 18px var(--as-display);color:var(--as-ink);background:var(--as-bg);border:1.5px solid var(--as-plum);border-radius:14px;padding:8px 14px;width:min(100%,240px)}
+.namebox input:focus-visible{outline:3px solid var(--as-focus);outline-offset:2px}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:8px}
+.opts.swatches{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+.opt{position:relative;display:block;cursor:pointer}
+.vh{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.opt-in{display:grid;gap:4px;justify-items:center;text-align:center;border:1.5px solid var(--as-line);border-radius:18px;padding:8px 6px 9px;background:var(--as-bg);height:100%;transition:border-color .15s ease,background .15s ease}
+.opt:hover .opt-in{border-color:var(--as-mint)}
+.opt input:checked+.opt-in{border-color:var(--as-mint);background:var(--as-mintsoft);box-shadow:inset 0 0 0 1.5px var(--as-mint)}
+.opt input:focus-visible+.opt-in{outline:3px solid var(--as-focus);outline-offset:2px}
+.opt .thumb{width:100%;max-width:84px;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--as-soft);display:grid;align-content:center}
+.opt .thumb.wide{max-width:84px}
+.opt .nm{font:600 12.5px/1.2 var(--as-font);color:var(--as-ink)}
+.opt .lk{font:500 11px/1.25 var(--as-font);color:var(--as-muted)}
+.opt .new{position:absolute;top:-6px;right:-4px;font:700 10.5px var(--as-font);background:var(--as-sun);color:var(--as-onsun);border-radius:999px;padding:2px 7px;letter-spacing:.04em}
+.opt.locked{cursor:not-allowed}
+.opt.locked .thumb{filter:grayscale(1);opacity:.45}
+.opt.locked .opt-in{border-style:dashed;background:transparent}
+.opt.locked .nm::before{content:"";display:inline-block;width:9px;height:10px;margin-right:5px;vertical-align:-1px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 10'%3E%3Cpath d='M2 4V3a2.5 2.5 0 015 0v1h1v6H1V4zm1 0h3V3a1.5 1.5 0 00-3 0z'/%3E%3C/svg%3E") no-repeat center/contain;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 10'%3E%3Cpath d='M2 4V3a2.5 2.5 0 015 0v1h1v6H1V4zm1 0h3V3a1.5 1.5 0 00-3 0z'/%3E%3C/svg%3E") no-repeat center/contain}
+.dot{width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(36,11,33,.35);display:block}
+.switch{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--as-ink);cursor:pointer}
+.switch input{width:20px;height:20px;accent-color:var(--as-mint);margin:1px 0 0;flex:none}
+.switch small{display:block;color:var(--as-muted);font-size:12.5px}
+.denbtns{display:flex;flex-wrap:wrap;gap:8px}
+/* exam index */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{appearance:none;border:1.5px solid var(--as-line2);background:var(--as-card);color:var(--as-ink);border-radius:999px;padding:9px 16px;font:600 14px var(--as-font);cursor:pointer}
+.tabs button:hover{border-color:var(--as-mint)}
+.tabs button[aria-selected="true"]{background:var(--as-ink);color:var(--as-card);border-color:var(--as-ink)}
+.tabs button small{font:500 11.5px var(--as-font);opacity:.8;margin-left:6px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar input[type=search]{flex:1 1 220px;font:15px var(--as-font);color:var(--as-ink);background:var(--as-card);border:1.5px solid var(--as-plum);border-radius:999px;padding:9px 16px;min-width:0}
+.subject{display:grid;gap:8px}
+.subject h3{margin:8px 0 0;font:600 20px var(--as-display);color:var(--as-ink)}
+.std{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:start;border:1px solid var(--as-line);border-radius:20px;padding:13px 16px;background:var(--as-card)}
+.std .t{color:var(--as-ink);font-weight:600}
+.std .t .code{font:500 12px var(--as-mono);color:var(--as-muted);margin-right:8px}
+.std .meta{font-size:13px;color:var(--as-muted);margin-top:3px}
+.std .meta b{color:var(--as-ink);font-weight:600}
+.std .acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.std details{grid-column:1/-1;font-size:14px}
+.std details summary{cursor:pointer;font:600 12px var(--as-font);color:var(--as-plum);letter-spacing:.06em;border-radius:6px}
+.std details ul{margin:6px 0 0;padding-left:18px}
+.star{appearance:none;border:1.5px solid var(--as-line2);background:var(--as-card);color:var(--as-ink);border-radius:999px;padding:7px 12px;font:600 13px var(--as-font);cursor:pointer}
+.star:hover{border-color:var(--as-mint)}
+.star[aria-pressed="true"]{background:var(--as-mintsoft);border-color:var(--as-mint)}
+.soon{font:600 12px var(--as-font);color:var(--as-muted);border:1.5px dashed var(--as-line2);border-radius:999px;padding:6px 11px}
+.mine{border:1px solid var(--as-line);border-radius:22px;padding:14px 16px;background:var(--as-soft);display:grid;gap:8px}
+.mine h3{margin:0;font:600 12px var(--as-font);letter-spacing:.08em;text-transform:uppercase;color:var(--as-muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.mine ol{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.mine li{display:grid;grid-template-columns:7.5em minmax(0,1fr) auto;gap:10px;font-size:14px;color:var(--as-ink);align-items:baseline}
+.mine li .d{font:500 12px var(--as-mono);color:var(--as-muted)}
+.mine li .c{font:600 12.5px var(--as-font);color:var(--as-mintink)}
+.area{display:grid;gap:6px;border:1px solid var(--as-line);border-radius:20px;padding:14px 16px;background:var(--as-card)}
+.area h3{margin:0;font:600 19px var(--as-display);color:var(--as-ink)}
+.area .st{font-size:12.5px;color:var(--as-muted)}
+.area ul{margin:4px 0 0;padding-left:18px;display:grid;gap:4px}
+.area li a{color:var(--as-ink);font-weight:600;text-decoration-color:var(--as-mint);text-decoration-thickness:2px;text-underline-offset:3px}
+.note{font-size:14px;color:var(--as-text);max-width:80ch}
+.empty{font-size:14px;color:var(--as-muted)}
+.hub-foot{border-top:1px solid var(--as-line);padding-top:16px;margin-top:6px}
+/* a whakataukī about learning: one quiet line, plum on cream, no ornament */
+.whaka{margin:0;padding:4px 6px 4px 18px;border-left:3px solid var(--as-plum);display:grid;gap:4px;max-width:86ch}
+.whaka blockquote{margin:0;font:600 clamp(16px,1.9vw,19px)/1.35 var(--as-display);color:var(--as-ink)}
+.whaka blockquote span{display:block;text-wrap:balance}
+.whaka figcaption span{text-wrap:pretty}
+.whaka figcaption{font-size:13.5px;color:var(--as-text)}
+.whaka cite{font-style:normal;color:var(--as-muted);font-size:12.5px;white-space:normal}
+.whaka cite a{color:var(--as-mintink)}
+@media (max-width:820px){.hero{grid-template-columns:1fr}.hero h1{max-width:none}.den-grid{grid-template-columns:1fr}.den-stage{position:static}}
+@media (max-width:620px){.opts{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}.std{grid-template-columns:1fr}.std .acts{justify-content:flex-start}.mine li{grid-template-columns:6.5em minmax(0,1fr)}.mine li .c{grid-column:2}.top nav{width:100%}.top nav a{padding:6px 10px}.count .num{font-size:44px}}
+@media (prefers-reduced-motion:reduce){.mcard{transition:none}.mcard:hover{transform:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
+    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a></nav>
+  </header>
+
+  <section class="hero" aria-labelledby="h-hero">
+    <div>
+      <div class="eyebrow">Study machines · Aotearoa</div>
+      <h1 id="h-hero">Your exam, <span class="swash">assembled.</span></h1>
+      <p><span lang="mi">Kia ora.</span> Interactive machines for NCEA and Years 9–10. See how it works, piece by piece, then nail it in the exam. Pick your year, find your exams, run a machine, and practise with NZQA's real past papers.</p>
+      <div class="cta"><a class="btn primary big" href="#h-mach">Find a machine →</a><a class="btn big" href="#h-index">Find my exams</a></div>
+    </div>
+    <figure><a href="#den" id="heroAllen" aria-label="Visit Allen's den"></a><figcaption class="script" aria-hidden="true">piece by piece.<span></span></figcaption></figure>
+  </section>
+
+  <figure class="whaka" aria-labelledby="whaka-mi">
+    <blockquote lang="mi" id="whaka-mi"><span>Whaowhia te kete mātauranga.</span></blockquote>
+    <figcaption><span>Fill the basket of knowledge.</span> <cite>Whakataukī, from the Ministry of Education's <a href="https://akopanuku.education.govt.nz/assets/ResourceFiles/Resource_Nga-whakatauki_File.pdf" target="_blank" rel="noopener">Ngā Whakataukī</a> resource</cite></figcaption>
+  </figure>
+
+  <div class="stats">
+    <div class="count" id="count"></div>
+    <div class="count streak" id="streak"></div>
+  </div>
+
+  <section class="block" aria-labelledby="h-mach">
+    <h2 id="h-mach">Machines on the bench</h2>
+    <p class="lede">Each one is a little app: pick a step, play with the drawing, then test yourself. Grouped by subject.</p>
+    <div class="subjects" id="machines"></div>
+  </section>
+
+  <section class="block den" id="den" aria-labelledby="h-den">
+    <div class="den-head"><h2 id="h-den"><span id="denName">Allen</span>'s den</h2>
+      <p class="lede">Allen is a long-haired dachshund, named after the Allen key every kitset needs. Pass a challenge in a machine to unlock gear; keep a streak going to unlock new places. He's saved on this device.</p></div>
+    <div class="den-grid">
+      <div class="den-stage"><div class="pic" id="denPic"></div><p class="who" id="denWho"></p></div>
+      <form class="den-ctl" id="denCtl" onsubmit="return false"></form>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-index">
+    <h2 id="h-index">Every exam, year by year</h2>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="mine" id="mine"></div>
+    <div id="panel"></div>
+  </section>
+
+  <footer class="hub-foot">
+    <p>Free to use. Exam dates are from NZQA's 2026 timetable; check your admission slip, since your school's entries decide what you sit. We link to NZQA for past papers, marking schedules and exemplars instead of copying them, because NZQA restricts reproduction of its assessment material.</p>
+    <p>Years 9–10 topics follow the refreshed New Zealand Curriculum: English and maths are in use from 2026; science and social sciences are required from 2027, so schools may still teach older content. Your school sets Year 9 and 10 exams.</p>
+    <p>Not made by or endorsed by NZQA or the Ministry of Education. Teachers: we'd love a review of any machine.</p>
+    <p class="as-foot" id="foot"></p>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script src="kit.js"></script>
+<script>
+(()=>{
+const D=window.STUDY, $=id=>document.getElementById(id), esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const K=window.StudyKit, A=K.allen;
+const NZ={timeZone:"Pacific/Auckland"};
+const days=iso=>Math.ceil((Date.parse(iso)-Date.now())/864e5);
+const fmtDay=iso=>new Date(iso).toLocaleDateString("en-NZ",{...NZ,weekday:"short",day:"numeric",month:"short"});
+const fmtTime=iso=>new Date(iso).toLocaleTimeString("en-NZ",{...NZ,hour:"numeric",minute:"2-digit"}).replace(":00","").replace(" ","");
+let mine=[];try{mine=JSON.parse(localStorage.getItem("mine")||"[]")}catch(e){}
+const saveMine=()=>{try{localStorage.setItem("mine",JSON.stringify(mine))}catch(e){}};
+$("lock").innerHTML=K.lockup;$("foot").innerHTML=K.lockup+`<span>assembly is made by assembl in Aotearoa.</span>`;
+
+// countdown
+(function(){const d=days(D.examsStart),e=days(D.examsEnd);
+  $("count").innerHTML=d>0?`<span class="num">${d}</span><span class="txt">days until NCEA exams start<span>${fmtDay(D.examsStart)} to ${fmtDay(D.examsEnd)} 2026 · 9:30am and 2pm sessions</span></span>`
+   :e>=0?`<span class="num">${e}</span><span class="txt">days of NCEA exams left<span>Last exam ${fmtDay(D.examsEnd)}</span></span>`:`<span class="txt">2026 NCEA exams are finished. Next year's start ${esc(D.next||"in November")}.</span>`})();
+
+// study streak (this device), plus the places it unlocks for Allen
+const LOG=K.readLog(), ST=A.state(LOG);
+(function(){const L=LOG;
+  const day=t=>new Date(t).toLocaleDateString("en-CA",{timeZone:"Pacific/Auckland"});
+  const days=new Set(L.map(x=>x.d));let n=0,cur=Date.now();if(!days.has(day(cur)))cur-=864e5;
+  while(days.has(day(cur))){n++;cur-=864e5}
+  const passed=L.filter(x=>x.kind==="pass").length,tried=new Set(L.map(x=>x.m)).size;
+  const miles=`<ul class="miles" aria-label="Streak milestones">${A.backgrounds.filter(b=>b.days).map(b=>`<li class="${ST.best>=b.days?"got":""}">${b.days} days · ${esc(A.scenes[b.id].label)}${ST.best>=b.days?" ✓":""}</li>`).join("")}</ul>`;
+  const next=ST.nextBg?`<span>${ST.nextBg.days-ST.best} more day${ST.nextBg.days-ST.best===1?"":"s"} in a row unlocks the ${esc(A.scenes[ST.nextBg.id].label.toLowerCase())} for Allen.</span>`:"";
+  $("streak").innerHTML=L.length?`<span class="num">${n}</span><span class="txt">day study streak${days.has(day(Date.now()))?"":" · study today to keep it going"}<span>${passed} challenges passed · ${tried} machine${tried===1?"":"s"} tried · saved on this device</span>${next}</span>${miles}`
+   :`<span class="txt">Start a study streak<span>Open a machine and pass a challenge each day. Your streak is saved on this device, and it unlocks new places for Allen.</span></span>${miles}`})();
+// machine cards
+const ICON={
+  fish:`<path d="M0,52 Q60,44 120,52 T240,52 L240,120 L0,120Z" fill="var(--sea)" opacity=".45"/><path d="M30,18 Q90,0 150,40" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><path d="M150,40 L150,62" stroke="var(--ink)"/><rect x="146" y="44" width="8" height="16" rx="4" fill="var(--hot)" stroke="var(--ink)"/><path d="M150,60 L150,92" stroke="var(--ink)" stroke-dasharray="2 2"/><g transform="translate(110,96)"><ellipse rx="26" ry="10" fill="var(--hot)" fill-opacity=".55" stroke="var(--ink)"/><path d="M-24,0 l-14,-9 v18Z" fill="var(--hot)" fill-opacity=".55" stroke="var(--ink)"/><circle cx="16" cy="-2" r="2" fill="var(--ink)"/></g>`,
+  claw:`<rect x="70" y="8" width="100" height="106" rx="14" fill="var(--hot)" fill-opacity=".25" stroke="var(--ink)" stroke-width="2"/><rect x="80" y="24" width="80" height="54" rx="6" fill="var(--paper)" stroke="var(--ink)"/><line x1="120" y1="24" x2="120" y2="44" stroke="var(--ink)" stroke-width="2"/><path d="M114,44 l-6,10 M126,44 l6,10" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>${[96,120,144].map((x,i)=>`<circle cx="${x}" cy="70" r="7" fill="${["var(--hot)","var(--land)","var(--sun)"][i]}" stroke="var(--ink)"/>`).join("")}<circle cx="96" cy="96" r="7" fill="var(--earth)" stroke="var(--ink)"/>`,
+  ai:`${[...Array(6)].map((_,i)=>`<rect x="${30+i*14}" y="${30+(i%3)*14}" width="12" height="12" rx="2" fill="var(--ink)" opacity="${.15+((i*37)%7)/9}"/>`).join("")}<path d="M60,90 q20,-30 40,0 t40,0" fill="none" stroke="var(--hot)" stroke-width="3" stroke-linecap="round"/><circle cx="175" cy="58" r="26" fill="none" stroke="var(--earth)" stroke-width="3"/><path d="M160,58 h30 M175,43 v30" stroke="var(--earth)" stroke-width="2"/><path d="M118,58 h30" stroke="var(--rose)" stroke-width="2" stroke-dasharray="3 3"/>`,
+  vinyl:`<circle cx="105" cy="60" r="48" fill="var(--ink)"/>${[40,33,26].map(r=>`<circle cx="105" cy="60" r="${r}" fill="none" stroke="var(--paper)" stroke-opacity=".18"/>`).join("")}<circle cx="105" cy="60" r="16" fill="var(--hot)"/><circle cx="105" cy="60" r="2.5" fill="var(--paper)"/><path d="M180,14 L150,70" stroke="var(--rose)" stroke-width="4" stroke-linecap="round"/><circle cx="180" cy="14" r="7" fill="var(--rose)"/><path d="M168,96 q8,-12 16,0 t16,0 t16,0" fill="none" stroke="var(--hot)" stroke-width="2.5"/>`,
+  bike:`<path d="M10,100 L230,60" stroke="var(--rose)" stroke-width="3"/><g transform="translate(120,82) rotate(-10) scale(1.35)"><circle cx="-26" cy="-15" r="15" fill="none" stroke="var(--ink)" stroke-width="4"/><circle cx="27" cy="-15" r="15" fill="none" stroke="var(--ink)" stroke-width="4"/><path d="M-26,-15 L0,-24 L18,-44 M-26,-15 L-6,-40 L16,-46 M0,-24 L-6,-40" stroke="var(--ink)" stroke-width="3.5" fill="none" stroke-linejoin="round"/><line x1="27" y1="-15" x2="18" y2="-50" stroke="var(--ink)" stroke-width="3.5"/><path d="M-6,-20 L5,-36 L-8,-52 L4,-58 L12,-48 L16,-55" stroke="var(--hot)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="-63" r="7" fill="var(--earth)"/></g><path d="M200,30 l18,0 M195,40 l26,0" stroke="var(--rose)" stroke-width="2" stroke-linecap="round"/>`,
+  sky:`<circle cx="120" cy="60" r="16" fill="var(--sun)" stroke="var(--ink)"/><ellipse cx="120" cy="60" rx="90" ry="34" fill="none" stroke="var(--rose)" stroke-dasharray="2 4"/><circle cx="34" cy="62" r="9" fill="var(--earth)" stroke="var(--ink)"/><circle cx="20" cy="52" r="4" fill="var(--moon)" stroke="var(--ink)"/>`,
+  particles:`<path d="M70,20 v78 h100 v-78" fill="none" stroke="var(--ink)" stroke-width="1.6"/>${[...Array(18)].map((_,i)=>`<circle cx="${84+(i%6)*15}" cy="${88-Math.floor(i/6)*12}" r="5" fill="${i<6?"var(--paper)":i<12?"var(--sea)":"var(--hot)"}" stroke="${i<6?"var(--cold)":"var(--ink)"}" stroke-width="${i<6?1.4:.6}"/>`).join("")}<rect x="190" y="20" width="10" height="70" rx="5" fill="var(--paper)" stroke="var(--ink)"/><circle cx="195" cy="96" r="8" fill="var(--hot)" stroke="var(--ink)"/>`,
+  civics:`${[...Array(30)].map((_,i)=>{const r=26+Math.floor(i/10)*14,a=Math.PI*(i%10)/9;return`<circle cx="${120-Math.cos(a)*r*1.6}" cy="${100-Math.sin(a)*r*1.4}" r="4.5" fill="${i%10<4?"var(--earth)":i%10<7?"var(--hot)":"var(--land)"}"/>`}).join("")}`,
+  energy:`<rect x="40" y="12" width="12" height="96" fill="var(--fill)" stroke="var(--ink)"/><circle cx="70" cy="40" r="6" fill="var(--hot)" stroke="var(--ink)"/>${[["var(--earth)",60],["var(--hot)",30],["var(--sun)",20]].map(([c,h],i)=>`<rect x="${120+i*36}" y="${104-h}" width="26" height="${h}" fill="${c}"/>`).join("")}`,
+  genes:`${[...Array(24)].map((_,i)=>`<circle cx="${40+(i%8)*22}" cy="${30+Math.floor(i/8)*28}" r="8" fill="${i%5===0?"var(--paper)":"var(--ink)"}" stroke="var(--ink)"/>${i%3===0&&i%5?`<circle cx="${40+(i%8)*22}" cy="${30+Math.floor(i/8)*28}" r="2.6" fill="var(--sun)"/>`:""}`).join("")}`,
+  ecology:`<path d="M0,40 L60,40 L240,100 L240,120 L0,120Z" fill="var(--fill)" stroke="var(--ink)"/><path d="M180,86 Q215,74 240,82 L240,120 L180,120Z" fill="var(--sea)" opacity=".4"/>${[0,1,2,3,4].map(i=>`<path d="M${20+i*26},${46+i*9} q-3,${-30+i*5} 0,${-36+i*6}" fill="none" stroke="var(--land)" stroke-width="3"/>`).join("")}`,
+  atoms:`<circle cx="120" cy="60" r="12" fill="var(--hot)" stroke="var(--ink)"/><circle cx="120" cy="60" r="28" fill="none" stroke="var(--rose)"/><circle cx="120" cy="60" r="48" fill="none" stroke="var(--rose)"/><circle cx="148" cy="60" r="5" fill="var(--sea)"/><circle cx="92" cy="60" r="5" fill="var(--sea)"/><circle cx="120" cy="12" r="5" fill="var(--sea)"/><circle cx="154" cy="94" r="5" fill="var(--sea)"/>`,
+  shapes:`<path d="M40,100 L130,100 L160,30 L70,30Z" fill="var(--sun)" fill-opacity=".35" stroke="var(--ink)" stroke-width="1.6"/><circle cx="195" cy="62" r="30" fill="none" stroke="var(--ink)" stroke-width="1.6"/><line x1="195" y1="62" x2="225" y2="62" stroke="var(--hot)"/>`,
+  lines:`<rect x="20" y="18" width="200" height="86" fill="var(--paper)" stroke="var(--line)"/><path d="M20,92 L220,30" stroke="var(--sea)" stroke-width="2.4"/><path d="M20,30 L220,96" stroke="var(--hot)" stroke-width="2.4"/><circle cx="118" cy="62" r="6" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`
+};
+Object.assign(ICON,{
+  read:`<path d="M120,28 C100,18 66,16 40,22 L40,102 C66,96 100,98 120,108Z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/><path d="M120,28 C140,18 174,16 200,22 L200,102 C174,96 140,98 120,108Z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>${[0,1,2,3,4].map(i=>`<path d="M52,${38+i*12} q30,-4 56,2" fill="none" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/>`).join("")}<rect x="50" y="57" width="60" height="10" rx="5" fill="var(--sun)" opacity=".55"/>${[0,1,2].map(i=>`<path d="M132,${38+i*12} q30,-6 56,-2" fill="none" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/>`).join("")}<circle cx="172" cy="84" r="14" fill="var(--land)"/><path d="m165,84 5,5 9,-10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+  words:`${[[56,"var(--hot)",40],[92,"var(--sun)",62],[128,"var(--sea)",30],[164,"var(--land)",52]].map(([x,c,y])=>`<rect x="${x-3}" y="18" width="6" height="86" rx="3" fill="var(--fill)"/><rect x="${x-14}" y="${y}" width="28" height="16" rx="6" fill="${c}" stroke="var(--ink)" stroke-width="1.5"/>`).join("")}<path d="M190,62 q6,-22 12,0 t12,0 t12,0" fill="none" stroke="var(--hot)" stroke-width="3" stroke-linecap="round"/>`,
+  essay:`${[["T","var(--sun)",150],["E","var(--sea)",170],["E","var(--land)",130],["L","var(--hot)",110]].map(([l,c,w],i)=>`<rect x="34" y="${18+i*22}" width="${w}" height="16" rx="8" fill="${c}"/><text x="44" y="${30+i*22}" style="font:700 11px var(--display);fill:#fff">${l}</text>`).join("")}<g transform="translate(196,26) rotate(35)"><rect x="-6" y="0" width="12" height="62" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.5"/><path d="M-6,62 L0,76 L6,62Z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/><rect x="-6" y="-8" width="12" height="9" rx="2" fill="var(--hot)" stroke="var(--ink)" stroke-width="1.5"/></g>`,
+  maps:`<rect x="20" y="10" width="200" height="100" rx="10" fill="#EAF6E6"/>${[40,30,20,11].map((r,i)=>`<ellipse cx="96" cy="62" rx="${r*1.7}" ry="${r}" fill="${i===3?"var(--land)":"none"}" fill-opacity=".35" stroke="var(--land)" stroke-width="2"/>`).join("")}<path d="M20,96 C60,86 70,104 110,94 S170,70 220,80" fill="none" stroke="var(--hot)" stroke-width="2.5" stroke-dasharray="5 5" stroke-linecap="round"/><g transform="translate(186,38)"><circle r="20" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/><path d="M0,-16 L5,0 L0,16 L-5,0Z" fill="var(--ink)"/><path d="M0,-16 L5,0 L-5,0Z" fill="var(--hot)"/></g>`,
+  market:`<path d="M30,40 h110 l-8,-22 h-94z" fill="var(--hot)"/>${[0,1,2,3,4].map(i=>`<path d="M${38+i*19},18 h9.5 l3,22 h-14z" fill="var(--paper)"/>`).join("")}<rect x="36" y="40" width="98" height="62" rx="4" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/><rect x="36" y="74" width="98" height="10" fill="var(--sun)"/><g transform="translate(150,18)"><path d="M10,0 V84 H76" fill="none" stroke="var(--ink)" stroke-width="1.6"/><path d="M16,10 L70,74" stroke="var(--sea)" stroke-width="3" stroke-linecap="round"/><path d="M16,74 L70,10" stroke="var(--hot)" stroke-width="3" stroke-linecap="round"/><circle cx="43" cy="42" r="5" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.5"/></g>`,
+  data:`<path d="M24,74 H216" stroke="var(--ink)" stroke-width="1.6"/>${[[44,1],[60,2],[76,4],[92,5],[108,4],[124,3],[140,2],[156,1],[196,1]].map(([x,n])=>[...Array(n)].map((_,j)=>`<circle cx="${x}" cy="${66-j*13}" r="6" fill="${x<100?"var(--sea)":"var(--paper)"}" stroke="${x<100?"var(--sea)":"var(--ink)"}" stroke-width="1.5"/>`).join("")).join("")}<path d="M60,98 H76 M140,98 H156" stroke="var(--ink)" stroke-width="2"/><rect x="76" y="88" width="64" height="20" rx="4" fill="var(--sun)" fill-opacity=".45" stroke="var(--ink)" stroke-width="2"/><path d="M100,88 V108" stroke="var(--ink)" stroke-width="2.5"/>`,
+  text:`<g transform="rotate(-3 120 60)"><rect x="52" y="10" width="136" height="104" rx="10" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/><rect x="104" y="4" width="34" height="12" rx="3" fill="var(--sun)" opacity=".7"/>${[0,1,2,3,4,5].map(i=>`<rect x="66" y="${30+i*13}" width="${[96,80,104,70,90,60][i]}" height="5" rx="2.5" fill="var(--line)"/>`).join("")}<rect x="64" y="26" width="44" height="12" rx="4" fill="var(--hot)" fill-opacity=".35"/><rect x="110" y="52" width="58" height="12" rx="4" fill="var(--sun)" fill-opacity=".5"/><rect x="64" y="91" width="40" height="12" rx="4" fill="var(--land)" fill-opacity=".4"/></g>`,
+  materials:`<g transform="translate(40,58)"><path d="M0,10 L34,0 L64,10 L30,20Z" fill="#F6B48A" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round"/><path d="M0,10 V34 L30,44 V20Z" fill="#E07B4C" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round"/><path d="M30,20 L64,10 V34 L30,44Z" fill="#C2582E" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round"/></g><g transform="translate(112,52)"><rect x="0" y="12" width="36" height="36" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/><path d="M0,12 L12,0 H48 L36,12Z M36,12 L48,0 V36 L36,48Z" fill="var(--fill)" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round"/></g><g transform="translate(178,58)"><path d="M-20,0 L-10,-12 H10 L20,0 L0,26Z" fill="#BFE6FA" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round"/><path d="M-20,0 H20 M-10,-12 L-4,0 L0,26 L4,0 L10,-12" fill="none" stroke="var(--ink)" stroke-width="1"/></g><circle cx="120" cy="26" r="13" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.5"/><path d="M114,38 h12" stroke="var(--ink)" stroke-width="3"/>`,
+  claims:`<rect x="62" y="8" width="76" height="108" rx="14" fill="var(--paper)" stroke="var(--ink)" stroke-width="2.5"/><rect x="70" y="22" width="60" height="32" rx="6" fill="var(--sun)" fill-opacity=".45"/><rect x="92" y="28" width="14" height="22" rx="3" fill="var(--hot)"/>${[0,1,2].map(i=>`<rect x="70" y="${62+i*11}" width="${[56,48,52][i]}" height="5" rx="2.5" fill="var(--line)"/>`).join("")}<rect x="70" y="60" width="40" height="9" rx="3" fill="var(--hot)" fill-opacity=".3"/><g transform="translate(160,62)"><circle r="24" fill="#fff" fill-opacity=".6" stroke="var(--sea)" stroke-width="5"/><path d="M17,17 L36,36" stroke="var(--sea)" stroke-width="7" stroke-linecap="round"/><path d="m-9,0 6,6 12,-12" fill="none" stroke="var(--land)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>`
+});
+const GROUPS=[["science","Science"],["biochem","Chemistry and biology"],["maths","Maths and statistics"],["english","English"],["social","Social studies"],["digital","Digital technologies"]];
+const gearFor=id=>A.items.filter(it=>it.m&&it.m.includes(id));
+function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(it.id));
+  const ex=m.tags.filter(t=>t.startsWith("NCEA")).map(t=>t.replace(/^NCEA /,"").replace(/^(L\d) .*?(\d{5})$/,"$1 · $2")),yrs=m.tags.filter(t=>/^Year/.test(t));
+  const yr=yrs.length>1?`Years ${yrs[0].replace("Year ","")}–${yrs[yrs.length-1].replace("Year ","")}`:(yrs[0]||"");
+  return `<a class="app" href="${m.href}" style="--acc:${K.accentFor(id)}">
+  <span class="app-art"><svg viewBox="0 0 240 120" aria-hidden="true">${ICON[id]||ICON[m.icon]||""}</svg><span class="app-ic" aria-hidden="true">${K.glyph(id)}</span>${ex.length?`<span class="app-ex">NCEA ${esc(ex.join(" + ").replace(/ \+ L1 · /g," + "))}</span>`:""}</span>
+  <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
+  <span class="app-foot"><span class="yr">${esc(yr)}</span>${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
+const byGroup={};Object.entries(D.machines).forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});
+$("machines").innerHTML=GROUPS.filter(([k])=>byGroup[k]).map(([k,label])=>{const list=byGroup[k].sort((a,b)=>(b[1].tags.some(t=>t.startsWith("NCEA"))?1:0)-(a[1].tags.some(t=>t.startsWith("NCEA"))?1:0));
+  return `<div class="subj" style="--acc:${K.accentFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
+
+
+// ---- Allen: hero, den and customiser
+let look=A.load();
+const shown=()=>{const n=String(look.name||"").trim();return n||"Allen"};
+const coatName=()=>(A.coats[look.coat]||A.coats.red).label.toLowerCase();
+const sceneLabel=()=>`${shown()}, a long-haired ${coatName()} dachshund, at the ${A.scenes[look.bg]?.label.toLowerCase()||"workshop"}`;
+function paint(){
+  $("heroAllen").innerHTML=A.svg(look,{scene:true,label:sceneLabel()});
+  $("heroAllen").setAttribute("aria-label",`Visit ${shown()}'s den`);
+  $("denPic").innerHTML=A.svg(look,{scene:true,label:sceneLabel()});
+  $("denName").textContent=shown();
+  const worn=["head","eyes","neck","prop"].map(s=>look.gear[s]).filter(Boolean).map(id=>A.label(id).toLowerCase());
+  $("denWho").innerHTML=`${esc(shown())}<small>${esc(A.coats[look.coat]?.label||"Red")} coat${worn.length?" · "+esc(worn.join(", ")):""} · ${esc(A.scenes[look.bg]?.label||"Workshop")}</small>`;
+}
+const SLOTS=[["head","Head"],["eyes","Eyes"],["neck","Neck"],["prop","Carrying"]];
+const thumbBox={head:"bust",eyes:"bust",neck:"neck",prop:"full"};
+function opt(name,value,checked,locked,inner,why,isNew){
+  return `<label class="opt${locked?" locked":""}"><input class="vh" type="radio" name="${name}" value="${esc(value)}"${checked?" checked":""}${locked?" disabled":""}><span class="opt-in">${inner}${locked?`<span class="lk">${esc(why)}</span>`:""}</span>${isNew?`<span class="new" aria-label="new">NEW</span>`:""}</label>`}
+function buildCtl(){
+  const seen=new Set(look.seen||[]),fresh=new Set([...ST.has].filter(k=>!seen.has(k)));
+  const plain={...look,gear:{}};
+  let o=`<div class="namebox"><label for="alName" class="den-ctl-l" style="font:600 12px var(--as-font);letter-spacing:.08em;text-transform:uppercase;color:var(--as-muted);width:100%">Name</label><input id="alName" maxlength="16" autocomplete="off" spellcheck="false" value="${esc(look.name)}"></div>`;
+  o+=`<fieldset><legend>Coat</legend><div class="opts">${Object.entries(A.coats).map(([k,c])=>opt("coat",k,look.coat===k,false,`<span class="thumb">${A.svg({...plain,coat:k},{box:"bust" })}</span><span class="nm">${esc(c.label)}</span>`)).join("")}</div></fieldset>`;
+  o+=`<fieldset><legend>Collar</legend><div class="opts swatches">${A.collars.map(([hex,lab])=>opt("collar",hex,look.collar===hex,false,`<span class="dot" style="background:${hex}"></span><span class="nm">${esc(lab)}</span>`)).join("")}</div></fieldset>`;
+  SLOTS.forEach(([slot,lab])=>{
+    o+=`<fieldset><legend>${lab}</legend><div class="opts">`+opt("g-"+slot,"",!look.gear[slot],false,`<span class="thumb">${A.svg(plain,{box:thumbBox[slot] })}</span><span class="nm">Nothing</span>`)+
+      A.items.filter(it=>it.slot===slot).map(it=>{const ok=ST.has.has(it.id);return opt("g-"+slot,it.id,look.gear[slot]===it.id&&ok,!ok,`<span class="thumb">${A.svg({...plain,gear:{[slot]:it.id}},{box:thumbBox[slot] })}</span><span class="nm">${esc(it.label)}</span>`,ST.why[it.id],ok&&fresh.has(it.id))}).join("")+`</div></fieldset>`});
+  o+=`<fieldset><legend>Place</legend><div class="opts">${A.backgrounds.map(b=>{const ok=ST.has.has("bg:"+b.id);return opt("bg",b.id,look.bg===b.id&&ok,!ok,`<span class="thumb wide">${A.svg({...look,bg:b.id},{scene:true })}</span><span class="nm">${esc(A.scenes[b.id].label)}</span>`,b.days?`Reach a ${b.days}-day streak`:"",ok&&b.days&&fresh.has("bg:"+b.id))}).join("")}</div></fieldset>`;
+  o+=`<label class="switch"><input type="checkbox" id="alMin"${look.minimal?" checked":""}><span>Tiny Allen in the machines<small>A small badge with no speech bubbles. Handy for Years 11–13, or anyone who wants a quieter bench.</small></span></label>`;
+  o+=`<div class="denbtns"><button type="button" class="btn" id="alRand">Surprise me</button><button type="button" class="btn" id="alReset">Back to plain Allen</button></div>`;
+  $("denCtl").innerHTML=o;
+  if(fresh.size){look.seen=[...new Set([...(look.seen||[]),...fresh])];A.save(look)}
+}
+// sanitise: never wear something that isn't unlocked (e.g. a cleared log)
+SLOTS.forEach(([s])=>{if(look.gear[s]&&!ST.has.has(look.gear[s]))look.gear[s]=""});if(!ST.has.has("bg:"+look.bg))look.bg="workshop";
+buildCtl();paint();
+const ctl=$("denCtl");
+ctl.addEventListener("change",e=>{const t=e.target;
+  if(t.name==="coat")look.coat=t.value;else if(t.name==="collar")look.collar=t.value;else if(t.name==="bg")look.bg=t.value;
+  else if(t.name&&t.name.startsWith("g-"))look.gear[t.name.slice(2)]=t.value;else if(t.id==="alMin")look.minimal=t.checked;
+  A.save(look);paint();K.sfx("pop");
+  if(t.name==="coat"||t.name==="collar"){const f=document.activeElement&&document.activeElement.name,v=document.activeElement&&document.activeElement.value;buildCtl();const back=f&&ctl.querySelector(`input[name="${f}"][value="${CSS.escape(v)}"]`);back&&back.focus()}});
+ctl.addEventListener("input",e=>{if(e.target.id==="alName"){look.name=e.target.value.slice(0,16);A.save(look);paint()}});
+ctl.addEventListener("click",e=>{
+  if(e.target.id==="alRand"){const pickOne=a=>a[Math.floor(Math.random()*a.length)];
+    look.coat=pickOne(Object.keys(A.coats));look.collar=pickOne(A.collars)[0];
+    SLOTS.forEach(([s])=>{look.gear[s]=pickOne(["",...A.items.filter(it=>it.slot===s&&ST.has.has(it.id)).map(it=>it.id)])});
+    look.bg=pickOne(A.backgrounds.filter(b=>ST.has.has("bg:"+b.id))).id;A.save(look);buildCtl();paint();K.sfx("pop");$("alRand").focus()}
+  if(e.target.id==="alReset"){look={...A.defaults,name:look.name,seen:look.seen,minimal:look.minimal,gear:{...A.defaults.gear}};A.save(look);buildCtl();paint();K.sfx("pop");$("alReset").focus()}});
+const wig=()=>{const s=$("denPic").querySelector(".allen");if(!s||matchMedia("(prefers-reduced-motion: reduce)").matches)return;s.classList.remove("wiggle");void s.getBoundingClientRect();s.classList.add("wiggle");K.sfx("yip");setTimeout(()=>s.classList.remove("wiggle"),1100)};
+$("denPic").addEventListener("click",wig);
+
+// tabs
+const TABS=[["y9","Year 9",""],["y10","Year 10",""],["l1","Year 11","NCEA L1"],["l2","Year 12","NCEA L2"],["l3","Year 13","NCEA L3"]];
+let tab=(location.hash||"").slice(1);if(!TABS.some(t=>t[0]===tab))tab="l1";
+$("tabs").innerHTML=TABS.map(([k,l,s])=>`<button role="tab" type="button" id="tab-${k}" aria-selected="${k===tab}" aria-controls="panel">${l}${s?`<small>${s}</small>`:""}</button>`).join("");
+TABS.forEach(([k])=>$("tab-"+k).onclick=()=>{tab=k;try{history.replaceState(null,"","#"+k)}catch(e){}render()});
+
+const allStd=()=>["l1","l2","l3"].flatMap(l=>(D.levels[l]?.standards||[]).map(s=>({...s,level:l})));
+function renderMine(){
+  const list=allStd().filter(s=>mine.includes(s.num)).sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100"));
+  $("mine").innerHTML=`<h3><span>My exams</span><span>${list.length?`${list.length} picked · saved on this device`:"tap ☆ on any exam below to build your timetable"}</span></h3>`+
+   (list.length?`<ol>${list.map(s=>`<li><span class="d">${s.when?fmtDay(s.when)+" "+fmtTime(s.when):"date tbc"}</span><span>${esc(s.subject)} · ${esc(s.title)}</span><span class="c">${s.when&&days(s.when)>0?days(s.when)+" days":""}</span></li>`).join("")}</ol><div><button class="btn" type="button" id="copyMine">Copy my timetable</button></div>`:"");
+  const c=$("copyMine");if(c)c.onclick=()=>{const txt=list.map(s=>`${s.when?fmtDay(s.when)+" "+fmtTime(s.when):"tbc"} · ${s.subject} ${s.num} · ${s.title}`).join("\n");
+    try{navigator.clipboard.writeText(txt).then(()=>{c.textContent="Copied"},()=>{c.textContent="Copy failed"})}catch(e){c.textContent="Copy failed"}};
+}
+function stdRow(s){const m=s.machine&&D.machines[s.machine];const d=s.when?days(s.when):null;
+  return `<div class="std"><div><div class="t"><span class="code">${esc(s.num)}</span>${esc(s.title)}</div>
+    <div class="meta">${s.when?`<b>${fmtDay(s.when)}, ${fmtTime(s.when)}</b>${d>0?` · ${d} days`:""}`:"Exam date to confirm"} · ${esc(s.credits?s.credits+" credits":"")}${s.format?` · ${esc(s.format)}`:""}</div></div>
+    <div class="acts">${m?`<a class="btn primary" href="${m.href}">Open machine</a>`:`<span class="soon">machine coming</span>`}
+      ${s.url?`<a class="btn" href="${s.url}" target="_blank" rel="noopener">Past papers ↗</a>`:""}
+      <button class="star" type="button" data-num="${esc(s.num)}" aria-pressed="${mine.includes(s.num)}">☆ My exams</button></div>
+    ${s.topics?.length?`<details><summary>WHAT'S EXAMINED</summary><ul>${s.topics.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></details>`:""}</div>`}
+function render(){
+  TABS.forEach(([k])=>$("tab-"+k).setAttribute("aria-selected",k===tab));
+  const L=D.levels[tab];let o="";
+  if(tab==="y9"||tab==="y10"){
+    o+=`<p class="note">${esc(L.note||"")}</p><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))">`+
+      L.areas.map(a=>`<div class="area"><h3>${esc(a.name)}</h3><div class="st">${esc(a.status||"")}</div><ul>${a.topics.map(t=>{const m=t.machine&&D.machines[t.machine];return`<li>${m?`<a href="${m.href}">${esc(t.t)}</a> · machine`:esc(t.t)}</li>`}).join("")}</ul></div>`).join("")+`</div>`;
+  } else {
+    const subjects=[...new Set(L.standards.map(s=>s.subject))].sort();
+    o+=`<div class="bar"><input type="search" id="q" placeholder="Search ${esc(TABS.find(t=>t[0]===tab)[2])} exams, e.g. biology, 91947, essay" aria-label="Search exams"><select id="subj" aria-label="Subject"><option value="">All subjects</option>${subjects.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div><div id="list"></div>`;
+  }
+  $("panel").innerHTML=o;
+  if($("q")){const go=()=>{const q=$("q").value.trim().toLowerCase(),sj=$("subj").value;
+      const rows=L.standards.filter(s=>(!sj||s.subject===sj)&&(!q||(s.num+" "+s.title+" "+s.subject+" "+(s.topics||[]).join(" ")).toLowerCase().includes(q)));
+      const by={};rows.forEach(s=>(by[s.subject]=by[s.subject]||[]).push(s));
+      const first=k=>Math.min(...by[k].map(s=>Date.parse(s.when||"2100-01-01")));
+      $("list").innerHTML=Object.keys(by).sort((a,b)=>first(a)-first(b)||a.localeCompare(b)).map(k=>`<div class="subject"><h3>${esc(k)}</h3>${by[k].sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100")).map(stdRow).join("")}</div>`).join("")||`<p class="empty">No exams match. Try a subject name or a standard number.</p>`;
+      document.querySelectorAll(".star").forEach(b=>b.onclick=()=>{const n=b.dataset.num;mine=mine.includes(n)?mine.filter(x=>x!==n):[...mine,n];saveMine();b.setAttribute("aria-pressed",mine.includes(n));renderMine()})};
+    $("q").oninput=go;$("subj").onchange=go;go()}
+  renderMine();
+}
+render();
+})();
+</script>
+
+<script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script></body></html>
