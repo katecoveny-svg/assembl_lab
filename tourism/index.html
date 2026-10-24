@@ -12,8 +12,8 @@
   --glass:rgba(255,253,251,.70);--glass-2:rgba(255,253,251,.86);--glass-solid:#FFFDFB;--glass-edge:rgba(255,255,255,.9);
   --glass-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 0 1px rgba(73,43,62,.08),0 24px 48px -30px rgba(36,11,33,.38),0 2px 6px -3px rgba(36,11,33,.12);
   --act-bg:#240B21;--act-ink:#F5F1F2;
-  --live:#C9772E;--glow:#E39433;--good:#3F7A55;--alert:#B3261E;--dom:#5D7F99;--money:#B8862B;--sim:#C9772E;--est:#A5552F;
-  --p-hotel:#492B3E;--p-motelL:#7B5C6E;--p-motelS:#A98790;--p-park:#C9A27A;--p-backpack:#D9822B;--p-lodge:#8E9AA6;
+  --live:#C9772E;--glow:#8C4E78;--good:#3F7A55;--alert:#B3261E;--dom:#5D7F99;--money:#B8862B;--sim:#C9772E;--est:#A5552F;
+  --p-hotel:#492B3E;--p-motelL:#7B5C6E;--p-motelS:#A98790;--p-park:#C9A27A;--p-backpack:#5E7F6E;--p-lodge:#8E9AA6;
   --sea:#E3E9EC;--sea-2:#D6DFE4;--t-low:#D2D9CB;--t-mid:#BCBDAC;--t-high:#A0978F;--t-snow:#F6F4F2;--t-edge:#492B3E;
   --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -22,8 +22,8 @@
   --glass:rgba(40,20,36,.58);--glass-2:rgba(46,24,42,.84);--glass-solid:#22121F;--glass-edge:rgba(255,255,255,.12);
   --glass-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.06),0 30px 60px -34px rgba(0,0,0,.85),0 2px 8px -4px rgba(0,0,0,.5);
   --act-bg:#F5F1F2;--act-ink:#240B21;
-  --live:#F0A24A;--glow:#F6B25A;--good:#86C79F;--alert:#F07A6E;--dom:#8FB7D6;--money:#E9C26A;--sim:#F0A24A;--est:#E9A276;
-  --p-hotel:#E9D9DE;--p-motelL:#C9A9B4;--p-motelS:#A98790;--p-park:#D9B48A;--p-backpack:#F0A24A;--p-lodge:#9FB0BE;
+  --live:#F0A24A;--glow:#D7A6C8;--good:#86C79F;--alert:#F07A6E;--dom:#8FB7D6;--money:#E9C26A;--sim:#F0A24A;--est:#E9A276;
+  --p-hotel:#E9D9DE;--p-motelL:#C9A9B4;--p-motelS:#A98790;--p-park:#D9B48A;--p-backpack:#8FB59E;--p-lodge:#9FB0BE;
   --sea:#0E1420;--sea-2:#121A28;--t-low:#465042;--t-mid:#57544C;--t-high:#6B625F;--t-snow:#CFC8CC;--t-edge:#F0E6E8;color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#150912;--chalk:#211220;--ink:#F5F1F2;--deep:#F5F1F2;--body:#D9CBCE;--rose:#B9979D;--line:rgba(245,241,242,.11);--line-2:rgba(245,241,242,.2);
@@ -31,8 +31,8 @@
   --glass:rgba(40,20,36,.58);--glass-2:rgba(46,24,42,.84);--glass-solid:#22121F;--glass-edge:rgba(255,255,255,.12);
   --glass-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.06),0 30px 60px -34px rgba(0,0,0,.85),0 2px 8px -4px rgba(0,0,0,.5);
   --act-bg:#F5F1F2;--act-ink:#240B21;
-  --live:#F0A24A;--glow:#F6B25A;--good:#86C79F;--alert:#F07A6E;--dom:#8FB7D6;--money:#E9C26A;--sim:#F0A24A;--est:#E9A276;
-  --p-hotel:#E9D9DE;--p-motelL:#C9A9B4;--p-motelS:#A98790;--p-park:#D9B48A;--p-backpack:#F0A24A;--p-lodge:#9FB0BE;
+  --live:#F0A24A;--glow:#D7A6C8;--good:#86C79F;--alert:#F07A6E;--dom:#8FB7D6;--money:#E9C26A;--sim:#F0A24A;--est:#E9A276;
+  --p-hotel:#E9D9DE;--p-motelL:#C9A9B4;--p-motelS:#A98790;--p-park:#D9B48A;--p-backpack:#8FB59E;--p-lodge:#9FB0BE;
   --sea:#0E1420;--sea-2:#121A28;--t-low:#465042;--t-mid:#57544C;--t-high:#6B625F;--t-snow:#CFC8CC;--t-edge:#F0E6E8;color-scheme:dark}
 *{box-sizing:border-box}[hidden]{display:none!important}
 html{background:var(--paper)}
@@ -255,12 +255,12 @@ details.vz-more[open]>summary{margin-bottom:8px}
   <header>
     <div class="eyebrow" id="eyebrow">Aotearoa tourism flow simulator · public data</div>
     <h1>Where Aotearoa's visitors go, month by month</h1>
-    <p class="sub">Every region's guest nights, rooms and visitor spend, from Stats NZ and MBIE, on a relief map of Te Ika-a-Māui and Te Waipounamu. Play the year and watch February fill the map with light and June drain it. Arcs carry visitors in from each market and out to the regions. Then try a new route, a big event or a currency move, clearly marked as simulated, and see the forecast we froze before the next official release.</p>
+    <p class="sub">Every region's guest nights, rooms and visitor spend, from Stats NZ and MBIE, on a relief map of Te Ika-a-Māui and Te Waipounamu. Play the year and watch February fill the map and June drain it. Arcs carry visitors in from each market and out to the regions. Then try a new route, a big event or a currency move, clearly marked as simulated, and see the forecast we froze before the next official release.</p>
   </header>
 
   <div class="main">
     <div class="stagebox" id="stagebox">
-      <canvas id="scene" aria-label="3D relief map of Aotearoa New Zealand. Regions glow with hotel and motel occupancy; arcs show visitors arriving by airport and travelling between regions."></canvas>
+      <canvas id="scene" aria-label="3D relief map of Aotearoa New Zealand. Regions are shaded by guest nights and each region's glass column fills to its occupancy; arcs show visitors arriving by airport and travelling between regions. Hover or tap a column or airport for its number; Explore lists every one."></canvas>
       <div class="ov views" role="group" aria-label="Views"><button type="button" class="chipb" data-view="national" aria-pressed="true">National</button><button type="button" class="chipb" data-view="region" aria-pressed="false">Region close-up</button><button type="button" class="chipb" data-view="accom" aria-pressed="false">Accommodation types</button></div>
       <div class="ov layers" role="group" aria-label="Layers"><button type="button" class="chipb" data-layer="people" aria-pressed="true">People</button><button type="button" class="chipb" data-layer="money" aria-pressed="false">Money</button><button type="button" class="chipb" data-layer="maori" aria-pressed="false">Māori tourism</button></div>
       <div id="tags"></div>
@@ -422,8 +422,15 @@ if(window.__assemblLive)draw(window.__assemblLive);
   </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/1/stage.css">
+<style>
+/* tourism on the twin stage: the views and layer chips share the top-left corner; the legend sits above the play bar */
+.ovtop{position:absolute;left:12px;top:12px;display:grid;gap:6px;justify-items:start;max-width:calc(100% - 340px);z-index:1;pointer-events:none}
+.ovtop>.ov{position:static;pointer-events:auto;max-width:none!important;right:auto!important}.ovtop .layers{flex-direction:row}
+.tw .legend{left:12px;right:auto;bottom:54px}.tw .tag.ap{background:var(--act-bg);color:var(--act-ink);box-shadow:none;border:0}html.tw-poster .ovtop,html.tw-poster .legend{display:none!important}
+@media (max-width:640px){.ovtop{right:12px;max-width:none}.tw .legend{display:none}.tw .hud{max-width:calc(100% - 24px)}.tw .tw-tools{bottom:56px}.tw .tw-dialwrap{bottom:56px}.tw .badge{top:auto;bottom:154px;right:12px}.tw .tw-pop{bottom:96px}.ovtop .chipb{padding:4px 9px;font-size:10.5px}.tw .badge{font-size:9px}}
+</style>
 <script>
 // assembl tourism flow simulator: the demand engine (no DOM). Works in the page and in Node.
 // Observed layer = the snapshot (Source). Allocation and what-if layers = this file (Estimate / Simulated).
@@ -594,7 +601,8 @@ const TOURISM_MODEL = (function () {
 })();
 
 </script>
-<script>
+<script type="module">
+import {THREE,createStage,nzDate,clamp} from "/assets/twin/1/stage.js";
 // assembl tourism flow simulator: the page (scene, panels, live feeds). Data and engine are inlined by build.mjs.
 (() => {
 "use strict";
@@ -685,22 +693,24 @@ const ST = { i: lastFeb, view: "national", layer: "people", market: "ALL", regio
 let MS = null, WI = null; // current month state, current what-if
 const LIVE = { fx: null, wx: {} };
 
-// ---------------------------------------------------------------- three.js scene
+// ---------------------------------------------------------------- the stage: a relief maquette of Aotearoa on the shared twin stage (/assets/twin/1)
+// Hex tiles on a round sea board, lit by the real sun for the month on the timeline and the hour on the dial.
+// Plum shade = guest nights; glass column = a region's rooms, plum inside = rooms filled. Orange is kept for what-ifs (simulated) and the selected region.
 const canvas = $("scene"), box = $("stagebox");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !LITE, alpha: false });
-renderer.setPixelRatio(Math.min(devicePixelRatio, LITE ? 1 : 1.75));
-renderer.shadowMap.enabled = !LITE; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(34, 1, 1, 1200);
-const controls = new THREE.OrbitControls(camera, canvas);
-controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.44; controls.minDistance = 25; controls.maxDistance = 330; controls.enablePan = true; controls.screenSpacePanning = false;
-const hemi = new THREE.HemisphereLight(0xfff6ee, 0x8f8580, 0.6); scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff4ea, 0.95); sun.position.set(-55, 120, -95); sun.castShadow = !LITE;
-sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -100, right: 100, top: 100, bottom: -100, near: 20, far: 400 }); sun.shadow.bias = -0.0008; scene.add(sun);
-const fill = new THREE.DirectionalLight(0xc9d6e8, 0.28); fill.position.set(80, 60, 90); scene.add(fill);
-scene.fog = new THREE.Fog(0xe4eaec, 240, 520);
-const sea = new THREE.Mesh(new THREE.CircleGeometry(420, 64), new THREE.MeshStandardMaterial({ color: 0xd8e1e5, roughness: 0.95 }));
-sea.rotation.x = -Math.PI / 2; sea.position.y = -0.02; sea.receiveShadow = !LITE; scene.add(sea);
+function sizeCanvas() { const w = box.clientWidth || 800, h = Math.max(window.__minH || 440, Math.min(innerHeight * 0.8, w < 560 ? w * 1.25 : w * 0.82)); canvas.style.height = Math.round(h) + "px"; }
+sizeCanvas();
+let hourNow = 15, dayRun = false;// the sun's hour (the dial's hand); tap the dial's centre to let the day run
+const stage = createStage({ id: "tourism", canvas, box, place: "nz", north: Math.PI, extent: 80, tableY: -1.08,
+  controls: { minDistance: 25, maxDistance: 330, maxPolarAngle: Math.PI * 0.44, enablePan: true, screenSpacePanning: false },
+  ao: { radius: 2.2, intensity: 0.8 }, tilt: 1.8, tiltBand: 0.3,
+  onResize: () => { sizeCanvas(); stage.resize(); pointsScale(); drawSeason(); },
+  onTheme: () => applyTheme() });
+if (LITE && !/[?&]quality=/.test(location.search)) stage.setTier("low");
+const scene = stage.scene, camera = stage.camera, controls = stage.controls;
+controls.screenSpacePanning = false;
+// the sea board the islands sit on (a round model on the paper table)
+const seaMat = new THREE.MeshPhysicalMaterial({ color: 0xd8e1e5, roughness: 0.6, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.4 });
+const sea = new THREE.Mesh(new THREE.CylinderGeometry(92, 93.2, 1.0, 160), seaMat); sea.position.set(-6, -0.52, 0); sea.receiveShadow = true; scene.add(sea);
 
 // tiles
 const SP = G.spacingKm / 10, DZ = (SP * Math.sqrt(3)) / 2, RAD = (SP / Math.sqrt(3)) * 0.97, T = G.tiles.length / 4;
@@ -728,11 +738,11 @@ const selMat = new THREE.LineBasicMaterial({ color: 0xc9772e, transparent: true,
 const selLine = new THREE.LineSegments(new THREE.BufferGeometry(), selMat); scene.add(selLine);
 function setOutline(ri) { selLine.geometry.dispose(); selLine.geometry = new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(outline[ri].map((v, k) => (k % 3 === 1 ? v + 0.05 : v)), 3)); }
 
-// columns: glass = rooms available this month, light inside = share occupied, amber cap = simulated extra
+// columns: glass = rooms available this month, plum inside = share occupied, orange cap = simulated extra (what-ifs)
 const topAt = (x, z) => { let best = 0, bd = 1e9; for (const t of tiles) { const d = (t.x - x) ** 2 + (t.z - z) ** 2; if (d < bd) { bd = d; best = t.h; } } return best; };
 const glassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x8a8486, transparent: true, opacity: 0.3, roughness: 0.1, metalness: 0, depthWrite: false });
-const lightMat = new THREE.MeshStandardMaterial({ color: 0xe39433, emissive: 0xe39433, emissiveIntensity: 0.75, roughness: 0.4 });
-const simMat = new THREE.MeshStandardMaterial({ color: 0xffd28a, emissive: 0xffb347, emissiveIntensity: 0.9, roughness: 0.4, transparent: true, opacity: 0.95 });
+const lightMat = new THREE.MeshStandardMaterial({ color: 0x8c4e78, emissive: 0x8c4e78, emissiveIntensity: 0.08, roughness: 0.5 });
+const simMat = new THREE.MeshStandardMaterial({ color: 0xc9772e, emissive: 0xc9772e, emissiveIntensity: 0.25, roughness: 0.45, transparent: true, opacity: 0.95 });
 const PROP_COLS = ["--p-hotel", "--p-motelL", "--p-motelS", "--p-park", "--p-backpack", "--p-lodge"];
 const propMats = PROP_COLS.map(() => new THREE.MeshStandardMaterial({ roughness: 0.55 }));
 const colGeo = new THREE.CylinderGeometry(1, 1, 1, 28, 1); colGeo.translate(0, 0.5, 0);
@@ -763,9 +773,9 @@ const arcLines = new THREE.LineSegments(new THREE.BufferGeometry(), arcMat); sce
 const PN = LITE ? 360 : 1100;
 const pPos = new Float32Array(PN * 3), pCol = new Float32Array(PN * 3), pSize = new Float32Array(PN);
 const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3)); pGeo.setAttribute("color", new THREE.BufferAttribute(pCol, 3)); pGeo.setAttribute("size", new THREE.BufferAttribute(pSize, 1));
-const pMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, vertexColors: true, uniforms: { scale: { value: 400 }, alpha: { value: 0.95 } },
-  vertexShader: "attribute float size;varying vec3 vC;uniform float scale;void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=min(size*scale/-mv.z,7.0);gl_Position=projectionMatrix*mv;}",
-  fragmentShader: "varying vec3 vC;uniform float alpha;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;float a=smoothstep(0.5,0.12,r);gl_FragColor=vec4(vC,a*alpha);}" });
+const pMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, vertexColors: true, uniforms: { scale: { value: 400 }, alpha: { value: 0.95 }, cap: { value: 7 } },
+  vertexShader: "attribute float size;varying vec3 vC;uniform float scale;uniform float cap;void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=min(size*scale/-mv.z,cap);gl_Position=projectionMatrix*mv;}",
+  fragmentShader: "varying vec3 vC;uniform float alpha;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;float a=smoothstep(0.5,0.12,r);gl_FragColor=vec4(vC,a*alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}" });
 const points = new THREE.Points(pGeo, pMat); points.frustumCulled = false; scene.add(points);
 const P = Array.from({ length: PN }, () => ({ a: -1, t: Math.random(), v: 0.18 + Math.random() * 0.14 }));
 let ARCS = [], CUM = [];
@@ -775,12 +785,12 @@ let C = {};
 function applyTheme() {
   const c = (n) => new THREE.Color(cssv(n) || "#888");
   C = { sea: c("--sea"), sea2: c("--sea-2"), low: c("--t-low"), mid: c("--t-mid"), high: c("--t-high"), snow: c("--t-snow"), edge: c("--t-edge"), glow: c("--glow"), live: c("--live"), dom: c("--dom"), money: c("--money"), ink: c("--ink"), rose: c("--rose"), sim: c("--sim"), maori: new THREE.Color(cssv("--rose")) };
-  const dark = C.sea.getHSL({}).l < 0.3; C.dark = dark; C.dim = dark ? new THREE.Color(0x1a1f2a) : new THREE.Color(0xa9a4a8);
-  renderer.setClearColor(C.sea, 1); scene.fog.color.copy(C.sea); sea.material.color.copy(C.sea2);
+  const dark = stage.dark(); C.dark = dark; C.dim = dark ? new THREE.Color(0x1a1f2a) : new THREE.Color(0xa9a4a8); C.people = C.glow.clone();
+  seaMat.color.copy(C.sea2); seaMat.clearcoat = dark ? 0.08 : 0.45; seaMat.roughness = dark ? 0.85 : 0.6; ghostRingMat.color.copy(C.ink); if (stage.ok) stage.renderer.toneMappingExposure = dark ? 0.85 : 0.9;
   borderMat.color.copy(C.edge); borderMat.opacity = dark ? 0.3 : 0.38;
-  hemi.intensity = dark ? 0.42 : 0.5; sun.intensity = dark ? 0.55 : 0.85; sun.color.set(dark ? 0xcfd8ff : 0xfff4ea);
-  lightMat.color.copy(C.glow); lightMat.emissive.copy(C.glow); lightMat.emissiveIntensity = dark ? 0.95 : 0.6;
-  glassMat.opacity = dark ? 0.2 : 0.34; glassMat.color.set(dark ? 0xd9ccff : 0xffffff); glassMat.emissive.set(dark ? 0x2a2433 : 0x8a8486);
+  lightMat.color.copy(C.glow); lightMat.emissive.copy(C.glow); lightMat.emissiveIntensity = dark ? 0.32 : 0.08;
+  simMat.color.copy(C.sim); simMat.emissive.copy(C.sim);
+  glassMat.opacity = dark ? 0.2 : 0.3; glassMat.color.set(dark ? 0xd9ccff : 0xffffff); glassMat.emissive.set(dark ? 0x2a2433 : 0x3a3436);
   selMat.color.copy(C.live);
   PROP_COLS.forEach((n, k) => propMats[k].color.copy(c(n)));
   apMeshes.forEach((a) => a.m.material.color.copy(C.ink));
@@ -789,8 +799,7 @@ function applyTheme() {
   tileDirty = true; arcsDirty = true; drawSeason(); drawBacktest(); drawCorr();
 }
 let terrain = [], tileDirty = true, arcsDirty = true;
-new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
+// the stage watches the theme and calls applyTheme (onTheme)
 
 // region intensities: goal (from data) and current (animated, "filling like light")
 const RI = E.rto.map(() => ({ cur: 0, goal: 0, sel: 0 }));
@@ -815,7 +824,7 @@ function mkArc(x1, z1, y1, x2, z2, y2, lift) { const d = Math.hypot(x2 - x1, z2 
 const colTop = (ri) => { const c = cols[ri]; return c ? c.base + capH(c.goal.cap) * 0.55 : 1; };
 function buildArcs() {
   const arcs = []; const money = ST.layer === "money";
-  const people = money ? C.money : C.dark ? new THREE.Color(0xfff1df) : new THREE.Color(0xb05f1c);
+  const people = money ? C.money : C.people;
   const domC = money ? C.money.clone().lerp(C.dark ? new THREE.Color(0xffffff) : C.ink, 0.35) : C.dom;
   const wInt = MS.intl.reduce((s, a) => s + a.w, 0) || 1, wDisp = MS.disp.reduce((s, a) => s + a.w, 0) || 1, wDom = MS.dom.reduce((s, a) => s + a.w, 0) || 1;
   const share = ST.market === "ALL" ? [0.3, 0.4, 0.3] : [0.45, 0.55, 0];
@@ -917,9 +926,9 @@ function weatherSnap(k) { const p = S.weather.points.find((q) => q.k === k); if 
 function renderLegend() {
   const money = ST.layer === "money";
   $("legend").innerHTML = ST.maori ? `<span class="sw" style="background:var(--rose)"></span>Māori tourism businesses by rohe (BERL, 2023)<br><span style="color:var(--rose)">Shade and number = businesses, core + general (excl. self-employed)</span>`
-    : `<span class="sw" style="background:var(--glow);opacity:.9"></span>${ST.market !== "ALL" ? MK[ST.market].n + " nights (estimate)" : money ? "glow = card spend per km²" : "glow = guest nights per km²"}<br>
-    <span class="sw" style="background:linear-gradient(0deg,var(--glow) 55%,rgba(255,255,255,.5) 55%)"></span>${ST.view === "accom" ? "column = guests by type" : "glass = rooms, light = filled"}<br>
-    <i style="background:${money ? "var(--money)" : C.dark ? "#fff1df" : "#b05f1c"}"></i>${money ? "international spend" : "overseas visitors"}${ST.market === "ALL" ? `<br><i style="background:${money ? "#" + C.money.clone().lerp(C.dark ? new THREE.Color(0xffffff) : C.ink, 0.35).getHexString() : "var(--dom)"}"></i>${money ? "domestic spend" : "domestic trips"}` : ""}${ST.view === "accom" ? "<br>" + S.props.map((p, k) => `<span class=\"sw\" style=\"width:9px;background:var(${PROP_COLS[k]})\"></span>${p.name.replace(" & apartments", "").replace(" accommodation", "").replace(" & campgrounds", "")}`).join("<br>") : ""}`;
+    : `<span class="sw" style="background:var(--glow);opacity:.9"></span>${ST.market !== "ALL" ? MK[ST.market].n + " nights (estimate)" : money ? "shade = card spend per km²" : "shade = guest nights per km²"}<br>
+    <span class="sw" style="background:linear-gradient(0deg,var(--glow) 55%,rgba(255,255,255,.5) 55%)"></span>${ST.view === "accom" ? "column = guests by type" : "glass = rooms, plum = filled"}<br>
+    <i style="background:${money ? "var(--money)" : "var(--glow)"}"></i>${money ? "international spend" : "overseas visitors"}${ST.market === "ALL" ? `<br><i style="background:${money ? "#" + C.money.clone().lerp(C.dark ? new THREE.Color(0xffffff) : C.ink, 0.35).getHexString() : "var(--dom)"}"></i>${money ? "domestic spend" : "domestic trips"}` : ""}${ST.view === "accom" ? "<br>" + S.props.map((p, k) => `<span class=\"sw\" style=\"width:9px;background:var(${PROP_COLS[k]})\"></span>${p.name.replace(" & apartments", "").replace(" accommodation", "").replace(" & campgrounds", "")}`).join("<br>") : ""}`;
   $("badge").textContent = ST.maori ? "SOURCE · BERL 2023" : "SOURCE DATA · FLOWS ESTIMATED";
 }
 
@@ -936,7 +945,7 @@ function renderWhatIf() {
   let notes = w.notes.map((t) => `<li>${esc(t)}</li>`).join("");
   if (w.ivlRevenue != null) notes += `<li>Levy revenue at $${ST.L.ivl.levy}: about ${fmt$(w.ivlRevenue)} a year <span class="lab est">Estimate</span> (2024/25 actual: $146m, Source).</li>`;
   if (active) { const y = E.whatIfYear(ST.L); notes += `<li><b>Over a year</b> (the 12 months to ${mLabel(S.lastAdp)}${ST.L.event.on ? ", the event counted once" : ""}): ${sgn(y.gn, (v) => fmtN(v))} guest nights, ${sgn(y.sp, fmt$)} spend, ${sgn(y.arr, (v) => fmtN(v))} arrivals.</li>`; }
-  $("wiNotes").innerHTML = notes || "<li>Switch on a route or an event, or move a slider. The map shows the simulated extra as a pale cap on each region's column.</li>";
+  $("wiNotes").innerHTML = notes || "<li>Switch on a route or an event, or move a slider. The map shows the simulated extra as an orange cap on each region's column.</li>";
 }
 function renderHow() {
   const A = TOURISM_MODEL.A, rows = Object.entries(A).map(([k, a]) => `<tr><td>${esc(a.note)}</td><td class="n">${typeof a.v === "number" && a.v < 1 && a.v > -1 && a.v !== 0 ? a.v.toFixed(3).replace(/0+$/, "") : a.v.toLocaleString("en-NZ")}</td><td><span class="lab ${a.label === "Source" ? "src" : "est"}">${a.label}</span></td></tr>`).join("");
@@ -1108,22 +1117,25 @@ function tags() {
     el.style.top = parseFloat(el.style.top) + (T - T0) + "px"; placed.push([L, T, L + w, T + h]); });
 }
 
-// ---------------------------------------------------------------- views, camera
+// ---------------------------------------------------------------- views, camera (eased moves on the stage)
 const VIEWS = { national: { p: [-6, 226, 104], t: [-6, 0, 8] }, accom: { p: [-6, 120, 150], t: [-6, 4, 8] } };
 let camGoal = null;
-function setView(v) {
-  ST.view = v; document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === v));
+function viewFor(v, k = ST.region) {
   let p, t;
-  if (v === "region") { const r = E.rto[E.idx[ST.region]], d = Math.sqrt(r.tiles) * 2.2 + 40; t = new THREE.Vector3(r.x, 2, r.z); p = new THREE.Vector3(r.x - d * 0.25, d * 1.05, r.z + d * 1.05); }
-  else { const q = VIEWS[v]; t = new THREE.Vector3(...q.t); p = new THREE.Vector3(...q.p); }
-  if (camera.aspect < 1) p.sub(t).multiplyScalar(v === "region" ? 1.15 : 0.9).add(t);
-  camGoal = { p, t }; selLine.visible = v === "region" || true; setOutline(E.idx[ST.region]);
+  if (v === "region") { const r = E.rto[E.idx[k]], d = Math.sqrt(r.tiles) * 2.2 + 40; t = [r.x, 2, r.z]; p = [r.x - d * 0.25, d * 1.05, r.z + d * 1.05]; }
+  else { const q = VIEWS[v] || VIEWS.national; t = q.t.slice(); p = q.p.slice(); }
+  if (camera.aspect < 1) { const s = v === "region" ? 1.15 : 0.9; p = p.map((x, j) => t[j] + (x - t[j]) * s); }
+  return { p, t };
+}
+function setView(v, instant) {
+  ST.view = v; document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === v));
+  stage.flyTo(viewFor(v), { exact: true, instant: !!instant, dur: 1.8 }); selLine.visible = true; setOutline(E.idx[ST.region]);
   cols.forEach((c) => { if (!c) return; c.light.visible = v !== "accom"; c.sim.visible = v !== "accom"; c.props.forEach((m) => (m.visible = v === "accom")); });
   tileDirty = true; renderLegend();
 }
 function setRegion(k, fly) { ST.region = k; setOutline(E.idx[k]); renderRegion(); liveWx(k); if (fly || ST.view === "region") setView("region"); tileDirty = true; }
 
-// picking
+// picking: a tap on the map selects that region (columns and airports also answer hover and pin, through the stage)
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null;
 canvas.addEventListener("pointerdown", (e) => (down = [e.clientX, e.clientY]));
 canvas.addEventListener("pointerup", (e) => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return; const b = canvas.getBoundingClientRect(); mouse.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1); ray.setFromCamera(mouse, camera);
@@ -1154,12 +1166,8 @@ bindR("rtWk", (v) => (ST.L.route.perWeek = v), labs); bindR("evA", (v) => (ST.L.
 bindR("fx", (v) => (ST.L.fx.pct = v), labs); bindR("cr", (v) => (ST.L.cruise.pct = v), labs); bindR("iv", (v) => (ST.L.ivl.levy = v), labs);
 $("rtPort").onchange = (e) => { ST.L.route.port = e.target.value; recompute(); }; $("evRto").onchange = (e) => { ST.L.event.rto = e.target.value; recompute(); };
 
-// ---------------------------------------------------------------- loop
-function resize() { const w = box.clientWidth, h = Math.max(window.__minH || 440, Math.min(innerHeight * 0.8, w < 560 ? w * 1.25 : w * 0.82)); canvas.style.height = h + "px"; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 1 ? 42 : 34; camera.updateProjectionMatrix(); pMat.uniforms.scale.value = (h * renderer.getPixelRatio()) / (2 * Math.tan((camera.fov * Math.PI) / 360)); }
-addEventListener("resize", () => { resize(); if (camGoal == null) setView(ST.view); drawSeason(); });
-controls.addEventListener("start", () => (camGoal = null));
-let last = performance.now(), visible = true, tagT = 0, playT = 0, clock = 0;
-try { new IntersectionObserver((es) => (visible = es[0].isIntersecting)).observe(canvas); } catch (e) {}
+// ---------------------------------------------------------------- loop (the stage draws; this steps the months, moves the sun, the flows and the labels)
+let tagT = 0, playT = 0, clock = 0;
 const o3 = [0, 0, 0];
 function anim(dt) {
   clock += dt;
@@ -1185,23 +1193,94 @@ function anim(dt) {
   cruiseMeshes.forEach((m) => { const s = ((clock * 0.5 + m.ph) % 1); m.m.scale.setScalar(0.8 + s * 2.2 * (0.6 + m.w * 3)); m.m.material.opacity = ST.maori ? 0 : cs * (1 - s) * 0.55; });
   if (ST.L.event.on && !ST.maori) { const r = E.rto[E.idx[ST.L.event.rto]], s = (clock * 0.7) % 1; eventRing.position.set(r.x, topAt(r.x, r.z) + 0.15, r.z); eventRing.scale.setScalar(1.5 + s * 7); eventRing.material.opacity = (1 - s) * 0.9; } else eventRing.material.opacity = 0;
 }
-function frame(now) {
-  const dt = Math.min(0.1, (now - last) / 1000); last = now;
-  if (visible) { anim(dt); if (camGoal) { const e = Math.min(1, dt * 2.6); camera.position.lerp(camGoal.p, e); controls.target.lerp(camGoal.t, e); if (camera.position.distanceTo(camGoal.p) < 0.1) camGoal = null; }
-    controls.update(); renderer.render(scene, camera); tagT += dt; if (tagT > 0.15) { tagT = 0; tags(); } }
-  requestAnimationFrame(frame);
+function pointsScale() { if (!stage.ok) return; pMat.uniforms.scale.value = stage.pointScale; pMat.uniforms.cap.value = 7 * stage.renderer.getPixelRatio(); }
+// the real sun for mid-month at the dial's hour, over the middle of the country
+function sky(dt) { if (dayRun) hourNow = (hourNow + dt * 0.5) % 24; const k = M[ST.i]; stage.setClock(nzDate(+k.slice(0, 4), +k.slice(5) - 1, 15, hourNow)); }
+stage.setWeather({ rain: 0, cloud: 0.04, fog: 0, wet: 0 });
+
+// ---------------------------------------------------------------- compare: ghost columns of another month (rooms filled), over the live map
+const GM = stage.ghostMaterial(0x6d4a64); GM.uniforms.uOpacity.value = 0.95;
+const ghostRingMat = new THREE.MeshBasicMaterial({ color: 0x492b3e, transparent: true, opacity: 0.85, depthWrite: false });
+const ghostRingGeo = new THREE.TorusGeometry(1.62, 0.13, 6, 40); ghostRingGeo.rotateX(Math.PI / 2);
+// each ghost is a faint sleeve up to the other month's filled height, with a plum ring marking that level (like a high-water mark)
+const ghostCols = cols.map((c) => { if (!c) return null; const m = new THREE.Mesh(colGeo, GM); m.position.copy(c.g.position); m.scale.set(1.5, 0.001, 1.5); m.visible = false; m.renderOrder = 2; scene.add(m);
+  const ring = new THREE.Mesh(ghostRingGeo, ghostRingMat); ring.position.copy(c.g.position); ring.visible = false; ring.renderOrder = 3; scene.add(ring); m.userData.ring = ring; return m; });
+let CMP_ID = null, CMP = null;// the option chosen, and the month index it shows
+const cmpIndex = (id) => id === "trough" ? lastJun : id === "peak" ? lastFeb : id === "yago" ? (ST.i >= 12 ? ST.i - 12 : null) : id == null ? null : +id;
+function setCompare(id) { CMP_ID = id; CMP = cmpIndex(id); }
+stage.compare({ label: "Compare", options: [{ id: "trough", label: "June trough", short: "Jun", note: "the quietest month, latest year" }, { id: "peak", label: "February peak", short: "Feb", note: "the busiest month, latest year" }, { id: "yago", label: "A year earlier", short: "−1 yr", note: "the same month, one year before" }],
+  onChange: (id) => setCompare(id) });
+function ghosts() {
+  if (CMP_ID === "yago") CMP = cmpIndex("yago");
+  const on = CMP != null && !ST.maori && ST.view !== "accom";
+  ghostCols.forEach((m, ri) => { if (!m) return; m.visible = m.userData.ring.visible = on; if (!on) return; const r = E.rto[ri], H = capH(r.cap[CMP] || 0), occ = Math.max(0.001, r.occ[CMP] || 0); m.scale.y = H * occ; m.userData.ring.position.y = m.position.y + H * occ; });
 }
 
+// ---------------------------------------------------------------- touch: hover a column or an airport for its number, tap to pin, Explore lists them all
+const islandOf = (r) => (G.rtos[r.gi] && G.rtos[r.gi].isl === "S" ? "Te Waipounamu, South Island" : "Te Ika-a-Māui, North Island");
+const SPEC = {};
+apMeshes.forEach((a) => {
+  const proxy = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 1.8, 16), new THREE.MeshBasicMaterial({ visible: false })); proxy.position.set(a.x, a.y + 0.7, a.z); scene.add(proxy);
+  SPEC[a.p] = stage.pickable(proxy, { title: `${a.p} Airport · ${E.AIRPORTS[a.p].code}`, hint: "overseas visitors arriving", truth: "Source", source: "Stats NZ, international travel",
+    value: () => { const j = E.itmAt(ST.i), v = S.itm.ports[a.p] ? S.itm.ports[a.p][j] : null; return `${v != null ? Math.round(v).toLocaleString("en-NZ") : "not yet published"} overseas visitor arrivals<br><span class="m">${mLabel(M[ST.i], true)}</span>`; },
+    view: { p: [a.x - 6, 54, a.z + 48], t: [a.x, 1, a.z] } }).userData.twPick;
+});
+E.rto.map((r, ri) => [r, ri]).filter(([r, ri]) => r.k !== "nonrto" && cols[ri]).sort((x, y) => x[0].name.localeCompare(y[0].name)).forEach(([r, ri]) => {
+  SPEC[r.k] = stage.pickable(cols[ri].g, { title: r.name, hint: islandOf(r), truth: "Source", source: "MBIE accommodation data (ADP)", panel: "#regionCard",
+    value: () => { if (!MS) return ""; const o = MS.rows[ri], w = WI && WI.rows[ri];
+      if (ST.maori) { const b = S.facts.berl.rohe.find((q) => q[5].includes(r.k)); return b ? `${b[1] + b[2]} Māori tourism businesses in ${b[0]}<br><span class="m">BERL, 2023</span>` : `<span class="m">no rohe figure for this region</span>`; }
+      return `${pct(o.occ, 0)} of rooms filled · ${fmtN(o.gn)} guest nights<br><span class="m">${o.gn ? pct(o.intl / o.gn, 0) : "—"} overseas guests · ${mLabel(M[ST.i])}</span>${w && Math.abs(w.gn) > 0.5 ? `<br><span class="a">what-if: ${sgn(w.gn, (v) => fmtN(v))} nights (simulated)</span>` : ""}`; },
+    get view() { return viewFor("region", r.k); }, onPin: () => setRegion(r.k, false) }).userData.twPick;
+});
+
+// ---------------------------------------------------------------- guided tour: the year in six stops; the signature is June under February's ghost, in low winter sun
+let tourGhost = false;
+const occAt = (i) => pct(S.nat.occ[i], 0), arrAt = (i, p) => { const v = p ? (S.itm.ports[p] || [])[E.itmAt(i)] : S.itm.total[E.itmAt(i)]; return v != null ? fmtN(v) : "—"; };
+stage.tour.set([
+  { title: "A relief map that fills with visitors", get view() { return viewFor("national"); }, get text() { return `Each hex is about 11 km across and its height is the real ground. The plum shade is guest nights, and each glass column is a region's rooms, filled to this month's occupancy: <b>${pct(MS.nat.occ, 0)}</b> across Aotearoa in ${mLabel(M[ST.i], true)}.`; } },
+  { title: "February fills the map", do: () => { ST.playing && togglePlay(false); jump("peak"); }, get view() { return viewFor("national"); }, get text() { return `${mLabel(M[lastFeb], true)}: <b>${occAt(lastFeb)}</b> of rooms filled and <b>${fmtN(S.nat.gn[lastFeb], 2)}</b> guest nights. The arcs carry visitors in from each market, through the airports, out to the regions.`; } },
+  { title: "Where they land", view: { p: [-14, 70, 2], t: [12, 1, -40] }, pin: () => SPEC.Auckland, get text() { return `Auckland takes most overseas arrivals: <b>${arrAt(lastFeb, "Auckland")}</b> visitors in ${mLabel(M[lastFeb])}, of <b>${arrAt(lastFeb)}</b> for the whole country. Hover any airport or column for its number.`; } },
+  { title: "Queenstown at its peak", do: () => setRegion("queenstown", false), get view() { return viewFor("region", "queenstown"); }, pin: () => SPEC.queenstown, get text() { const q = E.rto[E.idx.queenstown]; return `Queenstown fills <b>${pct(q.occ[lastFeb], 0)}</b> of its rooms in February, and <b>${pct(q.gn[lastFeb] ? q.intl[lastFeb] / q.gn[lastFeb] : null, 0)}</b> of its guest nights are overseas visitors.`; } },
+  { title: "June, under February's ghost", do: () => { jump("trough"); tourGhost = true; setCompare("peak"); }, view: { p: [-40, 92, 128], t: [-18, 2, 28] }, get text() { return `${mLabel(M[lastJun], true)}: <b>${occAt(lastJun)}</b> of rooms filled, against ${occAt(lastFeb)} in February. The ghost columns are February. The sun is the real one for mid-June at 3 pm: low in the north, so the Southern Alps throw long shadows.`; } },
+  { title: "Now try a what-if", do: () => { if (tourGhost) { setCompare(null); tourGhost = false; } }, get view() { return viewFor("national"); }, text: "Below the map, add a route, an event or a currency move. Orange is kept for what-ifs: a simulated extra shows as an orange cap on each region's column, and every result is labelled simulated." }
+], "A year of visitors");
+stage.tour.onEnd = () => { if (tourGhost) { setCompare(null); tourGhost = false; } };
+
+// ---------------------------------------------------------------- sound (off until asked for): a murmur that follows occupancy, wind over the sea
+stage.sound.layer("crowd", { type: "chatter", gain: 0.2 }).layer("wind", { type: "wind", gain: 0.1 }).layer("sea", { type: "noise", f: 380, q: 0.5, gain: 0.08 });
+function sounds() { const s = stage.sound; if (!s.on || !MS) return; s.set("crowd", ST.maori ? 0.15 : clamp((MS.nat.occ || 0) * 1.25, 0.05, 1)); s.set("wind", 0.35); s.set("sea", 0.5); }
+
+// ---------------------------------------------------------------- the dial: outer ring = the twelve months (bar = guest nights in the latest year), hand = the sun's hour
+const calIdx = (m) => { for (let i = N - 1; i >= 0; i--) if (+M[i].slice(5) === m + 1) return i; return N - 1; };
+stage.dial({ months: { labels: MONL, short: MON, values: () => MON.map((_, m) => S.nat.gn[calIdx(m)] || 0), get: () => +M[ST.i].slice(5) - 1, set: (m) => { ST.playing && togglePlay(false); jump(calIdx(m)); }, title: "Month (bar length is that month's guest nights, latest year)" },
+  day: { get: () => hourNow, set: (h) => { hourNow = h; dayRun = false; }, held: () => !dayRun, title: "Time of day for the sun", marks: [{ h: 12, c: "var(--rose)", t: "Midday" }] },
+  onCenter: () => { dayRun = !dayRun; } });
+
+// labels hide where they would sit under the controls
+function tagsAvoidUI() {
+  const ui = [...box.querySelectorAll(".ovtop,.hud,.legend,.badge,.tw-tools,.tw-dialwrap,.tw-tour:not([hidden]),.tw-pins .tw-card,.tw-pop:not([hidden])")].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
+  tagEls.forEach((el) => { if (el.style.opacity === "0") return; const r = el.getBoundingClientRect(); if (ui.some((k) => r.left < k.right + 2 && r.right > k.left - 2 && r.top < k.bottom + 2 && r.bottom > k.top - 2)) el.style.opacity = 0; });
+}
+// the ghost's own label, at the selected region
+function ghostTag() { if (CMP == null || ST.maori || ST.view === "accom") return; const ri = E.idx[ST.region], r = E.rto[ri], c = cols[ri]; if (!c) return;
+  tag("ghost", r.x + 4, c.base + capH(c.cur.cap) + 1, r.z + 3, `Ghost: ${mLabel(M[CMP])} <span class="m">${pct(r.occ[CMP], 0)} · now ${pct(MS.rows[ri].occ, 0)}</span>`); }
+function allTags() { tags(); ghostTag(); tagsAvoidUI(); }
+
 // ---------------------------------------------------------------- start
+// the views and layer chips share one corner, so the stage's own tools have the other
+{ const top = document.createElement("div"); top.className = "ovtop"; const v = box.querySelector(".views"), l = box.querySelector(".layers"); v.before(top); top.append(v, l); }
+stage.onFrame((dt) => { anim(dt); sky(dt); ghosts(); sounds(); tagT += dt; if (tagT > 0.15) { tagT = 0; allTags(); } });
 $("eyebrow").textContent = `Aotearoa tourism flow simulator · Stats NZ and MBIE data to ${mLabel(S.lastAdp)} · built ${S.built}`;
-resize(); applyTheme(); recompute(); setView("national"); camera.position.copy(camGoal.p); controls.target.copy(camGoal.t); camGoal = null;
-renderLedger(); renderMaori(); renderSources(); renderHow(); labs(); syncLayers(); liveFx(); liveWx(ST.region); tags();
+stage.start(viewFor("national")); pointsScale();
+recompute(); setView("national", true);
+renderLedger(); renderMaori(); renderSources(); renderHow(); labs(); syncLayers(); liveFx(); liveWx(ST.region); sky(0); allTags();
 window.__tourism = { S, E, ST, setView, recompute, jump, speed: (x) => { ST.speed = x; $("speedBtn").textContent = "Speed " + x + "×"; }, play: (on = true) => togglePlay(on),
   market: (c) => { ST.market = c; recompute(); }, region: (k, fly = true) => setRegion(k, fly), layer: (l) => { if (l === "maori") ST.maori = true; else { ST.layer = l; ST.maori = false; } syncLayers(); recompute(); },
   whatIf: (k, v) => { if (k === "route" || k === "event") { Object.assign(ST.L[k], typeof v === "object" ? v : { on: !!v }); document.querySelector(`[data-tog="${k}"]`).setAttribute("aria-checked", ST.L[k].on); } else if (k === "fx") ST.L.fx.pct = v; else if (k === "cruise") ST.L.cruise.pct = v; else if (k === "ivl") ST.L.ivl.levy = v; labs(); recompute(); return WI; },
-  advance: (s) => { for (let q = 0; q < Math.round(s * 10); q++) anim(0.1); tags(); }, state: () => ({ month: M[ST.i], view: ST.view, market: ST.market, region: ST.region, nat: MS.nat, whatIf: WI && WI.tot }) };
-requestAnimationFrame(frame);
+  advance: (s) => { for (let q = 0; q < Math.round(s * 10); q++) anim(0.1); allTags(); }, state: () => ({ month: M[ST.i], view: ST.view, market: ST.market, region: ST.region, nat: MS.nat, whatIf: WI && WI.tot }),
+  hour: (h) => { if (h == null) dayRun = true; else { hourNow = +h; dayRun = false; } }, compare: (id) => setCompare(id), tour: (i) => stage.tour.start(i || 0), stage };
 })();
+
 
 </script>
 

@@ -794,7 +794,7 @@ stage.sound.layer("dryer",{type:"hum",freq:52,gain:0.2}).layer("steam",{type:"no
 function sounds(){const s=stage.sound;if(!s.on)return;s.set("dryer",stoppedNow?0:clamp(intensityNow*1.3,0.1,1));s.set("steam",cleaningNow?0.2:clamp(intensityNow*1.2,0.05,1));s.set("boiler",clamp(heatB*1.2,0,1));s.set("wind",S.grid?0:clamp(Math.hypot(...WX.wind)*0.9,0,1));s.set("rain",WX.rain)}
 // the time dial: outer ring = the season (bar = that month's milk), inner hand = plant time; tap the centre to hold the light
 stage.dial({months:{labels:MONTHS,short:MONTHS.map(m=>m.slice(0,3)),values:()=>SHARE.map(v=>v*S.vol),get:()=>S.m,set:i=>setMonth(i),title:"Month of the season (bar length is that month's milk)"},
-  day:{get:lightHour,set:h=>{hold=h},held:()=>hold!=null,title:"Plant time of day",marks:[{h:2,c:"var(--rose)",t:"02:00 low-intake window"},{h:8,c:"var(--live)",t:"Morning power price peak (illustrative)"},{h:18.5,c:"var(--live)",t:"Evening power price peak (illustrative)"}]},
+  day:{get:lightHour,set:h=>{hold=h},held:()=>hold!=null,title:"Plant time of day",marks:[{h:2,c:"var(--rose)",t:"02:00 low-intake window"},{h:8,c:"var(--ink)",t:"Morning power price peak (illustrative)"},{h:18.5,c:"var(--ink)",t:"Evening power price peak (illustrative)"}]},
   onCenter:()=>{hold=hold==null?lightHour():null}});
 // the badge says what is simulated and what is live
 const badge=box.querySelector(".badge");let badgeTxt="";

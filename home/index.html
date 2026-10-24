@@ -459,7 +459,7 @@ function draw(j){const want=(document.documentElement.dataset.feeds||"").split("
   $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
   $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
   try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
-function HOOK(j,ok,u){}
+function HOOK(j,ok,u){const w=ok("weather");if(w&&window.__twin&&window.__twin.setLiveWeather)window.__twin.setLiveWeather(w.values,w.source&&w.source.name)}
 window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
 if(window.__assemblLive)draw(window.__assemblLive);
 })();
@@ -477,8 +477,10 @@ if(window.__assemblLive)draw(window.__assemblLive);
   </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/1/stage.css">
+<style>.tw .flowkey{right:140px;bottom:46px}.tw .key{bottom:12px}@media (max-width:640px){.tw .flowkey{display:none}}html.tw-poster .key,html.tw-poster .flowkey{display:none!important}</style>
+
 <script>
 // A typical 3-bedroom NZ house (114 m²), simulated in small time steps. One model drives the scene, the meters and the yearly numbers.
 const HOME = (() => {
@@ -739,7 +741,8 @@ function makeVision(C) {
 }
 
 </script>
-<script>
+<script type="module">
+import {THREE,createStage,nzDate,clamp,smooth,calm} from "/assets/twin/1/stage.js";
 (()=>{
 const H=HOME,$=id=>document.getElementById(id);
 const S={city:"Auckland",adults:2,kids:1,kidsAlt:false,wfh:0,env:"retro",heater:"hp",setpoint:20,bedHeat:false,hpwh:false,tou:false,ev:false,solar:0,battery:0};
@@ -758,16 +761,24 @@ const ROOMS={
 const OX=-6,OZ=-4.75,FY=0.3,EXT=1.55,INT=1.15;
 const wx=x=>x+OX, wz=z=>z+OZ, cx=R=>wx((R.x[0]+R.x[1])/2), cz=R=>wz((R.z[0]+R.z[1])/2);
 
-// ---------------- renderer
+// ---------------- the stage (shared twin engine, /assets/twin/1): renderer, camera, the real sun over Auckland, post, touch, tour, dial
 const canvas=$("scene"),box=$("stagebox");
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:"high-performance"});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0x000000,0);
-renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.74));canvas.style.height=Math.round(h)+"px"}
+sizeCanvas();
+const stage=createStage({id:"home",canvas,box,place:"auckland",extent:16,tableY:-0.72,fov:undefined,controls:{minDistance:6,maxDistance:60,maxPolarAngle:Math.PI*0.47},ao:{radius:0.5,intensity:0.75},tilt:3,tiltBand:0.2,
+  onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
+const renderer=stage.renderer||{capabilities:{getMaxAnisotropy:()=>1}};
 const SMALL=Math.min(screen.width||1280,screen.height||800)<700;
+const LAMPK=4;// lamp brightness in the engine's physical light units (was tuned for three r128's legacy units)
+
+
+
+
+
 // procedural textures: timber, tiles, fabric, lawn, corrugated iron, weatherboards, soft contact shadows
 let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
 function tex(w,h,draw,o={}){const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");draw(g,w,h);const t=new THREE.CanvasTexture(c);
-  t.wrapS=t.wrapT=THREE.RepeatWrapping;if(o.repeat)t.repeat.set(o.repeat[0],o.repeat[1]);if(o.srgb!==false)t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t}
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;if(o.repeat)t.repeat.set(o.repeat[0],o.repeat[1]);if(o.srgb!==false)t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t}
 const TX={
   timber:tex(512,512,(g,w,h)=>{const n=8,ph=h/n;for(let i=0;i<n;i++){let x=-rnd()*w;while(x<w){const L=w*(0.45+rnd()*0.6),v=218+rnd()*28;g.fillStyle=`rgb(${v+8},${v},${v-12})`;g.fillRect(x,i*ph,L,ph);
       for(let k=0;k<7;k++){g.strokeStyle=`rgba(120,80,50,${0.05+rnd()*0.07})`;g.lineWidth=0.6+rnd()*1.2;g.beginPath();const y=i*ph+rnd()*ph;g.moveTo(x,y);g.bezierCurveTo(x+L*.3,y+(rnd()-.5)*6,x+L*.6,y+(rnd()-.5)*6,x+L,y+(rnd()-.5)*4);g.stroke()}
@@ -782,8 +793,8 @@ const TX={
   soft:tex(128,128,(g,w,h)=>{g.filter="blur(14px)";g.fillStyle="#000";g.fillRect(30,30,68,68)},{srgb:false}),
   round:tex(128,128,(g,w,h)=>{const r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,"rgba(0,0,0,1)");r.addColorStop(.45,"rgba(0,0,0,.6)");r.addColorStop(1,"rgba(0,0,0,0)");g.fillStyle=r;g.fillRect(0,0,w,h)},{srgb:false})};
 [TX.soft,TX.round].forEach(t=>{t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping});
-const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,0.3,400);camera.position.set(17,15,21);
-const controls=new THREE.OrbitControls(camera,canvas);controls.target.set(1,1.2,0);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.47;controls.minDistance=6;controls.maxDistance=60;controls.enablePan=false;
+const scene=stage.scene,camera=stage.camera,controls=stage.controls;camera.near=0.3;camera.updateProjectionMatrix();
+
 const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.9,metalness:0},o));
 const mats={ground:std({map:TX.lawn,roughness:1}),plinth:std({roughness:.8}),path:std({roughness:.95}),wall:std({roughness:.93}),ext:std({map:TX.boards,bumpMap:TX.boardsBump,bumpScale:.012,roughness:.82}),
   floor:std({roughness:.85}),furn:std({roughness:.75}),tree:std({flatShading:true,roughness:.95}),tree2:std({flatShading:true,roughness:.95}),trunk:std({color:0x8a7461,roughness:1}),
@@ -793,10 +804,10 @@ const mats={ground:std({map:TX.lawn,roughness:1}),plinth:std({roughness:.8}),pat
   linen:std({color:0xf7f3ef,map:TX.fabric,roughness:1}),leaf:std({color:0x5f8a5a,flatShading:true,roughness:.9}),pot:std({color:0xc9a48a,roughness:.8}),
   shade:std({color:0xf6eadb,emissive:0xffb35c,emissiveIntensity:0,roughness:.9,side:THREE.DoubleSide}),
   glass:std({color:0xa9cbdc,transparent:true,opacity:.36,roughness:.05,metalness:.1,emissive:0xFFB36A,emissiveIntensity:0})};
-const hemi=new THREE.HemisphereLight(0xffffff,0xb9a99f,.6);scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff0dc,1.2);sun.castShadow=true;const SM=SMALL?2048:4096;sun.shadow.mapSize.set(SM,SM);sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.02;
-Object.assign(sun.shadow.camera,{left:-17,right:17,top:17,bottom:-17,near:1,far:120});scene.add(sun,sun.target);sun.target.position.set(1,0,0);
-const fill=new THREE.DirectionalLight(0xcfd8ee,.22);fill.position.set(-20,10,-14);scene.add(fill);
+// the sun, sky light and fill come from the stage (the real sun over Auckland for the simulated month and hour)
+
+
+
 // warm interior lights for the evening: floor lamp by the sofa, pendant over the table, bedside lamp
 const lamp=new THREE.PointLight(0xffb36a,0,10,2);lamp.position.set(-2.55,FY+1.35,4.15);scene.add(lamp);
 const lamp2=new THREE.PointLight(0xffc58a,0,8,2);lamp2.position.set(-1.0,FY+1.15,0.9);scene.add(lamp2);
@@ -822,9 +833,9 @@ tree(-9.5,-5,1.3);tree(-9,5.5,1.05);tree(12.5,6.5,1.2);tree(-4,-10,0.9);tree(13.
 [[-7.6,7.6],[-2,7.9],[11.6,9.4],[-8.6,0.6]].forEach(([x,z],i)=>{const b=new THREE.Mesh(new THREE.IcosahedronGeometry(.55,0),i%2?mats.tree2:mats.tree);b.position.set(x,.35,z);b.scale.y=.7;add(b);ao(x,z,1.5,1.5,0.035,.35,true)});
 // power pole at the street and the service line to the meter box
 const POLE=new THREE.Vector3(6.9,5.0,-12.6),METER=new THREE.Vector3(6.1,1.25,-3.4);
-boxM(0.22,5.2,0.22,mats.trunk,POLE.x,2.6,POLE.z);boxM(1.6,0.12,0.12,mats.trunk,POLE.x,4.9,POLE.z);
-boxM(0.08,0.5,0.35,mats.white,METER.x+0.02,METER.y,METER.z);
-{const pts=[];for(let i=0;i<=20;i++){const t=i/20;const p=POLE.clone().lerp(METER,t);p.y-=Math.sin(t*Math.PI)*0.45;pts.push(p)}scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mats.line))}
+const gridG=new THREE.Group();scene.add(gridG);gridG.add(boxM(0.22,5.2,0.22,mats.trunk,POLE.x,2.6,POLE.z),boxM(1.6,0.12,0.12,mats.trunk,POLE.x,4.9,POLE.z),
+  boxM(0.08,0.5,0.35,mats.white,METER.x+0.02,METER.y,METER.z));
+const SERVICE=[];{for(let i=0;i<=20;i++){const t=i/20;const p=POLE.clone().lerp(METER,t);p.y-=Math.sin(t*Math.PI)*0.45;SERVICE.push(p)}gridG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(SERVICE),mats.line))}
 
 // ---------------- floor slab, room floors coloured by temperature
 boxM(12.3,FY,9.8,mats.floor,0,FY/2,0,false);ao(0,0,15.2,12.6,0.03,.5);
@@ -932,7 +943,7 @@ const pPos=new Float32Array(PN*3),pCol=new Float32Array(PN*3),pA=new Float32Arra
 pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));pGeo.setAttribute("pcolor",new THREE.BufferAttribute(pCol,3));pGeo.setAttribute("alpha",new THREE.BufferAttribute(pA,1));pGeo.setAttribute("size",new THREE.BufferAttribute(pSz,1));
 const pMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{scale:{value:300}},
   vertexShader:"attribute vec3 pcolor;attribute float alpha;attribute float size;varying vec3 vC;varying float vA;uniform float scale;void main(){vC=pcolor;vA=alpha;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=size*scale/-mv.z;gl_Position=projectionMatrix*mv;}",
-  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;float a=exp(-r*r*13.0);vec3 c=mix(vC,vec3(1.0,0.97,0.92),smoothstep(0.16,0.0,r)*0.4);gl_FragColor=vec4(c,vA*a);}"});
+  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;float a=exp(-r*r*13.0);vec3 c=mix(vC,vec3(1.0,0.97,0.92),smoothstep(0.16,0.0,r)*0.4);gl_FragColor=vec4(c,vA*a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"});
 const points=new THREE.Points(pGeo,pMat);points.frustumCulled=false;scene.add(points);
 let pi=0;function emit(x,y,z,vx,vy,vz,life,c,size,grow=0,wob=0){const i=pi;pi=(pi+1)%PN;pPos.set([x,y,z],i*3);pVel.set([vx,vy,vz],i*3);pCol.set([c.r,c.g,c.b],i*3);pLife[i]=life;pMax[i]=life;pSz[i]=pBase[i]=size;pGrow[i]=grow;pWob[i]=wob;pPh[i]=Math.random()*6.28}
 function toward(a,b,speed,c,size,jit=0.05){const d=b.clone().sub(a),L=d.length();d.multiplyScalar(speed/L);emit(a.x+(Math.random()-.5)*jit,a.y+(Math.random()-.5)*jit,a.z+(Math.random()-.5)*jit,d.x,d.y,d.z,L/speed,c,size)}
@@ -949,45 +960,82 @@ function particles(dt){
     const air=(r.qHeatL+r.qCoolL);if(S.heater!=="gas"||r.qCoolL>0)rate("air",air>0.05?18+air*6:0,dt,()=>emit(0.3,FY+1.0,3.2+(Math.random()-.5)*.8,-1.6-Math.random()*.6,-0.25,(Math.random()-.5)*.5,1.6,r.qCoolL>0.05?C.cool:C.heat,0.16));
     if(S.heater==="gas")rate("gas",r.qHeatL>0.05?22:0,dt,()=>emit(-5.6+Math.random()*.3,FY+0.5,3.6+(Math.random()-.5)*.5,0.9+Math.random()*.4,0.4,(Math.random()-.5)*.4,1.6,C.heat,0.16));
     if(S.solar>0)rate("sol",r.gen*10,dt,()=>{const i=Math.floor(Math.random()*S.solar),c2=i%5,rr=Math.floor(i/5);tmpV.set(-4.8+c2*2.4+(Math.random()-.5)*1.8,0.15,-1.2+rr*1.35+(Math.random()-.5)*.8);faces[1].localToWorld(tmpV);toward(tmpV.clone(),METER,5,C.solar,0.2,0.1)});
-    rate("imp",r.imp*8,dt,()=>toward(POLE,METER,5.5,C.grid,0.18));
-    rate("exp",r.exp*8,dt,()=>toward(METER,POLE,5.5,C.solar,0.18));
-    rate("ev",r.ev*10,dt,()=>toward(METER,PORT,3,C.ev,0.17));
+
+
+
   }
   for(let i=0;i<PN;i++){if(pLife[i]<=0){pA[i]=0;continue}pLife[i]-=dt;const t=1-pLife[i]/pMax[i];
     const w=pWob[i]?Math.sin(t*7+pPh[i])*pWob[i]*dt:0;pPos[i*3]+=pVel[i*3]*dt+w;pPos[i*3+1]+=pVel[i*3+1]*dt;pPos[i*3+2]+=pVel[i*3+2]*dt+w*0.6;pSz[i]=pBase[i]*(1+pGrow[i]*t);pA[i]=Math.min(1,t*5)*Math.min(1,(1-t)*3)*0.95}
   pGeo.attributes.position.needsUpdate=true;pGeo.attributes.pcolor.needsUpdate=true;pGeo.attributes.alpha.needsUpdate=true;pGeo.attributes.size.needsUpdate=true}
 
+// ---------------- added on the twin stage: a battery, the "power right now" columns, flows riding the wires, comparison ghosts
+const SM=stage.M,sgeo=stage.geo;let VIEW="all";
+const DMH={heat:SM.data(0xC25E45,0.12),hw:SM.data(0x3F7E9C,0.12),app:SM.data(0x7B5C8E,0.12),ev:SM.data(0xC9772E,0.12),solar:SM.data(0xD9A441,0.12),grid:SM.data(0x7B5C8E,0.12),batt:SM.data(0x5E8C6A,0.12),base:SM.tint(0xE9E1D6,{roughness:.9})};
+// battery on the east wall by the meter (shown when the household has one); the bar on its face is the state of charge
+const battG=new THREE.Group();battG.position.set(6.3,0,-1.9);scene.add(battG);
+stage.mesh(sgeo.rbox(0.26,1.05,0.72,0.05),mats.white,[0,FY+0.62,0],{parent:battG});
+const battFill=stage.mesh(sgeo.rbox(0.04,1,0.14,0.015),DMH.batt,[0.14,FY+0.6,0],{parent:battG,cast:false});battG.visible=false;
+// power right now: two columns on a little plinth by the driveway, near the meter and the line to the street. Left = what the house is using (heating, hot water, appliances, car); right = where it comes from (solar, battery, grid)
+const colG=new THREE.Group();colG.position.set(11.6,0,-5.5);scene.add(colG);
+stage.mesh(sgeo.rbox(2.0,0.1,1.0,0.04),DMH.base,[0,0.05,0],{parent:colG});
+const KW=0.36;// metres per kW
+const USE=["heat","hw","app","ev"].map(k=>stage.mesh(sgeo.rbox(0.62,1,0.62,0.03),DMH[k],[-0.45,0.5,0],{parent:colG}));
+const SRCC=["solar","batt","grid"].map(k=>stage.mesh(sgeo.rbox(0.62,1,0.62,0.03),DMH[k],[0.45,0.5,0],{parent:colG}));
+function stackCol(arr,vals){let y=0.1;arr.forEach((m,i)=>{const h=Math.max(0,vals[i])*KW;m.visible=h>0.004;m.scale.y=Math.max(0.001,h);m.position.y=y+h/2;y+=h});return y}
+// flows on the wires: bought from the grid (pole to meter), sold to it (meter to pole), into the car
+const FLW={};
+FLW.imp=stage.flow({points:SERVICE,count:36,color:0x7B5C8E,size:0.11,speed:3.2,jitter:0,glow:0.3});
+FLW.exp=stage.flow({points:SERVICE.slice().reverse(),count:36,color:0xD9A441,size:0.11,speed:3.2,jitter:0,glow:0.3});
+FLW.ev=stage.flow({points:[[METER.x+0.06,METER.y-0.3,METER.z],[6.45,0.12,-3.2],[7.3,0.12,-2.0],[PORT.x,PORT.y,PORT.z]],count:16,color:0xC9772E,size:0.1,speed:1.4,jitter:0});
+const evCable=new THREE.Mesh(new THREE.TubeGeometry(FLW.ev.curve,40,0.025,6,false),mats.dark);scene.add(evCable);
+function themeExtras(){const m={heat:"--c-heat",hw:"--c-hw",app:"--c-app",ev:"--c-ev",solar:"--c-solar",grid:"--c-grid"};Object.entries(m).forEach(([k,v])=>{const c=col(v);DMH[k].color.copy(c);DMH[k].emissive.copy(c)});
+  DMH.base.color.copy(col("--scene-plinth"));FLW.imp.set({color:col("--c-grid")});FLW.exp.set({color:col("--c-solar")});FLW.ev.set({color:col("--c-ev")})}
+// comparison ghosts: what an upgrade would add, drawn as a translucent ghost over the live house
+const GMh=stage.ghostMaterial();
+const GFill=new THREE.MeshBasicMaterial({color:0x8E6E88,transparent:true,opacity:0.4,depthWrite:false});// small ghost parts read better as a soft plum fill than as a rim
+const ghostPV=[...Array(10)].map((_,i)=>{const c=i%5,rr=Math.floor(i/5),m=new THREE.Mesh(pv.geometry,GFill);m.renderOrder=2;m.position.set(-4.8+c*2.4,0.08,-1.2+rr*1.35);m.visible=false;faces[1].add(m);return m});
+const ghostBatt=stage.ghost(battG);ghostBatt.traverse(o=>{if(o.isMesh)o.material=GFill});
+const ghostHPWH=new THREE.Mesh(sgeo.rbox(0.8,0.62,0.36,0.06),GFill);ghostHPWH.position.set(0.6,0.31,-5.35);ghostHPWH.visible=false;scene.add(ghostHPWH);
+const ghostShell=new THREE.Mesh(sgeo.rbox(12.7,EXT+0.12,10.2,0.12),GMh);ghostShell.position.set(0,FY+EXT/2,0);ghostShell.visible=false;scene.add(ghostShell);
+let CMP=null;const CMPOPT={solar:{label:"Add solar panels",ch:()=>({solar:S.solar<5?5:10})},batt:{label:"A 10 kWh battery",ch:()=>({battery:10,solar:Math.max(S.solar,3)})},
+  hpwh:{label:"Heat pump hot water",ch:()=>({hpwh:true})},h1:{label:"Insulated to the 2023 code",ch:()=>({env:"h1"})}};
+function ghostsNow(){const t=CMP==="solar"?(S.solar<5?5:10):CMP==="batt"?Math.max(S.solar,3):0;ghostPV.forEach((m,i)=>m.visible=i>=S.solar&&i<t);
+  ghostBatt.visible=CMP==="batt"&&S.battery<10;ghostHPWH.visible=CMP==="hpwh"&&!S.hpwh;ghostShell.visible=CMP==="h1"&&S.env!=="h1"}
+let cmpKey="",cmpRes=null;
+function cmpNow(){if(!CMP||!YR)return null;const o=CMPOPT[CMP],ch=o.ch(),key=CMP+JSON.stringify(S);if(key!==cmpKey){cmpKey=key;const y=H.year({...S,...ch});
+  const cost=CMP==="solar"?(ch.solar-S.solar)*H.PV_COST:CMP==="batt"?(10-S.battery)*H.BATT_COST+(ch.solar-S.solar)*H.PV_COST:CMP==="hpwh"?H.HPWH_COST:null;cmpRes={save:YR.cost-y.cost,cost,cold:y.coldShare,label:o.label,ch}}return cmpRes}
+
 // ---------------- theme
-const lin=n=>col(n).convertSRGBToLinear();
+const lin=n=>col(n);
 function applyTheme(){mats.ground.color=lin("--scene-ground");mats.plinth.color=lin("--scene-plinth");mats.path.color=lin("--scene-path");mats.wall.color=lin("--scene-wall");mats.ext.color=lin("--scene-ext");
   mats.floor.color=lin("--scene-floor");mats.furn.color=lin("--scene-furn");mats.roof.color=lin("--scene-roof");mats.tree.color=lin("--scene-tree");mats.tree2.color=lin("--scene-tree").multiplyScalar(.78);
   mats.fabric.color=lin("--scene-fabric");mats.fabric2.color=lin("--scene-fabric-2");mats.rug.color=lin("--scene-rug");mats.timber.color=lin("--scene-timber");mats.bench.color=lin("--scene-bench");
   duvets[0].color=lin("--scene-fabric-2");duvets[1].color=lin("--scene-fabric");duvets[2].color=lin("--scene-rug");
   mats.person.color=new THREE.Color(0xffffff);mats.head.color=lin("--scene-person");mats.cap.color=lin("--scene-edge");mats.line.color=lin("--scene-edge");
   C={person:lin("--scene-person"),live:lin("--live"),heat:col("--heat"),heatHi:col("--heat").lerp(new THREE.Color("#F2B27A"),.5),cool:col("--cool"),solar:col("--c-solar"),grid:col("--c-grid"),ev:col("--c-ev"),
-    cold:lin("--cool"),mid:lin("--scene-floor"),warm:new THREE.Color("#E39A2D").convertSRGBToLinear(),
+    cold:lin("--cool"),mid:lin("--scene-floor"),warm:new THREE.Color("#E39A2D"),
     sky:["--sky-day-1","--sky-day-2","--sky-dusk-1","--sky-dusk-2","--sky-night-1","--sky-night-2"].map(col)};
   const dark=css("--paper").toLowerCase()!=="#fffdfb";pMat.blending=dark?THREE.AdditiveBlending:THREE.NormalBlending;pMat.needsUpdate=true;
-  skyKey="";drawWeek()}
+  skyKey="";themeExtras();drawWeek()}
 let skyKey="";
-function sky(h){const up=H.sunUp(month,h);const dusk=Math.max(0,1-Math.abs(up-0.12)/0.12)*(up>0?1:0.6);const day=Math.min(1,up*3.2);
-  const top=C.sky[4].clone().lerp(C.sky[0],day).lerp(C.sky[2],dusk*0.35),bot=C.sky[5].clone().lerp(C.sky[1],day).lerp(C.sky[3],dusk*0.4);
-  const k=top.getHexString()+bot.getHexString();if(k!==skyKey){skyKey=k;box.style.background=`linear-gradient(180deg,#${top.getHexString()},#${bot.getHexString()})`}
-  return day}
-new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
+function sky(h){return Math.min(1,H.sunUp(month,h)*3.2)}// the model's own daylight decides when lights go on; the stage draws the real sun
+
+
+
+
+
 
 // ---------------- camera views
-function resize(){const w=box.clientWidth,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.74));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;
-  camera.fov=w/h<1?44:34;camera.updateProjectionMatrix();pMat.uniforms.scale.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360))}
-addEventListener("resize",resize);
+
+
+
 const VIEWS={all:{p:[17,16,22],t:[1,2.0,-0.5],lift:5,rz:-2.5,show:1},living:{p:[2,9,11],t:[-2.6,0.6,2.0],lift:9,rz:0,show:0},beds:{p:[13,10,-6],t:[3,0.6,0],lift:9,rz:0,show:0},roof:{p:[11,14,21],t:[0,2.2,0],lift:0,rz:0,show:1}};
 let camGoal=null;
 function setView(name){document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===name?"true":"false"));const v=VIEWS[name];
-  const narrow=camera.aspect<1;const p=new THREE.Vector3(...v.p),t=new THREE.Vector3(...v.t);if(narrow)p.sub(t).multiplyScalar(0.98).add(t);
-  camGoal={p,t};roofGoal=v.lift;roofZGoal=v.rz;roofShowGoal=v.show}
+  stage.flyTo({p:v.p,t:v.t});VIEW=name;roofGoal=v.lift;roofZGoal=v.rz;roofShowGoal=v.show}
+
 document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));
-controls.addEventListener("start",()=>camGoal=null);
+
 
 // ---------------- simulation
 const weekOf=d=>Math.floor(d/7);
@@ -1008,15 +1056,15 @@ function people(dt){const h=simH%24,wd=day%7,n=S.adults+S.kids;let awakeIdx=0;
 function fx(dt){const h=simH%24,day=sky(h);
   Object.entries(ROOMS).forEach(([k,R])=>{const T=R.zone==="l"?st.Tl:st.Tb;roomFloor[k].material.color.lerp(tempColor(T),Math.min(1,dt*3))});
   const lit=r.lights>0.02&&day<0.25,ease=Math.min(1,dt*3),bedLit=lit&&r.P.home>0&&(h>=19.5&&h<22.5);mats.glass.emissiveIntensity+=((lit?0.7:0)-mats.glass.emissiveIntensity)*ease;
-  lamp.intensity+=((lit&&r.P.awake>0?2.6:0)-lamp.intensity)*ease;lamp2.intensity+=((lit&&r.P.awake>1?1.6:0)-lamp2.intensity)*ease;lamp3.intensity+=((bedLit?1.2:0)-lamp3.intensity)*ease;
-  mats.shade.emissiveIntensity=Math.min(1.4,lamp.intensity*0.55);
+  lamp.intensity+=((lit&&r.P.awake>0?2.6*LAMPK:0)-lamp.intensity)*ease;lamp2.intensity+=((lit&&r.P.awake>1?1.6*LAMPK:0)-lamp2.intensity)*ease;lamp3.intensity+=((bedLit?1.2*LAMPK:0)-lamp3.intensity)*ease;
+  mats.shade.emissiveIntensity=Math.min(1.4,lamp.intensity/LAMPK*0.55);
   fan.rotation.y+=(S.heater==="hp"?(r.qHeatL+r.qCoolL):0)*dt*5;
   Object.values(heaters).forEach(m=>m.emissiveIntensity=r.qHeatB>0.05||(S.heater==="panel"&&r.qHeatL>0.05)?0.8:0);
-  cylMat.emissiveIntensity=r.hwElec>0.05?0.7:0;pvMat.emissiveIntensity=S.solar?Math.min(.4,r.gen/Math.max(1,S.solar)*.55):0;
-  const a=(h-6)/14*Math.PI,up=Math.max(0.04,Math.sin(a));sun.position.set(Math.cos(a)*-26+1,4+28*up,22);sun.intensity=0.08+1.25*day;hemi.intensity=0.22+0.42*day;fill.intensity=0.06+0.2*day;
-  hemi.color.setRGB(1,1,1).lerp(nightTint,1-day);sun.color.setRGB(1,.94,.86).lerp(duskTint,Math.max(0,1-day*2.2)*.6);
+  cylMat.emissiveIntensity=r.hwElec>0.05?0.7:0;pvMat.emissiveIntensity=S.solar?Math.min(.12,r.gen/Math.max(1,S.solar)*.18):0;
+  stage.setClock(nzDate(2026,month,15,h));
+
   roofLift+=(roofGoal-roofLift)*Math.min(1,dt*2.5);roofShow+=(roofShowGoal-roofShow)*Math.min(1,dt*3);roofZ+=(roofZGoal-roofZ)*Math.min(1,dt*2.5);roof.position.y=ROOF_BASE+roofLift;roof.position.z=roofZ;roof.visible=roofShow>0.03;
-  mats.roof.opacity=roofShow*(roofLift>1?0.92:1);mats.roof.transparent=true;pvMat.transparent=roofShow<0.99;pvMat.opacity=roofShow}
+  mats.roof.opacity=roofShow*(roofLift>1?0.72:1);mats.roof.transparent=true;pvMat.transparent=roofShow<0.99;pvMat.opacity=roofShow}
 // labels
 const nightTint=new THREE.Color(0x7f86b8),duskTint=new THREE.Color(0xffb88a);
 const tagsEl=$("tags"),tg=[0,1,2,3,4].map(()=>{const d=document.createElement("div");d.className="tag chip";tagsEl.appendChild(d);return d});const v3=new THREE.Vector3();
@@ -1092,24 +1140,96 @@ document.querySelectorAll("[data-speed]").forEach(b=>b.onclick=()=>{speed=+b.dat
 $("pause").onclick=()=>{playing=!playing;$("pause").textContent=playing?"Pause":"Play"};$("pause").textContent=playing?"Pause":"Play";
 // jumping forward in time simulates the hours in between, so rooms cool or warm realistically
 $("hour").oninput=e=>{const target=+e.target.value;let ahead=(target-simH+24)%24;while(ahead>0.001){const s=Math.min(ahead,0.25);stepSim(s);ahead-=s}};
-// loop
-let last=performance.now(),visible=true;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
-function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(visible){if(playing){let left=dt*speed/3600;while(left>0){const s=Math.min(left,0.05);stepSim(s);left-=s}}else if(!r)stepSim(0.0001);
-    people(dt);fx(dt);particles(dt);
-    if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.05)camGoal=null}
-    controls.update();renderer.render(scene,camera);tags();panels(now)}
-  requestAnimationFrame(frame)}
+// ---------------- the loop: the stage draws; this steps the house, moves people and light, and keeps labels and panels current
+stage.onFrame((dt)=>{if(playing){let left=dt*speed/3600;while(left>0){const s=Math.min(left,0.05);stepSim(s);left-=s}}else if(!r)stepSim(0.0001);
+  people(dt);fx(dt);particles(dt);extras(dt);tags();tags2();panels(performance.now())});
+const disp={use:[0,0,0,0],src:[0,0,0]},baseBg=new THREE.Color();
+const LIVEWX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.35,0.12],src:"",at:""},WX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.35,0.12]};
+function extras(dt){pMat.uniforms.scale.value=stage.pointScale;if(!r)return;const k=S.scale||1,e=Math.min(1,dt*4);
+  const use=[r.heatElec*k,r.hwElec*k,r.appl*k,r.ev],bat=Math.max(0,r.batt),src=[Math.max(0,r.load-r.imp-bat),bat,r.imp];
+  use.forEach((v,i)=>disp.use[i]+=(v-disp.use[i])*e);src.forEach((v,i)=>disp.src[i]+=(v-disp.src[i])*e);stackCol(USE,disp.use);stackCol(SRCC,disp.src);
+  battG.visible=S.battery>0;if(S.battery>0){const f=Math.max(0.02,Math.min(1,st.soc/S.battery));battFill.scale.y=0.84*f;battFill.position.y=FY+0.2+0.42*f}
+  FLW.imp.set({rate:Math.min(1,r.imp/5)});FLW.exp.set({rate:Math.min(1,r.exp/3)});FLW.ev.set({rate:S.ev?Math.min(1,r.ev/1.7):0,visible:!!S.ev});evCable.visible=!!S.ev;
+  // the studio dims a little at night, so lit windows and lamps read
+  const n=stage.clock.night*(stage.dark()?0.3:0.55);baseBg.set(stage.look().bg);stage.scene.background.copy(baseBg).lerp(NIGHT_BG(),n);if(stage.scene.fog)stage.scene.fog.color.copy(stage.scene.background);
+  // live weather only when the twin is set to Auckland (the city the live feed is for)
+  const tgt=LIVEWX.src&&S.city==="Auckland"?LIVEWX:{rain:0,cloud:0.1,fog:0,wet:0,wind:[0.35,0.12]},q=Math.min(1,dt*1.2);
+  ["rain","cloud","fog","wet"].forEach(n=>WX[n]+=(tgt[n]-WX[n])*q);WX.wind[0]+=(tgt.wind[0]-WX.wind[0])*q;WX.wind[1]+=(tgt.wind[1]-WX.wind[1])*q;stage.setWeather(WX);
+  ghostsNow();soundsNow();badgeNow()}
+const NIGHT_BG=()=>new THREE.Color(stage.dark()?0x0E0A16:0x3A3046);
 function warm(){for(let i=0;i<48;i++)H.step(S,st,month,0,i*0.5,0.5,0)}
-resize();warm();stepSim(0.0001);applyTheme();buildPV();recompute();setView("all");camera.position.copy(camGoal.p);controls.target.copy(camGoal.t);camGoal=null;
+warm();stepSim(0.0001);buildPV();recompute();
+
+
+
+
+
+
+
+
+
 window.__twin={S,H,setView,recompute,buildPV,month:()=>month,year:()=>YR,setMonth:m=>{month=m;st=H.newState(S,month);warm();recompute()},jump:h=>{$("hour").value=h;$("hour").oninput({target:$("hour")})},speed:v=>speed=v,
   sync:()=>{["adults","kids","wfh","setpoint","solar","battery"].forEach(k=>{$(k).value=S[k]});["city","env","heater"].forEach(k=>$(k).value=S[k]);["kidsAlt","bedHeat","hpwh","tou","ev"].forEach(k=>$(k).checked=!!S[k]);
     $("adultsV").textContent=S.adults;$("kidsV").textContent=S.kids;$("wfhV").textContent=S.wfh;$("setV").textContent=S.setpoint+"°C";$("solarV").textContent=S.solar?S.solar+" kW":"none";$("batteryV").textContent=S.battery?S.battery+" kWh":"none";
     const sel=[0,3,6,9].reduce((a,b)=>Math.abs(b-month)<Math.abs(a-month)?b:a,0);$("season").value=String(sel);buildPV()}};
-requestAnimationFrame(frame);
+// ---------------- touch anything: hover for the live number, tap to pin, Explore lists every part
+const MON3=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],MONF=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const inside=()=>{roofGoal=9;roofZGoal=0;roofShowGoal=0};// picking a room lifts the roof away so you can see in
+const kw=v=>fmt(Math.max(0,v),v<10?1:0)+" kW",pr=()=>r.free?"free hour":fmt(r.rate*100,1)+"c/kWh"+(S.tariff?" on your bill":" average");
+const pk=(obj,spec)=>stage.pickable(obj,Object.assign({truth:"Simulated"},spec));
+const bedsG=new THREE.Group();scene.add(bedsG);["bed1","bed2","bed3"].forEach(k=>bedsG.add(roomFloor[k]));
+const hpG=new THREE.Group();scene.add(hpG);hpG.add(hpIndoor,hpOut,fan);
+pk(roomFloor.living,{title:"Living room",hint:"heated to your setting",panel:"#tL",onPin:inside,value:()=>`${fmt(st.Tl,1)}°C · set to ${S.setpoint}°C<br><span class="m">${r.qHeatL>0.05?"heating · "+kw(r.qHeatL)+" of heat":r.qCoolL>0.05?"cooling":"heater off"} · ${r.P.awake} awake at home</span>`});
+pk(bedsG,{title:"Bedrooms",hint:"where the house runs coldest",panel:"#tB",onPin:inside,value:()=>`${fmt(st.Tb,1)}°C<br><span class="m">${r.qHeatB>0.05?"heaters on":"unheated"} · living room under 18°C for ${YR?fmt(YR.coldShare*100):"–"}% of home hours this year</span>`});
+pk(hpG,{title:"Heating",hint:"heat pump, panels or gas",panel:"#stack",value:()=>`${H.HEATER[S.heater].name}<br><span class="m">${r.qHeatL>0.05?(S.heater==="gas"?fmt(r.heatGas,1)+" kW of gas":kw(r.heatElec*(S.scale||1))+" of electricity for "+kw(r.qHeatL)+" of heat"):r.qCoolL>0.05?"cooling":"off right now"}</span>`});
+pk(cyl,{title:"Hot water",hint:"the cylinder in the laundry",panel:"#stack",onPin:inside,value:()=>`${S.hpwh?"Heat pump cylinder":"Electric cylinder"}<br><span class="m">${r.hwElec>0.05?"heating · "+kw(r.hwElec*(S.scale||1)):"ready"}${S.tou?" · waits for free hours":""}</span>`});
+pk(pv,{title:"Solar panels",hint:"north face of the roof",panel:"#solarNow",view:{p:[11,14,21],t:[0,2.2,0]},value:()=>S.solar?`${kw(r.gen)} of ${S.solar} kW now<br><span class="m">${r.exp>0.01?"selling "+kw(r.exp)+" to the grid":"all used in the house"}</span>`:`<span class="m">No panels yet. Compare → Add solar shows where they'd go.</span>`});
+pk(car,{title:"Car",hint:"petrol or electric",panel:"#ev",value:()=>S.ev?`Electric · ${r.ev>0?"charging "+kw(r.ev):"plugged in"}<br><span class="m">charges ${S.tou?"in the free hours":"overnight"}</span>`:`Petrol<br><span class="m">switch on Electric car below to see it charge</span>`});
+pk(gridG,{title:"Grid connection",hint:"the meter and the line to the street",panel:"#kw",source:"Average price: MBIE all-in 38.3c/kWh incl. GST",value:()=>`${r.exp>0.01?"Selling "+kw(r.exp):"Buying "+kw(r.imp)}<br><span class="m">${pr()} · $${fmt(today.cost,2)} today so far</span>`});
+pk(battG,{title:"Home battery",hint:"by the meter",panel:"#battery",value:()=>S.battery?`${fmt(st.soc,1)} of ${S.battery} kWh<br><span class="m">${r.batt>0.01?"powering the house · "+kw(r.batt):r.batt<-0.01?"charging · "+kw(-r.batt):"waiting"}</span>`:`<span class="m">No battery. Compare → A 10 kWh battery shows what it would change.</span>`});
+pk(colG,{title:"Power right now",hint:"what's on, and where it comes from",panel:"#kw",view:{p:[17,7,2],t:[11.6,1.3,-5.5]},value:()=>`Using ${kw(r.load)}<br><span class="m">from solar ${kw(disp.src[0])} · battery ${kw(disp.src[1])} · grid ${kw(disp.src[2])}</span>`});
+// ---------------- guided tour: six stops; the 6pm winter peak is the signature moment. On narrow screens the tour card alone tells the story (no pinned cards on top of it).
+let tourSaved=null;
+function setMonthUI(m){window.__twin.setMonth(m);const sel=[0,3,6,9].reduce((a,b)=>Math.abs(b-m)<Math.abs(a-m)?b:a,0);$("season").value=String(sel)}
+function setPlaying(p){if(playing!==p)$("pause").click()}
+stage.tour.set([
+  {title:"A Kiwi home, cut open",do:()=>window.__twin.setView("all"),get text(){return `${S.adults} adult${S.adults>1?"s":""} and ${S.kids} child${S.kids===1?"":"ren"} in ${S.city}, in a house with ${H.ENVELOPE[S.env].name.toLowerCase()}. The roof lifts off like a model so you can see in; each floor is coloured by its temperature.`}},
+  {title:"Where the heat goes",do:()=>window.__twin.setView("living"),get pin(){return box.clientWidth>640?()=>roomFloor.living.userData.twPick:null},get text(){return `The living room is <b>${fmt(st.Tl,1)}°C</b>. The rust-coloured dots are heat leaving through the walls, windows and ceiling: the colder it is outside, the faster they go.`}},
+  {title:"The cold bedrooms",do:()=>window.__twin.setView("beds"),get pin(){return box.clientWidth>640?()=>bedsG.userData.twPick:null},get text(){return `Bedrooms are at <b>${fmt(st.Tb,1)}°C</b>${r.qHeatB>0.05?", heated overnight":", unheated"}. In a year like this the living room is under 18°C for <b>${YR?fmt(YR.coldShare*100):"–"}%</b> of the hours people are home and awake.`}},
+  {title:"Sun on the roof",do:()=>{window.__twin.setView("roof");if(Math.abs(simH%24-12.5)>1.5)window.__twin.jump(12.5)},get pin(){return box.clientWidth>640?()=>pv.userData.twPick:null},get text(){return S.solar?`At midday the ${S.solar} kW of panels make <b>${kw(r.gen)}</b>; anything the house doesn't use is sold back to the grid.`:`No panels on this house yet. Open <b>Compare → Add solar panels</b> to see where 5 kW would sit, and what it would save.`}},
+  {title:"The 6pm winter peak",view:{p:[19,12,19],t:[3,1.6,0.6]},do:()=>{if(!tourSaved)tourSaved={month,playing};if(month!==6)setMonthUI(6);window.__twin.jump(18);setPlaying(false);roofGoal=5;roofZGoal=-2.5;roofShowGoal=1},get pin(){return box.clientWidth>640?()=>colG.userData.twPick:null},
+    get text(){return `July, a weekday, 6pm. It's dark, everyone is home, and the oven, the heat pump and the lights all run at once: the house is using <b>${kw(r.load)}</b>${r.batt>0.05?`, and the battery is carrying <b>${kw(r.batt)}</b> of it`:`, all of it from the grid`}. Winter evenings like this are when New Zealand's grid is busiest. The two columns by the driveway show it: what's on, and where it comes from.`}},
+  {title:"Make it yours",do:()=>{if(tourSaved){if(month!==tourSaved.month)setMonthUI(tourSaved.month);setPlaying(tourSaved.playing);tourSaved=null}window.__twin.setView("all")},text:"Change the household below, or snap your own power bill to run this house on your own prices. <b>Compare</b> shows a ghost of an upgrade over the house, with what it would save."}
+],"A day in this house");
+stage.tour.onEnd=()=>{if(tourSaved){if(month!==tourSaved.month)setMonthUI(tourSaved.month);setPlaying(tourSaved.playing);tourSaved=null}};
+// ---------------- compare: a ghost of an upgrade over the live house
+stage.compare({label:"Compare",options:[{id:"solar",label:"Add solar panels",short:"solar",note:"5 kW on the north roof (10 kW if it has 5)"},{id:"batt",label:"A 10 kWh battery",short:"battery",note:"by the meter, with solar to charge it"},{id:"hpwh",label:"Heat pump hot water",short:"hot water",note:"instead of a standard cylinder"},{id:"h1",label:"Insulated to the 2023 code",short:"insulation",note:"walls, ceiling, floor and glazing"}],onChange:id=>{CMP=id}});
+// ---------------- sound (off until asked for): the heat pump's hum, the room, rain and wind
+stage.sound.layer("hp",{type:"hum",freq:74,gain:0.16}).layer("room",{type:"chatter",gain:0.12}).layer("rain",{type:"rain",gain:0.18}).layer("wind",{type:"wind",gain:0.09});
+function soundsNow(){const s=stage.sound;if(!s.on||!r)return;s.set("hp",S.heater==="hp"?clamp((r.qHeatL+r.qCoolL)/5,0,1):0);s.set("room",clamp(r.P.awake/5,0,0.8));s.set("rain",WX.rain);s.set("wind",clamp(Math.hypot(...WX.wind),0,1))}
+// ---------------- the time dial: outer ring = the year (bar = power bought on an average day), hand = the simulation's clock; tap the centre to pause
+stage.dial({months:{labels:MONF,short:MON3,values:()=>YR?YR.byMonth.map(b=>b.imp/b.days):new Array(12).fill(1),get:()=>month,set:i=>setMonthUI(i),title:"Month (bar length is the power bought on an average day that month)"},
+  day:{get:()=>simH%24,set:h=>window.__twin.jump(Math.round(h*2)/2),held:()=>!playing,title:"Time of day in the simulation",marks:[{h:7,c:"var(--rose)",t:"Morning: showers and breakfast"},{h:18,c:"var(--ink)",t:"Evening peak: cooking, heating and lights at once"}]},
+  onCenter:()=>$("pause").click()});
+// ---------------- labels for the added parts, and keeping labels off the controls
+TAGP.push([11.6,3.1,-5.5],[0.6,3.4,-5.2]);while(tg.length<TAGP.length){const d=document.createElement("div");d.className="tag chip";tagsEl.appendChild(d);tg.push(d)}
+const TAGPICK=["Living room","Bedrooms","Hot water","Car","Grid connection","Power right now",null];
+function tags2(){if(!r)return;const k=S.scale||1;
+  tg[5].innerHTML=`<b>Power now</b> ${kw(r.load)}<br><span class="m">${disp.src[1]>0.05?"battery "+kw(disp.src[1])+" · ":""}${disp.src[0]>0.05?"solar "+kw(disp.src[0])+" · ":""}grid ${kw(disp.src[2])}</span>`;
+  const c=cmpNow();tg[6].hidden=!c||tg[6].hidden;if(c){tg[6].className="tag chip";tg[6].innerHTML=`<b>Ghost: ${c.label.charAt(0).toLowerCase()+c.label.slice(1)}${CMP==="batt"&&S.solar<3?" + 3 kW solar":""}</b><br><span class="m">${c.save>20?"saves about $"+fmt(c.save)+" a year":"little or no saving here"}${c.cost?" · costs about $"+fmt(c.cost):""}</span>`}
+  const pinned=new Set([...box.querySelectorAll(".tw-pins .tw-card")].map(e=>e.getAttribute("aria-label")));
+  const kept=[...box.querySelectorAll(".views,.tw-tools,.tw-dialwrap,.badge,.flowkey,.key,.tw-tour:not([hidden]),.tw-following:not([hidden])")].filter(e=>e.offsetParent).map(e=>e.getBoundingClientRect());
+  tg.forEach((el,i)=>{if(el.hidden)return;if(TAGPICK[i]&&pinned.has(TAGPICK[i])){el.hidden=true;return}const rc=el.getBoundingClientRect();if(kept.some(q=>rc.left<q.right+4&&rc.right>q.left-4&&rc.top<q.bottom+4&&rc.bottom>q.top-4))el.hidden=true})}
+// ---------------- the badge says what is simulated and what is live
+const badge=$("badge");let badgeTxt="";
+function badgeNow(){const live=LIVEWX.src&&S.city==="Auckland",t="SIMULATED"+(live?" · WEATHER LIVE, AUCKLAND":"");if(t!==badgeTxt){badgeTxt=t;badge.textContent=t;badge.title=live?`Rain, cloud and wind from ${LIVEWX.src}${LIVEWX.at?", "+LIVEWX.at:""}. The house, its people and its clock are simulated.`:"A simulated house; public averages only"}}
+Object.assign(window.__twin,{stage,tour:i=>stage.tour.start(i||0),compare:id=>{CMP=id||null},
+  setLiveWeather:(v,src)=>{if(!v)return;const mm=+v.rainMm||0;LIVEWX.rain=mm<=0?0:Math.min(1,0.25+mm*0.35);LIVEWX.cloud=Math.min(1,(+v.cloudPct||0)/100);LIVEWX.wet=Math.max(LIVEWX.rain,(+v.today?.rainMm||0)>2?0.35:0);
+    const s=Math.min(1,(+v.windKmh||0)/40);LIVEWX.wind=[0.15+0.6*s,0.05+0.25*s];LIVEWX.fog=(+v.humidity||0)>96&&(+v.windKmh||0)<6?0.3:0;LIVEWX.src=src||"Open-Meteo";LIVEWX.at=v.at?new Date(v.at).toLocaleTimeString("en-NZ",{hour:"numeric",minute:"2-digit"}):""}});
+stage.start({p:VIEWS.all.p,t:VIEWS.all.t});
 })();
 </script>
-<script>
+<script type="module">
 // Snap your power bill: add (photo, sample or typed) → check every figure → run the twin on your own prices.
 (()=>{
 const T=window.__twin,H=T.H,S=T.S,$=id=>document.getElementById(id);

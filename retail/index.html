@@ -261,6 +261,15 @@ details.vz-more[open]>summary{margin-bottom:8px}
 @media (max-width:620px){.ai-lad .hd{display:none}.ai-lad .r{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.ai-lad .n,.ai-lad .ev{grid-column:1/-1}.ai-lad .n small{display:block}}
 .yrviz{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 26px}
 @media (max-width:900px){.yrviz{grid-template-columns:minmax(0,1fr)}}
+
+/* twin stage v1: this twin keeps its walnut ink; sawdust is the accent, proposed changes use the proposed colour */
+#stagebox.tw{--tw-live:var(--saw)}
+#stagebox .tw-cv .a{color:var(--prop)}
+#stagebox .tw-dial .tw-months path.on{fill:var(--ink)}
+.tw .key{max-width:calc(100% - 270px)}
+.tw:has(.tw-touring) .key{opacity:.35}
+html.tw-poster #stagebox .key,html.tw-poster .tw-gtag,html.tw-poster .closed{display:none!important}
+@media (max-width:640px){#stagebox .key{display:none}#stagebox .badge{top:auto;bottom:10px;left:12px;right:auto}}
 </style>
 </head>
 <body>
@@ -430,8 +439,8 @@ details.vz-more[open]>summary{margin-bottom:8px}
   </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/1/stage.css">
 <script>
 const RETAIL_SNAP = {"retrieved":"2026-10-23","figures":{"rts_hardware":{"metric":"Hardware, building and garden supplies: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":10865,"yoy_pct":4.7,"stock_m":1352.6,"sales_to_stock":8.0},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFH1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_pharma":{"metric":"Pharmaceutical and other store based retailing: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":9541,"yoy_pct":11.7,"stock_m":567.2,"sales_to_stock":16.8},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFM1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_all":{"metric":"All industries total: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":127808,"yoy_pct":5.6,"stock_m":9232.9,"sales_to_stock":13.8},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SF91CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_dept":{"metric":"Department stores: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":7120,"yoy_pct":2.0,"stock_m":1140.3,"sales_to_stock":6.2},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFF1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_clothing":{"metric":"Clothing, footwear and personal accessory retailing: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":5185,"yoy_pct":2.1,"stock_m":738.8,"sales_to_stock":7.0},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFK1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_electrical":{"metric":"Electrical and electronic goods retailing: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":4221,"yoy_pct":17.0,"stock_m":453.4,"sales_to_stock":9.3},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFL1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_recreational":{"metric":"Recreational goods retailing: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":3348,"yoy_pct":6.6,"stock_m":617.7,"sales_to_stock":5.4},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFJ1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"rts_furniture":{"metric":"Furniture, floor coverings, houseware and textile goods retailing: sales YE Jun 2026 ($m), YoY %, stock at 30 Jun 2026 ($m), sales/stock ratio","value":{"sales_m":3321,"yoy_pct":6.3,"stock_m":376.6,"sales_to_stock":8.8},"unit":"NZD million","period":"YE Jun 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","notes":"Series RTTQ.SFG1CA; sales/stock is sales at retail over stock at cost - a turns proxy, not COGS-based turns"},"geo_G423_units":{"metric":"Hardware, building and garden supplies retailing (G423) business locations (geographic units)","value":2121,"unit":"locations","period":"Feb 2025","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/New-Zealand-business-demography-statistics/New-Zealand-business-demography-statistics-At-February-2025/Download-data/geographic-units-by-industry-and-statistical-area-2000-2025-descending-order.zip","notes":"Summed from RTotal rows of geographic-units CSV, year=2025"},"geo_G423_employees":{"metric":"Hardware, building and garden supplies retailing (G423) employee count at locations","value":23800,"unit":"employees","period":"Feb 2025","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/New-Zealand-business-demography-statistics/New-Zealand-business-demography-statistics-At-February-2025/Download-data/geographic-units-by-industry-and-statistical-area-2000-2025-descending-order.zip","notes":"Employee counts are rounded by Stats NZ"},"geo_G427_units":{"metric":"Pharmaceutical and other store-based retailing (G427) business locations (geographic units)","value":7428,"unit":"locations","period":"Feb 2025","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/New-Zealand-business-demography-statistics/New-Zealand-business-demography-statistics-At-February-2025/Download-data/geographic-units-by-industry-and-statistical-area-2000-2025-descending-order.zip","notes":"Summed from RTotal rows of geographic-units CSV, year=2025"},"geo_G427_employees":{"metric":"Pharmaceutical and other store-based retailing (G427) employee count at locations","value":29400,"unit":"employees","period":"Feb 2025","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/New-Zealand-business-demography-statistics/New-Zealand-business-demography-statistics-At-February-2025/Download-data/geographic-units-by-industry-and-statistical-area-2000-2025-descending-order.zip","notes":"Employee counts are rounded by Stats NZ"},"ect_retail_cats":{"metric":"Card spend by category YE Sep 2026 ($m)","value":{"Consumables":33987.5,"Durables":19982.3,"Hospitality":17597.0,"Fuel":6088.6,"Apparel":3989.0,"Motor vehicles excl fuel":2332.9},"unit":"NZD million","period":"YE Sep 2026","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Electronic-card-transactions/Electronic-card-transactions-September-2026/Download-data/electronic-card-transactions-september-2026.zip","notes":""},"ect_durables_seasonality":{"metric":"Durables card spend Dec 2025 vs Feb 2026","value":1.6,"unit":"ratio","period":"2025-26","truth_label":"Source (computed)","source_url":"https://www.stats.govt.nz/assets/Uploads/Electronic-card-transactions/Electronic-card-transactions-September-2026/Download-data/electronic-card-transactions-september-2026.zip","notes":""},"ect_mean_txn":{"metric":"Mean electronic card transaction value (all industries)","value":55.1,"unit":"NZD","period":"Sep 2026","truth_label":"Source","source_url":"https://www.stats.govt.nz/assets/Uploads/Electronic-card-transactions/Electronic-card-transactions-September-2026/Download-data/electronic-card-transactions-september-2026.zip","notes":"Series ECTM.S4A1V; 167m transactions, $9.2b in month"},"retail_crime_cost":{"metric":"Retail crime cost (Retail NZ 2023 Retail Crime Report)","value":2600000000.0,"unit":"NZD per year","period":"2023","truth_label":"Source","source_url":"https://insideretail.co.nz/2025/05/05/report-finds-many-retail-crimes-in-new-zealand-go-unreported/","notes":"~40% unreported; 140,746 incidents (COMS 2024)"},"nzpost_online_q4_2024":{"metric":"Online spend (NZ Post), Q4 2024","value":1730000000.0,"unit":"NZD","period":"Oct-Dec 2024","truth_label":"Source","source_url":"https://www.nzpost.co.nz/about-us/media-centre/media-release/online-shoppers-spent-173-billion-october-to-december-2024","notes":"+9%; 72% domestic; 1.7m+ shoppers"},"briscoe_sales":{"metric":"Briscoe Group full-year sales","value":686800000.0,"unit":"NZD","period":"FY to 25 Jan 2026","truth_label":"Source","source_url":"https://insideretail.co.nz/2026/02/04/rebel-operator-briscoe-group-sees-record-year/","notes":"Online 20% of sales"},"warehouse_sales":{"metric":"The Warehouse Group sales","value":3000000000.0,"unit":"NZD","period":"FY26","truth_label":"Source","source_url":"https://www.1news.co.nz/2026/09/30/warehouse-stores-lose-money-but-noel-leeming-leads-group-back-to-profit/","notes":"NPAT $11.2m; Noel Leeming operating profit $21.8m; The Warehouse operating loss $7.5m"},"minwage_2026":{"metric":"Adult minimum wage from 1 Apr 2026","value":23.95,"unit":"NZD/hour","period":"1 Apr 2026","truth_label":"Source","source_url":"https://www.employment.govt.nz/news-and-updates/minimum-wage-is-increasing-on-1-april-2026","notes":"Starting-out/training $19.16"},"ai_gap_scheduling":{"metric":"Stable scheduling at Gap: median sales +7%, labour productivity +5%","value":0.07,"unit":"ratio","period":"Nov 2015-Aug 2016","truth_label":"Independent (academic field experiment)","source_url":"https://www.kenan-flagler.unc.edu/news/stable-scheduling-in-retail-is-good-for-business-and-workers/","notes":"28 stores, 19 treated; not AI but shows rostering lever size"},"ai_tiger_labour":{"metric":"Labour cost saving from ML demand forecasting (unnamed US fast-casual chain)","value":0.2,"unit":"ratio","period":"2023","truth_label":"Vendor claim","source_url":"https://www.tigeranalytics.com/perspectives/case-study/ai-ml-forecasting-delivers-20-savings-for-top-us-restaurant-chain/","notes":"Also 10% less inventory waste"},"bd_retail_employees":{"metric":"Retail trade employee count","value":222400,"unit":"employees","period":"Feb 2025","truth_label":"Source","source_url":"https://www.stats.govt.nz/assets/Uploads/New-Zealand-business-demography-statistics/New-Zealand-business-demography-statistics-At-February-2025/Download-data/new-zealand-business-demography-statistics-at-february-2025.xlsx","notes":"-2.5% YoY; 119,600 (54%) in enterprises with 100+ employees"}},"fuel":{"petrol91":357.9,"diesel":321.7,"unit":"c/L","period":"week ending 16 Oct 2026","truth_label":"Source","source_url":"https://www.mbie.govt.nz/assets/Data-Files/Energy/Weekly-fuel-price-monitoring/weekly-table.csv","name":"MBIE weekly fuel price monitoring (adjusted retail price)"},"rts_url":"https://www.stats.govt.nz/assets/Uploads/Retail-trade-survey/Retail-trade-survey-June-2026-quarter/Download-data/retail-trade-survey-june-2026-quarter.zip","ect_url":"https://www.stats.govt.nz/assets/Uploads/Electronic-card-transactions/Electronic-card-transactions-September-2026/Download-data/electronic-card-transactions-september-2026.zip"};
 </script>
@@ -941,163 +950,147 @@ const RETAIL = (() => {
 })();
 
 </script>
-<script>
-// The store in 3D. Plan units are metres; y is up; the car park and the road are +z. DIY entrance and garden centre on the left (-x),
-// trade desk and the drive-through timber yard on the right (+x). Everything that moves is driven by the model's day view:
-// utes at the desk and the yard gate, DIY customers in the aisles and at the checkouts, pickers at the click-and-collect bay, aisles coloured by availability.
+<script type="module">
+import {THREE,createStage,nzDate,clamp,smooth,calm,solar} from "/assets/twin/1/stage.js";
+// The store in 3D, on the shared twin stage (/assets/twin/1): a card-and-timber maquette of the shed, yard and car park, lit by the real
+// Auckland sun for the simulated date and minute. Plan units are metres; y is up; the car park and the road are +z. DIY entrance and garden
+// centre on the left (-x), trade desk and the drive-through timber yard on the right (+x). Everything that moves is driven by the model's day view:
+// utes at the desk and the yard gate, DIY customers in the aisles and at the checkouts, pickers at the click-and-collect bay, bins coloured by availability.
+// Where the roof is off over the sales floor, the front wall is cut down like a section model so the floor reads from the car park.
 function createRetailScene({ canvas, box, lite }) {
-const K = RETAIL;
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), col = n => new THREE.Color(css(n) || "#999").convertSRGBToLinear(), lin = h => new THREE.Color(h).convertSRGBToLinear();
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lite, alpha: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(lite ? 1 : Math.min(devicePixelRatio, 1.75)); renderer.setClearColor(0, 0);
-renderer.shadowMap.enabled = !lite; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
-const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 1, 0.5, 600);
-const controls = new THREE.OrbitControls(camera, canvas); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 8; controls.maxDistance = 220; controls.enablePan = false;
+const K = RETAIL, R = () => window.__retail || null;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), col = n => new THREE.Color(css(n) || "#999");
+function sizeCanvas() { const w = box.clientWidth || 600, h = Math.max(window.__minH || 440, Math.min(innerHeight * .72, w * .6)); canvas.style.height = Math.round(h) + "px"; }
+sizeCanvas();
+const stage = createStage({ id: "retail", canvas, box, place: "auckland", extent: 95, controls: { minDistance: 10, maxDistance: 250, maxPolarAngle: Math.PI * .47 }, ao: { radius: 3.2 }, tilt: 3.2, tableY: -1.3,
+  onResize: () => { sizeCanvas(); stage.resize(); }, onTheme: () => applyTheme() });
+if (lite) stage.setTier("low");
+const { M, geo } = stage, V = (x, y, z) => new THREE.Vector3(x, y, z);
+const put = (g, mat, x, y, z, o = {}) => stage.mesh(g, mat, [x, y, z], o);
+const grp = (x = 0, y = 0, z = 0, parent) => { const g = new THREE.Group(); g.position.set(x, y, z); (parent || stage.root).add(g); return g; };
+const boxM = (w, h, d, mat, x, y, z, o = {}) => put(geo.rbox(w, h, d, o.r), mat, x, y, z, o);
+const DM = { concrete: M.tint(0xDAD6CE, { roughness: .95 }), gravel: M.tint(0xD8D0C2, { roughness: 1 }), trim: M.tint(0x4A3F39, { roughness: .6 }), cut: M.tint(0x2B2320, { roughness: .7 }),
+  timber: M.tint(0xC49A62, { roughness: .8 }), timber2: M.tint(0xA8834F, { roughness: .8 }), shelf: M.tint(0x8E8F91, { roughness: .7 }), pot: M.tint(0xA8674A, { roughness: .9 }),
+  leaf: M.tint(0x8FA98A, { roughness: .95 }), kiosk: M.tint(0x6F7D86, { roughness: .5 }), prop: M.data(0xB0552F, .22),
+  shade: new THREE.MeshStandardMaterial({ color: 0xDADFD6, transparent: true, opacity: .42, roughness: .9, depthWrite: false }), paint: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .55 }),
+  person: new THREE.MeshStandardMaterial({ roughness: .75 }), head: new THREE.MeshStandardMaterial({ roughness: .6 }), veh: new THREE.MeshStandardMaterial({ roughness: .45, metalness: .2 }),
+  vehTop: new THREE.MeshStandardMaterial({ roughness: .3, metalness: .2 }), load: new THREE.MeshStandardMaterial({ roughness: .8 }), trolley: M.tint(0xA9B0B5, { roughness: .4, metalness: .5 }),
+  lamp: new THREE.MeshStandardMaterial({ color: 0xFFF4DA, emissive: 0xFFE2A8, emissiveIntensity: 0, roughness: .4 }), ghost: stage.ghostMaterial(0x6E5A4E) };
+const G = {}, L = { aisles: [], lanes: [], scos: [], uteBays: [], carBays: [] };
 
-// ---------------- procedural textures
-let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-function tex(w, h, draw, o = {}) { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); draw(g, w, h); const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = o.clamp ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping; if (o.srgb !== false) t.encoding = THREE.sRGBEncoding; t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); return t; }
-const noise = (g, w, h, base, amp, n = 4000, sz = 1.6) => { g.fillStyle = base; g.fillRect(0, 0, w, h); for (let i = 0; i < n; i++) { const v = (rnd() - 0.5) * amp; g.fillStyle = v > 0 ? `rgba(255,255,255,${v})` : `rgba(0,0,0,${-v})`; g.fillRect(rnd() * w, rnd() * h, sz, sz); } };
-const TX = {
-  asphalt: tex(256, 256, (g, w, h) => noise(g, w, h, "#e4e4e4", 0.16, 12000, 1.3)),
-  concrete: tex(256, 256, (g, w, h) => { noise(g, w, h, "#ededed", 0.1, 6000, 1.8); g.strokeStyle = "rgba(0,0,0,.14)"; g.lineWidth = 1.5; for (let k = 0; k <= 4; k++) { g.beginPath(); g.moveTo(k * 64, 0); g.lineTo(k * 64, h); g.moveTo(0, k * 64); g.lineTo(w, k * 64); g.stroke(); } }),
-  gravel: tex(256, 256, (g, w, h) => noise(g, w, h, "#e9e7e2", 0.24, 9000, 1.8)),
-  cladding: tex(128, 128, (g, w, h) => { g.fillStyle = "#f6f6f6"; g.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 8) { g.fillStyle = "rgba(0,0,0,.09)"; g.fillRect(x + 6, 0, 2, h); } }),
-  grass: tex(256, 256, (g, w, h) => { g.fillStyle = "#f0f0f0"; g.fillRect(0, 0, w, h); for (let i = 0; i < 3000; i++) { const v = 200 + rnd() * 55; g.fillStyle = `rgba(${v},${v},${v},.85)`; g.fillRect(rnd() * w, rnd() * h, 1.4, 2.6); } }),
-  soft: tex(128, 128, g => { g.filter = "blur(14px)"; g.fillStyle = "#000"; g.fillRect(30, 30, 68, 68); }, { srgb: false, clamp: true }) };
-const rep = (t, x, y) => { const c = t.clone(); c.needsUpdate = true; c.repeat.set(x, y); return c; };
-const std = (o = {}) => new THREE.MeshStandardMaterial(Object.assign({ roughness: .88, metalness: 0 }, o));
-const M = { asphalt: std({ map: rep(TX.asphalt, 10, 10), roughness: .95 }), concrete: std({ map: rep(TX.concrete, 6, 6), roughness: .95 }), gravel: std({ map: rep(TX.gravel, 8, 8), roughness: 1 }), grass: std({ map: rep(TX.grass, 6, 6), roughness: 1 }),
-  wall: std({ map: rep(TX.cladding, 10, 2), roughness: .8, metalness: .1 }), wallPlain: std({ roughness: .85 }), roof: std({ roughness: .6, metalness: .25 }), trim: std({ roughness: .6 }), steel: std({ roughness: .4, metalness: .5 }),
-  glass: std({ color: 0xC9DCE2, roughness: .1, metalness: .1, transparent: true, opacity: .5 }), timber: std({ roughness: .8 }), timber2: std({ roughness: .8 }), shelf: std({ roughness: .7 }), bin: std({ roughness: .75 }),
-  leaf: std({ flatShading: true, roughness: .95 }), pot: std({ roughness: .9 }), person: std({ roughness: .75 }), head: std({ roughness: .6 }), ute: std({ roughness: .45, metalness: .25 }), uteTop: std({ roughness: .3, metalness: .2 }),
-  car: std({ roughness: .45, metalness: .25 }), kiosk: std({ roughness: .5 }), dark: std({ color: 0x2A2626, roughness: .5 }), white: std({ color: 0xF4F1EC, roughness: .5 }), trolley: std({ color: 0xA9B0B5, roughness: .4, metalness: .5 }),
-  rain: new THREE.LineBasicMaterial({ color: 0xBCD2E2, transparent: true, opacity: .5 }) };
-Object.values(M).forEach(m => { if (m.color) m.color.convertSRGBToLinear(); });
-const hemi = new THREE.HemisphereLight(0xffffff, 0xb8b0a6, .62); scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff2e0, 0.9); sun.castShadow = !lite; const SM = lite ? 1024 : 2048; sun.shadow.mapSize.set(SM, SM); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.04;
-Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 300 }); sun.shadow.camera.updateProjectionMatrix();
-scene.add(sun, sun.target); const fill = new THREE.DirectionalLight(0xd2dbee, .2); fill.position.set(-40, 20, -30); scene.add(fill);
-function boxM(w, h, d, mat, x, y, z, cast = true, parent = scene) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = cast && !lite; m.receiveShadow = true; parent.add(m); return m; }
-function plane(w, d, mat, x, y, z, parent = scene) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.receiveShadow = true; parent.add(m); return m; }
-const aoM = new THREE.MeshBasicMaterial({ map: TX.soft, color: 0x1a1512, transparent: true, opacity: .3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
-function ao(x, z, w, d, parent = scene) { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), aoM); p.rotation.x = -Math.PI / 2; p.position.set(x, 0.03, z); p.renderOrder = 1; parent.add(p); }
-function tree(x, z, s = 1, parent = scene) { boxM(.22 * s, 1.6 * s, .22 * s, M.trim, x, .8 * s, z, true, parent); const c = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2 * s, 0), M.leaf); c.position.set(x, 2.3 * s, z); c.scale.set(1, 1.3, 1); c.castShadow = !lite; parent.add(c); }
-const V = (x, y, z) => new THREE.Vector3(x, y, z);
+// ---------------- the site: a card base, a grass margin and the asphalt yard
+put(geo.rbox(180, 1.2, 130, .5), M.card2, 0, -.6, 6, { cast: false });
+put(geo.rbox(177, .1, 127, .04), M.felt, 0, .05, 6, { cast: false });
+put(geo.rbox(170, .1, 118, .04), M.road, 0, .1, 6, { cast: false });
+// ---------------- the shed: 90 x 46 m, 9 m tall
+const SX = 90, SZ = 46, SH = 9, bz = -18, fz = bz + SZ / 2;
+G.shed = grp();
+boxM(SX, .12, SZ, DM.concrete, 0, .2, bz, { parent: G.shed, cast: false });
+boxM(SX, SH, .4, M.card, 0, SH / 2, bz - SZ / 2, { parent: G.shed }); boxM(.4, SH, SZ, M.card, -SX / 2, SH / 2, bz, { parent: G.shed }); boxM(.4, SH, SZ, M.card, SX / 2, SH / 2, bz, { parent: G.shed });
+// the front wall: full height under the roofed ends, cut down to 2.6 m along the open sales floor (the cut face in walnut, as on a section model)
+boxM(16, SH, .4, M.card, -37, SH / 2, fz, { parent: G.shed }); boxM(31, SH, .4, M.card, 29.5, SH / 2, fz, { parent: G.shed });
+[[-29, -28], [-20, 14]].forEach(([a, b]) => { const w = b - a, x = (a + b) / 2; boxM(w, 2.6, .4, M.card, x, 1.3, fz, { parent: G.shed }); boxM(w, .08, .42, DM.cut, x, 2.62, fz, { parent: G.shed, cast: false }); });
+boxM(8, 2.4, .2, M.glass, -24, 1.2, fz + .1, { parent: G.shed, cast: false }); boxM(5, 4.2, .3, M.glass, 26, 2.1, fz + .16, { parent: G.shed, cast: false });
+boxM(16.6, .9, .5, DM.trim, -37, SH - .2, fz + .3, { parent: G.shed }); boxM(31.6, .9, .5, DM.trim, 29.5, SH - .2, fz + .3, { parent: G.shed });
+boxM(14, 1.2, .1, M.window, -37, 6.2, fz + .22, { parent: G.shed, cast: false }); boxM(10, 1.2, .1, M.window, 34, 6.2, fz + .22, { parent: G.shed, cast: false });
+// canopy over the DIY entrance
+boxM(14, .3, 6, M.roof, -24, 5.6, fz + 3, { parent: G.shed }); [-30, -18].forEach(x => boxM(.3, 5.5, .3, M.steel, x, 2.75, fz + 5.6, { parent: G.shed }));
+L.entry = V(-24, 0, fz + 1); L.entryOut = V(-24, 0, 24); L.tradeDoor = V(26, 0, fz + 1);
+// roofs over the two ends and a back strip; the sales floor between is left open so the twelve aisles read from above
+boxM(16, .5, SZ + .6, M.roof, -37, SH + .25, bz, { parent: G.shed }); boxM(31, .5, SZ + .6, M.roof, 29.5, SH + .25, bz, { parent: G.shed }); boxM(52, .5, 8, M.roof, -11, SH + .25, bz - SZ / 2 + 4, { parent: G.shed });
+for (let x = -36; x <= 14; x += 10) boxM(.4, SH, .4, M.steel, x, SH / 2, fz - 1.5, { parent: G.shed });
+// twelve aisles, two to a product class, each with eight bins that carry the shelf's availability
+G.racks = grp(); const CLS = K.CLASSES, aisleX0 = -34, pitch = 4.3;
+for (let a = 0; a < 12; a++) { const x = aisleX0 + a * pitch, cls = CLS[Math.floor(a / 2)], g = grp(x, 0, bz + 2, G.racks);
+  boxM(1.2, 2.6, 24, DM.shelf, 0, 1.3, 0, { parent: g });
+  const bins = []; for (let b = 0; b < 8; b++) bins.push(boxM(1.26, .5, 2.6, M.tint(0xD9D2C4, { roughness: .75 }), 0, 1.0 + (b % 2) * 1.2, -10.5 + Math.floor(b / 2) * 6, { parent: g, cast: false }));
+  L.aisles.push({ x, cls: cls.k, g, bins, z0: bz - 10, z1: bz + 14, walk: V(x + pitch / 2, 0, bz + 2) }); }
+L.floorIn = V(-24, 0, bz + 22); L.floorHub = V(-10, 0, bz + 18);
+// checkouts: six staffed lanes and ten self-checkout kiosks inside the entrance (six today; the other four are the proposed change)
+G.checkouts = grp();
+for (let l = 0; l < 6; l++) { const x = -16 + l * 3.2, z = bz + 19.5; boxM(2.2, 1.0, 1.0, DM.kiosk, x, .5, z, { parent: G.checkouts }); boxM(.6, .9, .6, M.dark, x - .8, .45, z - 1.2, { parent: G.checkouts }); L.lanes.push({ p: V(x + 1.4, 0, z + 1.5), q: V(x + 1.4, 0, z + 2.5), srv: V(x - .8, 0, z + .4) }); }
+for (let s = 0; s < 10; s++) { const x = -32 + (s % 5) * 1.5, z = bz + 19 + Math.floor(s / 5) * 2.2; const k = boxM(.7, 1.3, .6, s < 6 ? DM.kiosk : DM.prop, x, .65, z, { parent: G.checkouts }); L.scos.push({ p: V(x, 0, z + .9), q: V(x, 0, z + 3.2), m: k }); }
+L.scoHost = V(-28, 0, bz + 22.5);
+// click-and-collect bay by the entrance, with twelve pick slots that show what is ready (and late)
+const ccx = -8, ccz = fz + 2.5; G.cc = grp();
+boxM(6, .3, 5, M.roof, ccx, 4.4, ccz, { parent: G.cc }); [-2.8, 2.8].forEach(dx => boxM(.25, 4.3, .25, M.steel, ccx + dx, 2.15, ccz + 2.3, { parent: G.cc }));
+boxM(4, 1.0, .8, DM.kiosk, ccx, .5, ccz + 1.2, { parent: G.cc });
+L.ccSlots = []; for (let i = 0; i < 12; i++) L.ccSlots.push(boxM(.8, .5, .6, M.tint(0xD9D2C4, { roughness: .75 }), ccx - 2.2 + (i % 6) * .88, .9 + Math.floor(i / 6) * 1.1, ccz - 1.2, { parent: G.cc, cast: false }));
+L.cc = V(ccx, 0, ccz + 2.4); L.ccPick = V(ccx, 0, ccz - .4); L.ccQ = V(ccx + 1.2, 0, ccz + 3);
+// garden centre: a shade-house to the left of the shed, pots in rows
+const gx = -56, gz = -10; G.garden = grp();
+boxM(24, .1, 32, DM.gravel, gx, .2, gz, { parent: G.garden, cast: false });
+for (let x = -11; x <= 11; x += 11) for (let z = -15; z <= 15; z += 15) boxM(.25, 4.2, .25, M.steel, gx + x, 2.1, gz + z, { parent: G.garden });
+boxM(24, .12, 32, DM.shade, gx, 4.3, gz, { parent: G.garden, cast: false });
+L.pots = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 10; c++) { const x = gx - 9 + c * 2, z = gz - 12 + r * 7; put(geo.cyl(.45, .6, 14), DM.pot, x, .5, z, { parent: G.garden }); L.pots.push(put(geo.sphere(.55, 1), DM.leaf, x, 1.15, z, { parent: G.garden, scale: [1, 1.3, 1] })); }
+L.garden = V(gx, 0, gz + 10); L.gardenIn = V(-44, 0, bz + 22);
+// trade desk inside the right-hand front, with a queue line out towards the car park, and the pre-picked orders staging rack (a proposed change)
+const tdx = 26, tdz = bz + 20; G.desk = grp();
+boxM(6, 1.1, 1.2, DM.timber2, tdx, .55, tdz, { parent: G.desk });
+L.desk = V(tdx, 0, tdz + 1.6); L.deskSrv = [V(tdx - 2, 0, tdz - .9), V(tdx, 0, tdz - .9), V(tdx + 2, 0, tdz - .9)]; L.deskQ = V(tdx, 0, tdz + 2.6);
+G.ahead = grp(tdx + 6, 0, tdz - 1, G.desk); boxM(3.2, .12, 1.2, M.dark, 0, 1.6, 0, { parent: G.ahead }); for (let i = 0; i < 6; i++) boxM(.9, .55, .8, DM.prop, -1 + (i % 3), .4 + Math.floor(i / 3) * 1.3, 0, { parent: G.ahead }); G.ahead.visible = false;
+// the car parks: angled trade bays in front of the desk, two rows of DIY bays, painted lines
+for (let b = 0; b < 8; b++) L.uteBays.push({ p: V(16 + b * 3.4, 0, 20), ry: 0 });
+for (let r = 0; r < 2; r++) for (let b = 0; b < 16; b++) L.carBays.push({ p: V(-62 + b * 3.0, 0, 24 + r * 10), ry: 0 });
+G.carpark = grp(); [...L.uteBays, ...L.carBays].forEach(b => put(geo.rbox(.12, .02, 5.2, .005), DM.paint, b.p.x - 1.5, .17, b.p.z, { parent: G.carpark, cast: false, receive: false }));
+// the drive-through timber yard: covered loading bays, racks of timber, utes queue on the lane outside
+const yx = 62, yz = -14; G.yard = grp();
+boxM(34, .1, 54, DM.concrete, yx, .2, yz, { parent: G.yard, cast: false });
+boxM(34, .4, 26, M.roof, yx, 7.2, yz - 12, { parent: G.yard }); for (let x = -16; x <= 16; x += 16) for (let z = -24; z <= 0; z += 24) boxM(.4, 7, .4, M.steel, yx + x, 3.5, yz + z, { parent: G.yard });
+for (let r = 0; r < 4; r++) { const x = yx - 14 + r * 9.3; for (let h = 0; h < 4; h++) boxM(2.2, .35, 20, h % 2 ? DM.timber : DM.timber2, x, .6 + h * .9, yz - 12, { parent: G.yard, r: .05 });
+  boxM(.3, 4, .3, M.steel, x - 1.3, 2, yz - 22, { parent: G.yard }); boxM(.3, 4, .3, M.steel, x + 1.3, 2, yz - 2, { parent: G.yard }); }
+L.yardGate = V(yx - 6, 0, 24); L.yardQ = V(yx - 6, 0, 30); L.yardBays = [V(yx - 10, 0, yz - 12), V(yx, 0, yz - 12), V(yx + 10, 0, yz - 12)]; L.yardExit = V(yx + 14, 0, 30); L.yardIn = V(yx - 6, 0, yz + 10);
+boxM(.3, 2.2, 10, M.steel, yx - 17, 1.1, yz + 20, { parent: G.yard }); boxM(.3, 2.2, 10, M.steel, yx + 17, 1.1, yz + 20, { parent: G.yard });
+// road and entries
+boxM(170, .08, 8, M.road, 0, .2, 48, { cast: false }); boxM(168, .02, .18, DM.paint, 0, .25, 48, { cast: false, receive: false });
+L.roadL = V(-80, 0, 46); L.roadR = V(80, 0, 46); L.carIn = V(-24, 0, 44); L.uteIn = V(30, 0, 44);
+// felt trees along the frontage and the garden side
+[[-70, 38, 1.1], [-50, 38, 1.1], [0, 38, 1.1], [10, 38, 1], [40, 38, 1.1], [75, 38, 1.2], [-80, -20, 1.3], [-80, 10, 1.3], [-82, 30, 1], [84, -30, 1.1], [84, 0, 1]].forEach(([x, z, s], i) => {
+  const g = grp(x, 0, z); put(geo.cyl(.22 * s, 2.2 * s), M.timber, 0, 1.1 * s, 0, { parent: g }); put(geo.sphere(1.5 * s, 1), DM.leaf, 0, 2.6 * s, 0, { parent: g, scale: [1, 1.2, 1] }); put(geo.sphere(1.05 * s, 1), DM.leaf, .6 * s, 3.6 * s, .3 * s, { parent: g }); });
 
-// ---------------- instanced moving things
-function inst(geo, mat, n) { const m = new THREE.InstancedMesh(geo, mat, n); for (let i = 0; i < n; i++) m.setColorAt(i, new THREE.Color(1, 1, 1)); m.count = 0; m.castShadow = !lite; m.receiveShadow = true; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.instanceColor.setUsage(THREE.DynamicDrawUsage); scene.add(m); return m; }
-const MAXP = 400, bodyI = inst(new THREE.CylinderGeometry(.2, .25, 1.0, 8).translate(0, .62, 0), M.person, MAXP), headI = inst(new THREE.SphereGeometry(.17, 10, 8).translate(0, 1.3, 0), M.head, MAXP);
-const MAXU = 80, uteI = inst(new THREE.BoxGeometry(1.9, .7, 5.3).translate(0, .6, 0), M.ute, MAXU), uteCabI = inst(new THREE.BoxGeometry(1.75, .75, 1.7).translate(0, 1.3, .6), M.uteTop, MAXU), uteLoadI = inst(new THREE.BoxGeometry(1.6, .35, 2.4).translate(0, 1.1, -1.2), M.timber, MAXU);
-const MAXC = 120, carI = inst(new THREE.BoxGeometry(1.8, .62, 4.1).translate(0, .5, 0), M.car, MAXC), carTopI = inst(new THREE.BoxGeometry(1.5, .42, 1.9).translate(0, 1.0, -.25), M.uteTop, MAXC);
-const MAXT = 160, trolI = inst(new THREE.BoxGeometry(.6, .5, .9).translate(0, .75, 0), M.trolley, MAXT);
-const dummy = new THREE.Object3D(), tmpC = new THREE.Color();
-let pN = 0, uN = 0, cN = 0, tN = 0;
-function person(p, color, face = 0) { if (pN >= MAXP) return; dummy.position.set(p.x, 0, p.z); dummy.rotation.set(0, face, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); bodyI.setMatrixAt(pN, dummy.matrix); headI.setMatrixAt(pN, dummy.matrix); bodyI.setColorAt(pN, color); headI.setColorAt(pN, C.person); pN++; }
-function ute(p, ry, color, loaded) { if (uN >= MAXU) return; dummy.position.set(p.x, 0, p.z); dummy.rotation.set(0, ry, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); uteI.setMatrixAt(uN, dummy.matrix); uteCabI.setMatrixAt(uN, dummy.matrix); uteI.setColorAt(uN, color); uteCabI.setColorAt(uN, DARK_TOP);
+// ---------------- instanced moving things (people, utes, cars, trolleys), with headlamps that light after dark
+function inst(g, mat, n, cast = true) { const m = new THREE.InstancedMesh(g, mat, n), w = new THREE.Color(1, 1, 1); for (let i = 0; i < n; i++) m.setColorAt(i, w); m.count = 0; m.frustumCulled = false;
+  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.instanceColor.setUsage(THREE.DynamicDrawUsage); stage.add(m, { cast: cast && !lite }); return m; }
+const cl = g => g.clone();
+const MAXP = 400, bodyI = inst(new THREE.CapsuleGeometry(.2, .56, 3, 10).translate(0, .62, 0), DM.person, MAXP), headI = inst(new THREE.SphereGeometry(.17, 12, 8).translate(0, 1.3, 0), DM.head, MAXP);
+const MAXU = 80, uteI = inst(cl(geo.rbox(1.9, .7, 5.3, .14)).translate(0, .6, 0), DM.veh, MAXU), uteCabI = inst(cl(geo.rbox(1.75, .75, 1.7, .16)).translate(0, 1.3, .6), DM.vehTop, MAXU),
+  uteLoadI = inst(cl(geo.rbox(1.6, .35, 2.4, .06)).translate(0, 1.1, -1.2), DM.load, MAXU), uteLampI = inst(cl(geo.rbox(1.5, .16, .06, .02)).translate(0, .66, 2.66), DM.lamp, MAXU, false);
+const MAXC = 120, carI = inst(cl(geo.rbox(1.8, .62, 4.1, .16)).translate(0, .5, 0), DM.veh, MAXC), carTopI = inst(cl(geo.rbox(1.5, .42, 1.9, .14)).translate(0, 1.0, -.25), DM.vehTop, MAXC),
+  carLampI = inst(cl(geo.rbox(1.4, .14, .06, .02)).translate(0, .56, 2.06), DM.lamp, MAXC, false);
+const MAXT = 160, trolI = inst(cl(geo.rbox(.6, .5, .9, .05)).translate(0, .75, 0), DM.trolley, MAXT);
+// ghosts for Compare: the queues the other version of the store would have at this minute
+const MAXG = 60, gUteI = inst(cl(geo.rbox(1.9, 1.5, 5.3, .2)).translate(0, .95, 0), DM.ghost, MAXG, false), gPerI = inst(new THREE.CapsuleGeometry(.24, .9, 3, 10).translate(0, .75, 0), DM.ghost, MAXG, false);
+const dummy = new THREE.Object3D(), WHITE = new THREE.Color(1, 1, 1);
+let pN = 0, uN = 0, cN = 0, tN = 0, gu = 0, gp = 0;
+const place = (p, ry) => { dummy.position.set(p.x, .2, p.z); dummy.rotation.set(0, ry || 0, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); return dummy.matrix; };
+function person(p, color, face = 0) { if (pN >= MAXP) return; const m = place(p, face); bodyI.setMatrixAt(pN, m); headI.setMatrixAt(pN, m); bodyI.setColorAt(pN, color); headI.setColorAt(pN, C.person); pN++; }
+function ute(p, ry, color, loaded) { if (uN >= MAXU) return; const m = place(p, ry); uteI.setMatrixAt(uN, m); uteCabI.setMatrixAt(uN, m); uteLampI.setMatrixAt(uN, m); uteI.setColorAt(uN, color); uteCabI.setColorAt(uN, DARK_TOP);
   dummy.scale.set(1, loaded ? 1 : 0.001, 1); dummy.updateMatrix(); uteLoadI.setMatrixAt(uN, dummy.matrix); uteLoadI.setColorAt(uN, C.timber); uN++; }
-function car(p, ry, color) { if (cN >= MAXC) return; dummy.position.set(p.x, 0, p.z); dummy.rotation.set(0, ry, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); carI.setMatrixAt(cN, dummy.matrix); carTopI.setMatrixAt(cN, dummy.matrix); carI.setColorAt(cN, color); carTopI.setColorAt(cN, DARK_TOP); cN++; }
-function trolley(p, ry) { if (tN >= MAXT) return; dummy.position.set(p.x, 0, p.z); dummy.rotation.set(0, ry, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); trolI.setMatrixAt(tN, dummy.matrix); tN++; }
+function car(p, ry, color) { if (cN >= MAXC) return; const m = place(p, ry); carI.setMatrixAt(cN, m); carTopI.setMatrixAt(cN, m); carLampI.setMatrixAt(cN, m); carI.setColorAt(cN, color); carTopI.setColorAt(cN, DARK_TOP); cN++; }
+function trolley(p, ry) { if (tN >= MAXT) return; trolI.setMatrixAt(tN, place(p, ry)); tN++; }
+function gUte(p) { if (gu < MAXG) gUteI.setMatrixAt(gu++, place(p, 0)); }
+function gPer(p) { if (gp < MAXG) gPerI.setMatrixAt(gp++, place(p, 0)); }
+const lin = h => new THREE.Color(h);
 const UTE_COLS = [0xE8E6E1, 0xB8BCC2, 0x50565F, 0x7A2E35, 0x2E4A63, 0xD9D3C7, 0x8C8F86].map(lin), CAR_COLS = [0xB8BCC2, 0x50565F, 0xE5E3DE, 0x7A2E35, 0x2E4A63, 0x8C8F86, 0x3A3D42, 0xC9B8A0].map(lin), DARK_TOP = lin(0x6E767C);
 const PCOLS = [0x7E8C99, 0x9A7F6B, 0x6F8A74, 0xA58C9C, 0x8D8F6E, 0x6E7590, 0xB09A84].map(lin);
 const pcol = id => PCOLS[((id % 7) + 7) % 7];
-// rain
-const RN = lite ? 400 : 1400, rainPos = new Float32Array(RN * 6), rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPos, 3));
-const rainSeed = []; for (let i = 0; i < RN; i++) rainSeed.push([(rnd() - .5) * 140, (rnd() - .5) * 110, rnd() * 16]);
-const rainLines = new THREE.LineSegments(rainGeo, M.rain); rainLines.frustumCulled = false; rainLines.visible = false; scene.add(rainLines); let raining = false;
 
-// ---------------- theme
+// ---------------- theme: the twin's own walnut-and-oat palette, read from the page so dark mode follows
 let C = {};
-function applyTheme() { M.asphalt.color = col("--scene-asphalt"); M.concrete.color = col("--scene-concrete"); M.gravel.color = col("--scene-gravel"); M.grass.color = col("--scene-lawn"); M.wall.color = col("--scene-wall"); M.wallPlain.color = col("--scene-wall");
-  M.roof.color = col("--scene-roof"); M.trim.color = col("--scene-trim"); M.timber.color = col("--scene-timber"); M.timber2.color = col("--scene-timber").multiplyScalar(.8); M.shelf.color = col("--scene-shelf"); M.leaf.color = col("--scene-tree"); M.pot.color = col("--scene-pot"); M.kiosk.color = col("--scene-kiosk");
+function applyTheme() {
+  M.road.color = col("--scene-asphalt"); M.felt.color = col("--scene-lawn"); M.roof.color = col("--scene-roof"); M.card.color = col("--scene-wall");
+  DM.concrete.color = col("--scene-concrete"); DM.gravel.color = col("--scene-gravel"); DM.trim.color = col("--scene-trim"); DM.timber.color = col("--scene-timber"); DM.timber2.color = col("--scene-timber").multiplyScalar(.82);
+  DM.shelf.color = col("--scene-shelf"); DM.leaf.color = col("--scene-tree"); DM.pot.color = col("--scene-pot"); DM.kiosk.color = col("--scene-kiosk"); DM.cut.color = col("--ink"); DM.prop.color = col("--prop"); DM.prop.emissive = col("--prop");
   C = { person: col("--scene-person"), staff: col("--scene-staff"), trade: col("--scene-trade"), timber: col("--scene-timber"), alert: col("--alert"), warn: col("--warn"), good: col("--good"),
-    full: col("--av-full"), low: col("--av-low"), empty: col("--av-empty"), sky: ["--sky-day-1", "--sky-day-2", "--sky-dusk-1", "--sky-dusk-2", "--sky-night-1", "--sky-night-2"].map(col) }; skyKey = ""; }
-
-// ---------------- the store (one layout)
-const L = { aisles: [], lanes: [], scos: [], bays: [], carBays: [], uteBays: [], shelfBins: [] };
-(function build() {
-  plane(170, 120, M.asphalt, 0, 0, 6); plane(176, 126, M.grass, 0, -.02, 6);
-  // the shed: 90 x 46 m, 9 m tall
-  const SX = 90, SZ = 46, SH = 9, bx = 0, bz = -18;
-  // four walls and a slab, no lid: the roof goes on in pieces below so the sales floor shows as a cutaway
-  boxM(SX, SH, .4, M.wall, bx, SH / 2, bz - SZ / 2, true); boxM(SX, SH, .4, M.wall, bx, SH / 2, bz + SZ / 2, true); boxM(.4, SH, SZ, M.wall, bx - SX / 2, SH / 2, bz, true); boxM(.4, SH, SZ, M.wall, bx + SX / 2, SH / 2, bz, true);
-  plane(SX, SZ, M.concrete, bx, .05, bz);
-  // the front wall has openings: DIY doors and the trade door are glass panels that sit in it; the sales floor behind is open to the view
-  boxM(SX + .6, .9, .5, M.trim, bx, SH - .2, bz + SZ / 2 + .3, false);   // fascia
-  // front: DIY doors (left), windows, trade desk door (right)
-  boxM(8, 5, .3, M.glass, -24, 2.5, bz + SZ / 2 + .16, false); boxM(5, 4.2, .3, M.glass, 26, 2.1, bz + SZ / 2 + .16, false);
-  boxM(28, 2.4, .25, M.glass, -4, 5.6, bz + SZ / 2 + .14, false);
-  // canopy over the entrance
-  boxM(14, .3, 6, M.roof, -24, 5.6, bz + SZ / 2 + 3, true); [-30, -18].forEach(x => boxM(.3, 5.5, .3, M.steel, x, 2.75, bz + SZ / 2 + 5.6, true));
-  L.entry = V(-24, 0, bz + SZ / 2 + 1); L.entryOut = V(-24, 0, 24); L.tradeDoor = V(26, 0, bz + SZ / 2 + 1);
-  // a cutaway: the roof is left off over the sales floor (x from -38 to 14) so the twelve aisles read from above; the walls stay
-  const racks = new THREE.Group(); scene.add(racks); L.racks = racks;
-  boxM(16, .5, SZ + .6, M.roof, -37, SH + .25, bz, true);            // roof over the garden-side back of house
-  boxM(31, .5, SZ + .6, M.roof, 29.5, SH + .25, bz, true);           // roof over trade desk and back of house
-  boxM(52, .5, 8, M.roof, -11, SH + .25, bz - SZ / 2 + 4, true);      // back strip of roof over the sales floor
-  for (let x = -36; x <= 14; x += 10) boxM(.4, SH, .4, M.steel, x, SH / 2, bz + SZ / 2 - 1.5, true);
-  const CLS = K.CLASSES; const aisleX0 = -34, pitch = 4.3;
-  for (let a = 0; a < 12; a++) { const x = aisleX0 + a * pitch, cls = CLS[Math.floor(a / 2)];
-    const g = new THREE.Group(); g.position.set(x, 0, bz + 2); racks.add(g);
-    boxM(1.2, 2.6, 24, M.shelf, 0, 1.3, 0, true, g);
-    const bins = []; for (let b = 0; b < 8; b++) { const m = boxM(1.26, .5, 2.6, M.bin.clone(), 0, 1.0 + (b % 2) * 1.2, -10.5 + Math.floor(b / 2) * 6, false, g); bins.push(m); }
-    L.aisles.push({ x, cls: cls.k, g, bins, z0: bz - 10, z1: bz + 14, walk: V(x + pitch / 2, 0, bz + 2) }); }
-  L.floorIn = V(-24, 0, bz + 22); L.floorHub = V(-10, 0, bz + 18);
-  // checkouts: 6 staffed lanes and self-checkout kiosks along the front, inside the entrance
-  for (let l = 0; l < 6; l++) { const x = -16 + l * 3.2, z = bz + 19.5; boxM(2.2, 1.0, 1.0, M.kiosk, x, .5, z, true); boxM(.6, .9, .6, M.dark, x - .8, .45, z - 1.2, true); L.lanes.push({ p: V(x + 1.4, 0, z + 1.5), q: V(x + 1.4, 0, z + 2.5), srv: V(x - .8, 0, z + .4) }); }
-  for (let s = 0; s < 10; s++) { const x = -32 + (s % 5) * 1.5, z = bz + 19 + Math.floor(s / 5) * 2.2; const k = boxM(.7, 1.3, .6, M.kiosk, x, .65, z, true); L.scos.push({ p: V(x, 0, z + .9), q: V(x, 0, z + 3.2), m: k }); }
-  L.scoHost = V(-28, 0, bz + 22.5);
-  // click-and-collect bay: a counter and shelving by the entrance, with pick slots
-  const ccx = -8, ccz = bz + SZ / 2 + 2.5; boxM(6, .3, 5, M.roof, ccx, 4.4, ccz, true); boxM(.25, 4.3, .25, M.steel, ccx - 2.8, 2.15, ccz + 2.3, true); boxM(.25, 4.3, .25, M.steel, ccx + 2.8, 2.15, ccz + 2.3, true);
-  boxM(4, 1.0, .8, M.kiosk, ccx, .5, ccz + 1.2, true); const slots = []; for (let i = 0; i < 12; i++) { const m = boxM(.8, .5, .6, M.bin.clone(), ccx - 2.2 + (i % 6) * .88, .9 + Math.floor(i / 6) * 1.1, ccz - 1.2, false); slots.push(m); } L.ccSlots = slots;
-  L.cc = V(ccx, 0, ccz + 2.4); L.ccPick = V(ccx, 0, ccz - .4); L.ccQ = V(ccx + 1.2, 0, ccz + 3);
-  // garden centre: a shade-house to the left of the shed, pots in rows
-  const gx = -56, gz = -10; plane(24, 32, M.gravel, gx, .04, gz); for (let x = -11; x <= 11; x += 11) for (let z = -15; z <= 15; z += 15) boxM(.25, 4.2, .25, M.steel, gx + x, 2.1, gz + z, true);
-  const shade = boxM(24, .15, 32, new THREE.MeshStandardMaterial({ color: 0xDADFD6, transparent: true, opacity: .45, roughness: .9 }), gx, 4.25, gz, false); shade.castShadow = false;
-  L.pots = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 10; c++) { const x = gx - 9 + c * 2, z = gz - 12 + r * 7; boxM(.9, .6, .9, M.pot, x, .3, z, true); const pl = new THREE.Mesh(new THREE.IcosahedronGeometry(.55, 0), M.leaf); pl.position.set(x, 1.0, z); pl.scale.set(1, 1.3, 1); pl.castShadow = !lite; scene.add(pl); L.pots.push(pl); }
-  L.garden = V(gx, 0, gz + 10); L.gardenIn = V(-44, 0, bz + 22);
-  // trade desk: a counter inside the right-hand front, with a queue line out towards the car park
-  const tdx = 26, tdz = bz + 20; boxM(6, 1.1, 1.2, M.timber2, tdx, .55, tdz, true); L.desk = V(tdx, 0, tdz + 1.6); L.deskSrv = [V(tdx - 2, 0, tdz - .9), V(tdx, 0, tdz - .9), V(tdx + 2, 0, tdz - .9)]; L.deskQ = V(tdx, 0, tdz + 2.6);
-  // trade car park: angled bays in front of the desk
-  for (let b = 0; b < 8; b++) L.uteBays.push({ p: V(16 + b * 3.4, 0, 20), ry: 0 });
-  // DIY car park rows
-  for (let r = 0; r < 2; r++) for (let b = 0; b < 16; b++) L.carBays.push({ p: V(-62 + b * 3.0, 0, 24 + r * 10), ry: 0 });
-  // paint bay lines
-  const lineM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .45 }); [...L.uteBays, ...L.carBays].forEach(b => { const m = new THREE.Mesh(new THREE.PlaneGeometry(.12, 5.2), lineM); m.rotation.x = -Math.PI / 2; m.position.set(b.p.x - 1.5, .04, b.p.z); scene.add(m); });
-  // the drive-through timber yard: a gate, 3 covered loading bays, racks of timber, utes queue on the lane outside
-  const yx = 62, yz = -14; plane(34, 54, M.concrete, yx, .04, yz);
-  boxM(34, .4, 26, M.roof, yx, 7.2, yz - 12, true); for (let x = -16; x <= 16; x += 16) for (let z = -24; z <= 0; z += 24) boxM(.4, 7, .4, M.steel, yx + x, 3.5, yz + z, true);
-  for (let r = 0; r < 4; r++) { const x = yx - 14 + r * 9.3; for (let h = 0; h < 4; h++) boxM(2.2, .35, 20, h % 2 ? M.timber : M.timber2, x, .6 + h * .9, yz - 12, true); boxM(.3, 4, .3, M.steel, x - 1.3, 2, yz - 22, true); boxM(.3, 4, .3, M.steel, x + 1.3, 2, yz - 2, true); }
-  L.yardGate = V(yx - 6, 0, 24); L.yardQ = V(yx - 6, 0, 30); L.yardBays = [V(yx - 10, 0, yz - 12), V(yx, 0, yz - 12), V(yx + 10, 0, yz - 12)]; L.yardExit = V(yx + 14, 0, 30); L.yardIn = V(yx - 6, 0, yz + 10);
-  boxM(.3, 2.2, 10, M.steel, yx - 17, 1.1, yz + 20, true); boxM(.3, 2.2, 10, M.steel, yx + 17, 1.1, yz + 20, true);
-  // road and entries
-  plane(170, 8, M.asphalt, 0, .02, 48); boxM(170, .06, .18, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .4 }), 0, .05, 48, false);
-  L.roadL = V(-80, 0, 46), L.roadR = V(80, 0, 46); L.carIn = V(-24, 0, 44); L.uteIn = V(30, 0, 44);
-  // trees along the frontage
-  [-70, -50, 0, 10, 40, 75].forEach(x => tree(x, 38, 1.1)); [-78, -78].forEach((x, i) => tree(x, -20 + i * 30, 1.3));
-  ao(0, bz, SX + 3, SZ + 3); ao(gx, gz, 26, 34); ao(yx, yz - 12, 36, 28);
-})();
-
-// ---------------- sky and light by time of day
-let skyKey = "";
-function sky(h) { const up = Math.sin(Math.PI * (h - 6.2) / 13.6), dusk = Math.max(0, 1 - Math.abs(up - .05) / .2) * (up > -.15 ? 1 : 0), day = Math.max(0, Math.min(1, up * 3));
-  const top = C.sky[4].clone().lerp(C.sky[0], day).lerp(C.sky[2], dusk * .5), bot = C.sky[5].clone().lerp(C.sky[1], day).lerp(C.sky[3], dusk * .5);
-  const k = top.getHexString() + bot.getHexString(); if (k !== skyKey) { skyKey = k; box.style.background = `linear-gradient(180deg,#${top.getHexString()},#${bot.getHexString()})`; } return { day, up }; }
-function lights(h) { const { day, up } = sky(h), a = (h - 6.2) / 13.6 * Math.PI, R = 90;
-  sun.position.set(-Math.cos(a) * R, 10 + R * 1.1 * Math.max(.06, up), R * .6); sun.intensity = (.1 + .8 * day) * (raining ? .5 : 1);
-  hemi.intensity = (.3 + .3 * day) * (raining ? .85 : 1); hemi.color.setRGB(1, 1, 1).lerp(new THREE.Color(0x8a90b8), (1 - day) * .8); renderer.toneMappingExposure = .95 + (1 - day) * .15; }
+    full: col("--av-full"), low: col("--av-low"), empty: col("--av-empty"), prop: col("--prop") }; }
+applyTheme();
 
 // ---------------- camera views
-const VIEWS = { whole: { p: [-6, 86, 122], t: [4, 0, -2] }, yard: { p: [78, 30, 74], t: [56, 0, 12] }, desk: { p: [38, 24, 34], t: [26, 1, 10] }, aisles: { p: [-12, 42, 28], t: [-11, 0, -10] },
-  checkouts: { p: [-20, 30, 26], t: [-20, 0, 2] }, cc: { p: [-4, 14, 32], t: [-8, 1, 8] }, garden: { p: [-70, 22, 26], t: [-56, 0, -6] } };
-let view = "whole", camGoal = null;
-function setView(n, instant) { if (!VIEWS[n]) n = "whole"; view = n; const v = VIEWS[n], t = new THREE.Vector3(...v.t), p = new THREE.Vector3(...v.p);
-  if (camera.aspect < 1) p.sub(t).multiplyScalar(n === "whole" ? 1.12 : 1.2).add(t).add(new THREE.Vector3(0, n === "whole" ? 6 : 2, 0));
-  camGoal = { p, t }; if (instant) { camera.position.copy(p); controls.target.copy(t); camGoal = null; } }
-controls.addEventListener("start", () => camGoal = null);
-function resize() { const w = box.clientWidth || 600, h = Math.max(window.__minH || 440, Math.min(innerHeight * .72, w * .6)); canvas.style.height = h + "px"; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 1 ? 50 : 34; camera.updateProjectionMatrix(); }
+const VIEWS = { whole: { p: [-4, 106, 120], t: [4, 0, -8] }, yard: { p: [96, 34, 78], t: [56, 0, 10] }, desk: { p: [40, 26, 40], t: [26, 1, 8] }, aisles: { p: [-12, 46, 30], t: [-11, 0, -10] },
+  checkouts: { p: [-20, 32, 30], t: [-20, 0, 2] }, cc: { p: [-2, 16, 36], t: [-8, 1, 8] }, garden: { p: [-74, 26, 30], t: [-56, 0, -6] } };
+stage.views = VIEWS; let view = "whole";
+function setView(n, instant) { if (!VIEWS[n]) n = "whole"; view = n; stage.flyTo(VIEWS[n], { instant: !!instant }); }
+function resize() { sizeCanvas(); stage.resize(); }
 
 // ---------------- the day, frame by frame
 const lerpV = (a, b, k) => a.clone().lerp(b, Math.max(0, Math.min(1, k)));
@@ -1105,23 +1098,39 @@ function path(pts, k) { if (k <= 0) return pts[0].clone(); if (k >= 1) return pt
   let s = k * tot; for (let i = 0; i < seg.length; i++) { if (s <= seg[i]) return lerpV(pts[i], pts[i + 1], s / seg[i]); s -= seg[i]; } return pts[pts.length - 1].clone(); }
 const hr = n => { let s = (n * 2654435761) >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
 const info = { deskQ: 0, yardQ: 0, laneQ: 0, scoQ: 0, inStore: 0, inGarden: 0, ccWaiting: 0, ccLate: 0, bins: { full: 0, low: 0, empty: 0 }, deskOn: 0, yardOn: 0, lanesOn: 0, ccPickers: 0, longestYard: 0 };
-let lastDay = -1;
-function sync(dt, D, Y, t) {
-  if (!D || !D.open) { if (D) { lights(t / 60); } renderer.render(scene, camera); return info; }
-  const h = t / 60; lights(h); pN = uN = cN = tN = 0;
-  if (camGoal) { camera.position.lerp(camGoal.p, Math.min(1, dt * 3)); controls.target.lerp(camGoal.t, Math.min(1, dt * 3)); if (camera.position.distanceTo(camGoal.p) < .05) camGoal = null; }
-  controls.update();
-  const hh = Math.floor(h), st = D.staff(Math.max(0, Math.min(23, hh)));
-  info.deskOn = st.desk; info.yardOn = st.yard; info.lanesOn = st.lanes; info.ccPickers = st.pick;
-  // ---- aisles coloured by availability; a bin at or under the shelf's availability flashes empty when it is low
-  const bins = { full: 0, low: 0, empty: 0 }, blink = (Math.sin(t * 1.3) + 1) / 2;
-  L.aisles.forEach((a, ai) => { const sh = D.shelves[a.cls], osa = sh.osa;
-    a.bins.forEach((b, bi) => { const r = hr(ai * 31 + bi * 7 + D.i)(), gap = r > osa, low = !gap && r > osa - 0.08;
-      if (gap) { b.material.color.copy(C.empty).lerp(C.alert, .35 + .45 * blink); bins.empty++; } else if (low) { b.material.color.copy(C.low); bins.low++; } else { b.material.color.copy(C.full); bins.full++; } }); });
-  info.bins = bins;
-  // ---- trade: utes arrive from the road, park, the driver walks to the desk queue, is served, then either drives to the yard gate or leaves
+const NOW = { D: null, Y: null, t: 6 * 60, i: 0 };
+let wxKey = "", lastDayI = -1;
+// the queues at minute t, as positions (used for the live store and for the Compare ghost)
+function queues(D, t) {
   const deskQ = D.trades.filter(x => x.deskStart != null && t >= x.t && t < x.deskStart).sort((a, b) => a.t - b.t);
   const yardQ = D.trades.filter(x => x.yard && x.yardStart != null && t >= x.yardT && t < x.yardStart).sort((a, b) => a.yardT - b.yardT);
+  const tillQ = D.diys.filter(x => x.buys && x.balk !== "till" && x.tillStart != null && t >= x.till && t < x.tillStart);
+  return { deskQ, yardQ, tillQ, laneN: tillQ.filter(x => !x.sco).length, scoN: tillQ.filter(x => x.sco).length };
+}
+function clearInst() { pN = uN = cN = tN = 0; }
+function commit() {
+  for (const [m, n] of [[bodyI, pN], [headI, pN], [uteI, uN], [uteCabI, uN], [uteLoadI, uN], [uteLampI, uN], [carI, cN], [carTopI, cN], [carLampI, cN], [trolI, tN], [gUteI, gu], [gPerI, gp]]) {
+    m.count = n; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; } }
+function clockAndWeather(D, Y, t) { const i = D.D ? D.D.i : D.i, d = K.dateOf(i); NOW.i = i;
+  stage.setClock(nzDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), t / 60));
+  const wet = !!(Y && Y.S.wet && D.D && D.D.wet), key = wet ? "wet" : "dry";
+  if (key !== wxKey) { wxKey = key; stage.setWeather(wet ? { rain: .75, cloud: .7, fog: .12, wet: 1, wind: [.3, .12] } : { rain: 0, cloud: .08, fog: 0, wet: 0, wind: [.4, .15] }); }
+  DM.lamp.emissiveIntensity = stage.clock.night * 1.6 + (wet ? .4 : 0); }
+function sync(dt, D, Y, t) {
+  NOW.D = D; NOW.Y = Y; NOW.t = t; if (!D) return info;
+  clockAndWeather(D, Y, t); clearInst(); gu = gp = 0;
+  const S = Y ? Y.S : {}; L.scos.forEach((k, j) => k.m.visible = j < 6 || !!S.sco); G.ahead.visible = false;
+  if (!D.open) { L.aisles.forEach(a => a.bins.forEach(b => b.material.color.copy(C.full))); commit(); return info; }
+  const h = t / 60, hh = Math.floor(h), st = D.staff(Math.max(0, Math.min(23, hh)));
+  info.deskOn = st.desk; info.yardOn = st.yard; info.lanesOn = st.lanes; info.ccPickers = st.pick;
+  // ---- aisles coloured by availability; an empty bin pulses gently toward the alert colour
+  const bins = { full: 0, low: 0, empty: 0 }, blink = calm ? .5 : (Math.sin(t * 1.3) + 1) / 2;
+  L.aisles.forEach((a, ai) => { const osa = D.shelves[a.cls].osa;
+    a.bins.forEach((b, bi) => { const r = hr(ai * 31 + bi * 7 + D.i)(), gap = r > osa, low = !gap && r > osa - 0.08;
+      if (gap) { b.material.color.copy(C.empty).lerp(C.alert, .3 + .4 * blink); bins.empty++; } else if (low) { b.material.color.copy(C.low); bins.low++; } else { b.material.color.copy(C.full); bins.full++; } }); });
+  info.bins = bins;
+  // ---- trade: utes arrive from the road, park, the driver walks to the desk queue, is served, then either drives to the yard gate or leaves
+  const Q = queues(D, t), deskQ = Q.deskQ, yardQ = Q.yardQ;
   info.deskQ = deskQ.length; info.yardQ = yardQ.length; info.longestYard = yardQ.length ? t - yardQ[0].yardT : 0;
   D.trades.forEach((x, k) => { const t0 = x.t, arr = t0 - 1.5, done = x.balk === "desk" ? t0 + 1 : x.yard ? (x.yardEnd != null ? x.yardEnd + 1.5 : x.yardT + 1) : (x.deskEnd || t0) + 1.5;
     if (t < arr || t > done + .2) return; const bay = L.uteBays[k % L.uteBays.length], c = UTE_COLS[k % UTE_COLS.length];
@@ -1156,28 +1165,120 @@ function sync(dt, D, Y, t) {
   if (st.sco) person(L.scoHost, C.staff);
   for (let j = 0; j < Math.min(3, st.yard); j++) if (!D.trades.some(x => x.yardStart != null && t >= x.yardStart && t < x.yardEnd && (x.bay || 0) % 3 === j)) person(L.yardBays[j].clone().add(V(-2.2, 0, 1.5)), C.staff);
   for (let j = 0; j < Math.min(4, st.garden); j++) person(L.garden.clone().add(V(-8 + j * 5, 0, 12)), C.staff);
+  // ---- proposed changes that show in the store: pre-picked trade orders waiting on the staging rack before 9:00, the overnight fill crew before opening
+  if (S.ahead && D.D.type === "wd" && h < 9) G.ahead.visible = true;
+  const open = (K.HOURS[D.D.type] || [6, 19])[0];
+  if (S.night && h < open) for (let j = 0; j < 4; j++) { const a = L.aisles[(j * 3 + 1) % 12], z = a.z0 + (a.z1 - a.z0) * ((h * .37 + j * .29) % 1); person(V(a.walk.x, 0, z), C.staff); trolley(V(a.walk.x + .6, 0, z + .7), 0); }
   // ---- click and collect: orders waiting to be picked, pickers moving between the aisles and the bay, customers collecting
-  let ccW = 0, ccLate = 0; const picking = D.ccs.filter(x => t >= x.pickStart && t < x.pickEnd);
-  picking.forEach((x, j) => { const a = L.aisles[(x.id || 0) % 12], u = ((t - x.pickStart) / (x.pickEnd - x.pickStart)); person(path([L.ccPick, a.walk, L.ccPick], u), C.staff); trolley(path([L.ccPick, a.walk, L.ccPick], u).add(V(.6, 0, .5)), 0); });
-  const ready = D.ccs.filter(x => !x.cancel && t >= x.pickEnd && (x.collect == null || t < x.collect)); ready.slice(0, 12).forEach((x, j) => { const m = L.ccSlots[j]; m.material.color.copy(x.late ? C.warn : C.good); }); for (let j = ready.length; j < 12; j++) L.ccSlots[j].material.color.copy(C.full).multiplyScalar(.75);
-  D.ccs.forEach((x, k) => { if (x.cancel || x.collect == null) return; if (t >= x.collect - 1 && t < Math.max(x.collect, x.pickEnd) + 1) { const w = t >= x.collect && t < x.pickEnd; if (w) { ccW++; if (x.late) ccLate++; } person(L.ccQ.clone().add(V(0, 0, ccW * .8)), w && t - x.collect > 5 ? C.alert : pcol(k + 5)); } });
+  let ccW = 0; const picking = D.ccs.filter(x => t >= x.pickStart && t < x.pickEnd);
+  picking.forEach(x => { const a = L.aisles[(x.id || 0) % 12], u = ((t - x.pickStart) / (x.pickEnd - x.pickStart)), p = path([L.ccPick, a.walk, L.ccPick], u); person(p, C.staff); trolley(p.clone().add(V(.6, 0, .5)), 0); });
+  const ready = D.ccs.filter(x => !x.cancel && t >= x.pickEnd && (x.collect == null || t < x.collect)); ready.slice(0, 12).forEach((x, j) => L.ccSlots[j].material.color.copy(x.late ? C.warn : C.good)); for (let j = ready.length; j < 12; j++) L.ccSlots[j].material.color.copy(C.full).multiplyScalar(.8);
+  D.ccs.forEach((x, k) => { if (x.cancel || x.collect == null) return; if (t >= x.collect - 1 && t < Math.max(x.collect, x.pickEnd) + 1) { const w = t >= x.collect && t < x.pickEnd; if (w) ccW++; person(L.ccQ.clone().add(V(0, 0, ccW * .8)), w && t - x.collect > 5 ? C.alert : pcol(k + 5)); } });
   info.ccWaiting = ccW; info.ccLate = D.ccs.filter(x => x.late && t >= x.promise).length;
-  // ---- garden: on a wet weekend, the plants droop a little and the gravel is dark
-  const wet = Y.S.wet && D.D.wet; L.pots.forEach((p, j) => p.scale.y = wet ? 1.1 : 1.3);
-  rainLines.visible = raining = wet; if (raining) { for (let i = 0; i < RN; i++) { const s = rainSeed[i]; s[2] -= dt * 22; if (s[2] < 0) s[2] += 16; const o = i * 6; rainPos[o] = s[0]; rainPos[o + 1] = s[2]; rainPos[o + 2] = s[1]; rainPos[o + 3] = s[0] + .05; rainPos[o + 4] = s[2] + .55; rainPos[o + 5] = s[1]; } rainGeo.attributes.position.needsUpdate = true; }
-  for (const [m, n] of [[bodyI, pN], [headI, pN], [uteI, uN], [uteCabI, uN], [uteLoadI, uN], [carI, cN], [carTopI, cN], [trolI, tN]]) { m.count = n; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
-  renderer.render(scene, camera); return info; }
+  // ---- garden: on a wet weekend the plants droop a little
+  const wet = Y.S.wet && D.D.wet; L.pots.forEach(p => p.scale.y = wet ? 1.05 : 1.3);
+  ghost(D, t);
+  commit(); return info; }
 
+// ---------------- Compare: a ghost of the queues the other version of the store has at this same minute, for the same customers
+let CMP = null, ghostInfo = null; const gC = { Y: null, i: -1, V: null, same: false };
+const leversOf = y => K.LEVERS.map(l => !!y.S[l.k]).join("") + (y.S.wet ? "w" : "");
+function ghost(D, t) { ghostInfo = null; if (!CMP) return; const st = R() && R().state ? R().state() : null; if (!st || !NOW.Y) return;
+  const gY = CMP === "asis" ? st.asIs : st.proof && st.proof.all; if (!gY) { ghostInfo = { pending: true }; return; }
+  const i = D.D ? D.D.i : D.i; if (gC.Y !== gY || gC.i !== i) { gC.Y = gY; gC.i = i; gC.same = leversOf(gY) === leversOf(NOW.Y) && gY.S.demand === NOW.Y.S.demand; gC.V = gC.same ? null : K.dayView(gY, i); }
+  if (gC.same) { ghostInfo = { same: true }; return; } if (!gC.V.open) return;
+  const Q = queues(gC.V, t);
+  Q.yardQ.forEach((x, qi) => gUte(L.yardQ.clone().add(V(2.4, 0, 6.5 * qi))));
+  Q.deskQ.forEach((x, qi) => gPer(L.deskQ.clone().add(V(.7, 0, qi * .8))));
+  const per = {}; Q.tillQ.forEach(x => { const k = (x.sco ? "s" : "l") + (x.lane || 0), n = per[k] = (per[k] || 0) + 1, q = x.sco ? L.scos[(x.lane || 0) % 10].q : L.lanes[(x.lane || 0) % 6].q; gPer(q.clone().add(V(.45, 0, Math.min(8, n - 1) * .8))); });
+  ghostInfo = { yard: Q.yardQ.length, desk: Q.deskQ.length, till: Q.tillQ.length }; }
+stage.compare({ label: "Compare", options: [
+  { id: "asis", label: "The store as it is", short: "as it is", note: "Ghost queues with none of the proposed changes" },
+  { id: "all", label: "All seven changes on", short: "all on", note: "Ghost queues with every proposed change" }], onChange: id => { CMP = id; gC.Y = null; } });
+const gTag = document.createElement("div"); gTag.className = "tag tw-gtag"; gTag.hidden = true; box.appendChild(gTag);
+
+// ---------------- labels and touch: hover any part for its number now; tap to pin it; Explore lists them all
 const v3 = new THREE.Vector3();
-function project(p) { v3.copy(p).project(camera); const w = canvas.clientWidth, h = canvas.clientHeight; return { x: (v3.x + 1) / 2 * w, y: (1 - v3.y) / 2 * h, ok: v3.z < 1 && v3.z > -1, w, h }; }
+function project(p) { const s = stage.project(p), w = canvas.clientWidth, h = canvas.clientHeight; return { x: s.x, y: s.y, ok: s.visible, w, h }; }
 function anchor(n) { const A = { desk: L.desk.clone().add(V(0, 3, 0)), yard: L.yardQ.clone().add(V(0, 3.5, -3)), aisles: V(-11, 4.5, -18), checkouts: V(-16, 3, 2), cc: L.cc.clone().add(V(0, 5.2, -2)), garden: L.garden.clone().add(V(0, 5, -8)), sco: V(-29, 3, 2) }; return A[n] ? A[n] : null; }
-if (/[?&]debug\b/.test(location.search)) window.__scene = { scene, renderer, THREE, L };
-return { applyTheme, setView, resize, sync, project, anchor, get view() { return view; }, VIEWS, L };
+const fmtN = (n, d = 0) => Number(n).toLocaleString("en-NZ", { maximumFractionDigits: d, minimumFractionDigits: d }), pc_ = (x, d = 0) => fmtN(x * 100, d) + "%";
+const yr = () => NOW.Y || {}, openNow = () => NOW.D && NOW.D.open;
+const HL = 0xFFF1DC, pk = (obj, spec) => stage.pickable(obj, Object.assign({ truth: "Simulated", color: HL }, spec));
+pk(G.yard, { title: "Timber yard", hint: "utes load at three bays", panel: "#yardQ", view: VIEWS.yard, anchor: [62, 8.2, -14],
+  value: () => openNow() ? `${info.yardOn} loader${info.yardOn === 1 ? "" : "s"} · ${info.yardQ ? `<span class="${info.longestYard > 10 ? "r" : "m"}">${info.yardQ} ute${info.yardQ === 1 ? "" : "s"} waiting${info.longestYard >= 1 ? `, longest ${fmtN(info.longestYard)} min` : ""}</span>` : "no queue"}<br><span class="m">this year, 90% of weekday 6–9 am waits under ${fmtN((yr().p90 || {}).yard || 0, 1)} min</span>` : `<span class="m">closed</span>` });
+pk(G.desk, { title: "Trade desk", hint: "dockets and accounts", panel: "#deskQ", view: VIEWS.desk, anchor: () => anchor("desk"),
+  value: () => openNow() ? `${info.deskOn} on the desk · ${info.deskQ ? `<span class="${info.deskQ >= 4 ? "r" : "m"}">${info.deskQ} waiting</span>` : "no queue"}${G.ahead.visible ? `<br><span class="a">pre-picked orders on the rack (proposed)</span>` : ""}<br><span class="m">${fmtN(yr().returns || 0)} second trips this year for short dockets</span>` : `<span class="m">closed</span>` });
+pk(G.racks, { title: "Aisles", hint: "bins coloured by availability", panel: "#emptyBins", view: VIEWS.aisles, anchor: () => anchor("aisles"),
+  value: () => `${fmtN(info.bins.empty)} empty · ${fmtN(info.bins.low)} low · ${fmtN(info.bins.full)} stocked<br><span class="m">on-shelf availability this year ${pc_(yr().osa || 0, 1)}</span>` });
+pk(G.checkouts, { title: "Checkouts", hint: "staffed lanes and self-checkout", panel: "#laneQ", view: VIEWS.checkouts, anchor: () => anchor("checkouts"),
+  value: () => openNow() ? `${info.lanesOn} lanes open · ${info.laneQ + info.scoQ ? `${info.laneQ} at lanes, ${info.scoQ} at kiosks` : "no queue"}<br><span class="m">${L.scos.filter(k => k.m.visible).length} self-checkout kiosks${yr().S && yr().S.sco ? " (four proposed)" : ""} · weekend-morning p90 wait ${fmtN((yr().p90 || {}).till || 0, 1)} min</span>` : `<span class="m">closed</span>` });
+pk(G.cc, { title: "Click and collect", hint: "orders promised in two hours", panel: "#ccReady", view: VIEWS.cc, anchor: () => anchor("cc"),
+  value: () => `${info.ccPickers} picking · ${L.ccSlots.length ? "slots: green ready, amber late" : ""}${info.ccLate ? `<br><span class="r">${info.ccLate} past promise today</span>` : ""}<br><span class="m">${pc_(yr().sla || 0)} ready on time this year</span>` });
+pk(G.garden, { title: "Garden centre", hint: "busiest in spring", panel: "#nIn", view: VIEWS.garden, anchor: () => anchor("garden"),
+  value: () => `${info.inGarden} browsing now${yr().S && yr().S.wet && NOW.D && NOW.D.D && NOW.D.D.wet ? `<br><span class="m">a wet weekend: garden demand down 45%</span>` : ""}` });
+
+// ---------------- guided tour: the six o'clock rush first (the moment this store is built around), then the rest of a week
+const dL = i => K.dateOf(i).toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+const go = (kind, hh) => { const r = R(); if (!r) return; r.setDay(K.defaultDay(kind)); r.jump(hh); };
+// the morning's yard queue at its longest, worked out from the same day view the store is drawing (so the tour never claims more than happens)
+function rush(Vd) { let n = 0, at = 360, wait = 0; if (!Vd || !Vd.open) return { n, at, wait };
+  for (let t = 360; t <= 600; t++) { const q = queues(Vd, t).yardQ.length; if (q > n) { n = q; at = t; } }
+  Vd.trades.forEach(x => { if (x.yardStart != null && x.yardT < 540 && x.yardWait > wait) wait = x.yardWait; }); return { n, at, wait }; }
+function sunrise(i) { const d = K.dateOf(i); for (let m = 300; m < 600; m++) if (solar(nzDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), m / 60), -36.85, 174.76).elev > -0.0145) return m; return 390; }
+const hm = m => `${Math.floor(m / 60)}:${String(Math.round(m % 60)).padStart(2, "0")}`;
+let RUSH = null; const narrow = () => box.clientWidth < 640;
+stage.tour.set([
+  { title: "The six o'clock rush", view: { p: [98, 36, 84], t: [56, 0, 36] }, get pin() { return narrow() ? undefined : () => G.yard.userData.twPick; },
+    do: () => { const r = R(); if (!r) return; const i = K.defaultDay("wd"); r.setDay(i); RUSH = rush(r.state().day); RUSH.sun = sunrise(i); r.jump(Math.max(6, (RUSH.at - 14) / 60)); r.speed(3); r.play(true); },
+    get text() { const R_ = RUSH || { n: 0, at: 360, wait: 0, sun: 390 };
+      return `${dL(K.defaultDay("wd"))}. The yard gate opens at 6:00 and the sun is up at ${hm(R_.sun)}. ${R_.n ? `By ${hm(R_.at)} <b>${R_.n} ute${R_.n === 1 ? "" : "s"}</b> are queued on the lane, and the longest yard wait this morning is <b>${fmtN(R_.wait)} minutes</b>.` : "This morning the yard keeps up."} Across the year, 90% of weekday 6–9 am yard waits were under <b>${fmtN((yr().p90 || {}).yard || 0, 1)} minutes</b>.`; } },
+  { title: "At the trade desk", view: { p: [44, 22, 42], t: [26, 1, 6] }, get pin() { return narrow() ? undefined : () => G.desk.userData.twPick; }, do: () => { const r = R(); if (r) r.speed(8); },
+    get text() { return `Three on the desk until 9:00. 90% of early desk waits were under <b>${fmtN((yr().p90 || {}).desk || 0, 1)} minutes</b>, and a docket that's short on stock means a second trip: <b>${fmtN(yr().returns || 0)}</b> this year.`; } },
+  { title: "Gaps on the shelves", view: "aisles", get pin() { return narrow() ? undefined : () => G.racks.userData.twPick; },
+    get text() { return `Each bin carries its shelf's availability: oat when stocked, amber when running low, rust when empty. On-shelf availability this year: <b>${pc_(yr().osa || 0, 1)}</b>.`; } },
+  { title: "Click and collect", view: "cc", get pin() { return narrow() ? undefined : () => G.cc.userData.twPick; },
+    get text() { return `Orders are promised within two hours. The slots turn green when an order is ready and amber when it's late. This year <b>${pc_(yr().sla || 0)}</b> were ready on time.`; } },
+  { title: "Saturday morning", view: "checkouts", do: () => go("sat", 10), get pin() { return narrow() ? undefined : () => G.checkouts.userData.twPick; },
+    get text() { return `The DIY crowd arrives on a spring Saturday. 90% of weekend-morning till waits were under <b>${fmtN((yr().p90 || {}).till || 0, 1)} minutes</b>.`; } },
+  { title: "Try the changes", view: "whole", do: () => go("wd", 6.1),
+    text: "Seven proposed changes sit below the model. Switch one on and the same customers meet a different store. Try <b>A second yard loader</b>, then use Compare to see the old queue as a ghost." }
+], "A week at the store");
+stage.tour.onEnd = () => { const r = R(); if (r) r.speed(8); [G.yard, G.desk, G.racks, G.cc, G.checkouts].forEach(g => stage.unpin(g.userData.twPick)); };
+
+// ---------------- sound (off until asked for): the shop floor's murmur, traffic, the yard's reversing beepers, rain
+stage.sound.layer("floor", { type: "chatter", gain: .16 }).layer("traffic", { type: "noise", f: 320, q: .7, gain: .16 }).layer("yard", { type: "ticks", freq: 1150, rate: 1.6, dur: .14, gain: .035 }).layer("rain", { type: "rain", gain: .18 });
+
+// ---------------- the time dial: outer ring = the twelve months of the trading year (bar = that month's sales), hand = the store clock; tap the centre to pause
+const MLAB = Array.from({ length: 12 }, (_, i) => K.MONTHS[(i + 6) % 12]);
+function setMonth(m) { const r = R(); if (!r || !NOW.D) return; const cur = NOW.i, dow = K.dowOf(cur);
+  for (let i = 0; i < K.NDAYS; i++) if (K.DAYINFO[i].m === m && K.dowOf(i) === dow && K.dateOf(i).getUTCDate() >= 8 && K.DAYINFO[i].type !== "closed") { r.setDay(i); return; }
+  for (let i = 0; i < K.NDAYS; i++) if (K.DAYINFO[i].m === m && K.DAYINFO[i].type !== "closed") { r.setDay(i); return; } }
+const paused = () => { const b = document.getElementById("pause"); return !!b && b.textContent.trim() === "Play"; };
+stage.dial({ months: { labels: MLAB, short: MLAB.map(m => m.slice(0, 3)), values: () => NOW.Y ? NOW.Y.mon.map(m => m.sales) : Array(12).fill(1), get: () => K.DAYINFO[NOW.i].m, set: setMonth, title: "Month of the trading year (bar length is that month's sales)" },
+  day: { get: () => NOW.t / 60, set: h => { const r = R(); if (r) r.jump(h); }, held: paused, title: "Store clock",
+    marks: [{ h: 6, c: "var(--ink)", t: "6:00 weekdays: doors and yard open, the trade rush" }, { h: 10, c: "var(--rose)", t: "Weekend mornings: the DIY peak" }, { h: 19, c: "var(--rose)", t: "7 pm: weekday close" }] },
+  onCenter: () => { const r = R(); if (r) r.play(paused()); } });
+
+// ---------------- per-frame extras: the ghost label, sound levels
+let ft = 0;
+stage.onFrame(dt => { ft += dt; if (ft < .25) return; ft = 0;
+  const s = stage.sound; if (s.on) { const on = openNow(); s.set("floor", on ? Math.min(1, (info.inStore + info.laneQ + info.scoQ) / 70) : 0); s.set("traffic", on ? Math.min(1, (uN + cN) / 60) : .05); s.set("yard", on ? Math.min(1, info.yardOn * .3 + info.yardQ * .1) : 0); s.set("rain", stage.weather.rain); }
+  if (!CMP || !ghostInfo) { gTag.hidden = true; return; }
+  const p = project(V(70, 2.5, 44)); if (!p.ok) { gTag.hidden = true; return; } gTag.hidden = false; gTag.style.left = p.x + "px"; gTag.style.top = p.y + "px";
+  const name = CMP === "asis" ? "as it is" : "all changes on";
+  gTag.innerHTML = ghostInfo.pending ? `<b>Ghost: ${name}</b> <span class="m">working it out…</span>` : ghostInfo.same ? `<b>Ghost: ${name}</b> <span class="m">same as now: switch a change on or off below</span>`
+    : `<b>Ghost: ${name}</b> <span class="m">yard ${ghostInfo.yard} · desk ${ghostInfo.desk} · tills ${ghostInfo.till}</span><br><span class="m">now: yard ${info.yardQ} · desk ${info.deskQ} · tills ${info.laneQ + info.scoQ}</span>`; });
+
+stage.start(VIEWS.whole);
+if (/[?&]debug\b/.test(location.search)) window.__scene = { scene: stage.scene, renderer: stage.renderer, THREE, L, stage };
+return { applyTheme, setView, resize, sync, project, anchor, get view() { return view; }, VIEWS, L, stage };
 }
+window.createRetailScene = createRetailScene;
+window.__retailMain();
 
 </script>
 <script>
-(() => {
+window.__retailMain = (() => {
 // ---- vz: small visual-summary kit (HTML bars, 100% stacks, truth chips, table disclosures, one tooltip). No libraries.
 // Every mark carries data-tip (read with textContent, never innerHTML) and the numbers stay in visible labels or the table behind "Show the table".
 const VZ = (() => {
@@ -1600,7 +1701,7 @@ window.__retail = { S, setMode, setView, jump, speed: setSpeed, play, setDay, re
   lever: (k, v) => { S[k] = v; recompute(k !== "wet"); }, apply: on => { K.LEVERS.forEach(l => S[l.k] = !!on); recompute(true); },
   state: () => ({ year: Y, asIs: A, day: V, t, proof: PR, info, live: LIVE }), proof: () => PR, ready: () => !!PR };
 requestAnimationFrame(frame);
-})();
+});
 
 </script>
 <script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="retail"></script><script src="/lab/navigation.js" defer></script></body>

@@ -142,7 +142,7 @@ details.tbl[open] summary{margin-bottom:6px}
 
   <div class="main">
     <div class="stagebox" id="stagebox">
-      <canvas id="scene" aria-label="3D model of the office building with people, lights and heating and cooling shown live"></canvas>
+      <canvas id="scene" aria-label="3D model of the office building with people, lights and heating and cooling, simulated minute by minute. Hover or tap a part for its number; Explore lists every part."></canvas>
       <div class="views" role="group" aria-label="Camera views">
         <button type="button" data-view="all" aria-pressed="true">Building</button>
         <button type="button" data-view="0">Level 1</button>
@@ -151,7 +151,7 @@ details.tbl[open] summary{margin-bottom:6px}
         <button type="button" data-view="roof">Roof plant</button>
       </div>
       <div id="tags"></div>
-      <div class="hint">Drag to turn · pinch or scroll to zoom</div>
+      <div class="hint">Drag to turn · tap a part for its number</div>
       <div class="badge">SIMULATED</div>
     </div>
 
@@ -212,8 +212,8 @@ details.tbl[open] summary{margin-bottom:6px}
       <div class="row" id="teamRow"><label for="team">Team size <b id="teamV">100</b></label><input id="team" type="range" min="20" max="150" step="5" value="100"></div>
       <div class="row" id="fixedRow" hidden><label for="fixed">People on site each weekday <b id="fixedV">50</b></label><input id="fixed" type="range" min="5" max="120" step="5" value="50"></div>
       <div class="row"><label for="solar">Rooftop solar <b id="solarV">none</b></label><input id="solar" type="range" min="0" max="70" step="5" value="0"></div>
-      <div class="row"><label for="season">Time of year</label>
-        <select id="season"><option value="0">Summer (January)</option><option value="3">Autumn (April)</option><option value="6">Winter (July)</option><option value="9" selected>Spring (October)</option></select></div>
+      <div class="row"><label for="season">Time of year <b>or turn the dial</b></label>
+        <select id="season"><option value="0">January (summer)</option><option value="1">February (summer)</option><option value="2">March (autumn)</option><option value="3">April (autumn)</option><option value="4">May (autumn)</option><option value="5">June (winter)</option><option value="6">July (winter)</option><option value="7">August (winter)</option><option value="8">September (spring)</option><option value="9" selected>October (spring)</option><option value="10">November (spring)</option><option value="11">December (summer)</option></select></div>
       <label class="toggle"><input type="checkbox" id="consolidate"><span>Close empty floors<small>Seat people on the fewest floors and set back heating and lights elsewhere.</small></span></label>
       <label class="toggle"><input type="checkbox" id="sensors"><span>Occupancy sensors<small>Lights and fresh air follow the people actually there.</small></span></label>
       <label class="toggle"><input type="checkbox" id="setback"><span>Tight schedule<small>Heating and cooling 6:30am to 6:30pm, not 6am to 9pm.</small></span></label>
@@ -297,7 +297,7 @@ function draw(j){const want=(document.documentElement.dataset.feeds||"").split("
   $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
   $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
   try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
-function HOOK(j,ok,u){const f=ok("fuel");if(f&&window.__office&&f.values.petrol91Dollars)window.__office.setFuel(f.values.petrol91Dollars,"· "+f.period);}
+function HOOK(j,ok,u){const f=ok("fuel");if(f&&window.__office&&f.values.petrol91Dollars)window.__office.setFuel(f.values.petrol91Dollars,"· "+f.period);const w=ok("weather");if(w&&window.__office&&window.__office.setLiveWeather)window.__office.setLiveWeather(w.values,w.source&&w.source.name);}
 window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
 if(window.__assemblLive)draw(window.__assemblLive);
 })();
@@ -313,8 +313,8 @@ if(window.__assemblLive)draw(window.__assemblLive);
   </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/1/stage.css">
 <script>
 // One model drives the motion, the meters and the yearly numbers.
 const TWIN = (() => {
@@ -424,10 +424,11 @@ const TWIN = (() => {
 
 
 </script>
-<script>
+<script type="module">
+import {THREE,createStage,nzDate} from "/assets/twin/1/stage.js";
 (()=>{
 const M=TWIN, $=id=>document.getElementById(id);
-const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], SEASON={0:"Summer",3:"Autumn",6:"Winter",9:"Spring"};
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], SEASON=["Summer","Summer","Autumn","Autumn","Autumn","Winter","Winter","Winter","Spring","Spring","Spring","Summer"],MONTHN=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------------- settings
@@ -473,122 +474,107 @@ function stateAt(p,h){
   return"desk";
 }
 
-// ---------------- three.js scene
+// ---------------- the scene: an architect's maquette of the office on the shared twin stage (/assets/twin/1).
+// Exploded floors on a city block, under the real Auckland sun for the month and minute of the simulation.
 const canvas=$("scene"), box=$("stagebox");
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
-renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(32,1,0.5,600);
-camera.position.set(52,46,58);
-const controls=new THREE.OrbitControls(camera,canvas);
-controls.target.set(0,7,0); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.47; controls.minDistance=14; controls.maxDistance=160;
-const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const mats={
-  ground:new THREE.MeshStandardMaterial({roughness:1}), slab:new THREE.MeshStandardMaterial({roughness:.9}),
-  desk:new THREE.MeshStandardMaterial({roughness:.8}), core:new THREE.MeshStandardMaterial({roughness:.9}),
-  dark:new THREE.MeshStandardMaterial({color:0x2a2228,roughness:.6}),
-  person:new THREE.MeshStandardMaterial({roughness:.7}), head:new THREE.MeshStandardMaterial({roughness:.6}),
-  glass:new THREE.MeshStandardMaterial({transparent:true,opacity:.12,roughness:.1,depthWrite:false}),
-  edge:new THREE.LineBasicMaterial({transparent:true,opacity:.32}),
-  unit:new THREE.MeshStandardMaterial({roughness:.6}), fan:new THREE.MeshStandardMaterial({color:0x3a3036,roughness:.5})
-};
-const hemi=new THREE.HemisphereLight(0xffffff,0xbbaaaf,.75); scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff3e0,.85); sun.castShadow=true; sun.shadow.mapSize.set(1536,1536);
-Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200}); scene.add(sun); scene.add(sun.target);
-
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(220,220),mats.ground); ground.rotation.x=-Math.PI/2; ground.position.y=-0.02; ground.receiveShadow=true; scene.add(ground);
-// footpath and street
-const street=new THREE.Mesh(new THREE.PlaneGeometry(220,9),new THREE.MeshStandardMaterial({color:0x8d8589,roughness:1,transparent:true,opacity:.25}));
-street.rotation.x=-Math.PI/2; street.position.set(0,0,22); scene.add(street);
-
-function edges(geo,x,y,z){const l=new THREE.LineSegments(new THREE.EdgesGeometry(geo),mats.edge);l.position.set(x,y,z);scene.add(l);return l}
-function boxMesh(w,h,d,mat,x,y,z,cast=true){const g=new THREE.BoxGeometry(w,h,d),m=new THREE.Mesh(g,mat);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;scene.add(m);return m}
-
-const floorFx=[];
-for(let f=0;f<3;f++){
-  const y=f*FG;
-  boxMesh(FW,0.35,FD,mats.slab,0,y+0.175,0,false);
-  edges(new THREE.BoxGeometry(FW,0.35,FD),0,y+0.175,0);
-  // glass line of the facade
-  edges(new THREE.BoxGeometry(FW,3.2,FD),0,y+1.95,0).material=mats.edge;
-  // core: lifts, stairs, toilets
-  boxMesh(5,3.2,7,mats.core,CORE.x,y+1.95,CORE.z); edges(new THREE.BoxGeometry(5,3.2,7),CORE.x,y+1.95,CORE.z);
-  // meeting rooms (glass) + tables
-  for(const m of MEET){const g=new THREE.Mesh(new THREE.BoxGeometry(5,2.6,4.6),mats.glass);g.position.set(m.x,y+1.65,m.z);scene.add(g);edges(new THREE.BoxGeometry(5,2.6,4.6),m.x,y+1.65,m.z);boxMesh(2.6,0.75,1.2,mats.desk,m.x,y+0.72,m.z)}
-  // kitchen bench
-  boxMesh(4.4,0.95,0.8,mats.desk,KITCHEN.x,y+0.82,9.2); boxMesh(1.6,0.95,1.6,mats.desk,KITCHEN.x-0.2,y+0.82,6.4);
-  // light glow and heating/cooling glow, laid on the slab
-  const lamp=new THREE.Mesh(new THREE.PlaneGeometry(18,17.5),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
-  lamp.rotation.x=-Math.PI/2; lamp.position.set(-2.3,y+0.37,-0.6); scene.add(lamp);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(0,1,4,1),new THREE.MeshBasicMaterial({transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
-  const frame=new THREE.Shape();frame.moveTo(-FW/2,-FD/2);frame.lineTo(FW/2,-FD/2);frame.lineTo(FW/2,FD/2);frame.lineTo(-FW/2,FD/2);frame.lineTo(-FW/2,-FD/2);
-  const hole=new THREE.Path();hole.moveTo(-FW/2+1.1,-FD/2+1.1);hole.lineTo(-FW/2+1.1,FD/2-1.1);hole.lineTo(FW/2-1.1,FD/2-1.1);hole.lineTo(FW/2-1.1,-FD/2+1.1);hole.lineTo(-FW/2+1.1,-FD/2+1.1);frame.holes.push(hole);
-  const band=new THREE.Mesh(new THREE.ShapeGeometry(frame),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
-  band.rotation.x=-Math.PI/2; band.position.y=y+0.38; scene.add(band);
-  floorFx.push({lamp,band,y});
-}
-// desks + monitors, instanced
-const deskGeo=new THREE.BoxGeometry(1.4,0.06,0.75), legGeo=new THREE.BoxGeometry(1.36,0.68,0.7), monGeo=new THREE.BoxGeometry(0.55,0.34,0.05);
-const desks=new THREE.InstancedMesh(deskGeo,mats.desk,120), deskBase=new THREE.InstancedMesh(legGeo,mats.slab,120), mons=new THREE.InstancedMesh(monGeo,mats.dark,120);
-desks.castShadow=true;desks.receiveShadow=true;
+function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||380,Math.min(innerHeight*0.72,w*0.78));canvas.style.height=Math.round(h)+"px"}
+sizeCanvas();
+const stage=createStage({id:"office",canvas,box,place:"auckland",extent:34,controls:{minDistance:12,maxDistance:150},ao:{radius:1.1},tilt:3.5,tableY:-1.12,
+  onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
+const SM=stage.M, geo=stage.geo, RY=3*FG;
+const grp=(x=0,y=0,z=0,parent)=>{const g=new THREE.Group();g.position.set(x,y,z);(parent||stage.root).add(g);return g};
+const put=(g,mat,x,y,z,o={})=>stage.mesh(g,mat,[x,y,z],o);
 const dummy=new THREE.Object3D();
+// rounded corners for a closed loop, so an air flow and its duct share one curve
+function loopBends(pts,r=1.2){const P=pts.map(p=>new THREE.Vector3(...p)),n=P.length,out=[];for(let i=0;i<n;i++){const a=P[(i+n-1)%n],b=P[i],c=P[(i+1)%n];
+  out.push(b.clone().add(a.clone().sub(b).setLength(Math.min(r,a.distanceTo(b)/2.2))),b.clone().add(c.clone().sub(b).setLength(Math.min(r,b.distanceTo(c)/2.2))))}return out}
+function bends(pts,r=0.8){const P=pts.map(p=>new THREE.Vector3(...p)),out=[P[0]];for(let i=1;i<P.length-1;i++){const a=P[i-1],b=P[i],c=P[i+1];
+  out.push(b.clone().add(a.clone().sub(b).setLength(Math.min(r,a.distanceTo(b)/2.2))),b.clone().add(c.clone().sub(b).setLength(Math.min(r,b.distanceTo(c)/2.2))))}out.push(P[P.length-1]);return out}
+// materials that carry data or need their own look (colours refreshed from the page's CSS in applyTheme)
+const OM={mull:SM.tint(0x9C8F95,{roughness:.6}),pv:SM.tint(0x3B4A63,{roughness:.35,metalness:.2}),person:SM.tint(0xffffff,{roughness:.7}),head:SM.tint(0x492B3E,{roughness:.6}),
+  glass:new THREE.MeshPhysicalMaterial({color:0xDCE8EC,roughness:.08,transparent:true,opacity:.2,depthWrite:false,clearcoat:1}),
+  duct:SM.tint(0xD6CDD1,{roughness:.5,metalness:.25}),kiosk:SM.tint(0x5E5258,{roughness:.6}),tree:SM.tint(0xA3B894,{roughness:1}),tree2:SM.tint(0x92A886,{roughness:1}),context:SM.tint(0xE4DDD5,{roughness:.95})};
+// the city block, street and neighbours (context only: plain card, no data)
+put(geo.rbox(66,1.1,52,0.3),SM.card2,0,-0.55,0,{cast:false});
+put(geo.rbox(66,0.1,8.6,0.04),SM.road,0,0.05,21.3,{cast:false});put(geo.rbox(62,0.02,0.16,0.008),SM.card,0,0.11,21.3,{cast:false});
+put(geo.rbox(66,0.14,4.6,0.05),SM.card,0,0.07,14.6,{cast:false});
+put(geo.rbox(20,0.08,12,0.04),SM.felt,-22,0.04,-2,{cast:false});
+[[-23,7,-19.5,14,14,9],[-3,5,-21,16,10,7],[19,9,-19.5,13,18,9]].forEach(([x,y,z,w,h,d])=>put(geo.rbox(w,h,d,0.2),OM.context,x,y,z));
+[[-28,14.6],[-20,14.6],[-4,14.6],[6,14.6],[16,14.6],[26,14.6],[-27,-7],[-17,4]].forEach(([x,z],i)=>{const s=0.75+((i*37)%5)*0.08,g=grp(x,0,z);
+  put(geo.cyl(0.16,1.8),SM.timber,0,0.9,0,{parent:g});put(geo.sphere(1.25*s,1),i%2?OM.tree:OM.tree2,0,1.9+s,0,{parent:g});put(geo.sphere(0.9*s,1),i%2?OM.tree2:OM.tree,0.5*s,2.8+1.2*s,0.25*s,{parent:g})});
+const kiosk=put(geo.rbox(1.6,1.4,1.0,0.12),OM.kiosk,-20,0.7,13.2,{});// the street transformer
+// ---------------- floors (exploded so you can see in): slab, core, meeting rooms, kitchen, mullions, light and air
+const G={fl:[]};const floorFx=[];
+function lampTexture(){const c=document.createElement("canvas");c.width=256;c.height=256;const x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,256,256);
+  for(let r=0;r<3;r++)for(let k=0;k<5;k++){const cx=28+k*50,cy=48+r*80,g=x.createRadialGradient(cx,cy,0,cx,cy,46);g.addColorStop(0,"rgba(255,255,255,.95)");g.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=g;x.fillRect(0,0,256,256)}
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+const LAMP_TEX=lampTexture();
+const MULL=[];for(let x=-15;x<=15.01;x+=3){MULL.push([x,-10],[x,10])}for(let z=-6.67;z<=6.68;z+=3.333){MULL.push([-15,z],[15,z])}
+for(let f=0;f<3;f++){const y=f*FG,g=grp(0,y,0);G.fl.push(g);
+  put(geo.rbox(FW,0.35,FD,0.12),SM.card,0,0.175,0,{parent:g});
+  put(geo.rbox(5,3.2,7,0.12),SM.card2,CORE.x,1.95,CORE.z,{parent:g});
+  for(const m of MEET){put(geo.rbox(5,2.6,4.6,0.06),OM.glass,m.x,1.65,m.z,{parent:g,cast:false});put(geo.rbox(2.6,0.75,1.2,0.06),SM.timber,m.x,0.72,m.z,{parent:g})}
+  put(geo.rbox(4.4,0.95,0.8,0.08),SM.card2,KITCHEN.x,0.82,9.2,{parent:g});put(geo.rbox(1.6,0.95,1.6,0.08),SM.card2,KITCHEN.x-0.2,0.82,6.4,{parent:g});
+  // mullions and the head of the glazing: their shadows rake across the floor when the sun is low
+  const mu=new THREE.InstancedMesh(geo.rbox(0.14,3.2,0.14,0.03),OM.mull,MULL.length);MULL.forEach(([x,z],i)=>{dummy.position.set(x,1.95,z);dummy.rotation.set(0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();mu.setMatrixAt(i,dummy.matrix)});
+  mu.castShadow=true;g.add(mu);
+  [[0,-10,FW+0.14,0.14],[0,10,FW+0.14,0.14],[-15,0,0.14,FD],[15,0,0.14,FD]].forEach(([x,z,w,d])=>put(geo.rbox(w,0.14,d,0.03),OM.mull,x,3.58,z,{parent:g}));
+  // light: soft pools on the floor that follow the lighting load
+  const lamp=new THREE.Mesh(new THREE.PlaneGeometry(18,17.5),new THREE.MeshBasicMaterial({map:LAMP_TEX,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,color:0xF2C86A}));
+  lamp.rotation.x=-Math.PI/2;lamp.position.set(-2.3,0.37,-0.6);g.add(lamp);
+  floorFx.push({lamp,y,air:null})}
+// desks and monitors, instanced across all three floors
+const desks=new THREE.InstancedMesh(geo.rbox(1.4,0.06,0.75,0.02),SM.timber,120),deskBase=new THREE.InstancedMesh(geo.rbox(1.34,0.66,0.68,0.04),SM.card2,120),mons=new THREE.InstancedMesh(geo.rbox(0.55,0.34,0.05,0.02),SM.dark,120);
+desks.castShadow=deskBase.castShadow=mons.castShadow=true;desks.receiveShadow=deskBase.receiveShadow=true;
 for(let f=0;f<3;f++)for(let k=0;k<40;k++){const r=Math.floor(k/8),c=k%8,i=f*40+k,x=-7.5+c*1.55,z=ROWS[r],y=f*FG+0.35;
   dummy.position.set(x,y+0.72,z);dummy.rotation.set(0,0,0);dummy.updateMatrix();desks.setMatrixAt(i,dummy.matrix);
   dummy.position.set(x,y+0.36,z);dummy.updateMatrix();deskBase.setMatrixAt(i,dummy.matrix);
   dummy.position.set(x,y+0.95,z-SEAT[r]*0.35);dummy.updateMatrix();mons.setMatrixAt(i,dummy.matrix)}
-scene.add(deskBase,desks,mons);
-// roof and plant
-const RY=3*FG;
-boxMesh(FW,0.35,FD,mats.slab,0,RY+0.175,0,true); edges(new THREE.BoxGeometry(FW,0.35,FD),0,RY+0.175,0);
-// columns tying the floors (exploded view, so drawn as thin posts)
-for(const [x,z] of [[-14.6,-9.6],[14.6,-9.6],[-14.6,9.6],[14.6,9.6]]){const c=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,RY,8),mats.core);c.position.set(x,RY/2,z);scene.add(c)}
-const lift=new THREE.Mesh(new THREE.BoxGeometry(1.6,RY,1.6),mats.glass);lift.position.set(CORE.x+1.2,RY/2+0.3,CORE.z);scene.add(lift);
-const fans=[], units=[];
-for(let u=0;u<3;u++){const x=-4+u*5.2;const un=boxMesh(4.2,1.5,2.4,mats.unit,x,RY+1.1,-4);edges(new THREE.BoxGeometry(4.2,1.5,2.4),x,RY+1.1,-4);units.push(un);
-  for(const dx of[-1,1]){const g=new THREE.Group();g.position.set(x+dx*1.05,RY+1.9,-4);
-    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.08,10),mats.fan);g.add(hub);
-    for(let b=0;b<3;b++){const bl=new THREE.Mesh(new THREE.BoxGeometry(0.85,0.03,0.22),mats.fan);bl.position.x=0.42;const arm=new THREE.Group();arm.rotation.y=b*Math.PI*2/3;arm.add(bl);g.add(arm)}
-    const shroud=new THREE.Mesh(new THREE.TorusGeometry(0.98,0.05,6,28),mats.fan);shroud.rotation.x=Math.PI/2;g.add(shroud);
-    scene.add(g);fans.push(g)}}
-boxMesh(6,1.8,2.6,mats.unit,7,RY+1.25,3.5); edges(new THREE.BoxGeometry(6,1.8,2.6),7,RY+1.25,3.5);
-// rooftop solar: each tile is about 2 kW of panels
+stage.root.add(deskBase,desks,mons);
+// columns tying the floors, and the glass lift shaft in the core
+for(const [x,z] of [[-14.6,-9.6],[14.6,-9.6],[-14.6,9.6],[14.6,9.6]])put(geo.cyl(0.12,RY),OM.mull,x,RY/2,z,{});
+const lift=put(geo.rbox(1.6,RY,1.6,0.05),OM.glass,CORE.x+1.2,RY/2+0.3,CORE.z,{cast:false});
+const liftCar=put(geo.rbox(1.3,1.6,1.3,0.08),SM.card2,CORE.x+1.2,1.2,CORE.z,{});
+// roof: heat pumps with their fans, the air-handling unit, and room for solar
+G.roof=grp(0,RY,0);put(geo.rbox(FW,0.35,FD,0.12),SM.card,0,0.175,0,{parent:G.roof});
+const fans=[];for(let u=0;u<3;u++){const x=-4+u*5.2;put(geo.rbox(4.2,1.5,2.4,0.15),SM.card2,x,1.1,-4,{parent:G.roof});
+  for(const dx of[-1,1]){const fg=grp(x+dx*1.05,1.9,-4,G.roof);put(geo.cyl(0.16,0.08,10),SM.dark,0,0,0,{parent:fg});
+    for(let b=0;b<3;b++){const arm=new THREE.Group();arm.rotation.y=b*Math.PI*2/3;fg.add(arm);put(geo.rbox(0.85,0.03,0.22,0.01),SM.dark,0.42,0,0,{parent:arm})}
+    put(new THREE.TorusGeometry(0.98,0.05,6,28),SM.dark,0,0,0,{parent:fg,rot:[Math.PI/2,0,0]});fans.push(fg)}}
+put(geo.rbox(6,1.8,2.6,0.15),SM.card2,7,1.25,3.5,{parent:G.roof});
 const PANEL_SPOTS=[];for(let r=0;r<3;r++)for(let c=0;c<12;c++)PANEL_SPOTS.push([-13.2+c*2.4,r===0?-8.6:r===1?6.4:8.6]);
-const panelMat=new THREE.MeshStandardMaterial({color:0x2c3d57,roughness:.35,metalness:.2,emissive:0xE39A2D,emissiveIntensity:0});
-const pvTiles=new THREE.InstancedMesh(new THREE.BoxGeometry(2.1,0.08,1.6),panelMat,PANEL_SPOTS.length);pvTiles.castShadow=true;scene.add(pvTiles);
-function buildPanels(){const n=Math.round(S.solar/2);PANEL_SPOTS.forEach((p,i)=>{dummy.position.set(p[0],RY+0.75,p[1]);dummy.rotation.set(-0.26,0,0);const k=i<n?1:0;dummy.scale.set(k,k,k);dummy.updateMatrix();pvTiles.setMatrixAt(i,dummy.matrix)});pvTiles.instanceMatrix.needsUpdate=true}
-// people
+const pvTiles=new THREE.InstancedMesh(geo.rbox(2.1,0.08,1.6,0.02),OM.pv,PANEL_SPOTS.length);pvTiles.castShadow=true;stage.root.add(pvTiles);
+function buildPanels(){const n=Math.round(S.solar/2);PANEL_SPOTS.forEach((p,i)=>{dummy.position.set(p[0],RY+0.75,p[1]);dummy.rotation.set(-0.26,0,0);const k=i<n?1:0;dummy.scale.set(k,k,k);dummy.updateMatrix();pvTiles.setMatrixAt(i,dummy.matrix)});pvTiles.instanceMatrix.needsUpdate=true;pvTiles.computeBoundingSphere();if(typeof solarTube!=="undefined")solarTube.visible=S.solar>0}
+// ---------------- flows on the GPU: conditioned air round each floor, power in from the street, solar down the riser
+const FL={air:[]};
+for(let f=0;f<3;f++){const y=f*FG+3.25,fl=stage.flow({points:loopBends([[-13.6,y,-8.6],[13.6,y,-8.6],[13.6,y,8.6],[-13.6,y,8.6]]),closed:true,count:90,color:0x3F7E9C,size:0.34,speed:3.2,jitter:0.05,glow:0.12});
+  fl.set({rate:0});FL.air.push(fl);stage.add(new THREE.Mesh(new THREE.TubeGeometry(fl.curve,220,0.13,6,true),OM.duct),{cast:false,parent:G.fl[f]}).position.y=-f*FG;}
+FL.grid=stage.flow({points:bends([[-20,0.32,12.6],[-20,0.32,6.2],[-14.2,0.32,6.2],[-14.2,0.6,3.9]]),count:40,color:0x492B3E,size:0.3,speed:4,jitter:0,glow:0.05});
+FL.solar=stage.flow({points:bends([[2,RY+0.7,8.6],[-9.3,RY+0.7,8.6],[-9.3,RY+0.7,3.7],[-9.3,0.6,3.7]]),count:60,color:0xD9A93C,size:0.3,speed:5,jitter:0,glow:0.2});FL.solar.set({rate:0});
+FL.exp=stage.flow({points:bends([[-14.2,0.6,3.9],[-14.2,0.32,6.2],[-20,0.32,6.2],[-20,0.32,12.6]]),count:40,color:0xD9A93C,size:0.3,speed:4,jitter:0,glow:0.2});FL.exp.set({rate:0});
+stage.add(new THREE.Mesh(new THREE.TubeGeometry(FL.grid.curve,80,0.08,6,false),SM.dark),{cast:false});
+const solarTube=stage.add(new THREE.Mesh(new THREE.TubeGeometry(FL.solar.curve,160,0.08,6,false),SM.dark),{cast:false});solarTube.visible=false;
+// ---------------- people: little figures, instanced. Ink at a desk, blue in a meeting, rose while walking.
 const MAXP=150;
-const bodyGeo=new THREE.CylinderGeometry(0.24,0.28,1.15,10), headGeo=new THREE.SphereGeometry(0.21,12,10);
-const bodies=new THREE.InstancedMesh(bodyGeo,mats.person,MAXP), heads=new THREE.InstancedMesh(headGeo,mats.head,MAXP);
-bodies.castShadow=true; bodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage); heads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-bodies.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXP*3),3);
-scene.add(bodies,heads);
-let vis=[]; // visual state per roster person
-
+const bodies=new THREE.InstancedMesh(geo.capsule(0.24,0.62),OM.person,MAXP),heads=new THREE.InstancedMesh(geo.sphere(0.2,2),OM.head,MAXP);
+bodies.castShadow=heads.castShadow=true;bodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage);heads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+bodies.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXP*3),3);bodies.frustumCulled=heads.frustumCulled=false;
+stage.root.add(bodies,heads);
+let vis=[];// visual state per roster person
+// ---------------- ghosts (Compare): the colleagues who would be at these desks in another pattern
+const ghostMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uColor:{value:new THREE.Color(0x6E4A64)},uOpacity:{value:0.92}},
+  vertexShader:"varying vec3 vN;varying vec3 vV;void main(){vec4 p=vec4(position,1.0);vec3 n=normal;\n#ifdef USE_INSTANCING\np=instanceMatrix*p;n=mat3(instanceMatrix)*n;\n#endif\nvec4 mv=modelViewMatrix*p;vN=normalize(normalMatrix*n);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}",
+  fragmentShader:"uniform vec3 uColor;uniform float uOpacity;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.0);gl_FragColor=vec4(uColor,(0.62+0.38*f)*uOpacity);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"});
+const ghostP=new THREE.InstancedMesh(geo.capsule(0.24,0.62),ghostMat,MAXP);ghostP.frustumCulled=false;ghostP.count=0;stage.root.add(ghostP);
+// ---------------- theme
+let colors={};
 function applyTheme(){
-  const c=n=>new THREE.Color(css(n)||"#ccc");
-  scene.background=c("--scene-bg"); scene.fog=new THREE.Fog(c("--scene-bg"),120,320);
-  mats.ground.color=c("--scene-ground"); mats.slab.color=c("--scene-slab"); mats.desk.color=c("--scene-desk");
-  mats.core.color=c("--scene-desk"); mats.unit.color=c("--scene-slab"); mats.person.color=new THREE.Color(0xffffff); mats.head.color=c("--scene-person");
-  mats.glass.color=c("--cool"); mats.edge.color=c("--scene-edge");
-  floorFx.forEach(F=>{F.lamp.material.color=c("--lamp")});
-  colors={person:c("--scene-person"),live:c("--live"),meet:c("--cool"),heat:c("--heat"),cool:c("--cool")};
+  const css=getComputedStyle(document.documentElement),c=n=>new THREE.Color(css.getPropertyValue(n).trim()||"#ccc");
+  OM.head.color.copy(c("--scene-person"));
+  colors={person:c("--scene-person"),live:c("--rose"),meet:c("--cool"),heat:c("--heat"),cool:c("--cool"),vent:c("--rose"),ink:c("--ink"),lamp:c("--lamp")};
+  floorFx.forEach(F=>F.lamp.material.color.copy(colors.lamp));FL.grid.set({color:colors.ink});
   drawCurve();drawWeek();
 }
-let colors={};
-new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
-
-function resize(){const w=box.clientWidth,h=Math.max(380,Math.min(innerHeight*0.72,w*0.78));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1.1?40:32;camera.updateProjectionMatrix()}
-addEventListener("resize",resize);
-
-// camera views
-const VIEWS={all:{p:[52,46,58],t:[0,7,0]},0:{p:[24,16,30],t:[0,0,0]},1:{p:[24,22.5,30],t:[0,FG,0]},2:{p:[24,29,30],t:[0,2*FG,0]},roof:{p:[18,RY+14,22],t:[2,RY+1,-1]}};
-let camGoal=null;
-document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
-  const v=VIEWS[b.dataset.view];camGoal={p:new THREE.Vector3(...v.p),t:new THREE.Vector3(...v.t)}});
-controls.addEventListener("start",()=>camGoal=null);
 
 // ---------------- simulation step
 let floorPeople=[0,0,0], pw=null;
@@ -624,9 +610,9 @@ function step(dtMin){
 }
 
 // ---------------- visual update of people
-const tmpC=new THREE.Color();
+const tmpC=new THREE.Color();let liftY=1.2;
 function movePeople(dt){
-  const h=(simMin%1440)/60, walk=9*dt, lift=7*dt;
+  const h=(simMin%1440)/60, walk=9*dt, lift=7*dt;let riding=null;
   dayPlan.roster.forEach((p,i)=>{
     const v=vis[i], st=stateAt(p,h), t=target(p,st);
     if(st!=="away"&&!v.shown){v.shown=true;v.x=ENTRY.x;v.y=0.35;v.z=ENTRY.z}
@@ -636,51 +622,65 @@ function movePeople(dt){
     if(Math.abs(v.y-t.y)>0.05){ if(!atCore){gx=CORE.x+1.2;gy=v.y;gz=CORE.z} else {gx=CORE.x+1.2;gz=CORE.z} }
     const dx=gx-v.x,dz=gz-v.z,dd=Math.hypot(dx,dz);
     if(dd>0.02){const s=Math.min(1,walk/dd);v.x+=dx*s;v.z+=dz*s}
-    else if(Math.abs(gy-v.y)>0.01){const dy=gy-v.y;v.y+=Math.sign(dy)*Math.min(Math.abs(dy),lift)}
+    else if(Math.abs(gy-v.y)>0.01){const dy=gy-v.y;v.y+=Math.sign(dy)*Math.min(Math.abs(dy),lift);riding=v.y}
     v.moving=dd>0.05||Math.abs(t.y-v.y)>0.05;
     if(st==="away"&&!v.moving&&v.shown&&Math.hypot(v.x-ENTRY.x,v.z-ENTRY.z)<0.3)v.shown=false;
     const sc=v.shown?1:0;
-    dummy.position.set(v.x,v.y+0.62,v.z);dummy.rotation.set(0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();bodies.setMatrixAt(i,dummy.matrix);
-    dummy.position.set(v.x,v.y+1.42,v.z);dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);
+    dummy.position.set(v.x,v.y+0.6,v.z);dummy.rotation.set(0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();bodies.setMatrixAt(i,dummy.matrix);
+    dummy.position.set(v.x,v.y+1.38,v.z);dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);
     tmpC.copy(v.moving?colors.live:st.startsWith("meet")?colors.meet:colors.person);bodies.setColorAt(i,tmpC);
   });
   for(let i=dayPlan.roster.length;i<MAXP;i++){dummy.scale.set(0,0,0);dummy.updateMatrix();bodies.setMatrixAt(i,dummy.matrix);heads.setMatrixAt(i,dummy.matrix)}
   bodies.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;if(bodies.instanceColor)bodies.instanceColor.needsUpdate=true;
+  if(riding!=null)liftY=riding-0.35+1.2;liftCar.position.y+=(liftY-liftCar.position.y)*Math.min(1,dt*6);
 }
-
+function snapPeople(){const h=(simMin%1440)/60;vis=dayPlan.roster.map(p=>{const st=stateAt(p,h),t=target(p,st);return{x:t.x,y:t.y,z:t.z,shown:st!=="away",moving:false}})}
 // ---------------- scene response to the model
 function updateFx(dt){
-  const h=(simMin%1440)/60;
+  const k=Math.min(1,dt*4);
   pw.floors.forEach((F,f)=>{const fx=floorFx[f];
-    fx.lamp.material.opacity+=((F.lit*0.32)-fx.lamp.material.opacity)*Math.min(1,dt*4);
-    const load=F.heat+F.cool, op=Math.min(0.85,0.12+load/6);
-    fx.band.material.color=F.mode==="Heating"?colors.heat:F.mode==="Cooling"?colors.cool:colors.person;
-    const tgt=F.mode==="Heating"||F.mode==="Cooling"?op:(F.mode==="Ventilating"?0.12:0);
-    fx.band.material.opacity+=(tgt-fx.band.material.opacity)*Math.min(1,dt*4)});
+    fx.lamp.material.opacity+=((F.lit*(0.3+0.7*stage.clock.night))-fx.lamp.material.opacity)*k;
+    const load=F.heat+F.cool,air=FL.air[f];
+    if(F.mode==="Heating"||F.mode==="Cooling"){air.set({rate:Math.min(1,0.25+load/7),color:F.mode==="Heating"?colors.heat:colors.cool,speed:3+Math.min(4,load/2)})}
+    else if(F.mode==="Ventilating")air.set({rate:0.18,color:colors.vent,speed:2.2});else air.set({rate:0})});
   const spin=pw.hvac/12*20*dt; fans.forEach(g=>g.rotation.y+=spin);
-  panelMat.emissiveIntensity=S.solar?Math.min(.35,pw.gen/Math.max(1,S.solar)*.35):0;
-  // sun by hour
-  const a=(h-6)/14*Math.PI, up=Math.max(0.05,Math.sin(a));
-  sun.position.set(Math.cos(a)*-60,10+70*up,-30);sun.intensity=0.25+0.75*up*(h>6&&h<20?1:0.2);hemi.intensity=0.45+0.4*up;
+  FL.grid.set({rate:Math.min(1,0.04+pw.grid/45)});FL.solar.set({rate:S.solar?Math.min(1,pw.gen/30):0});FL.exp.set({rate:Math.min(1,pw.exp/25)});
 }
-
-// ---------------- tags over the scene
-const tagsEl=$("tags");const tagEls=[0,1,2,3].map(()=>{const d=document.createElement("div");d.className="tag";tagsEl.appendChild(d);return d});
-const v3=new THREE.Vector3();
+// ---------------- light and weather: the real Auckland sun for the simulated month and minute; rain and cloud from the live feed when it answers
+const LIVEWX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.4,0.15],src:"",at:""},WX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.4,0.15]};
+function sky(dt){const d=Math.floor(simMin/1440),h=(simMin%1440)/60;stage.setClock(nzDate(2026,month,8+(d%7),h));
+  const k=Math.min(1,dt*1.2);["rain","cloud","fog","wet"].forEach(n=>WX[n]+=(LIVEWX[n]-WX[n])*k);WX.wind[0]+=(LIVEWX.wind[0]-WX.wind[0])*k;WX.wind[1]+=(LIVEWX.wind[1]-WX.wind[1])*k;stage.setWeather(WX)}
+// ---------------- time travel for the dial and the tour (always re-runs the model minute by minute, so the meters stay true)
+function advanceTo(target){while(simMin<target-1e-6){const s=Math.min(5,target-simMin);simMin+=s;step(s)}step(0)}
+function setHour(h){const d=Math.floor(simMin/1440),t=d*1440+h*60;if(t<simMin){today={kwh:0,cost:0,co2:0,grid:0,solar:0,exp:0};simMin=d*1440;step(0)}advanceTo(t);snapPeople();panels()}
+function jumpTo(wd,h){const w0=Math.floor(simMin/10080)*10080;let t=w0+wd*1440+h*60;if(t<=simMin)t+=10080;advanceTo(t);snapPeople();panels();drawWeek()}
+// ---------------- ghosts of another pattern at the desks that are empty now
+let CMP=null;
+function ghosts(){if(!CMP){ghostP.count=0;return}const wd=dayIdx%7,N=CMP==="everyone"?M.planned({...S,policy:"everyone"},wd):M.planned(S,1),n=dayPlan.n;let c=0;
+  for(let j=n;j<Math.min(N,120);j++){const d=deskPos(j);dummy.position.set(d.x,d.f*FG+0.35+0.6,d.z);dummy.rotation.set(0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();ghostP.setMatrixAt(c++,dummy.matrix)}
+  ghostP.count=c;ghostP.instanceMatrix.needsUpdate=true;CMP_N=N}
+let CMP_N=0;
+// ---------------- tags over the scene (a tag hides when its part is pinned or would cover the controls)
+const tagsEl=$("tags");const tagEls=[0,1,2,3,4].map(()=>{const d=document.createElement("div");d.className="tag";tagsEl.appendChild(d);return d});
+const v3=new THREE.Vector3(),TAGPICK=["Level 1","Level 2","Level 3","Heat pumps",null];
 function updateTags(){
-  const w=canvas.clientWidth,hh=canvas.clientHeight;
-  const pts=[[FW/2-1,0*FG+3.6,FD/2-1],[FW/2-1,1*FG+3.6,FD/2-1],[FW/2-1,2*FG+3.6,FD/2-1],[1,RY+3.4,-4]];
-  pts.forEach((p,i)=>{v3.set(...p).project(camera);const el=tagEls[i];
-    if(v3.z>1){el.hidden=true;return}el.hidden=false;el.style.left=((v3.x+1)/2*w)+"px";el.style.top=((1-v3.y)/2*hh)+"px";
+  const w=canvas.clientWidth,hh=canvas.clientHeight,pinned=new Set([...box.querySelectorAll(".tw-pins .tw-card")].map(e=>e.getAttribute("aria-label")));
+  const pts=[[FW/2-1,0*FG+3.9,FD/2-1],[FW/2-1,1*FG+3.9,FD/2-1],[FW/2-1,2*FG+3.9,FD/2-1],[1,RY+3.4,-4],[-2,0.6,FD/2+1.5]];
+  pts.forEach((p,i)=>{const el=tagEls[i];v3.set(...p);const s=stage.project(v3);
+    if(!s.visible||pinned.has(TAGPICK[i])||(i===4&&!CMP)||s.x<30||s.x>w-30||s.y<44||s.y>hh-30){el.hidden=true;return}el.hidden=false;el.style.left=s.x+"px";el.style.top=s.y+"px";
     if(i<3){const F=pw.floors[i];el.className="tag "+(F.mode==="Heating"?"heat":F.mode==="Cooling"?"cool":"");
       el.innerHTML=`<b>L${i+1}</b> · ${Math.round(F.people)} people<br><span class="m">${dayPlan.open[i]?F.mode:"Closed"} ${F.hvac.toFixed(1)} kW</span>`}
-    else el.innerHTML=`<b>Heat pumps</b> · ${pw.hvac.toFixed(1)} kW<br><span class="m">outside ${pw.T.toFixed(1)}°C</span>`});
+    else if(i===3)el.innerHTML=`<b>Heat pumps</b> · ${pw.hvac.toFixed(1)} kW<br><span class="m">outside ${pw.T.toFixed(1)}°C</span>`;
+    else{el.className="tag";el.innerHTML=`<b>Ghosts: ${CMP==="everyone"?"everyone in":"a full Tuesday"}</b><br><span class="m">${CMP_N} at desks · ${dayPlan.n} in today</span>`}});
+  const kept=[...box.querySelectorAll(".views,.hint,.tw-tools,.tw-dialwrap,.tw-tour:not([hidden]),.tw-following:not([hidden]),.badge")].map(e=>e.getBoundingClientRect());
+  [3,2,1,0,4].forEach(i=>{const el=tagEls[i];if(el.hidden)return;let r=el.getBoundingClientRect();const lx=parseFloat(el.style.left),half=r.width/2,nx=Math.min(w-half-6,Math.max(half+6,lx));if(nx!==lx){el.style.left=nx+"px";r=el.getBoundingClientRect()}
+    if(kept.some(k=>r.left<k.right+4&&r.right>k.left-4&&r.top<k.bottom+4&&r.bottom>k.top-4)){el.hidden=true;return}kept.push(r)});
 }
 
 // ---------------- panels
 const fmt=(n,d=0)=>n.toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
 function clockText(){const h=(simMin%1440)/60,hh=Math.floor(h),mm=Math.floor((h-hh)*60);const ap=hh>=12?"pm":"am",h12=((hh+11)%12)+1;
-  return `${DAYS[dayIdx%7]} ${h12}:${String(mm).padStart(2,"0")} ${ap} · ${SEASON[month]}`}
+  return `${DAYS[dayIdx%7]} ${h12}:${String(mm).padStart(2,"0")} ${ap} · ${MONTHN[month]} (${SEASON[month].toLowerCase()})`}
 function panels(){
   $("clock").textContent=clockText();
   $("kw").innerHTML=`${fmt(pw.total,1)}<small>kW</small>`;
@@ -763,27 +763,65 @@ $("season").onchange=e=>{month=+e.target.value;recomputeYear();drawCurve();drawW
 document.getElementById("km").oninput=commute;
 ["consolidate","sensors","setback"].forEach(k=>$(k).onchange=e=>{S[k]=e.target.checked;replan()});
 
-// ---------------- loop
-let last=performance.now(), sinceWeek=0, visible=true;
-try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
-function frame(now){
-  const dt=Math.min(0.1,(now-last)/1000);last=now;
-  if(visible){
-    if(playing){let left=dt*speed/60; // sim minutes
-      while(left>0){const s=Math.min(left,5);simMin+=s;step(s);left-=s}}
-    else step(0);
-    movePeople(dt);updateFx(dt);
-    if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.2)camGoal=null}
-    controls.update();renderer.render(scene,camera);updateTags();panels();
-    sinceWeek+=dt;if(sinceWeek>1){sinceWeek=0;drawWeek()}
-  }
-  requestAnimationFrame(frame);
-}
-resize();ensureDay();step(0);applyTheme();recomputeYear();buildPanels();
-// start with people already at their desks
-dayPlan.roster.forEach((p,i)=>{const st=stateAt(p,(simMin%1440)/60);const t=target(p,st);Object.assign(vis[i],{x:t.x,y:t.y,z:t.z,shown:st!=="away"})});
-requestAnimationFrame(frame);
+// ---------------- camera views, touch, tour, compare, sound and the time dial
+const VIEWS={all:{p:[58,30,62],t:[0,8,0]},0:{p:[24,16,30],t:[0,0,0]},1:{p:[24,22.5,30],t:[0,FG,0]},2:{p:[24,29,30],t:[0,2*FG,0]},roof:{p:[30,RY+19,34],t:[1,RY+1,0]}};stage.views=VIEWS;
+function setView(n){const v=VIEWS[n];if(!v)return;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===String(n)?"true":"false"));stage.flyTo(v)}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+function setMonth(m){month=(m+12)%12;$("season").value=month;recomputeYear();drawCurve();drawWeek();step(0)}
+function setS(p){Object.assign(S,p);$("policy").value=S.policy;$("teamRow").hidden=S.policy==="fixed";$("fixedRow").hidden=S.policy!=="fixed";$("team").value=S.team;$("teamV").textContent=S.team;
+  $("fixed").value=S.fixed;$("fixedV").textContent=S.fixed;["consolidate","sensors","setback"].forEach(k=>$(k).checked=!!S[k]);$("solar").value=S.solar;$("solarV").textContent=S.solar?S.solar+" kW":"none";buildPanels();replan();step(0)}
+function setCompare(id){const b=box.querySelector(`.tw-comparepop [data-c="${id||""}"]`);if(b)b.click();else CMP=id||null}
+const SIM="Simulated",pk=(obj,spec)=>stage.pickable(obj,Object.assign({truth:SIM},spec));
+[0,1,2].forEach(f=>pk(G.fl[f],{title:`Level ${f+1}`,hint:"people, lights, heating and cooling",panel:"#floors",view:VIEWS[f],value:()=>{const F=pw.floors[f];
+  return `${Math.round(F.people)} people · ${dayPlan.open[f]?F.mode:"Closed today"}<br><span class="m">heating and cooling ${F.hvac.toFixed(1)} kW · lights ${Math.round(F.lit*100)}%</span>`}}));
+pk(G.roof,{title:"Heat pumps",hint:"roof plant",panel:"#legend",view:VIEWS.roof,value:()=>`${pw.hvac.toFixed(1)} kW for heating, cooling and fans<br><span class="m">outside ${pw.T.toFixed(1)}°C (Auckland average for the month)</span>`});
+pk(pvTiles,{title:"Rooftop solar",hint:"set its size below",panel:"#solar",view:VIEWS.roof,value:()=>S.solar?`${pw.gen.toFixed(1)} kW now of ${S.solar} kW<br><span class="m">${fmt(today.solar)} kWh today · exporting ${pw.exp.toFixed(1)} kW</span>`:`<span class="m">no panels yet: add rooftop solar under Try a different week</span>`});
+pk(kiosk,{title:"Street connection",hint:"power from the grid",panel:"#kw",view:{p:[-2,12,34],t:[-17,1,10]},value:()=>`${pw.grid.toFixed(1)} kW from the grid now<br><span class="m">$${fmt(today.cost)} and ${fmt(today.co2,1)} kg CO₂-e today</span>`,source:"Price 23c/kWh (2024 average) · carbon 0.0846 kg/kWh (MfE)"});
+pk(lift,{title:"Lifts and core",hint:"the load that never sleeps",panel:"#legend",value:()=>`${pw.base.toFixed(1)} kW base load, day and night<br><span class="m">comms room, lifts, fridges, standby, security</span>`});
+// guided tour: six stops; stop four is this twin's signature, a Friday building lit and conditioned for a handful
+let tourSave=null,friKW=0;
+const saveTour=()=>{if(!tourSave)tourSave={S:{...S},month}};
+const floorsWord=n=>["no floors","one floor","two floors","all three floors"][n];
+stage.tour.set([
+  {title:"Tuesday morning",view:"all",do:()=>{saveTour();jumpTo(1,9.5)},pin:()=>G.fl[1].userData.twPick,get text(){return `Tuesday, 9:30am. <b>${dayPlan.n} people</b> are coming in today on the ${M.POLICIES[S.policy].name.toLowerCase()} pattern. Walking figures are pink, people in meetings blue; the air in each floor's ring duct shows heating (red) or cooling (blue).`}},
+  {title:"Where the power goes",view:"roof",pin:()=>G.roof.userData.twPick,get text(){return `Right now <b>${fmt(pw.total,1)} kW</b>: base ${fmt(pw.base,1)}, lights ${fmt(pw.light,1)}, equipment ${fmt(pw.plug,1)} and heating and cooling ${fmt(pw.hvac,1)}. The heat-pump fans on the roof spin with their load.`}},
+  {title:"A summer afternoon",view:{p:[58,24,30],t:[0,6,0]},do:()=>{setMonth(0);jumpTo(2,17)},pin:()=>G.fl[2].userData.twPick,get text(){const n=pw.floors.filter(F=>F.mode==="Cooling").length;return `January, 5pm. The real Auckland sun is low in the west and rakes across the floors between the mullions. With people, lights and sun all adding heat, <b>${floorsWord(n)}</b> ${n===1?"is":"are"} cooling.`}},
+  {title:"Friday: a building for twenty",view:"all",do:()=>{setS({policy:"hybrid",team:100,consolidate:false,sensors:false,setback:false});setMonth(tourSave?tourSave.month:9);jumpTo(4,14.5);setCompare("everyone");friKW=pw.total},get text(){return `Friday, 2:30pm. <b>${dayPlan.n} people</b> are in, but all three floors are lit and conditioned: <b>${fmt(pw.total,1)} kW</b>. The ghosts sit at the ${Math.max(0,M.planned({...S,policy:"everyone"},4)-dayPlan.n)} desks that would be full if everyone came in.`}},
+  {title:"Close the empty floors",view:"all",do:()=>{setS({consolidate:true,sensors:true})},pin:()=>G.fl[0].userData.twPick,get text(){const open=dayPlan.open.filter(Boolean).length;return `Seat everyone on ${floorsWord(open)} and let sensors follow them: the other floors go dark and their air stops. <b>${fmt(pw.total,1)} kW</b> now, against ${fmt(friKW,1)} a moment ago.`}},
+  {title:"Try your own week",view:"all",do:()=>{setCompare(null);if(tourSave){setS(tourSave.S);setMonth(tourSave.month);tourSave=null}},text:"The controls below set who comes in and how the building responds. The curve shows the fixed cost of an open building, and the week shows each day's energy. Turn the dial to change the month or the time."}
+],"A week in the office");
+stage.tour.onEnd=()=>{if(tourSave){setCompare(null);setS(tourSave.S);setMonth(tourSave.month);tourSave=null}};
+stage.compare({label:"Compare",options:[{id:"everyone",label:"Everyone in",short:"everyone",note:"Ghosts at the desks that would be full"},{id:"tue",label:"A full Tuesday",short:"Tue",note:"This pattern on its busiest day"}],onChange:id=>{CMP=id||null}});
+// sound (off until asked for): the heat pumps' hum, the room's murmur, wind and rain
+stage.sound.layer("hp",{type:"hum",freq:64,gain:0.16}).layer("room",{type:"chatter",gain:0.12}).layer("wind",{type:"wind",gain:0.08}).layer("rain",{type:"rain",gain:0.16});
+function sounds(){const s=stage.sound;if(!s.on)return;s.set("hp",Math.min(1,pw.hvac/14));s.set("room",Math.min(1,(floorPeople[0]+floorPeople[1]+floorPeople[2])/90));s.set("wind",Math.min(1,Math.hypot(...WX.wind)*0.8));s.set("rain",WX.rain)}
+// the time dial: outer ring = the year (bar = a Wednesday's energy that month), inner hand = the simulated time; tap the centre to pause
+let mvKey="",mvVals=new Array(12).fill(1);
+const monthVals=()=>{const k=JSON.stringify(S);if(k!==mvKey){mvKey=k;mvVals=[...Array(12).keys()].map(m=>M.dayEnergy(S,m,2,M.planned(S,2)))}return mvVals};
+stage.dial({months:{labels:MONTHN,values:monthVals,get:()=>month,set:m=>setMonth(m),title:"Month (bar length is a Wednesday's energy)"},
+  day:{get:()=>(simMin%1440)/60,set:h=>setHour(h),held:()=>!playing,title:"Simulated time of day",marks:[{h:6,c:"var(--rose)",t:"Heating and cooling start (6:30 on the tight schedule)"},{h:8,c:"var(--ink)",t:"People start arriving"},{h:21,c:"var(--rose)",t:"Heating and cooling stop (6:30pm on the tight schedule)"}]},
+  onCenter:()=>$("pause").click()});
+// the badge says what is simulated and what is live
+const badge=box.querySelector(".badge");let badgeTxt="";
+function badgeNow(){const t="SIMULATED"+(LIVEWX.src?" · WEATHER LIVE, AUCKLAND":"");if(t!==badgeTxt){badgeTxt=t;badge.textContent=t;badge.title=LIVEWX.src?`Rain, cloud and wind from ${LIVEWX.src}${LIVEWX.at?", "+LIVEWX.at:""}. People, power and temperatures are simulated.`:"A fictional office, simulated from rules of thumb"}}
+// ---------------- loop (the stage draws; this moves the model, people, air, light and labels)
+let sinceWeek=0,panelT=0,tagT=0;
+stage.onFrame(dt=>{
+  if(playing){let left=dt*speed/60;while(left>0){const s=Math.min(left,5);simMin+=s;step(s);left-=s}}else step(0);
+  movePeople(dt);updateFx(dt);sky(dt);ghosts();sounds();badgeNow();
+  tagT+=dt;if(tagT>0.2){tagT=0;updateTags()}panelT+=dt;if(panelT>0.12){panelT=0;panels()}
+  sinceWeek+=dt;if(sinceWeek>1){sinceWeek=0;drawWeek()}
+});
+if((box.clientWidth||800)<600)VIEWS.all={p:[40,24,46],t:[0,8,0]};// a phone: closer, so the floors read
+ensureDay();step(0);recomputeYear();buildPanels();snapPeople();
+stage.start(VIEWS.all);sky(1);updateFx(1);updateTags();panels();
+window.__office=Object.assign(window.__office||{},{S,setView,jump:jumpTo,hour:setHour,month:setMonth,set:setS,compare:setCompare,tour:i=>stage.tour.start(i||0),
+  pause:on=>{if(!!on===playing)$("pause").click()},state:()=>({day:DAYS[dayIdx%7],hour:(simMin%1440)/60,month,people:dayPlan.n,kw:pw.total,floors:pw.floors.map(F=>({people:F.people,mode:F.mode,kw:F.hvac})),today:{...today}}),
+  setLiveWeather:(v,src)=>{if(!v)return;const mm=+v.rainMm||0;LIVEWX.rain=mm<=0?0:Math.min(1,0.25+mm*0.35);LIVEWX.cloud=Math.min(1,(+v.cloudPct||0)/100);LIVEWX.wet=Math.max(LIVEWX.rain,(+v.today?.rainMm||0)>2?0.35:0);
+    const s=Math.min(1,(+v.windKmh||0)/40);LIVEWX.wind=[0.15+0.6*s,0.05+0.25*s];LIVEWX.fog=(+v.humidity||0)>96&&(+v.windKmh||0)<6?0.35:0;LIVEWX.src=src||"Open-Meteo";LIVEWX.at=v.at?new Date(v.at).toLocaleTimeString("en-NZ",{hour:"numeric",minute:"2-digit"}):""},
+  stage});
 })();
+
 </script>
 
 <script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="office"></script><script src="/lab/navigation.js" defer></script></body></html>

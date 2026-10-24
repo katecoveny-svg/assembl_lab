@@ -14,6 +14,9 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 export { THREE, OrbitControls, RoundedBoxGeometry };
+// keep glows, glass, rings, steam and ghosts out of the ambient-occlusion buffer (the stock pass only skips points and lines)
+GTAOPass.prototype.overrideVisibility = function () { const cache = this._visibilityCache; this.scene.traverse(o => { cache.set(o, o.visible); const m = o.material;
+  if (o.isPoints || o.isLine || o.isSprite || (m && !Array.isArray(m) && m.transparent && m.depthWrite === false)) o.visible = false; }); };
 
 export const PLACES = {
   auckland: [-36.85, 174.76], hamilton: [-37.79, 175.28], wellington: [-41.29, 174.78], christchurch: [-43.53, 172.64],
@@ -141,7 +144,7 @@ function makeMaterials(look) {
 }
 function ghostMaterial(color = 0x8E6E88) {
   return new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uColor: { value: new THREE.Color(color) }, uOpacity: { value: 0.5 } },
-    vertexShader: 'varying vec3 vN;varying vec3 vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    vertexShader: 'varying vec3 vN;varying vec3 vV;void main(){vec4 p=vec4(position,1.0);vec3 n=normal;\n#ifdef USE_INSTANCING\np=instanceMatrix*p;n=mat3(instanceMatrix)*n;\n#endif\nvec4 mv=modelViewMatrix*p;vN=normalize(normalMatrix*n);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
     fragmentShader: 'uniform vec3 uColor;uniform float uOpacity;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.2);gl_FragColor=vec4(uColor,(0.12+0.88*f)*uOpacity);}' });
 }
 
@@ -204,7 +207,7 @@ function makeRain(stage, count, extent) {
 export function createStage(o) {
   const canvas = o.canvas, box = o.box || canvas.parentElement, extent = o.extent || 50;
   box.classList.add('tw');
-  const place = Array.isArray(o.place) ? o.place : (PLACES[o.place] || PLACES.nz);
+  const place = (Array.isArray(o.place) ? o.place : (PLACES[o.place] || PLACES.nz)).slice();
   const posterMode = params.get('poster') === '1';
   if (posterMode) document.documentElement.classList.add('tw-poster');
   let renderer = null;
@@ -390,8 +393,15 @@ export function createStage(o) {
   function findSpec(o3) { while (o3) { if (o3.userData && o3.userData.twPick) return o3.userData.twPick; o3 = o3.parent; } return null; }
   function hitTest(cx, cy) {
     const r = canvas.getBoundingClientRect(); ndc.set((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(ndc, camera); const objs = picks.filter(p => p.obj.visible !== false && !p.disabled).map(p => p.obj);
-    const hit = ray.intersectObjects(objs, true).find(h => h.object.visible); return hit ? findSpec(hit.object) : null;
+    ray.setFromCamera(ndc, camera);
+    // the nearest solid thing under the pointer wins, so a part hidden behind a wall can't be picked through it
+    const hits = ray.intersectObject(scene, true);
+    for (const h of hits) { const o = h.object; if (!o.isMesh) continue;
+      let vis = true; for (let q = o; q; q = q.parent) if (q.visible === false) { vis = false; break; } if (!vis) continue;
+      const s = findSpec(o); if (s && !s.disabled) return s;
+      const m = o.material; if (o.isInstancedMesh || !m || Array.isArray(m) || m.isShaderMaterial || (m.transparent && m.opacity < 0.5)) continue;
+      return null; }
+    return null;
   }
   const hoverEl = $u('.tw-hover');
   canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; lastMove = [e.clientX, e.clientY]; });
@@ -449,15 +459,17 @@ export function createStage(o) {
     start(i = 0) { if (!tour.steps.length) return; tour.on = true; closePops(); tourEl.hidden = false; uiEl.classList.add('tw-touring'); tour.go(i); },
     go(i) { tour.i = clamp(i, 0, tour.steps.length - 1); const s = tour.steps[tour.i];
       try { s.do && s.do(); } catch (e) { console.warn('tour step', e); }
-      if (s.view) flyTo(typeof s.view === 'string' ? stage.views[s.view] : s.view, { dur: s.dur || 2.2 });
-      while (pinned.length) unpin(pinned[0].spec); clearTimeout(tour.pt); if (s.pin) tour.pt = setTimeout(() => { if (tour.on) pin(typeof s.pin === 'function' ? s.pin() : s.pin); }, calm ? 0 : 1300);
+      if (s.view) flyTo(typeof s.view === 'string' ? stage.views[s.view] : s.view, { dur: s.dur || 2.2, exact: !!s.exact });
+      // the tour's own cards: one per stop, and none on a phone, where the note itself is the card
+      while (pinned.length) unpin(pinned[0].spec); clearTimeout(tour.pt);
+      if (s.pin && W >= 640) tour.pt = setTimeout(() => { if (tour.on) pin(typeof s.pin === 'function' ? s.pin() : s.pin); }, calm ? 0 : 1300);
       const n = tour.steps.length;
       tourEl.innerHTML = `<div class="tw-tour-h"><span>${esc(tour.title)} · ${tour.i + 1} of ${n}</span><button type="button" class="tw-x" data-t="end" aria-label="End the tour">×</button></div>
         <b class="tw-tour-t">${esc(s.title)}</b><p>${s.text}</p>
         <div class="tw-tour-f"><span class="tw-dots" aria-hidden="true">${tour.steps.map((_, k) => `<i class="${k === tour.i ? 'on' : k < tour.i ? 'done' : ''}"></i>`).join('')}</span>
         <button type="button" class="tw-btn" data-t="back" ${tour.i ? '' : 'disabled'}>Back</button><button type="button" class="tw-btn tw-primary" data-t="next">${tour.i === n - 1 ? 'Finish' : 'Next'}</button></div>`;
       const nb = tourEl.querySelector('[data-t="next"]'); nb && nb.focus({ preventScroll: true }); },
-    end() { tour.on = false; tourEl.hidden = true; uiEl.classList.remove('tw-touring'); const s = tour.onEnd; s && s(); btn('tour').focus({ preventScroll: true }); }
+    end() { tour.on = false; clearTimeout(tour.pt); while (pinned.length) unpin(pinned[0].spec); tourEl.hidden = true; uiEl.classList.remove('tw-touring'); const s = tour.onEnd; s && s(); btn('tour').focus({ preventScroll: true }); }
   };
   btn('tour').onclick = () => tour.start(0);
   tourEl.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (!b) return; const a = b.dataset.t;
@@ -466,7 +478,9 @@ export function createStage(o) {
 
   // ---- compare: a translucent ghost of another moment or choice over the live scene
   const cmp = { opts: [], cur: null, onChange: null, label: 'Compare' };
-  function compare(opt) { cmp.opts = opt.options || []; cmp.onChange = opt.onChange; cmp.label = opt.label || 'Compare'; btn('compare').hidden = !cmp.opts.length; drawCompare(); }
+  function compare(opt) { cmp.opts = opt.options || []; cmp.onChange = opt.onChange; cmp.label = opt.label || 'Compare'; btn('compare').hidden = !cmp.opts.length; drawCompare(); return compareApi; }
+  // set the ghost from code (a tour stop, an API call); the button and menu follow
+  const compareApi = { set(id, quiet) { cmp.cur = id == null ? null : String(id); drawCompare(); if (!quiet && cmp.onChange) cmp.onChange(cmp.cur); return compareApi; }, get: () => cmp.cur };
   function drawCompare() { const pop = $u('.tw-comparepop'); btn('compare').textContent = cmp.cur ? `${cmp.label}: ${cmp.opts.find(x => x.id === cmp.cur)?.short || 'on'}` : cmp.label;
     btn('compare').classList.toggle('tw-on', !!cmp.cur);
     pop.innerHTML = `<div class="tw-pop-h">${esc(opt_hint())}</div>` + [{ id: null, label: 'No ghost', note: 'Just the live scene' }, ...cmp.opts].map(x => `<button type="button" class="tw-item" data-c="${x.id || ''}" aria-pressed="${cmp.cur === x.id}"><b>${esc(x.label)}</b>${x.note ? `<span>${esc(x.note)}</span>` : ''}</button>`).join(''); }
@@ -509,20 +523,20 @@ export function createStage(o) {
   // ---- the time dial: an outer season wheel (12 months, bar = that month's load) and an inner 24-hour ring you can turn
   let dialObj = null;
   function dial(d) {
-    const wrap = $u('.tw-dialwrap'), S = 120, C = S / 2, R0 = 37, RL = 17, RD = 27;
+    const NM = d.months ? d.months.labels.length : 12, wrap = $u('.tw-dialwrap'), S = 120, C = S / 2, R0 = 37, RL = 17, RD = 27;
     const pol = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
     const arc = (r1, r2, a1, a2) => { const [x1, y1] = pol(r2, a1), [x2, y2] = pol(r2, a2), [x3, y3] = pol(r1, a2), [x4, y4] = pol(r1, a1), l = a2 - a1 > Math.PI ? 1 : 0;
       return `M${x1} ${y1}A${r2} ${r2} 0 ${l} 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 ${l} 0 ${x4} ${y4}Z`; };
     wrap.innerHTML = `<svg class="tw-dial" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}">
-      ${d.months ? `<g class="tw-months" role="slider" tabindex="0" aria-label="${esc(d.months.title || 'Month')}" aria-valuemin="0" aria-valuemax="11"></g>` : ''}
-      ${d.day ? `<circle class="tw-dtrack" cx="${C}" cy="${C}" r="${RD}"/><g class="tw-dmarks"></g><g class="tw-dhand" role="slider" tabindex="0" aria-label="${esc(d.day.title || 'Time of day')}" aria-valuemin="0" aria-valuemax="24"><line x1="${C}" y1="${C}" x2="${C}" y2="${C - RD + 3}"/><circle cx="${C}" cy="${C - RD}" r="5"/></g>` : ''}
+      ${d.months ? `<g class="tw-months" role="slider" tabindex="0" aria-label="${esc(d.months.title || 'Month')}" aria-valuemin="0" aria-valuemax="${NM - 1}"></g>` : ''}
+      ${d.day ? `<circle class="tw-dtrack" cx="${C}" cy="${C}" r="${RD}"/><g class="tw-dmarks"></g><g class="tw-dhand" role="slider" tabindex="0" aria-label="${esc(d.day.title || 'Time of day')}" aria-valuemin="0" aria-valuemax="24"><line x1="${C}" y1="${C - 15}" x2="${C}" y2="${C - RD + 3}"/><circle cx="${C}" cy="${C - RD}" r="5"/></g>` : ''}
       <text class="tw-dt1" x="${C}" y="${C + 2}" text-anchor="middle"></text><text class="tw-dt2" x="${C}" y="${C + 14}" text-anchor="middle"></text></svg>`;
     const svg = wrap.querySelector('svg'), mg = svg.querySelector('.tw-months'), hand = svg.querySelector('.tw-dhand'), t1 = svg.querySelector('.tw-dt1'), t2 = svg.querySelector('.tw-dt2');
     if (d.day && d.day.marks) svg.querySelector('.tw-dmarks').innerHTML = d.day.marks.map(m => { const a = m.h / 24 * Math.PI * 2, [x1, y1] = pol(RD - 4, a), [x2, y2] = pol(RD + 4, a);
       return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${m.c || 'var(--live)'}"><title>${esc(m.t || '')}</title></line>`; }).join('');
     let lastKey = '';
     const drawMonths = () => { if (!mg) return; const vals = d.months.values(), mx = Math.max(...vals, 1e-9), cur = d.months.get();
-      mg.innerHTML = vals.map((v, i) => { const a1 = i / 12 * Math.PI * 2 + 0.035, a2 = (i + 1) / 12 * Math.PI * 2 - 0.035, len = 3 + v / mx * RL;
+      mg.innerHTML = vals.map((v, i) => { const gap = Math.min(0.035, Math.PI / NM * 0.2), a1 = i / NM * Math.PI * 2 + gap, a2 = (i + 1) / NM * Math.PI * 2 - gap, len = 3 + v / mx * RL;
         return `<path d="${arc(R0, R0 + len, a1, a2)}" class="${i === cur ? 'on' : ''}"><title>${esc(d.months.labels[i])}</title></path>`; }).join('');
       mg.setAttribute('aria-valuenow', cur); mg.setAttribute('aria-valuetext', d.months.labels[cur]); };
     const update = () => {
@@ -537,13 +551,13 @@ export function createStage(o) {
     };
     let drag = null;
     const angAt = e => { const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * S - C, y = (e.clientY - r.top) / r.height * S - C; return { a: (Math.atan2(x, -y) + Math.PI * 2) % (Math.PI * 2), r: Math.hypot(x, y) }; };
-    const apply = (mode, a) => { if (mode === 'm' && d.months) { const i = Math.floor(a / (Math.PI * 2) * 12) % 12; if (i !== d.months.get()) d.months.set(i); }
+    const apply = (mode, a) => { if (mode === 'm' && d.months) { const i = Math.floor(a / (Math.PI * 2) * NM) % NM; if (i !== d.months.get()) d.months.set(i); }
       if (mode === 'h' && d.day) d.day.set(a / (Math.PI * 2) * 24); update(); };
     if (d.onCenter) wrap.title = `${d.months ? 'Drag the outer ring to change the month. ' : ''}Drag the hand to set the time. Tap the centre to hold or release the clock.`;
     svg.addEventListener('pointerdown', e => { const p = angAt(e); if (d.onCenter && p.r < RD - 9) { d.onCenter(); lastKey = ''; update(); e.preventDefault(); return; } drag = p.r > R0 - 2 && d.months ? 'm' : d.day ? 'h' : 'm'; svg.setPointerCapture(e.pointerId); apply(drag, p.a); e.preventDefault(); });
     svg.addEventListener('pointermove', e => { if (drag) apply(drag, angAt(e).a); });
     svg.addEventListener('pointerup', () => drag = null);
-    mg && mg.addEventListener('keydown', e => { const k = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 0; if (!k) return; e.preventDefault(); d.months.set((d.months.get() + k + 12) % 12); update(); });
+    mg && mg.addEventListener('keydown', e => { const k = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 0; if (!k) return; e.preventDefault(); d.months.set((d.months.get() + k + NM) % NM); update(); });
     hand && hand.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && d.onCenter) { e.preventDefault(); d.onCenter(); lastKey = ''; update(); return; } const k = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 0; if (!k) return; e.preventDefault(); d.day.set(((d.day.get() + k) % 24 + 24) % 24); update(); });
     dialObj = { update }; update(); return dialObj;
   }
@@ -589,7 +603,8 @@ export function createStage(o) {
     add(obj, opt = {}) { obj.traverse(m => { if (m.isMesh) { m.castShadow = opt.cast !== false; m.receiveShadow = opt.receive !== false; } }); (opt.parent || root).add(obj); return obj; },
     mesh(g, mat, pos, opt = {}) { const m = new THREE.Mesh(g, mat); if (pos) m.position.set(...pos); if (opt.rot) m.rotation.set(...opt.rot); if (opt.scale) m.scale.set(...opt.scale); return stage.add(m, opt); },
     flow(opt) { const f = makeFlow(stage, opt); flows.push(f); return f; },
-    ghost, ghostMaterial, compare, pickable, pin, unpin, focusOn, flyTo, follow: followObj, tour, sound, dial,
+    ghost, ghostMaterial, compare, compareSet: (id, quiet) => compareApi.set(id, quiet), refreshExplore, pickable, pin, unpin, focusOn, flyTo, follow: followObj, tour, sound, dial,
+    setPlace(pl) { const v = Array.isArray(pl) ? pl : PLACES[pl]; if (v) { place[0] = v[0]; place[1] = v[1]; setClock(clock.date); } },
     setClock, setWeather, lightNow, applyTheme, resize,
     setViews(v, sel = '[data-view]') { stage.views = v; document.querySelectorAll(sel).forEach(b => { b.addEventListener('click', () => { document.querySelectorAll(sel).forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); flyTo(v[b.dataset.view]); }); }); },
     onFrame(fn) { frameFns.push(fn); return stage; },

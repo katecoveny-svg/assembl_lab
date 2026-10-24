@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fpi,foodprices"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fpi,foodprices,weather"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>Supermarket Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -48,7 +48,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 .hour{display:flex;align-items:center;gap:8px;font:500 11px var(--mono);color:var(--rose)}
 .hour input{width:150px}
 .main{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(290px,1fr);gap:14px}
-.stagebox{position:relative;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,var(--sky-day-1),var(--sky-day-2));min-height:440px}
+.stagebox{position:relative;border-radius:14px;overflow:hidden;background:#EAE4DC;min-height:440px}
 #scene{display:block;width:100%;min-height:440px;touch-action:none}
 .views{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px);z-index:2}
 .views button{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 10px;font:500 11.5px var(--mono);cursor:pointer}
@@ -58,6 +58,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 .tag::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:7px;background:var(--rose);opacity:.6}
 .badge{position:absolute;right:12px;bottom:12px;font:500 10.5px var(--mono);letter-spacing:.06em;color:var(--rose);background:var(--paper);border:1px solid var(--rose);border-radius:4px;padding:2px 6px}
 .key{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - 120px);font:10.5px var(--mono);color:var(--ink);background:color-mix(in srgb,var(--paper) 90%,transparent);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.tw .key{max-width:calc(100% - 300px)}
+.tw-dial .tw-dhand line{opacity:0}
+html.tw-poster .key{display:none}
 .key span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:var(--k)}
 .side{display:grid;gap:10px;align-content:start;min-width:0}
 .card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper);min-width:0}
@@ -217,10 +220,10 @@ details.vz-more[open]>summary{margin-bottom:8px}
 
   <div class="main">
     <div class="stagebox" id="stagebox">
-      <canvas id="scene" aria-label="3D view of a supermarket floor with aisles, fresh produce, bakery, chillers along the back wall, checkouts with queues, and a loading dock"></canvas>
+      <canvas id="scene" aria-label="3D model of a supermarket floor with aisles, fresh produce, bakery, chillers along the back wall, checkouts with queues, a loading dock and the refrigeration plant. Hover or tap a part for its live number; Explore lists every part."></canvas>
       <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="store" aria-pressed="true">Whole store</button><button type="button" data-view="checkouts">Checkouts</button><button type="button" data-view="fresh">Fresh and waste</button><button type="button" data-view="chillers">Chillers</button></div>
       <div id="tags"></div>
-      <div class="key" aria-hidden="true"><span style="--k:var(--live)">waiting over 3 min · reduced stock</span><span style="--k:var(--coldair)">cold air leaving open chillers</span><span style="--k:var(--good)">lane open · rescued food</span></div>
+      <div class="key" aria-hidden="true"><span style="--k:var(--alert)">waited over 3 min</span><span style="--k:var(--live)">reduced to clear</span><span style="--k:var(--coldair)">cold air leaving open chillers</span><span style="--k:var(--good)">lane open · rescued food</span></div>
       <div class="badge">SIMULATED</div>
     </div>
     <div class="side">
@@ -364,7 +367,7 @@ function draw(j){const want=(document.documentElement.dataset.feeds||"").split("
   $("assemblLiveItems").innerHTML=out.join("");el.hidden=false;
   $("assemblLiveNote").textContent=`Public data fetched ${new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"})}, key-less sources only. Live means now; Latest published means the newest official release. The simulation's own figures are labelled Simulated.`+(missing.length?` Not answering right now: ${missing.join(", ")}.`:"");
   try{HOOK(j,id=>ok(j,id),{fmt,esc,sign})}catch(err){console.warn("live hook",err)}}
-function HOOK(j,ok,u){const f=ok("fpi");if(f){const g=Object.fromEntries((f.values.groups||[]).map(x=>[x.name,x.annualPct]));const el=document.getElementById("fpiRow");if(el)el.innerHTML=`${u.sign(f.value)}% in the year to ${u.esc(f.period)}; grocery ${u.sign(g["Grocery food"])}%, meat ${u.sign(g["Meat, poultry and fish"])}%, fruit and veg ${u.sign(g["Fruit and vegetables"])}% <em style="font-style:normal;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px">Latest published</em>`}}
+function HOOK(j,ok,u){const w=ok("weather");if(w&&window.__store&&window.__store.setLiveWeather)window.__store.setLiveWeather(w.values,w.source&&w.source.name);const f=ok("fpi");if(f){const g=Object.fromEntries((f.values.groups||[]).map(x=>[x.name,x.annualPct]));const el=document.getElementById("fpiRow");if(el)el.innerHTML=`${u.sign(f.value)}% in the year to ${u.esc(f.period)}; grocery ${u.sign(g["Grocery food"])}%, meat ${u.sign(g["Meat, poultry and fish"])}%, fruit and veg ${u.sign(g["Fruit and vegetables"])}% <em style="font-style:normal;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 5px">Latest published</em>`}}
 window.addEventListener("assembl:live",e=>{try{draw(e.detail)}catch(err){console.warn("live strip",err)}});
 if(window.__assemblLive)draw(window.__assemblLive);
 })();
@@ -375,8 +378,8 @@ if(window.__assemblLive)draw(window.__assemblLive);
   </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/1/stage.css">
 <script>
 // A generic, fictional mid-size New Zealand suburban supermarket, simulated minute by minute.
 // Deterministic: every day is generated from a seeded RNG, so the same settings always give the same numbers.
@@ -648,7 +651,8 @@ const STORE = (() => {
 })();
 
 </script>
-<script>
+<script type="module">
+import {THREE,createStage,nzDate,clamp,calm} from "/assets/twin/1/stage.js";
 (()=>{
 // ---- vz: small visual-summary kit (HTML bars, 100% stacks, truth chips, table disclosures, one tooltip). No libraries.
 // Every mark carries data-tip (read with textContent, never innerHTML) and the numbers stay in visible labels or the table behind "Show the table".
@@ -716,39 +720,43 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const hLabel=h=>{const hh=Math.floor(h)%24,mm=Math.round((h-Math.floor(h))*60);return `${((hh+11)%12)+1}${mm?":"+String(mm).padStart(2,"0"):""}${hh>=12?"pm":"am"}`};
 let dow=4,d=K.newDay(S,dow),speed=3,playing=!matchMedia("(prefers-reduced-motion: reduce)").matches,acc=0;
 
-// ---------------- renderer
+// ---------------- stage: the shared twin stage (/assets/twin/1) draws the store as a lit maquette under Auckland's real sun
 const canvas=$("scene"),box=$("stagebox");
-const LITE=/[?&]lite\b/.test(location.search); // test runs only: cheaper rendering in software GL
-const renderer=new THREE.WebGLRenderer({canvas,antialias:!LITE,alpha:true});renderer.setPixelRatio(LITE?1:Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0,0);
-const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,0.5,600);
-const controls=new THREE.OrbitControls(camera,canvas);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.46;controls.minDistance=8;controls.maxDistance=150;controls.enablePan=false;
+const LITE=/[?&]lite\b/.test(location.search); // kept for old test links; ?quality=low is the stage's own switch
+function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.68));canvas.style.height=Math.round(h)+"px"}
+sizeCanvas();
+const stage=createStage({id:"store",canvas,box,place:"auckland",extent:42,tableY:-0.81,controls:{minDistance:8,maxDistance:150},ao:{radius:1.1},tilt:2.4,tiltBand:0.24,
+  onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
+const scene=stage.root,camera=stage.camera,controls=stage.controls,geo=stage.geo,SM=stage.M;
 const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.9},o));
-const M={plinth:std(),ground:std(),floor:std(),wall:std(),asphalt:std(),yard:std(),case:std({roughness:.55}),cap:new THREE.MeshBasicMaterial(),line:new THREE.LineBasicMaterial({transparent:true,opacity:.45}),
-  white:std({color:0xF4F1EF,roughness:.6}),steel:std({color:0xAEB4BA,roughness:.35,metalness:.55}),dark:std({color:0x3A3438,roughness:.6}),belt:std({color:0x2E2A2D,roughness:.7}),
-  glass:std({color:0xCFE4EE,transparent:true,opacity:.3,roughness:.08,metalness:.1,depthWrite:false}),door:std({color:0xCFE4EE,transparent:true,opacity:0,roughness:.08,metalness:.1,depthWrite:false}),
+// maquette card for the building and plinth (colours come from the stage's light and dark looks); colour stays for stock, people and things that carry a number
+const M={plinth:SM.card2,ground:SM.felt,floor:std({roughness:.85}),wall:SM.card,asphalt:SM.road,yard:std({roughness:.95}),case:std({roughness:.55}),cap:std({roughness:.9}),line:new THREE.LineBasicMaterial({transparent:true,opacity:.75}),
+  white:std({color:0xF4F1EF,roughness:.6}),steel:std({color:0xAEB4BA,roughness:.35,metalness:.55}),dark:std({color:0x3A3438,roughness:.6}),belt:std({color:0x34373D,roughness:.7}),
+  glass:new THREE.MeshPhysicalMaterial({color:0xCFE4EE,transparent:true,opacity:.3,roughness:.08,metalness:0,clearcoat:1,depthWrite:false}),door:new THREE.MeshPhysicalMaterial({color:0xCFE4EE,transparent:true,opacity:0,roughness:.08,metalness:0,clearcoat:1,depthWrite:false}),
   frame:std({color:0x8C949B,roughness:.4,metalness:.4,transparent:true,opacity:0}),canopy:std({color:0xffffff,emissive:0xEAF4FA,emissiveIntensity:.35,roughness:.5}),
-  person:std({color:0xffffff}),head:std(),staff:std({color:0x492B3E}),trolley:std({color:0xD5DADF,metalness:.05,roughness:.45,transparent:true,opacity:.92}),wood:std({color:0xB89C7E}),
+  person:std({color:0xffffff,roughness:.8}),head:std({roughness:.8}),staff:std({color:0x492B3E,roughness:.7}),trolley:std({color:0xD5DADF,metalness:.2,roughness:.4,transparent:true,opacity:.92}),wood:SM.timber,
   oven:std({color:0x6A6266,roughness:.45,metalness:.3}),strip:std({color:0xffffff,emissive:0xFFF1DC,emissiveIntensity:0}),lampHead:std({color:0xffffff,emissive:0xFFE2B8,emissiveIntensity:0}),
   truck:std({color:0xEDEAE6,roughness:.5}),cab:std({color:0x6E7F8C,roughness:.4}),van:std({color:0xF2F0EC,roughness:.5}),bin:std({color:0x56606A,roughness:.6}),binFill:std({color:0x8A7A6E})};
-const hemi=new THREE.HemisphereLight(0xffffff,0xa99ca4,.6);scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff1dd,.65);sun.castShadow=true;sun.shadow.mapSize.set(LITE?1024:2048,LITE?1024:2048);Object.assign(sun.shadow.camera,{left:-44,right:44,top:44,bottom:-44,near:1,far:200});sun.shadow.bias=-0.0005;scene.add(sun,sun.target);
-const storeLight=new THREE.DirectionalLight(0xFFE6C8,0);storeLight.position.set(2,30,6);scene.add(storeLight); // the store's own lights after dark (no shadows)
+// the store's own lights after dark (no shadows); the sun, sky and shadows are the stage's
+const storeLight=new THREE.DirectionalLight(0xFFE6C8,0);storeLight.position.set(2,30,6);stage.scene.add(storeLight);
 function add(m,cast=true,recv=true){m.castShadow=cast;m.receiveShadow=recv;scene.add(m);return m}
-function boxM(w,h,d_,mat,x,y,z,cast=true,parent){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d_),mat);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;(parent||scene).add(m);return m}
+// rounded edges on anything thick enough to catch the light; thin shelves stay crisp
+const RB=(w,h,d_)=>Math.min(w,h,d_)>=0.3?geo.rbox(w,h,d_):new THREE.BoxGeometry(w,h,d_);
+function boxM(w,h,d_,mat,x,y,z,cast=true,parent){const m=new THREE.Mesh(RB(w,h,d_),mat);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;(parent||scene).add(m);return m}
 const FY=0.3,FZ=3.9,BZ=-12.2;
 
 // ---------------- diorama: plinth, grass, car park, service yard
 const PC=[0,2];
 add(new THREE.Mesh(new THREE.CylinderGeometry(41,41.4,0.8,110),M.plinth),false,true).position.set(PC[0],-0.41,PC[1]);
 add(new THREE.Mesh(new THREE.CylinderGeometry(40.8,40.8,0.04,110),M.ground),false,true).position.set(PC[0],0,PC[1]);
-scene.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([...Array(121)].map((_,i)=>{const a=i/120*Math.PI*2;return new THREE.Vector3(PC[0]+Math.cos(a)*41.4,-0.81,PC[1]+Math.sin(a)*41.4)})),M.line));
+
 boxM(56,0.05,15,M.asphalt,0,0.03,24,false);   // car park
 boxM(54,0.05,17,M.yard,0,0.03,-24.5,false);   // service yard and dock
 {const pts=[];for(let i=0;i<13;i++){const x=-24+i*4;pts.push(new THREE.Vector3(x,0.07,19.5),new THREE.Vector3(x,0.07,23),new THREE.Vector3(x,0.07,25.5),new THREE.Vector3(x,0.07,29))}scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),M.line))}
 // parked cars (they come and go with the shoppers in store)
 const CARP=[];for(let i=0;i<12;i++){CARP.push([-22+i*4,21.3,0],[-22+i*4,27.2,Math.PI])}
-const PAINT=[0xF2F2F2,0xBFC3C7,0x6E747A,0x2A2D31,0x2E4E7E,0x9E2B2B,0xD8D2C4,0x3E6B52].map(c=>new THREE.Color(c));
-const carB=new THREE.InstancedMesh(new THREE.BoxGeometry(1.8,0.7,3.9),std({roughness:.35,metalness:.25}),CARP.length),carC=new THREE.InstancedMesh(new THREE.BoxGeometry(1.6,0.55,2.0),std({color:0x26313a,roughness:.15}),CARP.length);
+const PAINT=[0xF2F2F2,0xBFC3C7,0x8A9096,0x5A5D62,0x5E7896,0xA2575A,0xD8D2C4,0x6E8E7A].map(c=>new THREE.Color(c));
+const carB=new THREE.InstancedMesh(new THREE.BoxGeometry(1.8,0.7,3.9),std({roughness:.35,metalness:.25}),CARP.length),carC=new THREE.InstancedMesh(new THREE.BoxGeometry(1.6,0.55,2.0),std({color:0x7A8590,roughness:.2,metalness:.1}),CARP.length);
 carB.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(CARP.length*3),3);carB.castShadow=true;scene.add(carB,carC);
 // floor slab
 boxM(48,FY,32,M.floor,0,FY/2,0,false);
@@ -853,7 +861,7 @@ const pPos=new Float32Array(PN*3),pCol=new Float32Array(PN*3),pA=new Float32Arra
 pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));pGeo.setAttribute("pcolor",new THREE.BufferAttribute(pCol,3));pGeo.setAttribute("alpha",new THREE.BufferAttribute(pA,1));pGeo.setAttribute("size",new THREE.BufferAttribute(pSz,1));
 const pMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{scale:{value:300}},
   vertexShader:"attribute vec3 pcolor;attribute float alpha;attribute float size;varying vec3 vC;varying float vA;uniform float scale;void main(){vC=pcolor;vA=alpha;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=size*scale/-mv.z;gl_Position=projectionMatrix*mv;}",
-  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;gl_FragColor=vec4(vC,vA*smoothstep(0.5,0.1,r));}"});
+  fragmentShader:"varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);if(r>0.5)discard;gl_FragColor=vec4(vC,vA*smoothstep(0.5,0.1,r));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"});
 const points=new THREE.Points(pGeo,pMat);points.frustumCulled=false;scene.add(points);
 let pi=0;function emit(x,y,z,vx,vy,vz,life,c,size){const i=pi;pi=(pi+1)%PN;pPos.set([x,y,z],i*3);pVel.set([vx,vy,vz],i*3);pCol.set([c.r,c.g,c.b],i*3);pLife[i]=life;pMax[i]=life;pSz[i]=size}
 let coldAcc=0,doorK=0;
@@ -866,10 +874,43 @@ function particles(dt){const rate=(1-doorK)*110+doorK*5;coldAcc+=rate*dt;
     if(pPos[i*3+1]<=FY+0.1){pVel[i*3]*=1.01;pVel[i*3+2]*=1.01}pA[i]=Math.min(1,t*5)*Math.min(1,(1-t)*2.5)*0.75}
   pGeo.attributes.position.needsUpdate=true;pGeo.attributes.pcolor.needsUpdate=true;pGeo.attributes.alpha.needsUpdate=true;pGeo.attributes.size.needsUpdate=true}
 
+// ---------------- the energy you can see: a grid connection and a refrigeration plant in the yard, power flowing in, cold flowing out to the open chillers
+const G={};const grp=(x=0,y=0,z=0)=>{const g=new THREE.Group();g.position.set(x,y,z);scene.add(g);return g};
+const put=(g,mat,x,y,z,o={})=>stage.mesh(g,mat,[x,y,z],o);
+G.plant=grp(-8,0,-19.6);put(geo.rbox(7,1.8,2.6),M.white,0,0.9,0,{parent:G.plant});[-2.2,0,2.2].forEach(x=>{put(geo.cyl(0.85,0.12),M.dark,x,1.86,0,{parent:G.plant});put(geo.cyl(0.18,0.2),M.steel,x,1.9,0,{parent:G.plant})});
+put(geo.rbox(7.4,0.12,3,0.04),M.yard,0,0.08,0,{parent:G.plant,cast:false});
+G.xf=grp(-20,0,-21);put(geo.rbox(1.9,1.9,1.6),M.steel,0,0.95,0,{parent:G.xf});[-0.5,0,0.5].forEach(x=>put(geo.cyl(0.1,0.5),M.dark,x,2.1,0,{parent:G.xf}));put(geo.rbox(3,0.1,2.6,0.04),M.yard,0,0.06,0,{parent:G.xf,cast:false});
+function bends(pts,r=0.6){const P=pts.map(p=>new THREE.Vector3(...p)),out=[P[0]];for(let i=1;i<P.length-1;i++){const a=P[i-1],b=P[i],c=P[i+1],da=Math.min(r,a.distanceTo(b)/2.2),dc=Math.min(r,b.distanceTo(c)/2.2);
+  out.push(b.clone().add(a.clone().sub(b).setLength(da)),b.clone().add(c.clone().sub(b).setLength(dc)))}out.push(P[P.length-1]);return out}
+const FL={};
+function piped(name,pts,o,r=0.13,mat=M.steel){const f=stage.flow(Object.assign({points:bends(pts),jitter:0.02},o));FL[name]=f;
+  if(r){const m=stage.add(new THREE.Mesh(new THREE.TubeGeometry(f.curve,Math.max(40,Math.round(f.length*3)),r,8,false),mat),{cast:false});m.userData.noGroup=true}return f}
+piped("refrig",[[-19,1.4,-21],[-15,1.4,-21],[-15,1.4,-19.6],[-11.6,1.4,-19.6]],{count:50,color:0x3F7E9C,size:0.28,speed:6},0.07,M.dark);
+piped("power",[[-20,1.6,-20.1],[-20,1.6,-17.4],[-20,2.6,-16.3]],{count:24,color:0x916A70,size:0.28,speed:4},0.07,M.dark);
+piped("coolW",[[-8,1.95,-18.4],[-8,3.4,-18.4],[-8,3.4,-16.05],[-23.8,3.4,-16.05],[-23.8,3.4,3]],{count:120,color:0x3F7E9C,size:0.3,speed:5});
+piped("coolE",[[-8,3.4,-16.05],[10.4,3.4,-16.05]],{count:60,color:0x3F7E9C,size:0.3,speed:5},0);
+// the busiest a load gets on a day as it is (doors off), so a flow's thickness reads against that
+const PMAX=(()=>{const m={open:1,refrig:1,other:1};for(let i=0;i<96;i++){const p=K.power({...S,doors:false},i*15);m.open=Math.max(m.open,p.openCase);m.refrig=Math.max(m.refrig,p.refrig);m.other=Math.max(m.other,p.total-p.refrig)}return m})();
+function themeExtras(){const cool=col("--cool");FL.refrig.set({color:cool});FL.coolW.set({color:cool});FL.coolE.set({color:cool});FL.power.set({color:col("--rose")})}
+
+// ---------------- parts you can touch: the scene's meshes regrouped by where they stand
+function regroup(){const B=new THREE.Box3(),c=new THREE.Vector3(),skip=new Set([M.wall,M.cap,M.floor,M.plinth,M.ground,M.yard,M.line]);
+  ["chk","self","ice","produce","aisles","bakery","deli","frz","chill","bin","park"].forEach(k=>G[k]=G[k]||grp());
+  const R=[["chk",(x,y,z)=>x>-8.8&&x<11.6&&z>8&&z<12.5],["ice",(x,y,z)=>x>-16.5&&x<-9&&z>7.8&&z<9.5],["produce",(x,y,z)=>x>-21.5&&x<-9.8&&z>-10&&z<3.4],
+    ["aisles",(x,y,z)=>x>-6.8&&x<12.3&&z>-10.9&&z<3.3],["bakery",(x,y,z)=>(x>14&&x<23.5&&z>-15.8&&z<-12.5)||(x>14&&x<21&&z>-12.5&&z<-7.95)],["deli",(x,y,z)=>x>13.8&&x<22.2&&z>-7.95&&z<-4.8],
+    ["frz",(x,y,z)=>x>22.3&&x<24.1&&z>-12&&z<-2.5],["chill",(x,y,z)=>(z>-16.1&&z<-14.4&&x>-22.3&&x<10.8)||(x>-24.1&&x<-22.5&&z>-12.3&&z<3.3)],["bin",(x,y,z)=>x>20&&x<23&&z>-20.3&&z<-18]];
+  [...scene.children].forEach(o=>{if(!o.isMesh||o.isInstancedMesh||skip.has(o.material)||o.userData.noGroup)return;if(o.material===M.asphalt){G.park.attach(o);return}
+    B.setFromObject(o);if(B.isEmpty())return;B.getCenter(c);for(const [k,f] of R)if(f(c.x,c.y,c.z)){G[k].attach(o);break}});
+  G.chk.add(laneLamp);G.self.add(kiosks,kScreens);G.park.add(carB,carC)}
+// stage controls that a label must not cover, as rectangles in canvas pixels
+function KEEPOUT(){const cr=canvas.getBoundingClientRect();return [...box.querySelectorAll(".tw-tools,.tw-dialwrap,.key,.badge,.tw-tour:not([hidden]),.tw-following:not([hidden])")].map(e=>{const r=e.getBoundingClientRect();return {l:r.left-cr.left,r:r.right-cr.left,t:r.top-cr.top,b:r.bottom-cr.top}}).filter(r=>r.r>r.l)}
+const TAGOF={"Checkouts":"chk","Self-checkout":"self","Fruit and veg":"veg","Bakery":"bak","Open chillers":"chill","Freezers":"frz","Delivery truck":"dock","Waste bin":"bin","Food rescue van":"van"};
+const PINNED=()=>[...box.querySelectorAll(".tw-pins .tw-card")].map(e=>e.getAttribute("aria-label"));
+
 // ---------------- theme
 let C={};
-function applyTheme(){M.plinth.color=col("--scene-plinth");M.ground.color=col("--scene-ground");M.floor.color=col("--scene-floor");M.wall.color=col("--scene-wall");M.asphalt.color=col("--scene-asphalt");M.yard.color=col("--scene-yard");
-  M.case.color=col("--scene-case");M.cap.color=col("--scene-edge");M.line.color=col("--scene-edge");M.head.color=col("--scene-person");
+function applyTheme(){const lk=stage.look();M.floor.color.set(lk.card).lerp(new THREE.Color(lk.roof),0.3);M.yard.color.set(lk.road).lerp(new THREE.Color(lk.card),0.35);
+  M.case.color.set(lk.card);M.cap.color.set(lk.roof);M.line.color.set(lk.card);M.head.color=col("--scene-person");
   CAT=[1,2,3,4,5,6].map(i=>col("--cat-"+i));
   C={live:col("--live"),good:col("--good"),cool:col("--cool"),cold:col("--coldair"),alert:col("--alert"),off:new THREE.Color(0x8E8689),waste:col("--rose"),
     sky:["--sky-day-1","--sky-day-2","--sky-dusk-1","--sky-dusk-2","--sky-night-1","--sky-night-2"].map(col),dept:{produce:col("--cat-6"),bakery:col("--cat-5"),meat:col("--cat-1"),deli:col("--cat-4")}};
@@ -877,7 +918,7 @@ function applyTheme(){M.plinth.color=col("--scene-plinth");M.ground.color=col("-
   PRODC.forEach((p,i)=>{if(p.cat!=null){tc.copy(CAT[p.cat]);if(p.v===1)tc.offsetHSL(0,0,dark?0.06:-0.06);else if(p.v===2)tc.offsetHSL(0,0,dark?-0.05:0.04)}else{tc.setHex(p.hex);if(dark)tc.multiplyScalar(0.62)}prodMesh.setColorAt(i,tc)});prodMesh.instanceColor.needsUpdate=true;
   gEnds.forEach(([e,gi])=>{e.material=e.material===M.case?std({roughness:.6}):e.material;e.material.color.copy(CAT[gi])});
   CARP.forEach((_,i)=>carB.setColorAt(i,PAINT[(i*5)%PAINT.length]));carB.instanceColor.needsUpdate=true;
-  skyKey="";charts()}
+  skyKey="";charts();themeExtras()}
 const isDark=()=>document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
 new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
 let skyKey="";
@@ -931,7 +972,7 @@ function syncPeople(dt){const qs=new Map();
     const vx=v.x-v.ox,vz=v.z-v.oz;if(vx*vx+vz*vz>1e-5){const a=Math.atan2(vx,vz);let da=a-v.a;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;v.a+=da*Math.min(1,dt*8)}
     if(s.phase==="queue"||s.phase==="serve")v.a+=(0-v.a)*Math.min(1,dt*4);
     v.ox=v.x;v.oz=v.z;
-    dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.position.set(v.x,FY+0.5,v.z);dm.updateMatrix();pb.setMatrixAt(n,dm.matrix);pb.setColorAt(n,waitLong?C.live:P.col);
+    dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.position.set(v.x,FY+0.5,v.z);dm.updateMatrix();pb.setMatrixAt(n,dm.matrix);pb.setColorAt(n,waitLong?C.alert:P.col);
     dm.position.set(v.x,FY+1.19,v.z);dm.updateMatrix();ph.setMatrixAt(n,dm.matrix);
     if(s.trolley){dm.position.set(v.x+Math.sin(v.a)*0.72,FY+0.4,v.z+Math.cos(v.a)*0.72);dm.rotation.set(0,v.a,0);dm.updateMatrix();tro.setMatrixAt(n,dm.matrix)}
     else{dm.scale.set(0,0,0);dm.updateMatrix();tro.setMatrixAt(n,dm.matrix)}
@@ -981,12 +1022,13 @@ function syncDock(){const h=simT/60;
   const fill=h>=22.4?Math.min(1,fs.waste/400):0.05;binFill.scale.y=Math.max(0.02,fill);binFill.position.y=0.15+fill*0.5;
   ovenGlow.forEach(g=>g.visible=h>=5&&h<14)}
 
-// ---------------- light
-function syncLight(dt){const h=(simT/60)%24,{day,up}=sky(h);const a=(h-6.4)/13.4*Math.PI;
-  sun.position.set(-Math.cos(a)*40,6+44*Math.max(0.05,up),26);sun.intensity=0.08+0.5*day;hemi.intensity=0.3+0.24*day;hemi.color.setRGB(1,1,1).lerp(new THREE.Color(0x8a8fb8),1-day);
-  const storeOn=h>=5&&h<23.3,lit=storeOn?1:0.25,dark=1-day;
+// ---------------- light: the stage's sun follows Auckland's real sun for today's date at the simulated hour; the store adds its own lights after dark
+const NZD=(()=>{try{const p=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",year:"numeric",month:"numeric",day:"numeric"}).formatToParts(new Date()),g=t=>+p.find(x=>x.type===t).value;return [g("year"),g("month")-1,g("day")]}
+  catch(e){const n=new Date();return [n.getFullYear(),n.getMonth(),n.getDate()]}})();
+function syncLight(dt){const h=(simT/60)%24;stage.setClock(nzDate(NZD[0],NZD[1],NZD[2],h));const day=stage.clock.day;
+  const storeOn=h>=5&&h<23.3,dark=1-day;
   // store lights: a warm glow on the floor and fittings when the store is lit and it is dark outside
-  storeLight.intensity+=((storeOn?0.62:0.15)*dark-storeLight.intensity)*Math.min(1,dt*3);const glow=(storeOn?0.1:0.04)*dark;M.floor.emissive.setHex(0xFFD9A8);M.floor.emissiveIntensity+=(glow-M.floor.emissiveIntensity)*Math.min(1,dt*3);M.case.emissive.setHex(0xFFE6C4);M.case.emissiveIntensity=M.floor.emissiveIntensity*0.55;
+  storeLight.intensity+=((storeOn?0.8:0.2)*dark-storeLight.intensity)*Math.min(1,dt*3);const glow=(storeOn?0.1:0.04)*dark;M.floor.emissive.setHex(0xFFD9A8);M.floor.emissiveIntensity+=(glow-M.floor.emissiveIntensity)*Math.min(1,dt*3);M.case.emissive.setHex(0xFFE6C4);M.case.emissiveIntensity=M.floor.emissiveIntensity*0.55;
   M.van.emissive.setHex(0xFFE2B8);M.van.emissiveIntensity=0.25*dark;M.truck.emissive.setHex(0xFFE2B8);M.truck.emissiveIntensity=0.2*dark;
   M.canopy.emissiveIntensity=0.35+0.5*dark;
   M.lampHead.emissiveIntensity=dark>0.4?1:0;lampDisc.forEach(x=>x.material.opacity=dark>0.4?0.22*(dark-0.4)/0.6+0.04:0);
@@ -996,13 +1038,13 @@ function syncLight(dt){const h=(simT/60)%24,{day,up}=sky(h);const a=(h-6.4)/13.4
 const TAGS=[
   {id:"chk",p:[1,3.4,10.2]},{id:"self",p:[18.2,3.0,10]},{id:"veg",p:[-15.5,2.6,2.4]},{id:"bak",p:[17.5,2.7,-8.3]},
   {id:"chill",p:[-12,3.6,-15.2]},{id:"meat",p:[-4.5,2.8,-14.6]},{id:"deli",p:[5.5,2.8,-14.6]},{id:"frz",p:[22.6,3.2,-7.4]},{id:"dock",p:[16,4.4,-21]},{id:"bin",p:[21.5,2.4,-19.2]},{id:"van",p:[7.5,3.4,-21]}];
-const VIEWS={store:{p:[19,35,35],t:[1,0,-1.5],tags:["chk","self","veg","bak","chill","dock"]},checkouts:{p:[8,25,25],t:[5,0,6.5],tags:["chk","self"]},
+const VIEWS={store:{p:[24,46,44],t:[1,0,-3],tags:["chk","self","veg","bak","chill","dock"]},checkouts:{p:[8,25,25],t:[5,0,6.5],tags:["chk","self"]},
   fresh:{p:[4,44,13],t:[0,0,-11],tags:["veg","bak","meat","deli","bin","van","dock"]},chillers:{p:[-2,10,-1],t:[-9,1,-14],tags:["chill","meat","deli","frz"]}};
 // portrait screens: steeper angles so the store, not the car park, fills the frame
 const VIEWS_N={store:{p:[7,64,30],t:[1,0,-3]},checkouts:{p:[6,30,22],t:[4,0,6.5]},fresh:{p:[2,58,8],t:[0,0,-10]},chillers:{p:[-3,15,4],t:[-8,1,-14]}};
 let view="store";
 const tagsEl=$("tags"),TE={};TAGS.forEach(t=>{const e=document.createElement("div");e.className="tag";e.hidden=true;tagsEl.appendChild(e);TE[t.id]=e});const v3=new THREE.Vector3();
-function tags(st){const w=canvas.clientWidth,hh=canvas.clientHeight,h=simT/60,fr=d.fresh,red=h>=S.markdownH&&h<22.2,closed=h>=22.2,placed=[];
+function tags(st){const w=canvas.clientWidth,hh=canvas.clientHeight,h=simT/60,fr=d.fresh,red=h>=S.markdownH&&h<22.2,closed=h>=22.2,placed=KEEPOUT();
   const set=(id,html,cls="")=>{TE[id].innerHTML=html;TE[id].className="tag "+cls};
   set("chk",`<b>Checkouts</b> ${st.lanes} of 8 lanes<br><span class="m">${st.inQueue?st.inQueue+" queuing · ~"+fmt(st.recentWait,1)+" min wait":"no queue"}</span>`,st.recentWait>3?"warn":"");
   set("self",`<b>Self-checkout</b> ${st.kiosks}<br><span class="m">${d.selfQ.length} waiting</span>`);
@@ -1013,7 +1055,7 @@ function tags(st){const w=canvas.clientWidth,hh=canvas.clientHeight,h=simT/60,fr
   const del=(h>=5.3&&h<6.9)||(h>=13.3&&h<14.45);set("dock",`<b>Dock</b><br><span class="m">${del?"delivery unloading":h<5.3?"first delivery 5:30am":h<13.3?"next delivery 1:30pm":"no more deliveries today"}</span>`);
   const fs=st.fresh;set("bin",`<b>Waste bin</b><br><span class="m">${h>=22.4?fmt(fs.waste)+" kg tonight":"filled at close"}</span>`);
   set("van",`<b>Food rescue partner</b><br><span class="m">${fmt(fs.rescued)} kg · about ${fmt(fs.rescued*K.MEALS_PER_KG)} meals</span>`,"good");
-  const show=new Set(VIEWS[view].tags);if(!d.rescueNight||h<22.05||h>22.95)show.delete("van");if(h<22.3)show.delete("bin");if(van.visible&&h>=22.05)show.delete("dock");
+  const show=new Set(VIEWS[view].tags);PINNED().forEach(t=>show.delete(TAGOF[t]));if(CMP)show.delete("chill");if(!d.rescueNight||h<22.05||h>22.95)show.delete("van");if(h<22.3)show.delete("bin");if(van.visible&&h>=22.05)show.delete("dock");
   TAGS.forEach(t=>{const el=TE[t.id];if(!show.has(t.id)){el.hidden=true;return}v3.set(...t.p).project(camera);const x=(v3.x+1)/2*w,y=(1-v3.y)/2*hh;
     if(v3.z>1||x<30||x>w-30||y<48||y>hh-16){el.hidden=true;return}el.hidden=false;el.style.left=x+"px";el.style.top=(y-7)+"px";
     const bw=el.offsetWidth,bh=el.offsetHeight,r={l:x-bw/2,r:x+bw/2,t:y-7-bh,b:y-7};
@@ -1129,28 +1171,95 @@ function rebuild(){const t=d.t;d=K.newDay(S,dow);paths.clear();vis.clear();while
 $("hour").oninput=e=>jump(+e.target.value);
 
 // ---------------- camera
-function resize(){const w=box.clientWidth,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.68));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?48:34;camera.updateProjectionMatrix();
-  pMat.uniforms.scale.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360))}
-addEventListener("resize",resize);
-let camGoal=null;function setView(n){if(!VIEWS[n])return;view=n;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));const narrow=camera.aspect<1,v=narrow?VIEWS_N[n]:VIEWS[n],t=new THREE.Vector3(...v.t),p=new THREE.Vector3(...v.p);camGoal={p,t}}
-document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));controls.addEventListener("start",()=>camGoal=null);
+function setView(n,instant){if(!VIEWS[n])return;view=n;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));const narrow=camera.aspect<1;stage.flyTo(narrow?VIEWS_N[n]:VIEWS[n],{exact:narrow,instant:!!instant})}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+regroup();
+
+// ---------------- touch anything: hover for the live number, tap to pin (numbers from the same model as the panels)
+let lastSt=null,lastP=null;const ST=()=>lastSt||K.dayStats(S,d),PW=()=>lastP||K.power(S,simT);
+const SIM="Simulated",EST="Estimate";
+const fr=(k,name)=>()=>{const f=d.fresh[k],h=simT/60,red=h>=S.markdownH&&h<22.2;return d.closed?`${fmt(f.rescued)} kg rescued · ${fmt(f.waste)} kg to waste<br><span class="m">tonight, ${name.toLowerCase()}</span>`:`${fmt(f.stock)} kg short-dated on display<br><span class="${red?"a":"m"}">${red?"reduced "+fmt(S.discount*100)+"% now":"full price until "+hLabel(S.markdownH)}</span>`};
+let G2=null;function picks(){const pk=(obj,spec)=>obj&&stage.pickable(obj,Object.assign({truth:SIM},spec));
+  pk(G.chk,{title:"Checkouts",hint:"8 staffed lanes",panel:"#qChart",view:VIEWS.checkouts,value:()=>{const s=ST();return `${s.lanes} of 8 lanes open · ${s.inQueue} queuing<br><span class="${s.recentWait>3?"r":"m"}">${s.recentWait?"about "+fmt(s.recentWait,1)+" min wait to be served":"no wait right now"}</span>`}});
+  pk(G.self,{title:"Self-checkout",hint:"kiosks with one attendant",panel:"#lanes",value:()=>`${K.kioskCount(S)} kiosks · ${d.selfQ.length} waiting<br><span class="m">${S.moreSelf?"two more fitted (proposed)":"6 as it is"}</span>`});
+  pk(G.produce,{title:"Fruit and veg",hint:"short-dated produce",panel:"#atRisk",value:fr("produce","Fruit and veg")});
+  pk(G.bakery,{title:"Bakery",hint:"ovens and bread tables",panel:"#atRisk",value:fr("bakery","Bakery")});
+  pk(G.deli,{title:"Deli counter",hint:"served counter",panel:"#atRisk",value:fr("deli","Deli")});
+  pk(G.aisles,{title:"Grocery aisles",hint:"six gondolas",panel:"#inStore",value:()=>`${fmt(ST().inStore)} shoppers browsing<br><span class="m">${fmt(ST().served)} through the tills today</span>`});
+  pk(G.chill,{title:"Open chillers",hint:"48 m of open cases",panel:"#eChart",value:()=>{const p=PW();return `${fmt(p.openCase)} kW now, all day and night<br><span class="m">${S.doors?"doors fitted (proposed): 40% less":"no doors: cold air spills into the aisle"}</span>`},truth:EST,source:"About 15 kWh a metre a day; doors save 40% (estimates)"});
+  pk(G.frz,{title:"Freezers",hint:"already have doors",panel:"#eChart",value:()=>`${fmt(PW().freezer)} kW now<br><span class="m">glass doors, little cold escapes</span>`});
+  pk(G.ice,{title:"Ice cream freezers",hint:"chest freezers",panel:"#eChart",value:()=>`<span class="m">counted with the freezers and coolrooms</span><br>${fmt(PW().freezer+PW().cool)} kW together`});
+  pk(G.plant,{title:"Refrigeration plant",hint:"compressors in the yard",panel:"#eChart",view:{p:[4,18,-38],t:[-10,1,-18]},value:()=>{const p=PW();return `${fmt(p.refrig)} kW for refrigeration now<br><span class="m">open chillers ${fmt(p.openCase)} · freezers and coolrooms ${fmt(p.freezer+p.cool)} kW</span>`},truth:EST,source:"Open chiller energy: estimate (see Figures used)"});
+  pk(G.xf,{title:"Grid connection",hint:"all the store's power",panel:"#kw",view:{p:[-4,16,-40],t:[-18,1,-19]},value:()=>{const p=PW();return `${fmt(p.total)} kW now<br><span class="m">${fmt(p.refrig/p.total*100)}% of it keeping food cold</span>`}});
+  pk(truck,{title:"Delivery truck",hint:"5:30am and 1:30pm",value:()=>`<span class="m">unloading at the dock</span>`});
+  pk(van,{title:"Food rescue van",hint:"collects at close",panel:"#fResc",value:()=>{const f=ST().fresh;return `${fmt(f.rescued)} kg tonight<br><span class="g">about ${fmt(f.rescued*K.MEALS_PER_KG)} meals</span>`},source:"Meals per kg: KiwiHarvest's published counters"});
+  pk(G.bin,{title:"Waste bin",hint:"filled at close",panel:"#fWaste",value:()=>{const f=ST().fresh;return simT/60>=22.4?`${fmt(f.waste)} kg tonight`:`<span class="m">filled at close, about 10pm</span>`}});
+  pk(G.park,{title:"Car park",hint:"cars follow the shoppers",panel:"#inStore",value:()=>{const s=ST(),n=s.inStore+s.inQueue;return `${Math.min(CARP.length,Math.round(n*0.32))} cars parked · ${n} shoppers inside<br><span class="m">the model parks about one car for every three shoppers</span>`}})}
+
+// ---------------- guided tour: five stops; the fourth is the signature moment, Friday's evening rush
+let tourPlay=null;
+const tourSteps=[
+  {title:"A suburban supermarket",do:()=>setView("store"),pin:()=>G.aisles.userData.twPick,get text(){const s=ST();return `A fictional mid-size New Zealand store, simulated minute by minute. Right now, ${K.DAYS[dow]} ${clockText().split(" · ")[0]}: <b>${s.inStore+s.inQueue} shoppers</b> inside and <b>${fmt(PW().total)} kW</b> coming in from the grid.`}},
+  {title:"Fresh food against the clock",do:()=>setView("fresh"),pin:()=>G.bakery.userData.twPick,get text(){return `Short-dated bread, mince, salads and veg sit on their own displays. At <b>${hLabel(S.markdownH)}</b> they turn orange: reduced ${fmt(S.discount*100)}%. What's left at close goes to the rescue van or the bin.`}},
+  {title:"The open chillers",do:()=>setView("chillers"),pin:()=>G.chill.userData.twPick,get text(){const p=PW();return `48 m of open cases run all day and night: <b>${fmt(p.openCase)} kW</b>, about ${fmt(p.openCase/p.total*100)}% of the store's power right now. Watch the cold air spill into the aisle, and the blue flow along the wall from the plant in the yard.`}},
+  {title:"Friday, 5:45pm: the rush",do:()=>{if(tourPlay==null)tourPlay=playing;dow=4;$("dow").value=4;d=K.newDay(S,dow);paths.clear();vis.clear();jump(17.75);recompute();lastSt=live();if(!playing&&!calm)$("pause").click();setView("checkouts")},pin:()=>G.chk.userData.twPick,
+    get text(){const s=ST();return `The week's after-work peak. <b>${s.lanes} of 8 lanes</b> are open and <b>${s.inQueue}</b> people are queuing; anyone shown in red has waited over 3 minutes. ${Math.min(CARP.length,Math.round((s.inStore+s.inQueue)*0.32))} of the ${CARP.length} car spaces are taken.`}},
+  {title:"Try the proposed store",do:()=>setView("store"),text:"Compare shows a ghost of the proposed changes over the live store: doors on the chillers, two more kiosks and an extra lane at the peaks. Below the model, switch each one on and the week's numbers update."}];
+function onTourEnd(){if(tourPlay===false&&playing)$("pause").click();tourPlay=null}
+
+// ---------------- compare: a ghost of the proposed store over the live one
+const GM=stage.ghostMaterial();let CMP=null;
+const ghostDoors=doorParts.map(p=>{const g=stage.ghost(p);g.visible=false;return g});
+const ghostKiosks=[6,7].map(i=>{const [x,z]=KIOSK[kioskOrder[i]];const m=new THREE.Mesh(new THREE.BoxGeometry(0.7,1.25,0.55),GM);m.position.set(x,FY+0.63,z);m.visible=false;scene.add(m);return m});
+const ghostStaff=new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,1.05,10),GM);ghostStaff.visible=false;scene.add(ghostStaff);
+const gTag=document.createElement("div");gTag.className="tag";gTag.hidden=true;$("tags").appendChild(gTag);
+function ghosts(){const on=CMP!=null,prop=CMP==="prop";ghostDoors.forEach(g=>g.visible=on&&!S.doors);
+  ghostKiosks.forEach(g=>g.visible=prop&&!S.moreSelf);
+  const h=Math.floor(simT/60)%24,now=K.lanesOpen(S,h,dow),more=K.lanesOpen({...S,extraLane:true},h,dow);ghostStaff.visible=prop&&!S.extraLane&&more>now&&now<8;
+  if(ghostStaff.visible)ghostStaff.position.set(LANEX[Math.min(7,now)]+1.4,FY+0.53,10.6);
+  if(!on||!DR||!PR){gTag.hidden=true;return}
+  v3.set(-6,3.6,-14.6).project(camera);const w=canvas.clientWidth,hh=canvas.clientHeight,x=(v3.x+1)/2*w,y=(1-v3.y)/2*hh;if(v3.z>1||x<40||x>w-40||y<60||y>hh-20){gTag.hidden=true;return}
+  gTag.hidden=false;gTag.style.left=x+"px";gTag.style.top=(y-7)+"px";gTag.className="tag cold";
+  gTag.innerHTML=prop?`<b>Ghost: the proposed store</b> <span class="m">PROPOSED</span><br><span class="m">${fmt(PR.week.queueMin/60)} h less queueing a week · ${fmt(DR.kwhDay)} kWh a day less</span>`:`<b>Ghost: doors on the chillers</b> <span class="m">PROPOSED</span><br><span class="m">${fmt(DR.kwhDay)} kWh a day less · ${money(DR.saveYear)} a year</span>`}
+
+// ---------------- sound (off until asked for): the shop's murmur, scanner beeps, the chillers' hum, rain on the roof
+stage.sound.layer("murmur",{type:"chatter",gain:0.16}).layer("tills",{type:"ticks",freq:2350,rate:3,dur:0.07,gain:0.035}).layer("chill",{type:"hum",freq:60,gain:0.12}).layer("rain",{type:"rain",gain:0.16});
+function sounds(){const s=stage.sound;if(!s.on)return;const st=ST(),serving=d.lanes.filter(L=>L.cur>=0).length;s.set("murmur",clamp((st.inStore+st.inQueue)/110,0,1));s.set("tills",clamp(serving/6,0,1));s.set("chill",clamp(PW().openCase/PMAX.open,0,1)*0.8);s.set("rain",WX.rain)}
+
+// ---------------- weather: live rain, cloud and wind at Auckland when the lab's feed answers; labelled live
+const LIVEWX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.3,0.1],src:"",at:""},WX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.3,0.1]};
+function weather(dt){const k=Math.min(1,dt*1.2);["rain","cloud","fog","wet"].forEach(n=>WX[n]+=(LIVEWX[n]-WX[n])*k);WX.wind[0]+=(LIVEWX.wind[0]-WX.wind[0])*k;WX.wind[1]+=(LIVEWX.wind[1]-WX.wind[1])*k;stage.setWeather(WX)}
+const badge=box.querySelector(".badge");let badgeTxt="";
+function badgeNow(){const t="SIMULATED"+(LIVEWX.src?" · WEATHER LIVE, AUCKLAND":"");if(t!==badgeTxt){badgeTxt=t;badge.textContent=t;badge.title=LIVEWX.src?`Rain, cloud and wind from ${LIVEWX.src}${LIVEWX.at?", "+LIVEWX.at:""}. The store and its shoppers are simulated.`:"A fictional store, simulated"}}
+
+// ---------------- the time dial: the hand is the store's clock (drag it to jump; tap the centre to pause or play)
+let dialObj=null,jumpT=0,jumpTo=null;
+function makeDial(){dialObj=stage.dial({label:K.DAYS[dow].slice(0,3),day:{get:()=>(simT/60)%24,set:h=>{jumpTo=Math.max(5,Math.min(23.9,h));clearTimeout(jumpT);jumpT=setTimeout(()=>{jump(jumpTo);jumpTo=null},140)},held:()=>!playing,title:"Store time",
+    marks:[{h:5.5,c:"var(--rose)",t:"Delivery, 5:30am"},{h:7,c:"var(--good)",t:"Doors open, 7am"},{h:13.5,c:"var(--rose)",t:"Delivery, 1:30pm"},{h:S.markdownH,c:"var(--live)",t:"Short-dated food reduced, "+hLabel(S.markdownH)},{h:22,c:"var(--good)",t:"Close and food rescue, 10pm"}]},
+  onCenter:()=>$("pause").click()});return dialObj}
+let dialDow=-1,dialMd=-1;function dialSync(){if(dow!==dialDow||S.markdownH!==dialMd){dialDow=dow;dialMd=S.markdownH;makeDial()}}
 
 // ---------------- loop
-let last=performance.now(),visible=true,pt=0,ct=0;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
-function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(visible){if(playing){acc+=dt*speed;while(acc>=1){K.step(S,d);acc-=1;if(d.t>=K.DAY_END){dow=(dow+1)%7;$("dow").value=dow;d=K.newDay(S,dow);paths.clear();vis.clear()}}}
-    simT=d.t+(playing?acc:0);
-    syncPeople(dt);syncFresh();syncDock();syncLight(dt);particles(dt);
-    if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.1)camGoal=null}
-    controls.update();renderer.render(scene,camera);pt+=dt;ct+=dt;if(pt>0.25){pt=0;tags(live())}if(ct>2){ct=0;charts()}}
-  requestAnimationFrame(frame)}
-resize();applyTheme();syncInputs();applyLabel();setView("store");camera.position.copy(camGoal.p);controls.target.copy(camGoal.t);camGoal=null;
+let pt=0,ct=0;
+stage.onFrame(dt=>{
+  if(playing){acc+=dt*speed;while(acc>=1){K.step(S,d);acc-=1;if(d.t>=K.DAY_END){dow=(dow+1)%7;$("dow").value=dow;d=K.newDay(S,dow);paths.clear();vis.clear()}}}
+  simT=d.t+(playing?acc:0);
+  syncPeople(dt);syncFresh();syncDock();syncLight(dt);particles(dt);pMat.uniforms.scale.value=stage.pointScale;
+  const p=K.power(S,simT);lastP=p;FL.coolW.set({rate:clamp(p.openCase/PMAX.open,0.03,1)});FL.coolE.set({rate:clamp(p.openCase/PMAX.open,0.03,1)});FL.refrig.set({rate:clamp(p.refrig/PMAX.refrig,0.03,1)});FL.power.set({rate:clamp((p.total-p.refrig)/PMAX.other,0.03,1)});
+  weather(dt);sounds();ghosts();badgeNow();dialSync();
+  pt+=dt;ct+=dt;if(pt>0.25){pt=0;lastSt=live();tags(lastSt)}if(ct>2){ct=0;charts()}});
+syncInputs();applyLabel();
 (()=>{const rows=[...document.querySelectorAll("#srcTable tbody tr")].map(tr=>({n:tr.cells[0].textContent,k:tr.querySelector(".lab").dataset.t})),TC={src:["Source","var(--vz-src)"],est:["Estimate","var(--vz-est)"]},ks=Object.keys(TC).filter(k=>rows.some(r=>r.k===k)),c=k=>rows.filter(r=>r.k===k).length;
   $("srcViz").innerHTML=`<div class="vz-split" role="img" aria-label="${ks.map(k=>c(k)+" "+TC[k][0]).join(", ")}">${ks.map(k=>`<i style="width:calc(${c(k)/rows.length*100}% - 2px);--c:${TC[k][1]}"></i>`).join("")}</div>`+VZ.chips(ks.map(k=>({n:c(k),label:TC[k][0],c:TC[k][1]})))+
     `<div class="vz-fl">${ks.map(k=>`<div class="vz-fi"><span><span class="lab" style="--c:${TC[k][1]}">${TC[k][0]}</span></span><span></span><span class="s">${rows.filter(r=>r.k===k).map(r=>VZ.esc(r.n)).join(" · ")}</span></div>`).join("")}</div>`})();
-jump(17.75);recompute();basketPanel();syncLight(1);tags(live());
-window.__store={S,setView,recompute,jump,speed:setSpeed,state:()=>d,apply:on=>{Object.assign(S,on?K.PROPOSED:K.AS_IS);if(!d.closed)d.rescueNight=S.rescueNightly||K.RESCUE_DAYS.includes(dow);syncInputs();applyLabel();recompute()}};
-requestAnimationFrame(frame);
+jump(17.75);recompute();basketPanel();
+picks();stage.tour.set(tourSteps,"A walk round the store");stage.tour.onEnd=onTourEnd;
+stage.compare({label:"Compare",options:[{id:"prop",label:"The proposed store",short:"proposed",note:"Chiller doors, two more kiosks, an extra lane at the peaks"},{id:"doors",label:"Doors on the chillers",short:"doors",note:"Ghost doors and the energy they would save"}],onChange:id=>{CMP=id}});
+stage.start();setView("store",true);syncLight(1);dialSync();lastSt=live();tags(lastSt);
+window.__store={S,setView,recompute,jump,speed:setSpeed,state:()=>d,apply:on=>{Object.assign(S,on?K.PROPOSED:K.AS_IS);if(!d.closed)d.rescueNight=S.rescueNightly||K.RESCUE_DAYS.includes(dow);syncInputs();applyLabel();recompute()},
+  tour:i=>stage.tour.start(i||0),compare:id=>{CMP=id||null},stage,
+  setLiveWeather:(v,src)=>{if(!v)return;const mm=+v.rainMm||0;LIVEWX.rain=mm<=0?0:Math.min(1,0.25+mm*0.35);LIVEWX.cloud=Math.min(1,(+v.cloudPct||0)/100);LIVEWX.wet=Math.max(LIVEWX.rain,(+v.today?.rainMm||0)>2?0.35:0);
+    const s=Math.min(1,(+v.windKmh||0)/40);LIVEWX.wind=[0.15+0.6*s,0.05+0.25*s];LIVEWX.fog=(+v.humidity||0)>96&&(+v.windKmh||0)<6?0.35:0;LIVEWX.src=src||"Open-Meteo";LIVEWX.at=v.at?new Date(v.at).toLocaleTimeString("en-NZ",{hour:"numeric",minute:"2-digit"}):""}};
 })();
 </script>
 

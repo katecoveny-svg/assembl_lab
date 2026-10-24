@@ -44,7 +44,12 @@ h2{margin:0 0 4px;font-size:20px;color:var(--ink);letter-spacing:-.01em;text-wra
 .btn{appearance:none;border:1px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:500 12px var(--mono);cursor:pointer}
 button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--live);outline-offset:2px}
 .main{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(290px,1fr);gap:14px}
-.stagebox{position:relative;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#D9E5EA,#F6F1EC);min-height:460px}
+.stagebox{position:relative;border-radius:14px;overflow:hidden;background:#EAE4DC;min-height:460px}
+.tw .legend3d{background:color-mix(in srgb,var(--paper) 78%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);max-width:calc(100% - 300px)}
+.legend3d span.ring6::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+@media (max-width:640px){.tw .legend3d{display:none}}
+.tw .tw-following{top:auto;bottom:62px}
+html.tw-poster .legend3d{display:none!important}
 #scene{display:block;width:100%;min-height:460px;touch-action:none}
 .views{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px)}
 .views button{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 10px;font:500 11.5px var(--mono);cursor:pointer}
@@ -194,10 +199,10 @@ details.tbl[open] summary{margin-bottom:6px}
 
   <div class="main">
     <div class="stagebox" id="stagebox">
-      <canvas id="scene" aria-label="3D view of an emergency department with patients moving between the waiting room, triage, cubicles and wards"></canvas>
+      <canvas id="scene" aria-label="3D model of an emergency department with patients moving between the waiting room, triage, cubicles and wards. Hover or tap an area for its live number; Explore lists every area."></canvas>
       <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="all" aria-pressed="true">Whole ED</button><button type="button" data-view="front">Waiting room</button><button type="button" data-view="cubicles">Cubicles</button><button type="button" data-view="ambulance">Ambulance bay</button></div>
       <div id="tags"></div>
-      <div class="legend3d" aria-hidden="true"><span style="--k:var(--t1)">Triage 1</span><span style="--k:var(--t2)">2</span><span style="--k:var(--t3)">3</span><span style="--k:var(--t4)">4</span><span style="--k:var(--t5)">5</span><span style="--k:var(--board)">waiting for a ward bed</span></div>
+      <div class="legend3d" aria-hidden="true"><span style="--k:var(--t1)">Triage 1</span><span style="--k:var(--t2)">2</span><span style="--k:var(--t3)">3</span><span style="--k:var(--t4)">4</span><span style="--k:var(--t5)">5</span><span style="--k:var(--board)">waiting for a ward bed</span><span class="ring6">ring: time here, full circle = 6 h</span></div>
       <div class="badge">SIMULATED</div>
     </div>
     <div class="side">
@@ -313,8 +318,8 @@ details.tbl[open] summary{margin-bottom:6px}
   </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/1/stage.css">
 <script>
 // A generic large NZ city emergency department, simulated minute by minute.
 // Public patterns only: triage mix and day-of-week pattern from Ministry of Health "ED use 2014/15";
@@ -409,7 +414,8 @@ const ED = (() => {
 
 
 </script>
-<script>
+<script type="module">
+import {THREE,createStage,nzDate} from "/assets/twin/1/stage.js";
 (()=>{
 const $=id=>document.getElementById(id);
 const S={...ED.BASE};
@@ -422,110 +428,174 @@ const col=n=>new THREE.Color(css(n)||"#999");
 function start(){st=ED.newState(S,7);st.t=5*1440;while(st.t<7*1440+600)ED.step(S,st)}
 start();
 
-// ---------------- scene
+// ---------------- scene: the department as an architect's cutaway model on the shared twin stage (/assets/twin/1).
+// Card walls cut at waist height so you can see in. Colour only where it carries data: triage category, waiting for a ward bed, free ward beds, and each patient's six hours.
 const canvas=$("scene"),box=$("stagebox");
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0,0);
-const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,0.5,500);
-const controls=new THREE.OrbitControls(camera,canvas);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.46;controls.minDistance=10;controls.maxDistance=110;controls.enablePan=false;
-const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.9},o));
-const mats={plinth:std(),ground:std(),floor:std(),wall:std(),furn:std(),path:std(),cap:new THREE.MeshBasicMaterial(),line:new THREE.LineBasicMaterial({transparent:true,opacity:.5}),
-  white:std({color:0xf4f1ef,roughness:.6}),dark:std({color:0x2a2228,roughness:.5}),person:std({color:0xffffff}),head:std({color:0xF2E6DC}),doc:std({color:0xffffff}),docHead:std({color:0x2E6F86}),
-  amb:std({color:0xF4F1EF,roughness:.5}),ambStripe:std({color:0xC8E04B,roughness:.6}),ward:std({transparent:true,opacity:.92}),bedFree:std({color:0x3F7A55,emissive:0x3F7A55,emissiveIntensity:.5})};
-scene.add(new THREE.HemisphereLight(0xffffff,0xa99ca4,.6));
-const sun=new THREE.DirectionalLight(0xfff1dd,.65);sun.position.set(-20,40,30);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-34,right:34,top:34,bottom:-34,near:1,far:150});sun.shadow.bias=-0.0006;scene.add(sun);
-function add(m,cast=true,recv=true){m.castShadow=cast;m.receiveShadow=recv;scene.add(m);return m}
-function boxM(w,h,d,mat,x,y,z,cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return add(m,cast)}
+function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||420,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=Math.round(h)+"px"}
+sizeCanvas();
+const stage=createStage({id:"ed",canvas,box,place:"auckland",extent:36,controls:{minDistance:10,maxDistance:120},ao:{radius:1.1},tilt:4,
+  onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
+const {M,geo}=stage;const dummy=new THREE.Object3D();
+const put=(g,mat,x,y,z,o={})=>stage.mesh(g,mat,[x,y,z],o);
+const grp=(x=0,y=0,z=0,parent)=>{const g=new THREE.Group();g.position.set(x,y,z);(parent||stage.root).add(g);return g};
 const FY=0.3,WH=1.4;
-// plinth and grounds
-add(new THREE.Mesh(new THREE.CylinderGeometry(34,34.4,0.8,96),mats.plinth),false,true).position.set(2,-0.41,4);
-add(new THREE.Mesh(new THREE.CylinderGeometry(33.8,33.8,0.04,96),mats.ground),false,true).position.set(2,0,4);
-boxM(9,0.04,30,mats.path,18,0.03,12,false);boxM(3,0.04,14,mats.path,-16,0.03,20,false);
-boxM(42,FY,28,mats.floor,0,FY/2,0,false);
-// zones (tinted floors)
-const ZONES={wait:{x:[-21,-6],z:[3,14],c:"--z-wait",n:"Waiting room"},triage:{x:[-6,1],z:[6,14],c:"--z-triage",n:"Triage"},cub:{x:[-4,13],z:[-14,4],c:"--z-cub",n:"Cubicles"},resus:{x:[13,21],z:[-2,6],c:"--z-resus",n:"Resus"},minor:{x:[-21,-6],z:[-14,1],c:"--z-minor",n:"Minors"}};
-const zoneMesh={};Object.entries(ZONES).forEach(([k,Z])=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(Z.x[1]-Z.x[0]-0.2,Z.z[1]-Z.z[0]-0.2),std({roughness:.95}));m.rotation.x=-Math.PI/2;m.position.set((Z.x[0]+Z.x[1])/2,FY+0.005,(Z.z[0]+Z.z[1])/2);add(m,false,true);zoneMesh[k]=m});
-// cutaway walls with section caps
-function wall(x1,z1,x2,z2,h=WH,t=0.2){const L=Math.hypot(x2-x1,z2-z1),m=new THREE.Mesh(new THREE.BoxGeometry(L,h,t),mats.wall);m.position.set((x1+x2)/2,FY+h/2,(z1+z2)/2);m.rotation.y=-Math.atan2(z2-z1,x2-x1);add(m);
-  const c=new THREE.Mesh(new THREE.BoxGeometry(L,0.04,t+0.01),mats.cap);c.position.set((x1+x2)/2,FY+h+0.02,(z1+z2)/2);c.rotation.y=m.rotation.y;scene.add(c)}
+// the model stays a light maquette in both themes, so the zone tints are the light ones
+const ZC={wait:0xEFE3D3,triage:0xEDE3EE,cub:0xE3ECEF,resus:0xF2DEDA,minor:0xE5EEE3};
+const DM={floor:M.tint(0xF1ECE6,{roughness:.95}),furn:M.tint(0xD9CDC7,{roughness:.9}),cap:M.tint(0x492B3E,{roughness:.6}),
+  person:M.tint(0xffffff,{roughness:.7}),head:M.tint(0xF3EEE7,{roughness:.8}),doc:M.tint(0x5A3B50,{roughness:.6}),
+  amb:M.tint(0xF4F1EF,{roughness:.5}),ambStripe:M.tint(0x5E8C6A,{roughness:.6}),curtain:M.tint(0xBFD3DA,{transparent:true,opacity:.6,roughness:.9}),
+  board:M.data(0x7B5C8E,0.2),bedFree:M.data(0x3F7A55,0.2),ward:M.tint(0xF7F3EF,{roughness:.9})};
+const G={};
+// plinth, grounds, the ambulance drive and the walk-in path, the floor slab
+put(new THREE.CylinderGeometry(34,34.6,1.0,112),M.card2,2,-0.5,4,{cast:false});
+put(new THREE.CylinderGeometry(33.6,33.6,0.06,112),M.felt,2,0.03,4,{cast:false});
+put(geo.rbox(42,FY,28,0.06),DM.floor,0,FY/2,0,{cast:false});
+// zones (tinted floors); each zone is a group so the whole area can be touched
+const ZONES={wait:{x:[-21,-6],z:[3,14],n:"Waiting room"},triage:{x:[-6,1],z:[6,14],n:"Triage"},cub:{x:[-4,13],z:[-14,4],n:"Cubicles"},resus:{x:[13,21],z:[-2,6],n:"Resus"},minor:{x:[-21,-6],z:[-14,1],n:"Minors"}};
+const zoneMat={};Object.entries(ZONES).forEach(([k,Z])=>{G[k]=grp();zoneMat[k]=M.tint(ZC[k],{roughness:.95});
+  put(new THREE.PlaneGeometry(Z.x[1]-Z.x[0]-0.2,Z.z[1]-Z.z[0]-0.2),zoneMat[k],(Z.x[0]+Z.x[1])/2,FY+0.006,(Z.z[0]+Z.z[1])/2,{rot:[-Math.PI/2,0,0],cast:false,parent:G[k]})});
+// cutaway walls with an ink section cap, like a cut model
+const WALLS=grp();
+function wall(x1,z1,x2,z2,h=WH,t=0.2){const L=Math.hypot(x2-x1,z2-z1),ry=-Math.atan2(z2-z1,x2-x1);put(geo.rbox(L,h,t,0.04),M.card,(x1+x2)/2,FY+h/2,(z1+z2)/2,{rot:[0,ry,0],parent:WALLS});
+  put(geo.rbox(L,0.05,t+0.02,0.01),DM.cap,(x1+x2)/2,FY+h+0.025,(z1+z2)/2,{rot:[0,ry,0],parent:WALLS,cast:false})}
 wall(-21,-14,21,-14);wall(-21,-14,-21,14);wall(21,-14,21,6);wall(-21,14,-18,14);wall(-14,14,10,14);wall(14,14,21,14);wall(21,10,21,14);
 wall(-6,1,-6,3,1);wall(-21,1,-15,1,1);wall(-11,1,-6,1,1);wall(-6,-14,-6,-6,1);wall(13,-14,13,-2,1);wall(13,6,21,6,1);wall(1,6,1,14,1);
-// furniture: seats, triage desk, cubicle beds, resus bays, minors chairs
-const seatGeo=new THREE.BoxGeometry(0.6,0.45,0.6),seats=new THREE.InstancedMesh(seatGeo,mats.furn,40);const dummy=new THREE.Object3D();
-const SEAT=[];for(let r=0;r<5;r++)for(let c=0;c<8;c++){const x=-19.5+c*1.7,z=5+r*1.9;SEAT.push([x,z]);dummy.position.set(x,FY+0.23,z+0.35);dummy.updateMatrix();seats.setMatrixAt(SEAT.length-1,dummy.matrix)}seats.castShadow=true;scene.add(seats);
-boxM(4.5,1,1,mats.white,-2.5,FY+0.5,9.5);
-const CUB=[];{const cols=11,xs=i=>-2.8+i*1.5;const rowsZ=[-12.6,-9.8,-4.6,-1.8];rowsZ.forEach(z=>{for(let i=0;i<cols;i++)CUB.push([xs(i),z])})}
-const bedGeo=new THREE.BoxGeometry(0.9,0.45,2.0),beds=new THREE.InstancedMesh(bedGeo,mats.white,CUB.length);CUB.forEach(([x,z],i)=>{dummy.position.set(x,FY+0.3,z);dummy.updateMatrix();beds.setMatrixAt(i,dummy.matrix)});beds.castShadow=true;scene.add(beds);
-const curtain=new THREE.InstancedMesh(new THREE.BoxGeometry(0.05,1.0,2.2),std({color:0xBFD3DA,transparent:true,opacity:.6}),CUB.length);CUB.forEach(([x,z],i)=>{dummy.position.set(x+0.72,FY+0.5,z);dummy.updateMatrix();curtain.setMatrixAt(i,dummy.matrix)});scene.add(curtain);
-const RES=[[15,-0.5],[18.5,-0.5],[15,3.6],[18.5,3.6]];RES.forEach(([x,z])=>{boxM(1.1,0.5,2.2,mats.white,x,FY+0.3,z);boxM(0.5,1.3,0.5,mats.dark,x+1.1,FY+0.65,z-0.6)});
-const FT=[];for(let r=0;r<2;r++)for(let c=0;c<7;c++)FT.push([-19.4+c*2,-11.5+r*5]);FT.forEach(([x,z])=>boxM(0.8,0.5,0.8,mats.furn,x,FY+0.25,z));
-boxM(4,1,1.2,mats.white,4.5,FY+0.5,1.6); // doctors' station
-// ambulance bay and ambulances
-const ambs=[];for(let i=0;i<10;i++){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(2.1,2.1,4.6),mats.amb);b.position.y=1.25;const s=new THREE.Mesh(new THREE.BoxGeometry(2.12,0.35,4.62),mats.ambStripe);s.position.y=1.0;const c=new THREE.Mesh(new THREE.BoxGeometry(2.0,1.2,1.4),mats.amb);c.position.set(0,0.8,-2.9);g.add(b,s,c);g.traverse(o=>{o.castShadow=true});g.visible=false;scene.add(g);ambs.push(g)}
-// wards: a floating floor above, the free beds glowing
-const ward=new THREE.Group();scene.add(ward);{const slab=new THREE.Mesh(new THREE.BoxGeometry(30,0.3,7),mats.ward);slab.receiveShadow=true;ward.add(slab);const e=new THREE.LineSegments(new THREE.EdgesGeometry(slab.geometry),mats.line);ward.add(e)}
-const wardBeds=[];for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.3,1.6),mats.white);m.position.set(-13.5+i*1.18,0.32,0);ward.add(m);wardBeds.push(m)}
-const freeMarks=new THREE.InstancedMesh(new THREE.SphereGeometry(0.28,12,10),mats.bedFree,40);ward.add(freeMarks);ward.position.set(0,9,-18);
-// people
-const MAXP=260,bodies=new THREE.InstancedMesh(new THREE.CylinderGeometry(.22,.27,1.0,10),mats.person,MAXP),heads=new THREE.InstancedMesh(new THREE.SphereGeometry(.2,12,10),mats.head,MAXP);
-bodies.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(MAXP*3),3);bodies.castShadow=true;scene.add(bodies,heads);
-const halos=new THREE.InstancedMesh(new THREE.TorusGeometry(.48,.07,8,24),std({color:0x7B5C8E,emissive:0x7B5C8E,emissiveIntensity:.4}),MAXP);scene.add(halos);
-const DOCN=12,docB=new THREE.InstancedMesh(new THREE.CylinderGeometry(.2,.25,1.15,10),mats.doc,DOCN),docH=new THREE.InstancedMesh(new THREE.SphereGeometry(.2,12,10),mats.docHead,DOCN);docB.castShadow=true;scene.add(docB,docH);
-let C={};
-function applyTheme(){mats.plinth.color=col("--scene-plinth");mats.ground.color=col("--scene-ground");mats.floor.color=col("--scene-floor");mats.wall.color=col("--scene-wall");mats.furn.color=col("--scene-furn");mats.path.color=col("--scene-path");mats.cap.color=col("--scene-edge");mats.line.color=col("--scene-edge");mats.ward.color=col("--scene-wall");
-  Object.entries(ZONES).forEach(([k,Z])=>zoneMesh[k].material.color=col(Z.c));C={t:[col("--t1"),col("--t2"),col("--t3"),col("--t4"),col("--t5")],board:col("--board")};
-  box.style.background=matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.dataset.theme!=="light"||document.documentElement.dataset.theme==="dark"?"linear-gradient(180deg,#241D33,#1A0D18)":"linear-gradient(180deg,#D6E4EA,#F6F1EC)";drawHours()}
-new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",applyTheme);
+// furniture: waiting seats, the triage desk, cubicle beds with curtains, resus bays, minors chairs, the doctors' station
+const SEAT=[];for(let r=0;r<5;r++)for(let c=0;c<8;c++)SEAT.push([-19.5+c*1.7,5+r*1.9]);
+{const seats=new THREE.InstancedMesh(geo.rbox(0.6,0.45,0.6,0.08),DM.furn,SEAT.length);SEAT.forEach(([x,z],i)=>{dummy.position.set(x,FY+0.23,z+0.35);dummy.updateMatrix();seats.setMatrixAt(i,dummy.matrix)});stage.add(seats,{parent:G.wait})}
+put(geo.rbox(4.5,1,1,0.1),M.card,-2.5,FY+0.5,9.5,{parent:G.triage});
+const CUB=[];{const xs=i=>-2.8+i*1.5;[-12.6,-9.8,-4.6,-1.8].forEach(z=>{for(let i=0;i<11;i++)CUB.push([xs(i),z])})}
+{const beds=new THREE.InstancedMesh(geo.rbox(0.9,0.45,2.0,0.1),M.card,CUB.length);CUB.forEach(([x,z],i)=>{dummy.position.set(x,FY+0.3,z);dummy.updateMatrix();beds.setMatrixAt(i,dummy.matrix)});stage.add(beds,{parent:G.cub});
+  const cur=new THREE.InstancedMesh(geo.rbox(0.05,1.0,2.2,0.02),DM.curtain,CUB.length);CUB.forEach(([x,z],i)=>{dummy.position.set(x+0.72,FY+0.5,z);dummy.updateMatrix();cur.setMatrixAt(i,dummy.matrix)});stage.add(cur,{parent:G.cub,cast:false})}
+const RES=[[15,-0.5],[18.5,-0.5],[15,3.6],[18.5,3.6]];RES.forEach(([x,z])=>{put(geo.rbox(1.1,0.5,2.2,0.1),M.card,x,FY+0.3,z,{parent:G.resus});put(geo.rbox(0.5,1.3,0.5,0.1),M.dark,x+1.1,FY+0.65,z-0.6,{parent:G.resus})});
+const FT=[];for(let r=0;r<2;r++)for(let c=0;c<7;c++)FT.push([-19.4+c*2,-11.5+r*5]);FT.forEach(([x,z])=>put(geo.rbox(0.8,0.5,0.8,0.1),DM.furn,x,FY+0.25,z,{parent:G.minor}));
+G.station=grp();put(geo.rbox(4,1,1.2,0.1),M.card,4.5,FY+0.5,1.6,{parent:G.station});
+// the ambulance bay: the drive, and one ambulance for each patient still waiting to be handed over
+G.amb=grp();put(geo.rbox(9,0.08,30,0.03),M.road,18,0.06,12,{cast:false,parent:G.amb});put(geo.rbox(3,0.08,14,0.03),M.road,-16,0.06,20,{cast:false});
+const ambs=[];for(let i=0;i<10;i++){const g=grp(0,0,0,G.amb);put(geo.rbox(2.1,2.1,4.6,0.22),DM.amb,0,1.25,0,{parent:g});put(geo.rbox(2.14,0.35,4.64,0.08),DM.ambStripe,0,1.0,0,{parent:g});
+  put(geo.rbox(2.0,1.2,1.4,0.18),DM.amb,0,0.8,-2.9,{parent:g});put(geo.rbox(1.7,0.45,0.06,0.02),M.window,0,1.1,-3.62,{parent:g});g.visible=false;ambs.push(g)}
+// the wards: an upper floor lifted on posts, the free beds marked
+G.ward=grp(0,9,-18);put(geo.rbox(30,0.3,7,0.1),DM.ward,0,0,0,{parent:G.ward});[[-14.4,-3.2],[14.4,-3.2],[-14.4,3.2],[14.4,3.2]].forEach(([x,z])=>put(geo.rbox(0.25,8.85,0.25,0.06),M.steel,x,-4.58,z,{parent:G.ward}));
+for(let i=0;i<24;i++)put(geo.rbox(0.8,0.3,1.6,0.08),M.card,-13.5+i*1.18,0.32,0,{parent:G.ward});
+const freeMarks=new THREE.InstancedMesh(geo.sphere(0.28,2),DM.bedFree,24);freeMarks.frustumCulled=false;G.ward.add(freeMarks);
+// a few felt trees round the grounds
+[[-24,22,1],[-27,-4,1.1],[-20,-17,.9],[26,-14,1],[29,0,.8],[6,28,.9],[-6,30,1.1],[27,22,.8]].forEach(([x,z,s],i)=>{const g=grp(x,0,z);put(geo.cyl(0.18,1.8),M.timber,0,0.9,0,{parent:g});
+  put(geo.sphere(1.2*s,1),M.tint(i%2?0xA3B894:0x92A886,{roughness:1}),0,1.8+1*s,0,{parent:g})});
+// people: abstract maquette figures, the body coloured by triage category; doctors in plum
+const MAXP=260,bodies=new THREE.InstancedMesh(geo.capsule(0.21,0.5),DM.person,MAXP),heads=new THREE.InstancedMesh(geo.sphere(0.19,2),DM.head,MAXP);
+for(let i=0;i<MAXP;i++)bodies.setColorAt(i,new THREE.Color(1,1,1));[bodies,heads].forEach(m=>{m.frustumCulled=false;stage.add(m,{receive:false})});
+const halos=new THREE.InstancedMesh(new THREE.TorusGeometry(.48,.07,8,24),DM.board,MAXP);halos.frustumCulled=false;stage.add(halos,{cast:false});
+const DOCN=12,docB=new THREE.InstancedMesh(geo.capsule(0.2,0.62),DM.doc,DOCN),docH=new THREE.InstancedMesh(geo.sphere(0.19,2),DM.head,DOCN);[docB,docH].forEach(m=>{m.frustumCulled=false;stage.add(m,{receive:false})});
+// the signature: every patient carries a thin ring on the floor that fills clockwise with their time in the department. Full circle = six hours, the target; past six hours it turns red.
+const SIX={ink:new THREE.Color(0x492B3E),alert:new THREE.Color(0xB3261E),track:new THREE.Color(0x916A70)};
+const ringGeo=new THREE.RingGeometry(0.5,0.68,48);ringGeo.setAttribute("aFrac",new THREE.InstancedBufferAttribute(new Float32Array(MAXP),1));
+const ringMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{uInk:{value:SIX.ink},uAlert:{value:SIX.alert},uTrack:{value:SIX.track}},
+  vertexShader:"attribute float aFrac;varying float vF;varying vec2 vP;void main(){vF=aFrac;vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}",
+  fragmentShader:"uniform vec3 uInk;uniform vec3 uAlert;uniform vec3 uTrack;varying float vF;varying vec2 vP;void main(){float t=fract(atan(vP.x,vP.y)/6.2831853+1.0);float on=step(t,min(vF,1.0));vec3 c=vF>=1.0?uAlert:uInk;gl_FragColor=vec4(mix(uTrack,c,on),mix(0.2,0.92,on));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"});
+const rings=new THREE.InstancedMesh(ringGeo,ringMat,MAXP);rings.frustumCulled=false;rings.renderOrder=2;stage.root.add(rings);
+// compare: ghost figures and ambulances for the same moment with one change made (instanced, so the ghost shader applies the instance matrix)
+const ghostFigMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uColor:{value:new THREE.Color(0x8E6E88)},uOpacity:{value:0.6}},
+  vertexShader:"varying vec3 vN;varying vec3 vV;void main(){vec4 mv=modelViewMatrix*instanceMatrix*vec4(position,1.0);vN=normalize(normalMatrix*mat3(instanceMatrix)*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}",
+  fragmentShader:"uniform vec3 uColor;uniform float uOpacity;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.0);gl_FragColor=vec4(uColor,(0.2+0.8*f)*uOpacity);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"});
+const ghostFig=new THREE.InstancedMesh(geo.capsule(0.25,0.62),ghostFigMat,MAXP);ghostFig.frustumCulled=false;ghostFig.visible=false;stage.root.add(ghostFig);
+const ghostAmb=ambs.map(a=>stage.ghost(a));
+// an anchor that walks with one patient, so Follow can track a journey through the department
+const followMe=new THREE.Object3D();stage.root.add(followMe);let followId=null;
+let C={t:[],board:null};let VIEW="all";
+function applyTheme(){const css=getComputedStyle(document.documentElement),c=n=>new THREE.Color(css.getPropertyValue(n).trim()||"#999");
+  C={t:[c("--t1"),c("--t2"),c("--t3"),c("--t4"),c("--t5")],board:c("--board")};DM.board.color.copy(C.board);DM.board.emissive.copy(C.board);
+  if(typeof drawHours==="function")drawHours()}
 
-// ---------------- where each patient stands
-const vis=new Map(); // id -> {x,y,z,cat,alpha,leaving}
-const slots={cub:new Map(),resus:new Map(),ft:new Map(),wait:new Map(),amb:new Map()};
-function slotFor(area,id,n){const m=slots[area];if(m.has(id))return m.get(id);const used=new Set(m.values());for(let i=0;i<n;i++)if(!used.has(i)){m.set(id,i);return i}return -1}
-function targetFor(p){
+// ---------------- where each patient stands (slot maps are per simulation, so the ghost can use the same rules)
+const vis=new Map();// id -> {x,y,z,cat,...}
+const mkSlots=()=>({cub:new Map(),resus:new Map(),ft:new Map(),wait:new Map(),amb:new Map()});
+const slots=mkSlots();
+function slotFor(SL,area,id,n){const m=SL[area];if(m.has(id))return m.get(id);const used=new Set(m.values());for(let i=0;i<n;i++)if(!used.has(i)){m.set(id,i);return i}return -1}
+function targetFor(p,SL=slots){
   if(p.state==="triage"){const i=p.id%6;return p.amb?[18-i*0.2,FY,9.8+i*0.7]:[-3.5+(i%3)*1.2,FY,11.8+Math.floor(i/3)*1.0]}
-  if(p.state==="wait"&&!p.where){if(p.amb){const i=slotFor("amb",p.id,40);return ["amb",i]}const i=slotFor("wait",p.id,SEAT.length);if(i<0)return[-12+(p.id%9)*0.9,FY,2.2];const [x,z]=SEAT[i];return [x,FY+0.25,z]}
-  if(p.where==="resus"){const i=slotFor("resus",p.id,4);const [x,z]=RES[Math.max(0,i)];return [x,FY+0.55,z]}
-  if(p.where==="ft"){const i=slotFor("ft",p.id,FT.length);const [x,z]=FT[Math.max(0,i)];return [x,FY+0.25,z]}
-  if(p.where==="cub"){const i=slotFor("cub",p.id,CUB.length);const [x,z]=CUB[Math.max(0,i)];return [x,FY+0.55,z]}
+  if(p.state==="wait"&&!p.where){if(p.amb){const i=slotFor(SL,"amb",p.id,40);return ["amb",i]}const i=slotFor(SL,"wait",p.id,SEAT.length);if(i<0)return[-12+(p.id%9)*0.9,FY,2.2];const [x,z]=SEAT[i];return [x,FY+0.25,z]}
+  if(p.where==="resus"){const i=slotFor(SL,"resus",p.id,4);const [x,z]=RES[Math.max(0,i)];return [x,FY+0.55,z]}
+  if(p.where==="ft"){const i=slotFor(SL,"ft",p.id,FT.length);const [x,z]=FT[Math.max(0,i)];return [x,FY+0.25,z]}
+  if(p.where==="cub"){const i=slotFor(SL,"cub",p.id,CUB.length);const [x,z]=CUB[Math.max(0,i)];return [x,FY+0.55,z]}
   return [0,FY,10]}
-function cleanSlots(){const live=new Set(st.pts.map(p=>p.id));for(const [a,m] of Object.entries(slots))for(const id of m.keys()){const p=st.pts.find(q=>q.id===id);if(!live.has(id)||(a==="wait"&&p.where)||(a==="amb"&&(p.where||p.state!=="wait")))m.delete(id)}}
-let leavers=[];
-function syncPeople(dt){cleanSlots();const live=new Set();
+function cleanSlots(state,SL){const byId=new Map(state.pts.map(p=>[p.id,p]));for(const [a,m] of Object.entries(SL))for(const id of m.keys()){const p=byId.get(id);if(!p||(a==="wait"&&p.where)||(a==="amb"&&(p.where||p.state!=="wait")))m.delete(id)}}
+let leavers=[];const tmpC=new THREE.Color();
+function syncPeople(dt){cleanSlots(st,slots);const live=new Set();
   st.pts.forEach(p=>{live.add(p.id);let v=vis.get(p.id);if(!v){v={x:p.amb?18:-16,y:FY,z:p.amb?16:16,cat:p.cat};vis.set(p.id,v)}let tg=targetFor(p);
     v.inAmb=false;if(tg[0]==="amb"){v.inAmb=true;tg=[18,FY,16]}
-    v.tx=tg[0];v.ty=tg[1];v.tz=tg[2];v.board=p.state==="board";v.cat=p.cat;v.lying=!!p.where&&p.where!=="ft"});
+    v.tx=tg[0];v.ty=tg[1];v.tz=tg[2];v.board=p.state==="board";v.cat=p.cat;v.lying=!!p.where&&p.where!=="ft";v.arr=p.arr;v.id=p.id});
   const recent=new Map(st.done.slice(-80).map(d=>[d.id,d.admit]));for(const [id,v] of vis)if(!live.has(id)){vis.delete(id);leavers.push({...v,t:0,toWard:!!recent.get(id),board:false})}
   leavers.forEach(l=>{l.t+=dt;if(l.toWard){l.tx=l.x;l.ty=9.5;l.tz=-18}else{l.tx=-16;l.ty=FY;l.tz=17}});leavers=leavers.filter(l=>l.t<2.5);
-  let i=0;const k=Math.min(1,dt*4);
-  const put=(v,alpha)=>{if(i>=MAXP)return;v.x+=(v.tx-v.x)*k;v.y+=(v.ty-v.y)*k;v.z+=(v.tz-v.z)*k;const sc=v.inAmb?0:alpha;
+  let i=0;const k=Math.min(1,dt*4),aF=ringGeo.attributes.aFrac.array;
+  const putV=(v,alpha,ring)=>{if(i>=MAXP)return;v.x+=(v.tx-v.x)*k;v.y+=(v.ty-v.y)*k;v.z+=(v.tz-v.z)*k;const sc=v.inAmb?0:alpha;
     dummy.position.set(v.x,v.y+(v.lying?0.25:0.5),v.z);dummy.rotation.set(v.lying?Math.PI/2:0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();bodies.setMatrixAt(i,dummy.matrix);
-    dummy.position.set(v.x,v.y+(v.lying?0.25:1.18),v.z+(v.lying?-0.65:0));dummy.rotation.set(0,0,0);dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);
-    bodies.setColorAt(i,C.t[v.cat-1]);
-    dummy.position.set(v.x,v.y+0.62,v.z);dummy.rotation.set(Math.PI/2,0,0);const hs=v.board&&!v.inAmb?alpha:0;dummy.scale.set(hs,hs,hs);dummy.updateMatrix();halos.setMatrixAt(i,dummy.matrix);i++};
-  for(const v of vis.values())put(v,1);leavers.forEach(l=>put(l,Math.max(0,1-l.t/2.5)));
-  dummy.scale.set(0,0,0);dummy.rotation.set(0,0,0);dummy.updateMatrix();for(;i<MAXP;i++){bodies.setMatrixAt(i,dummy.matrix);heads.setMatrixAt(i,dummy.matrix);halos.setMatrixAt(i,dummy.matrix)}
-  bodies.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;halos.instanceMatrix.needsUpdate=true;bodies.instanceColor.needsUpdate=true;
+    dummy.position.set(v.x,v.y+(v.lying?0.25:1.15),v.z+(v.lying?-0.65:0));dummy.rotation.set(0,0,0);dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);
+    bodies.setColorAt(i,C.t[v.cat-1]||tmpC.set(0xffffff));
+    dummy.position.set(v.x,v.y+0.62,v.z);dummy.rotation.set(Math.PI/2,0,0);const hs=v.board&&!v.inAmb?alpha:0;dummy.scale.set(hs,hs,hs);dummy.updateMatrix();halos.setMatrixAt(i,dummy.matrix);
+    // the six-hour ring on the floor (or the bed) under each patient
+    const rs=ring&&!v.inAmb?sc:0;dummy.position.set(v.x,v.lying?v.y+0.03:(v.ty>FY+0.1?FY+0.47:FY+0.02),v.z);dummy.rotation.set(-Math.PI/2,0,0);dummy.scale.set(rs,rs,rs);dummy.updateMatrix();rings.setMatrixAt(i,dummy.matrix);
+    aF[i]=ring?(st.t-v.arr)/360:0;i++};
+  for(const v of vis.values())putV(v,1,true);leavers.forEach(l=>putV(l,Math.max(0,1-l.t/2.5),false));
+  dummy.scale.set(0,0,0);dummy.rotation.set(0,0,0);dummy.updateMatrix();for(;i<MAXP;i++){bodies.setMatrixAt(i,dummy.matrix);heads.setMatrixAt(i,dummy.matrix);halos.setMatrixAt(i,dummy.matrix);rings.setMatrixAt(i,dummy.matrix)}
+  [bodies,heads,halos,rings].forEach(m=>m.instanceMatrix.needsUpdate=true);bodies.instanceColor.needsUpdate=true;ringGeo.attributes.aFrac.needsUpdate=true;
   // doctors walk to the patient they are seeing
-  const docs=[...st.docs,...(S.fastTrack?st.ftDocs:[])];docs.forEach((d,j)=>{const v=d.p?vis.get(d.p.id):null;const tx=v?v.tx+0.8:3+(j%6)*0.8,tz=v?v.tz+0.4:2.6+Math.floor(j/6)*0.8;d.vx=d.vx??tx;d.vz=d.vz??tz;d.vx+=(tx-d.vx)*k;d.vz+=(tz-d.vz)*k;
-    dummy.scale.set(1,1,1);dummy.position.set(d.vx,FY+0.58,d.vz);dummy.updateMatrix();docB.setMatrixAt(j,dummy.matrix);dummy.position.set(d.vx,FY+1.3,d.vz);dummy.updateMatrix();docH.setMatrixAt(j,dummy.matrix)});
-  dummy.scale.set(0,0,0);dummy.updateMatrix();for(let j=docs.length;j<DOCN;j++){docB.setMatrixAt(j,dummy.matrix);docH.setMatrixAt(j,dummy.matrix)}docB.instanceMatrix.needsUpdate=true;docH.instanceMatrix.needsUpdate=true;
+  const docs=[...st.docs,...(S.fastTrack?st.ftDocs:[])];docs.forEach((d,j)=>{if(j>=DOCN)return;const v=d.p?vis.get(d.p.id):null;const tx=v?v.tx+0.8:3+(j%6)*0.8,tz=v?v.tz+0.4:2.6+Math.floor(j/6)*0.8;d.vx=d.vx??tx;d.vz=d.vz??tz;d.vx+=(tx-d.vx)*k;d.vz+=(tz-d.vz)*k;
+    dummy.scale.set(1,1,1);dummy.rotation.set(0,0,0);dummy.position.set(d.vx,FY+0.58,d.vz);dummy.updateMatrix();docB.setMatrixAt(j,dummy.matrix);dummy.position.set(d.vx,FY+1.3,d.vz);dummy.updateMatrix();docH.setMatrixAt(j,dummy.matrix)});
+  dummy.scale.set(0,0,0);dummy.updateMatrix();for(let j=Math.min(docs.length,DOCN);j<DOCN;j++){docB.setMatrixAt(j,dummy.matrix);docH.setMatrixAt(j,dummy.matrix)}docB.instanceMatrix.needsUpdate=true;docH.instanceMatrix.needsUpdate=true;
   // ambulances: one per patient still in the ambulance, queueing down the drive
   const inAmb=[...vis.values()].filter(v=>v.inAmb).length+st.pts.filter(p=>p.amb&&p.state==="triage").length;
   ambs.forEach((a,j)=>{a.visible=j<Math.min(10,inAmb);a.position.set(16.5+(j%2)*3,0,16+Math.floor(j/2)*5.6)});
-  // ward: free beds glow
-  const free=Math.max(0,Math.floor(st.wardFree));for(let j=0;j<40;j++){dummy.scale.set(j<free?1:0,j<free?1:0,j<free?1:0);dummy.position.set(-13.5+j*1.18,0.75,0);dummy.updateMatrix();freeMarks.setMatrixAt(j,dummy.matrix)}freeMarks.instanceMatrix.needsUpdate=true}
+  // wards: free beds marked
+  const free=Math.max(0,Math.min(24,Math.floor(st.wardFree)));for(let j=0;j<24;j++){const s=j<free?1:0;dummy.scale.set(s,s,s);dummy.position.set(-13.5+j*1.18,0.75,0);dummy.updateMatrix();freeMarks.setMatrixAt(j,dummy.matrix)}freeMarks.instanceMatrix.needsUpdate=true;
+  // the follow anchor: the newest walk-in, kept until they leave
+  if(followId==null||!vis.has(followId)){const c=st.pts.filter(p=>!p.amb&&(p.state==="triage"||p.state==="wait")).sort((a,b)=>b.arr-a.arr)[0];followId=c?c.id:null}
+  const fv=followId!=null&&vis.get(followId);if(fv)followMe.position.set(fv.x,fv.y+0.6,fv.z)}
+// ---------------- compare: the same moment with one change made, run alongside the live simulation and drawn as ghosts
+const CMPOPT=[
+  {id:"ward",label:"A new 28-bed ward",short:"+28 beds",note:"More beds upstairs",ch:()=>({extraBeds:28})},
+  {id:"early",label:"Ward discharges before 11am",short:"early discharge",note:"Beds free up earlier",ch:()=>({earlyDischarge:true})},
+  {id:"docs",label:"Two more doctors",short:"+2 doctors",note:"On the floor, every shift",ch:()=>({doctors:S.doctors+2})},
+  {id:"ft",label:"Fast-track stream",short:"fast-track",note:"Triage 4–5 seen in minors",ch:()=>({fastTrack:true})},
+  {id:"shift",label:"10% of lower-urgency patients go elsewhere",short:"10% elsewhere",note:"Urgent care or a GP instead",ch:()=>({shift:Math.min(0.3,S.shift+0.1)})}];
+let CMP=null,alt=null,AS=null,gslots=mkSlots();
+const altSettings=()=>Object.assign(AS||(AS={}),S,CMP.ch());
+function startAlt(){alt=null;AS=null;gslots=mkSlots();if(!CMP)return;altSettings();alt=ED.newState(AS,7);alt.t=Math.max(0,st.t-2880)}
+function stepAlt(max){if(!alt)return;altSettings();while(alt.docs.length<AS.doctors)alt.docs.push({p:null});while(alt.docs.length>AS.doctors){const d=alt.docs.pop();if(d.p)d.p.state="needdoc"}
+  let n=0;while(alt.t<st.t&&n<max){ED.step(AS,alt);n++}}
+function ghosts(){const on=!!(alt&&alt.t>=st.t);ghostFig.visible=on;if(!on){ghostAmb.forEach(g=>g.visible=false);return}
+  cleanSlots(alt,gslots);let i=0,inAmbG=0;
+  for(const p of alt.pts){const tg=targetFor(p,gslots);if(tg[0]==="amb"||(p.amb&&p.state==="triage")){inAmbG++;continue}if(i>=MAXP)break;const lying=!!p.where&&p.where!=="ft";
+    dummy.position.set(tg[0],tg[1]+(lying?0.25:0.5),tg[2]);dummy.rotation.set(lying?Math.PI/2:0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();ghostFig.setMatrixAt(i++,dummy.matrix)}
+  dummy.scale.set(0,0,0);dummy.rotation.set(0,0,0);dummy.updateMatrix();for(;i<MAXP;i++)ghostFig.setMatrixAt(i,dummy.matrix);ghostFig.instanceMatrix.needsUpdate=true;
+  ghostAmb.forEach((g,j)=>{g.visible=j<Math.min(10,inAmbG);g.position.set(16.5+(j%2)*3,0,16+Math.floor(j/2)*5.6)})}
 
-// ---------------- labels
-const tagsEl=$("tags"),tg=[0,1,2,3,4,5].map(()=>{const d=document.createElement("div");d.className="tag";tagsEl.appendChild(d);return d});const v3=new THREE.Vector3();
-const TAGP=[[-13,2.4,9],[-1,2.4,10],[5,2.6,-6],[17,2.6,2],[-13,2.4,-7],[0,11,-18]];
-function tags(s){const w=canvas.clientWidth,hh=canvas.clientHeight;TAGP.forEach((p,i)=>{v3.set(...p).project(camera);const el=tg[i],x=(v3.x+1)/2*w,y=(1-v3.y)/2*hh;if(v3.z>1||x<40||x>w-40||y<46||y>hh-30){el.hidden=true;return}el.hidden=false;el.style.left=x+"px";el.style.top=y+"px"});
+// ---------------- light, weather and the lit department at night
+const LIVEWX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.4,0.15],src:"",at:"",place:""},WX={rain:0,cloud:0.1,fog:0,wet:0,wind:[0.4,0.15]};
+const NOW=new Date();
+const simHour=()=>(st.t%1440)/60;
+function sky(dt){stage.setClock(nzDate(NOW.getFullYear(),NOW.getMonth(),15,simHour()));const k=Math.min(1,dt*1.2);
+  ["rain","cloud","fog","wet"].forEach(n=>WX[n]+=(LIVEWX[n]-WX[n])*k);WX.wind[0]+=(LIVEWX.wind[0]-WX.wind[0])*k;WX.wind[1]+=(LIVEWX.wind[1]-WX.wind[1])*k;stage.setWeather(WX);
+  // the department never closes: after dark its floors glow softly, as a lit building would
+  const glow=stage.clock.night*0.32;[DM.floor,...Object.values(zoneMat)].forEach(m=>{m.emissive.copy(m.color);m.emissiveIntensity=glow})}
+
+// ---------------- labels on the model (a tag hides when its part is pinned, or when it would cover the controls)
+const tagsEl=$("tags"),tg=[0,1,2,3,4,5,6].map(()=>{const d=document.createElement("div");d.className="tag";tagsEl.appendChild(d);return d});const v3=new THREE.Vector3();
+const TAGP=[[-13,2.4,9],[-1,2.4,10],[5,2.6,-6],[17,2.6,2],[-13,2.4,-7],[0,11,-18],[4.5,3.2,1.6]];
+const TAGPICK=["Waiting room","Triage","Cubicles","Resus","Minors","Wards",null];
+function tags(s){const w=canvas.clientWidth,hh=canvas.clientHeight;
+  const pinned=new Set([...box.querySelectorAll(".tw-pins .tw-card")].map(e=>e.getAttribute("aria-label")));
+  const ghostOn=!!(alt&&alt.t>=st.t);
+  TAGP.forEach((p,i)=>{v3.set(...p);const q=stage.project(v3),el=tg[i];if((i===6&&!ghostOn)||pinned.has(TAGPICK[i])||!q.visible||q.x<40||q.x>w-40||q.y<46||q.y>hh-30){el.hidden=true;return}el.hidden=false;el.style.left=q.x+"px";el.style.top=q.y+"px"});
   const cnt=w=>st.pts.filter(p=>p.where===w).length,wt=st.pts.filter(p=>p.state==="wait"&&!p.amb).length,tri=st.pts.filter(p=>p.state==="triage").length;
   tg[0].className="tag"+(wt>30?" hot":"");tg[0].innerHTML=`<b>Waiting room</b> ${wt}<br><span class="m">${wt>40?"standing room only":"seats "+Math.min(wt,40)+"/40"}</span>`;
   tg[1].innerHTML=`<b>Triage</b><br><span class="m">${tri} being assessed</span>`;
   const c=cnt("cub");tg[2].className="tag"+(c>=S.cubicles?" hot":"");tg[2].innerHTML=`<b>Cubicles</b> ${c}/${S.cubicles}<br><span class="m">${s.board} waiting for a ward bed</span>`;
   tg[3].innerHTML=`<b>Resus</b> ${cnt("resus")}/4<br><span class="m">most urgent first</span>`;
   tg[4].innerHTML=`<b>Minors</b> ${cnt("ft")}/${S.ftChairs}<br><span class="m">${S.fastTrack?"fast-track on":"shared doctors"}</span>`;
-  tg[5].className="tag";tg[5].innerHTML=`<b>Wards</b><br><span class="m">${Math.floor(st.wardFree)} bed${Math.floor(st.wardFree)===1?"":"s"} free</span>`}
-
+  tg[5].className="tag";tg[5].innerHTML=`<b>Wards</b><br><span class="m">${Math.floor(st.wardFree)} bed${Math.floor(st.wardFree)===1?"":"s"} free</span>`;
+  if(ghostOn){const a=ED.stats(alt);tg[6].className="tag";tg[6].innerHTML=`<b>Ghost: ${CMP.label.charAt(0).toLowerCase()+CMP.label.slice(1)}</b><br><span class="m">waiting ${a.wait} (now ${s.wait}) · ward-bed waits ${a.board} (now ${s.board})</span><br><span class="m">seen within 6 h, last 24 h: ${fmt(a.within6*100)}% (now ${fmt(s.within6*100)}%)</span>`}
+  const kept=[...box.querySelectorAll(".views,.legend3d,.tw-tools,.tw-dialwrap,.tw-tour:not([hidden]),.tw-following:not([hidden]),.badge")].map(e=>e.getBoundingClientRect());
+  [6,2,0,5,3,4,1].forEach(i=>{const el=tg[i];if(el.hidden)return;let r=el.getBoundingClientRect();const lx=parseFloat(el.style.left),half=r.width/2,nx=Math.min(w-half-6,Math.max(half+6,lx));if(nx!==lx){el.style.left=nx+"px";r=el.getBoundingClientRect()}if(kept.some(k=>r.left<k.right+4&&r.right>k.left-4&&r.top<k.bottom+4&&r.bottom>k.top-4)){el.hidden=true;return}kept.push(r)})}
 // ---------------- panels
 function clockText(){const t=st.t,d=ED.dayOf(t)%7,m=t%1440,h=Math.floor(m/60),mm=m%60;return `${DAYS[d]} ${((h+11)%12)+1}:${String(mm).padStart(2,"0")} ${h>=12?"pm":"am"}`}
 function panels(){const s=ED.stats(st);$("clock").textContent=clockText();
@@ -568,22 +638,61 @@ $("reset").onclick=()=>{Object.assign(S,ED.BASE);["surge","shift","doctors","bed
   $("surgeV").textContent="none";$("shiftV").textContent="0%";$("doctorsV").textContent=S.doctors;$("bedsV").textContent="none";syncDocs();ladder()};
 document.querySelectorAll("[data-speed]").forEach(b=>b.onclick=()=>{speed=+b.dataset.speed;document.querySelectorAll("[data-speed]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"))});
 $("pause").onclick=()=>{playing=!playing;$("pause").textContent=playing?"Pause":"Play"};$("pause").textContent=playing?"Pause":"Play";
-// ---------------- camera
-function resize(){const w=box.clientWidth,h=Math.max(window.__minH||420,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=h+"px";renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?46:34;camera.updateProjectionMatrix()}
-addEventListener("resize",resize);
-const VIEWS={all:{p:[32,40,52],t:[3,1,1]},front:{p:[-12,14,30],t:[-10,0,7]},cubicles:{p:[18,22,14],t:[4,0,-6]},ambulance:{p:[34,14,36],t:[16,0,14]}};
-let camGoal=null;function setView(n){document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));const v=VIEWS[n],t=new THREE.Vector3(...v.t),p=new THREE.Vector3(...v.p);if(camera.aspect<1)p.sub(t).multiplyScalar(1.25).add(t);camGoal={p,t}}
-document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));controls.addEventListener("start",()=>camGoal=null);
-// ---------------- loop
-let last=performance.now(),acc=0,visible=true,panelT=0;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe(canvas)}catch(e){}
-function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(visible){if(playing){acc+=dt*speed;let n=0;while(acc>=1&&n<400){ED.step(S,st);acc-=1;n++}}
-    syncPeople(dt);if(camGoal){camera.position.lerp(camGoal.p,Math.min(1,dt*3));controls.target.lerp(camGoal.t,Math.min(1,dt*3));if(camera.position.distanceTo(camGoal.p)<0.1)camGoal=null}
-    controls.update();renderer.render(scene,camera);panelT+=dt;if(panelT>0.25){panelT=0;const s=panels();tags(s)}}
-  requestAnimationFrame(frame)}
-resize();applyTheme();setView("all");camera.position.copy(camGoal.p);controls.target.copy(camGoal.t);camGoal=null;tags(panels());ladder();
-window.__ed={S,setView,speed:v=>speed=v,state:()=>st,restart:()=>{start();syncDocs();ladder()},ladder,natPct:p=>{natPct=p}};
-requestAnimationFrame(frame);
+// ---------------- camera, touch, tour, compare, sound and the time dial
+const VIEWS={all:{p:[30,37,48],t:[1,0,0]},front:{p:[-12,14,30],t:[-10,0,7]},cubicles:{p:[18,22,14],t:[4,0,-6]},ambulance:{p:[34,14,36],t:[16,0,14]}};stage.views=VIEWS;
+function setView(n){if(!VIEWS[n])return;VIEW=n;document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.view===n?"true":"false"));stage.flyTo(VIEWS[n])}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+const STATE={triage:"being triaged",wait:"waiting to be seen",needdoc:"in a space, waiting for a doctor",doc:"with a doctor",obs:"tests and observation",board:"waiting for a ward bed"};
+const pk=(obj,spec)=>{if(spec.truth==null)spec.truth="Simulated";if(spec.color==null)spec.color=0x916A70;return stage.pickable(obj,spec)};// (no Object.assign: it would freeze the getters)
+const inZone=w=>st.pts.filter(p=>p.where===w).length;
+pk(G.wait,{title:"Waiting room",hint:"walk-ins waiting to be seen",panel:"#waiting",view:{p:[-2,16,32],t:[-13,0,8]},value:()=>{const wt=st.pts.filter(p=>p.state==="wait"&&!p.amb),lw=wt.reduce((m,p)=>Math.max(m,st.t-p.arr),0);return `${wt.length} waiting · seats ${Math.min(wt.length,40)}/40<br><span class="m">longest wait so far ${mins(lw)}</span>`}});
+pk(G.triage,{title:"Triage",hint:"most urgent first",panel:"#waiting",view:{p:[6,14,26],t:[-2,0,9]},value:()=>`${st.pts.filter(p=>p.state==="triage").length} being assessed<br><span class="m">${S.triageNurses} triage nurses · 2 to 6 minutes each</span>`});
+pk(followMe,{title:"One patient's visit",hint:"follow someone from the door",follow:true,followOffset:[0,0.6,0],get view(){const q=followMe.position;return {p:[q.x+9,q.y+11,q.z+14],t:[q.x,q.y,q.z]}},
+  value:()=>{const p=st.pts.find(q=>q.id===followId);return p?`triage ${p.cat} · ${mins(st.t-p.arr)} so far<br><span class="m">${STATE[p.state]||"on the way"}</span>`:`<span class="m">no one waiting right now</span>`}});
+pk(G.cub,{title:"Cubicles",hint:"beds for assessment and treatment",panel:"#board",view:VIEWS.cubicles,value:()=>{const b=st.pts.filter(p=>p.state==="board").length;return `${inZone("cub")}/${S.cubicles} in use<br><span class="m">${b} held by people waiting for a ward bed</span>`}});
+pk(G.resus,{title:"Resus",hint:"triage 1 goes straight in",panel:"#inED",view:{p:[28,14,14],t:[17,0,1.5]},value:()=>`${inZone("resus")}/4 bays in use<br><span class="m">the most urgent patients first</span>`});
+pk(G.minor,{title:"Minors",hint:"chairs for triage 4 and 5",panel:"#ft",view:{p:[-4,16,6],t:[-13,0,-7]},value:()=>`${inZone("ft")}/${S.ftChairs} chairs in use<br><span class="m">${S.fastTrack?"fast-track stream on: two dedicated clinicians":"shared doctors (try the fast-track stream)"}</span>`});
+pk(G.station,{title:"Doctors' station",hint:"doctors on the floor",panel:"#doctors",value:()=>`${S.doctors} doctors on the floor<br><span class="m">${st.docs.filter(d=>d.p).length} with a patient right now</span>`});
+pk(G.amb,{title:"Ambulance bay",hint:"handovers waiting",panel:"#ramp",view:VIEWS.ambulance,value:()=>{const s=ED.stats(st);return `${s.ramped} ambulance${s.ramped===1?"":"s"} waiting 15+ minutes<br><span class="m">one ambulance shown for each patient not yet handed over</span>`}});
+pk(G.ward,{title:"Wards",hint:"the floor upstairs",panel:"#early",view:{p:[12,20,8],t:[0,8,-18]},value:()=>`${Math.floor(st.wardFree)} bed${Math.floor(st.wardFree)===1?"":"s"} free<br><span class="m">discharges ${S.earlyDischarge?"mostly before 11am":"mostly mid-afternoon"}${S.extraBeds?` · +${S.extraBeds} beds`:""}</span>`});
+// guided tour: six stops, the camera and a short note in step (the Monday-evening stop pauses the clock; it runs on when you leave it)
+let tourHeld=false;const resumeTour=()=>{if(tourHeld){tourHeld=false;if(!playing)$("pause").click()}};
+function nextMondayEvening(){let d=ED.dayOf(st.t);while(d%7!==0||d*1440+1110<=st.t)d++;return d*1440+1110}
+stage.tour.set([
+  {title:"The front door",view:"front",pin:()=>G.wait.userData.twPick,get text(){return `About <b>${fmt(ED.arrivalsPerMin(S,st.t)*60)} people</b> arrive this hour. Walk-ins take a seat; ambulance patients queue on the drive until they can be handed over. Right now <b>${st.pts.filter(p=>p.state==="wait"&&!p.amb).length}</b> are waiting to be seen.`}},
+  {title:"Triage: most urgent first",view:{p:[6,14,26],t:[-2,0,9]},pin:()=>G.triage.userData.twPick,text:"A nurse sorts everyone by urgency. Each figure's colour is its triage category, from 1 (red, immediately) to 5 (blue, can wait). The most urgent are seen first, so the longest waits fall on categories 4 and 5."},
+  {title:"Six hours",view:"cubicles",pin:()=>G.cub.userData.twPick,text:"Each person has a thin ring on the floor that fills clockwise with their time in the department. A full circle is <b>six hours</b>, the national target; past it the ring turns red. Purple halos are patients who are ready for a ward but have no bed."},
+  {title:"The bottleneck upstairs",view:{p:[12,20,8],t:[0,8,-18]},pin:()=>G.ward.userData.twPick,get text(){return `Ward beds free up mostly in the afternoon. Until one does, admitted patients wait in an ED cubicle, and the cubicle can't take the next person. Right now <b>${st.pts.filter(p=>p.state==="board").length}</b> are waiting for a ward bed.`}},
+  {title:"Monday evening",view:"front",do:()=>{jumpTo=nextMondayEvening();if(playing){tourHeld=true;$("pause").click()}},pin:()=>G.wait.userData.twPick,text:"We've moved the clock on to Monday at 6:30pm, the busiest day, near the end of the daily plateau, and paused it. The waiting room is full; each ring shows how long that person has been here, and red ones have passed six hours. Press Next and the clock runs on. This is a simulated hospital, not a real one."},
+  {title:"Try a change",view:"all",do:resumeTour,text:"Below the model you can add doctors, open a fast-track stream, send lower-urgency patients to urgent care, discharge from the wards earlier or add a ward. Compare shows the same moment with one change as ghosts, and the ladder below runs a simulated week for each."}
+],"A day in the department");
+stage.tour.onEnd=()=>{resumeTour();[G.wait,G.triage,G.cub,G.ward].forEach(g=>stage.unpin(g.userData.twPick))};
+// compare: the same moment with one change made, drawn as ghosts
+stage.compare({label:"Compare",options:CMPOPT.map(o=>({id:o.id,label:o.label,short:o.short,note:o.note})),onChange:id=>{CMP=CMPOPT.find(o=>o.id===id)||null;startAlt()}});
+// sound (off until asked for, and kept very quiet): a soft room murmur that follows how full the waiting room is
+stage.sound.layer("room",{type:"chatter",gain:0.05});
+function sounds(){if(!stage.sound.on)return;stage.sound.set("room",Math.min(1,st.pts.filter(p=>p.state==="wait"&&!p.amb).length/40))}
+// the time dial: the hand is simulated time; drag it to move the clock on (time only runs forward); tap the centre to pause
+let jumpTo=null;
+stage.dial({day:{get:simHour,set:h=>{const cur=st.t%1440,tgt=Math.round(h*60)%1440;let d=tgt-cur;if(d<0)d+=1440;jumpTo=st.t+d},held:()=>!playing,title:"Simulated time of day",
+    marks:[{h:10,c:"var(--rose)",t:"Arrivals reach their daily plateau around 10am"},{h:20,c:"var(--rose)",t:"and ease after about 8pm"}]},
+  onCenter:()=>$("pause").click(),get label(){return DAYS[ED.dayOf(st.t)%7]}});
+// the badge says what is simulated and what is live
+const badge=box.querySelector(".badge");let badgeTxt="";
+function badgeNow(){const t="SIMULATED"+(LIVEWX.src?" · WEATHER LIVE"+(LIVEWX.place?", "+LIVEWX.place.toUpperCase():""):"");if(t!==badgeTxt){badgeTxt=t;badge.textContent=t;badge.title=LIVEWX.src?`Rain, cloud and wind from ${LIVEWX.src}${LIVEWX.at?", "+LIVEWX.at:""}. The hospital and its patients are simulated.`:"A simulated hospital, not any real one"}}
+// ---------------- the loop (the stage draws; this runs the simulation, the ghost, light and labels)
+let acc=0,panelT=0;
+stage.onFrame(dt=>{if(playing){acc+=dt*speed;let n=0;while(acc>=1&&n<400){ED.step(S,st);acc-=1;n++}}
+  if(jumpTo!=null){let n=0;while(st.t<jumpTo&&n<720){ED.step(S,st);n++}if(st.t>=jumpTo)jumpTo=null}
+  stepAlt(900);syncPeople(dt);ghosts();sky(dt);sounds();badgeNow();
+  panelT+=dt;if(panelT>0.25){panelT=0;tags(panels())}});
+tags(panels());ladder();
+stage.start(VIEWS.all);sky(1);
+window.__ed={S,setView,speed:v=>speed=v,state:()=>st,restart:()=>{start();syncDocs();ladder();startAlt()},ladder,natPct:p=>{natPct=p},
+  stage,tour:i=>stage.tour.start(i||0),compare:id=>{CMP=CMPOPT.find(o=>o.id===id)||null;startAlt()},jump:t=>{jumpTo=t==null?nextMondayEvening():t},
+  setLiveWeather:(v,src)=>{if(!v)return;const mm=+v.rainMm||0;LIVEWX.rain=mm<=0?0:Math.min(1,0.25+mm*0.35);LIVEWX.cloud=Math.min(1,(+v.cloudPct||0)/100);LIVEWX.wet=Math.max(LIVEWX.rain,(+v.today?.rainMm||0)>2?0.35:0);
+    const s=Math.min(1,(+v.windKmh||0)/40);LIVEWX.wind=[0.15+0.6*s,0.05+0.25*s];LIVEWX.fog=(+v.humidity||0)>96&&(+v.windKmh||0)<6?0.35:0;LIVEWX.src=src||"Open-Meteo";LIVEWX.place=String(v.place||"").split(",")[0];
+    LIVEWX.at=v.at?new Date(v.at).toLocaleTimeString("en-NZ",{hour:"numeric",minute:"2-digit"}):""}};
 })();
 </script>
 <script>
@@ -601,6 +710,7 @@ function spark(tr,key){if(!tr||tr.length<2)return"";const vs=tr.map(x=>+x[key]||
   return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--live)" stroke-width="2" stroke-linejoin="round"/></svg>`}
 function render(j){data=j;
   const ed=ok(j,"ed"),ww=ok(j,"wastewater"),w=ok(j,"weather"),cal=ok(j,"calendar"),uc=ok(j,"urgentcare");
+  try{if(w&&window.__ed&&window.__ed.setLiveWeather)window.__ed.setLiveWeather(w.values,w.source&&w.source.name)}catch(err){}
   const any=ed||ww||w||cal||uc;
   $("lstate").className="lstate"+(any?" on":"");
   $("lstate").innerHTML=any?`<i></i>Connected. Fetched ${esc(new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"}))}. Anything missing below is a feed that did not answer; the simulation itself is unaffected.`:`<i></i>The feeds did not answer, so this shows the built-in snapshot.`;
