@@ -148,9 +148,9 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   const ext=(pts,m)=>{const sh=new THREE.Shape(pts.map(p=>new THREE.Vector2(p[0],p[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:HD*2,bevelEnabled:false,curveSegments:4});g.translate(0,0,-HD);return S.mesh(g,m)};
   const shP=[[X(0),TOP]];for(let d=0;d<=40;d+=1)shP.push([X(d),SF(d)-ST(d)]);shP.push([X(40)+.8,SF(40)-.08],[X(40)+.8,TOP]);
   S.scene.add(ext(shP,mat("matte","#DCD5C8",{rough:.9})));
-  const soP=[];for(let d=0;d<=36;d+=1)soP.push([X(d),SF(d)+.005]);for(let d=36;d>=0;d-=1)soP.push([X(d),SF(d)-ST(d)]);
+  const soP=[];for(let d=0;d<=28;d+=1)soP.push([X(d),SF(d)+.005]);for(let d=28;d>=0;d-=1)soP.push([X(d),SF(d)-ST(d)]);
   S.scene.add(ext(soP,mat("matte","#C9A27C",{rough:.85})));
-  const mossP=[];for(let d=0;d<=34;d+=1)mossP.push([X(d),SF(d)+.03]);for(let d=34;d>=0;d-=1)mossP.push([X(d),SF(d)]);
+  const mossP=[];for(let d=0;d<=24;d+=1)mossP.push([X(d),SF(d)+.03]);mossP.push([X(26),SF(26)+.005]);for(let d=24;d>=0;d-=1)mossP.push([X(d),SF(d)]);
   S.scene.add(ext(mossP,mat("matte","#B5CF8E",{rough:.8})));
   // pebbles: on the open shingle and studded in the cut face
   {const n=420,peb=S.swarm(n,new THREE.SphereGeometry(1,10,8),mat("matte","#ffffff",{rough:.7}),{colors:true});const pc=["#B8AE9E","#A99F90","#C6BDAE","#D8D0C2","#9C9384"];
@@ -172,11 +172,11 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   blades.forEach((b,i)=>grass.tint(i,gc[i%4]));S.scene.add(grass);
   const tufts=[];for(let d=0;d<26;d+=.7){const c=lerpA(COUNT,d);if(rnd()*14<c)tufts.push({x:X(d+rnd()*.6),z:(rnd()-.5)*HD*1.7,r:.12+lerpA(HEIGHT,d)*.006*rnd()+.04})}
   const tuft=S.swarm(tufts.length,new THREE.IcosahedronGeometry(1,1),mat("matte","#5E9A48",{rough:.6}),{colors:true,cast:true});
-  tufts.forEach((t,i)=>{tuft.putS(i,t.x,SF((t.x+8.4)/.4)+t.r*.4,t.z,t.r*1.4,t.r*.8,t.r*1.2);tuft.tint(i,i%2?"#5E9A48":"#6FAE52")});tuft.done();S.scene.add(tuft);
+  tufts.forEach((t,i)=>{tuft.putS(i,t.x,SF((t.x+8.4)/.4)+t.r*.35,t.z,t.r*1.3,t.r*1.05,t.r*1.2);tuft.tint(i,["#6FAE52","#7FBF5E","#5E9A48"][i%3])});tuft.done();S.scene.add(tuft);
   // ---------------------------------------------------------------- transect tape, quadrats, the surveyor and height poles
   const tape=S.tube(Array.from({length:21},(_,i)=>[X(i*2),SF(i*2)+.06,-.0]),.02,mat("plastic",PAL.product.butter,{rough:.35}),{seg:120,cast:false});S.scene.add(tape);
   for(const d of [0,40])S.scene.add(S.cyl(.04,.04,.6,mat("metal"),{at:[X(d),SF(d)+.25,0],seg:10}));
-  const quads=D.map((d,i)=>{const m=mat("plastic","#ffffff",{rough:.4,fresh:true});const q=S.mesh(new THREE.TorusGeometry(.42,.028,6,4),m,{cast:true});q.rotation.set(Math.PI/2,0,Math.PI/4);
+  const quads=D.map((d,i)=>{const m=mat("plastic","#ffffff",{rough:.4,fresh:true});const q=S.mesh(new THREE.TorusGeometry(.42,.04,6,4),m,{cast:true});q.rotation.set(Math.PI/2,0,Math.PI/4);
     q.position.set(X(d),SF(d)+.05,.55);S.scene.add(q);
     const pole=S.group();pole.position.set(X(d)+.36,SF(d),.9);S.scene.add(pole);const ph=HEIGHT[i]*.032;
     if(ph>0){pole.add(S.cyl(.025,.025,ph,mat("plastic","#ffffff"),{at:[0,ph/2,0],seg:8}));pole.add(S.sphere(.06,mat("plastic",PAL.product.strawberry),{at:[0,ph,0],seg:12}))}
@@ -194,15 +194,16 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   const ins=Array.from({length:NI},()=>{const d=2+rnd()*26;return {d,z:(rnd()-.5)*HD*1.7,ph:rnd()*6}});
   const ND=8,dotB=S.swarm(ND,bodyGeo,mat("plastic","#FBF6EC",{rough:.35}),{cast:true}),dotH=S.swarm(ND,bodyGeo,mat("plastic","#FBF6EC",{rough:.35}),{cast:true}),dotBand=S.swarm(ND,new THREE.TorusGeometry(1,.25,8,20),mat("plastic","#9A6A4A",{rough:.4}));
   S.scene.add(dotB,dotH,dotBand);const dots=Array.from({length:ND},(_,i)=>({d:15+i*2.2+rnd(),z:(rnd()-.5)*3,ph:rnd()*6}));
-  const NS=10,stB=S.swarm(NS,new THREE.CapsuleGeometry(.09,.42,6,12),mat("plastic","#B67E52",{rough:.4}),{cast:true}),stT=S.swarm(NS,new THREE.CapsuleGeometry(.035,.3,4,8),mat("plastic","#3E3A4E",{rough:.4}),{cast:true});
-  S.scene.add(stB,stT);const sts=Array.from({length:NS},(_,i)=>({d:3+i*2.4+rnd(),z:(rnd()-.5)*3.2,ph:rnd()*6}));
+  const NS=10,stB=S.swarm(NS,new THREE.CapsuleGeometry(.13,.6,6,12),mat("plastic","#8A5A3A",{rough:.4}),{cast:true}),stT=S.swarm(NS,new THREE.CapsuleGeometry(.05,.42,4,8),mat("plastic","#3E3A4E",{rough:.4}),{cast:true});
+  S.scene.add(stB,stT);const sts=Array.from({length:NS},(_,i)=>({d:9+i*2.0+rnd(),z:(rnd()-.5)*3.2,ph:rnd()*6}));
   // energy moving up the chain: glowing beads hop from food to eater
-  const NE=90,energy=S.swarm(NE,new THREE.SphereGeometry(.05,10,8),S.M.glow("#ffffff",4.5),{colors:true});S.scene.add(energy);
+  const NE=90,energy=S.swarm(NE,new THREE.SphereGeometry(.1,12,10),S.M.glow("#ffffff",4.5),{colors:true});S.scene.add(energy);
   const ep=Array.from({length:NE},()=>({a:V3(0,0,0),b:V3(0,0,0),t:1,dur:1}));let eAcc=[0,0,0];
   const LV=[PAL.product.lime,PAL.product.butter,PAL.product.blueberry,PAL.product.peach];
   // ---------------------------------------------------------------- factor props: highlight band, dotterel nest, sun, heat shimmer, salt spray, nutrients
   const bandM=mat("acrylic",PAL.product.butter,{opacity:.18,fresh:true});const band=S.box(1,2.4,HD*2+.1,bandM,{cast:false});band.renderOrder=5;S.scene.add(band);
-  const nest=S.group();nest.position.set(X(24),SF(24),-.6);S.scene.add(nest);
+  const nest=S.group();nest.position.set(X(24),SF(24),-.6);nest.scale.setScalar(1.6);S.scene.add(nest);
+  {const bm=mat("plastic","#FBF6EC",{rough:.35});const bb=S.sphere(.16,bm,{at:[.42,.16,.1]});bb.scale.set(1.5,1,1);nest.add(bb);nest.add(S.sphere(.09,bm,{at:[.6,.3,.1]}));nest.add(S.torus(.08,.025,mat("plastic","#9A6A4A"),{at:[.57,.22,.1],rot:[Math.PI/2,0,0]}));for(const z of [.05,.15])nest.add(S.cyl(.012,.012,.12,mat("plastic","#3E3A4E"),{at:[.42,.03,z],seg:6}))}
   nest.add(S.torus(.22,.05,mat("plastic","#C6BDAE",{rough:.8}),{rot:[Math.PI/2,0,0],at:[0,.03,0]}));
   [[-.06,.02],[.07,.03],[0,-.07]].forEach(([x,z])=>{const e=S.sphere(.06,mat("plastic","#E8DCC4",{rough:.5}),{at:[x,.07,z],seg:12});e.scale.set(1,.8,1.25);nest.add(e)});
   const sun=S.sphere(.5,S.M.glow(PAL.product.butter,5),{at:[4,6.4,-3.2],cast:false});S.scene.add(sun);
@@ -212,7 +213,7 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   // ---------------------------------------------------------------- the energy pyramid: stacked blocks, ~10% passing up each level
   const EN=[10000,1000,100,10],PH=.62;
   const pyr=S.group();pyr.position.set(ZP.x,TOP,ZP.z);
-  const blocks=EN.map((e,i)=>{const w=3.9*Math.pow(e/10000,.38);const b=S.rbox(w,PH,w,.08,mat("plastic",LV[i],{rough:.35}),{at:[0,PH/2+i*PH,0]});pyr.add(b);return {w,b,y:PH/2+i*PH}});
+  const blocks=EN.map((e,i)=>{const w=3.9*Math.pow(e/10000,.38);const b=S.rbox(w,PH,w,.08,mat("acrylic",LV[i],{opacity:.5}),{at:[0,PH/2+i*PH,0],cast:false});b.renderOrder=2;pyr.add(b);pyr.add(S.rbox(w-.04,.04,w-.04,.02,mat("plastic",LV[i],{rough:.4}),{at:[0,i*PH+.02,0]}));return {w,b,y:PH/2+i*PH}});
   // little figurines on each level's ledge
   {const lv=pyr;const g1=S.swarm(24,bladeGeo,mat("plastic","#4F8A3A",{rough:.5}),{cast:true});for(let i=0;i<24;i++){const a=i/24*Math.PI*2;g1.putS(i,Math.cos(a)*1.75,PH,Math.sin(a)*1.75,1,.35+.2*(i%3),1)}g1.done();lv.add(g1);
     const g2=S.swarm(6,bodyGeo,mat("plastic","#C98F62"),{cast:true});for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3;g2.putS(i,Math.cos(a)*.62,PH*2+.05,Math.sin(a)*.62,.08,.05,.05)}g2.done();lv.add(g2);
@@ -228,14 +229,14 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   const lSoil=[0,15,35].map(d=>S.label({off:[d===35?30:-30,40]}));const lCut=S.label({off:[30,-30]}).set("Cut-away<small>soil (brown) on shingle (grey)</small>");
   const lFac=S.label({cls:"hot",off:[0,-40]}),lNest=S.label({off:[30,-30]}).set("Dotterel nest<small>on open shingle</small>");
   const lPl=S.label({off:[-30,-40]}),lIn=S.label({off:[-30,30]}),lDo=S.label({off:[30,-40]}),lSt=S.label({cls:"hot",off:[-30,-40]});
-  const lLv=blocks.map((b,i)=>S.label({off:[i%2?-36:36,0]}));const lHeat=S.label({off:[36,30]}).set("Lost as heat<small>respiration, movement</small>");
+  const lLv=blocks.map((b,i)=>S.label({off:[i%2?-36:36,0]}));const lHeat=S.label({off:[-36,34]}).set("Lost as heat<small>respiration, movement</small>");
   // ---------------------------------------------------------------- views
   S.view("habitat",[-.4,8.4,19.5],[0,1.0,0],{min:5,max:34});
-  S.view("transect",[-4,4.4,10.5],[-4,1.4,0],{min:3,max:24});
+  S.view("transect",[-6.6,5.6,11],[-7,1.4,0],{min:3,max:24});
   S.view("soil",[-4.2,2.4,11.2],[-3.6,1.2,1.4],{min:3,max:24});
   S.view("factors",[0,8.2,18.6],[0,1.2,0],{min:5,max:34});
-  S.view("chain",[-2,5.6,12],[-2.2,1.5,0],{min:4,max:28});
-  S.view("pyramid",[ZP.x+1.4,5,10],[ZP.x,1.6,0],{min:3,max:24});
+  S.view("chain",[-1.2,7.2,13.6],[-1.6,1.3,-.2],{min:4,max:28});
+  S.view("pyramid",[ZP.x+.8,4.4,8.4],[ZP.x,1.35,0],{min:3,max:24});
   S.view("all",[5.5,11.5,25],[5.5,1,0],{min:6,max:50});
   const all=[lTop,lSeaE,lZone1,lZone2,lQ,lWalk,...lSoil,lCut,lFac,lNest,lPl,lIn,lDo,lSt,...lLv,lHeat];
   const show={habitat:[lTop,lSeaE,lZone1,lZone2],transect:[lQ,lWalk,lTop,lSeaE],soil:[...lSoil,lCut],factors:[lFac],chain:[lPl,lIn,lDo,lSt],pyramid:[...lLv,lHeat],test:[lQ]};
@@ -255,7 +256,7 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
       fo.forEach((f,i)=>{f.life-=dt;if(f.life<=0){f.x=SX0+.1+rnd()*.5;f.z=(rnd()-.5)*HD*2;f.y=WL+.03;f.life=1+rnd()*1.5}f.x+=dt*.1;foam.put(i,f.x,f.y,f.z,Math.min(.7,f.life*.5),70)});foam.done();
       // transect: quadrats light up when walked; the surveyor walks with the model's walk
       const tr=["transect","soil","test"].includes(k),w=Math.min(40,s.walk);
-      quads.forEach((q,i)=>{const done=tr&&D[i]<=w;q.q.visible=tr;q.m.color.set(done?PAL.product.butter:"#ffffff");
+      quads.forEach((q,i)=>{const done=tr&&D[i]<=w;q.q.visible=tr;q.m.color.set(done?PAL.product.butter:"#ffffff");q.m.emissive.set(done?PAL.product.butter:"#000000");q.m.emissiveIntensity=done?.5:0;
         q.k+=(((done&&k!=="soil")?1:0)-q.k)*.1;q.pole.scale.setScalar(Math.max(.001,q.k));q.pole.visible=q.k>.01});
       tape.visible=tr;walker.visible=tr&&k!=="soil";
       const moving=s.playing&&st.speed&&w<40;walker.position.set(X(w),SF(w)+(moving?Math.abs(Math.sin(t*9))*.05:0),0);walker.rotation.y=-.6;
@@ -277,12 +278,12 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
       // food chain animals
       const ch=k==="chain"||k==="pyramid"||k==="test",chainOn=k==="chain";
       const nIns=ch?Math.min(NI,Math.round(P.ins/25)):0,nDot=ch?Math.min(ND,Math.round(P.dot/10)):0,nSt=ch?Math.min(NS,P.st):0;
-      for(let i=0;i<NI;i++){if(i<nIns){hopPos(i,t*R,tmp);insects.putS(i,tmp.x,tmp.y,tmp.z,.07,.045,.045)}else insects.put(i,0,-5,0,.001)}insects.done();
+      for(let i=0;i<NI;i++){if(i<nIns){hopPos(i,t*R,tmp);insects.putS(i,tmp.x,tmp.y+.03,tmp.z,.1,.065,.065)}else insects.put(i,0,-5,0,.001)}insects.done();
       for(let i=0;i<ND;i++){if(i<nDot){const o=dots[i];const x=X(o.d)+Math.sin(t*.5*R+o.ph)*.6,y=SF(o.d);const dir=Math.cos(t*.5*R+o.ph)>0?0:Math.PI;const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,dir,0));
-          dotB.putS(i,x,y+.17,o.z,.17,.12,.12,q);const hx=x+(dir?-.13:.13);dotH.put(i,hx,y+.3,o.z,.085);dotBand.putS(i,hx-(dir?-.02:.02),y+.24,o.z,.08,.08,.08,new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)))}
+          dotB.putS(i,x,y+.24,o.z,.25,.17,.17,q);const hx=x+(dir?-.19:.19);dotH.put(i,hx,y+.43,o.z,.12);dotBand.putS(i,hx-(dir?-.03:.03),y+.34,o.z,.11,.11,.11,new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)))}
         else{dotB.put(i,0,-5,0,.001);dotH.put(i,0,-5,0,.001);dotBand.put(i,0,-5,0,.001)}}dotB.done();dotH.done();dotBand.done();
-      for(let i=0;i<NS;i++){if(i<nSt){const o=sts[i];const x=X(o.d)+Math.sin(t*.8*R+o.ph)*.8,y=SF(o.d)+.12;const dir=Math.cos(t*.8*R+o.ph)>0?0:Math.PI;
-          const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,dir,Math.PI/2));stB.putS(i,x,y,o.z,1,1,1,q);const q2=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,dir,Math.PI/2+.5));stT.putS(i,x+(dir?.36:-.36),y+.05,o.z,1,1,1,q2)}
+      for(let i=0;i<NS;i++){if(i<nSt){const o=sts[i];const x=X(o.d)+Math.sin(t*.8*R+o.ph)*.8,y=SF(o.d)+.16;const dir=Math.cos(t*.8*R+o.ph)>0?0:Math.PI;
+          const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,dir,Math.PI/2));stB.putS(i,x,y,o.z,1,1,1,q);const q2=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,dir,Math.PI/2+.5));stT.putS(i,x+(dir?.52:-.52),y+.08,o.z,1,1,1,q2)}
         else{stB.put(i,0,-5,0,.001);stT.put(i,0,-5,0,.001)}}stB.done();stT.done();
       // energy hops: plants → insects → dotterels → stoats, fewer beads each level up
       const rates=[6,1.8,.7];const pos=[(j,o)=>{const b=blades[(j*37)%blades.length];return o.set(b.x,b.y+b.h*.8,b.z)},(j,o)=>hopPos(j%Math.max(1,nIns),t*R,o),(j,o)=>{const d=dots[j%Math.max(1,nDot)];return o.set(X(d.d),SF(d.d)+.25,d.z)},(j,o)=>{const d=sts[j%Math.max(1,nSt)];return o.set(X(d.d),SF(d.d)+.15,d.z)}];
@@ -302,8 +303,8 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
         pb.put(i,p.x,p.y,p.z,1);pb.tint(i,LV[p.lv])});pb.done();
       hq.forEach((h,i)=>{if(h.life>0){h.life-=dt;h.x+=h.vx*dt;h.y+=h.vy*dt;h.z+=h.vz*dt}heatP.put(i,h.x,h.y,h.z,Math.max(0,h.life)*.4,180)});heatP.done();
       const names=["Plants","Insects","Dotterels","Stoats"];
-      blocks.forEach((b,i)=>lLv[i].at(tmp.set(ZP.x+(i%2?-1:1)*b.w/2,TOP+b.y,ZP.z)).set(`${names[i]} · level ${i+1}<b>${EN[i].toLocaleString("en-NZ")} kJ</b>`));
-      lHeat.at(tmp.set(ZP.x+2.0,TOP+.9,1.0));
+      blocks.forEach((b,i)=>lLv[i].at(tmp.set(ZP.x+(i%2?-1:1)*b.w/2,TOP+b.y,ZP.z+b.w/2)).set(`${names[i]} · level ${i+1}<b>${EN[i].toLocaleString("en-NZ")} kJ</b>`));
+      lHeat.at(tmp.set(ZP.x-1.9,TOP+.35,1.6));
       sun.material.emissiveIntensity=4.5+Math.sin(t*2)*.5;
     }};
 }

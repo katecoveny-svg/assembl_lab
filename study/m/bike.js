@@ -909,7 +909,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   // ================================================================ the trail: a 1:1 cut of hillside following SEG, with the trail as its lit top
   const tz=S.group();tz.position.set(TX0,TY0,0);
   {const sh=new THREE.Shape();const x0=-30,x1=TRAIL_END+40;sh.moveTo(x0,-TY0);sh.lineTo(x0,TOP);sh.lineTo(0,TOP);SEG.forEach(q=>{sh.lineTo(q.x0,q.y0);sh.lineTo(q.x1,q.y1)});const ye=SEG[SEG.length-1].y1;sh.lineTo(x1,ye);sh.lineTo(x1,-TY0);sh.lineTo(x0,-TY0);
-    const eg=new THREE.ExtrudeGeometry(sh,{depth:12,bevelEnabled:false,steps:1});eg.translate(0,0,-9.8);const hill=S.mesh(eg,mat("plastic",SOIL,{rough:.8,coat:.05}));hill.receiveShadow=true;tz.add(hill);
+    const eg=new THREE.ExtrudeGeometry(sh,{depth:12,bevelEnabled:false,steps:1});eg.translate(0,0,-9.8);const hill=S.mesh(eg,mat("plastic",SOIL,{rough:.8,coat:.05}));hill.receiveShadow=false;tz.add(hill);
     const strip=(z0,z1,c,dy)=>{const pos=[],idx=[];const pts=[[x0,TOP],[0,TOP]];SEG.forEach(q=>{pts.push([q.x0,q.y0],[q.x1,q.y1])});pts.push([x1,ye]);
       pts.forEach(([x,y],i)=>{pos.push(x,y+dy,z0,x,y+dy,z1);if(i){const a=(i-1)*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}});const gg=new THREE.BufferGeometry();gg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));gg.setIndex(idx);gg.computeVertexNormals();
       const m=S.mesh(gg,mat("plastic",c,{rough:.85,coat:.05}),{cast:false});m.material.side=THREE.DoubleSide;tz.add(m);return m};
@@ -938,8 +938,8 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   const ecol=[["Ep lost",P3.product.blueberry],["Ek",P3.product.strawberry],["Heat",P3.product.peach]].map(([n,c],i)=>{const g=new THREE.Group();g.position.set(-3.2+i*.75,0,-3.4);rideAlong.add(g);
     const H=2.6;g.add(S.cyl(.26,.28,.1,white,{at:[0,.05,0]}));const fm=mat("liquid",c,{opacity:1});const fill=S.cyl(.2,.2,1,fm,{seg:28});g.add(fill);const sh=S.cyl(.24,.24,H,mat("acrylic","#ffffff",{opacity:.22}),{at:[0,.1+H/2,0],cast:false,seg:28});sh.renderOrder=4;g.add(sh);
     g.add(S.torus(.24,.02,mat("plastic",P3.case.peach),{at:[0,.1+H,0],rot:[Math.PI/2,0,0]}));return {g,fill,H,n}});
-  const scrStand=new THREE.Group();rideAlong.add(scrStand);scrStand.position.set(.4,0,-3.2);scrStand.add(S.cyl(.05,.07,1.7,steel,{at:[0,.85,0]}));scrStand.add(S.rbox(2.75,1.6,.08,.06,mat("plastic","#ffffff",{rough:.4}),{at:[0,2.45,-.05]}));
-  const scr=S.panel(640,360,2.6);scr.position.set(0,2.45,.01);scrStand.add(scr);let scrKey="";
+  const scrStand=new THREE.Group();rideAlong.add(scrStand);scrStand.position.set(2.6,-.3,-2.8);scrStand.add(S.cyl(.05,.07,1.7,steel,{at:[0,.85,0]}));scrStand.add(S.rbox(3.55,2.05,.08,.06,mat("plastic","#ffffff",{rough:.4}),{at:[0,2.6,-.05]}));
+  const scr=S.panel(640,360,3.4);scr.position.set(0,2.6,.01);scrStand.add(scr);let scrKey="";
   // ================================================================ stopping distance: a 1:1 run-out with a log 25 m ahead
   plinth(SZ.x+18,SZ.z,46,4.4,P3.case.peach);const sz=S.group();sz.position.set(SZ.x,PT,SZ.z);
   const runout=S.rbox(42,.05,2.6,.02,mat("plastic",TRAIL,{rough:.85}),{at:[17,.025,0]});sz.add(runout);
@@ -983,7 +983,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   // ================================================================ labels
   const L=o=>S.label(o);
   const lab={trail:{spd:L({cls:"big",off:[-40,-74]}),seg:L({off:[-30,-50]}),crash:L({cls:"hot big",off:[0,-70]}),w:L({off:[18,10]}),n:L({off:[-20,-20]}),par:L({off:[20,16]}),res:L({off:[-24,10]}),brk:L({off:[-24,-14]}),net:L({cls:"hot",off:[24,-10]}),
-      e0:L({off:[-20,-24]}),e1:L({off:[0,-34]}),e2:L({off:[20,-24]}),rot:L({off:[24,24]}),lip:L({cls:"hot",off:[-30,-36]}),jump:L({cls:"big",off:[24,-30]}),gap:L({off:[0,30]})},
+      e0:L({off:[-20,-24]}),e1:L({off:[0,-34]}),e2:L({off:[20,-24]}),rot:L({off:[24,24]}),lip:L({cls:"hot",off:[-60,40]}),jump:L({cls:"big",off:[24,-30]}),gap:L({off:[0,30]})},
     stop:{bike:L({cls:"big",off:[0,-56]}),think:L({off:[0,30],lead:false}),brake:L({off:[0,30],lead:false}),log:L({off:[20,-40]}),m0:L({off:[0,26],lead:false}),res:L({cls:"hot big",off:[0,-60]})},
     fork:{drop:L({off:[-30,-20]}),x:L({cls:"big",off:[26,-20]}),F:L({cls:"hot",off:[26,10]}),W:L({off:[-26,10]}),gauge:L({off:[20,-30]}),spr:L({off:[-30,-30]})},
     garage:{name:L({cls:"big",off:[-30,-40]}),fork:L({off:[30,-20]}),spring:L({off:[30,0]}),shock:L({off:[30,20]}),damp:L({off:[-30,30]}),wheels:L({off:[-30,30]})},
@@ -993,8 +993,8 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   S.view("garage",[GZ.x+1.2,2.3,GZ.z+7.2],[GZ.x+.4,1.15,GZ.z],{min:2,max:20});
   S.view("stop",[SZ.x+14,9.5,SZ.z+20],[SZ.x+14,.2,SZ.z],{min:4,max:50});
   S.view("fork",[FZ.x+1.2,2.3,FZ.z+7.4],[FZ.x+.7,1.25,FZ.z],{min:2,max:20});
-  S.view("ski",[KZ.x+.4,5.2,KZ.z+11.6],[KZ.x+.2,1.6,KZ.z],{min:3,max:30});
-  S.view("turn",[TZ.x+.4,4.6,TZ.z+6.2],[TZ.x,.2,TZ.z],{min:3,max:30});
+  S.view("ski",[KZ.x+.2,5.8,KZ.z+13.6],[KZ.x,1.7,KZ.z],{min:3,max:30});
+  S.view("turn",[TZ.x+.4,5.2,TZ.z+7.2],[TZ.x,.2,TZ.z],{min:3,max:30});
   S.view("all",[3,24,101],[3,0,66.5],{min:6,max:90});
   let zone="all",follow=null;S.goView("all",true);
   const riderW=()=>{const x=s.x,y=s.air?s.y:trackY(Math.max(0,x));return V3(TX0+x,TY0+y,0)};
@@ -1045,13 +1045,13 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
         show("trail","gap",jumpOn);lab.trail.gap.at(wl(V3((SGAP.x0+SGAP.x1)/2,SGAP.y0,1))).set(`Gap ${fmt(GAP_END-LIP)} m`);
         show("trail","jump",jumpOn&&!!s.jump);if(s.jump)lab.trail.jump.at(wl(V3(LIP+s.jump.dist,trackY(LIP+s.jump.dist)+.2,0))).set(`${fmt(s.jump.dist,1)} m${s.jump.cleared?"":" (short)"}<small>fork used ${fmt(s.jump.forkX*1000)} of ${fmt(TRAVEL()*1000)} mm${s.jump.bottom?" · bottomed out":""}</small>`)}
       // ---------------- stopping distance
-      {const N=stopNums(),SCB=1.5,lim=LOGX-.24-1.08*SCB,bx=Math.min(s.sx,lim),hit=s.sx>lim+.02,braking=s.sphase==="brake";
+      {const N=stopNums(),SCB=1.5,lim=LOGX-.24-1.08*SCB,bx=Math.min(s.sx,lim),hit=N.total>LOGX&&s.sx>=lim,braking=s.sphase==="brake";
         const B=bikes.stop;B.g.position.set(SZ.x+bx,PT,SZ.z);B.g.scale.setScalar(SCB);B.g.rotation.z=hit?-.08:braking?-.02:0;B.update({b:s.b,comp:braking?.45:.05,spin:s.sx/.375,heat:braking?150:0,pose:0,crouch:braking?.4:0,rider:true});
         thinkBar.scale.x=Math.max(.01,N.think);thinkBar.position.x=N.think/2;brakeBar.scale.x=Math.max(.01,N.brake);brakeBar.position.x=N.think+N.brake/2;
         mudS.visible=s.grip==="mud";rootS.visible=s.grip==="roots";
         for(let i=0;i<60;i++){const p=s.sdust[i];if(p)sdustP.put(i,p.x,p.y+.1,((i*37)%10)/10-.5,p.life*.7,p.r*1400);else sdustP.put(i,0,-99,0,0,1)}sdustP.done();
         const sw=v=>tl.set(SZ.x+v.x,PT+v.y,SZ.z+v.z);
-        show("stop","bike");lab.stop.bike.at(sw(V3(bx+.6,2.6,0))).set(s.sphase==="ready"?"Press play":s.sphase==="see"?`Log! (reacting…)<small>${fmt(s.v0)} km/h · ${fmt(s.tr,1)} s</small>`:braking?`Brakes on<small>${fmt(s.sv*3.6)} km/h</small>`:hit?"Hit the log":"Stopped");
+        show("stop","bike");lab.stop.bike.at(sw(V3(bx+.6,2.6,0))).set(s.sphase==="ready"?"Press play":s.sphase==="see"?`Log! (reacting…)<small>${fmt(s.v0)} km/h · ${fmt(s.tr,1)} s</small>`:braking?`Brakes on<small>${fmt(s.sv*3.6)} km/h</small>`:N.total>LOGX?"Hit the log":"Stopped");
         show("stop","think");lab.stop.think.at(sw(V3(N.think/2,.05,1.65))).set(`Thinking<b>${fmt(N.think,1)} m</b>`);show("stop","brake");lab.stop.brake.at(sw(V3(N.think+N.brake/2,.05,1.65))).set(`Braking<b>${fmt(N.brake,1)} m</b><small>μ = ${fmt(N.mu,2)} · ${SURF[s.grip]}</small>`);
         show("stop","log");lab.stop.log.at(sw(V3(LOGX,.5,0))).set(`Log<b>${LOGX} m</b>`);show("stop","m0");lab.stop.m0.at(sw(V3(0,.05,1.2))).set("0 m");
         show("stop","res",s.sphase==="stopped");lab.stop.res.at(sw(V3(LOGX-4,3.6,0))).set(`${N.total>LOGX?"Hit the log":"Stopped in time"}: ${fmt(N.total,1)} m`)}
