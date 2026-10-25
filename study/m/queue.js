@@ -270,13 +270,13 @@ function queue3d(S){const {THREE,mat}=S;const P3=S.PAL;const V3=(x,y,z)=>new THR
   const leaves=LF.map((p,i)=>{const m=S.rbox(.5,1,.5,.06,leafM[i]);m.position.set(p.x+.6,0,p.z);zt.add(m);return m});
   const flow=S.swarm(60,new THREE.SphereGeometry(.045,10,8),pm("#ffffff",.3),{colors:true});zt.add(flow);let flowR=rng(11);const fl=Array.from({length:60},()=>({u:Math.random()*3,a:0,b:0}));
   const table=S.panel(640,330,2.4);table.position.set(-2.0,1.55,-2.2);table.rotation.y=Math.PI/2-.5;zt.add(table);zt.add(S.rbox(2.52,1.34,.06,.05,pm("#ffffff"),{at:[-2.04,1.55,-2.24],rot:[0,Math.PI/2-.5,0]}));let tabKey="";
-  const brL=[0,1,2,3,4,5].map(()=>label({off:[0,-18],lead:false})),lfL=[0,1,2,3].map(()=>label({off:[0,34],lead:false})),lPH=label({cls:"hot big",off:[0,40],lead:false});
+  const brL=[[0,-18],[0,-18],[-34,-18],[16,-48],[-16,12],[34,-18]].map(o=>label({off:o,lead:false})),lfL=[0,1,2,3].map(()=>label({off:[0,34],lead:false})),lPH=label({cls:"hot big",off:[0,74],lead:false});
   // ---------------------------------------------------------------- views
   S.view("arrivals",[ZA.x+.3,3.6,ZA.z+8.8],[ZA.x,1.25,ZA.z+.2],{min:2,max:30});
   S.view("service",[ZN.x+.3,4.0,ZN.z+8.4],[ZN.x,1.3,ZN.z-.2],{min:2,max:30});
   S.view("wait",[ZW.x+.2,5.4,ZW.z+8.6],[ZW.x,.9,ZW.z],{min:2,max:30});
   S.view("ed",[ZE.x+.4,4.4,ZE.z+7.4],[ZE.x,.8,ZE.z-.5],{min:2,max:30});
-  S.view("tree",[ZT.x+.6,4.6,ZT.z+7.6],[ZT.x,1.1,ZT.z],{min:2,max:30});
+  S.view("tree",[ZT.x+.4,5.8,ZT.z+10.0],[ZT.x,.9,ZT.z+.7],{min:2,max:30});
   S.view("all",[0,19,26],[0,.5,-4.6],{min:6,max:70});
   const half={arrivals:4.5,service:4.5,wait:4.5,ed:4.5,tree:4.5,all:16},ctr={arrivals:[ZA.x,0,ZA.z],service:[ZN.x,0,ZN.z],wait:[ZW.x,0,ZW.z],ed:[ZE.x,0,ZE.z],tree:[ZT.x,0,ZT.z],all:[0,0,-4.6]};
   let first=true;
