@@ -205,9 +205,9 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   const border=[...Array(NBd).keys()].sort(()=>rnd()-.5);let beadKey="";const beadFlip=new Float32Array(NBd);
   // a graph screen: D frequency over the generations (the same line as the side graph)
   const gscr=S.group(iz);gscr.position.set(-4.7,TOP,-3.2);gscr.rotation.y=.35;
-  gscr.add(S.cyl(.05,.07,1.0,mat("metal"),{at:[0,.5,0]}));gscr.add(S.rbox(.8,.1,.5,.04,mat("plastic","#ffffff"),{at:[0,.05,0]}));
-  gscr.add(S.rbox(2.5,1.55,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,1.75,-.05]}));
-  const graph=S.panel(600,360,2.32);graph.position.set(0,1.75,0);gscr.add(graph);let graphKey="",graphT=0;
+  gscr.add(S.cyl(.05,.07,1.1,mat("metal"),{at:[0,.55,0]}));gscr.add(S.rbox(.8,.1,.5,.04,mat("plastic","#ffffff"),{at:[0,.05,0]}));
+  gscr.add(S.rbox(3.3,2.0,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,2.05,-.05]}));
+  const graph=S.panel(600,360,3.1);graph.position.set(0,2.05,0);gscr.add(graph);let graphKey="",graphT=0;
   // ---------------------------------------------------------------- the predator: circles overhead and swoops on pale birds (survival)
   const hawk=S.group(iz);
   {const hm=mat("plastic","#6E5A7E",{rough:.4});const hb=S.sphere(.22,hm);hb.scale.set(1.8,.7,.8);hawk.add(hb);hawk.add(S.sphere(.13,hm,{at:[.36,.06,0]}));
@@ -238,12 +238,12 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   // ---------------------------------------------------------------- the gel tank: five lanes of glowing bands; tap a male's lane to pick him
   const gz=S.group();gz.position.copy(ZG);
   gz.add(S.rbox(6.0,.3,4.2,.1,mat("plastic","#ffffff",{rough:.4}),{at:[0,TOP+.15,0]}));
-  const tank=S.acrylicCase(5.8,.7,4.0,PAL.case.mint,{opacity:.2});tank.position.y=TOP+.3;gz.add(tank);
+  const tank=S.acrylicCase(5.8,.7,4.0,PAL.case.mint,{opacity:.08});tank.position.y=TOP+.3;gz.add(tank);
   const gelM=mat("plastic","#E6F5EE",{rough:.25,coat:.6});gz.add(S.rbox(5.3,.18,3.5,.05,gelM,{at:[0,TOP+.42,0]}));
-  gz.add(S.cyl(.06,.06,5.2,mat("metal",PAL.product.strawberry),{at:[0,TOP+.6,-1.85],rot:[0,0,Math.PI/2]}));gz.add(S.cyl(.06,.06,5.2,mat("metal","#3E4262"),{at:[0,TOP+.6,1.85],rot:[0,0,Math.PI/2]}));
+  gz.add(S.cyl(.06,.06,5.2,mat("metal",PAL.product.strawberry),{at:[0,TOP+.6,1.85],rot:[0,0,Math.PI/2]}));gz.add(S.cyl(.06,.06,5.2,mat("metal","#3E4262"),{at:[0,TOP+.6,-1.85],rot:[0,0,Math.PI/2]}));
   const LW=1.0,lx=i=>(i-2)*LW;
   for(let i=0;i<5;i++)gz.add(S.box(.62,.06,.12,mat("plastic","#CFE3D9"),{at:[lx(i),TOP+.5,-1.45]}));
-  const NBand=5*4*2,bands=S.swarm(NBand,new THREE.BoxGeometry(.66,.05,.075),S.M.glow("#ffffff",1),{colors:true});gz.add(bands);
+  const NBand=5*4*2,bands=S.swarm(NBand,new S.RoundedBoxGeometry(.66,.07,.085,2,.02),mat("plastic","#ffffff",{rough:.3}),{colors:true});gz.add(bands);
   let gelRef=null,gelT=0;
   const laneHit=[0,1,2].map(m=>{const h=S.box(.9,.4,3.4,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[lx(m+2),TOP+.6,0],cast:false});h.material.colorWrite=false;gz.add(h);S.pick(h,()=>{S.api.state.gelPick=m});return h});
   const lLane=["Mother","Chick","Male 1","Male 2","Male 3"].map((n,i)=>S.label({off:[0,-34]}).set(n));
@@ -261,7 +261,7 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   S.view("dna",[ZG.x+.4,6.6,ZG.z+6.4],[ZG.x,.4,ZG.z+.2],{min:3,max:24});
   S.view("all",[2,15,30],[1.8,1,0],{min:8,max:60});
   const islandL=[lPop,lPool,lMut,lLost,lHawk,lMig,lHome,lGraph],crossL=[lMum,lDad,...lTile,lBrood],gelL=[...lLane,lGel];
-  const show={cross:crossL,pool:[lPop,lPool,lGraph],mutation:[lPop,lPool,lMut],small:[lPop,lPool,lLost],survival:[lPop,lPool,lHawk],migration:[lPop,lPool,lMig,lHome],dna:gelL,test:[lPool]};
+  const show={cross:crossL,pool:[lPop,lPool],mutation:[lPop,lPool,lMut],small:[lPop,lPool,lLost],survival:[lPop,lPool,lHawk],migration:[lPop,lPool,lMig,lHome],dna:gelL,test:[lPool]};
   S.goView("pool",true);
   return {
     step(st){const k=st.k,v=k==="test"?"all":k;S.goView(v);
@@ -275,7 +275,7 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
       for(let i=0;i<2;i++)for(let j=0;j<2;j++){const p=parentAt[i];const a=P2[i][j];allele.put(i*2+j,p.x+(j-.5)*.5,TOP+2.15+Math.sin(t*2+j)*.04*R,p.z,.15);allele.tint(i*2+j,a==="D"?DARK:PALE)}
       for(let j=0;j<2;j++){allele.put(4+j,PX+(j-.5)*PC,TOP+.42,PZ-PC-.2,.12);allele.tint(4+j,P2[1][j]==="D"?DARK:PALE);allele.put(6+j,PX-PC-.2,TOP+.42,PZ+(j-.5)*PC,.12);allele.tint(6+j,P2[0][j]==="D"?DARK:PALE)}allele.done();
       tiles.forEach((T,n)=>{const g=[P2[0][T.i],P2[1][T.j]].sort().join("").replace("dD","Dd");T.m.color.set(g==="dd"?"#FFF7E6":g==="DD"?"#DCD8EE":"#ECE8F7");
-        tileBirds.put(n,PX+(T.j-.5)*PC,TOP+.38,PZ+(T.i-.5)*PC,.17,g,.6);lTile[n].at(tmp.set(ZC.x+PX+(T.j-.5)*PC,TOP+.7,PZ+(T.i-.5)*PC)).set(g)});tileBirds.done();
+        tileBirds.put(n,PX+(T.j-.5)*PC,TOP+.38,PZ+(T.i-.5)*PC,.17,g,.6);lTile[n].at(tmp.set(ZC.x+PX+(T.j-.5)*PC,TOP+.7,PZ+(T.i-.5)*PC)).set(`<b>${g}</b>`)});tileBirds.done();
       if(s.kids!==kidsRef){kidsRef=s.kids;kidsT=0}kidsT+=dt;
       for(let i=0;i<24;i++){const g=s.kids[i];const pop=S.clamp((kidsT-i*.04)*4,0,1);const x=-3.2+(i%12)*.58,z=1.75+Math.floor(i/12)*.75;
         chicks.put(i,x,TOP+.22,z,g?.17*S.ease(pop):0,g,.4+Math.sin(i)*.4,Math.max(0,Math.sin(t*4+i))*.03*R)}chicks.done();
@@ -291,7 +291,7 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
       // predator: circles; every couple of seconds swoops on a pale bird, which is gone until the next generation is drawn
       const predOn=s.sel>0&&(k==="survival"||k==="test");hawk.visible=predOn;
       if(predOn){nextSwoop-=dt;if(swoop.i<0&&nextSwoop<=0&&!S.REDUCED){const pale=[];for(let i=0;i<n;i++)if(b[i]==="dd"&&!eaten.has(i))pale.push(i);if(pale.length){swoop={i:pale[Math.floor(rnd()*pale.length)],t:0}}nextSwoop=1.2+rnd()*1.5/(s.sel*3)}
-        const ca=t*.6;let hx=Math.cos(ca)*3.3,hy=4.4,hz2=.3+Math.sin(ca)*3.3,yaw=-ca-Math.PI/2;
+        const ca=t*.6;let hx=Math.cos(ca)*3.0,hy=3.3,hz2=.3+Math.sin(ca)*3.3,yaw=-ca-Math.PI/2;
         if(swoop.i>=0){swoop.t+=dt*.8;spot(swoop.i,n,tmp);const u=swoop.t;const k2=u<.5?S.ease(u*2):S.ease((1-u)*2);hx=S.lerp(hx,tmp.x,k2);hy=S.lerp(hy,tmp.y+.3,k2);hz2=S.lerp(hz2,tmp.z,k2);
           if(u>=.5&&!eaten.has(swoop.i)){eaten.add(swoop.i);for(let m=0;m<6;m++){const e=pe.find(q=>q.life<=0);if(e){e.p.copy(tmp).setY(tmp.y+.15);e.v.set(rnd()-.5,.6+rnd()*.5,rnd()-.5);e.life=.8}}}if(u>=1)swoop={i:-1,t:0}}
         hawk.position.set(hx,hy,hz2);hawk.rotation.set(0,yaw,Math.sin(t*2)*.15);hawk.userData.w.rotation.x=Math.sin(t*6)*.25}
@@ -325,7 +325,7 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
       if(G!==gelRef){gelRef=G;gelT=0}gelT+=dt;const run=S.ease(S.clamp(gelT/2.5,0,1));
       const lanes=[G.mum,G.chick,G.dads[0],G.dads[1],G.dads[2]];let bi=0;
       lanes.forEach((m,i)=>{const c=i===1?PAL.product.strawberry:i===0?PAL.product.blueberry:(s.gelPick===i-2?PAL.product.butter:"#5A6596");
-        m.forEach((pair,mk)=>pair.forEach(bb=>{const zf=-1.05+mk*.72+bb*.1;bands.put(bi,lx(i),TOP+.53,S.lerp(-1.45,zf,run),1);bands.tint(bi,c);bi++}))});bands.done();
+        m.forEach((pair,mk)=>pair.forEach(bb=>{const zf=-1.05+mk*.72+bb*.1;bands.put(bi,lx(i),TOP+.55,S.lerp(-1.45,zf,run),1);bands.tint(bi,c);bi++}))});bands.done();
       lLane.forEach((L,i)=>L.at(tmp.set(ZG.x+lx(i),TOP+.75,-1.6)));lGel.at(tmp.set(ZG.x+lx(3),TOP+.6,1.3));
       // ---- island labels
       const dd=b.filter(g=>g==="dd").length;

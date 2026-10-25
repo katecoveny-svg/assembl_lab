@@ -251,15 +251,15 @@ function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   board.add(S.rbox(2.0,1.2,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,1.45,-.05]}));
   const score=S.panel(512,300,1.84);score.position.set(0,1.45,.0);board.add(score);let scoreKey="",scoreT=0;
   // a zoom bubble above the foil: three gold atoms, mostly empty space. Alpha paths are worked out with a real 1/r² push from each nucleus
-  const bub=S.group(fz);bub.position.set(0,FC.y+2.3,0);const BR=.85;
+  const bub=S.group(fz);bub.position.set(0,FC.y+2.45,0);const BR=1.0;
   const glassB=S.sphere(BR,mat("glass","#ffffff",{opacity:.13}),{cast:false,seg:40});glassB.renderOrder=6;bub.add(glassB);
   bub.add(S.cyl(.012,.06,1.15,mat("glass","#ffffff",{opacity:.35}),{at:[0,-BR-.5,0],cast:false}));
   const NUC=[V3(0,.05,0),V3(0,.48,-.28),V3(0,-.44,.3)];
-  NUC.forEach(n=>{bub.add(S.sphere(.035,S.M.glow("#E9B03A",4.2),{at:[n.x,n.y,n.z],cast:false,seg:12}));const cl=S.sphere(.3,mat("flat",PAL.product.butter,{opacity:.08,depthWrite:false}),{at:[n.x,n.y,n.z],cast:false,seg:20});cl.renderOrder=5;bub.add(cl)});
+  NUC.forEach(n=>{bub.add(S.sphere(.05,S.M.glow("#E9B03A",4.2),{at:[n.x,n.y,n.z],cast:false,seg:12}));const cl=S.sphere(.3,mat("flat",PAL.product.butter,{opacity:.08,depthWrite:false}),{at:[n.x,n.y,n.z],cast:false,seg:20});cl.renderOrder=5;bub.add(cl)});
   const tracks=[];{const KC=.01,offs=[[.05+.005,0],[.05+.032,.0],[.25,.25],[-.2,-.05],[.3,-.35],[-.12,.5],[.0,-.62],[-.6,-.1],[.62,.2]];
     for(const [y0,z0] of offs){const p=V3(-Math.sqrt(Math.max(.01,BR*BR*.88-y0*y0-z0*z0)),y0,z0),v=V3(1,0,0),pts=[];for(let i=0;i<4000&&p.length()<BR*.97;i++){const a=V3(0,0,0);for(const n of NUC){tmp.subVectors(p,n);const r=Math.max(.012,tmp.length());a.addScaledVector(tmp,KC/(r*r*r))}
         v.addScaledVector(a,.0015);p.addScaledVector(v,.0015);if(i%6===0)pts.push(p.clone())}tracks.push({pts,ph:Math.random()})}}
-  const zA=S.swarm(tracks.length,new THREE.SphereGeometry(.03,10,8),S.M.glow("#FF9A5C",5),{cast:false});bub.add(zA);
+  const zA=S.swarm(tracks.length,new THREE.SphereGeometry(.04,10,8),S.M.glow("#FF9A5C",5),{cast:false});bub.add(zA);
   const zT=S.puffs(tracks.length*6,"#FFB27A",{additive:true});bub.add(zT);
   const lZoom=S.label({off:[40,-20]}).set("Zoom into the foil<small>gold atoms are mostly empty space: only a near-miss with a nucleus bends an alpha</small>");
   const lSrc=S.label({off:[-30,-40]}).set("Alpha source<small>fires positive alpha particles</small>");
@@ -346,7 +346,7 @@ function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
         tr.lab.at(tmp.set(tr.g.position.x,TOP+.55,tr.g.position.z)).set(`${tr.name}<b>${s[tr.key]}</b>`)});
       drawTile(s);
       const [cx,cy,cz]=cellAt(s.p);cursor.position.set(cx,cy+.04+.02*Math.sin(t*4),cz);
-      const ckey=s.p+"|"+s.n+"|"+s.e;if(ckey!==lastP){lastP=ckey;for(let z=1;z<=20;z++){const [x,y,w]=cellAt(z);cells.put(z-1,x,y+(z===s.p?.03:0),w,1);cells.tint(z-1,z===s.p?PAL.product.butter:rowC[POS[z][1]])}cells.done()}
+      const ckey=s.p+"|"+s.n+"|"+s.e;if(ckey!==lastP){lastP=ckey;for(let z=1;z<=20;z++){const [x,y,w]=cellAt(z);cells.put(z-1,x,y,w,1);cells.tint(z-1,z===s.p?PAL.product.butter:rowC[POS[z][1]])}cells.done()}
       const n0=EL[s.p-1][2]-s.p;cmpK+=((k==="isotopes"?1:0)-cmpK)*(S.REDUCED?1:.08);cmpG.visible=cmpK>.02;cmpG.scale.setScalar(Math.max(.001,cmpK));
       if(cmpG.visible){const key=s.p+"|"+n0;if(key!==cmpKey){cmpKey=key;const NN=s.p+n0,sl=pack(NN);let a=0,b=0;let p2=s.p,n2=n0;
           for(let i=0;i<NN;i++){if(p2&&(!n2||i%2===0)){cP.put(a++,sl[i].x,sl[i].y,sl[i].z,1);p2--}else{cN.put(b++,sl[i].x,sl[i].y,sl[i].z,1);n2--}}
@@ -363,7 +363,7 @@ function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
       lAtomic.at(tmp.set(TL.x-.72,TOP+.6,TL.z+.28)).set(`Atomic number <b>${s.p}</b><small>protons: decides the element</small>`);
       lNeutEq.at(tmp.copy(AC).add(V3(-nucR*.5,nucR*.6,0))).set(`Neutrons = ${A} − ${s.p} = <b>${s.n}</b>`);
       const sym=El[0]+(ion?(Math.abs(c)>1?Math.abs(c):"")+(c>0?"⁺":"⁻"):"");
-      lCharge.at(tmp.copy(AC).add(V3(.3,.5,0))).set(`${sym}<small>${s.p} protons (+), ${s.e} electrons (−): ${c===0?"no overall charge":"charge "+(Math.abs(c)>1?Math.abs(c):"")+(c>0?"+":"−")}</small>`);
+      lCharge.at(tmp.copy(AC).add(V3(.3,.5,0))).set(`Charge<b>${sym}</b><small>${s.p} protons (+), ${s.e} electrons (−): ${c===0?"no overall charge":"charge "+(Math.abs(c)>1?Math.abs(c):"")+(c>0?"+":"−")}</small>`);
       if(oi>=0){ringPoint(oi,Math.PI*1.15,tmp);shG.localToWorld(tmp)}lTap.at(tmp);lTap.show(k==="ions"&&s.e>0);
       lIso.at(tmp.copy(AC).add(V3(-nucR*.6,nucR*.5,0))).set(`${El[1]}-${A}<small>${s.p} protons · ${s.n} neutrons${s.p===6&&s.n===8?" · radioactive":""}</small>`);
       lCmp.at(tmp.set(CM.x+.3,TOP+1.5,CM.z)).set(`${El[1]}-${El[2]}<small>${s.p} protons · ${n0} neutrons${n0===s.n?" · same as yours":""}</small>`);
@@ -396,7 +396,7 @@ function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
       for(const kname in marks){const M=marks[kname];M.a.forEach((m,i)=>{if(m.life>0&&playing)m.life-=dt*.06;MK[kname].put(i,m.p.x,m.p.y,m.p.z,Math.max(0,m.life)*.85,kname==="straight"?70:110)});MK[kname].done()}
       tracks.forEach((tr,i)=>{tr.ph+=dt*(playing?.32:0);const u=tr.ph%1.25,n=tr.pts.length,j=Math.min(n-1,Math.floor(u*n)),on=u<1;const p=tr.pts[j];zA.put(i,p.x,p.y,p.z,on?1:.001);
         for(let m=1;m<=6;m++){const q=tr.pts[Math.max(0,j-m*3)];zT.put(i*6+m-1,q.x,q.y,q.z,on?.45*(1-m/7):0,70)}});zA.done();zT.done();
-      lZoom.at(tmp.set(FC.x+BR*.7,FC.y+2.3+BR*.6,0));
+      lZoom.at(tmp.set(FC.x+BR*.7,FC.y+2.45+BR*.6,0));
       coreM.emissiveIntensity=4.5+1.5*Math.sin(t*6);
       const h=s.hits,tot=h.straight+h.small+h.back;
       scoreT-=dt;const skey=tot+"";if(foilOn&&skey!==scoreKey&&scoreT<=0){scoreKey=skey;scoreT=.25;
