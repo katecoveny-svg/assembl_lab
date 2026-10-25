@@ -227,7 +227,7 @@ export function attach(api,cfg,factory,kit){
     try{world.update&&world.update(api.state,st,dt,t)}catch(e){console.warn(e)}
     if(tween){tween.t+=dt/tween.dur;const k=ease(Math.min(1,tween.t));camera.position.lerpVectors(tween.p0,tween.p1,k);
       camera.position.y+=Math.sin(k*Math.PI)*tween.arc*tween.p0.distanceTo(tween.p1);controls.target.lerpVectors(tween.t0,tween.t1,k);if(tween.t>=1)tween=null}
-    if(!tween&&follow&&(follow.always||!userTouched)){const v=follow.fn();if(v){const d=v.clone().sub(controls.target).multiplyScalar(follow.k);controls.target.add(d);camera.position.add(d)}}
+    if(!tween&&follow&&(follow.always||!userTouched)){const v=follow.fn();if(v){const d=v.clone().sub(controls.target).multiplyScalar(1-Math.pow(1-follow.k,dt*60));controls.target.add(d);camera.position.add(d)}}
     controls.update();placeLabels(W,H);
     if(composer)composer.render();else renderer.render(scene,camera)}
   resize();requestAnimationFrame(frame);
