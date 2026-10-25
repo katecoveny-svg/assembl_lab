@@ -36,7 +36,7 @@ StudyKit.mount({ ..., scene3d: mymachine3d, ... });
 | | |
 |---|---|
 | `S.THREE`, `S.scene`, `S.camera`, `S.controls`, `S.renderer` | the usual |
-| `S.mat(kind, colour, opts)` | Cached materials. Kinds: `plastic` (clear-coated toy plastic), `matte`, `metal`, `acrylic` (frosted case), `glass`, `glow` (emissive; bloom picks up intensity > 1.2), `flat`, `liquid`. Pass `{fresh:true}` for a material you will mutate every frame. |
+| `S.mat(kind, colour, opts)` | Cached materials. Kinds: `plastic` (clear-coated toy plastic), `matte`, `metal`, `acrylic` (frosted case), `glass`, `glow` (emissive; bloom picks up intensity > 1.2), `flat`, `liquid`. Pass `{fresh:true}` for a material you will mutate every frame (for glow it is the fourth argument: `mat("glow", c, intensity, {fresh:true})`). |
 | `S.rbox(w,h,d,r,mat,{at,rot})`, `S.box`, `S.cyl(rt,rb,h)`, `S.sphere(r)`, `S.torus(r,t,{arc})`, `S.tube(points,r)`, `S.mesh(geo,mat)` | Meshes. Shadows are on by default and off for transparent materials. |
 | `S.acrylicCase(w,h,d,tint)` | the signature frosted case with rails and corner balls |
 | `S.arrow(colour)` → `a.set(fromV3, vecV3, scale)` | a force or velocity vector |
