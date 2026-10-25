@@ -450,6 +450,10 @@ No curriculum dictionary for DVC was found among Te Aka's sources, so these are 
 
 No new kupu were added (both machines already carry 8 verified terms). The existing terms were mapped onto the new steps: downhill *run* (pūngao moe, pūngao neke, waku), *work* (tōpana, waku, whakahohoro), *model* (tere, pūngao), *turn* (tōpana, tere); vinyl *omega* and *centripetal* (auau). Looked for but not added: *angular velocity*, *centripetal*, *torque* (no Te Aka entries found).
 
+### Shaky Isles book (m/shaky/) — reused kupu only
+
+Added 25 October 2026. Te Aka could not be reached from the build environment that day, so **no new kupu were looked up**. The book reuses only terms already verified for the machines above, each linked to the same Te Aka entry: tōpana, kiato, pēhanga, tauira, rewa, pae rewa, haurehu, wera, paemahana, waku, pūngao, pūngao moe, pūngao neke, ngaru, taunakitanga, wē, totoka, tere, teitei. Each lesson shows them on its Prove tab, with `lang="mi"`.
+
 ## 4. Terms looked for but not added (no verified entry, or contested)
 - **momentum**, **torque**, **angular velocity**, **centripetal** (vending, downhill, vinyl): no curriculum-cited entry; torohaki/ānga are general words for momentum.
 - **capacitor** (phone): two differing Te Aka entries (pūnga iahiko, pūranga iahiko), neither curriculum-cited; left for the teacher.
@@ -461,6 +465,7 @@ No new kupu were added (both machines already carry 8 verified terms). The exist
 - **range** (statistics), **amplitude** (Te Aka's two entries conflict), **wavelength** (only "(radio) wavelength"), **contour line** (Te Aka's *rārangi hua* comes from visual arts), **mutation**, **allele**, **variation**, **personification**, **hyperbole**, **demand**, **opportunity cost**, **trapezium**, **prism**, **values** (as beliefs): no suitable verified entry found, so none was added.
 - **toharite**: Te Reo Pāngarau uses it for *mean*, but Te Aka also records it used for *median* (from Te Ara). The fish machine says so and gives *tau waenga* for median.
 - **iramoe**: Te Aka lists it as both *neutron* (Te Reo Pūtaiao) and *recessive gene*. It is used only in atoms, with a note, and left out of genes.
+- **earthquake, volcano, tsunami, tectonic plate, magma, lava, fault, epicentre, liquefaction** (Shaky Isles book): not yet looked up on Te Aka (no access from the build environment on 25 October 2026). The book says so on each Prove tab. These are the most useful terms to add next, after checking each entry.
 
 ## 5. Existing te reo checked across all files (macrons and usage)
 
