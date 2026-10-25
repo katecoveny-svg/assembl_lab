@@ -194,7 +194,201 @@ const KUPU=[
  {mi:"kahaoro",en:"volume, loudness",ta:45548,chip:"db"},
  {mi:"pūngao oro",en:"sound energy",ta:47724}];
 Object.entries({"groove": ["ngaru", "auau", "tōiriiri"], "pitch": ["auau", "hauoro"], "air": ["oro", "ngaru pou", "tōiriiri", "pūngao oro"], "loud": ["kahaoro", "oro"], "omega": ["auau"], "centripetal": ["auau"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-StudyKit.mount({kupu:KUPU,caseTint:"blush",
+// ---- the 3D bench (../kit3d.js): a real turntable (the record turns by s.ang from the model, the tonearm lands at s.r and
+// can be dragged), a magnified groove whose wiggle has the model's wavelength, a keyboard for pitch, and a long frosted
+// tube of air the speaker pushes. The dust speck and its arrows use the same ω, v = rω and a = ω²r as the chips.
+function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const TOP=.3,tmp=new THREE.Vector3(),tv=new THREE.Vector3(),hs=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+  const ZT=V3(-3.6,0,-.4),ZG=V3(6.4,0,-.6),ZA=V3(.6,0,7.2);
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZT,10.6,7.4,PAL.case.blush);plinth(ZG,7.4,7.8,PAL.case.lavender);plinth(ZA,15.4,4.6,PAL.case.mint);
+  const zoneG=c=>{const g=S.group();g.position.set(c.x,TOP,c.z);return g};
+  const white=mat("plastic","#ffffff",{rough:.35}),steel=mat("metal",PAL.steel,{rough:.25}),steelD=mat("metal",PAL.steelDark,{rough:.35}),rubber=mat("plastic","#3C4557",{rough:.8,coat:.05});
+  const vinylM=mat("plastic","#2E3048",{rough:.22,coat:.9});
+  const K=2.2/R_OUT;   // scene units per metre on the record (the LP's outer groove sits at 2.2 units)
+
+  // ================================================================ ZONE 1: the turntable
+  const gT=zoneG(ZT);const deck=S.group(gT);deck.position.set(-1.0,0,0);
+  deck.add(S.rbox(6.8,.12,5.2,.1,white,{at:[0,.06,0]}));
+  const shell=S.rbox(6.8,.62,5.2,.16,mat("acrylic",PAL.case.blush,{opacity:.3}),{at:[0,.43,0],cast:false});shell.renderOrder=3;deck.add(shell);
+  deck.add(S.rbox(6.7,.04,5.1,.1,mat("acrylic","#ffffff",{opacity:.25}),{at:[0,.73,0],cast:false}));
+  const motor=S.group(deck);motor.position.set(2.5,.12,1.6);motor.add(S.cyl(.32,.32,.4,mat("plastic",PAL.case.mint,{rough:.4}),{at:[0,.2,0],seg:24}));const pulley=S.cyl(.12,.12,.12,steel,{at:[0,.46,0],seg:16});motor.add(pulley);
+  const belt=S.tube(new THREE.CatmullRomCurve3([V3(2.5,.58,1.48),V3(1.0,.58,.85),V3(0,.58,.82),V3(-.82,.58,0),V3(0,.58,-.82),V3(.9,.58,-.7),V3(2.6,.58,1.72)],true),.025,rubber,{seg:120,closed:true});deck.add(belt);
+  deck.add(S.cyl(.84,.84,.06,steelD,{at:[0,.58,0],seg:40}));
+  const YP=.86;   // top of the platter
+  const platter=S.group(deck);platter.position.y=.75;platter.add(S.cyl(2.46,2.46,.22,steel,{at:[0,0,0],seg:96}));
+  const strobe=S.swarm(64,new THREE.SphereGeometry(.035,8,6),mat("metal",PAL.steelDark,{rough:.3}));for(let i=0;i<64;i++){const a=i/64*Math.PI*2;strobe.put(i,Math.cos(a)*2.42,0,Math.sin(a)*2.42,1)}strobe.done();strobe.position.y=.0;platter.add(strobe);
+  platter.add(S.cyl(2.38,2.38,.03,rubber,{at:[0,.125,0],seg:96}));
+  // the records: a painted groove texture on top, a vinyl edge, a two-tone label; a tick on the label shows the turning
+  function recTex(R0,lab,hole){const c=document.createElement("canvas");c.width=c.height=1024;const g=c.getContext("2d");const cx=512;
+    g.fillStyle="#2E3048";g.beginPath();g.arc(cx,cx,510,0,7);g.fill();for(let k=0;k<70;k++){const r=510*lab+(500-510*lab)*k/70;g.strokeStyle=k%14===13?"rgba(140,136,166,.75)":"rgba(80,84,112,.6)";g.lineWidth=k%14===13?4:1.4;g.beginPath();g.arc(cx,cx,r,0,7);g.stroke()}
+    g.fillStyle=LABEL;g.beginPath();g.arc(cx,cx,510*lab*.94,0,7);g.fill();g.fillStyle=LABEL2;g.beginPath();g.arc(cx,cx,510*lab*.94,0,Math.PI);g.fill();
+    g.strokeStyle="#492B3E";g.lineWidth=10;g.beginPath();g.moveTo(cx,cx-510*lab*.85);g.lineTo(cx,cx-510*lab*.55);g.stroke();
+    if(hole){g.fillStyle="#E9E4EC";g.beginPath();g.arc(cx,cx,510*hole,0,7);g.fill()}
+    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
+  function record(R,lab,hole){const g=S.group(platter);g.position.y=.155;g.add(S.cyl(R,R,.04,vinylM,{seg:96}));
+    const top=S.mesh(new THREE.CircleGeometry(R,96),new THREE.MeshPhysicalMaterial({map:recTex(R,lab,hole),roughness:.25,clearcoat:.9}),{rot:[-Math.PI/2,0,0],at:[0,.021,0]});g.add(top);return g}
+  const lp=record(R_OUT*K,.36,0),single=record(R_SINGLE*K,.42,.16);
+  if(true){const ad=S.cyl(.36,.36,.03,mat("plastic",PAL.product.butter,{rough:.4}),{at:[0,.04,0],seg:40});single.add(ad)}
+  platter.add(S.cyl(.05,.05,.3,steel,{at:[0,.2,0],seg:16}));
+  // speed buttons: tap 33 or 45
+  const btn=(x,rpm)=>{const b=S.rbox(.5,.12,.3,.05,mat("plastic","#ffffff",{rough:.35,fresh:true}),{at:[x,.78,2.25]});deck.add(b);S.pick(b,()=>{S.api.state.rpm=rpm});return {b,rpm}};
+  const btns=[btn(-2.8,100/3),btn(-2.2,45)];
+  // the tonearm: pivot back right; it swings so the stylus sits at the needle radius; drag the headshell to move it
+  const PV=V3(2.75,0,-1.75),ARM_L=3.05;const pivot=S.group(deck);pivot.position.set(PV.x,YP,PV.z);
+  deck.add(S.cyl(.34,.38,.16,steelD,{at:[PV.x,.8,PV.z],seg:32}));pivot.add(S.cyl(.16,.2,.36,steel,{at:[0,.18,0],seg:24}));
+  const arm=S.group(pivot);arm.position.y=.36;
+  arm.add(S.cyl(.045,.045,ARM_L-.35,steel,{at:[(ARM_L-.35)/2,0,0],rot:[0,0,Math.PI/2],seg:14}));
+  arm.add(S.cyl(.17,.17,.36,steelD,{at:[-.55,0,0],rot:[0,0,Math.PI/2],seg:24}));arm.add(S.cyl(.03,.03,.5,steel,{at:[-.25,0,0],rot:[0,0,Math.PI/2],seg:10}));
+  const head=S.group(arm);head.position.set(ARM_L,0,0);head.add(S.rbox(.5,.1,.26,.04,mat("plastic",PAL.product.strawberry,{rough:.35}),{at:[-.12,-.06,0]}));
+  head.add(S.rbox(.18,.12,.16,.03,mat("plastic","#ffffff"),{at:[-.02,-.17,0]}));head.add(S.cyl(.004,.02,.12,steel,{at:[0,-.29,0],seg:8}));
+  const grab=S.mesh(new THREE.SphereGeometry(.42,12,8),new THREE.MeshBasicMaterial({visible:false}));head.add(grab);
+  S.dragger(grab,{normal:V3(0,1,0),move:p=>{const lp2=deck.worldToLocal(p.clone());const rr=Math.hypot(lp2.x,lp2.z)/K;S.api.state.r=Math.round(S.clamp(rr,R_IN,RMAX())*1000)/1000}});
+  // groove-speed markers (spin step), the dust speck and its arrows (NCEA steps)
+  const ringM=(c)=>S.torus(1,.012,mat("glow",c,1.4),{rot:[Math.PI/2,0,0],cast:false,ts:96});
+  const rOut=ringM(PINK),rIn=ringM(MINT),rSpk=ringM(PINK);[rOut,rIn,rSpk].forEach(r=>{r.position.y=YP+.2;deck.add(r)});
+  const dotO=S.sphere(.09,mat("plastic",PINK,{rough:.3}),{cast:false}),dotI=S.sphere(.09,mat("plastic",MINT,{rough:.3}),{cast:false}),speck=S.sphere(.1,mat("plastic",MINT,{rough:.3}),{cast:false});deck.add(dotO,dotI,speck);
+  const vO=S.arrow(PINK),vI=S.arrow(MINT),vS=S.arrow(PINK,{r:.04}),aS=S.arrow(MINT,{r:.04});deck.add(vO,vI,vS,aS);
+  const trail=S.puffs(80,"#ffffff");deck.add(trail);const trl=[];for(let i=0;i<80;i++)trl.push({x:0,z:0,a:0});let ti=0,tAcc=0;
+  const sweepM=new THREE.MeshBasicMaterial({color:PINK,transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide});let sweep=null;
+  // the formats bars and a record crate
+  const bars=S.group(gT);bars.position.set(3.9,0,1.6);bars.add(S.rbox(1.9,.1,1.0,.05,white,{at:[0,.05,0]}));
+  const barM=[PINK,MINT,PAL.product.butter].map(c=>mat("plastic",c,{rough:.35}));const barMesh=[0,1,2].map(i=>{const b=S.cyl(.17,.17,1,barM[i],{seg:24});b.position.set(-.6+i*.6,0,0);bars.add(b);return b});
+  const crate=S.group(gT);crate.position.set(3.9,0,-1.4);
+  SLEEVES.forEach((c,i)=>crate.add(S.rbox(.1,1.25,1.25,.03,mat("plastic",c,{rough:.45}),{at:[-.75+i*.19,.68,0]})));
+  const cr=S.rbox(1.95,.7,1.5,.08,mat("acrylic",PAL.case.blush,{opacity:.28}),{at:[0,.35,0],cast:false});cr.renderOrder=3;crate.add(cr);
+  const lRpm=S.label({cls:"big",off:[-30,-40]}),lOut=S.label({off:[-40,-30]}),lIn=S.label({off:[30,-40]}),lNeedle=S.label({off:[30,-30]}),lV=S.label({off:[20,-40]}),lA=S.label({off:[-30,30]}),lW=S.label({cls:"big",off:[-10,-36]}),lBars=S.label({off:[0,-40]}),lDrag=S.label({cls:"hot",off:[30,20]});
+
+  // ================================================================ ZONE 2: the groove under a magnifier, and a keyboard
+  const gG=zoneG(ZG);
+  const GW=5.0,GSC=GW/0.003;   // 3 mm of groove across the lens
+  const lensBase=S.group(gG);lensBase.position.set(0,0,-1.1);
+  lensBase.add(S.rbox(5.6,.12,3.6,.05,vinylM,{at:[0,.06,0]}));
+  const NX=181,NG=5,NP=7,PROF=[[-.31,0],[-.15,0],[-.075,-.13],[0,-.18],[.075,-.13],[.15,0],[.31,0]];
+  const gGeo=new THREE.BufferGeometry();const gPos=new Float32Array(NG*NX*NP*3);gGeo.setAttribute("position",new THREE.BufferAttribute(gPos,3));
+  {const idx=[];for(let g=0;g<NG;g++)for(let i=0;i<NX-1;i++)for(let j=0;j<NP-1;j++){const a=(g*NX+i)*NP+j,b=a+NP;idx.push(a,b,a+1,a+1,b,b+1)}gGeo.setIndex(idx)}
+  const grooveM=mat("plastic","#9A96B8",{rough:.3,coat:1,fresh:true});grooveM.side=THREE.DoubleSide;const groove=S.mesh(gGeo,grooveM,{cast:false});groove.position.y=.305;lensBase.add(groove);
+  const lensRing=S.torus(2.0,.07,mat("plastic",PAL.case.blush,{rough:.3}),{rot:[Math.PI/2,0,0]});lensRing.scale.set(1.45,1,1);lensRing.position.y=.34;lensBase.add(lensRing);
+  const stylus=S.group(lensBase);stylus.add(S.cyl(.04,.04,1.6,steel,{at:[0,.95,-.5],rot:[.55,0,0],seg:10}));const tip=S.mesh(new THREE.OctahedronGeometry(.11,0),mat("plastic","#CFF3FB",{rough:.05,coat:1}));tip.scale.set(1,1.5,1);tip.position.y=.27;stylus.add(tip);
+  stylus.add(S.rbox(.5,.3,.4,.06,mat("plastic",PAL.product.strawberry),{at:[0,1.7,-.95]}));
+  const lamBar=S.rbox(1,.06,.06,.03,mat("glow",MINT,1.2),{at:[0,.36,1.35]});lensBase.add(lamBar);
+  // the keyboard: recorded note in mint, the note you hear in pink (pressed)
+  const kb=S.group(gG);kb.position.set(-2.6,0,2.2);kb.add(S.rbox(5.6,.3,1.5,.1,mat("plastic",PAL.case.blush,{rough:.4}),{at:[2.6,.15,0]}));
+  const WH=[0,2,4,5,7,9,11],BASE=48;const keyPos=[];let wx=0;for(let n=BASE;n<BASE+36;n++){const pc=n%12;if(WH.includes(pc)){keyPos.push({n,x:wx,w:true});wx+=.245}else keyPos.push({n,x:wx-.1225,w:false})}
+  const wKeys=S.swarm(21,new S.RoundedBoxGeometry(.23,.14,1.1,2,.03),mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true}),bKeys=S.swarm(15,new S.RoundedBoxGeometry(.15,.14,.66,2,.03),mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true});kb.add(wKeys,bKeys);
+  const lLam=S.label({cls:"big",off:[30,30]}),lGs=S.label({off:[-30,-40]}),lKeys=S.label({off:[0,-50]}),lRec=S.label({off:[-24,30]}),lHeard=S.label({cls:"hot",off:[24,-40]});
+
+  // ================================================================ ZONE 3: the air: a speaker and a long frosted tube of particles
+  const gA=zoneG(ZA);const TL=11.4,TR=.95,TX0=-5.0,TY=1.25;
+  const tube=S.mesh(new THREE.CylinderGeometry(TR,TR,TL,48,1,true),mat("acrylic",PAL.case.blush,{opacity:.16}),{cast:false,rot:[0,0,Math.PI/2]});tube.position.set(TX0+TL/2,TY,0);tube.renderOrder=6;gA.add(tube);
+  for(const x of [TX0+.6,TX0+TL-.6])gA.add(S.rbox(.3,TY-TR+.05,.9,.06,white,{at:[x,(TY-TR)/2,0]}));
+  const spk=S.group(gA);spk.position.set(TX0-.75,0,0);spk.add(S.rbox(1.2,2.4,1.9,.14,mat("plastic",PAL.product.strawberry,{rough:.35}),{at:[0,1.2,0]}));
+  const cone=S.mesh(new THREE.LatheGeometry([new THREE.Vector2(.12,0),new THREE.Vector2(.3,.05),new THREE.Vector2(.7,.25),new THREE.Vector2(.78,.28)],40),mat("plastic","#3C4557",{rough:.7}),{rot:[0,0,-Math.PI/2]});cone.material.side=THREE.DoubleSide;
+  const coneG=S.group(spk);coneG.position.set(.6,TY,0);coneG.add(cone);coneG.add(S.sphere(.15,mat("plastic",PAL.case.blush,{rough:.3}),{at:[.12,0,0]}));coneG.add(S.torus(.8,.05,steel,{rot:[0,Math.PI/2,0],at:[.28,0,0]}));
+  const NXp=64,pts=[];for(let i=0;i<NXp;i++)for(let a=-2;a<=2;a++)for(let b=-2;b<=2;b++){const y=a*.34,z=b*.34;if(Math.hypot(y,z)>TR-.12)continue;pts.push({x:TX0+.15+i*(TL-.3)/(NXp-1),y,z,j:hs(pts.length)*6.28})}
+  const air=S.swarm(pts.length,new THREE.SphereGeometry(.055,10,8),mat("plastic","#ffffff",{rough:.35}),{colors:true});gA.add(air);
+  const fronts=[];for(let i=0;i<14;i++){const r=S.torus(TR+.04,.035,mat("glow",PINK,1.3),{rot:[0,Math.PI/2,0],cast:false});r.position.y=TY;gA.add(r);fronts.push(r)}
+  const lamA=S.rbox(1,.06,.06,.03,mat("glow",MINT,1.2),{at:[0,TY-TR-.12,TR+.1]});gA.add(lamA);
+  // a decibel rule along the front
+  const DB0=20,DB1=120,RX0=-4.6,RX1=5.4,dbX=d=>RX0+(d-DB0)/(DB1-DB0)*(RX1-RX0);
+  const rule=S.group(gA);rule.position.set(0,0,1.75);rule.add(S.rbox(RX1-RX0+.3,.08,.3,.03,steel,{at:[(RX0+RX1)/2,.04,0]}));
+  rule.add(S.rbox(dbX(120)-dbX(80),.02,.32,.02,mat("plastic",PAL.product.strawberry,{rough:.5}),{at:[(dbX(80)+dbX(120))/2,.09,0]}));
+  const LEVELS=[["Whisper",30],["Talking",60],["Busy café",75],["Lawnmower",90],["Earbuds at max",100],["Concert",110]];
+  LEVELS.forEach(([n,d])=>rule.add(S.box(.02,.2,.02,mat("plastic",PAL.ink),{at:[dbX(d),.14,0]})));
+  const dbMark=S.sphere(.14,mat("plastic",PAL.product.strawberry,{rough:.3}),{at:[0,.2,0]});rule.add(dbMark);
+  const lLev=LEVELS.map((l,i)=>S.label({off:[0,i%2?34:-30],lead:false}).set(`${l[0]} ${l[1]}`)),lDb=S.label({cls:"big",off:[0,-56]}),lLamA=S.label({cls:"big",off:[40,30]}),lSpk=S.label({off:[-20,-60]});
+
+  // ---------------------------------------------------------------- views
+  S.view("deck",[ZT.x-.4,6.6,ZT.z+7.6],[ZT.x-.6,.8,ZT.z+.2],{min:3,max:24});
+  S.view("deckNear",[ZT.x-.7,6.1,ZT.z+7.1],[ZT.x-.6,.8,ZT.z+.2],{min:2.5,max:24});
+  S.view("formats",[ZT.x+.6,6.4,ZT.z+8.0],[ZT.x+.4,.8,ZT.z+.2],{min:3,max:24});
+  S.view("groove",[ZG.x-.3,5.8,ZG.z+5.0],[ZG.x,.4,ZG.z-1.0],{min:2.5,max:22});
+  S.view("pitch",[ZG.x-.2,6.0,ZG.z+7.6],[ZG.x,.3,ZG.z+.4],{min:2.5,max:22});
+  S.view("air",[ZA.x+.4,6.0,ZA.z+11.6],[ZA.x+.2,.9,ZA.z+.3],{min:3,max:26});
+  S.view("all",[0,15,21],[0,.2,1.6],{min:6,max:60});
+  const viewOf=k=>k==="spin"?"deck":k==="omega"||k==="centripetal"?"deckNear":k==="formats"?"formats":k==="groove"?"groove":k==="pitch"?"pitch":k==="air"||k==="loud"?"air":"all";
+  const zoneOf=v=>v==="groove"||v==="pitch"?"G":v==="air"?"A":v==="all"?"all":"T";const centers={T:ZT,G:ZG,A:ZA};
+  const LT=[lRpm,lOut,lIn,lNeedle,lV,lA,lW,lBars,lDrag],LG=[lLam,lGs,lKeys,lRec,lHeard],LA=[...lLev,lDb,lLamA,lSpk];
+  let zone="T",first=true,kk="spin",grooveKey="";S.goView("deck",true);
+  const wp=(o,x,y,z)=>tmp.set(x,y,z).applyMatrix4(o.matrixWorld);
+  return {
+    step(st){kk=st.k;const v=viewOf(st.k);zone=zoneOf(v);S.goView(v,first);first=false;const c=centers[zone];S.setShadowBox(zone==="all"?18:6,c?[c.x,0,c.z]:[0,0,0]);
+      LT.forEach(l=>l.show(zone==="T"));LG.forEach(l=>l.show(zone==="G"));LA.forEach(l=>l.show(zone==="A"));
+      const isN=["omega","centripetal","formats"].includes(st.k);[lV,lA,lW].forEach(l=>l.show(isN));[lOut,lIn].forEach(l=>l.show(st.k==="spin"));lBars.show(st.k==="formats");lLev.forEach(l=>l.show(st.k==="loud"));lDb.show(st.k==="loud");
+      if(zone==="all"){lRpm.show();lHeard.show()}[lRec,lHeard].forEach(l=>l.show(st.k==="pitch"||(zone==="all"&&l===lHeard)));lLam.show(st.k==="groove");},
+    update(s,st,dt,t){const k=st.k;deck.updateMatrixWorld();
+      // ---- the record turns by the model's angle; the right disc for the format
+      const isSingle=s.format==="single";lp.visible=!isSingle;single.visible=isSingle;
+      platter.rotation.y=-s.ang;pulley.rotation.y=-s.ang*6.8;
+      btns.forEach(b=>{const on=Math.abs(s.rpm-b.rpm)<.01;b.b.material.color.set(on?PAL.product.butter:"#ffffff");b.b.position.y=on?.75:.78});
+      // the tonearm: circle-circle intersection puts the stylus exactly at radius s.r
+      const rr=s.r*K,d=Math.hypot(PV.x,PV.z),phiP=Math.atan2(PV.z,PV.x);const ca=S.clamp((d*d+rr*rr-ARM_L*ARM_L)/(2*d*rr),-1,1);const phN=phiP+Math.acos(ca);
+      const NX0=Math.cos(phN)*rr,NZ0=Math.sin(phN)*rr;const al=Math.atan2(NZ0-PV.z,NX0-PV.x);pivot.rotation.y=-al;
+      // ---- spin step: two grooves, same turns, different speeds
+      const spin=k==="spin";[rOut,rIn,dotO,dotI].forEach(o=>o.visible=spin);
+      rOut.scale.setScalar(R_OUT*K);rIn.scale.setScalar(R_IN*K);rOut.position.y=rIn.position.y=YP+.21;
+      const a0=s.ang+Math.PI*.3;
+      const put=(o,r,a)=>{o.position.set(Math.cos(a)*r*K,YP+.24,Math.sin(a)*r*K)};
+      put(dotO,R_OUT,a0);put(dotI,R_IN,a0);
+      const tang=a=>tv.set(-Math.sin(a),0,Math.cos(a));
+      if(spin){vO.set(dotO.position.clone(),tang(a0).clone(),speedAt(R_OUT)*3.2);vI.set(dotI.position.clone(),tang(a0).clone(),speedAt(R_IN)*3.2)}else{vO.visible=vI.visible=false}
+      // ---- NCEA: the dust speck at the needle radius, velocity along the tangent, acceleration to the centre
+      const ncea=["omega","centripetal","formats"].includes(k);speck.visible=rSpk.visible=ncea;
+      put(speck,s.r,a0);rSpk.scale.setScalar(s.r*K);rSpk.position.y=YP+.21;
+      if(ncea){vS.set(speck.position.clone(),tang(a0).clone(),Math.min(2.2,vlin(s.r)*3.6));aS.set(speck.position.clone(),tv.set(-Math.cos(a0),0,-Math.sin(a0)).clone(),Math.min(2.0,acen(s.r)*.9))}else{vS.visible=aS.visible=false}
+      // a fading trail behind whichever marker is in play: the distance it covers each second
+      tAcc+=dt;if(tAcc>.05){tAcc=0;const src=spin?dotO:speck;const q=trl[ti=(ti+1)%80];q.x=src.position.x;q.z=src.position.z;q.a=1}
+      for(let i=0;i<80;i++){const q=trl[i];q.a=Math.max(0,q.a-dt*.35);trail.put(i,q.x,YP+.24,q.z,(spin||ncea)?q.a*.55:0,60)}trail.done();
+      if(k==="omega"){const ang1=1;if(!sweep){sweep=S.mesh(new THREE.CircleGeometry(1,40,0,ang1),sweepM,{cast:false,rot:[Math.PI/2,0,0]});deck.add(sweep)}sweep.visible=true;sweep.scale.setScalar(s.r*K);sweep.position.y=YP+.205;sweep.rotation.z=a0-ang1}else if(sweep)sweep.visible=false;
+      // ---- formats bars: edge speeds of the LP and the single, and the needle now
+      const vLP=R_OUT*2*Math.PI*(100/3)/60,vS7=R_SINGLE*2*Math.PI*45/60,vN=vlin(s.r);bars.visible=k==="formats"||zone==="all";
+      [vLP,vS7,vN].forEach((v,i)=>{const h=Math.max(.02,v*3.2);barMesh[i].scale.y=h;barMesh[i].position.y=.1+h/2});
+      // ---- labels on the deck
+      const tw=(x,y,z)=>wp(deck,x,y,z);
+      lRpm.at(tw(-2.5,.9,2.25)).set(`${fmt(s.rpm,1)} rpm<small>${fmt(period(),2)} s a turn · tap 33 or 45</small>`);
+      lOut.at(dotO.getWorldPosition(new THREE.Vector3())).set(`Outer groove<b>${fmt(speedAt(R_OUT)*100,1)} cm/s</b><small>r = 14.6 cm · ${fmt(2*Math.PI*R_OUT,3)} m a turn</small>`);
+      lIn.at(dotI.getWorldPosition(new THREE.Vector3())).set(`Inner groove<b>${fmt(speedAt(R_IN)*100,1)} cm/s</b><small>r = 6.0 cm · same rpm</small>`);
+      lNeedle.at(tw(NX0,YP+.25,NZ0)).set(`Needle<b>${fmt(s.r*100,1)} cm</b><small>groove ${fmt(speedAt(s.r),2)} m/s</small>`);lNeedle.show(zone==="T"&&!spin);
+      lDrag.at(head.getWorldPosition(new THREE.Vector3())).set("Drag the arm");lDrag.show(zone==="T"&&(k==="centripetal"||k==="formats"));
+      const sp=speck.getWorldPosition(new THREE.Vector3());
+      lV.at(sp.clone().add(tang(a0).clone().multiplyScalar(Math.min(2.2,vlin(s.r)*3.6)))).set(`Velocity<b>v = rω = ${fmt(vlin(s.r),2)} m/s</b>`);
+      lA.at(sp.clone().add(tv.set(-Math.cos(a0),0,-Math.sin(a0)).multiplyScalar(Math.min(2,acen(s.r)*.9)))).set(`Acceleration<b>a = ω²r = ${fmt(acen(s.r),2)} m/s²</b><small>toward the centre</small>`);
+      lW.at(tw(-2.3,YP+.2,-1.9)).set(k==="omega"?`Angular velocity<b>ω = 2πf = ${fmt(omega(),2)} rad/s</b><small>pink wedge = 1 radian · T = ${fmt(2*Math.PI/omega(),2)} s · L3: L = Iω = ${fmt(I_PLATTER*omega(),3)} kg m²/s · Ek = ${fmt(.5*I_PLATTER*omega()*omega(),3)} J</small>`
+        :`${isSingle?"7-inch single":"12-inch LP"}<b>ω = ${fmt(omega(),2)} rad/s</b><small>${fmt(s.rpm,1)} rpm</small>`);
+      lBars.at(wp(bars,0,.2+Math.max(vLP,vS7,vN)*3.2,0)).set(`Edge speed<b>LP ${fmt(vLP,2)} · single ${fmt(vS7,2)} m/s</b><small>needle now ${fmt(vN,2)} m/s (yellow)</small>`);
+      // ---- the groove: λ = groove speed ÷ heard-at-recording frequency, drawn 3 mm across the lens
+      const v=speedAt(s.r),lam=v/s.f,lamU=Math.max(.05,lam*GSC),A=.08+.22*s.amp,ph=s.phase;
+      for(let g=0;g<NG;g++){const zc=(g-2)*.62,Ag=g===2?A:A*.45,pg=g===2?ph:ph*.6+g;for(let i=0;i<NX;i++){const x=-GW/2+GW*i/(NX-1);const zz=zc+Ag*Math.sin(2*Math.PI*(x+GW/2)/lamU-pg);
+        for(let j=0;j<NP;j++){const o=((g*NX+i)*NP+j)*3;gPos[o]=x;gPos[o+1]=PROF[j][1];gPos[o+2]=zz+PROF[j][0]}}}
+      gGeo.attributes.position.needsUpdate=true;gGeo.computeVertexNormals();
+      const zTip=A*Math.sin(2*Math.PI*(GW/2)/lamU-ph);stylus.position.z=zTip;
+      lamBar.scale.x=Math.min(GW,lamU);
+      lLam.at(wp(lensBase,0,.4,1.35)).set(`One wiggle<b>λ = ${fmt(lam*1000,2)} mm</b><small>λ = v ÷ f = ${fmt(v,2)} ÷ ${fmt(s.f)} · 3 mm shown</small>`);
+      lGs.at(wp(lensBase,-2.2,.4,-1.4)).set(`Groove passes at<b>${fmt(v,2)} m/s</b><small>needle at ${fmt(s.r*100,1)} cm</small>`);
+      // ---- keyboard: recorded note and the note you hear
+      const k0=Math.round(12*Math.log2(s.f/440))+57,k1=Math.round(12*Math.log2(heard()/440))+57;let wi=0,bi=0;
+      keyPos.forEach(q=>{const press=q.n===k1?-.05:0;const col=q.n===k1?PINK:q.n===k0?(q.w?LABEL2:MINT):(q.w?"#ffffff":"#3C4557");
+        if(q.w){wKeys.put(wi,q.x,.37+press,0,1);wKeys.tint(wi++,col)}else{bKeys.put(bi,q.x,.45+press,-.22,1);bKeys.tint(bi++,col)}});wKeys.done();bKeys.done();
+      const kx=n=>{const q=keyPos.find(p=>p.n===n);return q?q.x:(n<BASE?0:wx)};
+      lRec.at(wp(kb,kx(k0),.5,.3)).set(`Recorded<b>${fmt(s.f)} Hz · ${noteOf(s.f)}</b>`);
+      lHeard.at(wp(kb,kx(k1),.5,-.3)).set(`You hear<b>${fmt(heard())} Hz · ${noteOf(heard())}</b><small>× ${fmt(pitchRatio(),3)} (${fmt(s.rpm,1)} ÷ ${fmt(s.disc,1)} rpm)</small>`);
+      lKeys.hide();
+      // ---- the air: longitudinal displacement, compressions marked by pink rings
+      const lamA2=Math.max(.2,Math.min(TL*.9,V_AIR/s.f*2.6)),Aa=.22*s.amp;const sw=S.REDUCED?0:1;
+      const cA=new THREE.Color(PAL.product.blueberry),cB=new THREE.Color("#E6ECF6"),cc=new THREE.Color();
+      pts.forEach((p,i)=>{const th=2*Math.PI*(p.x-TX0)/lamA2-s.phase;const dx=Aa*Math.sin(th);air.put(i,p.x+dx,TY+p.y+Math.sin(t*3+p.j)*.01*sw,p.z,1);const dens=-Math.cos(th);cc.copy(cB).lerp(cA,S.clamp(.5+.5*dens*s.amp*1.4,0,1));air.setColorAt(i,cc)});air.done();
+      const n0=Math.floor(-(.5+s.phase/(2*Math.PI)))-1;let fi=0;for(let n=n0;fi<fronts.length&&n<n0+60;n++){const x=TX0+(n+.5+s.phase/(2*Math.PI))*lamA2;if(x<TX0||x>TX0+TL)continue;fronts[fi].position.x=x;fronts[fi].visible=true;fronts[fi].material.opacity=1;fi++}
+      for(;fi<fronts.length;fi++)fronts[fi].visible=false;
+      coneG.position.x=.6+.08*s.amp*Math.sin(s.phase);
+      lamA.scale.x=Math.min(TL,lamA2);lamA.position.x=TX0+Math.min(TL,lamA2)/2;
+      lLamA.at(wp(gA,TX0+Math.min(TL,lamA2)/2,TY-TR-.12,TR+.1)).set(`One wavelength<b>λ = ${fmt(V_AIR/s.f,2)} m</b><small>${fmt(s.f)} Hz · v = 343 m/s${V_AIR/s.f*2.6>TL*.9?" · longer than the tube":""}</small>`);
+      lSpk.at(wp(gA,TX0-.75,2.5,0)).set(`Speaker<b>${fmt(s.f)} Hz · ${noteOf(s.f)}</b><small>amplitude ${Math.round(s.amp*100)}%</small>`);
+      dbMark.position.x=dbX(s.db);const safeH=40*Math.pow(2,-(s.db-80)/3);
+      lDb.at(wp(rule,dbX(s.db),.3,0)).set(`${fmt(s.db)} dB<small>safe about ${safeH>=1?fmt(safeH,0)+" h":fmt(safeH*60,0)+" min"} a week</small>`).cls(s.db>80?"big hot":"big");
+      LEVELS.forEach((l,i)=>lLev[i].at(wp(rule,dbX(l[1]),.24,0)));
+    }};
+}
+StudyKit.mount({kupu:KUPU,caseTint:"blush",scene3d:vinyl3d,
   eyebrow:"Science and maths · Waves, sound and circles", title:"The vinyl machine", crumb:"Year 9 and 10 Science (waves and sound) and Maths (circles, rates and ratios), plus three NCEA Level 2–3 steps on circular motion (AS91171, AS91524)", homeHash:"y10",
   fig:"FIG. 11 · A TURNTABLE, A GROOVE AND A SPEAKER", railTitle:"From groove to ear",
   badge:{label:"Years 9–11 · NCEA L2 91171 · L3 91524"},

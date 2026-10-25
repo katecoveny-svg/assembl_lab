@@ -95,7 +95,8 @@ export function attach(api,cfg,factory,kit){
     flat:(c,o={})=>new THREE.MeshBasicMaterial({color:C(c),transparent:o.opacity!=null,opacity:o.opacity??1,depthWrite:o.depthWrite??true,side:o.side??THREE.FrontSide}),
     liquid:(c,o={})=>new THREE.MeshPhysicalMaterial({color:C(c),roughness:.1,metalness:0,clearcoat:1,transparent:true,opacity:o.opacity??.8,depthWrite:o.depthWrite??true}),
   };
-  const mat=(kind,c,o)=>{const key=kind+"|"+(c instanceof THREE.Color?c.getHexString():c)+"|"+JSON.stringify(o||{});if(o&&o.fresh)return M[kind](c,o);if(!cache.has(key))cache.set(key,M[kind](c,o));return cache.get(key)};
+  // mat("glow", colour, intensity, {fresh}) takes its options fourth; every other kind takes them third
+  const mat=(kind,c,o,o2)=>{const fresh=(o&&o.fresh)||(o2&&o2.fresh);const key=kind+"|"+(c instanceof THREE.Color?c.getHexString():c)+"|"+JSON.stringify(o??{});if(fresh)return M[kind](c,o);if(!cache.has(key))cache.set(key,M[kind](c,o));return cache.get(key)};
 
   // ---------------------------------------------------------------- geometry helpers
   const shadowy=(m,cast=true,rec=true)=>{m.traverse(o=>{if(o.isMesh){o.castShadow=cast;o.receiveShadow=rec}});return m};

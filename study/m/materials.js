@@ -789,7 +789,7 @@ function materials3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
       const res1=on1?"Lights up":"Stays dark",res2=ms==="melted"?"Melted":ms==="melting"?"Melting":"Still solid",res4=m.sol?"Dissolves":m.rho<1?"Floats":"Sinks, no change";
       const sp=(c,dx,dy,dz)=>tmp.set(ZB.x+c+dx,TOP+dy,ZB.z+.55+dz);
       lB[0].at(sp(X1,0,1.0,-.75)).set(`Conducts?<b>${res1}</b>`);lB[1].at(sp(X2,-.15,.9,0)).set(`Heat to ${fmt(s.temp)} °C<b>${res2}</b>`);
-      lB[2].at(sp(X3,-.15,.75,0)).set(`Hammer it<b>${m.ham}</b>`);lB[3].at(sp(X4,0,1.5,0)).set(`In water · ${m.rhoT} g/cm³<b>${res4}</b>`);
+      lB[2].at(sp(X3,-.15,.75,0)).set(`Hammer it<b>${m.ham}</b>`);lB[3].at(sp(X4,0,1.5,0)).set(`In water<b>${res4}</b><small>${m.rhoT} g/cm³</small>`);
       lMat.at(tmp.set(ZB.x-4.2+ORDER.indexOf(k)*1.4,TOP+1.15,ZB.z-2.15)).set(`${m.n}<small>${m.tn} · tap a sample</small>`);
       // ---- lattice: in the zoom zone it follows the heat; in the conduction zone it follows the chosen state
       const inC=zone==="conduct";const e=effState(k,s.cstate);
@@ -862,9 +862,9 @@ function materials3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
       ["cu","al"].forEach(q=>{const L=lines[q],ton=KGKM(q)*s.len/1000;L.sel.material.opacity=s.line===q?.55+.2*Math.sin(t*3):0;
         const h=.1+2.6*ton/maxT;L.colBar.scale.y=h;L.colBar.position.y=.06+h/2;
         for(let i=0;i<14;i++){const u=((i/14)+(run||!S.REDUCED?t*.06:0))%1;L.curve.getPointAt(u,tmp);L.flow.put(i,tmp.x,tmp.y,tmp.z,1)}L.flow.done();
-        L.lab.at(tmp.set(ZT.x-.2,TOP+PH3-.2-L.sag,ZT.z+L.z)).set(`${M[q].n} · ${M[q].rhoT} g/cm³<small>${fmt(KGKM(q))} kg per km · sag ∝ weight</small>`).cls(s.line===q?"hot":"");
-        L.lcol.at(tmp.set(ZT.x+4.5,TOP+.06+h,ZT.z+L.z)).set(`${fmt(ton,1)} t<small>for ${s.len} km</small>`);
-        L.ldisc.at(tmp.set(ZT.x-4.6,TOP+.9,ZT.z+L.z)).set(`${fmt(AREA(q)*1e6)} mm²<small>${fmt(DIAM(q),1)} mm cable</small>`)});
+        L.lab.at(tmp.set(ZT.x-.2,TOP+PH3-.2-L.sag,ZT.z+L.z)).set(`${M[q].n}<b>${M[q].rhoT} g/cm³</b><small>${fmt(KGKM(q))} kg per km · sag ∝ weight</small>`).cls(s.line===q?"hot":"");
+        L.lcol.at(tmp.set(ZT.x+4.5,TOP+.06+h,ZT.z+L.z)).set(`<b>${fmt(ton,1)} t</b><small>for ${s.len} km</small>`);
+        L.ldisc.at(tmp.set(ZT.x-4.6,TOP+.9,ZT.z+L.z)).set(`<b>${fmt(AREA(q)*1e6)} mm²</b><small>${fmt(DIAM(q),1)} mm cable</small>`)});
       // ---- test beacons
       beacons.forEach(b=>{const ok=b.fn();b.orb.material.color.set(ok?PAL.product.lime:"#D8D4E2");b.orb.material.emissive.set(ok?PAL.product.lime:"#9A96B0");b.orb.material.emissiveIntensity=ok?1.6+.4*Math.sin(t*3):.15;
         b.lab.at(tmp.set(b.g.position.x,TOP+2.3,b.g.position.z)).set(`${b.n} · ${b.txt}<b>${ok?"Done ✓":"Not yet"}</b>`).cls(ok?"hot":"")});

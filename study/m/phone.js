@@ -273,7 +273,7 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   for(const z of [-.2,.2])brick.add(S.box(.35,.06,.1,steel,{at:[-.72,.42,z]}));brick.add(S.rbox(.06,.16,.3,.03,ink,{at:[.58,.42,0]}));
   const cable=wireRun(gP,[[-3.42,.42,1.7],[-2.8,.16,1.8],[-2.1,.14,1.2],[-1.6,.16,.2],[-1.05,.16,-.2],[PXc-2.3,.12,-.2]],28,{r:.07,mat:mat("plastic","#E9EDF4",{rough:.45}),seg:120});
   const haze=S.puffs(30,"#FFB27A",{additive:true});gP.add(haze);const hz=[];for(let i=0;i<30;i++)hz.push({x:0,y:0,z:0,life:Math.random()*2});
-  const gr=graphStand(gP,[PXc,0,-2.6],3.6);let grKey="";
+  const gr=graphStand(gP,[4.6,0,-1.9],2.8);gr.parent.rotation.y=-.45;let grKey="";
   const lBat=S.label({off:[-30,-40]}),lQ=S.label({cls:"big",off:[34,-20]}),lScr=S.label({cls:"big",off:[30,-30]}),lChg=S.label({off:[-20,-46]}),lCab=S.label({cls:"hot",off:[-30,30]}),lCell=S.label({off:[40,30]});
   let scrKey="",explode=1;
 
@@ -290,7 +290,7 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const spI=S.cyl(.05,.05,1,mat("glow",STRAW,.6),{seg:10});thI.add(spI);thI.add(S.cyl(.22,.25,.06,white,{at:[0,.03,0],seg:20}));
   const heatI=S.puffs(30,"#FF9A5A",{additive:true});gI.add(heatI);const hi=[];for(let i=0;i<30;i++)hi.push({x:0,y:0,z:0,life:Math.random()});
   const grI=graphStand(gI,[1.0,0,-1.7],2.6);let grIKey="";
-  const lEmf=S.label({off:[-30,-40]}),lR=S.label({cls:"hot",off:[10,-56]}),lVt=S.label({cls:"big",off:[30,-30]}),lLoad=S.label({off:[30,0]}),lTemp=S.label({off:[24,-10]});
+  const lEmf=S.label({off:[-30,-40]}),lR=S.label({cls:"hot",off:[10,-56]}),lVt=S.label({cls:"big",off:[34,34]}),lLoad=S.label({off:[30,0]}),lTemp=S.label({off:[24,-10]});
 
   // ================================================================ ZONE 3: loads in parallel
   const gR=zoneG(ZR);gR.add(S.rbox(7.6,.08,4.6,.05,mat("acrylic",PAL.case.sky,{opacity:.3}),{at:[0,.04,0],cast:false}));
@@ -303,7 +303,7 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const lineRun=(pts)=>{const path=new THREE.CurvePath();for(let i=0;i<pts.length-1;i++)path.add(new THREE.LineCurve3(V3(...pts[i]),V3(...pts[i+1])));return path};
   const loopS=wireRun(gR,lineRun(railS),40,{r:.045}),loopMo=wireRun(gR,lineRun(railM),60,{r:.045,col:"#BFE0FF"});
   const amR=meterDial(gR,[-1.6,.08,-1.5],4);
-  const lVp=S.label({off:[-30,-30]}),lIs=S.label({off:[-36,-40]}),lIm=S.label({off:[30,-40]}),lIt=S.label({cls:"big",off:[0,-50]}),lFlat=S.label({off:[30,30]});
+  const lVp=S.label({off:[-30,-30]}),lIs=S.label({off:[24,-56]}),lIm=S.label({off:[30,-40]}),lIt=S.label({cls:"big",off:[-50,-40]}),lFlat=S.label({off:[30,30]});
 
   // ================================================================ ZONE 4: the Qi pad
   const gW=zoneG(ZW);
@@ -314,8 +314,8 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   hov.add(S.rbox(3.2,.04,1.55,.06,mat("plastic","#1B2238",{rough:.15}),{at:[0,.23,0]}));
   const pCoils=[];for(let i=0;i<8;i++){const r=S.torus(.18+i*.085,.022,copperM,{rot:[Math.PI/2,0,0]});r.position.y=-.02;hov.add(r);pCoils.push(r)}
   const coilRun=wireRun(hov,new THREE.CatmullRomCurve3(Array.from({length:24},(_,i)=>V3(Math.cos(i/24*6.283)*.52,-.02,Math.sin(i/24*6.283)*.52)),true),20,{draw:false,closed:true,br:.04});
-  const fieldRings=[];for(let i=0;i<8;i++){const r=S.torus(1,.02,addGlowM("#FFD76A",0),{rot:[Math.PI/2,0,0],cast:false,ts:72});gW.add(r);fieldRings.push(r)}
-  const fluxLines=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const g=S.group(gW);g.rotation.y=a;const ln=S.mesh(new THREE.TorusGeometry(.55,.012,6,48,Math.PI*1.25),addGlowM("#FFC84A",0),{cast:false});ln.rotation.set(0,0,-Math.PI*.12);g.add(ln);fluxLines.push({g,ln})}
+  const fieldRings=[];for(let i=0;i<8;i++){const r=S.torus(1,.03,addGlowM("#FFD76A",0),{rot:[Math.PI/2,0,0],cast:false,ts:72});gW.add(r);fieldRings.push(r)}
+  const fluxLines=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;const ln=S.cyl(.012,.012,1,addGlowM("#FFC84A",0),{seg:6,cast:false});ln.position.set(Math.cos(a)*.6,0,Math.sin(a)*.6);gW.add(ln);fluxLines.push({ln})}
   const emfBar=S.group(gW);emfBar.position.set(2.7,0,-1.6);emfBar.add(S.cyl(.14,.14,2.4,mat("glass","#ffffff",{opacity:.25}),{at:[0,1.35,0],cast:false}));emfBar.add(S.cyl(.26,.3,.1,white,{at:[0,.05,0],seg:24}));
   const emfFillM=S.M.glow(LIME,1.2);const emfFill=S.cyl(.1,.1,1,emfFillM,{seg:16});emfBar.add(emfFill);
   let wph=0;
@@ -335,12 +335,12 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const lTau=S.label({cls:"big",off:[-20,-40]}),lCap=S.label({off:[30,-40]}),lRes=S.label({off:[-20,-34]}),lQc=S.label({off:[30,30]});
 
   // ---------------------------------------------------------------- views
-  S.view("battery",[ZP.x+PXc+.6,6.6,ZP.z+6.4],[ZP.x+PXc,1.4,ZP.z-.2],{min:3,max:24});
+  S.view("battery",[ZP.x+PXc+.5,8.0,ZP.z+8.6],[ZP.x+PXc,1.7,ZP.z-.2],{min:3,max:24});
   S.view("phone",[ZP.x+PXc-1.0,6.8,ZP.z+5.6],[ZP.x+PXc,1.2,ZP.z-.3],{min:3,max:24});
   S.view("charger",[ZP.x+.4,6.2,ZP.z+9.4],[ZP.x+.1,1.2,ZP.z-.4],{min:3,max:26});
   S.view("internal",[ZI.x+.6,5.0,ZI.z+7.4],[ZI.x+.2,.9,ZI.z],{min:3,max:22});
   S.view("circuit",[ZR.x+.3,5.6,ZR.z+6.8],[ZR.x,.7,ZR.z],{min:3,max:22});
-  S.view("wireless",[ZW.x+.8,3.8,ZW.z+7.6],[ZW.x,1.0,ZW.z],{min:3,max:22});
+  S.view("wireless",[ZW.x+.6,2.6,ZW.z+7.4],[ZW.x+.3,.9,ZW.z],{min:3,max:22});
   S.view("capacitor",[ZK.x+.6,5.0,ZK.z+7.2],[ZK.x+.2,.9,ZK.z],{min:3,max:22});
   S.view("all",[0,17,22],[0,.3,-.8],{min:6,max:60});
   const viewOf=k=>k==="charge"?"battery":k==="energy"?"phone":k==="fast"||k==="ccv"?"charger":k==="test"?"all":k;
@@ -362,7 +362,7 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       back.position.y=0;bat.position.y=.2+explode*.9;board.position.y=.45+explode*1.85;scr.position.y=.6+explode*2.7;
       batFill.scale.x=Math.max(.01,soc);batFill.position.set(-1.38+1.38*soc,.17,0);fillM.color.set(soc>.2?LIME:STRAW);
       const showBeads=k==="charge";const nB=showBeads?Math.min(320,Math.round(Q()/60)):0;
-      for(let i=0;i<320;i++){const a=i%20,b=Math.floor(i/20)%8,c=Math.floor(i/160);const j=S.REDUCED?0:.012;beads.put(i,-1.3+a*.137+Math.sin(t*5+i)*j,.12+c*.11+Math.cos(t*4+i*1.3)*j,-.7+b*.2,i<nB?.04:0)}beads.done();
+      for(let i=0;i<320;i++){const a=i%20,b=Math.floor(i/20)%8,c=Math.floor(i/160);const j=S.REDUCED?0:.012;beads.put(i,-1.3+a*.137+Math.sin(t*5+i)*j,.42+c*.1+Math.cos(t*4+i*1.3)*j,-.7+b*.2,i<nB?.045:0)}beads.done();
       const P=Pavg(),usingE=k==="energy";upStream.upd(dt,.1+P*.06,usingE&&run);upStream2.upd(dt,.1+P*.06,usingE&&run);
       glowScr.material.opacity=usingE?.12+.05*Math.sin(t*2):0;
       const I=k==="ccv"?Icc(s.soc):Ibatt();const flowing=charging&&s.soc<1&&run;cable.upd(dt,.04+I*.035,charging&&s.soc<1);
@@ -378,8 +378,8 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       gr.parent.visible=zone!=="P"||k==="fast"||k==="ccv"||k==="test";
       const pw=(x,y,z)=>tmp.set(ZP.x+PXc+x,TOP+y,ZP.z-.2+z);
       lBat.at(pw(-1.4,bat.position.y+.35,.8)).set(`Battery<b>${fmt(s.mAh)} mAh · ${fmt(s.V,2)} V</b>`);
-      lQ.at(pw(1.2,bat.position.y+.4,0)).set(`Q = It<b>${fmt(Q())} C</b><small>${fmt(s.mAh/1000,3)} A h × 3600 s · 1 bead ≈ 60 C</small>`);
-      lScr.at(pw(1.6,scr.position.y,.6)).set(`P = E ÷ t<b>${fmt(Pavg(),2)} W</b><small>E = ${fmt(E()/1000,1)} kJ over ${fmt(s.hours,1)} h · I = ${fmt(Pavg()/s.V,2)} A</small>`);
+      lQ.at(pw(1.2,bat.position.y+.4,0)).set(`Charge stored<b>Q = It = ${fmt(Q())} C</b><small>${fmt(s.mAh/1000,3)} A h × 3600 s · 1 bead ≈ 60 C</small>`);
+      lScr.at(pw(1.6,scr.position.y,.6)).set(`Average power<b>P = E ÷ t = ${fmt(Pavg(),2)} W</b><small>E = ${fmt(E()/1000,1)} kJ over ${fmt(s.hours,1)} h · I = ${fmt(Pavg()/s.V,2)} A</small>`);
       lChg.at(tmp.set(ZP.x-4.0,TOP+.95,ZP.z+1.7)).set(k==="fast"?`Charger ${fmt(s.Pchg)} W<small>${Math.round(s.eff*100)}% reaches the cell</small>`:`Charger holds ${fmt(VCHG,1)} V<small>cell emf ε = ${fmt(emf(s.soc),2)} V</small>`);
       cable.curve.getPointAt(.45,tmp);tmp.add(gP.position);lCab.at(tmp).set(k==="fast"?`I into the cell<b>${fmt(Ibatt(),1)} A</b>`:`I = ${fmt(Icc(s.soc),2)} A<small>${Icc(s.soc)>=Ibatt()-.01?"limited by the charger (CC)":"= pd ÷ r, falling (CV)"}</small>`);
       lCell.at(pw(1.45,bat.position.y+.2,.85)).set(k==="fast"?`50% in<b>${fmt(t50()/60,1)} min</b><small>½E = ${fmt(.5*E()/1000,1)} kJ</small>`:`${Math.round(s.soc*100)}%<small>driving pd ${fmt(VCHG-emf(s.soc),2)} V · ${fmt(s.tchg/60)} min</small>`);
@@ -389,7 +389,7 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       for(let i=0;i<hi.length;i++){const p=hi[i];p.life-=dt*.8;if(p.life<=0){p.life=1;p.x=-1.25+(Math.random()-.5)*.7;p.z=-.6+(Math.random()-.5)*.3;p.y=.75}p.y+=dt*.5;heatI.put(i,p.x,p.y,p.z,Math.min(1,Pl/2)*.6*p.life,110)}heatI.done();
       const gik=`${s.r}|${s.Iload}|${s.V}`;if(gik!==grIKey){grIKey=gik;grI.redraw((g,w,h)=>plot(g,w,h,{title:"Terminal V against current",xlab:"current 0–5 A",x0:0,x1:5,y0:2.5,y1:4.2,curves:[{f:x=>s.V-x*s.r,col:STRAW}],dot:[s.Iload,Vterm()]}))}
       const ip=(x,y,z)=>tmp.set(ZI.x+x,TOP+y,ZI.z+z);
-      lEmf.at(ip(-2.6,1.25,-.6)).set(`Cell emf<b>ε = ${fmt(s.V,2)} V</b>`);lR.at(ip(-1.25,.7,-.6)).set(`r = ${fmt(s.r,2)} Ω<small>heat I²r = ${fmt(Pl,2)} W</small>`);
+      lEmf.at(ip(-2.6,1.25,-.6)).set(`Cell emf<b>ε = ${fmt(s.V,2)} V</b>`);lR.at(ip(-1.25,.7,-.6)).set(`Internal resistance<b>r = ${fmt(s.r,2)} Ω</b><small>heat I²r = ${fmt(Pl,2)} W</small>`);
       lVt.at(ip(2.4,1.0,.4)).set(`Terminal V<b>${fmt(Vterm(),2)} V</b><small>lost volts Ir = ${fmt(IL*s.r,2)} V</small>`);lLoad.at(ip(0,.4,1.5)).set(`Load ${fmt(IL,1)} A<small>delivered ${fmt(Pdel(),1)} W</small>`);
       lTemp.at(ip(3.2,.22+spI.scale.y,-1.5)).set(`${fmt(Tph)}°C<small>phone (est.)</small>`);
       // ---- parallel
@@ -401,26 +401,26 @@ function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       lFlat.at(rp(-1.5,.32,1.5)).set(`Flat in<b>${fmt(hoursFlat(),1)} h</b>`);
       // ---- wireless
       if(run&&k==="wireless"&&!S.REDUCED)wph+=dt*s.f/140*.5;const ew=emfW(),fall=Math.exp(-s.gap/6);
-      const gapY=.28+.08+s.gap*.12;hov.position.y=gapY;
+      const gapY=.28+.2+s.gap*.15;hov.position.y=gapY;
       pCoils.forEach((r,i)=>r.visible=i<Math.min(8,Math.round(s.N/2.5)));
       padCoilM.emissiveIntensity=.6+.6*Math.sin(wph*Math.PI*2*3);
-      fieldRings.forEach((r,i)=>{const u=((wph+i/8)%1);r.position.y=.3+u*(gapY-.3);r.scale.setScalar(1.25-u*.55);r.material.opacity=Math.sin(u*Math.PI)*(.25+.55*fall)});
-      fluxLines.forEach((f,i)=>{f.ln.position.set(0,0,0);f.g.position.y=.3;f.ln.scale.set(1,Math.max(.4,(gapY+.2)/.7),1);f.ln.material.opacity=(.15+.3*fall)*(.6+.4*Math.sin(wph*Math.PI*2*3+i))});
+      fieldRings.forEach((r,i)=>{const u=((wph+i/8)%1);r.position.y=.3+u*(gapY-.3);r.scale.setScalar(1.25-u*.55);r.material.opacity=Math.sin(u*Math.PI)*(.35+.65*fall)});
+      fluxLines.forEach((f,i)=>{f.ln.scale.y=gapY-.3;f.ln.position.y=.3+(gapY-.3)/2;f.ln.material.opacity=(.2+.5*fall)*(.5+.5*Math.sin(wph*Math.PI*2*3))});
       coilRun.upd(dt,ew*.06,k==="wireless"?run:true);
       const eh=Math.min(2.3,ew/9.2*2.3);emfFill.scale.y=Math.max(.02,eh);emfFill.position.y=.15+eh/2;
       const wp=(x,y,z)=>tmp.set(ZW.x+x,TOP+y,ZW.z+z);
       lPad.at(wp(1.3,.28,.9)).set(`Pad coil<b>${fmt(s.f)} kHz AC</b>`);lCoil.at(wp(-1.2,gapY+.2,0)).set(`Phone coil<b>N = ${s.N}</b>`);
-      lGap.at(wp(-1.65,(gapY+.28)/2,.8)).set(`Gap ${fmt(s.gap,1)} mm<small>drawn bigger than life</small>`);lEmfW.at(wp(2.7,.15+eh,-1.6)).set(`emf ≈ ${fmt(ew,1)} V<small>efficiency ${Math.round(effW()*100)}% · 50% in ${fmt(tW50()/60)} min</small>`);
+      lGap.at(wp(-1.65,(gapY+.28)/2,.8)).set(`Gap<b>${fmt(s.gap,1)} mm</b><small>drawn bigger than life</small>`);lEmfW.at(wp(2.7,.15+eh,-1.6)).set(`Induced emf<b>≈ ${fmt(ew,1)} V</b><small>efficiency ${Math.round(effW()*100)}% · 50% in ${fmt(tW50()/60)} min</small>`);
       // ---- capacitor
       const frac=s.V?s.vcap/s.V:0,Ik=1-frac;kRun.upd(dt,.02+Ik*.25,k==="capacitor"?run&&frac<.995:false);kRun2.upd(dt,.02+Ik*.25,k==="capacitor"?run&&frac<.995:false);
       const nq=Math.round(frac*100);for(let i=0;i<100;i++){const a=i%10,b=Math.floor(i/10);const y=1.1-.63+b*.14,z=-.63+a*.14;qPlus.put(i,PLX[0]+.07,y,z,i<nq?.045:0);qMinus.put(i,PLX[1]-.07,y,z,i<nq?.045:0)}qPlus.done();qMinus.done();
       for(let i=0;i<25;i++){const a=i%5,b=Math.floor(i/5);const y=1.1-.5+b*.25,z=-.5+a*.25;fLines.putS(i,(PLX[0]+PLX[1])/2,y,z,.008,frac>.02?PLX[1]-PLX[0]-.16:0,.008,qq.setFromUnitVectors(UP,V3(1,0,0)))}fLines.done();fLines.material.opacity=.15+.6*frac;
       const gkk=`${s.C}|${s.R}|${Math.round(s.tcap/tau()*40)}`;if(gkk!==grKKey){grKKey=gkk;const T5=tau()*5;grK.redraw((g,w,h)=>plot(g,w,h,{title:"Capacitor V against time",xlab:"time · 5τ shown",x0:0,x1:T5,y0:0,y1:s.V*1.05,curves:[{f:x=>s.V*(1-Math.exp(-x/tau())),col:STRAW}],marks:[{x:tau(),t:"τ · 63%",col:BLUE}],dot:[Math.min(T5,s.tcap),s.vcap]}))}
       const kp=(x,y,z)=>tmp.set(ZK.x+x,TOP+y,ZK.z+z);
-      lTau.at(kp(-1.1,.6,-1.5)).set(`τ = RC = ${fmt(tau()*1000,1)} ms<small>${fmt(s.R)} Ω × ${fmt(s.C)} μF</small>`);lRes.hide();
-      lCap.at(kp(1.85,1.95,0)).set(`${fmt(s.C)} μF<b>${fmt(s.vcap,2)} V now</b>`);lQc.at(kp(1.85,.4,.75)).set(`Q = CV = ${sci(Qcap(),2)} C<small>E = ½CV² = ${sci(Ecap(),2)} J</small>`);
+      lTau.at(kp(-1.1,.6,-1.5)).set(`Time constant<b>τ = RC = ${fmt(tau()*1000,1)} ms</b><small>${fmt(s.R)} Ω × ${fmt(s.C)} μF</small>`);lRes.hide();
+      lCap.at(kp(1.85,1.95,0)).set(`Capacitor<b>${fmt(s.C)} μF · ${fmt(s.vcap,2)} V now</b>`);lQc.at(kp(1.85,.4,.75)).set(`Q = CV = ${sci(Qcap(),2)} C<small>E = ½CV² = ${sci(Ecap(),2)} J</small>`);
       // ---- test overview
-      if(zone==="all"){const items=[[ZP,`Charge Q<b>${fmt(Q())} C</b><small>average P ${fmt(Pavg(),2)} W</small>`,[PXc,2.2,0]],[ZP,`Time to 50%<b>${fmt(t50()/60,1)} min</b>`,[-4,1.2,1.7]],[ZI,`Terminal V<b>${fmt(Vterm(),2)} V</b>`,[0,1.6,0]],[ZK,`τ = RC<b>${fmt(tau()*1000,1)} ms</b>`,[1.8,2,0]],[ZW,`Induced emf<b>${fmt(emfW(),1)} V</b>`,[0,1.4,0]]];
+      if(zone==="all"){const items=[[ZP,`Charge Q<b>${fmt(Q())} C</b><small>average P ${fmt(Pavg(),2)} W</small>`,[PXc,2.2,0]],[ZP,`Time to 50%<b>${fmt(t50()/60,1)} min</b>`,[-4,1.2,1.7]],[ZI,`Terminal V<b>${fmt(Vterm(),2)} V</b>`,[0,1.6,0]],[ZK,`Time constant<b>τ = ${fmt(tau()*1000,1)} ms</b>`,[1.8,2,0]],[ZW,`Induced emf<b>${fmt(emfW(),1)} V</b>`,[0,1.4,0]]];
         items.forEach((it,i)=>lAll[i].at(tmp.set(it[0].x+it[2][0],TOP+it[2][1],it[0].z+it[2][2])).set(it[1]))}
     }};
 }
