@@ -125,7 +125,187 @@ const KUPU=[
  {mi:"tāroa",en:"hypotenuse",ta:7603,chip:"hyp"},
  {mi:"koki hāngai",en:"right angle",ta:45739}];
 Object.entries({"para": ["tapawhā whakarara", "horahanga"], "tri": ["tapatoru", "horahanga"], "trap": ["horahanga"], "circle": ["porowhita", "pūtoro", "paenga"], "pyth": ["tāroa", "koki hāngai"], "prism": ["horahanga"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-StudyKit.mount({kupu:KUPU,
+// ---------- the 3D bench: a workshop of cutting mats. Shapes are cut tiles that really move: the parallelogram's corner slides
+// across to make a rectangle, a second triangle or trapezium spins in to show the "half", the circle's rim peels off onto a tape,
+// liquid pours from the two small squares into the big one, and a prism stacks up slice by slice on a turntable.
+function shapes3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const TOP=.3,MT=TOP+.012;
+  const ZA=V3(0,0,0),ZC=V3(-11,0,.4),ZP=V3(10.5,0,.2),ZG=V3(-5.6,0,-9),ZV=V3(6,0,-9.2);
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  // a white cutting mat with an exact 1 m grid, lying flat on a plinth
+  function gridMat(c,u0,u1,v0,v1,k,tint){plinth(c,(u1-u0)*k+.8,(v1-v0)*k+.8,tint);const W=(u1-u0)*k,PW=1024,PH=Math.round(PW*(v1-v0)/(u1-u0));
+    const p=S.panel(PW,PH,W);p.rotation.x=-Math.PI/2;p.position.set(c.x+(u0+u1)/2*k,MT-.004,c.z-(v0+v1)/2*k);S.scene.add(p);
+    p.redraw((g,w,h)=>{g.fillStyle="rgba(255,255,255,.97)";g.beginPath();g.roundRect(0,0,w,h,16);g.fill();const sx=w/(u1-u0);
+      for(let i=0;i<=u1-u0;i++){g.strokeStyle=(i+u0)%5?"rgba(106,80,190,.16)":"rgba(106,80,190,.34)";g.lineWidth=(i+u0)%5?1.5:2.5;g.beginPath();g.moveTo(i*sx,0);g.lineTo(i*sx,h);g.stroke()}
+      for(let j=0;j<=v1-v0;j++){g.strokeStyle=(j+v0)%5?"rgba(106,80,190,.16)":"rgba(106,80,190,.34)";g.lineWidth=(j+v0)%5?1.5:2.5;g.beginPath();g.moveTo(0,h-j*sx);g.lineTo(w,h-j*sx);g.stroke()}});return p}
+  // a cut tile from a polygon in metres; the mesh's own origin is the polygon origin, lying on the mat
+  const TH=.13;
+  function tileGeo(pts,k,th=TH){const sh=new THREE.Shape();pts.forEach(([u,v],i)=>i?sh.lineTo(u*k,v*k):sh.moveTo(u*k,v*k));sh.closePath();
+    const g=new THREE.ExtrudeGeometry(sh,{depth:th,bevelEnabled:true,bevelThickness:.015,bevelSize:.015,bevelSegments:2});g.rotateX(-Math.PI/2);return g}
+  function tile(parent,col){const pivot=S.group(parent);const m=S.mesh(new THREE.BufferGeometry(),mat("plastic",col,{rough:.35}));pivot.add(m);
+    return {pivot,m,set(pts,k,th){m.geometry.dispose();m.geometry=tileGeo(pts,k,th)}}}
+  // dashed glowing lines (heights, radii): instanced dashes
+  function dashes(parent,n,col){const sw=S.swarm(n,new THREE.BoxGeometry(1,1,1),mat("plastic",col,{rough:.35}));parent.add(sw);const q=new THREE.Quaternion(),X=V3(1,0,0);
+    sw.line=(a,b,y)=>{const d=b.clone().sub(a),L=d.length(),cnt=Math.min(n,Math.max(1,Math.floor(L/.14)));q.setFromUnitVectors(X,d.clone().normalize());
+      for(let i=0;i<n;i++){if(i<cnt){const p=a.clone().addScaledVector(d,(i+.5)/cnt);sw.putS(i,p.x,y,p.z,L/cnt*.55,.03,.045,q)}else sw.put(i,0,-9,0,.0001)}sw.done()};
+    sw.off=()=>{for(let i=0;i<n;i++)sw.put(i,0,-9,0,.0001);sw.done()};return sw}
+  const hitM=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  const handle=(parent,col)=>{const h=S.sphere(.11,mat("plastic","#ffffff",{rough:.3}));h.add(S.torus(.12,.035,mat("plastic",col,{rough:.3}),{rot:[Math.PI/2,0,0],cast:false}));
+    h.add(S.mesh(new THREE.SphereGeometry(.34,10,8),hitM,{cast:false}));parent.add(h);return h};
+
+  // ---------------------------------------------------------------- area station: parallelogram, triangle, trapezium
+  const KA=.28,U0=-9,V0=-6;gridMat(ZA,-13,13,-7,7,KA,P.case.lavender);
+  const area=S.group();area.position.set(ZA.x+U0*KA,MT,ZA.z-V0*KA);   // local origin = the shape's bottom-left base corner
+  const L=(u,v,y=0)=>V3(u*KA,y,-v*KA);
+  const tA=tile(area,P.product.butter),tB=tile(area,P.product.butter),ghost=S.mesh(new THREE.BufferGeometry(),mat("flat",P.case.lavender,{opacity:.55,depthWrite:false}),{cast:false});ghost.renderOrder=1;area.add(ghost);
+  const ghostEdge=dashes(area,90,P.deep.lavender);const hDash=dashes(area,40,"#D2557A");const corner=S.group(area);
+  corner.add(S.box(.16,.03,.03,mat("plastic","#D2557A"),{at:[.08,0,0]}));corner.add(S.box(.03,.03,.16,mat("plastic","#D2557A"),{at:[.16,0,-.08]}));
+  const hSh=handle(area,P.deep.butter),hB=handle(area,P.deep.lavender),hH=handle(area,"#D2557A");
+  S.dragger(hSh,{normal:V3(0,1,0),move:p=>{const q=area.worldToLocal(p.clone());const st=S.api.state;const u=q.x/KA;if(curK==="trap"||curK==="test")st.a=S.clamp(Math.round(2*(u-(st.b/2))),1,12);else st.sh=S.clamp(Math.round(u-st.b/2),-4,8)}});
+  S.dragger(hB,{normal:V3(0,1,0),move:p=>{const q=area.worldToLocal(p.clone());S.api.state.b=S.clamp(Math.round(q.x/KA),2,14)}});
+  S.dragger(hH,{normal:V3(0,1,0),move:p=>{const q=area.worldToLocal(p.clone());S.api.state.h=S.clamp(Math.round(-q.z/KA),2,11)}});
+  const lBase=S.label({off:[0,34]}),lH=S.label({off:[20,0]}),lA2=S.label({off:[0,-40]}),lFA=S.label({cls:"hot big",off:[0,-30],lead:false}),lHow=S.label({off:[0,-24],lead:false});
+  let aKey="",cyc=0,curK="para",pOX=0,pOY=0;
+
+  // ---------------------------------------------------------------- circle station: a peach disc whose rim peels off onto a tape (tape at half scale)
+  const KC=.3;gridMat(ZC,-12,12,-6,6,KC,P.case.peach);
+  const circ=S.group();circ.position.set(ZC.x-6*KC,MT,ZC.z-1*KC);
+  const disc=S.mesh(new THREE.CylinderGeometry(1,1,TH,72),mat("plastic",P.product.peach,{rough:.35}));circ.add(disc);
+  const rimM=mat("plastic","#E57E45",{rough:.3});const rim=S.mesh(new THREE.BufferGeometry(),rimM);circ.add(rim);
+  const tape=S.mesh(new THREE.BoxGeometry(1,1,1),rimM);circ.add(tape);const ticks=S.swarm(8,new THREE.BoxGeometry(1,1,1),mat("plastic",P.ink,{rough:.4}));circ.add(ticks);
+  const rad=S.mesh(new THREE.BoxGeometry(1,1,1),mat("plastic","#D2557A",{rough:.35}));circ.add(rad);const ctr=S.sphere(.05,mat("plastic",P.ink));circ.add(ctr);
+  const hR=handle(circ,"#D2557A");S.dragger(hR,{normal:V3(0,1,0),move:p=>{const q=circ.worldToLocal(p.clone());const st=S.api.state;const r=S.clamp(Math.round(Math.hypot(q.x,q.z)/KC*2)/2,1,7);if(r!==st.r){st.r=r;st.unroll=0}}});
+  let rimKey="";const lR=S.label({off:[0,-26]}),lTape=S.label({off:[0,34]}),lFC=S.label({cls:"hot big",off:[0,-30],lead:false}),lPi=S.label({off:[0,-30]});
+
+  // ---------------------------------------------------------------- Pythagoras station: three square trays on the sides of a right-angled triangle
+  plinth(ZP,7.4,7.4,P.case.blush);const py=S.group();py.position.set(ZP.x,MT,ZP.z);
+  const triT=tile(py,"#ffffff");const pyM=S.group(py);const pyLiq=[0,1,2].map(i=>{const m=S.mesh(new THREE.BufferGeometry(),mat("liquid",[P.product.blueberry,P.product.strawberry,P.product.butter][i],{fresh:true,opacity:.85}),{cast:false});m.renderOrder=3;py.add(m);return m});
+  const pyGrid=S.swarm(90,new THREE.BoxGeometry(1,1,1),mat("flat",P.deep.lavender,{opacity:.4}));py.add(pyGrid);
+  const pours=S.puffs(60,"#ffffff");py.add(pours);const pp=Array.from({length:60},(_,i)=>({u:Math.random(),src:i%2}));
+  const rAng=S.group(py);rAng.add(S.box(.18,.03,.03,mat("plastic",P.ink),{at:[-.09,TH+.02,0]}));rAng.add(S.box(.03,.03,.18,mat("plastic",P.ink),{at:[-.18,TH+.02,-.09]}));
+  let pyKey="",KP=.4,sq=[];const lSa=S.label({off:[0,0],lead:false}),lSb=S.label({off:[0,0],lead:false}),lSc=S.label({off:[0,0],lead:false}),lFP=S.label({cls:"hot big",off:[0,-30],lead:false});
+  const hA=handle(py,P.product.blueberry),hBt=handle(py,P.product.strawberry);
+  S.dragger(hA,{normal:V3(0,1,0),move:p=>{const q=py.worldToLocal(p.clone());const st=S.api.state;const a=S.clamp(Math.round(q.x/KP-pOX),1,8);if(a!==st.ta){st.ta=a;st.pour=0}}});
+  S.dragger(hBt,{normal:V3(0,1,0),move:p=>{const q=py.worldToLocal(p.clone());const st=S.api.state;const b=S.clamp(Math.round(-q.z/KP-pOY),1,8);if(b!==st.tb){st.tb=b;st.pour=0}}});
+  function trayAt(c,col,out){const n=c.length,g=S.group(pyM);const wallM=mat("acrylic",col,{opacity:.35}),floorM=mat("plastic","#ffffff",{rough:.5});
+    g.add(S.mesh(tileGeo(c,KP,.04),floorM));
+    for(let i=0;i<n;i++){const a=c[i],b=c[(i+1)%n],dx=(b[0]-a[0])*KP,dz=-(b[1]-a[1])*KP,Lw=Math.hypot(dx,dz);const w=S.box(Lw+.04,.3,.04,wallM,{cast:false});
+      w.position.set((a[0]+b[0])/2*KP,.15,-(a[1]+b[1])/2*KP);w.rotation.y=-Math.atan2(dz,dx);w.renderOrder=4;g.add(w)}
+    out.push(c);return g}
+
+  // ---------------------------------------------------------------- parallel lines station: two steel rails and a strawberry rod you can turn
+  plinth(ZG,8.4,4.6,P.case.mint);const ag=S.group();ag.position.set(ZG.x,MT,ZG.z);const GAP=1.0;
+  for(const z of [-GAP,GAP]){ag.add(S.cyl(.06,.06,7.6,mat("metal",P.steel,{rough:.25}),{rot:[0,0,Math.PI/2],at:[0,.07,z]}));
+    for(const x of [0,2.2]){const ch=S.cyl(0,.09,.22,mat("plastic",P.ink,{rough:.4}),{rot:[0,0,-Math.PI/2],at:[x,.07,z-.22],seg:3});ag.add(ch)}}
+  const rod=S.cyl(.055,.055,1,mat("plastic",P.product.strawberry,{rough:.3}),{seg:20});ag.add(rod);
+  const wedge=c=>{const m=S.mesh(new THREE.BufferGeometry(),mat("plastic",c,{rough:.4}));ag.add(m);return m};
+  const wU=wedge(P.product.butter),wL=wedge(P.product.butter),wL2=wedge(P.product.blueberry);let angKey=-1;
+  const sector=(t0,t1,r)=>{const sh=new THREE.Shape();sh.moveTo(0,0);sh.absarc(0,0,r,t0,t1,false);sh.lineTo(0,0);const g=new THREE.ExtrudeGeometry(sh,{depth:.04,bevelEnabled:false,curveSegments:32});g.rotateX(-Math.PI/2);return g};
+  const hG=handle(ag,P.product.strawberry);S.dragger(hG,{normal:V3(0,1,0),move:p=>{const q=ag.worldToLocal(p.clone());S.api.state.ang=S.clamp(Math.round(Math.atan2(-q.z,q.x)*180/Math.PI),30,150)}});
+  const lAu=S.label({off:[30,-20]}),lAl=S.label({off:[30,-20]}),lAl2=S.label({off:[-30,-20]}),lFG=S.label({cls:"hot big",off:[0,-30],lead:false});
+
+  // ---------------------------------------------------------------- prism station: a turntable; the prism builds up one 1 m slice at a time
+  const KV=.24;plinth(ZV,6.6,5.6,P.case.butter);const tt=S.group();tt.position.set(ZV.x,TOP,ZV.z);
+  tt.add(S.cyl(2.5,2.6,.12,mat("plastic","#ffffff",{rough:.4}),{at:[0,.06,0],seg:64}));const spin=S.group(tt);spin.position.y=.12;
+  spin.add(S.cyl(2.35,2.35,.03,mat("plastic",P.case.lavender,{rough:.4}),{at:[0,.015,0],seg:64}));
+  const slices=S.swarm(16,new THREE.BufferGeometry(),mat("plastic",P.product.peach,{rough:.35}),{colors:true,cast:true});slices.castShadow=true;slices.receiveShadow=true;spin.add(slices);
+  const face=S.mesh(new THREE.BufferGeometry(),mat("glow",P.product.peach,.5),{cast:false});spin.add(face);let pKey="",pClock=0;
+  const lCross=S.label({off:[-30,-20]}),lLen=S.label({off:[30,20]}),lFV=S.label({cls:"hot big",off:[0,-30],lead:false}),lSl=S.label({off:[0,-30],lead:false});
+
+  // ---------------------------------------------------------------- views
+  S.view("area",[ZA.x-.7,5.0,ZA.z+6.6],[ZA.x-.9,.3,ZA.z+.6],{min:3,max:24});
+  S.view("circle",[ZC.x+.4,6.0,ZC.z+7.0],[ZC.x,.4,ZC.z-.2],{min:3,max:24});
+  S.view("pyth",[ZP.x+.3,8.6,ZP.z+7.4],[ZP.x,.3,ZP.z-.3],{min:3,max:24});
+  S.view("angles",[ZG.x+.4,6.0,ZG.z+6.8],[ZG.x,.3,ZG.z],{min:3,max:24});
+  S.view("prism",[ZV.x+3.4,5.8,ZV.z+8.8],[ZV.x+.3,.9,ZV.z+.4],{min:3,max:24});
+  S.view("all",[0,21,21],[0,0,-3.8],{min:6,max:60});
+  const zoneOf=k=>["para","tri","trap"].includes(k)?"area":k==="circle"?"circle":k==="pyth"?"pyth":k==="angles"?"angles":k==="prism"?"prism":"all";
+  const C={area:ZA,circle:ZC,pyth:ZP,angles:ZG,prism:ZV,all:V3(0,0,-3.5)};
+  const LAB={area:[lBase,lH,lA2,lFA,lHow],circle:[lR,lTape,lFC,lPi],pyth:[lSa,lSb,lSc,lFP],angles:[lAu,lAl,lAl2,lFG],prism:[lCross,lLen,lFV,lSl]};
+  S.goView("area",true);const tmp=V3(0,0,0),wp=(g,v)=>g.localToWorld(v.clone());let zone="area";
+  return {
+    step(st){zone=zoneOf(st.k);S.goView(zone);const c=C[zone];S.setShadowBox(zone==="all"?20:zone==="pyth"?5:6,[c.x,0,c.z]);cyc=0;pClock=0;
+      Object.values(LAB).flat().forEach(l=>l.hide())},
+    update(s,st,dt,t){const k=st.k;curK=k;const all=zone==="all",showL=z=>zone===z;cyc+=dt;pClock+=dt;
+      // ---- area station
+      {const mode=k==="para"||k==="tri"?k:"trap",b=s.b,h=s.h,sh=s.sh,a=s.a,off=(b-a)/2;const key=[mode,b,h,sh,a].join("|");
+        const par=[[0,0],[b,0],[b+sh,h],[sh,h]];
+        if(key!==aKey){aKey=key;
+          if(mode==="para"){const cut=sh>=0?[[0,0],[sh,0],[sh,h]]:[[b+sh,0],[b,0],[b+sh,h]],rest=sh>=0?[[sh,0],[b,0],[b+sh,h],[sh,h]]:[[0,0],[b+sh,0],[b+sh,h],[sh,h]];
+            if(sh===0){tA.set(par,KA);tB.m.visible=false}else{tA.set(rest,KA);tB.set(cut,KA);tB.m.visible=true}tA.m.material=tB.m.material=mat("plastic",P.product.butter,{rough:.35});
+            ghost.geometry.dispose();ghost.geometry=tileGeo([[sh,0],[sh+b,0],[sh+b,h],[sh,h]],KA,.01)}
+          else if(mode==="tri"){tA.set([[0,0],[b,0],[sh,h]],KA);tB.set([[0,0],[b,0],[sh,h]],KA);tB.m.visible=true;tA.m.material=mat("plastic",P.product.blueberry,{rough:.35});tB.m.material=mat("plastic","#C9DCF6",{rough:.35});
+            ghost.geometry.dispose();ghost.geometry=tileGeo(par,KA,.01)}
+          else{const tr=[[0,0],[b,0],[off+a,h],[off,h]];tA.set(tr,KA);tB.set(tr,KA);tB.m.visible=true;tA.m.material=mat("plastic",P.product.lime,{rough:.35});tB.m.material=mat("plastic","#D6EDB8",{rough:.35});
+            ghost.geometry.dispose();ghost.geometry=tileGeo([[0,0],[a+b,0],[a+b+off,h],[off,h]],KA,.01)}}
+        // the motion: one 7-second cycle (rest, move, hold, back)
+        const ph=S.REDUCED?0:(cyc%7)/7;const d=ph<.18?0:ph<.5?S.ease((ph-.18)/.32):ph<.85?1:1-S.ease((ph-.85)/.15);const lift=Math.sin(d*Math.PI)*.5;
+        tA.pivot.position.set(0,0,0);tA.pivot.rotation.y=0;tA.m.position.set(0,0,0);
+        if(mode==="para"){tB.m.position.set(0,0,0);tB.pivot.position.set((sh>=0?b:-b)*KA*d,lift,0);tB.pivot.rotation.y=0}
+        else{const M=mode==="tri"?[(b+sh)/2,h/2]:[(b+off+a)/2,h/2];tB.pivot.position.set(M[0]*KA,lift+.002,-M[1]*KA);tB.m.position.set(-M[0]*KA,0,M[1]*KA);tB.pivot.rotation.y=Math.PI*d;tB.m.visible=d>.01}
+        ghost.visible=mode!=="para"||sh!==0;
+        hDash.line(L(mode==="trap"?b/2:sh,0),L(mode==="trap"?b/2:sh,h),TH+.03);corner.position.copy(L(mode==="trap"?b/2:sh,0,TH+.03));corner.rotation.y=0;ghostEdge.off();
+        hSh.position.copy(mode==="trap"?L(off+a,h,TH+.12):L(sh+b/2,h,TH+.12));hB.position.copy(L(b,0,TH+.12));hH.position.copy(L(mode==="trap"?b/2:sh,h,TH+.12));
+        [hSh,hB,hH].forEach(o=>o.visible=!all);
+        const ar=mode==="para"?b*h:mode==="tri"?b*h/2:(a+b)*h/2;
+        lBase.show(showL("area")).at(wp(area,L(b/2,0,TH))).set(mode==="trap"?`b = ${b} m`:`base ${b} m`);
+        lH.show(showL("area")).at(wp(area,L(mode==="trap"?b/2:sh,h/2,TH))).set(mode==="trap"?`h = ${h} m`:`height ${h} m`);
+        lA2.show(showL("area")&&mode==="trap").at(wp(area,L(off+a/2,h,TH))).set(`a = ${a} m`);
+        lFA.cls(all?"":"hot big").show(showL("area")||all).at(V3(ZA.x,MT+.1,ZA.z-7*KA)).set(mode==="para"?`<b>Area = base × height</b><small>= ${b} × ${h} = ${b*h} m²</small>`:mode==="tri"?`<b>Area = ½ × base × height</b><small>= ½ × ${b} × ${h} = ${f(b*h/2)} m²</small>`:`<b>Area = ½ (a + b) h</b><small>= ½ × (${a} + ${b}) × ${h} = ${f((a+b)*h/2)} m²</small>`);
+        lHow.show(showL("area")).at(V3(ZA.x,MT,ZA.z+7*KA+.2)).set(mode==="para"?(sh===0?"Already a rectangle":"Cut the corner off, slide it across: a rectangle, same area"):mode==="tri"?"Two copies make the parallelogram: one is half":"Two copies make a parallelogram, base a + b: one is half");lHow.off=[0,30];}
+      // ---- circle station
+      {const r=s.r,R=r*KC,u=s.unroll,C2=2*Math.PI*r;disc.scale.set(R,1,R);disc.position.y=TH/2;
+        const rk=r+"|"+Math.round(u*200);if(rk!==rimKey){rimKey=rk;rim.geometry.dispose();const arc=Math.max(.001,(1-u)*Math.PI*2);rim.geometry=new THREE.TorusGeometry(R,.05,10,96,arc).rotateX(-Math.PI/2);rim.visible=u<.999;rim.rotation.set(0,-Math.PI/2-arc,0)}
+        rim.position.y=TH+.02;   // the peeling end always sits at the front of the disc, where the tape starts
+        const LT=C2*KC*.5;tape.visible=u>0;tape.scale.set(Math.max(.001,LT*u),.06,.1);tape.position.set(LT*u/2,.03,R+.06);
+        const dD=2*r*KC*.5;for(let i=0;i<8;i++){const x=(i+1)*dD;if(i<3&&x<=LT*u+1e-6)ticks.putS(i,x,.08,R+.06,.025,.12,.2);else ticks.put(i,0,-9,0,.0001)}ticks.done();
+        rad.scale.set(R,.03,.05);rad.position.set(R/2,TH+.03,0);ctr.position.set(0,TH+.03,0);hR.position.set(R,TH+.12,0);hR.visible=!all;
+        lR.show(showL("circle")).at(wp(circ,V3(R/2,TH,0))).set(`r = ${r} m`);
+        lTape.show(showL("circle")&&u>0).at(wp(circ,V3(LT*u,.1,R+.06))).set(`edge unrolled<b>${f(C2*u)} m</b><small>half scale</small>`);
+        lPi.show(showL("circle")&&u>=1).at(wp(circ,V3(3*dD,.1,R+.06))).set(`3 diameters and a bit: π ≈ 3.14`);lPi.off=[0,-34];lTape.off=[20,30];
+        lFC.cls(all?"":"hot big").show(showL("circle")||all).at(V3(ZC.x,MT+.1,ZC.z-6*KC-.2)).set(`<b>Circumference = 2πr = ${f(C2)} m</b><small>Area = πr² = ${f(Math.PI*r*r)} m²</small>`)}
+      // ---- Pythagoras station
+      {const a=s.ta,b=s.tb,c=Math.hypot(a,b);const key=a+"|"+b;
+        if(key!==pyKey){pyKey=key;KP=Math.min(.42,6.2/Math.max(a+2*b,2*a+b));const ox=-(a+2*b)/2+b,oy=-(2*a+b)/2+a;pOX=ox;pOY=oy;
+          const sh=(pts)=>pts.map(([u,v])=>[u+ox,v+oy]);triT.set(sh([[0,0],[a,0],[a,b]]),KP);triT.m.material=mat("plastic","#ffffff",{rough:.35});
+          while(pyM.children.length)pyM.remove(pyM.children[0]);sq=[];
+          const SA=sh([[0,0],[a,0],[a,-a],[0,-a]]),SB=sh([[a,0],[a+b,0],[a+b,b],[a,b]]),SC=sh([[0,0],[a,b],[a-b,b+a],[-b,a]]);
+          trayAt(SA,P.product.blueberry,sq);trayAt(SB,P.product.strawberry,sq);trayAt(SC,P.product.butter,sq);
+          sq.forEach((c4,i)=>{const ins=c4;pyLiq[i].geometry.dispose();pyLiq[i].geometry=tileGeo(ins,KP,1)});
+          let gi=0;const q=new THREE.Quaternion();sq.forEach(c4=>{const e1=[c4[1][0]-c4[0][0],c4[1][1]-c4[0][1]],e2=[c4[3][0]-c4[0][0],c4[3][1]-c4[0][1]],side=Math.hypot(...e1);
+            for(const [ea,eb] of [[e1,e2],[e2,e1]]){q.setFromUnitVectors(V3(1,0,0),V3(eb[0],0,-eb[1]).normalize());for(let i=1;i<side-1e-6&&gi<90;i++){const f0=i/side;const px=(c4[0][0]+ea[0]*f0+eb[0]/2)*KP,pz=-(c4[0][1]+ea[1]*f0+eb[1]/2)*KP;pyGrid.putS(gi++,px,.05,pz,side*KP,.006,.012,q)}}});
+          for(;gi<90;gi++)pyGrid.put(gi,0,-9,0,.0001);pyGrid.done();rAng.position.set((a+ox)*KP,0,-(oy)*KP)}
+        const fr=[1-s.pour,1-s.pour,.18+.82*s.pour];pyLiq.forEach((m,i)=>{m.visible=fr[i]>.005;m.scale.y=Math.max(.001,.24*fr[i]);m.position.y=.04});
+        const cen=c4=>{let x=0,z=0;c4.forEach(([u,v])=>{x+=u*KP;z-=v*KP});return V3(x/4,0,z/4)};const cA=cen(sq[0]),cB=cen(sq[1]),cC=cen(sq[2]);
+        const flowing=s.playing&&st.speed&&s.pour>0&&s.pour<1&&k==="pyth";for(let i=0;i<60;i++){const p=pp[i];if(flowing)p.u=(p.u+dt*.8)%1;const src=p.src?cB:cA;const x=S.lerp(src.x,cC.x,p.u),z=S.lerp(src.z,cC.z,p.u),y=.3+Math.sin(p.u*Math.PI)*1.2;
+          pours.put(i,x,y,z,flowing?.8:0,90)}pours.done();
+        hA.position.set((pOX+a)*KP,.45,-(pOY-a/2)*KP);hBt.position.set((pOX+a+b/2)*KP,.45,-(pOY+b)*KP);hA.visible=hBt.visible=!all;
+        lSa.show(showL("pyth")||all).at(wp(py,cA.setY(.3))).set(`<b>a² = ${a*a} m²</b>`);lSb.show(showL("pyth")||all).at(wp(py,cB.setY(.3))).set(`<b>b² = ${b*b} m²</b>`);lSc.show(showL("pyth")||all).at(wp(py,cC.setY(.3))).set(`<b>c² = ${f(c*c)} m²</b>`);
+        lFP.show(showL("pyth")).at(V3(ZP.x,MT+.1,ZP.z-3.4)).set(`<b>a² + b² = c²</b><small>${a*a} + ${b*b} = ${f(c*c)} · c = √${f(c*c)} = ${f(c,2)} m</small>`)}
+      // ---- parallel lines station
+      {const A=s.ang*Math.PI/180,dx=2*GAP/Math.tan(A),xA=-dx/2,xB=dx/2,dir=V3(Math.cos(A),0,-Math.sin(A));
+        const ext=(GAP+.55)/Math.sin(A),p0=V3(0,.1,0).addScaledVector(dir,-ext),p1=V3(0,.1,0).addScaledVector(dir,ext);
+        rod.position.set(0,.1,0);rod.quaternion.setFromUnitVectors(V3(0,1,0),dir);rod.scale.set(1,ext*2,1);hG.position.copy(p1).setY(.2);hG.visible=!all;
+        if(angKey!==s.ang){angKey=s.ang;for(const [m,t0,t1] of [[wU,0,A],[wL,0,A],[wL2,A,Math.PI]]){m.geometry.dispose();m.geometry=sector(t0,t1,.5)}}
+        wU.position.set(xB,.02,-GAP);wL.position.set(xA,.02,GAP);wL2.position.set(xA,.025,GAP);
+        lAu.show(showL("angles")).at(wp(ag,V3(xB+.45*Math.cos(A/2),.1,-GAP-.45*Math.sin(A/2)))).set(`<b>${s.ang}°</b>`);
+        lAl.show(showL("angles")).at(wp(ag,V3(xA+.45*Math.cos(A/2),.1,GAP-.45*Math.sin(A/2)))).set(`<b>${s.ang}°</b><small>corresponding</small>`);
+        lAl2.show(showL("angles")).at(wp(ag,V3(xA+.45*Math.cos((A+Math.PI)/2),.1,GAP-.45*Math.sin((A+Math.PI)/2)))).set(`<b>${180-s.ang}°</b>`);
+        lFG.show(showL("angles")).at(V3(ZG.x,MT+.1,ZG.z-2.1)).set("<b>Corresponding angles are equal</b>")}
+      // ---- prism station
+      {const b=s.b,h=s.h,n=s.len,key=b+"|"+h;if(key!==pKey){pKey=key;const sh=new THREE.Shape();sh.moveTo(-b/2*KV,0);sh.lineTo(b/2*KV,0);sh.lineTo(0,h*KV);sh.closePath();
+          slices.geometry.dispose();slices.geometry=new THREE.ExtrudeGeometry(sh,{depth:KV*.94,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1});
+          face.geometry.dispose();face.geometry=new THREE.ShapeGeometry(sh)}
+        const per=.45,shown=S.REDUCED||k!=="prism"?n:Math.min(n,pClock/per),z0=n*KV/2;
+        for(let i=0;i<16;i++){if(i<n&&i<shown+1){const fall=S.clamp(shown-i,0,1),y=(1-S.ease(fall))*1.6;slices.put(i,0,.03+y,z0-(i+1)*KV);slices.tint(i,i%2?P.product.peach:"#F7B48A")}else slices.put(i,0,-9,0,.0001)}slices.done();
+        face.position.set(0,.03,z0+.004);spin.rotation.y=S.REDUCED?-.5:-.5+Math.sin(t*.35)*.35;
+        const Ar=b*h/2,done=Math.min(n,Math.floor(shown+1e-6));
+        lCross.show(showL("prism")).at(wp(spin,V3(-b/6*KV,h*KV/3,z0))).set(`cross-section<b>½ × ${b} × ${h} = ${f(Ar)} m²</b>`);
+        lLen.show(showL("prism")).at(wp(spin,V3(b/2*KV,0,0))).set(`length <b>${n} m</b>`);
+        lSl.show(showL("prism")).at(V3(ZV.x,MT+.1,ZV.z+2.2)).set(`<b>${done} slice${done===1?"":"s"} × ${f(Ar)} m³ = ${f(done*Ar)} m³</b>`);lSl.off=[0,22];
+        lFV.show(showL("prism")).at(V3(ZV.x-.6,MT+.1,ZV.z-2.7)).set(`<b>Volume = area of cross-section × length</b><small>= ${f(Ar)} × ${n} = ${f(Ar*n)} m³</small>`)}
+    }};
+}
+StudyKit.mount({kupu:KUPU,scene3d:shapes3d,
   eyebrow:"Maths · Measurement and geometry", title:"The shape workshop", crumb:"Year 9–10 maths · area, circles, Pythagoras, angles and volume · also NCEA Level 1 91947", homeHash:"y9",
   fig:"FIG. 09 · GRID PAPER", railTitle:"Measure anything",
   mainBox:"0 0 640 330", mainPhoneBig:true, mainLabel:"Shapes drawn on grid paper with their measurements", closeBox:"0 0 420 260",

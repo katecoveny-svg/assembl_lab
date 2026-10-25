@@ -155,7 +155,7 @@ Object.entries({"start": ["kauwhata", "haukotinga"], "rate": ["rōnaki", "pānga
 // ---------- the 3D bench: two real tanks on a lavender plinth with a frosted graph board, and a scooter road behind
 function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const TOP=.3;
   const plinth=(x,z,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(x,.15,z);S.scene.add(p);return p};
-  const ZS=-2,SX=-19;plinth(.6,0,13.4,5.4,P.case.lavender);plinth(SX+.4,ZS,13.8,6.6,P.case.sky);
+  const ZS=-2,SX=-16.5;plinth(.6,0,13.4,5.4,P.case.lavender);plinth(SX+.4,ZS,13.8,6.6,P.case.sky);
   const UP=V3(0,1,0),cylGeo=new THREE.CylinderGeometry(1,1,1,16),boxGeo=new THREE.BoxGeometry(1,1,1);
   // a straight segment between two points: a cylinder stretched and turned (a line on the board is exactly this)
   const seg=(m,a,b,r)=>{const d=b.clone().sub(a),L=d.length();if(L<1e-4){m.visible=false;return}m.visible=true;m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(UP,d.divideScalar(L));m.scale.set(r,L,r)};
@@ -271,14 +271,14 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   const mkS=S.torus(.2,.035,mat("plastic",P.ink,{rough:.3}),{cast:false});sb.g.add(mkS);
   grab(sb,scA.h0,q=>{S.api.state.feeA=S.clamp(Math.round(q.v*2)/2,0,3)});grab(sb,scB.h0,q=>{S.api.state.feeB=S.clamp(Math.round(q.v*2)/2,0,3)});
   grab(sb,scA.h1,q=>{const st=S.api.state;st.rateA=S.clamp(Math.round((q.v-st.feeA)/10*20)/20,.1,1)});grab(sb,scB.h1,q=>{const st=S.api.state;st.rateB=S.clamp(Math.round((q.v-st.feeB)/10*20)/20,.1,1)});
-  const lCA=S.label({off:[-20,-40],cls:"big"}),lCB=S.label({off:[20,-40],cls:"big"}),lCoinA=S.label({off:[-10,30]}),lGate=S.label({off:[16,-26],cls:"hot"}),lSRule=S.label({cls:"hot",off:[0,-30],lead:false}),lSMeet=S.label({off:[20,-30]});
+  const lCA=S.label({off:[-30,-44],cls:"big"}),lCB=S.label({off:[30,-60],cls:"big"}),lCoinA=S.label({off:[70,26]}),lGate=S.label({off:[16,-26],cls:"hot"}),lSRule=S.label({cls:"hot",off:[0,-30],lead:false}),lSMeet=S.label({off:[20,-30]});
 
   // ---------------------------------------------------------------- views
   S.view("tank",[1.4,4.2,12.6],[.9,2.35,0],{min:4,max:28});
   S.view("rule",[-.6,4.0,12.2],[-.3,2.3,0],{min:4,max:28});
   S.view("two",[1.0,4.3,12.8],[.6,2.35,0],{min:4,max:28});
-  S.view("scooter",[SX+.2,4.6,ZS+11.2],[SX+.1,1.5,ZS+.2],{min:4,max:28});
-  S.view("all",[-9,12,19],[-9,1.4,-1],{min:6,max:60});
+  S.view("scooter",[SX+.4,6.8,ZS+13.8],[SX+.3,1.7,ZS+.3],{min:4,max:28});
+  S.view("all",[-8,17,28],[-8,1,-1.5],{min:6,max:60});
   const tankL=[TA.lab,TBk.lab,lRule,lRuleB,lNow,lStart,lRun,lRise,lMeet,lEmpty,l50,lBand,lDrag,lStair],scL=[lCA,lCB,lCoinA,lGate,lSRule,lSMeet];
   let K="start";S.goView("tank",true);const tmp=V3(0,0,0),wp=(B,v)=>B.g.localToWorld(v.clone());
   return {
@@ -305,7 +305,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
       const sStart=k==="start"||k==="rule";mkStart.visible=sStart;mkStart.position.copy(tb.at(0,S.clamp(s.cA,0,100)));lStart.show(sStart).at(wp(tb,mkStart.position)).set(`starts at <b>${fmtN(s.cA)} L</b>`);
       lDrag.show((k==="start"||k==="rate")&&serA.h1.visible).at(wp(tb,serA.h1.position));
       blocks.forEach(b=>b.visible=false);lRun.hide();lRise.hide();lStair.hide();
-      const BX=(x0,y0,x1,y1,i)=>bar(blocks[i],x0,y0,x1,y1,.1,.07,.16);
+      const BX=(x0,y0,x1,y1,i)=>bar(blocks[i],x0,y0,x1,y1,.13,.1,.2);
       if(k==="rate"||k==="drain"){const v1=lev(s.mA,s.cA,4),v2=lev(s.mA,s.cA,9);if(v1>=0&&v1<=100&&v2>=0&&v2<=100){const a=tb.at(4,v1),b=tb.at(9,v1),c2=tb.at(9,v2);BX(a.x,a.y,b.x,b.y,0);BX(b.x,b.y,c2.x,c2.y,1);
         lRun.show().at(wp(tb,V3((a.x+b.x)/2,a.y,0))).set("run <b>5</b>");lRise.show().at(wp(tb,V3(b.x,(b.y+c2.y)/2,0))).set(`rise <b>${fmtN(v2-v1)}</b>`);lRun.off=[0,v2>=v1?30:-34]}}
       if(k==="rule"){let ok=true;for(let i=0;i<5;i++){const v1=lev(s.mA,s.cA,i),v2=lev(s.mA,s.cA,i+1);if(v1<0||v2>100||v2<0||v1>100){ok=false;break}const a=tb.at(i,v1),b=tb.at(i+1,v1),c2=tb.at(i+1,v2);BX(a.x,a.y,b.x,b.y,i*2);BX(b.x,b.y,c2.x,c2.y,i*2+1)}
@@ -317,8 +317,8 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
       const e=emptyAt(s.mA,s.cA),eOk=k==="drain"&&e!==null&&e<=TMAX;mkEmpty.visible=eOk;if(eOk){mkEmpty.position.copy(tb.at(e,0));lEmpty.show().at(wp(tb,mkEmpty.position)).set(`empty at <b>${fmtN(Math.round(e*10)/10)} min</b>`)}else lEmpty.hide();
       const ineq=k==="ineq"||s.shade;band.visible=tAxis.visible=dash50.visible=ineq;l50.show(ineq);lBand.hide();
       if(ineq){const a=tb.at(0,50),b=tb.at(TMAX,100);bar(band,a.x,a.y,b.x,b.y,.04,.01,.02);for(let i=0;i<40;i++){const p=tb.at(i/40*TMAX+.12,50);dash50.putS(i,p.x,p.y,.08,.13,.03,.04)}dash50.done();
-        l50.at(wp(tb,tb.at(TMAX,100))).set("<b>L ≥ 50</b>");let a0=null,b0=null;for(let q=0;q<=TMAX;q+=.05){const v=lev(s.mA,s.cA,q);if(v>=50&&v<=100){if(a0===null)a0=q;b0=q}}
-        if(a0!==null){const p=tb.at(a0,0),p2=tb.at(b0,0);bar(tAxis,p.x,p.y,p2.x,p2.y,.09,.07,.1);lBand.show().at(wp(tb,V3((p.x+p2.x)/2,p.y,0))).set(`t ≥ ${fmtN(Math.round(a0*10)/10)} min`)}else tAxis.visible=false}
+        l50.at(wp(tb,tb.at(TMAX-1,50))).set("<b>L ≥ 50</b>");let a0=null,b0=null;for(let q=0;q<=TMAX;q+=.05){const v=lev(s.mA,s.cA,q);if(v>=50&&v<=100){if(a0===null)a0=q;b0=q}}
+        if(a0!==null){const p=tb.at(a0,0),p2=tb.at(b0,0);bar(tAxis,p.x,p.y,p2.x,p2.y,.09,.07,.1);lBand.show().at(wp(tb,V3((p.x+p2.x)/2,p.y,0))).set(`<b>t ≥ ${fmtN(Math.round(a0*10)/10)} min</b>`)}else tAxis.visible=false}
       table.visible=k==="rule";if(k==="rule"){const key=s.mA+"|"+s.cA;if(key!==tKey){tKey=key;tpan.redraw((c,w,h)=>{c.fillStyle="rgba(255,255,255,.96)";c.beginPath();c.roundRect(4,4,w-8,h-8,20);c.fill();
         c.font="600 22px 'Instrument Sans',system-ui";c.fillStyle="#6E6A86";c.fillText("TIME",34,52);c.fillText("TANK A",160,52);c.fillText("CHANGE",286,52);
         const rows=[0,1,2,3,4,5,10];rows.forEach((tt,j)=>{const y=100+j*56;if(j%2===0){c.fillStyle="#F4F1FA";c.fillRect(16,y-36,w-32,52)}c.font="500 30px 'IBM Plex Mono',monospace";c.fillStyle=tt===0?"#6A50BE":"#222A55";
