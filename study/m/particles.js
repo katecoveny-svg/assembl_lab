@@ -297,7 +297,7 @@ function particles3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
     update(s,st,dt,t){
       const Tbp=Tb(),stt=stateFrom(s.Q,Tbp),T=stt.T,sp=Math.sqrt((T+273)/273);
       const heating=s.playing&&st.speed&&st.k!=="pressure";
-      coilM.emissiveIntensity=S.lerp(coilM.emissiveIntensity,heating?1.2+s.power*1.1:0,.08);lamp.material.emissiveIntensity=heating?2.5:0;
+      coilM.emissiveIntensity=S.lerp(coilM.emissiveIntensity,heating?2+s.power*1.8:0,.08);lamp.material.emissiveIntensity=heating?2.5:0;
       // ---- molecules
       const nS=Math.round(stt.solid*N),nG=Math.round(stt.gas*N);
       const lvl=Math.max(.25,(1-stt.gas)*(N-nS)/N*1.05+(nS>0?0:0)),liqTop=B0+.05+Math.max(.25,((N-nS-nG)/N)*1.0+(nS/N)*.35);

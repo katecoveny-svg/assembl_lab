@@ -74,7 +74,7 @@ export function attach(api,cfg,factory,kit){
 
   let composer=null,bloom=null;
   if(HQ){try{composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
-    bloom=new UnrealBloomPass(new THREE.Vector2(256,256),.45,.4,1.15);composer.addPass(bloom);composer.addPass(new OutputPass())}catch(e){composer=null}}
+    bloom=new UnrealBloomPass(new THREE.Vector2(256,256),.5,.35,2.2);composer.addPass(bloom);composer.addPass(new OutputPass())}catch(e){composer=null}}
 
   const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.08;controls.enablePan=false;
   controls.maxPolarAngle=1.42;controls.minPolarAngle=.08;controls.rotateSpeed=.7;controls.zoomSpeed=.8;controls.minDistance=1.5;controls.maxDistance=60;

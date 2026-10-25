@@ -301,7 +301,7 @@ function sky3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,
       g.beginPath();g.moveTo(c+Math.cos(a)*(OR-.25)*k,c-Math.sin(a)*(OR-.25)*k);g.lineTo(c+Math.cos(a)*(OR+.25)*k,c-Math.sin(a)*(OR+.25)*k);g.stroke();
       g.fillStyle="#3A6FB8";g.fillText(m.toUpperCase(),c+Math.cos(a)*(OR+.9)*k,c-Math.sin(a)*(OR+.9)*k)})});
   // the Sun: a glowing ball on a brass stem, with a soft corona; it does not cast the bench shadow
-  const sunM=new THREE.MeshBasicMaterial({color:new THREE.Color("#FFD45A").multiplyScalar(1.6),toneMapped:true});
+  const sunM=new THREE.MeshBasicMaterial({color:new THREE.Color("#FFD45A").multiplyScalar(3.2),toneMapped:true});
   const sun=S.sphere(1.05,sunM,{cast:false,seg:48});sun.position.set(0,Y0,0);S.scene.add(sun);
   const corona=S.puffs(1,"#FFC94A",{additive:true});corona.put(0,0,Y0,0,.75,5200);corona.done();S.scene.add(corona);
   S.scene.add(S.cyl(.08,.14,Y0-.3,mat("metal","#D8B16A",{rough:.25}),{at:[0,.36+(Y0-.3)/2-.05,0],seg:20}));

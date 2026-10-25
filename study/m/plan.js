@@ -215,14 +215,14 @@ function plan3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
     built=s.brief}
   const canDrag=()=>["explore","communicate","test"].includes(S.api.step.k);
   // rule lights along the front of the board
-  const lights=[0,1,2,3,4,5].map(i=>{const g=S.group();g.position.set(-4.4+i*1.15,TOP,4.1);g.add(S.cyl(.18,.22,.12,mat("plastic","#ffffff",{rough:.4}),{at:[0,.06,0]}));
-    const b=S.sphere(.13,mat("glow",PAL.product.lime,1.2,{fresh:true}),{at:[0,.24,0]});g.add(b);const L=S.label({off:[0,24]});return {g,b,L}});
+  const lights=[0,1,2,3,4,5].map(i=>{const g=S.group();g.position.set(-5.2+i*1.75,TOP,4.15);g.add(S.cyl(.18,.22,.12,mat("plastic","#ffffff",{rough:.4}),{at:[0,.06,0]}));
+    const b=S.sphere(.13,mat("glow",PAL.product.lime,1.2,{fresh:true}),{at:[0,.24,0]});g.add(b);const L=S.label({off:[0,i%2?26:-30]});return {g,b,L}});
   // people walking the brief's route
   const NW=14,walkers=S.swarm(NW,new THREE.CapsuleGeometry(.06,.12,4,10),mat("plastic","#ffffff",{rough:.4}),{colors:true});walkers.castShadow=true;model.add(walkers);
   const heads=S.swarm(NW,new THREE.SphereGeometry(.055,12,8),mat("plastic","#F2D0B4",{rough:.4}));model.add(heads);
   const route=S.tube([[0,0,0],[1,0,0]],.025,mat("glow",PAL.deep.sky,.8,{fresh:true}),{cast:false});model.add(route);let routeKey="";let curve=null;
   // three saved options as little models on stands
-  const opt=["A","B","C"].map((K,i)=>{const g=S.group();g.position.set(-4.2+i*4.2,TOP,-7.6);const stand=S.rbox(3.6,.2,2.6,.08,mat("plastic","#ffffff",{rough:.45}),{at:[0,.1,0]});g.add(stand);
+  const opt=["A","B","C"].map((K,i)=>{const g=S.group();g.position.set(-4.2+i*4.2,TOP,-7.6);const stand=S.rbox(3.6,.2,2.6,.08,mat("plastic",PAL.case.butter,{rough:.5}),{at:[0,.1,0]});g.add(stand);
     const inner=S.group(g);inner.position.y=.22;const L=S.label({off:[0,-34]});return {g,inner,L,key:""}});
   // dimension rods for the communicate step
   const dimM=mat("plastic",PAL.ink,{rough:.4});const dims=[0,1,2,3].map(()=>{const g=S.group(model);const r=S.cyl(.012,.012,1,dimM,{seg:6,cast:false,rot:[0,0,Math.PI/2]});g.add(r);
@@ -230,7 +230,7 @@ function plan3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
   const setDim=(D,p1,p2,txt)=>{const L=p1.distanceTo(p2);D.g.position.copy(p1).add(p2).multiplyScalar(.5);D.g.lookAt(model.localToWorld(p2.clone()));D.g.rotateY(Math.PI/2);
     D.r.scale.y=L;D.a.position.set(-L/2,0,0);D.b.position.set(L/2,0,0);D.L.at(model.localToWorld(D.g.position.clone())).set(txt)};
   const lBrief=S.label({cls:"big",off:[0,-40]}),lScore=S.label({cls:"big",off:[30,-20]});
-  S.view("board",[1.2,9.6,9.4],[-.4,0,.6],{min:4,max:30});S.view("options",[.2,7.4,1.8],[0,0,-7.4],{min:3,max:30});S.view("low",[5.6,5.2,8.6],[-.6,.2,0],{min:4,max:30});
+  S.view("board",[1.2,9.6,9.4],[-.4,0,.6],{min:4,max:30});S.view("options",[.4,5.2,-1.2],[0,.2,-7.6],{min:3,max:30});S.view("low",[5.6,5.2,8.6],[-.6,.2,0],{min:4,max:30});
   const viewOf=k=>k==="ideate"?"options":k==="evaluate"?"low":"board";
   const tmp=V3();
   function miniModel(o,zs){while(o.inner.children.length)o.inner.remove(o.inner.children[0]);const Bz=B();const kk=3.2/Bz.W;

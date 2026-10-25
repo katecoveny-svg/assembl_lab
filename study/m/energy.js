@@ -369,7 +369,7 @@ function energy3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
       const lvl=S.clamp((s.km-s.boiled)/1.7*.9,.02,.95)*JH*.92;water.scale.y=lvl;water.position.y=.245+lvl/2;surf.position.y=.25+lvl;
       const warm=S.clamp((s.T-15)/85,0,1);waterM.color.set(PAL.water).lerp(new THREE.Color("#F6B384"),warm);
       const on=s.playing&&["heat","boil"].includes(st.k);const heatK=on?1:Math.max(0,ring.material.emissiveIntensity-dt*2)/3;
-      ring.material.emissiveIntensity=coil.material.emissiveIntensity=on?2.4+Math.sin(t*12)*.3:Math.max(0,coil.material.emissiveIntensity-dt*2);
+      ring.material.emissiveIntensity=coil.material.emissiveIntensity=on?5+Math.sin(t*12)*.6:Math.max(0,coil.material.emissiveIntensity-dt*2);
       const boiling=s.T>=99.9;const nuc=on?(boiling?1:S.clamp((s.T-60)/40,0,1)*.35):0;
       for(let i=0;i<bubs.length;i++){const b=bubs[i];if(b.y<0||b.y>lvl){if(Math.random()<nuc*.25){const a=Math.random()*6.28,r=Math.random()*.48;b.x=Math.cos(a)*r;b.z=Math.sin(a)*r;b.y=.02;b.v=.3+Math.random()*.5;b.r=.012+Math.random()*.02}else{b.y=-1}}
         if(b.y>=0){b.y+=b.v*dt*(boiling?1.8:1);b.r+=dt*.01*(boiling?2:.5);b.x+=Math.sin(t*5+i)*.002}bub.put(i,b.x,b.y<0?-50:.25+b.y,b.z,b.y<0?0:b.r)}bub.done();
