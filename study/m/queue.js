@@ -189,7 +189,194 @@ const CH=[
     no:()=>`Not yet. Saved: A = ${s.runA?`${s.runA.c} beds, ${fmt(s.runA.rate)}/h, ${fmt(s.runA.minutes/60)} h`:"nothing"}; B = ${s.runB?`${s.runB.c} beds, ${fmt(s.runB.rate)}/h, ${fmt(s.runB.minutes/60)} h`:"nothing"}. Set 14 an hour, 24 hours, 8 beds → Run → Save as A; then 12 beds → Run → Save as B.`},
   {q:"Tree: set the three chances so that P(needs help) is exactly 0.25.",check:()=>Math.abs(s.pSelf*s.pHelpSelf+(1-s.pSelf)*s.pHelpStaff-0.25)<0.005,ok:()=>`Yes: ${fmt(s.pSelf,2)} × ${fmt(s.pHelpSelf,2)} + ${fmt(1-s.pSelf,2)} × ${fmt(s.pHelpStaff,2)} = ${fmt(s.pSelf*s.pHelpSelf+(1-s.pSelf)*s.pHelpStaff,3)}.`,no:()=>`Not yet: P(help) = ${fmt(s.pSelf*s.pHelpSelf+(1-s.pSelf)*s.pHelpStaff,3)}. Multiply along each branch and add the two "help" leaves.`}];
 function runED(){const r=runFast({seed:s.seed,rate:s.edRate/60,c:s.beds,service:svcED,minutes:s.edHours*60});r.rate=s.edRate;s.edLast=r;s.lastED=r;StudyKit.sfx("ding");return r}
-StudyKit.mount({kupu:KUPU,caseTint:"lavender",
+// ---------- the 3D bench: a walkway where shoppers arrive at the model's Poisson times, a normal curve with falling samples,
+// a supermarket with c checkouts running the same discrete-event simulation, an ED ward replaying the current settings,
+// and a 3D probability tree. Everything reads s (and the model's own functions); nothing here changes a result.
+function queue3d(S){const {THREE,mat}=S;const P3=S.PAL;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const ZA=V3(-9.2,0,0),ZN=V3(0,0,0),ZW=V3(9.2,0,0),ZE=V3(-4.8,0,-10),ZT=V3(4.8,0,-10),TOP=.3;
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZA,8.0,5.6,P3.case.lavender);plinth(ZN,8.0,5.6,P3.case.lavender);plinth(ZW,8.4,5.8,P3.case.lavender);plinth(ZE,8.4,5.4,P3.case.sky);plinth(ZT,8.0,5.4,P3.case.mint);
+  const glowM=(c,i=0)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),emissive:new THREE.Color(c),emissiveIntensity:i,roughness:.4});
+  const pm=(c,r=.35)=>mat("plastic",c,{rough:r});
+  const LBL=[];const label=o=>{const l=S.label(o);LBL.push(l);return l};let overview=false;
+  const tmp=V3(0,0,0);
+  // an instanced crowd of faceless figures: hoodie, head, hair cap, two legs
+  function crowd(n,parent,k=1){const b=S.swarm(n,new THREE.CapsuleGeometry(.08*k,.1*k,4,12),pm("#ffffff"),{colors:true,cast:true}),h=S.swarm(n,new THREE.SphereGeometry(.068*k,14,10),pm("#ffffff",.5),{colors:true}),
+      hr=S.swarm(n,new THREE.SphereGeometry(.071*k,14,8),pm("#4E4868",.6)),lg=S.swarm(n*2,new THREE.CylinderGeometry(.024*k,.022*k,.16*k,8),pm("#4E4868",.5));
+    [b,h,hr,lg].forEach(m=>{m.castShadow=true;(parent||S.scene).add(m)});
+    return {n,put(i,x,y,z,c,sk,bob=0){b.put(i,x,y+.27*k+bob,z,1);h.put(i,x,y+.45*k+bob,z,1);hr.putS(i,x,y+.475*k+bob,z-.008,1,.6,1);lg.put(i*2,x-.04*k,y+.08*k,z,1);lg.put(i*2+1,x+.04*k,y+.08*k,z,1);b.tint(i,c);h.tint(i,sk)},
+      hide(i){b.put(i,0,-9,0,0);h.put(i,0,-9,0,0);hr.put(i,0,-9,0,0);lg.put(i*2,0,-9,0,0);lg.put(i*2+1,0,-9,0,0)},done(){[b,h,hr,lg].forEach(m=>m.done())}}}
+  // ---------------------------------------------------------------- arrivals: a walkway, a gate that flashes at each arrival, a counting window and the histogram
+  const za=S.group();za.position.set(ZA.x,TOP,ZA.z);const WX0=-3.4,WL=5.6,WZ=1.2;
+  za.add(S.rbox(WL+.4,.12,.9,.05,pm(P3.case.lavender,.45),{at:[WX0+WL/2,.06,WZ]}));
+  const gateM=glowM(P3.product.butter,.3);za.add(S.torus(.55,.05,gateM,{at:[WX0+.1,.12,WZ],rot:[0,Math.PI/2,0],arc:Math.PI}));
+  const door=S.group(za);door.position.set(WX0+WL+.35,0,WZ);door.add(S.rbox(.12,1.5,1.0,.04,pm("#ffffff"),{at:[0,.75,0]}));door.add(S.rbox(.5,1.2,.06,.03,mat("glass","#E6F2FC",{opacity:.25}),{at:[-.05,.6,0],rot:[0,Math.PI/2,0],cast:false}));
+  door.add(S.rbox(1.0,.82,.06,.04,pm("#ffffff"),{at:[0,1.3,.56]}));const cnt=S.panel(256,200,.92);cnt.position.set(0,1.3,.595);door.add(cnt);
+  const shop=crowd(40,za);
+  const histB=S.panel(1100,480,6.8);histB.position.set(0,1.55,-1.6);za.add(histB);za.add(S.rbox(6.95,3.16,.06,.05,pm("#ffffff"),{at:[0,1.55,-1.64]}));
+  const bars=S.swarm(40,new S.RoundedBoxGeometry(1,1,1,2,.08),pm(P3.product.blueberry,.3));za.add(bars);
+  const pdots=S.swarm(40,new THREE.SphereGeometry(.07,14,10),pm(P3.product.strawberry,.3));za.add(pdots);
+  const HX0=-3.0,HW=6.0,HY0=.55,HH=2.1;let histKey="";
+  const lLam=label({cls:"hot big",off:[0,-30],lead:false}),lWin=label({off:[-26,-30]});
+  // ---------------------------------------------------------------- service times: the normal curve as a solid, the shaded slice, and 100 samples falling into bins
+  const zn=S.group();zn.position.set(ZN.x,TOP,ZN.z);const NX0=-3,NW=6,NH=2.0;const nx=x=>NX0+(x-(s.mu-4*s.sig))/(8*s.sig)*NW;
+  const pdfU=u=>Math.exp(-.5*u*u);   // u in σ units
+  {const sh=new THREE.Shape();sh.moveTo(NX0,0);for(let i=0;i<=160;i++){const u=-4+i/20;sh.lineTo(NX0+(u+4)/8*NW,pdfU(u)*NH)}sh.lineTo(NX0+NW,0);sh.lineTo(NX0,0);
+    const g=new THREE.ExtrudeGeometry(sh,{depth:.3,bevelEnabled:false,curveSegments:4});zn.add(S.mesh(g,pm(P3.case.lavender,.4),{at:[0,.1,-.9]}))}
+  zn.add(S.rbox(NW+.4,.1,2.4,.04,pm("#ffffff",.5),{at:[0,.05,-.2]}));
+  const shadeM=pm(P3.product.butter,.35);let shadeMesh=null,shadeKey="";
+  const NB=16,NBALL=100,balls=S.swarm(NBALL,new THREE.SphereGeometry(.055,14,10),pm("#ffffff",.25),{colors:true});zn.add(balls);
+  const bin=Array(NB).fill(0),bl=[];let spawnT=0,ballR=null,ballKey="",nextBall=0,restT=0;
+  for(let i=0;i<NB-1;i++)zn.add(S.box(.012,.5,.4,mat("acrylic","#ffffff",{opacity:.3}),{at:[NX0+(i+1)*NW/NB,.35,.3],cast:false}));
+  const loH=S.group(zn),hiH=S.group(zn);[[loH,P3.product.blueberry],[hiH,P3.product.butter]].forEach(([g,c])=>{g.add(S.cyl(.018,.018,2.3,mat("metal",P3.steel),{at:[0,1.25,.65],seg:8}));g.add(S.sphere(.11,pm(c,.3),{at:[0,2.45,.65]}))});
+  const setB=(which,p)=>{const l=zn.worldToLocal(p.clone());const x=Math.round(s.mu-4*s.sig+(l.x-NX0)/NW*8*s.sig);const v=S.clamp(x,40,200);if(which==="lo"){s.lo=v;if(s.hi<s.lo)s.hi=s.lo}else{s.hi=v;if(s.lo>s.hi)s.lo=s.hi}};
+  S.dragger(loH.children[1],{normal:V3(0,0,1),move:p=>setB("lo",p)});S.dragger(hiH.children[1],{normal:V3(0,0,1),move:p=>setB("hi",p)});
+  const axis=S.panel(1200,90,NW+.4);axis.rotation.x=-Math.PI/2;axis.position.set(0,.105,.95);zn.add(axis);let axisKey="";
+  const readN=S.panel(620,300,2.4);readN.position.set(2.35,2.65,-1.1);zn.add(readN);zn.add(S.rbox(2.5,1.25,.06,.05,pm("#ffffff"),{at:[2.35,2.65,-1.14]}));let readKey="";
+  const lBalls=label({off:[-30,-30]}),lLo=label({off:[-20,-24],lead:false}),lHi=label({off:[20,-24],lead:false});
+  // ---------------------------------------------------------------- the checkout: c counters, servers behind, a roped snake queue, a screen with the wait readouts
+  const zw=S.group();zw.position.set(ZW.x,TOP,ZW.z);
+  const CK=8,ckX=(i,c)=>(i-(c-1)/2)*.9;const cks=[];
+  for(let i=0;i<CK;i++){const g=S.group(zw);g.add(S.rbox(.72,.42,.4,.04,pm(WOOD,.55),{at:[0,.21,0]}));g.add(S.box(.46,.02,.3,pm("#4A5366",.5),{at:[-.08,.43,0]}));g.add(S.rbox(.14,.14,.14,.03,mat("metal",P3.steel),{at:[.26,.5,-.06]}));
+    const goods=S.swarm(3,new THREE.BoxGeometry(.07,.05,.07),pm("#ffffff",.4),{colors:true});g.add(goods);[STRAW,LIME,BLUE].forEach((c,k)=>{goods.put(k,-.25+k*.14,.47,0,1);goods.tint(k,c)});goods.done();
+    S.pick(g,()=>{s.playing=!s.playing});cks.push({g,goods})}
+  const staff=crowd(CK,zw,1.1),cust=crowd(48,zw,1.1);
+  const QX0=-3.3,QSP=.33,qPos=i=>{const row=Math.floor(i/20),k=i%20,x=row%2?QX0+(19-k)*QSP:QX0+k*QSP;return [x,.35+row*.55]};
+  {const postM=mat("metal",P3.steel);for(const z of [.08,.62,1.17])for(let k=0;k<5;k++){zw.add(S.cyl(.03,.03,.36,postM,{at:[QX0-.15+k*1.65,.18,z],seg:10}));zw.add(S.cyl(.07,.07,.02,postM,{at:[QX0-.15+k*1.65,.01,z],seg:16}))}
+    for(const z of [.08,.62,1.17])for(let k=0;k<4;k++){const a=QX0-.15+k*1.65,b=a+1.65;zw.add(S.tube([[a,.33,z],[(a+b)/2,.27,z],[b,.33,z]],.014,pm(P3.deep.lavender,.4),{seg:16,rs:5}))}}
+  const scr=S.panel(1000,330,4.4);scr.position.set(0,2.15,-1.3);zw.add(scr);zw.add(S.rbox(4.56,1.6,.08,.06,pm("#3B4466",.4),{at:[0,2.15,-1.36]}));zw.add(S.cyl(.04,.05,1.4,mat("metal",P3.steel),{at:[0,.7,-1.4]}));let scrKey="";
+  const pos={},slotOf={};const cLab=Array.from({length:CK},()=>label({off:[0,-30],lead:false}));const lWait=label({cls:"hot",off:[30,20]}),lPlay=label({cls:"hot",off:[0,-20]}).set("Press play to open the doors");
+  // ---------------------------------------------------------------- the ED: beds, a waiting room, and screens for runs A and B
+  const ze=S.group();ze.position.set(ZE.x,TOP,ZE.z);const NBED=16;
+  const bedX=i=>-3.3+(i%8)*.94,bedZ=i=>i<8?-1.75:-.75;const beds=[];
+  for(let i=0;i<NBED;i++){const g=S.group(ze);g.position.set(bedX(i),0,bedZ(i));g.add(S.rbox(.5,.18,.8,.05,pm("#ffffff",.4),{at:[0,.25,0]}));g.add(S.rbox(.36,.06,.16,.03,pm(P3.case.sky,.4),{at:[0,.37,-.28]}));
+    for(const x of [-.2,.2])for(const z of [-.32,.32])g.add(S.cyl(.02,.02,.16,mat("metal",P3.steel),{at:[x,.08,z],seg:8}));beds.push(g)}
+  const pats=S.swarm(NBED,new THREE.CapsuleGeometry(.08,.34,4,12),pm("#ffffff",.35),{colors:true});ze.add(pats);
+  const patH=S.swarm(NBED,new THREE.SphereGeometry(.07,14,10),pm(SKIN[1],.5),{colors:true});ze.add(patH);
+  const chairs=S.swarm(30,new S.RoundedBoxGeometry(.22,.06,.22,2,.03),pm(P3.case.lavender,.45));ze.add(chairs);for(let i=0;i<30;i++)chairs.put(i,-3.2+(i%10)*.36,.2,.35+Math.floor(i/10)*.4,1);chairs.done();
+  const waitP=crowd(30,ze,.9);
+  const edScr=S.panel(600,200,2.0);edScr.position.set(2.7,.95,1.5);edScr.rotation.y=-.3;ze.add(edScr);ze.add(S.rbox(2.1,.72,.06,.05,pm("#3B4466",.4),{at:[2.71,.95,1.47],rot:[0,-.3,0]}));ze.add(S.cyl(.03,.04,.6,mat("metal",P3.steel),{at:[2.7,.3,1.44]}));
+  const runScr=[S.panel(560,330,2.2),S.panel(560,330,2.2),S.panel(560,330,2.2)];runScr.forEach((p,i)=>{p.position.set(-2.4+i*2.4,1.35,-2.45);ze.add(p);ze.add(S.rbox(2.3,1.42,.06,.05,pm("#ffffff"),{at:[-2.4+i*2.4,1.35,-2.49]}))});let runKey="";
+  let edSim=null,edKey="",edClock=0;
+  const lEd=label({cls:"hot",off:[0,-30]});
+  // ---------------------------------------------------------------- the tree: branches as thick as their chances, leaves as columns, shoppers flowing down
+  const zt=S.group();zt.position.set(ZT.x,TOP,ZT.z+.2);zt.rotation.y=-Math.PI/2;const R0=V3(-2.2,1.9,0),NS=V3(-.6,1.75,1.3),NT=V3(-.6,1.75,-1.3);const LF=[V3(.9,0,2.1),V3(.9,0,.7),V3(.9,0,-.7),V3(.9,0,-2.1)];
+  zt.add(S.sphere(.14,pm(P3.ink,.3),{at:[R0.x,R0.y,R0.z]}));zt.add(S.sphere(.1,pm("#ffffff",.3),{at:[NS.x,NS.y,NS.z]}));zt.add(S.sphere(.1,pm("#ffffff",.3),{at:[NT.x,NT.y,NT.z]}));
+  const branch=(a,b)=>{const m=S.mesh(new THREE.CylinderGeometry(1,1,1,16),pm(P3.ink,.35));zt.add(m);m.userData.a=a;m.userData.b=b;return m};
+  const LTOP=i=>V3(LF[i].x,1.55,LF[i].z);
+  const brs=[branch(R0,NS),branch(R0,NT),branch(NS,LTOP(0)),branch(NS,LTOP(1)),branch(NT,LTOP(2)),branch(NT,LTOP(3))];
+  const setBranch=(m,r)=>{const a=m.userData.a,b=m.userData.b,d=b.clone().sub(a);m.position.copy(a).add(b).multiplyScalar(.5);m.scale.set(r,d.length(),r);m.quaternion.setFromUnitVectors(V3(0,1,0),d.normalize())};
+  const leafM=[pm(P3.product.butter,.3),pm("#ffffff",.35),pm(P3.product.butter,.3),pm("#ffffff",.35)];
+  const leaves=LF.map((p,i)=>{const m=S.rbox(.5,1,.5,.06,leafM[i]);m.position.set(p.x+.6,0,p.z);zt.add(m);return m});
+  const flow=S.swarm(60,new THREE.SphereGeometry(.045,10,8),pm("#ffffff",.3),{colors:true});zt.add(flow);let flowR=rng(11);const fl=Array.from({length:60},()=>({u:Math.random()*3,a:0,b:0}));
+  const table=S.panel(640,330,2.4);table.position.set(-2.0,1.55,-2.2);table.rotation.y=Math.PI/2-.5;zt.add(table);zt.add(S.rbox(2.52,1.34,.06,.05,pm("#ffffff"),{at:[-2.04,1.55,-2.24],rot:[0,Math.PI/2-.5,0]}));let tabKey="";
+  const brL=[0,1,2,3,4,5].map(()=>label({off:[0,-18],lead:false})),lfL=[0,1,2,3].map(()=>label({off:[0,34],lead:false})),lPH=label({cls:"hot big",off:[0,40],lead:false});
+  // ---------------------------------------------------------------- views
+  S.view("arrivals",[ZA.x+.3,3.6,ZA.z+8.8],[ZA.x,1.25,ZA.z+.2],{min:2,max:30});
+  S.view("service",[ZN.x+.3,4.0,ZN.z+8.4],[ZN.x,1.3,ZN.z-.2],{min:2,max:30});
+  S.view("wait",[ZW.x+.2,5.4,ZW.z+8.6],[ZW.x,.9,ZW.z],{min:2,max:30});
+  S.view("ed",[ZE.x+.4,4.4,ZE.z+7.4],[ZE.x,.8,ZE.z-.5],{min:2,max:30});
+  S.view("tree",[ZT.x+.6,4.6,ZT.z+7.6],[ZT.x,1.1,ZT.z],{min:2,max:30});
+  S.view("all",[0,19,26],[0,.5,-4.6],{min:6,max:70});
+  const half={arrivals:4.5,service:4.5,wait:4.5,ed:4.5,tree:4.5,all:16},ctr={arrivals:[ZA.x,0,ZA.z],service:[ZN.x,0,ZN.z],wait:[ZW.x,0,ZW.z],ed:[ZE.x,0,ZE.z],tree:[ZT.x,0,ZT.z],all:[0,0,-4.6]};
+  let first=true;
+  const sk=i=>SKIN[Math.abs(i|0)%SKIN.length];
+  const pdfN=x=>Math.exp(-.5*((x-s.mu)/s.sig)**2);
+  return {
+    step(st){const v=st.k==="test"?"all":st.k;overview=v==="all";S.goView(v,first);first=false;S.setShadowBox(half[v],ctr[v]);
+      if(st.k==="service"){ballKey=""}},
+    update(s3,st,dt,t){const k=st.k;
+      // ---- arrivals
+      const dots=s.dots||[];let newest=99;for(let i=0;i<40;i++){const d=dots[dots.length-1-i];if(d){const age=s.t-d.t;newest=Math.min(newest,age);const x=WX0+.2+age/2.5*WL;shop.put(i,x,.12,WZ+((d.t*7.3)%1-.5)*.35,BLUE,sk(d.t*7),S.REDUCED?0:Math.abs(Math.sin(age*14))*.02)}else shop.hide(i)}shop.done();
+      gateM.emissiveIntensity=S.lerp(gateM.emissiveIntensity,newest<.12?3:.3,.3);
+      const ck=s.arrCount+"|"+s.arrT.toFixed(1)+"|"+s.win;if(ck!==cntKeyA){cntKeyA=ck;cnt.redraw((g,w,h)=>{g.fillStyle="#fff";g.beginPath();g.roundRect(0,0,w,h,20);g.fill();g.fillStyle="#6E6A86";g.font="700 22px Instrument Sans, system-ui";g.textAlign="center";g.fillText("THIS WINDOW",w/2,36);
+        g.fillStyle="#262E5C";g.font="700 84px Instrument Sans, system-ui";g.fillText(s.arrCount,w/2,122);g.fillStyle="#6E6A86";g.font="600 22px Instrument Sans, system-ui";g.fillText(`${fmt(s.arrT,1)} of ${s.win} min`,w/2,170)})}
+      const lam=s.lam*s.win,K=Math.max(8,Math.ceil(lam+3*Math.sqrt(lam))),KK=Math.min(39,K);const cn=Array(K+1).fill(0);s.wins.forEach(w=>{if(w<=K)cn[w]++});const n=Math.max(1,s.wins.length);
+      let pmax=.05;for(let q=0;q<=K;q++)pmax=Math.max(pmax,poisson(lam,q),cn[q]/n);const bw=HW/(KK+1);
+      for(let q=0;q<40;q++){if(q<=KK){const x=HX0+(q+.5)*bw,bh=cn[q]/n/pmax*HH;bars.putS(q,x,HY0+bh/2,-1.3,bw*.72,Math.max(.001,bh),.3);pdots.put(q,x,HY0+poisson(lam,q)/pmax*HH,-1.1,Math.min(1,bw*3))}else{bars.put(q,0,-9,0,0);pdots.put(q,0,-9,0,0)}}bars.done();pdots.done();
+      const hk=KK+"|"+pmax.toFixed(3)+"|"+s.wins.length;if(hk!==histKey){histKey=hk;histB.redraw((g,w,h)=>{g.fillStyle="#FFFDFB";g.fillRect(0,0,w,h);const X=x=>(x+3.4)/6.8*w,Y=y=>h-(y-.0)/3.1*h;
+        g.font="700 24px Instrument Sans, system-ui";g.fillStyle="#262E5C";g.textAlign="left";g.fillText(`ARRIVALS PER ${s.win}-MINUTE WINDOW · ${s.wins.length} WINDOWS · BARS = OBSERVED, DOTS = POISSON λ = ${fmt(lam,2)}`,24,40);
+        g.strokeStyle="#8F9BAA";g.lineWidth=3;g.beginPath();g.moveTo(X(HX0),Y(HY0));g.lineTo(X(HX0+HW),Y(HY0));g.stroke();g.font="600 22px Instrument Sans, system-ui";g.textAlign="center";g.fillStyle="#6E6A86";
+        for(let q=0;q<=KK;q++)if(KK<20||q%2===0)g.fillText(q,X(HX0+(q+.5)*bw),Y(HY0)+30)})}
+      const showA=k==="arrivals";lLam.at(tmp.set(ZA.x,TOP+3.4,ZA.z-1.6)).set(`λ = ${fmt(s.lam,1)} × ${s.win} = ${fmt(lam,2)}<small>P(no arrivals) = e^(−${fmt(lam,2)}) = ${fmt(poisson(lam,0),3)} · observed ${s.wins.length?fmt(s.wins.filter(w=>w===0).length/s.wins.length,3):"–"}</small>`).show(showA);
+      lWin.at(tmp.set(ZA.x+WX0+.1,TOP+.7,ZA.z+WZ)).set(`${fmt(s.lam,1)} a minute<small>${fmt(s.t,1)} min so far</small>`).show(showA);
+      // ---- service
+      const sk2=s.lo+"|"+s.hi+"|"+s.mu+"|"+s.sig;
+      if(sk2!==shadeKey){shadeKey=sk2;if(shadeMesh){zn.remove(shadeMesh);shadeMesh.geometry.dispose();shadeMesh=null}const lo=Math.max(s.lo,s.mu-4*s.sig),hi=Math.min(s.hi,s.mu+4*s.sig);
+        if(hi>lo){const sh=new THREE.Shape();sh.moveTo(nx(lo),0);for(let i=0;i<=80;i++){const x=lo+i/80*(hi-lo);sh.lineTo(nx(x),pdfN(x)*NH+.01)}sh.lineTo(nx(hi),0);sh.lineTo(nx(lo),0);
+          shadeMesh=S.mesh(new THREE.ExtrudeGeometry(sh,{depth:.42,bevelEnabled:false,curveSegments:4}),shadeM,{at:[0,.1,-.96]});zn.add(shadeMesh)}
+        axis.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);g.textAlign="center";g.textBaseline="middle";for(let z=-3;z<=3;z++){const x=(z+4)/8*(NW/(NW+.4))*w+(.2/(NW+.4))*w;g.fillStyle="#262E5C";g.font="700 30px Instrument Sans, system-ui";g.fillText(fmt(s.mu+z*s.sig)+" s",x,30);g.fillStyle="#6E6A86";g.font="600 24px Instrument Sans, system-ui";g.fillText("z = "+z,x,66)}});
+        const zl=(s.lo-s.mu)/s.sig,zh=(s.hi-s.mu)/s.sig,p=Phi(zh)-Phi(zl);readN.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);g.fillStyle="#6E6A86";g.font="700 24px Instrument Sans, system-ui";g.textAlign="left";
+          g.fillText(`P(${s.lo<=s.mu-4*s.sig?"X":fmt(s.lo)+" < X"} ${s.hi>=s.mu+4*s.sig?"":"< "+fmt(s.hi)})`,24,44);g.fillStyle="#262E5C";g.font="500 26px Instrument Sans, system-ui";
+          g.fillText(`z: ${s.lo<=s.mu-4*s.sig?"−∞":fmt(zl,2)} to ${s.hi>=s.mu+4*s.sig?"∞":fmt(zh,2)}`,24,98);g.fillText(`Φ(${fmt(zh,2)}) − Φ(${fmt(zl,2)})`,24,142);g.fillText(`= ${fmt(Phi(zh),3)} − ${fmt(Phi(zl),3)}`,24,184);g.font="700 54px Instrument Sans, system-ui";g.fillText(`P = ${fmt(p,3)}`,24,260)})}
+      loH.position.x=nx(S.clamp(s.lo,s.mu-4*s.sig,s.mu+4*s.sig));hiH.position.x=nx(S.clamp(s.hi,s.mu-4*s.sig,s.mu+4*s.sig));
+      // falling samples (a fresh batch of 100 each time; same seed, same batch)
+      const bk=s.mu+"|"+s.sig+"|"+s.seed;if(bk!==ballKey){ballKey=bk;ballR=rng(s.seed);bin.fill(0);bl.length=0;nextBall=0;restT=0}
+      if(k==="service"||k==="test"){spawnT+=dt;if(nextBall<NBALL&&spawnT>(S.REDUCED?0:.05)){spawnT=0;const x=s.mu+s.sig*randn(ballR);const b=Math.floor((x-(s.mu-4*s.sig))/(s.sig/2));const bi=S.clamp(b,0,NB-1);bl.push({x,bi,h:bin[bi]++,y:3.2,v:0,land:false});nextBall++}
+        if(nextBall>=NBALL&&bl.every(b=>b.land)){restT+=dt;if(restT>4){ballR=rng(s.seed+Math.floor(t));bin.fill(0);bl.length=0;nextBall=0;restT=0}}}
+      let inR=0;for(let i=0;i<NBALL;i++){const b=bl[i];if(!b){balls.put(i,0,-9,0,0);continue}const ty=.16+b.h*.1;if(!b.land){b.v-=9*dt;b.y+=b.v*dt;if(b.y<=ty||S.REDUCED){b.y=ty;b.land=true}}
+        const inside=b.x>=s.lo&&b.x<=s.hi;if(inside&&b.land)inR++;balls.put(i,NX0+(b.bi+.5)*NW/NB,b.y,.3,1);balls.tint(i,inside?P3.product.butter:P3.product.blueberry)}balls.done();
+      const showN=k==="service";const landed=bl.filter(b=>b.land).length;lBalls.at(tmp.set(ZN.x-2.4,TOP+1.6,ZN.z+.3)).set(`${inR} of ${landed} samples in the shaded range<small>model: P = ${fmt(Phi((s.hi-s.mu)/s.sig)-Phi((s.lo-s.mu)/s.sig),3)} · samples vary, the model doesn't</small>`).show(showN);
+      lLo.at(tmp.set(ZN.x+loH.position.x,TOP+2.6,ZN.z+.65)).set(s.lo<=s.mu-4*s.sig?"from −∞":`from ${s.lo} s`).show(showN);lHi.at(tmp.set(ZN.x+hiH.position.x,TOP+2.6,ZN.z+.65)).set(s.hi>=s.mu+4*s.sig?"to ∞":`to ${s.hi} s`).show(showN);
+      // ---- checkouts
+      const Sm=s.sim,c=s.c;cks.forEach((o,i)=>{o.g.visible=i<c;o.g.position.set(ckX(i,c),0,-.55);o.goods.visible=false});
+      for(let i=0;i<CK;i++){if(i<c)staff.put(i,ckX(i,c),0,-1.05,P3.product.lime,sk(i+2));else staff.hide(i)}staff.done();
+      const live=new Set();let ci=0;
+      if(Sm){Object.keys(slotOf).forEach(id=>{if(!Sm.busy.some(b=>b.id==id))delete slotOf[id]});
+        const used=new Set(Object.values(slotOf));Sm.busy.forEach(b=>{if(slotOf[b.id]==null){let q=0;while(used.has(q))q++;slotOf[b.id]=q;used.add(q)}});
+        Sm.busy.forEach(b=>{const q=slotOf[b.id];const tx=ckX(q,c),tz=-.1;const p=pos[b.id]||(pos[b.id]={x:tx,z:tz});p.x=S.lerp(p.x,tx,.15);p.z=S.lerp(p.z,tz,.15);live.add(b.id);if(ci<48){cust.put(ci++,p.x,0,p.z,STRAW,sk(b.id));}
+          if(cks[q])cks[q].goods.visible=true;cLab[q]&&cLab[q].at(tmp.set(ZW.x+tx,TOP+.95,ZW.z+tz)).set(`${fmt((b.end-Sm.t)*60)} s`).show(k==="wait")});
+        Sm.queue.slice(0,40).forEach((p0,i)=>{const [tx,tz]=qPos(i);const p=pos[p0.id]||(pos[p0.id]={x:QX0-1.2,z:.35});p.x=S.lerp(p.x,tx,.12);p.z=S.lerp(p.z,tz,.12);live.add(p0.id);if(ci<48)cust.put(ci++,p.x,0,p.z,BLUE,sk(p0.id),S.REDUCED?0:Math.abs(Math.sin(t*5+p0.id))*.01)})}
+      for(;ci<48;ci++)cust.hide(ci);cust.done();Object.keys(pos).forEach(id=>{if(!live.has(+id))delete pos[id]});
+      for(let q=0;q<CK;q++)if(!Sm||!Sm.busy.some(b=>slotOf[b.id]===q)||q>=c)cLab[q].show(false);
+      const r=s.lastRun||(Sm?summarise(Sm,{rate:s.rate,c:s.c,minutes:s.t,seed:s.seed}):null);
+      const sk3=(r?r.n+"|"+r.mean.toFixed(2):"x")+"|"+s.t.toFixed(1)+"|"+c+"|"+s.rate;if(sk3!==scrKey){scrKey=sk3;scr.redraw((g,w,h)=>{g.fillStyle="#262E5C";g.fillRect(0,0,w,h);g.fillStyle=P3.product.butter;g.font="700 30px Instrument Sans, system-ui";g.textAlign="left";
+        g.fillText(`${c} CHECKOUT${c>1?"S":""} · ${fmt(s.rate,1)} ARRIVALS A MINUTE · ${fmt(Math.min(60,s.t),1)} OF 60 MIN`,24,44);
+        g.fillStyle="rgba(255,255,255,.18)";g.fillRect(24,62,w-48,10);g.fillStyle=P3.product.butter;g.fillRect(24,62,(w-48)*Math.min(1,s.t/60),10);
+        if(r&&r.n){g.fillStyle="#fff";g.font="600 28px Instrument Sans, system-ui";g.fillText(`${r.n} served · mean wait ${fmt(r.mean,1)} min · median ${fmt(r.median,1)}`,24,116);g.fillText(`longest ${fmt(r.max,1)} min · ${Math.round(r.over5*100)}% waited over 5 min · busy ${Math.round(Math.min(1,s.rate*s.mu/60/s.c)*100)}%`,24,156);
+          const B=12,wmax=Math.max(10,Math.ceil(r.max)),bw2=wmax/B,cn2=Array(B).fill(0);r.waits.forEach(x=>{cn2[Math.min(B-1,Math.floor(x/bw2))]++});const m=Math.max(...cn2,1);
+          for(let i=0;i<B;i++){const hh=cn2[i]/m*110;g.fillStyle=P3.product.blueberry;g.fillRect(24+i*44,300-hh,36,hh);}g.fillStyle="rgba(255,255,255,.7)";g.font="600 20px Instrument Sans, system-ui";g.fillText(`WAITS 0 → ${fmt(wmax)} MIN`,24+B*44+16,296)}
+        else{g.fillStyle="#fff";g.font="600 28px Instrument Sans, system-ui";g.fillText(`Press play to open the doors for a simulated hour (${s.speed}× real time).`,24,130)}})}
+      const showW=k==="wait";lPlay.at(tmp.set(ZW.x,TOP+.9,ZW.z+.6)).show(showW&&!Sm&&!s.lastRun);
+      lWait.at(tmp.set(ZW.x+QX0,TOP+.7,ZW.z+.35)).set(Sm?`Waiting<b>${Sm.queue.length}</b>`:"Waiting<b>0</b>").show(showW);
+      // ---- ED replay
+      const ek=s.edRate+"|"+s.beds+"|"+s.seed+"|"+s.edHours;if(ek!==edKey){edKey=ek;edSim=newSim({seed:s.seed,rate:s.edRate/60,c:s.beds,service:svcED});edClock=0}
+      if(k==="ed"||k==="test"){const step2=dt*(S.REDUCED?0:40);if(edSim.t+step2>=s.edHours*60){edSim=newSim({seed:s.seed,rate:s.edRate/60,c:s.beds,service:svcED})}else stepSim(edSim,edSim.t+step2)}
+      beds.forEach((b,i)=>b.visible=i<s.beds);let breachNow=0;
+      for(let i=0;i<NBED;i++){const p=i<s.beds?edSim.busy[i]:null;if(p){const late=edSim.t-p.arr>360;if(late)breachNow++;pats.putS(i,bedX(i),.43,bedZ(i)+.05,1,1,1,new THREE.Quaternion().setFromAxisAngle(V3(1,0,0),Math.PI/2));pats.tint(i,late?STRAW:BLUE);patH.put(i,bedX(i),.45,bedZ(i)-.27,1)}else{pats.put(i,0,-9,0,0);patH.put(i,0,-9,0,0)}}pats.done();patH.done();
+      for(let i=0;i<30;i++){const p=edSim.queue[i];if(p){const late=edSim.t-p.arr>360;if(late)breachNow++;waitP.put(i,-3.2+(i%10)*.36,.15,.35+Math.floor(i/10)*.4,late?STRAW:BLUE,sk(p.id))}else waitP.hide(i)}waitP.done();
+      const ek2=Math.floor(edSim.t/6)+"|"+edSim.queue.length;if(ek2!==edScrKey){edScrKey=ek2;edScr.redraw((g,w,h)=>{g.fillStyle="#262E5C";g.fillRect(0,0,w,h);g.fillStyle=P3.product.butter;g.font="700 26px Instrument Sans, system-ui";g.textAlign="left";g.fillText(`REPLAY · HOUR ${fmt(edSim.t/60,1)} OF ${s.edHours}`,20,40);
+        g.fillStyle="#fff";g.font="600 24px Instrument Sans, system-ui";g.fillText(`${edSim.busy.length} of ${s.beds} beds busy · ${edSim.queue.length} waiting`,20,90);g.fillText(`${edSim.totals.filter(x=>x>360).length} of ${edSim.totals.length} left after 6 h so far`,20,130);g.fillStyle="rgba(255,255,255,.7)";g.font="600 20px Instrument Sans, system-ui";g.fillText(`${s.edRate} an hour · seed ${s.seed} · pink = past 6 hours`,20,172)})}
+      const rk=JSON.stringify([s.runA&&[s.runA.c,s.runA.breaches,s.runA.nT,s.runA.seed,s.runA.minutes],s.runB&&[s.runB.c,s.runB.breaches,s.runB.nT,s.runB.seed,s.runB.minutes]]);
+      if(rk!==runKey){runKey=rk;const draw=(p,r2,lab,col)=>p.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);g.strokeStyle=col;g.lineWidth=8;g.strokeRect(4,4,w-8,h-8);g.textAlign="left";
+          if(!r2){g.fillStyle="#6E6A86";g.font="600 26px Instrument Sans, system-ui";g.fillText(`Run ${lab}: press Run the ED,`,24,140);g.fillText(`then Save as ${lab}`,24,176);return}
+          g.fillStyle="#6E6A86";g.font="700 22px Instrument Sans, system-ui";g.fillText(`RUN ${lab} · ${r2.c} BEDS · ${fmt(r2.rate)}/h · ${fmt(r2.minutes/60)} h`,24,44);g.fillStyle="#262E5C";g.font="700 56px Instrument Sans, system-ui";g.fillText(`${fmt(r2.within6*100,1)}%`,24,116);
+          g.font="500 24px Instrument Sans, system-ui";g.fillText("finished within 6 h",24,152);g.fillText(`${r2.breaches} of ${r2.nT} breached · risk ${fmt(r2.breach,3)}`,24,200);g.fillText(`median wait ${fmt(r2.median)} min · seed ${r2.seed}`,24,240);g.fillText(`${r2.left} still inside at the end`,24,280)});
+        draw(runScr[0],s.runA,"A",STRAW);draw(runScr[2],s.runB,"B",BLUE);
+        runScr[1].redraw((g,w,h)=>{g.fillStyle=P3.case.butter;g.fillRect(0,0,w,h);g.fillStyle="#6E6A86";g.font="700 22px Instrument Sans, system-ui";g.textAlign="left";g.fillText("RELATIVE RISK OF BREACHING, A ÷ B",24,44);g.fillStyle="#262E5C";
+          if(s.runA&&s.runB){const rr=s.runB.breach>0?s.runA.breach/s.runB.breach:Infinity;g.font="700 72px Instrument Sans, system-ui";g.fillText(isFinite(rr)?fmt(rr,2):"∞",24,134);g.font="500 23px Instrument Sans, system-ui";
+            g.fillText(`${fmt(s.runA.breach,3)} ÷ ${fmt(s.runB.breach,3)}`,24,180);g.fillText(isFinite(rr)?(rr>=2?"At least halves the risk (RR ≥ 2)":rr>1?"Less than halved":"B no better than A"):"B had no breaches: undefined",24,220);g.fillText(`samples: ${s.runA.nT} and ${s.runB.nT} patients`,24,260)}
+          else{g.font="500 25px Instrument Sans, system-ui";g.fillText("14 an hour: 8 beds (A), then",24,120);g.fillText("12 beds (B). Does it at least",24,156);g.fillText("halve the risk?",24,192)}})}
+      lEd.at(tmp.set(ZE.x,TOP+.6,ZE.z+1.6)).set(`Waiting room<small>${edSim.queue.length} waiting · ${breachNow} past 6 hours now</small>`).show(k==="ed");
+      // ---- tree
+      const p=s.pSelf,a=s.pHelpSelf,b=s.pHelpStaff,pr=[p,1-p,a,1-a,b,1-b],joint=[p*a,p*(1-a),(1-p)*b,(1-p)*(1-b)],pH=p*a+(1-p)*b;
+      brs.forEach((m,i)=>setBranch(m,.015+.07*pr[i]));
+      leaves.forEach((m,i)=>{const h=Math.max(.02,joint[i]*2.4);m.scale.y=h;m.position.y=h/2;lfL[i].at(zt.localToWorld(tmp.set(LF[i].x+.85,0,LF[i].z))).set(`${["self AND help","self, no help","staffed AND help","staffed, no help"][i]}<b>${fmt(joint[i],3)}</b>`).cls(i%2?"":"hot").show(k==="tree")});
+      const mids=[[R0,NS],[R0,NT],[NS,LTOP(0)],[NS,LTOP(1)],[NT,LTOP(2)],[NT,LTOP(3)]];const names=["self","staffed","help","no help","help","no help"];
+      mids.forEach(([u,w],i)=>brL[i].at(zt.localToWorld(tmp.copy(u).add(w).multiplyScalar(.5).add(V3(0,.12,0)))).set(`${names[i]} ${fmt(pr[i],2)}`).show(k==="tree"));
+      // shoppers flow down the tree, choosing branches with the tree's own chances
+      for(let i=0;i<60;i++){const f=fl[i];f.u+=dt*(S.REDUCED?0:.8);if(f.u>=3){f.u-=3;f.a=flowR()<p?0:1;f.b=flowR()<(f.a?b:a)?0:1}
+        let P;if(f.u<1)P=R0.clone().lerp(f.a?NT:NS,f.u);else if(f.u<2){const nd=f.a?NT:NS,lf=LTOP(f.a*2+f.b);P=nd.clone().lerp(lf,f.u-1)}else{const lf=LTOP(f.a*2+f.b);P=lf.clone().add(V3(.6*(f.u-2)*2.5,-(f.u-2)*2.5*(1.55-Math.max(.02,joint[f.a*2+f.b]*2.4)),0))}
+        if(f.u<2.4&&k==="tree"){flow.put(i,P.x,P.y+.08,P.z,1);flow.tint(i,f.u>1&&f.b===0?P3.product.butter:"#ffffff")}else flow.put(i,0,-9,0,0)}flow.done();
+      const tk=[p,a,b].join();if(tk!==tabKey){tabKey=tk;table.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);const T=[["",`help`,`no help`,`total`],[`self`,fmt(1000*p*a),fmt(1000*p*(1-a)),fmt(1000*p)],[`staffed`,fmt(1000*(1-p)*b),fmt(1000*(1-p)*(1-b)),fmt(1000*(1-p))],[`total`,fmt(1000*pH),fmt(1000*(1-pH)),"1000"]];
+        g.fillStyle="#6E6A86";g.font="700 20px Instrument Sans, system-ui";g.textAlign="left";g.fillText("OUT OF 1000 SHOPPERS",20,32);g.textAlign="center";g.textBaseline="middle";
+        T.forEach((row,i)=>row.forEach((cc,j)=>{const x=20+j*150,y=50+i*66;g.fillStyle=i===0||j===0?P3.case.lavender:(i<3&&j===1?P3.case.butter:"#FBFAFE");g.fillRect(x,y,146,62);g.fillStyle="#262E5C";g.font=`${i===0||j===0?700:600} 28px Instrument Sans, system-ui`;g.fillText(cc,x+73,y+33)}));g.textBaseline="alphabetic"})}
+      lPH.at(tmp.set(ZT.x+1.9,TOP,ZT.z+2.2)).set(`P(help) = ${fmt(p*a,3)} + ${fmt((1-p)*b,3)} = ${fmt(pH,3)}<small>P(self | help) = ${fmt(p*a,3)} ÷ ${fmt(pH,3)} = ${fmt(pH?p*a/pH:0,3)}</small>`).show(k==="tree");
+      if(overview)LBL.forEach(l=>l.show(false));
+    }};
+}
+let cntKeyA="",edScrKey="";
+StudyKit.mount({kupu:KUPU,caseTint:"lavender",scene3d:queue3d,
   eyebrow:"Maths and statistics · Probability", title:"The queue machine", crumb:"NCEA Level 2 Mathematics and Statistics · AS91267 Apply probability methods in solving problems", homeHash:"l2",
   fig:"FIG. 26 · A CHECKOUT, AN ED AND A TREE", railTitle:"Arrive, wait, be served",
   badge:{label:"NCEA L2 Maths 91267",exam:"2026-11-19T09:30:00+13:00",examText:"Thu 19 Nov, 9:30am"},

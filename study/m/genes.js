@@ -142,7 +142,7 @@ const KUPU=[
  {mi:"rauropi",en:"organism",ta:38797}];
 Object.entries({"cross": ["ira", "pūira", "mātai iranga"], "pool": ["mātāira", "ira", "taupori"], "mutation": ["ira", "pītau ira"], "small": ["taupori", "mātāira"], "survival": ["rauropi"], "migration": ["taupori", "mātāira"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 // ---------- the 3D bench: a Punnett cross with real chicks, an island of birds whose colours are the gene pool, a DNA helix and a gel tank
-function genes3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const TOP=.3,ZC=V3(-13.5,0,0),ZI=V3(0,0,0),ZM=V3(8.4,0,-2.6),ZG=V3(17,0,0);
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
   plinth(ZC,8.6,7.2,PAL.case.blush);plinth(ZI,12.4,9.2,PAL.case.mint);plinth(ZM,4.2,4.2,PAL.case.sky);plinth(ZG,7.4,6.2,PAL.case.lavender);

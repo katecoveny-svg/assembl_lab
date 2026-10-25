@@ -816,7 +816,320 @@ const KUPU=[
  {mi:"pūngao moe",en:"potential energy",ta:47720,chip:"ep"},
  {mi:"waku",en:"friction",ta:12421}];
 Object.entries({"garage": ["waku"], "drop": ["tere", "whakahohoro"], "graph": ["tere", "whakahohoro"], "forces": ["tōpana", "tōpana taurite", "waku"], "energy": ["pūngao", "pūngao moe", "pūngao neke"], "jump": ["tere"], "stop": ["waku", "tere"], "fork": ["tōpana"], "run": ["pūngao moe", "pūngao neke", "waku"], "work": ["tōpana", "waku", "whakahohoro"], "model": ["tere", "pūngao"], "turn": ["tōpana", "tere"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",
+// ---------- the 3D bench (../kit3d.js): your bike in 3D, built from the same geometry the drawing uses (geoPts, riderPts), with a
+// working fork (stanchions slide into the lowers), a coil shock that really compresses, brake rotors that glow as they heat up and a
+// helmeted rider (no face). It rides a 1:1 hillside of the trail profile (SEG) through redwoods, runs out to a log for stopping
+// distance, drops off a ledge onto its fork spring, and sits on a turntable in the garage beside an exploded view of the
+// suspension. The NCEA steps get a snow run and a check turn. Everything reads the model: tickTrail, tickStop, tickFork, SK.
+function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const PT=.3,U=.025;
+  const GZ=V3(-16,0,60),FZ=V3(-7,0,60),KZ=V3(5,0,60),TZ=V3(19.5,0,60),SZ=V3(-17,0,75.4),TX0=100,TY0=-12;
+  const plinth=(x,z,w,d,tint)=>{const p=S.rbox(w,PT,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(x,PT/2,z);S.scene.add(p);return p};
+  const steel=mat("metal",P3.steel,{rough:.25}),steelD=mat("metal",P3.steelDark,{rough:.3}),rub=mat("plastic",RUB,{rough:.85,coat:.05}),dark=mat("plastic","#3A4152",{rough:.45}),white=mat("plastic","#ffffff",{rough:.4}),cream=mat("plastic",CREAM,{rough:.45});
+  const unitCyl=new THREE.CylinderGeometry(1,1,1,14),Y1=V3(0,1,0),tmp=V3(0,0,0),tq=new THREE.Quaternion();
+  const rodMesh=(material,parent)=>{const m=S.mesh(unitCyl,material);parent.add(m);return m};
+  const setRod=(m,a,b,r)=>{const d=tmp.subVectors(b,a);const L=d.length();if(L<1e-5){m.visible=false;return}m.visible=true;m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(Y1,d.multiplyScalar(1/L));m.scale.set(r,L,r)};
+  const W2=(p,z=0)=>V3(p[0]*U,-p[1]*U,z);
+  // a coil: a helix one unit tall, scaled along its axis so it really squashes
+  const coilGeo=(turns,r,tr)=>{const pts=[];for(let i=0;i<=turns*24;i++){const a=i/24*Math.PI*2;pts.push(V3(Math.cos(a)*r,i/(turns*24),Math.sin(a)*r))}return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),turns*40,tr,6,false)};
+  const shockCoil=coilGeo(9,1,.13);
+  // ================================================================ the bike (and rider), rebuilt from geoPts every frame
+  function makeBike(withRider){const g=new THREE.Group();const frameM=S.M.plastic(COLOURS.black.main,{rough:.32});const accM=S.M.plastic(CREAM,{rough:.4});const stM=S.M.plastic(GOLD,{rough:.22});
+    const wheels=[0,1].map(()=>{const w=new THREE.Group();g.add(w);
+      w.add(S.torus(.333,.042,rub,{rs:12,ts:56}));w.add(S.torus(.296,.012,dark,{rs:8,ts:48}));w.add(S.cyl(.026,.026,.13,steel,{rot:[Math.PI/2,0,0],seg:16}));
+      const sp=[];for(let i=0;i<24;i++){const a=i*Math.PI/12,a2=a+(i%2?.42:-.42),z=i%2?.03:-.03;sp.push(Math.cos(a)*.02,Math.sin(a)*.02,z,Math.cos(a2)*.29,Math.sin(a2)*.29,0)}
+      const sg=new THREE.BufferGeometry();sg.setAttribute("position",new THREE.Float32BufferAttribute(sp,3));w.add(new THREE.LineSegments(sg,new THREE.LineBasicMaterial({color:P3.steelDark})));
+      const rotM=S.M.glow(P3.hot,0);rotM.color.set(P3.steel);rotM.metalness=.8;rotM.roughness=.3;const rotor=S.mesh(new THREE.RingGeometry(.072,.1,40),rotM,{cast:false});rotor.material.side=THREE.DoubleSide;rotor.position.z=.075;w.add(rotor);
+      w.add(S.cyl(.02,.02,.02,steelD,{rot:[Math.PI/2,0,0],at:[0,0,.075]}));
+      const knobs=S.swarm(80,new THREE.BoxGeometry(1,1,1),rub,{cast:true});w.add(knobs);return {w,rotM,knobs,key:""}});
+    const cal=[0,1].map(()=>{const c=S.rbox(.07,.07,.04,.015,dark);g.add(c);return c});
+    const rods={};["down","seat","top","cs1","cs2","ss1","ss2","head","stem","post","l1","l2","s1","s2","s3","s4","crankF","crankR","shockBody","shockRod"].forEach(k=>rods[k]=rodMesh(k[0]==="s"&&k.length===2?stM:["l1","l2"].includes(k)?accM:["shockBody"].includes(k)?dark:["shockRod","post","crankF","crankR","stem"].includes(k)?steelD:frameM,g));
+    const crown=S.rbox(.07,.045,.2,.015,dark);g.add(crown);const crown2=S.rbox(.07,.04,.2,.015,dark);g.add(crown2);
+    const bar=rodMesh(dark,g),grips=[0,1].map(()=>rodMesh(mat("plastic","#1F2433",{rough:.7}),g));const saddle=S.rbox(.24,.05,.1,.025,mat("plastic",BLK,{rough:.6}));g.add(saddle);
+    const ring=S.torus(.085,.012,steelD,{rs:6,ts:28});g.add(ring);const pedals=[0,1].map(()=>{const p=S.rbox(.09,.02,.08,.01,dark);g.add(p);return p});
+    const coil=S.mesh(shockCoil,mat("plastic",GOLD,{rough:.3}));g.add(coil);const airCan=rodMesh(dark,g);
+    const guard=S.torus(.4,.012,mat("plastic",BLK,{rough:.5}),{arc:1.2,rs:6,ts:16});g.add(guard);const pod=S.rbox(.06,.05,.07,.015,dark);g.add(pod);const podLight=S.sphere(.022,S.M.glow("#FFF4D6",3),{cast:false});g.add(podLight);
+    const plate=S.rbox(.02,.1,.14,.02,white);g.add(plate);
+    let RD=null;if(withRider){const jer=mat("plastic",JERSEY,{rough:.5}),jerD=mat("plastic",JERSEY_D,{rough:.5}),pants=mat("plastic",PANTS,{rough:.6}),pantsD=mat("plastic",PANTS_D,{rough:.6});
+      RD={torso:rodMesh(jer,g),hipB:S.sphere(1,pants),thF:rodMesh(pants,g),shF:rodMesh(pants,g),thR:rodMesh(pantsD,g),shR:rodMesh(pantsD,g),uaF:rodMesh(jer,g),faF:rodMesh(jer,g),uaR:rodMesh(jerD,g),faR:rodMesh(jerD,g),neck:rodMesh(jerD,g),
+        kneeF:S.sphere(1,dark),kneeR:S.sphere(1,dark),gF:S.sphere(1,mat("plastic",SKIN_GLOVE)),gR:S.sphere(1,mat("plastic",SKIN_GLOVE)),shoeF:S.rbox(.15,.06,.08,.02,mat("plastic","#1F2433")),shoeR:S.rbox(.15,.06,.08,.02,mat("plastic","#1F2433")),helmet:new THREE.Group()};
+      [RD.hipB,RD.kneeF,RD.kneeR,RD.gF,RD.gR,RD.shoeF,RD.shoeR,RD.helmet].forEach(m=>g.add(m));
+      const hm=RD.helmet;hm.add(S.sphere(.13,white,{seg:24}));const stripe=S.torus(.128,.014,frameM,{rot:[Math.PI/2,0,0],arc:Math.PI});stripe.rotation.set(0,Math.PI/2,0);hm.add(stripe);
+      const gog=S.rbox(.07,.06,.17,.02,mat("plastic",P3.product.butter,{rough:.15,coat:1}));gog.position.set(.1,.0,0);hm.add(gog);
+      const chin=S.rbox(.08,.06,.15,.03,mat("plastic","#E6EAF0",{rough:.4}));chin.position.set(.1,-.08,0);hm.add(chin);
+      const peak=S.rbox(.12,.015,.16,.006,dark);peak.position.set(.1,.12,0);peak.rotation.z=-.25;hm.add(peak);hm.add(S.rbox(.06,.045,.04,.01,dark,{at:[-.01,.14,0]}))}
+    let lastWheels="";
+    function update(o){const b=o.b,Md=MODELS[b.model],C=COLOURS[b.colour],Wh=WHEELS[b.wheels];frameM.color.set(C.main);stM.color.set(Md.stanch);rods.l1.material=rods.l2.material=Md.lowers==="frame"?frameM:accM;
+      const travelU=Md.travel/U,comp=Math.max(0,Math.min(1,o.comp||0))*travelU,P=geoPts(b,comp),u=P.u,uW=V3(u[0],-u[1],0);
+      // wheels and their knobs (tread pattern follows the wheel choice)
+      if(b.wheels!==lastWheels){lastWheels=b.wheels;wheels.forEach(w=>{const n=Wh.knobs,kh=Wh.kh*U,kw=Wh.kw*U;let i=0;for(let k=0;k<n;k++){const a=k/n*Math.PI*2;
+          w.knobs.putS(i++,Math.cos(a)*(.375+kh/2-.004),Math.sin(a)*(.375+kh/2-.004),0,kh,kw,.05,tq.setFromAxisAngle(V3(0,0,1),a-Math.PI/2));
+          const a2=a+Math.PI/n;for(const z of [-.036,.036])w.knobs.putS(i++,Math.cos(a2)*(.36+kh/2),Math.sin(a2)*(.36+kh/2),z,kh*.8,kw*.7,.025,tq.setFromAxisAngle(V3(0,0,1),a2-Math.PI/2))}
+          for(;i<80;i++)w.knobs.put(i,0,0,0,.0001);w.knobs.done()})}
+      const hf=S.clamp(((o.heat||0)-70)/330,0,1);
+      [P.RA,P.FA].forEach((p,i)=>{const w=wheels[i];w.w.position.copy(W2(p));w.w.rotation.z=-(o.spin||0);w.rotM.emissiveIntensity=hf*6;w.rotM.color.set(hf>.02?"#E9A27A":P3.steel);
+        cal[i].position.copy(W2(p,.085)).add(V3(Math.cos(i?-2.05:-2.2)*.1,-Math.sin(i?-2.05:-2.2)*.1,0))});
+      // frame
+      const HB=W2(P.HB),HT=W2(P.HT),BB=W2(P.BB),ST=W2(P.ST),TT=W2(P.TT),MP=W2(P.MP),RA=W2(P.RA),RK=W2(P.RK),FA=W2(P.FA);
+      setRod(rods.down,HB,BB,.03);setRod(rods.seat,BB,ST,.023);setRod(rods.top,HT.clone().addScaledVector(uW,-.9*U),TT,.022);setRod(rods.head,HB.clone().addScaledVector(uW,-.01),HT.clone().addScaledVector(uW,.01),.032);
+      for(const [k,z] of [["cs1",.055],["cs2",-.055]])setRod(rods[k],V3(MP.x,MP.y,z*.4),V3(RA.x,RA.y,z),.016);
+      for(const [k,z] of [["ss1",.055],["ss2",-.055]])setRod(rods[k],V3(RA.x,RA.y,z),V3(RK.x,RK.y,z*.3),.013);
+      // fork: lowers fixed to the axle, stanchions hang from the crown and slide in as the fork compresses
+      const fl=Md.geo.fl*U,dual=Md.fork==="dual",topC=dual?W2(P.UC):HB;
+      for(const [k,z] of [["l1",.07],["l2",-.07]]){const a=V3(FA.x,FA.y,z),b2=a.clone().addScaledVector(uW,fl*.58);setRod(rods[k],a.addScaledVector(uW,-.02),b2,.024)}
+      for(const [k,z] of [["s1",.07],["s2",-.07]])setRod(rods[k],V3(HB.x,HB.y,z).addScaledVector(uW,-fl*.6),V3(topC.x,topC.y,z),.017);
+      for(const [k,z] of [["s3",.07],["s4",-.07]])rods[k].visible=false;
+      crown.position.copy(HB);crown.quaternion.setFromUnitVectors(Y1,uW);crown2.visible=dual;if(dual){crown2.position.copy(topC);crown2.quaternion.copy(crown.quaternion)}
+      const SB=W2(P.SB),CL=W2(P.CL);setRod(rods.stem,HT,CL,.018);
+      const bw=BARS[b.bars].w/2000,GRp=W2(P.GR);setRod(bar,V3(CL.x,CL.y,-bw),V3(CL.x,CL.y,bw),.013);setRod(grips[0],V3(CL.x,CL.y,bw-.11),V3(CL.x,CL.y,bw),.017);setRod(grips[1],V3(CL.x,CL.y,-bw),V3(CL.x,CL.y,-bw+.11),.017);
+      const SEAT=W2(P.SEAT);setRod(rods.post,ST,SEAT,.015);saddle.position.copy(SEAT).add(V3(.02,.02,0));
+      ring.position.copy(BB).setZ(.06);const PF=W2(P.PF,.1),PR=W2(P.PR,-.1);setRod(rods.crankF,V3(BB.x,BB.y,.08),V3(PF.x,PF.y,.08),.012);setRod(rods.crankR,V3(BB.x,BB.y,-.08),V3(PR.x,PR.y,-.08),.012);pedals[0].position.copy(PF);pedals[1].position.copy(PR);
+      // shock: the coil really squashes as the frame compresses
+      const s0=W2(P.SH0),s1=W2(P.SH1),sd=s1.clone().sub(s0),sl=sd.length(),sn=sd.clone().normalize();
+      setRod(rods.shockBody,s0,s0.clone().addScaledVector(sn,sl*.55),.016);setRod(rods.shockRod,s0,s1,.008);
+      const isCoil=Md.shock==="coil";coil.visible=isCoil;airCan.visible=!isCoil;
+      if(isCoil){coil.position.copy(s0).addScaledVector(sn,sl*.18);coil.quaternion.setFromUnitVectors(Y1,sn);const cr=.026;coil.scale.set(cr,sl*.62,cr);coil.material.color&&coil.material.color.set(b.colour==="black"?"#D98A2B":GOLD)}
+      else setRod(airCan,s0,s0.clone().addScaledVector(sn,sl*.55),.027);
+      guard.visible=!!b.guard;guard.position.copy(FA).setZ(0);guard.rotation.z=Math.atan2(uW.y,uW.x)-.6;
+      pod.visible=podLight.visible=!!b.pod;pod.position.copy(CL).add(V3(.04,.05,0));podLight.position.copy(CL).add(V3(.08,.05,0));plate.position.copy(CL).add(V3(.07,-.05,0));
+      // rider
+      if(RD){RD.helmet.visible=o.rider;Object.values(RD).forEach(m=>{if(m.isObject3D)m.visible=!!o.rider});if(o.rider){const R2=riderPts(P,{pose:o.pose||0,crouch:o.crouch||0});
+        const hip=W2(R2.hip),sh=W2(R2.sh),hd=W2(R2.head),kF=W2(R2.kF,.11),kR=W2(R2.kR,-.11),fF=W2(R2.fF,.1),fR=W2(R2.fR,-.1),el=W2(R2.el,.17),elR=W2(R2.elR,-.17),gF=V3(CL.x,CL.y,bw-.06),gR=V3(CL.x,CL.y,-bw+.06);
+        setRod(RD.torso,hip,sh,.12);RD.hipB.position.copy(hip);RD.hipB.scale.setScalar(.12);
+        setRod(RD.thF,V3(hip.x,hip.y,.1),kF,.06);setRod(RD.shF,kF,fF,.048);setRod(RD.thR,V3(hip.x,hip.y,-.1),kR,.06);setRod(RD.shR,kR,fR,.048);
+        RD.kneeF.position.copy(kF);RD.kneeF.scale.setScalar(.06);RD.kneeR.position.copy(kR);RD.kneeR.scale.setScalar(.06);
+        setRod(RD.uaF,V3(sh.x,sh.y,.16),el,.04);setRod(RD.faF,el,gF,.034);setRod(RD.uaR,V3(sh.x,sh.y,-.16),elR,.04);setRod(RD.faR,elR,gR,.034);
+        RD.gF.position.copy(gF);RD.gF.scale.setScalar(.035);RD.gR.position.copy(gR);RD.gR.scale.setScalar(.035);
+        RD.shoeF.position.copy(fF).add(V3(.02,.03,0));RD.shoeR.position.copy(fR).add(V3(.02,.03,0));
+        const hc=hd.clone().add(V3(.02,.02,0));setRod(RD.neck,sh,hc,.045);RD.helmet.position.copy(hc);RD.helmet.rotation.z=-(8-(o.pose||0)*10)*Math.PI/180}}
+      return P}
+    return {g,update,wheels}}
+  const bikes={trail:makeBike(true),stop:makeBike(true),fork:makeBike(true),garage:makeBike(false)};
+  for(const k in bikes)S.scene.add(bikes[k].g);
+  const stanM={garage:S.M.plastic(GOLD,{rough:.22})};
+  // ================================================================ the trail: a 1:1 cut of hillside following SEG, with the trail as its lit top
+  const tz=S.group();tz.position.set(TX0,TY0,0);
+  {const sh=new THREE.Shape();const x0=-30,x1=TRAIL_END+40;sh.moveTo(x0,-TY0);sh.lineTo(x0,TOP);sh.lineTo(0,TOP);SEG.forEach(q=>{sh.lineTo(q.x0,q.y0);sh.lineTo(q.x1,q.y1)});const ye=SEG[SEG.length-1].y1;sh.lineTo(x1,ye);sh.lineTo(x1,-TY0);sh.lineTo(x0,-TY0);
+    const eg=new THREE.ExtrudeGeometry(sh,{depth:12,bevelEnabled:false,steps:1});eg.translate(0,0,-9.8);const hill=S.mesh(eg,mat("plastic",SOIL,{rough:.8,coat:.05}));hill.receiveShadow=true;tz.add(hill);
+    const strip=(z0,z1,c,dy)=>{const pos=[],idx=[];const pts=[[x0,TOP],[0,TOP]];SEG.forEach(q=>{pts.push([q.x0,q.y0],[q.x1,q.y1])});pts.push([x1,ye]);
+      pts.forEach(([x,y],i)=>{pos.push(x,y+dy,z0,x,y+dy,z1);if(i){const a=(i-1)*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}});const gg=new THREE.BufferGeometry();gg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));gg.setIndex(idx);gg.computeVertexNormals();
+      const m=S.mesh(gg,mat("plastic",c,{rough:.85,coat:.05}),{cast:false});m.material.side=THREE.DoubleSide;tz.add(m);return m};
+    strip(-1.4,1.4,TRAIL,.02);strip(-9.8,-1.4,"#CFE4B0",.01);strip(1.4,2.2,"#CFE4B0",.01)}
+  // redwoods behind the trail, ponga and ferns at their feet, roots in the root garden, planks on the wooden roller, gate and finish arch
+  {let seed=3;const r=()=>(seed=(seed*16807)%2147483647)/2147483647;const NT=110,trunks=S.swarm(NT,new THREE.CylinderGeometry(.42,.6,1,14),mat("plastic",BARK,{rough:.7,coat:.1}),{colors:true,cast:true});tz.add(trunks);
+    let i=0;for(let x=-24;x<TRAIL_END+30&&i<NT;x+=3.2+r()*3){if(x>LIP-4&&x<GAP_END+3&&r()<.6)continue;const z=-3.2-r()*6,rr=.5+r()*.8,h=34+r()*14,yb=trackY(Math.max(0,x))-1;trunks.putS(i,x,yb+h/2,z,rr,h,rr);trunks.tint(i++,r()<.5?BARK:"#B97C63")}
+    for(;i<NT;i++)trunks.put(i,0,-99,0,.001);trunks.done();
+    const NF=160,fronds=S.swarm(NF,new THREE.SphereGeometry(1,10,6),mat("plastic",FERN,{rough:.6}),{colors:true});tz.add(fronds);
+    for(let k=0;k<NF;k++){const x=-20+r()*(TRAIL_END+40),front=k%4===0,z=front?1.85+r()*.3:-1.8-r()*6.5,yb=trackY(Math.max(0,Math.min(TRAIL_END,x)));const s2=front?.14+r()*.12:.5+r()*.7;
+      fronds.putS(k,x,yb+s2*.35,z,s2*1.4,s2*.5,s2*1.1,tq.setFromAxisAngle(Y1,r()*6));fronds.tint(k,r()<.5?FERN:FERN_D)}fronds.done();
+    const SR=SEG.find(q=>q.n==="Root garden");const roots=S.swarm(24,unitCyl,mat("plastic","#A8775A",{rough:.6}));tz.add(roots);
+    for(let k=0;k<24;k++){const x=SR.x0+1+k*(SR.x1-SR.x0-2)/24+r()*.5;roots.putS(k,x,trackY(x)+.03,(r()-.5)*.6,.05,2.6,.05,tq.setFromEuler(new THREE.Euler(Math.PI/2,0,(r()-.5)*.8)))}roots.done();
+    const planks=S.swarm(40,new THREE.BoxGeometry(1,1,1),mat("plastic","#C9A072",{rough:.6}));tz.add(planks);let pi=0;SROLL.forEach(q=>{for(let k=0;k<20&&pi<40;k++){const x=q.x0+(k+.5)*(q.x1-q.x0)/20;const th=Math.atan(q.gr);planks.putS(pi++,x,trackY(x)+.04,0,.17,.06,2.6,tq.setFromAxisAngle(V3(0,0,1),th))}});planks.done();
+    const arch=(x,c1)=>{const y=trackY(x);for(const z of [-1.6,1.6])tz.add(S.cyl(.08,.08,3,mat("plastic",c1,{rough:.4}),{at:[x,y+1.5,z]}));tz.add(S.rbox(.25,.45,3.6,.08,mat("plastic",c1,{rough:.4}),{at:[x,y+3.1,0]}))};
+    arch(1,P3.product.peach);arch(FINISH,P3.product.strawberry);
+    // the berm: a banked wall of dirt on the outside of the corner
+    const pos=[],idx=[];const n=20;for(let k=0;k<=n;k++){const x=SBERM.x0-2+k*(SBERM.x1-SBERM.x0+4)/n,h=Math.sin(k/n*Math.PI)*1.8,y=trackY(x);pos.push(x,y,-1.4,x,y+h,-2.6-h*.3);if(k){const a=(k-1)*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}}
+    const bg=new THREE.BufferGeometry();bg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));bg.setIndex(idx);bg.computeVertexNormals();const berm=S.mesh(bg,mat("plastic",TRAIL,{rough:.85}));berm.material.side=THREE.DoubleSide;tz.add(berm)}
+  const dustP=S.puffs(90,"#E8CBA6");tz.add(dustP);
+  const airDots=S.swarm(140,new THREE.SphereGeometry(.05,8,6),mat("glow",P3.product.strawberry,1.2));tz.add(airDots);
+  // forces on the rider
+  const FA_={w:S.arrow("#5B6B7E",{r:.04}),n:S.arrow(P3.deep.sky,{r:.035}),par:S.arrow(HOT_SKI,{r:.04}),res:S.arrow("#3A857B",{r:.04}),brk:S.arrow(P3.product.butter,{r:.04}),net:S.arrow(P3.deep.lavender,{r:.05})};for(const k in FA_)tz.add(FA_[k]);
+  // energy columns and the live graph screen ride along with you
+  const rideAlong=S.group(tz);
+  const ecol=[["Ep lost",P3.product.blueberry],["Ek",P3.product.strawberry],["Heat",P3.product.peach]].map(([n,c],i)=>{const g=new THREE.Group();g.position.set(-3.2+i*.75,0,-3.4);rideAlong.add(g);
+    const H=2.6;g.add(S.cyl(.26,.28,.1,white,{at:[0,.05,0]}));const fm=mat("liquid",c,{opacity:1});const fill=S.cyl(.2,.2,1,fm,{seg:28});g.add(fill);const sh=S.cyl(.24,.24,H,mat("acrylic","#ffffff",{opacity:.22}),{at:[0,.1+H/2,0],cast:false,seg:28});sh.renderOrder=4;g.add(sh);
+    g.add(S.torus(.24,.02,mat("plastic",P3.case.peach),{at:[0,.1+H,0],rot:[Math.PI/2,0,0]}));return {g,fill,H,n}});
+  const scrStand=new THREE.Group();rideAlong.add(scrStand);scrStand.position.set(.4,0,-3.2);scrStand.add(S.cyl(.05,.07,1.7,steel,{at:[0,.85,0]}));scrStand.add(S.rbox(2.75,1.6,.08,.06,mat("plastic","#ffffff",{rough:.4}),{at:[0,2.45,-.05]}));
+  const scr=S.panel(640,360,2.6);scr.position.set(0,2.45,.01);scrStand.add(scr);let scrKey="";
+  // ================================================================ stopping distance: a 1:1 run-out with a log 25 m ahead
+  plinth(SZ.x+18,SZ.z,46,4.4,P3.case.peach);const sz=S.group();sz.position.set(SZ.x,PT,SZ.z);
+  const runout=S.rbox(42,.05,2.6,.02,mat("plastic",TRAIL,{rough:.85}),{at:[17,.025,0]});sz.add(runout);
+  const logG=new THREE.Group();logG.position.set(LOGX,.24,0);logG.add(S.cyl(.24,.24,2.8,mat("plastic","#C9A072",{rough:.7}),{rot:[Math.PI/2,0,0],seg:24}));for(const z of [-1.4,1.4])logG.add(S.cyl(.22,.22,.02,mat("plastic","#EBCB9F",{rough:.6}),{rot:[Math.PI/2,0,0],at:[0,0,z],seg:24}));sz.add(logG);
+  const thinkBar=S.rbox(1,.05,.34,.02,mat("plastic",P3.product.butter,{rough:.4})),brakeBar=S.rbox(1,.05,.34,.02,mat("plastic",P3.product.strawberry,{rough:.4}));thinkBar.position.set(0,.03,1.65);brakeBar.position.set(0,.03,1.65);sz.add(thinkBar,brakeBar);
+  const ticksS=S.swarm(9,new THREE.BoxGeometry(.04,.02,.3),mat("plastic",SOIL_D));sz.add(ticksS);for(let k=0;k<9;k++)ticksS.put(k,k*5,.06,1.2,1);ticksS.done();
+  const mudS=S.swarm(30,new THREE.CylinderGeometry(1,1,1,16),mat("plastic","#A47A5C",{rough:.15,coat:1}));sz.add(mudS);const rootS=S.swarm(30,unitCyl,mat("plastic","#A8775A",{rough:.6}));sz.add(rootS);
+  {let sd=9;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;for(let k=0;k<30;k++){mudS.putS(k,k*1.3+r()*.6,.055,(r()-.5)*1.8,.3+r()*.4,.012,.18+r()*.2);rootS.putS(k,k*1.35+r()*.5,.06,(r()-.5)*.4,.05,2.4,.05,tq.setFromEuler(new THREE.Euler(Math.PI/2,0,(r()-.5)*.7)))}mudS.done();rootS.done()}
+  const sdustP=S.puffs(60,"#E8CBA6");sz.add(sdustP);
+  // ================================================================ the fork: a ledge, the drop, a big spring and a travel gauge
+  plinth(FZ.x+.6,FZ.z,7.4,4,P3.case.mint);const fz=S.group();fz.position.set(FZ.x,PT,FZ.z);
+  const ledge=S.rbox(3.2,1,2.6,.04,mat("plastic",SOIL,{rough:.8}),{});fz.add(ledge);const ledgeTop=S.rbox(3.2,.04,2.6,.02,mat("plastic",TRAIL,{rough:.8}));fz.add(ledgeTop);
+  const BIGC=coilGeo(8,1,.09);const bigCoil=S.mesh(BIGC,mat("metal",GOLD,{rough:.25}));fz.add(bigCoil);const plateTop=S.cyl(.3,.3,.06,steel,{seg:32}),plateBot=S.cyl(.3,.3,.06,steel,{at:[2.9,.03,-.9],seg:32});fz.add(plateTop,plateBot);
+  const gaugeT=S.cyl(.17,.17,2,mat("acrylic","#ffffff",{opacity:.22}),{cast:false,seg:28});gaugeT.position.set(3.7,1.0+.06,-.9);gaugeT.renderOrder=4;fz.add(gaugeT);fz.add(S.cyl(.2,.2,.06,white,{at:[3.7,.03,-.9]}));
+  const gaugeM=S.M.plastic(P3.product.butter,{rough:.3});const gaugeF=S.cyl(.14,.14,1,gaugeM,{seg:24});fz.add(gaugeF);const gaugeMax=S.box(.42,.012,.42,mat("plastic",P3.ink),{cast:false});fz.add(gaugeMax);
+  const fArrowK=S.arrow(P3.deep.mint,{r:.04}),fArrowW=S.arrow(HOT_SKI,{r:.04});fz.add(fArrowK,fArrowW);
+  fz.add(S.rbox(3.4,2.2,.1,.05,mat("plastic","#ffffff",{rough:.45}),{at:[.9,1.6,-1.85]}));const fpan=S.panel(560,330,3.1);fpan.position.set(.9,1.6,-1.79);fz.add(fpan);let fpKey="";
+  // ================================================================ the garage: a turntable and an exploded view of the suspension
+  plinth(GZ.x+.4,GZ.z,7.6,5,P3.case.peach);const gz=S.group();gz.position.set(GZ.x,PT,GZ.z);
+  gz.add(S.rbox(7.2,3.2,.14,.07,mat("plastic",P3.case.mint,{rough:.5}),{at:[.4,1.6,-2.2]}));{const pegs=S.swarm(120,new THREE.CylinderGeometry(.03,.03,.02,8),mat("plastic",P3.deep.mint),{});gz.add(pegs);for(let k=0;k<120;k++)pegs.putS(k,-2.9+(k%20)*.34,.5+Math.floor(k/20)*.45,-2.12,1,1,1,tq.setFromAxisAngle(V3(1,0,0),Math.PI/2));pegs.done()}
+  const turn=S.group(gz);turn.position.set(-1,0,.1);turn.add(S.cyl(1.35,1.4,.1,mat("plastic","#ffffff",{rough:.35}),{at:[0,.05,0],seg:48}));turn.add(S.torus(1.36,.02,mat("plastic",P3.case.peach),{rot:[Math.PI/2,0,0],at:[0,.1,0]}));
+  const ex=S.group(gz);ex.position.set(2.2,0,-.4);ex.add(S.rbox(1.8,.1,1.2,.04,white,{at:[0,.05,0]}));ex.add(S.cyl(.03,.03,2.4,steel,{at:[-.6,1.25,0]}));ex.add(S.cyl(.03,.03,2.4,steel,{at:[.6,1.25,0]}));
+  const exF={crown:S.rbox(.5,.08,.16,.03,dark),st1:rodMesh(stanM.garage,ex),st2:rodMesh(stanM.garage,ex),lo1:rodMesh(cream,ex),lo2:rodMesh(cream,ex),spr:S.mesh(coilGeo(10,1,.12),mat("metal",GOLD,{rough:.25})),axle:rodMesh(steel,ex),
+    sEye1:S.torus(.05,.018,steelD,{rs:8,ts:16}),sBody:rodMesh(dark,ex),sRod:rodMesh(steel,ex),sCoil:S.mesh(coilGeo(9,1,.12),mat("plastic",GOLD,{rough:.3})),sCollar:S.cyl(.06,.06,.03,mat("plastic",HOT_SKI,{rough:.4}),{seg:20}),sEye2:S.torus(.05,.018,steelD,{rs:8,ts:16})};
+  [exF.crown,exF.spr,exF.sEye1,exF.sCoil,exF.sCollar,exF.sEye2].forEach(m=>ex.add(m));
+  gz.add(S.rbox(2.3,1.45,.08,.05,mat("plastic","#ffffff",{rough:.4}),{at:[-2.2,2.35,-2.05]}));const spec=S.panel(512,320,2.2);spec.position.set(-2.2,2.35,-2.0);gz.add(spec);let specKey="";
+  // ================================================================ NCEA: the snow run and the check turn
+  plinth(KZ.x+.2,KZ.z,13.6,5,P3.case.sky);const kz=S.group();kz.position.set(KZ.x,PT,KZ.z);let runKey="",runMesh=null;const RUNL=10;
+  const skier=new THREE.Group();kz.add(skier);{const suit=mat("plastic","#E8664A",{rough:.4});skier.add(S.mesh(new THREE.CapsuleGeometry(.1,.2,6,12),suit,{at:[0,.42,0]}));skier.add(S.sphere(.09,white,{at:[.02,.68,0]}));
+    skier.add(S.rbox(.05,.04,.13,.015,mat("plastic",P3.product.butter,{rough:.15,coat:1}),{at:[.08,.68,0]}));for(const z of [-.06,.06]){skier.add(S.cyl(.035,.035,.3,mat("plastic",PANTS),{at:[0,.17,z],seg:8}));skier.add(S.rbox(.75,.02,.05,.01,mat("metal","#D8DEE8",{rough:.2}),{at:[.05,.01,z]}))}
+    for(const z of [-.14,.14])skier.add(S.cyl(.008,.008,.6,steelD,{at:[-.05,.3,z],rot:[0,0,.3],seg:6}))}
+  const KA={w:S.arrow("#5B6B7E",{r:.03}),par:S.arrow(HOT_SKI,{r:.035}),res:S.arrow("#3A857B",{r:.035})};for(const k in KA)kz.add(KA[k]);
+  const hBar=S.box(.05,1,.05,mat("plastic",GOLD,{rough:.3}));kz.add(hBar);const sprayP=S.puffs(50,"#ffffff");kz.add(sprayP);const spr=[];for(let i=0;i<50;i++)spr.push({x:0,y:0,z:0,vx:0,vy:0,life:0});
+  const kcol=[["Ep lost",P3.product.butter],["Ek at the bottom",P3.product.strawberry],["Friction + air",P3.product.blueberry]].map(([n,c],i)=>{const g=new THREE.Group();g.position.set(1.7+i*.85,0,1.55);kz.add(g);const H=2.2;
+    g.add(S.cyl(.26,.28,.08,white,{at:[0,.04,0]}));const fill=S.cyl(.2,.2,1,mat("liquid",c,{opacity:1}),{seg:24});g.add(fill);const sh=S.cyl(.24,.24,H,mat("acrylic","#ffffff",{opacity:.22}),{at:[0,.08+H/2,0],cast:false,seg:24});sh.renderOrder=4;g.add(sh);return {g,fill,H,n}});
+  const vcol=[["Frictionless √(2gh)",P3.case.lavender],["Real",P3.product.strawberry]].map(([n,c],i)=>{const g=new THREE.Group();g.position.set(-5.3+i*.9,0,1.55);kz.add(g);g.add(S.cyl(.3,.32,.08,white,{at:[0,.04,0]}));
+    const fill=S.cyl(.24,.24,1,mat("liquid",c,{opacity:1}),{seg:24});g.add(fill);return {g,fill,n}});
+  plinth(TZ.x,TZ.z,8,5,P3.case.sky);const tzn=S.group();tzn.position.set(TZ.x,PT,TZ.z);tzn.add(S.cyl(3.7,3.7,.06,mat("plastic","#F7FAFC",{rough:.5}),{at:[0,.03,0],seg:64}));
+  let trackKey="",track=null,bermM=null;const tskier=skier.clone();tzn.add(tskier);tskier.scale.setScalar(.7);
+  const TA={fc:S.arrow(HOT_SKI,{r:.035}),fr:S.arrow("#3A857B",{r:.035}),v:S.arrow(P3.deep.sky,{r:.03})};for(const k in TA)tzn.add(TA[k]);const tspray=S.puffs(40,"#ffffff");tzn.add(tspray);const tsp=[];for(let i=0;i<40;i++)tsp.push({x:0,y:0,z:0,vx:0,vz:0,life:0});
+  // ================================================================ labels
+  const L=o=>S.label(o);
+  const lab={trail:{spd:L({cls:"big",off:[-40,-74]}),seg:L({off:[-30,-50]}),crash:L({cls:"hot big",off:[0,-70]}),w:L({off:[18,10]}),n:L({off:[-20,-20]}),par:L({off:[20,16]}),res:L({off:[-24,10]}),brk:L({off:[-24,-14]}),net:L({cls:"hot",off:[24,-10]}),
+      e0:L({off:[-20,-24]}),e1:L({off:[0,-34]}),e2:L({off:[20,-24]}),rot:L({off:[24,24]}),lip:L({cls:"hot",off:[-30,-36]}),jump:L({cls:"big",off:[24,-30]}),gap:L({off:[0,30]})},
+    stop:{bike:L({cls:"big",off:[0,-56]}),think:L({off:[0,30],lead:false}),brake:L({off:[0,30],lead:false}),log:L({off:[20,-40]}),m0:L({off:[0,26],lead:false}),res:L({cls:"hot big",off:[0,-60]})},
+    fork:{drop:L({off:[-30,-20]}),x:L({cls:"big",off:[26,-20]}),F:L({cls:"hot",off:[26,10]}),W:L({off:[-26,10]}),gauge:L({off:[20,-30]}),spr:L({off:[-30,-30]})},
+    garage:{name:L({cls:"big",off:[-30,-40]}),fork:L({off:[30,-20]}),spring:L({off:[30,0]}),shock:L({off:[30,20]}),damp:L({off:[-30,30]}),wheels:L({off:[-30,30]})},
+    ski:{v:L({cls:"big",off:[24,-40]}),h:L({off:[20,0]}),track:L({off:[0,-30]}),c0:L({off:[-30,-40]}),c1:L({off:[0,-64]}),c2:L({off:[26,-40]}),w:L({off:[18,10]}),par:L({off:[20,20]}),res:L({off:[-20,-20]}),v0:L({off:[-30,-30]}),v1:L({cls:"hot",off:[30,-20]})},
+    turn:{fc:L({cls:"hot",off:[24,26]}),fr:L({off:[24,-30]}),ok:L({cls:"big",off:[0,-50]}),r:L({off:[-20,0],lead:false}),bank:L({off:[30,-10]})}};
+  const zoneOfStep=k=>k==="garage"?"garage":TRACKSTEPS.includes(k)?"trail":k==="stop"?"stop":k==="fork"?"fork":["run","work","model"].includes(k)?"ski":k==="turn"?"turn":"all";
+  S.view("garage",[GZ.x+1.2,2.3,GZ.z+7.2],[GZ.x+.4,1.15,GZ.z],{min:2,max:20});
+  S.view("stop",[SZ.x+14,9.5,SZ.z+20],[SZ.x+14,.2,SZ.z],{min:4,max:50});
+  S.view("fork",[FZ.x+1.2,2.3,FZ.z+7.4],[FZ.x+.7,1.25,FZ.z],{min:2,max:20});
+  S.view("ski",[KZ.x+.4,5.2,KZ.z+11.6],[KZ.x+.2,1.6,KZ.z],{min:3,max:30});
+  S.view("turn",[TZ.x+.4,4.6,TZ.z+6.2],[TZ.x,.2,TZ.z],{min:3,max:30});
+  S.view("all",[3,24,101],[3,0,66.5],{min:6,max:90});
+  let zone="all",follow=null;S.goView("all",true);
+  const riderW=()=>{const x=s.x,y=s.air?s.y:trackY(Math.max(0,x));return V3(TX0+x,TY0+y,0)};
+  const allLabels=[];for(const z in lab)for(const k in lab[z])allLabels.push(lab[z][k]);
+  const tl=V3(0,0,0),money=null;
+  const drawGraph=(g,w,h,key)=>{const Smp=s.samples,GS=s.ghost&&key==="v"?s.ghost.samples:[],T=Math.max(10,(s.lastRun?s.lastRun.time:30)+4,Smp.length?Smp[Smp.length-1].t:0,GS.length?GS[GS.length-1].t:0);
+    const vmax=key==="v"?Math.max(15,...Smp.map(p=>p.v),...GS.map(p=>p.v)):Math.max(100,FINISH+20);const X=tt=>70+tt/T*(w-100),Y=v=>h-50-v/vmax*(h-100);
+    g.fillStyle="#fff";g.beginPath();g.roundRect(0,0,w,h,24);g.fill();g.strokeStyle="#C9C2DC";g.lineWidth=3;g.beginPath();g.moveTo(70,30);g.lineTo(70,h-50);g.lineTo(w-24,h-50);g.stroke();
+    g.fillStyle="#222A55";g.font="700 24px Instrument Sans, system-ui";g.textAlign="left";g.fillText(key==="v"?"SPEED–TIME":"DISTANCE–TIME",84,40);
+    g.fillStyle="#6E6A86";g.font="600 18px Instrument Sans, system-ui";g.fillText(key==="v"?"speed (m/s)":"distance (m)",84,64);g.textAlign="right";g.fillText("time (s) →",w-28,h-18);
+    const line=(arr,c,wd,dash)=>{if(arr.length<2)return;g.strokeStyle=c;g.lineWidth=wd;g.setLineDash(dash||[]);g.lineCap="round";g.beginPath();arr.forEach((p,i)=>g[i?"lineTo":"moveTo"](X(p.t),Y(key==="v"?p.v:p.d)));g.stroke();g.setLineDash([])};
+    if(GS.length)line(GS,"#B9B3CC",5,[10,8]);line(Smp,key==="v"?P3.deep.blush:P3.deep.sky,6);
+    if(Smp.length){const p=Smp[Smp.length-1];g.fillStyle="#222A55";g.beginPath();g.arc(X(p.t),Y(key==="v"?p.v:p.d),9,0,7);g.fill()}};
+  return {
+    step(st){zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());
+      if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?5.6:4.4),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail");
+        S.setFollow(()=>riderW().add(V3(1.4,.8,0)),.3,true)}
+      else{S.setFollow(null);S.goView(zone)}
+      const sb={garage:[5,[GZ.x,0,GZ.z]],stop:[22,[SZ.x+18,0,SZ.z]],fork:[5,[FZ.x,0,FZ.z]],ski:[8,[KZ.x,0,KZ.z]],turn:[5,[TZ.x,0,TZ.z]],all:[36,[3,0,68]]};if(sb[zone])S.setShadowBox(...sb[zone])},
+    update(s,st,dt,t){const k=st.k,Z=zone;const show=(z,key,c=true)=>lab[z][key].show(Z===z&&c);
+      // ---------------- trail
+      {const x=s.x,y=s.air?s.y:trackY(Math.max(0,x)),th=s.air?Math.atan2(s.air.vy,s.air.vx)*.6:Math.atan(slope(Math.max(0,x)));
+        const B=bikes.trail;B.g.position.set(TX0+x,TY0+y,0);B.g.rotation.z=th;B.update({b:s.b,comp:Math.max(0,s.fc),spin:s.dist/.375,heat:rotorT(),pose:s.attack?0:1,crouch:Math.max(0,s.fc)*1.2,rider:true});
+        if(Z==="trail")S.setShadowBox(7,[TX0+x,TY0+y,0]);
+        for(let i=0;i<90;i++){const p=s.dust[i];if(p)dustP.put(i,p.x,p.y,((i*37)%10)/10-.5,p.life*.7,p.r*900);else dustP.put(i,0,-99,0,0,1)}dustP.done();
+        const ap=s.airPath,na=ap.length,showAir=Z==="trail"&&na>1;for(let i=0;i<140;i++){const j=Math.floor(i/140*na);if(showAir&&i<na&&ap[j])airDots.put(i,ap[j][0],ap[j][1]+.35,0,1);else airDots.put(i,0,-99,0,.001)}airDots.done();
+        const tv=V3(Math.cos(th),Math.sin(th),0),nv=V3(-Math.sin(th),Math.cos(th),0),c=V3(x,y,0).addScaledVector(nv,1.0);
+        const F=forces(Math.max(0,x),s.v),Wt=M()*g,N=Wt*Math.cos(F.th),par=M()*F.grav,res=M()*(F.roll+F.air),brk=s.brakeN,net=par-res-brk,ks=1/450,on=Z==="trail"&&k==="forces"&&!s.air;
+        for(const kk in FA_)FA_[kk].visible=false;
+        if(on){FA_.w.set(c,V3(0,-Wt,0),ks);FA_.n.set(c,nv.clone().multiplyScalar(N),ks);FA_.par.set(c.clone().addScaledVector(nv,.12),tv.clone().multiplyScalar(par),ks);FA_.res.set(c.clone().addScaledVector(nv,-.12),tv.clone().multiplyScalar(-res),ks);
+          FA_.brk.set(c.clone().addScaledVector(nv,-.28),tv.clone().multiplyScalar(-brk),ks);FA_.net.set(c.clone().addScaledVector(nv,.75),tv.clone().multiplyScalar(net),ks*2)}
+        const wl=(v)=>tl.copy(v).add(V3(TX0,TY0,0));
+        show("trail","w",on);lab.trail.w.at(wl(c.clone().add(V3(0,-Wt*ks,0)))).set(`Weight<b>${fmt(Wt)} N</b>`);show("trail","n",on);lab.trail.n.at(wl(c.clone().addScaledVector(nv,N*ks))).set(`Normal<b>${fmt(N)} N</b>`);
+        show("trail","par",on);lab.trail.par.at(wl(c.clone().addScaledVector(nv,.12).addScaledVector(tv,par*ks))).set(`Down-slope pull<b>${fmt(par)} N</b>`);
+        show("trail","res",on);lab.trail.res.at(wl(c.clone().addScaledVector(nv,-.12).addScaledVector(tv,-res*ks))).set(`Friction + air<b>${fmt(res)} N</b>`);
+        show("trail","brk",on&&brk>5);lab.trail.brk.at(wl(c.clone().addScaledVector(nv,-.28).addScaledVector(tv,-brk*ks))).set(`Brakes<b>${fmt(brk)} N</b>`);
+        show("trail","net",on);lab.trail.net.at(wl(c.clone().addScaledVector(nv,.75).addScaledVector(tv,net*ks*2))).set(`Net force<b>${fmt(net)} N</b><small>${Math.abs(net)<20?"balanced: steady speed":net>0?"speeding up":"slowing down"}</small>`);
+        // energy columns and screen ride along behind you
+        rideAlong.position.set(x,trackY(Math.max(0,Math.min(TRAIL_END,x))),0);const showE=Z==="trail"&&k==="energy";ecol.forEach(e=>e.g.visible=showE);scrStand.visible=Z==="trail"&&(k==="drop"||k==="graph");
+        const Et=Math.max(1,M()*g*(TOP-SFIN.y0)),Ep=M()*g*(TOP-y),Ek=.5*M()*s.v*s.v,Ht=s.heatB+s.heatF;[Ep,Ek,Ht].forEach((E,i)=>{const e=ecol[i],f=S.clamp(E/Et,0,1)*e.H;e.fill.scale.y=Math.max(.002,f);e.fill.position.y=.1+f/2;
+          show("trail","e"+i,showE);lab.trail["e"+i].at(wl(V3(x+e.g.position.x,rideAlong.position.y+.1+e.H,e.g.position.z))).set(`${e.n}<b>${kJ(E)}</b>`)});
+        show("trail","rot",showE);lab.trail.rot.at(wl(V3(x+.7,y+.38,.1))).set(`Brake rotors<b>${fmt(rotorT())} °C</b>`);
+        if(scrStand.visible){const key=k+"|"+s.samples.length+"|"+(s.ghost?s.ghost.samples.length:0);if(key!==scrKey){scrKey=key;scr.redraw((g2,w,h)=>drawGraph(g2,w,h,k==="graph"?"v":"d"))}}
+        show("trail","spd");lab.trail.spd.at(wl(V3(x,y+1.9,0))).set(`${fmt(s.v*3.6)} km/h<small>${fmt(s.v,1)} m/s · ${fmt(s.t,1)} s · ${fmt(s.dist)} m</small>`);
+        const sg=segAt(Math.max(0,x));show("trail","seg");lab.trail.seg.at(wl(V3(x-1,y+.05,1.4))).set(s.finished?"Finished":sg.n);
+        show("trail","crash",!!s.crash||(s.finished&&s.v<.02));lab.trail.crash.at(wl(V3(x,y+1.5,0))).set(s.crash?`${s.crash.split(". ")[0]}.<small>Press Restart</small>`:`${fmt(s.lastRun?s.lastRun.time:s.t,1)} s<small>average ${fmt(s.lastRun?s.lastRun.avg:0,1)} m/s</small>`);
+        const jumpOn=k==="jump";show("trail","lip",jumpOn);lab.trail.lip.at(wl(V3(LIP,SLIP.y1+.1,0))).set(`Lip<b>${s.lipV?fmt(s.lipV*3.6)+" km/h":"–"}</b>`);
+        show("trail","gap",jumpOn);lab.trail.gap.at(wl(V3((SGAP.x0+SGAP.x1)/2,SGAP.y0,1))).set(`Gap ${fmt(GAP_END-LIP)} m`);
+        show("trail","jump",jumpOn&&!!s.jump);if(s.jump)lab.trail.jump.at(wl(V3(LIP+s.jump.dist,trackY(LIP+s.jump.dist)+.2,0))).set(`${fmt(s.jump.dist,1)} m${s.jump.cleared?"":" (short)"}<small>fork used ${fmt(s.jump.forkX*1000)} of ${fmt(TRAVEL()*1000)} mm${s.jump.bottom?" · bottomed out":""}</small>`)}
+      // ---------------- stopping distance
+      {const N=stopNums(),SCB=1.5,lim=LOGX-.24-1.08*SCB,bx=Math.min(s.sx,lim),hit=s.sx>lim+.02,braking=s.sphase==="brake";
+        const B=bikes.stop;B.g.position.set(SZ.x+bx,PT,SZ.z);B.g.scale.setScalar(SCB);B.g.rotation.z=hit?-.08:braking?-.02:0;B.update({b:s.b,comp:braking?.45:.05,spin:s.sx/.375,heat:braking?150:0,pose:0,crouch:braking?.4:0,rider:true});
+        thinkBar.scale.x=Math.max(.01,N.think);thinkBar.position.x=N.think/2;brakeBar.scale.x=Math.max(.01,N.brake);brakeBar.position.x=N.think+N.brake/2;
+        mudS.visible=s.grip==="mud";rootS.visible=s.grip==="roots";
+        for(let i=0;i<60;i++){const p=s.sdust[i];if(p)sdustP.put(i,p.x,p.y+.1,((i*37)%10)/10-.5,p.life*.7,p.r*1400);else sdustP.put(i,0,-99,0,0,1)}sdustP.done();
+        const sw=v=>tl.set(SZ.x+v.x,PT+v.y,SZ.z+v.z);
+        show("stop","bike");lab.stop.bike.at(sw(V3(bx+.6,2.6,0))).set(s.sphase==="ready"?"Press play":s.sphase==="see"?`Log! (reacting…)<small>${fmt(s.v0)} km/h · ${fmt(s.tr,1)} s</small>`:braking?`Brakes on<small>${fmt(s.sv*3.6)} km/h</small>`:hit?"Hit the log":"Stopped");
+        show("stop","think");lab.stop.think.at(sw(V3(N.think/2,.05,1.65))).set(`Thinking<b>${fmt(N.think,1)} m</b>`);show("stop","brake");lab.stop.brake.at(sw(V3(N.think+N.brake/2,.05,1.65))).set(`Braking<b>${fmt(N.brake,1)} m</b><small>μ = ${fmt(N.mu,2)} · ${SURF[s.grip]}</small>`);
+        show("stop","log");lab.stop.log.at(sw(V3(LOGX,.5,0))).set(`Log<b>${LOGX} m</b>`);show("stop","m0");lab.stop.m0.at(sw(V3(0,.05,1.2))).set("0 m");
+        show("stop","res",s.sphase==="stopped");lab.stop.res.at(sw(V3(LOGX-4,3.6,0))).set(`${N.total>LOGX?"Hit the log":"Stopped in time"}: ${fmt(N.total,1)} m`)}
+      // ---------------- the fork spring
+      {const N=forkNums(),T=N.T,fh=s.fh;ledge.scale.y=fh;ledge.position.set(-1.7,fh/2,0);ledgeTop.position.set(-1.7,fh+.01,0);
+        const comp=Math.min(T,s.fx)/T,B=bikes.fork;B.g.position.set(FZ.x+.75,PT+s.fy,FZ.z);B.update({b:s.b,comp,spin:0,heat:0,pose:0,crouch:comp*1.4,rider:true});
+        const L0=1.7,Lc=L0*(1-.7*Math.min(1,s.fx/T));bigCoil.position.set(2.9,.06,-.9);bigCoil.scale.set(.24,Lc,.24);plateTop.position.set(2.9,.09+Lc,-.9);
+        const f=Math.min(1,s.fx/T),fm=Math.min(1,s.fmax/T);gaugeF.scale.y=Math.max(.002,f*2);gaugeF.position.set(3.7,.06+f,-.9);gaugeM.color.set(s.fmax>=T-.001?P3.product.strawberry:P3.product.butter);gaugeMax.position.set(3.7,.06+fm*2,-.9);
+        const FAx=V3(.75+.7,s.fy+.375,.2),Fk=N.k*Math.min(s.fx,T),Wf=N.mf*g;fArrowK.visible=fArrowW.visible=false;if(s.fphase==="squash"||s.fphase==="settled"){fArrowK.set(FAx.clone().add(V3(.15,-.35,0)),V3(0,1,0),Math.max(.15,Fk/4000));}fArrowW.set(V3(.75+.1,s.fy+1.1,.4),V3(0,-1,0),Math.max(.2,Wf/4000)*3);
+        const pk=[s.k,s.fh,s.m,Math.round(s.fx*1000),Math.round(s.fmax*1000)].join("|");if(pk!==fpKey){fpKey=pk;fpan.redraw((g2,w,h)=>{g2.fillStyle="#fff";g2.beginPath();g2.roundRect(0,0,w,h,24);g2.fill();
+          const Fmax=Math.max(3000,N.k*.25),X=x=>70+x/.25*(w-100),Y=F=>h-50-F/Fmax*(h-100);g2.strokeStyle="#C9C2DC";g2.lineWidth=3;g2.beginPath();g2.moveTo(70,30);g2.lineTo(70,h-50);g2.lineTo(w-24,h-50);g2.stroke();
+          g2.fillStyle="#222A55";g2.font="700 24px Instrument Sans, system-ui";g2.textAlign="left";g2.fillText("HOOKE'S LAW  F = kx",84,42);g2.fillStyle="#6E6A86";g2.font="600 18px Instrument Sans, system-ui";g2.fillText("force (N)",84,66);g2.textAlign="right";g2.fillText("compression x (m) →",w-28,h-18);
+          g2.strokeStyle=HOT_SKI;g2.setLineDash([8,6]);g2.lineWidth=3;g2.beginPath();g2.moveTo(X(T),30);g2.lineTo(X(T),h-50);g2.stroke();g2.setLineDash([]);g2.fillStyle=HOT_SKI;g2.textAlign="center";g2.fillText(`travel ${fmt(T*1000)} mm`,X(T),26+0);
+          g2.strokeStyle=P3.deep.mint;g2.lineWidth=6;g2.lineCap="round";g2.beginPath();g2.moveTo(X(0),Y(0));g2.lineTo(X(Math.min(.25,Fmax/N.k)),Y(Math.min(Fmax,N.k*.25)));g2.stroke();
+          const xx=Math.min(s.fx,T);g2.fillStyle="#222A55";g2.beginPath();g2.arc(X(xx),Y(N.k*xx),10,0,7);g2.fill();g2.textAlign="left";g2.font="600 20px IBM Plex Mono, monospace";g2.fillText(`k = ${fmt(N.k)} N/m`,90,96)})}
+        const fw=v=>tl.set(FZ.x+v.x,PT+v.y,FZ.z+v.z);
+        show("fork","drop");lab.fork.drop.at(fw(V3(-1.7,fh,0))).set(`Ledge<b>${fmt(fh,1)} m</b>`);show("fork","x");lab.fork.x.at(fw(V3(1.45,s.fy+.6,.2))).set(`Fork squash<b>${fmt(s.fx*1000)} mm</b><small>of ${fmt(T*1000)} mm travel${s.fmax>=T-.001?" · bottomed out!":""}</small>`);
+        show("fork","F",s.fphase!=="fall"&&s.fphase!=="ready");lab.fork.F.at(fw(FAx.clone().add(V3(.15,-.35+Math.max(.15,Fk/4000),0)))).set(`Spring force F = kx<b>${fmt(Fk)} N</b>`);
+        show("fork","W");lab.fork.W.at(fw(V3(.85,s.fy+1.1-Math.max(.2,Wf/4000)*3,.4))).set(`Front weight<b>${fmt(Wf)} N</b><small>45% of ${fmt(M(),1)} kg × g</small>`);
+        show("fork","gauge");lab.fork.gauge.at(fw(V3(3.7,2.1,-.9))).set(`Travel used<b>${fmt(f*100)}%</b>`);show("fork","spr");lab.fork.spr.at(fw(V3(2.9,.1+Lc,-.9))).set(`Spring<small>k = ${s.k} N/mm</small>`)}
+      // ---------------- garage
+      {if(!bikes.garage.g.parent||bikes.garage.g.parent!==turn){turn.add(bikes.garage.g);bikes.garage.g.position.set(-.05,.1,0)}turn.rotation.y=S.REDUCED?.5:.5+Math.sin(t*.3)*.7;
+        const Md=MD();bikes.garage.update({b:s.b,comp:.08,spin:s.gspin,heat:0,rider:false});stanM.garage.color.set(Md.stanch);
+        const e=S.REDUCED?.6:.5+.5*Math.sin(t*.9),R2=(m,a,b,r)=>setRod(m,a,b,r);
+        exF.axle.visible=true;R2(exF.axle,V3(-.55,.35,0),V3(.05,.35,0),.02);R2(exF.lo1,V3(-.37,.38,0),V3(-.37,.98,0),.04);R2(exF.lo2,V3(-.13,.38,0),V3(-.13,.98,0),.04);
+        exF.spr.position.set(-.25,1.02+.12*e,0);exF.spr.scale.set(.06,.45,.06);R2(exF.st1,V3(-.37,1.08+.35*e,0),V3(-.37,1.78+.35*e,0),.03);R2(exF.st2,V3(-.13,1.08+.35*e,0),V3(-.13,1.78+.35*e,0),.03);exF.crown.position.set(-.25,1.85+.5*e,0);
+        exF.sEye1.position.set(.35,.42,0);R2(exF.sBody,V3(.35,.5+.12*e,0),V3(.35,.95+.12*e,0),.04);R2(exF.sRod,V3(.35,.95+.12*e,0),V3(.35,1.95+.45*e,0),.012);exF.sCoil.position.set(.35,1.0+.3*e,0);exF.sCoil.scale.set(.065,.55,.065);
+        exF.sCoil.visible=Md.shock==="coil";exF.sCollar.position.set(.35,1.6+.38*e,0);exF.sEye2.position.set(.35,2.02+.5*e,0);
+        const sk=[s.b.model,s.b.wheels,s.b.bars,s.b.colour,s.b.guard,s.b.pod,s.m,s.grip,s.attack].join("|");if(sk!==specKey){specKey=sk;spec.redraw((g2,w,h)=>{g2.fillStyle="#222A55";g2.beginPath();g2.roundRect(0,0,w,h,24);g2.fill();
+          g2.fillStyle=COLOURS[s.b.colour].main;g2.beginPath();g2.roundRect(24,22,12,44,6);g2.fill();g2.fillStyle="#fff";g2.font="700 34px Instrument Sans, system-ui";g2.textAlign="left";g2.fillText(Md.n,48,56);
+          g2.fillStyle="rgba(255,255,255,.65)";g2.font="600 18px Instrument Sans, system-ui";g2.fillText(`${Md.kind.toUpperCase()} · ${WH().n.toUpperCase()}`,48,84);
+          const row=(y,l,v)=>{g2.fillStyle="rgba(255,255,255,.7)";g2.font="600 20px Instrument Sans, system-ui";g2.textAlign="left";g2.fillText(l,28,y);g2.fillStyle="#fff";g2.font="700 24px IBM Plex Mono, monospace";g2.textAlign="right";g2.fillText(v,w-28,y)};
+          row(132,"MASS",`${fmt(M(),1)} kg`);row(170,"WEIGHT",`${fmt(M()*g)} N`);row(208,"GRIP μ",`${fmt(MU(),2)}`);row(246,"TRAVEL",`${fmt(TRAVEL()*1000)} mm`);row(284,"DRAG AREA",`${fmt(CDA(),2)} m²`)})}
+        const gw=v=>tl.set(GZ.x+v.x,PT+v.y,GZ.z+v.z);
+        show("garage","name");lab.garage.name.at(gw(V3(-1,1.5,.1))).set(`${Md.n}<small>${fmt(bikeMass(),1)} kg bike · ${s.m} kg rider</small>`);
+        show("garage","fork");lab.garage.fork.at(gw(V3(2.2-.25,1.85+.5*e,-.4))).set(`Fork<small>${Md.fork==="dual"?"dual":"single"} crown · ${fmt(TRAVEL()*1000)} mm travel</small>`);
+        show("garage","spring");lab.garage.spring.at(gw(V3(2.2-.25,1.2+.12*e,-.4))).set(`Spring<small>k = ${s.k} N/mm: F = kx</small>`);
+        show("garage","shock");lab.garage.shock.at(gw(V3(2.2+.35,1.6+.38*e,-.4))).set(`Rear shock<small>${Md.shock==="coil"?"coil spring":"air spring"}</small>`);
+        show("garage","damp");lab.garage.damp.at(gw(V3(2.2+.35,.7,-.4))).set("Damper<small>turns bounce into heat</small>");
+        show("garage","wheels");lab.garage.wheels.at(gw(V3(-1.6,.5,.4))).set(`${WH().n}<small>μ ${fmt(MU("dry"),2)} dry · ${fmt(MU("mud"),2)} mud</small>`)}
+      // ---------------- NCEA snow run
+      {const th=SK.theta(),Ld=Math.min(RUNL,5.2/Math.max(.05,Math.sin(th))),Hh=Ld*Math.sin(th),hx=Ld*Math.cos(th),x0=-hx/2-.6;
+        const rk=th.toFixed(4);if(rk!==runKey){runKey=rk;if(runMesh){kz.remove(runMesh);runMesh.geometry.dispose()}const sh=new THREE.Shape();sh.moveTo(x0-1.2,0);sh.lineTo(x0-1.2,Hh);sh.lineTo(x0,Hh);sh.lineTo(x0+hx,.06);sh.lineTo(x0+hx+1.8,.06);sh.lineTo(x0+hx+1.8,0);sh.lineTo(x0-1.2,0);
+          const eg=new THREE.ExtrudeGeometry(sh,{depth:1.6,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:2});eg.translate(0,0,-.8);runMesh=new THREE.Mesh(eg,[mat("plastic","#DCE8F3",{rough:.55}),mat("plastic","#FBFDFF",{rough:.45})]);runMesh.castShadow=runMesh.receiveShadow=true;kz.add(runMesh)}
+        const f=s.ski.x/s.ski.L,v=Math.sqrt(2*SK.anet()*s.ski.x);skier.position.set(x0+f*hx,Hh*(1-f)+.06+.05,0);skier.rotation.z=-th*(f<1?1:0);
+        const moving=s.ski.phase==="go";for(let i=0;i<50;i++){const p=spr[i];if(p.life<=0&&moving&&Math.random()<.4){p.x=skier.position.x-.3;p.y=skier.position.y;p.z=(Math.random()-.5)*.3;p.vx=-.4-Math.random()*.5;p.vy=.5+Math.random()*.6;p.life=.8}
+          if(p.life>0){p.life-=dt;p.vy-=2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}sprayP.put(i,p.x,p.y,p.z,p.life>0?p.life*.8:0,120)}sprayP.done();
+        hBar.scale.y=Math.max(.01,Hh);hBar.position.set(x0+hx+.3,.06+Hh/2,-.95);
+        const isModel=k==="model",isWork=k==="work";kcol.forEach(c=>c.g.visible=!isModel);vcol.forEach(c=>c.g.visible=isModel);
+        const Ept=SK.ep(),Epf=s.ski.m*g*s.ski.h*f,Ekf=.5*s.ski.m*v*v,lost=Math.max(0,Epf-Ekf);[Epf,Ekf,lost].forEach((E,i)=>{const c=kcol[i],hh=S.clamp(E/Ept,0,1)*c.H;c.fill.scale.y=Math.max(.002,hh);c.fill.position.y=.08+hh/2});
+        const vf=SK.vfree();[vf,s.ski.v].forEach((vv,i)=>{const c=vcol[i],hh=vv/20;c.fill.scale.y=hh;c.fill.position.y=.08+hh/2});
+        for(const kk in KA)KA[kk].visible=false;const cm=skier.position.clone().add(V3(0,.45,0)),tv=V3(Math.cos(th),-Math.sin(th),0);
+        if(isWork){const ks=1/300;KA.w.set(cm,V3(0,-s.ski.m*g,0),ks);KA.par.set(cm.clone().add(V3(0,.1,.2)),tv.clone().multiplyScalar(SK.comp()),ks*2);KA.res.set(cm.clone().add(V3(0,.1,-.2)),tv.clone().multiplyScalar(-SK.fres()),ks*2)}
+        const kw=v2=>tl.set(KZ.x+v2.x,PT+v2.y,KZ.z+v2.z);
+        show("ski","v");lab.ski.v.at(kw(skier.position.clone().add(V3(0,.8,0)))).set(s.ski.phase==="go"?`${fmt(v,1)} m/s<small>${fmt(s.ski.t,1)} s</small>`:s.ski.phase==="done"?`Bottom: ${fmt(s.ski.v,1)} m/s<small>in ${fmt(s.ski.t,1)} s</small>`:"Press play");
+        show("ski","h");lab.ski.h.at(kw(V3(x0+hx+.3,.06+Hh/2,-.95))).set(`h = ${fmt(s.ski.h)} m`);show("ski","track");lab.ski.track.at(kw(V3(x0+hx*.45,Hh*.55+.2,.8))).set(`track ${fmt(s.ski.L)} m · θ = ${fmt(th*180/Math.PI,1)}°`);
+        kcol.forEach((c,i)=>{show("ski","c"+i,!isModel);lab.ski["c"+i].at(kw(V3(c.g.position.x,.1+c.H,1.55))).set(`${c.n}<b>${kJ(i===0?Ept:i===1?SK.ek():Math.max(0,Ept-SK.ek()))}</b>${i===2?`<small>${fmt(SK.loss()*100)}% dissipated</small>`:""}`)});
+        show("ski","w",isWork);lab.ski.w.at(kw(cm.clone().add(V3(0,-s.ski.m*g/300,0)))).set(`mg<b>${fmt(s.ski.m*g)} N</b>`);show("ski","par",isWork);lab.ski.par.at(kw(cm.clone().add(V3(0,.1,.2)).addScaledVector(tv,SK.comp()/150))).set(`mg sin θ<b>${fmt(SK.comp())} N</b>`);
+        show("ski","res",isWork);lab.ski.res.at(kw(cm.clone().add(V3(0,.1,-.2)).addScaledVector(tv,-SK.fres()/150))).set(`Resistance ≈<b>${fmt(SK.fres())} N</b><small>W ÷ d</small>`);
+        show("ski","v0",isModel);lab.ski.v0.at(kw(V3(vcol[0].g.position.x,.1+vf/20,1.55))).set(`Frictionless<b>${fmt(vf,1)} m/s</b>`);show("ski","v1",isModel);lab.ski.v1.at(kw(V3(vcol[1].g.position.x,.1+s.ski.v/20,1.55))).set(`Real<b>${fmt(s.ski.v)} m/s</b><small>model is ${fmt((vf/s.ski.v-1)*100)}% too fast</small>`)}
+      // ---------------- NCEA check turn
+      {const r=s.ski.r,rr=Math.min(3.3,r*.034),vt=s.ski.vt,ok=vt<=SK.vmax(),key=r+"|"+SK.bank().toFixed(2);
+        if(key!==trackKey){trackKey=key;if(track){tzn.remove(track);track.geometry.dispose()}track=S.torus(rr,.09,mat("plastic","#B9C7D6",{rough:.6}),{rot:[Math.PI/2,0,0],rs:8,ts:96});track.scale.set(1,1,.3);track.position.y=.07;tzn.add(track)}
+        const w=Math.min(2.5,vt/Math.max(rr,.3)*.15);const cyc=ok?1e9:(Math.PI*.7)/w+1.4,tt=(t%cyc);let ang,pos;
+        if(ok||tt<(Math.PI*.7)/w){ang=(ok?t*w:tt*w);pos=V3(Math.cos(ang)*rr,.08,-Math.sin(ang)*rr)}else{const a0=Math.PI*.7,d=(tt-a0/w)*vt*.12;ang=a0;pos=V3(Math.cos(a0)*rr,.08,-Math.sin(a0)*rr).add(V3(-Math.sin(a0),0,-Math.cos(a0)).multiplyScalar(d))}
+        tskier.position.copy(pos);tskier.rotation.set(0,ang+Math.PI,0);const lean=Math.atan(vt*vt/(r*g));tskier.rotateX(Math.min(.9,lean)*(ok?1:.6));
+        const inward=V3(-Math.cos(ang),0,Math.sin(ang)),tang=V3(-Math.sin(ang),0,-Math.cos(ang)),cm=pos.clone().add(V3(0,.35,0));for(const kk in TA)TA[kk].visible=false;
+        TA.fc.set(cm,inward,Math.min(3,SK.fc()/500));TA.fr.set(cm.clone().add(V3(0,.18,0)),inward,Math.min(3,s.ski.mu*s.ski.m*g/500));TA.v.set(cm.clone().add(V3(0,-.12,0)),tang,Math.min(1.5,vt/16));
+        for(let i=0;i<40;i++){const p=tsp[i];if(p.life<=0&&Math.random()<(ok?.15:.5)){p.x=pos.x;p.y=.12;p.z=pos.z;const o2=ok?.3:1;p.vx=(Math.random()-.5)*o2-tang.x*.3;p.vz=(Math.random()-.5)*o2-tang.z*.3;p.life=.7}
+          if(p.life>0){p.life-=dt;p.x+=p.vx*dt;p.z+=p.vz*dt}tspray.put(i,p.x,p.y+.05,p.z,p.life>0?p.life:0,90)}tspray.done();
+        const tw=v2=>tl.set(TZ.x+v2.x,PT+v2.y,TZ.z+v2.z);
+        show("turn","fc");lab.turn.fc.at(tw(cm.clone().addScaledVector(inward,Math.min(3,SK.fc()/500)))).set(`Needs mv²/r<b>${fmt(SK.fc())} N</b>`);
+        show("turn","fr");lab.turn.fr.at(tw(cm.clone().add(V3(0,.18,0)).addScaledVector(inward,Math.min(3,s.ski.mu*s.ski.m*g/500)))).set(`Friction can give μmg<b>${fmt(s.ski.mu*s.ski.m*g)} N</b>`);
+        show("turn","ok");lab.turn.ok.cls(ok?"big":"hot big");lab.turn.ok.at(tw(V3(0,1.2,-rr))).set(ok?`Holds the turn<small>v max = √(μgr) = ${fmt(SK.vmax(),1)} m/s</small>`:`Skids out<small>v max = √(μgr) = ${fmt(SK.vmax(),1)} m/s</small>`);
+        show("turn","r");lab.turn.r.at(tw(V3(0,.1,0))).set(`r = ${fmt(r)} m`);show("turn","bank");lab.turn.bank.at(tw(V3(rr+.1,.1,0))).set(`Level 3 berm<b>${fmt(SK.bank(),1)}°</b><small>tan θ = v²/(rg)</small>`)}
+    }};
+}
+const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",scene3d:bike3d,
   eyebrow:"Science · Forces and motion", title:"The downhill machine", crumb:"Year 9 and 10 Science · forces, motion and energy, with NCEA Level 1 ideas, plus four NCEA Level 2–3 steps on a ski run (AS91171, AS91524)", homeHash:"y9",
   fig:"FIG. 10 · THE REDWOODS, WHAKAREWAREWA FOREST", railTitle:"Build it, ride the physics",
   badge:{label:"Years 9–11 · NCEA L2 91171 · L3 91524"},

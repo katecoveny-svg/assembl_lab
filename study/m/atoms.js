@@ -120,7 +120,7 @@ const KUPU=[
  {mi:"tau karihi",en:"mass number",ta:40329,chip:"mass"}];
 Object.entries({"build": ["ngota", "karihi", "iraoho", "iramoe", "irahiko"], "numbers": ["tau iraoho", "tau karihi", "pūmotu"], "shells": ["irahiko"], "isotopes": ["iramoe"], "foil": ["karihi", "ngota"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 // ---------- the 3D bench: an atom you build with your hands, and Rutherford's gold foil experiment
-function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const ZA=V3(0,0,0),ZF=V3(15,0,0),TOP=.3;
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
   plinth(ZA,10.6,6.8,PAL.case.sky);plinth(V3(ZF.x-.5,0,0),9.8,7.8,PAL.case.lavender);

@@ -147,13 +147,13 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   // ---------------------------------------------------------------- the ground: shingle with a soil layer on top, cut away at the front
   const ext=(pts,m)=>{const sh=new THREE.Shape(pts.map(p=>new THREE.Vector2(p[0],p[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:HD*2,bevelEnabled:false,curveSegments:4});g.translate(0,0,-HD);return S.mesh(g,m)};
   const shP=[[X(0),TOP]];for(let d=0;d<=40;d+=1)shP.push([X(d),SF(d)-ST(d)]);shP.push([X(40)+.8,SF(40)-.08],[X(40)+.8,TOP]);
-  S.scene.add(ext(shP,mat("plastic","#DCD5C8",{rough:.85,coat:.05})));
+  S.scene.add(ext(shP,mat("matte","#DCD5C8",{rough:.9})));
   const soP=[];for(let d=0;d<=36;d+=1)soP.push([X(d),SF(d)+.005]);for(let d=36;d>=0;d-=1)soP.push([X(d),SF(d)-ST(d)]);
-  S.scene.add(ext(soP,mat("plastic","#C9A27C",{rough:.8,coat:.05})));
+  S.scene.add(ext(soP,mat("matte","#C9A27C",{rough:.85})));
   const mossP=[];for(let d=0;d<=34;d+=1)mossP.push([X(d),SF(d)+.03]);for(let d=34;d>=0;d-=1)mossP.push([X(d),SF(d)]);
-  S.scene.add(ext(mossP,mat("plastic","#B5CF8E",{rough:.7,coat:.1})));
+  S.scene.add(ext(mossP,mat("matte","#B5CF8E",{rough:.8})));
   // pebbles: on the open shingle and studded in the cut face
-  {const n=420,peb=S.swarm(n,new THREE.SphereGeometry(1,10,8),mat("plastic","#ffffff",{rough:.6,coat:.2}),{colors:true});const pc=["#B8AE9E","#A99F90","#C6BDAE","#D8D0C2","#9C9384"];
+  {const n=420,peb=S.swarm(n,new THREE.SphereGeometry(1,10,8),mat("matte","#ffffff",{rough:.7}),{colors:true});const pc=["#B8AE9E","#A99F90","#C6BDAE","#D8D0C2","#9C9384"];
     for(let i=0;i<n;i++){let x,y,z,r=.05+rnd()*.07;if(i<260){const d=27+rnd()*14;x=X(d);z=(rnd()-.5)*HD*1.9;y=SF(d)+r*.2}
       else{const d=rnd()*41;x=X(d);z=HD+r*.2;const top=SF(d)-ST(d);y=TOP+.06+rnd()*Math.max(0,top-TOP-.12)}
       peb.putS(i,x,y,z,r*1.3,r*.7,r,new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd(),rnd()*6,rnd()*.4)));peb.tint(i,pc[i%5])}
@@ -166,12 +166,12 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   const foam=S.puffs(60,"#ffffff");S.scene.add(foam);const fo=Array.from({length:60},()=>({x:0,y:0,z:0,life:0}));
   // ---------------------------------------------------------------- plants: grass and pōhuehue tufts, tall where the soil is deep
   const bladeGeo=new THREE.ConeGeometry(.035,1,5);bladeGeo.translate(0,.5,0);
-  const blades=[];for(let d=0;d<34;d+=.3){const c=lerpA(COUNT,d),h=lerpA(HEIGHT,d)*.032;const n=Math.round(c/2.2);for(let k=0;k<n;k++)blades.push({x:X(d+rnd()*.3),z:(rnd()-.5)*HD*1.85,h:h*(.6+rnd()*.6),ax:(rnd()-.5)*.5,az:(rnd()-.5)*.5,ph:rnd()*6})}
+  const blades=[];for(let d=0;d<34;d+=.3){const c=lerpA(COUNT,d),h=lerpA(HEIGHT,d)*.032;const n=Math.round(c/3);for(let k=0;k<n;k++)blades.push({x:X(d+rnd()*.3),z:(rnd()-.5)*HD*1.85,h:h*(.6+rnd()*.6),ax:(rnd()-.5)*.5,az:(rnd()-.5)*.5,ph:rnd()*6})}
   blades.forEach(b=>b.y=SF((b.x+8.4)/.4)+.02);
-  const grass=S.swarm(blades.length,bladeGeo,mat("plastic","#ffffff",{rough:.5}),{colors:true,cast:true});const gc=["#7FB65A","#96C94E","#4F8A3A","#A9D47A"];
+  const grass=S.swarm(blades.length,bladeGeo,mat("matte","#ffffff",{rough:.6}),{colors:true,cast:true});const gc=["#7FB65A","#96C94E","#4F8A3A","#A9D47A"];
   blades.forEach((b,i)=>grass.tint(i,gc[i%4]));S.scene.add(grass);
   const tufts=[];for(let d=0;d<26;d+=.7){const c=lerpA(COUNT,d);if(rnd()*14<c)tufts.push({x:X(d+rnd()*.6),z:(rnd()-.5)*HD*1.7,r:.12+lerpA(HEIGHT,d)*.006*rnd()+.04})}
-  const tuft=S.swarm(tufts.length,new THREE.IcosahedronGeometry(1,1),mat("plastic","#5E9A48",{rough:.55}),{colors:true,cast:true});
+  const tuft=S.swarm(tufts.length,new THREE.IcosahedronGeometry(1,1),mat("matte","#5E9A48",{rough:.6}),{colors:true,cast:true});
   tufts.forEach((t,i)=>{tuft.putS(i,t.x,SF((t.x+8.4)/.4)+t.r*.4,t.z,t.r*1.4,t.r*.8,t.r*1.2);tuft.tint(i,i%2?"#5E9A48":"#6FAE52")});tuft.done();S.scene.add(tuft);
   // ---------------------------------------------------------------- transect tape, quadrats, the surveyor and height poles
   const tape=S.tube(Array.from({length:21},(_,i)=>[X(i*2),SF(i*2)+.06,-.0]),.02,mat("plastic",PAL.product.butter,{rough:.35}),{seg:120,cast:false});S.scene.add(tape);

@@ -236,14 +236,14 @@ Object.entries({"cast": ["tere"], "lever": ["tōpana", "taumaha"], "float": ["ki
 // a cut-away tank where a glowing light ray bends at the surface on its way to your eye; and measuring boards of 3D snapper with a
 // stacked histogram. Every part reads the same functions the challenges mark: range(), flight(), effort(), floatSub(), refractPath(), stats().
 function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
-  const ZC=V3(0,0,0),ZL=V3(21.4,0,.2),ZF=V3(28.2,0,.2),ZLi=V3(24.6,0,-7.4),ZS=V3(-8.6,0,.2),TOP=.3;
+  const ZC=V3(0,0,0),ZL=V3(20.2,0,.2),ZF=V3(26.8,0,.2),ZLi=V3(23.4,0,-11.8),ZS=V3(-8.6,0,.2),TOP=.3;
   const plinth=(x,z,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(x,.15,z);S.scene.add(p);return p};
   plinth(6.1,0,17.4,4.2,PAL.case.mint);plinth(ZL.x+.4,ZL.z,6,3.4,PAL.case.peach);plinth(ZF.x+.3,ZF.z,5.2,3.4,PAL.case.mint);plinth(ZLi.x+.2,ZLi.z,6,3.4,PAL.case.peach);plinth(ZS.x,ZS.z,8.6,4.4,PAL.case.peach);
   const white=mat("plastic","#ffffff",{rough:.4}),steel=mat("metal",PAL.steel,{rough:.25}),steelD=mat("metal",PAL.steelDark,{rough:.3}),ink=mat("plastic",PAL.ink,{rough:.45});
   const waterM=mat("liquid",PAL.water,{opacity:.34,depthWrite:false}),tmp=V3(0,0,0),q=new THREE.Quaternion(),eul=new THREE.Euler();
   const toW=(g,x,y,z)=>tmp.set(x,y,z).applyMatrix4(g.matrixWorld);
   // ================================================================ instanced snapper (no faces): a body with a coppery back fading to a silver belly, a tail and a dorsal fin
-  const bodyG=new THREE.SphereGeometry(1,28,16);{const p=bodyG.attributes.position,col=[];const c1=new THREE.Color("#C2503F"),c2=new THREE.Color("#EE8D72"),c3=new THREE.Color("#FBF2EE"),c=new THREE.Color();
+  const bodyG=new THREE.SphereGeometry(1,28,16);{const p=bodyG.attributes.position,col=[];const c1=new THREE.Color("#B9B3B6"),c2=new THREE.Color("#E6E2E4"),c3=new THREE.Color("#FFFFFF"),c=new THREE.Color();
     for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i);const f=x>0?1-.32*x*Math.max(0,y):1;p.setY(i,y*f);const k=(y+1)/2;if(k>.55)c.copy(c2).lerp(c1,(k-.55)/.45);else c.copy(c3).lerp(c2,k/.55);col.push(c.r,c.g,c.b)}
     bodyG.setAttribute("color",new THREE.Float32BufferAttribute(col,3));bodyG.scale(.42,.19,.075);bodyG.translate(.08,0,0);bodyG.computeVertexNormals()}
   const tailG=new THREE.ConeGeometry(.15,.22,4,1);tailG.rotateZ(-Math.PI/2);tailG.scale(1,1,.12);tailG.translate(-.43,0,0);
@@ -252,7 +252,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
   S.scene.add(fBody,fTail,fFin);
   const ghostM=new THREE.MeshBasicMaterial({color:"#F6B7A6",transparent:true,opacity:.35,depthWrite:false});const gBody=S.mesh(bodyG,ghostM,{cast:false}),gTail=S.mesh(tailG,ghostM,{cast:false});S.scene.add(gBody,gTail);
   function fishPut(i,x,y,z,len,rx,ry,rz,grey){eul.set(rx,ry,rz,"YZX");q.setFromEuler(eul);fBody.putS(i,x,y,z,len,len,len,q);fTail.putS(i,x,y,z,len,len,len,q);fFin.putS(i,x,y,z,len,len,len,q);
-    fBody.tint(i,grey?"#D8CDD1":"#ffffff");fTail.tint(i,grey?"#CEC0C5":"#E58A71");fFin.tint(i,grey?"#CEC0C5":"#E58A71")}
+    fBody.tint(i,grey?"#E4DCE0":"#F08A70");fTail.tint(i,grey?"#CEC0C5":"#E58A71");fFin.tint(i,grey?"#CEC0C5":"#E58A71")}
   const fishHide=i=>{fBody.put(i,0,-50,0,.001);fTail.put(i,0,-50,0,.001);fFin.put(i,0,-50,0,.001)};
   for(let i=0;i<NFISH;i++)fishHide(i);
   // ================================================================ cast zone: rock, angler, sea tank, buoys, Rangitoto
@@ -309,7 +309,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
   const effA=S.arrow(PAL.deep.mint,{r:.045}),loadA=S.arrow(PAL.product.strawberry,{r:.045});lz.add(effA,loadA);
   const dimM=mat("plastic",PAL.ink,{rough:.5});const dimL=S.box(1,.02,.02,dimM),dimD=S.box(1,.02,.02,dimM);lz.add(dimL,dimD);
   const ticks=[0,1,2,3].map(()=>{const m=S.box(.02,.14,.02,dimM);lz.add(m);return m});
-  const mPanel=S.panel(560,300,2.3);mPanel.position.set(1.75,2.15,-1.33);lz.add(mPanel);let mKey="";
+  const mPanel=S.panel(560,300,1.62);mPanel.position.set(2.42,2.12,-1.33);lz.add(mPanel);let mKey="";
   S.dragger(frontHand,{normal:V3(0,0,1),move:p=>{const l=lz.worldToLocal(p.clone());s.d=Math.round(S.clamp(l.x-PX,.3,.8)/.05)*.05;s.d=+s.d.toFixed(2)}});
   // ================================================================ float zone: a float tank and a density ladder
   const fz=S.group();fz.position.set(ZF.x,TOP,ZF.z);const FTX=-.7,FTH=2.6,FW=2.1;
@@ -352,7 +352,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
     sz.add(S.box(.014,.012,1.9,pinkM,{at:[x0+.09+30*CM,.066,BZ0+.9],cast:false}))}
   const HB0=15,HBW=.8,HX0=-3.6;const blocks=S.swarm(40,new S.RoundedBoxGeometry(1,1,1,2,.12),mat("plastic","#ffffff",{rough:.4}),{colors:true,cast:true});sz.add(blocks);
   sz.add(S.rbox(7.4,.05,.5,.02,white,{at:[0,.025,-1.55]}));
-  const meanBar=S.box(.04,2.3,.04,mat("glow",PAL.product.lime,1.6),{cast:false}),medBar=S.box(.04,2.3,.04,mat("glow",PAL.product.strawberry,1.6),{cast:false});sz.add(meanBar,medBar);
+  const meanBar=S.box(.04,1.9,.04,mat("glow",PAL.product.lime,1.6),{cast:false}),medBar=S.box(.04,1.9,.04,mat("glow",PAL.product.strawberry,1.6),{cast:false});sz.add(meanBar,medBar);
   const chilly=S.group(sz);chilly.position.set(3.75,0,1.55);chilly.add(S.rbox(.7,.42,.46,.06,mat("plastic",PAL.product.blueberry,{rough:.4}),{at:[0,.21,0]}));chilly.add(S.rbox(.74,.08,.5,.04,white,{at:[0,.46,0]}));
   S.pick(chilly,()=>{const st=S.api.step;if(!(st.controls||[]).includes("catch"))return;s.sample=catchSample();s.catches++;s.view="stats"});
   let sKey="",catchT=-9,lastCatch=s.catches;
@@ -362,16 +362,16 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
   const lL={eff:L({cls:"hot",off:[24,10]}),load:L({cls:"hot",off:[24,10]}),piv:L({off:[-30,46]}),dL:L({off:[0,-24],lead:false}),dD:L({off:[0,-24],lead:false}),drag:L({off:[30,-34]})};
   const fL={sub:L({cls:"big",off:[60,40]}),up:L({off:[24,-10]}),w:L({off:[-24,10]}),rho:L({off:[-30,-30]}),lad:LAD.map((x,i)=>L({off:[0,i%2?34:-34],lead:false}))};
   const liL={real:L({cls:"big",off:[30,10]}),app:L({off:[30,-16]}),eye:L({off:[-24,-26]}),nor:L({off:[16,-30]}),ang:L({off:[-30,16]})};
-  const sL={mean:L({cls:"hot",off:[-20,-24]}),med:L({cls:"hot",off:[20,-24]}),keep:L({off:[0,-30]}),chilly:L({off:[-20,-30]}),min:L({off:[10,30],lead:false})};
+  const sL={mean:L({cls:"hot",off:[-20,-24]}),med:L({cls:"hot",off:[20,-24]}),keep:L({off:[-10,-34]}),chilly:L({off:[-20,-30]}),min:L({off:[10,30],lead:false})};
   const zoneLabels={cast:[cL.dist,cL.sink,cL.ang,cL.g,...cL.marks],lever:Object.values(lL),float:[fL.sub,fL.up,fL.w,fL.rho,...fL.lad],light:Object.values(liL),stats:Object.values(sL)};
   // ================================================================ views
   S.view("cast",[6.4,4.6,15.6],[5.6,2.0,0],{min:3,max:30});
   S.view("lever",[ZL.x+.9,2.8,ZL.z+7.2],[ZL.x+.35,1.5,ZL.z],{min:3,max:20});
   S.view("float",[ZF.x+.5,2.9,ZF.z+7.8],[ZF.x+.3,1.45,ZF.z],{min:3,max:20});
   S.view("light",[ZLi.x+.2,3.4,ZLi.z+9.6],[ZLi.x-.2,2.25,ZLi.z],{min:3,max:20});
-  S.view("stats",[ZS.x+.2,5.4,ZS.z+6.3],[ZS.x,.55,ZS.z-.2],{min:3,max:20});
-  S.view("all",[9.5,16,30],[9.5,.6,-2.6],{min:6,max:60});
-  const shadowOf={cast:[9,[6,0,0]],lever:[4.5,[ZL.x,0,ZL.z]],float:[4,[ZF.x,0,ZF.z]],light:[4.5,[ZLi.x,0,ZLi.z]],stats:[5.5,[ZS.x,0,ZS.z]],all:[22,[9.5,0,-3]]};
+  S.view("stats",[ZS.x+.2,6.0,ZS.z+7.4],[ZS.x,.45,ZS.z-.1],{min:3,max:20});
+  S.view("all",[8.8,11.5,37],[8.8,1.3,-4.2],{min:6,max:60});
+  const shadowOf={cast:[9,[6,0,0]],lever:[4.5,[ZL.x,0,ZL.z]],float:[4,[ZF.x,0,ZF.z]],light:[4.5,[ZLi.x,0,ZLi.z]],stats:[5.5,[ZS.x,0,ZS.z]],all:[24,[8.8,0,-4]]};
   let zone="all",testView=null;S.goView("all",true);
   const setZone=(z,labelsZ)=>{zone=z;S.goView(z);S.setShadowBox(...shadowOf[z]);for(const k in zoneLabels)zoneLabels[k].forEach(l=>l.show(k===labelsZ))};
   return {
@@ -409,7 +409,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
       const tipL=V3(PX+Lr*Math.cos(rock_),PY+Lr*Math.sin(rock_),0),handP=V3(PX+d*Math.cos(rock_),PY+d*Math.sin(rock_)-.11,0);frontHand.position.copy(handP);
       const flen=S.clamp(.38+s.m*.075,.4,1.0),fishTop=tipL.y-.42;lline.scale.y=.42-.0;lline.position.set(tipL.x,tipL.y-.21,0);
       fishPut(20,ZL.x+tipL.x,TOP+fishTop-flen/2,ZL.z,flen,0,0,Math.PI/2+Math.sin(t*1.3)*.04);
-      const fs=1/60;effA.set(V3(handP.x,handP.y-.08-Math.min(3.2,Math.max(.35,Fe*fs)),0),V3(0,1,0),Math.min(3.2,Math.max(.35,Fe*fs)));loadA.set(V3(tipL.x+.18,fishTop-.1,0),V3(0,-1,0),Math.max(.32,Wn*fs));
+      const fs=1/60;effA.set(V3(handP.x,handP.y-.08-Math.min(3.2,Math.max(.35,Fe*fs)),0),V3(0,1,0),Math.min(3.2,Math.max(.35,Fe*fs)));loadA.set(V3(tipL.x+.36,fishTop-.1,0),V3(0,-1,0),Math.max(.32,Wn*fs));
       dimL.scale.x=Lr;dimL.position.set(PX+Lr/2,PY+.8,0);dimD.scale.x=d;dimD.position.set(PX+d/2,PY+.5,0);
       ticks[0].position.set(PX,PY+.8,0);ticks[1].position.set(PX+Lr,PY+.8,0);ticks[2].position.set(PX,PY+.5,0);ticks[3].position.set(PX+d,PY+.5,0);
       const mk=[Lr,d,s.m].join("|");if(mk!==mKey){mKey=mk;mPanel.redraw((g,w,h)=>{g.fillStyle="#ffffff";g.beginPath();g.roundRect(0,0,w,h,24);g.fill();g.strokeStyle="#DCD6EA";g.lineWidth=3;g.stroke();
@@ -417,7 +417,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
         const M=Wn*Lr,bar=(y,lab,val,c)=>{g.fillStyle="#222A55";g.font="600 22px Instrument Sans, system-ui";g.fillText(lab,26,y);g.fillStyle=c;g.beginPath();g.roundRect(26,y+10,w-52,30,15);g.fill();g.fillStyle="#fff";g.font="700 22px IBM Plex Mono, monospace";g.fillText(val,40,y+33)};
         bar(84,"Turning down: fish",`${fmt(Wn,1)} N × ${fmt(Lr,1)} m = ${fmt(M,1)} N m`,PAL.product.strawberry);bar(170,"Turning up: your front hand",`${fmt(Fe)} N × ${fmt(d,2)} m = ${fmt(Fe*d,1)} N m`,PAL.deep.mint);
         g.fillStyle="#222A55";g.font="600 22px Instrument Sans, system-ui";g.fillText(`Tip moves ×${fmt(tipRatio(),1)} further than your hand`,26,h-30)})}
-      const lw=lz.position;lL.eff.at(tmp.set(lw.x+handP.x,lw.y+handP.y-.6,0+lw.z)).set(`Effort<b>${fmt(Fe)} N</b>`);lL.load.at(tmp.set(lw.x+tipL.x+.18,lw.y+fishTop-.4,lw.z)).set(`Load<b>${fmt(Wn,1)} N</b><small>${fmt(s.m,1)} kg fish</small>`);
+      const lw=lz.position;lL.eff.at(tmp.set(lw.x+handP.x,lw.y+handP.y-.6,0+lw.z)).set(`Effort<b>${fmt(Fe)} N</b>`);lL.load.at(tmp.set(lw.x+tipL.x+.36,lw.y+fishTop-.4,lw.z)).set(`Load<b>${fmt(Wn,1)} N</b><small>${fmt(s.m,1)} kg fish</small>`);
       lL.piv.at(tmp.set(lw.x+PX,lw.y+PY-.45,lw.z)).set("Pivot<small>back hand</small>");lL.dL.at(tmp.set(lw.x+PX+Lr/2,lw.y+PY+.8,lw.z)).set(`L = ${fmt(Lr,1)} m`);lL.dD.at(tmp.set(lw.x+PX+d/2-.15,lw.y+PY+.5,lw.z)).set(`d = ${fmt(d,2)} m`);
       lL.drag.at(tmp.set(lw.x+handP.x,lw.y+handP.y,lw.z+.12)).set("Drag your hand");
       // ---- float
@@ -428,9 +428,9 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
       for(let i=0;i<40;i++){const b=bub[i];b.y+=b.v*dt;if(b.y>FW-.02)b.y=0;bubbles.put(i,b.x,b.y,b.z,b.r)}bubbles.done();
       cubes.forEach((m,i)=>{m.position.y=m.userData.base+(m.userData.r<1.025?Math.sin(t*1.8+i)*.012:0)});
       for(let i=0;i<2;i++){const u=t*.35+i*Math.PI;fishPut(21+i,ZF.x+FTX+Math.cos(u)*.7,TOP+.45+i*.35,ZF.z+Math.sin(u)*.35,.42,0,-u-Math.PI/2*(1)+Math.PI,Math.sin(t*4+i)*.05)}
-      const fw=fz.position;fL.sub.at(tmp.set(fw.x+FTX+.14,fw.y+Math.min(FW,fy+FH*.5),fw.z)).set(ok?`${fmt(frac*100)}% under water<small>float + ${s.sink} g lead</small>`:"Too heavy<small>the rig sinks</small>");
+      const fw=fz.position;fL.sub.hide();
       fL.up.show(live==="float").at(tmp.set(fw.x+FTX+.36,fw.y+fy+FH*.45+up*ks,fw.z)).set(`Upthrust<b>${fmt(up*G/1000,2)} N</b>`);fL.w.show(live==="float").at(tmp.set(fw.x+FTX-.36,fw.y+fy+FH*.45-gm*ks,fw.z)).set(`Weight<b>${fmt(gm*G/1000,2)} N</b>`);
-      fL.rho.at(tmp.set(fw.x+FTX-.9,fw.y+FW,fw.z)).set(`Rig density<b>${fmt(avgRho(),3)} g/cm³</b><small>sea water 1.025</small>`);
+      fL.rho.at(tmp.set(fw.x+FTX-.9,fw.y+FW,fw.z)).set(`Rig density<b>${fmt(avgRho(),3)} g/cm³</b><small>${ok?fmt(frac*100)+"% of the float under water":"denser than sea water (1.025): it sinks"}</small>`);
       cubes.forEach((m,i)=>fL.lad[i].at(tmp.set(fw.x+m.position.x,fw.y+m.position.y,fw.z+m.position.z)).set(`${LAD[i][0]}<small>${LAD[i][1]}</small>`));
       // ---- light: the ray from the fish bends at the surface to reach your eye; your brain traces it back in a straight line
       const RP=refractPath(),D=s.depth,Fp=V3(FX,LWY-D*LS,0),Pp=V3(FX+RP.px*LS,LWY,0),Ep=V3(FX-s.eye*LS,LWY+1.6*LS,0),Ap=V3(FX,LWY-RP.app*LS,0);
@@ -454,10 +454,10 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
       s.sample.forEach((Lc,i)=>{const c=Math.floor(i/5),r=i%5,x0=BX0+c*(BWD+.12)+.09,keep=Lc>=MIN_SIZE,len=Lc*CM;const delay=S.clamp(fl*1.6-i*.03,0,1);const hop=(1-delay)*1.2+Math.abs(Math.sin(delay*Math.PI*2))*(1-delay)*.25;
         fishPut(i,ZS.x+x0+len/2,TOP+.09+hop,ZS.z+BZ0+.12+r*.38,len,-Math.PI/2,0,0,!keep)});
       const sk2=s.sample.join(",");if(sk2!==sKey){sKey=sk2;const cnt={};let bi=0;Sx.a.forEach(v=>{const b=Math.floor(v/5)*5;const n=cnt[b]=(cnt[b]||0);cnt[b]++;
-          blocks.putS(bi,HX0+(b-HB0+2.5)/5*HBW,.05+.17+n*.34,-1.55,HBW*.82,.3,.36);blocks.tint(bi++,b>=MIN_SIZE?"#EE8D72":"#D8CDD1")});for(;bi<40;bi++)blocks.put(bi,0,-50,0,.001);blocks.done()}
-      const hx=v=>HX0+(v-HB0)/5*HBW;meanBar.position.set(hx(Sx.mean),1.2,-1.32);medBar.position.set(hx(Sx.med),1.2,-1.32);
-      const zp=sz.position;sL.mean.at(tmp.set(zp.x+hx(Sx.mean),zp.y+2.3,zp.z-1.32)).set(`Mean<b>${fmt(Sx.mean,1)} cm</b>`);sL.med.at(tmp.set(zp.x+hx(Sx.med),zp.y+2.3,zp.z-1.32)).set(`Median<b>${fmt(Sx.med,1)} cm</b>`);
-      sL.keep.at(tmp.set(zp.x-2.6,zp.y+.1,zp.z+BZ0+1.95)).set(`Catch ${s.catches}<small>${Sx.keep} of 20 at ${MIN_SIZE} cm or more</small>`);sL.chilly.at(tmp.set(zp.x+3.75,zp.y+.5,zp.z+1.55)).set("Tap: catch another 20");
+          blocks.putS(bi,HX0+(b-HB0+2.5)/5*HBW,.05+.12+n*.25,-1.55,HBW*.82,.22,.36);blocks.tint(bi++,b>=MIN_SIZE?"#EE8D72":"#D8CDD1")});for(;bi<40;bi++)blocks.put(bi,0,-50,0,.001);blocks.done()}
+      const hx=v=>HX0+(v-HB0)/5*HBW;meanBar.position.set(hx(Sx.mean),1.0,-1.32);medBar.position.set(hx(Sx.med),1.0,-1.32);
+      const zp=sz.position;sL.mean.at(tmp.set(zp.x+hx(Sx.mean),zp.y+1.95,zp.z-1.32)).set(`Mean<b>${fmt(Sx.mean,1)} cm</b>`);sL.med.at(tmp.set(zp.x+hx(Sx.med),zp.y+1.95,zp.z-1.32)).set(`Median<b>${fmt(Sx.med,1)} cm</b>`);
+      sL.keep.at(tmp.set(zp.x+BX0,zp.y+.1,zp.z+BZ0-.1)).set(`Catch ${s.catches}<small>${Sx.keep} of 20 at ${MIN_SIZE} cm or more</small>`);sL.chilly.at(tmp.set(zp.x+3.75,zp.y+.5,zp.z+1.55)).set("Tap: catch another 20");
       sL.min.at(tmp.set(zp.x+BX0+.09+30*CM,zp.y+.07,zp.z+BZ0+1.85)).set("30 cm");
       fBody.done();fTail.done();fFin.done();
     }};
