@@ -155,7 +155,7 @@ Object.entries({"start": ["kauwhata", "haukotinga"], "rate": ["rōnaki", "pānga
 // ---------- the 3D bench: two real tanks on a lavender plinth with a frosted graph board, and a scooter road behind
 function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const TOP=.3;
   const plinth=(x,z,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(x,.15,z);S.scene.add(p);return p};
-  const ZS=-14;plinth(.6,0,13.4,5.4,P.case.lavender);plinth(.4,ZS,13.8,6.6,P.case.sky);
+  const ZS=-2,SX=-19;plinth(.6,0,13.4,5.4,P.case.lavender);plinth(SX+.4,ZS,13.8,6.6,P.case.sky);
   const UP=V3(0,1,0),cylGeo=new THREE.CylinderGeometry(1,1,1,16),boxGeo=new THREE.BoxGeometry(1,1,1);
   // a straight segment between two points: a cylinder stretched and turned (a line on the board is exactly this)
   const seg=(m,a,b,r)=>{const d=b.clone().sub(a),L=d.length();if(L<1e-4){m.visible=false;return}m.visible=true;m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(UP,d.divideScalar(L));m.scale.set(r,L,r)};
@@ -183,13 +183,13 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
     return B}
   // a series on a board: ghost line, glowing drawn-so-far tube, live bead, and two grab handles (start and slope)
   function series(B,col,deep){const o={};
-    o.ghost=S.mesh(cylGeo,mat("flat",deep,{opacity:.35}),{cast:false});o.line=S.mesh(cylGeo,mat("glow",col,.55),{cast:false});
+    o.ghost=S.mesh(cylGeo,mat("flat",deep,{opacity:.35}),{cast:false});o.line=S.mesh(cylGeo,mat("glow",deep,.7),{cast:false});
     o.bead=S.sphere(.11,mat("glow",col,.9));o.h0=S.sphere(.12,mat("plastic","#ffffff",{rough:.3}));o.h1=S.sphere(.12,mat("plastic","#ffffff",{rough:.3}));
     for(const h of [o.h0,o.h1]){h.add(S.torus(.13,.035,mat("plastic",col,{rough:.3}),{cast:false}));h.add(S.mesh(new THREE.SphereGeometry(.34,10,8),hitM,{cast:false}))}
     B.g.add(o.ghost,o.line,o.bead,o.h0,o.h1);
     o.set=(m,c,t,showH)=>{const full=clipT(m,c,B.max,0,TMAX),done=clipT(m,c,B.max,0,t);
       if(full)seg(o.ghost,B.at(full[0],m*full[0]+c),B.at(full[1],m*full[1]+c),.02);else o.ghost.visible=false;
-      if(done&&t>0)seg(o.line,B.at(done[0],m*done[0]+c),B.at(done[1],m*done[1]+c),.05);else o.line.visible=false;
+      if(done&&t>0)seg(o.line,B.at(done[0],m*done[0]+c),B.at(done[1],m*done[1]+c),.065);else o.line.visible=false;
       const v=m*t+c;o.bead.visible=v>=0&&v<=B.max;o.bead.position.copy(B.at(t,S.clamp(v,0,B.max)));
       o.h0.visible=showH&&c>=0&&c<=B.max;o.h0.position.copy(B.at(0,S.clamp(c,0,B.max)));
       const v10=m*10+c;o.h1.visible=showH&&v10>=0&&v10<=B.max;o.h1.position.copy(B.at(10,S.clamp(v10,0,B.max)))};
@@ -223,7 +223,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   // ring marks drawn round a tank at a level (50 L line, meeting level)
   const ringAt=(col,w)=>{const g=S.group();const m=mat("glow",col,1.1);
     for(const [sx,sz,rx,rz] of [[0,1,w,.04],[0,-1,w,.04],[1,0,.04,w],[-1,0,.04,w]])g.add(S.box(rx,.035,rz,m,{at:[sx*w/2,0,sz*w/2],cast:false}));return g};
-  const ring50=ringAt(P.product.butter,TW+.08),ringMeetA=ringAt("#ffffff",TW+.08),ringMeetB=ringAt("#ffffff",TW+.08);
+  const ring50=ringAt(P.product.butter,TW+.08),ringMeetA=ringAt(P.deep.lavender,TW+.08),ringMeetB=ringAt(P.deep.lavender,TW+.08);
   const tb=board(3.25,TOP+.55+2.15,-.6,6,4.3);tb.draw(100,20,"WATER (L)","TIME (MINUTES)");
   const serA=series(tb,COL.A,DEEPC.A),serB=series(tb,COL.B,DEEPC.B);
   const setC=k=>q=>{S.api.state["c"+k]=S.clamp(Math.round(q.v/5)*5,0,100)};
@@ -246,7 +246,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
     lMeet=S.label({off:[20,-30]}),lEmpty=S.label({off:[20,-34]}),l50=S.label({off:[-20,-24]}),lBand=S.label({off:[0,32],cls:"hot"}),lDrag=S.label({off:[22,22],cls:"hot"}).set("Drag to tilt"),lStair=S.label({off:[26,24]});
 
   // ---------------------------------------------------------------- scooter road: two helmeted riders, minute posts, coins for every 10 cents
-  const R0=-5.6,RL=6.4,rx=t=>R0+t/TMAX*RL,LZ={A:ZS+1.5,B:ZS+.55};
+  const R0=SX-5.6,RL=6.4,rx=t=>R0+t/TMAX*RL,LZ={A:ZS+1.5,B:ZS+.55};
   S.scene.add(S.rbox(RL+1.2,.06,2.1,.03,mat("plastic","#E9E6F0",{rough:.8,coat:0}),{at:[R0+RL/2,TOP+.03,ZS+1.02]}));
   {const dashes=S.swarm(20,boxGeo,mat("plastic","#ffffff",{rough:.6}));for(let i=0;i<20;i++)dashes.putS(i,R0+.16+i*RL/20,TOP+.065,ZS+1.02,.18,.01,.04);dashes.done();S.scene.add(dashes);
     const posts=S.swarm(21,new S.RoundedBoxGeometry(1,1,1,2,.3),mat("plastic","#ffffff",{rough:.4}),{colors:true,cast:true});
@@ -266,7 +266,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   coins.A.castShadow=coins.B.castShadow=true;S.scene.add(coins.A,coins.B);const CZ={A:ZS+2.75,B:ZS-.45};
   const gate=S.group();for(const z of [ZS+.05,ZS+2])gate.add(S.cyl(.04,.04,1.6,mat("glow",P.product.butter,1.3),{at:[0,TOP+.8,z],seg:12,cast:false}));
   gate.add(S.cyl(.04,.04,1.95,mat("glow",P.product.butter,1.3),{at:[0,TOP+1.6,ZS+1.02],rot:[Math.PI/2,0,0],seg:12,cast:false}));S.scene.add(gate);
-  const sb=board(3.45,TOP+.55+2.0,ZS-.9,5.6,4);sb.draw(15,5,"COST ($)","MINUTES RIDDEN");
+  const sb=board(SX+3.45,TOP+.55+2.0,ZS-.9,5.6,4);sb.draw(15,5,"COST ($)","MINUTES RIDDEN");
   const scA=series(sb,COL.A,DEEPC.A),scB=series(sb,COL.B,DEEPC.B);
   const mkS=S.torus(.2,.035,mat("plastic",P.ink,{rough:.3}),{cast:false});sb.g.add(mkS);
   grab(sb,scA.h0,q=>{S.api.state.feeA=S.clamp(Math.round(q.v*2)/2,0,3)});grab(sb,scB.h0,q=>{S.api.state.feeB=S.clamp(Math.round(q.v*2)/2,0,3)});
@@ -277,13 +277,13 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   S.view("tank",[1.4,4.2,12.6],[.9,2.35,0],{min:4,max:28});
   S.view("rule",[-.6,4.0,12.2],[-.3,2.3,0],{min:4,max:28});
   S.view("two",[1.0,4.3,12.8],[.6,2.35,0],{min:4,max:28});
-  S.view("scooter",[.2,4.6,ZS+11.2],[.1,1.5,ZS+.2],{min:4,max:28});
-  S.view("all",[3,13.5,15.5],[.4,1.4,-6.5],{min:6,max:50});
+  S.view("scooter",[SX+.2,4.6,ZS+11.2],[SX+.1,1.5,ZS+.2],{min:4,max:28});
+  S.view("all",[-9,12,19],[-9,1.4,-1],{min:6,max:60});
   const tankL=[TA.lab,TBk.lab,lRule,lRuleB,lNow,lStart,lRun,lRise,lMeet,lEmpty,l50,lBand,lDrag,lStair],scL=[lCA,lCB,lCoinA,lGate,lSRule,lSMeet];
   let K="start";S.goView("tank",true);const tmp=V3(0,0,0),wp=(B,v)=>B.g.localToWorld(v.clone());
   return {
     step(st,s){K=st.k;const v=K==="scooter"?"scooter":K==="test"?"all":K==="rule"?"rule":K==="meet"?"two":"tank";S.goView(v);
-      S.setShadowBox(v==="all"?16:7.5,v==="scooter"?[0,0,ZS]:v==="all"?[0,0,-7]:[.6,0,0]);
+      S.setShadowBox(v==="all"?20:7.5,v==="scooter"?[SX,0,ZS]:v==="all"?[-9,0,-1]:[.6,0,0]);
       [...tankL,...scL].forEach(l=>l.hide())},
     update(s,st,dt,t){const k=st.k,both=s.B,run=s.playing&&st.speed;
       // ---- tanks
@@ -299,8 +299,8 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
       ring50.visible=k==="ineq"||s.shade;ring50.position.set(TA.x,Ly(50),0);
       // ---- tank board
       const showH=k!=="test"&&k!=="scooter";serA.set(s.mA,s.cA,s.t,showH);[serB.ghost,serB.line,serB.bead,serB.h0,serB.h1].forEach(o=>o.visible=false);if(both)serB.set(s.mB,s.cB,s.t,showH);
-      lRule.show(k!=="scooter").at(wp(tb,V3(-tb.W/2+1.2,tb.H/2,0))).set(`<b>${rule(s.mA,s.cA,"t",both?"A":"L")}</b>`);
-      lRuleB.show(both&&k!=="scooter").at(wp(tb,V3(tb.W/2-1.4,tb.H/2,0))).set(`<b>${rule(s.mB,s.cB,"t","B")}</b>`);lRuleB.el.style.setProperty("--acc",COL.B);
+      lRule.show(k!=="scooter").at(wp(tb,V3(-tb.W/2+1.2,tb.H/2,0))).set(`<b>${rule(s.mA,s.cA,"t",both?"A":"L")}</b>`);lRule.el.style.setProperty("--acc",DEEPC.A);
+      lRuleB.show(both&&k!=="scooter").at(wp(tb,V3(tb.W/2-1.4,tb.H/2,0))).set(`<b>${rule(s.mB,s.cB,"t","B")}</b>`);lRuleB.el.style.setProperty("--acc",DEEPC.B);
       lNow.show(k!=="scooter"&&k!=="test"&&serA.bead.visible).at(wp(tb,serA.bead.position)).set(`${fmtN(Math.round(s.t*10)/10)} min<b>${fmtN(Math.round(lev(s.mA,s.cA,s.t)*10)/10)} L</b>`);
       const sStart=k==="start"||k==="rule";mkStart.visible=sStart;mkStart.position.copy(tb.at(0,S.clamp(s.cA,0,100)));lStart.show(sStart).at(wp(tb,mkStart.position)).set(`starts at <b>${fmtN(s.cA)} L</b>`);
       lDrag.show((k==="start"||k==="rate")&&serA.h1.visible).at(wp(tb,serA.h1.position));
@@ -330,7 +330,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
         for(let i=0;i<240;i++){const tw=Math.floor(i/10),j=i%10;if(i<nF+nM){cs.put(i,R0+.1+tw*.27,TOP+.02+j*.03,CZ[key],1,0,(i*.7)%3,0);cs.tint(i,i<nF?P.product.butter:"#DCE3EC")}else cs.put(i,0,-5,0,.0001)}cs.done()}
       const XS=meet(s.rateA,s.feeA,s.rateB,s.feeB),xs=XS&&XS.t>0&&XS.t<=TMAX;gate.visible=!!xs;if(xs)gate.position.x=rx(XS.t);
       scA.set(s.rateA,s.feeA,tt,k==="scooter");scB.set(s.rateB,s.feeB,tt,k==="scooter");const xsOk=xs&&XS.y<=15;mkS.visible=!!xsOk;if(xsOk)mkS.position.copy(sb.at(XS.t,XS.y));
-      lCA.show(sc).at(tmp.set(rx(tt),TOP+1.3,LZ.A)).set(`A<b>$${(s.feeA+s.rateA*tt).toFixed(2)}</b>`);lCB.show(sc).at(tmp.set(rx(tt),TOP+1.3,LZ.B)).set(`B<b>$${(s.feeB+s.rateB*tt).toFixed(2)}</b>`);lCB.el.style.setProperty("--acc",COL.B);
+      lCA.show(sc).at(tmp.set(rx(tt),TOP+1.3,LZ.A)).set(`A<b>$${(s.feeA+s.rateA*tt).toFixed(2)}</b>`);lCB.show(sc).at(tmp.set(rx(tt),TOP+1.3,LZ.B)).set(`B<b>$${(s.feeB+s.rateB*tt).toFixed(2)}</b>`);lCB.el.style.setProperty("--acc",DEEPC.B);
       lCoinA.show(k==="scooter").at(tmp.set(R0+.1,TOP+.3,CZ.A)).set(`gold = unlock fee<small>silver = 10c of riding each</small>`);
       lGate.show(k==="scooter"&&!!xs).at(tmp.set(xs?rx(XS.t):0,TOP+1.6,ZS+1.02)).set(xs?`same price at ${fmtN(Math.round(XS.t*10)/10)} min`:"");
       lSRule.show(k==="scooter").at(wp(sb,V3(-sb.W/2+1.6,sb.H/2,0))).set(`<b>${rule(s.rateA,s.feeA,"t","A")}</b><small>${rule(s.rateB,s.feeB,"t","B")}</small>`);
