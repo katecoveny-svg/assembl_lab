@@ -176,7 +176,7 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   // ---------------------------------------------------------------- transect tape, quadrats, the surveyor and height poles
   const tape=S.tube(Array.from({length:21},(_,i)=>[X(i*2),SF(i*2)+.06,-.0]),.02,mat("plastic",PAL.product.butter,{rough:.35}),{seg:120,cast:false});S.scene.add(tape);
   for(const d of [0,40])S.scene.add(S.cyl(.04,.04,.6,mat("metal"),{at:[X(d),SF(d)+.25,0],seg:10}));
-  const quads=D.map((d,i)=>{const m=mat("plastic","#ffffff",{rough:.4,fresh:true});const q=S.mesh(new THREE.TorusGeometry(.42,.04,6,4),m,{cast:true});q.rotation.set(Math.PI/2,0,Math.PI/4);
+  const quads=D.map((d,i)=>{const m=mat("plastic","#ffffff",{rough:.4,fresh:true});m.emissive=new THREE.Color(0);const q=S.mesh(new THREE.TorusGeometry(.42,.05,6,4),m,{cast:true});q.rotation.set(Math.PI/2,0,Math.PI/4);
     q.position.set(X(d),SF(d)+.05,.55);S.scene.add(q);
     const pole=S.group();pole.position.set(X(d)+.36,SF(d),.9);S.scene.add(pole);const ph=HEIGHT[i]*.032;
     if(ph>0){pole.add(S.cyl(.025,.025,ph,mat("plastic","#ffffff"),{at:[0,ph/2,0],seg:8}));pole.add(S.sphere(.06,mat("plastic",PAL.product.strawberry),{at:[0,ph,0],seg:12}))}
@@ -232,7 +232,7 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   const lLv=blocks.map((b,i)=>S.label({off:[i%2?-36:36,0]}));const lHeat=S.label({off:[-36,34]}).set("Lost as heat<small>respiration, movement</small>");
   // ---------------------------------------------------------------- views
   S.view("habitat",[-.4,8.4,19.5],[0,1.0,0],{min:5,max:34});
-  S.view("transect",[-6.6,5.6,11],[-7,1.4,0],{min:3,max:24});
+  S.view("transect",[-.8,7.6,15.8],[-.6,1.1,0],{min:3,max:30});
   S.view("soil",[-4.2,2.4,11.2],[-3.6,1.2,1.4],{min:3,max:24});
   S.view("factors",[0,8.2,18.6],[0,1.2,0],{min:5,max:34});
   S.view("chain",[-1.2,7.2,13.6],[-1.6,1.3,-.2],{min:4,max:28});
@@ -247,7 +247,7 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
   return {
     step(st){K=st.k;const v=st.k==="test"?"all":st.k;S.goView(v);
       if(v==="pyramid")S.setShadowBox(5,[ZP.x,0,0]);else if(v==="all")S.setShadowBox(16,[5,0,0]);else S.setShadowBox(10.5,[0,0,0]);
-      S.setFollow(st.k==="transect"?walkPos:null,.04);all.forEach(l=>l.hide());(show[st.k]||[]).forEach(l=>l.show())},
+      S.setFollow(null);all.forEach(l=>l.hide());(show[st.k]||[]).forEach(l=>l.show())},
     update(s,st,dt,t){const k=st.k,P=pops();const R=S.REDUCED?0:1;
       // wind in the grass
       blades.forEach((b,i)=>{const w=Math.sin(t*1.6+b.x*.8+b.ph*.3)*.12*R;grass.putS(i,b.x,b.y,b.z,1,b.h,1,new THREE.Quaternion().setFromEuler(new THREE.Euler(b.ax+w*.4,0,b.az+w)))});grass.done();

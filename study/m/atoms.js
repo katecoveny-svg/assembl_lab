@@ -120,7 +120,7 @@ const KUPU=[
  {mi:"tau karihi",en:"mass number",ta:40329,chip:"mass"}];
 Object.entries({"build": ["ngota", "karihi", "iraoho", "iramoe", "irahiko"], "numbers": ["tau iraoho", "tau karihi", "pūmotu"], "shells": ["irahiko"], "isotopes": ["iramoe"], "foil": ["karihi", "ngota"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 // ---------- the 3D bench: an atom you build with your hands, and Rutherford's gold foil experiment
-function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const ZA=V3(0,0,0),ZF=V3(15,0,0),TOP=.3;
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
   plinth(ZA,10.6,6.8,PAL.case.sky);plinth(V3(ZF.x-.5,0,0),9.8,7.8,PAL.case.lavender);
@@ -265,7 +265,7 @@ function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   const lSrc=S.label({off:[-30,-40]}).set("Alpha source<small>fires positive alpha particles</small>");
   const lFoil=S.label({off:[20,-50]}).set("Thin gold foil");
   const lDet=S.label({off:[30,-30]}).set("Detector screen<small>flashes where an alpha lands</small>");
-  const lStraight=S.label({off:[24,30]}),lBack=S.label({cls:"hot",off:[-30,40]});
+  const lStraight=S.label({off:[24,30]}),lBack=S.label({cls:"hot",off:[-40,-30]});
   const lScale=S.label({off:[0,30],lead:false}).set("<small>Zoomed view not to scale: an atom is about 100,000 times wider than its nucleus</small>");
 
   // ---------------------------------------------------------------- views
@@ -406,7 +406,7 @@ function atoms3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
             g.fillStyle="#EEEAF6";g.beginPath();g.roundRect(24,y+30,w-48,18,9);g.fill();g.fillStyle=col;g.beginPath();g.roundRect(24,y+30,Math.max(18,(w-48)*f),18,9);g.fill()})})}
       lSrc.at(tmp.set(FC.x+src.position.x,FC.y+.5,0));lFoil.at(tmp.set(FC.x,FC.y+.55,-.5));lDet.at(tmp.set(FC.x+R*Math.cos(-.9),FC.y+.95,R*Math.sin(-.9)));
       lStraight.at(tmp.set(FC.x+R,FC.y-.3,0)).set(`Straight through<b>${tot?(h.straight/tot*100).toFixed(1):"0"}%</b>`);
-      lBack.at(tmp.set(FC.x-R*.97,FC.y-.6,R*.24)).set(`Bounced back<b>${h.back} of ${tot}</b>`);
+      lBack.at(tmp.set(FC.x-R*.9,FC.y+.5,-R*.4)).set(`Bounced back<b>${h.back} of ${tot}</b>`);
       lScale.at(tmp.set(FC.x,TOP,R+.4));
     }};
 }

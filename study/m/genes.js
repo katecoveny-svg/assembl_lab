@@ -142,7 +142,7 @@ const KUPU=[
  {mi:"rauropi",en:"organism",ta:38797}];
 Object.entries({"cross": ["ira", "pūira", "mātai iranga"], "pool": ["mātāira", "ira", "taupori"], "mutation": ["ira", "pītau ira"], "small": ["taupori", "mātāira"], "survival": ["rauropi"], "migration": ["taupori", "mātāira"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 // ---------- the 3D bench: a Punnett cross with real chicks, an island of birds whose colours are the gene pool, a DNA helix and a gel tank
-function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function genes3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const TOP=.3,ZC=V3(-13.5,0,0),ZI=V3(0,0,0),ZM=V3(8.4,0,-2.6),ZG=V3(17,0,0);
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
   plinth(ZC,8.6,7.2,PAL.case.blush);plinth(ZI,12.4,9.2,PAL.case.mint);plinth(ZM,4.2,4.2,PAL.case.sky);plinth(ZG,7.4,6.2,PAL.case.lavender);
@@ -221,6 +221,7 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   mz.add(S.mesh(new THREE.CylinderGeometry(1.05,1.2,.18,48),mat("plastic","#BFE3A6",{rough:.7,coat:.1}),{at:[0,TOP+.48,0]}));
   const mBirds=flock(12,{parent:mz});const mG=[];{let s0=5;const r=()=>(s0=(s0*16807)%2147483647)/2147483647;for(let i=0;i<12;i++){const a=r()<s.pm?"D":"d",b=r()<s.pm?"D":"d";mG.push(a+b==="DD"?"DD":a+b==="dd"?"dd":"Dd")}}
   const NF=10,fly=flock(NF,{cast:false});const wings=S.swarm(NF*2,new THREE.BoxGeometry(.5,.03,.22),mat("plastic","#2F3A66",{rough:.4}));S.scene.add(wings);
+  const route=S.tube(Array.from({length:24},(_,i)=>{const u=i/23;return [S.lerp(ZM.x,1.6,u),TOP+.8+Math.sin(u*Math.PI)*2.2,S.lerp(ZM.z,-.6,u)]}),.025,mat("flat",PAL.deep.sky,{opacity:.35,depthWrite:false}),{seg:80,cast:false});S.scene.add(route);
   const fl=Array.from({length:NF},()=>({t:1,a:V3(0,0,0),b:V3(0,0,0),g:"DD"}));let flAcc=0;
   // ---------------------------------------------------------------- a DNA double helix that turns; in the mutation step one base pair changes
   const hz=S.group();hz.position.set(-5.05,TOP,3.3);
@@ -259,7 +260,7 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   S.view("survival",[1.0,8.8,11.4],[0,1.6,0],{min:4,max:30});
   S.view("migration",[5.4,8.0,13.4],[3.6,1.1,-1],{min:4,max:30});
   S.view("dna",[ZG.x+.4,6.6,ZG.z+6.4],[ZG.x,.4,ZG.z+.2],{min:3,max:24});
-  S.view("all",[2,15,30],[1.8,1,0],{min:8,max:60});
+  S.view("all",[1.8,11.5,28],[1.8,.8,0],{min:8,max:60});
   const islandL=[lPop,lPool,lMut,lLost,lHawk,lMig,lHome,lGraph],crossL=[lMum,lDad,...lTile,lBrood],gelL=[...lLane,lGel];
   const show={cross:crossL,pool:[lPop,lPool],mutation:[lPop,lPool,lMut],small:[lPop,lPool,lLost],survival:[lPop,lPool,lHawk],migration:[lPop,lPool,lMig,lHome],dna:gelL,test:[lPool]};
   S.goView("pool",true);
@@ -311,11 +312,11 @@ function genes3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
           g.fillStyle=PAL.product.butter;g.strokeStyle="#3E4A7C";g.lineWidth=3;g.beginPath();g.arc(X(s.hist.length-1),Y(s.p),9,0,7);g.fill();g.stroke();
           g.fillStyle="#6E6A86";g.textAlign="center";g.fillText(`GENERATION ${s.gen}`,(X0+X1)/2,h-12)})}
       // migrants
-      const migOn=s.mig>0&&(k==="migration"||k==="test");mz.visible=true;
+      const migOn=s.mig>0&&(k==="migration"||k==="test");mz.visible=true;route.visible=migOn;
       for(let i=0;i<12;i++){const a=i/12*Math.PI*2+i,r=.35+(i%3)*.25;mBirds.put(i,Math.cos(a)*r,TOP+.57,Math.sin(a)*r,.13,mG[i],a+Math.sin(t*.5+i)*.5*R,Math.max(0,Math.sin(t*3+i))*.03*R)}mBirds.done();
       if(migOn&&playing){flAcc+=dt*s.mig*60;while(flAcc>=1){flAcc--;const f=fl.find(q=>q.t>=1);if(!f)break;const a=rnd()*6.28;f.a.set(ZM.x+Math.cos(a)*.6,TOP+.7,ZM.z+Math.sin(a)*.6);spot(Math.floor(rnd()*Math.max(1,n)),Math.max(1,n),f.b);f.b.add(ZI);f.t=0;f.g=mG[Math.floor(rnd()*12)]}}
-      fl.forEach((f,i)=>{if(f.t<1){f.t+=dt*.45;const u=Math.min(1,f.t);tmp.lerpVectors(f.a,f.b,u);tmp.y+=Math.sin(u*Math.PI)*2.2;const yaw=Math.atan2(-(f.b.z-f.a.z),f.b.x-f.a.x);fly.put(i,tmp.x,tmp.y,tmp.z,.13,f.g,yaw);
-          const fl2=Math.sin(t*14+i)*.6;eul.set(fl2,yaw,0);q0.setFromEuler(eul);wings.putS(i*2,tmp.x+Math.sin(yaw)*.14,tmp.y+.2,tmp.z+Math.cos(yaw)*.14,1,1,1,q0);eul.set(-fl2,yaw,0);q0.setFromEuler(eul);wings.putS(i*2+1,tmp.x-Math.sin(yaw)*.14,tmp.y+.2,tmp.z-Math.cos(yaw)*.14,1,1,1,q0)}
+      fl.forEach((f,i)=>{if(!migOn)f.t=1;if(f.t<1){f.t+=dt*.45;const u=Math.min(1,f.t);tmp.lerpVectors(f.a,f.b,u);tmp.y+=Math.sin(u*Math.PI)*2.2;const yaw=Math.atan2(-(f.b.z-f.a.z),f.b.x-f.a.x);fly.put(i,tmp.x,tmp.y,tmp.z,.2,f.g,yaw);
+          const fl2=Math.sin(t*14+i)*.6;eul.set(fl2,yaw,0);q0.setFromEuler(eul);wings.putS(i*2,tmp.x+Math.sin(yaw)*.22,tmp.y+.3,tmp.z+Math.cos(yaw)*.22,1.5,1.5,1.5,q0);eul.set(-fl2,yaw,0);q0.setFromEuler(eul);wings.putS(i*2+1,tmp.x-Math.sin(yaw)*.22,tmp.y+.3,tmp.z-Math.cos(yaw)*.22,1.5,1.5,1.5,q0)}
         else{fly.put(i,0,0,0,0);wings.put(i*2,0,-9,0,.001);wings.put(i*2+1,0,-9,0,.001)}});fly.done();wings.done();
       // helix
       helix.rotation.y+=dt*.5*R;
