@@ -22,58 +22,74 @@ function gel(){let x=s.gelSeed*9301+49297;const r=()=>{x=(x*9301+49297)%233280;r
   const mum=mk(),dads=[mk(),mk(),mk()],real=Math.floor(r()*3);const chick=mum.map((m,i)=>[m[r()<.5?0:1],dads[real][i][r()<.5?0:1]]);
   return{mum,dads,chick,real};}
 let G=gel();
-// ---------- drawing
-const COL={DD:"var(--ink)",Dd:"var(--ink)",dd:"var(--paper)"};
-function bird(x,y,g,r=7){return `<g transform="translate(${x},${y})"><path d="M${-r},0 a${r},${r*0.85} 0 1,0 ${2*r},0 a${r},${r*0.85} 0 1,0 ${-2*r},0" fill="${COL[g]}" stroke="var(--ink)" stroke-width="1"/>${g==="Dd"?`<circle r="${r*0.32}" fill="var(--sun)"/>`:""}<path d="M${r*0.9},${-r*0.3} l${r*0.6},${r*0.2} l${-r*0.6},${r*0.2}z" fill="var(--sun)"/></g>`}
+// ---------- drawing: the bench figure look (StudyKit.fig): birds as painted pebbles in a frosted mint island case
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.mint,DARK="#3E4A7C",PALE="#FBF6EA";
+const BM={DD:F.mat("painted",DARK),Dd:F.mat("painted",DARK),dd:F.mat("painted",PALE)},BEAK=F.mat("painted",PAL.product.peach),DOT=F.mat("painted",PAL.product.butter);
+function bird(x,y,g,r=7,sh=true){const m=BM[g];
+  return `<g transform="translate(${x},${y})">${sh?`<ellipse cx="${r*0.55}" cy="${r*0.8}" rx="${r*1.15}" ry="${r*0.3}" fill="${PAL.shadow}" opacity=".16"/>`:""}<path d="M${-r},0 a${r},${r*0.85} 0 1,0 ${2*r},0 a${r},${r*0.85} 0 1,0 ${-2*r},0" fill="${m.fill}" stroke="${g==="dd"?"#8F9BAA":m.stroke}" stroke-width="1"/><ellipse cx="${-r*0.32}" cy="${-r*0.4}" rx="${r*0.42}" ry="${r*0.2}" fill="${g==="dd"?"#fff":m.hi}" opacity="${g==="dd"?1:.55}"/>${g==="Dd"?`<circle r="${r*0.32}" fill="${DOT.fill}" stroke="${DOT.stroke}" stroke-width=".6"/>`:""}<path d="M${r*0.9},${-r*0.3} l${r*0.6},${r*0.2} l${-r*0.6},${r*0.2}z" fill="${BEAK.fill}" stroke="${BEAK.stroke}" stroke-width=".6"/></g>`}
 function drawMain(st0,st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  let o=F.floor(640,330);
   if(st.k==="cross")return o+drawCross();
   if(st.k==="dna")return o+drawGel();
   const b=s.birds,n=b.length,cols=Math.ceil(Math.sqrt(n*2.2)),rows=Math.ceil(n/cols);
-  const W=600,H=230,cw=W/cols,ch=Math.min(26,H/rows),r=Math.max(3.2,Math.min(n<20?20:9,cw*0.32,ch*0.4));
-  b.forEach((g,i)=>{const c=i%cols,rr=Math.floor(i/cols);o+=bird(26+c*cw+cw/2,52+rr*ch+ch/2,g,r)});
+  // the island: a mint plinth with a frosted acrylic case on it
+  o+=F.box(10,284,606,8,{colour:PAL.mintPlastic,kind:"plastic",d:14,r:3,shadowLen:22});
+  o+=F.acrylic(14,38,598,246,{tint:TINT,d:14,r:12,shadow:false});
+  const W=578,H=230,cw=W/cols,ch=Math.min(26,H/rows),r=Math.max(3.2,Math.min(n<20?20:9,cw*0.32,ch*0.4));
+  b.forEach((g,i)=>{const c=i%cols,rr=Math.floor(i/cols);o+=bird(24+c*cw+cw/2,52+rr*ch+ch/2,g,r,r>=4)});
   const cnt={DD:0,Dd:0,dd:0};b.forEach(g=>cnt[g]++);
   o+=`<text class="t-lab" x="16" y="24">${s.N>200?"200 OF ":""}${s.N} BIRDS · GENERATION ${s.gen}</text><text class="t-ink" x="624" y="24" text-anchor="end">D ${Math.round(s.p*100)}% · d ${Math.round((1-s.p)*100)}%</text>`;
-  o+=`<g class="t-lab">${bird(24,306,"DD",6)}<text x="36" y="310">DD DARK</text>${bird(124,306,"Dd",6)}<text x="136" y="310">Dd DARK, CARRIES PALE</text>${bird(304,306,"dd",6)}<text x="316" y="310">dd PALE</text></g>`;
-  if(st.k==="small")o+=`<text class="t-ink" x="624" y="310" text-anchor="end">${s.p===0||s.p===1?"An allele has been lost for good":""}</text>`;
+  o+=`<g class="t-lab">${bird(24,314,"DD",6,false)}<text x="36" y="318">DD DARK</text>${bird(124,314,"Dd",6,false)}<text x="136" y="318">Dd DARK, CARRIES PALE</text>${bird(304,314,"dd",6,false)}<text x="316" y="318">dd PALE</text></g>`;
+  if(st.k==="small")o+=`<text class="t-ink" x="624" y="318" text-anchor="end">${s.p===0||s.p===1?"An allele has been lost for good":""}</text>`;
   return o;
 }
 function drawCross(){
   let o="";const P=[s.pA,s.pB];
   o+=`<text class="t-lab" x="16" y="24">TWO PARENTS · ${s.kids.length} CHICKS</text>`;
-  o+=bird(150,70,P[0],16)+bird(490,70,P[1],16);
-  o+=`<text class="t-big" x="150" y="108" text-anchor="middle">${P[0]}</text><text class="t-big" x="490" y="108" text-anchor="middle">${P[1]}</text><text class="t-big" x="320" y="76" text-anchor="middle">×</text>`;
-  // punnett
-  const x0=250,y0=126,c=46;o+=`<text class="t-ink" x="${x0-14}" y="${y0+c/2+4}" text-anchor="end">${P[0][0]}</text><text class="t-ink" x="${x0-14}" y="${y0+c*1.5+4}" text-anchor="end">${P[0][1]}</text><text class="t-ink" x="${x0+c/2}" y="${y0-6}" text-anchor="middle">${P[1][0]}</text><text class="t-ink" x="${x0+c*1.5}" y="${y0-6}" text-anchor="middle">${P[1][1]}</text>`;
+  // the parents stand on mint plinths
+  o+=F.box(118,84,64,10,{colour:PAL.mintPlastic,kind:"plastic",d:9,r:3,shadowLen:26})+F.box(458,84,64,10,{colour:PAL.mintPlastic,kind:"plastic",d:9,r:3,shadowLen:26});
+  o+=bird(150,70,P[0],16,false)+bird(490,70,P[1],16,false);
+  o+=`<text class="t-big" x="150" y="116" text-anchor="middle">${P[0]}</text><text class="t-big" x="490" y="116" text-anchor="middle">${P[1]}</text><text class="t-big" x="320" y="76" text-anchor="middle">×</text>`;
+  // punnett: a flat chart on a frosted panel
+  const x0=250,y0=126,c=46;
+  o+=F.acrylic(x0-34,y0-26,c*2+52,c*2+36,{tint:TINT,d:10,r:10,balls:false,shadow:false});
+  o+=`<text class="t-ink" x="${x0-14}" y="${y0+c/2+4}" text-anchor="end">${P[0][0]}</text><text class="t-ink" x="${x0-14}" y="${y0+c*1.5+4}" text-anchor="end">${P[0][1]}</text><text class="t-ink" x="${x0+c/2}" y="${y0-6}" text-anchor="middle">${P[1][0]}</text><text class="t-ink" x="${x0+c*1.5}" y="${y0-6}" text-anchor="middle">${P[1][1]}</text>`;
   for(let i=0;i<2;i++)for(let j=0;j<2;j++){const g=[P[0][i],P[1][j]].sort().join("").replace("dD","Dd");const gg=g==="Dd"||g==="dD"?"Dd":g;
-    o+=`<rect x="${x0+j*c}" y="${y0+i*c}" width="${c}" height="${c}" fill="var(--paper)" stroke="var(--ink)"/><text class="t-ink" x="${x0+j*c+c/2}" y="${y0+i*c+c/2+4}" text-anchor="middle">${gg}</text>`}
-  // kids
-  s.kids.forEach((g,i)=>{o+=bird(60+(i%12)*46,250+Math.floor(i/12)*30,g,9)});
+    o+=`<rect x="${x0+j*c}" y="${y0+i*c}" width="${c}" height="${c}" fill="#fff" stroke="${F.deep(TINT)}"/><text class="t-ink" x="${x0+j*c+c/2}" y="${y0+i*c+c/2+4}" text-anchor="middle">${gg}</text>`}
+  // kids, in a frosted brood tray
+  o+=F.acrylic(30,236,584,68,{tint:TINT,d:12,r:12,shadowLen:30});
+  s.kids.forEach((g,i)=>{o+=bird(60+(i%12)*46,252+Math.floor(i/12)*30,g,9)});
   return o;
 }
 function drawGel(){
   let o=`<text class="t-lab" x="16" y="24">DNA PROFILE: WHICH MALE IS THE CHICK'S FATHER?</text>`;
   const lanes=[["Mother",G.mum],["Chick",G.chick],["Male 1",G.dads[0]],["Male 2",G.dads[1]],["Male 3",G.dads[2]]];
-  const x0=80,lw=96,top=50,bh=240;o+=`<rect x="${x0-20}" y="${top}" width="${lanes.length*lw+10}" height="${bh}" rx="8" fill="var(--paper)" stroke="var(--ink)"/>`;
-  lanes.forEach(([n,m],i)=>{const x=x0+i*lw;o+=`<text class="t-ink" x="${x+30}" y="${top+16}" text-anchor="middle">${n}</text><rect x="${x+8}" y="${top+24}" width="44" height="8" fill="var(--line)"/>`;
-    m.forEach((pair,k)=>pair.forEach(b=>{const y=top+44+k*48+b*7;o+=`<rect x="${x+6}" y="${y}" width="48" height="4" rx="2" fill="${i===1?"var(--hot)":i===0?"var(--earth)":(s.gelPick===i-2?"var(--sun)":"var(--ink)")}"/>`}))});
-  o+=`<text class="t-lab" x="16" y="314">EACH BAND IS ONE ALLELE AT A MARKER. A CHICK GETS ONE FROM EACH PARENT.</text>`;
+  const x0=80,lw=96,top=50,bh=240;
+  // the gel tank: frosted acrylic with a pale gel slab and two electrodes
+  o+=F.acrylic(x0-20,top,lanes.length*lw+10,bh,{tint:TINT,d:14,r:10});
+  o+=`<rect x="${x0-10}" y="${top+22}" width="${lanes.length*lw-10}" height="${bh-30}" rx="6" fill="#F4FBF7" fill-opacity=".85" stroke="${F.deep(TINT)}" stroke-opacity=".5"/>`;
+  o+=F.cyl(x0-4,top-14,5,12,{colour:PAL.product.strawberry,kind:"painted",shadow:false})+F.cyl(x0+lanes.length*lw-24,top-14,5,12,{colour:DARK,kind:"painted",shadow:false});
+  const BC=i=>i===1?PAL.product.strawberry:i===0?PAL.product.blueberry:(s.gelPick===i-2?PAL.product.butter:DARK);
+  lanes.forEach(([n,m],i)=>{const x=x0+i*lw;o+=`<text class="t-ink" x="${x+30}" y="${top+16}" text-anchor="middle">${n}</text><rect x="${x+8}" y="${top+24}" width="44" height="8" rx="2" fill="#CFE3D9" stroke="${F.deep(TINT)}" stroke-width=".8"/>`;
+    m.forEach((pair,k)=>pair.forEach(b=>{const y=top+44+k*48+b*7,c=BC(i);o+=`<rect x="${x+6}" y="${y}" width="48" height="4.4" rx="2" fill="${c}" stroke="${F.mat("painted",c).stroke}" stroke-width=".6"/>`}))});
+  o+=`<text class="t-lab" x="16" y="318">EACH BAND IS ONE ALLELE AT A MARKER. A CHICK GETS ONE FROM EACH PARENT.</text>`;
   return o;
 }
 function drawClose(st0,st){
-  let o=`<rect width="420" height="260" fill="var(--chalk)"/>`;
+  let o=F.floor(420,260);
   if(st.k==="cross"){const c={DD:0,Dd:0,dd:0};s.kids.forEach(g=>c[g]++);const n=s.kids.length||1;
     o+=`<text class="t-lab" x="14" y="22">WHAT THE CHICKS GOT</text>`;
-    ["DD","Dd","dd"].forEach((g,i)=>{const w=c[g]/n*300;o+=`<text class="t-ink" x="14" y="${60+i*36}">${g}</text><rect x="54" y="${48+i*36}" width="300" height="16" fill="var(--paper)" stroke="var(--line)"/><rect x="54" y="${48+i*36}" width="${w}" height="16" fill="${g==="dd"?"var(--rose)":"var(--ink)"}"/><text class="t-ink" x="362" y="${60+i*36}">${c[g]}</text>`});
+    ["DD","Dd","dd"].forEach((g,i)=>{const w=c[g]/n*300,col=g==="dd"?PAL.product.strawberry:g==="Dd"?PAL.product.blueberry:DARK;o+=`<text class="t-ink" x="14" y="${60+i*36}">${g}</text><rect x="54" y="${48+i*36}" width="300" height="16" rx="4" fill="#fff" stroke="#DCD6EA"/><rect x="54" y="${48+i*36}" width="${w}" height="16" rx="4" fill="${col}" stroke="${F.mat("painted",col).stroke}" stroke-width=".8"/><text class="t-ink" x="362" y="${60+i*36}">${c[g]}</text>`});
     const pale=c.dd/n;o+=`<text class="t-body" x="14" y="190">Pale chicks: ${c.dd} of ${s.kids.length} (${Math.round(pale*100)}%).</text><text class="t-body" x="14" y="210">The Punnett square predicts ${expPale()}.</text><text class="t-body" x="14" y="236">Small broods rarely match the prediction exactly: chance.</text>`;return o}
   if(st.k==="dna"){o+=`<text class="t-lab" x="14" y="22">HOW TO READ IT</text>`;
     ["Every band in the chick must come from the mother or the father.","Cross off the chick's bands that match the mother.","The father must have every band that's left.","Tap a male below, then press Check in Test yourself."].forEach((t,i)=>o+=`<text class="t-body" x="14" y="${54+i*26}">${i+1}. ${t}</text>`);
     o+=`<text class="t-ink" x="14" y="200">${s.gelPick>=0?`You picked Male ${s.gelPick+1}.`:"No male picked yet."}</text>`;return o}
   o+=`<text class="t-lab" x="14" y="22">ALLELE FREQUENCY OF D OVER GENERATIONS</text>`;
-  const X=i=>40+i/199*360,Y=p=>210-p*180;o+=`<line x1="40" x2="400" y1="210" y2="210" stroke="var(--rose)"/><line x1="40" x2="40" y1="30" y2="210" stroke="var(--rose)"/>`;
-  [0,.5,1].forEach(p=>o+=`<text class="t-lab" x="34" y="${Y(p)+3.5}" text-anchor="end">${p*100}%</text><line x1="40" x2="400" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--line)"/>`);
-  o+=`<path d="${s.hist.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(p).toFixed(1)).join("")}" fill="none" stroke="var(--ink)" stroke-width="2"/>`;
-  o+=`<circle cx="${X(s.hist.length-1)}" cy="${Y(s.p)}" r="5" fill="var(--sun)" stroke="var(--ink)"/>`;
+  const X=i=>40+i/199*360,Y=p=>210-p*180;
+  [0,.5,1].forEach(p=>o+=`<text class="t-lab" x="34" y="${Y(p)+3.5}" text-anchor="end">${p*100}%</text><line x1="40" x2="400" y1="${Y(p)}" y2="${Y(p)}" stroke="#DCD6EA"/>`);
+  o+=`<line x1="40" x2="400" y1="210" y2="210" stroke="#8F9BAA"/><line x1="40" x2="40" y1="30" y2="210" stroke="#8F9BAA"/>`;
+  o+=`<path d="${s.hist.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(p).toFixed(1)).join("")}" fill="none" stroke="${F.mat("painted",PAL.product.blueberry).stroke}" stroke-width="2.4" stroke-linejoin="round"/>`;
+  o+=`<circle cx="${X(s.hist.length-1)}" cy="${Y(s.p)}" r="5" fill="${PAL.product.butter}" stroke="${DARK}"/>`;
   o+=`<text class="t-lab" x="220" y="230" text-anchor="middle">GENERATIONS (LAST 200)</text>`;
   const why=s.N<=20?"Small population: chance alone swings the frequency.":s.sel>0?"Pale birds survive less, so d falls each generation.":s.mig>0?"Migrants keep bringing D in.":s.mu>0?"Mutation slowly turns d into D.":"Big population, no pressures: the frequency barely moves.";
   o+=`<text class="t-body" x="14" y="250">${why}</text>`;return o;

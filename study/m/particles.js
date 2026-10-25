@@ -51,78 +51,98 @@ function updateGas(dt){const sp=0.9*Math.sqrt((s.gasT+273)/293);
   hitClock+=dt;if(hitClock>1){hitRate=hits/hitClock;hits=0;hitClock=0}}
 const pressure=()=>101.3*(60/s.vol)*((s.gasT+273)/293);
 
-// ---------- drawing
+// ---------- drawing: the bench figure look (StudyKit.fig): frosted sky glassware on a steel hotplate, painted particles
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.sky,GD=F.deep(TINT),AXIS="#8F9BAA";
+const PC={solid:"#FFFFFF",liquid:PAL.product.blueberry,gas:PAL.product.strawberry},PS={solid:"#6E9FD0",liquid:F.mat("painted",PAL.product.blueberry).stroke,gas:F.mat("painted",PAL.product.strawberry).stroke};
+function ball(x,y,r,kind,op){return `<g opacity="${op==null?1:op}"><circle cx="${x}" cy="${y}" r="${r}" fill="${PC[kind]}" stroke="${PS[kind]}" stroke-width="${kind==="solid"?1.5:.9}"/><circle cx="${(+x-r*0.34).toFixed(1)}" cy="${(+y-r*0.36).toFixed(1)}" r="${(r*0.32).toFixed(1)}" fill="#fff" opacity="${kind==="solid"?.9:.75}"/></g>`}
 function drawMain(st0,step){
   if(step.k==="pressure")return drawSyringe();
   const st=stateFrom(s.Q,Tb());
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
-  // hotplate
-  const glow=s.playing&&step.speed?Math.min(1,s.power/3):0.05;
-  o+=`<rect x="130" y="296" width="280" height="16" rx="4" fill="var(--fill)" stroke="var(--ink)"/>`;
-  for(let i=0;i<5;i++)o+=`<path d="M${160+i*50},304 q12,-6 24,0 t24,0" fill="none" stroke="var(--hot)" stroke-width="2.4" opacity="${0.2+0.8*glow}"/>`;
-  o+=`<rect x="120" y="312" width="300" height="10" rx="3" fill="var(--ink)"/>`;
-  // beaker
-  o+=`<path d="M${BX0-6},40 L${BX0-6},${BY1+4} Q${BX0-6},${BY1+6} ${BX0},${BY1+6} L${BX1},${BY1+6} Q${BX1+6},${BY1+6} ${BX1+6},${BY1+4} L${BX1+6},40" fill="none" stroke="var(--ink)" stroke-width="2"/>`;
-  for(let k=1;k<=4;k++)o+=`<line x1="${BX1-10}" y1="${BY1-k*45}" x2="${BX1+4}" y2="${BY1-k*45}" stroke="var(--rose)"/>`;
-  // water surface
-  if(st.liquid>0.02){const top=BY1-Math.max(26,(1-st.gas)*112);o+=`<rect x="${BX0}" y="${top}" width="${BX1-BX0}" height="${BY1-top+4}" fill="var(--sea)" opacity="0.14"/>`}
-  P.forEach(p=>{const c=p.kind==="solid"?"var(--paper)":p.kind==="liquid"?"var(--sea)":"var(--hot)";
-    o+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.2" fill="${c}" stroke="${p.kind==="solid"?"var(--cold)":"var(--ink)"}" stroke-width="${p.kind==="solid"?1.6:.6}" opacity="${p.kind==="gas"?0.85:1}"/>`;
-    if(p.kind==="solid")o+=``});
-  // bonds in solid
-  P.forEach(p=>{if(p.kind!=="solid")return;const q=P[p.r*8+p.c+1];if(p.c<7&&q.kind==="solid")o+=`<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="var(--cold)" stroke-width=".8" opacity=".5"/>`});
-  // thermometer
+  let o=F.floor(640,330);
+  // hotplate: a steel box with a glowing coil on its top
+  const glow=s.playing&&step.speed?Math.min(1,s.power/3):0.05,cx=(BX0+BX1)/2;
+  o+=F.box(118,300,304,20,{colour:PAL.steel,kind:"metal",d:14,r:4,shadowLen:90});
+  o+=`<ellipse cx="${cx+7}" cy="${296}" rx="128" ry="3.6" fill="${PAL.steelDark}" opacity=".5"/>`;
+  for(let i=0;i<5;i++)o+=`<path d="M${154+i*50},298 q12,-4 24,0 t24,0" fill="none" stroke="${PAL.product.strawberry}" stroke-width="2.4" stroke-linecap="round" opacity="${0.2+0.8*glow}"/>`;
+  o+=`<circle cx="396" cy="310" r="5.5" fill="${PAL.product.peach}" stroke="${F.mat("painted",PAL.product.peach).stroke}"/><circle cx="380" cy="310" r="2.6" fill="${PAL.product.strawberry}" opacity="${0.25+0.75*glow}"/>`;
+  // beaker: frosted glass, back wall first
+  const L=BX0-6,R=BX1+6,bt=40,bb=BY1+3,ry=5;
+  o+=`<path d="M${L},${bt} V${bb} A${(R-L)/2},${ry} 0 0 0 ${R},${bb} V${bt}" fill="${TINT}" fill-opacity=".22"/><ellipse cx="${cx}" cy="${bt}" rx="${(R-L)/2}" ry="${ry}" fill="${TINT}" fill-opacity=".35" stroke="${GD}" stroke-width="1.2"/>`;
+  // water: a blueberry body with a lit surface
+  if(st.liquid>0.02){const top=BY1-Math.max(26,(1-st.gas)*112);o+=`<path d="M${BX0-4},${top} V${bb} A${(R-L)/2-2},${ry-1} 0 0 0 ${BX1+4},${bb} V${top}z" fill="${PAL.product.blueberry}" opacity=".24"/><ellipse cx="${cx}" cy="${top}" rx="${(R-L)/2-2}" ry="${ry-1}" fill="#DCEBFB" opacity=".7" stroke="${PS.liquid}" stroke-opacity=".4"/>`}
+  // bonds in solid, then the particles
+  P.forEach(p=>{if(p.kind!=="solid")return;const q=P[p.r*8+p.c+1];if(p.c<7&&q.kind==="solid")o+=`<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="${GD}" stroke-width=".9" opacity=".6"/>`});
+  P.forEach(p=>{o+=ball(p.x.toFixed(1),p.y.toFixed(1),5.2,p.kind,p.kind==="gas"?0.9:1)});
+  // beaker front: rim, wall line, highlight streak, graduations
+  o+=`<path d="M${L},${bt} V${bb} A${(R-L)/2},${ry} 0 0 0 ${R},${bb} V${bt}" fill="none" stroke="${GD}" stroke-width="1.6"/><path d="M${L},${bt} A${(R-L)/2},${ry} 0 0 0 ${R},${bt}" fill="none" stroke="${GD}" stroke-width="1.6"/>`;
+  o+=`<path d="M${L+12},${bt+18} V${bb-14}" stroke="#fff" stroke-opacity=".8" stroke-width="3" stroke-linecap="round"/><path d="M${L+22},${bt+18} V${bt+90}" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linecap="round"/>`;
+  for(let k=1;k<=4;k++)o+=`<line x1="${BX1-10}" y1="${BY1-k*45}" x2="${BX1+4}" y2="${BY1-k*45}" stroke="${GD}"/>`;
+  o+=F.pill(20,92,"Beaker",{ax:L+2,ay:120})+F.pill(20,262,"Hotplate",{ax:126,ay:306});
+  // thermometer: a frosted tube on a steel stand, strawberry spirit
   const tx=500,ty0=50,ty1=270,Tmin=-30,Tmax=140,Y=T=>ty1-(T-Tmin)/(Tmax-Tmin)*(ty1-ty0);
-  o+=`<rect x="${tx-9}" y="${ty0-10}" width="18" height="${ty1-ty0+20}" rx="9" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>`;
-  o+=`<circle cx="${tx}" cy="${ty1+22}" r="15" fill="var(--hot)" stroke="var(--ink)" stroke-width="1.4"/>`;
-  o+=`<rect x="${tx-4}" y="${Y(st.T)}" width="8" height="${ty1+10-Y(st.T)}" fill="var(--hot)"/>`;
-  for(let T=-20;T<=140;T+=20)o+=`<line x1="${tx+10}" x2="${tx+18}" y1="${Y(T)}" y2="${Y(T)}" stroke="var(--rose)"/><text class="t-lab" x="${tx+22}" y="${Y(T)+3.5}">${T}°</text>`;
-  o+=`<line x1="${tx-16}" x2="${tx+10}" y1="${Y(Tb())}" y2="${Y(Tb())}" stroke="var(--hot)" stroke-dasharray="3 3"/><text class="t-lab" x="${tx-20}" y="${Y(Tb())+3.5}" text-anchor="end">BOILS ${Tb().toFixed(0)}°</text>`;
-  o+=`<line x1="${tx-16}" x2="${tx+10}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--cold)" stroke-dasharray="3 3"/><text class="t-lab" x="${tx-20}" y="${Y(0)+3.5}" text-anchor="end">MELTS 0°</text>`;
+  o+=F.box(tx-26,304,52,8,{colour:PAL.steel,kind:"metal",d:10,r:3});
+  const th=ty1-ty0+20,fr=Math.max(0,Math.min(1,(ty1+10-Y(st.T))/th));
+  o+=F.tube(tx-9,ty0-10,18,th,fr,{tint:TINT,fill:PAL.product.strawberry,shadow:false});
+  const bm=F.mat("painted",PAL.product.strawberry);o+=`<circle cx="${tx}" cy="${ty1+22}" r="15" fill="${bm.fill}" stroke="${bm.stroke}" stroke-width="1.3"/><circle cx="${tx-5}" cy="${ty1+17}" r="4.5" fill="#fff" opacity=".7"/>`;
+  for(let T=-20;T<=140;T+=20)o+=`<line x1="${tx+10}" x2="${tx+18}" y1="${Y(T)}" y2="${Y(T)}" stroke="${AXIS}"/><text class="t-lab" x="${tx+22}" y="${Y(T)+3.5}">${T}°</text>`;
+  o+=`<line x1="${tx-16}" x2="${tx+10}" y1="${Y(Tb())}" y2="${Y(Tb())}" stroke="${PS.gas}" stroke-dasharray="3 3"/><text class="t-lab" x="${tx-20}" y="${Y(Tb())+3.5}" text-anchor="end">BOILS ${Tb().toFixed(0)}°</text>`;
+  o+=`<line x1="${tx-16}" x2="${tx+10}" y1="${Y(0)}" y2="${Y(0)}" stroke="${PS.liquid}" stroke-dasharray="3 3"/><text class="t-lab" x="${tx-20}" y="${Y(0)+3.5}" text-anchor="end">MELTS 0°</text>`;
   o+=`<text class="t-big" x="${tx+48}" y="${Y(st.T)+5}">${st.T.toFixed(1)}°C</text>`;
   // key
-  o+=`<g class="t-lab"><circle cx="24" cy="24" r="5" fill="var(--paper)" stroke="var(--cold)" stroke-width="1.6"/><text x="34" y="27">ICE</text><circle cx="72" cy="24" r="5" fill="var(--sea)"/><text x="82" y="27">WATER</text><circle cx="134" cy="24" r="5" fill="var(--hot)"/><text x="144" y="27">STEAM</text></g>`;
+  o+=`<g class="t-lab">${ball(24,24,5,"solid")}<text x="34" y="27">ICE</text>${ball(72,24,5,"liquid")}<text x="82" y="27">WATER</text>${ball(134,24,5,"gas")}<text x="144" y="27">STEAM</text></g>`;
   o+=`<text class="t-ink" x="616" y="24" text-anchor="end">${st.phase}</text>`;
   return o;
 }
 function drawSyringe(){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
-  const x0=90,y0=110,H=120,Wfull=360,W=Wfull*s.vol/100;
-  o+=`<rect x="${x0}" y="${y0}" width="${Wfull+40}" height="${H}" rx="8" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/>`;
-  for(let k=0;k<=10;k++)o+=`<line x1="${x0+k*Wfull/10}" x2="${x0+k*Wfull/10}" y1="${y0}" y2="${y0+(k%5?8:14)}" stroke="var(--rose)"/>`;
-  o+=`<rect x="${x0}" y="${y0+4}" width="${W}" height="${H-8}" fill="var(--hot)" opacity=".08"/>`;
-  G.forEach(g=>{o+=`<circle cx="${(x0+6+g.x*(W-12)).toFixed(1)}" cy="${(y0+8+g.y*(H-16)).toFixed(1)}" r="5" fill="var(--hot)" stroke="var(--ink)" stroke-width=".6"/>`});
-  o+=`<rect x="${x0+W}" y="${y0+2}" width="12" height="${H-4}" rx="3" fill="var(--ink)"/><rect x="${x0+W+12}" y="${y0+H/2-6}" width="${Wfull+40-W+30}" height="12" fill="var(--rose)"/><rect x="${x0+Wfull+82}" y="${y0+20}" width="12" height="${H-40}" rx="3" fill="var(--ink)"/>`;
-  // gauge
+  let o=F.floor(640,330);
+  const x0=90,y0=110,H=120,Wfull=360,W=Wfull*s.vol/100,ry=10;
+  // the barrel lies on the bench: frosted acrylic, a nozzle at the left end
+  o+=F.shadow(x0,y0+H,Wfull+40,{len:36,opacity:.14});
+  o+=`<path d="M${x0-16},${y0+H/2-9} h16 v18 h-16z" fill="${TINT}" fill-opacity=".55" stroke="${GD}" stroke-width="1.2"/><ellipse cx="${x0-16}" cy="${y0+H/2}" rx="3" ry="9" fill="${TINT}" stroke="${GD}"/>`;
+  o+=`<rect x="${x0}" y="${y0}" width="${Wfull+40}" height="${H}" rx="${ry}" fill="${TINT}" fill-opacity=".26" stroke="${GD}" stroke-width="1.4"/>`;
+  o+=`<ellipse cx="${x0+4}" cy="${y0+H/2}" rx="${ry}" ry="${H/2-1}" fill="${TINT}" fill-opacity=".35" stroke="${GD}" stroke-width="1.1"/>`;
+  for(let k=0;k<=10;k++)o+=`<line x1="${x0+k*Wfull/10}" x2="${x0+k*Wfull/10}" y1="${y0}" y2="${y0+(k%5?8:14)}" stroke="${GD}"/>`;
+  o+=`<rect x="${x0}" y="${y0+4}" width="${W}" height="${H-8}" fill="${PAL.product.strawberry}" opacity=".1"/>`;
+  G.forEach(g=>{o+=ball((x0+6+g.x*(W-12)).toFixed(1),(y0+8+g.y*(H-16)).toFixed(1),5,"gas")});
+  // plunger: a rubber head, a steel rod and a thumb plate
+  const rod=Wfull+40-W+30,rm=F.mat("rubber","#4E5468");
+  o+=`<rect x="${x0+W+12}" y="${y0+H/2-6}" width="${rod}" height="12" fill="${PAL.steel}" stroke="${PAL.steelDark}"/><path d="M${x0+W+14},${y0+H/2-3} h${rod-4}" stroke="#fff" stroke-width="2" opacity=".8"/>`;
+  o+=`<rect x="${x0+W}" y="${y0+2}" width="12" height="${H-4}" rx="3" fill="${rm.fill}" stroke="${rm.stroke}"/><path d="M${x0+W+3},${y0+8} v${H-16}" stroke="${rm.hi}" stroke-width="2" stroke-linecap="round"/>`;
+  o+=`<rect x="${x0+Wfull+82}" y="${y0+20}" width="12" height="${H-40}" rx="3" fill="${PAL.steel}" stroke="${PAL.steelDark}"/><path d="M${x0+Wfull+85},${y0+26} v${H-52}" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`;
+  // the highlight streak on the barrel, drawn over the gas
+  o+=`<path d="M${x0+16},${y0+7} H${x0+Math.min(Wfull,240)}" stroke="#fff" stroke-opacity=".85" stroke-width="2.4" stroke-linecap="round"/>`;
+  // gauge: a steel-cased dial joined by a copper pipe
   const p=pressure(),a=-210+Math.min(240,p/400*240);const gx=560,gy=60;
-  o+=`<circle cx="${gx}" cy="${gy}" r="34" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/><line x1="${gx}" y1="${gy}" x2="${gx+26*Math.cos(a*Math.PI/180)}" y2="${gy+26*Math.sin(a*Math.PI/180)}" stroke="var(--hot)" stroke-width="2.4"/><circle cx="${gx}" cy="${gy}" r="3" fill="var(--ink)"/>`;
-  o+=`<path d="M${gx},${gy+34} L${gx},${y0} L${x0+6},${y0}" fill="none" stroke="var(--ink)" stroke-width="1.2"/>`;
+  o+=`<path d="M${gx},${gy+34} L${gx},${y0} L${x0+6},${y0}" fill="none" stroke="${PAL.copper}" stroke-width="3.4" stroke-linejoin="round"/><path d="M${gx-1},${gy+36} V${y0-1}" stroke="#fff" stroke-width="1" opacity=".55"/>`;
+  o+=`<circle cx="${gx+5}" cy="${gy-3}" r="36" fill="${PAL.steelDark}"/><circle cx="${gx}" cy="${gy}" r="36" fill="${PAL.steel}" stroke="${PAL.steelDark}" stroke-width="1.2"/><circle cx="${gx}" cy="${gy}" r="29" fill="#fff" stroke="${PAL.steelDark}" stroke-width="1"/>`;
+  for(let k=0;k<=8;k++){const aa=(-210+k*30)*Math.PI/180;o+=`<line x1="${gx+22*Math.cos(aa)}" y1="${gy+22*Math.sin(aa)}" x2="${gx+27*Math.cos(aa)}" y2="${gy+27*Math.sin(aa)}" stroke="${AXIS}" stroke-width="1.2"/>`}
+  o+=`<line x1="${gx}" y1="${gy}" x2="${gx+26*Math.cos(a*Math.PI/180)}" y2="${gy+26*Math.sin(a*Math.PI/180)}" stroke="${PS.gas}" stroke-width="2.6" stroke-linecap="round"/><circle cx="${gx}" cy="${gy}" r="3.4" fill="#4E5468"/>`;
   o+=`<text class="t-big" x="${gx-44}" y="${gy+5}" text-anchor="end">${p.toFixed(0)} kPa</text>`;
   o+=`<text class="t-lab" x="${x0}" y="${y0+H+26}">SEALED SYRINGE OF AIR · ${s.vol} mL · ${s.gasT}°C · ${hitRate.toFixed(0)} HITS A SECOND ON THE PLUNGER</text>`;
   return o;
 }
 function drawClose(st0,step){
-  let o=`<rect width="420" height="260" fill="var(--chalk)"/>`;
+  let o=F.floor(420,260);
   if(step.k==="pressure"){
     o+=`<text class="t-lab" x="14" y="22">PRESSURE AGAINST VOLUME (SAME TEMPERATURE)</text>`;
     const X=v=>50+(v-20)/80*340,Y=p=>220-p/320*180;let d="";for(let v=20;v<=100;v+=2)d+=(v>20?"L":"M")+X(v)+","+Y(101.3*60/v*((s.gasT+273)/293));
-    o+=`<line x1="50" y1="220" x2="390" y2="220" stroke="var(--rose)"/><line x1="50" y1="40" x2="50" y2="220" stroke="var(--rose)"/><path d="${d}" fill="none" stroke="var(--hot)" stroke-width="2"/>`;
+    o+=`<line x1="50" y1="220" x2="390" y2="220" stroke="${AXIS}"/><line x1="50" y1="40" x2="50" y2="220" stroke="${AXIS}"/><path d="${d}" fill="none" stroke="${PS.gas}" stroke-width="2.4"/>`;
     [20,40,60,80,100].forEach(v=>o+=`<text class="t-lab" x="${X(v)}" y="236" text-anchor="middle">${v}</text>`);
     [0,100,200,300].forEach(p=>o+=`<text class="t-lab" x="44" y="${Y(p)+3.5}" text-anchor="end">${p}</text>`);
-    o+=`<text class="t-lab" x="220" y="252" text-anchor="middle">VOLUME (mL)</text><circle cx="${X(s.vol)}" cy="${Y(pressure())}" r="6" fill="var(--sun)" stroke="var(--ink)"/>`;
+    o+=`<text class="t-lab" x="220" y="252" text-anchor="middle">VOLUME (mL)</text><circle cx="${X(s.vol)}" cy="${Y(pressure())}" r="6" fill="${PAL.product.butter}" stroke="var(--ink)"/>`;
     return o;
   }
   const S=stages(Tb()),st=stateFrom(s.Q,Tb());
   o+=`<text class="t-lab" x="14" y="22">HEATING CURVE · TEMPERATURE AGAINST HEAT ADDED</text>`;
   const X=q=>50+q/S.q5*350,Y=T=>210-(T+30)/170*170;
   const pts=[[0,-20],[S.q1,0],[S.q2,0],[S.q3,Tb()],[S.q4,Tb()],[S.q5,Tb()+30]];
-  o+=`<line x1="50" y1="210" x2="400" y2="210" stroke="var(--rose)"/><line x1="50" y1="36" x2="50" y2="210" stroke="var(--rose)"/>`;
+  o+=`<line x1="50" y1="210" x2="400" y2="210" stroke="${AXIS}"/><line x1="50" y1="36" x2="50" y2="210" stroke="${AXIS}"/>`;
   [-20,0,50,100].forEach(T=>o+=`<text class="t-lab" x="44" y="${Y(T)+3.5}" text-anchor="end">${T}°</text>`);
-  o+=`<path d="${pts.map((p,i)=>(i?"L":"M")+X(p[0])+","+Y(p[1])).join("")}" fill="none" stroke="var(--line)" stroke-width="3"/>`;
+  o+=`<path d="${pts.map((p,i)=>(i?"L":"M")+X(p[0])+","+Y(p[1])).join("")}" fill="none" stroke="#DCD6EA" stroke-width="3"/>`;
   // progress so far
   const done=pts.filter(p=>p[0]<=s.Q);done.push([s.Q,st.T]);
-  o+=`<path d="${done.map((p,i)=>(i?"L":"M")+X(p[0])+","+Y(p[1])).join("")}" fill="none" stroke="var(--ink)" stroke-width="2.4"/>`;
-  o+=`<circle cx="${X(s.Q)}" cy="${Y(st.T)}" r="6" fill="var(--sun)" stroke="var(--ink)"/>`;
+  o+=`<path d="${done.map((p,i)=>(i?"L":"M")+X(p[0])+","+Y(p[1])).join("")}" fill="none" stroke="${PS.liquid}" stroke-width="2.6" stroke-linejoin="round"/>`;
+  o+=`<circle cx="${X(s.Q)}" cy="${Y(st.T)}" r="6" fill="${PAL.product.butter}" stroke="var(--ink)"/>`;
   o+=`<text class="t-lab" x="${X(S.q1)+4}" y="${Y(0)-8}">MELTING</text><text class="t-lab" x="${(X(S.q3)+X(S.q4))/2}" y="${Y(Tb())-8}" text-anchor="middle">BOILING: TEMPERATURE STAYS FLAT</text>`;
   o+=`<text class="t-lab" x="225" y="232" text-anchor="middle">HEAT ADDED (kJ) →</text><text class="t-lab" x="400" y="232" text-anchor="end">${Math.round(S.q5)}</text>`;
   o+=`<text class="t-big" x="14" y="252">${Math.round(s.Q)} kJ added · ${Math.floor(s.time/60)} min ${Math.round(s.time%60)} s at ${s.power.toFixed(1)} kW</text>`;

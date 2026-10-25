@@ -16,51 +16,65 @@ function tickFoil(dt){if(Math.random()<dt*14)fire();
       if(near<1.2){a.vx=-200;a.vy=(Math.random()-.5)*80;s.hits.back++}else if(near<5){a.vy=(Math.random()<.5?-1:1)*(90+Math.random()*80);s.hits.small++}else s.hits.straight++;a.done=true}
     a.x+=a.vx*dt;a.y+=a.vy*dt});
   s.alphas=s.alphas.filter(a=>a.x>-10&&a.x<650&&a.y>-10&&a.y<340)}
-// ---------- drawing
+// ---------- drawing (the bench figure look: StudyKit.fig)
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.sky,AX="#8F9BAA";
+// a painted sphere: body, a soft shade on the lower right and one highlight
+const ball=(x,y,r,c)=>{x=+x;y=+y;const m=F.mat("painted",c);return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${m.stroke}" stroke-width=".8"/><path d="M${(x+r*0.15).toFixed(1)},${(y+r*0.95).toFixed(1)} a${r},${r} 0 0 0 ${(r*0.8).toFixed(1)},${(-r*1.3).toFixed(1)}" fill="none" stroke="${m.shade}" stroke-width="${(r*0.35).toFixed(1)}" opacity=".55"/><circle cx="${(x-r*0.35).toFixed(1)}" cy="${(y-r*0.38).toFixed(1)}" r="${(r*0.3).toFixed(1)}" fill="#fff" opacity=".85"/>`};
+const COL={p:PAL.product.strawberry,n:PAL.steel,e:PAL.product.blueberry};
 function drawAtom(st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;const cx=250,cy=165,sh=shells(s.e);
-  // shells
-  [42,72,102,132].forEach((r,i)=>{if(i<Math.max(sh.length,1))o+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--rose)" stroke-dasharray="${i<sh.length?"0":"3 4"}"/>`});
+  let o=F.floor(640,330);const cx=250,cy=165,sh=shells(s.e);
+  // a soft floor shadow under the floating atom, toward the lower right
+  o+=`<ellipse cx="${cx+40}" cy="300" rx="104" ry="8" fill="${PAL.shadow}" opacity=".12"/>`;
+  // shells: thin frosted orbits
+  [42,72,102,132].forEach((r,i)=>{if(i<Math.max(sh.length,1))o+=i<sh.length?`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${F.deep(TINT)}" stroke-width="3" stroke-opacity=".35"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#fff" stroke-width="1" stroke-opacity=".9"/>`:`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${AX}" stroke-dasharray="3 4"/>`});
   // nucleus: protons and neutrons packed
-  const N=s.p+s.n,R=Math.max(10,Math.sqrt(N)*4.2);const pts=[];let k=0;
+  const N=s.p+s.n,R=Math.max(10,Math.sqrt(N)*4.2);const pts=[];
   for(let i=0;i<N;i++){const a=i*2.399,r=R*Math.sqrt((i+0.5)/N);pts.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r])}
   // interleave protons and neutrons
   const kinds=[];let pp=s.p,nn=s.n;for(let i=0;i<N;i++){if(pp&&(!nn||i%2===0)){kinds.push("p");pp--}else{kinds.push("n");nn--}}
-  pts.forEach((q,i)=>o+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4.6" fill="${kinds[i]==="p"?"var(--hot)":"var(--moon)"}" stroke="var(--ink)" stroke-width=".7"/>`);
+  // draw back to front (top-left first) so the packing reads as a cluster of balls
+  pts.map((q,i)=>[q,kinds[i]]).sort((a,b)=>(a[0][0]+a[0][1])-(b[0][0]+b[0][1])).forEach(([q,k])=>o+=ball(q[0].toFixed(1),q[1].toFixed(1),4.8,COL[k]));
   // electrons
-  sh.forEach((cnt,i)=>{const r=[42,72,102,132][i];for(let j=0;j<cnt;j++){const a=s.spin*(1.2-i*0.25)+j*2*Math.PI/cnt;o+=`<circle cx="${(cx+Math.cos(a)*r).toFixed(1)}" cy="${(cy+Math.sin(a)*r).toFixed(1)}" r="5" fill="var(--sea)" stroke="var(--ink)" stroke-width=".7"/>`}});
-  // symbol card
+  sh.forEach((cnt,i)=>{const r=[42,72,102,132][i];for(let j=0;j<cnt;j++){const a=s.spin*(1.2-i*0.25)+j*2*Math.PI/cnt;o+=ball((cx+Math.cos(a)*r).toFixed(1),(cy+Math.sin(a)*r).toFixed(1),5,COL.e)}});
+  // symbol card: a frosted acrylic tile standing on the floor
   const E=el(),A=s.p+s.n,c=charge();
-  o+=`<rect x="440" y="70" width="150" height="150" rx="12" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/>`;
+  o+=F.acrylic(440,70,150,150,{tint:TINT,d:14,r:12,opacity:.34,shadowLen:34});
   o+=`<text x="470" y="104" style="font:500 15px var(--mono);fill:var(--ink)">${A}</text><text x="470" y="198" style="font:500 15px var(--mono);fill:var(--ink)">${s.p}</text>`;
   o+=`<text x="515" y="170" text-anchor="middle" style="font:600 56px var(--display);fill:var(--ink)">${E[0]}</text>`;
   if(c!==0)o+=`<text x="560" y="104" style="font:600 18px var(--mono);fill:var(--warn)">${Math.abs(c)>1?Math.abs(c):""}${c>0?"+":"−"}</text>`;
-  o+=`<text class="t-big" x="515" y="244" text-anchor="middle">${E[1]}${c!==0?" ion":""}</text><text class="t-lab" x="515" y="262" text-anchor="middle">MASS NUMBER ${A} · ATOMIC NUMBER ${s.p}</text>`;
-  o+=`<g class="t-lab"><circle cx="24" cy="24" r="5" fill="var(--hot)"/><text x="34" y="27">PROTON +</text><circle cx="112" cy="24" r="5" fill="var(--moon)"/><text x="122" y="27">NEUTRON 0</text><circle cx="206" cy="24" r="5" fill="var(--sea)"/><text x="216" y="27">ELECTRON −</text></g>`;
+  o+=`<text class="t-big" x="515" y="250" text-anchor="middle">${E[1]}${c!==0?" ion":""}</text><text class="t-lab" x="515" y="268" text-anchor="middle">MASS NUMBER ${A} · ATOMIC NUMBER ${s.p}</text>`;
+  o+=`<g class="t-lab">${ball(24,24,5.5,COL.p)}<text x="34" y="27">PROTON +</text>${ball(112,24,5.5,COL.n)}<text x="122" y="27">NEUTRON 0</text>${ball(206,24,5.5,COL.e)}<text x="216" y="27">ELECTRON −</text></g>`;
   o+=`<text class="t-ink" x="250" y="318" text-anchor="middle">Electron arrangement ${sh.join(",")||"none"}</text>`;
   return o;
 }
 function drawFoil(){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
-  o+=`<rect x="10" y="135" width="24" height="60" rx="4" fill="var(--ink)"/><text class="t-lab" x="10" y="128">ALPHA SOURCE</text>`;
-  o+=`<rect x="320" y="40" width="8" height="250" fill="var(--sun)" opacity=".6"/><text class="t-lab" x="324" y="32" text-anchor="middle">GOLD FOIL</text>`;
-  [-80,-40,0,40,80].forEach(c=>o+=`<circle cx="324" cy="${165+c}" r="2.2" fill="var(--hot)"/>`);
-  o+=`<path d="M600,30 A300,300 0 0,1 600,300" fill="none" stroke="var(--rose)" stroke-width="6" opacity=".4"/><text class="t-lab" x="626" y="24" text-anchor="end">DETECTOR SCREEN</text>`;
-  s.alphas.forEach(a=>o+=`<circle cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="3" fill="var(--ink)"/>`);
+  let o=F.floor(640,330);
+  // detector screen: a curved frosted band
+  o+=`<path d="M600,30 A300,300 0 0,1 600,300" fill="none" stroke="${TINT}" stroke-width="12" opacity=".75"/><path d="M600,30 A300,300 0 0,1 600,300" fill="none" stroke="${F.deep(TINT)}" stroke-width="1.2" transform="translate(6,0)"/><path d="M596,36 A296,296 0 0,1 596,294" fill="none" stroke="#fff" stroke-width="1.6" opacity=".8"/>`;
+  // alpha source: a lead box with a slit
+  o+=F.box(10,135,24,60,{colour:"#6E7891",kind:"metal",d:10,r:3});
+  o+=`<rect x="31" y="160" width="3" height="10" fill="${PAL.product.butter}"/>`;
+  // gold foil: a thin gold sheet on edge
+  o+=F.box(320,40,8,250,{colour:"#E9C46A",kind:"metal",d:10,shadowLen:40});
+  [-80,-40,0,40,80].forEach(c=>o+=ball(324,165+c,2.6,PAL.product.strawberry));
+  s.alphas.forEach(a=>o+=`<circle cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="3" fill="${PAL.product.blueberry}" stroke="#4E6FA8" stroke-width=".9"/>`);
+  o+=F.pill(10,104,"Alpha source",{ax:22,ay:132});
+  o+=F.pill(338,10,"Gold foil",{ax:330,ay:38});
+  o+=F.pill(632,6,"Detector screen",{anchor:"end",ax:606,ay:36});
   o+=`<text class="t-lab" x="16" y="318">THE NUCLEI ARE DRAWN FAR BIGGER THAN REAL: AN ATOM IS ABOUT 100,000 TIMES WIDER THAN ITS NUCLEUS</text>`;
   return o;
 }
 function drawClose(st0,st){
-  let o=`<rect width="420" height="260" fill="var(--chalk)"/>`;
+  let o=F.floor(420,260);
   if(st.k==="foil"){const h=s.hits,t=h.straight+h.small+h.back||1;o+=`<text class="t-lab" x="14" y="22">WHAT THE DETECTOR SEES</text>`;
-    [["Straight through",h.straight],["Bent a little",h.small],["Bounced back",h.back]].forEach(([n,v],i)=>{const w=v/t*260;o+=`<text class="t-ink" x="14" y="${62+i*40}">${n}</text><rect x="140" y="${50+i*40}" width="260" height="16" fill="var(--paper)" stroke="var(--line)"/><rect x="140" y="${50+i*40}" width="${Math.max(1,w)}" height="16" fill="var(--ink)"/><text class="t-ink" x="140" y="${80+i*40}">${v} (${(v/t*100).toFixed(1)}%)</text>`});
+    [["Straight through",h.straight,PAL.product.blueberry],["Bent a little",h.small,PAL.product.butter],["Bounced back",h.back,PAL.product.strawberry]].forEach(([n,v,c],i)=>{const w=v/t*260;o+=`<text class="t-ink" x="14" y="${62+i*40}">${n}</text><rect x="140" y="${50+i*40}" width="260" height="16" rx="8" fill="#fff" stroke="#DCD6EA"/><rect x="140" y="${50+i*40}" width="${Math.max(1,w)}" height="16" rx="8" fill="${c}" stroke="${F.mat("painted",c).stroke}" stroke-width=".8"/><text class="t-ink" x="140" y="${80+i*40}">${v} (${(v/t*100).toFixed(1)}%)</text>`});
     o+=`<text class="t-body" x="14" y="200">Most go straight through: the atom is mostly empty space.</text><text class="t-body" x="14" y="220">A few bounce back: there's a tiny, dense, positive nucleus.</text><text class="t-body" x="14" y="246">Ernest Rutherford, from Brightwater near Nelson, led this work.</text>`;return o}
   o+=`<text class="t-lab" x="14" y="22">FIRST 20 ELEMENTS · ROW = SHELLS</text>`;
   const pos={1:[0,0],2:[7,0]};for(let z=3;z<=10;z++)pos[z]=[z<=4?z-3:z-3+0,1];for(let z=11;z<=18;z++)pos[z]=[z-11,2];pos[19]=[0,3];pos[20]=[1,3];
   // groups 1,2,13..18 -> columns 0..7
   for(let z=3;z<=10;z++)pos[z]=[z-3,1];
   const W=46,H=44,x0=18,y0=36;
-  for(let z=1;z<=20;z++){const [c,r]=pos[z];const on=z===s.p;o+=`<rect x="${x0+c*W}" y="${y0+r*H}" width="${W-4}" height="${H-4}" rx="5" fill="${on?"var(--sun)":"var(--paper)"}" stroke="${on?"var(--ink)":"var(--line)"}"/><text class="t-lab" x="${x0+c*W+4}" y="${y0+r*H+12}">${z}</text><text x="${x0+c*W+(W-4)/2}" y="${y0+r*H+31}" text-anchor="middle" style="font:600 14px var(--display);fill:var(--ink)">${EL[z-1][0]}</text>`}
+  for(let z=1;z<=20;z++){const [c,r]=pos[z];const on=z===s.p;o+=`<rect x="${x0+c*W}" y="${y0+r*H}" width="${W-4}" height="${H-4}" rx="5" fill="${on?PAL.product.butter:"#fff"}" stroke="${on?"#B08A2E":"#DCD6EA"}" stroke-width="${on?1.4:1}"/><text class="t-lab" x="${x0+c*W+4}" y="${y0+r*H+12}">${z}</text><text x="${x0+c*W+(W-4)/2}" y="${y0+r*H+31}" text-anchor="middle" style="font:600 14px var(--display);fill:var(--ink)">${EL[z-1][0]}</text>`}
   const sh=shells(s.p);o+=`<text class="t-body" x="14" y="230">${el()[1]}: period ${sh.length} (${sh.length} shell${sh.length>1?"s":""}), ${sh[sh.length-1]} electron${sh[sh.length-1]>1?"s":""} in the outer shell.</text>`;
   o+=`<text class="t-body" x="14" y="250">${[2,10,18].includes(s.p)?"Full outer shell: a noble gas that hardly reacts.":"Atoms react to get a full outer shell."}</text>`;
   return o;

@@ -17,20 +17,35 @@ function allocate(){
 function gov(){const A=allocate();const g=A.final.reduce((a,x,i)=>a+(s.gov[i]?x:0),0);return{g,need:Math.floor(A.total/2)+1,total:A.total,A}}
 const STAGES=[["Introduced","A member puts the bill before Parliament"],["First reading","First debate and vote"],["Select committee","MPs study it and hear from the public, usually up to 6 months"],["Second reading","Debate on the committee's changes, then a vote"],["Committee of the whole House","Every clause debated, changes voted on"],["Third reading","Final debate and vote"],["Royal assent","The Governor-General signs it into law"]];
 
-// ---------- chamber drawing
+// ---------- chamber drawing: figure parts from the shared bench look (StudyKit.fig), peach for social studies
+const FG=StudyKit.fig,PAL=FG.palette,TINT=PAL.case.peach,TDEEP=FG.deep(PAL.case.peach),AX="#8F9BAA";
+const benchArcs=()=>{let g="";const rows=7,r0=66,r1=168;
+  // the chamber floor, then seven tiers of benches: each a peach band with a darker riser in front
+  g+=`<path d="M${320-r1-14},236 A${r1+14},${r1+14} 0 0 1 ${320+r1+14},236 Z" fill="${TINT}" fill-opacity=".32" stroke="${TDEEP}" stroke-width="1.1"/>`;
+  for(let k=rows-1;k>=0;k--){const r=r0+k*(r1-r0)/(rows-1);
+    g+=`<path d="M${320-r},236 A${r},${r} 0 0 1 ${320+r},236" fill="none" stroke="${TINT}" stroke-width="13" stroke-opacity=".75"/>`;
+    g+=`<path d="M${320-r+6.5},236 A${r-6.5},${r-6.5} 0 0 1 ${320+r-6.5},236" fill="none" stroke="${TDEEP}" stroke-width="1.6" stroke-opacity=".55"/>`}
+  // the well of the House, with the Table and the Speaker's chair
+  g+=`<path d="M${320-r0+8},236 A${r0-8},${r0-8} 0 0 1 ${320+r0-8},236 Z" fill="#fff" fill-opacity=".55"/>`;
+  return g};
 function seatPositions(N){const rows=7,r0=66,r1=168,pos=[];
   const radii=[...Array(rows).keys()].map(k=>r0+k*(r1-r0)/(rows-1));const totR=radii.reduce((a,b)=>a+b,0);
   let left=N;radii.forEach((r,k)=>{let n=k===rows-1?left:Math.round(N*r/totR);n=Math.min(n,left);left-=n;
     for(let j=0;j<n;j++){const a=Math.PI*(n===1?0.5:j/(n-1));pos.push({x:320-Math.cos(a)*r,y:236-Math.sin(a)*r,a})}});
   return pos.sort((p,q)=>p.a-q.a);}
 function drawMain(st0,st){
-  const A=allocate(),G=gov();let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  const A=allocate(),G=gov();let o=FG.floor(640,330);
+  // the chamber: a frosted peach case holding the tiered benches
+  o+=FG.acrylic(128,40,384,214,{tint:TINT,d:14,r:16,shadowLen:70});
+  o+=benchArcs();
   const order=[...Array(6).keys()].sort((i,j)=>(s.gov[j]-s.gov[i])||(A.final[j]-A.final[i]));
   const seq=[];order.forEach(i=>{for(let k=0;k<A.final[i];k++)seq.push({i,elec:k<s.elec[i]})});
   const pos=seatPositions(seq.length);
   const showSides=["govt","cabinet","bill","committee"].includes(st.k);
   seq.forEach((p,k)=>{const q=pos[k];if(!q)return;const col=PARTIES[p.i].c;
-    const op=PARTIES[p.i].o;o+=`<circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="5.6" fill="${p.elec?col:"var(--paper)"}" fill-opacity="${p.elec?op:1}" stroke="${col}" stroke-opacity="${op}" stroke-width="2"/>`});
+    const op=PARTIES[p.i].o;o+=`<circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="5.6" fill="${p.elec?col:"var(--paper)"}" fill-opacity="${p.elec?op:1}" stroke="${col}" stroke-opacity="${op}" stroke-width="2"/>`;
+    // a lit spot on each seat so they read as round chairs on the benches
+    o+=`<circle cx="${(q.x-1.7).toFixed(1)}" cy="${(q.y-1.9).toFixed(1)}" r="1.5" fill="#fff" opacity="${p.elec?.5:.9}"/>`});
   o+=`<text class="t-big" x="320" y="222" text-anchor="middle">${A.total} seats</text><text class="t-lab" x="320" y="238" text-anchor="middle">${A.total>120?`120 + ${A.total-120} OVERHANG`:"NO OVERHANG"}</text>`;
   if(showSides)o+=`<text class="t-lab" x="110" y="262" text-anchor="middle">GOVERNMENT · ${G.g}</text><text class="t-lab" x="530" y="262" text-anchor="middle">OPPOSITION · ${A.total-G.g}</text>`;
   // legend
@@ -39,9 +54,10 @@ function drawMain(st0,st){
   return o;
 }
 function drawClose(st0,st){
-  const A=allocate(),G=gov();let o=`<rect width="420" height="260" fill="var(--chalk)"/>`;
+  const A=allocate(),G=gov();let o=FG.floor(420,260);
   if(["vote","threshold","electorate"].includes(st.k)){
     o+=`<text class="t-lab" x="14" y="22">HOW THE 120 SEATS ARE SHARED (SAINTE-LAGUË)</text>`;
+    o+=FG.acrylic(6,34,392,174,{tint:TINT,d:12,r:12,shadowLen:40,balls:false});
     const cols=[["PARTY",14],["VOTE",150],["SEATS",204],["ELECT.",258],["LIST",312],["OVER",364]];
     cols.forEach(([h,x])=>o+=`<text class="t-lab" x="${x}" y="46">${h}</text>`);
     PARTIES.forEach((P,i)=>{const y=68+i*24,op=A.q[i]?1:.45;
@@ -54,8 +70,10 @@ function drawClose(st0,st){
   }
   if(["govt","cabinet"].includes(st.k)){
     o+=`<text class="t-lab" x="14" y="22">IS THERE A MAJORITY?</text>`;
-    const W=380,x0=20,y0=60;o+=`<rect x="${x0}" y="${y0}" width="${W}" height="30" rx="6" fill="var(--paper)" stroke="var(--ink)"/>`;
-    let x=x0;PARTIES.forEach((P,i)=>{if(!s.gov[i])return;const w=A.final[i]/A.total*W;o+=`<rect x="${x}" y="${y0}" width="${w}" height="30" fill="${P.c}" fill-opacity="${P.o}" stroke="var(--paper)"/>`;x+=w});
+    const W=380,x0=20,y0=60;
+    // the seat bar as a frosted peach rail; government seats are painted blocks standing in it
+    o+=FG.acrylic(x0,y0,W,30,{tint:TINT,d:10,r:6,balls:false,shadowLen:36});
+    let x=x0;PARTIES.forEach((P,i)=>{if(!s.gov[i])return;const w=A.final[i]/A.total*W;o+=`<rect x="${x}" y="${y0}" width="${w}" height="30" fill="${P.c}" fill-opacity="${P.o}" stroke="var(--paper)"/><path d="M${x},${y0} l10,-5.5 h${w} l-10,5.5z" fill="${P.c}" fill-opacity="${P.o*.55}" stroke="var(--paper)"/>`;x+=w});
     const mx=x0+G.need/A.total*W;o+=`<line x1="${mx}" x2="${mx}" y1="${y0-10}" y2="${y0+40}" stroke="var(--ink)" stroke-width="2"/><text class="t-ink" x="${mx}" y="${y0-14}" text-anchor="middle">${G.need} needed</text>`;
     const ok=G.g>=G.need;
     o+=`<text class="t-big" x="14" y="130">${ok?`Majority: ${G.g} of ${A.total} seats`:`No majority: ${G.g} of ${A.total} seats, ${G.need-G.g} short`}</text>`;
@@ -67,8 +85,9 @@ function drawClose(st0,st){
   o+=`<text class="t-lab" x="14" y="22">A FICTIONAL BILL: THE KERERŪ PROTECTION BILL</text>`;
   const pass=G.g>=G.need;const failAt=pass?99:1;
   STAGES.forEach((S,k)=>{const y=46+k*28,done=k<s.stage||(k===s.stage&&s.t>=1),cur=k===s.stage,fail=k>=failAt&&s.stage>=failAt;
-    o+=`<circle cx="26" cy="${y}" r="8" fill="${fail&&k===failAt?"var(--warn)":done?"var(--ink)":cur?"var(--sun)":"var(--paper)"}" stroke="var(--ink)"/>`;
-    if(k<STAGES.length-1)o+=`<line x1="26" x2="26" y1="${y+8}" y2="${y+20}" stroke="var(--rose)"/>`;
+    if(k<STAGES.length-1)o+=`<line x1="26" x2="26" y1="${y+6}" y2="${y+22}" stroke="${AX}" stroke-width="2"/>`;
+    // each stage is a painted token: lime once passed, butter for the current stage, strawberry where it fails
+    o+=FG.cyl(26,y-3,8,6,{colour:fail&&k===failAt?PAL.product.strawberry:done?PAL.product.lime:cur?PAL.product.butter:PAL.steel,kind:fail||done||cur?"painted":"metal",shadow:false});
     o+=`<text class="t-ink" x="44" y="${y+4}" style="font-weight:${cur?600:400}">${S[0]}</text><text class="t-lab" x="200" y="${y+4}">${S[1].toUpperCase().slice(0,38)}</text>`});
   if(!pass&&s.stage>=1)o+=`<text class="t-big" x="14" y="250" fill="var(--warn)">Voted down at first reading: ${G.g} for, ${A.total-G.g} against</text>`;
   else if(s.stage>=6&&s.t>=1)o+=`<text class="t-big" x="14" y="250">It's now an Act of Parliament: the law.</text>`;

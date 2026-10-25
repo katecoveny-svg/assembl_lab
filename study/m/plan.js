@@ -7,7 +7,11 @@ const esc=StudyKit.esc;
 const fmt=(x,d=0)=>{let v=Number(x);if(!isFinite(v))v=0;if(Math.abs(v)<0.5*Math.pow(10,-d))v=0;return v.toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d})};
 const LAB="https://assembl-lab.vercel.app/";
 // figure materials: the shared bench recipe (StudyKit.figMat)
-const FM=StudyKit.figMat,P_WALL=FM("painted","#2E2A47"),P_DOOR=FM("painted","#FFD84D");
+const FM=StudyKit.figMat;
+// the bench figure look (StudyKit.fig): the brief and the option cards are paper sheets on a frosted butter drafting board;
+// the plan is an architectural model on the board (walls with thickness and a lit top, zones as tinted floor tiles)
+const F=StudyKit.fig,PAL=F.palette,BUT=PAL.case.butter,BUTD=F.deep(BUT),NAVY="#262E5C",GREY="#6E6A86",WALL="#4E4868";
+const STRAW=PAL.product.strawberry,LIME=PAL.product.lime,DIM="#3A6FB8",DOOR=PAL.product.butter;
 // ---- the two briefs: site (m), fixed features, zones (x, y, w, h in metres) and constraints
 const BRIEFS={
   ed:{name:"Emergency department",W:30,H:20,stake:"Health NZ, measured against the target of 95% of patients admitted, discharged or transferred within 6 hours",
@@ -45,35 +49,61 @@ function move(id,dx,dy){const z=s.zones[id];z.x=snap(z.x+dx);z.y=snap(z.y+dy)}
 function resize(id,dw,dh){const z=s.zones[id];z.w=Math.max(2,snap(z.w+dw));z.h=Math.max(2,snap(z.h+dh))}
 function saveOption(k){s.options[k]={zones:JSON.parse(JSON.stringify(s.zones)),brief:s.brief,r:evalZones(s.zones)}}
 // ---- drawing
-const INK="var(--ink)",ROSE="var(--rose)",HOT="var(--hot)",SEA="var(--sea)",SUN="var(--sun)",LINE="var(--line)",PAPER="var(--paper)";
+const LINE="#DCD6EA",BAD="#D4486B";
 const PX=20;// 1 m = 20 px in the main drawing (a 1:100 scale would be 10 px per metre at 1 px = 1 mm… the title block states the scale)
+// a sheet of paper or a white card standing on the board: lit top, shaded side, soft shadow
+function sheet(x,y,w,h,r,d,c){const white=!c||c==="#FFFFFF",m=white?{hi:"#FFFFFF",shade:"#E3E8F0",stroke:"#C2CAD6"}:F.mat("plastic",c),i=Math.min(r*0.35,w/4),dy=-0.55*d;c=c||"#FFFFFF";
+  return F.shadow(x+i,y+h,w-i+d,{opacity:.1,len:Math.min(24,Math.max(10,h*0.25))})+`<path d="M${x+i},${y} l${d},${dy} h${w-2*i} l${-d},${-dy}z" fill="${m.hi}" stroke="${m.stroke}" stroke-linejoin="round"/><path d="M${x+w},${y+i} l${d},${dy} v${Math.max(0,h-2*i)} l${-d},${-dy}z" fill="${m.shade}" stroke="${m.stroke}" stroke-linejoin="round"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}" stroke="${m.stroke}" stroke-width="1.2"/>`}
+// the frosted butter drafting board everything sits on, with two steel clips
+const board=(x,y,w,h)=>F.acrylic(x,y,w,h,{tint:BUT,d:8,r:16,balls:false,opacity:.45});
+const clip=(cx,y)=>F.shadow(cx+4,y+18,64,{len:10,h:2,opacity:.14})+F.box(cx,y,64,18,{colour:PAL.steel,kind:"metal",d:7,r:5,shadow:false})+`<path d="M${cx+8},${y+5} h40" stroke="#fff" stroke-opacity=".8" stroke-width="1.6" stroke-linecap="round"/><circle cx="${cx+32}" cy="${y+11}" r="3" fill="${PAL.steelDark}"/>`;
 function planSVG(zs,ox,oy,px,opts){const Bz=B();opts=opts||{};const r=evalZones(zs);let o="";
-  const X=x=>ox+x*px,Y=y=>oy+y*px;
-  o+=`<rect x="${X(0)}" y="${Y(0)}" width="${Bz.W*px}" height="${Bz.H*px}" fill="${PAPER}" stroke="${P_WALL.fill}" stroke-width="${opts.thin?2:5}"/>`;
-  if(!opts.thin)for(let g=1;g<Bz.W;g++)o+=`<line x1="${X(g)}" x2="${X(g)}" y1="${Y(0)}" y2="${Y(Bz.H)}" stroke="${LINE}" stroke-width="${g%5?0.5:1}"/>`;
-  if(!opts.thin)for(let g=1;g<Bz.H;g++)o+=`<line x1="${X(0)}" x2="${X(Bz.W)}" y1="${Y(g)}" y2="${Y(g)}" stroke="${LINE}" stroke-width="${g%5?0.5:1}"/>`;
-  Bz.fixed.forEach(f=>{o+=`<rect x="${X(f.x)-2}" y="${Y(f.y)}" width="${f.w*px+4}" height="${f.h*px}" ${P_DOOR.attrs}/>`;if(!opts.thin)o+=`<text x="${X(f.x)+(f.x>1?-8:14)}" y="${Y(f.y)+f.h*px/2+4}" class="t-lab" text-anchor="${f.x>1?"end":"start"}">${esc(f.label).toUpperCase()}</text>`});
+  const X=x=>ox+x*px,Y=y=>oy+y*px,Wp=Bz.W*px,Hp=Bz.H*px;
+  if(opts.thin){// a small model: floor, thin walls, flat tiles
+    o+=`<path d="M${X(0)+4},${Y(Bz.H)} h${Wp} l10,6 h${-Wp}z" fill="${PAL.shadow}" opacity=".1"/><rect x="${X(0)}" y="${Y(0)}" width="${Wp}" height="${Hp}" fill="${PAL.paper}" stroke="${WALL}" stroke-width="2.4"/><path d="M${X(0)+2},${Y(0)+2} h${Wp-4}" stroke="#fff" stroke-width="1"/>`;
+    Bz.fixed.forEach(f=>{o+=`<rect x="${X(f.x)-2}" y="${Y(f.y)}" width="${f.w*px+4}" height="${f.h*px}" fill="${DOOR}" stroke="${F.mat("painted",DOOR).stroke}"/>`})}
+  else{const T=5,S=7;// walls: T px thick (mostly outside the site line), S px tall; key light from the upper left
+    o+=`<path d="M${X(0)+S},${Y(Bz.H)+T} h${Wp+T} l26,12 h${-Wp-T}z M${X(Bz.W)+T},${Y(0)+S} l26,12 v${Hp+T-S} l-26,-12z" fill="${PAL.shadow}" opacity=".12"/>`;
+    o+=`<rect x="${X(0)}" y="${Y(0)}" width="${Wp}" height="${Hp}" fill="${PAL.paper}"/>`;
+    for(let g=1;g<Bz.W;g++)o+=`<line x1="${X(g)}" x2="${X(g)}" y1="${Y(0)}" y2="${Y(Bz.H)}" stroke="${LINE}" stroke-width="${g%5?0.5:1}"/>`;
+    for(let g=1;g<Bz.H;g++)o+=`<line x1="${X(0)}" x2="${X(Bz.W)}" y1="${Y(g)}" y2="${Y(g)}" stroke="${LINE}" stroke-width="${g%5?0.5:1}"/>`;
+    // the walls cast a soft shadow onto the floor inside the top and left walls
+    o+=`<path d="M${X(0)},${Y(0)} H${X(Bz.W)} l-${S},${S} H${X(0)+S} V${Y(Bz.H)-S} l-${S},${S}z" fill="${PAL.shadow}" opacity=".08"/>`;
+    // the shaded outer face of the bottom and right walls, then the lit wall tops
+    o+=`<path d="M${X(0)-T},${Y(Bz.H)+T} h${Wp+2*T} v${S*0.6} h${-Wp-2*T}z M${X(Bz.W)+T},${Y(0)-T} h${S*0.6} v${Hp+2*T+S*0.6} h${-S*0.6}z" fill="${F.mat("painted","#DCD6EA").shade}" stroke="${WALL}" stroke-width=".8"/>`;
+    o+=`<path d="M${X(0)-T},${Y(0)-T} h${Wp+2*T} v${Hp+2*T} h${-Wp-2*T}z M${X(0)+1.5},${Y(0)+1.5} v${Hp-3} h${Wp-3} v${-Hp+3}z" fill="#FFFDF8" fill-rule="evenodd" stroke="${WALL}" stroke-width="1.3" stroke-linejoin="round"/><path d="M${X(0)-T+3},${Y(0)-T+2} h${Math.min(160,Wp*0.4)}" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>`;
+    Bz.fixed.forEach(f=>{const dm=F.mat("painted",DOOR);o+=`<rect x="${X(f.x)-T-1}" y="${Y(f.y)}" width="${f.w*px+T+4}" height="${f.h*px}" rx="1.5" fill="${DOOR}" stroke="${dm.stroke}" stroke-width="1.2"/><path d="M${X(f.x)-T+1},${Y(f.y)+2} v${f.h*px-4}" stroke="${dm.hi}" stroke-width="1.6"/>`;
+      const inX=f.x>1?X(f.x)-2:X(f.x+f.w)+2,sw=Math.min(f.h*px*0.8,40),dir=f.x>1?-1:1;o+=`<path d="M${inX},${Y(f.y)} l${dir*sw},0 A${sw},${sw} 0 0 ${dir>0?1:0} ${inX},${Y(f.y)+sw}" fill="none" stroke="${WALL}" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 2"/>`;
+      o+=`<text x="${X(f.x)+(f.x>1?-8:14)}" y="${Y(f.y)+f.h*px/2+4}" class="t-lab" text-anchor="${f.x>1?"end":"start"}">${esc(f.label).toUpperCase()}</text>`})}
   Bz.zones.forEach(zd=>{const z={...zd,...zs[zd.id]};const bad=(z.x<0||z.y<0||z.x+z.w>Bz.W||z.y+z.h>Bz.H)||Bz.zones.some(q=>q.id!==z.id&&gap(z,{...q,...zs[q.id]})<-0.01);const sel=!opts.thin&&s.sel===z.id;
-    const zm=FM("painted",z.c);o+=`<g data-zone="${z.id}" style="cursor:move"><rect x="${X(z.x)}" y="${Y(z.y)}" width="${z.w*px}" height="${z.h*px}" rx="${opts.thin?2:6}" fill="${z.c}" stroke="${bad?HOT:sel?INK:zm.stroke}" stroke-width="${bad?3:sel?3:1.5}"${bad?' stroke-dasharray="6 4"':""}/>${opts.thin?"":`<path d="M${X(z.x)+6},${Y(z.y)+4} H${X(z.x+z.w)-6}" stroke="${zm.hi}" stroke-width="2" stroke-linecap="round" opacity=".8"/>`}`;
-    if(!opts.thin)o+=`<text x="${X(z.x)+8}" y="${Y(z.y)+18}" class="t-ink" style="font-weight:600">${esc(z.label)}</text><text x="${X(z.x)+8}" y="${Y(z.y)+34}" class="t-lab">${z.w*px>=120?`${fmt(z.w,1)} × ${fmt(z.h,1)} m · `:""}${fmt(z.w*z.h)} m²</text>`;
+    const zm=FM("painted",z.c),x=X(z.x),y=Y(z.y),w=z.w*px,h=z.h*px,rr=opts.thin?2:6,lift=sel?4:2.5;
+    // a tinted floor tile: its own small shadow, the tile (the drag target), a lit top-left edge and a shaded bottom-right edge
+    o+=`<g data-zone="${z.id}" style="cursor:move">`;
+    if(!opts.thin)o+=`<rect pointer-events="none" x="${x+lift}" y="${y+lift*1.3}" width="${w}" height="${h}" rx="${rr}" fill="${PAL.shadow}" opacity="${sel?.2:.13}"/>`;
+    o+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rr}" fill="${z.c}" stroke="${bad?BAD:sel?NAVY:zm.stroke}" stroke-width="${bad?3:sel?3:opts.thin?1:1.4}"${bad?' stroke-dasharray="6 4"':""}/>`;
+    if(!opts.thin)o+=`<path pointer-events="none" d="M${x+3},${y+h-6} V${y+6} q0,-3 3,-3 H${x+w-6}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2" stroke-linecap="round"/><path pointer-events="none" d="M${x+w-3},${y+8} V${y+h-6} q0,3 -3,3 H${x+8}" fill="none" stroke="${zm.shade}" stroke-opacity=".9" stroke-width="2" stroke-linecap="round"/>`;
+    if(!opts.thin)o+=`<text x="${x+8}" y="${y+18}" class="t-ink" style="font-weight:600">${esc(z.label)}</text><text x="${x+8}" y="${y+34}" class="t-lab">${z.w*px>=120?`${fmt(z.w,1)} × ${fmt(z.h,1)} m · `:""}${fmt(z.w*z.h)} m²</text>`;
     o+=`</g>`});
   if(opts.dims){// dimension lines for the selected zone and the site
-    const z=Z(s.sel);const dim=(x1,y1,x2,y2,t,off)=>{const vert=x1===x2;const ax=vert?x1+off:x1,ay=vert?y1:y1+off,bx=vert?x2+off:x2,by=vert?y2:y2+off;return `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${SEA}" stroke-width="1.5"/><line x1="${ax}" y1="${ay-(vert?0:5)}" x2="${ax-(vert?5:0)}" y2="${ay+(vert?0:5)}" stroke="${SEA}"/><line x1="${bx+(vert?5:0)}" y1="${by-(vert?0:5)}" x2="${bx-(vert?5:0)}" y2="${by+(vert?0:5)}" stroke="${SEA}"/><text x="${(ax+bx)/2+(vert?10:0)}" y="${(ay+by)/2+(vert?4:-6)}" class="t-lab" text-anchor="${vert?"start":"middle"}" style="fill:${SEA}">${t}</text>`};
+    const z=Z(s.sel);const dim=(x1,y1,x2,y2,t,off)=>{const vert=x1===x2;const ax=vert?x1+off:x1,ay=vert?y1:y1+off,bx=vert?x2+off:x2,by=vert?y2:y2+off;return `<g pointer-events="none"><line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${DIM}" stroke-width="1.5"/><line x1="${ax}" y1="${ay-(vert?0:5)}" x2="${ax-(vert?5:0)}" y2="${ay+(vert?0:5)}" stroke="${DIM}"/><line x1="${bx+(vert?5:0)}" y1="${by-(vert?0:5)}" x2="${bx-(vert?5:0)}" y2="${by+(vert?0:5)}" stroke="${DIM}"/><text x="${(ax+bx)/2+(vert?10:0)}" y="${(ay+by)/2+(vert?4:-6)}" class="t-lab" text-anchor="${vert?"start":"middle"}" style="fill:${DIM}">${t}</text></g>`};
     o+=dim(X(0),Y(Bz.H),X(Bz.W),Y(Bz.H),`${fmt(Bz.W*1000)}`,22)+dim(X(Bz.W),Y(0),X(Bz.W),Y(Bz.H),`${fmt(Bz.H*1000)}`,22);
     o+=dim(X(z.x),Y(z.y),X(z.x+z.w),Y(z.y),`${fmt(z.w*1000)}`,-10)+dim(X(z.x),Y(z.y),X(z.x),Y(z.y+z.h),`${fmt(z.h*1000)}`,-10)}
   return o}
-function drawMain(st){const W=800,H=420;let o=`<rect width="${W}" height="${H}" fill="var(--case-soft,var(--chalk))"/>`;const Bz=B();const px=Math.min(620/Bz.W,380/Bz.H);const ox=24,oy=20;
+// a rule light: a small painted bead, lime when met, strawberry when not
+const bead=(x,y,r,ok)=>{const c=ok?LIME:STRAW,m=F.mat("painted",c);return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${m.stroke}" stroke-width="1"/><circle cx="${x-r*0.35}" cy="${y-r*0.35}" r="${r*0.32}" fill="#fff" opacity=".6"/>`};
+function drawMain(st){const W=800,H=420;let o=F.floor(W,H);const Bz=B();const px=Math.min(620/Bz.W,380/Bz.H);const ox=24,oy=20;
   if(st.k==="brief")return o+drawBrief();
   if(st.k==="ideate")return o+drawOptions();
+  o+=board(ox-12,oy-11,Bz.W*px+24,Bz.H*px+24);
   o+=planSVG(s.zones,ox,oy,px,{dims:st.k==="communicate"});
-  const r=evalZones(s.zones);
+  const r=evalZones(s.zones),pw=W-ox-Bz.W*px-32;
   // rule panel
-  o+=`<g transform="translate(${ox+Bz.W*px+16},${oy})"><rect width="${W-ox-Bz.W*px-32}" height="${Bz.rules.length*30+14}" rx="12" fill="${PAPER}" stroke="${LINE}"/>`;
-  Bz.rules.forEach(([k,lab,short],i)=>{const ok=r[k];o+=`<circle cx="16" cy="${22+i*30}" r="7" fill="${ok?"var(--land)":HOT}"/><text x="30" y="${26+i*30}" class="t-lab" style="font-size:9.5px">${esc(short||lab).toUpperCase()}</text>`});
+  o+=sheet(ox+Bz.W*px+16,oy,pw,Bz.rules.length*30+14,12,7)+`<g transform="translate(${ox+Bz.W*px+16},${oy})">`;
+  Bz.rules.forEach(([k,lab,short],i)=>{const ok=r[k];o+=bead(16,22+i*30,7,ok)+`<text x="30" y="${26+i*30}" class="t-lab" style="font-size:9.5px">${esc(short||lab).toUpperCase()}</text>`});
   o+=`</g>`;
-  if(st.k==="communicate")o+=`<g transform="translate(${ox+Bz.W*px+16},${oy+Bz.rules.length*30+30})"><rect width="${W-ox-Bz.W*px-32}" height="86" rx="12" fill="${PAPER}" stroke="${INK}"/><text x="12" y="20" class="t-lab">TITLE BLOCK</text><text x="12" y="40" class="t-ink">${esc(Bz.name)} · plan</text><text x="12" y="58" class="t-ink">Scale 1:${s.scale} · dims in mm</text><text x="12" y="76" class="t-ink">Instrumental drawing, option ${esc(s.show==="plan"?"working":s.show)}</text></g>`;
+  if(st.k==="communicate")o+=sheet(ox+Bz.W*px+16,oy+Bz.rules.length*30+30,pw,86,12,7)+`<g transform="translate(${ox+Bz.W*px+16},${oy+Bz.rules.length*30+30})"><rect width="${pw}" height="86" rx="12" fill="none" stroke="${NAVY}"/><text x="12" y="20" class="t-lab">TITLE BLOCK</text><text x="12" y="40" class="t-ink">${esc(Bz.name)} · plan</text><text x="12" y="58" class="t-ink">Scale 1:${s.scale} · dims in mm</text><text x="12" y="76" class="t-ink">Instrumental drawing, option ${esc(s.show==="plan"?"working":s.show)}</text></g>`;
   return o}
-function drawBrief(){const Bz=B();let o=`<g transform="translate(30,30)"><rect width="740" height="370" rx="18" fill="${PAPER}" stroke="${LINE}"/>`;
+function drawBrief(){const Bz=B();let o=board(16,14,768,398)+sheet(30,30,740,370,6,4)+clip(300,20)+clip(436,20)+`<g transform="translate(30,30)">`;
   const line=(y,lab,txt)=>`<text x="24" y="${y}" class="t-lab">${lab}</text><foreignObject x="150" y="${y-16}" width="570" height="60"><div xmlns="http://www.w3.org/1999/xhtml" style="font:500 13.5px/1.35 var(--display);color:var(--ink)">${txt}</div></foreignObject>`;
   o+=`<text x="24" y="40" class="t-big" style="font-size:18px">DESIGN BRIEF: ${esc(Bz.name).toUpperCase()}</text>`;
   o+=line(80,"STAKEHOLDER",esc(Bz.stake));
@@ -82,16 +112,19 @@ function drawBrief(){const Bz=B();let o=`<g transform="translate(30,30)"><rect w
   o+=line(262,"EVIDENCE",`Simulation screenshots from the lab's ${s.brief==="ed"?"ED twin":"supermarket twin"} before and after, plus the measurable rules on the Explore step.`);
   o+=line(316,"OUTPUT","Freehand ideation sketches of at least three options, an instrumental plan at 1:100 with dimensions, and an evaluation against the brief.");
   o+=`</g>`;return o}
-function drawOptions(){let o="";const Bz=B();const keys=["A","B","C"];keys.forEach((k,i)=>{const op=s.options[k];const ox=30+i*255,oy=30;
-    o+=`<rect x="${ox}" y="${oy}" width="235" height="330" rx="16" fill="${PAPER}" stroke="${op?INK:LINE}" ${op?"":'stroke-dasharray="8 5"'}/><text x="${ox+14}" y="${oy+26}" class="t-big">OPTION ${k}</text>`;
+function drawOptions(){let o=board(16,14,768,398);const Bz=B();const keys=["A","B","C"];keys.forEach((k,i)=>{const op=s.options[k];const ox=30+i*255,oy=30;
+    // a saved option is a paper sheet taped to the board; an empty slot is a dashed outline
+    if(op)o+=sheet(ox,oy,235,330,10,4)+`<path d="M${ox+90},${oy-6} h56 v16 h-56z" fill="${PAL.product.peach}" opacity=".45" transform="rotate(-3 ${ox+118} ${oy+2})"/>`;
+    else o+=`<rect x="${ox}" y="${oy}" width="235" height="330" rx="16" fill="#fff" fill-opacity=".5" stroke="${BUTD}" stroke-dasharray="8 5"/>`;
+    o+=`<text x="${ox+14}" y="${oy+26}" class="t-big">OPTION ${k}</text>`;
     if(op&&op.brief===s.brief){const px=Math.min(200/Bz.W,150/Bz.H);o+=planSVG(op.zones,ox+17,oy+40,px,{thin:true});
       o+=`<text x="${ox+14}" y="${oy+220}" class="t-ink">${op.r.pass} of ${op.r.total} rules met</text><text x="${ox+14}" y="${oy+242}" class="t-ink">walk ${fmt(op.r.walk,1)} m · ${s.brief==="ed"?"triage":"queue"} ${fmt(s.brief==="ed"?op.r.triageD:op.r.queueGap,1)} m</text><text x="${ox+14}" y="${oy+264}" class="t-ink">${s.brief==="ed"?"waiting":"queue"} area ${fmt(op.r.areaV)} m²</text>`;
       const other=keys.filter(q=>q!==k&&s.options[q]);const diff=other.length?Math.min(...other.map(q=>optDiff(op.zones,s.options[q].zones))):null;o+=`<text x="${ox+14}" y="${oy+300}" class="t-lab">${diff===null?"":diff<4?"VERY LIKE ANOTHER OPTION":"CLEARLY DIFFERENT"}</text>`}
     else o+=`<text x="${ox+14}" y="${oy+120}" class="t-ink">Move the zones on Explore,</text><text x="${ox+14}" y="${oy+140}" class="t-ink">then press Save as ${k}.</text>`});
   o+=`<text x="30" y="396" class="t-lab">THREE DIFFERENT IDEAS BEAT ONE POLISHED ONE: DIVERGE FIRST, THEN CHOOSE</text>`;return o}
 function optDiff(a,b){let d=0;Object.keys(a).forEach(id=>{if(b[id])d+=Math.hypot(a[id].x-b[id].x,a[id].y-b[id].y)});return d}
-function drawClose(st){let o="";const Bz=B();const r=evalZones(s.zones);
-  if(st.k==="brief"){o+=`<text class="t-lab" x="14" y="22">THE ZONES AND THEIR MINIMUM SIZES</text>`;Bz.zones.forEach((z,i)=>{o+=`<rect x="14" y="${36+i*28}" width="22" height="18" rx="4" fill="${z.c}" stroke="${INK}"/><text class="t-ink" x="46" y="${50+i*28}">${esc(z.label)}</text><text class="t-ink" x="400" y="${50+i*28}" text-anchor="end">${z.w} × ${z.h} m</text>`});return o}
+function drawClose(st){let o=F.floor(420,260);const Bz=B();const r=evalZones(s.zones);
+  if(st.k==="brief"){o+=`<text class="t-lab" x="14" y="22">THE ZONES AND THEIR MINIMUM SIZES</text>`;Bz.zones.forEach((z,i)=>{o+=`<rect x="14" y="${36+i*28}" width="22" height="18" rx="4" fill="${z.c}" stroke="${FM("painted",z.c).stroke}"/><path d="M17,${39+i*28} h16" stroke="#fff" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/><text class="t-ink" x="46" y="${50+i*28}">${esc(z.label)}</text><text class="t-ink" x="400" y="${50+i*28}" text-anchor="end">${z.w} × ${z.h} m</text>`});return o}
   if(st.k==="evaluate"){o+=`<text class="t-lab" x="14" y="22">SCORECARD · CURRENT LAYOUT AGAINST THE BRIEF</text>`;
     const rows=[[`Rules met`,`${r.pass} of ${r.total}`],[r.walkLabel,`${fmt(r.walk,1)} m`],[s.brief==="ed"?"Entrance to triage":"Checkouts to exit",`${fmt(s.brief==="ed"?r.triageD:r.exitD,1)} m`],[s.brief==="ed"?"Fast-track to waiting gap":"Queue to checkouts gap",`${fmt(s.brief==="ed"?r.fastGap:r.queueGap,1)} m`],[s.brief==="ed"?"Waiting area per patient":"Queue area per shopper",`${fmt(r.areaV/Bz.need,2)} m²`],["Overlaps",`${r.overlaps}`]];
     rows.forEach((row,i)=>{o+=`<text class="t-lab" x="14" y="${54+i*26}">${esc(row[0]).toUpperCase()}</text><text class="t-ink" x="400" y="${54+i*26}" text-anchor="end">${esc(row[1])}</text>`});
@@ -101,7 +134,7 @@ function drawClose(st){let o="";const Bz=B();const r=evalZones(s.zones);
     o+=`<text class="t-lab" x="14" y="110">FREEHAND VS INSTRUMENTAL</text><text class="t-ink" x="14" y="134">Freehand: quick ideation sketches, thumbnails,</text><text class="t-ink" x="14" y="154">annotated with arrows and notes (divergent thinking).</text><text class="t-ink" x="14" y="180">Instrumental: ruled, to scale, dimensioned in mm,</text><text class="t-ink" x="14" y="200">with a title block, north point and section marks.</text><text class="t-ink" x="14" y="232">Both belong in the portfolio, labelled.</text>`;return o}
   // explore / ideate / test: the selected zone and its numbers
   const z=Z(s.sel);o+=`<text class="t-lab" x="14" y="22">SELECTED ZONE</text><text class="t-big" x="14" y="50">${esc(z.label)}</text><text class="t-ink" x="14" y="76">x ${fmt(z.x,1)} m · y ${fmt(z.y,1)} m · ${fmt(z.w,1)} × ${fmt(z.h,1)} m = ${fmt(z.w*z.h,1)} m²</text>`;
-  o+=`<text class="t-lab" x="14" y="110">RULES</text>`;Bz.rules.forEach(([k,lab],i)=>{o+=`<circle cx="22" cy="${128+i*22}" r="6" fill="${r[k]?"var(--land)":HOT}"/><text class="t-ink" x="36" y="${132+i*22}">${esc(lab)}</text>`});
+  o+=`<text class="t-lab" x="14" y="110">RULES</text>`;Bz.rules.forEach(([k,lab],i)=>{o+=`${bead(22,128+i*22,6,r[k])}<text class="t-ink" x="36" y="${132+i*22}">${esc(lab)}</text>`});
   return o}
 // ---- pointer dragging on the plan (keyboard users use the Nudge buttons)
 function wireDrag(api){const svg=document.getElementById("k-main");if(!svg)return;

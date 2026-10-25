@@ -8,8 +8,10 @@ const esc=StudyKit.esc;
 const fmt=(x,d=0)=>{let v=Number(x);if(!isFinite(v))v=0;if(Math.abs(v)<0.5*Math.pow(10,-d))v=0;return v.toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d})};
 const REDUCED=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const LAB="https://assembl-lab.vercel.app/";
-// figure materials: the shared bench recipe (StudyKit.figMat)
-const FM=StudyKit.figMat,Q_COUNTER=FM("wood","#D9B48C"),Q_BELT=FM("rubber","#3C4557"),Q_RAIL=FM("metal","#B9C5D6"),Q_ARROW=FM("metal","#B9C5D6");
+// the bench figure look (StudyKit.fig): a shop floor on paper, wood-and-steel checkouts with rubber belts, simple faceless
+// shoppers, charts on frosted lavender screens, product colours for the data
+const F=StudyKit.fig,PAL=F.palette,LAV=PAL.case.lavender,LAVD=F.deep(LAV),AXIS="#8F9BAA",NAVY="#262E5C",GREY="#6E6A86";
+const STRAW=PAL.product.strawberry,BLUE=PAL.product.blueberry,BUTTER=PAL.product.butter,LIME=PAL.product.lime,WOOD="#D9B48C";
 // ---- maths
 function erf(x){const t=1/(1+0.3275911*Math.abs(x));const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return x<0?-y:y}
 const Phi=z=>0.5*(1+erf(z/Math.SQRT2));
@@ -43,78 +45,104 @@ function tickArr(dt){const d=dt*s.speed/60;s.t+=d;s.arrT+=d;// simulated minutes
   s.dots=s.dots.filter(x=>s.t-x.t<2.5)}
 function tickLive(dt){if(!s.sim)startLive();const d=dt*s.speed/60;stepSim(s.sim,s.t+d);s.t+=d;if(s.t>=60){s.lastRun=summarise(s.sim,{rate:s.rate,c:s.c,minutes:60,seed:s.seed});s.playing=false}}
 // ---- drawing
-const INK="var(--ink)",ROSE="var(--rose)",HOT="var(--hot)",SEA="var(--sea)",SUN="var(--sun)",LINE="var(--line)",PAPER="var(--paper)",LAND="var(--land)";
-const person=(x,y,c)=>{const m=FM("painted",c==="var(--hot)"?"#F2603F":"#2F8FD8");return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="6" cy="-14" fill="${m.fill}" stroke="${m.stroke}" stroke-width="1"/><path d="M-7,10 C-7,-2 7,-2 7,10Z" fill="${m.fill}" stroke="${m.stroke}" stroke-width="1"/><circle r="2" cx="-2" cy="-16" fill="${m.hi}" opacity=".7"/></g>`};
-function drawMain(st){const W=800,H=420;let o=`<rect width="${W}" height="${H}" fill="var(--case-soft,var(--chalk))"/>`;
+const LINE="#DCD6EA",SKIN=["#F2D0B4","#D9A47E","#B07650","#E8B48A","#8D5A3B"];
+// a simple painted figure (head, body, legs; no face), feet on the floor at y + 12
+const person=(x,y,c,k)=>{const m=F.mat("painted",c),sk=SKIN[Math.abs(Math.floor(k||0))%SKIN.length];return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><ellipse cx="5" cy="12.5" rx="10" ry="2.3" fill="${PAL.shadow}" opacity=".16"/><path d="M-3,5 v6.5 M3,5 v6.5" stroke="#4E4868" stroke-width="2.6" stroke-linecap="round"/><path d="M-8,7 v-6 q0,-9 8,-9 q8,0 8,9 v6z" fill="${c}" stroke="${m.stroke}" stroke-width="1"/><path d="M-5,1 q0.5,-4 4,-5.5" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cy="-13.5" r="6" fill="${sk}" stroke="#A9805F" stroke-width=".8"/><path d="M-6,-14 a6,6 0 0 1 12,0 q-6,-3 -12,0z" fill="#4E4868"/></g>`};
+// a rounded solid with a lit top and shaded side, for cards and panels standing on the paper
+function slab(x,y,w,h,r,d,c,sh){const white=c==="#FFFFFF",m=white?{hi:"#FFFFFF",shade:"#E3E8F0",stroke:"#C2CAD6"}:F.mat("plastic",c),i=Math.min(r*0.35,w/4),dy=-0.55*d;
+  return (sh===false?"":F.shadow(x+i,y+h,w-i+d,{opacity:.1,len:Math.min(26,Math.max(12,h*0.3))}))+`<path d="M${x+i},${y} l${d},${dy} h${w-2*i} l${-d},${-dy}z" fill="${m.hi}" stroke="${m.stroke}" stroke-linejoin="round"/><path d="M${x+w},${y+i} l${d},${dy} v${Math.max(0,h-2*i)} l${-d},${-dy}z" fill="${m.shade}" stroke="${m.stroke}" stroke-linejoin="round"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}" stroke="${m.stroke}" stroke-width="1.2"/>`}
+function drawMain(st){const W=800,H=420;let o=F.floor(W,H);
   if(st.k==="arrivals")return o+drawArrivals();if(st.k==="service")return o+drawNormal();if(st.k==="ed")return o+drawED();if(st.k==="tree")return o+drawTree();return o+drawCheckout()}
 function drawArrivals(){let o=`<text x="30" y="36" class="t-lab">SHOPPERS ARRIVING AT ${fmt(s.lam,1)} A MINUTE ON AVERAGE · ${fmt(s.t,1)} MIN</text>`;
-  o+=`<rect x="40" y="160" width="720" height="8" rx="4" ${Q_RAIL.attrs}/><path d="M700,140 l40,24 -40,24" fill="none" stroke="${Q_ARROW.stroke}" stroke-width="2"/>`;
-  (s.dots||[]).forEach(d=>{const age=s.t-d.t;o+=person(80+age/2.5*620,150,SEA)});
-  o+=`<rect x="640" y="90" width="120" height="120" rx="12" fill="${PAPER}" stroke="${INK}"/><text x="700" y="118" text-anchor="middle" class="t-lab">THIS WINDOW</text><text x="700" y="160" text-anchor="middle" class="t-big" style="font-size:30px">${s.arrCount}</text><text x="700" y="190" text-anchor="middle" class="t-lab">${fmt(s.arrT,1)} OF ${s.win} MIN</text>`;
+  // the walkway into the shop: a low lavender platform; shoppers walk along it to the counter
+  o+=F.box(40,164,600,8,{colour:LAV,kind:"plastic",d:26,r:2,shadowLen:30});
+  (s.dots||[]).forEach(d=>{const age=s.t-d.t;o+=person(80+age/2.5*620,150,BLUE,d.t*7)});
+  o+=F.acrylic(640,90,120,120,{tint:LAV,d:14,r:12})+`<rect x="650" y="100" width="100" height="100" rx="8" fill="#fff" fill-opacity=".72" stroke="${LAVD}" stroke-opacity=".6"/><text x="700" y="118" text-anchor="middle" class="t-lab">THIS WINDOW</text><text x="700" y="160" text-anchor="middle" class="t-big" style="font-size:30px">${s.arrCount}</text><text x="700" y="190" text-anchor="middle" class="t-lab">${fmt(s.arrT,1)} OF ${s.win} MIN</text>`;
+  // the chart on a frosted lavender screen
+  o+=F.acrylic(28,224,736,192,{tint:LAV,d:8,r:14,balls:false,shadow:false,opacity:.32});
   o+=`<text x="40" y="240" class="t-lab">ARRIVALS PER ${s.win}-MINUTE WINDOW SO FAR (${s.wins.length} WINDOWS) · BARS = OBSERVED, DOTS = POISSON MODEL λ = ${fmt(s.lam*s.win,2)}</text>`;
   const lam=s.lam*s.win,K=Math.max(8,Math.ceil(lam+3*Math.sqrt(lam)));const cnt=Array(K+1).fill(0);s.wins.forEach(w=>{if(w<=K)cnt[w]++});const n=Math.max(1,s.wins.length);
   const bw=Math.min(50,680/(K+1)),x0=60,y0=400,hmax=120;let pmax=0.05;for(let k=0;k<=K;k++)pmax=Math.max(pmax,poisson(lam,k),cnt[k]/n);
-  for(let k=0;k<=K;k++){const x=x0+k*bw;o+=`<rect x="${x+2}" y="${y0-cnt[k]/n/pmax*hmax}" width="${bw-4}" height="${cnt[k]/n/pmax*hmax}" fill="${SEA}" opacity=".7"/><circle cx="${x+bw/2}" cy="${y0-poisson(lam,k)/pmax*hmax}" r="4" fill="${HOT}" stroke="${INK}"/><text x="${x+bw/2}" y="${y0+14}" text-anchor="middle" class="t-lab">${k}</text>`}
+  o+=`<line x1="${x0}" x2="${x0+(K+1)*bw}" y1="${y0}" y2="${y0}" stroke="${AXIS}"/>`;
+  for(let k=0;k<=K;k++){const x=x0+k*bw,bh=cnt[k]/n/pmax*hmax;o+=`<rect x="${x+2}" y="${y0-bh}" width="${bw-4}" height="${bh}" rx="3" fill="${BLUE}" fill-opacity=".85" stroke="${F.mat("painted",BLUE).stroke}" stroke-width="${bh>0?1:0}"/><circle cx="${x+bw/2}" cy="${y0-poisson(lam,k)/pmax*hmax}" r="4" fill="${STRAW}" stroke="${NAVY}"/><text x="${x+bw/2}" y="${y0+14}" text-anchor="middle" class="t-lab">${k}</text>`}
   return o}
 function drawNormal(){let o=`<text x="30" y="36" class="t-lab">CHECKOUT SERVICE TIME · NORMAL, μ = ${fmt(s.mu)} s, σ = ${fmt(s.sig)} s</text>`;
+  o+=F.acrylic(40,48,720,364,{tint:LAV,d:10,r:16,shadow:false,opacity:.3});
   const X=x=>60+(x-(s.mu-4*s.sig))/(8*s.sig)*680,Y=p=>360-p*280;const pdf=x=>Math.exp(-0.5*((x-s.mu)/s.sig)**2);
   let d="",a="";for(let i=0;i<=200;i++){const x=s.mu-4*s.sig+i/200*8*s.sig;d+=(i?"L":"M")+X(x).toFixed(1)+","+Y(pdf(x)).toFixed(1)}
   const lo=Math.max(s.lo,s.mu-4*s.sig),hi=Math.min(s.hi,s.mu+4*s.sig);if(hi>lo){for(let i=0;i<=100;i++){const x=lo+i/100*(hi-lo);a+=(i?"L":"M")+X(x).toFixed(1)+","+Y(pdf(x)).toFixed(1)}a+=` L${X(hi).toFixed(1)},360 L${X(lo).toFixed(1)},360Z`}
-  o+=`<path d="${a}" fill="${SUN}" opacity=".7"/><path d="${d}" fill="none" stroke="${INK}" stroke-width="2.4"/><line x1="60" x2="740" y1="360" y2="360" stroke="${ROSE}"/>`;
-  for(let z=-3;z<=3;z++){const x=s.mu+z*s.sig;o+=`<line x1="${X(x)}" x2="${X(x)}" y1="360" y2="368" stroke="${ROSE}"/><text x="${X(x)}" y="384" text-anchor="middle" class="t-lab">${fmt(x)}</text><text x="${X(x)}" y="400" text-anchor="middle" class="t-lab" style="fill:${ROSE}">z = ${z}</text>`}
+  o+=`<path d="${a}" fill="${BUTTER}" opacity=".75"/><path d="${d}" fill="none" stroke="${NAVY}" stroke-width="2.4"/><line x1="60" x2="740" y1="360" y2="360" stroke="${AXIS}"/>`;
+  for(let z=-3;z<=3;z++){const x=s.mu+z*s.sig;o+=`<line x1="${X(x)}" x2="${X(x)}" y1="360" y2="368" stroke="${AXIS}"/><text x="${X(x)}" y="384" text-anchor="middle" class="t-lab">${fmt(x)}</text><text x="${X(x)}" y="400" text-anchor="middle" class="t-lab" style="fill:${GREY}">z = ${z}</text>`}
   const zl=(s.lo-s.mu)/s.sig,zh=(s.hi-s.mu)/s.sig,p=Phi(zh)-Phi(zl);
-  o+=`<g transform="translate(470,60)"><rect width="300" height="130" rx="14" fill="${PAPER}" stroke="${LINE}"/><text x="14" y="26" class="t-lab">P(${s.lo<=s.mu-4*s.sig?"X":fmt(s.lo)+" < X"} ${s.hi>=s.mu+4*s.sig?"":"< "+fmt(s.hi)}${s.lo<=s.mu-4*s.sig&&s.hi>=s.mu+4*s.sig?" anything":""})</text>`;
+  o+=slab(470,60,300,130,14,8,"#FFFFFF")+`<g transform="translate(470,60)"><text x="14" y="26" class="t-lab">P(${s.lo<=s.mu-4*s.sig?"X":fmt(s.lo)+" < X"} ${s.hi>=s.mu+4*s.sig?"":"< "+fmt(s.hi)}${s.lo<=s.mu-4*s.sig&&s.hi>=s.mu+4*s.sig?" anything":""})</text>`;
   o+=`<text x="14" y="54" class="t-ink">z = (x − μ) ÷ σ: ${s.lo<=s.mu-4*s.sig?"−∞":fmt(zl,2)} to ${s.hi>=s.mu+4*s.sig?"∞":fmt(zh,2)}</text><text x="14" y="78" class="t-ink">Φ(${fmt(zh,2)}) − Φ(${fmt(zl,2)}) = ${fmt(Phi(zh),3)} − ${fmt(Phi(zl),3)}</text><text x="14" y="114" class="t-big" style="font-size:22px">P = ${fmt(p,3)}</text></g>`;
   return o}
+function checkout(x,w,d,busy){// a wood counter with a steel edge and kick plate, a rubber belt along its top (goods on it when busy) and a steel till
+  const dy=-0.55*d,t=f=>[x+f*d,80+f*dy],WM=F.mat("wood",WOOD);let o=F.box(x,80,w,56,{colour:WOOD,kind:"wood",d,r:3,shadowLen:24});
+  const [ax,ay]=t(0.18),[bx,by]=t(0.78),bl=w*0.64;
+  o+=`<path d="M${ax+2},${ay} L${bx+2},${by} h${bl} L${ax+2+bl},${ay}z" fill="#4A5366" stroke="#2F3646" stroke-width=".8" stroke-linejoin="round"/>`;
+  for(let k=1;k<4;k++){const u=k/4;o+=`<path d="M${ax+2+bl*u},${ay} L${bx+2+bl*u},${by}" stroke="#fff" stroke-opacity=".18" stroke-width="1"/>`}
+  if(busy)[[0.12,STRAW],[0.42,LIME],[0.7,BLUE]].forEach(([u,c],k)=>{if(u*bl+8<bl)o+=F.box((ax+bx)/2+2+u*bl-2,(ay+by)/2+2-6,Math.min(9,bl*0.18),6,{colour:c,kind:"painted",d:3,shadow:false})});
+  o+=`<path d="M${x+3},80.5 H${x+w-3}" stroke="${PAL.steel}" stroke-width="3" stroke-linecap="round"/><path d="M${x+6},88 H${x+w-8}" stroke="${WM.hi}" stroke-width="2" stroke-linecap="round" opacity=".8"/><path d="M${x+w*0.5},92 V126" stroke="${WM.stroke}" stroke-opacity=".35"/><rect x="${x+1}" y="126" width="${w-2}" height="9" rx="2" fill="${PAL.steel}" stroke="${PAL.steelDark}" stroke-width=".8"/>`;
+  const tw=Math.max(10,w*0.2),tx=x+w-tw-2+d*0.3,ty=80+dy*0.3;o+=F.box(tx,ty-11,tw,11,{colour:PAL.steel,kind:"metal",d:Math.min(7,d*0.35),r:2,shadow:false})+`<rect x="${tx+2}" y="${ty-9}" width="${tw-4}" height="5" rx="1" fill="#3B4466"/>`;
+  return o}
 function drawCheckout(){const S=s.sim;let o=`<text x="30" y="36" class="t-lab">${s.c} CHECKOUT${s.c>1?"S":""} OPEN · ${fmt(s.rate,1)} ARRIVALS A MINUTE · ${S?fmt(s.t,1):0} OF 60 MIN</text>`;
-  const cw=Math.min(110,600/s.c);
-  for(let i=0;i<s.c;i++){const x=120+i*cw;o+=`<rect x="${x}" y="80" width="${cw-16}" height="56" rx="10" ${Q_COUNTER.attrs}/><path d="M${x+10},86 H${x+cw-30}" stroke="${Q_COUNTER.hi}" stroke-width="3" stroke-linecap="round"/><rect x="${x+8}" y="92" width="${cw-32}" height="14" rx="4" ${Q_BELT.attrs}/>`;
-    const b=S&&S.busy[i];if(b)o+=person(x+(cw-16)/2,170,HOT)+`<text x="${x+(cw-16)/2}" y="196" text-anchor="middle" class="t-lab">${fmt((b.end-S.t)*60)} s</text>`}
-  if(S){const q=S.queue;q.slice(0,40).forEach((p,i)=>{o+=person(120+(i%20)*32,250+Math.floor(i/20)*44,SEA)});if(q.length>40)o+=`<text x="120" y="340" class="t-ink">+ ${q.length-40} more</text>`;
+  const cw=Math.min(110,600/s.c),dd=Math.min(22,cw*0.28);
+  for(let i=0;i<s.c;i++){const x=120+i*cw;const b=S&&S.busy[i];o+=checkout(x,cw-16,dd,!!b);
+    if(b)o+=person(x+(cw-16)/2,170,STRAW,b.id)+`<text x="${x+(cw-16)/2}" y="196" text-anchor="middle" class="t-lab">${fmt((b.end-S.t)*60)} s</text>`}
+  // the queue lane: steel posts with a lavender rope
+  const posts=[116,276,436,596,756];
+  posts.slice(0,-1).forEach((p,k)=>{o+=`<path d="M${p},209 Q${p+80},218 ${posts[k+1]},209" fill="none" stroke="${LAVD}" stroke-width="3" stroke-linecap="round"/>`});
+  posts.forEach(p=>{o+=F.cyl(p,208,3.2,14,{colour:PAL.steel,kind:"metal",shadowLen:10})+`<ellipse cx="${p}" cy="222" rx="7" ry="2.4" fill="${PAL.steelDark}"/>`});
+  if(S){const q=S.queue;q.slice(0,40).forEach((p,i)=>{o+=person(120+(i%20)*32,250+Math.floor(i/20)*44,BLUE,p.id)});if(q.length>40)o+=`<text x="120" y="340" class="t-ink">+ ${q.length-40} more</text>`;
     o+=`<text x="30" y="226" class="t-lab">WAITING: ${q.length}</text>`;
     const r=summarise(S,{rate:s.rate,c:s.c,minutes:s.t,seed:s.seed});
-    o+=`<g transform="translate(30,360)"><rect width="740" height="44" rx="12" fill="${PAPER}" stroke="${LINE}"/><text x="14" y="28" class="t-ink">${r.n} served · mean wait ${fmt(r.mean,1)} min · median ${fmt(r.median,1)} · longest ${fmt(r.max,1)} · ${Math.round(r.over5*100)}% waited over 5 min · busy ${Math.round(Math.min(1,s.rate*s.mu/60/s.c)*100)}%</text></g>`}
+    o+=slab(30,360,740,44,12,7,"#FFFFFF",false)+`<g transform="translate(30,360)"><text x="14" y="28" class="t-ink">${r.n} served · mean wait ${fmt(r.mean,1)} min · median ${fmt(r.median,1)} · longest ${fmt(r.max,1)} · ${Math.round(r.over5*100)}% waited over 5 min · busy ${Math.round(Math.min(1,s.rate*s.mu/60/s.c)*100)}%</text></g>`}
   else o+=`<text x="120" y="280" class="t-ink">Press play to open the doors for a simulated hour (${s.speed}× real time).</text>`;
   return o}
 function drawED(){let o=`<text x="30" y="36" class="t-lab">ED: ${fmt(s.edRate)} ARRIVALS AN HOUR, ${s.beds} BEDS, ${s.edHours} SIMULATED HOURS · TREATMENT 30 MIN TYPICAL, 12% COMPLEX CASES (ESTIMATE)</text>`;
-  const show=(r,x,label,c)=>{if(!r){o+=`<g transform="translate(${x},70)"><rect width="340" height="200" rx="14" fill="${PAPER}" stroke="${LINE}" stroke-dasharray="6 4"/><text x="170" y="110" text-anchor="middle" class="t-ink">${label}: press Run, then Save as ${label}</text></g>`;return}
-    o+=`<g transform="translate(${x},70)"><rect width="340" height="200" rx="14" fill="${PAPER}" stroke="${c}" stroke-width="2"/><text x="16" y="28" class="t-lab">RUN ${label} · ${r.c} BEDS · ${fmt(r.rate)}/h · ${fmt(r.minutes/60)} h</text>
+  // each saved run is a frosted lavender screen with a white readout, keyed by a product colour (A strawberry, B blueberry)
+  const show=(r,x,label,c)=>{if(!r){o+=`<g transform="translate(${x},70)"><rect width="340" height="200" rx="14" fill="#fff" fill-opacity=".55" stroke="#B9B3CF" stroke-dasharray="6 4"/><text x="170" y="110" text-anchor="middle" class="t-ink">${label}: press Run, then Save as ${label}</text></g>`;return}
+    o+=F.acrylic(x,70,340,200,{tint:LAV,d:12,r:14,opacity:.4})+`<rect x="${x+7}" y="77" width="326" height="186" rx="10" fill="#fff" fill-opacity=".78" stroke="${c}" stroke-width="2"/>`;
+    o+=`<g transform="translate(${x},70)"><text x="16" y="28" class="t-lab">RUN ${label} · ${r.c} BEDS · ${fmt(r.rate)}/h · ${fmt(r.minutes/60)} h</text>
       <text x="16" y="62" class="t-big" style="font-size:26px">${fmt(r.within6*100,1)}%</text><text x="150" y="62" class="t-ink">finished within 6 h</text>
       <text x="16" y="96" class="t-ink">${r.breaches} of ${r.nT} breached · risk ${fmt(r.breach,3)}</text><text x="16" y="120" class="t-ink">median wait for a bed ${fmt(r.median)} min</text><text x="16" y="144" class="t-ink">longest wait ${fmt(r.max)} min · ${r.left} still inside at the end</text>
       <text x="16" y="178" class="t-lab">SEED ${r.seed} · SAME SEED, SAME RESULT</text></g>`};
-  show(s.runA,30,"A",HOT);show(s.runB,420,"B",SEA);
-  if(s.runA&&s.runB){const rr=s.runB.breach>0?s.runA.breach/s.runB.breach:Infinity;o+=`<g transform="translate(30,290)"><rect width="740" height="110" rx="14" fill="${SUN}" opacity=".9"/><text x="16" y="30" class="t-lab">RELATIVE RISK OF BREACHING 6 HOURS, A ÷ B</text><text x="16" y="66" class="t-big" style="font-size:24px">${isFinite(rr)?fmt(rr,2):"∞ (B had no breaches)"}</text><text x="16" y="94" class="t-ink">${isFinite(rr)?(rr>=2?`Run A's risk is ${fmt(rr,1)} times B's: the claim "at least halves the risk" holds for these runs.`:rr>1?`Run A's risk is only ${fmt(rr,2)} times B's: less than halved.`:"B is no better than A here."):"B had zero breaches, so the ratio is undefined: say so, and run longer."} Sample sizes: ${s.runA.nT} and ${s.runB.nT}.</text></g>`}
+  show(s.runA,30,"A",STRAW);show(s.runB,420,"B",BLUE);
+  if(s.runA&&s.runB){const rr=s.runB.breach>0?s.runA.breach/s.runB.breach:Infinity;o+=slab(30,290,740,110,14,10,PAL.case.butter,false)+`<g transform="translate(30,290)"><text x="16" y="30" class="t-lab">RELATIVE RISK OF BREACHING 6 HOURS, A ÷ B</text><text x="16" y="66" class="t-big" style="font-size:24px">${isFinite(rr)?fmt(rr,2):"∞ (B had no breaches)"}</text><text x="16" y="94" class="t-ink">${isFinite(rr)?(rr>=2?`Run A's risk is ${fmt(rr,1)} times B's: the claim "at least halves the risk" holds for these runs.`:rr>1?`Run A's risk is only ${fmt(rr,2)} times B's: less than halved.`:"B is no better than A here."):"B had zero breaches, so the ratio is undefined: say so, and run longer."} Sample sizes: ${s.runA.nT} and ${s.runB.nT}.</text></g>`}
   else o+=`<text x="30" y="330" class="t-ink">The pack's question: 14 an hour, 8 beds, then 12 beds. Does adding beds at least halve the risk of breaching 6 hours?</text>`;
   return o}
 function drawTree(){const p=s.pSelf,a=s.pHelpSelf,b=s.pHelpStaff;const pH=p*a+(1-p)*b;let o=`<text x="30" y="36" class="t-lab">PROBABILITY TREE: WHICH CHECKOUT, THEN WHETHER THEY NEED HELP</text>`;
-  const br=(x1,y1,x2,y2,lab,c)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c||INK}" stroke-width="2"/><text x="${(x1+x2)/2-6}" y="${(y1+y2)/2-6}" class="t-ink" text-anchor="end">${lab}</text>`;
+  const br=(x1,y1,x2,y2,lab,c)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c||NAVY}" stroke-width="2.2" stroke-linecap="round"/><text x="${(x1+x2)/2-6}" y="${(y1+y2)/2-6}" class="t-ink" text-anchor="end">${lab}</text>`;
   o+=br(120,220,300,120,`self ${fmt(p,2)}`)+br(120,220,300,320,`staffed ${fmt(1-p,2)}`);
-  o+=br(300,120,480,80,`help ${fmt(a,2)}`,HOT)+br(300,120,480,160,`no help ${fmt(1-a,2)}`)+br(300,320,480,280,`help ${fmt(b,2)}`,HOT)+br(300,320,480,360,`no help ${fmt(1-b,2)}`);
-  const leaf=(y,txt,hot)=>`<rect x="490" y="${y-16}" width="280" height="32" rx="8" fill="${hot?SUN:PAPER}" stroke="${LINE}"/><text x="502" y="${y+5}" class="t-ink">${txt}</text>`;
+  o+=br(300,120,480,80,`help ${fmt(a,2)}`,STRAW)+br(300,120,480,160,`no help ${fmt(1-a,2)}`)+br(300,320,480,280,`help ${fmt(b,2)}`,STRAW)+br(300,320,480,360,`no help ${fmt(1-b,2)}`);
+  // the leaves are little cards on the paper; the two "help" leaves are butter
+  const leaf=(y,txt,hot)=>slab(490,y-16,280,32,8,6,hot?BUTTER:"#FFFFFF")+`<text x="502" y="${y+5}" class="t-ink">${txt}</text>`;
   o+=leaf(80,`self AND help: ${fmt(p,2)} × ${fmt(a,2)} = ${fmt(p*a,3)}`,true)+leaf(160,`self, no help: ${fmt(p*(1-a),3)}`)+leaf(280,`staffed AND help: ${fmt(1-p,2)} × ${fmt(b,2)} = ${fmt((1-p)*b,3)}`,true)+leaf(360,`staffed, no help: ${fmt((1-p)*(1-b),3)}`);
-  o+=`<circle cx="120" cy="220" r="8" fill="${INK}"/>`;
+  [[300,120],[300,320]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="4" fill="#fff" stroke="${NAVY}" stroke-width="1.6"/>`);
+  o+=`<circle cx="122" cy="223" r="8" fill="${PAL.shadow}" opacity=".15"/><circle cx="120" cy="220" r="8" fill="${NAVY}"/><circle cx="117.5" cy="217.5" r="2.4" fill="#fff" opacity=".5"/>`;
   o+=`<g transform="translate(30,380)"><text x="0" y="0" class="t-ink">P(help) = ${fmt(p*a,3)} + ${fmt((1-p)*b,3)} = ${fmt(pH,3)} · P(self | help) = ${fmt(p*a,3)} ÷ ${fmt(pH,3)} = ${fmt(pH?p*a/pH:0,3)}</text></g>`;
   return o}
-function drawClose(st){const w=420;let o="";
+function drawClose(st){const w=420;let o=F.floor(420,260);
   if(st.k==="arrivals"){const lam=s.lam*s.win;o+=`<text class="t-lab" x="14" y="22">POISSON: P(X = k) = e^(−λ) λ^k ÷ k!, λ = ${fmt(s.lam,1)} × ${s.win} = ${fmt(lam,2)}</text>`;
     [0,1,2,3,4,5].forEach((k,i)=>{o+=`<text class="t-lab" x="14" y="${54+i*26}">P(${k})</text><text class="t-ink" x="60" y="${54+i*26}">${fmt(poisson(lam,k),4)}</text>`});
     o+=`<text class="t-ink" x="200" y="54">P(0) = e^(−${fmt(lam,2)}) = ${fmt(poisson(lam,0),4)}</text><text class="t-ink" x="200" y="80">P(at least 1) = 1 − P(0) = ${fmt(1-poisson(lam,0),4)}</text><text class="t-ink" x="200" y="106">mean = variance = λ</text><text class="t-ink" x="200" y="132">observed mean: ${s.wins.length?fmt(s.wins.reduce((x,y)=>x+y,0)/s.wins.length,2):"–"}</text>`;
     o+=`<text class="t-lab" x="14" y="236">POISSON IS A LEVEL 3 TOPIC (AS91586); AT LEVEL 2 YOU COMPARE THE OBSERVED DISTRIBUTION</text>`;return o}
   if(st.k==="service"){o+=`<text class="t-lab" x="14" y="22">STANDARD NORMAL: AREA TO THE LEFT OF z</text>`;const X=z=>40+(z+3.5)/7*360,Y=p=>220-p*170;let d="";for(let i=0;i<=140;i++){const z=-3.5+i/20;d+=(i?"L":"M")+X(z).toFixed(1)+","+Y(Phi(z)).toFixed(1)}
-    o+=`<line x1="40" x2="400" y1="220" y2="220" stroke="${ROSE}"/><path d="${d}" fill="none" stroke="${HOT}" stroke-width="2.4"/>`;const zl=(s.lo-s.mu)/s.sig,zh=(s.hi-s.mu)/s.sig;
-    [[zl,SEA],[zh,SUN]].forEach(([z,c])=>{if(z>-3.5&&z<3.5)o+=`<line x1="${X(z)}" x2="${X(z)}" y1="${Y(Phi(z))}" y2="220" stroke="${c}" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${X(z)}" cy="${Y(Phi(z))}" r="5" fill="${c}" stroke="${INK}"/>`});
+    o+=`<line x1="40" x2="400" y1="220" y2="220" stroke="${AXIS}"/><path d="${d}" fill="none" stroke="${STRAW}" stroke-width="2.4"/>`;const zl=(s.lo-s.mu)/s.sig,zh=(s.hi-s.mu)/s.sig;
+    [[zl,BLUE],[zh,BUTTER]].forEach(([z,c])=>{if(z>-3.5&&z<3.5)o+=`<line x1="${X(z)}" x2="${X(z)}" y1="${Y(Phi(z))}" y2="220" stroke="${c}" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${X(z)}" cy="${Y(Phi(z))}" r="5" fill="${c}" stroke="${NAVY}"/>`});
     [-3,-2,-1,0,1,2,3].forEach(z=>o+=`<text class="t-lab" x="${X(z)}" y="238" text-anchor="middle">${z}</text>`);
     o+=`<text class="t-ink" x="48" y="48">Φ(${fmt(zl,2)}) = ${fmt(Phi(zl),4)} · Φ(${fmt(zh,2)}) = ${fmt(Phi(zh),4)}</text><text class="t-ink" x="48" y="70">P(X > 100) = 1 − Φ(−0.95) = ${fmt(1-Phi((100-s.mu)/s.sig),3)}</text>`;return o}
   if(st.k==="wait"||st.k==="test"){const r=s.lastRun||(s.sim?summarise(s.sim,{rate:s.rate,c:s.c,minutes:s.t,seed:s.seed}):null);o+=`<text class="t-lab" x="14" y="22">WAITING TIMES THIS HOUR: SHAPE, CENTRE, SPREAD</text>`;
     if(!r||!r.n){o+=`<text class="t-ink" x="14" y="60">Press play on the checkout, or Run an hour.</text>`;return o}
     const B=12,wmax=Math.max(10,Math.ceil(r.max)),bw=wmax/B,cnt=Array(B).fill(0);r.waits.forEach(x=>{cnt[Math.min(B-1,Math.floor(x/bw))]++});const m=Math.max(...cnt,1);
-    for(let i=0;i<B;i++){const h=cnt[i]/m*150;o+=`<rect x="${40+i*28}" y="${210-h}" width="24" height="${h}" fill="${SEA}" opacity=".75"/><text class="t-lab" x="${52+i*28}" y="226" text-anchor="middle">${fmt(i*bw)}</text>`}
+    for(let i=0;i<B;i++){const h=cnt[i]/m*130;o+=`<rect x="${40+i*28}" y="${210-h}" width="24" height="${h}" fill="${BLUE}" opacity=".75"/><text class="t-lab" x="${52+i*28}" y="226" text-anchor="middle">${fmt(i*bw)}</text>`}
     o+=`<text class="t-lab" x="400" y="240" text-anchor="end">WAIT (MIN)</text><text class="t-ink" x="48" y="48">n = ${r.n} · mean ${fmt(r.mean,1)} · median ${fmt(r.median,1)} · IQR ${fmt(r.q1,1)}–${fmt(r.q3,1)} · max ${fmt(r.max,1)}</text><text class="t-ink" x="48" y="70">${r.mean>r.median*1.2?"Skewed right: a few long waits pull the mean up.":"Fairly symmetric."}</text>`;return o}
   if(st.k==="ed"){o+=`<text class="t-lab" x="14" y="22">RELATIVE RISK = P(breach | A) ÷ P(breach | B)</text><text class="t-ink" x="14" y="52">Above 1: A is riskier. Below 1: A is safer.</text><text class="t-ink" x="14" y="74">"At least halves the risk" means RR ≥ 2 (A = fewer beds).</text><text class="t-ink" x="14" y="110">Calculation AND interpretation earn the marks:</text><text class="t-ink" x="14" y="132">state the two risks, the ratio, what it means,</text><text class="t-ink" x="14" y="154">and the sample sizes behind them.</text>`;
     o+=`<text class="t-lab" x="14" y="196">THE FULL TWIN: ${LAB.replace("https://","")}ed</text><text class="t-lab" x="14" y="216">SUPERMARKET TWIN: ${LAB.replace("https://","")}store</text>`;return o}
   const p=s.pSelf,a=s.pHelpSelf,b=s.pHelpStaff;o+=`<text class="t-lab" x="14" y="22">THE SAME NUMBERS AS A TWO-WAY TABLE (OUT OF 1000 SHOPPERS)</text>`;
   const T=[["",`help`,`no help`,`total`],[`self`,fmt(1000*p*a),fmt(1000*p*(1-a)),fmt(1000*p)],[`staffed`,fmt(1000*(1-p)*b),fmt(1000*(1-p)*(1-b)),fmt(1000*(1-p))],[`total`,fmt(1000*(p*a+(1-p)*b)),fmt(1000*(1-p*a-(1-p)*b)),"1000"]];
-  T.forEach((row,i)=>row.forEach((c,j)=>{o+=`<rect x="${14+j*96}" y="${40+i*34}" width="94" height="32" fill="${i===0||j===0?"var(--chalk)":PAPER}" stroke="${LINE}"/><text class="t-ink" x="${61+j*96}" y="${61+i*34}" text-anchor="middle">${esc(c)}</text>`}));
+  T.forEach((row,i)=>row.forEach((c,j)=>{o+=`<rect x="${14+j*96}" y="${40+i*34}" width="94" height="32" fill="${i===0||j===0?LAV:"#FFFFFF"}" stroke="${LINE}"/><text class="t-ink" x="${61+j*96}" y="${61+i*34}" text-anchor="middle">${esc(c)}</text>`}));
   o+=`<text class="t-ink" x="14" y="206">P(self | help) = ${fmt(1000*p*a)} ÷ ${fmt(1000*(p*a+(1-p)*b))} = ${fmt(p*a/(p*a+(1-p)*b),3)}</text><text class="t-ink" x="14" y="230">Risk of needing help: self ${fmt(a,2)} vs staffed ${fmt(b,2)} → relative risk ${fmt(a/b,2)}</text>`;
   return o}
 // ---- steps

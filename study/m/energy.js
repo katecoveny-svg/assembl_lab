@@ -4,6 +4,8 @@ const s={m:70,h:192,y:192,v:0,heat:0,mode:"free",lift:false,
   km:1.0,kP:2200,T:15,boiled:0,kt:0,
   tc:0, V:12,R:24, cq:0};
 const fmt=(x,d=0)=>Number(x).toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d});
+// figure parts: the shared bench look (StudyKit.fig), so these drawings match the 3D machines
+const F=StudyKit.fig,PAL=F.palette,TINT="#BFDDF5";
 const kJ=J=>J>=1e6?fmt(J/1e6,2)+" MJ":J>=1000?fmt(J/1000,1)+" kJ":fmt(J)+" J";
 // ---------- tower
 function resetTower(top=true){s.y=top?s.h:0;s.v=0;s.heat=0}
@@ -18,23 +20,24 @@ function tickTower(dt,st){
     else{s.v+=g*d;s.y=Math.max(0,s.y-s.v*d);if(s.y<=0){s.v=Math.sqrt(2*g*s.h);break}}}
 }
 function drawTower(st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  let o=F.floor(640,330);
   const gy=300,top=40,Y=y=>gy-(y/192)*(gy-top),tx=210;
-  // Sky Tower-ish column
-  o+=`<rect x="${tx-10}" y="${top-20}" width="20" height="${gy-top+20}" fill="var(--fill)" stroke="var(--ink)"/>`;
-  o+=`<rect x="${tx-34}" y="${Y(192)-10}" width="68" height="22" rx="8" fill="var(--paper)" stroke="var(--ink)"/><line x1="${tx}" x2="${tx}" y1="${top-40}" y2="${top-20}" stroke="var(--ink)" stroke-width="2"/>`;
-  o+=`<line x1="0" x2="640" y1="${gy}" y2="${gy}" stroke="var(--ink)" stroke-width="1.4"/>`;
-  for(let k=0;k<=192;k+=48)o+=`<line x1="${tx-22}" x2="${tx-14}" y1="${Y(k)}" y2="${Y(k)}" stroke="var(--rose)"/><text class="t-lab" x="${tx-26}" y="${Y(k)+3.5}" text-anchor="end">${k} m</text>`;
-  if(st.k==="wire")o+=`<line x1="${tx+70}" x2="${tx+70}" y1="${Y(192)}" y2="${gy}" stroke="var(--rose)" stroke-dasharray="2 3"/>`;
-  if(st.k==="lift")o+=`<line x1="${tx+70}" x2="${tx+70}" y1="${Y(192)-12}" y2="${Y(s.y)}" stroke="var(--ink)" stroke-width="1.6"/>`;
-  // jumper
-  const jy=Y(s.y);o+=`<g transform="translate(${tx+70},${jy-14})"><circle r="6" cy="-10" fill="var(--sun)" stroke="var(--ink)"/><rect x="-5" y="-4" width="10" height="16" rx="4" fill="var(--hot)" stroke="var(--ink)"/></g>`;
-  if(s.v>2)o+=`<path d="M${tx+88},${jy-20} v${-Math.min(60,s.v*1.2)}" stroke="var(--rose)" stroke-width="1.4"/>`;
-  // energy bars
+  // the tower: a steel shaft on a concrete base, a pod at the top
+  o+=F.box(tx-46,gy-8,92,10,{colour:"#E3DCCF",kind:"painted",d:10});
+  o+=F.cyl(tx,top-14,11,gy-top+6,{colour:PAL.steel,kind:"metal",shadowLen:60});
+  o+=`<line x1="${tx}" x2="${tx}" y1="${top-44}" y2="${top-18}" stroke="#8F9BAA" stroke-width="2.4"/><circle cx="${tx}" cy="${top-46}" r="3" fill="#E8664A"/>`;
+  o+=F.box(tx-36,Y(192)-12,72,22,{colour:PAL.case.sky,kind:"plastic",d:9,r:6,shadow:false});
+  for(let k=0;k<=192;k+=48)o+=`<line x1="${tx-24}" x2="${tx-16}" y1="${Y(k)}" y2="${Y(k)}" stroke="#8F9BAA"/><text class="t-lab" x="${tx-28}" y="${Y(k)+3.5}" text-anchor="end">${k} m</text>`;
+  if(st.k==="wire")o+=`<line x1="${tx+70}" x2="${tx+70}" y1="${Y(192)}" y2="${gy}" stroke="#8F9BAA" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  if(st.k==="lift")o+=`<line x1="${tx+70}" x2="${tx+70}" y1="${Y(192)-12}" y2="${Y(s.y)}" stroke="#4E4868" stroke-width="1.6"/>`;
+  // the jumper: a little painted figure
+  const jy=Y(s.y);o+=`<g transform="translate(${tx+70},${jy-14})"><circle r="6.5" cy="-10" fill="#F2D0B4" stroke="#B88A6A"/><rect x="-6" y="-4" width="12" height="17" rx="5" fill="${PAL.product.strawberry}" stroke="#A8455E"/><path d="M-3,13 v6 M3,13 v6" stroke="#4E4868" stroke-width="2.4" stroke-linecap="round"/></g>`;
+  if(s.v>2)o+=`<path d="M${tx+90},${jy-20} v${-Math.min(60,s.v*1.2)}" stroke="#8F9BAA" stroke-width="1.6" stroke-linecap="round"/>`;
+  // energy stores as three frosted tubes, filled with product colours
   const Ep=s.m*g*s.y,Ek=0.5*s.m*s.v*s.v,H=st.k==="wire"?s.heat:0,Tot=s.m*g*s.h,bx=380,bw=50,bh=210,by=280;
-  [["Potential",Ep,"var(--earth)"],["Kinetic",Ek,"var(--hot)"],["Heat",H,"var(--sun)"]].forEach(([n,E,c],i)=>{const x=bx+i*80,hh=Tot?E/Tot*bh:0;
-    o+=`<rect x="${x}" y="${by-bh}" width="${bw}" height="${bh}" fill="var(--paper)" stroke="var(--line)"/><rect x="${x}" y="${by-hh}" width="${bw}" height="${hh}" fill="${c}"/>
-    <text class="t-lab" x="${x+bw/2}" y="${by+16}" text-anchor="middle">${n.toUpperCase()}</text><text class="t-ink" x="${x+bw/2}" y="${by-hh-6}" text-anchor="middle">${kJ(E)}</text>`});
+  [["Potential",Ep,PAL.product.blueberry],["Kinetic",Ek,PAL.product.strawberry],["Heat",H,PAL.product.peach]].forEach(([n,E,c],i)=>{const x=bx+i*80,f=Tot?E/Tot:0;
+    o+=F.tube(x,by-bh,bw,bh,f,{tint:TINT,fill:c});
+    o+=`<text class="t-lab" x="${x+bw/2}" y="${by+20}" text-anchor="middle">${n.toUpperCase()}</text><text class="t-ink" x="${x+bw/2}" y="${by-bh*f-10}" text-anchor="middle">${kJ(E)}</text>`});
   o+=`<text class="t-lab" x="16" y="22">${st.k==="lift"?"LIFTING THE JUMPER UP THE TOWER":st.k==="wire"?"SKYJUMP: GUIDE WIRE AND BRAKE":"NO WIRE, NO AIR: AN IDEAL FALL"}</text><text class="t-ink" x="624" y="22" text-anchor="end">${fmt(s.v,1)} m/s · ${fmt(s.v*3.6)} km/h</text>`;
   return o;
 }
@@ -45,14 +48,18 @@ function tickKettle(dt,st){const P=s.kP;const SP=12;let E=P*dt*SP;s.kt+=dt*SP;
   if(st.k==="heat"&&s.T>=100)s.playing=false;
   if(s.boiled>=s.km*0.25)s.playing=false;}
 function drawKettle(st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  let o=F.floor(640,330);
   const x0=150,y0=90,W=170,H=170,lvl=(s.km-s.boiled)/1.7*H*0.9;
-  o+=`<path d="M${x0},${y0} h${W} l14,${H} h${-W-28}z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/>`;
-  o+=`<path d="M${x0-7},${y0+H-lvl} h${W+14} l${7*lvl/H},${lvl} h${-W-14-14*lvl/H}z" fill="var(--sea)" opacity="${0.25+0.35*(s.T-15)/85}"/>`;
-  o+=`<path d="M${x0+W},${y0+30} q48,10 40,70 q-6,40 -40,52" fill="none" stroke="var(--ink)" stroke-width="6"/><path d="M${x0},${y0+20} l-40,-30" stroke="var(--ink)" stroke-width="5"/>`;
-  o+=`<rect x="${x0-30}" y="${y0+H}" width="${W+60}" height="14" rx="4" fill="var(--ink)"/>`;
-  if(s.T>=100)for(let i=0;i<5;i++)o+=`<path d="M${x0-30-i*6},${y0-20-i*10} q-10,-12 0,-24 q10,-12 0,-24" fill="none" stroke="var(--rose)" stroke-width="2" opacity="${.3+.1*i}"/>`;
-  o+=`<text class="t-big" x="${x0+W/2}" y="${y0+H/2}" text-anchor="middle">${fmt(s.T,1)}°C</text>`;
+  // a jug of frosted acrylic on its powered base, the water inside warming from blue to peach
+  o+=F.box(x0-30,y0+H,W+60,16,{colour:PAL.steel,kind:"metal",d:12,r:4});
+  const warm=Math.max(0,Math.min(1,(s.T-15)/85)),water=warm<.5?"#8FB8EE":"#F6B384";
+  o+=`<path d="M${x0-7},${y0+H-lvl} h${W+14} l${7*lvl/H},${lvl} h${-W-14-14*lvl/H}z" fill="${water}" opacity="${0.45+0.4*warm}"/>`;
+  o+=F.acrylic(x0,y0,W,H,{tint:TINT,d:16,r:14,shadow:false});
+  o+=`<path d="M${x0+W},${y0+30} q48,10 40,70 q-6,40 -40,52" fill="none" stroke="#A9CBE3" stroke-width="9" stroke-linecap="round"/><path d="M${x0+W},${y0+30} q48,10 40,70 q-6,40 -40,52" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2.5"/>`;
+  o+=`<path d="M${x0},${y0+20} l-40,-30" stroke="#A9CBE3" stroke-width="8" stroke-linecap="round"/>`;
+  if(s.T>=100)for(let i=0;i<5;i++)o+=`<path d="M${x0-30-i*6},${y0-20-i*10} q-10,-12 0,-24 q10,-12 0,-24" fill="none" stroke="#C9CEDF" stroke-width="3" stroke-linecap="round" opacity="${.4+.1*i}"/>`;
+  o+=F.plate(x0+W/2-44,y0+H/2-34,"Jug",{tint:TINT,size:11});
+  o+=`<text class="t-big" x="${x0+W/2}" y="${y0+H/2+12}" text-anchor="middle">${fmt(s.T,1)}°C</text>`;
   const Eh=s.km*C_W*(s.T-15),Eb=s.boiled*L_V;
   o+=`<g class="t-ink"><text x="400" y="110">E = P × t</text><text x="400" y="130">= ${fmt(s.kP)} W × ${fmt(s.kt)} s = ${kJ(s.kP*s.kt)}</text>
     <text x="400" y="170">E = m c ΔT</text><text x="400" y="190">= ${fmt(s.km,1)} × 4200 × ${fmt(s.T-15,1)} = ${kJ(Eh)}</text>
@@ -63,42 +70,50 @@ function drawKettle(st){
 // ---------- flask vs mug
 const kMug=0.045,kFlask=0.0035;const Tf=(k,t)=>18+(92-18)*Math.exp(-k*t);
 function drawFlask(st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
-  const t=s.tc;
-  // mug
-  o+=`<rect x="100" y="150" width="90" height="100" rx="10" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/><path d="M190,170 q30,0 30,30 q0,30 -30,30" fill="none" stroke="var(--ink)" stroke-width="5"/>`;
-  o+=`<rect x="104" y="160" width="82" height="86" rx="6" fill="var(--hot)" opacity="${.15+.6*(Tf(kMug,t)-18)/74}"/>`;
-  [["CONDUCTION",14,186],["CONVECTION",150,92],["RADIATION",228,196]].forEach(([n,x,y],i)=>{o+=`<text class="t-lab" x="${x}" y="${y}">${n}</text>`});
-  o+=`<path d="M145,145 q-10,-20 0,-40 q10,-20 0,-40" fill="none" stroke="var(--rose)" stroke-width="2"/><path d="M222,200 h30" stroke="var(--sun)" stroke-width="2" stroke-dasharray="3 3"/><path d="M100,200 h-30" stroke="var(--sun)" stroke-width="2"/>`;
-  o+=`<text class="t-big" x="145" y="280" text-anchor="middle">Open mug ${fmt(Tf(kMug,t),1)}°C</text>`;
-  // flask cutaway
-  const fx=290;o+=`<rect x="${fx}" y="70" width="110" height="190" rx="22" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/>`;
-  o+=`<rect x="${fx+14}" y="84" width="82" height="162" rx="16" fill="none" stroke="var(--rose)" stroke-dasharray="3 3"/><rect x="${fx+22}" y="92" width="66" height="146" rx="12" fill="var(--hot)" opacity="${.15+.6*(Tf(kFlask,t)-18)/74}" stroke="var(--moon)" stroke-width="3"/>`;
-  o+=`<rect x="${fx+30}" y="54" width="50" height="22" rx="6" fill="var(--ink)"/>`;
-  o+=`<g class="t-lab"><text x="${fx+122}" y="66">LID: STOPS CONVECTION</text><text x="${fx+122}" y="90">VACUUM GAP: NO PARTICLES,</text><text x="${fx+122}" y="104">SO NO CONDUCTION OR CONVECTION</text><text x="${fx+122}" y="130">SHINY WALLS: REFLECT</text><text x="${fx+122}" y="144">RADIATION BACK IN</text></g>`;
-  o+=`<text class="t-big" x="${fx+55}" y="280" text-anchor="middle">Vacuum flask ${fmt(Tf(kFlask,t),1)}°C</text>`;
+  let o=F.floor(640,330);
+  const t=s.tc,tea=T=>{const k=Math.max(0,Math.min(1,(T-18)/74));return k>.5?"#C98A5E":"#E2B48E"};
+  // mug: painted ceramic, tea inside, heat leaving three ways
+  o+=F.box(96,150,98,104,{colour:PAL.case.blush,kind:"painted",d:14,r:10});
+  o+=`<path d="M194,170 q32,0 32,30 q0,30 -32,30" fill="none" stroke="${F.deep(PAL.case.blush)}" stroke-width="7" stroke-linecap="round"/>`;
+  o+=`<path d="M96,150 l14,-7.7 h98 l-14,7.7z" fill="${tea(Tf(kMug,t))}" stroke="${F.deep(PAL.case.blush)}"/>`;
+  [["CONDUCTION",14,186],["CONVECTION",150,92],["RADIATION",232,196]].forEach(([n,x,y])=>{o+=`<text class="t-lab" x="${x}" y="${y}">${n}</text>`});
+  o+=`<path d="M150,138 q-10,-18 0,-36 q10,-18 0,-36" fill="none" stroke="#C9CEDF" stroke-width="3" stroke-linecap="round"/><path d="M232,204 h28" stroke="${PAL.product.peach}" stroke-width="2.4" stroke-dasharray="3 3"/><path d="M96,204 h-28" stroke="${PAL.product.peach}" stroke-width="2.4"/>`;
+  o+=`<text class="t-big" x="152" y="292" text-anchor="middle">Open mug ${fmt(Tf(kMug,t),1)}°C</text>`;
+  // flask: steel shell cut away to show the vacuum gap and the shiny inner wall
+  const fx=290;o+=F.cyl(fx+55,74,55,186,{colour:PAL.steel,kind:"metal",shadowLen:70});
+  o+=`<rect x="${fx+14}" y="92" width="82" height="160" rx="16" fill="${PAL.paper}" stroke="#8F9BAA" stroke-dasharray="3 3"/><rect x="${fx+22}" y="100" width="66" height="144" rx="12" fill="${tea(Tf(kFlask,t))}" stroke="#E7ECF2" stroke-width="4"/>`;
+  o+=F.box(fx+28,52,54,20,{colour:PAL.case.sky,kind:"plastic",d:8,r:6,shadow:false});
+  o+=F.pill(fx+122,54,"Lid",{sub:"stops convection",ax:fx+82,ay:62});
+  o+=F.pill(fx+122,98,"Vacuum gap",{sub:"no particles: no conduction or convection",ax:fx+18,ay:120});
+  o+=F.pill(fx+122,150,"Shiny walls",{sub:"reflect radiation back in",ax:fx+86,ay:170});
+  o+=`<text class="t-big" x="${fx+55}" y="292" text-anchor="middle">Vacuum flask ${fmt(Tf(kFlask,t),1)}°C</text>`;
   o+=`<text class="t-lab" x="16" y="22">TWO CUPS OF TEA AT 92°C IN AN 18°C ROOM</text><text class="t-ink" x="624" y="22" text-anchor="end">${fmt(t)} minutes</text>`;
   return o;
 }
 // ---------- circuit
 function drawCircuit(st){
-  const I=s.V/s.R,P=s.V*I;let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  const I=s.V/s.R,P=s.V*I;let o=F.floor(640,330);
   const L=110,T=70,Rr=500,B=270;
-  o+=`<rect x="${L}" y="${T}" width="${Rr-L}" height="${B-T}" fill="none" stroke="var(--ink)" stroke-width="3" rx="6"/>`;
-  // battery
-  o+=`<rect x="${L-14}" y="140" width="28" height="70" fill="var(--chalk)"/><line x1="${L-16}" x2="${L+16}" y1="160" y2="160" stroke="var(--ink)" stroke-width="3"/><line x1="${L-9}" x2="${L+9}" y1="172" y2="172" stroke="var(--ink)" stroke-width="5"/><line x1="${L-16}" x2="${L+16}" y1="184" y2="184" stroke="var(--ink)" stroke-width="3"/><line x1="${L-9}" x2="${L+9}" y1="196" y2="196" stroke="var(--ink)" stroke-width="5"/>`;
-  o+=`<text class="t-ink" x="${L-24}" y="182" text-anchor="end">${fmt(s.V,1)} V</text>`;
-  // bulb
-  const bx=(L+Rr)/2,glow=Math.min(1,P/60);
-  o+=`<circle cx="${bx}" cy="${T}" r="${26+glow*30}" fill="var(--sun)" opacity="${glow*.35}"/><circle cx="${bx}" cy="${T}" r="22" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/><path d="M${bx-12},${T+6} l6,-14 l6,14 l6,-14 l6,14" fill="none" stroke="${glow>.05?"var(--sun)":"var(--rose)"}" stroke-width="2"/>`;
-  o+=`<text class="t-ink" x="${bx}" y="${T+46}" text-anchor="middle">${fmt(s.R)} Ω</text>`;
-  // ammeter
-  o+=`<circle cx="${Rr}" cy="170" r="18" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/><text class="t-big" x="${Rr}" y="175" text-anchor="middle">A</text><text class="t-ink" x="${Rr+26}" y="175">${fmt(I,2)} A</text>`;
+  // copper wires on a frosted acrylic board
+  o+=F.acrylic(L-46,T-38,Rr-L+92,B-T+68,{tint:TINT,d:12,r:16});
+  o+=`<rect x="${L}" y="${T}" width="${Rr-L}" height="${B-T}" fill="none" stroke="${PAL.copper}" stroke-width="4" rx="6"/><rect x="${L}" y="${T}" width="${Rr-L}" height="${B-T}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1" rx="6"/>`;
   // moving charges (conventional current direction + to -)
   const per=2*((Rr-L)+(B-T)),n=24;
   for(let k=0;k<n;k++){let d=((k/n)*per+s.cq*60)%per;let x,y;
     if(d<(Rr-L)){x=L+d;y=T}else if((d-=Rr-L)<(B-T)){x=Rr;y=T+d}else if((d-=B-T)<(Rr-L)){x=Rr-d;y=B}else{d-=Rr-L;x=L;y=B-d}
-    o+=`<circle cx="${x}" cy="${y}" r="3.2" fill="var(--hot)"/>`}
+    o+=`<circle cx="${x}" cy="${y}" r="3.4" fill="${PAL.product.strawberry}" stroke="#fff" stroke-width="1"/>`}
+  // battery: a painted cell standing on the wire
+  o+=F.cyl(L,138,15,62,{colour:PAL.product.lime,kind:"painted",shadow:false});
+  o+=`<text class="t-ink" x="${L-24}" y="182" text-anchor="end">${fmt(s.V,1)} V</text><text class="t-lab" x="${L+6}" y="132" text-anchor="middle">+</text>`;
+  // lamp: a glass bulb that glows with the power
+  const bx=(L+Rr)/2,glow=Math.min(1,P/60);
+  o+=`<circle cx="${bx}" cy="${T}" r="${26+glow*30}" fill="${PAL.product.butter}" opacity="${glow*.35}"/>`;
+  o+=F.box(bx-12,T+16,24,14,{colour:PAL.steel,kind:"metal",d:6,shadow:false});
+  o+=`<circle cx="${bx}" cy="${T}" r="22" fill="${glow>.05?"#FFF6D6":"#F2FAFD"}" fill-opacity=".9" stroke="#A9CBE3" stroke-width="2"/><path d="M${bx-12},${T+6} l6,-14 l6,14 l6,-14 l6,14" fill="none" stroke="${glow>.05?PAL.product.butter:"#8F9BAA"}" stroke-width="2.2"/><path d="M${bx-12},${T-12} q4,-6 10,-6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  o+=`<text class="t-ink" x="${bx}" y="${T+48}" text-anchor="middle">${fmt(s.R)} Ω</text>`;
+  // ammeter: a meter case on the wire
+  o+=F.box(Rr-20,152,40,36,{colour:"#FFFFFF",kind:"plastic",d:8,r:8,shadow:false});
+  o+=`<text class="t-big" x="${Rr}" y="175" text-anchor="middle">A</text><text class="t-ink" x="${Rr+34}" y="175">${fmt(I,2)} A</text>`;
   o+=`<g class="t-ink"><text x="230" y="150">I = V ÷ R = ${fmt(s.V,1)} ÷ ${fmt(s.R)} = ${fmt(I,2)} A</text><text x="230" y="175">P = V × I = ${fmt(s.V,1)} × ${fmt(I,2)} = ${fmt(P,1)} W</text><text x="230" y="200">In 1 minute: E = P × t = ${kJ(P*60)}</text></g>`;
   o+=`<text class="t-lab" x="16" y="22">A SIMPLE CIRCUIT: BATTERY, LAMP AND AMMETER</text>`;
   return o;

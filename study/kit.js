@@ -485,10 +485,66 @@ figMat.three=function(THREE,kind,colour,opts){const K=FIG[kind]||FIG.painted;opt
     const rim=opts.rim!=null?opts.rim:K.rim;if(rim>0){m.defines=Object.assign(m.defines||{},{FIG_RIM:rim.toFixed(2)});
       m.onBeforeCompile=figRim}}
   m.userData.fig=kind;return m};
+// ---- StudyKit.fig: the bench figure look for SVG drawings (refs/figure/README.md), so drawn machines match the 3D ones.
+// Oblique 2.5D: depth runs up and to the right (dx = d, dy = -0.55 d). Solid parts are boxes and cylinders with a lit top,
+// a shaded side and a darker hairline; see-through parts are frosted pastel acrylic; one long navy shadow falls to the lower
+// right; labels are white pills with a leader. Every helper returns an SVG string. Colours are hexes (not CSS vars) because
+// faces are mixed from them.
+const FIGSV=(()=>{const P=FIG_PALETTE,num=v=>Math.round(v*10)/10;
+  const shadeOf=(c,kind)=>figMat(kind||"painted",c);
+  const DY=-0.55;
+  function shadow(x,y,w,o){o=o||{};const len=o.len!=null?o.len:Math.max(18,w*0.35),h=o.h!=null?o.h:6,op=o.opacity!=null?o.opacity:0.22;
+    // a parallelogram on the floor from the footprint (x..x+w at y) toward the lower right
+    return `<path d="M${num(x)},${num(y)} h${num(w)} l${num(len)},${num(len*0.32+h)} h${num(-w)} z" fill="${P.shadow}" opacity="${op}"/>`}
+  function box(x,y,w,h,o){o=o||{};const d=o.d!=null?o.d:12,c=o.colour||P.case.peach,m=shadeOf(c,o.kind),dx=d,dy=d*DY,r=o.r||0,sw=o.sw||1.2;
+    const st=o.stroke||m.stroke;let g="";
+    if(o.shadow!==false)g+=shadow(x,y+h,w+dx,{len:o.shadowLen});
+    g+=`<path d="M${num(x)},${num(y)} l${num(dx)},${num(dy)} h${num(w)} l${num(-dx)},${num(-dy)} z" fill="${m.hi}" stroke="${st}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+    g+=`<path d="M${num(x+w)},${num(y)} l${num(dx)},${num(dy)} v${num(h)} l${num(-dx)},${num(-dy)} z" fill="${m.shade}" stroke="${st}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+    g+=`<rect x="${num(x)}" y="${num(y)}" width="${num(w)}" height="${num(h)}" rx="${r}" fill="${c}" stroke="${st}" stroke-width="${sw}"/>`;
+    return g}
+  function acrylic(x,y,w,h,o){o=o||{};const t=o.tint||P.case.mint,d=o.d!=null?o.d:14,dx=d,dy=d*DY,st=mixTo(t,0.38,0),deep=mixTo(t,0.25,0),r=o.r!=null?o.r:10;let g="";
+    if(o.shadow!==false)g+=shadow(x,y+h,w+dx,{len:o.shadowLen,opacity:0.18});
+    g+=`<path d="M${num(x+r*0.3)},${num(y)} l${num(dx)},${num(dy)} h${num(w-r*0.6)} l${num(-dx)},${num(-dy)} z" fill="${t}" fill-opacity="0.5" stroke="${st}" stroke-width="1.1" stroke-linejoin="round"/>`;
+    g+=`<path d="M${num(x+w)},${num(y+r*0.3)} l${num(dx)},${num(dy)} v${num(h-r*0.6)} l${num(-dx)},${num(-dy)} z" fill="${deep}" fill-opacity="0.32" stroke="${st}" stroke-width="1.1" stroke-linejoin="round"/>`;
+    g+=`<rect x="${num(x)}" y="${num(y)}" width="${num(w)}" height="${num(h)}" rx="${r}" fill="${t}" fill-opacity="${o.opacity!=null?o.opacity:0.26}" stroke="${st}" stroke-width="1.3"/>`;
+    // a highlight streak and corner balls, as on the reference cases
+    g+=`<path d="M${num(x+r)},${num(y+5)} h${num(Math.min(w*0.42,120))}" stroke="#fff" stroke-opacity=".85" stroke-width="2.4" stroke-linecap="round"/>`;
+    if(o.balls!==false)[[x+5,y+5],[x+w-5,y+5],[x+5,y+h-5],[x+w-5,y+h-5]].forEach(([bx,by])=>g+=`<circle cx="${num(bx)}" cy="${num(by)}" r="3.4" fill="${deep}" stroke="${st}" stroke-width=".9"/>`);
+    return g}
+  function cyl(cx,y,rx,h,o){o=o||{};const c=o.colour||P.steel,m=shadeOf(c,o.kind||"metal"),ry=o.ry!=null?o.ry:rx*0.32,st=o.stroke||m.stroke;let g="";
+    if(o.shadow!==false)g+=shadow(cx-rx,y+h,rx*2,{len:o.shadowLen});
+    g+=`<path d="M${num(cx-rx)},${num(y)} v${num(h)} a${num(rx)},${num(ry)} 0 0 0 ${num(rx*2)},0 v${num(-h)}" fill="${c}" stroke="${st}" stroke-width="1.2"/>`;
+    g+=`<path d="M${num(cx+rx*0.35)},${num(y+ry*0.6)} v${num(h)}" stroke="${m.shade}" stroke-width="${num(rx*0.5)}" opacity=".45"/>`;
+    g+=`<path d="M${num(cx-rx*0.55)},${num(y+ry*0.8)} v${num(Math.max(0,h-ry))}" stroke="${m.hi}" stroke-width="${num(Math.max(1.2,rx*0.16))}" stroke-linecap="round" opacity=".9"/>`;
+    g+=`<ellipse cx="${num(cx)}" cy="${num(y)}" rx="${num(rx)}" ry="${num(ry)}" fill="${m.hi}" stroke="${st}" stroke-width="1.2"/>`;
+    return g}
+  // a frosted acrylic tube (a measuring column or bar) filled to a fraction with a product colour
+  function tube(x,y,w,h,frac,o){o=o||{};const t=o.tint||P.case.sky,fill=o.fill||P.product.blueberry,st=mixTo(t,0.38,0),ry=w*0.22,f=Math.max(0,Math.min(1,frac||0)),fh=h*f;let g="";
+    if(o.shadow!==false)g+=shadow(x,y+h,w,{len:o.shadowLen||w*0.8,opacity:0.16});
+    g+=`<path d="M${num(x)},${num(y)} v${num(h)} a${num(w/2)},${num(ry)} 0 0 0 ${num(w)},0 v${num(-h)}" fill="${t}" fill-opacity=".28" stroke="${st}" stroke-width="1.2"/>`;
+    if(fh>0.5){const m=figMat("painted",fill);g+=`<path d="M${num(x+2)},${num(y+h-fh)} v${num(fh)} a${num(w/2-2)},${num(ry*0.9)} 0 0 0 ${num(w-4)},0 v${num(-fh)}" fill="${fill}" stroke="${m.stroke}" stroke-width=".9"/><ellipse cx="${num(x+w/2)}" cy="${num(y+h-fh)}" rx="${num(w/2-2)}" ry="${num(ry*0.9)}" fill="${m.hi}" stroke="${m.stroke}" stroke-width=".9"/>`}
+    g+=`<ellipse cx="${num(x+w/2)}" cy="${num(y)}" rx="${num(w/2)}" ry="${num(ry)}" fill="${t}" fill-opacity=".5" stroke="${st}" stroke-width="1.2"/>`;
+    g+=`<path d="M${num(x+w*0.22)},${num(y+ry+4)} v${num(Math.max(0,h-ry*2-8))}" stroke="#fff" stroke-opacity=".8" stroke-width="2" stroke-linecap="round"/>`;
+    return g}
+  // label pill: small-caps name over an optional note; with ax,ay a thin leader runs to the part
+  function pill(x,y,text,o){o=o||{};const sub=o.sub||"",fs=o.size||10,w=Math.max(String(text).length*fs*0.68,String(sub).length*fs*0.56)+16,h=sub?fs*2.9:fs*1.9,acc=o.lead||P.pill.ink;
+    const px=o.anchor==="end"?x-w:o.anchor==="middle"?x-w/2:x;let g="";
+    if(o.ax!=null)g+=`<path d="M${num(o.ax)},${num(o.ay)} L${num(o.ax<px?px:o.ax>px+w?px+w:o.ax)},${num(y+h/2)}" fill="none" stroke="${acc}" stroke-width="1.1" opacity=".7"/><circle cx="${num(o.ax)}" cy="${num(o.ay)}" r="2.4" fill="${acc}"/>`;
+    g+=`<rect x="${num(px)}" y="${num(y)}" width="${num(w)}" height="${num(h)}" rx="${num(h/2.6)}" fill="${P.pill.bg}" stroke="${P.pill.line}"/>`;
+    g+=`<text x="${num(px+8)}" y="${num(y+fs*1.32)}" style="font:700 ${fs}px var(--as-font,'Instrument Sans',sans-serif);letter-spacing:.06em;fill:${o.colour||P.pill.ink}">${esc(String(text).toUpperCase())}</text>`;
+    if(sub)g+=`<text x="${num(px+8)}" y="${num(y+fs*2.45)}" style="font:500 ${num(fs*0.95)}px var(--as-font,'Instrument Sans',sans-serif);fill:#6E6A86">${esc(sub)}</text>`;
+    return g}
+  // a name plate on a case front, like PHYSICS LAB on the reference machines
+  function plate(x,y,text,o){o=o||{};const t=o.tint||P.case.mint,fs=o.size||12,w=String(text).length*fs*0.7+22,h=fs*2.1,deep=mixTo(t,0.55,0);
+    return `<g transform="rotate(${o.rot||0} ${num(x)} ${num(y)})"><rect x="${num(x)}" y="${num(y)}" width="${num(w)}" height="${num(h)}" rx="${num(h/3)}" fill="#fff" fill-opacity=".85" stroke="${mixTo(t,0.3,0)}" stroke-width="1.4"/><text x="${num(x+11)}" y="${num(y+fs*1.42)}" style="font:600 ${fs}px var(--as-display,'Fredoka',sans-serif);letter-spacing:.04em;fill:${deep}">${esc(String(text).toUpperCase())}</text></g>`}
+  // the floor every drawing stands on: paper with a faint grid, matching the 3D ground
+  function floor(W,H,o){o=o||{};return `<rect width="${W}" height="${H}" fill="${o.colour||P.paper}"/>`+(o.grid===false?"":`<g stroke="#1B2452" stroke-opacity=".05">${Array.from({length:Math.ceil(W/32)},(_,i)=>`<path d="M${i*32},0V${H}"/>`).join("")}${Array.from({length:Math.ceil(H/32)},(_,i)=>`<path d="M0,${i*32}H${W}"/>`).join("")}</g>`)}
+  return {box,acrylic,case:acrylic,cyl,tube,pill,plate,shadow,floor,palette:P,mat:figMat,deep:t=>mixTo(t,0.38,0)}})();
 function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#include <dithering_fragment>","#include <dithering_fragment>\n#ifndef FLAT_SHADED\n{float figRim=pow(1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition))),2.6);gl_FragColor.rgb*=1.0-FIG_RIM*figRim;}\n#endif")}
 // the lockup: a hex-socket mark, "assembly", and "by assembl"
 const LOCKUP=`<span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span>`;
 // for machines with their own shell: StudyKit.companion(el) puts Allen in el; call .react(true|false) after a check (log the pass first)
 function companion(el){return allenCorner(null,{steps:[]},el||document.body)}
-window.StudyKit={mount,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat};
+window.StudyKit={mount,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat,fig:FIGSV};
 })();

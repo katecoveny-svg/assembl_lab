@@ -3,7 +3,9 @@
 // Speed = distance ÷ time, levers and moments, density and floating, refraction, and mean vs median.
 const fmt=(x,d=0)=>{let v=Number(x);if(Math.abs(v)<0.5*Math.pow(10,-d))v=0;return v.toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d})};
 const G=9.8, RHO_SEA=1.025, RHO_LEAD=11.3, FLOAT_V=20, FLOAT_M=1, N_WATER=1.33, MIN_SIZE=30;
-const INK="#492B3E",SKY1="#FCE9E4",SKY2="#F6F0EA",SEA="#A9D6E5",SEA2="#86BFD2",DEEP="#5E9DB3",ROCK="#8F8189",ROCK2="#76686F",SNAP="#F2A7A0",SPOT="#7FB6E0",PINK="#E77FA0",MINT="#5FB79B",SUN="#F4C26B",ROD="#3A3540",LINE="#5a5560";
+// figure parts: the shared bench look (StudyKit.fig): paper floor, a frosted sky acrylic tank for the sea, painted parts
+const F=StudyKit.fig,PAL=F.palette,PR=PAL.product,TINT=PAL.case.sky;
+const INK="#262E5C",SKY2=PAL.paper,SEA="#A9CFEE",SEA2="#86BFD2",DEEP="#6E9FD6",ROCK="#A89BA6",SNAP="#F2A7A0",PINK=PR.strawberry,MINT="#3FA57F",SUN="#E9B32E",ROD="#343B5E",LINE="#5A6072",GREY="#6E6A86";
 // ---- seeded random so a sample can be re-caught and checked
 let seed=7;const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296};
 const normal=()=>{let u=0,v=0;while(!u)u=rnd();while(!v)v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
@@ -50,18 +52,39 @@ function fish(x,y,len,col=SNAP,face=1,op=1,hh,rot=0){// nose at x, tail tip at x
   o+=`<path d="M0.3,2 C-2,3.2 -4.5,4.1 -7,4.3" fill="none" stroke="${P.line}" stroke-width=".8"${ns}/><ellipse cx="-4.2" cy="-6.2" rx=".7" ry=".6" fill="${P.line}"/>`;
   // the pectoral fin lies over the body; then the eye
   o+=`<path d="M-21,3.5 C-27,1 -38,3 -49,10.5 C-41,10.5 -31,9.5 -21,7.5Z" fill="${P.fin}" fill-opacity=".78" stroke="${P.finDark}" stroke-width=".5"${ns}/><path d="M-22,4.6L-45,9.8M-22,6.2L-38,9.6" stroke="${P.finDark}" stroke-width=".45" opacity=".5"${ns}/>`;
-  o+=`<circle cx="-8.5" cy="-7" r="3.7" fill="${P.iris}" stroke="${P.line}" stroke-width=".6"${ns}/><circle cx="-8.4" cy="-7" r="2.3" fill="#1C1418"/><circle cx="-7.5" cy="-7.9" r=".8" fill="#fff" opacity=".9"/>`;
+  // a simple eye dot (no cartoon face)
+  o+=`<circle cx="-8.4" cy="-7" r="2.5" fill="#1C1418"/><circle cx="-7.6" cy="-7.8" r=".75" fill="#fff" opacity=".85"/>`;
   return o+`</g></g>`}
-function sky(W,H,water){return `<defs><linearGradient id="fsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${SKY1}"/><stop offset="1" stop-color="${SKY2}"/></linearGradient><linearGradient id="fsea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${SEA}"/><stop offset="1" stop-color="${DEEP}"/></linearGradient></defs>
-  <rect width="${W}" height="${water}" fill="url(#fsky)"/><circle cx="${W-90}" cy="70" r="30" fill="${SUN}" opacity=".55"/><path d="M${W-330},${water} q60,-46 120,-30 q50,-28 110,-8 q40,-6 80,38Z" fill="#C9D9CF" opacity=".8"/>
-  <rect y="${water}" width="${W}" height="${H-water}" fill="url(#fsea)"/>${[0,1,2,3].map(i=>`<path d="M0,${water+4+i*7} ${[...Array(20)].map((_,k)=>`q10,${k%2?3:-3} 20,0 t20,0`).join(" ")}" fill="none" stroke="#fff" stroke-opacity="${0.35-i*0.07}"/>`).join("")}`}
+// the sea is a cross-section of a frosted sky-blue acrylic tank; its water line stays exactly at y = water
+function sky(W,H,water){const x0=6,x1=W-20,d=14,dy=-0.55*d,yb=H-6;
+  let o=F.floor(W,H)+`<defs><linearGradient id="fsea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${SEA}" stop-opacity=".82"/><stop offset="1" stop-color="${DEEP}" stop-opacity=".9"/></linearGradient></defs>`;
+  o+=`<circle cx="${W-90}" cy="70" r="30" fill="${PR.butter}" opacity=".45"/><circle cx="${W-90}" cy="70" r="20" fill="${PR.butter}" opacity=".5"/><path d="M${W-330},${water} q60,-46 120,-30 q50,-28 110,-8 q40,-6 80,38Z" fill="${PAL.case.mint}" opacity=".85"/><path d="M${W-330},${water} q60,-46 120,-30 q50,-28 110,-8" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2"/>`;
+  // the water: its body, the far side seen through the glass and the lit surface
+  o+=`<path d="M${x1},${water} l${d},${dy} V${yb+dy} l${-d},${-dy}Z" fill="${DEEP}" opacity=".5"/>`;
+  o+=`<rect x="${x0}" y="${water}" width="${x1-x0}" height="${yb-water}" fill="url(#fsea)"/>`;
+  o+=`<path d="M${x0},${water} l${d},${dy} H${x1+d} l${-d},${-dy}Z" fill="#D4E8F8" stroke="#fff" stroke-opacity=".7"/>`;
+  o+=[0,1,2,3].map(i=>`<path d="M${x0},${water+4+i*7} ${[...Array(20)].map((_,k)=>`q10,${k%2?3:-3} 20,0 t20,0`).join(" ")}" fill="none" stroke="#fff" stroke-opacity="${0.45-i*0.09}" clip-path="url(#ftank)"/>`).join("");
+  o+=`<clipPath id="ftank"><rect x="${x0}" y="${water}" width="${x1-x0}" height="${yb-water}"/></clipPath>`;
+  // the frosted glass walls rise a little above the water line
+  o+=F.acrylic(x0,water-18,x1-x0,yb-water+18,{tint:TINT,d,r:8,opacity:.1,shadow:false});
+  return o}
 function angler(x,y,rodAng,rodLen){// rock, person, rod; returns the rod tip
-  let o=`<path d="M0,${y+8} L${x+60},${y} L${x+78},${y+22} L${x+70},${y+60} L0,${y+70}Z" fill="${ROCK}" stroke="${ROCK2}"/>`;
-  o+=`<circle cx="${x}" cy="${y-62}" r="10" fill="${INK}"/><path d="M${x-9},${y-50} q9,-6 18,0 l4,32 l-26,0Z" fill="${PINK}"/><path d="M${x-6},${y-18} l-4,18 M${x+6},${y-18} l5,18" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
+  // the rock: a painted boulder with a lit top and a shaded side
+  const rm=F.mat("painted",ROCK),d=14,dy=-0.55*d;
+  let o=`<path d="M0,${y+8} L${x+60},${y} L${x+60+d},${y+dy} L${d},${y+8+dy}Z" fill="${rm.hi}" stroke="${rm.stroke}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  o+=`<path d="M${x+60},${y} L${x+60+d},${y+dy} L${x+78+d},${y+22+dy} L${x+70+d},${y+60+dy} L${x+70},${y+60} L${x+78},${y+22}Z" fill="${rm.shade}" stroke="${rm.stroke}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  o+=`<path d="M0,${y+8} L${x+60},${y} L${x+78},${y+22} L${x+70},${y+60} L0,${y+70}Z" fill="${ROCK}" stroke="${rm.stroke}" stroke-width="1.2" stroke-linejoin="round"/><path d="M${x+20},${y+14} l22,6 l10,16 M${x-30},${y+30} l18,10" fill="none" stroke="${rm.shade}" stroke-width="1.6" stroke-linecap="round"/>`;
+  // a bait bucket beside the angler
+  o+=F.cyl(x-38,y-8,9,13,{colour:PR.blueberry,kind:"painted",shadow:false})+`<path d="M${x-47},${y-8} q9,-14 18,0" fill="none" stroke="${PAL.steelDark}" stroke-width="1.4"/>`;
+  // the angler: a simple painted figure (head, body, legs), no face
+  o+=`<circle cx="${x}" cy="${y-62}" r="10" fill="#F2D0B4" stroke="#B88A6A"/><path d="M${x-9},${y-50} q9,-6 18,0 l4,32 l-26,0Z" fill="${PINK}" stroke="#A8455E" stroke-linejoin="round"/><path d="M${x-6},${y-46} q6,-3 10,0" stroke="#fff" stroke-opacity=".5" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M${x-6},${y-18} l-4,18 M${x+6},${y-18} l5,18" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
   const hx=x+12,hy=y-36,tx=hx+Math.cos(rodAng)*rodLen,ty=hy-Math.sin(rodAng)*rodLen;
-  o+=`<path d="M${x+4},${y-44} L${hx},${hy}" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><line x1="${hx-Math.cos(rodAng)*14}" y1="${hy+Math.sin(rodAng)*14}" x2="${tx}" y2="${ty}" stroke="${ROD}" stroke-width="3.2" stroke-linecap="round"/><circle cx="${hx+Math.cos(rodAng)*6}" cy="${hy-Math.sin(rodAng)*6+6}" r="5" fill="${SUN}" stroke="${INK}"/>`;
+  o+=`<path d="M${x+4},${y-44} L${hx},${hy}" stroke="#C9506F" stroke-width="4.4" stroke-linecap="round"/><line x1="${hx-Math.cos(rodAng)*14}" y1="${hy+Math.sin(rodAng)*14}" x2="${tx}" y2="${ty}" stroke="${ROD}" stroke-width="3.4" stroke-linecap="round"/><line x1="${hx-Math.cos(rodAng)*14}" y1="${hy+Math.sin(rodAng)*14-1}" x2="${hx+Math.cos(rodAng)*20}" y2="${hy-Math.sin(rodAng)*20-1}" stroke="#D9A877" stroke-width="4" stroke-linecap="round"/><line x1="${hx+Math.cos(rodAng)*24}" y1="${hy-Math.sin(rodAng)*24-1}" x2="${tx}" y2="${ty-1}" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>`;
+  const rx=hx+Math.cos(rodAng)*6,ry=hy-Math.sin(rodAng)*6+6;o+=`<circle cx="${rx}" cy="${ry}" r="5.5" fill="${PAL.steel}" stroke="${PAL.steelDark}"/><circle cx="${rx}" cy="${ry}" r="2" fill="${PAL.steelDark}"/><circle cx="${rx-2}" cy="${ry-2}" r="1.3" fill="#fff" opacity=".8"/>`;
   return{o,tx,ty}}
-function tag(x,y,w,txt,col=INK){return `<rect x="${x}" y="${y}" width="${w}" height="34" rx="8" fill="#fff" opacity=".93"/><text x="${x+12}" y="${y+22}" style="font:600 14px var(--mono);fill:${col}">${txt}</text>`}
+// the data card: a white label pill with the live numbers
+function tag(x,y,w,txt,col=INK){return `<rect x="${x+3}" y="${y+4}" width="${w}" height="34" rx="12" fill="${PAL.shadow}" opacity=".1"/><rect x="${x}" y="${y}" width="${w}" height="34" rx="12" fill="#fff" stroke="${PAL.pill.line}"/><text x="${x+12}" y="${y+22}" style="font:600 14px var(--mono);fill:${col}">${txt}</text>`}
+const steelBall=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${PAL.steelDark}" stroke="#5E6878"/><circle cx="${cx-r*.35}" cy="${cy-r*.35}" r="${r*.38}" fill="#E7ECF2" opacity=".85"/>`;
 
 // ---- main scenes
 function drawMain(st){const Wd=800,H=420;
@@ -75,41 +98,46 @@ function castScene(st){const Wd=800,H=420,water=262;let o=sky(Wd,H,water);
   const R=range(),sx=680/72,sy=5.6;const X=x=>A.tx+x*sx,Y=(x,y)=>A.ty+(water-A.ty)*(x/Math.max(R,0.1))-y*sy;
   const yAt=x=>Math.tan(rad())*x-G*x*x/(2*Math.pow(s.v*Math.cos(rad()),2));
   let d="";for(let i=0;i<=60;i++){const x=R*i/60;d+=(i?" L":"M")+X(x).toFixed(1)+","+Y(x,yAt(x)).toFixed(1)}
-  o+=`<path d="${d}" fill="none" stroke="${PINK}" stroke-width="2" stroke-dasharray="5 5"/>`;
+  o+=`<path d="${d}" fill="none" stroke="${PINK}" stroke-width="2.2" stroke-dasharray="5 5"/>`;
   // distance ruler on the water
-  for(let m=0;m<=70;m+=10)o+=`<line x1="${X(m)}" x2="${X(m)}" y1="${water+20}" y2="${water+30}" stroke="#fff"/><text x="${X(m)}" y="${water+46}" text-anchor="middle" style="font:500 11px var(--mono);fill:#fff">${m} m</text>`;
-  o+=`<line x1="${X(0)}" x2="${X(70)}" y1="${water+25}" y2="${water+25}" stroke="#fff" stroke-opacity=".7"/>`;
+  for(let m=0;m<=70;m+=10)o+=`<line x1="${X(m)}" x2="${X(m)}" y1="${water+20}" y2="${water+30}" stroke="${INK}" stroke-opacity=".7"/><text x="${X(m)}" y="${water+46}" text-anchor="middle" style="font:600 11px var(--mono);fill:${INK}">${m} m</text>`;
+  o+=`<line x1="${X(0)}" x2="${X(70)}" y1="${water+25}" y2="${water+25}" stroke="${INK}" stroke-opacity=".5"/>`;
   const T=flight(),tt=Math.min(s.t%(T+1.2),T),xs=s.v*Math.cos(rad())*tt;
-  if(s.t%(T+1.2)<T)o+=`<line x1="${A.tx}" y1="${A.ty}" x2="${X(xs)}" y2="${Y(xs,yAt(xs))}" stroke="${LINE}" stroke-width=".7" opacity=".6"/><circle cx="${X(xs)}" cy="${Y(xs,yAt(xs))}" r="6" fill="${INK}"/>`;
-  else{o+=`<ellipse cx="${X(R)}" cy="${water+2}" rx="16" ry="4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="${X(R)}" cy="${water}" r="5" fill="${INK}"/>`}
+  if(s.t%(T+1.2)<T)o+=`<line x1="${A.tx}" y1="${A.ty}" x2="${X(xs)}" y2="${Y(xs,yAt(xs))}" stroke="${LINE}" stroke-width=".7" opacity=".6"/>`+steelBall(X(xs),Y(xs,yAt(xs)),6);
+  else{o+=`<ellipse cx="${X(R)}" cy="${water+2}" rx="16" ry="4" fill="none" stroke="#fff" stroke-width="2"/>`+steelBall(X(R),water,5)}
   // the angle at the tip
   o+=`<path d="M${A.tx+40},${A.ty} A40,40 0 0 0 ${A.tx+40*Math.cos(rad())},${A.ty-40*Math.sin(rad())}" fill="none" stroke="${MINT}" stroke-width="2"/><line x1="${A.tx}" x2="${A.tx+56}" y1="${A.ty}" y2="${A.ty}" stroke="${MINT}" stroke-dasharray="3 3"/><text x="${A.tx+46}" y="${A.ty-10}" style="font:600 12px var(--mono);fill:${INK}">${s.ang}°</text>`;
   o+=tag(16,14,330,`${fmt(R,1)} m in ${fmt(T,2)} s · ${fmt(s.v)} m/s`);
-  o+=`<text x="${Wd-16}" y="${H-12}" text-anchor="end" style="font:500 10px var(--mono);fill:#fff;opacity:.8">HEIGHTS SQUASHED TO FIT · NO AIR</text>`;
+  o+=`<text x="${Wd-32}" y="${H-14}" text-anchor="end" style="font:600 10px var(--mono);fill:${INK};opacity:.75">HEIGHTS SQUASHED TO FIT · NO AIR</text>`;
   return o}
-function leverScene(){const Wd=800,H=420;let o=`<rect width="${Wd}" height="${H}" fill="${SKY2}"/>`;
+function leverScene(){const Wd=800,H=420;let o=F.floor(Wd,H);
   const px=90,py=200,sc=560/3.6,tipX=px+s.L*sc,hx=px+s.d*sc,droop=8;
-  o+=`<line x1="${px-30}" y1="${py}" x2="${tipX}" y2="${py+droop}" stroke="${ROD}" stroke-width="7" stroke-linecap="round"/>`;
-  [0.25,0.5,0.75,0.95].forEach(f=>o+=`<circle cx="${px+f*(tipX-px)}" cy="${py+droop*f+6}" r="4" fill="none" stroke="${METAL}" stroke-width="2"/>`);
+  // the rod: a painted blank with a cork grip and steel guides
+  o+=`<line x1="${px-30}" y1="${py}" x2="${tipX}" y2="${py+droop}" stroke="${ROD}" stroke-width="7" stroke-linecap="round"/><line x1="${px-26}" y1="${py-1.6}" x2="${tipX-6}" y2="${py+droop-1.6}" stroke="#fff" stroke-opacity=".35" stroke-width="1.6" stroke-linecap="round"/>`;
+  o+=`<line x1="${px-30}" y1="${py}" x2="${hx+16}" y2="${py+droop*(hx+16-px)/(tipX-px)}" stroke="#D9A877" stroke-width="10" stroke-linecap="round"/><line x1="${px-28}" y1="${py-2.6}" x2="${hx+14}" y2="${py-2.6+droop*(hx+14-px)/(tipX-px)}" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>`;
+  [0.25,0.5,0.75,0.95].forEach(f=>o+=`<circle cx="${px+f*(tipX-px)}" cy="${py+droop*f+6}" r="4" fill="none" stroke="${PAL.steelDark}" stroke-width="2"/><circle cx="${px+f*(tipX-px)}" cy="${py+droop*f+6}" r="4" fill="none" stroke="${PAL.steel}" stroke-width="1" stroke-dasharray="3 9"/>`);
   const fl=Math.min(170,60+s.m*14),fw=fl*0.36/38;// the snapper hangs nose-up from the line, as a hooked fish does
   o+=`<line x1="${tipX}" y1="${py+droop}" x2="${tipX}" y2="${py+30}" stroke="${LINE}" stroke-width="1.2"/>`+fish(tipX,py+30,fl,SNAP,1,1,undefined,-90);
-  o+=`<path d="M${px},${py+6} l-16,30 h32Z" fill="${INK}"/><text x="${px}" y="${py+56}" text-anchor="middle" style="font:600 12px var(--mono);fill:${INK}">PIVOT</text><text x="${px}" y="${py+72}" text-anchor="middle" style="font:500 11px var(--mono);fill:#916A70">back hand</text>`;
+  // the pivot: a steel wedge with a lit face and a shaded side
+  o+=`<path d="M${px},${py+6} l6,-3.3 l16,30 l-6,3.3Z" fill="${F.mat("metal",PAL.steelDark).shade}" stroke="#5E6878" stroke-linejoin="round"/><path d="M${px},${py+6} l-16,30 h32Z" fill="${PAL.steelDark}" stroke="#5E6878" stroke-linejoin="round"/><path d="M${px-2},${py+12} l-9,17" stroke="#E7ECF2" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/><text x="${px}" y="${py+56}" text-anchor="middle" style="font:600 12px var(--mono);fill:${INK}">PIVOT</text><text x="${px}" y="${py+72}" text-anchor="middle" style="font:500 11px var(--mono);fill:${GREY}">back hand</text>`;
   o+=arrow(hx,py+60,hx,py+4,MINT,`EFFORT ${fmt(effort())} N`,"up");
   const ax=tipX-34*fw-14;o+=arrow(ax,py+30,ax,py+30+Math.min(110,30+W()*1.4),PINK,`LOAD ${fmt(W(),1)} N`,"down",true);
   o+=dim(px,hx,py-34,`d = ${fmt(s.d,2)} m`)+dim(px,tipX,py-70,`L = ${fmt(s.L,1)} m`);
   o+=tag(16,14,380,`${fmt(s.m,1)} kg fish · effort ${fmt(effort())} N`);
-  o+=`<g transform="translate(${px-20},413)"><text style="font:500 12px var(--mono);fill:#916A70">TIP MOVES ×${fmt(tipRatio(),1)} FURTHER THAN YOUR HAND</text></g>`;
+  o+=`<g transform="translate(${px-20},413)"><text style="font:500 12px var(--mono);fill:${GREY}">TIP MOVES ×${fmt(tipRatio(),1)} FURTHER THAN YOUR HAND</text></g>`;
   return o}
 const METAL="#C9C4C9";
 function arrow(x1,y1,x2,y2,col,label,dir,left){const a=dir==="up"?-1:1;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="5"/><path d="M${x2-9},${y2-a*12} L${x2},${y2} L${x2+9},${y2-a*12}" fill="${col}"/><text x="${left?x2-14:x2+12}" y="${dir==="up"?y1-4:y2-6}" text-anchor="${left?"end":"start"}" style="font:600 13px var(--mono);fill:${INK}">${label}</text>`}
-function dim(x1,x2,y,label){return `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="${INK}"/><line x1="${x1}" x2="${x1}" y1="${y-6}" y2="${y+6}" stroke="${INK}"/><line x1="${x2}" x2="${x2}" y1="${y-6}" y2="${y+6}" stroke="${INK}"/><rect x="${(x1+x2)/2-58}" y="${y-11}" width="116" height="20" fill="${SKY2}"/><text x="${(x1+x2)/2}" y="${y+4}" text-anchor="middle" style="font:600 12px var(--mono);fill:${INK}">${label}</text>`}
+function dim(x1,x2,y,label){return `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="${INK}"/><line x1="${x1}" x2="${x1}" y1="${y-6}" y2="${y+6}" stroke="${INK}"/><line x1="${x2}" x2="${x2}" y1="${y-6}" y2="${y+6}" stroke="${INK}"/><rect x="${(x1+x2)/2-58}" y="${y-11}" width="116" height="20" rx="10" fill="#fff" stroke="${PAL.pill.line}"/><text x="${(x1+x2)/2}" y="${y+4}" text-anchor="middle" style="font:600 12px var(--mono);fill:${INK}">${label}</text>`}
 function floatScene(){const Wd=800,H=420,water=150;let o=sky(Wd,H,water);
   const fx=400,fr=34,vol=FLOAT_V,sub=Math.min(vol,floatSub()),frac=sub/vol,ok=floats();
   const bob=Math.sin(s.bob)*3;const top=ok?water-2*fr*(1-frac)+bob:water+60+Math.min(140,s.t*40%140);
   // the float: a capsule, top half orange, bottom white; frac of it below the line
   o+=`<line x1="${fx}" y1="${top+2*fr}" x2="${fx}" y2="${top+2*fr+150}" stroke="${LINE}" stroke-width="1.2"/>`;
-  o+=`<rect x="${fx-fr*0.45}" y="${top}" width="${fr*0.9}" height="${2*fr}" rx="${fr*0.45}" fill="#fff" stroke="${INK}"/><path d="M${fx-fr*0.45},${top+fr*0.45} a${fr*0.45},${fr*0.45} 0 0 1 ${fr*0.9},0 v${fr*0.55} h${-fr*0.9}Z" fill="#F29C7A" stroke="${INK}"/><line x1="${fx}" y1="${top-16}" x2="${fx}" y2="${top}" stroke="${INK}" stroke-width="2"/>`;
-  const sy=top+2*fr+150,sr=4+Math.cbrt(s.sink)*2.2;o+=`<ellipse cx="${fx}" cy="${sy}" rx="${sr*0.8}" ry="${sr}" fill="#8b8f99" stroke="${INK}"/><path d="M${fx},${sy+sr} v18 q0,10 -8,6" fill="none" stroke="${INK}" stroke-width="1.6"/>`;
+  // the float: a painted capsule, peach cap over a white body, with a lit streak
+  const fm=F.mat("painted",PR.peach);
+  o+=`<rect x="${fx-fr*0.45}" y="${top}" width="${fr*0.9}" height="${2*fr}" rx="${fr*0.45}" fill="#FBFAF7" stroke="#8F8AA3"/><path d="M${fx+fr*0.12},${top+fr} v${fr*0.8}" stroke="#D9D4E2" stroke-width="5" stroke-linecap="round"/><path d="M${fx-fr*0.45},${top+fr*0.45} a${fr*0.45},${fr*0.45} 0 0 1 ${fr*0.9},0 v${fr*0.55} h${-fr*0.9}Z" fill="${PR.peach}" stroke="${fm.stroke}"/><path d="M${fx-fr*0.22},${top+fr*0.3} v${fr*1.3}" stroke="#fff" stroke-opacity=".8" stroke-width="3" stroke-linecap="round"/><line x1="${fx}" y1="${top-16}" x2="${fx}" y2="${top}" stroke="${INK}" stroke-width="2"/><circle cx="${fx}" cy="${top-17}" r="2.6" fill="${PR.strawberry}"/>`;
+  const sy=top+2*fr+150,sr=4+Math.cbrt(s.sink)*2.2;o+=`<ellipse cx="${fx}" cy="${sy}" rx="${sr*0.8}" ry="${sr}" fill="${PAL.steelDark}" stroke="#5E6878"/><ellipse cx="${fx-sr*0.25}" cy="${sy-sr*0.35}" rx="${sr*0.22}" ry="${sr*0.4}" fill="#E7ECF2" opacity=".8"/><path d="M${fx},${sy+sr} v18 q0,10 -8,6" fill="none" stroke="#5E6878" stroke-width="1.8"/>`;
   // forces on the float
   if(ok){o+=arrow(fx+70,top+fr,fx+70,top+fr-Math.min(90,20+frac*70),MINT,`UPTHRUST ${fmt(totalM()*G/1000,2)} N`,"up")+arrow(fx-60,top+fr,fx-60,top+fr+Math.min(90,20+frac*70),PINK,`WEIGHT ${fmt(totalM()*G/1000,2)} N`,"down",true)}
   o+=fish(225,320,110,SNAP,1,.9)+fish(620,360,80,SNAP,-1,.7);
@@ -117,20 +145,20 @@ function floatScene(){const Wd=800,H=420,water=150;let o=sky(Wd,H,water);
   return o}
 function lightScene(){const Wd=800,H=420,water=150,sc=70;let o=sky(Wd,H,water);
   const fx=470,R=refractPath(),D=s.depth,ex=fx-s.eye*sc,ey=water-1.6*sc,Px=fx+R.px*sc,fy=water+D*sc,ay=water+R.app*sc;
-  o+=`<line x1="${fx}" x2="${fx}" y1="${water-20}" y2="${H}" stroke="#fff" stroke-dasharray="3 5" opacity=".7"/>`;
+  o+=`<line x1="${fx}" x2="${fx}" y1="${water-20}" y2="${H-6}" stroke="${INK}" stroke-dasharray="3 5" opacity=".35"/>`;
   if(s.eye>=0.02){o+=`<line x1="${Px}" x2="${Px}" y1="${water-60}" y2="${water+60}" stroke="${INK}" stroke-dasharray="2 4" opacity=".6"/><text x="${Px+6}" y="${water-48}" style="font:500 11px var(--mono);fill:${INK}">NORMAL</text>`;
-    o+=`<line x1="${Px}" y1="${water}" x2="${fx}" y2="${ay}" stroke="#fff" stroke-width="1.5" stroke-dasharray="6 5"/>`}
-  o+=fish(fx+48,ay,96,SNAP,1,.45)+`<text x="${fx+60}" y="${ay+4}" style="font:600 12px var(--mono);fill:#fff">WHERE IT LOOKS · ${fmt(R.app,2)} m</text>`;
+    o+=`<line x1="${Px}" y1="${water}" x2="${fx}" y2="${ay}" stroke="#fff" stroke-width="2" stroke-dasharray="6 5"/>`}
+  o+=fish(fx+48,ay,96,SNAP,1,.45)+`<text x="${fx+60}" y="${ay+4}" style="font:600 12px var(--mono);fill:${INK};opacity:.7">WHERE IT LOOKS · ${fmt(R.app,2)} m</text>`;
   o+=fish(fx+48,fy,96,SNAP,1,1)+`<text x="${fx+60}" y="${fy+4}" style="font:600 12px var(--mono);fill:${INK}">WHERE IT IS · ${fmt(D,2)} m</text>`;
   if(s.eye>=0.02)o+=`<path d="M${fx},${fy} L${Px},${water} L${ex},${ey}" fill="none" stroke="${SUN}" stroke-width="3"/><path d="M${(Px+ex)/2},${(water+ey)/2} l-4,-10 l10,3Z" fill="${SUN}"/>`;
   else o+=`<line x1="${fx}" y1="${fy}" x2="${fx}" y2="${ey}" stroke="${SUN}" stroke-width="3"/>`;
-  o+=`<circle cx="${ex}" cy="${ey}" r="15" fill="#fff" stroke="${INK}" stroke-width="2"/><circle cx="${ex+4}" cy="${ey+3}" r="6" fill="${INK}"/><text x="${ex}" y="${ey-24}" text-anchor="middle" style="font:600 12px var(--mono);fill:${INK}">YOUR EYE</text>`;
+  o+=`<circle cx="${ex+2}" cy="${ey+3}" r="15" fill="${PAL.shadow}" opacity=".12"/><circle cx="${ex}" cy="${ey}" r="15" fill="#fff" stroke="${INK}" stroke-width="2"/><circle cx="${ex+4}" cy="${ey+3}" r="6" fill="${INK}"/><text x="${ex}" y="${ey-24}" text-anchor="middle" style="font:600 12px var(--mono);fill:${INK}">YOUR EYE</text>`;
   o+=tag(16,H-50,380,`Looks ${fmt(R.app,2)} m deep · really ${fmt(D,2)} m`);
   return o}
-function statsScene(){const Wd=800,H=420,S=stats();let o=`<rect width="${Wd}" height="${H}" fill="${SKY2}"/>`;
+function statsScene(){const Wd=800,H=420,S=stats();let o=F.floor(Wd,H);
   const px=3,bw=56*px+10,gap=14;// px per cm: four measuring boards of five fish, so every snapper keeps its real shape
-  [0,1,2,3].forEach(c=>{const x0=24+c*(bw+gap);o+=`<rect x="${x0}" y="40" width="${bw}" height="366" rx="8" fill="#fff" stroke="#E3D3D8"/>`;
-    for(let cm=0;cm<=55;cm+=5)o+=`<line x1="${x0+5+cm*px}" x2="${x0+5+cm*px}" y1="44" y2="${cm%10?50:56}" stroke="${INK}" opacity=".6"/>${cm%10?"":`<text x="${x0+5+cm*px}" y="68" text-anchor="middle" style="font:500 9px var(--mono);fill:#916A70">${cm}</text>`}`;
+  [0,1,2,3].forEach(c=>{const x0=24+c*(bw+gap);o+=F.box(x0,40,bw-2,366,{colour:"#FFFDF8",kind:"plastic",d:8,r:8,shadow:c===3,shadowLen:20,stroke:"#CFC6BC"});
+    for(let cm=0;cm<=55;cm+=5)o+=`<line x1="${x0+5+cm*px}" x2="${x0+5+cm*px}" y1="44" y2="${cm%10?50:56}" stroke="${INK}" opacity=".6"/>${cm%10?"":`<text x="${x0+5+cm*px}" y="68" text-anchor="middle" style="font:500 9px var(--mono);fill:${GREY}">${cm}</text>`}`;
     o+=`<line x1="${x0+5+MIN_SIZE*px}" x2="${x0+5+MIN_SIZE*px}" y1="44" y2="402" stroke="${PINK}" stroke-width="1.6" stroke-dasharray="4 3"/>`});
   s.sample.forEach((L,i)=>{const c=Math.floor(i/5),r=i%5,x0=24+c*(bw+gap)+5,y=108+r*64,keep=L>=MIN_SIZE;
     o+=fish(x0+L*px,y,L*px,keep?SNAP:"#E8D9DC",1,keep?1:.75)+`<text x="${x0+L*px+4}" y="${y+4}" style="font:600 11px var(--mono);fill:${keep?INK:"#9b8a90"}">${L}${keep?"":" ↩"}</text>`});
