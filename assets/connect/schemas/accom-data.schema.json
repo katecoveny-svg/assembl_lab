@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://assembl.co.nz/contracts/accommodation-data/v1",
+  "title": "Accommodation twin data contract v1",
+  "description": "Three tables a lodge, motel or holiday park can export from its property management system (PMS) or channel manager. No guest names, emails, phone numbers, addresses, card or passport numbers or vehicle registrations are needed, and no staff names; the importer ignores columns that look like personal information. Money is NZD; totals include GST unless flagged. Independent assembl concept.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "property_type": {
+          "type": "string",
+          "enum": [
+            "lodge",
+            "motel",
+            "holiday_park",
+            "other"
+          ]
+        },
+        "rto": {
+          "type": "string",
+          "description": "Regional tourism organisation area, as MBIE's Accommodation Data Programme names it"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_system": {
+          "type": "string",
+          "description": "PMS or channel manager name and version"
+        }
+      }
+    },
+    "reservations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reservations"
+      }
+    },
+    "rooms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rooms"
+      }
+    },
+    "housekeeping_log": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/housekeeping_log"
+      }
+    }
+  },
+  "$defs": {
+    "reservations": {
+      "title": "Reservations",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reservation_id",
+        "created_at",
+        "arrival",
+        "departure",
+        "total",
+        "channel"
+      ],
+      "properties": {
+        "reservation_id": {
+          "type": "string",
+          "description": "Booking or confirmation number. One row per reservation (one room, unit or site). Also recognised as: booking_id, booking_ref, booking_reference, confirmation, confirmation_no, res_id, reference, ref, booking_no, reservation_number."
+        },
+        "created_at": {
+          "type": "string",
+          "description": "When the booking was made. Drives lead time and the booking pace. Also recognised as: booked, booked_on, booking_date, created, date_booked, made_on, reservation_date."
+        },
+        "arrival": {
+          "type": "string",
+          "description": "Check-in date. Also recognised as: check_in, checkin, arrival_date, start_date, arrive, from, date_in."
+        },
+        "departure": {
+          "type": "string",
+          "description": "Check-out date. Must be after arrival. Also recognised as: check_out, checkout, departure_date, end_date, depart, to, date_out."
+        },
+        "room_type": {
+          "type": "string",
+          "description": "Room, unit or site type as the PMS names it. Also recognised as: room_category, category, unit_type, site_type, accommodation_type, type."
+        },
+        "room_id": {
+          "type": "string",
+          "description": "Room, unit or site number, if assigned. Also recognised as: room, room_no, room_number, unit, unit_no, site, site_no."
+        },
+        "adults": {
+          "type": "number",
+          "description": "Adults on the booking. Also recognised as: adult, no_adults, guests, pax, number_of_guests."
+        },
+        "children": {
+          "type": "number",
+          "description": "Children on the booking. Also recognised as: child, kids, no_children."
+        },
+        "rate_plan": {
+          "type": "string",
+          "description": "Rate plan or package name. Also recognised as: rate, rate_code, plan, tariff, package."
+        },
+        "total": {
+          "type": "number",
+          "description": "Accommodation total for the stay. Assumed to include GST unless total_includes_gst is false. Also recognised as: total_amount, amount, price, accommodation_total, room_revenue, total_nzd, booking_value, value, revenue."
+        },
+        "total_includes_gst": {
+          "type": "boolean",
+          "description": "true if total includes GST (the usual NZ PMS report). Also recognised as: incl_gst, gst_inclusive, tax_inclusive."
+        },
+        "channel": {
+          "type": "string",
+          "description": "Where the booking came from: direct, phone, website, walk-in, Booking.com, Expedia, Airbnb, wholesale or a travel agent. Recognised from the text. Also recognised as: source, booking_source, channel_name, agent, ota, origin, market_source."
+        },
+        "commission": {
+          "type": "number",
+          "description": "Commission charged on this booking, if the export carries it. Otherwise it is estimated from the twin's channel rates and labelled Estimate. Also recognised as: commission_amount, ota_commission, agent_commission, fees."
+        },
+        "status": {
+          "type": "string",
+          "description": "Confirmed, checked out, cancelled or no-show. Cancelled and no-show rows are counted as cancellations, not stays. Also recognised as: booking_status, state, reservation_status."
+        },
+        "cancelled_at": {
+          "type": "string",
+          "description": "When it was cancelled, if it was. Also recognised as: cancelled, cancelled_on, cancellation_date, date_cancelled."
+        },
+        "guest_ref": {
+          "type": "string",
+          "description": "A stable guest number from the PMS (not a name or email). Used only to count repeat stays. Also recognised as: guest_id, profile_id, customer_id, guest_no, client_id."
+        }
+      }
+    },
+    "rooms": {
+      "title": "Rooms, units or sites",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Room, unit or site number. Also recognised as: room, room_id, room_no, room_number, unit, unit_no, site, site_no, number."
+        },
+        "type": {
+          "type": "string",
+          "description": "Room, unit or site type. Also recognised as: room_type, category, unit_type, site_type."
+        },
+        "capacity": {
+          "type": "number",
+          "description": "Most guests it sleeps. Also recognised as: max_guests, max_occupancy, sleeps, occupancy, beds."
+        }
+      }
+    },
+    "housekeeping_log": {
+      "title": "Housekeeping log",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "room",
+        "start",
+        "end"
+      ],
+      "properties": {
+        "room": {
+          "type": "string",
+          "description": "Room, unit or site number. Also recognised as: room_id, room_no, unit, site, room_number."
+        },
+        "start": {
+          "type": "string",
+          "description": "When the clean started. Also recognised as: started, start_time, time_in, begin."
+        },
+        "end": {
+          "type": "string",
+          "description": "When it finished. Also recognised as: finished, end_time, time_out, completed, done."
+        },
+        "task": {
+          "type": "string",
+          "description": "Departure clean, stayover service, deep clean and so on. Also recognised as: type, clean_type, job, service."
+        }
+      }
+    }
+  }
+}

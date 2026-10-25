@@ -367,16 +367,9 @@ details.vz-more[open]>summary{margin-bottom:8px}
     <div class="shead"><div><span class="eyebrow">Connect your data</span><h2>Switch the twin from simulated to yours</h2><p>Start with exports the venue already has: POS sales by item and hour, rosters or timesheets, and supplier invoices. Files are read inside this browser tab. Nothing is uploaded or sent anywhere.</p></div></div>
     <div class="tabs" role="tablist"><button role="tab" type="button" id="tabUp" aria-selected="true" aria-controls="panelUp">Upload exports</button><button role="tab" type="button" id="tabLive" aria-selected="false" aria-controls="panelLive">Live feed (proposed)</button></div>
     <div id="panelUp" role="tabpanel" aria-labelledby="tabUp" style="display:grid;gap:12px">
-      <label class="drop glass" id="drop" for="fileIn"><b>Drop CSV exports here, or choose files</b><span class="note">POS sales by item, rosters or timesheets, supplier invoices, waste log. Columns are matched to the contract automatically, and you confirm the mapping.</span>
-        <input type="file" id="fileIn" accept=".csv,.txt,text/csv" multiple style="position:absolute;width:1px;height:1px;opacity:0"></label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" type="button" id="loadSamples">Load the sample exports</button><button class="btn" type="button" id="resetData">Back to simulated</button><span class="note" id="dataState">No files yet. Every figure is simulated, a source or an estimate.</span></div>
-      <div id="files" style="display:grid;gap:12px"></div>
+      <div id="cnRoot" style="display:grid;gap:12px"></div>
       <div class="card glass" id="yourData" hidden><h3><span>Your data</span><span id="ydRange"></span></h3><div class="yd" id="ydGrid"></div><p class="note" id="ydNote"></p></div>
-      <details><summary>Sample CSVs to copy (made-up numbers, no personal information)</summary>
-        <p class="note">Generated in this page from a simulated week, so a demo never touches real data. Some column names differ on purpose, the sales file has two broken rows and a customer phone column, and the timesheets carry a staff name column, to show the mapping, validation and privacy steps.</p>
-        <div class="chips" id="sampleChips" style="margin:8px 0"></div><textarea id="sampleText" readonly aria-label="Sample CSV"></textarea>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="btn" type="button" id="copySample">Copy to clipboard</button><span class="note" id="copyState"></span></div></details>
-      <details><summary>The data contract: four tables</summary><div id="contractView" class="scroll"></div></details>
+      <div id="cnMore" style="display:grid;gap:8px"></div>
     </div>
     <div id="panelLive" role="tabpanel" aria-labelledby="tabLive" hidden style="display:grid;gap:12px">
       <div class="card glass"><h3><span class="prop">PROPOSED · NOT CONNECTED</span><span>architecture for discussion</span></h3>
@@ -460,6 +453,8 @@ if(window.__assemblLive)draw(window.__assemblLive);
   </footer>
 </div>
 
+<link rel="stylesheet" href="/assets/connect/connect.css">
+<script src="/assets/connect/connect.js"></script>
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
 <style>.tw .views{max-width:calc(100% - 360px)}@media (max-width:640px){.tw .views{max-width:none}.tw .views button{padding:4px 8px;font-size:10.5px}.tw .badge{top:auto;bottom:12px;left:12px;right:auto}}.tw .key{max-width:calc(100% - 300px)}.stagebox{background:#EAE4DC}html.tw-poster .key,html.tw-poster .ghosttag{display:none!important}.ghosttag{z-index:1;box-shadow:0 0 0 1.5px #8E6E88,0 6px 16px -10px rgba(0,0,0,.4)}</style>
@@ -1864,7 +1859,7 @@ function srcTable() { const G = {}; SRC.forEach(r => (G[r[2]] = G[r[2]] || []).p
   $("srcTable").innerHTML = `<thead><tr><th>Figure</th><th>Value</th><th>Label</th><th>Where it comes from</th></tr></thead><tbody>${SRC.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${lab(r[2], r[3])}</td><td>${r[5] ? `<a href="${r[5]}" target="_blank" rel="noopener" style="color:var(--ink)">${esc(r[4])}</a>` : esc(r[4])}</td></tr>`).join("")}</tbody>`; }
 
 // ---------------- connect your data
-const TABLES = Object.keys(K.CONTRACT), FILES = [];
+const TABLES = Object.keys(K.CONTRACT);
 function fromYour() { return Object.keys(DATA).length ? K.fromData(DATA, S) : null; }
 function dataState() { const n = Object.keys(DATA).length; $("dataState").innerHTML = n ? `<b style="color:var(--data)">${n} table${n > 1 ? "s" : ""} in use:</b> ${Object.values(DATA).map(v => esc(v.file)).join(", ")}. Figures from them now say "Your data".` : "No files yet. Every figure is simulated, a source or an estimate.";
   $("badge").textContent = n ? "SIMULATED MOTION · YOUR FIGURES" : "SIMULATED"; yourData(); }
@@ -1879,40 +1874,18 @@ function yourData() { const Y = fromYour(); $("yourData").hidden = !Y; if (!Y) r
   if (Y.wasteCost != null) k.push(kpi(money(Y.wasteCost), "logged waste a week", Y.wasteFile));
   $("ydGrid").innerHTML = k.join(""); $("ydRange").textContent = Y.salesRange ? `${Y.salesRange[0]} to ${Y.salesRange[1]}` : "";
   $("ydNote").textContent = "Weekly averages over each file's date range. Gross profit from invoices treats purchases in the period as cost of goods (stock changes ignored). The 3D venue keeps running on simulated customers; the P&L and benchmark panels gain a Your data column."; }
-function addFile(name, text, auto) { const parsed = K.parseCSV(text), det = K.detectTable(parsed.headers); const f = { id: FILES.length, name, parsed, table: det.t, map: det.map, report: null, used: false }; FILES.push(f); if (auto && det.complete) applyFile(f, true); renderFiles(); return f; }
-function applyFile(f, quiet) { const r = K.validate(f.parsed, f.map, f.table); f.report = r; if (r.ok) { FILES.forEach(x => { if (x !== f && x.table === f.table) x.used = false; }); f.used = true; DATA[f.table] = { rows: r.rows, file: f.name, range: r.range }; } else f.used = false; if (!quiet) { renderFiles(); afterData(); } }
 function afterData() { dataState(); plTable(); bandsPanel(); }
-function renderFiles() { $("files").innerHTML = FILES.map(f => { const fs = K.CONTRACT[f.table].fields, r = f.report;
-  const opts = sel => `<option value="">— not in file —</option>` + f.parsed.headers.map((h, i) => `<option value="${i}" ${sel === i ? "selected" : ""}>${esc(h)}</option>`).join("");
-  return `<div class="file glass" data-id="${f.id}"><header><b>${esc(f.name)}</b><span class="note">${fmt(f.parsed.rows.length)} rows · ${f.parsed.headers.length} columns</span><span class="status ${f.used ? "on" : ""}">${f.used ? "In use" : r ? "Not used" : "Check the mapping"}</span></header>
-    <div class="row"><label>This file is <select data-k="table" style="max-width:260px">${TABLES.map(t => `<option value="${t}" ${t === f.table ? "selected" : ""}>${K.CONTRACT[t].n} (${t})</option>`).join("")}</select></label></div>
-    <div class="maps">${fs.map(x => `<label class="${x.req ? "req" : ""}"><span>${x.k}</span><select data-f="${x.k}">${opts(f.map[x.k])}</select></label>`).join("")}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" type="button" data-act="use">Check and use this file</button><button class="btn" type="button" data-act="remove">Remove</button></div>
-    ${r && !r.missing.length && r.read ? `<div class="vz-split" role="img" aria-label="${fmt(r.accepted)} rows used, ${fmt(r.read - r.accepted)} set aside"><i style="width:calc(${r.accepted / r.read * 100}% - 2px);--c:var(--data)"${VZ.tipAttr(`${fmt(r.accepted)} rows used\nof ${fmt(r.read)} read`)}></i>${r.read > r.accepted ? `<i style="width:max(4px,calc(${(r.read - r.accepted) / r.read * 100}% - 2px));--c:var(--alert)"${VZ.tipAttr(`${fmt(r.read - r.accepted)} rows set aside`)}></i>` : ""}</div>` : ""}
-    ${r ? `<div class="report">${r.missing.length ? `<span class="bad">Missing required columns: ${r.missing.join(", ")}. Map them above.</span>` : `<span class="ok">${fmt(r.accepted)} of ${fmt(r.read)} rows used${r.range ? ` · ${r.range[0]} to ${r.range[1]}` : ""}.</span>`}
-      ${r.rejected && !r.missing.length ? `<span class="bad">${fmt(r.rejected)} rows set aside: ${r.reasons.map(x => `${x.n} × ${esc(x.ex)}`).join("; ")}.</span>` : ""}${r.warnings.map(w => `<span class="warn">${esc(w)}.</span>`).join("")}
-      ${r.pii.length ? `<span class="ok">Ignored as personal information, not needed and not kept: ${r.pii.map(esc).join(", ")}.</span>` : ""}${r.ignored.length ? `<span class="note">Not used: ${r.ignored.map(esc).join(", ")}.</span>` : ""}
-      ${/^sample-/.test(f.name) ? `<span class="note">Sample data made up in this page from a simulated week. It is not any venue's.</span>` : ""}</div>` : ""}</div>`; }).join(""); }
-$("files").addEventListener("change", e => { const card = e.target.closest(".file"); if (!card) return; const f = FILES[+card.dataset.id];
-  if (e.target.dataset.k === "table") { if (f.used) { delete DATA[f.table]; f.used = false; } f.table = e.target.value; f.map = K.autoMap(f.parsed.headers, f.table); f.report = null; renderFiles(); afterData(); return; }
-  const k = e.target.dataset.f; if (k) { const v = e.target.value; if (v === "") delete f.map[k]; else f.map[k] = +v; f.report = null; } });
-$("files").addEventListener("click", e => { const b = e.target.closest("button[data-act]"); if (!b) return; const f = FILES[+b.closest(".file").dataset.id];
-  if (b.dataset.act === "use") applyFile(f); else { if (f.used) delete DATA[f.table]; FILES.splice(FILES.indexOf(f), 1); FILES.forEach((x, i) => x.id = i); renderFiles(); afterData(); } });
-const readFiles = list => Promise.all([...list].map(file => file.text().then(t => [file.name, t]))).then(rs => rs.forEach(([n, t]) => addFile(n, t, false)));
-$("fileIn").onchange = e => readFiles(e.target.files).then(() => { e.target.value = ""; });
-const drop = $("drop"); ["dragenter", "dragover"].forEach(k => drop.addEventListener(k, e => { e.preventDefault(); drop.classList.add("over"); })); ["dragleave", "drop"].forEach(k => drop.addEventListener(k, e => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", e => readFiles(e.dataTransfer.files));
+// Shared Connect module (/assets/connect/connect.js): reads CSV and XLSX, detects the table, maps columns from the contract schema,
+// strips personal columns, runs K.validate, and emits assembl:yourdata. This twin keeps doing exactly what its importer did with the rows.
 const sampleCache = {}; const sample = t => sampleCache[S.mode + t] || (sampleCache[S.mode + t] = K.sampleCSV(t, { ...K.BASE, mode: S.mode }));
-function loadSamples() { TABLES.forEach(t => { if (!FILES.some(f => f.name === `sample-${t}.csv`)) addFile(`sample-${t}.csv`, sample(t), true); }); renderFiles(); afterData(); }
-$("loadSamples").onclick = loadSamples;
-$("resetData").onclick = () => { DATA = {}; FILES.length = 0; renderFiles(); afterData(); };
-let sampleT = "sales_items"; $("sampleChips").innerHTML = TABLES.map(t => `<button type="button" data-t="${t}" aria-pressed="${t === sampleT}">sample-${t}.csv</button>`).join("");
-const showSample = () => { const txt = sample(sampleT), lines = txt.split("\n"); $("sampleText").value = lines.length > 400 ? lines.slice(0, 400).join("\n") + `\n… ${fmt(lines.length - 400)} more rows (Load the sample exports uses all of them)` : txt; document.querySelectorAll("#sampleChips button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === sampleT ? "true" : "false")); $("copyState").textContent = ""; };
-$("sampleChips").onclick = e => { const b = e.target.closest("button"); if (b) { sampleT = b.dataset.t; showSample(); } };
-document.querySelector("#sampleChips").closest("details").addEventListener("toggle", e => { if (e.target.open) showSample(); });
-$("copySample").onclick = async () => { try { await navigator.clipboard.writeText(sample(sampleT)); $("copyState").textContent = "Copied. Paste it into a .csv file and drop it above."; } catch (e) { $("sampleText").select(); $("copyState").textContent = "Selected: press Ctrl+C or ⌘C to copy."; } };
-$("contractView").innerHTML = TABLES.map(t => `<h3 style="margin:14px 0 6px">${esc(K.CONTRACT[t].n)} <span>${t}</span></h3><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Also recognised as</th></tr></thead><tbody>${K.CONTRACT[t].fields.map(f => `<tr><td style="font-family:var(--mono)">${f.k}</td><td>${f.t}</td><td>${f.req ? "Yes" : "–"}</td><td class="note">${esc(f.syn.slice(0, 5).join(", "))}</td></tr>`).join("")}</tbody></table>`).join("") +
-  `<p class="note" style="margin-top:10px">No customer names, phone numbers, emails or card numbers are needed, and no staff names: a staff ID is enough. Columns that look like personal information are ignored on load. Full schema: contract/cafe-data.schema.json.</p>`;
+const CN = ASSEMBL_CONNECT.mount({ twin: "cafe", el: $("cnRoot"), more: $("cnMore"), dropClass: "glass", model: K, schemaUrl: "/assets/connect/schemas/cafe-data.schema.json", schemaFile: "cafe-data.schema.json", sample, firstSample: "sales_items",
+  hint: "POS sales by item, rosters or timesheets, supplier invoices, waste log.", emptyState: "No files yet. Every figure is simulated, a source or an estimate.",
+  sampleHint: "The full sample exports are made in this page from a simulated week: some column names differ on purpose, the sales file has two broken rows and a customer phone column, and the timesheets carry a staff name column, to show the mapping, validation and privacy steps.",
+  sampleNote: "Sample data made up in this page from a simulated week. It is not any venue's.", never: ["Card numbers or payment tokens from the POS", "Staff names, IRD numbers or bank details from payroll: a staff ID and the hours are enough"] });
+const FILES = CN.files, loadSamples = CN.loadSamples;
+addEventListener("assembl:yourdata", e => { const d = e.detail; if (d.twin !== "cafe") return;
+  if (d.action === "reset") DATA = {}; else if (d.rows) DATA[d.table] = { rows: d.rows, file: d.file, range: d.range }; else delete DATA[d.table];
+  if (!d.more) afterData(); });
 const tabs = [["tabUp", "panelUp"], ["tabLive", "panelLive"]]; tabs.forEach(([t]) => $(t).onclick = () => tabs.forEach(([t2, p2]) => { $(t2).setAttribute("aria-selected", t2 === t ? "true" : "false"); $(p2).hidden = t2 !== t; }));
 // proposed live-feed architecture
 (() => { const bx = (x, y, w, h, t, s, st = "var(--line-2)", dash) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="var(--glass)" stroke="${st}" stroke-width="1.5" ${dash ? 'stroke-dasharray="6 5"' : ""}/><text x="${x + 14}" y="${y + 26}" font-size="15" font-weight="600" fill="var(--ink)">${t}</text>${s.map((l, i) => `<text x="${x + 14}" y="${y + 48 + i * 18}" font-size="12.5" fill="var(--body)">${l}</text>`).join("")}`;

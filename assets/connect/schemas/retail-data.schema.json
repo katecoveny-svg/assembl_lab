@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://assembl.co.nz/contracts/retail-data/v1",
+  "title": "Retail twin (home and trade) data contract v1",
+  "description": "Five tables a hardware store can export from its POS, inventory, web-order, rostering and door-counter systems. No customer names, emails, phone numbers, addresses or card numbers are needed, no account holder names and no staff names; the importer ignores columns that look like personal information and hashes trade account ids before keeping them. Money is NZD excl. GST. Independent assembl concept.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "store_type": {
+          "type": "string",
+          "enum": [
+            "hardware",
+            "other"
+          ]
+        },
+        "region": {
+          "type": "string"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_system": {
+          "type": "string",
+          "description": "POS or ERP name and version"
+        }
+      }
+    },
+    "pos_lines": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pos_lines"
+      }
+    },
+    "inventory": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/inventory"
+      }
+    },
+    "click_collect": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/click_collect"
+      }
+    },
+    "roster": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/roster"
+      }
+    },
+    "door_counts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/door_counts"
+      }
+    }
+  },
+  "$defs": {
+    "pos_lines": {
+      "title": "POS line items",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "txn",
+        "ts",
+        "sku",
+        "qty",
+        "net"
+      ],
+      "properties": {
+        "txn": {
+          "type": "string",
+          "description": "Transaction, docket or receipt number. Several rows share one txn. Also recognised as: transaction, transaction_id, receipt, receipt_no, docket, docket_no, invoice, invoice_no, sale_id, txn_id."
+        },
+        "ts": {
+          "type": "string",
+          "description": "When the line was sold (POS) or the counting interval started (door counter). Also recognised as: timestamp, date_time, datetime, sale_time, time, date, created, sold_at."
+        },
+        "store": {
+          "type": "string",
+          "description": "Store or branch code, for multi-store exports. Also recognised as: store_id, branch, site, location, outlet, store_no."
+        },
+        "lane": {
+          "type": "string",
+          "description": "Till, register or terminal. Self-checkouts are recognised from the text (self, SCO, kiosk). Also recognised as: till, register, terminal, pos, checkout, lane_id, till_no."
+        },
+        "customer_type": {
+          "type": "string",
+          "description": "Trade or DIY as the POS records it. If absent, a line with an account id counts as trade. Also recognised as: segment, customer_segment, channel, trade_diy, cust_type, type."
+        },
+        "account_id": {
+          "type": "string",
+          "description": "Trade account number. Hashed on load with a per-session salt; the raw number is never kept. Account holder names are ignored. Also recognised as: account, trade_account, account_no, account_number, customer_id, customer_no, acct."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Item code, article or barcode. Also recognised as: item, item_code, product, product_code, article, barcode, plu, item_no."
+        },
+        "department": {
+          "type": "string",
+          "description": "Department or category, used to group lines into the twin's six classes. Also recognised as: dept, category, class, product_group, group, section."
+        },
+        "qty": {
+          "type": "number",
+          "description": "Units sold (negative for a refund). Also recognised as: quantity, units, qty_sold, units_sold."
+        },
+        "net": {
+          "type": "number",
+          "description": "Net sales for the line, excl. GST. Also recognised as: net_sales, net_amount, amount, sales, value, line_total, total_excl_gst, sales_excl_gst, revenue."
+        },
+        "cost": {
+          "type": "number",
+          "description": "Cost of the line, if the POS carries it. Otherwise margin uses the twin's 33% estimate. Also recognised as: cogs, cost_amount, line_cost, cost_price, unit_cost."
+        },
+        "promo": {
+          "type": "string",
+          "description": "Promotion code or flag, if the line sold on promotion. Also recognised as: promotion, promo_code, on_promo, deal, promo_flag."
+        }
+      }
+    },
+    "inventory": {
+      "title": "Inventory snapshots",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sku",
+        "on_hand"
+      ],
+      "properties": {
+        "sku": {
+          "type": "string",
+          "description": "Item code, article or barcode. Also recognised as: item, item_code, product, product_code, article, barcode, item_no."
+        },
+        "store": {
+          "type": "string",
+          "description": "Store or branch code, for multi-store exports. Also recognised as: store_id, branch, site, location, outlet."
+        },
+        "snapshot_at": {
+          "type": "string",
+          "description": "When the stock count was taken. Also recognised as: date, as_at, as_of, snapshot, snapshot_date, count_date."
+        },
+        "department": {
+          "type": "string",
+          "description": "Department or category, used to group lines into the twin's six classes. Also recognised as: dept, category, class, product_group, group."
+        },
+        "on_hand": {
+          "type": "number",
+          "description": "Units on hand. Also recognised as: soh, stock_on_hand, qty_on_hand, onhand, stock, available."
+        },
+        "on_order": {
+          "type": "number",
+          "description": "Units on order with suppliers. Also recognised as: soo, stock_on_order, qty_on_order, onorder, ordered."
+        },
+        "reorder_point": {
+          "type": "number",
+          "description": "Reorder point or minimum stock. Also recognised as: rop, min, min_stock, reorder_level, reorder."
+        },
+        "lead_time": {
+          "type": "number",
+          "description": "Supplier lead time in days. Also recognised as: lead_time_days, leadtime, lt, supplier_lead_time."
+        },
+        "unit_cost": {
+          "type": "number",
+          "description": "Average cost per unit, to value the stock. Also recognised as: cost, avg_cost, average_cost, cost_price."
+        }
+      }
+    },
+    "click_collect": {
+      "title": "Click-and-collect orders",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order_id",
+        "placed"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "Web order number. Also recognised as: order, order_no, order_number, web_order, reference, ref."
+        },
+        "placed": {
+          "type": "string",
+          "description": "When the customer placed the order. Also recognised as: placed_at, ordered, order_date, created, created_at, order_time."
+        },
+        "promised": {
+          "type": "string",
+          "description": "When the store promised it would be ready. If absent, two hours after placing is assumed and labelled Estimate. Also recognised as: promised_at, ready_by, due, sla, promise."
+        },
+        "picked": {
+          "type": "string",
+          "description": "When picking finished. Also recognised as: picked_at, ready, ready_at, pick_complete, completed."
+        },
+        "collected": {
+          "type": "string",
+          "description": "When the customer took it. Also recognised as: collected_at, picked_up, handed_over, fulfilled."
+        },
+        "status": {
+          "type": "string",
+          "description": "Collected, cancelled, waiting and so on. Also recognised as: order_status, state."
+        },
+        "value": {
+          "type": "number",
+          "description": "Order value, excl. GST. Also recognised as: total, order_value, amount, net."
+        }
+      }
+    },
+    "roster": {
+      "title": "Roster",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "description": "Shift start. Also recognised as: shift_start, start_time, from, clock_in, begin."
+        },
+        "end": {
+          "type": "string",
+          "description": "Shift end. Also recognised as: shift_end, end_time, to, clock_out, finish."
+        },
+        "role": {
+          "type": "string",
+          "description": "Area or role: trade desk, yard, checkouts, floor, pickers, garden, receiving. Also recognised as: position, area, department, job, team."
+        },
+        "staff_ref": {
+          "type": "string",
+          "description": "A payroll or employee number, not a name. Used only to count people. Also recognised as: employee_id, staff_id, emp_id, payroll_id."
+        },
+        "paid_hours": {
+          "type": "number",
+          "description": "Paid hours for the shift, if the roster states them. Also recognised as: hours, paid, duration_hours."
+        }
+      }
+    },
+    "door_counts": {
+      "title": "Door counter",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ts",
+        "count"
+      ],
+      "properties": {
+        "ts": {
+          "type": "string",
+          "description": "When the line was sold (POS) or the counting interval started (door counter). Also recognised as: timestamp, date_time, datetime, period, interval_start, hour, time, date."
+        },
+        "count": {
+          "type": "number",
+          "description": "People counted entering in the interval. Also recognised as: visitors, entries, in, count_in, footfall, traffic."
+        },
+        "door": {
+          "type": "string",
+          "description": "Which entrance or sensor. Also recognised as: entrance, sensor, zone, door_id."
+        }
+      }
+    }
+  }
+}
