@@ -1,0 +1,865 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://assembl-lab.vercel.app/cars/schema.json",
+ "title": "Consumer Information Notice (used motor vehicle), as data",
+ "description": "Every field a New Zealand motor vehicle trader must show on a used vehicle's Consumer Information Notice, keyed for agents. Field order and wording follow MBIE's example notice (Nov 2020) under the Consumer Information Standards (Used Motor Vehicles) Regulations 2008. Each field carries a truth label. In the assembl lab demo every value is Simulated.",
+ "x-source": {
+  "name": "Consumer Information Notice template (MBIE, Nov 2020)",
+  "url": "https://www.consumerprotection.govt.nz/assets/uploads/documents/consumer-information-notice-vehicle-trader.pdf"
+ },
+ "x-trader-duties": {
+  "name": "Motor Vehicle Traders Register: traders' responsibilities to buyers",
+  "url": "https://motortraders.mbie.govt.nz/for-consumers/traders-responsibilities-to-buyers"
+ },
+ "x-truth-labels": {
+  "Simulated": "Invented for the demo dealer",
+  "Source": "Copied from an official document",
+  "Estimate": "An assumption, with its basis",
+  "Your data": "Facts the buyer or the chat supplied"
+ },
+ "type": "object",
+ "required": [
+  "supplier.name",
+  "supplier.address",
+  "supplier.contact",
+  "supplier.traderRegistrationNumber",
+  "price.cash",
+  "price.includes",
+  "securityInterest.registered",
+  "vehicle.makeModel",
+  "vehicle.year",
+  "vehicle.engineCapacity",
+  "vehicle.vin",
+  "odometer.km",
+  "odometer.mayBeInaccurate",
+  "radio.fm88to108",
+  "wof.expiry",
+  "licence.expiry",
+  "registration.registered",
+  "registration.plate",
+  "registration.yearFirstRegisteredNz",
+  "registration.reRegistered",
+  "fuel.type",
+  "ruc.applies",
+  "ruc.outstanding",
+  "import.yearFirstRegisteredOverseas",
+  "import.countryLastRegistered",
+  "import.damaged"
+ ],
+ "properties": {
+  "supplier.name": {
+   "type": "object",
+   "title": "Supplier name",
+   "description": "Supplier. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Supplier name"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "supplier.address": {
+   "type": "object",
+   "title": "Supplier address",
+   "description": "Supplier. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Supplier address"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "supplier.contact": {
+   "type": "object",
+   "title": "Supplier contact",
+   "description": "Supplier. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Supplier contact"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "supplier.traderRegistrationNumber": {
+   "type": "object",
+   "title": "Motor vehicle trader registration number",
+   "description": "Supplier. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Motor vehicle trader registration number"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "price.cash": {
+   "type": "object",
+   "title": "Cash price (NZD)",
+   "description": "Sale information. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Cash price (NZD)"
+    },
+    "value": {
+     "type": "number"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "price.includes": {
+   "type": "object",
+   "title": "Price includes GST, registration and licensing",
+   "description": "Sale information. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Price includes GST, registration and licensing"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "securityInterest.registered": {
+   "type": "object",
+   "title": "Security interest registered on the PPSR (money owing)",
+   "description": "Security interest. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Security interest registered on the PPSR (money owing)"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "vehicle.makeModel": {
+   "type": "object",
+   "title": "Make and model",
+   "description": "Vehicle. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Make and model"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "vehicle.year": {
+   "type": "object",
+   "title": "Vehicle year",
+   "description": "Vehicle. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Vehicle year"
+    },
+    "value": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "vehicle.engineCapacity": {
+   "type": "object",
+   "title": "Engine capacity (cc)",
+   "description": "Vehicle. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Engine capacity (cc)"
+    },
+    "value": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "vehicle.vin": {
+   "type": "object",
+   "title": "VIN or chassis number",
+   "description": "Vehicle. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "VIN or chassis number"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "odometer.km": {
+   "type": "object",
+   "title": "Actual distance travelled (km)",
+   "description": "Odometer. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Actual distance travelled (km)"
+    },
+    "value": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "odometer.mayBeInaccurate": {
+   "type": "object",
+   "title": "Odometer may be inaccurate",
+   "description": "Odometer. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Odometer may be inaccurate"
+    },
+    "value": {
+     "type": "boolean"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "radio.fm88to108": {
+   "type": "object",
+   "title": "Receives 88–108 MHz without a band expander",
+   "description": "Radio. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Receives 88–108 MHz without a band expander"
+    },
+    "value": {
+     "type": "boolean"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "wof.expiry": {
+   "type": "object",
+   "title": "WOF or CoF expiry",
+   "description": "WOF. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "WOF or CoF expiry"
+    },
+    "value": {
+     "type": "string",
+     "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "licence.expiry": {
+   "type": "object",
+   "title": "Vehicle licence (rego) expiry",
+   "description": "Licence. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Vehicle licence (rego) expiry"
+    },
+    "value": {
+     "type": "string",
+     "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "registration.registered": {
+   "type": "object",
+   "title": "Registered vehicle",
+   "description": "Registration. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Registered vehicle"
+    },
+    "value": {
+     "type": "boolean"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "registration.plate": {
+   "type": "object",
+   "title": "Registration plate",
+   "description": "Registration. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Registration plate"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "registration.yearFirstRegisteredNz": {
+   "type": "object",
+   "title": "Year first registered in NZ",
+   "description": "Registration. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Year first registered in NZ"
+    },
+    "value": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "registration.reRegistered": {
+   "type": "object",
+   "title": "Re-registered vehicle",
+   "description": "Registration. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Re-registered vehicle"
+    },
+    "value": {
+     "type": "boolean"
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "fuel.type": {
+   "type": "object",
+   "title": "Operating fuel type",
+   "description": "Fuel and RUC. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Operating fuel type"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "ruc.applies": {
+   "type": "object",
+   "title": "Road user charges apply",
+   "description": "Fuel and RUC. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Road user charges apply"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "ruc.outstanding": {
+   "type": "object",
+   "title": "Outstanding road user charges",
+   "description": "Fuel and RUC. Required on every dealer notice.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Outstanding road user charges"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "import.yearFirstRegisteredOverseas": {
+   "type": "object",
+   "title": "Year first registered overseas",
+   "description": "Used imports. Required for used imports; 'Not applicable: NZ-new' otherwise.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Year first registered overseas"
+    },
+    "value": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "import.countryLastRegistered": {
+   "type": "object",
+   "title": "Country where last registered",
+   "description": "Used imports. Required for used imports; 'Not applicable: NZ-new' otherwise.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Country where last registered"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "import.damaged": {
+   "type": "object",
+   "title": "Imported as a damaged vehicle",
+   "description": "Used imports. Required for used imports; 'Not applicable: NZ-new' otherwise.",
+   "required": [
+    "label",
+    "value",
+    "truth"
+   ],
+   "properties": {
+    "label": {
+     "const": "Imported as a damaged vehicle"
+    },
+    "value": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "truth": {
+     "enum": [
+      "Simulated",
+      "Source",
+      "Estimate",
+      "Your data"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  }
+ },
+ "additionalProperties": false
+}

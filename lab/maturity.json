@@ -1,25 +1,84 @@
 {
   "what": "Where each lab experiment sits on the digital-twin maturity ladder. The ladder is the one the research converges on (OxMaint; MDPI Sustainability 15(4):3412, the Lorraine three-mode ED twin): model → shadow → twin → exploratory. Honest reading: every experiment here is a model or a shadow. None is a twin, because none is synchronised to a real facility's own data, and none is exploratory, because none runs ensembles of futures. Levers on a page are what-ifs on a model, not an exploratory twin.",
   "ladder": {
-    "model": { "level": 1, "label": "Model", "means": "A simulation with no live connection. Its figures are published snapshots and estimates, labelled Source, Estimate and Simulated." },
-    "shadow": { "level": 2, "label": "Shadow", "means": "One-way public data reaches the page and replaces or sits beside its snapshot figures (chips say Live or Latest published). Nothing flows back, and the data is national or regional, not this building's." },
-    "twin": { "level": 3, "label": "Twin", "means": "Synchronised to a real facility's own data (its arrivals, tills, sensors) and simulating its near future between real events. No lab experiment is here yet." },
-    "exploratory": { "level": 4, "label": "Exploratory", "means": "Runs many possible futures against a real facility for a decision. No lab experiment is here yet." }
+    "model": {
+      "level": 1,
+      "label": "Model",
+      "means": "A simulation with no live connection. Its figures are published snapshots and estimates, labelled Source, Estimate and Simulated."
+    },
+    "shadow": {
+      "level": 2,
+      "label": "Shadow",
+      "means": "One-way public data reaches the page and replaces or sits beside its snapshot figures (chips say Live or Latest published). Nothing flows back, and the data is national or regional, not this building's."
+    },
+    "twin": {
+      "level": 3,
+      "label": "Twin",
+      "means": "Synchronised to a real facility's own data (its arrivals, tills, sensors) and simulating its near future between real events. No lab experiment is here yet."
+    },
+    "exploratory": {
+      "level": 4,
+      "label": "Exploratory",
+      "means": "Runs many possible futures against a real facility for a decision. No lab experiment is here yet."
+    }
   },
   "updated": "2026-10-25",
   "twins": {
-    "ed": { "stage": "shadow", "why": "Health NZ's quarterly district and national 6-hour results, the quarterly series since the 2023 baseline, wastewater, weather and holidays reach the page and can calibrate the simulated week; still a generic city ED, not any hospital." },
-    "home": { "stage": "shadow", "why": "Yesterday's wholesale power price, the month's generation mix, the week's fuel prices and the live weather feed the model; the house itself is generic." },
-    "office": { "stage": "shadow", "why": "Weekly MBIE fuel prices replace its commute constant and wholesale power and weather feed the building model; three fictional floors." },
-    "dairy": { "stage": "shadow", "why": "Global Dairy Trade results, the exchange rate and wholesale power reach the page; the plant and its eight AI tools are a model." },
-    "kitchen": { "stage": "shadow", "why": "Stats NZ's latest average food prices replace 14 of its 15 snapshot prices each month; the week itself is yours to plan." },
-    "store": { "stage": "shadow", "why": "Food price indexes and average prices, the Commerce Commission's market structure and the quarterly Retail Trade Survey sit beside the model; the store, its shoppers and its tills are simulated." },
-    "food": { "stage": "shadow", "why": "Stats NZ food price indexes replace its bars each month; household flows and waste are estimates." },
-    "everyday": { "stage": "shadow", "why": "The Ministry of Education's termly attendance figures replace its snapshot sentence; the day itself is a model." },
-    "retail": { "stage": "shadow", "why": "The Retail Trade Survey's hardware figures replace its benchmark each quarter and MBIE diesel and weather reach it; the big-box store and its customers are simulated." },
-    "cafe": { "stage": "model", "why": "Food price indexes, weather and holidays arrive as context chips, but no figure of the café itself is mirrored; the rush, the pass and the roster are estimates." },
-    "stay": { "stage": "model", "why": "Exchange rates and holidays arrive as context; bookings, cleaning and commissions are estimates." },
-    "tourism": { "stage": "model", "why": "Built on published Stats NZ and MBIE tables; no feed reaches it yet." },
-    "study": { "stage": "model", "why": "Nineteen study machines: teaching models with no live data by design." }
+    "ed": {
+      "stage": "shadow",
+      "why": "Health NZ's quarterly district and national 6-hour results, the quarterly series since the 2023 baseline, wastewater, weather and holidays reach the page and can calibrate the simulated week; still a generic city ED, not any hospital."
+    },
+    "home": {
+      "stage": "shadow",
+      "why": "Yesterday's wholesale power price, the month's generation mix, the week's fuel prices and the live weather feed the model; the house itself is generic."
+    },
+    "office": {
+      "stage": "shadow",
+      "why": "Weekly MBIE fuel prices replace its commute constant and wholesale power and weather feed the building model; three fictional floors."
+    },
+    "dairy": {
+      "stage": "shadow",
+      "why": "Global Dairy Trade results, the exchange rate and wholesale power reach the page; the plant and its eight AI tools are a model."
+    },
+    "kitchen": {
+      "stage": "shadow",
+      "why": "Stats NZ's latest average food prices replace 14 of its 15 snapshot prices each month; the week itself is yours to plan."
+    },
+    "store": {
+      "stage": "shadow",
+      "why": "Food price indexes and average prices, the Commerce Commission's market structure and the quarterly Retail Trade Survey sit beside the model; the store, its shoppers and its tills are simulated."
+    },
+    "food": {
+      "stage": "shadow",
+      "why": "Stats NZ food price indexes replace its bars each month; household flows and waste are estimates."
+    },
+    "everyday": {
+      "stage": "shadow",
+      "why": "The Ministry of Education's termly attendance figures replace its snapshot sentence; the day itself is a model."
+    },
+    "retail": {
+      "stage": "shadow",
+      "why": "The Retail Trade Survey's hardware figures replace its benchmark each quarter and MBIE diesel and weather reach it; the big-box store and its customers are simulated."
+    },
+    "cafe": {
+      "stage": "model",
+      "why": "Food price indexes, weather and holidays arrive as context chips, but no figure of the café itself is mirrored; the rush, the pass and the roster are estimates."
+    },
+    "stay": {
+      "stage": "model",
+      "why": "Exchange rates and holidays arrive as context; bookings, cleaning and commissions are estimates."
+    },
+    "tourism": {
+      "stage": "model",
+      "why": "Built on published Stats NZ and MBIE tables; no feed reaches it yet."
+    },
+    "study": {
+      "stage": "model",
+      "why": "Nineteen study machines: teaching models with no live data by design."
+    },
+    "cars": {
+      "stage": "model",
+      "why": "A fictional demo dealer with Simulated stock. MBIE's weekly fuel price and household power survey feed only its running-cost estimate; no dealer's own data reaches it."
+    }
   }
 }

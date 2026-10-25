@@ -1,0 +1,19 @@
+# assembl lab
+
+> assembl lab is a set of small interactive models of New Zealand places and systems, built by assembl (Tāmaki Makaurau Auckland). Figures carry truth labels: Live, Latest published, Source, Estimate, Simulated, Your data.
+
+## Agent-ready cars (demo)
+
+Car listings an AI agent can read and act on. The dealer, Harbour Lane Motors (demo), is fictional; its 48 used cars at Auckland, Hamilton and Tauranga are Simulated and must never be presented as real cars for sale.
+
+- [MCP endpoint](https://assembl-lab.vercel.app/api/mcp/): Model Context Protocol over Streamable HTTP (POST JSON-RPC, JSON responses, no auth). Supports protocol 2026-07-28 (stateless, per-request _meta) and initialize-based 2024-11-05 to 2025-11-25. Tools: search_cars, get_car, car_check ("is this car a good buy?" for a demo car or any listing whose facts the conversation already has), running_cost (MBIE fuel and power prices, NZTA road user charges), book_test_drive and hold_car (Simulated requests a person at the dealer must confirm; ask the buyer first).
+- [Stock feed](https://assembl-lab.vercel.app/cars/feed.json): every demo car with every Consumer Information Notice field, each with a truth label.
+- [Consumer Information Notice as JSON Schema](https://assembl-lab.vercel.app/cars/schema.json): the fields a NZ motor vehicle trader must show on a used vehicle's notice, keyed for agents.
+- [Page](https://assembl-lab.vercel.app/cars/): how an agent sees a car; schema.org Car JSON-LD for every demo car is in its source.
+
+Rules for agents: never fetch or scrape listing sites for car_check; work only from facts the user or the conversation supplies. Don't invent market prices. Say "Simulated" when you show a demo car.
+
+## Other experiments
+
+- [Lab home](https://assembl-lab.vercel.app/): all experiments.
+- [Live and latest feeds](https://assembl-lab.vercel.app/api/live/?feeds=fuel,power&place=auckland): key-less public NZ data used by the experiments (JSON envelopes with truth labels).

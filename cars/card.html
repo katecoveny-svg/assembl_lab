@@ -1,0 +1,117 @@
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Is this car a good buy?</title><style>:root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--deep:#240B21;--body:#654A4E;--rose:#916A70;--line:rgba(73,43,62,.14);
+--sim:#7A5C6B;--est:#8C6D3F;--src:#3F6A52;--live:#2F7D5B;--pub:#A8642A;--you:#3D5A7A;--stop:#9B3D3A;color-scheme:light}
+:root[data-theme=dark]{--paper:#1B0918;--chalk:#2A1426;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D9CDD1;--rose:#B898A0;--line:rgba(245,241,242,.16);--sim:#C8A9B8;--est:#D2AE73;--src:#8CC7A4;--live:#7FC6A0;--pub:#F0A24A;--you:#9EBBE0;--stop:#E79A92;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;background:var(--paper);color:var(--body);font:400 14px/1.5 "Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.card{padding:18px 18px 16px;max-width:720px;margin:0 auto}
+.mono,.chip,.ev{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+h1{margin:2px 0 0;font-size:19px;line-height:1.25;font-weight:500;color:var(--deep);letter-spacing:-.2px}
+.ev{font-size:11px;color:var(--rose);letter-spacing:.02em}
+.chip{display:inline-block;font-size:9.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.c-sim{--c:var(--sim)}.c-est{--c:var(--est)}.c-src{--c:var(--src)}.c-live{--c:var(--live)}.c-pub{--c:var(--pub)}.c-you{--c:var(--you)}
+.hero{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin:12px 0 4px}
+.hero svg{width:100%;height:auto;display:block}
+.sum{font-size:15px;color:var(--ink);margin:0}
+h2{font:500 10px/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+.wf{display:flex;flex-direction:column;gap:6px}.wr{display:grid;grid-template-columns:minmax(96px,32%) 1fr auto;gap:8px;align-items:center;font-size:12.5px;color:var(--ink)}
+.tr{position:relative;height:12px;border-radius:4px;background:color-mix(in srgb,var(--ink) 7%,transparent)}.tr i{position:absolute;top:0;bottom:0;border-radius:4px;opacity:.85}
+.wr b{font:500 12px "IBM Plex Mono",ui-monospace,monospace;color:var(--deep);min-width:58px;text-align:right}.wr.tot{padding-top:6px;border-top:1px solid var(--line)}
+ul{list-style:none;margin:0;padding:0}li{padding:6px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:18px 1fr;gap:8px}
+li:last-child{border-bottom:0}li b{font-weight:500;color:var(--ink)}li small{display:block;color:var(--body);font-size:12.5px}
+.k{width:12px;height:12px;border-radius:50%;margin-top:4px;border:1.5px solid var(--rose)}.k.stop{background:var(--stop);border-color:var(--stop)}.k.watch{border-color:var(--pub);background:color-mix(in srgb,var(--pub) 40%,transparent)}.k.ask{border-color:var(--you)}.k.info{border-color:var(--line)}
+.box{width:12px;height:12px;border:1.5px solid var(--ink);border-radius:3px;margin-top:4px}
+a{color:var(--ink);text-underline-offset:3px}
+.miss{font-size:12.5px}.foot{margin-top:14px;font-size:11px;color:var(--rose)}
+.wait{padding:24px 18px;font:12px "IBM Plex Mono",ui-monospace,monospace;color:var(--rose)}
+@media(max-width:420px){.hero{grid-template-columns:1fr}.hero svg{max-width:220px}}</style></head>
+<body><div id="root"><p class="wait">Waiting for the car check…</p></div><script>
+var VERSION="1.0.0";
+function profileSVG(kind, paint, opts) {
+  opts = opts || {};
+  var T = {
+    hatch: { L: 4.00, bot: .28, wr: .31, wf: 1.27, wb: -1.27, belt: .93, roof: 1.50, top: [[2.00, .50], [2.00, .68], [1.88, .76], [1.25, .86], [.80, .93]], glass: [.80, .12, -1.42, -1.82], tail: [[-1.82, .93], [-1.95, .86], [-2.00, .55]] },
+    sedan: { L: 4.65, bot: .30, wr: .32, wf: 1.40, wb: -1.38, belt: .95, roof: 1.45, top: [[2.32, .52], [2.32, .70], [2.18, .79], [1.45, .90], [.95, .95]], glass: [.95, .18, -1.05, -1.62], tail: [[-1.62, .98], [-2.22, .97], [-2.31, .90], [-2.33, .56]] },
+    suv: { L: 4.60, bot: .38, wr: .36, wf: 1.36, wb: -1.36, belt: 1.10, roof: 1.70, top: [[2.30, .60], [2.30, .86], [2.17, .98], [1.50, 1.06], [1.00, 1.10]], glass: [1.00, .28, -1.95, -2.20], tail: [[-2.20, 1.10], [-2.28, 1.00], [-2.30, .62]] },
+    ute: { L: 5.30, bot: .44, wr: .38, wf: 1.62, wb: -1.50, belt: 1.14, roof: 1.80, top: [[2.65, .64], [2.65, .92], [2.50, 1.06], [1.70, 1.12], [1.06, 1.14]], glass: [1.06, .40, -.72, -.86],
+      tail: [[-.86, 1.14], [-.94, 1.14], [-.94, .74], [-2.58, .74], [-2.58, .70], [-2.65, .66]], tray: [-.94, -2.58, 1.18, .74] },
+    van: { L: 5.00, bot: .34, wr: .35, wf: 1.62, wb: -1.40, belt: 1.18, roof: 2.00, top: [[2.50, .58], [2.50, .92], [2.32, 1.06], [1.86, 1.14], [1.64, 1.18]], glass: [1.64, 1.10, -2.40, -2.46], tail: [[-2.46, 1.18], [-2.50, 1.10], [-2.50, .60]], sideTo: .02 },
+  }[kind] || null;
+  if (!T) T = { L: 4.00, bot: .28, wr: .31, wf: 1.27, wb: -1.27, belt: .93, roof: 1.50, top: [[2.00, .50], [2.00, .68], [1.88, .76], [1.25, .86], [.80, .93]], glass: [.80, .12, -1.42, -1.82], tail: [[-1.82, .93], [-1.95, .86], [-2.00, .55]] };
+  var S = 100, H = 2.25, pad = .18, W0 = -2.75, Wd = 5.5;
+  var X = function (x) { return ((x - W0) * S).toFixed(1); }, Y = function (y) { return ((H - y) * S).toFixed(1); };
+  var P = function (p) { return X(p[0]) + " " + Y(p[1]); };
+  var g = T.glass, ra = T.wr + .08, d = "M" + P(T.top[0]);
+  T.top.forEach(function (p) { d += " L" + P(p); });
+  d += " L" + P([g[1], T.roof]) + " L" + P([g[2], T.roof]) + " L" + P([g[3], T.belt]);
+  T.tail.forEach(function (p) { d += " L" + P(p); });
+  d += " L" + P([-T.L / 2 + .05, T.bot]) + " L" + P([T.wb - ra, T.bot]) + " A" + (ra * S).toFixed(1) + " " + (ra * S).toFixed(1) + " 0 0 1 " + P([T.wb + ra, T.bot]);
+  d += " L" + P([T.wf - ra, T.bot]) + " A" + (ra * S).toFixed(1) + " " + (ra * S).toFixed(1) + " 0 0 1 " + P([T.wf + ra, T.bot]) + " L" + P([T.L / 2 - .06, T.bot]) + " Z";
+  // glasshouse: windscreen foot → roof front → roof rear → rear belt (a cab-only window for the ute and van)
+  var yb = T.belt + .035, yt = T.roof - .07, end = T.sideTo != null ? T.sideTo : g[3];
+  var gl = "M" + P([g[0] - .04, yb]) + " L" + P([g[1] - .02, yt]) + " L" + P([T.sideTo != null ? end : g[2] + .02, yt]) + " L" + P([T.sideTo != null ? end : g[3] + .06, yb]) + " Z";
+  var span = (g[1] - (T.sideTo != null ? end : g[2])), n = T.sideTo != null ? 1 : span > 2.3 ? 3 : 2, pillars = "";
+  for (var i = 1; i < n; i++) { var px = g[1] - span * i / n; pillars += '<rect x="' + X(px - .05) + '" y="' + Y(yt + .01) + '" width="' + (.1 * S).toFixed(1) + '" height="' + ((yt - yb + .02) * S).toFixed(1) + '" fill="' + paint + '"/>'; }
+  var wheel = function (x) {
+    var cx = X(x), cy = Y(T.wr), r = T.wr * S, rim = r * .62, sp = "";
+    for (var k = 0; k < 5; k++) { var a = k * Math.PI * 2 / 5 - Math.PI / 2; sp += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (+cx + Math.cos(a) * rim * .9).toFixed(1) + '" y2="' + (+cy + Math.sin(a) * rim * .9).toFixed(1) + '" stroke="#8E9095" stroke-width="' + (r * .11).toFixed(1) + '" stroke-linecap="round"/>'; }
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r.toFixed(1) + '" fill="#2E2A2C"/><circle cx="' + cx + '" cy="' + cy + '" r="' + rim.toFixed(1) + '" fill="#C9CCD0"/>' + sp + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (rim * .26).toFixed(1) + '" fill="#9A9DA2"/>';
+  };
+  var hy = T.top[1][1] - .06, ty = Math.max(.62, T.tail[1][1] - .14);
+  var lights = '<rect x="' + X(T.L / 2 - .16) + '" y="' + Y(hy + .06) + '" width="16" height="11" rx="4" fill="#F4F1E8" stroke="#00000022"/>' +
+    '<rect x="' + X(-T.L / 2 - .01) + '" y="' + Y(ty + .07) + '" width="11" height="14" rx="3" fill="#B5453E"/>';
+  var tray = T.tray ? '<rect x="' + X(T.tray[1]) + '" y="' + Y(T.tray[2]) + '" width="' + ((T.tray[0] - T.tray[1]) * S).toFixed(1) + '" height="' + ((T.tray[2] - T.tray[3]) * S).toFixed(1) + '" fill="' + paint + '" stroke="#240B21" stroke-opacity=".28" stroke-width="2.4"/><line x1="' + X(T.tray[1] + .05) + '" y1="' + Y(T.tray[2] - .06) + '" x2="' + X(T.tray[0] - .05) + '" y2="' + Y(T.tray[2] - .06) + '" stroke="#00000022" stroke-width="3"/>' : "";
+  var wells = [T.wf, T.wb].map(function (x) { return '<circle cx="' + X(x) + '" cy="' + Y(T.wr) + '" r="' + (ra * S - 2).toFixed(1) + '" fill="#2E2A2C" opacity=".9"/>'; }).join("");
+  var shadow = '<ellipse cx="' + X(0) + '" cy="' + Y(0) + '" rx="' + (T.L * .52 * S).toFixed(1) + '" ry="10" fill="' + (opts.shadow || "#240B21") + '" opacity=".12"/>';
+  var label = opts.title ? '<title>' + String(opts.title).replace(/[<&]/g, "") + '</title>' : "";
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + (-pad * S) + ' ' + (-.05 * S) + ' ' + ((Wd + 2 * pad) * S) + ' ' + ((H + .15) * S) + '" role="img"' + (opts.title ? "" : ' aria-hidden="true"') + ' class="' + (opts.cls || "car-profile") + '">' + label + shadow + wells +
+    '<path d="' + d + '" fill="' + paint + '" stroke="#240B21" stroke-opacity=".28" stroke-width="2.4" stroke-linejoin="round"/>' +
+    '<path d="' + gl + '" fill="#433C47" opacity=".88"/>' + pillars + tray + lights +
+    '<line x1="' + X(-T.L / 2 + .2) + '" y1="' + Y(T.bot + .1) + '" x2="' + X(T.L / 2 - .2) + '" y2="' + Y(T.bot + .1) + '" stroke="#00000026" stroke-width="5"/>' +
+    wheel(T.wf) + wheel(T.wb) + '</svg>';
+}
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+var money=function(n,d){return n==null?"–":"$"+Number(n).toLocaleString("en-NZ",{minimumFractionDigits:d||0,maximumFractionDigits:d||0})};
+var CHIP={"Simulated":"c-sim","Estimate":"c-est","Source":"c-src","Live":"c-live","Latest published":"c-pub","Your data":"c-you"};
+var chip=function(t){return '<span class="chip '+(CHIP[t]||"c-sim")+'">'+esc(t)+'</span>'};
+function waterfall(rc){
+  var max=rc.totalWeekly||1,acc=0,rows=rc.lines.map(function(l){var x=acc/max*100,w=Math.max(.8,l.weekly/max*100);acc+=l.weekly;
+    return '<div class="wr"><span>'+esc(l.label)+'</span><span class="tr"><i style="left:'+x.toFixed(2)+'%;width:'+w.toFixed(2)+'%;background:'+(l.truth==="Estimate"?"var(--est)":l.truth==="Your data"?"var(--you)":"var(--pub)")+'"></i></span><b>'+money(l.weekly,2)+'</b></div>'}).join("");
+  return '<div class="wf" role="img" aria-label="Weekly running cost '+money(rc.totalWeekly,2)+'">'+rows+'<div class="wr tot"><span>A week, all in</span><span class="tr"><i style="left:0;width:100%;background:var(--ink)"></i></span><b>'+money(rc.totalWeekly,2)+'</b></div></div>';
+}
+function render(r){
+  if(!r||!r.car){return}
+  var rc=r.runningCost||{lines:[],totalWeekly:0},kind=(r.car.render&&r.car.render.kind)||"hatch",paint=(r.car.render&&r.car.render.paint)||"#C8CBCB";
+  var flags=(r.redFlags||[]).map(function(f){return '<li><span class="k '+esc(f.level)+'"></span><span><b>'+esc(f.title)+'</b><small>'+esc(f.why)+'</small></span></li>'}).join("");
+  var checks=(r.checks||[]).map(function(c){return '<li><span class="box"></span><span><b>'+esc(c.title)+'</b><small>'+esc(c.how)+(c.link?' <a href="'+esc(c.link.url)+'" data-link="'+esc(c.link.url)+'" target="_blank" rel="noopener">'+esc(c.link.name)+'</a>':'')+'</small></span></li>'}).join("");
+  var miss=(r.notice&&r.notice.missing||[]).map(function(m){return esc(m.label)}).join(" · ");
+  $("#root").innerHTML='<div class="card"><div class="top"><div><div class="ev">car_check · '+esc(r.car.source||"")+'</div><h1>'+esc(r.car.name)+'</h1></div>'+chip(r.car.truth)+'</div>'+
+    '<div class="hero">'+profileSVG(kind,paint,{title:r.car.name})+'<div><p class="sum">'+esc(r.summary)+'</p><p class="ev">'+esc(r.statement)+'</p></div></div>'+
+    '<h2>Running cost · '+esc(rc.kmPerWeek)+' km a week · '+esc(rc.place||"")+'</h2>'+waterfall(rc)+
+    '<p class="ev">'+rc.lines.map(function(l){return esc(l.label)+": "+esc(l.truth)+(l.period?" · "+esc(l.period):"")}).join(" &nbsp;/&nbsp; ")+'</p>'+
+    (flags?'<h2>Red flags and questions</h2><ul>'+flags+'</ul>':'')+
+    '<h2>Before you pay</h2><ul>'+checks+'</ul>'+
+    (miss?'<h2>Notice fields not given · '+esc(r.notice.present)+' of '+esc(r.notice.total)+'</h2><p class="miss">'+miss+'</p>':'<h2>Notice</h2><p class="miss">All '+esc(r.notice&&r.notice.total)+' notice fields present.</p>')+
+    '<p class="foot">'+esc(r.fairPrice&&r.fairPrice.note)+' assembl lab · Agent-ready cars (demo) · v'+VERSION+'</p></div>';
+  size();
+}
+var nextId=1,pending={},inHost=window.parent&&window.parent!==window;
+function send(m){try{window.parent.postMessage(m,"*")}catch(e){}}
+function rpc(method,params){return new Promise(function(res,rej){var id=nextId++;pending[id]={res:res,rej:rej};send({jsonrpc:"2.0",id:id,method:method,params:params});setTimeout(function(){if(pending[id]){delete pending[id];rej(new Error("timeout"))}},5000)})}
+function notify(method,params){send({jsonrpc:"2.0",method:method,params:params||{}})}
+var lastH=0;function size(){if(!inHost)return;var el=document.getElementById("root"),h=Math.ceil(el.getBoundingClientRect().height);if(Math.abs(h-lastH)<2)return;lastH=h;notify("ui/notifications/size-changed",{height:h})}
+function theme(ctx){if(ctx&&ctx.theme)document.documentElement.dataset.theme=ctx.theme}
+window.addEventListener("message",function(e){var m=e.data;if(!m||m.jsonrpc!=="2.0")return;
+  if(m.id!=null&&pending[m.id]&&("result" in m||"error" in m)){var p=pending[m.id];delete pending[m.id];m.error?p.rej(m.error):p.res(m.result);return}
+  if(m.method==="ui/notifications/tool-result"){render(m.params&&m.params.structuredContent);return}
+  if(m.method==="ui/notifications/tool-input"){if(!$(".card"))$("#root").innerHTML='<p class="wait">Checking the notice for '+esc((m.params&&m.params.arguments&&(m.params.arguments.car_id||[m.params.arguments.make,m.params.arguments.model].join(" ")))||"this car")+'</p>';return}
+  if(m.method==="ui/notifications/host-context-changed"){theme(m.params);return}
+  if(m.id!=null&&m.method){send({jsonrpc:"2.0",id:m.id,result:{}})}
+});
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[data-link]");if(!a||!inHost)return;e.preventDefault();rpc("ui/open-link",{url:a.dataset.link}).catch(function(){window.open(a.dataset.link,"_blank","noopener")})});
+if(matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.dataset.theme="dark";
+if(inHost)rpc("ui/initialize",{protocolVersion:"2026-01-26",appInfo:{name:"agent-ready-cars-card",title:"Is this car a good buy?",version:VERSION},appCapabilities:{}}).then(function(r){theme(r&&r.hostContext);notify("ui/notifications/initialized",{});size()}).catch(function(){});
+function fromOpenAI(){var o=window.openai;if(o&&o.toolOutput)render(o.toolOutput);if(o&&o.theme)theme({theme:o.theme})}
+window.addEventListener("openai:set_globals",fromOpenAI);fromOpenAI();
+if(window.ResizeObserver)new ResizeObserver(size).observe(document.getElementById("root"));
+</script></body></html>

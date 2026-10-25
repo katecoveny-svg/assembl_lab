@@ -15,6 +15,10 @@
   },
   "api/ask.js": {
    "maxDuration": 20
+  },
+  "api/mcp.js": {
+   "maxDuration": 20,
+   "includeFiles": "api/_feeds/snapshots/**"
   }
  },
  "headers": [

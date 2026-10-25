@@ -1,0 +1,49 @@
+{
+ "what": "Anchor points of the notice fields on /cars/hero-poster.png (pixels), for the page when WebGL can't start. Baked from the 3D stage.",
+ "width": 1200,
+ "height": 900,
+ "anchors": [
+  {
+   "id": "dash",
+   "x": 666,
+   "y": 411,
+   "visible": true
+  },
+  {
+   "id": "labels",
+   "x": 724,
+   "y": 387,
+   "visible": true
+  },
+  {
+   "id": "sticker",
+   "x": 688,
+   "y": 388,
+   "visible": true
+  },
+  {
+   "id": "tag",
+   "x": 775,
+   "y": 439,
+   "visible": true
+  },
+  {
+   "id": "door",
+   "x": 549,
+   "y": 461,
+   "visible": true
+  },
+  {
+   "id": "filler",
+   "x": 366,
+   "y": 410,
+   "visible": true
+  },
+  {
+   "id": "flag",
+   "x": 359,
+   "y": 288,
+   "visible": true
+  }
+ ]
+}
