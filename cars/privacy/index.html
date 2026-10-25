@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy (draft) · Agent-ready cars · assembl lab</title>
+<meta name="description" content="Draft privacy policy for Agent-ready cars, an assembl lab demonstration: what each tool collects, who receives it and your rights under New Zealand's Privacy Act 2020.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/cars/policy.css">
+</head>
+<body>
+<main>
+<p class="eyebrow">assembl lab · Agent-ready cars</p>
+<h1>Privacy</h1>
+<p class="draft"><b>DRAFT for Kate's review, 26 October 2026.</b> This is not yet a published policy, and it needs a review by a privacy lawyer. Its permanent home will be an assembl.co.nz address. This copy on the lab site is for review only. Items marked <span class="todo">TO CONFIRM</span> need a decision.</p>
+
+<p class="lede">Agent-ready cars lets an AI assistant, such as ChatGPT or Claude, search a demo dealer's cars, check a car before you buy it, and work out what it costs to run. It's built to work without your personal information.</p>
+
+<h2>Who we are</h2>
+<p>assembl is based in Tāmaki Makaurau Auckland, New Zealand, and is the agency responsible for this service under the Privacy Act 2020. Contact us about privacy at <span class="todo">TO CONFIRM: privacy contact email at assembl.co.nz</span>, or by post at <span class="todo">TO CONFIRM: postal address</span>.</p>
+
+<h2>What this policy covers</h2>
+<p>It covers the Agent-ready cars endpoint (<span class="todo">TO CONFIRM: final URL; today https://assembl-lab.vercel.app/api/mcp/</span>), the views it shows inside ChatGPT, Claude and other assistants, and the <a href="/cars/">Agent-ready cars page</a>. It's a demonstration. The dealer, Harbour Lane Motors (demo), and all of its cars are invented, and the car images are 3D renders, not photographs.</p>
+
+<h2>What each tool asks for</h2>
+<p>No tool asks for your name, email, phone number, address or account details. The tools store nothing you send them.</p>
+<div class="tw"><table>
+<thead><tr><th scope="col">Tool</th><th scope="col">What it takes</th><th scope="col">Personal information</th></tr></thead>
+<tbody>
+<tr><td>search_cars</td><td>Budget, body type, fuel, seats, kilometres, year, must-haves, a test-drive day, and your region (one of New Zealand's 16 regions, never a town, street or coordinates)</td><td>None</td></tr>
+<tr><td>get_car</td><td>A demo car's id</td><td>None</td></tr>
+<tr><td>car_check</td><td>Facts about a car: make, model, year, kilometres, price, fuel, region, WOF and licence dates, and yes or no answers about the listing</td><td>None. It never takes names, addresses, plates, VINs or links. It asks only <em>whether</em> a listing shows the dealer's details and the VIN. It reports on the vehicle, never its owner, and refuses links. The make, model and year (and nothing else) are sent to NZTA's open Motor Vehicle Register to count how many are registered.</td></tr>
+<tr><td>running_cost</td><td>The car, kilometres a week, your region, and optionally your own power or pump price</td><td>None</td></tr>
+<tr><td>book_test_drive</td><td>A demo car, a time, and an optional note</td><td>None. A note with an email address or phone number in it is refused.</td></tr>
+<tr><td>hold_car</td><td>A demo car, a date, and an optional reason</td><td>None. A reason with contact details in it is refused. No deposit or payment is taken.</td></tr>
+</tbody></table></div>
+
+<h3>Contact details, only at test-drive confirmation</h3>
+<p>In this demo, nothing is sent to a dealer and no contact details are collected. In a live version with a real dealer, we would ask for your name and a phone number or email address <em>only</em> when you confirm a test drive. We would ask on an assembl web page, not in the chat, and use those details for one purpose: passing them to the dealer you chose so they can confirm the time. We would keep them for <span class="todo">TO CONFIRM: retention period</span>, and we would not use them for marketing unless you agree.</p>
+
+<h2>What the assistant app sends us</h2>
+<ul>
+<li><b>Tool inputs.</b> When you use a tool, your assistant sends us the inputs its model chose, as listed above. We use them to answer, then discard them. We never ask for, pull or rebuild your chat history.</li>
+<li><b>A coarse location, sometimes.</b> ChatGPT may send a coarse location hint, such as a city and region. If you haven't named a region, we use the New Zealand region from that hint to sort cars by distance, and nothing else. We don't store it.</li>
+<li><b>Anonymous identifiers.</b> ChatGPT may send anonymised user and conversation identifiers. We don't use or store them.</li>
+</ul>
+
+<h2>Technical logs</h2>
+<p>Our host, Vercel, records request details (IP address, time, the address requested and the response status) to run and protect the service. Our code doesn't write tool inputs or results to logs. Vercel keeps these logs for <span class="todo">TO CONFIRM: retention for our Vercel plan</span>. The views inside ChatGPT and Claude contain no analytics, trackers or advertising, and load nothing except the car renders from our own site.</p>
+
+<h2>Who receives information</h2>
+<ul>
+<li><b>OpenAI</b>, if you use ChatGPT, or <b>Anthropic</b>, if you use Claude. Your assistant sends your tool calls to us and receives our results. Their own privacy policies govern your conversation.</li>
+<li><b>NZ Transport Agency Waka Kotahi</b> receives the make, model and year of a car being checked, as a query to its open data service. No personal information is sent.</li>
+<li><b>Vercel Inc.</b> hosts the service. Our functions run in Vercel's Sydney region; Vercel is a United States company.</li>
+<li>In a live version, <b>the dealer you choose</b>, and only for the test drive you confirm.</li>
+</ul>
+<p>We don't sell personal information and we don't use it for advertising.</p>
+
+<h2>Sending information overseas</h2>
+<p>Information is processed in Australia (Vercel's Sydney region), and may be accessed by Vercel, OpenAI or Anthropic in the United States. Under information privacy principle 12, we disclose personal information overseas only where the recipient is subject to comparable safeguards, or where we have agreed terms that protect it in a comparable way. <span class="todo">TO CONFIRM: which ground applies for each provider</span></p>
+
+<h2>When someone else gives us information about you (IPP 3A)</h2>
+<p>Since 1 May 2026, information privacy principle 3A requires us to tell you when we collect personal information about you from someone other than you. For example, a dealer might pass us your enquiry. We would tell you, as soon as reasonably practicable, that we have it, why, who will receive it, our name and address, any law that requires the collection, and your rights to see and correct it, unless an exception applies. This demo collects no such information. Its tools are built not to accept other people's details, such as a private seller's name.</p>
+
+<h2>Your rights</h2>
+<p>You can ask for any personal information we hold about you, and ask us to correct it (information privacy principles 6 and 7). Contact us at the address above. If you're not happy with our response, you can complain to the <a href="https://www.privacy.org.nz/">Office of the Privacy Commissioner</a>. To stop using the service, remove the app or connector from ChatGPT (Settings → Apps) or Claude (Customize → Connectors). It then loses access at once.</p>
+
+<h2>Children</h2>
+<p>The service isn't directed at children under 13. It's suitable for general audiences, including 13 to 17 year olds.</p>
+
+<h2>Changes</h2>
+<p>We'll date every change to this policy, and describe significant changes on this page. Draft of 26 October 2026.</p>
+
+<footer><a href="/cars/">Agent-ready cars</a><a href="/cars/terms/">Terms (draft)</a><a href="/cars/support/">Support (draft)</a></footer>
+</main>
+</body>
+</html>

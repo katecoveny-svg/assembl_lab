@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Is this car a good buy? · assembl lab</title>
+<meta name="description" content="Check a used car before you pay: the facts a New Zealand dealer must show, red flags, the official checks, the weekly running cost, and live model facts from NZTA's open Motor Vehicle Register. Nothing you type is stored.">
+<meta property="og:title" content="Is this car a good buy?">
+<meta property="og:description" content="Type in what a listing tells you. The check pins each fact to the car, then shows the card ChatGPT and Claude show. Live model facts from NZTA's open register. Nothing you type is stored.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://assembl-lab.vercel.app/cars/check/og.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A maquette of a 2016 Toyota Aqua with the check's facts pinned to it: odometer, WOF and licence, money owing, the NZ register and fuel economy, each with its truth label.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#FFFDFB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1218" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="modulepreload" href="/cars/check/check.js">
+<style>
+/* assembl lab · car check. Paper, plum and one car: motion only where the check is assembling. */
+:root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--deep:#240B21;--body:#654A4E;--rose:#916A70;--line:rgba(73,43,62,.13);--line2:rgba(73,43,62,.26);
+  --card:#FFFFFF;--field:#FFFFFF;--glass:rgba(255,253,251,.9);--btn:#240B21;--btn-ink:#FFFDFB;--floor:#F3EDEE;--shade:rgba(36,11,33,.42);
+  --sim:#7A5C6B;--est:#8C6D3F;--src:#3F6A52;--live:#2F7D5B;--pub:#A8642A;--you:#3D5A7A;--stop:#9B3D3A;--watch:#8C6D3F;--ok:#3F6A52;
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gut:max(16px,4vw);--car-h:520px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1C1218;--chalk:#271A22;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D8CBD0;--rose:#BC9CA4;--line:rgba(245,241,242,.13);--line2:rgba(245,241,242,.26);
+  --card:#22161D;--field:#1C1218;--glass:rgba(28,18,24,.9);--btn:#F5F1F2;--btn-ink:#240B21;--floor:#2A1C25;--shade:rgba(0,0,0,.6);
+  --sim:#C8A9B8;--est:#D2AE73;--src:#8CC7A4;--live:#7FC6A0;--pub:#F0A24A;--you:#9EBBE0;--stop:#E79A92;--watch:#D2AE73;--ok:#8CC7A4;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1C1218;--chalk:#271A22;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D8CBD0;--rose:#BC9CA4;--line:rgba(245,241,242,.13);--line2:rgba(245,241,242,.26);
+  --card:#22161D;--field:#1C1218;--glass:rgba(28,18,24,.9);--btn:#F5F1F2;--btn-ink:#240B21;--floor:#2A1C25;--shade:rgba(0,0,0,.6);
+  --sim:#C8A9B8;--est:#D2AE73;--src:#8CC7A4;--live:#7FC6A0;--pub:#F0A24A;--you:#9EBBE0;--stop:#E79A92;--watch:#D2AE73;--ok:#8CC7A4;color-scheme:dark}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;scroll-behavior:auto}
+body{margin:0;background:var(--paper);color:var(--body);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3{color:var(--deep);font-weight:500;letter-spacing:-.02em;margin:0}
+a{color:var(--ink);text-underline-offset:3px;text-decoration-thickness:1px}a:hover{text-decoration-thickness:2px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--rose);outline-offset:3px;border-radius:6px}
+[hidden]{display:none!important}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--gut)}
+.eyebrow{font:500 11px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:0}
+.lbl{font:500 10.5px/1.4 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--body)}
+.fine{font-size:13px;line-height:1.55;color:var(--body);margin:0}
+.chip{display:inline-block;font:500 9.5px/1.6 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:999px;white-space:nowrap;vertical-align:2px;color:var(--c,var(--sim));background:color-mix(in srgb,var(--c,var(--sim)) 13%,transparent)}
+.chip[data-truth="Estimate"]{--c:var(--est)}.chip[data-truth="Source"]{--c:var(--src)}.chip[data-truth="Live"]{--c:var(--live)}.chip[data-truth="Latest published"]{--c:var(--pub)}.chip[data-truth="Your data"]{--c:var(--you)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;min-height:50px;padding:0 24px;font:500 15px var(--sans);cursor:pointer;background:var(--btn);color:var(--btn-ink);transition:background .2s}
+.btn:hover{background:color-mix(in srgb,var(--btn) 86%,var(--rose))}.btn[disabled]{opacity:.6;cursor:progress}
+.quiet{min-height:40px;padding:0 16px;border-radius:999px;border:0;box-shadow:inset 0 0 0 1px var(--line2);background:transparent;color:var(--ink);font:500 14px var(--sans);cursor:pointer}.quiet:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
+
+/* top line */
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:18px;padding-bottom:6px}
+.mark-word{font:500 17px/1 var(--sans);letter-spacing:-.02em;color:var(--deep);text-decoration:none}.mark-word span{color:var(--rose);font-weight:400}
+.top nav a{font-size:14px;color:var(--ink)}
+
+/* ---------- hero: the question, the form, the car ---------- */
+.hero{display:grid;grid-template-columns:minmax(300px,392px) minmax(0,1fr);grid-template-areas:"head stage" "form stage";column-gap:clamp(28px,4.4vw,64px);align-items:start;padding-top:clamp(18px,4vw,44px);padding-bottom:28px}
+.head{grid-area:head}.formcol{grid-area:form}.stage{grid-area:stage}
+h1{font-size:clamp(38px,5.2vw,62px);line-height:1.02;letter-spacing:-.035em;margin:14px 0 16px}
+.lede{font-size:17.5px;line-height:1.55;color:var(--ink);margin:0 0 22px;max-width:40ch}
+form{background:var(--chalk);border-radius:20px;padding:18px 18px 16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:grid;gap:5px;margin:0 0 11px;min-width:0}
+input,select{width:100%;min-width:0;color:var(--deep);background:var(--field);border:0;box-shadow:inset 0 0 0 1px var(--line2);border-radius:11px;min-height:44px;padding:8px 12px;font-size:15.5px}
+input:focus,select:focus{outline:none;box-shadow:inset 0 0 0 1.5px var(--ink)}
+details.more{margin:2px 0 14px;border-top:1px solid var(--line);padding-top:10px}
+details.more summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:baseline;min-height:30px;font-size:14px;color:var(--ink)}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary b{font-weight:500;white-space:nowrap;flex:none}details.more summary b::before{content:"+";display:inline-block;width:16px;color:var(--rose)}details.more[open] summary b::before{content:"–"}
+details.more summary span{font:400 12px/1.4 var(--mono);color:var(--body);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+details.more .inner{padding-top:10px}
+.go{width:100%}
+.under{margin:12px 2px 0;display:grid;gap:8px}
+.under .safe{color:var(--ink);font-size:13.5px}.under .safe b{font-weight:500}
+
+/* the stage: a car on paper, the pins, the verdict */
+.stage{position:relative;display:flex;flex-direction:column;min-width:0}
+.car{position:relative;height:var(--car-h);order:1}
+.car::before{content:"";position:absolute;inset:6% 4% 0;background:radial-gradient(58% 34% at 50% 70%,var(--floor) 0%,color-mix(in srgb,var(--floor) 55%,transparent) 48%,transparent 72%);border-radius:50%;pointer-events:none}
+.car canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .5s ease}.car canvas.ready{opacity:1}
+.car .poster{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);width:min(92%,620px);height:auto;border-radius:18px;display:block}
+.leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.leaders line{stroke:var(--ink);stroke-width:1;stroke-opacity:.5;stroke-dasharray:640;stroke-dashoffset:640;transition:stroke-dashoffset .55s cubic-bezier(.2,.7,.2,1),opacity .35s}
+.leaders line.on{stroke-dashoffset:0}
+.leaders circle{fill:var(--paper);stroke:var(--ink);stroke-width:1.5;transition:opacity .35s}
+.leaders circle.ping{fill:none;stroke-width:1;opacity:0}
+.leaders circle.ping.go{animation:ping .9s cubic-bezier(.2,.7,.2,1)}
+@keyframes ping{0%{opacity:.7;r:4px}100%{opacity:0;r:22px}}
+.marks{position:absolute;inset:0;pointer-events:none}
+.mk{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--deep);color:var(--paper);font:500 10px/20px var(--mono);text-align:center;opacity:0;transform:scale(.4);transition:opacity .3s,transform .35s cubic-bezier(.2,.8,.2,1.2)}
+.mk.on{opacity:1;transform:none}.mk.away{opacity:.3}
+.status{position:absolute;left:0;top:4px;margin:0;font:500 11px/1.5 var(--mono);letter-spacing:.04em;color:var(--body);z-index:2}
+.status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--rose);margin-right:7px;vertical-align:1px}
+.status[data-state="done"] .dot{background:var(--ok)}.status[data-state="error"] .dot{background:var(--stop)}
+.cap{position:absolute;right:0;bottom:6px;margin:0;font:500 10.5px/1.4 var(--mono);letter-spacing:.05em;color:var(--body);text-align:right}
+
+.pins{list-style:none;margin:0;padding:0;position:absolute;left:0;top:0;width:100%;height:var(--car-h);pointer-events:none;z-index:3}
+.pin{position:absolute;left:0;top:0;width:178px;padding:8px 11px 9px;border-radius:12px;background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 0 0 1px var(--line),0 14px 30px -20px rgba(36,11,33,.5);opacity:0;transform:translate3d(var(--fx,0),6px,0);transition:opacity .4s ease,transform .55s cubic-bezier(.2,.75,.2,1),top .35s cubic-bezier(.2,.75,.2,1)}
+.pin.on{opacity:1;transform:none}.pin.away{opacity:.42}
+.pin-k{display:flex;gap:6px;align-items:center;font:500 10px/1.4 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--body)}
+.pin-k b{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--deep);color:var(--paper);font-size:9px;font-weight:500;letter-spacing:0}
+.pin-k i{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--lv,transparent);box-shadow:inset 0 0 0 1.5px var(--lv,var(--line2))}
+.pin[data-level="stop"]{--lv:var(--stop)}.pin[data-level="watch"]{--lv:var(--watch)}.pin[data-level="ok"]{--lv:var(--ok)}.pin[data-level="ask"] .pin-k i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--you)}
+.pin-v{display:block;color:var(--deep);font-size:15.5px;line-height:1.28;font-weight:500;margin:5px 0 3px;letter-spacing:-.01em}
+.pin-s{display:block;font-size:12px;line-height:1.4;color:var(--body)}
+.pin .chip{font-size:8.5px;padding:0 6px;margin-left:2px}
+
+.dress{order:2;display:flex;flex-wrap:wrap;gap:12px 26px;align-items:center;justify-content:center;margin:2px 0 0;padding:0;border:0}
+.pick{display:flex;align-items:center;gap:10px;border:0;margin:0;padding:0;min-width:0}
+.pick legend{float:left;margin-right:10px;padding:0}
+.seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:var(--chalk)}
+.seg label{position:relative}.seg input,.sw input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.seg span{display:block;padding:5px 11px;min-height:32px;line-height:22px;border-radius:999px;font-size:13px;color:var(--ink);cursor:pointer;transition:background .2s,color .2s}
+.seg input:checked+span{background:var(--deep);color:var(--paper)}.seg input:focus-visible+span{outline:2px solid var(--rose);outline-offset:1px}
+.sw{display:flex;gap:7px}.sw label{position:relative;display:block;width:28px;height:28px;cursor:pointer}
+.sw span{display:block;width:28px;height:28px;border-radius:50%;background:var(--p);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18),0 0 0 2px var(--paper),0 0 0 3px transparent;transition:box-shadow .2s}
+.sw input:checked+span{box-shadow:inset 0 0 0 1px rgba(0,0,0,.18),0 0 0 2px var(--paper),0 0 0 3.5px var(--deep)}.sw input:focus-visible+span{outline:2px solid var(--rose);outline-offset:4px}
+.bodynote{order:3;margin:8px 0 0;text-align:center;font-size:12.5px;color:var(--body);min-height:20px}
+
+.verdict{order:5;margin-top:16px;border-top:1px solid var(--line);padding-top:16px;min-height:132px}
+.v-idle{margin:0;color:var(--body);font-size:14.5px;max-width:52ch}.v-idle b{color:var(--ink);font-weight:500}
+.v-done .lbl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.v-head{margin:6px 0 12px;color:var(--deep);font-size:clamp(22px,2.4vw,28px);line-height:1.15;letter-spacing:-.02em;font-weight:500}
+.tally{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tally li{border-radius:14px;background:var(--chalk);padding:11px 13px 12px;opacity:0;transform:translateY(6px);transition:opacity .4s ease calc(var(--i,0)*110ms),transform .5s cubic-bezier(.2,.75,.2,1) calc(var(--i,0)*110ms)}
+.v-done.on .tally li{opacity:1;transform:none}
+.tally b{display:block;color:var(--deep);font-size:24px;line-height:1.1;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tally li>span{display:block;font-size:13px;color:var(--body);margin-top:3px}
+.tally li[data-level="stop"] b{color:var(--stop)}
+.v-more{display:inline-block;margin-top:12px;font-size:14px}
+.stage.stale .pin,.stage.stale .v-done{opacity:.45}.stage.stale .leaders{opacity:.4}
+
+/* ---------- the chat ---------- */
+.band{border-top:1px solid var(--line);padding:clamp(48px,7vw,88px) 0}
+.band.chalk{background:var(--chalk)}
+.sec-head{max-width:64ch;margin-bottom:26px}.sec-head h2{font-size:clamp(28px,3.4vw,40px);line-height:1.08;letter-spacing:-.03em;margin:10px 0 10px}.sec-head p{margin:0}
+.chatgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:clamp(20px,3.4vw,44px);align-items:start}
+.chat{background:var(--card);border-radius:24px;box-shadow:0 0 0 1px var(--line),0 40px 70px -50px rgba(36,11,33,.45);padding:clamp(14px,2.4vw,26px);min-width:0}
+.chat-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;font:500 11px/1.5 var(--mono);letter-spacing:.04em;color:var(--body)}
+.bubble{margin:0 0 18px auto;width:fit-content;max-width:min(480px,88%);background:var(--chalk);color:var(--deep);border-radius:20px 20px 6px 20px;padding:11px 17px;font-size:16px;line-height:1.45}
+.asst-k{margin:0 0 8px;font:500 11px/1.5 var(--mono);letter-spacing:.04em;color:var(--body);display:flex;gap:8px;align-items:center}
+.asst-k i{width:8px;height:8px;border-radius:50%;background:var(--ink);display:inline-block}
+.slot iframe{display:block;width:100%;border:0;height:560px;background:transparent;color-scheme:normal}
+.wait{margin:0;padding:34px 12px;text-align:center;color:var(--body);font:500 12.5px/1.6 var(--mono);border-radius:14px;background:color-mix(in srgb,var(--chalk) 60%,transparent)}
+.chat details{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.chat summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:.03em;color:var(--ink);min-height:32px;display:flex;align-items:center}
+.chat pre{white-space:pre-wrap;word-break:break-word;font:400 12px/1.55 var(--mono);color:var(--body);background:var(--chalk);border-radius:12px;padding:12px;max-height:420px;overflow:auto;margin:8px 0 0}
+.chat .fine{margin-top:12px}
+.use{position:sticky;top:24px}.use h3{font-size:22px;letter-spacing:-.02em;margin:0 0 8px}
+.use>p{margin:0 0 12px}
+.url{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 18px}.url code{font:500 13.5px var(--mono);color:var(--deep);background:var(--chalk);padding:9px 12px;border-radius:11px;overflow-wrap:anywhere;min-width:0}
+.steps{border-radius:16px;box-shadow:inset 0 0 0 1px var(--line);padding:14px 16px 14px;margin:0 0 12px}
+.steps h4{margin:0 0 6px;color:var(--deep);font-weight:500;font-size:16px}.steps ol{margin:0;padding-left:20px;font-size:14.5px}.steps li+li{margin-top:4px}
+
+/* where each fact comes from */
+.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(16px,2.4vw,28px)}
+.legend li{border-top:1px solid var(--line2);padding-top:14px;font-size:14.5px}.legend li .chip{margin-bottom:8px}.legend b{display:block;color:var(--deep);font-weight:500;margin-bottom:4px}
+footer{padding:26px 0 48px;border-top:1px solid var(--line);font-size:14px}footer .wrap{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center}footer .fine{margin-left:auto}
+
+@keyframes appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* no WebGL: a studio render of the body type, the facts listed under it */
+.stage.poster .leaders,.stage.poster .marks{display:none}
+.stage.poster .pins{order:4;position:static;height:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:14px;pointer-events:auto}
+.stage.poster .pin{position:relative;width:auto;left:auto!important;top:auto!important;transform:none;box-shadow:0 0 0 1px var(--line)}
+.stage.poster .pin:not(.on){display:none}.stage.poster .pin.on{animation:appear .45s cubic-bezier(.2,.75,.2,1) both}
+.stage.poster .car{height:auto;aspect-ratio:4/3;max-height:var(--car-h)}.stage.poster .car::before{display:none}
+.stage.poster .poster{width:100%;max-width:640px;transform:translate(-50%,-45%)}
+
+/* ---------- narrow: the car first, the facts listed under it ---------- */
+@media (max-width:900px){
+  :root{--car-h:min(76vw,440px)}
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "stage" "form"}
+  .lede{max-width:none;margin-bottom:8px}
+  .formcol{margin-top:26px}
+  .leaders{display:none}
+  .status{max-width:100%}
+  .pins{order:4;position:static;height:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:14px;pointer-events:auto}
+  .pin{position:relative;width:auto;left:auto!important;top:auto!important;transform:none;box-shadow:0 0 0 1px var(--line)}
+  .pin:not(.on){display:none}.pin.on{animation:appear .45s cubic-bezier(.2,.75,.2,1) both}.pin.away{opacity:1}
+  .tally{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.tally b{font-size:20px}.tally li{padding:10px 10px 11px}
+  .chatgrid{grid-template-columns:minmax(0,1fr)}.use{position:static}
+  .legend{grid-template-columns:1fr 1fr}
+}
+@media (max-width:520px){
+  .row{gap:8px}
+  .dress{justify-content:flex-start;gap:10px}
+  .pick legend{width:44px;margin-right:4px}
+  .seg span{padding:5px 9px;font-size:12.5px}
+  .tally{grid-template-columns:1fr}.tally li{display:flex;align-items:baseline;gap:10px}.tally li>span{margin:0}
+  .legend{grid-template-columns:1fr}
+  .bubble{font-size:15px}
+  footer .fine{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top wrap"><a class="mark-word" href="/">assembl <span>lab</span></a><nav><a href="/cars/">Agent-ready cars</a></nav></header>
+<main>
+<section class="hero wrap" aria-labelledby="h1">
+  <div class="head">
+    <p class="eyebrow">assembl lab · car check</p>
+    <h1 id="h1">Is this car a good buy?</h1>
+    <p class="lede">Type in what a listing tells you. You get the check an AI assistant runs, pinned to the car: what's missing, the red flags, the checks to run before you pay, and what it costs each week.</p>
+  </div>
+
+  <div class="stage" id="stage" aria-label="The check, assembled on the car">
+    <div class="car" id="car">
+      <canvas id="c3d" aria-hidden="true"></canvas>
+      <img class="poster" id="poster" alt="" hidden width="640" height="480">
+      <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+      <div class="marks" id="marks" aria-hidden="true"></div>
+      <p class="status" id="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="status-t">Your car, before the check</span></p>
+      <p class="cap" id="cap">Maquette · body style and paint, not this car</p>
+    </div>
+    <ol class="pins" id="pins" aria-label="What the check found, part by part" aria-live="polite"></ol>
+    <div class="dress">
+      <fieldset class="pick"><legend class="lbl">Body</legend><div class="seg" id="body-pick">
+        <label><input type="radio" name="body" value="hatch" checked><span>Hatch</span></label><label><input type="radio" name="body" value="sedan"><span>Sedan</span></label><label><input type="radio" name="body" value="suv"><span>SUV</span></label><label><input type="radio" name="body" value="ute"><span>Ute</span></label><label><input type="radio" name="body" value="van"><span>Van</span></label></div></fieldset>
+      <fieldset class="pick" id="paint-set"><legend class="lbl">Paint</legend><div class="sw" id="paint-pick"></div></fieldset>
+    </div>
+    <p class="bodynote" id="bodynote"></p>
+    <div class="verdict" id="verdict">
+      <p class="v-idle" id="v-idle">Press <b>Check this car</b>. Each fact lands on the part it belongs to, then the verdict assembles here.</p>
+      <div class="v-done" id="v-done" hidden>
+        <p class="lbl"><span>The check</span><span id="v-name"></span></p>
+        <p class="v-head" id="v-head"></p>
+        <ul class="tally" id="tally"></ul>
+        <a class="v-more" href="#chat">See the whole check, the way your assistant shows it</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="formcol">
+    <form id="f" novalidate aria-label="The car's facts">
+      <div class="row"><label class="f"><span class="lbl">Make</span><input id="make" value="Toyota" autocomplete="off" maxlength="40" required></label>
+        <label class="f"><span class="lbl">Model</span><input id="model" value="Aqua" autocomplete="off" maxlength="60" required></label></div>
+      <div class="row"><label class="f"><span class="lbl">Year</span><input id="year" type="number" inputmode="numeric" min="1980" max="2030" value="2016"></label>
+        <label class="f"><span class="lbl">Kilometres</span><input id="km" type="number" inputmode="numeric" min="0" step="100" value="98000"></label></div>
+      <div class="row"><label class="f"><span class="lbl">Price (NZD)</span><input id="price" type="number" inputmode="numeric" min="0" step="10" value="11500"></label>
+        <label class="f"><span class="lbl">Region</span><select id="region">
+          <option>Northland</option><option selected>Auckland</option><option>Waikato</option><option>Bay of Plenty</option><option>Gisborne</option><option>Hawke's Bay</option><option>Taranaki</option><option>Manawatū-Whanganui</option>
+          <option>Wellington</option><option>Tasman</option><option>Nelson</option><option>Marlborough</option><option>West Coast</option><option>Canterbury</option><option>Otago</option><option>Southland</option></select></label></div>
+      <details class="more" id="more"><summary><b>More details</b><span id="more-sum"></span></summary><div class="inner">
+        <div class="row"><label class="f"><span class="lbl">Fuel</span><select id="fuel"><option value="petrol">Petrol</option><option value="hybrid" selected>Hybrid</option><option value="plug-in hybrid">Plug-in hybrid</option><option value="electric">Electric</option><option value="diesel">Diesel</option><option value="unknown">Not sure</option></select></label>
+          <label class="f"><span class="lbl">Used import or NZ-new</span><select id="imported"><option value="yes" selected>Used import</option><option value="no">NZ-new</option><option value="unknown">Not sure</option></select></label></div>
+        <div class="row"><label class="f"><span class="lbl">WOF expiry</span><input id="wof" type="month" min="2020-01" max="2030-12"></label>
+          <label class="f"><span class="lbl">Licence expiry</span><input id="lic" type="month" min="2020-01" max="2030-12"></label></div>
+        <label class="f"><span class="lbl">Money owing</span><select id="owing"><option value="unknown" selected>Not sure</option><option value="no">None, says the seller</option><option value="yes">Yes, it's registered</option></select></label>
+      </div></details>
+      <button class="btn go" id="go" type="submit">Check this car</button>
+      <div class="under">
+        <p class="safe"><b>Nothing you type is stored, and no personal details are asked for.</b> No name, plate, VIN or link.</p>
+        <p class="fine" id="via">Runs the car_check tool on assembl's endpoint, the same one ChatGPT and Claude call.</p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="band" id="chat" aria-labelledby="chat-h">
+  <div class="wrap">
+    <header class="sec-head"><p class="eyebrow">In the chat</p><h2 id="chat-h">How it looks in ChatGPT or Claude</h2>
+      <p>Ask in your own words. The assistant calls car_check on assembl's endpoint and shows this card in the chat. Below, this page plays the chat app: the question is yours, and the card is the real tool result, in the same kind of sandbox.</p></header>
+    <div class="chatgrid">
+      <div class="chat" aria-label="A chat with an assistant that has the connector">
+        <div class="chat-top"><span>A chat with the connector switched on</span><span id="ms"></span></div>
+        <p class="bubble" id="bubble">Is a 2016 Aqua with 98k for $11.5k in Auckland a good buy?</p>
+        <p class="asst-k"><i aria-hidden="true"></i>Assistant · used car_check</p>
+        <div class="slot" id="slot" aria-live="polite"><p class="wait">The card lands here when the check runs.</p></div>
+        <details id="det" hidden><summary>What the assistant reads (the tool's text result)</summary><pre id="txt"></pre></details>
+        <p class="fine">The chat around the card is drawn by this page. The card is what the tool returns, and an assistant writes its own words around it.</p>
+      </div>
+      <aside class="use" aria-labelledby="use-h">
+        <h3 id="use-h">Use it in ChatGPT or Claude</h3>
+        <p>Add this connector URL to your assistant, then ask, for example "is a 2016 Aqua with 98k for $11.5k in Auckland a good buy?"</p>
+        <div class="url"><code id="u">https://assembl-lab.vercel.app/api/mcp/</code><button class="quiet" type="button" id="cp">Copy</button></div>
+        <article class="steps"><h4>Claude</h4><ol><li>Customize → Connectors → Add custom connector, and paste the URL.</li><li>Choose No sign in, then switch it on in a chat with + → Connectors.</li></ol></article>
+        <article class="steps"><h4>ChatGPT</h4><ol><li>Settings → Apps → Advanced settings: turn on developer mode, then Create app and paste the URL.</li><li>Choose No Authentication and use it from the composer.</li></ol></article>
+        <p class="fine">It's a demo connector, not listed in either directory. The same connector also has a demo dealer, Harbour Lane Motors, whose cars are Simulated. This check works on any car you describe.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="band chalk" aria-labelledby="src-h">
+  <div class="wrap">
+    <header class="sec-head"><p class="eyebrow">Truth labels</p><h2 id="src-h">Where each fact comes from</h2><p>Every figure on the car and in the card carries one of these, so you and your assistant can tell a fact from a guess.</p></header>
+    <ul class="legend">
+      <li><span class="chip" data-truth="Your data">Your data</span><b>What you type</b>It runs the check and isn't stored. No name, plate, VIN or link is asked for.</li>
+      <li><span class="chip" data-truth="Source">Source</span><b>NZTA's register, live</b>How many of this make, model and year are registered in New Zealand, how they came in, and their fuel, engine and rated economy. Plate checks are links to the official free checks: NZTA's WOF and licence check, and a PPSR search for money owing.</li>
+      <li><span class="chip" data-truth="Latest published">Latest published</span><b>This week's prices</b>MBIE's weekly pump price and quarterly household power price, with the period they cover.</li>
+      <li><span class="chip" data-truth="Estimate">Estimate</span><b>Labelled assumptions</b>Real-world fuel use, servicing, tyres, WOF and licence. Each says what it's based on.</li>
+    </ul>
+  </div>
+</section>
+</main>
+<footer><div class="wrap"><a href="/cars/">Agent-ready cars</a><a href="/cars/privacy/">Privacy (draft)</a><a href="/cars/terms/">Terms (draft)</a><a href="/cars/support/">Support (draft)</a><p class="fine mono">assembl lab · car check</p></div></footer>
+<noscript><p class="wrap fine">The check runs with JavaScript. Without it, add the connector URL above to ChatGPT or Claude and ask there.</p></noscript>
+<script type="module" src="/cars/check/check.js"></script>
+</body>
+</html>

@@ -9,11 +9,16 @@
 //  • modern clients (2026-07-28) send the version in every request's _meta and the MCP-Protocol-Version header; `server/discover`,
 //    HeaderMismatch (-32020) and UnsupportedProtocolVersionError (-32022) follow that revision.
 // Tools: search_cars, get_car, car_check, running_cost (read-only) and book_test_drive, hold_car (Simulated requests that a person at
-// the fictional dealer would have to confirm: no side effects). Resources: the stock feed, the CIN schema, one car, the car_check card.
+// the fictional dealer would have to confirm: no side effects). Resources: the stock feed, the CIN schema, one car, and three
+// MCP Apps views (text/html;profile=mcp-app): the search results carousel, the car check card and the car gallery.
+// Model-visible results carry no request, trace or session ids and no fetch times; a request's reference rides in _meta only.
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 import STOCK from "./_cars/stock.js";
-import { TOOLS, callTool, cinJsonSchema, toJsonLd, CARD_URI, VERSION, DEALER, SNAPSHOT, SITE_URL } from "./_cars/tools.js";
+import { TOOLS, callTool, cinJsonSchema, toJsonLd, UI, LEGACY_CARD_URI, VERSION, DEALER, SNAPSHOT, SITE_URL, MCP_URL, regionFromLocationHint, registerFor } from "./_cars/tools.js";
 import { CARD_HTML } from "./_cars/card.js";
+import { RESULTS_HTML } from "./_cars/carousel.js";
+import { GALLERY_HTML } from "./_cars/gallery.js";
 import { fetchFuel } from "./_feeds/fuel.js";
 import { withStatus } from "./_feeds/util.js";
 const QSDEP = createRequire(import.meta.url)("./_feeds/snapshots/qsdep.json");
@@ -23,9 +28,10 @@ export const LEGACY = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 export const SUPPORTED = [...MODERN, ...LEGACY];
 const PV = "io.modelcontextprotocol/protocolVersion";
 const SERVER_INFO = { name: "assembl-agent-ready-cars", title: "Agent-ready cars (assembl lab demo)", version: VERSION, websiteUrl: `${SITE_URL}/cars/` };
-const INSTRUCTIONS = `Agent-ready cars is a demonstration by assembl lab. ${DEALER.note} Use search_cars to find demo cars, get_car for one car's Consumer Information Notice as data and its test-drive slots, ` +
-  "car_check to answer 'is this car a good buy?' for a demo car OR for any listing the conversation already has (pass its facts; this server never fetches or scrapes listing sites), " +
-  "and running_cost for the weekly cost from live MBIE fuel prices and NZTA road user charges. book_test_drive and hold_car only return a Simulated request that a person at the dealer would have to confirm: ask the buyer before calling them, and never present demo cars as real cars for sale.";
+// The most important guidance first (OpenAI: keep it in the first 512 characters; don't repeat the tool descriptions).
+export const INSTRUCTIONS = "An assembl lab demonstration: Harbour Lane Motors (demo) and its 48 cars are Simulated, so never present them as real cars for sale; images are renders. " +
+  "book_test_drive and hold_car return only a Simulated request the dealer would confirm: get the buyer's yes first and collect no contact details. " +
+  "car_check uses the facts given plus NZTA's open register for the model, never a plate, owner or listing page. Locations are one of New Zealand's 16 regions.";
 const CAPS = { tools: { listChanged: false }, resources: { subscribe: false, listChanged: false }, prompts: { listChanged: false }, extensions: { "io.modelcontextprotocol/ui": {} } };
 const CORS = {
   "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
@@ -33,17 +39,63 @@ const CORS = {
   "Access-Control-Expose-Headers": "MCP-Protocol-Version", "Access-Control-Max-Age": "86400",
 };
 
+// ---------- MCP Apps views: CSP and the per-host sandbox domain ------------------------------------------------------
+// The views fetch nothing; they load only the cars' renders, from the lab's own origin (declared as resourceDomains).
+const IMG_ORIGIN = new URL(SITE_URL).origin;
+// _meta.ui.domain is host-specific, and one resource can't satisfy both hosts at once:
+//  • ChatGPT: required when a plugin with UI is submitted, "string (origin)", unique per plugin (OpenAI Apps SDK reference; the
+//    MCP Apps spec's own example of ChatGPT's form is a URL-derived "www-example-com.oaiusercontent.com"). Set MCP_UI_DOMAIN_OPENAI.
+//  • Claude: optional; if set it must be exactly the first 32 hex characters of SHA-256(connector URL) + ".claudemcpcontent.com",
+//    or the view won't render ("ui.domain mismatch"). MCP_UI_DOMAIN_CLAUDE=auto computes it from MCP_URL (hash of the exact URL,
+//    trailing slash included); leave it unset unless the views need a stable origin (they don't today: no OAuth, no fetches).
+// TODO(Kate): choose the final assembl.co.nz host for the endpoint, then set both (see src/cars/submission/README.md).
+export const claudeUiDomain = (url) => createHash("sha256").update(url).digest("hex").slice(0, 32) + ".claudemcpcontent.com";
+export function uiDomains(env = (typeof process !== "undefined" && process.env) || {}) {
+  const c = env.MCP_UI_DOMAIN_CLAUDE;
+  return { openai: env.MCP_UI_DOMAIN_OPENAI || null, claude: c === "auto" ? claudeUiDomain(env.MCP_PUBLIC_URL || MCP_URL) : c || null };
+}
+// which host is asking: ChatGPT sends openai/* _meta and identifies as openai-mcp; Claude as claude-*. Unknown → no domain.
+export function hostOf(H = {}, params = {}) {
+  const meta = (params && params._meta) || {}, ua = String(H["user-agent"] || ""), client = String((meta["io.modelcontextprotocol/clientInfo"] || {}).name || "");
+  if (Object.keys(meta).some((k) => k.startsWith("openai/")) || /openai|chatgpt/i.test(ua) || /openai|chatgpt/i.test(client)) return "openai";
+  if (/claude|anthropic/i.test(ua) || /claude|anthropic/i.test(client)) return "claude";
+  return null;
+}
+const VIEWS = {
+  [UI.results]: { html: () => RESULTS_HTML, name: "results-view", title: "Demo cars (carousel)", border: false, modes: ["inline"],
+    description: "MCP Apps view for search_cars: 3 to 8 Simulated cars with their studio renders, price, km and region, and one action each." },
+  [UI.check]: { html: () => CARD_HTML, name: "car-check-view", title: "Is this car a good buy? (card)", border: true, modes: ["inline", "fullscreen"],
+    description: "MCP Apps view for car_check: the verdict, the weekly running cost with km and power-price sliders and a fuel-versus-electric comparison, the red flags, and every check in fullscreen." },
+  [UI.gallery]: { html: () => GALLERY_HTML, name: "gallery-view", title: "One demo car (gallery)", border: true, modes: ["inline", "fullscreen"],
+    description: "MCP Apps view for get_car: the car's renders and drawing, every notice field, quick checks and free test-drive times, in fullscreen on request." },
+};
+VIEWS[LEGACY_CARD_URI] = { ...VIEWS[UI.check], hidden: true };
+function viewMeta(uri, host) {
+  const v = VIEWS[uri], d = uiDomains(), domain = host ? d[host] : null;
+  const meta = { ui: { prefersBorder: v.border, csp: { connectDomains: [], resourceDomains: [IMG_ORIGIN] } },
+    "openai/widgetDescription": v.description, "openai/ui": { availableDisplayModes: v.modes }, "openai/widgetPrefersBorder": v.border,
+    "openai/widgetCSP": { connect_domains: [], resource_domains: [IMG_ORIGIN] } };
+  if (domain) { meta.ui.domain = domain; if (host === "openai") meta["openai/widgetDomain"] = domain; }
+  return meta;
+}
+
 const RESOURCES = [
-  { uri: "cars://feed", name: "stock-feed", title: "Stock feed (Simulated)", description: "All 48 demo cars with every Consumer Information Notice field and its truth label. Also at /cars/feed.json.", mimeType: "application/json" },
+  { uri: "cars://feed", name: "stock-feed", title: "Stock feed (Simulated)", description: "All 48 demo cars with every Consumer Information Notice field, its truth label and the cars' render URLs. Also at /cars/feed.json.", mimeType: "application/json" },
   { uri: "cars://schema/cin", name: "cin-schema", title: "Consumer Information Notice as JSON Schema", description: "The fields a NZ dealer must show on a used vehicle's notice, keyed for agents. Also at /cars/schema.json.", mimeType: "application/schema+json" },
-  { uri: CARD_URI, name: "car-check-card", title: "Is this car a good buy? (card)", description: "MCP Apps view for car_check: the car, a running-cost waterfall and the checklist.", mimeType: "text/html;profile=mcp-app", _meta: { ui: { prefersBorder: true } } },
+  ...Object.entries(VIEWS).filter(([, v]) => !v.hidden).map(([uri, v]) => ({ uri, name: v.name, title: v.title, description: v.description, mimeType: "text/html;profile=mcp-app", _meta: { ui: { prefersBorder: v.border } } })),
 ];
 const TEMPLATES = [{ uriTemplate: "cars://car/{id}", name: "car", title: "One demo car", description: "One car's record and JSON-LD, e.g. cars://car/hl-014", mimeType: "application/json" }];
 
-// live fuel price with the built-in snapshot as the last rung; tariffs are MBIE's QSDEP snapshot (MBIE refuses automated fetches)
+// live fuel price with the built-in snapshot as the last rung; tariffs are MBIE's QSDEP snapshot (MBIE refuses automated fetches).
+// A warm function reuses its last answer for 15 minutes, and a slow upstream gives way to the snapshot after 5 s.
+let fuelMemo = null;
 async function feedCtx() {
   let fuel;
-  try { fuel = withStatus(await fetchFuel()); } catch (e) { fuel = { ...SNAPSHOT.fuel, note: "MBIE didn't answer, so this is the built-in snapshot: " + String(e?.message || e).slice(0, 80) }; }
+  if (fuelMemo && Date.now() - fuelMemo.t < 900e3) fuel = fuelMemo.v;
+  else {
+    try { fuel = withStatus(await Promise.race([fetchFuel(), new Promise((_, rej) => setTimeout(() => rej(new Error("MBIE took longer than 5 s")), 5000))])); fuelMemo = { t: Date.now(), v: fuel }; }
+    catch (e) { fuel = { ...SNAPSHOT.fuel, note: "MBIE didn't answer, so this is the built-in snapshot: " + String(e?.message || e).slice(0, 80) }; }
+  }
   return { fuel, qsdep: QSDEP };
 }
 
@@ -51,10 +103,10 @@ const ok = (id, result) => ({ jsonrpc: "2.0", id, result });
 const err = (id, code, message, data) => ({ jsonrpc: "2.0", id: id === undefined ? null : id, error: { code, message, ...(data !== undefined ? { data } : {}) } });
 class RpcError extends Error { constructor(code, message, data, http) { super(message); this.code = code; this.data = data; this.http = http; } }
 
-function readResource(uri) {
+function readResource(uri, host) {
   if (uri === "cars://feed") return { uri, mimeType: "application/json", text: JSON.stringify(STOCK) };
   if (uri === "cars://schema/cin") return { uri, mimeType: "application/schema+json", text: JSON.stringify(cinJsonSchema(), null, 1) };
-  if (uri === CARD_URI) return { uri, mimeType: "text/html;profile=mcp-app", text: CARD_HTML, _meta: { ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } }, "openai/widgetDescription": "Shows the car, its weekly running cost as a waterfall, red flags and the checks to run before paying." } };
+  if (VIEWS[uri]) return { uri, mimeType: "text/html;profile=mcp-app", text: VIEWS[uri].html(), _meta: viewMeta(uri, host) };
   const m = /^cars:\/\/car\/(hl-\d{3})$/.exec(uri || "");
   const car = m && STOCK.cars.find((c) => c.id === m[1]);
   if (car) return { uri, mimeType: "application/json", text: JSON.stringify({ truth: "Simulated", car, jsonld: toJsonLd(car) }) };
@@ -62,7 +114,7 @@ function readResource(uri) {
 }
 
 // One JSON-RPC request → result object (throws RpcError). `modern` adds the 2026-07-28 result fields.
-async function dispatch(msg, modern, now) {
+async function dispatch(msg, modern, now, H = {}) {
   const p = msg.params || {};
   const meta = modern ? { _meta: { "io.modelcontextprotocol/serverInfo": { name: SERVER_INFO.name, version: VERSION } } } : {};
   const list = modern ? { resultType: "complete", ttlMs: 3600000, cacheScope: "public" } : {};
@@ -81,15 +133,20 @@ async function dispatch(msg, modern, now) {
       if (typeof p.name !== "string") throw new RpcError(-32602, "Invalid params: tools/call needs params.name");
       if (p.arguments != null && (typeof p.arguments !== "object" || Array.isArray(p.arguments))) throw new RpcError(-32602, "Invalid params: params.arguments must be an object");
       if (!TOOLS.find((t) => t.name === p.name)) throw new RpcError(-32602, `Unknown tool: ${p.name}`, { tools: TOOLS.map((t) => t.name) });
-      const ctx = p.name === "car_check" || p.name === "running_cost" ? await feedCtx() : {};
+      // car_check also asks NZTA's open register about the model (counts only; register.js never throws), alongside the fuel feed
+      const [ctx, register] = await Promise.all([p.name === "car_check" || p.name === "running_cost" ? feedCtx() : {}, p.name === "car_check" ? registerFor(STOCK, p.arguments || {}) : null]);
+      if (register) ctx.register = register;
+      const hint = regionFromLocationHint(p._meta && p._meta["openai/userLocation"]); // coarse, host-provided; used only to rank by distance
+      if (hint) ctx.userRegion = hint.name;
       const r = callTool(p.name, p.arguments || {}, { stock: STOCK, ctx, now });
-      return { content: [{ type: "text", text: r.text }, { type: "text", text: JSON.stringify(r.structuredContent) }], structuredContent: r.structuredContent, isError: r.isError, ...done, ...meta };
+      // one text block (the summary) plus structuredContent: the JSON isn't repeated as text, to keep results frugal with tokens
+      return { content: [{ type: "text", text: r.text }], ...(r.structuredContent ? { structuredContent: r.structuredContent } : {}), isError: r.isError, ...(r.meta ? { _meta: r.meta } : {}), ...done, ...meta };
     }
     case "resources/list": return { resources: RESOURCES, ...list, ...meta };
     case "resources/templates/list": return { resourceTemplates: TEMPLATES, ...list, ...meta };
     case "resources/read": {
       if (typeof p.uri !== "string") throw new RpcError(-32602, "Invalid params: resources/read needs params.uri");
-      return { contents: [readResource(p.uri)], ...done, ...meta };
+      return { contents: [readResource(p.uri, hostOf(H, p))], ...done, ...meta };
     }
     case "prompts/list": return { prompts: [], ...list, ...meta };
     case "logging/setLevel": return { ...done, ...meta };
@@ -144,7 +201,7 @@ async function one(msg, hdrVer, H, now) { // eslint-disable-line max-params
   }
   if (isNote) return { status: 202, body: false }; // notifications/initialized, notifications/cancelled, …: accepted, no body
   try {
-    const result = await dispatch(msg, modern, now);
+    const result = await dispatch(msg, modern, now, H);
     return reply(200, ok(msg.id, result), msg.method === "initialize" ? result.protocolVersion : modern ? metaVer : undefined);
   } catch (e) {
     if (e instanceof RpcError) return reply(e.http || 200, err(msg.id, e.code, e.message, e.data));

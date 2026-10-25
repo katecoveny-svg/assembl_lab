@@ -17,10 +17,23 @@
    "maxDuration": 20
   },
   "api/mcp.js": {
-   "maxDuration": 20,
+   "maxDuration": 30,
    "includeFiles": "api/_feeds/snapshots/**"
   }
  },
+ "redirects": [
+  {
+   "source": "/",
+   "has": [
+    {
+     "type": "host",
+     "value": "auto.assembl.co.nz"
+    }
+   ],
+   "destination": "/cars/",
+   "permanent": false
+  }
+ ],
  "headers": [
   {
    "source": "/(.*)",
