@@ -409,7 +409,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
       const tipL=V3(PX+Lr*Math.cos(rock_),PY+Lr*Math.sin(rock_),0),handP=V3(PX+d*Math.cos(rock_),PY+d*Math.sin(rock_)-.11,0);frontHand.position.copy(handP);
       const flen=S.clamp(.38+s.m*.075,.4,1.0),fishTop=tipL.y-.42;lline.scale.y=.42-.0;lline.position.set(tipL.x,tipL.y-.21,0);
       fishPut(20,ZL.x+tipL.x,TOP+fishTop-flen/2,ZL.z,flen,0,0,Math.PI/2+Math.sin(t*1.3)*.04);
-      const fs=1/60;effA.set(V3(handP.x,handP.y-.08-Math.min(3.2,Math.max(.35,Fe*fs)),0),V3(0,1,0),Math.min(3.2,Math.max(.35,Fe*fs)));loadA.set(V3(tipL.x+.36,fishTop-.1,0),V3(0,-1,0),Math.max(.32,Wn*fs));
+      const fs=1/250,eL=Math.min(1.3,Math.max(.35,Fe*fs));effA.set(V3(handP.x,handP.y-.08-eL,0),V3(0,1,0),eL);loadA.set(V3(tipL.x+.36,fishTop-.1,0),V3(0,-1,0),Math.max(.32,Wn*fs));
       dimL.scale.x=Lr;dimL.position.set(PX+Lr/2,PY+.8,0);dimD.scale.x=d;dimD.position.set(PX+d/2,PY+.5,0);
       ticks[0].position.set(PX,PY+.8,0);ticks[1].position.set(PX+Lr,PY+.8,0);ticks[2].position.set(PX,PY+.5,0);ticks[3].position.set(PX+d,PY+.5,0);
       const mk=[Lr,d,s.m].join("|");if(mk!==mKey){mKey=mk;mPanel.redraw((g,w,h)=>{g.fillStyle="#ffffff";g.beginPath();g.roundRect(0,0,w,h,24);g.fill();g.strokeStyle="#DCD6EA";g.lineWidth=3;g.stroke();
@@ -417,7 +417,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
         const M=Wn*Lr,bar=(y,lab,val,c)=>{g.fillStyle="#222A55";g.font="600 22px Instrument Sans, system-ui";g.fillText(lab,26,y);g.fillStyle=c;g.beginPath();g.roundRect(26,y+10,w-52,30,15);g.fill();g.fillStyle="#fff";g.font="700 22px IBM Plex Mono, monospace";g.fillText(val,40,y+33)};
         bar(84,"Turning down: fish",`${fmt(Wn,1)} N × ${fmt(Lr,1)} m = ${fmt(M,1)} N m`,PAL.product.strawberry);bar(170,"Turning up: your front hand",`${fmt(Fe)} N × ${fmt(d,2)} m = ${fmt(Fe*d,1)} N m`,PAL.deep.mint);
         g.fillStyle="#222A55";g.font="600 22px Instrument Sans, system-ui";g.fillText(`Tip moves ×${fmt(tipRatio(),1)} further than your hand`,26,h-30)})}
-      const lw=lz.position;lL.eff.at(tmp.set(lw.x+handP.x,lw.y+handP.y-.6,0+lw.z)).set(`Effort<b>${fmt(Fe)} N</b>`);lL.load.at(tmp.set(lw.x+tipL.x+.36,lw.y+fishTop-.4,lw.z)).set(`Load<b>${fmt(Wn,1)} N</b><small>${fmt(s.m,1)} kg fish</small>`);
+      const lw=lz.position;lL.eff.at(tmp.set(lw.x+handP.x,lw.y+handP.y-.5,lw.z)).set(`Effort<b>${fmt(Fe)} N</b>`);lL.load.at(tmp.set(lw.x+tipL.x+.36,lw.y+fishTop-.4,lw.z)).set(`Load<b>${fmt(Wn,1)} N</b><small>${fmt(s.m,1)} kg fish</small>`);
       lL.piv.at(tmp.set(lw.x+PX,lw.y+PY-.45,lw.z)).set("Pivot<small>back hand</small>");lL.dL.at(tmp.set(lw.x+PX+Lr/2,lw.y+PY+.8,lw.z)).set(`L = ${fmt(Lr,1)} m`);lL.dD.at(tmp.set(lw.x+PX+d/2-.15,lw.y+PY+.5,lw.z)).set(`d = ${fmt(d,2)} m`);
       lL.drag.at(tmp.set(lw.x+handP.x,lw.y+handP.y,lw.z+.12)).set("Drag your hand");
       // ---- float
