@@ -9,7 +9,7 @@ const SUBJ={science:"#2F8FD8",biochem:"#12A386",maths:"#7B61FF",english:"#F2603F
 const MSUB={fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
-  vend:"science",phone:"science",queue:"maths",plan:"tech"};
+  vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
 const accentFor=id=>SUBJ[MSUB[id]]||SUBJ.science;
 // one line icon per machine (24x24, drawn with currentColor), used for the app icon here and the tiles on the home page
 const G=(d,extra)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra||""}</svg>`;
@@ -38,6 +38,7 @@ const GLYPH={
   materials:G(`<path d="M12 2.5 20.5 7.3v9.4L12 21.5l-8.5-4.8V7.3z"/><path d="M12 12l8.5-4.7M12 12v9.5M12 12 3.5 7.3"/>`),
   claims:G(`<circle cx="10.5" cy="10.5" r="7.5"/><path d="m7.3 10.6 2.3 2.3 4.4-4.6M16 16l5.5 5.5"/>`),
   vend:G(`<rect x="4" y="2.5" width="16" height="19" rx="2"/><rect x="7" y="5.5" width="7" height="9" rx="1"/><path d="M16.5 6.5v2M16.5 11v.5M7 18h7"/><circle cx="10.5" cy="9.5" r="1.3" fill="currentColor"/>`),
+  pinball:G(`<path d="M5 3.5h14a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M7 20.5 11 16M17 20.5 13 16"/><circle cx="9" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15" cy="7.5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.3"/>`),
   phone:G(`<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12.8 7.5 10.5 12h3l-2.3 4.5M10.5 5h3"/>`),
   queue:G(`<circle cx="5" cy="7" r="2.2"/><circle cx="12" cy="7" r="2.2"/><circle cx="19" cy="7" r="2.2"/><path d="M2.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M9.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M16.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M4 20.5h16"/>`),
   plan:G(`<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 12h7v9M10 12V3M10 7h4M14 12h7M17 12v4"/>`)
@@ -235,13 +236,13 @@ let alMem=null;
 function alLoad(){let v=alMem;try{const raw=localStorage.getItem(AL_KEY);if(raw)v=JSON.parse(raw)}catch(e){}v=v&&typeof v==="object"?v:{};
   return {...AL_DEFAULT,...v,gear:{...AL_DEFAULT.gear,...(v.gear||{})},seen:Array.isArray(v.seen)?v.seen:[]}}
 function alSave(look){alMem=look;try{localStorage.setItem(AL_KEY,JSON.stringify(look))}catch(e){}}
-const MNAME={bike:"the downhill machine",vinyl:"the vinyl machine",fish:"the fishing machine",claw:"the claw machine",particles:"the particle machine",atoms:"the atom machine",energy:"the energy machine",read:"the reading machine",maps:"the map machine",materials:"the materials lab",text:"the text studio",vend:"the vending machine",phone:"the phone machine",queue:"the queue machine",plan:"the floor-plan studio"};
+const MNAME={bike:"the downhill machine",vinyl:"the vinyl machine",fish:"the fishing machine",claw:"the claw machine",particles:"the particle machine",atoms:"the atom machine",energy:"the energy machine",read:"the reading machine",maps:"the map machine",materials:"the materials lab",text:"the text studio",vend:"the vending machine",pinball:"the pinball table",phone:"the phone machine",queue:"the queue machine",plan:"the floor-plan studio"};
 const ITEMS=[
   {id:"helmet",slot:"head",label:"Downhill helmet",m:["bike"]},
   {id:"headphones",slot:"head",label:"Headphones",m:["vinyl"]},
   {id:"buckethat",slot:"head",label:"Bucket hat",m:["fish"]},
   {id:"goggles",slot:"eyes",label:"Downhill goggles",m:["bike"]},
-  {id:"labgoggles",slot:"eyes",label:"Lab goggles",m:["particles","atoms","energy","materials","vend","phone"]},
+  {id:"labgoggles",slot:"eyes",label:"Lab goggles",m:["particles","atoms","energy","materials","vend","phone","pinball"]},
   {id:"glasses",slot:"eyes",label:"Reading glasses",m:["read","text"]},
   {id:"bandana",slot:"neck",label:"Bandana",machines:3},
   {id:"lifejacket",slot:"neck",label:"Life jacket",passes:10},
