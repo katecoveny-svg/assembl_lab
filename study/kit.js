@@ -3,6 +3,10 @@
 (function(){
 // always light: the machines are drawn for a bright bench (this also switches off older dark rules keyed on data-theme)
 try{document.documentElement.setAttribute("data-theme","light")}catch(e){}
+// the 3D bench (kit3d.js) is an ES module on the vendored three.js; its addons import "three", so map it before any module loads
+const KIT_SRC=(document.currentScript&&document.currentScript.src)||location.href;
+try{if(!document.querySelector('script[type="importmap"]')){const im=document.createElement("script");im.type="importmap";
+  im.textContent=JSON.stringify({imports:{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}});document.head.appendChild(im)}}catch(e){}
 // each machine is a small app with its own colour, grouped by subject
 const MID=(()=>{try{return (location.pathname.split("/").pop()||"").replace(/\.html?$/,"")}catch(e){return ""}})();
 // pastel family (refs/figure/README.md): every machine has one case tint; surfaces use the tint with navy ink on it,
@@ -317,6 +321,7 @@ const kupuOk=k=>k&&typeof k==="object"&&k.mi&&k.en;
 function kupuItem(k){return `<li><b lang="mi">${esc(k.mi)}</b><span class="en">${esc(k.en)}</span>${k.ta?`<a class="ta" href="${TEAKA(k.ta)}" target="_blank" rel="noopener" aria-label="${esc(k.mi)} in Te Aka Māori Dictionary (opens in a new tab)">Te Aka ↗</a>`:""}${k.note?`<small>${esc(k.note)}</small>`:""}</li>`}
 let reoOn=false;try{reoOn=localStorage.getItem("studyreo")==="on"}catch(e){}
 function setReo(v){reoOn=!!v;try{localStorage.setItem("studyreo",reoOn?"on":"off")}catch(e){}}
+const SCENES={};
 function mount(cfg){logStudy("open");
   const KU=(Array.isArray(cfg.kupu)?cfg.kupu:[]).filter(kupuOk);
   const kFind=x=>typeof x==="string"?KU.find(k=>k.mi===x):(kupuOk(x)?x:null);
@@ -446,6 +451,11 @@ function mount(cfg){logStudy("open");
     requestAnimationFrame(loop)}
   const h=(location.hash||"").slice(1),hi=cfg.steps.findIndex(x=>x.k===h);
   setStep(hi>=0?hi:0);mounted=true;requestAnimationFrame(loop);
+  // the real-time 3D bench: a scene factory turns the live state into a world you can turn; the SVG stays underneath as the fallback
+  const f3=cfg.scene3d||SCENES[mid];
+  if(f3&&!/[?&]lite\b/.test(location.search)&&(()=>{try{const c=document.createElement("canvas");return !!(c.getContext("webgl2")||c.getContext("webgl"))}catch(e){return false}})()){
+    import(new URL("kit3d.js",KIT_SRC).href).then(m=>{api.s3=m.attach(api,cfg,f3,window.StudyKit)}).catch(e=>{console.warn("3D bench unavailable, showing the drawing",e);
+      const c=document.querySelector(".canvas.s3-on");if(c)c.classList.remove("s3-on")})}
   window.addEventListener("hashchange",()=>{const k=(location.hash||"").slice(1),j=cfg.steps.findIndex(x=>x.k===k);if(j>=0&&j!==step)setStep(j)});
   return api;
 }
@@ -546,5 +556,5 @@ function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#in
 const LOCKUP=`<span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span>`;
 // for machines with their own shell: StudyKit.companion(el) puts Allen in el; call .react(true|false) after a check (log the pass first)
 function companion(el){return allenCorner(null,{steps:[]},el||document.body)}
-window.StudyKit={mount,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat,fig:FIGSV};
+window.StudyKit={mount,scenes:SCENES,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat,fig:FIGSV};
 })();
