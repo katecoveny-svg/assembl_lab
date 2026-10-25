@@ -574,6 +574,66 @@ const snd=(()=>{let ctx=null,N={},gest=false,mutedC=null;
     gg.gain.setValueAtTime(0.0001,t);gg.gain.exponentialRampToValueAtTime(0.09*k+0.01,t+0.01);gg.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.connect(gg).connect(ctx.destination);o.start(t);o.stop(t+0.3)}
   return {update,thud,syncMute}})();
 
+
+// =====================================================================================
+// ---------- NCEA Level 2/3 extension: the downhill run (AS91171 mechanics, AS91524 mechanical systems)
+// Think Coronet Peak: a run dropping 120 m vertically over 400 m of track; a 72 kg skier reaches the bottom at 34 m/s.
+// Figures from the NCEA Everyday-Engineering Practice Pack; the turn's radius, grip and entry speed are estimates.
+const SKISTEPS=["run","work","model","turn"];
+// figure materials: the shared bench recipe (StudyKit.figMat)
+const FM=StudyKit.figMat,K_SKI=FM("metal","#D8DEE8"),K_SUIT=FM("painted","#E8664A"),K_HEAD=FM("painted","#F2B8B8"),K_SNOW=FM("plastic","#F7FAFC"),K_TRACK=FM("rubber","#B9C7D6");
+s.ski={m:72,h:120,L:400,v:34,mu:0.5,r:30,vt:20,x:0,t:0,phase:"ready"};
+const SK={
+  theta:()=>Math.asin(Math.min(1,s.ski.h/s.ski.L)), ep:()=>s.ski.m*g*s.ski.h, ek:()=>0.5*s.ski.m*s.ski.v*s.ski.v,
+  loss:()=>Math.max(0,1-SK.ek()/SK.ep()), vfree:()=>Math.sqrt(2*g*s.ski.h), comp:()=>s.ski.m*g*Math.sin(SK.theta()),
+  fres:()=>Math.max(0,SK.ep()-SK.ek())/s.ski.L, anet:()=>s.ski.v*s.ski.v/(2*s.ski.L), vmax:()=>Math.sqrt(s.ski.mu*g*s.ski.r),
+  fc:()=>s.ski.m*s.ski.vt*s.ski.vt/s.ski.r, rmin:()=>s.ski.vt*s.ski.vt/(s.ski.mu*g), bank:()=>Math.atan(s.ski.vt*s.ski.vt/(s.ski.r*g))*180/Math.PI};
+function resetSki(){s.ski.x=0;s.ski.t=0;s.ski.phase="ready"}
+function tickSki(dt){if(s.ski.phase==="done")return;s.ski.phase="go";const a=SK.anet();s.ski.t+=dt*3;const x=0.5*a*s.ski.t*s.ski.t;if(x>=s.ski.L){s.ski.x=s.ski.L;s.ski.phase="done";s.playing=false}else s.ski.x=x}
+function drawSki(st){const W=800,H=420;let o=`<rect width="${W}" height="${H}" fill="var(--case-soft,var(--chalk))"/>`;
+  if(st.k==="turn")return o+drawTurn();
+  const th=SK.theta(),x0=90,y0=70,len=560,dx=len*Math.cos(th),dy=len*Math.sin(th)*(0.9);
+  o+=`<path d="M${x0-60},${y0} L${x0},${y0} L${x0+dx},${y0+dy} L${x0+dx+120},${y0+dy} L${x0+dx+120},${H} L${x0-60},${H}Z" fill="${K_SNOW.fill}" stroke="${K_SNOW.stroke}" stroke-width="2"/>`;
+  o+=`<path d="M${x0-60},${H} L${x0-60},${y0} M${x0},${y0} L${x0+dx},${y0+dy}" fill="none" stroke="#B9C7D6" stroke-width="1" stroke-dasharray="4 4"/>`;
+  // dimensions
+  o+=`<line x1="${x0+dx+60}" y1="${y0}" x2="${x0+dx+60}" y2="${y0+dy}" stroke="${GOLD}" stroke-width="2"/><text x="${x0+dx+68}" y="${y0+dy/2+4}" class="t-ink">h = ${fmt(s.ski.h)} m</text>`;
+  o+=`<text x="${x0+dx/2-40}" y="${y0+dy/2-14}" class="t-ink" transform="rotate(${th*0.9*180/Math.PI} ${x0+dx/2} ${y0+dy/2})">track ${fmt(s.ski.L)} m · θ = ${fmt(th*180/Math.PI,1)}°</text>`;
+  // skier
+  const f=s.ski.x/s.ski.L,sx=x0+dx*f,sy=y0+dy*f;const v=Math.sqrt(2*SK.anet()*s.ski.x);
+  o+=`<g transform="translate(${sx},${sy-18}) rotate(${th*0.9*180/Math.PI})"><circle cx="0" cy="-14" r="7" ${K_HEAD.attrs}/><path d="M0,-7 L-4,8 M0,-7 L5,6 M-6,-2 L6,-4" stroke="${K_SUIT.fill}" stroke-width="3.5" stroke-linecap="round"/><path d="M0,-7 L-4,8 M0,-7 L5,6 M-6,-2 L6,-4" stroke="${K_SUIT.hi}" stroke-width="1" stroke-linecap="round" opacity=".6"/><path d="M-14,10 L16,10" stroke="${K_SKI.stroke}" stroke-width="5" stroke-linecap="round"/><path d="M-14,10 L16,10" stroke="${K_SKI.fill}" stroke-width="3" stroke-linecap="round"/><path d="M-12,9 L14,9" stroke="${K_SKI.hi}" stroke-width="1" stroke-linecap="round"/></g>`;
+  if(st.k==="work"){// force components at the skier
+    const sc=0.5;const comp=SK.comp()*sc,W_=s.ski.m*g*sc*0.6;const ang=th;
+    const arrow=(x,y,ddx,ddy,c,lab)=>`<line x1="${x}" y1="${y}" x2="${x+ddx}" y2="${y+ddy}" stroke="${c}" stroke-width="3" marker-end="url(#skArr)"/><text x="${x+ddx+6}" y="${y+ddy+4}" class="t-ink">${lab}</text>`;
+    o+=`<defs><marker id="skArr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8Z" fill="context-stroke"/></marker></defs>`;
+    o+=arrow(sx,sy,0,W_*0.5,"#5B6B7E",`mg = ${fmt(s.ski.m*g)} N`)+arrow(sx,sy,comp*Math.cos(ang)*0.5,comp*Math.sin(ang)*0.5,HOT_SKI,`mg sin θ = ${fmt(SK.comp())} N`)+arrow(sx,sy,-SK.fres()*sc*0.5*Math.cos(ang),-SK.fres()*sc*0.5*Math.sin(ang),"#3A857B",`resistance ≈ ${fmt(SK.fres())} N`)}
+  // energy bars
+  const Ep=SK.ep(),Ek=SK.ek(),lost=Math.max(0,Ep-Ek);const bx=80,by=350,bw=200;
+  const bar=(x,label,val,frac,c)=>`<rect x="${x}" y="${by-frac*120}" width="${bw-20}" height="${frac*120}" fill="${c}" stroke="${BLK}"/><text x="${x+(bw-20)/2}" y="${by+18}" text-anchor="middle" class="t-lab">${label}</text><text x="${x+(bw-20)/2}" y="${by-frac*120-6}" text-anchor="middle" class="t-ink">${kJ(val)}</text>`;
+  if(st.k!=="model"){o+=bar(bx,"Ep LOST",Ep,1,"#E6D3A8")+bar(bx+bw,"Ek AT THE BOTTOM",Ek,Ek/Ep,"#E8886F")+bar(bx+2*bw,"FRICTION + AIR",lost,lost/Ep,"#A9C5D8")}
+  else{const vf=SK.vfree();o+=`<g transform="translate(60,250)"><rect width="680" height="140" rx="14" fill="#fff" stroke="#D5DFE8"/><text x="16" y="30" class="t-lab">FRICTIONLESS MODEL v = √(2gh)</text><text x="16" y="58" class="t-big" style="font-size:22px">${fmt(vf,1)} m/s</text><text x="16" y="84" class="t-ink">= ${fmt(vf*3.6)} km/h, ignoring all resistance</text><text x="360" y="30" class="t-lab">REAL EXIT SPEED</text><text x="360" y="58" class="t-big" style="font-size:22px">${fmt(s.ski.v,1)} m/s</text><text x="360" y="84" class="t-ink">model overestimates by ${fmt((vf/s.ski.v-1)*100)}%</text><text x="16" y="118" class="t-ink">the real speed is ${fmt(s.ski.v/vf*100)}% of the model: friction (W = Fd over ${fmt(s.ski.L)} m) and drag (∝ v²) took ${fmt(SK.loss()*100)}% of the energy</text></g>`}
+  o+=`<text x="${x0-40}" y="${y0-20}" class="t-ink">${s.ski.phase==="go"?`${fmt(s.ski.t,1)} s · ${fmt(v,1)} m/s`:s.ski.phase==="done"?`bottom: ${fmt(s.ski.v,1)} m/s in ${fmt(s.ski.t,1)} s`:"press play"}</text>`;
+  return o}
+const HOT_SKI="#E8664A";
+function drawTurn(){const W=800,H=420;let o=`<text x="30" y="36" class="t-lab">THE CHECK TURN · RADIUS ${fmt(s.ski.r)} m · ENTRY ${fmt(s.ski.vt)} m/s · SNOW GRIP μ = ${fmt(s.ski.mu,2)} (EDGED, ESTIMATE)</text>`;
+  const cx=330,cy=250,R=Math.min(170,s.ski.r*2.2);
+  o+=`<path d="M${cx-R-140},${cy+R+40} C${cx-R-60},${cy+R+40} ${cx-R},${cy+R} ${cx-R},${cy} A${R},${R} 0 0 1 ${cx+R},${cy} C${cx+R},${cy+R} ${cx+R+60},${cy+R+40} ${cx+R+140},${cy+R+40}" fill="none" stroke="${K_TRACK.stroke}" stroke-width="28" stroke-linecap="round"/><path d="M${cx-R-140},${cy+R+40} C${cx-R-60},${cy+R+40} ${cx-R},${cy+R} ${cx-R},${cy} A${R},${R} 0 0 1 ${cx+R},${cy} C${cx+R},${cy+R} ${cx+R+60},${cy+R+40} ${cx+R+140},${cy+R+40}" fill="none" stroke="${K_TRACK.fill}" stroke-width="24" stroke-linecap="round"/>`;
+  o+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#6B7A99" stroke-dasharray="4 5"/><line x1="${cx}" y1="${cy}" x2="${cx+R*Math.cos(-0.8)}" y2="${cy+R*Math.sin(-0.8)}" stroke="#6B7A99"/><text x="${cx+R*0.5*Math.cos(-0.8)+6}" y="${cy+R*0.5*Math.sin(-0.8)}" class="t-ink">r</text>`;
+  const a=-0.8,px=cx+R*Math.cos(a),py=cy+R*Math.sin(a);const ok=s.ski.vt<=SK.vmax();
+  o+=`<circle cx="${px}" cy="${py}" r="9" fill="${ok?"#3A857B":HOT_SKI}" stroke="${BLK}" stroke-width="1.5"/>`;
+  o+=`<defs><marker id="skArr2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8Z" fill="context-stroke"/></marker></defs>`;
+  const fl=Math.min(90,SK.fc()/12);o+=`<line x1="${px}" y1="${py}" x2="${px-fl*Math.cos(a)}" y2="${py-fl*Math.sin(a)}" stroke="${HOT_SKI}" stroke-width="3" marker-end="url(#skArr2)"/><text x="${px-fl*Math.cos(a)-10}" y="${py-fl*Math.sin(a)+22}" class="t-ink">Fc = mv²/r = ${fmt(SK.fc())} N</text>`;
+  const vl=s.ski.vt*3;o+=`<line x1="${px}" y1="${py}" x2="${px-vl*Math.sin(a)}" y2="${py+vl*Math.cos(a)}" stroke="#2F6DB5" stroke-width="3" marker-end="url(#skArr2)"/><text x="${px-vl*Math.sin(a)+8}" y="${py+vl*Math.cos(a)}" class="t-ink">v = ${fmt(s.ski.vt)} m/s</text>`;
+  o+=`<g transform="translate(470,60)"><rect width="310" height="150" rx="14" fill="#fff" stroke="#D5DFE8"/><text x="16" y="28" class="t-lab">FRICTION SUPPLIES THE CENTRIPETAL FORCE</text><text x="16" y="56" class="t-ink">max friction = μmg = ${fmt(s.ski.mu*s.ski.m*g)} N</text><text x="16" y="80" class="t-ink">needs mv²/r = ${fmt(SK.fc())} N</text><text x="16" y="110" class="t-big" style="fill:${ok?"#3A857B":HOT_SKI}">${ok?"holds the turn":"skids out"}</text><text x="16" y="136" class="t-ink">v max = √(μgr) = ${fmt(SK.vmax(),1)} m/s</text></g>`;
+  o+=`<g transform="translate(470,230)"><rect width="310" height="80" rx="14" fill="#fff" stroke="#D5DFE8"/><text x="16" y="28" class="t-lab">LEVEL 3: A BERMED (BANKED) TURN</text><text x="16" y="52" class="t-ink">no friction needed at tan θ = v²/(rg)</text><text x="16" y="72" class="t-ink">here θ = ${fmt(SK.bank(),1)}°</text></g>`;
+  return o}
+function skiPanel(st){const w=420,h=260;let o="";
+  if(st.k==="run"){o+=`<text class="t-lab" x="14" y="22">THE WORKING</text>`;const rows=[["Ep = mgh",`${fmt(s.ski.m)} × 9.8 × ${fmt(s.ski.h)} = ${kJ(SK.ep())}`],["Ek = ½mv²",`0.5 × ${fmt(s.ski.m)} × ${fmt(s.ski.v)}² = ${kJ(SK.ek())}`],["dissipated",`${kJ(SK.ep()-SK.ek())} = ${fmt(SK.loss()*100)}% of Ep`],["where it went","heat in the snow and skis, air"]];rows.forEach((r,i)=>{o+=`<text class="t-lab" x="14" y="${54+i*40}">${r[0].toUpperCase()}</text><text class="t-ink" x="14" y="${72+i*40}">${r[1]}</text>`});return o}
+  if(st.k==="work"){o+=`<text class="t-lab" x="14" y="22">FORCES ALONG THE RUN</text>`;const th=SK.theta();const rows=[["sin θ = h ÷ L",`${fmt(s.ski.h)} ÷ ${fmt(s.ski.L)} = ${fmt(Math.sin(th),2)} → θ = ${fmt(th*180/Math.PI,1)}°`],["down the slope: mg sin θ",`${fmt(SK.comp())} N`],["average resistance: W ÷ d",`${kJ(SK.ep()-SK.ek())} ÷ ${fmt(s.ski.L)} m = ${fmt(SK.fres())} N`],["net force and a = F/m",`${fmt(SK.comp()-SK.fres())} N → ${fmt((SK.comp()-SK.fres())/s.ski.m,2)} m/s²`],["check: v² = 2ad",`√(2 × ${fmt(SK.anet(),2)} × ${fmt(s.ski.L)}) = ${fmt(Math.sqrt(2*SK.anet()*s.ski.L),1)} m/s`]];rows.forEach((r,i)=>{o+=`<text class="t-lab" x="14" y="${50+i*42}">${r[0].toUpperCase()}</text><text class="t-ink" x="14" y="${68+i*42}">${r[1]}</text>`});return o}
+  if(st.k==="model"){o+=`<text class="t-lab" x="14" y="22">EXIT SPEED AGAINST VERTICAL DROP</text>`;const X=hh=>46+hh/250*340,Y=v=>220-v/75*160;let d="",d2="";for(let i=0;i<=50;i++){const hh=i*5;d+=(i?"L":"M")+X(hh).toFixed(1)+","+Y(Math.sqrt(2*g*hh)).toFixed(1);d2+=(i?"L":"M")+X(hh).toFixed(1)+","+Y(Math.sqrt(2*g*hh*(1-SK.loss()))).toFixed(1)}
+    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="var(--rose)"/><line x1="46" x2="46" y1="50" y2="220" stroke="var(--rose)"/><path d="${d}" fill="none" stroke="#6B7A99" stroke-width="2" stroke-dasharray="5 4"/><path d="${d2}" fill="none" stroke="${HOT_SKI}" stroke-width="2.4"/>`;
+    o+=`<circle cx="${X(s.ski.h)}" cy="${Y(SK.vfree())}" r="5" fill="#fff" stroke="${BLK}"/><circle cx="${X(s.ski.h)}" cy="${Y(s.ski.v)}" r="6" fill="var(--sun)" stroke="${BLK}"/><text class="t-lab" x="386" y="238" text-anchor="end">VERTICAL DROP (0–250 m)</text><text class="t-ink" x="54" y="44">dashed: frictionless √(2gh) · solid: with ${fmt(SK.loss()*100)}% lost</text>`;return o}
+  o+=`<text class="t-lab" x="14" y="22">MAXIMUM SPEED AGAINST TURN RADIUS · v = √(μgr)</text>`;const X=r=>46+r/120*340,Y=v=>220-v/30*160;let d="";for(let i=1;i<=60;i++){const r=i*2;d+=(i>1?"L":"M")+X(r).toFixed(1)+","+Y(Math.sqrt(s.ski.mu*g*r)).toFixed(1)}
+  o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="var(--rose)"/><line x1="46" x2="46" y1="50" y2="220" stroke="var(--rose)"/><path d="${d}" fill="none" stroke="${HOT_SKI}" stroke-width="2.4"/><circle cx="${X(s.ski.r)}" cy="${Y(s.ski.vt)}" r="6" fill="${s.ski.vt<=SK.vmax()?"#3A857B":HOT_SKI}" stroke="${BLK}"/><text class="t-lab" x="386" y="238" text-anchor="end">RADIUS (0–120 m)</text><text class="t-ink" x="54" y="44">below the line holds; above it skids. r min at ${fmt(s.ski.vt)} m/s = ${fmt(SK.rmin())} m</text>`;return o}
 // =====================================================================================
 // ---------- rider tips: a real skill for each step, and the physics that makes it work
 const TIPS={
@@ -585,6 +645,10 @@ const TIPS={
   jump:["Compress, then let the bike come up","Push down into the face of the lip, then relax your arms and legs and let the bike rise to you. Don't yank on the bars.","Once your tyres leave the lip, only gravity and air act on you, so the path of your centre of mass is set at take-off. Your speed at the lip is the thing that decides whether you clear the gap. Session a jump at slower speeds first."],
   stop:["Ride within your sight line","Only go as fast as you could stop in the distance you can see.","Stopping distance = thinking + braking, and braking distance grows with speed squared. Around a blind corner on wet roots, the safe speed is a lot lower than it feels."],
   fork:["Soft knees and elbows","Land with your arms and legs bent so they can bend some more.","The same kinetic energy has to be taken away on landing. Work = force × distance, so stopping over a longer distance (fork plus legs) means a smaller force on you. Your helmet's foam works the same way."],
+  run:["Scrub speed early, not late","On a long fall line, make your speed checks at the top where the slope is kinder.","Kinetic energy grows with speed squared, so the energy you must shed in a check turn at 34 m/s is four times what it is at 17 m/s. Early, small checks cost less than one big one."],
+  work:["Keep your weight over your feet","Stand against the slope with your mass stacked over the skis, not leaning back.","The normal force is mg cos θ. Lean back and the skis unweight, grip drops, and you can't use friction to control the run."],
+  model:["Trust the trail, not the calculator","Trail designers shape runs so that real speeds stay well below the frictionless number.","Traverses and rolling terrain shorten the effective fall line: less Ep is converted per metre travelled, so the shape of the trail, not just its slope, sets your speed."],
+  turn:["Edge early, before the turn bites","Roll onto the edges as you enter the turn so friction is ready when the centripetal demand peaks.","Friction can only supply up to μN. The turn needs mv²/r. Set the edge before the demand arrives and the turn holds; late, and you skid out."],
   test:["Change one thing at a time","Like a fair test in science: swap one part, ride, compare with your last run.","If you change the tyres and the bars at once, you can't tell which one made the difference. The dashed ghost line on the speed–time graph is your last run."]};
 
 // ---------- steps
@@ -621,7 +685,23 @@ const steps=[
   big:"<b>The big idea:</b> a spring obeys Hooke's law, F = kx. It stores energy when it's squashed (elastic potential energy) and gives it back.",
   exam:"The fork spring obeys Hooke's law, F = kx: the force is proportional to the compression. A spring with a larger spring constant k compresses less for the same force. On landing, the rider's kinetic energy is transferred into elastic potential energy in the spring, and the damper turns some of it into heat so the bike doesn't bounce.",
   trap:"Using millimetres in F = kx when k is in N/m. Convert to metres first: 120 mm = 0.12 m.",chips:["k","comp","force"],onStep:()=>{resetFork()}},
- {k:"test",lab:"Test yourself",cap:"Five challenges. Use the controls from any step and the garage, then press Check.",controls:["restart","limit","m","grip","v0","tr","k","fh"],chips:["time","stopd","comp","rotor"],
+ {k:"run",lab:"NCEA: the ski run",cap:"Level 2 and 3. Think Coronet Peak: a run dropping 120 m over 400 m of track. A 72 kg skier reaches the bottom at 34 m/s. Press play; the bars show the energy the slope gave and where it went.",speed:1,speedLabel:"3× real time",controls:["play","restart","skm","skh","skl","skv"],
+  big:"<b>The big idea:</b> energy conservation with a leak. Ep lost = Ek gained + work done against friction and air. The gap between mgh and ½mv² is what the run dissipated.",
+  exam:"Ep = mgh = 72 × 9.8 × 120 = 8.47 × 10⁴ J. At the bottom Ek = ½mv² = 0.5 × 72 × 34² = 4.16 × 10⁴ J, so (8.47 − 4.16) ÷ 8.47 ≈ 51 % of the original energy was dissipated by friction and air resistance.",
+  trap:"Using the track length (400 m) as h in mgh. Only the vertical drop counts for gravitational potential energy.",chips:["skep","skek","skloss","skv"],onStep:()=>{resetSki()}},
+ {k:"work",lab:"NCEA: forces on the slope",cap:"Where did 43 kJ go? Work = force × distance along the track. Resolve the skier's weight: the component down the slope drives the run; an average resistive force opposes it.",speed:1,speedLabel:"3× real time",controls:["play","restart","skm","skh","skl","skv"],
+  big:"<b>The big idea:</b> resolve weight into mg sin θ (down the slope) and mg cos θ (into the slope). Work done against resistance W = Fd lets you turn an energy gap into an average force.",
+  exam:"sin θ = 120 ÷ 400 = 0.30, so θ = 17.5°. The component of weight down the slope is mg sin θ = 72 × 9.8 × 0.30 = 212 N. The 4.31 × 10⁴ J dissipated over 400 m gives an average resistive force of W ÷ d = 108 N, so the net force is about 104 N and the average acceleration is F ÷ m ≈ 1.4 m s⁻².",
+  trap:"Resolving with cos instead of sin. Down the slope is mg sin θ; the normal force is mg cos θ.",chips:["sktheta","skcomp","skfres","ska"],onStep:()=>{resetSki()}},
+ {k:"model",lab:"NCEA: the frictionless model",cap:"The lab's twin computes an 'exit speed' with v = √(2gh), frictionless. Compare it with the real 34 m/s, and see why a course designer uses trail shape, not just slope, to keep skiers safe on a steeper pitch.",speed:0,controls:["skh","skl","skv"],
+  big:"<b>The big idea:</b> a model is only as good as what it leaves out. Because v ∝ √E, a 51 % energy loss is a 30 % speed loss, and the frictionless number overestimates by about 43 %. Excellence answers quantify the gap and say what to do about it.",
+  exam:"The frictionless prediction is v = √(2 × 9.8 × 120) = 48.5 m s⁻¹ against the real 34 m s⁻¹, an overestimate of about 43 % in speed, because the model ignores the work done against friction (W = Fd over 400 m) and drag, which grows with v². Designers add traverses, check turns and rolling terrain: shortening the effective fall line converts less Ep per metre travelled, so trail shape, not just slope, sets speed.",
+  trap:"Comparing energies as if they were speeds. Halving the kinetic energy only cuts the speed to 71 % (v ∝ √E).",chips:["skvfree","skv","skloss"]},
+ {k:"turn",lab:"NCEA: the check turn",cap:"Level 2 circular motion, with a Level 3 berm. In a turn, friction between edged skis and snow must supply the centripetal force mv²/r. Change the radius, the entry speed and the grip: does the turn hold?",speed:0,controls:["skr","skvt","skmu"],
+  big:"<b>The big idea:</b> centripetal force is not an extra force; it is the name for the net inward force. On flat snow that is friction, limited to μN, so v max = √(μgr). On a bermed turn part of the normal force points inward too.",
+  exam:"For a 30 m radius turn with μ = 0.5, the maximum friction is μmg = 0.5 × 72 × 9.8 = 353 N, and the turn needs mv²/r = 72 × 20² ÷ 30 = 960 N at 20 m s⁻¹, so the skier skids out. The fastest speed the turn can hold is v = √(μgr) = √(0.5 × 9.8 × 30) = 12.1 m s⁻¹. Level 3: on a banked turn with no friction, tan θ = v²/(rg).",
+  trap:"Treating centripetal force as a separate force to add to the diagram. Draw the real forces (friction, normal, weight); their inward resultant is the centripetal force.",chips:["skfc","skfmax","skvmax","skbank"]},
+ {k:"test",lab:"Test yourself",cap:"Eight challenges: five on the trail and three on the NCEA ski run. Use the controls from any step and the garage, then press Check.",controls:["restart","limit","m","grip","v0","tr","k","fh","skh","skv","skr","skvt","skmu"],chips:["time","stopd","comp","rotor","skloss","skvmax"],
   big:"<b>Exam tip:</b> say which forces act, whether they're balanced, and what that means for the speed. Show the formula, the numbers and the unit."}];
 
 // ---------- challenges (two use the garage)
@@ -635,7 +715,10 @@ const CH=[
     no:()=>{const N=stopNums(30,0.5,"roots");return `${WH().n}: μ = ${fmt(N.mu,2)} on roots, ${fmt(N.think,1)} + ${fmt(N.brake,1)} = ${fmt(N.total,1)} m. Braking distance = v² ÷ (2μg), so you need a bigger μ. Swap wheels in the garage.`}},
   {q:`Garage: FLOW has small 180 mm rotors. Build a FLOW, brake above 45 km/h (or lower) on dry hardpack, and finish a run with the rotors under ${ROTOR_MAX} °C. Which parts help, and why?`,check:()=>!!(s.lastRun&&s.lastRun.model==="flow"&&s.lastRun.grip==="dry"&&s.lastRun.limit<=45&&s.lastRun.rotorT<ROTOR_MAX),
     ok:()=>`Yes: ${fmt(s.lastRun.rotorT)} °C on ${s.lastRun.build}. Less mass means less Ep to get rid of; heavier rotors need more energy per degree (Q = mcΔT); more rolling resistance and drag take some energy so the brakes don't have to.`,
-    no:()=>!s.lastRun?"No finished run yet. Build a FLOW, then ride from Drop in with the brake speed at 45 km/h or less.":s.lastRun.model!=="flow"?`Your last run was on ${s.lastRun.build}. Choose FLOW in the garage, then ride again.`:s.lastRun.grip!=="dry"?"Set the trail to dry hardpack (Forces step) and ride again.":s.lastRun.limit>45?`Your last run ${s.lastRun.limit>=80?"had no brakes":"braked above "+s.lastRun.limit+" km/h"}. Set the brake speed to 45 km/h or less and ride again.`:`Your last run: ${fmt(s.lastRun.rotorT)} °C on ${s.lastRun.build}. Think Q = mcΔT: what makes Q smaller, or m bigger?`}];
+    no:()=>!s.lastRun?"No finished run yet. Build a FLOW, then ride from Drop in with the brake speed at 45 km/h or less.":s.lastRun.model!=="flow"?`Your last run was on ${s.lastRun.build}. Choose FLOW in the garage, then ride again.`:s.lastRun.grip!=="dry"?"Set the trail to dry hardpack (Forces step) and ride again.":s.lastRun.limit>45?`Your last run ${s.lastRun.limit>=80?"had no brakes":"braked above "+s.lastRun.limit+" km/h"}. Set the brake speed to 45 km/h or less and ride again.`:`Your last run: ${fmt(s.lastRun.rotorT)} °C on ${s.lastRun.build}. Think Q = mcΔT: what makes Q smaller, or m bigger?`},
+  {q:"NCEA ski run (120 m drop): set a real exit speed at which less than 40% of the energy is dissipated.",check:()=>s.ski.h===120&&SK.loss()<0.4,ok:()=>`Yes: at ${fmt(s.ski.v)} m/s, Ek = ${kJ(SK.ek())} of ${kJ(SK.ep())}, so only ${fmt(SK.loss()*100)}% was lost.`,no:()=>s.ski.h!==120?"Set the vertical drop back to 120 m first.":`Not yet: ${fmt(SK.loss()*100)}% lost at ${fmt(s.ski.v)} m/s. You need ½mv² > 0.6 × mgh, so v > √(1.2 × 9.8 × 120) = ${fmt(Math.sqrt(1.2*g*120),1)} m/s.`},
+  {q:"Check turn: with μ = 0.50 and a 20 m/s entry, find the smallest radius (to the nearest 5 m) that holds the turn.",check:()=>Math.abs(s.ski.mu-0.5)<1e-9&&s.ski.vt===20&&s.ski.r>=SK.rmin()&&s.ski.r<SK.rmin()+5,ok:()=>`Yes: r min = v² ÷ (μg) = 400 ÷ 4.9 = ${fmt(SK.rmin(),1)} m, so ${fmt(s.ski.r)} m holds: friction ${fmt(s.ski.mu*s.ski.m*g)} N against mv²/r = ${fmt(SK.fc())} N.`,no:()=>Math.abs(s.ski.mu-0.5)>1e-9||s.ski.vt!==20?"Set μ = 0.50 and the entry speed to 20 m/s first.":s.ski.r<SK.rmin()?`Not yet: at ${fmt(s.ski.r)} m the turn needs ${fmt(SK.fc())} N but friction can only give ${fmt(s.ski.mu*s.ski.m*g)} N. r ≥ v² ÷ (μg).`:`That holds, but a smaller radius would too. r min = v² ÷ (μg) = ${fmt(SK.rmin(),1)} m.`},
+  {q:"Trail design: keep the frictionless exit speed √(2gh) under 30 m/s by limiting the vertical drop.",check:()=>SK.vfree()<30,ok:()=>`Yes: a ${fmt(s.ski.h)} m drop gives √(2 × 9.8 × ${fmt(s.ski.h)}) = ${fmt(SK.vfree(),1)} m/s even with no friction. That is what traverses do: they split a big drop into small ones.`,no:()=>`Not yet: ${fmt(s.ski.h)} m gives ${fmt(SK.vfree(),1)} m/s. v² = 2gh, so h must be under 30² ÷ (2 × 9.8) = ${fmt(900/(2*g),1)} m.`}];
 
 // ---------- the garage panel and the rider-tip card (built once, after the kit mounts)
 const CSS=`.bk-garage{flex:1 1 100%;display:grid;gap:10px;min-width:0}
@@ -705,11 +788,11 @@ const KUPU=[
  {mi:"pūngao neke",en:"kinetic energy",ta:47721,chip:"ek"},
  {mi:"pūngao moe",en:"potential energy",ta:47720,chip:"ep"},
  {mi:"waku",en:"friction",ta:12421}];
-Object.entries({"garage": ["waku"], "drop": ["tere", "whakahohoro"], "graph": ["tere", "whakahohoro"], "forces": ["tōpana", "tōpana taurite", "waku"], "energy": ["pūngao", "pūngao moe", "pūngao neke"], "jump": ["tere"], "stop": ["waku", "tere"], "fork": ["tōpana"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-const api=StudyKit.mount({kupu:KUPU,
-  eyebrow:"Science · Forces and motion", title:"The downhill machine", crumb:"Year 9 and 10 Science · forces, motion and energy, with NCEA Level 1 ideas", homeHash:"y9",
+Object.entries({"garage": ["waku"], "drop": ["tere", "whakahohoro"], "graph": ["tere", "whakahohoro"], "forces": ["tōpana", "tōpana taurite", "waku"], "energy": ["pūngao", "pūngao moe", "pūngao neke"], "jump": ["tere"], "stop": ["waku", "tere"], "fork": ["tōpana"], "run": ["pūngao moe", "pūngao neke", "waku"], "work": ["tōpana", "waku", "whakahohoro"], "model": ["tere", "pūngao"], "turn": ["tōpana", "tere"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
+const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",
+  eyebrow:"Science · Forces and motion", title:"The downhill machine", crumb:"Year 9 and 10 Science · forces, motion and energy, with NCEA Level 1 ideas, plus four NCEA Level 2–3 steps on a ski run (AS91171, AS91524)", homeHash:"y9",
   fig:"FIG. 10 · THE REDWOODS, WHAKAREWAREWA FOREST", railTitle:"Build it, ride the physics",
-  badge:{label:"Forces and motion · Years 9–11"},
+  badge:{label:"Years 9–11 · NCEA L2 91171 · L3 91524"},
   mainBox:"0 0 800 420", mainPhoneBig:true, mainLabel:"A downhill mountain bike and rider in a redwood forest, with a helmet camera view and force arrows", closeBox:"0 0 420 260",
   state:s, steps,
   onStep:(x,st)=>{garageUI.show(st.k==="garage");tipUI.set(st.k)},
@@ -722,11 +805,19 @@ const api=StudyKit.mount({kupu:KUPU,
     {type:"range",id:"v0",label:"Speed",min:10,max:60,step:1,get:()=>s.v0,set:(x,v)=>{s.v0=v;resetStop()},fmt:()=>s.v0+" km/h"},
     {type:"range",id:"tr",label:"Reaction time",min:0.3,max:2,step:0.1,get:()=>s.tr,set:(x,v)=>{s.tr=Math.round(v*10)/10;resetStop()},fmt:()=>fmt(s.tr,1)+" s"},
     {type:"range",id:"k",label:"Spring",min:10,max:100,step:1,get:()=>s.k,set:(x,v)=>{s.k=v;save();resetFork();s.fphase="ready"},fmt:()=>s.k+" N/mm"},
-    {type:"range",id:"fh",label:"Drop height",min:0.3,max:2,step:0.1,get:()=>s.fh,set:(x,v)=>{s.fh=Math.round(v*10)/10;resetFork();s.fphase="ready"},fmt:()=>fmt(s.fh,1)+" m"}],
+    {type:"range",id:"fh",label:"Drop height",min:0.3,max:2,step:0.1,get:()=>s.fh,set:(x,v)=>{s.fh=Math.round(v*10)/10;resetFork();s.fphase="ready"},fmt:()=>fmt(s.fh,1)+" m"},
+    {type:"range",id:"skm",label:"Skier mass",min:40,max:110,step:1,get:()=>s.ski.m,set:(x,v)=>{s.ski.m=v},fmt:()=>s.ski.m+" kg"},
+    {type:"range",id:"skh",label:"Vertical drop",min:20,max:250,step:5,get:()=>s.ski.h,set:(x,v)=>{s.ski.h=v;if(s.ski.L<s.ski.h)s.ski.L=s.ski.h;resetSki()},fmt:()=>s.ski.h+" m"},
+    {type:"range",id:"skl",label:"Track length",min:100,max:1000,step:10,get:()=>s.ski.L,set:(x,v)=>{s.ski.L=Math.max(v,s.ski.h);resetSki()},fmt:()=>s.ski.L+" m"},
+    {type:"range",id:"skv",label:"Real exit speed",min:5,max:60,step:1,get:()=>s.ski.v,set:(x,v)=>{s.ski.v=Math.min(v,Math.floor(SK.vfree()));resetSki()},fmt:()=>`${s.ski.v} m/s · ${fmt(s.ski.v*3.6)} km/h`},
+    {type:"range",id:"skr",label:"Turn radius",min:10,max:120,step:5,get:()=>s.ski.r,set:(x,v)=>{s.ski.r=v},fmt:()=>s.ski.r+" m"},
+    {type:"range",id:"skvt",label:"Entry speed",min:5,max:30,step:1,get:()=>s.ski.vt,set:(x,v)=>{s.ski.vt=v},fmt:()=>s.ski.vt+" m/s"},
+    {type:"range",id:"skmu",label:"Snow grip μ",min:0.1,max:0.8,step:0.05,get:()=>s.ski.mu,set:(x,v)=>{s.ski.mu=Math.round(v*100)/100},fmt:()=>fmt(s.ski.mu,2)}],
   tick:(x,dt,st)=>{const d=dt*(s.slow?0.35:1);if(st.k==="garage"){s.gspin+=dt*2.2}
+    else if(SKISTEPS.includes(st.k)){tickSki(dt)}
     else if(TRACKSTEPS.includes(st.k)){if(!s.crash&&!(s.finished&&s.v<=0.01))tickTrail(d)}else if(st.k==="stop"){if(s.sphase!=="stopped")tickStop(d)}else if(st.k==="fork"){if(s.fphase==="ready")s.fphase="fall";if(s.fphase!=="settled")tickFork(d)}},
-  drawMain:(x,st)=>st.k==="garage"?drawGarage():TRACKSTEPS.includes(st.k)||st.k==="test"?drawTrail(st):st.k==="stop"?drawStop():drawFork(),
-  drawClose:(x,st)=>st.k==="garage"?specCard():st.k==="drop"?graph("d"):st.k==="graph"?graph("v"):st.k==="forces"?fbd():st.k==="energy"?energyBars():st.k==="jump"?jumpPanel():st.k==="stop"?stopPanel():st.k==="fork"?springPanel():graph("v"),
+  drawMain:(x,st)=>st.k==="garage"?drawGarage():SKISTEPS.includes(st.k)?drawSki(st):TRACKSTEPS.includes(st.k)||st.k==="test"?drawTrail(st):st.k==="stop"?drawStop():drawFork(),
+  drawClose:(x,st)=>st.k==="garage"?specCard():SKISTEPS.includes(st.k)?skiPanel(st):st.k==="drop"?graph("d"):st.k==="graph"?graph("v"):st.k==="forces"?fbd():st.k==="energy"?energyBars():st.k==="jump"?jumpPanel():st.k==="stop"?stopPanel():st.k==="fork"?springPanel():graph("v"),
   chips:()=>{const F=forces(s.x,s.v),net=M()*F.grav-M()*(F.roll+F.air)-s.brakeN,N=stopNums(),K=forkNums();return{
     mass:["MASS",fmt(M(),1)+" kg"],weight:["WEIGHT",fmt(M()*g)+" N",true],mu:["GRIP μ",fmt(MU(),2)+" "+(s.grip==="dry"?"dry":s.grip==="mud"?"mud":"roots")],travel:["TRAVEL",fmt(TRAVEL()*1000)+" mm"],cda:["DRAG AREA",fmt(CDA(),2)+" m²"],
     time:["TIME",fmt(s.t,1)+" s"],dist:["DISTANCE",fmt(s.dist)+" m"],speed:["SPEED",`${fmt(s.v,1)} m/s · ${fmt(s.v*3.6)} km/h`,true],avg:["AVERAGE",s.t>0.5?fmt(s.dist/s.t,1)+" m/s":"–"],
@@ -734,11 +825,14 @@ const api=StudyKit.mount({kupu:KUPU,
     ep:["Ep LOST",kJ(M()*g*(TOP-s.y))],ek:["Ek",kJ(0.5*M()*s.v*s.v),true],heat:["HEAT",kJ(s.heatB+s.heatF)],rotor:["ROTORS",fmt(rotorT())+" °C"],
     lip:["LIP SPEED",s.lipV?fmt(s.lipV*3.6)+" km/h":"–",true],flew:["JUMP",s.jump?fmt(s.jump.dist,1)+" m":"–"],
     think:["THINKING",fmt(N.think,1)+" m"],brake:["BRAKING",fmt(N.brake,1)+" m"],stopd:["STOPPING",fmt(N.total,1)+" m",true],
-    k:["k",fmt(K.k)+" N/m"],comp:["LANDING SQUASH",fmt(K.x*1000)+" mm",K.x>K.T],force:["SPRING FORCE",fmt(K.F)+" N"]}},
+    k:["k",fmt(K.k)+" N/m"],comp:["LANDING SQUASH",fmt(K.x*1000)+" mm",K.x>K.T],force:["SPRING FORCE",fmt(K.F)+" N"],
+    skep:["Ep = mgh",kJ(SK.ep())],skek:["Ek = ½mv²",kJ(SK.ek()),true],skloss:["DISSIPATED",fmt(SK.loss()*100)+"%",true],skv:["REAL EXIT SPEED",`${fmt(s.ski.v)} m/s`],skvfree:["FRICTIONLESS √(2gh)",`${fmt(SK.vfree(),1)} m/s`,true],
+    sktheta:["SLOPE θ",`${fmt(SK.theta()*180/Math.PI,1)}° (sin θ = ${fmt(Math.sin(SK.theta()),2)})`],skcomp:["mg sin θ",`${fmt(SK.comp())} N`,true],skfres:["AVERAGE RESISTANCE",`${fmt(SK.fres())} N`],ska:["AVERAGE a",`${fmt(SK.anet(),2)} m/s²`],
+    skfc:["NEEDS mv²/r",`${fmt(SK.fc())} N`,true],skfmax:["FRICTION CAN GIVE",`${fmt(s.ski.mu*s.ski.m*g)} N`],skvmax:["v MAX = √(μgr)",`${fmt(SK.vmax(),1)} m/s`,s.ski.vt>SK.vmax()],skbank:["BERM ANGLE",`${fmt(SK.bank(),1)}°`]}},
   challenges:CH,
-  papers:[{label:"NZQA: Physics, Earth and Space Science",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/physics-earth-and-space-science/"},{label:"NZQA: Science past exams",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/"}],
-  truth:"A fictional trail inspired by the Redwoods, Whakarewarewa Forest, Rotorua. Uses g = 9.8 N/kg and air density 1.2 kg/m³. Bike masses (14.5–18.4 kg), drag areas (0.47–0.65 m²), rolling resistance (0.03–0.08) and tyre grip (μ 0.22–0.78) are typical estimates, not measurements of real bikes. The fork spring also stands in for your legs, so k is stiffer than a real fork spring. Rotor temperatures assume all the braking heat stays in the rotors (a top estimate; real rotors also lose heat to the air). The rider brakes to hold the speed you choose. Bikes and riders are drawn larger than the trail so you can see them.",
-  footer:"Covers Year 9–10 forces and motion: mass and weight, speed, distance–time and speed–time graphs, balanced and unbalanced forces, a = F/m, Ep and Ek, heat and Q = mcΔT, projectiles, stopping distance, pressure and Hooke's law. Energy ideas link to NCEA L1 AS 92047."
+  papers:[{label:"NZQA: Physics, Earth and Space Science",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/physics-earth-and-space-science/"},{label:"NZQA: Science past exams",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/"},{label:"NZQA: L2 Physics 91171 (mechanics)",url:"https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=91171"},{label:"NZQA: L3 Physics 91524 (mechanical systems)",url:"https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=91524"}],
+  truth:"The NCEA ski-run steps use the practice pack's figures (120 m drop over 400 m, 72 kg, 34 m/s); the turn's radius, entry speed and snow grip μ are estimates, and the skier is animated at three times real time with a constant average acceleration. A fictional trail inspired by the Redwoods, Whakarewarewa Forest, Rotorua. Uses g = 9.8 N/kg and air density 1.2 kg/m³. Bike masses (14.5–18.4 kg), drag areas (0.47–0.65 m²), rolling resistance (0.03–0.08) and tyre grip (μ 0.22–0.78) are typical estimates, not measurements of real bikes. The fork spring also stands in for your legs, so k is stiffer than a real fork spring. Rotor temperatures assume all the braking heat stays in the rotors (a top estimate; real rotors also lose heat to the air). The rider brakes to hold the speed you choose. Bikes and riders are drawn larger than the trail so you can see them.",
+  footer:"Covers Year 9–10 forces and motion: mass and weight, speed, distance–time and speed–time graphs, balanced and unbalanced forces, a = F/m, Ep and Ek, heat and Q = mcΔT, projectiles, stopping distance, pressure and Hooke's law. Energy ideas link to NCEA L1 AS 92047. The four NCEA steps cover L2 AS91171 (energy conservation, work, force components, circular motion) and L3 AS91524 (circular motion with multiple forces, banked turns)."
 });
 
 garageUI.build();tipUI.build();garageUI.show(api.step.k==="garage");tipUI.set(api.step.k);

@@ -1,6 +1,6 @@
 # Te reo Māori in assembly: research notes and sources
 
-Last updated 23 October 2026. These notes record what guidance shaped the te reo Māori added to the study machines, where every kupu (word) came from, and what still needs review by someone with cultural standing. Nothing here was invented: each kupu was looked up and its entry opened on Te Aka Māori Dictionary, and the link is recorded below.
+Last updated 25 October 2026 (practice-pack machines added: vending machine, phone, queue, floor-plan studio; NCEA steps on the downhill and vinyl machines). These notes record what guidance shaped the te reo Māori added to the study machines, where every kupu (word) came from, and what still needs review by someone with cultural standing. Nothing here was invented: each kupu was looked up and its entry opened on Te Aka Māori Dictionary, and the link is recorded below.
 
 ## 1. What the Ministry of Education expects
 
@@ -386,7 +386,75 @@ Notes shown to students:
 | **whakarāpopoto** | to summarise; summary | [Te Aka 9800](https://maoridictionary.co.nz/word/9800) | Te Aka entry (no curriculum citation) | (machine list only) |  |
 | **kaituhi** | writer, author | [Te Aka 2031](https://maoridictionary.co.nz/word/2031) | Te Aka entry (no curriculum citation) | (machine list only) |  |
 
+### Vending machine (vend.js) — 8 kupu
+
+| Kupu | English | Source (opened) | Evidence | Shown on steps | Chip label |
+|---|---|---|---|---|---|
+| **tōpana** | force | [Te Aka 40375](https://maoridictionary.co.nz/word/40375) | Te Reo Pūtaiao (MoE 2009) cited in entry | apart, coil, impact | force, F |
+| **papatipu** | mass | [Te Aka 5179](https://maoridictionary.co.nz/word/5179) | Te Reo Pūtaiao (MoE 2009) cited in entry | look | mass |
+| **tere** | speed | [Te Aka 7953](https://maoridictionary.co.nz/word/7953) | Te Aka entry (no curriculum citation) | coin, fall, impact, faster | v, coinv |
+| **whakahohoro** | acceleration, speeding up | [Te Aka 12447](https://maoridictionary.co.nz/word/12447) | Te Aka entry (no curriculum citation) | coin |  |
+| **tō ā-papa** | gravity | [Te Aka 12845](https://maoridictionary.co.nz/word/12845) | Te Reo Pūtaiao (MoE 2009) cited in entry | coin, fall |  |
+| **pūngao neke** | kinetic energy | [Te Aka 47721](https://maoridictionary.co.nz/word/47721) | Te Aka entry (no curriculum citation) | fall, faster | ek |
+| **pūngao moe** | potential energy | [Te Aka 47720](https://maoridictionary.co.nz/word/47720) | Te Aka entry (no curriculum citation) | look | ep |
+| **teitei** | height | [Te Aka 7895](https://maoridictionary.co.nz/word/7895) | Te Aka entry (no curriculum citation) | look, faster | h, coinh |
+
+All eight were already verified for the downhill and energy machines; the same notes are shown to students (papatipu's land meaning, whakahohoro as a general word, pūngao konikoni and kume ā-papa as alternatives). Looked for but not added: *momentum* (Te Aka gives torohaki 8482 and ānga 247, neither with a curriculum citation) and *torque* (no entry found), so those readouts stay in English.
+
+### Phone (phone.js) — 8 kupu
+
+| Kupu | English | Source (opened) | Evidence | Shown on steps | Chip label |
+|---|---|---|---|---|---|
+| **hiko** | electricity | [Te Aka 1171](https://maoridictionary.co.nz/word/1171) | Te Aka entry (no curriculum citation) | wireless |  |
+| **iahiko** | electric current | [Te Aka 1648](https://maoridictionary.co.nz/word/1648) | Te Reo Pūtaiao (MoE 2009) cited in entry | charge, fast, ccv, circuit | Iavg, Inow, Itot, Ichg |
+| **ngaohiko** | voltage | [Te Aka 40454](https://maoridictionary.co.nz/word/40454) | Te Reo Pūtaiao (MoE 2009) cited in entry | energy, ccv, internal, wireless | Vterm, pd |
+| **ara iahiko** | electric circuit | [Te Aka 343](https://maoridictionary.co.nz/word/343) | Te Reo Pūtaiao (MoE 2009) cited in entry | circuit |  |
+| **pūhiko** | battery, electrical cell | [Te Aka 40049](https://maoridictionary.co.nz/word/40049) | Te Reo Pūtaiao (RP 2009:333) cited in entry; Te Aka also lists the loanwords pāteri and pēteri | charge | mAh |
+| **whana hiko** | electric charge | [Te Aka 40518](https://maoridictionary.co.nz/word/40518) | Te Reo Pūtaiao (RP 2009:455) cited in entry | charge, capacitor | Q, Qcap |
+| **pūngao hiko** | electrical energy | [Te Aka 47713](https://maoridictionary.co.nz/word/47713) | Te Aka entry (no curriculum citation) | energy, fast, capacitor | E, Ecap |
+| **parenga** | resistance, resistor | [Te Aka 5300](https://maoridictionary.co.nz/word/5300) | Te Aka entry (no curriculum citation); parenga iahiko 46887 is listed for a resistor | ccv, internal, circuit, capacitor |  |
+
+Notes shown to students: *parenga*: Te Aka also lists parenga iahiko for a resistor. Looked for but not added: *capacitor* (Te Aka lists pūnga iahiko 46818 and pūranga iahiko 51177, both without a curriculum citation and differing from each other, so left for a teacher to choose).
+
+### Queue (queue.js) — 8 kupu
+
+| Kupu | English | Source (opened) | Evidence | Shown on steps | Chip label |
+|---|---|---|---|---|---|
+| **tūponotanga** | probability, chance | [Te Aka 46069](https://maoridictionary.co.nz/word/46069) | Te Reo Pāngarau (MoE 2010) cited in entry | arrivals, service, ed, tree | p0, prob, phelp |
+| **pāpono** | event (in probability) | [Te Aka 45828](https://maoridictionary.co.nz/word/45828) | Te Reo Pāngarau (MoE 2010) cited in entry | arrivals, tree |  |
+| **putanga** | outcome | [Te Aka 6346](https://maoridictionary.co.nz/word/6346) | Te Reo Pāngarau (MoE 2010) cited in entry | tree |  |
+| **tūtira** | queue, row, file | [Te Aka 8821](https://maoridictionary.co.nz/word/8821) | Te Aka entry (historical citations; no curriculum citation) | arrivals, wait |  |
+| **toharite** | mean, average | [Te Aka 38680](https://maoridictionary.co.nz/word/38680) | Te Reo Pāngarau (TRP 2010:292) cited in entry | service, wait | meanw |
+| **ine mahora** | standard deviation | [Te Aka 49898](https://maoridictionary.co.nz/word/49898) | Te Aka entry, maths sense (no curriculum citation) | service | sig |
+| **tauanga** | statistics | [Te Aka 44587](https://maoridictionary.co.nz/word/44587) | Te Reo Pāngarau (MoE 2010) cited in entry | ed |  |
+| **raraunga** | data | [Te Aka 6555](https://maoridictionary.co.nz/word/6555) | Te Aka entry (no curriculum citation) | wait, ed |  |
+
+Notes shown to students: *tūtira*: Te Aka also lists rārangi for a line or queue. *toharite*: Te Aka also gives toharite for the median, so check which your class uses. Looked for but not added: *normal distribution* and *relative risk* (no Te Aka entries found).
+
+### Floor-plan studio (plan.js) — 8 kupu
+
+| Kupu | English | Source (opened) | Evidence | Shown on steps | Chip label |
+|---|---|---|---|---|---|
+| **hoahoa** | to design, plan; a plan of a building | [Te Aka 1290](https://maoridictionary.co.nz/word/1290) | Te Aka entry (no curriculum citation) | brief, explore, communicate |  |
+| **kaihoahoa** | designer, architect | [Te Aka 1924](https://maoridictionary.co.nz/word/1924) | Te Aka entry (no curriculum citation) | brief |  |
+| **mahere** | map, plan, chart | [Te Aka 3350](https://maoridictionary.co.nz/word/3350) | Te Aka entry (no curriculum citation); already used in the map machine | explore, communicate |  |
+| **āwhata** | scale (of a map or drawing) | [Te Aka 15342](https://maoridictionary.co.nz/word/15342) | Te Aka entry; already used in the map machine | communicate | scaleTxt |
+| **horahanga** | area | [Te Aka 45667](https://maoridictionary.co.nz/word/45667) | Te Reo Pāngarau (MoE 2010) cited in entry; already used in the shape workshop | explore, evaluate | area |
+| **tauira** | example, pattern, model | [Te Aka 7706](https://maoridictionary.co.nz/word/7706) | Te Aka entry (no curriculum citation) | ideate |  |
+| **kiritaki** | customer, client | [Te Aka 11034](https://maoridictionary.co.nz/word/11034) | Te Aka entry (no curriculum citation); already used in the market machine | brief, evaluate |  |
+| **āhuatanga hoahoa** | design element | [Te Aka 38908](https://maoridictionary.co.nz/word/38908) | Te Aka entry (no curriculum citation) | ideate |  |
+
+No curriculum dictionary for DVC was found among Te Aka's sources, so these are general Te Aka entries. Looked for but not added: *floor plan* and *scale drawing* as compounds (Te Aka's nearest is hoahoa, "plan of a house"), *brief* and *stakeholder*.
+
+### NCEA steps on the downhill and vinyl machines: no new kupu
+
+No new kupu were added (both machines already carry 8 verified terms). The existing terms were mapped onto the new steps: downhill *run* (pūngao moe, pūngao neke, waku), *work* (tōpana, waku, whakahohoro), *model* (tere, pūngao), *turn* (tōpana, tere); vinyl *omega* and *centripetal* (auau). Looked for but not added: *angular velocity*, *centripetal*, *torque* (no Te Aka entries found).
+
 ## 4. Terms looked for but not added (no verified entry, or contested)
+- **momentum**, **torque**, **angular velocity**, **centripetal** (vending, downhill, vinyl): no curriculum-cited entry; torohaki/ānga are general words for momentum.
+- **capacitor** (phone): two differing Te Aka entries (pūnga iahiko, pūranga iahiko), neither curriculum-cited; left for the teacher.
+- **normal distribution**, **relative risk** (queue): no entry found.
+- **floor plan**, **scale drawing**, **brief**, **stakeholder** (floor-plan studio): no entry as a compound; hoahoa covers a building plan.
 
 - **artificial intelligence**: Te Aka has no entry (only *atamai*, intelligent; *waea atamai*, smartphone). Phrases like "atamai horihori" are in use elsewhere but were not verified, so none was added. Treat this as newer and contested vocabulary.
 - **lever** (fish): Te Aka has verbs for prising or levering, but no noun for a lever. *kauwhiti* appears inside an example sentence but its own entry means something else, so it was not used.
