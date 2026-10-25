@@ -1,0 +1,39 @@
+/* assembl Connect: shared "Your data" uploader. Inherits each twin's tokens (--ink, --body, --line, --data, --alert, --good, --est, --mono)
+   and its .btn, .drop, .note, .status, .report and .chips rules, so it looks native in every twin, light and dark. Works at 400 px. */
+.cn-drop{position:relative}
+.cn-priv{font:500 11px var(--mono,ui-monospace,monospace);letter-spacing:.04em;text-transform:uppercase;color:var(--data,#2b7a6f);margin-top:4px}
+.cn-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cn-files{display:grid;gap:12px}
+.cn-file{padding:14px 16px;display:grid;gap:10px;border-radius:14px;border:1px solid var(--line,#ddd);background:var(--glass,var(--card,var(--chalk,transparent)));min-width:0}
+.cn-file header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.cn-file header b{color:var(--ink);font-family:var(--mono,ui-monospace,monospace);font-weight:500;overflow-wrap:anywhere}
+.cn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--body)}
+.cn-row label{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.cn-row select{max-width:100%}
+.cn-maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 12px}
+.cn-maps label{display:grid;gap:3px;font:500 11px var(--mono,ui-monospace,monospace);color:var(--rose,var(--muted,var(--body)));min-width:0}
+.cn-maps label span{display:flex;justify-content:space-between;gap:6px}
+.cn-maps label small{font-weight:400;opacity:.75}
+.cn-maps label.req span::after{content:" *";color:var(--alert,#b3261e)}
+.cn-maps select,.cn-unm select,.cn-row select{border-radius:8px;width:100%;max-width:100%;min-width:0;font:inherit;font-size:12.5px;color:var(--ink);background:var(--paper,#fff);border:1px solid var(--line,#ccc);padding:4px 6px}
+.cn-unm{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;font-size:12px}
+.cn-unm label{display:inline-flex;gap:6px;align-items:center;border:1px dashed var(--line,#ccc);border-radius:999px;padding:2px 4px 2px 10px;max-width:100%}
+.cn-unm label span{font:500 11.5px var(--mono,ui-monospace,monospace);color:var(--ink);overflow-wrap:anywhere}
+.cn-unm select{width:auto;border-radius:999px;padding:2px 6px}
+.cn-split{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.cn-split i{display:block;height:100%;background:var(--data,#2b7a6f);border-radius:4px}
+.cn-split i.x{background:var(--alert,#b3261e)}
+.cn-file .report{font-size:13px;display:grid;gap:4px}
+.cn-file .report .ok{color:var(--good,#2f7d4f)}.cn-file .report .bad{color:var(--alert,#b3261e)}.cn-file .report .warn{color:var(--est,#a66a00)}
+.cn-link{appearance:none;border:0;background:none;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer;font:inherit}
+.cn-more>summary{cursor:pointer}
+.cn-chips{margin:8px 0}
+.cn-text{width:100%;min-height:150px;font:12px/1.4 var(--mono,ui-monospace,monospace);color:var(--ink);background:var(--paper,#fff);border:1px solid var(--line,#ccc);border-radius:8px;padding:8px;box-sizing:border-box;margin-top:8px}
+.cn-never ul{margin:8px 0;padding-left:18px;font-size:13.5px;color:var(--body);display:grid;gap:4px}
+.cn-contract h3{margin:14px 0 6px;font-size:15px}
+.cn-contract h3 span{font:500 11.5px var(--mono,ui-monospace,monospace);color:var(--rose,var(--muted,var(--body)));margin-left:6px}
+.cn-contract table{width:100%;border-collapse:collapse;font-size:12.5px}
+.cn-contract td,.cn-contract th{text-align:left;padding:4px 8px 4px 0;border-bottom:1px solid var(--line,#ddd);vertical-align:top}
+.cn-contract td i{font-style:normal;opacity:.75}
+.cn-mono{font-family:var(--mono,ui-monospace,monospace)}
+@media (max-width:480px){.cn-maps{grid-template-columns:1fr 1fr}.cn-file{padding:12px}}

@@ -101,7 +101,9 @@ nav.steps .fig,nav.steps h2{display:none}
 .caption{flex:1;font-size:16px;line-height:1.45;color:var(--as-ink);min-height:2.9em;max-width:74ch;margin:0}
 .caption .slow{font:600 11px var(--as-font);background:var(--as-ink);color:#fff;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px;white-space:nowrap}
 .nextb{flex:none}
-.canvas{position:relative;background:var(--chalk);border-radius:22px;box-shadow:inset 0 0 0 1px var(--as-line);overflow:hidden}
+.canvas{position:relative;background:var(--case-soft,var(--chalk));border-radius:22px;box-shadow:inset 0 0 0 1px var(--as-line);overflow:hidden}
+@supports (color:color-mix(in srgb,red,blue)){:root{--case-soft:color-mix(in srgb,var(--case,var(--chalk)) 26%,var(--chalk));--case-line:color-mix(in srgb,var(--case,var(--chalk)) 60%,var(--as-line))}
+  :root[style*="--case"] .stepno{background:var(--case-soft);color:var(--as-ink);box-shadow:inset 0 0 0 1px var(--case-line)}}
 svg{display:block;width:100%;height:auto}
 .controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--as-soft);border-radius:20px;padding:12px 14px}
 .controls:not(:has(> :not([hidden]))){display:none}

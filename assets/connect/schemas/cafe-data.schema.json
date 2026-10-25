@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://assembl.co.nz/contracts/cafe-data/v1",
+  "title": "Café and restaurant twin data contract v1",
+  "description": "Four tables a café or restaurant can export from its POS, rostering system and accounts. No customer names, phone numbers, emails or card numbers are needed, and no staff names; the importer ignores columns that look like personal information. Money is NZD; POS amounts include GST unless flagged. Independent assembl concept.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "venue": {
+          "type": "string"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_system": {
+          "type": "string",
+          "description": "POS, rostering or accounting system name and version"
+        }
+      }
+    },
+    "sales_items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sales_items"
+      }
+    },
+    "timesheets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/timesheets"
+      }
+    },
+    "invoices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/invoices"
+      }
+    },
+    "waste_log": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/waste_log"
+      }
+    }
+  },
+  "$defs": {
+    "sales_items": {
+      "title": "POS sales by item",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "txn_id",
+        "opened_at",
+        "item_name",
+        "qty",
+        "net"
+      ],
+      "properties": {
+        "txn_id": {
+          "type": "string",
+          "description": "Receipt, order or docket number. Lines with the same txn_id are one transaction. Also recognised as: transaction_id, order_id, order_no, receipt, receipt_no, sale_id, check, check_no, docket."
+        },
+        "opened_at": {
+          "type": "string",
+          "description": "When the order was taken (local time). Drives the demand curve by hour. Also recognised as: opened, date_time, datetime, created_at, order_time, sale_time, timestamp, date, time_opened."
+        },
+        "closed_at": {
+          "type": "string",
+          "description": "When it was paid or completed. Also recognised as: closed, paid_at, time_closed, completed_at."
+        },
+        "channel": {
+          "type": "string",
+          "description": "Dine in, takeaway, delivery app (Uber Eats, DoorDash and similar) or online pickup. Delivery apps are recognised from the text. Also recognised as: order_type, sales_type, type, dining_option, source, mode."
+        },
+        "table_id": {
+          "type": "string",
+          "description": "Table number for dine-in. Also recognised as: table, table_no, table_number."
+        },
+        "covers": {
+          "type": "number",
+          "description": "Guests on the transaction (dine-in). Also recognised as: guests, pax, guest_count, people."
+        },
+        "item_sku": {
+          "type": "string",
+          "description": "PLU or product code. Also recognised as: sku, item_id, plu, product_id, product_code."
+        },
+        "item_name": {
+          "type": "string",
+          "description": "Menu item as sold. Also recognised as: item, product, product_name, description, menu_item, name_of_item."
+        },
+        "qty": {
+          "type": "number",
+          "description": "Units on the line. Also recognised as: quantity, units, count, qty_sold."
+        },
+        "net": {
+          "type": "number",
+          "description": "Line amount after discounts. Assumed to include GST unless net_includes_gst says otherwise. Also recognised as: net_sales, net_amount, amount, total, line_total, sales, value, gross."
+        },
+        "net_includes_gst": {
+          "type": "boolean",
+          "description": "true if net includes GST (the usual NZ POS report). Also recognised as: incl_gst, gst_inclusive, tax_inclusive."
+        },
+        "unit_cost": {
+          "type": "number",
+          "description": "Recipe or ingredient cost per unit, excl. GST, if the POS holds it. Enables menu engineering on your own items. Also recognised as: cost, item_cost, recipe_cost, cost_price."
+        }
+      }
+    },
+    "timesheets": {
+      "title": "Rosters or timesheets",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "staff_id",
+        "start",
+        "end"
+      ],
+      "properties": {
+        "staff_id": {
+          "type": "string",
+          "description": "Payroll or staff number. No names needed. Also recognised as: employee_id, emp_id, staff_no, payroll_id, employee_number."
+        },
+        "role": {
+          "type": "string",
+          "description": "Barista, kitchen, floor, bar, dishes, manager. Also recognised as: position, area, department, team, job."
+        },
+        "start": {
+          "type": "string",
+          "description": "Shift start (rostered or clocked). Also recognised as: start_time, clock_in, shift_start, in, time_in."
+        },
+        "end": {
+          "type": "string",
+          "description": "Shift end. Also recognised as: end_time, clock_out, shift_end, out, time_out, finish."
+        },
+        "break_minutes": {
+          "type": "number",
+          "description": "Unpaid break minutes. Also recognised as: break, breaks, unpaid_break, break_mins."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Hourly rate excl. on-costs. If missing, $27 an hour is assumed and labelled. Also recognised as: hourly_rate, pay_rate, wage, rate_per_hour."
+        }
+      }
+    },
+    "invoices": {
+      "title": "Supplier invoices",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invoice_date",
+        "amount_ex_gst"
+      ],
+      "properties": {
+        "invoice_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Invoice date. Also recognised as: date, inv_date, document_date, issued."
+        },
+        "supplier": {
+          "type": "string",
+          "description": "Supplier name (a business, not a person). Also recognised as: vendor, supplier_name, from, contact."
+        },
+        "category": {
+          "type": "string",
+          "description": "Account or category. Rent, power, insurance and similar are excluded from cost of goods. Also recognised as: account, type, group, gl_account, expense_type."
+        },
+        "amount_ex_gst": {
+          "type": "number",
+          "description": "Invoice amount excl. GST. Also recognised as: amount, net, subtotal, total_ex_gst, excl_gst, amount_excl_gst, value."
+        }
+      }
+    },
+    "waste_log": {
+      "title": "Waste log",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "item"
+      ],
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date logged. Also recognised as: logged, day, waste_date."
+        },
+        "item": {
+          "type": "string",
+          "description": "What was thrown away. Also recognised as: item_name, product, description."
+        },
+        "qty": {
+          "type": "number",
+          "description": "Units on the line. Also recognised as: quantity, units, portions."
+        },
+        "kg": {
+          "type": "number",
+          "description": "Weight, if weighed. Also recognised as: weight, weight_kg, kgs."
+        },
+        "cost": {
+          "type": "number",
+          "description": "Cost of what was thrown away, excl. GST. Also recognised as: value, cost_value, amount."
+        },
+        "reason": {
+          "type": "string",
+          "description": "For example: unsold at close, spoiled, plate waste. Also recognised as: why, cause, type."
+        }
+      }
+    }
+  }
+}

@@ -5,10 +5,11 @@
 try{document.documentElement.setAttribute("data-theme","light")}catch(e){}
 // each machine is a small app with its own colour, grouped by subject
 const MID=(()=>{try{return (location.pathname.split("/").pop()||"").replace(/\.html?$/,"")}catch(e){return ""}})();
-const SUBJ={science:"#2F8FD8",biochem:"#12A386",maths:"#7B61FF",english:"#F2603F",social:"#2FA65A",digital:"#D9468F"};
+const SUBJ={science:"#2F8FD8",biochem:"#12A386",maths:"#7B61FF",english:"#F2603F",social:"#2FA65A",digital:"#D9468F",tech:"#D98A1F"};
 const MSUB={shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
-  read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital"};
+  read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
+  vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
 const accentFor=id=>SUBJ[MSUB[id]]||SUBJ.science;
 // one line icon per machine (24x24, drawn with currentColor), used for the app icon here and the tiles on the home page
 const G=(d,extra)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra||""}</svg>`;
@@ -36,7 +37,12 @@ const GLYPH={
   data:G(`<path d="M3.5 20.5V11M8 20.5V14M3.5 20.5h9"/><circle cx="15" cy="9" r="5"/><path d="m18.6 12.6 3 3M13 10.5V9M15 10.5V7M17 10.5V8.5"/>`),
   text:G(`<path d="M3.5 4.5h11M9 4.5v15"/><path d="M14.5 11.5h6M14.5 15.5h6M14.5 19.5h4"/>`),
   materials:G(`<path d="M12 2.5 20.5 7.3v9.4L12 21.5l-8.5-4.8V7.3z"/><path d="M12 12l8.5-4.7M12 12v9.5M12 12 3.5 7.3"/>`),
-  claims:G(`<circle cx="10.5" cy="10.5" r="7.5"/><path d="m7.3 10.6 2.3 2.3 4.4-4.6M16 16l5.5 5.5"/>`)
+  claims:G(`<circle cx="10.5" cy="10.5" r="7.5"/><path d="m7.3 10.6 2.3 2.3 4.4-4.6M16 16l5.5 5.5"/>`),
+  vend:G(`<rect x="4" y="2.5" width="16" height="19" rx="2"/><rect x="7" y="5.5" width="7" height="9" rx="1"/><path d="M16.5 6.5v2M16.5 11v.5M7 18h7"/><circle cx="10.5" cy="9.5" r="1.3" fill="currentColor"/>`),
+  pinball:G(`<path d="M5 3.5h14a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M7 20.5 11 16M17 20.5 13 16"/><circle cx="9" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15" cy="7.5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.3"/>`),
+  phone:G(`<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12.8 7.5 10.5 12h3l-2.3 4.5M10.5 5h3"/>`),
+  queue:G(`<circle cx="5" cy="7" r="2.2"/><circle cx="12" cy="7" r="2.2"/><circle cx="19" cy="7" r="2.2"/><path d="M2.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M9.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M16.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M4 20.5h16"/>`),
+  plan:G(`<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 12h7v9M10 12V3M10 7h4M14 12h7M17 12v4"/>`)
 };
 const glyph=id=>GLYPH[id]||GLYPH.energy;
 const ICO={
@@ -77,7 +83,7 @@ function sfx(name){if(muted)return;try{(SFX[name]||SFX.pop)()}catch(e){}}
 function setMuted(m){muted=m;try{localStorage.setItem("studysound",m?"off":"on")}catch(e){}}
 const calm=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}};
 // ---- a small celebration when a challenge is passed
-function burst(el){if(!el||calm())return;const r=el.getBoundingClientRect(),cols=["#FFD84D","#F2B33D","#7FD8B8","#492B3E","#FFFFFF","#E8664A"];
+function burst(el){if(!el||calm())return;const r=el.getBoundingClientRect(),cols=["#F7E7A6","#F3B8C8","#BFE8D6","#D9CBF2","#BFDDF5","#F9D2B8"];
   for(let i=0;i<26;i++){const p=document.createElement("i");p.className="kconf";const a=Math.random()*Math.PI*2,v=60+Math.random()*90;
     p.style.cssText=`left:${r.left+r.width*0.85}px;top:${r.top+r.height/2}px;background:${cols[i%cols.length]};--dx:${Math.cos(a)*v}px;--dy:${Math.sin(a)*v-40}px;--r:${Math.random()*540-270}deg`;
     document.body.appendChild(p);setTimeout(()=>p.remove(),1100)}}
@@ -87,7 +93,7 @@ function burst(el){if(!el||calm())return;const r=el.getBoundingClientRect(),cols
    sports-style mark in plain inline SVG: a plum circle with a sun ring, a thick plum outline and two or three tones
    per colour, so he stays crisp at any size with no image files. His coat, collar, gear, place and name are all
    drawn from the look; moods (happy on a pass, think while you work or after a miss) change the face. */
-const AL_INK="#240B21",AL_SUN="#FFD84D";
+const AL_INK="#240B21",AL_SUN="#F7E7A6";// butter pastel: used for the little scene suns and gear accents (no gold ring or yellow tag anywhere)
 const COATS={
   blacktan: {label:"Black and tan",base:"#2B2227",dark:"#150F13",light:"#4B3C45",sheen:"#7A5236",edge:"#8E6A4A",tan:"#C9833F",tanDark:"#9E5F2A",points:true},
   red:      {label:"Red",base:"#B4562B",dark:"#85381A",light:"#D27A46",sheen:"#E39A5E",edge:"#E8A66E",tan:"#D9894F",tanDark:"#B06A36",points:false},
@@ -95,7 +101,7 @@ const COATS={
   dapple:   {label:"Dapple",base:"#33292E",dark:"#1B1418",light:"#54454D",sheen:"#8A7E84",edge:"#A79CA2",tan:"#C9833F",tanDark:"#9E5F2A",points:true,patch:"#A79CA2"},
   cream:    {label:"Cream",base:"#E3C08B",dark:"#BF9863",light:"#F3DDB4",sheen:"#FBEBCB",edge:"#FFF6E2",tan:"#EED3A3",tanDark:"#CFA974",points:false}
 };
-const COLLARS=[["#3BB28F","Mint"],["#FFD84D","Sunny"],["#492B3E","Plum"],["#E8664A","Coral"],["#4FA3D9","Sky"],["#F4E9D8","Oat"]];
+const COLLARS=[["#3BB28F","Mint"],["#F7E7A6","Butter"],["#492B3E","Plum"],["#E8664A","Coral"],["#4FA3D9","Sky"],["#F4E9D8","Oat"]];
 const BG={workshop:{label:"Workshop"},beach:{label:"Beach"},redwood:{label:"Redwood trail"},records:{label:"Record shop"},jetty:{label:"Jetty at sunset"}};
 // crops of the 512 badge for the den thumbnails: [x, y, w, h] of the viewBox
 const BOX={full:[0,0,512,512],bust:[118,88,276,276],neck:[90,318,332,186],prop:[0,0,512,512],scene:[0,0,512,512]};
@@ -119,7 +125,7 @@ const AL_PLACES={
     <g fill="#5E2A1E"><path d="M60,0 L72,0 L76,420 L48,420Z"/><path d="M400,0 L412,0 L414,420 L382,420Z"/><path d="M216,0 L224,0 L224,300 L210,300Z"/></g>
     <g fill="#4E8F58"><path d="M120,60 C150,20 200,30 226,70 L130,96Z"/><path d="M300,20 C340,-10 390,10 404,60 L300,80Z"/><path d="M0,120 C30,70 90,80 110,130 L0,150Z"/><path d="M440,110 C470,70 512,80 512,130 L450,150Z"/></g>
     <path d="M0,420 C180,400 340,400 512,420 L512,512 L0,512Z" fill="#A07A58"/><path d="M0,470 C170,450 350,450 512,470" stroke="#8C6646" stroke-width="7" fill="none"/>`,
-  records:()=>{const cols=["#E8664A","#FFD84D","#3BB28F","#4FA3D9","#F4E9D8","#8E5BA6"];let s="";
+  records:()=>{const cols=["#E8664A","#F7E7A6","#3BB28F","#4FA3D9","#F4E9D8","#8E5BA6"];let s="";
     [[40,80],[40,170],[40,260]].forEach(([x,y],r)=>{s+=`<rect x="${x-10}" y="${y+52}" width="140" height="8" rx="3" fill="#C9A77A"/>`;for(let i=0;i<6;i++)s+=`<rect x="${x+i*22}" y="${y+(i%2?6:0)}" width="20" height="52" rx="2" fill="${cols[(i+r)%6]}"/>`});
     return `<rect width="512" height="512" fill="#5A2E4C"/><rect width="512" height="40" fill="#3A1A32"/>${s}
     <circle cx="400" cy="150" r="80" fill="#1A1016"/><circle cx="400" cy="150" r="60" fill="none" stroke="#2E242A" stroke-width="3"/><circle cx="400" cy="150" r="40" fill="none" stroke="#2E242A" stroke-width="3"/><circle cx="400" cy="150" r="24" fill="#E8664A"/><circle cx="400" cy="150" r="4" fill="#1A1016"/>
@@ -130,27 +136,25 @@ const AL_PLACES={
     <path d="M0,512 L120,340 L392,340 L512,512Z" fill="#7B4A3A"/><path d="M60,470 L452,470 M90,430 L422,430 M118,392 L394,392 M140,360 L372,360" stroke="#5E3428" stroke-width="7"/>
     <path d="M130,340 v-70 M382,340 v-70" stroke="#4A2A22" stroke-width="12" stroke-linecap="round"/>`
 };
-// ---- the gold bone tag, with the chosen name (letters are hidden below 64px by kit.css)
-function alBone(name,cx,cy){
-  const nm=String(name||"").trim().slice(0,16).toUpperCase()||"ALLEN",n=nm.length,MAXW=150,fs=Math.min(24,MAXW/(n*0.66)),tw=n*0.66*fs;
-  const B=Math.max(70,Math.min(MAXW,tw)+16),H=34,r=15,ky=H/2-4,x=B/2;
-  const sh=`<rect x="${-x}" y="${-H/2}" width="${B}" height="${H}" rx="6"/><circle cx="${-x}" cy="${-ky}" r="${r}"/><circle cx="${-x}" cy="${ky}" r="${r}"/><circle cx="${x}" cy="${-ky}" r="${r}"/><circle cx="${x}" cy="${ky}" r="${r}"/>`;
-  return `<g transform="translate(${cx},${cy})"><circle cx="0" cy="${-H/2-14}" r="8" fill="none" stroke="#B88A1C" stroke-width="5"/>
-    <g fill="${AL_INK}" stroke="${AL_INK}" stroke-width="10" stroke-linejoin="round">${sh}</g><g fill="#F3BF33">${sh}</g>
-    <path d="M${-x+4},${-H/2+5} H${x-4}" stroke="#FFE38E" stroke-width="5" stroke-linecap="round" opacity=".8"/>
-    <text class="al-tx" x="0" y="${(fs*0.36).toFixed(1)}" text-anchor="middle" font-family="Fredoka,'Instrument Sans',system-ui,sans-serif" font-weight="700" font-size="${fs.toFixed(1)}" fill="${AL_INK}"${tw>MAXW?` textLength="${MAXW}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(nm)}</text></g>`}
+// ---- the name tag: a small lavender pill with the name in ink (letters hidden below 64px by kit.css)
+function alPill(name,cx,cy){const nm=String(name||"").trim().slice(0,16)||"Allen",fs=Math.min(22,120/(nm.length*0.58)),w=Math.max(60,nm.length*0.58*fs+26);
+  return `<g transform="translate(${cx},${cy})"><rect x="${-w/2}" y="-17" width="${w}" height="34" rx="17" fill="#D9CBF2" stroke="${AL_INK}" stroke-width="4"/><text class="al-tx" x="0" y="${(fs*0.36).toFixed(1)}" text-anchor="middle" font-family="Fredoka,'Instrument Sans',system-ui,sans-serif" font-weight="600" font-size="${fs.toFixed(1)}" fill="${AL_INK}">${esc(nm)}</text></g>`}
 let alUid=0;
 // ---- the mark itself. look: {coat, collar, gear:{head,eyes,neck,prop}, bg, name}; opt: {mood, scene}
-function alMark(look,opt){const c=COATS[look.coat]||COATS.blacktan,col=hexOk(look.collar)?look.collar:COLLARS[0][0],g=look.gear||{},id="al"+(++alUid);
+// The default look (Kate's pick, 25 Oct 2026): the pastel style on a mint disc. No sun ring, no gold tag, a thinner outline, no sheen
+// strokes, tan softened toward peach. opt.disc picks another pastel ("none" for no disc); opt.style "badge" is the old plum badge, kept
+// only for comparison (it too has lost the ring and the yellow tag). With opt.scene the unlocked place fills the circle instead of the disc.
+const PASTEL_DISC={mint:"#BFE8D6",blush:"#F3B8C8",sky:"#BFDDF5",lavender:"#D9CBF2",butter:"#F7E7A6",peach:"#F9D2B8"};
+function alMark(look,opt){const P=opt.style!=="badge";const disc=opt.disc||"mint";let c=COATS[look.coat]||COATS.blacktan;if(P&&c.points)c=Object.assign({},c,{tan:"#E8B28C",tanDark:"#C98B63"});const col=hexOk(look.collar)?look.collar:COLLARS[0][0],g=look.gear||{},id="al"+(++alUid);
   const m=opt.mood==="puzzled"?"think":(opt.mood==="happy"||opt.mood==="think"?opt.mood:"");
-  const S=`stroke="${AL_INK}" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"`;
+  const S=`stroke="${AL_INK}" stroke-width="${P?6:10}" stroke-linejoin="round" stroke-linecap="round"`;
   const tilt=m==="think"?8:0,earUp=m==="happy"?-5:0;
   const HEAD="M256,112 C312,112 352,142 354,192 C356,232 340,254 324,274 C312,300 312,332 300,354 C290,372 274,382 256,382 C238,382 222,372 212,354 C200,332 200,300 188,274 C172,254 156,232 158,192 C160,142 200,112 256,112Z";
   const EAR="M200,150 C156,140 122,172 110,220 C104,244 98,262 92,284 C86,306 90,318 84,338 C78,358 72,374 70,396 C68,422 74,438 86,446 C96,452 106,448 112,442 C118,458 136,462 146,450 C154,464 174,464 182,450 C192,458 208,452 210,436 C214,390 212,340 206,296 C200,246 200,196 200,150Z";
   const gearOk=(slot,id)=>g[slot]===id&&ITEMS.some(it=>it.id===id&&it.slot===slot);
   let o=`<svg viewBox="${(opt.box||BOX.full).join(" ")}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><defs>
     <clipPath id="${id}k"><circle cx="256" cy="256" r="226"/></clipPath><clipPath id="${id}h"><path d="${HEAD}"/></clipPath><clipPath id="${id}e"><path d="${EAR}"/></clipPath></defs>
-    <circle cx="256" cy="256" r="246" fill="${AL_INK}"/><g clip-path="url(#${id}k)">${(opt.scene&&AL_PLACES[look.bg]||AL_PLACES.plain)()}
+    ${P?(!opt.scene&&PASTEL_DISC[disc]?`<circle cx="256" cy="256" r="236" fill="${PASTEL_DISC[disc]}"/>`:""):`<circle cx="256" cy="256" r="246" fill="${AL_INK}"/>`}<g clip-path="url(#${id}k)">${P&&!opt.scene?"":(opt.scene&&AL_PLACES[look.bg]||AL_PLACES.plain)()}
     <g class="ab-dog"><g transform="translate(256,236) scale(.9) translate(-256,-236)">`;
   // body and chest
   o+=`<path d="M104,560 C112,470 156,404 210,376 L302,376 C356,404 400,470 408,560Z" fill="${c.base}" ${S}/>
@@ -159,12 +163,13 @@ function alMark(look,opt){const c=COATS[look.coat]||COATS.blacktan,col=hexOk(loo
   if(c.patch)o+=`<circle cx="160" cy="500" r="14" fill="${c.patch}"/><circle cx="350" cy="480" r="10" fill="${c.patch}"/>`;
   // neck gear sits over the chest
   if(gearOk("neck","lifejacket"))o+=`<path d="M170,424 C200,444 312,444 342,424 L356,560 L156,560Z" fill="#F08A3C" ${S}/><path d="M256,440 V560" stroke="${AL_INK}" stroke-width="8"/><path d="M184,462 H328 M190,498 H322" stroke="#1F3A5A" stroke-width="12"/><rect x="236" y="450" width="40" height="22" rx="4" fill="#1F3A5A" stroke="${AL_INK}" stroke-width="5"/>`;
+  if(gearOk("neck","hivis"))o+=`<path d="M176,420 C206,442 306,442 336,420 L350,560 L162,560Z" fill="#D9F03A" ${S}/><path d="M256,436 V560" stroke="${AL_INK}" stroke-width="6"/><path d="M186,478 H326 M192,512 H320" stroke="#C9CDD6" stroke-width="12"/><path d="M186,478 H326 M192,512 H320" stroke="#fff" stroke-opacity=".6" stroke-width="4"/>`;
   // collar
   o+=`<path d="M190,384 C226,404 286,404 322,384 L328,416 C290,440 222,440 184,416Z" fill="${col}" ${S}/><path d="M194,394 C228,412 284,412 318,394" stroke="#fff" stroke-opacity=".25" stroke-width="5" fill="none"/>`;
   if(gearOk("neck","bandana"))o+=`<path d="M176,414 C222,442 290,442 336,414 L256,492Z" fill="#E8664A" ${S}/><g fill="#FFF1B8"><circle cx="236" cy="438" r="4"/><circle cx="276" cy="438" r="4"/><circle cx="256" cy="462" r="4"/></g>`;
   o+=`<g transform="rotate(${tilt} 256 330)">`;
   // ears: long wavy locks with a lighter edge so they read apart from the body
-  const ear=flip=>{const t=flip?`translate(512,0) scale(-1,1) `:"";return `<g transform="${t}rotate(${earUp} 200 160)"><path d="${EAR}" fill="${c.base}" ${S}/><g clip-path="url(#${id}e)">
+  const ear=flip=>{const t=flip?`translate(512,0) scale(-1,1) `:"";if(P)return `<g transform="${t}rotate(${earUp} 200 160)"><path d="${EAR}" fill="${c.base}" ${S}/><g clip-path="url(#${id}e)"><path d="M128,170 C108,230 98,300 86,360 C80,392 76,420 84,440 L40,450 L40,150Z" fill="${c.dark}" opacity=".45"/></g></g>`;return `<g transform="${t}rotate(${earUp} 200 160)"><path d="${EAR}" fill="${c.base}" ${S}/><g clip-path="url(#${id}e)">
       <path d="M128,170 C108,230 98,300 86,360 C80,392 76,420 84,440 L40,450 L40,150Z" fill="${c.dark}" opacity=".55"/>
       <path d="M200,150 C204,240 206,340 204,450 L224,450 L224,150Z" fill="${c.dark}" opacity=".5"/>
       <path d="M168,172 C140,212 138,252 124,292 C112,330 122,362 108,402 C102,420 100,434 104,448" stroke="${c.dark}" stroke-width="7" fill="none" stroke-linecap="round"/>
@@ -176,8 +181,8 @@ function alMark(look,opt){const c=COATS[look.coat]||COATS.blacktan,col=hexOk(loo
             ${c.patch?`<ellipse cx="150" cy="300" rx="14" ry="22" fill="${c.patch}"/>`:""}</g></g>`};
   o+=ear(false)+ear(true);
   // head
-  o+=`<path d="${HEAD}" fill="${c.base}" ${S}/><g clip-path="url(#${id}h)">
-    <path d="M150,180 C160,240 180,270 196,290 L150,300Z" fill="${c.dark}" opacity=".55"/><path d="M362,180 C352,240 332,270 316,290 L362,300Z" fill="${c.dark}" opacity=".55"/>
+  o+=`<path d="${HEAD}" fill="${c.base}" ${S}/><g clip-path="url(#${id}h)">`;
+  if(!P)o+=`<path d="M150,180 C160,240 180,270 196,290 L150,300Z" fill="${c.dark}" opacity=".55"/><path d="M362,180 C352,240 332,270 316,290 L362,300Z" fill="${c.dark}" opacity=".55"/>
     <path d="M224,132 C240,124 262,122 278,126" stroke="${c.light}" stroke-width="6" fill="none" stroke-linecap="round" opacity=".8"/><path d="M290,134 C300,138 310,146 316,156" stroke="${c.light}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".6"/>
     <path d="M256,150 C250,190 248,240 252,290" stroke="${c.light}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".7"/>`;
   if(c.points)o+=`<path d="M182,262 C198,250 222,254 234,272 C240,288 238,304 244,316 L268,316 C274,304 272,288 278,272 C290,254 314,250 330,262 C320,304 310,352 292,374 C278,388 234,388 220,374 C202,352 192,304 182,262Z" fill="${c.tan}"/>
@@ -218,33 +223,34 @@ function alMark(look,opt){const c=COATS[look.coat]||COATS.blacktan,col=hexOk(loo
   if(gearOk("prop","rod"))o+=`<path d="M330,520 L462,150" stroke="${AL_INK}" stroke-width="12" stroke-linecap="round"/><path d="M330,520 L462,150" stroke="#B98A5A" stroke-width="5" stroke-linecap="round"/><path d="M462,150 C476,190 474,230 456,260" stroke="#E9E1D0" stroke-width="3" fill="none"/><circle cx="366" cy="440" r="16" fill="#3B3F46" ${S}/><circle cx="366" cy="440" r="5" fill="#B9BEC6"/>`;
   if(gearOk("prop","plush"))o+=`<g transform="translate(124,440) rotate(-10)"><ellipse cx="0" cy="0" rx="40" ry="30" fill="#8C6A3E" ${S}/><circle cx="-26" cy="-22" r="16" fill="#8C6A3E" ${S}/><path d="M-40,-24 L-84,-14" stroke="${AL_INK}" stroke-width="8" stroke-linecap="round"/><circle cx="-30" cy="-26" r="3" fill="${AL_INK}"/><path d="M-10,28 v14 M14,28 v14" stroke="${AL_INK}" stroke-width="6" stroke-linecap="round"/></g>`;
   if(gearOk("prop","map"))o+=`<g transform="translate(398,430) rotate(10)"><path d="M-44,-30 L-14,-38 L14,-30 L44,-38 L44,30 L14,38 L-14,30 L-44,38Z" fill="#F4E9D8" ${S}/><path d="M-14,-38 V30 M14,-30 V38" stroke="#D9C7B5" stroke-width="3"/><path d="M-34,16 C-20,0 -4,14 10,-6 C20,-18 30,-14 36,-24" stroke="#3BB28F" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="7 5"/><circle cx="24" cy="12" r="10" fill="#fff" stroke="${AL_INK}" stroke-width="3"/><path d="M24,4 L28,12 L24,20 L20,12Z" fill="#E8664A"/></g>`;
-  o+=alBone(look.name,256,464);
-  o+=`</g></g></g><circle cx="256" cy="256" r="230" fill="none" stroke="${AL_SUN}" stroke-width="10"/></svg>`;
+  o+=alPill(look.name,256,466);
+  o+=`</g></g></g></svg>`;
   return o}
-function allenSVG(look,opt){look=look||{};opt=opt||{};   // the contract: A.svg(look, {mood, box, scene, label}) -> markup
+function allenSVG(look,opt){look=look||{};opt=opt||{};   // the contract: A.svg(look, {mood, box, scene, label, style, disc}) -> markup; default style is pastel on a mint disc
   const lab=opt.label?`role="img" aria-label="${esc(opt.label)}"`:`aria-hidden="true"`;
   const mood=/^(happy|puzzled|think)$/.test(opt.mood||"")?" m-"+opt.mood:"";
   const box=opt.scene?BOX.scene:(BOX[opt.box]||BOX.full);
-  return `<span class="allen av${opt.scene?" scene":""}${mood}" ${lab} style="aspect-ratio:${box[2]}/${box[3]}">${alMark(look,{mood:opt.mood,scene:!!opt.scene,box})}</span>`}
+  return `<span class="allen av${opt.scene?" scene":""}${mood}" ${lab} style="aspect-ratio:${box[2]}/${box[3]}">${alMark(look,{mood:opt.mood,scene:!!opt.scene,box,style:opt.style,disc:opt.disc})}</span>`}
 // ---- his look, saved on this device (works without storage too)
 const AL_KEY="allen",AL_DEFAULT={name:"Allen",coat:"blacktan",collar:"#3BB28F",gear:{head:"",eyes:"",neck:"",prop:""},bg:"workshop",minimal:false,seen:[]};
 let alMem=null;
 function alLoad(){let v=alMem;try{const raw=localStorage.getItem(AL_KEY);if(raw)v=JSON.parse(raw)}catch(e){}v=v&&typeof v==="object"?v:{};
   return {...AL_DEFAULT,...v,gear:{...AL_DEFAULT.gear,...(v.gear||{})},seen:Array.isArray(v.seen)?v.seen:[]}}
 function alSave(look){alMem=look;try{localStorage.setItem(AL_KEY,JSON.stringify(look))}catch(e){}}
-const MNAME={bike:"the downhill machine",vinyl:"the vinyl machine",fish:"the fishing machine",claw:"the claw machine",particles:"the particle machine",atoms:"the atom machine",energy:"the energy machine",read:"the reading machine",maps:"the map machine",materials:"the materials lab",text:"the text studio"};
+const MNAME={bike:"the downhill machine",vinyl:"the vinyl machine",fish:"the fishing machine",claw:"the claw machine",particles:"the particle machine",atoms:"the atom machine",energy:"the energy machine",read:"the reading machine",maps:"the map machine",materials:"the materials lab",text:"the text studio",vend:"the vending machine",pinball:"the pinball table",phone:"the phone machine",queue:"the queue machine",plan:"the floor-plan studio"};
 const ITEMS=[
   {id:"helmet",slot:"head",label:"Downhill helmet",m:["bike"]},
   {id:"headphones",slot:"head",label:"Headphones",m:["vinyl"]},
   {id:"buckethat",slot:"head",label:"Bucket hat",m:["fish"]},
   {id:"goggles",slot:"eyes",label:"Downhill goggles",m:["bike"]},
-  {id:"labgoggles",slot:"eyes",label:"Lab goggles",m:["particles","atoms","energy","materials"]},
+  {id:"labgoggles",slot:"eyes",label:"Lab goggles",m:["particles","atoms","energy","materials","vend","phone","pinball"]},
   {id:"glasses",slot:"eyes",label:"Reading glasses",m:["read","text"]},
   {id:"bandana",slot:"neck",label:"Bandana",machines:3},
   {id:"lifejacket",slot:"neck",label:"Life jacket",passes:10},
+  {id:"hivis",slot:"neck",label:"Hi-vis vest",m:["queue","plan"]},
   {id:"rod",slot:"prop",label:"Fishing rod",m:["fish"]},
   {id:"plush",slot:"prop",label:"Kiwi plush",m:["claw"]},
-  {id:"map",slot:"prop",label:"Map and compass",m:["maps"]}
+  {id:"map",slot:"prop",label:"Map and compass",m:["maps","plan"]}
 ];
 const BGS=[{id:"workshop",days:0},{id:"beach",days:3},{id:"redwood",days:7},{id:"records",days:10},{id:"jetty",days:14}];
 const orList=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" or "+a[a.length-1];
@@ -313,6 +319,8 @@ function mount(cfg){logStudy("open");
   const app=document.getElementById("app");
   const mid=cfg.id||MID;
   try{document.documentElement.style.setProperty("--acc",cfg.accent||accentFor(mid))}catch(e){}
+  // the machine's case tint (one pastel per machine, see refs/figure/README.md): washes the bench canvases and keys the step chip
+  try{const tint=cfg.caseTint&&(FIG_PALETTE.case[cfg.caseTint]||cfg.caseTint);if(tint)document.documentElement.style.setProperty("--case",tint)}catch(e){}
   const exam=cfg.badge?.exam?daysUntil(cfg.badge.exam):null;
   const examTxt=cfg.badge?`${esc(cfg.badge.label)}${cfg.badge.examText?` · exam <b>${esc(cfg.badge.examText)}</b>`:""}${exam!==null&&exam>0?`<span class="dd">${exam} day${exam===1?"":"s"}</span>`:""}`:"";
   const home=cfg.home||"../index.html";
@@ -433,9 +441,46 @@ function mount(cfg){logStudy("open");
   window.addEventListener("hashchange",()=>{const k=(location.hash||"").slice(1),j=cfg.steps.findIndex(x=>x.k===k);if(j>=0&&j!==step)setStep(j)});
   return api;
 }
+
+/* ================= figure materials =================
+   One recipe for every figure on the bench, 3D or drawn, so the machines read as one family (the "Colorfigures" look:
+   soft matte pastels, glass-like body, metal that reads as metal, crisp silhouettes, a calm paper-white ground).
+   StudyKit.figMat(kind, colour) → SVG styling {fill, stroke, hi, shade, attrs} for a drawing;
+   StudyKit.figMat.three(THREE, kind, colour, opts) → a three.js material with the same recipe (rim darkening for firm edges). */
+const FIG={
+  metal:  {rough:0.32,metal:0.9, rim:0.6, colour:"#CBD3DD",strokeK:0.42,hiK:0.6, shadeK:0.28},
+  plastic:{rough:0.45,metal:0.02,rim:0.5, colour:"#CFECDD",strokeK:0.45,hiK:0.4, shadeK:0.22},
+  glass:  {rough:0.08,metal:0,   rim:0,   colour:"#BFE8D6",strokeK:0.3, hiK:0.6, shadeK:0.1, transmission:0.92,opacity:0.16},
+  rubber: {rough:0.92,metal:0,   rim:0.6, colour:"#3C4557",strokeK:0.5, hiK:0.25,shadeK:0.3},
+  painted:{rough:0.3, metal:0.05,rim:0.55,colour:"#F4A6B8",strokeK:0.45,hiK:0.5, shadeK:0.26},
+  wood:   {rough:0.7, metal:0,   rim:0.35,colour:"#C9A072",strokeK:0.45,hiK:0.35,shadeK:0.25}};
+// the settled palette (from Kate's two reference figures, see refs/figure/README.md): frosted pastel acrylic cases, saturated pastel products,
+// copper and brushed steel for the works, pale-mint plastic housings, a navy drop shadow on paper white
+const FIG_PALETTE={paper:"#F7F3EC",shadow:"#1B2452",case:{blush:"#F3B8C8",mint:"#BFE8D6",lavender:"#D9CBF2",butter:"#F7E7A6",sky:"#BFDDF5",peach:"#F9D2B8"},
+  product:{strawberry:"#E8688A",blueberry:"#6FA3E8",lime:"#96C94E",butter:"#F2C83C",peach:"#F49A5E"},copper:"#C97A4A",steel:"#CBD3DD",steelDark:"#8F9BAA",mintPlastic:"#CFECDD",pcb:"#5FA87A",
+  pill:{bg:"#FFFFFF",ink:"#4E4868",line:"#DCD6EA"}};
+const hex2=h=>{const m=String(h).replace("#","");const n=parseInt(m.length===3?m.split("").map(c=>c+c).join(""):m,16);return [(n>>16)&255,(n>>8)&255,n&255]};
+const rgb2hex=(r,g,b)=>"#"+[r,g,b].map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,"0")).join("");
+const mixTo=(h,k,to)=>{const [r,g,b]=hex2(h);return rgb2hex(r+(to-r)*k,g+(to-g)*k,b+(to-b)*k)};
+function figMat(kind,colour,opts){const K=FIG[kind]||FIG.painted;const c=colour||K.colour;opts=opts||{};
+  const stroke=mixTo(c,K.strokeK,0),hi=mixTo(c,K.hiK,255),shade=mixTo(c,K.shadeK,0);
+  const o={kind,fill:c,stroke,hi,shade,opacity:kind==="glass"?(opts.opacity!=null?opts.opacity:0.35):1,
+    attrs:`fill="${c}" stroke="${stroke}" stroke-width="${opts.sw||1.4}" stroke-linejoin="round"${kind==="glass"?` fill-opacity="${opts.opacity!=null?opts.opacity:0.35}"`:""}`};
+  // a highlight streak for metal and glass, a soft sheen for painted: callers draw it with o.hi
+  return o}
+figMat.kinds=Object.keys(FIG);figMat.palette=FIG_PALETTE;
+figMat.three=function(THREE,kind,colour,opts){const K=FIG[kind]||FIG.painted;opts=opts||{};const c=colour||K.colour;let m;
+  if(kind==="glass"){m=new THREE.MeshPhysicalMaterial({color:c,roughness:K.rough,metalness:0,transmission:opts.transmission!=null?opts.transmission:K.transmission,transparent:true,opacity:opts.opacity!=null?opts.opacity:K.opacity,clearcoat:0.6,clearcoatRoughness:0.2,depthWrite:false,side:THREE.DoubleSide})}
+  else{m=new THREE.MeshStandardMaterial({color:c,roughness:opts.rough!=null?opts.rough:K.rough,metalness:opts.metal!=null?opts.metal:K.metal,envMapIntensity:kind==="metal"?1.4:1});
+    if(opts.emissive){m.emissive=new THREE.Color(opts.emissive);m.emissiveIntensity=opts.emissiveIntensity||0.5}
+    // rim darkening: a view-dependent edge tone that firms up every silhouette without an outline pass
+    const rim=opts.rim!=null?opts.rim:K.rim;if(rim>0){m.defines=Object.assign(m.defines||{},{FIG_RIM:rim.toFixed(2)});
+      m.onBeforeCompile=figRim}}
+  m.userData.fig=kind;return m};
+function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#include <dithering_fragment>","#include <dithering_fragment>\n{float figRim=pow(1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition))),2.6);gl_FragColor.rgb*=1.0-FIG_RIM*figRim;}")}
 // the lockup: a hex-socket mark, "assembly", and "by assembl"
 const LOCKUP=`<span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span>`;
 // for machines with their own shell: StudyKit.companion(el) puts Allen in el; call .react(true|false) after a check (log the pass first)
 function companion(el){return allenCorner(null,{steps:[]},el||document.body)}
-window.StudyKit={mount,glyph,accentFor,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA};
+window.StudyKit={mount,glyph,accentFor,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat};
 })();
