@@ -79,6 +79,16 @@ const STEPS=[
 
 // ---------- drawing helpers
 const R=(cx,cy,r,a)=>[cx+r*Math.cos(a*D),cy-r*Math.sin(a*D)];
+// bench figure look (StudyKit.fig): paper floor, painted spheres with a lit side, a sky-tint acrylic orrery plate, label pills
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.sky,TD=F.deep(TINT),SUNC=PAL.product.butter,EARTHC=PAL.product.blueberry,MOONC="#E4E2DA",NIGHT="#1B2452";
+// a painted sphere: radial shading lit from the direction lit (screen degrees, y up); self:true for the Sun, which lights itself
+function sphere(id,cx,cy,r,col,o){o=o||{};const m=F.mat("painted",col),a=(o.lit!=null?o.lit:135)*D,fx=50+28*Math.cos(a),fy=50-28*Math.sin(a);
+  const g=o.self?`<radialGradient id="${id}" cx="50%" cy="50%" r="55%"><stop offset="0" stop-color="#FFF6D2"/><stop offset=".55" stop-color="${col}"/><stop offset="1" stop-color="${m.shade}"/></radialGradient>`
+    :`<radialGradient id="${id}" cx="${fx}%" cy="${fy}%" r="78%"><stop offset="0" stop-color="${m.hi}"/><stop offset=".5" stop-color="${col}"/><stop offset="1" stop-color="${m.shade}"/></radialGradient>`;
+  return `<defs>${g}</defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id})" stroke="${m.stroke}" stroke-width="${o.sw||1.1}"/>`}
+const spec=(cx,cy,r,lit)=>{const a=(lit!=null?lit:135)*D;return `<ellipse cx="${cx+r*.45*Math.cos(a)}" cy="${cy-r*.45*Math.sin(a)}" rx="${r*.22}" ry="${r*.14}" transform="rotate(${-lit+90} ${cx+r*.45*Math.cos(a)} ${cy-r*.45*Math.sin(a)})" fill="#fff" opacity=".55"/>`};
+// one soft navy shadow on the floor, falling to the lower right of a sphere
+const floorShadow=(cx,cy,r,op)=>`<ellipse cx="${cx+r*.55}" cy="${cy+r*.82}" rx="${r*1.15}" ry="${r*.36}" transform="rotate(10 ${cx+r*.55} ${cy+r*.82})" fill="${PAL.shadow}" opacity="${op||.16}"/>`;
 function moonDisc(cx,cy,r,age,south=true,cls=""){
   // lit fraction by terminator ellipse; waxing lit on left in the south
   const f=lit(age), wax=age<SYN/2, k=1-2*f, rx=Math.abs(k)*r;
@@ -87,8 +97,9 @@ function moonDisc(cx,cy,r,age,south=true,cls=""){
   const top=`${cx},${cy-r}`, bot=`${cx},${cy+r}`;
   const outer=`M${top} A${r},${r} 0 0,${sweepOuter} ${bot}`;
   const inner=`A${rx},${r} 0 0,${(k>0)?(sweepOuter?0:1):sweepOuter} ${top}`;
-  return `<g class="${cls}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--night)" stroke="var(--ink)" stroke-width="1"/>
-    <path d="${outer} ${inner}Z" fill="var(--moon)"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--ink)" stroke-width="1"/></g>`;
+  const id="skyMd"+Math.round(cx);
+  return `<g class="${cls}">${floorShadow(cx,cy,r,.13)}<defs><radialGradient id="${id}" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#FBF9F2"/><stop offset=".7" stop-color="${MOONC}"/><stop offset="1" stop-color="#BDBAB0"/></radialGradient></defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="#666D8E" stroke="#3A3F5C" stroke-width="1"/>
+    <path d="${outer} ${inner}Z" fill="url(#${id})"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#3A3F5C" stroke-width="1.2"/></g>`;
 }
 
 function drawOrrery(){
@@ -99,36 +110,42 @@ function drawOrrery(){
   const e=elong(t), s=CUR;
   const mA=sunDir+e, MR=big?64:48;
   const mx=ex+MR*Math.cos(mA*D), my=ey-MR*.55*Math.sin(mA*D)-moonLat(t)*(s.k==="eclipse"?2.2:0);
-  let o=`<rect width="${W}" height="${H}" fill="var(--chalk)"/>`;
+  let o=F.floor(W,H);
+  // the orrery plate: a frosted sky-tint acrylic disc on the paper floor, the orbit drawn on it as a clean diagram
+  const PR=OR+40,PRy=OR*K+26,TH=10;
+  o+=`<ellipse cx="${cx+38}" cy="${cy+30}" rx="${PR}" ry="${PRy}" fill="${PAL.shadow}" opacity=".1"/>`;
+  o+=`<path d="M${cx-PR},${cy} A${PR},${PRy} 0 0,0 ${cx+PR},${cy} v${TH} A${PR},${PRy} 0 0,1 ${cx-PR},${cy+TH}Z" fill="${TD}" fill-opacity=".38" stroke="${TD}" stroke-width="1.1"/>`;
+  o+=`<ellipse cx="${cx}" cy="${cy}" rx="${PR}" ry="${PRy}" fill="#DCEBF8" fill-opacity=".92" stroke="${TD}" stroke-width="1.3"/><ellipse cx="${cx}" cy="${cy}" rx="${PR-12}" ry="${PRy-6}" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.2"/>`;
+  o+=`<path d="M${cx-PR*.86},${cy-PRy*.5} A${PR},${PRy} 0 0,1 ${cx-PR*.3},${cy-PRy*.95}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2.4" stroke-linecap="round"/>`;
   // month ticks on orbit
   const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  o+=`<ellipse cx="${cx}" cy="${cy}" rx="${OR}" ry="${OR*K}" fill="none" stroke="var(--rose)" stroke-width="1" stroke-dasharray="2 4"/>`;
+  o+=`<ellipse cx="${cx}" cy="${cy}" rx="${OR}" ry="${OR*K}" fill="none" stroke="#5E7FA6" stroke-width="1.1" stroke-dasharray="2 4"/>`;
   months.forEach((m,i)=>{const lsm=360*((new Date(Date.UTC(2026,i,15))-Date.UTC(2026,0,1))/864e5+1-80)/365.25;const a=lsm+270;
     const [x1,y1]=[cx+(OR-5)*Math.cos(a*D),cy-(OR-5)*K*Math.sin(a*D)],[x2,y2]=[cx+(OR+5)*Math.cos(a*D),cy-(OR+5)*K*Math.sin(a*D)];
     const [tx,ty]=[cx+(OR+22)*Math.cos(a*D),cy-(OR*K+16)*Math.sin(a*D)];
-    o+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--rose)"/><text class="t-lab" x="${tx}" y="${ty+3}" text-anchor="middle">${m}</text>`});
+    o+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#5E7FA6"/><text class="t-lab" x="${tx}" y="${ty+3}" text-anchor="middle">${m}</text>`});
   // node line (eclipse step)
   if(s.k==="eclipse"){const na=nodeLon(t)+180+90;for(const sg of[1,-1]){const [x,y]=[cx+sg*(OR+8)*Math.cos(na*D),cy-sg*(OR+8)*K*Math.sin(na*D)];
     o+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--ink)" stroke-width=".8" stroke-dasharray="1 3"/>`}
     o+=`<text class="t-lab" x="16" y="${H-14}">dotted line: where the Moon's orbit crosses ours (eclipse seasons)</text>`}
   // sun
-  o+=`<circle cx="${cx}" cy="${cy}" r="44" fill="var(--sunglow)"/><circle cx="${cx}" cy="${cy}" r="27" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.2"/>
-      <text class="t-lab" x="${cx}" y="${cy+52}" text-anchor="middle">SUN</text>`;
+  o+=floorShadow(cx,cy,27,.14)+`<circle cx="${cx}" cy="${cy}" r="44" fill="var(--sunglow)"/>`+sphere("skySun",cx,cy,27,SUNC,{self:true,sw:1.2});
+  const sunPill=F.pill(cx,cy+40,"Sun",{anchor:"middle",size:9});
   // sunlight beam to earth
-  o+=`<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="var(--sun)" stroke-width="1" opacity=".55"/>`;
+  o+=`<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="${SUNC}" stroke-width="1.4" opacity=".7"/>`;
   // moon orbit
-  if(["phase","tide","eclipse","test"].includes(s.k))o+=`<ellipse cx="${ex}" cy="${ey}" rx="${MR}" ry="${MR*.55}" fill="none" stroke="var(--rose)" stroke-dasharray="1 3"/>`;
+  if(["phase","tide","eclipse","test"].includes(s.k))o+=`<ellipse cx="${ex}" cy="${ey}" rx="${MR}" ry="${MR*.55}" fill="none" stroke="#5E7FA6" stroke-dasharray="1 3"/>`;
   const behind=Math.sin(mA*D)>0; // moon behind earth (further from viewer)
   const moonSvg=()=>{if(!["phase","tide","eclipse","test"].includes(s.k))return"";const ang=Math.atan2(-(cy-my),cx-mx)/D;
-    return `<g><circle cx="${mx}" cy="${my}" r="${MRr}" fill="var(--night)" stroke="var(--ink)"/><path d="${halfDisc(mx,my,MRr,ang)}" fill="var(--moon)"/><circle cx="${mx}" cy="${my}" r="${MRr}" fill="none" stroke="var(--ink)"/></g>`};
+    return `<g>${floorShadow(mx,my,MRr,.14)}${sphere("skyMoon",mx,my,MRr,MOONC,{lit:ang})}<path d="${halfDisc(mx,my,MRr,ang+180)}" fill="${NIGHT}" opacity=".55"/><circle cx="${mx}" cy="${my}" r="${MRr}" fill="none" stroke="#3A3F5C"/></g>`};
   if(behind)o+=moonSvg();
   // tide bulges
   if(s.k==="tide"){const p=tidePull(e),a=ER+9*p,b=ER;
     const rot=-(sunDir+e);o+=`<ellipse cx="${ex}" cy="${ey}" rx="${a}" ry="${b}" transform="rotate(${rot} ${ex} ${ey})" fill="var(--sea)" opacity=".35"/>`;
     const ra=-(sunDir);o+=`<ellipse cx="${ex}" cy="${ey}" rx="${ER+4.2}" ry="${b}" transform="rotate(${ra} ${ex} ${ey})" fill="none" stroke="var(--sun)" stroke-dasharray="2 2" opacity=".8"/>`}
   // earth
-  o+=`<circle cx="${ex}" cy="${ey}" r="${ER}" fill="var(--earth)" stroke="var(--ink)" stroke-width="1.2"/>`;
-  o+=`<path d="${halfDisc(ex,ey,ER,sunDir+180)}" fill="var(--night)"/>`;
+  o+=floorShadow(ex,ey,ER,.15)+sphere("skyEarth",ex,ey,ER,EARTHC,{lit:sunDir,sw:1.2});
+  o+=`<path d="${halfDisc(ex,ey,ER,sunDir+180)}" fill="${NIGHT}" opacity=".5"/>`+spec(ex,ey,ER,sunDir);
   // axis: fixed in space, north leans left
   const tl=23.44, L=ER+13, axx=-Math.sin(tl*D)*L, axy=-Math.cos(tl*D)*L;
   o+=`<line x1="${ex-axx}" y1="${ey-axy}" x2="${ex+axx}" y2="${ey+axy}" stroke="var(--ink)" stroke-width="${s.k==="tilt"?2:1.2}"/>
@@ -138,7 +155,7 @@ function drawOrrery(){
   if(["spin","season","lat","tilt"].includes(s.k)){const da=sunDir+hA, [px,py]=[ex+ER*.6*Math.cos(da*D),ey-ER*.3*Math.sin(da*D)+ER*.3];
     const day=isDay();o+=`<circle cx="${px}" cy="${py}" r="3.2" fill="${day?"var(--sun)":"var(--paper)"}" stroke="var(--ink)"/>`}
   if(!behind)o+=moonSvg();
-  o+=`<text class="t-lab" x="${ex+ER+10}" y="${ey+4}">EARTH</text>`;
+  o+=sunPill+F.pill(ex+ER+9,ey-8,"Earth",{size:8,ax:ex+ER*.75,ay:ey});
   o+=`<text class="t-lab" x="16" y="22">TOP VIEW · NOT TO SCALE</text><text class="t-ink" x="${W-16}" y="22" text-anchor="end">${fmtDate(t)}${s.k==="spin"?" · "+fmtTime(t):""}</text>`;
   return o;
 }
@@ -152,13 +169,13 @@ function isDay(){const P=PLACES[placeIdx];const dec=decl(t),H=(solarHour(t,P.lon
 // close-ups
 function drawGlobe(){
   const W=420,H=260,cx=300,cy=124,Rr=82,dec=decl(t),P=PLACES[placeIdx],s=CUR;
-  let o=`<rect width="${W}" height="${H}" fill="var(--chalk)"/>`;
+  let o=F.floor(W,H);
   // rays from left
-  for(let y=cy-Rr+8;y<=cy+Rr-8;y+=16)o+=`<line x1="14" y1="${y}" x2="${cx-Math.sqrt(Math.max(0,Rr*Rr-(y-cy)**2))-3}" y2="${y}" stroke="var(--sun)" stroke-width="1" opacity=".6"/>`;
+  for(let y=cy-Rr+8;y<=cy+Rr-8;y+=16)o+=`<line x1="14" y1="${y}" x2="${cx-Math.sqrt(Math.max(0,Rr*Rr-(y-cy)**2))-3}" y2="${y}" stroke="${SUNC}" stroke-width="1.3" opacity=".75"/>`;
   o+=`<text class="t-lab" x="14" y="22">SIDE VIEW · SUNLIGHT FROM THE LEFT</text>`;
   // globe
-  o+=`<circle cx="${cx}" cy="${cy}" r="${Rr}" fill="var(--earth)" stroke="var(--ink)" stroke-width="1.4"/>`;
-  o+=`<path d="M${cx},${cy-Rr} A${Rr},${Rr} 0 0,1 ${cx},${cy+Rr}Z" fill="var(--night)"/>`;
+  o+=floorShadow(cx,cy,Rr,.08)+sphere("skyGlobe",cx,cy,Rr,EARTHC,{lit:180,sw:1.4});
+  o+=`<path d="M${cx},${cy-Rr} A${Rr},${Rr} 0 0,1 ${cx},${cy+Rr}Z" fill="${NIGHT}" opacity=".5"/>`;
   const rho=dec; // rotate globe by declination
   const g=(lat,H)=>{const x=-Math.cos(lat*D)*Math.cos(H*D),y=Math.sin(lat*D),z=Math.cos(lat*D)*Math.sin(H*D);
     const sx=x*Math.cos(rho*D)-y*Math.sin(rho*D),sy=x*Math.sin(rho*D)+y*Math.cos(rho*D);return [cx+Rr*sx,cy-Rr*sy,z]};
@@ -187,44 +204,44 @@ function drawGlobe(){
   return o;
 }
 function drawMoon(){
-  const W=420,H=260,a=moonAge(t);let o=`<rect width="${W}" height="${H}" fill="var(--chalk)"/>`;
+  const W=420,H=260,a=moonAge(t);let o=F.floor(W,H);
   o+=`<text class="t-lab" x="14" y="22">TONIGHT'S MOON, AS SEEN FROM…</text>`;
   o+=moonDisc(130,120,62,a,true)+`<text class="t-big" x="130" y="214" text-anchor="middle">Aotearoa</text>`;
   o+=moonDisc(318,128,40,a,false)+`<text class="t-lab" x="318" y="190" text-anchor="middle">NORTHERN HEMISPHERE</text>`;
   o+=`<text class="t-ink" x="130" y="238" text-anchor="middle">${phaseName(a)} · ${Math.round(lit(a)*100)}% lit</text>`;
   // 29.5 day strip
-  const y=H-14;o+=`<line x1="250" y1="${y}" x2="400" y2="${y}" stroke="var(--rose)"/>`;
-  [0,7.38,14.77,22.15,29.53].forEach(d=>{const x=250+150*d/SYN;o+=`<line x1="${x}" y1="${y-4}" x2="${x}" y2="${y+4}" stroke="var(--rose)"/>`});
+  const y=H-14;o+=`<line x1="250" y1="${y}" x2="400" y2="${y}" stroke="#8F9BAA" stroke-width="1.4"/>`;
+  [0,7.38,14.77,22.15,29.53].forEach(d=>{const x=250+150*d/SYN;o+=`<line x1="${x}" y1="${y-4}" x2="${x}" y2="${y+4}" stroke="#8F9BAA"/>`});
   o+=`<circle cx="${250+150*a/SYN}" cy="${y}" r="4" fill="var(--sun)" stroke="var(--ink)"/><text class="t-lab" x="250" y="${y-10}">DAY ${a.toFixed(1)} OF 29.5</text>`;
   return o;
 }
 function drawTide(){
-  const W=420,H=260,e=elong(t),p=tidePull(e);let o=`<rect width="${W}" height="${H}" fill="var(--chalk)"/>`;
+  const W=420,H=260,e=elong(t),p=tidePull(e);let o=F.floor(W,H);
   o+=`<text class="t-lab" x="14" y="22">TIDE RANGE THROUGH THE MONTH (RELATIVE)</text>`;
   // curve
   const x0=24,x1=W-24,ym=150,amp=60;let d="";
   for(let i=0;i<=120;i++){const ee=i/120*360,x=x0+(x1-x0)*i/120,yy=ym-amp*(tidePull(ee)-1)/.46*.9;d+=(i?"L":"M")+x+","+yy}
-  o+=`<line x1="${x0}" y1="${ym}" x2="${x1}" y2="${ym}" stroke="var(--line)"/><path d="${d}" fill="none" stroke="var(--sea)" stroke-width="2"/>`;
+  o+=`<path d="${d} L${x1},${ym} L${x0},${ym}Z" fill="${EARTHC}" opacity=".16"/><line x1="${x0}" y1="${ym}" x2="${x1}" y2="${ym}" stroke="#8F9BAA"/><path d="${d}" fill="none" stroke="${EARTHC}" stroke-width="2.4"/>`;
   [["New",0],["1st qtr",90],["Full",180],["Last qtr",270],["New",360]].forEach(([n,ee])=>{const x=x0+(x1-x0)*ee/360;
-    o+=`<line x1="${x}" y1="${ym+70}" x2="${x}" y2="${ym+76}" stroke="var(--rose)"/><text class="t-lab" x="${x}" y="${ym+90}" text-anchor="middle">${n.toUpperCase()}</text>`});
+    o+=`<line x1="${x}" y1="${ym+70}" x2="${x}" y2="${ym+76}" stroke="#8F9BAA"/><text class="t-lab" x="${x}" y="${ym+90}" text-anchor="middle">${n.toUpperCase()}</text>`});
   o+=`<text class="t-lab" x="${x0}" y="${ym-amp-6}">SPRING</text><text class="t-lab" x="${x0+(x1-x0)/4}" y="${ym+amp+4}" text-anchor="middle">NEAP</text>`;
   const cxp=x0+(x1-x0)*e/360,cyp=ym-amp*(p-1)/.46*.9;
-  o+=`<circle cx="${cxp}" cy="${cyp}" r="6" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.3"/><text class="t-big" x="${Math.min(cxp+10,W-110)}" y="${cyp-10}">${Math.round(p*100)}% of average</text>`;
+  o+=`<circle cx="${cxp}" cy="${cyp}" r="6" fill="${SUNC}" stroke="var(--ink)" stroke-width="1.3"/><text class="t-big" x="${Math.min(cxp+10,W-110)}" y="${cyp-10}">${Math.round(p*100)}% of average</text>`;
   return o;
 }
 function drawEclipse(){
-  const W=420,H=260,e=elong(t),b=moonLat(t);let o=`<rect width="${W}" height="${H}" fill="var(--chalk)"/>`;
+  const W=420,H=260,e=elong(t),b=moonLat(t);let o=F.floor(W,H);
   o+=`<text class="t-lab" x="14" y="22">EDGE-ON VIEW · MOON'S HEIGHT ABOVE OUR ORBIT</text>`;
   const ym=135,sx=40,ex_=240;
-  o+=`<line x1="20" y1="${ym}" x2="${W-20}" y2="${ym}" stroke="var(--rose)" stroke-dasharray="3 3"/><text class="t-lab" x="${W-20}" y="${ym-6}" text-anchor="end">EARTH'S ORBIT PLANE</text>`;
-  o+=`<circle cx="${sx}" cy="${ym}" r="22" fill="var(--sun)" stroke="var(--ink)"/>`;
+  o+=`<line x1="20" y1="${ym}" x2="${W-20}" y2="${ym}" stroke="#8F9BAA" stroke-dasharray="3 3"/><text class="t-lab" x="${W-20}" y="${ym-6}" text-anchor="end">EARTH'S ORBIT PLANE</text>`;
+  o+=`<circle cx="${sx}" cy="${ym}" r="34" fill="var(--sunglow)"/>`+sphere("skyESun",sx,ym,22,SUNC,{self:true});
   // earth shadow
-  o+=`<path d="M${ex_},${ym-16} L${W-20},${ym-6} L${W-20},${ym+6} L${ex_},${ym+16}Z" fill="var(--night)" opacity=".5"/>`;
-  o+=`<circle cx="${ex_}" cy="${ym}" r="16" fill="var(--earth)" stroke="var(--ink)"/>`;
+  o+=`<path d="M${ex_},${ym-16} L${W-20},${ym-6} L${W-20},${ym+6} L${ex_},${ym+16}Z" fill="${NIGHT}" opacity=".22"/>`;
+  o+=sphere("skyEEarth",ex_,ym,16,EARTHC,{lit:180})+`<path d="${halfDisc(ex_,ym,16,0)}" fill="${NIGHT}" opacity=".45"/>`;
   // moon x: between sun and earth at new, behind earth at full
   const mx=ex_-Math.cos(e*D)*95, my=ym-b*14;
-  o+=`<line x1="${ex_}" y1="${ym}" x2="${mx}" y2="${my}" stroke="var(--rose)" stroke-width=".8"/>`;
-  o+=`<circle cx="${mx}" cy="${my}" r="7" fill="var(--moon)" stroke="var(--ink)" opacity="${Math.abs(Math.sin(e*D))>.35?.45:1}"/>`;
+  o+=`<line x1="${ex_}" y1="${ym}" x2="${mx}" y2="${my}" stroke="#8F9BAA" stroke-width=".8"/>`;
+  o+=`<g opacity="${Math.abs(Math.sin(e*D))>.35?.45:1}">${sphere("skyEMoon",mx,my,7,MOONC,{lit:180})}<path d="${halfDisc(mx,my,7,0)}" fill="${NIGHT}" opacity=".45"/></g>`;
   const ec=eclipse(t),good=ec.includes("eclipse");
   o+=`<text class="t-big" x="14" y="${H-28}" ${good?'fill="var(--warn)"':""}>${good?ec+"!":ec==="No"?"Not lined up: no eclipse":"Lined up, but the Moon "+(b>0?"passes above":"passes below")}</text>
       <text class="t-lab" x="14" y="${H-12}">MOON ${Math.abs(b).toFixed(1)}° ${b>0?"ABOVE":"BELOW"} · ${phaseName(moonAge(t)).toUpperCase()}</text>`;

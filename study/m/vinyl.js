@@ -16,47 +16,82 @@ let actx=null;
 function beep(f,amp){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type="triangle";o.frequency.value=Math.min(8000,Math.max(40,f));
   g.gain.setValueAtTime(0,actx.currentTime);g.gain.linearRampToValueAtTime(0.06+0.12*amp,actx.currentTime+0.03);g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+0.9);o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+0.95)}catch(e){}}
 
-// ---- palette for the record shop look
-// figure materials: the shared bench recipe (StudyKit.figMat), so the turntable matches the rest of the bench
-const FM=StudyKit.figMat,V_WOOD=FM("wood","#B98B5E"),V_MAT=FM("rubber","#2A2A2E"),V_ARM=FM("metal","#C9C4C9"),V_REC=FM("plastic","#1E1B20");
-const WOOD=V_WOOD.fill,WOOD2=V_WOOD.stroke,VINYL=V_REC.fill,GROOVE="#3A3540",LABEL="#F2B8C6",LABEL2="#A8DCCB",METAL=V_ARM.fill,PINK="#E77FA0",MINT="#5FB79B";
-function turntable(cx,cy,R){let o=`<rect x="${cx-R-34}" y="${cy-R-30}" width="${2*R+150}" height="${2*R+60}" rx="18" fill="${WOOD}"/><rect x="${cx-R-34}" y="${cy-R-30}" width="${2*R+150}" height="${2*R+60}" rx="18" fill="none" stroke="${WOOD2}" stroke-width="3"/>`;
-  o+=`<circle cx="${cx}" cy="${cy}" r="${R+8}" ${V_MAT.attrs}/>`;
+// ---- the bench figure look (StudyKit.fig): a frosted blush acrylic plinth, a steel platter, a rubber mat, a painted record
+const F=StudyKit.fig,PAL=F.palette,BL=PAL.case.blush,BL_D=F.deep(BL),FM=StudyKit.figMat;
+const V_ARM=FM("metal",PAL.steel),V_MAT=FM("rubber","#3C4557"),V_MINT=FM("plastic",PAL.mintPlastic);
+const VINYL="#2E3048",GROOVE="#464A66",LABEL="#F2B8C6",LABEL2="#A8DCCB",METAL=PAL.steel,PINK="#E77FA0",MINT="#5FB79B";
+const INK="#262E5C",SUB="#6E6A86",PINK_D="#B5466F",MINT_D="#2A7D63",AXIS="#8F9BAA";
+const SLEEVES=[PAL.product.strawberry,PAL.product.blueberry,PAL.product.butter,PAL.product.lime,PAL.product.peach,PAL.case.lavender,PAL.case.mint,PAL.case.sky,BL];
+// a frosted blush card with a white face, for the live numbers
+const card=(x,y,w,h)=>F.acrylic(x,y,w,h,{tint:BL,d:10,r:14,opacity:.5,balls:false,shadowLen:22})+`<rect x="${x+6}" y="${y+6}" width="${w-12}" height="${h-12}" rx="10" fill="#fff" fill-opacity=".86"/>`;
+// the readout pill top left
+const readout=(w,txt)=>`<path d="M16,54 h${w} l14,8 h${-w}z" fill="${PAL.shadow}" opacity=".1"/><rect x="16" y="14" width="${w}" height="40" rx="14" fill="#fff" stroke="${PAL.pill.line}"/><text x="28" y="39" style="font:600 15px var(--mono);fill:${INK}">${txt}</text>`;
+// a record crate: painted sleeves standing in a frosted case
+function crate(){let o=F.shadow(560,404,238,{len:40,opacity:.16});
+  SLEEVES.forEach((c,i)=>o+=F.box(570+i*23,324,17,76,{colour:c,kind:"painted",d:6,r:2,shadow:false,sw:1}));
+  return o+F.acrylic(560,352,226,52,{tint:BL,d:12,r:8,opacity:.42,shadow:false})+F.plate(574,364,"Records",{tint:BL,size:10})}
+function turntable(cx,cy,R){const x0=cx-R-34,y0=cy-R-30,w=2*R+150,h=2*R+60;
+  // the plinth: frosted blush acrylic, so the motor and belt show through
+  let o=F.shadow(x0+10,y0+h,w,{len:R*0.55,opacity:.2})+F.acrylic(x0,y0,w,h,{tint:BL,d:14,r:18,opacity:.55,shadow:false});
+  const mx=x0+w-58,my=y0+h-62,ddx=cx-mx,ddy=cy-my,dl=Math.hypot(ddx,ddy),nx=-ddy/dl,ny=ddx/dl;
+  o+=`<path d="M${(mx+nx*7).toFixed(1)},${(my+ny*7).toFixed(1)} L${(cx+nx*R*0.5).toFixed(1)},${(cy+ny*R*0.5).toFixed(1)} M${(mx-nx*7).toFixed(1)},${(my-ny*7).toFixed(1)} L${(cx-nx*R*0.5).toFixed(1)},${(cy-ny*R*0.5).toFixed(1)}" stroke="${V_MAT.fill}" stroke-width="2.4" stroke-linecap="round"/>`;
+  o+=`<circle cx="${mx+2}" cy="${my+4}" r="21" fill="${V_MINT.stroke}" opacity=".5"/><circle cx="${mx}" cy="${my}" r="20" fill="${V_MINT.fill}" stroke="${V_MINT.stroke}" stroke-width="1.2"/><path d="M${mx-12},${my-10} a15,15 0 0 1 14,-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".8"/><circle cx="${mx}" cy="${my}" r="7" fill="${METAL}" stroke="${V_ARM.stroke}"/>`;
+  // speed buttons: the lit one is the speed it is spinning at
+  [["33",s.rpm>33&&s.rpm<34],["45",s.rpm===45]].forEach(([t,on],i)=>{const bx=x0+14+i*32,by=y0+h-26;o+=F.box(bx,by,26,13,{colour:on?PAL.product.butter:"#FFFFFF",kind:"plastic",d:4,r:3,shadow:false,sw:1})+`<text x="${bx+13}" y="${by+10}" text-anchor="middle" style="font:700 9px var(--mono);fill:${INK}">${t}</text>`});
+  // the steel platter (a thick disc: side then top), strobe dots turning with it, then the rubber mat
+  o+=`<circle cx="${cx+2.5}" cy="${cy+5}" r="${R+12}" fill="${V_ARM.shade}" stroke="${V_ARM.stroke}" stroke-width="1.2"/><circle cx="${cx}" cy="${cy}" r="${R+12}" fill="${V_ARM.fill}" stroke="${V_ARM.stroke}" stroke-width="1.2"/>`;
+  {let d="";for(let k=0;k<48;k++){const a=s.ang+k*Math.PI/24;d+=`M${(cx+Math.cos(a)*(R+9)).toFixed(1)},${(cy+Math.sin(a)*(R+9)).toFixed(1)}h.01`}o+=`<path d="${d}" stroke="${V_ARM.stroke}" stroke-width="2.6" stroke-linecap="round"/>`}
+  o+=`<path d="M${cx-(R+12)*0.85},${cy-(R+12)*0.5} A${R+12},${R+12} 0 0 1 ${cx-(R+12)*0.2},${cy-(R+12)*0.98}" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".9"/>`;
+  o+=`<circle cx="${cx}" cy="${cy}" r="${R+5}" fill="${V_MAT.fill}" stroke="${V_MAT.stroke}"/>`;
+  // the record turns; its label carries the speed
   o+=`<g transform="rotate(${s.ang*180/Math.PI},${cx},${cy})"><circle cx="${cx}" cy="${cy}" r="${R}" fill="${VINYL}"/>`;
   for(let k=0;k<26;k++){const rr=R*0.42+k*(R*0.56/26);o+=`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="${GROOVE}" stroke-width="${k%7===6?2.2:0.7}" opacity="${k%7===6?0.9:0.6}"/>`}
-  o+=`<path d="M${cx},${cy-R} A${R},${R} 0 0 1 ${cx+R*0.7},${cy-R*0.7}" stroke="#fff" stroke-width="5" opacity=".08" fill="none"/>`;
-  o+=`<circle cx="${cx}" cy="${cy}" r="${R*0.34}" fill="${LABEL}"/><path d="M${cx-R*0.34},${cy} A${R*0.34},${R*0.34} 0 0 0 ${cx+R*0.34},${cy}Z" fill="${LABEL2}"/>`;
+  o+=`<circle cx="${cx}" cy="${cy}" r="${R*0.34}" fill="${LABEL}"/><path d="M${cx-R*0.34},${cy} A${R*0.34},${R*0.34} 0 0 0 ${cx+R*0.34},${cy}Z" fill="${LABEL2}"/><circle cx="${cx}" cy="${cy}" r="${R*0.34}" fill="none" stroke="#fff" stroke-width="1.5" opacity=".7"/>`;
   o+=`<text x="${cx}" y="${cy-R*0.14}" text-anchor="middle" style="font:700 ${R*0.09}px var(--display);fill:#492B3E">SIDE A</text><text x="${cx}" y="${cy+R*0.2}" text-anchor="middle" style="font:500 ${R*0.07}px var(--mono);fill:#492B3E">${s.disc>40?"45":"33⅓"} RPM</text>`;
-  o+=`<line x1="${cx}" y1="${cy-R*0.32}" x2="${cx}" y2="${cy-R*0.24}" stroke="#492B3E" stroke-width="3"/></g><circle cx="${cx}" cy="${cy}" r="5" fill="${METAL}" stroke="#555"/>`;
+  o+=`<line x1="${cx}" y1="${cy-R*0.32}" x2="${cx}" y2="${cy-R*0.24}" stroke="#492B3E" stroke-width="3"/></g>`;
+  // a still sheen on the vinyl (the light does not turn with the record), then the steel spindle
+  o+=`<path d="M${cx-R*0.62},${cy-R*0.62} A${R*0.88},${R*0.88} 0 0 1 ${cx+R*0.1},${cy-R*0.87}" stroke="#fff" stroke-width="${(R*0.06).toFixed(1)}" fill="none" stroke-linecap="round" opacity=".12"/><path d="M${cx+R*0.62},${cy+R*0.62} A${R*0.88},${R*0.88} 0 0 1 ${cx-R*0.1},${cy+R*0.87}" stroke="#fff" stroke-width="${(R*0.04).toFixed(1)}" fill="none" stroke-linecap="round" opacity=".07"/>`;
+  o+=`<circle cx="${cx}" cy="${cy}" r="5" fill="${METAL}" stroke="${V_ARM.stroke}"/><circle cx="${cx-1.5}" cy="${cy-1.5}" r="1.6" fill="#fff"/>`;
   // tonearm: pivot top-right, needle at radius s.r along the left side
-  const px=cx+R+62,py=cy-R+8,nr=s.r/RMAX()*R*0.98,na=Math.PI*0.86,nx=cx+Math.cos(na)*nr*0.25+ (R*0.12),ny=cy-Math.sin(na)*0+(-nr*0.0);
+  const px=cx+R+62,py=cy-R+8,nr=s.r/RMAX()*R*0.98;
   const needle=[cx+nr*Math.cos(-0.62),cy+nr*Math.sin(-0.62)];
-  o+=`<circle cx="${px}" cy="${py}" r="16" ${V_ARM.attrs}/><line x1="${px}" y1="${py}" x2="${needle[0]+6}" y2="${needle[1]-8}" stroke="${V_ARM.stroke}" stroke-width="7" stroke-linecap="round"/><line x1="${px}" y1="${py}" x2="${needle[0]+6}" y2="${needle[1]-8}" stroke="${V_ARM.fill}" stroke-width="4" stroke-linecap="round"/><line x1="${px}" y1="${py}" x2="${needle[0]+6}" y2="${needle[1]-8}" stroke="${V_ARM.hi}" stroke-width="1.2" stroke-linecap="round" opacity=".8"/><rect x="${needle[0]-4}" y="${needle[1]-12}" width="18" height="12" rx="2" fill="#333" transform="rotate(-30,${needle[0]},${needle[1]})"/>`;
+  const ex=needle[0]+6,ey=needle[1]-8,al=Math.hypot(ex-px,ey-py),ux=(px-ex)/al,uy=(py-ey)/al;
+  // the counterweight sits behind the pivot, on the far end of the arm
+  const wx=px+ux*20,wy=py+uy*20;
+  o+=`<line x1="${px}" y1="${py}" x2="${wx.toFixed(1)}" y2="${wy.toFixed(1)}" stroke="${V_ARM.stroke}" stroke-width="4" stroke-linecap="round"/><line x1="${(px+ux*12).toFixed(1)}" y1="${(py+uy*12).toFixed(1)}" x2="${(px+ux*24).toFixed(1)}" y2="${(py+uy*24).toFixed(1)}" stroke="${PAL.steelDark}" stroke-width="13" stroke-linecap="round"/><line x1="${(px+ux*12).toFixed(1)}" y1="${(py+uy*12-3).toFixed(1)}" x2="${(px+ux*24).toFixed(1)}" y2="${(py+uy*24-3).toFixed(1)}" stroke="${V_ARM.hi}" stroke-width="2" stroke-linecap="round"/>`;
+  o+=`<circle cx="${px+3}" cy="${py+5}" r="18" fill="${PAL.shadow}" opacity=".14"/><circle cx="${px}" cy="${py}" r="17" fill="${V_ARM.shade}" stroke="${V_ARM.stroke}" stroke-width="1.2"/><circle cx="${px-1.5}" cy="${py-2}" r="12.5" fill="${V_ARM.hi}" stroke="${V_ARM.stroke}"/>`;
+  o+=`<line x1="${px}" y1="${py}" x2="${ex}" y2="${ey}" stroke="${PAL.shadow}" stroke-width="6" stroke-linecap="round" opacity=".14" transform="translate(4,6)"/><line x1="${px}" y1="${py}" x2="${ex}" y2="${ey}" stroke="${V_ARM.stroke}" stroke-width="7" stroke-linecap="round"/><line x1="${px}" y1="${py}" x2="${ex}" y2="${ey}" stroke="${V_ARM.fill}" stroke-width="4.4" stroke-linecap="round"/><line x1="${px}" y1="${py}" x2="${ex}" y2="${ey}" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".85" transform="translate(-.8,-1.2)"/>`;
+  o+=`<circle cx="${px}" cy="${py}" r="4.5" fill="${PAL.steelDark}" stroke="${V_ARM.stroke}"/>`;
+  o+=`<g transform="rotate(-30,${needle[0]},${needle[1]})"><rect x="${needle[0]-4}" y="${needle[1]-12}" width="18" height="12" rx="2.5" fill="${PAL.product.strawberry}" stroke="${F.deep(PAL.product.strawberry)}"/><rect x="${needle[0]-2}" y="${needle[1]-10.5}" width="12" height="2.4" rx="1" fill="#fff" opacity=".55"/></g>`;
   return {o,needle}}
 function magnifier(x,y,r){// the groove under the needle: a wiggle whose wavelength = groove speed ÷ frequency
   const v=speedAt(s.r),lam=v/s.f; // metres
   const scale=r*2/0.003; // show 3 mm of groove across the lens
-  let o=`<clipPath id="vyLens"><circle cx="${x}" cy="${y}" r="${r}"/></clipPath><g clip-path="url(#vyLens)"><rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" fill="${VINYL}"/>`;
+  // a steel loupe on a handle; its shadow falls on the paper
+  let o=`<circle cx="${x+10}" cy="${y+14}" r="${r+10}" fill="${PAL.shadow}" opacity=".1"/>`;
+  const hx=x+r*0.72,hy=y+r*0.72;o+=`<line x1="${hx+6}" y1="${hy+6}" x2="${hx+30}" y2="${hy+30}" stroke="${PAL.shadow}" stroke-width="14" stroke-linecap="round" opacity=".1" transform="translate(6,9)"/><line x1="${hx}" y1="${hy}" x2="${hx+30}" y2="${hy+30}" stroke="${PAL.steelDark}" stroke-width="14" stroke-linecap="round"/><line x1="${hx}" y1="${hy}" x2="${hx+30}" y2="${hy+30}" stroke="${BL}" stroke-width="10" stroke-linecap="round"/><line x1="${hx+4}" y1="${hy+1}" x2="${hx+28}" y2="${hy+25}" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>`;
+  o+=`<clipPath id="vyLens"><circle cx="${x}" cy="${y}" r="${r}"/></clipPath><g clip-path="url(#vyLens)"><rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" fill="${VINYL}"/>`;
   for(let k=-3;k<=3;k++){if(k===0)continue;o+=`<path d="${wig(x-r,y+k*r*0.28,2*r,lam*scale,4*s.amp,s.phase*0.6+k)}" stroke="${GROOVE}" stroke-width="5" fill="none"/>`}
-  o+=`<path d="${wig(x-r,y,2*r,lam*scale,10*s.amp,s.phase)}" stroke="#7d7488" stroke-width="7" fill="none"/><path d="${wig(x-r,y,2*r,lam*scale,10*s.amp,s.phase)}" stroke="#ddd" stroke-width="1.2" fill="none" opacity=".6"/>`;
-  o+=`<path d="M${x-6},${y-r} L${x+6},${y-r} L${x+2},${y+2} L${x-2},${y+2}Z" fill="${METAL}" stroke="#555"/></g><circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#2a2a2e" stroke-width="8"/><circle cx="${x}" cy="${y}" r="${r+4}" fill="none" stroke="${PINK}" stroke-width="2"/>`;
-  o+=`<line x1="${x-lam*scale/2}" x2="${x+lam*scale/2}" y1="${y+r*0.55}" y2="${y+r*0.55}" stroke="${MINT}" stroke-width="3"/><text x="${x}" y="${y+r+26}" text-anchor="middle" style="font:600 14px var(--mono);fill:#492B3E">one wiggle λ = ${fmt(lam*1000,2)} mm</text>`;
+  o+=`<path d="${wig(x-r,y,2*r,lam*scale,10*s.amp,s.phase)}" stroke="#8C88A6" stroke-width="7" fill="none"/><path d="${wig(x-r,y,2*r,lam*scale,10*s.amp,s.phase)}" stroke="#fff" stroke-width="1.2" fill="none" opacity=".6"/>`;
+  o+=`<path d="M${x-6},${y-r} L${x+6},${y-r} L${x+2},${y+2} L${x-2},${y+2}Z" fill="${METAL}" stroke="${V_ARM.stroke}"/><path d="M${x-r*0.7},${y-r*0.45} A${r*0.85},${r*0.85} 0 0 1 ${x-r*0.1},${y-r*0.84}" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".18"/></g>`;
+  o+=`<circle cx="${x}" cy="${y}" r="${r+4}" fill="none" stroke="${V_ARM.stroke}" stroke-width="11"/><circle cx="${x}" cy="${y}" r="${r+4}" fill="none" stroke="${V_ARM.fill}" stroke-width="8"/><path d="M${x-(r+4)*0.8},${y-(r+4)*0.6} A${r+4},${r+4} 0 0 1 ${x},${y-r-4}" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="${r+9.5}" fill="none" stroke="${BL_D}" stroke-width="1.2"/>`;
+  o+=`<line x1="${x-lam*scale/2}" x2="${x+lam*scale/2}" y1="${y+r*0.55}" y2="${y+r*0.55}" stroke="${MINT}" stroke-width="3"/><text x="${x}" y="${y+r+26}" text-anchor="middle" style="font:600 14px var(--mono);fill:${INK}">one wiggle λ = ${fmt(lam*1000,2)} mm</text>`;
   return o}
 function wig(x0,y0,w,lamPx,A,ph){let d=`M${x0},${y0}`;const n=Math.min(400,Math.max(30,w/lamPx*16));for(let i=0;i<=n;i++){const x=x0+i*w/n;d+=` L${x.toFixed(1)},${(y0+A*Math.sin(2*Math.PI*(x-x0)/Math.max(0.5,lamPx)-ph)).toFixed(1)}`}return d}
-function drawMain(st){const W=800,H=420;let o=`<rect width="${W}" height="${H}" fill="#F7EEF0"/>`;
-  for(let i=0;i<9;i++)o+=`<rect x="${560+i*26}" y="300" width="22" height="110" rx="2" fill="${[PINK,MINT,"#F4C26B","#8FA9E0",LABEL,LABEL2,"#C9A7E8","#F29C7A","#9BD3E8"][i]}" opacity=".75"/>`;
-  if(st.k==="air"||st.k==="loud")return o+airScene(st);
-  if(["omega","centripetal","formats"].includes(st.k))return o+circularScene(st);
+function drawMain(st){const W=800,H=420;let o=F.floor(W,H);
+  if(st.k==="air"||st.k==="loud")return o+crate()+airScene(st);
+  if(["omega","centripetal","formats"].includes(st.k))return o+crate()+circularScene(st);
+  o+=crate();
   const T=turntable(220,215,160);o+=T.o;
   const [nx,ny]=T.needle;
-  if(st.k!=="spin"){o+=`<line x1="${nx}" y1="${ny}" x2="590" y2="140" stroke="${PINK}" stroke-width="1.5" stroke-dasharray="4 4"/>`+magnifier(610,140,104)}
+  if(st.k!=="spin"){o+=`<line x1="${nx}" y1="${ny}" x2="590" y2="140" stroke="${PINK_D}" stroke-width="1.5" stroke-dasharray="4 4"/><circle cx="${nx}" cy="${ny}" r="2.6" fill="${PINK_D}"/>`+magnifier(610,140,104)}
   else{// speed of the groove under the needle, outer vs inner
     o+=`<circle cx="220" cy="215" r="${160*R_OUT/R_OUT*0.98}" fill="none" stroke="${PINK}" stroke-width="2" stroke-dasharray="6 5"/><circle cx="220" cy="215" r="${160*R_IN/R_OUT}" fill="none" stroke="${MINT}" stroke-width="2" stroke-dasharray="6 5"/>`;
-    o+=`<g transform="translate(470,70)"><rect width="300" height="210" rx="14" fill="#fff" stroke="#E3D3D8"/><text x="18" y="32" style="font:600 13px var(--mono);fill:${PINK}">OUTER GROOVE · r = 14.6 cm</text><text x="18" y="58" style="font:600 22px var(--mono);fill:#492B3E">${fmt(speedAt(R_OUT)*100,1)} cm/s</text>
-      <text x="18" y="102" style="font:600 13px var(--mono);fill:${MINT}">INNER GROOVE · r = 6.0 cm</text><text x="18" y="128" style="font:600 22px var(--mono);fill:#492B3E">${fmt(speedAt(R_IN)*100,1)} cm/s</text>
-      <text x="18" y="168" style="font:500 12px var(--mono);fill:#916A70">SAME rpm, DIFFERENT SPEED:</text><text x="18" y="188" style="font:500 12px var(--mono);fill:#916A70">BIGGER CIRCLE, MORE DISTANCE EACH TURN</text></g>`}
-  o+=`<rect x="16" y="14" width="250" height="40" rx="8" fill="#fff" opacity=".92"/><text x="28" y="39" style="font:600 15px var(--mono);fill:#492B3E">${fmt(s.rpm,1)} rpm · ${fmt(period(),2)} s a turn</text>`;
-  if(st.k==="pitch")o+=`<g transform="translate(470,268)"><rect width="300" height="64" rx="12" fill="#fff" stroke="#E3D3D8"/><text x="16" y="26" style="font:500 12px var(--mono);fill:#916A70">RECORDED ${fmt(s.f)} Hz (${noteOf(s.f)}) · YOU HEAR</text><text x="16" y="52" style="font:600 22px var(--mono);fill:${pitchRatio()>1.01?PINK:pitchRatio()<0.99?MINT:"#492B3E"}">${fmt(heard())} Hz · ${noteOf(heard())}</text></g>`;
+    o+=card(470,70,310,210)+`<g transform="translate(470,70)"><text x="18" y="32" style="font:600 13px var(--mono);fill:${PINK_D}">OUTER GROOVE · r = 14.6 cm</text><text x="18" y="58" style="font:600 22px var(--mono);fill:${INK}">${fmt(speedAt(R_OUT)*100,1)} cm/s</text>
+      <text x="18" y="102" style="font:600 13px var(--mono);fill:${MINT_D}">INNER GROOVE · r = 6.0 cm</text><text x="18" y="128" style="font:600 22px var(--mono);fill:${INK}">${fmt(speedAt(R_IN)*100,1)} cm/s</text>
+      <text x="18" y="168" style="font:500 12px var(--mono);fill:${SUB}">SAME rpm, DIFFERENT SPEED:</text><text x="18" y="188" style="font:500 12px var(--mono);fill:${SUB}">BIGGER CIRCLE, MORE DISTANCE EACH TURN</text></g>`}
+  o+=readout(250,`${fmt(s.rpm,1)} rpm · ${fmt(period(),2)} s a turn`);
+  if(st.k==="pitch")o+=card(470,296,300,64)+`<g transform="translate(470,296)"><text x="16" y="26" style="font:500 12px var(--mono);fill:${SUB}">RECORDED ${fmt(s.f)} Hz (${noteOf(s.f)}) · YOU HEAR</text><text x="16" y="52" style="font:600 22px var(--mono);fill:${pitchRatio()>1.01?PINK_D:pitchRatio()<0.99?MINT_D:INK}">${fmt(heard())} Hz · ${noteOf(heard())}</text></g>`;
   return o}
 function circularScene(st){const R=s.format==="single"?100:160,T=turntable(220,215,R);let o=T.o;const [nx,ny]=T.needle;
   // the dust speck on the groove under the needle: velocity along the tangent, acceleration toward the centre
@@ -66,35 +101,46 @@ function circularScene(st){const R=s.format==="single"?100:160,T=turntable(220,2
   const vl=Math.min(120,vlin(s.r)*180),al=Math.min(110,acen(s.r)*40);
   o+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${(px-vl*Math.sin(a0)).toFixed(1)}" y2="${(py+vl*Math.cos(a0)).toFixed(1)}" stroke="${PINK}" stroke-width="3.5" marker-end="url(#vyArr)"/>`;
   o+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${(px-al*Math.cos(a0)).toFixed(1)}" y2="${(py-al*Math.sin(a0)).toFixed(1)}" stroke="${MINT}" stroke-width="3.5" marker-end="url(#vyArr)"/>`;
-  o+=`<g transform="translate(470,60)"><rect width="300" height="${st.k==="formats"?260:210}" rx="14" fill="#fff" stroke="#E3D3D8"/>`;
-  if(st.k==="omega")o+=`<text x="18" y="30" style="font:600 13px var(--mono);fill:${PINK}">ANGULAR VELOCITY ω = 2πf</text><text x="18" y="56" style="font:500 12px var(--mono);fill:#916A70">f = ${fmt(s.rpm,2)} ÷ 60 = ${fmt(rps(),3)} Hz</text><text x="18" y="86" style="font:600 22px var(--mono);fill:#492B3E">ω = ${fmt(omega(),2)} rad/s</text><text x="18" y="116" style="font:500 12px var(--mono);fill:#916A70">T = 2π ÷ ω = ${fmt(2*Math.PI/omega(),2)} s a turn</text><text x="18" y="150" style="font:600 13px var(--mono);fill:${MINT}">LEVEL 3: THE PLATTER</text><text x="18" y="172" style="font:500 12px var(--mono);fill:#916A70">I = ½MR² = ${fmt(I_PLATTER,4)} kg m² (1.5 kg, 0.15 m)</text><text x="18" y="192" style="font:500 12px var(--mono);fill:#916A70">L = Iω = ${fmt(I_PLATTER*omega(),3)} kg m²/s · Ek = ½Iω² = ${fmt(0.5*I_PLATTER*omega()*omega(),3)} J</text>`;
-  else if(st.k==="centripetal")o+=`<text x="18" y="30" style="font:600 13px var(--mono);fill:${PINK}">SPEED ALONG THE GROOVE v = rω</text><text x="18" y="58" style="font:600 22px var(--mono);fill:#492B3E">${fmt(s.r,3)} × ${fmt(omega(),2)} = ${fmt(vlin(s.r),2)} m/s</text><text x="18" y="96" style="font:600 13px var(--mono);fill:${MINT}">CENTRIPETAL a = v²/r = ω²r</text><text x="18" y="124" style="font:600 22px var(--mono);fill:#492B3E">${fmt(acen(s.r),2)} m/s²</text><text x="18" y="156" style="font:500 12px var(--mono);fill:#916A70">toward the centre, always; the speck's speed</text><text x="18" y="174" style="font:500 12px var(--mono);fill:#916A70">is constant but its velocity keeps turning</text><text x="18" y="198" style="font:500 12px var(--mono);fill:#916A70">a 1 mg speck needs F = ma = ${(acen(s.r)*1e-6).toExponential(1)} N of grip</text>`;
-  else o+=`<text x="18" y="30" style="font:600 13px var(--mono);fill:${PINK}">12-INCH LP · 33⅓ rpm · OUTER r = 0.146 m</text><text x="18" y="56" style="font:600 18px var(--mono);fill:#492B3E">ω = ${fmt(2*Math.PI*(100/3)/60,2)} rad/s · v = ${fmt(0.146*2*Math.PI*(100/3)/60,2)} m/s</text><text x="18" y="92" style="font:600 13px var(--mono);fill:${MINT}">7-INCH SINGLE · 45 rpm · OUTER r = 0.088 m</text><text x="18" y="118" style="font:600 18px var(--mono);fill:#492B3E">ω = ${fmt(2*Math.PI*45/60,2)} rad/s · v = ${fmt(0.088*2*Math.PI*45/60,2)} m/s</text><text x="18" y="152" style="font:500 12px var(--mono);fill:#916A70">faster spin, slower groove: v = rω</text><text x="18" y="172" style="font:500 12px var(--mono);fill:#916A70">scales with radius</text><text x="18" y="206" style="font:600 13px var(--mono);fill:${PINK}">YOUR NEEDLE NOW</text><text x="18" y="232" style="font:600 18px var(--mono);fill:#492B3E">r = ${fmt(s.r*100,1)} cm · v = ${fmt(vlin(s.r),2)} m/s</text><text x="18" y="252" style="font:500 12px var(--mono);fill:#916A70">${fmt(vlin(s.r)*1000)} mm of groove a second</text>`;
-  o+=`</g><rect x="16" y="14" width="300" height="40" rx="8" fill="#fff" opacity=".92"/><text x="28" y="39" style="font:600 15px var(--mono);fill:#492B3E">${s.format==="single"?"7-inch single":"12-inch LP"} · ${fmt(s.rpm,1)} rpm · ω = ${fmt(omega(),2)} rad/s</text>`;
+  o+=card(462,60,328,st.k==="formats"?260:210)+`<g transform="translate(462,60)">`;
+  if(st.k==="omega")o+=`<text x="18" y="30" style="font:600 12px var(--mono);fill:${PINK_D}">ANGULAR VELOCITY ω = 2πf</text><text x="18" y="56" style="font:500 11px var(--mono);fill:${SUB}">f = ${fmt(s.rpm,2)} ÷ 60 = ${fmt(rps(),3)} Hz</text><text x="18" y="86" style="font:600 22px var(--mono);fill:${INK}">ω = ${fmt(omega(),2)} rad/s</text><text x="18" y="116" style="font:500 11px var(--mono);fill:${SUB}">T = 2π ÷ ω = ${fmt(2*Math.PI/omega(),2)} s a turn</text><text x="18" y="150" style="font:600 12px var(--mono);fill:${MINT_D}">LEVEL 3: THE PLATTER</text><text x="18" y="172" style="font:500 11px var(--mono);fill:${SUB}">I = ½MR² = ${fmt(I_PLATTER,4)} kg m² (1.5 kg, 0.15 m)</text><text x="18" y="192" style="font:500 11px var(--mono);fill:${SUB}">L = Iω = ${fmt(I_PLATTER*omega(),3)} kg m²/s · Ek = ½Iω² = ${fmt(0.5*I_PLATTER*omega()*omega(),3)} J</text>`;
+  else if(st.k==="centripetal")o+=`<text x="18" y="30" style="font:600 12px var(--mono);fill:${PINK_D}">SPEED ALONG THE GROOVE v = rω</text><text x="18" y="58" style="font:600 22px var(--mono);fill:${INK}">${fmt(s.r,3)} × ${fmt(omega(),2)} = ${fmt(vlin(s.r),2)} m/s</text><text x="18" y="96" style="font:600 12px var(--mono);fill:${MINT_D}">CENTRIPETAL a = v²/r = ω²r</text><text x="18" y="124" style="font:600 22px var(--mono);fill:${INK}">${fmt(acen(s.r),2)} m/s²</text><text x="18" y="156" style="font:500 11px var(--mono);fill:${SUB}">toward the centre, always; the speck's speed</text><text x="18" y="174" style="font:500 11px var(--mono);fill:${SUB}">is constant but its velocity keeps turning</text><text x="18" y="198" style="font:500 11px var(--mono);fill:${SUB}">a 1 mg speck needs F = ma = ${(acen(s.r)*1e-6).toExponential(1)} N of grip</text>`;
+  else o+=`<text x="18" y="30" style="font:600 12px var(--mono);fill:${PINK_D}">12-INCH LP · 33⅓ rpm · OUTER r = 0.146 m</text><text x="18" y="56" style="font:600 17px var(--mono);fill:${INK}">ω = ${fmt(2*Math.PI*(100/3)/60,2)} rad/s · v = ${fmt(0.146*2*Math.PI*(100/3)/60,2)} m/s</text><text x="18" y="92" style="font:600 12px var(--mono);fill:${MINT_D}">7-INCH SINGLE · 45 rpm · OUTER r = 0.088 m</text><text x="18" y="118" style="font:600 17px var(--mono);fill:${INK}">ω = ${fmt(2*Math.PI*45/60,2)} rad/s · v = ${fmt(0.088*2*Math.PI*45/60,2)} m/s</text><text x="18" y="152" style="font:500 11px var(--mono);fill:${SUB}">faster spin, slower groove: v = rω</text><text x="18" y="172" style="font:500 11px var(--mono);fill:${SUB}">scales with radius</text><text x="18" y="206" style="font:600 12px var(--mono);fill:${PINK_D}">YOUR NEEDLE NOW</text><text x="18" y="232" style="font:600 17px var(--mono);fill:${INK}">r = ${fmt(s.r*100,1)} cm · v = ${fmt(vlin(s.r),2)} m/s</text><text x="18" y="252" style="font:500 11px var(--mono);fill:${SUB}">${fmt(vlin(s.r)*1000)} mm of groove a second</text>`;
+  o+=`</g>`+readout(300,`${s.format==="single"?"7-inch single":"12-inch LP"} · ${fmt(s.rpm,1)} rpm · ω = ${fmt(omega(),2)} rad/s`);
   return o}
 function airScene(st){// a speaker pushing air: compressions and rarefactions travel at 343 m/s
-  const W=800,y0=120,h=200,lamPx=Math.max(14,Math.min(700,V_AIR/s.f*180));let o=`<g transform="translate(40,${y0})"><rect x="0" y="40" width="60" height="120" rx="10" fill="#2a2a2e"/><circle cx="48" cy="100" r="${42+6*s.amp*Math.sin(s.phase)}" fill="#3a3540" stroke="${METAL}" stroke-width="3"/><circle cx="48" cy="100" r="12" fill="${PINK}"/></g>`;
-  for(let i=0;i<420;i++){const gx=120+(i%42)*16,gy=y0+30+Math.floor(i/42)*15,dx=18*s.amp*Math.sin(2*Math.PI*(gx-120)/lamPx-s.phase);o+=`<circle cx="${gx+dx}" cy="${gy}" r="2.4" fill="#492B3E" opacity=".75"/>`}
-  o+=`<line x1="120" x2="${120+lamPx}" y1="${y0+190}" y2="${y0+190}" stroke="${MINT}" stroke-width="3"/><text x="120" y="${y0+212}" style="font:600 13px var(--mono);fill:#492B3E">one wavelength λ = ${fmt(V_AIR/s.f,2)} m${lamPx>=700?" (longer than the screen)":""}</text>`;
-  o+=`<rect x="16" y="14" width="330" height="40" rx="8" fill="#fff" opacity=".92"/><text x="28" y="39" style="font:600 15px var(--mono);fill:#492B3E">${fmt(s.f)} Hz · ${noteOf(s.f)} · ${st.k==="loud"?fmt(s.db)+" dB":"v = 343 m/s"}</text>`;
+  const W=800,y0=120,h=200,lamPx=Math.max(14,Math.min(700,V_AIR/s.f*180));
+  // the air sits in a long frosted acrylic tube, so you can see the particles bunch and spread
+  let o=F.acrylic(108,y0+16,680,170,{tint:BL,d:10,r:16,opacity:.32,shadowLen:60});
+  // the speaker: a painted cabinet with a rubber cone and a steel surround
+  const sm=FM("rubber","#3C4557");
+  o+=`<g transform="translate(40,${y0})">${F.box(0,40,60,120,{colour:PAL.product.strawberry,kind:"painted",d:14,r:8,shadowLen:50})}<circle cx="48" cy="100" r="${42+6*s.amp*Math.sin(s.phase)}" fill="${sm.fill}" stroke="${V_ARM.fill}" stroke-width="4"/><circle cx="48" cy="100" r="${30+4*s.amp*Math.sin(s.phase)}" fill="none" stroke="${sm.hi}" stroke-width="1.2" opacity=".7"/><path d="M${48-30},${100-24} a38,38 0 0 1 24,-14" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><circle cx="48" cy="100" r="12" fill="${BL}" stroke="${BL_D}"/></g>`;
+  for(let i=0;i<420;i++){const gx=120+(i%42)*16,gy=y0+30+Math.floor(i/42)*15,dx=18*s.amp*Math.sin(2*Math.PI*(gx-120)/lamPx-s.phase);o+=`<circle cx="${gx+dx}" cy="${gy}" r="2.4" fill="${INK}" opacity=".75"/>`}
+  o+=`<line x1="120" x2="${120+lamPx}" y1="${y0+200}" y2="${y0+200}" stroke="${MINT_D}" stroke-width="3" stroke-linecap="round"/><text x="120" y="${y0+222}" style="font:600 13px var(--mono);fill:${INK}">one wavelength λ = ${fmt(V_AIR/s.f,2)} m${lamPx>=700?" (longer than the screen)":""}</text>`;
+  o+=readout(330,`${fmt(s.f)} Hz · ${noteOf(s.f)} · ${st.k==="loud"?fmt(s.db)+" dB":"v = 343 m/s"}`);
   return o}
-// ---- close-ups
-function wavePanel(){const w=420,h=260,ms=4,X=t=>46+t/ms*(w-60),Y=v=>130-v*80;let o=`<line x1="46" x2="${w-12}" y1="130" y2="130" stroke="var(--line)"/><line x1="46" x2="46" y1="30" y2="230" stroke="var(--ink)"/>`;
-  let d="";for(let i=0;i<=400;i++){const t=i/400*ms;d+=(i?" L":"M")+X(t).toFixed(1)+","+Y(s.amp*Math.sin(2*Math.PI*heard()*t/1000)).toFixed(1)}o+=`<path d="${d}" fill="none" stroke="${PINK}" stroke-width="2.2"/>`;
-  const T=1000/heard();if(T<ms){o+=`<line x1="${X(T/4)}" x2="${X(T/4+T)}" y1="${Y(s.amp)-12}" y2="${Y(s.amp)-12}" stroke="var(--ink)"/><text class="t-ink" x="${X(T/4)}" y="${Y(s.amp)-18}">period T = ${fmt(T,2)} ms</text>`}
-  o+=`<line x1="${w-30}" x2="${w-30}" y1="130" y2="${Y(s.amp)}" stroke="${MINT}" stroke-width="2"/><text class="t-lab" x="${w-36}" y="${Y(s.amp)+14}" text-anchor="end">AMPLITUDE</text>`;
+// ---- close-ups: instruments on the paper, the wave on a frosted screen
+function wavePanel(){const w=420,h=260,ms=4,X=t=>46+t/ms*(w-60),Y=v=>130-v*80;let o=F.acrylic(36,34,376,204,{tint:BL,d:8,r:12,opacity:.3,balls:false,shadowLen:20})+`<line x1="46" x2="${w-12}" y1="130" y2="130" stroke="${AXIS}"/><line x1="46" x2="46" y1="30" y2="230" stroke="${AXIS}" stroke-width="1.4"/>`;
+  let d="";for(let i=0;i<=400;i++){const t=i/400*ms;d+=(i?" L":"M")+X(t).toFixed(1)+","+Y(s.amp*Math.sin(2*Math.PI*heard()*t/1000)).toFixed(1)}o+=`<path d="${d}" fill="none" stroke="${PAL.product.strawberry}" stroke-width="2.4"/>`;
+  const T=1000/heard();if(T<ms){o+=`<line x1="${X(T/4)}" x2="${X(T/4+T)}" y1="${Y(s.amp)-12}" y2="${Y(s.amp)-12}" stroke="${INK}"/><text class="t-ink" x="${X(T/4)}" y="${Y(s.amp)-18}">period T = ${fmt(T,2)} ms</text>`}
+  o+=`<line x1="${w-30}" x2="${w-30}" y1="130" y2="${Y(s.amp)}" stroke="${MINT_D}" stroke-width="2"/><text class="t-lab" x="${w-36}" y="${Y(s.amp)+14}" text-anchor="end">AMPLITUDE</text>`;
   o+=`<text class="t-lab" x="${w-12}" y="252" text-anchor="end">TIME (ms) · 4 ms SHOWN</text><text class="t-ink" x="54" y="24">f = 1 ÷ T = ${fmt(heard())} Hz</text>`;return o}
 function keys(){const w=420,h=260;let o="";const base=48;const k0=Math.round(12*Math.log2(s.f/440))+57,k1=Math.round(12*Math.log2(heard()/440))+57;
-  const white=[0,2,4,5,7,9,11];let x=12;const pos={};for(let n=base;n<base+36;n++){const pc=n%12;if(white.includes(pc)){pos[n]=x;o+=`<rect x="${x}" y="60" width="17" height="110" rx="3" fill="${n===k1?PINK:n===k0?LABEL2:"#fff"}" stroke="#bbb"/>`;x+=18}}
-  for(let n=base;n<base+36;n++){const pc=n%12;if(!white.includes(pc)){const xx=pos[n-1]+12;o+=`<rect x="${xx}" y="60" width="11" height="68" rx="2" fill="${n===k1?PINK:n===k0?MINT:"#2a2a2e"}"/>`}}
+  // a little keyboard: a painted blush body, white keys, rubber-dark black keys
+  o+=F.box(6,56,392,122,{colour:BL,kind:"painted",d:10,r:6,shadowLen:40});
+  const white=[0,2,4,5,7,9,11];let x=12;const pos={};for(let n=base;n<base+36;n++){const pc=n%12;if(white.includes(pc)){pos[n]=x;o+=`<rect x="${x}" y="60" width="17" height="110" rx="3" fill="${n===k1?PINK:n===k0?LABEL2:"#fff"}" stroke="#C9C3DA"/>`;x+=18}}
+  for(let n=base;n<base+36;n++){const pc=n%12;if(!white.includes(pc)){const xx=pos[n-1]+12;o+=`<rect x="${xx}" y="60" width="11" height="68" rx="2" fill="${n===k1?PINK:n===k0?MINT:"#3C4557"}"/><rect x="${xx+2}" y="62" width="3" height="56" rx="1.5" fill="#fff" opacity="${n===k1||n===k0?.35:.18}"/>`}}
   const semis=12*Math.log2(pitchRatio());
   o+=`<text class="t-ink" x="12" y="30">Speed ratio ${fmt(s.rpm,1)} ÷ ${fmt(s.disc,1)} = ${fmt(pitchRatio(),3)}</text><text class="t-ink" x="12" y="48">Pitch moves ${semis>=0?"up":"down"} ${fmt(Math.abs(semis),1)} semitones</text>`;
-  o+=`<rect x="12" y="190" width="12" height="12" fill="${LABEL2}"/><text class="t-lab" x="30" y="200">RECORDED NOTE</text><rect x="150" y="190" width="12" height="12" fill="${PINK}"/><text class="t-lab" x="168" y="200">WHAT YOU HEAR</text>`;
+  o+=`<rect x="12" y="190" width="12" height="12" rx="3" fill="${LABEL2}" stroke="${F.deep(LABEL2)}"/><text class="t-lab" x="30" y="200">RECORDED NOTE</text><rect x="150" y="190" width="12" height="12" rx="3" fill="${PINK}" stroke="${PINK_D}"/><text class="t-lab" x="168" y="200">WHAT YOU HEAR</text>`;
   o+=`<text class="t-lab" x="12" y="232">EVERY OCTAVE DOUBLES THE FREQUENCY · ONE SEMITONE = ×1.059</text>`;return o}
 function dbPanel(){const w=420,h=260,levels=[["Whisper",30],["Talking",60],["Busy café",75],["Lawnmower",90],["Earbuds at max",100],["Concert",110]];const X=d=>30+(d-20)/100*360;let o="";
-  o+=`<line x1="30" x2="390" y1="150" y2="150" stroke="var(--ink)"/>`;levels.forEach(([n,d],i)=>{o+=`<line x1="${X(d)}" x2="${X(d)}" y1="144" y2="156" stroke="var(--ink)"/><text class="t-lab" x="${X(d)}" y="${i%2?178:132}" text-anchor="middle">${n.toUpperCase()} ${d}</text>`});
-  o+=`<rect x="${X(80)}" y="186" width="${X(120)-X(80)}" height="10" fill="${PINK}" opacity=".35"/><text class="t-lab" x="${X(80)}" y="214">WHO SAFE LISTENING: ABOUT 80 dB FOR UP TO 40 H A WEEK (ADULTS)</text>`;
-  o+=`<circle cx="${X(s.db)}" cy="150" r="8" fill="${PINK}" stroke="#fff" stroke-width="2"/><text class="t-ink" x="${X(s.db)}" y="104" text-anchor="middle" style="font-weight:600">${fmt(s.db)} dB</text>`;
+  // the decibel scale is a steel rule lying on the paper
+  o+=F.box(26,147,368,7,{colour:PAL.steel,kind:"metal",d:8,r:2,shadowLen:24,sw:1});
+  // labels nudged sideways where neighbours would collide
+  const lay=[[0,"middle"],[0,"middle"],[0,"middle"],[30,"end"],[-46,"start"],[-34,"start"]];
+  levels.forEach(([n,d],i)=>{o+=`<line x1="${X(d)}" x2="${X(d)}" y1="144" y2="157" stroke="${INK}"/><text class="t-lab" x="${X(d)+lay[i][0]}" y="${i%2?178:132}" text-anchor="${lay[i][1]}">${n.toUpperCase()} ${d}</text>`});
+  o+=`<rect x="${X(80)}" y="186" width="${X(120)-X(80)}" height="10" rx="3" fill="${PAL.product.strawberry}" opacity=".45"/><text class="t-lab" x="8" y="214">WHO SAFE LISTENING: ABOUT 80 dB FOR UP TO 40 H A WEEK (ADULTS)</text>`;
+  o+=`<circle cx="${X(s.db)+2}" cy="153" r="8" fill="${PAL.shadow}" opacity=".15"/><circle cx="${X(s.db)}" cy="150" r="8" fill="${PAL.product.strawberry}" stroke="#fff" stroke-width="2"/><text class="t-ink" x="${X(s.db)}" y="104" text-anchor="middle" style="font-weight:600">${fmt(s.db)} dB</text>`;
   const safeH=40*Math.pow(2,-(s.db-80)/3);o+=`<text class="t-ink" x="30" y="34">Every +3 dB doubles the sound energy,</text><text class="t-ink" x="30" y="52">so the safe time halves: at ${fmt(s.db)} dB about ${safeH>=1?fmt(safeH,0)+" h":fmt(safeH*60,0)+" min"} a week.</text>`;return o}
 function circlePanel(){const C_out=2*Math.PI*R_OUT,C_in=2*Math.PI*R_IN;return `<text class="t-lab" x="16" y="28">ONE TURN = ONE CIRCUMFERENCE, C = 2πr</text>
   <text class="t-ink" x="16" y="60">Outer: 2 × π × 0.146 = ${fmt(C_out,3)} m a turn</text><text class="t-ink" x="16" y="82">Inner: 2 × π × 0.060 = ${fmt(C_in,3)} m a turn</text>
@@ -164,7 +210,7 @@ StudyKit.mount({kupu:KUPU,caseTint:"blush",
     {type:"select",id:"format",label:"Record",options:[["lp","12-inch LP at 33⅓"],["single","7-inch single at 45"]],get:()=>s.format,set:(x,v)=>{s.format=v;if(v==="single"){s.rpm=45;s.disc=45;s.r=Math.min(s.r,R_SINGLE)}else{s.rpm=100/3;s.disc=100/3}}}],
   tick:(x,dt,st)=>{const slow=st.k==="spin"?1:0.0025;s.ang+=2*Math.PI*rps()*dt;s.phase+=2*Math.PI*Math.min(heard(),900)*dt*slow*(st.k==="air"||st.k==="loud"?1:1);s.t+=dt},
   drawMain:(x,st)=>drawMain(st),
-  drawClose:(x,st)=>st.k==="spin"?circlePanel():st.k==="pitch"?keys():st.k==="loud"?dbPanel():wavePanel(),
+  drawClose:(x,st)=>F.floor(420,260)+(st.k==="spin"?circlePanel():st.k==="pitch"?keys():st.k==="loud"?dbPanel():wavePanel()),
   chips:()=>({rpm:["SPEED",fmt(s.rpm,1)+" rpm"],period:["ONE TURN",fmt(period(),2)+" s"],outer:["OUTER GROOVE",fmt(speedAt(R_OUT),2)+" m/s",true],inner:["INNER GROOVE",fmt(speedAt(R_IN),2)+" m/s"],
     f:["RECORDED",`${fmt(s.f)} Hz`],heard:["YOU HEAR",`${fmt(heard())} Hz · ${noteOf(heard())}`,true],ratio:["RATIO",fmt(pitchRatio(),3)],note:["SEMITONES",(12*Math.log2(pitchRatio())>=0?"+":"")+fmt(12*Math.log2(pitchRatio()),1)],
     lambda:["WAVELENGTH",["air","loud"].includes(s.step)?fmt(V_AIR/s.f,2)+" m in air":fmt(speedAt(s.r)/s.f*1000,2)+" mm in groove",true],gspeed:["GROOVE SPEED",fmt(speedAt(s.r),2)+" m/s"],

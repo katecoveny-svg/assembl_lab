@@ -3,63 +3,79 @@
 const s={b:8,h:5,sh:0,a:4,r:3,ang:62,len:10,unroll:0,pour:0,ta:3,tb:4};
 const PX=18; // pixels per unit
 const f=(x,d=1)=>{const r=Math.round(x*Math.pow(10,d))/Math.pow(10,d);return r.toLocaleString("en-NZ")};
-function grid(){let o="";for(let x=20;x<=620;x+=PX)o+=`<line x1="${x}" x2="${x}" y1="20" y2="310" stroke="var(--line)" stroke-width=".6"/>`;for(let y=20;y<=310;y+=PX)o+=`<line x1="20" x2="620" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width=".6"/>`;return o}
+// bench figure look (StudyKit.fig): the grid paper is a frosted lavender cutting mat on the paper floor; each shape is a cut acrylic
+// tile with a little thickness, so the top face keeps exactly the measured outline
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.lavender,TD=F.deep(TINT),PR=PAL.product,HOT="#D2557A",RAIL="#6E7A8C";
+function grid(){let o="";for(let x=20;x<=620;x+=PX)o+=`<line x1="${x}" x2="${x}" y1="20" y2="310" stroke="${TD}" stroke-opacity=".32" stroke-width=".6"/>`;for(let y=20;y<=310;y+=PX)o+=`<line x1="20" x2="620" y1="${y}" y2="${y}" stroke="${TD}" stroke-opacity=".32" stroke-width=".6"/>`;return o}
+function mat(){return F.floor(640,330,{grid:false})+F.acrylic(12,14,612,302,{tint:TINT,d:8,r:12,opacity:.32,shadowLen:30})+`<rect x="20" y="20" width="600" height="290" fill="#fff" fill-opacity=".45"/>`}
+// a cut tile: floor shadow, the edge (thickness) and the top face; op is the top face's fill opacity
+function slab(d,col,op,extra){const m=F.mat("painted",col);extra=extra||"";
+  return `<path d="${d}" transform="translate(5,6)" fill="${PAL.shadow}" opacity=".12"/><path d="${d}" transform="translate(2.5,3)" fill="${m.shade}" fill-opacity="${Math.min(1,op+.35)}" stroke="${m.stroke}" stroke-width="1.2" stroke-linejoin="round"/><path d="${d}" fill="${col}" fill-opacity="${op}" stroke="${m.stroke}" stroke-width="2" stroke-linejoin="round" ${extra}/>`}
 const X0=74,Y0=272;
 function dimLabel(x1,y1,x2,y2,t,off=14){const mx=(x1+x2)/2,my=(y1+y2)/2;return `<text class="t-ink" x="${mx}" y="${my+off}" text-anchor="middle">${t}</text>`}
 function drawMain(st0,st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`+grid();const B=s.b*PX,H=s.h*PX,SH=s.sh*PX;
+  let o=mat()+grid();const B=s.b*PX,H=s.h*PX,SH=s.sh*PX;
   if(st.k==="para"){
-    o+=`<path d="M${X0},${Y0} L${X0+B},${Y0} L${X0+B+SH},${Y0-H} L${X0+SH},${Y0-H}Z" fill="var(--sun)" fill-opacity=".35" stroke="var(--ink)" stroke-width="2"/>`;
-    o+=`<line x1="${X0+SH}" x2="${X0+SH}" y1="${Y0-H}" y2="${Y0}" stroke="var(--hot)" stroke-dasharray="4 3" stroke-width="1.6"/><path d="M${X0+SH},${Y0-10} h10 v10" fill="none" stroke="var(--hot)"/>`;
+    o+=slab(`M${X0},${Y0} L${X0+B},${Y0} L${X0+B+SH},${Y0-H} L${X0+SH},${Y0-H}Z`,PR.butter,.8);
+    o+=`<line x1="${X0+SH}" x2="${X0+SH}" y1="${Y0-H}" y2="${Y0}" stroke="${HOT}" stroke-dasharray="4 3" stroke-width="1.6"/><path d="M${X0+SH},${Y0-10} h10 v10" fill="none" stroke="${HOT}"/>`;
     o+=dimLabel(X0,Y0,X0+B,Y0,`base ${s.b} m`)+`<text class="t-ink" x="${X0+SH+8}" y="${Y0-H/2}">height ${s.h} m</text>`;
     o+=`<text class="t-big" x="360" y="60">Area = base × height</text><text class="t-big" x="360" y="84">= ${s.b} × ${s.h} = ${s.b*s.h} m²</text><text class="t-body" x="360" y="112">Slide the top: the area stays the same.</text>`;return o}
   if(st.k==="tri"){
-    o+=`<path d="M${X0},${Y0} L${X0+B},${Y0} L${X0+B+SH},${Y0-H} L${X0+SH},${Y0-H}Z" fill="none" stroke="var(--rose)" stroke-dasharray="4 3"/>`;
-    o+=`<path d="M${X0},${Y0} L${X0+B},${Y0} L${X0+SH},${Y0-H}Z" fill="var(--sea)" fill-opacity=".35" stroke="var(--ink)" stroke-width="2"/>`;
-    o+=`<line x1="${X0+SH}" x2="${X0+SH}" y1="${Y0-H}" y2="${Y0}" stroke="var(--hot)" stroke-dasharray="4 3" stroke-width="1.6"/>`+dimLabel(X0,Y0,X0+B,Y0,`base ${s.b} m`)+`<text class="t-ink" x="${X0+SH+8}" y="${Y0-H/2}">height ${s.h} m</text>`;
+    o+=`<path d="M${X0},${Y0} L${X0+B},${Y0} L${X0+B+SH},${Y0-H} L${X0+SH},${Y0-H}Z" fill="#fff" fill-opacity=".4" stroke="${TD}" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+    o+=slab(`M${X0},${Y0} L${X0+B},${Y0} L${X0+SH},${Y0-H}Z`,PR.blueberry,.75);
+    o+=`<line x1="${X0+SH}" x2="${X0+SH}" y1="${Y0-H}" y2="${Y0}" stroke="${HOT}" stroke-dasharray="4 3" stroke-width="1.6"/>`+dimLabel(X0,Y0,X0+B,Y0,`base ${s.b} m`)+`<text class="t-ink" x="${X0+SH+8}" y="${Y0-H/2}">height ${s.h} m</text>`;
     o+=`<text class="t-big" x="360" y="60">Area = ½ × base × height</text><text class="t-big" x="360" y="84">= ½ × ${s.b} × ${s.h} = ${f(s.b*s.h/2)} m²</text><text class="t-body" x="360" y="112">Every triangle is half a parallelogram.</text>`;return o}
   if(st.k==="trap"){const A=s.a*PX;const off=(B-A)/2;
-    o+=`<path d="M${X0},${Y0} L${X0+B},${Y0} L${X0+off+A},${Y0-H} L${X0+off},${Y0-H}Z" fill="var(--land)" fill-opacity=".35" stroke="var(--ink)" stroke-width="2"/>`;
-    o+=dimLabel(X0,Y0,X0+B,Y0,`b = ${s.b} m`)+dimLabel(X0+off,Y0-H,X0+off+A,Y0-H,`a = ${s.a} m`,-8)+`<line x1="${X0+B/2}" x2="${X0+B/2}" y1="${Y0-H}" y2="${Y0}" stroke="var(--hot)" stroke-dasharray="4 3"/><text class="t-ink" x="${X0+B/2+8}" y="${Y0-H/2}">h = ${s.h} m</text>`;
+    o+=slab(`M${X0},${Y0} L${X0+B},${Y0} L${X0+off+A},${Y0-H} L${X0+off},${Y0-H}Z`,PR.lime,.8);
+    o+=dimLabel(X0,Y0,X0+B,Y0,`b = ${s.b} m`)+dimLabel(X0+off,Y0-H,X0+off+A,Y0-H,`a = ${s.a} m`,-8)+`<line x1="${X0+B/2}" x2="${X0+B/2}" y1="${Y0-H}" y2="${Y0}" stroke="${HOT}" stroke-dasharray="4 3"/><text class="t-ink" x="${X0+B/2+8}" y="${Y0-H/2}">h = ${s.h} m</text>`;
     o+=`<text class="t-big" x="360" y="60">Area = ½ (a + b) h</text><text class="t-big" x="360" y="84">= ½ × (${s.a} + ${s.b}) × ${s.h} = ${f((s.a+s.b)*s.h/2)} m²</text><text class="t-body" x="360" y="112">The average of the parallel sides × height.</text>`;return o}
-  if(st.k==="circle"){const R=s.r*PX,cx=170,cy=150,C=2*Math.PI*s.r;
-    o+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--sun)" fill-opacity="${.35*(1-s.unroll)}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="${2*Math.PI*R*(1-s.unroll)} 9999"/>`;
-    o+=`<line x1="${cx}" x2="${cx+R}" y1="${cy}" y2="${cy}" stroke="var(--hot)" stroke-width="1.6"/><text class="t-ink" x="${cx+R/2}" y="${cy-6}" text-anchor="middle">r = ${s.r} m</text>`;
-    const L=Math.min(560,C*PX*0.5);o+=`<line x1="40" x2="${40+L*s.unroll}" y1="300" y2="300" stroke="var(--ink)" stroke-width="3"/><text class="t-lab" x="40" y="292">THE EDGE UNROLLED (HALF SCALE): ${f(C*s.unroll)} m</text>`;
+  if(st.k==="circle"){const R=s.r*PX,cx=170,cy=150,C=2*Math.PI*s.r,m=F.mat("painted",PR.peach),k=1-s.unroll;
+    // a round tile; as the edge unrolls the tile empties and its rim is peeled off onto the tape below
+    if(k>0.01)o+=`<circle cx="${cx+5}" cy="${cy+6}" r="${R}" fill="${PAL.shadow}" opacity="${.12*k}"/><circle cx="${cx+2.5}" cy="${cy+3}" r="${R}" fill="${m.shade}" fill-opacity="${.9*k}" stroke="${m.stroke}" stroke-opacity="${k}" stroke-width="1.2"/>`;
+    o+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${PR.peach}" fill-opacity="${.8*k}" stroke="${m.stroke}" stroke-width="2.4" stroke-dasharray="${2*Math.PI*R*(1-s.unroll)} 9999"/>`;
+    if(s.unroll<1)o+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1" stroke-dasharray="${2*Math.PI*R*(1-s.unroll)} 9999" transform="translate(-1.5,-1.5)"/>`;
+    o+=`<line x1="${cx}" x2="${cx+R}" y1="${cy}" y2="${cy}" stroke="${HOT}" stroke-width="1.6"/><text class="t-ink" x="${cx+R/2}" y="${cy-6}" text-anchor="middle">r = ${s.r} m</text>`;
+    const L=Math.min(560,C*PX*0.5);if(s.unroll>0)o+=`<path d="M40,${305} h${L*s.unroll}" stroke="${PAL.shadow}" stroke-opacity=".12" stroke-width="4" stroke-linecap="round"/><line x1="40" x2="${40+L*s.unroll}" y1="300" y2="300" stroke="${m.stroke}" stroke-width="4.5" stroke-linecap="round"/><line x1="40" x2="${40+L*s.unroll}" y1="300" y2="300" stroke="${PR.peach}" stroke-width="2.4" stroke-linecap="round"/>`;
+    o+=`<text class="t-lab" x="40" y="292">THE EDGE UNROLLED (HALF SCALE): ${f(C*s.unroll)} m</text>`;
     o+=`<text class="t-big" x="380" y="60">Circumference = 2πr = ${f(C)} m</text><text class="t-big" x="380" y="84">Area = πr² = ${f(Math.PI*s.r*s.r)} m²</text><text class="t-body" x="380" y="112">π ≈ 3.14: any circle's edge is about 3.14 diameters.</text>`;return o}
   if(st.k==="pyth"){const c=Math.hypot(s.ta,s.tb),S=Math.min(18,120/c),a=s.ta*S,b=s.tb*S,ox=230,oy=262;
-    // right triangle with legs along axes; squares outward
-    o+=`<path d="M${ox},${oy} h${a} v${-b}z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/>`;
-    o+=`<rect x="${ox}" y="${oy}" width="${a}" height="${a}" fill="var(--sea)" fill-opacity="${.45*(1-s.pour)}" stroke="var(--ink)"/>`;
-    o+=`<rect x="${ox+a}" y="${oy-b}" width="${b}" height="${b}" fill="var(--hot)" fill-opacity="${.45*(1-s.pour)}" stroke="var(--ink)"/>`;
-    // hypotenuse square: from (ox,oy) to (ox+a, oy-b); outward normal points up-left
+    // three acrylic trays: the two small squares pour into the square on the hypotenuse
+    const tray=(d,col,frac)=>{const m=F.mat("painted",col);return `<path d="${d}" transform="translate(4,5)" fill="${PAL.shadow}" opacity=".1"/><path d="${d}" transform="translate(2.5,3)" fill="${TD}" fill-opacity=".35" stroke="${TD}" stroke-width="1"/><path d="${d}" fill="#fff" fill-opacity=".55" stroke="${m.stroke}" stroke-width="1.6" stroke-linejoin="round"/><path d="${d}" fill="${col}" fill-opacity="${r2(.85*frac)}"/>`};
+    const r2=v=>Math.round(v*100)/100;
     const dx=a,dy=-b,nx=dy,ny=-dx;const P1=[ox,oy],P2=[ox+dx,oy+dy],P3=[P2[0]+nx,P2[1]+ny],P4=[ox+nx,oy+ny];
-    o+=`<path d="M${P1} L${P2} L${P3} L${P4}Z" fill="var(--sun)" fill-opacity="${.15+.4*s.pour}" stroke="var(--ink)"/>`;
+    o+=tray(`M${P1} L${P2} L${P3} L${P4}Z`,PR.butter,.18+.82*s.pour);
+    o+=tray(`M${ox},${oy} h${a} v${a} h${-a}z`,PR.blueberry,1-s.pour);
+    o+=tray(`M${ox+a},${oy-b} h${b} v${b} h${-b}z`,PR.strawberry,1-s.pour);
+    o+=slab(`M${ox},${oy} h${a} v${-b}z`,"#FFFFFF",1);
+    o+=`<path d="M${ox+a-9},${oy} v-9 h9" fill="none" stroke="${RAIL}" stroke-width="1.2"/>`;
     o+=`<text class="t-ink" x="${ox+a/2}" y="${oy+a/2+4}" text-anchor="middle">${s.ta*s.ta}</text><text class="t-ink" x="${ox+a+b/2}" y="${oy-b/2+4}" text-anchor="middle">${s.tb*s.tb}</text><text class="t-ink" x="${(P1[0]+P3[0])/2}" y="${(P1[1]+P3[1])/2+4}" text-anchor="middle">${f(c*c)}</text>`;
     o+=`<text class="t-big" x="440" y="236">a² + b² = c²</text><text class="t-big" x="440" y="260">${s.ta*s.ta} + ${s.tb*s.tb} = ${f(c*c)}</text><text class="t-big" x="440" y="284">c = √${f(c*c)} = ${f(c,2)} m</text>`;return o}
   if(st.k==="angles"){const a=s.ang*Math.PI/180;const y1=110,y2=230;
-    o+=`<line x1="40" x2="600" y1="${y1}" y2="${y1}" stroke="var(--ink)" stroke-width="2"/><line x1="40" x2="600" y1="${y2}" y2="${y2}" stroke="var(--ink)" stroke-width="2"/>`;
-    o+=`<path d="M300,${y1-6} l8,6 l-8,6 M500,${y1-6} l8,6 l-8,6" fill="none" stroke="var(--ink)"/><path d="M300,${y2-6} l8,6 l-8,6 M500,${y2-6} l8,6 l-8,6" fill="none" stroke="var(--ink)"/>`;
+    // two steel rails and a strawberry rod crossing them
+    const rod=(x1,yA,x2,yB,c,lo,hi,w)=>`<line x1="${x1+3}" y1="${yA+4}" x2="${x2+3}" y2="${yB+4}" stroke="${PAL.shadow}" stroke-opacity=".12" stroke-width="${w+1}" stroke-linecap="round"/><line x1="${x1}" y1="${yA}" x2="${x2}" y2="${yB}" stroke="${lo}" stroke-width="${w}" stroke-linecap="round"/><line x1="${x1}" y1="${yA-1.2}" x2="${x2}" y2="${yB-1.2}" stroke="${hi}" stroke-width="${w*.35}" stroke-linecap="round"/>`;
+    o+=rod(40,y1,600,y1,0,RAIL,PAL.steel,6)+rod(40,y2,600,y2,0,RAIL,PAL.steel,6);
+    o+=`<path d="M300,${y1-12} l8,6 l-8,6 M500,${y1-12} l8,6 l-8,6" fill="none" stroke="var(--ink)" stroke-width="1.4"/><path d="M300,${y2-12} l8,6 l-8,6 M500,${y2-12} l8,6 l-8,6" fill="none" stroke="var(--ink)" stroke-width="1.4"/>`;
     const dx=(y2-y1)/Math.tan(a);const xA=300-dx/2,xB=300+dx/2;
-    o+=`<line x1="${xB+60/Math.tan(a)}" y1="${y1-60}" x2="${xA-60/Math.tan(a)}" y2="${y2+60}" stroke="var(--hot)" stroke-width="2"/>`;
-    const arc=(x,y,from,to,c)=>{const r=26,p1=[x+r*Math.cos(from),y-r*Math.sin(from)],p2=[x+r*Math.cos(to),y-r*Math.sin(to)];return `<path d="M${x},${y} L${p1} A${r},${r} 0 0,0 ${p2}Z" fill="${c}" fill-opacity=".45"/>`};
-    o+=arc(xB,y1,0,a,"var(--sun)")+arc(xA,y2,0,a,"var(--sun)")+arc(xA,y2,a,Math.PI,"var(--sea)");
+    const arc=(x,y,from,to,c)=>{const r=26,p1=[x+r*Math.cos(from),y-r*Math.sin(from)],p2=[x+r*Math.cos(to),y-r*Math.sin(to)];return `<path d="M${x},${y} L${p1} A${r},${r} 0 0,0 ${p2}Z" fill="${c}" fill-opacity=".7" stroke="${F.mat("painted",c).stroke}" stroke-width="1"/>`};
+    o+=arc(xB,y1,0,a,PR.butter)+arc(xA,y2,0,a,PR.butter)+arc(xA,y2,a,Math.PI,PR.blueberry);
+    o+=rod(xB+60/Math.tan(a),y1-60,xA-60/Math.tan(a),y2+60,0,"#C2456A",PR.strawberry,4.5);
     o+=`<text class="t-ink" x="${xB+34}" y="${y1-8}">${s.ang}°</text><text class="t-ink" x="${xA+34}" y="${y2-8}">${s.ang}°</text><text class="t-ink" x="${xA-60}" y="${y2-8}">${180-s.ang}°</text>`;
     o+=`<text class="t-big" x="380" y="290">Corresponding angles are equal</text>`;return o}
-  // prism volume
-  const A=s.b*s.h/2,V=A*s.len;const fx=120,fy=250,bb=s.b*PX*0.8,hh=s.h*PX*0.8,d=s.len*PX*0.6,dx=d*0.7,dy=-d*0.45;
-  o+=`<path d="M${fx},${fy} L${fx+bb},${fy} L${fx+bb/2},${fy-hh}Z" fill="var(--sun)" fill-opacity=".45" stroke="var(--ink)" stroke-width="2"/>`;
-  o+=`<path d="M${fx+bb},${fy} L${fx+bb+dx},${fy+dy} L${fx+bb/2+dx},${fy-hh+dy} L${fx+bb/2},${fy-hh}Z" fill="var(--fill)" stroke="var(--ink)"/><path d="M${fx+bb/2},${fy-hh} L${fx+bb/2+dx},${fy-hh+dy}" stroke="var(--ink)"/>`;
-  o+=`<path d="M${fx},${fy} L${fx+dx},${fy+dy} L${fx+bb+dx},${fy+dy}" fill="none" stroke="var(--ink)" stroke-dasharray="4 3"/><path d="M${fx+dx},${fy+dy} L${fx+bb/2+dx},${fy-hh+dy}" stroke="var(--ink)" stroke-dasharray="4 3"/>`;
+  // prism volume: a solid painted block with a lit sloping face and a shaded side, hidden edges dashed
+  const A=s.b*s.h/2,V=A*s.len;const fx=120,fy=250,bb=s.b*PX*0.8,hh=s.h*PX*0.8,d=s.len*PX*0.6,dx=d*0.7,dy=-d*0.45,m=F.mat("painted",PR.peach);
+  o+=F.shadow(fx+4,fy,bb+dx*.7,{len:56,opacity:.14});
+  o+=`<path d="M${fx},${fy} L${fx+dx},${fy+dy} L${fx+bb+dx},${fy+dy}" fill="none" stroke="${m.stroke}" stroke-opacity=".6" stroke-dasharray="4 3"/><path d="M${fx+dx},${fy+dy} L${fx+bb/2+dx},${fy-hh+dy}" stroke="${m.stroke}" stroke-opacity=".6" stroke-dasharray="4 3"/>`;
+  o+=`<path d="M${fx+bb},${fy} L${fx+bb+dx},${fy+dy} L${fx+bb/2+dx},${fy-hh+dy} L${fx+bb/2},${fy-hh}Z" fill="${m.hi}" fill-opacity=".92" stroke="${m.stroke}" stroke-width="1.6" stroke-linejoin="round"/><path d="M${fx+bb/2},${fy-hh} L${fx+bb/2+dx},${fy-hh+dy}" stroke="${m.stroke}" stroke-width="1.6"/>`;
+  o+=`<path d="M${fx},${fy} L${fx+bb},${fy} L${fx+bb/2},${fy-hh}Z" fill="${PR.peach}" stroke="${m.stroke}" stroke-width="2" stroke-linejoin="round"/><path d="M${fx+bb*.18},${fy-hh*.2} L${fx+bb*.44},${fy-hh*.78}" stroke="#fff" stroke-opacity=".7" stroke-width="2.4" stroke-linecap="round"/>`;
   o+=`<text class="t-ink" x="${fx+bb+dx/2+8}" y="${fy+dy/2+4}">length ${s.len} m</text>`;
   o+=`<text class="t-big" x="400" y="60">Volume = area of cross-section × length</text><text class="t-big" x="400" y="84">= (½ × ${s.b} × ${s.h}) × ${s.len}</text><text class="t-big" x="400" y="108">= ${f(A)} × ${s.len} = ${f(V)} m³</text>`;
   return o;
 }
 function drawClose(st0,st){
-  let o=`<rect width="420" height="260" fill="var(--chalk)"/><text class="t-lab" x="14" y="22">CHEAT SHEET · WHAT EACH FORMULA MEANS</text>`;
+  let o=F.floor(420,260)+`<text class="t-lab" x="14" y="22">CHEAT SHEET · WHAT EACH FORMULA MEANS</text>`;
   const rows=[["Rectangle / parallelogram","A = b × h","h is the perpendicular height"],["Triangle","A = ½ b h","half a parallelogram"],["Trapezium","A = ½ (a + b) h","average of parallel sides × h"],["Circle","C = 2πr, A = πr²","units: m for C, m² for A"],["Pythagoras","a² + b² = c²","c is the longest side"],["Prism","V = area × length","units: m³"]];
-  const cur={para:0,tri:1,trap:2,circle:3,pyth:4,prism:5}[st.k];
-  rows.forEach((r,i)=>{const y=48+i*34,on=i===cur;o+=`<rect x="10" y="${y-16}" width="400" height="30" rx="6" fill="${on?"var(--sun)":"var(--paper)"}" fill-opacity="${on?.35:1}" stroke="${on?"var(--ink)":"var(--line)"}"/><text class="t-ink" x="20" y="${y+3}">${r[0]}</text><text class="t-ink" x="200" y="${y+3}" style="font-weight:600">${r[1]}</text><text class="t-lab" x="404" y="${y+3}" text-anchor="end"> </text>`});
+  const cur={para:0,tri:1,trap:2,circle:3,pyth:4,prism:5}[st.k],sw=[PR.butter,PR.blueberry,PR.lime,PR.peach,PR.strawberry,PR.peach];
+  rows.forEach((r,i)=>{const y=48+i*34,on=i===cur;o+=`<rect x="13" y="${y-13}" width="400" height="30" rx="10" fill="${PAL.shadow}" opacity=".07"/><rect x="10" y="${y-16}" width="400" height="30" rx="10" fill="${on?TINT:"#FFFFFF"}" stroke="${on?TD:PAL.pill.line}" stroke-width="${on?1.6:1}"/><rect x="${on?16:18}" y="${y-8}" width="10" height="14" rx="3" fill="${sw[i]}" stroke="${F.mat("painted",sw[i]).stroke}" stroke-width=".8"/><text class="t-ink" x="32" y="${y+3}">${r[0]}</text><text class="t-ink" x="200" y="${y+3}" style="font-weight:600">${r[1]}</text><text class="t-lab" x="404" y="${y+3}" text-anchor="end"> </text>`});
   if(st.k==="angles")o+=`<text class="t-body" x="14" y="256">Corresponding equal · alternate equal · co-interior add to 180°</text>`;
   else{const r=rows[cur]||rows[0];o+=`<text class="t-body" x="14" y="256">${r[0]}: ${r[2]}.</text>`}
   return o;

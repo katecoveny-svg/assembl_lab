@@ -26,23 +26,28 @@ function synth(kind,o={}){const R=Math.random,sc=o.scale??(0.25+R()*0.55),cxp=o.
 function addExample(c,strokes){s.ex[c].push({strokes,v:raster(strokes,false),vc:raster(strokes,true)})}
 let TEST=null;function testSet(){if(!TEST){TEST=[];for(let i=0;i<40;i++){const c=i%2;TEST.push({c,strokes:synth(c)})}TEST.forEach(t=>{t.v=raster(t.strokes,false);t.vc=raster(t.strokes,true)})}return TEST}
 function accuracy(){const T=testSet();let ok=0;T.forEach(t=>{const p=predict(s.center?t.vc:t.v);if(p&&p.c===t.c)ok++});return ok/T.length}
-// ---- drawing
+// ---- drawing (the bench figure look: StudyKit.fig; digital technologies use the blush case tint)
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.blush,CLS=[PAL.product.strawberry,PAL.product.blueberry];
 const path=st=>st.length?`M${st.map(p=>p.join(",")).join(" L")}`:"";
-function thumb(e,x,y,w){const k=w/PAD.s;return `<g transform="translate(${x},${y}) scale(${k}) translate(${-PAD.x},${-PAD.y})"><rect x="${PAD.x}" y="${PAD.y}" width="${PAD.s}" height="${PAD.s}" rx="${24}" fill="var(--paper)" stroke="var(--line)" stroke-width="${4}"/>${e.strokes.map(st=>`<path d="${path(st)}" fill="none" stroke="var(--ink)" stroke-width="${10}" stroke-linecap="round" stroke-linejoin="round"/>`).join("")}</g>`}
-function drawMain(st){let o=`<rect width="800" height="420" fill="var(--chalk)"/>`;
-  o+=`<rect x="${PAD.x}" y="${PAD.y}" width="${PAD.s}" height="${PAD.s}" rx="18" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/>`;
+function thumb(e,x,y,w,c){const k=w/PAD.s;return `<path d="M${x},${y+w} h${w} l${w*0.3},${w*0.16} h${-w}z" fill="${PAL.shadow}" opacity=".1"/><g transform="translate(${x},${y}) scale(${k}) translate(${-PAD.x},${-PAD.y})"><rect x="${PAD.x}" y="${PAD.y}" width="${PAD.s}" height="${PAD.s}" rx="${24}" fill="#fff" stroke="${c?F.mat("painted",c).stroke:"#DCD6EA"}" stroke-width="${c?10:4}"/>${e.strokes.map(st=>`<path d="${path(st)}" fill="none" stroke="var(--ink)" stroke-width="${10}" stroke-linecap="round" stroke-linejoin="round"/>`).join("")}</g>`}
+function drawMain(st){let o=F.floor(800,420);
+  // the drawing tablet: a blush plastic case with a white screen (the screen is exactly the drawing pad)
+  o+=F.box(PAD.x-12,PAD.y-12,PAD.s+24,PAD.s+24,{colour:TINT,kind:"plastic",d:10,r:24,shadowLen:60});
+  o+=`<rect x="${PAD.x}" y="${PAD.y}" width="${PAD.s}" height="${PAD.s}" rx="18" fill="#fff" stroke="${F.deep(TINT)}" stroke-width="2"/><path d="M${PAD.x+22},${PAD.y+10} h120" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>`;
+  o+=`<circle cx="${PAD.x+PAD.s/2}" cy="${PAD.y+PAD.s+7}" r="3.2" fill="${PAL.product.lime}" stroke="#6E9A3E" stroke-width=".8"/>`;
   if(!s.strokes.length&&!s.cur)o+=`<text class="t-lab" x="${PAD.x+PAD.s/2}" y="${PAD.y+PAD.s/2}" text-anchor="middle">DRAW HERE${st.k==="test"||st.k==="guess"?": THE AI WILL GUESS":""}</text>`;
   [...s.strokes,...(s.cur?[s.cur]:[])].forEach(stk=>o+=`<path d="${path(stk)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`);
   // right side: the training examples, by class
-  [0,1].forEach(c=>{const x0=410+c*195;o+=`<text x="${x0}" y="58" style="font:600 15px var(--display);fill:var(--ink)">${s.names[c]}</text><text class="t-lab" x="${x0+185}" y="58" text-anchor="end">${s.ex[c].length} EXAMPLES</text>`;
-    s.ex[c].slice(-12).forEach((e,i)=>o+=thumb(e,x0+(i%4)*47,70+Math.floor(i/4)*47,42));});
-  if(s.pred){const p=s.pred,bx=410,by=232;o+=`<rect x="${bx}" y="${by}" width="375" height="150" rx="14" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/><text class="t-lab" x="${bx+16}" y="${by+26}">THE AI'S GUESS</text>
-    <text x="${bx+16}" y="${by+62}" style="font:700 30px var(--display);fill:var(--ink)">${s.names[p.c]}</text><text class="t-ink" x="${bx+16}" y="${by+86}">${fmt(p.conf*100)}% sure</text>
-    <text class="t-lab" x="${bx+190}" y="${by+26}">LOOKS MOST LIKE</text>`;p.near.forEach((n,i)=>{const e=s.ex[n.c][n.i];o+=thumb(e,bx+190+i*60,by+38,52)+`<text class="t-lab" x="${bx+216+i*60}" y="${by+108}" text-anchor="middle">${s.names[n.c].toUpperCase()}</text>`});
+  o+=F.acrylic(404,34,386,188,{tint:TINT,d:8,r:12,opacity:.24,shadowLen:28,balls:false});
+  [0,1].forEach(c=>{const x0=410+c*195;o+=`<rect x="${x0}" y="64" width="185" height="3" rx="1.5" fill="${CLS[c]}" opacity=".9"/>`;o+=`<text x="${x0}" y="58" style="font:600 15px var(--display);fill:var(--ink)">${s.names[c]}</text><text class="t-lab" x="${x0+185}" y="58" text-anchor="end">${s.ex[c].length} EXAMPLES</text>`;
+    s.ex[c].slice(-12).forEach((e,i)=>o+=thumb(e,x0+(i%4)*47,74+Math.floor(i/4)*47,42,CLS[c]));});
+  if(s.pred){const p=s.pred,bx=410,by=232;o+=F.acrylic(bx,by,375,150,{tint:TINT,d:10,r:14,opacity:.3,shadowLen:24})+`<rect x="${bx+12}" y="${by+36}" width="6" height="56" rx="3" fill="${CLS[p.c]}"/>`;o+=`<text class="t-lab" x="${bx+16}" y="${by+26}">THE AI'S GUESS</text>
+    <text x="${bx+26}" y="${by+62}" style="font:700 30px var(--display);fill:var(--ink)">${s.names[p.c]}</text><text class="t-ink" x="${bx+26}" y="${by+86}">${fmt(p.conf*100)}% sure</text>
+    <text class="t-lab" x="${bx+190}" y="${by+26}">LOOKS MOST LIKE</text>`;p.near.forEach((n,i)=>{const e=s.ex[n.c][n.i];o+=thumb(e,bx+190+i*60,by+38,52,CLS[n.c])+`<text class="t-lab" x="${bx+216+i*60}" y="${by+108}" text-anchor="middle">${s.names[n.c].toUpperCase()}</text>`});
     if(s.last!=null)o+=`<text class="t-ink" x="${bx+16}" y="${by+132}">${s.last?"✓ Right!":"✗ Wrong: show it more examples like this"}</text>`}
   else if(st.k==="draw")o+=`<text class="t-ink" x="410" y="300">Draw one, then press "Add as ${s.names[0]}" or "Add as ${s.names[1]}".</text><text class="t-ink" x="410" y="320">Five of each is a good start.</text>`;
   return o}
-function drawClose(st){const v=raster(s.strokes,s.center);let o=`<text class="t-lab" x="16" y="22">WHAT THE AI SEES: 16 × 16 = 256 NUMBERS</text>`;
+function drawClose(st){const v=raster(s.strokes,s.center);let o=F.floor(420,260)+`<rect x="10" y="28" width="204" height="204" rx="8" fill="#fff" stroke="#DCD6EA"/><text class="t-lab" x="16" y="22">WHAT THE AI SEES: 16 × 16 = 256 NUMBERS</text>`;
   for(let y=0;y<G;y++)for(let x=0;x<G;x++){const a=Math.min(1,v[y*G+x]*2.2);o+=`<rect x="${16+x*12}" y="${32+y*12}" width="11" height="11" fill="var(--ink)" opacity="${0.06+a*0.94}"/>`}
   o+=`<text class="t-ink" x="226" y="50">Your drawing becomes</text><text class="t-ink" x="226" y="68">a grid of numbers:</text><text class="t-ink" x="226" y="86">0 = blank, 1 = ink.</text>`;
   o+=`<text class="t-ink" x="226" y="120">To guess, it finds the</text><text class="t-ink" x="226" y="138">3 training drawings with</text><text class="t-ink" x="226" y="156">the closest numbers.</text>`;

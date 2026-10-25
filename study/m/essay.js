@@ -4,10 +4,21 @@
 // The letter and the story here are original, written for this machine.
 const esc=StudyKit.esc;
 const sfx=n=>{try{if(window.StudyKit&&StudyKit.sfx)StudyKit.sfx(n)}catch(e){}};
-const INK="#492B3E",ROSE="#916A70",WHITE="#FFFDFB",PAPER="#FFFCF5",DESK="#2F1F2D";
-const TEEL={T:"#E3D7FA",E1:"#FFE2A8",E2:"#C7EBDD",L:"#FAD0DC"};
-const TECH=["#F7B2C4","#9CC7F2","#FFD66B","#A8DEC6","#CDB8F5","#FFB48A"];
-const LENS={p:"#FFD66B",a:"#9CC7F2"};
+// figure parts: the shared bench look (StudyKit.fig): a blush acrylic clipboard, paper sheets, chunky plastic keys
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.blush,PR=PAL.product;
+const lite=(h,k)=>{const n=parseInt(h.slice(1),16),f=v=>Math.round(v+(255-v)*k).toString(16).padStart(2,"0");return "#"+f(n>>16&255)+f(n>>8&255)+f(n&255)};
+const INK="#262E5C",ROSE="#6E6A86",WHITE="#FFFDFB",PAPER="#FFFDF8";
+const TEEL={T:lite(PR.blueberry,.55),E1:lite(PR.butter,.5),E2:lite(PR.lime,.5),L:lite(PR.strawberry,.55)};
+const TECH=[lite(PR.strawberry,.5),lite(PR.blueberry,.5),lite(PR.butter,.45),lite(PR.lime,.5),PAL.case.lavender,lite(PR.peach,.45)];
+const LENS={p:lite(PR.butter,.45),a:lite(PR.blueberry,.5)};
+// a chunky plastic key with a lit top and navy ink on it
+const key=(x,y,w,h,col,o={})=>F.box(x,y,w,h,{colour:col,kind:"plastic",d:o.d||5,r:o.r!=null?o.r:Math.min(h/2,10),shadow:false,sw:o.sw,stroke:o.stroke});
+const tag=(x,yb,lab,col,z)=>{const h=z.tiny*1.7,w=tw(lab,z.tiny,600,true)+26;return key(x,yb-h,w,h,col,{d:5,r:h/2})+T(x+w/2,yb-z.tiny*0.85+z.tiny*0.35,lab,z.tiny,{a:"middle",mono:true,wt:600})};
+// a frosted blush clipboard holding a paper sheet with a navy drop shadow and a steel clip
+function board(ax,ay,aw,ah,px,py,pw,ph,clip){let o=F.acrylic(ax,ay,aw,ah,{tint:TINT,d:10,r:14,shadow:false,balls:true,opacity:.5});
+  o+=`<rect x="${px+5}" y="${py+6}" width="${pw}" height="${ph}" rx="5" fill="${PAL.shadow}" opacity=".14"/><rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="5" fill="${PAPER}" stroke="#E4DCCF" stroke-width="1.2"/>`;
+  if(clip){const cx=px+pw/2;o+=F.box(cx-44,py-10,88,16,{colour:PAL.steel,kind:"metal",d:6,r:5,shadow:false})+`<rect x="${cx-14}" y="${py-4}" width="28" height="4" rx="2" fill="${PAL.steelDark}"/>`}
+  return o}
 const mq=matchMedia("(max-width:820px)");const PH=()=>mq.matches;
 const Z=()=>PH()?{h2:30,body:25,read:23.5,small:20,tiny:17}:{h2:24,body:19,read:19,small:15,tiny:12.5};
 let _mc=null;
@@ -36,9 +47,8 @@ function fitFlow(segs,o,maxH,minSize){let sz=o.size,r;for(let i=0;i<9;i++){r=flo
 const ease=x=>x<0?0:x>1?1:1-Math.pow(1-x,3);
 let till=0,raf=0;function kick(ms){till=Math.max(till,performance.now()+ms);if(!raf)raf=requestAnimationFrame(pump)}
 function pump(){raf=0;api&&api.redraw();if(performance.now()<till)raf=requestAnimationFrame(pump)}
-function bgGrad(a,b,id){return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="800" height="420" fill="url(#${id})"/>`}
 function meter(x,y,w,n,max,label,z){let o=T(x,y-6,label,z.tiny,{mono:true,fill:ROSE,ls:1});const cw=(w-(max-1)*4)/max;
-  for(let i=0;i<max;i++){const lit=i<n,c=i<max*0.5?"#9ED39B":i<max*0.8?"#F4C46B":"#7FC6A4";o+=`<rect x="${x+i*(cw+4)}" y="${y}" width="${cw}" height="16" rx="4" fill="${lit?(n>=max?"#7FC6A4":c):"#EDE3EA"}" stroke="${INK}" stroke-opacity=".25"/>`}return o}
+  for(let i=0;i<max;i++){const lit=i<n,c=i<max*0.5?lite(PR.peach,.25):i<max*0.8?PR.butter:PR.lime;o+=key(x+i*(cw+4),y,cw-4,16,lit?(n>=max?PR.lime:c):"#ECE8EF",{d:4,r:4})}return o}
 
 // ---- the reading text: a letter to the editor (original)
 const LETTER={title:"Give Us Somewhere to Ride",by:"A Year 10 rider",form:"LETTERS TO THE EDITOR",
@@ -81,7 +91,7 @@ const DIALS=[["a technique","a list","a list of three"],["show","tell readers","
 // ---- essay plan
 const THESES=[{t:"This essay is about a letter about a pump track.",kind:"Topic only",ideas:[]},
  {t:"The writer uses lots of language features to persuade.",kind:"Vague",ideas:[]},
- {t:"The writer persuades the council by making the problem feel urgent and the solution feel easy and fair.",kind:"Arguable",ideas:[["problem feel urgent","#F7B2C4"],["solution feel easy","#A8DEC6"],["fair","#FFD66B"]]}];
+ {t:"The writer persuades the council by making the problem feel urgent and the solution feel easy and fair.",kind:"Arguable",ideas:[["problem feel urgent",TECH[0]],["solution feel easy",TECH[3]],["fair",TECH[2]]]}];
 const BODIES=["Urgent: the rhetorical question and 'dodging cars' make the car park sound unsafe.","Easy: comparing the cost to a sports field makes a pump track sound cheap and simple.","Fair: 'We are not asking for a stadium' makes the request sound modest and reasonable."];
 
 const s={lens:"t",qt:"retrieve",pick:null,order:[],doneT:0,dials:[0,0,0,0,0],dialT:[0,0,0,0,0],thesis:0,bodies:3,solved:{},plugT:0};
@@ -91,76 +101,77 @@ const dialScore=()=>s.dials.reduce((a,b)=>a+b,0);
 const sharpLevel=n=>n>=10?"Precise":n>=7?"Strong":n>=4?"Getting there":"Vague";
 
 // ---- step 1 and 2: the letter on the desk
-function paper(doc,z,top,sty,extra){let o=`<rect x="20" y="${top+4}" width="760" height="${412-top}" rx="6" fill="#000" opacity=".06"/><rect x="16" y="${top}" width="764" height="${408-top}" rx="6" fill="${PAPER}" stroke="${INK}" stroke-width="1.2"/>`;
+function paper(doc,z,top,sty,extra){let o=board(2,top+2,786,404-top,18,top+8,756,386-top,true);
   const tb=top+10+z.h2*1.05;o+=T(32,tb,doc.title,z.h2,{wt:600})+T(764,tb,doc.form,z.tiny,{a:"end",mono:true,fill:ROSE,ls:1.2});const y0=tb+z.h2*0.4;
   const f=fitFlow(segsOf(doc),{x:32,y:y0,w:736,size:z.read,lhf:1.27,sty},404-y0-z.small*1.3,z.read*0.75);o+=f.o;
   o+=T(764,Math.min(402,y0+f.h+z.small*1.15),"— "+doc.by,z.small,{a:"end",fill:ROSE});return o+(extra||"")}
 function parseK(k){if(!k)return{i:-1,tags:[]};const[i,t]=k.split("|");return{i:+i,tags:t?t.split(" "):[]}}
-function readScene(){const z=Z();let o=bgGrad("#F6EFE6","#EFE6F4","eg1");
+function readScene(){const z=Z();let o=F.floor(800,420);
   o+=paper(LETTER,z,10,k=>{const{tags}=parseK(k);if(s.lens==="t"){const t=tags.find(x=>x[0]==="t");return t?{bg:TECH[+t[1]-1],wt:500}:{}}
     return tags.includes(s.lens)?{bg:LENS[s.lens],wt:600}:{op:0.55}});
   // lens tag
-  const lab=s.lens==="p"?"LENS: PURPOSE":s.lens==="a"?"LENS: AUDIENCE":"LENS: TECHNIQUES",w=tw(lab,z.tiny,600,true)+26;
-  o+=`<rect x="32" y="${396-z.tiny*1.7}" width="${w}" height="${z.tiny*1.7}" rx="${z.tiny*0.85}" fill="${INK}"/>`+T(32+w/2,396-z.tiny*0.85+z.tiny*0.35,lab,z.tiny,{a:"middle",mono:true,wt:600,fill:WHITE});
+  const lab=s.lens==="p"?"LENS: PURPOSE":s.lens==="a"?"LENS: AUDIENCE":"LENS: TECHNIQUES";
+  o+=tag(32,396,lab,s.lens==="t"?PAL.case.lavender:LENS[s.lens],z);
   return o}
-function qScene(){const z=Z(),Q=QS[s.qt];let o=bgGrad("#F6EFE6","#EFE6F4","eg2");
-  o+=paper(LETTER,z,10,k=>{const{i}=parseK(k);const st={data:"sent:"+i};if(s.pick===i){st.bg=i===Q.ans?"#A8DEC6":"#FFC9B0";st.wt=600}return st});
-  const tag=s.qt==="effect"?"EXPLAIN THE EFFECT":s.qt.toUpperCase(),w=tw(tag,z.tiny,600,true)+26;
-  o+=`<rect x="32" y="${396-z.tiny*1.7}" width="${w}" height="${z.tiny*1.7}" rx="${z.tiny*0.85}" fill="${s.qt==="retrieve"?"#FFD66B":s.qt==="infer"?"#9CC7F2":"#F7B2C4"}" stroke="${INK}"/>`+T(32+w/2,396-z.tiny*0.85+z.tiny*0.35,tag,z.tiny,{a:"middle",mono:true,wt:600});
+function qScene(){const z=Z(),Q=QS[s.qt];let o=F.floor(800,420);
+  o+=paper(LETTER,z,10,k=>{const{i}=parseK(k);const st={data:"sent:"+i};if(s.pick===i){st.bg=i===Q.ans?lite(PR.lime,.45):lite(PR.peach,.5);st.wt=600}return st});
+  const lab=s.qt==="effect"?"EXPLAIN THE EFFECT":s.qt.toUpperCase();
+  o+=tag(32,396,lab,s.qt==="retrieve"?LENS.p:s.qt==="infer"?LENS.a:TECH[0],z);
   return o}
 // ---- step 3: TEEL blocks
-function teelScene(){const z=Z(),now=performance.now(),done=teelDone();let o=bgGrad("#FBF5FF","#FFF4EC","eg3");
+function teelScene(){const z=Z(),now=performance.now(),done=teelDone();let o=F.floor(800,420);
   o+=T(16,30,done?"PARAGRAPH BUILT":"TAP IN ORDER: T → E → E → L",z.small,{mono:true,wt:600})+meter(600,16,184,teelScore(),4,"",z);
   const p=done?ease((now-s.doneT)/700):0,gap=6,pad=12,TW=696;let size=z.body,B;
   for(let k=0;k<10;k++){B=SHOW.map(id=>({id,h:flow([{t:BLOCKS[id]}],{x:0,y:0,w:TW,size,lh:size*1.24}).h+pad*2}));if(B.reduce((a,b)=>a+b.h+gap,0)<=370||size<12)break;size*=0.95}
   const order=done?[...CORRECT,"D1","D2"]:SHOW,ya={},yb={};let y=46;SHOW.forEach((id,i)=>{ya[id]=y;y+=B[i].h+gap});y=46;order.forEach(id=>{yb[id]=y;y+=B.find(b=>b.id===id).h+gap});
   SHOW.forEach((id,i)=>{const b=B[i],yy=ya[id]+(yb[id]-ya[id])*p,pos=s.order.indexOf(id),isD=id[0]==="D",h=b.h;
     const fill=done?(isD?"#F1ECEF":TEEL[id]):pos>=0&&pos<4?TEEL[SLOTK[pos]]:WHITE;
-    o+=`<g data-a="blk:${id}" role="button" tabindex="0" aria-label="${esc(BLOCKS[id])}" style="cursor:pointer" opacity="${done&&isD?1-0.55*p:1}"><rect x="16" y="${yy}" width="768" height="${h}" rx="12" fill="${fill}" stroke="${INK}" stroke-width="${pos>=0?1.8:1}"/>`;
+    o+=`<g data-a="blk:${id}" role="button" tabindex="0" aria-label="${esc(BLOCKS[id])}" style="cursor:pointer" opacity="${done&&isD?1-0.55*p:1}">`+key(16,yy,760,h,fill,{d:8,r:12,sw:pos>=0?1.8:1.2,stroke:pos>=0?INK:undefined});
     const badge=pos>=0?(pos<4?SLOTN[pos]:"?"):"",cx=44,cy=yy+h/2,r=Math.min(size*0.75,h/2-4);
-    o+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${pos>=0?INK:"none"}" stroke="${INK}" stroke-dasharray="${pos>=0?"":"3 3"}"/>`+(badge?T(cx,cy+size*0.32,badge,size*0.9,{a:"middle",mono:true,wt:600,fill:WHITE}):"");
+    o+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${pos>=0?INK:"#fff"}" fill-opacity="${pos>=0?1:.6}" stroke="${INK}" stroke-opacity="${pos>=0?1:.5}" stroke-dasharray="${pos>=0?"":"3 3"}"/>`+(pos>=0?`<path d="M${cx-r*.55},${cy-r*.35} a${r*.7},${r*.7} 0 0 1 ${r*.6},-${r*.4}" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none" stroke-linecap="round"/>`:"")+(badge?T(cx,cy+size*0.32,badge,size*0.9,{a:"middle",mono:true,wt:600,fill:WHITE}):"");
     o+=flow([{t:BLOCKS[id]}],{x:74,y:yy+pad,w:TW,size,lh:size*1.24}).o;
-    if(done){const lab=isD?"✕ NOT ANALYSIS":JOB[id][0],lw=tw(lab,z.tiny,600,true)+14;o+=`<g opacity="${p}"><rect x="${776-lw}" y="${yy+h-z.tiny*1.5-4}" width="${lw}" height="${z.tiny*1.5}" rx="${z.tiny*0.75}" fill="${INK}"/>`+T(776-lw/2,yy+h-4-z.tiny*0.42,lab,z.tiny,{a:"middle",mono:true,wt:600,fill:WHITE})+`</g>`}
+    if(done){const lab=isD?"✕ NOT ANALYSIS":JOB[id][0],lw=tw(lab,z.tiny,600,true)+14;o+=`<g opacity="${p}"><rect x="${768-lw}" y="${yy+h-z.tiny*1.5-4}" width="${lw}" height="${z.tiny*1.5}" rx="${z.tiny*0.75}" fill="#fff" stroke="${PAL.pill.line}"/>`+T(768-lw/2,yy+h-4-z.tiny*0.42,lab,z.tiny,{a:"middle",mono:true,wt:600,fill:isD?"#A5552F":INK})+`</g>`}
     o+=`</g>`});
   return o}
 // ---- step 4: sharpen
-function sharpScene(){const z=Z(),now=performance.now(),n=dialScore();let o=bgGrad("#FFF7EE","#EEF6F1","eg4");
+function sharpScene(){const z=Z(),now=performance.now(),n=dialScore();let o=F.floor(800,420);
   o+=T(16,30,"TAP A HIGHLIGHTED PHRASE TO SHARPEN IT",z.small,{mono:true,wt:600})+meter(520,18,264,n,10,"",z);
-  o+=`<rect x="16" y="52" width="768" height="356" rx="16" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`;
+  o+=board(8,50,774,362,20,58,752,344,false);
   const d=i=>({t:DIALS[i][s.dials[i]]+" ▾",k:"d"+i});
   const segs=[{t:"The writer uses "},d(0),{t:" ('little kids on balance bikes, teenagers learning tricks, parents chatting') to "},d(1),{t:" that a pump track is "},d(2),{t:". This "},d(3),{t:" and "},d(4),{t:"."}];
-  const col=["#FFC9B0","#FFE2A8","#A8DEC6"];
+  const col=[lite(PR.peach,.5),lite(PR.butter,.45),lite(PR.lime,.45)];
   const f=fitFlow(segs,{x:44,y:70,w:712,size:z.h2,lhf:1.55,sty:k=>k?{bg:col[s.dials[+k[1]]],wt:600,data:"dial:"+k[1]}:{}},290,z.body*0.8);o+=f.o;
   o+=T(400,392,`${sharpLevel(n).toUpperCase()} · ${n}/10`,z.small,{a:"middle",mono:true,wt:600,fill:n>=10?"#2F6B47":ROSE});
   return o}
 // ---- step 5: essay plan with patch cables
-function planScene(){const z=Z(),th=THESES[s.thesis],nb=s.bodies,now=performance.now(),p=ease((now-s.plugT)/600);let o=bgGrad("#F4EFFA","#FFF5EE","eg5");
-  const card=(x,y,w,h,head,col)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/><path d="M${x},${y+14} a14,14 0 0 1 14,-14 h${w-28} a14,14 0 0 1 14,14 v${z.tiny*1.6} h-${w}Z" fill="${col}" stroke="${INK}" stroke-width="1.5"/>`+T(x+14,y+z.tiny*1.25,head,z.tiny,{mono:true,wt:600,ls:1});
+function planScene(){const z=Z(),th=THESES[s.thesis],nb=s.bodies,now=performance.now(),p=ease((now-s.plugT)/600);let o=F.floor(800,420);
+  // each card is a paper panel standing on the floor, its header a strip of pastel plastic
+  const card=(x,y,w,h,head,col)=>{const m=F.mat("plastic",col);return F.box(x,y,w,h,{colour:WHITE,kind:"plastic",d:8,r:14,shadow:y+h>390?undefined:false,shadowLen:26,stroke:"#B9B2C4"})+`<path d="M${x},${y+14} a14,14 0 0 1 14,-14 h${w-28} a14,14 0 0 1 14,14 v${z.tiny*1.6} h-${w}Z" fill="${col}" stroke="${m.stroke}" stroke-width="1.2"/><path d="M${x+12},${y+3.5} h${Math.min(w*.4,90)}" stroke="#fff" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>`+T(x+14,y+z.tiny*1.25,head,z.tiny,{mono:true,wt:600,ls:1})};
   const hh=z.tiny*1.6+14;
   // intro
-  o+=card(16,16,244,388,"INTRO","#E3D7FA");
+  o+=card(16,16,244,388,"INTRO",TEEL.T);
   const ctxF=fitFlow([{t:"In the letter 'Give Us Somewhere to Ride', a Year 10 rider asks the local paper's readers for a pump track."}],{x:30,y:16+hh,w:216,size:z.small*0.9,lhf:1.22,fill:ROSE},120,z.tiny);o+=ctxF.o;
   const ty=16+hh+ctxF.h+10;o+=T(30,ty+z.tiny,"THESIS",z.tiny,{mono:true,fill:ROSE,ls:1});
   const tsegs=[];if(th.ideas.length){let rest=th.t;th.ideas.forEach(([w,c],i)=>{const j=rest.indexOf(w);tsegs.push({t:rest.slice(0,j)},{t:w,k:"i"+i});rest=rest.slice(j+w.length)});tsegs.push({t:rest})}else tsegs.push({t:th.t});
   const tf=fitFlow(tsegs,{x:30,y:ty+z.tiny+8,w:216,size:z.small,lhf:1.28,wt:600,sty:k=>k?{bg:th.ideas[+k[1]][1]}:{}},404-ty-z.tiny-20,z.tiny);o+=tf.o;
   // bodies
   const bx=316,bw=250,top=16,avail=388,bh=(avail-(nb-1)*10)/nb;const ends=[];
-  for(let i=0;i<nb;i++){const y=top+i*(bh+10),idea=th.ideas[i],col=idea?idea[1]:"#EDE3EA";
+  for(let i=0;i<nb;i++){const y=top+i*(bh+10),idea=th.ideas[i],col=idea?idea[1]:"#ECE8EF";
     o+=card(bx,y,bw,bh,`BODY ${i+1} · TEEL`,col);const f=fitFlow([{t:BODIES[i]}],{x:bx+14,y:y+hh+2,w:bw-28,size:z.small,lhf:1.22},bh-hh-10,z.tiny*0.9);o+=f.o;ends.push([bx,y+bh/2,idea])}
   // cables: intro jacks → bodies
-  th.ideas.forEach((idea,i)=>{const jy=60+i*40,jx=260;o+=`<circle cx="${jx}" cy="${jy}" r="7" fill="${idea[1]}" stroke="${INK}" stroke-width="1.5"/>`;
+  th.ideas.forEach((idea,i)=>{const jy=60+i*40,jx=260,jm=F.mat("plastic",idea[1]);o+=`<circle cx="${jx}" cy="${jy}" r="8" fill="${PAL.steel}" stroke="${PAL.steelDark}" stroke-width="1.2"/><circle cx="${jx}" cy="${jy}" r="5" fill="${idea[1]}" stroke="${jm.stroke}"/><circle cx="${jx-1.6}" cy="${jy-1.8}" r="1.6" fill="#fff" opacity=".8"/>`;
     if(i<nb){const[ex,ey]=ends[i],mx=jx+(ex-jx)*p,my=jy+(ey-jy)*p;o+=`<path d="M${jx},${jy} C${jx+30},${jy} ${mx-30},${my} ${mx},${my}" fill="none" stroke="${idea[1]}" stroke-width="6" stroke-linecap="round"/><path d="M${jx},${jy} C${jx+30},${jy} ${mx-30},${my} ${mx},${my}" fill="none" stroke="${INK}" stroke-width="1" stroke-opacity=".35"/>`}
     else o+=`<path d="M${jx},${jy} q24,10 22,48" fill="none" stroke="${idea[1]}" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 10"/>`+`<circle cx="${jx+22}" cy="${jy+66}" r="${z.tiny*0.75}" fill="#A5552F"/>`+T(jx+22,jy+66+z.tiny*0.36,"!",z.tiny,{a:"middle",mono:true,wt:600,fill:WHITE})});
   if(!th.ideas.length)ends.forEach(([ex,ey])=>{o+=`<path d="M${ex},${ey} q-20,8 -26,30" fill="none" stroke="#BFB0BA" stroke-width="5" stroke-linecap="round"/>`+T(ex-28,ey+50,"?",z.h2,{a:"middle",wt:600,fill:"#A5552F"})});
   // bodies → conclusion
-  const cx=616;o+=card(cx,16,168,388,"CONCLUSION","#FAD0DC");
+  const cx=616;o+=card(cx,16,168,388,"CONCLUSION",TEEL.L);
   const cf=fitFlow([{t:th.ideas.length?"Restate the thesis in new words: an urgent problem, an easy and fair fix. End with a bigger idea: young people can change their town by speaking up.":"Restate… what? With no clear argument, there's nothing to sum up."}],{x:cx+12,y:16+hh,w:144,size:z.small*0.9,lhf:1.22},388-hh-12,z.tiny*0.85);o+=cf.o;
   ends.forEach(([ex,ey,idea])=>{const sx=bx+bw;o+=`<path d="M${sx},${ey} C${sx+30},${ey} ${cx-30},210 ${cx},210" fill="none" stroke="${idea?idea[1]:"#D9CED5"}" stroke-width="${idea?4:2}" stroke-dasharray="${idea?"":"4 5"}" opacity="${idea?p:1}"/>`});
   return o}
 // ---- test: the unseen story
-function testScene(){const z=Z(),sv=s.solved,hl={};if(sv.c0)hl[7]="#FFD66B";if(sv.c1)hl[7]="#9CC7F2";if(sv.c2)hl[4]="#F7B2C4";if(sv.c5)hl[8]="#A8DEC6";
-  let o=bgGrad("#F6EFE6","#EFE6F4","eg6");o+=paper(STORY,z,10,k=>{const{i}=parseK(k);return hl[i]?{bg:hl[i],wt:600}:{}});
-  const n=Object.values(sv).filter(Boolean).length,lab=`${n} OF 6 SOLVED`,w=tw(lab,z.tiny,600,true)+26;o+=`<rect x="32" y="${396-z.tiny*1.7}" width="${w}" height="${z.tiny*1.7}" rx="${z.tiny*0.85}" fill="${n===6?"#7FC6A4":INK}"/>`+T(32+w/2,396-z.tiny*0.85+z.tiny*0.35,lab,z.tiny,{a:"middle",mono:true,wt:600,fill:n===6?INK:WHITE});
+function testScene(){const z=Z(),sv=s.solved,hl={};if(sv.c0)hl[7]=TECH[2];if(sv.c1)hl[7]=TECH[1];if(sv.c2)hl[4]=TECH[0];if(sv.c5)hl[8]=TECH[3];
+  let o=F.floor(800,420);o+=paper(STORY,z,10,k=>{const{i}=parseK(k);return hl[i]?{bg:hl[i],wt:600}:{}});
+  const n=Object.values(sv).filter(Boolean).length,lab=`${n} OF 6 SOLVED`;o+=tag(32,396,lab,n===6?lite(PR.lime,.3):"#FFFFFF",z);
   return o}
 
 // ---- close-ups

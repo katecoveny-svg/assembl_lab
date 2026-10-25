@@ -9,12 +9,20 @@ function rule(m,c,x="t",y="L"){const ms=m===0?"":m===1?x:m===-1?"−"+x:fmtN(m).
 function meet(m1,c1,m2,c2){if(m1===m2)return null;const t=(c2-c1)/(m1-m2);return{t,y:m1*t+c1}}
 function emptyAt(m,c){if(m>=0)return null;return -c/m}
 
-// ---------- drawing
+// ---------- drawing: figure parts from the shared bench look (StudyKit.fig), lavender for maths
+const FG=StudyKit.fig,PAL=FG.palette,TINT=PAL.case.lavender,AX="#8F9BAA",STEEL=PAL.steel,STEELD=PAL.steelDark||"#8F9BAA";
+const COLA=PAL.product.blueberry,COLB=PAL.product.strawberry,DEEP={[COLA]:"#4F7FC0",[COLB]:"#C2587A"};
+// a series line: a deep edge under the product colour, so pastel lines stay crisp on white
+const series=(d,col,w)=>d?`<path d="${d}" fill="none" stroke="${DEEP[col]||FG.deep(col)}" stroke-width="${w+2}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:"";
+// a steel pipe (taps and drains)
+const pipe=d=>`<path d="${d}" fill="none" stroke="${STEELD}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${STEEL}" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(-.8,-.8)"/>`;
 const GX0=330,GX1=620,GY0=30,GY1=290;
 function gx(t){return GX0+t/TMAX*(GX1-GX0)}
 function gy(v,max=100){return GY1-v/max*(GY1-GY0)}
 function axes(max,ylab,xlab,step){
-  let o=`<rect x="${GX0}" y="${GY0}" width="${GX1-GX0}" height="${GY1-GY0}" fill="var(--paper)" stroke="var(--line)"/>`;
+  // the plotter: a white screen in a frosted lavender case; the grid itself stays flat and exact
+  let o=FG.acrylic(300,27,326,299,{tint:TINT,d:12,r:14,shadowLen:40,balls:false});
+  o+=`<rect x="${GX0}" y="${GY0}" width="${GX1-GX0}" height="${GY1-GY0}" fill="var(--paper)" stroke="${AX}" stroke-width="1.2"/>`;
   for(let t=0;t<=TMAX;t+=5)o+=`<line x1="${gx(t)}" x2="${gx(t)}" y1="${GY0}" y2="${GY1}" stroke="var(--line)"/><text class="t-lab" x="${gx(t)}" y="${GY1+14}" text-anchor="middle">${t}</text>`;
   for(let v=0;v<=max;v+=step)o+=`<line x1="${GX0}" x2="${GX1}" y1="${gy(v,max)}" y2="${gy(v,max)}" stroke="var(--line)"/><text class="t-lab" x="${GX0-6}" y="${gy(v,max)+3.5}" text-anchor="end">${v}</text>`;
   o+=`<text class="t-lab" x="${(GX0+GX1)/2}" y="${GY1+30}" text-anchor="middle">${xlab}</text><text class="t-lab" x="${GX0}" y="${GY0-10}">${ylab}</text>`;
@@ -26,48 +34,51 @@ function tank(x,label,m,c,col){
   let o=`<text class="t-ink" x="${x+W/2}" y="${y0-34}" text-anchor="middle">${label}</text>`;
   // tap
   const flow=m>0?Math.min(1,m/8):0;
-  o+=`<path d="M${x+W/2-30},${y0-22} h22 v10" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>`;
-  if(flow>0&&s.t<TMAX&&v<100)o+=`<rect x="${x+W/2-10}" y="${y0-12}" width="${2+flow*5}" height="${H+12-h}" fill="${col}" opacity=".55"/>`;
-  o+=`<rect x="${x}" y="${y0}" width="${W}" height="${H}" rx="6" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/>`;
-  o+=`<rect x="${x+2}" y="${y0+H-h}" width="${W-4}" height="${h}" rx="4" fill="${col}" opacity=".45"/>`;
-  for(let k=0;k<=10;k++)o+=`<line x1="${x+W}" x2="${x+W+(k%5?5:9)}" y1="${y0+H-k*H/10}" y2="${y0+H-k*H/10}" stroke="var(--rose)"/>`;
-  [0,50,100].forEach(k=>o+=`<text class="t-lab" x="${x+W+12}" y="${y0+H-k*H/100+3.5}">${k}</text>`);
+  // the tank: water in a product colour behind a frosted lavender case, a steel tap above
+  const D=10;
+  if(h>0.5)o+=`<rect x="${x+2}" y="${y0+H-h}" width="${W-4}" height="${h}" rx="4" fill="${col}" opacity=".62"/><path d="M${x+2},${y0+H-h} l${D-2},${-(D-2)*.55} h${W-4} l${-(D-2)},${(D-2)*.55}z" fill="${col}" opacity=".4"/>`;
+  if(flow>0&&s.t<TMAX&&v<100)o+=`<rect x="${x+W/2-10}" y="${y0-12}" width="${2+flow*5}" height="${H+12-h}" fill="${col}" opacity=".7"/>`;
+  o+=FG.acrylic(x,y0,W,H,{tint:TINT,d:D,r:6,balls:false,shadowLen:30});
+  o+=pipe(`M${x+W/2-30},${y0-22} h22 v10`);
+  for(let k=0;k<=10;k++)o+=`<line x1="${x+W+D}" x2="${x+W+D+(k%5?5:9)}" y1="${y0+H-k*H/10}" y2="${y0+H-k*H/10}" stroke="${AX}"/>`;
+  [0,50,100].forEach(k=>o+=`<text class="t-lab" x="${x+W+D+12}" y="${y0+H-k*H/100+3.5}">${k}</text>`);
   // drain
-  if(m<0){o+=`<path d="M${x+W-14},${y0+H} v14 h18" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>`;if(v>0)o+=`<rect x="${x+W+4}" y="${y0+H+12}" width="${3+Math.min(1,-m/8)*4}" height="26" fill="${col}" opacity=".55"/>`}
+  if(m<0){if(v>0)o+=`<rect x="${x+W+4}" y="${y0+H+12}" width="${3+Math.min(1,-m/8)*4}" height="26" fill="${col}" opacity=".7"/>`;o+=pipe(`M${x+W-14},${y0+H} v14 h18`)}
   o+=`<text class="t-big" x="${x+W/2}" y="${y0+H+44}" text-anchor="middle">${fmtN(Math.round(v*10)/10)} L</text>`;
   return o;
 }
 function meter(x,label,fee,rate,col){
   const cost=fee+rate*s.t;
   let o=`<text class="t-ink" x="${x+60}" y="40" text-anchor="middle">${label}</text>`;
-  o+=`<rect x="${x}" y="52" width="120" height="150" rx="16" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/>`;
+  // the hire meter: a lavender plastic housing with a navy display
+  o+=FG.box(x,52,120,150,{colour:TINT,kind:"plastic",d:10,r:16,shadowLen:34});
   o+=`<rect x="${x+12}" y="66" width="96" height="40" rx="6" fill="var(--ink)"/><text x="${x+60}" y="94" text-anchor="middle" style="font:500 20px var(--mono);fill:var(--paper)">$${cost.toFixed(2)}</text>`;
   o+=`<text class="t-lab" x="${x+60}" y="128" text-anchor="middle">UNLOCK $${fee.toFixed(2)}</text><text class="t-lab" x="${x+60}" y="146" text-anchor="middle">${Math.round(rate*100)}c A MINUTE</text>`;
-  o+=`<circle cx="${x+60}" cy="178" r="12" fill="${col}" opacity=".5" stroke="var(--ink)"/>`;
+  o+=`<circle cx="${x+60}" cy="178" r="12" fill="${col}" stroke="${DEEP[col]||FG.deep(col)}" stroke-width="1.4"/><circle cx="${x+56}" cy="174" r="3.5" fill="#fff" opacity=".6"/>`;
   return o;
 }
 function drawMain(st0,st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  let o=FG.floor(640,330);
   const both=s.B;
   if(st.k==="scooter"){
-    o+=meter(30,"Scooter A",s.feeA,s.rateA,"var(--sea)")+meter(170,"Scooter B",s.feeB,s.rateB,"var(--hot)");
+    o+=meter(30,"Scooter A",s.feeA,s.rateA,COLA)+meter(166,"Scooter B",s.feeB,s.rateB,COLB);
     o+=axes(15,"COST ($)","MINUTES RIDDEN",5);
     const max=15;
-    [[s.feeA,s.rateA,"var(--sea)"],[s.feeB,s.rateB,"var(--hot)"]].forEach(([c,m,col])=>{o+=`<path d="${linePath(m,c,max,TMAX)}" fill="none" stroke="${col}" stroke-width="1.4" opacity=".35"/><path d="${linePath(m,c,max,s.t)}" fill="none" stroke="${col}" stroke-width="2.6"/>`;
+    [[s.feeA,s.rateA,COLA],[s.feeB,s.rateB,COLB]].forEach(([c,m,col])=>{o+=`<path d="${linePath(m,c,max,TMAX)}" fill="none" stroke="${DEEP[col]}" stroke-width="1.4" opacity=".35"/>`+series(linePath(m,c,max,s.t),col,2.6);
       const v=m*s.t+c;if(v<=max)o+=`<circle cx="${gx(s.t)}" cy="${gy(v,max)}" r="5" fill="${col}" stroke="var(--ink)"/>`});
     const X=meet(s.rateA,s.feeA,s.rateB,s.feeB);
     if(X&&X.t>0&&X.t<=TMAX&&X.y<=max)o+=`<circle cx="${gx(X.t)}" cy="${gy(X.y,max)}" r="7" fill="none" stroke="var(--ink)" stroke-width="1.6"/><text class="t-ink" x="${gx(X.t)+(gx(X.t)>520?-10:10)}" y="${gy(X.y,max)-10}" text-anchor="${gx(X.t)>520?"end":"start"}">same price at ${fmtN(Math.round(X.t*10)/10)} min</text>`;
     return o;
   }
-  o+=tank(both?24:80,"Tank A",s.mA,s.cA,"var(--sea)");
-  if(both)o+=tank(160,"Tank B",s.mB,s.cB,"var(--hot)");
+  o+=tank(both?24:80,"Tank A",s.mA,s.cA,COLA);
+  if(both)o+=tank(158,"Tank B",s.mB,s.cB,COLB);
   o+=axes(100,"WATER (L)","TIME (MINUTES)",20);
-  if(st.k==="ineq"||s.shade){o+=`<rect x="${GX0}" y="${GY0}" width="${GX1-GX0}" height="${gy(50)-GY0}" fill="var(--sun)" opacity=".12"/><line x1="${GX0}" x2="${GX1}" y1="${gy(50)}" y2="${gy(50)}" stroke="var(--sun)" stroke-width="1.6" stroke-dasharray="4 3"/><text class="t-lab" x="${GX1-4}" y="${gy(50)-6}" text-anchor="end">L ≥ 50</text>`;
+  if(st.k==="ineq"||s.shade){o+=`<rect x="${GX0}" y="${GY0}" width="${GX1-GX0}" height="${gy(50)-GY0}" fill="${PAL.product.butter}" opacity=".22"/><line x1="${GX0}" x2="${GX1}" y1="${gy(50)}" y2="${gy(50)}" stroke="#C9A227" stroke-width="1.6" stroke-dasharray="4 3"/><text class="t-lab" x="${GX1-4}" y="${gy(50)-6}" text-anchor="end">L ≥ 50</text>`;
     // highlight times where A above 50
     let a=null,b=null;for(let t=0;t<=TMAX;t+=0.05){const v=lev(s.mA,s.cA,t);if(v>=50&&v<=100){if(a===null)a=t;b=t}}
-    if(a!==null)o+=`<line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="var(--sun)" stroke-width="5"/>`}
-  const lines=[[s.mA,s.cA,"var(--sea)"]];if(both)lines.push([s.mB,s.cB,"var(--hot)"]);
-  lines.forEach(([m,c,col])=>{o+=`<path d="${linePath(m,c,100,TMAX)}" fill="none" stroke="${col}" stroke-width="1.4" opacity=".35"/><path d="${linePath(m,c,100,s.t)}" fill="none" stroke="${col}" stroke-width="2.6"/>`;
+    if(a!==null)o+=`<line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="${PAL.product.butter}" stroke-width="5"/><line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="#C9A227" stroke-width="1"/>`}
+  const lines=[[s.mA,s.cA,COLA]];if(both)lines.push([s.mB,s.cB,COLB]);
+  lines.forEach(([m,c,col])=>{o+=`<path d="${linePath(m,c,100,TMAX)}" fill="none" stroke="${DEEP[col]}" stroke-width="1.4" opacity=".35"/>`+series(linePath(m,c,100,s.t),col,2.6);
     const v=lev(m,c,s.t);if(v>=0&&v<=100)o+=`<circle cx="${gx(s.t)}" cy="${gy(v)}" r="5" fill="${col}" stroke="var(--ink)"/>`});
   // gradient triangle on A
   if(["rate","rule","drain"].includes(st.k)){const t1=4,t2=9,v1=lev(s.mA,s.cA,t1),v2=lev(s.mA,s.cA,t2);
@@ -78,16 +89,18 @@ function drawMain(st0,st){
   return o;
 }
 function drawClose(st0,st){
-  let o=`<rect width="420" height="260" fill="var(--chalk)"/>`;
+  let o=FG.floor(420,260);
   const isS=st.k==="scooter";
   const rows=[0,1,2,3,4,5,10];
   o+=`<text class="t-lab" x="14" y="22">TABLE OF VALUES</text>`;
   const cols=isS?[["MIN",t=>t],["A ($)",t=>(s.feeA+s.rateA*t).toFixed(2)],["B ($)",t=>(s.feeB+s.rateB*t).toFixed(2)]]:[["TIME",t=>t],["TANK A",t=>fmtN(lev(s.mA,s.cA,t))]].concat(s.B?[["TANK B",t=>fmtN(lev(s.mB,s.cB,t))]]:[]);
+  // the table on a frosted lavender card
+  o+=FG.acrylic(10,32,cols.length>2?250:196,158,{tint:TINT,d:10,r:12,balls:false,shadowLen:30});
   cols.forEach((c,i)=>{const x=24+i*90;o+=`<text class="t-lab" x="${x}" y="46">${c[0]}</text>`;rows.forEach((t,j)=>{o+=`<text class="t-ink" x="${x}" y="${66+j*19}">${c[1](t)}</text>`})});
   if(!isS){const d=s.mA;o+=`<text class="t-lab" x="${24+90}" y="${66+6*19+20}">${d>=0?"+":"−"}${fmtN(Math.abs(d))} EVERY MINUTE</text>`}
   // rule card
   const R=isS?[rule(s.rateA,s.feeA,"t","A"),rule(s.rateB,s.feeB,"t","B")]:[rule(s.mA,s.cA,"t","A")].concat(s.B?[rule(s.mB,s.cB,"t","B")]:[]);
-  o+=`<rect x="${isS||s.B?290:220}" y="40" width="${isS||s.B?118:180}" height="${R.length*44+22}" rx="8" fill="var(--paper)" stroke="var(--ink)"/>`;
+  o+=FG.box(isS||s.B?290:220,40,isS||s.B?112:180,R.length*44+22,{colour:"#FFFFFF",kind:"plastic",d:8,r:8,stroke:FG.deep(TINT),shadowLen:28});
   o+=`<text class="t-lab" x="${(isS||s.B?290:220)+12}" y="58">THE RULE</text>`;
   R.forEach((r,i)=>o+=`<text x="${(isS||s.B?290:220)+12}" y="${84+i*40}" style="font:500 ${isS||s.B?13:17}px var(--mono);fill:var(--ink)">${r}</text>`);
   o+=`<text class="t-body" x="14" y="${H0}">${isS?"c = unlock fee (where the line starts), m = price per minute (how steep)":"c = starting water (y-intercept), m = litres per minute (gradient)"}</text>`;

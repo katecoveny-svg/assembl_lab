@@ -14,46 +14,66 @@ const FACTORS={
 // food chain populations respond to predators (illustrative)
 function pops(){const st=s.stoats;const dot=Math.max(4,Math.round(60*(1-0.085*st)));const ins=Math.round(900*(1+0.004*(60-dot)));return{plants:12000,ins,dot,st}}
 const X=d=>60+d/40*520;
+// ---------- drawing (the bench figure look: StudyKit.fig): the beach as a cut-away diorama in a frosted mint case
+const F=StudyKit.fig,PAL=F.palette,TINT=PAL.case.mint,AX="#8F9BAA";
+const SHINGLE="#DCD5C8",SOILC="#C9A27C",LEAF="#7FB65A",LEAFD="#4F8A3A",SEA=PAL.product.blueberry;
+const DD=14,DDY=-DD*0.55;  // diorama depth: the top surface runs back up and to the right
+function figure(x,y,c){return `<g transform="translate(${x},${y})"><circle r="5.5" cy="-10" fill="#F2D0B4" stroke="#B88A6A"/><rect x="-5" y="-4" width="10" height="15" rx="4" fill="${c}" stroke="${F.mat("painted",c).stroke}"/><path d="M-2.5,11 v6 M2.5,11 v6" stroke="#4E4868" stroke-width="2.2" stroke-linecap="round"/></g>`}
+function bird(x,y,r){return `<g transform="translate(${x},${y})"><path d="M${-r*1.6},${r*0.4} l${r*1.4},${r*0.75} h${r*2.6}" fill="none" stroke="${PAL.shadow}" stroke-opacity=".18" stroke-width="${r*0.9}" stroke-linecap="round"/><ellipse rx="${r*1.5}" ry="${r*1.1}" fill="#FBF6EC" stroke="#A89A86"/><path d="M${-r*1.1},${-r*0.5} a${r*1.5},${r*1.1} 0 0 1 ${r*2.2},0" fill="none" stroke="#C9B89E" stroke-width="${r*0.5}" opacity=".7"/><rect x="${-r}" y="${-r*0.15}" width="${r*2}" height="${r*0.4}" rx="${r*0.2}" fill="${PAL.product.strawberry}"/><circle cx="${r*1.3}" cy="${-r}" r="${r*0.62}" fill="#FBF6EC" stroke="#A89A86"/></g>`}
 function drawMain(st0,st){
-  let o=`<rect width="640" height="330" fill="var(--chalk)"/>`;
+  let o=F.floor(640,330);
   // sky labels
   o+=`<text class="t-lab" x="60" y="22">TOP OF BEACH · 0 m</text><text class="t-lab" x="580" y="22" text-anchor="end">SEA · 40 m</text>`;
   // ground profile: slopes down to the sea
-  const gy=d=>150+d*2.3;
-  let ground=`M0,${gy(0)} L${X(0)},${gy(0)}`;D.forEach(d=>ground+=` L${X(d)},${gy(d)}`);ground+=` L640,${gy(40)+8} L640,330 L0,330Z`;
-  o+=`<path d="${ground}" fill="var(--fill)" stroke="var(--ink)" stroke-width="1.2"/>`;
+  const gy=d=>150+d*2.3,L=24,R=616,B=300,CT=38;
+  // the case sits on the floor: back panel and floor shadow first
+  o+=F.shadow(L,B,R-L+DD,{len:70,opacity:.16});
+  o+=`<rect x="${L+DD}" y="${CT+DDY}" width="${R-L}" height="${B-CT}" rx="10" fill="${TINT}" fill-opacity=".22" stroke="${F.deep(TINT)}" stroke-opacity=".5"/>`;
+  // top surface of the ground (seen from slightly above), then the cut face
+  let top=`M${L},${gy(0)}`;D.forEach(d=>top+=` L${X(d)},${gy(d)}`);top+=` L${R},${gy(40)+8} l${DD},${DDY} `;[...D].reverse().forEach(d=>top+=` L${X(d)+DD},${gy(d)+DDY}`);top+=` L${L+DD},${gy(0)+DDY}Z`;
+  o+=`<path d="${top}" fill="#EEE8DC" stroke="#B9AE9C" stroke-width="1"/>`;
+  let topSoil=`M${L},${gy(0)}`;D.forEach((d,i)=>{if(SOIL[i]>0)topSoil+=` L${X(d)},${gy(d)}`});const lastSoil=D[SOIL.findIndex(v=>v===0)-1]??0;
+  topSoil+=` L${X(lastSoil)+6},${gy(lastSoil)+3} l${DD},${DDY}`;[...D].filter((d,i)=>SOIL[i]>0).reverse().forEach(d=>topSoil+=` L${X(d)+DD},${gy(d)+DDY}`);topSoil+=` L${L+DD},${gy(0)+DDY}Z`;
+  o+=`<path d="${topSoil}" fill="#B5CF8E" opacity=".75"/>`;
+  let ground=`M${L},${gy(0)}`;D.forEach(d=>ground+=` L${X(d)},${gy(d)}`);ground+=` L${R},${gy(40)+8} L${R},${B} L${L},${B}Z`;
+  o+=`<path d="${ground}" fill="${SHINGLE}" stroke="#A89E8C" stroke-width="1.2"/>`;
   // soil layer on top of shingle
   let soil="";D.forEach((d,i)=>soil+=(i?"L":"M")+X(d)+","+(gy(d)-0));for(let i=D.length-1;i>=0;i--)soil+=` L${X(D[i])},${gy(D[i])+SOIL[i]*1.6}`;
-  o+=`<path d="${soil}Z" fill="var(--land)" opacity=".45"/>`;
-  // shingle dots
-  for(let i=0;i<70;i++){const d=(i*37%40),dy=(i*13%30);o+=`<circle cx="${X(d)+((i*7)%9)}" cy="${gy(d)+20+dy}" r="${2+(i%3)}" fill="var(--moon)" stroke="var(--ink)" stroke-width=".5"/>`}
-  // sea
-  const wave=Math.sin(Date.now()/600)*3;o+=`<path d="M${X(36)},${gy(36)+6+wave} Q${X(40)},${gy(40)-6+wave} 640,${gy(40)+wave} L640,330 L${X(36)},330Z" fill="var(--sea)" opacity=".35"/>`;
+  o+=`<path d="${soil}Z" fill="${SOILC}" opacity=".85"/>`;
+  // shingle pebbles in the cut face
+  for(let i=0;i<70;i++){const d=(i*37%40),dy=(i*13%30),px=X(d)+((i*7)%9),py=gy(d)+20+dy,r=2+(i%3);if(py+r<B-2)o+=`<ellipse cx="${px}" cy="${py}" rx="${r*1.25}" ry="${r}" fill="${["#B8AE9E","#A99F90","#C6BDAE"][i%3]}" stroke="#8C8273" stroke-width=".6"/><path d="M${px-r*0.8},${py-r*0.3} q${r*0.6},${-r*0.6} ${r*1.2},${-r*0.5}" fill="none" stroke="#fff" stroke-width=".9" opacity=".6"/>`}
+  // sea: translucent water with a lit surface
+  const wave=Math.sin(Date.now()/600)*3;
+  o+=`<path d="M${X(36)},${gy(36)+6+wave} Q${X(40)},${gy(40)-6+wave} ${R},${gy(40)+wave} L${R},${B} L${X(36)},${B}Z" fill="${SEA}" opacity=".5"/>`;
+  o+=`<path d="M${X(36)},${gy(36)+6+wave} Q${X(40)},${gy(40)-6+wave} ${R},${gy(40)+wave}" fill="none" stroke="#fff" stroke-width="2" opacity=".85"/>`;
   // plants
-  D.forEach((d,i)=>{const h=HEIGHT[i]*1.6,n=Math.min(5,Math.ceil(COUNT[i]/3));for(let k=0;k<n;k++){const x=X(d)-14+k*7,y=gy(d);if(h>0)o+=`<path d="M${x},${y} q-4,${-h*0.6} 0,${-h} M${x},${y} q5,${-h*0.5} 6,${-h*0.8}" fill="none" stroke="var(--land)" stroke-width="2.4"/>`}});
+  D.forEach((d,i)=>{const h=HEIGHT[i]*1.6,n=Math.min(5,Math.ceil(COUNT[i]/3));for(let k=0;k<n;k++){const x=X(d)-14+k*7+DD*0.4,y=gy(d)+DDY*0.4;if(h>0)o+=`<path d="M${x},${y} q-4,${-h*0.6} 0,${-h} M${x},${y} q5,${-h*0.5} 6,${-h*0.8}" fill="none" stroke="${LEAFD}" stroke-width="3.4" stroke-linecap="round"/><path d="M${x},${y} q-4,${-h*0.6} 0,${-h} M${x},${y} q5,${-h*0.5} 6,${-h*0.8}" fill="none" stroke="${LEAF}" stroke-width="1.8" stroke-linecap="round"/>`}});
+  // the frosted front of the case over the diorama
+  o+=F.acrylic(L,CT,R-L,B-CT,{tint:TINT,d:DD,r:10,opacity:.1,shadow:false});
   // dotterel nest on open shingle
-  if(st.k==="factors"&&s.factor==="shelter")o+=`<g transform="translate(${X(24)},${gy(24)-8})"><ellipse rx="9" ry="7" fill="var(--paper)" stroke="var(--ink)"/><circle cx="8" cy="-6" r="3.5" fill="var(--paper)" stroke="var(--ink)"/><rect x="-6" y="-1" width="12" height="2.4" fill="var(--hot)"/></g><text class="t-lab" x="${X(24)}" y="${gy(24)-24}" text-anchor="middle">DOTTEREL NEST</text>`;
+  if(st.k==="factors"&&s.factor==="shelter")o+=bird(X(24),gy(24)-8,6)+F.pill(X(24)-52,gy(24)-52,"Dotterel nest",{ax:X(24),ay:gy(24)-16});
   if(st.k==="factors"){const f=s.factor;
     const band={shelter:[0,12],nutrients:[0,15],temperature:[18,34],light:[20,40],water:[28,40]}[f];
-    o+=`<rect x="${X(band[0])}" y="40" width="${X(band[1])-X(band[0])}" height="60" rx="8" fill="var(--sun)" opacity=".18"/><text class="t-ink" x="${(X(band[0])+X(band[1]))/2}" y="74" text-anchor="middle">${FACTORS[f][0]}</text>`}
+    o+=`<rect x="${X(band[0])}" y="40" width="${X(band[1])-X(band[0])}" height="60" rx="10" fill="${PAL.product.butter}" opacity=".3" stroke="${PAL.product.butter}"/><text class="t-ink" x="${(X(band[0])+X(band[1]))/2}" y="74" text-anchor="middle">${FACTORS[f][0]}</text>`}
   // transect line and quadrats
-  if(["transect","soil","test"].includes(st.k)){o+=`<line x1="${X(0)}" x2="${X(40)}" y1="118" y2="118" stroke="var(--ink)" stroke-dasharray="4 3"/>`;
-    D.forEach((d,i)=>{const done=d<=s.walk;o+=`<rect x="${X(d)-12}" y="${gy(d)-8}" width="24" height="8" fill="none" stroke="${done?"var(--sun)":"var(--rose)"}" stroke-width="${done?2:1}"/><text class="t-lab" x="${X(d)}" y="112" text-anchor="middle">${d}</text>`});
-    const wx=X(Math.min(40,s.walk));o+=`<g transform="translate(${wx},${gy(Math.min(40,s.walk))-30})"><circle cy="-10" r="5" fill="var(--sun)" stroke="var(--ink)"/><rect x="-4" y="-5" width="8" height="16" rx="3" fill="var(--ink)"/></g>`}
+  if(["transect","soil","test"].includes(st.k)){o+=`<line x1="${X(0)}" x2="${X(40)}" y1="118" y2="118" stroke="#4E4868" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+    D.forEach((d,i)=>{const done=d<=s.walk,qx=X(d)-12,qy=gy(d)-2;o+=`<path d="M${qx},${qy} l${DD*0.6},${DDY*0.6} h24 l${-DD*0.6},${-DDY*0.6}z" fill="${done?PAL.product.butter:"none"}" fill-opacity=".45" stroke="${done?"#B08A2E":AX}" stroke-width="${done?2:1.2}"/><text class="t-lab" x="${X(d)}" y="112" text-anchor="middle">${d}</text>`});
+    const wx=X(Math.min(40,s.walk));o+=figure(wx+4,gy(Math.min(40,s.walk))-20,PAL.product.strawberry)}
   if(st.k==="chain"||st.k==="pyramid"){const P=pops();
     o+=`<text class="t-ink" x="320" y="60" text-anchor="middle">${P.st} stoats hunting this beach</text>`;
-    for(let k=0;k<P.st;k++)o+=`<g transform="translate(${80+k*36},96)"><path d="M-12,0 q12,-8 24,0 q-12,6 -24,0z" fill="var(--hot)" stroke="var(--ink)"/><path d="M12,0 l8,-3" stroke="var(--ink)"/></g>`;
-    const nd=Math.round(P.dot/10);for(let k=0;k<nd;k++)o+=`<g transform="translate(${X(14+k*3)},${gy(14+k*3)-8})"><ellipse rx="6" ry="4.5" fill="var(--paper)" stroke="var(--ink)"/><rect x="-4" y="-1" width="8" height="2" fill="var(--hot)"/></g>`}
+    for(let k=0;k<P.st;k++){const m=F.mat("painted","#C98F62");o+=`<g transform="translate(${80+k*36},96)"><path d="M-12,4 l10,5 h24 l-10,-5z" fill="${PAL.shadow}" opacity=".14"/><path d="M-12,0 q12,-9 24,0 q-12,7 -24,0z" fill="#C98F62" stroke="${m.stroke}"/><path d="M-8,-2 q8,-5 16,0" fill="none" stroke="${m.hi}" stroke-width="2" stroke-linecap="round"/><path d="M-10,1 q8,4 18,1" fill="none" stroke="#F4E6D2" stroke-width="2"/><path d="M12,0 l8,-3" stroke="${m.stroke}" stroke-width="1.6" stroke-linecap="round"/><path d="M-12,0 l-8,2" stroke="#4E4868" stroke-width="2" stroke-linecap="round"/></g>`}
+    const nd=Math.round(P.dot/10);for(let k=0;k<nd;k++)o+=bird(X(14+k*3),gy(14+k*3)-6,4.2)}
   return o;
 }
 function drawClose(st0,st){
-  let o=`<rect width="420" height="260" fill="var(--chalk)"/>`;
+  let o=F.floor(420,260);
   if(["transect","soil","test","habitat"].includes(st.k)){
     const which=st.k==="soil"?"soil":"height";const vals=which==="soil"?SOIL:HEIGHT,max=which==="soil"?20:50,lab=which==="soil"?"SOIL DEPTH (cm)":"AVERAGE PLANT HEIGHT (cm)";
     o+=`<text class="t-lab" x="14" y="22">${lab} ALONG THE TRANSECT</text>`;
-    const XX=d=>44+d/40*350,YY=v=>200-v/max*160;o+=`<line x1="44" x2="394" y1="200" y2="200" stroke="var(--rose)"/><line x1="44" x2="44" y1="34" y2="200" stroke="var(--rose)"/>`;
+    const XX=d=>44+d/40*350,YY=v=>200-v/max*160;o+=`<line x1="44" x2="394" y1="200" y2="200" stroke="${AX}"/><line x1="44" x2="44" y1="34" y2="200" stroke="${AX}"/>`;
     [0,max/2,max].forEach(v=>o+=`<text class="t-lab" x="38" y="${YY(v)+3.5}" text-anchor="end">${v}</text>`);
-    D.forEach((d,i)=>{o+=`<text class="t-lab" x="${XX(d)}" y="214" text-anchor="middle">${d}</text>`;if(st.k==="habitat"||d<=s.walk||st.k==="soil")o+=`<rect x="${XX(d)-12}" y="${YY(vals[i])}" width="24" height="${200-YY(vals[i])}" fill="${which==="soil"?"var(--land)":"var(--ink)"}" opacity="${which==="soil"?.7:1}"/>`});
+    const c=which==="soil"?PAL.product.peach:PAL.product.lime,m=F.mat("painted",c);
+    D.forEach((d,i)=>{o+=`<text class="t-lab" x="${XX(d)}" y="214" text-anchor="middle">${d}</text>`;if(st.k==="habitat"||d<=s.walk||st.k==="soil")o+=`<rect x="${XX(d)-12}" y="${YY(vals[i])}" width="24" height="${200-YY(vals[i])}" rx="3" fill="${c}" stroke="${m.stroke}" stroke-width=".9"/><rect x="${XX(d)-8}" y="${YY(vals[i])+3}" width="3" height="${Math.max(0,200-YY(vals[i])-6)}" rx="1.5" fill="#fff" opacity=".55"/>`});
     o+=`<text class="t-lab" x="220" y="230" text-anchor="middle">DISTANCE FROM TOP OF BEACH (m)</text>`;
     if(st.k==="soil")o+=`<text class="t-body" x="14" y="252">Soil gets shallower towards the sea, and so do the plants.</text>`;
     else o+=`<text class="t-body" x="14" y="252">${s.walk>=40?"Plants get shorter, then disappear, towards the sea.":"Press Play to walk the transect, one quadrat every 5 m."}</text>`;
@@ -63,12 +83,13 @@ function drawClose(st0,st){
     o+=wrap(f[1],50)+`<text class="t-lab" x="14" y="168">THE RULE</text>`+wrap(f[2],188);return o;}
   // food chain and pyramid
   const P=pops();const chain=[["Plants (pōhuehue, grasses)","Producer",P.plants],["Insects and sandhoppers","Primary consumer",P.ins],["Banded dotterel","Secondary consumer",P.dot],["Stoat","Tertiary consumer",P.st]];
+  const LV=[PAL.product.lime,PAL.product.butter,PAL.product.blueberry,PAL.product.peach];
   if(st.k==="chain"){o+=`<text class="t-lab" x="14" y="22">FOOD CHAIN: ARROWS SHOW WHERE ENERGY GOES</text>`;
-    chain.forEach((c,i)=>{const y=40+i*52;o+=`<rect x="14" y="${y}" width="250" height="38" rx="8" fill="var(--paper)" stroke="var(--ink)"/><text class="t-ink" x="26" y="${y+16}">${c[0]}</text><text class="t-lab" x="26" y="${y+31}">${c[1].toUpperCase()} · LEVEL ${i+1}</text><text class="t-ink" x="390" y="${y+24}" text-anchor="end">≈ ${c[2].toLocaleString("en-NZ")}</text>`;
-      if(i<3)o+=`<path d="M139,${y+38} v12" stroke="var(--ink)" stroke-width="1.6"/><path d="M134,${y+44} l5,6 l5,-6" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`});
+    chain.forEach((c,i)=>{const y=40+i*52;o+=`<rect x="14" y="${y}" width="250" height="38" rx="8" fill="#fff" stroke="#DCD6EA"/><rect x="14" y="${y}" width="7" height="38" rx="3.5" fill="${LV[i]}"/><text class="t-ink" x="26" y="${y+16}">${c[0]}</text><text class="t-lab" x="26" y="${y+31}">${c[1].toUpperCase()} · LEVEL ${i+1}</text><text class="t-ink" x="390" y="${y+24}" text-anchor="end">≈ ${c[2].toLocaleString("en-NZ")}</text>`;
+      if(i<3)o+=`<path d="M139,${y+38} v12" stroke="#4E4868" stroke-width="1.6"/><path d="M134,${y+44} l5,6 l5,-6" fill="none" stroke="#4E4868" stroke-width="1.6"/>`});
     return o;}
   o+=`<text class="t-lab" x="14" y="22">ENERGY PYRAMID: ABOUT 10% PASSES UP EACH LEVEL</text>`;
-  const E=[10000,1000,100,10];E.forEach((e,i)=>{const w=360*Math.pow(e/10000,0.38),y=196-i*44;o+=`<rect x="${210-w/2}" y="${y}" width="${w}" height="36" fill="${["var(--land)","var(--sun)","var(--paper)","var(--hot)"][i]}" stroke="var(--ink)"/><text class="t-ink" x="210" y="${y+22}" text-anchor="middle">${chain[i][0].split(" (")[0]} · ${e.toLocaleString("en-NZ")} kJ</text>`});
+  const E=[10000,1000,100,10];E.forEach((e,i)=>{const w=360*Math.pow(e/10000,0.38),y=196-i*44,c=LV[i];o+=`<rect x="${210-w/2}" y="${y}" width="${w}" height="36" rx="4" fill="${c}" stroke="${F.mat("painted",c).stroke}"/><text class="t-ink" x="210" y="${y+22}" text-anchor="middle">${chain[i][0].split(" (")[0]} · ${e.toLocaleString("en-NZ")} kJ</text>`});
   o+=`<text class="t-body" x="14" y="250">The rest is used for living (respiration) and lost as heat.</text>`;return o;
 }
 const steps=[

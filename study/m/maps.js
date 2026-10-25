@@ -3,7 +3,9 @@
 // and a climate graph. Compass points and bearings, grid references, scale and distance, contours and cross-sections.
 const fmt=(x,d=0)=>{let v=Number(x);if(Math.abs(v)<0.5*Math.pow(10,-d))v=0;return v.toLocaleString("en-NZ",{maximumFractionDigits:d,minimumFractionDigits:d})};
 const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
-const INK="#492B3E",ROSE="#916A70",PAPER="#FFFDFB",PINK="#E0709A",MINT="#4FA88A",SUN="#F4C26B",SEA="#BFE1EC",RIVER="#5FA8CB",ROAD="#E39A6A",TRAIL="#D2558A",LILAC="#9C86D6",BUSH="#A9CC9A";
+// figure parts from the shared bench look (StudyKit.fig): navy ink, product colours, peach cases for social studies
+const FG=StudyKit.fig,PAL=FG.palette,TINT=PAL.case.peach,TDEEP=FG.deep(PAL.case.peach);
+const INK="#262E5C",ROSE="#7C7F99",PAPER="#FFFDFB",PINK="#E8688A",MINT="#4FA88A",SUN="#F2C83C",SEA="#BFE1EC",RIVER="#5FA8CB",ROAD="#E39A6A",TRAIL="#D2558A",LILAC="#9C86D6",BUSH="#A9CC9A";
 // ---------- sound: the kit's sounds if it has them, plus a tiny synth for footsteps and whistles (only after a tap or key press)
 let gest=false;["pointerdown","keydown"].forEach(e=>addEventListener(e,()=>{gest=true},{capture:true}));
 const muted=()=>{try{return localStorage.getItem("studysound")==="off"}catch(e){return false}};
@@ -111,9 +113,13 @@ function terrainURL(){try{const W=320,Hh=200,cv=document.createElement("canvas")
     const k=(j*W+i)*4;im.data[k]=c[0];im.data[k+1]=c[1];im.data[k+2]=c[2];im.data[k+3]=255}
   g.putImageData(im,0,0);return cv.toDataURL("image/png")}catch(e){return""}}
 const TERR=terrainURL();
+// a steel-bezelled compass standing on the paper: navy floor shadow, steel ring, white face
+const bezel=(cx,cy,r)=>`<ellipse cx="${cx+r*.32}" cy="${cy+r*.3}" rx="${r+5}" ry="${r+3}" fill="${PAL.shadow}" opacity=".16"/><circle cx="${cx}" cy="${cy}" r="${r+5}" fill="${PAL.steel}" stroke="${PAL.steelDark}" stroke-width="1.2"/><path d="M${cx-(r+2.5)*.8},${cy-(r+2.5)*.6} A${r+2.5},${r+2.5} 0 0 1 ${cx+(r+2.5)*.6},${cy-(r+2.5)*.8}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2" stroke-linecap="round"/>`;
+// the map sheet lies in a shallow frosted peach tray, one long navy shadow to the lower right
+const tray=(x,y,w,h)=>`<path d="M${x+w+6},${y+4} l26,14 V${y+h+30} H${x+40} l-34,-24 z" fill="${PAL.shadow}" opacity=".10"/>`+FG.acrylic(x,y,w,h,{tint:TINT,d:6,r:8,balls:false,shadow:false});
 // ---------- static map layer
 let rnd=11;const R=()=>{rnd=(rnd*1103515245+12345)%2147483648;return rnd/2147483648};
-function staticMap(){let o=`<rect width="800" height="420" fill="#FBF6F2"/><rect x="${MX}" y="${MY}" width="${GW*K}" height="${GH*K}" fill="${SEA}"/>`;
+function staticMap(){let o=FG.floor(800,420)+tray(MX-7,MY-5,GW*K+14,GH*K+10)+`<rect x="${MX}" y="${MY}" width="${GW*K}" height="${GH*K}" fill="${SEA}"/>`;
   if(TERR)o+=`<image href="${TERR}" x="${MX}" y="${MY}" width="${GW*K}" height="${GH*K}" preserveAspectRatio="none"/>`;
   // sea ripples
   for(let i=0;i<9;i++){const Y=0.3+i*0.55,X=xc(Y)+0.35+(i%3)*0.18;if(X<7.8)o+=`<path d="M${PX(X)},${PY(Y)} q6,-4 12,0 t12,0" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>`}
@@ -161,7 +167,9 @@ function gridLines(strong){let o="";const op=strong?.55:.28;
   o+=`<text class="mp-l halo" x="${MX+3}" y="${PY(0)-4}" style="fill:${INK}">40</text>`;
   return o+`<rect x="${MX}" y="${MY}" width="${GW*K}" height="${GH*K}" fill="none" stroke="${INK}" stroke-width="1.5"/>`}
 function sidePanel(hiDir){let o="";const cx=728,cy=72,r=36;
-  o+=`<circle cx="${cx}" cy="${cy}" r="${r+6}" fill="#fff" stroke="${INK}" stroke-opacity=".25"/>`;
+  // the key: a frosted peach card beside the map, the compass rose in a steel bezel on it
+  o+=FG.acrylic(672,8,122,404,{tint:TINT,d:4,r:10,balls:false,shadow:false,opacity:.2});
+  o+=bezel(cx,cy,r+1)+`<circle cx="${cx}" cy="${cy}" r="${r+1}" fill="#fff"/>`;
   P8s.forEach((n,i)=>{const a=i*Math.PI/4,big=i%2===0,L=big?r:r*.62,hi=hiDir===i;o+=`<path d="M${cx},${cy} L${cx+Math.sin(a+.16)*7},${cy-Math.cos(a+.16)*7} L${cx+Math.sin(a)*L},${cy-Math.cos(a)*L} L${cx+Math.sin(a-.16)*7},${cy-Math.cos(a-.16)*7}Z" fill="${hi?PINK:big?INK:"#B9A9B0"}"/>`;
     if(big)o+=`<text class="mp-l" x="${cx+Math.sin(a)*(r+16)}" y="${cy-Math.cos(a)*(r+16)+4.5}" text-anchor="middle" style="fill:${hi?PINK:INK}">${n}</text>`});
   o+=`<rect class="mp-desk" x="680" y="140" width="96" height="1" fill="none"/>`;
@@ -174,13 +182,13 @@ function sidePanel(hiDir){let o="";const cx=728,cy=72,r=36;
   L.forEach((l,i)=>{const y=222+i*27;o+=`<g transform="translate(0,${y})">${l[1]}<text class="mp-s" x="702" y="4" style="fill:${INK}">${l[2]}</text></g>`});
   o+=`<text class="mp-s mp-desk" x="674" y="392" style="fill:${ROSE}">CONTOURS 50 m</text><text class="mp-s mp-desk" x="674" y="407" style="fill:${ROSE}">MADE-UP PLACE</text>`;
   return o}
-function tag(txt,w,col=INK,y=360){return `<rect x="26" y="${y}" width="${w}" height="38" rx="9" fill="#fff" fill-opacity=".94" stroke="${INK}" stroke-opacity=".2"/><text class="mp-t" x="40" y="${y+25}" style="fill:${col}">${txt}</text>`}
+function tag(txt,w,col=INK,y=360){return `<rect x="26" y="${y}" width="${w}" height="38" rx="13" fill="#fff" fill-opacity=".96" stroke="${PAL.pill.line}" stroke-width="1.2"/><text class="mp-t" x="40" y="${y+25}" style="fill:${col}">${txt}</text>`}
 const tagW=(t)=>Math.max(160,t.length*8.6+28);
 const tagWp=(t)=>Math.max(160,t.length*13.3+28);
 function tagR(t,col){// one size for desktop, one for phones
   return `<g class="mp-desk">${tag(t,tagW(t),col)}</g><g class="mp-phone">${tag(t,Math.min(630,tagWp(t)),col)}</g>`}
 function pinSVG(p,prog,col=PINK){const x=PX(p.X),y=PY(p.Y);const e=prog>=1?1:(t=>{const n=7.5625,d=2.75;if(t<1/d)return n*t*t;if(t<2/d)return n*(t-=1.5/d)*t+.75;if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;return n*(t-=2.625/d)*t+.984375})(prog);
-  const dy=-(1-e)*90;return `<ellipse cx="${x}" cy="${y+1}" rx="${4+3*e}" ry="${1.6+1.2*e}" fill="${INK}" opacity="${.15+.2*e}"/><g transform="translate(${x},${y+dy})"><path d="M0,0 C-3,-8 -11,-13 -11,-21 a11,11 0 1 1 22,0 C11,-13 3,-8 0,0Z" fill="${col}" stroke="${INK}" stroke-width="1.4"/><circle cx="0" cy="-21" r="4.2" fill="#fff"/></g>`}
+  const dy=-(1-e)*90;return `<ellipse cx="${x+4*e}" cy="${y+2}" rx="${4+5*e}" ry="${1.6+1.6*e}" fill="${PAL.shadow}" opacity="${.12+.2*e}" transform="rotate(14 ${x} ${y})"/><g transform="translate(${x},${y+dy})"><path d="M0,0 C-3,-8 -11,-13 -11,-21 a11,11 0 1 1 22,0 C11,-13 3,-8 0,0Z" fill="${col}" stroke="${INK}" stroke-width="1.4"/><circle cx="0" cy="-21" r="4.2" fill="#fff"/></g>`}
 // ---------- topographic views
 function topoView(v){let o=STATIC+gridLines(v==="grid");
   const B=curB();o+=sidePanel(v==="compass"&&B!=null?Math.round(B/45)%8:-1);
@@ -189,7 +197,7 @@ function topoView(v){let o=STATIC+gridLines(v==="grid");
     if(B!=null){o+=`<line x1="${PX(a.X)}" y1="${PY(a.Y)}" x2="${PX(b.X)}" y2="${PY(b.Y)}" stroke="${INK}" stroke-width="2" stroke-dasharray="5 5"/>`;
       if(s.to!=="pin")o+=`<circle cx="${PX(b.X)}" cy="${PY(b.Y)}" r="15" fill="none" stroke="${PINK}" stroke-width="3"/>`}
     // compass rose at the starting point, needle swings to the target
-    const cx=PX(a.X),cy=PY(a.Y),r=44;o+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" fill-opacity=".95" stroke="${INK}" stroke-width="1.5"/>`;
+    const cx=PX(a.X),cy=PY(a.Y),r=44;o+=bezel(cx,cy,r)+`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" fill-opacity=".97" stroke="${PAL.steelDark}" stroke-width="1"/>`;
     for(let i=0;i<16;i++){const an=i*Math.PI/8,L=i%4===0?9:i%2===0?6:3;o+=`<line x1="${cx+Math.sin(an)*(r-L)}" y1="${cy-Math.cos(an)*(r-L)}" x2="${cx+Math.sin(an)*r}" y2="${cy-Math.cos(an)*r}" stroke="${INK}" stroke-width="${i%4?1:1.6}"/>`}
     ["N","E","S","W"].forEach((n,i)=>o+=`<text class="mp-l" x="${cx+Math.sin(i*Math.PI/2)*(r-17)}" y="${cy-Math.cos(i*Math.PI/2)*(r-17)+4.5}" text-anchor="middle" style="fill:${i?INK:PINK}">${n}</text>`);
     if(B!=null){const ang=s.needle*Math.PI/180,ar=26;o+=`<path d="M${cx},${cy-ar} A${ar},${ar} 0 ${s.needle>180?1:0} 1 ${cx+Math.sin(ang)*ar},${cy-Math.cos(ang)*ar}" fill="none" stroke="${MINT}" stroke-width="4" stroke-opacity=".75"/>`;
@@ -206,16 +214,16 @@ function topoView(v){let o=STATIC+gridLines(v==="grid");
     const st0=TR[0];o+=`<line x1="${PX(st0[0])}" y1="${PY(st0[1])}" x2="${PX(at[0])}" y2="${PY(at[1])}" stroke="${INK}" stroke-width="1.6" stroke-dasharray="4 4"/>`;
     o+=`<circle cx="${PX(st0[0])}" cy="${PY(st0[1])}" r="9" fill="#fff" stroke="${INK}" stroke-width="1.5"/><text class="mp-l" x="${PX(st0[0])}" y="${PY(st0[1])+4.5}" text-anchor="middle" style="fill:${INK}">P</text>`;
     // the rider
-    const x=PX(at[0]),y=PY(at[1]),bob=Math.sin(s.trail*40)*1.2;o+=`<g transform="translate(${x},${y-12+bob})"><circle cx="-6" cy="8" r="5" fill="#fff" stroke="${INK}" stroke-width="1.6"/><circle cx="6" cy="8" r="5" fill="#fff" stroke="${INK}" stroke-width="1.6"/><path d="M-6,8 L-1,0 L6,8 M-1,0 h6" stroke="${INK}" stroke-width="1.6" fill="none"/><circle cx="1" cy="-9" r="4.5" fill="${LILAC}" stroke="${INK}" stroke-width="1.2"/><path d="M1,-5 L0,1" stroke="${LILAC}" stroke-width="3.5" stroke-linecap="round"/></g>`;
+    const x=PX(at[0]),y=PY(at[1]),bob=Math.sin(s.trail*40)*1.2;o+=`<g transform="translate(${x},${y-12+bob})"><circle cx="-6" cy="8" r="5" fill="#fff" stroke="${INK}" stroke-width="1.6"/><circle cx="6" cy="8" r="5" fill="#fff" stroke="${INK}" stroke-width="1.6"/><path d="M-6,8 L-1,0 L6,8 M-1,0 h6" stroke="${INK}" stroke-width="1.6" fill="none"/><circle cx="1" cy="-9" r="4.5" fill="#F2D0B4" stroke="#B88A6A" stroke-width="1.2"/><path d="M1,-5 L0,1" stroke="${PINK}" stroke-width="3.8" stroke-linecap="round"/></g>`;
     const sl=Math.hypot(at[0]-st0[0],at[1]-st0[1]);o+=tagR(`Trail ${fmt(Math.min(s.trail,TRL),2)} km · straight ${fmt(sl,2)} km`)}
   if(v==="contour"){const A=s.A,Bp=s.B;o+=`<line x1="${PX(A.X)}" y1="${PY(A.Y)}" x2="${PX(Bp.X)}" y2="${PY(Bp.Y)}" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".8"/><line x1="${PX(A.X)}" y1="${PY(A.Y)}" x2="${PX(Bp.X)}" y2="${PY(Bp.Y)}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>`;
     // the drawing pen moves along the line as the cross-section draws
     if(s.secP<1){const t=s.secP;o+=`<circle cx="${PX(A.X+(Bp.X-A.X)*t)}" cy="${PY(A.Y+(Bp.Y-A.Y)*t)}" r="6" fill="${SUN}" stroke="${INK}"/>`}
     const hA=gH(A.X,A.Y),hB=gH(Bp.X,Bp.Y);o+=tagR(`A ${hA<=0?"sea":Math.round(hA)+" m"} → B ${hB<=0?"sea":Math.round(hB)+" m"} · drag A or B`);
-    [["A",A],["B",Bp]].forEach(([n,p])=>o+=`<circle cx="${PX(p.X)}" cy="${PY(p.Y)}" r="13" fill="${n==="A"?MINT:PINK}" stroke="${INK}" stroke-width="1.6"/><text class="mp-l" x="${PX(p.X)}" y="${PY(p.Y)+4.5}" text-anchor="middle" style="fill:#fff">${n}</text>`)}
+    [["A",A],["B",Bp]].forEach(([n,p])=>o+=`<circle cx="${PX(p.X)}" cy="${PY(p.Y)}" r="13" fill="${n==="A"?PAL.product.lime:PAL.product.strawberry}" stroke="${INK}" stroke-width="1.6"/><circle cx="${PX(p.X)-4}" cy="${PY(p.Y)-5}" r="3" fill="#fff" opacity=".55"/><text class="mp-l" x="${PX(p.X)}" y="${PY(p.Y)+4.5}" text-anchor="middle" style="fill:${INK}">${n}</text>`)}
   return o}
 // ---------- Aotearoa: latitude and longitude
-function nzView(){let o=`<rect width="800" height="420" fill="#FBF6F2"/><rect x="${NZx(166)}" y="${NZy(34)}" width="${NZx(179)-NZx(166)}" height="${NZy(47.6)-NZy(34)}" fill="${SEA}" rx="6"/>`;
+function nzView(){let o=FG.floor(800,420)+tray(NZx(166)-7,NZy(34)-6,NZx(179)-NZx(166)+14,NZy(47.6)-NZy(34)+12)+`<rect x="${NZx(166)}" y="${NZy(34)}" width="${NZx(179)-NZx(166)}" height="${NZy(47.6)-NZy(34)}" fill="${SEA}" rx="6"/>`;
   for(let la=34;la<=47;la++)o+=`<line x1="${NZx(166)}" x2="${NZx(179)}" y1="${NZy(la)}" y2="${NZy(la)}" stroke="#fff" stroke-width="${la%2?0.8:1.4}"/>`;
   for(let lo=166;lo<=179;lo++)o+=`<line y1="${NZy(34)}" y2="${NZy(47.6)}" x1="${NZx(lo)}" x2="${NZx(lo)}" stroke="#fff" stroke-width="${lo%2?0.8:1.4}"/>`;
   const poly=P=>`<path d="${cr(P.concat([P[0]]),6).map((p,i)=>(i?"L":"M")+NZx(p[0]).toFixed(1)+","+NZy(p[1]).toFixed(1)).join("")}Z" fill="#E3EDCF" stroke="#7DB5CC" stroke-width="1.3" stroke-linejoin="round"/>`;
@@ -237,21 +245,21 @@ function nzView(){let o=`<rect width="800" height="420" fill="#FBF6F2"/><rect x=
   o+=`<text class="mp-m" x="${x0+18}" y="162" style="fill:#654A4E">How far south of the equator.</text><text class="mp-m mp-desk" x="${x0+18}" y="180" style="fill:#654A4E">Lines of latitude run east–west.</text>`;
   o+=`<rect x="${x0}" y="204" width="10" height="10" fill="${LILAC}"/><text class="mp-l" x="${x0+18}" y="214" style="fill:${INK}">LONGITUDE ${fmt(s.lon,2)}° E</text>`;
   o+=`<text class="mp-m" x="${x0+18}" y="236" style="fill:#654A4E">How far east of Greenwich, London.</text><text class="mp-m mp-desk" x="${x0+18}" y="254" style="fill:#654A4E">Lines of longitude run north–south.</text>`;
-  o+=`<rect x="${x0}" y="282" width="400" height="${near.k<25?96:70}" rx="10" fill="#fff" stroke="${INK}" stroke-opacity=".2"/>`;
+  o+=FG.box(x0,282,400,near.k<25?96:70,{colour:"#FFFFFF",kind:"plastic",d:8,r:10,stroke:PAL.pill.line,shadowLen:40});
   if(near.k<25)o+=`<text class="mp-l" x="${x0+14}" y="306" style="fill:${ROSE}">YOU'RE ON</text><text class="mp-b" x="${x0+14}" y="338" style="fill:${INK}">${near.c.n}</text><text class="mp-t" x="${x0+14}" y="362" style="fill:${INK}">${near.c.e}</text>`;
   else o+=`<text class="mp-l" x="${x0+14}" y="306" style="fill:${ROSE}">NEAREST CITY ON THIS MAP</text><text class="mp-t" x="${x0+14}" y="334" style="fill:${INK}">${near.c.e} · ${fmt(near.k)} km away</text>`;
   o+=`<text class="mp-s mp-desk" x="${x0}" y="404" style="fill:${ROSE}">SIMPLIFIED COASTLINE · CITY CENTRES ROUNDED TO 0.01°</text>`;
   return o}
 function pinNZ(x,y,prog){const e=prog>=1?1:1-Math.pow(1-prog,3)*Math.cos(prog*6);const dy=-(1-Math.min(1,e))*70;
-  return `<ellipse cx="${x}" cy="${y+1}" rx="6" ry="2" fill="${INK}" opacity=".25"/><g transform="translate(${x},${y+dy})"><path d="M0,0 C-3,-8 -10,-12 -10,-19 a10,10 0 1 1 20,0 C10,-12 3,-8 0,0Z" fill="${SUN}" stroke="${INK}" stroke-width="1.4"/><circle cx="0" cy="-19" r="3.8" fill="#fff"/></g>`}
+  return `<ellipse cx="${x+4}" cy="${y+2}" rx="9" ry="2.6" fill="${PAL.shadow}" opacity=".28" transform="rotate(14 ${x} ${y})"/><g transform="translate(${x},${y+dy})"><path d="M0,0 C-3,-8 -10,-12 -10,-19 a10,10 0 1 1 20,0 C10,-12 3,-8 0,0Z" fill="${SUN}" stroke="${INK}" stroke-width="1.4"/><circle cx="0" cy="-19" r="3.8" fill="#fff"/></g>`}
 // ---------- climate graph
 const CG={x0:78,x1:600,y0:360,y1:44,rmax:160,tmax:25};
 const cgx=i=>CG.x0+(i+.5)*(CG.x1-CG.x0)/12,cgr=r=>CG.y0-r/CG.rmax*(CG.y0-CG.y1),cgt=t=>CG.y0-t/CG.tmax*(CG.y0-CG.y1);
-function climateView(){let o=`<rect width="800" height="420" fill="#FBF6F2"/>`;const bw=(CG.x1-CG.x0)/12*.62,m=s.month;
+function climateView(){let o=FG.floor(800,420)+FG.acrylic(8,6,656,404,{tint:TINT,d:8,r:14,balls:false,shadowLen:50,opacity:.2})+`<rect x="${CG.x0}" y="${CG.y1}" width="${CG.x1-CG.x0}" height="${CG.y0-CG.y1}" fill="#fff" fill-opacity=".7"/>`;const bw=(CG.x1-CG.x0)/12*.62,m=s.month;
   for(let r=0;r<=160;r+=40)o+=`<line x1="${CG.x0}" x2="${CG.x1}" y1="${cgr(r)}" y2="${cgr(r)}" stroke="${INK}" stroke-opacity=".1"/><text class="mp-s" x="${CG.x0-8}" y="${cgr(r)+4}" text-anchor="end" style="fill:#3E7FA0">${r}</text>`;
   for(let t=0;t<=25;t+=5)o+=`<text class="mp-s" x="${CG.x1+8}" y="${cgt(t)+4}" style="fill:#B4456F">${t}</text>`;
   o+=`<text class="mp-l" x="${CG.x0-8}" y="26" text-anchor="end" style="fill:#3E7FA0">RAIN mm</text><text class="mp-l" x="${CG.x1+8}" y="26" style="fill:#B4456F">TEMP °C</text>`;
-  RAIN.forEach((r,i)=>{const x=cgx(i);o+=`<rect x="${x-bw/2}" y="${cgr(r)}" width="${bw}" height="${CG.y0-cgr(r)}" rx="4" fill="${i===m?"#7FC0DC":"#BFE1EC"}" stroke="${i===m?INK:"#8CC3D8"}" stroke-width="${i===m?1.6:1}"/>`;
+  RAIN.forEach((r,i)=>{const x=cgx(i);o+=`<rect x="${x-bw/2}" y="${cgr(r)}" width="${bw}" height="${CG.y0-cgr(r)}" rx="4" fill="${i===m?PAL.product.blueberry:"#C9DCF6"}" stroke="${i===m?INK:"#8FB2DE"}" stroke-width="${i===m?1.6:1}"/>`;
     o+=`<text class="mp-s" x="${x}" y="${CG.y0+18}" text-anchor="middle" style="fill:${i===m?INK:ROSE};font-weight:${i===m?700:500}">${MON[i][0]}<tspan class="mp-desk">${MON[i].slice(1)}</tspan></text>`});
   o+=`<line x1="${CG.x0}" x2="${CG.x1}" y1="${CG.y0}" y2="${CG.y0}" stroke="${INK}"/><line x1="${CG.x0}" x2="${CG.x0}" y1="${CG.y0}" y2="${CG.y1}" stroke="#3E7FA0"/><line x1="${CG.x1}" x2="${CG.x1}" y1="${CG.y0}" y2="${CG.y1}" stroke="#B4456F"/>`;
   o+=`<path d="${TEMP.map((t,i)=>(i?"L":"M")+cgx(i)+","+cgt(t)).join("")}" fill="none" stroke="${PINK}" stroke-width="3" stroke-linejoin="round"/>`;
@@ -260,18 +268,22 @@ function climateView(){let o=`<rect width="800" height="420" fill="#FBF6F2"/>`;c
   const x=cgx(m);o+=`<path d="M${x},${cgr(RAIN[m])} H${CG.x0}" stroke="#3E7FA0" stroke-dasharray="4 4"/><path d="M${x},${cgt(TEMP[m])} H${CG.x1}" stroke="#B4456F" stroke-dasharray="4 4"/>`;
   // labels: show a label box above the month
   const lx=Math.max(CG.x0+80,Math.min(CG.x1-80,x)),ly=Math.min(cgr(RAIN[m]),cgt(TEMP[m]))-58;
-  o+=`<rect x="${lx-78}" y="${Math.max(4,ly)}" width="156" height="44" rx="9" fill="#fff" stroke="${INK}" stroke-opacity=".3"/><text class="mp-l" x="${lx}" y="${Math.max(4,ly)+18}" text-anchor="middle" style="fill:#3E7FA0">${RAIN[m]} mm rain</text><text class="mp-l" x="${lx}" y="${Math.max(4,ly)+36}" text-anchor="middle" style="fill:#B4456F">${fmt(TEMP[m],1)} °C average</text>`;
+  o+=`<rect x="${lx-78}" y="${Math.max(4,ly)}" width="156" height="44" rx="13" fill="#fff" stroke="${PAL.pill.line}" stroke-width="1.2"/><text class="mp-l" x="${lx}" y="${Math.max(4,ly)+18}" text-anchor="middle" style="fill:#3E7FA0">${RAIN[m]} mm rain</text><text class="mp-l" x="${lx}" y="${Math.max(4,ly)+36}" text-anchor="middle" style="fill:#B4456F">${fmt(TEMP[m],1)} °C average</text>`;
   // seasons
   [["SUMMER",-0.5,1.5],["AUTUMN",1.5,4.5],["WINTER",4.5,7.5],["SPRING",7.5,10.5],["",10.5,11.5]].forEach(([n,a,b])=>{const xa=CG.x0+(a+.5)*(CG.x1-CG.x0)/12,xb=CG.x0+(b+.5)*(CG.x1-CG.x0)/12;
     o+=`<line x1="${Math.max(CG.x0,xa)+3}" x2="${xb-3}" y1="${CG.y0+30}" y2="${CG.y0+30}" stroke="${n==="WINTER"?"#3E7FA0":n===""||n==="SUMMER"?"#E39A2D":ROSE}" stroke-width="3" stroke-linecap="round"/>${n?`<text class="mp-s mp-desk" x="${(Math.max(CG.x0,xa)+xb)/2}" y="${CG.y0+46}" text-anchor="middle" style="fill:${ROSE}">${n}</text>`:""}`});
-  // weather station
-  o+=`<g transform="translate(712,190)"><rect x="-30" y="-36" width="60" height="44" rx="4" fill="#fff" stroke="${INK}" stroke-width="1.5"/>${[0,1,2,3].map(i=>`<line x1="-24" x2="24" y1="${-28+i*9}" y2="${-24+i*9}" stroke="${INK}" stroke-opacity=".4"/>`).join("")}<path d="M-36,-36 l36,-16 l36,16z" fill="${PINK}" stroke="${INK}" stroke-width="1.5"/><line x1="-20" x2="-20" y1="8" y2="70" stroke="${INK}" stroke-width="3"/><line x1="20" x2="20" y1="8" y2="70" stroke="${INK}" stroke-width="3"/>
-    <rect x="46" y="30" width="18" height="40" rx="3" fill="#BFE1EC" stroke="${INK}"/><path d="M42,30 h26" stroke="${INK}" stroke-width="2"/><line x1="-60" x2="80" y1="70" y2="70" stroke="${INK}" stroke-opacity=".3"/></g>`;
+  // weather station: a white louvred screen on steel legs, a strawberry roof, a rain gauge beside it
+  o+=FG.shadow(684,260,72,{len:46,opacity:.18});
+  o+=FG.cyl(692,198,3,62,{colour:PAL.steel,kind:"metal",shadow:false})+FG.cyl(732,198,3,62,{colour:PAL.steel,kind:"metal",shadow:false});
+  o+=FG.box(682,154,60,44,{colour:"#FFFFFF",kind:"painted",d:12,r:3,stroke:"#9AA3B5",shadow:false});
+  o+=[0,1,2,3].map(i=>`<line x1="688" x2="736" y1="${162+i*9}" y2="${166+i*9}" stroke="${INK}" stroke-opacity=".35"/>`).join("");
+  o+=`<path d="M676,154 l36,-16 l36,16z" fill="${PAL.product.strawberry}" stroke="#B8506E" stroke-width="1.2" stroke-linejoin="round"/><path d="M712,138 l12,-6.6 l36,16 l-12,6.6z" fill="#C95A79" stroke="#B8506E" stroke-width="1.2" stroke-linejoin="round"/>`;
+  o+=FG.cyl(767,222,9,38,{colour:PAL.product.blueberry,kind:"painted",shadowLen:22});
   o+=`<text class="mp-l" x="712" y="296" text-anchor="middle" style="fill:${INK}">KŌWHAI BAY</text><text class="mp-s" x="712" y="314" text-anchor="middle" style="fill:${ROSE}">EXAMPLE DATA</text><text class="mp-s mp-desk" x="712" y="330" text-anchor="middle" style="fill:${ROSE}">(A MADE-UP TOWN)</text>`;
   o+=`<text class="mp-s mp-desk" x="716" y="364" text-anchor="middle" style="fill:${ROSE}">Total ${RTOT} mm a year</text>`;
   return o}
 // ---------- close-ups
-function compassPanel(){const B=curB(),cx=118,cy=132,r=96;let o=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/>`;
+function compassPanel(){const B=curB(),cx=118,cy=132,r=96;let o=FG.floor(420,260)+bezel(cx,cy,r)+`<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--paper)" stroke="${PAL.steelDark}" stroke-width="1.2"/>`;
   for(let i=0;i<36;i++){const a=i*Math.PI/18;o+=`<line x1="${cx+Math.sin(a)*(r-(i%9===0?12:i%3===0?8:4))}" y1="${cy-Math.cos(a)*(r-(i%9===0?12:i%3===0?8:4))}" x2="${cx+Math.sin(a)*r}" y2="${cy-Math.cos(a)*r}" stroke="var(--ink)"/>`}
   P8s.forEach((n,i)=>{const a=i*Math.PI/4,hi=B!=null&&Math.round(B/45)%8===i;o+=`<text class="t-ink" x="${cx+Math.sin(a)*(r-26)}" y="${cy-Math.cos(a)*(r-26)+4}" text-anchor="middle" style="font-weight:${hi?700:400};fill:${hi?PINK:"var(--ink)"}">${n}</text>`});
   if(B!=null){const a=s.needle*Math.PI/180;o+=`<path d="M${cx},${cy-r+14} A${r-14},${r-14} 0 ${s.needle>180?1:0} 1 ${cx+Math.sin(a)*(r-14)},${cy-Math.cos(a)*(r-14)}" fill="none" stroke="${MINT}" stroke-width="5" stroke-opacity=".6"/>`;
@@ -279,8 +291,10 @@ function compassPanel(){const B=curB(),cx=118,cy=132,r=96;let o=`<circle cx="${c
   const a=F[s.from],b=target();o+=`<text class="t-lab" x="236" y="40">BEARING = DEGREES CLOCKWISE</text><text class="t-lab" x="236" y="54">FROM NORTH, 3 FIGURES</text>`;
   if(B!=null){o+=`<text class="t-big" x="236" y="88">${b3(B)}</text><text class="t-ink" x="236" y="110">${dir8(B)}</text><text class="t-body" x="236" y="140">from ${a.s} to</text><text class="t-body" x="236" y="158">${s.to==="pin"?"your pin":b.s}</text>`}
   o+=`<text class="t-lab" x="236" y="196">EACH POINT IS 45° APART</text><text class="t-ink" x="236" y="216">N 000  NE 045  E 090</text><text class="t-ink" x="236" y="234">S 180  SW 225  W 270</text>`;return o}
-function gridPanel(){const p=s.pin,i=Math.floor(p.X),j=Math.floor(p.Y),fx=p.X-i,fy=p.Y-j,x0=40,y0=226,S=190;let o="";
-  o+=`<rect x="${x0}" y="${y0-S}" width="${S}" height="${S}" fill="${SUN}" fill-opacity=".18" stroke="var(--ink)" stroke-width="1.5"/>`;
+function gridPanel(){const p=s.pin,i=Math.floor(p.X),j=Math.floor(p.Y),fx=p.X-i,fy=p.Y-j,x0=40,y0=226,S=190;let o=FG.floor(420,260);
+  // one grid square, lifted off the map as a sheet with a navy shadow
+  o+=FG.shadow(x0,y0,S,{len:40,opacity:.16})+`<rect x="${x0}" y="${y0-S}" width="${S}" height="${S}" fill="#fff"/>`;
+  o+=`<rect x="${x0}" y="${y0-S}" width="${S}" height="${S}" fill="${SUN}" fill-opacity=".2" stroke="var(--ink)" stroke-width="1.5"/>`;
   for(let k=1;k<10;k++)o+=`<line x1="${x0+k*S/10}" x2="${x0+k*S/10}" y1="${y0}" y2="${y0-S}" stroke="var(--ink)" stroke-opacity="${k===5?.35:.15}"/><line y1="${y0-k*S/10}" y2="${y0-k*S/10}" x1="${x0}" x2="${x0+S}" stroke="var(--ink)" stroke-opacity="${k===5?.35:.15}"/>`;
   const px=x0+fx*S,py=y0-fy*S,te=Math.floor(fx*10),tn=Math.floor(fy*10);
   o+=`<path d="M${x0},${y0+10} H${px}" stroke="${MINT}" stroke-width="4" marker-end=""/><path d="M${px},${y0+10} l-7,-5 v10z" fill="${MINT}"/>`;
@@ -290,30 +304,30 @@ function gridPanel(){const p=s.pin,i=Math.floor(p.X),j=Math.floor(p.Y),fx=p.X-i,
   const X=260;o+=`<text class="t-lab" x="${X}" y="34">1 · ALONG THE CORRIDOR</text><text class="t-ink" x="${X}" y="54">Easting ${20+i} + ${te} tenths</text><text class="t-big" x="${X}" y="76" style="fill:${MINT}">${20+i}${te}</text>`;
   o+=`<text class="t-lab" x="${X}" y="108">2 · UP THE STAIRS</text><text class="t-ink" x="${X}" y="128">Northing ${40+j} + ${tn} tenths</text><text class="t-big" x="${X}" y="150" style="fill:${PINK}">${40+j}${tn}</text>`;
   o+=`<text class="t-lab" x="${X}" y="184">SIX-FIGURE</text><text class="t-big" x="${X}" y="206">${grid6(p)}</text><text class="t-lab" x="${X}" y="232">FOUR-FIGURE (THE SQUARE)</text><text class="t-big" x="${X}" y="252">${grid4(p)}</text>`;return o}
-function scalePanel(){const d0=Math.min(s.trail,TRL),at=trailAt(d0),sl=Math.hypot(at[0]-TR[0][0],at[1]-TR[0][1]);const X0=20,S=380/Math.max(6,Math.ceil(TRL));let o="";
+function scalePanel(){const d0=Math.min(s.trail,TRL),at=trailAt(d0),sl=Math.hypot(at[0]-TR[0][0],at[1]-TR[0][1]);const X0=20,S=380/Math.max(6,Math.ceil(TRL));let o=FG.floor(420,260);
   o+=`<text class="t-lab" x="${X0}" y="26">THE STRING, PULLED STRAIGHT</text>`;
   o+=`<rect x="${X0}" y="36" width="${d0*S}" height="16" rx="8" fill="${TRAIL}"/><rect x="${X0}" y="36" width="${TRL*S}" height="16" rx="8" fill="none" stroke="${TRAIL}" stroke-dasharray="4 3"/>`;
-  o+=`<text class="t-lab" x="${X0}" y="74">THE RULER, STRAIGHT LINE</text><rect x="${X0}" y="84" width="${sl*S}" height="16" rx="3" fill="var(--ink)" opacity=".75"/>`;
+  o+=`<text class="t-lab" x="${X0}" y="74">THE RULER, STRAIGHT LINE</text>`+(sl*S>1?FG.box(X0,84,sl*S,16,{colour:PAL.steel,kind:"metal",d:6,r:2,shadow:false}):"");
   for(let k=0;k<=Math.max(6,Math.ceil(TRL));k++)o+=`<line x1="${X0+k*S}" x2="${X0+k*S}" y1="112" y2="${k%1?118:122}" stroke="var(--ink)"/><text class="t-lab" x="${X0+k*S}" y="136" text-anchor="middle">${k}</text>`;
   o+=`<line x1="${X0}" x2="${X0+Math.max(6,Math.ceil(TRL))*S}" y1="112" y2="112" stroke="var(--ink)"/><text class="t-lab" x="400" y="150" text-anchor="end">KILOMETRES</text>`;
   const cm=Math.round(d0*40)/10;o+=`<text class="t-lab" x="${X0}" y="178">ON THE PAPER MAP (1:25 000)</text><text class="t-ink" x="${X0}" y="198">1 cm on the map = 25 000 cm = 250 m</text>`;
   o+=`<text class="t-ink" x="${X0}" y="218">String: ${fmt(cm,1)} cm × 250 m = ${fmt(cm*250)} m</text><text class="t-big" x="${X0}" y="244">≈ ${fmt(cm*0.25,2)} km along the trail</text>`;return o}
 function profile(){const A=s.A,B=s.B,n=160,L=Math.hypot(B.X-A.X,B.Y-A.Y),P=[];for(let i=0;i<=n;i++){const t=i/n,X=A.X+(B.X-A.X)*t,Y=A.Y+(B.Y-A.Y)*t;P.push({t,X,Y,h:gH(X,Y),r:dRiver(X,Y)})}return{P,L}}
 function steepest(P,L){let best=0,bi=0;const w=Math.max(2,Math.round(0.15/(L/(P.length-1))));for(let i=0;i+w<P.length;i++){if(P[i].h<=0||P[i+w].h<=0)continue;const g=Math.abs(P[i+w].h-P[i].h)/((w/(P.length-1))*L*1000);if(g>best){best=g;bi=i}}return{g:best,i:bi,w}}
-function contourPanel(){const{P,L}=profile(),x0=46,x1=404,y0=206,y1=34,hm=450,X=t=>x0+t*(x1-x0),Y=h=>y0-Math.max(0,h)/hm*(y0-y1);let o="";
+function contourPanel(){const{P,L}=profile(),x0=46,x1=404,y0=206,y1=34,hm=450,X=t=>x0+t*(x1-x0),Y=h=>y0-Math.max(0,h)/hm*(y0-y1);let o=FG.floor(420,260)+`<rect x="${x0}" y="${y1-8}" width="${x1-x0}" height="${y0-y1+8}" fill="#fff" fill-opacity=".75"/>`;
   for(let h=0;h<=400;h+=100)o+=`<line x1="${x0}" x2="${x1}" y1="${Y(h)}" y2="${Y(h)}" stroke="var(--ink)" stroke-opacity="${h?.12:.5}"/><text class="t-lab" x="${x0-6}" y="${Y(h)+4}" text-anchor="end">${h}</text>`;
   o+=`<text class="t-lab" x="${x0-6}" y="22" text-anchor="end">m</text>`;
   const k=Math.max(1,Math.round(P.length*Math.min(1,s.secP))),Q=P.slice(0,k);
   // sea
   let sea="";P.forEach((p,i)=>{if(p.h<=0&&i<k)sea+=`<rect x="${X(p.t)-1.2}" y="${Y(0)}" width="2.6" height="${Math.min(14,-p.h*0.6)+2}" fill="${SEA}"/>`});o+=sea;
-  o+=`<path d="M${X(0)},${y0} ${Q.map(p=>"L"+X(p.t).toFixed(1)+","+Y(p.h).toFixed(1)).join(" ")} L${X(Q[Q.length-1].t)},${y0}Z" fill="${MINT}" fill-opacity=".22"/><path d="${Q.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+","+Y(p.h).toFixed(1)).join("")}" fill="none" stroke="var(--ink)" stroke-width="2.2"/>`;
+  o+=`<path d="M${X(0)},${y0} ${Q.map(p=>"L"+X(p.t).toFixed(1)+","+Y(p.h).toFixed(1)).join(" ")} L${X(Q[Q.length-1].t)},${y0}Z" fill="${PAL.product.lime}" fill-opacity=".38"/><path d="${Q.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+","+Y(p.h).toFixed(1)).join("")}" fill="none" stroke="var(--ink)" stroke-width="2.2"/>`;
   if(s.secP>=1){const S=steepest(P,L);if(S.g>0){const a=P[S.i],b=P[S.i+S.w];const down=b.h<a.h,mx=X((a.t+b.t)/2),my=(Y(a.h)+Y(b.h))/2,lx=down?Math.min(mx+12,x1-70):Math.max(mx-12,x0+70);o+=`<path d="M${X(a.t)},${Y(a.h)} L${X(b.t)},${Y(b.h)}" stroke="${PINK}" stroke-width="5" stroke-linecap="round"/><text class="t-lab" x="${lx}" y="${Math.max(30,my-10)}" text-anchor="${down?"start":"end"}" style="fill:${PINK}">STEEPEST</text>`}
     let lastR=-1;P.forEach((p,i)=>{if(p.r<0.04&&p.h>0&&i-lastR>8){lastR=i;o+=`<circle cx="${X(p.t)}" cy="${Y(p.h)}" r="5" fill="${RIVER}" stroke="var(--paper)" stroke-width="1.5"/><text class="t-lab" x="${X(p.t)}" y="${Y(p.h)+18}" text-anchor="middle" style="fill:${RIVER}">STREAM</text>`}})}
-  o+=`<circle cx="${X(0)}" cy="${Y(P[0].h)}" r="8" fill="${MINT}"/><text class="t-lab" x="${X(0)}" y="${Y(P[0].h)+3.5}" text-anchor="middle" style="fill:#fff">A</text>`;
-  if(s.secP>=1)o+=`<circle cx="${X(1)}" cy="${Y(P[P.length-1].h)}" r="8" fill="${PINK}"/><text class="t-lab" x="${X(1)}" y="${Y(P[P.length-1].h)+3.5}" text-anchor="middle" style="fill:#fff">B</text>`;
+  o+=`<circle cx="${X(0)}" cy="${Y(P[0].h)}" r="8" fill="${PAL.product.lime}" stroke="${INK}"/><text class="t-lab" x="${X(0)}" y="${Y(P[0].h)+3.5}" text-anchor="middle" style="fill:${INK}">A</text>`;
+  if(s.secP>=1)o+=`<circle cx="${X(1)}" cy="${Y(P[P.length-1].h)}" r="8" fill="${PAL.product.strawberry}" stroke="${INK}"/><text class="t-lab" x="${X(1)}" y="${Y(P[P.length-1].h)+3.5}" text-anchor="middle" style="fill:${INK}">B</text>`;
   const hi=P.reduce((a,p)=>p.h>a.h?p:a,P[0]);o+=`<text class="t-lab" x="${x0}" y="226">0 km</text><text class="t-lab" x="${x1}" y="226" text-anchor="end">${fmt(L,1)} km</text>`;
   o+=`<text class="t-ink" x="${x0}" y="250">Highest point ${Math.round(hi.h)} m · heights stretched ×${fmt((y0-y1)/hm*1000/((x1-x0)/L),0)}</text>`;return o}
-function latPanel(){const cx=110,cy=130,r=96;let o=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${SEA}" stroke="var(--ink)" stroke-width="1.5"/>`;
+function latPanel(){const cx=110,cy=130,r=96;let o=FG.floor(420,260)+`<ellipse cx="${cx+34}" cy="${cy+r-4}" rx="${r*.8}" ry="14" fill="${PAL.shadow}" opacity=".16"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${SEA}" stroke="var(--ink)" stroke-width="1.5"/>`;
   // a tilted globe: parallels as ellipses, meridians as half-ellipses
   for(let la=-60;la<=60;la+=30){const y=cy-Math.sin(la*Math.PI/180)*r*0.9,rx=Math.cos(la*Math.PI/180)*r;o+=`<ellipse cx="${cx}" cy="${y}" rx="${rx}" ry="${rx*0.16}" fill="none" stroke="#fff" stroke-width="${la?1:2.5}"/>`}
   for(let lo=-60;lo<=60;lo+=30){const rx=Math.abs(Math.sin(lo*Math.PI/180))*r;o+=`<path d="M${cx},${cy-r} A${rx||0.1},${r} 0 0 ${lo<0?0:1} ${cx},${cy+r}" fill="none" stroke="#fff" stroke-width="1"/>`}
@@ -324,7 +338,7 @@ function latPanel(){const cx=110,cy=130,r=96;let o=`<circle cx="${cx}" cy="${cy}
   o+=`<text class="t-lab" x="${X}" y="98" style="fill:${LILAC}">GREENWICH = 0° LONGITUDE</text><text class="t-body" x="${X}" y="116">Aotearoa is east of it,</text><text class="t-body" x="${X}" y="132">so longitude is °E.</text>`;
   const f=s.lat-Math.floor(s.lat);o+=`<text class="t-lab" x="${X}" y="164">DECIMALS TO MINUTES</text><text class="t-ink" x="${X}" y="184">${fmt(f,2)}° × 60 = ${fmt(f*60,0)}′</text><text class="t-ink" x="${X}" y="204">${fmt(s.lat,2)}° = ${dms(s.lat)}</text>`;
   o+=`<text class="t-lab" x="${X}" y="236">SAY LATITUDE FIRST</text>`;return o}
-function climatePanel(){const wet=RAIN.indexOf(Math.max(...RAIN)),dry=RAIN.indexOf(Math.min(...RAIN)),hot=TEMP.indexOf(TMAX),cold=TEMP.indexOf(TMIN);let o="";
+function climatePanel(){const wet=RAIN.indexOf(Math.max(...RAIN)),dry=RAIN.indexOf(Math.min(...RAIN)),hot=TEMP.indexOf(TMAX),cold=TEMP.indexOf(TMIN);let o=FG.floor(420,260);
   o+=`<text class="t-lab" x="16" y="26">DESCRIBE IT: PATTERN, NUMBERS, EXCEPTION</text>`;
   o+=`<text class="t-lab" x="16" y="54" style="fill:#B4456F">TEMPERATURE (LINE, RIGHT AXIS)</text><text class="t-ink" x="16" y="74">Warmest ${MONL[hot]} ${fmt(TMAX,1)} °C · coolest ${MONL[cold]} ${fmt(TMIN,1)} °C</text><text class="t-ink" x="16" y="94">Range ${fmt(TMAX,1)} − ${fmt(TMIN,1)} = ${fmt(TRANGE,1)} °C</text>`;
   o+=`<text class="t-lab" x="16" y="126" style="fill:#3E7FA0">RAINFALL (BARS, LEFT AXIS)</text><text class="t-ink" x="16" y="146">Wettest ${MONL[wet]} ${RAIN[wet]} mm · driest ${MONL[dry]} ${RAIN[dry]} mm</text><text class="t-ink" x="16" y="166">Total for the year: ${RTOT} mm</text>`;

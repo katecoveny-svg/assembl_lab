@@ -299,3 +299,8 @@ details.kupu-all .kupu-list li{border-top:1px dashed var(--as-line);padding-top:
 .btn.primary:hover,.btn.check:hover{background:var(--as-plum);border-color:var(--as-plum)}
 .exam .dd,.challenge .q b.qn,.pick button[aria-pressed="true"]{background:var(--acc-tint);color:var(--as-ink)}
 .pick button[aria-pressed="true"]{border-color:var(--acc)}
+/* the drawing area is the machine's frosted case: a tinted acrylic rim, a white highlight along the top, a corner ball at each
+   corner and one hard navy shadow to the lower right, as on the reference figures */
+.canvas{box-shadow:inset 0 0 0 2px var(--case-line,var(--as-line)),inset 0 3px 0 2px rgba(255,255,255,.55),14px 16px 0 -6px rgba(27,36,82,.14);
+  background-image:radial-gradient(circle at 13px 13px,var(--case-line,var(--as-line2)) 3.6px,transparent 4.4px),radial-gradient(circle at calc(100% - 13px) 13px,var(--case-line,var(--as-line2)) 3.6px,transparent 4.4px),
+    radial-gradient(circle at 13px calc(100% - 13px),var(--case-line,var(--as-line2)) 3.6px,transparent 4.4px),radial-gradient(circle at calc(100% - 13px) calc(100% - 13px),var(--case-line,var(--as-line2)) 3.6px,transparent 4.4px)}

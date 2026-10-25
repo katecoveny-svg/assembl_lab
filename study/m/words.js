@@ -4,7 +4,9 @@
 // Every line and poem here is original, written for this machine.
 const esc=StudyKit.esc;
 const sfx=n=>{try{if(!s.mute&&window.StudyKit&&StudyKit.sfx)StudyKit.sfx(n)}catch(e){}};
-const INK="#492B3E",ROSE="#916A70",CREAM="#FFF8F3",LILAC="#F2ECFA",DESK="#2F1F2D",DESK2="#3E2B3B",PADOFF="#4A3547",PADTXT="#E9DCE6",WHITE="#FFFDFB";
+const INK="#262E5C",ROSE="#6E6A86",CREAM="#FFF8F3",LILAC="#F2ECFA",DESK="#2F1F2D",DESK2="#3E2B3B",PADOFF="#4A3547",PADTXT="#E9DCE6",WHITE="#FFFDFB";
+// figure parts: the shared bench look (StudyKit.fig); English machines use the blush case tint
+const FG=StudyKit.fig,PAL=FG.palette,TINT=PAL.case.blush,PADLINE="#DCD6EA";
 const SLOT={f:"#E3D7FA",q:"#FFE2A8",e:"#C7EBDD",r:"#FAD0DC"};
 const CH={allit:"#FFB48A",asson:"#9CC7F2",onom:"#FFD66B",simile:"#CDB8F5",metaphor:"#F7B2C4",person:"#A8DEC6",hyper:"#F49AAE",rep:"#F4C46B",rq:"#8FB8F0",emo:"#C9A3E8"};
 const SENSE={s:["SIGHT","#F4C46B"],h:["SOUND","#8FB8F0"],t:["TOUCH","#F49AAE"],m:["SMELL","#9ED39B"],g:["TASTE","#C9A3E8"]};
@@ -238,9 +240,9 @@ function soundScene(){const z=Z(),W=padWords(),col=CH[s.sch],now=performance.now
   o+=T(28,58,cap1(FEAT[s.sch].n),z.hero,{wt:600});
   const dl=flow([{t:FEAT[s.sch].def+"."}],{x:420,y:18,w:360,size:z.small,lh:z.small*1.25,fill:ROSE,align:"middle"});o+=`<g transform="translate(0,${Math.max(0,(52-dl.h)/2)})">${dl.o}</g>`;
   // console
-  o+=`<rect x="16" y="82" width="768" height="272" rx="20" fill="${DESK}"/><rect x="16" y="82" width="768" height="272" rx="20" fill="none" stroke="${DESK2}" stroke-width="3"/>`;
-  for(let i=0;i<6;i++)o+=`<circle cx="${40+i*16}" cy="102" r="3.5" fill="${i<3?col:"#5A4458"}"/>`;
-  o+=T(764,106,"TAP A PAD TO HEAR IT",z.tiny,{a:"end",mono:true,fill:"#B9A3B4",ls:1});
+  o+=FG.acrylic(16,82,768,272,{tint:TINT,d:10,r:20,opacity:.34,shadowLen:22});
+  for(let i=0;i<6;i++)o+=`<circle cx="${40+i*16}" cy="102" r="3.5" fill="${i<3?col:"#D9D2E4"}" stroke="${i<3?FG.mat("plastic",col).stroke:PADLINE}"/>`;
+  o+=T(764,106,"TAP A PAD TO HEAR IT",z.tiny,{a:"end",mono:true,fill:ROSE,ls:1});
   // pad layout with wrap
   let ps=z.pad,rows,ph;for(let k=0;k<6;k++){ph=ps*1.9;const gap=12,maxW=728;rows=[[]];let x=0;
     W.forEach((w,i)=>{const pw=tw(w.plain,ps,600)+30;if(x>0&&x+gap+pw>maxW){rows.push([]);x=0}rows[rows.length-1].push({i,w,pw,x:x?x+gap:0});x=(x?x+gap:0)+pw});
@@ -248,19 +250,20 @@ function soundScene(){const z=Z(),W=padWords(),col=CH[s.sch],now=performance.now
   const top=124+(176-rows.length*(ph+14))/2;
   const seqI=s.seq?(()=>{const e=(now-s.seq.t0)/1000;return s.seq.slots.findIndex(([a,d])=>e>=a&&e<a+d)})():-1;
   rows.forEach((R,r)=>{const rw=R.length?R[R.length-1].x+R[R.length-1].pw:0,ox=400-rw/2,y=top+r*(ph+14);
-    R.forEach(P=>{const x=ox+P.x,w=P.w,act=seqI===P.i||(s.flash&&s.flash.i===P.i&&now-s.flash.t0<350),fill=w.hot?col:PADOFF;
-      if(act)o+=`<rect x="${x-6}" y="${y-6}" width="${P.pw+12}" height="${ph+12}" rx="16" fill="${w.hot?col:"#8E7489"}" opacity=".35"/>`;
-      o+=`<g data-a="pad:${P.i}" role="button" tabindex="0" aria-label="Play the word ${esc(w.plain)}" style="cursor:pointer"><rect x="${x}" y="${y+(act?2:0)}" width="${P.pw}" height="${ph}" rx="12" fill="${fill}" stroke="${act?WHITE:w.hot?"#FFFFFF55":"#5E475B"}" stroke-width="${act?3:1.5}"/>`;
-      o+=`<rect x="${x+4}" y="${y+ph-7+(act?2:0)}" width="${P.pw-8}" height="4" rx="2" fill="#000" opacity=".12"/>`;
+    R.forEach(P=>{const x=ox+P.x,w=P.w,act=seqI===P.i||(s.flash&&s.flash.i===P.i&&now-s.flash.t0<350),fill=w.hot?col:"#FFFFFF",pm=FG.mat("plastic",fill);
+      if(act)o+=`<rect x="${x-6}" y="${y-6}" width="${P.pw+12}" height="${ph+12}" rx="16" fill="${w.hot?col:"#B9B3CC"}" opacity=".35"/>`;
+      o+=FG.box(x,y+(act?2:0),P.pw,ph,{colour:fill,kind:"plastic",d:6,r:12,shadow:false});
+      o+=`<g data-a="pad:${P.i}" role="button" tabindex="0" aria-label="Play the word ${esc(w.plain)}" style="cursor:pointer"><rect x="${x}" y="${y+(act?2:0)}" width="${P.pw}" height="${ph}" rx="12" fill="${fill}" stroke="${act?INK:pm.stroke}" stroke-width="${act?2.5:1.2}"/>`;
+      o+=`<rect x="${x+4}" y="${y+ph-7+(act?2:0)}" width="${P.pw-8}" height="4" rx="2" fill="#1B2452" opacity=".06"/>`;
       let tx=x+15;const by=y+ph/2+ps*0.34+(act?2:0);let line="";
       w.segs.forEach(sg=>{const sw=tw(sg.t,ps,600);if(sg.h&&w.hot)line+=`<rect x="${tx}" y="${by+ps*0.14}" width="${sw}" height="${Math.max(3,ps*0.12)}" rx="1.5" fill="${INK}"/>`;tx+=sw});
-      o+=`<text x="${x+15}" y="${by}" style="font:600 ${ps}px ${DISP}">${w.segs.map(sg=>`<tspan style="fill:${w.hot?(sg.h?INK:"#6B4D62"):PADTXT}${sg.h?"":";opacity:"+(w.hot?0.85:0.9)}">${esc(sg.t)}</tspan>`).join("")}</text>${line}</g>`;
-      o+=`<circle cx="${x+P.pw-10}" cy="${y-1}" r="3" fill="${w.hot?col:"#5A4458"}"/>`})});
+      o+=`<text x="${x+15}" y="${by}" style="font:600 ${ps}px ${DISP}">${w.segs.map(sg=>`<tspan style="fill:${w.hot?(sg.h?INK:"#4E4868"):"#4E4868"}${sg.h?"":";opacity:"+(w.hot?0.85:0.9)}">${esc(sg.t)}</tspan>`).join("")}</text>${line}</g>`;
+      o+=`<circle cx="${x+P.pw-10}" cy="${y-1}" r="3" fill="${w.hot?col:"#C9C3D8"}"/>`})});
   // the track lane: a little waveform for each word, with a playhead
   const L0=40,L1=760,ly=330;let tot=0;const sl=W.map(w=>{const d=w.hot?(s.sch==="onom"?0.62:0.36):0.24;const r=[tot,d];tot+=d;return r});
-  o+=`<rect x="${L0-8}" y="${ly-18}" width="${L1-L0+16}" height="36" rx="10" fill="#241722"/>`;
+  o+=FG.box(L0-12,ly-21,L1-L0+24,42,{colour:PAL.steel,kind:"metal",d:6,r:12,shadow:false})+`<rect x="${L0-8}" y="${ly-18}" width="${L1-L0+16}" height="36" rx="10" fill="#2B3158"/>`;
   W.forEach((w,i)=>{const x0=L0+sl[i][0]/tot*(L1-L0),x1=L0+(sl[i][0]+sl[i][1])/tot*(L1-L0);
-    if(!w.hot){o+=`<line x1="${x0+4}" x2="${x1-4}" y1="${ly}" y2="${ly}" stroke="#5A4458" stroke-width="2"/>`;return}
+    if(!w.hot){o+=`<line x1="${x0+4}" x2="${x1-4}" y1="${ly}" y2="${ly}" stroke="#4A5288" stroke-width="2"/>`;return}
     let d="";const n=40;for(let k=0;k<=n;k++){const xx=x0+3+(x1-x0-6)*k/n,f=k/n;let a;
       if(s.sch==="allit")a=(f<0.25?13*(1-f*4):5*Math.sin(f*Math.PI))*Math.sin(k*2.2);else if(s.sch==="asson")a=12*Math.sin(f*Math.PI)*Math.sin(k*1.1);else a=14*Math.exp(-f*2.5)*Math.sin(k*k*0.37+i);
       d+=(k?" L":"M")+xx.toFixed(1)+","+(ly+a).toFixed(1)}
@@ -269,19 +272,22 @@ function soundScene(){const z=Z(),W=padWords(),col=CH[s.sch],now=performance.now
   // channel buttons
   SOUNDS.forEach((k,i)=>o+=chanBtn(16+i*262,366,244,42,FEAT[k].n.toUpperCase(),CH[k],s.sch===k,"sch:"+k,z));
   return o}
-function chanBtn(x,y,w,h,label,col,on,act,z){return `<g data-a="${act}" role="button" tabindex="0" aria-label="${esc(label)}" style="cursor:pointer"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h/2}" fill="${on?col:WHITE}" stroke="${INK}" stroke-width="${on?2:1.2}"/><circle cx="${x+20}" cy="${y+h/2}" r="5" fill="${on?INK:col}"/>${T(x+w/2+8,y+h/2+z.tiny*0.36+1,label,Math.min(z.tiny,(w-50)/label.length/0.6),{a:"middle",mono:true,wt:on?600:500,ls:0.5})}</g>`}
+function chanBtn(x,y,w,h,label,col,on,act,z){return FG.shadow(x+h/2,y+h-4,w-h,{len:14,opacity:.12})+`<g data-a="${act}" role="button" tabindex="0" aria-label="${esc(label)}" style="cursor:pointer"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h/2}" fill="${on?col:WHITE}" stroke="${INK}" stroke-width="${on?2:1.2}"/><circle cx="${x+20}" cy="${y+h/2}" r="5" fill="${on?INK:col}"/>${T(x+w/2+8,y+h/2+z.tiny*0.36+1,label,Math.min(z.tiny,(w-50)/label.length/0.6),{a:"middle",mono:true,wt:on?600:500,ls:0.5})}</g>`}
 const cap1=t=>t[0].toUpperCase()+t.slice(1);
-function bgGrad(a,b,id="wbg"){return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="800" height="420" fill="url(#${id})"/>`}
+function bgGrad(){return FG.floor(800,420)}
 
 // ---- step 2: comparisons as two overlapping circles
 const VD={simile:190,metaphor:120,person:160};
 function compareScene(){const z=Z(),it=C()[s.cch],col=CH[s.cch];let o=bgGrad("#FBF4FF","#FFF3EE","wbg2");
   const segs=segQuote(it.line,it.quote,"q");const fl=fitFlow(segs,{x:40,y:24,w:720,size:z.h2,lhf:1.28,wt:500,align:"middle",sty:k=>k==="q"?{bg:col,wt:600}:{}},86,z.body);
-  o+=`<rect x="16" y="12" width="768" height="${fl.h+24}" rx="16" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`+fl.o;
+  o+=FG.acrylic(16,12,768,fl.h+24,{tint:TINT,d:8,r:16,opacity:.3,shadow:false})+fl.o;
   const cb=fl.h+36,r=Math.min(140,(420-cb-z.small*2.6-14)/2),cy=cb+z.small*2.6+r,sc=r/124,p=ease((performance.now()-s.vdT)/650),d=(s.vdFrom+(VD[s.cch]-s.vdFrom)*p)*sc,X0=(16+(PH()?150:136)+10+784)/2,ax=X0-d/2,bx=X0+d/2;
   const qcol=s.cch==="person"?"#BFE6D3":"#FAD0DC";
+  o+=`<ellipse cx="${X0+r*0.5}" cy="${cy+r+6}" rx="${r+d/2+20}" ry="${r*0.12}" fill="${PAL.shadow}" opacity=".1"/>`;
+  [[ax,"#E8DFF8"],[bx,qcol]].forEach(([x,c])=>o+=`<circle cx="${x+8}" cy="${cy-4.4}" r="${r}" fill="${FG.mat("plastic",c).shade}" stroke="${FG.deep(c)}" opacity=".55"/>`);
   o+=`<circle cx="${ax}" cy="${cy}" r="${r}" fill="#E8DFF8" stroke="${INK}" stroke-width="1.5" opacity=".95"/><circle cx="${bx}" cy="${cy}" r="${r}" fill="${qcol}" stroke="${INK}" stroke-width="1.5" opacity=".78"/>`;
   o+=`<clipPath id="lens"><circle cx="${ax}" cy="${cy}" r="${r}"/></clipPath><circle cx="${bx}" cy="${cy}" r="${r}" fill="${col}" clip-path="url(#lens)" stroke="${INK}" stroke-width="1.5"/>`;
+  [ax,bx].forEach(x=>o+=`<path d="M${x-r*0.78},${cy-r*0.36} a${r},${r} 0 0 1 ${r*0.52},${-r*0.5}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>`);
   o+=T(ax-r*0.36,cy-r*0.56,"WHAT IT IS",z.tiny,{a:"middle",mono:true,fill:ROSE,ls:1})+T(bx+r*0.36,cy-r*0.56,s.cch==="person"?"A PERSON":"COMPARED TO",z.tiny,{a:"middle",mono:true,fill:ROSE,ls:1});
   const lab=(t,x)=>{const f=fitFlow([{t}],{x:x-r*0.46,y:0,w:r*0.92,size:z.body,lhf:1.15,wt:600,align:"middle"},z.body*2.4,z.small);return `<g transform="translate(0,${cy-8-f.h/2-r*0.06})">${f.o}</g>`};
   o+=lab(it.a,ax-r*0.4)+lab(it.b,bx+r*0.4);
@@ -298,18 +304,18 @@ function compareScene(){const z=Z(),it=C()[s.cch],col=CH[s.cch];let o=bgGrad("#F
 
 // ---- step 3: the intensity faders
 function ampScene(){const z=Z(),c=C(),now=performance.now();let o=bgGrad("#FFF2F5","#F4EEFB","wbg3");
-  o+=`<rect x="16" y="16" width="238" height="388" rx="20" fill="${DESK}"/>`+T(36,46,"INTENSITY DESK",z.tiny,{mono:true,fill:"#B9A3B4",ls:1});
+  o+=FG.acrylic(16,16,238,388,{tint:TINT,d:10,r:20,opacity:.34,shadow:false})+T(36,46,"INTENSITY DESK",z.tiny,{mono:true,fill:ROSE,ls:1});
   AMPS.forEach((k,i)=>{const on=s.amp[k],y=70+i*82,p=s.ampT[k]?ease((now-s.ampT[k])/350):1,pos=on?p:1-p,kx=40+pos*150;
     o+=`<g data-a="amp:${k}" role="button" tabindex="0" aria-pressed="${on}" aria-label="${FEAT[k].n}" style="cursor:pointer"><rect x="24" y="${y-8}" width="222" height="74" rx="12" fill="transparent"/>`;
-    o+=T(36,y+14,FEAT[k].n.toUpperCase(),Math.min(z.small,196/FEAT[k].n.length/0.6),{mono:true,wt:600,fill:on?CH[k]:"#C7B4C3"});
-    o+=`<rect x="40" y="${y+34}" width="170" height="8" rx="4" fill="#1E131C"/><rect x="40" y="${y+34}" width="${pos*170}" height="8" rx="4" fill="${CH[k]}"/>`;
-    o+=`<rect x="${kx-12}" y="${y+22}" width="24" height="32" rx="6" fill="${on?CH[k]:"#8E7489"}" stroke="${WHITE}" stroke-width="2"/><line x1="${kx-6}" x2="${kx+6}" y1="${y+38}" y2="${y+38}" stroke="${INK}" stroke-width="2"/>`;
-    o+=`<circle cx="228" cy="${y+38}" r="6" fill="${on?CH[k]:"#4A3547"}"/></g>`});
+    o+=T(36,y+14,FEAT[k].n.toUpperCase(),Math.min(z.small,196/FEAT[k].n.length/0.6),{mono:true,wt:600,fill:on?INK:"#8C87A3"});
+    o+=`<rect x="40" y="${y+34}" width="170" height="8" rx="4" fill="#E6E1EE" stroke="#B9B3CC"/><rect x="40" y="${y+34}" width="${pos*170}" height="8" rx="4" fill="${CH[k]}"/>`;
+    o+=FG.box(kx-12,y+22,24,32,{colour:on?CH[k]:PAL.steel,kind:on?"plastic":"metal",d:5,r:6,shadow:false})+`<line x1="${kx-6}" x2="${kx+6}" y1="${y+38}" y2="${y+38}" stroke="${INK}" stroke-width="2"/>`;
+    o+=`<circle cx="228" cy="${y+38}" r="6" fill="${on?CH[k]:"#E6E1EE"}" stroke="${on?FG.mat("plastic",CH[k]).stroke:"#B9B3CC"}"/></g>`});
   // meter
   const n=AMPS.filter(k=>s.amp[k]).length;o+=T(272,46,"INTENSITY",z.tiny,{mono:true,fill:ROSE,ls:1});
-  for(let i=0;i<12;i++){const lit=i<n*3,c2=i<6?"#9ED39B":i<9?"#F4C46B":"#F49AAE";o+=`<rect x="${396+i*32}" y="28" width="26" height="22" rx="4" fill="${lit?c2:"#EDE3EA"}" stroke="${INK}" stroke-opacity=".25"/>`}
+  for(let i=0;i<12;i++){const lit=i<n*3,c2=i<6?PAL.product.lime:i<9?PAL.product.butter:PAL.product.strawberry;o+=`<rect x="${396+i*32}" y="28" width="26" height="22" rx="4" fill="${lit?c2:"#EDE3EA"}" stroke="${INK}" stroke-opacity=".25"/>`}
   // the passage: plain line, then each active channel adds its own line
-  o+=`<rect x="268" y="66" width="516" height="338" rx="18" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`;
+  o+=FG.box(268,66,516,338,{colour:"#FFFFFF",kind:"plastic",d:8,r:18,shadow:false});
   const parts=[{k:null,line:c.base}].concat(AMPS.filter(k=>s.amp[k]).map(k=>({k,line:c[k].line,q:c[k].quote})));
   let size=z.body,blocks;for(let a=0;a<6;a++){let y=84;blocks=parts.map(P=>{const r=flow(P.k?segQuote(P.line,P.q,"q"):[{t:P.line}],{x:300,y,w:466,size,lh:size*1.28,wt:P.k?500:400,fill:P.k?INK:ROSE,sty:k=>k==="q"?{bg:CH[P.k],wt:600}:{}});const b={...P,r,y};y+=r.h+size*0.55;return b});
     if(blocks.length&&blocks[blocks.length-1].y+blocks[blocks.length-1].r.h<=392)break;size*=0.93}
@@ -330,9 +336,9 @@ function scene(ctx,tone,H){const P=TONEPAL[tone],dark=tone==="tense";let o=`<def
   else if(ctx==="fish"){o+=`<rect y="${H*0.52}" width="800" height="${H*0.48}" fill="${dark?"#4F6E80":"#7FC1D6"}"/>`;for(let i=0;i<4;i++)o+=`<path d="M0,${H*0.56+i*14} ${[...Array(20)].map(()=>"q10,-4 20,0 t20,0").join(" ")}" fill="none" stroke="#fff" stroke-opacity="${0.4-i*0.08}"/>`;
     o+=`<path d="M0,${H-70} L170,${H-90} L230,${H-40} L210,${H} L0,${H}Z" fill="${dark?"#5C5058":"#8F8189"}"/><circle cx="130" cy="${H-142}" r="11" fill="${INK}"/><path d="M120,${H-130} q10,-6 20,0 l4,36 l-28,0Z" fill="#E77FA0"/><line x1="140" y1="${H-118}" x2="330" y2="${H-190}" stroke="${INK}" stroke-width="3"/><path d="M330,${H-190} Q420,${H-150} 470,${H*0.52}" fill="none" stroke="${INK}" stroke-width=".8"/><ellipse cx="470" cy="${H*0.52}" rx="7" ry="10" fill="#F29C7A" stroke="${INK}"/>`}
   else if(ctx==="vinyl"){o+=`<rect y="${H-60}" width="800" height="60" fill="${dark?"#6A4B3A":"#B98B5E"}"/>`;const cols=["#F49AAE","#9ED39B","#F4C46B","#8FB8F0","#C9A3E8","#FFB48A"];for(let r=0;r<2;r++)for(let i=0;i<22;i++)o+=`<rect x="${20+i*35}" y="${20+r*70}" width="30" height="58" rx="2" fill="${cols[(i*7+r*3)%6]}" opacity="${dark?0.55:0.9}"/>`;
-    o+=`<rect x="300" y="${H-92}" width="200" height="40" rx="8" fill="#3A3540"/><ellipse cx="380" cy="${H-82}" rx="70" ry="12" fill="#1E1B20"/><ellipse cx="380" cy="${H-82}" rx="22" ry="4" fill="#F2B8C6"/>`}
+    o+=FG.box(300,H-92,200,40,{colour:"#3A3540",kind:"plastic",d:10,r:6,shadowLen:40})+`<ellipse cx="380" cy="${H-82}" rx="70" ry="12" fill="#1E1B20"/><ellipse cx="380" cy="${H-82}" rx="22" ry="4" fill="#F2B8C6"/>`}
   else if(ctx==="arcade"){o+=`<rect y="${H-50}" width="800" height="50" fill="${dark?"#2C2236":"#3A2C48"}"/>`;for(let i=0;i<9;i++)o+=`<line x1="${i*100}" y1="${H-50}" x2="${i*100-60}" y2="${H}" stroke="#C9A3E8" stroke-opacity=".5"/>`;
-    [140,330,520].forEach((x,i)=>{o+=`<rect x="${x}" y="${H-170}" width="140" height="130" rx="10" fill="${dark?"#3B2E4A":"#5B4670"}"/><rect x="${x+16}" y="${H-156}" width="108" height="66" rx="6" fill="${["#8FB8F0","#F49AAE","#9ED39B"][i]}" opacity="${dark?0.6:1}"/><circle cx="${x+40}" cy="${H-70}" r="8" fill="#F4C46B"/><circle cx="${x+70}" cy="${H-70}" r="8" fill="#F49AAE"/><rect x="${x+96}" y="${H-80}" width="6" height="20" fill="#E9DCE6"/>`})}
+    [140,330,520].forEach((x,i)=>{o+=FG.box(x,H-170,140,130,{colour:dark?"#3B2E4A":"#5B4670",kind:"plastic",d:12,r:8,shadowLen:40})+`<rect x="${x+16}" y="${H-156}" width="108" height="66" rx="6" fill="${["#8FB8F0","#F49AAE","#9ED39B"][i]}" opacity="${dark?0.6:1}"/><circle cx="${x+40}" cy="${H-70}" r="8" fill="#F4C46B"/><circle cx="${x+70}" cy="${H-70}" r="8" fill="#F49AAE"/><rect x="${x+96}" y="${H-80}" width="6" height="20" fill="#E9DCE6"/>`})}
   else if(ctx==="rugby"){o+=`<rect y="${H*0.42}" width="800" height="${H*0.58}" fill="${g}"/>`;for(let i=0;i<8;i++)o+=`<rect x="${i*100}" y="${H*0.42}" width="50" height="${H*0.58}" fill="#fff" opacity=".07"/>`;
     o+=`<rect y="${H*0.18}" width="800" height="${H*0.24}" fill="${dark?"#5A4E68":"#C9B6D9"}"/>`;for(let i=0;i<70;i++)o+=`<circle cx="${8+i*11.5}" cy="${H*0.24+(i%3)*12}" r="4" fill="${["#F49AAE","#8FB8F0","#F4C46B","#fff"][i%4]}" opacity=".8"/>`;
     o+=`<path d="M560,${H-20} V${H*0.2} M640,${H-20} V${H*0.2} M560,${H*0.62} H640" stroke="#fff" stroke-width="5"/><ellipse cx="300" cy="${H-40}" rx="22" ry="14" fill="#B5734F" transform="rotate(-25,300,${H-40})"/>`}
@@ -341,9 +347,10 @@ function scene(ctx,tone,H){const P=TONEPAL[tone],dark=tone==="tense";let o=`<def
     o+=`<rect x="420" y="${H*0.56}" width="90" height="16" rx="8" fill="#F49AAE" transform="rotate(-10,465,${H*0.6})"/>`}
   if(dark)o+=`<rect width="800" height="${H}" fill="#2A1A3A" opacity=".18"/>`;return o}
 function rider(x,y){return `<g transform="translate(${x},${y}) rotate(-8)"><circle cx="-26" cy="20" r="17" fill="none" stroke="${INK}" stroke-width="4"/><circle cx="30" cy="20" r="17" fill="none" stroke="${INK}" stroke-width="4"/><path d="M-26,20 L-4,0 L22,0 L30,20 M-4,0 L4,20 L-26,20 M22,0 L18,-12" stroke="${INK}" stroke-width="3.5" fill="none"/><circle cx="6" cy="-34" r="9" fill="#E77FA0"/><path d="M4,-26 L-2,-4 M2,-22 L18,-12" stroke="${INK}" stroke-width="5" stroke-linecap="round"/></g>`}
-function toneScene(){const z=Z(),H=206;let o=scene(s.ctx,s.tone,H);
-  const tl="TONE: "+s.tone.toUpperCase(),w=tw(tl,z.small,600,true)+30;o+=`<rect x="16" y="14" width="${w}" height="${z.small*1.9}" rx="${z.small*0.95}" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`+T(31,14+z.small*0.95+z.small*0.35,tl,z.small,{mono:true,wt:600});
-  o+=`<rect x="0" y="${H}" width="800" height="${420-H}" fill="${WHITE}"/><line x1="0" x2="800" y1="${H}" y2="${H}" stroke="${INK}" stroke-width="1.5"/>`;
+function toneScene(){const z=Z(),H=206;let o=FG.floor(800,420)+FG.shadow(16,H,776,{len:40,opacity:.14});
+  o+=`<clipPath id="tscr"><rect x="16" y="12" width="768" height="${H-12}" rx="14"/></clipPath><g clip-path="url(#tscr)"><g transform="translate(16,12) scale(${768/800},${(H-12)/H})">${scene(s.ctx,s.tone,H)}</g></g>`;
+  o+=FG.acrylic(16,12,768,H-12,{tint:TINT,d:8,r:14,opacity:.06,shadow:false});
+  const tl="TONE: "+s.tone.toUpperCase(),w=tw(tl,z.small,600,true)+30;o+=`<rect x="28" y="24" width="${w}" height="${z.small*1.9}" rx="${z.small*0.95}" fill="${WHITE}" stroke="${PADLINE}" stroke-width="1.2"/>`+T(43,24+z.small*0.95+z.small*0.35,tl,z.small,{mono:true,wt:600});
   const segs=toneSegs(C().tone[s.tone]);const f=fitFlow(segs,{x:28,y:H+12,w:744,size:z.body,lhf:1.42,sty:k=>k==="tw"?{wt:600,bg:"#EDE3EA"}:k&&k[0]==="s"?{ul:SENSE[k[1]][1],bg:SENSE[k[1]][1],bgop:0.28}:{}},150,z.small);o+=`<g transform="translate(0,${Math.max(0,(150-f.h)/2)})">${f.o}</g>`;
   const used=new Set(segs.filter(x=>x.k&&x.k[0]==="s").map(x=>x.k[1]));
   Object.keys(SENSE).forEach((k,i)=>{const on=used.has(k),x=16+i*155,y=376;o+=`<rect x="${x}" y="${y}" width="145" height="34" rx="17" fill="${on?SENSE[k][1]:WHITE}" stroke="${INK}" stroke-opacity="${on?1:0.3}"/>`+T(x+72.5,y+17+z.tiny*0.36,SENSE[k][0],z.tiny,{a:"middle",mono:true,wt:on?600:400,op:on?1:0.45})});
@@ -367,9 +374,10 @@ const RL={f:"FEATURE",q:"QUOTE",e:"EFFECT",r:"READER"};
 function explainScene(){const z=Z(),{it,R}=curReels(),now=performance.now();let o=bgGrad("#FFF8EE","#F2ECFA","wbg5");
   const pl=plain(it.line),qo=R.q[s.reels.q%R.q.length];
   const f=fitFlow(segQuote(pl,qo.t,"q"),{x:40,y:22,w:720,size:z.h2,lhf:1.25,wt:500,align:"middle",sty:k=>k==="q"?{bg:SLOT.q,wt:600}:{}},70,z.body);
-  o+=`<rect x="16" y="12" width="768" height="${Math.max(84,f.h+20)}" rx="16" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/><g transform="translate(0,${Math.max(0,(64-f.h)/2)})">${f.o}</g>`;
+  o+=FG.acrylic(16,12,768,Math.max(84,f.h+20),{tint:TINT,d:8,r:16,opacity:.3,shadow:false})+`<g transform="translate(0,${Math.max(0,(64-f.h)/2)})">${f.o}</g>`;
   const top=110,rh=216,rw=186;
   ["f","q","e","r"].forEach((k,j)=>{const x=16+j*(rw+8),opts=R[k],i=s.reels[k]%opts.length,op=opts[i],p=ease((now-(s.reelT[k]||0))/260);
+    o+=FG.box(x,top,rw,rh,{colour:"#FFFFFF",kind:"plastic",d:6,r:14,shadowLen:26});
     o+=`<g data-a="reel:${k}" role="button" tabindex="0" aria-label="Change the ${RL[k].toLowerCase()}" style="cursor:pointer"><rect x="${x}" y="${top}" width="${rw}" height="${rh}" rx="14" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`;
     o+=`<path d="M${x},${top+14} a14,14 0 0 1 14,-14 h${rw-28} a14,14 0 0 1 14,14 v24 h-${rw}Z" fill="${SLOT[k]}" stroke="${INK}" stroke-width="1.5"/>`+T(x+14,top+26,RL[k],z.tiny,{mono:true,wt:600,ls:1});
     o+=`<clipPath id="rc${k}"><rect x="${x+2}" y="${top+40}" width="${rw-4}" height="${rh-76}"/></clipPath><g clip-path="url(#rc${k})"><g transform="translate(0,${(1-p)*40})" opacity="${p}">`;
@@ -380,13 +388,13 @@ function explainScene(){const z=Z(),{it,R}=curReels(),now=performance.now();let 
   // strength meter
   const sc=score(),mv=s.meter;o+=T(16,358,"STRENGTH",z.tiny,{mono:true,fill:ROSE,ls:1})+T(784,358,`${LEVEL(sc)} · ${sc}/8`,z.small,{a:"end",mono:true,wt:600});
   o+=`<rect x="16" y="368" width="768" height="34" rx="17" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`;
-  const gw=Math.max(0,(764-0)*mv/8);o+=`<defs><linearGradient id="mg" x1="0" x2="1"><stop offset="0" stop-color="#F49AAE"/><stop offset=".5" stop-color="#F4C46B"/><stop offset="1" stop-color="#9ED39B"/></linearGradient></defs><rect x="18" y="370" width="${gw}" height="30" rx="15" fill="url(#mg)"/>`;
+  const gw=Math.max(0,(764-0)*mv/8);o+=`<defs><linearGradient id="mg" x1="0" x2="1"><stop offset="0" stop-color="${PAL.product.strawberry}"/><stop offset=".5" stop-color="${PAL.product.butter}"/><stop offset="1" stop-color="${PAL.product.lime}"/></linearGradient></defs><rect x="18" y="370" width="${gw}" height="30" rx="15" fill="url(#mg)"/>`;
   for(let i=1;i<8;i++)o+=`<line x1="${16+i*96}" x2="${16+i*96}" y1="372" y2="398" stroke="${INK}" stroke-opacity=".18"/>`;
   return o}
 
 // ---- test: the poem
 function poemScene(){const z=Z(),P=C().poem;let o=bgGrad("#FFF7F1","#F1ECFA","wbg6");
-  o+=`<rect x="16" y="12" width="768" height="396" rx="18" fill="${WHITE}" stroke="${INK}" stroke-width="1.5"/>`;
+  o+=FG.box(16,12,768,396,{colour:"#FFFFFF",kind:"plastic",d:8,r:18,shadow:false});
   o+=T(48,58,P.title,z.h2+4,{wt:600})+T(752,56,"AN ORIGINAL POEM",z.tiny,{a:"end",mono:true,fill:ROSE,ls:1});
   const marks={};const sv=s.solved;
   if(sv.s0)marks[P.spot[0][0]]=P.spot[0][1];if(sv.s1)marks[P.spot[1][0]]=P.spot[1][1];if(sv.best)marks[P.best.n]=P.best.f;if(sv.fix)marks[P.fix.n]=P.fix.f;

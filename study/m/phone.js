@@ -8,8 +8,31 @@ const sci=(x,d=2)=>{if(!x)return "0";const e=Math.floor(Math.log10(Math.abs(x)))
 const sup=n=>String(n).replace(/-/g,"⁻").replace(/\d/g,c=>"⁰¹²³⁴⁵⁶⁷⁸⁹"[c]);
 const REDUCED=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const E_CHARGE=1.602e-19;
-// figure materials: the shared bench recipe (StudyKit.figMat), so this drawing matches the 3D vending machine and the other machines
-const FM=StudyKit.figMat,P_BODY=FM("plastic","#232838"),P_SCREEN=FM("glass","#0F1320",{opacity:0.92}),P_BATT=FM("painted","#58D68D"),P_LOW=FM("painted","#F2603F"),P_BRICK=FM("plastic","#E9EDF4"),P_CABLE=FM("rubber","#CDD5E3"),P_PLUG=FM("metal","#B9C5D6"),P_CELL=FM("metal","#AAB4C4"),P_COIL=FM("metal","#C98B63");
+// the bench figure look (StudyKit.fig): a phone in a frosted sky case lying on the paper, a white plastic charger brick,
+// a rubber cable, the cell as a frosted tube filling with lime; copper for wires and coils, steel for pins and plates
+const F=StudyKit.fig,PAL=F.palette,SKY=PAL.case.sky,SKYD=F.deep(SKY),AXIS="#8F9BAA",NAVY="#262E5C",GREY="#6E6A86";
+const LIME=PAL.product.lime,STRAW=PAL.product.strawberry,BLUE=PAL.product.blueberry,BUTTER=PAL.product.butter,PEACH=PAL.product.peach,COPPER=PAL.copper;
+// a rounded solid with real thickness: front face, a lit top and shaded side running up and to the right, one floor shadow
+function slab(x,y,w,h,r,d,c,kind,sh){const m=c==="#FFFFFF"?{hi:"#FFFFFF",shade:"#E3E8F0",stroke:"#C2CAD6"}:F.mat(kind||"plastic",c),dx=d,dy=-0.55*d,id="phs"+String(c).replace("#","")+(kind||"p");
+  let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${m.hi}"/><stop offset=".7" stop-color="${m.shade}"/></linearGradient></defs>`;
+  if(sh!==false)g+=F.shadow(x+r*0.4,y+h,w+dx-r*0.4,{len:sh&&sh.len||Math.min(60,Math.max(16,h*0.3)),opacity:sh&&sh.op||0.16});
+  const n=Math.max(2,Math.ceil(d/1.4));for(let i=n;i>=1;i--){const k=i/n;g+=`<rect x="${(x+dx*k).toFixed(1)}" y="${(y+dy*k).toFixed(1)}" width="${w}" height="${h}" rx="${r}" fill="url(#${id})"${i===n?` stroke="${m.stroke}" stroke-width="1.1"`:""}/>`}
+  return g+`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}" stroke="${m.stroke}" stroke-width="1.2"/>`}
+// a white data card standing on the paper
+const card=(x,y,w,h)=>slab(x,y,w,h,14,8,"#FFFFFF","plastic",{len:22,op:0.1});
+// a frosted cell lying on its side, filled from the left with a product colour
+function cellH(x,y,w,h,frac,fill){const rx=h*0.22,f=Math.max(0,Math.min(1,frac)),fw=(w-4)*f,m=F.mat("painted",fill),ry=h/2;
+  let g=`<path d="M${x},${y} h${w} a${rx},${ry} 0 0 1 0,${h} h${-w} a${rx},${ry} 0 0 1 0,${-h}z" fill="${SKY}" fill-opacity=".35" stroke="${SKYD}" stroke-width="1.4"/>`;
+  g+=F.box(x+w+rx-1,y+h*0.32,7,h*0.36,{colour:PAL.steel,kind:"metal",d:3,shadow:false});
+  if(fw>0.5)g+=`<path d="M${x+2},${y+3} h${fw} a${rx-1},${ry-3} 0 0 1 0,${h-6} h${-fw} a${rx-1},${ry-3} 0 0 1 0,${-(h-6)}z" fill="${fill}" stroke="${m.stroke}" stroke-width="1"/><ellipse cx="${x+2+fw}" cy="${y+ry}" rx="${rx-1}" ry="${ry-3}" fill="${m.hi}" stroke="${m.stroke}" stroke-width="1"/><path d="M${x+4},${y+9} h${Math.max(0,fw-6)}" stroke="#fff" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>`;
+  g+=`<ellipse cx="${x+w}" cy="${y+ry}" rx="${rx}" ry="${ry}" fill="${SKY}" fill-opacity=".45" stroke="${SKYD}" stroke-width="1.2"/><path d="M${x+6},${y+5} h${w*0.55}" stroke="#fff" stroke-opacity=".85" stroke-width="2.2" stroke-linecap="round"/>`;
+  return g}
+// copper wire on the board (a lit hairline along it)
+const wire=d=>`<path d="${d}" fill="none" stroke="${F.mat("metal",COPPER).stroke}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${COPPER}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>`;
+// an ammeter: a round white meter seen from above
+const meter=(x,y)=>`<ellipse cx="${x+3}" cy="${y+5}" rx="17" ry="15" fill="${PAL.shadow}" opacity=".14"/><circle cx="${x}" cy="${y}" r="16" fill="#fff" stroke="#AEB6C4" stroke-width="1.6"/><path d="M${x-10},${y-7} a12,12 0 0 1 12,-5" fill="none" stroke="#fff" stroke-width="2"/><circle cx="${x}" cy="${y}" r="12.5" fill="none" stroke="#E3E8F0"/>`;
+// a standing cell (the battery) on the wire
+const cellV=(x,y1,y2)=>F.cyl(x,y1,13,y2-y1,{colour:LIME,kind:"painted",shadow:false})+F.cyl(x,y1-6,5,6,{colour:PAL.steel,kind:"metal",shadow:false});
 const s={mAh:3349,V:3.87,hours:5,Pchg:20,eff:0.85,r:0.08,Iload:3,Iscreen:1.2,Imodem:0.5,C:1000,R:100,N:10,f:140,gap:2,
   soc:0.2,tchg:0,t:0,parts:[],socCC:0.2,vcap:0,tcap:0,playing:false};
 // ---- physics
@@ -32,92 +55,110 @@ function tickCharge(dt){const k=250;s.t+=dt;
   const n=Math.round(2+Icc(s.soc)*3);s.parts=s.parts.filter(p=>(p.u+=dt*(0.25+Icc(s.soc)*0.08))<1);while(s.parts.length<n)s.parts.push({u:Math.random()*0.2,lane:Math.random()})}
 function tickCap(dt){s.tcap+=dt*tau()*0.9;s.vcap=s.V*(1-Math.exp(-s.tcap/tau()))}
 // ---- drawing
-const INK="var(--ink)",ROSE="var(--rose)",HOT="var(--hot)",SEA="var(--sea)",SUN="var(--sun)",LINE="var(--line)",PAPER="var(--paper)";
-function phoneBody(x,y,w,h,soc,label){let o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="26" ${P_BODY.attrs} stroke-width="2"/><rect x="${x+8}" y="${y+10}" width="${w-16}" height="${h-20}" rx="20" fill="${P_SCREEN.fill}" fill-opacity=".96"/><path d="M${x+14},${y+40} Q${x+14},${y+16} ${x+40},${y+16}" fill="none" stroke="${P_BODY.hi}" stroke-width="2" stroke-linecap="round" opacity=".7"/>`;
-  o+=`<rect x="${x+w/2-24}" y="${y+16}" width="48" height="8" rx="4" fill="#2B3142"/>`;
+// ---- drawing
+const LINE="#DCD6EA";
+function phoneBody(x,y,w,h,soc,label){// the phone lying on the paper: a frosted sky case with real thickness, the screen inset, the cell showing through
+  let o=slab(x,y,w,h,28,18,SKY,"plastic",{len:120,op:0.18});
+  o+=`<rect x="${x+w-2}" y="${y+70}" width="5" height="34" rx="2" fill="${F.mat("plastic",SKY).shade}" stroke="${SKYD}" stroke-width=".8"/>`;
+  o+=`<rect x="${x+10}" y="${y+12}" width="${w-20}" height="${h-24}" rx="20" fill="#F6FAFD" stroke="${SKYD}" stroke-width="1.2"/><path d="M${x+16},${y+44} Q${x+16},${y+18} ${x+42},${y+18}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M${x+24},${y+h-20} h${w-48}" stroke="${SKYD}" stroke-opacity=".25" stroke-width="1"/>`;
+  o+=`<rect x="${x+w/2-24}" y="${y+18}" width="48" height="8" rx="4" fill="#3B4466"/><circle cx="${x+w/2+16}" cy="${y+22}" r="2" fill="${BLUE}"/>`;
   const bw=w-70,bx=x+35,by=y+h/2-26;
-  o+=`<rect x="${bx}" y="${by}" width="${bw}" height="52" rx="12" fill="#1C2233" stroke="#55607A" stroke-width="2"/><rect x="${bx+bw}" y="${by+16}" width="8" height="20" rx="3" fill="#55607A"/>`;
-  const bm=soc>0.2?P_BATT:P_LOW;o+=`<rect x="${bx+5}" y="${by+5}" width="${Math.max(0,(bw-10)*soc)}" height="42" rx="8" fill="${bm.fill}" stroke="${bm.stroke}" stroke-width="1"/><rect x="${bx+9}" y="${by+9}" width="${Math.max(0,(bw-18)*soc)}" height="8" rx="4" fill="${bm.hi}" opacity=".55"/>`;
-  o+=`<text x="${x+w/2}" y="${by+90}" text-anchor="middle" style="font:600 22px var(--display);fill:#fff">${Math.round(soc*100)}%</text><text x="${x+w/2}" y="${by+112}" text-anchor="middle" style="font:500 12px var(--mono);fill:#8F9AB5">${esc(label||"")}</text>`;
+  o+=cellH(bx,by,bw,52,soc,soc>0.2?LIME:STRAW);
+  o+=`<text x="${x+w/2}" y="${by+90}" text-anchor="middle" style="font:600 22px var(--display);fill:${NAVY}">${Math.round(soc*100)}%</text><text x="${x+w/2}" y="${by+112}" text-anchor="middle" style="font:500 12px var(--mono);fill:${GREY}">${esc(label||"")}</text>`;
   return o}
-function cable(x0,y0,x1,y1,parts,on){let o=`<path d="M${x0},${y0} C${x0+80},${y0} ${x1-80},${y1} ${x1},${y1}" fill="none" stroke="${P_CABLE.stroke}" stroke-width="7" stroke-linecap="round"/><path d="M${x0},${y0} C${x0+80},${y0} ${x1-80},${y1} ${x1},${y1}" fill="none" stroke="${P_CABLE.fill}" stroke-width="3.5" stroke-linecap="round"/><path d="M${x0},${y0} C${x0+80},${y0} ${x1-80},${y1} ${x1},${y1}" fill="none" stroke="${P_CABLE.hi}" stroke-width="1" stroke-linecap="round" opacity=".7"/>`;
-  if(on)parts.forEach(p=>{const t=p.u,mt=1-t;const X=mt*mt*mt*x0+3*mt*mt*t*(x0+80)+3*mt*t*t*(x1-80)+t*t*t*x1,Y=mt*mt*mt*y0+3*mt*mt*t*y0+3*mt*t*t*y1+t*t*t*y1;o+=`<circle cx="${X.toFixed(1)}" cy="${(Y+(p.lane-0.5)*4).toFixed(1)}" r="3.6" fill="${SUN}" stroke="${INK}" stroke-width=".8"/>`});
+function cable(x0,y0,x1,y1,parts,on){const d=`M${x0},${y0} C${x0+80},${y0} ${x1-80},${y1} ${x1},${y1}`;
+  // a rubber tube with its own faint floor shadow, a steel plug at the phone
+  let o=`<path d="${d}" transform="translate(9,11)" fill="none" stroke="${PAL.shadow}" stroke-opacity=".1" stroke-width="8" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#8F9BAA" stroke-width="8.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#E9EDF4" stroke-width="5.5" stroke-linecap="round"/><path d="${d}" transform="translate(-.6,-1.4)" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".9"/>`;
+  o+=F.box(x1-14,y1-6,14,12,{colour:PAL.steel,kind:"metal",d:4,r:2,shadow:false})+F.box(x0,y0-6,10,12,{colour:"#C9D0DB",kind:"rubber",d:4,r:2,shadow:false});
+  if(on)parts.forEach(p=>{const t=p.u,mt=1-t;const X=mt*mt*mt*x0+3*mt*mt*t*(x0+80)+3*mt*t*t*(x1-80)+t*t*t*x1,Y=mt*mt*mt*y0+3*mt*mt*t*y0+3*mt*t*t*y1+t*t*t*y1;o+=`<circle cx="${X.toFixed(1)}" cy="${(Y+(p.lane-0.5)*4).toFixed(1)}" r="3.6" fill="${BUTTER}" stroke="${NAVY}" stroke-width=".8"/>`});
   return o}
-function drawMain(st){const W=800,H=420;let o=`<rect width="${W}" height="${H}" fill="var(--case-soft,var(--chalk))"/>`;
+function drawMain(st){const W=800,H=420;let o=F.floor(W,H);
   if(st.k==="internal")return o+drawInternal();if(st.k==="circuit")return o+drawParallel();if(st.k==="wireless")return o+drawWireless();if(st.k==="capacitor")return o+drawCap();
   const charging=["fast","ccv"].includes(st.k)||(st.k==="test");
-  o+=`<rect x="60" y="300" width="120" height="70" rx="10" ${P_BRICK.attrs}/><path d="M72,308 H120" stroke="${P_BRICK.hi}" stroke-width="3" stroke-linecap="round"/><text x="120" y="328" text-anchor="middle" class="t-lab">USB-C</text><text x="120" y="350" text-anchor="middle" class="t-big">${fmt(s.Pchg)} W</text><rect x="36" y="318" width="24" height="34" rx="4" ${P_PLUG.attrs}/><path d="M40,322 V348" stroke="${P_PLUG.hi}" stroke-width="2"/>`;
+  // the charger: a white plastic brick with steel pins
+  o+=F.box(38,320,22,7,{colour:PAL.steel,kind:"metal",d:5,shadow:false})+F.box(38,340,22,7,{colour:PAL.steel,kind:"metal",d:5,shadow:false});
+  o+=F.box(60,300,120,70,{colour:"#FFFFFF",kind:"plastic",d:16,r:8,shadowLen:56})+`<path d="M70,306 H130" stroke="#E3E8F0" stroke-width="2" stroke-linecap="round"/><text x="120" y="328" text-anchor="middle" class="t-lab">USB-C</text><text x="120" y="350" text-anchor="middle" class="t-big">${fmt(s.Pchg)} W</text>`;
   o+=cable(180,335,330,250,s.parts,charging&&s.playing);
   const soc=charging?s.soc:(st.k==="energy"?Math.max(0.02,1-Math.min(1,s.t/ (s.hours*0.6))):1);
   o+=phoneBody(330,40,200,340,soc,charging?(s.soc>=1?"full":s.soc>0.8?"constant voltage":"constant current"):(st.k==="charge"?`${fmt(s.mAh)} mAh · ${fmt(s.V,2)} V`:`${fmt(Pavg(),1)} W average`));
   // readout card
-  o+=`<g transform="translate(560,50)"><rect width="220" height="${st.k==="charge"?200:220}" rx="16" fill="${PAPER}" stroke="${LINE}"/>`;
+  o+=card(560,50,220,st.k==="charge"?200:220)+`<g transform="translate(560,50)">`;
   if(st.k==="charge")o+=`<text x="16" y="30" class="t-lab">CHARGE STORED, Q = It</text><text x="16" y="58" class="t-ink">${fmt(s.mAh)} mAh = ${fmt(s.mAh/1000,3)} A h</text><text x="16" y="80" class="t-ink">× 3600 s</text><text x="16" y="112" class="t-big">Q = ${fmt(Q())} C</text><text x="16" y="136" class="t-ink">≈ ${sci(Q())} C</text><text x="16" y="168" class="t-ink">${sci(Q()/E_CHARGE,1)} electrons</text>`;
   else if(st.k==="energy")o+=`<text x="16" y="30" class="t-lab">ENERGY, E = VQ</text><text x="16" y="58" class="t-ink">${fmt(s.V,2)} V × ${fmt(Q())} C</text><text x="16" y="90" class="t-big">E = ${sci(E())} J</text><text x="16" y="120" class="t-lab">POWER, P = E ÷ t</text><text x="16" y="146" class="t-ink">${fmt(E()/1000,1)} kJ ÷ (${fmt(s.hours,1)} × 3600 s)</text><text x="16" y="176" class="t-big">P = ${fmt(Pavg(),2)} W</text><text x="16" y="200" class="t-ink">I = P ÷ V = ${fmt(Pavg()/s.V,2)} A</text>`;
   else if(st.k==="fast")o+=`<text x="16" y="30" class="t-lab">HALF A BATTERY, t = E ÷ P</text><text x="16" y="58" class="t-ink">½E = ${fmt(0.5*E()/1000,1)} kJ</text><text x="16" y="80" class="t-ink">P into the cell = ${fmt(s.Pchg)} W × ${Math.round(s.eff*100)}%</text><text x="16" y="112" class="t-big">t = ${fmt(t50()/60,1)} min</text><text x="16" y="140" class="t-ink">"50% in 30 min": ${t50()<=1800?"plausible":"not at this power"}</text><text x="16" y="176" class="t-ink">I into the cell ≈ ${fmt(Ibatt(),1)} A</text><text x="16" y="198" class="t-ink">(P ÷ V at ${fmt(s.V,2)} V)</text>`;
   else o+=`<text x="16" y="30" class="t-lab">CHARGING NOW</text><text x="16" y="58" class="t-ink">cell emf ε = ${fmt(emf(s.soc),2)} V</text><text x="16" y="80" class="t-ink">charger holds ${fmt(VCHG,1)} V</text><text x="16" y="102" class="t-ink">driving pd = ${fmt(VCHG-emf(s.soc),2)} V</text><text x="16" y="134" class="t-big">I = ${fmt(Icc(s.soc),2)} A</text><text x="16" y="160" class="t-ink">${Icc(s.soc)>=Ibatt()-0.01?"limited by the charger (CC)":"= pd ÷ r, falling (CV)"}</text><text x="16" y="192" class="t-ink">${fmt(s.tchg/60)} min · ${Math.round(s.soc*100)}%</text>`;
   o+=`</g>`;return o}
 function drawInternal(){const I=s.Iload;let o=`<text x="30" y="36" class="t-lab">THE CELL HAS INTERNAL RESISTANCE r. TERMINAL VOLTAGE V = ε − Ir</text>`;
-  // battery symbol with r, load resistor, ammeter
-  o+=`<path d="M120,200 H200 M200,170 V230 M216,185 V215 M216,200 H270" stroke="${INK}" stroke-width="3" fill="none"/>`;
-  o+=`<rect x="270" y="186" width="70" height="28" rx="4" fill="${PAPER}" stroke="${INK}" stroke-width="2"/><text x="305" y="205" text-anchor="middle" class="t-ink">r = ${fmt(s.r,2)} Ω</text>`;
-  o+=`<path d="M340,200 H540 V300 H120 V200" stroke="${INK}" stroke-width="3" fill="none"/>`;
-  o+=`<rect x="500" y="236" width="80" height="34" rx="6" fill="${SUN}" stroke="${INK}" stroke-width="2" transform="rotate(90 540 253)"/><text x="590" y="258" class="t-ink">load ${fmt(I,1)} A</text>`;
-  o+=`<circle cx="330" cy="300" r="16" fill="${PAPER}" stroke="${INK}" stroke-width="2"/><text x="330" y="305" text-anchor="middle" class="t-ink">A</text>`;
+  // copper wires on a frosted sky board: the cell, its internal resistance r, the load and an ammeter
+  o+=F.acrylic(96,140,560,182,{tint:SKY,d:12,r:16});
+  o+=wire("M340,200 H540 V300 H120 V200 H195")+wire("M221,200 H270");
+  o+=cellV(208,178,222);
+  o+=F.box(270,186,70,28,{colour:"#FFFFFF",kind:"plastic",d:8,r:4,shadow:false})+`<text x="305" y="205" text-anchor="middle" class="t-ink">r = ${fmt(s.r,2)} Ω</text>`;
+  o+=F.box(523,213,34,80,{colour:BUTTER,kind:"painted",d:8,r:5,shadow:false})+`<path d="M529,220 v66" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/><text x="590" y="258" class="t-ink">load ${fmt(I,1)} A</text>`;
+  o+=meter(330,300)+`<text x="330" y="305" text-anchor="middle" class="t-ink">A</text>`;
   o+=`<text x="208" y="160" text-anchor="middle" class="t-ink">ε = ${fmt(s.V,2)} V</text>`;
-  o+=`<g transform="translate(90,330)"><rect width="620" height="70" rx="14" fill="${PAPER}" stroke="${LINE}"/><text x="16" y="28" class="t-ink">Lost volts Ir = ${fmt(I,1)} × ${fmt(s.r,2)} = ${fmt(I*s.r,2)} V → terminal V = ${fmt(s.V,2)} − ${fmt(I*s.r,2)} = ${fmt(Vterm(),2)} V</text><text x="16" y="54" class="t-ink">Heat in the cell P = I²r = ${fmt(Plost(),2)} W · delivered P = VI = ${fmt(Pdel(),1)} W · efficiency ${fmt(Pdel()/(s.V*I)*100,1)}%</text></g>`;
-  // a thermometer for the phone
-  const T=22+Plost()*6;o+=`<rect x="690" y="80" width="18" height="150" rx="9" fill="${PAPER}" stroke="${INK}"/><rect x="694" y="${230-Math.min(140,(T-20)*7)}" width="10" height="${Math.min(140,(T-20)*7)}" rx="4" fill="${HOT}"/><text x="699" y="260" text-anchor="middle" class="t-lab">${fmt(T)}°C</text><text x="699" y="66" text-anchor="middle" class="t-lab">PHONE (EST.)</text>`;
+  o+=card(90,330,620,70)+`<g transform="translate(90,330)"><text x="16" y="28" class="t-ink">Lost volts Ir = ${fmt(I,1)} × ${fmt(s.r,2)} = ${fmt(I*s.r,2)} V → terminal V = ${fmt(s.V,2)} − ${fmt(I*s.r,2)} = ${fmt(Vterm(),2)} V</text><text x="16" y="54" class="t-ink">Heat in the cell P = I²r = ${fmt(Plost(),2)} W · delivered P = VI = ${fmt(Pdel(),1)} W · efficiency ${fmt(Pdel()/(s.V*I)*100,1)}%</text></g>`;
+  // a thermometer for the phone: a frosted tube filling with strawberry
+  const T=22+Plost()*6;o+=F.tube(690,80,18,150,Math.min(140,(T-20)*7)/150,{tint:SKY,fill:STRAW,shadowLen:22})+`<text x="699" y="260" text-anchor="middle" class="t-lab">${fmt(T)}°C</text><text x="699" y="66" text-anchor="middle" class="t-lab">PHONE (EST.)</text>`;
   return o}
 function drawParallel(){let o=`<text x="30" y="36" class="t-lab">TWO LOADS IN PARALLEL ACROSS THE BATTERY: SAME V, CURRENTS ADD</text>`;
-  o+=`<path d="M120,120 V300 M110,180 H130 M114,196 H126 M120,120 H620 M120,300 H620 M400,120 V300 M620,120 V300" stroke="${INK}" stroke-width="3" fill="none"/>`;
-  o+=`<rect x="380" y="180" width="40" height="60" rx="6" fill="${SUN}" stroke="${INK}" stroke-width="2"/><text x="440" y="200" class="t-ink">screen</text><text x="440" y="222" class="t-ink">${fmt(s.Iscreen,2)} A · ${fmt(s.V/s.Iscreen,2)} Ω</text>`;
-  o+=`<rect x="600" y="180" width="40" height="60" rx="6" fill="${SEA}" stroke="${INK}" stroke-width="2"/><text x="660" y="200" class="t-ink">modem</text><text x="660" y="222" class="t-ink">${fmt(s.Imodem,2)} A · ${fmt(s.V/s.Imodem,2)} Ω</text>`;
-  o+=`<circle cx="260" cy="120" r="16" fill="${PAPER}" stroke="${INK}" stroke-width="2"/><text x="260" y="125" text-anchor="middle" class="t-ink">A</text><text x="260" y="98" text-anchor="middle" class="t-ink">${fmt(Itot(),2)} A</text>`;
+  o+=F.acrylic(84,106,690,210,{tint:SKY,d:12,r:16});
+  o+=wire("M120,164 V120 H620 V300 H120 V210")+wire("M400,120 V300");
+  o+=cellV(120,166,210);
+  o+=F.box(380,180,40,60,{colour:BUTTER,kind:"painted",d:8,r:5,shadow:false})+`<text x="440" y="200" class="t-ink">screen</text><text x="440" y="222" class="t-ink">${fmt(s.Iscreen,2)} A · ${fmt(s.V/s.Iscreen,2)} Ω</text>`;
+  o+=F.box(600,180,40,60,{colour:BLUE,kind:"painted",d:8,r:5,shadow:false})+`<text x="660" y="200" class="t-ink">modem</text><text x="660" y="222" class="t-ink">${fmt(s.Imodem,2)} A · ${fmt(s.V/s.Imodem,2)} Ω</text>`;
+  o+=meter(260,120)+`<text x="260" y="125" text-anchor="middle" class="t-ink">A</text><text x="260" y="98" text-anchor="middle" class="t-ink">${fmt(Itot(),2)} A</text>`;
   o+=`<text x="60" y="190" text-anchor="end" class="t-ink">${fmt(s.V,2)} V</text>`;
-  o+=`<g transform="translate(90,330)"><rect width="620" height="70" rx="14" fill="${PAPER}" stroke="${LINE}"/><text x="16" y="28" class="t-ink">I total = ${fmt(s.Iscreen,2)} + ${fmt(s.Imodem,2)} = ${fmt(Itot(),2)} A · P = VI = ${fmt(s.V,2)} × ${fmt(Itot(),2)} = ${fmt(Ppar(),2)} W</text><text x="16" y="54" class="t-ink">Combined R = V ÷ I = ${fmt(s.V/Itot(),2)} Ω (1/R = 1/R₁ + 1/R₂) · flat in ${fmt(s.mAh/1000,3)} A h ÷ ${fmt(Itot(),2)} A = ${fmt(hoursFlat(),1)} h</text></g>`;
+  o+=card(90,330,620,70)+`<g transform="translate(90,330)"><text x="16" y="28" class="t-ink">I total = ${fmt(s.Iscreen,2)} + ${fmt(s.Imodem,2)} = ${fmt(Itot(),2)} A · P = VI = ${fmt(s.V,2)} × ${fmt(Itot(),2)} = ${fmt(Ppar(),2)} W</text><text x="16" y="54" class="t-ink">Combined R = V ÷ I = ${fmt(s.V/Itot(),2)} Ω (1/R = 1/R₁ + 1/R₂) · flat in ${fmt(s.mAh/1000,3)} A h ÷ ${fmt(Itot(),2)} A = ${fmt(hoursFlat(),1)} h</text></g>`;
   return o}
 function drawWireless(){let o=`<text x="30" y="36" class="t-lab">A QI PAD: AN ALTERNATING CURRENT IN THE PAD COIL MAKES A CHANGING FIELD; THE PHONE COIL FEELS AN INDUCED EMF</text>`;
-  const gapPx=12+s.gap*8;
-  o+=`<rect x="150" y="${250}" width="300" height="24" rx="8" ${P_BRICK.attrs}/>`;
-  for(let i=0;i<6;i++)o+=`<ellipse cx="300" cy="262" rx="${40+i*18}" ry="${5+i*2}" fill="none" stroke="${P_COIL.fill}" stroke-width="2.2"/>`;
-  o+=`<rect x="170" y="${250-gapPx-110}" width="260" height="110" rx="20" ${P_BODY.attrs} stroke-width="2"/>`;
-  for(let i=0;i<Math.min(8,Math.round(s.N/2.5));i++)o+=`<ellipse cx="300" cy="${250-gapPx-18}" rx="${30+i*12}" ry="${4+i*1.4}" fill="none" stroke="${P_COIL.hi}" stroke-width="2"/>`;
-  const ph=s.playing?s.t*s.f/20:0;for(let i=0;i<5;i++){const y=262-((i*22+ph*10)%110);o+=`<path d="M${240-i*8},${y} Q300,${y-14} ${360+i*8},${y}" fill="none" stroke="${SUN}" stroke-width="2" opacity="${0.9-i*0.15}"/>`}
+  const gapPx=12+s.gap*8,py=250-gapPx-110,CD=F.mat("metal",COPPER).stroke;
+  // the pad: a white plastic puck with its copper coil; the phone hovers above it in its frosted sky case
+  o+=slab(150,250,300,24,8,26,"#FFFFFF","plastic",{len:44,op:0.16});
+  for(let i=0;i<6;i++)o+=`<ellipse cx="300" cy="262" rx="${40+i*18}" ry="${5+i*2}" fill="none" stroke="${CD}" stroke-width="3"/><ellipse cx="300" cy="262" rx="${40+i*18}" ry="${5+i*2}" fill="none" stroke="${COPPER}" stroke-width="1.6"/>`;
+  o+=F.shadow(184,250,252,{len:Math.max(6,gapPx*0.5),h:2,opacity:0.08});
+  o+=slab(170,py,260,110,20,12,SKY,"plastic",false)+`<rect x="180" y="${py+10}" width="240" height="90" rx="14" fill="#F6FAFD" fill-opacity=".7" stroke="${SKYD}" stroke-width="1"/><path d="M190,${py+16} h90" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`;
+  for(let i=0;i<Math.min(8,Math.round(s.N/2.5));i++)o+=`<ellipse cx="300" cy="${250-gapPx-18}" rx="${30+i*12}" ry="${4+i*1.4}" fill="none" stroke="${CD}" stroke-width="2.6"/><ellipse cx="300" cy="${250-gapPx-18}" rx="${30+i*12}" ry="${4+i*1.4}" fill="none" stroke="${F.mat("metal",COPPER).hi}" stroke-width="1.2"/>`;
+  const ph=s.playing?s.t*s.f/20:0;for(let i=0;i<5;i++){const y=262-((i*22+ph*10)%110);o+=`<path d="M${240-i*8},${y} Q300,${y-14} ${360+i*8},${y}" fill="none" stroke="#D9A932" stroke-width="2.2" opacity="${0.9-i*0.15}"/>`}
   o+=`<text x="300" y="300" text-anchor="middle" class="t-ink">pad coil · ${fmt(s.f)} kHz</text><text x="470" y="${250-gapPx-50}" class="t-ink">phone coil · N = ${s.N}</text><text x="470" y="${250-gapPx/2+4}" class="t-ink">gap ${fmt(s.gap)} mm</text>`;
-  o+=`<g transform="translate(90,330)"><rect width="620" height="70" rx="14" fill="${PAPER}" stroke="${LINE}"/><text x="16" y="28" class="t-ink">Faraday: ε = −N ΔΦ ÷ Δt. Model emf ≈ ${fmt(emfW(),1)} V (more turns, higher frequency, smaller gap → bigger)</text><text x="16" y="54" class="t-ink">Efficiency ≈ ${Math.round(effW()*100)}% (estimate) · 50% charge at ${fmt(Math.min(15,s.Pchg))} W pad: ${fmt(tW50()/60)} min</text></g>`;
+  o+=card(90,330,620,70)+`<g transform="translate(90,330)"><text x="16" y="28" class="t-ink">Faraday: ε = −N ΔΦ ÷ Δt. Model emf ≈ ${fmt(emfW(),1)} V (more turns, higher frequency, smaller gap → bigger)</text><text x="16" y="54" class="t-ink">Efficiency ≈ ${Math.round(effW()*100)}% (estimate) · 50% charge at ${fmt(Math.min(15,s.Pchg))} W pad: ${fmt(tW50()/60)} min</text></g>`;
   return o}
 function drawCap(){let o=`<text x="30" y="36" class="t-lab">A CAPACITOR ON THE PHONE'S POWER RAIL CHARGES THROUGH R: V = V₀(1 − e^(−t/RC))</text>`;
-  o+=`<path d="M120,120 V300 M110,180 H130 M114,196 H126 M120,120 H330 M120,300 H620 M620,120 V300 M400,120 H620" stroke="${INK}" stroke-width="3" fill="none"/>`;
-  o+=`<rect x="330" y="106" width="70" height="28" rx="4" fill="${PAPER}" stroke="${INK}" stroke-width="2"/><text x="365" y="125" text-anchor="middle" class="t-ink">${fmt(s.R)} Ω</text>`;
-  o+=`<rect x="600" y="190" width="40" height="40" fill="var(--chalk)"/><path d="M606,190 H634 M606,230 H634" stroke="${P_CELL.stroke}" stroke-width="6"/><path d="M606,189 H634 M606,229 H634" stroke="${P_CELL.hi}" stroke-width="1.5"/><text x="660" y="214" class="t-ink">${fmt(s.C)} μF</text>`;
-  const frac=s.V?s.vcap/s.V:0;o+=`<rect x="606" y="${230-36*frac}" width="28" height="${36*frac}" fill="${SUN}" opacity=".8"/>`;
+  o+=F.acrylic(84,106,690,210,{tint:SKY,d:12,r:16});
+  o+=wire("M120,164 V120 H330")+wire("M400,120 H620 V190")+wire("M620,230 V300 H120 V210");
+  o+=cellV(120,166,210);
+  o+=F.box(330,106,70,28,{colour:"#FFFFFF",kind:"plastic",d:8,r:4,shadow:false})+`<text x="365" y="125" text-anchor="middle" class="t-ink">${fmt(s.R)} Ω</text>`;
+  // the capacitor: two steel plates, the charge between them shown in butter
+  const frac=s.V?s.vcap/s.V:0;
+  o+=F.box(602,185,36,6,{colour:PAL.steel,kind:"metal",d:6,shadow:false});
+  o+=`<rect x="606" y="${230-36*frac}" width="28" height="${36*frac}" fill="${BUTTER}" opacity=".8"/>`;
+  o+=F.box(602,229,36,6,{colour:PAL.steel,kind:"metal",d:6,shadow:false})+`<text x="660" y="214" class="t-ink">${fmt(s.C)} μF</text>`;
   o+=`<text x="60" y="190" text-anchor="end" class="t-ink">${fmt(s.V,2)} V</text>`;
-  o+=`<g transform="translate(90,330)"><rect width="620" height="70" rx="14" fill="${PAPER}" stroke="${LINE}"/><text x="16" y="28" class="t-ink">τ = RC = ${fmt(s.R)} × ${sci(s.C*1e-6,2)} = ${fmt(tau()*1000,1)} ms · at t = τ the capacitor is at 63% · Q = CV = ${sci(Qcap(),2)} C</text><text x="16" y="54" class="t-ink">Energy stored E = ½CV² = ½ × ${sci(s.C*1e-6,2)} × ${fmt(s.V,2)}² = ${sci(Ecap(),2)} J · now ${fmt(s.vcap,2)} V at t = ${fmt(s.tcap*1000)} ms</text></g>`;
+  o+=card(90,330,620,70)+`<g transform="translate(90,330)"><text x="16" y="28" class="t-ink">τ = RC = ${fmt(s.R)} × ${sci(s.C*1e-6,2)} = ${fmt(tau()*1000,1)} ms · at t = τ the capacitor is at 63% · Q = CV = ${sci(Qcap(),2)} C</text><text x="16" y="54" class="t-ink">Energy stored E = ½CV² = ½ × ${sci(s.C*1e-6,2)} × ${fmt(s.V,2)}² = ${sci(Ecap(),2)} J · now ${fmt(s.vcap,2)} V at t = ${fmt(s.tcap*1000)} ms</text></g>`;
   return o}
-function drawClose(st){const w=420,h=260;let o="";
+function drawClose(st){const w=420,h=260;let o=F.floor(w,h);
   if(st.k==="ccv"||st.k==="fast"){// current and voltage against charge
     o+=`<text class="t-lab" x="14" y="22">CHARGING CURVE · CURRENT AND CELL VOLTAGE AGAINST CHARGE</text>`;
     const X=f=>46+f*340,Yi=i=>220-i/Math.max(1,Ibatt())*150,Yv=v=>220-(v-3.4)/0.9*150;
-    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${ROSE}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${ROSE}"/>`;
+    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${AXIS}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${AXIS}"/>`;
     let di="",dv="";for(let i=0;i<=100;i++){const f=i/100;di+=(i?"L":"M")+X(f).toFixed(1)+","+Yi(Icc(f)).toFixed(1);dv+=(i?"L":"M")+X(f).toFixed(1)+","+Yv(emf(f)).toFixed(1)}
-    o+=`<path d="${di}" fill="none" stroke="${HOT}" stroke-width="2.4"/><path d="${dv}" fill="none" stroke="${SEA}" stroke-width="2.4" stroke-dasharray="5 4"/>`;
-    o+=`<circle cx="${X(s.soc)}" cy="${Yi(Icc(s.soc))}" r="6" fill="${SUN}" stroke="${INK}"/>`;
-    o+=`<text class="t-lab" x="14" y="${Yi(Ibatt())+4}" fill="${HOT}">I</text><text class="t-lab" x="14" y="${Yv(4.2)+4}">V</text><text class="t-lab" x="386" y="238" text-anchor="end">CHARGE (0 → 100%)</text>`;
+    o+=`<path d="${di}" fill="none" stroke="${STRAW}" stroke-width="2.4"/><path d="${dv}" fill="none" stroke="${BLUE}" stroke-width="2.4" stroke-dasharray="5 4"/>`;
+    o+=`<circle cx="${X(s.soc)}" cy="${Yi(Icc(s.soc))}" r="6" fill="${BUTTER}" stroke="${NAVY}"/>`;
+    o+=`<text class="t-lab" x="14" y="${Yi(Ibatt())+4}" fill="${STRAW}">I</text><text class="t-lab" x="14" y="${Yv(4.2)+4}">V</text><text class="t-lab" x="386" y="238" text-anchor="end">CHARGE (0 → 100%)</text>`;
     o+=`<text class="t-ink" x="54" y="46">current (solid) · cell emf (dashed) · r = ${fmt(s.r,2)} Ω</text>`;return o}
   if(st.k==="capacitor"){o+=`<text class="t-lab" x="14" y="22">CAPACITOR VOLTAGE AGAINST TIME</text>`;const T=tau()*5,X=t=>46+t/T*340,Y=v=>220-v/s.V*150;
-    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${ROSE}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${ROSE}"/>`;let d="";for(let i=0;i<=100;i++){const t=i/100*T;d+=(i?"L":"M")+X(t).toFixed(1)+","+Y(s.V*(1-Math.exp(-t/tau()))).toFixed(1)}
-    o+=`<path d="${d}" fill="none" stroke="${HOT}" stroke-width="2.4"/><line x1="${X(tau())}" x2="${X(tau())}" y1="60" y2="220" stroke="${SEA}" stroke-dasharray="4 4"/><text class="t-lab" x="${X(tau())+4}" y="74">τ = ${fmt(tau()*1000,1)} ms · 63%</text>`;
-    o+=`<circle cx="${X(Math.min(T,s.tcap))}" cy="${Y(s.vcap)}" r="6" fill="${SUN}" stroke="${INK}"/><text class="t-lab" x="386" y="238" text-anchor="end">TIME · 5τ SHOWN</text>`;return o}
+    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${AXIS}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${AXIS}"/>`;let d="";for(let i=0;i<=100;i++){const t=i/100*T;d+=(i?"L":"M")+X(t).toFixed(1)+","+Y(s.V*(1-Math.exp(-t/tau()))).toFixed(1)}
+    o+=`<path d="${d}" fill="none" stroke="${STRAW}" stroke-width="2.4"/><line x1="${X(tau())}" x2="${X(tau())}" y1="60" y2="220" stroke="${BLUE}" stroke-dasharray="4 4"/><text class="t-lab" x="${X(tau())+4}" y="74">τ = ${fmt(tau()*1000,1)} ms · 63%</text>`;
+    o+=`<circle cx="${X(Math.min(T,s.tcap))}" cy="${Y(s.vcap)}" r="6" fill="${BUTTER}" stroke="${NAVY}"/><text class="t-lab" x="386" y="238" text-anchor="end">TIME · 5τ SHOWN</text>`;return o}
   if(st.k==="internal"){o+=`<text class="t-lab" x="14" y="22">TERMINAL VOLTAGE AGAINST CURRENT · V = ε − Ir</text>`;const X=i=>46+i/5*340,Y=v=>220-(v-2.5)/1.7*150;
-    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${ROSE}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${ROSE}"/><line x1="${X(0)}" y1="${Y(s.V)}" x2="${X(5)}" y2="${Y(s.V-5*s.r)}" stroke="${HOT}" stroke-width="2.4"/>`;
-    o+=`<circle cx="${X(s.Iload)}" cy="${Y(Vterm())}" r="6" fill="${SUN}" stroke="${INK}"/><text class="t-lab" x="52" y="${Y(s.V)-8}">INTERCEPT = ε = ${fmt(s.V,2)} V</text><text class="t-lab" x="386" y="238" text-anchor="end">CURRENT (0–5 A)</text><text class="t-ink" x="200" y="160">gradient = −r = −${fmt(s.r,2)} Ω</text>`;return o}
+    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${AXIS}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${AXIS}"/><line x1="${X(0)}" y1="${Y(s.V)}" x2="${X(5)}" y2="${Y(s.V-5*s.r)}" stroke="${STRAW}" stroke-width="2.4"/>`;
+    o+=`<circle cx="${X(s.Iload)}" cy="${Y(Vterm())}" r="6" fill="${BUTTER}" stroke="${NAVY}"/><text class="t-lab" x="52" y="${Y(s.V)-8}">INTERCEPT = ε = ${fmt(s.V,2)} V</text><text class="t-lab" x="386" y="238" text-anchor="end">CURRENT (0–5 A)</text><text class="t-ink" x="200" y="160">gradient = −r = −${fmt(s.r,2)} Ω</text>`;return o}
   if(st.k==="wireless"){o+=`<text class="t-lab" x="14" y="22">INDUCED EMF AGAINST GAP (THIS MODEL)</text>`;const X=g=>46+g/8*340,Y=e=>220-e/8*150;let d="";for(let i=0;i<=80;i++){const g=i/10;d+=(i?"L":"M")+X(g).toFixed(1)+","+Y(0.0023*s.N*s.f*Math.exp(-g/6)).toFixed(1)}
-    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${ROSE}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${ROSE}"/><path d="${d}" fill="none" stroke="${HOT}" stroke-width="2.4"/><circle cx="${X(s.gap)}" cy="${Y(emfW())}" r="6" fill="${SUN}" stroke="${INK}"/><text class="t-lab" x="386" y="238" text-anchor="end">GAP (0–8 mm)</text>`;return o}
+    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${AXIS}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${AXIS}"/><path d="${d}" fill="none" stroke="${STRAW}" stroke-width="2.4"/><circle cx="${X(s.gap)}" cy="${Y(emfW())}" r="6" fill="${BUTTER}" stroke="${NAVY}"/><text class="t-lab" x="386" y="238" text-anchor="end">GAP (0–8 mm)</text>`;return o}
   // charge / energy / circuit: an energy ladder
   o+=`<text class="t-lab" x="14" y="22">${st.k==="circuit"?"HOURS TO FLAT AGAINST TOTAL CURRENT":"THE NUMBERS, IN ORDER"}</text>`;
   if(st.k==="circuit"){const X=i=>46+i/4*340,Y=h=>220-Math.min(1,h/10)*150;let d="";for(let i=1;i<=80;i++){const I=i/20;d+=(i>1?"L":"M")+X(I).toFixed(1)+","+Y(s.mAh/1000/I).toFixed(1)}
-    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${ROSE}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${ROSE}"/><path d="${d}" fill="none" stroke="${HOT}" stroke-width="2.4"/><circle cx="${X(Itot())}" cy="${Y(hoursFlat())}" r="6" fill="${SUN}" stroke="${INK}"/><text class="t-lab" x="386" y="238" text-anchor="end">CURRENT (0–4 A) · 10 h AT THE TOP</text>`;return o}
+    o+=`<line x1="46" x2="386" y1="220" y2="220" stroke="${AXIS}"/><line x1="46" x2="46" y1="60" y2="220" stroke="${AXIS}"/><path d="${d}" fill="none" stroke="${STRAW}" stroke-width="2.4"/><circle cx="${X(Itot())}" cy="${Y(hoursFlat())}" r="6" fill="${BUTTER}" stroke="${NAVY}"/><text class="t-lab" x="386" y="238" text-anchor="end">CURRENT (0–4 A) · 10 h AT THE TOP</text>`;return o}
   const rows=[["Capacity",`${fmt(s.mAh)} mAh = ${fmt(s.mAh/1000,3)} A h`],["Charge Q = It",`${fmt(Q())} C`],["Voltage",`${fmt(s.V,2)} V`],["Energy E = VQ",`${fmt(E()/1000,1)} kJ (${sci(E())} J)`],["Screen-on time",`${fmt(s.hours,1)} h = ${fmt(s.hours*3600)} s`],["Average power P = E/t",`${fmt(Pavg(),2)} W`],["Average current I = P/V",`${fmt(Pavg()/s.V,2)} A`]];
   rows.forEach((r,i)=>{o+=`<text class="t-lab" x="14" y="${54+i*28}">${esc(r[0]).toUpperCase()}</text><text class="t-ink" x="400" y="${54+i*28}" text-anchor="end">${esc(r[1])}</text><line x1="14" x2="400" y1="${62+i*28}" y2="${62+i*28}" stroke="${LINE}"/>`});
   return o}
