@@ -21,6 +21,19 @@
    "includeFiles": "api/_feeds/snapshots/**"
   }
  },
+ "redirects": [
+  {
+   "source": "/",
+   "has": [
+    {
+     "type": "host",
+     "value": "auto.assembl.co.nz"
+    }
+   ],
+   "destination": "/cars/",
+   "permanent": false
+  }
+ ],
  "headers": [
   {
    "source": "/(.*)",

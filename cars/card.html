@@ -30,7 +30,7 @@ h1{margin:2px 0 0;font-size:var(--fs-hl);line-height:1.25;font-weight:600;color:
 h2{margin:18px 0 8px;font-size:var(--fs-h);font-weight:600;color:var(--c-text)}
 .hero{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:14px;align-items:center;margin:12px 0 2px}
 .hero .pic{border-radius:var(--r-md);overflow:hidden;background:var(--c-surface);aspect-ratio:4/3;position:relative}.hero .pic img,.hero .pic svg{width:100%;height:100%;object-fit:cover}
-.hero .pic .chip{position:absolute;left:6px;bottom:6px;background:color-mix(in srgb,var(--c-raised) 88%,transparent)}
+.hero .pic .chip{position:absolute;left:6px;bottom:6px;max-width:calc(100% - 12px);white-space:normal;line-height:1.25;background:color-mix(in srgb,var(--c-raised) 88%,transparent)}
 .sum{margin:0;font-size:var(--fs-md);font-weight:600;color:var(--c-text)}.stmt{margin:6px 0 0;font-size:var(--fs-xs);color:var(--c-text-2)}
 .reg{margin-top:14px;padding:14px;border:var(--bw) solid var(--c-line);border-radius:var(--r-lg)}
 .reg h2{margin:0 0 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.reg .n{margin:0;font-size:var(--fs-md)}.reg .n b{font-weight:600;font-variant-numeric:tabular-nums}
@@ -165,6 +165,10 @@ function profileSVG(kind, paint, opts) {
 }
 var R=null,base=null,state={kmw:200,ckwh:40,dirty:false,source:"result"};
 var FUEL={petrol:"Petrol",diesel:"Diesel",hybrid:"Hybrid","plug-in hybrid":"Plug-in hybrid",electric:"Electric"};
+// which body render to show: the body passed to the tool, else the register's commonest body for the model, else a hatch
+var BODY_WORD={hatch:"hatchback",sedan:"sedan",suv:"SUV",ute:"ute",van:"van"};
+function regBody(g){var v=String(g&&g.body&&g.body.value||"").toLowerCase();return /hatch/.test(v)?"hatch":/saloon|sedan/.test(v)?"sedan":/utility|pick ?up|cab and chassis/.test(v)?"ute":/van|bus/.test(v)?"van":/wagon|sports utility|suv/.test(v)?"suv":null}
+function bodyOf(r){var b=r.car&&r.car.body;return BODY_WORD[b]?b:regBody(r.register)||"hatch"}
 // the same sums as running_cost, from the rates it returned: energy, road user charges, WOF + licence, servicing
 function cost(rc,fuel,eco,kmw,ckwh){var r=rc.rates,e=0;
   if(fuel==="electric")e=kmw*eco/100*(1+r.chargingLoss)*ckwh/100;
@@ -204,8 +208,9 @@ function regHTML(g){if(!g)return "";var credit='Source: <a href="'+esc(g.source&
     '<p class="quiet">'+esc(g.period?g.period.charAt(0).toUpperCase()+g.period.slice(1):"")+(g.matchedFrom?' · matched "'+esc(g.matchedFrom)+'" to the model':'')+(g.scope?' · '+esc(g.scope):'')+'<br>'+credit+'</p></section>'}
 function render(r,meta){var v=viewOf(meta);if(v&&v.runningCost)r.runningCost=v.runningCost;R=r;var rc=r.runningCost;
   if(!base){base={kmw:rc.kmPerWeek,ckwh:rc.rates?rc.rates.electricityCkwh:0};state.kmw=base.kmw;state.ckwh=base.ckwh}
-  var src=safeImg(r.car.image&&r.car.image.url),kind=r.car.body&&r.car.body!=="unknown"?r.car.body:"hatch";
-  var pic=src?'<img src="'+esc(src)+'" alt="'+esc(r.car.image.alt)+'" width="1200" height="900">'+chip("Simulated","Render · simulated"):profileSVG(kind,"#C9C6C2",{title:"Drawing of a "+kind+" (not this car)"})+chip("Estimate","Drawing, not this car");
+  var src=safeImg(r.car.image&&r.car.image.url),kind=bodyOf(r),bsrc=safeImg(IMG_BASE+"body-"+kind+"-4x3.webp");
+  var pic=src?'<img src="'+esc(src)+'" alt="'+esc(r.car.image.alt)+'" width="1200" height="900">'+chip("Simulated","Render · simulated"):
+    (bsrc?'<img src="'+esc(bsrc)+'" alt="Studio render of a '+esc(BODY_WORD[kind])+' body style, not this car" width="640" height="480" data-body="'+esc(kind)+'">':profileSVG(kind,"#C9C6C2",{title:"Drawing of a "+kind+" (not this car)"}))+chip("Estimate","Render · body style, not this car");
   var flags=(r.redFlags||[]).slice().sort(function(a,b){var o={stop:0,watch:1,ask:2,info:3};return o[a.level]-o[b.level]});
   var li=function(f){return '<li><span class="k '+esc(f.level)+'" aria-hidden="true"></span><span><b>'+esc(f.title)+'</b><small>'+esc(f.why)+'</small></span></li>'};
   var checks=(r.checks||[]).map(function(c){return '<li><span class="box" aria-hidden="true"></span><span><b>'+esc(c.title)+'</b><small>'+esc(c.how)+(c.link?' <a href="'+esc(c.link.url)+'">'+esc(c.link.name)+'</a>':'')+'</small></span></li>'}).join("");
@@ -221,6 +226,8 @@ function render(r,meta){var v=viewOf(meta);if(v&&v.runningCost)r.runningCost=v.r
       '<h2>Is the price fair?</h2><ol class="qs">'+(r.fairPrice.questions||[]).map(function(q){return '<li>'+esc(q)+'</li>'}).join("")+'</ol><p class="note">'+esc(r.fairPrice.note)+'</p></div>'+
     '<div class="actions more"><button class="btn primary" type="button" id="all">See every check</button></div>'+
     '<p class="note">Agent-ready cars (demo) · v'+esc(VERSION)+'</p></div>';
+  // if the render can't load (a host that blocks it, or offline), the drawing of the same body type takes its place
+  var bi=$(".hero .pic img[data-body]");if(bi)bi.addEventListener("error",function(){var k=bi.getAttribute("data-body");bi.outerHTML=profileSVG(k,"#C9C6C2",{title:"Drawing of a "+(BODY_WORD[k]||k)+" body style, not this car"});Host.size()});
   wire()}
 function status(){return state.source==="tool"?"Updated by running_cost for "+state.kmw+" km a week.":state.dirty?"Worked out here from the rates in the result"+(Host.canCallTools()?"; checking with running_cost…":"."):"From running_cost at "+state.kmw+" km a week."}
 var timer=0;function wire(){

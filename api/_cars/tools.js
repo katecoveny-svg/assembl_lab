@@ -714,7 +714,7 @@ export function registerSummary(reg, demo = false) {
   const pick = (o, ...k) => (o ? Object.fromEntries(k.map((x) => [x, o[x]])) : null);
   return { ...base, found: true, name: reg.name, period: reg.period, total: reg.total, nzNewPct: reg.nzNewPct, usedImportPct: reg.usedImportPct,
     // an engine size means nothing for a battery EV (the register's figure for one isn't a displacement), so it's left out
-    fuel: pick(reg.fuel, "value", "pct"), engineCc: reg.fuel && reg.fuel.value === "electric" ? null : pick(reg.engineCc, "cc", "pct"), previousCountry: pick(reg.previousCountry, "value", "pct"),
+    fuel: pick(reg.fuel, "value", "pct"), engineCc: reg.fuel && reg.fuel.value === "electric" ? null : pick(reg.engineCc, "cc", "pct"), previousCountry: pick(reg.previousCountry, "value", "pct"), body: pick(reg.body, "value", "pct"),
     ratedEconomy: reg.ratedEconomy ? { lPer100km: reg.ratedEconomy.lPer100km, basis: "Rated combined figure recorded on the register: rated, not real-world." } : null,
     firstNzRegistration: reg.firstNzRegistration || null, ...(reg.matchedFrom ? { matchedFrom: reg.matchedFrom } : {}), ...(reg.note ? { note: reg.note } : {}) };
 }
