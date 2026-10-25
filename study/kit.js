@@ -5,12 +5,20 @@
 try{document.documentElement.setAttribute("data-theme","light")}catch(e){}
 // each machine is a small app with its own colour, grouped by subject
 const MID=(()=>{try{return (location.pathname.split("/").pop()||"").replace(/\.html?$/,"")}catch(e){return ""}})();
-const SUBJ={science:"#2F8FD8",biochem:"#12A386",maths:"#7B61FF",english:"#F2603F",social:"#2FA65A",digital:"#D9468F",tech:"#D98A1F"};
+// pastel family (refs/figure/README.md): every machine has one case tint; surfaces use the tint with navy ink on it,
+// and --acc is the tint's deep shade, used for lines, highlights and the few places that put white text on the accent
+const CASE={sky:"#BFDDF5",mint:"#BFE8D6",lavender:"#D9CBF2",blush:"#F3B8C8",butter:"#F7E7A6",peach:"#F9D2B8"};
+const DEEP={sky:"#3A6FB8",mint:"#2A7D63",lavender:"#6A50BE",blush:"#B5466F",butter:"#8A6510",peach:"#B2552D"};
+const STINT={science:"sky",biochem:"mint",maths:"lavender",english:"blush",social:"peach",digital:"blush",tech:"butter"};
+const MTINT={vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
+const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
-const accentFor=id=>SUBJ[MSUB[id]]||SUBJ.science;
+const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
+const accentFor=id=>DEEP[tintName(id)];
+const tintFor=id=>CASE[tintName(id)];
 // one line icon per machine (24x24, drawn with currentColor), used for the app icon here and the tiles on the home page
 const G=(d,extra)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra||""}</svg>`;
 const GLYPH={
@@ -320,7 +328,7 @@ function mount(cfg){logStudy("open");
   const mid=cfg.id||MID;
   try{document.documentElement.style.setProperty("--acc",cfg.accent||accentFor(mid))}catch(e){}
   // the machine's case tint (one pastel per machine, see refs/figure/README.md): washes the bench canvases and keys the step chip
-  try{const tint=cfg.caseTint&&(FIG_PALETTE.case[cfg.caseTint]||cfg.caseTint);if(tint)document.documentElement.style.setProperty("--case",tint)}catch(e){}
+  try{const tint=(cfg.caseTint&&(FIG_PALETTE.case[cfg.caseTint]||cfg.caseTint))||tintFor(mid);document.documentElement.style.setProperty("--case",tint);document.documentElement.style.setProperty("--acc-tint",tint)}catch(e){}
   const exam=cfg.badge?.exam?daysUntil(cfg.badge.exam):null;
   const examTxt=cfg.badge?`${esc(cfg.badge.label)}${cfg.badge.examText?` · exam <b>${esc(cfg.badge.examText)}</b>`:""}${exam!==null&&exam>0?`<span class="dd">${exam} day${exam===1?"":"s"}</span>`:""}`:"";
   const home=cfg.home||"../index.html";
@@ -477,10 +485,10 @@ figMat.three=function(THREE,kind,colour,opts){const K=FIG[kind]||FIG.painted;opt
     const rim=opts.rim!=null?opts.rim:K.rim;if(rim>0){m.defines=Object.assign(m.defines||{},{FIG_RIM:rim.toFixed(2)});
       m.onBeforeCompile=figRim}}
   m.userData.fig=kind;return m};
-function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#include <dithering_fragment>","#include <dithering_fragment>\n{float figRim=pow(1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition))),2.6);gl_FragColor.rgb*=1.0-FIG_RIM*figRim;}")}
+function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#include <dithering_fragment>","#include <dithering_fragment>\n#ifndef FLAT_SHADED\n{float figRim=pow(1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition))),2.6);gl_FragColor.rgb*=1.0-FIG_RIM*figRim;}\n#endif")}
 // the lockup: a hex-socket mark, "assembly", and "by assembl"
 const LOCKUP=`<span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span>`;
 // for machines with their own shell: StudyKit.companion(el) puts Allen in el; call .react(true|false) after a check (log the pass first)
 function companion(el){return allenCorner(null,{steps:[]},el||document.body)}
-window.StudyKit={mount,glyph,accentFor,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat};
+window.StudyKit={mount,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat};
 })();

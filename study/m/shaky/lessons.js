@@ -60,17 +60,17 @@ const L1={id:"plates",n:1,acc:"#F2603F",acc2:"#2F8FD8",title:"Two plates, one co
     const B=[[179.9,-33.5],[179.2,-35.6],[178.9,-37.6],[178.3,-39.6],[176.9,-41.1],[175.2,-42.2],[174.3,-42.7],[173.2,-42.4],[172.3,-42.2],[171.5,-42.7],[170.4,-43.3],[169.1,-44],[167.8,-44.7],[167,-45.5],[166.3,-46.4],[165.8,-47.5],[165.5,-48.5]];
     const H=.14;
     const plate=(pts,col)=>{const geo=new T.ExtrudeGeometry(shapeFrom(T,pts.map(p=>[sx(p[0]),sy(p[1])])),{depth:H,bevelEnabled:false});geo.rotateX(-Math.PI/2);return c.mesh(geo,col,{th:40})};
-    const west=plate([[165,-33.5],...B,[165,-48.5]],0xffae5e),east=plate([[179.9,-33.5],[180.5,-33.5],[180.5,-48.5],...B.slice().reverse()],0x6cc4f0);
+    const west=plate([[165,-33.5],...B,[165,-48.5]],0xf9d2b8),east=plate([[179.9,-33.5],[180.5,-33.5],[180.5,-48.5],...B.slice().reverse()],0xbfddf5);
     g.add(c.pop(west,0),c.pop(east,.08));
     const NI=[[172.7,-34.4],[173,-34.4],[174.3,-35.2],[174.5,-35.8],[174.8,-36.8],[175.5,-36.5],[175.9,-36.8],[176.2,-37.6],[177,-37.95],[177.3,-38],[178.55,-37.7],[178,-38.7],[177.9,-39.1],[176.9,-39.5],[177.1,-39.65],[176.2,-40.9],[175.3,-41.6],[174.8,-41.3],[175,-40.9],[175,-39.95],[174.3,-39.6],[173.75,-39.3],[174.1,-39.05],[174.6,-38.7],[174.8,-37.8],[174.5,-37.05],[174.2,-36.4],[173.9,-36],[173.4,-35.5],[173.1,-35.2]];
     const SI=[[172.9,-40.5],[173.3,-41.3],[173.9,-40.8],[174.3,-41.7],[173.7,-42.4],[172.8,-43.2],[173.1,-43.8],[172.3,-43.8],[171.25,-44.4],[171,-45.1],[170.7,-45.9],[169.8,-46.45],[168.3,-46.6],[167.7,-46.2],[166.6,-46.15],[166.8,-45.5],[167.9,-44.6],[168.6,-43.97],[169,-43.85],[170.95,-42.7],[171.2,-42.45],[171.6,-41.75],[172.1,-41.25],[172.2,-40.8]];
     const ST=[...Array(14)].map((_,i)=>{const a=i/14*Math.PI*2;return [167.95+Math.cos(a)*.32,-46.98+Math.sin(a)*.2]});
     const land=new T.Group();land.position.y=H;
-    [NI,SI,ST].forEach(p=>{const geo=new T.ExtrudeGeometry(shapeFrom(T,p.map(q=>[sx(q[0]),sy(q[1])])),{depth:.045,bevelEnabled:false});geo.rotateX(-Math.PI/2);land.add(c.mesh(geo,0x7ed36b,{th:50}))});
+    [NI,SI,ST].forEach(p=>{const geo=new T.ExtrudeGeometry(shapeFrom(T,p.map(q=>[sx(q[0]),sy(q[1])])),{depth:.045,bevelEnabled:false});geo.rotateX(-Math.PI/2);land.add(c.mesh(geo,0xafd873,{th:50}))});
     g.add(c.pop(land,.25));
-    const cone=(lon,lat,r,h,col,d)=>{const m=c.mesh(new T.ConeGeometry(r,h,9),col||0xb08c6e,{flat:true,th:50});m.position.copy(W(lon,lat)).setY(H+.045+h/2);land.add(m);return m};
+    const cone=(lon,lat,r,h,col,d)=>{const m=c.mesh(new T.ConeGeometry(r,h,9),col||0xcbb7a4,{flat:true,th:50});m.position.copy(W(lon,lat)).setY(H+.045+h/2);land.add(m);return m};
     const ru=cone(175.57,-39.28,.05,.12),tk=cone(174.06,-39.3,.055,.14);cone(177.18,-37.52,.025,.05);
-    const lake=new T.Mesh(new T.CircleGeometry(.05,24),c.flatMat(0x2f8fd8,{opacity:.9}));lake.rotation.x=-Math.PI/2;lake.scale.set(.8,1.1,1);lake.position.copy(W(175.88,-38.82)).setY(H+.0465);land.add(lake);
+    const lake=new T.Mesh(new T.CircleGeometry(.05,24),c.flatMat(0x8fb8ee,{opacity:.9}));lake.rotation.x=-Math.PI/2;lake.scale.set(.8,1.1,1);lake.position.copy(W(175.88,-38.82)).setY(H+.0465);land.add(lake);
     // Southern Alps: a row of peaks on the Pacific side of the Alpine Fault
     const R=rng(7),alp=B.slice(8,13);
     for(let i=0;i<16;i++){const t=i/15*(alp.length-1),k=Math.min(alp.length-2,Math.floor(t)),f=t-k;const lon=lerp(alp[k][0],alp[k+1][0],f),lat=lerp(alp[k][1],alp[k+1][1],f);
@@ -80,17 +80,17 @@ const L1={id:"plates",n:1,acc:"#F2603F",acc2:"#2F8FD8",title:"Two plates, one co
     const SEG={hik:{pts:B.slice(0,7),name:"Hikurangi Trough",teeth:-1},alp:{pts:B.slice(8,13),name:"Alpine Fault"},pus:{pts:B.slice(12),name:"Puysegur Trench",teeth:1},marl:{pts:B.slice(6,9)}};
     const lines=new T.Group();lines.position.y=H+.004;g.add(c.pop(lines,.45));
     Object.entries(SEG).forEach(([k,s])=>{const curve=new T.CatmullRomCurve3(s.pts.map(p=>W(p[0],p[1])));
-      s.mat=new T.MeshBasicMaterial({color:k==="marl"?0x9b8f80:0xff5a36});if(k!=="marl")s.mat.color.multiplyScalar(1.25);s.tube=new T.Mesh(new T.TubeGeometry(curve,80,k==="marl"?.009:.02,8),s.mat);lines.add(s.tube);
+      s.mat=new T.MeshBasicMaterial({color:k==="marl"?0xb9afa6:0xe8664a});if(k!=="marl")s.mat.color.multiplyScalar(1.25);s.tube=new T.Mesh(new T.TubeGeometry(curve,80,k==="marl"?.009:.02,8),s.mat);lines.add(s.tube);
       if(s.teeth){for(let i=1;i<14;i++){const u=i/14,p=curve.getPointAt(u),d=curve.getTangentAt(u);const n=new T.Vector3(-d.z,0,d.x);if((n.x<0?-1:1)!==s.teeth)n.negate();
         const tt=new T.Mesh(new T.ConeGeometry(.026,.06,3),s.mat);tt.position.copy(p).addScaledVector(n,.035);tt.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),n);tt.scale.z=.3;lines.add(tt)}}
       if(k!=="marl"){const hit=new T.Mesh(new T.TubeGeometry(curve,40,.07,6),new T.MeshBasicMaterial({visible:false}));hit.userData.onTap=()=>select(k);lines.add(hit);s.curve=curve}});
     // strike-slip half arrows on the Alpine Fault
-    const afc=SEG.alp.curve,am=c.sketch(0x2a2140);
+    const afc=SEG.alp.curve,am=c.sketch(0x222a55);
     [[.35,1],[.62,-1]].forEach(([u,side])=>{const p=afc.getPointAt(u),d=afc.getTangentAt(u);const n=new T.Vector3(-d.z,0,d.x);if(n.x<0)n.negate();
       const a=new T.Mesh(new T.ShapeGeometry(arrowShape(T,.22,.025)),am);a.rotation.x=-Math.PI/2;const dir=d.clone().multiplyScalar(side>0?1:-1);
       a.rotation.z=Math.atan2(-dir.z,dir.x);a.position.copy(p).addScaledVector(n,side*.075).setY(.006);lines.add(a)});
     // big arrow: Pacific relative to Australian
-    const arr=new T.Mesh(new T.ExtrudeGeometry(arrowShape(T,.5,.07),{depth:.02,bevelEnabled:false}),c.sketch(0x2a2140));arr.rotation.x=-Math.PI/2;
+    const arr=new T.Mesh(new T.ExtrudeGeometry(arrowShape(T,.5,.07),{depth:.02,bevelEnabled:false}),c.sketch(0x222a55));arr.rotation.x=-Math.PI/2;
     const arrDir=new T.Vector3(-1,0,.25).normalize();arr.rotation.z=Math.atan2(-arrDir.z,arrDir.x);const arrHome=W(179.2,-41.6).setY(H+.002);arr.position.copy(arrHome);
     const arrG=new T.Group();arrG.add(arr);g.add(c.pop(arrG,.6));
     c.tag(arr,"Pacific Plate<small>≈ 4 cm a year, west</small>",{off:[.25,0,0],cls:"big key"});
@@ -108,16 +108,16 @@ const L1={id:"plates",n:1,acc:"#F2603F",acc2:"#2F8FD8",title:"Two plates, one co
       const mantleA=[[-.8,.28],[-.15,.3],[-.55,.02],[-.8,.02]],mantleB=[[.8,.32],[.15,.32],[-.22,.18],[-.66,.02],[.8,.02]];
       const sea=[[.15,.48],[.8,.48],[.8,.42],[.15,.42]];
       const add=(p,col,o)=>{const m=c.mesh(extrudeXY(T,pts(p),.5),col,Object.assign({th:40,side:T.DoubleSide},o||{}));s.add(m);return m};
-      add(over,flip?0x6cc4f0:0xffae5e);const sl=add(slab,flip?0xffae5e:0x6cc4f0);add(mantleA,0xff8a5b);add(mantleB,0xff8a5b);add(sea,0x2f8fd8,{opacity:.55,edges:false,cast:false});
-      const base=c.mesh(new T.BoxGeometry(1.6,.02,.5),0xe0d4ff);base.position.y=.01;s.add(base);
-      const ar=new T.Mesh(new T.ShapeGeometry(arrowShape(T,.32,.03)),c.sketch(0x2a2140,{side:T.DoubleSide}));ar.position.set(.62*f,.38,.255);ar.rotation.z=flip?0:Math.PI;ar.rotation.z+=f*.35*(flip?-1:1);s.add(ar);
+      add(over,flip?0xbfddf5:0xf9d2b8);const sl=add(slab,flip?0xf9d2b8:0xbfddf5);add(mantleA,0xf6b384);add(mantleB,0xf6b384);add(sea,0x8fb8ee,{opacity:.55,edges:false,cast:false});
+      const base=c.mesh(new T.BoxGeometry(1.6,.02,.5),0xd9cbf2);base.position.y=.01;s.add(base);
+      const ar=new T.Mesh(new T.ShapeGeometry(arrowShape(T,.32,.03)),c.sketch(0x222a55,{side:T.DoubleSide}));ar.position.set(.62*f,.38,.255);ar.rotation.z=flip?0:Math.PI;ar.rotation.z+=f*.35*(flip?-1:1);s.add(ar);
       c.tag(sl,flip?"Australian Plate sinks":"Pacific Plate sinks",{off:[.05*f,.2,.25],cls:"hot"});
       c.tag(s,flip?"Pacific Plate":"Australian Plate (North Island)",{off:[-.5*f,.5,0]});
       return s}
     function slideSection(){const s=new T.Group();
-      const a=c.mesh(new T.BoxGeometry(.75,.36,.5),0xffae5e,{th:40});a.position.set(-.38,.18,0);const b=c.mesh(new T.BoxGeometry(.75,.36,.5),0x6cc4f0,{th:40});b.position.set(.38,.18,0);s.add(a,b);
+      const a=c.mesh(new T.BoxGeometry(.75,.36,.5),0xf9d2b8,{th:40});a.position.set(-.38,.18,0);const b=c.mesh(new T.BoxGeometry(.75,.36,.5),0xbfddf5,{th:40});b.position.set(.38,.18,0);s.add(a,b);
       for(let i=0;i<5;i++){const m=c.mesh(new T.ConeGeometry(.06,.1+(i%3)*.05,5),0xffffff,{flat:true,th:50});m.position.set(.12+i*.12,.36+.05+(i%3)*.025,(i%2-.5)*.2);s.add(m)}
-      const am2=c.sketch(0x2a2140,{side:T.DoubleSide});
+      const am2=c.sketch(0x222a55,{side:T.DoubleSide});
       [[-.38,1],[.38,-1]].forEach(([x,d])=>{const ar=new T.Mesh(new T.ShapeGeometry(arrowShape(T,.3,.04)),am2);ar.rotation.x=-Math.PI/2;ar.rotation.z=d>0?Math.PI/2:-Math.PI/2;ar.position.set(x,.362,d>0?.15:-.15);s.add(ar)});
       c.tag(a,"Australian Plate",{off:[0,.2,0]});c.tag(b,"Pacific Plate",{off:[0,.3,0]});return s}
     XS.hik=slabSection(false);XS.pus=slabSection(true);XS.alp=slideSection();
@@ -128,7 +128,7 @@ const L1={id:"plates",n:1,acc:"#F2603F",acc2:"#2F8FD8",title:"Two plates, one co
       alp:{type:"Transform, with squeeze",move:"Plates slide past",sinks:"Neither",makes:"Big shallow quakes, Southern Alps"},
       pus:{type:"Subduction (convergent)",move:"Plates push together",sinks:"Australian Plate",makes:"Earthquakes, tsunami risk"}};
     function select(k){if(sel===k)return;const prev=sel?XS[sel]:null;sel=k;
-      Object.entries(SEG).forEach(([kk,s])=>{if(s.mat&&kk!=="marl"){s.mat.color.set(kk===k?0xff3d14:0xff8a6a);if(kk===k)s.mat.color.multiplyScalar(2)}});
+      Object.entries(SEG).forEach(([kk,s])=>{if(s.mat&&kk!=="marl"){s.mat.color.set(kk===k?0xe8664a:0xf2a48e);if(kk===k)s.mat.color.multiplyScalar(2)}});
       Object.entries(segTags).forEach(([kk,tg])=>tg.el.classList.toggle("hot",kk===k));
       if(prev){const p=prev;animScale(p,0,()=>{p.visible=false})}
       const x=XS[k];x.visible=true;animScale(x,1);
@@ -138,7 +138,7 @@ const L1={id:"plates",n:1,acc:"#F2603F",acc2:"#2F8FD8",title:"Two plates, one co
       if(k==="alp")c.pass("Yes. The Alpine Fault is a transform boundary: the plates slide past each other, with enough squeeze to lift the Southern Alps.");}
     const anims=[];function animScale(o,to,done){anims.push({o,from:o.scale.y,to,t:0,done})}
     return{
-      controls:()=>`<div class="seg" role="group" aria-label="Stretch of the boundary">${["hik","alp","pus"].map(k=>`<button class="kb" data-seg="${k}" aria-pressed="${sel===k}">${SEG[k].name}</button>`).join("")}</div>
+      controls:()=>`<div class="seg" role="group" aria-label="Stretch of the boundary">${["hik","alp","pus"].map(k=>`<button class="btn" data-seg="${k}" aria-pressed="${sel===k}">${SEG[k].name}</button>`).join("")}</div>
         <p class="fine">You can also tap the rust line on the map. Press ▶ in the dock to watch the plates move.</p>`,
       bind:p=>p.querySelectorAll("[data-seg]").forEach(b=>b.onclick=()=>select(b.dataset.seg)),
       readouts:()=>{const i=sel&&INFO[sel];return [["Boundary",i?i.type:"Pick a stretch"],["Movement",i?i.move:"—"],["Which plate sinks",i?i.sinks:"—",i&&i.sinks!=="Neither"?"hot":""],["Causes",i?i.makes:"—"],["Relative speed","≈ 4 cm a year"],["Fingernails grow","≈ 4 cm a year"]]},
@@ -177,21 +177,21 @@ const L2={id:"magma",n:2,acc:"#FF7A2F",acc2:"#7B61FF",title:"Where the magma com
     const slab=[[1.2,.9],[1,.88],[.6,.74],[.2,.55],[-.2,.35],[-.6,.12],[-.78,0],[-.5,0],[-.14,.22],[.24,.42],[.62,.61],[1,.75],[1.2,.77]];
     const lower=[[1.2,.77],[1,.75],[.62,.61],[.24,.42],[-.14,.22],[-.5,0],[1.2,0]];
     const add=(p,col,o,d)=>{const m=c.mesh(extrudeXY(T,p,Z*2),col,Object.assign({th:40},o||{}));M.add(c.pop(m,d||0));return m};
-    const mW=add(wedge,0xff8a5b,{},0),mL=add(lower,0xf06a45,{},.05),sl=add(slab,0x5b8def,{},.12),cr=add(crust,0xffc37a,{},.2),se=add(sea,0x2f8fd8,{opacity:.5,edges:false,cast:false},.28);
+    const mW=add(wedge,0xf6b384,{},0),mL=add(lower,0xee8fa6,{},.05),sl=add(slab,0x8fb8ee,{},.12),cr=add(crust,0xf7e7a6,{},.2),se=add(sea,0x8fb8ee,{opacity:.5,edges:false,cast:false},.28);
     // painted on the cut face: chamber, conduit and the path of the melt
     const face=new T.Group();face.position.z=Z+.002;M.add(c.pop(face,.4));
-    const hot=c.flatMat(0xff6a1f,{glow:1.6}),hot2=c.flatMat(0xe0874f,{opacity:.85});
+    const hot=c.flatMat(0xf0784a,{glow:1.6}),hot2=c.flatMat(0xe0874f,{opacity:.85});
     const ch=new T.Mesh(new T.CircleGeometry(1,40),hot);ch.scale.set(.13,.045,1);ch.position.set(-.35,.86,0);face.add(ch);
     const cond=new T.Mesh(new T.PlaneGeometry(.022,.1),hot);cond.position.set(-.35,.94,0);face.add(cond);
-    const wz=new T.Mesh(new T.CircleGeometry(1,40),c.flatMat(0x7fd1ff,{opacity:.55}));wz.scale.set(.2,.08,1);wz.position.set(-.3,.42,0);face.add(wz);
+    const wz=new T.Mesh(new T.CircleGeometry(1,40),c.flatMat(0xbfddf5,{opacity:.55}));wz.scale.set(.2,.08,1);wz.position.set(-.3,.42,0);face.add(wz);
     for(let i=0;i<9;i++){const d=new T.Mesh(new T.CircleGeometry(.006,8),c.flatMat(0x8a6a55,{opacity:.6}));d.position.set(lerp(-.3,-.35,i/8),lerp(.47,.8,i/8),0);face.add(d)}
     // moving drops: water leaves the slab (blue), turns to melt (orange), rises to the chamber
     const drops=[],R=rng(3);
-    for(let i=0;i<16;i++){const m=new T.Mesh(new T.CircleGeometry(.014,10),c.flatMat(0x2f8fd8));m.position.z=.001;face.add(m);drops.push({m,ph:R(),x0:lerp(-.05,-.45,R())})}
+    for(let i=0;i<16;i++){const m=new T.Mesh(new T.CircleGeometry(.014,10),c.flatMat(0x8fb8ee));m.position.z=.001;face.add(m);drops.push({m,ph:R(),x0:lerp(-.05,-.45,R())})}
     // the volcano on top: one lathe that morphs with silica
-    const vMat=c.sketch(0xb08c6e,{side:T.DoubleSide,fresh:true});
+    const vMat=c.sketch(0xcbb7a4,{side:T.DoubleSide,fresh:true});
     let volc=null,vEdge=null,silica=60,erupting=0,eType="andesite";
-    const lake=new T.Mesh(new T.CircleGeometry(.2,32),c.flatMat(0x2f8fd8,{opacity:.9}));lake.rotation.x=-Math.PI/2;lake.position.set(-.35,1.013,0);M.add(lake);
+    const lake=new T.Mesh(new T.CircleGeometry(.2,32),c.flatMat(0x8fb8ee,{opacity:.9}));lake.rotation.x=-Math.PI/2;lake.position.set(-.35,1.013,0);M.add(lake);
     const vg=new T.Group();vg.position.set(-.35,1,0);M.add(c.pop(vg,.5));
     function profile(s){const shield=r=>.1*Math.max(0,1-Math.pow(r/.44,1.7)),strato=r=>{const R0=.38;if(r<.035)return .4;return .42*Math.pow(Math.max(0,1-r/R0),1.55)},
         cald=r=>r<.2?.012:r<.25?lerp(.012,.075,(r-.2)/.05):.075*Math.max(0,1-Math.pow((r-.25)/.19,1.3));
@@ -206,7 +206,7 @@ const L2={id:"magma",n:2,acc:"#FF7A2F",acc2:"#7B61FF",title:"Where the magma com
     const N=420,pg=new T.IcosahedronGeometry(.02,1),pm=new T.MeshBasicMaterial({color:0xffffff});
     const parts=new T.InstancedMesh(pg,pm,N);parts.instanceMatrix.setUsage(T.DynamicDrawUsage);parts.castShadow=true;parts.frustumCulled=false;M.add(parts);
     const P=[...Array(N)].map(()=>({life:0,p:new T.Vector3(),v:new T.Vector3(),s:1,col:new T.Color(),ash:false}));
-    const dummy=new T.Object3D(),cHot=new T.Color(0xff6a1f).multiplyScalar(3),cAsh=new T.Color(0x8d8699),cAsh2=new T.Color(0xc9c3d6);
+    const dummy=new T.Object3D(),cHot=new T.Color(0xf0784a).multiplyScalar(3),cAsh=new T.Color(0x8d8699),cAsh2=new T.Color(0xc9c3d6);
     P.forEach((q,i)=>{parts.setColorAt(i,cAsh);dummy.position.set(0,-9,0);dummy.scale.setScalar(.001);dummy.updateMatrix();parts.setMatrixAt(i,dummy.matrix)});
     let spawnAcc=0,next=0;
     function spawn(){const q=P[next];next=(next+1)%N;const top=1+(eType==="basalt"?.1:eType==="andesite"?.42:.03);q.p.set(-.35+(Math.random()-.5)*.03,top,(Math.random()-.5)*.03);
@@ -237,13 +237,13 @@ const L2={id:"magma",n:2,acc:"#FF7A2F",acc2:"#7B61FF",title:"Where the magma com
       if(eType==="rhyolite"&&!passed){passed=true;c.pass("That's Taupō: high-silica rhyolite traps gas, so it erupts explosively.")}}
     return{
       controls:()=>`<div class="kctl"><label for="si">Silica in the magma <output id="sio">${silica}% silica</output></label><input type="range" id="si" min="48" max="76" step="1" value="${silica}"><div class="scale"><span>Basalt</span><span>Andesite</span><span>Rhyolite</span></div></div>
-        <div class="krow"><button class="kb" data-pre="50">Rangitoto</button><button class="kb" data-pre="60">Ruapehu</button><button class="kb" data-pre="74">Taupō</button><button class="kb hot" id="erupt">Erupt</button></div>`,
+        <div class="krow"><button class="btn" data-pre="50">Rangitoto</button><button class="btn" data-pre="60">Ruapehu</button><button class="btn" data-pre="74">Taupō</button><button class="btn primary" id="erupt">Erupt</button></div>`,
       bind:p=>{p.querySelector("#si").oninput=e=>setS(+e.target.value);p.querySelectorAll("[data-pre]").forEach(b=>b.onclick=()=>{p.querySelector("#si").value=b.dataset.pre;setS(+b.dataset.pre)});p.querySelector("#erupt").onclick=erupt},
       readouts:()=>{const i=INFO[eType];return [["Magma",eType[0].toUpperCase()+eType.slice(1)],["Silica",silica+"%"],["Temperature",i.T],["Stickiness",i.st,eType==="rhyolite"?"hot":""],["Gas",i.gas],["Eruption",i.er,eType==="rhyolite"?"hot":""],["Volcano shape",i.sh],["NZ example",i.ex]]},
       play:on=>{run=on;if(on)erupt()},
       update:(dt)=>{t+=dt;drops.forEach(d=>{const ph=(d.ph+t*.12)%1;let x,y,col;
-          if(ph<.35){const k=ph/.35;x=lerp(d.x0,-.3,k*.4);const sy=d.x0>-.2?lerp(.35,.55,(d.x0+.2)/.2*0):.3;y=lerp(.3+(-.2-d.x0)*-.35,.45,k);col=0x2f8fd8}
-          else{const k=(ph-.35)/.65;x=lerp(-.3,-.35,k)+Math.sin(k*9+d.ph*6)*.012;y=lerp(.45,.84,k);col=k<.15?0x9a7a8a:0xff6a1f}
+          if(ph<.35){const k=ph/.35;x=lerp(d.x0,-.3,k*.4);const sy=d.x0>-.2?lerp(.35,.55,(d.x0+.2)/.2*0):.3;y=lerp(.3+(-.2-d.x0)*-.35,.45,k);col=0x8fb8ee}
+          else{const k=(ph-.35)/.65;x=lerp(-.3,-.35,k)+Math.sin(k*9+d.ph*6)*.012;y=lerp(.45,.84,k);col=k<.15?0x9a7a8a:0xf0784a}
           d.m.position.set(x,y,.001);d.m.material.color.setHex(col)});
         stepParts(dt)}}}
 };
@@ -272,27 +272,27 @@ const L3={id:"fault",n:3,acc:"#6A4CF0",acc2:"#12A386",title:"Stick, slip, shake"
   examA:"The Pacific and Australian plates move past each other at the Alpine Fault at about 3 cm a year, but friction locks the fault, so the rocks either side bend elastically and store strain energy. When the stress becomes greater than the friction, the fault slips suddenly and the rocks spring back to an unstrained position, releasing the stored energy as seismic waves: an earthquake. The last large rupture was in 1717, so about 300 years × 3 cm ≈ 8–9 m of slip has built up, similar to the slip in past ruptures. Sediment records show ruptures about every 300 years on average, so a rupture of about magnitude 8 is considered likely (about a 75% chance in the next 50 years). Because the exact strength of the fault is unknown, the timing cannot be predicted precisely.",
   build(g,c){const T=c.THREE;const M=new T.Group();g.add(M);
     const BW=1.15,BD=1.0,BH=.32;
-    const wB=c.mesh(new T.BoxGeometry(BW,BH,BD*2),0xffae5e,{th:40});wB.position.set(-BW/2,BH/2,0);
-    const eB=c.mesh(new T.BoxGeometry(BW,BH,BD*2),0x6cc4f0,{th:40});eB.position.set(BW/2,BH/2,0);
-    const gW=c.mesh(new T.BoxGeometry(BW,.03,BD*2),0x7ed36b,{th:40});gW.position.set(-BW/2,BH+.015,0);
-    const gE=c.mesh(new T.BoxGeometry(BW,.03,BD*2),0x7ed36b,{th:40});gE.position.set(BW/2,BH+.015,0);
+    const wB=c.mesh(new T.BoxGeometry(BW,BH,BD*2),0xf9d2b8,{th:40});wB.position.set(-BW/2,BH/2,0);
+    const eB=c.mesh(new T.BoxGeometry(BW,BH,BD*2),0xbfddf5,{th:40});eB.position.set(BW/2,BH/2,0);
+    const gW=c.mesh(new T.BoxGeometry(BW,.03,BD*2),0xafd873,{th:40});gW.position.set(-BW/2,BH+.015,0);
+    const gE=c.mesh(new T.BoxGeometry(BW,.03,BD*2),0xafd873,{th:40});gE.position.set(BW/2,BH+.015,0);
     M.add(c.pop(wB,0),c.pop(eB,.06),c.pop(gW,.15),c.pop(gE,.18));
     const TOPY=BH+.03;
     const alps=new T.Group();M.add(c.pop(alps,.35));const R=rng(11);
     for(let i=0;i<13;i++){const h=.12+R()*.16,r=.08+R()*.06;const m=c.mesh(new T.ConeGeometry(r,h,5),0xffffff,{flat:true,th:50});m.position.set(.22+R()*.82,TOPY+h/2,-.85+R()*.7);m.rotation.y=R()*3;m.userData.h=h;alps.add(m)}
     for(let i=0;i<8;i++){const h=.08+R()*.1;const m=c.mesh(new T.ConeGeometry(.07,h,5),0xffffff,{flat:true,th:50});m.position.set(.2+R()*.85,TOPY+h/2,.35+R()*.5);m.rotation.y=R()*3;alps.add(m)}
     // a few trees on the west coast side
-    for(let i=0;i<10;i++){const tr=c.mesh(new T.ConeGeometry(.03,.09,6),0x2fa65a,{th:50});tr.position.set(-.2-R()*.85,TOPY+.045,(R()-.5)*1.8);if(Math.abs(tr.position.z)<.12)tr.position.z+=.25;M.add(c.pop(tr,.5+i*.02))}
+    for(let i=0;i<10;i++){const tr=c.mesh(new T.ConeGeometry(.03,.09,6),0x8fc77a,{th:50});tr.position.set(-.2-R()*.85,TOPY+.045,(R()-.5)*1.8);if(Math.abs(tr.position.z)<.12)tr.position.z+=.25;M.add(c.pop(tr,.5+i*.02))}
     // the fence
     const fence=new T.Group();M.add(c.pop(fence,.6));const NP=22,xs=[...Array(NP)].map((_,i)=>-1.05+i*.1);
-    const postG=new T.CylinderGeometry(.012,.012,.1,6),posts=xs.map(x=>{const p=c.mesh(postG,0x9a5b34,{th:80});p.position.set(x,TOPY+.05,0);fence.add(p);return p});
-    const railM=c.sketch(0x9a5b34),rails=[];for(let i=0;i<NP-1;i++){for(const h of [.04,.085]){const r=new T.Mesh(new T.BoxGeometry(1,.009,.009),railM);r.castShadow=true;r.userData={i,h};fence.add(r);rails.push(r)}}
+    const postG=new T.CylinderGeometry(.012,.012,.1,6),posts=xs.map(x=>{const p=c.mesh(postG,0xc9a27e,{th:80});p.position.set(x,TOPY+.05,0);fence.add(p);return p});
+    const railM=c.sketch(0xc9a27e),rails=[];for(let i=0;i<NP-1;i++){for(const h of [.04,.085]){const r=new T.Mesh(new T.BoxGeometry(1,.009,.009),railM);r.castShadow=true;r.userData={i,h};fence.add(r);rails.push(r)}}
     // focus and epicentre
-    const epi=new T.Mesh(new T.RingGeometry(.03,.045,24),c.flatMat(0xff5a36,{glow:2.5}));epi.rotation.x=-Math.PI/2;epi.position.set(0,TOPY+.003,-.55);M.add(epi);
-    const star=new T.Mesh(new T.CircleGeometry(.035,5),new T.MeshBasicMaterial({color:new T.Color(0xff5a36).multiplyScalar(3),depthTest:false,transparent:true}));star.renderOrder=5;star.position.set(0,.1,-.55);M.add(star);
-    const dl=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(0,.1,-.55),new T.Vector3(0,TOPY,-.55)]),new T.LineDashedMaterial({color:0xff5a36,dashSize:.02,gapSize:.015,depthTest:false,transparent:true}));dl.computeLineDistances();dl.renderOrder=5;M.add(dl);
+    const epi=new T.Mesh(new T.RingGeometry(.03,.045,24),c.flatMat(0xe8664a,{glow:2.5}));epi.rotation.x=-Math.PI/2;epi.position.set(0,TOPY+.003,-.55);M.add(epi);
+    const star=new T.Mesh(new T.CircleGeometry(.035,5),new T.MeshBasicMaterial({color:new T.Color(0xe8664a).multiplyScalar(3),depthTest:false,transparent:true}));star.renderOrder=5;star.position.set(0,.1,-.55);M.add(star);
+    const dl=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(0,.1,-.55),new T.Vector3(0,TOPY,-.55)]),new T.LineDashedMaterial({color:0xe8664a,dashSize:.02,gapSize:.015,depthTest:false,transparent:true}));dl.computeLineDistances();dl.renderOrder=5;M.add(dl);
     // seismic rings
-    const rings=[...Array(3)].map(()=>{const r=new T.Mesh(new T.RingGeometry(.96,1,64),c.flatMat(0xff5a36,{opacity:0,glow:2.6}));r.rotation.x=-Math.PI/2;r.position.set(0,TOPY+.004,-.55);r.scale.setScalar(.01);M.add(r);return r});
+    const rings=[...Array(3)].map(()=>{const r=new T.Mesh(new T.RingGeometry(.96,1,64),c.flatMat(0xe8664a,{opacity:0,glow:2.6}));r.rotation.x=-Math.PI/2;r.position.set(0,TOPY+.004,-.55);r.scale.setScalar(.01);M.add(r);return r});
     c.tag(gW,"Australian Plate<small>West Coast</small>",{off:[-.1,.02,.85]});c.tag(gE,"Pacific Plate",{off:[.25,.02,.85]});
     c.tag(alps,"Southern Alps",{off:[.62,.5,-.5]});c.tag(epi,"Epicentre",{off:[0,0,0],cls:"hot key"});c.tag(star,"Focus (underground)",{off:[0,0,0],cls:"hot flat"});
     const fT=c.tag(fence,"Fence",{off:[-.85,TOPY+.1,0],cls:"key"});
@@ -309,7 +309,7 @@ const L3={id:"fault",n:3,acc:"#6A4CF0",acc2:"#12A386",title:"Stick, slip, shake"
     const a=new T.Vector3(),b=new T.Vector3();
     return{
       controls:()=>`<div class="kctl"><label for="yr">Years of loading since the last rupture <output id="yro">${Math.round(years)} years</output></label><input type="range" id="yr" min="0" max="400" step="1" value="${Math.round(years)}"><div class="scale"><span>0</span><span>200</span><span>400</span></div></div>
-        <div class="krow"><button class="kb" id="now">Today (since 1717)</button><button class="kb primary" id="load">Load 25 more years</button></div>
+        <div class="krow"><button class="btn" id="now">Today (since 1717)</button><button class="btn primary" id="load">Load 25 more years</button></div>
         <p class="fine">Sideways movement is exaggerated about 20× so you can see the bending.</p>`,
       bind:p=>{p.querySelector("#yr").oninput=e=>setYears(+e.target.value);p.querySelector("#now").onclick=()=>{broken=false;perm=0;setYears(2026-1717);p.querySelector("#yr").value=years};
         p.querySelector("#load").onclick=()=>{setYears(Math.min(400,years+25));const s=p.querySelector("#yr");if(s&&!broken)s.value=Math.round(years)}},
@@ -346,23 +346,23 @@ const L4={id:"ground",n:4,acc:"#12A386",acc2:"#F2603F",title:"Why some quakes hu
   examA:"Magnitude measures energy released, and the 7.1 released roughly 20 times more energy than the 6.2. But the February 2011 earthquake was shallow (about 5 km deep) and its epicentre was only about 10 km from the city centre, whereas the September 2010 epicentre was about 40 km away near Darfield. Seismic waves lose energy with distance, so the city was shaken much harder in 2011. Much of eastern Christchurch is built on loose, water-saturated sand and silt; strong shaking raised the pore-water pressure until the grains lost contact, so the ground liquefied: buildings tilted and sank, and sand boils and flooding followed. Buildings already weakened in 2010 failed in 2011, and the 2011 earthquake struck at lunchtime on a weekday when the central city was busy, while the 2010 quake struck at 4.35 am.",
   build(g,c){const T=c.THREE;const M=new T.Group();M.position.set(.05,0,.15);g.add(M);const shakeG=new T.Group();M.add(shakeG);
     const W=2.2,Dp=1.5;
-    const bed=c.mesh(new T.BoxGeometry(W,.18,Dp),0x9c8574,{th:40});bed.position.y=.09;
-    const grav=c.mesh(new T.BoxGeometry(W,.12,Dp),0xd9a877,{th:40});grav.position.y=.24;
-    const topMat=c.sketch(0xf5c77e,{fresh:true});const top=c.mesh(new T.BoxGeometry(W,.16,Dp),0,{mat:topMat,th:40});top.position.y=.38;
+    const bed=c.mesh(new T.BoxGeometry(W,.18,Dp),0xb9afa6,{th:40});bed.position.y=.09;
+    const grav=c.mesh(new T.BoxGeometry(W,.12,Dp),0xe8cda8,{th:40});grav.position.y=.24;
+    const topMat=c.sketch(0xf7e7a6,{fresh:true});const top=c.mesh(new T.BoxGeometry(W,.16,Dp),0,{mat:topMat,th:40});top.position.y=.38;
     shakeG.add(c.pop(bed,0),c.pop(grav,.06),c.pop(top,.12));
-    const water=new T.Mesh(new T.BoxGeometry(W,.1,.004),c.flatMat(0x2f8fd8,{opacity:.28}));water.position.set(0,.35,Dp/2+.003);shakeG.add(water);
-    const wline=new T.Mesh(new T.PlaneGeometry(W,.006),c.flatMat(0x1f78c4));wline.position.set(0,.4,Dp/2+.004);shakeG.add(wline);
+    const water=new T.Mesh(new T.BoxGeometry(W,.1,.004),c.flatMat(0x8fb8ee,{opacity:.28}));water.position.set(0,.35,Dp/2+.003);shakeG.add(water);
+    const wline=new T.Mesh(new T.PlaneGeometry(W,.006),c.flatMat(0x6e9fe0));wline.position.set(0,.4,Dp/2+.004);shakeG.add(wline);
     const GY=.46;
     // street and houses
-    const road=new T.Mesh(new T.PlaneGeometry(W,.22),c.flatMat(0x6b5e86,{opacity:.9}));road.rotation.x=-Math.PI/2;road.position.set(0,GY+.002,.05);shakeG.add(road);
+    const road=new T.Mesh(new T.PlaneGeometry(W,.22),c.flatMat(0xb8bfcb,{opacity:.9}));road.rotation.x=-Math.PI/2;road.position.set(0,GY+.002,.05);shakeG.add(road);
     const houses=[],R=rng(21);
     [[-.85,-.35],[-.4,-.38],[.05,-.33],[.5,-.36],[.9,-.34],[-.62,.45],[-.15,.47],[.32,.44],[.78,.46]].forEach(([x,z],i)=>{const h=new T.Group();
-      const body=c.mesh(new T.BoxGeometry(.2,.12,.16),[0xff8f7a,0x8fd3ff,0xc7b6ff,0x7fe0b8,0xffc37a][i%5],{th:40});body.position.y=.06;h.add(body);
-      const roof=c.mesh(extrudeXY(T,[[-.115,0],[.115,0],[0,.075]],.18),0x5b4a8a,{th:40});roof.position.y=.12;h.add(roof);
-      const door=new T.Mesh(new T.PlaneGeometry(.035,.06),c.flatMat(0x9a5b34));door.position.set(0,.03,z<0?.081:-.081);if(z>0)door.rotation.y=Math.PI;h.add(door);
+      const body=c.mesh(new T.BoxGeometry(.2,.12,.16),[0xf3b8c8,0xbfddf5,0xd9cbf2,0xbfe8d6,0xf7e7a6][i%5],{th:40});body.position.y=.06;h.add(body);
+      const roof=c.mesh(extrudeXY(T,[[-.115,0],[.115,0],[0,.075]],.18),0x8f9baa,{th:40});roof.position.y=.12;h.add(roof);
+      const door=new T.Mesh(new T.PlaneGeometry(.035,.06),c.flatMat(0xc9a27e));door.position.set(0,.03,z<0?.081:-.081);if(z>0)door.rotation.y=Math.PI;h.add(door);
       h.position.set(x,GY,z);if(z>0)h.rotation.y=Math.PI;shakeG.add(c.pop(h,.3+i*.04));houses.push({h,tilt:[(R()-.5)*.35,(R()-.5)*.35],sink:.03+R()*.04})});
-    const boils=[];for(let i=0;i<11;i++){const b=new T.Group();const cn=c.mesh(new T.ConeGeometry(.045,.025,10),0xe8b66a,{th:60});cn.position.y=.012;b.add(cn);
-      const pd=new T.Mesh(new T.CircleGeometry(.06,16),c.flatMat(0x2f8fd8,{opacity:.6}));pd.rotation.x=-Math.PI/2;pd.position.y=.002;b.add(pd);
+    const boils=[];for(let i=0;i<11;i++){const b=new T.Group();const cn=c.mesh(new T.ConeGeometry(.045,.025,10),0xf3d56e,{th:60});cn.position.y=.012;b.add(cn);
+      const pd=new T.Mesh(new T.CircleGeometry(.06,16),c.flatMat(0x8fb8ee,{opacity:.6}));pd.rotation.x=-Math.PI/2;pd.position.y=.002;b.add(pd);
       b.position.set(-.95+R()*1.9,GY,(R()-.5)*1.25);if(Math.abs(b.position.z+.35)<.12||Math.abs(b.position.z-.45)<.12)b.position.z=.05+(R()-.5)*.15;b.scale.setScalar(.001);shakeG.add(b);boils.push(b)}
     c.tag(top,"",{off:[-.9,.02,Dp/2]});const topTag=c.tags?null:null;
     const gTag=c.tag(top,"Wet sand and silt",{off:[.85,.0,Dp/2]}),wTag=c.tag(wline,"Water table",{off:[-.75,0,0],cls:"sea key"});c.tag(bed,"Bedrock",{off:[.85,0,Dp/2]});
@@ -370,7 +370,7 @@ const L4={id:"ground",n:4,acc:"#12A386",acc2:"#F2603F",title:"Why some quakes hu
     const cv=document.createElement("canvas");cv.width=640;cv.height=440;const tex=new T.CanvasTexture(cv);tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=8;
     const card=new T.Group();card.position.set(-2.25,0,1.05);card.rotation.y=.22;
     const face=new T.Mesh(new T.PlaneGeometry(1.3,.9),new T.MeshLambertMaterial({map:tex,side:T.DoubleSide}));face.position.y=.5;face.rotation.x=-.18;face.castShadow=true;card.add(face);
-    const foot=c.mesh(new T.BoxGeometry(1.3,.02,.18),0xe0d4ff);foot.position.set(0,.01,.06);card.add(foot);
+    const foot=c.mesh(new T.BoxGeometry(1.3,.02,.18),0xd9cbf2);foot.position.set(0,.01,.06);card.add(foot);
     g.add(c.pop(card,.5));
     let Mg=6.2,dep=5,dist=10,ground="sand",shk=0,liq=0,lastS=0,did=false,run=false,peak=0;
     const R0=()=>Math.hypot(dist,dep);
@@ -392,7 +392,7 @@ const L4={id:"ground",n:4,acc:"#12A386",acc2:"#F2603F",title:"Why some quakes hu
       g2.fillStyle="#336f8f";g2.fillText(fmt(R0())+" km to the street",Math.max(80,(70+ex)/2-60),(sy+fz)/2+34);
       g2.fillStyle="#7a7166";g2.font='italic 20px "Newsreader",serif';g2.fillText("M "+fmt(Mg,1)+" · "+dist+" km away · depth not to scale",30,418);
       tex.needsUpdate=true}
-    function setGround(gr){ground=gr;topMat.color.set(gr==="sand"?0xf5c77e:0xb8ada2);water.visible=wline.visible=gr==="sand";gTag.el.innerHTML=gr==="sand"?"Wet sand and silt":"Rock";wTag.show=gr==="sand";resetDamage();c.refresh();
+    function setGround(gr){ground=gr;topMat.color.set(gr==="sand"?0xf7e7a6:0xcbd3dd);water.visible=wline.visible=gr==="sand";gTag.el.innerHTML=gr==="sand"?"Wet sand and silt":"Rock";wTag.show=gr==="sand";resetDamage();c.refresh();
       document.querySelectorAll("[data-gr]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.gr===gr))}
     function resetDamage(){liq=0;houses.forEach(o=>{o.h.position.y=GY;o.h.rotation.x=o.h.rotation.z=0});boils.forEach(b=>b.scale.setScalar(.001));did=false}
     function quake(){resetDamage();lastS=S();peak=lastS;shk=1.6+Math.max(0,Mg-5)*.8;c.sfx.rumble();c.shake(.01+lastS*.006,shk);did=ground==="sand"&&lastS>=4.5;
@@ -403,8 +403,8 @@ const L4={id:"ground",n:4,acc:"#12A386",acc2:"#F2603F",title:"Why some quakes hu
       controls:()=>`<div class="kctl"><label for="mg">Magnitude <output id="mgo">M ${fmt(Mg,1)}</output></label><input type="range" id="mg" min="4" max="8.5" step=".1" value="${Mg}"></div>
         <div class="kctl"><label for="dp">Depth of the focus <output id="dpo">${dep} km</output></label><input type="range" id="dp" min="2" max="40" step="1" value="${dep}"></div>
         <div class="kctl"><label for="ds">Distance from the street to the epicentre <output id="dso">${dist} km</output></label><input type="range" id="ds" min="0" max="100" step="1" value="${dist}"></div>
-        <div class="seg" role="group" aria-label="Ground under the street"><button class="kb" data-gr="rock" aria-pressed="${ground==="rock"}">Rock</button><button class="kb" data-gr="sand" aria-pressed="${ground==="sand"}">Wet sand and silt</button></div>
-        <div class="krow"><button class="kb" data-pre="2010">Sept 2010 (Darfield)</button><button class="kb" data-pre="2011">Feb 2011 (Christchurch)</button><button class="kb hot" id="quake">Shake it</button></div>
+        <div class="seg" role="group" aria-label="Ground under the street"><button class="btn" data-gr="rock" aria-pressed="${ground==="rock"}">Rock</button><button class="btn" data-gr="sand" aria-pressed="${ground==="sand"}">Wet sand and silt</button></div>
+        <div class="krow"><button class="btn" data-pre="2010">Sept 2010 (Darfield)</button><button class="btn" data-pre="2011">Feb 2011 (Christchurch)</button><button class="btn primary" id="quake">Shake it</button></div>
         <p class="fine">Shaking is a simple model: it rises with magnitude, falls with distance to the focus, and is higher on soft, wet ground. It shows the pattern, not a forecast.</p>`,
       bind:p=>{const on=(s,f)=>p.querySelector(s).oninput=e=>{f(+e.target.value);setFrom(p);drawCard();c.refresh()};
         on("#mg",v=>Mg=v);on("#dp",v=>dep=v);on("#ds",v=>dist=v);
@@ -445,24 +445,24 @@ const L5={id:"tsunami",n:5,acc:"#2F8FD8",acc2:"#FF7A2F",title:"Long or strong, g
     const fy=s=>SL-depth(s)/3000*.6;
     const prof=[];for(let s=0;s<=LEN;s+=1)prof.push([xOf(s),fy(s)]);
     const groundPts=[[1.35,0],[1.35,fy(0)],...prof,[-.97,.775],[-1.12,.785],[-1.2,.9],[-1.3,1.02],[-1.36,1.05],[-1.36,0]];
-    const gnd=c.mesh(extrudeXY(T,groundPts,Z*2),0xffae5e,{th:40});M.add(c.pop(gnd,0));
+    const gnd=c.mesh(extrudeXY(T,groundPts,Z*2),0xf9d2b8,{th:40});M.add(c.pop(gnd,0));
     const slabTop=[];for(let s=0;s<=70;s+=5)slabTop.push([xOf(s),fy(s)-.025-s*.0022]);const slabP=[...slabTop,...slabTop.slice().reverse().map(p=>[p[0],p[1]-.075])];
-    const slab=new T.Mesh(new T.ShapeGeometry(shapeFrom(T,slabP)),c.flatMat(0x5b8def,{opacity:.8}));slab.position.z=Z+.002;M.add(c.pop(slab,.1));
+    const slab=new T.Mesh(new T.ShapeGeometry(shapeFrom(T,slabP)),c.flatMat(0x8fb8ee,{opacity:.8}));slab.position.z=Z+.002;M.add(c.pop(slab,.1));
     // uplift block near the trench
-    const up=c.mesh(new T.BoxGeometry(.6,.03,Z*2),0x6cc4f0,{th:40});up.position.set(xOf(22),fy(22)-.012,0);M.add(c.pop(up,.15));
+    const up=c.mesh(new T.BoxGeometry(.6,.03,Z*2),0xbfddf5,{th:40});up.position.set(xOf(22),fy(22)-.012,0);M.add(c.pop(up,.15));
     // town and hill
     const town=new T.Group();M.add(c.pop(town,.3));const houses=[];
     [-1.0,-1.06,-1.12].forEach((x,i)=>[-.2,.12].forEach((z,j)=>{const h=new T.Group();const b=c.mesh(new T.BoxGeometry(.045,.035,.05),0xffffff,{th:40});b.position.y=.0175;h.add(b);
-      const r=c.mesh(extrudeXY(T,[[-.028,0],[.028,0],[0,.022]],.054),0x5b4a8a,{th:40});r.position.y=.035;r.rotation.y=Math.PI/2;h.add(r);h.position.set(x,.78,z);town.add(h);houses.push(h)}));
-    const safe=new T.Mesh(new T.RingGeometry(.05,.065,24),c.flatMat(0x12a386,{glow:2.2}));safe.rotation.x=-Math.PI/2;safe.position.set(-1.33,1.052,0);M.add(safe);
+      const r=c.mesh(extrudeXY(T,[[-.028,0],[.028,0],[0,.022]],.054),0x8f9baa,{th:40});r.position.y=.035;r.rotation.y=Math.PI/2;h.add(r);h.position.set(x,.78,z);town.add(h);houses.push(h)}));
+    const safe=new T.Mesh(new T.RingGeometry(.05,.065,24),c.flatMat(0x5fbf9a,{glow:2.2}));safe.rotation.x=-Math.PI/2;safe.position.set(-1.33,1.052,0);M.add(safe);
     // a person
-    const person=new T.Group();const bd=c.mesh(new T.CylinderGeometry(.009,.012,.04,8),0x1f78c4,{th:80});bd.position.y=.02;const hd=c.mesh(new T.SphereGeometry(.01,10,8),0xf1d9c4,{th:80});hd.position.y=.05;person.add(bd,hd);
+    const person=new T.Group();const bd=c.mesh(new T.CylinderGeometry(.009,.012,.04,8),0x6e9fe0,{th:80});bd.position.y=.02;const hd=c.mesh(new T.SphereGeometry(.01,10,8),0xf1d9c4,{th:80});hd.position.y=.05;person.add(bd,hd);
     const beachX=-.955;person.position.set(beachX,.77,.3);M.add(c.pop(person,.5));
     // water: a top surface and a front face, rebuilt every frame
-    const NX=150,surf=new T.PlaneGeometry(1,1,NX,1);const sm=c.flatMat(0x1f8be0,{opacity:.72,depthWrite:false});const top=new T.Mesh(surf,sm);top.renderOrder=2;M.add(top);
-    let front=new T.Mesh(new T.BufferGeometry(),c.flatMat(0x1667c0,{opacity:.82}));front.position.z=Z+.003;front.renderOrder=2;M.add(front);
-    const flood=new T.Mesh(new T.BufferGeometry(),c.flatMat(0x1667c0,{opacity:.8}));flood.position.z=Z+.004;M.add(flood);
-    const floodTop=new T.Mesh(new T.PlaneGeometry(1,Z*2),c.flatMat(0x2f8fd8,{opacity:.5}));floodTop.rotation.x=-Math.PI/2;floodTop.visible=false;M.add(floodTop);
+    const NX=150,surf=new T.PlaneGeometry(1,1,NX,1);const sm=c.flatMat(0x8fb8ee,{opacity:.72,depthWrite:false});const top=new T.Mesh(surf,sm);top.renderOrder=2;M.add(top);
+    let front=new T.Mesh(new T.BufferGeometry(),c.flatMat(0x6e9fe0,{opacity:.82}));front.position.z=Z+.003;front.renderOrder=2;M.add(front);
+    const flood=new T.Mesh(new T.BufferGeometry(),c.flatMat(0x6e9fe0,{opacity:.8}));flood.position.z=Z+.004;M.add(flood);
+    const floodTop=new T.Mesh(new T.PlaneGeometry(1,Z*2),c.flatMat(0x8fb8ee,{opacity:.5}));floodTop.rotation.x=-Math.PI/2;floodTop.visible=false;M.add(floodTop);
     c.tag(gnd,"Hikurangi Trough",{off:[1.2,fy(0),Z],cls:"hot key"});c.tag(slab,"Pacific Plate (sinking)",{off:[xOf(40),fy(40)-.2,0]});c.tag(town,"Town",{off:[-1.06,.85,-.2],cls:"key"});c.tag(safe,"High ground",{off:[0,.02,0],cls:"flat key"});
     const ft=c.tag(top,"",{off:[0,0,0],cls:"sea key"});ft.show=false;
     // the wave: real travel time from v = √(g d) on this profile
@@ -495,7 +495,7 @@ const L5={id:"tsunami",n:5,acc:"#2F8FD8",acc2:"#FF7A2F",title:"Long or strong, g
       el.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>choose(b.dataset.ch))}
     const realMin=()=>phase==="idle"?0:phase==="shake"?pt/SHAKE*1.5:1.5+(phase==="travel"?Math.min(TT,pt/TRAVEL*TT):TT)/60;
     return{
-      controls:()=>`<div class="krow"><button class="kb hot" id="rup">Rupture the Hikurangi</button><button class="kb" id="rst">Reset</button></div><div id="tsChoice"></div>
+      controls:()=>`<div class="krow"><button class="btn primary" id="rup">Rupture the Hikurangi</button><button class="btn" id="rst">Reset</button></div><div id="tsChoice"></div>
         <p class="fine">Wave heights are exaggerated and the coast is a model: 120 km from the trough, with a made-up seafloor profile. Speeds use v = √(g × d).</p>`,
       bind:p=>{p.querySelector("#rup").onclick=start;p.querySelector("#rst").onclick=()=>{phase="idle";pt=0;fl=0;lift=0;choice=null;person.position.set(beachX,.77,.3);up.position.y=fy(22)-.012;houses.forEach(h=>h.rotation.set(0,0,0));renderChoice();c.refresh()};renderChoice()},
       readouts:()=>{const s=phase==="idle"?S0:sf,d=depth(s),v=Math.sqrt(G*Math.max(1,d))*3.6;

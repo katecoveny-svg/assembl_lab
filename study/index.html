@@ -50,14 +50,14 @@
 .subjects{display:grid;gap:26px}
 .subj{display:grid;gap:12px}
 .subj h3{margin:0;display:flex;align-items:center;gap:10px;font:600 20px var(--as-display);color:var(--as-ink)}
-.subj h3 i{width:12px;height:12px;border-radius:4px;background:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 18%,transparent)}
+.subj h3 i{width:14px;height:14px;border-radius:5px;background:var(--acc-tint);box-shadow:inset 0 0 0 1.5px var(--acc)}
 .subj h3 small{font:500 13px var(--as-font);color:var(--as-muted)}
 .apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
 .app{display:grid;grid-template-rows:auto 1fr auto;border-radius:24px;background:var(--as-card);border:1px solid var(--as-line);overflow:hidden;text-decoration:none;color:inherit;box-shadow:var(--as-shadow);transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease}
-.app:hover{transform:translateY(-3px);box-shadow:var(--as-lift);border-color:color-mix(in srgb,var(--acc) 40%,#fff)}
-.app-art{position:relative;display:block;background:color-mix(in srgb,var(--acc) 11%,#fff);padding:10px 12px 18px}
+.app:hover{transform:translateY(-3px);box-shadow:var(--as-lift);border-color:var(--acc-line)}
+.app-art{position:relative;display:block;background:color-mix(in srgb,var(--acc-tint) 55%,#fff);padding:10px 12px 18px}
 .app-art svg{display:block;width:100%;height:auto}
-.app-ic{position:absolute;left:14px;bottom:-18px;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--acc);color:#fff;box-shadow:0 8px 16px -8px var(--acc),0 0 0 3px var(--as-card)}
+.app-ic{position:absolute;left:14px;bottom:-18px;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--acc-tint);color:var(--as-ink);box-shadow:inset 0 0 0 1.5px rgba(34,42,85,.16),0 8px 16px -8px var(--acc),0 0 0 3px var(--as-card)}
 .app-ic svg{width:25px;height:25px}
 .app-ex{position:absolute;right:10px;top:10px;font:700 11px var(--as-font);letter-spacing:.02em;background:var(--as-card);color:var(--as-ink);border-radius:999px;padding:3px 9px;box-shadow:0 2px 6px rgba(42,33,64,.1)}
 .app-body{display:grid;gap:4px;align-content:start;padding:28px 16px 6px}
@@ -67,7 +67,7 @@
 .app-foot .yr{white-space:nowrap;flex:none}
 .app-foot .gearnote{font-weight:600;color:var(--as-muted);background:var(--as-soft);border-radius:999px;padding:3px 9px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app-foot .gearnote.got{color:var(--as-mintink);background:var(--as-mintsoft)}
-.app-foot .go{flex:none;margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;padding:5px 13px;font-weight:700}
+.app-foot .go{flex:none;margin-left:auto;background:var(--as-ink);color:#fff;border-radius:999px;padding:5px 13px;font-weight:700}
 @media (prefers-reduced-motion:reduce){.app{transition:none}.app:hover{transform:none}}
 @media (max-width:620px){
   .apps{grid-template-columns:1fr 1fr;gap:10px}
@@ -302,13 +302,13 @@ const gearFor=id=>A.items.filter(it=>it.m&&it.m.includes(id));
 function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(it.id));
   const ex=m.tags.filter(t=>t.startsWith("NCEA")).map(t=>t.replace(/^NCEA /,"").replace(/^(L\d) .*?(\d{5})$/,"$1 · $2")),yrs=m.tags.filter(t=>/^Year/.test(t));
   const yr=yrs.length>1?`Years ${yrs[0].replace("Year ","")}–${yrs[yrs.length-1].replace("Year ","")}`:(yrs[0]||"");
-  return `<a class="app" href="${m.href}" style="--acc:${K.accentFor(id)}">
+  return `<a class="app" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
   <span class="app-art"><svg viewBox="0 0 240 120" aria-hidden="true">${ICON[id]||ICON[m.icon]||""}</svg><span class="app-ic" aria-hidden="true">${K.glyph(id)}</span>${ex.length?`<span class="app-ex">NCEA ${esc(ex.join(" + ").replace(/ \+ L1 · /g," + "))}</span>`:""}</span>
   <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
   <span class="app-foot"><span class="yr">${esc(yr)}</span>${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
 const byGroup={};Object.entries(D.machines).forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});
 $("machines").innerHTML=GROUPS.filter(([k])=>byGroup[k]).map(([k,label])=>{const list=byGroup[k].sort((a,b)=>(b[1].tags.some(t=>t.startsWith("NCEA"))?1:0)-(a[1].tags.some(t=>t.startsWith("NCEA"))?1:0));
-  return `<div class="subj" style="--acc:${K.accentFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
+  return `<div class="subj" style="--acc:${K.accentFor(list[0][0])};--acc-tint:${K.tintFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
 
 
 // ---- Allen: hero, den and customiser

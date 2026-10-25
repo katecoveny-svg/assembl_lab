@@ -3,60 +3,64 @@
 <title>Shaky Isles · a 3D book of extreme Earth events</title>
 <meta name="description" content="A 3D pop-up book for NCEA Level 2 Earth and Space Science 91191: plates, magma, the Alpine Fault, liquefaction and tsunami in Aotearoa. Predict, test, prove.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Caveat:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@600;700&display=swap">
 <link rel="stylesheet" href="../../kit.css">
 <link rel="stylesheet" href="book.css">
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 </head>
 <body>
-<div class="shell" id="shell">
-  <header class="bar">
-    <a class="back" href="../../" aria-label="Back to the study machines"><span aria-hidden="true">‹</span> Study</a>
-    <div class="bk-title"><b>Shaky Isles</b><span>a pop-up book of extreme Earth events in Aotearoa</span></div>
-    <button class="stars" id="starBox" aria-label="Stars" title="Your stars: one for each prediction, one for each challenge"><i aria-hidden="true">★</i><b id="starCount">0</b><span>/10</span></button>
+<div class="wrap">
+  <header class="apphead">
+    <a class="back" href="../../index.html" aria-label="All study machines" title="All study machines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <span class="appicon" id="appicon" aria-hidden="true"></span>
+    <div class="apptitle"><div class="eyebrow">Earth and Space Science · Extreme Earth events</div><h1>Shaky Isles</h1></div>
+    <div class="mhr">
+      <div class="exam">NCEA L2 ESS 91191 · exam <b>Tue 1 Dec, 9.30am</b><span class="dd" id="examDays" hidden></span></div>
+      <button class="stars" id="starBox" type="button" aria-label="Stars" title="One star for each prediction, one for each challenge"><i aria-hidden="true">★</i><b id="starCount">0</b><span>/10</span></button>
+    </div>
   </header>
 
-  <main class="bkstage" id="stage" aria-label="3D book">
-    <canvas id="gl" role="img" aria-label="An open book with a pop-up model"></canvas>
-    <div class="tags" id="tags" aria-hidden="true"></div>
-    <canvas class="fx" id="fx" aria-hidden="true"></canvas>
-    <div class="flash" id="flash" aria-hidden="true" hidden></div>
-    <div class="allen-spot" id="allenSpot"></div>
-    <div class="nogl" id="nogl" hidden>
-      <p><b>3D isn't available on this device.</b> The lessons, questions and explanations still work.</p>
-    </div>
-    <div class="hint" id="hint" aria-hidden="true">Drag to spin the book · pinch or scroll to zoom</div>
-    <span class="flag" title="Shapes, sizes and timescales are simplified so the processes are visible">Simplified model · not to scale</span>
-    <nav class="dock" aria-label="Book controls">
-      <button class="ic" id="bContents" aria-label="Contents" aria-haspopup="dialog" title="Contents"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h11"/></svg></button>
-      <button class="ic" id="bPrev" aria-label="Previous lesson" title="Previous lesson"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <button class="ic play" id="bPlay" aria-label="Run the model" title="Run the model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" class="fill"/></svg></button>
-      <span class="dock-t" id="dockTitle"><b>1</b> Two plates, one country</span>
-      <button class="ic" id="bNext" aria-label="Next lesson" title="Next lesson"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-      <button class="ic" id="bSound" aria-label="Sound off" aria-pressed="false" title="Sound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h4l5-4v13l-5-4H4z"/><path class="on" d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/><path class="off" d="M17 9.5l5 5M22 9.5l-5 5"/></svg></button>
-      <button class="ic" id="bClean" aria-label="Comic view: add ink shading" aria-pressed="false" title="Comic view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 20 4M4 14 14 4M10 20 20 10"/></svg></button>
-      <button class="ic" id="bExam" aria-label="Exam room" aria-haspopup="dialog" title="Exam room"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11M21.5 9v5"/></svg></button>
-    </nav>
-  </main>
-
-  <section class="sheet" id="sheet" aria-labelledby="lesson-title">
-    <div class="sheet-head">
-      <button class="sheet-toggle" id="sheetToggle" aria-expanded="true" aria-controls="sheetBody">
-        <span class="ln" id="lesson-num">1</span>
-        <h1 id="lesson-title">Two plates, one country</h1>
-        <span class="lstars" id="lessonStars" aria-hidden="true"></span>
-        <span class="chev" aria-hidden="true">▾</span>
-      </button>
-    </div>
-    <div class="sheet-body" id="sheetBody">
-      <div class="tabs" role="tablist" aria-label="Lesson steps">
-        <button role="tab" id="tab-predict" aria-controls="pane" aria-selected="true" data-tab="predict"><i>1</i>Predict</button>
-        <button role="tab" id="tab-test" aria-controls="pane" aria-selected="false" data-tab="test"><i>2</i>Test</button>
-        <button role="tab" id="tab-prove" aria-controls="pane" aria-selected="false" data-tab="prove"><i>3</i>Prove</button>
+  <div class="book-layout">
+    <section class="bench book-bench" aria-label="3D book">
+      <div class="bkstage" id="stage">
+        <canvas id="gl" role="img" aria-label="An open book with a pop-up model"></canvas>
+        <div class="tags" id="tags" aria-hidden="true"></div>
+        <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+        <div class="flash" id="flash" aria-hidden="true" hidden></div>
+        <div class="allen-spot" id="allenSpot"></div>
+        <div class="nogl" id="nogl" hidden><p><b>3D isn't available on this device.</b> The lessons, questions and explanations still work.</p></div>
+        <div class="hint" id="hint" aria-hidden="true">Drag to turn the book · pinch or scroll to zoom</div>
+        <span class="flag" title="Shapes, sizes and timescales are simplified so the processes are visible">Simplified model · not to scale</span>
+        <nav class="dock" aria-label="Book controls">
+          <button class="ic" id="bContents" aria-label="Contents" aria-haspopup="dialog" title="Contents"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h11"/></svg></button>
+          <button class="ic" id="bPrev" aria-label="Previous lesson" title="Previous lesson"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button class="ic play" id="bPlay" aria-label="Run the model" title="Run the model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" class="fill"/></svg></button>
+          <span class="dock-t" id="dockTitle"><b>1</b> Two plates, one country</span>
+          <button class="ic" id="bNext" aria-label="Next lesson" title="Next lesson"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+          <button class="ic" id="bSound" aria-label="Sound off" aria-pressed="false" title="Sound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h4l5-4v13l-5-4H4z"/><path class="on" d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/><path class="off" d="M17 9.5l5 5M22 9.5l-5 5"/></svg></button>
+          <button class="ic" id="bExam" aria-label="Exam room" aria-haspopup="dialog" title="Exam room"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11M21.5 9v5"/></svg></button>
+        </nav>
       </div>
-      <div class="pane" id="pane" role="tabpanel" tabindex="0"></div>
-    </div>
-  </section>
+    </section>
+
+    <section class="bench sheet" id="sheet" aria-labelledby="lesson-title">
+      <div class="sheet-head">
+        <div class="sheet-toggle">
+          <span class="ln" id="lesson-num">1</span>
+          <span class="lt"><span class="eyebrow">Lesson <span id="lesson-of">1 of 5</span></span><span class="h" id="lesson-title">Two plates, one country</span></span>
+          <span class="lstars" id="lessonStars" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div class="sheet-body" id="sheetBody">
+        <div class="steps tabs" role="tablist" aria-label="Lesson steps">
+          <button class="step" role="tab" id="tab-predict" aria-controls="pane" aria-selected="true" data-tab="predict"><span class="n">1</span>Predict</button>
+          <button class="step" role="tab" id="tab-test" aria-controls="pane" aria-selected="false" data-tab="test"><span class="n">2</span>Test</button>
+          <button class="step" role="tab" id="tab-prove" aria-controls="pane" aria-selected="false" data-tab="prove"><span class="n">3</span>Prove</button>
+        </div>
+        <div class="pane" id="pane" role="tabpanel" tabindex="0"></div>
+      </div>
+    </section>
+  </div>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-h">

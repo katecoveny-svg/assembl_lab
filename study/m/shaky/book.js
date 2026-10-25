@@ -1,9 +1,9 @@
 /* Shaky Isles: a 3D pop-up book for NCEA Level 2 Earth and Space Science 91191 (causes of extreme Earth events in NZ).
-   A chunky pop-up book floats in a toy-box world at golden hour. Each lesson is a spread: the lesson on the left page,
-   a model that pops up on the right. Every lesson runs Predict → Test → Prove and earns two stars.
-   Look: toon shading with bold outlines, saturated colours per lesson, glowing heat (bloom), drifting clouds.
-   "Comic view" in the dock adds screen-space hatching in the shadows. Models are deterministic and simplified;
-   numbers on screen come from each lesson's small model (labelled "model") or from published figures (cited in Prove). */
+   It sits on the study bench like the other machines: the kit's header, steps, chips and buttons, and the bench figure look
+   from refs/figure/README.md (StudyKit.figMat materials, paper-white ground, one long navy shadow to the lower right,
+   white label pills). The book's case tint is peach. Each lesson is a spread: the lesson on the left page, a model that
+   pops up on the right. Every lesson runs Predict → Test → Prove and earns two stars. Models are deterministic and
+   simplified; numbers on screen come from each lesson's small model (labelled "model") or published figures (cited in Prove). */
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
@@ -14,6 +14,7 @@ import {OutputPass} from "three/addons/postprocessing/OutputPass.js";
 import {LineSegments2} from "three/addons/lines/LineSegments2.js";
 import {LineSegmentsGeometry} from "three/addons/lines/LineSegmentsGeometry.js";
 import {LineMaterial} from "three/addons/lines/LineMaterial.js";
+import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {LESSONS} from "./lessons.js";
 
 const $=id=>document.getElementById(id);
@@ -45,12 +46,14 @@ const canvas=$("gl"),stage=$("stage");
 let renderer=null;
 try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});}catch(e){renderer=null}
 if(!renderer){$("nogl").hidden=false;$("hint").hidden=true}
-const PX={value:Math.min(window.devicePixelRatio||1,2)};
+const PX={value:Math.min(window.devicePixelRatio||1,innerWidth<700?1.5:2)};
 if(renderer){renderer.setPixelRatio(PX.value);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NeutralToneMapping||THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;renderer.localClippingEnabled=true}
+  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NeutralToneMapping||THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.localClippingEnabled=true}
 const scene=new THREE.Scene();
-const HORIZON=new THREE.Color(0xc4e6ff);
-scene.fog=new THREE.Fog(HORIZON,18,40);
+const FM=window.StudyKit&&StudyKit.figMat,PAL=FM?FM.palette:{paper:"#F7F3EC",shadow:"#1B2452"};
+const TINT="#F9D2B8",DEEP="#B2552D",INK="#222A55";
+scene.background=new THREE.Color(PAL.paper);
+scene.fog=new THREE.Fog(PAL.paper,20,42);
 const camera=new THREE.PerspectiveCamera(34,1,.05,90);
 camera.position.set(1.4,6,7);
 let controls=null;
@@ -58,24 +61,16 @@ if(renderer){controls=new OrbitControls(camera,canvas);controls.enableDamping=tr
   controls.maxPolarAngle=1.36;controls.minPolarAngle=.12;controls.screenSpacePanning=false;controls.rotateSpeed=.7;
   controls.addEventListener("start",()=>{$("hint").classList.add("gone");camTween=null})}
 
-// sky: a gradient dome from clear blue to a peach horizon
-const sky=new THREE.Mesh(new THREE.SphereGeometry(60,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
-  uniforms:{top:{value:new THREE.Color(0x4aa8ee)},mid:{value:new THREE.Color(0xffd6c2)},bot:{value:HORIZON}},
-  vertexShader:"varying vec3 vp;void main(){vp=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vp,1.);}",
-  fragmentShader:"uniform vec3 top,mid,bot;varying vec3 vp;void main(){float h=normalize(vp).y;vec3 c=h>.18?mix(mid,top,smoothstep(.18,.75,h)):mix(bot,mid,smoothstep(-.05,.18,h));gl_FragColor=vec4(c,1.);}"}));
-scene.add(sky);
-// ground: a warm round mat that melts into the horizon
-function groundTex(){const c=document.createElement("canvas");c.width=c.height=1024;const g=c.getContext("2d");
-  const gr=g.createRadialGradient(512,512,40,512,512,512);gr.addColorStop(0,"#eef8ff");gr.addColorStop(.5,"#d6eeff");gr.addColorStop(1,"#c4e6ff");g.fillStyle=gr;g.fillRect(0,0,1024,1024);
-  g.fillStyle="rgba(255,255,255,.75)";for(let y=16;y<1024;y+=32)for(let x=16+(y/32%2)*16;x<1024;x+=32){const d=Math.hypot(x-512,y-512);if(d<470){g.beginPath();g.arc(x,y,2.4,0,7);g.fill()}}
-  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
-const ground=new THREE.Mesh(new THREE.CircleGeometry(30,64),new THREE.MeshLambertMaterial({map:groundTex()}));
+// paper-white ground that only shows shadows (navy, as in the bench figures), a soft studio environment for the plastics
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.ShadowMaterial({color:new THREE.Color(PAL.shadow),opacity:.5}));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-
-// light: warm low sun from the upper left, cool sky fill
-scene.add(new THREE.HemisphereLight(0xcfeaff,0xffc9a3,1.05));
-const sun=new THREE.DirectionalLight(0xfff0d8,1.75);sun.position.set(-5,9,4);sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:1,far:25});sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
+if(renderer){try{const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(),.04).texture;scene.environmentIntensity=.55;pm.dispose()}catch(e){}}
+// key from the upper left and behind, so the one long shadow falls to the lower right; a soft shadowless fill from the front
+scene.add(new THREE.HemisphereLight(0xffffff,0xd6dce8,.5));
+const fill=new THREE.DirectionalLight(0xffffff,.55);fill.position.set(3,4,7);scene.add(fill);
+const sun=new THREE.DirectionalLight(0xfff6ec,1.5);sun.position.set(-5.5,6.5,-4.2);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:1,far:28});sun.shadow.bias=-.0005;sun.shadow.normalBias=.02;
+if(renderer){renderer.shadowMap.type=THREE.VSMShadowMap;sun.shadow.radius=6;sun.shadow.blurSamples=8}
 scene.add(sun);scene.add(sun.target);
 
 // ---------------------------------------------------------------- materials: toon colour, bold outlines, optional comic hatching, glow
@@ -83,40 +78,26 @@ export const HATCH={value:0};
 const GRAD=(()=>{const d=new Uint8Array([70,140,205,255]);const t=new THREE.DataTexture(d,4,1,THREE.RedFormat);t.minFilter=t.magFilter=THREE.NearestFilter;t.needsUpdate=true;return t})();
 const matCache=new Map();
 export function sketch(color,o={}){
-  const key=[color,o.opacity||1,o.side||0,o.glow||0,o.flat?1:0].join("|");
+  const key=[color,o.opacity||1,o.side||0,o.glow||0,o.flat?1:0,o.kind||""].join("|");
   if(!o.fresh&&matCache.has(key))return matCache.get(key);
-  const op=o.opacity||1;
-  const m=new THREE.MeshToonMaterial({color,gradientMap:GRAD,transparent:op<1,opacity:op,side:o.side||THREE.FrontSide,depthWrite:op>=1,
-    emissive:o.glow?color:0x000000,emissiveIntensity:o.glow||0});
-  m.onBeforeCompile=sh=>{sh.uniforms.uHatch=HATCH;sh.uniforms.uPx=PX;
-    sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nuniform float uHatch;uniform float uPx;\nfloat hl(float v,float w){float f=abs(fract(v)-.5);return 1.-smoothstep(w-.06,w+.06,f);}")
-    .replace("#include <dithering_fragment>",`#include <dithering_fragment>
-      vec2 q=gl_FragCoord.xy/(uPx*5.);
-      float lum=dot(gl_FragColor.rgb,vec3(.299,.587,.114));
-      float ink=hl(q.x+q.y,.08)*smoothstep(.7,.45,lum);
-      ink=max(ink,hl(q.x-q.y,.08)*smoothstep(.45,.25,lum));
-      gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(.16,.13,.25),ink*.5*uHatch);`)};
-  m.customProgramCacheKey=()=>"toon";
+  const op=o.opacity||1,c=new THREE.Color(color);let m;
+  if(FM){m=op<1?FM.three(THREE,"glass","#"+c.getHexString(),{opacity:op,transmission:o.transmission??0})
+      :FM.three(THREE,o.kind||"plastic","#"+c.getHexString(),o.glow?{emissive:"#"+c.getHexString(),emissiveIntensity:o.glow}:{});
+    if(op>=1&&o.side)m.side=o.side}
+  else m=new THREE.MeshStandardMaterial({color:c,roughness:.5,transparent:op<1,opacity:op,side:o.side||THREE.FrontSide,emissive:o.glow?c:0x000000,emissiveIntensity:o.glow||0});
   if(!o.fresh)matCache.set(key,m);
   return m;
 }
-const LINE=new LineMaterial({color:0x2a2140,linewidth:2.1,transparent:true,opacity:.92});
-const LINE_SOFT=new LineMaterial({color:0x2a2140,linewidth:1.3,transparent:true,opacity:.55});
+const LINE=new LineMaterial({color:0x222a55,linewidth:1.1,transparent:true,opacity:.32});
+const LINE_SOFT=new LineMaterial({color:0x222a55,linewidth:.9,transparent:true,opacity:.2});
 export function edges(m,th=30,soft){const g=new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(m.geometry,th));const e=new LineSegments2(g,soft?LINE_SOFT:LINE);e.raycast=()=>{};m.add(e);return m}
 export function mesh(geo,color,o={}){const m=new THREE.Mesh(geo,o.mat||sketch(color,o));m.castShadow=o.cast!==false;m.receiveShadow=o.receive!==false;if(o.edges!==false)edges(m,o.th,o.soft);return m}
 export function flatMat(color,o={}){const m=new THREE.MeshBasicMaterial({color,transparent:true,opacity:o.opacity??1,side:THREE.DoubleSide,depthWrite:o.depthWrite??false});if(o.glow)m.color.multiplyScalar(o.glow);return m}
 
-// clouds drifting around the book
-const clouds=new THREE.Group();scene.add(clouds);
-{const cm=sketch(0xffffff,{fresh:true}),R=(()=>{let s=4;return()=>(s=(s*16807)%2147483647)/2147483647})();
-  for(let i=0;i<7;i++){const c=new THREE.Group();const n=4+Math.floor(R()*3);
-    for(let k=0;k<n;k++){const r=.35+R()*.45;const p=new THREE.Mesh(new THREE.SphereGeometry(r,18,12),cm);p.position.set((k-n/2)*.5+R()*.2,R()*.25,R()*.3);p.scale.y=.75;p.castShadow=false;c.add(p)}
-    const a=i/7*Math.PI*2+R(),rad=8+R()*4;c.position.set(Math.cos(a)*rad,2.6+R()*2.2,Math.sin(a)*rad-2);c.rotation.y=-a;c.userData.bob=R()*6;clouds.add(c)}}
-
 // ---------------------------------------------------------------- book
 const PAGE_W=3.0,PAGE_D=4.0,TOP=.36; // right page spans x 0.05..3.05, the model sits on y=TOP
-const paperCol="#fffaf2";
-function pageEdgeTex(){const c=document.createElement("canvas");c.width=512;c.height=64;const g=c.getContext("2d");g.fillStyle="#f6eee2";g.fillRect(0,0,512,64);
+const paperCol="#fffdf8";
+function pageEdgeTex(){const c=document.createElement("canvas");c.width=512;c.height=64;const g=c.getContext("2d");g.fillStyle="#f6f1e8";g.fillRect(0,0,512,64);
   for(let y=1;y<64;y+=2.6){g.fillStyle="rgba(160,120,120,.16)";g.fillRect(0,y,512,.8)}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
 const edgeTex=pageEdgeTex();
 function pageCanvas(){const c=document.createElement("canvas");c.width=1024;c.height=1366;return c}
@@ -124,10 +105,10 @@ const leftC=pageCanvas(),rightC=pageCanvas();
 const leftT=new THREE.CanvasTexture(leftC),rightT=new THREE.CanvasTexture(rightC);
 [leftT,rightT].forEach(t=>{t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8});
 const book=new THREE.Group();scene.add(book);
-const coverMat=sketch(0xf2603f,{fresh:true});
+const coverMat=sketch(TINT,{fresh:true,kind:"painted"});
 const cover=mesh(new RoundedBoxGeometry(6.56,.16,4.42,4,.06),0,{mat:coverMat,th:40});cover.position.set(0,.08,0);book.add(cover);
 const spine=mesh(new THREE.CylinderGeometry(.13,.13,4.42,16,1,false,Math.PI,Math.PI),0,{mat:coverMat,th:50});spine.rotation.x=Math.PI/2;spine.position.set(0,.03,0);book.add(spine);
-const ribbonMat=sketch(0x7b61ff,{fresh:true});const ribbon=mesh(new THREE.BoxGeometry(.12,.02,.9),0,{mat:ribbonMat,th:40});ribbon.position.set(.25,.17,2.55);ribbon.rotation.y=-.12;book.add(ribbon);
+const ribbonMat=sketch(0xF3B8C8,{fresh:true,kind:"painted"});const ribbon=mesh(new THREE.BoxGeometry(.12,.02,.9),0,{mat:ribbonMat,th:40});ribbon.position.set(.25,.17,2.55);ribbon.rotation.y=-.12;book.add(ribbon);
 function pageBlock(x,tex){
   const side=new THREE.MeshLambertMaterial({map:edgeTex});
   const top=new THREE.MeshLambertMaterial({map:tex});
@@ -141,26 +122,27 @@ gutter.rotation.x=-Math.PI/2;gutter.position.set(0,TOP+.002,0);book.add(gutter);
 const DISPLAY='"Fredoka", "Instrument Sans", system-ui, sans-serif',SANS='"Instrument Sans", system-ui, sans-serif';
 function wrap(g,text,x,y,maxW,lh){const words=text.split(" ");let line="";for(const w of words){const t=line?line+" "+w:w;if(g.measureText(t).width>maxW&&line){g.fillText(line,x,y);y+=lh;line=w}else line=t}if(line)g.fillText(line,x,y);return y+lh}
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
-function star(g,cx,cy,r,fill,stroke){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr2=i%2?r*.45:r;g.lineTo(cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2)}g.closePath();if(fill){g.fillStyle=fill;g.fill()}g.lineWidth=6;g.strokeStyle=stroke;g.lineJoin="round";g.stroke()}
-function paper(g,acc){g.fillStyle=paperCol;g.fillRect(0,0,1024,1366);g.fillStyle=acc+"22";for(let y=40;y<1366;y+=44)for(let x=40;x<1024;x+=44){g.beginPath();g.arc(x,y,2.6,0,7);g.fill()}}
-function drawPages(L){const acc=L.acc;
-  let g=leftC.getContext("2d");paper(g,acc);
-  const gr=g.createLinearGradient(1024,0,880,0);gr.addColorStop(0,"rgba(120,60,80,.14)");gr.addColorStop(1,"rgba(120,60,80,0)");g.fillStyle=gr;g.fillRect(860,0,164,1366);
-  g.fillStyle=acc;rr(g,96,96,330,64,32);g.fill();g.fillStyle="#fff";g.font=`600 30px ${DISPLAY}`;g.fillText("LESSON "+L.n+" OF "+LESSONS.length,126,140);
-  g.fillStyle="#2a2140";g.beginPath();g.arc(196,330,104,0,7);g.fill();g.fillStyle=acc;g.beginPath();g.arc(186,320,104,0,7);g.fill();
-  g.fillStyle="#fff";g.font=`700 150px ${DISPLAY}`;g.textAlign="center";g.fillText(String(L.n),186,372);g.textAlign="left";
-  const got=[answers[L.id]!=null,done.has(L.id)];got.forEach((on,i)=>star(g,370+i*96,330,40,on?acc:null,"#2a2140"));
-  g.fillStyle="#2a2140";g.font=`600 80px ${DISPLAY}`;let y=wrap(g,L.title,96,540,820,88);
-  g.strokeStyle=acc;g.lineWidth=10;g.lineCap="round";g.beginPath();for(let x=0;x<=260;x+=4)g.lineTo(100+x,y-36+Math.sin(x/18)*8);g.stroke();
-  g.fillStyle="#4b4662";g.font=`500 40px ${SANS}`;wrap(g,L.short,96,y+40,800,56);
-  g.fillStyle="#9a92b0";g.font=`600 30px ${DISPLAY}`;g.fillText(String(L.n*2),96,1300);
+function star(g,cx,cy,r,fill,stroke){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr2=i%2?r*.45:r;g.lineTo(cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2)}g.closePath();if(fill){g.fillStyle=fill;g.fill()}g.lineWidth=4;g.strokeStyle=stroke;g.lineJoin="round";g.stroke()}
+function paper(g){g.fillStyle=paperCol;g.fillRect(0,0,1024,1366);g.fillStyle="rgba(178,85,45,.10)";for(let y=40;y<1366;y+=44)for(let x=40;x<1024;x+=44){g.beginPath();g.arc(x,y,2.6,0,7);g.fill()}}
+function drawPages(L){
+  let g=leftC.getContext("2d");paper(g);
+  const gr=g.createLinearGradient(1024,0,880,0);gr.addColorStop(0,"rgba(27,36,82,.10)");gr.addColorStop(1,"rgba(27,36,82,0)");g.fillStyle=gr;g.fillRect(860,0,164,1366);
+  g.font=`700 26px ${SANS}`;const lab="LESSON "+L.n+" OF "+LESSONS.length,lw=g.measureText(lab).width;g.fillStyle="#fff";rr(g,96,100,lw+48,56,28);g.fill();g.strokeStyle="#DCD6EA";g.lineWidth=3;g.stroke();
+  g.fillStyle="#4E4868";g.fillText(lab,120,138);
+  g.fillStyle=TINT;rr(g,96,206,200,200,56);g.fill();g.strokeStyle="rgba(34,42,85,.18)";g.lineWidth=4;g.stroke();
+  g.fillStyle=INK;g.font=`600 140px ${DISPLAY}`;g.textAlign="center";g.fillText(String(L.n),196,356);g.textAlign="left";
+  const got=[answers[L.id]!=null,done.has(L.id)];got.forEach((on,i)=>star(g,370+i*92,306,36,on?DEEP:"#fff",on?DEEP:"#D8CEBF"));
+  g.fillStyle=INK;g.font=`600 76px ${DISPLAY}`;let y=wrap(g,L.title,96,530,820,86);
+  g.strokeStyle=TINT;g.lineWidth=12;g.lineCap="round";g.beginPath();g.moveTo(100,y-38);g.lineTo(330,y-38);g.stroke();
+  g.fillStyle="#4A5070";g.font=`500 38px ${SANS}`;wrap(g,L.short,96,y+36,800,54);
+  g.fillStyle="#6E6A86";g.font=`600 28px ${DISPLAY}`;g.fillText(String(L.n*2),96,1300);
   leftT.needsUpdate=true;
-  g=rightC.getContext("2d");paper(g,acc);
-  const gr2=g.createLinearGradient(0,0,150,0);gr2.addColorStop(0,"rgba(120,60,80,.14)");gr2.addColorStop(1,"rgba(120,60,80,0)");g.fillStyle=gr2;g.fillRect(0,0,160,1366);
-  g.font=`600 32px ${DISPLAY}`;const w=g.measureText(L.fig).width;g.fillStyle="#fff";rr(g,140,1208,w+56,64,32);g.fill();g.strokeStyle=acc;g.lineWidth=4;g.stroke();
-  g.fillStyle="#2a2140";g.fillText(L.fig,168,1252);
-  g.fillStyle="#9a92b0";g.font=`600 22px ${SANS}`;g.fillText("SIMPLIFIED MODEL · NOT TO SCALE",150,1310);
-  g.font=`600 30px ${DISPLAY}`;g.textAlign="right";g.fillText(String(L.n*2+1),930,1310);g.textAlign="left";
+  g=rightC.getContext("2d");paper(g);
+  const gr2=g.createLinearGradient(0,0,150,0);gr2.addColorStop(0,"rgba(27,36,82,.10)");gr2.addColorStop(1,"rgba(27,36,82,0)");g.fillStyle=gr2;g.fillRect(0,0,160,1366);
+  g.font=`700 26px ${SANS}`;const cap=L.fig.toUpperCase(),w=g.measureText(cap).width;g.fillStyle="#fff";rr(g,140,1210,w+52,58,29);g.fill();g.strokeStyle="#DCD6EA";g.lineWidth=3;g.stroke();
+  g.fillStyle="#4E4868";g.fillText(cap,166,1248);
+  g.fillStyle="#6E6A86";g.font=`600 22px ${SANS}`;g.fillText("SIMPLIFIED MODEL · NOT TO SCALE",150,1310);
+  g.font=`600 28px ${DISPLAY}`;g.textAlign="right";g.fillText(String(L.n*2+1),930,1310);g.textAlign="left";
   rightT.needsUpdate=true}
 
 // a turning page for lesson changes
@@ -176,7 +158,7 @@ function setTurn(t,dir){const p=turnGeo.attributes.position.array;
 // ---------------------------------------------------------------- post: bloom picks out anything hotter than white (magma, glowing lines)
 let composer=null,bloom=null;
 if(renderer){try{composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
-  bloom=new UnrealBloomPass(new THREE.Vector2(256,256),1.1,.6,1.0);composer.addPass(bloom);composer.addPass(new OutputPass())}catch(e){console.warn('bloom off',e);composer=null}}
+  bloom=new UnrealBloomPass(new THREE.Vector2(256,256),.5,.5,1.0);composer.addPass(bloom);composer.addPass(new OutputPass())}catch(e){console.warn('bloom off',e);composer=null}}
 canvas.dataset.bloom=composer?"on":"off";
 
 // ---------------------------------------------------------------- tiny tweens
@@ -210,7 +192,7 @@ function popOut(list,cb){if(!list.length||RM){cb&&cb();return}let n=0;list.forEa
 
 // ---------------------------------------------------------------- celebration: confetti over the stage
 const fx=$("fx"),fxg=fx.getContext("2d");let bits=[];
-function confetti(n,x,y){if(RM)return;const r=stage.getBoundingClientRect();fx.width=r.width*PX.value;fx.height=r.height*PX.value;const cols=["#F2603F","#FF7A2F","#7B61FF","#12A386","#2F8FD8","#FF6FA8"];
+function confetti(n,x,y){if(RM)return;const r=stage.getBoundingClientRect();fx.width=r.width*PX.value;fx.height=r.height*PX.value;const cols=["#EE8FA6","#8FB8EE","#AFD873","#F3D56E","#F6B384","#B9A6EC"];
   const cx=x??r.width/2,cy=y??r.height*.45;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=4+Math.random()*7;bits.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s-6,r:Math.random()*6,vr:(Math.random()-.5)*.4,w:6+Math.random()*6,h:4+Math.random()*4,c:cols[i%cols.length],life:1.6+Math.random()*.6})}}
 function stepFx(dt){if(!bits.length)return;fxg.setTransform(PX.value,0,0,PX.value,0,0);fxg.clearRect(0,0,fx.width,fx.height);
   bits=bits.filter(b=>(b.life-=dt)>0);for(const b of bits){b.vy+=22*dt;b.x+=b.vx*60*dt*.5;b.y+=b.vy*60*dt*.5;b.vx*=.985;b.r+=b.vr;fxg.save();fxg.translate(b.x,b.y);fxg.rotate(b.r);fxg.globalAlpha=Math.min(1,b.life);fxg.fillStyle=b.c;fxg.fillRect(-b.w/2,-b.h/2,b.w,b.h);fxg.restore()}
@@ -236,7 +218,7 @@ const ctx={THREE,sketch,mesh,edges,flatMat,pop,HATCH,TOP,
 // ---------------------------------------------------------------- lessons
 let cur=-1,api=null,group=null,lessonPops=[],tab="predict",tagAlpha=0,busy=false;
 // how far to pull the camera back for this stage shape: closer on small screens (the model sits on the right page), further on tall ones
-function camK(a){if(stage.clientWidth<600)return a<.9?.62/a*.9:.62;return a<1.25?Math.min(1.9,1.2/a):1}
+function camK(a){if(stage.clientWidth<600)return Math.min(1.5,Math.max(.8,.82/a));return a<1.25?Math.min(1.9,1.2/a):1}
 function viewFor(L){const a=stage.clientWidth/Math.max(1,stage.clientHeight);const v=L.view;
   const t=new THREE.Vector3(...v.target),p=new THREE.Vector3(...v.pos);const d=p.clone().sub(t);if(stage.clientWidth<600)t.x+=(1.54-t.x)*.6;
   d.multiplyScalar(camK(a));return {pos:t.clone().add(d),target:t}}
@@ -245,10 +227,9 @@ function flyTo(pos,target,dur=1.4){if(!controls)return;const p0=camera.position.
   const v=viewFor({view:{pos,target}});
   camTween=tween(dur,k=>{const e=ease.inout(k);camera.position.lerpVectors(p0,v.pos,e);controls.target.lerpVectors(t0,v.target,e)},()=>camTween=null)}
 
-const onAcc=hex=>{const c=new THREE.Color(hex),lin=v=>v,L=.2126*lin(c.r)+.7152*lin(c.g)+.0722*lin(c.b);return (1.05/(L+.05))>=(L+.05)/.069?"#ffffff":"#2a2140"};
-function setAccent(L){document.documentElement.style.setProperty("--acc",L.acc);document.documentElement.style.setProperty("--onacc",onAcc(L.acc));document.documentElement.style.setProperty("--accsoft",L.acc+"22");
-  const c0=coverMat.color.clone(),c1=new THREE.Color(L.acc);tween(.8,k=>coverMat.color.lerpColors(c0,c1,k));
-  const r0=ribbonMat.color.clone(),r1=new THREE.Color(L.acc2||"#7b61ff");tween(.8,k=>ribbonMat.color.lerpColors(r0,r1,k))}
+function setAccent(){const r=document.documentElement.style;r.setProperty("--acc",DEEP);r.setProperty("--acc-tint",TINT);r.setProperty("--case",TINT)}
+setAccent();
+try{$("appicon").innerHTML=StudyKit.glyph("shaky");const d=StudyKit.daysUntil?StudyKit.daysUntil("2026-12-01T09:30:00+13:00"):null;if(d!=null&&d>0){$("examDays").textContent=d+" day"+(d===1?"":"s");$("examDays").hidden=false}}catch(e){}
 function build(i){const L=LESSONS[i];
   group=new THREE.Group();group.position.set(PAGE_W/2+.04,TOP,0);book.add(group);
   pops.length=0;
@@ -260,7 +241,7 @@ function flash(L){const f=$("flash");if(RM){f.hidden=true;return}f.innerHTML=`<s
 
 function go(i,first){if(busy||i<0||i>=LESSONS.length||i===cur)return;busy=true;const dir=i>cur?1:-1;
   setPlaying(false);
-  const next=()=>{teardown();cur=i;store.set("shakylesson",String(i));const L=LESSONS[i];setAccent(L);build(i);
+  const next=()=>{teardown();cur=i;store.set("shakylesson",String(i));const L=LESSONS[i];build(i);
     const v=viewFor(L);
     if(first&&controls){camera.position.copy(v.pos);controls.target.copy(v.target)}else flyTo(L.view.pos,L.view.target,1.6);
     popIn(lessonPops,()=>{busy=false});tagAlpha=0;flash(L);
@@ -279,7 +260,7 @@ document.querySelectorAll(".tabs [role=tab]").forEach((b,n,all)=>{b.onclick=()=>
     if(j!==null){e.preventDefault();setTab(all[j].dataset.tab,true)}}});
 function renderStars(){const n=stars();$("starCount").textContent=n;$("starBox").setAttribute("aria-label",`${n} of ${LESSONS.length*2} stars`);
   const L=LESSONS[cur];if(!L)return;$("lessonStars").innerHTML=[answers[L.id]!=null,done.has(L.id)].map((on,i)=>`<i class="${on?"on":""}" title="${i?"Challenge":"Prediction"}">★</i>`).join("")}
-function renderSheet(){const L=LESSONS[cur];$("lesson-num").textContent=L.n;$("lesson-title").textContent=L.title;
+function renderSheet(){const L=LESSONS[cur];$("lesson-num").textContent=L.n;$("lesson-title").textContent=L.title;$("lesson-of").textContent=L.n+" of "+LESSONS.length;
   $("dockTitle").innerHTML=`<b>${L.n}</b> ${esc(L.title)}`;$("bPrev").disabled=cur===0;$("bNext").disabled=cur===LESSONS.length-1;
   renderStars();setTab(answers[L.id]==null?"predict":"test")}
 function markTabs(){const L=LESSONS[cur];$("tab-predict").classList.toggle("done",answers[L.id]!=null);$("tab-test").classList.toggle("done",done.has(L.id));}
@@ -288,15 +269,15 @@ function renderPane(){const L=LESSONS[cur],P=L.predict,pane=$("pane");markTabs()
   if(tab==="predict"){const a=answers[L.id];
     pane.innerHTML=`<h2>${esc(P.q)}</h2><p class="fine">Make your call before you touch the model. Being wrong is fine: it's how the next bit sticks.</p>
       <div class="opts" role="radiogroup" aria-label="Your prediction">${P.opts.map((o,n)=>`<button class="opt${a!=null?(n===P.a?" right":n===a?" wrong":""):""}" role="radio" aria-checked="${a===n}" data-n="${n}"><b>${"ABC"[n]}</b><span>${esc(o)}</span></button>`).join("")}</div>
-      ${a!=null?`<div class="note ${a===P.a?"ok":"no"}"><b>${a===P.a?"Good call!":"Not quite, and that's useful."}</b> ${esc(P.why)}</div><button class="kb primary" id="toTest">Now test it on the model →</button>`:""}`;
+      ${a!=null?`<div class="note ${a===P.a?"ok":"no"}"><b>${a===P.a?"Good call!":"Not quite, and that's useful."}</b> ${esc(P.why)}</div><button class="btn primary" id="toTest">Now test it on the model →</button>`:""}`;
     pane.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const first=answers[L.id]==null;answers[L.id]=+b.dataset.n;store.set("shakypredict",JSON.stringify(answers));renderPane();
       const ok=+b.dataset.n===P.a;if(first){earned();if(ok){const r=b.getBoundingClientRect(),s=stage.getBoundingClientRect();confetti(40,Math.min(s.width-40,Math.max(40,r.left-s.left+40)),s.height*.6)}}cheer(ok);
       const f=pane.querySelector("#toTest");f&&f.focus()});
     const t=pane.querySelector("#toTest");if(t)t.onclick=()=>setTab("test",true)}
   else if(tab==="test"){
-    pane.innerHTML=`<p class="lede">${esc(L.testIntro)}</p>${api.controls()}<div class="read" id="read" aria-live="off"></div>
-      <div class="chal${done.has(L.id)?" done":""}" id="chal"><h3><span aria-hidden="true">★</span> Challenge</h3><p>${esc(L.challenge)}</p><div class="st" id="chalSt">${done.has(L.id)?"✓ Done! Pass it again any time.":""}</div></div>
-      <button class="kb" id="toProve">Prove it: the explanation and exam line →</button>`;
+    pane.innerHTML=`<p class="lede">${esc(L.testIntro)}</p>${api.controls()}<div class="chips" id="read" aria-live="off"></div>
+      <div class="card chal${done.has(L.id)?" done":""}" id="chal"><h3><span aria-hidden="true">★</span> Challenge</h3><p>${esc(L.challenge)}</p><div class="st" id="chalSt">${done.has(L.id)?"✓ Done! Pass it again any time.":""}</div></div>
+      <button class="btn" id="toProve">Prove it: the explanation and exam line →</button>`;
     api.bind(pane);renderReadouts();pane.querySelector("#toProve").onclick=()=>setTab("prove",true)}
   else{
     pane.innerHTML=`${L.prove.map((p,n)=>n===0?`<p class="lede">${p}</p>`:`<p>${p}</p>`).join("")}
@@ -305,12 +286,12 @@ function renderPane(){const L=LESSONS[cur],P=L.predict,pane=$("pane");markTabs()
       ${L.kupu.length?`<h3>Kupu Māori</h3><div class="kupu">${L.kupu.map(k=>`<a href="https://maoridictionary.co.nz/word/${k.ta}" target="_blank" rel="noopener" title="Open in Te Aka Māori Dictionary"><b lang="mi">${esc(k.mi)}</b>${esc(k.en)}</a>`).join("")}</div>
       <p class="fine">Each kupu links to its Te Aka Māori Dictionary entry.${L.kupuNote?" "+esc(L.kupuNote):""}</p>`:""}
       <h3>Sources</h3><ul class="src">${L.sources.map(s=>`<li><a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a></li>`).join("")}</ul>
-      ${cur<LESSONS.length-1?`<button class="kb primary" id="toNext">Turn the page: ${esc(LESSONS[cur+1].title)} →</button>`:`<button class="kb primary" id="toExam">Open the exam room →</button>`}`;
+      ${cur<LESSONS.length-1?`<button class="btn primary" id="toNext">Turn the page: ${esc(LESSONS[cur+1].title)} →</button>`:`<button class="btn primary" id="toExam">Open the exam room →</button>`}`;
     const n=pane.querySelector("#toNext");if(n)n.onclick=()=>go(cur+1);const x=pane.querySelector("#toExam");if(x)x.onclick=openExam}
   pane.scrollTop=0}
 let lastRead="";
 function renderReadouts(){const el=$("read");if(!el||!api||!api.readouts)return;const rows=api.readouts();
-  const html=rows.map(r=>`<div><span>${esc(r[0])}</span><b class="${r[2]||""}">${esc(r[1])}</b></div>`).join("");if(html!==lastRead){el.innerHTML=html;lastRead=html}}
+  const html=rows.map(r=>`<div class="chip"><span>${esc(r[0])}</span><b class="${r[2]||""}">${esc(r[1])}</b></div>`).join("");if(html!==lastRead){el.innerHTML=html;lastRead=html}}
 function pass(msg){const L=LESSONS[cur];const first=!done.has(L.id);done.add(L.id);saveDone();logStudy("pass");sfx.win();
   const c=$("chal"),s=$("chalSt");if(c){c.classList.add("done");s.textContent="✓ "+msg}markTabs();ctx.live("Challenge passed. "+msg);
   confetti(first?90:40);cheer(true);if(first)earned();
@@ -320,11 +301,11 @@ function pass(msg){const L=LESSONS[cur];const first=!done.has(L.id);done.add(L.i
 const dlg=$("dlg");
 function openDlg(html,onOpen){$("dlgBody").innerHTML=html;if(typeof dlg.showModal==="function")dlg.showModal();else dlg.setAttribute("open","");onOpen&&onOpen()}
 function openContents(){openDlg(`<h2 id="dlg-h">Contents</h2><p class="fine">NCEA Level 2 Earth and Space Science 91191: the causes of extreme Earth events in New Zealand. Exam: Tuesday 1 December 2026, 9.30 am. You have <b>${stars()} of ${LESSONS.length*2}</b> stars.</p>
-  <ol class="toc">${LESSONS.map((L,i)=>`<li><button data-i="${i}" style="--c:${L.acc}" ${i===cur?'aria-current="true"':""}><span class="n">${L.n}</span><span class="t">${esc(L.title)}<small>${esc(L.short)}</small></span><span class="d" aria-label="${(answers[L.id]!=null)+done.has(L.id)} of 2 stars">${[answers[L.id]!=null,done.has(L.id)].map(on=>`<i class="${on?"on":""}">★</i>`).join("")}</span></button></li>`).join("")}
-  <li><button data-exam="1" style="--c:#2a2140"><span class="n">🎓</span><span class="t">Exam room<small>Practice questions with model answers</small></span><span class="d"></span></button></li></ol>`,
+  <ol class="toc">${LESSONS.map((L,i)=>`<li><button data-i="${i}" ${i===cur?'aria-current="true"':""}><span class="n">${L.n}</span><span class="t">${esc(L.title)}<small>${esc(L.short)}</small></span><span class="d" aria-label="${(answers[L.id]!=null)+done.has(L.id)} of 2 stars">${[answers[L.id]!=null,done.has(L.id)].map(on=>`<i class="${on?"on":""}">★</i>`).join("")}</span></button></li>`).join("")}
+  <li><button data-exam="1"><span class="n">★</span><span class="t">Exam room<small>Practice questions with model answers</small></span><span class="d"></span></button></li></ol>`,
   ()=>{$("dlgBody").querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{dlg.close();go(+b.dataset.i)});$("dlgBody").querySelector("[data-exam]").onclick=()=>{dlg.close();openExam()}})}
 function openExam(){openDlg(`<h2 id="dlg-h">Exam room</h2><p class="fine">Questions in the style of 91191. Write your answer first (on paper or in your head), then open the model answer. Past papers and the official assessment schedules are on the <a href="https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/earth-and-space-science/" target="_blank" rel="noopener">NZQA Earth and Space Science page</a>.</p>
-  ${LESSONS.map(L=>`<div class="exam-q" style="--c:${L.acc}"><p><b>${L.n}.</b> ${esc(L.examQ)}</p><details><summary>Show an Excellence-level answer</summary><p class="fine" style="margin-top:8px">${L.examA}</p></details></div>`).join("")}
+  ${LESSONS.map(L=>`<div class="exam-q"><p><b>${L.n}.</b> ${esc(L.examQ)}</p><details><summary>Show an Excellence-level answer</summary><p class="fine" style="margin-top:8px">${L.examA}</p></details></div>`).join("")}
   <p class="fine">These are practice questions written for this book. They are not NZQA questions, and NZQA has not reviewed them.</p>`)}
 
 // ---------------------------------------------------------------- dock
@@ -335,9 +316,7 @@ $("bPlay").onclick=()=>{ac();if(tab!=="test")setTab("test");setPlaying(!playing)
 $("bContents").onclick=openContents;$("bExam").onclick=openExam;$("starBox").onclick=openContents;
 const setSound=on=>{soundOn=on;store.set("shakysound",on?"on":"off");if(on)store.set("studysound","on");$("bSound").setAttribute("aria-pressed",on);$("bSound").setAttribute("aria-label",on?"Sound on":"Sound off")};
 setSound(soundOn);$("bSound").onclick=()=>{setSound(!soundOn);if(soundOn){ac();sfx.pop()}};
-const setComic=on=>{HATCH.value=on?1:0;store.set("shakycomic",on?"1":"0");$("bClean").setAttribute("aria-pressed",on)};
-setComic(store.get("shakycomic","0")==="1");$("bClean").onclick=()=>setComic(HATCH.value===0);
-$("sheetToggle").onclick=()=>{if(innerWidth>860)return;const s=$("sheet");s.classList.toggle("min");$("sheetToggle").setAttribute("aria-expanded",!s.classList.contains("min"));resize()};
+
 addEventListener("keydown",e=>{if(e.target.closest("input,textarea,select,dialog"))return;if(e.key==="PageDown"||(e.key==="ArrowRight"&&e.altKey))go(cur+1);if(e.key==="PageUp"||(e.key==="ArrowLeft"&&e.altKey))go(cur-1)});
 
 // ---------------------------------------------------------------- tap on the model (optional; every action also has a button)
@@ -358,7 +337,6 @@ const camOff=new THREE.Vector3();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;const t=now/1000;
   runTweens(now);
   if(api&&api.update)api.update(dt,t);
-  if(!RM){clouds.rotation.y+=dt*.012;clouds.children.forEach(c=>{c.position.y+=Math.sin(t*.5+c.userData.bob)*.0012})}
   if(!busy)tagAlpha=Math.min(1,tagAlpha+dt*2.5);
   if(controls){controls.update();const tg=controls.target;tg.x=THREE.MathUtils.clamp(tg.x,-3,4);tg.z=THREE.MathUtils.clamp(tg.z,-2.5,2.5);tg.y=THREE.MathUtils.clamp(tg.y,0,2.5)}
   if(shake.t>0){shake.t-=dt;const a=shake.amp*Math.min(1,shake.t*2);camOff.set((Math.random()-.5)*a,(Math.random()-.5)*a,(Math.random()-.5)*a);camera.position.add(camOff)}else camOff.set(0,0,0);
