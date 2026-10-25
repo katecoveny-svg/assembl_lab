@@ -185,7 +185,94 @@ const CH=[
     ok:()=>`Yes: three options with triage at (${["A","B","C"].map(k=>`${fmt(s.options[k].zones.triage.x,1)}, ${fmt(s.options[k].zones.triage.y,1)}`).join("), (")}). Rules met: ${["A","B","C"].map(k=>s.options[k].r.pass).join(", ")} of ${B().rules.length}.`,
     no:()=>{const o=s.options;return !(o.A&&o.B&&o.C)?`Saved so far: ${["A","B","C"].filter(k=>o[k]).join(", ")||"none"}. Arrange, Save as A; rearrange, Save as B; again for C.`:"All three are saved, but triage sits in nearly the same place in two of them (move it at least 3 m)."}},
   {q:"ED brief: give the waiting room at least 1.5 m² per expected waiting patient (20 patients).",check:()=>s.brief==="ed"&&evalZones(s.zones).area,ok:()=>`Yes: ${fmt(evalZones(s.zones).areaV)} m² ÷ 20 = ${fmt(evalZones(s.zones).areaV/20,2)} m² each.`,no:()=>s.brief!=="ed"?"Choose the ED brief first.":`Not yet: ${fmt(evalZones(s.zones).areaV)} m² is ${fmt(evalZones(s.zones).areaV/20,2)} m² each. You need ≥ 30 m²: select the waiting room and make it wider or taller.`}];
-const api=StudyKit.mount({kupu:KUPU,caseTint:"butter",
+// ---------- the 3D bench (../kit3d.js): the plan becomes an architectural model on a butter drafting board. Zones are tinted
+// floor slabs with low walls that you drag around the site (snapped to 0.5 m, the same move() rules as the drawing); a zone
+// that breaks a rule glows red; rule lights stand along the board; people walk the brief's route; the three saved options
+// stand side by side as small models; and the communicate step adds dimension rods in millimetres.
+function plan3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const TOP=.3,SITE=9.5;   // the site's long side in world units
+  const boardM=S.rbox(13.6,.3,9.4,.14,mat("plastic",PAL.case.butter,{rough:.55,coat:.2}));boardM.position.set(.9,.15,0);S.scene.add(boardM);
+  const model=S.group();model.position.set(-.6,TOP,0);
+  let built=null,k=1,zoneM={},fixedM=[],floor=null,walls=[];
+  const wallM=mat("plastic","#FFFDF8",{rough:.5,coat:.2}),doorM=mat("plastic",PAL.product.butter,{rough:.4});
+  const W2=(x,y)=>V3((x-B().W/2)*k,0,(y-B().H/2)*k);
+  function build(){[floor,...walls,...fixedM,...Object.values(zoneM).map(z=>z.g)].forEach(o=>o&&model.remove(o));zoneM={};fixedM=[];walls=[];
+    const Bz=B();k=SITE/Math.max(Bz.W,Bz.H*1.45);const w=Bz.W*k,h=Bz.H*k;
+    floor=S.panel(Math.round(Bz.W*24),Math.round(Bz.H*24),w);floor.rotation.x=-Math.PI/2;floor.position.y=.02;model.add(floor);
+    floor.redraw((g,cw,ch)=>{g.fillStyle="#FFFDF8";g.fillRect(0,0,cw,ch);const m=cw/Bz.W;for(let x=1;x<Bz.W;x++){g.strokeStyle=x%5?"#ECE6F4":"#D9D1EA";g.lineWidth=x%5?1:2;g.beginPath();g.moveTo(x*m,0);g.lineTo(x*m,ch);g.stroke()}
+      for(let y=1;y<Bz.H;y++){g.strokeStyle=y%5?"#ECE6F4":"#D9D1EA";g.lineWidth=y%5?1:2;g.beginPath();g.moveTo(0,y*m);g.lineTo(cw,y*m);g.stroke()}});
+    const T=.12,H=.42;const wall=(x,z,ww,dd)=>{const m=S.rbox(ww,H,dd,.03,wallM,{at:[x,H/2,z]});model.add(m);walls.push(m)};
+    wall(0,-h/2-T/2,w+2*T,T);wall(0,h/2+T/2,w+2*T,T);wall(-w/2-T/2,0,T,h);wall(w/2+T/2,0,T,h);
+    Bz.fixed.forEach(f=>{const c=W2(f.x+f.w/2,f.y+f.h/2);const m=S.rbox(T*1.6,H*1.1,f.h*k,.03,doorM,{at:[c.x+(f.x>1?T/2:-T/2),H*.55,c.z]});model.add(m);fixedM.push(m);m.userData.f=f});
+    Bz.zones.forEach(zd=>{const g=S.group(model);const tint=new THREE.Color(zd.c);
+      const slab=S.rbox(1,1,1,.04,mat("plastic",zd.c,{rough:.45,fresh:true}));g.add(slab);
+      const rim=S.mesh(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),new THREE.LineBasicMaterial({color:PAL.ink,transparent:true,opacity:.35}));const rimL=new THREE.LineSegments(rim.geometry,rim.material);g.add(rimL);
+      const glow=S.box(1,1,1,new THREE.MeshBasicMaterial({color:"#D4486B",transparent:true,opacity:0,depthWrite:false}),{cast:false});g.add(glow);
+      const L=S.label({off:[0,-26]});zoneM[zd.id]={g,slab,rimL,glow,L,lift:0};
+      S.dragger(slab,{normal:V3(0,1,0),start:p=>{if(!canDrag())return;s.sel=zd.id;const q=model.worldToLocal(p.clone());const z=s.zones[zd.id];zoneM[zd.id].grab=[q.x/k+B().W/2-z.x,q.z/k+B().H/2-z.y]},
+        move:p=>{if(!canDrag()||!zoneM[zd.id].grab)return;const q=model.worldToLocal(p.clone());const z=s.zones[zd.id];z.x=snap(q.x/k+B().W/2-zoneM[zd.id].grab[0]);z.y=snap(q.z/k+B().H/2-zoneM[zd.id].grab[1])},
+        end:()=>{if(zoneM[zd.id].grab){zoneM[zd.id].grab=null;StudyKit.sfx("pop")}}})});
+    built=s.brief}
+  const canDrag=()=>["explore","communicate","test"].includes(S.api.step.k);
+  // rule lights along the front of the board
+  const lights=[0,1,2,3,4,5].map(i=>{const g=S.group();g.position.set(-5.2+i*1.75,TOP,4.15);g.add(S.cyl(.18,.22,.12,mat("plastic","#ffffff",{rough:.4}),{at:[0,.06,0]}));
+    const b=S.sphere(.13,mat("glow",PAL.product.lime,1.2,{fresh:true}),{at:[0,.24,0]});g.add(b);const L=S.label({off:[0,i%2?26:-30]});return {g,b,L}});
+  // people walking the brief's route
+  const NW=14,walkers=S.swarm(NW,new THREE.CapsuleGeometry(.06,.12,4,10),mat("plastic","#ffffff",{rough:.4}),{colors:true});walkers.castShadow=true;model.add(walkers);
+  const heads=S.swarm(NW,new THREE.SphereGeometry(.055,12,8),mat("plastic","#F2D0B4",{rough:.4}));model.add(heads);
+  const route=S.tube([[0,0,0],[1,0,0]],.025,mat("glow",PAL.deep.sky,.8,{fresh:true}),{cast:false});model.add(route);let routeKey="";let curve=null;
+  // three saved options as little models on stands
+  const opt=["A","B","C"].map((K,i)=>{const g=S.group();g.position.set(-4.2+i*4.2,TOP,-7.6);const stand=S.rbox(3.6,.2,2.6,.08,mat("plastic",PAL.case.butter,{rough:.5}),{at:[0,.1,0]});g.add(stand);
+    const inner=S.group(g);inner.position.y=.22;const L=S.label({off:[0,-34]});return {g,inner,L,key:""}});
+  // dimension rods for the communicate step
+  const dimM=mat("plastic",PAL.ink,{rough:.4});const dims=[0,1,2,3].map(()=>{const g=S.group(model);const r=S.cyl(.012,.012,1,dimM,{seg:6,cast:false,rot:[0,0,Math.PI/2]});g.add(r);
+    const a=S.box(.012,.16,.012,dimM,{cast:false}),b=S.box(.012,.16,.012,dimM,{cast:false});g.add(a,b);const L=S.label({off:[0,-18]});return {g,r,a,b,L}});
+  const setDim=(D,p1,p2,txt)=>{const L=p1.distanceTo(p2);D.g.position.copy(p1).add(p2).multiplyScalar(.5);D.g.lookAt(model.localToWorld(p2.clone()));D.g.rotateY(Math.PI/2);
+    D.r.scale.y=L;D.a.position.set(-L/2,0,0);D.b.position.set(L/2,0,0);D.L.at(model.localToWorld(D.g.position.clone())).set(txt)};
+  const lBrief=S.label({cls:"big",off:[0,-40]}),lScore=S.label({cls:"big",off:[30,-20]});
+  S.view("board",[1.2,9.6,9.4],[-.4,0,.6],{min:4,max:30});S.view("options",[.4,5.2,-1.2],[0,.2,-7.6],{min:3,max:30});S.view("low",[5.6,5.2,8.6],[-.6,.2,0],{min:4,max:30});
+  const viewOf=k=>k==="ideate"?"options":k==="evaluate"?"low":"board";
+  const tmp=V3();
+  function miniModel(o,zs){while(o.inner.children.length)o.inner.remove(o.inner.children[0]);const Bz=B();const kk=3.2/Bz.W;
+    o.inner.add(S.rbox(Bz.W*kk+.06,.03,Bz.H*kk+.06,.01,mat("plastic","#FFFDF8"),{at:[0,.015,0]}));
+    Bz.zones.forEach(zd=>{const z={...zd,...zs[zd.id]};o.inner.add(S.rbox(z.w*kk*.96,.12,z.h*kk*.96,.02,mat("plastic",zd.c,{rough:.45}),{at:[(z.x+z.w/2-Bz.W/2)*kk,.09,(z.y+z.h/2-Bz.H/2)*kk]}))})}
+  return {
+    step(st){const v=viewOf(st.k);S.goView(v);S.setShadowBox(v==="options"?6:8,v==="options"?[0,0,-7.4]:[0,0,0])},
+    update(x,st,dt,t){
+      if(built!==s.brief)build();
+      const Bz=B(),r=evalZones(s.zones);const show=st.k!=="ideate";
+      Bz.zones.forEach(zd=>{const Zm=zoneM[zd.id];if(!Zm)return;const z={...zd,...s.zones[zd.id]};const c=W2(z.x+z.w/2,z.y+z.h/2);
+        const bad=(z.x<0||z.y<0||z.x+z.w>Bz.W||z.y+z.h>Bz.H)||Bz.zones.some(q=>q.id!==z.id&&gap(z,{...q,...s.zones[q.id]})<-0.01);const sel=s.sel===zd.id;
+        Zm.lift=S.lerp(Zm.lift,sel?.12:0,.2);const hh=.16+(sel?.04:0);Zm.g.position.set(c.x,Zm.lift,c.z);
+        Zm.slab.scale.set(z.w*k*.97,hh,z.h*k*.97);Zm.slab.position.y=hh/2;Zm.rimL.scale.copy(Zm.slab.scale);Zm.rimL.position.y=hh/2;
+        Zm.glow.scale.set(z.w*k*.99+.04,hh+.04,z.h*k*.99+.04);Zm.glow.position.y=hh/2;Zm.glow.material.opacity=bad?.35+.15*Math.sin(t*6):0;
+        Zm.L.show(show).at(model.localToWorld(tmp.set(c.x,Zm.lift+hh+.05,c.z))).set(`${esc(zd.label)}<small>${fmt(z.w*z.h)} m²${bad?" · breaks a rule":""}</small>`).cls(sel?"hot":"")});
+      model.visible=show;
+      Bz.rules.forEach(([key,lab,short],i)=>{const Lt=lights[i];if(!Lt)return;Lt.g.visible=show;const ok=r[key];Lt.b.material.color.set(ok?PAL.product.lime:PAL.product.strawberry);Lt.b.material.emissive.set(ok?PAL.product.lime:PAL.product.strawberry);
+        Lt.b.material.emissiveIntensity=ok?1.4:1+.5*Math.sin(t*5);Lt.L.show(show).at(tmp.set(Lt.g.position.x,TOP+.4,Lt.g.position.z)).set(esc(short||lab))});
+      for(let i=Bz.rules.length;i<6;i++){lights[i].g.visible=false;lights[i].L.hide()}
+      // the walking route: entrance → triage → bays (ED) or entrance → lobby → produce → checkouts → exit (store)
+      const door=id=>Bz.fixed.find(f=>f.id===id).door,ctr=id=>{const z=Z(id);return [z.x+z.w/2,z.y+z.h/2]};
+      const pts=s.brief==="ed"?[door("entrance"),ctr("triage"),ctr("bays")]:[door("entrance"),ctr("lobby"),ctr("produce"),ctr("checkouts"),door("exit")];
+      const rk=JSON.stringify(pts);if(rk!==routeKey){routeKey=rk;curve=new THREE.CatmullRomCurve3(pts.map(p=>{const v=W2(p[0],p[1]);v.y=.06;return v}),false,"centripetal",.2);
+        route.geometry.dispose();route.geometry=new THREE.TubeGeometry(curve,80,.025,8,false)}
+      route.visible=show;
+      for(let i=0;i<NW;i++){const u=((t*.06+i/NW)%1);const p=curve.getPointAt(u);walkers.put(i,p.x,.15,p.z,show?1:0);heads.put(i,p.x,.3,p.z,show?1:0);walkers.tint(i,[PAL.product.blueberry,PAL.product.strawberry,PAL.product.lime,PAL.product.peach][i%4])}
+      walkers.done();heads.done();
+      // options
+      opt.forEach((o,i)=>{const K=["A","B","C"][i];const op=s.options[K];const key=op&&op.brief===s.brief?JSON.stringify(op.zones):"";
+        if(key!==o.key){o.key=key;miniModel(o,key?op.zones:{});if(!key)while(o.inner.children.length)o.inner.remove(o.inner.children[0])}
+        o.g.visible=st.k==="ideate"||st.k==="test";o.L.show(o.g.visible).at(tmp.set(o.g.position.x,TOP+.6,o.g.position.z)).set(key?`Option ${K}<small>${op.r.pass} of ${op.r.total} rules · walk ${fmt(op.r.walk,1)} m</small>`:`Option ${K}<small>arrange the zones, then Save as ${K}</small>`)});
+      // dimensions (communicate): the site and the selected zone, in millimetres
+      const showD=st.k==="communicate";dims.forEach(D=>{D.g.visible=showD;D.L.show(showD)});
+      if(showD){const z=Z(s.sel);const y=.5;const w0=W2(0,Bz.H),w1=W2(Bz.W,Bz.H),h0=W2(Bz.W,0),h1=W2(Bz.W,Bz.H);
+        setDim(dims[0],V3(w0.x,y,w0.z+.45),V3(w1.x,y,w1.z+.45),`${fmt(Bz.W*1000)}`);setDim(dims[1],V3(h0.x+.45,y,h0.z),V3(h1.x+.45,y,h1.z),`${fmt(Bz.H*1000)}`);
+        const a=W2(z.x,z.y),b=W2(z.x+z.w,z.y),c=W2(z.x,z.y+z.h);setDim(dims[2],V3(a.x,y,a.z-.25),V3(b.x,y,b.z-.25),`${fmt(z.w*1000)}`);setDim(dims[3],V3(a.x-.25,y,a.z),V3(c.x-.25,y,c.z),`${fmt(z.h*1000)}`)}
+      lBrief.show(st.k==="brief").at(tmp.set(-.6,TOP+.8,-4)).set(`${esc(Bz.name)}<small>${Bz.W} × ${Bz.H} m site · ${Bz.zones.length} zones · ${Bz.rules.length} rules</small>`);
+      lScore.show(st.k==="evaluate").at(tmp.set(4.2,TOP+.6,2.6)).set(`${r.pass} of ${r.total} rules met<small>walk ${fmt(r.walk,1)} m · ${fmt(r.areaV/Bz.need,2)} m² each</small>`);
+    }};
+}
+const api=StudyKit.mount({kupu:KUPU,caseTint:"butter",scene3d:plan3d,
   eyebrow:"Design and visual communication · Spatial design", title:"The floor-plan studio", crumb:"NCEA DVC · AS91337 (Level 2) and AS91627 (Level 3) · externally assessed portfolios", homeHash:"l2",
   fig:"FIG. 27 · A FLOOR PLAN YOU CAN REARRANGE", railTitle:"Brief, explore, draw, evaluate",
   badge:{label:"NCEA DVC 91337 · 91627 (portfolio)"},

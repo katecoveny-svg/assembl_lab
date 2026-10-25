@@ -215,7 +215,216 @@ const CH=[
   {q:"Set a charger and efficiency so that 50% takes between 25 and 30 minutes (3 349 mAh).",check:()=>s.mAh===3349&&t50()>=1500&&t50()<=1800,ok:()=>`Yes: ${fmt(0.5*E()/1000,1)} kJ ÷ (${fmt(s.Pchg)} W × ${Math.round(s.eff*100)}%) = ${fmt(t50()/60,1)} min.`,no:()=>s.mAh!==3349?"Set the battery back to 3 349 mAh first.":`Not yet: ${fmt(t50()/60,1)} min. You need ${fmt(0.5*E()/1000,1)} kJ ÷ P_eff between 1500 and 1800 s, so P × efficiency between ${fmt(0.5*E()/1800,1)} and ${fmt(0.5*E()/1500,1)} W.`},
   {q:"Level 3: with a 3.0 A load, choose an internal resistance that keeps the lost volts under 0.10 V.",check:()=>s.Iload===3&&s.Iload*s.r<0.1,ok:()=>`Yes: Ir = 3.0 × ${fmt(s.r,2)} = ${fmt(3*s.r,2)} V, so the terminal voltage stays at ${fmt(Vterm(),2)} V and only ${fmt(Plost(),2)} W heats the cell.`,no:()=>s.Iload!==3?"Set the load to 3.0 A first.":`Not yet: Ir = ${fmt(3*s.r,2)} V. You need r < 0.10 ÷ 3.0 = 0.033 Ω.`},
   {q:"Level 3: set the capacitor and resistor so the time constant is about 0.10 s.",check:()=>Math.abs(tau()-0.1)<=0.01,ok:()=>`Yes: τ = RC = ${fmt(s.R)} × ${sci(s.C*1e-6,2)} = ${fmt(tau(),3)} s. After 0.10 s the capacitor is at 63%.`,no:()=>`Not yet: τ = ${fmt(tau()*1000,1)} ms. τ = RC with C in farads (${fmt(s.C)} μF = ${sci(s.C*1e-6,2)} F).`}];
-StudyKit.mount({kupu:KUPU,caseTint:"sky",
+// ---- the 3D bench (../kit3d.js): an exploded, see-through phone on a charger, plus four little circuit boards (internal
+// resistance, parallel loads, a Qi pad, a capacitor). Charges are glowing beads whose speed follows the model's current;
+// every number on a pill or a screen comes from the same functions the chips and challenges use.
+function phone3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const TOP=.3,tmp=new THREE.Vector3(),UP=V3(0,1,0),qq=new THREE.Quaternion();
+  const ZP=V3(-4.6,0,3.6),ZW=V3(8.2,0,3.6),ZI=V3(-10,0,-6),ZR=V3(0,0,-6),ZK=V3(10,0,-6);
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZP,12.4,7.6,PAL.case.sky);plinth(ZW,7.6,7.6,PAL.case.lavender);plinth(ZI,8.6,5.8,PAL.case.mint);plinth(ZR,8.6,5.8,PAL.case.lavender);plinth(ZK,8.6,5.8,PAL.case.mint);
+  const zoneG=c=>{const g=S.group();g.position.set(c.x,TOP,c.z);return g};
+  const white=mat("plastic","#ffffff",{rough:.35}),ink=mat("plastic",PAL.ink,{rough:.4}),steel=mat("metal",PAL.steel,{rough:.3}),steelD=mat("metal",PAL.steelDark,{rough:.35}),copperM=mat("metal",PAL.copper,{rough:.28});
+  const limeM=mat("plastic",LIME,{rough:.35}),butterM=mat("plastic",BUTTER,{rough:.35});
+  const addGlowM=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o??0,depthWrite:false,blending:THREE.AdditiveBlending});
+  const beadGeo=new THREE.SphereGeometry(1,12,10);
+  // a wire with glowing charges riding along it; the phase advances at a speed set by the current, so changes never jump
+  function wireRun(parent,pts,n,o={}){const curve=pts instanceof THREE.Curve?pts:new THREE.CatmullRomCurve3(pts.map(p=>V3(...p)),!!o.closed,"centripetal");
+    if(o.draw!==false)parent.add(S.tube(curve,o.r??.04,o.mat||copperM,{seg:o.seg??160,closed:!!o.closed}));
+    const sw=S.swarm(n,beadGeo,mat("glow",o.col||"#FFD76A",2.2));parent.add(sw);
+    return {curve,sw,ph:0,upd(dt,speed,on){if(on&&!S.REDUCED)this.ph=(this.ph+dt*speed)%1;for(let i=0;i<n;i++){let u=(i/n+this.ph)%1;if(!o.closed)u=Math.min(.999,u);curve.getPointAt(u,tmp);sw.put(i,tmp.x,tmp.y,tmp.z,on?(o.br??.05):0)}sw.done()}}}
+  // a canvas graph on a white stand
+  function graphStand(parent,at,wU){const g=S.group(parent);g.position.set(...at);const p=S.panel(640,400,wU);p.position.set(0,.35+p.hU/2+.08,.03);g.add(p);
+    g.add(S.rbox(wU+.18,p.hU+.18,.08,.05,white,{at:[0,.35+p.hU/2+.08,-.03]}));g.add(S.cyl(.05,.07,.5,steel,{at:[0,.25,-.05],seg:12}));g.add(S.cyl(.3,.34,.06,white,{at:[0,.03,-.05],seg:24}));return p}
+  function plot(g,w,h,o){g.fillStyle="#ffffff";g.fillRect(0,0,w,h);const L=70,R=w-30,T=46,B=h-56;g.strokeStyle="#8F9BAA";g.lineWidth=2;g.beginPath();g.moveTo(L,T-10);g.lineTo(L,B);g.lineTo(R+10,B);g.stroke();
+    g.font="600 22px Instrument Sans, system-ui";g.fillStyle="#6E6A86";g.textAlign="left";g.fillText(o.title,L,30);g.textAlign="right";g.fillText(o.xlab,R,h-18);
+    const X=x=>L+(x-o.x0)/(o.x1-o.x0)*(R-L),Y=y=>B-(y-o.y0)/(o.y1-o.y0)*(B-T);
+    (o.marks||[]).forEach(mk=>{g.strokeStyle=mk.col;g.setLineDash([8,8]);g.lineWidth=2;g.beginPath();g.moveTo(X(mk.x),T);g.lineTo(X(mk.x),B);g.stroke();g.setLineDash([]);g.fillStyle=mk.col;g.textAlign="left";g.fillText(mk.t,X(mk.x)+8,T+20)});
+    o.curves.forEach(c=>{g.strokeStyle=c.col;g.lineWidth=5;g.setLineDash(c.dash?[14,10]:[]);g.beginPath();for(let i=0;i<=120;i++){const x=o.x0+(o.x1-o.x0)*i/120,y=c.f(x);const px=X(x),py=Math.max(T-10,Math.min(B,Y(y)));i?g.lineTo(px,py):g.moveTo(px,py)}g.stroke();g.setLineDash([]);
+      if(c.lab){g.fillStyle=c.col;g.textAlign="left";g.fillText(c.lab,14,Math.max(T,Math.min(B,Y(c.f(o.x0))))+8)}});
+    if(o.dot){const px=X(o.dot[0]),py=Math.max(T-10,Math.min(B,Y(o.dot[1])));g.fillStyle=BUTTER;g.strokeStyle=NAVY;g.lineWidth=3;g.beginPath();g.arc(px,py,12,0,7);g.fill();g.stroke()}}
+  const cell=(parent,at,rot)=>{const g=S.group(parent);g.position.set(...at);if(rot)g.rotation.set(...rot);g.add(S.cyl(.32,.32,1.0,limeM,{seg:32}));g.add(S.cyl(.33,.33,.12,ink,{at:[0,-.5,0],seg:32}));g.add(S.cyl(.1,.1,.1,steel,{at:[0,.55,0],seg:16}));return g};
+  const meterDial=(parent,at,max)=>{const g=S.group(parent);g.position.set(...at);g.add(S.cyl(.42,.46,.22,white,{at:[0,.11,0],seg:36}));const p=S.panel(256,256,.74);p.rotation.x=-Math.PI/2;p.position.y=.225;g.add(p);
+    let last=-1;g.set=v=>{if(Math.abs(v-last)<.005)return;last=v;p.redraw((c,w,h)=>{c.fillStyle="#fff";c.beginPath();c.arc(w/2,h/2,w/2-4,0,7);c.fill();c.strokeStyle="#C9C2DC";c.lineWidth=6;c.beginPath();c.arc(w/2,h/2+30,90,Math.PI*1.15,Math.PI*1.85);c.stroke();
+      for(let k=0;k<=5;k++){const a=Math.PI*(1.15+.7*k/5);c.lineWidth=4;c.beginPath();c.moveTo(w/2+Math.cos(a)*90,h/2+30+Math.sin(a)*90);c.lineTo(w/2+Math.cos(a)*72,h/2+30+Math.sin(a)*72);c.stroke()}
+      const a=Math.PI*(1.15+.7*Math.max(0,Math.min(1,v/max)));c.strokeStyle=PAL.deep.blush;c.lineWidth=7;c.lineCap="round";c.beginPath();c.moveTo(w/2,h/2+30);c.lineTo(w/2+Math.cos(a)*88,h/2+30+Math.sin(a)*88);c.stroke();
+      c.fillStyle=NAVY;c.beginPath();c.arc(w/2,h/2+30,10,0,7);c.fill();c.fillStyle="#6E6A86";c.font="700 30px Instrument Sans, system-ui";c.textAlign="center";c.fillText("A",w/2,h/2+86)})};return g};
+
+  // ================================================================ ZONE 1: the exploded phone on its charger
+  const gP=zoneG(ZP);const PXc=1.3;
+  const phone=S.group(gP);phone.position.set(PXc,0,-.2);
+  const back=S.group(phone);back.add(S.rbox(4.4,.18,2.2,.09,mat("plastic",PAL.case.sky,{rough:.4}),{at:[0,.09,0]}));
+  back.add(S.rbox(.9,.1,.9,.12,mat("plastic",PAL.case.sky,{rough:.3}),{at:[1.55,.22,-.55]}));for(const [x,z] of [[1.4,-.7],[1.7,-.4],[1.4,-.4]])back.add(S.cyl(.12,.12,.06,ink,{at:[x,.29,z],seg:24}));
+  back.add(S.rbox(.18,.1,.3,.03,steel,{at:[-2.18,.1,0]}));
+  const bat=S.group(phone);
+  const batCase=S.rbox(2.9,.34,1.7,.08,mat("acrylic",PAL.case.sky,{opacity:.22}),{cast:false});batCase.position.y=.17;batCase.renderOrder=3;bat.add(batCase);
+  const fillM=mat("plastic",LIME,{rough:.35,fresh:true});const batFill=S.rbox(2.76,.26,1.56,.06,fillM);bat.add(batFill);
+  bat.add(S.rbox(.2,.1,.5,.03,steel,{at:[1.55,.17,0]}));
+  const beads=S.swarm(320,beadGeo,mat("glow","#FFD24A",2.2));bat.add(beads);
+  const board=S.group(phone);board.add(S.rbox(3.9,.06,2.0,.04,mat("plastic","#9ED6C2",{rough:.5}),{at:[0,.03,0]}));
+  board.add(S.rbox(.7,.08,.7,.04,ink,{at:[.6,.1,.2]}));board.add(S.rbox(.5,.06,.35,.03,mat("plastic","#3B4466"),{at:[-.5,.09,-.5]}));board.add(S.rbox(.35,.06,.5,.03,steel,{at:[1.4,.09,.5]}));
+  for(let i=0;i<5;i++)board.add(S.box(.02,.01,1.2,copperM,{at:[-1.3+i*.12,.065,.2]}));
+  const scr=S.group(phone);scr.add(S.rbox(4.3,.08,2.12,.08,mat("plastic","#1B2238",{rough:.15,coat:1}),{at:[0,.04,0]}));
+  const screen=S.panel(760,370,4.0);screen.rotation.x=-Math.PI/2;screen.position.y=.085;scr.add(screen);
+  const glowScr=S.mesh(new THREE.PlaneGeometry(4.2,2.0),addGlowM("#BFDDF5"),{rot:[-Math.PI/2,0,0],at:[0,.1,0],cast:false});scr.add(glowScr);
+  const upStream=wireRun(phone,[[-.3,.4,.3],[-.3,2.6,.3]],12,{draw:false,col:"#FFD24A",br:.045}),upStream2=wireRun(phone,[[.5,.4,-.3],[.5,2.6,-.3]],12,{draw:false,col:"#FFD24A",br:.045});
+  // the charger brick, its pins, and the cable with charges riding along it
+  const brick=S.group(gP);brick.position.set(-4.0,0,1.7);brick.add(S.rbox(1.15,.85,.95,.14,white,{at:[0,.425,0]}));
+  for(const z of [-.2,.2])brick.add(S.box(.35,.06,.1,steel,{at:[-.72,.42,z]}));brick.add(S.rbox(.06,.16,.3,.03,ink,{at:[.58,.42,0]}));
+  const cable=wireRun(gP,[[-3.42,.42,1.7],[-2.8,.16,1.8],[-2.1,.14,1.2],[-1.6,.16,.2],[-1.05,.16,-.2],[PXc-2.3,.12,-.2]],28,{r:.07,mat:mat("plastic","#E9EDF4",{rough:.45}),seg:120});
+  const haze=S.puffs(30,"#FFB27A",{additive:true});gP.add(haze);const hz=[];for(let i=0;i<30;i++)hz.push({x:0,y:0,z:0,life:Math.random()*2});
+  const gr=graphStand(gP,[4.6,0,-1.9],2.8);gr.parent.rotation.y=-.45;let grKey="";
+  const lBat=S.label({off:[-30,-40]}),lQ=S.label({cls:"big",off:[34,-20]}),lScr=S.label({cls:"big",off:[30,-30]}),lChg=S.label({off:[-20,-46]}),lCab=S.label({cls:"hot",off:[-30,30]}),lCell=S.label({off:[40,30]});
+  let scrKey="",explode=1;
+
+  // ================================================================ ZONE 2: internal resistance
+  const gI=zoneG(ZI);gI.add(S.rbox(7.6,.08,4.6,.05,mat("acrylic",PAL.case.sky,{opacity:.3}),{at:[0,.04,0],cast:false}));
+  const cellI=cell(gI,[-2.6,.62,-.6],[0,0,0]);
+  const insideCell=S.rbox(2.9,1.5,1.3,.1,mat("acrylic","#ffffff",{opacity:.12}),{at:[-1.9,.8,-.6],cast:false});insideCell.renderOrder=3;gI.add(insideCell);
+  const rM=new THREE.MeshPhysicalMaterial({color:"#F4F1EA",roughness:.5,clearcoat:.3,emissive:"#FF5A2A",emissiveIntensity:0});
+  const rBlock=S.rbox(.9,.36,.36,.08,rM,{at:[-1.25,.5,-.6]});gI.add(rBlock);for(const x of [-1.5,-1.25,-1.0])gI.add(S.box(.06,.37,.37,mat("plastic",PAL.product.peach),{at:[x,.5,-.6]}));
+  const load=S.rbox(.6,.9,.6,.1,butterM,{at:[2.4,.55,.4]});gI.add(load);
+  const loopI=wireRun(gI,[[-2.6,.32,-.1],[-2.6,.32,1.5],[0,.32,1.5],[2.4,.32,1.5],[2.4,.32,.4],[2.4,.32,-.6],[0,.5,-.6],[-.8,.5,-.6],[-1.7,.5,-.6],[-2.2,.5,-.6],[-2.6,1.2,-.6]],36,{closed:true});
+  const amI=meterDial(gI,[0,.08,1.5],5);
+  const thI=S.group(gI);thI.position.set(3.2,0,-1.5);thI.add(S.cyl(.09,.09,1.8,mat("glass","#ffffff",{opacity:.3}),{at:[0,1.05,0],cast:false}));thI.add(S.sphere(.14,mat("glow",STRAW,.6),{at:[0,.16,0]}));
+  const spI=S.cyl(.05,.05,1,mat("glow",STRAW,.6),{seg:10});thI.add(spI);thI.add(S.cyl(.22,.25,.06,white,{at:[0,.03,0],seg:20}));
+  const heatI=S.puffs(30,"#FF9A5A",{additive:true});gI.add(heatI);const hi=[];for(let i=0;i<30;i++)hi.push({x:0,y:0,z:0,life:Math.random()});
+  const grI=graphStand(gI,[1.0,0,-1.7],2.6);let grIKey="";
+  const lEmf=S.label({off:[-30,-40]}),lR=S.label({cls:"hot",off:[10,-56]}),lVt=S.label({cls:"big",off:[34,34]}),lLoad=S.label({off:[30,0]}),lTemp=S.label({off:[24,-10]});
+
+  // ================================================================ ZONE 3: loads in parallel
+  const gR=zoneG(ZR);gR.add(S.rbox(7.6,.08,4.6,.05,mat("acrylic",PAL.case.sky,{opacity:.3}),{at:[0,.04,0],cast:false}));
+  cell(gR,[-2.9,.42,0],[Math.PI/2,0,0]);
+  const scrL=S.group(gR);scrL.position.set(-.1,0,0);scrL.add(S.rbox(.9,.9,.3,.08,butterM,{at:[0,.55,0]}));const scrGlowM=S.M.glow("#DDEBFF",0);scrL.add(S.rbox(.72,.66,.02,.04,scrGlowM,{at:[0,.58,.16]}));
+  const modem=S.group(gR);modem.position.set(2.3,0,0);modem.add(S.rbox(.7,.6,.5,.08,mat("plastic",BLUE,{rough:.35}),{at:[0,.4,0]}));modem.add(S.cyl(.03,.03,.8,steel,{at:[.2,1.0,0],seg:8}));
+  const rings=[0,1,2].map(()=>{const r=S.torus(.2,.015,addGlowM(BLUE,0),{rot:[Math.PI/2,0,0],cast:false});r.position.set(.2,1.4,0);modem.add(r);return r});
+  const railS=[[-2.9,.32,-.4],[-2.9,.32,-1.5],[-.1,.32,-1.5],[-.1,.32,-.3],[-.1,.32,.3],[-.1,.32,1.5],[-2.9,.32,1.5],[-2.9,.32,.4]];
+  const railM=[[-2.9,.32,-.4],[-2.9,.32,-1.5],[-.1,.32,-1.5],[2.3,.32,-1.5],[2.3,.32,-.3],[2.3,.32,.3],[2.3,.32,1.5],[-.1,.32,1.5],[-2.9,.32,1.5],[-2.9,.32,.4]];
+  const lineRun=(pts)=>{const path=new THREE.CurvePath();for(let i=0;i<pts.length-1;i++)path.add(new THREE.LineCurve3(V3(...pts[i]),V3(...pts[i+1])));return path};
+  const loopS=wireRun(gR,lineRun(railS),40,{r:.045}),loopMo=wireRun(gR,lineRun(railM),60,{r:.045,col:"#BFE0FF"});
+  const amR=meterDial(gR,[-1.6,.08,-1.5],4);
+  const lVp=S.label({off:[-30,-30]}),lIs=S.label({off:[24,-56]}),lIm=S.label({off:[30,-40]}),lIt=S.label({cls:"big",off:[-50,-40]}),lFlat=S.label({off:[30,30]});
+
+  // ================================================================ ZONE 4: the Qi pad
+  const gW=zoneG(ZW);
+  gW.add(S.cyl(1.7,1.8,.26,white,{at:[0,.13,0],seg:64}));
+  const padCoilM=S.M.glow(PAL.copper,0);padCoilM.color.set(PAL.copper);
+  gW.add(S.tube(Array.from({length:140},(_,i)=>{const a=i/139*Math.PI*12;const r=.25+1.2*(i/139);return [Math.cos(a)*r,.28,Math.sin(a)*r]}),.035,padCoilM,{seg:600,cast:false}));
+  const hov=S.group(gW);hov.add(S.rbox(3.4,.22,1.7,.1,mat("acrylic",PAL.case.sky,{opacity:.35}),{at:[0,.11,0],cast:false}));hov.children[0].renderOrder=3;
+  hov.add(S.rbox(3.2,.04,1.55,.06,mat("plastic","#1B2238",{rough:.15}),{at:[0,.23,0]}));
+  const pCoils=[];for(let i=0;i<8;i++){const r=S.torus(.18+i*.085,.022,copperM,{rot:[Math.PI/2,0,0]});r.position.y=-.02;hov.add(r);pCoils.push(r)}
+  const coilRun=wireRun(hov,new THREE.CatmullRomCurve3(Array.from({length:24},(_,i)=>V3(Math.cos(i/24*6.283)*.52,-.02,Math.sin(i/24*6.283)*.52)),true),20,{draw:false,closed:true,br:.04});
+  const fieldRings=[];for(let i=0;i<8;i++){const r=S.torus(1,.03,addGlowM("#FFD76A",0),{rot:[Math.PI/2,0,0],cast:false,ts:72});gW.add(r);fieldRings.push(r)}
+  const fluxLines=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;const ln=S.cyl(.012,.012,1,addGlowM("#FFC84A",0),{seg:6,cast:false});ln.position.set(Math.cos(a)*.6,0,Math.sin(a)*.6);gW.add(ln);fluxLines.push({ln})}
+  const emfBar=S.group(gW);emfBar.position.set(2.7,0,-1.6);emfBar.add(S.cyl(.14,.14,2.4,mat("glass","#ffffff",{opacity:.25}),{at:[0,1.35,0],cast:false}));emfBar.add(S.cyl(.26,.3,.1,white,{at:[0,.05,0],seg:24}));
+  const emfFillM=S.M.glow(LIME,1.2);const emfFill=S.cyl(.1,.1,1,emfFillM,{seg:16});emfBar.add(emfFill);
+  let wph=0;
+  const lPad=S.label({off:[-30,30]}),lCoil=S.label({off:[30,-40]}),lGap=S.label({off:[-40,-10]}),lEmfW=S.label({cls:"big",off:[24,-20]});
+
+  // ================================================================ ZONE 5: a capacitor charging through a resistor
+  const gK=zoneG(ZK);gK.add(S.rbox(7.6,.08,4.6,.05,mat("acrylic",PAL.case.sky,{opacity:.3}),{at:[0,.04,0],cast:false}));
+  cell(gK,[-2.9,.42,0],[Math.PI/2,0,0]);
+  const res=S.group(gK);res.position.set(-1.1,.42,-1.5);res.add(S.cyl(.16,.16,.8,mat("plastic","#F4F1EA",{rough:.5}),{rot:[0,0,Math.PI/2],seg:20}));
+  [PAL.product.peach,PAL.ink,PAL.product.strawberry].forEach((c,i)=>res.add(S.cyl(.165,.165,.07,mat("plastic",c),{at:[-.2+i*.17,0,0],rot:[0,0,Math.PI/2],seg:20})));
+  const PLX=[1.55,2.15];const plates=PLX.map(x=>{const p=S.rbox(.08,1.5,1.5,.03,steel,{at:[x,1.1,0]});gK.add(p);gK.add(S.cyl(.04,.04,.4,steelD,{at:[x,.2,0],seg:8}));return p});
+  const kRun=wireRun(gK,lineRun([[-2.9,.32,-.45],[-2.9,.32,-1.5],[-1.5,.42,-1.5],[-.7,.42,-1.5],[1.2,.42,-1.5],[1.2,1.1,-1.5],[1.2,1.1,0],[1.51,1.1,0]]),26,{r:.04});
+  const kRun2=wireRun(gK,lineRun([[2.19,1.1,0],[2.6,1.1,0],[2.6,1.1,1.5],[2.6,.32,1.5],[-2.9,.32,1.5],[-2.9,.32,.45]]),26,{r:.04});
+  const qPlus=S.swarm(100,beadGeo,mat("glow",STRAW,2)),qMinus=S.swarm(100,beadGeo,mat("glow","#7FB2F0",2));gK.add(qPlus,qMinus);
+  const fLines=S.swarm(25,new THREE.CylinderGeometry(1,1,1,6),addGlowM("#FFD76A",.5));gK.add(fLines);
+  const grK=graphStand(gK,[-.6,0,-.2],2.4);grK.parent.position.set(-.4,0,.3);let grKKey="";
+  const lTau=S.label({cls:"big",off:[-20,-40]}),lCap=S.label({off:[30,-40]}),lRes=S.label({off:[-20,-34]}),lQc=S.label({off:[30,30]});
+
+  // ---------------------------------------------------------------- views
+  S.view("battery",[ZP.x+PXc+.5,8.0,ZP.z+8.6],[ZP.x+PXc,1.7,ZP.z-.2],{min:3,max:24});
+  S.view("phone",[ZP.x+PXc-1.0,6.8,ZP.z+5.6],[ZP.x+PXc,1.2,ZP.z-.3],{min:3,max:24});
+  S.view("charger",[ZP.x+.4,6.2,ZP.z+9.4],[ZP.x+.1,1.2,ZP.z-.4],{min:3,max:26});
+  S.view("internal",[ZI.x+.6,5.0,ZI.z+7.4],[ZI.x+.2,.9,ZI.z],{min:3,max:22});
+  S.view("circuit",[ZR.x+.3,5.6,ZR.z+6.8],[ZR.x,.7,ZR.z],{min:3,max:22});
+  S.view("wireless",[ZW.x+.6,2.6,ZW.z+7.4],[ZW.x+.3,.9,ZW.z],{min:3,max:22});
+  S.view("capacitor",[ZK.x+.6,5.0,ZK.z+7.2],[ZK.x+.2,.9,ZK.z],{min:3,max:22});
+  S.view("all",[0,17,22],[0,.3,-.8],{min:6,max:60});
+  const viewOf=k=>k==="charge"?"battery":k==="energy"?"phone":k==="fast"||k==="ccv"?"charger":k==="test"?"all":k;
+  const zoneOf=v=>v==="battery"||v==="phone"||v==="charger"?"P":v==="internal"?"I":v==="circuit"?"R":v==="wireless"?"W":v==="capacitor"?"K":"all";
+  const centers={P:ZP,I:ZI,R:ZR,W:ZW,K:ZK};
+  const LP=[lBat,lQ,lScr,lChg,lCab,lCell],LI=[lEmf,lR,lVt,lLoad,lTemp],LR=[lVp,lIs,lIm,lIt,lFlat],LW=[lPad,lCoil,lGap,lEmfW],LK=[lTau,lCap,lRes,lQc];
+  const lAll=[S.label({off:[0,-40]}),S.label({off:[0,-40]}),S.label({off:[0,-40]}),S.label({off:[0,-40]}),S.label({off:[0,-40]})];
+  let zone="P",first=true;S.goView("battery",true);
+  return {
+    step(st){const v=viewOf(st.k);zone=zoneOf(v);S.goView(v,first);first=false;const c=centers[zone];S.setShadowBox(zone==="all"?20:6.5,c?[c.x,0,c.z]:[0,0,0]);
+      [[LP,"P"],[LI,"I"],[LR,"R"],[LW,"W"],[LK,"K"]].forEach(([a,z])=>a.forEach(l=>l.show(zone===z)));lAll.forEach(l=>l.show(zone==="all"));
+      [lQ,lScr,lChg,lCab,lCell].forEach(l=>l.hide());
+      if(st.k==="charge")lQ.show();else if(st.k==="energy")lScr.show();else if(zone==="P"){lChg.show();lCab.show();lCell.show()}},
+    update(s,st,dt,t){const k=st.k,run=s.playing;
+      // ---- phone zone
+      const charging=k==="fast"||k==="ccv"||k==="test";
+      const soc=charging?s.soc:(k==="energy"?Math.max(.02,1-Math.min(1,s.t/(s.hours*.6))):1);
+      const ex=k==="charge"?1:k==="energy"?.75:.3;explode=S.lerp(explode,ex,S.REDUCED?1:.06);
+      back.position.y=0;bat.position.y=.2+explode*.9;board.position.y=.45+explode*1.85;scr.position.y=.6+explode*2.7;
+      batFill.scale.x=Math.max(.01,soc);batFill.position.set(-1.38+1.38*soc,.17,0);fillM.color.set(soc>.2?LIME:STRAW);
+      const showBeads=k==="charge";const nB=showBeads?Math.min(320,Math.round(Q()/60)):0;
+      for(let i=0;i<320;i++){const a=i%20,b=Math.floor(i/20)%8,c=Math.floor(i/160);const j=S.REDUCED?0:.012;beads.put(i,-1.3+a*.137+Math.sin(t*5+i)*j,.42+c*.1+Math.cos(t*4+i*1.3)*j,-.7+b*.2,i<nB?.045:0)}beads.done();
+      const P=Pavg(),usingE=k==="energy";upStream.upd(dt,.1+P*.06,usingE&&run);upStream2.upd(dt,.1+P*.06,usingE&&run);
+      glowScr.material.opacity=usingE?.12+.05*Math.sin(t*2):0;
+      const I=k==="ccv"?Icc(s.soc):Ibatt();const flowing=charging&&s.soc<1&&run;cable.upd(dt,.04+I*.035,charging&&s.soc<1);
+      for(let i=0;i<hz.length;i++){const p=hz[i];p.life-=dt;if(p.life<=0){p.life=1.2+Math.random();p.x=-4.0+(Math.random()-.5)*.8;p.z=1.7+(Math.random()-.5)*.6;p.y=.9}p.y+=dt*.45;
+        haze.put(i,p.x,p.y,p.z,k==="fast"&&flowing?(1-s.eff)*2.2*Math.min(1,p.life):0,120)}haze.done();
+      const sk=`${Math.round(soc*100)}|${k}|${charging&&s.soc<1}`;if(sk!==scrKey){scrKey=sk;screen.redraw((g,w,h)=>{const grd=g.createLinearGradient(0,0,w,h);grd.addColorStop(0,"#26305A");grd.addColorStop(1,"#1A2142");g.fillStyle=grd;g.fillRect(0,0,w,h);
+        const bx=w/2-170,by=h/2-60,bw=320,bh=120;g.strokeStyle="#E9EDF4";g.lineWidth=8;g.beginPath();g.roundRect(bx,by,bw,bh,22);g.stroke();g.fillStyle="#E9EDF4";g.fillRect(bx+bw+6,by+38,16,44);
+        g.fillStyle=soc>.2?LIME:STRAW;g.beginPath();g.roundRect(bx+12,by+12,Math.max(8,(bw-24)*soc),bh-24,14);g.fill();
+        g.fillStyle="#ffffff";g.font="600 64px Instrument Sans, system-ui";g.textAlign="center";g.fillText(Math.round(soc*100)+"%",w/2,by+bh+84);
+        if(charging&&s.soc<1){g.fillStyle=BUTTER;g.beginPath();g.moveTo(w/2+12,by+18);g.lineTo(w/2-26,by+66);g.lineTo(w/2,by+66);g.lineTo(w/2-12,by+102);g.lineTo(w/2+26,by+54);g.lineTo(w/2,by+54);g.closePath();g.fill()}})}
+      if(k==="fast"||k==="ccv"){const gk=`${Math.round(s.soc*200)}|${s.Pchg}|${s.r}|${s.eff}|${s.mAh}`;if(gk!==grKey){grKey=gk;gr.redraw((g,w,h)=>plot(g,w,h,{title:"Current (solid) and cell emf (dashed)",xlab:"charge 0 → 100%",x0:0,x1:1,y0:0,y1:1.08,
+        curves:[{f:x=>Icc(x)/Math.max(1,Ibatt()),col:STRAW,lab:"I"},{f:x=>(emf(x)-3.4)/.9,col:BLUE,dash:true,lab:"V"}],marks:[{x:.8,t:"CV",col:"#B5A9D6"}],dot:[s.soc,Icc(s.soc)/Math.max(1,Ibatt())]}))}}
+      gr.parent.visible=zone!=="P"||k==="fast"||k==="ccv"||k==="test";
+      const pw=(x,y,z)=>tmp.set(ZP.x+PXc+x,TOP+y,ZP.z-.2+z);
+      lBat.at(pw(-1.4,bat.position.y+.35,.8)).set(`Battery<b>${fmt(s.mAh)} mAh · ${fmt(s.V,2)} V</b>`);
+      lQ.at(pw(1.2,bat.position.y+.4,0)).set(`Charge stored<b>Q = It = ${fmt(Q())} C</b><small>${fmt(s.mAh/1000,3)} A h × 3600 s · 1 bead ≈ 60 C</small>`);
+      lScr.at(pw(1.6,scr.position.y,.6)).set(`Average power<b>P = E ÷ t = ${fmt(Pavg(),2)} W</b><small>E = ${fmt(E()/1000,1)} kJ over ${fmt(s.hours,1)} h · I = ${fmt(Pavg()/s.V,2)} A</small>`);
+      lChg.at(tmp.set(ZP.x-4.0,TOP+.95,ZP.z+1.7)).set(k==="fast"?`Charger ${fmt(s.Pchg)} W<small>${Math.round(s.eff*100)}% reaches the cell</small>`:`Charger holds ${fmt(VCHG,1)} V<small>cell emf ε = ${fmt(emf(s.soc),2)} V</small>`);
+      cable.curve.getPointAt(.45,tmp);tmp.add(gP.position);lCab.at(tmp).set(k==="fast"?`I into the cell<b>${fmt(Ibatt(),1)} A</b>`:`I = ${fmt(Icc(s.soc),2)} A<small>${Icc(s.soc)>=Ibatt()-.01?"limited by the charger (CC)":"= pd ÷ r, falling (CV)"}</small>`);
+      lCell.at(pw(1.45,bat.position.y+.2,.85)).set(k==="fast"?`50% in<b>${fmt(t50()/60,1)} min</b><small>½E = ${fmt(.5*E()/1000,1)} kJ</small>`:`${Math.round(s.soc*100)}%<small>driving pd ${fmt(VCHG-emf(s.soc),2)} V · ${fmt(s.tchg/60)} min</small>`);
+      // ---- internal resistance
+      const IL=s.Iload,Pl=Plost();loopI.upd(dt,.03+IL*.03,true);amI.set(IL);rM.emissiveIntensity=Math.min(4.5,Pl*1.6);rM.emissive.set(Pl>1.5?"#FF7A3A":"#FF5A2A");
+      const Tph=22+Pl*6;spI.scale.y=Math.max(.02,Math.min(1.55,(Tph-20)*.06));spI.position.y=.22+spI.scale.y/2;
+      for(let i=0;i<hi.length;i++){const p=hi[i];p.life-=dt*.8;if(p.life<=0){p.life=1;p.x=-1.25+(Math.random()-.5)*.7;p.z=-.6+(Math.random()-.5)*.3;p.y=.75}p.y+=dt*.5;heatI.put(i,p.x,p.y,p.z,Math.min(1,Pl/2)*.6*p.life,110)}heatI.done();
+      const gik=`${s.r}|${s.Iload}|${s.V}`;if(gik!==grIKey){grIKey=gik;grI.redraw((g,w,h)=>plot(g,w,h,{title:"Terminal V against current",xlab:"current 0–5 A",x0:0,x1:5,y0:2.5,y1:4.2,curves:[{f:x=>s.V-x*s.r,col:STRAW}],dot:[s.Iload,Vterm()]}))}
+      const ip=(x,y,z)=>tmp.set(ZI.x+x,TOP+y,ZI.z+z);
+      lEmf.at(ip(-2.6,1.25,-.6)).set(`Cell emf<b>ε = ${fmt(s.V,2)} V</b>`);lR.at(ip(-1.25,.7,-.6)).set(`Internal resistance<b>r = ${fmt(s.r,2)} Ω</b><small>heat I²r = ${fmt(Pl,2)} W</small>`);
+      lVt.at(ip(2.4,1.0,.4)).set(`Terminal V<b>${fmt(Vterm(),2)} V</b><small>lost volts Ir = ${fmt(IL*s.r,2)} V</small>`);lLoad.at(ip(0,.4,1.5)).set(`Load ${fmt(IL,1)} A<small>delivered ${fmt(Pdel(),1)} W</small>`);
+      lTemp.at(ip(3.2,.22+spI.scale.y,-1.5)).set(`${fmt(Tph)}°C<small>phone (est.)</small>`);
+      // ---- parallel
+      loopS.upd(dt,.03+s.Iscreen*.035,true);loopMo.upd(dt,(.03+s.Imodem*.035)*40/60*1.3,true);amR.set(Itot());scrGlowM.emissiveIntensity=.6+s.Iscreen*2.2;
+      rings.forEach((r,i)=>{const ph=((t*(.4+s.Imodem*.8)+i/3)%1);r.scale.setScalar(.5+ph*2.2);r.material.opacity=(1-ph)*.6});
+      const rp=(x,y,z)=>tmp.set(ZR.x+x,TOP+y,ZR.z+z);
+      lVp.at(rp(-2.9,.9,0)).set(`${fmt(s.V,2)} V<small>across each branch</small>`);lIs.at(rp(-.1,1.1,0)).set(`Screen ${fmt(s.Iscreen,2)} A<small>${fmt(s.V/s.Iscreen,2)} Ω</small>`);
+      lIm.at(rp(2.3,1.5,0)).set(`Modem ${fmt(s.Imodem,2)} A<small>${fmt(s.V/s.Imodem,2)} Ω</small>`);lIt.at(rp(-1.6,.4,-1.5)).set(`I total = ${fmt(Itot(),2)} A<small>P = ${fmt(Ppar(),2)} W · R = ${fmt(s.V/Itot(),2)} Ω</small>`);
+      lFlat.at(rp(-1.5,.32,1.5)).set(`Flat in<b>${fmt(hoursFlat(),1)} h</b>`);
+      // ---- wireless
+      if(run&&k==="wireless"&&!S.REDUCED)wph+=dt*s.f/140*.5;const ew=emfW(),fall=Math.exp(-s.gap/6);
+      const gapY=.28+.2+s.gap*.15;hov.position.y=gapY;
+      pCoils.forEach((r,i)=>r.visible=i<Math.min(8,Math.round(s.N/2.5)));
+      padCoilM.emissiveIntensity=.6+.6*Math.sin(wph*Math.PI*2*3);
+      fieldRings.forEach((r,i)=>{const u=((wph+i/8)%1);r.position.y=.3+u*(gapY-.3);r.scale.setScalar(1.25-u*.55);r.material.opacity=Math.sin(u*Math.PI)*(.35+.65*fall)});
+      fluxLines.forEach((f,i)=>{f.ln.scale.y=gapY-.3;f.ln.position.y=.3+(gapY-.3)/2;f.ln.material.opacity=(.2+.5*fall)*(.5+.5*Math.sin(wph*Math.PI*2*3))});
+      coilRun.upd(dt,ew*.06,k==="wireless"?run:true);
+      const eh=Math.min(2.3,ew/9.2*2.3);emfFill.scale.y=Math.max(.02,eh);emfFill.position.y=.15+eh/2;
+      const wp=(x,y,z)=>tmp.set(ZW.x+x,TOP+y,ZW.z+z);
+      lPad.at(wp(1.3,.28,.9)).set(`Pad coil<b>${fmt(s.f)} kHz AC</b>`);lCoil.at(wp(-1.2,gapY+.2,0)).set(`Phone coil<b>N = ${s.N}</b>`);
+      lGap.at(wp(-1.65,(gapY+.28)/2,.8)).set(`Gap<b>${fmt(s.gap,1)} mm</b><small>drawn bigger than life</small>`);lEmfW.at(wp(2.7,.15+eh,-1.6)).set(`Induced emf<b>≈ ${fmt(ew,1)} V</b><small>efficiency ${Math.round(effW()*100)}% · 50% in ${fmt(tW50()/60)} min</small>`);
+      // ---- capacitor
+      const frac=s.V?s.vcap/s.V:0,Ik=1-frac;kRun.upd(dt,.02+Ik*.25,k==="capacitor"?run&&frac<.995:false);kRun2.upd(dt,.02+Ik*.25,k==="capacitor"?run&&frac<.995:false);
+      const nq=Math.round(frac*100);for(let i=0;i<100;i++){const a=i%10,b=Math.floor(i/10);const y=1.1-.63+b*.14,z=-.63+a*.14;qPlus.put(i,PLX[0]+.07,y,z,i<nq?.045:0);qMinus.put(i,PLX[1]-.07,y,z,i<nq?.045:0)}qPlus.done();qMinus.done();
+      for(let i=0;i<25;i++){const a=i%5,b=Math.floor(i/5);const y=1.1-.5+b*.25,z=-.5+a*.25;fLines.putS(i,(PLX[0]+PLX[1])/2,y,z,.008,frac>.02?PLX[1]-PLX[0]-.16:0,.008,qq.setFromUnitVectors(UP,V3(1,0,0)))}fLines.done();fLines.material.opacity=.15+.6*frac;
+      const gkk=`${s.C}|${s.R}|${Math.round(s.tcap/tau()*40)}`;if(gkk!==grKKey){grKKey=gkk;const T5=tau()*5;grK.redraw((g,w,h)=>plot(g,w,h,{title:"Capacitor V against time",xlab:"time · 5τ shown",x0:0,x1:T5,y0:0,y1:s.V*1.05,curves:[{f:x=>s.V*(1-Math.exp(-x/tau())),col:STRAW}],marks:[{x:tau(),t:"τ · 63%",col:BLUE}],dot:[Math.min(T5,s.tcap),s.vcap]}))}
+      const kp=(x,y,z)=>tmp.set(ZK.x+x,TOP+y,ZK.z+z);
+      lTau.at(kp(-1.1,.6,-1.5)).set(`Time constant<b>τ = RC = ${fmt(tau()*1000,1)} ms</b><small>${fmt(s.R)} Ω × ${fmt(s.C)} μF</small>`);lRes.hide();
+      lCap.at(kp(1.85,1.95,0)).set(`Capacitor<b>${fmt(s.C)} μF · ${fmt(s.vcap,2)} V now</b>`);lQc.at(kp(1.85,.4,.75)).set(`Q = CV = ${sci(Qcap(),2)} C<small>E = ½CV² = ${sci(Ecap(),2)} J</small>`);
+      // ---- test overview
+      if(zone==="all"){const items=[[ZP,`Charge Q<b>${fmt(Q())} C</b><small>average P ${fmt(Pavg(),2)} W</small>`,[PXc,2.2,0]],[ZP,`Time to 50%<b>${fmt(t50()/60,1)} min</b>`,[-4,1.2,1.7]],[ZI,`Terminal V<b>${fmt(Vterm(),2)} V</b>`,[0,1.6,0]],[ZK,`Time constant<b>τ = ${fmt(tau()*1000,1)} ms</b>`,[1.8,2,0]],[ZW,`Induced emf<b>${fmt(emfW(),1)} V</b>`,[0,1.4,0]]];
+        items.forEach((it,i)=>lAll[i].at(tmp.set(it[0].x+it[2][0],TOP+it[2][1],it[0].z+it[2][2])).set(it[1]))}
+    }};
+}
+StudyKit.mount({kupu:KUPU,caseTint:"sky",scene3d:phone3d,
   eyebrow:"Physics · Electricity and electrical systems", title:"The phone machine", crumb:"NCEA Level 2 Physics AS91173 and Level 3 AS91526", homeHash:"l2",
   fig:"FIG. 25 · A PHONE, ITS BATTERY AND A CHARGER", railTitle:"Charge, energy, current",
   badge:{label:"NCEA L2 91173 · L3 91526",exam:"2026-11-18T14:00:00+13:00",examText:"L2 Wed 18 Nov · L3 Thu 12 Nov"},

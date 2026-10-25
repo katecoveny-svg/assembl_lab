@@ -141,7 +141,206 @@ const KUPU=[
  {mi:"momo",en:"type, kind, species",ta:4184},
  {mi:"rauropi",en:"organism",ta:38797}];
 Object.entries({"cross": ["ira", "pūira", "mātai iranga"], "pool": ["mātāira", "ira", "taupori"], "mutation": ["ira", "pītau ira"], "small": ["taupori", "mātāira"], "survival": ["rauropi"], "migration": ["taupori", "mātāira"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-StudyKit.mount({kupu:KUPU,
+// ---------- the 3D bench: a Punnett cross with real chicks, an island of birds whose colours are the gene pool, a DNA helix and a gel tank
+function genes3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const TOP=.3,ZC=V3(-13.5,0,0),ZI=V3(0,0,0),ZM=V3(8.4,0,-2.6),ZG=V3(17,0,0);
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZC,8.6,7.2,PAL.case.blush);plinth(ZI,12.4,9.2,PAL.case.mint);plinth(ZM,4.2,4.2,PAL.case.sky);plinth(ZG,7.4,6.2,PAL.case.lavender);
+  const FONT="Instrument Sans, system-ui, sans-serif";
+  const COLS={DD:DARK,Dd:DARK,dd:PALE};
+  const tmp=new THREE.Vector3(),q0=new THREE.Quaternion(),eul=new THREE.Euler();
+  let seed=99;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  // ---------------------------------------------------------------- bird parts (simple pebble birds: body, head, tail; no faces). Dd carriers wear a butter dot
+  const bodyGeo=new THREE.SphereGeometry(1,18,14),tailGeo=new THREE.ConeGeometry(.45,1,10);tailGeo.rotateZ(Math.PI/2);
+  const plum=mat("plastic","#ffffff",{rough:.38});
+  function flock(n,o={}){const b=S.swarm(n,bodyGeo,plum,{colors:true,cast:o.cast??true}),h=S.swarm(n,bodyGeo,plum,{colors:true,cast:o.cast??true}),t=S.swarm(n,tailGeo,plum,{colors:true}),d=S.swarm(n,bodyGeo,mat("plastic",PAL.product.butter,{rough:.3}));
+    const par=o.parent||S.scene;par.add(b,h,t,d);
+    return {n,put(i,x,y,z,sc,g,yaw=0,hop=0){if(sc<=0||!g){b.put(i,0,-9,0,.001);h.put(i,0,-9,0,.001);t.put(i,0,-9,0,.001);d.put(i,0,-9,0,.001);return}
+        const c=Math.cos(yaw),s2=Math.sin(yaw);eul.set(0,yaw,0);q0.setFromEuler(eul);const Y=y+hop;
+        b.putS(i,x,Y+sc*.9,z,sc*1.3,sc*.95,sc,q0);h.put(i,x+c*sc*1.05,Y+sc*1.75,z-s2*sc*1.05,sc*.62);t.putS(i,x-c*sc*1.35,Y+sc*1.1,z+s2*sc*1.35,sc*.8,sc*.4,sc*.5,q0);
+        d.put(i,g==="Dd"?x-c*sc*.1:0,g==="Dd"?Y+sc*1.82:-9,g==="Dd"?z+s2*sc*.1:0,g==="Dd"?sc*.32:.001);
+        const col=COLS[g];b.tint(i,col);h.tint(i,col);t.tint(i,g==="dd"?"#E8DFCC":"#2F3A66")},
+      done(){b.done();h.done();t.done();d.done()},parts:[b,h,t,d]}}
+  // ---------------------------------------------------------------- the cross: two parents, a 3D Punnett square, a brood tray of chicks
+  const cz=S.group();cz.position.copy(ZC);
+  const parentAt=[V3(-2.7,0,-1.9),V3(2.7,0,-1.9)];
+  parentAt.forEach(p=>cz.add(S.rbox(1.6,.4,1.6,.12,mat("plastic","#ffffff",{rough:.4}),{at:[p.x,TOP+.2,p.z]})));
+  const parents=flock(2,{parent:cz});
+  const allele=S.swarm(8,bodyGeo,mat("plastic","#ffffff",{rough:.3}),{colors:true,cast:true});cz.add(allele);   // 4 parent alleles + 4 Punnett headers
+  const PX=0,PZ=-1.2,PC=.95;
+  cz.add(S.rbox(PC*2+.5,.16,PC*2+.5,.08,mat("acrylic",PAL.case.blush,{opacity:.3}),{at:[PX,TOP+.08,PZ],cast:false}));
+  const tiles=[0,1,2,3].map(k=>{const i=k>>1,j=k&1;const m=mat("plastic","#ffffff",{rough:.35,fresh:true});const t=S.rbox(PC-.08,.22,PC-.08,.06,m,{at:[PX+(j-.5)*PC,TOP+.27,PZ+(i-.5)*PC]});cz.add(t);return {t,m,i,j}});
+  const tileBirds=flock(4,{parent:cz});
+  const tray=S.rbox(7.2,.22,1.9,.1,mat("plastic","#ffffff",{rough:.4}),{at:[0,TOP+.11,2.15]});cz.add(tray);
+  const trayWall=S.rbox(7.4,.5,2.1,.12,mat("acrylic",PAL.case.blush,{opacity:.22}),{at:[0,TOP+.3,2.15],cast:false});trayWall.renderOrder=3;cz.add(trayWall);
+  const chicks=flock(24,{parent:cz});let kidsRef=null,kidsT=0;
+  // tap a parent to change its genotype, tap the tray to breed again (the same as the Mother, Father and Breed again controls)
+  const cyc={DD:"Dd",Dd:"dd",dd:"DD"};
+  const hitP=parentAt.map((p,i)=>{const m=S.cyl(.8,.8,1.6,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[p.x,TOP+1,p.z],cast:false});m.material.colorWrite=false;cz.add(m);
+    S.pick(m,()=>{const s=S.api.state;if(i===0)s.pA=cyc[s.pA];else s.pB=cyc[s.pB];cross()});return m});
+  S.pick(tray,()=>cross());
+  const lMum=S.label({cls:"big",off:[-30,-40]}),lDad=S.label({cls:"big",off:[30,-40]});
+  const lTile=[0,1,2,3].map(k=>S.label({off:[(k&1)?34:-34,(k>>1)?26:-26]}));
+  const lBrood=S.label({cls:"hot",off:[30,34]});
+  // ---------------------------------------------------------------- the island: sea, sand, grass, and up to 200 birds whose colours are the alleles they carry
+  const iz=S.group();iz.position.copy(ZI);
+  const sea=S.cyl(4.45,4.45,.34,mat("liquid",PAL.water,{opacity:.55,depthWrite:false}),{at:[0,TOP+.17,.3],seg:72,cast:false});sea.renderOrder=2;iz.add(sea);
+  const ring=S.torus(4.45,.05,mat("plastic","#ffffff",{rough:.3}),{at:[0,TOP+.34,.3],rot:[Math.PI/2,0,0],ts:96});iz.add(ring);
+  const sand=S.mesh(new THREE.CylinderGeometry(3.45,3.75,.42,64),mat("plastic","#F2E3C2",{rough:.7,coat:.1}),{at:[0,TOP+.25,.3]});iz.add(sand);
+  const turf=S.mesh(new THREE.CylinderGeometry(3.0,3.3,.2,64),mat("plastic","#BFE3A6",{rough:.7,coat:.1}),{at:[0,TOP+.52,.3]});iz.add(turf);
+  const IY=TOP+.62;
+  // a few pastel bushes and rocks so it reads as a place
+  {const bush=S.swarm(14,new THREE.IcosahedronGeometry(1,1),mat("plastic","#8FCB7A",{rough:.5}),{colors:true,cast:true});for(let i=0;i<14;i++){const a=i/14*Math.PI*2+.2,r=3.05+rnd()*.25,s2=.18+rnd()*.16;bush.putS(i,Math.cos(a)*r,IY-.05+s2*.5,.3+Math.sin(a)*r,s2*1.3,s2,s2*1.2);bush.tint(i,i%2?"#8FCB7A":"#A6D98F")}bush.done();iz.add(bush)}
+  const birds=flock(200,{parent:iz});
+  const home=[];for(let i=0;i<200;i++)home.push({ph:rnd()*6,sp:.6+rnd()*.8,yaw:rnd()*6,jx:rnd()-.5,jz:rnd()-.5});
+  let lastGen=-1,genT=0,lastBirds=null;const eaten=new Set();
+  const spot=(i,n,out)=>{const r=2.75*Math.sqrt((i+.5)/Math.max(n,1)),a=i*2.39996;return out.set(Math.cos(a)*r,IY,.3+Math.sin(a)*r)};
+  // the gene pool jar: 120 allele beads, the dark share is the D frequency
+  const jar=S.group(iz);jar.position.set(4.75,TOP,-3.15);
+  jar.add(S.cyl(.62,.66,.12,mat("plastic","#ffffff",{rough:.4}),{at:[0,.06,0]}));
+  const glass=S.cyl(.6,.6,1.9,mat("glass","#ffffff",{opacity:.16}),{at:[0,1.07,0],cast:false,open:true});glass.renderOrder=6;jar.add(glass);
+  jar.add(S.torus(.6,.03,mat("plastic","#ffffff"),{at:[0,2.02,0],rot:[Math.PI/2,0,0]}));
+  const NBd=120,beads=S.swarm(NBd,new THREE.SphereGeometry(.105,14,10),mat("plastic","#ffffff",{rough:.3}),{colors:true,cast:true});jar.add(beads);
+  const bslot=[];for(let i=0;i<NBd;i++){const layer=Math.floor(i/12),k=i%12,a=k/12*Math.PI*2+layer*.5,r=k%3===0?.12:.4;bslot.push(V3(Math.cos(a)*r,.24+layer*.19,Math.sin(a)*r))}
+  const border=[...Array(NBd).keys()].sort(()=>rnd()-.5);let beadKey="";const beadFlip=new Float32Array(NBd);
+  // a graph screen: D frequency over the generations (the same line as the side graph)
+  const gscr=S.group(iz);gscr.position.set(-4.7,TOP,-3.2);gscr.rotation.y=.35;
+  gscr.add(S.cyl(.05,.07,1.1,mat("metal"),{at:[0,.55,0]}));gscr.add(S.rbox(.8,.1,.5,.04,mat("plastic","#ffffff"),{at:[0,.05,0]}));
+  gscr.add(S.rbox(3.3,2.0,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,2.05,-.05]}));
+  const graph=S.panel(600,360,3.1);graph.position.set(0,2.05,0);gscr.add(graph);let graphKey="",graphT=0;
+  // ---------------------------------------------------------------- the predator: circles overhead and swoops on pale birds (survival)
+  const hawk=S.group(iz);
+  {const hm=mat("plastic","#6E5A7E",{rough:.4});const hb=S.sphere(.22,hm);hb.scale.set(1.8,.7,.8);hawk.add(hb);hawk.add(S.sphere(.13,hm,{at:[.36,.06,0]}));
+    const wingG=new THREE.BoxGeometry(.5,.04,1.5);const w=S.mesh(wingG,hm);hawk.add(w);hawk.userData.w=w;const tl=S.mesh(new THREE.BoxGeometry(.35,.03,.3),hm,{at:[-.45,0,0]});hawk.add(tl)}
+  let swoop={i:-1,t:0},nextSwoop=1.5;
+  const puffE=S.puffs(30,"#ffffff");iz.add(puffE);const pe=Array.from({length:30},()=>({p:V3(0,0,0),v:V3(0,0,0),life:0}));
+  // ---------------------------------------------------------------- the migrants' island: nearly all D, birds fly across
+  const mz=S.group();mz.position.copy(ZM);
+  mz.add(S.cyl(1.75,1.75,.3,mat("liquid",PAL.water,{opacity:.55,depthWrite:false}),{at:[0,TOP+.15,0],cast:false,seg:48}));
+  mz.add(S.mesh(new THREE.CylinderGeometry(1.25,1.45,.4,48),mat("plastic","#F2E3C2",{rough:.7,coat:.1}),{at:[0,TOP+.22,0]}));
+  mz.add(S.mesh(new THREE.CylinderGeometry(1.05,1.2,.18,48),mat("plastic","#BFE3A6",{rough:.7,coat:.1}),{at:[0,TOP+.48,0]}));
+  const mBirds=flock(12,{parent:mz});const mG=[];{let s0=5;const r=()=>(s0=(s0*16807)%2147483647)/2147483647;for(let i=0;i<12;i++){const a=r()<s.pm?"D":"d",b=r()<s.pm?"D":"d";mG.push(a+b==="DD"?"DD":a+b==="dd"?"dd":"Dd")}}
+  const NF=10,fly=flock(NF,{cast:false});const wings=S.swarm(NF*2,new THREE.BoxGeometry(.5,.03,.22),mat("plastic","#2F3A66",{rough:.4}));S.scene.add(wings);
+  const route=S.tube(Array.from({length:24},(_,i)=>{const u=i/23;return [S.lerp(ZM.x,1.6,u),TOP+.8+Math.sin(u*Math.PI)*2.2,S.lerp(ZM.z,-.6,u)]}),.025,mat("flat",PAL.deep.sky,{opacity:.35,depthWrite:false}),{seg:80,cast:false});S.scene.add(route);
+  const fl=Array.from({length:NF},()=>({t:1,a:V3(0,0,0),b:V3(0,0,0),g:"DD"}));let flAcc=0;
+  // ---------------------------------------------------------------- a DNA double helix that turns; in the mutation step one base pair changes
+  const hz=S.group();hz.position.set(-5.05,TOP,3.3);
+  hz.add(S.cyl(.6,.7,.3,mat("plastic","#ffffff",{rough:.4}),{at:[0,.15,0]}));
+  const helix=S.group(hz);helix.position.y=.45;
+  const HN=22,HH=2.7,HR=.42,turns=2;const strand=k=>Array.from({length:60},(_,i)=>{const u=i/59,a=u*turns*Math.PI*2+k*Math.PI;return [Math.cos(a)*HR,u*HH,Math.sin(a)*HR]});
+  helix.add(S.tube(strand(0),.05,mat("plastic",PAL.product.strawberry,{rough:.3}),{seg:200}));helix.add(S.tube(strand(1),.05,mat("plastic",PAL.product.blueberry,{rough:.3}),{seg:200}));
+  const rungGeo=new THREE.CylinderGeometry(.035,.035,1,8);rungGeo.rotateZ(Math.PI/2);
+  const rungs=S.swarm(HN*2,rungGeo,mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true});helix.add(rungs);
+  const BASE={A:PAL.product.lime,T:PAL.product.peach,G:PAL.product.butter,C:"#B9A3EA"},PAIR={A:"T",T:"A",G:"C",C:"G"};
+  const seq=[...Array(HN)].map(()=>"ATGC"[Math.floor(rnd()*4)]);let mutI=-1,mutT=0;
+  const mutGlow=S.puffs(1,PAL.product.butter,{additive:true});helix.add(mutGlow);
+  const drawRungs=()=>{for(let i=0;i<HN;i++){const u=(i+.5)/HN,a=u*turns*Math.PI*2,y=u*HH;const cx=Math.cos(a)*HR/2,cz2=Math.sin(a)*HR/2;eul.set(0,-a,0);q0.setFromEuler(eul);
+    rungs.putS(i*2,cx,y,cz2,HR,1,1,q0);rungs.putS(i*2+1,-cx,y,-cz2,HR,1,1,q0);rungs.tint(i*2,BASE[seq[i]]);rungs.tint(i*2+1,BASE[PAIR[seq[i]]])}rungs.done()};drawRungs();
+  // ---------------------------------------------------------------- the gel tank: five lanes of glowing bands; tap a male's lane to pick him
+  const gz=S.group();gz.position.copy(ZG);
+  gz.add(S.rbox(6.0,.3,4.2,.1,mat("plastic","#ffffff",{rough:.4}),{at:[0,TOP+.15,0]}));
+  const tank=S.acrylicCase(5.8,.7,4.0,PAL.case.mint,{opacity:.08});tank.position.y=TOP+.3;gz.add(tank);
+  const gelM=mat("plastic","#E6F5EE",{rough:.25,coat:.6});gz.add(S.rbox(5.3,.18,3.5,.05,gelM,{at:[0,TOP+.42,0]}));
+  gz.add(S.cyl(.06,.06,5.2,mat("metal",PAL.product.strawberry),{at:[0,TOP+.6,1.85],rot:[0,0,Math.PI/2]}));gz.add(S.cyl(.06,.06,5.2,mat("metal","#3E4262"),{at:[0,TOP+.6,-1.85],rot:[0,0,Math.PI/2]}));
+  const LW=1.0,lx=i=>(i-2)*LW;
+  for(let i=0;i<5;i++)gz.add(S.box(.62,.06,.12,mat("plastic","#CFE3D9"),{at:[lx(i),TOP+.5,-1.45]}));
+  const NBand=5*4*2,bands=S.swarm(NBand,new S.RoundedBoxGeometry(.66,.07,.085,2,.02),mat("plastic","#ffffff",{rough:.3}),{colors:true});gz.add(bands);
+  let gelRef=null,gelT=0;
+  const laneHit=[0,1,2].map(m=>{const h=S.box(.9,.4,3.4,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[lx(m+2),TOP+.6,0],cast:false});h.material.colorWrite=false;gz.add(h);S.pick(h,()=>{S.api.state.gelPick=m});return h});
+  const lLane=["Mother","Chick","Male 1","Male 2","Male 3"].map((n,i)=>S.label({off:[0,-34]}).set(n));
+  const lGel=S.label({off:[40,40]}).set("Tap a male's lane<small>to pick the father</small>");
+  // ---------------------------------------------------------------- island labels
+  const lPop=S.label({cls:"big",off:[-40,-46]}),lPool=S.label({cls:"hot",off:[-30,-30]}),lMut=S.label({off:[30,-30]}),lLost=S.label({cls:"hot",off:[30,-40]});
+  const lHawk=S.label({off:[30,-20]}),lMig=S.label({off:[0,-50]}),lHome=S.label({off:[40,30]}),lGraph=S.label({off:[0,-30]});
+  // ---------------------------------------------------------------- views
+  S.view("cross",[ZC.x+.6,6.6,ZC.z+9.4],[ZC.x,.9,ZC.z+.1],{min:4,max:24});
+  S.view("pool",[1.2,8.4,12.6],[0,1.0,-.2],{min:4,max:30});
+  S.view("mutation",[-2.4,6.2,11.8],[-1.6,1.4,.4],{min:4,max:30});
+  S.view("small",[.8,4.6,8.2],[0,1.0,.3],{min:3,max:24});
+  S.view("survival",[1.0,8.8,11.4],[0,1.6,0],{min:4,max:30});
+  S.view("migration",[5.4,8.0,13.4],[3.6,1.1,-1],{min:4,max:30});
+  S.view("dna",[ZG.x+.4,6.6,ZG.z+6.4],[ZG.x,.4,ZG.z+.2],{min:3,max:24});
+  S.view("all",[1.8,11.5,28],[1.8,.8,0],{min:8,max:60});
+  const islandL=[lPop,lPool,lMut,lLost,lHawk,lMig,lHome,lGraph],crossL=[lMum,lDad,...lTile,lBrood],gelL=[...lLane,lGel];
+  const show={cross:crossL,pool:[lPop,lPool],mutation:[lPop,lPool,lMut],small:[lPop,lPool,lLost],survival:[lPop,lPool,lHawk],migration:[lPop,lPool,lMig,lHome],dna:gelL,test:[lPool]};
+  S.goView("pool",true);
+  return {
+    step(st){const k=st.k,v=k==="test"?"all":k;S.goView(v);
+      if(k==="cross")S.setShadowBox(6,[ZC.x,0,0]);else if(k==="dna")S.setShadowBox(5,[ZG.x,0,0]);else if(k==="test")S.setShadowBox(20,[2,0,0]);else S.setShadowBox(8,[2,0,-1]);
+      [...islandL,...crossL,...gelL].forEach(l=>l.hide());(show[k]||[]).forEach(l=>l.show());if(k==="dna")gelT=0},
+    update(s,st,dt,t){const k=st.k,R=S.REDUCED?0:1;const playing=s.playing&&st.speed;
+      // ---- cross
+      const P2=[s.pA,s.pB];
+      parentAt.forEach((p,i)=>parents.put(i,p.x,TOP+.4,p.z,.42,P2[i],i?Math.PI-.5:.5,Math.abs(Math.sin(t*2+i))*.04*R));parents.done();
+      // the four alleles each parent carries float above it; the Punnett headers repeat them along the square's edges
+      for(let i=0;i<2;i++)for(let j=0;j<2;j++){const p=parentAt[i];const a=P2[i][j];allele.put(i*2+j,p.x+(j-.5)*.5,TOP+2.15+Math.sin(t*2+j)*.04*R,p.z,.15);allele.tint(i*2+j,a==="D"?DARK:PALE)}
+      for(let j=0;j<2;j++){allele.put(4+j,PX+(j-.5)*PC,TOP+.42,PZ-PC-.2,.12);allele.tint(4+j,P2[1][j]==="D"?DARK:PALE);allele.put(6+j,PX-PC-.2,TOP+.42,PZ+(j-.5)*PC,.12);allele.tint(6+j,P2[0][j]==="D"?DARK:PALE)}allele.done();
+      tiles.forEach((T,n)=>{const g=[P2[0][T.i],P2[1][T.j]].sort().join("").replace("dD","Dd");T.m.color.set(g==="dd"?"#FFF7E6":g==="DD"?"#DCD8EE":"#ECE8F7");
+        tileBirds.put(n,PX+(T.j-.5)*PC,TOP+.38,PZ+(T.i-.5)*PC,.17,g,.6);lTile[n].at(tmp.set(ZC.x+PX+(T.j-.5)*PC,TOP+.7,PZ+(T.i-.5)*PC)).set(`<b>${g}</b>`)});tileBirds.done();
+      if(s.kids!==kidsRef){kidsRef=s.kids;kidsT=0}kidsT+=dt;
+      for(let i=0;i<24;i++){const g=s.kids[i];const pop=S.clamp((kidsT-i*.04)*4,0,1);const x=-3.2+(i%12)*.58,z=1.75+Math.floor(i/12)*.75;
+        chicks.put(i,x,TOP+.22,z,g?.17*S.ease(pop):0,g,.4+Math.sin(i)*.4,Math.max(0,Math.sin(t*4+i))*.03*R)}chicks.done();
+      const cnt={DD:0,Dd:0,dd:0};s.kids.forEach(g=>cnt[g]++);
+      lMum.at(tmp.set(ZC.x+parentAt[0].x,TOP+1.5,parentAt[0].z)).set(`Mother<b>${s.pA}</b>`);lDad.at(tmp.set(ZC.x+parentAt[1].x,TOP+1.5,parentAt[1].z)).set(`Father<b>${s.pB}</b>`);
+      lBrood.at(tmp.set(ZC.x+3.2,TOP+.5,2.5)).set(`Pale chicks<b>${cnt.dd} of ${s.kids.length}</b><small>the Punnett square predicts ${expPale()}</small>`);
+      // ---- island birds
+      const b=s.birds,n=b.length;if(s.gen!==lastGen||b!==lastBirds){lastGen=s.gen;lastBirds=b;genT=0;eaten.clear()}genT+=dt;
+      const sc=S.clamp(.62/Math.sqrt(Math.max(n,1)),.075,.3);
+      for(let i=0;i<200;i++){if(i>=n||eaten.has(i)){if(!(swoop.i===i&&swoop.t<.6))birds.put(i,0,0,0,0);continue}
+        const h=home[i];spot(i,n,tmp);const w=Math.sin(t*h.sp*R+h.ph);const hop=(genT<.25?Math.sin(genT/.25*Math.PI)*sc*.8:0)*R+Math.max(0,w)*sc*.25*R;
+        birds.put(i,tmp.x+h.jx*sc,tmp.y,tmp.z+h.jz*sc,sc,b[i],h.yaw+Math.sin(t*.3+h.ph)*.6*R,hop)}
+      // predator: circles; every couple of seconds swoops on a pale bird, which is gone until the next generation is drawn
+      const predOn=s.sel>0&&(k==="survival"||k==="test");hawk.visible=predOn;
+      if(predOn){nextSwoop-=dt;if(swoop.i<0&&nextSwoop<=0&&!S.REDUCED){const pale=[];for(let i=0;i<n;i++)if(b[i]==="dd"&&!eaten.has(i))pale.push(i);if(pale.length){swoop={i:pale[Math.floor(rnd()*pale.length)],t:0}}nextSwoop=1.2+rnd()*1.5/(s.sel*3)}
+        const ca=t*.6;let hx=Math.cos(ca)*3.0,hy=3.3,hz2=.3+Math.sin(ca)*3.3,yaw=-ca-Math.PI/2;
+        if(swoop.i>=0){swoop.t+=dt*.8;spot(swoop.i,n,tmp);const u=swoop.t;const k2=u<.5?S.ease(u*2):S.ease((1-u)*2);hx=S.lerp(hx,tmp.x,k2);hy=S.lerp(hy,tmp.y+.3,k2);hz2=S.lerp(hz2,tmp.z,k2);
+          if(u>=.5&&!eaten.has(swoop.i)){eaten.add(swoop.i);for(let m=0;m<6;m++){const e=pe.find(q=>q.life<=0);if(e){e.p.copy(tmp).setY(tmp.y+.15);e.v.set(rnd()-.5,.6+rnd()*.5,rnd()-.5);e.life=.8}}}if(u>=1)swoop={i:-1,t:0}}
+        hawk.position.set(hx,hy,hz2);hawk.rotation.set(0,yaw,Math.sin(t*2)*.15);hawk.userData.w.rotation.x=Math.sin(t*6)*.25}
+      pe.forEach((e,i)=>{if(e.life>0){e.life-=dt;e.p.addScaledVector(e.v,dt)}puffE.put(i,e.p.x,e.p.y,e.p.z,Math.max(0,e.life)*.8,90)});puffE.done();
+      birds.done();
+      // mutation sparks: a few birds glint each generation as a d allele turns into D
+      // gene pool jar
+      const nD=Math.round(s.p*NBd),bk=nD+"";if(bk!==beadKey){for(let i=0;i<NBd;i++){const wasD=beads.userData&&beads.userData.d&&beads.userData.d[i];const isD=border.indexOf(i)<nD;if(beads.userData.d&&wasD!==isD)beadFlip[i]=1}
+        beads.userData.d=[...Array(NBd)].map((_,i)=>border.indexOf(i)<nD);beadKey=bk}
+      for(let i=0;i<NBd;i++){const p=bslot[i];beadFlip[i]=Math.max(0,beadFlip[i]-dt*2.5);const j=Math.sin(t*3+i)*.01*R;beads.put(i,p.x+j,p.y+beadFlip[i]*.15,p.z,1+beadFlip[i]*.5);beads.tint(i,beads.userData.d[i]?DARK:PALE)}beads.done();
+      // graph screen
+      graphT-=dt;const gk=s.gen+"|"+s.hist.length+"|"+s.p;if(graphT<=0&&gk!==graphKey){graphKey=gk;graphT=.3;
+        graph.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);g.fillStyle="#6E6A86";g.font=`600 22px ${FONT}`;g.textAlign="left";g.fillText("FREQUENCY OF D OVER GENERATIONS",22,36);
+          const X0=70,X1=w-24,Y0=h-44,Y1=60,X=i=>X0+i/199*(X1-X0),Y=p=>Y0-p*(Y0-Y1);g.strokeStyle="#DCD6EA";g.lineWidth=2;g.font=`600 18px ${FONT}`;g.textAlign="right";
+          [0,.5,1].forEach(p=>{g.beginPath();g.moveTo(X0,Y(p));g.lineTo(X1,Y(p));g.stroke();g.fillText(p*100+"%",X0-10,Y(p)+6)});
+          g.strokeStyle=PAL.deep.sky;g.lineWidth=5;g.lineJoin="round";g.beginPath();s.hist.forEach((p,i)=>i?g.lineTo(X(i),Y(p)):g.moveTo(X(i),Y(p)));g.stroke();
+          g.fillStyle=PAL.product.butter;g.strokeStyle="#3E4A7C";g.lineWidth=3;g.beginPath();g.arc(X(s.hist.length-1),Y(s.p),9,0,7);g.fill();g.stroke();
+          g.fillStyle="#6E6A86";g.textAlign="center";g.fillText(`GENERATION ${s.gen}`,(X0+X1)/2,h-12)})}
+      // migrants
+      const migOn=s.mig>0&&(k==="migration"||k==="test");mz.visible=true;route.visible=migOn;
+      for(let i=0;i<12;i++){const a=i/12*Math.PI*2+i,r=.35+(i%3)*.25;mBirds.put(i,Math.cos(a)*r,TOP+.57,Math.sin(a)*r,.13,mG[i],a+Math.sin(t*.5+i)*.5*R,Math.max(0,Math.sin(t*3+i))*.03*R)}mBirds.done();
+      if(migOn&&playing){flAcc+=dt*s.mig*60;while(flAcc>=1){flAcc--;const f=fl.find(q=>q.t>=1);if(!f)break;const a=rnd()*6.28;f.a.set(ZM.x+Math.cos(a)*.6,TOP+.7,ZM.z+Math.sin(a)*.6);spot(Math.floor(rnd()*Math.max(1,n)),Math.max(1,n),f.b);f.b.add(ZI);f.t=0;f.g=mG[Math.floor(rnd()*12)]}}
+      fl.forEach((f,i)=>{if(!migOn)f.t=1;if(f.t<1){f.t+=dt*.45;const u=Math.min(1,f.t);tmp.lerpVectors(f.a,f.b,u);tmp.y+=Math.sin(u*Math.PI)*2.2;const yaw=Math.atan2(-(f.b.z-f.a.z),f.b.x-f.a.x);fly.put(i,tmp.x,tmp.y,tmp.z,.2,f.g,yaw);
+          const fl2=Math.sin(t*14+i)*.6;eul.set(fl2,yaw,0);q0.setFromEuler(eul);wings.putS(i*2,tmp.x+Math.sin(yaw)*.22,tmp.y+.3,tmp.z+Math.cos(yaw)*.22,1.5,1.5,1.5,q0);eul.set(-fl2,yaw,0);q0.setFromEuler(eul);wings.putS(i*2+1,tmp.x-Math.sin(yaw)*.22,tmp.y+.3,tmp.z-Math.cos(yaw)*.22,1.5,1.5,1.5,q0)}
+        else{fly.put(i,0,0,0,0);wings.put(i*2,0,-9,0,.001);wings.put(i*2+1,0,-9,0,.001)}});fly.done();wings.done();
+      // helix
+      helix.rotation.y+=dt*.5*R;
+      if(k==="mutation"||s.mu>0){mutT-=dt;if(mutT<=0&&playing){mutI=Math.floor(rnd()*HN);seq[mutI]="ATGC".replace(seq[mutI],"")[Math.floor(rnd()*3)];drawRungs();mutT=1.6}}
+      if(mutI>=0){const u=(mutI+.5)/HN;mutGlow.put(0,0,u*HH,0,Math.max(0,mutT/1.6)*.9,500)}else mutGlow.put(0,0,0,0,0,1);mutGlow.done();
+      // ---- gel: bands run down from the wells when the step opens or a new family is made
+      if(G!==gelRef){gelRef=G;gelT=0}gelT+=dt;const run=S.ease(S.clamp(gelT/2.5,0,1));
+      const lanes=[G.mum,G.chick,G.dads[0],G.dads[1],G.dads[2]];let bi=0;
+      lanes.forEach((m,i)=>{const c=i===1?PAL.product.strawberry:i===0?PAL.product.blueberry:(s.gelPick===i-2?PAL.product.butter:"#5A6596");
+        m.forEach((pair,mk)=>pair.forEach(bb=>{const zf=-1.05+mk*.72+bb*.1;bands.put(bi,lx(i),TOP+.55,S.lerp(-1.45,zf,run),1);bands.tint(bi,c);bi++}))});bands.done();
+      lLane.forEach((L,i)=>L.at(tmp.set(ZG.x+lx(i),TOP+.75,-1.6)));lGel.at(tmp.set(ZG.x+lx(3),TOP+.6,1.3));
+      // ---- island labels
+      const dd=b.filter(g=>g==="dd").length;
+      lPop.at(tmp.set(-2.6,IY+.4,-2.2)).set(`${s.N>200?"200 of ":""}${s.N} birds<small>generation ${s.gen} · ${Math.round(dd/Math.max(1,n)*100)}% pale</small>`);
+      lPool.at(tmp.set(4.75,TOP+2.1,-3.15)).set(`Gene pool<b>D ${Math.round(s.p*100)}% · d ${Math.round((1-s.p)*100)}%</b>`);
+      lMut.at(tmp.set(-5.05,TOP+2.6,3.3)).set(`Mutation<b>${(s.mu*100).toFixed(1)}% a generation</b><small>a random change in the DNA</small>`);
+      lLost.at(tmp.set(0,IY+.6,.3)).set(s.p===0||s.p===1?`${s.p===1?"d":"D"} allele lost for good<small>only mutation or migration can bring it back</small>`:`Both alleles still here<small>chance decides who breeds</small>`);
+      lHawk.at(hawk.position).set(`Predator<small>spots pale birds: ${Math.round(s.sel*100)}% eaten</small>`);lHawk.show(predOn&&k==="survival");
+      lMig.at(tmp.set(ZM.x,TOP+1.2,ZM.z)).set(`Migrants' island<b>${Math.round(s.pm*100)}% D</b><small>${Math.round(s.mig*100)}% of birds arrive each generation</small>`);
+      lHome.at(tmp.set(2.2,IY+.3,2.2)).set(`This island<b>D ${Math.round(s.p*100)}%</b>`);
+      lGraph.at(tmp.set(-4.7,TOP+2.6,-3.2)).set("Allele frequency");
+    }};
+}
+StudyKit.mount({kupu:KUPU,scene3d:genes3d,
   eyebrow:"Biology · Genetic variation", title:"The gene pool machine", crumb:"NCEA Level 1 Chemistry and Biology · genetic variation · also Year 9–10 genetics", homeHash:"l1",
   fig:"FIG. 06 · AN ISLAND OF BIRDS", railTitle:"How variation is made and changed",
   badge:{label:"NCEA L1 Chem & Bio 92022",exam:"2026-11-19T14:00:00+13:00",examText:"Thu 19 Nov, 2pm"},

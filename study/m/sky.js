@@ -283,7 +283,123 @@ const KUPU=[
  {mi:"tai timu",en:"low tide",ta:7187},
  {mi:"āraitanga",en:"eclipse",ta:347}];
 Object.entries({"spin": ["rā", "pou tāwhirowhiro"], "tilt": ["pou tāwhirowhiro", "kaupeka"], "season": ["kaupeka"], "lat": ["rā"], "phase": ["marama", "mata o te marama"], "tide": ["tai pari", "tai timu", "marama"], "eclipse": ["āraitanga", "rā", "marama"]}).forEach(([k,a])=>{const st=STEPS.find(x=>x.k===k);if(st)st.kupu=a});
-StudyKit.mount({kupu:KUPU,
+// ---------- the 3D bench (../kit3d.js): a working orrery. The Sun lights the Earth and Moon for real (a day/night terminator
+// computed per pixel), the Earth's axis keeps its 23.4° lean in one direction all year, the Moon's orbit is tilted 5.1° with its
+// node line, and the tide bulges follow the Moon and Sun. Every position comes from the same model as the drawing (t, decl, elong…).
+function sky3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const OR=7.2,ER=.85,MR=.24,MD=2.3,Y0=1.9,EPS=23.44*D;
+  // the orrery plate: frosted acrylic on a plinth, the orbit and months printed on it
+  const plate=S.panel(1024,1024,OR*2+3.6);plate.rotation.x=-Math.PI/2;plate.position.y=.36;plate.material.transparent=true;S.scene.add(plate);
+  const disc=S.cyl(OR+1.8,OR+1.9,.3,mat("plastic",PAL.case.sky,{rough:.6,coat:.1}),{at:[0,.15,0],seg:96,cast:false});disc.renderOrder=1;S.scene.add(disc);
+  S.scene.add(S.torus(OR+1.85,.05,mat("plastic","#ffffff",{rough:.3}),{at:[0,.31,0],rot:[Math.PI/2,0,0],ts:128}));
+  const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const lonOfDay=d=>((360*(d+1-80)/365.25)%360+360)%360;
+  plate.redraw((g,w,h)=>{const c=w/2,k=w/(OR*2+3.6);g.strokeStyle="rgba(58,111,184,.55)";g.lineWidth=3;g.setLineDash([6,10]);g.beginPath();g.arc(c,c,OR*k,0,7);g.stroke();g.setLineDash([]);
+    g.font="600 26px Instrument Sans, system-ui";g.textAlign="center";g.textBaseline="middle";
+    months.forEach((m,i)=>{const d=(Date.UTC(2026,i,15)-Date.UTC(2026,0,1))/864e5;const ls=lonOfDay(d)*D;const a=ls+Math.PI;   // Earth sits opposite the Sun's longitude
+      g.strokeStyle="rgba(58,111,184,.7)";g.lineWidth=3;
+      g.beginPath();g.moveTo(c+Math.cos(a)*(OR-.25)*k,c-Math.sin(a)*(OR-.25)*k);g.lineTo(c+Math.cos(a)*(OR+.25)*k,c-Math.sin(a)*(OR+.25)*k);g.stroke();
+      g.fillStyle="#3A6FB8";g.fillText(m.toUpperCase(),c+Math.cos(a)*(OR+.9)*k,c-Math.sin(a)*(OR+.9)*k)})});
+  // the Sun: a glowing ball on a brass stem, with a soft corona; it does not cast the bench shadow
+  const sunM=new THREE.MeshBasicMaterial({color:new THREE.Color("#FFD45A").multiplyScalar(3.2),toneMapped:true});
+  const sun=S.sphere(1.05,sunM,{cast:false,seg:48});sun.position.set(0,Y0,0);S.scene.add(sun);
+  const corona=S.puffs(1,"#FFC94A",{additive:true});corona.put(0,0,Y0,0,.75,5200);corona.done();S.scene.add(corona);
+  S.scene.add(S.cyl(.08,.14,Y0-.3,mat("metal","#D8B16A",{rough:.25}),{at:[0,.36+(Y0-.3)/2-.05,0],seg:20}));
+  // a lit-by-the-Sun material: day side from a texture, night side navy, a soft terminator
+  const sunU={value:V3(0,Y0,0)};
+  function litMat(tex,night){return new THREE.ShaderMaterial({uniforms:{map:{value:tex},sunPos:sunU,night:{value:new THREE.Color(night)}},
+    vertexShader:`varying vec3 vN;varying vec3 vW;varying vec2 vUv;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`uniform sampler2D map;uniform vec3 sunPos;uniform vec3 night;varying vec3 vN;varying vec3 vW;varying vec2 vUv;
+      void main(){vec3 l=normalize(sunPos-vW);float d=dot(normalize(vN),l);vec3 c=texture2D(map,vUv).rgb;float lit=smoothstep(-.06,.12,d);
+      vec3 day=c*(.55+.55*max(d,0.));vec3 nt=mix(night,c*.25,.25);vec3 col=mix(nt,day,lit);
+      float rim=pow(1.-max(dot(normalize(vN),normalize(cameraPosition-vW)),0.),3.);col+=vec3(.55,.75,1.)*rim*.25*lit;gl_FragColor=vec4(col,1.);
+      #include <colorspace_fragment>
+      }`})}
+  // a pastel Earth: oceans, rough continents, Aotearoa picked out
+  const LAND={nzN:[[172.7,-34.4],[174.5,-35.5],[175.5,-37],[178.5,-37.7],[177,-39.5],[176.5,-41.3],[174.8,-41.3],[174,-39.5],[173.8,-39],[174.6,-37.5]],
+    nzS:[[172.7,-40.5],[174.3,-41.3],[173,-43],[171.2,-44.5],[170.6,-45.9],[169,-46.6],[166.5,-46],[167,-45],[168.4,-44],[170.5,-43],[172,-41.5]],
+    aus:[[113,-22],[114,-26],[115,-34],[118,-35],[123,-34],[129,-31.5],[132,-32],[135,-34.5],[138,-35],[140,-38],[146,-39],[150,-37.5],[153,-32],[153,-25],[146,-19],[145,-15],[142,-11],[141,-17],[136,-12],[131,-11.5],[129,-15],[125,-14],[122,-17],[114,-21.5]],
+    sam:[[-80,9],[-77,1],[-81,-5],[-76,-14],[-71,-18],[-71,-30],[-73,-40],[-75,-52],[-68,-55],[-65,-47],[-58,-38],[-48,-28],[-40,-22],[-35,-8],[-50,0],[-60,10],[-72,12]],
+    afr:[[-17,15],[-17,21],[-10,30],[-5,36],[10,37],[22,32],[32,31],[35,28],[43,12],[51,12],[40,-2],[40,-15],[35,-24],[32,-29],[27,-34],[20,-35],[17,-29],[12,-17],[13,-6],[9,4],[-8,4],[-14,10]],
+    eur:[[-10,36],[-9,43],[-2,47],[-5,48],[2,51],[8,54],[10,58],[5,62],[16,69],[30,71],[45,68],[70,73],[100,77],[140,72],[180,68],[180,62],[163,58],[156,51],[141,46],[135,35],[122,30],[120,22],[108,21],[105,10],[100,13],[98,8],[100,3],[104,1],[98,16],[92,22],[88,22],[80,15],[77,8],[73,19],[67,25],[58,25],[56,27],[50,30],[48,29],[56,22],[58,17],[52,15],[43,13],[39,21],[34,28],[32,31],[27,36],[23,36],[19,40],[13,45],[12,42],[15,38],[8,44],[3,43],[-1,37]],
+    nam:[[-168,66],[-162,70],[-140,70],[-120,70],[-95,72],[-80,68],[-62,60],[-55,52],[-66,45],[-70,41],[-76,35],[-80,32],[-81,25],[-83,29],[-90,30],[-97,27],[-97,22],[-87,21],[-88,16],[-83,10],[-79,9],[-85,11],[-92,15],[-105,20],[-110,24],[-115,32],[-121,35],[-124,42],[-124,48],[-132,55],[-140,60],[-152,59],[-165,62]],
+    grl:[[-55,60],[-43,60],[-20,70],[-20,82],[-60,82],[-70,77],[-58,70]]};
+  const ec=document.createElement("canvas");ec.width=1024;ec.height=512;{const g=ec.getContext("2d");const X=l=>(l+180)/360*1024,Y=b=>(90-b)/180*512;
+    const gr=g.createLinearGradient(0,0,0,512);gr.addColorStop(0,"#9CC8F2");gr.addColorStop(.5,"#7FB4EC");gr.addColorStop(1,"#9CC8F2");g.fillStyle=gr;g.fillRect(0,0,1024,512);
+    g.fillStyle="#F4F7FB";g.fillRect(0,Y(-68),1024,512);g.fillRect(0,0,1024,Y(80));
+    for(const [k,pts] of Object.entries(LAND)){g.fillStyle=k.startsWith("nz")?"#7CC48A":"#B9E2A6";g.beginPath();pts.forEach((p,i)=>g[i?"lineTo":"moveTo"](X(p[0]),Y(p[1])));g.closePath();g.fill();
+      g.strokeStyle=k.startsWith("nz")?"#3E8F55":"rgba(62,143,85,.35)";g.lineWidth=k.startsWith("nz")?2:1.5;g.stroke()}}
+  const earthTex=new THREE.CanvasTexture(ec);earthTex.colorSpace=THREE.SRGBColorSpace;earthTex.anisotropy=8;
+  const mc=document.createElement("canvas");mc.width=256;mc.height=128;{const g=mc.getContext("2d");g.fillStyle="#E9E6DD";g.fillRect(0,0,256,128);let sd=3;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
+    for(let i=0;i<40;i++){g.fillStyle=`rgba(150,145,135,${.15+r()*.2})`;g.beginPath();g.arc(r()*256,r()*128,2+r()*9,0,7);g.fill()}}
+  const moonTex=new THREE.CanvasTexture(mc);moonTex.colorSpace=THREE.SRGBColorSpace;
+  const earthSys=S.group();      // moves around the orbit
+  const tilt=S.group(earthSys);  // holds the fixed axis direction
+  const AX=V3(0,Math.cos(EPS),-Math.sin(EPS));tilt.quaternion.setFromUnitVectors(V3(0,1,0),AX);
+  const spin=S.group(tilt);
+  const earth=S.mesh(new THREE.SphereGeometry(ER,96,64),litMat(earthTex,"#1B2452"),{cast:false});spin.add(earth);
+  const axisRod=S.cyl(.022,.022,ER*3.1,mat("metal",PAL.steelDark,{rough:.3}),{seg:10,cast:false});tilt.add(axisRod);
+  tilt.add(S.sphere(.05,mat("plastic",PAL.product.strawberry),{at:[0,ER*1.55,0],cast:false}));tilt.add(S.sphere(.05,mat("plastic",PAL.product.blueberry),{at:[0,-ER*1.55,0],cast:false}));
+  const eq=S.torus(ER*1.003,.006,new THREE.MeshBasicMaterial({color:"#ffffff",transparent:true,opacity:.55}),{rot:[Math.PI/2,0,0],cast:false});tilt.add(eq);
+  // the place pin rides on the spinning Earth
+  const pin=S.group(spin);const pinBall=S.sphere(.055,mat("glow",PAL.product.strawberry,1.4),{cast:false});pin.add(pinBall);
+  const pinStem=S.cyl(.012,.012,.16,mat("plastic",PAL.product.strawberry),{at:[0,-.08,0],cast:false});pin.add(pinStem);
+  const placeDir=p=>{const l=p.lon*D,b=p.lat*D;return V3(Math.cos(b)*Math.cos(l),Math.sin(b),-Math.cos(b)*Math.sin(l))};
+  // the Moon and its tilted orbit ring
+  const moon=S.mesh(new THREE.SphereGeometry(MR,48,32),litMat(moonTex,"#2A3158"),{cast:false});earthSys.add(moon);
+  const mOrbit=S.torus(MD,.008,new THREE.MeshBasicMaterial({color:PAL.deep.sky,transparent:true,opacity:.5}),{rot:[Math.PI/2,0,0],ts:128,cast:false});
+  const mOrbitG=S.group(earthSys);mOrbitG.add(mOrbit);
+  const nodeLine=S.cyl(.008,.008,MD*2.3,new THREE.MeshBasicMaterial({color:PAL.ink,transparent:true,opacity:.45}),{rot:[0,0,Math.PI/2],cast:false,seg:6});mOrbitG.add(nodeLine);
+  // tide bulges: a translucent ocean shell stretched towards the Moon (and a little towards the Sun)
+  const tide=S.mesh(new THREE.SphereGeometry(ER*1.04,64,48),new THREE.MeshPhysicalMaterial({color:"#5FA3EA",transparent:true,opacity:.35,roughness:.1,clearcoat:1,depthWrite:false}),{cast:false});earthSys.add(tide);
+  // shadows in space for the eclipse step: Earth's and the Moon's
+  const shadowM=new THREE.MeshBasicMaterial({color:"#1B2452",transparent:true,opacity:.22,depthWrite:false,side:THREE.DoubleSide});
+  const eShadow=S.mesh(new THREE.CylinderGeometry(ER,ER*.25,5,48,1,true),shadowM,{cast:false});const eShG=S.group(earthSys);eShG.add(eShadow);eShadow.position.y=2.5;
+  const mShadow=S.mesh(new THREE.CylinderGeometry(MR,0.0,MD*1.05,32,1,true),shadowM,{cast:false});const mShG=S.group(earthSys);mShG.add(mShadow);mShadow.position.y=MD*.525;
+  // a sunbeam from the Sun to the Earth
+  const beam=S.mesh(new THREE.CylinderGeometry(.03,.03,1,8),new THREE.MeshBasicMaterial({color:"#FFD45A",transparent:true,opacity:.55}),{cast:false});S.scene.add(beam);
+  const lPlace=S.label({cls:"hot",off:[26,-20]}),lSun=S.label({off:[0,-40]}).set("Sun"),lMoon=S.label({off:[22,-22]}),lAxis=S.label({off:[22,-14]}),lEarth=S.label({off:[-26,-30]}),lTide=S.label({off:[-30,24]});
+  S.pick(earth,()=>{S.api.state.playing=!S.api.state.playing});
+  S.view("globe",[0,0,0],[0,0,0]);let viewName="globe";
+  const ep=V3(),tmp=V3(),q=new THREE.Quaternion();
+  const camFor=(k,E)=>{   // camera offsets around the moving Earth, with the Sun in the background where it helps
+    const toSun=V3(0,Y0,0).sub(E).normalize(),side=V3().crossVectors(toSun,V3(0,1,0)).normalize();
+    if(k==="globe")return [E.clone().addScaledVector(toSun,2.3).addScaledVector(side,3.9).add(V3(0,1.4,0)),E.clone()];
+    if(k==="moon")return [E.clone().add(V3(0,5.4,0)).addScaledVector(toSun,2.8).addScaledVector(side,.6),E.clone()];
+    if(k==="tide")return [E.clone().add(V3(0,3.4,0)).addScaledVector(side,1.8).addScaledVector(toSun,1.6),E.clone()];
+    if(k==="eclipse")return [E.clone().addScaledVector(side,7.6).add(V3(0,1.1,0)).addScaledVector(toSun,1.6),E.clone().addScaledVector(toSun,.9)];
+    return [V3(3,21,25),V3(0,.6,0)]};
+  function place(){earthSys.position.copy(ep)}
+  return {
+    step(st){viewName=st.k==="test"?"wide":st.view;const E=earthPos();const [p,tg]=camFor(viewName,E);S.view("cur",p.toArray(),tg.toArray(),{min:1.6,max:40,dur:1.8});S.goView("cur");
+      S.setFollow(viewName==="wide"?null:()=>earthSys.position.clone(),.2,true);S.setShadowBox(10,[0,0,0])},
+    update(s,st,dt,tt){
+      const E=earthPos();ep.copy(E);place();
+      // spin: put the subsolar longitude under the Sun
+      const ls=sunLon(t)*D,toSunW=V3(0,Y0,0).sub(E).normalize();
+      tilt.updateMatrixWorld();q.copy(tilt.quaternion).invert();const dL=toSunW.clone().applyQuaternion(q);const lt=Math.atan2(-dL.z,dL.x);
+      const d=new Date(t),utc=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600,lsub=(12-utc)*15*D;spin.rotation.y=lt-lsub;
+      const P=PLACES[placeIdx];const pd=placeDir(P);pin.position.copy(pd).multiplyScalar(ER*1.05);pin.quaternion.setFromUnitVectors(V3(0,1,0),pd);
+      // Moon: ecliptic longitude Sun + elongation, latitude from the tilted orbit
+      const e=elong(t)*D,b=moonLat(t)*D*(st.k==="eclipse"?3:1),L=ls+e;
+      moon.position.set(Math.cos(L)*Math.cos(b)*MD,Math.sin(b)*MD,-Math.sin(L)*Math.cos(b)*MD);
+      const showM=["phase","tide","eclipse","test"].includes(st.k);moon.visible=mOrbitG.visible=showM;
+      const nl=nodeLon(t)*D;mOrbitG.rotation.set(0,nl,0);mOrbit.rotation.set(Math.PI/2+5.145*D*(st.k==="eclipse"?3:1),0,0);nodeLine.visible=st.k==="eclipse";
+      // tides: bulge towards the Moon, size from the Sun–Moon alignment
+      tide.visible=st.k==="tide";if(tide.visible){const k=tidePull(elong(t))*.14;const md=moon.position.clone().normalize();tide.quaternion.setFromUnitVectors(V3(1,0,0),md);tide.scale.set(1+k,1-k*.35,1-k*.35)}
+      eShG.visible=mShG.visible=st.k==="eclipse";if(eShG.visible){const away=toSunW.clone().negate();eShG.quaternion.setFromUnitVectors(V3(0,1,0),away);mShG.position.copy(moon.position);mShG.quaternion.setFromUnitVectors(V3(0,1,0),away)}
+      const bl=E.distanceTo(sun.position)-ER-1.05;beam.scale.y=Math.max(.01,bl);beam.position.copy(sun.position).addScaledVector(toSunW.clone().negate(),1.05+bl/2);beam.quaternion.setFromUnitVectors(V3(0,1,0),toSunW);
+      const dec=decl(t);
+      lPlace.at(pin.getWorldPosition(tmp)).set(`${P.n}<small>${hm(dayLen(P.lat,dec))} of daylight · ${fmtTime(t)}</small>`);
+      lSun.at(sun.position.clone().add(V3(0,1.1,0)));
+      lMoon.show(showM).at(moon.getWorldPosition(tmp)).set(`Moon<small>${phaseName(moonAge(t))} · ${Math.round(lit(moonAge(t))*100)}% lit</small>`);
+      lAxis.show(["tilt","season","test","spin"].includes(st.k)).at(tmp.set(0,ER*1.55,0).applyQuaternion(tilt.quaternion).add(E)).set(`Axis<small>23.4°, always the same way</small>`);
+      lEarth.show(st.k!=="test").at(tmp.copy(E).add(V3(0,ER*1.2,0))).set(`${fmtDate(t)}<small>${season(t)} in Aotearoa · Sun overhead ${Math.abs(dec).toFixed(1)}°${dec<0?"S":"N"}</small>`);
+      lTide.show(st.k==="tide").at(tmp.copy(E).addScaledVector(moon.position.clone().normalize(),ER*1.2)).set(`${tidePull(elong(t))>1.25?"Spring tides":tidePull(elong(t))<.75?"Neap tides":"Tides"}<small>bulges follow the Moon</small>`);
+    }};
+  function earthPos(){const ls=sunLon(t)*D;return V3(-Math.cos(ls)*OR,Y0,Math.sin(ls)*OR)}
+}
+StudyKit.mount({kupu:KUPU,scene3d:sky3d,
   eyebrow:"Earth & Space · made for Aotearoa", title:"The Sun–Earth–Moon machine", crumb:"NCEA Level 1 · Physics, Earth and Space Science · also Year 9–10 science", homeHash:"l1",
   fig:"FIG. 01 · AOTEAROA SKY", railTitle:"How the sky runs our days",
   badge:{label:"NCEA L1 PESS 92046", exam:"2026-11-12T14:00:00+13:00", examText:"Thu 12 Nov, 2pm"},

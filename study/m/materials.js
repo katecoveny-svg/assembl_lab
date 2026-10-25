@@ -451,9 +451,429 @@ const steps=[
     big:"Structure decides properties; properties decide uses."}
 ];
 
+// ---------- the 3D bench (../kit3d.js): one materials lab with six zones the camera flies between. A test bench (circuit,
+// hotplate, swinging hammer, beaker), a particle zoom in an acrylic cube over a hotplate, a conduction rig with its own
+// particle lens, a sliding-layer lattice you push with a block, a job bench, and two overhead lines. Every zone reads the same
+// state the drawing and the challenges use (s.mat, s.temp, s.cstate, s.hamMat, s.shift, s.job, s.picks, s.len, s.line).
+function materials3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const mtx=new THREE.Matrix4(),TOP=.3,UP=V3(0,1,0),qq=new THREE.Quaternion(),tmp=new THREE.Vector3(),tv=new THREE.Vector3();
+  const ZB=V3(-11.5,0,-6.2),ZZ=V3(0,0,-6.2),ZC=V3(11.2,0,-6.2),ZH=V3(-11.5,0,6.4),ZU=V3(0,0,6.4),ZT=V3(11.5,0,6.4);
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  const pB=plinth(ZB,11.2,6.2,PAL.case.mint),pZ=plinth(ZZ,8.4,6.2,PAL.case.lavender),pC=plinth(ZC,9.6,6.2,PAL.case.sky),
+    pH=plinth(ZH,10.2,6.2,PAL.case.lavender),pU=plinth(ZU,9.6,6.4,PAL.case.mint),pT=plinth(ZT,10.6,6.4,PAL.case.sky);
+  const zoneG=c=>{const g=S.group();g.position.set(c.x,TOP,c.z);return g};
+  const white=mat("plastic","#ffffff",{rough:.35}),ink=mat("plastic",PAL.ink,{rough:.4}),steel=mat("metal",PAL.steel,{rough:.3}),steelD=mat("metal",PAL.steelDark,{rough:.35}),copperM=mat("metal",PAL.copper,{rough:.28});
+  const addGlowM=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o??0,depthWrite:false,blending:THREE.AdditiveBlending});
+  const putBond=(sw,i,ax,ay,az,bx,by,bz,r)=>{tv.set(bx-ax,by-ay,bz-az);const L=tv.length()||1e-3;qq.setFromUnitVectors(UP,tv.multiplyScalar(1/L));sw.putS(i,(ax+bx)/2,(ay+by)/2,(az+bz)/2,r,L,r,qq)};
+  const wrap=(v,B)=>((v+B)%(2*B)+2*B)%(2*B)-B;
+  // ---------------------------------------------------------------- the seven samples as little toy objects
+  const SM={cu:mat("metal",PAL.copper,{rough:.24}),al:mat("metal","#DCE2EA",{rough:.3}),nacl:mat("plastic","#F7FAFD",{rough:.42,coat:.35}),wax:mat("plastic","#F6E3A6",{rough:.5,coat:.15}),
+    hdpe:mat("plastic","#E1EDF7",{rough:.4}),dia:mat("plastic","#CFF3FB",{rough:.04,coat:1}),gra:mat("plastic","#50566A",{rough:.7,coat:.1})};
+  const ION={cu:PAL.copper,al:"#C5CEDA"};
+  function mkSample(k,sc=1,o={}){const g=new THREE.Group();const m=SM[k];
+    if(k==="cu"||k==="al"){if(o.bent){const geo=new THREE.BoxGeometry(1,.3,.5,24,2,2);const p=geo.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setY(i,p.getY(i)+.34*(x*2)*(x*2)-.02)}geo.computeVertexNormals();g.add(S.mesh(geo,m,{at:[0,.17,0]}))}
+      else g.add(S.rbox(1.0,.3,.5,.06,m,{at:[0,.15,0]}))}
+    else if(k==="nacl"){const c=S.rbox(.58,.58,.58,.035,m,{at:[0,.29,0]});c.rotation.y=.45;g.add(c);
+      for(const [a,b] of [[-.12,.1],[.08,-.06]]){const ln=S.box(.2,.012,.012,mat("plastic","#BCD0E2"),{at:[a,.4+b,.29],cast:false});ln.rotation.z=.8;c.add(ln);ln.position.set(a,b,.295)}}
+    else if(k==="wax"){g.add(S.cyl(.3,.3,.6,m,{at:[0,.3,0]}));g.add(S.cyl(.018,.018,.14,ink,{at:[0,.66,0],seg:8}))}
+    else if(k==="hdpe"){g.add(S.rbox(1.05,.16,.62,.06,m,{at:[0,.08,0]}));g.add(S.cyl(.07,.07,.165,white,{at:[.37,.085,.14],seg:20}))}
+    else if(k==="dia"){const d=S.mesh(new THREE.OctahedronGeometry(.34,0),m);d.scale.set(1,1.2,1);d.position.y=.42;d.rotation.y=.5;g.add(d)}
+    else{for(let i=0;i<4;i++)g.add(S.rbox(.95,.07,.5,.02,i%2?mat("plastic","#666C80",{rough:.7,coat:.1}):m,{at:[i*.02,.04+i*.075,0]}))}
+    g.scale.setScalar(sc);return g}
+  const perK=(parent,sc,at,o)=>{const r={};ORDER.forEach(k=>{const g=mkSample(k,sc,o);g.position.set(...at);g.visible=false;parent.add(g);r[k]=g});r.show=k=>ORDER.forEach(q=>r[q].visible=q===k);return r};
+
+  // ================================================================ ZONE 1: the test bench
+  const gB=zoneG(ZB);
+  // the sample shelf: tap a sample to load it into all four tests
+  const shelf=[];ORDER.forEach((k,i)=>{const g=S.group(gB);g.position.set(-4.2+i*1.4,0,-2.15);
+    g.add(S.cyl(.5,.54,.1,white,{at:[0,.05,0],seg:40}));const ring=S.torus(.5,.03,S.M.glow(PAL.case.mint,0),{at:[0,.11,0],rot:[Math.PI/2,0,0],cast:false});g.add(ring);
+    const smp=mkSample(k,.62);smp.position.y=.1;g.add(smp);S.pick(g,()=>{S.api.state.mat=k;S.api.state.dis=0});shelf.push({k,g,smp,ring})});
+  const stationBase=x=>{const b=S.rbox(2.4,.1,2.5,.05,mat("plastic","#ffffff",{rough:.5,coat:.2}),{at:[x,.05,.55]});gB.add(b);return b};
+  // -- station 1: does it conduct? battery, bulb and a sample clipped into the loop
+  const X1=-4.1,X2=-1.37,X3=1.37,X4=4.1;stationBase(X1);stationBase(X2);stationBase(X3);stationBase(X4);
+  const c1=S.group(gB);c1.position.set(X1,.1,.55);
+  const bat=S.group(c1);bat.position.set(-.62,.2,-.55);bat.rotation.x=Math.PI/2;bat.add(S.cyl(.17,.17,.62,mat("plastic",PAL.product.butter,{rough:.35}),{seg:32}));bat.add(S.cyl(.17,.17,.1,ink,{at:[0,-.33,0],seg:32}));bat.add(S.cyl(.06,.06,.06,steel,{at:[0,.34,0],seg:16}));
+  c1.add(S.cyl(.12,.14,.2,steel,{at:[.25,.1,-.75],seg:24}));
+  const bulb1=S.sphere(.26,mat("glass","#ffffff",{opacity:.22}),{at:[.25,.44,-.75],cast:false});bulb1.renderOrder=6;c1.add(bulb1);
+  const fil1M=S.M.glow("#FFC24A",0);c1.add(S.tube([[.17,.24,-.75],[.17,.42,-.75],[.21,.5,-.75],[.25,.42,-.75],[.29,.5,-.75],[.33,.42,-.75],[.33,.24,-.75]],.012,fil1M,{seg:60,cast:false}));
+  const halo1=S.sphere(.42,addGlowM("#FFD76A"),{at:[.25,.44,-.75],cast:false});c1.add(halo1);
+  const loop1=new THREE.CatmullRomCurve3([[-.62,.2,-.24],[-.75,.2,.3],[-.5,.2,.62],[-.34,.2,.62],[.34,.2,.62],[.6,.2,.62],[.72,.2,.1],[.6,.2,-.55],[.38,.2,-.75],[.1,.2,-.75],[-.3,.2,-.9],[-.62,.2,-.86]].map(p=>V3(...p)),true,"centripetal");
+  c1.add(S.tube(loop1,.025,copperM,{seg:180,closed:true}));
+  for(const x of [-.4,.4])c1.add(S.rbox(.18,.12,.24,.03,steelD,{at:[x,.06,.62]}));
+  const smp1=perK(c1,.5,[0,.13,.62]);
+  const chg1=S.swarm(22,new THREE.SphereGeometry(.035,10,8),mat("glow","#FFD76A",2));c1.add(chg1);
+  // -- station 2: heat it. hotplate, glowing coil, thermometer; the sample slumps into a puddle above its melting point
+  const c2=S.group(gB);c2.position.set(X2,.1,.55);
+  c2.add(S.rbox(1.6,.24,1.6,.08,steel,{at:[-.15,.12,0]}));
+  const coil2M=S.M.glow("#FF6A3D",0);c2.add(S.tube(Array.from({length:60},(_,i)=>{const a=i/59*Math.PI*6;const r=.1+.5*(i/59);return [-.15+Math.cos(a)*r,.25,Math.sin(a)*r]}),.022,coil2M,{seg:220,cast:false}));
+  const smp2=perK(c2,.62,[-.15,.26,0]);
+  const puddleM=new THREE.MeshPhysicalMaterial({color:"#ffffff",roughness:.15,clearcoat:1,emissive:"#000000"});
+  const puddle=S.mesh(new THREE.CylinderGeometry(.5,.55,.05,40),puddleM,{at:[-.15,.27,0]});c2.add(puddle);
+  const th2=S.group(c2);th2.position.set(.88,0,-.2);th2.add(S.rbox(.3,.06,.3,.03,white,{at:[0,.03,0]}));
+  th2.add(S.cyl(.06,.06,1.7,mat("glass","#ffffff",{opacity:.3}),{at:[0,1.0,0],cast:false}));th2.add(S.sphere(.1,mat("glow",PAL.product.strawberry,.5),{at:[0,.16,0]}));
+  const spirit2=S.cyl(.03,.03,1,mat("glow",PAL.product.strawberry,.5),{seg:10});th2.add(spirit2);
+  const haze2=S.puffs(26,"#FFB27A",{additive:true});c2.add(haze2);const hz=[];for(let i=0;i<26;i++)hz.push({x:0,y:0,z:0,life:Math.random()*2});
+  // -- station 3: hammer it. an anvil and a hammer on a pivot that swings and strikes
+  const c3=S.group(gB);c3.position.set(X3,.1,.55);
+  c3.add(S.rbox(1.3,.22,.9,.06,steelD,{at:[-.15,.11,0]}));c3.add(S.rbox(1.0,.2,.7,.06,steel,{at:[-.15,.32,0]}));
+  c3.add(S.cyl(.06,.06,1.3,steel,{at:[.85,.65,-.35],seg:12}));c3.add(S.sphere(.09,ink,{at:[.85,1.3,-.35]}));
+  const hamPiv=S.group(c3);hamPiv.position.set(.85,1.3,0);
+  hamPiv.add(S.cyl(.045,.05,1.0,mat("plastic","#D69A5C",{rough:.5}),{at:[-.5,0,0],rot:[0,0,Math.PI/2],seg:12}));
+  hamPiv.add(S.rbox(.3,.42,.3,.05,steel,{at:[-1.0,-.02,0]}));
+  const smp3=perK(c3,.48,[-.15,.42,0]),bent3=perK(c3,.48,[-.15,.42,0],{bent:true});
+  const shardGeo=new THREE.TetrahedronGeometry(.07,0),shards=S.swarm(36,shardGeo,mat("plastic","#ffffff",{rough:.3}),{colors:true,cast:true});c3.add(shards);
+  const sh3=[];for(let i=0;i<36;i++)sh3.push({x:0,y:-9,z:0,vx:0,vy:0,vz:0,r:0,live:false});
+  const spark3=S.puffs(20,"#FFE08A",{additive:true});c3.add(spark3);const sp3=[];for(let i=0;i<20;i++)sp3.push({x:0,y:0,z:0,vx:0,vy:0,life:0});
+  let hamPhase=0,lastHit=-1;
+  // -- station 4: in water. a beaker; salt dissolves, light samples float, dense ones sink
+  const c4=S.group(gB);c4.position.set(X4,.1,.55);
+  const wM=mat("liquid",PAL.water,{opacity:.32});wM.depthWrite=false;
+  const water4=S.cyl(.56,.56,1.0,wM,{at:[0,.55,0],cast:false,seg:48});water4.renderOrder=4;c4.add(water4);
+  const glass4=S.mesh(new THREE.CylinderGeometry(.62,.62,1.4,48,1,true),mat("glass","#E6F2FC",{opacity:.14}),{cast:false});glass4.position.y=.75;glass4.renderOrder=6;c4.add(glass4);
+  c4.add(S.cyl(.62,.62,.05,mat("glass","#E6F2FC",{opacity:.35}),{at:[0,.03,0],cast:false,seg:48}));c4.add(S.torus(.62,.02,mat("glass","#ffffff",{opacity:.5}),{at:[0,1.45,0],rot:[Math.PI/2,0,0],cast:false}));
+  const smp4=perK(c4,.44,[0,.06,0]);
+  const ions4=S.swarm(30,new THREE.SphereGeometry(1,12,10),mat("plastic","#ffffff",{rough:.35}),{colors:true});c4.add(ions4);
+  for(let i=0;i<30;i++)ions4.tint(i,i%2?PAL.product.lime:PAL.product.strawberry);
+  const lB=[S.label({off:[-10,-48]}),S.label({off:[0,-56]}),S.label({off:[0,-56]}),S.label({off:[10,-48]})],lMat=S.label({cls:"big",off:[0,-44]});
+
+  // ================================================================ the lattice (shared by the zoom and conduction zones)
+  const LB=S.group(),LBOX=1.5;
+  const ionSw=S.swarm(560,new THREE.SphereGeometry(1,18,14),mat("plastic","#ffffff",{rough:.32,coat:.55}),{colors:true});LB.add(ionSw);
+  const bondSw=S.swarm(760,new THREE.CylinderGeometry(1,1,1,8,1),mat("plastic","#ffffff",{rough:.5,coat:.2}),{colors:true});LB.add(bondSw);
+  const elSw=S.swarm(140,new THREE.SphereGeometry(1,12,10),mat("glow","#FFD24A",1.9));LB.add(elSw);
+  const lcase=S.acrylicCase(LBOX*2+.5,LBOX*2+.5,LBOX*2+.5,PAL.case.lavender,{opacity:.1});lcase.position.y=-LBOX-.25;LB.add(lcase);
+  const plates=S.group(LB);for(const sx of [-1,1]){plates.add(S.rbox(.08,LBOX*2,LBOX*2,.03,steelD,{at:[sx*(LBOX+.12),0,0]}))}
+  let LT=null;
+  const rnd=(i)=>hs(i*1.37+.11);
+  function buildLattice(k){const typ=M[k].type;const L={k,typ,at:[],bonds:[],weak:[],el:[],water:[]};
+    const add=(x,y,z,c,r,o={})=>{L.at.push(Object.assign({x,y,z,c,r,a1:rnd(L.at.length)*6.28,a2:rnd(L.at.length+500)*6.28,a3:rnd(L.at.length+900)*6.28},o));return L.at.length-1};
+    if(typ==="metal"){const sp=.58;for(let i=0;i<6;i++)for(let j=0;j<5;j++)for(let l=0;l<5;l++)add((i-2.5)*sp,(j-2)*sp,(l-2)*sp,ION[k],.2);
+      for(let i=0;i<120;i++)L.el.push({x:(rnd(i+40)*2-1)*LBOX,y:(rnd(i+80)*2-1)*LBOX,z:(rnd(i+120)*2-1)*LBOX,vx:(rnd(i+3)-.5)*.9,vy:(rnd(i+5)-.5)*.9,vz:(rnd(i+7)-.5)*.9,plane:null})}
+    else if(typ==="ionic"){const sp=.5;for(let i=0;i<6;i++)for(let j=0;j<6;j++)for(let l=0;l<6;l++){const na=(i+j+l)%2===0;add((i-2.5)*sp,(j-2.5)*sp,(l-2.5)*sp,na?PAL.product.strawberry:PAL.product.lime,na?.13:.21,{na})}
+      for(let i=0;i<60;i++)L.water.push({x:(rnd(i+700)*2-1)*LBOX,y:(rnd(i+760)*2-1)*LBOX,z:(rnd(i+820)*2-1)*LBOX,a:rnd(i+880)*6.28})}
+    else if(typ==="molec"){let m=0;for(let j=0;j<6;j++)for(let l=0;l<5;l++)for(let xi=0;xi<2;xi++){const cx=(xi-.5)*1.5+(j%2?.2:-.2),cy=(j-2.5)*.48,cz=(l-2)*.6;const first=L.at.length;
+        for(let b=0;b<8;b++){add(cx,cy,cz,"#E9C25A",.075,{mol:m,lx:(b-3.5)*.16,ly:(b%2?.06:-.06)});if(b)L.bonds.push([L.at.length-2,L.at.length-1,.03])}m++}
+      L.nmol=m;L.molc=[];for(let i=0;i<m;i++)L.molc.push({a:rnd(i+300)*6.28,b:rnd(i+340)*6.28});
+      for(let i=0;i<m;i++){const j=i+10;if(j<m)L.weak.push([i*8+3,j*8+3])}}
+    else if(typ==="poly"){for(let c=0;c<7;c++){const yc=(c-3)*.4,zc=((c*3)%7-3)*.36;for(let b=0;b<44;b++){add(0,0,0,"#5DBB7E",.07,{ch:c,u:-1.6+b*3.2/43,yc,zc});if(b)L.bonds.push([L.at.length-2,L.at.length-1,.045])}}
+      for(let c=0;c<6;c++)for(let b=4;b<44;b+=10)L.weak.push([c*44+b,(c+1)*44+b])}
+    else if(typ==="net"){const a=1.45,pts=[],B=[[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]];
+      for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(let l=-1;l<=1;l++)for(const b of B)for(const o of [0,.25]){const x=(i+b[0]+o)*a,y=(j+b[1]+o)*a,z=(l+b[2]+o)*a;if(Math.abs(x)<=LBOX+.01&&Math.abs(y)<=LBOX+.01&&Math.abs(z)<=LBOX+.01)pts.push([x,y,z])}
+      pts.forEach(p=>add(p[0],p[1],p[2],"#5A5478",.13));const d0=a*Math.sqrt(3)/4;
+      for(let i=0;i<L.at.length;i++)for(let j=i+1;j<L.at.length;j++){const A=L.at[i],Bq=L.at[j];if(Math.abs(Math.hypot(A.x-Bq.x,A.y-Bq.y,A.z-Bq.z)-d0)<.02)L.bonds.push([i,j,.045])}}
+    else{const bl=.3,hw=Math.sqrt(3)*bl;const layers=[-1,0,1];
+      layers.forEach((ly,li)=>{const y=ly*.9;const idx={};const key=(c,r)=>c+","+r;
+        for(let r=-6;r<=6;r++)for(let c=-6;c<=6;c++){const x=c*hw+(r%2?hw/2:0)+(li===1?hw/2:0),z=r*1.5*bl;
+          for(const [dx,dz,tag] of [[0,-bl,"a"],[0,bl,"b"]]){const px=x+dx*0,pz=z+dz;if(Math.abs(px)>LBOX||Math.abs(pz)>LBOX)continue;idx[key(c,r)+tag]=add(px,y,pz,"#5C6275",.1,{layer:li})}}
+        const n0=L.at.length;});
+      for(let i=0;i<L.at.length;i++)for(let j=i+1;j<L.at.length;j++){const A=L.at[i],Bq=L.at[j];if(A.layer!==Bq.layer)continue;if(Math.abs(Math.hypot(A.x-Bq.x,A.z-Bq.z)-bl)<.02)L.bonds.push([i,j,.035])}
+      for(let i=0;i<90;i++)L.el.push({x:(rnd(i+40)*2-1)*LBOX,y:(Math.floor(rnd(i+60)*3)-1)*.9+.16,z:(rnd(i+120)*2-1)*LBOX,vx:(rnd(i+3)-.5)*.9,vy:0,vz:(rnd(i+7)-.5)*.9,plane:1});
+      for(let li=0;li<2;li++)for(let q=0;q<4;q++){const x=-1.05+q*.7;L.weak.push({x,y0:(li-1)*.9+.12,y1:li*.9-.12})}}
+    L.at.forEach((a,i)=>ionSw.tint(i,a.c));
+    L.bonds.forEach((b,i)=>bondSw.tint(i,typ==="net"?"#A8A3C4":typ==="poly"?"#4FA570":typ==="layer"?"#7C8296":"#C9A040"));
+    return L}
+  const PINK=PAL.product.strawberry;
+  function updateLattice(L,state,T,drift,t){const typ=L.typ;const melt=state==="molten",dis=state==="dissolved",half=state==="melting";
+    const amp=.025+.075*S.clamp((T-20)/1180,0,1)+(melt?.04:0),w=S.REDUCED?0:1;const B=LBOX;let n=0,nb=0,ne=0;const P=[];
+    const vib=(a,s)=>Math.sin(t*11*w+a)*amp*s;
+    const flow=(a,i)=>{const dx=Math.sin(t*.7+a.a1)*.5+Math.sin(t*.31+a.a3)*.35,dy=Math.sin(t*.6+a.a2)*.5,dz=Math.cos(t*.5+a.a3)*.5;return [wrap(a.x+dx*w+(drift?(a.na?-1:1)*t*.35:0)*(typ==="ionic"?1:0),B),wrap(a.y+dy*w,B),wrap(a.z+dz*w,B)]};
+    if(typ==="molec"){const mc=L.molc;L.at.forEach((a,i)=>{const free=melt||(half&&hs(a.mol)<.5);let cx=a.x,cy=a.y,cz=a.z,rot=0;
+        if(free){const m=mc[a.mol];cx=wrap(a.x+Math.sin(t*.5*w+m.a)*.55,B);cy=wrap(a.y+Math.sin(t*.43*w+m.b)*.4,B);cz=wrap(a.z+Math.cos(t*.37*w+m.a)*.4,B);rot=Math.sin(t*.4*w+m.b)*1.3}
+        const c=Math.cos(rot),s2=Math.sin(rot);const x=cx+a.lx*c+vib(a.a1,1),z=cz+a.lx*s2+vib(a.a3,1),y=cy+a.ly+vib(a.a2,1);P.push([x,y,z,free]);ionSw.put(n++,x,y,z,a.r)})}
+    else if(typ==="poly"){L.at.forEach(a=>{const ph=melt?t*w:0;const x=a.u+(melt?Math.sin(t*.4*w+a.ch)*.25:0),y=a.yc+.14*Math.sin(a.u*2.6+a.ch*1.9+ph*1.6)+.12*Math.sin(a.u*.9+a.ch*2.3+ph*.7)+vib(a.a1+a.u*3,.6),
+        z=a.zc+.16*Math.sin(a.u*1.7+a.ch*.7+ph)+vib(a.a2+a.u*3,.6);P.push([x,y,z]);ionSw.put(n++,x,y,z,a.r)})}
+    else if(typ==="ionic"&&dis){L.at.forEach((a,i)=>{if(i<40){const sp=1.6;const x=wrap((rnd(i+11)*2-1)*B+Math.sin(t*.8*w+a.a1)*.2+(drift?(a.na?-1:1)*t*.3:0),B),y=wrap((rnd(i+31)*2-1)*B+Math.cos(t*.7*w+a.a2)*.2,B),z=(rnd(i+51)*2-1)*B*.9;ionSw.put(n++,x,y,z,a.r);ionSw.tint(n-1,i%2?PAL.product.lime:PAL.product.strawberry)}});
+      L.water.forEach((q,i)=>{const x=wrap(q.x+Math.sin(t*.9*w+q.a)*.15,B),y=wrap(q.y+Math.cos(t*.8*w+q.a)*.15,B),z=q.z,a=q.a+t*.6*w;ionSw.put(n,x,y,z,.11);ionSw.tint(n++,PAL.water);
+        ionSw.put(n,x+Math.cos(a)*.12,y+.07,z+Math.sin(a)*.12,.06);ionSw.tint(n++,"#ffffff");ionSw.put(n,x-Math.cos(a)*.12,y+.07,z-Math.sin(a)*.12,.06);ionSw.tint(n++,"#ffffff")})}
+    else{L.at.forEach((a,i)=>{let x,y,z;if(melt&&(typ==="metal"||typ==="ionic")){[x,y,z]=flow(a,i)}else{x=a.x+vib(a.a1,1);y=a.y+vib(a.a2,1);z=a.z+vib(a.a3,1)}P.push([x,y,z]);ionSw.put(n++,x,y,z,a.r);
+        if(typ==="ionic")ionSw.tint(n-1,a.c)})}
+    ionSw.count=n;
+    if(!(typ==="ionic")){L.bonds.forEach((b,i)=>{const A=P[b[0]],Bq=P[b[1]];if(!A||!Bq)return;putBond(bondSw,nb++,A[0],A[1],A[2],Bq[0],Bq[1],Bq[2],b[2]);});
+      L.bonds.forEach((b,i)=>bondSw.tint(i,typ==="net"?"#A8A3C4":typ==="poly"?"#4FA570":typ==="layer"?"#7C8296":"#C9A040"))}
+    // weak forces between molecules / chains / layers: thin pink struts, only while the solid holds together
+    if(!melt&&(typ==="molec"||typ==="poly")){L.weak.forEach(([i,j])=>{const A=P[i],Bq=P[j];if(!A||!Bq||A[3]||Bq[3])return;putBond(bondSw,nb,A[0],A[1],A[2],Bq[0],Bq[1],Bq[2],.012);bondSw.tint(nb++,PINK)})}
+    if(typ==="layer"){L.weak.forEach(q=>{putBond(bondSw,nb,q.x,q.y0,.9,q.x,q.y1,.9,.012);bondSw.tint(nb++,PINK)})}
+    bondSw.count=nb;
+    L.el.forEach(e=>{let x=wrap(e.x+e.vx*t*w+(drift?.55*t:0),B),y=e.plane?e.y+Math.sin(t*3+e.x*5)*.03:wrap(e.y+e.vy*t*w,B),z=wrap(e.z+e.vz*t*w,B);elSw.put(ne++,x,y,z,.055)});elSw.count=ne;
+    ionSw.done();bondSw.done();elSw.done();return P}
+
+  // ================================================================ ZONE 2: zoom in
+  const gZ=zoneG(ZZ);
+  const LZ=V3(ZZ.x+1.3,TOP+2.15,ZZ.z);
+  gZ.add(S.rbox(3.8,.28,3.6,.1,steel,{at:[1.3,.14,0]}));
+  const coilZM=S.M.glow("#FF6A3D",0);gZ.add(S.tube(Array.from({length:80},(_,i)=>{const a=i/79*Math.PI*8;const r=.15+1.45*(i/79);return [1.3+Math.cos(a)*r,.3,Math.sin(a)*r]}),.03,coilZM,{seg:320,cast:false}));
+  const pedZ=S.group(gZ);pedZ.position.set(-2.6,0,.4);pedZ.add(S.cyl(.6,.7,.5,white,{at:[0,.25,0],seg:40}));
+  const smpZ=perK(pedZ,1.0,[0,.5,0]);
+  const lensZ=S.group(gZ);lensZ.position.set(-1.25,1.25,.25);lensZ.rotation.y=Math.PI/2;
+  lensZ.add(S.torus(.42,.05,mat("plastic",PAL.case.blush,{rough:.3}),{cast:false}));const lg=S.mesh(new THREE.CircleGeometry(.42,40),mat("glass","#ffffff",{opacity:.2}),{cast:false});lensZ.add(lg);
+  lensZ.add(S.cyl(.04,.04,.6,mat("plastic",PAL.case.blush),{at:[0,-.7,0],seg:10}));
+  const cone=S.mesh(new THREE.CylinderGeometry(.42,1.9,2.4,40,1,true),new THREE.MeshBasicMaterial({color:"#ffffff",transparent:true,opacity:.07,depthWrite:false,side:THREE.DoubleSide}),{cast:false});
+  cone.rotation.z=-Math.PI/2;cone.position.set(0,.9,0);
+  const coneG=S.group(gZ);coneG.position.set(-1.25,1.25,.25);coneG.add(cone);cone.position.set(1.2,0,0);
+  const lZname=S.label({cls:"big",off:[-20,-60]}),lZstate=S.label({off:[-20,-14]}),lZleg=[S.label({off:[40,-30]}),S.label({off:[40,24]}),S.label({off:[-40,30]})];
+
+  // ================================================================ ZONE 3: why it conducts
+  const gC=zoneG(ZC);
+  const LC=V3(ZC.x+2.4,TOP+1.55,ZC.z+.3);
+  gC.add(S.rbox(5.2,.1,4.8,.06,mat("plastic","#ffffff",{rough:.5,coat:.2}),{at:[-1.6,.05,0]}));
+  const batC=S.group(gC);batC.position.set(-3.2,.38,-1.55);batC.rotation.z=Math.PI/2;batC.add(S.cyl(.26,.26,1.0,mat("plastic",PAL.product.butter,{rough:.35}),{seg:32}));batC.add(S.cyl(.26,.26,.14,ink,{at:[0,.52,0],seg:32}));batC.add(S.cyl(.09,.09,.08,steel,{at:[0,-.54,0],seg:16}));
+  gC.add(S.cyl(.18,.2,.3,steel,{at:[-.6,.15,-1.6],seg:24}));
+  const bulbC=S.sphere(.4,mat("glass","#ffffff",{opacity:.22}),{at:[-.6,.68,-1.6],cast:false});bulbC.renderOrder=6;gC.add(bulbC);
+  const filCM=S.M.glow("#FFC24A",0);gC.add(S.tube([[-.72,.36,-1.6],[-.72,.62,-1.6],[-.66,.74,-1.6],[-.6,.62,-1.6],[-.54,.74,-1.6],[-.48,.62,-1.6],[-.48,.36,-1.6]],.016,filCM,{seg:60,cast:false}));
+  const haloC=S.sphere(.55,addGlowM("#FFD76A"),{at:[-.6,.68,-1.6],cast:false});gC.add(haloC);
+  const lampC=new THREE.PointLight("#FFC873",0,5,1.6);lampC.position.set(-.6,.7,-1.4);gC.add(lampC);
+  const EX=[-2.35,-.85],EY=1.5;
+  const loopC=new THREE.CatmullRomCurve3([[-3.75,.38,-1.55],[-3.9,.38,-.6],[-3.4,.5,.2],[-2.6,EY+.1,.4],[EX[0],EY,.55],[EX[0],EY,.55],[-1.6,EY+.25,.55],[EX[1],EY,.55],[-.4,EY,.3],[.15,.6,-.4],[0,.25,-1.4],[-.45,.25,-1.6],[-1.5,.38,-1.6],[-2.65,.38,-1.55]].map(p=>V3(...p)),true,"centripetal");
+  // the wire: a battery-bulb loop with a gap across the electrodes (the gap is bridged only by the sample)
+  const wireC=S.tube(new THREE.CatmullRomCurve3([[EX[1],EY,.55],[-.4,EY,.3],[.15,.6,-.4],[0,.25,-1.4],[-.45,.25,-1.6]].map(p=>V3(...p))),.035,copperM,{seg:80});gC.add(wireC);
+  gC.add(S.tube(new THREE.CatmullRomCurve3([[-.75,.25,-1.6],[-1.5,.38,-1.6],[-2.65,.38,-1.55]].map(p=>V3(...p))),.035,copperM,{seg:40}));
+  gC.add(S.tube(new THREE.CatmullRomCurve3([[-3.75,.38,-1.55],[-3.9,.38,-.6],[-3.4,.5,.2],[-2.6,EY+.1,.4],[EX[0],EY,.55]].map(p=>V3(...p))),.035,copperM,{seg:60}));
+  const elecs=EX.map(x=>{const e=S.cyl(.06,.06,1,steel,{seg:14});gC.add(e);return e});
+  for(const x of EX){gC.add(S.sphere(.08,ink,{at:[x,EY,.55]}))}
+  const lPlus=S.label({off:[14,-16]}).set("+"),lMinus=S.label({off:[-14,-16]}).set("−");
+  // three containers: a bar across the electrodes, a crucible on a burner, a beaker of water
+  const conC=S.group(gC);conC.position.set(-1.6,0,.55);
+  const barC={};ORDER.forEach(k=>{const b=S.rbox(1.9,.36,.5,.06,SM[k]);b.visible=false;conC.add(b);barC[k]=b});
+  const cruc=S.group(conC);cruc.add(S.cyl(.5,.5,.12,steelD,{at:[0,.06,0],seg:32}));
+  const cprof=[new THREE.Vector2(.45,0),new THREE.Vector2(.5,.02),new THREE.Vector2(.9,.95),new THREE.Vector2(.84,.97),new THREE.Vector2(.46,.08),new THREE.Vector2(0,.08)];
+  const crucM=mat("metal",PAL.steelDark,{rough:.35});const cBody=S.mesh(new THREE.LatheGeometry(cprof,48),crucM);crucM.side=THREE.DoubleSide;cBody.position.y=.3;cruc.add(cBody);
+  const meltM=new THREE.MeshStandardMaterial({color:"#ffffff",emissive:"#000000",roughness:.25});const meltTop=S.mesh(new THREE.CylinderGeometry(.8,.48,.7,40),meltM,{at:[0,.7,0]});cruc.add(meltTop);
+  const flameC=S.puffs(40,"#FF8A4A",{additive:true});cruc.add(flameC);const flc=[];for(let i=0;i<40;i++)flc.push({x:0,y:0,z:0,life:Math.random()});
+  for(const a of [0,2.1,4.2])cruc.add(S.cyl(.03,.03,.32,steelD,{at:[Math.cos(a)*.42,.16,Math.sin(a)*.42],seg:8}));
+  const beak=S.group(conC);const bwM=mat("liquid",PAL.water,{opacity:.32});bwM.depthWrite=false;
+  const bwater=S.cyl(.88,.88,1.0,bwM,{at:[0,.55,0],cast:false,seg:48});bwater.renderOrder=4;beak.add(bwater);
+  const bglass=S.mesh(new THREE.CylinderGeometry(.94,.94,1.3,48,1,true),mat("glass","#E6F2FC",{opacity:.14}),{cast:false});bglass.position.y=.7;bglass.renderOrder=6;beak.add(bglass);
+  beak.add(S.cyl(.94,.94,.05,mat("glass","#E6F2FC",{opacity:.35}),{at:[0,.03,0],cast:false,seg:48}));
+  const barInW={};ORDER.forEach(k=>{const b=S.rbox(1.0,.3,.42,.05,SM[k],{at:[0,.2,0]});b.visible=false;beak.add(b);barInW[k]=b});
+  const ionsC=S.swarm(40,new THREE.SphereGeometry(1,12,10),mat("plastic","#ffffff",{rough:.35}),{colors:true});beak.add(ionsC);for(let i=0;i<40;i++)ionsC.tint(i,i%2?PAL.product.lime:PAL.product.strawberry);
+  const chgC=S.swarm(40,new THREE.SphereGeometry(.05,10,8),mat("glow","#FFD76A",2));gC.add(chgC);
+  const lCstate=S.label({cls:"big",off:[-30,40]}),lCflow=S.label({off:[30,-50]}),lCcar=S.label({off:[30,40]});
+
+  // ================================================================ ZONE 4: the hammer test (sliding layers)
+  const gH=zoneG(ZH);
+  const HC=9,HR=4,HD=3,HSP=.6,HX0=-(HC-1)/2*HSP+.4,HY0=.75;
+  gH.add(S.rbox((HC+1.4)*HSP,.3,HD*HSP+.8,.08,steel,{at:[.4,.15,0]}));
+  const hIon=S.swarm(HC*HR*HD,new THREE.SphereGeometry(1,20,16),mat("plastic","#ffffff",{rough:.3,coat:.6}),{colors:true,cast:true});hIon.castShadow=true;gH.add(hIon);
+  const hEl=S.swarm(90,new THREE.SphereGeometry(.06,10,8),mat("glow","#FFD24A",1.9));gH.add(hEl);
+  const hEls=[];for(let i=0;i<90;i++)hEls.push({u:rnd(i+200),v:rnd(i+230),w:rnd(i+260),vu:(rnd(i+290)-.5)*.12,vv:(rnd(i+320)-.5)*.2});
+  const rowY=j=>HY0+j*HSP*.92;
+  const pusher=S.group(gH);
+  const pHead=S.rbox(.36,1.15,HD*HSP+.3,.06,steel);pusher.add(pHead);
+  pusher.add(S.cyl(.08,.08,1.4,mat("plastic","#D69A5C",{rough:.5}),{at:[-.88,0,0],rot:[0,0,Math.PI/2],seg:14}));
+  pusher.add(S.sphere(.14,mat("plastic",PAL.product.peach,{rough:.35}),{at:[-1.6,0,0]}));
+  const repel=[];for(let i=0;i<HC;i++)repel.push([S.arrow("#E8503A",{r:.035}),S.arrow("#E8503A",{r:.035})]);repel.forEach(p=>p.forEach(a=>gH.add(a)));
+  const attr=S.swarm(HC,new THREE.CylinderGeometry(1,1,1,6),mat("plastic",PAL.product.lime,{rough:.4}));gH.add(attr);
+  const crackPts=[];for(let i=0;i<=HC*2+2;i++)crackPts.push([HX0-HSP*.8+i*HSP/2,(rowY(1)+rowY(2))/2+(i%2?.06:-.06),(HD-1)/2*HSP+.33]);
+  const crack=S.tube(crackPts,.025,S.M.glow("#FF5A4A",4.5),{seg:120,cast:false,type:"catmullrom",tension:0});crack.visible=false;gH.add(crack);
+  const burstH=S.puffs(40,"#FF9A6A",{additive:true});gH.add(burstH);const bh=[];for(let i=0;i<40;i++)bh.push({x:0,y:0,z:0,vx:0,vy:0,life:0});let wasCracked=false;
+  // lattice choice tokens: a copper cube and a salt cube you can tap
+  const tok=(x,k,val)=>{const g=S.group(gH);g.position.set(x,0,2.25);g.add(S.cyl(.38,.42,.1,white,{at:[0,.05,0],seg:32}));const rg=S.torus(.38,.03,S.M.glow(PAL.case.lavender,0),{at:[0,.11,0],rot:[Math.PI/2,0,0],cast:false});g.add(rg);
+    const sm=mkSample(k,.5);sm.position.y=.1;g.add(sm);S.pick(g,()=>{S.api.state.hamMat=val});return {g,rg,val}};
+  const toks=[tok(-4.2,"cu","metal"),tok(-3.25,"nacl","ionic")];
+  let grabDX=0;
+  S.dragger(pHead,{normal:V3(0,0,1),start:p=>{const lp=gH.worldToLocal(p.clone());grabDX=lp.x-pusher.position.x},move:p=>{const lp=gH.worldToLocal(p.clone());const x=lp.x-grabDX;const x0=HX0-HSP*.75;
+    S.api.state.shift=Math.round(S.clamp((x-x0)/HSP,0,1)*20)/20}});
+  const lHt=S.label({cls:"big",off:[-20,-40]}),lHres=S.label({cls:"hot",off:[30,-30]}),lHdrag=S.label({off:[-20,44]}).set("Drag the block →"),lHtok=S.label({off:[0,30]}).set("Tap a lattice");
+
+  // ================================================================ ZONE 5: pick for the job
+  const gU=zoneG(ZU);
+  function jobModel(id){const g=new THREE.Group();
+    if(id==="wire"){const pts=[];for(let i=0;i<=80;i++){const a=i/80*Math.PI*6;pts.push([Math.cos(a)*.3,.12+i/80*.5,Math.sin(a)*.3])}g.add(S.tube(pts,.05,copperM,{seg:240}));
+      g.add(S.rbox(.26,.2,.2,.04,ink,{at:[.42,.75,0]}));for(const z of [-.05,.05])g.add(S.box(.12,.025,.025,steel,{at:[.6,.78,z]}))}
+    else if(id==="drill"){g.add(S.rbox(.5,.36,.36,.08,mat("plastic",PAL.case.sky,{rough:.35}),{at:[-.35,.3,0]}));const bit=S.cyl(.05,.08,.6,steel,{at:[.2,.3,0],rot:[0,0,-Math.PI/2],seg:16});g.add(bit);
+      const tip=S.mesh(new THREE.OctahedronGeometry(.08,0),SM.dia);tip.position.set(.55,.3,0);g.add(tip);g.add(S.rbox(.2,.36,.2,.05,mat("plastic",PAL.case.sky),{at:[-.45,.05,0]}))}
+    else if(id==="pencil"){const pg=S.group(g);pg.position.y=.18;pg.rotation.z=.35;pg.add(S.cyl(.08,.08,.8,mat("plastic",PAL.product.butter,{rough:.4}),{rot:[0,0,Math.PI/2],seg:6}));
+      pg.add(S.cyl(0,.08,.2,mat("plastic","#F4D3A8"),{at:[.5,0,0],rot:[0,0,-Math.PI/2],seg:6}));pg.add(S.cyl(0,.03,.07,SM.gra,{at:[.57,0,0],rot:[0,0,-Math.PI/2],seg:10}));
+      pg.add(S.cyl(.08,.08,.1,mat("plastic",PAL.product.strawberry),{at:[-.45,0,0],rot:[0,0,Math.PI/2],seg:12}))}
+    else if(id==="board"){g.add(S.rbox(.95,.08,.6,.06,SM.hdpe,{at:[0,.04,0]}));g.add(S.cyl(.06,.06,.085,white,{at:[.34,.045,.15],seg:16}));g.add(S.rbox(.5,.02,.1,.01,steel,{at:[-.05,.1,-.05]}));g.add(S.rbox(.2,.05,.07,.02,ink,{at:[.28,.11,-.05]}))}
+    else if(id==="candle"){g.add(S.cyl(.17,.17,.55,SM.wax,{at:[0,.275,0]}));g.add(S.cyl(.012,.012,.08,ink,{at:[0,.59,0],seg:6}));const fl=S.mesh(new THREE.SphereGeometry(.07,16,12),mat("glow","#FFB347",2.4),{cast:false});fl.scale.set(1,1.8,1);fl.position.y=.72;g.add(fl)}
+    else if(id==="can"){g.add(S.cyl(.2,.2,.6,mat("plastic",PAL.product.strawberry,{rough:.3}),{at:[0,.3,0],seg:32}));g.add(S.cyl(.18,.2,.04,mat("metal","#DCE2EA"),{at:[0,.62,0],seg:32}));g.add(S.cyl(.205,.205,.14,white,{at:[0,.32,0],seg:32}))}
+    else if(id==="deice"){g.add(S.rbox(1.0,.08,.6,.03,mat("plastic","#5B5670",{rough:.7}),{at:[0,.04,0]}));for(let i=0;i<3;i++)g.add(S.box(.16,.01,.04,white,{at:[-.3+i*.3,.085,0]}));
+      for(let i=0;i<9;i++){const c=S.box(.05,.05,.05,SM.nacl,{at:[-.4+hs(i)*.8,.11,-.25+hs(i+9)*.5]});c.rotation.y=i;g.add(c)}}
+    else{const pan=S.mesh(new THREE.LatheGeometry([new THREE.Vector2(0,0),new THREE.Vector2(.32,0),new THREE.Vector2(.38,.12),new THREE.Vector2(.35,.12),new THREE.Vector2(.3,.03),new THREE.Vector2(0,.03)],40),mat("metal","#5B5670",{rough:.4}));g.add(pan);
+      g.add(S.cyl(.045,.04,.55,mat("plastic","#3A3E47",{rough:.6}),{at:[.62,.12,0],rot:[0,0,Math.PI/2-.15],seg:14}))}
+    return g}
+  const jobs=JOBS.map((j,i)=>{const g=S.group(gU);g.position.set(-3.85+i*1.1,0,-2.3);g.add(S.cyl(.46,.5,.1,white,{at:[0,.05,0],seg:36}));
+    const rg=S.torus(.46,.03,S.M.glow(PAL.case.mint,0),{at:[0,.11,0],rot:[Math.PI/2,0,0],cast:false});g.add(rg);const m=jobModel(j.id);m.scale.setScalar(.62);m.position.y=.1;g.add(m);
+    S.pick(g,()=>{S.api.state.job=j.id});return {id:j.id,g,rg}});
+  const heroJ=S.group(gU);heroJ.position.set(-2.6,0,.25);heroJ.add(S.cyl(.85,.95,.4,white,{at:[0,.2,0],seg:48}));
+  const heroModels={};JOBS.forEach(j=>{const m=jobModel(j.id);m.scale.setScalar(1.45);m.position.y=.4;m.visible=false;heroJ.add(m);heroModels[j.id]=m});
+  const heroM=S.group(gU);heroM.position.set(-.3,0,.25);heroM.add(S.cyl(.85,.95,.4,white,{at:[0,.2,0],seg:48}));const heroRing=S.torus(.86,.04,S.M.glow(PAL.product.lime,0),{at:[0,.41,0],rot:[Math.PI/2,0,0],cast:false});heroM.add(heroRing);
+  const heroS=perK(heroM,1.15,[0,.4,0]);const qmark=S.group(heroM);
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;qmark.add(S.sphere(.06,mat("plastic",PAL.case.blush),{at:[Math.cos(a)*.45,.6,Math.sin(a)*.45]}))}
+  const plus=S.group(gU);plus.position.set(-1.45,.75,.25);plus.add(S.rbox(.36,.1,.1,.04,mat("plastic",PAL.case.blush)));plus.add(S.rbox(.1,.36,.1,.04,mat("plastic",PAL.case.blush)));
+  // the needs board: one lamp per need, and a fit bar that fills
+  const needB=S.group(gU);needB.position.set(2.5,0,.1);needB.add(S.rbox(2.6,.16,2.4,.06,white,{at:[0,.08,0]}));
+  const lamps=[0,1,2,3].map(i=>{const l=S.sphere(.13,S.M.glow("#cccccc",0),{at:[-.95,.3,-.85+i*.5]});needB.add(l);needB.add(S.cyl(.16,.18,.08,steelD,{at:[-.95,.2,-.85+i*.5],seg:20}));return l});
+  needB.add(S.cyl(.09,.09,2.2,mat("plastic","#E8E4F0"),{at:[0,.28,1.0],rot:[0,0,Math.PI/2],seg:16}));
+  const fitM=S.M.glow(PAL.product.lime,.5);const fitBar=S.cyl(.1,.1,1,fitM,{at:[0,.28,1.0],rot:[0,0,Math.PI/2],seg:16});needB.add(fitBar);
+  const picks=ORDER.map((k,i)=>{const g=S.group(gU);g.position.set(-3.6+i*1.2,0,2.35);g.add(S.cyl(.48,.52,.1,white,{at:[0,.05,0],seg:36}));
+    const rg=S.torus(.48,.03,S.M.glow(PAL.product.lime,0),{at:[0,.11,0],rot:[Math.PI/2,0,0],cast:false});g.add(rg);const sm=mkSample(k,.55);sm.position.y=.1;g.add(sm);
+    S.pick(g,()=>{const st=S.api.state;st.picks[st.job]=k});return {k,g,rg}});
+  const lNeeds=[0,1,2,3].map(()=>S.label({off:[22,0],lead:false})),lJob=S.label({cls:"big",off:[-10,-70]}),lPick=S.label({off:[0,-80]}),lFit=S.label({off:[0,30]}),lUhint=S.label({off:[0,40]});
+
+  // ================================================================ ZONE 6: the trade-off (two overhead lines)
+  const gT=zoneG(ZT);
+  const PX=[-3.7,3.3],LZs={cu:-1.35,al:1.35},PH3=3.0;
+  function pylon(x,z){const g=S.group(gT);g.position.set(x,0,z);const lm=steelD;
+    for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=S.cyl(.03,.045,PH3,lm,{seg:8});leg.position.set(a*.22,PH3/2,b*.22);leg.rotation.set(-b*.1,0,a*.1);g.add(leg)}
+    for(let i=1;i<5;i++){const y=i*PH3/5,w=.48-.3*i/5;g.add(S.box(w,.025,.025,lm,{at:[0,y,.22-.06*i/5]}));g.add(S.box(.025,.025,w,lm,{at:[.22-.06*i/5,y,0]}))}
+    g.add(S.rbox(.08,.08,.9,.03,lm,{at:[0,PH3,0]}));g.add(S.cyl(.06,.06,.2,mat("plastic","#ffffff"),{at:[0,PH3-.12,0],seg:12}));g.add(S.cyl(.12,.15,.08,mat("plastic","#ffffff",{rough:.5}),{at:[0,.04,0],seg:20}));return g}
+  const lines={};["cu","al"].forEach(k=>{const z=LZs[k];const p1=pylon(PX[0],z),p2=pylon(PX[1],z);
+    const kg=KGKM(k),sag=.25+.95*kg/KGKM("cu"),r=.012*DIAM(k)/3;const ya=PH3-.24,xa=PX[0],xb=PX[1];const pts=[];
+    for(let i=0;i<=40;i++){const u=i/40;pts.push(V3(S.lerp(xa,xb,u),ya-sag*4*u*(1-u),z))}
+    const curve=new THREE.CatmullRomCurve3(pts);const cab=S.tube(curve,r,k==="cu"?copperM:mat("metal","#C3CCD7",{rough:.3}),{seg:120});gT.add(cab);
+    const hit=S.mesh(new THREE.TubeGeometry(curve,40,.22,6,false),new THREE.MeshBasicMaterial({visible:false}));gT.add(hit);
+    const sel=S.mesh(new THREE.TubeGeometry(curve,80,r+.05,10,false),addGlowM(PAL.product.lime,0),{cast:false});gT.add(sel);
+    const pad=S.rbox(8.0,.04,1.0,.04,mat("plastic","#ffffff",{rough:.5,coat:.2}),{at:[(PX[0]+PX[1])/2,.02,z]});gT.add(pad);
+    const col=S.group(gT);col.position.set(4.5,0,z);const colM=k==="cu"?copperM:mat("metal","#C3CCD7",{rough:.3});const colBar=S.cyl(.26,.26,1,colM,{seg:32});col.add(colBar);col.add(S.cyl(.32,.34,.06,white,{at:[0,.03,0],seg:32}));
+    const disc=S.cyl(r*6,r*6,.06,colM,{at:[0,0,0],rot:[Math.PI/2,0,0],seg:32});const discG=S.group(gT);discG.position.set(-4.6,.9,z);discG.add(disc);discG.add(S.cyl(.03,.03,.9,steelD,{at:[0,-.45,0],seg:8}));
+    const flow=S.swarm(14,new THREE.SphereGeometry(.04,10,8),mat("glow","#FFD76A",2));gT.add(flow);
+    [p1,p2,hit,cab,pad].forEach(o=>S.pick(o,()=>{S.api.state.line=k}));
+    lines[k]={curve,sel,colBar,flow,sag,z,lab:S.label({off:[k==="cu"?-24:24,k==="cu"?-44:40]}),lcol:S.label({off:[24,-10]}),ldisc:S.label({off:[-20,k==="cu"?-34:34]})}});
+
+  // ================================================================ the test: four beacons over the zones (tap to go there)
+  const beacons=[["conduct",ZC,passConduct,"Molten or dissolved"],["hammer",ZH,passHammer,"Shatter the crystal"],["use",ZU,()=>fullJobs()>=3,"Three perfect fits"],["tradeoff",ZT,passLine,"Power-line metal"]].map(([k,Z,fn,txt],i)=>{
+    const g=S.group();g.position.set(Z.x+(k==="use"?4.4:k==="tradeoff"?-4.7:k==="hammer"?4.5:-4.1),TOP,Z.z+(k==="conduct"||k==="use"||k==="hammer"?-2.5:2.5));
+    g.add(S.cyl(.05,.05,1.6,steel,{at:[0,.8,0],seg:10}));g.add(S.cyl(.3,.34,.1,white,{at:[0,.05,0],seg:24}));const orb=S.sphere(.3,S.M.glow("#cccccc",.1),{at:[0,1.85,0]});g.add(orb);
+    S.pick(g,()=>{const j=steps.findIndex(x=>x.k===k);if(j>=0){StudyKit.sfx&&StudyKit.sfx("whoosh");S.api.setStep(j)}});return {k,g,orb,fn,txt,n:i+1,lab:S.label({off:[0,-34]})}});
+  [pB,pZ,pC,pH,pU,pT].forEach((p,i)=>{const k=["bench","zoom","conduct","hammer","use","tradeoff"][i];S.pick(p,()=>{if(S.api.step.k==="test"){const j=steps.findIndex(x=>x.k===k);if(j>=0)S.api.setStep(j)}})});
+
+  // ---------------------------------------------------------------- views
+  S.view("bench",[ZB.x+.6,6.3,ZB.z+10.2],[ZB.x,.9,ZB.z+.2],{min:3,max:26});
+  S.view("zoom",[ZZ.x+1.4,4.6,ZZ.z+9.2],[ZZ.x+.2,1.9,ZZ.z],{min:2.5,max:22});
+  S.view("conduct",[ZC.x+.6,4.8,ZC.z+9.0],[ZC.x+.1,1.3,ZC.z],{min:2.5,max:22});
+  S.view("hammer",[ZH.x+.3,4.4,ZH.z+9.2],[ZH.x-.4,1.4,ZH.z+.2],{min:2.5,max:22});
+  S.view("use",[ZU.x+.4,7.0,ZU.z+10.4],[ZU.x,.8,ZU.z+.3],{min:2.5,max:22});
+  S.view("tradeoff",[ZT.x+.6,7.4,ZT.z+9.0],[ZT.x,1.1,ZT.z+.3],{min:3,max:26});
+  S.view("all",[0,15,20.5],[0,.2,.6],{min:6,max:60});
+  const zoneOf=k=>k==="test"?"all":k;const centers={bench:ZB,zoom:ZZ,conduct:ZC,hammer:ZH,use:ZU,tradeoff:ZT};
+  const L_B=[...lB,lMat],L_Z=[lZname,lZstate,...lZleg],L_C=[lCstate,lCflow,lCcar,lPlus,lMinus],L_H=[lHt,lHres,lHdrag,lHtok],L_U=[...lNeeds,lJob,lPick,lFit,lUhint],L_T=[];
+  ["cu","al"].forEach(k=>L_T.push(lines[k].lab,lines[k].lcol,lines[k].ldisc));
+  const groupsL={bench:L_B,zoom:L_Z,conduct:L_C,hammer:L_H,use:L_U,tradeoff:L_T};
+  let zone="bench",firstStep=true;S.goView("bench",true);
+  let latKey="",curLat=null;
+  const lerpCol=(a,b,f)=>new THREE.Color(a).lerp(new THREE.Color(b),S.clamp(f,0,1));
+  return {
+    step(st){zone=zoneOf(st.k);S.goView(zone,firstStep);firstStep=false;const c=centers[zone];S.setShadowBox(zone==="all"?20:6,c?[c.x,0,c.z]:[0,0,0]);
+      Object.entries(groupsL).forEach(([z,arr])=>arr.forEach(l=>l.show(z===zone)));beacons.forEach(b=>{b.lab.show(zone==="all");b.g.visible=zone==="all"})},
+    update(s,st,dt,t){const k=s.mat,m=M[k],run=s.playing&&!S.REDUCED;
+      // ---- bench
+      shelf.forEach(o=>{const on=o.k===k;o.smp.position.y=S.lerp(o.smp.position.y,on?.35+Math.sin(t*2)*.04:.1,.12);o.smp.rotation.y+=on&&!S.REDUCED?dt*.8:0;o.ring.material.emissiveIntensity=on?1.8:0;o.ring.material.color.set(on?PAL.case.mint:"#E4E0EC")});
+      [smp1,smp2,smp4].forEach(r=>r.show(k));
+      const on1=m.elec;fil1M.emissiveIntensity=S.lerp(fil1M.emissiveIntensity,on1?5.5:0,.15);halo1.material.opacity=on1?.35:0;
+      for(let i=0;i<22;i++){const u=((i/22)+(on1&&run?t*.12:0))%1;loop1.getPointAt(u,tmp);chg1.put(i,tmp.x,tmp.y,tmp.z,on1?1:0)}chg1.done();
+      const ms=meltState(k,s.temp),f2=S.clamp((s.temp-20)/1000,0,1);coil2M.emissiveIntensity=S.lerp(coil2M.emissiveIntensity,.15+f2*4.5,.1);
+      coil2M.emissive.copy(lerpCol("#FF4A2A","#FFD36B",f2));
+      ORDER.forEach(q=>{const g=smp2[q];if(q!==k)return;g.visible=ms!=="melted";g.scale.set(.62*(ms==="melting"?1.15:1),.62*(ms==="melting"?.6:1),.62*(ms==="melting"?1.15:1))});
+      puddle.visible=ms!=="solid";const hotLiq=s.temp>500;puddleM.color.set(hotLiq?"#FFB070":m.c1);puddleM.emissive.set(hotLiq?"#FF6A2A":"#000000");puddleM.emissiveIntensity=hotLiq?.9:0;puddle.scale.set(ms==="melted"?1.2:.9,1,ms==="melted"?1.2:.9);
+      const lv=S.clamp((s.temp-20)/1180,0,1);spirit2.scale.y=.05+lv*1.5;spirit2.position.y=.2+spirit2.scale.y/2;
+      for(let i=0;i<hz.length;i++){const p=hz[i];p.life-=dt;if(p.life<=0){p.life=1.5+Math.random();p.x=-.15+(Math.random()-.5)*.8;p.z=(Math.random()-.5)*.8;p.y=.4}p.y+=dt*.5;haze2.put(i,p.x+Math.sin(t*3+i)*.03,p.y,p.z,s.temp>60?(.15+.35*f2)*Math.min(1,p.life):0,90+140*f2)}haze2.done();
+      // hammer: raise, swing, strike, recover (a purely visual loop while playing)
+      if(run)hamPhase=(hamPhase+dt/3.0)%1;const ph=hamPhase;const ang=ph<.55?S.lerp(0,1.25,S.ease(Math.min(1,ph/.5))):ph<.62?S.lerp(1.25,-.08,(ph-.55)/.07):S.lerp(-.08,0,Math.min(1,(ph-.62)/.1));
+      hamPiv.rotation.z=-ang;const struck=ph>=.62&&ph<.97;const hitNow=ph>=.62&&lastHit<.62;lastHit=ph;
+      ORDER.forEach(q=>{smp3[q].visible=false;bent3[q].visible=false});
+      if(k==="cu"||k==="al"){(struck?bent3:smp3)[k].visible=true}
+      else if(k==="nacl"){smp3[k].visible=!struck}
+      else{const g=smp3[k];g.visible=true;const sq=struck?(k==="wax"?[1.35,.45]:k==="hdpe"?[1.06,.82]:k==="gra"?[1.1,.6]:[1,1]):[1,1];g.scale.set(.48*sq[0],.48*sq[1],.48*sq[0])}
+      if(hitNow){const n=k==="nacl"?36:k==="gra"?18:k==="dia"?5:0;for(let i=0;i<36;i++){const p=sh3[i];p.live=i<n;if(!p.live)continue;const a=Math.random()*6.28,v=k==="gra"?.8:1.6+Math.random()*1.4;p.x=-.15+(Math.random()-.5)*.2;p.y=.6;p.z=(Math.random()-.5)*.2;p.vx=Math.cos(a)*v;p.vz=Math.sin(a)*v*.6;p.vy=1.2+Math.random()*1.8;p.r=Math.random()*6;
+          shards.tint(i,k==="gra"?"#5C6275":k==="dia"?"#CFF3FB":"#F4F8FC")}
+        if(k==="dia"||k==="cu"||k==="al")for(let i=0;i<20;i++){const q=sp3[i];q.life=.4+Math.random()*.3;q.x=-.15;q.y=.62;q.z=0;q.vx=(Math.random()-.5)*3;q.vy=Math.random()*2.5}}
+      for(let i=0;i<36;i++){const p=sh3[i];if(!p.live||!struck){shards.put(i,0,-9,0,0);continue}p.vy-=9*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;
+        const floorY=Math.abs(p.x+.15)<.5&&Math.abs(p.z)<.35?.45:Math.abs(p.x+.15)<.65&&Math.abs(p.z)<.45?.24:.05;if(p.y<floorY){p.y=floorY;p.vy*=-.25;p.vx*=.6;p.vz*=.6}p.r+=dt*p.vx*3;shards.put(i,p.x,p.y,p.z,k==="gra"?.8:1,p.r,p.r*.7,0)}shards.done();
+      for(let i=0;i<20;i++){const q=sp3[i];q.life-=dt;q.vy-=6*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;spark3.put(i,q.x,q.y,q.z,q.life>0?Math.min(1,q.life*2.5):0,70)}spark3.done();
+      // water
+      ORDER.forEach(q=>{if(q!==k)return;const g=smp4[q];if(m.sol){const f=Math.min(1,.3+s.dis);const sc=.44*(1-.8*f);g.scale.setScalar(Math.max(.02,sc));g.position.y=.06;g.visible=sc>.05}
+        else if(m.rho<1){g.scale.setScalar(.44);g.position.y=1.0+Math.sin(t*1.6)*.025;g.rotation.z=Math.sin(t*1.1)*.04}else{g.scale.setScalar(.44);g.position.y=.06;g.rotation.z=0}});
+      {const f=m.sol?Math.min(1,.3+s.dis):0;for(let i=0;i<30;i++){const vis=m.sol&&hs(i+7)<f+.1;const a=hs(i)*6.28+t*.2*(i%3?1:-1),r=.12+hs(i+30)*.4;ions4.put(i,Math.cos(a)*r,.15+((hs(i+60)*.85+t*.03*(i%2?1:-1))%.85+.85)%.85,Math.sin(a)*r,vis?(i%2?.055:.04):0)}ions4.done()}
+      const res1=on1?"Lights up":"Stays dark",res2=ms==="melted"?"Melted":ms==="melting"?"Melting":"Still solid",res4=m.sol?"Dissolves":m.rho<1?"Floats":"Sinks, no change";
+      const sp=(c,dx,dy,dz)=>tmp.set(ZB.x+c+dx,TOP+dy,ZB.z+.55+dz);
+      lB[0].at(sp(X1,0,1.0,-.75)).set(`Conducts?<b>${res1}</b>`);lB[1].at(sp(X2,-.15,.9,0)).set(`Heat to ${fmt(s.temp)} °C<b>${res2}</b>`);
+      lB[2].at(sp(X3,-.15,.75,0)).set(`Hammer it<b>${m.ham}</b>`);lB[3].at(sp(X4,0,1.5,0)).set(`In water<b>${res4}</b><small>${m.rhoT} g/cm³</small>`);
+      lMat.at(tmp.set(ZB.x-4.2+ORDER.indexOf(k)*1.4,TOP+1.15,ZB.z-2.15)).set(`${m.n}<small>${m.tn} · tap a sample</small>`);
+      // ---- lattice: in the zoom zone it follows the heat; in the conduction zone it follows the chosen state
+      const inC=zone==="conduct";const e=effState(k,s.cstate);
+      const lstate=inC?(e==="molten"?"molten":e==="dissolved"?"dissolved":"solid"):(ms==="melted"?"molten":ms==="melting"?"melting":"solid");
+      const lT=inC?(lstate==="molten"?m.mp2+80:20):s.temp;const drift=inC&&conducts(k,s.cstate);
+      if(latKey!==k){latKey=k;curLat=buildLattice(k)}
+      const tgt=inC?LC:LZ;LB.position.copy(tgt);const sc=inC?.62:1;LB.scale.setScalar(sc);plates.visible=inC;
+      const P=updateLattice(curLat,lstate,lT,drift,t);
+      // ---- zoom zone
+      smpZ.show(k);smpZ[k].rotation.y=S.REDUCED?0:t*.4;coilZM.emissiveIntensity=S.lerp(coilZM.emissiveIntensity,.1+f2*4.5,.1);coilZM.emissive.copy(lerpCol("#FF4A2A","#FFD36B",f2));
+      lZname.at(tmp.set(ZZ.x-2.6,TOP+1.4,ZZ.z+.4)).set(`${m.n}<small>${m.tn}</small>`);
+      lZstate.at(tmp.set(LZ.x,LZ.y+LBOX+.3,LZ.z)).set(`${ms==="melted"?"Liquid":ms==="melting"?"Melting":"Solid"} at ${fmt(s.temp)} °C<small>${m.parts}</small>`).cls(ms==="solid"?"":"hot");
+      const legs=LEG[m.type];lZleg.forEach((l,i)=>{const it=legs[i];l.show(zone==="zoom"&&!!it);if(!it)return;let pnt=null;
+        if(it[0]==="e"&&curLat.el.length){const q=curLat.el[0];elSw.getMatrixAt(0,mtx);pnt=tv.setFromMatrixPosition(mtx)}
+        else if(it[0]==="weak"||it[0]==="bond"){const b=it[0]==="weak"?bondSw.count-1:0;if(b>=0){bondSw.getMatrixAt(b,mtx);pnt=tv.setFromMatrixPosition(mtx)}}
+        else{const idx=it[0]==="cl"?1:it[0]==="na"?0:Math.min(curLat.at.length-1,it[0]==="ion"?7:11);ionSw.getMatrixAt(idx,mtx);pnt=tv.setFromMatrixPosition(mtx)}
+        if(pnt){pnt.multiplyScalar(sc).add(LB.position);l.at(pnt).set(it[1])}});
+      // ---- conduction zone
+      const onC=conducts(k,s.cstate);filCM.emissiveIntensity=S.lerp(filCM.emissiveIntensity,onC?6:0,.15);haloC.material.opacity=onC?.22:0;lampC.intensity=onC?2.2:0;
+      const solidLike=e==="solid"||e==="nomelt";const molten=e==="molten",wet=e==="dissolved"||e==="insol";
+      ORDER.forEach(q=>{barC[q].visible=q===k&&solidLike;barC[q].position.set(0,EY-.2,0);barInW[q].visible=q===k&&e==="insol"});
+      cruc.visible=molten;beak.visible=wet;
+      if(molten){const hot=m.type==="metal"||k==="nacl";meltM.color.set(hot?"#FFB070":m.c1);meltM.emissive.set(hot?"#FF6A2A":"#000000");meltM.emissiveIntensity=hot?1.1:0}
+      for(let i=0;i<flc.length;i++){const p=flc[i];p.life-=dt*1.4;if(p.life<=0){p.life=1;const a=Math.random()*6.28;p.x=Math.cos(a)*.3;p.z=Math.sin(a)*.3}flameC.put(i,p.x*(p.life),.05+(1-p.life)*.35,p.z*p.life,molten?p.life*.7:0,160*p.life)}flameC.done();
+      const eLen=solidLike?.25:molten?1.0:1.15,eTop=EY;elecs.forEach((el,i)=>{el.scale.y=eLen;el.position.set(EX[i],eTop-eLen/2,.55)});
+      for(let i=0;i<40;i++){const na=i%2===0,vis=e==="dissolved";const x=wrap(-.7+hs(i)*1.4+(onC&&run?(na?-1:1)*t*.15:0)+Math.sin(t+i)*.03,.75),y=.15+hs(i+40)*.8+Math.cos(t*.8+i)*.02,z=(hs(i+80)-.5)*1.1;ionsC.put(i,x,y,z,vis?(na?.05:.07):0)}ionsC.done();
+      for(let i=0;i<40;i++){const u=((i/40)+(onC&&run?t*.08:0))%1;loopC.getPointAt(u,tmp);chgC.put(i,tmp.x,tmp.y,tmp.z,onC?1:0)}chgC.done();
+      lCstate.at(tmp.set(ZC.x-1.6,TOP+.2,ZC.z+1.6)).set(stLabel(k,s.cstate)+(e==="nomelt"?`<small>${m.sh} doesn't melt below about 3500 °C</small>`:e==="insol"?`<small>${m.sh} doesn't dissolve: it's still a solid</small>`:""));
+      lCflow.at(tmp.set(ZC.x-.6,TOP+1.2,ZC.z-1.6)).set(onC?"Charges flow<b>Bulb on</b>":"Nothing free to move<b>Bulb off</b>").cls(onC?"hot":"");
+      lCcar.at(tmp.set(LC.x,LC.y-LBOX*.62-.1,LC.z)).set(`Charge carriers<b>${carriers(k,s.cstate)}</b>`);
+      lMinus.at(tmp.set(EX[0]+ZC.x,TOP+EY+.1,ZC.z+.55));lPlus.at(tmp.set(EX[1]+ZC.x,TOP+EY+.1,ZC.z+.55));
+      // ---- hammer zone (sliding layers)
+      const metal=s.hamMat==="metal",sh=s.shift,cracked=!metal&&sh>=.9,dx=sh*HSP,lift=cracked?.32:0,tilt=cracked?.07:0;
+      const px=HX0,py=rowY(2);let n=0;
+      for(let j=0;j<HR;j++)for(let i=0;i<HC;i++)for(let d=0;d<HD;d++){let x=HX0+i*HSP,y=rowY(j),z=(d-(HD-1)/2)*HSP;const w=S.REDUCED?0:1;x+=Math.sin(t*6*w+i*1.7+j*2.3+d)*.01;
+        if(j>=2){x+=dx;if(cracked){const rx=x-px,ry=y-py;x=px+rx*Math.cos(tilt)-ry*Math.sin(tilt);y=py+rx*Math.sin(tilt)+ry*Math.cos(tilt)+lift}}
+        const na=(i+j+d)%2===0;hIon.put(n,x,y,z,metal?.27:na?.19:.28);hIon.tint(n++,metal?PAL.copper:na?PAL.product.strawberry:PAL.product.lime)}
+      hIon.done();
+      for(let i=0;i<90;i++){const q=hEls[i];const u=((q.u+(S.REDUCED?0:t*q.vu))%1+1)%1,v=((q.v+(S.REDUCED?0:t*q.vv*.3))%1+1)%1;const y=rowY(0)-.25+v*(rowY(3)-rowY(0)+.5);const x=HX0-.3+u*((HC-1)*HSP+.6)+(y>(rowY(1)+rowY(2))/2?dx:0);
+        hEl.put(i,x,y,(q.w-.5)*(HD*HSP),metal?1:0)}hEl.done();
+      for(let i=0;i<HC;i++){const jf=Math.round(i+sh),near=1-Math.abs((i+sh)-jf);const same=((i+2)%2)===((jf+1)%2);const zf=(HD-1)/2*HSP+.32;const show=!metal&&jf>=0&&jf<HC&&near>=.35;
+        const xm=HX0+i*HSP+dx,xf=HX0+jf*HSP,ya=rowY(1),yb2=rowY(2)+lift;
+        if(show&&same&&sh>.45){const k2=S.clamp((sh-.45)/.4,0,1)*.5;repel[i][0].set(tmp.set(xm,yb2-.05,zf),V3(0,1,0),k2);repel[i][1].set(tmp.set(xf,ya+.05,zf),V3(0,-1,0),k2)}else{repel[i][0].visible=repel[i][1].visible=false}
+        if(show&&!same&&sh<.4){putBond(attr,i,xm,yb2-.2,zf,xf,ya+.2,zf,.025)}else attr.put(i,0,-9,0,0)}attr.done();
+      crack.visible=cracked;crack.position.y=lift*.4;
+      if(cracked&&!wasCracked){for(let i=0;i<40;i++){const q=bh[i];q.x=HX0+Math.random()*(HC-1)*HSP;q.y=(rowY(1)+rowY(2))/2;q.z=(Math.random()-.5)*HD*HSP;q.vx=(Math.random()-.5)*1.5;q.vy=Math.random()*1.6;q.life=.6+Math.random()*.6}}wasCracked=cracked;
+      for(let i=0;i<40;i++){const q=bh[i];q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;burstH.put(i,q.x,q.y,q.z,q.life>0?Math.min(1,q.life):0,120)}burstH.done();
+      pusher.position.set(HX0-HSP*.75+dx-.1,(rowY(2)+rowY(3))/2+lift,0);pusher.rotation.z=cracked?tilt*.5:0;
+      toks.forEach(o=>{const on=o.val===s.hamMat;o.rg.material.emissiveIntensity=on?1.8:0;o.rg.material.color.set(on?PAL.case.lavender:"#E4E0EC");o.g.position.y=on?.05:0});
+      const stt=metal?["Still bonded","Layers slide"]:cracked?["Cracked!","Like charges repel"]:sh>.45?["Like charges repel","Push further"]:["Holding together","Opposite charges attract"];
+      lHt.at(tmp.set(ZH.x+HX0+.2,TOP+rowY(3)+.6,ZH.z)).set(metal?"Metal: layers slide<small>delocalised electrons keep holding them</small>":"Ionic: like charges meet<small>layers shift by one ion</small>");
+      lHres.at(tmp.set(ZH.x+HX0+(HC-1)*HSP+dx,TOP+rowY(3)+lift,ZH.z)).set(`${stt[0]}<small>pushed ${Math.round(sh*100)}% of a gap</small>`).cls(cracked?"hot":"");
+      lHdrag.at(tmp.set(ZH.x+pusher.position.x-.6,TOP+pusher.position.y+.5,ZH.z));lHtok.at(tmp.set(ZH.x-3.7,TOP+.5,ZH.z+2.25));
+      // ---- use zone
+      const j=JOB(s.job),pk=s.picks[s.job]||"",fit=fitOf(s.job,pk);
+      jobs.forEach(o=>{const on=o.id===s.job;o.rg.material.emissiveIntensity=on?1.8:0;o.rg.material.color.set(on?PAL.case.mint:"#E4E0EC");o.g.position.y=on?.06:0});
+      JOBS.forEach(q=>{const hm=heroModels[q.id];hm.visible=q.id===s.job;if(hm.visible&&!S.REDUCED)hm.rotation.y=Math.sin(t*.5)*.5});
+      ORDER.forEach(q=>{const g=heroS[q];g.visible=q===pk;if(g.visible&&!S.REDUCED)g.rotation.y=t*.5});qmark.visible=!pk;if(!pk&&!S.REDUCED)qmark.rotation.y=t*.8;
+      heroRing.material.emissiveIntensity=fit.full?2:0;heroRing.material.color.set(fit.full?PAL.product.lime:"#E4E0EC");
+      picks.forEach(o=>{const on=o.k===pk;o.rg.material.emissiveIntensity=on?1.8:0;o.rg.material.color.set(on?PAL.product.lime:"#E4E0EC");o.g.position.y=on?.06:0});
+      lamps.forEach((l,i)=>{const r=fit.res[i];l.visible=i<j.need.length;l.material.color.set(r===null||r===undefined?"#D8D4E2":r?PAL.product.lime:"#F07A6A");l.material.emissive.set(r===null||r===undefined?"#000000":r?PAL.product.lime:"#F06050");l.material.emissiveIntensity=r===null||r===undefined?0:1.4});
+      const pc=fit.n?fit.pass/fit.n:0;fitBar.scale.y=Math.max(.001,2.2*pc);fitBar.position.x=-1.1+1.1*pc;fitM.color.set(fit.full?PAL.product.lime:pc>=.5?PAL.product.butter:"#F07A6A");fitM.emissive.copy(fitM.color);
+      lNeeds.forEach((l,i)=>{const nd=j.need[i];l.show(zone==="use"&&!!nd);if(!nd)return;const r=fit.res[i];l.at(tmp.set(ZU.x+2.5-.95,TOP+.3,ZU.z+.1-.85+i*.5)).set(`${r===null?"·":r?"✓":"✗"} ${nd[0]}`)});
+      lJob.at(tmp.set(ZU.x-2.6,TOP+1.3,ZU.z+.25)).set(`${j.n}<small>needs ${j.need.length} things · tap a job</small>`);
+      lPick.at(tmp.set(ZU.x-.3,TOP+1.5,ZU.z+.25)).set(pk?`${M[pk].sh}<small>${M[pk].tn}</small>`:"Pick a material<small>tap one in the front row</small>");
+      const verdict=!pk?"Pick a material":fit.full?"Perfect fit":j.id==="handle"?"No perfect fit here":fit.pass>=fit.n-1?"Close, but not quite":"Poor fit";
+      lFit.at(tmp.set(ZU.x+2.5,TOP+.4,ZU.z+1.1)).set(`${verdict}${pk?`<b>${fit.pass} of ${fit.n}</b>`:""}`).cls(fit.full?"hot":"");lUhint.hide();
+      // ---- trade-off zone
+      const maxT=KGKM("cu")*50/1000;
+      ["cu","al"].forEach(q=>{const L=lines[q],ton=KGKM(q)*s.len/1000;L.sel.material.opacity=s.line===q?.55+.2*Math.sin(t*3):0;
+        const h=.1+2.6*ton/maxT;L.colBar.scale.y=h;L.colBar.position.y=.06+h/2;
+        for(let i=0;i<14;i++){const u=((i/14)+(run||!S.REDUCED?t*.06:0))%1;L.curve.getPointAt(u,tmp);L.flow.put(i,tmp.x,tmp.y,tmp.z,1)}L.flow.done();
+        L.lab.at(tmp.set(ZT.x-.2,TOP+PH3-.2-L.sag,ZT.z+L.z)).set(`${M[q].n}<b>${M[q].rhoT} g/cm³</b><small>${fmt(KGKM(q))} kg per km · sag ∝ weight</small>`).cls(s.line===q?"hot":"");
+        L.lcol.at(tmp.set(ZT.x+4.5,TOP+.06+h,ZT.z+L.z)).set(`<b>${fmt(ton,1)} t</b><small>for ${s.len} km</small>`);
+        L.ldisc.at(tmp.set(ZT.x-4.6,TOP+.9,ZT.z+L.z)).set(`<b>${fmt(AREA(q)*1e6)} mm²</b><small>${fmt(DIAM(q),1)} mm cable</small>`)});
+      // ---- test beacons
+      beacons.forEach(b=>{const ok=b.fn();b.orb.material.color.set(ok?PAL.product.lime:"#D8D4E2");b.orb.material.emissive.set(ok?PAL.product.lime:"#9A96B0");b.orb.material.emissiveIntensity=ok?1.6+.4*Math.sin(t*3):.15;
+        b.lab.at(tmp.set(b.g.position.x,TOP+2.3,b.g.position.z)).set(`${b.n} · ${b.txt}<b>${ok?"Done ✓":"Not yet"}</b>`).cls(ok?"hot":"")});
+    }};
+}
+
 // ---------- mount
 const matOpts=ORDER.map(k=>[k,M[k].n]);
-const api=StudyKit.mount({
+const api=StudyKit.mount({scene3d:materials3d,
   eyebrow:"Chemistry · Materials", title:"The materials lab", crumb:"NCEA Level 1 Chemistry and Biology · physical properties of materials", homeHash:"l1",
   fig:"MATERIALS LAB", railTitle:"How particles decide properties",
   badge:{label:"NCEA L1 Chem & Bio 92023",exam:"2026-11-19T14:00:00+13:00",examText:"Thu 19 Nov, 2pm"},

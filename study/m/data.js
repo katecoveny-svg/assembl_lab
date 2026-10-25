@@ -258,7 +258,179 @@ const steps=[
 
 const pct=(n,d)=>Math.round(n/d*100);
 const s2=v=>v===1?"":"s";
-const api=K.mount({
+// ---------- the 3D bench: the case file as four evidence tables. Survey answers are real beads that stack, drop into a box plot
+// and line up for a comparison; the newspaper chart has a false floor you can drag down; the town is 400 little figures you
+// can sample; the two towns' injuries are piles of blocks that turn into rates per 1000 cyclists.
+function data3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const PT=.3;
+  const ZR=V3(0,0,0),ZM=V3(-11.5,0,-.6),ZN=V3(11.5,0,-.6),ZT=V3(0,0,-15);
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  const BLUEc=P.product.blueberry,PINKc=P.product.strawberry,DB="#3F6FB0",DP="#B5466F";const hitM=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  // ---------------------------------------------------------------- survey bench: the 0–12 h axis, bead stacks, box plots
+  plinth(ZR,10.4,5.2,P.case.lavender);const sv=S.group();sv.position.set(ZR.x,PT,ZR.z);
+  const SC=.68,hx=h=>(h-6)*SC,BR=.14,ROWZ=-.35;
+  sv.add(S.rbox(9.4,.06,3.6,.04,mat("plastic","#ffffff",{rough:.5}),{at:[0,.03,-.3]}));
+  sv.add(S.cyl(.035,.035,9,mat("metal"),{rot:[0,0,Math.PI/2],at:[0,.1,1.62],seg:12}));
+  const axP=S.panel(1024,120,9.2);axP.rotation.x=-Math.PI/2;axP.position.set(0,.065,1.95);sv.add(axP);
+  axP.redraw((g,w,h)=>{const X=v=>w/2+(v-6)*SC/9.2*w;g.fillStyle="#6E6A86";g.strokeStyle="#8F9BAA";g.lineWidth=3;g.font="600 30px 'Instrument Sans',system-ui";g.textAlign="center";
+    for(let v=0;v<=12;v++){g.beginPath();g.moveTo(X(v),0);g.lineTo(X(v),18);g.stroke();g.fillText(v,X(v),52)}g.font="600 22px 'Instrument Sans',system-ui";g.textAlign="right";g.fillText("HOURS A DAY",w-16,100)});
+  const beadGeo=new THREE.SphereGeometry(BR,20,14);
+  const beads=S.swarm(30,beadGeo,mat("plastic","#ffffff",{rough:.3}),{colors:true,cast:true});beads.castShadow=true;sv.add(beads);
+  const beadsW=S.swarm(30,beadGeo,mat("plastic","#ffffff",{rough:.3}),{colors:true}),beadsE=S.swarm(30,beadGeo,mat("plastic","#ffffff",{rough:.3}),{colors:true});sv.add(beadsW,beadsE);
+  const STW=stacks(WD),STE=stacks(FW.a);
+  // the reading line: a frosted blade with a knob on top that you drag along the axis
+  const blade=S.group(sv);blade.add(S.box(.03,2.2,3.2,mat("acrylic",P.ink,{opacity:.14}),{at:[0,1.1,-.3],cast:false}));blade.add(S.box(.05,.05,3.2,mat("plastic",P.ink,{rough:.3}),{at:[0,2.2,-.3]}));
+  const knob=S.sphere(.16,mat("plastic",P.product.butter,{rough:.3}),{at:[0,2.3,-.3]});knob.add(S.mesh(new THREE.SphereGeometry(.4,10,8),hitM,{cast:false}));blade.add(knob);
+  const shadeB=S.mesh(new THREE.BoxGeometry(1,1,1),mat("flat",BLUEc,{opacity:.22,depthWrite:false}),{cast:false});shadeB.renderOrder=2;sv.add(shadeB);
+  S.dragger(knob,{normal:V3(0,0,1),move:p=>{const q=sv.worldToLocal(p.clone());S.api.state.line=S.clamp(Math.round((q.x/SC+6)*4)/4,0,12)}});
+  S.dragger(blade.children[0],{normal:V3(0,0,1),move:p=>{const q=sv.worldToLocal(p.clone());S.api.state.line=S.clamp(Math.round((q.x/SC+6)*4)/4,0,12)}});
+  function boxPlot(col,deep){const g=S.group(sv);
+    const box=S.rbox(1,1,1,.06,mat("acrylic",col,{opacity:.32}),{cast:false});box.renderOrder=3;g.add(box);
+    const top=S.rbox(1,.04,1,.02,mat("plastic",col,{rough:.35}));g.add(top);
+    const med=S.rbox(.09,1,1,.03,mat("plastic",PINKc,{rough:.3}));g.add(med);
+    const wL=S.cyl(.03,.03,1,mat("plastic",P.ink,{rough:.4}),{rot:[0,0,Math.PI/2],seg:10}),wR=wL.clone();g.add(wL,wR);
+    const cL=S.box(.04,.04,.5,mat("plastic",P.ink,{rough:.4})),cR=cL.clone();g.add(cL,cR);
+    g.set=(f,z,o,a)=>{g.visible=a>.01;const H=.55*a,D=.95;const x1=hx(f.q1),x3=hx(f.q3),wHi=o.out?f.wHi:f.max,wLo=o.out?f.wLo:f.min;
+      box.visible=top.visible=!!o.box;box.scale.set(x3-x1,Math.max(.01,H),D);box.position.set((x1+x3)/2,H/2+.06,z);top.scale.set(x3-x1,1,D);top.position.set((x1+x3)/2,H+.08,z);
+      med.visible=!!o.med;med.scale.set(1,Math.max(.01,H+.25*a),D+.15);med.position.set(hx(f.med),(H+.25*a)/2+.06,z);
+      const wy=.06+H/2;wL.visible=wR.visible=cL.visible=cR.visible=!!o.wh;
+      if(o.box){const l1=x1-hx(wLo),l2=hx(wHi)-x3;wL.scale.set(1,Math.max(.001,l1),1);wL.position.set(hx(wLo)+l1/2,wy,z);wR.scale.set(1,Math.max(.001,l2),1);wR.position.set(x3+l2/2,wy,z)}
+      else{const l=hx(wHi)-hx(wLo);wL.scale.set(1,l,1);wL.position.set((hx(wLo)+hx(wHi))/2,wy,z);wR.visible=false}
+      cL.position.set(hx(wLo),wy,z);cR.position.set(hx(wHi),wy,z);cL.scale.y=cR.scale.y=Math.max(.01,a)};return g}
+  const bpW=boxPlot(BLUEc,DB),bpE=boxPlot(PINKc,DP);
+  const olap=S.mesh(new THREE.BoxGeometry(1,1,1),mat("flat",P.product.butter,{opacity:.3,depthWrite:false}),{cast:false});olap.renderOrder=2;sv.add(olap);
+  const medLines=[0,1].map(()=>{const m=S.mesh(new THREE.BoxGeometry(1,1,1),mat("plastic",DP,{rough:.4}),{cast:false});sv.add(m);return m});
+  const shift=S.arrow(P.ink);sv.add(shift);
+  const lLine=S.label({cls:"big",off:[0,-30],lead:false}),lBelow=S.label({cls:"hot",off:[-24,30]}),lAbove=S.label({off:[24,30]}),lMed=S.label({off:[0,-38],cls:"hot"}),lQ1=S.label({off:[-16,34]}),lQ3=S.label({off:[16,34]}),
+    lIqr=S.label({off:[30,-26]}),lRange=S.label({off:[0,40]}),lOut=S.label({off:[10,-34]}),lRowW=S.label({off:[-30,-10]}),lRowE=S.label({off:[-30,-10]}),lOlap=S.label({off:[0,-40],cls:"hot"}),lShift=S.label({off:[22,-24]}),lTitleR=S.label({off:[0,-20],lead:false});
+  lBelow.el.style.setProperty("--acc",DB);lRowE.el.style.setProperty("--acc",DP);
+
+  // ---------------------------------------------------------------- the newspaper chart: true-height bars, a false floor at the axis start
+  plinth(ZM,6.8,5.2,P.case.butter);const nm=S.group();nm.position.set(ZM.x,PT,ZM.z);
+  const BH=v=>v/TOP*3.4;
+  const bars=SL.map((d,i)=>{const b=S.rbox(1.05,1,1.05,.08,mat("plastic",d.c,{rough:.35}));b.position.x=-1.0+i*1.7;b.scale.y=BH(d.v);b.position.y=BH(d.v)/2;nm.add(b);return b});
+  const floor=S.group(nm);const fl=S.rbox(4.4,.07,2.6,.03,mat("acrylic",P.case.lavender,{opacity:.5}),{cast:false});fl.renderOrder=4;floor.add(fl);
+  
+  const fHandle=S.sphere(.15,mat("plastic","#D2557A",{rough:.3}),{at:[2.35,0,.9]});fHandle.add(S.mesh(new THREE.SphereGeometry(.42,10,8),hitM,{cast:false}));floor.add(fHandle);
+  S.dragger(fHandle,{normal:V3(0,0,1),move:p=>{const q=nm.worldToLocal(p.clone());S.api.state.axis=S.clamp(Math.round(q.y/3.4*TOP),0,47)}});
+  S.dragger(fl,{normal:V3(0,0,1),move:p=>{const q=nm.worldToLocal(p.clone());S.api.state.axis=S.clamp(Math.round(q.y/3.4*TOP),0,47)}});
+  const scale=S.panel(220,700,.66);scale.position.set(-2.35,3.6/2+.02,0);nm.add(scale);nm.add(S.rbox(.74,3.75,.06,.03,mat("plastic","#ffffff",{rough:.4}),{at:[-2.35,1.82,-.05]}));let scKey="";
+  const gauge=S.panel(400,420,1.5);gauge.position.set(2.75,1.6,-.6);gauge.rotation.y=-.35;nm.add(gauge);nm.add(S.cyl(.04,.06,.9,mat("metal"),{at:[2.75,.45,-.66]}));let gKey="";
+  const lBarA=S.label({off:[0,-30]}),lBarB=S.label({off:[0,-30]}),lAxis=S.label({cls:"hot",off:[30,20]}),lTrick=S.label({off:[0,-26],lead:false});
+
+  // ---------------------------------------------------------------- the town: 400 figures, school on the left, bus stop on the right
+  plinth(ZN,9.6,6.6,P.case.mint);const tn=S.group();tn.position.set(ZN.x,PT,ZN.z);const GS=.3,gxp=c=>(c-(COLS-1)/2)*GS+.35,gzp=r=>(r-(ROWS-1)/2)*GS+.35;
+  tn.add(S.rbox(8.1,.05,5.4,.04,mat("plastic","#ffffff",{rough:.5}),{at:[.35,.025,.35]}));
+  const body=S.swarm(400,new THREE.CapsuleGeometry(.055,.1,4,10),mat("plastic","#ffffff",{rough:.4}),{colors:true,cast:true}),head=S.swarm(400,new THREE.SphereGeometry(.055,12,8),mat("plastic","#ffffff",{rough:.3}),{colors:true});
+  body.castShadow=true;tn.add(body,head);const rings=S.swarm(200,new THREE.TorusGeometry(.11,.02,6,20),mat("plastic",P.ink,{rough:.4}));tn.add(rings);
+  {const sch=S.group(tn);sch.position.set(gxp(0)-.75,0,gzp(7));sch.add(S.rbox(.6,.45,.7,.04,mat("plastic",P.case.blush,{rough:.4}),{at:[0,.25,0]}));
+    const roof=S.mesh(new THREE.CylinderGeometry(.45,.45,.78,3,1),mat("plastic",PINKc,{rough:.4}),{rot:[Math.PI/2,0,Math.PI/2],at:[0,.6,0]});roof.scale.set(1,1,.6);sch.add(roof);
+    sch.add(S.cyl(.012,.012,.5,mat("metal"),{at:[.1,.95,0]}));sch.add(S.box(.18,.1,.01,mat("plastic",P.product.butter),{at:[.19,1.14,0]}));sch.add(S.box(.14,.22,.02,mat("plastic","#ffffff"),{at:[0,.14,.36]}))}
+  {const bs=S.group(tn);bs.position.set(gxp(COLS-1)+.6,0,gzp(STOP.row));bs.add(S.cyl(.03,.03,.9,mat("metal"),{at:[0,.45,0]}));bs.add(S.rbox(.3,.22,.04,.04,mat("plastic",BLUEc,{rough:.35}),{at:[0,.85,0]}));
+    bs.add(S.rbox(.7,.04,.2,.02,mat("plastic","#ffffff"),{at:[-.3,.2,.3]}))}
+  const you=S.torus(.17,.035,mat("glow",DP,1),{rot:[Math.PI/2,0,0],cast:false});tn.add(you);
+  const gaugeBar=(z,col)=>{const g=S.group(tn);g.position.set(.35,.25,-2.55+z);g.add(S.cyl(.12,.12,4,mat("glass","#ffffff",{opacity:.22}),{rot:[0,0,Math.PI/2],cast:false}));
+    const fillM=mat("plastic",col,{rough:.3});const fill=S.cyl(.1,.1,1,fillM,{rot:[0,0,Math.PI/2]});g.add(fill);return {g,fill}};
+  const gTrue=gaugeBar(-.35,P.product.lime),gSamp=gaugeBar(0,P.product.butter);
+  const die=S.rbox(.36,.36,.36,.07,mat("plastic","#ffffff",{rough:.3}),{at:[-3.7,.18,-2.7]});tn.add(die);
+  for(const [x,y,z] of [[0,.181,0],[.09,.181,.09],[-.09,.181,-.09],[.181,.09,0],[.181,-.09,0],[0,0,.181]])die.add(S.sphere(.03,mat("plastic",P.ink),{at:[x,y,z],seg:10}));
+  S.pick(die,()=>{const st=S.api.state;st.seed++;takeSample()});
+  let sampKey="",hop=9;const lTrue=S.label({off:[-20,-22]}),lSamp=S.label({off:[-20,22],cls:"hot"}),lYou=S.label({off:[0,-26]}),lDie=S.label({off:[0,-26]}).set("Tap: new sample"),lHow=S.label({off:[0,30],lead:false});
+
+  // ---------------------------------------------------------------- two towns: injury blocks (counts) or 1000 cyclists as 100 figures (rates)
+  plinth(ZT,9.6,5.2,P.case.sky);const towns={};
+  ["A","B"].forEach((k,i)=>{const g=S.group();g.position.set(ZT.x-2.4+i*4.8,PT,ZT.z);const cs=S.acrylicCase(3.9,2.3,3.4,P.case.lavender,{opacity:.14});g.add(cs);
+    const base=S.rbox(3.8,.06,3.3,.03,mat("plastic","#ffffff",{rough:.5}),{at:[0,.03,0]});g.add(base);
+    const bar=S.rbox(1,.12,.16,.05,mat("plastic",BLUEc,{rough:.35}));const L=2.8*TOWNS[k].cyc/4000;bar.scale.x=L;bar.position.set(-1.4+L/2,.12,1.45);g.add(bar);
+    const glowM=mat("glow",P.product.butter,1.2);const frame=S.group(g);for(const [x,z,w,d] of [[0,1.72,4,.06],[0,-1.72,4,.06],[1.97,0,.06,3.5],[-1.97,0,.06,3.5]])frame.add(S.box(w,.06,d,glowM,{at:[x,.05,z],cast:false}));
+    const blocks=S.swarm(120,new S.RoundedBoxGeometry(.22,.22,.22,2,.04),mat("plastic",PINKc,{rough:.35}),{cast:true});blocks.castShadow=true;g.add(blocks);
+    const ppl=S.swarm(100,new THREE.CapsuleGeometry(.06,.12,4,10),mat("plastic","#ffffff",{rough:.4}),{colors:true,cast:true}),hd=S.swarm(100,new THREE.SphereGeometry(.06,12,8),mat("plastic","#ffffff",{rough:.3}));ppl.castShadow=true;g.add(ppl,hd);
+    S.pick(cs.userData.body,()=>{S.api.state.pick=k});S.pick(base,()=>{S.api.state.pick=k});S.scene.add(g);
+    towns[k]={g,frame,blocks,ppl,hd,mix:0,lab:S.label({off:[0,-30]}),num:S.label({cls:"big",off:[0,30]}),cyc:S.label({off:[0,26]})}});
+  const lPick=S.label({cls:"hot",off:[0,-30]});
+
+  // ---------------------------------------------------------------- views
+  S.view("read",[ZR.x,5.0,ZR.z+7.2],[ZR.x,.7,ZR.z-.3],{min:3,max:26});
+  S.view("compare",[ZR.x,6.4,ZR.z+8.2],[ZR.x,.4,ZR.z-.3],{min:3,max:26});
+  S.view("news",[ZM.x-.2,3.5,ZM.z+6.2],[ZM.x+.1,3.0,ZM.z],{min:3,max:26,dur:1.4});
+  S.view("reveal",[ZM.x+2.4,4.6,ZM.z+9.2],[ZM.x-.3,1.7,ZM.z],{min:3,max:26,dur:2.2});
+  S.view("sample",[ZN.x+.2,8.8,ZN.z+7.8],[ZN.x+.2,.1,ZN.z+.1],{min:3,max:26});
+  S.view("rates",[ZT.x,6.6,ZT.z+11.6],[ZT.x,.9,ZT.z],{min:3,max:26});
+  S.view("all",[0,24,20],[0,0,-6],{min:6,max:70});
+  const zoneOf=k=>k==="read"||k==="spread"?"read":k==="compare"?"compare":k==="mislead"?"news":k==="sample"?"sample":k==="rates"?"rates":"all";
+  const CEN={read:ZR,compare:ZR,news:ZM,sample:ZN,rates:ZT,all:V3(0,0,-6)};
+  const caseL=[1,2,3,4].map(()=>S.label({off:[0,-36],lead:false}));
+  const ALL=[lLine,lBelow,lAbove,lMed,lQ1,lQ3,lIqr,lRange,lOut,lRowW,lRowE,lOlap,lShift,lTitleR,lBarA,lBarB,lAxis,lTrick,lTrue,lSamp,lYou,lDie,lHow,lPick,...caseL,...Object.values(towns).flatMap(T=>[T.lab,T.num,T.cyc])];
+  let zone="read",since=0,revealed=false;S.goView("read",true);const tmp=V3(0,0,0),W2=(g,x,y,z)=>g.localToWorld(V3(x,y,z));
+  return {
+    step(st){zone=zoneOf(st.k);S.goView(zone);since=0;revealed=false;const c=CEN[zone];S.setShadowBox(zone==="all"?22:6.5,[c.x,0,c.z]);ALL.forEach(l=>l.hide())},
+    update(s,st,dt,t){const k=st.k,test=k==="test";since+=dt;
+      if(k==="mislead"&&!revealed&&since>(S.REDUCED?.5:4.2)){revealed=true;S.goView("reveal")}
+      // ---- survey bench
+      const mode=k==="spread"?"spread":k==="compare"?"compare":"read";const onR=zone==="read"||zone==="compare";
+      const e=mode==="spread"?(s.t<.5?2*s.t*s.t:1-Math.pow(-2*s.t+2,2)/2):mode==="compare"?1:0,a=mode==="spread"?S.clamp((s.t-.5)/.5,0,1):0;
+      beads.visible=mode!=="compare";beadsW.visible=beadsE.visible=mode==="compare";
+      if(mode!=="compare"){STW.forEach(({v,j},i)=>{const isOut=s.out&&F.out.includes(v),b=v<s.line,on=v===s.line;
+        const y0=BR+.06+j*2*BR,z1=ROWZ+(j%2?1:-1)*Math.ceil(j/2)*.13,sc=1-.35*e,y1=.06+BR*.65;
+        beads.put(i,hx(v),S.lerp(y0,y1,e)+Math.sin(e*Math.PI)*.4,S.lerp(ROWZ,z1,e),sc);
+        beads.tint(i,mode==="spread"?(isOut&&a>0?PINKc:BLUEc):b?BLUEc:on?P.product.butter:"#F4F2F8")});beads.done()}
+      else{[[STW,beadsW,BLUEc,-1.05],[STE,beadsE,PINKc,.55]].forEach(([stk,sw,c,z])=>{stk.forEach(({v,j},i)=>{sw.put(i,hx(v),.06+BR*.55,z+(j%2?1:-1)*Math.ceil(j/2)*.08,.55);sw.tint(i,c)});sw.done()})}
+      blade.visible=mode==="read";blade.position.x=hx(s.line);shadeB.visible=mode==="read"&&s.line>0;shadeB.scale.set(Math.max(.01,hx(s.line)-hx(0)+.3),.01,3.2);shadeB.position.set((hx(0)-.3+hx(s.line))/2,.07,-.3);
+      bpW.set(F,mode==="compare"?-1.05:ROWZ,mode==="compare"?{box:1,med:1,wh:1,out:1}:{box:s.box,med:s.med,wh:s.wh,out:s.out},mode==="compare"?1:a);bpE.set(FW,.55,{box:1,med:1,wh:1,out:1},mode==="compare"?1:0);
+      const cmp=mode==="compare"&&s.shade;olap.visible=cmp&&OLAP>0;if(olap.visible){const x1=hx(Math.max(F.q1,FW.q1)),x2=hx(Math.min(F.q3,FW.q3));olap.scale.set(x2-x1,.9,2.8);olap.position.set((x1+x2)/2,.5,-.25)}
+      medLines.forEach((m,i)=>{m.visible=cmp;const f=i?FW:F;m.scale.set(.03,.03,2.9);m.position.set(hx(f.med),.1,-.25)});
+      shift.visible=false;if(cmp)shift.set(V3(hx(F.med),1.1,-.25),V3(hx(FW.med)-hx(F.med),0,0),1);
+      const b=below(s.line),o=onL(s.line);
+      lLine.show(onR&&mode==="read").at(W2(sv,hx(s.line),2.45,-.3)).set(`<b>${fh(s.line)} h</b>`);
+      lBelow.show(onR&&mode==="read").at(W2(sv,hx(Math.max(0,s.line-1)),.1,1)).set(`<b>← ${b} below</b>`);lAbove.show(onR&&mode==="read").at(W2(sv,hx(Math.min(12,s.line+1)),.1,1)).set(`<b>${30-b-o} above →</b>`);
+      const sa=mode==="spread"&&a>.05&&onR;
+      lMed.show(sa&&s.med).at(W2(sv,hx(F.med),.9,ROWZ)).set(`median <b>${fh(F.med)} h</b>`);lQ1.show(sa&&s.box).at(W2(sv,hx(F.q1),.06,ROWZ+.5)).set(`Q1 ${fh(F.q1)}`);lQ3.show(sa&&s.box).at(W2(sv,hx(F.q3),.06,ROWZ+.5)).set(`Q3 ${fh(F.q3)}`);
+      lIqr.show(sa&&s.box).at(W2(sv,hx(F.q3),.65,ROWZ-.4)).set(`middle half<b>IQR ${fh(F.iqr)} h</b>`);lRange.show(sa&&s.wh).at(W2(sv,hx((F.min+F.max)/2),.1,1.2)).set(`range <b>${fh(F.range)} h</b>`);
+      lOut.show(sa&&s.out&&F.out.length>0).at(W2(sv,hx(F.out[0]),.3,ROWZ)).set(`${fh(F.out[0])} h · unusual`);
+      lTitleR.show(onR&&mode==="read").at(W2(sv,0,.1,-2.2)).set(mode==="read"?"Hours on screens on a school day<small>30 Year 11s · Kōwhai College · made-up data</small>":"From dots to a box plot<small>same 30 students · school days · made-up data</small>");
+      lRowW.show(mode==="compare"&&onR).at(W2(sv,hx(0),.2,-1.05)).set(`School day<small>median ${fh(F.med)} h</small>`);lRowE.show(mode==="compare"&&onR).at(W2(sv,hx(0),.2,.55)).set(`Weekend<small>median ${fh(FW.med)} h</small>`);
+      lOlap.show(cmp&&OLAP>0&&onR).at(W2(sv,hx((Math.max(F.q1,FW.q1)+Math.min(F.q3,FW.q3))/2),.95,-1.6)).set(`boxes overlap <b>${fh(OLAP)} h</b>`);lShift.show(cmp&&onR).at(W2(sv,hx(FW.med),1.1,-.25)).set(`<b>+${fh(FW.med-F.med)} h</b>`);
+      // ---- newspaper chart
+      const ax=s.axis,fy=BH(ax);floor.position.y=S.lerp(floor.position.y,fy,S.REDUCED?1:.15);fl.visible=true;
+      const sk=ax+"|"+s.brk;if(sk!==scKey){scKey=sk;scale.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);const Y=v=>h-(v/TOP)*(h*3.4/3.6)-6;
+        g.fillStyle="rgba(143,155,170,.18)";g.fillRect(0,Y(ax),w,h-Y(ax));g.strokeStyle="#8F9BAA";g.lineWidth=4;g.beginPath();g.moveTo(w-30,Y(TOP));g.lineTo(w-30,Y(ax));g.stroke();
+        g.font="600 34px 'Instrument Sans',system-ui";g.textAlign="right";g.fillStyle="#222A55";
+        for(let v=Math.ceil((ax+.001)/5)*5;v<=TOP;v+=5){g.fillRect(w-46,Y(v)-2,16,4);g.fillText(v+"%",w-54,Y(v)+12)}
+        g.fillStyle=ax>0?"#C2410C":"#222A55";g.font="700 36px 'Instrument Sans',system-ui";g.fillText(ax+"%",w-54,Y(ax)+12);
+        if(ax>0&&s.brk){g.strokeStyle="#C2410C";g.lineWidth=5;g.beginPath();for(const dy of [36,52]){g.moveTo(w-46,Y(ax)-dy+8);g.lineTo(w-30,Y(ax)-dy);g.lineTo(w-14,Y(ax)-dy+8)}g.stroke()}})}
+      const L=looks(ax),gk=L.toFixed(2);if(gk!==gKey){gKey=gk;gauge.redraw((g,w,h)=>{g.fillStyle="#fff";g.beginPath();g.roundRect(4,4,w-8,h-8,30);g.fill();g.strokeStyle="#D9CBF2";g.lineWidth=4;g.stroke();
+        g.fillStyle="#6E6A86";g.font="600 26px 'Instrument Sans',system-ui";g.fillText("BARS LOOK",36,70);g.fillText("REALLY",36,232);
+        g.font="600 86px 'Instrument Sans',system-ui";g.fillStyle=L>1.25?"#C2410C":"#222A55";g.fillText(L.toFixed(L<10?1:0)+"×",36,160);g.fillStyle="#2A7D63";g.fillText(really.toFixed(2)+"×",36,322);
+        g.fillStyle="#6E6A86";g.font="600 26px 'Instrument Sans',system-ui";g.fillText("52 ÷ 48",36,376)})}
+      const onM=zone==="news"||zone==="reveal";
+      bars.forEach((bb,i)=>{const lab=i?lBarB:lBarA;lab.show(onM||test).at(W2(nm,bb.position.x,BH(SL[i].v)+.05,0)).set(`${SL[i].nm}<b>${SL[i].v}%</b>`)});
+      lAxis.show(onM&&ax>0).at(W2(nm,2.2,floor.position.y,1.2)).set(`<b>axis starts at ${ax}%, not 0</b>`);
+      lTrick.show(onM&&revealed&&ax>0).at(W2(nm,0,.05,1.6)).set("Under the floor: the hidden part of both bars");lTrick.off=[0,34];
+      // ---- the town
+      const key=s.sample.join(",");if(key!==sampKey){sampKey=key;hop=0}hop+=dt;const SS=new Set(s.sample);let ri=0;
+      POP.forEach(p=>{const inS=SS.has(p.i),x=gxp(p.c),z=gzp(p.row);const d=S.clamp(hop-(p.c*.025),0,.5)/.5,jump=inS&&!S.REDUCED?Math.sin(d*Math.PI)*.35:0;const sc=inS?1.15:.85;
+        const col=p.act?P.product.lime:"#B9C3CF",pale=inS?col:(p.act?"#CFE6AE":"#DCE2E9");body.put(p.i,x,.05+.11*sc+jump,z,sc);body.tint(p.i,pale);head.put(p.i,x,.05+.27*sc+jump,z,sc);head.tint(p.i,inS?"#ffffff":"#F1F1F4");
+        if(inS&&ri<200)rings.put(ri++,x,.06,z,1,Math.PI/2,0,0)});for(;ri<200;ri++)rings.put(ri,0,-9,0,.0001);body.done();head.done();rings.done();
+      you.visible=s.method==="friends";you.position.set(gxp(YOU.c),.07,gzp(YOU.row));
+      const sp=sampPct();gTrue.fill.scale.y=Math.max(.01,4*TRUE/100);gTrue.fill.position.x=-2+2*TRUE/100;gSamp.fill.scale.y=Math.max(.01,4*sp/100);gSamp.fill.position.x=-2+2*sp/100;
+      const onN=zone==="sample";
+      lTrue.show(onN||test).at(W2(tn,.35-2+4*TRUE/100,.35,-2.9)).set(`Everyone<b>${pc(TRUE)}%</b>`);lSamp.show(onN||test).at(W2(tn,.35-2+4*sp/100,.35,-2.55)).set(`Sample says<b>${pc(sp)}%</b>`);
+      lYou.show(onN&&s.method==="friends").at(W2(tn,gxp(YOU.c),.3,gzp(YOU.row))).set("You");lDie.show(onN&&(s.method==="random"||s.method==="online")).at(W2(tn,-3.7,.4,-2.7));
+      lHow.show(onN).at(W2(tn,.35,.05,3.05)).set(`${mName(s.method)} · ${s.sample.length} asked<small>green = walks or bikes · grey = bus or car · ringed = asked</small>`);
+      // ---- towns
+      const rates=s.view==="rates";["A","B"].forEach(k2=>{const T=towns[k2],tw=TOWNS[k2];T.mix=S.lerp(T.mix,rates?1:0,S.REDUCED?1:.08);const m=T.mix;
+        for(let n=0;n<120;n++){if(n<tw.inj){const c=n%6,r=Math.floor(n/6)%5,l=Math.floor(n/30);const sc=Math.max(.0001,1-m*1.6);T.blocks.put(n,-.6+c*.24,.17+l*.24,-.9+r*.24,sc)}else T.blocks.put(n,0,-9,0,.0001)}T.blocks.done();
+        const lit=Math.round(per1000(tw)/10),ps=Math.max(.0001,m*1.6-.6);
+        for(let n=0;n<100;n++){const c=n%10,r=Math.floor(n/10);const x=-1.35+c*.3,z=-1.35+r*.27;T.ppl.put(n,x,.06+.12*ps,z,ps);T.ppl.tint(n,n<lit?PINKc:"#E3E7EE");T.hd.put(n,x,.06+.28*ps,z,ps)}T.ppl.done();T.hd.done();
+        T.frame.visible=s.pick===k2;const onT=zone==="rates";
+        T.lab.show(onT||test).at(W2(T.g,0,2.35,0)).set(`${tw.nm}<small>${tw.cyc.toLocaleString("en-NZ")} cyclists</small>`);
+        T.num.show(onT).at(W2(T.g,0,.1,1.7)).set(rates?`<b>${fh(per1000(tw))}</b>per 1000 cyclists`:`<b>${tw.inj}</b>injuries`);
+        T.cyc.show(onT&&rates).at(W2(T.g,1.4,.1,-1.6)).set("1 figure = 10 cyclists");T.cyc.off=[0,-30]});
+      lPick.show((zone==="rates"||test)&&!!s.pick).at(s.pick?W2(towns[s.pick].g,1.9,.1,1.7):tmp).set("your pick");
+      // ---- the test: four cases on the board
+      [[lineOk,"Median",W2(sv,0,2.6,0)],[axisOk,"Fair graph",W2(nm,0,4.2,0)],[sampOk,"Good sample",W2(tn,.35,1.0,-3)],[rateOk,"Safer town",W2(towns.A.g,2.4,3.1,0)]].forEach(([ok,l,p],i)=>{
+        caseL[i].show(test).at(p).set(`${ok()?"✓":i+1} · ${l}`).cls(ok()?"hot":"")})}};
+}
+const api=K.mount({scene3d:data3d,
   eyebrow:"Maths and stats · Data", title:"The data detective", crumb:"NCEA Level 1 Mathematics and Statistics · interpreting data", homeHash:"l1",
   fig:"CASE FILE", railTitle:"Read it, sum it up, question it",
   badge:{label:"NCEA L1 Maths 91946",exam:"2026-11-10T09:30:00+13:00",examText:"Tue 10 Nov, 9:30am"},

@@ -292,7 +292,222 @@ const KUPU=[
  {mi:"kiritaki",en:"consumer, customer",ta:11034},
  {mi:"pakihi",en:"business",ta:5016}];
 Object.entries({"needs": ["matea", "hiahia"], "choice": ["ngōuruuru", "utu"], "stall": ["kaiwhakaputa", "kiritaki", "pakihi"], "market": ["utu"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-API=StudyKit.mount({kupu:KUPU,
+// ---------- the 3D bench: a peach acrylic vending machine with coils and real goods, an ice-block stall with a live queue,
+// a supply-and-demand board with 3D curves and a draggable price rod, and a values continuum with seven people.
+// Every tap goes through tapAt() (the same code the SVG and keyboard use), so the sorting, ranking and perspectives stay one model.
+function market3d(S){const {THREE,mat}=S;const P3=S.PAL;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const ZV=V3(-13,0,0),ZS=V3(-4.3,0,0),ZM=V3(4.4,0,0),ZI=V3(13.2,0,0),TOP=.3;
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZV,6.4,5.4,P3.case.peach);plinth(ZS,7.6,5.4,P3.case.mint);plinth(ZM,7.6,5.4,P3.case.peach);plinth(ZI,7.8,5.4,P3.case.lavender);
+  const glowM=(c,i=0)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),emissive:new THREE.Color(c),emissiveIntensity:i,roughness:.4});
+  const pm=(c,r=.35)=>mat("plastic",c,{rough:r});
+  const tmp=V3(0,0,0),tmp2=V3(0,0,0);const LBL=[];const label=o=>{const l=S.label(o);LBL.push(l);return l};let overview=false;
+  // a faceless figure: legs, hoodie, head, hair cap
+  function figure(c,skin){const g=new THREE.Group();for(const x of [-.045,.045])g.add(S.cyl(.03,.028,.2,pm("#4E4868",.5),{at:[x,.1,0],seg:10}));
+    const b=S.mesh(new THREE.CapsuleGeometry(.1,.12,4,14),pm(c));b.position.y=.33;g.add(b);g.add(S.sphere(.085,pm(skin,.5),{at:[0,.55,0],seg:20}));
+    const hair=S.sphere(.088,pm("#4E4868",.6),{seg:20});hair.scale.set(1,.6,1);hair.position.set(0,.58,-.01);g.add(hair);return g}
+  // ---------------------------------------------------------------- goods (simple toy models, no text)
+  function good(id){const g=new THREE.Group();
+    if(id==="water"){g.add(S.cyl(.07,.07,.24,pm(P3.product.blueberry,.2),{at:[0,.12,0],seg:20}));g.add(S.cyl(.035,.035,.06,pm(P3.deep.sky),{at:[0,.27,0],seg:14}))}
+    if(id==="lolly"){g.add(S.sphere(.08,pm(P3.product.butter),{at:[0,.1,0]}));for(const s2 of [-1,1]){const c=S.cyl(0,.05,.08,pm(P3.product.strawberry),{at:[s2*.11,.1,0],rot:[0,0,s2*Math.PI/2],seg:12});g.add(c)}}
+    if(id==="sand"){const m=S.mesh(new THREE.CylinderGeometry(.16,.16,.1,3),pm("#F5DDA8",.5),{rot:[Math.PI/2,0,0]});m.position.y=.09;m.rotation.z=Math.PI/2*0;g.add(m);g.add(S.box(.2,.02,.11,pm(P3.product.lime),{at:[0,.06,0]}))}
+    if(id==="game"){g.add(S.rbox(.26,.09,.15,.04,pm(P3.case.lavender),{at:[0,.06,0]}));g.add(S.sphere(.02,pm(P3.product.strawberry),{at:[.07,.11,0]}));g.add(S.box(.06,.012,.02,pm(P3.ink),{at:[-.07,.11,0]}))}
+    if(id==="jacket"){g.add(S.rbox(.22,.24,.1,.04,pm(P3.product.butter),{at:[0,.13,0]}));g.add(S.rbox(.07,.18,.08,.03,pm(P3.product.butter),{at:[-.14,.15,0],rot:[0,0,.25]}));g.add(S.rbox(.07,.18,.08,.03,pm(P3.product.butter),{at:[.14,.15,0],rot:[0,0,-.25]}));g.add(S.box(.01,.22,.105,pm("#C9A040"),{at:[0,.13,0]}))}
+    if(id==="tea"){g.add(S.cyl(.08,.065,.22,mat("acrylic","#F3D9C2",{opacity:.75}),{at:[0,.11,0],seg:20}));g.add(S.cyl(.085,.085,.015,pm("#ffffff"),{at:[0,.225,0],seg:20}));g.add(S.cyl(.012,.012,.16,pm(P3.product.strawberry),{at:[.02,.28,0],rot:[0,0,-.3],seg:8}));
+      for(let k=0;k<5;k++)g.add(S.sphere(.018,pm(P3.ink),{at:[Math.cos(k*1.3)*.04,.03,Math.sin(k*1.3)*.04],seg:8}))}
+    if(id==="aid"){g.add(S.rbox(.24,.16,.12,.03,pm("#ffffff"),{at:[0,.08,0]}));g.add(S.box(.035,.1,.01,pm(P3.product.strawberry),{at:[0,.08,.062]}));g.add(S.box(.1,.035,.01,pm(P3.product.strawberry),{at:[0,.08,.062]}))}
+    if(id==="phones"){g.add(S.torus(.1,.015,pm(P3.ink),{at:[0,.12,0],arc:Math.PI}));for(const x of [-.1,.1])g.add(S.rbox(.06,.1,.08,.025,pm(P3.product.lime),{at:[x,.09,0]}))}
+    return g}
+  // ---------------------------------------------------------------- the vending machine
+  const vm=S.group();vm.position.set(ZV.x,TOP,ZV.z-.6);
+  const CW=2.4,CH=3.4,CD=1.2;
+  for(const x of [-.9,.9])vm.add(S.rbox(.3,.12,.9,.04,mat("metal",P3.steel),{at:[x,.06,0]}));
+  const caseG=S.acrylicCase(CW,CH,CD,P3.case.peach,{opacity:.16});caseG.position.y=.12;vm.add(caseG);
+  vm.add(S.rbox(CW-.04,.34,CD-.04,.08,pm(P3.case.peach,.45),{at:[0,.12+CH-.17,0]}));
+  vm.add(S.rbox(CW-.06,.08,CD-.06,.03,pm("#ffffff",.5),{at:[0,.16,0]}));
+  vm.add(S.box(CW-.06,CH-.5,.04,pm("#FFF6EE",.6),{at:[0,.12+(CH-.5)/2+.1,-CD/2+.06]}));     // the back wall
+  const colX=i=>-.95+(i%4)*.48,rowY=i=>2.6-Math.floor(i/4)*1.05;
+  for(let r=0;r<2;r++)vm.add(S.rbox(1.95,.05,CD-.15,.02,mat("metal",P3.steel),{at:[-.23,rowY(r*4)-.06,0]}));
+  const coilM=mat("metal",P3.copper,{rough:.3});
+  ITEMS.forEach((it,i)=>{const pts=[];for(let k=0;k<=60;k++){const a=k/60*Math.PI*10;pts.push([colX(i)+Math.cos(a)*.13,rowY(i)+.08+Math.sin(a)*.08*0+Math.sin(a)*.0,(k/60-.5)*.8+Math.sin(a)*.0])}
+    const helix=[];for(let k=0;k<=80;k++){const a=k/80*Math.PI*10;helix.push([colX(i)+Math.sin(a)*.14,rowY(i)+.1+Math.cos(a)*.1,(k/80-.5)*.85])}vm.add(S.tube(helix,.012,coilM,{seg:400,rs:5}))});
+  // the works: a mint housing, a screen, a keypad, a coin slot
+  vm.add(S.rbox(.5,2.3,.5,.06,pm(P3.case.mint,.45),{at:[.88,1.8,0]}));
+  const screen=S.panel(256,140,.42);screen.position.set(.88,2.65,.255);vm.add(screen);let scrKey="";
+  {const keys=S.swarm(12,new THREE.CylinderGeometry(.035,.035,.03,14),pm("#ffffff"));for(let k=0;k<12;k++)keys.put(k,.8+(k%3)*.08,2.25-Math.floor(k/3)*.085,.26,1,Math.PI/2);keys.done();vm.add(keys)}
+  vm.add(S.rbox(.16,.24,.05,.03,mat("metal",P3.steel),{at:[.88,1.65,.26]}));vm.add(S.box(.02,.15,.02,pm(P3.ink),{at:[.88,1.65,.29]}));
+  vm.add(S.rbox(1.95,.42,.12,.05,mat("metal",P3.steel,{rough:.3}),{at:[-.23,.55,.5]}));            // the PUSH flap / tray
+  const goods=ITEMS.map((it,i)=>{const g=good(it.id);g.scale.setScalar(1.35);vm.add(g);g.position.set(colX(i),rowY(i)+.12,.15);S.pick(g,()=>{const p=slot(i);tapAt(p.x,p.y)});return g});
+  const binCopies=ITEMS.map((it,i)=>{const g=good(it.id);g.scale.setScalar(1.25);S.scene.add(g);g.visible=false;S.pick(g,()=>{const p=slot(i);tapAt(p.x,p.y)});return g});
+  const binX=[ZV.x-1.05,ZV.x+1.05],binZ=ZV.z+1.75;
+  [[P3.product.lime,0],[P3.case.lavender,1]].forEach(([c,k])=>{const b=S.acrylicCase(1.7,.32,1.1,c,{opacity:.28});b.position.set(binX[k],TOP,binZ);S.scene.add(b);S.scene.add(S.rbox(1.66,.04,1.06,.02,pm(c,.5),{at:[binX[k],TOP+.02,binZ]}))});
+  const lNeeds=label({cls:"hot",off:[0,-22],lead:false}).set("Needs"),lWants=label({off:[0,-22],lead:false}).set("Wants");
+  const priceL=ITEMS.map((it,i)=>label({off:[0,24],lead:false}).set("$"+it.p));
+  const badgeL=ITEMS.map(()=>label({off:[0,-34]}));const marks=ITEMS.map(()=>label({off:[16,-20],lead:false}));
+  const ocRing=S.torus(.25,.025,glowM(P3.product.butter,1.6),{rot:[Math.PI/2,0,0],cast:false});vm.add(ocRing);
+  const wallet=S.swarm(60,new THREE.CylinderGeometry(.1,.1,.024,24),mat("plastic",P3.product.butter,{rough:.3}));S.scene.add(wallet);
+  const lWallet=label({off:[24,-20]}),lScore=label({cls:"hot big",off:[0,-40]}),lGiven=label({cls:"hot",off:[30,24]});
+  const hop={};
+  // ---------------------------------------------------------------- the stall
+  const sg=S.group();sg.position.set(ZS.x-1.3,TOP,ZS.z-.5);
+  for(const x of [-1.2,1.2])for(const z of [-.5])sg.add(S.cyl(.05,.05,2.3,pm("#C9A072",.6),{at:[x,1.15,z],seg:12}));
+  for(let i=0;i<8;i++)sg.add(S.rbox(.31,.08,.8,.02,pm(i%2?"#ffffff":P3.product.strawberry,.45),{at:[-1.09+i*.312,2.3,-.1],rot:[.35,0,0]}));
+  for(let i=0;i<8;i++){const fl=S.cyl(.155,.155,.04,pm(i%2?"#ffffff":P3.product.strawberry,.45),{at:[-1.09+i*.312,2.08,.28],rot:[Math.PI/2,0,0],seg:20});fl.scale.set(1,1,1);sg.add(fl)}
+  sg.add(S.rbox(2.6,.9,.7,.06,pm("#FFF3EA",.5),{at:[0,.45,0]}));
+  const blocks=S.swarm(12,new S.RoundedBoxGeometry(.11,.2,.05,2,.03),pm("#ffffff",.25),{colors:true});sg.add(blocks);
+  for(let i=0;i<6;i++){blocks.put(i,-.9+i*.3,1.02,.15,1);blocks.tint(i,IB[i])}
+  const sticks=S.swarm(12,new THREE.BoxGeometry(.025,.1,.012),pm("#D9B48C",.6));sg.add(sticks);for(let i=0;i<6;i++)sticks.put(i,-.9+i*.3,.88,.15,1);sticks.done();
+  for(let i=6;i<12;i++){blocks.put(i,0,-9,0,0);blocks.tint(i,"#fff")}blocks.done();
+  const sign=S.panel(512,128,1.6);sign.position.set(0,1.65,-.48);sg.add(sign);sg.add(S.rbox(1.7,.46,.04,.03,pm("#ffffff"),{at:[0,1.65,-.51]}));let signKey="";
+  const seller=figure(P3.product.lime,SKIN[0]);seller.position.set(0,0,-.75);seller.scale.setScalar(1.35);sg.add(seller);
+  const cash=S.rbox(.36,.22,.26,.04,pm(P3.product.butter),{at:[.95,1.01,-.1]});sg.add(cash);
+  const cashScr=S.panel(128,48,.3);cashScr.position.set(.95,1.0,.035);sg.add(cashScr);let cashKey="";
+  const QN=12,qBody=S.swarm(QN,new THREE.CapsuleGeometry(.1,.12,4,14),pm("#ffffff"),{colors:true,cast:true}),qHead=S.swarm(QN,new THREE.SphereGeometry(.085,16,12),pm("#ffffff",.5),{colors:true}),qHair=S.swarm(QN,new THREE.SphereGeometry(.088,16,10),pm("#4E4868",.6)),qLeg=S.swarm(QN*2,new THREE.CylinderGeometry(.03,.028,.2,8),pm("#4E4868",.5));
+  [qBody,qHead,qHair,qLeg].forEach(m=>{m.castShadow=true;S.scene.add(m)});
+  const fly=S.swarm(2,new S.RoundedBoxGeometry(.11,.2,.05,2,.03),pm("#ffffff",.25),{colors:true});S.scene.add(fly);
+  const coinFly=S.swarm(1,new THREE.CylinderGeometry(.07,.07,.02,20),mat("metal","#E3B65A",{rough:.25}));S.scene.add(coinFly);
+  // profit board behind the queue
+  const prof=S.panel(560,320,2.2);prof.position.set(ZS.x+2.1,TOP+1.55,ZS.z-1.9);S.scene.add(prof);S.scene.add(S.rbox(2.32,1.38,.06,.05,pm("#ffffff"),{at:[ZS.x+2.1,TOP+1.55,ZS.z-1.94]}));S.scene.add(S.cyl(.04,.05,.86,mat("metal",P3.steel),{at:[ZS.x+2.1,TOP+.43,ZS.z-1.96]}));let profKey="";
+  // circular flow: producer and consumers on two pads with goods one way and money the other
+  const cfA=V3(ZS.x-2.7,TOP,ZS.z+1.7),cfB=V3(ZS.x-.3,TOP,ZS.z+1.7);
+  S.scene.add(S.cyl(.42,.46,.1,pm(P3.case.mint,.45),{at:[cfA.x,TOP+.05,cfA.z],seg:40}));S.scene.add(S.cyl(.42,.46,.1,pm(P3.case.lavender,.45),{at:[cfB.x,TOP+.05,cfB.z],seg:40}));
+  const arcPt=(u,up)=>{const x=S.lerp(cfA.x,cfB.x,up?1-u:u),z=cfA.z+(up?.32:-.32);return V3(x,TOP+.15+Math.sin(u*Math.PI)*.55,z)};
+  S.scene.add(S.tube(Array.from({length:20},(_,k)=>arcPt(k/19,false)),.012,pm(P3.product.strawberry),{seg:60,rs:5}));S.scene.add(S.tube(Array.from({length:20},(_,k)=>arcPt(k/19,true)),.012,pm("#C9922D"),{seg:60,rs:5}));
+  const cfGoods=S.swarm(3,new S.RoundedBoxGeometry(.09,.16,.04,2,.02),pm("#ffffff",.25),{colors:true});S.scene.add(cfGoods);const cfCoins=S.swarm(3,new THREE.CylinderGeometry(.06,.06,.02,18),mat("metal","#E3B65A",{rough:.25}));S.scene.add(cfCoins);
+  const pFig=figure(P3.product.lime,SKIN[1]);pFig.position.set(cfA.x,TOP+.1,cfA.z);S.scene.add(pFig);const cFig=figure(P3.case.lavender,SKIN[3]);cFig.position.set(cfB.x,TOP+.1,cfB.z);S.scene.add(cFig);
+  const lProd=label({off:[-20,30]}).set("Producer<small>you, at the stall</small>"),lCons=label({off:[20,30]}).set("Consumers<small>students buying</small>"),lFlow=label({off:[0,24],lead:false}).set("Ice blocks → · ← money");
+  const lBuyers=label({cls:"hot big",off:[26,-40]}),lNone=label({off:[0,-20]}).set("No one's buying at this price");
+  // ---------------------------------------------------------------- the supply-and-demand board
+  const mg=S.group();mg.position.set(ZM.x-1.1,TOP,ZM.z-1.0);
+  const BW=4.6,BH=3.3,X0=-1.55,Y0=.5,QW=3.4,PH=2.55;const gxq=q=>X0+q/160*QW,gyp=P=>Y0+P/3.5*PH;
+  mg.add(S.rbox(BW+.16,BH+.16,.08,.06,pm("#ffffff",.35),{at:[0,BH/2+.1,-.06]}));
+  const board=S.panel(1024,734,BW);board.position.set(0,BH/2+.1,-.01);mg.add(board);
+  const bx=w=>(w/BW+.5)*1024,by=h=>734-((h-.1)/BH)*734;
+  board.redraw((g,w,h)=>{g.fillStyle="#FFFDFB";g.fillRect(0,0,w,h);g.font="600 26px Instrument Sans, system-ui";g.textBaseline="middle";
+    for(let p=.5;p<=3.5;p+=.5){const y=by(gyp(p));g.strokeStyle="rgba(38,46,92,.1)";g.lineWidth=2;g.beginPath();g.moveTo(bx(gxq(0)),y);g.lineTo(bx(gxq(160)),y);g.stroke();g.fillStyle="#6E6A86";g.textAlign="right";g.fillText("$"+fmt(p,p%1?2:0),bx(gxq(0))-12,y)}
+    for(let q=0;q<=160;q+=40){g.fillStyle="#6E6A86";g.textAlign="center";g.fillText(q,bx(gxq(q)),by(gyp(0))+26)}
+    g.strokeStyle="#8F9BAA";g.lineWidth=4;g.beginPath();g.moveTo(bx(gxq(0)),by(gyp(3.5)));g.lineTo(bx(gxq(0)),by(gyp(0)));g.lineTo(bx(gxq(160)),by(gyp(0)));g.stroke();
+    g.fillStyle="#262E5C";g.font="700 24px Instrument Sans, system-ui";g.textAlign="left";g.fillText("PRICE",20,30);g.textAlign="right";g.fillText("ICE BLOCKS AN HOUR",bx(gxq(160)),by(gyp(0))+62)});
+  let curveKey="",curves=[];
+  const dPts=d=>{const P0=Math.max(.25,(120+20*d-160)/40),P1=Math.min(3.4,(120+20*d)/40);return [V3(gxq(120+20*d-40*P0),gyp(P0),.06),V3(gxq(120+20*d-40*P1),gyp(P1),.06)]};
+  const sPts=u=>{const P0=Math.max(.25,(20-20*u)/40+.01),P1=Math.min(3.4,(160+20-20*u)/40);return [V3(gxq(-20+20*u+40*P0),gyp(P0),.06),V3(gxq(-20+20*u+40*P1),gyp(P1),.06)]};
+  const rod=S.box(QW,.05,.05,glowM("#F2C83C",1.4),{cast:false});mg.add(rod);
+  const tag=S.rbox(.36,.2,.1,.05,pm(P3.product.butter,.3));mg.add(tag);
+  S.dragger(tag,{normal:V3(0,0,1),move:p=>{const l=mg.worldToLocal(p.clone());s.P=S.clamp(Math.round((l.y-Y0)/PH*3.5*4)/4,.5,3);s.settle=false}});
+  S.dragger(rod,{normal:V3(0,0,1),move:p=>{const l=mg.worldToLocal(p.clone());s.P=S.clamp(Math.round((l.y-Y0)/PH*3.5*4)/4,.5,3);s.settle=false}});
+  const mD=S.sphere(.08,pm(P3.product.strawberry,.3));const mS=S.sphere(.08,pm(P3.product.blueberry,.3));const mE=S.sphere(.09,pm("#ffffff",.3));mg.add(mD,mS,mE);
+  const gapBar=S.box(1,.06,.06,glowM("#C25E45",1.2),{cast:false});mg.add(gapBar);
+  const eqDash=S.swarm(60,new THREE.SphereGeometry(.016,6,5),pm(P3.ink,.4));mg.add(eqDash);
+  const arD=S.arrow(P3.product.strawberry,{r:.03}),arS=S.arrow(P3.product.blueberry,{r:.03});mg.add(arD,arS);
+  const lD=label({off:[14,-10],lead:false}),lS=label({off:[14,0],lead:false}),lP=label({cls:"hot",off:[-30,0]}),lGap=label({cls:"hot",off:[0,32]}),lE=label({off:[22,-26]}),lDragP=label({cls:"hot",off:[-30,30]}).set("Drag the price");
+  // the stall vignette beside the board: a queue when there's a shortage, melting leftovers when there's a surplus
+  const vg=S.group();vg.position.set(ZM.x+2.55,TOP,ZM.z+.2);vg.add(S.rbox(1.6,.6,.6,.06,pm("#FFF3EA",.5),{at:[0,.3,0]}));
+  const vBlocks=S.swarm(14,new S.RoundedBoxGeometry(.11,.2,.05,2,.03),pm("#ffffff",.25),{colors:true});vg.add(vBlocks);
+  const puddles=S.swarm(14,new THREE.CircleGeometry(.08,20),mat("liquid","#ffffff",{opacity:.75}),{colors:true});vg.add(puddles);
+  const vQ=S.swarm(9,new THREE.CapsuleGeometry(.08,.1,4,12),pm("#ffffff"),{colors:true,cast:true}),vH=S.swarm(9,new THREE.SphereGeometry(.07,14,10),pm("#ffffff",.5),{colors:true});vg.add(vQ,vH);
+  const lV=label({off:[0,-40]});
+  // ---------------------------------------------------------------- the values continuum
+  const ig=S.group();ig.position.set(ZI.x,TOP,ZI.z);const IX=st=>st*1.55,IZ=row=>row?-.15:-1.0;
+  const barP=S.panel(1024,48,6.6);barP.rotation.x=-Math.PI/2;barP.position.set(0,.11,.9);ig.add(barP);ig.add(S.rbox(6.7,.1,.22,.05,pm("#ffffff",.4),{at:[0,.05,.9]}));
+  barP.redraw((g,w,h)=>{const gr=g.createLinearGradient(0,0,w,0);gr.addColorStop(0,P3.product.blueberry);gr.addColorStop(.5,"#EDE4E7");gr.addColorStop(1,P3.product.peach);g.fillStyle=gr;g.beginPath();g.roundRect(0,6,w,h-12,18);g.fill();
+    [-2,-1,0,1,2].forEach(v=>{const x=w/2+v*1.55/6.6*w;g.fillStyle=v?"rgba(38,46,92,.45)":"#262E5C";g.fillRect(x-(v?2:3),0,v?4:6,h)})});
+  const ppl=PEOPLE.map((p,i)=>{const f=figure(p.c,SKIN[i%SKIN.length]);f.position.set(IX(p.st),.12,IZ(p.row));f.scale.setScalar(1.6);ig.add(f);
+    ig.add(S.cyl(.24,.27,.12,pm("#ffffff",.4),{at:[IX(p.st),.06,IZ(p.row)],seg:28}));
+    const drop=S.cyl(.008,.008,.9-IZ(p.row)-.2,pm(P3.ink,.5),{seg:6});drop.rotation.x=Math.PI/2;drop.position.set(IX(p.st),.12,(IZ(p.row)+.9+.2)/2);ig.add(drop);
+    S.pick(f,()=>tapAt(PX(p.st),PY(p.row)+18));const l=label({off:[0,28],lead:false}).set(p.n.split(",")[0]);return {f,l,p}});
+  const selRing=S.torus(.3,.03,glowM(P3.product.butter,1.6),{rot:[Math.PI/2,0,0],cast:false});ig.add(selRing);
+  const bubble=S.panel(720,250,2.9);ig.add(bubble);let bubKey="";
+  const you=S.group(ig);you.add(S.cyl(0,.12,.24,pm(P3.ink,.3),{at:[0,.12,0],seg:3,rot:[0,0,Math.PI]}));you.add(S.rbox(.36,.16,.06,.04,pm(P3.ink,.3),{at:[0,.36,0]}));
+  S.dragger(you,{normal:V3(0,1,0),move:p=>{const l=ig.worldToLocal(p.clone());s.you=Math.round(S.clamp(l.x/1.55,-2,2)*10)/10}});
+  const lIssue=label({cls:"big",off:[0,-30],lead:false}).set("Should Kōwhai Reserve get a bike park?<small>a made-up issue</small>"),lAg=label({off:[0,26],lead:false}).set("Strongly against"),lFor=label({off:[0,26],lead:false}).set("Strongly for"),lYou=label({cls:"hot",off:[0,30],lead:false}),lMidL=label({off:[0,26],lead:false}).set("Unsure / it depends");
+  // ---------------------------------------------------------------- views
+  S.view("needs",[ZV.x+.3,4.6,ZV.z+8.9],[ZV.x,1.55,ZV.z+.5],{min:2,max:26});
+  S.view("choice",[ZV.x+1.6,3.9,ZV.z+8.0],[ZV.x+.3,1.6,ZV.z],{min:2,max:26});
+  S.view("stall",[ZS.x+.2,3.6,ZS.z+7.4],[ZS.x,1.05,ZS.z],{min:2,max:26});
+  S.view("market",[ZM.x+.3,3.9,ZM.z+8.6],[ZM.x+.1,1.65,ZM.z-.4],{min:2,max:26});
+  S.view("inquiry",[ZI.x,4.0,ZI.z+6.6],[ZI.x,.9,ZI.z-.3],{min:2,max:26});
+  S.view("all",[0,15,30],[0,1,0],{min:6,max:70});
+  const half={needs:4,choice:4,stall:4.5,market:4.5,inquiry:4.5,all:18},ctr={needs:[ZV.x,0,ZV.z],choice:[ZV.x,0,ZV.z],stall:[ZS.x,0,ZS.z],market:[ZM.x,0,ZM.z],inquiry:[ZI.x,0,ZI.z],all:[0,0,0]};
+  let first=true,isTest=false,lastView=null;
+  const go=v=>{overview=v==="all";S.goView(v,first);first=false;S.setShadowBox(half[v],ctr[v])};
+  const wrapPx=(g,t,maxW)=>{const w=t.split(" "),L=[];let c="";w.forEach(x=>{const tt=c?c+" "+x:x;if(g.measureText(tt).width>maxW&&c){L.push(c);c=x}else c=tt});if(c)L.push(c);return L};
+  return {
+    step(st){isTest=st.k==="test";go(isTest?"all":st.k);lastView=s.view},
+    update(s3,st,dt,t){const v=viewNow(),over=isTest&&lastView!==null&&v===lastView&&false;
+      if(isTest&&s.view!==lastView){lastView=s.view;go(s.view)}
+      const ov=isTest&&s.view===lastView&&false;
+      // ---- vending machine
+      const vend=v==="needs"||v==="choice",sh=shop(),sc=sortScore(),all=sc.done===ITEMS.length,now=performance.now();
+      const binN=[0,0];
+      ITEMS.forEach((it,i)=>{const g=goods[i];const bm=s.bump[i]?Math.max(0,1-(now-s.bump[i])/450):0;let x=colX(i),y=rowY(i)+.12,z=.15,sc2=1.35*(1+.25*Math.sin(bm*Math.PI));
+        const got=v==="choice"&&sh.got.includes(i);if(got){const n=sh.got.indexOf(i);x=-.95+n*.36;y=.8;z=.5;sc2=1.1}
+        const k=g.userData.k=S.lerp(g.userData.k??0,got?1:0,.12);g.position.set(S.lerp(colX(i),x,k),S.lerp(rowY(i)+.12,y,k)+Math.sin(k*Math.PI)*.15,S.lerp(.15,z,k));g.scale.setScalar(sc2);g.rotation.y=bm*Math.PI*2;
+        // price pills only when you're at the machine
+        priceL[i].at(tmp.set(vm.position.x+colX(i),TOP+rowY(i)-.05,vm.position.z+.55)).show(vend&&!isTest);
+        // bins
+        const sv=s.sort[i],bc=binCopies[i];bc.visible=v==="needs"&&sv>0;
+        if(bc.visible){const b=sv-1,n=binN[b]++;const bx2=binX[b]-.55+(n%4)*.37,bz=binZ-.25+Math.floor(n/4)*.5;bc.position.set(bx2,TOP+.06+Math.sin(bm*Math.PI)*.35,bz);bc.rotation.y=bm*Math.PI*2;
+          marks[i].at(tmp.set(bx2,TOP+.35,bz)).set(all?((sv===1)===it.need?"✓":"✗"):"").cls(all&&(sv===1)!==it.need?"hot":"").show(all&&!isTest)}else marks[i].show(false);
+        // badges
+        let bt="";if(v==="needs"&&sv)bt=sv===1?"Need":"Want";if(v==="choice"){const r=s.rank.indexOf(i);if(r>=0)bt=`${r+1}${sh.got.includes(i)?" · bought":sh.oc===i?" · given up":""}`}
+        badgeL[i].at(tmp.set(vm.position.x+colX(i),TOP+rowY(i)+.55,vm.position.z+.2)).set(bt).cls(v==="choice"&&sh.oc===i?"hot":"").show(vend&&!!bt&&!isTest&&!(v==="choice"&&(sh.got.includes(i)||sh.oc===i)))});
+      lNeeds.at(tmp.set(binX[0]-.6,TOP+.34,binZ-.55)).show(v==="needs");lWants.at(tmp.set(binX[1]+.6,TOP+.34,binZ-.55)).show(v==="needs");
+      lScore.at(tmp.set(ZV.x,TOP+CH+.5,vm.position.z)).set(all?`${sc.right} of ${ITEMS.length} right<small>${sc.right<8?"tap a ✗ item to move it":"food, water, clothing, health care are needs"}</small>`:`${sc.done} of ${ITEMS.length} sorted<small>tap an item: once = need, twice = want</small>`).show(v==="needs");
+      ocRing.visible=v==="choice"&&sh.oc>=0;if(ocRing.visible){ocRing.position.set(colX(sh.oc),rowY(sh.oc)+.12,.25);ocRing.scale.setScalar(1+.08*Math.sin(t*4))}
+      lGiven.at(tmp.set(vm.position.x+(sh.oc>=0?colX(sh.oc):0),TOP+(sh.oc>=0?rowY(sh.oc):0)+.2,vm.position.z+.3)).set(sh.oc>=0?`Opportunity cost<small>${ITEMS[sh.oc].n}, your next-best choice</small>`:"").show(v==="choice"&&sh.oc>=0);
+      const coinsN=v==="choice"?sh.left:s.budget;for(let k=0;k<60;k++){if(k<coinsN&&vend)wallet.put(k,ZV.x+1.75+Math.floor(k/30)*.24,TOP+.03+(k%30)*.032,ZV.z+.55,1);else wallet.put(k,0,-9,0,0)}wallet.done();
+      lWallet.at(tmp.set(ZV.x+1.85,TOP+Math.min(30,Math.max(1,coinsN))*.032+.1,ZV.z+.55)).set(v==="choice"?`Money left<b>$${sh.left}</b><small>wallet $${s.budget}</small>`:`Wallet<b>$${s.budget}</b>`).show(vend);
+      const sk=(v==="choice"?"L":"B")+(v==="choice"?sh.left:s.budget);if(sk!==scrKey){scrKey=sk;screen.redraw((g,w,h)=>{g.fillStyle="#262E5C";g.beginPath();g.roundRect(0,0,w,h,16);g.fill();g.fillStyle=P3.product.butter;g.font="700 64px Instrument Sans, system-ui";g.textAlign="center";g.textBaseline="middle";g.fillText("$"+(v==="choice"?sh.left:s.budget),w/2,h/2+4)})}
+      // ---- stall
+      const stall=v==="stall";const Q=demandAt(s.sp),N=Math.min(QN,Math.round(Q/10)),gap=Math.min(.55,3.2/Math.max(1,N)),ph=(s.t%1.4)/1.4,shift=ph<.5?0:Math.min(1,(ph-.5)*2.6),cyc=Math.floor(s.t/1.4);
+      const qx0=sg.position.x+1.55,qz=sg.position.z+.75;
+      for(let i=0;i<QN;i++){let x,z=qz,on=i<N;if(on){if(i===0&&shift>0){x=qx0-shift*.2;z=qz+shift*1.4}else x=qx0+(i-shift)*gap}
+        const c=IB[(i+cyc)%6];if(on){const bob=S.REDUCED?0:Math.abs(Math.sin(t*6+i))*.015;qBody.put(i,x,TOP+.33*1.25+bob,z,1.25);qHead.put(i,x,TOP+.55*1.25+bob,z,1.25);qHair.putS(i,x,TOP+.58*1.25+bob,z-.01,1.25,.75,1.25);qBody.tint(i,c);qHead.tint(i,SKIN[(i+cyc)%5]);
+          qLeg.put(i*2,x-.05,TOP+.12,z,1.25);qLeg.put(i*2+1,x+.05,TOP+.12,z,1.25)}else{qBody.put(i,0,-9,0,0);qHead.put(i,0,-9,0,0);qHair.put(i,0,-9,0,0);qLeg.put(i*2,0,-9,0,0);qLeg.put(i*2+1,0,-9,0,0)}}
+      [qBody,qHead,qHair,qLeg].forEach(m=>m.done());
+      if(N>0&&ph<.5&&!S.REDUCED&&stall){const f=ph/.5;fly.put(0,S.lerp(sg.position.x+.9,qx0,f),TOP+1.05+Math.sin(f*Math.PI)*.5,S.lerp(sg.position.z+.15,qz,f),1);fly.tint(0,IB[cyc%6]);coinFly.put(0,S.lerp(qx0,sg.position.x+.95,f),TOP+1.2+Math.sin(f*Math.PI)*.6,S.lerp(qz,sg.position.z-.1,f),1,Math.PI/2)}
+      else{fly.put(0,0,-9,0,0);coinFly.put(0,0,-9,0,0)}fly.put(1,0,-9,0,0);fly.done();coinFly.done();
+      if(signKey!==s.sp+""){signKey=s.sp+"";sign.redraw((g,w,h)=>{g.fillStyle="#fff";g.fillRect(0,0,w,h);g.fillStyle="#262E5C";g.font="700 54px Instrument Sans, system-ui";g.textAlign="center";g.textBaseline="middle";g.fillText("ICE BLOCKS "+$$(s.sp),w/2,h/2+3)})}
+      const ck=$$(s.sale);if(ck!==cashKey){cashKey=ck;cashScr.redraw((g,w,h)=>{g.fillStyle="#262E5C";g.fillRect(0,0,w,h);g.fillStyle=P3.product.butter;g.font="700 30px Instrument Sans, system-ui";g.textAlign="center";g.textBaseline="middle";g.fillText(ck,w/2,h/2+2)})}
+      const pk=s.sp+"";if(pk!==profKey){profKey=pk;prof.redraw((g,w,h)=>{g.fillStyle="#FFFDFB";g.fillRect(0,0,w,h);const X=P=>60+(P-.5)/2.5*(w-90),Y=v2=>h-60-(v2+12)/68*(h-110);g.font="600 18px Instrument Sans, system-ui";
+        g.fillStyle="#262E5C";g.textAlign="left";g.fillText("PROFIT AT EACH PRICE",14,26);[0,20,40].forEach(v2=>{g.strokeStyle=v2?"rgba(38,46,92,.12)":"rgba(38,46,92,.5)";g.lineWidth=2;g.beginPath();g.moveTo(X(.5),Y(v2));g.lineTo(X(3),Y(v2));g.stroke();g.fillStyle="#6E6A86";g.textAlign="right";g.fillText("$"+v2,X(.5)-8,Y(v2)+6)});
+        [.5,1,1.5,2,2.5,3].forEach(P=>{g.textAlign="center";g.fillText("$"+fmt(P,P%1?2:0),X(P),h-30)});g.strokeStyle=P3.product.strawberry;g.lineWidth=5;g.beginPath();for(let P=.5;P<=3.0001;P+=.05)g[P>.5?"lineTo":"moveTo"](X(P),Y(profit(P)));g.stroke();
+        const pr=profit(s.sp);g.fillStyle=P3.product.butter;g.strokeStyle="#262E5C";g.lineWidth=3;g.beginPath();g.arc(X(s.sp),Y(pr),11,0,7);g.fill();g.stroke();g.fillStyle=pr<0?"#C25E45":"#262E5C";g.font="700 22px Instrument Sans, system-ui";g.textAlign="right";g.fillText(`${pr<0?"Loss":"Profit"} ${$$(Math.abs(pr))} an hour`,w-14,26)})}
+      for(let k=0;k<3;k++){const f=((s.t*.5+k/3)%1);const a=arcPt(f,false),b=arcPt(f,true);if(N>0&&stall){cfGoods.put(k,a.x,a.y+.08,a.z,1);cfGoods.tint(k,IB[k]);cfCoins.put(k,b.x,b.y,b.z,1,Math.PI/2)}else{cfGoods.put(k,0,-9,0,0);cfCoins.put(k,0,-9,0,0)}}cfGoods.done();cfCoins.done();
+      lBuyers.at(tmp.set(qx0+1,TOP+1.1,qz)).set(`${fmt(Q)} buyers an hour<small>profit ${profit(s.sp)<0?"−":""}${$$(Math.abs(profit(s.sp)))} an hour</small>`).show(stall);lNone.at(tmp.set(qx0+.6,TOP+.4,qz)).show(stall&&N===0);
+      lProd.at(tmp.set(cfA.x,TOP+.9,cfA.z)).show(stall&&!isTest);lCons.at(tmp.set(cfB.x,TOP+.9,cfB.z)).show(stall&&!isTest);lFlow.at(tmp.set((cfA.x+cfB.x)/2,TOP+.1,cfA.z+.5)).show(stall&&!isTest);
+      // ---- supply and demand
+      const mk=v==="market";const ck2=s.dS+"|"+s.sS;if(ck2!==curveKey){curveKey=ck2;curves.forEach(c=>{mg.remove(c);c.geometry.dispose()});curves=[];
+        const add=(pts,c,r,o)=>{const m=S.tube(pts,r,o?new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,depthWrite:false}):pm(c,.3),{seg:4,rs:10,type:"catmullrom"});mg.add(m);curves.push(m)};
+        if(s.dS)add(dPts(0),P3.product.strawberry,.022,.35);if(s.sS)add(sPts(0),P3.product.blueberry,.022,.35);add(dPts(s.dS),"#E27A96",.04);add(sPts(s.sS),P3.deep.sky,.04)}
+      const qd=Qd(s.P),qs=Qs(s.P),E=eqP(),EQ=eqQ(),py=gyp(s.P);rod.position.set(X0+QW/2,py,.08);tag.position.set(X0-.3,py,.1);
+      mD.position.set(gxq(qd),py,.1);mS.position.set(gxq(qs),py,.1);mE.position.set(gxq(EQ),gyp(E),.09);
+      const g0=Math.min(qd,qs),g1=Math.max(qd,qs),short=qd>qs;gapBar.visible=g1-g0>.5;if(gapBar.visible){gapBar.scale.x=gxq(g1)-gxq(g0);gapBar.position.set((gxq(g0)+gxq(g1))/2,py+(short?-.18:.18),.1);gapBar.material.color.set(short?"#C25E45":"#C9922D");gapBar.material.emissive.set(gapBar.material.color)}
+      for(let k=0;k<60;k++){const u=k/59;if(k<30){eqDash.put(k,S.lerp(X0,gxq(EQ),u*2),gyp(E),.07,k%2?0:1)}else eqDash.put(k,gxq(EQ),S.lerp(gyp(E),Y0,(u-.5)*2),.07,k%2?0:1)}eqDash.done();
+      if(s.dS)arD.set(V3(gxq(80),gyp(1),.12),V3(s.dS*.5,0,0));else arD.visible=false;if(s.sS)arS.set(V3(gxq(80),gyp(2.75),.12),V3(s.sS*.5,0,0));else arS.visible=false;
+      const wp=o=>mg.localToWorld(o.clone());
+      const dE=dPts(s.dS),sE=sPts(s.sS);lD.at(wp(dE[0])).set(`Demand${s.dS?" (D2)":""}`).show(mk);lS.at(wp(sE[1])).set(`Supply${s.sS?" (S2)":""}`).show(mk);
+      lP.at(wp(tag.position)).set(`${$$(s.P)}<small>want ${fmt(qd)} · made ${fmt(qs)}</small>`).show(mk);
+      lGap.at(wp(gapBar.position)).set(`${short?"Shortage":"Surplus"} ${fmt(g1-g0)}`).cls(short?"hot":"").show(mk&&gapBar.visible);
+      lE.at(wp(mE.position)).set(`Equilibrium<small>${$$(E)} · ${fmt(EQ)} an hour</small>`).show(mk);lDragP.at(wp(tag.position)).show(mk&&!s.settle&&t<40&&!isTest);
+      // vignette
+      const nq=qd>qs+.5?Math.min(9,Math.round((qd-qs)/10)):0,nm=qs>qd+.5?Math.min(14,Math.round((qs-qd)/10)):0;
+      for(let i=0;i<9;i++){if(i<nq){const x=-.65+(i%5)*.32,z=.6+Math.floor(i/5)*.32;vQ.put(i,x,.3,z,1);vH.put(i,x,.48,z,1);vQ.tint(i,IB[i%6]);vH.tint(i,SKIN[i%5])}else if(nq===0&&nm===0&&i<4){const x=-.45+i*.3;vQ.put(i,x,.3,.6,1);vH.put(i,x,.48,.6,1);vQ.tint(i,IB[i+2]);vH.tint(i,SKIN[i%5])}else{vQ.put(i,0,-9,0,0);vH.put(i,0,-9,0,0)}}vQ.done();vH.done();
+      for(let i=0;i<14;i++){if(i<nm){const x=-.65+(i%7)*.21,z=-.12+Math.floor(i/7)*.2,melt=S.REDUCED?.5:.5+.5*Math.sin(t*.8+i);vBlocks.putS(i,x,.7-.04*melt,z,1,1-.3*melt,1);vBlocks.tint(i,IB[i%6]);puddles.putS(i,x,.605,z,1+melt*.8,1+melt*.8,1,new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI/2,0,0)));puddles.tint(i,IB[i%6])}else{vBlocks.put(i,0,-9,0,0);puddles.put(i,0,-9,0,0)}}vBlocks.done();puddles.done();
+      lV.at(tmp.set(vg.position.x,TOP+1.0,vg.position.z)).set(nq?`Sold out<small>${fmt(qd-qs)} go without</small>`:nm?`Left over, melting<small>${fmt(qs-qd)} an hour</small>`:"Just right<small>no queue, no leftovers</small>").cls(nq?"hot":"").show(mk);
+      // ---- inquiry
+      const iq=v==="inquiry";const sel=PEOPLE.find(p=>p.id===s.sel);
+      ppl.forEach(o=>{const on=sel&&o.p.id===sel.id;const lift=on?.1+(S.REDUCED?0:Math.abs(Math.sin(t*3))*.04):0;o.f.position.y=.12+lift;o.f.rotation.y=on?Math.sin(t*1.5)*.3:0;o.l.at(tmp.set(ig.position.x+IX(o.p.st),TOP+.12,ig.position.z+IZ(o.p.row)+.25)).cls(on?"hot":"").show(iq&&!isTest)});
+      selRing.visible=!!sel;if(sel){selRing.position.set(IX(sel.st),.13,IZ(sel.row));const bk=sel.id;if(bk!==bubKey){bubKey=bk;bubble.redraw((g,w,h)=>{g.fillStyle="#fff";g.strokeStyle="#B9B3CF";g.lineWidth=4;g.beginPath();g.roundRect(4,4,w-8,h-44,24);g.fill();g.stroke();
+          g.beginPath();g.moveTo(w/2-20,h-42);g.lineTo(w/2,h-6);g.lineTo(w/2+20,h-42);g.fill();g.stroke();g.fillStyle="#262E5C";g.font="700 34px Instrument Sans, system-ui";g.textBaseline="top";g.fillText(`${sel.n} · ${sel.who}`,26,20);
+          g.font="500 30px Instrument Sans, system-ui";wrapPx(g,"“"+sel.q+"”",w-52).slice(0,4).forEach((l,k)=>g.fillText(l,26,66+k*36))})}
+        bubble.position.set(S.clamp(IX(sel.st),-1.9,1.9),2.05,IZ(sel.row));bubble.visible=iq||isTest}else bubble.visible=false;
+      you.position.set(IX(s.you),.1,.9);lYou.at(tmp.set(ig.position.x+IX(s.you),TOP+.5,ig.position.z+.9)).set(`You<small>${s.you<-1.2?"strongly against":s.you<-.3?"against":s.you<=.3?"unsure":s.you<=1.2?"for":"strongly for"} · drag me</small>`).show(iq);
+      lIssue.at(tmp.set(ig.position.x,TOP+2.95,ig.position.z-1)).show(iq&&!isTest);lAg.at(tmp.set(ig.position.x-3.2,TOP+.1,ig.position.z+1.05)).show(iq);lFor.at(tmp.set(ig.position.x+3.2,TOP+.1,ig.position.z+1.05)).show(iq);lMidL.at(tmp.set(ig.position.x,TOP+.1,ig.position.z+1.25)).show(false);
+      if(overview)LBL.forEach(l=>l.show(false));
+    }};
+}
+API=StudyKit.mount({kupu:KUPU,scene3d:market3d,
   eyebrow:"Social studies · Economics and social inquiry", title:"The market machine", crumb:"Year 9–10 social studies: needs and wants, scarcity, opportunity cost, producers and consumers, supply and demand, perspectives and values", homeHash:"y9",
   fig:"FIG. 16 · THE SCHOOL FAIR", railTitle:"Choices, markets and points of view",
   badge:{label:"Year 9 social studies",exam:"2026-11-02T08:30:00+13:00",examText:"Mon 2 Nov"},
