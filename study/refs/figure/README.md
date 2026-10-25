@@ -40,6 +40,21 @@ Edges: every opaque material carries a view-dependent rim darkening (`figMat.thr
 | plan (floor-plan studio) | butter | Design and visual communication |
 | bike (downhill, NCEA ski run) | peach | Physics (mechanics) |
 | vinyl | blush | Physics (circular motion) and waves |
+| pinball | sky | Physics (mechanics) |
+| shaky (Shaky Isles book) | peach | Earth and Space Science |
+
+## The shell uses the same palette (25 Oct 2026)
+
+The kit chrome around every machine now follows the figures, so the bench reads as one family:
+
+- Ground is paper white (`--as-bg:#F7F3EC`), ink is navy (`--as-ink:#222A55`, drawing ink `--ink:#262E5C`), shadows are navy-tinted.
+- Every machine has a case tint even without `caseTint`: the table above, otherwise its subject's tint (science sky, chemistry and biology mint,
+  maths lavender, English blush, social studies peach, digital technologies blush, technology butter). `StudyKit.tintFor(id)` returns it.
+- The tint is a surface colour with navy text on it: the app icon, the current step, the exam countdown, picked options and the canvas wash.
+- `--acc` (and `StudyKit.accentFor(id)`) is the tint's deep shade (sky `#3A6FB8`, mint `#2A7D63`, lavender `#6A50BE`, blush `#B5466F`,
+  butter `#8A6510`, peach `#B2552D`), at least 4.5:1 on white, for lines, highlights and the places that put white text on the accent.
+- Primary and check buttons are navy on every machine. The yellow highlight (`--as-sun`) is the butter pastel.
+- The drawing palette (`--sun`, `--earth`, `--land`, `--hot`, `--cold`) uses the product pastels, slightly deepened so thin lines still read.
 
 ## Candidates (from the six-machine reference; noted, not built)
 
