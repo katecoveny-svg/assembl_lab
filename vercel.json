@@ -17,7 +17,7 @@
    "maxDuration": 20
   },
   "api/mcp.js": {
-   "maxDuration": 20,
+   "maxDuration": 30,
    "includeFiles": "api/_feeds/snapshots/**"
   }
  },

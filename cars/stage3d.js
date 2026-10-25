@@ -43,6 +43,9 @@ export async function createStage(canvas, car, opts = {}) {
   for (const p of ["body", "glass", "tyres", "rims", "heads", "tails", "trim"]) { const m = new THREE.Mesh(K[p], MAT[p]); m.castShadow = p !== "glass"; m.receiveShadow = true; if (p === "glass") m.renderOrder = 2; carG.add(m); }
 
   // ---- the parts the notice talks about -----------------------------------------------------------------------------
+  // opts.bare skips them (and the pins' anchors) for a clean studio render of the car alone: src/cars/_build/render-cars.mjs
+  const ANCH = opts.bare ? {} : await noticeParts();
+  async function noticeParts() {
   if (document.fonts && document.fonts.ready) { try { await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]); } catch (e) { /* draw with fallbacks */ } }
   const [g0, g1] = T.glass, y0 = T.belt + 0.012, y1 = T.roof - 0.03, dx = g1 - g0, dy = y1 - y0, len = Math.hypot(dx, dy);
   const wsN = new THREE.Vector3(dy / len, -dx / len, 0); // windscreen outward normal (forward and up)
@@ -93,11 +96,12 @@ export async function createStage(canvas, car, opts = {}) {
   flagM.rotation.y = 0.7; flagM.position.copy(flagBase).add(new THREE.Vector3(-0.155 * Math.cos(0.7), 0.33, 0.155 * Math.sin(0.7))); flagM.castShadow = true; carG.add(flagM);
 
   // anchor points (car space) + outward normals, for the pins
-  const ANCH = {
+  return {
     dash: [onScreen(0.09, 0.40, 0.07), wsN], labels: [onScreen(0.12, -0.54, 0.075), wsN], sticker: [onScreen(0.24, -0.1, 0.076), wsN],
     tag: [new THREE.Vector3(keyG.position.x + 0.2, keyG.position.y, 0.23), new THREE.Vector3(0, 1, 0)], door: [door.clone().add(new THREE.Vector3(0, 0, 0.01)), new THREE.Vector3(0, 0, 1)],
     filler: [filler.clone().add(new THREE.Vector3(0, 0, 0.01)), new THREE.Vector3(0, 0, 1)], flag: [flagM.position.clone(), new THREE.Vector3(0, 1, 0)],
   };
+  }
 
   // ---- camera, size, render on demand -------------------------------------------------------------------------------
   let W = 1, H = 1, yaw = YAW[0], shift = 0, fit = 1, tween = null;

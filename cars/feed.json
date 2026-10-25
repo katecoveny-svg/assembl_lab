@@ -1,7 +1,7 @@
 {
  "type": "assembl.cars.feed",
  "version": 1,
- "toolVersion": "1.0.0",
+ "toolVersion": "1.1.0",
  "generated": "2026-10-25",
  "truth": "Simulated",
  "notice": "A fictional dealer group invented for this demonstration. It has no yard, no phone and no stock; every listing is Simulated. Every value is labelled. Fuel economy is an Estimate; safety stars are Simulated; nothing here describes a real vehicle.",
@@ -11,6 +11,7 @@
    {
     "id": "auckland",
     "name": "Harbour Lane Motors Auckland (demo)",
+    "town": "Auckland",
     "address": "1 Harbour Lane, Penrose, Auckland (fictional address)",
     "region": "Auckland",
     "lat": -36.91,
@@ -19,6 +20,7 @@
    {
     "id": "hamilton",
     "name": "Harbour Lane Motors Hamilton (demo)",
+    "town": "Hamilton",
     "address": "2 Harbour Lane, Te Rapa, Hamilton (fictional address)",
     "region": "Waikato",
     "lat": -37.745,
@@ -27,6 +29,7 @@
    {
     "id": "tauranga",
     "name": "Harbour Lane Motors Tauranga (demo)",
+    "town": "Tauranga",
     "address": "3 Harbour Lane, Mount Maunganui (fictional address)",
     "region": "Bay of Plenty",
     "lat": -37.66,
@@ -59,6 +62,16 @@
  "schema": "https://assembl-lab.vercel.app/cars/schema.json",
  "mcp": "https://assembl-lab.vercel.app/api/mcp/",
  "testDrives": "Free slots for the next 7 days are computed live: call get_car on the MCP endpoint.",
+ "images": {
+  "kind": "render",
+  "label": "Render · simulated car",
+  "note": "Every image is a studio render of a Simulated car from assembl's 3D car kit, not a photograph.",
+  "base": "https://assembl-lab.vercel.app/cars/img/",
+  "formats": [
+   "4:3 1200×900",
+   "1:1 800×800"
+  ]
+ },
  "cars": [
   {
    "id": "hl-001",
@@ -105,6 +118,26 @@
     "kind": "hatch",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-001-4x3.webp",
+     "alt": "Render · simulated car: 2017 Toyota Aqua S, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-001-1x1.webp",
+     "alt": "Render · simulated car: 2017 Toyota Aqua S, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -289,6 +322,26 @@
     "kind": "hatch",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-002-4x3.webp",
+     "alt": "Render · simulated car: 2019 Toyota Aqua G, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-002-1x1.webp",
+     "alt": "Render · simulated car: 2019 Toyota Aqua G, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -473,6 +526,26 @@
     "kind": "hatch",
     "paint": "#6F7C8C"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-003-4x3.webp",
+     "alt": "Render · simulated car: 2015 Toyota Aqua X-Urban, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-003-1x1.webp",
+     "alt": "Render · simulated car: 2015 Toyota Aqua X-Urban, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -658,6 +731,26 @@
     "kind": "hatch",
     "paint": "#A0726F"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-004-4x3.webp",
+     "alt": "Render · simulated car: 2016 Toyota Aqua G, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-004-1x1.webp",
+     "alt": "Render · simulated car: 2016 Toyota Aqua G, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -842,6 +935,26 @@
     "kind": "hatch",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-005-4x3.webp",
+     "alt": "Render · simulated car: 2020 Toyota Corolla GX Hybrid, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-005-1x1.webp",
+     "alt": "Render · simulated car: 2020 Toyota Corolla GX Hybrid, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -1028,6 +1141,26 @@
     "kind": "sedan",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-006-4x3.webp",
+     "alt": "Render · simulated car: 2019 Toyota Corolla GX 2.0, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-006-1x1.webp",
+     "alt": "Render · simulated car: 2019 Toyota Corolla GX 2.0, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -1214,6 +1347,26 @@
     "kind": "hatch",
     "paint": "#6F7C8C"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-007-4x3.webp",
+     "alt": "Render · simulated car: 2021 Toyota Corolla ZR Hybrid, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-007-1x1.webp",
+     "alt": "Render · simulated car: 2021 Toyota Corolla ZR Hybrid, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -1400,6 +1553,26 @@
     "kind": "suv",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-008-4x3.webp",
+     "alt": "Render · simulated car: 2020 Toyota RAV4 Hybrid GX AWD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-008-1x1.webp",
+     "alt": "Render · simulated car: 2020 Toyota RAV4 Hybrid GX AWD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -1586,6 +1759,26 @@
     "kind": "suv",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-009-4x3.webp",
+     "alt": "Render · simulated car: 2019 Toyota RAV4 Hybrid GXL AWD, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-009-1x1.webp",
+     "alt": "Render · simulated car: 2019 Toyota RAV4 Hybrid GXL AWD, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -1772,6 +1965,26 @@
     "kind": "suv",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-010-4x3.webp",
+     "alt": "Render · simulated car: 2022 Toyota RAV4 Hybrid GX 2WD, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-010-1x1.webp",
+     "alt": "Render · simulated car: 2022 Toyota RAV4 Hybrid GX 2WD, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -1958,6 +2171,26 @@
     "kind": "suv",
     "paint": "#4E4A4B"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-011-4x3.webp",
+     "alt": "Render · simulated car: 2021 Toyota Highlander Hybrid ZR, black, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-011-1x1.webp",
+     "alt": "Render · simulated car: 2021 Toyota Highlander Hybrid ZR, black, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -2144,6 +2377,26 @@
     "kind": "suv",
     "paint": "#C9C2B1"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-012-4x3.webp",
+     "alt": "Render · simulated car: 2016 Toyota Highlander GXL V6, sand, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-012-1x1.webp",
+     "alt": "Render · simulated car: 2016 Toyota Highlander GXL V6, sand, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -2330,6 +2583,26 @@
     "kind": "hatch",
     "paint": "#A0726F"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-013-4x3.webp",
+     "alt": "Render · simulated car: 2018 Suzuki Swift GLX, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-013-1x1.webp",
+     "alt": "Render · simulated car: 2018 Suzuki Swift GLX, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -2516,6 +2789,26 @@
     "kind": "suv",
     "paint": "#A0726F"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-014-4x3.webp",
+     "alt": "Render · simulated car: 2019 Toyota RAV4 Hybrid GX AWD, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-014-1x1.webp",
+     "alt": "Render · simulated car: 2019 Toyota RAV4 Hybrid GX AWD, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -2699,6 +2992,26 @@
     "kind": "hatch",
     "paint": "#AFB9B4"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-015-4x3.webp",
+     "alt": "Render · simulated car: 2020 Suzuki Swift RS, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-015-1x1.webp",
+     "alt": "Render · simulated car: 2020 Suzuki Swift RS, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -2885,6 +3198,26 @@
     "kind": "hatch",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-016-4x3.webp",
+     "alt": "Render · simulated car: 2019 Suzuki Swift Sport, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-016-1x1.webp",
+     "alt": "Render · simulated car: 2019 Suzuki Swift Sport, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -3071,6 +3404,26 @@
     "kind": "suv",
     "paint": "#7A5C6B"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-017-4x3.webp",
+     "alt": "Render · simulated car: 2018 Mazda CX-5 GSX 2.5 AWD, deep plum, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-017-1x1.webp",
+     "alt": "Render · simulated car: 2018 Mazda CX-5 GSX 2.5 AWD, deep plum, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -3257,6 +3610,26 @@
     "kind": "suv",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-018-4x3.webp",
+     "alt": "Render · simulated car: 2020 Mazda CX-5 Takami AWD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-018-1x1.webp",
+     "alt": "Render · simulated car: 2020 Mazda CX-5 Takami AWD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -3443,6 +3816,26 @@
     "kind": "suv",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-019-4x3.webp",
+     "alt": "Render · simulated car: 2017 Mazda CX-5 20S, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-019-1x1.webp",
+     "alt": "Render · simulated car: 2017 Mazda CX-5 20S, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -3627,6 +4020,26 @@
     "kind": "suv",
     "paint": "#A0726F"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-020-4x3.webp",
+     "alt": "Render · simulated car: 2019 Mazda CX-3 GSX, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-020-1x1.webp",
+     "alt": "Render · simulated car: 2019 Mazda CX-3 GSX, red mica, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -3813,6 +4226,26 @@
     "kind": "suv",
     "paint": "#6F7C8C"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-021-4x3.webp",
+     "alt": "Render · simulated car: 2016 Mazda CX-3 XD Touring, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-021-1x1.webp",
+     "alt": "Render · simulated car: 2016 Mazda CX-3 XD Touring, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -3997,6 +4430,26 @@
     "kind": "hatch",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-022-4x3.webp",
+     "alt": "Render · simulated car: 2017 Honda Fit Hybrid L, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-022-1x1.webp",
+     "alt": "Render · simulated car: 2017 Honda Fit Hybrid L, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -4181,6 +4634,26 @@
     "kind": "hatch",
     "paint": "#AFB9B4"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-023-4x3.webp",
+     "alt": "Render · simulated car: 2020 Honda Jazz RS, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-023-1x1.webp",
+     "alt": "Render · simulated car: 2020 Honda Jazz RS, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -4367,6 +4840,26 @@
     "kind": "hatch",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-024-4x3.webp",
+     "alt": "Render · simulated car: 2015 Honda Fit 13G F, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-024-1x1.webp",
+     "alt": "Render · simulated car: 2015 Honda Fit 13G F, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -4551,6 +5044,26 @@
     "kind": "hatch",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-025-4x3.webp",
+     "alt": "Render · simulated car: 2018 Nissan Leaf G 40 kWh, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-025-1x1.webp",
+     "alt": "Render · simulated car: 2018 Nissan Leaf G 40 kWh, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -4736,6 +5249,26 @@
     "kind": "hatch",
     "paint": "#6F7C8C"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-026-4x3.webp",
+     "alt": "Render · simulated car: 2016 Nissan Leaf X 30 kWh, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-026-1x1.webp",
+     "alt": "Render · simulated car: 2016 Nissan Leaf X 30 kWh, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -4921,6 +5454,26 @@
     "kind": "hatch",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-027-4x3.webp",
+     "alt": "Render · simulated car: 2020 Nissan Leaf e+ 62 kWh, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-027-1x1.webp",
+     "alt": "Render · simulated car: 2020 Nissan Leaf e+ 62 kWh, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -5106,6 +5659,26 @@
     "kind": "suv",
     "paint": "#AFB9B4"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-028-4x3.webp",
+     "alt": "Render · simulated car: 2020 Kia Niro EV Earth, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-028-1x1.webp",
+     "alt": "Render · simulated car: 2020 Kia Niro EV Earth, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -5292,6 +5865,26 @@
     "kind": "suv",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-029-4x3.webp",
+     "alt": "Render · simulated car: 2021 Kia Niro EV Light, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-029-1x1.webp",
+     "alt": "Render · simulated car: 2021 Kia Niro EV Light, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -5479,6 +6072,26 @@
     "kind": "suv",
     "paint": "#4E4A4B"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-030-4x3.webp",
+     "alt": "Render · simulated car: 2019 Kia Sportage LX 2.0 Diesel AWD, black, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-030-1x1.webp",
+     "alt": "Render · simulated car: 2019 Kia Sportage LX 2.0 Diesel AWD, black, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -5665,6 +6278,26 @@
     "kind": "suv",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-031-4x3.webp",
+     "alt": "Render · simulated car: 2018 Kia Sportage EX 2.0, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-031-1x1.webp",
+     "alt": "Render · simulated car: 2018 Kia Sportage EX 2.0, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -5851,6 +6484,26 @@
     "kind": "hatch",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-032-4x3.webp",
+     "alt": "Render · simulated car: 2019 Hyundai Ioniq Electric, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-032-1x1.webp",
+     "alt": "Render · simulated car: 2019 Hyundai Ioniq Electric, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -6038,6 +6691,26 @@
     "kind": "hatch",
     "paint": "#7A5C6B"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-033-4x3.webp",
+     "alt": "Render · simulated car: 2018 Hyundai Ioniq Hybrid Elite, deep plum, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-033-1x1.webp",
+     "alt": "Render · simulated car: 2018 Hyundai Ioniq Hybrid Elite, deep plum, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -6224,6 +6897,26 @@
     "kind": "suv",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-034-4x3.webp",
+     "alt": "Render · simulated car: 2019 Hyundai Tucson Elite 1.6T AWD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-034-1x1.webp",
+     "alt": "Render · simulated car: 2019 Hyundai Tucson Elite 1.6T AWD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -6410,6 +7103,26 @@
     "kind": "suv",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-035-4x3.webp",
+     "alt": "Render · simulated car: 2017 Hyundai Tucson 2.0, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-035-1x1.webp",
+     "alt": "Render · simulated car: 2017 Hyundai Tucson 2.0, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -6599,6 +7312,26 @@
     "kind": "suv",
     "paint": "#6F7C8C"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-036-4x3.webp",
+     "alt": "Render · simulated car: 2018 Mitsubishi Outlander PHEV VRX, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-036-1x1.webp",
+     "alt": "Render · simulated car: 2018 Mitsubishi Outlander PHEV VRX, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -6787,6 +7520,26 @@
     "kind": "suv",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-037-4x3.webp",
+     "alt": "Render · simulated car: 2020 Mitsubishi Outlander PHEV XLS, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-037-1x1.webp",
+     "alt": "Render · simulated car: 2020 Mitsubishi Outlander PHEV XLS, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -6975,6 +7728,26 @@
     "kind": "suv",
     "paint": "#4E4A4B"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-038-4x3.webp",
+     "alt": "Render · simulated car: 2016 Mitsubishi Outlander PHEV G, black, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-038-1x1.webp",
+     "alt": "Render · simulated car: 2016 Mitsubishi Outlander PHEV G, black, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -7159,6 +7932,26 @@
     "kind": "ute",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-039-4x3.webp",
+     "alt": "Render · simulated car: 2019 Ford Ranger XLT 3.2 4WD, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-039-1x1.webp",
+     "alt": "Render · simulated car: 2019 Ford Ranger XLT 3.2 4WD, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -7345,6 +8138,26 @@
     "kind": "ute",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-040-4x3.webp",
+     "alt": "Render · simulated car: 2021 Ford Ranger Wildtrak 2.0 BiT 4WD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-040-1x1.webp",
+     "alt": "Render · simulated car: 2021 Ford Ranger Wildtrak 2.0 BiT 4WD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -7531,6 +8344,26 @@
     "kind": "ute",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-041-4x3.webp",
+     "alt": "Render · simulated car: 2017 Ford Ranger XL 2.2 2WD, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-041-1x1.webp",
+     "alt": "Render · simulated car: 2017 Ford Ranger XL 2.2 2WD, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -7717,6 +8550,26 @@
     "kind": "ute",
     "paint": "#8F8D89"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-042-4x3.webp",
+     "alt": "Render · simulated car: 2018 Toyota Hilux SR5 2.8 4WD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-042-1x1.webp",
+     "alt": "Render · simulated car: 2018 Toyota Hilux SR5 2.8 4WD, graphite grey, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -7903,6 +8756,26 @@
     "kind": "ute",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-043-4x3.webp",
+     "alt": "Render · simulated car: 2020 Toyota Hilux SR 2.4 2WD, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-043-1x1.webp",
+     "alt": "Render · simulated car: 2020 Toyota Hilux SR 2.4 2WD, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -8091,6 +8964,26 @@
     "kind": "van",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-044-4x3.webp",
+     "alt": "Render · simulated car: 2019 Toyota HiAce ZX 2.8 Diesel, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-044-1x1.webp",
+     "alt": "Render · simulated car: 2019 Toyota HiAce ZX 2.8 Diesel, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -8277,6 +9170,26 @@
     "kind": "sedan",
     "paint": "#ECE7DE"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-045-4x3.webp",
+     "alt": "Render · simulated car: 2020 Tesla Model 3 Standard Range Plus, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-045-1x1.webp",
+     "alt": "Render · simulated car: 2020 Tesla Model 3 Standard Range Plus, pearl white, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -8466,6 +9379,26 @@
     "kind": "sedan",
     "paint": "#6F7C8C"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-046-4x3.webp",
+     "alt": "Render · simulated car: 2021 Tesla Model 3 Long Range AWD, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-046-1x1.webp",
+     "alt": "Render · simulated car: 2021 Tesla Model 3 Long Range AWD, midnight blue, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -8653,6 +9586,26 @@
     "kind": "suv",
     "paint": "#AFB9B4"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-047-4x3.webp",
+     "alt": "Render · simulated car: 2023 BYD Atto 3 Extended Range, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-047-1x1.webp",
+     "alt": "Render · simulated car: 2023 BYD Atto 3 Extended Range, sage green, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",
@@ -8840,6 +9793,26 @@
     "kind": "suv",
     "paint": "#C8CBCB"
    },
+   "images": [
+    {
+     "ratio": "4:3",
+     "width": 1200,
+     "height": 900,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-048-4x3.webp",
+     "alt": "Render · simulated car: 2022 MG ZS EV Excite, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    },
+    {
+     "ratio": "1:1",
+     "width": 800,
+     "height": 800,
+     "url": "https://assembl-lab.vercel.app/cars/img/hl-048-1x1.webp",
+     "alt": "Render · simulated car: 2022 MG ZS EV Excite, silver metallic, front three-quarter view",
+     "label": "Render · simulated car",
+     "kind": "render"
+    }
+   ],
    "cin": {
     "supplier.name": {
      "label": "Supplier name",

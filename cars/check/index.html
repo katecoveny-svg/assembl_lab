@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Is this car a good buy? · assembl lab</title>
+<meta name="description" content="Check a used car before you pay: the facts a New Zealand dealer must show, red flags, the official checks, the weekly running cost, and live model facts from NZTA's open Motor Vehicle Register. Nothing you type is stored.">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--deep:#240B21;--body:#654A4E;--rose:#916A70;--line:rgba(73,43,62,.14);--line2:rgba(73,43,62,.26);--field:#FFFFFF;--btn:#240B21;--btn-ink:#FFFDFB;--frame:#F7F4F2;
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--gut:max(16px,4vw);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1A0917;--chalk:#241021;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D6C8CD;--rose:#B898A0;--line:rgba(245,241,242,.14);--line2:rgba(245,241,242,.28);--field:#211020;--btn:#F5F1F2;--btn-ink:#240B21;--frame:#221020;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1A0917;--chalk:#241021;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D6C8CD;--rose:#B898A0;--line:rgba(245,241,242,.14);--line2:rgba(245,241,242,.28);--field:#211020;--btn:#F5F1F2;--btn-ink:#240B21;--frame:#221020;color-scheme:dark}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--body);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
+a{color:var(--ink);text-underline-offset:3px}:focus-visible{outline:2px solid var(--rose);outline-offset:3px;border-radius:4px}
+main{max-width:1180px;margin:0 auto;padding:32px var(--gut) 72px}
+.label{font:500 11.5px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:0}
+h1{color:var(--deep);font-weight:500;letter-spacing:-.02em;font-size:clamp(30px,5.2vw,50px);line-height:1.06;margin:10px 0 12px}
+h2{color:var(--deep);font-weight:500;letter-spacing:-.015em;font-size:22px;margin:0 0 10px}
+.lede{font-size:18px;color:var(--ink);max-width:62ch;margin:0}
+.plain{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:6px;max-width:70ch}.plain li{padding-left:18px;position:relative}.plain li:before{content:"";position:absolute;left:0;top:.72em;width:7px;height:7px;border-radius:50%;background:var(--rose)}
+.grid{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:28px;align-items:start;margin-top:30px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+form{border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--chalk)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f{display:grid;gap:4px;margin:0 0 12px}.f span{font:500 11px/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--rose)}
+input,select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line2);border-radius:10px;min-height:44px;padding:8px 12px;width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;min-height:48px;padding:0 22px;font:600 15px var(--sans);cursor:pointer;background:var(--btn);color:var(--btn-ink);width:100%}
+.btn[disabled]{opacity:.6;cursor:progress}
+.fine{font-size:13px;color:var(--rose);margin:10px 0 0}
+.out{min-width:0}.frame{border:1px solid var(--line);border-radius:16px;background:var(--frame);padding:14px}
+.frame .label{margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+iframe{display:block;width:100%;border:0;height:560px;background:transparent;color-scheme:normal}
+.wait{padding:40px 10px;text-align:center;color:var(--rose);font:500 13px var(--mono)}
+details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:.04em;color:var(--ink)}
+pre{white-space:pre-wrap;word-break:break-word;font:400 12.5px/1.55 var(--mono);color:var(--body);background:var(--chalk);border-radius:10px;padding:12px;max-height:420px;overflow:auto}
+.use{margin-top:44px;padding-top:26px;border-top:1px solid var(--line)}
+.url{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 16px}.url code{font:500 14px var(--mono);color:var(--ink);background:var(--chalk);padding:8px 12px;border-radius:10px;word-break:break-all}
+.copy{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--ink);font:500 14px var(--sans);cursor:pointer}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media (max-width:700px){.two{grid-template-columns:1fr}}
+.two article{border:1px solid var(--line);border-radius:14px;padding:16px}.two h3{color:var(--deep);font-weight:500;margin:0 0 6px;font-size:18px}.two ol{margin:0;padding-left:20px}
+footer{margin-top:44px;font-size:14px;color:var(--rose)}footer a{margin-right:14px}
+</style>
+</head>
+<body>
+<main>
+<p class="label">assembl lab · car check</p>
+<h1>Is this car a good buy?</h1>
+<p class="lede">Type in the facts from a listing you're looking at. You'll get the check an AI assistant shows when it uses this tool: what the listing should tell you, the red flags, the checks to run before paying, and what the car will cost to run each week.</p>
+<ul class="plain">
+<li><b>Model facts are live from NZTA's register.</b> How many of this make, model and year are registered in New Zealand, how they came in, and their fuel, engine and rated economy.</li>
+<li><b>Plate checks are links to the official free checks:</b> NZTA's WOF and licence check, and a PPSR search for money owing.</li>
+<li><b>Nothing you type is stored, and no personal details are asked for.</b> No name, plate, VIN or link.</li>
+</ul>
+
+<div class="grid">
+<form id="f" novalidate>
+  <div class="row"><label class="f"><span>Make</span><input id="make" value="Toyota" autocomplete="off" maxlength="40" required></label>
+  <label class="f"><span>Model</span><input id="model" value="Aqua" autocomplete="off" maxlength="60" required></label></div>
+  <div class="row"><label class="f"><span>Year</span><input id="year" type="number" inputmode="numeric" min="1980" max="2030" value="2016"></label>
+  <label class="f"><span>Kilometres</span><input id="km" type="number" inputmode="numeric" min="0" step="100" value="98000"></label></div>
+  <div class="row"><label class="f"><span>Price (NZD)</span><input id="price" type="number" inputmode="numeric" min="0" step="10" value="11500"></label>
+  <label class="f"><span>Fuel</span><select id="fuel"><option value="petrol">Petrol</option><option value="hybrid" selected>Hybrid</option><option value="plug-in hybrid">Plug-in hybrid</option><option value="electric">Electric</option><option value="diesel">Diesel</option><option value="unknown">Not sure</option></select></label></div>
+  <label class="f"><span>Region you'll drive it in</span><select id="region">
+    <option>Northland</option><option selected>Auckland</option><option>Waikato</option><option>Bay of Plenty</option><option>Gisborne</option><option>Hawke's Bay</option><option>Taranaki</option><option>Manawatū-Whanganui</option>
+    <option>Wellington</option><option>Tasman</option><option>Nelson</option><option>Marlborough</option><option>West Coast</option><option>Canterbury</option><option>Otago</option><option>Southland</option></select></label>
+  <div class="row"><label class="f"><span>Used import or NZ-new</span><select id="imported"><option value="yes" selected>Used import</option><option value="no">NZ-new</option><option value="unknown">Not sure</option></select></label>
+  <label class="f"><span>Money owing</span><select id="owing"><option value="unknown" selected>Not sure</option><option value="no">No</option><option value="yes">Yes</option></select></label></div>
+  <label class="f"><span>WOF expiry (optional)</span><input id="wof" type="month" min="2020-01" max="2030-12"></label>
+  <button class="btn" id="go" type="submit">Check this car</button>
+  <p class="fine" id="via">Runs the car_check tool on assembl's endpoint, the same one ChatGPT and Claude call.</p>
+</form>
+
+<section class="out" aria-live="polite">
+  <div class="frame"><p class="label"><span>What the assistant shows</span><span id="ms"></span></p>
+    <div id="slot"><p class="wait">Press "Check this car" to see the result for the example, or change the facts first.</p></div>
+    <details id="det" hidden><summary>What the assistant reads (the tool's text result)</summary><pre id="txt"></pre></details>
+  </div>
+</section>
+</div>
+
+<section class="use" id="use" aria-labelledby="use-h">
+  <h2 id="use-h">Use it in ChatGPT or Claude</h2>
+  <p>Add this connector URL to your assistant, then ask in your own words, for example "is a 2016 Aqua with 98k for $11.5k in Auckland a good buy?"</p>
+  <div class="url"><code id="u">https://assembl-lab.vercel.app/api/mcp/</code><button class="copy" type="button" id="cp">Copy</button></div>
+  <div class="two">
+    <article><h3>Claude</h3><ol><li>Customize → Connectors → Add custom connector, and paste the URL.</li><li>Choose No sign in, then switch it on in a chat with + → Connectors.</li></ol></article>
+    <article><h3>ChatGPT</h3><ol><li>Settings → Apps → Advanced settings: turn on developer mode, then Create app and paste the URL.</li><li>Choose No Authentication and use it from the composer.</li></ol></article>
+  </div>
+  <p class="fine">It's a demo connector, not listed in either directory. The same connector also has a demo dealer, Harbour Lane Motors, whose cars are Simulated. This check works on any car you describe.</p>
+</section>
+
+<footer><a href="/cars/">Agent-ready cars</a><a href="/cars/privacy/">Privacy (draft)</a><a href="/cars/terms/">Terms (draft)</a><a href="/cars/support/">Support (draft)</a></footer>
+</main>
+<script type="module">
+// This page plays an MCP Apps host for one view: it calls car_check on the endpoint, reads the card resource, and renders the
+// card in a sandboxed iframe with the CSP the resource declares. The card's sliders call running_cost through this page.
+const MCP = "/api/mcp/", CARD = "ui://cars/car-check.v2.html", $ = (s) => document.querySelector(s);
+let seq = 0, endpoint = null, frame = null, last = null, hostTools = false;
+async function rpc(method, params) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), 25000);
+  try {
+    const r = await fetch(MCP, { method: "POST", signal: c.signal, headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: ++seq, method, params }) });
+    const j = await r.json(); if (j.error) throw new Error(j.error.message); return j.result;
+  } finally { clearTimeout(t); }
+}
+// the endpoint first; if it can't be reached (a static preview), the same tools run in this page
+async function callTool(name, args) {
+  if (endpoint !== false) { try { const r = await rpc("tools/call", { name, arguments: args }); endpoint = true; return r; } catch (e) { endpoint = false; } }
+  const T = await import("/cars/tools.js"), stock = await fetch("/cars/feed.json").then((r) => r.json());
+  const ctx = name === "car_check" ? { register: await T.registerFor(stock, args) } : {};
+  const r = T.callTool(name, args, { stock, ctx });
+  return { content: [{ type: "text", text: r.text }], ...(r.structuredContent ? { structuredContent: r.structuredContent } : {}), isError: r.isError, ...(r.meta ? { _meta: r.meta } : {}) };
+}
+async function cardHtml() {
+  if (endpoint !== false) { try { const r = await rpc("resources/read", { uri: CARD }); const c = r.contents[0]; return withCsp(c.text, c._meta && c._meta.ui && c._meta.ui.csp); } catch (e) { /* fall through */ } }
+  return withCsp(await fetch("/cars/card.html").then((r) => r.text()), { resourceDomains: ["https://assembl-lab.vercel.app"] });
+}
+// the CSP a host builds from _meta.ui.csp (MCP Apps spec): the card may load images from the declared origin and nothing else
+function withCsp(html, csp = {}) {
+  const res = (csp.resourceDomains || []).join(" "), con = (csp.connectDomains || []).join(" ");
+  const policy = `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: ${res}; font-src ${res || "'none'"}; media-src data: ${res}; connect-src ${con || "'none'"}; frame-src 'none'; base-uri 'none'; form-action 'none'`;
+  return html.replace(/<head>/i, `<head><meta http-equiv="Content-Security-Policy" content="${policy}">`);
+}
+const theme = () => (document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+const post = (m) => frame && frame.contentWindow && frame.contentWindow.postMessage(m, "*");
+function args() {
+  const v = (id) => $(id).value.trim(), num = (id) => { const x = parseFloat(v(id).replace(/[^\d.]/g, "")); return isFinite(x) ? x : undefined; };
+  const a = { make: v("#make") || undefined, model: v("#model") || undefined, year: num("#year") && Math.round(num("#year")), odometer_km: num("#km") && Math.round(num("#km")), price_nzd: num("#price"),
+    fuel: v("#fuel"), region: v("#region"), imported: v("#imported"), money_owing: v("#owing"), wof_expiry: v("#wof") || undefined, source: "typed by the buyer", km_per_week: 200 };
+  return Object.fromEntries(Object.entries(a).filter(([, x]) => x !== undefined && x !== ""));
+}
+$("#f").addEventListener("submit", async (e) => {
+  e.preventDefault(); const btn = $("#go"), a = args(); btn.disabled = true; btn.textContent = "Checking…"; const t0 = performance.now();
+  try {
+    const [result, html] = await Promise.all([callTool("car_check", a), cardHtml()]);
+    last = { args: a, result }; $("#ms").textContent = `car_check · ${Math.round(performance.now() - t0)} ms · ${endpoint ? "assembl endpoint" : "tools in this page"}`;
+    $("#txt").textContent = (result.content || []).map((c) => c.text).join("\n"); $("#det").hidden = false;
+    hostTools = !!endpoint;
+    frame = document.createElement("iframe"); frame.title = "Car check card"; frame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
+    frame.srcdoc = html; $("#slot").replaceChildren(frame);
+  } catch (err) { $("#slot").innerHTML = `<p class="wait">The check didn't run: ${String(err.message || err).replace(/[<&]/g, "")}. Try again.</p>`; }
+  finally { btn.disabled = false; btn.textContent = "Check this car"; }
+});
+addEventListener("message", async (e) => {
+  if (!frame || e.source !== frame.contentWindow) return; const m = e.data; if (!m || m.jsonrpc !== "2.0") return;
+  const reply = (result) => post({ jsonrpc: "2.0", id: m.id, result }), fail = (message) => post({ jsonrpc: "2.0", id: m.id, error: { code: -32000, message } });
+  switch (m.method) {
+    case "ui/initialize": return reply({ protocolVersion: "2026-01-26", hostInfo: { name: "assembl-lab-check-page", version: "1" }, hostCapabilities: { openLinks: {}, ...(hostTools ? { serverTools: {} } : {}) },
+      hostContext: { theme: theme(), displayMode: "inline", availableDisplayModes: ["inline"], locale: "en-NZ", timeZone: "Pacific/Auckland", platform: "web" } });
+    case "ui/notifications/initialized": post({ jsonrpc: "2.0", method: "ui/notifications/tool-input", params: { arguments: last.args } }); post({ jsonrpc: "2.0", method: "ui/notifications/tool-result", params: last.result }); return;
+    case "ui/notifications/size-changed": if (m.params && m.params.height) frame.style.height = Math.min(4000, Math.max(300, Math.ceil(m.params.height) + 8)) + "px"; return;
+    case "ui/open-link": if (m.params && /^https:\/\//.test(m.params.url)) { window.open(m.params.url, "_blank", "noopener"); return reply({}); } return fail("Only https links open");
+    case "tools/call": if (!m.params || m.params.name !== "running_cost") return fail("This page only lets the card call running_cost");
+      try { return reply(await callTool("running_cost", m.params.arguments || {})); } catch (err) { return fail(String(err.message || err)); }
+    case "ui/request-display-mode": return reply({ mode: "inline" });
+    default: if (m.id != null && m.method) reply({});
+  }
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => post({ jsonrpc: "2.0", method: "ui/notifications/host-context-changed", params: { theme: theme() } }));
+$("#cp").addEventListener("click", async (e) => { try { await navigator.clipboard.writeText($("#u").textContent); e.target.textContent = "Copied"; } catch (err) { e.target.textContent = "Select and copy"; } });
+</script>
+</body>
+</html>

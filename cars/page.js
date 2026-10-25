@@ -1,6 +1,7 @@
 // assembl lab · Agent-ready cars: the page. Every demo runs the real tools: POST /api/mcp/ when it answers, otherwise the same
 // functions in /cars/tools.js (copied from api/_cars at build time) with the live feeds this page already holds.
-import { callTool, TOOLS, toJsonLd, fuelLabel, money, fmtDate, quickChecks, slotsFor, PLACES, DEALER } from "/cars/tools.js";
+import { callTool, TOOLS, toJsonLd, fuelLabel, money, fmtDate, quickChecks, slotsFor, REGIONS, regionFromText, DEALER, registerFor } from "/cars/tools.js";
+import { registerLine } from "/cars/register.js";
 import { profileSVG } from "/cars/profile.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -30,18 +31,22 @@ async function mcp(name, args) {
       const j = await r.json();
       if (j.error) throw new Error(j.error.message);
       endpointOk = true;
-      return { via: "MCP", ms: Math.round(performance.now() - t0), result: j.result.structuredContent, isError: j.result.isError, text: j.result.content[0].text };
+      return { via: "MCP", ms: Math.round(performance.now() - t0), result: withView(j.result.structuredContent, j.result._meta, j.result.content[0].text), isError: j.result.isError, text: j.result.content[0].text };
     } catch (e) { endpointOk = false; }
   }
-  const r = callTool(name, args, { stock, ctx: ctx() });
-  return { via: "local", ms: Math.round(performance.now() - t0), result: r.structuredContent, isError: r.isError, text: r.text };
+  // offline: car_check asks NZTA's open register from the browser (it answers quietly "not looked up" if that fails too)
+  const c = name === "car_check" ? { ...ctx(), register: await registerFor(stock, args) } : ctx();
+  const r = callTool(name, args, { stock, ctx: c });
+  return { via: "local", ms: Math.round(performance.now() - t0), result: withView(r.structuredContent, r.meta, r.text), isError: r.isError, text: r.text };
 }
+// the page draws the full figures (each cost line's source, the slider rates) that the tool puts in _meta for views
+function withView(sc, meta, text) { if (!sc) return { error: text }; const v = meta && meta["assembl/view"]; return v ? { ...sc, ...v } : sc; }
 const viaLabel = (r) => (r.via === "MCP" ? `MCP · ${r.ms} ms` : "tools in this page (endpoint not reachable)");
 
 // ---------------------------------------------------------------- the story: pins on the car
 const monthLong = (ymd) => new Date(ymd + "T12:00:00Z").toLocaleDateString("en-NZ", { month: "long", year: "numeric", timeZone: "UTC" });
 const wof = hero.cin["wof.expiry"].value, lic = hero.cin["licence.expiry"].value, qc = quickChecks(hero);
-const runNow = () => callTool("running_cost", { car_id: hero.id, km_per_week: 200, place: DEALER.sites[hero.site].region === "Waikato" ? "Hamilton" : hero.site }, { stock, ctx: ctx() }).structuredContent;
+const runNow = () => { const r = callTool("running_cost", { car_id: hero.id, km_per_week: 200, region: DEALER.sites[hero.site].region }, { stock, ctx: ctx() }); return withView(r.structuredContent, r.meta, r.text); };
 let RC = runNow();
 const energy = () => RC.lines.find((l) => l.key === "energy");
 const PINS = [
@@ -269,17 +274,18 @@ $("#run-chat").addEventListener("click", runChat);
 async function runChat() {
   const btn = $("#run-chat"); btn.disabled = true; btn.textContent = "Running";
   $$(".transcript > :not(.buyer)").forEach((x) => x.remove());
-  const a1 = { budget_max: 35000, body: "suv", fuel: "hybrid", near: "Hamilton", must_have: ["no money owing"], test_drive_day: "saturday", limit: 3 };
+  const a1 = { budget_max: 35000, body: "suv", fuel: "hybrid", region: "Waikato", must_have: ["no money owing"], test_drive_day: "saturday", limit: 3 };
   const r1 = await mcp("search_cars", a1), s = r1.result;
   evidence("search_cars", a1, `${s.matched} of ${s.total} match`, r1);
-  const mini = add(s.results.map((c, i) => `<article class="${i === 0 ? "top" : ""}">${profileSVG(c.render.kind, c.render.paint)}<h4>${esc(c.title)}</h4><p>${money(c.priceNzd)} · ${c.odometerKm.toLocaleString("en-NZ")} km</p><p class="why">${esc(c.why.slice(-2).join(" · "))}</p></article>`).join(""), "mini");
+  const renderOf = (id) => (cars.find((x) => x.id === id) || hero).render;
+  const mini = add(s.results.map((c, i) => `<article class="${i === 0 ? "top" : ""}">${profileSVG(renderOf(c.id).kind, renderOf(c.id).paint)}<h4>${esc(c.title)}</h4><p>${money(c.priceNzd)} · ${c.odometerKm.toLocaleString("en-NZ")} km</p><p class="why">${esc(c.why.slice(-2).join(" · "))}</p></article>`).join(""), "mini");
   void mini;
   const top = s.results[0], owing = s.excluded["money owing stated"] || 0;
   bot(`${s.matched} fit. The closest match is the <b>${esc(top.title)}</b> at the Hamilton site, ${money(35000 - top.priceNzd)} under your budget.${owing ? ` I left out ${owing} hybrid SUV${owing > 1 ? "s" : ""} in budget because money is owing on ${owing > 1 ? "them" : "it"}.` : ""}`);
-  const r2 = await mcp("get_car", { car_id: top.id }), g = r2.result;
-  evidence("get_car", { car_id: top.id }, `${g.checks.cinFields.present}/${g.checks.cinFields.total} notice fields · ${g.testDriveSlots.length} slots`, r2);
-  const r3 = await mcp("running_cost", { car_id: top.id, km_per_week: 200, place: "Hamilton" }), rc = r3.result;
-  evidence("running_cost", { car_id: top.id, km_per_week: 200, place: "Hamilton" }, `${money(rc.totalWeekly, 2)}/wk`, r3);
+  const r2 = await mcp("get_car", { car_id: top.id, test_drive_day: "saturday" }), g = r2.result;
+  evidence("get_car", { car_id: top.id, test_drive_day: "saturday" }, `${g.checks.cinFields.present}/${g.checks.cinFields.total} notice fields · ${g.testDriveSlots.length} Saturday slots`, r2);
+  const r3 = await mcp("running_cost", { car_id: top.id, km_per_week: 200, region: "Waikato" }), rc = r3.result;
+  evidence("running_cost", { car_id: top.id, km_per_week: 200, region: "Waikato" }, `${money(rc.totalWeekly, 2)}/wk`, r3);
   const fuelLine = rc.lines.find((l) => l.key === "energy");
   bot(`Its notice is complete: WOF to ${fmtDate(g.checks.wof.expiry)}, licence to ${fmtDate(g.checks.licence.expiry)}, and no money owing stated. I'd still search the PPSR on the day you pay. At 200 km a week it costs about <b>${money(rc.totalWeekly, 2)}</b> a week to run, using MBIE's fuel price for the ${esc(fuelLine.period || "latest week")}.`);
   const sats = g.testDriveSlots.filter((x) => x.day === "Saturday"), today = nzDate();
@@ -295,11 +301,11 @@ async function runChat() {
   card.querySelector('[data-act="yes"]').addEventListener("click", async () => {
     card.querySelectorAll("button").forEach((b) => (b.disabled = true));
     const a4 = { car_id: top.id, slot: pick.start }, r4 = await mcp("book_test_drive", a4);
-    evidence("book_test_drive", a4, r4.isError ? "not requested" : r4.result.requestId, r4, true);
+    evidence("book_test_drive", a4, r4.isError ? "not requested" : "requested (Simulated)", r4, true);
     const a5 = { car_id: top.id, hold_until: holdUntil }, r5 = await mcp("hold_car", a5);
-    evidence("hold_car", a5, r5.isError ? "not requested" : r5.result.requestId, r5, true);
-    if (r4.isError || r5.isError) bot(esc((r4.isError ? r4.result.error : r5.result.error) || "The dealer's system didn't accept that."));
-    else bot(`Both requests are with ${esc(r4.result.site)}: <b>${esc(r4.result.requestId)}</b> for ${esc(pick.label)} and <b>${esc(r5.result.requestId)}</b> to hold the car until ${esc(fmtDate(r5.result.holdUntil))}. Nothing is booked or held until a person there confirms. ${chip("Simulated")} This is a demo: nothing was sent anywhere.`);
+    evidence("hold_car", a5, r5.isError ? "not requested" : "requested (Simulated)", r5, true);
+    if (r4.isError || r5.isError) bot(esc((r4.isError ? r4.text : r5.text) || "The dealer's system didn't accept that."));
+    else bot(`Both requests are with ${esc(r4.result.site)}: a test drive at <b>${esc(pick.label)}</b> and a hold until <b>${esc(fmtDate(r5.result.holdUntil))}</b>. Nothing is booked or held until a person there confirms. ${chip("Simulated")} This is a demo: nothing was sent anywhere.`);
     done();
   });
   function done() { btn.disabled = false; btn.textContent = "Run it again"; }
@@ -307,7 +313,7 @@ async function runChat() {
 
 // ---------------------------------------------------------------- is this car a good buy?
 const regionSel = $("#f-region");
-regionSel.innerHTML = Object.entries(PLACES).filter(([k]) => !["waikato", "bay of plenty"].includes(k)).map(([k, p]) => `<option value="${esc(k)}"${k === "auckland" ? " selected" : ""}>${esc(p.name)}</option>`).join("");
+regionSel.innerHTML = REGIONS.map((r) => `<option value="${esc(r.name)}"${r.name === "Auckland" ? " selected" : ""}>${esc(r.name)}</option>`).join("");
 $("#gb-car").innerHTML = cars.map((c) => `<option value="${c.id}"${c.id === hero.id ? " selected" : ""}>${c.id} · ${esc(c.title)} · ${money(c.priceNzd)}</option>`).join("");
 const mode = () => $('input[name="mode"]:checked').value;
 $$('input[name="mode"]').forEach((r) => r.addEventListener("change", () => { $("#gb-demo").hidden = mode() !== "demo"; $("#gb-listing").hidden = mode() !== "listing"; }));
@@ -322,7 +328,7 @@ $("#gb-read").addEventListener("click", () => {
   const mk = MAKES.find((m) => new RegExp(`\\b${m}\\b`, "i").test(t));
   if (mk) { set("#f-make", mk, "make"); const after = t.slice(t.search(new RegExp(`\\b${mk}\\b`, "i")) + mk.length).split(/[,.;\n(|]/)[0].replace(/\b(19|20)\d\d\b|\bhybrid\b|\belectric\b|\bdiesel\b|\bpetrol\b/gi, "").trim(); if (after) set("#f-model", after.split(/\s+/).slice(0, 3).join(" "), "model"); }
   const fu = /plug-?in|phev/i.test(t) ? "plug-in hybrid" : /hybrid/i.test(t) ? "hybrid" : /\belectric\b|\bev\b|kwh/i.test(t) ? "electric" : /diesel/i.test(t) ? "diesel" : /petrol/i.test(t) ? "petrol" : null; if (fu) set("#f-fuel", fu, "fuel");
-  const pl = Object.entries(PLACES).find(([k, p]) => new RegExp(`\\b${k}\\b`, "i").test(t) || t.toLowerCase().includes(p.name.split(" ").pop().toLowerCase())); if (pl && regionSel.querySelector(`option[value="${pl[0]}"]`)) set("#f-region", pl[0], "region");
+  const rg = regionFromText(t); if (rg) set("#f-region", rg.name, "region");
   const my = (re) => { const m = t.match(re); if (!m) return null; let [, mo, y] = m; if (isNaN(+mo)) { mo = String(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(mo.slice(0, 3).toLowerCase()) + 1); } y = y.length === 2 ? "20" + y : y; return +mo >= 1 && +mo <= 12 ? `${y}-${String(mo).padStart(2, "0")}` : null; };
   const w = my(/wof[^0-9a-z]{0,6}(?:to|until|till|exp\w*)?\s*(\d{1,2}|[a-z]{3,9})[\/\- ](\d{2,4})/i); if (w) set("#f-wof", w, "WOF");
   const l = my(/(?:rego|licen[cs]e)[^0-9a-z]{0,6}(?:to|until|till|exp\w*)?\s*(\d{1,2}|[a-z]{3,9})[\/\- ](\d{2,4})/i); if (l) set("#f-lic", l, "licence");
@@ -337,7 +343,7 @@ function gbArgs() {
   const v = (id) => $(id).value.trim(), num = (id) => { const x = parseFloat(v(id).replace(/[^\d.]/g, "")); return isFinite(x) ? x : undefined; };
   const a = { make: v("#f-make") || undefined, model: v("#f-model") || undefined, year: num("#f-year") && Math.round(num("#f-year")), odometer_km: num("#f-km") && Math.round(num("#f-km")), price_nzd: num("#f-price"),
     fuel: v("#f-fuel"), seller: v("#f-seller"), region: v("#f-region"), wof_expiry: v("#f-wof") || undefined, licence_expiry: v("#f-lic") || undefined, money_owing: v("#f-owing"), imported: v("#f-import"),
-    source: "typed or pasted on the Agent-ready cars page", km_per_week: kmw };
+    source: "typed by the buyer", km_per_week: kmw };
   return Object.fromEntries(Object.entries(a).filter(([, x]) => x !== undefined && x !== ""));
 }
 let lastCheck = null;
@@ -346,7 +352,7 @@ $("#gb-form").addEventListener("submit", async (e) => {
   const btn = $("#gb-run"), args = gbArgs(); btn.disabled = true; $("#gb-ev").textContent = "car_check running…";
   const r = await mcp("car_check", args); btn.disabled = false;
   $("#gb-ev").textContent = `car_check · ${viaLabel(r)}`;
-  if (r.isError) { $("#gb-out").innerHTML = `<p class="res-sum">${esc(r.result.error || r.text)}</p>`; return; }
+  if (r.isError) { $("#gb-out").innerHTML = `<p class="res-sum">${esc((r.result && r.result.error) || r.text)}</p>`; return; }
   lastCheck = { args, result: r.result }; renderCheck(r.result, r); sendCardResult(r.result);
 });
 function waterfall(rc) {
@@ -362,6 +368,7 @@ function renderCheck(res, r) {
   $("#gb-out").innerHTML = `<div class="res">
     <div class="res-head"><div><p class="said">car_check · ${esc(viaLabel(r))}</p><h3>${esc(res.car.name)}</h3></div>${chip(res.car.truth)}</div>
     <div class="res-car">${profileSVG(kind, paint, { title: res.car.name })}<div><p class="res-sum">${esc(res.summary)}</p><p class="said">${esc(res.statement)}</p></div></div>
+    ${res.register ? `<p class="said">${esc(registerLine(res.register))} ${chip("Source", "NZTA register")} <a href="${esc(res.register.source.url)}">Source: NZ Transport Agency Waka Kotahi, Motor Vehicle Register</a> (CC BY 4.0)</p>` : ""}
     <h4>Running cost · <span id="rc-km">${rc.kmPerWeek}</span> km a week · ${esc(rc.place)}</h4><div id="rc-box">${waterfall(rc)}${costLines(rc)}</div>${pw}
     ${res.redFlags.length ? `<h4>Red flags and questions</h4><ul class="flags">${res.redFlags.map((f) => `<li><span class="dot ${esc(f.level)}" aria-label="${esc(f.level)}"></span><span><b>${esc(f.title)}</b><small>${esc(f.why)}</small></span></li>`).join("")}</ul>` : ""}
     <h4>Before you pay</h4><ul class="todo">${res.checks.map((c) => `<li><input type="checkbox" aria-label="Done: ${esc(c.title)}"><span><b>${esc(c.title)}</b><small>${esc(c.how)}${c.link ? ` <a href="${esc(c.link.url)}">${esc(c.link.name)}</a>` : ""}</small></span></li>`).join("")}</ul>
@@ -374,8 +381,8 @@ function rerunCost() {
   if (!lastCheck) return; clearTimeout(costTimer);
   costTimer = setTimeout(() => {
     const a = lastCheck.args, kmw = +$("#f-kmw").value;
-    const args = a.car_id ? { car_id: a.car_id, km_per_week: kmw } : Object.fromEntries(Object.entries({ make: a.make, model: a.model, year: a.year, fuel: a.fuel && a.fuel !== "unknown" ? a.fuel : undefined, km_per_week: kmw, place: a.region }).filter(([, x]) => x !== undefined));
-    const rc = callTool("running_cost", args, { stock, ctx: ctx() }).structuredContent;
+    const args = a.car_id ? { car_id: a.car_id, km_per_week: kmw } : Object.fromEntries(Object.entries({ make: a.make, model: a.model, year: a.year, fuel: a.fuel && a.fuel !== "unknown" ? a.fuel : undefined, km_per_week: kmw, region: a.region }).filter(([, x]) => x !== undefined));
+    const out = callTool("running_cost", args, { stock, ctx: ctx() }), rc = withView(out.structuredContent, out.meta, out.text).runningCost;
     if (!rc || rc.error || !$("#rc-box")) return;
     $("#rc-km").textContent = rc.kmPerWeek; $("#rc-box").innerHTML = waterfall(rc) + costLines(rc);
     $("#gb-ev").textContent = "running_cost · recomputed in this page with the same tool and the feeds it already has";
