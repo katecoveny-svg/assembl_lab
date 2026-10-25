@@ -6,13 +6,14 @@ try{document.documentElement.setAttribute("data-theme","light")}catch(e){}
 // each machine is a small app with its own colour, grouped by subject
 const MID=(()=>{try{return (location.pathname.split("/").pop()||"").replace(/\.html?$/,"")}catch(e){return ""}})();
 const SUBJ={science:"#2F8FD8",biochem:"#12A386",maths:"#7B61FF",english:"#F2603F",social:"#2FA65A",digital:"#D9468F"};
-const MSUB={fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
+const MSUB={shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital"};
 const accentFor=id=>SUBJ[MSUB[id]]||SUBJ.science;
 // one line icon per machine (24x24, drawn with currentColor), used for the app icon here and the tiles on the home page
 const G=(d,extra)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra||""}</svg>`;
 const GLYPH={
+  shaky:G(`<path d="M2.5 15.5h4l2-5 3 9 3-13 2.5 9h4.5"/><path d="M2.5 20.5h19"/>`),
   fish:G(`<path d="M2.5 12c2.6-3.9 7.3-5.6 11.6-3.6L19 5v14l-4.9-3.4C9.8 17.6 5.1 15.9 2.5 12z"/><circle cx="8" cy="11" r="1" fill="currentColor"/>`),
   claw:G(`<path d="M12 2.5v6.5M7.5 13.5 12 9l4.5 4.5M7.5 13.5V17M16.5 13.5V17"/><circle cx="12" cy="19" r="2.5"/>`),
   ai:G(`<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9.5 2.5v3.5M14.5 2.5v3.5M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5M10 10h4v4h-4z"/>`),

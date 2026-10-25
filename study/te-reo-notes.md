@@ -386,12 +386,17 @@ Notes shown to students:
 | **whakarāpopoto** | to summarise; summary | [Te Aka 9800](https://maoridictionary.co.nz/word/9800) | Te Aka entry (no curriculum citation) | (machine list only) |  |
 | **kaituhi** | writer, author | [Te Aka 2031](https://maoridictionary.co.nz/word/2031) | Te Aka entry (no curriculum citation) | (machine list only) |  |
 
+### Shaky Isles book (m/shaky/) — reused kupu only
+
+Added 25 October 2026. Te Aka could not be reached from the build environment that day, so **no new kupu were looked up**. The book reuses only terms already verified for the machines above, each linked to the same Te Aka entry: tōpana, kiato, pēhanga, tauira, rewa, pae rewa, haurehu, wera, paemahana, waku, pūngao, pūngao moe, pūngao neke, ngaru, taunakitanga, wē, totoka, tere, teitei. Each lesson shows them on its Prove tab, with `lang="mi"`.
+
 ## 4. Terms looked for but not added (no verified entry, or contested)
 
 - **artificial intelligence**: Te Aka has no entry (only *atamai*, intelligent; *waea atamai*, smartphone). Phrases like "atamai horihori" are in use elsewhere but were not verified, so none was added. Treat this as newer and contested vocabulary.
 - **lever** (fish): Te Aka has verbs for prising or levering, but no noun for a lever. *kauwhiti* appears inside an example sentence but its own entry means something else, so it was not used.
 - **range** (statistics), **amplitude** (Te Aka's two entries conflict), **wavelength** (only "(radio) wavelength"), **contour line** (Te Aka's *rārangi hua* comes from visual arts), **mutation**, **allele**, **variation**, **personification**, **hyperbole**, **demand**, **opportunity cost**, **trapezium**, **prism**, **values** (as beliefs): no suitable verified entry found, so none was added.
 - **toharite**: Te Reo Pāngarau uses it for *mean*, but Te Aka also records it used for *median* (from Te Ara). The fish machine says so and gives *tau waenga* for median.
+- **earthquake, volcano, tsunami, tectonic plate, magma, lava, fault, epicentre, liquefaction** (Shaky Isles book): not yet looked up on Te Aka (no access from the build environment on 25 October 2026). The book says so on each Prove tab. These are the most useful terms to add next, after checking each entry.
 - **iramoe**: Te Aka lists it as both *neutron* (Te Reo Pūtaiao) and *recessive gene*. It is used only in atoms, with a note, and left out of genes.
 
 ## 5. Existing te reo checked across all files (macrons and usage)
