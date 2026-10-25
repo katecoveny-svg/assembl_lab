@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-feeds="ed,urgentcare,wastewater,calendar,weather" data-district="auckland-district"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-feeds="ed,urgentcare,wastewater,calendar,weather,edhistory" data-district="auckland-district"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>Emergency Department Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -161,9 +161,12 @@ details.tbl[open] summary{margin-bottom:6px}
 .lt .v small{font-size:12px;color:var(--rose);margin-left:4px}
 .lt p{margin:0;font-size:13px;color:var(--body)}
 .lt .src{font:10.5px var(--mono);color:var(--rose)}.lt .src a{color:var(--ink)}
-.tl.lv{border-color:var(--good);color:var(--good)}.tl.lp{border-color:var(--live);color:var(--ink)}.tl.sn{border-style:dashed}
+.tl.lv{display:inline;border-color:var(--good);color:var(--good)}.tl.lp{border-color:var(--live);color:var(--ink)}.tl.sn{border-style:dashed}
 .lt .meter{margin:6px 0 16px}
 .spark{display:block;width:100%;height:34px}
+/* the quarterly national series: a 12-point line against the 95% target and the 77% milestone, redrawn from the edhistory feed */
+.lt.trend{margin:10px 0 2px}.trendsvg{display:block;width:100%;max-width:760px;height:auto;overflow:visible}.trendsvg text{font:9.5px var(--mono);fill:var(--rose)}.trendsvg .tgt{stroke:var(--good);stroke-dasharray:4 4}.trendsvg .ms{stroke:var(--live);stroke-dasharray:2 4}.trendsvg .ln{stroke:var(--ink);fill:none;stroke-width:2;stroke-linejoin:round}.trendsvg .pt{fill:var(--ink)}.trendsvg .pt.last{fill:var(--live)}.trendsvg .grid{stroke:var(--line)}.trendsvg .lab{fill:var(--ink)}
+.trendfoot{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font:10.5px var(--mono);color:var(--rose)}.trendfoot .tl{font-size:9px}.trendfoot a{color:var(--ink)}
 .nolive{margin:10px 0 0;border:1.5px dashed var(--alert);border-radius:10px;padding:8px 12px;color:var(--ink);font-size:13.5px}
 .nolive b{color:var(--alert)}
 .calrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px;font-size:13px}
@@ -260,6 +263,7 @@ details.tbl[open] summary{margin-bottom:6px}
       <label class="pick" id="pickWrap" hidden><span>Health NZ district</span><select id="district" aria-label="Health NZ district"></select></label>
     </div>
     <div class="lstate" id="lstate"><i></i>Not connected to the lab's feeds: showing the built-in snapshot. On the lab site this panel fills from Health NZ, PHF Science, Open-Meteo and Pegasus Health.</div>
+    <div class="lt trend" id="ltHist"></div>
     <div class="ltiles" id="ltiles" hidden>
       <div class="lt" id="ltEd"></div>
       <div class="lt" id="ltWw"></div>
@@ -290,9 +294,10 @@ details.tbl[open] summary{margin-bottom:6px}
 
   <div class="card">
     <h3><span>From simulated to live</span><span>public data wired into this page on the lab site</span></h3>
-    <div class="feedsum"><span style="--k:var(--good)"><b>3</b> live</span><span style="--k:var(--live)"><b>2</b> latest published</span><span style="--k:var(--rose)"><b>1</b> not published in NZ</span></div>
+    <div class="feedsum"><span style="--k:var(--good)"><b>3</b> live</span><span style="--k:var(--live)"><b>3</b> latest published</span><span style="--k:var(--rose)"><b>1</b> not published in NZ</span></div>
     <div class="feeds">
       <div class="feed"><span class="d" style="--k:var(--live)"></span><b>Health NZ health targets</b><span>Quarterly · % seen within 6 h, by district</span></div>
+      <div class="feed"><span class="d" style="--k:var(--live)"></span><b>DPMC and Health NZ target series</b><span>Quarterly · national 6-hour result since the 2023 baseline</span></div>
       <div class="feed"><span class="d" style="--k:var(--live)"></span><b>PHF Science wastewater</b><span>Weekly · COVID-19 community signal</span></div>
       <div class="feed"><span class="d" style="--k:var(--good)"></span><b>Pegasus 24 Hour Surgery</b><span>Live · wait, number waiting (urgent care)</span></div>
       <div class="feed"><span class="d" style="--k:var(--good)"></span><b>Open-Meteo weather</b><span>Live · at the district's main hospital</span></div>
@@ -303,6 +308,7 @@ details.tbl[open] summary{margin-bottom:6px}
       <thead><tr><th>Feed</th><th>What it gives</th><th>How often</th><th>Chip</th></tr></thead>
       <tbody>
         <tr><td>Health NZ | Te Whatu Ora health target factsheets</td><td>% of ED patients admitted, discharged or transferred within 6 hours, for each of 20 districts and nationally; attendances</td><td>Quarterly</td><td>Latest published</td></tr>
+        <tr><td>DPMC Government Targets factsheets, Health NZ "5 and 10 years of results"</td><td>The national 6-hour result every quarter since the September 2023 baseline (68.0%), drawn against the 95% target and the 77% 2025/26 milestone</td><td>Quarterly</td><td>Latest published</td></tr>
         <tr><td>PHF Science (formerly ESR) wastewater</td><td>SARS-CoV-2 genome copies per person per day, national and regional, with reported cases</td><td>Weekly</td><td>Latest published</td></tr>
         <tr><td>Pegasus 24 Hour Surgery, Christchurch</td><td>Estimated wait, number waiting, patients in treatment. Urgent care, not an ED</td><td>Live (page updates every few minutes)</td><td>Live</td></tr>
         <tr><td>Open-Meteo</td><td>Temperature, rain and wind at the district's main hospital</td><td>Hourly</td><td>Live</td></tr>
@@ -705,13 +711,39 @@ const ok=(j,id)=>j&&j.feeds&&j.feeds[id]&&!j.feeds[id].error?j.feeds[id]:null;
 const chip=e=>e.truth==="Live"?`<span class="tl lv">Live</span>`:`<span class="tl lp">Latest published</span>`;
 const src=e=>`<span class="src">${esc(e.period)} · <a href="${esc(e.source.url)}" target="_blank" rel="noopener">${esc(e.source.name)}</a></span>`;
 let data=null,picked=false,calibrated=null;
+// Quarterly national series since the September 2023 baseline. The snapshot was copied from the DPMC and Health NZ
+// factsheets on the date shown; on the lab site the edhistory feed redraws it with any newer quarter.
+const ED_HISTORY_SNAP={"retrieved":"2026-10-25","target":95,"milestone":77,"series":[{"q":"Q1 2023/24","l":"Jul\u2013Sep 2023","end":"2023-09","pct":68.0},{"q":"Q2 2023/24","l":"Oct\u2013Dec 2023","end":"2023-12","pct":69.7},{"q":"Q3 2023/24","l":"Jan\u2013Mar 2024","end":"2024-03","pct":70.1},{"q":"Q4 2023/24","l":"Apr\u2013Jun 2024","end":"2024-06","pct":71.2},{"q":"Q1 2024/25","l":"Jul\u2013Sep 2024","end":"2024-09","pct":67.5},{"q":"Q2 2024/25","l":"Oct\u2013Dec 2024","end":"2024-12","pct":72.1},{"q":"Q3 2024/25","l":"Jan\u2013Mar 2025","end":"2025-03","pct":74.2},{"q":"Q4 2024/25","l":"Apr\u2013Jun 2025","end":"2025-06","pct":73.9},{"q":"Q1 2025/26","l":"Jul\u2013Sep 2025","end":"2025-09","pct":68.9},{"q":"Q2 2025/26","l":"Oct\u2013Dec 2025","end":"2025-12","pct":74.2},{"q":"Q3 2025/26","l":"Jan\u2013Mar 2026","end":"2026-03","pct":74.4},{"q":"Q4 2025/26","l":"Apr\u2013Jun 2026","end":"2026-06","pct":76.3}]};
+let lastHist=null;
+function drawHistory(src,chipHtml,footHtml){lastHist=[src,chipHtml,footHtml];const ser=src.series.filter(r=>isFinite(r.pct));if(ser.length<2)return;
+  const W=Math.max(300,Math.min(760,($("ltHist").clientWidth||600)-26)),H=W<420?170:150,L=34,R=14,T=14,B=30,lo=55,hi=100;
+  const x=i=>L+(i/(ser.length-1))*(W-L-R),y=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);const last=ser[ser.length-1],first=ser[0];
+  const pts=ser.map((r,i)=>`${x(i).toFixed(1)},${y(r.pct).toFixed(1)}`).join(" ");
+  const grid=[60,70,80,90,100].map(v=>`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-6}" y="${(y(v)+3).toFixed(1)}" text-anchor="end">${v}%</text>`).join("");
+  const lbl=r=>r.end.endsWith("-06")?"Jun "+r.end.slice(0,4):r.l;
+  const xl=ser.map((r,i)=>(i===0||i===ser.length-1||(W>=420&&r.end.endsWith("-06")&&i<ser.length-2)?`<text x="${x(i).toFixed(1)}" y="${H-10}" text-anchor="${i===0?"start":i===ser.length-1?"end":"middle"}">${esc(lbl(r))}</text>`:"")).join("");
+  const dots=ser.map((r,i)=>`<circle class="pt${i===ser.length-1?" last":""}" cx="${x(i).toFixed(1)}" cy="${y(r.pct).toFixed(1)}" r="${i===ser.length-1?4:2.5}"><title>${esc(r.q)} (${esc(r.l)}): ${fmt(r.pct,1)}%</title></circle>`).join("");
+  const tgt=src.target||95,ms=src.milestone;
+  const svg=`<svg class="trendsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="National share of ED patients seen within 6 hours each quarter, ${esc(first.l)} ${fmt(first.pct,1)}% to ${esc(last.l)} ${fmt(last.pct,1)}%, against the 95% target">${grid}
+    <line class="tgt" x1="${L}" x2="${W-R}" y1="${y(tgt).toFixed(1)}" y2="${y(tgt).toFixed(1)}"/><text class="lab" x="${W-R}" y="${(y(tgt)-4).toFixed(1)}" text-anchor="end">target ${tgt}% by 2030</text>
+    ${ms?`<line class="ms" x1="${L}" x2="${W-R}" y1="${y(ms).toFixed(1)}" y2="${y(ms).toFixed(1)}"/><text x="${L+4}" y="${(y(ms)-4).toFixed(1)}">2025/26 milestone ${ms}%</text>`:""}
+    <polyline class="ln" points="${pts}"/>${dots}<text class="lab" x="${(x(ser.length-1)-7).toFixed(1)}" y="${(y(last.pct)+(Math.abs(last.pct-(ms||0))<4?16:-8)).toFixed(1)}" text-anchor="end">${fmt(last.pct,1)}%</text>${xl}</svg>`;
+  $("ltHist").innerHTML=`<h4>Seen within 6 hours, national, by quarter ${chipHtml}</h4><div class="v">${fmt(last.pct,1)}<small>% in ${esc(last.l)} · ${fmt(tgt-last.pct,1)} points short of 95% · ${last.pct>=first.pct?"+":""}${fmt(last.pct-first.pct,1)} since the ${esc(first.l)} baseline</small></div>${svg}<div class="trendfoot">${footHtml}</div>`}
+let histT=0;addEventListener("resize",()=>{clearTimeout(histT);histT=setTimeout(()=>{if(lastHist)drawHistory(...lastHist)},150)});
+drawHistory(ED_HISTORY_SNAP,`<span class="tl sn">Snapshot</span>`,`<span>Copied from the DPMC Government Targets and Health NZ health target factsheets on ${esc(new Date(ED_HISTORY_SNAP.retrieved).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"}))}. On the lab site this redraws from Health NZ's latest factsheet.</span>`);
 function spark(tr,key){if(!tr||tr.length<2)return"";const vs=tr.map(x=>+x[key]||0),mx=Math.max(...vs,1),W=240,H=34;
   const pts=vs.map((v,i)=>`${(i/(vs.length-1)*W).toFixed(1)},${(H-3-(v/mx)*(H-6)).toFixed(1)}`).join(" ");
   return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--live)" stroke-width="2" stroke-linejoin="round"/></svg>`}
 function render(j){data=j;
-  const ed=ok(j,"ed"),ww=ok(j,"wastewater"),w=ok(j,"weather"),cal=ok(j,"calendar"),uc=ok(j,"urgentcare");
+  const ed=ok(j,"ed"),ww=ok(j,"wastewater"),w=ok(j,"weather"),cal=ok(j,"calendar"),uc=ok(j,"urgentcare"),eh=ok(j,"edhistory");
   try{if(w&&window.__ed&&window.__ed.setLiveWeather)window.__ed.setLiveWeather(w.values,w.source&&w.source.name)}catch(err){}
-  const any=ed||ww||w||cal||uc;
+  const any=ed||ww||w||cal||uc||eh;
+  // 0. the quarterly series and the 95% line (falls back to the page's snapshot when the feed is missing)
+  if(eh&&eh.values&&eh.values.series){const v=eh.values,st=window.assemblFeeds?window.assemblFeeds.status(eh):"live";
+    const ms=(v.milestones||[]).find(m=>m.year==="2025/26");
+    drawHistory({series:v.series.map(r=>({q:r.quarter,l:r.label,end:r.end,pct:r.pct})),target:v.target?v.target.pct:95,milestone:ms?ms.pct:77},
+      st==="snapshot"?`<span class="tl sn">Snapshot</span>`:chip(eh),
+      `<span>${esc(eh.period)}${v.appendedFromHealthNZ?` · ${esc(v.appendedFromHealthNZ)} added from Health NZ's latest factsheet`:""}${v.yearAgo?` · a year earlier ${fmt(v.yearAgo.pct,1)}%`:""}.</span> <a href="${esc(eh.source.url)}" target="_blank" rel="noopener">${esc(eh.source.name)}</a><span>${esc(window.assemblFeeds?window.assemblFeeds.statusLabel(eh):"")}</span>`)}
   $("lstate").className="lstate"+(any?" on":"");
   $("lstate").innerHTML=any?`<i></i>Connected. Fetched ${esc(new Date(j.fetchedAt).toLocaleString("en-NZ",{hour:"numeric",minute:"2-digit",day:"numeric",month:"short"}))}. Anything missing below is a feed that did not answer; the simulation itself is unaffected.`:`<i></i>The feeds did not answer, so this shows the built-in snapshot.`;
   $("ltiles").hidden=!any;

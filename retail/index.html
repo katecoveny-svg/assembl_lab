@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-NZ" data-place="auckland" data-feeds="fuel,weather" data-feeds-place="auckland">
+<html lang="en-NZ" data-place="auckland" data-feeds="fuel,weather,rts" data-feeds-place="auckland">
 <head>
 <meta charset="utf-8">
 <title>Retail Twin</title>
@@ -422,7 +422,7 @@ html.tw-poster #stagebox .key,html.tw-poster .tw-gtag,html.tw-poster .closed{dis
           </tbody></table></div>
           <p class="note">Until a vendor's API is confirmed, a scheduled export (the same CSVs, dropped nightly into a secure folder) is the realistic path.</p></div>
         <div class="panel"><h3><span>Public feeds this page would use</span><span id="feedState" class="lab">waiting</span></h3><div class="feedtile" id="feedTiles"></div>
-          <p class="note">This page declares <code>data-feeds="fuel,weather"</code>. When the assembl lab's shared feeds layer answers, the tiles switch from the snapshot to the latest published or live value. The Retail Trade Survey is quarterly (the September 2026 quarter is due 23 November 2026), so its figures stay as a snapshot.</p></div>
+          <p class="note">This page declares <code>data-feeds="fuel,weather,rts"</code>. When the assembl lab's shared feeds layer answers, the tiles switch from the snapshot to the latest published or live value. The Retail Trade Survey is quarterly (the September 2026 quarter is due 23 November 2026): the <code>rts</code> feed reads the latest release's zipped CSV, so the hardware benchmark follows each new quarter and names the quarter it shows.</p></div>
       </div>
     </div>
   </section>
@@ -1349,8 +1349,10 @@ const hLabel = m => { const h = Math.floor(m / 60) % 24, mm = Math.floor(m % 60)
 const dLabel = i => K.dateOf(i).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const LITE = /[?&]lite\b/.test(location.search), reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let Y = null, A = null, PR = null, V = null, day = K.defaultDay("wd"), t = 6.5 * 60, speed = 8, playing = !reduce, DATA = {}, prToken = 0;
-const LIVE = { diesel: null, dieselAsOf: null, weather: null, src: null };
-const RTSH = F.rts_hardware.value, LOC = F.geo_G423_units.value, EMP = F.geo_G423_employees.value;
+const LIVE = { diesel: null, dieselAsOf: null, weather: null, src: null, rts: null };
+// The hardware benchmark: the snapshot's June 2026 quarter until the lab's rts feed answers, then the latest quarter (RTSH is mutated in place, see onFeeds)
+const RTSH = { ...F.rts_hardware.value, ye: "June 2026", quarter: "June 2026 quarter", live: false, url: F.rts_hardware.source_url }, LOC = F.geo_G423_units.value, EMP = F.geo_G423_employees.value;
+const rtsLab = () => RTSH.live ? lab("live", `Latest published · ${RTSH.quarter} · Stats NZ RTS`) : lab("src", `Source · Stats NZ RTS, ${RTSH.quarter}, snapshot`);
 
 // ---------------- 3D
 const tw = createRetailScene({ canvas: $("scene"), box: $("stagebox"), lite: LITE });
@@ -1412,7 +1414,7 @@ function proofAsync() { const tok = ++prToken, base = { ...S }, allS = { ...base
   setTimeout(step, 0); }
 
 // ---------------- masthead benchmark line
-function benchLine() { $("benchline").innerHTML = `Hardware, building and garden supplies sold <b>${money(RTSH.sales_m * 1e6)}</b> in the year to June 2026 (<b>+${fmt(RTSH.yoy_pct, 1)}%</b>), with <b>${money(RTSH.stock_m * 1e6)}</b> of stock at cost on 30 June: sales to stock <b>${fmt(RTSH.sales_to_stock, 1)}</b>. ${fmt(LOC)} locations, ${fmt(EMP)} employees. ${lab("src", "Source · Stats NZ RTS and business demography, computed")}`; }
+function benchLine() { $("benchline").innerHTML = `Hardware, building and garden supplies sold <b>${money(RTSH.sales_m * 1e6)}</b> in the year to ${esc(RTSH.ye)} (<b>${RTSH.yoy_pct >= 0 ? "+" : ""}${fmt(RTSH.yoy_pct, 1)}%</b>), with <b>${money(RTSH.stock_m * 1e6)}</b> of stock at cost at the end of ${esc(RTSH.ye)}: sales to stock <b>${fmt(RTSH.sales_to_stock, 1)}</b>. ${fmt(LOC)} locations, ${fmt(EMP)} employees. ${RTSH.live ? lab("live", `Latest published · ${RTSH.quarter} · Stats NZ RTS and business demography, computed`) : lab("src", `Source · Stats NZ RTS (${RTSH.quarter}, snapshot) and business demography, computed`)}`; }
 
 // ---------------- 01 the year
 const ml = j => K.MSHORT[K.calMonth(j)], yr = j => j < 6 ? 2025 : 2026;
@@ -1427,7 +1429,7 @@ function yearPanel() { const y = Y, Yd = fromYour(), segPerEmp = RTSH.sales_m * 
   const brk = y.mon[5]; $("salesText").innerHTML = `<b>${money(y.sales)}</b> a year, <b>${pct(y.tradeShare)}</b> of it trade. Card spend on durables was 1.6 times higher in December 2025 than in February 2026 across New Zealand (Source, ECT); this store is flatter because trade falls away over the builders' break, so December sales are ${money(brk.sales)} against ${money(y.mon[pk].sales)} in ${K.MONTHS[K.calMonth(pk)]} (Estimate).`;
   // against the segment: dumbbell-free rows with a Source tick
   const splE = y.sales / y.heads, rows = [
-    { label: "Sales to stock", sub: "sales at retail ÷ stock at cost", value: y.salesToStock, tick: RTSH.sales_to_stock, text: `${fmt(y.salesToStock, 1)}<small>segment ${fmt(RTSH.sales_to_stock, 1)}</small>`, tip: `${fmt(y.salesToStock, 2)} this store\nsegment ${fmt(RTSH.sales_to_stock, 1)} (Source, computed). A turns proxy, not COGS-based turns`, tickTip: `Segment ${fmt(RTSH.sales_to_stock, 1)}\nRTS hardware, YE Jun 2026`, hi: 12 },
+    { label: "Sales to stock", sub: "sales at retail ÷ stock at cost", value: y.salesToStock, tick: RTSH.sales_to_stock, text: `${fmt(y.salesToStock, 1)}<small>segment ${fmt(RTSH.sales_to_stock, 1)}</small>`, tip: `${fmt(y.salesToStock, 2)} this store\nsegment ${fmt(RTSH.sales_to_stock, 1)} (Source, computed). A turns proxy, not COGS-based turns`, tickTip: `Segment ${fmt(RTSH.sales_to_stock, 1)}\nRTS hardware, year to ${RTSH.ye}${RTSH.live ? " (latest published)" : " (snapshot)"}`, hi: 12 },
     { label: "Sales per employee", sub: "a year", value: splE, tick: segPerEmp, text: `${money(splE)}<small>segment ${money(segPerEmp)}</small>`, tip: `${money(splE)} per head here (${fmt(y.heads, 1)} heads at 30 h a week)\nsegment ${money(segPerEmp)}: RTS sales ÷ business-demography employees (Source, computed; head counts are rounded and include part-time)`, tickTip: `Segment ${money(segPerEmp)} a year per employee`, hi: 700000 },
     { label: "Sales per location", sub: "this store against the average", value: y.sales, tick: segPerLoc, text: `${money(y.sales)}<small>average ${money(segPerLoc)}</small>`, tip: `${money(y.sales)} this store\nsegment average ${money(segPerLoc)} across ${fmt(LOC)} locations, most of them far smaller than a big box (Source, computed)`, tickTip: `Segment average ${money(segPerLoc)} per location`, hi: 35e6 },
     { label: "Labour, share of sales", sub: "wages and on-costs", value: y.labour / y.sales, text: `${pct(y.labour / y.sales, 1)}<small>no NZ segment figure</small>`, tip: `${pct(y.labour / y.sales, 1)} of sales\n${fmt(y.hours)} hours at $${fmt(S.wage, 2)} with 10% on-costs (Estimate); no free NZ benchmark found`, hi: .2, color: "var(--vz-est)" },
@@ -1576,7 +1578,7 @@ function aiTable() { const R = [
 
 // ---------------- 07 sources
 function srcTable() { const f = k => F[k], u = k => F[k].source_url, SRC = [
-  ["Hardware, building and garden supplies: sales, stock, sales to stock", `${money(RTSH.sales_m * 1e6)} sales YE Jun 2026 (+${RTSH.yoy_pct}%), ${money(RTSH.stock_m * 1e6)} stock at 30 Jun 2026, ratio ${RTSH.sales_to_stock}`, "src", "Source (computed)", "Stats NZ Retail Trade Survey, June 2026 quarter, series RTTQ.SFH1CA; sales at retail over stock at cost", u("rts_hardware")],
+  ["Hardware, building and garden supplies: sales, stock, sales to stock", `${money(RTSH.sales_m * 1e6)} sales in the year to ${RTSH.ye} (${RTSH.yoy_pct >= 0 ? "+" : ""}${fmt(RTSH.yoy_pct, 1)}%), ${money(RTSH.stock_m * 1e6)} stock at the end of ${RTSH.ye}, ratio ${fmt(RTSH.sales_to_stock, 1)}`, RTSH.live ? "live" : "src", RTSH.live ? `Latest published · ${RTSH.quarter}` : "Source (computed)", `Stats NZ Retail Trade Survey, ${RTSH.quarter}, series RTTQ.SFH1CA; sales at retail over stock at cost${RTSH.live ? "; fetched by the lab's rts feed" : "; snapshot"}`, RTSH.url],
   ["Other store segments for comparison", `Pharmaceutical and other $${fmt(F.rts_pharma.value.sales_m / 1000, 2)}b (+${F.rts_pharma.value.yoy_pct}%, ratio ${F.rts_pharma.value.sales_to_stock}); department stores $${fmt(F.rts_dept.value.sales_m / 1000, 2)}b; all industries ratio ${F.rts_all.value.sales_to_stock}`, "src", "Source (computed)", "Stats NZ Retail Trade Survey", u("rts_all")],
   ["Hardware locations and employees", `${fmt(LOC)} locations, ${fmt(EMP)} employees (ANZSIC G423, Feb 2025)`, "src", "Source (computed)", "Stats NZ business demography, geographic units; employee counts rounded", u("geo_G423_units")],
   ["Durables seasonality", `Card spend on durables ${F.ect_durables_seasonality.value}× higher in Dec 2025 than Feb 2026`, "src", "Source (computed)", "Stats NZ electronic card transactions, September 2026", u("ect_durables_seasonality")],
@@ -1661,11 +1663,16 @@ function wxChip(cls, text) { $("wxChip").className = "wxchip " + cls; $("wxText"
 function feedTiles() { const d = LIVE.diesel != null, w = LIVE.weather;
   $("feedTiles").innerHTML = `<div><span class="v">${fmt(d ? LIVE.diesel : SNAP.fuel.diesel, 1)} c/L</span><span class="l">diesel, national adjusted retail · feeds the trade return-trip cost</span>${lab(d ? "live" : "src", d ? `Latest published · ${LIVE.dieselAsOf} · MBIE` : `Source · snapshot, ${SNAP.fuel.period}`)}</div>` +
     `<div><span class="v">${w ? `${fmt(w.tempC)}°, ${w.rainMm > 0.1 ? "raining" : "dry"}` : "–"}</span><span class="l">${w ? `${esc(w.place)} now · the simulated year keeps its own ten wet weekends` : "weather now · waiting for the feeds layer"}</span>${lab(w ? "live" : "", w ? "Live · Open-Meteo" : "not connected")}</div>` +
-    `<div><span class="v">${fmt(RTSH.sales_to_stock, 1)}</span><span class="l">RTS hardware sales to stock, YE Jun 2026 · quarterly, snapshot</span>${lab("src", "Source · Stats NZ, next release 23 Nov 2026")}</div>`;
-  $("feedState").className = "lab " + (d || w ? "live" : ""); $("feedState").textContent = d || w ? "connected" : "snapshot"; }
+    `<div><span class="v">${fmt(RTSH.sales_to_stock, 1)}</span><span class="l">RTS hardware sales to stock, year to ${esc(RTSH.ye)} · quarterly${RTSH.live ? "" : ", snapshot"}</span>${rtsLab()}</div>`;
+  $("feedState").className = "lab " + (d || w || RTSH.live ? "live" : ""); $("feedState").textContent = d || w || RTSH.live ? "connected" : "snapshot"; }
 function onFeeds(j) { if (!j || typeof j !== "object") return; const F2 = j.feeds || {};
   const fuel = F2.fuel && !F2.fuel.error ? F2.fuel : null; if (fuel) { const v = fuel.values && fuel.values.diesel && fuel.values.diesel.retail != null ? fuel.values.diesel.retail : null; if (v != null && isFinite(v)) { LIVE.diesel = +v; LIVE.dieselAsOf = fuel.period || fuel.asOf || ""; } }
   const wx = F2.weather && !F2.weather.error ? F2.weather.values : (j.weather && j.weather.tempC != null ? j.weather : null); if (wx && wx.tempC != null) LIVE.weather = { tempC: wx.tempC, rainMm: wx.rainMm ?? 0, place: wx.place || "" };
+  // Retail Trade Survey: the hardware segment's latest quarter replaces the snapshot benchmark (the simulated store keeps the stock calibration it was built with)
+  const rts = F2.rts && !F2.rts.error && F2.rts.values && F2.rts.values.hardware ? F2.rts : null;
+  if (rts) { const h = rts.values.hardware; if (isFinite(h.yearEndingSalesM) && isFinite(h.stockM) && h.salesToStock) {
+    Object.assign(RTSH, { sales_m: h.yearEndingSalesM, yoy_pct: h.yearEndingChangePct ?? RTSH.yoy_pct, stock_m: h.stockM, sales_to_stock: h.salesToStock, quarter: h.quarter, ye: h.quarter.replace(/ quarter$/, ""), live: true, url: rts.source.url, period: rts.period, fetchedAt: rts.fetchedAt });
+    LIVE.rts = { period: rts.period, quarterChangePct: h.quarterChangePct, salesSAM: h.salesSeasonallyAdjustedM }; benchLine(); if (Y) yearPanel(); } }
   const parts = []; if (LIVE.weather) parts.push(`${LIVE.weather.place.split(" ").slice(-1)[0]} ${fmt(LIVE.weather.tempC)}°`); if (LIVE.diesel != null) parts.push(`diesel ${fmt(LIVE.diesel, 1)} c/L`);
   if (parts.length) wxChip("live", parts.join(" · ") + " · live via the lab"); feedTiles(); if (Y) { frictionPanel(); srcTable(); } }
 addEventListener("assembl:feeds", e => onFeeds(e.detail)); addEventListener("assembl:live", e => onFeeds(e.detail));
