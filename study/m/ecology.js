@@ -133,7 +133,7 @@ const KUPU=[
  {mi:"raupapa kame",en:"food chain",ta:40170}];
 Object.entries({"habitat": ["nōhanga", "pūnaha hauropi"], "transect": ["momo", "taupori"], "soil": ["oneone"], "factors": ["urutau", "nōhanga"], "chain": ["raupapa kame", "rauropi"], "pyramid": ["raupapa kame", "taupori"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 // ---------- the 3D bench: the shingle beach as a cut-away diorama, plus an energy pyramid
-function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function ecology3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const TOP=.3,ZP=V3(15.5,0,0),HD=2.2;   // beach half-depth
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
   plinth(V3(0,0,0),19.4,6.4,PAL.case.mint);plinth(ZP,7.4,6.2,PAL.case.lavender);
@@ -261,7 +261,7 @@ function ecology3d(S){window.__S=S;const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new
       tape.visible=tr;walker.visible=tr&&k!=="soil";
       const moving=s.playing&&st.speed&&w<40;walker.position.set(X(w),SF(w)+(moving?Math.abs(Math.sin(t*9))*.05:0),0);walker.rotation.y=-.6;
       const qi=Math.min(8,Math.floor(w/5));
-      lQ.at(tmp.set(X(D[qi]),SF(D[qi])+.1,.55)).set(`Quadrat at ${D[qi]} m<b>${HEIGHT[qi]} cm tall</b><small>${COUNT[qi]} plants</small>`);
+      lQ.at(tmp.set(X(D[qi]),SF(D[qi])+.1,.55)).set(`Quadrat at ${D[qi]} m<b>${HEIGHT[qi]} cm tall</b><small>${COUNT[qi]} plant${COUNT[qi]===1?"":"s"}</small>`);
       lWalk.at(tmp.set(X(w),SF(w)+.9,0)).set(w>=40?"Walk done":"Walking the tape");
       // soil depths on the cut face
       [0,15,35].forEach((d,j)=>{const i=D.indexOf(d);lSoil[j].at(tmp.set(X(d),SF(d)-ST(d)/2,HD)).set(`Soil at ${d} m<b>${SOIL[i]} cm</b>`)});lCut.at(tmp.set(X(26),SF(26)-.4,HD));
