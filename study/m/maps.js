@@ -400,7 +400,356 @@ const KUPU=[
  {mi:"āwhata",en:"scale (of a map)",ta:15342},
  {mi:"teitei",en:"height, altitude",ta:7895}];
 Object.entries({"compass": ["raki", "tonga", "rāwhiti", "uru", "kāpehu"], "grid": ["mahere"], "scale": ["āwhata", "mahere"], "contour": ["teitei"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-API=StudyKit.mount({kupu:KUPU,
+// ---------- the 3D bench: Kōwhai Bay as a carved terrain model, a relief plate of Aotearoa with a globe, and a 3D climate graph.
+// Everything reads the same state (s) and the same height grid (G, gH), bearings, grid references and trail as the map and the challenges.
+function maps3d(S){const {THREE,mat}=S;const P3=S.PAL;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const ZM=V3(0,0,0),ZG=V3(13,0,0),ZC=V3(-13,0,0),TOP=.3;
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZM,9.4,6.6,P3.case.peach);plinth(ZG,10.6,7.4,P3.case.sky);plinth(ZC,11.4,4.6,P3.case.mint);
+  const glowM=(c,i=0)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),emissive:new THREE.Color(c),emissiveIntensity:i,roughness:.4});
+  const lineM=(c,o)=>new THREE.MeshBasicMaterial({color:new THREE.Color(c),transparent:true,opacity:o,depthWrite:false});
+  const bounce=t=>{const n=7.5625,d=2.75;if(t<1/d)return n*t*t;if(t<2/d)return n*(t-=1.5/d)*t+.75;if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;return n*(t-=2.625/d)*t+.984375};
+  // ---------------------------------------------------------------- the terrain: 1 unit = 1 km across, heights stretched ×4
+  const VS=.004,BASE=.4,EX=Math.round(VS*1000);
+  const hy=h=>h>0?h*VS:h*VS*3;
+  const ly=(X,Y)=>BASE+Math.max(0,hy(gH(X,Y)));                      // local height of the land, or the sea surface
+  const wx=X=>ZM.x+X-GW/2,wz=Y=>ZM.z+GH/2-Y;
+  const W=(X,Y,lift=0)=>V3(wx(X),TOP+ly(X,Y)+lift,wz(Y));
+  const L3=(X,Y,lift=0)=>V3(X-GW/2,ly(X,Y)+lift,GH/2-Y);                // inside the terrain group
+  const toKm3=p=>({X:S.clamp(p.x-ZM.x+GW/2,.02,GW-.02),Y:S.clamp(GH/2-(p.z-ZM.z),.02,GH-.02)});
+  const terr=S.group();terr.position.set(ZM.x,TOP,ZM.z);
+  const tg=new THREE.PlaneGeometry(GW,GH,NX,NY);tg.rotateX(-Math.PI/2);
+  const tp=tg.attributes.position,tcol=new Float32Array(tp.count*3),c3=new THREE.Color();
+  const ramp=[[-30,"#9CCADD"],[0,"#CFE6EE"],[.3,"#F4E3B8"],[10,"#EEF3D8"],[60,"#E0EDC9"],[150,"#CFE5C0"],[250,"#E6E2BF"],[340,"#F0D9C4"],[440,"#EFC9D6"]].map(([h,c])=>[h,new THREE.Color(c)]);
+  const rampC=h=>{if(h<=ramp[0][0])return c3.copy(ramp[0][1]);for(let i=1;i<ramp.length;i++)if(h<=ramp[i][0]){const t=(h-ramp[i-1][0])/(ramp[i][0]-ramp[i-1][0]);return c3.copy(ramp[i-1][1]).lerp(ramp[i][1],t)}return c3.copy(ramp[ramp.length-1][1])};
+  for(let k=0;k<tp.count;k++){const X=tp.getX(k)+GW/2,Y=GH/2-tp.getZ(k);const i=Math.round(X/GS),j=Math.round(Y/GS);const h=G[j][i];tp.setY(k,BASE+hy(h));rampC(h);tcol[k*3]=c3.r;tcol[k*3+1]=c3.g;tcol[k*3+2]=c3.b}
+  tg.setAttribute("color",new THREE.BufferAttribute(tcol,3));tg.computeVertexNormals();
+  const terrain=S.mesh(tg,new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.78,clearcoat:.12,clearcoatRoughness:.5}));terr.add(terrain);
+  // the cut sides of the model, in soft layered strata
+  const strata=[new THREE.Color("#E9C6A9"),new THREE.Color("#F4DCC6")];
+  function skirt(ij){const n=ij.length,R=8,pos=new Float32Array(n*(R+1)*3),col=new Float32Array(n*(R+1)*3),idx=[];
+    ij.forEach(([i,j],a)=>{const top=BASE+hy(G[j][i]),x=i*GS-GW/2,z=GH/2-j*GS;for(let r=0;r<=R;r++){const y=top*r/R,k=(a*(R+1)+r)*3;pos[k]=x;pos[k+1]=y;pos[k+2]=z;const c=strata[Math.floor(y/.13)%2];col[k]=c.r;col[k+1]=c.g;col[k+2]=c.b}});
+    for(let a=0;a<n-1;a++)for(let r=0;r<R;r++){const p=a*(R+1)+r,q=(a+1)*(R+1)+r;idx.push(p,q,p+1,q,q+1,p+1)}
+    const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
+    terr.add(S.mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,side:THREE.DoubleSide})))}
+  skirt(Array.from({length:NX+1},(_,i)=>[i,0]));skirt(Array.from({length:NX+1},(_,i)=>[i,NY]));
+  skirt(Array.from({length:NY+1},(_,j)=>[0,j]));skirt(Array.from({length:NY+1},(_,j)=>[NX,j]));
+  const sea=S.box(GW-.02,BASE-.006,GH-.02,mat("liquid","#8CC6DE",{opacity:.5,depthWrite:false}),{at:[0,(BASE-.006)/2,0],cast:false});sea.renderOrder=2;terr.add(sea);
+  // a path laid on the land (or on the sea surface), as points in the terrain group
+  const drape=(P,lift,step=.04)=>{const o=[];for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(L/step));
+      for(let k=0;k<n;k++){const t=k/n;o.push(L3(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,lift))}}const z=P[P.length-1];o.push(L3(z[0],z[1],lift));return o};
+  // contours: every 50 m, as rings at their true (stretched) height; index contours thicker. They glow level by level on the contour step.
+  const contLv=CONT.map(c=>{const idx=c.L%100===0,m=glowM("#B9876D",0);const g=S.group(terr);
+    c.ch.forEach(ch=>{if(ch.length<3)return;const pts=ch.map(p=>V3(p[0]-GW/2,BASE+c.L*VS+.007,GH/2-p[1]));g.add(S.tube(pts,idx?.014:.008,m,{seg:Math.min(700,pts.length*2),rs:5,cast:false}))});return {L:c.L,m,idx}});
+  // stream, roads, the grid
+  terr.add(S.tube(drape(RIV,.014),.03,mat("plastic",RIVER,{rough:.2}),{seg:300,rs:8,cast:false}));
+  [RD,RDM].forEach((P,i)=>terr.add(S.tube(drape(P,.016),i?.017:.024,mat("plastic",ROAD,{rough:.4}),{seg:300,rs:8,cast:false})));
+  const gridM=lineM(P3.ink,.22);
+  for(let i=0;i<=GW;i++)terr.add(S.tube(drape([[i,0],[i,GH]],.016,.05),.007,gridM,{seg:200,rs:4,cast:false}));
+  for(let j=0;j<=GH;j++)terr.add(S.tube(drape([[0,j],[GW,j]],.016,.05),.007,gridM,{seg:300,rs:4,cast:false}));
+  // bush and the town: instanced
+  let sd=11;const rr=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  {const n=360,trees=S.swarm(n,new THREE.ConeGeometry(.045,.15,7),mat("plastic","#ffffff",{rough:.6,coat:.1}),{colors:true,cast:true});let i=0,guard=0;const tc=["#9CCB8E","#86BF8A","#B3D6A0","#7FB89A"];
+    while(i<n&&guard++<20000){const X=.1+rr()*6.3,Y=.1+rr()*4.8,h=gH(X,Y);if(h<140||xc(Y)-X<.4||dRiver(X,Y)<.12||Math.hypot(X-SUM[0],Y-SUM[1])<.3)continue;
+      let near=false;for(let k=0;k<TR.length;k+=3)if(Math.hypot(TR[k][0]-X,TR[k][1]-Y)<.1){near=true;break}if(near)continue;
+      const sc=.7+rr()*.7;trees.putS(i,wx(X),TOP+ly(X,Y)+.07*sc-.01,wz(Y),sc,sc,sc);trees.tint(i,tc[i%4]);i++}
+    for(;i<n;i++)trees.put(i,0,-9,0,0);trees.done();S.scene.add(trees)}
+  {const n=110,houses=S.swarm(n,new S.RoundedBoxGeometry(1,1,1,2,.15),mat("plastic","#ffffff",{rough:.45}),{colors:true,cast:true});const hc=["#FFFFFF",P3.case.peach,P3.case.blush,"#E9EEF6",P3.case.butter];let i=0,guard=0;
+    while(i<n&&guard++<20000){const X=4.82+rr()*1.06,Y=.7+rr()*.9;if(X>xc(Y)-.1||dRiver(X,Y)<.1||Math.hypot((X-5.35)/.55,(Y-1.12)/.42)>1)continue;let bad=false;
+      for(const p of RD)if(Math.hypot(p[0]-X,p[1]-Y)<.06){bad=true;break}for(const p of TR)if(Math.hypot(p[0]-X,p[1]-Y)<.07){bad=true;break}if(bad)continue;
+      const hh=.04+rr()*.04;const q=new THREE.Quaternion().setFromAxisAngle(V3(0,1,0),rr()*.5);houses.putS(i,wx(X),TOP+ly(X,Y)+hh/2,wz(Y),.07,hh,.06,q);houses.tint(i,hc[i%5]);i++}
+    for(;i<n;i++)houses.put(i,0,-9,0,0);houses.done();S.scene.add(houses)}
+  // landmarks you can tap (on the compass step a tap makes it the place you head to)
+  const feat={};
+  const mkFeat=(k,build)=>{const g=S.group();const p=W(F[k].X,F[k].Y);g.position.copy(p);build(g);feat[k]=g;return g};
+  mkFeat("marae",g=>{g.add(S.rbox(.2,.1,.14,.02,mat("plastic","#ffffff",{rough:.4}),{at:[0,.05,0]}));const roof=S.mesh(new THREE.CylinderGeometry(.09,.09,.17,3),mat("plastic",PINK,{rough:.35}),{rot:[-Math.PI/2,0,0]});roof.scale.set(1.35,1,.55);roof.position.set(0,.13,0);roof.rotation.z=Math.PI/2;g.add(roof);g.rotation.y=.4});
+  mkFeat("lookout",g=>{g.add(S.cyl(0,.06,.16,mat("plastic","#ffffff",{rough:.3}),{at:[0,.08,0],seg:4}));g.add(S.sphere(.03,mat("plastic",P3.ink),{at:[0,.17,0]}))});
+  mkFeat("bridge",g=>{g.add(S.rbox(.24,.03,.07,.01,mat("plastic",P3.ink,{rough:.4}),{at:[0,.04,0]}));g.rotation.y=-.4});
+  mkFeat("town",g=>{g.add(S.cyl(.035,.035,.18,mat("plastic","#ffffff"),{at:[0,.09,0],seg:12}));g.add(S.cyl(0,.05,.07,mat("plastic",PINK),{at:[0,.21,0],seg:12}))});
+  mkFeat("fishing",g=>{const rm=mat("plastic","#A79BA6",{rough:.7,coat:.1});g.add(S.sphere(.07,rm,{at:[-.05,.02,.04]}));g.add(S.sphere(.055,rm,{at:[.06,.02,.05]}));g.add(S.sphere(.045,rm,{at:[.01,.02,-.06]}))});
+  // the car park at the start of the trail
+  const carP=S.cyl(.09,.09,.03,mat("plastic",P3.product.blueberry,{rough:.4}),{seg:24});carP.position.copy(W(TR[0][0],TR[0][1],.015));S.scene.add(carP);
+  // the trail as a string of beads (the ridden part lights up on the scale step)
+  const NB=Math.ceil(TRL/.05),beads=S.swarm(NB,new THREE.SphereGeometry(.022,10,8),mat("plastic","#ffffff",{rough:.3}),{colors:true});S.scene.add(beads);
+  const beadP=[];for(let i=0;i<NB;i++){const a=trailAt(i*TRL/(NB-1));beadP.push(W(a[0],a[1],.02))}
+  // a north arrow and a scale bar on the plinth
+  const nA=S.group();nA.position.set(ZM.x-GW/2-.25,TOP,ZM.z-GH/2+.1);nA.add(S.cyl(.12,.12,.04,mat("plastic","#ffffff"),{at:[0,.02,0],seg:32}));
+  const nArrow=S.mesh(new THREE.ConeGeometry(.08,.34,4),mat("plastic",PINK,{rough:.3}),{rot:[-Math.PI/2,0,0]});nArrow.scale.set(1,1,.35);nArrow.position.set(0,.06,-.05);nA.add(nArrow);
+  const sbar=S.group();sbar.position.set(ZM.x-GW/2,TOP,ZM.z+GH/2+.38);
+  for(let k=0;k<4;k++)sbar.add(S.box(.5,.05,.09,mat("plastic",k%2?"#ffffff":P3.ink,{rough:.4}),{at:[k*.5+.25,.025,0]}));
+  const lN=S.label({off:[0,-30],lead:false}).set("N"),lS0=S.label({off:[0,22],lead:false}).set("0"),lS1=S.label({off:[0,22],lead:false}).set("1 km"),lS2=S.label({off:[0,22],lead:false}).set("2 km<small>scale 1:25 000</small>");
+
+  // ---------------------------------------------------------------- the pin (grid step, and "my pin" on the compass step)
+  const pinG=S.group();const pinM=mat("plastic",PINK,{rough:.3});
+  pinG.add(S.sphere(.11,pinM,{at:[0,.38,0]}));const tip=S.mesh(new THREE.ConeGeometry(.055,.3,16),pinM,{rot:[Math.PI,0,0]});tip.position.y=.17;pinG.add(tip);
+  pinG.add(S.sphere(.04,mat("plastic","#ffffff"),{at:[0,.4,.09]}));
+  const pinShadow=S.mesh(new THREE.CircleGeometry(.1,24),new THREE.MeshBasicMaterial({color:P3.shadow,transparent:true,opacity:.25,depthWrite:false}),{rot:[-Math.PI/2,0,0],cast:false});S.scene.add(pinShadow);
+
+  // ---------------------------------------------------------------- compass step: a real compass on the "from" place, needle swinging to the target
+  const comp=S.group();
+  comp.scale.setScalar(1.25);comp.add(S.cyl(.6,.62,.07,mat("plastic","#ffffff",{rough:.4}),{at:[0,0,0],seg:64}));
+  comp.add(S.torus(.6,.045,mat("metal",P3.steel,{rough:.22}),{at:[0,.04,0],rot:[Math.PI/2,0,0],ts:96}));
+  const face=S.panel(512,512,1.12);face.rotation.x=-Math.PI/2;face.position.y=.042;comp.add(face);
+  const lens=S.cyl(.56,.56,.04,mat("glass","#ffffff",{opacity:.12}),{at:[0,.13,0],seg:64,cast:false});lens.renderOrder=6;comp.add(lens);
+  const needle=S.group(comp);needle.position.y=.08;
+  const nN=S.mesh(new THREE.ConeGeometry(.06,.46,4),mat("plastic",PINK,{rough:.3}),{rot:[-Math.PI/2,0,0]});nN.scale.set(1,1,.4);nN.position.z=-.23;needle.add(nN);
+  const nS=S.mesh(new THREE.ConeGeometry(.06,.38,4),mat("plastic","#CFC3C8",{rough:.3}),{rot:[Math.PI/2,0,0]});nS.scale.set(1,1,.4);nS.position.z=.19;needle.add(nS);
+  needle.add(S.sphere(.045,mat("metal",P3.steel)));
+  const stem=S.cyl(.02,.02,1,mat("metal",P3.steelDark),{seg:10});S.scene.add(stem);
+  const dash=S.swarm(80,new THREE.SphereGeometry(.022,8,6),mat("plastic",P3.ink,{rough:.4}));S.scene.add(dash);
+  const ring=S.torus(.17,.025,glowM(PINK,1.4),{rot:[Math.PI/2,0,0],cast:false});S.scene.add(ring);
+  let faceKey="";
+  function drawFace(B,nd){face.redraw((g,w,h)=>{const cx=w/2,cy=h/2,r=w/2-6;g.fillStyle="#fff";g.beginPath();g.arc(cx,cy,r,0,7);g.fill();
+    if(B!=null){g.strokeStyle="rgba(79,168,138,.7)";g.lineWidth=30;g.beginPath();g.arc(cx,cy,r*.5,-Math.PI/2,-Math.PI/2+nd*Math.PI/180,false);g.stroke()}
+    g.strokeStyle="#262E5C";for(let i=0;i<72;i++){const a=i*Math.PI/36,L=i%18===0?30:i%9===0?22:i%2===0?13:7;g.lineWidth=i%9===0?4:2;g.beginPath();g.moveTo(cx+Math.sin(a)*(r-4),cy-Math.cos(a)*(r-4));g.lineTo(cx+Math.sin(a)*(r-4-L),cy-Math.cos(a)*(r-4-L));g.stroke()}
+    g.textAlign="center";g.textBaseline="middle";
+    P8s.forEach((n,i)=>{const a=i*Math.PI/4,hi=B!=null&&Math.round(B/45)%8===i,x=cx+Math.sin(a)*r*.7,y=cy-Math.cos(a)*r*.7;
+      if(hi){g.fillStyle=PINK;g.beginPath();g.arc(x,y,i%2?34:42,0,7);g.fill()}g.fillStyle=hi?"#fff":i===0?PINK:"#262E5C";g.font=`700 ${i%2?34:52}px Instrument Sans, system-ui`;g.fillText(n,x,y+2)})})}
+  const lFrom=S.label({off:[-26,26]}),lTo=S.label({off:[24,-26]}),lBear=S.label({cls:"hot big",off:[30,-46]});
+
+  // ---------------------------------------------------------------- grid step: the square lights up, tenths ticks, dashed lines to the left and bottom edges
+  const gridG=S.group();
+  const col=S.box(1,1.1,1,mat("acrylic",P3.product.butter,{opacity:.16}),{cast:false});col.renderOrder=3;gridG.add(col);
+  const sqM=glowM(P3.product.butter,1.3);let sqTube=null,sqKey="";
+  const ticks=S.swarm(18,new THREE.BoxGeometry(1,1,1),mat("plastic",P3.ink,{rough:.4}));S.scene.add(ticks);
+  const gdash=S.swarm(60,new THREE.SphereGeometry(.018,8,6),mat("plastic",P3.ink,{rough:.4}));S.scene.add(gdash);
+  const eLab=Array.from({length:GW},(_,i)=>S.label({off:[0,24],lead:false}).set(String(20+i)));
+  const nLab=Array.from({length:GH},(_,j)=>S.label({off:[-22,0],lead:false}).set(String(40+j)));
+  const lGrid=S.label({cls:"hot big",off:[28,-40]});
+
+  // ---------------------------------------------------------------- scale step: a rider on the trail, a straight steel ruler from the car park, the string of beads
+  const rider=S.group();const ink=mat("plastic",P3.ink,{rough:.35});
+  for(const x of [-.07,.07])rider.add(S.torus(.045,.012,ink,{at:[x,.045,0],ts:24}));
+  rider.add(S.tube([[-.07,.045,0],[-.01,.1,0],[.07,.045,0]],.009,mat("metal",P3.steel),{seg:12,rs:6}));
+  const rBody=S.mesh(new THREE.CapsuleGeometry(.03,.06,4,10),mat("plastic",PINK,{rough:.35}));rBody.position.set(-.005,.15,0);rBody.rotation.z=-.5;rider.add(rBody);
+  rider.add(S.sphere(.032,mat("plastic","#ffffff",{rough:.2}),{at:[.02,.21,0],seg:16}));
+  const visor=S.sphere(.033,mat("plastic",P3.ink,{rough:.15}),{seg:16});visor.scale.set(1,.5,1);visor.position.set(.03,.205,0);rider.add(visor);
+  rider.scale.setScalar(2.6);S.scene.add(rider);
+  const ruler=S.rbox(1,.025,.08,.01,mat("metal",P3.steel,{rough:.2}));S.scene.add(ruler);
+  const lRide=S.label({cls:"hot big",off:[26,-40]}),lP=S.label({off:[-24,20]}).set("P<small>car park</small>"),lDragR=S.label({cls:"hot",off:[20,26]}).set("Drag the rider");
+
+  // ---------------------------------------------------------------- contour step: A and B handles you can drag, a knife along the line, and the slice lifted out in front
+  const hA=S.group(),hB=S.group();
+  [[hA,P3.product.lime],[hB,P3.product.strawberry]].forEach(([g,c])=>{g.add(S.cyl(.016,.016,.42,mat("metal",P3.steel),{at:[0,.21,0],seg:8}));g.add(S.sphere(.13,mat("plastic",c,{rough:.3}),{at:[0,.5,0]}));S.scene.add(g)});
+  const knife=S.mesh(new THREE.PlaneGeometry(1,1),mat("glass","#ffffff",{opacity:.16}),{cast:false});knife.renderOrder=6;S.scene.add(knife);
+  const cut=S.swarm(90,new THREE.SphereGeometry(.024,8,6),mat("plastic",P3.ink,{rough:.4}));S.scene.add(cut);
+  const pen=S.sphere(.07,mat("plastic",P3.product.butter,{rough:.3}));S.scene.add(pen);
+  const sliceZ=ZM.z+GH/2+1.75,VSS=.006;const sliceG=S.group();sliceG.position.set(ZM.x,0,sliceZ);
+  const slicePl=S.rbox(7.6,.3,1.2,.12,mat("plastic",P3.case.mint,{rough:.55,coat:.2}),{at:[0,.15,0]});sliceG.add(slicePl);
+  const sliceM=mat("plastic","#BFE3A0",{rough:.5});let sliceMesh=null,sliceKey="";
+  const steepM=glowM(PINK,1.3);let steepTube=null;
+  const streams=S.swarm(6,new THREE.SphereGeometry(.06,12,10),mat("plastic",RIVER,{rough:.2}));sliceG.add(streams);
+  const lA=S.label({off:[-24,-30]}),lB=S.label({off:[24,-30]}),lSteep=S.label({off:[26,-34]}),lSlice=S.label({off:[0,30],lead:false}),lDragAB=S.label({cls:"hot",off:[26,26]}).set("Drag A or B");
+  const lSA=S.label({off:[-16,-22],lead:false}).set("A"),lSB=S.label({off:[16,-22],lead:false}).set("B"),lStream=S.label({off:[0,26]}).set("Stream");
+  const putAB=(n,p)=>{const k=toKm3(p);s[n]=k;s.sec="custom";s.secP=1};
+  S.dragger(hA.children[1],{normal:V3(0,1,0),move:p=>putAB("A",p),end:()=>{tick()}});
+  S.dragger(hB.children[1],{normal:V3(0,1,0),move:p=>putAB("B",p),end:()=>{tick()}});
+  S.dragger(rider,{normal:V3(0,1,0),move:p=>{const k=toKm3(p);let bi=0,bd=1e9;TR.forEach((q,i)=>{const dd=Math.hypot(q[0]-k.X,q[1]-k.Y);if(dd<bd){bd=dd;bi=i}});s.trail=TRcum[bi];s.playing=false}});
+
+  // taps on the land do what a tap on the paper map does
+  const tapMap=(X,Y,key)=>{const v=viewNow();
+    if(v==="scale"){let bi=0,bd=1e9;TR.forEach((q,i)=>{const dd=Math.hypot(q[0]-X,q[1]-Y);if(dd<bd){bd=dd;bi=i}});if(bd<.4){s.trail=TRcum[bi];s.playing=false}return}
+    if(v==="contour"){const n=Math.hypot(s.A.X-X,s.A.Y-Y)<Math.hypot(s.B.X-X,s.B.Y-Y)?"A":"B";s[n]={X,Y};s.sec="custom";s.secP=1;return}
+    if(v==="compass"&&key&&key!==s.from){s.to=key;s.view="compass";sfx("whoosh");kick();return}
+    if(v!=="compass"&&v!=="grid")return;dropPin(X,Y);s.view=v};
+  S.pick(terrain,h=>{const k=toKm3(h.point);tapMap(k.X,k.Y)});
+  Object.entries(feat).forEach(([k,g])=>S.pick(g,h=>{const q=toKm3(h.point);tapMap(q.X,q.Y,k)}));
+
+  // ---------------------------------------------------------------- Aotearoa: a relief plate with a crosshair, and a globe
+  const DG=.4,NZC=[172.5,40.8],plateX=ZG.x+1.9;
+  const nx=lon=>plateX+(lon-NZC[0])*DG,nz=lat=>ZG.z+(lat-NZC[1])*DG;
+  const pW=(179-166)*DG+.3,pD=(47.6-34)*DG+.3;
+  const plate=S.rbox(pW,.1,pD,.04,mat("plastic","#BFE1EC",{rough:.4}),{at:[nx(172.5),TOP+.05,(nz(34)+nz(47.6))/2]});S.scene.add(plate);
+  const isl=P=>{const sh=new THREE.Shape();cr(P.concat([P[0]]),6).forEach((p,i)=>{const x=(p[0]-NZC[0])*DG,y=-(p[1]-NZC[1])*DG;i?sh.lineTo(x,y):sh.moveTo(x,y)});
+    const g=new THREE.ExtrudeGeometry(sh,{depth:.1,bevelEnabled:true,bevelThickness:.02,bevelSize:.02,bevelSegments:2,curveSegments:4});g.rotateX(-Math.PI/2);
+    const m=S.mesh(g,mat("plastic","#D7EAC2",{rough:.5}));m.position.set(plateX,TOP+.1,ZG.z);S.scene.add(m);return m};
+  isl(NI);isl(SI);isl(RK);
+  {const n=14+14,gl=S.swarm(n,new THREE.BoxGeometry(1,1,1),mat("plastic","#ffffff",{rough:.5}));let i=0;
+    for(let la=34;la<=47;la++)gl.putS(i++,nx(172.5),TOP+.105,nz(la),pW-.3,.006,la%2?.008:.016);
+    for(let lo=166;lo<=179;lo++)gl.putS(i++,nx(lo),TOP+.105,(nz(34)+nz(47.6))/2,lo%2?.008:.016,.006,pD-.3);gl.done();S.scene.add(gl)}
+  const latLab=[36,38,40,42,44,46].map(la=>({la,l:S.label({off:[-20,0],lead:false}).set(la+"°S")})),lonLab=[168,170,172,174,176,178].map(lo=>({lo,l:S.label({off:[0,22],lead:false}).set(lo+"°E")}));
+  const latBar=S.box(pW-.3,.035,.035,glowM(PINK,1.2),{cast:false});S.scene.add(latBar);
+  const lonBar=S.box(.035,.035,pD-.3,glowM(LILAC,1.2),{cast:false});S.scene.add(lonBar);
+  const latKnob=S.rbox(.12,.16,.3,.04,mat("plastic",PINK,{rough:.3}));S.scene.add(latKnob);
+  const lonKnob=S.rbox(.3,.16,.12,.04,mat("plastic",LILAC,{rough:.3}));S.scene.add(lonKnob);
+  const cPin=S.group();const cpM=mat("plastic",SUN,{rough:.3});cPin.add(S.sphere(.11,cpM,{at:[0,.38,0]}));const ct=S.mesh(new THREE.ConeGeometry(.05,.3,16),cpM,{rot:[Math.PI,0,0]});ct.position.y=.17;cPin.add(ct);S.scene.add(cPin);
+  const cityLab={};Object.entries(CITIES).forEach(([k,c])=>{S.scene.add(S.cyl(.05,.05,.06,mat("plastic",P3.ink),{at:[nx(c.lon),TOP+.24,nz(c.lat)],seg:16}));
+    cityLab[k]=S.label({off:k==="wlg"?[24,-8]:k==="chc"?[-24,14]:[22,-12]}).set(`${c.n}<small>${c.e}</small>`)});
+  const setLL=p=>{s.lon=Math.round(S.clamp(NZC[0]+(p.x-plateX)/DG,166,179)*100)/100;s.lat=Math.round(S.clamp(NZC[1]+(p.z-ZG.z)/DG,34,47.5)*100)/100;s.cross0=null};
+  S.pick(plate,h=>{setLL(h.point);s.cpin=RM?1:0;sfx("whoosh");kick()});
+  S.dragger(cPin,{normal:V3(0,1,0),move:p=>{setLL(p);s.cpin=1}});
+  const lLL=S.label({cls:"hot big",off:[28,-50]}),lNear=S.label({off:[-26,40]});
+  // the globe: graticule every 30°, the equator (pink) and Greenwich (lilac), and rings that follow your latitude and longitude
+  const GR=1.05,globeC=V3(ZG.x-3.4,TOP+1.75,ZG.z+.5);
+  const gStand=S.group();gStand.position.set(globeC.x,TOP,globeC.z);gStand.add(S.cyl(.55,.62,.12,mat("plastic","#ffffff",{rough:.35}),{at:[0,.06,0],seg:48}));
+  gStand.add(S.cyl(.05,.07,globeC.y-TOP-GR,mat("metal",P3.steel),{at:[0,(globeC.y-TOP-GR)/2+.1,0],seg:16}));
+  gStand.add(S.torus(GR+.09,.025,mat("metal",P3.steel),{at:[0,globeC.y-TOP,0],arc:Math.PI*1.2,rot:[0,0,-Math.PI*.6+Math.PI/2]}));
+  const tiltG=S.group();tiltG.position.copy(globeC);tiltG.rotation.x=-.42;const spinG=S.group(tiltG);
+  const gc=document.createElement("canvas");gc.width=1024;gc.height=512;{const g=gc.getContext("2d");const X=l=>(l+180)/360*1024,Y=b=>(90-b)/180*512;
+    g.fillStyle="#A9D3EE";g.fillRect(0,0,1024,512);g.fillStyle="#F4F7FB";g.fillRect(0,Y(-68),1024,512);g.fillRect(0,0,1024,Y(80));
+    const LANDS=[[[113,-22],[115,-34],[123,-34],[132,-32],[138,-35],[146,-39],[150,-37.5],[153,-32],[153,-25],[146,-19],[142,-11],[141,-17],[136,-12],[129,-15],[122,-17]],
+      [[-80,9],[-77,1],[-81,-5],[-71,-18],[-71,-30],[-75,-52],[-68,-55],[-58,-38],[-40,-22],[-35,-8],[-50,0],[-60,10],[-72,12]],
+      [[-17,15],[-10,30],[-5,36],[10,37],[32,31],[43,12],[51,12],[40,-2],[35,-24],[27,-34],[20,-35],[12,-17],[9,4],[-8,4]],
+      [[-10,36],[-9,43],[2,51],[10,58],[16,69],[45,68],[100,77],[180,68],[163,58],[141,46],[122,30],[108,21],[100,3],[92,22],[80,15],[73,19],[58,25],[48,29],[56,22],[43,13],[34,28],[27,36],[13,45],[-1,37]],
+      [[-168,66],[-140,70],[-95,72],[-62,60],[-55,52],[-70,41],[-81,25],[-97,27],[-87,21],[-79,9],[-92,15],[-110,24],[-124,42],[-132,55],[-152,59]],[[-55,60],[-20,70],[-20,82],[-60,82],[-70,77]]];
+    g.fillStyle="#CFE8BE";LANDS.forEach(P=>{g.beginPath();P.forEach((p,i)=>g[i?"lineTo":"moveTo"](X(p[0]),Y(p[1])));g.closePath();g.fill()});
+    g.fillStyle="#86C38E";[NI,SI].forEach(P=>{g.beginPath();P.forEach((p,i)=>g[i?"lineTo":"moveTo"](X(p[0]),Y(-p[1])));g.closePath();g.fill()});
+    g.strokeStyle="rgba(255,255,255,.75)";g.lineWidth=1.5;for(let la=-60;la<=60;la+=30){g.beginPath();g.moveTo(0,Y(la));g.lineTo(1024,Y(la));g.stroke()}for(let lo=-180;lo<180;lo+=30){g.beginPath();g.moveTo(X(lo),0);g.lineTo(X(lo),512);g.stroke()}}
+  const gTex=new THREE.CanvasTexture(gc);gTex.colorSpace=THREE.SRGBColorSpace;gTex.anisotropy=8;
+  spinG.add(S.mesh(new THREE.SphereGeometry(GR,64,48),new THREE.MeshPhysicalMaterial({map:gTex,roughness:.45,clearcoat:.4}),{cast:true}));
+  const phiOf=L=>(L+180)/360*Math.PI*2,dirOf=(latS,L)=>{const b=-latS*Math.PI/180,f=phiOf(L);return V3(-Math.cos(f)*Math.cos(b),Math.sin(b),Math.sin(f)*Math.cos(b))};
+  const meridian=(L,c,t,i)=>{const g=S.group(spinG);g.rotation.y=Math.PI+phiOf(L);const m=S.torus(GR+.012,t,glowM(c,i),{arc:Math.PI,rot:[0,0,-Math.PI/2],cast:false,ts:64});g.add(m);return g};
+  spinG.add(S.torus(GR+.012,.016,glowM(PINK,.6),{rot:[Math.PI/2,0,0],cast:false,ts:96}));meridian(0,LILAC,.016,.6);
+  const latRing=S.torus(1,.011,glowM(PINK,1.4),{rot:[Math.PI/2,0,0],cast:false,ts:96});spinG.add(latRing);
+  const lonRing=meridian(174,LILAC,.011,1.4);
+  const gDot=S.sphere(.05,glowM(SUN,1.6),{cast:false});spinG.add(gDot);
+  const faceNZ=-Math.atan2(dirOf(41,174).x,dirOf(41,174).z);
+  const lEq=S.label({off:[-30,10]}).set("Equator 0°"),lGw=S.label({off:[30,-10]}).set("Greenwich 0°"),lGlobe=S.label({off:[0,-34],lead:false}).set("N");
+
+  // ---------------------------------------------------------------- climate: rain columns, the temperature line, a weather station whose rain gauge fills
+  const cg=S.group();cg.position.set(ZC.x-.9,TOP,ZC.z);
+  const CW=.5,RH=2.4/160,TH=2.4/25,CB=.12,CX=i=>(i-5.5)*CW;
+  const PWU=7.6,PHU=3.3,board=S.panel(1152,500,PWU);board.position.set(0,PHU/2,-.42);cg.add(board);
+  cg.add(S.rbox(PWU+.16,PHU+.16,.06,.05,mat("plastic","#ffffff",{rough:.35}),{at:[0,PHU/2,-.47]}));
+  cg.add(S.rbox(CW*12+.3,CB,.7,.05,mat("plastic","#ffffff",{rough:.4}),{at:[0,CB/2,0]}));
+  const boardY=y=>500-(y/PHU)*500,boardX=x=>(x/PWU+.5)*1152;
+  const paleM=mat("plastic","#C9DCF6",{rough:.35}),hotM=mat("plastic",P3.product.blueberry,{rough:.3});
+  const cols=RAIN.map((r,i)=>{const h=r*RH;const m=S.rbox(CW*.66,h,.34,.07,paleM,{at:[CX(i),CB+h/2,0]});cg.add(m);S.pick(m,()=>{s.month=i;s.view="climate";tick()});return m});
+  const tPts=TEMP.map((t,i)=>V3(CX(i),CB+t*TH,.3));cg.add(S.tube(tPts,.03,mat("plastic",PINK,{rough:.3}),{seg:120,rs:8,type:"catmullrom"}));
+  const tDots=S.swarm(12,new THREE.SphereGeometry(.07,16,12),mat("plastic","#ffffff",{rough:.3}),{colors:true});cg.add(tDots);
+  const seasons=[[P3.product.peach,-1,1.5],[P3.case.blush,1.5,4.5],[P3.product.blueberry,4.5,7.5],[P3.product.lime,7.5,10.5],[P3.product.peach,10.5,12]];
+  seasons.forEach(([c,a,b])=>{const xa=CX(Math.max(-.5,a)+.0)+(a<0?0:0),x0=Math.max(CX(-.5),CX(a)),x1=Math.min(CX(11.5),CX(b));cg.add(S.box(x1-x0-.04,.05,.08,mat("plastic",c,{rough:.4}),{at:[(x0+x1)/2,.03,1.02]}))});
+  let boardM=-1;
+  function drawBoard(m){board.redraw((g,w,h)=>{g.fillStyle="#FFFDFB";g.fillRect(0,0,w,h);const y0=boardY(CB);
+    g.font="600 22px Instrument Sans, system-ui";g.textBaseline="middle";
+    for(let r=0;r<=160;r+=40){const y=boardY(CB+r*RH);g.strokeStyle="rgba(38,46,92,.12)";g.lineWidth=2;g.beginPath();g.moveTo(boardX(CX(-.6)),y);g.lineTo(boardX(CX(11.6)),y);g.stroke();g.fillStyle="#3E7FA0";g.textAlign="right";g.fillText(r,boardX(CX(-.6))-10,y)}
+    for(let t=0;t<=25;t+=5){const y=boardY(CB+t*TH);g.fillStyle="#B4456F";g.textAlign="left";g.fillText(t,boardX(CX(11.6))+10,y)}
+    g.font="700 22px Instrument Sans, system-ui";g.fillStyle="#3E7FA0";g.textAlign="left";g.fillText("RAIN mm",14,24);g.fillStyle="#B4456F";g.textAlign="right";g.fillText("TEMP °C",w-14,24);
+    });
+    strip.redraw((g,w,h)=>{g.textAlign="center";g.textBaseline="middle";MON.forEach((n,i)=>{const x=boardX(CX(i));if(i===m){g.fillStyle="#3A6FB8";g.beginPath();g.roundRect(x-40,10,80,h-20,30);g.fill()}
+      g.fillStyle=i===m?"#fff":"#4A4F72";g.font=`${i===m?700:600} 34px Instrument Sans, system-ui`;g.fillText(n,x,h/2+2)})})}
+  const strip=S.panel(1152,90,PWU);strip.rotation.x=-Math.PI/2;strip.position.set(0,.012,.62);cg.add(strip);
+  const st3=S.group();st3.position.set(ZC.x+4.3,TOP,ZC.z-.2);
+  for(const x of [-.32,.32])for(const z of [-.22,.22])st3.add(S.cyl(.025,.025,1.25,mat("metal",P3.steel),{at:[x,.62,z],seg:10}));
+  st3.add(S.rbox(.86,.62,.62,.04,mat("plastic","#ffffff",{rough:.35}),{at:[0,1.55,0]}));
+  for(let k=0;k<4;k++)st3.add(S.box(.78,.03,.02,mat("plastic","#C9CEDB",{rough:.5}),{at:[0,1.36+k*.13,.32],rot:[-.5,0,0]}));
+  const sroof=S.mesh(new THREE.CylinderGeometry(.5,.5,.76,3),mat("plastic",P3.product.strawberry,{rough:.35}),{rot:[-Math.PI/2,0,0]});sroof.rotation.z=Math.PI/2;sroof.scale.set(1,1,.32);sroof.position.set(0,1.95,0);st3.add(sroof);
+  const gauge=S.group(st3);gauge.position.set(1.05,0,.35);
+  gauge.add(S.cyl(.2,.22,.08,mat("plastic","#ffffff"),{at:[0,.04,0],seg:32}));
+  const gGlass=S.cyl(.16,.16,1.1,mat("glass","#ffffff",{opacity:.18}),{at:[0,.63,0],seg:40,cast:false});gGlass.renderOrder=6;gauge.add(gGlass);
+  gauge.add(S.cyl(.24,.12,.16,mat("metal",P3.steel),{at:[0,1.26,0],seg:32,open:true}));
+  const gWater=S.cyl(.145,.145,1,mat("liquid",P3.water,{opacity:.85}),{seg:32,cast:false});gauge.add(gWater);
+  const drops=S.swarm(40,new THREE.SphereGeometry(.025,8,6),mat("plastic",P3.water,{rough:.1}));drops.scale.set(1,1,1);gauge.add(drops);
+  const dr=Array.from({length:40},()=>({y:1.3+Math.random()*1.5,x:(Math.random()-.5)*.25,z:(Math.random()-.5)*.25}));
+  const lMon=S.label({cls:"hot big",off:[26,-46]}),lStation=S.label({off:[-20,-30]}).set("Kōwhai Bay<small>example data, made-up town</small>"),lGauge=S.label({off:[24,-10]}),lTap=S.label({cls:"hot",off:[-30,30]}).set("Tap a month");
+
+  // ---------------------------------------------------------------- views
+  S.view("compass",[ZM.x+.6,7.4,ZM.z+8.4],[ZM.x,.6,ZM.z-.2],{min:3,max:30});
+  S.view("grid",[ZM.x,11.4,ZM.z+7.4],[ZM.x,.3,ZM.z+.9],{min:3,max:30});
+  S.view("scale",[ZM.x-.8,5.4,ZM.z+7.0],[ZM.x-.6,.7,ZM.z+1.3],{min:2,max:30});
+  S.view("contour",[ZM.x+.3,9.2,ZM.z+13.6],[ZM.x,.4,ZM.z+2.5],{min:3,max:34});
+  S.view("latlong",[ZG.x+.2,8.4,ZG.z+9.6],[ZG.x+.1,.9,ZG.z+.3],{min:3,max:30});
+  S.view("climate",[ZC.x+.6,4.4,ZC.z+10.8],[ZC.x+.4,1.45,ZC.z],{min:3,max:30});
+  S.view("all",[0,20,32],[0,.8,0],{min:6,max:70});
+  const zoneOf=v=>v==="latlong"?"latlong":v==="climate"?"climate":v;
+  const half={compass:6,grid:6,scale:6,contour:7,latlong:6,climate:6.5,all:20},ctr={compass:[0,0,.5],grid:[0,0,0],scale:[0,0,.5],contour:[0,0,1.5],latlong:[ZG.x,0,ZG.z],climate:[ZC.x,0,ZC.z],all:[0,0,0]};
+  let curV=null,isTest=false,lastView=null,first=true;
+  const fly=v=>{curV=v;S.goView(v);S.setShadowBox(half[v],ctr[v])};
+  S.goView("compass",true);
+  const tmp=V3(0,0,0),tmp2=V3(0,0,0);let sliceK=0;
+  return {
+    step(st){isTest=st.k==="test";const v=isTest?"all":zoneOf(st.k);fly(v);if(first){first=false;S.goView(v,true)}lastView=s.view},
+    update(s3,st,dt,t){const v=viewNow();
+      if(isTest&&s.view!==lastView){lastView=s.view;fly(zoneOf(s.view))}
+      const topo=["compass","grid","scale","contour"].includes(v),over=isTest&&curV==="all";
+      // ---- contours glow, one ring at a time, on the contour step
+      contLv.forEach((c,i)=>{const ph=(t*1.1)%(LEVELS.length+3)-1;const want=v==="contour"?.3+3.2*Math.exp(-((i-ph)**2)*1.5):0;c.m.emissiveIntensity=S.lerp(c.m.emissiveIntensity,want,.15);
+        c.m.emissive.set(v==="contour"?"#F49A5E":"#B9876D")});
+      gridM.opacity=S.lerp(gridM.opacity,v==="grid"?.55:.2,.1);
+      // ---- the trail beads
+      const d0=Math.min(s.trail,TRL);for(let i=0;i<NB;i++){const on=v==="scale"&&i*TRL/(NB-1)<=d0;const p=beadP[i];beads.put(i,p.x,p.y,p.z,on?1.35:.8);beads.tint(i,on?TRAIL:i%2?"#ffffff":"#F2B6CB")}beads.done();
+      // ---- pin
+      const showPin=topo&&(v==="grid"||(v==="compass"&&s.to==="pin"));pinG.visible=pinShadow.visible=showPin;
+      if(showPin){const e=s.pinP>=1?1:bounce(s.pinP);const p=W(s.pin.X,s.pin.Y);pinG.position.set(p.x,p.y+(1-e)*1.6,p.z);pinShadow.position.set(p.x+.04,p.y+.012,p.z+.03);pinShadow.material.opacity=.1+.2*e}
+      // ---- compass
+      const B=curB(),a=F[s.from],b=target();const showC=v==="compass";comp.visible=stem.visible=showC;dash.visible=ring.visible=showC&&B!=null;
+      if(showC){const p=W(a.X,a.Y);comp.position.set(p.x,p.y+.5,p.z);stem.position.set(p.x,p.y+.25,p.z);stem.scale.y=.5;needle.rotation.y=-s.needle*Math.PI/180;
+        const fk=(B==null?"x":Math.round(B/45)%8)+"|"+Math.round(s.needle*2);if(fk!==faceKey){faceKey=fk;drawFace(B,s.needle)}
+        if(B!=null){for(let i=0;i<80;i++){const u=i/79,X=a.X+(b.X-a.X)*u,Y=a.Y+(b.Y-a.Y)*u;const q=W(X,Y,.03);dash.put(i,q.x,q.y,q.z,i%2?0:1)}dash.done();
+          const q=W(b.X,b.Y,.03);ring.position.copy(q);ring.scale.setScalar(1+.12*Math.sin(t*4));ring.visible=s.to!=="pin"}
+        lFrom.at(tmp.set(p.x-.45,p.y+.45,p.z+.3)).set(`From<b>${a.n}</b>`);
+        if(B!=null){const q=W(b.X,b.Y,.2);lTo.at(q).set(`To<b>${s.to==="pin"?"your pin":b.n}</b>`);
+          lBear.at(tmp2.set(p.x+.55,p.y+.5,p.z-.3)).set(`${dir8(B).toUpperCase()} · ${b3(B)}<small>${fmt(Math.hypot(b.X-a.X,b.Y-a.Y),1)} km in a straight line</small>`)}
+        else lBear.at(tmp2.set(p.x+.55,p.y+.5,p.z)).set("Pick two different places")}
+      lFrom.show(showC&&!over);lTo.show(showC&&B!=null&&!over);lBear.show(showC);
+      // ---- grid square
+      const showG=v==="grid";gridG.visible=ticks.visible=gdash.visible=showG;if(sqTube)sqTube.visible=showG;
+      if(showG){const p=s.pin,i=Math.floor(p.X),j=Math.floor(p.Y);const key=i+","+j;
+        if(key!==sqKey){sqKey=key;if(sqTube){terr.remove(sqTube);sqTube.geometry.dispose()}sqTube=S.tube(drape([[i,j],[i+1,j],[i+1,j+1],[i,j+1],[i,j]],.03,.04),.02,sqM,{seg:400,rs:6,cast:false,type:"catmullrom",tension:0});terr.add(sqTube)}
+        col.position.set(wx(i+.5),TOP+ly(i+.5,j+.5)+.6,wz(j+.5));col.scale.set(.98,1,.98);
+        let k=0;for(let q=1;q<10;q++){const big=q===5;const e=W(i+q/10,j,.03),n=W(i,j+q/10,.03);ticks.putS(k++,e.x,e.y+.02,e.z,.012,big?.09:.05,.012);ticks.putS(k++,n.x,n.y+.02,n.z,.012,big?.09:.05,.012)}ticks.done();
+        const on=s.pinP>=1;for(let q=0;q<30;q++){const u=q/29;const A=W(p.X,p.Y+(j-p.Y)*u,.03),C=W(p.X+(i-p.X)*u,p.Y,.03);gdash.put(q,A.x,A.y,A.z,on&&q%2===0?1:0);gdash.put(30+q,C.x,C.y,C.z,on&&q%2===0?1:0)}gdash.done();
+        lGrid.at(W(p.X,p.Y,.55)).set(`${grid6(p)}<small>six-figure · square ${grid4(p)}</small>`);
+        eLab.forEach((l,q)=>{l.at(tmp.set(wx(q),TOP+.05,wz(0)+.12)).cls(q===i?"hot":"")});nLab.forEach((l,q)=>{l.at(tmp.set(wx(0)-.12,TOP+.05,wz(q))).cls(q===j?"hot":"")})}
+      eLab.forEach(l=>l.show(showG&&!over));nLab.forEach(l=>l.show(showG&&!over));lGrid.show(showG);
+      // ---- rider, ruler
+      const showS=v==="scale";rider.visible=ruler.visible=carP.visible=showS;sbar.visible=showS||over||v==="grid";
+      if(showS){const at=trailAt(d0),nx2=trailAt(Math.min(TRL,d0+.05)),pv=trailAt(Math.max(0,d0-.05));const p=W(at[0],at[1],.01);rider.position.set(p.x,p.y+Math.abs(Math.sin(t*9))*.01*(s.playing?1:0),p.z);
+        rider.rotation.y=Math.atan2(-(wz(nx2[1])-wz(pv[1])),wx(nx2[0])-wx(pv[0]));
+        const A=W(TR[0][0],TR[0][1],.12),C=W(at[0],at[1],.12);const dv=C.clone().sub(A),L=dv.length();ruler.visible=L>.02;if(L>.02){ruler.position.copy(A).add(C).multiplyScalar(.5);ruler.scale.set(L,1,1);ruler.quaternion.setFromUnitVectors(V3(1,0,0),dv.normalize())}
+        const sl=Math.hypot(at[0]-TR[0][0],at[1]-TR[0][1]);lRide.at(tmp.set(p.x,p.y+.35,p.z)).set(`Trail ${fmt(d0,2)} km<small>straight line ${fmt(sl,2)} km · ${fmt(d0*4,1)} cm of string on the map</small>`);
+        lP.at(carP.position);lDragR.at(tmp2.set(p.x,p.y+.1,p.z))}
+      lRide.show(showS);lP.show(showS&&!over);lDragR.show(showS&&!over&&!s.playing&&d0<.3);
+      lN.at(tmp.set(nA.position.x,TOP+.1,nA.position.z-.25)).show(topo&&!over&&v!=="contour");
+      lS0.at(tmp.set(sbar.position.x,TOP+.05,sbar.position.z)).show(showS&&!over);lS1.at(tmp.set(sbar.position.x+1,TOP+.05,sbar.position.z)).show(showS&&!over);lS2.at(tmp.set(sbar.position.x+2,TOP+.05,sbar.position.z)).show(showS&&!over);
+      // ---- contour: handles, knife, slice
+      const showK=v==="contour";hA.visible=hB.visible=knife.visible=cut.visible=showK;pen.visible=showK&&s.secP<1;
+      sliceK=S.lerp(sliceK,showK||over?1:0,S.REDUCED?1:.08);sliceG.visible=sliceK>.01;sliceG.scale.setScalar(Math.max(.001,sliceK));
+      if(showK||sliceG.visible){const A=s.A,Bp=s.B;const pa=W(A.X,A.Y),pb=W(Bp.X,Bp.Y);hA.position.copy(pa);hB.position.copy(pb);
+        const dx=pb.x-pa.x,dz=pb.z-pa.z,Lw=Math.hypot(dx,dz);knife.position.set((pa.x+pb.x)/2,TOP+BASE+.7,(pa.z+pb.z)/2);knife.scale.set(Math.max(.01,Lw),1.6,1);knife.rotation.y=-Math.atan2(dz,dx);
+        const sp=Math.min(1,s.secP);for(let i=0;i<90;i++){const u=i/89;const q=W(A.X+(Bp.X-A.X)*u,A.Y+(Bp.Y-A.Y)*u,.03);cut.put(i,q.x,q.y,q.z,u<=sp+1e-6?1:0)}cut.done();
+        if(s.secP<1){const q=W(A.X+(Bp.X-A.X)*sp,A.Y+(Bp.Y-A.Y)*sp,.1);pen.position.copy(q)}
+        const key=[A.X,A.Y,Bp.X,Bp.Y].map(x=>x.toFixed(3)).join()+"|"+Math.round(sp*40);
+        const {P,L}=profile();const SLK=Math.min(1.5,7/Math.max(.1,L)),x0=-L*SLK/2,X=u=>x0+u*L*SLK,Yh=h=>.3+.06+Math.max(0,h)*VSS;
+        if(key!==sliceKey){sliceKey=key;if(sliceMesh){sliceG.remove(sliceMesh);sliceMesh.geometry.dispose()}if(steepTube){sliceG.remove(steepTube);steepTube.geometry.dispose();steepTube=null}
+          const k=Math.max(2,Math.round(P.length*sp)),Q=P.slice(0,k);const sh=new THREE.Shape();sh.moveTo(X(0),.3);Q.forEach(p=>sh.lineTo(X(p.t),Yh(p.h)));sh.lineTo(X(Q[Q.length-1].t),.3);sh.lineTo(X(0),.3);
+          const g=new THREE.ExtrudeGeometry(sh,{depth:.16,bevelEnabled:false});sliceMesh=S.mesh(g,sliceM);sliceMesh.position.z=-.08;sliceG.add(sliceMesh);
+          let ns=0,lastR=-99;if(sp>=1){const SS=steepest(P,L);if(SS.g>0){const pts=[];for(let i=SS.i;i<=SS.i+SS.w;i++)pts.push(V3(X(P[i].t),Yh(P[i].h)+.02,.09));steepTube=S.tube(pts,.03,steepM,{seg:24,rs:6,cast:false});sliceG.add(steepTube);
+              lSteep.at(tmp.set(sliceG.position.x+X(P[SS.i+(SS.w>>1)].t),Yh(P[SS.i+(SS.w>>1)].h)+.05,sliceZ+.09)).set(`Steepest<small>1 m up for every ${fmt(1/SS.g,1)} m across</small>`)}
+            P.forEach((p,i)=>{if(p.r<.04&&p.h>0&&i-lastR>8&&ns<6){lastR=i;streams.put(ns++,X(p.t),Yh(p.h),.02,1)}})}
+          for(let i=ns;i<6;i++)streams.put(i,0,-9,0,0);streams.done();sliceG.userData.ns=ns;sliceG.userData.stream=ns?lastR:-1}
+        const hAv=gH(A.X,A.Y),hBv=gH(Bp.X,Bp.Y);
+        lA.at(tmp.set(pa.x,pa.y+.66,pa.z)).set(`A<b>${hAv<=0?"sea":Math.round(hAv)+" m"}</b>`);lB.at(tmp.set(pb.x,pb.y+.66,pb.z)).set(`B<b>${hBv<=0?"sea":Math.round(hBv)+" m"}</b>`);
+        lDragAB.at(tmp.set(pb.x,pb.y+.5,pb.z));
+        lSA.at(tmp.set(sliceG.position.x+X(0),Yh(P[0].h)+.05,sliceZ));lSB.at(tmp.set(sliceG.position.x+X(1),Yh(P[P.length-1].h)+.05,sliceZ));
+        const hi=P.reduce((m,p)=>p.h>m.h?p:m,P[0]);lSlice.at(tmp.set(sliceG.position.x,.3,sliceZ+.6)).set(`Cross-section A → B · ${fmt(L,1)} km · highest ${Math.round(hi.h)} m<small>heights stretched ×${fmt(VSS*1000/SLK,1)} (on the model ×${EX})</small>`);
+        if(sliceG.userData.stream>=0){const p=P[sliceG.userData.stream];lStream.at(tmp.set(sliceG.position.x+X(p.t),Yh(p.h)+.03,sliceZ))}}
+      const sc=showK&&!over;lA.show(sc);lB.show(sc);lDragAB.show(sc&&s.sec!=="custom");lSA.show(sc&&s.secP>=1);lSB.show(sc&&s.secP>=1);lSlice.show(sc);lSteep.show(sc&&s.secP>=1&&!!steepTube);lStream.show(sc&&s.secP>=1&&sliceG.userData.stream>=0);
+      // ---- Aotearoa
+      const showL=v==="latlong";const lx=nx(s.lon),lz=nz(s.lat);latBar.position.set(nx(172.5),TOP+.2,lz);lonBar.position.set(lx,TOP+.2,(nz(34)+nz(47.6))/2);
+      latKnob.position.set(nx(166)-.15-.06,TOP+.18,lz);lonKnob.position.set(lx,TOP+.18,nz(47.6)+.15+.06);
+      const e=s.cpin>=1?1:bounce(s.cpin);cPin.position.set(lx,TOP+.12+(1-e)*1.4,lz);
+      lLL.at(tmp.set(lx,TOP+.6,lz)).set(`${fmt(s.lat,2)}° S, ${fmt(s.lon,2)}° E<small>${dms(s.lat)}S ${dms(s.lon)}E · latitude first</small>`).show(showL);
+      const near=Object.values(CITIES).map(c=>({c,k:kmBetween(c,s)})).sort((p,q)=>p.k-q.k)[0];
+      lNear.at(tmp2.set(lx,TOP+.15,lz)).set(near.k<25?`You're on<b>${near.c.n}</b><small>${near.c.e}</small>`:`Nearest city<b>${near.c.e}</b><small>${fmt(near.k)} km away</small>`).show(showL&&!over);
+      Object.entries(CITIES).forEach(([k,c])=>cityLab[k].at(tmp.set(nx(c.lon),TOP+.27,nz(c.lat))).show(showL&&!over&&near.c!==c));
+      latLab.forEach(o=>o.l.at(tmp.set(nx(166)-.1,TOP+.1,nz(o.la))).show(showL&&!over));lonLab.forEach(o=>o.l.at(tmp.set(nx(o.lo),TOP+.1,nz(47.6)+.1)).show(showL&&!over));
+      spinG.rotation.y=faceNZ+(S.REDUCED?0:Math.sin(t*.25)*.7);
+      const lb=-s.lat*Math.PI/180;latRing.scale.setScalar(GR*Math.cos(lb)+.012);latRing.position.y=GR*Math.sin(lb);lonRing.rotation.y=Math.PI+phiOf(s.lon);
+      gDot.position.copy(dirOf(s.lat,s.lon).multiplyScalar(GR+.02));
+      spinG.updateMatrixWorld();const eqP=V3(0,0,GR).applyMatrix4(spinG.matrixWorld);lEq.at(tmp.set(globeC.x-GR*.95,globeC.y-.38,globeC.z+.2)).show(showL&&!over);
+      lGw.at(tmp2.set(globeC.x,globeC.y+GR+.05,globeC.z-.4)).show(false);lGlobe.at(tmp.set(globeC.x,globeC.y+GR+.25,globeC.z-.2)).show(showL&&!over);
+      // ---- climate
+      const m=s.month,showCl=v==="climate";if(m!==boardM){boardM=m;drawBoard(m);cols.forEach((c,i)=>c.material=i===m?hotM:paleM)}
+      for(let i=0;i<12;i++){tDots.put(i,tPts[i].x,tPts[i].y,tPts[i].z,i===m?1.5:1);tDots.tint(i,i===m?PINK:"#ffffff")}tDots.done();
+      const lev=RAIN[m]/160*1.0;gWater.scale.y=S.lerp(gWater.scale.y,Math.max(.01,lev),.08);gWater.position.y=.09+gWater.scale.y/2;
+      const rate=RAIN[m]/140;for(let i=0;i<40;i++){const q=dr[i];if(showCl&&!S.REDUCED){q.y-=dt*(2.2+i%3*.3);if(q.y<.1+gWater.scale.y){q.y=1.4+Math.random()*1.6*(1.3/rate)}}drops.putS(i,q.x,q.y,q.z,1,2.2,1)}drops.done();drops.visible=showCl;
+      const cx=cg.position.x+CX(m);lMon.at(tmp.set(cx,TOP+CB+Math.max(RAIN[m]*RH,TEMP[m]*TH)+.2,ZC.z+.2)).set(`${MONL[m]}<small>${RAIN[m]} mm rain · ${fmt(TEMP[m],1)} °C average</small>`).show(showCl||(over&&false));
+      lStation.at(tmp.set(st3.position.x,TOP+2.1,st3.position.z)).show(showCl&&!over);lGauge.at(tmp.set(st3.position.x+1.05,TOP+.1+gWater.scale.y,st3.position.z+.35)).set(`Gauge<b>${RAIN[m]} mm</b>`).show(showCl&&!over);
+      lTap.at(tmp.set(cg.position.x+CX(0),TOP+CB+RAIN[0]*RH,ZC.z)).show(showCl&&!over&&t<40)
+    }};
+}
+API=StudyKit.mount({kupu:KUPU,scene3d:maps3d,
   eyebrow:"Social studies and geography · Map and graph skills", title:"The map machine", crumb:"Year 9–10 social studies: compass, grid references, scale, contours, latitude and longitude, climate graphs", homeHash:"y9",
   fig:"FIG. 15 · KŌWHAI BAY, 1:25 000", railTitle:"Read any map",
   badge:{label:"Year 9 social studies",exam:"2026-11-02T08:30:00+13:00",examText:"Mon 2 Nov"},

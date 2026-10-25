@@ -142,7 +142,160 @@ const KUPU=[
  {mi:"rūnanga o te kāwanatanga",en:"Cabinet",ta:13091},
  {mi:"pire",en:"bill (a proposed law)",ta:13133}];
 Object.entries({"vote": ["pōti", "rōpū tōrangapū", "Pāremata"], "threshold": ["rōpū tōrangapū"], "electorate": ["rohe pōti", "pōti"], "govt": ["manapori"], "cabinet": ["Pirimia", "rūnanga o te kāwanatanga"], "bill": ["pire", "Pāremata"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-StudyKit.mount({kupu:KUPU,
+// ---------- the 3D bench: the party-vote tower of ballot coins with the 5% gate, a debating chamber whose seats fill by the MMP count,
+// a Beehive cutaway with the Cabinet table, and a track the bill travels along. All of it reads allocate()/gov() and the same state.
+function civics3d(S){const {THREE,mat}=S;const P3=S.PAL;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const ZV=V3(-8.6,0,-.6),ZH=V3(0,0,-.6),ZK=V3(8.4,0,-.6),TZ=5.0,TOP=.3;
+  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
+  plinth(ZV,5.6,4.2,P3.case.lavender);plinth(ZH,7.2,5.2,P3.case.peach);plinth(ZK,4.8,4.6,P3.case.lavender);plinth(V3(0,0,TZ),17.4,2.4,P3.case.mint);
+  const glowM=(c,i=0)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),emissive:new THREE.Color(c),emissiveIntensity:i,roughness:.4});
+  const INKC=new THREE.Color(P3.ink),WHITE=new THREE.Color("#ffffff");
+  const shade=i=>WHITE.clone().lerp(INKC,PARTIES[i].o);                     // the party's navy shade (no real party colours)
+  const shadeHex=i=>"#"+shade(i).getHexString();
+  const short=i=>PARTIES[i].n.replace(" Party","");
+  // ---------------------------------------------------------------- the party vote: one ballot coin per 1% in six towers, the 5% gate across them
+  const vz=S.group();vz.position.set(ZV.x,TOP,ZV.z);
+  const CH=.05,CX=i=>(i-2.5)*.8;
+  vz.add(S.rbox(5.1,.08,1.1,.04,mat("plastic","#ffffff",{rough:.4}),{at:[0,.04,.2]}));
+  const coins=S.swarm(330,new THREE.CylinderGeometry(.24,.24,CH*.82,28),mat("plastic","#ffffff",{rough:.32,coat:.8}),{colors:true,cast:true});coins.castShadow=true;vz.add(coins);
+  const gate=S.box(5.0,.025,1.0,glowM(P3.product.butter,1.1),{cast:false});gate.position.set(0,.08+5*CH,.2);vz.add(gate);
+  const knobs=PARTIES.map((P,i)=>{const k=S.sphere(.11,mat("plastic",P3.product.butter,{rough:.3}),{at:[CX(i),.2,.2]});vz.add(k);
+    S.dragger(k,{move:p=>{const l=vz.worldToLocal(p.clone());s.vote[i]=Math.round(S.clamp((l.y-.08)/CH,0,50)*2)/2}});return k});
+  const vLab=PARTIES.map((P,i)=>S.label({off:[0,30],lead:false}));
+  const lGate=S.label({cls:"hot",off:[-30,-8]}),lWaste=S.label({off:[30,-20]}),lDragV=S.label({cls:"hot",off:[24,-24]}).set("Drag a coin tower");
+  const coinCount=new Array(6).fill(0);
+  // ---------------------------------------------------------------- the debating chamber: seven tiers, a pawn on every seat (filled = electorate, collar = list)
+  const ch=S.group();ch.position.set(ZH.x,TOP,ZH.z+.9);
+  const ROWS=7,R0=1.05,R1=2.75,TIER=.1,rad=k=>R0+k*(R1-R0)/(ROWS-1);
+  for(let k=ROWS-1;k>=0;k--){const r=rad(k),sh=new THREE.Shape();sh.absarc(0,0,r+.13,0,Math.PI,false);sh.absarc(0,0,r-.13-(k===0?0:0),Math.PI,0,true);
+    const g=new THREE.ExtrudeGeometry(sh,{depth:(k+1)*TIER,bevelEnabled:false,curveSegments:48});g.rotateX(-Math.PI/2);
+    ch.add(S.mesh(g,mat("plastic",k%2?"#F6E2D2":"#FBEDE2",{rough:.5})))}
+  const floorSh=new THREE.Shape();floorSh.absarc(0,0,R0-.13,0,Math.PI,false);floorSh.lineTo(-(R0-.13),0);
+  {const g=new THREE.ExtrudeGeometry(floorSh,{depth:.03,bevelEnabled:false,curveSegments:40});g.rotateX(-Math.PI/2);ch.add(S.mesh(g,mat("plastic","#BFE8D6",{rough:.6})))}
+  ch.add(S.rbox(.7,.16,.3,.04,mat("plastic","#C9A27E",{rough:.45}),{at:[0,.08,-.45]}));                     // the Table
+  const spk=S.group(ch);spk.position.set(0,0,.25);spk.add(S.rbox(.36,.08,.3,.04,mat("plastic","#C9A27E"),{at:[0,.04,0]}));spk.add(S.rbox(.28,.5,.08,.04,mat("plastic",P3.case.mint),{at:[0,.3,.12]}));
+  ch.add(S.cyl(.02,.02,.5,mat("metal","#D8B16A"),{at:[.22,.25,-.45],rot:[0,0,Math.PI/2.2]}));                 // the Mace on the Table
+  const NMAX=320;
+  const body=S.swarm(NMAX,new THREE.CylinderGeometry(.055,.075,.17,16),mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true});body.castShadow=true;ch.add(body);
+  const head=S.swarm(NMAX,new THREE.SphereGeometry(.055,14,10),mat("plastic","#ffffff",{rough:.3}),{colors:true});ch.add(head);
+  const collar=S.swarm(NMAX,new THREE.TorusGeometry(.074,.022,8,20),mat("plastic","#ffffff",{rough:.3}),{colors:true});ch.add(collar);
+  const govDisc=S.swarm(NMAX,new THREE.CylinderGeometry(.11,.11,.012,18),mat("plastic",P3.product.lime,{rough:.5}),{colors:true});ch.add(govDisc);
+  const seat=[];for(let i=0;i<NMAX;i++)seat.push({p:-1,e:false,x:0,z:0,y:0,tx:0,tz:0,ty:0,drop:1,on:false});
+  let posN=-1,posCache=[];
+  function seatPos3(N){if(N===posN)return posCache;posN=N;const radii=[...Array(ROWS).keys()].map(rad);const totR=radii.reduce((a,b)=>a+b,0);const pos=[];let left=N;
+    radii.forEach((r,k)=>{let n=k===ROWS-1?left:Math.round(N*r/totR);n=Math.min(n,left);left-=n;for(let j=0;j<n;j++){const a=Math.PI*(n===1?.5:j/(n-1));pos.push({x:-Math.cos(a)*r,z:-Math.sin(a)*r,y:(k+1)*TIER,a})}});
+    posCache=pos.sort((p,q)=>p.a-q.a);return posCache}
+  const gateM=glowM(P3.product.butter,1.2),majGate=S.box(.04,.7,.4,gateM,{cast:false});ch.add(majGate);
+  S.pick(body,h=>{const id=h.instanceId;if(id==null)return;const p=seat[id].p;if(p<0)return;const k=S.api.step.k;if(["govt","cabinet","bill","test"].includes(k))s.gov[p]=!s.gov[p]});
+  const lSeats=S.label({cls:"big",off:[0,40],lead:false}),lGov=S.label({cls:"hot",off:[-30,-30]}),lOpp=S.label({off:[30,-30]}),lMaj=S.label({off:[0,-40]}),lTapP=S.label({cls:"hot",off:[24,28]}).set("Tap an MP to change sides");
+  const pLab=PARTIES.map(()=>S.label({off:[0,-30]}));
+  // ---------------------------------------------------------------- the Beehive, cut away, with the Cabinet table inside
+  const bh=S.group();bh.position.set(ZK.x,TOP,ZK.z);const CUT=Math.PI*.55,ROT=CUT/2-.3;
+  const floors=10;for(let f=0;f<floors;f++){const r=1.55-f*.06,y=f*.3;
+    const slab=S.mesh(new THREE.CylinderGeometry(r+.06,r+.06,.05,64,1,false,0,Math.PI*2-CUT),mat("plastic",f%2?"#ffffff":"#F4F1F8",{rough:.4}));slab.position.y=y+.025;slab.rotation.y=ROT;bh.add(slab);
+    const band=S.mesh(new THREE.CylinderGeometry(r,r,.25,64,1,true,0,Math.PI*2-CUT),mat("acrylic",P3.case.lavender,{opacity:.18}),{cast:false});band.position.y=y+.175;band.rotation.y=ROT;band.renderOrder=3;bh.add(band);
+    const fins=S.mesh(new THREE.CylinderGeometry(r+.02,r+.02,.25,24,1,true,0,Math.PI*2-CUT),new THREE.MeshStandardMaterial({color:"#D9D3E6",wireframe:true,transparent:true,opacity:.25}),{cast:false});fins.position.copy(band.position);fins.rotation.copy(band.rotation);bh.add(fins)}
+  {const dome=S.mesh(new THREE.SphereGeometry(1.0,48,16,0,Math.PI*2,0,Math.PI/2),mat("plastic","#ffffff",{rough:.35}));dome.scale.set(1,.28,1);dome.position.y=floors*.3;bh.add(dome)}
+  const CF=6,cabY=CF*.3+.05;bh.add(S.cyl(.55,.55,.06,mat("plastic","#C9A27E",{rough:.45}),{at:[0,cabY+.22,.15],seg:48}));bh.add(S.cyl(.06,.1,.2,mat("plastic","#C9A27E"),{at:[0,cabY+.1,.15]}));
+  const NCAB=12,cab=S.swarm(NCAB+1,new THREE.CylinderGeometry(.05,.07,.16,16),mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true});bh.add(cab);
+  const cabH=S.swarm(NCAB+1,new THREE.SphereGeometry(.05,14,10),mat("plastic","#ffffff",{rough:.3}),{colors:true});bh.add(cabH);
+  const sash=S.torus(.072,.022,mat("plastic",P3.product.butter,{rough:.3}),{rot:[Math.PI/2,0,0]});bh.add(sash);
+  const lPM=S.label({cls:"hot",off:[30,-30]}),lCab=S.label({off:[-34,-20]}),lBee=S.label({off:[0,-30],lead:false}).set("The Beehive<small>the Executive: Prime Minister and ministers</small>"),lOppL=S.label({off:[0,-34]});
+  // ---------------------------------------------------------------- the bill's journey: seven stations on a track
+  const tr=S.group();tr.position.set(0,TOP,TZ);
+  const SX=k=>-7+k*(14/6);const stn=[];
+  tr.add(S.tube([[-7.6,.05,0],[7.6,.05,0]],.05,mat("metal",P3.steel),{seg:8}));
+  for(let k=0;k<7;k++){const g=S.group(tr);g.position.x=SX(k);const padM=mat("plastic",P3.steel,{fresh:true,rough:.35});const pad=S.cyl(.42,.46,.1,padM,{at:[0,.05,0],seg:40});g.add(pad);
+    if([1,3,4,5].includes(k)){for(let r=0;r<3;r++)g.add(S.torus(.32-r*.06,.03,mat("plastic","#F6E2D2",{rough:.5}),{at:[0,.12+r*.05,-.1],rot:[Math.PI/2,0,0],arc:Math.PI}))}
+    if(k===2){const room=S.acrylicCase(1.1,.7,.8,P3.case.sky,{opacity:.14});room.position.set(0,.1,-.1);g.add(room);
+      const hs=S.mesh(new THREE.TorusGeometry(.26,.05,10,32,Math.PI),mat("plastic","#C9A27E",{rough:.45}));hs.rotation.x=Math.PI/2;hs.position.set(0,.3,-.15);g.add(hs)}
+    if(k===6){g.add(S.rbox(.8,.42,.5,.04,mat("plastic","#ffffff",{rough:.4}),{at:[0,.31,-.15]}));const rf=S.mesh(new THREE.CylinderGeometry(.34,.34,.9,3),mat("plastic",P3.case.blush,{rough:.4}),{rot:[-Math.PI/2,0,0]});rf.rotation.z=Math.PI/2;rf.scale.set(1,1,.45);rf.position.set(0,.62,-.15);g.add(rf)}
+    stn.push({g,padM,lab:S.label({off:[0,30],lead:false}).set(STAGES[k][0])})}
+  // the committee members and a submitter (that could be you) in the room
+  const cm=S.swarm(7,new THREE.CylinderGeometry(.04,.055,.12,12),mat("plastic","#ffffff",{rough:.35}),{colors:true});stn[2].g.add(cm);
+  for(let i=0;i<6;i++){const a=Math.PI*(i+.5)/6;cm.put(i,-Math.cos(a)*.3,.22+.06,-.15-Math.sin(a)*.3,1);cm.tint(i,shadeHex(i%6))}cm.put(6,0,.28,.18,1.15);cm.tint(6,P3.product.peach);cm.done();
+  const papers=S.swarm(10,new THREE.BoxGeometry(.12,.005,.16),mat("plastic","#ffffff",{rough:.6}));stn[2].g.add(papers);
+  const billG=S.group(tr);const scroll=S.cyl(.09,.09,.42,mat("plastic","#ffffff",{rough:.35}),{rot:[0,0,Math.PI/2],seg:24});billG.add(scroll);
+  const band=S.cyl(.095,.095,.1,mat("plastic",P3.product.butter,{fresh:true,rough:.3}),{rot:[0,0,Math.PI/2],seg:24});billG.add(band);
+  S.pick(billG,()=>{s.playing=!s.playing});
+  const sparks=S.puffs(24,"#FFD76A",{additive:true});tr.add(sparks);const spk2=Array.from({length:24},()=>({x:0,y:0,z:0,vx:0,vy:0,l:0}));let lastDone=-1;
+  const lBill=S.label({cls:"hot big",off:[26,-46]}),lVote=S.label({off:[-30,-30]});
+
+  // ---------------------------------------------------------------- views
+  S.view("vote",[-4.6,6.4,10.4],[-4.2,.9,-.2],{min:3,max:34});
+  S.view("threshold",[ZV.x+.6,3.6,ZV.z+6.6],[ZV.x,1.0,ZV.z],{min:2,max:24});
+  S.view("chamber",[ZH.x,6.0,ZH.z+7.4],[ZH.x,.4,ZH.z+.2],{min:2,max:24});
+  S.view("cabinet",[ZK.x-2.2,5.2,ZK.z+7.2],[ZK.x-1.4,1.5,ZK.z],{min:2,max:24});
+  S.view("bill",[0,6.0,TZ+10.2],[0,.5,TZ-.4],{min:3,max:30});
+  S.view("committee",[SX(2)+.6,2.2,TZ+3.0],[SX(2),.6,TZ-.1],{min:1.5,max:20});
+  S.view("all",[0,13,21],[0,.6,1.6],{min:5,max:50});
+  const viewOf=k=>({vote:"vote",threshold:"threshold",electorate:"chamber",govt:"chamber",cabinet:"cabinet",bill:"bill",committee:"committee",test:"all"})[k]||"all";
+  const half={vote:9,threshold:4,chamber:5,cabinet:5,bill:9,committee:3,all:13},ctr={vote:[-4.3,0,-.6],threshold:[ZV.x,0,ZV.z],chamber:[0,0,0],cabinet:[ZK.x,0,ZK.z],bill:[0,0,TZ],committee:[SX(2),0,TZ],all:[0,0,1.5]};
+  let first=true;const tmp=V3(0,0,0);
+  return {
+    step(st){const v=viewOf(st.k);S.goView(v,first);first=false;S.setShadowBox(half[v],ctr[v])},
+    update(s3,st,dt,t){const k=st.k,A=allocate(),G=gov(),over=k==="test";
+      // ---- coins
+      let ci=0;for(let i=0;i<6;i++){const v=s.vote[i],n=Math.ceil(v-1e-6),c=shade(i),wasted=!A.q[i];
+        for(let j=0;j<n&&ci<330;j++){const frac=Math.min(1,v-j);const wob=S.REDUCED?0:Math.sin(t*2+i+j*.7)*.006;coins.putS(ci,CX(i)+wob,.08+(j+.5)*CH*(j===n-1?1:1),.2,1,frac,1);coins.tint(ci,wasted?(j%2?"#F3B8C8":"#F7CBD7"):j%2?c:c.clone().lerp(WHITE,.12));ci++}
+        knobs[i].position.set(CX(i),.08+v*CH+.14,.2);
+        vLab[i].at(tmp.set(vz.position.x+CX(i),TOP,vz.position.z+.75)).set(`${short(i)}<b>${A.share[i].toFixed(1)}%</b><small>${A.final[i]} seats${wasted?" · wasted":""}</small>`).cls(wasted?"hot":"")}
+      for(;ci<330;ci++)coins.put(ci,0,-9,0,0);coins.done();
+      const showV=["vote","threshold","test"].includes(k);vLab.forEach(l=>l.show(showV&&!over));
+      lGate.at(tmp.set(vz.position.x-2.5,TOP+.08+5*CH,vz.position.z+.2)).set("5% threshold<small>or win one electorate</small>").show(showV&&!over||k==="threshold");
+      lWaste.at(tmp.set(vz.position.x+2.2,TOP+.6,vz.position.z+.2)).set(`Wasted vote<b>${A.wasted.toFixed(1)}%</b>`).show(showV&&!over);
+      lDragV.at(tmp.set(vz.position.x+CX(0),TOP+.08+s.vote[0]*CH+.2,vz.position.z+.2)).show(k==="vote"&&t<30);
+      knobs.forEach(kb=>kb.visible=showV);
+      // ---- seats
+      const order=[...Array(6).keys()].sort((i,j)=>(s.gov[j]-s.gov[i])||(A.final[j]-A.final[i]));
+      const seq=[];order.forEach(i=>{for(let q=0;q<A.final[i];q++)seq.push({i,e:q<s.elec[i]})});
+      const N=Math.min(NMAX,seq.length),pos=seatPos3(N);const sides=["govt","cabinet","bill","committee","test"].includes(k);
+      for(let q=0;q<NMAX;q++){const z=seat[q];if(q<N){const w=seq[q],p=pos[q];if(z.p!==w.i||z.e!==w.e||!z.on){z.p=w.i;z.e=w.e;z.drop=S.REDUCED?1:0;if(!z.on){z.x=p.x;z.z=p.z}z.on=true}
+          z.x=S.lerp(z.x,p.x,.12);z.z=S.lerp(z.z,p.z,.12);z.drop=Math.min(1,z.drop+dt*2.2);const e=z.drop>=1?1:bounce3(z.drop);const y=p.y+(1-e)*1.4;
+          const c=shade(w.i);body.put(q,z.x,y+.085,z.z,1);head.put(q,z.x,y+.23,z.z,1);body.tint(q,w.e?c:WHITE);head.tint(q,w.e?c:WHITE);
+          if(w.e)collar.put(q,0,-9,0,0);else{collar.put(q,z.x,y+.12,z.z,1,Math.PI/2);collar.tint(q,c)}
+          if(sides&&s.gov[w.i]){govDisc.put(q,z.x,p.y+.006,z.z,1);govDisc.tint(q,P3.product.lime)}else govDisc.put(q,0,-9,0,0)}
+        else{if(z.on){z.on=false;z.p=-1}body.put(q,0,-9,0,0);head.put(q,0,-9,0,0);collar.put(q,0,-9,0,0);govDisc.put(q,0,-9,0,0)}}
+      body.done();head.done();collar.done();govDisc.done();
+      // the majority gate stands between the last seat a government needs and the next
+      majGate.visible=sides&&N>1;if(majGate.visible){const a=Math.PI*Math.min(1,(G.need-.5)/N),r=(R0+R1)/2;majGate.position.set(-Math.cos(a)*r,.5,-Math.sin(a)*r);majGate.scale.set(1,1,(R1-R0+.4)/.4);majGate.rotation.y=-a;
+        gateM.emissiveIntensity=G.g>=G.need?1.6+.6*Math.sin(t*4):.6;gateM.color.set(G.g>=G.need?P3.product.lime:P3.product.strawberry);gateM.emissive.set(gateM.color)}
+      const chW=ch.position;lSeats.at(tmp.set(chW.x,TOP+.1,chW.z+.3)).set(`${A.total} seats<small>${A.total>120?`120 + ${A.total-120} overhang`:"no overhang"} · filled = electorate · collar = list</small>`).show(!over&&["vote","electorate","govt"].includes(k));
+      lGov.at(tmp.set(chW.x-2.4,TOP+.6,chW.z-.6)).set(`Government<b>${G.g} seats</b>`).show(sides&&!over&&k!=="committee");
+      lOpp.at(tmp.set(chW.x+2.4,TOP+.6,chW.z-.6)).set(`Opposition<b>${A.total-G.g} seats</b>`).show(sides&&!over&&k!=="committee");
+      lMaj.at(tmp.set(majGate.position.x+chW.x,TOP+1.0,majGate.position.z+chW.z)).set(G.g>=G.need?`Majority<b>${G.g} ≥ ${G.need}</b>`:`No majority<b>${G.need-G.g} short of ${G.need}</b>`).cls(G.g>=G.need?"":"hot").show(["govt","cabinet"].includes(k));
+      lTapP.at(tmp.set(chW.x+1.2,TOP+.9,chW.z-2.4)).show(k==="govt"&&t<40);
+      // per-party electorate and list counts (electorate step)
+      const mid={};seq.forEach((w,q)=>{if(q<N){(mid[w.i]=mid[w.i]||[]).push(q)}});
+      PARTIES.forEach((P,i)=>{const arr=mid[i];const show=k==="electorate"&&arr&&arr.length>0;pLab[i].show(!!show);if(!show)return;const q=arr[arr.length>>1],p=pos[q];
+        pLab[i].at(tmp.set(chW.x+p.x,TOP+p.y+.4,chW.z+p.z)).set(`${short(i)} ${A.final[i]}<small>${s.elec[i]} electorate + ${Math.max(0,A.list[i])} list${A.overhang[i]?` · ${A.overhang[i]} overhang`:""}</small>`).cls(A.overhang[i]?"hot":"")});
+      // ---- Beehive: the Cabinet table
+      const gp=[...Array(6).keys()].filter(i=>s.gov[i]).sort((i,j)=>A.final[j]-A.final[i]);const gs=gp.reduce((a,i)=>a+A.final[i],0);
+      const chairs=[];if(gs>0){const quota=gp.map(i=>A.final[i]/gs*NCAB),fl=quota.map(Math.floor);let left=NCAB-fl.reduce((a,b)=>a+b,0);quota.map((q,j)=>[q-fl[j],j]).sort((a,b)=>b[0]-a[0]).forEach(([_,j])=>{if(left>0){fl[j]++;left--}});gp.forEach((i,j)=>{for(let q=0;q<fl[j];q++)chairs.push(i)})}
+      for(let q=0;q<=NCAB;q++){if(q===0&&gp.length){const x=0,z=.15-.72;cab.putS(0,x,cabY+.1,z,1.15,1.35,1.15);cabH.put(0,x,cabY+.27,z,1.1);cab.tint(0,shade(gp[0]));cabH.tint(0,shade(gp[0]));sash.visible=true;sash.position.set(x,cabY+.19,z)}
+        else if(q>0&&chairs[q-1]!=null){const a=-Math.PI/2+q/(NCAB+1)*Math.PI*2,x=Math.cos(a)*.72,z=.15+Math.sin(a)*.72;cab.put(q,x,cabY+.08,z,1);cabH.put(q,x,cabY+.21,z,1);cab.tint(q,shade(chairs[q-1]));cabH.tint(q,shade(chairs[q-1]))}
+        else{cab.put(q,0,-9,0,0);cabH.put(q,0,-9,0,0);if(q===0)sash.visible=false}}cab.done();cabH.done();
+      const showK=k==="cabinet";lPM.at(tmp.set(bh.position.x,TOP+cabY+.35,bh.position.z+.15-.72)).set(gp.length?`Prime Minister<small>leader of the ${PARTIES[gp[0]].n}</small>`:"No government yet<small>tap parties to join it</small>").show(showK);
+      lCab.at(tmp.set(bh.position.x-.6,TOP+cabY+.3,bh.position.z+.4)).set("Cabinet<small>senior ministers make the big decisions</small>").show(showK&&gp.length>0);lBee.at(tmp.set(bh.position.x,TOP+3.3,bh.position.z)).show(showK);
+      const opp=[...Array(6).keys()].filter(i=>!s.gov[i]&&A.final[i]>0).sort((i,j)=>A.final[j]-A.final[i])[0];
+      lOppL.at(tmp.set(chW.x+1.9,TOP+.5,chW.z-1.4)).set(opp!=null?`Leader of the Opposition<small>${PARTIES[opp].n}</small>`:"No Opposition").show(showK);
+      // ---- the bill
+      const pass=G.g>=G.need,failAt=pass?99:1,stg=Math.min(6,s.stage);
+      stn.forEach((o,q)=>{const done=q<s.stage||(q===s.stage&&s.t>=1),cur=q===s.stage,fail=q===failAt&&s.stage>=failAt;o.padM.color.set(fail?P3.product.strawberry:done?P3.product.lime:cur?P3.product.butter:P3.steel);o.padM.metalness=fail||done||cur?0:.6;o.lab.at(tmp.set(SX(q),TOP,TZ+.55)).cls(cur?"hot":"").show(["bill","committee","test"].includes(k)&&!over&&(k==="bill"||q===2))});
+      const e=S.ease(Math.min(1,s.t*1.6)),from=stg===0?SX(0):SX(stg-1),to=SX(stg),bx=S.lerp(from,to,stg===0?1:e);const failed=!pass&&s.stage>=1&&s.t>=1&&s.stage===1;
+      billG.position.set(bx,.32+Math.sin(Math.PI*(stg===0?0:e))*.6+(S.REDUCED?0:Math.sin(t*3)*.02),stg===2&&k==="committee"?-.05:0);billG.rotation.set(0,0,failed?1.2:0);
+      band.material.color.set(failed?P3.product.strawberry:stg===6&&s.t>=1?P3.product.lime:P3.product.butter);
+      const doneNow=s.stage*2+(s.t>=1?1:0);if(doneNow!==lastDone){if(lastDone>=0&&!S.REDUCED&&!failed&&doneNow>lastDone)for(const p of spk2){p.x=bx;p.y=.4;p.z=0;p.vx=(Math.random()-.5)*2;p.vy=1+Math.random()*1.5;p.l=.9}lastDone=doneNow}
+      for(let q=0;q<24;q++){const p=spk2[q];if(p.l>0){p.l-=dt;p.vy-=4*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}sparks.put(q,p.x,p.y,p.z,Math.max(0,p.l),200)}sparks.done();
+      const showB=k==="bill"||k==="committee"||over;
+      lBill.at(tmp.set(tr.position.x+bx,TOP+.9,TZ)).set(failed?`Voted down at first reading<small>${G.g} for, ${A.total-G.g} against</small>`:stg>=6&&s.t>=1?"Royal assent<small>it's now an Act of Parliament: the law</small>":`${STAGES[stg][0]}<small>${STAGES[stg][1]}</small>`).cls(failed?"hot":"hot big").show(showB&&!over);
+      const reading=[1,3,5].includes(stg);lVote.at(tmp.set(tr.position.x+SX(stg),TOP+.25,TZ-.3)).set(`Ayes ${G.g} · Noes ${A.total-G.g}`).show(k==="bill"&&reading);
+      // submissions fluttering into the committee room
+      const subOn=k==="committee";for(let q=0;q<10;q++){if(subOn&&!S.REDUCED){const u=((t*.35+q/10)%1);papers.put(q,S.lerp(.9,.05,u)+Math.sin(u*9+q)*.05,.25+Math.sin(u*Math.PI)*.5+.1,S.lerp(.9,.18,u),1,Math.sin(t+q),u*3,0)}else papers.put(q,0,-9,0,0)}papers.done();
+    }};
+}
+const bounce3=t=>{const n=7.5625,d=2.75;if(t<1/d)return n*t*t;if(t<2/d)return n*(t-=1.5/d)*t+.75;if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;return n*(t-=2.625/d)*t+.984375};
+StudyKit.mount({kupu:KUPU,scene3d:civics3d,
   eyebrow:"Social studies · Civics", title:"The MMP and law machine", crumb:"Year 9–10 social studies · civics: how government is formed and how a law is passed", homeHash:"y9",
   fig:"FIG. 04 · THE DEBATING CHAMBER", railTitle:"How Aotearoa chooses and makes its laws",
   mainBox:"0 0 640 330", mainPhoneBig:true, mainLabel:"Seats in Parliament coloured by fictional parties", closeBox:"0 0 420 260",

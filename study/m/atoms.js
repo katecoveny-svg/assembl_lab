@@ -144,7 +144,7 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const spark=S.puffs(40,"#C8F08A",{additive:true});nucG.add(spark);const spk=[];for(let i=0;i<40;i++)spk.push({p:V3(0,0,0),v:V3(0,0,0),life:0});
   // ---------------------------------------------------------------- electron shells: tilted frosted rings with glowing electron beads
   const RAD=[1.05,1.55,2.05,2.55],CAP=[2,8,8,2];
-  const shG=S.group();shG.position.copy(AC);shG.rotation.set(-.62,.18,0);
+  const shG=S.group();shG.position.copy(AC);shG.rotation.set(-.98,.22,0);
   const ringTilt=[[.0,.0],[.1,-.14],[-.12,.1],[.08,.16]];
   const rings=RAD.map((r,i)=>{const g=new THREE.Group();g.rotation.set(ringTilt[i][0],ringTilt[i][1],0);shG.add(g);
     const solid=S.torus(r,.016,S.M.plastic(PAL.deep.sky,{rough:.35}),{cast:false,ts:128,rs:8});g.add(solid);
@@ -152,11 +152,11 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
     const full=S.torus(r,.05,new THREE.MeshBasicMaterial({color:PAL.product.lime,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}),{cast:false,ts:128,rs:8});g.add(full);
     return {g,r,solid,faint,full,glow:0}});
   const eGeo=new THREE.SphereGeometry(.085,18,14);
-  const electrons=S.swarm(20,eGeo,S.M.glow(PAL.product.blueberry,4.5),{cast:false});shG.add(electrons);
+  const electrons=S.swarm(20,eGeo,S.M.glow("#4F86D9",4.5),{cast:false});shG.add(electrons);
   const eGlow=S.puffs(20*6,"#9CC8FF",{additive:true});shG.add(eGlow);
   const E=Array.from({length:20},(_,i)=>({cur:V3(0,0,0),on:false,sc:0}));
   const ghosts=Array.from({length:8},()=>({p:V3(0,0,0),v:V3(0,0,0),life:0}));let gi=0;
-  const ghostM=S.swarm(8,eGeo,S.M.glow(PAL.product.blueberry,4.5),{cast:false});shG.add(ghostM);
+  const ghostM=S.swarm(8,eGeo,S.M.glow("#4F86D9",4.5),{cast:false});shG.add(ghostM);
   const ionHalo=S.puffs(1,"#ffffff",{additive:false});shG.add(ionHalo);
   // tap an electron to pull it off (the same as the Electrons slider going down by one)
   S.pick(electrons,()=>{const s=S.api.state;if(s.e>0)s.e--});
@@ -199,7 +199,7 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   S.pick(ptP,hit=>{if(!hit.uv)return;const c=Math.floor(hit.uv.x*8),r=Math.floor((1-hit.uv.y)*4);const z=+Object.keys(POS).find(k=>POS[k][0]===c&&POS[k][1]===r);
     if(z){const s=S.api.state;s.p=z;s.n=EL[z-1][2]-z;s.e=z}});
   // ---------------------------------------------------------------- isotope comparison: the element's common isotope on a little pedestal
-  const CM=V3(.95,TOP,2.0);
+  const CM=V3(.45,TOP,.35);
   const cmpG=S.group();cmpG.position.copy(CM);
   cmpG.add(S.cyl(.45,.55,.3,mat("plastic","#ffffff",{rough:.4}),{at:[0,.15,0]}));
   const dome=S.sphere(.62,mat("glass","#ffffff",{opacity:.14}),{at:[0,1.05,0],cast:false});dome.renderOrder=6;cmpG.add(dome);
@@ -208,7 +208,7 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   let cmpK=0,cmpKey="";
   // ---------------------------------------------------------------- labels
   const lNuc=S.label({off:[-44,30]}),lE=S.label({off:[40,-20]}),lName=S.label({cls:"big",off:[30,-30]});
-  const lShell=RAD.map(()=>S.label({off:[30,-6]}));
+  const SHA=[.55,-.35,2.55,-2.5];const lShell=RAD.map((r,i)=>S.label({off:[i>=2?-30:30,i%2?24:-24]}));
   const lMass=S.label({cls:"hot",off:[-40,-30]}),lAtomic=S.label({cls:"hot",off:[-40,20]}),lNeutEq=S.label({cls:"big",off:[-50,-40]});
   const lCharge=S.label({cls:"hot",off:[40,-40]}),lTap=S.label({off:[40,24]}).set("Tap an outer electron<small>to pull it off the atom</small>");
   const lIso=S.label({cls:"hot",off:[-46,-36]}),lCmp=S.label({off:[34,-34]}),lTable=S.label({off:[30,30]}).set("Tap an element<small>to build that atom</small>");
@@ -246,26 +246,38 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const marks={};for(const k in MK){fz.add(MK[k]);marks[k]={a:Array.from({length:MK[k].n},()=>({p:V3(0,0,0),life:0})),i:0}}
   const vis=new Map();
   // a score screen beside the ring
-  const board=S.group(fz);board.position.set(-3.55,TOP,2.85);board.rotation.y=.55;
+  const board=S.group(fz);board.position.set(-3.55,TOP,2.85);board.rotation.y=.35;
   board.add(S.cyl(.05,.07,.9,mat("metal"),{at:[0,.45,0]}));board.add(S.rbox(.8,.1,.5,.04,mat("plastic","#ffffff"),{at:[0,.05,0]}));
   board.add(S.rbox(2.0,1.2,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,1.45,-.05]}));
   const score=S.panel(512,300,1.84);score.position.set(0,1.45,.0);board.add(score);let scoreKey="",scoreT=0;
+  // a zoom bubble above the foil: three gold atoms, mostly empty space. Alpha paths are worked out with a real 1/r² push from each nucleus
+  const bub=S.group(fz);bub.position.set(0,FC.y+2.3,0);const BR=.85;
+  const glassB=S.sphere(BR,mat("glass","#ffffff",{opacity:.13}),{cast:false,seg:40});glassB.renderOrder=6;bub.add(glassB);
+  bub.add(S.cyl(.012,.06,1.15,mat("glass","#ffffff",{opacity:.35}),{at:[0,-BR-.5,0],cast:false}));
+  const NUC=[V3(0,.05,0),V3(0,.48,-.28),V3(0,-.44,.3)];
+  NUC.forEach(n=>{bub.add(S.sphere(.035,S.M.glow("#E9B03A",4.2),{at:[n.x,n.y,n.z],cast:false,seg:12}));const cl=S.sphere(.3,mat("flat",PAL.product.butter,{opacity:.08,depthWrite:false}),{at:[n.x,n.y,n.z],cast:false,seg:20});cl.renderOrder=5;bub.add(cl)});
+  const tracks=[];{const KC=.01,offs=[[.05+.005,0],[.05+.032,.0],[.25,.25],[-.2,-.05],[.3,-.35],[-.12,.5],[.0,-.62],[-.6,-.1],[.62,.2]];
+    for(const [y0,z0] of offs){const p=V3(-Math.sqrt(Math.max(.01,BR*BR*.88-y0*y0-z0*z0)),y0,z0),v=V3(1,0,0),pts=[];for(let i=0;i<4000&&p.length()<BR*.97;i++){const a=V3(0,0,0);for(const n of NUC){tmp.subVectors(p,n);const r=Math.max(.012,tmp.length());a.addScaledVector(tmp,KC/(r*r*r))}
+        v.addScaledVector(a,.0015);p.addScaledVector(v,.0015);if(i%6===0)pts.push(p.clone())}tracks.push({pts,ph:Math.random()})}}
+  const zA=S.swarm(tracks.length,new THREE.SphereGeometry(.03,10,8),S.M.glow("#FF9A5C",5),{cast:false});bub.add(zA);
+  const zT=S.puffs(tracks.length*6,"#FFB27A",{additive:true});bub.add(zT);
+  const lZoom=S.label({off:[40,-20]}).set("Zoom into the foil<small>gold atoms are mostly empty space: only a near-miss with a nucleus bends an alpha</small>");
   const lSrc=S.label({off:[-30,-40]}).set("Alpha source<small>fires positive alpha particles</small>");
   const lFoil=S.label({off:[20,-50]}).set("Thin gold foil");
   const lDet=S.label({off:[30,-30]}).set("Detector screen<small>flashes where an alpha lands</small>");
   const lStraight=S.label({off:[24,30]}),lBack=S.label({cls:"hot",off:[-30,40]});
-  const lScale=S.label({off:[0,30],lead:false}).set("<small>Nuclei are far smaller than drawn: the atom is ~100,000× wider</small>");
+  const lScale=S.label({off:[0,30],lead:false}).set("<small>Zoomed view not to scale: an atom is about 100,000 times wider than its nucleus</small>");
 
   // ---------------------------------------------------------------- views
   S.view("build",[1.2,4.7,11.6],[-.2,1.95,0],{min:4,max:24});
   S.view("numbers",[2.2,3.6,8.2],[.9,2.0,-.6],{min:3,max:20});
   S.view("shells",[-1.6,6.4,8.6],[-2.0,2.7,-.2],{min:3,max:20});
   S.view("ions",[-.6,4.4,8.8],[-1.6,2.5,0],{min:3,max:20});
-  S.view("isotopes",[.6,3.6,8.6],[-.6,1.9,.6],{min:3,max:20});
-  S.view("foil",[FC.x-4.6,6.2,8.8],[FC.x+.2,1.1,-.2],{min:4,max:26});
+  S.view("isotopes",[.2,4.0,9.6],[-.9,2.1,.2],{min:3,max:20});
+  S.view("foil",[FC.x-2.2,7.4,11.6],[FC.x-.5,2.0,0],{min:4,max:26});
   S.view("all",[7.2,10.5,22],[7.4,1.4,0],{min:6,max:50});
   const viewOf=k=>k==="foil"?"foil":k==="test"?"all":k;
-  const atomL=[lNuc,lE,lName,...lShell,lMass,lAtomic,lNeutEq,lCharge,lTap,lIso,lCmp,lTable,...trays.map(t=>t.lab)],foilL=[lSrc,lFoil,lDet,lStraight,lBack,lScale];
+  const atomL=[lNuc,lE,lName,...lShell,lMass,lAtomic,lNeutEq,lCharge,lTap,lIso,lCmp,lTable,...trays.map(t=>t.lab)],foilL=[lSrc,lFoil,lDet,lStraight,lBack,lScale,lZoom];
   let K0=null;
   const show={
     build:[lNuc,lE,lName,lTable,...trays.map(t=>t.lab)],
@@ -346,7 +358,7 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       lNuc.at(tmp.copy(AC).add(V3(-nucR*.7,-nucR*.6,0))).set(`Nucleus<small>${s.p} proton${s.p!==1?"s":""} (+) · ${s.n} neutron${s.n!==1?"s":""}</small>`);
       const oi=sh.length-1;if(oi>=0){ringPoint(oi,.35,tmp);shG.localToWorld(tmp)}else tmp.copy(AC);
       lE.at(tmp).set(`${s.e} electron${s.e!==1?"s":""} (−)<small>in shells ${sh.join(",")||"none"}</small>`);
-      lShell.forEach((L,i)=>{if(k!=="shells"){return}const on=i<sh.length;L.show(on);if(!on)return;ringPoint(i,-.25+i*.12,tmp);shG.localToWorld(tmp);L.at(tmp).set(`Shell ${i+1}<b>${sh[i]} of ${CAP[i]}</b>`)});
+      lShell.forEach((L,i)=>{if(k!=="shells"){return}const on=i<sh.length;L.show(on);if(!on)return;ringPoint(i,SHA[i],tmp);shG.localToWorld(tmp);L.at(tmp).set(`Shell ${i+1}<b>${sh[i]} of ${CAP[i]}</b>`)});
       lMass.at(tmp.set(TL.x-.72,TOP+2.15,TL.z+.28)).set(`Mass number <b>${A}</b><small>${s.p} protons + ${s.n} neutrons</small>`);
       lAtomic.at(tmp.set(TL.x-.72,TOP+.6,TL.z+.28)).set(`Atomic number <b>${s.p}</b><small>protons: decides the element</small>`);
       lNeutEq.at(tmp.copy(AC).add(V3(-nucR*.5,nucR*.6,0))).set(`Neutrons = ${A} − ${s.p} = <b>${s.n}</b>`);
@@ -382,6 +394,9 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       for(let i=ai;i<NA;i++)alphas.put(i,0,-5,0,.001);alphas.done();for(;ti<trail.n;ti++)trail.put(ti,0,-5,0,0,1);trail.done();
       fls.forEach((f,i)=>{if(f.life>0)f.life-=dt;flash.put(i,f.p.x,f.p.y,f.p.z,Math.max(0,f.life)*1.4,520*(1.2-f.life))});flash.done();
       for(const kname in marks){const M=marks[kname];M.a.forEach((m,i)=>{if(m.life>0&&playing)m.life-=dt*.06;MK[kname].put(i,m.p.x,m.p.y,m.p.z,Math.max(0,m.life)*.85,kname==="straight"?70:110)});MK[kname].done()}
+      tracks.forEach((tr,i)=>{tr.ph+=dt*(playing?.32:0);const u=tr.ph%1.25,n=tr.pts.length,j=Math.min(n-1,Math.floor(u*n)),on=u<1;const p=tr.pts[j];zA.put(i,p.x,p.y,p.z,on?1:.001);
+        for(let m=1;m<=6;m++){const q=tr.pts[Math.max(0,j-m*3)];zT.put(i*6+m-1,q.x,q.y,q.z,on?.45*(1-m/7):0,70)}});zA.done();zT.done();
+      lZoom.at(tmp.set(FC.x+BR*.7,FC.y+2.3+BR*.6,0));
       coreM.emissiveIntensity=4.5+1.5*Math.sin(t*6);
       const h=s.hits,tot=h.straight+h.small+h.back;
       scoreT-=dt;const skey=tot+"";if(foilOn&&skey!==scoreKey&&scoreT<=0){scoreKey=skey;scoreT=.25;

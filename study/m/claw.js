@@ -111,7 +111,7 @@ Object.entries({"play": ["whakamātau tūponotanga", "putanga", "raraunga"], "lo
 // on the theoretical line, and a coin balance that weighs the cost of a play against the expected prize. Everything reads the same
 // state the challenges mark: pWin(), s.hist, s.plays, s.wins, s.anim and the sliders.
 function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
-  const ZT=V3(-8.2,0,-.4),ZM=V3(0,0,0),ZG=V3(7.6,0,-.4),ZV=V3(14.2,0,-.4),TOP=.3;
+  const ZT=V3(-7.6,0,-.4),ZM=V3(0,0,0),ZG=V3(7.0,0,-.4),ZV=V3(13.0,0,-.4),TOP=.3;
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
   plinth(ZT,7.4,4,PAL.case.blush);plinth(ZM,5.6,5.4,PAL.case.mint);plinth(ZG,6.2,4,PAL.case.blush);plinth(ZV,5.8,4,PAL.case.mint);
   const LAV=PAL.case.lavender,LAVD=PAL.deep.lavender;
@@ -152,7 +152,7 @@ function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
   const bulbP=[];for(let i=0;i<NB;i++){const u=i/NB;let x,y;const P=2*(BW-.2)+2*.44,d=u*P,a=BW-.2;
     if(d<a){x=-a/2+d;y=MQY+.22}else if(d<a+.44){x=a/2;y=MQY+.22-(d-a)}else if(d<2*a+.44){x=a/2-(d-a-.44);y=MQY-.22}else{x=-a/2;y=MQY-.22+(d-2*a-.44)}bulbP.push([x,y])}
   // the payout counter: one lamp a play since the last win, shown only when the machine pays out on a schedule
-  const NL=30,lamps=S.swarm(NL,new THREE.SphereGeometry(.034,10,8),new THREE.MeshBasicMaterial({color:"#ffffff",toneMapped:false}),{colors:true});cab.add(lamps);
+  const NL=30,lamps=S.swarm(NL,new THREE.SphereGeometry(.045,10,8),new THREE.MeshBasicMaterial({color:"#ffffff",toneMapped:false}),{colors:true});cab.add(lamps);
   // the gantry: two rails, a bridge that runs along x and a carriage that runs along z
   const GY=FL+CH-.2;
   for(const z of [-BD/2+.18,BD/2-.18])cab.add(S.cyl(.035,.035,BW-.1,steel,{rot:[0,0,Math.PI/2],at:[0,GY,z],seg:12}));
@@ -212,29 +212,29 @@ function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
   const GX0=-2.35,GW=4.7,GY0=.32,GH=2.5;
   gz.add(S.rbox(GW+.2,.08,.9,.03,mat("plastic","#F3EEFB",{rough:.5}),{at:[GX0+GW/2,GY0-.04,-.3]}));
   gz.add(S.box(.03,GH,.03,steelD,{at:[GX0,GY0+GH/2,-.75]}));
-  for(let k=1;k<=4;k++)gz.add(S.box(GW,.008,.01,mat("flat","#DCD6EA"),{at:[GX0+GW/2,GY0+k*GH/4,-.83],cast:false}));
+  for(let k=1;k<=4;k++)gz.add(S.box(GW,.008,.01,mat("flat","#DCD6EA"),{at:[GX0+GW/2,GY0+k*GH/4,-.8],cast:false}));
   const NG=120,bars=S.swarm(NG,new THREE.BoxGeometry(1,1,1),mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true});gz.add(bars);
-  const theo=S.box(GW+.3,.035,.95,mat("glow",PAL.product.lime,3.5),{cast:false});gz.add(theo);
-  const theoSheet=S.box(GW+.3,.01,.95,mat("acrylic",PAL.case.mint,{opacity:.25}),{cast:false});gz.add(theoSheet);
+  const theo=S.box(GW+.3,.03,.62,mat("glow",PAL.product.lime,1.8),{cast:false});gz.add(theo);
+  const theoSheet={position:V3(0,0,0)};
   let gKey="";
   // ================================================================ value zone: a coin balance and two coin towers
   const vz=S.group();vz.position.set(ZV.x,TOP,ZV.z);
-  const BX=-.9;vz.add(S.rbox(1.4,.16,.8,.06,white,{at:[BX,.08,0]}));vz.add(S.cyl(.06,.08,2.25,steel,{at:[BX,1.25,0]}));
+  const BX=-1.15;vz.add(S.rbox(1.4,.16,.8,.06,white,{at:[BX,.08,0]}));vz.add(S.cyl(.06,.08,2.25,steel,{at:[BX,1.25,0]}));
   const PIV=2.4;const beam=S.group(vz);beam.position.set(BX,PIV,0);beam.add(S.rbox(2.7,.1,.14,.04,mat("plastic",LAV,{rough:.3})));beam.add(S.sphere(.09,steelD,{rot:[Math.PI/2,0,0]}));
   const needle=S.box(.03,.5,.03,mat("plastic",PAL.ink),{at:[0,-.3,0]});beam.add(needle);
   const pans=[-1,1].map(sg=>{const g=S.group(vz);g.add(S.cyl(.48,.44,.05,steel,{seg:40}));
     const w=[0,1,2].map(i=>{const a=i/3*Math.PI*2+.4;const m=S.cyl(.006,.006,1,steelD,{seg:4});g.add(m);return {m,a}});return {g,sg,w}});
   const NC=200,coins=S.swarm(NC,new THREE.CylinderGeometry(.16,.16,.045,24),mat("metal",PAL.product.butter,{rough:.25}),{cast:true});vz.add(coins);
-  [1.0,1.95].forEach(x=>vz.add(S.cyl(.32,.34,.06,white,{at:[x,.03,0],seg:32})));
+  [1.2,2.15].forEach(x=>vz.add(S.cyl(.32,.34,.06,white,{at:[x,.03,0],seg:32})));
   // ================================================================ labels
   const lPlay=S.label({cls:"big",off:[-30,-30]}),lChute=S.label({off:[28,10]}).set("Chute"),lTape=S.label({off:[-20,26]}),lGo=S.label({cls:"hot",off:[26,20]});
   const lPay=S.label({off:[30,-20]}),lGrip=S.label({off:[-30,-10]});
-  const lN={};for(const k in N_)lN[k]=S.label({off:[0,-30],lead:false});
+  const lN={};for(const k in N_)lN[k]=S.label({off:[2,0],lead:false});
   lN.root.set("Press go");lN.grab.set("Grabs it");lN.miss.set("Misses");lN.win.set("Holds: WIN");lN.drop.set("Drops it");
   const lB={grab:S.label({off:[-24,-16]}),miss:S.label({off:[-24,16]}),win:S.label({off:[-18,-18]}),drop:S.label({off:[-18,18]})};
   const lT={win:S.label({off:[20,-24]}),drop:S.label({off:[20,-24]}),miss:S.label({off:[20,-24]})},lMul=S.label({cls:"hot big",off:[0,40]});
-  const lTheo=S.label({cls:"hot",off:[24,-22]}),lRF=S.label({cls:"big",off:[22,-30]}),lAxis=S.label({off:[0,28],lead:false});
-  const lCost=S.label({off:[-26,-36]}),lRet=S.label({off:[26,-36]}),lEV=S.label({cls:"hot big",off:[0,-48]}),lSpent=S.label({off:[-20,-30]}),lWon=S.label({off:[20,-30]});
+  const lTheo=S.label({cls:"hot",off:[-24,-24]}),lRF=S.label({cls:"big",off:[22,-30]}),lAxis=S.label({off:[0,28],lead:false});
+  const lCost=S.label({off:[-26,-36]}),lRet=S.label({off:[26,-36]}),lEV=S.label({cls:"hot big",off:[0,-48]}),lSpent=S.label({off:[-14,46]}),lWon=S.label({off:[24,46]});
   const zoneL={machine:[lPlay,lChute,lTape,lGo,lPay,lGrip],tree:[...Object.values(lN),...Object.values(lB),...Object.values(lT),lMul],graph:[lTheo,lRF,lAxis],value:[lCost,lRet,lEV,lSpent,lWon]};
   // ================================================================ picks: the button and joystick play, as the step's own buttons do
   function press(){const st=S.api.step,c=st.controls||[];
@@ -242,14 +242,14 @@ function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
     const n=c.includes("play100")?100:c.includes("play10")?10:0;for(let i=0;i<n;i++)playOnce();if(n)s.anim=null}
   S.pick(btn,press);S.pick(joy,press);
   // ================================================================ views
-  S.view("machine",[ZM.x+2.6,4.3,ZM.z+10.6],[ZM.x,2.5,ZM.z],{min:3,max:24});
+  S.view("machine",[ZM.x+2.6,4.1,ZM.z+11.4],[ZM.x,2.2,ZM.z+.4],{min:3,max:24});
   S.view("rigged",[ZM.x+2.2,3.4,ZM.z+9.6],[ZM.x,1.9,ZM.z+.4],{min:3,max:24});
   S.view("tree",[ZT.x+.9,3.0,ZT.z+9.2],[ZT.x+.35,2.05,ZT.z-.4],{min:3,max:24});
   S.view("graph",[ZG.x+.9,3.0,ZG.z+8.4],[ZG.x,1.55,ZG.z-.3],{min:3,max:24});
   S.view("value",[ZV.x+.8,3.2,ZV.z+8.4],[ZV.x+.35,1.5,ZV.z],{min:3,max:24});
-  S.view("all",[3.2,11,27],[3.2,1.6,0],{min:6,max:50});
+  S.view("all",[2.7,8.8,25],[2.7,3.0,-.8],{min:6,max:50});
   const zoneOf=k=>k==="play"?"machine":k==="rigged"?"rigged":k==="long"?"graph":k==="tree"?"tree":k==="value"?"value":"all";
-  const shadowOf={machine:[5,[ZM.x,0,ZM.z]],rigged:[5,[ZM.x,0,ZM.z]],tree:[5,[ZT.x,0,ZT.z]],graph:[5,[ZG.x,0,ZG.z]],value:[5,[ZV.x,0,ZV.z]],all:[16,[3,0,0]]};
+  const shadowOf={machine:[5,[ZM.x,0,ZM.z]],rigged:[5,[ZM.x,0,ZM.z]],tree:[5,[ZT.x,0,ZT.z]],graph:[5,[ZG.x,0,ZG.z]],value:[5,[ZV.x,0,ZV.z]],all:[16,[2.7,0,0]]};
   let zone="all";S.goView("all",true);
   // the last n outcomes, oldest first, recovered from the running relative frequency the model keeps
   function lastOutcomes(n){const H=s.hist,L=H.length,out=[];for(let j=Math.max(0,L-n);j<L;j++){const p=s.plays-(L-1-j);const w=Math.round(H[j]*p);
@@ -303,7 +303,7 @@ function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
         row(64,"PLAYS",fmt(s.plays));row(128,"PRIZES",fmt(s.wins),PAL.product.lime);row(192,"WINS ÷ PLAYS",s.plays?fmt(s.wins/s.plays,3):"–",PAL.product.butter);row(256,"P(WIN)",fmt(P,3),"#BFE8D6");
         g.fillStyle="rgba(255,255,255,.55)";g.font="600 18px Instrument Sans, system-ui";g.textAlign="left";g.fillText(s.mode==="random"?"RANDOM EVERY PLAY":"PAYS OUT EVERY "+s.every+" PLAYS",30,h-26)})}
       const cw=cab.position;
-      lPlay.at(tmp.set(cw.x+cx,cw.y+cy+.5,cw.z+cz)).set(a&&a.t>.85?(a.win?"WIN!":a.grab?"Dropped it!":"Missed!"):`${fmt(s.plays)} plays<small>${fmt(s.wins)} prizes</small>`);{const c=a&&a.t>.85&&a.win?"hot big":"big";if(c!==playCls){playCls=c;lPlay.cls(c)}}
+      lPlay.at(tmp.set(cw.x+cx,cw.y+cy+.5,cw.z+cz)).set(a&&a.t>.85?(a.win?"WIN!":a.grab?"Dropped it!":"Missed!"):`${fmt(s.plays)} play${s.plays===1?"":"s"}<small>${fmt(s.wins)} prize${s.wins===1?"":"s"}</small>`);{const c=a&&a.t>.85&&a.win?"hot big":"big";if(c!==playCls){playCls=c;lPlay.cls(c)}}
       lChute.at(tmp.set(cw.x+CHX+.4,cw.y+FL+.5,cw.z+CHZ));lGo.at(tmp.set(cw.x+.05,cw.y+BH+.12,cw.z+BD/2+.4)).set((st.controls||[]).includes("play1")?"Press to play":"Press: play "+((st.controls||[]).includes("play100")?100:10));
       lTape.at(tmp.set(TX0+NT*TDX*.5,TOP+.2,TZ+.15)).set(`Last ${NT} plays<small>tall green block = a win</small>`);
       lPay.show(zone==="rigged"&&pay).at(tmp.set(cw.x+1.3,cw.y+1.25,cw.z+BD/2)).set(`${since} of ${s.every} plays<small>since the last win</small>`);
@@ -312,22 +312,22 @@ function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
       const pg=s.pGrab,ph=s.pHold,pr={grab:pg,miss:1-pg,win:pg*ph,drop:pg*(1-ph)};
       for(const k in BR){const m=BR[k];const r=.02+.075*pr[k];m.scale.set(r,m.userData.len,r)}
       for(const k in tubes){const T=tubes[k],v=k==="miss"?1-pg:pr[k];T.f.scale.set(1,Math.max(.002,v*T.L),1);T.f.position.x=v*T.L/2;lT[k].at(tmp.set(ZT.x+T.g.position.x+v*T.L,TOP+T.g.position.y+.12,ZT.z+T.g.position.z)).set(`<b>${fmt(v,3)}</b>`)}
-      for(let i=0;i<NBALL;i++){const b=bl[i];b.u+=dt*.55*(S.REDUCED?.3:1);if(b.u>=2.6){b.u-=2.6;b.fate=Math.random()<pg?(Math.random()<ph?1:2):3}
+      for(let i=0;i<NBALL;i++){const b=bl[i];const u0=b.u;b.u+=dt*.55*(S.REDUCED?.3:1);if(b.u>=2.6||(u0<0&&b.u>=0)){if(b.u>=2.6)b.u-=2.6;b.fate=Math.random()<pg?(Math.random()<ph?1:2):3}
         let p=null;if(b.u<0||!b.fate){balls.put(i,0,-50,0,.001);continue}
         const L1=b.fate===3?N_.miss:N_.grab,L2=b.fate===1?N_.win:b.fate===2?N_.drop:N_.miss.clone().setX(.9),L3=L2.clone().setX(L2.x+.75+.2);
         if(b.u<1)p=tmp.lerpVectors(N_.root,L1,b.u);else if(b.u<2)p=tmp.lerpVectors(L1,L2,b.u-1);else p=tmp.lerpVectors(L2,L3,Math.min(1,(b.u-2)/.6));
         balls.put(i,p.x,p.y,p.z+.22,b.u>2.4?(2.6-b.u)*5:1);balls.tint(i,b.fate===1?PAL.product.lime:b.fate===2?PAL.product.butter:PAL.product.strawberry)}balls.done();
-      for(const k in N_)lN[k].at(tmp.set(ZT.x+N_[k].x,TOP+N_[k].y+.2,ZT.z+N_[k].z));
+      for(const k in N_)lN[k].at(tmp.set(ZT.x+N_[k].x-.44,TOP+N_[k].y,ZT.z+N_[k].z+.18));
       const mid=(A,B)=>tmp.set(ZT.x+(A.x+B.x)/2,TOP+(A.y+B.y)/2,ZT.z+A.z);
       lB.grab.at(mid(N_.root,N_.grab)).set(`<b>${fmt(pg,2)}</b>`);lB.miss.at(mid(N_.root,N_.miss)).set(`<b>${fmt(1-pg,2)}</b>`);lB.win.at(mid(N_.grab,N_.win)).set(`<b>${fmt(ph,2)}</b>`);lB.drop.at(mid(N_.grab,N_.drop)).set(`<b>${fmt(1-ph,2)}</b>`);
-      lMul.at(tmp.set(ZT.x-.6,TOP+.35,ZT.z-.6)).set(`P(win) = ${fmt(pg,2)} × ${fmt(ph,2)}<b>= ${fmt(pg*ph,3)}</b>`);
+      lMul.at(tmp.set(ZT.x-.4,TOP+.3,ZT.z-.4)).set(`P(win) = ${fmt(pg,2)} × ${fmt(ph,2)}<b>= ${fmt(pg*ph,3)}</b>`);
       // ---- long-run bars
       const gk=s.plays+"|"+P.toFixed(4);const ymax=Math.max(.5,P*3),Yv=v=>Math.min(1.05,v/ymax)*GH;
       if(gk!==gKey){gKey=gk;const H=s.hist,Hn=H.length,n=Math.min(NG,Hn),span=Math.max(50,Hn),bw=GW/Math.max(n,50)*.72;
         for(let j=0;j<NG;j++){if(j>=n){bars.put(j,0,-50,0,.001);continue}const i=Math.round((j+1)/n*Hn)-1;const v=H[i],hgt=Math.max(.01,Yv(v)),x=GX0+(i+1)/span*GW;
-          bars.putS(j,x,GY0+hgt/2,-.3,bw,hgt,.5);const off2=Math.min(1,Math.abs(v-P)/Math.max(.02,P));bars.tint(j,new THREE.Color(PAL.product.strawberry).lerp(new THREE.Color(PAL.product.lime),1-off2).getStyle())}bars.done()}
+          bars.putS(j,x,GY0+hgt/2,-.3,bw,hgt,.42);const off2=Math.min(1,Math.abs(v-P)/Math.max(.02,P));bars.tint(j,new THREE.Color(PAL.product.strawberry).lerp(new THREE.Color(PAL.product.lime),1-off2).getStyle())}bars.done()}
       theo.position.set(GX0+GW/2,GY0+Yv(P),-.3);theoSheet.position.copy(theo.position);
-      lTheo.at(tmp.set(ZG.x+GX0+GW+.15,TOP+GY0+Yv(P),ZG.z-.3)).set(`Theoretical<b>${fmt(P,3)}</b>`);
+      lTheo.at(tmp.set(ZG.x+GX0+.05,TOP+GY0+Yv(P),ZG.z-.3)).set(`Theoretical<b>${fmt(P,3)}</b>`);
       const Hn=s.hist.length;lRF.show(zone==="graph"&&Hn>0);if(Hn){const v=s.hist[Hn-1];lRF.at(tmp.set(ZG.x+GX0+Hn/Math.max(50,Hn)*GW,TOP+GY0+Yv(v),ZG.z-.05)).set(`Relative frequency<b>${fmt(v,3)}</b><small>after ${fmt(s.plays)} plays</small>`)}
       lAxis.at(tmp.set(ZG.x,TOP+GY0-.1,ZG.z+.2)).set(Hn?"Number of plays →":"Press Play 100 or Play 1,000");
       // ---- value: the balance weighs one play's cost against its expected prize; towers stack what you've really spent and won
@@ -338,14 +338,14 @@ function claw3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
         pn.w.forEach(({m,a:aa})=>{const rx=Math.cos(aa)*.4,rz=Math.sin(aa)*.4;const d=V3(rx,py+.03-hy2,rz);m.position.set(rx/2,(hy2-py)/2,rz/2);m.scale.set(1,d.length(),1);m.quaternion.setFromUnitVectors(V3(0,-1,0),d.normalize())});
         const val=pn.sg<0?cost:ret;let left=val;const offs=[[-.17,-.12],[.17,-.12],[-.17,.16],[.17,.16]];for(let st2=0;st2<4&&left>0;st2++)for(let c=0;c<10&&left>0;c++){const f=Math.min(1,left);coinAt(hx2+offs[st2][0],py+.05+c*.047+.0225*f,offs[st2][1],f);left-=1}});
       const spent=s.plays*s.cost,won=s.wins*s.prize,unit=[1,2,5,10,20,50,100,200,500,1000,2000,5000].find(u=>Math.max(spent,won)/u<=60)||10000;
-      [[1.0,spent],[1.95,won]].forEach(([x,v])=>{const n=Math.min(70,Math.ceil(v/unit-1e-9));for(let c=0;c<n;c++)coinAt(x+Math.sin(c*1.7)*.012,.08+c*.047,Math.cos(c*1.3)*.012,1)});
+      [[1.2,spent],[2.15,won]].forEach(([x,v])=>{const n=Math.min(70,Math.ceil(v/unit-1e-9));for(let c=0;c<n;c++)coinAt(x+Math.sin(c*1.7)*.012,.08+c*.047,Math.cos(c*1.3)*.012,1)});
       for(;ci<NC;ci++)coins.put(ci,0,-50,0,.001);coins.done();
       const pl=pans[0].g.position,pr2=pans[1].g.position;
       lCost.at(tmp.set(ZV.x+pl.x,TOP+pl.y+.1,ZV.z)).set(`Cost a play<b>${money(cost)}</b><small>1 coin = $1</small>`);
       lRet.at(tmp.set(ZV.x+pr2.x,TOP+pr2.y+.1,ZV.z)).set(`Expected prize<b>${money(ret)}</b><small>${fmt(P,3)} × $${fmt(s.prize,0)}</small>`);
       lEV.at(tmp.set(ZV.x+BX,TOP+PIV+.1,ZV.z)).set(`Expected value<b>${money(diff)} a play</b>`);
-      lSpent.at(tmp.set(ZV.x+1.0,TOP+.1+Math.min(70,spent/unit)*.047,ZV.z)).set(`Spent<b>${money(spent)}</b><small>1 coin = $${fmt(unit)}</small>`);
-      lWon.at(tmp.set(ZV.x+1.95,TOP+.1+Math.min(70,won/unit)*.047,ZV.z)).set(`Prizes worth<b>${money(won)}</b><small>${won>=spent?"ahead":"behind"} ${money(Math.abs(won-spent))}</small>`);
+      lSpent.at(tmp.set(ZV.x+1.2,TOP+.1,ZV.z+.3)).set(`Spent<b>${money(spent)}</b><small>1 coin = $${fmt(unit)}</small>`);
+      lWon.at(tmp.set(ZV.x+2.15,TOP+.1,ZV.z+.3)).set(`Prizes worth<b>${money(won)}</b><small>${won>=spent?"ahead":"behind"} ${money(Math.abs(won-spent))}</small>`);
       if(zone==="all"){[lTape,lGo,lPay,lGrip,lChute].forEach(l=>l.hide());}
     }};
 }
