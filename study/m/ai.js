@@ -84,8 +84,98 @@ const KUPU=[
  {mi:"tīpako haukume",en:"biased sample",ta:46051},
  {mi:"tīpako matapōkere",en:"random sample",ta:46052}];
 Object.entries({"draw": ["whakangungu", "tauira", "raraunga"], "guess": ["hātepe", "rorohiko"], "score": ["tīpako", "raraunga"], "bias": ["tīpako haukume", "tīpako matapōkere"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
+// ---------- the 3D bench (../kit3d.js): you draw on a tablet in the scene; your drawing rises as the 256 numbers the AI sees
+// (a 16 × 16 field of pillars); every training example floats on a memory table placed by similarity (the first two principal
+// components of the same 256 numbers), and a guess draws glowing threads to its three nearest neighbours. Same k-NN as the page.
+function ai3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const TINT=PAL.case.blush;
+  const plinth=(x,z,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(x,.15,z);S.scene.add(p);return p};
+  plinth(-4.6,0,4.4,4.4,TINT);plinth(0,0,3.6,4.4,PAL.case.lavender);plinth(4.9,0,5,4.4,PAL.case.sky);
+  const TOP=.3;
+  // ---------------------------------------------------------------- the tablet on an easel; its screen is the drawing pad
+  const tab=S.group();tab.position.set(-4.6,TOP+1.25,.2);tab.rotation.x=-.62;
+  tab.add(S.rbox(3.3,3.3,.16,.22,mat("plastic",TINT,{rough:.35})));
+  const scr=S.panel(512,512,2.9);scr.position.z=.085;tab.add(scr);
+  tab.add(S.sphere(.05,mat("glow",PAL.product.lime,1.5),{at:[0,-1.55,.09],cast:false}));
+  const leg=S.cyl(.06,.08,1.4,mat("metal"),{at:[-4.6,TOP+.6,-.65],rot:[.5,0,0]});S.scene.add(leg);
+  const toPad=p=>{const l=scr.worldToLocal(p.clone());const u=l.x/2.9+.5,v=.5-l.y/2.9;return [PAD.x+S.clamp(u,0,1)*PAD.s,PAD.y+S.clamp(v,0,1)*PAD.s]};
+  const can=()=>["draw","guess","bias","test"].includes(S.api.step.k);
+  S.dragger(scr,{normal:null,start:p=>{if(!can())return;s.cur=[toPad(p)];S.api.redraw()},
+    move:p=>{if(!s.cur)return;const q=toPad(p),l=s.cur[s.cur.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>3)s.cur.push(q)},
+    end:()=>{if(s.cur){s.strokes.push(s.cur);s.cur=null}}});
+  // the drag plane must be the screen itself, not facing the camera
+  scr.userData.pick.o.drag.normal=null;Object.defineProperty(scr.userData.pick.o.drag,"normal",{get:()=>V3(0,0,1).applyQuaternion(scr.getWorldQuaternion(new THREE.Quaternion()))});
+  let drawnKey="";
+  // ---------------------------------------------------------------- what the AI sees: 256 pillars
+  const pill=S.swarm(G*G,new S.RoundedBoxGeometry(1,1,1,2,.12),mat("plastic","#ffffff",{rough:.35}),{colors:true,cast:true});pill.castShadow=true;S.scene.add(pill);
+  const cell=.19,hcur=new Float32Array(G*G);
+  const grid=S.rbox(G*cell+.3,.08,G*cell+.3,.05,mat("plastic","#ffffff",{rough:.4}),{at:[0,TOP+.04,.1]});S.scene.add(grid);
+  const inkC=new THREE.Color(PAL.ink),paperC=new THREE.Color("#F1EEF8"),tc=new THREE.Color();
+  // ---------------------------------------------------------------- the memory table: examples placed by similarity
+  const memo=S.group();memo.position.set(4.9,TOP,0);
+  const table=S.rbox(4.4,.1,3.8,.06,mat("acrylic",PAL.case.sky,{opacity:.5}),{at:[0,.05,0],cast:false});memo.add(table);
+  const tiles=new Map();const tileGeo=new THREE.PlaneGeometry(.46,.46);
+  function tileFor(e,c){let T=tiles.get(e);if(T)return T;const cv2=document.createElement("canvas");cv2.width=cv2.height=96;const g=cv2.getContext("2d");
+    g.fillStyle="#fff";g.fillRect(0,0,96,96);g.strokeStyle=CLS[c];g.lineWidth=8;g.strokeRect(4,4,88,88);g.strokeStyle="#222A55";g.lineWidth=5;g.lineCap="round";g.lineJoin="round";
+    const k=80/PAD.s;e.strokes.forEach(stk=>{g.beginPath();stk.forEach((p,i)=>g[i?"lineTo":"moveTo"](8+(p[0]-PAD.x)*k,8+(p[1]-PAD.y)*k));g.stroke()});
+    const tex=new THREE.CanvasTexture(cv2);tex.colorSpace=THREE.SRGBColorSpace;
+    const m=new THREE.Mesh(tileGeo,new THREE.MeshBasicMaterial({map:tex,toneMapped:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2+.5;
+    const g2=S.group(memo);g2.add(m);const stem=S.cyl(.012,.012,1,mat("plastic",CLS[c]),{seg:6,cast:false});g2.add(stem);
+    T={g:g2,m,stem,pos:V3(0,0,0),tgt:V3(0,0,0),born:S.t};tiles.set(e,T);return T}
+  // first two principal components of all example vectors (power iteration), recomputed when the examples change
+  let pcKey="",pc1=null,pc2=null,mean=null,sc=1;
+  function pca(vs){const n=vs.length,d=G*G;mean=new Float32Array(d);vs.forEach(v=>{for(let i=0;i<d;i++)mean[i]+=v[i]/n});
+    const comp=(prev)=>{let w=new Float32Array(d).map((_,i)=>Math.sin(i*1.7+(prev?2:0)));for(let it=0;it<30;it++){const nw=new Float32Array(d);
+        vs.forEach(v=>{let dot=0;for(let i=0;i<d;i++)dot+=(v[i]-mean[i])*w[i];for(let i=0;i<d;i++)nw[i]+=dot*(v[i]-mean[i])});
+        if(prev){let p=0;for(let i=0;i<d;i++)p+=nw[i]*prev[i];for(let i=0;i<d;i++)nw[i]-=p*prev[i]}
+        let L=0;for(let i=0;i<d;i++)L+=nw[i]*nw[i];L=Math.sqrt(L)||1;for(let i=0;i<d;i++)nw[i]/=L;w=nw}return w};
+    pc1=comp(null);pc2=comp(pc1);let m2=0;vs.forEach(v=>{const p=proj(v);m2=Math.max(m2,Math.abs(p[0]),Math.abs(p[1]))});sc=m2||1}
+  const proj=v=>{let a=0,b=0;for(let i=0;i<G*G;i++){const x=v[i]-mean[i];a+=x*pc1[i];b+=x*pc2[i]}return [a,b]};
+  const place=v=>{const [a,b]=proj(v);return V3(a/sc*1.75,0,b/sc*1.45)};
+  const me=S.sphere(.11,mat("glow",PAL.product.butter,2.2),{cast:false});memo.add(me);
+  const threads=[0,1,2].map(()=>{const m=S.cyl(.014,.014,1,mat("glow",PAL.product.butter,1.6),{seg:6,cast:false});memo.add(m);return m});
+  // test set results as beads: right ones lime, wrong ones strawberry
+  const beads=S.swarm(40,new THREE.SphereGeometry(.06,12,8),mat("plastic","#ffffff",{rough:.3}),{colors:true});memo.add(beads);let beadKey="";
+  const lGuess=S.label({cls:"big",off:[24,-36]}),lSees=S.label({off:[0,-40]}),lMem=S.label({off:[0,-46]}),lPad=S.label({cls:"hot",off:[0,-44]}),lAcc=S.label({cls:"big",off:[-30,-30]});
+  S.view("draw",[-1.9,4.4,7.4],[-2.4,1.0,0],{min:2.5,max:20});S.view("all",[.6,6.4,10.6],[.2,.9,0],{min:3,max:30});
+  S.view("memory",[5.6,4.4,5.4],[4.6,.6,0],{min:2.5,max:20});
+  const viewOf=k=>k==="draw"?"draw":k==="score"?"memory":"all";
+  const tmp=V3();
+  return {
+    step(st){const v=viewOf(st.k);S.goView(v);S.setShadowBox(v==="all"?9:5,v==="draw"?[-4.6,0,0]:v==="memory"?[4.9,0,0]:[0,0,0])},
+    update(x,st,dt,t){
+      // the pad
+      const key=JSON.stringify([s.strokes.length,s.cur?s.cur.length:0,s.strokes.map(a=>a.length)]);
+      if(key!==drawnKey){drawnKey=key;scr.redraw((g,w,h)=>{g.fillStyle="#fff";g.beginPath();g.roundRect(0,0,w,h,36);g.fill();g.strokeStyle=PAL.deep.blush;g.lineWidth=6;g.stroke();
+        const k=w/PAD.s;g.strokeStyle="#222A55";g.lineWidth=12;g.lineCap="round";g.lineJoin="round";
+        [...s.strokes,...(s.cur?[s.cur]:[])].forEach(stk=>{g.beginPath();stk.forEach((p,i)=>g[i?"lineTo":"moveTo"]((p[0]-PAD.x)*k,(p[1]-PAD.y)*k));if(stk.length===1)g.lineTo((stk[0][0]-PAD.x)*k+.1,(stk[0][1]-PAD.y)*k);g.stroke()});
+        if(!s.strokes.length&&!s.cur){g.fillStyle="#B8B2CC";g.font="600 30px Instrument Sans, system-ui";g.textAlign="center";g.fillText("DRAW HERE",w/2,h/2)}})}
+      // the pillars follow the 16 × 16 grid of the current drawing (or the last guess)
+      const v=raster(s.strokes.concat(s.cur?[s.cur]:[]),s.center);
+      for(let i=0;i<G*G;i++){const a=Math.min(1,v[i]*2.2);hcur[i]=S.lerp(hcur[i],a,.15);const gx=i%G,gy=Math.floor(i/G);const h=.04+hcur[i]*1.1;
+        pill.putS(i,(gx-(G-1)/2)*cell,TOP+.08+h/2,.1+(gy-(G-1)/2)*cell,cell*.86,h,cell*.86);pill.tint(i,tc.copy(paperC).lerp(inkC,hcur[i]))}pill.done();
+      // the memory table
+      const all=[];s.ex.forEach((list,c)=>list.forEach(e=>all.push({e,c})));
+      const k2=all.length+"|"+s.center;if(k2!==pcKey&&all.length>=3){pcKey=k2;pca(all.map(a=>s.center?a.e.vc:a.e.v))}
+      const live=new Set();all.forEach(({e,c})=>{const T=tileFor(e,c);live.add(e);if(pc1)T.tgt.copy(place(s.center?e.vc:e.v));T.pos.lerp(T.tgt,.08);
+        const grow=S.clamp((S.t-T.born)*2,0,1);T.g.position.set(T.pos.x,.12,T.pos.z);T.m.position.y=.25+.35*grow;T.m.scale.setScalar(grow);T.stem.scale.y=.25+.35*grow;T.stem.position.y=(.25+.35*grow)/2});
+      for(const [e,T] of tiles)if(!live.has(e)){memo.remove(T.g);tiles.delete(e)}
+      const hasDraw=s.strokes.length>0&&pc1;me.visible=!!hasDraw;
+      if(hasDraw){const p=place(raster(s.strokes,s.center));me.position.set(p.x,.75+Math.sin(t*3)*.04,p.z)}
+      threads.forEach((th,i)=>{const n=s.pred&&s.pred.near[i];const T=n&&s.ex[n.c][n.i]&&tiles.get(s.ex[n.c][n.i]);th.visible=!!(T&&hasDraw);
+        if(th.visible){const a=me.position,b=V3(T.pos.x,.12+T.m.position.y,T.pos.z);const L=a.distanceTo(b);th.scale.y=L;th.position.copy(a).add(b).multiplyScalar(.5);th.quaternion.setFromUnitVectors(V3(0,1,0),b.clone().sub(a).normalize())}});
+      // the test set
+      const bk=s.acc==null?"":s.acc+"|"+s.center+"|"+all.length;beads.visible=!!bk&&["score","bias","test"].includes(st.k);
+      if(bk&&bk!==beadKey){beadKey=bk;testSet().forEach((tt,i)=>{const p=predict(s.center?tt.vc:tt.v);beads.put(i,-2+(i%20)*.21,.2,2.15+Math.floor(i/20)*.2,1);beads.tint(i,p&&p.c===tt.c?PAL.product.lime:PAL.product.strawberry)});beads.done()}
+      // labels
+      lPad.show(["draw","guess","bias","test"].includes(st.k)&&!s.strokes.length).at(tab.localToWorld(tmp.set(0,1.75,0))).set("Draw on the tablet");
+      lSees.at(tmp.set(0,TOP+1.5,-1.4)).set(`What the AI sees<small>16 × 16 = 256 numbers${s.center?" · centred":""}</small>`);
+      lMem.at(tmp.set(4.9,TOP+1.1,-1.9)).set(`Its memory<small>${s.ex[0].length} ${s.names[0].toLowerCase()} · ${s.ex[1].length} ${s.names[1].toLowerCase()} · close together = similar</small>`);
+      lGuess.show(!!s.pred&&hasDraw).at(memo.localToWorld(tmp.copy(me.position))).set(s.pred?`${s.names[s.pred.c]}<small>${fmt(s.pred.conf*100)}% sure${s.last==null?"":s.last?" · right":" · wrong"}</small>`:"");
+      lAcc.show(!!bk&&beads.visible).at(memo.localToWorld(tmp.set(0,.3,2.3))).set(`Test set<b>${s.acc==null?"":fmt(s.acc*100)+"% right"}</b>`);
+    }};
+}
 let api;
-api=StudyKit.mount({kupu:KUPU,
+api=StudyKit.mount({kupu:KUPU,scene3d:ai3d,
   eyebrow:"Digital technologies · Artificial intelligence", title:"Train your own AI", crumb:"Years 9–10 Technology and Digital Technologies: data, algorithms and AI ethics", homeHash:"y9",
   fig:"FIG. 12 · A DRAWING CLASSIFIER YOU TEACH", railTitle:"Teach, test, find the bias",
   badge:{label:"AI and digital tech · Years 9–11"},

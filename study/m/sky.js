@@ -367,8 +367,8 @@ function sky3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,
     if(k==="globe")return [E.clone().addScaledVector(toSun,2.3).addScaledVector(side,3.9).add(V3(0,1.4,0)),E.clone()];
     if(k==="moon")return [E.clone().add(V3(0,5.4,0)).addScaledVector(toSun,2.8).addScaledVector(side,.6),E.clone()];
     if(k==="tide")return [E.clone().add(V3(0,3.4,0)).addScaledVector(side,1.8).addScaledVector(toSun,1.6),E.clone()];
-    if(k==="eclipse")return [E.clone().addScaledVector(side,5.6).add(V3(0,.8,0)).addScaledVector(toSun,1.4),E.clone().addScaledVector(toSun,.8)];
-    return [V3(4,13,15),V3(0,1,0)]};
+    if(k==="eclipse")return [E.clone().addScaledVector(side,7.6).add(V3(0,1.1,0)).addScaledVector(toSun,1.6),E.clone().addScaledVector(toSun,.9)];
+    return [V3(3,21,25),V3(0,.6,0)]};
   function place(){earthSys.position.copy(ep)}
   return {
     step(st){viewName=st.k==="test"?"wide":st.view;const E=earthPos();const [p,tg]=camFor(viewName,E);S.view("cur",p.toArray(),tg.toArray(),{min:1.6,max:40,dur:1.8});S.goView("cur");
