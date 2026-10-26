@@ -84,3 +84,24 @@
 .experiment-card{background:color-mix(in srgb,var(--card-bg) 38%,#fffefc)}
 .card-bottom{border-top-color:color-mix(in srgb,var(--card-bg) 80%,#bfaebb)}
 .card-go{background:color-mix(in srgb,var(--card-bg) 18%,#3e2339)}
+/* phones and tablets: the same stage feel, stacked */
+@media(max-width:950px){
+.hero{position:relative}
+.hero-world{border-radius:26px;border:0;background:radial-gradient(130% 110% at 70% 30%,#f4ecf3 0%,#eadff0 50%,#e1d3ea 100%);box-shadow:0 30px 60px -44px #5f314e88,inset 0 0 0 1px #ffffff80}
+.hero-world[data-world=cafe]{background:radial-gradient(130% 110% at 70% 30%,#fbf1e8 0%,#f5e3d4 50%,#efd5c2 100%)}
+.hero-world[data-world=store]{background:radial-gradient(130% 110% at 70% 30%,#f0f6ee 0%,#e2eedf 50%,#d4e5d0 100%)}
+.scene-area{height:400px;min-height:400px}
+.scene-hint{bottom:10px}
+.scene-caption{margin:-34px 14px 0;background:#ffffffc8;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:18px;padding:14px 14px 14px 18px;box-shadow:0 16px 30px -22px #3e233966;z-index:3}
+.world-tools{margin:14px 16px 12px}
+.world-selector{margin:0 12px 12px;border:0;background:#ffffffb8;border-radius:100px;padding:4px;gap:4px;overflow-x:auto;scrollbar-width:none}
+.world-selector::-webkit-scrollbar{display:none}
+.world-selector button{border:0;border-radius:100px;padding:10px 12px;font-size:12px;flex:1 0 auto}.world-selector button[aria-pressed=true]{background:var(--ink);color:#fff}.world-selector button[aria-pressed=true] span{opacity:.7}
+.hero-cubes{display:block;position:absolute;right:4%;top:26px;width:34%;height:300px;z-index:1;pointer-events:none}
+.hero-copy{position:relative;z-index:2}
+.hc{position:absolute;width:40px;filter:drop-shadow(0 12px 8px #3e233926);animation:hcIn 1.4s cubic-bezier(.2,1.2,.3,1) both,hcFloat 7s ease-in-out 1.4s infinite alternate}.hc svg{display:block;width:100%;height:auto}
+.hc0{right:6%;top:8%;width:46px}.hc1{right:52%;top:2%;width:26px;animation-delay:.2s,1.6s}.hc5{right:30%;top:30%;width:22px;animation-delay:.4s,1.8s}.hc2,.hc3,.hc4{display:none}
+}
+@media(prefers-reduced-motion:reduce){.hc{animation:none!important}}
+@keyframes hcIn{from{opacity:0;transform:translate(-120px,60px) rotate(-40deg) scale(.4)}to{opacity:1;transform:none}}@keyframes hcFloat{from{transform:translateY(0) rotate(0)}to{transform:translateY(-16px) rotate(6deg)}}
+@media(max-width:950px){.scene-area{-webkit-mask-image:linear-gradient(180deg,#000 78%,transparent);mask-image:linear-gradient(180deg,#000 78%,transparent)}}
