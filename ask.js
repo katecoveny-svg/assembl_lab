@@ -1,5 +1,7 @@
 /* assembl lab · Ask about this. Two questions per page per day, answered by a small model, capped server-side. */
 (function(){
+  // not inside a lab preview embed (the home page hero): the page around it already has its own button
+  if(window.__labEmbed||(/[?&]lab-preview=1\b/.test(location.search)&&window.parent!==window))return;
   const page=(document.currentScript&&document.currentScript.dataset.page)||document.documentElement.dataset.ask||"lab", KEY="ask:"+page+":"+new Date().toISOString().slice(0,10), MAX=2;
   let used=0;try{used=+localStorage.getItem(KEY)||0}catch(e){}
   const css=`.askb{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:45;font:500 15px "Instrument Sans",system-ui,sans-serif}
