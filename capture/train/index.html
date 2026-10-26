@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>assembl capture · train</title>
+  <meta name="description" content="Turn an assembl capture into a 3D Gaussian splat on this computer: pose solving, training (Brush, WebGPU) and preparation all run in the browser. Nothing is uploaded.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../capture.css">
+  <link rel="stylesheet" href="../../splat-viewer/viewer/viewer.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23240B21' stroke-width='4' stroke-dasharray='5 2.4'/%3E%3C/svg%3E">
+  <!-- The splat-car viewer's libraries, pinned as in splat-viewer/DECISIONS.md -->
+  <script type="importmap">
+  { "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"
+  } }
+  </script>
+  <style>
+    .tr-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; align-items: start; }
+    @media (max-width: 900px) { .tr-grid { grid-template-columns: minmax(0, 1fr); } }
+    .tr-panel { border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 0 0 16px; background: var(--bg); }
+    .tr-panel.is-quiet { background: var(--surface); }
+    .tr-drop { display: grid; place-items: center; text-align: center; min-height: 128px; border: 1.5px dashed var(--line-strong); border-radius: 12px; padding: 18px; cursor: pointer; color: var(--body); }
+    .tr-drop.is-over { border-color: var(--fg); background: var(--surface); }
+    .tr-drop strong { color: var(--fg); font-weight: 500; }
+    .tr-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .tr-settings { grid-template-columns: 1fr; } }
+    select.ac-input { appearance: auto; }
+    .tr-steps { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+    .tr-step { position: relative; padding: 10px 0 12px 34px; border-bottom: 1px solid var(--line); counter-increment: s; }
+    .tr-step::before { content: counter(s); position: absolute; left: 0; top: 10px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-strong);
+      font: 500 12px/20px var(--mono); text-align: center; color: var(--body); }
+    .tr-step[data-status="running"]::before { border-color: var(--fg); color: var(--fg); }
+    .tr-step[data-status="done"]::before { content: "✓"; background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+    .tr-step[data-status="skipped"]::before { content: "–"; }
+    .tr-step[data-status="failed"]::before { content: "!"; border-color: var(--fg); color: var(--fg); }
+    .tr-step-name { font-weight: 500; color: var(--fg); }
+    .tr-step-line { margin: 2px 0 0; color: var(--body); font-size: 14.5px; font-variant-numeric: tabular-nums; }
+    .tr-bar { height: 4px; border-radius: 2px; background: var(--line); margin-top: 8px; overflow: hidden; }
+    .tr-bar > i { display: block; height: 100%; width: 0; background: var(--fg); transition: width 200ms linear; }
+    .tr-step:not([data-status="running"]) .tr-bar { display: none; }
+    .tr-preview-wrap { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--paper); aspect-ratio: 4 / 3; }
+    .tr-preview { display: block; width: 100%; height: 100%; touch-action: none; }
+    .tr-preview-label { position: absolute; left: 10px; bottom: 10px; font: 400 11.5px/1.3 var(--mono); padding: 5px 8px; border-radius: 6px; background: rgba(36, 11, 33, 0.72); color: #FFFDFB; }
+    .tr-viewer { min-height: 560px; margin-top: 16px; }
+    @media (max-width: 760px) { .tr-viewer { min-height: 0; } }
+    .tr-downloads { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .tr-downloads a { text-decoration: none; }
+    .tr-numbers { margin: 10px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px 16px; }
+    .tr-numbers dt { font: 400 11px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--body); }
+    .tr-numbers dd { margin: 0; font: 500 17px/1.3 var(--sans); color: var(--fg); font-variant-numeric: tabular-nums; }
+    .tr-log { font: 400 12px/1.5 var(--mono); color: var(--body); max-height: 160px; overflow: auto; white-space: pre-wrap; margin: 10px 0 0; }
+  </style>
+</head>
+<body>
+  <main class="page page-wide">
+    <header class="ac-head">
+      <p class="ac-kicker">assembl capture · train</p>
+      <h1 class="ac-title">Turn a capture into 3D on this computer</h1>
+      <p class="ac-lead">Load a capture file from the phone. This page works out where each photo was taken (if the phone couldn't), trains the 3D model with your graphics card, cleans it up and opens it in the walkthrough viewer. Nothing is uploaded.</p>
+    </header>
+
+    <div class="tr-grid">
+      <div>
+        <section class="tr-panel is-quiet" id="gpu" aria-live="polite">
+          <p class="ac-label">This computer</p>
+          <p class="ac-device-head" id="gpu-head">Checking WebGPU…</p>
+          <p class="ac-device-body" id="gpu-body"></p>
+        </section>
+
+        <section class="tr-panel">
+          <p class="ac-label">1 · Capture file</p>
+          <label class="tr-drop" id="drop">
+            <input type="file" id="file" accept=".zip,application/zip" hidden>
+            <span><strong>Choose a capture (.zip)</strong><br>or drop it here</span>
+          </label>
+          <dl class="ac-summary" id="summary" hidden></dl>
+        </section>
+
+        <section class="tr-panel">
+          <p class="ac-label">2 · Settings</p>
+          <div class="tr-settings">
+            <label class="ac-field"><span class="ac-label">Training steps</span>
+              <select class="ac-input" id="iters">
+                <option value="3000">Quick · 3,000</option>
+                <option value="7000" selected>Standard · 7,000</option>
+                <option value="15000">Fine · 15,000</option>
+              </select></label>
+            <label class="ac-field"><span class="ac-label">Photo size used</span>
+              <select class="ac-input" id="res">
+                <option value="960">960 px</option>
+                <option value="1280" selected>1,280 px</option>
+                <option value="1600">1,600 px</option>
+              </select></label>
+            <label class="ac-field"><span class="ac-label" id="size-label">Known length <span class="ac-opt">m · sets the real scale</span></span>
+              <input class="ac-input" id="size" type="number" inputmode="decimal" min="0" step="0.001" placeholder="e.g. 4.395"></label>
+            <label class="ac-field"><span class="ac-label">File size budget <span class="ac-opt">MB</span></span>
+              <input class="ac-input" id="budget" type="number" min="0.5" step="0.5" placeholder="8"></label>
+          </div>
+          <div class="ac-actions">
+            <button class="ac-btn ac-btn-primary" id="run" type="button" disabled>Start</button>
+            <button class="ac-btn" id="poses-only" type="button" hidden>Solve poses only</button>
+            <button class="ac-btn ac-btn-ghost" id="cancel" type="button" hidden>Cancel</button>
+            <p class="ac-error" id="error" role="alert" hidden></p>
+          </div>
+        </section>
+      </div>
+
+      <div>
+        <section class="tr-panel">
+          <p class="ac-label">3 · Progress</p>
+          <ol class="tr-steps" id="steps">
+            <li class="tr-step" data-step="read"><span class="tr-step-name">Read the capture</span><p class="tr-step-line">Waiting for a file.</p><div class="tr-bar"><i></i></div></li>
+            <li class="tr-step" data-step="poses"><span class="tr-step-name">Work out where each photo was taken</span><p class="tr-step-line">Only needed when the phone couldn't record it (iPhone, iPad).</p><div class="tr-bar"><i></i></div></li>
+            <li class="tr-step" data-step="train"><span class="tr-step-name">Train the 3D model</span><p class="tr-step-line">Brush, on this computer's graphics card.</p><div class="tr-bar"><i></i></div></li>
+            <li class="tr-step" data-step="prepare"><span class="tr-step-name">Level, scale, crop and clean</span><p class="tr-step-line">The same steps as the splat-car pipeline.</p><div class="tr-bar"><i></i></div></li>
+            <li class="tr-step" data-step="view"><span class="tr-step-name">Open in the walkthrough viewer</span><p class="tr-step-line"></p><div class="tr-bar"><i></i></div></li>
+          </ol>
+          <dl class="tr-numbers" id="numbers" hidden></dl>
+        </section>
+        <div class="tr-preview-wrap" id="preview-wrap" hidden>
+          <canvas class="tr-preview" id="preview"></canvas>
+          <span class="tr-preview-label">Live preview: unsorted splat sprites from the GPU, not the final render</span>
+        </div>
+      </div>
+    </div>
+
+    <section id="result" hidden>
+      <div class="tr-viewer" id="viewer"></div>
+      <div class="tr-downloads" id="downloads"></div>
+      <p class="ac-privacy">These files exist only in this browser until you download them.</p>
+    </section>
+
+    <section class="ac-explain">
+      <h2>What runs where</h2>
+      <p>Pose solving uses colmap-wasm (COLMAP and GLOMAP compiled to WebAssembly, BSD licence). Training uses Brush (Apache-2.0) compiled to WebAssembly and WebGPU. Both run in this tab. Training needs Chrome or Edge 134 or later on a Mac or PC with WebGPU subgroups; Safari doesn't offer subgroups yet, so it can't train here.</p>
+    </section>
+  </main>
+
+  <script type="module" src="./page.js"></script>
+</body>
+</html>
