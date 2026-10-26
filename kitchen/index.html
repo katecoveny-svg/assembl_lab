@@ -1,4 +1,5 @@
-<!doctype html><html lang="en-NZ" data-feeds="fpi,foodprices"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-feeds="fpi,foodprices"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+</head><body>
 <title>The Kitchen Machine</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -160,6 +161,7 @@ footer{font-size:12.5px;color:var(--body);display:grid;gap:6px;max-width:96ch}fo
 .gb{display:grid;grid-template-columns:minmax(0,112px) minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:13px;color:var(--ink)}
 .gb .trk{height:10px;position:relative}
 .gb .trk i{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--ink);opacity:.78;min-width:2px;transition:width .4s var(--ease)}
+.gb .trk i{height:12px;top:-1px;border-radius:999px;opacity:1;background:linear-gradient(90deg,#B5466F,#E8688A)}.gb .trk i[data-g=veg]{background:linear-gradient(90deg,#2A7D63,#6FB36A)}.gb .trk i[data-g=dairy]{background:linear-gradient(90deg,#3A6FB8,#7EB2EE)}.gb .trk i[data-g=meat],.gb .trk i[data-g=seafood]{background:linear-gradient(90deg,#9A3B53,#D46A78)}.gb .trk i[data-g=bakery]{background:linear-gradient(90deg,#8A6510,#D9A55A)}.gb .trk i[data-g=other],.gb .trk i[data-g=leftovers]{background:linear-gradient(90deg,#6A50BE,#B59BD6)}
 .gb b{font:500 12.5px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
 .gb small{font:10.5px var(--mono);color:var(--rose)}
 .split{display:flex;gap:2px;height:12px}
@@ -571,9 +573,13 @@ function drawScene(p){let o="";const ink="var(--ink)";
   o+=`<path d="M300,40 Q395,2 490,40" fill="none" stroke="var(--rose)" stroke-width="1.5" stroke-dasharray="3 5"/><text x="395" y="70" text-anchor="middle" style="font:600 15px var(--display);fill:${ink}">${head}</text><text x="395" y="90" text-anchor="middle" style="font:500 10.5px var(--mono);fill:var(--rose);letter-spacing:.06em">${sub}</text>`;
   const slots={fridge:{x:36,y:[40,130],w:200,max:8},crisper:{x:36,y:[266],w:200,max:4},door:{x:36,y:[346],w:200,max:4},bench:{x:290,y:[196,142],w:210,max:8},pantry:{x:312,y:[316,356],w:170,max:6}};
   const tiles=[];
-  if(SCAN){SCAN.forEach(it=>tiles.push({name:it.name,where:whereOf(it),fill:tint(it.category),dot:useColor(it.use_by),have:true}));
-    p.items.forEach(it=>tiles.push({name:it.name,where:it.where==="freezer"?"pantry":it.where,fill:"none",dot:tagColor(it.keep),have:false}))}
-  else p.items.forEach(it=>tiles.push({name:it.name,where:it.where,fill:tint(it.group),dot:tagColor(it.keep),have:true}));
+  const fresh=k=>k<=3?"today":k<=7?"week":"fine";
+  if(SCAN){SCAN.forEach(it=>tiles.push({name:it.name,where:whereOf(it),fill:tint(it.category),dot:useColor(it.use_by),have:true,group:it.category,fresh:it.use_by==="today"?"today":it.use_by==="this_week"?"week":"fine"}));
+    p.items.forEach(it=>tiles.push({name:it.name,where:it.where==="freezer"?"pantry":it.where,fill:"none",dot:tagColor(it.keep),have:false,group:it.group,fresh:fresh(it.keep)}))}
+  else p.items.forEach(it=>tiles.push({name:it.name,where:it.where,fill:tint(it.group),dot:tagColor(it.keep),have:true,group:it.group,fresh:fresh(it.keep)}));
+  // the 3D kitchen (kitchen3d.js) draws the same tiles; the SVG stays as the fallback
+  window.__kitchenScene={tiles:tiles.map(t=>({name:t.name,where:t.where,group:t.group,fresh:t.fresh,have:t.have})),head,sub};
+  try{dispatchEvent(new CustomEvent("kitchen:scene",{detail:window.__kitchenScene}))}catch(e){}
   const filled={};
   tiles.forEach((t,i)=>{const s=slots[t.where]||slots.fridge;const k=filled[t.where]||0;const perRow=Math.floor(s.w/50);if(k>=s.max)return;filled[t.where]=k+1;
     const row=Math.floor(k/perRow),col=k%perRow;const y=(s.y[row]??(s.y[s.y.length-1]+row*44));const x=s.x+col*50+22,yy=y+20;const nm=t.name.length>9?t.name.slice(0,8)+"…":t.name;
@@ -594,7 +600,7 @@ function render(){const p=plan();drawScene(p);
   {const GN={fruit:"Fruit",veg:"Vegetables",dairy:"Dairy and eggs",meat:"Meat",seafood:"Fish",bakery:"Bread",pantry:"Pantry",frozen:"Frozen",other:"Other"};const g={};p.items.forEach(i=>{const k=GN[i.group]?i.group:"other";g[k]=(g[k]||0)+i.cost});
     const rows=Object.entries(g).filter(([,v])=>v>0.005).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...rows.map(r=>r[1]));
     $("spendViz").hidden=!rows.length;
-    $("gbars").innerHTML=rows.map(([k,v])=>`<div class="gb" title="${GN[k]}: $${v.toFixed(2)}"><span>${GN[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><b>$${v.toFixed(0)}</b></div>`).join("");
+    $("gbars").innerHTML=rows.map(([k,v])=>`<div class="gb" title="${GN[k]}: $${v.toFixed(2)}"><span>${GN[k]}</span><span class="trk"><i data-g="${k}" style="width:${(v/mx*100).toFixed(1)}%"></i></span><b>$${v.toFixed(0)}</b></div>`).join("");
     $("gbars").setAttribute("aria-label","Spend by food group: "+rows.map(([k,v])=>`${GN[k]} $${v.toFixed(0)}`).join(", "));
     const mc=p.items.reduce((a,i)=>a+(i.price?i.main*i.price:0),0),tc=p.items.reduce((a,i)=>a+(i.price?i.top*i.price:0),0);
     const sp=$("shopSplit").children;sp[0].style.flexGrow=mc;sp[1].style.flexGrow=tc;sp[1].hidden=tc<0.005;
@@ -730,4 +736,5 @@ window.__kitchen={S,plan,render,state:()=>({stage,src:SRC,scan:SCAN}),vision:VIS
 })();
 </script>
 
+<script type="module" src="/kitchen/kitchen3d.js"></script>
 <script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="kitchen"></script><script src="/lab/navigation.js" defer></script></body></html>
