@@ -31,3 +31,56 @@
 @media(prefers-reduced-motion:reduce){.machine-tile,.machine-tile img{transition:none}}
 .experiment-card{display:flex;flex-direction:column}.card-link{display:flex;flex-direction:column;flex:1}.card-art{flex:1 0 auto}
 .allen-badge .allen-label{position:static;transform:none}
+/* ---- wow pass: an immersive hero stage, cube icons instead of arrows, 3D-tilting cards ---- */
+.go{display:inline-block;width:1.15em;height:1.15em;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round'%3E%3Cpath d='M4 9 16 2l12 7v14l-12 7L4 23Z'/%3E%3Cpath d='M4 9l12 7 12-7M16 16v14'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round'%3E%3Cpath d='M4 9 16 2l12 7v14l-12 7L4 23Z'/%3E%3Cpath d='M4 9l12 7 12-7M16 16v14'/%3E%3C/svg%3E") center/contain no-repeat;transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+.button .go{width:22px;height:22px;padding:0}.button{gap:18px}.button.primary{padding:13px 14px 13px 24px;box-shadow:0 10px 24px -14px #3e2339aa}
+.button.primary .go{background:#fff;width:18px;height:18px}.button.primary{position:relative}
+.button:hover .go,.round-link:hover .go,.header-cta:hover .go,.experiment-card:hover .card-go .go,.text-button:hover .go{transform:rotate(60deg) scale(1.12)}
+.header-cta{gap:12px;background:var(--white);transition:background .25s,color .25s}.header-cta:hover{background:var(--ink);color:#fff}.header-cta .go{width:16px;height:16px}
+.text-button .go{width:15px;height:15px;color:#b5466f}
+.round-link{background:var(--ink);color:#fff;border:0;width:48px;height:48px;box-shadow:0 10px 22px -12px #3e2339aa}.round-link .go{width:20px;height:20px}
+.card-go{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--card-bg) 30%,#3e2339);color:#fff;box-shadow:0 8px 18px -10px color-mix(in srgb,var(--card-bg) 30%,#3e2339)}.card-go .go{width:17px;height:17px}
+.card-bottom{font-size:12px;font-weight:500;padding-top:12px}
+/* cards lean towards the pointer */
+.experiment-card,.machine-tile{transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(0);transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s;will-change:transform}
+.experiment-card:hover,.machine-tile:hover{transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-8px);box-shadow:0 34px 50px -32px color-mix(in srgb,var(--card-bg,#e9e0ef) 25%,#3e2339)}
+.experiment-card.tilting,.machine-tile.tilting{transition:transform .12s linear,box-shadow .45s}
+.experiment-card:after,.machine-tile:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,0%),#ffffff8c,#fff0 45%);opacity:0;transition:opacity .4s;z-index:3;mix-blend-mode:soft-light}
+.experiment-card:hover:after,.machine-tile:hover:after{opacity:1}
+.machine-tile{position:relative}
+.experiment-card:hover .card-poster{transform:scale(1.09) translate(calc(var(--ry,0deg) / 1deg * -1.4px),calc(var(--rx,0deg) / 1deg * 1.4px))}
+.card-art{background:radial-gradient(120% 90% at 30% 20%,#fff8,transparent 60%),var(--card-bg)}
+.experiment-card{border-color:color-mix(in srgb,var(--card-bg) 70%,#c9b8c4)}
+/* the hero becomes one big stage with the world alive inside it */
+.hero-cubes{display:none}
+@media(min-width:951px){
+.hero{display:block;position:relative;max-width:none;padding:22px 2.4% 30px;min-height:0}
+.hero-world{height:clamp(640px,84vh,900px);border-radius:30px;border:0;background:radial-gradient(120% 120% at 78% 40%,#f4ecf3 0%,#eadff0 45%,#e1d3ea 100%);box-shadow:0 40px 80px -60px #5f314e88,inset 0 0 0 1px #ffffff80}
+.hero-world[data-world=cafe]{background:radial-gradient(120% 120% at 78% 40%,#fbf1e8 0%,#f5e3d4 45%,#efd5c2 100%)}
+.hero-world[data-world=store]{background:radial-gradient(120% 120% at 78% 40%,#f0f6ee 0%,#e2eedf 45%,#d4e5d0 100%)}
+.scene-area{position:absolute;inset:0 0 0 30%;height:auto;min-height:0}
+.scene-fallback{object-position:60% 50%}
+.hero-copy{position:absolute;z-index:4;left:calc(2.4% + 56px);top:84px;max-width:560px;padding:0;pointer-events:none}.hero-copy a,.hero-copy button{pointer-events:auto}
+.hero-copy h1{font-size:clamp(64px,6.4vw,112px)}
+.world-top{left:auto;right:28px;top:26px;gap:10px;justify-content:flex-end}
+.scene-caption{position:absolute;right:28px;bottom:96px;z-index:4;background:#ffffffc4;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:20px;padding:16px 16px 16px 22px;box-shadow:0 20px 40px -28px #3e233966;min-width:330px}
+.world-tools{position:absolute;right:28px;bottom:40px;z-index:4;margin:0;gap:14px}
+.view-buttons button{background:#ffffffa8;backdrop-filter:blur(8px);font-size:11px;padding:7px 13px}
+.simulation-label{background:#ffffffa8;padding:5px 9px;border-radius:6px}
+.world-selector{position:absolute;left:calc(2.4% + 56px);bottom:40px;z-index:4;border:0;background:#ffffffb8;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:100px;padding:5px;gap:4px;box-shadow:0 16px 30px -24px #3e233977}
+.world-selector button{flex:none;border:0;border-radius:100px;padding:11px 18px;font-size:12px}.world-selector button[aria-pressed=true]{background:var(--ink);color:#fff}.world-selector button[aria-pressed=true] span{opacity:.7}
+.scene-hint{bottom:auto;top:30px;left:auto;right:84px;width:auto}
+.hero-cubes{display:block;position:absolute;left:33%;top:22px;width:17%;height:clamp(640px,84vh,900px);z-index:3;pointer-events:none;overflow:hidden;border-radius:0}
+.hc{position:absolute;width:58px;filter:drop-shadow(0 18px 12px #3e233926);animation:hcIn 1.4s cubic-bezier(.2,1.2,.3,1) both,hcFloat 7s ease-in-out 1.4s infinite alternate}
+.hc svg{display:block;width:100%;height:auto}
+.hc0{left:40%;top:10%;width:66px;animation-delay:.1s,1.5s}.hc1{left:70%;top:32%;width:44px;animation-delay:.25s,1.65s}.hc2{left:30%;top:60%;width:72px;animation-delay:.4s,1.8s}
+.hc3{left:62%;top:82%;width:40px;animation-delay:.55s,1.95s}.hc4{left:8%;top:40%;width:34px;animation-delay:.7s,2.1s}.hc5{left:80%;top:6%;width:30px;animation-delay:.85s,2.25s}
+@keyframes hcIn{from{opacity:0;transform:translate(-120px,60px) rotate(-40deg) scale(.4)}to{opacity:1;transform:none}}
+@keyframes hcFloat{from{transform:translateY(0) rotate(0)}to{transform:translateY(-16px) rotate(6deg)}}
+.lab-ribbon{margin-top:8px}
+}
+@media(prefers-reduced-motion:reduce){.hc{animation:none}.go{transition:none}.experiment-card,.machine-tile{transition:none}}
+@media(min-width:951px){.scene-area{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22%);mask-image:linear-gradient(90deg,transparent 0,#000 22%)}.scene-hint{display:none}}
+.experiment-card{background:color-mix(in srgb,var(--card-bg) 38%,#fffefc)}
+.card-bottom{border-top-color:color-mix(in srgb,var(--card-bg) 80%,#bfaebb)}
+.card-go{background:color-mix(in srgb,var(--card-bg) 18%,#3e2339)}
