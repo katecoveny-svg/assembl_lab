@@ -1,0 +1,374 @@
+{
+  "schema": "assembl.splatcar.spec/1",
+  "id": "sample-simulated",
+  "vehicle": {
+    "make": "Sample",
+    "model": "Vehicle",
+    "variant": "Spec template",
+    "bodyStyle": "Sample spec · Simulated — use when the captured car is not an identifiable model",
+    "market": "New Zealand",
+    "specEdition": "Simulated figures for layout testing only"
+  },
+  "capture": {
+    "note": "Sample spec · Simulated. None of these figures describe a real vehicle.",
+    "truth": "Simulated",
+    "attribution": ""
+  },
+  "sources": [
+    {
+      "id": "simulated",
+      "title": "Simulated values for layout testing",
+      "publisher": "assembl",
+      "short": "simulated",
+      "url": null,
+      "accessed": "2026-10-26"
+    },
+    {
+      "id": "capture-measured",
+      "title": "Measured from this 3D capture",
+      "publisher": "assembl splat pipeline",
+      "short": "this capture",
+      "url": null,
+      "accessed": "2026-10-26"
+    }
+  ],
+  "groups": [
+    {
+      "id": "size",
+      "label": "Size and weight",
+      "fields": [
+        "length",
+        "width",
+        "height",
+        "wheelbase",
+        "kerbWeight",
+        "measuredHeight"
+      ]
+    },
+    {
+      "id": "drive",
+      "label": "Engine and drive",
+      "fields": [
+        "engine",
+        "power",
+        "torque",
+        "transmission",
+        "drivetrain"
+      ]
+    },
+    {
+      "id": "running",
+      "label": "Running costs",
+      "fields": [
+        "economy",
+        "co2",
+        "fuelTank"
+      ]
+    },
+    {
+      "id": "safety",
+      "label": "Safety",
+      "fields": [
+        "ancap",
+        "rightcar",
+        "safetyTech"
+      ]
+    },
+    {
+      "id": "practical",
+      "label": "Practicality",
+      "fields": [
+        "boot",
+        "towBraked",
+        "towUnbraked",
+        "wheels"
+      ]
+    },
+    {
+      "id": "tech",
+      "label": "Technology",
+      "fields": [
+        "keyTech",
+        "roof"
+      ]
+    },
+    {
+      "id": "own",
+      "label": "Ownership",
+      "fields": [
+        "warranty",
+        "servicing"
+      ]
+    }
+  ],
+  "fields": {
+    "length": {
+      "label": "Overall length",
+      "value": 4500,
+      "unit": "mm",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "width": {
+      "label": "Width, excluding mirrors",
+      "value": 1840,
+      "unit": "mm",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "height": {
+      "label": "Overall height",
+      "value": 1650,
+      "unit": "mm",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "wheelbase": {
+      "label": "Wheelbase",
+      "value": 2700,
+      "unit": "mm",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "kerbWeight": {
+      "label": "Kerb weight",
+      "value": 1600,
+      "unit": "kg",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "measuredHeight": {
+      "label": "Height in this capture",
+      "value": null,
+      "unit": "mm",
+      "fromManifest": "measured.heightM",
+      "truth": "Source-based inference",
+      "source": "capture-measured",
+      "note": "Measured from the splat after scaling it to the 3,915 mm published length. Shows the 3D scale is real."
+    },
+    "engine": {
+      "label": "Engine",
+      "value": "2.0 L petrol hybrid",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "power": {
+      "label": "Maximum power",
+      "value": 150,
+      "unit": "kW",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "torque": {
+      "label": "Maximum torque",
+      "value": 300,
+      "unit": "Nm",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "transmission": {
+      "label": "Transmission",
+      "value": "8-speed automatic",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "drivetrain": {
+      "label": "Drivetrain",
+      "value": "All-wheel drive",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "economy": {
+      "label": "Fuel economy, combined",
+      "value": 5.9,
+      "unit": "L/100 km",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "co2": {
+      "label": "CO₂ emissions",
+      "value": 135,
+      "unit": "g/km",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "fuelTank": {
+      "label": "Fuel tank",
+      "value": 55,
+      "unit": "L",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "ancap": {
+      "label": "ANCAP rating",
+      "value": "5 stars (2025)",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "rightcar": {
+      "label": "Rightcar safety and environment",
+      "value": "Check by plate or VIN",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "safetyTech": {
+      "label": "Driver assistance",
+      "value": "Autonomous emergency braking, lane keep assist, adaptive cruise",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "boot": {
+      "label": "Boot volume",
+      "value": 480,
+      "unit": "L",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "towBraked": {
+      "label": "Towing, braked",
+      "value": 1600,
+      "unit": "kg",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "towUnbraked": {
+      "label": "Towing, unbraked",
+      "value": 750,
+      "unit": "kg",
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "wheels": {
+      "label": "Wheels and tyres",
+      "value": "18-inch alloy · 235/55 R18",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "keyTech": {
+      "label": "Key tech",
+      "value": "12-inch screen, wireless CarPlay and Android Auto, 360° camera",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "roof": {
+      "label": "Roof",
+      "value": "Fixed steel roof",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "warranty": {
+      "label": "Warranty",
+      "value": "5 years / 150,000 km",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    },
+    "servicing": {
+      "label": "Scheduled servicing",
+      "value": "3 years capped-price servicing",
+      "unit": null,
+      "truth": "Simulated",
+      "source": "simulated"
+    }
+  },
+  "hotspots": [
+    {
+      "id": "powertrain",
+      "anchor": "bonnet",
+      "label": "Engine",
+      "title": "2.0 L, rear-wheel drive",
+      "fields": [
+        "engine",
+        "power",
+        "torque",
+        "transmission",
+        "drivetrain"
+      ]
+    },
+    {
+      "id": "safety",
+      "anchor": "headlamp",
+      "label": "Safety",
+      "title": "Safety and driver assistance",
+      "fields": [
+        "ancap",
+        "rightcar",
+        "safetyTech"
+      ]
+    },
+    {
+      "id": "dimensions",
+      "anchor": "sideSill",
+      "label": "Size",
+      "title": "Dimensions and weight",
+      "fields": [
+        "length",
+        "width",
+        "height",
+        "wheelbase",
+        "kerbWeight",
+        "measuredHeight"
+      ]
+    },
+    {
+      "id": "wheels",
+      "anchor": "frontWheel",
+      "label": "Wheels",
+      "title": "Wheels and tyres",
+      "fields": [
+        "wheels"
+      ]
+    },
+    {
+      "id": "tech",
+      "anchor": "cabin",
+      "label": "Tech",
+      "title": "Cabin and technology",
+      "fields": [
+        "keyTech",
+        "roof"
+      ]
+    },
+    {
+      "id": "economy",
+      "anchor": "tailLamp",
+      "label": "Economy",
+      "title": "Fuel and emissions",
+      "fields": [
+        "economy",
+        "co2",
+        "fuelTank"
+      ]
+    },
+    {
+      "id": "boot",
+      "anchor": "boot",
+      "label": "Boot",
+      "title": "Boot and towing",
+      "fields": [
+        "boot",
+        "towBraked",
+        "towUnbraked"
+      ]
+    },
+    {
+      "id": "warranty",
+      "anchor": "doorMirror",
+      "label": "Ownership",
+      "title": "Warranty and servicing",
+      "fields": [
+        "warranty",
+        "servicing"
+      ]
+    }
+  ]
+}

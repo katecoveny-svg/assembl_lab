@@ -1,0 +1,13 @@
+{
+  "project": "Brush",
+  "repository": "https://github.com/ArthurBrussee/brush",
+  "commit": "1388f74c6fe0236f68ee4915564bf00e9d2e3747",
+  "crate": "apps/brush-js (wasm-bindgen bindings), unmodified",
+  "licence": "Apache-2.0 (see LICENSE in this folder)",
+  "built": "2026-10-25T23:02:14Z",
+  "buildSeconds": 1239,
+  "toolchain": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+  "wasmPack": "wasm-pack 0.13.1",
+  "wasmBindgen": "wasm-bindgen 0.2.128",
+  "wasmOpt": ""
+}
