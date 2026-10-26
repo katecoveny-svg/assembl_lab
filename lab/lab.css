@@ -94,9 +94,9 @@
 .scene-hint{bottom:10px}
 .scene-caption{margin:-34px 14px 0;background:#ffffffc8;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:18px;padding:14px 14px 14px 18px;box-shadow:0 16px 30px -22px #3e233966;z-index:3}
 .world-tools{margin:14px 16px 12px}
-.world-selector{margin:0 12px 12px;border:0;background:#ffffffb8;border-radius:100px;padding:4px;gap:4px;overflow-x:auto;scrollbar-width:none}
+.world-selector{margin:0 12px 12px;border:0;background:#ffffffb8;border-radius:22px;padding:4px;gap:4px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}
 .world-selector::-webkit-scrollbar{display:none}
-.world-selector button{border:0;border-radius:100px;padding:10px 12px;font-size:12px;flex:1 0 auto}.world-selector button[aria-pressed=true]{background:var(--ink);color:#fff}.world-selector button[aria-pressed=true] span{opacity:.7}
+.world-selector button{border:0;border-radius:18px;padding:9px 5px;font-size:11px;min-width:0;min-height:48px;white-space:normal;line-height:1.3;overflow-wrap:anywhere}.world-selector button span{display:block;margin:0 0 3px}.world-selector button[aria-pressed=true]{background:var(--ink);color:#fff}.world-selector button[aria-pressed=true] span{opacity:.7}
 .hero-cubes{display:block;position:absolute;right:4%;top:26px;width:34%;height:300px;z-index:1;pointer-events:none}
 .hero-copy{position:relative;z-index:2}
 .hc{position:absolute;width:40px;filter:drop-shadow(0 12px 8px #3e233926);animation:hcIn 1.4s cubic-bezier(.2,1.2,.3,1) both,hcFloat 7s ease-in-out 1.4s infinite alternate}.hc svg{display:block;width:100%;height:auto}
