@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>assembl capture</title>
+  <meta name="description" content="Guided phone capture for 3D Gaussian-splat walkthroughs of cars and objects. Runs in the browser; nothing is uploaded.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#FFFDFB" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1C1218" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="capture.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23240B21' stroke-width='4' stroke-dasharray='5 2.4'/%3E%3C/svg%3E">
+</head>
+<body>
+  <main class="page">
+    <div id="capture"></div>
+
+    <section class="ac-explain" aria-labelledby="why">
+      <h2 id="why">How the photos become 3D</h2>
+      <p>Each photo needs to know where it was taken: its <em>pose</em>. Phone apps such as Scaniverse get poses from the phone's own motion tracking. A web page can only do that on Android Chrome with Google Play Services for AR (WebXR). On iPhone and iPad, browsers don't offer it, so this page records sharp photos and the phone's tilt-and-turn sensors, and the training page solves the poses from the photos on your computer. Nothing is uploaded at any step.</p>
+      <h3>Next step</h3>
+      <p>Save the capture, move the file to a Mac or PC (AirDrop, cable or USB stick), and open the training page in Chrome or Edge (assembl capture · train, coming soon).</p>
+      <h3>Fallback: solve poses on your own Mac</h3>
+      <p>If the browser pose solver can't place enough photos, run COLMAP and GLOMAP (both BSD-licensed) on your Mac instead, then load the folder on the training page. The commands are in the module's README, under "Fallback: poses on a Mac".</p>
+    </section>
+  </main>
+  <script type="module">
+    import { start } from "./src/capture.js";
+    const q = new URLSearchParams(location.search);
+    if (q.get("theme")) document.documentElement.dataset.theme = q.get("theme");
+    const subject = {};
+    if (q.get("label")) subject.label = q.get("label");
+    if (q.get("length")) subject.knownLengthM = Number(q.get("length"));
+    if (q.get("size")) subject.knownSizeM = Number(q.get("size"));
+    window.captureReady = start("#capture", {
+      preset: q.get("preset") || "walkaround",
+      source: q.get("source") || undefined,       // "camera" forces the camera + sensors path
+      subject,
+    }).then((c) => (window.assemblCapture = c));
+  </script>
+</body>
+</html>
