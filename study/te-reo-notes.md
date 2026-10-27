@@ -466,6 +466,23 @@ Notes shown to students:
 
 Looked for but not added: "lateral line" (no Te Aka entry found); a general word for night (*pō*) was not opened, so it was left out.
 
+### Space (space.js) — 10 kupu
+
+Added 27 October 2026. Each entry was opened on Te Aka during the build. Star names (Takurua, Rehua, Atutahi) carry seasonal and tribal meanings beyond the star; they are on the cultural review list (section 7, item 2).
+
+| Kupu | English | Source | Chip label | Note shown to students |
+|---|---|---|---|---|
+| **whānau a Tamanuiterā** | solar system | [Te Aka 13026](https://maoridictionary.co.nz/word/13026) |  |  |
+| **whetūao** | planet | [Te Aka 10295](https://maoridictionary.co.nz/word/10295) |  | Te Aka also lists aorangi. |
+| **marama** | moon | [Te Aka 3673](https://maoridictionary.co.nz/word/3673) |  | Also means month. |
+| **Matawhero** | Mars | [Te Aka 3844](https://maoridictionary.co.nz/word/3844) |  |  |
+| **tō ā-papa** | gravity | [Te Aka 12845](https://maoridictionary.co.nz/word/12845) | balance |  |
+| **tau aho** | light year | [Te Aka 40314](https://maoridictionary.co.nz/word/40314) | ly |  |
+| **whetū** | star | [Te Aka 10293](https://maoridictionary.co.nz/word/10293) | star | Sometimes also used for other bodies in the sky, such as comets. |
+| **Takurua** | Sirius | [Te Aka 7316](https://maoridictionary.co.nz/word/7316) |  | As an ordinary word, takurua means winter. |
+| **Rehua** | Antares | [Te Aka 6676](https://maoridictionary.co.nz/word/6676) |  | The star associated with summer. |
+| **Atutahi** | Canopus | [Te Aka 500](https://maoridictionary.co.nz/word/500) |  |  |
+
 ### Īnanga (inanga.js) — 10 kupu
 
 Added 27 October 2026. Each entry was opened on Te Aka during the build. *karohe* has no source citation in Te Aka. *mahinga kai* ([Te Aka 3355](https://maoridictionary.co.nz/word/3355)) appears in the restore step's text only. The kaitiakitanga and mahinga kai framing is on the list for cultural review (section 7).
@@ -553,7 +570,7 @@ Checked and correct, so **no changes were needed**: Aotearoa; Tāmaki Makaurau (
 
 Please have a kaiako of te reo Māori, or a Māori education adviser, and ideally local mana whenua, check these before wide release:
 1. **The whakataukī choice and its use on a commercial study product.** The resource gives no iwi attribution or origin; confirm it suits this use and setting.
-2. **Matariki, Puanga and maramataka** (sky machine). The notes follow Te Aka: Matariki's pre-dawn rising marks the Māori new year; for some iwi Puanga does; maramataka names are similar but their order varies by iwi. Te Aka dates Matariki's rising to "about mid-June", while the reading machine's text (and the public holiday) put it in late June or early July, so the card says "in midwinter". Check that the framing and dates are right for your audience, and whether local iwi practice (e.g. Puanga in Taranaki and Whanganui) should be named.
+2. **Matariki, Puanga and maramataka** (sky machine), and the star names Takurua, Rehua and Atutahi (space machine). The notes follow Te Aka: Matariki's pre-dawn rising marks the Māori new year; for some iwi Puanga does; maramataka names are similar but their order varies by iwi. Te Aka dates Matariki's rising to "about mid-June", while the reading machine's text (and the public holiday) put it in late June or early July, so the card says "in midwinter". Check that the framing and dates are right for your audience, and whether local iwi practice (e.g. Puanga in Taranaki and Whanganui) should be named.
 3. **Papatūānuku as "Earth"**: the card notes she is the Earth mother as well as the name Te Reo Pūtaiao uses for the planet. Confirm this sits respectfully in a physics context.
 4. **Genetics terms** (*ira*, *pītau ira*, *mātāira*) next to the DNA-profiling step: genetics touches whakapapa and Māori data sovereignty. Confirm the framing is appropriate.
 5. **Words with deeper meanings shown with an everyday gloss**: *utu* (price, and reciprocity), *papatipu* (mass, and ancestral land), *kāwanatanga* (government; a word with particular significance in Te Tiriti o Waitangi), *kaitiakitanga*, *hapū*, *mana whenua* (already in the market inquiry). Confirm the short notes are adequate.
