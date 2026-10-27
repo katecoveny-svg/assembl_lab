@@ -26,6 +26,8 @@
  *   label         button text (default 'View in your space'). title: the name shown in AR and on the code.
  *   maxTriangles  snapshot budget (default 150000). Over it, segment counts drop first, then the smallest
  *                 instanced items, then rounded boxes become boxes, then the smallest parts; see the report.
+ *   camera        optional camera (or () => camera). Only what it can see goes into the snapshot: useful when a
+ *                 scene lays several stations side by side and the camera flies between them.
  *   mount         'floor' (default) | 'wall'.
  *   qr            true (default) | false | a URL. What the code on a computer opens.
  *   style         code style: 'assembly' (default) | 'dots' | 'glass' | 'square'.
@@ -88,7 +90,7 @@ export function button(host, options = {}) {
   const o = { label: 'View in your space', maxTriangles: 150000, unitsPerMetre: 1, mount: 'floor', qr: true, style: 'assembly', variant: 'dark', ...options };
   const isLib = !!o.model;
   if (!isLib && !o.object) throw new Error('assembl AR: pass a model or an object');
-  if (o.scale == null) o.scale = isLib ? 'table' : 'table';
+  if (o.scale == null) o.scale = 'table';
 
   const wrap = document.createElement('div'); wrap.className = 'aar-wrap';
   const btn = document.createElement('button'); btn.type = 'button';
@@ -148,9 +150,10 @@ export function button(host, options = {}) {
     }
     const obj = typeof o.object === 'function' ? await o.object() : o.object;
     if (!obj || !obj.isObject3D) throw new Error('assembl AR: the object option did not give a three.js Object3D');
-    const key = o.key ? 'k:' + o.key() : 'f:' + m.prepare.fingerprint(obj);
+    const cam = typeof o.camera === 'function' ? o.camera() : o.camera;
+    const key = (o.key ? 'k:' + o.key() : 'f:' + m.prepare.fingerprint(obj)) + (cam ? ':' + cam.matrixWorld.elements.map(v => v.toFixed(2)).join(',') : '');
     current = { key, object: obj, title: o.title || document.title, mount: o.mount, fixedScale: o.scale === 'real',
-      sceneViewer: null, qrURL: qrTarget(), snapshotOptions: { unitsPerMetre: o.unitsPerMetre, scale: o.scale, maxTriangles: o.maxTriangles } };
+      sceneViewer: null, qrURL: qrTarget(), snapshotOptions: { unitsPerMetre: o.unitsPerMetre, scale: o.scale, maxTriangles: o.maxTriangles, view: cam || null } };
   }
   async function activate() {
     if (busy) return;
@@ -202,7 +205,7 @@ export function button(host, options = {}) {
   idle(async () => {
     try {
       const m = await ready();
-      if (isLib && (await placer.ready).mode === 'quicklook') { await prepare(m); placer.prefetch(); }
+      if (isLib) { await prepare(m); if ((await placer.ready).mode === 'quicklook') placer.prefetch(); }
     } catch (e) { /* made on tap instead */ }
   });
 

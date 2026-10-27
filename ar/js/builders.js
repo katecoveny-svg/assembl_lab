@@ -172,7 +172,7 @@ export function buildLogo(spec0) {
   }
   const object = seat(content, 'assembl AR · logo');
   object.userData.parts = parts;
-  return { object, kind: 'logo', title: 'Your logo', shareable: true, spec, fixedScale: false, mount: 'floor',
+  return { object, kind: 'logo', title: spec.n || 'Your logo', shareable: true, spec, fixedScale: false, mount: 'floor',
     note: `${model.shapes.length} shape${model.shapes.length === 1 ? '' : 's'} · ${Math.round(spec.w / 10)} cm across` };
 }
 

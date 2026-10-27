@@ -227,6 +227,7 @@ function setLogo(text, name) {
   const { items, strokes } = logoFromSVGText(text);
   const pack = packLogoForLink(items);
   S.logo.s = pack.s; S.logo.name = name; S.logo.strokes = strokes;
+  S.logo.n = String(name || '').replace(/\.svg$/i, '').replace(/[_-]+/g, ' ').trim().slice(0, 40);
   const url = shareURL({ ...S.logo, k: 'logo' });
   S.logo.link = { length: url.length, fits: !!planQR(url), grid: pack.grid };
 }
@@ -240,7 +241,7 @@ function showLogoStatus(html, warn) { const p = $('logoStatus'); if (!p) return;
 function showGLBStatus(html, warn) { const p = $('glbStatus'); if (!p) return; p.innerHTML = html; p.hidden = !html; p.classList.toggle('warn', !!warn); }
 async function loadSampleLogo() {
   const t = await (await fetch(new URL('../samples/sample-mark.svg', import.meta.url))).text();
-  setLogo(t, 'Sample mark (three faces of a cube)');
+  setLogo(t, 'Sample mark');
   const n = $('logoFileName'); if (n) n.textContent = S.logo.name;
 }
 async function loadSampleFrame() {
@@ -279,7 +280,7 @@ async function rebuild() {
   try {
     let r;
     if (type === 'text') r = await buildText(S.text);
-    else if (type === 'logo') { if (!S.logo.s) await loadSampleLogo(); r = buildLogo(S.logo); r.title = S.logo.name ? S.logo.name.replace(/\.svg$/i, '') : 'Your logo'; }
+    else if (type === 'logo') { if (!S.logo.s) await loadSampleLogo(); r = buildLogo(S.logo); }
     else if (type === 'frame') { if (!S.frame.canvas) await loadSampleFrame(); r = buildFrame({ ...S.frame, mat: !!S.frame.mat, name: S.frame.name }); }
     else if (type === 'lib') r = S.lib.item === 'bike' ? await buildBike(S.lib.bike) : await buildCar({ ...S.lib.car, m: S.lib.item });
     else if (type === 'glb') {

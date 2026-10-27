@@ -28,8 +28,8 @@ export const KINDS = {
       c: pick(s.c, colourIds, 'ink'), b: s.b === 0 || s.b === '0' ? 0 : 1, m: pick(s.m, ['s', 'g', 'm'], 's') })
   },
   logo: {
-    def: { k: 'logo', s: '', w: 160, d: 12, v: 1, c: 'own', b: 1, m: 's' },
-    norm: s => ({ k: 'logo', s: String(s.s || '').replace(/[^A-Za-z0-9_-]/g, ''), w: num(s.w, 20, 3000, 160), d: num(s.d, 2, 60, 12),
+    def: { k: 'logo', n: '', s: '', w: 160, d: 12, v: 1, c: 'own', b: 1, m: 's' },
+    norm: s => ({ k: 'logo', n: String(s.n || '').replace(/[\r\n]/g, ' ').trim().slice(0, 40), s: String(s.s || '').replace(/[^A-Za-z0-9_-]/g, ''), w: num(s.w, 20, 3000, 160), d: num(s.d, 2, 60, 12),
       v: num(s.v, 0, 3, 1), c: pick(s.c, ['own', ...colourIds], 'own'), b: s.b === 0 || s.b === '0' ? 0 : 1, m: pick(s.m, ['s', 'g', 'm'], 's') })
   },
   car: {
@@ -43,7 +43,7 @@ export const KINDS = {
       fr: hex6(s.fr, '492B3E'), ac: hex6(s.ac, 'F5F1F2'), b: s.b === 0 || s.b === '0' ? 0 : 1, s: pick(s.s, ['model', 'real'], 'model') })
   }
 };
-export const ORDER = { text: ['k', 't', 'f', 'h', 'd', 'c', 'b', 'm'], logo: ['k', 'w', 'd', 'v', 'c', 'b', 'm', 's'],
+export const ORDER = { text: ['k', 't', 'f', 'h', 'd', 'c', 'b', 'm'], logo: ['k', 'n', 'w', 'd', 'v', 'c', 'b', 'm', 's'],
   car: ['k', 'm', 's', 'p'], bike: ['k', 'wb', 'wd', 'su', 'fr', 'ac', 'b', 's'] };
 
 export function normalise(spec) {
@@ -51,11 +51,14 @@ export function normalise(spec) {
   return K ? K.norm({ ...K.def, ...spec }) : null;
 }
 
+// Values that match the defaults are left out, so typical links stay short and their codes small (version 2–6).
+// The defaults are part of the link format: change one and old links change meaning.
 export function encodeHash(spec) {
   const s = normalise(spec);
   if (!s) return '';
+  const def = KINDS[s.k].def;
   const p = new URLSearchParams();
-  for (const key of ORDER[s.k]) p.set(key, String(s[key]));
+  for (const key of ORDER[s.k]) if (key === 'k' || String(s[key]) !== String(def[key])) p.set(key, String(s[key]));
   return p.toString();
 }
 

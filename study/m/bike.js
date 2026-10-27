@@ -1,4 +1,5 @@
 (()=>{
+const BIKE_SRC=(document.currentScript&&document.currentScript.src)||location.href;
 // The downhill machine: build a bike in the garage, then ride one fictional trail inspired by the Redwoods,
 // Whakarewarewa Forest, Rotorua. Real physics, and your build feeds every step.
 // Units: metres, seconds, kilograms. g = 9.8. Height is "y" (up), distance along the ground is "x".
@@ -907,28 +908,28 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   for(const k in bikes)S.scene.add(bikes[k].g);
   const stanM={garage:S.M.plastic(GOLD,{rough:.22})};
   // ================================================================ the trail: a 1:1 cut of hillside following SEG, with the trail as its lit top
-  const tz=S.group();tz.position.set(TX0,TY0,0);
+  const tz=S.group();tz.position.set(TX0,TY0,0);const simpleTrail=[];
   {const sh=new THREE.Shape();const x0=-30,x1=TRAIL_END+40;sh.moveTo(x0,-TY0);sh.lineTo(x0,TOP);sh.lineTo(0,TOP);SEG.forEach(q=>{sh.lineTo(q.x0,q.y0);sh.lineTo(q.x1,q.y1)});const ye=SEG[SEG.length-1].y1;sh.lineTo(x1,ye);sh.lineTo(x1,-TY0);sh.lineTo(x0,-TY0);
-    const eg=new THREE.ExtrudeGeometry(sh,{depth:12,bevelEnabled:false,steps:1});eg.translate(0,0,-9.8);const hill=S.mesh(eg,mat("plastic",SOIL,{rough:.8,coat:.05}));hill.receiveShadow=false;tz.add(hill);
+    const eg=new THREE.ExtrudeGeometry(sh,{depth:12,bevelEnabled:false,steps:1});eg.translate(0,0,-9.8);const hill=S.mesh(eg,mat("plastic",SOIL,{rough:.8,coat:.05}));hill.receiveShadow=false;tz.add(hill);simpleTrail.push(hill);
     const strip=(z0,z1,c,dy)=>{const pos=[],idx=[];const pts=[[x0,TOP],[0,TOP]];SEG.forEach(q=>{pts.push([q.x0,q.y0],[q.x1,q.y1])});pts.push([x1,ye]);
       pts.forEach(([x,y],i)=>{pos.push(x,y+dy,z0,x,y+dy,z1);if(i){const a=(i-1)*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}});const gg=new THREE.BufferGeometry();gg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));gg.setIndex(idx);gg.computeVertexNormals();
-      const m=S.mesh(gg,mat("plastic",c,{rough:.85,coat:.05}),{cast:false});m.material.side=THREE.DoubleSide;tz.add(m);return m};
+      const m=S.mesh(gg,mat("plastic",c,{rough:.85,coat:.05}),{cast:false});m.material.side=THREE.DoubleSide;tz.add(m);simpleTrail.push(m);return m};
     strip(-1.4,1.4,TRAIL,.02);strip(-9.8,-1.4,"#CFE4B0",.01);strip(1.4,2.2,"#CFE4B0",.01)}
   // redwoods behind the trail, ponga and ferns at their feet, roots in the root garden, planks on the wooden roller, gate and finish arch
-  {let seed=3;const r=()=>(seed=(seed*16807)%2147483647)/2147483647;const NT=110,trunks=S.swarm(NT,new THREE.CylinderGeometry(.42,.6,1,14),mat("plastic",BARK,{rough:.7,coat:.1}),{colors:true,cast:true});tz.add(trunks);
+  {let seed=3;const r=()=>(seed=(seed*16807)%2147483647)/2147483647;const NT=110,trunks=S.swarm(NT,new THREE.CylinderGeometry(.42,.6,1,14),mat("plastic",BARK,{rough:.7,coat:.1}),{colors:true,cast:true});tz.add(trunks);simpleTrail.push(trunks);
     let i=0;for(let x=-24;x<TRAIL_END+30&&i<NT;x+=3.2+r()*3){if(x>LIP-4&&x<GAP_END+3&&r()<.6)continue;const z=-3.2-r()*6,rr=.5+r()*.8,h=34+r()*14,yb=trackY(Math.max(0,x))-1;trunks.putS(i,x,yb+h/2,z,rr,h,rr);trunks.tint(i++,r()<.5?BARK:"#B97C63")}
     for(;i<NT;i++)trunks.put(i,0,-99,0,.001);trunks.done();
-    const NF=160,fronds=S.swarm(NF,new THREE.SphereGeometry(1,10,6),mat("plastic",FERN,{rough:.6}),{colors:true});tz.add(fronds);
+    const NF=160,fronds=S.swarm(NF,new THREE.SphereGeometry(1,10,6),mat("plastic",FERN,{rough:.6}),{colors:true});tz.add(fronds);simpleTrail.push(fronds);
     for(let k=0;k<NF;k++){const x=-20+r()*(TRAIL_END+40),front=k%4===0,z=front?1.85+r()*.3:-1.8-r()*6.5,yb=trackY(Math.max(0,Math.min(TRAIL_END,x)));const s2=front?.14+r()*.12:.5+r()*.7;
       fronds.putS(k,x,yb+s2*.35,z,s2*1.4,s2*.5,s2*1.1,tq.setFromAxisAngle(Y1,r()*6));fronds.tint(k,r()<.5?FERN:FERN_D)}fronds.done();
-    const SR=SEG.find(q=>q.n==="Root garden");const roots=S.swarm(24,unitCyl,mat("plastic","#A8775A",{rough:.6}));tz.add(roots);
+    const SR=SEG.find(q=>q.n==="Root garden");const roots=S.swarm(24,unitCyl,mat("plastic","#A8775A",{rough:.6}));tz.add(roots);simpleTrail.push(roots);
     for(let k=0;k<24;k++){const x=SR.x0+1+k*(SR.x1-SR.x0-2)/24+r()*.5;roots.putS(k,x,trackY(x)+.03,(r()-.5)*.6,.05,2.6,.05,tq.setFromEuler(new THREE.Euler(Math.PI/2,0,(r()-.5)*.8)))}roots.done();
-    const planks=S.swarm(40,new THREE.BoxGeometry(1,1,1),mat("plastic","#C9A072",{rough:.6}));tz.add(planks);let pi=0;SROLL.forEach(q=>{for(let k=0;k<20&&pi<40;k++){const x=q.x0+(k+.5)*(q.x1-q.x0)/20;const th=Math.atan(q.gr);planks.putS(pi++,x,trackY(x)+.04,0,.17,.06,2.6,tq.setFromAxisAngle(V3(0,0,1),th))}});planks.done();
+    const planks=S.swarm(40,new THREE.BoxGeometry(1,1,1),mat("plastic","#C9A072",{rough:.6}));tz.add(planks);tz.userData.planks=planks;let pi=0;SROLL.forEach(q=>{for(let k=0;k<20&&pi<40;k++){const x=q.x0+(k+.5)*(q.x1-q.x0)/20;const th=Math.atan(q.gr);planks.putS(pi++,x,trackY(x)+.04,0,.17,.06,2.6,tq.setFromAxisAngle(V3(0,0,1),th))}});planks.done();
     const arch=(x,c1)=>{const y=trackY(x);for(const z of [-1.6,1.6])tz.add(S.cyl(.08,.08,3,mat("plastic",c1,{rough:.4}),{at:[x,y+1.5,z]}));tz.add(S.rbox(.25,.45,3.6,.08,mat("plastic",c1,{rough:.4}),{at:[x,y+3.1,0]}))};
     arch(1,P3.product.peach);arch(FINISH,P3.product.strawberry);
     // the berm: a banked wall of dirt on the outside of the corner
     const pos=[],idx=[];const n=20;for(let k=0;k<=n;k++){const x=SBERM.x0-2+k*(SBERM.x1-SBERM.x0+4)/n,h=Math.sin(k/n*Math.PI)*1.8,y=trackY(x);pos.push(x,y,-1.4,x,y+h,-2.6-h*.3);if(k){const a=(k-1)*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}}
-    const bg=new THREE.BufferGeometry();bg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));bg.setIndex(idx);bg.computeVertexNormals();const berm=S.mesh(bg,mat("plastic",TRAIL,{rough:.85}));berm.material.side=THREE.DoubleSide;tz.add(berm)}
+    const bg=new THREE.BufferGeometry();bg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));bg.setIndex(idx);bg.computeVertexNormals();const berm=S.mesh(bg,mat("plastic",TRAIL,{rough:.85}));berm.material.side=THREE.DoubleSide;tz.add(berm);simpleTrail.push(berm)}
   const dustP=S.puffs(90,"#E8CBA6");tz.add(dustP);
   const airDots=S.swarm(140,new THREE.SphereGeometry(.05,8,6),mat("glow",P3.product.strawberry,1.2));tz.add(airDots);
   // forces on the rider
@@ -997,7 +998,14 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   S.view("turn",[TZ.x+.4,5.2,TZ.z+7.2],[TZ.x,.2,TZ.z],{min:3,max:30});
   S.view("all",[3,24,101],[3,0,66.5],{min:6,max:90});
   let zone="all",follow=null;S.goView("all",true);
-  if(/[?&]debug\b/.test(location.search))try{window.__bike={S,s}}catch(e){}
+  // the redwood forest (bike/forest.js) loads after the bench is up; until then (or if it can't load) the simple trail stays
+  let forest=null;
+  if(!/[?&]noforest\b/.test(location.search))import(new URL("bike/forest.js",BIKE_SRC).href)
+    .then(m=>m.buildForest(S,{trackY,SEG,LIP,GAP_END,SLIP,TRAIL_END,SBERM,SROLL,rootSeg:SEG.find(q=>q.n==="Root garden")}))
+    .then(f=>{forest=f;tz.add(f.group);simpleTrail.forEach(o=>o.visible=false);const pk=tz.userData.planks;if(pk)pk.material=new THREE.MeshStandardMaterial({color:"#9C7A58",roughness:.85});
+      if(zone==="trail")f.enter()})
+    .catch(e=>console.warn("Redwood forest unavailable; keeping the simple trail",e));
+  if(/[?&]debug\b/.test(location.search))try{window.__bike={S,s,get forest(){return forest}}}catch(e){}
   const riderW=()=>{const x=s.x,y=s.air?s.y:trackY(Math.max(0,x));return V3(TX0+x,TY0+y,0)};
   const allLabels=[];for(const z in lab)for(const k in lab[z])allLabels.push(lab[z][k]);
   const tl=V3(0,0,0),money=null;
@@ -1010,8 +1018,8 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
     if(GS.length)line(GS,"#B9B3CC",5,[10,8]);line(Smp,key==="v"?P3.deep.blush:P3.deep.sky,6);
     if(Smp.length){const p=Smp[Smp.length-1];g.fillStyle="#222A55";g.beginPath();g.arc(X(p.t),Y(key==="v"?p.v:p.d),9,0,7);g.fill()}};
   return {
-    step(st){zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());
-      if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?5.6:4.4),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail");
+    step(st){zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());if(forest){if(zone==="trail")forest.enter();else forest.leave()}
+      if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?3.9:2.9),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail");
         S.setFollow(()=>riderW().add(V3(1.4,.8,0)),.3,true)}
       else{S.setFollow(null);S.goView(zone)}
       const sb={garage:[5,[GZ.x,0,GZ.z]],stop:[22,[SZ.x+18,0,SZ.z]],fork:[5,[FZ.x,0,FZ.z]],ski:[8,[KZ.x,0,KZ.z]],turn:[5,[TZ.x,0,TZ.z]],all:[36,[3,0,68]]};if(sb[zone])S.setShadowBox(...sb[zone])},
@@ -1019,7 +1027,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
       // ---------------- trail
       {const x=s.x,y=s.air?s.y:trackY(Math.max(0,x)),th=s.air?Math.atan2(s.air.vy,s.air.vx)*.6:Math.atan(slope(Math.max(0,x)));
         const B=bikes.trail;B.g.position.set(TX0+x,TY0+y,0);B.g.rotation.z=th;B.update({b:s.b,comp:Math.max(0,s.fc),spin:s.dist/.375,heat:rotorT(),pose:s.attack?0:1,crouch:Math.max(0,s.fc)*1.2,rider:true});
-        if(Z==="trail")S.setShadowBox(7,[TX0+x,TY0+y,0]);
+        if(Z==="trail"){if(forest&&forest.group.visible)forest.update(x,y,tz.position);else S.setShadowBox(7,[TX0+x,TY0+y,0])}
         for(let i=0;i<90;i++){const p=s.dust[i];if(p)dustP.put(i,p.x,p.y,((i*37)%10)/10-.5,p.life*.7,p.r*900);else dustP.put(i,0,-99,0,0,1)}dustP.done();
         const ap=s.airPath,na=ap.length,showAir=Z==="trail"&&na>1;for(let i=0;i<140;i++){const j=Math.floor(i/140*na);if(showAir&&i<na&&ap[j])airDots.put(i,ap[j][0],ap[j][1]+.35,0,1);else airDots.put(i,0,-99,0,.001)}airDots.done();
         const tv=V3(Math.cos(th),Math.sin(th),0),nv=V3(-Math.sin(th),Math.cos(th),0),c=V3(x,y,0).addScaledVector(nv,1.0);

@@ -2,6 +2,31 @@
 import { GLTFExporter } from '../vendor/three/exporters/GLTFExporter.js';
 import { USDZExporter } from '../vendor/three/exporters/USDZExporter.js';
 import { wallPose } from './prepare.js';
+import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/three/libs/fflate.module.js';
+
+// three r170's USDZExporter declares two texture inputs with the wrong USD types (Pixar's validators flag them).
+// Rewrite those two declarations and re-pack the archive with the same 64-byte alignment AR Quick Look expects.
+function fixUSDZ(bytes) {
+  const files = unzipSync(bytes);
+  let changed = false;
+  for (const name in files) {
+    if (!name.endsWith('.usda')) continue;
+    const s = strFromU8(files[name]);
+    const t = s.replace(/\btoken inputs:varname\b/g, 'string inputs:varname').replace(/\btoken inputs:in\.connect\b/g, 'float2 inputs:in.connect');
+    if (t !== s) { files[name] = strToU8(t); changed = true; }
+  }
+  if (!changed) return bytes;
+  const out = {};
+  let offset = 0;
+  for (const name in files) {
+    const file = files[name];
+    offset += 34 + name.length;
+    const mod = offset & 63;
+    out[name] = mod !== 4 ? [file, { extra: { 12345: new Uint8Array(64 - mod) } }] : file;
+    offset = file.length;
+  }
+  return zipSync(out, { level: 0 });
+}
 
 export async function exportGLB(group) {
   const ab = await new GLTFExporter().parseAsync(group, { binary: true, onlyVisible: true, maxTextureSize: 2048 });
@@ -16,7 +41,7 @@ export async function exportUSDZ(group, { mount = 'floor' } = {}) {
     ar: { anchoring: { type: 'plane' }, planeAnchoring: { alignment: wall ? 'vertical' : 'horizontal' } },
     includeAnchoringProperties: true, quickLookCompatible: true, maxTextureSize: 2048
   });
-  return new Blob([bytes], { type: 'model/vnd.usdz+zip' });
+  return new Blob([fixUSDZ(bytes)], { type: 'model/vnd.usdz+zip' });
 }
 
 export function download(blob, name) {
