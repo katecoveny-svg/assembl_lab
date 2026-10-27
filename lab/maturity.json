@@ -74,11 +74,27 @@
     },
     "study": {
       "stage": "model",
-      "why": "Nineteen study machines: teaching models with no live data by design."
+      "why": "Thirty-seven study machines: teaching models with no live data by design."
     },
     "cars": {
       "stage": "model",
       "why": "A fictional demo dealer with Simulated stock. MBIE's weekly fuel price and household power survey feed only its running-cost estimate; no dealer's own data reaches it."
+    },
+    "junior": {
+      "stage": "model",
+      "why": "Eight curriculum machines: teaching models with no live data by design."
+    },
+    "year9": {
+      "stage": "model",
+      "why": "Practice tools that run in your browser; no live data by design."
+    },
+    "print": {
+      "stage": "model",
+      "why": "A parametric model you shape and export; no live data by design."
+    },
+    "next": {
+      "stage": "model",
+      "why": "Fourteen studios of models and creative tools; no live data by design."
     }
   }
 }
