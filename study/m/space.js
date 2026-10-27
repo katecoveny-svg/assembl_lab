@@ -877,6 +877,7 @@ function space3d(S){
       if(!o.g.visible||!SOL.visible||(k==="form")){lab.hide();return}
       const anchor=tmp.copy(posOf[id]);screenXY(anchor,sxy);const off=sxy.z>1||sxy.x<-20||sxy.y<-20||sxy.x>S.canvas.clientWidth+20||sxy.y>S.canvas.clientHeight+20;
       const isF=(k==="tour"||k==="test")&&s.focus===id;if(off){lab.hide();return}
+      if(k==="moons"&&s.caseId==="dwarf"&&(id==="pluto"||id==="eris")){shown.push({x:sxy.x,y:sxy.y});lab.hide();return}   // the replay's own pills name these
       if(b.p&&!(isF||(k==="tour"||k==="test")&&s.focus===b.p)&&!(k==="moons")){lab.hide();return}
       if(k==="moons"&&b.p&&(b.p!==CBY[s.caseId].p||s.caseU<.98)){lab.hide();return}
       if(!isF&&!claim(sxy.x,sxy.y,70,20,lab)){lab.hide();return}if(isF)shown.push({x:sxy.x,y:sxy.y});
@@ -884,7 +885,7 @@ function space3d(S){
       const arrived=!b.p&&id!=="sun"&&la2>0&&la2>=r;
       lab.at(anchor).cls("sp"+(isF?" hot":"")+(DWARFS.includes(id)||b.p?" dim":"")).set(isF?`${b.n}<small>${b.k==="dwarf"?"dwarf planet":b.k==="moon"||b.p?"moon":b.k}</small>`:arrived?`${b.n}<small>light took ${fmtLight(lightSec(r))}</small>`:b.n).show()});
     // the Kuiper Belt pill goes on the first part of the belt that is on screen and clear
-    {let kOK=false;if(KUI.P.visible&&(((k==="tour"||k==="test")&&(s.focus==="all"||s.focus==="kuiper"))||(k==="moons"&&s.caseId==="dwarf"))){const cw=S.canvas.clientWidth,ch=S.canvas.clientHeight;
+    {let kOK=false;if(KUI.P.visible&&(((k==="tour"||k==="test")&&(s.focus==="all"||s.focus==="kuiper")))){const cw=S.canvas.clientWidth,ch=S.canvas.clientHeight;
       for(const a of KANG){mapAU([44*Math.cos(a),44*Math.sin(a),0],sc,pA);tmp.set(...pA);screenXY(tmp,sxy);if(sxy.z>1||sxy.x<24||sxy.y<24||sxy.x>cw-110||sxy.y>ch-30)continue;
         if(claim(sxy.x,sxy.y,90,22,lKuiper)){lKuiper.at(tmp);kOK=true;break}}}
       lKuiper.show(kOK)}
@@ -1002,8 +1003,11 @@ function space3d(S){
           tmp.set(Math.cos(a)*r,(d.c-.5)*R*.02,-Math.sin(a)*r).applyQuaternion(P.tilt.quaternion);rpos.set([tmp.x,tmp.y,tmp.z],i*3);rcol.set([.85,.8,.72],i*3);rsiz[i]=R*.06}
         rgeo.attributes.position.needsUpdate=true;rgeo.attributes.color.needsUpdate=true;rgeo.attributes.size.needsUpdate=true;rmat.uniforms.sc.value=S.canvas.clientHeight*.9;
         lRep[0].at(tmp.copy(RP.position).add(V3(r1,0,0).applyQuaternion(P.tilt.quaternion))).set(q<.5?"Torn apart<small>into chunks of ice and rock</small>":"A new ringlet<small>illustrative</small>").show()}}
-    else if(c.id==="dwarf"){lRep[0].at(posOf.pluto).set("Pluto<small>round, orbits the Sun, orbit not cleared</small>").show();lRep[1].at(posOf.neptune).set("Neptune").show();
-      lRep[2].at(tmp.set(...(()=>{mapAU([-44*.7,44*.7,0],"display",pA);return pA})())).set("Kuiper Belt<small>many icy bodies share Pluto's zone</small>").show();
+    else if(c.id==="dwarf"){lRep[0].at(posOf.pluto).set("Pluto<small>round, orbits the Sun, orbit not cleared</small>").show();lRep[1].hide();
+      {const cw=S.canvas.clientWidth,ch=S.canvas.clientHeight;let ok=false;lRep[2].set("Kuiper Belt<small>many icy bodies share Pluto's zone</small>");
+        for(const a of KANG){mapAU([44*Math.cos(a+3.93),44*Math.sin(a+3.93),0],"display",pA);tmp.set(...pA);screenXY(tmp,sxy);if(sxy.z>1||sxy.x<24||sxy.y<24||sxy.x>cw-60||sxy.y>ch-30)continue;
+          if(claim(sxy.x,sxy.y,120,30,lRep[2])){lRep[2].at(tmp);ok=true;break}}
+        lRep[2].show(ok)}
       lRep[3].at(posOf.eris).set("Eris<small>dwarf planet</small>").show()}
     if(c.id!=="collision"&&c.id!=="charon"){B3.earth.mesh.material.emissiveIntensity=0;B3.pluto.mesh.material.emissiveIntensity=0}}
   // ---------------------------------------------------------------- retrograde update
@@ -1155,7 +1159,7 @@ function drawMagMap(W,H){const L=60,R=W-30,dm=ly=>12*Math.log10(1+ly/3),X=ly=>L+
   [10,100,1000].forEach(ly=>o+=`<line x1="${X(ly)}" x2="${X(ly)}" y1="${H-50}" y2="${H-44}" stroke="#AEB9E6"/>`+TX(X(ly),H-30,num(ly)+" ly",{size:10,a:"middle",fill:"#AEB9E6"}));
   o+=TX(L,H-12,"Distance from the Sun (log scale)",{size:10,fill:"#AEB9E6"})+`<circle cx="${L}" cy="${H/2}" r="7" fill="#FFD27A"/>`+TX(L,H/2+22,"Sun",{size:10,a:"middle"});
   STARS.forEach((x,i)=>{if(x.id==="sun"&&!s.same)return;const y=74+i*((H-150)/(STARS.length-1));const px=s.same?x10:X(x.ly);const mag=s.same?x.M:x.m;const r=clamp(Math.pow(10,-0.1*mag)*4,1.5,16);const sel=s.magPick===x.id;
-    o+=`<circle cx="${px.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*1.9).toFixed(1)}" fill="${tColor(x.T)}" opacity=".25"/><circle cx="${px.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${tColor(x.T)}"${sel?` stroke="#fff" stroke-width="2"`:""}/>`+TX(px+r*1.9+4,y+4,`${x.n} ${fmtMag(mag)}`,{size:10,fill:sel?"#fff":"#C9D2F2"})});
+    o+=`<circle cx="${px.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*1.9).toFixed(1)}" fill="${tColor(x.T)}" opacity=".25"/><circle cx="${px.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${tColor(x.T)}"${sel?` stroke="#fff" stroke-width="2"`:""}/>`+(()=>{const t=`${x.n} ${fmtMag(mag)}`,left=px+r*1.9+4+t.length*5.7>W-6;return TX(left?px-r*1.9-4:px+r*1.9+4,y+4,t,{size:10,a:left?"end":"start",fill:sel?"#fff":"#C9D2F2"})})()});
   o+=TX(14,24,s.same?"ALL AT 10 PARSECS: ABSOLUTE MAGNITUDE":"AS SEEN FROM EARTH: APPARENT MAGNITUDE",{size:10.5,ls:".05em"});return o}
 // the HR diagram as a flat chart (fallback, and to read values exactly)
 function drawHR2D(W,H,k){const pl=58,pr=44,pt=34,pb=44;const TMAX=40000,TMIN=2500,MT=-10.2,MB=17.3;
