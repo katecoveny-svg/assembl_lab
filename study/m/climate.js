@@ -116,10 +116,10 @@ function drawEnergy(st){
   if(s.gh){o+=`<rect x="128" y="${by}" width="364" height="${bt.toFixed(1)}" rx="5" fill="${GASC}" fill-opacity=".38" stroke="#8C76C9" stroke-width="1.1"/>`;
     const nm=Math.round(ppm()/30);for(let k=0;k<nm;k++){const mx=136+((k*53)%348),my=by+3+((k*29)%Math.max(2,bt-6));o+=`<circle cx="${mx}" cy="${my.toFixed(1)}" r="1.8" fill="#4A4F6A"/>`}
     o+=`<text class="t-lab" x="134" y="${by-6}">GREENHOUSE GASES · CO₂ ${fmt(ppm())} ppm</text>`}
-  else o+=`<text class="t-lab" x="134" y="${by-6}">NO GREENHOUSE GASES (A THOUGHT EXPERIMENT)</text>`;
+  else o+=`<text class="t-lab" x="134" y="${by-6}">NO GREENHOUSE GASES</text>`;
   // the flows, drawn to scale (width ∝ W/m²)
   o+=arw(92,86,244,cy-18,Wd(S0),SUNC)+tag(98,126,`${S0} in`,"end");
-  o+=arw(286,cy-18,330,24,Wd(fl.refl),"#C9CEDF")+tag(336,40,`${fmt(fl.refl)} reflected`);
+  o+=arw(286,cy-18,330,24,Wd(fl.refl),"#C9CEDF")+tag(322,40,`${fmt(fl.refl)} reflected`,"end");
   const top=s.gh?by:24;
   o+=arw(400,cy-18,400,s.gh?by+bt+4:24,Wd(fl.ir),IRC,true)+tag(410,cy-46,`${fmt(fl.ir)} infrared`);
   if(s.gh){o+=arw(440,by-2,440,24,Wd(fl.out),IRC,true)+tag(450,40,`${fmt(fl.out)} to space`);
@@ -133,25 +133,25 @@ function drawEnergy(st){
   return o}
 function drawCarbon(){let o=F.floor(640,330);
   // [name, x, y, w, h, fill, colour, value, label x, label y, anchor]
-  const T=[["ATMOSPHERE",272,52,92,92,clamp(s.A/2400,0,1),AIRC,s.A,374,72,"start"],["OCEAN",40,176,116,92,.82,PAL.product.blueberry,s.O,98,306,"middle"],
+  const T=[["ATMOSPHERE",272,66,92,80,clamp(s.A/2400,0,1),AIRC,s.A,374,86,"start"],["OCEAN",40,176,116,92,.82,PAL.product.blueberry,s.O,98,306,"middle"],
     ["PLANTS AND SOIL",482,178,104,90,clamp(s.L/DEF.L*.75,0,1),"#B98A5A",s.L,534,306,"middle"],["FOSSIL CARBON",276,240,84,34,clamp(s.F/DEF.F*.9,0,1),"#4A4F6A",s.F,318,306,"middle"]];
   const so=sinkO(),sl=sinkL();
   // the flows first, so the tanks sit over them (arrow width ∝ GtC a year)
   if(fos()>0)o+=arw(300,224,300,170,Wd(fos()*18),"#4A4F6A")+tag(292,206,`burn ${fmt(fos(),1)}`,"end");
   if(s.q>0)o+=arw(340,170,340,224,Wd(s.q*18),GASC)+tag(348,206,`capture ${fmt(s.q,1)}`);
-  if(so>0)o+=arw(270,118,150,188,Wd(so*18),PAL.product.blueberry)+tag(196,138,`ocean ${fmt(so,1)}`,"end");
-  o+=arw(366,126,490,196,Wd((sl+s.p)*18),"#7DB55A")+tag(430,178,`plants ${fmt(sl+s.p,1)}`,"end");
-  if(s.c>0)o+=arw(552,172,374,104,Wd(s.c*18),PAL.product.peach)+tag(482,118,`clearing ${fmt(s.c,1)}`);
+  if(so>0)o+=arw(270,126,150,188,Wd(so*18),PAL.product.blueberry)+tag(196,138,`ocean ${fmt(so,1)}`,"end");
+  o+=arw(366,132,490,196,Wd((sl+s.p)*18),"#7DB55A")+tag(430,178,`plants ${fmt(sl+s.p,1)}`,"end");
+  if(s.c>0)o+=arw(552,172,374,112,Wd(s.c*18),PAL.product.peach)+tag(482,118,`clearing ${fmt(s.c,1)}`);
   T.forEach(([n,x,y,w,h,f,c,v,lx,ly,an])=>{o+=F.tube(x,y,w,h,f,{tint:PAL.case.mint,fill:c});o+=`<text class="t-lab" x="${lx}" y="${ly}" text-anchor="${an}">${n}</text><text class="t-ink" x="${lx}" y="${ly+14}" text-anchor="${an}">${fmt(v)} GtC</text>`});
-  const yPre=52+92-92*(A_PRE/2400);o+=`<path d="M268,${yPre.toFixed(1)} h100" stroke="#8F9BAA" stroke-dasharray="3 3"/><text class="t-lab" x="374" y="${(yPre+3.5).toFixed(1)}">1750 LEVEL</text>`;
+  const yPre=66+80-80*(A_PRE/2400);o+=`<path d="M268,${yPre.toFixed(1)} h100" stroke="#8F9BAA" stroke-dasharray="3 3"/><text class="t-lab" x="374" y="${(yPre+3.5).toFixed(1)}">1750 LEVEL</text>`;
   o+=`<text class="t-lab" x="16" y="22">CARBON STORES (GtC) AND FLOWS (GtC A YEAR) · MODEL YEAR ${sg(s.yr,0)}</text><text class="t-ink" x="624" y="22" text-anchor="end">air ${fmt(ppm())} ppm · ${sg(netA())} GtC a year</text>`;
   o+=`<text class="t-lab" x="16" y="38">TANKS NOT TO SCALE: THE OCEAN HOLDS ABOUT 40 TIMES THE AIR'S CARBON</text>`;
   return o}
 function drawNZ(){let o=F.floor(640,330);
-  const bar=(y,rows,title,on)=>{let x=40,g=`<text class="t-lab" x="40" y="${y-12}">${title}</text>`;
+  const bar=(y,rows,title,on)=>{let x=40,small=0,g=`<text class="t-lab" x="40" y="${y-12}">${title}</text>`;
     rows.forEach(([n,v,c],i)=>{const w=560*v/100;g+=F.box(x,y,w-2,26,{colour:c,kind:"painted",d:8,r:2,shadow:i===rows.length-1});
       if(w>70)g+=`<text class="t-ink" x="${(x+6).toFixed(1)}" y="${y+46}">${esc(n)}</text><text class="t-big" x="${(x+6).toFixed(1)}" y="${y+18}" style="fill:#222A55">${v}%</text>`;
-      else g+=`<text class="t-ink" x="${(x+w-2).toFixed(1)}" y="${y+46+(i%2)*14}" text-anchor="end">${esc(n)} ${v}%</text>`;x+=w});
+      else{g+=`<text class="t-ink" x="${(x+w-2).toFixed(1)}" y="${y+62+small*14}" text-anchor="end">${esc(n)} ${v}%</text>`;small++}x+=w});
     if(on)g+=`<rect x="34" y="${y-6}" width="574" height="38" rx="8" fill="none" stroke="var(--acc)" stroke-width="1.6"/>`;return g};
   o+=bar(78,NZ.sector,"BY SECTOR",s.nzv==="sector")+bar(184,NZ.gas,"BY GAS",s.nzv==="gas");
   o+=`<text class="t-lab" x="16" y="22">AOTEAROA, 2024 · GROSS EMISSIONS ${NZ.gross} Mt CO₂-e</text><text class="t-body" x="40" y="286">Forests took up ${fmt(NZ.forest,1)} Mt (${NZ.forestPct}% of gross), so net emissions were ${NZ.net} Mt.</text><text class="t-lab" x="40" y="312">SOURCE: MINISTRY FOR THE ENVIRONMENT, GREENHOUSE GAS INVENTORY 1990–2024</text>`;
@@ -220,7 +220,7 @@ const steps=[
   onStep:()=>{resetAll()}},
  {k:"feedback",lab:"Feedbacks",...ESPEED,controls:["play","fb","co2","cloud","reset"],chips:["temp","ice","alb","co2"],
   cap:"A feedback is when a change causes more change. With the ice–albedo feedback on, add CO₂ and press Play. As the slice warms, the ice tile shrinks, dark ocean shows through, more sunlight is absorbed and it warms even more.",
-  big:"<b>The big idea:</b> reinforcing (positive) feedbacks amplify a change. Ice–albedo is one; warmer air holding more water vapour is another (always on in this model). The extra infrared a warmer surface gives off is a balancing feedback. Warming also weakens the carbon sinks: by about 25% on land and 7% in the ocean over 2015 to 2024 (not in this model).",
+  big:"<b>The big idea:</b> reinforcing (positive) feedbacks amplify a change. Ice–albedo is one; warmer air holding more water vapour is another (always on in this model). The extra infrared a warmer surface gives off is a balancing feedback. Climate change and natural swings also weakened the carbon sinks, by about 25% on land and 7% in the ocean over 2015 to 2024 (not in this model).",
   exam:"The ice–albedo feedback is a reinforcing (positive) feedback. Warming melts ice and snow, exposing darker ocean or land with a lower albedo. The darker surface absorbs more sunlight, which causes more warming and more melting.",
   trap:"Thinking a 'positive' feedback is a good thing. In science it means the change is reinforced, which here means more warming.",
   onStep:()=>{resetAll();s.fb=true}},
@@ -229,7 +229,7 @@ const steps=[
   big:"<b>The big idea:</b> not every greenhouse gas lasts as long. Methane stays in the air for a couple of decades; carbon dioxide and nitrous oxide stay for hundreds of years. So the mix of gases a country emits changes how its emissions affect warming over time.",
   exam:"In 2024 about 53% of New Zealand's gross greenhouse gas emissions came from agriculture, mainly methane from ruminant animals such as cattle and sheep, and nitrous oxide. Methane is short-lived and breaks down within a couple of decades, while carbon dioxide and nitrous oxide stay in the atmosphere for hundreds of years.",
   trap:"Saying transport or electricity is New Zealand's biggest source. Agriculture is the largest share of gross emissions; energy, including transport, is second."},
- {k:"test",lab:"Test yourself",...ESPEED,controls:["play","tile","surf","cloud","fb","fossil","clear","plant","capture","reset"],chips:["temp","bal","alb","co2","net"],
+ {k:"test",lab:"Test yourself",...ESPEED,controls:["play","tile","surf","cloud","fb","fossil","clear","plant","capture","reset"],chips:["temp","bal","alb","ice","co2","net"],
   cap:"Use the controls to answer each one, then press Check. The machine marks you with the same model it runs.",
   big:"<b>Exam tip:</b> follow the energy. Say where it comes in (sunlight), what is reflected (albedo), what goes out (infrared) and what greenhouse gases do to it. For carbon, name the stores and the flows between them."}
 ];
@@ -312,10 +312,10 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
   for(let T=-40;T<=40;T+=10){th.add(S.box(T%20?.08:.14,.012,.01,tickM,{at:[-.16,Ty(T),-.085],cast:false}))}
   th.add(S.box(.2,.02,.012,mat("flat",P.deep.sky),{at:[-.14,Ty(15),-.085],cast:false}));
   // the energy books screen
-  const scr=S.group();scr.position.set(DX+3.7,TOP,DZ-2.25);scr.rotation.y=-.42;
-  scr.add(S.cyl(.05,.07,1.1,mat("metal"),{at:[0,.55,0]}));scr.add(S.rbox(.8,.1,.5,.04,white,{at:[0,.05,0]}));
-  scr.add(S.rbox(2.9,1.86,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,2.0,-.05]}));
-  const book=S.panel(640,400,2.7);book.position.set(0,2.0,0);scr.add(book);let bookKey="";
+  const scr=S.group();scr.position.set(-3.85,TOP,1.75);scr.rotation.y=.38;
+  scr.add(S.cyl(.05,.07,.55,mat("metal"),{at:[0,.28,0]}));scr.add(S.rbox(.8,.1,.5,.04,white,{at:[0,.05,0]}));
+  scr.add(S.rbox(2.5,1.62,.08,.06,mat("plastic","#ffffff",{rough:.35}),{at:[0,1.32,-.05]}));
+  const book=S.panel(640,400,2.34);book.position.set(0,1.32,0);scr.add(book);let bookKey="";
   // particles: sunlight in, light reflected, infrared up, infrared re-emitted
   const capG=new THREE.CylinderGeometry(.028,.028,.26,8);
   const NPH=110,phIn=S.swarm(NPH,capG,mat("glow",SUNC,1.5)),phOut=S.swarm(NPH,capG,mat("glow","#FFF2C8",1.1));
@@ -333,7 +333,6 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
     g.add(S.cyl(r+.1,r+.14,.14,white,{at:[0,.07,0],seg:48}));
     const gl=S.cyl(r,r,h,glassM,{at:[0,.14+h/2,0],cast:false,open:true,seg:48});gl.renderOrder=6;g.add(gl);
     g.add(S.torus(r,.035,rimM,{at:[0,.16,0],rot:[Math.PI/2,0,0],ts:64}));g.add(S.torus(r,.035,rimM,{at:[0,.14+h,0],rot:[Math.PI/2,0,0],ts:64}));
-    g.add(S.cyl(r+.05,r+.05,.07,rimM,{at:[0,.16+h,0],seg:48}));
     const fm=mat("liquid",fillC,{opacity:.88,fresh:true});const fill=S.cyl(r-.03,r-.03,1,fm,{seg:48});g.add(fill);
     const sl=S.cyl(r-.03,r-.03,.012,mat("plastic","#ffffff",{rough:.3,fresh:true}),{seg:48,cast:false});sl.material.color.set(fillC).lerp(new THREE.Color("#ffffff"),.35);g.add(sl);
     return {g,fill,sl,r,h,y0,set(f){f=clamp(f,.01,1);const H=f*h;fill.scale.y=H;fill.position.y=.16+H/2;sl.position.y=.16+H+.006}}}
@@ -388,28 +387,37 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
   const MP=Array.from({length:36},()=>({x:0,y:0,z:0,life:0})),EP=Array.from({length:24},()=>({x:0,y:0,z:0,life:0}));let mAcc=0,eAcc=0;
   // ================================================================ labels
   const lSun=S.label({cls:"big",off:[24,-34]}),lRefl=S.label({off:[26,-10]}),lAbs=S.label({off:[-30,30]}),lTile=S.label({cls:"hot",off:[-34,24]});
-  const lIR=S.label({off:[30,6]}),lGas=S.label({off:[-36,-26]}),lBack=S.label({off:[34,22]}),lSpace=S.label({off:[30,-8]}),lTemp=S.label({cls:"big",off:[26,-8]}),lBal=S.label({off:[0,-40]}),lCloud=S.label({off:[-30,-22]}),lIce=S.label({cls:"hot",off:[-36,-30]});
-  const lAtm=S.label({cls:"big",off:[-40,-34]}),lOcean=S.label({off:[-36,-30]}),lLand=S.label({off:[30,-30]}),lFossil=S.label({off:[34,-24]}),lNet=S.label({cls:"hot",off:[40,-20]});
+  const lIR=S.label({off:[30,30]}),lGas=S.label({off:[-36,-26]}),lBack=S.label({off:[-36,16]}),lSpace=S.label({off:[30,-8]}),lTemp=S.label({cls:"big",off:[26,-8]}),lBal=S.label({off:[30,-30]}),lCloud=S.label({off:[-30,-22]}),lIce=S.label({cls:"hot",off:[-36,-30]});
+  const lAtm=S.label({cls:"big",off:[-40,-34]}),lOcean=S.label({off:[-36,-30]}),lLand=S.label({off:[28,16]}),lFossil=S.label({off:[30,-34]}),lNet=S.label({cls:"hot",off:[-40,24]});
   const lVF=S.label({off:[30,-26]}),lVC=S.label({off:[30,-14]}),lVP=S.label({off:[30,24]}),lVQ=S.label({off:[30,-20]});
-  const lNZ=S.label({cls:"big",off:[0,-44]}),lSeg=[0,1,2,3].map(i=>S.label({off:[-44,0]})),lOther=S.label({off:[44,-12]}),lCows=S.label({off:[-30,-34]}),lCars=S.label({off:[30,-30]}),lGrove=S.label({off:[30,-24]});
-  const ENER=[lSun,lRefl,lAbs,lTile,lIR,lGas,lBack,lSpace,lTemp,lBal,lCloud,lIce],CARB=[lAtm,lOcean,lLand,lFossil,lNet,lVF,lVC,lVP,lVQ],NZL=[lNZ,...lSeg,lOther,lCows,lCars,lGrove];
-  const SHOW={sun:[lSun,lRefl,lAbs,lTemp,lCloud],albedo:[lTile,lRefl,lAbs,lTemp],infrared:[lIR,lSpace,lTemp,lBal,lGas],blanket:[lGas,lBack,lSpace,lIR,lTemp,lBal],
-    carbon:[lAtm,lOcean,lLand,lFossil,lNet,lVF,lVC,lVP,lVQ],feedback:[lIce,lTemp,lGas,lBal],nz:NZL,test:[lTemp,lBal,lAtm,lNet,lTile,lIce]};
+  const lNZ=S.label({cls:"big",off:[34,-40]}),lSeg=[0,1,2,3].map(i=>S.label({off:[-44,0]})),lOther=S.label({off:[30,0]}),lCows=S.label({off:[-30,-34]}),lCars=S.label({off:[30,-30]}),lGrove=S.label({off:[30,-24]});
+  const lSlice=S.label({off:[30,26]});
+  const ENER=[lSun,lRefl,lAbs,lTile,lIR,lGas,lBack,lSpace,lTemp,lBal,lCloud,lIce,lSlice],CARB=[lAtm,lOcean,lLand,lFossil,lNet,lVF,lVC,lVP,lVQ],NZL=[lNZ,...lSeg,lOther,lCows,lCars,lGrove];
+  const SHOW={sun:[lSun,lRefl,lAbs,lTemp,lCloud,lSlice],albedo:[lTile,lRefl,lAbs,lTemp],infrared:[lIR,lSpace,lTemp,lGas],blanket:[lGas,lBack,lSpace,lIR,lTemp],
+    carbon:[lAtm,lOcean,lLand,lFossil,lNet,lVF,lVC,lVP,lVQ],feedback:[lIce,lTemp,lGas],nz:NZL,test:[lTemp,lBal,lAtm,lNet]};
   // ================================================================ views
-  S.view("sun",[-1.2,6.3,11.8],[-.2,2.3,0],{min:4,max:30});
-  S.view("albedo",[1.6,6.6,7.6],[.5,1.2,.3],{min:3,max:24});
-  S.view("infrared",[3.6,4.6,10.6],[.6,2.7,.2],{min:4,max:30});
-  S.view("blanket",[-2.8,5.0,10.8],[.4,2.9,0],{min:4,max:30});
-  S.view("carbon",[ZC.x+.4,7.4,11.8],[ZC.x,2.0,-.3],{min:4,max:30});
-  S.view("feedback",[1.0,7.8,8.8],[.6,1.3,.2],{min:3,max:26});
-  S.view("nz",[ZN.x+.6,5.8,9.6],[ZN.x,1.7,0],{min:4,max:28});
-  S.view("all",[7.2,12.6,24.5],[7.2,1.9,0],{min:8,max:60});
-  S.goView("sun",true);
-  let curK="sun";
+  // each view has a wider twin for narrow (phone) screens, pulled back so the whole rig fits
+  const VIEW=(n,pos,tg,o)=>{S.view(n,pos,tg,o);S.view(n+"_n",pos.map((v,i)=>tg[i]+(v-tg[i])*1.4),tg,Object.assign({},o,{max:(o.max||40)*1.4}))};
+  VIEW("sun",[-1.2,6.3,11.8],[-.2,2.3,0],{min:4,max:30});
+  VIEW("albedo",[1.4,4.7,8.4],[.5,1.1,.3],{min:3,max:24});
+  VIEW("infrared",[3.6,4.6,10.6],[.6,2.7,.2],{min:4,max:30});
+  VIEW("blanket",[-2.8,5.0,10.8],[.4,2.9,0],{min:4,max:30});
+  VIEW("carbon",[ZC.x+.4,7.4,11.8],[ZC.x,2.0,-.3],{min:4,max:30});
+  VIEW("feedback",[1.0,7.8,8.8],[.6,1.3,.2],{min:3,max:26});
+  VIEW("nz",[ZN.x+.6,5.8,9.6],[ZN.x,1.7,0],{min:4,max:28});
+  VIEW("all",[7.2,12.6,24.5],[7.2,1.9,0],{min:8,max:60});
+  // on narrow screens some pills step aside (the sliders and chips carry the same numbers)
+  const NARROW_HIDE=new Set([lVF,lVC,lVP,lVQ,lCows,lCars,lGrove,lCloud,lSlice,lRefl,lNet,lBal]);
+  let narrow=false;const isNarrow=()=>{const w=S.canvas.clientWidth||800;return w<620};
+  const vname=k=>(k==="test"?"all":k)+(narrow?"_n":"");
+  narrow=isNarrow();S.goView(vname("sun"),true);
+  let curK="sun",first=true;
+  function showLabels(k){[...ENER,...CARB,...NZL].forEach(l=>l.hide());(SHOW[k]||[]).forEach(l=>{if(!(narrow&&NARROW_HIDE.has(l)))l.show()})}
   return {
-    step(st){const k=st.k;curK=k;S.goView(k==="test"?"all":k);
+    resize(){const n=isNarrow();if(n!==narrow){narrow=n;S.goView(vname(curK),true);showLabels(curK)}},
+    step(st){const k=st.k;curK=k;narrow=isNarrow();S.goView(vname(k),first);first=false;showLabels(k);
       if(k==="carbon")S.setShadowBox(7,[ZC.x,0,0]);else if(k==="nz")S.setShadowBox(6,[ZN.x,0,0]);else if(k==="test")S.setShadowBox(19,[7,0,0]);else S.setShadowBox(7,[-.3,0,0]);
-      [...ENER,...CARB,...NZL].forEach(l=>l.hide());(SHOW[k]||[]).forEach(l=>l.show())},
+      },
     update(s,st,dt,t){const k=st.k,run=s.playing&&st.speed,fl=flows(),r=R();
       // ---- tiles
       for(let i=0;i<TILE_N;i++){const ty=s.tiles[i],ic=s.ic[i]||0,m=tileM[i];const base=(ty==="ice"||ty==="ocean")?"ocean":ty;
@@ -496,27 +504,28 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
       const AIMs=tmp;
       lSun.at(AIMs.copy(LH).addScaledVector(ldir,.5)).set(`Sunlight in<b>${S0} W/m²</b><small>the lamp is the Sun</small>`);
       lRefl.at(tmp.set(DX+1.4,TOP+4.6,DZ-.2)).set(`Reflected<b>${pct(fl.alb)}</b><small>${fmt(fl.refl)} W/m² back to space</small>`);
+      lSlice.at(tmp.set(DX+1.6,TOP+.4,DZ+CD/2)).set(`A slice of planet<small>crust, mantle, core · not to scale</small>`);
       lAbs.at(tmp.set(DX-1.6,TY+.2,DZ+.9)).set(`Absorbed<b>${fmt(fl.abs)} W/m²</b>`);
       lTile.at(tmp.set(tileX(s.tsel),TY+.3,tileZ(s.tsel))).set(`Tile ${s.tsel+1}: ${NAME[s.tiles[s.tsel]].toLowerCase()}<small>reflects ${pct(tileAlb(s.tsel))} · tap again to change</small>`);
-      lIR.at(tmp.set(DX+1.7,TY+1.0,DZ+.7)).set(`Infrared from the surface<b>${fmt(fl.ir)} W/m²</b>`);
-      lGas.at(tmp.set(DX-2.5,s.gh?BY:TOP+2.4,DZ+1.3)).set(s.gh?`Greenhouse gases<b>CO₂ ${fmt(ppm())} ppm</b><small>absorb ${pct(fl.eps)} of the infrared</small>`:`No greenhouse gases<small>a thought experiment</small>`);
-      lBack.at(tmp.set(DX+2.3,BY-.5,DZ+1.3)).set(`Back down to the surface<b>${fmt(fl.back)} W/m²</b>`);
+      lIR.at(tmp.set(DX+1.1,TY+1.1,DZ+.9)).set(`Infrared from the surface<b>${fmt(fl.ir)} W/m²</b>`);
+      lGas.at(tmp.set(DX-2.5,s.gh?BY:BY+.3,DZ+1.35)).set(s.gh?`Greenhouse gases<b>CO₂ ${fmt(ppm())} ppm</b><small>absorb ${pct(fl.eps)} of the infrared</small>`:`No greenhouse gases<small>a thought experiment</small>`);
+      lBack.at(tmp.set(DX-1.3,BY-.75,DZ+1.3)).set(`Back down to the surface<b>${fmt(fl.back)} W/m²</b>`);
       lSpace.at(tmp.set(DX+.6,TOP+5.4,DZ)).set(`Infrared to space<b>${fmt(fl.out)} W/m²</b>`);
       lTemp.at(tmp.set(TH.x,TOP+Ty(s.T),TH.z)).set(`Surface<b>${fmt(s.T,1)} °C</b>`);
-      lBal.at(tmp.set(scr.position.x,TOP+3.0,scr.position.z)).set(`Energy in − out<b>${sg(fl.N)} W/m²</b><small>${balWord(fl.N)}</small>`).cls(Math.abs(fl.N)>=.3?"hot":"");
+      lBal.at(tmp.set(scr.position.x+.6,TOP+2.2,scr.position.z)).set(`Energy in − out<b>${sg(fl.N)} W/m²</b><small>${balWord(fl.N)}</small>`).cls(Math.abs(fl.N)>=.3?"hot":"");
       const vc=vis.length?cloudAt[vis[0]]:cloudAt[0];lCloud.at(tmp.set(vc[0],vc[1]+.2,vc[2])).set(`Clouds ${pct(s.cloud)}<small>reflect half the light that hits them</small>`);
       const ii=s.tiles.indexOf("ice"),il=iceLeft();lIce.at(tmp.set(ii>=0?tileX(ii):DX,TY+.3,ii>=0?tileZ(ii):DZ)).set(il==null?`No ice tiles<small>set a tile to ice</small>`:`Ice left<b>${pct(il)}</b><small>feedback ${s.fb?"on":"off"}</small>`);
       lAtm.at(tmp.set(ZC.x,TOP+AY+2.2,-1.9)).set(`Atmosphere<b>${fmt(s.A)} GtC</b><small>${fmt(ppm())} ppm CO₂</small>`);
-      lOcean.at(tmp.set(ZC.x-3.6,TOP+1.9,1.25)).set(`Ocean<b>${fmt(s.O)} GtC</b><small>takes up ${fmt(sinkO(),1)} a year</small>`);
-      lLand.at(tmp.set(ZC.x+3.5,TOP+1.9,1.3)).set(`Plants and soil<b>${fmt(s.L)} GtC</b><small>take up ${fmt(sinkL()+s.p,1)} a year</small>`);
-      lFossil.at(tmp.set(ZC.x+4.3,TOP+1.1,-2.15)).set(`Fossil carbon<b>${fmt(s.F)} GtC</b><small>known coal, oil and gas reserves</small>`);
-      lNet.at(tmp.set(ZC.x+.95,TOP+AY+1.0,-1.9)).set(`Into the air<b>${sg(netA())} GtC a year</b><small>model year ${sg(s.yr,0)}</small>`);
+      lOcean.at(tmp.set(ZC.x-3.6,TOP+1.9,1.25)).set(`Ocean<b>${fmt(s.O)} GtC</b>${narrow?"":`<small>takes up ${fmt(sinkO(),1)} a year</small>`}`);
+      lLand.at(tmp.set(ZC.x+4.4,TOP+.8,1.7)).set(`Plants and soil<b>${fmt(s.L)} GtC</b>${narrow?"":`<small>take up ${fmt(sinkL()+s.p,1)} a year</small>`}`);
+      lFossil.at(tmp.set(ZC.x+4.5,TOP+1.0,-2.15)).set(`Fossil carbon<b>${fmt(s.F)} GtC</b>${narrow?"":"<small>known coal, oil and gas reserves</small>"}`);
+      lNet.at(tmp.set(ZC.x-.95,TOP+AY+.9,-1.9)).set(`Into the air<b>${sg(netA())} GtC a year</b><small>model year ${sg(s.yr,0)}</small>`);
       const vp=(key)=>pipes[key].w.getWorldPosition(tmp2);
       lVF.at(vp("fossil")).set(`Burn fossil fuels<b>${fmt(fos(),1)}</b>`);lVC.at(vp("clear")).set(`Clear forest<b>${fmt(s.c,1)}</b>`);
       lVP.at(vp("uptake")).set(`Plant forest<b>${fmt(s.p,1)}</b>`);lVQ.at(vp("capture")).set(`Capture and store<b>${fmt(s.q,1)}</b>`);
-      lNZ.at(tmp.set(ZN.x,TOP+3.75,-1.15)).set(`Aotearoa, 2024<b>${NZ.gross} Mt CO₂-e gross</b><small>Ministry for the Environment</small>`);
-      const ci=s.nzv==="gas"?1:0,col=colSeg[ci];lSeg.forEach((l,j)=>{const g=col[j];if(!g||k!=="nz"){l.hide();return}l.show();l.at(tmp.set(ZN.x+colX[ci]-.6,g.y,-1.15+.6)).set(`${esc(g.n)}<b>${g.v}%</b>`)});
-      lOther.at(tmp.set(ZN.x+colX[1-ci],TOP+3.5,-1.15)).set(ci?"By sector<small>tap to sort by sector</small>":"By gas<small>tap to sort by gas</small>");
+      lNZ.at(tmp.set(ZN.x+colX[0],TOP+3.5,-1.15)).set(`Aotearoa, 2024<b>${NZ.gross} Mt CO₂-e gross</b><small>Ministry for the Environment</small>`);
+      const ci=s.nzv==="gas"?1:0,col=colSeg[ci];lSeg.forEach((l,j)=>{const g=col[j];if(!g||k!=="nz"){l.hide();return}l.show();l.at(tmp.set(ZN.x+colX[ci]-.6,g.y,-1.15+.6)).set(narrow?`${esc(g.n.split(" (")[0])} · ${g.v}%`:`${esc(g.n)}<b>${g.v}%</b>`)});
+      lOther.at(tmp.set(ZN.x+colX[1-ci]+.7,TOP+2.2,-.45)).set(ci?"By sector<small>tap to sort by sector</small>":"By gas<small>tap to sort by gas</small>");
       lCows.at(tmp.set(ZN.x-2.6,TOP+.9,1.8)).set(`Cattle and sheep<small>methane from digesting grass</small>`);
       lCars.at(tmp.set(ZN.x+2.4,TOP+.5,1.75)).set(`Road transport<small>carbon dioxide</small>`);
       lGrove.at(tmp.set(ZN.x+3.6,TOP+.7,-1.7)).set(`Forests took up<b>${fmt(NZ.forest,1)} Mt</b><small>${NZ.forestPct}% of gross</small>`);
@@ -569,7 +578,7 @@ StudyKit.mount({kupu:KUPU,caseTint:"sky",scene3d:climate3d,
      no:()=>{const il=iceLeft();return il==null?"There's no ice left to melt. Set a tile to ice first.":!s.fb?"Turn the ice–albedo feedback on first.":`Ice left: ${pct(il)}. Warm the slice more and press Play.`}},
     {q:"Make the air's carbon go down without changing fossil emissions (keep burning 10 GtC a year).",
      check:()=>s.f===DEF.f&&netA()<0&&s.A<=A0+1,
-     ok:"Yes: no clearing, lots of planting and some capture beat the fossil flow. It took the land and capture valves near full. Real forests and capture have limits, which is why cutting fossil emissions matters most.",
+     ok:"Yes: with no clearing, plenty of planting and capture, the sinks beat the fossil flow. It took the land and capture valves near full. Real forests and capture have limits, which is why cutting fossil emissions matters most.",
      no:()=>s.f!==DEF.f?"Put the fossil fuel valve back to 10 GtC a year.":s.A>A0+1?`The air holds ${fmt(s.A)} GtC, more than today's ${fmt(A0)}. Press Reset to today and try again.`:`Carbon is still going into the air (${sg(netA())} GtC a year). Use the other valves.`}],
   papers:[{label:"NZQA: Earth and Space Science",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/earth-and-space-science/"},
     {label:"MfE: Greenhouse Gas Inventory 1990–2024",url:"https://environment.govt.nz/publications/new-zealands-greenhouse-gas-inventory-19902024-snapshot/"},

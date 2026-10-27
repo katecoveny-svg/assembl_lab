@@ -25,7 +25,7 @@ document.querySelectorAll('[data-tool-link]').forEach(a=>a.addEventListener('cli
 
 // ---------------------------------------------------------------- 1 · study sprint
 const STUDY={
- science:{machine:'/study/junior/?m=reactions',machineTitle:'The reaction chamber',machineText:'Change temperature and concentration, watch the particle collisions, then come back and explain the pattern.',
+ science:{machine:'/study/m/reactions.html',machineTitle:'The reaction machine',machineText:'Change the temperature, the acid and the chip size, watch the gas syringe fill and the particles collide, then come back and explain the pattern.',
   workedTitle:'Worked example: particles and temperature',workedText:'Two samples have the same concentration. Sample A is at 20 °C. Sample B is at 40 °C. Which reacts faster, and why?',
   workedAnswer:'<b>Sample B.</b> Its particles have more kinetic energy on average. They collide more often, and more of those collisions have enough energy to react. Temperature changes the chance of a successful collision; it doesn’t make more particles.',
   questionTitle:'Your turn: concentration',questionText:'A third sample stays at 20 °C, but its reactant concentration is doubled. What happens to the reaction rate, and what is the particle-level reason?',

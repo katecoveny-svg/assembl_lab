@@ -466,6 +466,40 @@ Notes shown to students:
 
 Looked for but not added: "lateral line" (no Te Aka entry found); a general word for night (*pō*) was not opened, so it was left out.
 
+### Climate (climate.js) — 10 kupu
+
+Added 27 October 2026. Each entry was checked on Te Aka during the build.
+
+| Kupu | English | Source | Chip label | Note shown to students |
+|---|---|---|---|---|
+| **āhuarangi** | climate | [Te Aka 11736](https://maoridictionary.co.nz/word/11736) |  |  |
+| **kōhauhau** | atmosphere | [Te Aka 39948](https://maoridictionary.co.nz/word/39948) | atm |  |
+| **hihi pōkākā** | infrared radiation | [Te Aka 47296](https://maoridictionary.co.nz/word/47296) | ir |  |
+| **paemahana** | temperature | [Te Aka 39927](https://maoridictionary.co.nz/word/39927) | temp | Te Aka also lists pāmahana. |
+| **tio** | ice | [Te Aka 8127](https://maoridictionary.co.nz/word/8127) | ice | This is the third sense in the Te Aka entry: ice, freezing cold. |
+| **hauhā** | carbon dioxide | [Te Aka 38806](https://maoridictionary.co.nz/word/38806) | co2 |  |
+| **mahana haere o te ao** | global warming | [Te Aka 39815](https://maoridictionary.co.nz/word/39815) |  | The entry's example sentence (from Te Reo Pūtaiao) calls the greenhouse effect te kati mahana. |
+| **koranehe** | fossil fuel | [Te Aka 40187](https://maoridictionary.co.nz/word/40187) | fos |  |
+| **ahotakakame** | photosynthesis | [Te Aka 38805](https://maoridictionary.co.nz/word/38805) |  |  |
+| **mewaro** | methane | [Te Aka 40472](https://maoridictionary.co.nz/word/40472) | meth | A loanword. |
+
+### Reactions (reactions.js) — 10 kupu
+
+Added 27 October 2026. Each entry was checked on Te Aka during the build.
+
+| Kupu | English | Source | Chip label | Note shown to students |
+|---|---|---|---|---|
+| **tauhohe matū** | chemical reaction | [Te Aka 40051](https://maoridictionary.co.nz/word/40051) |  |  |
+| **pūmatū hohe** | reactant | [Te Aka 40182](https://maoridictionary.co.nz/word/40182) |  |  |
+| **matūriki** | particle | [Te Aka 50542](https://maoridictionary.co.nz/word/50542) |  |  |
+| **waikawa pūhaumāota** | hydrochloric acid | [Te Aka 40475](https://maoridictionary.co.nz/word/40475) | acid |  |
+| **hauhā** | carbon dioxide | [Te Aka 38806](https://maoridictionary.co.nz/word/38806) |  |  |
+| **pāpātanga** | rate | [Te Aka 45822](https://maoridictionary.co.nz/word/45822) | r0, rnow | A maths term: a rate compares two quantities, here gas made and time. |
+| **rōnaki** | gradient, slope | [Te Aka 13240](https://maoridictionary.co.nz/word/13240) |  | Also means to glide or slope. |
+| **paemahana** | temperature | [Te Aka 39927](https://maoridictionary.co.nz/word/39927) | temp | Te Aka also lists pāmahana. |
+| **horahanga mata** | surface area | [Te Aka 45668](https://maoridictionary.co.nz/word/45668) | surf |  |
+| **whākōkī** | catalyst | [Te Aka 40520](https://maoridictionary.co.nz/word/40520) | cat | Te Aka also lists whakakōkī. |
+
 ### NCEA steps on the downhill and vinyl machines: no new kupu
 
 No new kupu were added (both machines already carry 8 verified terms). The existing terms were mapped onto the new steps: downhill *run* (pūngao moe, pūngao neke, waku), *work* (tōpana, waku, whakahohoro), *model* (tere, pūngao), *turn* (tōpana, tere); vinyl *omega* and *centripetal* (auau). Looked for but not added: *angular velocity*, *centripetal*, *torque* (no Te Aka entries found).

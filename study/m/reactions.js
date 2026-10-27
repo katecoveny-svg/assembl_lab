@@ -62,13 +62,13 @@ const rateTxt=v=>v>=10?n1(v):v>=0.1?n2(v):v>=0.001?v.toFixed(3):v>0?"< 0.001":"0
 // ================================================================ the equilibrium: 2NO2 ⇌ N2O4, forward exothermic
 const DH_EQ=-56.9e3;                                 // J/mol for 2NO2 → N2O4 (Chemguide gives +56.9 kJ/mol for N2O4 → 2NO2)
 const kcRatio=T=>Math.exp(-DH_EQ/R*(1/(T+273.15)-1/T0));   // Kc compared with its 20 °C value (van 't Hoff)
-const EQ_N=24,EQ_K20=0.365;                          // 24 "NO2 units" in the window; the 20 °C mix is illustrative
+const EQ_N=32,EQ_K20=0.273;                          // 32 "NO2 units" in the window; the 20 °C mix is illustrative
 function eqCounts(T){const Kw=EQ_K20*kcRatio(T);const a=(-1+Math.sqrt(1+8*Kw*EQ_N))/(4*Kw);return {a,b:(EQ_N-a)/2}}
 const eqShare=T=>{const e=eqCounts(T);return e.a/(e.a+e.b)};
 
 // ================================================================ the particle window (a slowed-down, illustrative sketch)
-const LR=1.5,RA=.085,RS=.11,VS=.62;
-const E0={marble:3.0,perU:6.5,perC:2.6};            // thresholds in the window's energy units
+const LR=1.5,RA=.085,RS=.12,VS=.78;
+const E0={marble:2.2,perU:6.5,perC:1.8};            // thresholds in the window's energy units
 const kTv=T=>Math.pow((T+273.15)/T0,2.4);           // exaggerated so the difference shows
 function erfc(x){const t=1/(1+.3275911*x);return t*(.254829592+t*(-.284496736+t*(1.421413741+t*(-1.453152027+t*1.061405429))))*Math.exp(-x*x)}
 const Q15=x=>x<=0?1:erfc(Math.sqrt(x))+2*Math.sqrt(x/Math.PI)*Math.exp(-x);   // share of a 3D energy spread above x
@@ -85,7 +85,7 @@ function buildSites(mode){const S=[];const add=(x,y,kind)=>{if(Math.hypot(x,y)<L
   else if(mode==="p-1"){[[-.85,-.8],[-.25,-1.05],[.38,-.98],[.9,-.62],[.05,-.5]].forEach(([x,y])=>{add(x-.11,y,"mno2");add(x+.11,y,"mno2");add(x,y+.19,"mno2")})}
   return S}
 function spawnPart(kind,T,top){const a=top?Math.PI*(.25+Math.random()*.5):Math.random()*6.283,rad=top?LR-.2:Math.sqrt(Math.random())*(LR-.3);
-  let x=Math.cos(a)*rad,y=top?Math.sin(a)*rad:Math.abs(Math.sin(a)*rad)*.9+.0;if(!top&&kind!=="no2"&&kind!=="pair")y=Math.max(y,-.2);
+  const eq=kind==="no2"||kind==="pair";let x=Math.cos(a)*rad,y=top||eq?Math.sin(a)*rad:Math.abs(Math.sin(a)*rad)*.9;if(!top&&!eq)y=Math.max(y,-.2);
   const E=sampleE(T),v=VS*Math.sqrt(2*E),d=top?-Math.PI/2+(Math.random()-.5)*1.4:Math.random()*6.283;
   return {kind,x,y,vx:Math.cos(d)*v,vy:Math.sin(d)*v,E,th:Math.random()*6.283,w:(Math.random()-.5)*5,a:top?0:1,dead:0}}
 function setSpeed(p,T){p.E=sampleE(T);const v=VS*Math.sqrt(2*p.E),m=Math.hypot(p.vx,p.vy)||1;p.vx=p.vx/m*v;p.vy=p.vy/m*v}
@@ -93,7 +93,7 @@ function lensBuild(mode,st){LW.key=mode;LW.sites=buildSites(mode);LW.site0=LW.si
   if(mode==="eq"){const e=eqCounts(s.T);let na=Math.round(e.a);if((EQ_N-na)%2)na++;for(let i=0;i<na;i++)LW.parts.push(spawnPart("no2",s.T,false));
     for(let i=0;i<(EQ_N-na)/2;i++)LW.parts.push(spawnPart("pair",s.T,false));LW.eq={fwd:[],rev:[],hist:[],histT:0};return}
   const tg=lensTarget();for(let i=0;i<tg;i++)LW.parts.push(spawnPart(s.run.rx==="marble"?"acid":"per",s.run.T,false))}
-function lensTarget(){const r=s.run;return r.rx==="marble"?Math.max(1,Math.round(9*acidNow(r,r.started?r.x:0))):Math.round(14*(1-r.x))}
+function lensTarget(){const r=s.run;return r.rx==="marble"?Math.max(1,Math.round(13*acidNow(r,r.started?r.x:0))):Math.round(16*(1-r.x))}
 const sitesOn=()=>s.run.started&&(s.run.rx==="marble"||s.run.cat);
 function lensEvent(ok,why,x,y){LW.ev.push({t:LW.t,ok});LW.fx.push({x,y,t:LW.t,ok});if(ok||LW.t-LW.out.t>1.3)LW.out={t:LW.t,why}}
 function lensTick(dt,st){dt=Math.min(dt,.05);LW.t+=dt;const mode=lensMode(st);if(mode!==LW.key)lensBuild(mode,st);
@@ -115,7 +115,7 @@ function lensTick(dt,st){dt=Math.min(dt,.05);LW.t+=dt;const mode=lensMode(st);if
     const d=Math.hypot(p.x,p.y);if(d>LR-RA){const nx=p.x/d,ny=p.y/d,vn=p.vx*nx+p.vy*ny;if(vn>0){p.vx-=2*vn*nx;p.vy-=2*vn*ny}p.x=nx*(LR-RA);p.y=ny*(LR-RA)}
     for(const q of alive){const dx=p.x-q.x,dy=p.y-q.y,dd=Math.hypot(dx,dy);if(dd>=RA+RS||dd<1e-6)continue;const nx=dx/dd,ny=dy/dd,vn=p.vx*nx+p.vy*ny;
       p.x=q.x+nx*(RA+RS);p.y=q.y+ny*(RA+RS);if(vn>=0)continue;p.vx-=2*vn*nx;p.vy-=2*vn*ny;
-      const Ea=q.kind==="mno2"?E0.perC:E0.marble,face=-(Math.cos(p.th)*nx+Math.sin(p.th)*ny)>=.5,hot=p.E>=Ea;
+      const Ea=q.kind==="mno2"?E0.perC:E0.marble,face=-(Math.cos(p.th)*nx+Math.sin(p.th)*ny)>=.25,hot=p.E>=Ea;
       const ok=react&&hot&&face&&s.playing!==false;
       lensEvent(ok,ok?"ok":!hot?"energy":"orient",q.x+nx*RS,q.y+ny*RS);
       if(ok){p.dead=1;LW.bubs.push({x:q.x+nx*(RS+.06),y:q.y+ny*(RS+.06),r:.06+Math.random()*.04,vy:.45+Math.random()*.2});
@@ -204,20 +204,22 @@ function drawEnergy(p,st){const W=420,H=260,r=s.run,per=r.rx==="perox",cat=per&&
   p.rect(0,0,W,H,{fill:"#FFFFFF",r:14});
   // profile
   p.text(16,22,"Energy profile",{caps:true,size:10.5});p.text(16,36,per?"2H₂O₂ → 2H₂O + O₂":"CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂",{size:9.5,weight:500,fill:MUTED});
-  const x0=22,x1=200,yb=226,yR=170,yP=204,yU=70,yC=126,ua=56,ub=170;
+  const x0=22,x1=204,yb=228,yR=176,yP=210,yU=66,yC=128,ua=50,ub=184;
   p.line([[x0,yb],[x0,52]],{stroke:"#8F9BAA",lw:1.2});p.line([[x0-3,58],[x0,52],[x0+3,58]],{stroke:"#8F9BAA",lw:1.2});p.text(x0+5,58,"energy",{size:9,weight:500,fill:MUTED});
   p.line([[x0,yb],[x1,yb]],{stroke:"#8F9BAA",lw:1.2});p.text((x0+x1)/2,yb+14,"reaction progress",{anchor:"middle",size:9,weight:500,fill:MUTED});
-  const curve=fn=>{const o=[];for(let i=0;i<=60;i++){const u=i/60,x=ua+(ub-ua)*u;o.push([x,fn(u)])}return [[x0+6,yR],...o,[x1-4,yP]]};
+  const curve=fn=>{const o=[];for(let i=0;i<=72;i++){const u=i/72,x=ua+(ub-ua)*u;o.push([x,fn(u)])}return [[x0+4,yR],...o,[x1-2,yP]]};
   const sm=u=>u*u*(3-2*u),base=u=>yR+(yP-yR)*sm(u);
-  const unc=u=>base(u)-(yR-yU)*Math.exp(-Math.pow((u-.46)/.19,2));
-  const cc=u=>base(u)-(yR-yC)*(Math.exp(-Math.pow((u-.33)/.12,2))+.82*Math.exp(-Math.pow((u-.64)/.12,2)));
-  p.line(curve(unc),{stroke:INK,lw:2.2,op:cat?.5:1});
-  if(per)p.line(curve(cc),{stroke:ACC,lw:cat?2.6:1.6,dash:cat?null:[5,4],op:cat?1:.7});
-  const xa=ua+(ub-ua)*.46,arrow=(x,ya,yb2,c)=>{p.line([[x,ya],[x,yb2]],{stroke:c,lw:1.3});p.line([[x-3,yb2+5],[x,yb2],[x+3,yb2+5]],{stroke:c,lw:1.3})};
-  p.line([[x0+6,yR],[xa+4,yR]],{stroke:GHOST,lw:1,dash:[2,3]});
-  arrow(xa,yR,yU+2,INK);p.text(xa+5,(yR+yU)/2,"Ea",{size:10.5,weight:700,fill:INK});
-  if(per){const xc=ua+(ub-ua)*.33;arrow(xc,yR,yC+2,ACC);p.text(xc-5,(yR+yC)/2+18,"Ea with",{anchor:"end",size:9,weight:700,fill:ACC});p.text(xc-5,(yR+yC)/2+29,"catalyst",{anchor:"end",size:9,weight:700,fill:ACC})}
-  p.text(x0+6,yR-6,"reactants",{size:9,weight:500,fill:MUTED});p.text(x1-4,yP-6,"products",{anchor:"end",size:9,weight:500,fill:MUTED});
+  const unc=u=>base(u)-(yR-yU)*Math.exp(-Math.pow((u-.5)/.2,2));
+  const cc=u=>base(u)-(yR-yC)*(Math.exp(-Math.pow((u-.36)/.12,2))+.85*Math.exp(-Math.pow((u-.66)/.12,2)));
+  p.line([[x0+4,yR],[x1-2,yR]],{stroke:GHOST,lw:1,dash:[2,3]});
+  p.line(curve(unc),{stroke:INK,lw:2.2,op:cat?.45:1});
+  if(per)p.line(curve(cc),{stroke:ACC,lw:cat?2.6:1.6,dash:cat?null:[5,4],op:cat?1:.75});
+  const arrow=(x,ya,yb2,c)=>{p.line([[x,ya],[x,yb2]],{stroke:c,lw:1.4});p.line([[x-3,yb2+5],[x,yb2],[x+3,yb2+5]],{stroke:c,lw:1.4})};
+  const xa=ua+(ub-ua)*.5;arrow(xa,yR,yU+3,INK);p.rect(xa+4,(yR+yU)/2-10,18,14,{fill:"#FFFFFF",r:3});p.text(xa+6,(yR+yU)/2+1,"Ea",{size:10.5,weight:700,fill:INK});
+  if(per){const xc=ua+(ub-ua)*.36;arrow(xc,yR,yC+3,ACC);p.rect(xc-22,(yR+yC)/2-8,18,14,{fill:"#FFFFFF",r:3});p.text(xc-6,(yR+yC)/2+3,"Ea",{anchor:"end",size:10.5,weight:700,fill:ACC});
+    p.line([[x1-74,60],[x1-58,60]],{stroke:ACC,lw:2,dash:cat?null:[4,3]});p.text(x1-54,63,"with MnO₂",{size:9,weight:700,fill:ACC});
+    p.line([[x1-74,74],[x1-58,74]],{stroke:INK,lw:2});p.text(x1-54,77,"without",{size:9,weight:600,fill:INK})}
+  p.text(x0+6,yR+13,"reactants",{size:9,weight:500,fill:MUTED});p.text(x1-2,yP+13,"products",{anchor:"end",size:9,weight:500,fill:MUTED});
   // collision energies at this temperature
   const ex0=226,ex1=404,ey0=226,ey1=60,EM=9,X=E=>ex0+E/EM*(ex1-ex0),fE=(E,T)=>{const k=kTv(T);return 2/Math.sqrt(Math.PI)*Math.sqrt(E)/Math.pow(k,1.5)*Math.exp(-E/k)},Y=v=>ey0-v/.56*(ey0-ey1);
   p.text(ex0,22,"Collision energies",{caps:true,size:10.5});p.text(ex0,36,"illustrative spread at "+r.T+" °C",{size:9.5,weight:500,fill:MUTED});
@@ -235,12 +237,12 @@ function drawEnergy(p,st){const W=420,H=260,r=s.run,per=r.rx==="perox",cat=per&&
 function drawEq(p){const W=420,H=260,T=s.T;p.rect(0,0,W,H,{fill:"#FFFFFF",r:14});
   p.text(16,22,"Dynamic equilibrium",{caps:true,size:10.5});p.text(16,38,"2NO₂(g) ⇌ N₂O₄(g)   forward reaction exothermic",{size:10,weight:600,fill:INK});
   const fw=LW.eq?LW.eq.fwd.length/5:0,rv=LW.eq?LW.eq.rev.length/5:0,mx=Math.max(4,fw,rv)*1.1;
-  [["forward: 2NO₂ → N₂O₄",fw,ACC],["reverse: N₂O₄ → 2NO₂",rv,SKYD]].forEach(([l,v,c],i)=>{const y=66+i*40;p.text(16,y,l,{size:9.5,weight:600,fill:MUTED});p.rect(16,y+6,180,14,{fill:"#F2EEF6",r:7});p.rect(16,y+6,180*v/mx,14,{fill:c,r:7});p.text(200,y+17,n1(v)+" a second",{size:9.5,weight:600,fill:INK})});
+  [["forward: 2NO₂ → N₂O₄",fw,ACC],["reverse: N₂O₄ → 2NO₂",rv,SKYD]].forEach(([l,v,c],i)=>{const y=70+i*40;p.text(16,y,l,{size:9.5,weight:600,fill:MUTED});p.rect(16,y+6,150,14,{fill:"#F2EEF6",r:7});p.rect(16,y+6,Math.max(14,150*v/mx),14,{fill:c,r:7});p.text(172,y+17,n1(v)+" /s",{size:9.5,weight:600,fill:INK})});
   p.text(16,166,"in the window, last 5 s",{size:9,weight:500,fill:MUTED});
-  const kc=kcRatio(T);p.text(16,196,`Kc at ${T} °C = ${kc>=1?n2(kc):kc.toFixed(3)} × its value at 20 °C`,{size:10,weight:600,fill:INK});
+  const kc=kcRatio(T);p.text(16,196,T===20?"Kc: the 20 °C value (our reference)":`Kc at ${T} °C = ${kc>=1?n2(kc):kc.toFixed(3)} × its 20 °C value`,{size:10,weight:600,fill:INK});
   p.text(16,212,T===20?"Change the temperature to shift the equilibrium.":T>20?"Hotter: the endothermic reverse reaction is favoured.":"Cooler: the exothermic forward reaction is favoured.",{size:9.5,weight:500,fill:MUTED});
   // share history
-  const gx0=276,gx1=404,gy0=226,gy1=70;p.text(gx0,62,"Share of molecules that are NO₂",{size:9,weight:600,fill:MUTED});
+  const gx0=246,gx1=404,gy0=226,gy1=74;p.text(gx0,62,"Share of molecules that are NO₂",{size:9,weight:600,fill:MUTED});
   [0,.5,1].forEach(v=>{const y=gy0-v*(gy0-gy1);p.line([[gx0,y],[gx1,y]],{stroke:GRID});p.text(gx0-4,y+3,Math.round(v*100)+"%",{anchor:"end",size:8.5,weight:500,fill:MUTED})});
   const h=LW.eq?LW.eq.hist:[];if(h.length>1){const t1=h[h.length-1][0],X=t=>gx1-(t1-t)/40*(gx1-gx0);p.line(h.filter(q=>t1-q[0]<=40).map(q=>[X(q[0]),gy0-q[1]*(gy0-gy1)]),{stroke:BROWN,lw:2})}
   const eq=eqShare(T);p.line([[gx0,gy0-eq*(gy0-gy1)],[gx1,gy0-eq*(gy0-gy1)]],{stroke:ACC,lw:1,dash:[3,3]});p.text(gx1,gy0+14,"last 40 s",{anchor:"end",size:8.5,weight:500,fill:MUTED})}
@@ -253,7 +255,7 @@ const lensSVG=(cx,cy,rad,st)=>{const k=rad/LR,X=x=>cx+x*k,Y=y=>cy-y*k;let o="";
   for(const b of LW.bubs)o+=`<circle cx="${X(b.x).toFixed(1)}" cy="${Y(b.y).toFixed(1)}" r="${(b.r*k).toFixed(1)}" fill="#fff" stroke="#9FB7CF" stroke-width="1"/>`;
   const ea=eaNow(s.run);
   for(const p of LW.parts){const a=Math.max(0,Math.min(1,p.a));if(a<=0)continue;
-    if(p.kind==="pair"){const c=Math.cos(p.th)*.09,sn=Math.sin(p.th)*.09;o+=`<g opacity="${a.toFixed(2)}"><line x1="${X(p.x-c).toFixed(1)}" y1="${Y(p.y-sn).toFixed(1)}" x2="${X(p.x+c).toFixed(1)}" y2="${Y(p.y+sn).toFixed(1)}" stroke="#C9B9A6" stroke-width="3"/><circle cx="${X(p.x-c).toFixed(1)}" cy="${Y(p.y-sn).toFixed(1)}" r="${(.085*k).toFixed(1)}" fill="#EFE6DA" stroke="#B9A58E"/><circle cx="${X(p.x+c).toFixed(1)}" cy="${Y(p.y+sn).toFixed(1)}" r="${(.085*k).toFixed(1)}" fill="#EFE6DA" stroke="#B9A58E"/></g>`;continue}
+    if(p.kind==="pair"){const c=Math.cos(p.th)*.12,sn=Math.sin(p.th)*.12;o+=`<g opacity="${a.toFixed(2)}"><line x1="${X(p.x-c).toFixed(1)}" y1="${Y(p.y-sn).toFixed(1)}" x2="${X(p.x+c).toFixed(1)}" y2="${Y(p.y+sn).toFixed(1)}" stroke="#C9B9A6" stroke-width="3"/><circle cx="${X(p.x-c).toFixed(1)}" cy="${Y(p.y-sn).toFixed(1)}" r="${(.085*k).toFixed(1)}" fill="#EFE6DA" stroke="#B9A58E"/><circle cx="${X(p.x+c).toFixed(1)}" cy="${Y(p.y+sn).toFixed(1)}" r="${(.085*k).toFixed(1)}" fill="#EFE6DA" stroke="#B9A58E"/></g>`;continue}
     const col=p.kind==="no2"?"#B5653A":p.kind==="per"?"#A9B8F0":P.product.blueberry,hot=p.kind!=="no2"&&p.E>=ea;
     if(hot)o+=`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${(RA*k*2).toFixed(1)}" fill="${P.product.butter}" opacity="${(.45*a).toFixed(2)}"/>`;
     o+=`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${(RA*k).toFixed(1)}" fill="${col}" stroke="${INK}" stroke-opacity=".35" opacity="${a.toFixed(2)}"/>`;
@@ -291,7 +293,7 @@ function drawMain(x,st){if(has3D)return "";const r=s.run;let o=F.floor(640,330);
   o+=F.acrylic(184,174,152,116,{tint:P.case.sky,d:12,r:8,shadow:false,balls:false});
   o+=`<rect x="188" y="${st.k==="equil"?200:202}" width="144" height="86" rx="4" fill="#9CCBF0" opacity=".3"/>`;
   if(r.T<=15)[[200,198],[300,197],[316,199]].forEach(([a,b])=>o+=`<rect x="${a}" y="${b}" width="12" height="9" rx="2" fill="#fff" stroke="#9FB7CF"/>`);
-  if(st.k==="equil"){const sh=eqShare(s.T);o+=`<rect x="200" y="150" width="22" height="130" rx="11" fill="${mix("#F4ECE2",BROWN,.15+sh*.75)}" stroke="#7E9CBD" stroke-width="1.4"/><path d="M205,160 v100" stroke="#fff" stroke-width="2" opacity=".7"/>`}
+  if(st.k==="equil"){const sh=eqShare(s.T);o+=`<rect x="200" y="150" width="22" height="130" rx="11" fill="${mix("#F1E2CF",BROWN,.3+sh*.7)}" stroke="#7E9CBD" stroke-width="1.4"/><path d="M205,160 v100" stroke="#fff" stroke-width="2" opacity=".7"/>`}
   o+=flaskSVG(266,286,44,108,r,"bung");
   o+=F.tube(318,150,9,132,(r.T+10)/80,{tint:P.case.sky,fill:P.product.strawberry,shadow:false});
   // delivery tube to the gas syringe on its stand
@@ -308,12 +310,17 @@ function drawMain(x,st){if(has3D)return "";const r=s.run;let o=F.floor(640,330);
   o+=`<rect x="530" y="294" width="64" height="9" rx="2" fill="#DDE8D8" stroke="#8F9BAA"/><text x="562" y="301.5" text-anchor="middle" style="font:600 7.5px var(--mono);fill:${INK}">${(startMass(r)-r.x*MLOSS(r.rx)).toFixed(3)} g</text>`;
   o+=flaskSVG(568,289,34,86,r,"cotton");
   o+=F.pill(632,138,"Balance",{sub:"cotton wool lets gas out",ax:568,ay:204,anchor:"end"});
+  if(st.k==="surface"||st.k==="test")[["large",3],["small",9],["powder",40]].forEach(([k,n],i)=>{const cx=34+i*46,cy=238,on=r.rx==="marble"&&r.size===k;
+    o+=`<ellipse cx="${cx}" cy="${cy}" rx="18" ry="6" fill="#EEF6FF" stroke="${on?ACC:"#8FA9C4"}" stroke-width="${on?2.4:1}"/>`;for(let j=0;j<n;j++){const u=((j*.618)%1)*24-12,v=((j*.37)%1)*4-2,sz={large:4,small:2.4,powder:1}[k];o+=`<circle cx="${(cx+u).toFixed(1)}" cy="${(cy+v-1).toFixed(1)}" r="${sz}" fill="#EFE6D6" stroke="#A89C88" stroke-width=".6"/>`}
+    o+=`<text x="${cx}" y="${cy+17}" text-anchor="middle" style="font:600 7.5px ${FONT};letter-spacing:.05em;fill:${MUTED}">${k.toUpperCase()}</text>`});
   o+=F.pill(12,262,"Water bath",{sub:`${r.T} °C${r.T<=15?" · ice":r.T>20?" · hot plate on":""}`,ax:190,ay:262});
   // the particle window, with a sight line to the chips
-  o+=`<path d="M152,150 L250,270 M150,96 L250,262" stroke="${ACC}" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>`;
+  o+=`<path d="${st.k==="equil"?"M155,140 L204,190 M150,96 L204,170":"M152,150 L250,270 M150,96 L250,262"}" stroke="${ACC}" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>`;
   o+=lensSVG(86,124,74,st);
   o+=`<text class="t-lab" x="86" y="34" text-anchor="middle">PARTICLE WINDOW</text>`;
   if(st.k==="catalyst"||(r.rx==="perox"))o+=F.pill(470,226,"Catalyst",{sub:r.cat?"MnO₂ 0.50 g · not used up":"no MnO₂ added",ax:300,ay:276});
+  if(st.k==="equil"){o+=F.pill(176,8,"Sealed tube",{sub:`2NO₂ ⇌ N₂O₄ · ${s.T} °C · ${Math.round(eqShare(s.T)*100)}% NO₂ at equilibrium`,ax:211,ay:150});return o}
+  o+=F.pill(176,8,r.rx==="marble"?"Marble + acid":"Hydrogen peroxide",{sub:runTxt(r)});
   o+=`<text class="t-ink" x="624" y="24" text-anchor="end">${r.started?(r.complete?(r.capped?"Stopped at 15 min":"Finished"):"Reacting · "+Math.round(r.t)+" s"):"Ready: press Play"}</text>`;
   return o}
 function drawClose(x,st){const p=svgPen();drawPanel(p,st);return p.out()}
@@ -340,12 +347,12 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
       const d=Math.hypot(x,z)/R,v=vial(i,n);a.push({x,z,y:r*.7+(heap?(1-d)*.16+rr()*.05:0),r:r*(.85+rr()*.3),rx:rr()*6,ry:rr()*6,rz:rr()*6,vx:v[0],vy:v[1],vz:v[2]})}return a};
     const col=(i,n)=>[(rr()-.5)*.08,.21+i*.37,(rr()-.5)*.08],tri=(i,n)=>{const l=Math.floor(i/3),a=(i%3)*2.094+l*.6;return [Math.cos(a)*.11,.14+l*.24,Math.sin(a)*.11]},
       pile=hh=>(i,n)=>{const a=rr()*6.283,rad=Math.sqrt(rr())*.19;return [Math.cos(a)*rad,.05+rr()*hh,Math.sin(a)*rad]};
-    LAY.large=mk(3,.2,.6,false,col);LAY.small=mk(12,.126,.7,false,tri);LAY.powder=mk(220,.047,.6,true,pile(.5));LAY.mno2=mk(46,.05,.5,true,pile(.22))}
+    LAY.large=mk(3,.23,.6,false,col);LAY.small=mk(12,.145,.7,false,tri);LAY.powder=mk(220,.055,.6,true,pile(.5));LAY.mno2=mk(46,.05,.5,true,pile(.22))}
   const bubGeo=new THREE.SphereGeometry(1,10,8);
   function makeFlask(at,plug){const g=S.group();g.position.copy(at);
     const sh=S.mesh(flaskGeo,mat("glass","#EEF6FF",{opacity:.16}),{cast:false});sh.renderOrder=7;g.add(sh);
     g.add(S.torus(1.07,.022,mat("glass","#ffffff",{opacity:.5}),{at:[0,.12,0],rot:[Math.PI/2,0,0],cast:false}));
-    const liqM=mat("liquid","#CFE4F6",{fresh:true,opacity:.42});liqM.depthWrite=false;const liq=S.mesh(new THREE.CylinderGeometry(1,1,1,48),liqM,{cast:false});liq.renderOrder=5;g.add(liq);
+    const liqM=mat("liquid","#BFDDF5",{fresh:true,opacity:.38});liqM.depthWrite=false;const liq=S.mesh(new THREE.CylinderGeometry(1,1,1,48),liqM,{cast:false});liq.renderOrder=5;g.add(liq);
     const surf=S.mesh(new THREE.CircleGeometry(1,48),mat("liquid","#EAF3FC",{fresh:true,opacity:.6}),{rot:[-Math.PI/2,0,0],cast:false});surf.material.depthWrite=false;surf.renderOrder=5;g.add(surf);
     const rocks=S.swarm(260,rockGeo,mat("plastic","#ffffff",{rough:.6,coat:.15}),{colors:true,cast:true});g.add(rocks);
     const bubs=S.swarm(140,bubGeo,mat("glass","#ffffff",{opacity:.5}),{});bubs.renderOrder=6;g.add(bubs);
@@ -355,7 +362,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
     const vb=S.mesh(new THREE.SphereGeometry(VIAL.r,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),mat("glass","#F4FAFF",{opacity:.24}),{cast:false});vb.position.y=.04;vb.renderOrder=6;vial.add(vb);
     vial.add(S.torus(VIAL.r,.02,mat("glass","#ffffff",{opacity:.6}),{at:[0,VIAL.h+.04,0],rot:[Math.PI/2,0,0],cast:false}));
     if(plug==="bung"){g.add(S.cyl(.37,.31,.36,rubber,{at:[0,3.3,0],seg:28}))}
-    else{const cw=mat("matte","#FBFBF8",{rough:.95});[[0,3.36,0,.22],[.12,3.42,.05,.16],[-.1,3.44,-.04,.17],[.02,3.52,.08,.14],[-.06,3.27,.06,.16]].forEach(([x,y,z,r])=>g.add(S.sphere(r,cw,{at:[x,y,z],seg:14})))}
+    else{const cw=mat("matte","#EEEBE4",{rough:.95});[[0,3.36,0,.22],[.12,3.42,.05,.16],[-.1,3.44,-.04,.17],[.02,3.52,.08,.14],[-.06,3.27,.06,.16]].forEach(([x,y,z,r])=>g.add(S.sphere(r,cw,{at:[x,y,z],seg:14})))}
     const F_={g,liq,surf,rocks,bubs,fizz,vial,drop:0,runId:-1,level:-1,B:Array.from({length:140},()=>({life:0,x:0,y:0,z:0,v:0,r:0})),FZ:Array.from({length:30},()=>({life:0,x:0,y:0,z:0})),acc:0};
     return F_}
   function setLevel(Fk,h){Fk.level=h;Fk.liq.geometry.dispose();Fk.liq.geometry=new THREE.CylinderGeometry(rIn(h)-.03,rIn(0)-.03,h,48);Fk.liq.position.y=.04+h/2;Fk.surf.position.y=.04+h+.001;Fk.surf.scale.setScalar(rIn(h)-.03)}
@@ -367,7 +374,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
     const lay=r.rx==="marble"?LAY[r.size]:(r.cat?LAY.mno2:null),shrink=r.rx==="marble"?Math.cbrt(Math.max(0,1-r.x)):1,c=cosA(tip),sn=sinA(tip);let n=0;
     if(lay)for(const q of lay){const lx=q.vx*c-q.vy*sn,ly=q.vx*sn+q.vy*c;const vx=VIAL.x+lx,vy=VIAL.y+.04+ly,vz=VIAL.z+q.vz;
       const x=S.lerp(vx,q.x,fall),z=S.lerp(vz,q.z,fall),y=S.lerp(vy,q.y,fall)+Math.sin(fall*Math.PI)*.22;const sc=q.r*(r.started&&fall>.98?shrink:1);
-      if(sc<.004)continue;Fk.rocks.put(n,x,y,z,sc,q.rx,q.ry,q.rz);Fk.rocks.tint(n,r.rx==="marble"?(n%3?"#F4EFE6":"#E9E3D8"):"#4A3F44");n++}
+      if(sc<.004)continue;Fk.rocks.put(n,x,y,z,sc,q.rx,q.ry,q.rz);Fk.rocks.tint(n,r.rx==="marble"?(n%3?"#EADFCB":"#DCCFB8"):"#4A3F44");n++}
     for(let i=n;i<260;i++)Fk.rocks.put(i,0,-9,0,.0001);Fk.rocks.done();
     // bubbles: as many as the gas is coming off (per real second)
     const run=r.started&&!r.complete&&s.playing&&st.speed,gas=run?dxdt(r,r.x)*VMAX(r.rx)*st.speed:0;Fk.acc+=Math.min(70,gas*1.4)*dt;
@@ -377,7 +384,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
     Fk.B.forEach((b,i)=>{if(b.life>0){b.y+=b.v*dt;b.x+=Math.sin(t*6+i)*.05*dt;if(b.y>=.04+lvl){b.life=0;const z=Fk.FZ.find(q=>q.life<=0);if(z){z.life=.5;z.x=b.x;z.y=.04+lvl+.02;z.z=b.z}}}
       Fk.bubs.put(i,b.x,b.life>0?b.y:-9,b.z,b.life>0?b.r:.0001)});Fk.bubs.done();
     Fk.FZ.forEach((z,i)=>{if(z.life>0)z.life-=dt;Fk.fizz.put(i,z.x,z.y,z.z,Math.max(0,z.life)*.9,60)});Fk.fizz.done();
-    Fk.liq.material.color.set(r.rx==="marble"?"#CFE4F6":"#D9E6FA")}
+    Fk.liq.material.color.set(r.rx==="marble"?"#BFDDF5":"#CBD8F7")}
   // ---------------------------------------------------------------- the hot plate and water bath, with flask A in it
   const HP=V3(-5.0,TOP,.6);
   const hot=S.group();hot.position.copy(HP);
@@ -389,8 +396,8 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
   const lampM=mat("glow",P3.product.strawberry,0,{fresh:true});hot.add(S.sphere(.07,lampM,{at:[.8,.27,2.2]}));
   const glowM=mat("glow","#FF7A45",0,{fresh:true});[[0,.6,1.83,4.0,.035,.06],[0,.6,-1.83,4.0,.035,.06],[2.03,.6,0,.06,.035,3.6],[-2.03,.6,0,.06,.035,3.6]].forEach(([x,y,z,w,h,d])=>hot.add(S.box(w,h,d,glowM,{at:[x,y,z],cast:false})));
   const B0=TOP+.6;   // bath floor
-  const bath=S.acrylicCase(4.0,2.2,3.6,P3.case.sky,{opacity:.13});bath.position.set(HP.x,B0,HP.z);S.scene.add(bath);
-  const waterM=mat("liquid","#8CC2EE",{fresh:true,opacity:.32});waterM.depthWrite=false;const water=S.rbox(3.88,1.72,3.48,.06,waterM,{cast:false});water.position.set(HP.x,B0+.88,HP.z);water.renderOrder=3;S.scene.add(water);
+  const bath=S.acrylicCase(4.0,2.2,3.6,P3.case.sky,{opacity:.1});bath.position.set(HP.x,B0,HP.z);S.scene.add(bath);
+  const waterM=mat("liquid","#8CC2EE",{fresh:true,opacity:.2});waterM.depthWrite=false;const water=S.rbox(3.88,1.72,3.48,.06,waterM,{cast:false});water.position.set(HP.x,B0+.88,HP.z);water.renderOrder=3;S.scene.add(water);
   const flaskA=makeFlask(V3(HP.x,B0+.04,HP.z),"bung");
   // bath thermometer
   const th=S.group();th.position.set(HP.x-1.62,B0,HP.z+1.42);
@@ -405,7 +412,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
   // ---------------------------------------------------------------- the delivery tube and the gas syringe on a clamp stand
   const SX0=-2.45,SL=4.6,SY=3.55,SZ=-.6;
   const tubeM=mat("acrylic","#C9DAE8",{opacity:.85});
-  S.scene.add(S.tube([[HP.x,B0+3.48,HP.z],[HP.x,B0+3.95,HP.z],[HP.x+.35,B0+4.25,HP.z-.25],[HP.x+1.3,B0+4.1,HP.z-.8],[SX0-.75,SY+.05,SZ],[SX0-.32,SY,SZ]],.06,tubeM,{seg:90,cast:false}));
+  S.scene.add(S.tube([[HP.x,B0+3.48,HP.z],[HP.x,B0+3.72,HP.z],[HP.x+.3,B0+3.92,HP.z-.2],[HP.x+1.4,B0+3.75,HP.z-.75],[SX0-.75,SY+.04,SZ],[SX0-.32,SY,SZ]],.06,tubeM,{seg:90,cast:false}));
   const syr=S.group();syr.position.set(0,0,SZ);
   const barrel=S.mesh(new THREE.CylinderGeometry(.42,.42,SL,40,1,true),mat("glass","#F4FAFF",{opacity:.2}),{cast:false,rot:[0,0,Math.PI/2]});barrel.position.set(SX0+SL/2,SY,0);barrel.renderOrder=6;syr.add(barrel);
   syr.add(S.cyl(.42,.42,.05,mat("glass","#F4FAFF",{opacity:.4}),{rot:[0,0,Math.PI/2],at:[SX0,SY,0],cast:false}));
@@ -435,7 +442,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
   [-1.25,1.25].forEach(x=>bal.add(S.cyl(.1,.1,.06,mat("plastic",P3.product.peach),{at:[x,.4,1.48],rot:[Math.PI/2,0,0],seg:16})));
   const flaskB=makeFlask(V3(BAL.x,TOP+.83,BAL.z-.1),"cotton");
   // ---------------------------------------------------------------- MnO2 bottle, the three dishes of marble, the acid bottle
-  const mno=S.group();mno.position.set(1.45,TOP,2.85);
+  const mno=S.group();mno.position.set(-1.35,TOP,3.05);
   mno.add(S.cyl(.34,.36,.8,mat("glass","#B07A3E",{opacity:.75}),{at:[0,.4,0],cast:false}));mno.add(S.cyl(.2,.3,.16,mat("glass","#B07A3E",{opacity:.75}),{at:[0,.88,0],cast:false}));
   mno.add(S.cyl(.22,.22,.22,dark,{at:[0,1.05,0]}));mno.add(S.cyl(.26,.26,.3,mat("plastic","#3E3438",{rough:.8}),{at:[0,.2,0]}));
   const mnoHit=S.cyl(.5,.5,1.3,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[0,.65,0],cast:false});mnoHit.material.colorWrite=false;mno.add(mnoHit);
@@ -448,7 +455,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
     const cnt={large:3,small:9,powder:70}[k],rad={large:.15,small:.09,powder:.032}[k];
     for(let i=0;i<cnt;i++){const a=rr()*6.28,d=Math.sqrt(rr())*(k==="powder"?.28:.3);dishRocks.put(n,x+Math.cos(a)*d,TOP+.05+rad*.7+(k==="powder"?(1-d/.28)*.06:0),DZ+Math.sin(a)*d,rad*(.85+rr()*.3),rr()*6,rr()*6,rr()*6);dishRocks.tint(n,i%3?"#F4EFE6":"#E9E3D8");n++}
     dishes[k]={g,ring}});for(let i=n;i<90;i++)dishRocks.put(i,0,-9,0,.0001);dishRocks.done()}
-  const acid=S.group();acid.position.set(.25,TOP,2.95);
+  const acid=S.group();acid.position.set(-.3,TOP,3.25);
   acid.add(S.cyl(.38,.38,1.1,mat("glass","#E2EEF8",{opacity:.4}),{at:[0,.55,0],cast:false}));acid.add(S.cyl(.18,.32,.25,mat("glass","#E2EEF8",{opacity:.4}),{at:[0,1.22,0],cast:false}));acid.add(S.cyl(.2,.2,.18,mat("plastic",P3.product.blueberry,{rough:.4}),{at:[0,1.42,0]}));
   const acidLiq=S.cyl(.34,.34,.7,mat("liquid","#CFE4F6",{opacity:.5}),{at:[0,.4,0],cast:false});acidLiq.renderOrder=5;acid.add(acidLiq);
   acid.add(S.rbox(.5,.32,.02,.04,white,{at:[0,.6,.38],cast:false}));
@@ -486,7 +493,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
   const screen=(x,z,w,ry,y0)=>{const g=S.group();g.position.set(x,TOP,z);g.rotation.y=ry||0;const hU=w*260/420,cy=y0+hU/2;
     for(const sx of [-w/2+.4,w/2-.4]){g.add(S.cyl(.06,.06,cy,steel,{at:[sx,cy/2,-.12],seg:12}));g.add(S.rbox(.7,.08,.7,.04,offW,{at:[sx,.04,-.12]}))}
     g.add(S.rbox(w+.3,hU+.3,.12,.08,white,{at:[0,cy,-.08]}));const pn=S.panel(1000,620,w);pn.position.set(0,cy,.0);g.add(pn);S.scene.add(g);return {g,pn,hU,key:"",t:0}};
-  const SCR={plot:screen(2.7,-3.95,6.4,-.06,4.0),energy:screen(-5.5,-3.95,5.0,.08,4.0)};
+  const SCR={plot:screen(2.7,-3.95,6.4,-.06,4.6),energy:screen(-5.5,-3.95,5.0,.08,4.6)};
   // ---------------------------------------------------------------- picks
   const hitA=S.cyl(1.15,1.15,3.4,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[HP.x,B0+1.7,HP.z],cast:false});hitA.material.colorWrite=false;S.scene.add(hitA);
   S.pick(hitA,()=>{if(S.api.step.speed)s.playing=!s.playing});
@@ -494,25 +501,27 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
   const hitS=S.box(SL+.6,1.0,1.0,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[SX0+SL/2,SY,SZ],cast:false});hitS.material.colorWrite=false;S.scene.add(hitS);S.pick(hitS,()=>{s.meas="vol"});
   const hitB=S.box(3.1,1.0,2.9,mat("flat","#ffffff",{opacity:0,depthWrite:false}),{at:[BAL.x,TOP+.4,BAL.z],cast:false});hitB.material.colorWrite=false;S.scene.add(hitB);S.pick(hitB,()=>{s.meas="mass"});
   // ---------------------------------------------------------------- labels
-  const lLens=S.label({cls:"big",off:[30,-58]}),lOut=S.label({off:[40,40]}),lA=S.label({off:[-40,-46]}),lSyr=S.label({cls:"big",off:[24,-40]}),lBal=S.label({cls:"big",off:[34,-30]}),
+  const lLens=S.label({cls:"big",off:[-24,-64]}),lOut=S.label({off:[40,40]}),lA=S.label({off:[36,-50]}),lSyr=S.label({cls:"big",off:[30,44]}),lBal=S.label({cls:"big",off:[34,-30]}),
     lBath=S.label({off:[-40,30]}),lMno=S.label({off:[30,-26]}),lAcid=S.label({off:[-30,-30]}),lTube=S.label({cls:"big",off:[-36,-40]});
-  const lDish=Object.keys(dishX).map(k=>S.label({off:[0,34]}));
-  // ---------------------------------------------------------------- views
+  const lDish=Object.keys(dishX).map((k,i)=>S.label({off:[(i-1)*46,i===1?44:30]}));
+  // ---------------------------------------------------------------- views (each has a wider twin for narrow, phone-shaped canvases)
+  const view0=S.view;S.view=(name,pos,tg,o)=>{view0(name,pos,tg,o);view0(name+"_n",pos.map((v,i)=>tg[i]+(v-tg[i])*1.55),tg,Object.assign({},o,{max:(o.max||40)*1.4}))};
   S.view("collide",[-5.9,6.4,11.6],[-7.2,3.0,0.9],{min:4,max:28});
-  S.view("measure",[0.4,10.2,20.5],[-.4,3.4,-.9],{min:6,max:40});
-  S.view("conc",[-3.6,8.4,16.0],[-4.4,3.3,-.8],{min:5,max:36});
-  S.view("temp",[-5.2,8.0,15.4],[-6.1,3.4,-.9],{min:5,max:34});
-  S.view("surface",[-6.2,6.2,11.8],[-7.0,2.6,1.2],{min:4,max:30});
-  S.view("catalyst",[-2.4,8.6,16.4],[-3.2,3.4,-.9],{min:5,max:36});
-  S.view("equil",[-6.2,7.4,14.0],[-6.8,3.2,-.6],{min:4,max:32});
-  S.view("all",[-1.0,13.5,25.5],[-1.2,3.0,-.8],{min:8,max:60});
+  S.view("measure",[1.4,10.0,18.5],[.4,3.9,-1.0],{min:6,max:40});
+  S.view("conc",[-3.4,8.8,15.5],[-4.2,4.0,-1.0],{min:5,max:36});
+  S.view("temp",[-5.6,8.6,14.8],[-6.4,4.2,-1.0],{min:5,max:34});
+  S.view("surface",[-6.3,6.9,12.6],[-6.9,2.4,1.2],{min:4,max:30});
+  S.view("catalyst",[-2.6,9.0,15.6],[-3.6,4.3,-1.2],{min:5,max:36});
+  S.view("equil",[-6.2,8.0,13.6],[-6.6,3.8,-.8],{min:4,max:32});
+  S.view("all",[-1.0,12.6,23.0],[-1.0,3.4,-.6],{min:8,max:60});
   const SHOW={collide:[lLens,lOut,lA],measure:[lSyr,lBal,lA],conc:[lLens,lA,lAcid,lSyr],temp:[lLens,lBath,lA],surface:[lLens,lA,...lDish],catalyst:[lMno,lA,lSyr,lLens],equil:[lTube,lLens,lBath],test:[lSyr,lBal,lBath,lA]};
   const ALL=[lLens,lOut,lA,lSyr,lBal,lBath,lMno,lAcid,lTube,...lDish];
   S.goView("measure",true);S.setShadowBox(12,[-1,0,0]);
   has3D=true;
-  const col=new THREE.Color(),bq=new THREE.Quaternion(),UP=V3(0,1,0);
+  const col=new THREE.Color(),brownC=new THREE.Color(BROWN),bq=new THREE.Quaternion(),UP=V3(0,1,0);
   return {
-    step(st){const k=st.k,v=k==="test"?"all":k;S.goView(v);S.setShadowBox(v==="all"||v==="measure"?13:8,v==="all"||v==="measure"?[-1,0,0]:[-5.5,0,.5]);ALL.forEach(l=>l.hide());(SHOW[k]||[]).forEach(l=>l.show())},
+    step(st){const k=st.k,v=k==="test"?"all":k,narrow=S.canvas.clientWidth<1.35*S.canvas.clientHeight;S.goView(narrow?v+"_n":v);
+      S.setShadowBox(v==="all"||v==="measure"?13:8,v==="all"||v==="measure"?[-1,0,0]:[-5.5,0,.5]);ALL.forEach(l=>l.hide());(SHOW[k]||[]).slice(0,narrow?2:9).forEach(l=>l.show())},
     update(x,st,dt,t){const r=s.run,k=st.k;
       // the particle window runs while the reaction is running (or waiting, or done); it pauses with the run
       const lensOn=k==="equil"||!(r.started&&!r.complete&&!s.playing);if(lensOn)lensTick(dt*(S.REDUCED?.4:1),st);else if(lensMode(st)!==LW.key)lensTick(0,st);
@@ -534,13 +543,13 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
       Object.entries(dishes).forEach(([kk,d])=>{d.ring.visible=r.rx==="marble"&&r.size===kk});
       // equilibrium tube
       const eqOn=k==="equil";eqShown=S.lerp(eqShown,eqOn?1:0,S.REDUCED?1:.06);eqT.visible=eqShown>.01;tubeG.position.y=S.lerp(B0+6.5,B0+1.35,eqShown);
-      const share=eqShare(s.T);eqK=S.lerp(eqK,share,S.REDUCED?1:.03);col.set("#F4ECE2").lerp(col.clone().set(BROWN),.12+eqK*.8);gasEqM.color.copy(col);gasEqM.opacity=.3+eqK*.5;
+      const share=eqShare(s.T);eqK=S.lerp(eqK,share,S.REDUCED?1:.03);col.set("#F1E2CF").lerp(brownC,.3+eqK*.7);gasEqM.color.copy(col);gasEqM.opacity=.5+eqK*.4;
       // ---- the particle window
       const isEq=LW.key==="eq",ea=eaNow(r);let n=0,nc=0,nb=0,nh=0;
       lensBackM.color.set(isEq?"#FBF6F1":"#F2F7FC");
       for(const p of LW.parts){const a=Math.max(0,Math.min(1,p.a));if(a<=.02)continue;const z=.04;
-        if(p.kind==="pair"){const c=Math.cos(p.th)*.09,sn=Math.sin(p.th)*.09;if(n+1<44){lp.put(n,(p.x-c)*LS,(p.y-sn)*LS,z,a);lp.tint(n++,"#EFE6DA");lp.put(n,(p.x+c)*LS,(p.y+sn)*LS,z,a);lp.tint(n++,"#EFE6DA")}
-          if(nb<24){tmp.set(c,sn,0).normalize();bq.setFromUnitVectors(UP,tmp);lbond.putS(nb++,p.x*LS,p.y*LS,z,1,.2*LS,1,bq)}continue}
+        if(p.kind==="pair"){const c=Math.cos(p.th)*.12,sn=Math.sin(p.th)*.12;if(n+1<44){lp.put(n,(p.x-c)*LS,(p.y-sn)*LS,z,a);lp.tint(n++,"#EFE6DA");lp.put(n,(p.x+c)*LS,(p.y+sn)*LS,z,a);lp.tint(n++,"#EFE6DA")}
+          if(nb<24){tmp.set(c,sn,0).normalize();bq.setFromUnitVectors(UP,tmp);lbond.putS(nb++,p.x*LS,p.y*LS,z,1.4,.26*LS,1.4,bq)}continue}
         if(n>=44)break;lp.put(n,p.x*LS,p.y*LS,z,a);lp.tint(n,p.kind==="no2"?"#B5653A":p.kind==="per"?"#A9B8F0":P3.product.blueberry);n++;
         if(p.kind!=="no2"&&nc<44)lcap.put(nc++,(p.x+Math.cos(p.th)*RA)*LS,(p.y+Math.sin(p.th)*RA)*LS,z+.03,a);
         if(p.kind!=="no2"&&p.E>=ea&&nh<44)lhalo.put(nh++,p.x*LS,p.y*LS,z-.02,.6*a,130)}
@@ -564,7 +573,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
       lSyr.at(tmp.set(SX0+SL*.55,SY+.5,SZ)).set(`Gas syringe<b>${n1(V)} mL</b><small>${GAS[r.rx].f} · ${Math.round(r.t)} s</small>`).cls(s.meas==="vol"?"big hot":"big");
       lBal.at(tmp.set(BAL.x+1.2,TOP+.75,BAL.z+.9)).set(`Balance<b>${m} g</b><small>cotton wool lets the gas out</small>`).cls(s.meas==="mass"?"big hot":"big");
       lBath.at(tmp.set(HP.x-1.7,B0+1.9,HP.z+1.6)).set(`Water bath<b>${r.T} °C</b><small>${r.T<=15?"ice added":r.T>20?"hot plate on":"room temperature"}</small>`);
-      lMno.at(tmp.set(mno.position.x,TOP+1.2,mno.position.z)).set(`MnO₂ catalyst<small>${r.rx==="perox"&&r.cat?"0.50 g in · still 0.50 g after":"tap to add it"}</small>`);
+      lMno.at(tmp.set(mno.position.x,TOP+1.2,mno.position.z)).set(`Catalyst<b>MnO₂</b><small>${r.rx==="perox"&&r.cat?"0.50 g in · still 0.50 g after":"tap the bottle to add it"}</small>`);
       lAcid.at(tmp.set(acid.position.x,TOP+1.5,acid.position.z)).set(`Hydrochloric acid<b>${r.c.toFixed(2)} mol L⁻¹</b>`);
       lTube.at(tmp.set(eqT.position.x,tubeG.position.y+1.1,eqT.position.z)).set(`Sealed tube<b>2NO₂ ⇌ N₂O₄</b><small>${s.T} °C · ${s.T>20?"darker brown":s.T<20?"paler":"medium brown"}</small>`);
       Object.keys(dishX).forEach((kk,i)=>lDish[i].at(tmp.set(dishX[kk],TOP+.25,DZ)).set(`${SIZE_N[kk][0].toUpperCase()+SIZE_N[kk].slice(1)}`).cls(r.rx==="marble"&&r.size===kk?"hot":""));
@@ -590,7 +599,7 @@ const steps=[
   exam:"Increasing the concentration of the acid increases the number of acid particles per unit volume. Particles collide more frequently, so there are more successful collisions per second and the rate of reaction increases. The same mass of marble is used, so the same total volume of CO₂ forms; it just forms sooner.",
   trap:"Saying the particles move faster at a higher concentration. They don't: there are more of them, so collisions happen more often.",
   chips:["acid","coll","r0","gas"],onStep:()=>{std({c:.5});s.playing=true}},
- {k:"temp",lab:"Temperature",cap:"Turn the hot plate up, or drop the bath to 10 °C with ice. Hotter particles move faster, so they collide more often, and more of the collisions have enough energy. The graph on the left screen shows the spread of collision energies.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","T"],
+ {k:"temp",lab:"Temperature",cap:"Turn the hot plate up, or drop the bath to 10 °C with ice. Hotter particles move faster, so they collide more often, and more of the collisions have enough energy. The energy screen shows the spread of collision energies.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","T"],
   big:"<b>The big idea:</b> temperature works in two ways: more frequent collisions, and a bigger share of collisions with at least the activation energy. The second effect is the bigger one. In this model the rate roughly doubles for every 10 °C rise.",
   exam:"At a higher temperature the particles have more kinetic energy and move faster. They collide more frequently, and a greater proportion of the collisions have energy equal to or greater than the activation energy. So there are more successful collisions per second and the rate of reaction increases.",
   trap:"Saying the activation energy gets lower when it's hotter. The activation energy stays the same; more of the particles have enough energy to get over it.",
@@ -600,7 +609,7 @@ const steps=[
   exam:"Powdered marble has a much greater surface area than the same mass of large chips. More calcium carbonate particles are exposed to the acid, so more collisions happen per second, giving more successful collisions per second and a faster rate of reaction. The total volume of CO₂ is the same because the mass of marble is the same.",
   trap:"Saying powder has 'more particles'. The same mass has the same number of particles; powder has more of them on the surface, where the acid can reach them.",
   chips:["size","surf","r0","tend"],onStep:()=>{std({size:"large"});s.playing=true}},
- {k:"catalyst",lab:"Catalyst",cap:"Now hydrogen peroxide: 2H₂O₂ → 2H₂O + O₂. On its own it breaks down so slowly you'd wait days. Tap the MnO₂ bottle (or the button) to add 0.50 g of manganese(IV) oxide, and oxygen pours out. The MnO₂ is still there at the end.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","cat","T"],
+ {k:"catalyst",lab:"Catalyst",cap:"Now hydrogen peroxide: 2H₂O₂ → 2H₂O + O₂. On its own it breaks down so slowly you'd wait days for this much oxygen. Press the MnO₂ button (or tap the brown bottle) to add 0.50 g of manganese(IV) oxide, and oxygen pours out. The MnO₂ is still there at the end.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","cat","T"],
   big:"<b>The big idea:</b> a catalyst provides an alternative pathway with a lower activation energy. A greater share of collisions now have enough energy, so the rate increases. The catalyst is not used up.",
   exam:"Manganese(IV) oxide is a catalyst. It provides an alternative reaction pathway with a lower activation energy. A greater proportion of collisions now have energy equal to or greater than the activation energy, so there are more successful collisions per second and the rate of reaction increases. The catalyst is not used up, so 0.50 g of MnO₂ is left at the end.",
   trap:"Saying a catalyst gives the particles more energy or makes them move faster. It lowers the energy they need, by giving the reaction a different route.",
@@ -609,7 +618,7 @@ const steps=[
   big:"<b>The big idea:</b> dynamic equilibrium. In a closed system the forward and reverse reactions keep going at the same rate, so the amounts stay the same. Change the temperature and the equilibrium shifts to oppose the change.",
   exam:"2NO₂(g) ⇌ N₂O₄(g) is exothermic in the forward direction. At equilibrium the forward and reverse reactions happen at the same rate, so the concentrations stay constant. Increasing the temperature favours the endothermic reverse reaction, so the position of equilibrium shifts left: more brown NO₂ forms and the colour darkens. Kc gets smaller, because only a change in temperature changes the value of Kc.",
   trap:"Saying the reactions stop at equilibrium. Both keep going; they just go at the same rate.",
-  chips:["temp","no2","fwd","rev","kc"],onStep:()=>{s.T=20;s.playing=true}},
+  chips:["temp","no2","fwd","rev","kc"],onStep:()=>{std();s.playing=true}},
  {k:"test",lab:"Test yourself",cap:"Four challenges. Set up a run, press Play (or Skip to the end), then press Check. The machine marks you from the same model that runs the bench.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","rx","T","c","size","cat","meas"],
   big:"<b>Exam tip:</b> for every factor, say what changes about the particles, link it to the frequency of successful collisions, then to the rate. When you talk about the total amount of product, name the limiting reactant.",
   chips:["gas","time","r0","tend"],onStep:()=>{std();s.playing=false}}];
@@ -646,7 +655,7 @@ const CH=[
   ok:()=>{const r=[s.run,s.ghost].find(r=>r&&r.rx==="perox"&&r.T===20&&r.t50!=null&&r.t50<20);return `Yes: 50 mL in ${secs(r.t50)}. The MnO₂ gives a pathway with a lower activation energy, so far more collisions succeed. It isn't used up.`},
   no:()=>{const r=s.run;return r.rx!=="perox"?"Switch the reaction to hydrogen peroxide.":r.T!==20?"Keep the bath at 20 °C for this one.":!r.cat?"At 20 °C without help it would take days. What can lower the activation energy?":"Run it until 50 mL is collected, then Check."}}];
 // ---- mount
-StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:reactions3d,
+const API=StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:reactions3d,
   eyebrow:"Chemistry · Rates of reaction", title:"The reaction machine", crumb:"Year 9–10 science · NCEA Level 2 Chemistry AS91166 Demonstrate understanding of chemical reactivity", homeHash:"l2",
   fig:"FIG. 34 · A RATES-OF-REACTION BENCH", railTitle:"What makes a reaction go faster",
   badge:{label:"NCEA L2 Chemistry 91166",exam:"2026-11-16T14:00:00+13:00",examText:"Mon 16 Nov, 2pm"},
@@ -655,7 +664,7 @@ StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:reactions3d,
   controls:[{type:"play"},
     {type:"button",id:"restart",label:"New run",onClick:()=>{newRun();s.playing=false}},
     {type:"button",id:"skip",label:"Skip to the end",onClick:()=>{let r=s.run;if(r.complete){newRun();r=s.run}r.started=true;integrate(r,TMAX,true,.25);s.playing=false;if(!r.capped)sfx("ding")}},
-    {type:"select",id:"rx",label:"Reaction",options:[["marble","Marble chips + hydrochloric acid"],["perox","Hydrogen peroxide"]],get:()=>s.rx,set:(x,v)=>setting("rx",v)},
+    {type:"select",id:"rx",label:"Reaction",options:[["marble","Marble + HCl acid"],["perox","Hydrogen peroxide"]],get:()=>s.rx,set:(x,v)=>setting("rx",v)},
     {type:"range",id:"T",label:"Temperature",min:10,max:60,step:5,get:()=>s.T,set:(x,v)=>setting("T",v),fmt:()=>s.T+" °C"},
     {type:"range",id:"c",label:"Acid",min:.25,max:2,step:.25,get:()=>s.c,set:(x,v)=>{setting("c",Math.round(v*100)/100);if(s.rx!=="marble")setting("rx","marble")},fmt:()=>s.c.toFixed(2)+" mol L⁻¹"},
     {type:"select",id:"size",label:"Marble",options:[["large","Large chips"],["small","Small chips"],["powder","Powder"]],get:()=>s.size,set:(x,v)=>{setting("size",v);if(s.rx!=="marble")setting("rx","marble")}},
@@ -690,5 +699,5 @@ StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:reactions3d,
   truth:"The amounts and equations are real: 0.40 g of marble (CaCO₃, 100.1 g mol⁻¹) with 50 mL of hydrochloric acid in excess, and 25 mL of 0.32 mol L⁻¹ hydrogen peroxide with 0.50 g of manganese(IV) oxide (the amount in RSC Education's practical). Gas volumes are calculated for 20 °C and 101.3 kPa (24.1 L per mole); the balance readings are illustrative. How fast each run goes is illustrative: the rate constants, the activation energies (50 kJ mol⁻¹ for marble; 75 and 50 kJ mol⁻¹ for peroxide without and with the catalyst) and the surface factors for chips and powder were chosen to show the trends, not measured. The model holds each flask at the bath temperature, treats the rate as proportional to acid concentration, and ignores CO₂ that dissolves in the acid. The particle window is a slowed-down sketch that exaggerates the differences so you can see them. For the NO₂ tube, how Kc changes with temperature uses ΔH = −57 kJ mol⁻¹ (Chemguide); the share of NO₂ in the window is illustrative.",
   footer:"Covers AS91166 rates of reaction: collision theory and activation energy; the effect of concentration, temperature, surface area and a catalyst; energy profiles; reading rate from a graph. Introduces dynamic equilibrium and the effect of temperature on it. Also Year 9–10 science: chemical reactions and reaction rates."
 });
-window.__RX={s,integrate,TMAX,LW};
+window.__RX={s,LW,warm:n=>{for(let i=0;i<n;i++)lensTick(.05,API.step)}};   // a hook for automated checks
 })();
