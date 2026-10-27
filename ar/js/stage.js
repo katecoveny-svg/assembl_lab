@@ -42,7 +42,7 @@ export function createStage(host, { label = '3D preview' } = {}) {
   const ground = new THREE.Group(); scene.add(ground);
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: blobShadow(), transparent: true, depthWrite: false, toneMapped: false }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.0005; shadow.renderOrder = -2; ground.add(shadow);
-  const ringMat = new THREE.MeshBasicMaterial({ color: 0x916a70, transparent: true, opacity: 0.45, depthWrite: false, toneMapped: false });
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x916a70, transparent: true, opacity: 0.38, depthWrite: false, toneMapped: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.992, 1, 128).rotateX(-Math.PI / 2), ringMat); ring.position.y = 0.0008; ground.add(ring);
   const ticks = new THREE.Group(); ground.add(ticks);
   for (let i = 0; i < 4; i++) {
@@ -87,7 +87,7 @@ export function createStage(host, { label = '3D preview' } = {}) {
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     radius = Math.max(sphere.radius, 1e-3);
     const foot = Math.max(size.x, size.z) * 0.5;
-    ring.scale.setScalar(Math.max(foot * 1.35, radius * 0.9)); ticks.scale.copy(ring.scale);
+    ring.scale.setScalar(Math.max(foot * 1.16, radius * 0.72)); ticks.scale.copy(ring.scale);
     shadow.scale.set(size.x * 1.35 + radius * 0.25, size.z * 1.35 + radius * 0.25, 1);
     camera.near = radius / 100; camera.far = radius * 60; camera.updateProjectionMatrix();
     controls.target.set(0, size.y * 0.42, 0);

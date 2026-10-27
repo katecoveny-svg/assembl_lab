@@ -298,6 +298,18 @@ function fern(x,y,sz,col,seed,op=1){let d="";const n=5+Math.floor(rnd(seed)*3);f
 function ponga(x,yb,h,col,seed){const top=yb-h;let d=`M${x},${yb} Q${x+(rnd(seed)-0.5)*10},${(yb+top)/2} ${x},${top}`;let f="";
   for(let i=0;i<8;i++){const a=(-160+i*45+(rnd(seed+i)-0.5)*16)*Math.PI/180,L=h*0.42*(0.8+rnd(seed+i*5)*0.4),ex=x+Math.cos(a)*L,ey=top+Math.abs(Math.sin(a))*L*0.15+L*0.35;f+=`M${x},${top} Q${(x+Math.cos(a)*L*0.55).toFixed(1)},${(top-L*0.32).toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`}
   return `<path d="${d}" stroke="${col}" stroke-width="${(h*0.05).toFixed(1)}" fill="none"/><path d="${f}" stroke="${col}" stroke-width="${(h*0.06).toFixed(1)}" fill="none" stroke-linecap="round"/>`}
+// a tree fern (ponga, wheki): a fibrous trunk and a crown of arching, finely divided fronds
+function treeFern(x,yb,h,sz,col,stem,seed){const top=yb-h,lean=(rnd(seed+3)-0.5)*h*0.12;let o=`<path d="M${x-sz*0.05},${yb} Q${x+lean*0.4},${(yb+top)/2} ${x+lean-sz*0.035},${top} L${x+lean+sz*0.035},${top} Q${x+lean*0.4+sz*0.05},${(yb+top)/2} ${x+sz*0.05},${yb}Z" fill="${stem}"/>`;
+  let ticks="";for(let k=1;k<5;k++){const yy=yb-h*k/5;ticks+=`M${x+lean*k/5-sz*0.04},${yy.toFixed(1)} l${(sz*0.08).toFixed(1)},-2`}o+=`<path d="${ticks}" stroke="#2E241C" stroke-width="1" opacity=".5"/>`;
+  const X0=x+lean;let d="";const n=9;for(let i=0;i<n;i++){const a=(-168+i*156/(n-1)+(rnd(seed+i)-0.5)*10)*Math.PI/180,L=sz*(0.82+rnd(seed+i*5)*0.3),s=Math.abs(Math.sin(a));
+    const ex=X0+Math.cos(a)*L,ey=top+L*(0.32-0.8*s*s),cx2=X0+Math.cos(a)*L*0.55,cy2=top-L*0.38*(0.4+s);d+=`M${X0.toFixed(1)},${top.toFixed(1)} Q${cx2.toFixed(1)},${cy2.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`;
+    for(let j=1;j<8;j++){const tt=j/8,px=(1-tt)*(1-tt)*X0+2*(1-tt)*tt*cx2+tt*tt*ex,py=(1-tt)*(1-tt)*top+2*(1-tt)*tt*cy2+tt*tt*ey,ll=L*0.17*(1-tt*0.7);
+      const dx=2*(1-tt)*(cx2-X0)+2*tt*(ex-cx2),dy=2*(1-tt)*(cy2-top)+2*tt*(ey-cy2),m=Math.hypot(dx,dy)||1,nx=-dy/m,ny=dx/m;
+      d+=`M${px.toFixed(1)},${py.toFixed(1)} l${(nx*ll+dx/m*ll*0.4).toFixed(1)},${(ny*ll+dy/m*ll*0.4).toFixed(1)} M${px.toFixed(1)},${py.toFixed(1)} l${(-nx*ll+dx/m*ll*0.4).toFixed(1)},${(-ny*ll+dy/m*ll*0.4).toFixed(1)}`}}
+  return o+`<path d="${d}" stroke="${col}" stroke-width="${Math.max(1,sz*0.035).toFixed(1)}" fill="none" stroke-linecap="round"/>`}
+// soft shafts of light falling through the canopy (slow parallax)
+function shafts(cx,p,W,yb,op){let o="";const off=cx*p;for(let k=Math.floor((off-320)/250);k<=Math.floor((off+W+320)/250);k++){const sx=k*250+rnd(k*13+1)*120-off,w=22+rnd(k*5+2)*46,sl=yb*0.5;
+  o+=`<path d="M${sx.toFixed(1)},-10 L${(sx+w).toFixed(1)},-10 L${(sx+w+sl).toFixed(1)},${yb} L${(sx+sl).toFixed(1)},${yb}Z" fill="url(#bkRay)" opacity="${op}"/>`}return o}
 const DEFS=`<defs><linearGradient id="bkSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8D6"/><stop offset=".55" stop-color="#EFE8D6"/><stop offset="1" stop-color="#D9D3BE"/></linearGradient>
   <linearGradient id="bkRay" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF4D2" stop-opacity=".6"/><stop offset="1" stop-color="#FFF4D2" stop-opacity="0"/></linearGradient>
   <linearGradient id="bkMist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EDE8D8" stop-opacity="0"/><stop offset=".7" stop-color="#E8E2CF" stop-opacity=".65"/><stop offset="1" stop-color="#E2DCC6" stop-opacity=".9"/></linearGradient>
@@ -314,8 +326,8 @@ function slab(pts,d,yb,o){o=o||{};const dx=d,dy=-0.55*d,top=o.top||TRAIL,face=o.
   if(o.strata!==false)[[24,.55],[62,.4],[110,.3]].forEach(([k,op])=>g+=`<path d="M${pts.map(q=>`${q[0].toFixed(1)},${(q[1]+k).toFixed(1)}`).join(" L")}" fill="none" stroke="${STRATA}" stroke-width="1.6" opacity="${op}" stroke-dasharray="${k>60?"10 7":"none"}"/>`);
   g+=`<path d="M${p.join(" L")}" fill="none" stroke="${TRAIL_HI}" stroke-width="2" stroke-linejoin="round" opacity=".9"/>`;
   return g}
-// a redwood as a painted cylinder standing on the ground
-const redwood=(x,yb,rx,yTop)=>FG.cyl(x,yTop,rx,yb-yTop,{colour:BARK,kind:"painted",shadow:false});
+// a redwood standing on the ground: a tall fibrous column with a flared foot
+const redwood=(x,yb,rx,yTop)=>trunk(x,yTop,yb,rx*2,"#B9735A","#7E3F2E","#EBB79C",Math.round(x),1.65);
 // a trail sign: a steel post and a white board
 const board=(sx,sy,txt)=>`<line x1="${sx}" y1="${sy}" x2="${sx}" y2="${sy-48}" stroke="${STEEL_D}" stroke-width="3" stroke-linecap="round"/><line x1="${sx-.8}" y1="${sy-2}" x2="${sx-.8}" y2="${sy-46}" stroke="#fff" stroke-width=".9" opacity=".8"/><path d="M${sx+2},${sy-46} h${txt.length*7.6+14} l4,3 v20 h${-(txt.length*7.6+14)}z" fill="${PAL.shadow}" opacity=".12"/><rect x="${sx-2}" y="${sy-66}" width="${txt.length*7.6+14}" height="20" rx="6" fill="#fff" stroke="${PAL.pill.line}"/><text class="t-lab" x="${sx+5}" y="${sy-52}" style="fill:${INK}">${txt}</text>`;
 // a label pill like StudyKit.fig.pill, but keeping the label's own case (kg and mm stay lower case)
@@ -330,12 +342,16 @@ function drawTrail(st){
   const W=800,Hh=420,SC=20,cx=s.x,cy=s.air?s.y:trackY(s.x),RX=290,RY=262,X=x=>RX+(x-cx)*SC,Y=y=>RY-(y-cy)*SC,D=26;
   let o=DEFS+FG.floor(W,Hh);
   // far redwoods: pale painted trunks (slow parallax)
-  const lay=(p,sp,w0,w1,col,op,seed,yb)=>{let r="";const off=cx*SC*p;for(let k=Math.floor((off-120)/sp);k<=Math.floor((off+W+120)/sp);k++){const sx=k*sp+rnd(seed+k)*sp*0.7-off,w=w0+rnd(seed+k*7)*(w1-w0),b=yb+rnd(k+seed)*20;r+=`<rect x="${(sx-w/2).toFixed(1)}" y="-10" width="${w.toFixed(1)}" height="${(b+10).toFixed(1)}" fill="${col}"/><rect x="${(sx-w*0.3).toFixed(1)}" y="-10" width="${(w*0.14).toFixed(1)}" height="${(b+10).toFixed(1)}" fill="#fff" opacity=".35"/>`}return `<g opacity="${op}">${r}</g>`};
+  const lay=(p,sp,w0,w1,col,op,seed,yb)=>{let r="";const off=cx*SC*p;for(let k=Math.floor((off-120)/sp);k<=Math.floor((off+W+120)/sp);k++){const sx=k*sp+rnd(seed+k)*sp*0.7-off,w=w0+rnd(seed+k*7)*(w1-w0),b=yb+rnd(k+seed)*20;
+    r+=`<path d="M${(sx-w*0.42).toFixed(1)},-10 L${(sx+w*0.42).toFixed(1)},-10 L${(sx+w*0.5).toFixed(1)},${(b-w).toFixed(1)} Q${(sx+w*0.52).toFixed(1)},${(b-w*0.25).toFixed(1)} ${(sx+w*0.9).toFixed(1)},${b.toFixed(1)} L${(sx-w*0.9).toFixed(1)},${b.toFixed(1)} Q${(sx-w*0.52).toFixed(1)},${(b-w*0.25).toFixed(1)} ${(sx-w*0.5).toFixed(1)},${(b-w).toFixed(1)}Z" fill="${col}"/><rect x="${(sx-w*0.3).toFixed(1)}" y="-10" width="${(w*0.12).toFixed(1)}" height="${(b-w).toFixed(1)}" fill="#fff" opacity=".3"/>`}return `<g opacity="${op}">${r}</g>`};
   o+=lay(0.25,70,14,24,"#EBD3C6",0.55,23,320);
+  o+=`<rect x="0" y="120" width="${W}" height="230" fill="url(#bkMist)" opacity=".8"/>`;
   // mid layer: redwoods with ponga at their feet on a soft lime bank
-  {const p=0.5,sp=95,off=cx*SC*p;for(let k=Math.floor((off-150)/sp);k<=Math.floor((off+W+150)/sp);k++){const sx=k*sp+rnd(k*3+5)*60-off,w=22+rnd(k+41)*20;o+=`<rect x="${(sx-w/2).toFixed(1)}" y="-10" width="${w.toFixed(1)}" height="348" fill="#E7C2AE"/><rect x="${(sx+w*0.18).toFixed(1)}" y="-10" width="${(w*0.32).toFixed(1)}" height="348" fill="#DBB09B"/><rect x="${(sx-w*0.34).toFixed(1)}" y="-10" width="${(w*0.12).toFixed(1)}" height="348" fill="#fff" opacity=".4"/>`}
+  {const p=0.5,sp=95,off=cx*SC*p;for(let k=Math.floor((off-150)/sp);k<=Math.floor((off+W+150)/sp);k++){const sx=k*sp+rnd(k*3+5)*60-off,w=22+rnd(k+41)*20;o+=trunk(sx,-10,338,w,"#E2B6A2","#C38D78","#F6DCCF",k*7,1.55)}
     o+=`<path d="M0,${Hh} L0,330 ${Array.from({length:17},(_,i)=>`Q${i*50+25},${314+rnd(Math.floor(off/50)+i)*10} ${i*50+50},${330}`).join(" ")} L${W},${Hh}Z" fill="#CFE4B0" stroke="#A9C985"/>`;
-    for(let k=Math.floor((off-100)/130);k<=Math.floor((off+W+100)/130);k++){const sx=k*130+rnd(k*5+2)*80-off;o+=ponga(sx,336,70+rnd(k)*40,"#9CC46E",k)}}
+    for(let k=Math.floor((off-100)/130);k<=Math.floor((off+W+100)/130);k++){const sx=k*130+rnd(k*5+2)*80-off;o+=treeFern(sx,338,40+rnd(k)*55,46+rnd(k*3)*22,rnd(k*7)>0.5?"#7FAE52":"#6E9E46","#7A6656",k)}}
+  // light falling through the canopy, over the far and middle trees
+  o+=shafts(cx*SC,0.35,W,340,0.8);
   // near redwoods: painted cylinders standing at the back of the trail (they move with it)
   for(let k=Math.floor((cx-18)/9);k<=Math.floor((cx+30)/9);k++){const xt=k*9+rnd(k*3)*5;const w=30+rnd(k)*22,yb=Y(trackY(xt))-D*0.55*0.6;if(xt>LIP-3&&xt<GAP_END+3)continue;o+=redwood(X(xt)+D*0.6,yb,w/2,-14)}
   // the berm: a banked wall of dirt behind the trail
@@ -397,12 +413,13 @@ function drawTrail(st){
 function gopro(W){const x0=W-236,y0=12,w=224,h=132,cx=x0+w/2,hz=y0+h*0.4;const tilt=s.air?0:Math.atan(slope(s.x))*60,C=CL();
   let o=FG.acrylic(x0-7,y0-6,w+14,h+13,{tint:PEACH,d:9,r:16,opacity:.6,balls:false,shadowLen:24});
   o+=`<clipPath id="bkCam"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" rx="12"/></clipPath><g clip-path="url(#bkCam)"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#CFE4B0"/>`;
-  o+=`<g transform="rotate(${tilt*0.25},${cx},${hz})"><rect x="${x0-40}" y="${y0-40}" width="${w+80}" height="${hz-y0+40}" fill="${PAL.paper}"/><rect x="${x0-40}" y="${hz}" width="${w+80}" height="${h}" fill="#BCD99A"/>`;
+  o+=`<g transform="rotate(${tilt*0.25},${cx},${hz})"><rect x="${x0-40}" y="${y0-40}" width="${w+80}" height="${hz-y0+40}" fill="url(#bkSky)"/><rect x="${x0-40}" y="${hz}" width="${w+80}" height="${h}" fill="#B2CF92"/>`+shafts(s.dist*6,1,w,hz-y0+30,0.45).replace(/<path d="M/g,`<path transform="translate(${x0},${y0-6})" d="M`);
   o+=`<path d="M${cx-5},${hz} L${cx+5},${hz} L${cx+96},${y0+h+20} L${cx-96},${y0+h+20}Z" fill="${TRAIL}"/><path d="M${cx-5},${hz} L${cx-96},${y0+h+20} M${cx+5},${hz} L${cx+96},${y0+h+20}" stroke="${SOIL_D}" stroke-width="2"/>`;
   const items=[];for(let i=0;i<12;i++){const z=((i*3.6-s.dist)%43+43)%43+1.2;items.push([z,i])}items.sort((a,b)=>b[0]-a[0]);
   items.forEach(([z,i])=>{const side=i%2?1:-1,sx=cx+side*(12+300/z),th=Math.min(260,1500/z),tw=Math.max(2,90/z),fade=Math.min(1,0.3+3/z);
-    o+=`<path d="M${sx-tw*0.4},${hz-th*0.85} L${sx+tw*0.4},${hz-th*0.85} L${sx+tw*0.6},${hz+th*0.12} L${sx-tw*0.6},${hz+th*0.12}Z" fill="${BARK}" opacity="${fade}"/>`;
-    if(i%3===0)o+=`<ellipse cx="${cx+side*(8+170/z)}" cy="${hz+th*0.1}" rx="${Math.max(2,60/z)}" ry="${Math.max(1,24/z)}" fill="${FERN}" opacity="${fade}"/>`});
+    const yb=hz+th*0.12,yt=hz-th*0.85;o+=`<path d="M${sx-tw*0.4},${yt} L${sx+tw*0.4},${yt} L${sx+tw*0.55},${yb-tw*0.6} Q${sx+tw*0.58},${yb-tw*0.15} ${sx+tw*0.95},${yb} L${sx-tw*0.95},${yb} Q${sx-tw*0.58},${yb-tw*0.15} ${sx-tw*0.55},${yb-tw*0.6}Z" fill="#B9735A" opacity="${fade}"/>`;
+    if(tw>5)o+=`<path d="M${sx-tw*0.15},${yt} L${sx-tw*0.2},${yb} M${sx+tw*0.2},${yt} L${sx+tw*0.26},${yb}" stroke="#7E3F2E" stroke-width="${Math.max(0.6,tw*0.07).toFixed(1)}" opacity="${(fade*0.6).toFixed(2)}"/>`;
+    if(i%3===0)o+=`<g opacity="${fade}">${treeFern(cx+side*(8+170/z),hz+th*0.1,Math.max(2,36/z),Math.max(3,60/z),"#6E9E46","#6B5A4A",i)}</g>`});
   for(let i=0;i<6;i++){const z=((i*7-s.dist)%42+42)%42+1;const yy=hz+(h*0.58)*(1.2/z)*3;o+=`<line x1="${cx-40/z*6}" y1="${yy}" x2="${cx+40/z*6}" y2="${yy}" stroke="${SOIL_D}" stroke-width="${Math.max(0.6,6/z)}"/>`}
   if(s.b.pod)o+=`<path d="M${cx},${y0+h} L${cx-70},${hz+8} L${cx+70},${hz+8}Z" fill="#FFF3C4" opacity=".3"/>`;
   o+=`</g>`;
@@ -1000,10 +1017,14 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   let zone="all",follow=null;S.goView("all",true);
   // the redwood forest (bike/forest.js) loads after the bench is up; until then (or if it can't load) the simple trail stays
   let forest=null;
+  // in the forest the rider's kit reads as cloth rather than clear-coated plastic (restored for the bench zones)
+  const fabricM=[];{const want=[JERSEY,JERSEY_D,PANTS,PANTS_D,SKIN_GLOVE].map(c=>new THREE.Color(c).getHex());bikes.trail.g.traverse(o=>{const m=o.material;if(m&&m.isMeshPhysicalMaterial&&want.includes(m.color.getHex())&&!fabricM.includes(m))fabricM.push(m)})}
+  const look=on=>{if(!forest)return;if(on)forest.enter();else forest.leave();fabricM.forEach(m=>{if(on&&!m.userData.bench){m.userData.bench=[m.roughness,m.clearcoat,m.sheen];m.roughness=.86;m.clearcoat=.02;m.sheen=.7}
+    else if(!on&&m.userData.bench){[m.roughness,m.clearcoat,m.sheen]=m.userData.bench;delete m.userData.bench}})};
   if(!/[?&]noforest\b/.test(location.search))import(new URL("bike/forest.js",BIKE_SRC).href)
     .then(m=>m.buildForest(S,{trackY,SEG,LIP,GAP_END,SLIP,TRAIL_END,SBERM,SROLL,rootSeg:SEG.find(q=>q.n==="Root garden")}))
     .then(f=>{forest=f;tz.add(f.group);simpleTrail.forEach(o=>o.visible=false);const pk=tz.userData.planks;if(pk)pk.material=new THREE.MeshStandardMaterial({color:"#9C7A58",roughness:.85});
-      if(zone==="trail")f.enter()})
+      if(zone==="trail")look(true)})
     .catch(e=>console.warn("Redwood forest unavailable; keeping the simple trail",e));
   if(/[?&]debug\b/.test(location.search))try{window.__bike={S,s,get forest(){return forest}}}catch(e){}
   const riderW=()=>{const x=s.x,y=s.air?s.y:trackY(Math.max(0,x));return V3(TX0+x,TY0+y,0)};
@@ -1018,7 +1039,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
     if(GS.length)line(GS,"#B9B3CC",5,[10,8]);line(Smp,key==="v"?P3.deep.blush:P3.deep.sky,6);
     if(Smp.length){const p=Smp[Smp.length-1];g.fillStyle="#222A55";g.beginPath();g.arc(X(p.t),Y(key==="v"?p.v:p.d),9,0,7);g.fill()}};
   return {
-    step(st){zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());if(forest){if(zone==="trail")forest.enter();else forest.leave()}
+    step(st){zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());look(zone==="trail");
       if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?3.9:2.9),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail");
         S.setFollow(()=>riderW().add(V3(1.4,.8,0)),.3,true)}
       else{S.setFollow(null);S.goView(zone)}
@@ -1140,7 +1161,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
 }
 const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",scene3d:bike3d,
   eyebrow:"Science · Forces and motion", title:"The downhill machine", crumb:"Year 9 and 10 Science · forces, motion and energy, with NCEA Level 1 ideas, plus four NCEA Level 2–3 steps on a ski run (AS91171, AS91524)", homeHash:"y9",
-  fig:"FIG. 10 · THE REDWOODS, WHAKAREWAREWA FOREST", railTitle:"Build it, ride the physics",
+  fig:"FIG. 10 · INSPIRED BY THE REDWOODS, WHAKAREWAREWA FOREST", railTitle:"Build it, ride the physics",
   badge:{label:"Years 9–11 · NCEA L2 91171 · L3 91524"},
   mainBox:"0 0 800 420", mainPhoneBig:true, mainLabel:"A downhill mountain bike and rider in a redwood forest, with a helmet camera view and force arrows", closeBox:"0 0 420 260",
   state:s, steps,
@@ -1180,8 +1201,8 @@ const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",scene3d:bike3d,
     skfc:["NEEDS mv²/r",`${fmt(SK.fc())} N`,true],skfmax:["FRICTION CAN GIVE",`${fmt(s.ski.mu*s.ski.m*g)} N`],skvmax:["v MAX = √(μgr)",`${fmt(SK.vmax(),1)} m/s`,s.ski.vt>SK.vmax()],skbank:["BERM ANGLE",`${fmt(SK.bank(),1)}°`]}},
   challenges:CH,
   papers:[{label:"NZQA: Physics, Earth and Space Science",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/physics-earth-and-space-science/"},{label:"NZQA: Science past exams",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/"},{label:"NZQA: L2 Physics 91171 (mechanics)",url:"https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=91171"},{label:"NZQA: L3 Physics 91524 (mechanical systems)",url:"https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=91524"}],
-  truth:"The NCEA ski-run steps use the practice pack's figures (120 m drop over 400 m, 72 kg, 34 m/s); the turn's radius, entry speed and snow grip μ are estimates, and the skier is animated at three times real time with a constant average acceleration. A fictional trail inspired by the Redwoods, Whakarewarewa Forest, Rotorua. Uses g = 9.8 N/kg and air density 1.2 kg/m³. Bike masses (14.5–18.4 kg), drag areas (0.47–0.65 m²), rolling resistance (0.03–0.08) and tyre grip (μ 0.22–0.78) are typical estimates, not measurements of real bikes. The fork spring also stands in for your legs, so k is stiffer than a real fork spring. Rotor temperatures assume all the braking heat stays in the rotors (a top estimate; real rotors also lose heat to the air). The rider brakes to hold the speed you choose. Bikes and riders are drawn larger than the trail so you can see them.",
-  footer:"Covers Year 9–10 forces and motion: mass and weight, speed, distance–time and speed–time graphs, balanced and unbalanced forces, a = F/m, Ep and Ek, heat and Q = mcΔT, projectiles, stopping distance, pressure and Hooke's law. Energy ideas link to NCEA L1 AS 92047. The four NCEA steps cover L2 AS91171 (energy conservation, work, force components, circular motion) and L3 AS91524 (circular motion with multiple forces, banked turns)."
+  truth:"The NCEA ski-run steps use the practice pack's figures (120 m drop over 400 m, 72 kg, 34 m/s); the turn's radius, entry speed and snow grip μ are estimates, and the skier is animated at three times real time with a constant average acceleration. A fictional trail inspired by the Redwoods, Whakarewarewa Forest, Rotorua: the forest (coast redwoods with tree ferns beneath, needle litter, haze and shafts of light) is an illustrative scene, not a map of a real trail. Uses g = 9.8 N/kg and air density 1.2 kg/m³. Bike masses (14.5–18.4 kg), drag areas (0.47–0.65 m²), rolling resistance (0.03–0.08) and tyre grip (μ 0.22–0.78) are typical estimates, not measurements of real bikes. The fork spring also stands in for your legs, so k is stiffer than a real fork spring. Rotor temperatures assume all the braking heat stays in the rotors (a top estimate; real rotors also lose heat to the air). The rider brakes to hold the speed you choose. Bikes and riders are drawn larger than the trail so you can see them.",
+  footer:"Covers Year 9–10 forces and motion: mass and weight, speed, distance–time and speed–time graphs, balanced and unbalanced forces, a = F/m, Ep and Ek, heat and Q = mcΔT, projectiles, stopping distance, pressure and Hooke's law. Energy ideas link to NCEA L1 AS 92047. The four NCEA steps cover L2 AS91171 (energy conservation, work, force components, circular motion) and L3 AS91524 (circular motion with multiple forces, banked turns). The 3D redwood crowns are grown with <a href='https://github.com/dgreenheck/ez-tree' target='_blank' rel='noopener'>ez-tree</a> by Daniel Greenheck (MIT licence); the bark, needle litter, trail dirt and fern textures are drawn from code for this machine, with no photographs."
 });
 
 garageUI.build();tipUI.build();garageUI.show(api.step.k==="garage");tipUI.set(api.step.k);

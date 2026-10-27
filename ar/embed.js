@@ -26,6 +26,14 @@
  *   label         button text (default 'View in your space'). title: the name shown in AR and on the code.
  *   maxTriangles  snapshot budget (default 150000). Over it, segment counts drop first, then the smallest
  *                 instanced items, then rounded boxes become boxes, then the smallest parts; see the report.
+ *                 The budget also tightens to keep the USDZ near 14 MB (three's exporter writes text USDA).
+ *
+ * The snapshot deep-copies what it needs and never changes your scene. It bakes world transforms and every
+ * InstancedMesh instance (matrix and colour) into plain meshes; skips lights, cameras, Points, Sprites, lines,
+ * ShaderMaterials, shadow catchers, invisible or fully transparent things, helpers and HTML labels (and anything
+ * with userData.arSkip = true); turns every material into MeshStandardMaterial (colour, map, roughness,
+ * metalness, opacity, emissive); copies canvas, video and 8-bit data textures as they are at that moment; then sits
+ * the result on y = 0, centred, in metres.
  *   camera        optional camera (or () => camera). Only what it can see goes into the snapshot: useful when a
  *                 scene lays several stations side by side and the camera flies between them.
  *   mount         'floor' (default) | 'wall'.

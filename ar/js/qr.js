@@ -174,7 +174,7 @@ export async function cardSVG({ url, title = '', detail = '', kind = '', thumb =
   }
   if (detail) out += T(mono, detail, { size: 13, x: tx + 26, y: ty + th - 24, fill: PAL.muted, maxWidth: tw - 120 });
   // the code
-  const qs = 300, qx = P - 6, qy = 436;
+  const qs = 320, qx = P - 8, qy = 432;
   const centreOpt = !m.centre ? null : centre === 'thumb' && (centreThumb || thumb) ? { kind: 'image', href: centreThumb || thumb } : { kind: 'cube' };
   out += qrMarkup(m, { x: qx, y: qy, size: qs, style, centre: centreOpt });
   // words beside it

@@ -358,6 +358,10 @@ segInto('styleSeg', 'qr.style', STYLES.map(s => [s.id, s.name]));
 segInto('centreSeg', 'qr.centre', [['thumb', 'Your object'], ['cube', 'Cube mark']]);
 
 // ---------------------------------------------------------------- actions
+// on wide screens the button sits on the stage so it's in the first view; on phones it sits under the stage
+const wide = matchMedia('(min-width: 861px)');
+const placeBtn = () => { (wide.matches ? $('stage') : document.querySelector('.stage-bar')).appendChild(viewBtn); viewBtn.classList.toggle('on-stage', wide.matches); };
+placeBtn(); wide.addEventListener ? wide.addEventListener('change', placeBtn) : wide.addListener(placeBtn);
 viewBtn.addEventListener('click', () => { stage.finish(); placer.activate(); });
 $('dlPNG').addEventListener('click', async () => { if (!card) return; download(await svgToPNG(card.svg, 2), `assembl-ar-${slug(card.title)}.png`); });
 $('dlSVG').addEventListener('click', () => { if (!card) return; download(new Blob([card.svg], { type: 'image/svg+xml' }), `assembl-ar-${slug(card.title)}.svg`); });

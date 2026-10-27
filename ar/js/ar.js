@@ -84,11 +84,13 @@ function overlayEl(title, mount) {
 // Call straight from a tap: the session request has to happen while the tap still counts as a user gesture.
 export async function startWebXR(object, { title = '', mount = 'floor', fixedScale = false, onEnd } = {}) {
   const overlay = overlayEl(title, mount);
+  overlay.style.visibility = 'hidden';
   document.body.appendChild(overlay);
   let session;
   try {
     session = await navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: overlay } });
   } catch (e) { overlay.remove(); throw e; }
+  overlay.style.visibility = '';
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));

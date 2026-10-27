@@ -7,7 +7,7 @@
      worn pumice-loam dirt with ragged edges; roots across the root garden; a timber lip and rollers.
    - Light (trail zone only): a low warm sun through a canopy (a hidden dappling screen that only casts shadows), soft
      forest-tinted ambient light, depth haze, and faint shafts of light between the trunks.
-   All textures are drawn from code (tex/, made by the texture script); no photographs. */
+   All textures are drawn from code (tex/texgen.js; open tex/texgen.html to regenerate them); no photographs. */
 import * as THREE from "three";
 import {mergeGeometries} from "three/addons/utils/BufferGeometryUtils.js";
 import {Tree} from "./vendor/ez-tree/tree.js";
@@ -21,7 +21,7 @@ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
 function noise2(seed){const h=(i,j)=>{let n=Math.imul(i,374761393)+Math.imul(j,668265263)+Math.imul(seed,1442695041);n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967296};
   const f=t=>t*t*(3-2*t);return (x,y)=>{const i=Math.floor(x),j=Math.floor(y),u=f(x-i),v=f(y-j);const a=h(i,j),b=h(i+1,j),c=h(i,j+1),d=h(i+1,j+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}}
 
-export async function buildForest(S,P){
+export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
   const HQ=!!S.HQ,R=S.renderer,scene=S.scene,sun=S.sun;
   const {trackY,SEG,LIP,GAP_END,SLIP,TRAIL_END,SBERM,SROLL}=P;
   const LAND=SEG.find(q=>Math.abs(q.x0-GAP_END)<1e-6)||SEG[SEG.indexOf(SLIP)+2];
@@ -30,7 +30,7 @@ export async function buildForest(S,P){
   const tex=(n,srgb,wrap=true)=>loader.loadAsync(new URL(`tex/${n}${sfx}.webp`,import.meta.url).href).then(t=>{t.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;
     if(wrap)t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=aniso;return t});
   const [barkC,barkN,litC,litN,dirtC,dirtN,atlas]=await Promise.all([tex("bark_color",1),tex("bark_normal",0),tex("litter_color",1),tex("litter_normal",0),tex("dirt_color",1),tex("dirt_normal",0),tex("atlas_color",1,false)]);
-  dirtC.wrapT=dirtN.wrapT=THREE.ClampToEdgeWrapping;
+  dirtC.wrapT=dirtN.wrapT=THREE.ClampToEdgeWrapping;tLoaded=performance.now();
   const group=new THREE.Group();group.name="redwood-forest";group.visible=false;
   const N=new THREE.Vector3(),Q=new THREE.Quaternion(),M4=new THREE.Matrix4(),E=new THREE.Euler(),V=new THREE.Vector3(),SC=new THREE.Vector3(),C=new THREE.Color();
 
@@ -134,7 +134,7 @@ export async function buildForest(S,P){
     return g}
   const G={
     ponga:frondGeo({L:1,aspect:.38,rise:.85,droop:2.0,segs:HQ?10:6,fold:.34,uv:[0,.25,0,1]}),
-    crownF:frondGeo({L:1,aspect:.28,rise:1.1,droop:1.4,segs:HQ?5:4,fold:.22,uv:[.25,.5,0,1]}),
+    crownF:frondGeo({L:1,aspect:.28,rise:1.1,droop:1.4,segs:4,fold:.22,uv:[.25,.5,0,1]}),
     dead:frondGeo({L:1,aspect:.5,rise:-1.15,droop:.25,segs:3,fold:.15,uv:[.5,.75,0,.5]}),
     pTrunk:(()=>{const g=new THREE.CylinderGeometry(.1,.15,1,HQ?10:7,3,true);g.translate(0,.5,0);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);p.setX(i,p.getX(i)*(1+.35*smooth(.85,1,y)));p.setZ(i,p.getZ(i)*(1+.35*smooth(.85,1,y)))}g.computeVertexNormals();
       const u=g.attributes.uv;for(let i=0;i<u.count;i++)u.setXY(i,u.getX(i)*.6,u.getY(i)*1.6);return g})(),
@@ -164,7 +164,7 @@ export async function buildForest(S,P){
   // tree ferns: thickest near the trail and under gaps, thinning into the distance; wheki keep a skirt of dead fronds
   const ponga=[];{const n=HQ?620:300;for(let i=0;i<n;i++){const x=X0+4+r()*(X1-X0-8);const zz=Math.pow(r(),2);const z=-3.1-zz*(HQ?46:36);
     if(inBerm(x,z))continue;if(trees.some(t=>Math.hypot(t.x-x,t.z-z)<t.r+.6))continue;if(ponga.some(p=>Math.hypot(p.x-x,p.z-z)<2.6))continue;
-    const h=(.35+Math.pow(r(),1.6)*3.8)*(r()<.15?1.5:1),y=groundY(x,z)-.1,wheki=r()<.55,lean=(r()-.5)*.25;ponga.push({x,z});
+    const h=Math.min((.35+Math.pow(r(),1.6)*3.8)*(r()<.15?1.5:1),z>-9?1.2+(-z-3)*.3:9),y=groundY(x,z)-.1,wheki=r()<.55,lean=(r()-.5)*.25;ponga.push({x,z});
     E.set(lean,r()*TAU,(r()-.5)*.2);Q.setFromEuler(E);const tk=1.15+r()*.5;M4.compose(SC.set(x,y,z),Q,N.set(tk,h,tk));put("pT",x,M4,null);
     const top=V.set(0,h,0).applyQuaternion(Q).add(SC.set(x,y,z)).clone();const nf=HQ?(wheki?14:17)+Math.floor(r()*6):10+Math.floor(r()*4),L=1.9+r()*1.2+h*.15;
     for(let k=0;k<nf;k++){const az=k/nf*TAU+r()*.4,young=k%5===0;E.set((r()-.5)*.5,az,(r()-.5)*.35+(young?.45:0),"YXZ");Q.setFromEuler(E);M4.compose(top,Q,N.set(L*(.75+r()*.35),L*(.75+r()*.35),L*(.8+r()*.3)));
@@ -172,8 +172,8 @@ export async function buildForest(S,P){
     if(wheki&&h>1.1){const nd=HQ?7+Math.floor(r()*4):4;for(let k=0;k<nd;k++){const az=k/nd*TAU+r()*.5;E.set(0,az,(r()-.5)*.3,"YXZ");Q.setFromEuler(E);const l=Math.min(h*.8,1.1+r()*.6);
       M4.compose(V.copy(top).add(SC.set(0,-.15,0)),Q,N.set(l,l,l*.8));C.setHSL(.07,.35,.38+r()*.15);put("pD",x,M4,C)}}}}
   // crown ferns: rosettes all over the floor, a line of them along both edges of the trail
-  {const n=HQ?2600:1300;for(let i=0;i<n;i++){const x=X0+2+r()*(X1-X0-4);let z;const u=r();
-    if(u<.24)z=-TB-.2-r()*1.6;else if(u<.4)z=TB+.35+r()*1.4;else if(u<.6)z=TB+1.6+r()*8;else z=-3.6-Math.pow(r(),1.6)*(HQ?40:30);
+  {const n=HQ?3000:1500;for(let i=0;i<n;i++){const x=X0+2+r()*(X1-X0-4);let z;const u=r();
+    if(u<.22)z=-TB-.2-r()*1.6;else if(u<.38)z=TB+.35+r()*1.4;else if(u<.64)z=TB+1.6+r()*8;else z=-3.6-Math.pow(r(),1.6)*(HQ?40:30);
     if(trees.some(t=>Math.abs(t.x-x)<4&&Math.hypot(t.x-x,t.z-z)<t.r*.9))continue;const y=groundY(x,z)-.03,edge=Math.abs(z)<4,nf=HQ?8+Math.floor(r()*5):7,L=edge?.55+r()*.4:.75+r()*.7;
     for(let k=0;k<nf;k++){const az=k/nf*TAU+r()*.5;
       // fronds on the trail side of an edge rosette stay short so they never cover the dirt
@@ -238,12 +238,12 @@ export async function buildForest(S,P){
   group.add(gobo);
   // shafts of light between the trunks: faint additive ribbons along the sun's direction
   const shafts=(()=>{const c=document.createElement("canvas");c.width=64;c.height=256;const g=c.getContext("2d"),im=g.createImageData(64,256);
-    for(let y=0;y<256;y++)for(let x=0;x<64;x++){const u=(x+.5)/64-.5,v=y/255,a=Math.exp(-u*u/.035)*smooth(0,.35,v)*smooth(1,.72,v)*(.75+.25*Math.sin(v*9+u*3));const i=(y*64+x)*4;im.data[i]=im.data[i+1]=im.data[i+2]=255;im.data[i+3]=a*255}
+    for(let y=0;y<256;y++)for(let x=0;x<64;x++){const u=(x+.5)/64-.5,v=y/255,a=Math.exp(-u*u/.03)*smooth(0,.3,v)*smooth(1,.62,v)*(.75+.25*Math.sin(v*9+u*3));const i=(y*64+x)*4;im.data[i]=im.data[i+1]=im.data[i+2]=255;im.data[i+3]=a*255}
     g.putImageData(im,0,0);const t=new THREE.CanvasTexture(c);
-    const n=HQ?70:30,geo=new THREE.PlaneGeometry(1,1),m=new THREE.MeshBasicMaterial({map:t,color:new THREE.Color("#FFE2B0"),transparent:true,opacity:HQ?.16:.13,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
+    const n=HQ?70:30,geo=new THREE.PlaneGeometry(1,1),m=new THREE.MeshBasicMaterial({map:t,color:new THREE.Color("#FFE2B0"),transparent:true,opacity:HQ?.24:.2,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
     const ims=new THREE.InstancedMesh(geo,m,n);const rr=rng(57),up=sunDir.clone().negate(),view=new THREE.Vector3(0,-.3,-1).normalize();
     const xa=new THREE.Vector3().crossVectors(up,view).normalize(),za=new THREE.Vector3().crossVectors(xa,up).normalize();const basis=new THREE.Matrix4().makeBasis(xa,up,za);Q.setFromRotationMatrix(basis);
-    for(let i=0;i<n;i++){const x=X0+10+rr()*(X1-X0-20),z=-3.5-Math.pow(rr(),1.2)*30,y=groundY(x,z),L=22+rr()*18,w=.7+rr()*2.2;
+    for(let i=0;i<n;i++){const x=X0+10+rr()*(X1-X0-20),z=-7-Math.pow(rr(),.9)*38,y=groundY(x,z),L=24+rr()*20,w=.6+rr()*2;
       M4.compose(SC.set(x,y,z).addScaledVector(up,L*.5-.5),Q,N.set(w,L,1));ims.setMatrixAt(i,M4);C.setScalar(.45+rr()*.55);ims.setColorAt(i,C)}
     ims.instanceColor.needsUpdate=true;ims.computeBoundingSphere();ims.renderOrder=6;ims.name="light-shafts";return ims})();
   group.add(shafts);
@@ -254,8 +254,8 @@ export async function buildForest(S,P){
   function enter(){if(on)return;on=true;group.visible=true;
     saved={bg:scene.background,fog:scene.fog,env:scene.environment,envI:scene.environmentIntensity,sc:sun.color.clone(),si:sun.intensity,far:sun.shadow.camera.far,
       hi:hemi&&hemi.intensity,hs:hemi&&hemi.color.clone(),hg:hemi&&hemi.groundColor.clone(),fi:fill&&fill.intensity};
-    scene.background=HAZE;scene.fog=fog;scene.environment=envTex;scene.environmentIntensity=1;sun.color.set("#FFE0B0");sun.intensity=3.4;
-    if(hemi){hemi.intensity=.95;hemi.color.set("#D8E6CF");hemi.groundColor.set("#5A4434")}if(fill)fill.intensity=.12}
+    scene.background=HAZE;scene.fog=fog;scene.environment=envTex;scene.environmentIntensity=.9;sun.color.set("#FFDCA6");sun.intensity=4.6;
+    if(hemi){hemi.intensity=.8;hemi.color.set("#D8E6CF");hemi.groundColor.set("#5A4434")}if(fill)fill.intensity=.12}
   function leave(){if(!on)return;on=false;group.visible=false;const s=saved;scene.background=s.bg;scene.fog=s.fog;scene.environment=s.env;scene.environmentIntensity=s.envI;sun.color.copy(s.sc);sun.intensity=s.si;
     sun.shadow.camera.near=1;sun.shadow.camera.far=s.far;sun.shadow.camera.updateProjectionMatrix();if(hemi){hemi.intensity=s.hi;hemi.color.copy(s.hs);hemi.groundColor.copy(s.hg)}if(fill)fill.intensity=s.fi}
   // every frame in the trail zone: the sun's shadow box follows the rider (a little uphill of them, where the camera looks)
@@ -264,5 +264,6 @@ export async function buildForest(S,P){
     sun.position.copy(ctr).addScaledVector(sunDir,-80);sun.shadow.camera.near=20;sun.shadow.camera.far=150;sun.shadow.camera.updateProjectionMatrix();
     // the dapple screen hangs above the rider; its pattern stays fixed to the ground as it moves
     const {t,SZ,TILE}=gobo.userData;gobo.position.set(x+3,y+15,-9);t.offset.set((gobo.position.x-SZ/2)/TILE,(-gobo.position.z-SZ/2)/TILE)}
-  return {group,enter,leave,update,meshes,stats:()=>({trees:trees.length,ponga:ponga.length,meshes:meshes.length})};
+  const tBuilt=performance.now();
+  return {group,enter,leave,update,meshes,stats:()=>({trees:trees.length,ponga:ponga.length,meshes:meshes.length,loadMs:Math.round(tLoaded-t0),buildMs:Math.round(tBuilt-tLoaded)})};
 }

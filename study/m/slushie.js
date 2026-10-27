@@ -84,7 +84,7 @@ const sfx=n=>{if(touched)K.sfx(n)};
 const mix=(a,b,k)=>{const h=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));const A=h(a),B=h(b);return "#"+A.map((v,i)=>Math.round(v+(B[i]-v)*Math.max(0,Math.min(1,k))).toString(16).padStart(2,"0")).join("")};
 
 // ================================================================ the particle window: a slowed-down sketch of the ice front on the drum
-// Water molecules lock into an open, hexagonal lattice (drawn flat, so each has three neighbours here; in real ice each is held by four).
+// Water molecules lock into an open, hexagonal lattice (drawn flat, so each has three neighbours here; real ice is 3D).
 // Sugar molecules can't join the ice, so they crowd into the syrup ahead of it. Counts, sizes and speeds are illustrative.
 const LR=1.5,YD=-1.02,BL=.2,RO=.062,RHO=21;
 const LW={t:0,sites:[],mols:[],sug:[],fx:[],heat:[],grid:[],fill:0,area:0,areaFill:-1,lockT:0,spawnT:0,runId:-1};
@@ -96,7 +96,7 @@ const LW={t:0,sites:[],mols:[],sug:[],fx:[],heat:[],grid:[],fill:0,area:0,areaFi
   for(let x=-LR;x<=LR;x+=.1)for(let y=YD;y<=LR;y+=.1){if(Math.hypot(x,y)>LR-.06)continue;let best=-1,bd=.19;LW.sites.forEach((q,i)=>{const d=Math.hypot(q.x-x,q.y-y);if(d<bd){bd=d;best=i}});LW.grid.push(best)}})();
 function lwArea(){if(LW.areaFill===LW.fill)return LW.area;let n=0;for(const i of LW.grid)if(i<0||!LW.sites[i].m)n++;LW.areaFill=LW.fill;return LW.area=n*.01}
 function freeSpot(){let x=0,y=LR-.3;for(let k=0;k<30;k++){const a=Math.random()*6.283,rad=Math.sqrt(Math.random())*(LR-.15);x=Math.cos(a)*rad;y=Math.max(YD+.12,Math.sin(a)*rad);
-  if(!LW.sites.some(q=>q.m&&Math.hypot(q.x-x,q.y-y)<.2))break}return [x,y]}
+  if(!LW.sites.some(q=>q.m&&Math.abs(q.x-x)<.22&&q.y>y-.14))break}return [x,y]}
 function spawnMol(top){const a=top?Math.PI*(.18+Math.random()*.64):0,rad=LR-.1,fs=top?null:freeSpot();
   return {x:top?Math.cos(a)*rad:fs[0],y:top?Math.sin(a)*rad:fs[1],dir:Math.random()*6.283,th:Math.random()*6.283,w:(Math.random()-.5)*4,rnd:Math.random(),st:"liq",a:top?0:1,out:false,site:null,k:0}}
 function wall(m,rr){const d=Math.hypot(m.x,m.y),lim=LR-rr;if(d>lim){m.x*=lim/d;m.y*=lim/d;m.dir=Math.atan2(-m.y,-m.x)+(Math.random()-.5)}if(m.y<YD+rr){m.y=YD+rr;m.dir=Math.PI/2+(Math.random()-.5)}}
@@ -128,8 +128,10 @@ function lwTick(dt){const snap=!(dt>0);dt=Math.min(dt||0,.05);LW.t+=dt;const r=s
   if(snap){LW.mols=LW.mols.filter(m=>!m.out);LW.sug=LW.sug.filter(g=>!g.out)}
   // motion: the liquid tumbles and jostles; ice molecules only vibrate in place; sugar drifts slowly and is pushed ahead of the ice
   const ice=LW.sites.filter(q=>q.m),all=LW.mols.filter(m=>m.st==="liq");
+  const iceTop=x=>{let y=-9;for(const q of ice)if(Math.abs(q.x-x)<.2&&q.y>y)y=q.y;return y};   // the liquid stays above the ice front
   for(const m of all){m.a=m.out?m.a-dt*2.5:Math.min(1,m.a+dt*2.5);m.dir+=(Math.random()-.5)*7*dt;const sp=v0*(.55+.9*m.rnd);m.x+=Math.cos(m.dir)*sp*dt;m.y+=Math.sin(m.dir)*sp*dt;m.th+=m.w*dt;
-    wall(m,RO+.02);for(const q of ice){const dx=m.x-q.x,dy=m.y-q.y,d=Math.hypot(dx,dy);if(d<.17&&d>1e-6){m.x=q.x+dx/d*.17;m.y=q.y+dy/d*.17;m.dir=Math.atan2(dy,dx)+(Math.random()-.5)}}}
+    wall(m,RO+.02);for(const q of ice){const dx=m.x-q.x,dy=m.y-q.y,d=Math.hypot(dx,dy);if(d<.17&&d>1e-6){m.x=q.x+dx/d*.17;m.y=q.y+dy/d*.17;m.dir=Math.atan2(dy,dx)+(Math.random()-.5)}}
+    const it=iceTop(m.x);if(it>-9&&m.y<it+.13){m.y=it+.13;m.dir=Math.PI/2+(Math.random()-.5)}}
   for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i],b=all[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<.15&&d>1e-6){const o=(.15-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o}}
   for(const g of LW.sug){g.a=g.out?g.a-dt*2:Math.min(1,g.a+dt*2);g.dir+=(Math.random()-.5)*3*dt;const sp=v0*.32;g.x+=Math.cos(g.dir)*sp*dt;g.y+=Math.sin(g.dir)*sp*dt;g.th+=g.w*.25*dt;wall(g,.21);
     for(const q of ice){const dx=g.x-q.x,dy=g.y-q.y,d=Math.hypot(dx,dy);if(d<.27&&d>1e-6){g.x=q.x+dx/d*.27;g.y=q.y+dy/d*.27;g.dir=Math.atan2(dy,dx)}}
@@ -306,13 +308,13 @@ function loopAt(ph){const L=LOOP.pts,T=((ph%1)+1)%1*LOOP.tau;let lo=0,hi=L.lengt
 function lwSVG(cx,cy,rad,acc){const k=rad/LR,X=x=>cx+x*k,Y=y=>cy-y*k,f=n=>n.toFixed(1);let o="";
   o+=`<circle cx="${cx+5}" cy="${cy+6}" r="${rad+6}" fill="${P.shadow}" opacity=".12"/><circle cx="${cx}" cy="${cy}" r="${rad+6}" fill="#fff" stroke="${acc}" stroke-width="3"/><circle cx="${cx}" cy="${cy}" r="${rad}" fill="#FBF3F5"/>`;
   o+=`<clipPath id="sl-lens"><circle cx="${cx}" cy="${cy}" r="${rad}"/></clipPath><g clip-path="url(#sl-lens)"><rect x="${cx-rad}" y="${f(Y(YD))}" width="${rad*2}" height="${rad}" fill="${P.steel}"/><rect x="${cx-rad}" y="${f(Y(YD))}" width="${rad*2}" height="3" fill="#EAF4FC"/>`;
-  for(const [a,b] of iceBonds())o+=`<line x1="${f(X(a.x))}" y1="${f(Y(a.y))}" x2="${f(X(b.x))}" y2="${f(Y(b.y))}" stroke="${SKYD}" stroke-width="1.4" stroke-dasharray="3 2.5" opacity=".7"/>`;
+  for(const [a,b] of iceBonds())o+=`<line x1="${f(X(a.x))}" y1="${f(Y(a.y))}" x2="${f(X(b.x))}" y2="${f(Y(b.y))}" stroke="${SKYD}" stroke-width="2" stroke-dasharray="3 2.5" opacity=".85"/>`;
   for(const [a,b] of liquidBonds(30))o+=`<line x1="${f(X(a.x))}" y1="${f(Y(a.y))}" x2="${f(X(b.x))}" y2="${f(Y(b.y))}" stroke="${SKYD}" stroke-width="1" stroke-dasharray="2 2.5" opacity=".35"/>`;
   for(const g of LW.sug){const a=Math.max(0,Math.min(1,g.a));for(const [dx,n] of [[-.085,6],[.09,5]]){const pts=[];for(let i=0;i<n;i++){const t=g.th+i*2*Math.PI/n;pts.push(`${f(X(g.x+dx*Math.cos(g.th)+Math.cos(t)*.085))},${f(Y(g.y+dx*Math.sin(g.th)+Math.sin(t)*.085))}`)}
     o+=`<polygon points="${pts.join(" ")}" fill="#F9D2B8" stroke="${PEACHD}" stroke-width="1.3" opacity="${a.toFixed(2)}"/>`}}
   for(const m of LW.mols){const a=Math.max(0,Math.min(1,m.a));if(a<=.02)continue;const hs=hAtoms(m);
     for(const h of hs)o+=`<circle cx="${f(X(m.x+h[0]*.075))}" cy="${f(Y(m.y+h[1]*.075))}" r="${f(.036*k)}" fill="#fff" stroke="#8FA3BD" stroke-width=".7" opacity="${a.toFixed(2)}"/>`;
-    o+=`<circle cx="${f(X(m.x))}" cy="${f(Y(m.y))}" r="${f(RO*k)}" fill="${m.st==="liq"?"#6FA3E8":"#4F86D6"}" stroke="${INK}" stroke-opacity=".3" opacity="${a.toFixed(2)}"/>`}
+    o+=`<circle cx="${f(X(m.x))}" cy="${f(Y(m.y))}" r="${f(RO*k)}" fill="${m.st==="liq"?"#9CC4F2":"#3466B8"}" stroke="${INK}" stroke-opacity=".3" opacity="${a.toFixed(2)}"/>`}
   for(const fx of LW.fx){const u=(LW.t-fx.t)/.6;o+=`<circle cx="${f(X(fx.x))}" cy="${f(Y(fx.y))}" r="${f((.06+u*.2)*k)}" fill="none" stroke="${fx.exo?"#E9875E":SKYD}" stroke-width="2" opacity="${(1-u).toFixed(2)}"/>`}
   for(const h of LW.heat){const u=(LW.t-h.t)/.9;o+=`<circle cx="${f(X(h.x))}" cy="${f(Y(h.y+(YD-.1-h.y)*u))}" r="${f(.035*k)}" fill="#E9875E" opacity="${(1-u).toFixed(2)}"/>`}
   o+=`</g><path d="M${cx-rad*.62},${cy-rad*.7} a${rad*.95},${rad*.95} 0 0 1 ${rad*.9},${-rad*.22}" stroke="#fff" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round"/>`;
@@ -399,7 +401,7 @@ function buildMachine(S){const {THREE,mat}=S,PAL=S.PAL,g=new THREE.Group();g.nam
     foam=mat("plastic","#DDEBF7",{rough:.8,coat:.05}),pcbM=mat("plastic","#5FA87A",{rough:.5}),dark=mat("plastic","#3A4152",{rough:.5}),glassM=mat("glass","#EEF6FF",{opacity:.13});
   const parts={};
   // ---- the base: a frosted case on the bench, with a low step in front for the drip tray
-  const base=caseBox(S,22*CM,15*CM,26*CM,"#D3E7F7",{opacity:.15});base.position.set(0,0,-2*CM);g.add(base);
+  const base=caseBox(S,22*CM,15*CM,26*CM,"#D3E7F7",{opacity:.2});base.position.set(0,0,-2*CM);g.add(base);
   RB(18,2.5,10,.8,offW,0,1.25,16);RB(16,.5,8.6,.25,steel,0,2.75,16);
   const slats=S.swarm(11,new THREE.BoxGeometry(1,1,1),steelD,{});for(let i=0;i<11;i++)slats.putS(i,(-7+i*1.4)*CM,3.1*CM,16*CM,.32*CM,.28*CM,7.6*CM);slats.done();g.add(slats);
   CY(1.3,1.3,1,blushP,-6.5,9.5,11.5,[Math.PI/2,0,0]);RB(2.2,1.4,.8,.3,white,-6.5,5.6,11.3);
@@ -424,7 +426,7 @@ function buildMachine(S){const {THREE,mat}=S,PAL=S.PAL,g=new THREE.Group();g.nam
   RB(5,.25,3.6,.1,pcbM,6.5,1.1,-5);RB(1.2,.4,1,.1,dark,5.6,1.45,-5.6);RB(.9,.35,.9,.1,dark,7.6,1.4,-4.2);CY(.4,.4,1,steel,7.9,1.8,-6.2);
   // ---- the pipes: copper on the hot side, icy and insulated on the cold side
   const PM={hot:[copper,.35],cond:[copper,.3],liq:[copper,.25],cold:[icyP,.3],evap:[steelD,.2],suct:[foam,.52]};
-  for(const sec of LOOP.secs){const pm=PM[sec.type];if(!pm)continue;TU(sec.pts,pm[1],pm[0],{seg:Math.max(24,sec.pts.length*6),rs:sec.type==="evap"?6:12})}
+  for(const sec of LOOP.secs){const pm=PM[sec.type];if(!pm)continue;TU(sec.pts,pm[1],pm[0],{seg:Math.max(24,sec.pts.length*(sec.type==="evap"?3:5)),rs:sec.type==="evap"?6:10})}
   // ---- the rear housing (auger motor) and the saddles the bowl sits on
   const rear=caseBox(S,10*CM,14*CM,3.4*CM,"#D3E7F7",{opacity:.17,rail:.3*CM});rear.position.set(0,15*CM,-13.6*CM);g.add(rear);
   parts.motor=CY(1.8,1.8,2.4,mintP,0,18.6,-13.6,[Math.PI/2,0,0]);
@@ -446,7 +448,7 @@ function buildMachine(S){const {THREE,mat}=S,PAL=S.PAL,g=new THREE.Group();g.nam
   {const n=Math.round(ATURN*64),pos=[],idx=[],ri=2.95,ro=4.7;for(let i=0;i<=n;i++){const u=i/n,th=u*ATURN*2*Math.PI,z=AZ0+(AZ1-AZ0)*u,c=Math.cos(th),sn=Math.sin(th);pos.push(ri*c*CM,ri*sn*CM,z*CM,ro*c*CM,ro*sn*CM,z*CM)}
     for(let i=0;i<n;i++){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}
     const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();const rib=new THREE.Mesh(geo,augM);rib.castShadow=true;aug.add(rib);
-    for(const rr of [ri,ro]){const pts=[];for(let i=0;i<=n;i+=2){const u=i/n,th=u*ATURN*2*Math.PI;pts.push([rr*Math.cos(th)*CM,rr*Math.sin(th)*CM,(AZ0+(AZ1-AZ0)*u)*CM])}aug.add(S.tube(pts,(rr===ro?.28:.18)*CM,augM,{seg:n*2,rs:8}))}
+    for(const rr of [ri,ro]){const pts=[];for(let i=0;i<=n;i+=2){const u=i/n,th=u*ATURN*2*Math.PI;pts.push([rr*Math.cos(th)*CM,rr*Math.sin(th)*CM,(AZ0+(AZ1-AZ0)*u)*CM])}aug.add(S.tube(pts,(rr===ro?.28:.18)*CM,augM,{seg:n,rs:6}))}
     aug.add(S.torus(3.8*CM,.32*CM,augM,{at:[0,0,AZ0*CM],ts:40}));parts.aug=aug}
   // ---- the thermometer probe, the tap and its handle, and the power cord
   parts.probe=CY(.25,.25,10,steel,1.5,26,12);RB(1.3,2.4,1.3,.45,rubber,1.5,32.2,12);CY(.3,.3,.6,mat("plastic",PAL.product.strawberry),1.5,21.2,12);
@@ -456,7 +458,7 @@ function buildMachine(S){const {THREE,mat}=S,PAL=S.PAL,g=new THREE.Group();g.nam
   // ---- the moving parts the model drives: ice crystals on the drum and in the drink, and the refrigerant
   const hexG=new THREE.CylinderGeometry(1,1,.34,6),iceM=mat("plastic","#F7FBFF",{rough:.22,coat:.9});
   const drumIce=S.swarm(240,hexG,iceM,{});g.add(drumIce);const susIce=S.swarm(420,hexG,iceM,{});g.add(susIce);
-  const refr=S.swarm(170,new THREE.SphereGeometry(1,10,8),mat("plastic","#ffffff",{rough:.35}),{colors:true});g.add(refr);
+  const refr=S.swarm(170,new THREE.SphereGeometry(1,8,6),mat("plastic","#ffffff",{rough:.35}),{colors:true});g.add(refr);
   Object.assign(parts,{liqM,drumM,shell,shellM,drumIce,susIce,refr,ledM,gear,pinion,handle,bowl,base,rear});
   return {g,parts,S}}
 
@@ -473,18 +475,18 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
   const plug=S.rbox(.9,.55,.5,.1,white);plug.position.set(5.85,TOP+.28,-6.3);S.scene.add(plug);
   const cordCurve=new THREE.CatmullRomCurve3(cordPts),zap=S.puffs(10,"#B9A5EA");S.scene.add(zap);
   // ---- the lab clock on its stand, wired to the probe
-  const clk=S.group();clk.position.set(-5.3,TOP,3.7);clk.rotation.y=.42;
+  const clk=S.group();clk.position.set(-6.4,TOP,1.8);clk.rotation.y=.5;
   clk.add(S.rbox(1.3,.12,1.0,.05,offW,{at:[0,.06,0]}));clk.add(S.cyl(.06,.06,1.05,steel,{at:[0,.6,-.05],seg:12}));
   clk.add(S.cyl(1.22,1.22,.16,white,{rot:[Math.PI/2,0,0],at:[0,2.25,-.1],seg:48}));const clockP=S.panel(420,420,2.3);clockP.position.set(0,2.25,.0);clk.add(clockP);
   clk.updateMatrixWorld(true);
-  S.scene.add(S.tube([W(1.5,33.4,12),W(1.5,36,12.6),V3(-1.4,TOP+2.6,4.6),V3(-4.2,TOP+.9,4.3),clk.localToWorld(V3(.3,1.2,-.2))],.05,dark,{seg:60}));
+  S.scene.add(S.tube([W(1.5,33.4,12),W(1.5,36,12.6),V3(-1.8,TOP+2.8,4.4),V3(-4.8,TOP+.9,3.2),clk.localToWorld(V3(.3,1.2,-.2))],.05,dark,{seg:60}));
   // ---- two screens: the cooling curve, and a second screen that follows the step
   const screen=(x,z,w,ry,y0)=>{const gg=S.group();gg.position.set(x,TOP,z);gg.rotation.y=ry;const hU=w*260/420,cy=y0+hU/2;
     for(const sx of [-w/2+.4,w/2-.4]){gg.add(S.cyl(.06,.06,cy,steel,{at:[sx,cy/2,-.12],seg:12}));gg.add(S.rbox(.7,.08,.7,.04,offW,{at:[sx,.04,-.12]}))}
     gg.add(S.rbox(w+.3,hU+.3,.12,.08,white,{at:[0,cy,-.08]}));const pn=S.panel(1000,620,w);pn.position.set(0,cy,0);gg.add(pn);return {g:gg,pn,key:"",t:0}};
-  const SA=screen(-9.4,-2.4,6.2,.38,3.0),SB=screen(9.6,-2.6,6.2,-.38,3.0);
+  const SA=screen(-10.0,-3.0,6.2,.42,3.0),SB=screen(10.4,-3.6,6.2,-.42,3.0);
   // ---- the particle window: a magnifier on an arm, looking at the ice front on the drum
-  const LS=1.05,lens=S.group();lens.position.set(5.6,5.2,4.6);lens.rotation.y=-.3;
+  const LS=1.05,lens=S.group();lens.position.set(6.6,4.5,5.0);lens.rotation.set(-.1,.15,0);
   lens.add(S.torus(LR*LS+.09,.1,mat("plastic",PAL.deep.sky,{rough:.35}),{ts:72}));
   lens.add(S.cyl(LR*LS+.05,LR*LS+.05,.06,mat("plastic","#FBF3F5",{rough:.7,coat:.1}),{rot:[Math.PI/2,0,0],at:[0,0,-.06],seg:64,cast:false}));
   lens.add(S.cyl(.3,.3,.26,mat("plastic",PAL.case.sky,{rough:.4}),{rot:[Math.PI/2,0,0],at:[0,0,-.22],seg:24}));
@@ -493,13 +495,13 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
     const fr=S.box(2*Math.cos(a0)*LR*LS,.04,.02,mat("flat","#EAF4FC"),{cast:false});fr.position.set(0,YD*LS+.02,-.01);lens.add(fr)}
   const front=S.cyl(LR*LS+.05,LR*LS+.05,.02,mat("glass","#ffffff",{opacity:.07}),{rot:[Math.PI/2,0,0],at:[0,0,.22],seg:64,cast:false});front.renderOrder=9;lens.add(front);
   S.scene.add(lens);
-  const lstand=S.group();lstand.position.set(6.0,TOP,4.2);lstand.add(S.rbox(1.0,.1,1.0,.04,offW,{at:[0,.05,0]}));lstand.add(S.cyl(.06,.06,3.0-LR*LS*.0,steel,{at:[0,1.5,0],seg:14}));S.scene.add(lstand);
-  S.scene.add(S.tube([[6.0,TOP+3.0,4.2],[5.95,TOP+3.15,4.3],[5.75,5.2-LR*LS-.2,4.55],[5.65,5.2-LR*LS-.05,4.6]],.05,steel,{seg:24}));
-  const O=S.swarm(170,new THREE.SphereGeometry(RO*LS,14,10),mat("plastic","#ffffff",{rough:.35}),{colors:true});lens.add(O);
-  const Hs=S.swarm(340,new THREE.SphereGeometry(.036*LS,10,8),mat("plastic","#ffffff",{rough:.35}),{});lens.add(Hs);
+  const lstand=S.group();lstand.position.set(7.0,TOP,4.6);lstand.add(S.rbox(1.0,.1,1.0,.04,offW,{at:[0,.05,0]}));lstand.add(S.cyl(.06,.06,2.4,steel,{at:[0,1.2,0],seg:14}));S.scene.add(lstand);
+  S.scene.add(S.tube([[7.0,TOP+2.4,4.6],[6.95,TOP+2.55,4.7],[6.7,4.5-LR*LS-.2,4.95],[6.62,4.5-LR*LS-.05,5.0]],.05,steel,{seg:24}));
+  const O=S.swarm(170,new THREE.SphereGeometry(RO*LS,10,8),mat("plastic","#ffffff",{rough:.35}),{colors:true});lens.add(O);
+  const Hs=S.swarm(340,new THREE.SphereGeometry(.036*LS,7,5),mat("plastic","#ffffff",{rough:.35}),{});lens.add(Hs);
   const ring6=S.swarm(24,new THREE.TorusGeometry(.085*LS,.024*LS,6,6),mat("plastic","#F49A5E",{rough:.4}),{});lens.add(ring6);
   const ring5=S.swarm(24,new THREE.TorusGeometry(.085*LS,.024*LS,6,5),mat("plastic","#F49A5E",{rough:.4}),{});lens.add(ring5);
-  const hb=S.swarm(240,new THREE.CylinderGeometry(.009*LS,.009*LS,1,5),mat("flat",PAL.deep.sky,{opacity:.55,depthWrite:false}),{});lens.add(hb);
+  const hb=S.swarm(240,new THREE.CylinderGeometry(.012*LS,.012*LS,1,5),mat("flat",PAL.deep.sky,{opacity:.75,depthWrite:false}),{});lens.add(hb);
   const fx=S.puffs(30,"#F6A27E");lens.add(fx);const fxm=S.puffs(20,"#8FC3F0");lens.add(fxm);const heatP=S.puffs(30,"#F09872");lens.add(heatP);
   {lens.updateMatrixWorld(true);const tgt=W(2.4,AX,1),lm=mat("flat",PAL.deep.sky,{opacity:.26,depthWrite:false});
     [[0,1],[0,-1],[1,0],[-1,0]].forEach(([a,b])=>{const p0=lens.localToWorld(V3(a*(LR*LS+.1),b*(LR*LS+.1),0));const m=S.tube([[p0.x,p0.y,p0.z],[tgt.x,tgt.y,tgt.z]],.012,lm,{seg:2,cast:false});m.renderOrder=4;S.scene.add(m)})}
@@ -515,13 +517,13 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
   const lDrink=S.label({cls:"big",off:[44,-56]}),lBack=S.label({cls:"big",off:[-50,-40]}),lPow=S.label({off:[30,26]}),lLens=S.label({cls:"big",off:[30,-70]}),lShell=S.label({cls:"hot",off:[-40,50]}),lComp=S.label({off:[-40,40]});
   // ---- views (each has a wider twin for narrow, phone-shaped canvases)
   const view0=S.view;S.view=(name,pos,tg,o)=>{view0(name,pos,tg,o);view0(name+"_n",pos.map((v,i)=>tg[i]+(v-tg[i])*1.5),tg,Object.assign({},o,{max:(o.max||40)*1.4}))};
-  S.view("machine",[8.6,7.6,13.2],[0,3.7,.6],{min:4,max:34});
-  S.view("curve",[-3.6,7.4,15.6],[-4.6,4.4,-.8],{min:4,max:36});
-  S.view("bonds",[8.0,6.6,12.6],[4.6,5.0,3.2],{min:3,max:30});
-  S.view("sugar",[6.0,7.8,15.8],[4.2,4.8,-.9],{min:4,max:36});
-  S.view("auger",[4.8,8.8,8.6],[0,6.0,.8],{min:2.5,max:30});
-  S.view("energy",[11.4,8.4,8.6],[3.6,4.2,-2.6],{min:4,max:36});
-  S.view("all",[.6,12.8,26.5],[0,3.7,-.6],{min:8,max:60});
+  S.view("machine",[-14.2,9.8,13.6],[0,3.9,.2],{min:5,max:40});
+  S.view("curve",[-6.8,8.6,17.2],[-5.6,4.4,-1.2],{min:5,max:40});
+  S.view("bonds",[8.1,6.3,13.4],[6.1,4.4,4.6],{min:3,max:34});
+  S.view("sugar",[7.8,8.8,18.4],[5.8,4.8,-1.6],{min:5,max:40});
+  S.view("auger",[10.6,8.0,4.4],[0,6.0,.3],{min:3,max:34});
+  S.view("energy",[14.2,9.6,9.4],[4.6,4.0,-2.6],{min:5,max:40});
+  S.view("all",[.6,13.6,29.5],[0,3.8,-.8],{min:8,max:64});
   const SHOW={machine:["comp","cond","fan","valve","drum","aug","tap","probe","motor"],curve:[lDrink,"probe"],bonds:[lLens,lDrink],sugar:[lDrink],auger:["aug",lShell,lDrink],energy:[lBack,lPow,"comp","cond","fan"],test:[lDrink,lBack,lComp]};
   S.goView("machine",true);S.setShadowBox(13,[0,0,-.5]);has3D=true;
   if(/[?&]debug\b/.test(location.search))try{window.__slushie=Object.assign(window.__slushie||{},{S,s,MG})}catch(e){}
@@ -545,7 +547,7 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
       const cold=S.clamp((6-r.T)/10,0,1)*(s.comp?1:.5);PT.drumM.color.set(PAL.steel).lerp(col.set("#EAF4FC"),cold);
       const dl=r.shell/200;PT.shell.visible=dl>.01;if(dl>.01)PT.shell.scale.set((2.6+dl)/2.6,1+dl/11.6,(2.6+dl)/2.6);
       // the drink turns to slush: paler and more opaque as the share of ice rises
-      PT.liqM.color.set(DRINK).lerp(col.set(FROST),r.jam?1:Math.min(1,phi/.6));PT.liqM.opacity=.42+.45*Math.min(1,phi/.6);
+      PT.liqM.color.set(DRINK).lerp(col.set(FROST),r.jam?1:Math.min(1,phi/.6));PT.liqM.opacity=r.jam?.8:.3+.3*Math.min(1,phi/.6);
       // ice crystals on the drum: grow while ice forms, flicked off when the auger's blade passes
       const forming=run&&(r.mi>.5||r.T<tfOf(r.w)+.4),tb=ATURN*2*Math.PI/(AZ1-AZ0);
       for(let i=0;i<240;i++){const c=DI[i];const bth=augRot+(c.z-AZ0)*tb,d=Math.atan2(Math.sin(bth-c.th),Math.cos(bth-c.th));
@@ -568,11 +570,11 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
       // ---- the particle window
       const isK=k==="bonds"||k==="sugar"||k==="test"||k==="all";let n=0,nh=0,nb=0,n6=0,n5=0;
       for(const m of LW.mols){const a=Math.max(0,Math.min(1,m.a));if(a<=.02||n>=170)continue;const jx=m.st==="ice"?Math.sin(t*13+m.rnd*40)*.008:0,jy=m.st==="ice"?Math.cos(t*11+m.rnd*30)*.008:0;
-        O.put(n,(m.x+jx)*LS,(m.y+jy)*LS,.04,a);O.tint(n,m.st==="liq"?"#6FA3E8":"#4F86D6");n++;
+        O.put(n,(m.x+jx)*LS,(m.y+jy)*LS,.04,a);O.tint(n,m.st==="liq"?"#9CC4F2":"#3466B8");n++;
         for(const h of hAtoms(m)){if(nh>=340)break;Hs.put(nh++,(m.x+jx+h[0]*.075)*LS,(m.y+jy+h[1]*.075)*LS,.07,a)}}
       for(let i=n;i<170;i++)O.put(i,0,0,-9,.0001);for(let i=nh;i<340;i++)Hs.put(i,0,0,-9,.0001);O.done();Hs.done();
       const bonds=iceBonds().concat(liquidBonds(36));for(const [a,b] of bonds){if(nb>=240)break;const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);if(L<1e-4)continue;dir.set(dx/L,dy/L,0);q.setFromUnitVectors(UP,dir);
-        hb.putS(nb++,(a.x+dx/2)*LS,(a.y+dy/2)*LS,.02,1,L*LS*(a.st==="ice"?.78:.6),1,q)}for(let i=nb;i<240;i++)hb.put(i,0,0,-9,.0001);hb.done();
+        const th=a.st==="ice"?1.7:.7;hb.putS(nb++,(a.x+dx/2)*LS,(a.y+dy/2)*LS,.02,th,L*LS*(a.st==="ice"?.78:.6),th,q)}for(let i=nb;i<240;i++)hb.put(i,0,0,-9,.0001);hb.done();
       for(const g2 of LW.sug){const a=Math.max(0,Math.min(1,g2.a));if(a<=.02)continue;const cx=Math.cos(g2.th),sy=Math.sin(g2.th);
         if(n6<24)ring6.put(n6++,(g2.x-cx*.085)*LS,(g2.y-sy*.085)*LS,.05,a,0,0,g2.th);if(n5<24)ring5.put(n5++,(g2.x+cx*.09)*LS,(g2.y+sy*.09)*LS,.05,a,0,0,g2.th)}
       for(let i=n6;i<24;i++)ring6.put(i,0,0,-9,.0001);for(let i=n5;i<24;i++)ring5.put(i,0,0,-9,.0001);ring6.done();ring5.done();
@@ -616,13 +618,13 @@ const steps=[
   chips:["pin","qc","qout","temp"],onStep:()=>{std();s.playing=true}},
  {k:"curve",lab:"Cooling curve",cap:"Pure water this time (0% sugar). Press Play and watch the probe. The temperature falls, then stays flat at 0 °C while ice forms, even though the machine keeps taking heat out. The second screen splits the energy into cooling and freezing.",speed:SP,speedLabel:"60× real time",controls:["play","fresh","skip","w"],
   big:"<b>The big idea:</b> on a cooling curve, a sloping line means the particles are slowing down, so the temperature falls. The flat part is the change of state. The energy removed there comes from attractions forming as the water freezes, not from the particles slowing, so the temperature stays the same.",
-  exam:"While the water freezes, its temperature stays at 0 °C. Heat is still being removed, but it comes from water molecules forming hydrogen bonds (attractions between molecules) as they join the ice lattice, which releases energy. Energy for a temperature change is E = mcΔT; energy for a change of state is E = mL, with L = 334 J g⁻¹ for water.",
+  exam:"While the water freezes, its temperature stays at 0 °C. Heat is still being removed, but this energy is released as attractions (intermolecular forces) form between the water molecules as they join the solid, so the particles don't slow down and the temperature stays the same. Energy for a temperature change is E = mcΔT; energy for a change of state is E = mL, with L = 334 J g⁻¹ for water.",
   trap:"Thinking the machine has stopped working on the flat part. It is taking heat out just as fast; that energy is released as the ice forms.",
   chips:["temp","time","ice","ecool","efrz"],onStep:()=>{std({w:0});s.playing=true}},
  {k:"bonds",lab:"Particles and bonds",cap:"Look through the particle window at the ice front on the drum. Water molecules in the liquid tumble past each other. As heat is taken away, some lock into the ice lattice, and each one gives out a little energy (the orange flash). Switch the cooling off and watch the ice melt.",speed:SP,speedLabel:"60× real time",controls:["play","fresh","comp"],
-  big:"<b>The big idea:</b> freezing forms attractions (hydrogen bonds) between water molecules, so it is exothermic: energy is released, and the machine carries it away. Melting breaks those attractions, so it is endothermic: energy has to be taken in from the surroundings.",
-  exam:"When water freezes, the molecules form hydrogen bonds and settle into a fixed, open hexagonal lattice. Forming attractions releases energy, so freezing is exothermic. Melting is endothermic, because energy is needed to break the hydrogen bonds between the molecules. The open lattice holds the molecules further apart than in the liquid, so ice is less dense than water and floats.",
-  trap:"Saying the bonds inside each water molecule break when ice melts. Only the attractions between molecules break; every H₂O stays whole.",
+  big:"<b>The big idea:</b> freezing forms attractions between water molecules, so it is exothermic: energy is released, and the machine carries it away. Melting breaks those attractions, so it is endothermic: energy has to be taken in from the surroundings. In water these attractions are hydrogen bonds. For AS91164 you can call them intermolecular forces; you don't have to name the type.",
+  exam:"When water freezes, attractions (intermolecular forces) form between the molecules as they settle into a fixed lattice, and energy is released to the surroundings, so freezing is exothermic. Melting is endothermic, because energy must be absorbed to break the attractions between the molecules. In ice these attractions are hydrogen bonds, which hold the molecules in an open lattice, so ice is less dense than liquid water and floats.",
+  trap:"Saying the covalent bonds inside each water molecule break when ice melts. Only the attractions between molecules break; every H₂O stays whole.",
   chips:["temp","ice","state","comp"],onStep:()=>{std();primeToIce(30);s.playing=true}},
  {k:"sugar",lab:"Why sugar makes slush",cap:"Sugar gets in the way. Its molecules make it harder for water to join the ice, so a sugary drink starts to freeze below 0 °C. As ice forms, the syrup left behind gets more concentrated and freezes at an even lower temperature. Change the sugar and see what the machine makes at −3 °C.",speed:SP,speedLabel:"60× real time",controls:["play","fresh","skip","w"],
   big:"<b>The big idea:</b> pure water freezes solid at one temperature. Syrup doesn't: as it freezes, the sugar is left in less and less water, so its freezing point keeps dropping. At the machine's −3 °C the drink settles as ice crystals in syrup: slush. Too little sugar and it sets hard; too much and it barely freezes.",
@@ -710,7 +712,7 @@ const CFG={kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3d:slushie3d,
   papers:[{label:"NZQA: Chemistry past exams",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/chemistry/"},
     {label:"2025 paper, AS91164",url:"https://www.nzqa.govt.nz/nqfdocs/ncea-resource/exams/2025/91164-exm-2025.pdf"},
     {label:"2025 marking schedule",url:"https://www.nzqa.govt.nz/nqfdocs/ncea-resource/schedules/2025/91164-ass-2025.pdf"}],
-  truth:"The machine is assembly's own design, not a model of any product. Real numbers: freezing (or melting) 1 g of water takes 334 J, and warming 1 g of liquid water by 1 °C takes 4.18 J (Case Western Reserve University); ice takes about 2 J g⁻¹ °C⁻¹ (Chemistry LibreTexts). The freezing points of sugar syrup come from a University of Guelph Food Science table (Leighton 1927, after Pickering 1891). Ice is about 9% less dense than liquid water (USGS), and in ice each water molecule is hydrogen-bonded to four others in an open, hexagonal structure (Chemistry LibreTexts). Heat out = heat in + work for any refrigerator (OpenStax College Physics). The model's own choices: 1 kg of drink starting at 20 °C in a 20 °C room; the syrup is given water's heat capacity; the thermostat holds −3 °C; the powers (120 W compressor, 8 W fan, 12 W auger, about 200 W taken from the drink), the 85% motor efficiency, how fast ice builds up on a still drum, the crystal sizes, and the slush bands (25–55% ice is slush; 70% jams the auger). Real drinks can cool a little below their freezing point before ice first forms; the model leaves this out. The particle window is a flat, slowed-down sketch: real ice is 3D, the sugar is exaggerated, and molecules are not to scale.",
+  truth:"The machine is assembly's own design, not a model of any product. Real numbers: freezing (or melting) 1 g of water takes 334 J, and warming 1 g of liquid water by 1 °C takes 4.18 J (Case Western Reserve University); ice takes about 2 J g⁻¹ °C⁻¹ (Chemistry LibreTexts). The freezing points of sugar syrup come from a University of Guelph Food Science table (Leighton 1927, after Pickering 1891). Ice is about 9% less dense than liquid water (USGS), because hydrogen bonds hold its molecules in an open structure with hexagonal channels (Chemistry LibreTexts). Heat out = heat in + work for any refrigerator (OpenStax College Physics). The model's own choices: 1 kg of drink starting at 20 °C in a 20 °C room; the syrup is given water's heat capacity; the thermostat holds −3 °C; the powers (120 W compressor, 8 W fan, 12 W auger, about 200 W taken from the drink), the 85% motor efficiency, how fast ice builds up on a still drum, the crystal sizes, and the slush bands (25–55% ice is slush; 70% jams the auger). Real drinks can cool a little below their freezing point before ice first forms; the model leaves this out. The particle window is a flat, slowed-down sketch: real ice is 3D, the sugar is exaggerated, and molecules are not to scale.",
   footer:"Covers AS91164 energy changes: changes of state, attractions between particles (hydrogen bonding in ice), exothermic and endothermic changes and energy calculations with E = mL. Also Year 10 science: energy transfer and transformation, conservation of energy, energy flow diagrams and percentage efficiency."
 };
 // "View in your space": the machine alone (no bench, labels or screens), at real size: 1 scene unit = 4 cm

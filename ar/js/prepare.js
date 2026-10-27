@@ -33,6 +33,7 @@ const SIMPLIFY = {
 };
 const FLAT_TYPES = new Set(['PlaneGeometry', 'CircleGeometry', 'RingGeometry', 'ShapeGeometry']);
 
+const plural = w => (/(x|s|ch|sh)$/.test(w) ? w + 'es' : w + 's');
 const triCount = g => (g.index ? g.index.count : g.attributes.position.count) / 3;
 
 function lowerGeometry(g) {
@@ -263,7 +264,7 @@ export function snapshot(root, options = {}) {
           if (tint) tint.setRGB(Math.round(tint.r * 64) / 64, Math.round(tint.g * 64) / 64, Math.round(tint.b * 64) / 64);
           sph.copy(geo.boundingSphere).applyMatrix4(world);
           if (!inView(sph)) { skip('out of view'); continue; }
-          items.push({ src: geometry, matrix: world, material, tint, tris, radius: sph.radius, instanced: true, name: mesh.name || `repeated ${(geo.type || 'mesh').replace(/Geometry$/, '').toLowerCase()}s` });
+          items.push({ src: geometry, matrix: world, material, tint, tris, radius: sph.radius, instanced: true, name: mesh.name || 'repeated ' + plural((geo.type || 'mesh').replace(/Geometry$/, '').toLowerCase()) });
           report.instances++;
         }
       } else {

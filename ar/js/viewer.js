@@ -1,7 +1,7 @@
 // assembl AR viewer: rebuild the object from the link, show it calmly, and offer the room.
 import { createStage } from './stage.js';
 import { buildFromSpec, fmtSize, sizeOf, KIND_LABEL } from './builders.js';
-import { decodeHash, encodeHash, STUDIO } from './codec.js';
+import { decodeHash, encodeHash, STUDIO, VIEWER } from './codec.js';
 import { qrSVG } from './qr.js';
 import { createPlacer } from './place.js';
 import { deviceSentence } from './ar.js';
@@ -16,7 +16,7 @@ const viewBtn = $('viewBtn'), viewLbl = viewBtn.querySelector('.lbl'), viewBar =
 
 const placer = createPlacer({
   source: () => result && { key: result.key, object: result.object, title: result.title, mount: result.mount, fixedScale: result.fixedScale,
-    sceneViewer: result.sceneViewer ? new URL(result.sceneViewer, location.href).href : null, qrURL: location.href,
+    sceneViewer: result.sceneViewer ? new URL(result.sceneViewer, location.href).href : null, qrURL: result.url,
     snapshotOptions: { unitsPerMetre: 1, scale: 'real', maxTriangles: 300000 } },
   onState(state, info) {
     viewBtn.disabled = state === 'busy';
@@ -58,7 +58,8 @@ async function load() {
   try {
     const r = await buildFromSpec(spec);
     if (id !== buildId) return;
-    r.key = id; r.size = sizeOf(r.object); result = r;
+    r.key = id; r.size = sizeOf(r.object); r.url = VIEWER.href + '#' + encodeHash(spec); result = r;
+    if (location.hash.slice(1) !== encodeHash(spec)) history.replaceState(null, '', r.url);
     if (stage) stage.setObject(r.object, { animate: true });
     $('vTitle').textContent = r.title;
     $('vKind').textContent = KIND_LABEL[r.kind];
@@ -67,6 +68,7 @@ async function load() {
     $('dims').lastElementChild.textContent = fmtSize(r.size);
     $('scaleChip').textContent = r.fixedScale ? 'Real size in AR' : 'Resizable in AR';
     $('editLink').href = STUDIO.href + '#' + encodeHash(spec);
+    renderQR();
     setTimeout(() => placer.prefetch(), 600);
   } catch (e) {
     console.warn(e);
@@ -74,14 +76,13 @@ async function load() {
   }
 }
 
-placer.ready.then(s => {
-  $('deviceNote').textContent = deviceSentence(s.mode);
-  if (s.mode === 'none') {
-    $('vQR').hidden = false;
-    $('vQRBox').innerHTML = qrSVG(location.href, { style: 'assembly', size: 300, centre: { kind: 'cube' } }) || '';
-    if (LOCAL) $('vQR').insertAdjacentHTML('beforeend', `<p class="local-note">This page is on <b>${esc(location.host)}</b>, which a phone can’t reach. The code works once it’s on assembl.co.nz.</p>`);
-  }
-});
+function renderQR() {
+  if (placer.mode !== 'none' || !result) return;
+  $('vQR').hidden = false;
+  $('vQRBox').innerHTML = qrSVG(result.url, { style: 'assembly', size: 300, centre: { kind: 'cube' } }) || '';
+  if (LOCAL && !$('vQR').querySelector('.local-note')) $('vQR').insertAdjacentHTML('beforeend', `<p class="local-note">This page is on <b>${esc(location.host)}</b>, which a phone can’t reach. The code works once it’s on assembl.co.nz.</p>`);
+}
+placer.ready.then(s => { $('deviceNote').textContent = deviceSentence(s.mode); renderQR(); });
 viewBtn.addEventListener('click', () => { if (stage) stage.finish(); placer.activate(); });
 async function dl(which, btn) {
   if (!result) return;
