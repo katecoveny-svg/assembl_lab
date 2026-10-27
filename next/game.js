@@ -488,8 +488,8 @@ class AudioEngine {
 }
 
 /* ---------------- Three.js island scene ----------------
-   The assembly 3D look (study/kit3d.js): a pale daylight sky, soft studio light from RoomEnvironment, one warm key
-   light with soft shadows, neutral tone mapping, pastel low-poly land and clear water. The island changes only to show
+   In the assembly palette: a pale daylight sky, a bright sky light and one warm key light with shadows, neutral tone
+   mapping, pastel low-poly land and clear water. The island changes only to show
    the game state: wetlands, trees, solar panels, seawall, homes and the bike path appear as projects are built,
    biodiversity sets the tree and bird counts, emissions tint the haze, and storms darken the sky and bring rain. */
 
@@ -501,7 +501,7 @@ const PALETTE = {
   concrete: 0xE6E0D6, path: 0xFFF8EC, rider: 0xE8688A, ink: 0x222A55, sun: 0xF7E7A6, mint: 0x2A7D63, rain: 0x6E87B8,
 };
 
-function makeScene3D(THREE, container, reducedMotion, addons) {
+function makeScene3D(THREE, container, reducedMotion) {
   const rng = mulberry32(0xC0FFEE); // fixed layout seed: the island itself is stable
   const scene = new THREE.Scene();
   const skyCol = new THREE.Color(PALETTE.sky);
@@ -509,40 +509,36 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   scene.fog = new THREE.Fog(PALETTE.sky, 60, 150);
 
   const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 320);
-  const camBase = new THREE.Vector3(0, 15, 25);
-  const camLook = new THREE.Vector3(0, 0.8, 0.6);
+  const camBase = new THREE.Vector3(0, 10.5, 26);
+  const camLook = new THREE.Vector3(0, 2.0, 0);
   camera.position.copy(camBase);
   camera.lookAt(camLook);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); // DPR cap
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); // DPR cap: a landscape does not need more
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   container.appendChild(renderer.domElement);
 
-  // soft studio light (RoomEnvironment) plus one warm key with soft shadows, as in kit3d.js
-  if (addons && addons.RoomEnvironment) {
-    const pm = new THREE.PMREMGenerator(renderer);
-    scene.environment = pm.fromScene(new addons.RoomEnvironment(), 0.04).texture;
-    scene.environmentIntensity = 0.45;
-    pm.dispose();
-  }
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d2e6, 0.55));
-  const sun = new THREE.DirectionalLight(0xfff3e4, 2.2);
+  // a bright sky light, one warm key with soft-edged shadows, and a cool fill. Lambert and Phong toy materials keep a
+  // whole landscape cheap to draw on any device (the flatpack studio uses the kit's full PBR look for a single object)
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc0, 1.7));
+  const sun = new THREE.DirectionalLight(0xfff3e4, 1.9);
   sun.position.set(-14, 22, 10);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 70 });
   sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4;
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+  const fill = new THREE.DirectionalLight(0xdfeaff, 0.45);
   fill.position.set(10, 8, 20);
   scene.add(fill);
 
-  const std = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, metalness: 0 }, o));
-  const plastic = (color, o = {}) => new THREE.MeshPhysicalMaterial(Object.assign({ color, roughness: 0.4, metalness: 0, clearcoat: 0.6, clearcoatRoughness: 0.3 }, o));
+  const std = (color, o = {}) => { const q = Object.assign({ color }, o); delete q.roughness; delete q.metalness; delete q.clearcoat; return new THREE.MeshLambertMaterial(q); };
+  const plastic = (color, o = {}) => { const q = Object.assign({ color, specular: 0x3a3a3a, shininess: 46 }, o); delete q.roughness; delete q.metalness; delete q.clearcoat; delete q.clearcoatRoughness; return new THREE.MeshPhongMaterial(q); }; // toy plastic: a soft highlight
   const shadowy = (m, cast = true, rec = true) => { m.castShadow = cast; m.receiveShadow = rec; return m; };
 
   // a soft sun low in the sky
@@ -560,16 +556,22 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
     h += 2.6 * Math.exp(-d1 / 9) * fall;          // solar hill
     const d2 = (x + 4.2) * (x + 4.2) + (z - 3.0) * (z - 3.0);
     h += 1.7 * Math.exp(-d2 / 12) * fall;         // back ridge
-    return h;
+    const w = wetAt(x, z);                         // two shallow wetland basins
+    return h + (WET_Y - 0.06 - h) * w;
+  }
+  const WET = [[-5.2, -4.2, 2.4], [-2.2, -6.2, 1.7]], WET_Y = 0.5;
+  function wetAt(x, z) {
+    let w = 0;
+    for (const [cx, cz, r] of WET) { const d = Math.hypot(x - cx, z - cz); w = Math.max(w, d < r ? 1 : d < r + 0.9 ? 1 - (d - r) / 0.9 : 0); }
+    return w * w * (3 - 2 * w);
   }
 
   // sea (gentle animated swell)
   const oceanGeo = new THREE.PlaneGeometry(220, 220, 52, 52);
   oceanGeo.rotateX(-Math.PI / 2);
   const oceanBase = oceanGeo.attributes.position.array.slice();
-  const ocean = new THREE.Mesh(oceanGeo, plastic(PALETTE.sea, { roughness: 0.25, clearcoat: 0.8, flatShading: true }));
+  const ocean = new THREE.Mesh(oceanGeo, plastic(PALETTE.sea, { specular: 0x9fc6e8, shininess: 70 }));
   ocean.position.y = -0.15;
-  ocean.receiveShadow = true;
   scene.add(ocean);
 
   // terrain with vertex colours: pastel lowland greens to a pale tussock top, low-poly faceted
@@ -606,10 +608,10 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   // ---- trees (biodiversity): rounded low-poly canopies ----
   const MAX_TREES = 70;
   const trunkIM = new THREE.InstancedMesh(track(new THREE.CylinderGeometry(0.07, 0.11, 0.6, 6)), std(PALETTE.trunk), MAX_TREES);
-  const canopyIM = new THREE.InstancedMesh(track(new THREE.IcosahedronGeometry(0.46, 0)), plastic(0xffffff, { roughness: 0.6, clearcoat: 0.25, flatShading: true }), MAX_TREES);
+  const canopyIM = new THREE.InstancedMesh(track(new THREE.IcosahedronGeometry(0.46, 1)), std(PALETTE.leaf), MAX_TREES);
   trunkIM.castShadow = canopyIM.castShadow = true;
   {
-    const m4 = new THREE.Matrix4(), col = new THREE.Color();
+    const m4 = new THREE.Matrix4();
     let placed = 0, guard = 0;
     while (placed < MAX_TREES && guard++ < 4000) {
       const x = (rng() * 2 - 1) * 9.5, z = (rng() * 2 - 1) * 9.5;
@@ -617,12 +619,12 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
       if (h < 0.35 || h > 2.6) continue;
       if (x > 1.4 && x < 5.6 && z > -4.6 && z < 0) continue;  // keep solar hill clear
       if (x > -3.5 && x < 3.5 && z > 3.6 && z < 7) continue;   // keep the village clear
+      if (wetAt(x, z) > 0) continue;                            // and the wetland basins
       const s = 0.75 + rng() * 0.6;
       m4.makeScale(s, s, s).setPosition(x, h + 0.27 * s, z);
       trunkIM.setMatrixAt(placed, m4);
       m4.makeScale(s, s * 1.15, s).setPosition(x, h + 0.82 * s, z);
       canopyIM.setMatrixAt(placed, m4);
-      canopyIM.setColorAt(placed, col.setHex(rng() < 0.5 ? PALETTE.leaf : PALETTE.leaf2));
       placed++;
     }
   }
@@ -631,11 +633,11 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   // ---- wetlands ----
   const wetGroup = new THREE.Group();
   {
-    const wetMat = plastic(PALETTE.wet, { roughness: 0.2, clearcoat: 1 });
+    const wetMat = plastic(PALETTE.wet, { roughness: 0.2 });
     const p1 = new THREE.Mesh(track(new THREE.CircleGeometry(2.4, 28)), wetMat);
-    p1.rotation.x = -Math.PI / 2; p1.position.set(-5.2, 0.34, -4.2); p1.receiveShadow = true;
+    p1.rotation.x = -Math.PI / 2; p1.position.set(-5.2, WET_Y, -4.2); p1.receiveShadow = true;
     const p2 = new THREE.Mesh(track(new THREE.CircleGeometry(1.7, 24)), wetMat);
-    p2.rotation.x = -Math.PI / 2; p2.position.set(-2.2, 0.32, -6.2); p2.receiveShadow = true;
+    p2.rotation.x = -Math.PI / 2; p2.position.set(-2.2, WET_Y, -6.2); p2.receiveShadow = true;
     wetGroup.add(p1, p2);
     const reedIM = new THREE.InstancedMesh(track(new THREE.ConeGeometry(0.05, 0.75, 5)), std(PALETTE.reed), 64);
     reedIM.castShadow = true;
@@ -644,7 +646,7 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
       const cx = i < 40 ? -5.2 : -2.2, cz = i < 40 ? -4.2 : -6.2, rr = i < 40 ? 2.2 : 1.5;
       const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * rr;
       const s = 0.7 + rng() * 0.7;
-      m4.makeScale(s, s, s).setPosition(cx + Math.cos(a) * r, 0.55, cz + Math.sin(a) * r);
+      m4.makeScale(s, s, s).setPosition(cx + Math.cos(a) * r, WET_Y + 0.3 * s, cz + Math.sin(a) * r);
       reedIM.setMatrixAt(i, m4);
     }
     wetGroup.add(reedIM);
@@ -655,7 +657,7 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   // ---- solar microgrid (on the hill) ----
   const solarGroup = new THREE.Group();
   {
-    const panelMat = plastic(PALETTE.panel, { roughness: 0.2, clearcoat: 1, metalness: 0.1 });
+    const panelMat = plastic(PALETTE.panel, { roughness: 0.25, metalness: 0.1 });
     const panelGeo = track(new THREE.BoxGeometry(0.85, 0.06, 0.6));
     const legGeo = track(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 6));
     const legMat = std(PALETTE.steel, { metalness: 0.6, roughness: 0.35 });
@@ -743,8 +745,8 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
       const x = Math.cos(a) * 7.4, z = Math.sin(a) * 7.4;
       pts.push(new THREE.Vector3(x, heightAt(x, z) + 0.1, z));
     }
-    const pathGeo = track(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 120, 0.09, 6, true));
-    const path = new THREE.Mesh(pathGeo, std(PALETTE.path, { roughness: 0.6 }));
+    const pathGeo = track(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 120, 0.14, 6, true));
+    const path = new THREE.Mesh(pathGeo, std(0xFFFFFF));
     path.scale.y = 0.4; path.receiveShadow = true;
     bikeGroup.add(path);
     const dotGeo = track(new THREE.SphereGeometry(0.13, 12, 8));
@@ -763,7 +765,7 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   // ---- clouds ----
   const clouds = [];
   {
-    const cloudMat = std(0xffffff, { roughness: 1, transparent: true, opacity: 0.95, flatShading: true });
+    const cloudMat = std(0xffffff, { roughness: 1 });
     const puffGeo = track(new THREE.IcosahedronGeometry(1, 1));
     for (let i = 0; i < 6; i++) {
       const g = new THREE.Group();
@@ -786,14 +788,14 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   const birds = [];
   {
     const birdMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, side: THREE.DoubleSide });
-    const wingGeo = track(new THREE.PlaneGeometry(0.5, 0.16)); wingGeo.rotateX(-Math.PI / 2);
+    const wingGeo = track(new THREE.PlaneGeometry(0.42, 0.14)); wingGeo.rotateX(-Math.PI / 2); wingGeo.translate(0.21, 0, 0);
     for (let i = 0; i < 10; i++) {
       const b = new THREE.Group();
       const wl = new THREE.Mesh(wingGeo, birdMat);
       const wr = new THREE.Mesh(wingGeo, birdMat);
-      wl.position.x = -0.24; wr.position.x = 0.24;
+      wl.scale.x = -1;
       b.add(wl, wr);
-      b.userData = { wl, wr, r: 11 + rng() * 6, h: 7.5 + rng() * 4.5, speed: 0.12 + rng() * 0.12, phase: rng() * Math.PI * 2 };
+      b.userData = { wl, wr, r: 9 + rng() * 6, h: 6.5 + rng() * 3, speed: 0.12 + rng() * 0.12, phase: rng() * Math.PI * 2 };
       birds.push(b);
       scene.add(b);
     }
@@ -810,7 +812,7 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
     return p;
   }
   const BURST_N = 90;
-  const burstPts = makePoints(BURST_N, 0.22, 0xF2C83C, 0);
+  const burstPts = makePoints(BURST_N, 0.22, 0xFFFFFF, 0);
   const burstVel = new Float32Array(BURST_N * 3);
   let burstLife = 0;
   const RAIN_N = 420;
@@ -874,13 +876,17 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
   let fitScale = 1;
   function frameFor(aspect) { fitScale = aspect >= 1.45 ? 1 : Math.min(1.9, Math.pow(1.45 / aspect, 0.85)); }
 
+  let onScreen = true, seenAt = 0, drawn = false;
+  try { new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(container); } catch (e) { /* always draw */ }
   function tick(ts) {
     if (disposed) return;
     raf = requestAnimationFrame(tick);
     const now = ts * 0.001;
     const dt = Math.min(0.05, last ? now - last : 0.016);
     last = now;
-    if (paused) return;
+    if (paused || !onScreen || container.offsetParent === null) { seenAt = 0; return; }
+    // the first frame compiles the shaders: only once the island has been on screen for a moment
+    if (!drawn) { if (!seenAt) seenAt = ts; if (ts - seenAt < 700) return; drawn = true; }
     t += dt;
 
     // sea swell
@@ -907,8 +913,8 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
       const a = u.phase + t * u.speed * motion;
       b.position.set(Math.cos(a) * u.r, u.h + Math.sin(t * 0.9 + u.phase) * 0.5 * motion, Math.sin(a) * u.r);
       b.rotation.y = -a;
-      const flap = Math.sin(t * 7 + u.phase * 3) * 0.55 * motion;
-      u.wl.rotation.z = 0.25 + flap; u.wr.rotation.z = -0.25 - flap;
+      const flap = Math.sin(t * 7 + u.phase * 3) * 0.4 * motion;
+      u.wr.rotation.z = 0.2 + flap; u.wl.rotation.z = -0.2 - flap;
     }
 
     // bikes ride the path
@@ -1005,7 +1011,6 @@ function makeScene3D(THREE, container, reducedMotion, addons) {
         }
       });
       disposables.forEach((d) => { if (d && d.dispose) d.dispose(); });
-      if (scene.environment) scene.environment.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     },
@@ -1096,7 +1101,7 @@ async function initGame(host) {
   const pauseBtn = el('button', 'kg-iconbtn', 'Pause');
   pauseBtn.title = 'Pause (P)';
   pauseBtn.setAttribute('aria-label', 'Pause game');
-  top.append(titleEl, turnEl, fundsEl, spacer, muteBtn, pauseBtn);
+  top.append(turnEl, fundsEl, spacer, muteBtn, pauseBtn);
 
   const metricsEl = el('div', 'kg-metrics');
   const metricRows = {};
@@ -1127,7 +1132,7 @@ async function initGame(host) {
   const cards = PROJECTS.map((p, i) => {
     const card = el('button', 'kg-card');
     card.type = 'button';
-    card.dataset.tint = ['mint', 'lavender', 'butter', 'peach', 'sky', 'blush'][i];
+    card.dataset.tint = ['mint', 'lavender', 'sky', 'peach', 'mint', 'blush'][i];
     const cardTop = el('div', 'kg-card-top');
     const cico = el('span', 'kg-card-ico'); cico.innerHTML = SVG(ICONS[p.id]);
     cardTop.append(cico, el('span', 'kg-card-key', p.key));
@@ -1157,16 +1162,22 @@ async function initGame(host) {
   root.append(top, body, projectsEl, overlay);
   host.appendChild(root);
 
-  /* ----- view: 3D or DOM fallback ----- */
-  let view;
-  try {
-    if (!webglAvailable()) throw new Error('WebGL unavailable');
-    const THREE = await import('three');
-    const addons = {};
-    try { addons.RoomEnvironment = (await import('three/addons/environments/RoomEnvironment.js')).RoomEnvironment; } catch (e) { /* plain lights only */ }
-    view = makeScene3D(THREE, stage, reducedMotion, addons);
-  } catch (e) {
-    view = makeFallbackView(stage);
+  /* ----- view: a no-op until the 3D island (or the DOM fallback) is ready, so the title shows straight away ----- */
+  let view = { is3D: false, sync() {}, burst() {}, stormPulse() {}, setPaused() {}, renderOnce() {}, info() { return { calls: 0, triangles: 0 }; }, dispose() {} };
+  async function loadView() {
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));   // let the title card paint first
+    let v;
+    try {
+      if (!webglAvailable()) throw new Error('WebGL unavailable');
+      const THREE = await import('three');
+      v = makeScene3D(THREE, stage, reducedMotion);
+    } catch (e) {
+      v = makeFallbackView(stage);
+    }
+    if (destroyed) { v.dispose(); return; }
+    view = v;
+    view.sync(core);
+    updateScenePause();
   }
 
   /* ----- HUD updates ----- */
@@ -1467,12 +1478,11 @@ async function initGame(host) {
     renderer: view.info(),
   });
 
-  /* ----- boot into title ----- */
-  view.sync(core);
+  /* ----- boot into title, then build the island ----- */
   updateHUD();
   showTitle();
-  updateScenePause();
   window.__GAME_READY__ = true;
+  loadView().then(() => { window.__GAME_VIEW__ = view.is3D ? '3d' : 'fallback'; });
 
   return { destroy, core };
 }

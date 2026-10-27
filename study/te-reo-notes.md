@@ -466,6 +466,23 @@ Notes shown to students:
 
 Looked for but not added: "lateral line" (no Te Aka entry found); a general word for night (*pō*) was not opened, so it was left out.
 
+### Īnanga (inanga.js) — 10 kupu
+
+Added 27 October 2026. Each entry was opened on Te Aka during the build. *karohe* has no source citation in Te Aka. *mahinga kai* ([Te Aka 3355](https://maoridictionary.co.nz/word/3355)) appears in the restore step's text only. The kaitiakitanga and mahinga kai framing is on the list for cultural review (section 7).
+
+| Kupu | English | Source | Chip label | Note shown to students |
+|---|---|---|---|---|
+| **īnanga** | inanga, whitebait (Galaxias maculatus) | [Te Aka 1724](https://maoridictionary.co.nz/word/1724) |  | Te Aka's entry notes that adults migrate downstream on new or full moons to spawn when spring tides flood the plants at the water's edge. |
+| **marama** | moon | [Te Aka 3673](https://maoridictionary.co.nz/word/3673) | moon | Also means month. |
+| **tai nunui** | spring tide | [Te Aka 40269](https://maoridictionary.co.nz/word/40269) |  | From Te Reo Pūtaiao (2009). |
+| **tai ririki** | neap tide | [Te Aka 40270](https://maoridictionary.co.nz/word/40270) |  | From Te Reo Pūtaiao (2009). |
+| **toene** | spawn, roe (of fish) | [Te Aka 40356](https://maoridictionary.co.nz/word/40356) | eggs | From Te Reo Pūtaiao (2009). |
+| **paopao** | to hatch (of eggs) | [Te Aka 15278](https://maoridictionary.co.nz/word/15278) | hatch |  |
+| **ngutuawa** | river mouth, estuary | [Te Aka 4687](https://maoridictionary.co.nz/word/4687) |  |  |
+| **mataora** | life cycle | [Te Aka 39882](https://maoridictionary.co.nz/word/39882) | stage | Also means life, or alive. |
+| **karohe** | inanga migrating upstream | [Te Aka 41749](https://maoridictionary.co.nz/word/41749) |  |  |
+| **kaitiakitanga** | guardianship, stewardship | [Te Aka 2018](https://maoridictionary.co.nz/word/2018) |  |  |
+
 ### Climate (climate.js) — 10 kupu
 
 Added 27 October 2026. Each entry was checked on Te Aka during the build.
@@ -540,5 +557,6 @@ Please have a kaiako of te reo Māori, or a Māori education adviser, and ideall
 3. **Papatūānuku as "Earth"**: the card notes she is the Earth mother as well as the name Te Reo Pūtaiao uses for the planet. Confirm this sits respectfully in a physics context.
 4. **Genetics terms** (*ira*, *pītau ira*, *mātāira*) next to the DNA-profiling step: genetics touches whakapapa and Māori data sovereignty. Confirm the framing is appropriate.
 5. **Words with deeper meanings shown with an everyday gloss**: *utu* (price, and reciprocity), *papatipu* (mass, and ancestral land), *kāwanatanga* (government; a word with particular significance in Te Tiriti o Waitangi), *kaitiakitanga*, *hapū*, *mana whenua* (already in the market inquiry). Confirm the short notes are adequate.
-6. **Iwi-specific content**: none was added. The fictional Kōwhai Bay marae and the market inquiry's "local hapū" were already there; confirm they stay generic and respectful.
-7. **Terms with only a general Te Aka source** (no curriculum citation), especially *whakahohoro* (acceleration), *matūriki* (particle), *wē* (liquid), *kanoirite* (isotope), *orokati tārua* (alliteration) and *kupu ororite* (onomatopoeia). A Māori-medium science, maths or English teacher could confirm the terms kura actually use.
+6. **Kaitiakitanga and mahinga kai on the īnanga machine**: the restore step frames bank restoration as kaitiakitanga and names whitebait as mahinga kai. Confirm the framing is appropriate.
+7. **Iwi-specific content**: none was added. The fictional Kōwhai Bay marae and the market inquiry's "local hapū" were already there; confirm they stay generic and respectful.
+8. **Terms with only a general Te Aka source** (no curriculum citation), especially *whakahohoro* (acceleration), *matūriki* (particle), *wē* (liquid), *kanoirite* (isotope), *orokati tārua* (alliteration) and *kupu ororite* (onomatopoeia). A Māori-medium science, maths or English teacher could confirm the terms kura actually use.

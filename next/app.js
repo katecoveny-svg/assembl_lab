@@ -108,7 +108,8 @@ function drawObj(g,type,H,col){g.save();if(type==='tree'){g.fillStyle=col?col.tr
   else{g.fillStyle=col?col.letter:C.dLav;g.font=`700 ${H*1.25}px Fredoka, sans-serif`;g.textAlign='center';g.textBaseline='alphabetic';g.fillText('A',0,0)}
   g.restore()}
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
-function drawPinhole(){const d=+$('aperture').value,v=+$('screenDistance').value,type=$('pinholeObject').value,w=pin2.width,h=pin2.height,g=pc;
+function drawPinhole(){const narrow=(pin2.parentElement.clientWidth||760)<520;if(narrow!==(pin2.height>600)){pin2.width=narrow?520:760;pin2.height=narrow?790:460}
+  const d=+$('aperture').value,v=+$('screenDistance').value,type=$('pinholeObject').value,w=pin2.width,h=pin2.height,g=pc;
   $('apertureOut').textContent=d+' mm';$('distanceOut').textContent=v+' mm';
   const size=v/60,bright=(d/6)**2*(60/v)**2;$('pinholeSize').textContent=`Inverted · ${size.toFixed(2)}× size`;$('pinholeLight').textContent=(bright>=10?bright.toFixed(0):bright.toFixed(bright<1?2:1))+'×';
   g.clearRect(0,0,w,h);g.fillStyle='#FFFFFF';rr(g,0,0,w,h,14);g.fill();
@@ -133,25 +134,26 @@ function drawPinhole(){const d=+$('aperture').value,v=+$('screenDistance').value
   g.fillStyle=C.muted;g.font='500 11px "IBM Plex Mono", monospace';g.fillText(`${d} mm`,px,boxT-10);g.fillText(`${v} mm`,(px+sx)/2,boxB+40);
   g.strokeStyle=C.muted;g.lineWidth=1;g.beginPath();g.moveTo(px,boxB+30);g.lineTo(sx,boxB+30);g.stroke();
   // the screen, seen from behind: translucent paper, darker when less light arrives
-  const ix=Math.max(sx+40,522),iw=w-ix-20,iy=40,ih=h-90;
+  const ix=narrow?24:Math.max(sx+40,522),iw=narrow?w-48:w-ix-20,iy=narrow?520:40,ih=narrow?220:h-90;
   g.fillStyle=C.ink;g.font='600 12px "IBM Plex Mono", monospace';g.textAlign='left';g.fillText('WHAT THE SCREEN SHOWS',ix,iy-12);
   g.fillStyle='#EFE7D8';rr(g,ix,iy,iw,ih,12);g.fill();
   g.save();rr(g,ix,iy,iw,ih,12);g.clip();
-  const imgH=1500*v/2000*3.1,blur=d*(1+v/2000)*.7;
+  const imgH=1500*v/2000*(narrow?2.6:3.1),blur=d*(1+v/2000)*.7;
   g.translate(ix+iw/2,iy+ih/2);g.rotate(Math.PI);g.translate(0,imgH/2);g.filter=`blur(${blur.toFixed(1)}px)`;
   drawObj(g,type,imgH,{trunk:'#C9733F',leaf:'#7DBA55',frame:'#D9577B',letter:'#7B61C9'});g.filter='none';g.restore();
   const lit=clamp(.72+.2*Math.log2(bright),.08,1);g.fillStyle=`rgba(20,24,52,${(.8*(1-lit)).toFixed(3)})`;rr(g,ix,iy,iw,ih,12);g.fill();
   g.strokeStyle=C.ink;g.lineWidth=2;rr(g,ix,iy,iw,ih,12);g.stroke();
   g.fillStyle=C.muted;g.font='500 11px "IBM Plex Mono", monospace';g.fillText('UPSIDE DOWN AND BACK TO FRONT',ix,iy+ih+20);
-  g.fillText('SCHEMATIC · NOT TO SCALE',22,h-14);
+  g.fillText('SCHEMATIC · NOT TO SCALE',22,narrow?470:h-14);
   $('pinholeExplain').textContent=d>12?'A wider hole lets in more light, but each point of the object spreads into a bigger blob, so the image goes soft. Try a smaller hole for a sharper, dimmer image.':v>75?'A longer box makes the image bigger, but the same light is spread over a bigger area, so it gets dimmer.':'A small hole keeps each blob of light small: sharper, but dimmer. Change one thing at a time when you compare.'}
 ['aperture','screenDistance','pinholeObject'].forEach(id=>$(id).addEventListener('input',drawPinhole));
+let redrawT=0;window.addEventListener('resize',()=>{clearTimeout(redrawT);redrawT=setTimeout(()=>{drawPinhole();renderMarket()},120)});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawPinhole);drawPinhole();
 $('pinholeChallenge').addEventListener('click',()=>{$('pinholeQuestion').textContent='Investigation: predict what happens when you double the hole and keep the screen distance the same. Record brightness and sharpness, then explain it with the rays.'});
 
 /* ---------------------------------------------------------------- pop-art collage */
 let collageItems=[],collageSerial=0,dragItem=null;
-const SWATCH=[['Navy',C.ink],['Strawberry',C.straw],['Sky',C.dSky],['Mint',C.dMint],['Butter','#F2C83C'],['Lavender',C.dLav],['Peach','#F49A5E']];
+const SWATCH=[['Navy',C.ink],['Strawberry',C.straw],['Sky',C.dSky],['Mint',C.dMint],['Peach','#F49A5E'],['Lavender',C.dLav],['Blush',C.blush]];
 $('collageSwatches').innerHTML=SWATCH.map(([n,c],i)=>`<button type="button" role="radio" aria-checked="${i===0}" aria-label="${n}" style="--sw:${c}" data-c="${c}"></button>`).join('');
 $('collageSwatches').append($('collageColour'));
 $('collageSwatches').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;$('collageColour').value=b.dataset.c;$$('#collageSwatches button').forEach(x=>x.setAttribute('aria-checked',String(x===b)))});
@@ -165,7 +167,7 @@ $('undoCollage').addEventListener('click',()=>{collageItems.pop();renderCollage(
 function svgPoint(e){const p=$('collageBoard').createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform($('collageBoard').getScreenCTM().inverse())}
 $('collageBoard').addEventListener('pointerdown',e=>{const g=e.target.closest('.collage-item');if(!g)return;dragItem=+g.dataset.index;$('collageBoard').setPointerCapture(e.pointerId);e.preventDefault()});$('collageBoard').addEventListener('pointermove',e=>{if(dragItem===null)return;const p=svgPoint(e);collageItems[dragItem].x=clamp(p.x,35,665);collageItems[dragItem].y=clamp(p.y,35,420);renderCollage()});$('collageBoard').addEventListener('pointerup',()=>dragItem=null);
 $('downloadCollage').addEventListener('click',()=>{const copy=$('collageBoard').cloneNode(true);copy.setAttribute('xmlns','http://www.w3.org/2000/svg');download('my-pop-collage.svg','<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(copy),'image/svg+xml')});
-[['star',C.ink],['heart',C.straw],['bolt','#F2C83C'],['circle',C.dSky]].forEach(([t,c],i)=>{collageItems.push({type:t,size:[80,90,100,60][i],colour:c,x:[150,330,500,600][i],y:[120,250,150,330][i],rot:[-12,8,14,0][i]});collageSerial++});renderCollage();
+[['star',C.ink],['heart',C.straw],['bolt','#F49A5E'],['circle',C.dSky]].forEach(([t,c],i)=>{collageItems.push({type:t,size:[80,90,100,60][i],colour:c,x:[150,330,500,600][i],y:[120,250,150,330][i],rot:[-12,8,14,0][i]});collageSerial++});renderCollage();
 
 /* ---------------------------------------------------------------- habitat model */
 const species={kakapo:{name:'KĀKĀPŌ',needs:{space:70,shade:75,water:45,enrichment:80,quiet:85},note:'Real kākāpō live only on protected predator-free islands and in one fenced mainland sanctuary, and the public cannot visit them (Department of Conservation). This is a design exercise, not a zoo plan.',src:'https://www.doc.govt.nz/nature/native-animals/birds/birds-a-z/kakapo/habitat-and-islands/'},
@@ -214,16 +216,16 @@ $('clearWeather').addEventListener('click',()=>{weather.length=0;$('weatherRows'
 /* ---------------------------------------------------------------- made-up market and business transactions */
 const prices=[12,14,11,15,17,13,16,18],events=['An ordinary market day. Supply and demand are balanced.','A warm afternoon lifts demand.','A new stall increases supply.','A local event brings more visitors.','Fewer stalls are open, so buyers have fewer choices.','Rain cuts the number of people walking past.','A school group arrives.','The final bell: stock you still hold has an opportunity cost.'];
 let market={round:0,cash:100,stock:0};
-const MX=i=>64+i*76,MY=p=>168-(p-8)/12*146;
-function renderMarket(){const p=prices[market.round];$('marketRound').textContent=market.round+1;$('marketPrice').textContent=money(p);$('marketCash').textContent=money(market.cash);$('marketStock').textContent=market.stock;$('marketEquity').textContent=money(market.cash+market.stock*p);$('marketEvent').textContent=events[market.round];$('buyMarket').disabled=market.cash<p||market.round===7;$('sellMarket').disabled=market.stock<1;$('nextMarket').disabled=market.round===7;
+let MW=620;const MX=i=>52+12+i*(MW-52-28)/7,MY=p=>168-(p-8)/12*146;
+function renderMarket(){const svg=$('marketChart'),cw=svg.clientWidth||620;MW=cw&&cw<480?380:620;svg.setAttribute('viewBox',`0 0 ${MW} 200`);const p=prices[market.round];$('marketRound').textContent=market.round+1;$('marketPrice').textContent=money(p);$('marketCash').textContent=money(market.cash);$('marketStock').textContent=market.stock;$('marketEquity').textContent=money(market.cash+market.stock*p);$('marketEvent').textContent=events[market.round];$('buyMarket').disabled=market.cash<p||market.round===7;$('sellMarket').disabled=market.stock<1;$('nextMarket').disabled=market.round===7;
   const pts=prices.slice(0,market.round+1).map((v,i)=>[MX(i),MY(v)]);let o='';
-  [10,14,18].forEach(v=>{o+=`<line class="mk-grid" x1="52" x2="604" y1="${MY(v)}" y2="${MY(v)}"/><text class="mk-t" x="44" y="${MY(v)+4}" text-anchor="end">$${v}</text>`});
-  o+=`<line class="mk-axis" x1="52" x2="604" y1="176" y2="176"/>`;
+  [10,14,18].forEach(v=>{o+=`<line class="mk-grid" x1="52" x2="${MW-16}" y1="${MY(v)}" y2="${MY(v)}"/><text class="mk-t" x="44" y="${MY(v)+4}" text-anchor="end">$${v}</text>`});
+  o+=`<line class="mk-axis" x1="52" x2="${MW-16}" y1="176" y2="176"/>`;
   prices.forEach((_,i)=>{o+=`<text class="mk-t" x="${MX(i)}" y="194" text-anchor="middle" style="${i===market.round?'fill:#222A55;font-weight:600':''}">R${i+1}</text>${i>market.round?`<circle cx="${MX(i)}" cy="176" r="3" fill="${C.line2}"/>`:''}`});
-  if(pts.length>1)o+=`<path d="M${pts[0][0]} 176 L${pts.map(q=>q.join(' ')).join(' L')} L${pts[pts.length-1][0]} 176Z" fill="${C.butter}" opacity=".55"/>`;
+  if(pts.length>1)o+=`<path d="M${pts[0][0]} 176 L${pts.map(q=>q.join(' ')).join(' L')} L${pts[pts.length-1][0]} 176Z" fill="${C.peach}" opacity=".6"/>`;
   o+=`<polyline points="${pts.map(q=>q.join(',')).join(' ')}" fill="none" stroke="${C.ink}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
-  o+=pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="${i===pts.length-1?7:5}" fill="${i===pts.length-1?C.butter:'#fff'}" stroke="${C.ink}" stroke-width="2"/>`).join('');
-  const last=pts[pts.length-1];o+=`<text class="mk-t" x="${last[0]}" y="${last[1]-13}" text-anchor="middle" style="fill:#222A55;font-weight:600">${money(p)}</text><text class="mk-t" x="604" y="16" text-anchor="end">MADE-UP PRICES</text>`;
+  o+=pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="${i===pts.length-1?7:5}" fill="${i===pts.length-1?C.peach:'#fff'}" stroke="${C.ink}" stroke-width="2"/>`).join('');
+  const last=pts[pts.length-1];o+=`<text class="mk-t" x="${last[0]}" y="${last[1]-13}" text-anchor="middle" style="fill:#222A55;font-weight:600">${money(p)}</text><text class="mk-t" x="${MW-16}" y="16" text-anchor="end">MADE-UP PRICES</text>`;
   $('marketChart').innerHTML=o}
 $('buyMarket').addEventListener('click',()=>{const p=prices[market.round];if(market.cash>=p){market.cash-=p;market.stock++;$('marketMessage').textContent=`Bought one at ${money(p)}. Cash is now tighter, and stock is not profit until you sell it.`;renderMarket()}});
 $('sellMarket').addEventListener('click',()=>{if(market.stock){const p=prices[market.round];market.cash+=p;market.stock--;$('marketMessage').textContent=`Sold one at ${money(p)}. Compare this with what you paid, not just the sale amount.`;renderMarket()}});

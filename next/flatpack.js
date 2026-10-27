@@ -35,7 +35,7 @@ const PARTS = [
 ];
 const PART_BY_ID = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const SUGGESTED_ORDER = ["base", "back", "left", "right", "front", "roof", "perch"];
-const PLASTIC = { base: PAL.sky, back: PAL.lavender, left: PAL.mint, right: PAL.mint, front: PAL.butter, roof: PAL.blush, perch: PAL.peach };
+const PLASTIC = { base: PAL.sky, back: PAL.lavender, left: PAL.mint, right: PAL.mint, front: PAL.peach, roof: PAL.blush, perch: PAL.butter };
 
 const REDUCED = () => typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -110,7 +110,7 @@ function buildParts(mats) {
     const p = piece(pentagon(true), "front", [0, Y0 + (HW + G) / 2, D / 2 + T / 2], q(0, 0, 0), q(-Math.PI / 2, 0, 0));
     const holeY = 0.64 - (HW + G) / 2;
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.018, 12, 48), mats.trim()); ring.position.set(0, holeY, T / 2); ring.castShadow = true;
-    const dark = new THREE.Mesh(new THREE.CircleGeometry(0.17, 40), new THREE.MeshBasicMaterial({ color: "#2B3260" }));
+    const dark = new THREE.Mesh(new THREE.CircleGeometry(0.17, 40), mats.disc());
     dark.position.set(0, holeY, -T / 2 - 0.004);
     p.mesh.add(ring, dark); parts.front = { pieces: [p] };
   }
@@ -152,8 +152,8 @@ const FALLBACK_SVG = `
   <g data-part="back"><path d="M52 152V74l58-34 58 34v78z" fill="${PAL.lavender}" stroke="${PAL.ink}" stroke-width="2" stroke-dasharray="5 4"/></g>
   <g data-part="left"><rect x="40" y="76" width="12" height="76" rx="2" fill="${PAL.mint}" stroke="${PAL.ink}" stroke-width="2"/></g>
   <g data-part="right"><rect x="168" y="76" width="12" height="76" rx="2" fill="${PAL.mint}" stroke="${PAL.ink}" stroke-width="2"/></g>
-  <g data-part="front"><path d="M52 152V74l58-34 58 34v78z" fill="${PAL.butter}" stroke="${PAL.ink}" stroke-width="2.5"/><circle cx="110" cy="100" r="13" fill="#2B3260" stroke="${PAL.ink}" stroke-width="2"/></g>
-  <g data-part="perch"><rect x="104" y="122" width="12" height="8" rx="3" fill="${PAL.peach}" stroke="${PAL.ink}" stroke-width="2"/></g>
+  <g data-part="front"><path d="M52 152V74l58-34 58 34v78z" fill="${PAL.peach}" stroke="${PAL.ink}" stroke-width="2.5"/><circle cx="110" cy="100" r="13" fill="#2B3260" stroke="${PAL.ink}" stroke-width="2"/></g>
+  <g data-part="perch"><rect x="104" y="122" width="12" height="8" rx="3" fill="${PAL.butter}" stroke="${PAL.ink}" stroke-width="2"/></g>
   <g data-part="roof"><path d="M24 80 110 30l86 50-8 8-78-46-78 46z" fill="${PAL.blush}" stroke="${PAL.ink}" stroke-width="2" stroke-linejoin="round"/></g>
 </svg>`;
 
@@ -171,12 +171,13 @@ export function initFlatpack(host) {
       <div class="fp-labels" aria-hidden="true"></div>
       <p class="fp-badge">Template example · not an AI or PDF converter</p>
       <p class="fp-hint">Drag to turn · scroll or pinch to zoom</p>
+      <p class="fp-loading">Loading the 3D view…</p>
       <div class="fp-done" hidden><strong>Birdhouse built</strong><span>Every recognised part is in place.</span></div>
     </div>
     <div class="fp-dock">
       <button type="button" class="btn" data-fp="prev" aria-label="Previous step">‹ Back</button>
       <div class="fp-now"><p class="fp-stepno"></p><p class="fp-stepname" aria-live="polite">Loading…</p>
-        <div class="fp-progress" role="progressbar" aria-label="Assembly progress" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><i class="fp-bar"></i></div></div>
+        <div class="fp-progress" role="progressbar" aria-label="Build progress" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><i class="fp-bar"></i></div></div>
       <button type="button" class="btn primary" data-fp="next" aria-label="Next step">Next ›</button>
     </div>
     <div class="fp-tools">
@@ -202,6 +203,7 @@ export function initFlatpack(host) {
   </section>`;
 
   const $ = sel => host.querySelector(sel);
+  let loadingEl = host.querySelector(".fp-loading");
   const manualEl = $(".fp-manual"), viewEl = $(".fp-view"), labelsEl = $(".fp-labels"), doneEl = $(".fp-done"), hintEl = $(".fp-hint");
   const stepNoEl = $(".fp-stepno"), stepNameEl = $(".fp-stepname"), statusEl = $(".fp-status"), warnListEl = $(".fp-warnlist");
   const stepsEl = $(".fp-steps"), legendEl = $(".fp-legend"), progressEl = $(".fp-progress"), barEl = $(".fp-bar");
@@ -336,17 +338,21 @@ export function initFlatpack(host) {
   });
 
   /* ----- frame loop (paused when hidden) ----- */
-  let raf = 0, visible = true;
+  let raf = 0, visible = true, seenAt = 0;
   function tick(now) {
     raf = 0;
     if (disposed || !three) return;
-    if (!visible || document.hidden || viewEl.offsetParent === null) { raf = requestAnimationFrame(tick); return; }
+    if (!visible || document.hidden || viewEl.offsetParent === null) { seenAt = 0; raf = requestAnimationFrame(tick); return; }
+    // the first frame compiles the shaders: wait until the stage has been on screen for a moment, so flicking past
+    // the studio does not pay for it
+    if (!three.ready) { if (!seenAt) seenAt = now; if (now - seenAt < 700) { raf = requestAnimationFrame(tick); return; } }
     if (anim) {
       const k = (now - anim.t0) / anim.dur;
       if (k >= 1) { const a = anim; anim = null; setPart(a.id, a.to); updateUI(); }
       else setPart(anim.id, anim.from + (anim.to - anim.from) * k);
     }
     three.render(now);
+    if (loadingEl) { loadingEl.remove(); loadingEl = null; }
     raf = requestAnimationFrame(tick);
   }
   try { new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(viewEl); } catch (e) { /* older browsers: always render */ }
@@ -384,8 +390,8 @@ function makeScene(viewEl, labelsEl) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 200);
-  const pm = new THREE.PMREMGenerator(renderer);
-  scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.5; pm.dispose();
+  // the soft studio light: RoomEnvironment through PMREM, made on the first frame drawn
+  const makeEnv = () => { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.5; pm.dispose(); };
   scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d2e6, 0.35));
   const fill = new THREE.DirectionalLight(0xffffff, 0.45); fill.position.set(4, 5, 9); scene.add(fill);
   const sun = new THREE.DirectionalLight(0xfff3e4, 2.4); sun.castShadow = true;
@@ -398,12 +404,13 @@ function makeScene(viewEl, labelsEl) {
   // materials: lacquered birch ply, or clear-coated pastel plastic (kit3d.js "plastic")
   const tex = plyTexture();
   // two recipes only (so few shader programs to compile): textured ply, and plain clear-coated plastic
-  const ply = c => new THREE.MeshPhysicalMaterial({ map: tex, color: new THREE.Color(c), roughness: 0.55, clearcoat: 0.35, clearcoatRoughness: 0.35, sheen: 0.15, sheenColor: new THREE.Color(0xffffff) });
-  const plastic = (c, rough = 0.38) => new THREE.MeshPhysicalMaterial({ color: new THREE.Color(c), roughness: rough, metalness: 0, clearcoat: 0.65, clearcoatRoughness: 0.25, sheen: 0.25, sheenColor: new THREE.Color(0xffffff) });
+  const ply = c => new THREE.MeshPhysicalMaterial({ map: tex, color: new THREE.Color(c), roughness: 0.55, clearcoat: 0.35, clearcoatRoughness: 0.35 });
+  const plastic = (c, rough = 0.38) => new THREE.MeshPhysicalMaterial({ color: new THREE.Color(c), roughness: rough, metalness: 0, clearcoat: 0.65, clearcoatRoughness: 0.25 });
   const plyMat = ply("#FFFFFF"), dowelMat = ply(PAL.dowel);
   const plasticMats = Object.fromEntries(Object.entries(PLASTIC).map(([k, c]) => [k, plastic(c)]));
   const trimPly = plastic(PAL.dowel, 0.45), trimPlastic = plastic("#FFFFFF");
-  const mats = { part: id => (id === "perch" ? dowelMat : plyMat), trim: () => trimPly };
+  const discMat = plastic("#2B3260", 0.9);
+  const mats = { part: id => (id === "perch" ? dowelMat : plyMat), trim: () => trimPly, disc: () => discMat };
   const parts = buildParts(mats);
 
   // the build spot (a round white plate with a tinted rim) and the parts mat
@@ -414,7 +421,7 @@ function makeScene(viewEl, labelsEl) {
   const mat = new THREE.Mesh(matGeo(), plastic("#FFFFFF", 0.8)); mat.receiveShadow = true;
   scene.add(plate, rim, mat);
   // a frosted acrylic ghost shows where the next part goes
-  const ghostMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(PAL.peach), roughness: 0.12, clearcoat: 1, transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide });
+  const ghostMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(PAL.peach), roughness: 0.38, metalness: 0, clearcoat: 0.65, clearcoatRoughness: 0.25, transparent: true, opacity: 0.4, depthWrite: false });
   const ghosts = {};
   for (const id of Object.keys(parts)) {
     parts[id].pieces.forEach(pc => scene.add(pc.mesh));
@@ -522,6 +529,7 @@ function makeScene(viewEl, labelsEl) {
   const anchor = new THREE.Vector3();
   let last = 0;
   function render(now) {
+    if (!scene.environment) makeEnv();
     resize();
     const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now;
     if (tween) {
@@ -543,6 +551,7 @@ function makeScene(viewEl, labelsEl) {
     if (!donePill.textContent) donePill.textContent = "Birdhouse built";
     placePill(donePill, anchor.copy(build).add(new THREE.Vector3(0, 2.0, 0)), complete && W > 360);
     renderer.render(scene, camera);
+    ready = true;
   }
   function setState(s, st) {
     steps = s; step = st;
@@ -559,15 +568,11 @@ function makeScene(viewEl, labelsEl) {
   function dispose() {
     controls.dispose();
     scene.traverse(o => { if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); } });
-    tex.dispose(); renderer.dispose(); renderer.domElement.remove();
+    tex.dispose(); if (scene.environment) scene.environment.dispose(); renderer.dispose(); renderer.domElement.remove();
   }
-  window.__fpDbg = () => { const pts = []; const m = mat.position, sx = mat.scale.x / 2, sz = mat.scale.z / 2; for (const p of corners(build.x - 1.05, build.x + 1.05, 0, 1.0, build.z - 1.05, build.z + 1.05).concat(corners(m.x - sx, m.x + sx, 0, 0.25, m.z - sz, m.z + sz))) { const q = p.clone().project(camera); pts.push([+q.x.toFixed(2), +q.y.toFixed(2)]); } return { cam: camera.position.toArray().map(v => +v.toFixed(2)), target: controls.target.toArray().map(v => +v.toFixed(2)), W, H, aspect: camera.aspect, tall, pts }; };
-  // compile every program now, including the plastic set and the ghost, so switching later does not stall
+  // shaders compile on the first frame drawn, which only happens once the stage is on screen (see tick), so opening
+  // the studio never stalls the page while the 3D view is still scrolled out of sight
   let ready = false;
-  const warm = new THREE.Group(); Object.values(plasticMats).concat([trimPlastic]).forEach(m => { const w = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), m); w.position.y = -5; warm.add(w); }); scene.add(warm);
-  Object.values(ghosts).forEach(g => { g.visible = true; });
-  const done = () => { ready = true; const nx = steps[step] ? steps[step].part : null; for (const id of Object.keys(ghosts)) ghosts[id].visible = id === nx; scene.remove(warm); warm.traverse(o => o.isMesh && o.geometry.dispose()); };
-  try { const par = renderer.compileAsync && renderer.extensions.has("KHR_parallel_shader_compile"); (par ? renderer.compileAsync(scene, camera) : new Promise(r => setTimeout(() => { renderer.compile(scene, camera); r(); }, 30))).then(done, done); } catch (e) { done(); }
   return { renderer, scene, camera, controls, parts, build, render, setState, setMaterial, frame, dispose, get ready() { return ready; } };
 }
 

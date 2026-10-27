@@ -74,15 +74,11 @@
     },
     "study": {
       "stage": "model",
-      "why": "Thirty-eight study machines: teaching models with no live data by design."
+      "why": "Thirty-three study machines: teaching models with no live data by design."
     },
     "cars": {
       "stage": "model",
       "why": "A fictional demo dealer with Simulated stock. MBIE's weekly fuel price and household power survey feed only its running-cost estimate; no dealer's own data reaches it."
-    },
-    "junior": {
-      "stage": "model",
-      "why": "Eight curriculum machines: teaching models with no live data by design."
     },
     "year9": {
       "stage": "model",

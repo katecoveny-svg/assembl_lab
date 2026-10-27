@@ -1,38 +1,10 @@
 <!doctype html>
-<html lang="en-NZ"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Eight interactive New Zealand curriculum learning machines for Years 7–10, with 3D models, simulations, voice guidance and official NZQA pathways.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%238fd8c1'/%3E%3Cpath d='M7 16h18M16 7v18' stroke='%2324231f' stroke-width='3'/%3E%3C/svg%3E">
-<title>Junior learning machines · assembl lab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
-<script src="/ask.js" defer data-page="study"></script>
-<script src="/lab/navigation.js" defer></script>
-</head><body>
-<a class="skip" href="#machine">Skip to the machine</a>
-<header class="top"><a class="brand" href="/">assembl<span>lab</span></a><nav aria-label="Learning"><a href="/study/">Study hub</a><a class="active" href="/study/junior/">3D machines</a><a href="/study/year9/">Year 9 studio</a><a href="/study/print/">Print Lab</a><a href="/study/teacher.html">For teachers</a></nav><a class="back" href="/#explore">All experiments <span aria-hidden="true">↗</span></a></header>
-<main>
-<section class="intro" aria-labelledby="page-title"><div><p class="eyebrow">THE JUNIOR COLLECTION · AOTEAROA NEW ZEALAND</p><h1 id="page-title">Don’t just read it.<br><em>Make it move.</em></h1></div><div class="intro-copy"><p>Eight hands-on machines for Years 7–10. Change a real variable, watch the system respond, then explain what happened in your own words.</p><p class="fine">Curriculum-aligned learning tools · browser-based voice and text guide · official NZQA links</p></div></section>
-<section class="machine-picker" aria-label="Choose a learning machine"><div id="machineTabs" class="tabs" role="tablist" aria-label="Learning machines"></div></section>
-<section id="machine" class="workbench" aria-labelledby="machineTitle">
-  <div class="work-head"><div><p id="machinePhase" class="eyebrow"></p><h2 id="machineTitle"></h2><p id="machineDesc"></p></div><div class="work-meta"><span id="yearBadge"></span><span id="conceptBadge"></span></div></div>
-  <div class="bench-grid">
-    <div class="model-wrap"><div id="scene" class="scene" role="img" aria-label="Interactive three-dimensional learning model"></div><div class="scene-bar"><span id="sceneStatus"><i></i> LIVE MODEL</span><span>Drag to orbit · scroll to zoom</span><button id="resetView" type="button">Reset view</button></div><div id="fallback" class="fallback" hidden>3D is unavailable on this device. All controls, values, hints and challenges still work.</div></div>
-    <aside class="control-panel" aria-label="Machine controls"><div class="panel-label">CONTROL DESK</div><div id="controls"></div><button id="run" class="run" type="button"></button><div class="button-row"><button id="check" type="button">Check challenge</button><button id="reset" type="button">Reset</button></div><p id="challenge" class="challenge"></p><div id="result" class="result" role="status" aria-live="polite"></div></aside>
-  </div>
-  <div id="readouts" class="readouts" aria-label="Live model readouts"></div>
-</section>
-<section class="learn-grid">
- <article class="guide" aria-labelledby="guideTitle"><div class="section-num">01 / YOUR GUIDE</div><h3 id="guideTitle">Ask for a nudge.<br>Not the answer.</h3><p>Type or talk to a curriculum-scripted guide. It uses the machine’s own hint ladder and worked demonstrations. It does not connect to a generative-AI service.</p>
- <div class="guide-log" id="guideLog" aria-live="polite"><div class="message guide-message"><b>Guide</b><p>What are you noticing? Ask for a hint, say “show me”, or describe what you changed.</p></div></div>
- <form id="guideForm" class="guide-form"><label class="sr-only" for="guideInput">Ask the machine guide</label><input id="guideInput" autocomplete="off" maxlength="240" placeholder="Ask: why did that happen?"><button type="submit">Ask</button><button id="voice" type="button" aria-pressed="false" title="Speak your question">Talk</button></form>
- <div class="guide-actions"><button id="hint" type="button">Give me a hint</button><button id="demo" type="button">Show a worked example</button><button id="speak" type="button" aria-pressed="false">Read replies aloud: off</button></div><p id="voiceNote" class="fine">Speech recognition depends on your browser and may use its speech service. Typing offers the same guide. Never share personal information.</p></article>
- <article class="pathway" aria-labelledby="pathTitle"><div class="section-num">02 / FOLLOW THE PATHWAY</div><h3 id="pathTitle">From junior concept<br>to exam practice.</h3><div id="curriculumLinks"></div><div id="examLink"></div><p class="integrity"><strong>Your work stays yours.</strong> Use machines to learn and revise. For NCEA internal assessment, follow the standard’s conditions and your school’s AI/authenticity policy. Generative AI is not permitted in NCEA external assessment.</p></article>
-</section>
-<section class="schools" aria-labelledby="schoolTitle"><div><div class="section-num">03 / FOR SCHOOLS</div><h3 id="schoolTitle">A useful bench now.<br>A careful platform next.</h3></div><div class="school-grid"><div><span>WORKS IN THIS RELEASE</span><h4>No login. No student profile.</h4><p>Eight working models, accessible controls, optional browser speech, curriculum links and official assessment routes. Nothing learners type is sent by this guide.</p></div><div><span>DESIGNED FOR DEPLOYMENT</span><h4>Teacher-controlled AI, when ready.</h4><p>A future school service could add curriculum-approved prompts, managed model access, accessibility settings and teacher review—subject to privacy, safety and procurement checks.</p></div><div><span>NOT CLAIMED YET</span><h4>No fake dashboards or data.</h4><p>School accounts, cross-device progress and class analytics require a secure backend and explicit school policies. They are roadmap items, not features of this static preview.</p></div></div></section>
-</main>
-<footer><a class="brand" href="/">assembl<span>lab</span></a><p>Independent learning tools. Not endorsed by NZQA or the Ministry of Education.</p><a href="https://www.education.govt.nz/education-professionals/schools-year-0-13/digital-technology/generative-ai" target="_blank" rel="noopener">NZ school GenAI guidance ↗</a></footer>
-<script type="module" src="app.js"></script>
-</body></html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moved · assembly</title><meta name="robots" content="noindex">
+<script>
+/* The junior collection was folded into the study machines on 27 October 2026. Old links land on the machine that now teaches the topic. */
+(function(){var to={inanga:"m/inanga.html",forces:"m/bike.html",waves:"m/vinyl.html",reactions:"m/reactions.html",probability:"m/claw.html",algebra:"m/lines.html",climate:"m/climate.html",evidence:"m/claims.html"};
+var m=(new URLSearchParams(location.search).get("m")||"").toLowerCase();location.replace("/study/"+(to[m]||""))})();
+</script>
+<style>body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#F7F3EC;color:#222A55;display:grid;place-items:center;min-height:100vh;padding:0 16px}a{color:#3A6FB8}</style></head>
+<body><p>The junior machines now live in the <a href="/study/">study hub</a>.</p></body></html>

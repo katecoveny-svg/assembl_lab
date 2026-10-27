@@ -123,9 +123,9 @@ function chartSVG(){const W=420,H=260,e=s.egg;let o=F.floor(W,H);const x0=40,x1=
   for(let i=0;i<=LAST;i++)o+=`<circle cx="${r1(XN(i))}" cy="${r1(YH(hw(i)))}" r="1.6" fill="${INK}"/>`;
   for(let a=0;a<=LAST+.01;a+=LUNAR/4){const q=Math.round(a/(LUNAR/4))%4,cx=r1(XN(a)),cy=y0+16;o+=q===0?`<circle cx="${cx}" cy="${cy}" r="5" fill="${INK}"/>`:q===2?`<circle cx="${cx}" cy="${cy}" r="5" fill="#fff" stroke="${INK}"/>`:`<circle cx="${cx}" cy="${cy}" r="5" fill="#fff" stroke="${INK}"/><path d="M${cx},${cy-5} A5,5 0 0 ${q===1?1:0} ${cx},${cy+5}Z" fill="${INK}"/>`}
   o+=`<text class="t-lab" x="${x0}" y="${H-12}">NIGHT 0</text><text class="t-lab" x="${x1}" y="${H-12}" text-anchor="end">NIGHT ${LAST}</text><text class="t-lab" x="${(x0+x1)/2}" y="${H-12}" text-anchor="middle">● NEW · ○ FULL · ◐ QUARTER</text>`;
-  if(e&&s.t>=e.n){o+=`<line x1="${r1(XN(e.n))}" x2="${r1(XN(e.end))}" y1="${r1(YH(e.h))}" y2="${r1(YH(e.h))}" stroke="${P.product.strawberry}" stroke-width="2.4"/><circle cx="${r1(XN(e.n))}" cy="${r1(YH(e.h))}" r="4" fill="${P.product.strawberry}"/>`;
-    o+=e.kind==="hatch"?`<circle cx="${r1(XN(e.end))}" cy="${r1(YH(e.h))}" r="5" fill="${P.product.lime}" stroke="${INK}"/>`:`<path d="M${r1(XN(e.end)-4)},${r1(YH(e.h)-4)} l8,8 m0,-8 l-8,8" stroke="${INK}" stroke-width="2"/>`;
-    o+=`<text class="t-ink" x="${r1(Math.min(x1-120,XN(e.n)+6))}" y="${r1(YH(e.h)-8)}">egg line · ${e.kind==="hatch"?"hatch":"flooded"} night ${s.t>=e.end?e.end:"?"}</text>`}
+  if(e&&s.t>=e.n){const done=s.t>=e.end;o+=`<line x1="${r1(XN(e.n))}" x2="${r1(XN(LAST))}" y1="${r1(YH(e.h))}" y2="${r1(YH(e.h))}" stroke="${P.product.strawberry}" stroke-width="2" stroke-dasharray="${done?"0":"5 3"}"/><circle cx="${r1(XN(e.n))}" cy="${r1(YH(e.h))}" r="4" fill="${P.product.strawberry}"/>`;
+    if(done)o+=e.kind==="hatch"?`<circle cx="${r1(XN(e.end))}" cy="${r1(YH(e.h))}" r="5" fill="${P.product.lime}" stroke="${INK}"/>`:`<path d="M${r1(XN(e.end)-4)},${r1(YH(e.h)-4)} l8,8 m0,-8 l-8,8" stroke="${INK}" stroke-width="2"/>`;
+    o+=`<text class="t-ink" x="${r1(Math.min(x1-150,XN(e.n)+6))}" y="${r1(YH(e.h)-8)}">egg line${done?` · ${e.kind==="hatch"?"hatched":"flooded"} night ${e.end}`:", laid night "+e.n}</text>`}
   if(s.guessSet)o+=`<line x1="${r1(XN(s.guess))}" x2="${r1(XN(s.guess))}" y1="${y1}" y2="${y0}" stroke="${P.product.butter}" stroke-width="3"/><path d="M${r1(XN(s.guess))},${y1} h12 l-4,5 l4,5 h-12z" fill="${P.product.butter}" stroke="#B08A2A"/>`;
   o+=`<line x1="${r1(XN(s.t))}" x2="${r1(XN(s.t))}" y1="${y1-4}" y2="${y0}" stroke="${INK}" stroke-width="2"/>`;
   return o}
@@ -166,7 +166,7 @@ const steps=[
   big:"<b>The big idea:</b> one life cycle, three habitats. The sea grows the larvae, the streams grow the adults and the estuary bank hatches the eggs. Break any link and the cycle fails.",
   exam:"After hatching, īnanga larvae are carried to the sea, where they feed and grow for about six months. They come back into fresh water in spring as juvenile whitebait, move upstream to adult habitat in lowland streams and mature. Most live for about one year, spawning the following autumn.",
   trap:"Thinking whitebait and adult īnanga are different fish. They're the same species at different life stages.",chips:["month","stage","life","pass"],onStep:()=>{s.month=4;s.playing=live()}},
- {k:"harm",lab:"Human impacts",cap:"Most spawning banks are on farms or in towns. Stock eat the grass and trample eggs. Mowing leaves eggs in short grass to dry out. Clearing drains, silt from floods, and culverts or floodgates that fish can't get through add more losses. Flip the switches to see what each one does.",speed:1,speedLabel:"1.6 nights a second",controls:["fence","mow","plant","culvert","play","night"],
+ {k:"harm",lab:"Human impacts",cap:"Many spawning banks are on farms or in towns. Stock eat the grass and trample eggs. Mowing leaves eggs in short grass to dry out. Clearing drains, silt from floods, and culverts or floodgates that fish can't get through add more losses. Flip the switches to see what each one does.",speed:1,speedLabel:"1.6 nights a second",controls:["fence","mow","plant","culvert","play","night"],
   big:"<b>The big idea:</b> the spawning strip is tiny. DOC estimates there's now less than 100 hectares of it in the whole country, so damage to a thin strip of bank hits the whole population.",
   exam:"Grazing stock eat bankside vegetation and trample eggs, and mowing removes the long grass that keeps eggs damp, so more eggs dry out or are destroyed. Silt from floods can smother eggs, and clearing drains in the spawning season damages sites. Badly placed culverts, weirs and floodgates stop whitebait swimming upstream to adult habitat.",
   trap:"Blaming just one thing. Īnanga are harmed at several life-cycle stages. A strong answer links each human impact to the stage it harms.",chips:["grass","survive","pass","run"],onStep:()=>{Object.assign(s,{fence:false,mow:true,plant:false,culvert:false});s.egg=layEggs(1);s.t=7;s.playing=false}},
@@ -221,7 +221,7 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   const plinth=(x,z,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(x,.15,z);S.scene.add(p);return p};
   plinth(-0.6,-0.95,11.2,7.3,PAL.case.mint);plinth(-8.5,0.1,4.6,3.8,PAL.case.lavender);plinth(7.3,0,4.3,3.8,PAL.case.sky);
   const white=mat("plastic","#ffffff",{rough:.4}),steel=mat("metal",PAL.steel,{rough:.25}),steelD=mat("metal",PAL.steelDark,{rough:.3}),ink=mat("plastic",PAL.ink,{rough:.45}),copper=mat("metal",PAL.copper,{rough:.3}),mintP=mat("plastic","#CFECDD",{rough:.4});
-  const waterM=mat("liquid","#6FB0EE",{opacity:.38,depthWrite:false}),surfM=mat("liquid","#CFE6FA",{opacity:.3,depthWrite:false});
+  const waterM=mat("liquid","#5FA8F0",{opacity:.42,depthWrite:false}),surfM=mat("liquid","#CFE6FA",{opacity:.3,depthWrite:false});
 
   // ================================================================ the bank case: soil, water, grass, the tide staff
   const bk=S.group();bk.position.set(CX,TOP,0);
@@ -273,9 +273,9 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
       for(let i=0;i<14;i++){const m=S.mesh(leafG,tuftM);m.rotation.set(0,i*1.3,.4+(i%3)*.35);m.scale.set(.35,.45,.35);tuft.add(m)}};
     flax(-2.3,-.75,.72);flax(-1.95,.55,.62);toetoe(-2.5,1.0);cabbage(-2.45,-1.12)}
   // ================================================================ eggs (100 pearls, each standing for ten eggs) with eyespots
-  const eggsI=S.swarm(100,new THREE.SphereGeometry(.034,12,8),mat("plastic","#ffffff",{rough:.2,coat:1}),{colors:true});bk.add(eggsI);
-  const eyesI=S.swarm(100,new THREE.SphereGeometry(.011,8,6),ink);bk.add(eyesI);
-  const ej=[];for(let i=0;i<100;i++)ej.push({dx:(rnd()-.5)*.22,dy:.025+rnd()*.07,z:-1.22+(i+rnd())/100*2.44,r:rnd()});
+  const eggsI=S.swarm(100,new THREE.SphereGeometry(.04,12,8),mat("plastic","#ffffff",{rough:.2,coat:1}),{colors:true});bk.add(eggsI);
+  const eyesI=S.swarm(100,new THREE.SphereGeometry(.013,8,6),ink);bk.add(eyesI);
+  const ej=[];for(let i=0;i<100;i++){const u=(i+rnd())/100;ej.push({dx:(rnd()-.5)*.26,dy:.025+rnd()*.07,z:1.27-Math.pow(u,1.6)*2.5,r:rnd()})}   // more of them near the cut face, where you can see them
   const order=[...Array(100).keys()].sort((a,b)=>ej[a].r-ej[b].r),rank=new Int16Array(100);order.forEach((i,k)=>rank[i]=k);
   const FRESH=new THREE.Color("#FFF9EC"),RIPE=new THREE.Color("#F1E6C2"),DRIED=new THREE.Color("#CDBFA3"),TROD=new THREE.Color("#B4A285");
   const eggPos=(i,e,out)=>{const x=xAt(e.h)+ej[i].dx;return W(x,yAt(x)+ej[i].dy,ej[i].z,out)};
@@ -291,7 +291,7 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   const larvaG=new THREE.CylinderGeometry(.007,.013,.11,5);larvaG.rotateZ(Math.PI/2);
   const NL=60,lv=S.swarm(NL,larvaG,mat("plastic","#EEF4F7",{rough:.3}));S.scene.add(lv);
   const SXc=7.3,lj=[];for(let i=0;i<NL;i++)lj.push({d:rnd()*1.3,sx:SXc+(rnd()-.5)*2.8,sy:.35+rnd()*1.0,sz:(rnd()-.5)*2.1,ph:rnd()*6.28,zc:(rnd()-.5)*1.6});
-  const NW=40,wb=S.swarm(NW,fishG,mat("acrylic","#F2F7F5",{opacity:.8}),{cast:false}),wt=S.swarm(NW,tailG,mat("acrylic","#E3ECE8",{opacity:.8}),{cast:false});S.scene.add(wb,wt);
+  const NW=40,wb=S.swarm(NW,fishG,mat("plastic","#ffffff",{rough:.3,coat:.8,extra:{vertexColors:true}}),{cast:false}),wt=S.swarm(NW,tailG,mat("plastic","#C9D3C2",{rough:.4}),{cast:false});S.scene.add(wb,wt);
   const wj=[];for(let i=0;i<NW;i++)wj.push({sx:SXc+(rnd()-.5)*2.6,sy:.4+rnd()*.9,sz:(rnd()-.5)*2,ph:rnd()*6.28,tx:CX+CULV_X+(rnd()-.5)*2.4,tz:-3.45+(rnd()-.5)*.8,ty:2.38+rnd()*.25,mz:(rnd()-.5)*.8});
   // ================================================================ the mouth pipe and the sea tank
   const px0=CX+4.2,px1=SXc-1.7,PY=TOP+.5,PZ=.72,pl=px1-px0;
@@ -334,7 +334,7 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   const con=S.group();con.position.set(-8.5,TOP,0);S.scene.add(con);
   const DX=-.2,DY=1.8,DZ=.35;
   con.add(S.cyl(.07,.09,DY,steelD,{at:[DX,DY/2,DZ-.2]}));con.add(S.rbox(.6,.1,.5,.04,white,{at:[DX,.05,DZ-.2]}));
-  con.add(S.cyl(1.0,1.0,.07,white,{at:[DX,DY,DZ-.06],rot:[Math.PI/2,0,0],seg:72}));con.add(S.torus(1.0,.035,steel,{at:[DX,DY,DZ-.02],ts:96}));
+  {const face=S.cyl(1.0,1.0,.07,mat("acrylic","#FFFFFF",{opacity:.4}),{at:[DX,DY,DZ-.06],rot:[Math.PI/2,0,0],seg:72,cast:false});face.renderOrder=3;con.add(face)}   // frosted, so the cam behind it showscon.add(S.torus(1.0,.035,steel,{at:[DX,DY,DZ-.02],ts:96}));
   con.add(S.torus(.72,.006,mat("flat",PAL.ink,{opacity:.3}),{at:[DX,DY,DZ+.0],ts:96,cast:false}));
   [[Math.PI,PAL.ink],[0,"#FFFFFF"],[Math.PI/2,PAL.steelDark],[-Math.PI/2,PAL.steelDark]].forEach(([a,c])=>con.add(S.sphere(.045,mat("plastic",c,{rough:.3}),{at:[DX+.9*Math.cos(a),DY+.9*Math.sin(a),DZ],seg:12})));
   const sunL=S.sphere(.2,mat("glow",PAL.product.butter,1.4),{at:[DX-1.75,DY,DZ],cast:false});con.add(sunL);con.add(S.cyl(.03,.04,DY,steelD,{at:[DX-1.75,DY/2,DZ]}));
@@ -343,7 +343,7 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   const shell=S.sphere(.19,mat("liquid","#9FD0F5",{opacity:.45,depthWrite:false}),{cast:false});shell.position.set(DX,DY,DZ+.12);shell.renderOrder=4;con.add(shell);
   const arm=S.group(con);arm.position.set(DX,DY,DZ+.12);arm.add(S.box(.72,.03,.03,steel,{at:[.36,0,-.02]}));
   const moonG=S.group(arm);moonG.position.set(.72,0,0);
-  moonG.add(S.mesh(new THREE.SphereGeometry(.12,24,16,-Math.PI/2,Math.PI),mat("plastic","#FFF4D6",{rough:.4})));moonG.add(S.mesh(new THREE.SphereGeometry(.12,24,16,Math.PI/2,Math.PI),mat("plastic","#3B4262",{rough:.5})));
+  moonG.add(S.mesh(new THREE.SphereGeometry(.15,24,16,-Math.PI/2,Math.PI),mat("plastic","#FFF6DC",{rough:.4})));moonG.add(S.mesh(new THREE.SphereGeometry(.15,24,16,Math.PI/2,Math.PI),mat("plastic","#3B4262",{rough:.5})));
   // behind the dial: an elliptical cam on the same axle (two lobes, so two spring tides a lunar month) pushing a follower rod to the gauge
   const CA=.6,CB=.38;const cam=S.cyl(1,1,.08,mat("plastic",PAL.product.butter,{rough:.35}),{rot:[Math.PI/2,0,0],seg:48});cam.scale.set(CA,1,CB);const camG=S.group(con);camG.position.set(DX,DY,DZ-.32);camG.add(cam);
   con.add(S.cyl(.05,.05,.5,steel,{at:[DX,DY,DZ-.3],rot:[Math.PI/2,0,0],seg:12}));
@@ -369,22 +369,22 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
     const st=S.api.state;const base=Math.floor(st.t/LUNAR)*LUNAR;let nn=Math.round(base+age);if(nn>LAST)nn-=Math.round(LUNAR);st.t=S.clamp(nn,0,LAST)}});
   // ================================================================ labels
   const L=o=>S.label(o);
-  const lBank=L({off:[30,-56]}),lFish=L({off:[34,34]}),lSea=L({off:[0,-46]}),lDial=L({off:[-26,-70]}),lGauge=L({cls:"big",off:[38,-6]}),lStream=L({off:[34,-26]}),lZone=L({cls:"hot",off:[-46,-50]});
-  const lSun=L({off:[-10,-40]}),lEarth=L({off:[22,30]}),lMoon=L({off:[26,-28]}),lSpring=L({off:[40,-18]}),lNeap=L({off:[40,16]}),lCam=L({off:[-30,40]});
-  const lEggs=L({cls:"hot",off:[30,-50]}),lNext=L({off:[34,44]}),lTide=L({off:[38,-34]}),lChart=L({off:[0,-30]});
-  const lCow=L({off:[-36,-44]}),lMow=L({off:[24,-50]}),lCulv=L({off:[36,-30]}),lSw=L({off:[30,34]}),lPlant=L({off:[-36,-46]}),lFence=L({off:[-40,-30]}),lRun=L({cls:"hot",off:[-30,-56]}),lYear=L({off:[0,-56]}),lWB=L({cls:"hot",off:[34,-34]});
+  const lBank=L({off:[30,-56]}),lFish=L({off:[34,34]}),lSea=L({off:[-70,-20]}),lDial=L({off:[-26,-70]}),lGauge=L({cls:"big",off:[38,-6]}),lStream=L({off:[34,-26]}),lZone=L({cls:"hot",off:[-46,-50]});
+  const lSun=L({off:[-10,-40]}),lEarth=L({off:[-20,96]}),lMoon=L({off:[26,-28]}),lSpring=L({off:[40,-18]}),lNeap=L({off:[40,16]}),lCam=L({off:[40,70]});
+  const lEggs=L({cls:"hot",off:[30,-64]}),lNext=L({off:[34,44]}),lTide=L({off:[70,46]}),lChart=L({off:[0,-30]});
+  const lCow=L({off:[-36,-44]}),lMow=L({off:[-40,56]}),lCulv=L({off:[36,-30]}),lSw=L({off:[30,34]}),lPlant=L({off:[-40,-44]}),lFence=L({off:[-30,46]}),lRun=L({cls:"hot",off:[-40,-36]}),lYear=L({off:[0,-56]}),lWB=L({cls:"hot",off:[34,-34]});
   const allL=[lBank,lFish,lSea,lDial,lGauge,lStream,lZone,lSun,lEarth,lMoon,lSpring,lNeap,lCam,lEggs,lNext,lTide,lChart,lCow,lMow,lCulv,lSw,lPlant,lFence,lRun,lYear,lWB];
-  const SHOW={bank:[lBank,lFish,lSea,lDial,lGauge,lStream,lZone],tides:[lSun,lEarth,lMoon,lGauge,lSpring,lNeap,lCam],spawn:[lTide,lEggs,lZone],eggs:[lEggs,lNext,lChart],
+  const SHOW={bank:[lBank,lFish,lSea,lDial,lGauge,lStream,lZone],tides:[lSun,lEarth,lMoon,lGauge,lCam],spawn:[lTide,lEggs,lZone],eggs:[lEggs,lNext,lChart],
     sea:[lSea,lWB,lCulv,lStream,lYear],harm:[lCow,lMow,lCulv,lEggs,lSw],restore:[lFence,lPlant,lCulv,lEggs,lRun,lSw],test:[lGauge,lEggs,lCulv,lSw]};
   // ================================================================ views
   S.view("bank",[-0.8,6.3,14.8],[-0.7,1.4,-.8],{min:4,max:40});
-  S.view("tides",[-6.4,4.0,8.6],[-7.4,2.0,-.2],{min:3,max:26});
-  S.view("spawn",[.2,3.0,5.8],[-1.7,1.9,.1],{min:2,max:22});
-  S.view("eggs",[-.3,2.75,4.4],[-1.9,1.95,.3],{min:1.6,max:20});
+  S.view("tides",[-6.6,4.3,10.2],[-7.0,2.25,-.3],{min:3,max:26});
+  S.view("spawn",[.9,3.5,7.6],[-.6,1.55,0],{min:2,max:22});
+  S.view("eggs",[.15,2.75,5.3],[-1.2,1.75,.8],{min:1.6,max:20});
   S.view("sea",[5.4,5.8,10.6],[3.8,1.5,-1.3],{min:4,max:30});
   S.view("harm",[.9,5.6,10.4],[-.6,1.5,-.6],{min:4,max:30});
   S.view("restore",[-.2,5.0,10.0],[-.9,1.5,-.5],{min:4,max:30});
-  S.view("all",[-.8,9.2,20.5],[-.6,1.4,-.7],{min:6,max:50});
+  S.view("all",[-.8,7.6,17.6],[-.6,1.3,-.7],{min:6,max:50});
   S.goView("bank",true);
   // ================================================================ the canvas screens
   function drawChart(g,w,h){const e=s.egg;g.fillStyle="#fff";g.fillRect(0,0,w,h);const x0=70,x1=w-22,y0=h-70,y1=62,XN=v=>x0+v/LAST*(x1-x0),YH=v=>y0-(v-1.1)/(1.95-1.1)*(y0-y1);
@@ -396,8 +396,8 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
     g.fillStyle="#3E4A7C";for(let i=0;i<=LAST;i++){g.beginPath();g.arc(XN(i),YH(hw(i)),3,0,7);g.fill()}
     for(let a=0;a<=LAST+.01;a+=LUNAR/4){const k=Math.round(a/(LUNAR/4))%4,cx=XN(a),cy=y0+30;g.lineWidth=2.5;g.strokeStyle="#3E4A7C";g.fillStyle=k===0?"#3E4A7C":"#fff";g.beginPath();g.arc(cx,cy,11,0,7);g.fill();g.stroke();
       if(k===1||k===3){g.fillStyle="#3E4A7C";g.beginPath();g.arc(cx,cy,11,-Math.PI/2,Math.PI/2,k===3);g.fill()}}
-    if(e&&s.t>=e.n){g.strokeStyle=PAL.product.strawberry;g.lineWidth=5;g.beginPath();g.moveTo(XN(e.n),YH(e.h));g.lineTo(XN(e.end),YH(e.h));g.stroke();g.fillStyle=PAL.product.strawberry;g.beginPath();g.arc(XN(e.n),YH(e.h),8,0,7);g.fill();
-      g.fillStyle=e.kind==="hatch"?PAL.product.lime:"#3E4A7C";g.beginPath();g.arc(XN(e.end),YH(e.h),9,0,7);g.fill()}
+    if(e&&s.t>=e.n){const done=s.t>=e.end;g.strokeStyle=PAL.product.strawberry;g.lineWidth=4;g.setLineDash(done?[]:[12,8]);g.beginPath();g.moveTo(XN(e.n),YH(e.h));g.lineTo(XN(LAST),YH(e.h));g.stroke();g.setLineDash([]);g.fillStyle=PAL.product.strawberry;g.beginPath();g.arc(XN(e.n),YH(e.h),8,0,7);g.fill();
+      if(done){g.fillStyle=e.kind==="hatch"?PAL.product.lime:"#3E4A7C";g.beginPath();g.arc(XN(e.end),YH(e.h),9,0,7);g.fill()}}
     if(s.guessSet){g.strokeStyle="#C9A43A";g.lineWidth=5;g.beginPath();g.moveTo(XN(s.guess),y1);g.lineTo(XN(s.guess),y0);g.stroke();g.fillStyle=PAL.product.butter;g.fillRect(XN(s.guess),y1,24,16)}
     g.strokeStyle="#222A55";g.lineWidth=4;g.beginPath();g.moveTo(XN(s.t),y1-8);g.lineTo(XN(s.t),y0);g.stroke();
     g.fillStyle="#6E6A86";g.font=`600 17px ${FONT}`;g.textAlign="left";g.fillText("NIGHT 0",x0,h-10);g.textAlign="right";g.fillText(`NIGHT ${LAST}`,x1,h-10)}
@@ -448,12 +448,12 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
         if(es==="washed"){const u=S.clamp(washT/2.4,0,1);tmp.x+=u*1.6;tmp.y=Math.max(.38,yAt(tmp.x)+ej[i].dy-u*.2);sc*=1-u}
         if(es==="hatched")sc*=1-S.clamp(hatchT/.6,0,1);
         eggsI.putS(i,tmp.x,tmp.y,tmp.z,sc,sc*sy,sc);eggsI.tint(i,col);
-        const eyes=!lost&&age>=DEV*.7&&es!=="washed";eyesI.put(i,tmp.x,tmp.y+.004,tmp.z+.026*sc,eyes?sc:.001)}
+        const eyes=!lost&&age>=DEV*.7&&es!=="washed";eyesI.put(i,tmp.x,tmp.y+.005,tmp.z+.031*sc,eyes?sc:.001)}
       eggsI.done();eyesI.done();
       // ---- adult īnanga: cruise up and down the channel; on a spawning, swim up into the flooded grass at the waterline
       const showAd=k!=="sea";for(let i=0;i<NF;i++){if(!showAd){hideFish(fb,ft,i);continue}const h=fh[i];const zz=h.z0+Math.sin(t*h.sp*R+h.ph)*1.0,vz=Math.cos(t*h.sp*R+h.ph);
         W(h.x,Math.min(h.y,lvl-.16),zz,tmp);dirV.set(0,0,vz>=0?1:-1);
-        if(i<8&&e&&spawnT<3.6){const xw=xAt(lvl)+.14+(i%3)*.09;W(xw,lvl-.09-(i%2)*.05,-1.05+i*.3,tmp2);const u1=S.ease(S.clamp(spawnT/1.0,0,1)),u2=S.ease(S.clamp((spawnT-2.5)/1.0,0,1)),u=u1*(1-u2);
+        if(i<8&&e&&spawnT<3.6){const xw=xAt(lvl)+.42+(i%3)*.14,yw=Math.max(yAt(xw)+.08,(lvl+yAt(xw))/2);W(xw,Math.min(yw,lvl-.06),-1.05+i*.3,tmp2);const u1=S.ease(S.clamp(spawnT/1.0,0,1)),u2=S.ease(S.clamp((spawnT-2.5)/1.0,0,1)),u=u1*(1-u2);
           prevP.copy(tmp);tmp.lerp(tmp2,u);if(u1<1)dirV.copy(tmp2).sub(prevP);else if(u2>0)dirV.copy(prevP).sub(tmp2);else dirV.set(-1,.2,0)}
         const wig=Math.sin(t*(spawnT<3.6&&i<8?14:5)+h.ph)*.18*R;putFish(fb,ft,i,tmp,dirV.setY(0).lengthSq()<1e-6?dirV.set(1,0,0):dirV,1.45,wig)}
       fb.done();ft.done();
@@ -470,20 +470,20 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
       const drop=outY-.17-lvl;fall.visible=culvK<.5&&drop>.05;if(fall.visible){fall.scale.set(1,drop,1);fall.position.copy(W(CULV_X,lvl+drop/2,-1.33))}
       // ---- whitebait (the year step): grow at sea, run up through the pipe and channel to the culvert; those that get past live in the stream
       const showW=k==="sea",nW=showW?Math.max(3,Math.round(NW*Math.min(1,expected()/920))):0,nPass=Math.round(nW*passage()),m=s.month;
-      for(let i=0;i<NW;i++){if(i>=nW){hideFish(wb,wt,i);continue}const w=wj[i];let sc=S.lerp(.35,.6,S.clamp((m-4)/4,0,1));
+      for(let i=0;i<NW;i++){if(i>=nW){hideFish(wb,wt,i);continue}const w=wj[i];let sc=S.lerp(.6,1.0,S.clamp((m-4)/4,0,1));
         const dep=8+(i/nW)*2.2,u=(m-dep)/.9;
         if(u<0){tmp.set(w.sx+Math.sin(t*.5*R+w.ph)*.25,TOP+w.sy,w.sz+Math.cos(t*.4*R+w.ph)*.2);dirV.set(Math.cos(t*.5*R+w.ph),0,-Math.sin(t*.4*R+w.ph))}
         else{const pts=[V3(w.sx,TOP+w.sy,w.sz),V3(px1+.05,PY,PZ),W(4.1,.5,PZ),W(3.2,Math.min(.9,lvl-.2),0),W(CULV_X,Math.min(outY-.3,lvl-.15),-1.15+w.mz*.1)];
           if(i<nPass){pts.push(O.clone(),I.clone(),V3(w.tx,TOP+w.ty,w.tz))}
           const uu=S.clamp(u/(i<nPass?1.4:1),0,1);prevP.copy(path(pts,uu,tmp2));path(pts,Math.min(1,uu+.01),dirV);dirV.sub(prevP);tmp.copy(prevP);
-          if(uu>=1){if(i<nPass){sc=S.lerp(.6,1,S.clamp((m-11.5)/2.5,0,1));tmp.x+=Math.sin(t*.5*R+w.ph)*.15;tmp.z+=Math.cos(t*.4*R+w.ph)*.08;dirV.set(Math.cos(t*.5*R+w.ph),0,-.3)}
+          if(uu>=1){if(i<nPass){sc=S.lerp(1.0,1.4,S.clamp((m-11.5)/2.5,0,1));tmp.x+=Math.sin(t*.5*R+w.ph)*.15;tmp.z+=Math.cos(t*.4*R+w.ph)*.08;dirV.set(Math.cos(t*.5*R+w.ph),0,-.3)}
             else{tmp.y+=Math.abs(Math.sin(t*2.2*R+w.ph))*.35*R;tmp.z+=w.mz*.3;dirV.set(0,.4,-1)}}}
         putFish(wb,wt,i,tmp,dirV.setY(0).lengthSq()<1e-6?dirV.set(1,0,0):dirV,sc,Math.sin(t*6+w.ph)*.2*R)}
       wb.done();wt.done();
       // ---- the switch box
       SWK.forEach((key,i)=>{const on=swOn(key);levA[i]+=((on?1:0)-levA[i])*kk(8);levers[i].rotation.x=S.lerp(.5,-.5,levA[i]);leds[i].color.set(on?PAL.product.lime:PAL.product.strawberry);leds[i].emissive.set(on?PAL.product.lime:PAL.product.strawberry)});
       // ---- screens
-      const ck=`${Math.round(s.t*4)}|${e?e.n+","+e.end+","+e.kind:""}|${s.guessSet?s.guess:"-"}`;if(ck!==chartKey){chartKey=ck;chart.redraw(drawChart)}
+      const ck=`${Math.round(s.t*4)}|${e?e.n+","+e.end+","+e.kind+","+(s.t>=e.end):""}|${s.guessSet?s.guess:"-"}`;if(ck!==chartKey){chartKey=ck;chart.redraw(drawChart)}
       const yk=Math.round(s.month*8)+"";if(yk!==ywKey){ywKey=yk;yw.redraw(drawYear)}
       // ---- labels
       const n=Math.round(s.t),tt=tideType(n),ew=e&&es!=="none"?eggPos(50,e,V3(0,0,0)):null;
@@ -491,11 +491,11 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
       lFish.at(W(3.3,.8,.6)).set("Adult īnanga<small>up to about 110 mm</small>");
       lSea.at(V3(SXc,TOP+1.8,0)).set(k==="sea"?`Sea tank<b>${monthName(m)}</b><small>${stageName(m).toLowerCase()}</small>`:"Sea tank<small>where the larvae grow</small>");
       lDial.at(con.localToWorld(V3(DX,DY+1.05,DZ))).set("Moon dial<small>drag the Moon to turn it</small>");
-      lGauge.at(con.localToWorld(V3(GX,lvl+.1,GZ))).set(`Tonight's high tide<b>${lvl.toFixed(2)} m</b><small>${k==="sea"?"average":TIDE[tt].toLowerCase()} (model)</small>`).cls(tt==="spring"&&k!=="sea"?"big hot":"big");
+      lGauge.at(con.localToWorld(V3(GX,lvl+.1,GZ))).set(`Tonight's high tide<b>${lvl.toFixed(2)} m</b><small>${k==="sea"?"average":TIDE[tt].toLowerCase()} (model)${k==="tides"?"<br>red ring: spring high tide · blue: neap":""}</small>`).cls(tt==="spring"&&k!=="sea"?"big hot":"big");
       lStream.at(V3(STX,TOP+STY+.8,STZ)).set("Upstream stream<small>adult habitat</small>");
       lZone.at(W(xAt(1.85),1.95,1.1)).set("Spawning zone<small>the top edge of the spring tides</small>");
       lSun.at(con.localToWorld(V3(DX-1.75,DY+.2,DZ))).set("Sun");lEarth.at(con.localToWorld(V3(DX,DY-.15,DZ+.15))).set(`Earth<small>ocean bulge ${sp>.8?"biggest":sp<-.8?"smallest":"in between"}</small>`);
-      lMoon.at(moonG.getWorldPosition(V3(0,0,0))).set(`Moon<b>${phaseName(nn)}</b>`);
+      lMoon.at(moonG.getWorldPosition(V3(0,0,0))).set(`Moon<b>${phaseName(nn)}</b>`);lMoon.off[0]=Math.cos(th)*64;lMoon.off[1]=-Math.sin(th)*58;lEarth.off[0]=-Math.cos(th)*80;lEarth.off[1]=Math.sin(th)*74;
       lSpring.at(con.localToWorld(V3(GX+.24,1.85,GZ))).set("Spring high tide");lNeap.at(con.localToWorld(V3(GX+.24,1.25,GZ))).set("Neap high tide");
       lCam.at(con.localToWorld(V3(DX+.4,DY-.3,DZ-.32))).set("Two-lobed cam<small>two spring tides a lunar month</small>");
       lTide.at(W(xAt(lvl)+.3,lvl,1.2)).set(`${TIDE[tt]}<small>the water reaches ${lvl.toFixed(2)} m</small>`).cls(tt==="spring"?"hot":"");
@@ -505,11 +505,11 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
       lChart.at(con.localToWorld(V3(0,4.4,-1.32))).set("Tide chart");
       lCow.at(cow.localToWorld(V3(0,.6,0))).set(b.grazed?"Stock on the bank<small>eat the grass, trample eggs</small>":"Stock in the paddock<small>fenced off the bank</small>");lCow.show(k==="harm");
       lMow.at(mower.localToWorld(V3(0,.3,0))).set("Mowing<small>short grass: eggs dry out</small>");lMow.show(k==="harm"&&s.mow);
-      lCulv.at(O).set(s.culvert?`Fixed culvert<small>${Math.round(passage()*100)}% get through (model)</small>`:`Perched culvert<small>${Math.round(passage()*100)}% get through (model)</small>`).cls(s.culvert?"":"hot");
+      lCulv.off[0]=44;lCulv.off[1]=k==="restore"||k==="test"?34:-30;lCulv.at(O).set(s.culvert?`Fixed culvert<small>${Math.round(passage()*100)}% get through (model)</small>`:`Perched culvert<small>${Math.round(passage()*100)}% get through (model)</small>`).cls(s.culvert?"":"hot");
       lSw.at(swG.localToWorld(V3(0,.5,.4))).set("Switch box<small>fence · mowing · plants · culvert</small>");
       lPlant.at(W(-2.1,2.9,.5)).set(s.plant?(s.fence?"Native plants<small>thick roots and stems</small>":"Native plants<small>eaten by stock without a fence</small>"):"");lPlant.show(k==="restore"&&s.plant);
       lFence.at(W(FENCE_X,fy+.85,1.2)).set(s.fence?"Fence<small>stock kept off the bank</small>":"No fence");
-      lRun.at(V3(SXc,TOP+1.75,.9)).set(`Next autumn's run<b>${runIdx(null)}%</b><small>of this year's (model)</small>`).cls(runIdx(null)>=100?"hot":"");
+      lRun.at(W(3.4,3.0,.2)).set(`Next autumn's run<b>${runIdx(null)}%</b><small>of this year's (model)</small>`).cls(runIdx(null)>=100?"hot":"");
       lYear.at(V3(SXc+.2,TOP+3.7,-1.6)).set("The year");
       lWB.at(V3(SXc-.6,TOP+1.5,.6)).set(m<8?"Larvae at sea<small>growing for about six months</small>":`Whitebait run<b>${nPass} of ${nW} get past</b><small>the culvert (model)</small>`);
       if(k==="sea"){lWB.show(true)}
