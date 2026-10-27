@@ -1,0 +1,9 @@
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Forest textures</title>
+<style>body{font:14px system-ui,sans-serif;background:#EDE9E0;color:#222A55;margin:16px}figure{display:inline-block;margin:6px;vertical-align:top}img{max-width:220px;background:#9a9;display:block}</style></head>
+<body><h1>Downhill machine: forest textures</h1><p>Generated from code with fixed seeds. Save each file into this folder to replace it.</p><div id="out"></div>
+<script src="texgen.js"></script><script>
+const jobs=[["bark",[512,1024],[256,512],(w,h)=>TEXGEN.bark(w,h,11)],["litter",[1024,1024],[512,512],(w)=>TEXGEN.litter(w,23)],["dirt",[1024,512],[512,256],(w,h)=>TEXGEN.dirt(w,h,37)],["atlas",[1024,1024],[512,512],(w)=>TEXGEN.atlas(w,51)]];
+const out=document.getElementById("out");
+for(const [name,full,lq,fn] of jobs)for(const [sz,tag] of [[full,""],[lq,"_lq"]]){const o=fn(sz[0],sz[1]);for(const k in o){const q=k==="normal"?(name==="litter"?.78:.9):.86,url=o[k].toDataURL("image/webp",q),f=`${name}_${k}${tag}.webp`;
+  out.insertAdjacentHTML("beforeend",`<figure><img src="${url}" alt="${f}"><figcaption><a download="${f}" href="${url}">${f}</a></figcaption></figure>`)}}
+</script></body></html>

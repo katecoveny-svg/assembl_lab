@@ -330,15 +330,15 @@ function setReo(v){reoOn=!!v;try{localStorage.setItem("studyreo",reoOn?"on":"off
 const SCENES={};
 // "View in your space" (assembl AR, /ar/embed.js) on every 3D machine. A machine can hand over just its model at real size with
 // cfg.ar={build:S=>Object3D,unitsPerMetre,scale:"real",label}; otherwise what the camera sees becomes a table-top model.
-// cfg.ar=false turns it off. The code on a computer opens this page with #ar on the phone, which points at the button (a tap is still needed).
+// cfg.ar={model:"lib:bike",params,scale} uses an assembl AR library model (short shareable code). cfg.ar=false turns it off. The code on a computer opens this page with #ar on the phone, which points at the button (a tap is still needed).
 function arButton(api,cfg,want){const S=api.s3;if(!S||cfg.ar===false)return;const host=document.querySelector(".s3-host");if(!host)return;
   if(!document.getElementById("s3-ar-css")){const st=document.createElement("style");st.id="s3-ar-css";
     st.textContent=".s3-ar{position:absolute;right:10px;bottom:8px;z-index:4;pointer-events:auto;max-width:calc(100% - 20px)}.s3-ar .aar-btn{box-shadow:0 2px 0 rgba(27,36,82,.08);padding:7px 14px 7px 10px;font-size:13px;gap:7px;min-height:0}.s3-ar .aar-btn svg{width:18px;height:18px}@media (max-width:820px){.s3-ar{right:6px;bottom:5px}.s3-ar .aar-btn{padding:5px 10px 5px 8px;font-size:11.5px}.s3-ar .aar-btn svg{width:15px;height:15px}}";document.head.appendChild(st)}
   const slot=document.createElement("div");slot.className="s3-ar";host.appendChild(slot);
   import("/ar/embed.js").then(m=>{const AR=m.default||m,o=cfg.ar||{};
-    const what=o.build?{object:()=>o.build(S),unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"real"}
+    const what=o.model?{model:o.model,params:o.params||{},scale:o.scale||"real"}:o.build?{object:()=>o.build(S),unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"real"}
       :{object:()=>S.scene,camera:()=>S.camera,unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"table"};
-    const ctl=AR.button(slot,{...what,label:o.label||(matchMedia("(max-width: 820px)").matches?"View in AR":"View in your space"),title:cfg.title||"assembly",variant:"light",style:"assembly",qr:location.origin+location.pathname+"#ar"});
+    const ctl=AR.button(slot,{...what,label:o.label||(matchMedia("(max-width: 820px)").matches?"View in AR":"View in your space"),title:cfg.title||"assembly",variant:"light",style:"assembly",...(o.model?{}:{qr:location.origin+location.pathname+"#ar"})});
     api.ar=ctl;if(want)setTimeout(()=>{try{ctl.prompt()}catch(e){}},800)})
   .catch(e=>{slot.remove();console.warn("AR unavailable",e)})}
 function mount(cfg){logStudy("open");
