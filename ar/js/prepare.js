@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from '../vendor/three/utils/BufferGeometryUtils.js';
 
-const DEFAULTS = { unitsPerMetre: 1, scale: 'real', tableSize: 0.38, tableMaxHeight: 0.5, maxTriangles: 150000, maxTexture: 2048, name: 'assembl AR snapshot' };
+const DEFAULTS = { unitsPerMetre: 1, scale: 'real', tableSize: 0.38, tableMaxHeight: 0.5, maxTriangles: 150000, maxBytes: 14e6, maxTexture: 2048, name: 'assembl AR snapshot' };
 
 // constructor parameter order for geometries we can rebuild with fewer segments: [name, min] for the ones we lower
 const SIMPLIFY = {
@@ -277,14 +277,13 @@ export function snapshot(root, options = {}) {
 
   report.trianglesBefore = items.reduce((s, it) => s + it.tris, 0);
   let total = report.trianglesBefore;
-  const budget = opts.maxTriangles;
+  const replaced = new Map(), boxes = new Map();
 
-  // 1. lower segment counts where the geometry knows how it was made
-  if (total > budget) {
-    const replaced = new Map();
+  function reduce(budget) {
+    // 1. lower segment counts where the geometry knows how it was made
     for (let pass = 0; pass < 4 && total > budget; pass++) {
       const uses = new Map();
-      for (const it of items) if (!it.baked) uses.set(it.src, (uses.get(it.src) || 0) + 1);
+      for (const it of items) if (!it.baked && !it.drop) uses.set(it.src, (uses.get(it.src) || 0) + 1);
       const order = [...uses.entries()].map(([g, n]) => ({ g, n, cost: triCount(g) * n })).sort((a, b) => b.cost - a.cost);
       let changed = false;
       for (const { g, n } of order) {
@@ -294,45 +293,61 @@ export function snapshot(root, options = {}) {
         const saved = (triCount(g) - triCount(ng)) * n;
         if (saved <= 0) continue;
         for (const it of items) if (it.src === g) { it.src = ng; it.tris = triCount(ng); }
-        const first = replaced.get(g) || g;
-        replaced.set(ng, first); total -= saved; changed = true;
-        report.simplified.push({ type: g.type, uses: n, trianglesSaved: saved });
+        replaced.set(ng, replaced.get(g) || g); total -= saved; changed = true;
+        const prev = report.simplified.find(x => x.type === g.type && x.uses === n);
+        if (prev) prev.trianglesSaved += saved; else report.simplified.push({ type: g.type, uses: n, trianglesSaved: saved });
       }
       if (!changed) break;
     }
-  }
-  // 2. drop the smallest instanced items
-  if (total > budget) {
-    const inst = items.filter(it => it.instanced).sort((a, b) => a.radius - b.radius);
-    const dropped = new Map();
-    for (const it of inst) {
-      if (total <= budget) break;
-      it.drop = true; total -= it.tris;
-      dropped.set(it.name, (dropped.get(it.name) || 0) + 1);
+    // 2. drop the smallest instanced items
+    const dropAll = (list, reason) => {
+      const dropped = new Map();
+      for (const it of list) {
+        if (total <= budget) break;
+        it.drop = true; total -= it.tris;
+        dropped.set(it.name, (dropped.get(it.name) || 0) + 1);
+      }
+      for (const [name, count] of dropped) {
+        const prev = report.dropped.find(x => x.name === name && x.reason === reason);
+        if (prev) prev.count += count; else report.dropped.push({ name, count, reason });
+      }
+    };
+    if (total > budget) dropAll(items.filter(it => it.instanced && !it.drop).sort((a, b) => a.radius - b.radius), 'smallest repeated items, over the budget');
+    // 3. rounded boxes become plain boxes
+    if (total > budget) {
+      for (const it of items) {
+        if (it.drop || it.baked || !isRoundedBox(it.src)) continue;
+        if (!boxes.has(it.src)) boxes.set(it.src, plainBox(it.src));
+        const ng = boxes.get(it.src); total -= it.tris - triCount(ng); it.src = ng; it.tris = triCount(ng);
+      }
+      if (boxes.size && !report.simplified.some(x => x.type === 'RoundedBoxGeometry → box')) report.simplified.push({ type: 'RoundedBoxGeometry → box', uses: boxes.size, trianglesSaved: null });
     }
-    for (const [name, count] of dropped) report.dropped.push({ name, count, reason: 'smallest repeated items, over the triangle budget' });
+    // 4. still over: drop the smallest remaining parts
+    if (total > budget) dropAll(items.filter(it => !it.drop).sort((a, b) => a.radius - b.radius), 'smallest parts, over the budget');
   }
-  // 3. rounded boxes become plain boxes
-  if (total > budget) {
-    const done = new Map();
+  // USDZ from three's exporter is text (about 74 bytes a vertex and 26 a triangle, more with UVs), so keep the
+  // estimated file under maxBytes as well as under the triangle budget
+  const estimate = () => {
+    let b = 0;
     for (const it of items) {
-      if (it.drop || it.baked || !isRoundedBox(it.src)) continue;
-      if (!done.has(it.src)) done.set(it.src, plainBox(it.src));
-      const ng = done.get(it.src); total -= it.tris - triCount(ng); it.src = ng; it.tris = triCount(ng);
+      if (it.drop) continue;
+      const v = it.src.attributes.position.count, uv = it.material && (it.material.map || it.material.emissiveMap) ? 28 : 0;
+      const k = it.material && it.material.side !== THREE.FrontSide && FLAT_TYPES.has(it.src.type) ? 2 : 1;
+      b += k * (v * (74 + uv) + it.tris * 26);
     }
-    if (done.size) report.simplified.push({ type: 'RoundedBoxGeometry → box', uses: done.size, trianglesSaved: null });
+    return b;
+  };
+  let budget = opts.maxTriangles;
+  reduce(budget);
+  for (let i = 0; i < 4; i++) {
+    const est = estimate();
+    if (est <= opts.maxBytes || total <= 1000) break;
+    budget = Math.floor(total * (opts.maxBytes / est) * 0.96);
+    report.budgetNote = `Lowered to about ${budget.toLocaleString('en-NZ')} triangles to keep the USDZ near ${(opts.maxBytes / 1e6).toFixed(0)} MB.`;
+    reduce(budget);
   }
-  // 4. still over: drop the smallest remaining parts
-  if (total > budget) {
-    const rest = items.filter(it => !it.drop).sort((a, b) => a.radius - b.radius);
-    const dropped = new Map();
-    for (const it of rest) {
-      if (total <= budget) break;
-      it.drop = true; total -= it.tris;
-      dropped.set(it.name, (dropped.get(it.name) || 0) + 1);
-    }
-    for (const [name, count] of dropped) report.dropped.push({ name, count, reason: 'smallest parts, over the triangle budget' });
-  }
+  report.estimatedUSDZBytes = estimate();
+  report.vertices = items.reduce((s, it) => s + (it.drop ? 0 : it.src.attributes.position.count), 0);
 
   // bake, group by material, merge
   const byMat = new Map();
