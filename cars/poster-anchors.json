@@ -5,44 +5,44 @@
  "anchors": [
   {
    "id": "dash",
-   "x": 666,
-   "y": 411,
+   "x": 671,
+   "y": 413,
    "visible": true
   },
   {
    "id": "labels",
-   "x": 724,
-   "y": 387,
+   "x": 737,
+   "y": 386,
    "visible": true
   },
   {
    "id": "sticker",
-   "x": 688,
-   "y": 388,
+   "x": 694,
+   "y": 387,
    "visible": true
   },
   {
    "id": "tag",
-   "x": 775,
-   "y": 439,
+   "x": 765,
+   "y": 438,
    "visible": true
   },
   {
    "id": "door",
-   "x": 549,
-   "y": 461,
+   "x": 548,
+   "y": 459,
    "visible": true
   },
   {
    "id": "filler",
-   "x": 366,
-   "y": 410,
+   "x": 373,
+   "y": 408,
    "visible": true
   },
   {
    "id": "flag",
-   "x": 359,
-   "y": 288,
+   "x": 373,
+   "y": 273,
    "visible": true
   }
  ]

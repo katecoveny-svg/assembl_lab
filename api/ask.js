@@ -16,6 +16,7 @@ const PAGES = {
   cafe: "the café and restaurant twin: a fictional NZ café by day and restaurant by night (queues, espresso machine, kitchen pass, roster, food waste, weekly P&L) with proposed changes; figures are simulated except where labelled with Stats NZ or other sources.",
   tourism: "the Aotearoa tourism flow simulator: a 3D map of NZ visitor flows by region and month built on Stats NZ international travel and MBIE accommodation and spend data, with simulated what-ifs and frozen forecasts.",
   stay: "the accommodation twin: a fictional NZ boutique lodge, motel and holiday park simulated booking by booking (check-in queue, housekeeping, OTA commission, direct bookings) benchmarked against MBIE accommodation occupancy for the chosen region.",
+  cars: "Agent-ready cars: how an AI assistant reads a used-car listing in New Zealand (the Consumer Information Notice as data, a car check, an MCP endpoint for ChatGPT and Claude, and a phone tool for 3D captures). The dealer, Harbour Lane Motors, is fictional and every car on it is Simulated; the check works on any car the buyer describes and stores nothing. Not legal or financial advice: point people to NZTA, the PPSR and Consumer Protection.",
   lab: "assembl lab: free public-good simulations by assembl, a NZ startup.",
 };
 const SYSTEM = page => `You are the explainer on an assembl lab page about ${PAGES[page] || PAGES.lab}

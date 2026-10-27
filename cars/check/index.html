@@ -10,7 +10,7 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://assembl-lab.vercel.app/cars/check/og.jpg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="A maquette of a 2016 Toyota Aqua with the check's facts pinned to it: odometer, WOF and licence, money owing, the NZ register and fuel economy, each with its truth label.">
+<meta property="og:image:alt" content="A studio maquette of a 2016 Toyota Aqua with the check's facts pinned to it: odometer, WOF and licence, money owing, the NZ register and fuel economy, each with its truth label.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#FFFDFB" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1C1218" media="(prefers-color-scheme: dark)">
@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="modulepreload" href="/cars/check/check.js">
+<script src="/cars/carnav.js" defer></script>
 <style>
 /* assembl lab · car check. Paper, plum and one car: motion only where the check is assembling. */
 :root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--deep:#240B21;--body:#654A4E;--rose:#916A70;--line:rgba(73,43,62,.13);--line2:rgba(73,43,62,.26);
@@ -50,10 +51,6 @@ button,input,select{font:inherit;color:inherit}
 .btn:hover{background:color-mix(in srgb,var(--btn) 86%,var(--rose))}.btn[disabled]{opacity:.6;cursor:progress}
 .quiet{min-height:40px;padding:0 16px;border-radius:999px;border:0;box-shadow:inset 0 0 0 1px var(--line2);background:transparent;color:var(--ink);font:500 14px var(--sans);cursor:pointer}.quiet:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
 
-/* top line */
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:18px;padding-bottom:6px}
-.mark-word{font:500 17px/1 var(--sans);letter-spacing:-.02em;color:var(--deep);text-decoration:none}.mark-word span{color:var(--rose);font-weight:400}
-.top nav a{font-size:14px;color:var(--ink)}
 
 /* ---------- hero: the question, the form, the car ---------- */
 .hero{display:grid;grid-template-columns:minmax(300px,392px) minmax(0,1fr);grid-template-areas:"head stage" "form stage";column-gap:clamp(28px,4.4vw,64px);align-items:start;padding-top:clamp(18px,4vw,44px);padding-bottom:28px}
@@ -197,7 +194,6 @@ footer{padding:26px 0 48px;border-top:1px solid var(--line);font-size:14px}foote
 </style>
 </head>
 <body>
-<header class="top wrap"><a class="mark-word" href="/">assembl <span>lab</span></a><nav><a href="/cars/">Agent-ready cars</a></nav></header>
 <main>
 <section class="hero wrap" aria-labelledby="h1">
   <div class="head">
@@ -213,7 +209,7 @@ footer{padding:26px 0 48px;border-top:1px solid var(--line);font-size:14px}foote
       <svg class="leaders" id="leaders" aria-hidden="true"></svg>
       <div class="marks" id="marks" aria-hidden="true"></div>
       <p class="status" id="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="status-t">Your car, before the check</span></p>
-      <p class="cap" id="cap">Maquette · body style and paint, not this car</p>
+      <p class="cap" id="cap">Studio maquette · body style and paint, not this car</p>
     </div>
     <ol class="pins" id="pins" aria-label="What the check found, part by part" aria-live="polite"></ol>
     <div class="dress">
@@ -299,5 +295,7 @@ footer{padding:26px 0 48px;border-top:1px solid var(--line);font-size:14px}foote
 <footer><div class="wrap"><a href="/cars/">Agent-ready cars</a><a href="/cars/privacy/">Privacy (draft)</a><a href="/cars/terms/">Terms (draft)</a><a href="/cars/support/">Support (draft)</a><p class="fine mono">assembl lab · car check</p></div></footer>
 <noscript><p class="wrap fine">The check runs with JavaScript. Without it, add the connector URL above to ChatGPT or Claude and ask there.</p></noscript>
 <script type="module" src="/cars/check/check.js"></script>
+<script src="/lab/navigation.js" defer></script>
+<script src="/ask.js" defer data-page="cars"></script>
 </body>
 </html>

@@ -19,9 +19,9 @@ const reduced = () => mqReduce.matches, narrow = () => mqNarrow.matches;
 const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : mqDark.matches; };
 
 // ---------- the car's look: body (a fact the check can use) and paint (the picture only) ---------------------------------
-const PAINTS = [ // common NZ colours; set darker than they read, because the renderer's tone mapping lifts them
-  { id: "white", name: "White", hex: "#D9D7D3", sw: "#F1EFEB" }, { id: "silver", name: "Silver", hex: "#9A9DA1", sw: "#C4C7CA" }, { id: "grey", name: "Grey", hex: "#55585C", sw: "#76797D" },
-  { id: "black", name: "Black", hex: "#1F1E22", sw: "#29282C" }, { id: "blue", name: "Blue", hex: "#203A5E", sw: "#2F4D74" }, { id: "red", name: "Red", hex: "#7C1F1F", sw: "#9A2E2C" },
+const PAINTS = [ // common NZ colours, as satin maquette paint (the swatch is the colour as it reads on paper)
+  { id: "white", name: "White", hex: "#ECE9E4", sw: "#F1EFEB" }, { id: "silver", name: "Silver", hex: "#BFC2C5", sw: "#C4C7CA" }, { id: "grey", name: "Grey", hex: "#6E7175", sw: "#76797D" },
+  { id: "black", name: "Black", hex: "#2E2D31", sw: "#29282C" }, { id: "blue", name: "Blue", hex: "#34507A", sw: "#2F4D74" }, { id: "red", name: "Red", hex: "#9A3431", sw: "#9A2E2C" },
 ];
 const BODY_WORD = { hatch: "hatchback", sedan: "sedan", suv: "SUV", ute: "ute", van: "van" };
 // the register's BODY_TYPE → the kit's five classes (an SUV is usually a "station wagon" on the register)
@@ -113,9 +113,9 @@ addEventListener("message", async (e) => {
 // ---------- the stage: three.js when it can, a studio render when it can't ------------------------------------------------
 const stageEl = $("#stage"), carEl = $("#car"), canvas = $("#c3d"), posterEl = $("#poster"), pinsEl = $("#pins"), marksEl = $("#marks"), leadersEl = $("#leaders");
 let stage = null, poster = false;
-const fit = (w) => (narrow() ? 0.98 : Math.max(1.15, Math.min(1.7, (0.7 * w) / Math.max(300, w - 340)))); // the car alone: big on the paper
+const fit = (w) => (narrow() ? 0.98 : Math.max(0.95, Math.min(1.25, (0.55 * w) / Math.max(300, w - 340)))); // the car alone: big on the paper
 // while a check is on the stage (desktop), the camera pulls back so a pin column fits each side of the car
-const ROOM = () => (narrow() || poster ? 1 : 1.3);
+const ROOM = () => (narrow() || poster ? 1 : 1.75);
 async function initStage() {
   try {
     if (new URLSearchParams(location.search).has("poster")) throw new Error("poster requested");

@@ -13,10 +13,53 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="capture.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23240B21' stroke-width='4' stroke-dasharray='5 2.4'/%3E%3C/svg%3E">
+  <!-- for the example viewer only, loaded on tap (pinned versions, the same as splat-viewer/viewer/index.html) -->
+  <script type="importmap">
+  { "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"
+  } }
+  </script>
+  <style>
+    /* this page's own block: an example of the end result, under the title. The 3D viewer loads only when asked for. */
+    .cx-example { margin: 0 0 28px; }
+    .cx-media { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 10; background: #FFFFFF; box-shadow: 0 0 0 1px var(--hair); }
+    .cx-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 58% 52%; transform: scale(1.32); transform-origin: 58% 56%; }
+    .cx-tag { position: absolute; z-index: 2; pointer-events: none; left: 12px; top: 12px; font: 500 10.5px/1 var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: #492B3E; background: rgba(255, 253, 251, 0.9); padding: 6px 9px; border-radius: 999px; }
+    .cx-play { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: #240B21; color: #FFFDFB; font: 500 15px var(--sans); cursor: pointer; box-shadow: 0 10px 24px -12px rgba(36, 11, 33, 0.6); }
+    .cx-play small { font: 500 11px var(--mono); opacity: 0.7; }
+    .cx-play svg { width: 16px; height: 16px; }
+    .cx-viewer { position: absolute; inset: 0; background: #FFFFFF; }
+    .cx-viewer[hidden] { display: none; }
+    .cx-cap { margin: 10px 2px 0; font-size: 14.5px; color: var(--text); }
+    .cx-cap b { font-weight: 500; color: var(--fg); }
+    .cx-credit { margin: 4px 2px 0; font-size: 12.5px; color: var(--body); }
+    .cx-credit a { color: inherit; }
+    @media (min-width: 640px) {
+      .cx-example { display: grid; grid-template-columns: 1.25fr 1fr; column-gap: 22px; align-items: center; }
+      .cx-example > .ac-label { grid-column: 1 / -1; }
+      .cx-media { grid-row: span 2; }
+      .cx-cap { margin: 0; align-self: end; }
+      .cx-credit { align-self: start; margin-top: 8px; }
+    }
+  </style>
 </head>
 <body>
   <main class="page">
     <div id="capture"></div>
+
+    <section class="cx-example" id="example" aria-labelledby="ex-h">
+      <h2 id="ex-h" class="ac-label">What you get</h2>
+      <div class="cx-media" id="ex-media">
+        <img id="ex-poster" src="example/mx5-rf-sample.poster.webp" alt="Example of a finished 3D capture: a pale grey sports car, as a Gaussian splat" width="1280" height="800" decoding="async">
+        <span class="cx-tag">Example · made by someone else</span>
+        <button class="cx-play" id="ex-play" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M8 1.8 13.5 5v6L8 14.2 2.5 11V5z"/><path d="M2.5 5 8 8.2 13.5 5M8 8.2v6"/></svg>View in 3D <small>7.8 MB</small></button>
+        <div class="cx-viewer" id="ex-viewer" hidden></div>
+      </div>
+      <p class="cx-cap"><b>A 3D model you can turn with a finger.</b> The photos you take become one on a computer, after the capture.</p>
+      <p class="cx-credit">Example capture: “Mazda MX5 remastered” by Goran (gorank) on SuperSplat, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, <a href="https://superspl.at/scene/4271aa24" rel="noopener">superspl.at/scene/4271aa24</a>. Cropped, levelled, scaled and compressed. Not made with this page.</p>
+    </section>
 
     <section class="ac-explain" aria-labelledby="why">
       <h2 id="why">How the photos become 3D</h2>
@@ -39,7 +82,23 @@
       preset: q.get("preset") || "walkaround",
       source: q.get("source") || undefined,       // "camera" forces the camera + sensors path
       subject,
+      afterHead: document.getElementById("example"), // the example sits under the title
     }).then((c) => (window.assemblCapture = c));
+
+    // the example: a poster until asked for; then the real viewer (three.js + Spark, about 8 MB with the capture)
+    // Working on the module, the files sit beside it in ../splat-viewer/; the lab's build copies them to ./example/ and rewrites these paths.
+    const poster = document.getElementById("ex-poster"), play = document.getElementById("ex-play"), box = document.getElementById("ex-viewer");
+    const base = "example/", viewerAt = "example/viewer/";
+    play.addEventListener("click", async () => {
+      play.disabled = true; box.hidden = false;
+      const css = document.createElement("link"); css.rel = "stylesheet"; css.href = viewerAt + "viewer.css"; document.head.appendChild(css);
+      try {
+        const { mount } = await import(new URL(viewerAt + "viewer.js", location.href).href);
+        await mount(box, { manifest: new URL(base + "mx5-rf-sample.manifest.json", location.href).href, capture: true, theme: q.get("theme") || "auto",
+          spec: { vehicle: {}, capture: {}, fields: {}, hotspots: [], groups: [], sources: [] }, title: "Example capture" });
+        play.hidden = true; document.querySelector(".cx-tag").textContent = "Example · drag to turn it";
+      } catch (e) { box.hidden = true; play.disabled = false; play.querySelector("small").textContent = "didn't load · try again"; console.warn(e); }
+    });
   </script>
-</body>
+<script src="/cars/carnav.js" defer></script><script src="/lab/navigation.js" defer></script><script src="/ask.js" defer data-page="cars"></script></body>
 </html>

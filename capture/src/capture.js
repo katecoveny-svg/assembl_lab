@@ -56,6 +56,57 @@ export async function detectDevice() {
   return { iOS, android, touch, xr, camera, motion, route, headline, detail, secure: window.isSecureContext };
 }
 
+/** Is this page inside another one, and does that page let it use the camera? (null: the browser can't say) */
+function framing() {
+  let framed = false; try { framed = window.top !== window.self; } catch { framed = true; }
+  let camera = null; try { const fp = document.permissionsPolicy || document.featurePolicy; if (fp?.allowsFeature) camera = fp.allowsFeature("camera"); } catch { /* unknown */ }
+  return { framed, camera };
+}
+
+// A small drawing for each kind of capture: walking round something large, circling an object on a table, turning an object
+// in front of a still camera. Line art in currentColor, so it follows the theme.
+function modeArt(p) {
+  const phone = (x, y, r = 0) => `<g transform="translate(${x} ${y}) rotate(${r})"><rect x="-4" y="-6.5" width="8" height="13" rx="2" class="ac-art-solid"/><circle cx="0" cy="4" r=".9" class="ac-art-bg"/></g>`;
+  if (p.objectMotion === "object-turns") return `<svg viewBox="0 0 72 52" class="ac-art">
+    <ellipse cx="44" cy="40" rx="20" ry="5.5" class="ac-art-soft"/><path d="M36 39 c0-9 3-15 8-15 s8 6 8 15" class="ac-art-line"/>
+    <path d="M27 31 a18 7 0 0 0 34 0" class="ac-art-dash"/><path d="m59 27.5 2.4 3.6-4.2 1" class="ac-art-line"/>
+    <rect x="4" y="18" width="12" height="9" rx="2" class="ac-art-line"/><circle cx="10" cy="22.5" r="2" class="ac-art-line"/><path d="M10 27v14M5 41h10" class="ac-art-line"/></svg>`;
+  if (p.mode === "object") return `<svg viewBox="0 0 72 52" class="ac-art">
+    <path d="M6 41h60" class="ac-art-line"/><ellipse cx="36" cy="35" rx="23" ry="7.5" class="ac-art-dash"/>
+    <path d="M30 37 c-1-6 2-10 6-10 s7 4 6 10z" class="ac-art-solid"/>${phone(57, 26, 18)}<path d="m15 31-3 3 4 1" class="ac-art-line"/></svg>`;
+  return `<svg viewBox="0 0 72 52" class="ac-art">
+    <ellipse cx="36" cy="27" rx="31" ry="20" class="ac-art-dash"/><rect x="18" y="19" width="36" height="16" rx="7" class="ac-art-solid"/>
+    <rect x="24" y="22" width="16" height="10" rx="3" class="ac-art-bg"/>${phone(63, 37, 35)}<path d="m8 21-2.5 4 4.5.5" class="ac-art-line"/></svg>`;
+}
+
+// The plan, drawn side-on: where the phone is for each ring (low, middle, high) and which way it looks, round the subject
+function planDiagram(p) {
+  const turns = p.objectMotion === "object-turns", small = p.mode === "object", W = 340, H = 168, gy = 140;
+  const subj = turns ? { x: 222, w: 52, h: 46 } : small ? { x: 222, w: 46, h: 34 } : { x: 220, w: 150, h: 64 };
+  const sx0 = subj.x - subj.w / 2, sy0 = gy - subj.h - (small || turns ? 26 : 0), cx = subj.x, cy = sy0 + subj.h / 2;
+  const level = { low: gy - 22, middle: gy - 62, high: gy - 112 };
+  const parts = [];
+  parts.push(`<path d="M10 ${gy}H${W - 10}" class="ac-art-line"/>`);
+  if (small || turns) parts.push(`<path d="M${cx - 64} ${gy - 26}h128M${cx - 54} ${gy - 26}v26M${cx + 54} ${gy - 26}v26" class="ac-art-line"/>`); // the table
+  parts.push(`<ellipse cx="${cx}" cy="${(small || turns) ? gy - 27 : gy - 1}" rx="${subj.w / 2 + (turns ? 12 : 44)}" ry="${turns ? 4 : 9}" class="ac-art-dash"/>`);
+  if (turns) parts.push(`<path d="M${cx - 30} ${gy - 34} a30 8 0 0 0 60 0" class="ac-art-line"/><path d="m${cx + 27} ${gy - 39} 3 5-5 1" class="ac-art-line"/>`);
+  parts.push(small || turns ? `<path d="M${sx0} ${gy - 26} c0-${subj.h * 0.9} ${subj.w * 0.18}-${subj.h} ${subj.w / 2}-${subj.h} s${subj.w / 2} ${subj.h * 0.1} ${subj.w / 2} ${subj.h}z" class="ac-art-solid"/>`
+    : `<rect x="${sx0}" y="${sy0}" width="${subj.w}" height="${subj.h}" rx="22" class="ac-art-solid"/><rect x="${sx0 + 34}" y="${sy0 + 9}" width="${subj.w * 0.42}" height="${subj.h * 0.34}" rx="8" class="ac-art-bg"/>`);
+  p.rings.forEach((r, i) => {
+    const pitch = r.pitch ? (r.pitch[0] + r.pitch[1]) / 2 : turns && i ? -24 : -6, a = (pitch * Math.PI) / 180;
+    // a large subject: the phone at knee, chest or overhead height, looking along its tilt; a small one: the phone set back along
+    // its line of sight to the object, so each ring's tilt is what puts the object in view
+    let x, y;
+    if (small && !turns) { x = cx - 104 * Math.cos(a); y = cy + 104 * Math.sin(a); }
+    else { y = turns ? (i === 0 ? gy - 62 : gy - 100) : level[r.id] ?? level.middle; x = turns ? 40 : 46 + i * 6; }
+    const tx = small && !turns ? cx - 10 * Math.cos(a) : Math.min(x + 150 * Math.cos(a), cx - 6), ty = small && !turns ? cy + 10 * Math.sin(a) : y + (tx - x) * Math.tan(-a);
+    parts.push(`<path d="M${(x + 8 * Math.cos(a)).toFixed(1)} ${(y - 8 * Math.sin(a)).toFixed(1)}L${tx.toFixed(1)} ${ty.toFixed(1)}" class="ac-art-sight"/>`);
+    parts.push(`<g transform="translate(${x} ${y}) rotate(${(-pitch).toFixed(1)})"><rect x="-3.5" y="-9" width="7" height="18" rx="2" class="ac-art-solid"/></g>`);
+    parts.push(`<g class="ac-art-num"><circle cx="${x - 20}" cy="${y}" r="9"/><text x="${x - 20}" y="${y + 3.6}" text-anchor="middle">${i + 1}</text></g>`);
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="ac-plan-svg" role="img" aria-label="Where to hold the phone for each ring">${parts.join("")}</svg>`;
+}
+
 class Emitter {
   constructor() { this.l = {}; }
   on(t, f) { (this.l[t] ||= []).push(f); return () => this.off(t, f); }
@@ -96,27 +147,27 @@ class CaptureController extends Emitter {
     const d = this.device, p = this.preset, s = this.opts.subject || {};
     const sf = p.sizeField;
     const sizeVal = s[sf.key] != null ? +(s[sf.key] / (sf.factor || 1)).toFixed(4) : "";
+    const fr = framing();
     this.el.classList.add("ac");
     this.el.innerHTML = `
       <section class="ac-setup" aria-labelledby="ac-title">
         <header class="ac-head">
           <p class="ac-kicker">assembl capture</p>
           <h1 id="ac-title" class="ac-title">${esc(this.opts.title || "Make a 3D capture")}</h1>
-          <p class="ac-lead">A guided walk round with your phone. The photos stay on this device until you save them.</p>
+          <p class="ac-lead">${esc(this.opts.lead || "A guided walk round with your phone. The photos stay on this device until you save them.")}</p>
         </header>
+        <div class="ac-slot"></div>
         ${this.opts.choosePreset ? `<fieldset class="ac-presets"><legend class="ac-label">What are you capturing?</legend>
           ${this.presetList.map((x) => `<label class="ac-preset"><input type="radio" name="ac-preset" value="${esc(x.id)}" ${x.id === p.id ? "checked" : ""}>
-            <span class="ac-preset-name">${esc(x.label)}</span><span class="ac-preset-eg">${esc(x.example || "")}</span></label>`).join("")}
+            <span class="ac-preset-art" aria-hidden="true">${modeArt(x)}</span><span class="ac-preset-name">${esc(x.label)}</span><span class="ac-preset-eg">${esc(x.example || "")}</span></label>`).join("")}
         </fieldset>` : ""}
-        <div class="ac-device ${d.route === "webxr" ? "is-good" : ""}" role="note">
-          <p class="ac-label">This device</p>
-          <p class="ac-device-head">${esc(d.headline)}</p>
-          <p class="ac-device-body">${esc(d.detail)}</p>
-          <dl class="ac-facts">
-            <div><dt>Poses</dt><dd>${d.route === "webxr" ? "Recorded live (WebXR)" : "Solved later on the computer"}</dd></div>
-            <div><dt>Camera</dt><dd>${d.camera ? "Available" : "Not available"}${d.secure ? "" : " · needs HTTPS"}</dd></div>
-            <div><dt>Motion sensors</dt><dd>${d.motion ? (d.iOS ? "Asked for when you start" : "Available") : "Not available"}</dd></div>
-          </dl>
+        <div class="ac-plan">
+          <p class="ac-label">The plan</p>
+          <figure class="ac-diagram">${planDiagram(p)}<figcaption class="ac-visually-hidden">${esc(p.rings.map((r, i) => `${i + 1}: ${r.label}`).join("; "))}</figcaption></figure>
+          <ol class="ac-rings">${p.rings.map((r) => `<li><strong>${esc(r.label)}.</strong> ${esc(r.hint)}</li>`).join("")}</ol>
+          ${p.distance?.hint ? `<p class="ac-note">${esc(p.distance.hint)}</p>` : ""}
+          <ul class="ac-tips">${(p.tips || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+          ${p.caution ? `<p class="ac-caution">${esc(p.caution)}</p>` : ""}
         </div>
         <div class="ac-subject">
           <label class="ac-field"><span class="ac-label">Name <span class="ac-opt">optional</span></span>
@@ -124,15 +175,22 @@ class CaptureController extends Emitter {
           <label class="ac-field"><span class="ac-label">${esc(sf.label)} <span class="ac-opt">${esc(sf.unit)} · optional, sets the real scale</span></span>
             <input class="ac-input" name="size" type="number" inputmode="decimal" min="0" step="${sf.step || 0.01}" value="${sizeVal}" placeholder="${esc(sf.placeholder || "")}"></label>
         </div>
-        <div class="ac-plan">
-          <p class="ac-label">The plan</p>
-          <ol class="ac-rings">${p.rings.map((r) => `<li><strong>${esc(r.label)}.</strong> ${esc(r.hint)}</li>`).join("")}</ol>
-          ${p.distance?.hint ? `<p class="ac-note">${esc(p.distance.hint)}</p>` : ""}
-          <ul class="ac-tips">${(p.tips || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
-          ${p.caution ? `<p class="ac-caution">${esc(p.caution)}</p>` : ""}
+        <div class="ac-device ${d.route === "webxr" ? "is-good" : ""}" role="note">
+          <p class="ac-label">This device</p>
+          <p class="ac-device-head">${esc(d.headline)}</p>
+          <p class="ac-device-body">${esc(d.detail)}</p>
+          <ul class="ac-facts">
+            <li><span>Poses</span> ${d.route === "webxr" ? "recorded live (WebXR)" : "solved later on the computer"}</li>
+            <li><span>Camera</span> ${d.camera ? (fr.camera === false ? "blocked by the page around this one" : "available") : "not available"}${d.secure ? "" : " · needs HTTPS"}</li>
+            <li><span>Motion sensors</span> ${d.motion ? (d.iOS ? "asked for when you start" : "available") : "not available"}</li>
+          </ul>
         </div>
         <div class="ac-actions">
-          <button class="ac-btn ac-btn-primary" type="button" data-act="start" ${d.camera ? "" : "disabled"}>Start capture</button>
+          ${fr.framed && fr.camera === false
+            ? `<a class="ac-btn ac-btn-primary" href="${esc(location.href)}" target="_blank" rel="noopener">Open capture on its own page ↗</a>
+               <p class="ac-framed">This page is shown inside another page that doesn't allow the camera. Open it on its own to start.</p>`
+            : `<button class="ac-btn ac-btn-primary" type="button" data-act="start" ${d.camera ? "" : "disabled"}>Start capture</button>
+               ${fr.framed ? `<p class="ac-framed">Shown inside another page? If the camera doesn't start, <a href="${esc(location.href)}" target="_blank" rel="noopener">open capture on its own page ↗</a>.</p>` : ""}`}
           <p class="ac-privacy">Nothing is uploaded. Photos are kept in this browser until you save the capture as a file.</p>
           <p class="ac-error" role="alert" hidden></p>
         </div>
@@ -167,6 +225,7 @@ class CaptureController extends Emitter {
         <p class="ac-next"></p>
         <p class="ac-privacy">Nothing has left this device. Saving writes one file to this phone; Share hands it to an app you choose (for example AirDrop to a Mac).</p>
       </section>`;
+    if (this.opts.afterHead instanceof Element) this.el.querySelector(".ac-slot").appendChild(this.opts.afterHead); // a host's own block, under the title
     this.$ = (q) => this.el.querySelector(q);
     this.el.querySelectorAll("input[name=ac-preset]").forEach((r) => r.addEventListener("change", () => {
       this.preset = resolvePreset(r.value, this.opts.presets); this.presetId = r.value;

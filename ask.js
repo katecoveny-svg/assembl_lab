@@ -7,6 +7,12 @@
   const css=`.askb{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:45;font:500 15px "Instrument Sans",system-ui,sans-serif}
   .askb>button{all:unset;cursor:pointer;display:flex;gap:8px;align-items:center;padding:11px 16px;border-radius:999px;background:#240B21;color:#FFFDFB;box-shadow:0 14px 34px -14px rgba(36,11,33,.7)}
   .askb>button:focus-visible{outline:2px solid #916A70;outline-offset:3px}
+  .askb>button svg{width:18px;height:18px;flex:none}
+  @media (prefers-color-scheme:dark){.askb>button{background:#F5F1F2;color:#240B21;box-shadow:0 14px 34px -14px rgba(0,0,0,.8)}}
+  @media (max-width:600px){.askb>button{padding:0;width:46px;height:46px;justify-content:center}.askb>button .askl{position:absolute;left:-9999px}.askb{right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px))}
+    .askp{bottom:54px}body::after{content:"";display:block;height:68px}
+    .askb{transition:transform .25s ease,opacity .25s ease}.askb.away{transform:translateY(84px);opacity:0;pointer-events:none}}
+  @media (prefers-reduced-motion:reduce){.askb{transition:none}}
   .askp{position:absolute;right:0;bottom:56px;width:min(380px,calc(100vw - 28px));padding:16px;border-radius:20px;background:rgba(255,253,251,.86);color:#492B3E;border:1px solid rgba(73,43,62,.14);
     -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);box-shadow:0 30px 60px -30px rgba(36,11,33,.55)}
   @media (prefers-color-scheme:dark){.askp{background:rgba(36,11,33,.86);color:#F5F1F2;border-color:rgba(245,241,242,.14)}}
@@ -19,11 +25,15 @@
   const w=document.createElement("div");w.className="askb";
   w.innerHTML=`<div class="askp" hidden role="dialog" aria-label="Ask about this page"><h2>Ask about this</h2><p class="meta" id="askLeft"></p><div class="ans" id="askAns" aria-live="polite"></div>
     <form id="askF"><label class="sr" for="askQ" style="position:absolute;left:-9999px">Your question</label><input id="askQ" maxlength="300" placeholder="Why does insulation save so much?" autocomplete="off"><button type="submit">Ask</button></form>
-    <p class="meta" style="margin:10px 0 0">Answers come from an AI and can be wrong. Don't share personal details.</p></div><button type="button" aria-expanded="false">Ask about this</button>`;
+    <p class="meta" style="margin:10px 0 0">Answers come from an AI and can be wrong. Don't share personal details.</p></div><button type="button" aria-expanded="false" aria-label="Ask about this"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.2 15.6 3 18l3.1-1.2A8 8 0 1 0 4.2 15.6Z" stroke-linejoin="round"/><path d="M8.2 7.9a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" stroke-linecap="round"/><circle cx="10" cy="13.4" r=".5" fill="currentColor"/></svg><span class="askl">Ask about this</span></button>`;
   document.body.appendChild(w);
   const panel=w.querySelector(".askp"),btn=w.querySelector(":scope>button"),ans=w.querySelector("#askAns"),left=w.querySelector("#askLeft"),f=w.querySelector("#askF"),q=w.querySelector("#askQ");
   const show=()=>{left.textContent=used>=MAX?"You've used today's questions on this page. Come back tomorrow.":`${MAX-used} question${MAX-used===1?"":"s"} left today`;f.hidden=used>=MAX};
   btn.onclick=()=>{panel.hidden=!panel.hidden;btn.setAttribute("aria-expanded",String(!panel.hidden));show();if(!panel.hidden)q.focus()};
+  // on a phone the button steps aside while you read down the page, and comes back when you scroll up or reach the end
+  const narrow=matchMedia("(max-width:600px)");let lastY=scrollY;
+  addEventListener("scroll",()=>{if(!narrow.matches||!panel.hidden){w.classList.remove("away");return}const y=scrollY,end=y+innerHeight>=document.documentElement.scrollHeight-40;
+    if(y>lastY+8&&!end){w.classList.add("away");lastY=y}else if(y<lastY-8||end){w.classList.remove("away");lastY=y}},{passive:true});
   f.onsubmit=async e=>{e.preventDefault();const v=q.value.trim();if(v.length<3||used>=MAX)return;ans.textContent="Thinking it through…";
     try{const r=await fetch("/api/ask/",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({page,question:v})});const j=await r.json().catch(()=>({}));
       if(r.ok){ans.textContent=j.answer;used++;try{localStorage.setItem(KEY,used)}catch(e){};q.value=""}

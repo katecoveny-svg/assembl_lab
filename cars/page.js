@@ -2,11 +2,11 @@
 // functions in /cars/tools.js (copied from api/_cars at build time) with the live feeds this page already holds.
 import { callTool, TOOLS, toJsonLd, fuelLabel, money, fmtDate, quickChecks, slotsFor, REGIONS, regionFromText, DEALER, registerFor } from "/cars/tools.js";
 import { registerLine } from "/cars/register.js";
-import { profileSVG } from "/cars/profile.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const mqReduce = matchMedia("(prefers-reduced-motion: reduce)"), mqNarrow = matchMedia("(max-width: 900px)");
+const mqReduce = matchMedia("(prefers-reduced-motion: reduce)"), mqNarrow = matchMedia("(max-width: 900px)"), mqDark = matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : mqDark.matches; };
 const reduced = () => mqReduce.matches, narrow = () => mqNarrow.matches;
 const chip = (t, label) => `<span class="chip" data-truth="${esc(t)}">${esc(label || t)}</span>`;
 const MCP_URL = "/api/mcp/", PV = "2026-07-28";
@@ -83,7 +83,10 @@ let posterAnchors = null;
 try {
   if (new URLSearchParams(location.search).has("poster")) throw new Error("poster requested");
   const mod = await import("/cars/stage3d.js");
-  stage = await mod.createStage(canvas, hero, { reduced: reduced(), onFrame: () => layout(), narrow, fit: (w, h) => (narrow() ? 1.02 : Math.max(1.25, Math.min(2.2, (0.9 * w) / Math.max(260, w - 400)))) }); // desktop: leave a label column each side
+  // desktop: leave a label column each side once fields are pinned; the opening beat frames the car closer. Narrow: the car alone.
+  stage = await mod.createStage(canvas, hero, { reduced: reduced(), dark: isDark(), onFrame: () => layout(), narrow,
+    fit: (w, h) => (narrow() ? 1.12 : Math.max(1.25, Math.min(2.2, (0.9 * w) / Math.max(260, w - 400)))), introFit: (w, h) => (narrow() ? 1.12 : Math.max(1.2, Math.min(1.6, 880 / w))) });
+  mqDark.addEventListener("change", () => stage.setTheme(isDark()));
 } catch (e) {
   posterMode = true; canvas.hidden = true; poster.hidden = false; poster.src = poster.dataset.src;
   try { posterAnchors = await fetch("/cars/poster-anchors.json").then((r) => r.json()); } catch (err) { posterAnchors = POSTER_ANCHORS; }
@@ -155,7 +158,7 @@ function setBeat(b, { fromScroll = false } = {}) {
   const turn = stage ? stage.setBeat(b) : Promise.resolve();
   for (const p of PINS) {
     const li = pinsEl.querySelector(`[data-id="${p.id}"]`), on = p.beat <= b;
-    li.classList.toggle("on", on && b < 8); li.setAttribute("aria-hidden", String(!(on && b < 8))); li.style.setProperty("--fx", (SIDE[p.id] === "L" ? -36 : 36) + "px"); li.style.setProperty("--fy", "0px");
+    li.classList.toggle("on", on && b < 8); li.classList.toggle("now", p.beat === b); li.setAttribute("aria-hidden", String(!(on && b < 8))); li.style.setProperty("--fx", (SIDE[p.id] === "L" ? -36 : 36) + "px"); li.style.setProperty("--fy", "0px");
     if (b < 8) { li.classList.remove("fly"); li.style.transform = ""; }
   }
   collapse(b === 8);
@@ -188,10 +191,10 @@ const beatEls = $$(".beat");
 let playing = null, ticking = false;
 function onScroll() {
   if (ticking || playing) return; ticking = true;
-  requestAnimationFrame(() => { ticking = false; const line = innerHeight * (narrow() ? 0.86 : 0.56); let b = 0; for (const el of beatEls) if (el.getBoundingClientRect().top < line) b = +el.dataset.beat; setBeat(b, { fromScroll: true }); });
+  requestAnimationFrame(() => { ticking = false; const line = innerHeight * (narrow() ? 0.8 : 0.56); let b = 0; for (const el of beatEls) if (el.getBoundingClientRect().top < line) b = +el.dataset.beat; setBeat(b, { fromScroll: true }); });
 }
 addEventListener("scroll", onScroll, { passive: true });
-const scrollToBeat = (b) => { const el = beatEls[b], top = scrollY + el.getBoundingClientRect().top - innerHeight * (narrow() ? 0.62 : 0.3); scrollTo({ top, behavior: reduced() ? "auto" : "smooth" }); };
+const scrollToBeat = (b) => { const el = beatEls[b], top = scrollY + el.getBoundingClientRect().top - innerHeight * (narrow() ? 0.5 : 0.3); scrollTo({ top, behavior: reduced() ? "auto" : "smooth" }); };
 $("#play").addEventListener("click", async () => {
   if (playing) return;
   const stop = () => { if (playing) playing.stopped = true; };
@@ -221,8 +224,8 @@ async function copy(text, btn) {
 }
 
 // ---------------------------------------------------------------- two ways to see the same car
-$("#human-img").src = stage ? stage.snapshot({ width: 900, height: 600, yaw: 0.36, fit: 1.12 }) : poster.dataset.src;
-$("#human-img").alt = `${hero.title} in ${hero.colour.toLowerCase()}, a rendered stand-in for a listing photo`;
+$("#human-img").src = `/cars/img/${hero.id}-4x3.webp`; // the car's own studio render: the stand-in for a listing photo
+$("#human-img").alt = `${hero.title} in ${hero.colour.toLowerCase()}, a studio render standing in for a listing photo (Simulated)`;
 $("#human-site").textContent = DEALER.sites[hero.site].name;
 $("#human-title").textContent = hero.title;
 $("#human-head").textContent = hero.headline;
@@ -277,8 +280,7 @@ async function runChat() {
   const a1 = { budget_max: 35000, body: "suv", fuel: "hybrid", region: "Waikato", must_have: ["no money owing"], test_drive_day: "saturday", limit: 3 };
   const r1 = await mcp("search_cars", a1), s = r1.result;
   evidence("search_cars", a1, `${s.matched} of ${s.total} match`, r1);
-  const renderOf = (id) => (cars.find((x) => x.id === id) || hero).render;
-  const mini = add(s.results.map((c, i) => `<article class="${i === 0 ? "top" : ""}">${profileSVG(renderOf(c.id).kind, renderOf(c.id).paint)}<h4>${esc(c.title)}</h4><p>${money(c.priceNzd)} · ${c.odometerKm.toLocaleString("en-NZ")} km</p><p class="why">${esc(c.why.slice(-2).join(" · "))}</p></article>`).join(""), "mini");
+  const mini = add(s.results.map((c, i) => `<article class="${i === 0 ? "top" : ""}"><img src="/cars/img/${esc(c.id)}-4x3.webp" alt="Studio render of the ${esc(c.title)} (Simulated)" width="1200" height="900" loading="lazy"><h4>${esc(c.title)}</h4><p>${money(c.priceNzd)} · ${c.odometerKm.toLocaleString("en-NZ")} km</p><p class="why">${esc(c.why.slice(-2).join(" · "))}</p></article>`).join(""), "mini");
   void mini;
   const top = s.results[0], owing = s.excluded["money owing stated"] || 0;
   bot(`${s.matched} fit. The closest match is the <b>${esc(top.title)}</b> at the Hamilton site, ${money(35000 - top.priceNzd)} under your budget.${owing ? ` I left out ${owing} hybrid SUV${owing > 1 ? "s" : ""} in budget because money is owing on ${owing > 1 ? "them" : "it"}.` : ""}`);
@@ -362,12 +364,15 @@ function waterfall(rc) {
   return `<div class="wfh" role="img" aria-label="Weekly running cost ${money(rc.totalWeekly, 2)}: ${rc.lines.map((l) => `${l.label} ${money(l.weekly, 2)}`).join(", ")}">${rows}<div class="wfr total"><span class="wfl">A week, all in</span><span class="wft"><i class="bar" style="left:0;width:100%"></i></span><span class="wfv">${money(rc.totalWeekly, 2)}</span></div></div>`;
 }
 const costLines = (rc) => `<ul class="lines">${rc.lines.map((l) => `<li><span>${esc(l.label)}</span>${chip(l.truth)}${l.period ? `<span class="mono said">${esc(l.period)}${l.statusLabel ? " · " + esc(l.statusLabel) : ""}</span>` : ""}<span class="b">${esc(l.basis)}${l.source ? ` · <a href="${esc(l.source.url)}">${esc(l.source.name)}</a>` : ""}</span></li>`).join("")}</ul><p class="said">Not included: ${esc(rc.notIncluded.join(", "))}.</p>`;
+const carImg = (res, kind) => { const id = lastCheck && lastCheck.args.car_id;
+  return id ? `<img src="/cars/img/${esc(id)}-4x3.webp" alt="Studio render of ${esc(res.car.name)} (Simulated)" width="1200" height="900">`
+    : `<img src="/cars/img/body-${esc(kind)}-4x3.webp" alt="Studio render of a ${esc(kind)} body style, not this car" width="640" height="480">`; };
 function renderCheck(res, r) {
   const rc = res.runningCost, kind = res.car.render && res.car.render.kind && res.car.render.kind !== "unknown" ? res.car.render.kind : "hatch", paint = (res.car.render && res.car.render.paint) || "#C8CBCB";
   const pw = live.power && (rc.fuel === "electric" || rc.fuel === "plug-in hybrid") ? `<p class="said">Context: wholesale power at ${esc(live.power.values.node)} averaged ${esc(live.power.values.avgCentsPerKWh)} c/kWh on ${esc(live.power.values.date)} ${chip("Live")} what retailers pay, before lines and GST; not your bill.</p>` : "";
   $("#gb-out").innerHTML = `<div class="res">
     <div class="res-head"><div><p class="said">car_check · ${esc(viaLabel(r))}</p><h3>${esc(res.car.name)}</h3></div>${chip(res.car.truth)}</div>
-    <div class="res-car">${profileSVG(kind, paint, { title: res.car.name })}<div><p class="res-sum">${esc(res.summary)}</p><p class="said">${esc(res.statement)}</p></div></div>
+    <div class="res-car">${carImg(res, kind)}<div><p class="res-sum">${esc(res.summary)}</p><p class="said">${esc(res.statement)}</p></div></div>
     ${res.register ? `<p class="said">${esc(registerLine(res.register))} ${chip("Source", "NZTA register")} <a href="${esc(res.register.source.url)}">Source: NZ Transport Agency Waka Kotahi, Motor Vehicle Register</a> (CC BY 4.0)</p>` : ""}
     <h4>Running cost · <span id="rc-km">${rc.kmPerWeek}</span> km a week · ${esc(rc.place)}</h4><div id="rc-box">${waterfall(rc)}${costLines(rc)}</div>${pw}
     ${res.redFlags.length ? `<h4>Red flags and questions</h4><ul class="flags">${res.redFlags.map((f) => `<li><span class="dot ${esc(f.level)}" aria-label="${esc(f.level)}"></span><span><b>${esc(f.title)}</b><small>${esc(f.why)}</small></span></li>`).join("")}</ul>` : ""}
@@ -411,7 +416,7 @@ const CINCOUNT = (c) => Object.values(c.cin).filter((f) => f.value !== undefined
 function drawCards() {
   const list = cars.filter((c) => matches(c));
   $("#cards").innerHTML = list.map((c) => `<li class="car" id="car-${c.id}">
-    <div class="thumb">${profileSVG(c.render.kind, c.render.paint, { title: `${c.title}, ${c.colour}` })}</div>
+    <div class="thumb"><img src="/cars/img/${c.id}-4x3.webp" alt="Studio render of the ${esc(c.title)} in ${esc(c.colour.toLowerCase())} (Simulated)" width="1200" height="900" loading="lazy" decoding="async"></div>
     <p class="site"><span>${esc(DEALER.sites[c.site].region)} · ${c.id}</span>${c.hold.status !== "available" ? `<span class="held">On hold</span>` : chip("Simulated")}</p>
     <h3>${esc(c.title)}</h3>
     <div class="person"><p class="price">${money(c.priceNzd)}</p><p class="meta">${c.odometerKm.toLocaleString("en-NZ")} km · ${esc(c.fuelLabel)} · ${esc(c.colour)}</p></div>

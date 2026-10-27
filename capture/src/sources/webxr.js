@@ -13,6 +13,8 @@ import { crc32 } from "../zip.js";
 /** Can this browser run an AR session at all? (Camera access is only known once a session starts.) */
 export async function xrSupport() {
   if (!("xr" in navigator)) return { ar: false, reason: "No WebXR in this browser." };
+  // inside a page that doesn't allow WebXR (an iframe without the permission), don't ask: the browser would only log a violation
+  try { const fp = document.permissionsPolicy || document.featurePolicy; if (fp?.allowsFeature && !fp.allowsFeature("xr-spatial-tracking")) return { ar: false, reason: "The page around this one doesn't allow WebXR." }; } catch { /* can't tell: ask */ }
   try {
     const ok = await navigator.xr.isSessionSupported("immersive-ar");
     return ok ? { ar: true, reason: null } : { ar: false, reason: "This browser has WebXR but no AR sessions (needs Android Chrome with Google Play Services for AR)." };

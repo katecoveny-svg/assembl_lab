@@ -1,4 +1,4 @@
-// The car check's hero: one maquette car on paper (/cars/kit3d.js), in the buyer's body type and paint, carrying the parts a
+// The car check's hero: one studio maquette on paper (/cars/kit3d.js, lit by /cars/look3d.js), in the buyer's body type and paint, carrying the parts a
 // check talks about: the odometer on the dash, the WOF and licence labels and the asking-price sticker on the windscreen, the key
 // on the bonnet with a money-owing tag, and the filler flap (or charge port). The register's facts are about the model, so their
 // pin sits on the roof. The labels on the car redraw as the buyer types (they're Your data); the pins are the page's job.
@@ -7,6 +7,7 @@
 // `room` (1 = the car alone) pulls the camera back so the pins have space beside the car while a check is on the stage.
 import * as THREE from "three";
 import { buildCarKit } from "/cars/kit3d.js";
+import { studio, carMaterials, maquettePaint } from "/cars/look3d.js";
 
 // where the car turns for each part (radians about y; the camera sits off the front-right quarter, so +yaw shows the driver's side)
 export const BEATS = { idle: 0.2, dash: -0.3, screen: -0.46, tag: -0.6, roof: 0.62, filler: 1.12, done: 0.3 };
@@ -19,28 +20,15 @@ export async function createCheckStage(canvas, opts = {}) {
   const reduced = !!opts.reduced;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
-  try { const { RoomEnvironment } = await import("three/addons/environments/RoomEnvironment.js"); const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.8; pm.dispose(); } catch (e) { /* reflections are optional */ }
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xcdbfc5, 0.85));
-  const sun = new THREE.DirectionalLight(0xfff6ee, 2.4); sun.position.set(3.5, 7.5, 4.5); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
-  Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 20 }); sun.shadow.radius = 6; sun.shadow.bias = -0.0005; scene.add(sun);
-  const groundMat = new THREE.ShadowMaterial({ opacity: 0.13, color: 0x240b21 }), ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), groundMat);
-  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-
+  const look = await studio(THREE, renderer, scene, { dark: !!opts.dark });
   const kit = buildCarKit(THREE), std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: new THREE.Color(c), ...o });
-  const contactMat = new THREE.MeshBasicMaterial({ map: kit.shadowTex, transparent: true, depthWrite: false, opacity: 0.42, color: 0x240b21 });
-  const contact = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), contactMat); contact.rotation.x = -Math.PI / 2; contact.position.y = 0.004; scene.add(contact);
-  const MAT = {
-    body: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(opts.paint || "#8D9094"), roughness: 0.42, metalness: 0.1, clearcoat: 0.6, clearcoatRoughness: 0.3, envMapIntensity: 0.4 }),
-    glass: new THREE.MeshPhysicalMaterial({ color: new THREE.Color("#2B2530"), roughness: 0.06, metalness: 0.25, transparent: true, opacity: 0.74, envMapIntensity: 1.3, side: THREE.DoubleSide }),
-    tyres: std("#2A2628", { roughness: 0.92 }), rims: std("#C3C6CA", { roughness: 0.3, metalness: 0.75 }), trim: std("#3D3638", { roughness: 0.75 }),
-    heads: std("#F4F1E8", { emissive: new THREE.Color("#FFF6E2"), emissiveIntensity: 0.25, roughness: 0.3 }), tails: std("#B5453E", { emissive: new THREE.Color("#B4443F"), emissiveIntensity: 0.15, roughness: 0.4 }),
-  };
+  const contactMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.5, color: 0x240b21 });
+  const contact = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), contactMat); contact.rotation.x = -Math.PI / 2; contact.position.y = 0.003; scene.add(contact);
+  const MAT = carMaterials(THREE, maquettePaint(THREE, opts.paint || "#8D9094"));
   const carG = new THREE.Group(); scene.add(carG);
   const mesh = {};
-  for (const p of Object.keys(MAT)) { const m = new THREE.Mesh(undefined, MAT[p]); m.castShadow = p !== "glass"; m.receiveShadow = true; if (p === "glass") m.renderOrder = 2; mesh[p] = m; carG.add(m); }
+  for (const p of ["body", "glass", "tyres", "rims", "heads", "tails", "trim", "mirrors"]) { const m = new THREE.Mesh(undefined, MAT[p === "mirrors" ? "body" : p]); m.castShadow = p !== "glass" && p !== "mirrors"; m.receiveShadow = !["body", "glass", "heads", "tails", "mirrors"].includes(p); mesh[p] = m; carG.add(m); }
 
   // ---- the labels on the car: one canvas each, redrawn in place when a fact changes -----------------------------------------
   if (document.fonts && document.fonts.ready) { try { await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]); } catch (e) { /* fallbacks */ } }
@@ -66,39 +54,39 @@ export async function createCheckStage(canvas, opts = {}) {
   let K = null, T = null, deco = null, ANCH = {}, flapMat = null;
   function build(kind) {
     K = kit[kind in kit.TYPES ? kind : "hatch"]; T = K.T;
-    for (const p of Object.keys(MAT)) mesh[p].geometry = K[p];
-    contact.geometry.dispose(); contact.geometry = new THREE.PlaneGeometry(K.L + 0.7, K.W + 0.7);
+    for (const p of Object.keys(mesh)) mesh[p].geometry = K[p];
+    contact.geometry.dispose(); contact.geometry = new THREE.PlaneGeometry(K.L + 0.7, K.W + 0.7); contactMat.map = K.shadowTex; contactMat.needsUpdate = true;
     if (deco) { deco.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== flapMat) o.material.dispose(); }); carG.remove(deco); }
     deco = new THREE.Group(); carG.add(deco);
-    const [g0, g1] = T.glass, y0 = T.belt + 0.012, y1 = T.roof - 0.03, dx = g1 - g0, dy = y1 - y0, len = Math.hypot(dx, dy);
-    const wsN = new THREE.Vector3(dy / len, -dx / len, 0); // windscreen outward normal (forward and up)
-    const onScreen = (t, z, off) => K.map(g0 + dx * t, y0 + dy * t, z).add(wsN.clone().multiplyScalar(off));
-    const wsQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), wsN.clone().normalize());
-    const decal = (T2, w, h, pos, quat, o = {}) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: T2.t, transparent: true, roughness: 0.6, ...o })); m.position.copy(pos); m.quaternion.copy(quat); deco.add(m); return m; };
-    // odometer: the instrument display, seen through the windscreen on the driver's side (+z)
-    decal(TX.odo, 0.30, 0.085, onScreen(0.09, 0.40, 0.03), wsQuat, { emissive: new THREE.Color("#F5E9D8"), emissiveIntensity: 0.35, emissiveMap: TX.odo.t }).renderOrder = 1;
+    const Z = new THREE.Vector3(0, 0, 1), UP = new THREE.Vector3(0, 1, 0), facing = (n) => new THREE.Quaternion().setFromUnitVectors(Z, n.clone().normalize());
+    const decal = (T2, w, h, at, off, o = {}) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: T2.t, transparent: true, roughness: 0.55, ...o }));
+      m.position.copy(at.p).addScaledVector(at.n, off); m.quaternion.copy(facing(at.n)); deco.add(m); return m; };
+    const half = K.windscreenHalf(0.12), zW = -(half - 0.1), zL = zW + 0.13;
+    // odometer: the instrument display, low on the driver's side of the windscreen (+z)
+    const odoAt = K.windscreen(0.09, Math.min(0.4, half - 0.2));
+    decal(TX.odo, 0.30, 0.085, odoAt, 0.004, { emissive: new THREE.Color("#F5E9D8"), emissiveIntensity: 0.35, emissiveMap: TX.odo.t });
     // WOF and licence labels, passenger-side corner of the windscreen; the asking price on a sticker beside them
-    decal(TX.wof, 0.1, 0.1, onScreen(0.12, -0.6, 0.074), wsQuat); decal(TX.lic, 0.1, 0.1, onScreen(0.12, -0.47, 0.074), wsQuat);
-    decal(TX.price, 0.34, 0.2, onScreen(0.24, -0.08, 0.075), wsQuat);
+    decal(TX.wof, 0.1, 0.1, K.windscreen(0.13, zW), 0.004); decal(TX.lic, 0.1, 0.1, K.windscreen(0.13, zL), 0.004);
+    const stickerAt = K.windscreen(0.27, -0.08); decal(TX.price, 0.34, 0.2, stickerAt, 0.005);
     // the key on the bonnet, with a paper tag that says whether money is owing (a security interest on the PPSR)
-    const bx = T.top[3][0] + (T.top[2][0] - T.top[3][0]) * 0.38, by = T.top[3][1] + (T.top[2][1] - T.top[3][1]) * 0.38, bonnet = K.map(bx, by, 0);
-    const slope = Math.atan2(T.top[2][1] - T.top[3][1], (T.top[2][0] - T.top[3][0]) * (K.map(1, 0, 0).x - K.map(0, 0, 0).x));
-    const keyG = new THREE.Group(); keyG.position.set(bonnet.x, bonnet.y + 0.055, 0.18); keyG.rotation.z = slope; deco.add(keyG);
+    const bon = K.topAt(T.cowl + (T.bonnetF - T.cowl) * 0.5, 0.18), keyG = new THREE.Group();
+    keyG.position.copy(bon.p).addScaledVector(bon.n, 0.016); keyG.quaternion.setFromUnitVectors(UP, bon.n); deco.add(keyG);
     const fob = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.028, 0.055), std("#262123", { roughness: 0.45, metalness: 0.2 })); fob.castShadow = true; keyG.add(fob);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.006, 8, 24), std("#C3C6CA", { metalness: 0.8, roughness: 0.25 })); ring.rotation.x = Math.PI / 2; ring.position.set(0.075, 0, 0); keyG.add(ring);
     const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.11), new THREE.MeshStandardMaterial({ map: TX.tag.t, transparent: true, roughness: 0.8, side: THREE.DoubleSide }));
     tag.rotation.x = -Math.PI / 2; tag.position.set(0.2, -0.008, 0.05); tag.rotation.z = -0.25; keyG.add(tag);
     const string = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.12, 6), std("#A0726F")); string.rotation.z = Math.PI / 2; string.rotation.y = 0.5; string.position.set(0.12, -0.005, 0.03); keyG.add(string);
-    // the filler flap (or charge port), driver's-side rear quarter
-    const doorZ = T.W / 2 + 0.012, fx = T.wb - (T.wr + 0.08) - 0.12, filler = K.map(fx, T.belt - 0.16, doorZ - 0.004);
-    if (!flapMat) flapMat = new THREE.MeshPhysicalMaterial({ color: MAT.body.color.clone().multiplyScalar(0.86), roughness: 0.4, clearcoat: 0.6 });
-    const flap = new THREE.Mesh(new THREE.CircleGeometry(0.075, 32), flapMat); flap.position.copy(filler); deco.add(flap);
-    const rim = new THREE.Mesh(new THREE.RingGeometry(0.075, 0.084, 32), std("#240B21", { roughness: 0.6, transparent: true, opacity: 0.45 })); rim.position.copy(filler).add(new THREE.Vector3(0, 0, 0.001)); deco.add(rim);
+    // the filler flap (or charge port), driver's-side rear quarter, above the back of the rear wheel
+    const fillAt = K.sideAt(T.wb - T.wr * 0.75, T.belt - 0.13, 1);
+    if (!flapMat) flapMat = new THREE.MeshPhysicalMaterial({ color: MAT.body.color.clone().multiplyScalar(0.9), roughness: 0.36, clearcoat: 0.6 });
+    const flap = new THREE.Mesh(new THREE.CircleGeometry(0.07, 32), flapMat); flap.position.copy(fillAt.p).addScaledVector(fillAt.n, 0.003); flap.quaternion.copy(facing(fillAt.n)); deco.add(flap);
+    const rim = new THREE.Mesh(new THREE.RingGeometry(0.07, 0.077, 32), std("#240B21", { roughness: 0.6, transparent: true, opacity: 0.5 })); rim.position.copy(fillAt.p).addScaledVector(fillAt.n, 0.004); rim.quaternion.copy(facing(fillAt.n)); deco.add(rim);
     // the roof, for the facts about every car of this model on the register
-    const roof = K.map((T.glass[1] + T.glass[2]) / 2, T.roof, 0);
+    const roof = K.topAt((T.roofF + T.roofR) / 2, 0);
+    const out = (at, d) => at.p.clone().addScaledVector(at.n, d); keyG.updateMatrixWorld(true);
     ANCH = {
-      dash: [onScreen(0.09, 0.40, 0.07), wsN], screen: [onScreen(0.12, -0.54, 0.075), wsN], tag: [new THREE.Vector3(keyG.position.x + 0.2, keyG.position.y, 0.23), new THREE.Vector3(0, 1, 0)],
-      filler: [filler.clone().add(new THREE.Vector3(0, 0, 0.01)), new THREE.Vector3(0, 0, 1)], roof: [roof.add(new THREE.Vector3(0, 0.01, 0)), new THREE.Vector3(0, 1, 0)],
+      dash: [out(odoAt, 0.05), odoAt.n], screen: [out(K.windscreen(0.13, (zW + zL) / 2), 0.06), K.windscreen(0.13, zW).n], tag: [keyG.localToWorld(new THREE.Vector3(0.2, 0, 0.05)), bon.n],
+      filler: [out(fillAt, 0.01), fillAt.n], roof: [out(roof, 0.01), roof.n],
     };
   }
 
@@ -137,10 +125,10 @@ export async function createCheckStage(canvas, opts = {}) {
     });
   }
   function setKind(k) { if (!(k in kit.TYPES)) return; kind = k; build(k); render(); }
-  function setPaint(hex) { MAT.body.color.set(hex); flapMat.color.copy(MAT.body.color).multiplyScalar(0.86); render(); }
+  function setPaint(hex) { MAT.body.color.set(maquettePaint(THREE, hex)); flapMat.color.copy(MAT.body.color).multiplyScalar(0.9); render(); }
   function setFacts(f) { facts = { ...facts, ...f }; draw(); render(); }
   // on a dark page the plum shadow would vanish: a near-black one instead
-  function setTheme(dark) { contactMat.color.set(dark ? 0x000000 : 0x240b21); contactMat.opacity = dark ? 0.6 : 0.42; groundMat.color.set(dark ? 0x000000 : 0x240b21); groundMat.opacity = dark ? 0.32 : 0.13; render(); }
+  function setTheme(dark) { look.setDark(dark); contactMat.color.set(dark ? 0x000000 : 0x240b21); contactMat.opacity = dark ? 0.72 : 0.5; render(); }
   build(kind); if (opts.dark) setTheme(true); resize();
   return { setKind, setPaint, setFacts, setTheme, turn, jump, anchors, resize, render, get kind() { return kind; }, get yaw() { return yaw; } };
 }
