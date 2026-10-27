@@ -50,8 +50,11 @@ function announce(t){$('modelStatus').textContent=t}
 // ---------------------------------------------------------------- the 3D bench
 function initScene(){
  try{
+  // check for WebGL first, so devices without it get the drawing quietly instead of renderer errors
+  const probe=document.createElement('canvas');if(!(probe.getContext('webgl2')||probe.getContext('webgl')))throw new Error('WebGL is not available');
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+  const mobile=matchMedia('(max-width: 820px), (pointer: coarse)').matches;
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.5:2));renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1.0;renderer.setClearColor(0x000000,0);
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('role','img');
@@ -62,7 +65,7 @@ function initScene(){
   scene.add(new THREE.HemisphereLight(0xffffff,0xd9d2e6,.4));
   const fill=new THREE.DirectionalLight(0xffffff,.5);fill.position.set(160,220,380);scene.add(fill);
   const sun=new THREE.DirectionalLight(0xfff3e4,2.4);sun.position.set(-220,420,190);sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.35;sun.shadow.radius=4;
+  sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.35;sun.shadow.radius=4;
   Object.assign(sun.shadow.camera,{left:-240,right:240,top:240,bottom:-240,near:10,far:1400});scene.add(sun,sun.target);
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(3000,3000),new THREE.ShadowMaterial({color:new THREE.Color('#1B2452'),opacity:.24}));
   ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
@@ -79,7 +82,7 @@ function initScene(){
    renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();requestRender()};
   new ResizeObserver(resize).observe($('modelHost'));resize();
   return true;
- }catch(err){console.warn('Print Lab: 3D view unavailable, showing the drawing instead.',err);G=null;return false}
+ }catch(err){console.info('Print Lab: 3D view unavailable, showing the drawing instead.',err.message);G=null;return false}
 }
 function requestRender(){if(G&&!G.frame)G.frame=requestAnimationFrame(tick)}
 function tick(now){
@@ -133,7 +136,7 @@ function rebuild(){
   if(!prev||!lastRadius)goView(G.view||'three',false);
   else{const k=f.radius/lastRadius,off=G.camera.position.clone().sub(G.orbit.target).multiplyScalar(k);G.orbit.target.copy(f.c);G.camera.position.copy(f.c).add(off);G.orbit.update();requestRender()}
   lastRadius=f.radius;announce(`${o.detail==='fine'?'Fine':'Standard'} detail · ${s.triangles.toLocaleString('en-NZ')} triangles`);
- }else{$('modelHost').hidden=true;$('modelFallback').hidden=false;$('modelFallback').innerHTML=drawingSVG(o,s);announce('3D view unavailable on this device · showing the drawing')}
+ }else{$('modelHost').hidden=true;$('modelFallback').hidden=false;document.querySelector('.pl-views').hidden=true;document.querySelector('.pl-hint').hidden=true;$('modelFallback').innerHTML=drawingSVG(o,s);announce('3D view unavailable on this device · showing the drawing')}
  preflight(o,s);
  document.documentElement.dataset.printlabReady='true';$('modelHost').dataset.triangles=String(s.triangles);
 }

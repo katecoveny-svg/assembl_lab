@@ -476,7 +476,7 @@ function kokopu3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   S.view("maze",[ZM.x+.4,9.4,ZM.z+10.6],[ZM.x,.4,ZM.z+.4],{min:5,max:34});
   S.view("all",[7.4,13.5,25],[7.4,1,0],{min:8,max:60});
   S.setShadowBox(13,[6,0,0]);S.goView("fish",true);
-  try{window.__kokopu={S,s}}catch(e){}
+  if(/[?&]debug\b/.test(location.search))try{window.__kokopu={S,s}}catch(e){}
 
   // ---------------------------------------------------------------- night and day
   const hemi=S.scene.children.find(o=>o.isHemisphereLight),fillL=S.scene.children.find(o=>o.isDirectionalLight&&o!==S.sun);

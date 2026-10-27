@@ -42,7 +42,7 @@ h3{margin:0;font:600 18px/1.2 var(--as-display);color:var(--as-ink)}
 /* controls rail */
 .pl-rail{display:grid;gap:14px;background:var(--as-soft);border-radius:22px;padding:16px;min-width:0}
 .pl-field{display:grid;gap:6px;min-width:0;border:0;margin:0;padding:0}
-.pl-field>label:not(.pl-custom),.pl-lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 12px var(--as-font);letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);padding:0}
+.pl-field:not(.pl-seg)>label:not(.pl-custom),.pl-lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 12px var(--as-font);letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);padding:0}
 .pl-field output{font:600 15px var(--as-display);letter-spacing:0;text-transform:none;color:var(--as-ink);font-variant-numeric:tabular-nums}
 .pl-field small,.pl-switch small,.pl-seg small{font-size:12px;color:var(--as-muted);line-height:1.35}
 .pl-field input[type=text],.pl-field input:not([type]),#modelName{font:600 16px var(--as-font);color:var(--as-ink);background:var(--as-card);border:1.5px solid var(--as-line2);border-radius:12px;padding:8px 12px;width:100%;min-width:0}
@@ -62,7 +62,7 @@ h3{margin:0;font:600 18px/1.2 var(--as-display);color:var(--as-ink)}
 .pl-seg legend{grid-column:1/-1;margin-bottom:6px}
 .pl-seg label{position:relative;cursor:pointer;display:block}
 .pl-seg input{position:absolute;opacity:0;width:1px;height:1px}
-.pl-seg span{display:grid;gap:1px;border:1.5px solid var(--as-line);background:var(--as-card);border-radius:14px;padding:8px 10px;font:600 14px var(--as-font);color:var(--as-ink)}
+.pl-seg span{display:grid;gap:1px;text-transform:none;letter-spacing:0;border:1.5px solid var(--as-line);background:var(--as-card);border-radius:14px;padding:8px 10px;font:600 14px var(--as-font);color:var(--as-ink)}
 .pl-seg input:checked+span{border-color:var(--as-ink);box-shadow:inset 0 0 0 1px var(--as-ink);background:var(--acc-soft)}
 .pl-seg input:focus-visible+span{outline:3px solid var(--as-focus);outline-offset:2px}
 .pl-switch{display:flex;gap:10px;align-items:flex-start;font:600 14px var(--as-font);color:var(--as-ink);cursor:pointer;background:var(--as-card);border-radius:16px;padding:10px 12px;box-shadow:inset 0 0 0 1px var(--as-line)}
@@ -135,13 +135,18 @@ h3{margin:0;font:600 18px/1.2 var(--as-display);color:var(--as-ink)}
 }
 @media (prefers-reduced-motion:reduce){.pl-file,.pl-hint{transition:none}}
 
-/* printing the drawing: only the sheet, at true scale on A4 landscape */
+/* printing the drawing: only the sheet, at true scale on A4 landscape (everything else is removed from the flow) */
 @page{size:A4 landscape;margin:0}
 @media print{
- body{padding:0;background:#fff}
- body *{visibility:hidden}
- #drawingSheet,#drawingSheet *{visibility:visible}
- #view-drawing{display:block!important}
- #drawingSheet{position:fixed;left:0;top:0;width:297mm;min-width:0;box-shadow:none;border-radius:0}
+ html,body{background:#fff!important;margin:0!important;padding:0!important}
+ body>*:not(.wrap){display:none!important}
+ .wrap{display:block;max-width:none;margin:0}
+ .wrap>*:not(#workbench){display:none!important}
+ #workbench{display:block;border:0;border-radius:0;box-shadow:none;overflow:visible}
+ #workbench>*:not(#view-drawing){display:none!important}
+ #view-drawing{display:block!important;padding:0}
+ #view-drawing>*:not(.pl-sheetwrap){display:none!important}
+ .pl-sheetwrap{padding:0;background:none;box-shadow:none;border-radius:0;overflow:hidden;width:297mm;height:210mm}
+ #drawingSheet{min-width:0;width:297mm;height:210mm;box-shadow:none;border-radius:0}
  #drawingSheet svg{width:297mm;height:210mm}
 }

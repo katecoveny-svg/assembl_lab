@@ -194,7 +194,7 @@ function analyse(){
  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const i=y*W+x,g=Math.abs(lum[i]-lum[i+1])+Math.abs(lum[i]-lum[i+W]);if(g>th){edgeMask[i]=1;edges++}}
  paint();const pct=(edges/n*100).toFixed(1);
  $('vBrightness').textContent=`${Math.round(mean)} / 255`;$('vContrast').textContent=String(Math.round(sd));$('vEdges').textContent=`${pct}%`;$('vColour').textContent=`${bins.size} of 512`;
- $('visionExplanation').innerHTML=`<h3>Measurement, not identification</h3><p>At sensitivity ${th}, <b>${pct}%</b> of pixels changed sharply from their neighbours (marked in pink). The image uses ${bins.size} of 512 colour bins. Try another sensitivity and explain the trade-off: a low setting finds faint edges, but also texture and noise.</p>`;
+ $('visionExplanation').innerHTML=`<h3>Measurement, not identification</h3><p>At sensitivity ${th}, <b>${pct}%</b> of pixels changed sharply from their neighbours${$('showEdges').checked?' (marked in pink)':' (turn on Show edges to see them)'}. The image uses ${bins.size} of 512 colour bins. Try another sensitivity and explain the trade-off: a low setting finds faint edges, but also texture and noise.</p>`;
  const wrap=$('visionWrap');wrap.style.setProperty('--h',canvas.clientHeight+'px');wrap.classList.remove('scanning');if(!REDUCED){void wrap.offsetWidth;wrap.classList.add('scanning')}
 }
 document.querySelectorAll('[data-sample]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-sample]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));drawSample(b.dataset.sample)}));

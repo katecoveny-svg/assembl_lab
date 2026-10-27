@@ -253,7 +253,7 @@ export function createBike(_three,opt={}){
  }
 
  // ---------------- materials and one merged mesh per material
- const plastic=(c,rough=.36,coat=.6)=>new THREE.MeshPhysicalMaterial({color:new THREE.Color(c),roughness:rough,metalness:0,clearcoat:coat,clearcoatRoughness:.25,sheen:.2,sheenColor:new THREE.Color('#ffffff')});
+ const plastic=(c,rough=.36,coat=.6)=>new THREE.MeshPhysicalMaterial({color:new THREE.Color(c),roughness:rough,metalness:0,clearcoat:coat,clearcoatRoughness:.25});
  const metal=(c,rough=.3)=>new THREE.MeshPhysicalMaterial({color:new THREE.Color(c),roughness:rough,metalness:1,clearcoat:.3});
  const lum=new THREE.Color(o.frame).getHSL({h:0,s:0,l:0}).l;
  const materials={

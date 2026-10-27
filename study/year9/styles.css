@@ -22,10 +22,9 @@ h4{margin:0;font:600 13px var(--as-font);letter-spacing:.06em;text-transform:upp
 .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 .btn.big{font-size:15px;padding:11px 20px}
 .y9-note{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:14px!important;font-size:13.5px!important;color:var(--as-muted)!important}
-.y9-hero-art{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:380px;justify-self:center;width:100%}
+.y9-hero-art{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:360px;justify-self:center;width:100%}
 .y9-tile{aspect-ratio:1;border-radius:26px;background:var(--tint);display:grid;place-items:center;align-content:center;gap:6px;color:var(--as-ink);
  box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),inset 0 -4px 0 rgba(34,42,85,.08),10px 12px 0 -4px rgba(27,36,82,.12)}
-.y9-tile:nth-child(2),.y9-tile:nth-child(3){transform:translateY(14px)}
 .y9-tile svg{width:46%;height:auto;color:var(--as-ink)}
 .y9-tile b{font:600 14px var(--as-display)}
 
@@ -76,7 +75,8 @@ fieldset{border:0;margin:0;padding:0;min-width:0}
 .y9-sprint .card{display:grid;gap:10px;padding:16px 18px;border-radius:24px}
 .y9-sprint .card p{max-width:none}
 .y9-worked{background:var(--tsoft);border-color:transparent}
-.y9-answer{background:var(--as-card);border-radius:16px;padding:12px 14px;color:var(--as-ink);font-size:14.5px;box-shadow:inset 3px 0 0 var(--as-mint)}
+.y9-model{background:var(--as-card);border-radius:16px;padding:12px 14px;color:var(--as-ink);font-size:14.5px;box-shadow:inset 3px 0 0 var(--as-mint)}
+.y9-sprint .card h3,.y9-source h3,.y9-explainer h3{margin:0;font:600 18px/1.2 var(--as-display);letter-spacing:0;text-transform:none;color:var(--as-ink)}
 .y9-explain{display:grid;gap:8px;border-top:1px dashed var(--as-line2);padding-top:12px;margin-top:2px}
 .y9-explain label{display:flex;justify-content:space-between;gap:8px;font:600 14px var(--as-font);color:var(--as-ink)}
 .y9-explain small{font-weight:500;color:var(--as-muted)}
@@ -177,7 +177,7 @@ details.card p{padding:0 16px 14px}
 
 /* print lab callout (peach, the bike's case tint) and guidance */
 .y9-print{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:18px;align-items:center;background:#FCEDE3;border-radius:32px;padding:clamp(16px,3vw,30px);box-shadow:inset 0 0 0 2px #F9D2B8}
-.y9-print .y9-bike{max-width:300px;justify-self:center}
+.y9-print .y9-bike{width:100%;max-width:320px;justify-self:center}
 .y9-print p{margin:6px 0 14px;max-width:56ch;color:var(--as-ink)}
 .y9-print h2{margin-top:4px}
 .y9-guide{display:grid;gap:12px}
@@ -197,7 +197,6 @@ details.card p{padding:0 16px 14px}
  .y9-hero h1{max-width:none}
  .y9-hero-art{grid-template-columns:repeat(4,1fr);max-width:none;gap:8px}
  .y9-tile{border-radius:18px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),6px 7px 0 -3px rgba(27,36,82,.12)}
- .y9-tile:nth-child(2),.y9-tile:nth-child(3){transform:none}
  .y9-tile b{display:none}
  .y9-sprint,.y9-vision,.y9-print{grid-template-columns:1fr}
  .y9-guide-grid{grid-template-columns:1fr}
