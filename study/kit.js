@@ -16,7 +16,7 @@ const DEEP={sky:"#3A6FB8",mint:"#2A7D63",lavender:"#6A50BE",blush:"#B5466F",butt
 const STINT={science:"sky",biochem:"mint",maths:"lavender",english:"blush",social:"peach",digital:"blush",tech:"butter"};
 const MTINT={vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
-const MSUB={shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
+const MSUB={inanga:"biochem",forcetrack:"science",wavefield:"science",reactionchamber:"biochem",chanceorchard:"maths",gradientlandscape:"maths",carbonbalance:"science",evidenceengine:"english",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
