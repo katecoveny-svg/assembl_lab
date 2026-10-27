@@ -7,6 +7,7 @@
 //   - copies canvas, video and 8-bit data textures at the moment of the snapshot
 //   - keeps to a triangle budget: lowers segment counts first, then drops the smallest instanced items,
 //     then rounds off rounded boxes, then drops the smallest remaining parts, and reports what it did
+//   - optionally keeps only what a camera can see (view: camera), for scenes with several stations side by side
 //   - centres the result on its base (y = 0) and scales it to real metres or a tabletop size
 import * as THREE from 'three';
 import { mergeGeometries } from '../vendor/three/utils/BufferGeometryUtils.js';
@@ -32,6 +33,7 @@ const SIMPLIFY = {
 };
 const FLAT_TYPES = new Set(['PlaneGeometry', 'CircleGeometry', 'RingGeometry', 'ShapeGeometry']);
 
+const plural = w => (/(x|s|ch|sh)$/.test(w) ? w + 'es' : w + 's');
 const triCount = g => (g.index ? g.index.count : g.attributes.position.count) / 3;
 
 function lowerGeometry(g) {
@@ -96,7 +98,8 @@ function copyTexture(t, cache, maxSize, report) {
     c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
     draw(c.getContext('2d'));
     out = new THREE.CanvasTexture(c);
-    out.colorSpace = t.colorSpace; out.flipY = t.flipY;
+    // three r152+ uses colorSpace; older builds (the r128 machines) use encoding, where 3001 meant sRGB
+    out.colorSpace = t.colorSpace ?? (t.encoding === 3001 ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace); out.flipY = t.flipY;
     out.wrapS = t.wrapS; out.wrapT = t.wrapT;
     out.repeat.copy(t.repeat); out.offset.copy(t.offset); out.rotation = t.rotation; out.center.copy(t.center);
     out.userData.mimeType = (t.userData && t.userData.mimeType) === 'image/jpeg' ? 'image/jpeg' : 'image/png';
@@ -219,6 +222,13 @@ export function snapshot(root, options = {}) {
   root.updateMatrixWorld(true);
   const items = [];
   const m4 = new THREE.Matrix4(), sph = new THREE.Sphere(), col = new THREE.Color();
+  // view: a camera. Only what it can see is kept (for scenes that lay several stations side by side)
+  let frustum = null;
+  if (opts.view && opts.view.isCamera) {
+    const cam = opts.view; cam.updateMatrixWorld(true);
+    frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+  }
+  const inView = s => !frustum || frustum.intersectsSphere(s);
 
   function addMesh(mesh) {
     const geo = mesh.geometry;
@@ -253,12 +263,14 @@ export function snapshot(root, options = {}) {
           if (mesh.instanceColor) { mesh.getColorAt(i, col); tint = tint ? tint.multiply(col) : col.clone(); }
           if (tint) tint.setRGB(Math.round(tint.r * 64) / 64, Math.round(tint.g * 64) / 64, Math.round(tint.b * 64) / 64);
           sph.copy(geo.boundingSphere).applyMatrix4(world);
-          items.push({ src: geometry, matrix: world, material, tint, tris, radius: sph.radius, instanced: true, name: mesh.name || 'instanced parts' });
+          if (!inView(sph)) { skip('out of view'); continue; }
+          items.push({ src: geometry, matrix: world, material, tint, tris, radius: sph.radius, instanced: true, name: mesh.name || 'repeated ' + plural((geo.type || 'mesh').replace(/Geometry$/, '').toLowerCase()) });
           report.instances++;
         }
       } else {
         sph.copy(geo.boundingSphere).applyMatrix4(mesh.matrixWorld);
-        items.push({ src: geometry, matrix: mesh.matrixWorld.clone(), material, tint: vtint, tris, radius: sph.radius, instanced: false, baked, name: mesh.name || 'part' });
+        if (!inView(sph)) { skip('out of view'); continue; }
+        items.push({ src: geometry, matrix: mesh.matrixWorld.clone(), material, tint: vtint, tris, radius: sph.radius, instanced: false, baked, name: mesh.name || `${(geo.type || 'mesh').replace(/Geometry$/, '').toLowerCase()} part` });
       }
     }
   }

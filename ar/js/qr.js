@@ -44,6 +44,20 @@ function rrectCCW(x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
   return `M${r2(x + r)} ${r2(y)}a${r2(r)} ${r2(r)} 0 0 0 ${r2(-r)} ${r2(r)}v${r2(h - 2 * r)}a${r2(r)} ${r2(r)} 0 0 0 ${r2(r)} ${r2(r)}h${r2(w - 2 * r)}a${r2(r)} ${r2(r)} 0 0 0 ${r2(r)} ${r2(-r)}v${r2(-(h - 2 * r))}a${r2(r)} ${r2(r)} 0 0 0 ${r2(-r)} ${r2(-r)}z`;
 }
+// a unit square with its own radius per corner (top-left, top-right, bottom-right, bottom-left), grown slightly
+// into neighbouring modules (g) so joined modules don't show hairline seams
+function cornerRect(x, y, tl, tr, br, bl, g) {
+  const x0 = x - g[3], y0 = y - g[0], x1 = x + 1 + g[1], y1 = y + 1 + g[2];
+  let p = `M${r2(x0 + tl)} ${r2(y0)}H${r2(x1 - tr)}`;
+  if (tr) p += `A${tr} ${tr} 0 0 1 ${r2(x1)} ${r2(y0 + tr)}`;
+  p += `V${r2(y1 - br)}`;
+  if (br) p += `A${br} ${br} 0 0 1 ${r2(x1 - br)} ${r2(y1)}`;
+  p += `H${r2(x0 + bl)}`;
+  if (bl) p += `A${bl} ${bl} 0 0 1 ${r2(x0)} ${r2(y1 - bl)}`;
+  p += `V${r2(y0 + tl)}`;
+  if (tl) p += `A${tl} ${tl} 0 0 1 ${r2(x0 + tl)} ${r2(y0)}`;
+  return p + 'z';
+}
 const circle = (cx, cy, r) => `M${r2(cx - r)} ${r2(cy)}a${r2(r)} ${r2(r)} 0 1 0 ${r2(2 * r)} 0a${r2(r)} ${r2(r)} 0 1 0 ${r2(-2 * r)} 0z`;
 
 // The cube mark: three faces of a cube coming together, in the plum family. Drawn in a 200-unit box.
@@ -55,10 +69,21 @@ export const CUBE_PATHS = [
 export const cubeSVG = (x, y, s) => `<g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(s / 200)})">${CUBE_PATHS.map(([c, d]) => `<path fill="${c}" d="${d}"/>`).join('')}</g>`;
 
 let uid = 0;
-// Returns the inner SVG markup of a code drawn at (x, y) with the given width, plus the module plan it used.
+// Shape settings per style, tuned with OpenCV's QRCodeDetector at 160 px (tools/test_ar.py). Finder patterns keep
+// near-square outer corners because decoders find the code's corners from them.
+export const STYLE_SHAPES = {
+  square: { tile: 'square', fo: 0, fi: 0, fc: 0 },
+  // rounded tiles with tiny gaps, like parts laid out to be assembled
+  assembly: { tile: 'round', inset: 0.02, r: 0.15, fo: 0.35, fi: 0.25, fc: 0.35 },
+  dots: { tile: 'dot', dot: 0.55, fo: 0.35, fi: 0.25, fc: 0.35 },
+  // joined modules that flow into each other, in a deep plum to muted plum gradient
+  glass: { tile: 'joined', r: 0.3, fo: 0.35, fi: 0.25, fc: 0.35 }
+};
+// Returns the inner SVG markup of a code drawn at (x, y) with the given width.
 // centre: null | {kind:'cube'} | {kind:'image', href}
-export function qrMarkup(m, { x = 0, y = 0, size = 300, style = 'assembly', quiet = 4, centre = { kind: 'cube' }, bg = PAL.paper, ink = PAL.plum } = {}) {
+export function qrMarkup(m, { x = 0, y = 0, size = 300, style = 'assembly', quiet = 4, centre = { kind: 'cube' }, bg = PAL.paper, ink = PAL.plum, shape = null } = {}) {
   const id = 'aq' + (++uid);
+  const sh = { ...(STYLE_SHAPES[style] || STYLE_SHAPES.assembly), ...(shape || {}) };
   const N = m.n + quiet * 2, u = size / N;
   const showCentre = centre && m.centre !== false;
   // knock out an odd-sized square in the middle for the mark (about 22% of the width, under 5% of the area)
@@ -69,7 +94,7 @@ export function qrMarkup(m, { x = 0, y = 0, size = 300, style = 'assembly', quie
   let d = '';
   const X = c => quiet + c, Y = r => quiet + r;
   for (let r = 0; r < m.n; r++) {
-    if (style === 'square') {
+    if (sh.tile === 'square') {
       // merge runs along each row
       let c = 0;
       while (c < m.n) {
@@ -82,20 +107,22 @@ export function qrMarkup(m, { x = 0, y = 0, size = 300, style = 'assembly', quie
     }
     for (let c = 0; c < m.n; c++) {
       if (!m.dark(r, c) || inFinder(r, c) || inCentre(r, c)) continue;
-      if (style === 'dots') d += circle(X(c) + 0.5, Y(r) + 0.5, 0.45);
-      else d += rrect(X(c) + 0.07, Y(r) + 0.07, 0.86, 0.86, 0.24);
+      if (sh.tile === 'dot') d += circle(X(c) + 0.5, Y(r) + 0.5, sh.dot);
+      else if (sh.tile === 'joined') {
+        const D = (rr, cc) => rr >= 0 && cc >= 0 && rr < m.n && cc < m.n && m.dark(rr, cc) && !inFinder(rr, cc) && !inCentre(rr, cc);
+        const up = D(r - 1, c), dn = D(r + 1, c), lf = D(r, c - 1), rt = D(r, c + 1), R = sh.r, e = 0.02;
+        d += cornerRect(X(c), Y(r), !up && !lf ? R : 0, !up && !rt ? R : 0, !dn && !rt ? R : 0, !dn && !lf ? R : 0, [up ? e : 0, rt ? e : 0, dn ? e : 0, lf ? e : 0]);
+      }
+      else d += rrect(X(c) + sh.inset, Y(r) + sh.inset, 1 - 2 * sh.inset, 1 - 2 * sh.inset, sh.r);
     }
   }
-  // finder patterns: a rounded ring and a rounded centre (square corners for the plain style)
+  // finder patterns: a ring and a centre, softly rounded
   let f = '';
   for (const [fr, fc] of [[0, 0], [0, m.n - 7], [m.n - 7, 0]]) {
     const fx = X(fc), fy = Y(fr);
-    if (style === 'square') f += `M${fx} ${fy}h7v7h-7z` + `M${fx + 1} ${fy + 1}v5h5v-5z` + `M${fx + 2} ${fy + 2}h3v3h-3z`;
-    else {
-      const ro = style === 'dots' ? 2.3 : 1.9, ri = style === 'dots' ? 1.5 : 1.15;
-      f += rrect(fx, fy, 7, 7, ro) + rrectCCW(fx + 1, fy + 1, 5, 5, ri);
-      f += style === 'dots' ? circle(fx + 3.5, fy + 3.5, 1.5) : rrect(fx + 2, fy + 2, 3, 3, 0.85);
-    }
+    if (!sh.fo && !sh.fi && !sh.fc) { f += `M${fx} ${fy}h7v7h-7z` + `M${fx + 1} ${fy + 1}v5h5v-5z` + `M${fx + 2} ${fy + 2}h3v3h-3z`; continue; }
+    f += rrect(fx, fy, 7, 7, sh.fo) + rrectCCW(fx + 1, fy + 1, 5, 5, sh.fi);
+    f += rrect(fx + 2, fy + 2, 3, 3, sh.fc);
   }
   let defs = '', fill = ink, ffill = ink;
   if (style === 'glass') {
@@ -112,8 +139,7 @@ export function qrMarkup(m, { x = 0, y = 0, size = 300, style = 'assembly', quie
       mid += `<image href="${esc(centre.href)}" x="${r2(px + 0.35)}" y="${r2(py + 0.35)}" width="${r2(ps - 0.7)}" height="${r2(ps - 0.7)}" preserveAspectRatio="xMidYMid meet" clip-path="url(#${id}c)"/>`;
     } else mid += cubeSVG(px + ps * 0.12, py + ps * 0.12, ps * 0.76);
   }
-  const markup = `<g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(u * 1000) / 1000})">${defs ? `<defs>${defs}</defs>` : ''}<rect width="${N}" height="${N}" rx="${style === 'square' ? 0 : 1.6}" fill="${bg}"/><path fill="${fill}" d="${d}"/><path fill="${ffill}" fill-rule="nonzero" d="${f}"/>${mid}</g>`;
-  return markup;
+  return `<g transform="translate(${r2(x)} ${r2(y)}) scale(${u.toFixed(6)})">${defs ? `<defs>${defs}</defs>` : ''}<rect width="${N}" height="${N}" rx="${sh.tile === 'square' ? 0 : 1.2}" fill="${bg}"/><path fill="${fill}" d="${d}"/><path fill="${ffill}" fill-rule="nonzero" d="${f}"/>${mid}</g>`;
 }
 
 export function qrSVG(text, opts = {}) {
@@ -148,7 +174,7 @@ export async function cardSVG({ url, title = '', detail = '', kind = '', thumb =
   }
   if (detail) out += T(mono, detail, { size: 13, x: tx + 26, y: ty + th - 24, fill: PAL.muted, maxWidth: tw - 120 });
   // the code
-  const qs = 300, qx = P - 6, qy = 436;
+  const qs = 320, qx = P - 8, qy = 432;
   const centreOpt = !m.centre ? null : centre === 'thumb' && (centreThumb || thumb) ? { kind: 'image', href: centreThumb || thumb } : { kind: 'cube' };
   out += qrMarkup(m, { x: qx, y: qy, size: qs, style, centre: centreOpt });
   // words beside it

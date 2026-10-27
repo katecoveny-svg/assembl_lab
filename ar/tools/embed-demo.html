@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>assembl AR embed · demo and test harness</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/ar/ar.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<style>
+  .demo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap);padding-bottom:80px}
+  .demo article{padding:20px;border-radius:24px;background:var(--chalk);display:grid;gap:12px;align-content:start}
+  .demo h2{font-size:19px}
+  .demo pre{margin:0;padding:12px;border-radius:14px;background:var(--paper);font:400 11.5px/1.5 var(--mono);color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+  .demo .out{font:400 11.5px/1.45 var(--mono);color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+  @media (max-width:860px){.demo{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<main>
+  <header class="intro wrap" style="grid-template-columns:minmax(0,1fr)">
+    <p class="eyebrow"><b>assembl ar</b><span>embed.js · demo and test harness</span></p>
+    <h1 style="font-size:clamp(30px,4vw,48px)">A “View in your space” button for any page</h1>
+    <p class="lede">Three ways in: a library id (shareable), a parametric library model, and your own three.js object exported on the fly. See the comment at the top of <a href="/ar/embed.js">/ar/embed.js</a>.</p>
+  </header>
+  <section class="demo wrap">
+    <article>
+      <h2>Library car</h2>
+      <pre>assemblAR.button(el, { model: 'lib:ute',
+  params: { paint: 'rose' }, scale: 'table' })</pre>
+      <div id="slotCar"></div>
+    </article>
+    <article>
+      <h2>Print Lab bike, real size</h2>
+      <pre>assemblAR.button(el, { model: 'lib:bike',
+  params: { wheelbase: 140, frame: '#492B3E' },
+  scale: 'real', label: 'Put it in the garage' })</pre>
+      <div id="slotBike"></div>
+    </article>
+    <article>
+      <h2>Your own three.js object</h2>
+      <pre>assemblAR.button(el, { object: () => group,
+  unitsPerMetre: 10, scale: 'table',
+  title: 'Instanced test object', note: true })</pre>
+      <div id="slotObj"></div>
+      <p class="out" id="objReport">Report appears after a snapshot.</p>
+    </article>
+  </section>
+</main>
+<script type="module">
+  import * as THREE from 'three';
+  import assemblAR from '/ar/embed.js';
+
+  // a small test object with the things machines use: instanced meshes with per-instance colour, a canvas texture,
+  // a physical material, a basic material, a transparent case, points and a sprite (which should be skipped)
+  function testObject() {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.BoxGeometry(4, 0.3, 3), new THREE.MeshPhysicalMaterial({ color: '#F5F1F2', roughness: 0.5, clearcoat: 0.5 }));
+    base.position.y = 0.15; g.add(base);
+    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.18, 32, 24), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.4 }), 60);
+    const d = new THREE.Object3D(), c = new THREE.Color(), cols = ['#492B3E', '#916A70', '#654A4E', '#240B21'];
+    for (let i = 0; i < 60; i++) {
+      d.position.set((i % 10) * 0.36 - 1.62, 0.5 + Math.floor(i / 10) * 0.36, Math.sin(i) * 0.6);
+      d.scale.setScalar(i === 59 ? 0 : 1); d.updateMatrix(); im.setMatrixAt(i, d.matrix);
+      im.setColorAt(i, c.set(cols[i % 4]));
+    }
+    g.add(im);
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    const x = cv.getContext('2d'); x.fillStyle = '#FFFDFB'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#240B21'; x.font = '600 44px sans-serif'; x.fillText('kia ora', 34, 80);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+    panel.position.set(0, 3, -1); g.add(panel);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 3), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, roughness: 0.05, transparent: true }));
+    glass.position.y = 1.8; g.add(glass);
+    const pts = new THREE.Points(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 4, 0)]), new THREE.PointsMaterial());
+    g.add(pts);
+    g.add(new THREE.Sprite(new THREE.SpriteMaterial()));
+    return g;
+  }
+  const group = testObject();
+  window.__demo = {
+    car: assemblAR.button(document.getElementById('slotCar'), { model: 'lib:ute', params: { paint: 'rose' }, scale: 'table', note: true }),
+    bike: assemblAR.button(document.getElementById('slotBike'), { model: 'lib:bike', params: { wheelbase: 140, frame: '#492B3E' }, scale: 'real', label: 'Put it in the garage', note: true }),
+    obj: assemblAR.button(document.getElementById('slotObj'), { object: () => group, unitsPerMetre: 10, scale: 'table', title: 'Instanced test object', note: true,
+      onReport: r => { document.getElementById('objReport').textContent = JSON.stringify({ triangles: r.triangles, before: r.trianglesBefore, size: r.size, skipped: r.skipped, dropped: r.dropped }, null, 1); } }),
+    group, assemblAR
+  };
+  if (location.hash === '#ar') window.__demo.obj.prompt();
+</script>
+</body>
+</html>

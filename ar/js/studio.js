@@ -124,7 +124,7 @@ const placer = createPlacer({
   },
   onNoAR: info => {
     if (info.qrURL) {
-      sheet(`<h2 id="sheetTitle">Scan this with your phone</h2><p>Open the camera on an iPhone, iPad or Android phone and point it at the code. ${placer.mode === 'sceneviewer' ? 'This browser can’t do web AR, but the link opens in one that can.' : ''}</p><div class="qrbox">${qrSVG(info.qrURL, { style: S.qr.style, size: 320, centre: { kind: 'cube' } })}</div>${LOCAL ? `<p class="local-note">This code points at <b>${esc(location.host)}</b>, which a phone can’t reach. It works once the page is on assembl.co.nz.</p>` : ''}`);
+      sheet(`<h2 id="sheetTitle">Scan this with your phone</h2><p>Open the camera on an iPhone, iPad or Android phone and point it at the code. ${placer.mode === 'sceneviewer' ? 'This browser can’t do web AR, but the link opens in one that can.' : ''}</p><div class="qrbox">${qrSVG(info.qrURL, { style: S.qr.style, size: 320, centre: { kind: 'cube' } })}</div>${LOCAL ? `<p class="local-note">This code points at <b>${esc(location.host)}</b>, which a phone can’t reach. It works once the page is on the live lab.</p>` : ''}`);
     } else {
       const why = result && result.kind === 'logo' ? 'This logo is too detailed to fit in a code.' : 'This one lives only in this browser, so it has no code yet.';
       sheet(`<h2 id="sheetTitle">${placer.mode === 'sceneviewer' ? 'This browser can’t place 3D here' : 'Take it to your phone'}</h2><p>${why} Download the USDZ for an iPhone or iPad, or the GLB for Android, and open it there. A shareable code needs hosting, which is the next step.</p>${filesRow()}`);
@@ -227,6 +227,7 @@ function setLogo(text, name) {
   const { items, strokes } = logoFromSVGText(text);
   const pack = packLogoForLink(items);
   S.logo.s = pack.s; S.logo.name = name; S.logo.strokes = strokes;
+  S.logo.n = String(name || '').replace(/\.svg$/i, '').replace(/[_-]+/g, ' ').trim().slice(0, 40);
   const url = shareURL({ ...S.logo, k: 'logo' });
   S.logo.link = { length: url.length, fits: !!planQR(url), grid: pack.grid };
 }
@@ -240,7 +241,7 @@ function showLogoStatus(html, warn) { const p = $('logoStatus'); if (!p) return;
 function showGLBStatus(html, warn) { const p = $('glbStatus'); if (!p) return; p.innerHTML = html; p.hidden = !html; p.classList.toggle('warn', !!warn); }
 async function loadSampleLogo() {
   const t = await (await fetch(new URL('../samples/sample-mark.svg', import.meta.url))).text();
-  setLogo(t, 'Sample mark (three faces of a cube)');
+  setLogo(t, 'Sample mark');
   const n = $('logoFileName'); if (n) n.textContent = S.logo.name;
 }
 async function loadSampleFrame() {
@@ -279,7 +280,7 @@ async function rebuild() {
   try {
     let r;
     if (type === 'text') r = await buildText(S.text);
-    else if (type === 'logo') { if (!S.logo.s) await loadSampleLogo(); r = buildLogo(S.logo); r.title = S.logo.name ? S.logo.name.replace(/\.svg$/i, '') : 'Your logo'; }
+    else if (type === 'logo') { if (!S.logo.s) await loadSampleLogo(); r = buildLogo(S.logo); }
     else if (type === 'frame') { if (!S.frame.canvas) await loadSampleFrame(); r = buildFrame({ ...S.frame, mat: !!S.frame.mat, name: S.frame.name }); }
     else if (type === 'lib') r = S.lib.item === 'bike' ? await buildBike(S.lib.bike) : await buildCar({ ...S.lib.car, m: S.lib.item });
     else if (type === 'glb') {
@@ -340,7 +341,7 @@ async function renderShare() {
   const id = r.key;
   const thumb = stage.thumbnail(300, 2.15), centreThumb = stage.thumbnail(160, 1);
   const c = await cardSVG({ url: r.shareURL, title: r.title, kind: KIND_LABEL[r.kind], detail: fmtSize(r.size) + (r.fixedScale ? ' · real size' : ''),
-    thumb, centreThumb, style: S.qr.style, centre: S.qr.centre, host: (LOCAL ? location.host : 'assembl.co.nz') + '/ar' });
+    thumb, centreThumb, style: S.qr.style, centre: S.qr.centre, host: location.host + '/ar' });
   if (id !== (result && result.key)) return;
   card = { ...c, url: r.shareURL, title: r.title };
   holder.innerHTML = c.svg;
@@ -357,6 +358,10 @@ segInto('styleSeg', 'qr.style', STYLES.map(s => [s.id, s.name]));
 segInto('centreSeg', 'qr.centre', [['thumb', 'Your object'], ['cube', 'Cube mark']]);
 
 // ---------------------------------------------------------------- actions
+// on wide screens the button sits on the stage so it's in the first view; on phones it sits under the stage
+const wide = matchMedia('(min-width: 861px)');
+const placeBtn = () => { (wide.matches ? $('stage') : document.querySelector('.stage-bar')).appendChild(viewBtn); viewBtn.classList.toggle('on-stage', wide.matches); };
+placeBtn(); wide.addEventListener ? wide.addEventListener('change', placeBtn) : wide.addListener(placeBtn);
 viewBtn.addEventListener('click', () => { stage.finish(); placer.activate(); });
 $('dlPNG').addEventListener('click', async () => { if (!card) return; download(await svgToPNG(card.svg, 2), `assembl-ar-${slug(card.title)}.png`); });
 $('dlSVG').addEventListener('click', () => { if (!card) return; download(new Blob([card.svg], { type: 'image/svg+xml' }), `assembl-ar-${slug(card.title)}.svg`); });
