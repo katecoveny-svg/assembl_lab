@@ -997,6 +997,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   S.view("turn",[TZ.x+.4,5.2,TZ.z+7.2],[TZ.x,.2,TZ.z],{min:3,max:30});
   S.view("all",[3,24,101],[3,0,66.5],{min:6,max:90});
   let zone="all",follow=null;S.goView("all",true);
+  if(/[?&]debug\b/.test(location.search))try{window.__bike={S,s}}catch(e){}
   const riderW=()=>{const x=s.x,y=s.air?s.y:trackY(Math.max(0,x));return V3(TX0+x,TY0+y,0)};
   const allLabels=[];for(const z in lab)for(const k in lab[z])allLabels.push(lab[z][k]);
   const tl=V3(0,0,0),money=null;
