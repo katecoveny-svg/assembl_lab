@@ -466,6 +466,23 @@ Notes shown to students:
 
 Looked for but not added: "lateral line" (no Te Aka entry found); a general word for night (*pō*) was not opened, so it was left out.
 
+### Slushie (slushie.js) — 10 kupu
+
+Added 28 October 2026. Each entry was checked on Te Aka during the build.
+
+| Kupu | English | Source | Chip label | Note shown to students |
+|---|---|---|---|---|
+| **tio** | ice; freezing | [Te Aka 8127](https://maoridictionary.co.nz/word/8127) | ice | Te Aka gives ice, freezing cold as its third sense and freezing as its second. |
+| **whakatio** | to freeze | [Te Aka 12572](https://maoridictionary.co.nz/word/12572) |  | Te Aka also lists whakatoka, to solidify. |
+| **rewa** | to melt | [Te Aka 6746](https://maoridictionary.co.nz/word/6746) |  | Also means to float, or to set off. |
+| **tioata** | crystal | [Te Aka 40349](https://maoridictionary.co.nz/word/40349) | crystals |  |
+| **huka** | sugar, sucrose | [Te Aka 1547](https://maoridictionary.co.nz/word/1547) | sugar | A loanword. |
+| **rāpoi ngota** | molecule | [Te Aka 40165](https://maoridictionary.co.nz/word/40165) |  |  |
+| **totoka** | solid; to become solid | [Te Aka 8538](https://maoridictionary.co.nz/word/8538) |  |  |
+| **paemahana** | temperature | [Te Aka 39927](https://maoridictionary.co.nz/word/39927) | temp |  |
+| **pūngao** | energy | [Te Aka 40075](https://maoridictionary.co.nz/word/40075) |  |  |
+| **wera** | heat | [Te Aka 9229](https://maoridictionary.co.nz/word/9229) | qout | Also means hot, or to burn. |
+
 ### Space (space.js) — 10 kupu
 
 Added 27 October 2026. Each entry was opened on Te Aka during the build. Star names (Takurua, Rehua, Atutahi) carry seasonal and tribal meanings beyond the star; they are on the cultural review list (section 7, item 2).

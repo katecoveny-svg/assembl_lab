@@ -14,9 +14,9 @@ const MID=(()=>{try{return (location.pathname.split("/").pop()||"").replace(/\.h
 const CASE={sky:"#BFDDF5",mint:"#BFE8D6",lavender:"#D9CBF2",blush:"#F3B8C8",butter:"#F7E7A6",peach:"#F9D2B8"};
 const DEEP={sky:"#3A6FB8",mint:"#2A7D63",lavender:"#6A50BE",blush:"#B5466F",butter:"#8A6510",peach:"#B2552D"};
 const STINT={science:"sky",biochem:"mint",maths:"lavender",english:"blush",social:"peach",digital:"blush",tech:"butter"};
-const MTINT={space:"lavender",reactions:"peach",vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
+const MTINT={slushie:"sky",space:"lavender",reactions:"peach",vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
-const MSUB={space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
+const MSUB={slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
@@ -32,6 +32,7 @@ const GLYPH={
   climate:G(`<circle cx="10" cy="13" r="7.5"/><path d="M3.5 11.5c2.5 1.6 4.6.4 6.6-.9 2-1.3 4.2-1.6 6.4.2M5 17c2.3-1 4.4-.2 6.3 1"/><path d="M19 3.5v9.6"/><circle cx="19" cy="15.5" r="2.2"/>`),
   inanga:G(`<path d="M3 11c2.4-2.8 6.2-3.9 9.6-2.4L16 6.5v9l-3.4-2.1C9.2 14.9 5.4 13.8 3 11z"/><path d="M2.5 19c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0"/>`),
   space:G(`<circle cx="12" cy="12" r="5.5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.5" transform="rotate(-20 12 12)"/>`),
+  slushie:G(`<path d="M6.5 9.5h11l-1.4 11a1.6 1.6 0 0 1-1.6 1.4H9.5a1.6 1.6 0 0 1-1.6-1.4z"/><path d="M5.5 9.5a6.5 6.5 0 0 1 13 0"/><path d="M13 3.5 15.5 1.5"/><path d="M9.6 13.5l.6.6M13.2 15.2l.6.6M11 18l.6.6"/>`),
   kokopu:G(`<path d="M2 12c2.8-3.8 7.6-5.4 12-3.4L19.5 5v14L14 15.4C9.6 17.4 4.8 15.8 2 12z"/><path d="M9 8.6v6.8M11.6 8.3v7.4M14 9v6"/><circle cx="5.6" cy="11.2" r=".9" fill="currentColor"/>`),
   claw:G(`<path d="M12 2.5v6.5M7.5 13.5 12 9l4.5 4.5M7.5 13.5V17M16.5 13.5V17"/><circle cx="12" cy="19" r="2.5"/>`),
   ai:G(`<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9.5 2.5v3.5M14.5 2.5v3.5M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5M10 10h4v4h-4z"/>`),
