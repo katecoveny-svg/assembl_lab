@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>assembl AR · make it here, place it in your room</title>
+<meta name="description" content="Make 3D text, a 3D logo from an SVG or a framed photo, or pick an assembl model. Scan the code with a phone to place it in your room. It opens in the phone's browser, with no app.">
+<meta name="theme-color" content="#FFFDFB">
+<link rel="icon" href="/lab/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/ar/ar.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<script src="/ask.js" defer data-page="lab"></script>
+<script src="/lab/navigation.js" defer></script>
+</head>
+<body class="studio-page">
+<a class="skip" href="#studio">Skip to the studio</a>
+<main>
+  <header class="intro wrap">
+    <p class="eyebrow"><b>assembl ar</b><span>Lab · runs in your browser</span><span>No app, no account</span></p>
+    <h1>Make it here.<br><span>Place it in your room.</span></h1>
+    <p class="lede">Shape a 3D object, then scan its code with a phone to stand it on your table or hang it on your wall. The phone’s own browser does the rest.</p>
+  </header>
+
+  <section class="studio wrap" id="studio" aria-label="AR studio">
+    <div class="col-make">
+      <div class="types" role="tablist" aria-label="What to make">
+        <button class="type" role="tab" id="tab-text" data-type="text" aria-selected="true" aria-controls="controls"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h11M9.5 5v14"/><path d="M15 5l4 2.5v1.5M9.5 19l3 1.8M12.5 20.8V9.8"/></svg></span><span><b>3D text</b><small>Shareable code</small></span></button>
+        <button class="type" role="tab" id="tab-logo" data-type="logo" aria-selected="false" aria-controls="controls" tabindex="-1"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><path d="M4.2 7.5 12 12l7.8-4.5M12 12v9"/></svg></span><span><b>3D logo</b><small>From an SVG</small></span></button>
+        <button class="type" role="tab" id="tab-frame" data-type="frame" aria-selected="false" aria-controls="controls" tabindex="-1"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><rect x="7" y="7" width="10" height="10" rx=".5"/><path d="M7 15l3-3 2.5 2.5L14 13l3 3"/></svg></span><span><b>Photo frame</b><small>This device</small></span></button>
+        <button class="type" role="tab" id="tab-lib" data-type="lib" aria-selected="false" aria-controls="controls" tabindex="-1"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 15.5v-3l2.2-1 2.6-3.6h7.4l3.4 3.6 3 .8v3.2h-1.6"/><circle cx="7.2" cy="15.8" r="1.9"/><circle cx="17" cy="15.8" r="1.9"/><path d="M9.1 15.8h6M2.5 15.5h2.8"/></svg></span><span><b>Library</b><small>assembl models</small></span></button>
+        <button class="type" role="tab" id="tab-glb" data-type="glb" aria-selected="false" aria-controls="controls" tabindex="-1"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3.5 19 7.5v8L12 19.5 5 15.5v-8z"/><path d="M12 15V9M9.4 11.4 12 8.8l2.6 2.6"/></svg></span><span><b>Your 3D file</b><small>GLB · this device</small></span></button>
+      </div>
+      <form class="controls" id="controls" role="tabpanel" aria-labelledby="tab-text" autocomplete="off" onsubmit="return false"></form>
+    </div>
+
+    <div class="col-stage">
+      <div class="stage" id="stage">
+        <div class="stage-meta"><span class="chip" id="dims"><i>w × h × d</i> <span>—</span></span><span class="chip" id="scaleChip">—</span></div>
+        <p class="stage-hint" aria-hidden="true">Drag to turn · scroll or pinch to zoom</p>
+        <p class="stage-status" id="stageStatus" role="status" aria-live="polite"></p>
+        <div class="stage-msg" id="stageMsg" hidden><div></div></div>
+        <noscript><div class="stage-msg"><div>The studio needs JavaScript and WebGL.</div></div></noscript>
+      </div>
+      <div class="stage-bar">
+        <div class="stage-title"><h2 id="objTitle">kia ora</h2><p id="objNote">Instrument Sans</p></div>
+        <button class="btn primary big" type="button" id="viewBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5V4.8A1.8 1.8 0 0 1 4.8 3h2.7M16.5 3h2.7A1.8 1.8 0 0 1 21 4.8v2.7M21 16.5v2.7a1.8 1.8 0 0 1-1.8 1.8h-2.7M7.5 21H4.8A1.8 1.8 0 0 1 3 19.2v-2.7"/><path d="M12 6.6 16.6 9.2v5.4L12 17.3 7.4 14.6V9.2z"/><path d="M7.4 9.2 12 11.8l4.6-2.6M12 11.8v5.5"/></svg><span class="lbl">View in your space</span><span class="bar"></span></button>
+      </div>
+      <p class="device-note" id="deviceNote"></p>
+    </div>
+
+    <aside class="col-share" aria-label="Share it">
+      <div class="share-head"><h2>Your code</h2><span class="truth" id="shareTruth">Works now</span></div>
+      <div class="share-main">
+        <div class="card-holder" id="cardHolder" aria-live="polite"></div>
+        <div class="no-share" id="noShare" hidden></div>
+      </div>
+      <div class="share-side">
+        <div id="qrOptions">
+          <div class="opt"><div class="label"><span>Code style</span></div><div class="seg" role="radiogroup" aria-label="Code style" id="styleSeg"></div></div>
+          <div class="opt"><div class="label"><span>Centre</span></div><div class="seg" role="radiogroup" aria-label="Centre of the code" id="centreSeg"></div></div>
+          <p class="density" id="density"></p>
+          <div class="btn-row" style="margin-top:12px">
+            <button class="btn" type="button" id="dlPNG">Card PNG</button>
+            <button class="btn" type="button" id="dlSVG">Card SVG</button>
+            <button class="btn" type="button" id="copyLink">Copy link</button>
+          </div>
+          <a class="share-link" id="shareLink" href="#" target="_blank" rel="noopener"></a>
+          <p class="local-note" id="localNote" hidden>This page is running on <b id="localHost"></b>, so the code points there and a phone can’t open it yet. Served from assembl.co.nz, it points at the live viewer.</p>
+        </div>
+        <div class="files">
+          <h3>Files</h3>
+          <div class="btn-row">
+            <button class="btn" type="button" id="dlGLB">GLB <small>Android · web · Blender</small></button>
+            <button class="btn" type="button" id="dlUSDZ">USDZ <small>iPhone · iPad · Mac</small></button>
+          </div>
+          <p class="file-note" id="fileNote">Made in this browser when you ask for them.</p>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="below wrap" aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="steps">
+      <li><span class="n">01</span><b>Shape it</b><p>Everything is built in this tab with three.js. Nothing you make is uploaded.</p></li>
+      <li><span class="n">02</span><b>Share the code</b><p>The link carries the object itself: the words, the logo’s outline or the model and its settings. The viewer page rebuilds it from that.</p></li>
+      <li><span class="n">03</span><b>Place it</b><p>The phone opens its own AR. Real-world size, so a 6 cm word is 6 cm on your desk and a real-size ute fills the driveway.</p></li>
+    </ol>
+  </section>
+
+  <section class="below wrap" aria-labelledby="devices">
+    <h2 id="devices">What each device does</h2>
+    <dl class="devices">
+      <div><dt>iPhone and iPad<small>Safari, iOS 13 or later</small></dt><dd>AR Quick Look. The phone makes a USDZ file from the shape and opens it on a real surface.</dd><dd>Pinch to resize, unless it’s locked to real size. Photo frames ask for a wall.</dd></div>
+      <div><dt>Android<small>Chrome with Google Play Services for AR</small></dt><dd>WebXR in the browser: find a surface, tap to place, drag to turn, pinch to resize.</dd><dd>Without WebXR, library cars open in Google’s Scene Viewer. Other objects download as a GLB.</dd></div>
+      <div><dt>Computer<small>Any modern browser</small></dt><dd>The 3D preview, the code to scan and the files. No camera AR.</dd><dd>GLB opens in Blender and most 3D tools. USDZ opens in Preview and Reality Composer on a Mac.</dd></div>
+    </dl>
+    <p class="tested"><b>Tested so far:</b> the studio, the viewer, the files and the codes, in desktop Chromium. Camera AR on real phones hasn’t been tested yet. The AR code follows the same patterns as Google’s model-viewer.</p>
+  </section>
+
+  <section class="below wrap" aria-labelledby="nextup">
+    <h2 id="nextup">Next steps <span class="truth proposed">Proposed</span></h2>
+    <ul class="next">
+      <li><span class="truth proposed">Proposed</span><b>Hosted uploads</b><p>Photos, detailed logos and your own 3D files need somewhere to live before they can have a code. Not built: they stay on your device for now.</p></li>
+      <li><span class="truth proposed">Proposed</span><b>Scan counts</b><p>How many people placed it, and on what device. Not built: this page records nothing.</p></li>
+      <li><span class="truth proposed">Proposed</span><b>Editable codes</b><p>Print a code once and change what it shows later. Needs accounts and hosting. Not built.</p></li>
+      <li><span class="truth proposed">Proposed</span><b>More kinds</b><p>Scans, splats, portals and face filters. Not built.</p></li>
+    </ul>
+  </section>
+
+  <footer class="foot wrap">
+    <details class="credits">
+      <summary>Credits and licences</summary>
+      <ul>
+        <li><a href="https://threejs.org">three.js</a> r170 (MIT): rendering, GLTFExporter, USDZExporter, GLTFLoader, SVGLoader.</li>
+        <li><a href="https://github.com/101arrowz/fflate">fflate</a> (MIT): compresses logo outlines for links and zips the USDZ.</li>
+        <li><a href="https://github.com/kazuhikoarase/qrcode-generator">QR Code Generator</a> by Kazuhiko Arase (MIT). “QR Code” is a registered trademark of DENSO WAVE.</li>
+        <li><a href="https://github.com/Instrument/instrument-sans">Instrument Sans</a> and <a href="https://github.com/IBM/plex">IBM Plex Mono</a> (SIL Open Font License 1.1), via Fontsource, converted to outlines for 3D letters.</li>
+        <li>Cars: assembl’s own Blender models. Downhill bike: the assembly Print Lab’s parametric model.</li>
+        <li>AR launch patterns follow Google’s <a href="https://modelviewer.dev">model-viewer</a> (Apache 2.0); no model-viewer code is bundled.</li>
+        <li>Inspired by <a href="https://ar-code.com">AR Code</a>. Not affiliated.</li>
+      </ul>
+    </details>
+    <p class="mono">assembl lab · an experiment · nothing you make here leaves your browser unless you share its link</p>
+  </footer>
+</main>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheetTitle">
+  <button class="x" type="button" data-close aria-label="Close">×</button>
+  <div id="sheetBody"></div>
+</dialog>
+
+<script type="module" src="/ar/js/studio.js"></script>
+</body>
+</html>
