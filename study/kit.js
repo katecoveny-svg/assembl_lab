@@ -328,6 +328,19 @@ function kupuItem(k){return `<li><b lang="mi">${esc(k.mi)}</b><span class="en">$
 let reoOn=false;try{reoOn=localStorage.getItem("studyreo")==="on"}catch(e){}
 function setReo(v){reoOn=!!v;try{localStorage.setItem("studyreo",reoOn?"on":"off")}catch(e){}}
 const SCENES={};
+// "View in your space" (assembl AR, /ar/embed.js) on every 3D machine. A machine can hand over just its model at real size with
+// cfg.ar={build:S=>Object3D,unitsPerMetre,scale:"real",label}; otherwise what the camera sees becomes a table-top model.
+// cfg.ar=false turns it off. The code on a computer opens this page with #ar on the phone, which points at the button (a tap is still needed).
+function arButton(api,cfg,want){const S=api.s3;if(!S||cfg.ar===false)return;const host=document.querySelector(".s3-host");if(!host)return;
+  if(!document.getElementById("s3-ar-css")){const st=document.createElement("style");st.id="s3-ar-css";
+    st.textContent=".s3-ar{position:absolute;right:10px;bottom:8px;z-index:4;pointer-events:auto;max-width:calc(100% - 20px)}.s3-ar .aar-btn{box-shadow:0 2px 0 rgba(27,36,82,.08);padding:7px 14px 7px 10px;font-size:13px;gap:7px;min-height:0}.s3-ar .aar-btn svg{width:18px;height:18px}@media (max-width:820px){.s3-ar{right:6px;bottom:5px}.s3-ar .aar-btn{padding:5px 10px 5px 8px;font-size:11.5px}.s3-ar .aar-btn svg{width:15px;height:15px}}";document.head.appendChild(st)}
+  const slot=document.createElement("div");slot.className="s3-ar";host.appendChild(slot);
+  import("/ar/embed.js").then(m=>{const AR=m.default||m,o=cfg.ar||{};
+    const what=o.build?{object:()=>o.build(S),unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"real"}
+      :{object:()=>S.scene,camera:()=>S.camera,unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"table"};
+    const ctl=AR.button(slot,{...what,label:o.label||(matchMedia("(max-width: 820px)").matches?"View in AR":"View in your space"),title:cfg.title||"assembly",variant:"light",style:"assembly",qr:location.origin+location.pathname+"#ar"});
+    api.ar=ctl;if(want)setTimeout(()=>{try{ctl.prompt()}catch(e){}},800)})
+  .catch(e=>{slot.remove();console.warn("AR unavailable",e)})}
 function mount(cfg){logStudy("open");
   const KU=(Array.isArray(cfg.kupu)?cfg.kupu:[]).filter(kupuOk);
   const kFind=x=>typeof x==="string"?KU.find(k=>k.mi===x):(kupuOk(x)?x:null);
@@ -455,12 +468,12 @@ function mount(cfg){logStudy("open");
   function loop(ts){const st=cfg.steps[step];
     if(s.playing&&visible&&st.speed&&cfg.tick){if(last!=null){cfg.tick(s,Math.min(.1,(ts-last)/1000),st,api);redraw()}last=ts}else last=null;
     requestAnimationFrame(loop)}
-  const h=(location.hash||"").slice(1),hi=cfg.steps.findIndex(x=>x.k===h);
+  const h=(location.hash||"").slice(1),hi=cfg.steps.findIndex(x=>x.k===h),wantAR=h==="ar";
   setStep(hi>=0?hi:0);mounted=true;requestAnimationFrame(loop);
   // the real-time 3D bench: a scene factory turns the live state into a world you can turn; the SVG stays underneath as the fallback
   const f3=cfg.scene3d||SCENES[mid];
   if(f3&&!/[?&]lite\b/.test(location.search)&&(()=>{try{const c=document.createElement("canvas");return !!(c.getContext("webgl2")||c.getContext("webgl"))}catch(e){return false}})()){
-    import(new URL("kit3d.js",KIT_SRC).href).then(m=>{api.s3=m.attach(api,cfg,f3,window.StudyKit)}).catch(e=>{console.warn("3D bench unavailable, showing the drawing",e);
+    import(new URL("kit3d.js",KIT_SRC).href).then(m=>{api.s3=m.attach(api,cfg,f3,window.StudyKit);try{arButton(api,cfg,wantAR)}catch(e){console.warn("AR button unavailable",e)}}).catch(e=>{console.warn("3D bench unavailable, showing the drawing",e);
       const c=document.querySelector(".canvas.s3-on");if(c)c.classList.remove("s3-on")})}
   window.addEventListener("hashchange",()=>{const k=(location.hash||"").slice(1),j=cfg.steps.findIndex(x=>x.k===k);if(j>=0&&j!==step)setStep(j)});
   return api;

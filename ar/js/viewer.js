@@ -80,7 +80,7 @@ function renderQR() {
   if (placer.mode !== 'none' || !result) return;
   $('vQR').hidden = false;
   $('vQRBox').innerHTML = qrSVG(result.url, { style: 'assembly', size: 300, centre: { kind: 'cube' } }) || '';
-  if (LOCAL && !$('vQR').querySelector('.local-note')) $('vQR').insertAdjacentHTML('beforeend', `<p class="local-note">This page is on <b>${esc(location.host)}</b>, which a phone can’t reach. The code works once it’s on assembl.co.nz.</p>`);
+  if (LOCAL && !$('vQR').querySelector('.local-note')) $('vQR').insertAdjacentHTML('beforeend', `<p class="local-note">This page is on <b>${esc(location.host)}</b>, which a phone can’t reach. The code works once it’s on the live lab.</p>`);
 }
 placer.ready.then(s => { $('deviceNote').textContent = deviceSentence(s.mode); renderQR(); });
 viewBtn.addEventListener('click', () => { if (stage) stage.finish(); placer.activate(); });

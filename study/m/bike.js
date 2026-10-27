@@ -953,10 +953,10 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
   const FA_={w:S.arrow("#5B6B7E",{r:.04}),n:S.arrow(P3.deep.sky,{r:.035}),par:S.arrow(HOT_SKI,{r:.04}),res:S.arrow("#3A857B",{r:.04}),brk:S.arrow(P3.product.butter,{r:.04}),net:S.arrow(P3.deep.lavender,{r:.05})};for(const k in FA_)tz.add(FA_[k]);
   // energy columns and the live graph screen ride along with you
   const rideAlong=S.group(tz);
-  const ecol=[["Ep lost",P3.product.blueberry],["Ek",P3.product.strawberry],["Heat",P3.product.peach]].map(([n,c],i)=>{const g=new THREE.Group();g.position.set(-3.2+i*.75,0,-3.4);rideAlong.add(g);
+  const ecol=[["Ep lost",P3.product.blueberry],["Ek",P3.product.strawberry],["Heat",P3.product.peach]].map(([n,c],i)=>{const g=new THREE.Group();g.position.set(-3.2+i*.75,0,-2.55);rideAlong.add(g);
     const H=2.6;g.add(S.cyl(.26,.28,.1,white,{at:[0,.05,0]}));const fm=mat("liquid",c,{opacity:1});const fill=S.cyl(.2,.2,1,fm,{seg:28});g.add(fill);const sh=S.cyl(.24,.24,H,mat("acrylic","#ffffff",{opacity:.22}),{at:[0,.1+H/2,0],cast:false,seg:28});sh.renderOrder=4;g.add(sh);
     g.add(S.torus(.24,.02,mat("plastic",P3.case.peach),{at:[0,.1+H,0],rot:[Math.PI/2,0,0]}));return {g,fill,H,n}});
-  const scrStand=new THREE.Group();rideAlong.add(scrStand);scrStand.position.set(2.6,-.3,-2.8);scrStand.add(S.cyl(.05,.07,1.7,steel,{at:[0,.85,0]}));scrStand.add(S.rbox(3.55,2.05,.08,.06,mat("plastic","#ffffff",{rough:.4}),{at:[0,2.6,-.05]}));
+  const scrStand=new THREE.Group();rideAlong.add(scrStand);scrStand.position.set(2.6,-.3,-2.45);scrStand.add(S.cyl(.05,.07,1.7,steel,{at:[0,.85,0]}));scrStand.add(S.rbox(3.55,2.05,.08,.06,mat("plastic","#ffffff",{rough:.4}),{at:[0,2.6,-.05]}));
   const scr=S.panel(640,360,3.4);scr.position.set(0,2.6,.01);scrStand.add(scr);let scrKey="";
   // ================================================================ stopping distance: a 1:1 run-out with a log 25 m ahead
   plinth(SZ.x+18,SZ.z,46,4.4,P3.case.peach);const sz=S.group();sz.position.set(SZ.x,PT,SZ.z);
@@ -1039,8 +1039,8 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
     if(GS.length)line(GS,"#B9B3CC",5,[10,8]);line(Smp,key==="v"?P3.deep.blush:P3.deep.sky,6);
     if(Smp.length){const p=Smp[Smp.length-1];g.fillStyle="#222A55";g.beginPath();g.arc(X(p.t),Y(key==="v"?p.v:p.d),9,0,7);g.fill()}};
   return {
-    step(st){zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());look(zone==="trail");
-      if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?3.9:2.9),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail");
+    step(st){const prev=zone;zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());look(zone==="trail");
+      if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?3.9:2.9),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail",prev!=="trail");
         S.setFollow(()=>riderW().add(V3(1.4,.8,0)),.3,true)}
       else{S.setFollow(null);S.goView(zone)}
       const sb={garage:[5,[GZ.x,0,GZ.z]],stop:[22,[SZ.x+18,0,SZ.z]],fork:[5,[FZ.x,0,FZ.z]],ski:[8,[KZ.x,0,KZ.z]],turn:[5,[TZ.x,0,TZ.z]],all:[36,[3,0,68]]};if(sb[zone])S.setShadowBox(...sb[zone])},

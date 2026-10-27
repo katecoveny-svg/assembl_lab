@@ -91,6 +91,10 @@
     "next": {
       "stage": "model",
       "why": "Fourteen studios of models and creative tools; no live data by design."
+    },
+    "ar": {
+      "stage": "model",
+      "why": "A making tool that runs in your browser; no live data by design."
     }
   }
 }

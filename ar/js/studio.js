@@ -124,7 +124,7 @@ const placer = createPlacer({
   },
   onNoAR: info => {
     if (info.qrURL) {
-      sheet(`<h2 id="sheetTitle">Scan this with your phone</h2><p>Open the camera on an iPhone, iPad or Android phone and point it at the code. ${placer.mode === 'sceneviewer' ? 'This browser can’t do web AR, but the link opens in one that can.' : ''}</p><div class="qrbox">${qrSVG(info.qrURL, { style: S.qr.style, size: 320, centre: { kind: 'cube' } })}</div>${LOCAL ? `<p class="local-note">This code points at <b>${esc(location.host)}</b>, which a phone can’t reach. It works once the page is on assembl.co.nz.</p>` : ''}`);
+      sheet(`<h2 id="sheetTitle">Scan this with your phone</h2><p>Open the camera on an iPhone, iPad or Android phone and point it at the code. ${placer.mode === 'sceneviewer' ? 'This browser can’t do web AR, but the link opens in one that can.' : ''}</p><div class="qrbox">${qrSVG(info.qrURL, { style: S.qr.style, size: 320, centre: { kind: 'cube' } })}</div>${LOCAL ? `<p class="local-note">This code points at <b>${esc(location.host)}</b>, which a phone can’t reach. It works once the page is on the live lab.</p>` : ''}`);
     } else {
       const why = result && result.kind === 'logo' ? 'This logo is too detailed to fit in a code.' : 'This one lives only in this browser, so it has no code yet.';
       sheet(`<h2 id="sheetTitle">${placer.mode === 'sceneviewer' ? 'This browser can’t place 3D here' : 'Take it to your phone'}</h2><p>${why} Download the USDZ for an iPhone or iPad, or the GLB for Android, and open it there. A shareable code needs hosting, which is the next step.</p>${filesRow()}`);
@@ -341,7 +341,7 @@ async function renderShare() {
   const id = r.key;
   const thumb = stage.thumbnail(300, 2.15), centreThumb = stage.thumbnail(160, 1);
   const c = await cardSVG({ url: r.shareURL, title: r.title, kind: KIND_LABEL[r.kind], detail: fmtSize(r.size) + (r.fixedScale ? ' · real size' : ''),
-    thumb, centreThumb, style: S.qr.style, centre: S.qr.centre, host: (LOCAL ? location.host : 'assembl.co.nz') + '/ar' });
+    thumb, centreThumb, style: S.qr.style, centre: S.qr.centre, host: location.host + '/ar' });
   if (id !== (result && result.key)) return;
   card = { ...c, url: r.shareURL, title: r.title };
   holder.innerHTML = c.svg;

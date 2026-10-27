@@ -21,7 +21,7 @@ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
 function noise2(seed){const h=(i,j)=>{let n=Math.imul(i,374761393)+Math.imul(j,668265263)+Math.imul(seed,1442695041);n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967296};
   const f=t=>t*t*(3-2*t);return (x,y)=>{const i=Math.floor(x),j=Math.floor(y),u=f(x-i),v=f(y-j);const a=h(i,j),b=h(i+1,j),c=h(i,j+1),d=h(i+1,j+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}}
 
-export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
+export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;const marks=[];const mark=k=>marks.push(k+":"+Math.round(performance.now()-t0));const breathe=()=>new Promise(res=>setTimeout(res,0));
   const HQ=!!S.HQ,R=S.renderer,scene=S.scene,sun=S.sun;
   const {trackY,SEG,LIP,GAP_END,SLIP,TRAIL_END,SBERM,SROLL}=P;
   const LAND=SEG.find(q=>Math.abs(q.x0-GAP_END)<1e-6)||SEG[SEG.indexOf(SLIP)+2];
@@ -121,7 +121,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     return {br,lv}}
   // trunks cast shadows; the crown's branches and needles (30 m up) don't need to
   const variant=(seed,tier)=>{const tr=trunkGeo({seed,H:60,R:1,seg:[10,16,26][tier],rings:[9,14,22][tier]}),cr=crown(seed,tier);return {trunk:tr,branches:cr.br,leaves:cr.lv,tier}};
-  const VAR=HQ?[variant(1201,2),variant(4407,2),variant(733,0)]:[variant(1201,1),variant(733,0)];
+  const VAR=HQ?[variant(1201,2),variant(4407,2),variant(733,0)]:[variant(1201,1),variant(733,0)];mark("trees");await breathe();
   // ------------------------------------------------------------------------------------------------ ferns
   // a frond card bent along an arc (base at the origin, growing along +x), folded into a shallow V across its width
   function frondGeo(o){const pos=[],uv=[],idx=[],n=o.segs;let px=0,py=0;const W=o.L*o.aspect;
@@ -162,9 +162,11 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
       const v=near?VAR[Math.floor(r()*(VAR.length-1))]:VAR[VAR.length-1];Q.setFromAxisAngle(V.set(0,1,0),r()*TAU);M4.compose(SC.set(px,y,pz),Q,N.set(sR,sH,sR));
       C.setHSL(.03+r()*.025,.18+r()*.2,.62+r()*.25);put(near?"rwN"+VAR.indexOf(v):"rwF",px,M4,C)}}
   // tree ferns: thickest near the trail and under gaps, thinning into the distance; wheki keep a skirt of dead fronds
-  const ponga=[];{const n=HQ?620:300;for(let i=0;i<n;i++){const x=X0+4+r()*(X1-X0-8);const zz=Math.pow(r(),2);const z=-3.1-zz*(HQ?46:36);
+  const ponga=[];{const n=HQ?620:300;for(let i=0;i<n;i++){const x=X0+4+r()*(X1-X0-8);const zz=Math.pow(r(),2);let z=-3.1-zz*(HQ?46:36);const h0=(.35+Math.pow(r(),1.6)*3.8)*(r()<.15?1.5:1);
+    // fronds stop short of the trail's edge, where the energy columns and the graph screen stand
+    const Lc=1.9+h0*.15+1.2;if(z>-2.7-Lc*.72)z=-2.7-Lc*.72-r()*.8;
     if(inBerm(x,z))continue;if(trees.some(t=>Math.hypot(t.x-x,t.z-z)<t.r+.6))continue;if(ponga.some(p=>Math.hypot(p.x-x,p.z-z)<2.6))continue;
-    const h=Math.min((.35+Math.pow(r(),1.6)*3.8)*(r()<.15?1.5:1),z>-9?1.2+(-z-3)*.3:9),y=groundY(x,z)-.1,wheki=r()<.55,lean=(r()-.5)*.25;ponga.push({x,z});
+    const h=Math.min(h0,z>-9?1.2+(-z-3)*.3:9),y=groundY(x,z)-.1,wheki=r()<.55,lean=(r()-.5)*.25;ponga.push({x,z});
     E.set(lean,r()*TAU,(r()-.5)*.2);Q.setFromEuler(E);const tk=1.15+r()*.5;M4.compose(SC.set(x,y,z),Q,N.set(tk,h,tk));put("pT",x,M4,null);
     const top=V.set(0,h,0).applyQuaternion(Q).add(SC.set(x,y,z)).clone();const nf=HQ?(wheki?14:17)+Math.floor(r()*6):10+Math.floor(r()*4),L=1.9+r()*1.2+h*.15;
     for(let k=0;k<nf;k++){const az=k/nf*TAU+r()*.4,young=k%5===0;E.set((r()-.5)*.5,az,(r()-.5)*.35+(young?.45:0),"YXZ");Q.setFromEuler(E);M4.compose(top,Q,N.set(L*(.75+r()*.35),L*(.75+r()*.35),L*(.8+r()*.3)));
@@ -186,7 +188,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     const y=(groundY(x-Math.cos(yaw)*L/2,z+Math.sin(yaw)*L/2)+groundY(x+Math.cos(yaw)*L/2,z-Math.sin(yaw)*L/2))/2;E.set(0,yaw,Math.atan2(groundY(x+L/2,z)-groundY(x-L/2,z),L)*.8);Q.setFromEuler(E);
     M4.compose(SC.set(x,y+rad*.45,z),Q,N.set(L,rad,rad));put("log",x,M4,null)}}
   // ------------------------------------------------------------------------------------------------ meshes from the buckets
-  const meshes=[];
+  mark("placed");await breathe();const meshes=[];
   const KIND={rwN0:[()=>VAR[0].trunk,barkM,1,1],rwN1:[()=>VAR[1].trunk,barkM,1,1],rwF:[()=>VAR[VAR.length-1].trunk,barkM,0,1],
     pT:[()=>G.pTrunk,pTrunkM,1,1],pF:[()=>G.ponga,fernM,HQ,1],pD:[()=>G.dead,fernM,HQ,1],cF:[()=>G.crownF,fernM,0,1],gF:[()=>G.groundF,fernM,0,1],log:[()=>G.log,logM,1,1]};
   const crownOf={rwN0:VAR[0],rwN1:VAR[1],rwF:VAR[VAR.length-1]};
@@ -194,7 +196,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
       b.m.forEach((m,i)=>{im.setMatrixAt(i,m);if(b.c[i])im.setColorAt(i,b.c[i])});im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
       im.castShadow=!!cast;im.receiveShadow=!!rec;im.computeBoundingSphere();im.name=b.kind+"@"+k.split("|")[1];group.add(im);meshes.push(im);return im};
     mk(spec[0](),spec[1],spec[2],spec[3]);const cv=crownOf[b.kind];if(cv){const bm=mk(cv.branches,barkM,0,0),lm=mk(cv.leaves,leafM,0,0);bm.name+="-br";lm.name+="-lv"}}
-  buildGround();const trailBits=buildTrail();
+  mark("meshes");await breathe();buildGround();const trailBits=buildTrail();mark("ground");await breathe();
 
   // ------------------------------------------------------------------------------------------------ the root garden, the timber lip and the berm
   {const SR=P.rootSeg;if(SR){const rootG=(()=>{const pts=[];for(let i=0;i<=10;i++){const t=i/10;pts.push(new THREE.Vector3(Math.sin(t*5.2)*.22+t*.3,Math.sin(t*Math.PI)*.05,(t-.5)*3.4))}
@@ -221,7 +223,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
   const sunDir=new THREE.Vector3(.5,-.78,.38).normalize();  // the way the light travels: from up the hill behind, across to the front right
   const HAZE=new THREE.Color("#AEB59E");
   // a forest-tinted environment for soft ambient light and reflections: bright canopy above, green haze around, brown floor below
-  const envTex=(()=>{const sc=new THREE.Scene(),geo=new THREE.SphereGeometry(10,48,24),p=geo.attributes.position,col=[];
+  mark("timber");const envTex=(()=>{const sc=new THREE.Scene(),geo=new THREE.SphereGeometry(10,48,24),p=geo.attributes.position,col=[];
     const top=new THREE.Color("#E3EBD8"),hor=new THREE.Color("#93A37F"),bot=new THREE.Color("#3A2A1E"),c=new THREE.Color();
     for(let i=0;i<p.count;i++){const y=p.getY(i)/10;if(y>=0)c.copy(hor).lerp(top,Math.pow(y,.6));else c.copy(hor).lerp(bot,Math.pow(-y,.45));col.push(c.r,c.g,c.b)}
     geo.setAttribute("color",new THREE.Float32BufferAttribute(col,3));sc.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
@@ -235,7 +237,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     const m=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ),new THREE.MeshBasicMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,colorWrite:false,depthWrite:false}));m.rotation.x=-Math.PI/2;m.castShadow=true;m.receiveShadow=false;
     // three.js tests shadow casters against the main camera's layers, so the screen stays on layer 0 but writes no colour or depth
     m.userData={t,SZ,TILE};m.name="canopy-dapple";return m})();
-  group.add(gobo);
+  mark("env");group.add(gobo);
   // shafts of light between the trunks: faint additive ribbons along the sun's direction
   const shafts=(()=>{const c=document.createElement("canvas");c.width=64;c.height=256;const g=c.getContext("2d"),im=g.createImageData(64,256);
     for(let y=0;y<256;y++)for(let x=0;x<64;x++){const u=(x+.5)/64-.5,v=y/255,a=Math.exp(-u*u/.03)*smooth(0,.3,v)*smooth(1,.62,v)*(.75+.25*Math.sin(v*9+u*3));const i=(y*64+x)*4;im.data[i]=im.data[i+1]=im.data[i+2]=255;im.data[i+3]=a*255}
@@ -265,5 +267,5 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     // the dapple screen hangs above the rider; its pattern stays fixed to the ground as it moves
     const {t,SZ,TILE}=gobo.userData;gobo.position.set(x+3,y+15,-9);t.offset.set((gobo.position.x-SZ/2)/TILE,(-gobo.position.z-SZ/2)/TILE)}
   const tBuilt=performance.now();
-  return {group,enter,leave,update,meshes,stats:()=>({trees:trees.length,ponga:ponga.length,meshes:meshes.length,loadMs:Math.round(tLoaded-t0),buildMs:Math.round(tBuilt-tLoaded)})};
+  return {group,enter,leave,update,meshes,stats:()=>({trees:trees.length,ponga:ponga.length,meshes:meshes.length,loadMs:Math.round(tLoaded-t0),buildMs:Math.round(tBuilt-tLoaded),marks:marks.join(" ")})};
 }
