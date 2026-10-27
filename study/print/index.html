@@ -1,19 +1,118 @@
-<!doctype html><html lang="en-NZ"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Customise a downhill-bike scale model, generate technical drawings and export STL or 3MF print files."><title>Bike Print Lab · assembl lab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/study/print/styles.css"><script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<!doctype html>
+<html lang="en-NZ" style="--case:#F9D2B8;--acc:#B2552D;--acc-tint:#F9D2B8"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Customise a downhill bike display model, check its orthographic drawing and download STL or 3MF files for your printer. Works in your browser.">
+<title>Print Lab · assembly</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fredoka:wght@500;600;700&family=Caveat:wght@600;700&display=swap">
+<link rel="stylesheet" href="/study/kit.css">
+<link rel="stylesheet" href="/study/print/styles.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <script src="/ask.js" defer data-page="study"></script>
 <script src="/lab/navigation.js" defer></script>
-</head><body><a class="skip" href="#workbench">Skip to the model controls</a>
-<header class="top"><a class="brand" href="/">assembl<span>lab</span></a><nav aria-label="Print Lab"><a href="/study/year9/">Year 9 studio</a><a class="active" href="/study/print/">Print Lab</a><a href="/study/">Study hub</a></nav></header>
-<main><section class="hero"><div><p class="kicker" id="modeKicker">STUDENT PRINT LAB · DOWNLOAD AND MAKE</p><h1>Built to<br>come off<br><em>the screen.</em></h1></div><div class="hero-side"><p>Customise a downhill bike as a display model. Change the geometry, inspect the drawing, export the print file.</p><a class="primary" href="#workbench">Open the workbench ↓</a><p class="fine">Scale display model · not rideable · not safety-certified</p></div><div class="hero-bike" aria-hidden="true"><svg viewBox="0 0 700 300"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="150" cy="190" r="82" stroke-width="12"/><circle cx="550" cy="190" r="82" stroke-width="12"/><path d="M150 190L260 100 360 190 150 190 230 75 380 70 360 190M380 70L550 190M370 52L550 190M225 58h70M380 70l18-38h90" stroke-width="9"/><path d="M260 100l90-25" stroke-width="16"/><path d="M115 190h70M515 190h70" stroke-width="2" stroke-dasharray="4 7"/></g><path d="M40 282H650" stroke="currentColor" stroke-width="2"/><path d="M150 272v20M550 272v20" stroke="currentColor"/><text x="350" y="295" text-anchor="middle">190 MM / PARAMETRIC STUDY</text></svg></div></section>
-<section class="workbench" id="workbench"><div class="work-head"><div><p class="kicker">PARAMETRIC PRINT LAB</p><h2>Shape first. Print second.</h2></div><p>Every control rebuilds the model and its drawing. Geometry exports are in millimetres; colours appear only in the preview.</p></div>
-<div class="view-tabs" role="tablist" aria-label="Bike views"><button id="tab-design" role="tab" aria-selected="true" aria-controls="view-design" data-view="design" data-short="01 · 3D">01 · 3D design</button><button id="tab-drawing" role="tab" aria-selected="false" aria-controls="view-drawing" data-view="drawing" data-short="02 · Draw" tabindex="-1">02 · Drawings</button><button id="tab-make" role="tab" aria-selected="false" aria-controls="view-make" data-view="make" data-short="03 · Print" tabindex="-1">03 · Print files</button></div>
-<section class="design-view" id="view-design" role="tabpanel" aria-labelledby="tab-design"><div class="model-column"><div id="modelHost" class="model-host"><div class="model-loading">Assembling the model…</div></div><div id="modelFallback" class="model-fallback" hidden></div><div class="model-bar"><span id="modelStatus">PARAMETRIC MODEL</span><span>Drag to orbit · scroll to zoom</span><button id="resetCamera" type="button">Reset view</button></div><div class="stats" aria-label="Model measurements"><div><span>ENVELOPE</span><b id="statSize">—</b></div><div><span>TRIANGLES</span><b id="statTriangles">—</b></div><div><span>ROUGH MATERIAL</span><b id="statMaterial">—</b></div></div><p class="fine">Material is an upper estimate from overlapping mesh volumes, not a slicer result. Use your slicer for the real time and material estimate.</p></div>
-<form class="controls" id="bikeControls"><div class="control-title">CUSTOMISE THE MODEL</div><label for="modelName">Model name</label><input id="modelName" maxlength="30" value="My downhill bike"><div class="two-controls"><label for="frameColour">Frame<input id="frameColour" type="color" value="#e8664a"></label><label for="accentColour">Details<input id="accentColour" type="color" value="#dcf2e8"></label></div><label for="wheelbase">Wheelbase <output id="wheelbaseOut">190 mm</output></label><input id="wheelbase" type="range" min="160" max="220" step="5" value="190"><label for="wheelDiameter">Wheel diameter <output id="wheelDiameterOut">68 mm</output></label><input id="wheelDiameter" type="range" min="56" max="78" step="2" value="68"><label for="suspension">Shock detail <output id="suspensionOut">180 mm travel reference</output></label><input id="suspension" type="range" min="130" max="200" step="10" value="180"><label for="detail">Mesh detail</label><select id="detail"><option value="standard">Standard · lighter download</option><option value="fine">Fine · smoother circles</option></select><label class="check"><input id="base" type="checkbox" checked>Include a display plinth</label><div class="spec-note"><span>DISPLAY MODEL</span><p>The travel control changes the shock’s visual coil detail. It does not claim to reproduce the real bike’s kinematics.</p></div><button class="secondary" id="resetModel" type="button">Reset to the starting model</button></form></section>
-<section id="view-drawing" role="tabpanel" aria-labelledby="tab-drawing" hidden><div class="drawing-tools"><div><h3>One model. Three views.</h3><p>Side, front and top views with live millimetre dimensions. Use the sheet to explain design choices, compare proportions or check the print envelope.</p></div><div><button class="secondary" id="downloadSVG" type="button">Download SVG drawing</button><button class="primary small" id="printDrawing" type="button">Print / save as PDF</button></div></div><div id="drawingSheet" class="drawing-sheet"></div></section>
-<section id="view-make" role="tabpanel" aria-labelledby="tab-make" hidden><div class="make-layout"><div><p class="kicker">YOUR PRINTABLE FILES</p><h3>Take the geometry with you.</h3><p>STL is widely supported. 3MF stores the same mesh with millimetre units declared. Both contain intersecting component shells; let your slicer unite overlapping volumes and inspect the result before printing.</p><div class="download-stack"><button class="primary" id="downloadSTL" type="button">Download STL <span>geometry</span></button><button class="secondary" id="download3MF" type="button">Download 3MF <span>millimetres</span></button><button class="secondary" id="downloadSpec" type="button">Download design record <span>JSON</span></button></div><h4>Suggested starting point</h4><dl class="print-spec"><div><dt>Material</dt><dd>PLA for a classroom display model</dd></div><div><dt>Layer height</dt><dd>0.16–0.20 mm</dd></div><div><dt>Supports</dt><dd>Likely; inspect frame, fork and cockpit</dd></div><div><dt>Orientation</dt><dd>Test in your slicer; plinth on bed if included</dd></div></dl><p class="fine">These are starting suggestions, not a validated print profile. An adult should supervise printer use and follow school/workshop rules.</p></div><div class="preflight"><h3>Pre-flight check</h3><div id="preflightChecks"></div><h4>What are you learning?</h4><ul><li>Turn a digital design into a physical outcome.</li><li>Use scale, proportion and constraints to guide decisions.</li><li>Test a model, identify a weakness and improve it.</li><li>Keep a drawing and design record as evidence of your process.</li></ul><p>Connects to Years 7–10 technological modelling, design and visual communication, and computer-aided manufacturing. For NCEA, use your teacher’s current standard and conditions rather than treating this tool as assessment evidence by itself.</p><a href="https://newzealandcurriculum.tahurangi.education.govt.nz/case-study---technological-modelling-and-dvc-in-year-7-10/5637204594.p" target="_blank" rel="noopener">Read the NZ curriculum modelling case study ↗</a></div></div>
-</section>
-</section>
-<section class="curriculum"><p class="kicker">A DESIGN PROCESS, NOT JUST A DOWNLOAD</p><div><h2>Whakaaro → āhua → whakamātau.</h2><p>Think → form → test. Start with a sketch, choose constraints, make a model, then explain what you would change after printing. The learning is in the decisions and the iteration.</p></div><a href="/study/year9/">Back to the Year 9 studio ↗</a></section></main>
-<footer><a class="brand" href="/">assembl<span>lab</span></a><p>Independent educational concept. A generic downhill bike made for printing, not any brand’s design.</p></footer>
-<script>window.PRINT_MODE='public'</script><script type="module" src="/study/print/app.js"></script></body></html>
+</head><body>
+<a class="skip" href="#workbench">Skip to the bike</a>
+<div class="wrap">
+ <header class="top">
+  <a class="as-lock" href="/study/" aria-label="assembly, by assembl"><span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span></a>
+  <nav aria-label="Study"><a href="/study/">Machines</a><a href="/study/year9/">Year 9 studio</a><a href="/study/print/" aria-current="page">Print Lab</a></nav>
+ </header>
+
+ <div class="apphead">
+  <a class="back" href="/study/" aria-label="Back to the study machines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+  <span class="appicon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="5.5"/><circle cx="24.5" cy="21" r="5.5"/><path d="M8 21l6.5-1 5-8.5M13 12.5l8.5-1.5M21.5 11l3 10M14.5 20l-2-8"/><path d="M20 8.5h3.5"/><path d="M11.5 12h3"/></svg></span>
+  <div class="apptitle"><div class="eyebrow">Technology · Design and visual communication</div><h1>Print Lab: a downhill bike</h1></div>
+  <div class="mhr"><span class="exam"><b>Years 7–10</b> · display model, not rideable</span></div>
+ </div>
+
+ <section class="bench" id="workbench" aria-label="Print Lab workbench">
+  <nav class="steps pl-steps" role="tablist" aria-label="Print Lab steps">
+   <button class="step" role="tab" id="tab-design" aria-controls="view-design" aria-selected="true"><span class="n">1</span>Shape it</button>
+   <button class="step" role="tab" id="tab-drawing" aria-controls="view-drawing" aria-selected="false" tabindex="-1"><span class="n">2</span>Draw it</button>
+   <button class="step" role="tab" id="tab-make" aria-controls="view-make" aria-selected="false" tabindex="-1"><span class="n">3</span>Print it</button>
+  </nav>
+  <div class="prog"><i id="progBar" style="width:33.3%"></i></div>
+
+  <section class="stage" id="view-design" role="tabpanel" aria-labelledby="tab-design">
+   <div class="caprow"><span class="stepno">1 of 3</span><p class="caption">Shape your bike. Every change rebuilds the 3D model, its drawing and the print files together.</p><button class="btn nextb" type="button" data-go="drawing">Next →</button></div>
+   <div class="pl-play">
+    <div class="pl-main">
+     <div class="canvas pl-case" id="modelCase">
+      <div id="modelHost" class="pl-host"><p class="pl-loading">Building the bike…</p></div>
+      <div id="modelFallback" class="pl-fallback" hidden></div>
+      <div class="pl-views" role="group" aria-label="Camera views"><button type="button" data-view3d="three" aria-pressed="true">3/4</button><button type="button" data-view3d="side" aria-pressed="false">Side</button><button type="button" data-view3d="front" aria-pressed="false">Front</button><button type="button" data-view3d="top" aria-pressed="false">Top</button></div>
+      <p class="pl-hint" aria-hidden="true">Drag to turn · scroll or pinch to zoom</p>
+     </div>
+     <div class="pl-status"><span class="truth">Works in your browser</span><span id="modelStatus" role="status">Building…</span></div>
+     <div class="chips pl-chips" aria-label="Model measurements">
+      <div class="chip"><span>Length × width × height</span><b id="statSize">—</b></div>
+      <div class="chip"><span>Triangles</span><b id="statTriangles">—</b></div>
+      <div class="chip"><span>Solid volume</span><b id="statVolume">—</b></div>
+     </div>
+     <p class="pl-fine">Solid volume adds up every part, so it is an upper estimate: overlaps count twice and real prints are partly hollow. Your slicer gives the real material and time.</p>
+    </div>
+
+    <form class="pl-rail" id="bikeControls" aria-label="Customise the bike">
+     <div class="pl-field"><label for="modelName">Name your bike</label><input id="modelName" maxlength="30" autocomplete="off" spellcheck="false"></div>
+     <div class="pl-field"><span class="pl-lab" id="frameLab">Frame colour</span><div class="pl-colours" role="group" aria-labelledby="frameLab"><div class="pl-swatches" id="frameSwatches"></div><label class="pl-custom"><input id="frameColour" type="color" aria-label="Custom frame colour">Custom</label></div></div>
+     <div class="pl-field"><span class="pl-lab" id="accentLab">Fork and cradle colour</span><div class="pl-colours" role="group" aria-labelledby="accentLab"><div class="pl-swatches" id="accentSwatches"></div><label class="pl-custom"><input id="accentColour" type="color" aria-label="Custom fork and cradle colour">Custom</label></div></div>
+     <div class="pl-field pl-range"><label for="wheelbase">Wheelbase <output id="wheelbaseOut" for="wheelbase"></output></label><input id="wheelbase" type="range"><small>Axle to axle. Longer stretches the front of the frame.</small></div>
+     <div class="pl-field pl-range"><label for="wheelDiameter">Wheel size <output id="wheelDiameterOut" for="wheelDiameter"></output></label><input id="wheelDiameter" type="range" step="2"><small id="wheelNote"></small></div>
+     <div class="pl-field pl-range"><label for="suspension">Shock spring <output id="suspensionOut" for="suspension"></output></label><input id="suspension" type="range"><small>Travel sets how many coils the spring shows. Looks only: it doesn’t model real suspension.</small></div>
+     <fieldset class="pl-field pl-seg"><legend class="pl-lab">Mesh detail</legend><label><input type="radio" name="detail" value="standard" checked><span>Standard<small>quicker to slice</small></span></label><label><input type="radio" name="detail" value="fine"><span>Fine<small>smoother curves</small></span></label></fieldset>
+     <label class="pl-switch"><input id="base" type="checkbox" checked><span>Display plinth<small>A flat base with two wheel cradles</small></span></label>
+     <div class="pl-field"><label for="bed">Printer bed to check against</label><select id="bed"><option value="180">180 × 180 mm (small)</option><option value="220" selected>220 × 220 mm</option><option value="256">256 × 256 mm</option><option value="300">300 × 300 mm</option></select><small>Shown as a dashed square under the bike.</small></div>
+     <button class="btn" id="resetModel" type="button">Start again</button>
+    </form>
+   </div>
+  </section>
+
+  <section class="stage" id="view-drawing" role="tabpanel" aria-labelledby="tab-drawing" hidden>
+   <div class="caprow"><span class="stepno">2 of 3</span><p class="caption">One model, three views. The plan, side and front views are drawn to scale from the same numbers as the 3D model.</p><button class="btn nextb" type="button" data-go="make">Next →</button></div>
+   <div class="pl-drawbar">
+    <p>Print it on A4 landscape at 100% and the views are true to the scale in the title block (1:2 for most bikes). Label your design decisions on it, or compare two versions side by side.</p>
+    <div class="pl-acts"><button class="btn" id="downloadSVG" type="button">Download SVG</button><button class="btn primary" id="printDrawing" type="button">Print or save as PDF</button></div>
+   </div>
+   <div class="pl-sheetwrap"><div id="drawingSheet" class="pl-sheet"></div></div>
+   <p class="pl-fine" id="drawStatus" role="status">A student drawing for design work, not a certified engineering drawing.</p>
+  </section>
+
+  <section class="stage" id="view-make" role="tabpanel" aria-labelledby="tab-make" hidden>
+   <div class="caprow"><span class="stepno">3 of 3</span><p class="caption">Take the geometry to your printer. Check the list, then open the file in your slicer before you print.</p></div>
+   <div class="pl-make">
+    <div class="pl-files">
+     <h2>Your files</h2>
+     <button class="pl-file" id="downloadSTL" type="button"><b>STL</b><span>Geometry in millimetres. Opens in almost every slicer.</span></button>
+     <button class="pl-file" id="download3MF" type="button"><b>3MF</b><span>The same mesh with millimetres written into the file.</span></button>
+     <button class="pl-file" id="downloadSpec" type="button"><b>Design record</b><span>Your settings and measurements as JSON, with space for your reflection.</span></button>
+     <p class="pl-fine" id="fileStatus" role="status">Files sit flat on the bed with the plinth down. Colours stay in the preview only.</p>
+     <div class="card pl-start"><h3>Starting points for a classroom printer</h3>
+      <dl><div><dt>Material</dt><dd>PLA</dd></div><div><dt>Nozzle</dt><dd>0.4 mm</dd></div><div><dt>Layer height</dt><dd>0.12–0.16 mm for the small parts</dd></div><div><dt>Supports</dt><dd>Tree or organic, everywhere</dd></div></dl>
+      <p>Starting suggestions, not a tested profile. An adult should supervise printer use and you follow your school’s workshop rules.</p></div>
+    </div>
+    <div class="pl-check">
+     <h2>Pre-flight check</h2>
+     <ul class="pl-checks" id="preflightChecks"></ul>
+    </div>
+   </div>
+  </section>
+ </section>
+
+ <section class="pl-learn" aria-labelledby="learn-h">
+  <h2 id="learn-h">A design process, not just a download</h2>
+  <p class="lede">The learning is in the decisions you make and test. Keep your drawings and design record as evidence of your process.</p>
+  <div class="pl-cards">
+   <article class="pl-card mint"><span class="pl-num">1</span><h3><span lang="mi">Whakaaro</span> · think</h3><p>Sketch what you want the model to show. Set your limits: printer bed size, time, material and the thinnest part your printer can make.</p></article>
+   <article class="pl-card sky"><span class="pl-num">2</span><h3><span lang="mi">Āhua</span> · form</h3><p>Shape the bike, then read the drawing. Which numbers did you choose, and which did the design decide for you?</p></article>
+   <article class="pl-card lavender"><span class="pl-num">3</span><h3><span lang="mi">Whakamātau</span> · test</h3><p>Print it, find one weakness (a snapped spoke, a sagging bar) and change one setting to fix it. Explain what you changed and why.</p></article>
+  </div>
+  <p class="pl-kupu">Kupu from Te Aka Māori Dictionary: <a href="https://maoridictionary.co.nz/word/9369" target="_blank" rel="noopener" lang="mi">whakaaro</a> (to think, plan), <a href="https://maoridictionary.co.nz/word/87" target="_blank" rel="noopener" lang="mi">āhua</a> (to form; shape) and <a href="https://maoridictionary.co.nz/word/9613" target="_blank" rel="noopener" lang="mi">whakamātau</a> (to try, test).</p>
+  <div class="card pl-nzc"><h3>Curriculum links</h3><p>Fits Years 7–10 technological modelling, design and visual communication, and computer-aided manufacturing. See a <a href="https://newzealandcurriculum.tahurangi.education.govt.nz/case-study---technological-modelling-and-dvc-in-year-7-10/5637204594.p" target="_blank" rel="noopener">Tāhūrangi case study on modelling in DVC, Years 7–10</a>. For NCEA, follow your teacher’s standard and conditions: this tool alone is not assessment evidence.</p></div>
+ </section>
+
+ <footer class="hub-foot">
+  <p>A generic downhill bike made for display. Not rideable, not a real bike part, and not safety-certified. Proportions follow the bike in the <a href="/study/m/bike.html">downhill machine</a>.</p>
+  <p class="as-foot"><span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span>assembly is made by assembl in Aotearoa.</span></p>
+ </footer>
+</div>
+<script type="module" src="/study/print/app.js"></script>
+</body></html>

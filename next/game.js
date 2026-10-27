@@ -2,7 +2,7 @@
    Kaitiaki 2040 — a turn-based 3D strategy game for the assembl lab.
    Restore a fictional NZ-inspired island over 8 turns.
    Exports initGame(host). Auto-inits if #gameHost exists.
-   Native Three.js via import map ('three'); DOM fallback if WebGL fails.
+   Native Three.js via import map ('three'); DOM fallback if WebGL fails. Styled in the assembly look (game.css).
    A fictional what-if game — not a forecast or real-world prediction.
    ========================================================================= */
 
@@ -58,6 +58,19 @@ function el(tag, cls, text) {
 
 /* ---------------- game data ---------------- */
 
+const SVG = (d) => '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+const ICONS = {
+  biodiversity: '<path d="M5 19c8 0 13-5 14-14-9 1-14 6-14 14z"/><path d="M5 19l7-7"/>',
+  community: '<circle cx="8" cy="8.5" r="2.6"/><circle cx="16" cy="8.5" r="2.6"/><path d="M3.5 18c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M11.5 18c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>',
+  resilience: '<path d="M12 3.5 19 6v5.5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/>',
+  emissions: '<path d="M7 18h10a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6 1.2A2.9 2.9 0 0 0 7 18z"/><path d="M12 9V4.5M10 6.5l2-2 2 2"/>',
+  wetlands: '<path d="M3 17c2 0 2-1.3 4.5-1.3S10 17 12 17s2-1.3 4.5-1.3S19 17 21 17"/><path d="M8 14V6M12 14V4M16 14V7M8 6c-1 0-2 1-2 2M16 7c1 0 2 1 2 2"/>',
+  predator: '<path d="M4 18V9l8-5 8 5v9"/><path d="M4 18h16M9 18v-5h6v5"/><path d="M12 8v2"/>',
+  solar: '<circle cx="12" cy="6.5" r="2.4"/><path d="M12 2.4v.8M8 6.5h-.8M16.8 6.5H16"/><path d="M4.5 20l2-7.5h11l2 7.5z"/><path d="M5.6 16.2h12.8M12 12.5V20"/>',
+  enterprise: '<path d="M4 10h16l-1.5-4.5h-13z"/><path d="M5.5 10v9h13v-9M10 19v-4.5h4V19"/>',
+  seawall: '<path d="M3 19c2 0 2-1.3 4.5-1.3S10 19 12 19"/><path d="M13 19V9h8v10M13 13h8"/><path d="M3 14c2 0 2-1.3 4.5-1.3S10 14 11 14"/>',
+  bikes: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l3 7h-7M13.5 6.5H16"/>',
+};
 const METRICS = [
   { id: 'biodiversity', icon: '≈', name: 'Biodiversity', goal: 58, dir: 'up' },
   { id: 'community',    icon: '◎', name: 'Community',   goal: 54, dir: 'up' },
@@ -245,8 +258,8 @@ class GameCore {
       m.community = clamp01(m.community - Math.ceil(dmg / 2));
       m.resilience = clamp01(m.resilience - 1);
       this.addLog(dmg <= 5
-        ? '\u26C8\uFE0F Coastal storm — the island held firm. Only ' + dmg + ' funds of damage.'
-        : '\u26C8\uFE0F Coastal storm! ' + dmg + ' funds of damage, community shaken.', dmg <= 5 ? 'good' : 'bad');
+        ? 'Coastal storm: the island held firm. Only ' + dmg + ' funds of damage.'
+        : 'Coastal storm: ' + dmg + ' funds of damage, and the community is shaken.', dmg <= 5 ? 'good' : 'bad');
       this.lastEvent = 'storm';
     } else if (id === 'grant') {
       m.funds += 25; m.community = clamp01(m.community + 2);
@@ -266,7 +279,7 @@ class GameCore {
     } else if (id === 'ferry') {
       const hit = this.levels.bikes > 0 ? 3 : 6;
       m.funds = Math.max(0, m.funds - hit);
-      this.addLog('\u26F4\uFE0F Ferry disruption: \u2212' + hit + ' funds' + (this.levels.bikes ? ' (bikes carried commuters)' : '') + '.', 'bad');
+      this.addLog('Ferry disruption: \u2212' + hit + ' funds' + (this.levels.bikes ? ' (bikes carried commuters)' : '') + '.', 'bad');
       this.lastEvent = 'ferry';
     }
   }
@@ -475,66 +488,67 @@ class AudioEngine {
 }
 
 /* ---------------- Three.js island scene ----------------
-   Deep-plum sea and sky, peach sun, mint life. The island visibly changes
-   as projects are built: wetlands, trees, solar panels, seawall, village,
-   bike path; biodiversity drives tree and bird counts. */
+   The assembly 3D look (study/kit3d.js): a pale daylight sky, soft studio light from RoomEnvironment, one warm key
+   light with soft shadows, neutral tone mapping, pastel low-poly land and clear water. The island changes only to show
+   the game state: wetlands, trees, solar panels, seawall, homes and the bike path appear as projects are built,
+   biodiversity sets the tree and bird counts, emissions tint the haze, and storms darken the sky and bring rain. */
 
 const PALETTE = {
-  plum0: 0x1a0f26, plum1: 0x241431, plum2: 0x33204a, plum3: 0x46306b,
-  peach: 0xffb98a, peachHot: 0xff9e7d, sand: 0xe8b58c,
-  mint: 0x9df0cd, mintDim: 0x5fbf9d, leaf: 0x4ea877, leafMint: 0x7fd8a8,
-  water: 0x3a2352, waterGlow: 0x1c1030, wall: 0x8a7f96,
+  sky: 0xEAF4FB, haze: 0xE9E1D6, storm: 0xC9CFDF, sea: 0x9CCBEF, seaDeep: 0x7FB7E8,
+  sand: 0xF3E2B3, low: 0xCDEBB4, mid: 0x9CCF7E, top: 0xE6DCC0,
+  leaf: 0x6FBF73, leaf2: 0x8FD08A, trunk: 0xA8744A, reed: 0x7FBF7A, wet: 0x8EC9E8,
+  panel: 0x2E3A6E, steel: 0xCBD3DD, wall: 0xFFF8EC, roofs: [0xF3B8C8, 0xF9D2B8, 0xBFDDF5, 0xD9CBF2],
+  concrete: 0xE6E0D6, path: 0xFFF8EC, rider: 0xE8688A, ink: 0x222A55, sun: 0xF7E7A6, mint: 0x2A7D63, rain: 0x6E87B8,
 };
 
-function makeScene3D(THREE, container, reducedMotion) {
+function makeScene3D(THREE, container, reducedMotion, addons) {
   const rng = mulberry32(0xC0FFEE); // fixed layout seed: the island itself is stable
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(PALETTE.plum1);
-  scene.fog = new THREE.Fog(PALETTE.plum1, 48, 140);
+  const skyCol = new THREE.Color(PALETTE.sky);
+  scene.background = skyCol.clone();
+  scene.fog = new THREE.Fog(PALETTE.sky, 60, 150);
 
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 320);
-  const camBase = new THREE.Vector3(0, 14.5, 24);
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 320);
+  const camBase = new THREE.Vector3(0, 15, 25);
+  const camLook = new THREE.Vector3(0, 0.8, 0.6);
   camera.position.copy(camBase);
-  camera.lookAt(0, 1.4, 0);
+  camera.lookAt(camLook);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); // DPR cap
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
-  // lights
-  scene.add(new THREE.HemisphereLight(PALETTE.peach, PALETTE.plum2, 0.85));
-  const sun = new THREE.DirectionalLight(PALETTE.peachHot, 1.25);
-  sun.position.set(-34, 26, -18);
-  scene.add(sun);
-  const rim = new THREE.DirectionalLight(PALETTE.mint, 0.35);
-  rim.position.set(20, 12, 26);
-  scene.add(rim);
-
-  // low peach sun disc on the horizon
-  const sunDisc = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 20, 14),
-    new THREE.MeshBasicMaterial({ color: PALETTE.peach, fog: false })
-  );
-  sunDisc.position.set(-70, 10, -95);
-  scene.add(sunDisc);
-
-  // stars
-  {
-    const n = 220, pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      const th = rng() * Math.PI * 2, ph = rng() * Math.PI * 0.45;
-      const r = 150;
-      pos[i * 3] = Math.cos(th) * Math.cos(ph) * r;
-      pos[i * 3 + 1] = Math.sin(ph) * r * 0.7 + 12;
-      pos[i * 3 + 2] = Math.sin(th) * Math.cos(ph) * r;
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    scene.add(new THREE.Points(g, new THREE.PointsMaterial({
-      color: 0xffe9d6, size: 0.9, sizeAttenuation: false, transparent: true, opacity: 0.6, fog: false,
-    })));
+  // soft studio light (RoomEnvironment) plus one warm key with soft shadows, as in kit3d.js
+  if (addons && addons.RoomEnvironment) {
+    const pm = new THREE.PMREMGenerator(renderer);
+    scene.environment = pm.fromScene(new addons.RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.45;
+    pm.dispose();
   }
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d2e6, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff3e4, 2.2);
+  sun.position.set(-14, 22, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 70 });
+  sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+  fill.position.set(10, 8, 20);
+  scene.add(fill);
+
+  const std = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, metalness: 0 }, o));
+  const plastic = (color, o = {}) => new THREE.MeshPhysicalMaterial(Object.assign({ color, roughness: 0.4, metalness: 0, clearcoat: 0.6, clearcoatRoughness: 0.3 }, o));
+  const shadowy = (m, cast = true, rec = true) => { m.castShadow = cast; m.receiveShadow = rec; return m; };
+
+  // a soft sun low in the sky
+  const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(5, 24, 16), new THREE.MeshBasicMaterial({ color: PALETTE.sun, fog: false }));
+  sunDisc.position.set(-70, 22, -110);
+  scene.add(sunDisc);
 
   // island height field (shared by terrain, trees, path)
   function heightAt(x, z) {
@@ -549,24 +563,22 @@ function makeScene3D(THREE, container, reducedMotion) {
     return h;
   }
 
-  // ocean (animated vertices)
+  // sea (gentle animated swell)
   const oceanGeo = new THREE.PlaneGeometry(220, 220, 52, 52);
   oceanGeo.rotateX(-Math.PI / 2);
   const oceanBase = oceanGeo.attributes.position.array.slice();
-  const ocean = new THREE.Mesh(oceanGeo, new THREE.MeshPhongMaterial({
-    color: 0x452a66, emissive: 0x241542, shininess: 110,
-    specular: PALETTE.mint, flatShading: true,
-  }));
+  const ocean = new THREE.Mesh(oceanGeo, plastic(PALETTE.sea, { roughness: 0.25, clearcoat: 0.8, flatShading: true }));
   ocean.position.y = -0.15;
+  ocean.receiveShadow = true;
   scene.add(ocean);
 
-  // terrain with vertex colours (mint lowlands -> leafy green -> peach-tinted peaks)
+  // terrain with vertex colours: pastel lowland greens to a pale tussock top, low-poly faceted
   const terraGeo = new THREE.PlaneGeometry(24, 24, 46, 46);
   terraGeo.rotateX(-Math.PI / 2);
   {
     const p = terraGeo.attributes.position;
     const colors = new Float32Array(p.count * 3);
-    const cLow = new THREE.Color(PALETTE.leafMint), cMid = new THREE.Color(PALETTE.leaf), cTop = new THREE.Color(0xc9a06a);
+    const cLow = new THREE.Color(PALETTE.low), cMid = new THREE.Color(PALETTE.mid), cTop = new THREE.Color(PALETTE.top);
     const tmp = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), z = p.getZ(i);
@@ -579,13 +591,10 @@ function makeScene3D(THREE, container, reducedMotion) {
     terraGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     terraGeo.computeVertexNormals();
   }
-  scene.add(new THREE.Mesh(terraGeo, new THREE.MeshLambertMaterial({ vertexColors: true })));
+  scene.add(shadowy(new THREE.Mesh(terraGeo, std(0xffffff, { vertexColors: true, roughness: 0.9, flatShading: true })), false, true));
 
   // beach ring
-  const beach = new THREE.Mesh(
-    new THREE.TorusGeometry(10.6, 1.15, 8, 72),
-    new THREE.MeshLambertMaterial({ color: PALETTE.sand })
-  );
+  const beach = shadowy(new THREE.Mesh(new THREE.TorusGeometry(10.6, 1.15, 8, 72), std(PALETTE.sand, { roughness: 0.95 })), false, true);
   beach.rotation.x = Math.PI / 2;
   beach.scale.set(1, 1, 0.28);
   beach.position.y = 0.02;
@@ -594,27 +603,26 @@ function makeScene3D(THREE, container, reducedMotion) {
   const disposables = [oceanGeo, terraGeo, beach.geometry];
   const track = (...objs) => { for (const o of objs) disposables.push(o.geometry ? o.geometry : o); return objs[0]; };
 
-  // ---- trees (biodiversity) ----
+  // ---- trees (biodiversity): rounded low-poly canopies ----
   const MAX_TREES = 70;
-  const trunkIM = new THREE.InstancedMesh(
-    track(new THREE.CylinderGeometry(0.07, 0.11, 0.55, 5)),
-    new THREE.MeshLambertMaterial({ color: 0x5a4030 }), MAX_TREES);
-  const canopyIM = new THREE.InstancedMesh(
-    track(new THREE.ConeGeometry(0.42, 1.15, 6)),
-    new THREE.MeshLambertMaterial({ color: PALETTE.leaf }), MAX_TREES);
+  const trunkIM = new THREE.InstancedMesh(track(new THREE.CylinderGeometry(0.07, 0.11, 0.6, 6)), std(PALETTE.trunk), MAX_TREES);
+  const canopyIM = new THREE.InstancedMesh(track(new THREE.IcosahedronGeometry(0.46, 0)), plastic(0xffffff, { roughness: 0.6, clearcoat: 0.25, flatShading: true }), MAX_TREES);
+  trunkIM.castShadow = canopyIM.castShadow = true;
   {
-    const m4 = new THREE.Matrix4();
+    const m4 = new THREE.Matrix4(), col = new THREE.Color();
     let placed = 0, guard = 0;
     while (placed < MAX_TREES && guard++ < 4000) {
       const x = (rng() * 2 - 1) * 9.5, z = (rng() * 2 - 1) * 9.5;
       const h = heightAt(x, z);
       if (h < 0.35 || h > 2.6) continue;
       if (x > 1.4 && x < 5.6 && z > -4.6 && z < 0) continue;  // keep solar hill clear
+      if (x > -3.5 && x < 3.5 && z > 3.6 && z < 7) continue;   // keep the village clear
       const s = 0.75 + rng() * 0.6;
-      m4.makeScale(s, s, s).setPosition(x, h + 0.24 * s, z);
+      m4.makeScale(s, s, s).setPosition(x, h + 0.27 * s, z);
       trunkIM.setMatrixAt(placed, m4);
-      m4.makeScale(s, s, s).setPosition(x, h + (0.55 + 0.5) * s, z);
+      m4.makeScale(s, s * 1.15, s).setPosition(x, h + 0.82 * s, z);
       canopyIM.setMatrixAt(placed, m4);
+      canopyIM.setColorAt(placed, col.setHex(rng() < 0.5 ? PALETTE.leaf : PALETTE.leaf2));
       placed++;
     }
   }
@@ -623,15 +631,14 @@ function makeScene3D(THREE, container, reducedMotion) {
   // ---- wetlands ----
   const wetGroup = new THREE.Group();
   {
-    const wetMat = new THREE.MeshPhongMaterial({ color: 0x3fae9c, emissive: 0x143c34, shininess: 70 });
-    const p1 = new THREE.Mesh(track(new THREE.CircleGeometry(2.4, 24)), wetMat);
-    p1.rotation.x = -Math.PI / 2; p1.position.set(-5.2, 0.32, -4.2);
-    const p2 = new THREE.Mesh(track(new THREE.CircleGeometry(1.7, 20)), wetMat);
-    p2.rotation.x = -Math.PI / 2; p2.position.set(-2.2, 0.3, -6.2);
+    const wetMat = plastic(PALETTE.wet, { roughness: 0.2, clearcoat: 1 });
+    const p1 = new THREE.Mesh(track(new THREE.CircleGeometry(2.4, 28)), wetMat);
+    p1.rotation.x = -Math.PI / 2; p1.position.set(-5.2, 0.34, -4.2); p1.receiveShadow = true;
+    const p2 = new THREE.Mesh(track(new THREE.CircleGeometry(1.7, 24)), wetMat);
+    p2.rotation.x = -Math.PI / 2; p2.position.set(-2.2, 0.32, -6.2); p2.receiveShadow = true;
     wetGroup.add(p1, p2);
-    const reedIM = new THREE.InstancedMesh(
-      track(new THREE.ConeGeometry(0.05, 0.75, 4)),
-      new THREE.MeshLambertMaterial({ color: PALETTE.mint }), 64);
+    const reedIM = new THREE.InstancedMesh(track(new THREE.ConeGeometry(0.05, 0.75, 5)), std(PALETTE.reed), 64);
+    reedIM.castShadow = true;
     const m4 = new THREE.Matrix4();
     for (let i = 0; i < 64; i++) {
       const cx = i < 40 ? -5.2 : -2.2, cz = i < 40 ? -4.2 : -6.2, rr = i < 40 ? 2.2 : 1.5;
@@ -648,63 +655,60 @@ function makeScene3D(THREE, container, reducedMotion) {
   // ---- solar microgrid (on the hill) ----
   const solarGroup = new THREE.Group();
   {
-    const panelMat = new THREE.MeshPhongMaterial({
-      color: PALETTE.plum1, emissive: PALETTE.mint, emissiveIntensity: 0.28, shininess: 100,
-    });
-    const panelGeo = track(new THREE.BoxGeometry(0.85, 0.07, 0.6));
-    const legGeo = track(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 4));
-    const legMat = new THREE.MeshLambertMaterial({ color: 0x777788 });
+    const panelMat = plastic(PALETTE.panel, { roughness: 0.2, clearcoat: 1, metalness: 0.1 });
+    const panelGeo = track(new THREE.BoxGeometry(0.85, 0.06, 0.6));
+    const legGeo = track(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 6));
+    const legMat = std(PALETTE.steel, { metalness: 0.6, roughness: 0.35 });
     for (let lvl = 0; lvl < 2; lvl++) {
       const g = new THREE.Group();
       for (let i = 0; i < 6; i++) {
         const px = 2.3 + (i % 3) * 1.15 + lvl * 0.55, pz = -3.4 + Math.floor(i / 3) * 1.05 + lvl * 1.15;
         const h = heightAt(px, pz);
-        const panel = new THREE.Mesh(panelGeo, panelMat);
+        const panel = shadowy(new THREE.Mesh(panelGeo, panelMat));
         panel.position.set(px, h + 0.42, pz);
         panel.rotation.x = -0.5; panel.rotation.y = 0.25;
-        const leg = new THREE.Mesh(legGeo, legMat);
+        const leg = shadowy(new THREE.Mesh(legGeo, legMat));
         leg.position.set(px, h + 0.2, pz);
         g.add(panel, leg);
       }
       g.visible = false;
       solarGroup.add(g);
     }
-    // little wind-battery mast
-    const mast = new THREE.Mesh(track(new THREE.CylinderGeometry(0.05, 0.07, 1.6, 5)), legMat);
+    // a small battery shed with a status lamp: the lamp is lit while the microgrid exists
+    const shed = shadowy(new THREE.Mesh(track(new THREE.BoxGeometry(0.7, 0.5, 0.5)), plastic(PALETTE.wall)));
     const mh = heightAt(4.6, -1.2);
-    mast.position.set(4.6, mh + 0.8, -1.2);
-    const lamp = new THREE.Mesh(track(new THREE.SphereGeometry(0.12, 8, 6)),
-      new THREE.MeshBasicMaterial({ color: PALETTE.mint }));
-    lamp.position.set(4.6, mh + 1.65, -1.2);
-    mast.visible = lamp.visible = false;
-    solarGroup.add(mast, lamp);
-    solarGroup.userData = { lamp };
+    shed.position.set(4.6, mh + 0.25, -1.2);
+    const lamp = new THREE.Mesh(track(new THREE.SphereGeometry(0.09, 12, 8)), new THREE.MeshBasicMaterial({ color: 0x8FE3B6 }));
+    lamp.position.set(4.6, mh + 0.56, -1.2);
+    shed.visible = lamp.visible = false;
+    solarGroup.add(shed, lamp);
+    solarGroup.userData = { lamp, shed };
   }
   scene.add(solarGroup);
 
-  // ---- village (enterprise) ----
+  // ---- village (enterprise): white homes with pastel roofs ----
   const villageGroup = new THREE.Group();
   const villageHouses = [];
   {
-    const wallMat = new THREE.MeshLambertMaterial({ color: PALETTE.plum3 });
-    const roofMat = new THREE.MeshLambertMaterial({ color: PALETTE.peachHot });
-    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
+    const wallMat = plastic(PALETTE.wall, { roughness: 0.5, clearcoat: 0.3 });
+    const roofMats = PALETTE.roofs.map((c) => plastic(c, { roughness: 0.45 }));
+    const doorMat = std(PALETTE.ink);
     const bodyGeo = track(new THREE.BoxGeometry(0.72, 0.5, 0.62));
     const roofGeo = track(new THREE.ConeGeometry(0.58, 0.42, 4));
-    const winGeo = track(new THREE.PlaneGeometry(0.16, 0.14));
+    const doorGeo = track(new THREE.PlaneGeometry(0.14, 0.24));
     const spots = [[-0.6, 4.4], [0.7, 5.1], [-1.7, 5.4], [1.9, 4.2], [-2.8, 4.3], [0.1, 6.4], [2.9, 5.3]];
     spots.forEach(([x, z], i) => {
       const h = heightAt(x, z);
       const house = new THREE.Group();
-      const body = new THREE.Mesh(bodyGeo, wallMat);
+      const body = shadowy(new THREE.Mesh(bodyGeo, wallMat));
       body.position.y = 0.25;
-      const roof = new THREE.Mesh(roofGeo, roofMat);
-      roof.position.y = 0.68; roof.rotation.y = Math.PI / 4;
-      const win = new THREE.Mesh(winGeo, glowMat);
-      win.position.set(0.12, 0.26, 0.315);
-      house.add(body, roof, win);
+      const roof = shadowy(new THREE.Mesh(roofGeo, roofMats[i % roofMats.length]));
+      roof.position.y = 0.71; roof.rotation.y = Math.PI / 4;
+      const door = new THREE.Mesh(doorGeo, doorMat);
+      door.position.set(0.12, 0.12, 0.315);
+      house.add(body, roof, door);
       house.position.set(x, h, z);
-      house.rotation.y = rng() * Math.PI;
+      house.rotation.y = (rng() - 0.5) * 1.2;
       house.visible = i < 3; // 3 homes to start, more with enterprise
       villageGroup.add(house);
       villageHouses.push(house);
@@ -713,9 +717,8 @@ function makeScene3D(THREE, container, reducedMotion) {
   scene.add(villageGroup);
 
   // ---- seawall (coast arc facing the open sea) ----
-  const wallIM = new THREE.InstancedMesh(
-    track(new THREE.BoxGeometry(1.35, 0.7, 0.55)),
-    new THREE.MeshLambertMaterial({ color: PALETTE.wall }), 18);
+  const wallIM = new THREE.InstancedMesh(track(new THREE.BoxGeometry(1.35, 0.7, 0.55)), std(PALETTE.concrete, { roughness: 0.85 }), 18);
+  wallIM.castShadow = true; wallIM.receiveShadow = true;
   {
     const m4 = new THREE.Matrix4();
     const e = new THREE.Euler();
@@ -738,16 +741,16 @@ function makeScene3D(THREE, container, reducedMotion) {
     for (let i = 0; i <= 72; i++) {
       const a = (i / 72) * Math.PI * 2;
       const x = Math.cos(a) * 7.4, z = Math.sin(a) * 7.4;
-      pts.push(new THREE.Vector3(x, heightAt(x, z) + 0.14, z));
+      pts.push(new THREE.Vector3(x, heightAt(x, z) + 0.1, z));
     }
-    const pathGeo = track(new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(pts, true), 96, 0.06, 5, true));
-    const path = new THREE.Mesh(pathGeo, new THREE.MeshBasicMaterial({ color: PALETTE.mint }));
+    const pathGeo = track(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 120, 0.09, 6, true));
+    const path = new THREE.Mesh(pathGeo, std(PALETTE.path, { roughness: 0.6 }));
+    path.scale.y = 0.4; path.receiveShadow = true;
     bikeGroup.add(path);
-    const dotGeo = track(new THREE.SphereGeometry(0.13, 8, 6));
-    const dotMat = new THREE.MeshBasicMaterial({ color: 0xfff3e0 });
+    const dotGeo = track(new THREE.SphereGeometry(0.13, 12, 8));
+    const dotMat = plastic(PALETTE.rider);
     for (let i = 0; i < 6; i++) {
-      const d = new THREE.Mesh(dotGeo, dotMat);
+      const d = shadowy(new THREE.Mesh(dotGeo, dotMat), true, false);
       d.userData.phase = i / 6;
       bikeDots.push(d);
       bikeGroup.add(d);
@@ -760,10 +763,8 @@ function makeScene3D(THREE, container, reducedMotion) {
   // ---- clouds ----
   const clouds = [];
   {
-    const cloudMat = new THREE.MeshLambertMaterial({
-      color: 0xffd9c0, emissive: 0x6b4552, transparent: true, opacity: 0.85,
-    });
-    const puffGeo = track(new THREE.SphereGeometry(1, 10, 8));
+    const cloudMat = std(0xffffff, { roughness: 1, transparent: true, opacity: 0.95, flatShading: true });
+    const puffGeo = track(new THREE.IcosahedronGeometry(1, 1));
     for (let i = 0; i < 6; i++) {
       const g = new THREE.Group();
       const puffs = 3 + Math.floor(rng() * 2);
@@ -771,7 +772,7 @@ function makeScene3D(THREE, container, reducedMotion) {
         const s = 0.8 + rng() * 1.1;
         const m = new THREE.Mesh(puffGeo, cloudMat);
         m.position.set(j * 1.2 - puffs * 0.5, rng() * 0.5, rng() * 0.8 - 0.4);
-        m.scale.set(s, s * 0.55, s * 0.8);
+        m.scale.set(s, s * 0.6, s * 0.8);
         g.add(m);
       }
       g.position.set((rng() * 2 - 1) * 60, 13 + rng() * 6, -45 + rng() * 45);
@@ -784,19 +785,15 @@ function makeScene3D(THREE, container, reducedMotion) {
   // ---- birds (biodiversity) ----
   const birds = [];
   {
-    const birdMat = new THREE.MeshBasicMaterial({ color: PALETTE.plum0, side: THREE.DoubleSide });
-    const wingGeo = track(new THREE.PlaneGeometry(0.55, 0.2));
+    const birdMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, side: THREE.DoubleSide });
+    const wingGeo = track(new THREE.PlaneGeometry(0.5, 0.16)); wingGeo.rotateX(-Math.PI / 2);
     for (let i = 0; i < 10; i++) {
       const b = new THREE.Group();
       const wl = new THREE.Mesh(wingGeo, birdMat);
       const wr = new THREE.Mesh(wingGeo, birdMat);
-      wl.position.x = -0.26; wr.position.x = 0.26;
+      wl.position.x = -0.24; wr.position.x = 0.24;
       b.add(wl, wr);
-      b.userData = {
-        wl, wr,
-        r: 11 + rng() * 6, h: 7.5 + rng() * 4.5,
-        speed: 0.12 + rng() * 0.12, phase: rng() * Math.PI * 2,
-      };
+      b.userData = { wl, wr, r: 11 + rng() * 6, h: 7.5 + rng() * 4.5, speed: 0.12 + rng() * 0.12, phase: rng() * Math.PI * 2 };
       birds.push(b);
       scene.add(b);
     }
@@ -813,11 +810,11 @@ function makeScene3D(THREE, container, reducedMotion) {
     return p;
   }
   const BURST_N = 90;
-  const burstPts = makePoints(BURST_N, 0.22, PALETTE.mint, 0);
+  const burstPts = makePoints(BURST_N, 0.22, 0xF2C83C, 0);
   const burstVel = new Float32Array(BURST_N * 3);
   let burstLife = 0;
   const RAIN_N = 420;
-  const rainPts = makePoints(RAIN_N, 0.14, 0x9dc8f0, 0);
+  const rainPts = makePoints(RAIN_N, 0.12, PALETTE.rain, 0);
   {
     const p = rainPts.geometry.attributes.position.array;
     for (let i = 0; i < RAIN_N; i++) {
@@ -829,11 +826,12 @@ function makeScene3D(THREE, container, reducedMotion) {
   let rainLevel = 0;
 
   // state mirrored from the core
-  let treeTarget = 16, birdTarget = 3;
+  let treeTarget = 16, birdTarget = 3, emissions = 60;
   let shake = 0, pulse = 0;
   let paused = false, disposed = false;
   let t = 0, last = 0, raf = 0;
   const motion = reducedMotion ? 0.15 : 1;
+  const hazeCol = new THREE.Color(), tmpCol = new THREE.Color();
 
   function sync(core) {
     const L = core.levels, m = core.metrics;
@@ -844,15 +842,12 @@ function makeScene3D(THREE, container, reducedMotion) {
     wetGroup.userData.reedIM.count = L.wetlands * 32;
     solarGroup.children[0].visible = L.solar >= 1;
     solarGroup.children[1].visible = L.solar >= 2;
-    solarGroup.userData.lamp.visible = L.solar >= 1;
-    solarGroup.children[2].visible = L.solar >= 1;
+    solarGroup.userData.lamp.visible = solarGroup.userData.shed.visible = L.solar >= 1;
     villageHouses.forEach((h, i) => { h.visible = i < 3 + L.enterprise * 2; });
     wallIM.count = L.seawall * 9;
     bikeGroup.visible = L.bikes >= 1;
     bikeDots.forEach((d, i) => { d.visible = i < L.bikes * 3; });
-    // emissions tint the fog: cleaner air -> clearer mint horizon
-    const clean = 1 - m.emissions / 100;
-    scene.fog.color.setHex(PALETTE.plum1).lerp(new THREE.Color(0x3c3a55), clean * 0.5);
+    emissions = m.emissions;
   }
 
   function burst() {
@@ -875,6 +870,10 @@ function makeScene3D(THREE, container, reducedMotion) {
     if (!reducedMotion) shake = 0.7;
   }
 
+  // frame the island for the stage's shape: a narrow stage pulls the camera back
+  let fitScale = 1;
+  function frameFor(aspect) { fitScale = aspect >= 1.45 ? 1 : Math.min(1.9, Math.pow(1.45 / aspect, 0.85)); }
+
   function tick(ts) {
     if (disposed) return;
     raf = requestAnimationFrame(tick);
@@ -884,9 +883,9 @@ function makeScene3D(THREE, container, reducedMotion) {
     if (paused) return;
     t += dt;
 
-    // ocean waves
+    // sea swell
     const op = oceanGeo.attributes.position;
-    const amp = 0.22 * motion;
+    const amp = 0.14 * motion;
     for (let i = 0; i < op.count; i++) {
       const x = oceanBase[i * 3], z = oceanBase[i * 3 + 2];
       op.setY(i, oceanBase[i * 3 + 1] + amp * (Math.sin(x * 0.22 + t * 1.15) + Math.cos(z * 0.19 + t * 0.85)));
@@ -900,7 +899,7 @@ function makeScene3D(THREE, container, reducedMotion) {
       if (c.position.x > 75) c.position.x = -75;
     }
 
-    // birds circle and flap
+    // birds circle and flap (their number shows biodiversity)
     for (let i = 0; i < birds.length; i++) {
       const b = birds[i], u = b.userData;
       b.visible = i < birdTarget;
@@ -909,7 +908,7 @@ function makeScene3D(THREE, container, reducedMotion) {
       b.position.set(Math.cos(a) * u.r, u.h + Math.sin(t * 0.9 + u.phase) * 0.5 * motion, Math.sin(a) * u.r);
       b.rotation.y = -a;
       const flap = Math.sin(t * 7 + u.phase * 3) * 0.55 * motion;
-      u.wl.rotation.y = 0.4 + flap; u.wr.rotation.y = -0.4 - flap;
+      u.wl.rotation.z = 0.25 + flap; u.wr.rotation.z = -0.25 - flap;
     }
 
     // bikes ride the path
@@ -919,10 +918,11 @@ function makeScene3D(THREE, container, reducedMotion) {
         if (!d.visible) continue;
         const u = (d.userData.phase + t * 0.03 * motion) % 1;
         curve.getPointAt(u, d.position);
+        d.position.y += 0.12;
       }
     }
 
-    // ease trees toward biodiversity target
+    // ease trees toward the biodiversity target
     const tc = trunkIM.count;
     if (tc !== treeTarget) {
       const next = tc < treeTarget ? Math.min(treeTarget, tc + 1) : Math.max(treeTarget, tc - 1);
@@ -951,26 +951,23 @@ function makeScene3D(THREE, container, reducedMotion) {
         if (p[i * 3 + 1] < 0) p[i * 3 + 1] = 16;
       }
       rainPts.geometry.attributes.position.needsUpdate = true;
-      rainPts.material.opacity = rainLevel * 0.75;
+      rainPts.material.opacity = rainLevel * 0.8;
     } else if (rainPts.material.opacity !== 0) rainPts.material.opacity = 0;
 
-    // solar lamp blink
-    if (solarGroup.userData.lamp.visible) {
-      solarGroup.userData.lamp.material.color.setHex(Math.sin(t * 4) > 0 ? PALETTE.mint : PALETTE.plum2);
-    }
+    // sky: higher emissions give a beige haze and a nearer horizon; a storm greys the sky while it passes
+    const dirty = clamp((emissions - 20) / 70, 0, 1);
+    hazeCol.setHex(PALETTE.sky).lerp(tmpCol.setHex(PALETTE.haze), dirty * 0.85).lerp(tmpCol.setHex(PALETTE.storm), rainLevel * 0.8);
+    scene.background.copy(hazeCol);
+    scene.fog.color.copy(hazeCol);
+    scene.fog.near = 60 - dirty * 30; scene.fog.far = 150 - dirty * 60;
 
-    // camera: gentle sway, storm shake, build pulse
+    // camera: fixed framing, plus a storm shake and a small push-in when something is built
     shake = Math.max(0, shake - dt * 0.8);
     pulse = Math.max(0, pulse - dt * 1.4);
-    const sway = Math.sin(t * 0.07) * 0.06 * motion;
     const sx = shake ? (rng() - 0.5) * shake * 0.9 : 0;
     const sy = shake ? (rng() - 0.5) * shake * 0.6 : 0;
-    camera.position.set(
-      camBase.x + Math.sin(sway) * 22 * 0.12 + sx,
-      camBase.y + sy - pulse * 0.7,
-      camBase.z * Math.cos(sway) - pulse * 1.6
-    );
-    camera.lookAt(0, 1.2, 0);
+    camera.position.set(camBase.x * fitScale + sx, camBase.y * fitScale + sy - pulse * 0.7, camBase.z * fitScale - pulse * 1.6);
+    camera.lookAt(camLook);
 
     renderer.render(scene, camera);
   }
@@ -979,6 +976,7 @@ function makeScene3D(THREE, container, reducedMotion) {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    frameFor(camera.aspect);
     renderer.setSize(w, h, false);
   }
   const ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(resize) : null;
@@ -1007,6 +1005,7 @@ function makeScene3D(THREE, container, reducedMotion) {
         }
       });
       disposables.forEach((d) => { if (d && d.dispose) d.dispose(); });
+      if (scene.environment) scene.environment.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     },
@@ -1083,39 +1082,43 @@ async function initGame(host) {
   root.setAttribute('role', 'application');
   root.setAttribute('aria-label', 'Kaitiaki 2040 — island restoration strategy game');
   const stage = el('div', 'kg-stage');
-  const hud = el('div', 'kg-hud');
+  const body = el('div', 'kg-body');
+  const side = el('div', 'kg-side');
 
   const top = el('div', 'kg-top');
   const titleEl = el('div', 'kg-title', 'Kaitiaki 2040');
+  const spacer = el('span', 'kg-spacer');
   const turnEl = el('div', 'kg-turn', 'Turn 1 / ' + MAX_TURNS);
   const fundsEl = el('div', 'kg-funds', '120 funds');
-  const muteBtn = el('button', 'kg-iconbtn', audio.muted ? 'OFF' : 'ON');
+  const muteBtn = el('button', 'kg-iconbtn', audio.muted ? 'Sound off' : 'Sound on');
   muteBtn.title = 'Mute / unmute (persisted)';
   muteBtn.setAttribute('aria-label', 'Toggle sound');
-  const pauseBtn = el('button', 'kg-iconbtn', '\u23F8');
+  const pauseBtn = el('button', 'kg-iconbtn', 'Pause');
   pauseBtn.title = 'Pause (P)';
   pauseBtn.setAttribute('aria-label', 'Pause game');
-  top.append(titleEl, turnEl, fundsEl, muteBtn, pauseBtn);
+  top.append(titleEl, turnEl, fundsEl, spacer, muteBtn, pauseBtn);
 
   const metricsEl = el('div', 'kg-metrics');
   const metricRows = {};
   for (const m of METRICS) {
     const row = el('div', 'kg-metric');
-    const ico = el('span', 'kg-metric-ico', m.icon);
+    const ico = el('span', 'kg-metric-ico'); ico.innerHTML = SVG(ICONS[m.id]);
     const name = el('span', 'kg-metric-name', m.name);
+    const goal = el('span', 'kg-metric-goal', m.dir === 'up' ? 'target ' + m.goal + '+' : 'target ' + m.goal + ' or less');
     const bar = el('div', 'kg-metric-bar');
     const fill = el('div', 'kg-metric-fill');
+    const tick = el('i', 'kg-metric-tick'); tick.style.left = m.goal + '%';
     const val = el('span', 'kg-metric-val', '0');
-    bar.appendChild(fill);
-    row.append(ico, name, bar, val);
+    bar.append(fill, tick);
+    row.append(ico, name, goal, val, bar);
     row.title = m.name + (m.dir === 'up' ? ' \u2014 target ' + m.goal + '+' : ' \u2014 target ' + m.goal + ' or less');
     metricsEl.appendChild(row);
     metricRows[m.id] = { row, fill, val };
   }
 
   const coach = el('div', 'kg-coach');
-  coach.innerHTML = 'You are the <b>kaitiaki</b> (guardian). Each season, pick <b>one project</b> — keys <b>1\u20136</b> or tap a card. ' +
-    'Mix nature, people and preparation: hit every target by season 8.';
+  coach.innerHTML = 'You are the <b>kaitiaki</b> (guardian). Each season, pick <b>one project</b>: tap a card or press <b>1\u20136</b>. ' +
+    'Mix nature, people and preparation, and reach every target by season 8.';
   coach.hidden = true;
 
   const logEl = el('div', 'kg-log');
@@ -1124,8 +1127,10 @@ async function initGame(host) {
   const cards = PROJECTS.map((p, i) => {
     const card = el('button', 'kg-card');
     card.type = 'button';
+    card.dataset.tint = ['mint', 'lavender', 'butter', 'peach', 'sky', 'blush'][i];
     const cardTop = el('div', 'kg-card-top');
-    cardTop.append(el('span', 'kg-card-ico', p.icon), el('span', 'kg-card-key', p.key));
+    const cico = el('span', 'kg-card-ico'); cico.innerHTML = SVG(ICONS[p.id]);
+    cardTop.append(cico, el('span', 'kg-card-key', p.key));
     const pips = el('span', 'kg-card-pips');
     pips.append(el('i'), el('i'));
     cardTop.appendChild(pips);
@@ -1141,13 +1146,15 @@ async function initGame(host) {
     return { card, pips: pips.children };
   });
 
-  hud.append(top, metricsEl, coach, logEl, projectsEl);
+  const sideHead = el('p', 'kg-sidehead', 'Island targets');
+  side.append(sideHead, metricsEl, coach, logEl);
+  body.append(stage, side);
 
   const overlay = el('div', 'kg-overlay');
   const panel = el('div', 'kg-panel');
   overlay.appendChild(panel);
 
-  root.append(stage, hud, overlay);
+  root.append(top, body, projectsEl, overlay);
   host.appendChild(root);
 
   /* ----- view: 3D or DOM fallback ----- */
@@ -1155,7 +1162,9 @@ async function initGame(host) {
   try {
     if (!webglAvailable()) throw new Error('WebGL unavailable');
     const THREE = await import('three');
-    view = makeScene3D(THREE, stage, reducedMotion);
+    const addons = {};
+    try { addons.RoomEnvironment = (await import('three/addons/environments/RoomEnvironment.js')).RoomEnvironment; } catch (e) { /* plain lights only */ }
+    view = makeScene3D(THREE, stage, reducedMotion, addons);
   } catch (e) {
     view = makeFallbackView(stage);
   }
@@ -1173,6 +1182,7 @@ async function initGame(host) {
       r.val.textContent = String(v);
       const danger = m.dir === 'up' ? v < 20 : v > 78;
       r.row.dataset.low = danger ? '1' : '0';
+      r.row.dataset.met = (m.dir === 'up' ? v >= m.goal : v <= m.goal) ? '1' : '0';
       if (flashMetric === m.id) {
         r.val.classList.remove('kg-metric-flash');
         void r.val.offsetWidth;
@@ -1218,7 +1228,7 @@ async function initGame(host) {
       ['Biodiversity', GOALS.biodiversity + '+'],
       ['Community', GOALS.community + '+'],
       ['Resilience', GOALS.resilience + '+'],
-      ['\u2601\uFE0F Emissions', GOALS.emissions + ' or less'],
+      ['Emissions', GOALS.emissions + ' or less'],
     ];
     for (const [k, v] of items) {
       const s = el('span');
@@ -1243,7 +1253,7 @@ async function initGame(host) {
     b.addEventListener('click', () => {
       resetSavedData();
       audio.setMuted(false);
-      muteBtn.textContent = 'ON';
+      muteBtn.textContent = 'Sound on';
       b.textContent = 'Saved data cleared.';
     });
     return b;
@@ -1252,7 +1262,7 @@ async function initGame(host) {
   function showTitle() {
     panel.textContent = '';
     panel.append(
-      (() => { const h = el('h1', null, 'Kaitiaki 2040'); return h; })(),
+      (() => { const h = el('h2', null, 'Kaitiaki 2040'); return h; })(),
       (() => {
         const p = el('p', 'kg-sub');
         p.innerHTML = 'A stormier future is coming to this island. Over <b>8 seasons</b>, choose projects that let ' +
@@ -1270,7 +1280,7 @@ async function initGame(host) {
     const keys = el('p', 'kg-keys');
     keys.innerHTML = '<kbd>Space</kbd> start \u00B7 <kbd>1</kbd>\u2013<kbd>6</kbd> choose a project \u00B7 <kbd>P</kbd> pause \u00B7 <kbd>R</kbd> restart';
     panel.append(keys, resetDataButton(),
-      el('p', 'kg-fineprint', 'A fictional what-if game about choices and trade-offs \u2014 not a forecast or real-world prediction. Progress is stored only in this browser.'));
+      el('p', 'kg-fineprint', 'A made-up what-if game about choices and trade-offs. Simulated: not a forecast or a real-world prediction. Only your best score is kept, in this browser.'));
     overlay.hidden = false;
   }
 
@@ -1403,7 +1413,7 @@ async function initGame(host) {
   function toggleMute() {
     audio.setMuted(!audio.muted);
     saveMuted(audio.muted);
-    muteBtn.textContent = audio.muted ? 'OFF' : 'ON';
+    muteBtn.textContent = audio.muted ? 'Sound off' : 'Sound on';
     if (!audio.muted && core.state === 'playing') audio.startMusic('play');
   }
 

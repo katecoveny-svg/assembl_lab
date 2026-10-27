@@ -1,149 +1,204 @@
+// assembly Print Lab: customise the downhill bike, check its drawing, download STL / 3MF.
+// Everything runs in the browser. The 3D view uses the same studio light as the study machines (kit3d.js):
+// soft room light, a warm key with a soft navy shadow, neutral tone mapping so the pastels stay pastel.
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {DEFAULTS,createBike,makeSTL,make3MF} from './model.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {DEFAULTS,RANGES,FRAME_SWATCHES,DETAIL_SWATCHES,wheelRange,normalise,createBike,makeSTL,make3MF} from './model.js';
 import {drawingSVG} from './drawing.js';
 
 const $=id=>document.getElementById(id);
-const mode='public'; // the student download studio only; the private quote studio was left out
-const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const number=(id,min,max)=>Math.max(min,Math.min(max,Number($(id).value)||min));
-const safeName=value=>String(value||DEFAULTS.name).trim().slice(0,30)||DEFAULTS.name;
-const slug=value=>safeName(value).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'bike-model';
-let current=null,scene=null,camera=null,renderer=null,orbit=null,ground=null,grid=null,rebuildFrame=0,renderFrame=0;
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug=v=>String(v||DEFAULTS.name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'bike-model';
+const fmt=(n,d=1)=>Number(n).toLocaleString('en-NZ',{maximumFractionDigits:d});
+const coils=t=>Math.max(6,Math.min(9,Math.round(t/25)));
+let current=null,G=null,rebuildFrame=0,lastRadius=0;
 
-function optionsFromControls(){
- return{
-  name:safeName($('modelName').value),
-  wheelbase:number('wheelbase',160,220),
-  wheelDiameter:number('wheelDiameter',56,78),
-  suspension:number('suspension',130,200),
-  frame:/^#[0-9a-f]{6}$/i.test($('frameColour').value)?$('frameColour').value:DEFAULTS.frame,
-  accent:/^#[0-9a-f]{6}$/i.test($('accentColour').value)?$('accentColour').value:DEFAULTS.accent,
-  detail:$('detail').value==='fine'?'fine':'standard',
-  base:$('base').checked
- };
+// ---------------------------------------------------------------- controls
+function swatches(host,list,input){
+ host.innerHTML=list.map(([n,c])=>`<button type="button" class="pl-sw" data-c="${c}" aria-pressed="false" title="${n}"><i style="background:${c}"></i><span>${n}</span></button>`).join('');
+ host.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;input.value=b.dataset.c;input.dispatchEvent(new Event('input',{bubbles:true}))});
 }
-function updateOutputs(){
- $('wheelbaseOut').textContent=`${$('wheelbase').value} mm`;
- $('wheelDiameterOut').textContent=`${$('wheelDiameter').value} mm`;
- $('suspensionOut').textContent=`${$('suspension').value} mm travel reference`;
+function markSwatches(){
+ for(const [host,input] of [[$('frameSwatches'),$('frameColour')],[$('accentSwatches'),$('accentColour')]])
+  host.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.c.toLowerCase()===input.value.toLowerCase())));
 }
-function download(name,content,type='application/octet-stream'){
- const blob=content instanceof Blob?content:new Blob([content],{type});
- const url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),2500);
+function syncWheelRange(){
+ const wb=Number($('wheelbase').value),[lo,hi]=wheelRange(wb),w=$('wheelDiameter'),prev=Number(w.value)||DEFAULTS.wheelDiameter;
+ // read the value first: changing min and max can clamp it on the way through
+ if(lo>Number(w.max)){w.max=hi;w.min=lo}else{w.min=lo;w.max=hi}
+ w.value=String(Math.min(hi,Math.max(lo,prev)));
+ $('wheelNote').textContent=`${lo}–${hi} mm suits a ${wb} mm wheelbase`;
 }
-function announce(text){$('modelStatus').textContent=text}
-function disposeBike(){
- if(!current)return;
- current.group.traverse(object=>{if(object.isMesh)object.geometry.dispose()});
- Object.values(current.materials).forEach(material=>material.dispose());
- if(scene)scene.remove(current.group);
+function readOptions(){
+ return normalise({name:$('modelName').value,wheelbase:$('wheelbase').value,wheelDiameter:$('wheelDiameter').value,suspension:$('suspension').value,
+  frame:$('frameColour').value,accent:$('accentColour').value,detail:document.querySelector('input[name="detail"]:checked')?.value,base:$('base').checked});
 }
-function fitCamera(){
- if(!camera||!orbit||!current)return;
- const box=new THREE.Box3().setFromObject(current.group),size=box.getSize(new THREE.Vector3()),centre=box.getCenter(new THREE.Vector3());
- const aspect=Math.max(.5,camera.aspect),fit=Math.max(size.y,size.x/aspect,size.z*.8);
- const distance=fit/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*(aspect<1?1.16:1.42);
- const direction=new THREE.Vector3(1.05,.55,1.35).normalize();
- camera.position.copy(centre).addScaledVector(direction,distance);
- camera.near=Math.max(.5,distance/1000);camera.far=Math.max(2000,distance*8);camera.updateProjectionMatrix();
- orbit.target.copy(centre);orbit.minDistance=Math.max(70,distance*.28);orbit.maxDistance=distance*2.8;orbit.update();
- requestRender();
+function showOutputs(o){
+ $('wheelbaseOut').textContent=`${o.wheelbase} mm`;$('wheelDiameterOut').textContent=`${o.wheelDiameter} mm`;
+ $('suspensionOut').textContent=`${o.suspension} mm · ${coils(o.suspension)} coils`;
+ markSwatches();
 }
-function requestRender(){
- if(!renderer||renderFrame)return;
- renderFrame=requestAnimationFrame(()=>{renderFrame=0;if(scene&&camera)renderer.render(scene,camera)});
+function setControls(o){
+ $('modelName').value=o.name;$('frameColour').value=o.frame;$('accentColour').value=o.accent;$('wheelbase').value=o.wheelbase;
+ syncWheelRange();$('wheelDiameter').value=o.wheelDiameter;$('suspension').value=o.suspension;
+ document.querySelectorAll('input[name="detail"]').forEach(r=>r.checked=r.value===o.detail);$('base').checked=o.base;
 }
-function makeFallback(){
- $('modelHost').hidden=true;$('modelFallback').hidden=false;
- $('modelFallback').innerHTML=drawingSVG(current.options,current.stats);
- announce('STATIC DRAWING · 3D VIEW UNAVAILABLE');
-}
+function announce(t){$('modelStatus').textContent=t}
+
+// ---------------------------------------------------------------- the 3D bench
 function initScene(){
  try{
-  scene=new THREE.Scene();scene.background=new THREE.Color('#F7F3EC');
-  camera=new THREE.PerspectiveCamera(35,1,1,3000);
-  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
-  const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Interactive three-dimensional downhill-bike display model. Drag to orbit, scroll to zoom, or use Reset view.');
+  renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1.0;renderer.setClearColor(0x000000,0);
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('role','img');
+  canvas.setAttribute('aria-label','A 3D downhill bike display model. Drag to turn it, scroll or pinch to zoom, or use the view buttons.');
   $('modelHost').replaceChildren(canvas);
-  scene.add(new THREE.HemisphereLight('#fffdf7','#a49c91',2.1));
-  const key=new THREE.DirectionalLight('#fff7e9',3.1);key.position.set(-180,300,210);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-300;key.shadow.camera.right=300;key.shadow.camera.top=260;key.shadow.camera.bottom=-220;key.shadow.camera.near=1;key.shadow.camera.far=900;key.shadow.bias=-.00025;scene.add(key);
-  const fill=new THREE.DirectionalLight('#DCF2E8',1.25);fill.position.set(200,100,-180);scene.add(fill);
-  ground=new THREE.Mesh(new THREE.PlaneGeometry(1600,1600),new THREE.MeshStandardMaterial({color:'#F7F3EC',roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-  grid=new THREE.GridHelper(700,35,'#b9b1a7','#d7d1ca');grid.material.transparent=true;grid.material.opacity=.24;scene.add(grid);
-  orbit=new OrbitControls(camera,canvas);orbit.enableDamping=false;orbit.enablePan=true;orbit.screenSpacePanning=true;orbit.maxPolarAngle=Math.PI*.49;orbit.addEventListener('change',requestRender);orbit.listenToKeyEvents(canvas);
-  const resize=()=>{const rect=$('modelHost').getBoundingClientRect(),w=Math.max(1,Math.round(rect.width)),h=Math.max(1,Math.round(rect.height));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();requestRender()};
+  const scene=new THREE.Scene();
+  const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(),.04).texture;scene.environmentIntensity=.55;pm.dispose();
+  scene.add(new THREE.HemisphereLight(0xffffff,0xd9d2e6,.4));
+  const fill=new THREE.DirectionalLight(0xffffff,.5);fill.position.set(160,220,380);scene.add(fill);
+  const sun=new THREE.DirectionalLight(0xfff3e4,2.4);sun.position.set(-220,420,190);sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.35;sun.shadow.radius=4;
+  Object.assign(sun.shadow.camera,{left:-240,right:240,top:240,bottom:-240,near:10,far:1400});scene.add(sun,sun.target);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(3000,3000),new THREE.ShadowMaterial({color:new THREE.Color('#1B2452'),opacity:.24}));
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const bedMat=new THREE.LineDashedMaterial({color:'#B2552D',dashSize:6,gapSize:4,transparent:true,opacity:.55});
+  const bed=new THREE.LineLoop(new THREE.BufferGeometry(),bedMat);scene.add(bed);
+  const camera=new THREE.PerspectiveCamera(30,1,1,6000);
+  const orbit=new OrbitControls(camera,canvas);orbit.enableDamping=true;orbit.dampingFactor=.09;orbit.enablePan=false;
+  orbit.minPolarAngle=0;orbit.maxPolarAngle=Math.PI*.495;orbit.rotateSpeed=.7;orbit.zoomSpeed=.8;
+  G={renderer,scene,camera,orbit,ground,bed,sun,frame:0,tween:null,view:'three'};
+  orbit.addEventListener('change',requestRender);
+  orbit.addEventListener('start',()=>{G.tween=null;$('modelCase').classList.add('touched');setPressed(null)});
+  orbit.listenToKeyEvents(canvas);
+  const resize=()=>{const r=$('modelHost').getBoundingClientRect(),w=Math.max(1,Math.round(r.width)),h=Math.max(1,Math.round(r.height));
+   renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();requestRender()};
   new ResizeObserver(resize).observe($('modelHost'));resize();
- }catch(error){
-  console.warn('Print Lab is using its static drawing fallback.',error);
-  if(renderer)renderer.dispose();renderer=null;scene=null;camera=null;orbit=null;
- }
+  return true;
+ }catch(err){console.warn('Print Lab: 3D view unavailable, showing the drawing instead.',err);G=null;return false}
 }
-function preflight(o,s){
- const longest=Math.max(s.bounds.x,s.bounds.y,s.bounds.z);
- const checks=[
-  {ok:longest<=250,title:longest<=250?'Print envelope is classroom-scale':'Check your printer bed',text:`Longest axis ${longest.toFixed(1)} mm. Compare this with your printer’s usable build area.`},
-  {ok:s.triangles<=120000,title:'Mesh detail recorded',text:`${s.triangles.toLocaleString('en-NZ')} triangles. A slicer may take longer with fine detail.`},
-  {ok:false,title:'Fine features need inspection',text:'Spokes, chain and coil details are delicate. Preview every layer and consider scaling up if your slicer flags them.'},
-  {ok:o.base,title:o.base?'Display plinth included':'No integrated display plinth',text:o.base?'Keep the plinth on the build plate as a starting orientation.':'Choose a stable orientation and expect more support material.'},
-  {ok:false,title:'Intersecting shells must be united',text:'This is a display model made from overlapping components. Use your slicer’s union/overlap settings and inspect the sliced result.'}
- ];
- $('preflightChecks').innerHTML=`<ul class="preflight-list">${checks.map(c=>`<li class="${c.ok?'pass':'review'}"><b>${c.ok?'Ready to review':'Review'} · ${c.title}</b><span>${c.text}</span></li>`).join('')}</ul>`;
+function requestRender(){if(G&&!G.frame)G.frame=requestAnimationFrame(tick)}
+function tick(now){
+ G.frame=0;
+ if(G.tween){const t=Math.min(1,(now-G.tween.t0)/G.tween.ms),e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const dir=G.tween.d0.clone().lerp(G.tween.d1,e).normalize(),dist=G.tween.r0+(G.tween.r1-G.tween.r0)*e;
+  G.orbit.target.lerpVectors(G.tween.c0,G.tween.c1,e);G.camera.position.copy(G.orbit.target).addScaledVector(dir,dist);
+  if(t>=1)G.tween=null}
+ const moved=G.orbit.update();
+ G.renderer.render(G.scene,G.camera);
+ if(moved||G.tween)requestRender();
 }
+const VIEWS={three:[.62,.34,1],side:[0,.04,1],front:[1,.08,.0001],top:[.0001,1,.035]};
+function frameFor(view){
+ const box=new THREE.Box3().setFromObject(current.group),sphere=box.getBoundingSphere(new THREE.Sphere()),c=box.getCenter(new THREE.Vector3());
+ const v=G.camera.fov*Math.PI/180,h=2*Math.atan(Math.tan(v/2)*G.camera.aspect),size=box.getSize(new THREE.Vector3());
+ // the 3/4 view fits the bounding sphere; the flat views fit the box's face with a small margin
+ let dist;
+ if(view==='three')dist=sphere.radius/Math.sin(Math.min(v,h)/2)*.78;
+ else{const [w,hh,depth]=view==='side'?[size.x,size.y,size.z]:view==='front'?[size.z,size.y,size.x]:[size.x,size.z,size.y];
+  dist=Math.max(w/2/Math.tan(h/2),hh/2/Math.tan(v/2))*1.12+depth/2}
+ return{c,dist,dir:new THREE.Vector3(...VIEWS[view]).normalize(),radius:sphere.radius};
+}
+function setPressed(view){document.querySelectorAll('[data-view3d]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view3d===view)))}
+function goView(view,animate=true){
+ if(!G||!current)return;G.view=view;setPressed(view);
+ const f=frameFor(view);
+ G.camera.near=Math.max(1,f.dist/100);G.camera.far=f.dist*20;G.camera.updateProjectionMatrix();
+ const d0=G.camera.position.clone().sub(G.orbit.target);
+ if(!animate||REDUCED||d0.lengthSq()<1){G.orbit.target.copy(f.c);G.camera.position.copy(f.c).addScaledVector(f.dir,f.dist);G.orbit.update();requestRender();return}
+ G.tween={t0:performance.now(),ms:520,c0:G.orbit.target.clone(),c1:f.c,d0:d0.clone().normalize(),d1:f.dir,r0:d0.length(),r1:f.dist};requestRender();
+}
+function placeBed(){
+ if(!G||!current)return;const box=new THREE.Box3().setFromObject(current.group),c=box.getCenter(new THREE.Vector3()),b=Number($('bed').value)/2,y=box.min.y+.15;
+ G.bed.geometry.dispose();G.bed.geometry=new THREE.BufferGeometry().setFromPoints([[-b,-b],[b,-b],[b,b],[-b,b]].map(([x,z])=>new THREE.Vector3(c.x+x,y,c.z+z)));G.bed.computeLineDistances();
+ G.ground.position.y=box.min.y-.05;G.sun.target.position.copy(c);
+}
+
+// ---------------------------------------------------------------- rebuild everything from the controls
+function dispose(){if(!current)return;current.group.traverse(m=>{if(m.isMesh)m.geometry.dispose()});Object.values(current.materials).forEach(m=>m.dispose());if(G)G.scene.remove(current.group)}
 function rebuild(){
- rebuildFrame=0;updateOutputs();disposeBike();
- const options=optionsFromControls();current=createBike(THREE,options);
- if(scene)scene.add(current.group);
- const {stats:s}=current;
- $('statSize').textContent=`${s.bounds.x} × ${s.bounds.y} × ${s.bounds.z} mm`;
+ rebuildFrame=0;syncWheelRange();const o=readOptions();showOutputs(o);
+ const prev=current;dispose();current=createBike(THREE,o);const s=current.stats;
+ $('statSize').textContent=`${fmt(s.length)} × ${fmt(s.width)} × ${fmt(s.height)} mm`;
  $('statTriangles').textContent=s.triangles.toLocaleString('en-NZ');
- $('statMaterial').textContent=`≈ ${s.filament} cm³`;
- const drawing=drawingSVG(current.options,s);$('drawingSheet').innerHTML=drawing;
- if(renderer){$('modelFallback').hidden=true;$('modelHost').hidden=false;if(ground&&grid){const box=new THREE.Box3().setFromObject(current.group);ground.position.y=box.min.y-.12;grid.position.y=box.min.y-.1}fitCamera();announce(`MODEL READY · ${current.options.detail.toUpperCase()} DETAIL`)}else makeFallback();
- preflight(current.options,s);
- $('modelHost').dataset.ready='true';$('modelHost').dataset.triangles=String(s.triangles);
- document.documentElement.dataset.printlabReady='true';
+ $('statVolume').textContent=`≈ ${fmt(s.solidCm3)} cm³`;
+ $('drawingSheet').innerHTML=drawingSVG(o,s);
+ if(G){
+  G.scene.add(current.group);$('modelFallback').hidden=true;$('modelHost').hidden=false;placeBed();
+  const f=frameFor(G.view||'three');
+  if(!prev||!lastRadius)goView(G.view||'three',false);
+  else{const k=f.radius/lastRadius,off=G.camera.position.clone().sub(G.orbit.target).multiplyScalar(k);G.orbit.target.copy(f.c);G.camera.position.copy(f.c).add(off);G.orbit.update();requestRender()}
+  lastRadius=f.radius;announce(`${o.detail==='fine'?'Fine':'Standard'} detail · ${s.triangles.toLocaleString('en-NZ')} triangles`);
+ }else{$('modelHost').hidden=true;$('modelFallback').hidden=false;$('modelFallback').innerHTML=drawingSVG(o,s);announce('3D view unavailable on this device · showing the drawing')}
+ preflight(o,s);
+ document.documentElement.dataset.printlabReady='true';$('modelHost').dataset.triangles=String(s.triangles);
 }
 function scheduleRebuild(){if(!rebuildFrame)rebuildFrame=requestAnimationFrame(rebuild)}
 
-const tabs=['design','drawing','make'];
-function selectView(view,focus=false,remember=true){
- if(!tabs.includes(view))view='design';
- tabs.forEach(name=>{const active=name===view;$('tab-'+name).setAttribute('aria-selected',String(active));$('tab-'+name).tabIndex=active?0:-1;$('view-'+name).hidden=!active});
- if(view==='design')requestRender();
- if(focus)$('tab-'+view).focus();
- if(remember)history.replaceState(null,'',view==='design'?'#workbench':'#'+view);
+function preflight(o,s){
+ const bed=Number($('bed').value),fits=s.length<=bed&&s.width<=bed;
+ const checks=[
+  {ok:fits,t:fits?`Fits a ${bed} mm bed`:`Too big for a ${bed} mm bed`,d:fits?`Footprint ${fmt(s.length)} × ${fmt(s.width)} mm, ${fmt(s.height)} mm tall. Check your own printer’s build area too.`:`Footprint ${fmt(s.length)} × ${fmt(s.width)} mm. Shorten the wheelbase, choose smaller wheels, or use a bigger printer.`},
+  {ok:o.base,t:o.base?'Flat plinth on the bed':'No plinth',d:o.base?'The plinth sits flat on the build plate and the tyres sit in two cradles.':'Only the tyre knobs touch the bed. It will need supports, and a stand or glue to display it.'},
+  {ok:false,t:'Thin parts are 0.9 mm',d:'Spokes, chain, brake levers and the shock spring are 0.9 mm across, about two lines from a 0.4 mm nozzle. Print at 150% for a sturdier model.'},
+  {ok:false,t:'Supports needed',d:'The frame, fork, bars and saddle overhang. Tree or organic supports are a good start. Preview every layer in your slicer.'},
+  {ok:false,t:'Parts overlap, like welds',d:'The file is made of overlapping solid parts. Most slicers merge them when slicing; check the preview for gaps.'},
+  {ok:s.triangles<=150000,t:`${s.triangles.toLocaleString('en-NZ')} triangles`,d:s.triangles<=150000?'A light file that slices quickly.':'A heavy file. Standard detail slices faster.'}
+ ];
+ $('preflightChecks').innerHTML=checks.map(c=>`<li class="${c.ok?'ok':'look'}"><b><span class="pl-dot" aria-hidden="true"></span>${esc(c.t)}<span class="sr"> (${c.ok?'ready':'check this'})</span></b><span>${esc(c.d)}</span></li>`).join('');
 }
-tabs.forEach((name,index)=>{
- $('tab-'+name).addEventListener('click',()=>selectView(name));
- $('tab-'+name).addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;selectView(tabs[next],true)});
-});
 
-$('bikeControls').addEventListener('submit',event=>event.preventDefault());
-$('bikeControls').addEventListener('input',scheduleRebuild);$('bikeControls').addEventListener('change',scheduleRebuild);
-$('resetModel').addEventListener('click',()=>{
- $('modelName').value=DEFAULTS.name;$('frameColour').value=DEFAULTS.frame;$('accentColour').value=DEFAULTS.accent;$('wheelbase').value=DEFAULTS.wheelbase;$('wheelDiameter').value=DEFAULTS.wheelDiameter;$('suspension').value=DEFAULTS.suspension;$('detail').value=DEFAULTS.detail;$('base').checked=DEFAULTS.base;rebuild();announce('STARTING MODEL RESTORED');
+// ---------------------------------------------------------------- tabs: shape it, draw it, print it
+const TABS=['design','drawing','make'];
+function selectTab(name,focus=false,remember=true){
+ if(!TABS.includes(name))name='design';
+ TABS.forEach((t,i)=>{const on=t===name;$('tab-'+t).setAttribute('aria-selected',String(on));$('tab-'+t).tabIndex=on?0:-1;$('view-'+t).hidden=!on;$('tab-'+t).classList.toggle('done',TABS.indexOf(name)>i)});
+ $('progBar').style.width=`${(TABS.indexOf(name)+1)/TABS.length*100}%`;
+ if(name==='design')requestRender();
+ if(focus)$('tab-'+name).focus();
+ if(remember)history.replaceState(null,'',name==='design'?location.pathname:'#'+name);
+}
+TABS.forEach((t,i)=>{
+ $('tab-'+t).addEventListener('click',()=>selectTab(t));
+ $('tab-'+t).addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
+  const n=e.key==='Home'?0:e.key==='End'?TABS.length-1:(i+(e.key==='ArrowRight'?1:-1)+TABS.length)%TABS.length;selectTab(TABS[n],true)});
 });
-$('resetCamera').addEventListener('click',()=>{fitCamera();announce(renderer?'VIEW RESET':'STATIC DRAWING · 3D VIEW UNAVAILABLE')});
-$('downloadSTL').addEventListener('click',()=>{try{announce('PREPARING STL…');download(`${slug(current.options.name)}.stl`,makeSTL(current.group,current.options.name));announce('STL DOWNLOADED · CHECK IT IN YOUR SLICER')}catch(error){console.error(error);announce('STL COULD NOT BE CREATED · PLEASE RESET AND TRY AGAIN')}});
-$('download3MF').addEventListener('click',()=>{try{announce('PREPARING 3MF…');download(`${slug(current.options.name)}.3mf`,make3MF(current.group,current.options.name));announce('3MF DOWNLOADED · CHECK IT IN YOUR SLICER')}catch(error){console.error(error);announce('3MF COULD NOT BE CREATED · PLEASE RESET AND TRY AGAIN')}});
-$('downloadSVG').addEventListener('click',()=>{download(`${slug(current.options.name)}-drawing.svg`,drawingSVG(current.options,current.stats),'image/svg+xml');announce('DRAWING DOWNLOADED')});
-$('printDrawing').addEventListener('click',()=>{selectView('drawing');requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()))});
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{selectTab(b.dataset.go);$('workbench').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'})}));
+
+// ---------------------------------------------------------------- downloads
+function download(name,content,type='application/octet-stream'){
+ const blob=content instanceof Blob?content:new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);return blob;
+}
+const kb=b=>b.size>1048576?`${fmt(b.size/1048576)} MB`:`${Math.round(b.size/1024)} KB`;
+function fileNote(t){$('fileStatus').textContent=t}
+$('downloadSTL').addEventListener('click',()=>{try{const b=download(`${slug(current.options.name)}.stl`,makeSTL(current.group,current.options.name));fileNote(`STL saved (${kb(b)}). Open it in your slicer.`)}catch(e){console.error(e);fileNote('The STL could not be made. Reset the model and try again.')}});
+$('download3MF').addEventListener('click',()=>{try{const b=download(`${slug(current.options.name)}.3mf`,make3MF(current.group,current.options.name));fileNote(`3MF saved (${kb(b)}). Open it in your slicer.`)}catch(e){console.error(e);fileNote('The 3MF could not be made. Reset the model and try again.')}});
 $('downloadSpec').addEventListener('click',()=>{
- const record={format:'assembl Print Lab design record',version:1,createdAt:new Date().toISOString(),mode,settings:current.options,measurements:current.stats,files:{stl:`${slug(current.options.name)}.stl`,threeMF:`${slug(current.options.name)}.3mf`,drawing:`${slug(current.options.name)}-drawing.svg`},important:'Scale display model. Not rideable or safety-certified. STL and 3MF contain geometry, not preview colours. Intersecting component shells require slicer inspection.',learning:'Use the drawing and iteration notes as design-process evidence; follow your teacher’s current assessment conditions.'};
- download(`${slug(current.options.name)}-design.json`,JSON.stringify(record,null,2),'application/json');announce('DESIGN RECORD DOWNLOADED');
+ const o=current.options,s=current.stats,n=slug(o.name);
+ const record={format:'assembly Print Lab design record',version:2,createdAt:new Date().toISOString(),settings:o,
+  measurements:{units:'mm',length:s.length,width:s.width,height:s.height,wheelbase:o.wheelbase,wheelDiameter:o.wheelDiameter,headAngleDegrees:s.headAngle,plinth:s.plinth,triangles:s.triangles,solidVolumeCm3Upper:s.solidCm3},
+  files:{stl:`${n}.stl`,threeMF:`${n}.3mf`,drawing:`${n}-drawing.svg`},
+  notes:'Scale display model. Not rideable or safety-certified. STL and 3MF hold geometry only (no colours). Parts overlap and are merged by the slicer.',
+  myReflection:{whatIChanged:'',why:'',whatITestedAfterPrinting:'',whatIWouldChangeNext:''}};
+ download(`${n}-design.json`,JSON.stringify(record,null,2),'application/json');fileNote('Design record saved. Add your reflection to it.');
 });
+$('downloadSVG').addEventListener('click',()=>{download(`${slug(current.options.name)}-drawing.svg`,drawingSVG(current.options,current.stats),'image/svg+xml');$('drawStatus').textContent='Drawing saved as SVG.'});
+$('printDrawing').addEventListener('click',()=>{selectTab('drawing');requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()))});
 
-if(mode==='public'){
- if($('quoteZone'))$('quoteZone').hidden=true;$('tab-make').textContent='03 · Print files';document.body.dataset.printMode='public';
-}
-
-
+// ---------------------------------------------------------------- wire up
+swatches($('frameSwatches'),FRAME_SWATCHES,$('frameColour'));swatches($('accentSwatches'),DETAIL_SWATCHES,$('accentColour'));
+for(const [id,[lo,hi,step]] of [['wheelbase',RANGES.wheelbase],['suspension',RANGES.suspension]])Object.assign($(id),{min:lo,max:hi,step});
+$('bikeControls').addEventListener('submit',e=>e.preventDefault());
+$('bikeControls').addEventListener('input',scheduleRebuild);$('bikeControls').addEventListener('change',scheduleRebuild);
+$('bed').addEventListener('change',()=>{placeBed();preflight(current.options,current.stats);requestRender()});
+$('resetModel').addEventListener('click',()=>{setControls(normalise(DEFAULTS));rebuild();if(G)goView('three');announce('Back to the starting bike')});
+document.querySelectorAll('[data-view3d]').forEach(b=>b.addEventListener('click',()=>goView(b.dataset.view3d)));
+setControls(normalise(DEFAULTS));
 initScene();rebuild();
-const initialView=location.hash.slice(1);selectView(tabs.includes(initialView)?initialView:'design',false,false);
-window.addEventListener('pagehide',()=>{if(renderFrame)cancelAnimationFrame(renderFrame);if(rebuildFrame)cancelAnimationFrame(rebuildFrame);orbit?.dispose();renderer?.dispose()},{once:true});
+const first=location.hash.slice(1);selectTab(TABS.includes(first)?first:'design',false,false);
+window.addEventListener('pagehide',()=>{if(G){cancelAnimationFrame(G.frame);G.orbit.dispose();G.renderer.dispose()}},{once:true});

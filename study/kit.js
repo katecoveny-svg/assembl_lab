@@ -16,7 +16,7 @@ const DEEP={sky:"#3A6FB8",mint:"#2A7D63",lavender:"#6A50BE",blush:"#B5466F",butt
 const STINT={science:"sky",biochem:"mint",maths:"lavender",english:"blush",social:"peach",digital:"blush",tech:"butter"};
 const MTINT={vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
-const MSUB={inanga:"biochem",forcetrack:"science",wavefield:"science",reactionchamber:"biochem",chanceorchard:"maths",gradientlandscape:"maths",carbonbalance:"science",evidenceengine:"english",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
+const MSUB={kokopu:"biochem",inanga:"biochem",forcetrack:"science",wavefield:"science",reactionchamber:"biochem",chanceorchard:"maths",gradientlandscape:"maths",carbonbalance:"science",evidenceengine:"english",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
@@ -28,6 +28,7 @@ const G=(d,extra)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const GLYPH={
   shaky:G(`<path d="M2.5 15.5h4l2-5 3 9 3-13 2.5 9h4.5"/><path d="M2.5 20.5h19"/>`),
   fish:G(`<path d="M2.5 12c2.6-3.9 7.3-5.6 11.6-3.6L19 5v14l-4.9-3.4C9.8 17.6 5.1 15.9 2.5 12z"/><circle cx="8" cy="11" r="1" fill="currentColor"/>`),
+  kokopu:G(`<path d="M2 12c2.8-3.8 7.6-5.4 12-3.4L19.5 5v14L14 15.4C9.6 17.4 4.8 15.8 2 12z"/><path d="M9 8.6v6.8M11.6 8.3v7.4M14 9v6"/><circle cx="5.6" cy="11.2" r=".9" fill="currentColor"/>`),
   claw:G(`<path d="M12 2.5v6.5M7.5 13.5 12 9l4.5 4.5M7.5 13.5V17M16.5 13.5V17"/><circle cx="12" cy="19" r="2.5"/>`),
   ai:G(`<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9.5 2.5v3.5M14.5 2.5v3.5M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5M10 10h4v4h-4z"/>`),
   vinyl:G(`<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="3"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5"/>`),
