@@ -1,69 +1,161 @@
 <!doctype html>
-<html lang="en-NZ"><head>
+<html lang="en-NZ" style="--acc:#2A7D63;--acc-tint:#BFE8D6"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="A practical Year 9 learning studio: study sprints, app building, local computer vision and AI judgement. Made for Aotearoa New Zealand.">
-<title>Year 9 Learning Studio · assembl lab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<meta name="description" content="Year 9 studio: a study sprint, an app builder, a pixel-measuring vision detective and an AI judgement check. Works in your browser, no login.">
+<title>Year 9 studio · assembly</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fredoka:wght@500;600;700&family=Caveat:wght@600;700&display=swap">
+<link rel="stylesheet" href="/study/kit.css">
+<link rel="stylesheet" href="/study/year9/styles.css">
 <script src="/ask.js" defer data-page="study"></script>
 <script src="/lab/navigation.js" defer></script>
 </head><body>
 <a class="skip" href="#studio">Skip to the tools</a>
-<header class="top"><a class="brand" href="/">assembl<span>lab</span></a><nav aria-label="Learning"><a href="/study/">Study hub</a><a href="/study/junior/">3D machines</a><a class="active" href="/study/year9/">Year 9 studio</a><a href="/study/print/">Print a bike</a></nav></header>
-<main>
-<section class="hero">
- <div class="hero-copy"><p class="kicker">YEAR 9 · LEARN BY MAKING</p><h1>One good<br>question.<br><em>Four ways in.</em></h1><p class="hero-lede">Practise for a school test. Build a tiny app. Teach your eyes to question computer vision. Then turn a bike design into a real drawing.</p><a class="primary" href="#studio">Start with 10 minutes <span aria-hidden="true">↓</span></a><p class="quiet"><span lang="mi">Kia kaha te ako</span> · keep learning with courage. No login. Your work stays in this browser.</p></div>
- <div class="hero-machine" aria-label="An illustrated learning machine connecting a question, evidence, code and a printed model">
-  <svg viewBox="0 0 620 600" role="img" aria-hidden="true"><path class="route" d="M92 166C198 60 340 100 380 198S484 376 542 282"/><path class="route second" d="M80 416C180 480 260 420 314 342S446 214 530 414"/><g class="node n1"><rect x="42" y="110" width="142" height="126" rx="8"/><text x="64" y="144">01 / ASK</text><path d="M68 176h86M68 190h58"/><circle cx="150" cy="202" r="10"/></g><g class="node n2"><rect x="328" y="124" width="178" height="150" rx="8"/><text x="350" y="158">02 / TEST</text><path d="M356 232l34-42 30 22 56-58"/><circle cx="390" cy="190" r="5"/><circle cx="420" cy="212" r="5"/></g><g class="node n3"><rect x="78" y="360" width="196" height="146" rx="8"/><text x="100" y="394">03 / MAKE</text><path d="M110 466l34-38 40 22 48-30M110 472h124"/><rect x="110" y="408" width="24" height="20"/><rect x="142" y="408" width="24" height="20"/></g><g class="node n4"><rect x="362" y="354" width="192" height="166" rx="8"/><text x="384" y="388">04 / EXPLAIN</text><circle cx="410" cy="442" r="22"/><circle cx="506" cy="442" r="22"/><path d="M410 442l34-26 32 12 30-14M410 442l30 34 36-34 30 34"/></g><text class="scribble" x="340" y="566">ideas → evidence → outcome</text></svg>
- </div>
-</section>
-<section class="studio" id="studio" aria-labelledby="studio-title">
- <div class="studio-heading"><p class="kicker">THE WORKBENCH</p><h2 id="studio-title">Pick a tool. Keep it simple.</h2><p>Short steps, a worked example, and a check at the end. Nothing here writes your assessment for you.</p></div>
- <div class="tool-tabs" role="tablist" aria-label="Year 9 tools">
-  <button role="tab" id="tab-study" aria-controls="panel-study" aria-selected="true" data-tool="study"><span>01</span>Study sprint</button>
-  <button role="tab" id="tab-code" aria-controls="panel-code" aria-selected="false" data-tool="code" tabindex="-1"><span>02</span>Vibe code an app</button>
-  <button role="tab" id="tab-vision" aria-controls="panel-vision" aria-selected="false" data-tool="vision" tabindex="-1"><span>03</span>Vision detective</button>
-  <button role="tab" id="tab-ai" aria-controls="panel-ai" aria-selected="false" data-tool="ai" tabindex="-1"><span>04</span>AI judgement</button>
- </div>
- <section class="tool-panel" id="panel-study" role="tabpanel" aria-labelledby="tab-study">
-  <div class="tool-intro"><div><p class="kicker">STUDY SPRINT</p><h3>Understand it. Then retrieve it.</h3></div><p>Choose a subject. Spend a few minutes with a model, answer without notes, then write one clear explanation. This is practice, not a prediction of your school exam.</p></div>
-  <div class="sprint-layout">
-   <form class="setup-block" id="sprintSetup"><label for="subject">1 · Pick a subject</label><select id="subject"><option value="science">Science · reaction rate</option><option value="maths">Maths · linear relationships</option><option value="english">English · evidence and inference</option><option value="social">Social studies · perspectives</option></select><div id="sprintPlan" class="plan-list"></div><button class="primary small" type="submit">Start my sprint</button></form>
-   <div class="practice-block" id="practiceBlock"><div class="practice-top"><span id="sprintSubject">SCIENCE</span><span>Worked example → your turn</span></div><h4 id="workedTitle"></h4><p id="workedText"></p><div class="worked" id="workedAnswer"></div><hr><h4 id="questionTitle"></h4><p id="questionText"></p><div id="answerArea"></div><div class="action-row"><button class="secondary" id="studyHint" type="button">One hint</button><button class="primary small" id="studyCheck" type="button">Check my thinking</button></div><div id="studyFeedback" class="feedback" role="status" aria-live="polite"></div><div class="explain-box"><label for="explain">Explain it in your own words <span>2–3 sentences</span></label><textarea id="explain" rows="4" placeholder="I changed… I observed… This happened because…"></textarea><button class="text-button" id="saveReflection" type="button">Save reflection on this device</button><p id="saveNote" class="fine" role="status"></p></div></div>
+<div class="wrap">
+ <header class="top">
+  <a class="as-lock" href="/study/" aria-label="assembly, by assembl"><span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span></a>
+  <nav aria-label="Study"><a href="/study/">Machines</a><a href="/study/year9/" aria-current="page">Year 9 studio</a><a href="/study/print/">Print Lab</a></nav>
+ </header>
+
+ <section class="y9-hero" aria-labelledby="y9-h">
+  <div class="y9-hero-copy">
+   <div class="eyebrow">Year 9 · learn by making</div>
+   <h1 id="y9-h">Four ways to learn <span class="swash">by making.</span></h1>
+   <p>Practise for a school test. Build a tiny app. Measure what a camera really sees. Judge an AI answer against its source. Each tool has a worked example and a check at the end.</p>
+   <div class="cta"><a class="btn primary big" href="#studio" data-tool-link="study">Start a 10-minute sprint →</a><a class="btn big" href="/study/print/">Open the Print Lab</a></div>
+   <p class="y9-note"><span class="truth">Works in your browser</span>No login. What you type stays on this device.</p>
   </div>
-  <div class="machine-link"><div><span class="kicker">WANT TO SEE IT MOVE?</span><h4 id="machineLinkTitle">Open the reaction chamber</h4><p id="machineLinkText">Change temperature and concentration. Watch particle collisions, then come back and explain the pattern.</p></div><a id="machineLink" class="secondary" href="/study/junior/?m=reactions">Open the 3D machine ↗</a></div>
- </section>
- <section class="tool-panel" id="panel-code" role="tabpanel" aria-labelledby="tab-code" hidden>
-  <div class="tool-intro"><div><p class="kicker">VIBE CODE STUDIO</p><h3>Describe it. Build it. Test it.</h3></div><p>“Vibe coding” still needs clear thinking. Choose a useful app, make decisions, inspect the code and test the result. This studio assembles tested templates; it does not call an AI model.</p></div>
-  <div class="code-steps" aria-label="App building steps"><span class="active">1 · Brief</span><span>2 · Choices</span><span>3 · Working app</span><span>4 · Code + test</span></div>
-  <div class="builder-layout">
-   <form class="builder-controls" id="builderControls">
-    <label for="appType">What are we making?</label><select id="appType"><option value="trail">Trail snack planner</option><option value="focus">Focus sprint planner</option><option value="nature">Nature observation log</option></select>
-    <label for="appName">Give it a name</label><input id="appName" maxlength="28" value="Trail Kai">
-    <fieldset><legend>Who is it for?</legend><label class="radio"><input type="radio" name="audience" value="my friends and me" checked>My friends and me</label><label class="radio"><input type="radio" name="audience" value="my whānau">My whānau</label><label class="radio"><input type="radio" name="audience" value="our class">Our class</label></fieldset>
-    <fieldset><legend>Pick one main feature</legend><label class="radio"><input type="radio" name="feature" value="checklist" checked>Reusable checklist</label><label class="radio"><input type="radio" name="feature" value="counter">Simple counter</label><label class="radio"><input type="radio" name="feature" value="notes">Notes that reset</label></fieldset>
-    <label for="appColour">Choose the accent</label><select id="appColour"><option value="mint">Mint</option><option value="coral">Coral</option><option value="blue">Blue</option><option value="yellow">Yellow</option></select>
-   </form>
-   <div class="phone-stage"><div class="phone" id="appPreview"></div><p class="fine">Live preview · every control works</p></div>
-   <div class="build-notes"><div class="prompt-paper"><span>YOUR BRIEF</span><p id="briefText"></p></div><h4>What the builder understood</h4><ol id="buildPlan"></ol><div class="architecture" aria-label="App architecture"><div>Interface</div><span>↕</span><div>State + events</div><span>↕</span><div>This device only</div></div><button class="text-button" id="showCode" type="button" aria-expanded="false">Show the code</button><pre id="codeView" hidden></pre><div class="test-box"><h4>Test before you celebrate</h4><label><input type="checkbox" class="test-check">I used the main feature.</label><label><input type="checkbox" class="test-check">I explained one choice.</label><label><input type="checkbox" class="test-check">I checked it on a narrow screen.</label><p id="testResult" role="status"></p></div><button class="primary small" id="downloadApp" type="button">Download my working app</button><p class="fine">A complete HTML file. Open it in a browser; no account or server needed.</p></div>
+  <div class="y9-hero-art" aria-hidden="true">
+   <div class="y9-tile mint"><svg viewBox="0 0 48 48"><use href="#g-study"/></svg><b>Study sprint</b></div>
+   <div class="y9-tile sky"><svg viewBox="0 0 48 48"><use href="#g-code"/></svg><b>App builder</b></div>
+   <div class="y9-tile lavender"><svg viewBox="0 0 48 48"><use href="#g-vision"/></svg><b>Vision detective</b></div>
+   <div class="y9-tile blush"><svg viewBox="0 0 48 48"><use href="#g-ai"/></svg><b>AI judgement</b></div>
   </div>
  </section>
- <section class="tool-panel" id="panel-vision" role="tabpanel" aria-labelledby="tab-vision" hidden>
-  <div class="tool-intro"><div><p class="kicker">VISION DETECTIVE</p><h3>A camera has data.<br>Not understanding.</h3></div><p>Run a real pixel-and-edge analysis on a sample or your own image. Everything happens on your device. This is classical computer vision, not an AI identification service.</p></div>
-  <div class="vision-layout"><div class="vision-input"><div class="sample-buttons" aria-label="Choose a sample"><button type="button" data-sample="leaf" class="selected">Leaf</button><button type="button" data-sample="wheel">Bike wheel</button><button type="button" data-sample="mixed">Mixed shapes</button></div><div class="vision-canvas-wrap"><canvas id="visionCanvas" width="640" height="440" aria-label="Image being analysed"></canvas><div id="scanLine" aria-hidden="true"></div></div><label class="upload" for="imageUpload">Use my image instead<input id="imageUpload" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="fine">The image is not uploaded. Avoid faces, names, addresses or anything private.</p><label for="threshold">Edge sensitivity <output id="thresholdOut">55</output></label><input id="threshold" type="range" min="20" max="110" value="55"><button class="primary small" id="analyseVision" type="button">Analyse pixels</button></div>
-  <div class="vision-output"><div class="metric-grid"><div><span>Brightness</span><b id="vBrightness">—</b></div><div><span>Contrast</span><b id="vContrast">—</b></div><div><span>Edge pixels</span><b id="vEdges">—</b></div><div><span>Colour spread</span><b id="vColour">—</b></div></div><div id="visionExplanation" class="analysis-note"><h4>What can you measure?</h4><p>Brightness counts light. Contrast describes variation. Edges mark quick changes between neighbouring pixels. None of these measurements can reliably tell you the species of a leaf.</p></div><details><summary>Why would an AI vision model get it wrong?</summary><p>Models learn patterns from training examples. A new angle, unusual light, a rare species or a biased dataset can change the answer. A confident sentence is not proof. Check the source, compare alternatives and ask someone with local knowledge.</p></details><details><summary>Privacy and Māori data sovereignty</summary><p>Do not upload people or private places to unknown services. Māori data can be taonga; decisions about its collection and use need the right people involved. A local whānau, hapū or iwi relationship cannot be replaced by a model.</p></details></div></div>
+
+ <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="g-study" viewBox="0 0 48 48"><circle cx="24" cy="27" r="14" fill="#fff" stroke="currentColor" stroke-width="3"/><path d="M24 27V18M24 27l6 4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M19 7h10M24 7v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="g-code" viewBox="0 0 48 48"><rect x="13" y="5" width="22" height="38" rx="5" fill="#fff" stroke="currentColor" stroke-width="3"/><path d="M19 17l-4 4 4 4M29 17l4 4-4 4M26 15l-4 12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 37h6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="g-vision" viewBox="0 0 48 48"><circle cx="21" cy="21" r="12" fill="#fff" stroke="currentColor" stroke-width="3"/><path d="M30 30l11 11" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M14 21h4l2-4 3 8 2-4h3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="g-ai" viewBox="0 0 48 48"><path d="M8 10h32a3 3 0 013 3v17a3 3 0 01-3 3H22l-9 8v-8H8a3 3 0 01-3-3V13a3 3 0 013-3z" fill="#fff" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M16 22l5 5 11-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ </svg>
+
+ <section class="bench y9-bench" id="studio" aria-labelledby="studio-h">
+  <h2 class="sr" id="studio-h">The tools</h2>
+  <div class="y9-tools" role="tablist" aria-label="Year 9 tools">
+   <button class="y9-tool mint" role="tab" id="tab-study" aria-controls="panel-study" aria-selected="true"><span class="y9-ic"><svg viewBox="0 0 48 48"><use href="#g-study"/></svg></span><span class="y9-tt"><b>Study sprint</b><small>Worked example, then you</small></span></button>
+   <button class="y9-tool sky" role="tab" id="tab-code" aria-controls="panel-code" aria-selected="false" tabindex="-1"><span class="y9-ic"><svg viewBox="0 0 48 48"><use href="#g-code"/></svg></span><span class="y9-tt"><b>App builder</b><small>Describe, build, test</small></span></button>
+   <button class="y9-tool lavender" role="tab" id="tab-vision" aria-controls="panel-vision" aria-selected="false" tabindex="-1"><span class="y9-ic"><svg viewBox="0 0 48 48"><use href="#g-vision"/></svg></span><span class="y9-tt"><b>Vision detective</b><small>What pixels can tell you</small></span></button>
+   <button class="y9-tool blush" role="tab" id="tab-ai" aria-controls="panel-ai" aria-selected="false" tabindex="-1"><span class="y9-ic"><svg viewBox="0 0 48 48"><use href="#g-ai"/></svg></span><span class="y9-tt"><b>AI judgement</b><small>Fluent isn’t the same as true</small></span></button>
+  </div>
+
+  <!-- 1 · study sprint -->
+  <section class="stage y9-panel" id="panel-study" role="tabpanel" aria-labelledby="tab-study">
+   <div class="caprow"><span class="stepno">Study sprint</span><p class="caption">Read a worked example, answer a new question without looking back, then explain it in your own words. Practice, not a prediction of your school test.</p></div>
+   <div class="pick y9-subjects" role="group" aria-label="Choose a subject">
+    <button type="button" data-subject="science" aria-pressed="true">Science · reaction rate</button>
+    <button type="button" data-subject="maths" aria-pressed="false">Maths · straight lines</button>
+    <button type="button" data-subject="english" aria-pressed="false">English · inference</button>
+    <button type="button" data-subject="social" aria-pressed="false">Social studies · perspectives</button>
+   </div>
+   <ol class="y9-progress" aria-label="Sprint progress"><li id="sp1" class="done"><span>1</span>Worked example</li><li id="sp2"><span>2</span>Your turn</li><li id="sp3"><span>3</span>Explain it</li></ol>
+   <div class="y9-sprint">
+    <article class="card y9-worked"><h3 id="workedTitle"></h3><p id="workedText"></p><div class="y9-answer" id="workedAnswer"></div></article>
+    <article class="card y9-turn">
+     <h3 id="questionTitle"></h3><p id="questionText"></p>
+     <div id="answerArea"></div>
+     <div class="y9-acts"><button class="btn" id="studyHint" type="button">One hint</button><button class="btn primary" id="studyCheck" type="button">Check my thinking</button></div>
+     <p id="studyFeedback" class="y9-fb" role="status" aria-live="polite"></p>
+     <div class="y9-explain"><label for="explain">Explain it in your own words <small>2–3 sentences</small></label><textarea id="explain" rows="4" placeholder="I noticed… This happens because…"></textarea>
+      <div class="y9-acts"><button class="btn" id="saveReflection" type="button">Save on this device</button><button class="btn" id="downloadReflections" type="button" hidden>Download my reflections</button></div>
+      <p id="saveNote" class="y9-fine" role="status"></p></div>
+    </article>
+   </div>
+   <div class="y9-machine"><div><span class="eyebrow">Want to see it move?</span><h3 id="machineLinkTitle"></h3><p id="machineLinkText"></p></div><a id="machineLink" class="btn" href="#">Open the machine →</a></div>
+  </section>
+
+  <!-- 2 · app builder -->
+  <section class="stage y9-panel" id="panel-code" role="tabpanel" aria-labelledby="tab-code" hidden>
+   <div class="caprow"><span class="stepno">App builder</span><p class="caption">Describe a small app, make the choices, then test the working result and read its code. This builder puts together tested templates; it doesn’t call an AI model.</p></div>
+   <div class="y9-builder">
+    <form class="y9-col y9-brief" id="builderControls">
+     <h3><span class="y9-n">1</span>Brief and choices</h3>
+     <label for="appType">What are we making?</label><select id="appType"><option value="trail">Trail snack planner</option><option value="focus">Focus sprint planner</option><option value="nature">Nature observation log</option></select>
+     <label for="appName">Give it a name</label><input id="appName" maxlength="28" value="Trail Kai" autocomplete="off">
+     <fieldset><legend>Who is it for?</legend><div class="y9-opts"><label><input type="radio" name="audience" value="my friends and me" checked><span>My friends and me</span></label><label><input type="radio" name="audience" value="my whānau"><span>My whānau</span></label><label><input type="radio" name="audience" value="our class"><span>Our class</span></label></div></fieldset>
+     <fieldset><legend>One main feature</legend><div class="y9-opts"><label><input type="radio" name="feature" value="checklist" checked><span>Checklist</span></label><label><input type="radio" name="feature" value="counter"><span>Counter</span></label><label><input type="radio" name="feature" value="notes"><span>Notes</span></label></div></fieldset>
+     <fieldset><legend>Accent colour</legend><div class="y9-opts y9-accents" id="accentPick"></div></fieldset>
+    </form>
+    <div class="y9-col y9-stage">
+     <h3><span class="y9-n">2</span>Working app</h3>
+     <div class="y9-phone"><div class="y9-screen" id="appPreview"></div></div>
+     <p class="y9-fine">Live preview. Every control in it works.</p>
+    </div>
+    <div class="y9-col y9-notes">
+     <h3><span class="y9-n">3</span>Code and test</h3>
+     <div class="y9-briefcard"><span class="eyebrow">Your brief</span><p id="briefText"></p></div>
+     <h4>What the builder understood</h4><ol id="buildPlan" class="y9-plan"></ol>
+     <div class="y9-arch" aria-label="How the app is put together"><span>Screen</span><i aria-hidden="true">↕</i><span>State and events</span><i aria-hidden="true">↕</i><span>This device only</span></div>
+     <button class="btn" id="showCode" type="button" aria-expanded="false" aria-controls="codeView">Show the code</button>
+     <pre id="codeView" class="y9-code" hidden></pre>
+     <div class="y9-tests"><h4>Test before you celebrate</h4><label><input type="checkbox" class="test-check">I used the main feature in the preview.</label><label><input type="checkbox" class="test-check">I can explain one choice I made.</label><label><input type="checkbox" class="test-check">I checked it on a narrow screen.</label><p id="testResult" role="status">0 of 3 checks done.</p></div>
+     <button class="btn primary" id="downloadApp" type="button">Download my working app</button>
+     <p class="y9-fine">One HTML file. Open it in any browser; no account or server.</p>
+    </div>
+   </div>
+  </section>
+
+  <!-- 3 · vision detective -->
+  <section class="stage y9-panel" id="panel-vision" role="tabpanel" aria-labelledby="tab-vision" hidden>
+   <div class="caprow"><span class="stepno">Vision detective</span><p class="caption">A camera has data, not understanding. Measure an image’s pixels on your device. This is classical computer vision, not an AI that identifies things.</p></div>
+   <div class="y9-vision">
+    <div class="y9-col">
+     <div class="pick y9-samples" role="group" aria-label="Choose a sample image"><button type="button" data-sample="leaf" aria-pressed="true">Leaf</button><button type="button" data-sample="wheel" aria-pressed="false">Bike wheel</button><button type="button" data-sample="mixed" aria-pressed="false">Mixed shapes</button></div>
+     <div class="canvas y9-canvas" id="visionWrap"><canvas id="visionCanvas" width="640" height="440" role="img" aria-label="The image being measured"></canvas><div id="scanLine" aria-hidden="true"></div></div>
+     <label class="btn y9-upload" for="imageUpload">Use my own image<input id="imageUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
+     <p class="y9-fine">Your image stays on this device. Avoid faces, names, addresses or anything private.</p>
+    </div>
+    <div class="y9-col">
+     <div class="y9-range"><label for="threshold">Edge sensitivity <output id="thresholdOut" for="threshold">55</output></label><input id="threshold" type="range" min="20" max="110" value="55"><small>Lower finds fainter changes, and more texture and noise.</small></div>
+     <div class="y9-acts"><button class="btn primary" id="analyseVision" type="button">Measure the pixels</button><label class="y9-toggle"><input type="checkbox" id="showEdges" checked>Show edges</label></div>
+     <div class="chips y9-metrics"><div class="chip"><span>Brightness</span><b id="vBrightness">—</b></div><div class="chip"><span>Contrast</span><b id="vContrast">—</b></div><div class="chip"><span>Edge pixels</span><b id="vEdges">—</b></div><div class="chip"><span>Colour spread</span><b id="vColour">—</b></div></div>
+     <div id="visionExplanation" class="card y9-explainer" role="status"></div>
+     <div class="card y9-try"><h3>Try this</h3><ol><li>Predict which sample has the most edge pixels. Then measure all three.</li><li>Change the sensitivity and measure again. What else gets marked?</li><li>Could any of these numbers tell you a leaf’s species? Why not?</li></ol></div>
+     <details class="card"><summary>Why would an AI vision model get it wrong?</summary><p>Models learn patterns from training examples. A new angle, unusual light, a rare species or a biased dataset can change the answer. A confident sentence is not proof: check the source, compare alternatives and ask someone with local knowledge.</p></details>
+     <details class="card"><summary>Privacy and Māori data</summary><p>Don’t upload people or private places to services you don’t know. Māori data can be taonga, and decisions about collecting and using it need the right people involved. A relationship with local whānau, hapū or iwi can’t be replaced by a model.</p></details>
+    </div>
+   </div>
+  </section>
+
+  <!-- 4 · AI judgement -->
+  <section class="stage y9-panel" id="panel-ai" role="tabpanel" aria-labelledby="tab-ai" hidden>
+   <div class="caprow"><span class="stepno">AI judgement</span><p class="caption">Fluent is not the same as true. Use the source card to judge three answers: what is supported, what goes too far, and what is made up.</p></div>
+   <article class="card y9-source"><span class="truth">Illustrative</span><h3>Source card: restoring a local stream</h3><p>Students surveyed 40 metres of stream bank. They counted 18 native plants before restoration. One year later, after planting and weed removal, they counted 43. The survey did not measure water quality or fish numbers.</p><small>An invented classroom dataset for practice, not a published study.</small></article>
+   <div id="aiAnswers" class="y9-answers"></div>
+   <div class="y9-acts"><button class="btn primary" id="aiCheck" type="button">Check my judgement</button><button class="btn" id="aiReset" type="button">Start again</button></div>
+   <p id="aiFeedback" class="y9-fb" role="status" aria-live="polite"></p>
+   <div class="card y9-habit"><h3>A four-check habit</h3><ol><li><b>Purpose:</b> is the tool helping me learn, or doing my thinking for me?</li><li><b>Evidence:</b> which claims can I check in a source I trust?</li><li><b>People:</b> does this use private, cultural or copyrighted material fairly?</li><li><b>Ownership:</b> can I explain and redo the final work myself?</li></ol>
+    <p class="y9-warn">Follow your school’s assessment and AI rules. The Ministry of Education says <a href="https://www.education.govt.nz/education-professionals/schools-year-0-13/digital-technology/generative-ai" target="_blank" rel="noopener">generative AI is not permitted in NCEA external assessment</a>, and assessed work must be your own.</p></div>
+  </section>
  </section>
- <section class="tool-panel" id="panel-ai" role="tabpanel" aria-labelledby="tab-ai" hidden>
-  <div class="tool-intro"><div><p class="kicker">AI JUDGEMENT</p><h3>Fluent is not the same as true.</h3></div><p>Use the source card to judge three answers. Look for support, missing context and invented certainty. The point is not to catch a robot; it is to strengthen your own reading.</p></div>
-  <div class="source-card"><span>SOURCE CARD · CLASSROOM EXAMPLE</span><h4>Restoring a local stream</h4><p>Students surveyed 40 metres of stream bank. They counted 18 native plants before restoration. One year later, after planting and weed removal, they counted 43. The survey did not measure water quality or fish numbers.</p><small>This is an invented classroom dataset, not a published scientific study.</small></div>
-  <div id="aiAnswers" class="ai-answers"></div><div class="action-row"><button class="secondary" id="aiReset" type="button">Reset choices</button><button class="primary small" id="aiCheck" type="button">Check my judgement</button></div><div id="aiFeedback" class="feedback" role="status" aria-live="polite"></div>
-  <div class="ai-rules"><h4>A four-check habit</h4><ol><li><b>Purpose:</b> is the tool helping me learn, or replacing my thinking?</li><li><b>Evidence:</b> which claims can I verify in a trustworthy source?</li><li><b>People:</b> does this use private, cultural or copyrighted material fairly?</li><li><b>Ownership:</b> can I explain and reproduce the final work myself?</li></ol><p>Follow your school’s assessment and AI rules. Generative AI is not permitted in NCEA external assessment.</p></div>
+
+ <section class="y9-print" aria-labelledby="print-h">
+  <svg class="y9-bike" viewBox="0 0 220 120" aria-hidden="true"><g fill="none" stroke="var(--as-ink)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><circle cx="48" cy="80" r="30"/><circle cx="170" cy="80" r="30"/><path d="M48 80l42-6 44-38M86 46l52-12M134 34l36 46M90 74L82 46"/><path d="M128 22h18M72 40h20"/></g><path d="M100 50l14 22" stroke="#D98A2B" stroke-width="7" stroke-linecap="round"/><path d="M140 40l20 30" stroke="#D9A646" stroke-width="6" stroke-linecap="round"/><path d="M10 114h200" stroke="var(--as-line2)" stroke-width="3"/></svg>
+  <div><div class="eyebrow">From screen to print bed</div><h2 id="print-h">Design a bike you can print.</h2><p>Shape a downhill bike display model, read its scale drawing, then download STL or 3MF files for your printer.</p><a class="btn primary" href="/study/print/">Open the Print Lab →</a> <span class="y9-fine">Display model only, not a rideable bike part.</span></div>
  </section>
-</section>
-<section class="print-callout"><div><p class="kicker">FROM SCREEN TO PRINT BED</p><h2>Your bike.<br><em>Your drawing.</em></h2></div><div><p>Customise a downhill bike scale model. See dimensions update, export STL or 3MF, and print an orthographic drawing for your own printer.</p><a class="primary" href="/study/print/">Open the student Print Lab ↗</a><p class="fine">Display model only. Not a rideable or safety-certified bike part.</p></div></section>
-<section class="guidance"><h2>Built around good learning.</h2><div><p><b>Teacher and student judgement stay central.</b> These are deterministic learning activities, not a tutor connected to a generative-AI service.</p><p><b>Year 9 and 10 tests are set by schools.</b> Use your teacher’s topics and instructions first. NCEA pathways come later; authentic evidence must be your own work.</p><p><b>Curriculum links.</b> Science, mathematics, English, social sciences, digital technologies, and design and visual communication. See the <a href="https://newzealandcurriculum.tahurangi.education.govt.nz/nzc-technology-phases-1-4-years-0-10/5637293836.p" target="_blank" rel="noopener">Technology learning area</a> and <a href="https://www.education.govt.nz/education-professionals/schools-year-0-13/digital-technology/generative-ai" target="_blank" rel="noopener">Ministry GenAI guidance</a>.</p></div></section>
-</main>
-<footer><a class="brand" href="/">assembl<span>lab</span></a><p>Independent learning tools. Not endorsed by NZQA or the Ministry of Education.</p><a href="/study/teacher.html">For teachers ↗</a></footer>
-<script type="module" src="app.js"></script>
+
+ <section class="y9-guide" aria-labelledby="guide-h">
+  <h2 id="guide-h">Built around good learning</h2>
+  <div class="y9-guide-grid">
+   <div class="card"><h3>Your judgement stays central</h3><p>These are fixed, checkable activities, not a tutor connected to a generative AI service.</p></div>
+   <div class="card"><h3>Your school sets Year 9 and 10 tests</h3><p>Use your teacher’s topics and instructions first. NCEA comes later, and assessed work must be your own.</p></div>
+   <div class="card"><h3>Curriculum links</h3><p>Science, maths, English, social sciences, digital technologies, and design and visual communication. See the <a href="https://newzealandcurriculum.tahurangi.education.govt.nz/nzc-technology-phases-1-4-years-0-10/5637293836.p" target="_blank" rel="noopener">Technology learning area</a>.</p></div>
+  </div>
+ </section>
+
+ <footer class="hub-foot">
+  <p>Independent learning tools. Not made by or endorsed by NZQA or the Ministry of Education. <a href="/study/teacher.html">For teachers</a>.</p>
+  <p class="as-foot"><span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span>assembly is made by assembl in Aotearoa.</span></p>
+ </footer>
+</div>
+<script type="module" src="/study/year9/app.js"></script>
 </body></html>
