@@ -446,6 +446,26 @@ Notes shown to students: *tūtira*: Te Aka also lists rārangi for a line or que
 
 No curriculum dictionary for DVC was found among Te Aka's sources, so these are general Te Aka entries. Looked for but not added: *floor plan* and *scale drawing* as compounds (Te Aka's nearest is hoahoa, "plan of a house"), *brief* and *stakeholder*.
 
+### Kōkopu (kokopu.js) — 7 kupu
+
+Added 27 October 2026. Each entry was opened on Te Aka on that date.
+
+| Kupu | English | Source (opened) | Evidence | Shown on steps | Chip label |
+|---|---|---|---|---|---|
+| **kōkopu** | banded kōkopu (*Galaxias fasciatus*); also some other small native fish | [Te Aka 2868](https://maoridictionary.co.nz/word/2868) | Te Aka entry (sense 1 names *Galaxias fasciatus*) | fish, ripples |  |
+| **moeao** | nocturnal | [Te Aka 47541](https://maoridictionary.co.nz/word/47541) | Te Aka entry (no curriculum citation) | night, freerun | state |
+| **piha** | gills (of a fish) | [Te Aka 5553](https://maoridictionary.co.nz/word/5553) | Te Reo Pūtaiao (MoE 2009) cited in entry | fish |  |
+| **rongo kakara** | sense of smell | [Te Aka 40229](https://maoridictionary.co.nz/word/40229) | Te Aka entry (no curriculum citation) | fish, maze |  |
+| **waipuke** | flood; to flood | [Te Aka 9067](https://maoridictionary.co.nz/word/9067) | Te Aka entry (no curriculum citation) | flood | level |
+| **kukune** | embryo, fertilised egg | [Te Aka 11084](https://maoridictionary.co.nz/word/11084) | Te Reo Pūtaiao (MoE 2009) cited in entry | flood |  |
+| **hekenga** | migration | [Te Aka 1044](https://maoridictionary.co.nz/word/1044) | Te Aka entry (no curriculum citation) | maze |  |
+
+Notes shown to students:
+- *kōkopu*: Te Aka lists several senses, including other small native fish, so the card says so.
+- *piha*: also a whale's blowhole.
+
+Looked for but not added: "lateral line" (no Te Aka entry found); a general word for night (*pō*) was not opened, so it was left out.
+
 ### NCEA steps on the downhill and vinyl machines: no new kupu
 
 No new kupu were added (both machines already carry 8 verified terms). The existing terms were mapped onto the new steps: downhill *run* (pūngao moe, pūngao neke, waku), *work* (tōpana, waku, whakahohoro), *model* (tere, pūngao), *turn* (tōpana, tere); vinyl *omega* and *centripetal* (auau). Looked for but not added: *angular velocity*, *centripetal*, *torque* (no Te Aka entries found).
