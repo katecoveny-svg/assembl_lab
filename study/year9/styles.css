@@ -214,3 +214,6 @@ details.card p{padding:0 16px 14px}
  #scanLine{left:8px;right:8px;top:8px}
 }
 @media (prefers-reduced-motion:reduce){.y9-tool,.y9-screen{transition:none}.y9-canvas.scanning #scanLine{animation:none}}
+
+/* mint swash here, matching Next Lab (keeps big yellow off the page) */
+.swash{background:linear-gradient(transparent 62%,#BFE8D6 62%,#BFE8D6 88%,transparent 88%)}
