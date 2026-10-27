@@ -3,8 +3,9 @@
    - Coast redwoods: our own lofted trunks (flared, fluted bases; fibrous bark) carrying crowns of short drooping branches and
      flat needle sprays grown with ez-tree (vendor/ez-tree, MIT). A few variants, instanced in chunks along the trail.
    - Understorey: tree ferns (ponga and wheki, some with a skirt of dead fronds), crown ferns, small ground ferns, fallen logs.
-   - Ground: a hillside the trail is benched into (uphill behind, falling away in front), deep needle litter, and the trail as
-     worn pumice-loam dirt with ragged edges; roots across the root garden; a timber lip and rollers.
+   - Ground: the hill falls along the trail; across it the floor is nearly level (a shallow cut bank behind, a gentle fall in
+     front). Deep needle litter, the trail as worn pumice-loam dirt with ragged edges, roots across the root garden, a timber
+     lip and rollers.
    - Light (trail zone only): a low warm sun through a canopy (a hidden dappling screen that only casts shadows), soft
      forest-tinted ambient light, depth haze, and faint shafts of light between the trunks.
    All textures are drawn from code (tex/texgen.js; open tex/texgen.html to regenerate them); no photographs. */
@@ -58,7 +59,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     const tone=noise2(31),moss=noise2(43);
     for(let j=0;j<nr;j++)for(let i=0;i<nc;i++){const x=cols[i],z=rows[j],y=groundY(x,z),k=j*nc+i;pos[k*3]=x;pos[k*3+1]=y;pos[k*3+2]=z;uv[k*2]=x/2.6;uv[k*2+1]=-z/2.6;
       let c=.9+(tone(x*.07,z*.07)-.5)*.45;const mo=smooth(.62,.8,moss(x*.05,z*.06))*.35;
-      // darker under the trees and in the cut bank behind the trail, a little lighter where people walk the edges
+      // darker litter around the feet of the trees
       for(const t of trees){const dx=x-t.x,dz=z-t.z;if(Math.abs(dx)>6||Math.abs(dz)>6)continue;const d=Math.hypot(dx,dz)-t.r;c*=1-.3*Math.exp(-Math.max(0,d)/1.6)}
       const g=1+mo*.25;col[k*3]=c*(1-mo*.3);col[k*3+1]=c*g;col[k*3+2]=c*(1-mo*.2)}
     const idx=[];for(let j=0;j<nr-1;j++)for(let i=0;i<nc-1;i++){const a=j*nc+i,b=a+1,c2=a+nc,d=c2+1;idx.push(a,c2,b,b,c2,d)}
@@ -76,10 +77,8 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
       r.forEach((x,i)=>{const y=tx(x)+.004;vs.forEach((z,j)=>{pos.push(x,y,z);uv.push(x/5.6,(z+W)/(2*W));if(i&&j){const a=(i-1)*5+j-1,b=a+1,c=a+5,d=c+1;idx.push(a,b,c,b,d,c)}})});
       const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g});
     const m=new THREE.Mesh(mergeGeometries(geos),dirtM);m.receiveShadow=true;m.name="trail-dirt";group.add(m);
-    // the walls of the gap: a timber face under the lip, packed dirt on the landing's knuckle
-    const wall=(x,y0,y1,face)=>{const g=new THREE.PlaneGeometry(2*W,Math.abs(y1-y0));const mm=new THREE.Mesh(g,face);mm.position.set(x,(y0+y1)/2,0);mm.rotation.y=Math.PI/2;mm.receiveShadow=true;group.add(mm);return mm};
-    wall(LAND.x0-.035,LAND.y0-1.4-.05,LAND.y0+.004,dirtM);
-    return {wall}}
+    // packed dirt on the landing's knuckle (the lip's face is timber, below)
+    const g=new THREE.PlaneGeometry(2*W,1.4+.054),mm=new THREE.Mesh(g,dirtM);mm.position.set(LAND.x0-.035,LAND.y0-.7-.023,0);mm.rotation.y=Math.PI/2;mm.receiveShadow=true;group.add(mm)}
   // ------------------------------------------------------------------------------------------------ redwoods
   const barkM=new THREE.MeshStandardMaterial({map:barkC,normalMap:barkN,normalScale:new THREE.Vector2(1.5,1.5),roughness:.95,metalness:0,vertexColors:true});
   const leafM=new THREE.MeshStandardMaterial({map:atlas,alphaTest:.45,side:THREE.DoubleSide,roughness:.88,metalness:0,color:new THREE.Color("#C9D6B8")});
@@ -88,7 +87,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
   function trunkGeo(o){const r=rng(o.seed),lobes=[],nl=4+Math.floor(r()*3);for(let i=0;i<nl;i++)lobes.push({a:(i+r()*.6)/nl*TAU,s:.55+r()*.6,w:3+r()*3});
     const ph=[r()*TAU,r()*TAU,r()*TAU],mossA=r()*TAU,lean=(r()-.5)*.012,leanA=r()*TAU;
     const ys=[];for(let k=0;k<=o.rings;k++){const t=k/o.rings;ys.push(-1+(o.H+1)*Math.pow(t,2.1))}
-    const seg=o.seg,urep=7,pos=[],nor=[],uv=[],col=[],idx=[];
+    const seg=o.seg,urep=7,pos=[],uv=[],col=[],idx=[];
     const ad=(a,b)=>{let d=((a-b)%TAU+TAU)%TAU;return d>Math.PI?TAU-d:d};
     ys.forEach((y,k)=>{const yy=Math.max(0,y),taper=Math.pow(Math.max(.015,1-yy/o.H),.82),flare=1+.95*Math.exp(-yy/1.25)+.25*Math.exp(-yy/6);
       const lx=Math.cos(leanA)*lean*yy*yy/o.H*3,lz=Math.sin(leanA)*lean*yy*yy/o.H*3;
@@ -104,7 +103,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     return g}
   // the crown from ez-tree: short drooping branches high up and flat sprays of needles. Its own trunk is dropped (ours replaces it).
   // tier 2: near trees in high quality; 1: near trees on phones; 0: far trees
-  function crown(seed,tier){const o=new TreeOptions(),hi=tier>0;o.seed=seed;o.type="evergreen";o.bark.textured=false;
+  function crown(seed,tier){const o=new TreeOptions();o.seed=seed;o.type="evergreen";o.bark.textured=false;
     const b=o.branch;b.levels=1;b.length[0]=60;b.radius[0]=1;b.sections[0]=10;b.segments[0]=4;b.children[0]=[22,34,54][tier];b.start[1]=.5;b.angle[1]=106;b.length[1]=11;b.radius[1]=.16;
     b.sections[1]=tier>1?4:3;b.segments[1]=tier>1?4:3;b.gnarliness[0]=0;b.gnarliness[1]=.14;b.force.direction={x:0,y:1,z:0};b.force.strength=.002;
     const L=o.leaves;L.count=[4,5,7][tier];L.start=.18;L.size=[3.5,3,2.6][tier];L.sizeVariance=.3;L.angle=48;L.billboard=tier>1?"double":"single";L.alphaTest=.45;
@@ -183,7 +182,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
       E.set(0,az,(r()-.5)*.3,"YXZ");Q.setFromEuler(E);M4.compose(SC.set(x,y,z),Q,N.set(l,l,l));C.setHSL(.2+r()*.07,.4+r()*.2,.5+r()*.22);put("cF",x,M4,C)}}}
   // small ground ferns and fallen logs
   {const n=HQ?900:350;for(let i=0;i<n;i++){const x=X0+2+r()*(X1-X0-4),z=r()<.25?TB+.3+r()*7:-2.3-Math.pow(r(),1.3)*34;if(nearTrail(x,z,.25))continue;const h=.35+r()*.45;
-    Q.setFromAxisAngle(V.set(0,1,0),r()*TAU);M4.compose(SC.set(x,groundY(x,z)-.04,z),Q,N.set(h*.5,h,h*.5));C.setHSL(.22+r()*.06,.4,.55+r()*.2);put("gF",x,M4,C)}
+    Q.setFromAxisAngle(V.set(0,1,0),r()*TAU);M4.compose(SC.set(x,groundY(x,z)-.04,z),Q,N.set(h*.5,h,h*.5));C.setHSL(.2+r()*.06,.32,.4+r()*.14);put("gF",x,M4,C)}
    const nl=HQ?46:24;for(let i=0;i<nl;i++){const x=X0+6+r()*(X1-X0-12),z=-6-r()*38;if(trees.some(t=>Math.hypot(t.x-x,t.z-z)<t.r+1.5))continue;const L=5+r()*10,rad=.18+r()*.38,yaw=(r()-.5)*1.2;
     const y=(groundY(x-Math.cos(yaw)*L/2,z+Math.sin(yaw)*L/2)+groundY(x+Math.cos(yaw)*L/2,z-Math.sin(yaw)*L/2))/2;E.set(0,yaw,Math.atan2(groundY(x+L/2,z)-groundY(x-L/2,z),L)*.8);Q.setFromEuler(E);
     M4.compose(SC.set(x,y+rad*.45,z),Q,N.set(L,rad,rad));put("log",x,M4,null)}}
@@ -196,7 +195,7 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
       b.m.forEach((m,i)=>{im.setMatrixAt(i,m);if(b.c[i])im.setColorAt(i,b.c[i])});im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
       im.castShadow=!!cast;im.receiveShadow=!!rec;im.computeBoundingSphere();im.name=b.kind+"@"+k.split("|")[1];group.add(im);meshes.push(im);return im};
     mk(spec[0](),spec[1],spec[2],spec[3]);const cv=crownOf[b.kind];if(cv){const bm=mk(cv.branches,barkM,0,0),lm=mk(cv.leaves,leafM,0,0);bm.name+="-br";lm.name+="-lv"}}
-  mark("meshes");await breathe();buildGround();const trailBits=buildTrail();mark("ground");await breathe();
+  mark("meshes");await breathe();buildGround();buildTrail();mark("ground");await breathe();
 
   // ------------------------------------------------------------------------------------------------ the root garden, the timber lip and the berm
   {const SR=P.rootSeg;if(SR){const rootG=(()=>{const pts=[];for(let i=0;i<=10;i++){const t=i/10;pts.push(new THREE.Vector3(Math.sin(t*5.2)*.22+t*.3,Math.sin(t*Math.PI)*.05,(t-.5)*3.4))}
@@ -214,13 +213,13 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     const side=(x0,x1,z)=>{for(let x=x0;x<x1;x+=.5){const y=tx(x+.25);add(x+.25,y-.3,z,.5,.6,.06,Math.atan((tx(x+.5)-tx(x))/.5))}};
     side(SLIP.x0,LIP,TB+.04);side(SLIP.x0,LIP,-TB-.04);SROLL.forEach(q=>{side(q.x0,q.x1,TB+.04);side(q.x0,q.x1,-TB-.04)});
     const g=new THREE.BoxGeometry(1,1,1),im=new THREE.InstancedMesh(g,woodM,planks.length);planks.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.computeBoundingSphere();group.add(im)}
-  {const pos=[],uv=[],idx=[],n=24;for(let k=0;k<=n;k++){const x=SBERM.x0-2+k*(SBERM.x1-SBERM.x0+4)/n,h=Math.sin(k/n*Math.PI)*1.8,y=tx(x);pos.push(x,y+.004,-1.3,x,y+h,-2.6-h*.3);uv.push(x/5.6,.62,x/5.6,1.02+h*.02);
+  {const pos=[],uv=[],idx=[],n=24;for(let k=0;k<=n;k++){const x=SBERM.x0-2+k*(SBERM.x1-SBERM.x0+4)/n,h=Math.sin(k/n*Math.PI)*1.8,y=tx(x);pos.push(x,y+.004,-1.3,x,y+h,-2.6-h*.3);uv.push(x/5.6,.45,x/5.6,.86);
       if(k){const a=(k-1)*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}}
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
-    const bm=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:dirtC,normalMap:dirtN,roughness:.93,side:THREE.DoubleSide}));bm.receiveShadow=true;bm.castShadow=true;group.add(bm)}
+    const bm=new THREE.Mesh(g,dirtM);bm.receiveShadow=true;bm.castShadow=true;group.add(bm)}
 
   // ------------------------------------------------------------------------------------------------ light
-  const sunDir=new THREE.Vector3(.5,-.78,.38).normalize();  // the way the light travels: from up the hill behind, across to the front right
+  const sunDir=new THREE.Vector3(.5,-.78,.38).normalize();  // the way the light travels: from behind the trees on the left, down towards the front right
   const HAZE=new THREE.Color("#AEB59E");
   // a forest-tinted environment for soft ambient light and reflections: bright canopy above, green haze around, brown floor below
   mark("timber");const envTex=(()=>{const sc=new THREE.Scene(),geo=new THREE.SphereGeometry(10,48,24),p=geo.attributes.position,col=[];

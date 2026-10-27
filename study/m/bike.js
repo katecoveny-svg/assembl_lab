@@ -1042,7 +1042,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
     step(st){const prev=zone;zone=zoneOfStep(st.k);allLabels.forEach(l=>l.hide());look(zone==="trail");
       if(zone==="trail"){const p=riderW();const far=st.k==="jump";S.view("trail",[p.x+(far?3.5:2.2),p.y+(far?3.9:2.9),far?13.5:9.6],[p.x+1.4,p.y+.8,0],{min:2.5,max:30});S.goView("trail",prev!=="trail");
         S.setFollow(()=>riderW().add(V3(1.4,.8,0)),.3,true)}
-      else{S.setFollow(null);S.goView(zone)}
+      else{S.setFollow(null);S.goView(zone,prev==="trail")}
       const sb={garage:[5,[GZ.x,0,GZ.z]],stop:[22,[SZ.x+18,0,SZ.z]],fork:[5,[FZ.x,0,FZ.z]],ski:[8,[KZ.x,0,KZ.z]],turn:[5,[TZ.x,0,TZ.z]],all:[36,[3,0,68]]};if(sb[zone])S.setShadowBox(...sb[zone])},
     update(s,st,dt,t){const k=st.k,Z=zone;const show=(z,key,c=true)=>lab[z][key].show(Z===z&&c);
       // ---------------- trail
