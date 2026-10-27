@@ -117,15 +117,16 @@ export const CREDITS = {
   ruc: { name: "NZTA Waka Kotahi road user charge rates", licence: null, url: LINKS.ruc.url },
 };
 // Light-vehicle road user charges, $ per 1,000 km incl. GST. Petrol and ordinary petrol hybrids pay excise inside the pump
-// price instead (MBIE's "taxes" line). NOTE: nzta.govt.nz refused automated fetches from this build, so these are the rates in
-// NZTA's table as transcribed by a secondary source on 25 Oct 2026 (table effective 6 Aug 2026). Check before relying on them.
+// price instead (MBIE's "taxes" line). Checked 27 Oct 2026 against the Road User Charges (Rates) Regulations 2015, Schedule 1, on
+// legislation.govt.nz (consolidated as at 6 Aug 2026): type 1 (light vehicles, including light EVs since 1 April 2024) $76,
+// type 12 (light plug-in hybrids) $38. nzta.govt.nz refuses automated fetches, so the NZTA page itself wasn't read.
 export const RUC = {
   perThousandKm: { diesel: 76, electric: 76, "plug-in hybrid": 38 },
-  asOf: "2026-08-06", checked: "2026-10-25",
+  asOf: "2026-08-06", checked: "2026-10-27",
   truth: "Latest published",
   label: "NZTA light-vehicle RUC rates (table effective 6 Aug 2026)",
   source: LINKS.ruc,
-  caveat: "Transcribed from NZTA's RUC rate table; not fetched live from nzta.govt.nz (it refuses automated requests). Light EVs have paid RUC since 1 April 2024. Check NZTA before relying on a rate.",
+  caveat: "Rates from the Road User Charges (Rates) Regulations 2015, Schedule 1 (legislation.govt.nz, consolidated as at 6 Aug 2026), checked 27 Oct 2026; not fetched live. Light EVs have paid RUC since 1 April 2024. Check NZTA before relying on a rate.",
 };
 // Built-in snapshots: used only when the live feed can't be reached (labelled "snapshot", never "Live").
 export const SNAPSHOT = {
