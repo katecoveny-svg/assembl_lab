@@ -1159,7 +1159,7 @@ function bike3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE.Vect
         show("turn","r");lab.turn.r.at(tw(V3(0,.1,0))).set(`r = ${fmt(r)} m`);show("turn","bank");lab.turn.bank.at(tw(V3(rr+.1,.1,0))).set(`Level 3 berm<b>${fmt(SK.bank(),1)}°</b><small>tan θ = v²/(rg)</small>`)}
     }};
 }
-const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",scene3d:bike3d,
+const api=StudyKit.mount({kupu:KUPU,caseTint:"peach",scene3d:bike3d,ar:{model:"lib:bike",scale:"real",label:"Put the bike in your room"},
   eyebrow:"Science · Forces and motion", title:"The downhill machine", crumb:"Year 9 and 10 Science · forces, motion and energy, with NCEA Level 1 ideas, plus four NCEA Level 2–3 steps on a ski run (AS91171, AS91524)", homeHash:"y9",
   fig:"FIG. 10 · INSPIRED BY THE REDWOODS, WHAKAREWAREWA FOREST", railTitle:"Build it, ride the physics",
   badge:{label:"Years 9–11 · NCEA L2 91171 · L3 91524"},
