@@ -2,9 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync(__dirname + '/living.js', 'utf8');
-const fn = source.slice(source.indexOf('function captionLines('), source.indexOf("\nel('capture')"));
-const captionLines = vm.runInNewContext(fn + ';captionLines');
+const source = fs.readFileSync(__dirname + '/caption.js', 'utf8').replace('export ', '');
+const captionLines = vm.runInNewContext(source + ';captionLines');
 for (const [name,w,h] of [['square',2400,2400],['portrait',2160,3840],['wide',3200,2240]]) {
   test(name + ': complete captions fit, excessive newlines block instead of clipping', () => {
     const calls=[];
