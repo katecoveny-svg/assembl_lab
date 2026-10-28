@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {turnAngle,waveAt,waveAmplitude,nearest,grade} from './model.js';
+test('rotation repeats close a full turn, including non-integer angles',()=>{for(let n=3;n<=12;n++)assert.ok(Math.abs(n*turnAngle(n)-360)<1e-10);});
+test('equal waves reinforce and cancel across their whole domain',()=>{for(let x=-10;x<=10;x+=.1){assert.ok(Math.abs(waveAt(x,0)-2*Math.sin(x))<1e-10);assert.ok(Math.abs(waveAt(x,180))<1e-10);}assert.equal(waveAmplitude(0),2);assert.ok(waveAmplitude(180)<1e-10);});
+test('analytic amplitude agrees with sampled rendered wave at every permitted phase',()=>{for(let phase=0;phase<=180;phase+=15){let peak=0;for(let x=0;x<Math.PI*2;x+=.001)peak=Math.max(peak,Math.abs(waveAt(x,phase)));assert.ok(Math.abs(peak-waveAmplitude(phase))<1e-5);}});
+test('Voronoi boundary stays equidistant at every height; moving B changes it',()=>{for(let b=40;b<=90;b++){for(let y=0;y<=100;y+=10){const sites=[{x:20,y:50},{x:b,y:50}];assert.deepEqual(nearest({x:(20+b)/2,y},sites).winners,[0,1]);assert.deepEqual(nearest({x:(20+b)/2-1,y},sites).winners,[0]);assert.deepEqual(nearest({x:(20+b)/2+1,y},sites).winners,[1]);}}});
+test('feedback rejects empty/invalid predictions and uses current model, not initial defaults',()=>{const s={count:8,phase:180,probe:50,site:60};assert.equal(grade('waves','',s).correct,false);assert.equal(grade('waves','banana',s).correct,false);assert.equal(grade('waves','0',s).correct,true);assert.equal(grade('symmetry','60',s).correct,false);assert.equal(grade('symmetry','45',s).correct,true);assert.equal(grade('regions','1',s).correct,true);assert.equal(grade('regions','0,1',s).correct,false);});
