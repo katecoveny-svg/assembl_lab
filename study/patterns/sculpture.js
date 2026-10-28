@@ -119,11 +119,27 @@ export function createSculpture(canvas) {
   scene.environmentIntensity=1.1;
   const group=new THREE.Group();scene.add(group);
   const shadow=makeShadow();scene.add(shadow);
+  // Opaque studio backdrop participates in Three's transmission render target.
+  // A uniform clear colour alone provides nothing recognisable to refract.
+  const backdropMaterial=new THREE.ShaderMaterial({
+    uniforms:{uDark:{value:0}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:`varying vec2 vUv;uniform float uDark;void main(){
+      vec3 cream=vec3(.92,.90,.85);vec2 p=vUv-.5;
+      float band=exp(-pow((p.x+.13*sin(p.y*8.)-.02)/.12,2.));
+      float mint=exp(-pow((p.x-.18+.08*sin(p.y*6.))/.09,2.));
+      vec3 c=mix(cream,vec3(.69,.60,.79),band*.35);
+      c=mix(c,vec3(.56,.74,.69),mint*.28);
+      c=mix(c,vec3(.05,.04,.09),uDark*.9);
+      gl_FragColor=vec4(c,1.);}`
+  });
+  const backdrop=new THREE.Mesh(new THREE.PlaneGeometry(14,14),backdropMaterial);
+  backdrop.position.z=-2.3;scene.add(backdrop);
   const key=new THREE.DirectionalLight(0xfff5e9,1.4);key.position.set(-3,5,4);scene.add(key);
   const rim=new THREE.DirectionalLight(0xeadfff,1.2);rim.position.set(4,1,-2);scene.add(rim);
   const fill=new THREE.HemisphereLight(0xffffff,0xc7b4af,.35);scene.add(fill);
   const materialOptions={roughness:.075,clearcoat:1,clearcoatRoughness:.045,envMapIntensity:1.32};
-  const glass=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xf4edff,metalness:0,roughness:.025,transmission:.96,thickness:.48,ior:1.46,iridescence:.37,iridescenceIOR:1.34,iridescenceThicknessRange:[160,430],attenuationColor:new THREE.Color(0xc9afff),attenuationDistance:.9});
+  const glass=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xffffff,metalness:0,clearcoat:0,envMapIntensity:.35,roughness:.025,transmission:1,thickness:.48,ior:1.5,iridescence:.08,iridescenceIOR:1.34,iridescenceThicknessRange:[160,430],attenuationColor:new THREE.Color(0xe5dcff),attenuationDistance:4});
   const chrome=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xe8e7e1,metalness:1,roughness:.13,iridescence:.12});
   const coral=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xffb69f,metalness:.14,transmission:.46,thickness:.7,ior:1.43,iridescence:.30,attenuationColor:new THREE.Color(0xff9d8b),attenuationDistance:2});
   const mint=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xc4e7d9,metalness:.2,transmission:.46,thickness:.65,ior:1.40,iridescence:.2});
@@ -146,10 +162,10 @@ export function createSculpture(canvas) {
     renderer.setSize(width,height,false);
     camera.aspect=width/height;
     // Editorial, edge-to-edge crop on phones; a whole sculpture on wider screens.
-    const vertical=width>height?5.4:7.1;
+    const vertical=width>height?5.2:6.4;
     const distance=(vertical/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
     camera.position.set(0,.15,distance);
-    camera.lookAt(0,-.38,0);camera.updateProjectionMatrix();
+    camera.lookAt(0,-.65,0);camera.updateProjectionMatrix();
   }
   function interact(x,y,dx=0,dy=0) {
     turnY+=dx*3.2;turnX=clamp(turnX+dy*2.2,-.8,.8);
@@ -164,7 +180,7 @@ export function createSculpture(canvas) {
       lastMaterial=material;
     }
     const dark=Boolean(settings.dark);
-    if(lastDark!==dark){scene.background.set(dark?'#211e3b':'#f6f3ec');shadow.material.uniforms.uDark.value=dark?1:0;lastDark=dark;}
+    if(lastDark!==dark){scene.background.set(dark?'#211e3b':'#f6f3ec');shadow.material.uniforms.uDark.value=dark?1:0;backdropMaterial.uniforms.uDark.value=dark?1:0;lastDark=dark;}
     const energy=clamp(settings.energy??.5,0,1), clock=Number.isFinite(time)?time:0;
     group.rotation.set(-.1+turnX+Math.sin(clock*.16)*.07*energy,turnY+Math.sin(clock*.13)*.18*energy,-.14+sculpt+(energy-.5)*.35);
     group.scale.set(1+sculpt*.2,1-sculpt*.11,1);
@@ -175,7 +191,7 @@ export function createSculpture(canvas) {
   function dispose() {
     if(disposed)return;disposed=true;
     ribbons.forEach(mesh=>mesh.geometry.dispose());materials.forEach(material=>material.dispose());
-    shadow.geometry.dispose();shadow.material.dispose();environment.dispose();renderer.dispose();
+    backdrop.geometry.dispose();backdropMaterial.dispose();shadow.geometry.dispose();shadow.material.dispose();environment.dispose();renderer.dispose();
   }
   reset(seed);resize(canvas.clientWidth||400,canvas.clientHeight||650,globalThis.devicePixelRatio||1);
   return {render,resize,interact,reset,dispose};

@@ -8,7 +8,7 @@ const modern={
  sculpture:{name:'Sculptural Playground',hint:'Drag to sculpt',description:'Bend glossy ribbons. Play with chrome, glass and reflected light.',prompt:'Real 3D geometry, procedural studio lighting and reflective materials. The same shape feels different in chrome and glass. What changes?',factory:createSculpture},
  garden:{name:'Luminous Type Garden',hint:'Touch to transform',description:'Your word, grown from layers of luminous silk petals.',prompt:'Editable letters guide layers of procedural petals. Drag through them and see the letterform bend. No image generation or upload is involved.',factory:createGarden}
 };
-const defaults={seed:42,energy:.55,material:'glass',word:'PLAY',dark:false,tone:0};
+const defaults={seed:42,energy:.55,material:'chrome',word:'PLAY',dark:false,tone:0};
 const settings={...defaults};const renderers=new Map();let active='liquid',time=0,tempo=1,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,legacy,ready=false,last=0,raf=0;
 let savedFile=null,savedURL=null,pointer=null,version=0,captureRevision=0;
 const host=el('canvas-host');
