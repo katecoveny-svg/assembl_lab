@@ -39,3 +39,15 @@ Geometric patterns are not presented as customary kōwhaiwhai. Cultural contexts
 
 Run `node --test study/patterns/model.test.js` and `node --check study/patterns/app.js`.
 The repository is plain static HTML/JavaScript with no build, typecheck or lint scripts/dependencies declared in package.json. Syntax checks and mathematical tests are applicable; do not report nonexistent compiler/lint runs as passed. Browser checks and deployment status are documented in `docs/studio-reuse-audit.md`.
+
+## Follow-up: ownership and extraction decisions
+
+The absent root licence is **not** a barrier to Kate authorising reuse of her own code. Path history traces this file through rename commit `e12b2e15c6201d19d9f013e734eef39129748128` to import `f911ad7a2a28c7008a8cdd7598a23e5774e5ef78` from Kate's Mac/Pages deployment. Maintenance includes Kate's `af5c3239a1602875a5ed614b6b9bc88c4b3da8e7` and Claude/Cursor commits, some coauthored with Kate. This supports reuse of owner-authored controls, palettes, orchestration and ordinary mathematical renderers under her explicit request. Pre-import history is absent, so it does not establish the origin of every embedded chunk.
+
+Specific remaining questions before extracting complex chunks: the Mahi renderer comments describe “Fidenza technique/signature/architecture”; the embedded QR encoder and shader blocks lack source credits. Those comments are not proof of copying or a licence. Trace those chunks separately rather than treating the entire owner repository as unusable. Elementary Clifford-attractor recurrence is a promising next renderer extraction with model tests and source attribution.
+
+Dependency findings: p5 1.11.3 is LGPL-2.1 ([licence](https://raw.githubusercontent.com/processing/p5.js/v1.11.3/license.txt)); the local Three bundle identifies revision 149 and MIT, copyright 2010–2023 ([licence](https://raw.githubusercontent.com/mrdoob/three.js/r149/LICENSE)); gif.js.optimized is MIT ([upstream](https://github.com/terikon/gif.js.optimized)), but Studio's CDN is unversioned and should be pinned with notices before reuse. Instrument Sans and IBM Plex Mono use SIL OFL 1.1. Puter's live v2 service remains excluded; its exact remotely served implementation was not pinned or licensed in this audit. No third-party renderer was vendored into this draft.
+
+The complete 40-engine catalogue is a coverage map, not a claim that 40 engines are implemented. Three original investigations cover related learning concepts; remaining families show proposed paths and existing Study overlap. Route styling reuses current Study colours, fonts and existing Allen asset. PNG creation uses browser Canvas only, with 4× geometry rendering. Downloads and optional device sharing are user-triggered; nothing is uploaded. Optional caption text is kept in the page only. Browser print uses A4 with 12 mm margins. Print colour depends on the user's printer and colour settings.
+
+This follow-up starts from main `e1ae010c57bdb62975075c437332bfb99e2d9da5`, after PRs 18 and 19 merged externally. It changes only the pattern route and its audit documents, preserving the current Study rebuild.

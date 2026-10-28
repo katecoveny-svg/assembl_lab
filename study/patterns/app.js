@@ -1,7 +1,8 @@
+import {families, matchingFamilies} from './catalogue.js';
 import {turnAngle, waveAt, waveAmplitude, nearest, grade} from './model.js';
 const $ = id => document.getElementById(id);
 const canvas = $('drawing');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d'), exporting = false;
 const defaults = {count:6, rotation:0, phase:0, probe:50, site:80};
 let state = {...defaults}, mode = 'symmetry';
 const lessons = {
@@ -12,7 +13,7 @@ const lessons = {
 function controlMarkup([key,label,min,max,step,unit]) {return `<label class="control"><span>${label}<output id="out-${key}" for="control-${key}">${state[key]}${unit}</output></span><input id="control-${key}" data-key="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${state[key]}" aria-label="${label}"></label>`;}
 function clearFeedback(){ $('feedback').textContent='You can try as many times as you like.'; delete $('feedback').dataset.correct; $('answer').value=''; $('choice').value=''; }
 function choose(next){
- mode=next; state={...defaults}; clearFeedback(); $('comparison').hidden=true;
+ mode=next; state={...defaults}; $('mission').hidden=true; clearFeedback(); $('comparison').hidden=true;
  const l=lessons[mode];
  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
  $('lesson-title').textContent=l.title; $('subject').textContent=l.subject; $('visual-label').textContent=l.label; $('explain').textContent=l.explain; $('model-note').textContent=l.note; $('reflection').textContent=l.reflection; $('related').innerHTML=l.related;
@@ -22,7 +23,7 @@ function choose(next){
  $('answer-label').textContent=mode==='symmetry'?'Smallest matching turn (degrees)':mode==='waves'?'Peak amplitude of the sum (units)':'Which station is nearer?';
  render();
 }
-function text(value,x,y,size=16,color='#715b69',align='left'){ctx.fillStyle=color;ctx.font=`${size * (canvas.clientWidth < 450 ? 1.8 : 1)}px Arial`;ctx.textAlign=align;ctx.fillText(value,x,y);}
+function text(value,x,y,size=16,color='#4A5070',align='left'){ctx.fillStyle=color;ctx.font=`${size * (!exporting && canvas.clientWidth < 450 ? 1.8 : 1)}px Arial`;ctx.textAlign=align;ctx.fillText(value,x,y);}
 function line(x1,y1,x2,y2,color='#d8c5d1',width=1,dash=[]){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);}
 function drawSymmetry(){
  const cx=400,cy=265,r=215;
@@ -34,42 +35,42 @@ function drawSymmetry(){
   for(let j=0;j<7;j++){
    const tip=202-j*15, spread=Math.min(80,170/state.count+25)-j*4;
    ctx.beginPath();ctx.moveTo(20,0);ctx.bezierCurveTo(85,-spread,tip-20,-spread,tip,0);ctx.bezierCurveTo(tip-20,spread,85,spread,20,0);
-   if(j===0){ctx.fillStyle='#e4c5d1';ctx.fill();}ctx.strokeStyle=j%2?'#a15f74':'#482139';ctx.lineWidth=j===0?2:1.5;ctx.stroke();
+   if(j===0){ctx.fillStyle='#BFDDF5';ctx.fill();}ctx.strokeStyle=j%2?'#2A7D63':'#3C4470';ctx.lineWidth=j===0?2:1.5;ctx.stroke();
   }ctx.restore();
  }
- ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fillStyle='#240b21';ctx.fill();
- text('FIXED CENTRE',cx,530,13,'#715b69','center');
- text(`${state.count} identical repeats`,35,35,16);text(`Turned ${state.rotation.toFixed(1).replace('.0','')}°`,765,35,16,'#715b69','right');
+ ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fillStyle='#222A55';ctx.fill();
+ text('FIXED CENTRE',cx,530,13,'#4A5070','center');
+ text(`${state.count} identical repeats`,35,35,16);text(`Turned ${state.rotation.toFixed(1).replace('.0','')}°`,765,35,16,'#4A5070','right');
  $('metric').textContent=`${turnAngle(state.count).toFixed(1).replace('.0','')}°`;
  $('description').textContent=`Smallest matching turn: 360° ÷ ${state.count}. The pattern has rotational symmetry of order ${state.count}.`;
  $('question').textContent=`With ${state.count} identical repeats, what is the smallest positive angle that maps the pattern onto itself? Use the turn control to check.`;
 }
 function drawWaves(){
  const rows=[105,275,440], labels=['A / original wave','B / shifted wave','A + B / their sum'];
- rows.forEach((y,i)=>{line(45,y,755,y);text(labels[i],45,y-65,16,i===2?'#240b21':'#715b69');for(let x=45;x<=755;x+=71)line(x,y-48,x,y+48,'#e6dbe1');});
- rows.forEach((y,i)=>{ctx.beginPath();ctx.strokeStyle=i===0?'#a15f74':i===1?'#876981':'#240b21';ctx.lineWidth=i===2?4:2.5;ctx.setLineDash(i===1?[8,4]:[]);for(let px=0;px<=710;px++){const x=px/710*Math.PI*4;const v=i===0?Math.sin(x):i===1?Math.sin(x+state.phase*Math.PI/180):waveAt(x,state.phase);const yy=y-v*34;if(px===0)ctx.moveTo(px+45,yy);else ctx.lineTo(px+45,yy);}ctx.stroke();ctx.setLineDash([]);});
- text('Position along the wave →',755,540,14,'#715b69','right');
+ rows.forEach((y,i)=>{line(45,y,755,y);text(labels[i],45,y-65,16,i===2?'#222A55':'#4A5070');for(let x=45;x<=755;x+=71)line(x,y-48,x,y+48,'#e6dbe1');});
+ rows.forEach((y,i)=>{ctx.beginPath();ctx.strokeStyle=i===0?'#2A7D63':i===1?'#6E6A86':'#222A55';ctx.lineWidth=i===2?4:2.5;ctx.setLineDash(i===1?[8,4]:[]);for(let px=0;px<=710;px++){const x=px/710*Math.PI*4;const v=i===0?Math.sin(x):i===1?Math.sin(x+state.phase*Math.PI/180):waveAt(x,state.phase);const yy=y-v*34;if(px===0)ctx.moveTo(px+45,yy);else ctx.lineTo(px+45,yy);}ctx.stroke();ctx.setLineDash([]);});
+ text('Position along the wave →',755,540,14,'#4A5070','right');
  $('metric').textContent=waveAmplitude(state.phase).toFixed(2);
  $('description').textContent=`Peak amplitude of A + B, in units. Each input has amplitude 1; phase difference is ${state.phase}°. Dashed line = B; solid dark line = sum.`;
  $('question').textContent=`At a phase difference of ${state.phase}°, what is the peak amplitude of the sum? Give your prediction to 2 decimal places, then compare the three traces.`;
 }
 function drawRegions(){
  const x0=150,y0=30,size=500,bound=(20+state.site)/2;
- ctx.fillStyle='#e5c7d3';ctx.fillRect(x0,y0,size*bound/100,size);ctx.fillStyle='#ded7e4';ctx.fillRect(x0+size*bound/100,y0,size*(100-bound)/100,size);
+ ctx.fillStyle='#DCF2E8';ctx.fillRect(x0,y0,size*bound/100,size);ctx.fillStyle='#F7E7A6';ctx.fillRect(x0+size*bound/100,y0,size*(100-bound)/100,size);
  for(let i=0;i<=100;i+=10){line(x0+i*5,y0,x0+i*5,y0+size,'#ffffff88');line(x0,y0+i*5,x0+size,y0+i*5,'#ffffff88');}
- line(x0+bound*5,y0,x0+bound*5,y0+size,'#482139',2,[6,5]);
+ line(x0+bound*5,y0,x0+bound*5,y0+size,'#3C4470',2,[6,5]);
  const py=y0+250,px=x0+state.probe*5;
  line(x0+100,py,px,py,'#843b5d',3);line(x0+state.site*5,py+5,px,py+5,'#644f83',3,[6,4]);
- [[20,'A'],[state.site,'B']].forEach(([x,label])=>{ctx.beginPath();ctx.arc(x0+x*5,py,13,0,Math.PI*2);ctx.fillStyle='#240b21';ctx.fill();text(label,x0+x*5,py-27,20,'#240b21','center');});
- ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fillStyle='#fffdfb';ctx.fill();ctx.strokeStyle='#240b21';ctx.lineWidth=2;ctx.stroke();text('PROBE',px,py+40,12,'#240b21','center');
- text('0',x0,550,13);text('100 units',x0+size,550,13,'#715b69','right');
+ [[20,'A'],[state.site,'B']].forEach(([x,label])=>{ctx.beginPath();ctx.arc(x0+x*5,py,13,0,Math.PI*2);ctx.fillStyle='#222A55';ctx.fill();text(label,x0+x*5,py-27,20,'#222A55','center');});
+ ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fillStyle='#fffdfb';ctx.fill();ctx.strokeStyle='#222A55';ctx.lineWidth=2;ctx.stroke();text('PROBE',px,py+40,12,'#222A55','center');
+ text('0',x0,550,13);text('100 units',x0+size,550,13,'#4A5070','right');
  const result=nearest({x:state.probe,y:50},[{x:20,y:50},{x:state.site,y:50}]);
  $('metric').textContent=result.winners.length===2?'A = B':result.winners[0]===0?'A nearer':'B nearer';
  $('description').textContent=`Probe (${state.probe}, 50): A is ${Number(result.distances[0].toFixed(1))} units away; B is ${Number(result.distances[1].toFixed(1))}. Boundary x = ${bound}.`;
  $('question').textContent=`For the current probe at x = ${state.probe}, is A or B nearer, or are the distances equal? Read the distances, then explain your choice.`;
 }
 function render(){
- if(ctx){ctx.clearRect(0,0,800,560);ctx.fillStyle='#f6f0f2';ctx.fillRect(0,0,800,560);({symmetry:drawSymmetry,waves:drawWaves,regions:drawRegions})[mode]();}
+ if(ctx){ctx.clearRect(0,0,800,560);ctx.fillStyle='#F2EDE4';ctx.fillRect(0,0,800,560);({symmetry:drawSymmetry,waves:drawWaves,regions:drawRegions})[mode]();}
  else {$('metric').textContent='Diagram unavailable';$('description').textContent='Use the explanation, controls and feedback to investigate the same model.';}
  canvas.setAttribute('aria-label',`${lessons[mode].title} ${$('description').textContent}`);
  lessons[mode].controls.forEach(([key,,,,,unit])=>{$(`out-${key}`).textContent=Number(state[key].toFixed(1))+unit;$(`control-${key}`).value=state[key];});
@@ -83,3 +84,65 @@ $('clear-pin').addEventListener('click',()=>{$('comparison').hidden=true;$('pin'
 $('answer-form').addEventListener('submit',event=>{event.preventDefault();const result=grade(mode,mode==='regions'?$('choice').value:$('answer').value,state);$('feedback').textContent=result.message;$('feedback').dataset.correct=String(result.correct);});
 choose('symmetry');
 new ResizeObserver(() => render()).observe(canvas);
+
+function renderCatalogue(){
+ const visible=matchingFamilies($('catalogue-search').value,$('catalogue-status').value);
+ $('catalogue-count').textContent=`${visible.length} of ${families.length} families · ${visible.reduce((n,f)=>n+f.modules.length,0)} of 40 source engines`;
+ $('catalogue-empty').hidden=visible.length>0;
+ $('family-list').innerHTML=visible.map(f=>`<details class="family"><summary><span class="family-title">${f.title}</span><span class="family-status">${f.status}</span><span class="family-number">${f.modules.length} engines</span></summary><div class="family-body"><p class="engine-names">${f.names}</p><h3>The learning opportunity</h3><p>${f.learn}</p><h3>Integration path</h3><p>${f.next}</p><p class="small"><b>Already in Study:</b> ${f.overlap}.</p><a href="${f.href}">${f.action} →</a></div></details>`).join('');
+}
+$('catalogue-search').addEventListener('input',renderCatalogue);
+$('catalogue-status').addEventListener('change',renderCatalogue);
+renderCatalogue();
+
+$('deeper').addEventListener('click',()=>{
+ const missions={symmetry:'Level up: make a pattern with a smallest matching turn of 30°. Change the repeats, test a turn, then explain your rule.',waves:'Level up: make the combined amplitude exactly 1 unit. Change the phase and explain why the result is smaller than the two input amplitudes added together.',regions:'Level up: move station B to 60, then find a probe position equally far from A and B. Explain what happens to the boundary.'};
+ $('mission').textContent=missions[mode];$('mission').hidden=false;
+ $('controls').querySelector('input').focus();
+});
+
+// Exports stay in memory. Rerender geometry at 4× instead of stretching the screen bitmap.
+let exportFile, exportURL;
+const sizes={portrait:[2160,3840],square:[2400,2400],artwork:[3200,2240]};
+function invalidateExport(){
+ exportFile=null; ['download-export','share-export','print-export'].forEach(id=>$(id).disabled=true);
+ $('export-preview').hidden=true; $('export-dimensions').textContent='Preview your current choices to see the exact output.';
+ $('export-status').textContent='Preview again to capture your current creation and export choices.';
+}
+function wrapCaption(context,value,x,y,width,lineHeight){
+ let row='';
+ for(const word of value.trim().split(/\s+/)){const next=row?`${row} ${word}`:word;if(context.measureText(next).width>width&&row){context.fillText(row,x,y);y+=lineHeight;row=word;}else row=next;}
+ if(row)context.fillText(row,x,y);return y+lineHeight;
+}
+async function prepareExport(){
+ const button=$('prepare-export');button.disabled=true;
+ try{
+ const drawing=document.createElement('canvas');drawing.width=3200;drawing.height=2240;
+ const original=ctx;ctx=drawing.getContext('2d');exporting=true;
+ try{ctx.scale(4,4);ctx.fillStyle='#F2EDE4';ctx.fillRect(0,0,800,560);({symmetry:drawSymmetry,waves:drawWaves,regions:drawRegions})[mode]();}finally{ctx=original;exporting=false;}
+ const [width,height]=sizes[$('export-format').value], output=document.createElement('canvas');output.width=width;output.height=height;
+ const target=output.getContext('2d'), margin=Math.round(width*.045), caption=$('export-caption').checked;
+ target.fillStyle='#F7F3EC';target.fillRect(0,0,width,height);
+ const captionSpace=caption?Math.round(width*.25):0, roomH=height-margin*2-captionSpace;
+ const scale=Math.min((width-margin*2)/3200,roomH/2240),dw=3200*scale,dh=2240*scale;
+ target.drawImage(drawing,(width-dw)/2,margin+(roomH-dh)/2,dw,dh);
+ if(caption){target.fillStyle='#222A55';target.font=`bold ${width*.024}px Arial`;target.textAlign='left';let y=height-captionSpace; y=wrapCaption(target,$('export-title').value,margin,y,width-margin*2,width*.032);target.font=`${width*.018}px Arial`;wrapCaption(target,$('export-explanation').value,margin,y+width*.012,width-margin*2,width*.026);}
+ const blob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));if(!blob)throw new Error('PNG encoding unavailable');
+ exportFile=new File([blob],`pattern-${mode}-${width}x${height}.png`,{type:'image/png'});
+ if(exportURL)URL.revokeObjectURL(exportURL);exportURL=URL.createObjectURL(blob);
+ $('export-preview').src=exportURL;$('export-preview').hidden=false;$('print-image').src=exportURL;
+ $('export-dimensions').textContent=`${width} × ${height} px · PNG · ${(blob.size/1024/1024).toFixed(2)} MB`;
+ $('download-export').disabled=false;$('print-export').disabled=false;
+ const supported=Boolean(navigator.canShare&&navigator.canShare({files:[exportFile]}));$('share-export').hidden=!supported;$('share-export').disabled=!supported;
+ $('export-status').textContent='Ready. This preview is the exact PNG you will download. A4 printing fits it within 12 mm margins.';
+ }catch(error){invalidateExport();$('export-status').textContent='Your browser could not prepare this PNG. Try a different size or browser.';}finally{button.disabled=false;}
+}
+$('export-caption').addEventListener('change',()=>{$('caption-fields').hidden=!$('export-caption').checked;invalidateExport();});
+['export-format','export-title','export-explanation'].forEach(id=>$(id).addEventListener('input',invalidateExport));
+$('controls').addEventListener('input',invalidateExport);
+['step','reset'].forEach(id=>$(id).addEventListener('click',invalidateExport));
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',invalidateExport));
+$('prepare-export').addEventListener('click',prepareExport);
+$('download-export').addEventListener('click',()=>{if(!exportFile)return;const a=document.createElement('a');a.href=exportURL;a.download=exportFile.name;a.click();});
+$('share-export').addEventListener('click',async()=>{if(!exportFile)return;try{await navigator.share({files:[exportFile]});$('export-status').textContent='Share sheet closed. You can still download your PNG.';}catch(error){$('export-status').textContent=error.name==='AbortError'?'Sharing cancelled. Your PNG is still ready to download.':'Sharing was unavailable. Use Download PNG instead.';}});
+$('print-export').addEventListener('click',()=>{if(exportFile)window.print();});
