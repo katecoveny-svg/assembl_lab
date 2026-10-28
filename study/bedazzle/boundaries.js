@@ -26,3 +26,9 @@ export function constrainCursor(mode, position, size, shape) {
       : 1;
   return { x: position.x * scale, y: position.y * scale };
 }
+
+export function overlaps(a, b) {
+  const minimum = footprint(a.size, a.shape) + footprint(b.size, b.shape);
+  // No permissive tolerance: the enclosing footprints must not intersect.
+  return Math.hypot(a.x - b.x, a.y - b.y) < minimum;
+}

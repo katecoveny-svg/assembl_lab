@@ -59,3 +59,15 @@ playwright-cli -s=bedazzle-review run-code --filename study/bedazzle/tests/brows
 Results: 19 node regressions passed. Actual browser Right×20 → Up×20 → Enter placed one stone without error. The browser handler passed all 72 corner combinations (both surfaces, three sizes, three shapes, four corners) and a board-edge → brush/statement-marquise transition; zero page errors. Expanded corner coverage uses dispatched keyboard events; the original reproduction uses Playwright keyboard input.
 
 Crystal finish now uses a small 256×128 original procedural light-panel texture, prefiltered once, plus clearcoat. It uses no external assets, transmission pass, extra per-frame scene, continuous animation or new dependencies. Updated front/orbit/phone screenshots are in `evidence/`. A fresh transparent 1200×1200 PNG export passed after this material change; phone overflow remains false.
+
+## Review correction: export concurrency, overlap and instance lifecycle
+
+- Image export copies the rendered frame into its own 2D canvas and restores live renderer dimensions/DPR, camera aspect and cursor visibility synchronously in `finally`, before asynchronous encoding. Concurrent requests cannot later restore a temporary export view. Download extensions now follow the encoded Blob MIME type rather than a selector that may change during encoding.
+- Pairwise footprints no longer apply the permissive 0.97 multiplier. Board marquise stones of size 0.16 at (0,0) and (0,0.44) are rejected. Unit tests cover both sides of the footprint threshold for every shape/size. Existing starter geometry remains valid.
+- Removed InstancedMeshes call `dispose()` to release instance attributes through the vendored Three.js hook, alongside existing geometry/material cleanup.
+
+`node --test study/bedazzle/tests/boundaries.test.mjs`: 20 passed.
+
+`playwright-cli -s=bedazzle-lifecycle run-code --filename study/bedazzle/tests/browser-lifecycle.mjs`: passed in a fresh browser context. The regression intercepts only its test page to inspect renderer state; production code exposes no diagnostics. Three delayed Download/Share/Print encodes completed out of order, including a failed encoding, while the live view was resized from 1010×678/aspect 1.4896755 to 596×678/aspect 0.8790560. The resized state survived completion; a separate failed encoding also preserved the live state and displayed the failure. The overlap fixture was rejected through the actual file input. Across 20 clear/undo/redo/load cycles, live WebGL buffers stayed at 22, geometries at 6 and textures at 1; 124 instance-disposal hooks ran. Zero page errors. These counts characterize the tested Chromium session, not a universal device budget.
+
+These are correctness-only changes under the visual-release hold. No merge, deployment or visual redesign is included.

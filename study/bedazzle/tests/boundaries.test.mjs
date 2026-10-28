@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { constrainCursor, insideBoundary } from "../boundaries.js";
+import { constrainCursor, insideBoundary, overlaps } from "../boundaries.js";
 for (const mode of ["brush", "board"])
   for (const size of [0.11, 0.16, 0.23])
     for (const shape of ["round", "square", "marquise"]) {
@@ -55,4 +55,17 @@ test("reported x=1, y=1.1 brush crash projects inside with statement marquise ma
   const p = constrainCursor("brush", { x: 1, y: 1.1 }, 0.23, "marquise");
   assert.ok(insideBoundary("brush", { ...p, size: 0.23, shape: "marquise" }));
   assert.ok(1 - p.x ** 2 / 1.25 ** 2 - p.y ** 2 / 1.75 ** 2 > 0);
+});
+
+test("marquise tips cannot overlap through a permissive distance tolerance", () => {
+  const a = { x: 0, y: 0, size: 0.16, shape: "marquise" };
+  assert.equal(overlaps(a, { ...a, y: 0.44 }), true);
+  assert.equal(overlaps(a, { ...a, y: 0.4481 }), false);
+  for (const shape of ["round", "square", "marquise"])
+    for (const size of [0.11, 0.16, 0.23]) {
+      const r = size * (shape === "marquise" ? 1.4 : 1.1),
+        stone = { x: 0, y: 0, size, shape };
+      assert.equal(overlaps(stone, { ...stone, y: r * 2 - 1e-8 }), true);
+      assert.equal(overlaps(stone, { ...stone, y: r * 2 + 1e-8 }), false);
+    }
 });

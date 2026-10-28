@@ -1,4 +1,4 @@
-import { footprint, insideBoundary, constrainCursor } from "./boundaries.js";
+import { overlaps, insideBoundary, constrainCursor } from "./boundaries.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 const $ = (id) => document.getElementById(id),
@@ -108,13 +108,8 @@ function surface(x, y) {
   };
 }
 function fits(s, stones = state.stones) {
-  const r = footprint(s.size, s.shape);
   if (!insideBoundary(state.mode, s)) return false;
-  return !stones.some(
-    (t) =>
-      Math.hypot(t.x - s.x, t.y - s.y) <
-      (footprint(t.size, t.shape) + r) * 0.97,
-  );
+  return !stones.some((t) => overlaps(s, t));
 }
 function gemGeometry(shape) {
   const n = shape === "square" ? 4 : shape === "marquise" ? 8 : 10,
@@ -159,6 +154,7 @@ const geometries = Object.fromEntries(
 function rebuild() {
   for (const child of [...object.children]) {
     object.remove(child);
+    if (child.isInstancedMesh) child.dispose();
     if (!Object.values(geometries).includes(child.geometry))
       child.geometry?.dispose();
     if (child.material !== brushMat) child.material?.dispose();
@@ -583,6 +579,10 @@ async function imageBlob() {
     ratio = renderer.getPixelRatio(),
     aspect = camera.aspect,
     visible = target.visible;
+  const c = document.createElement("canvas"),
+    format = $("format").value;
+  c.width = w;
+  c.height = h;
   try {
     target.visible = false;
     renderer.setPixelRatio(1);
@@ -590,23 +590,12 @@ async function imageBlob() {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     render();
-    const c = document.createElement("canvas");
-    c.width = w;
-    c.height = h;
-    const ctx = c.getContext("2d"),
-      format = $("format").value;
+    const ctx = c.getContext("2d");
     if (format === "jpeg" || !$("transparent").checked) {
       ctx.fillStyle = "#eee2fa";
       ctx.fillRect(0, 0, w, h);
     }
     ctx.drawImage(renderer.domElement, 0, 0);
-    return await new Promise((resolve, reject) =>
-      c.toBlob(
-        (b) => (b ? resolve(b) : reject(Error("Image export failed."))),
-        "image/" + format,
-        0.94,
-      ),
-    );
   } finally {
     renderer.setPixelRatio(ratio);
     renderer.setSize(size.x, size.y, false);
@@ -615,11 +604,20 @@ async function imageBlob() {
     target.visible = visible;
     render();
   }
+  // The shared live renderer is restored synchronously, before encoding can yield.
+  // Each request owns its copied canvas, so concurrent exports cannot restore stale state.
+  return new Promise((resolve, reject) =>
+    c.toBlob(
+      (b) => (b ? resolve(b) : reject(Error("Image export failed."))),
+      "image/" + format,
+      0.94,
+    ),
+  );
 }
 async function exportImage(share = false) {
   try {
     const blob = await imageBlob(),
-      name = "bedazzle." + ($("format").value === "jpeg" ? "jpg" : "png"),
+      name = "bedazzle." + (blob.type === "image/jpeg" ? "jpg" : "png"),
       file = new File([blob], name, { type: blob.type });
     if (share && navigator.canShare?.({ files: [file] })) {
       try {
