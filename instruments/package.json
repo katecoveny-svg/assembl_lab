@@ -5,7 +5,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "playwright test",
-    "serve": "python3 -m http.server 4173 --directory .."
+    "serve": "python3 -m http.server 4173 --directory ..",
+    "test:unit": "node --test unit/*.test.js"
   },
   "keywords": [],
   "author": "",

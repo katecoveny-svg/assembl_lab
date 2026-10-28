@@ -1,13 +1,14 @@
+import { createFrameClock } from "./frame-clock.js";
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { $, light } from "./app.js";
+import { $, light, isLighterQuality } from "./app.js";
 export { T };
-export function studio() {
+export function studio({ antialias = true } = {}) {
   const canvas = $("#canvas");
   const renderer = new T.WebGLRenderer({
     canvas,
-    antialias: !light,
+    antialias: antialias && !light,
     preserveDrawingBuffer: true,
     alpha: false,
   });
@@ -71,24 +72,14 @@ export function studio() {
     return ray.ray.intersectPlane(plane, new T.Vector3());
   };
   let frozen = false,
-    visible = true,
-    last = performance.now(),
-    frames = 0,
-    elapsed = 0,
-    fps = 0;
+    visible = true;
+  const clock = createFrameClock(performance.now());
   function loop(t) {
-    const dt = Math.min((t - last) / 1000, 0.034);
-    last = t;
     if (visible) {
-      if (!frozen) api.update?.(dt, t / 1000);
+      const { simulationSeconds } = clock.tick(t);
+      if (!frozen) api.update?.(simulationSeconds, t / 1000);
       controls.update();
       renderer.render(scene, camera);
-      frames++;
-      elapsed += dt;
-      if (elapsed > 1) {
-        fps = Math.round(frames / elapsed);
-        frames = elapsed = 0;
-      }
     }
     requestAnimationFrame(loop);
   }
@@ -100,16 +91,24 @@ export function studio() {
     canvas,
     point,
     ray,
+    setQuality(value) {
+      renderer.setPixelRatio(
+        Math.min(devicePixelRatio, isLighterQuality(value) ? 1.25 : 1.75),
+      );
+      resize();
+      clock.reset(performance.now());
+    },
     freeze(v) {
       frozen = v;
     },
     visible(v) {
       visible = v;
+      clock.reset(performance.now());
     },
     render() {
       renderer.render(scene, camera);
     },
-    fps: () => fps,
+    fps: () => clock.fps(),
   };
   requestAnimationFrame(loop);
   canvas.addEventListener("webglcontextlost", (e) => {

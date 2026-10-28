@@ -71,9 +71,14 @@ export function history(capture, restore) {
 // Detect before creating a renderer; a Canvas2D study stays playable without WebGL2.
 const gpu = !!document.createElement("canvas").getContext("webgl2");
 const mode = new URLSearchParams(location.search).get("mode");
-export const light =
-  mode === "light" ||
-  (mode !== "full" && matchMedia("(max-width:650px)").matches);
+export function isLighterQuality(value) {
+  return (
+    value === "light" ||
+    (value !== "full" &&
+      (kind === "reality-remix" || matchMedia("(max-width:650px)").matches))
+  );
+}
+export const light = isLighterQuality(mode);
 let api;
 async function start() {
   try {
@@ -100,13 +105,16 @@ async function start() {
       api.freeze(frozen);
     };
     $("#quality").value = ["light", "full"].includes(mode) ? mode : "auto";
+    $("#quality").disabled = !api.setQuality;
     $("#quality").onchange = () => {
       const u = new URL(location);
       const v = $("#quality").value;
       v === "auto"
         ? u.searchParams.delete("mode")
         : u.searchParams.set("mode", v);
-      location.href = u;
+      const note = api.setQuality(v);
+      window.history.replaceState(null, "", u);
+      status(note || "Rendering quality updated. Artwork and undo kept.");
     };
     async function blob() {
       await api.prepareCapture?.();
@@ -145,6 +153,8 @@ async function start() {
       }
     };
     const preparePrint = () => {
+      // Native beforeprint cannot await promises; solid geometry supplies a synchronous flush.
+      api.preparePrint?.();
       api.render?.();
       let img = $(".print-image");
       if (!img) {

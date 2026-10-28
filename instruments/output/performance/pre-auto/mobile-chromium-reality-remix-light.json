@@ -1,0 +1,18 @@
+{
+  "frames": 144,
+  "wallMilliseconds": 5029.800000011921,
+  "measuredFPS": 28.6,
+  "displayedFPS": [
+    28,
+    25,
+    25,
+    31
+  ],
+  "backend": "spark-gaussians",
+  "stats": {
+    "splats": 2400,
+    "fps": 31,
+    "opacity": 2112.00000000013,
+    "displacement": 0
+  }
+}
