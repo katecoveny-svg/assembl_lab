@@ -1,0 +1,2 @@
+# Built third-party shader strings retain upstream whitespace verbatim.
+dist/** linguist-generated=true -whitespace
