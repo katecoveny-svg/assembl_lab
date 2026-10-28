@@ -67,7 +67,28 @@ assert.match(await page.locator('#hero-temp').innerText(),/15.00/);
 assert.match(await page.locator('#hero-time').innerText(),/0.0 \/ 1/);
 await page.reload();assert.match(await page.locator('#progress').textContent(),/Explored: not yet/);
 await page.screenshot({path:out+'climate-desktop.png',fullPage:true});
-for(const width of [320,375]){await page.setViewportSize({width,height:812});await page.goto(base);await page.waitForSelector('.s3-host canvas');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('.s3-host canvas').evaluate(e=>getComputedStyle(e).pointerEvents),'none');await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+`climate-${width}.png`,fullPage:true});await page.screenshot({path:out+`climate-${width}-viewport.png`});}
+for(const width of [320,375]){await page.setViewportSize({width,height:812});await page.goto(base);await page.waitForSelector('.s3-host canvas');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('.s3-host canvas').evaluate(e=>getComputedStyle(e).pointerEvents),'none');
+assert.equal(await page.locator('#run').count(),1);
+assert.equal(await page.locator('#mobile-controls #run').count(),1);
+assert.ok(await page.locator('#run').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight),'Run visible in initial phone viewport');
+assert.ok(await page.locator('[data-surface="ice"]').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight),'surface choices visible in initial phone viewport');
+await page.screenshot({path:out+`climate-${width}-ready.png`});
+await page.getByRole('button',{name:'More stages →',exact:true}).click();
+assert.ok(await page.locator('[data-step="4"]').evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;}),'Transfer revealed by continuation control');
+await page.getByRole('button',{name:'05 Transfer',exact:true}).click();
+assert.match(await page.locator('#stage-position').innerText(),/5 of 5/);
+await page.getByRole('button',{name:'← Earlier stages',exact:true}).click();
+await page.locator('#explore').click();
+await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+`climate-${width}.png`,fullPage:true});await page.screenshot({path:out+`climate-${width}-viewport.png`});}
+await page.setViewportSize({width:1280,height:900});
+await page.locator('#desktop-controls #run').waitFor();
+assert.equal(await page.locator('#desktop-controls #run').count(),1);
+assert.match(await page.locator('#hero-temp').innerText(),/17.37/);
+await page.setViewportSize({width:375,height:812});
+await page.locator('#mobile-controls #run').waitFor();
+assert.equal(await page.locator('#mobile-controls #run').count(),1);
+assert.equal(await page.locator('#run').count(),1);
+assert.match(await page.locator('#hero-temp').innerText(),/17.37/);
 // Block storage before any script executes and force the actual no-WebGL fallback.
 const fallback=await browser.newContext({viewport:{width:375,height:812},reducedMotion:'reduce'});
 await fallback.addInitScript(()=>{for(const name of ['localStorage','sessionStorage'])Object.defineProperty(window,name,{get(){throw new DOMException('Blocked','SecurityError')}});const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/.test(type)?null:original.call(this,type,...args)};});

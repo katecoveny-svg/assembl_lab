@@ -8,3 +8,11 @@
 .balance-line{font-size:10px;color:#475c56;background:#e8eee6;padding:8px 10px;border-radius:7px;margin-top:10px;font-variant-numeric:tabular-nums}
 @media(max-width:700px){.balance-line{font-size:9px;margin-top:8px}}
 @media(max-width:700px){.journey button{min-height:44px;font-size:11px}.scene-tools button{min-height:40px;font-size:10px;padding:7px 9px}.scene-help summary{width:40px;min-height:40px!important;padding:8px!important;font-size:12px}.header-actions button{font-size:10px;min-height:36px;padding:7px 10px}.header-actions a{font-size:9px}.surfaces b{font-size:11px}.surfaces small{font-size:9px}.fixed-conditions,.assist-note{font-size:11px}.assistance button{font-size:11px}}
+.journey-cue{display:none}#mobile-controls:empty{display:none}
+@media(max-width:700px){
+ .journey{margin-bottom:0}.journey-cue{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 9px;font-size:10px;color:var(--muted)}
+ .journey-cue button{border:0;background:transparent;min-height:36px;padding:6px 0 6px 12px;font-size:11px;font-weight:650;color:var(--ink)}
+ #mobile-controls{padding:12px 0 3px}#mobile-controls .section-label{margin-bottom:8px}
+ #mobile-controls .surfaces button{min-height:65px;gap:4px;padding:7px 2px}#mobile-controls .surface-icon{width:23px;height:17px}
+ #mobile-controls .run-actions{margin-top:8px}#mobile-controls .primary{min-height:44px;padding:10px 14px}
+}

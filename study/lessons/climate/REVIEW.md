@@ -26,3 +26,10 @@ The reference `https://lab.tongjiang.app/` and its linked atmospheric-heating le
 - Local lesson: `http://127.0.0.1:8765/study/lessons/climate/`; embed: `http://127.0.0.1:8765/study/lessons/climate/embed/`; different-origin school fixture: `http://127.0.0.1:8766/school.html`.
 
 Remaining limits: parent/Kate visual acceptance; actual touch-device and screen-reader testing; teacher review of year placement/curriculum and the model's scientific simplifications; real school CMS validation; ordinary public production-header checks after an approved deployment. No offline certification, school publication, merge or deployment. No provider spend or credentials. No shared `kit.js`, `kit.css`, model configuration, navigation, header policy or homepage edits in this refinement.
+
+## Phone review follow-up
+
+- Added a visible stage-count / “More stages” control below the phone stage strip. It reveals Explain and Transfer and switches to “Earlier stages” at the end. Selecting a stage shows its position out of five.
+- Moved the existing primary control group (four surfaces, Run and Restart) immediately below the phone scene. The same DOM nodes move back to the sidebar on desktop; there is no duplicate state or second Run control. Breakpoint changes retain the selected surface and completed model output.
+- Tightened the narrow-screen camera framing without changing the model/scene geometry. At 320×812 and 375×812, the surface choices and Run are inside the initial viewport.
+- Added browser assertions for initial-viewport control bounds, the continuation control revealing Transfer, step position, exactly one Run control, and state retention across both breakpoint directions. `climate-375-ready.png` and `climate-320-ready.png` capture the actionable initial viewport; existing `*-viewport.png` files show the completed run at the same sizes.
