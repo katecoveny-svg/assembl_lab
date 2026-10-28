@@ -199,7 +199,6 @@ test("Liquid is finite, responsive to stirring, and mobile layout fits", async (
   await page.getByRole("button", { name: "Ⅱ Pause", exact: true }).click();
   const before = await page.locator("canvas").screenshot();
   await page.getByRole("button", { name: "↟ Stir the liquid" }).click();
-  await page.getByRole("button", { name: "▶ Resume", exact: true }).click();
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Ⅱ Pause", exact: true }).click();
   expect((await page.locator("canvas").screenshot()).equals(before)).toBe(

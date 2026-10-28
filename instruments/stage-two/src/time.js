@@ -8,6 +8,7 @@ export function timeSculpture({
   snapshot,
 }) {
   renderer.setClearColor("#202747");
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 0.65));
   $("intro").textContent =
     "A little movement, held in space. Turn time over in your hands.";
   $("note").textContent =
@@ -81,8 +82,8 @@ export function timeSculpture({
  vec3 inv=1./ray;vec3 a=(-.5-eye)*inv;vec3 b=(.5-eye)*inv;
  vec3 lo=min(a,b),hi=max(a,b);float nearT=max(max(lo.x,lo.y),lo.z);float farT=min(min(hi.x,hi.y),hi.z);
  if(nearT>farT)discard;nearT=max(nearT,0.);
- vec4 sum=vec4(0.);float delta=(farT-nearT)/192.;
- for(int i=0;i<192;i++){vec3 p=eye+ray*(nearT+(float(i)+.5)*delta)+.5;
+ vec4 sum=vec4(0.);float delta=(farT-nearT)/96.;
+ for(int i=0;i<96;i++){vec3 p=eye+ray*(nearT+(float(i)+.5)*delta)+.5;
  if(abs(p.z-cut)>depth*.5)continue;
  vec4 v=texture(volume,p);float density=max(v.a-threshold,0.);float opacity=1.-exp(-density*delta*65.);
  vec3 colour=v.rgb*(.78+.3*p.y);sum.rgb+=(1.-sum.a)*colour*opacity;sum.a+=(1.-sum.a)*opacity;if(sum.a>.985)break;}
@@ -154,6 +155,7 @@ export function timeSculpture({
     if (regenerate) generate();
   }
   return {
+    isAnimating: () => sweeping,
     getState: () => ({ ...state }),
     setState,
     reset() {

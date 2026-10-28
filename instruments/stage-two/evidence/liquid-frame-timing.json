@@ -1,0 +1,19 @@
+{
+  "samples": 84,
+  "medianMs": 50,
+  "p95Ms": 66.80000000000018,
+  "meanMs": 47.61666666666667,
+  "metrics": "640 PARTICLES · 6496 TRIANGLES · 27.8 ms CPU",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "viewport": [
+    1280,
+    1000
+  ],
+  "dpr": 1,
+  "warnings": [
+    "[.WebGL-0x10c00438a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x10c00438a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x10c00438a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x10c00438a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ]
+}

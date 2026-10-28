@@ -1,31 +1,47 @@
-# Local validation · 28 October 2026
+# Stage-two validation · 28 October 2026
 
-Base: refreshed `origin/main` at `cb0d83351d6cb783a398c6069e09e6859e6a6d44`. Isolated checkout/branch `codex/stage-two-instruments`.
+Isolated checkout/branch `codex/stage-two-instruments`; refreshed main base `cb0d83351d6cb783a398c6069e09e6859e6a6d44`. Existing instrument code/build outputs, patterns and Study overview are untouched. No production merge, provider spending, uploads or credential changes.
 
-## Verified
+## Sonic Loom
 
-- Build with existing pinned esbuild/Three dependencies succeeds; output is isolated under `stage-two/dist`.
-- Four sequential Chromium Playwright tests pass. No app console errors in the volume or fluid checks. Initial shader compile defects were fixed before final checks.
-- Sonic: no AudioContext before Play; context runs after Play; original oscillator events occur; analyser detects a non-zero waveform. Mute lowers master gain; Pause suspends the context; Play resumes animation and sound. Injected rejected resume recovers on a second Play. Simulated interruption and hidden-state change suspend sound, becoming visible does not restart it. `pagehide` closes the context. Voice ceiling is 16. These checks verify signals/state, not a subjective listening assessment.
-- Time: intercepted actual `texSubImage3D` call is 128×128×64 with 4,194,304 source bytes. One RGBA8 GPU texture is nominally another 4 MiB, excluding framebuffer, driver and browser overhead. Whole-process/GPU resident memory was not measured. Source data is retained by the texture; regenerating a motion briefly retains old and new CPU arrays until GC. Orbit uses actual 3D rays. Slice depth, time and threshold each produce different canvas pixels. Undo/reset exercised. PNG downloaded as `.png`. Print snapshot loaded, print media shows it, PDF generated locally.
-- Fluid: original CPU position-based solver uses 640 particles, three 3D density-projection iterations per step, spatial hashing and bounded catch-up (two 1/60 steps per frame). Typed simulation arrays total 33,280 bytes; hash lists and rendering resources add overhead. Compression test reduced mean positive density error from 1.6329 to 0 after eight steps; 240 subsequent steps with stirring stayed finite and within all tank bounds. Recorded Node mean step approximately 7.6–9.5 ms on this Mac. A browser screenshot showed approximately 16.9 ms CPU for a frame; this is not a sustained frame-rate guarantee. Stir visibly changes the scene; undo stores bounded particle snapshots (maximum 30 actions).
-- Narrow 390px viewport has no horizontal overflow in the liquid test. This is desktop emulation, **not physical iPhone testing**.
-- PNG/print are local. Native file sharing button is hidden unless `canShare({files})` succeeds. The OS share sheet was not submitted. No recording feature or MP4 promise.
+Verified with actual UI gestures: AudioContext absent before Play, running after Play; original oscillator events and a non-zero analyser signal; mute gain approaches zero; Pause suspends audio; Play resumes. Injected rejected resume recovers on retry. Synthetic interruption/visibility changes stop audio, and visibility recovery does not automatically start sound. Three real route exits close the audio context, and browser Back reconstructs a silent instrument. Voice count is bounded at 16. These are signal/state checks, not a subjective listening assessment.
 
-## Liquid scope and reviewed alternative
+Keyboard 1–8 and pointer drag produce visibly changed ribbon pixels. Rhythm changes the rendered mesh; keyboard orbit changes the view. Reduced-motion preference now starts paused and removes idle drift. Explicit Play/pluck can resume motion. Tempo/tension and undo/reset remain available.
 
-Liquid is an **experimental 3D particle-fluid view**, not the requested high-fidelity smooth surface. Its density projection prevents excessive compression; it has damping rather than a full viscosity model, and no surface tension or continuous surface reconstruction. This materially limits the water-like appearance. No 2D fallback is misrepresented as 3D.
+## Time Sculpture
 
-Splash review at commit `3df5d621e6f153d7269037cbd8606bd83796f3fd`:
-- MIT licence verified; `package.json` scripts invoke Vite through npx.
-- `main.ts` uses maximum tier counts for particle, posvel, cell and density allocations, including the 180,000-particle tier even for smaller UI choices.
-- Six `public/cubemap` PNGs are fetched; individual image rights were not established.
-- A future Splash adaptation must allocate only a selected low tier, destroy/rebuild all buffers and textures on changes, replace cube maps with original procedural lighting, and test compute pipelines, limits and device-loss handling.
-- Current Chromium reported a WebGPU adapter with maxBufferSize/maxStorageBufferBindingSize 4,294,967,292. No Splash pipeline/device-loss test was run. This does not validate the solver on Chromium, Safari 26 or iPhone.
-- **No upstream software execution was attempted or denied.** Action-time approval to execute unrecognised upstream software remains pending if that route is chosen. The original implementation avoids that dependency; it does not claim equivalent visual quality.
+Actual `texSubImage3D` upload verified: 128×128×64, 4,194,304 source bytes. The RGBA8 GPU allocation is nominally another 4 MiB; whole-process/GPU resident memory is not measured. Regeneration briefly retains old/new CPU arrays until GC. No decoder or user video is present.
 
-## Remaining validation
+Orbit/drag and keyboard orbit expose actual 3D depth. Time, slice thickness and background threshold each change canvas pixels; Home/End slider edits are undoable. PNG and print snapshots verified. Idle volumes now redraw only for changes. Active sweeps use 96 ray samples at a bounded 0.65 render pixel ratio; the full 128×128×64 data texture is retained. This reduced the software-rendered sweep from approximately 128 ms mean frame spacing to approximately 21 ms in short samples.
 
-Physical iPhone and Safari testing, sustained thermal/performance measurements, subjective sound balance, OS sharing flow, and a smooth fluid surface remain open. There is no video importer or clip recorder to validate. No production merge or credential/protection changes were made.
+## Liquid Playground
 
-Screenshots: `evidence/sonic-final.png`, `evidence/time-sculpture-final.png`, `evidence/liquid-final.png`, `evidence/liquid-mobile.png`.
+The particle-only first draft has been replaced by a **connected smooth 3D density surface**. Actual solver positions are deposited into a 40³ scalar field. Marching cubes from the existing pinned Three 0.186.1 package extracts the surface; original procedural studio light boxes supply reflections. No image-based lighting assets or new software dependency.
+
+The original solver has 640 particles, 3D spatial hashing, three density-projection iterations, gravity/bounds and bounded XSPH-style neighbour velocity blending. Stir works by button or drag. Pour recirculates 160 existing particles through a controlled top emitter without expanding allocation. Reset restores the original block; pause/undo work; particle view allows inspection of the same underlying simulation. Surface/pour/stir/reset and narrow-screen rendering are browser-tested. It remains **experimental**: low resolution, approximate viscosity, no calibrated surface tension or validated real-world fluid parameters. It resembles a paint-like liquid rather than physically accurate clear water.
+
+The density compression test reduces mean positive error from 1.6329 to 0 after eight steps. Another 240 steps with stirring remain finite and inside every tank bound. Updated Node mean step was about 16.2 ms in one run (timing varies with system load). Simulation typed arrays total 33,280 bytes; surface field/cache/palette and bounded triangle arrays total about 3.52 MB, excluding JS/hash overhead, environment textures, GPU copies and driver overhead. Maximum surface capacity is 24,000 triangles; observed checks stayed below the cap.
+
+## Browser / frame evidence
+
+Tests run sequentially, one active art scene at a time. Installed headed Google Chrome reports `ANGLE Metal Renderer: Apple M5`. Short 2.5–4 second samples at 1280×1000, DPR 1:
+
+| Scene | Mean frame spacing | Median | p95 |
+| --- | ---: | ---: | ---: |
+| Sonic, playing | 16.7 ms | 16.7 ms | 17.8 ms |
+| Time, active sweep | 16.7 ms | 16.7 ms | 18.5 ms |
+| Liquid, simulating surface | 16.7 ms | 16.7 ms | 18.3 ms |
+
+These are animation-frame timestamps, not GPU execution timings or thermal guarantees. The latest fluid CPU readout was 10.8 ms (an earlier run showed 22.9 ms); do not infer a constant per-frame cost. Separate headless Chromium used **SwiftShader software rendering** and measured fluid mean ~47.6 ms, p95 ~66.8 ms. ReadPixels performance warnings appeared during software screenshots; hardware run had no warnings. Raw timing JSON is retained in `evidence/`.
+
+Final installed-Chrome result: **11 passed, 1 explicitly skipped**. Expanded suite: audio lifecycle/rejection, direct pluck/drag, orbit/slices, local exports, share fallbacks, repeated route transitions, mobile portrait/landscape, reduced-motion and smooth-fluid interactions. The actual native-visibility test is explicitly **skipped with a recorded environment limitation**: both automation browsers kept `document.hidden=false` after attempted tab changes and native minimization, even with background-suppression flags removed. Synthetic visibility handler checks pass, but actual background-tab suspension still needs an ordinary manual browser check. No denial or uncertain external action occurred.
+
+390×844 portrait and 844×390 landscape are desktop viewport emulation, **not physical iPhone tests**. Sharing cancellation/unavailability were injected to exercise fallback UI; no OS share submission occurred. PNG signatures/extension and print snapshot presence were checked. No local video importer or clip recorder is included, so no codec/cancellation/recording claims are made.
+
+## Source review and remaining work
+
+Splash was reviewed read-only at `3df5d621e6f153d7269037cbd8606bd83796f3fd`: MIT, max-tier allocations even for Small, six cube-map PNGs with individually unverified rights. No upstream source/assets/scripts were copied or executed. The current smooth-surface path uses only existing approved Three code plus original implementation. A future Splash replacement still requires action-time upstream execution approval and low-tier allocation/asset/device-loss adaptations; it is not required to run this draft.
+
+Remaining: manual real tab-background verification, subjective audio balance, Safari and physical iPhone testing, sustained thermal performance, native sharing flow, and visual approval of the experimental liquid. No smooth-water realism or full physical accuracy claim.
+
+See `evidence/sonic-drag.png`, `evidence/time-orbit.png`, `evidence/time-slice.png`, `evidence/liquid-surface-default.png`, `evidence/liquid-surface-pour.png`, `evidence/liquid-surface-stir.png` and the portrait/landscape captures.

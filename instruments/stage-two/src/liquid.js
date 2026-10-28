@@ -1,3 +1,4 @@
+import { fluidSurface } from "./fluid-surface.js";
 import { Fluid } from "./fluid-solver.js";
 export function liquid({
   T,
@@ -11,15 +12,18 @@ export function liquid({
   range,
   button,
   snapshot,
+  renderer,
+  resumeAnimation,
 }) {
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 0.85));
   $("intro").textContent =
     "A pocketful of liquid. Stir it, lift it, let it settle.";
-  $("note").textContent = "Experimental 3D particle fluid · 640 particles";
-  $("medium").textContent = "3D DENSITY CONSTRAINTS / PARTICLE VIEW";
+  $("note").textContent = "Experimental 3D liquid · smooth density surface";
+  $("medium").textContent = "3D PARTICLE FLUID / DENSITY SURFACE";
   $("hint").textContent =
     "Drag to orbit · press Stir, or switch gesture to stir";
   $("explanation").textContent =
-    "This small original position-based fluid solver predicts particle motion, finds neighbours in a 3D spatial grid and projects excessive density through three constraint iterations. Gravity, boundaries and damping then update velocity. The particles occupy real x, y and z coordinates. This is an experimental low-resolution particle view, not a continuous water surface or a production fluid solver. It runs on the CPU with Three.js WebGL2 rendering; it does not execute Splash or require WebGPU. There is no 2D texture pretending to be a volume.";
+    "This small original position-based fluid solver predicts particle motion, finds neighbours in a 3D spatial grid and projects excessive density through three constraint iterations. Gravity, boundaries, damping and weighted neighbour velocity blending then update velocity. The particles occupy real x, y and z coordinates. A smooth connected surface is extracted from a 40³ density field using the pinned Three.js marching-cubes implementation. This is an experimental low-resolution liquid, not a production fluid solver. It runs on the CPU with Three.js WebGL2 rendering; it does not execute Splash or require WebGPU. Lighting uses original procedural light boxes, with no image assets.";
   let fluid = new Fluid(),
     gravity = 5,
     accumulator = 0,
@@ -36,6 +40,12 @@ export function liquid({
   );
   mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
   scene.add(mesh);
+  mesh.visible = false;
+  const surface = fluidSurface(scene, renderer);
+  let triangles = 0,
+    pourIndex = 0,
+    pourRemaining = 0,
+    pourClock = 0;
   const floor = new T.Mesh(
     new T.PlaneGeometry(2.85, 2.25),
     new T.MeshStandardMaterial({ color: 0xd4d5dd, roughness: 0.8 }),
@@ -69,11 +79,26 @@ export function liquid({
     mesh.instanceMatrix.needsUpdate = true;
     mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
+    if (surface.mesh.visible) triangles = surface.update(fluid.p);
   }
   draw();
   button("↟ Stir the liquid", () => {
     snapshot();
     fluid.stir(0, 0, 1.4);
+    resumeAnimation();
+  });
+  button("Pour a ribbon", () => {
+    snapshot();
+    pourRemaining = 160;
+    pourClock = 0;
+    resumeAnimation();
+    status("Pouring 160 of the existing particles back into the tank.");
+  });
+  const view = button("View: Smooth liquid", () => {
+    mesh.visible = !mesh.visible;
+    surface.mesh.visible = !mesh.visible;
+    view.textContent = mesh.visible ? "View: Particles" : "View: Smooth liquid";
+    draw();
   });
   const gesture = button("Gesture: Orbit", () => {
     mode = mode === "orbit" ? "stir" : "orbit";
@@ -99,6 +124,7 @@ export function liquid({
   }
   on(canvas, "pointerdown", (e) => {
     if (mode !== "stir") return;
+    resumeAnimation();
     snapshot();
     dragging = true;
     canvas.setPointerCapture(e.pointerId);
@@ -110,11 +136,21 @@ export function liquid({
   on(canvas, "pointerup", () => (dragging = false));
   on(canvas, "pointercancel", () => (dragging = false));
   return {
-    getState: () => ({ gravity, ...fluid.snapshot() }),
+    getState: () => ({
+      gravity,
+      pourIndex,
+      pourRemaining,
+      pourClock,
+      ...fluid.snapshot(),
+    }),
     setState(s) {
       gravity = s.gravity;
+      pourIndex = s.pourIndex || 0;
+      pourRemaining = s.pourRemaining || 0;
+      pourClock = s.pourClock || 0;
       gravityUI(gravity);
       fluid.restore(s);
+      accumulator = 0;
       draw();
     },
     reset() {
@@ -122,6 +158,9 @@ export function liquid({
       gravity = 5;
       gravityUI(gravity);
       accumulator = 0;
+      pourRemaining = 0;
+      pourIndex = 0;
+      pourClock = 0;
       draw();
     },
     update(dt) {
@@ -129,15 +168,34 @@ export function liquid({
       accumulator = Math.min(accumulator + dt, 0.05);
       let steps = 0;
       while (accumulator >= 1 / 60 && steps < 2) {
+        if (pourRemaining > 0) {
+          pourClock += 1 / 60;
+          if (pourClock >= 0.025) {
+            pourClock = 0;
+            for (let j = 0; j < 4 && pourRemaining > 0; j++) {
+              const i = pourIndex++ % fluid.n,
+                k = i * 3;
+              fluid.p[k] = -0.75 + (j % 2) * 0.12;
+              fluid.p[k + 1] = 1.22;
+              fluid.p[k + 2] = -0.25 + Math.floor(j / 2) * 0.12;
+              fluid.v[k] = 0.75;
+              fluid.v[k + 1] = -1.5;
+              fluid.v[k + 2] = 0.2;
+              pourRemaining--;
+            }
+          }
+        }
         fluid.step(1 / 60, gravity);
         accumulator -= 1 / 60;
         steps++;
       }
       draw();
       $("metrics").textContent =
-        `640 PARTICLES · ${(performance.now() - start).toFixed(1)} ms CPU`;
+        `640 PARTICLES · ${triangles} TRIANGLES · ${(performance.now() - start).toFixed(1)} ms CPU`;
     },
     dispose() {
+      surface.dispose();
+      mesh.dispose();
       fluid = null;
     },
   };

@@ -134,6 +134,24 @@ export class Fluid {
     }
     for (let k = 0; k < p.length; k++)
       v[k] = ((p[k] - this.old[k]) / dt) * 0.993;
+    // XSPH-style neighbour velocity blending: a bounded viscosity approximation.
+    // Compute from the same velocity snapshot before applying any correction.
+    this.hash();
+    this.delta.fill(0);
+    for (let i = 0; i < n; i++) {
+      const k = i * 3;
+      let weight = 0;
+      this.each(i, (j, r) => {
+        if (j === i) return;
+        const w = this.kernel(r);
+        weight += w;
+        for (let a = 0; a < 3; a++)
+          this.delta[k + a] += (v[j * 3 + a] - v[k + a]) * w;
+      });
+      if (weight > 0)
+        for (let a = 0; a < 3; a++) this.delta[k + a] *= 0.14 / weight;
+    }
+    for (let k = 0; k < v.length; k++) v[k] += this.delta[k];
     this.steps++;
   }
   stir(x, z, strength = 1) {

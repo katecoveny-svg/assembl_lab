@@ -13,7 +13,7 @@ const status = (text) => ($("status").textContent = text);
 let renderer,
   art,
   disposed = false,
-  paused = false,
+  paused = matchMedia("(prefers-reduced-motion: reduce)").matches,
   raf,
   last = 0;
 const history = [];
@@ -37,7 +37,11 @@ function range(name, min, max, step, value, change) {
   $("controls").append(label);
   on(input, "pointerdown", snapshot);
   on(input, "keydown", (e) => {
-    if (e.key.startsWith("Arrow")) snapshot();
+    if (
+      e.key.startsWith("Arrow") ||
+      ["Home", "End", "PageUp", "PageDown"].includes(e.key)
+    )
+      snapshot();
   });
   on(input, "input", () => {
     out.textContent = input.value;
@@ -89,6 +93,7 @@ try {
     button,
     snapshot,
     renderer,
+    reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
     resumeAnimation() {
       paused = false;
       $("freeze").textContent = "Ⅱ Pause";
@@ -101,9 +106,16 @@ try {
       : document.body.dataset.instrument === "liquid-playground"
         ? liquid(api)
         : timeSculpture(api);
+  art.update(0, 0);
+  let dirty = true;
+  orbit.addEventListener("change", () => (dirty = true));
+  on(document, "input", () => (dirty = true));
+  on(document, "click", () => (dirty = true));
+  on(document, "keydown", () => (dirty = true));
   const resize = new ResizeObserver(() => {
     const r = stage.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
+    dirty = true;
     camera.aspect = r.width / r.height;
     camera.updateProjectionMatrix();
   });
@@ -116,17 +128,24 @@ try {
     if (document.hidden) return;
     if (!paused) art.update(dt, now / 1000);
     orbit.update();
-    renderer.render(scene, camera);
+    if (dirty || (!paused && (art.isAnimating?.() ?? true))) {
+      renderer.render(scene, camera);
+      dirty = false;
+    }
   }
   raf = requestAnimationFrame(frame);
   on($("undo"), "click", () => {
     const s = history.pop();
-    if (s) art.setState(s);
+    if (s) {
+      art.setState(s);
+      art.update(0, last / 1000);
+    }
     $("undo").disabled = !history.length;
   });
   on($("reset"), "click", () => {
     snapshot();
     art.reset();
+    art.update(0, last / 1000);
     orbit.reset();
   });
   const pause = () => {
@@ -144,6 +163,27 @@ try {
   });
   on(document, "visibilitychange", () => {
     if (document.hidden) pause();
+  });
+  on(matchMedia("(prefers-reduced-motion: reduce)"), "change", (e) => {
+    if (e.matches) pause();
+  });
+  on(canvas, "keydown", (e) => {
+    if (!orbit.enabled) return;
+    const rotations = { ArrowLeft: 0.12, ArrowRight: -0.12 };
+    if (e.key in rotations) {
+      e.preventDefault();
+      camera.position.applyAxisAngle(new T.Vector3(0, 1, 0), rotations[e.key]);
+    }
+    if (e.key === "+" || e.key === "=") {
+      e.preventDefault();
+      camera.position.multiplyScalar(0.93);
+    }
+    if (e.key === "-") {
+      e.preventDefault();
+      camera.position.multiplyScalar(1.07);
+    }
+    camera.position.clampLength(orbit.minDistance, orbit.maxDistance);
+    orbit.update();
   });
   async function blob() {
     renderer.render(scene, camera);
@@ -218,7 +258,12 @@ try {
     abort.abort();
   });
   $("loading").hidden = true;
-  $("freeze").textContent = "Ⅱ Pause";
+  $("freeze").textContent = paused ? "▶ Resume" : "Ⅱ Pause";
+  $("freeze").setAttribute("aria-pressed", String(paused));
+  if (paused)
+    status(
+      "Motion is paused for your reduced-motion preference. Resume when ready.",
+    );
 } catch (e) {
   $("loading").textContent =
     "This instrument needs WebGL2. Try a current browser with hardware graphics enabled.";

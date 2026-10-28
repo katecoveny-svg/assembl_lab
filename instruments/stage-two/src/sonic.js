@@ -10,6 +10,7 @@ export function sonic({
   button,
   snapshot,
   resumeAnimation,
+  reducedMotion,
 }) {
   $("intro").textContent =
     "Pluck a colour. Weave a rhythm. Let the ribbons answer.";
@@ -167,6 +168,7 @@ export function sonic({
     );
   }
   function pluck(i, x = 0, strength = 1) {
+    resumeAnimation();
     pulses.push({ i, x, strength, age: 0 });
     if (pulses.length > 48) pulses.shift();
     if (!playing || context?.state !== "running" || voices.size >= 16) return;
@@ -268,7 +270,8 @@ export function sonic({
         for (let j = 0; j < a.count; j++) {
           const x = base[j * 3],
             y = base[j * 3 + 1];
-          let z = 0.32 * Math.sin(x * 1.4 + i * 0.45 + t * 0.3);
+          let z =
+            0.32 * Math.sin(x * 1.4 + i * 0.45 + (reducedMotion ? 0 : t * 0.3));
           for (const p of pulses)
             if (p.i === i)
               z +=

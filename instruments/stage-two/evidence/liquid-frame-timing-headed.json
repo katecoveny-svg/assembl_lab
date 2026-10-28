@@ -1,0 +1,14 @@
+{
+  "samples": 240,
+  "medianMs": 16.699999999999818,
+  "p95Ms": 18.300000000000182,
+  "meanMs": 16.666666666666664,
+  "metrics": "640 PARTICLES · 6004 TRIANGLES · 10.8 ms CPU",
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)",
+  "viewport": [
+    1280,
+    1000
+  ],
+  "dpr": 1,
+  "warnings": []
+}
