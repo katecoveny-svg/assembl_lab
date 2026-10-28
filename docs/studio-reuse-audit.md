@@ -92,3 +92,9 @@ Based on main e1ae010c57bdb62975075c437332bfb99e2d9da5 after PRs 18/19 merged ex
 - Recovery browser verification at 390×844: symmetry answer 60 and challenge, waves 180-degree cancellation answer 0, nearest-site tie feedback, export invalidation on mode change, actual portrait PNG download. document scroll width equals viewport width (390). Desktop search for flocking returns the systems family. New screenshots saved in task evidence directory; earlier before/after and print evidence retained.
 - Seven Node tests pass, including all-40 coverage and flocking search regression. JS syntax checks pass. No build, typecheck or lint script is declared; none is falsely reported as run.
 - Native share-sheet delivery to another app and physical printing are intentionally untested. Protected deployment UI needs an authenticated Vercel session; local browser flows do not establish deployed UI verification.
+
+## Browser-history regression
+
+Independent QA found that browser Back restored the ready-only select value after initial catalogue rendering, leaving all eight families visible. The catalogue now rerenders in a deferred task after `pageshow`, covering restored form state without requiring an input/change event.
+
+Manual browser regression (IAB): select Related lessons ready → Back to study machines → browser Back. Confirm select remains ready and exactly one family / three related engines is rendered; repeated twice successfully. Also tested restored search: All families + flocking → Study → Back returns one family / ten engines with the query intact. Evidence: task `evidence/back-filter-fixed.txt` and `back-filter-fixed.jpg`. This requires real browser history/form restoration; the Node data tests alone do not cover it.
