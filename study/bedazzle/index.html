@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Bedazzle Studio · assembl Lab</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/assets/vendor/three/three.module.min.js",
+          "three/addons/": "/assets/vendor/three/addons/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <a href="/study/">assembl <span>Lab /</span></a
+      ><span>SMALL STONES. BIG PERSONALITY.</span>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">THE GEM PLAYGROUND</p>
+          <h1>Bedazzle<span> Studio</span></h1>
+          <p>A little sparkle. Entirely your own.</p>
+        </div>
+        <div class="switch">
+          <button data-mode="brush" aria-pressed="true">Hairbrush</button
+          ><button data-mode="board" aria-pressed="false">Art board</button>
+        </div>
+      </section>
+      <div class="workspace">
+        <section class="stage">
+          <div
+            id="view"
+            tabindex="0"
+            role="application"
+            aria-label="Gem canvas. Arrow keys move placement cursor. Enter places a gem. Delete erases nearest gem."
+          ></div>
+          <div class="stage-top">
+            <span id="count">0 stones</span
+            ><button id="home">Front view ↗</button>
+          </div>
+          <div class="stage-bottom">
+            <button id="design" aria-pressed="true">✦ Design</button
+            ><button id="play" aria-pressed="false">↻ Orbit</button
+            ><button id="minus" aria-label="Zoom out">−</button
+            ><button id="plus" aria-label="Zoom in">+</button>
+          </div>
+        </section>
+        <aside>
+          <p class="eyebrow">MAKE IT SHINE</p>
+          <h2>Your gem bar</h2>
+          <label
+            >Shape<select id="shape">
+              <option value="round">Brilliant round</option>
+              <option value="square">Princess square</option>
+              <option value="marquise">Marquise</option>
+            </select></label
+          >
+          <div id="colors" aria-label="Gem colours"></div>
+          <label
+            >Stone size<select id="size">
+              <option value="0.11">Tiny</option>
+              <option value="0.16" selected>Classic</option>
+              <option value="0.23">Statement</option>
+            </select></label
+          ><label
+            >Finish<select id="finish">
+              <option value="crystal">Crystal</option>
+              <option value="metal">Metallic</option>
+              <option value="pearl">Frosted</option>
+            </select></label
+          ><label
+            >Placement<select id="pattern">
+              <option value="single">One at a time</option>
+              <option value="mirror">Mirror pair</option>
+              <option value="row">Row of three</option>
+            </select></label
+          >
+          <div class="actions">
+            <button id="erase" aria-pressed="false">Eraser</button
+            ><button id="undo">↶ Undo</button><button id="redo">↷ Redo</button
+            ><button id="reset">Clear</button>
+          </div>
+          <p id="status" role="status">
+            Tap the brush to add a little brilliance.
+          </p>
+          <details>
+            <summary>Save, share & export ↗</summary>
+            <label
+              >Composition<select id="aspect">
+                <option value="square">Square · 1200 × 1200</option>
+                <option value="portrait">Portrait · 1200 × 1600</option>
+                <option value="landscape">Landscape · 1600 × 1200</option>
+              </select></label
+            ><label
+              >Image<select id="format">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG</option>
+              </select></label
+            ><label class="check"
+              ><input type="checkbox" id="transparent" />Transparent PNG</label
+            ><button id="export">Download image</button
+            ><button id="share">Share image</button
+            ><button id="svg">Editable board SVG</button
+            ><button id="save">Save project</button
+            ><label class="load"
+              >Load project<input
+                id="load"
+                type="file"
+                accept="application/json,.json" /></label
+            ><button id="print">Print view</button>
+          </details>
+        </aside>
+      </div>
+      <footer>
+        <p>
+          Design: tap to place · Orbit: drag to turn · Scroll stays yours.<br />Keyboard:
+          arrows move the cursor, Enter places, Delete erases.
+        </p>
+        <p>
+          Local only. No account. Just sparkle.<br />Decorative layouts, not
+          physical fitting templates.
+        </p>
+      </footer>
+    </main>
+    <div id="printout"></div>
+    <script type="module" src="studio.js"></script>
+  </body>
+</html>
