@@ -109,9 +109,15 @@ export async function start() {
     s.scene.add(mesh);
     reassembling = false;
   }
-  const capture = () => data.map(({ x, y, z, a }) => ({ x, y, z, a }));
+  const capture = () => ({
+    splats: data.map(({ x, y, z, a }) => ({ x, y, z, a })),
+    radius,
+  });
   const restore = (snapshot) => {
-    snapshot.forEach((d, i) => Object.assign(data[i], d));
+    snapshot.splats.forEach((d, i) => Object.assign(data[i], d));
+    radius = snapshot.radius;
+    brushSlider.value = radius;
+    brushSlider.previousElementSibling.textContent = radius;
     reassembling = false;
     upload();
   };
@@ -167,7 +173,15 @@ export async function start() {
           : "Drag across the sculpture · Undo keeps experiments easy";
     },
   );
-  range("Brush size", 0.3, 1.6, radius, 0.05, (v) => (radius = v));
+  const brushSlider = range(
+    "Brush size",
+    0.3,
+    1.6,
+    radius,
+    0.05,
+    (v) => (radius = v),
+    () => h.push(),
+  );
   const b = document.createElement("button");
   b.className = "export";
   b.textContent = "↟ Reassemble";
@@ -258,7 +272,7 @@ export async function start() {
     },
     reset() {
       h.push();
-      restore(original);
+      restore({ splats: original, radius });
     },
     capture,
     stats: () => ({

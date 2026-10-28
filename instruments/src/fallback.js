@@ -54,13 +54,15 @@ export async function start(kind) {
     ctx.fillStyle = "#e9e6ee";
     ctx.fill();
   }
-  const h = history(
-    () => structuredClone(points),
-    (p) => {
-      points = p;
-      draw();
-    },
-  );
+  let radius = 0.2;
+  const capture = () => ({ points: structuredClone(points), radius });
+  const h = history(capture, (state) => {
+    points = state.points;
+    radius = state.radius;
+    reach.value = radius;
+    reach.previousElementSibling.textContent = radius;
+    draw();
+  });
   h.install();
   choices(
     "Try a gesture",
@@ -71,8 +73,15 @@ export async function start(kind) {
     mode,
     (v) => (mode = v),
   );
-  let radius = 0.2;
-  range("Reach", 0.1, 0.4, radius, 0.01, (v) => (radius = v));
+  const reach = range(
+    "Reach",
+    0.1,
+    0.4,
+    radius,
+    0.01,
+    (v) => (radius = v),
+    () => h.push(),
+  );
   const link = document.createElement("a");
   link.href = "?mode=light";
   link.textContent = "Try the 3D version →";
@@ -118,6 +127,6 @@ export async function start(kind) {
     },
     render: draw,
     stats: () => ({ points: points.length }),
-    capture: () => points,
+    capture,
   };
 }
