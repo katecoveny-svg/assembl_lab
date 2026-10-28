@@ -24,7 +24,7 @@ function studioHarness() {
       open: false, checked: false, width: 800, height: 600,
       dataset: {}, style: {}, children: [], listeners: {},
       classList: {toggle() {}, add() {}, remove() {}},
-      setAttribute() {}, replaceChildren() { this.children = []; },
+      attributes: {}, setAttribute(name, value) { this.attributes[name] = value; }, replaceChildren() { this.children = []; },
       append(...children) { this.children.push(...children); }, remove() {},
       addEventListener(name, callback) { this.listeners[name] = callback; },
       getBoundingClientRect: () => ({width: 800, height: 600, left: 0, top: 0}),
@@ -37,19 +37,22 @@ function studioHarness() {
     if (!ids.has(id)) ids.set(id, element(id));
     return ids.get(id);
   };
+  const materials = ['chrome','glass','coral'].map(material => {
+    const button = element(); button.dataset.material = material; return button;
+  });
   const legacy = {
     engines: {attract: {
       name: 'Attract', hint: '', description: '', prompt: '',
       controls: [['attA', 'Curve A', -3, 3, .05]]
     }},
     state: {attA: -1.4}, render() { stats.draws++; },
-    resize() {}, select() {}, palette() {}, canvas: element()
+    resize() {}, select() {}, palette() {}, reset() {}, canvas: element()
   };
   const sandbox = {
     document: {
       getElementById: get,
       querySelectorAll: selector => selector.startsWith('.mode,')
-        ? [get('pause'), get('open-settings'), get('open-export')] : [],
+        ? [get('pause'), get('open-settings'), get('open-export')] : selector === '[data-material]' ? materials : [],
       querySelector: () => element(), createElement: () => element(), hidden: false
     },
     window: {addEventListener: (name, handler) => { events[name] = handler; }},
@@ -65,7 +68,8 @@ function studioHarness() {
   vm.runInContext(source + `
     globalThis.access = {
       setLegacy(value) { legacy=value; active='attract'; ready=true; paused=false; },
-      getState() { return {tempo, time, active, savedFile, raf}; },
+      getState() { return {tempo, time, active, savedFile, raf, material:settings.material}; },
+      controls,
       setModern(renderer) {
         active='liquid';
         renderers.set('liquid', {canvas:document.createElement('canvas'), renderer});
@@ -76,7 +80,7 @@ function studioHarness() {
   const modern = () => access.setModern({
     render() {}, resize() {}, dispose() { stats.disposals++; }
   });
-  return {get, stats, events, legacy, access, modern,
+  return {get, stats, events, legacy, access, modern, materials,
     finishBlob: () => { assert.equal(typeof blobDone, 'function'); blobDone({size: 1}); }};
 }
 
@@ -171,4 +175,23 @@ test('Suminagashi automatic drops follow the legacy frame clock, not every draw'
   for (let i = 0; i < 42; i++) sandbox.window.LegacyStudio.render();
   assert.equal(sandbox.frameCount, 135);
   assert.equal(sandbox.readDrops(), 6, 'next automatic drop occurs at frame 135');
+});
+
+
+test('initial material, switching and reset keep exactly one truthful pressed label', () => {
+  const h = studioHarness();
+  const assertSelected = expected => {
+    assert.equal(h.access.getState().material, expected);
+    assert.deepEqual(h.materials.filter(b => b.attributes['aria-pressed'] === 'true').map(b => b.dataset.material), [expected]);
+    assert.ok(h.materials.every(b => ['true','false'].includes(b.attributes['aria-pressed'])));
+  };
+  // controls() is the common initial/mode-entry path; it must repair stale markup.
+  h.materials[1].attributes['aria-pressed'] = 'true';
+  h.access.controls(); assertSelected('chrome');
+  for (const button of h.materials) {
+    button.onclick(); assertSelected(button.dataset.material);
+    h.access.controls(); assertSelected(button.dataset.material);
+  }
+  h.get('reset').onclick(); assertSelected('chrome');
+  h.access.controls(); assertSelected('chrome');
 });

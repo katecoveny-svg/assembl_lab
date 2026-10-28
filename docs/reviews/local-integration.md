@@ -10,7 +10,7 @@ Unpublished combined preview: http://127.0.0.1:8769/ . Branch codex/lab-local-in
 - All applied cleanly. Main-repository wrapper is not included.
 
 ## Checks on the combined source
-- Node model suites: 30/30 (19 Studio, 6 Climate, 5 learning).
+- Node model suites: 31/31 (20 Studio, 6 Climate, 5 learning).
 - Browser /study/tests/lesson-shell.html: PASS 19 checks, including dynamic explanation, independent stage/topic navigation, keyboard End and restart focus.
 - Lines: A 3 L/min, 10 L initial, 10 min -> 40 L; B 6 L/min -> 70 L. Worked explanation updates to L = 6t + 10. Prediction accepts text and stage progression preserves model/topic.
 - Particles: 60 mL/20 C -> 101.3 kPa; 30 mL/20 C -> 202.6 kPa. Both captured in Explain.
@@ -28,6 +28,6 @@ Prior homepage before/after evidence remains in output/design-audit/ and its rev
 ## Remaining limits / review gate
 - LOCAL ONLY, pending parent visual review.
 - Studio Glass remains an unfinished material study; selected concept fidelity is not approved. Liquid lacks the selected wet pigment depth and Garden remains stylised. Do not label release-ready.
-- Studio initial Sculpture state marks Glass pressed although defaults.material is chrome; explicit Chrome selection corrects the label. Reported to parent; owner files left unchanged.
+- Studio material-label regression fixed under bounded integration ownership: initial HTML and common controls synchronisation both match Chrome. Regression covers stale initial markup, all material switches, control refresh and reset; IAB verified initial Chrome, Glass surviving a mode round-trip, and reset returning Chrome. Evidence: output/integration/studio-material-fixed.jpg. Glass visual fidelity remains unfinished.
 - Reduced-motion runtime emulation unverified: previous browser DevTools permission was dismissed/cancelled before approval. No retry or workaround. Static reduced-motion CSS exists.
 - Desktop browser viewport testing is not real iPhone/touch/GPU performance certification. No claim all35 machine engines were upgraded.
