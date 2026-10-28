@@ -532,6 +532,16 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
     }};
 }
 
+// A scoped adapter reuses this exact model and scene without mounting the legacy lesson.
+// The public lesson owns its UI and does not run StudyKit progress logging.
+if(document.documentElement.dataset.lesson === "climate") {
+  window.ClimateMachine = {state:s, reset:resetAll, advance, flows, setTile,
+    scene:climate3d, draw:()=>drawEnergy({k:"albedo"}), albedos:ALB,
+    constants:{sunlight:S0,heatCapacity:CH,co2:PPM0,cloud:DEF.cloud},
+    restartThermal:()=>{s.T=T_REF;s.yr=0;s.hist=[];s.histAcc=0;s.playing=false}};
+  return;
+}
+
 // ---------------------------------------------------------------- mount
 const set=k=>(x,v)=>{s[k]=v};
 StudyKit.mount({kupu:KUPU,caseTint:"sky",scene3d:climate3d,
