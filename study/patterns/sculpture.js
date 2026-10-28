@@ -48,19 +48,9 @@ function studioEnvironment(renderer) {
 class SculptedCurve extends THREE.Curve {
   constructor(seed, variant) { super(); this.seed=seed;this.variant=variant; }
   getPoint(u, target=new THREE.Vector3()) {
-    const a=u*TAU, p=this.seed*.00071, v=this.variant;
-    if(v===0) return target.set(
-      1.03*Math.sin(2*a+.05)+.19*Math.sin(3*a+p),
-      1.64*Math.cos(a)+.12*Math.cos(3*a+p),
-      .68*Math.sin(3*a+.35)+.16*Math.sin(a+p));
-    if(v===1) return target.set(
-      1.07*Math.sin(2*a+.91)+.12*Math.sin(4*a+p),
-      1.58*Math.cos(a+.37)+.10*Math.sin(3*a+p),
-      .62*Math.cos(3*a+.6)-.12*Math.cos(a+p));
-    return target.set(
-      .94*Math.cos(a)+.21*Math.sin(3*a+p),
-      1.34*Math.sin(a)+.17*Math.sin(2*a+p),
-      .66*Math.sin(2*a+.8)+.13*Math.cos(3*a));
+    const a=u*TAU, phase=Math.sin(this.seed*.017)*.12;
+    const radius=1.02+.38*Math.cos(3*a+phase);
+    return target.set(radius*Math.cos(2*a),radius*Math.sin(2*a)*1.12,.48*Math.sin(3*a+phase));
   }
 }
 
@@ -76,8 +66,8 @@ function ribbonGeometry(seed,variant) {
     const twist=.62*Math.sin(a*2+variant*.9)+.28*Math.sin(a*3+seed*.001)+variant*.8;
     n.copy(frames.normals[i]).multiplyScalar(Math.cos(twist)).addScaledVector(frames.binormals[i],Math.sin(twist));
     b.copy(frames.binormals[i]).multiplyScalar(Math.cos(twist)).addScaledVector(frames.normals[i],-Math.sin(twist));
-    const width=(variant===0?.34:variant===1?.28:.21)*(1+.24*Math.sin(a*2+.7+variant));
-    const thickness=variant===0?.24:variant===1?.20:.16;
+    const width=.235*(1+.10*Math.sin(a*2+.7));
+    const thickness=.20;
     for(let j=0;j<=sides;j++) {
       const v=j/sides, theta=v*TAU;
       pos.copy(centre).addScaledVector(n,Math.cos(theta)*width).addScaledVector(b,Math.sin(theta)*thickness);
@@ -133,8 +123,8 @@ export function createSculpture(canvas) {
   const rim=new THREE.DirectionalLight(0xeadfff,1.2);rim.position.set(4,1,-2);scene.add(rim);
   const fill=new THREE.HemisphereLight(0xffffff,0xc7b4af,.35);scene.add(fill);
   const materialOptions={roughness:.075,clearcoat:1,clearcoatRoughness:.045,envMapIntensity:1.32};
-  const glass=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xb7a2e7,metalness:0,transmission:.88,thickness:.9,ior:1.46,iridescence:.37,iridescenceIOR:1.34,iridescenceThicknessRange:[160,430],attenuationColor:new THREE.Color(0xc9afff),attenuationDistance:2.5});
-  const chrome=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xe8e7e1,metalness:1,roughness:.095,iridescence:.12});
+  const glass=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xf4edff,metalness:0,roughness:.025,transmission:.96,thickness:.48,ior:1.46,iridescence:.37,iridescenceIOR:1.34,iridescenceThicknessRange:[160,430],attenuationColor:new THREE.Color(0xc9afff),attenuationDistance:.9});
+  const chrome=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xe8e7e1,metalness:1,roughness:.13,iridescence:.12});
   const coral=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xffb69f,metalness:.14,transmission:.46,thickness:.7,ior:1.43,iridescence:.30,attenuationColor:new THREE.Color(0xff9d8b),attenuationDistance:2});
   const mint=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xc4e7d9,metalness:.2,transmission:.46,thickness:.65,ior:1.40,iridescence:.2});
   const materials=[glass,chrome,coral,mint];
@@ -146,12 +136,8 @@ export function createSculpture(canvas) {
     for(const mesh of ribbons){group.remove(mesh);mesh.geometry.dispose();}
     ribbons=[];
     const a=new THREE.Mesh(ribbonGeometry(seed,0),glass);
-    const b=new THREE.Mesh(ribbonGeometry(seed+390,1),chrome);
-    const c=new THREE.Mesh(ribbonGeometry(seed+910,2),coral);
-    c.rotation.set(.55,-.1,-.52);c.scale.set(.8,.86,.9);c.position.set(.12,-.08,-.15);
-    const d=new THREE.Mesh(ribbonGeometry(seed+130,2),mint);
-    d.rotation.set(-.75,.50,.8);d.scale.set(.57,.58,.70);d.position.set(-.20,.16,-.35);
-    ribbons=[a,b,c,d];ribbons.forEach(mesh=>group.add(mesh));
+    // One closed, separated strand avoids intersections between independently moving meshes.
+    ribbons=[a];group.add(a);
     turnX=0;turnY=0;sculpt=0;lastMaterial='';
   }
   function resize(w,h,dpr=1) {
@@ -160,7 +146,7 @@ export function createSculpture(canvas) {
     renderer.setSize(width,height,false);
     camera.aspect=width/height;
     // Editorial, edge-to-edge crop on phones; a whole sculpture on wider screens.
-    const vertical=width>height?6.2:5.4;
+    const vertical=width>height?5.4:7.1;
     const distance=(vertical/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
     camera.position.set(0,.15,distance);
     camera.lookAt(0,-.38,0);camera.updateProjectionMatrix();
@@ -175,8 +161,6 @@ export function createSculpture(canvas) {
     const material=settings.material||'glass';
     if(lastMaterial!==material) {
       ribbons[0].material=material==='chrome'?chrome:material==='coral'?coral:glass;
-      ribbons[1].material=material==='chrome'?glass:chrome;
-      ribbons[2].material=material==='coral'?glass:coral;
       lastMaterial=material;
     }
     const dark=Boolean(settings.dark);
@@ -186,8 +170,6 @@ export function createSculpture(canvas) {
     group.scale.set(1+sculpt*.2,1-sculpt*.11,1);
     // Slow independent motion changes overlaps and reflections, not just pixels.
     ribbons[0].rotation.y=Math.sin(clock*.12)*.11*energy;
-    ribbons[1].rotation.z=Math.sin(clock*.14+.5)*.10*energy;
-    ribbons[2].rotation.y=-.1+Math.sin(clock*.17)*.20*energy;
     renderer.render(scene,camera);
   }
   function dispose() {

@@ -17,3 +17,11 @@ Bounded refinement: rounder sculpture cross-sections, more geometry segments, re
 Mac evidence directory (outside source): ../three-modes-incoming/ relative to the worktree. Inspected captures: liquid-mac-phone.jpg, sculpture-mac-phone-before.jpg, sculpture-mac-phone.jpg, sculpture-chrome-mac-phone.jpg, sculpture-mac-desktop.jpg, garden-mac-phone.jpg. liquid-mac-desktop.jpg records the initial pre-refinement Liquid rendering.
 
 Unverified here: physical touch/iPhone, reduced-motion OS setting, native sharing delivery, physical print, low-end GPU performance. Original-engine exhaustive UI coverage remains the supplied cloud pass, supported by unchanged engines.js and passing runtime tests; this Mac pass focused on the newly available GPU paths. No elevated DevTools, credentials, provider calls, permissions or deployment actions were used.
+
+## Focused geometry refinement
+
+Replaced the four independently intersecting ribbons with one closed trefoil strand. Its two-turn toroidal path separates the apparent crossings in depth; material switching now applies to the same continuous object. The cross-section is bounded and rounded, and the phone camera frames the whole shape above the dock. Glass has lower roughness and less diffuse tint; chrome roughness was softened to avoid razor-sharp synthetic light cards.
+
+Ordinary IAB inspected the new Glass and Chrome at 375x812 and Chrome after dragging. The previously obvious cut-throughs between separate moving meshes are absent in these inspected views. New captures in the same external evidence directory: sculpture-continuous-glass-phone.jpg, sculpture-continuous-chrome-phone.jpg and sculpture-continuous-desktop.jpg. Previous sculpture-mac-phone.jpg and sculpture-chrome-mac-phone.jpg are retained as before evidence. This is a simpler single-object composition than the reference, deliberately prioritising coherent geometry. Glass still reads closer to pale polished resin than deep photographic refraction; independent visual acceptance remains required. No release claim.
+
+All 19 existing tests still pass after this pass. No other creative modes or original engines changed.
