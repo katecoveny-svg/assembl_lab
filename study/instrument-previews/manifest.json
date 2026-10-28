@@ -1,0 +1,24 @@
+{
+  "sourceHead": "cb0d83351d6cb783a398c6069e09e6859e6a6d44",
+  "method": "Browser captures of the actual initial canvas; overlay labels hidden, scene unmodified. JPEG max edge 1000px, quality 85. Display crop 8:5 centred.",
+  "captures": [
+    {
+      "route": "/instruments/reality-remix/",
+      "medium": "SYNTHETIC GAUSSIAN SCULPTURE",
+      "state": "Initial loaded composition; no scene changes",
+      "capture": "Visible canvas crop; overlay labels hidden only"
+    },
+    {
+      "route": "/instruments/soft-matter/",
+      "medium": "LIVE SOFT BODY / RAPIER",
+      "state": "Initial loaded composition; no scene changes",
+      "capture": "Visible canvas crop; overlay labels hidden only"
+    },
+    {
+      "route": "/instruments/impossible-objects/",
+      "medium": "LIVE SOLID / MANIFOLD",
+      "state": "Initial loaded composition; no scene changes",
+      "capture": "Visible canvas crop; overlay labels hidden only"
+    }
+  ]
+}

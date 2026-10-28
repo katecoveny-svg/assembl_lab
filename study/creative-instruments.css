@@ -1,0 +1,17 @@
+/* Open-ended making sits outside the curriculum machine catalogue. */
+.creative-instruments{margin-top:18px;padding:clamp(18px,3vw,30px);border:1px solid var(--as-line);border-radius:28px;background:#f1edf8;display:grid;gap:18px}
+.creative-instruments h2{font:600 clamp(28px,3.6vw,40px)/1.05 var(--as-display);color:var(--as-ink);margin:5px 0 8px}
+.creative-instruments header p{max-width:65ch;margin:0;font-size:15px;line-height:1.5}
+.creative-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.creative-card{display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;background:var(--as-card);color:var(--as-ink);border:1px solid var(--as-line);border-radius:22px;text-decoration:none;box-shadow:var(--as-shadow);transition:transform .18s ease,box-shadow .18s ease}
+.creative-card:hover{transform:translateY(-3px);box-shadow:var(--as-lift)}
+.creative-card:focus-visible{outline:3px solid var(--as-focus);outline-offset:4px}
+.creative-card>img{display:block;width:100%;height:auto;aspect-ratio:8/5;object-fit:cover;object-position:center;background:#f4efe8}
+.creative-copy{padding:17px 18px 8px}
+.creative-copy h3{font:600 23px/1.1 var(--as-display);margin:0 0 9px}
+.creative-copy p{margin:0;font-size:14px;line-height:1.5;color:var(--as-text)}
+.creative-action{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px 18px;font:600 12px var(--as-font)}
+.creative-action span{color:var(--as-muted)}
+.creative-action b{background:var(--as-ink);color:white;border-radius:999px;padding:8px 14px;white-space:nowrap}
+@media(max-width:760px){.creative-grid{grid-template-columns:1fr}.creative-card>img{max-height:280px}.creative-copy h3{font-size:24px}.creative-instruments{gap:16px}.creative-action{padding-top:10px}}
+@media(prefers-reduced-motion:reduce){.creative-card{transition:none}.creative-card:hover{transform:none}}
