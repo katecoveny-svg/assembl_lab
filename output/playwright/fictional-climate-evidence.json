@@ -1,0 +1,260 @@
+{
+  "lesson": "climate-reflectivity-1.0.0",
+  "reviewDate": "2026-10-28",
+  "outputType": "calculated model outputs, not measurements",
+  "curriculumMapping": "proposed practices only, not assessment alignment",
+  "progress": {
+    "explored": true,
+    "watchedDemonstration": true,
+    "independentlyAttempted": true
+  },
+  "snapshots": [
+    {
+      "model": "climate-reflectivity-1.0.0",
+      "assisted": false,
+      "inputs": {
+        "tiles": [
+          "forest",
+          "forest",
+          "forest",
+          "forest",
+          "forest",
+          "forest",
+          "forest",
+          "forest"
+        ],
+        "surfaceAlbedo": 0.12,
+        "cloudFraction": 0.4,
+        "co2ppm": 425.6,
+        "initialTemperatureC": 15,
+        "heatCapacityWyrM2K": 8,
+        "sunlightWm2": 340,
+        "iceFeedback": false,
+        "carbonCycle": false
+      },
+      "outputs": {
+        "year": 1,
+        "temperatureC": 16.015943379577955,
+        "absorbedWm2": 247.51999999999998,
+        "outgoingWm2": 240.3796712764225,
+        "imbalanceWm2": 7.140328723577483,
+        "reflectedWm2": 92.48
+      },
+      "series": [
+        {
+          "year": 0,
+          "temperatureC": 15,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 238.34,
+          "imbalanceWm2": 9.179999999999978,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.1,
+          "temperatureC": 15.113462220841628,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 238.56788438744812,
+          "imbalanceWm2": 8.952115612551864,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.2,
+          "temperatureC": 15.224107971858912,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 238.7900911439601,
+          "imbalanceWm2": 8.729908856039884,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.3,
+          "temperatureC": 15.332007420725272,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 239.00676231471422,
+          "imbalanceWm2": 8.513237685285759,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.4,
+          "temperatureC": 15.437228979624331,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 239.2180363920794,
+          "imbalanceWm2": 8.301963607920584,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.5,
+          "temperatureC": 15.539839349170364,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 239.42404840232825,
+          "imbalanceWm2": 8.095951597671728,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.6,
+          "temperatureC": 15.639903561255295,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 239.6249299904862,
+          "imbalanceWm2": 7.895070009513773,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.7,
+          "temperatureC": 15.737485020845476,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 239.8208095033384,
+          "imbalanceWm2": 7.699190496661572,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.8,
+          "temperatureC": 15.832645546751216,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 240.0118120706077,
+          "imbalanceWm2": 7.508187929392278,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 0.9,
+          "temperatureC": 15.925445411391713,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 240.19805968432624,
+          "imbalanceWm2": 7.321940315673743,
+          "reflectedWm2": 92.48
+        },
+        {
+          "year": 1,
+          "temperatureC": 16.015943379577955,
+          "absorbedWm2": 247.51999999999998,
+          "outgoingWm2": 240.3796712764225,
+          "imbalanceWm2": 7.140328723577483,
+          "reflectedWm2": 92.48
+        }
+      ]
+    },
+    {
+      "model": "climate-reflectivity-1.0.0",
+      "assisted": false,
+      "inputs": {
+        "tiles": [
+          "farm",
+          "farm",
+          "farm",
+          "farm",
+          "farm",
+          "farm",
+          "farm",
+          "farm"
+        ],
+        "surfaceAlbedo": 0.19999999999999998,
+        "cloudFraction": 0.4,
+        "co2ppm": 425.6,
+        "initialTemperatureC": 15,
+        "heatCapacityWyrM2K": 8,
+        "sunlightWm2": 340,
+        "iceFeedback": false,
+        "carbonCycle": false
+      },
+      "outputs": {
+        "year": 1,
+        "temperatureC": 14.209870596781897,
+        "absorbedWm2": 231.2,
+        "outgoingWm2": 236.752494739436,
+        "imbalanceWm2": -5.552494739436014,
+        "reflectedWm2": 108.8
+      },
+      "series": [
+        {
+          "year": 0,
+          "temperatureC": 15,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 238.34,
+          "imbalanceWm2": -7.140000000000015,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.1,
+          "temperatureC": 14.911751658398915,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 238.1627420172535,
+          "imbalanceWm2": -6.962742017253504,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.2,
+          "temperatureC": 14.82569424299739,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.989872654127,
+          "imbalanceWm2": -6.789872654127009,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.3,
+          "temperatureC": 14.74177350552532,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.82128404127363,
+          "imbalanceWm2": -6.62128404127364,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.4,
+          "temperatureC": 14.659936531403464,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.6568709075178,
+          "imbalanceWm2": -6.456870907517811,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.5,
+          "temperatureC": 14.580131707598515,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.4965305209914,
+          "imbalanceWm2": -6.296530520991411,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.6,
+          "temperatureC": 14.502308691207991,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.34016263133134,
+          "imbalanceWm2": -6.14016263133135,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.7,
+          "temperatureC": 14.42641837876166,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.18766941294538,
+          "imbalanceWm2": -5.987669412945394,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.8,
+          "temperatureC": 14.352412876226143,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 237.03895540934172,
+          "imbalanceWm2": -5.838955409341736,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 0.9,
+          "temperatureC": 14.280245469699404,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 236.89392747852222,
+          "imbalanceWm2": -5.693927478522227,
+          "reflectedWm2": 108.8
+        },
+        {
+          "year": 1,
+          "temperatureC": 14.209870596781897,
+          "absorbedWm2": 231.2,
+          "outgoingWm2": 236.752494739436,
+          "imbalanceWm2": -5.552494739436014,
+          "reflectedWm2": 108.8
+        }
+      ]
+    }
+  ],
+  "learnerExplanations": {
+    "transfer": "Fictional learner: reflectivity affects absorbed sunlight. Evaporation is omitted."
+  }
+}
