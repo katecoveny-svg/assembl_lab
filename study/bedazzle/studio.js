@@ -583,8 +583,12 @@ async function exportImage(share = false) {
         await navigator.share({ files: [file], title: "My Bedazzle design" });
         status("Shared using your device.");
       } catch (e) {
-        if (e.name !== "AbortError") throw e;
-        status("Sharing cancelled.");
+        if (e.name === "AbortError") {
+          status("Sharing cancelled.");
+        } else {
+          download(blob, name);
+          status("Sharing was unavailable; image downloaded instead.");
+        }
       }
     } else {
       download(blob, name);
@@ -604,7 +608,7 @@ $("svg").onclick = () => {
   if (state.mode !== "board") return;
   const shapes = state.stones
     .map((s) => {
-      const n = s.shape === "square" ? 4 : 10,
+      const n = s.shape === "square" ? 4 : s.shape === "marquise" ? 8 : 10,
         pts = Array.from({ length: n }, (_, i) => {
           const a =
             (i / n) * Math.PI * 2 + (s.shape === "square" ? Math.PI / 4 : 0);
