@@ -25,7 +25,7 @@ npm run test:unit
 npm test
 ```
 
-The test server must be running. Tests exercise real rendering, gestures, undo, reassembly, deformation, finite physics states, geometry changes, PNG signature, GLB header/JSON/metre transform, responsive overflow, and the 2D/share fallbacks. Visual captures live under `output/playwright/`.
+Playwright starts or reuses a localhost test server. Tests exercise real rendering, gestures, undo, reassembly, deformation, finite physics states, geometry changes, PNG signature, GLB header/JSON/metre transform, responsive overflow, and the 2D/share fallbacks. Visual captures live under `output/playwright/`.
 
 ## Browser and performance boundaries
 

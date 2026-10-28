@@ -11,7 +11,7 @@ export async function start() {
   $("#medium").textContent = "LIVE SOFT BODY / RAPIER";
   $("#hint").textContent = "Grab and stretch · release to rebound";
   $("#explanation").innerHTML =
-    "<p>A low-resolution 3D cage is simulated by Rapier’s real deformable-body solver: connected particles, elastic edge constraints, volume preservation and shape matching. A subdivided surface follows that cage. Pulling pins a small patch temporarily; releasing it lets the material rebound. The bottom patch is anchored like a sculpture on a plinth.</p><p>This is a playful bounded material experiment, not an engineering material model. No tearing, plasticity or self-collision is offered. The three presets change spring frequency and damping. Undo restores particle positions and velocities. Lighter mode uses a smaller cage. Export is a PNG still.</p>";
+    "<p>A low-resolution 3D cage is simulated by Rapier’s real deformable-body solver: connected particles, elastic edge constraints, volume preservation and shape matching. A subdivided surface follows that cage. Pulling pins a small patch temporarily; releasing it lets the material rebound. The bottom patch is anchored like a sculpture on a plinth.</p><p>This is a playful bounded material experiment, not an engineering material model. No tearing, plasticity or self-collision is offered. The three presets change spring frequency and damping. Undo restores particle positions, velocities, spring and material settings. Lighter mode uses a smaller cage. Export is a PNG still.</p>";
   await R.init();
   const s = studio();
   s.camera.position.set(1.5, 1.3, 5.8);
@@ -27,7 +27,27 @@ export async function start() {
     grab,
     last,
     frozen = false;
-  let preset = "jelly";
+  let preset = "jelly",
+    slider,
+    presetControls;
+  const presetSpring = { jelly: 5, foam: 9, gum: 3 };
+  function syncMaterial() {
+    slider.value = stiffness;
+    slider.previousElementSibling.textContent = stiffness;
+    material.color.set(
+      preset === "foam" ? 0x8ecdb6 : preset === "gum" ? 0xaca0df : 0xec7e96,
+    );
+    material.roughness = preset === "foam" ? 0.7 : 0.22;
+    body.setMaterial(mat());
+    presetControls
+      .querySelectorAll("button")
+      .forEach((button) =>
+        button.setAttribute(
+          "aria-pressed",
+          button.dataset.value === preset && stiffness === presetSpring[preset],
+        ),
+      );
+  }
   const material = new T.MeshPhysicalMaterial({
     color: 0xec7e96,
     roughness: 0.22,
@@ -139,8 +159,13 @@ export async function start() {
   const capture = () => ({
     p: body.particlePositions(),
     v: body.particleVelocities(),
+    stiffness,
+    preset,
   });
   const restore = (state) => {
+    stiffness = state.stiffness;
+    preset = state.preset;
+    syncMaterial();
     selected = [];
     for (let i = 0; i < body.numParticles(); i++) {
       body.setParticlePinned(i, pinned.includes(i));
@@ -160,7 +185,7 @@ export async function start() {
   const h = history(capture, restore);
   h.install();
   init();
-  choices(
+  presetControls = choices(
     "Pick a feeling",
     [
       ["jelly", "Rose jelly"],
@@ -169,15 +194,10 @@ export async function start() {
     ],
     preset,
     (v) => {
+      h.push();
       preset = v;
-      stiffness = v === "foam" ? 9 : v === "gum" ? 3 : 5;
-      slider.value = stiffness;
-      slider.dispatchEvent(new Event("input"));
-      material.color.set(
-        v === "foam" ? 0x8ecdb6 : v === "gum" ? 0xaca0df : 0xec7e96,
-      );
-      material.roughness = v === "foam" ? 0.7 : 0.22;
-      body.setMaterial(mat());
+      stiffness = presetSpring[v];
+      syncMaterial();
       status("New spring and damping response.");
     },
   );
@@ -191,10 +211,18 @@ export async function start() {
     mode,
     (v) => (mode = v),
   );
-  const slider = range("Spring", 2, 12, stiffness, 0.5, (v) => {
-    stiffness = v;
-    body.setMaterial(mat());
-  });
+  slider = range(
+    "Spring",
+    2,
+    12,
+    stiffness,
+    0.5,
+    (v) => {
+      stiffness = v;
+      syncMaterial();
+    },
+    () => h.push(),
+  );
   const b = document.createElement("button");
   b.textContent = "✦ Give it a wobble";
   b.className = "export";

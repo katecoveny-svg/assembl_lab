@@ -25,13 +25,39 @@ export function choices(title, items, initial, fn) {
   };
   return d;
 }
-export function range(title, min, max, value, step, fn) {
+export function range(title, min, max, value, step, fn, beginHistory) {
   const d = group(
     "",
     `<label class="slider">${title}<span>${value}</span><input aria-label="${title}" type="range" min="${min}" max="${max}" value="${value}" step="${step}"></label>`,
   );
   const i = d.querySelector("input");
+  // Snapshot on the first actual value change, not merely focusing or pressing a key.
+  // One pointer drag/held key is one undo step; accessibility input events work too.
+  let gesture = null,
+    recorded = false;
+  const begin = (kind) => {
+    if (gesture !== kind) {
+      gesture = kind;
+      recorded = false;
+    }
+  };
+  const end = () => {
+    gesture = null;
+    recorded = false;
+  };
+  i.addEventListener("pointerdown", () => begin("pointer"));
+  window.addEventListener("pointerup", () => {
+    if (gesture === "pointer") end();
+  });
+  window.addEventListener("pointercancel", () => {
+    if (gesture === "pointer") end();
+  });
+  i.addEventListener("keydown", () => begin("keyboard"));
+  i.addEventListener("keyup", end);
+  i.addEventListener("blur", end);
   i.oninput = () => {
+    if (!recorded) beginHistory?.();
+    recorded = gesture !== null;
     d.querySelector("span").textContent = i.value;
     fn(+i.value);
   };

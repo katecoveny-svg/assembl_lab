@@ -188,21 +188,20 @@ export async function start() {
     ["carve", "Carve", 0.15, 0.8, 0.01],
     ["twist", "Twist", -120, 120, 1],
   ]) {
-    const input = range(label, min, max, params[key], step, (v) => {
-      params[key] = v;
-      syncPreset();
-      clearTimeout(timer);
-      timer = setTimeout(make, 70);
-    });
-    input.addEventListener("pointerdown", () => h.push());
-    input.addEventListener("keydown", (e) => {
-      if (
-        (e.key.startsWith("Arrow") ||
-          ["Home", "End", "PageUp", "PageDown"].includes(e.key)) &&
-        !e.repeat
-      )
-        h.push();
-    });
+    const input = range(
+      label,
+      min,
+      max,
+      params[key],
+      step,
+      (v) => {
+        params[key] = v;
+        syncPreset();
+        clearTimeout(timer);
+        timer = setTimeout(make, 70);
+      },
+      () => h.push(),
+    );
     inputs[key] = input;
   }
   const sw = group("Material", '<div class="swatches"></div>');
