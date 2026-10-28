@@ -2,6 +2,8 @@
 
 Prepared 28 October 2026 as an isolated draft from `katecoveny-svg/assembl_lab` main `328bf97da8124405956a4b973e698297bcba375a`.
 
+Rebased onto fresh main `a1c83556536271549b83d491fa7a6277267bdb95` before publication; the concurrent catalogue apostrophe fix is preserved. No `.agents/skills` or `AGENTS.md` exists in this fresh Lab checkout. Product Design index/audit and Vercel deployment guidance were read.
+
 ## Source investigation
 
 Reference: https://assembl-studio.pages.dev/#braid
