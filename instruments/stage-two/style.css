@@ -561,3 +561,26 @@ body[data-instrument="time-sculpture"] .stage-bottom {
     object-fit: contain;
   }
 }
+.video-import {
+  display: block;
+  font-size: 13px;
+  margin: 16px 0;
+  grid-column: 1/-1;
+}
+.video-import input {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  font-size: 12px;
+  margin: 12px 0;
+}
+.video-import small {
+  display: block;
+  line-height: 1.5;
+  color: #62647b;
+}
+#controls progress {
+  width: 100%;
+  accent-color: #2a7d63;
+  grid-column: 1/-1;
+}

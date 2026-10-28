@@ -2,10 +2,10 @@
 
 Dedicated routes:
 - `/instruments/sonic-loom/` — original Web Audio synthesis coupled to deforming Three.js ribbons. Explicit Play, mute, interruption retry, pluck/drag, keys 1–8, orbit, tempo, tension and palette.
-- `/instruments/time-sculpture/` — original 128×128×64 RGBA temporal volume and GLSL3 raymarcher. Original local orb/ribbon frame stack, orbit, time, slice thickness, threshold and sweep.
+- `/instruments/time-sculpture/` — original 128×128×64 RGBA temporal volume and GLSL3 raymarcher. Original local orb/ribbon frame stack plus bounded local video import, orbit, time, slice thickness, threshold and sweep.
 - `/instruments/liquid-playground/` — **experimental** original 640-particle position-based fluid with a connected smooth surface reconstructed from a 40³ density field. Real 3D spatial neighbours, density constraints, velocity blending, gravity, stirring, bounded recirculating pour and boundaries. A particle-view toggle exposes the underlying solver. This is not a Splash port.
 
-All routes offer undo, reset, pause, local PNG, print and capability-detected file sharing. Sharing is invoked only by the user's Share button. No microphone/camera, accounts, uploads, sample recordings or network runtime dependencies. Optional video import and clip recording are not implemented.
+All routes offer undo, reset, pause, local PNG, print and capability-detected file sharing. Sharing is invoked only by the user's Share button. No microphone/camera, accounts, uploads, sample recordings or network runtime dependencies. Video import accepts local clips up to 40 MiB / 12 seconds / 1920px longest edge and 1920×1080 total pixels. It extracts 64 letterboxed 128×128 frames with progress/cancel and releases its object URL. Clip recording is not implemented.
 
 Shared navigation outside these three new routes is deliberately left to the parent task. Existing `instruments/src`, `instruments/dist`, the original patterns studio and Study overview are untouched.
 
@@ -18,7 +18,9 @@ With the existing `instruments/node_modules` installed:
 ```sh
 cd instruments/stage-two
 node build.mjs
-node --test tests/fluid.test.js
+node --test tests/fluid.test.js tests/video-limits.test.js
+# Original synthetic test fixtures; uses already-installed ffmpeg, not a runtime dependency:
+python3 tests/make-video-fixture.py
 # Serve repository root on localhost:4185 in another terminal:
 # python3 -m http.server 4185 --bind 127.0.0.1
 node ../node_modules/@playwright/test/cli.js test

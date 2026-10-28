@@ -80,6 +80,7 @@ try {
   const light = new T.DirectionalLight(0xffffff, 3);
   light.position.set(3, 5, 4);
   scene.add(light);
+  let dirty = true;
   const api = {
     T,
     $,
@@ -93,6 +94,13 @@ try {
     button,
     snapshot,
     renderer,
+    invalidate() {
+      dirty = true;
+    },
+    clearHistory() {
+      history.length = 0;
+      $("undo").disabled = true;
+    },
     reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
     resumeAnimation() {
       paused = false;
@@ -107,7 +115,6 @@ try {
         ? liquid(api)
         : timeSculpture(api);
   art.update(0, 0);
-  let dirty = true;
   orbit.addEventListener("change", () => (dirty = true));
   on(document, "input", () => (dirty = true));
   on(document, "click", () => (dirty = true));

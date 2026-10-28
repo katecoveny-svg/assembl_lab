@@ -1,3 +1,4 @@
+import { extractVideoVolume } from "./video-volume.js";
 export function timeSculpture({
   T,
   $,
@@ -6,6 +7,11 @@ export function timeSculpture({
   range,
   button,
   snapshot,
+  on,
+  status,
+  clearHistory,
+  invalidate,
+  resumeAnimation,
 }) {
   renderer.setClearColor("#202747");
   renderer.setPixelRatio(Math.min(devicePixelRatio, 0.65));
@@ -16,10 +22,13 @@ export function timeSculpture({
   $("medium").textContent = "TEMPORAL VOLUME / 128 × 128 × 64";
   $("hint").textContent = "Drag to orbit · pinch or scroll to zoom";
   $("explanation").textContent =
-    "An original moving orb and ribbon are generated locally into 64 frames. Each frame occupies a different depth of a Data3DTexture. An original raymarching shader samples through that 3D volume and composites coloured density. Orbit reveals temporal depth, Time chooses the centre of a slice, Slice depth changes its thickness, and Background threshold removes dim voxels. The RGBA stack occupies exactly 4 MiB in JavaScript plus approximately 4 MiB on the GPU; driver, framebuffer and browser overhead are additional. No personal files are loaded.";
+    "An original moving orb and ribbon are generated locally into 64 frames. Each frame occupies a different depth of a Data3DTexture. An original raymarching shader samples through that 3D volume and composites coloured density. Orbit reveals temporal depth, Time chooses the centre of a slice, Slice depth changes its thickness, and Background threshold removes dim voxels. The RGBA stack occupies exactly 4 MiB in JavaScript plus approximately 4 MiB on the GPU; driver, framebuffer and browser overhead are additional. You can also choose a local video up to 40 MiB, 12 seconds and 1920 pixels on its longest side (at most 1920 × 1080 pixels total). It is letterboxed without stretching, sampled into 64 frames, and never uploaded. Brightness becomes density, so the threshold removes dark backgrounds. Import replaces the source and clears source history; Reset returns to the generated demo. Decoder and temporary readback memory are additional.";
   let state = { time: 0.5, depth: 1, threshold: 0.12, shape: 0 },
     texture,
-    phase = 0;
+    phase = 0,
+    source = "demo",
+    activeImport = null,
+    dead = false;
   const uniforms = {
     volume: { value: null },
     cut: { value: 0.5 },
@@ -51,7 +60,10 @@ export function timeSculpture({
           data[i + 3] = Math.round(density * 255);
         }
     }
-    const next = new T.Data3DTexture(data, n, n, d);
+    install(data);
+  }
+  function install(data) {
+    const next = new T.Data3DTexture(data, 128, 128, 64);
     next.format = T.RGBAFormat;
     next.type = T.UnsignedByteType;
     next.minFilter = next.magFilter = T.LinearFilter;
@@ -60,6 +72,7 @@ export function timeSculpture({
     texture?.dispose();
     texture = next;
     uniforms.volume.value = next;
+    invalidate();
     $("metrics").textContent =
       `${(data.byteLength / 1048576).toFixed(1)} MiB RAW · 64 FRAMES`;
   }
@@ -129,7 +142,10 @@ export function timeSculpture({
       },
     );
   button("Another motion", () => {
-    snapshot();
+    cancelImport();
+    if (source === "demo") snapshot();
+    else clearHistory();
+    source = "demo";
     state.shape = 1 - state.shape;
     generate();
   });
@@ -140,6 +156,9 @@ export function timeSculpture({
       snapshot();
       state.depth = 0.18;
       depthUI(0.18);
+      sync();
+      resumeAnimation();
+      invalidate();
     }
     sweep.textContent = sweeping ? "Ⅱ Stop sweep" : "▶ Sweep through time";
   });
@@ -154,6 +173,105 @@ export function timeSculpture({
     sync();
     if (regenerate) generate();
   }
+  const uploadLabel = document.createElement("label");
+  uploadLabel.className = "video-import";
+  uploadLabel.textContent = "Use your own short clip";
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "video/*";
+  input.setAttribute("aria-label", "Choose a local video");
+  uploadLabel.append(input);
+  const limits = document.createElement("small");
+  limits.textContent =
+    "Local only · up to 40 MiB / 12 sec / 1080p. Bright subjects on dark backgrounds work best.";
+  uploadLabel.append(limits);
+  $("controls").append(uploadLabel);
+  const progress = document.createElement("progress");
+  progress.max = 64;
+  progress.value = 0;
+  progress.hidden = true;
+  progress.setAttribute("aria-label", "Video extraction progress");
+  $("controls").append(progress);
+  const cancel = button("Cancel import", () => cancelImport());
+  cancel.hidden = true;
+  function cancelImport(
+    message = "Import cancelled. Your previous sculpture is still here.",
+  ) {
+    if (activeImport) {
+      activeImport.abort();
+      activeImport = null;
+      if (!dead) {
+        progress.hidden = true;
+        cancel.hidden = true;
+        status(message);
+      }
+    }
+  }
+  function demo() {
+    cancelImport();
+    clearHistory();
+    source = "demo";
+    state = { time: 0.5, depth: 1, threshold: 0.12, shape: 0 };
+    sweeping = false;
+    sweep.textContent = "▶ Sweep through time";
+    timeUI(0.5);
+    depthUI(1);
+    thresholdUI(0.12);
+    sync();
+    generate();
+    status("Generated demo restored. Local clip data released.");
+  }
+  button("Use generated demo", demo);
+  on(input, "change", async () => {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    cancelImport();
+    const controller = new AbortController();
+    activeImport = controller;
+    progress.hidden = false;
+    cancel.hidden = false;
+    progress.value = 0;
+    try {
+      const result = await extractVideoVolume(file, {
+        signal: controller.signal,
+        onProgress: (n, text) => {
+          if (activeImport === controller) {
+            progress.value = n;
+            status(text);
+          }
+        },
+      });
+      if (dead || activeImport !== controller) return;
+      clearHistory();
+      source = "video";
+      sweeping = false;
+      sweep.textContent = "▶ Sweep through time";
+      install(result.data);
+      status(
+        `Local clip ready: ${result.width} × ${result.height}, ${result.duration.toFixed(2)} sec, 64 frames. Nothing uploaded.`,
+      );
+    } catch (e) {
+      if (!dead && activeImport === controller)
+        status(
+          e.name === "AbortError"
+            ? "Import cancelled. Previous sculpture kept."
+            : e.message + " Previous sculpture kept.",
+        );
+    } finally {
+      if (activeImport === controller) {
+        activeImport = null;
+        progress.hidden = true;
+        cancel.hidden = true;
+      }
+    }
+  });
+  on(document, "visibilitychange", () => {
+    if (document.hidden)
+      cancelImport(
+        "Import stopped when you left the tab. Choose the clip again to retry; the previous sculpture is kept.",
+      );
+  });
   return {
     isAnimating: () => sweeping,
     getState: () => ({ ...state }),
@@ -162,7 +280,7 @@ export function timeSculpture({
       sweeping = false;
       sweep.textContent = "▶ Sweep through time";
       phase = 0;
-      setState({ time: 0.5, depth: 1, threshold: 0.12, shape: 0 });
+      demo();
     },
     update(dt) {
       if (sweeping) {
@@ -173,6 +291,8 @@ export function timeSculpture({
       }
     },
     dispose() {
+      dead = true;
+      cancelImport();
       texture.dispose();
     },
   };

@@ -28,7 +28,8 @@ export function sonic({
     nextBeat = 0,
     mode = "pluck",
     dead = false,
-    starting = false;
+    starting = false,
+    startGeneration = 0;
   const voices = new Set(),
     pulses = [],
     notes = [130.81, 164.81, 196, 261.63, 293.66, 329.63, 392, 523.25];
@@ -77,6 +78,8 @@ export function sonic({
   ring.rotation.y = 0.5;
   group.add(ring);
   function stop() {
+    startGeneration++;
+    starting = false;
     playing = false;
     for (const v of voices) {
       try {
@@ -93,6 +96,7 @@ export function sonic({
   async function start() {
     if (starting) return;
     starting = true;
+    const generation = ++startGeneration;
     try {
       if (!context) {
         context = new AudioContext();
@@ -107,6 +111,11 @@ export function sonic({
         };
       }
       await context.resume();
+      if (generation !== startGeneration) {
+        if (!playing && !starting && context.state === "running")
+          await context.suspend();
+        return;
+      }
       if (dead || document.hidden) {
         stop();
         if (dead) context.close();
@@ -121,10 +130,12 @@ export function sonic({
       play.setAttribute("aria-pressed", "true");
       status("Playing original synthesised notes.");
     } catch (e) {
-      stop();
-      status("Sound could not start. Press Play to retry.");
+      if (generation === startGeneration) {
+        stop();
+        status("Sound could not start. Press Play to retry.");
+      }
     } finally {
-      starting = false;
+      if (generation === startGeneration) starting = false;
     }
   }
   const play = button("▶ Play rhythm", () => (playing ? stop() : start()));
