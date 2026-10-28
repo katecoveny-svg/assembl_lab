@@ -40,6 +40,18 @@ await page.getByLabel('Your thinking').fill('Fictional learner: reflectivity aff
 await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: yes/);
 const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Export evidence (.json)',exact:true}).click();const download=await downloadPromise;await download.saveAs(out+'fictional-climate-evidence.json');
 const evidence=JSON.parse(await fs.readFile(out+'fictional-climate-evidence.json','utf8'));assert.equal(evidence.snapshots.length,2);assert.equal(evidence.progress.watchedDemonstration,true);assert.equal(evidence.progress.independentlyAttempted,true);assert.match(evidence.learnerExplanations.transfer,/Fictional/);
+// Historical success must never be used as feedback for a rejected current submission.
+await page.getByRole('button',{name:'Start independent attempt',exact:true}).click();
+for(let i=0;i<3;i++)await page.getByRole('button',{name:'Next',exact:true}).click();
+await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();
+assert.match(await page.locator('#status').innerText(),/save A and B yourself/);
+assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: yes/);
+await page.getByRole('button',{name:'Show me again',exact:true}).click();
+await page.getByRole('button',{name:'Show bright comparison',exact:true}).click();
+await page.getByLabel('Your thinking').fill('Fictional assisted explanation');
+await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();
+assert.match(await page.locator('#status').innerText(),/save A and B yourself/);
+assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: yes/);
 await page.getByText('Embed on a school website',{exact:true}).click();
 await context.grantPermissions(['clipboard-read','clipboard-write']);await page.getByRole('button',{name:'Copy embed code',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#copy-status').textContent.includes('copied'));assert.match(await page.locator('#copy-status').innerText(),/copied/);
 await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>Promise.reject(new Error('blocked'))}}));await page.getByRole('button',{name:'Copy embed code',exact:true}).click();assert.match(await page.locator('#copy-status').innerText(),/selected/);
@@ -52,6 +64,25 @@ for(const width of [320,375]){await page.setViewportSize({width,height:812});awa
 const fallback=await browser.newContext({viewport:{width:375,height:812},reducedMotion:'reduce'});
 await fallback.addInitScript(()=>{for(const name of ['localStorage','sessionStorage'])Object.defineProperty(window,name,{get(){throw new DOMException('Blocked','SecurityError')}});const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/.test(type)?null:original.call(this,type,...args)};});
 const fp=await fallback.newPage();await fp.goto(base);await fp.getByRole('button',{name:'Run one model year',exact:true}).click();assert.match(await fp.locator('#readings').innerText(),/17.37/);assert.equal(await fp.locator('.s3-host').count(),0);await fp.screenshot({path:out+'climate-fallback.png',fullPage:true});
+// Hold the shared viewer module while a learner changes their view preference.
+for(const toggleCount of [1,2]){
+ const delayedContext=await browser.newContext();
+ let release,started;const hold=new Promise(r=>release=r),requested=new Promise(r=>started=r);
+ await delayedContext.route('**/study/kit3d.js',async route=>{started();await hold;await route.continue();});
+ const dp=await delayedContext.newPage();const navigation=dp.goto(base);
+ await requested;
+ await dp.getByRole('button',{name:'Use drawing',exact:true}).click();
+ if(toggleCount===2)await dp.getByRole('button',{name:'Use 3D',exact:true}).click();
+ release();await navigation;await dp.waitForSelector('.s3-host canvas',{state:'attached'});
+ await dp.waitForFunction(()=>document.querySelector('.s3-host canvas')!==null);
+ const drawing=toggleCount===1;
+ assert.equal(await dp.locator('#drawing').getAttribute('aria-pressed'),String(drawing));
+ assert.equal(await dp.locator('#drawing').innerText(),drawing?'Use 3D':'Use drawing');
+ assert.equal(await dp.locator('.s3-host').evaluate(e=>e.hidden),drawing);
+ assert.equal(await dp.locator('.canvas').evaluate(e=>e.classList.contains('s3-on')),!drawing);
+ assert.equal(await dp.locator('#interact').isDisabled(),drawing);
+ await delayedContext.close();
+}
 const school=await context.newPage();await school.goto('http://127.0.0.1:8766/school.html');const frame=school.frameLocator('iframe');await frame.getByRole('button',{name:'Run one model year',exact:true}).click();assert.match(await frame.locator('#readings').innerText(),/17.37/);assert.equal(await frame.getByRole('button',{name:'Copy embed code',exact:true}).count(),0);assert.equal(await frame.locator('script[src="/ask.js"]').count(),0);assert.notEqual(new URL(school.url()).origin,new URL(school.frames()[1].url()).origin);await school.screenshot({path:out+'climate-cross-origin.png',fullPage:true});
 const pop=school.waitForEvent('popup');await frame.getByRole('link',{name:'Open full experience',exact:false}).click();await (await pop).close();
 const reduced=await browser.newContext({reducedMotion:'reduce'});const rp=await reduced.newPage();await rp.goto(base);await rp.waitForSelector('.s3-host canvas');assert.equal(await rp.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),true);await rp.getByRole('button',{name:'Teacher presentation',exact:true}).click();assert.equal(await rp.locator('#lesson').evaluate(e=>e.classList.contains('present')),true);await rp.screenshot({path:out+'climate-presentation.png',fullPage:true});assert.deepEqual(requests.filter(u=>!u.startsWith('http://127.0.0.1:')&&!u.startsWith('blob:')),[]);assert.deepEqual(errors,[]);console.log('PASS: flow, demo isolation, independent attempt, export, copy and fallback, reset/reopen, keyboard, 320/375px, blocked storage + no-WebGL, reduced motion, real cross-origin iframe + full-view link.');

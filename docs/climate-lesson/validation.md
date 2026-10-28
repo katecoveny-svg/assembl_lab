@@ -4,9 +4,11 @@ All checks below ran locally against this branch. No production or protected dep
 
 | Check | Result / evidence |
 | --- | --- |
-| Production-model determinism, baseline balance, energy accounting and trend | PASS, `node --test study/lessons/tests/climate.test.mjs` (5 tests total). At t=1: dark 17.370661701655685 °C; bright 2.9240307756514303 °C from identical 15 °C starts. Absorbed + reflected = 340 W/m². CO₂ unchanged. |
+| Production-model determinism, baseline balance, energy accounting and trend | PASS, `node --test study/lessons/tests/climate.test.mjs` (6 tests total). At t=1: dark 17.370661701655685 °C; bright 2.9240307756514303 °C from identical 15 °C starts. Absorbed + reflected = 340 W/m². CO₂ unchanged. |
 | Snapshot separation and repeatable reset | PASS; saved state is a copy; thermal restart retains chosen tiles; full reset restores baseline. |
 | Demonstration versus independent work | PASS; two assisted states do not mark independent work; B-only sparse array rejected; fresh distinct learner runs plus transfer response record an attempt, never correctness. |
+| Repeated submission feedback | PASS; after prior independent success, a fresh blank submission and an assisted demonstration submission are rejected while preserving historical activity. |
+| Delayed 3D attachment | PASS; module loading is held while the learner selects drawing, or toggles back to 3D. On attachment, visible mode, button label/pressed state and interaction availability agree with the latest preference. |
 | Guided Back, reset, reopen | PASS; Back preserves prediction; reset clears evidence/activity; reload opens fresh Explore. Guided-step heading receives focus. |
 | Browser model/UI response | PASS; actual interface yields 17.37 °C and 2.92 °C in the A/B comparison. |
 | Evidence export | PASS; actual browser download parsed, includes two inputs/outputs/series, fictional explanation and distinct activity flags. |

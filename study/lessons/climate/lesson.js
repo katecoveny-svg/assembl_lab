@@ -54,17 +54,25 @@ $('back').onclick=()=>{L.move(-1);render();$('question').focus();};$('next').onc
 $('present').onclick=()=>{const on=$('lesson').classList.toggle('present');$('present').setAttribute('aria-pressed',on);};
 $('demo').onclick=()=>{L.demonstrate();demoStage++;const type=demoStage%2?'ocean':'ice';preset(type);$('surface').value=type;run();L.snapshots[demoStage%2?0:1]=snapshot();render();$('demo').textContent=demoStage%2?'Show bright comparison':'Show me again';status(demoStage%2?'Demonstration A: dark surface absorbs more sunlight. Choose “Show bright comparison” next.':'Demonstration B: compare the brighter surface after the same time. These snapshots are assisted.');};
 $('fresh').onclick=()=>{L.freshAttempt();preset('forest');$('surface').value='forest';L.mode='guided';L.index=1;render();$('question').focus();status('Fresh independent attempt. Previous demonstration remains in activity history; comparison and written answers are cleared.');};
-$('attempt').onclick=()=>{L.attempt();render();status(L.progress.independentlyAttempted?'Independent attempt recorded, not graded. Discuss the evidence and limitations with your teacher.':'Start an independent attempt, save A and B yourself, and write a transfer explanation first.');};
+$('attempt').onclick=()=>{const valid=L.attempt();render();status(valid?'Independent attempt recorded, not graded. Discuss the evidence and limitations with your teacher.':'Start an independent attempt, save A and B yourself, and write a transfer explanation first.');};
 $('reset').onclick=()=>{L.reset();preset('ocean');$('surface').value='ocean';demoStage=0;$('demo').textContent='Show me';render();status('Everything reset. Evidence and activity history cleared.');};
 $('export').onclick=()=>{const evidence={lesson:version,reviewDate:review,outputType:'calculated model outputs, not measurements',curriculumMapping:'proposed practices only, not assessment alignment',progress:L.progress,snapshots:L.snapshots,learnerExplanations:L.answers};const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(evidence,null,2)],{type:'application/json'}));a.href=url;a.download='climate-evidence.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Evidence download requested. Nothing was uploaded.');};
 if(!embedded){$('embed-code').value=embedCode(location.origin,path,'assembl Lab: reflectivity and energy investigation');$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('embed-code').value);$('copy-status').textContent=' Embed code copied.';}catch{$('embed-code').focus();$('embed-code').select();$('copy-status').textContent=' Copy unavailable: code selected; use your device’s Copy command.';}};}
 $('interact').onclick=()=>{const canvas=document.querySelector('.canvas'),on=canvas.classList.toggle('interactive');$('interact').setAttribute('aria-pressed',on);$('interact').textContent=on?'Disable 3D interaction':'Enable 3D interaction';if(on)document.querySelector('.s3-host canvas')?.focus();};
-$('drawing').onclick=()=>{const c=document.querySelector('.canvas'),host=document.querySelector('.s3-host'),drawing=$('drawing').getAttribute('aria-pressed')!=='true';$('drawing').setAttribute('aria-pressed',drawing);$('drawing').textContent=drawing?'Use 3D':'Use drawing';if(host)host.hidden=drawing;c.classList.toggle('s3-on',!drawing&&sceneReady);$('interact').disabled=drawing||!sceneReady;};
+function applyViewPreference(){
+ const drawing=$('drawing').getAttribute('aria-pressed')==='true';
+ const c=document.querySelector('.canvas'),host=document.querySelector('.s3-host');
+ if(host)host.hidden=drawing;
+ c.classList.toggle('s3-on',!drawing&&sceneReady);
+ $('drawing').textContent=drawing?'Use 3D':'Use drawing';
+ $('interact').disabled=drawing||!sceneReady;
+}
+$('drawing').onclick=()=>{$('drawing').setAttribute('aria-pressed',$('drawing').getAttribute('aria-pressed')!=='true');applyViewPreference();};
 preset('ocean');render();
 if(!new URLSearchParams(location.search).has('lite')){
  try{const {attach}=await import('../../kit3d.js');const api={state:s,step:{k:'sun'},redraw:render};
  // Surface edits use the explicit accessible preset control; scene picks cannot alter held variables.
- attach(api,{title:'Climate energy bench'},S=>M.scene({...S,pick:()=>{}}),{...StudyKit,sfx:()=>{}});sceneReady=true;$('interact').disabled=false;
+ attach(api,{title:'Climate energy bench'},S=>M.scene({...S,pick:()=>{}}),{...StudyKit,sfx:()=>{}});sceneReady=true;applyViewPreference();
  document.querySelector('.s3-host canvas').addEventListener('webglcontextlost',()=>{document.querySelector('.s3-host').hidden=true;document.querySelector('.canvas').classList.remove('s3-on');$('interact').disabled=true;status('3D unavailable. The drawing, controls and tables still work.');});
  }catch{document.querySelector('.canvas').classList.remove('s3-on');document.querySelector('.s3-host')?.remove();status('Drawing mode: the same model, controls and tables work without 3D.');}
 }else{$('drawing').disabled=true;$('drawing').textContent='Drawing mode';}

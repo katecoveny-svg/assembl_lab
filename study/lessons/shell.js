@@ -6,7 +6,9 @@ export function createLesson(steps) {
     move(delta){this.index=Math.max(0,Math.min(steps.length-1,this.index+delta));},
     demonstrate(){this.assisted=true;this.progress.watchedDemonstration=true;},
     freshAttempt(){this.assisted=false;this.snapshots=[];this.answers={};},
-    attempt(){if(!this.assisted && this.snapshots[0] && this.snapshots[1] && this.snapshots[0].inputs.surfaceAlbedo !== this.snapshots[1].inputs.surfaceAlbedo && this.snapshots.every(s=>!s.assisted) && this.answers.transfer?.trim()) this.progress.independentlyAttempted=true;},
+    attempt(){const valid=Boolean(!this.assisted && this.snapshots[0] && this.snapshots[1] && this.snapshots[0].inputs.surfaceAlbedo !== this.snapshots[1].inputs.surfaceAlbedo && this.snapshots.every(s=>!s.assisted) && this.answers.transfer?.trim());
+      if(valid) this.progress.independentlyAttempted=true;
+      return valid;},
     reset(){this.mode='explore';this.index=0;this.answers={};this.snapshots=[];this.assisted=false;
       this.progress={explored:false,watchedDemonstration:false,independentlyAttempted:false};}
   };
