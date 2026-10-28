@@ -1,0 +1,251 @@
+{
+  "sourceHead": "fc7eb93",
+  "method": "Captured from actual browser experiences at 1200 x 900. Three.js annotation overlays hidden for card legibility; scene geometry is unchanged. JPEGs resized to 800px maximum edge.",
+  "machines": [
+    {
+      "id": "inanga",
+      "three": true,
+      "source": "m/inanga.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "inanga.jpg"
+    },
+    {
+      "id": "reactions",
+      "three": true,
+      "source": "m/reactions.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "reactions.jpg"
+    },
+    {
+      "id": "slushie",
+      "three": true,
+      "source": "m/slushie.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "slushie.jpg"
+    },
+    {
+      "id": "climate",
+      "three": true,
+      "source": "m/climate.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "climate.jpg"
+    },
+    {
+      "id": "shaky",
+      "three": true,
+      "source": "m/shaky/",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "shaky.jpg"
+    },
+    {
+      "id": "fish",
+      "three": true,
+      "source": "m/fish.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "fish.jpg"
+    },
+    {
+      "id": "read",
+      "three": false,
+      "source": "m/read.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "read.jpg"
+    },
+    {
+      "id": "words",
+      "three": false,
+      "source": "m/words.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "words.jpg"
+    },
+    {
+      "id": "essay",
+      "three": false,
+      "source": "m/essay.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "essay.jpg"
+    },
+    {
+      "id": "maps",
+      "three": true,
+      "source": "m/maps.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "maps.jpg"
+    },
+    {
+      "id": "market",
+      "three": true,
+      "source": "m/market.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "market.jpg"
+    },
+    {
+      "id": "claw",
+      "three": true,
+      "source": "m/claw.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "claw.jpg"
+    },
+    {
+      "id": "ai",
+      "three": true,
+      "source": "m/ai.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "ai.jpg"
+    },
+    {
+      "id": "vinyl",
+      "three": true,
+      "source": "m/vinyl.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "vinyl.jpg"
+    },
+    {
+      "id": "bike",
+      "three": true,
+      "source": "m/bike.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "bike.jpg"
+    },
+    {
+      "id": "lines",
+      "three": true,
+      "source": "m/lines.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "lines.jpg"
+    },
+    {
+      "id": "particles",
+      "three": true,
+      "source": "m/particles.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "particles.jpg"
+    },
+    {
+      "id": "energy",
+      "three": true,
+      "source": "m/energy.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "energy.jpg"
+    },
+    {
+      "id": "genes",
+      "three": true,
+      "source": "m/genes.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "genes.jpg"
+    },
+    {
+      "id": "kokopu",
+      "three": true,
+      "source": "m/kokopu.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "kokopu.jpg"
+    },
+    {
+      "id": "ecology",
+      "three": true,
+      "source": "m/ecology.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "ecology.jpg"
+    },
+    {
+      "id": "atoms",
+      "three": true,
+      "source": "m/atoms.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "atoms.jpg"
+    },
+    {
+      "id": "shapes",
+      "three": true,
+      "source": "m/shapes.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "shapes.jpg"
+    },
+    {
+      "id": "civics",
+      "three": true,
+      "source": "m/civics.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "civics.jpg"
+    },
+    {
+      "id": "sky",
+      "three": true,
+      "source": "m/sky.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "sky.jpg"
+    },
+    {
+      "id": "space",
+      "three": true,
+      "source": "m/space.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "space.jpg"
+    },
+    {
+      "id": "data",
+      "three": true,
+      "source": "m/data.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "data.jpg"
+    },
+    {
+      "id": "text",
+      "three": false,
+      "source": "m/text.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "text.jpg"
+    },
+    {
+      "id": "materials",
+      "three": true,
+      "source": "m/materials.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "materials.jpg"
+    },
+    {
+      "id": "claims",
+      "three": false,
+      "source": "m/claims.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "claims.jpg"
+    },
+    {
+      "id": "vend",
+      "three": true,
+      "source": "m/vend.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "vend.jpg"
+    },
+    {
+      "id": "pinball",
+      "three": true,
+      "source": "m/pinball.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "pinball.jpg"
+    },
+    {
+      "id": "phone",
+      "three": true,
+      "source": "m/phone.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "phone.jpg"
+    },
+    {
+      "id": "queue",
+      "three": true,
+      "source": "m/queue.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "queue.jpg"
+    },
+    {
+      "id": "plan",
+      "three": true,
+      "source": "m/plan.html",
+      "capture": "/.playmain > .canvas or experience main panel",
+      "image": "plan.jpg"
+    }
+  ]
+}
