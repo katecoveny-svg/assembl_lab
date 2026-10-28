@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lesson shell regression checks</title><link rel="stylesheet" href="../kit.css"><body><pre id="results" role="status">Running</pre><div id="app"></div><script src="../kit.js"></script><script>
+const failures=[],checks=[];function check(name,ok){checks.push(name);if(!ok)failures.push(name)}
+let calls=0;const state={value:7,playing:false};const api=StudyKit.mount({id:'fixture',title:'Test model',eyebrow:'Regression fixture',state,mainBox:'0 0 640 330',companion:'quiet',ar:false,
+ steps:[{k:'first',lab:'First',cap:'First',onStep(){calls++}},{k:'second',lab:'Second',cap:'Second',onStep(){calls++}}],
+ controls:[{type:'range',id:'value',label:'Value',min:0,max:10,get:s=>s.value,set:(s,v)=>s.value=v}],drawMain:()=>'<text x="20" y="40">Model</text>',
+ lesson:{step:'first',question:'An authored question',explore:'Explore',predict:'Prediction',investigate:'Investigate',explain:'Explain',prepare(){},capture(){return{raw:{v:state.value},fields:{Value:state.value}}},reset(){state.value=0}}
+});
+const click=s=>document.querySelector(s).click(),input=document.querySelector('#k-prediction');
+check('initial onStep called once',calls===1);input.value='My prediction';
+for(let i=0;i<24;i++)click(`[data-stage="${i%4}"]`);
+check('lesson transitions never call onStep',calls===1);check('lesson transitions preserve state',state.value===7);check('topic hash independent of stage',location.hash==='#first');
+check('prediction node and draft survive',document.querySelector('#k-prediction')===input&&input.value==='My prediction');
+click('[data-stage="2"]');click('[data-capture="B"]');check('B requires A',document.querySelector('#k-lesson-status').textContent.includes('A first'));
+click('[data-capture="A"]');state.value=9;api.redraw();check('capture is immutable',document.querySelector('#k-evidence').textContent.includes('Value7'));
+click('[data-capture="B"]');click('[data-capture="A"]');check('recapturing A clears B',document.querySelector('#k-evidence').textContent.includes('Observation BNot captured yet.'));
+api.setStep(1);check('other topic hides lesson',document.querySelector('#k-lesson').hidden);api.setStep(0);check('topic return preserves draft',input.value==='My prediction');check('only topic transitions call onStep',calls===3);
+const explore=document.querySelector('[data-stage="0"]');explore.focus();explore.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true,cancelable:true}));check('stage keyboard End focuses Explain',document.activeElement.dataset.stage==='3');
+click('#k-lesson-reset');check('restart resets model and drafts',state.value===0&&input.value==='');check('restart focuses Explore',document.activeElement===explore);check('restart does not call onStep',calls===3);
+document.querySelector('#results').textContent=failures.length?`FAIL ${failures.join('; ')}`:`PASS ${checks.length} checks\n${checks.join('\n')}`;
+</script></body></html>
