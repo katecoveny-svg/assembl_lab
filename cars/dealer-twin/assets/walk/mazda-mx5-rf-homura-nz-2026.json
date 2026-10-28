@@ -1,0 +1,435 @@
+{
+  "schema": "assembl.splatcar.spec/1",
+  "id": "mazda-mx5-rf-homura-nz-2026",
+  "vehicle": {
+    "make": "Mazda",
+    "model": "MX-5",
+    "variant": "RF Homura",
+    "bodyStyle": "Retractable fastback (electric hardtop), 2 seats",
+    "market": "New Zealand",
+    "specEdition": "Mazda NZ MX-5 specifications, September 2026",
+    "priceFrom": {
+      "value": 61990,
+      "unit": "NZD",
+      "note": "Mazda NZ website, 'From' price for RF Homura, read 26 October 2026",
+      "truth": "Established",
+      "source": "mazda-nz-mx5-page"
+    }
+  },
+  "capture": {
+    "note": "The 3D capture is a community scan of a European-market MX-5 RF (left-hand drive, German plates), model year unverified. It shows the body style. It is not the vehicle in this listing.",
+    "truth": "Established",
+    "attribution": "\"Mazda MX5 remastered\" by Goran (gorank) on SuperSplat, CC BY 4.0, https://superspl.at/scene/4271aa24. Cropped, levelled, scaled and compressed by assembl."
+  },
+  "sources": [
+    {
+      "id": "mazda-nz-brochure-2026-09",
+      "title": "Mazda MX-5 specifications brochure (MZ4900811), September 2026",
+      "publisher": "Mazda Motors of New Zealand Limited",
+      "url": "https://res.cloudinary.com/dllcelqe3/image/upload/v1788935691/mazda-nz-payload-prod/mazda-mx-5-brochure-september-2026.pdf",
+      "accessed": "2026-10-26",
+      "short": "Mazda NZ brochure"
+    },
+    {
+      "id": "mazda-nz-mx5-page",
+      "title": "Mazda MX-5 Roadster and RF",
+      "publisher": "Mazda New Zealand",
+      "url": "https://www.mazda.co.nz/cars/mx-5",
+      "accessed": "2026-10-26",
+      "short": "Mazda NZ"
+    },
+    {
+      "id": "ancap-mx5",
+      "title": "ANCAP safety rating: Mazda MX-5 (Sep 2015 – Dec 2023)",
+      "publisher": "ANCAP",
+      "url": "https://www.ancap.com.au/safety-ratings/mazda/mx-5/6e3441",
+      "accessed": "2026-10-26",
+      "short": "ANCAP"
+    },
+    {
+      "id": "rightcar",
+      "title": "Rightcar vehicle lookup",
+      "publisher": "NZ Transport Agency Waka Kotahi",
+      "url": "https://rightcar.govt.nz/",
+      "accessed": "2026-10-26",
+      "short": "Rightcar"
+    },
+    {
+      "id": "parkers-rf-practicality",
+      "title": "Mazda MX-5 RF practicality review",
+      "publisher": "Parkers (UK)",
+      "url": "https://parkers.co.uk/mazda/mx-5/rf/review/practicality",
+      "accessed": "2026-10-26",
+      "short": "Parkers (UK)"
+    },
+    {
+      "id": "carsguide-mx5-towing-2026",
+      "title": "Mazda MX-5 towing capacity, 2026",
+      "publisher": "CarsGuide (Australia)",
+      "url": "https://www.carsguide.com.au/mazda/mx-5/towing-capacity/2026",
+      "accessed": "2026-10-26",
+      "short": "CarsGuide (AU)"
+    },
+    {
+      "id": "capture-measured",
+      "title": "Measured from this 3D capture after scaling to the published overall length",
+      "publisher": "assembl splat pipeline",
+      "url": "../data/build/mx5-rf-sample.manifest.json",
+      "accessed": "2026-10-26",
+      "short": "this capture"
+    }
+  ],
+  "groups": [
+    {
+      "id": "size",
+      "label": "Size and weight",
+      "fields": [
+        "length",
+        "width",
+        "height",
+        "wheelbase",
+        "kerbWeight",
+        "measuredHeight"
+      ]
+    },
+    {
+      "id": "drive",
+      "label": "Engine and drive",
+      "fields": [
+        "engine",
+        "power",
+        "torque",
+        "transmission",
+        "drivetrain"
+      ]
+    },
+    {
+      "id": "running",
+      "label": "Running costs",
+      "fields": [
+        "economy",
+        "co2",
+        "fuelTank"
+      ]
+    },
+    {
+      "id": "safety",
+      "label": "Safety",
+      "fields": [
+        "ancap",
+        "rightcar",
+        "safetyTech"
+      ]
+    },
+    {
+      "id": "practical",
+      "label": "Practicality",
+      "fields": [
+        "boot",
+        "towBraked",
+        "towUnbraked",
+        "wheels"
+      ]
+    },
+    {
+      "id": "tech",
+      "label": "Technology",
+      "fields": [
+        "keyTech",
+        "roof"
+      ]
+    },
+    {
+      "id": "own",
+      "label": "Ownership",
+      "fields": [
+        "warranty",
+        "servicing"
+      ]
+    }
+  ],
+  "fields": {
+    "length": {
+      "label": "Overall length",
+      "value": 3915,
+      "unit": "mm",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "width": {
+      "label": "Width, excluding mirrors",
+      "value": 1735,
+      "unit": "mm",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "height": {
+      "label": "Overall height",
+      "value": 1235,
+      "unit": "mm",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "wheelbase": {
+      "label": "Wheelbase",
+      "value": 2310,
+      "unit": "mm",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "kerbWeight": {
+      "label": "Kerb weight",
+      "value": 1131,
+      "unit": "kg",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "measuredHeight": {
+      "label": "Height in this capture",
+      "value": null,
+      "unit": "mm",
+      "fromManifest": "measured.heightM",
+      "truth": "Source-based inference",
+      "source": "capture-measured",
+      "note": "Measured from the splat after scaling it to the 3,915 mm published length. Shows the 3D scale is real."
+    },
+    "engine": {
+      "label": "Engine",
+      "value": "2.0 L Skyactiv-G, in-line 4-cylinder petrol",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "power": {
+      "label": "Maximum power",
+      "value": 135,
+      "unit": "kW @ 7,000 rpm",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "torque": {
+      "label": "Maximum torque",
+      "value": 205,
+      "unit": "Nm @ 4,000 rpm",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "transmission": {
+      "label": "Transmission",
+      "value": "6-speed automatic, paddle shift",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "drivetrain": {
+      "label": "Drivetrain",
+      "value": "Rear-wheel drive",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "economy": {
+      "label": "Fuel economy, combined",
+      "value": 8.0,
+      "unit": "L/100 km",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09",
+      "note": "3P-WLTP test programme. Real-world use will differ."
+    },
+    "co2": {
+      "label": "CO₂ emissions",
+      "value": 187,
+      "unit": "g/km",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09",
+      "note": "3P-WLTP."
+    },
+    "fuelTank": {
+      "label": "Fuel tank",
+      "value": 45,
+      "unit": "L",
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "ancap": {
+      "label": "ANCAP rating",
+      "value": "Unrated — 2016 rating expired December 2023",
+      "unit": null,
+      "truth": "Established",
+      "source": "ancap-mx5",
+      "note": "Five stars when tested in 2016. ANCAP ratings carry a date stamp and expire after six years."
+    },
+    "rightcar": {
+      "label": "Rightcar safety and environment",
+      "value": "Check by plate or VIN on Rightcar",
+      "unit": null,
+      "truth": "Requires validation",
+      "source": "rightcar",
+      "note": "Rightcar results are per vehicle. Add the listed car's plate or VIN before publishing."
+    },
+    "safetyTech": {
+      "label": "Driver assistance",
+      "value": "Smart City Brake Support (forward and reverse), Blind Spot Monitoring with exit warning, Rear Cross Traffic Alert, Lane Departure Warning, Traffic Sign Recognition, Driver Attention Alert",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "boot": {
+      "label": "Boot volume",
+      "value": 127,
+      "unit": "L",
+      "truth": "Requires validation",
+      "source": "parkers-rf-practicality",
+      "note": "The Mazda NZ September 2026 brochure lists 455 L for both body styles, which conflicts with the 127 L widely published for the RF. Confirm with Mazda NZ before publishing."
+    },
+    "towBraked": {
+      "label": "Towing, braked",
+      "value": "Not rated (0 kg)",
+      "unit": null,
+      "truth": "Requires validation",
+      "source": "carsguide-mx5-towing-2026",
+      "note": "Australian listing. Mazda NZ does not publish a towing figure for MX-5."
+    },
+    "towUnbraked": {
+      "label": "Towing, unbraked",
+      "value": "Not published",
+      "unit": null,
+      "truth": "Requires validation",
+      "source": "carsguide-mx5-towing-2026"
+    },
+    "wheels": {
+      "label": "Wheels and tyres",
+      "value": "17 × 7.0J alloy, black metallic · 205/45 R17 · tyre mobility kit",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "keyTech": {
+      "label": "Key tech",
+      "value": "8.8-inch Mazda Connect with satellite navigation, Apple CarPlay and Android Auto, Bose 9-speaker audio, adaptive LED headlights, heated leather seats, reverse camera and rear sensors",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "roof": {
+      "label": "Roof",
+      "value": "Electrically operated retractable hardtop",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "warranty": {
+      "label": "Warranty",
+      "value": "5 years / unlimited km new vehicle; 5 years corrosion; 5 years roadside assistance",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    },
+    "servicing": {
+      "label": "Scheduled servicing",
+      "value": "5 years / 100,000 km at no extra cost (Mazdacare)",
+      "unit": null,
+      "truth": "Established",
+      "source": "mazda-nz-brochure-2026-09"
+    }
+  },
+  "hotspots": [
+    {
+      "id": "powertrain",
+      "anchor": "bonnet",
+      "label": "Engine",
+      "title": "2.0 L, rear-wheel drive",
+      "fields": [
+        "engine",
+        "power",
+        "torque",
+        "transmission",
+        "drivetrain"
+      ],
+      "summary": "135 kW · 205 Nm"
+    },
+    {
+      "id": "safety",
+      "anchor": "headlamp",
+      "label": "Safety",
+      "title": "Safety and driver assistance",
+      "fields": [
+        "ancap",
+        "rightcar",
+        "safetyTech"
+      ],
+      "summary": "ANCAP: unrated (expired)"
+    },
+    {
+      "id": "dimensions",
+      "anchor": "sideSill",
+      "label": "Size",
+      "title": "Dimensions and weight",
+      "fields": [
+        "length",
+        "width",
+        "height",
+        "wheelbase",
+        "kerbWeight",
+        "measuredHeight"
+      ],
+      "summary": "3,915 mm long"
+    },
+    {
+      "id": "wheels",
+      "anchor": "frontWheel",
+      "label": "Wheels",
+      "title": "Wheels and tyres",
+      "fields": [
+        "wheels"
+      ],
+      "summary": "17-inch alloys"
+    },
+    {
+      "id": "tech",
+      "anchor": "cabin",
+      "label": "Tech",
+      "title": "Cabin and technology",
+      "fields": [
+        "keyTech",
+        "roof"
+      ],
+      "summary": "8.8-inch screen · Bose"
+    },
+    {
+      "id": "economy",
+      "anchor": "tailLamp",
+      "label": "Economy",
+      "title": "Fuel and emissions",
+      "fields": [
+        "economy",
+        "co2",
+        "fuelTank"
+      ],
+      "summary": "8.0 L/100 km"
+    },
+    {
+      "id": "boot",
+      "anchor": "boot",
+      "label": "Boot",
+      "title": "Boot and towing",
+      "fields": [
+        "boot",
+        "towBraked",
+        "towUnbraked"
+      ],
+      "summary": "127 L · to confirm"
+    },
+    {
+      "id": "warranty",
+      "anchor": "doorMirror",
+      "label": "Ownership",
+      "title": "Warranty and servicing",
+      "fields": [
+        "warranty",
+        "servicing"
+      ],
+      "summary": "5 yr / unlimited km"
+    }
+  ]
+}

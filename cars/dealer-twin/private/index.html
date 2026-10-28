@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dealer twin · Agent-ready cars · assembl lab</title>
+<meta name="description" content="A private demo of an agentic system for a dealer group: stock, service and sales as one working model. By sign-in only.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FFFDFB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A0917" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* assembl lab · Agent-ready cars · dealer twin. One quiet page: what it is, and the way in. */
+:root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--deep:#240B21;--body:#654A4E;--rose:#916A70;--line:rgba(73,43,62,.13);--line2:rgba(73,43,62,.24);--card:#FFFFFF;--btn:#240B21;--btn-ink:#FFFDFB;
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--gut:max(16px,4vw);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1A0917;--chalk:#241021;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D6C8CD;--rose:#B898A0;--line:rgba(245,241,242,.13);--line2:rgba(245,241,242,.24);--card:#211020;--btn:#F5F1F2;--btn-ink:#240B21;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1A0917;--chalk:#241021;--ink:#F5F1F2;--deep:#FFFDFB;--body:#D6C8CD;--rose:#B898A0;--line:rgba(245,241,242,.13);--line2:rgba(245,241,242,.24);--card:#211020;--btn:#F5F1F2;--btn-ink:#240B21;color-scheme:dark}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--body);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--ink);text-underline-offset:3px;text-decoration-thickness:1px}
+:focus-visible{outline:2px solid var(--rose);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1040px;margin:0 auto;padding:clamp(40px,8vw,96px) var(--gut) clamp(56px,8vw,96px)}
+.eyebrow{font:500 11px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:0 0 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip{font:500 9.5px/1.6 var(--mono);letter-spacing:.06em;padding:2px 8px;border-radius:999px;color:var(--ink);background:color-mix(in srgb,var(--ink) 9%,transparent)}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(28px,6vw,80px);align-items:start}
+h1{color:var(--deep);font-weight:500;font-size:clamp(38px,5.4vw,64px);line-height:1.02;letter-spacing:-.035em;margin:0 0 20px}
+.lede{font-size:clamp(17px,1.6vw,20px);line-height:1.55;color:var(--ink);margin:0 0 14px;max-width:34ch}
+p{margin:0 0 12px;max-width:52ch}
+.door{border-radius:22px;background:var(--card);box-shadow:0 0 0 1px var(--line),0 40px 70px -50px rgba(36,11,33,.45);padding:clamp(20px,3vw,30px)}
+.door-k{display:flex;align-items:center;gap:10px;font:500 11px/1.4 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--body);margin:0 0 14px}
+.door-k svg{width:16px;height:16px;color:var(--ink)}
+.door h2{color:var(--deep);font-weight:500;font-size:22px;letter-spacing:-.02em;line-height:1.2;margin:0 0 8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;min-height:48px;padding:0 22px;font:500 15px var(--sans);text-decoration:none;cursor:pointer;background:var(--btn);color:var(--btn-ink);margin:12px 0 10px}
+.btn[aria-disabled="true"]{background:transparent;color:var(--body);box-shadow:inset 0 0 0 1px var(--line2);cursor:default}
+.fine{font-size:13px;line-height:1.55;color:var(--body);margin:0}
+.parts{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.parts li{display:grid;grid-template-columns:88px 1fr;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:15px}
+.parts b{font:500 11px/1.9 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--rose)}
+.after{margin-top:clamp(36px,6vw,64px);padding-top:18px;border-top:1px solid var(--line);font-size:14.5px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}.lede{max-width:none}}
+@media (max-width:420px){.parts li{grid-template-columns:1fr;gap:2px}.btn{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap" id="main">
+  <div class="grid">
+    <div>
+      <p class="eyebrow">Agent-ready cars · Dealer twin <span class="chip">Private demo</span></p>
+      <h1>The dealer twin</h1>
+      <p class="lede">A private demo of an agentic system for a dealer group: its stock, service and sales running as one model, with agents that act only on the dealer's instruction.</p>
+      <p>It works from a dealer group's own records, so it's shown by sign-in only, to people the group has invited.</p>
+      <ul class="parts" aria-label="What the twin covers">
+        <li><b>Stock</b><span>Every car as a record an agent can read, published on the dealer's say-so.</span></li>
+        <li><b>Service</b><span>Bookings, parts and the waits in between, in one view.</span></li>
+        <li><b>Sales</b><span>Enquiries, test drives and holds, each confirmed by a person.</span></li>
+      </ul>
+    </div>
+    <aside class="door" aria-labelledby="door-h">
+      <p class="door-k"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.6"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7"/></svg>Sign-in only</p>
+      <h2 id="door-h">Invited? Sign in to the twin.</h2>
+      <a class="btn" id="twin-link" href="PRIVATE_TWIN_URL" rel="noopener">Sign in to the dealer twin <span aria-hidden="true">↗</span></a>
+      <p class="fine" id="twin-note">It opens on its own site. Access is by invitation.</p>
+    </aside>
+  </div>
+  <p class="after">Without a sign-in, the <a href="/cars/dealer-twin/">public dealer twin</a>, the <a href="/cars/">overview</a>, the <a href="/cars/check/">car check</a> and <a href="/capture/">3D capture</a> show the same ideas with a fictional dealer and Simulated stock.</p>
+</main>
+<script>
+// until the sign-in site's address is filled in (replace PRIVATE_TWIN_URL above), the button says so instead of leading nowhere
+(function () { var a = document.getElementById("twin-link"); if (!/^https:\/\//.test(a.getAttribute("href"))) {
+  a.removeAttribute("href"); a.setAttribute("aria-disabled", "true"); a.setAttribute("role", "link"); a.textContent = "Sign-in link coming soon";
+  document.getElementById("twin-note").textContent = "The twin's sign-in site isn't open yet. Access will be by invitation."; } })();
+</script>
+<script src="/cars/carnav.js" defer></script>
+<script src="/lab/navigation.js" defer></script>
+<script src="/ask.js" defer data-page="cars"></script>
+</body>
+</html>
