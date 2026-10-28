@@ -2,7 +2,7 @@ import { createFrameClock } from "./frame-clock.js";
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { $, light } from "./app.js";
+import { $, light, isLighterQuality } from "./app.js";
 export { T };
 export function studio({ antialias = true } = {}) {
   const canvas = $("#canvas");
@@ -91,6 +91,13 @@ export function studio({ antialias = true } = {}) {
     canvas,
     point,
     ray,
+    setQuality(value) {
+      renderer.setPixelRatio(
+        Math.min(devicePixelRatio, isLighterQuality(value) ? 1.25 : 1.75),
+      );
+      resize();
+      clock.reset(performance.now());
+    },
     freeze(v) {
       frozen = v;
     },

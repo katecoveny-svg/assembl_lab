@@ -1,6 +1,14 @@
 import { PackedSplats, SplatMesh, SparkRenderer } from "@sparkjsdev/spark";
 import { studio, T, drag } from "./scene.js";
-import { $, status, choices, range, history, light } from "./app.js";
+import {
+  $,
+  status,
+  choices,
+  range,
+  history,
+  light,
+  isLighterQuality,
+} from "./app.js";
 export async function start() {
   $("#intro").textContent = "Pull the world apart. Put it back differently.";
   $("#note").innerHTML =
@@ -8,7 +16,7 @@ export async function start() {
   $("#medium").textContent = "SYNTHETIC GAUSSIAN SCULPTURE";
   $("#hint").textContent = "Drag to brush · choose Orbit to turn";
   $("#explanation").innerHTML =
-    "<p>This original scene is made from thousands of oriented, translucent 3D Gaussian ellipsoids, rendered by Spark. It is a synthetic sculpture, not a scan or a point-cloud substitute. Brushing changes Gaussian centres; dissolve changes their opacity; the vortex rotates them around an axis. Reassemble returns each one to its original position.</p><p>Undo stores up to 16 gestures. Freeze pauses reassembly; you can still edit the frozen sculpture. Lighter mode uses fewer splats and fewer screen pixels. PNG is a still image, not a 3D scene export.</p>";
+    "<p>This original scene is made from thousands of oriented, translucent 3D Gaussian ellipsoids, rendered by Spark. It is a synthetic sculpture, not a scan or a point-cloud substitute. Brushing changes Gaussian centres; dissolve changes their opacity; the vortex rotates them around an axis. Reassemble returns each one to its original position.</p><p>Undo stores up to 16 gestures. Freeze pauses reassembly; you can still edit the frozen sculpture. Auto conservatively renders 2,400 splats on every screen; Full renders 5,600 and may be slower. Every edit updates the complete sculpture. Quality switches change only its rendering, preserving the artwork, camera, freeze state and undo history. PNG is a still image, not a 3D scene export.</p>";
   // Spark resolves Gaussian coverage itself; MSAA adds cost without improving splats.
   const s = studio({ antialias: false });
   const spark = new SparkRenderer({ renderer: s.renderer });
@@ -23,7 +31,8 @@ export async function start() {
     original = [],
     mesh,
     packed;
-  const count = light ? 2400 : 5600;
+  const count = 5600;
+  let visibleCount = light ? 2400 : count;
   const scale = new T.Vector3(),
     q = new T.Quaternion(),
     p = new T.Vector3(),
@@ -94,6 +103,7 @@ export async function start() {
         c,
       );
     }
+    packed.numSplats = visibleCount;
     original = data.map((d) => ({ ...d }));
     mesh = new SplatMesh({ packedSplats: packed, enableLod: false });
     s.scene.add(mesh);
@@ -108,16 +118,19 @@ export async function start() {
   const h = history(capture, restore);
   h.install();
   function upload() {
-    data.forEach((d, i) =>
-      packed.setSplat(
-        i,
-        p.set(d.x, d.y, d.z),
-        scale.set(d.sx, d.sy, d.sz),
-        d.q,
-        d.a,
-        d.c,
-      ),
-    );
+    data
+      .slice(0, visibleCount)
+      .forEach((d, i) =>
+        packed.setSplat(
+          i,
+          p.set(d.x, d.y, d.z),
+          scale.set(d.sx, d.sy, d.sz),
+          d.q,
+          d.a,
+          d.c,
+        ),
+      );
+    packed.numSplats = visibleCount;
     packed.needsUpdate = true;
     mesh.updateVersion();
   }
@@ -224,11 +237,20 @@ export async function start() {
       }
     }
     $("#metrics").textContent =
-      `${count.toLocaleString()} GAUSSIANS / ${s.fps()} FPS`;
+      `${visibleCount.toLocaleString()} GAUSSIANS / ${s.fps()} FPS`;
   };
   return {
     ...s,
     backend: "spark-gaussians",
+    setQuality(value) {
+      visibleCount = isLighterQuality(value) ? 2400 : count;
+      s.setQuality(value);
+      upload();
+      $("#metrics").textContent = `${visibleCount.toLocaleString()} GAUSSIANS`;
+      return value === "full"
+        ? "Full: 5,600 splats; slower on some browsers. Artwork and undo kept."
+        : "Lighter: 2,400 splats. Artwork and undo kept.";
+    },
     async prepareCapture() {
       await mesh.initialized;
       await spark.update({ scene: s.scene, camera: s.camera });
@@ -240,7 +262,8 @@ export async function start() {
     },
     capture,
     stats: () => ({
-      splats: count,
+      splats: packed.numSplats,
+      modelSplats: data.length,
       fps: s.fps(),
       opacity: data.reduce((a, d) => a + d.a, 0),
       displacement: data.reduce(

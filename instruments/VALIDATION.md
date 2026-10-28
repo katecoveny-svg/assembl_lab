@@ -7,7 +7,7 @@ Original checkout was read only; all implementation paths are under `instruments
 
 ## Executed checks
 
-`npm run build` passes. The initial browser suite passed **19 tests; 2 intentionally skipped** (CDP touch is specific to the mobile Chromium project). The complete follow-up suite passed **43 browser tests; 2 platform-specific skips**, plus **6 deterministic unit tests**. This includes 12 control/export regression cases and 12 independent measurement runs.
+`npm run build` passes. The initial browser suite passed **19 tests; 2 intentionally skipped** (CDP touch is specific to the mobile Chromium project). The complete follow-up suite passed **61 browser tests; 2 platform-specific skips**, plus **6 deterministic unit tests**. This includes 12 control/export regression cases, 15 Auto/state-preservation/native-print cases, and 15 independent measurement runs.
 
 | Environment | Reality Remix | Soft Matter | Impossible Objects |
 | --- | --- | --- | --- |
@@ -27,17 +27,21 @@ Six deterministic unit tests cover 5, 10, 15 and 60 FPS, a two-second active sta
 
 Independent measurements count requestAnimationFrame callbacks over five wall-clock seconds after two seconds of warm-up. These are **idle-scene measurements**, not interaction-latency or physical-device benchmarks. The instrument's one-second readings are recorded alongside the independent counts in `output/performance/*.json`.
 
-| Headless environment | Reality Remix full | Reality Remix lighter | Soft Matter | Impossible Objects |
-| --- | ---: | ---: | ---: | ---: |
-| Chromium desktop 1440×1000 | 15.4 FPS | 30.5 FPS | 51.0 FPS | 33.7 FPS |
-| Chromium Pixel 7 emulation | Auto uses lighter | 28.6–31.4 FPS | 60.1 FPS | 60.2 FPS |
-| WebKit desktop | 60.2 FPS | 60.1 FPS | 60.0 FPS | 60.1 FPS |
+| Headless environment | Reality Auto | Reality lighter | Reality manual Full | Soft Matter | Impossible Objects |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Chromium desktop 1440×1000 | 27.9 FPS | 26.9 FPS | 13.5 FPS | 38.9 FPS | 27.4 FPS |
+| Chromium Pixel 7 emulation | 28.8 FPS | 29.4 FPS | 10.1 FPS | 60.2 FPS | 59.0 FPS |
+| WebKit desktop | 60.1 FPS | 60.0 FPS | 60.1 FPS | 60.1 FPS | 60.1 FPS |
 
-**Remaining performance limit:** full 5,600-splat quality is slow in this headless desktop Chromium environment. Lighter quality (2,400 splats) is the more responsive option there. Removing MSAA, as Spark recommends for Gaussian rendering, did not eliminate the bottleneck: before/after full-quality samples were 14.1 and 15.4 FPS, too small a change to claim a substantial improvement. Both sets of raw results are preserved (`before-msaa/` and the final files). The UI reports the low rate honestly; full quality is not described as universally smooth. Geometry rebuilding and shader warm-up can also briefly stall rendering; five-second idle rates do not hide those costs.
+**Default corrected:** Reality Remix Auto now conservatively renders 2,400 splats on every viewport, avoiding the slow Full first experience in Chromium. Full (5,600) remains an explicit choice and is slow in the Chromium measurements above. The UI warns that it can be slower. The complete 5,600-splat model remains resident and receives every edit, so changing visible density never reconstructs or resets the artwork. Removing MSAA, as Spark recommends for Gaussian rendering, did not eliminate the bottleneck: before/after full-quality samples were 14.1 and 15.4 FPS, too small a change to claim a substantial improvement. Those historical raw results are preserved in `before-msaa/` and `pre-auto/`. Current files explicitly distinguish `-auto`, `-light` and `-full`; the table above uses the fresh Auto-correction run. Host background load was not controlled, so small differences across runs are not attributed solely to code changes. The UI reports low rates honestly; full quality is not described as universally smooth. Geometry rebuilding and shader warm-up can also briefly stall rendering; five-second idle rates do not hide those costs.
 
 Pixel caps: 1.75 full, 1.25 lighter. Gaussian counts: 5,600 / 2,400. Cage counts: 162 / 92. The 90° test solid has 8,688 / 3,522 triangles. Hidden documents stop active updates. These observations do not predict physical phone thermal/battery behavior.
 
 ## Review corrections
+
+Quality controls now update rendering in place rather than navigating/reloading. Tests compare the complete frozen edited sculpture before/after Auto → Full → Lighter → Auto, verify visible coloured pixels after each switch, preserve freeze/undo state and exercise Undo afterwards. The other two instruments also preserve current state across quality switches; their cage/mesh resolution remains fixed at startup while live pixel density changes. The 2D fallback disables this selector.
+
+The native `beforeprint` path synchronously flushes pending solid geometry, sharing the same flush as image/mesh capture. A paused-clock test edits Carve then dispatches `beforeprint` before the 70 ms timer; dimensions update immediately and the still is generated. No physical printer dialog is opened by this test.
 
 Four focused visible-control tests failed on the initial implementation and passed after correction: Home undo, End undo, pending-edit GLB export, and preset highlight after Undo/Reset. A paused browser clock keeps the 70 ms geometry update pending while the user activates Export; the saved GLB now matches the current dimensions and triangle count. Export/capture flush pending geometry; failed geometry cannot silently export the prior design. Preset highlights are derived from the actual parameters, including no selected preset for custom edits.
 
@@ -58,7 +62,7 @@ Committed screenshots in `output/playwright/`: desktop, emulated mobile and WebK
 
 - Parent must integrate entry links and confirm release scope. No Study navigation/overview file changed.
 - Initial PR #24 was merged externally. This agent performed no merge, deployment or rollback. The review follow-up remains separate from that production baseline. Protected preview authentication remains unverified; no Vercel CLI, bypass token, deployment-protection changes or credentials were used.
-- No physical phone testing; default “Auto” chooses lighter quality on narrow screens. Low-end WebGL2 support still varies; a labelled 2D study remains available.
+- No physical phone testing; Reality Remix “Auto” chooses lighter rendering on every screen; other instruments use lighter startup detail on narrow screens. Low-end WebGL2 support still varies; a labelled 2D study remains available.
 - Soft Matter has an anchored boundary cage, not arbitrary volumetric FEM, tear/plasticity or self-collision. No claims of those features appear in the UI.
 - Reality Remix is original synthetic Gaussian artwork, never labelled a captured scan.
 - Next-stage Liquid Playground, Sonic Loom and Time Sculpture are not included or represented by placeholders.

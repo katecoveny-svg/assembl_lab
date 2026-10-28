@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 for (const route of [
   "reality-remix/",
   "reality-remix/?mode=light",
+  "reality-remix/?mode=full",
   "soft-matter/",
   "impossible-objects/",
 ]) {
@@ -40,7 +41,10 @@ for (const route of [
     );
     console.log(info.project.name, route, JSON.stringify(measurement));
     expect(measurement.frames).toBeGreaterThan(0);
-    const key = `${info.project.name}-${route.includes("light") ? "reality-remix-light" : route.replace("/", "")}`;
+    const label = route.startsWith("reality-remix")
+      ? `reality-remix-${route.includes("full") ? "full" : route.includes("light") ? "light" : "auto"}`
+      : route.replace("/", "");
+    const key = `${info.project.name}-${label}`;
     await mkdir("output/performance", { recursive: true });
     await writeFile(
       `output/performance/${key}.json`,

@@ -1,8 +1,9 @@
 {
   "frames": 301,
-  "wallMilliseconds": 5015,
-  "measuredFPS": 60,
+  "wallMilliseconds": 5007,
+  "measuredFPS": 60.1,
   "displayedFPS": [
+    60,
     60,
     60,
     60,

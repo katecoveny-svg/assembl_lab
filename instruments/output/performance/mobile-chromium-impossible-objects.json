@@ -1,11 +1,11 @@
 {
-  "frames": 301,
-  "wallMilliseconds": 5004.099999964237,
-  "measuredFPS": 60.2,
+  "frames": 295,
+  "wallMilliseconds": 5001.800000011921,
+  "measuredFPS": 59,
   "displayedFPS": [
+    56,
     60,
-    60,
-    60,
+    59,
     60
   ],
   "backend": "manifold-wasm",

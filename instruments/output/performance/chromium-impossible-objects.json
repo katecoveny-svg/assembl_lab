@@ -1,12 +1,12 @@
 {
-  "frames": 169,
-  "wallMilliseconds": 5011,
-  "measuredFPS": 33.7,
+  "frames": 138,
+  "wallMilliseconds": 5034.699999988079,
+  "measuredFPS": 27.4,
   "displayedFPS": [
-    34,
-    34,
-    33,
-    33
+    29,
+    28,
+    27,
+    27
   ],
   "backend": "manifold-wasm",
   "stats": {
@@ -18,6 +18,6 @@
       55
     ],
     "triangles": 8688,
-    "fps": 33
+    "fps": 26
   }
 }

@@ -263,6 +263,9 @@ export async function start() {
   return {
     ...s,
     backend: "manifold-wasm",
+    preparePrint() {
+      flushGeometry();
+    },
     prepareCapture() {
       flushGeometry();
       s.render();

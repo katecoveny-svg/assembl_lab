@@ -31,7 +31,11 @@ The test server must be running. Tests exercise real rendering, gestures, undo, 
 
 WebGL2 is detected before renderer creation. Without it, or at `?mode=2d`, a clearly labelled interactive 2D colour study remains available. A startup/rendering-context error offers that fallback. WebAssembly failure is caught by the startup handler. This fallback does not claim Gaussian rendering, physics or mesh export.
 
-At narrow viewport widths or `?mode=light`, Reality Remix uses 2,400 instead of 5,600 splats, Soft Matter uses 92 instead of 162 cage particles, Manifold uses 32 instead of 56 circular segments, and device pixel ratio is capped at 1.25 instead of 1.75. Physics runs at fixed 60 Hz with bounded catch-up. Offscreen documents stop simulation/rendering; reduced-motion settings receive no ambient animation (none is used by default). Native hardware still needs device testing; emulated mobile tests are not evidence of phone thermal/battery behavior.
+Reality Remix Auto conservatively renders 2,400 splats on **all** viewport widths. Full remains an explicit 5,600-splat option with an honest slower-browser warning. The complete 5,600-splat model is retained and edited in every quality mode; switching changes the visible count and pixel cap without rebuilding the sculpture or clearing history, camera or freeze state. Quality changes use the existing page, not navigation/reload.
+
+Other instruments select their simulation/geometry resolution at startup: narrow viewports or `?mode=light` use 92 instead of 162 cage particles and 32 instead of 56 circular segments. Their live quality switches adjust pixel density while preserving the current cage/mesh resolution and all artwork. Pixel caps are 1.25 lighter / 1.75 full. The 2D fallback disables the inapp quality selector; its explicit “Try 3D” link remains available.
+
+Physics runs at fixed 60 Hz with bounded catch-up. Offscreen documents stop simulation/rendering; no ambient animation is used by default. Native hardware still needs device testing; emulated mobile tests are not evidence of phone thermal/battery behavior. Both the app Print button and native beforeprint synchronously flush pending solid geometry; tests dispatch beforeprint without opening a physical printer dialog.
 
 ## Scope and integration
 
