@@ -26,7 +26,7 @@ async (page) => {
  const box=await canvas.boundingBox();await page.mouse.move(box.x+box.width*.6,box.y+box.height*.6);await page.mouse.down();await page.mouse.move(box.x+box.width*.8,box.y+box.height*.6,{steps:8});await page.mouse.up();await page.waitForTimeout(100);
  check(firstCamera!==await page.locator('#habitatViewport').getAttribute('data-camera'),'pointer drag orbits camera');
  await page.getByRole('button',{name:'Reset view',exact:true}).click();
- await page.locator('#habitatViewport').screenshot({path:'study/thumbnails/habitat.png'});
+ await page.locator('#habitatViewport').screenshot({path:'study/thumbnails/habitat.png',style:'.habitat-caption{visibility:hidden}'});
  await page.locator('#panel-zoo').screenshot({path:'output/playwright/habitat-desktop.png'});
  for(const sp of ['tuatara','giraffe','kakapo']){await page.locator('#zooSpecies').selectOption(sp);check(await page.locator('#habitatViewport').getAttribute('data-species')===sp,sp+' spatial model displayed')}
  await page.emulateMedia({reducedMotion:'reduce'});

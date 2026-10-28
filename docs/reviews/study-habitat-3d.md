@@ -26,6 +26,7 @@ Browser checks passed in desktop Chromium and emulated 390px mobile/touch contex
 - 19 Habitat assertions: WebGL active; pixel differences for all five sliders; assessment and stale-score reset; keyboard and pointer orbit; all three species; narrow-screen overflow; reduced-motion top-view control; explicit drawing fallback and working controls; no JS errors.
 - 6 touch/failure assertions: coarse-pointer instructions, `pan-y`, tapped camera controls, Study mobile fit, simulated unavailable WebGL and working fallback assessment.
 - 7 Study/audit assertions: all 35 captures present and decoded, Allen preserved, mobile fit, keyboard navigation to a real machine, live Year 9's four tabs and absent Habitat tab.
+- Low-quality DPR cap and visible drawing-mode link also checked.
 - `node --check` for both new modules; `git diff --check`.
 - A local favicon 404 is pre-existing and is not a JavaScript error.
 
