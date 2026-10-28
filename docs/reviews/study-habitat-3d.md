@@ -56,3 +56,5 @@ The assembl-lab deployment check succeeds. Browser access to the preview redirec
 - Explicit `?lite` exits the dedicated loader before importing the renderer. Network-observed regression verifies zero scene/Three.js/addon requests and working drawing controls/assessment.
 - 44 targeted regression assertions passed, plus reruns of the 19 Habitat and 6 touch/fallback checks. See `output/playwright/habitat-regressions.json` and `habitat-water-matrix.png`.
 - These fixes were QA'd only against the local preview. No protected-preview access or credential operation was performed. Merge remains on hold.
+
+- Mobile orientation follow-up: the dedicated Habitat loader reveals its active tab after sizing/font changes, scrolling only the horizontal strip. Four fresh-page checks (375/320px × 3D/lite) confirm the tab is fully visible, selected, page scroll stays 0 and no horizontal page overflow appears. See `habitat-tab-checks.json` and `habitat-mobile-selected-tab.png`.
