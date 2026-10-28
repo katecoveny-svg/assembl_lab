@@ -93,6 +93,9 @@ function renderCatalogue(){
 }
 $('catalogue-search').addEventListener('input',renderCatalogue);
 $('catalogue-status').addEventListener('change',renderCatalogue);
+// History traversal can restore form values after module initialisation without input/change.
+// Defer one task after pageshow so persisted form state is available on both cache paths.
+window.addEventListener('pageshow',()=>setTimeout(renderCatalogue,0));
 renderCatalogue();
 
 $('deeper').addEventListener('click',()=>{
