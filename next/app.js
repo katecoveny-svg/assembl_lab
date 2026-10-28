@@ -176,7 +176,7 @@ const species={kakapo:{name:'KĀKĀPŌ',needs:{space:70,shade:75,water:45,enrich
 const controlNames={space:'Usable space',shade:'Shelter + shade',water:'Water access',enrichment:'Enrichment',quiet:'Quiet retreat'};
 const zooStart=[70,60,50,65,70];
 function buildZooControls(){$('zooControls').innerHTML=Object.entries(controlNames).map(([key,name],i)=>`<label class="zoo-control range-row" for="zoo-${key}"><span>${name}</span><output id="zoo-${key}-out">${zooStart[i]}</output><input id="zoo-${key}" data-zoo="${key}" type="range" min="0" max="100" value="${zooStart[i]}"></label>`).join('');
-  $$('[data-zoo]').forEach(r=>r.addEventListener('input',()=>{$(r.id+'-out').textContent=r.value;drawZoo()}))}
+  $$('[data-zoo]').forEach(r=>r.addEventListener('input',()=>{$(r.id+'-out').textContent=r.value;drawZoo();$('zooScore').textContent='—';$('zooMeter').style.width='0';$('zooFeedback').textContent='Design changed. Test again to compare with the illustrative targets.'}))}
 const zv=k=>+$('zoo-'+k).value;
 function tree(x,y,s){return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-4" y="-34" width="8" height="34" rx="3" fill="${C.dPeach}" stroke="${C.ink}" stroke-width="1.5"/><circle cx="-12" cy="-44" r="18" fill="${C.land}" stroke="${C.ink}" stroke-width="1.5"/><circle cx="10" cy="-50" r="22" fill="#9BD06F" stroke="${C.ink}" stroke-width="1.5"/></g>`}
 function animal(sp){const st=`stroke="${C.ink}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;

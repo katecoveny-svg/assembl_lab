@@ -1,1 +1,8 @@
-["touch-specific instructions appear","scene preserves vertical touch scrolling","touch tap rotates scene","Study has no mobile horizontal overflow","device without WebGL receives drawing","no-WebGL fallback remains interactive"]
+[
+  "touch-specific instructions appear",
+  "scene preserves vertical touch scrolling",
+  "touch tap rotates scene",
+  "Study has no mobile horizontal overflow",
+  "device without WebGL receives drawing",
+  "no-WebGL fallback remains interactive"
+]
