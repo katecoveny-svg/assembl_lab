@@ -1,0 +1,82 @@
+{
+  "tabScenarios": [
+    {
+      "width": 375,
+      "lite": false,
+      "visible": true,
+      "scrollY": 0,
+      "overflow": false,
+      "selected": "true"
+    },
+    {
+      "width": 320,
+      "lite": false,
+      "visible": true,
+      "scrollY": 0,
+      "overflow": false,
+      "selected": "true"
+    },
+    {
+      "width": 375,
+      "lite": true,
+      "visible": true,
+      "scrollY": 0,
+      "overflow": false,
+      "selected": "true"
+    },
+    {
+      "width": 320,
+      "lite": true,
+      "visible": true,
+      "scrollY": 0,
+      "overflow": false,
+      "selected": "true"
+    }
+  ],
+  "regressions": [
+    "space 0: water 10\u219250 changes rendered basin",
+    "space 0: water 50\u2192100 changes rendered basin",
+    "space 70: water 10\u219250 changes rendered basin",
+    "space 70: water 50\u2192100 changes rendered basin",
+    "space 100: water 10\u219250 changes rendered basin",
+    "space 100: water 50\u2192100 changes rendered basin",
+    "former plateau fixed: space 0, water 45\u2192100",
+    "former plateau fixed: space 70, water 72\u2192100",
+    "**/next/habitat/scene.js: drawing remains visible",
+    "**/next/habitat/scene.js: space precondition scored",
+    "**/next/habitat/scene.js: space invalidates score",
+    "**/next/habitat/scene.js: space clears meter",
+    "**/next/habitat/scene.js: shade precondition scored",
+    "**/next/habitat/scene.js: shade invalidates score",
+    "**/next/habitat/scene.js: shade clears meter",
+    "**/next/habitat/scene.js: water precondition scored",
+    "**/next/habitat/scene.js: water invalidates score",
+    "**/next/habitat/scene.js: water clears meter",
+    "**/next/habitat/scene.js: enrichment precondition scored",
+    "**/next/habitat/scene.js: enrichment invalidates score",
+    "**/next/habitat/scene.js: enrichment clears meter",
+    "**/next/habitat/scene.js: quiet precondition scored",
+    "**/next/habitat/scene.js: quiet invalidates score",
+    "**/next/habitat/scene.js: quiet clears meter",
+    "**/assets/vendor/three/three.module.min.js: drawing remains visible",
+    "**/assets/vendor/three/three.module.min.js: space precondition scored",
+    "**/assets/vendor/three/three.module.min.js: space invalidates score",
+    "**/assets/vendor/three/three.module.min.js: space clears meter",
+    "**/assets/vendor/three/three.module.min.js: shade precondition scored",
+    "**/assets/vendor/three/three.module.min.js: shade invalidates score",
+    "**/assets/vendor/three/three.module.min.js: shade clears meter",
+    "**/assets/vendor/three/three.module.min.js: water precondition scored",
+    "**/assets/vendor/three/three.module.min.js: water invalidates score",
+    "**/assets/vendor/three/three.module.min.js: water clears meter",
+    "**/assets/vendor/three/three.module.min.js: enrichment precondition scored",
+    "**/assets/vendor/three/three.module.min.js: enrichment invalidates score",
+    "**/assets/vendor/three/three.module.min.js: enrichment clears meter",
+    "**/assets/vendor/three/three.module.min.js: quiet precondition scored",
+    "**/assets/vendor/three/three.module.min.js: quiet invalidates score",
+    "**/assets/vendor/three/three.module.min.js: quiet clears meter",
+    "explicit lite drawing is visible",
+    "explicit lite assessment works",
+    "explicit lite design change invalidates score",
+    "explicit lite makes zero renderer/Three/addon requests"
+  ]
+}
