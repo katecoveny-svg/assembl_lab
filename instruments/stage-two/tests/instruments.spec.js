@@ -184,6 +184,7 @@ test("Time renders 4 MiB 3D texture; slice, time, threshold, undo and PNG work",
   await expect(page.locator(".print-image")).toBeVisible();
   await page.pdf({ path: "../../output/playwright/time-print.pdf" });
   await page.emulateMedia({ media: "screen" });
+  await page.waitForTimeout(500);
   await page.screenshot({
     path: "../../output/playwright/time-sculpture-final.png",
   });
