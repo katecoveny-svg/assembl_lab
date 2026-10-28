@@ -1,0 +1,15 @@
+# Assembl cinematic experience
+
+Published experience: a full-screen architecture concept, an authored 30.6-second film with a New Zealand AI narrator, layered scroll and pointer motion, visual campaign examples, and the existing working buyer-journey demos. Reduced-motion preferences and an ambient-motion pause control are supported. The film uses generated still artwork, camera moves and transitions; it does not contain generated moving footage.
+
+Creative opens in Create. Three original AI-generated visual directions are available immediately. Selecting a visual updates the linked site, deck and film opening. Site/deck HTML exports inline the selected image so the exported file remains portable. Old designs without artwork still load. Artwork participates in snapshots and approval fingerprints.
+
+Uploads are optimised in the browser and saved to owner-scoped D1 media records. The same owner and origin checks as the existing creative editor protect the media APIs. Images are returned with private/no-store caching and MIME sniffing; SVG and arbitrary external image URLs are not accepted. Image selection is a draft change until the project is saved. Generated and uploaded image assets are saved independently of that selection.
+
+Generate image calls the existing Assembl image service at https://www.assembl.co.nz/api/creative/image through an owner-only route. It sends the entered prompt, brand colours and a bounded creative brief, requests one image, and enforces a local 30-second rate interval. The original service's provider configuration and limits still apply. No keys were copied or created. The build environment's direct service check timed out, so a successful production generation is not asserted. Failed requests preserve the prompt; the copy-to-ChatGPT brief and upload workflow remain available.
+
+Film canvas creates an actual downloadable MP4 or WebM using the browser's available encoder. It supports one image per scene, landscape/portrait/square layouts, camera movement, editable scene copy and uploaded audio. Scene image replacements and audio files are session assets; download the film and storyboard to keep the work. Audio plays once and is trimmed to the film length. Keeping the tab visible is required for browser recording. New generative footage still needs a funded provider; the connected Higgsfield video request lacked sufficient credits and Runway's current plan does not allow video generation.
+
+The published product film is reproducible with scripts/render-cinematic-film.py and public/cinematic/assembl-nz-voice.mp3. Original artwork prompts are recorded in docs/cinematic-artwork.json. Narrator: Microsoft en-NZ-MollyNeural, natural New Zealand English; pronunciation uses “Assemble” for Assembl. Synthetic narration is labelled on the public page.
+
+Verification: both TypeScript projects, production builds, existing journey/bid regression checks, old-design compatibility, safe asset paths, artwork approval fingerprints, standalone image exports and all database migrations. Film encoding: H.264/AAC, 1280×720, 30.6 seconds. No browser or authenticated production generation was tested in this turn.

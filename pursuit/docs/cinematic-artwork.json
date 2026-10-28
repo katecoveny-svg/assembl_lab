@@ -1,0 +1,23 @@
+{
+  "mode": "built-in image_gen",
+  "assets": [
+    {
+      "asset": "architecture",
+      "path": "/workspace/scratch/f9b5968c477b/cinematic-assets/architecture.png",
+      "prompt": "Use case: ads-marketing.\nAsset type: cinematic architectural campaign still for Assembl creative studio and narrated film.\nPrimary request: Create one original photorealistic image of a beautifully designed New Zealand coastal pavilion, sculptural glass and pale stone architecture set among native coastal planting with the ocean beyond. Include one fine sculptural architectural element in deep plum #43273e.\nComposition/framing: widescreen 16:9, premium architectural editorial photography, generous cinematic framing showing the pavilion in its coastal setting, carefully resolved geometry and believable materials.\nLighting/mood: warm dawn light, quiet atmosphere, delicate shadows, high-end architectural campaign.\nColor palette: pale stone and premium off-white, warm muted rose dawn accents, transparent glass, deep plum accent, restrained coastal colors.\nConstraints: no words, no logos, no watermarks, no user interface, no screens, no collage. This is a finished cinematic image asset.",
+      "inspection": "Photoreal coastal pavilion with curved pale-stone roof, floor-to-ceiling glass, planted rocky coastal foreground, ocean and warm dawn, one deep plum curved wall element. No visible text or logos."
+    },
+    {
+      "asset": "loyalty",
+      "path": "/workspace/scratch/f9b5968c477b/cinematic-assets/loyalty.png",
+      "prompt": "Use case: ads-marketing.\nAsset type: cinematic luxury product campaign still for Assembl creative studio and a narrated film.\nPrimary request: Create one original luxury macro product campaign image of a plum ceramic takeaway coffee cup with delicate steam, hovering slightly above a rose stone surface. Tasteful polished chrome reflective rings and natural glass caustics surround the cup in an elegant, restrained arrangement. Sophisticated loyalty and customer-experience campaign mood.\nStyle/medium: photorealistic high-end product photography with physically believable materials.\nComposition/framing: widescreen 16:9, sculptural close product composition with refined negative space, cup is the clear hero.\nLighting/mood: tactile cinematic studio lighting, soft highlights, delicate steam, subtle glass light patterns, premium and calm.\nColor palette: deep plum #43273e, muted rose stone, polished chrome, clear glass, premium off-white background.\nConstraints: no words, no logos, no watermarks, no screens, no interface, no collage. A finished cinematic image asset.",
+      "inspection": "Plum ceramic takeaway cup hovers over rose stone; steam, chrome rings, clear glass objects and caustics are visible. No visible text or logos."
+    },
+    {
+      "asset": "assembl-form",
+      "path": "/workspace/scratch/f9b5968c477b/cinematic-assets/assembl-form.png",
+      "prompt": "Use case: stylized-concept.\nAsset type: high-end cinematic 3D key visual for Assembl creative studio and narrated film.\nPrimary request: Create one original physically rendered sculptural exploded assembly of one continuous looping ribbon, formed from polished chrome and translucent plum glass segments. The individual segments float in close alignment as if precisely assembling into a single flowing loop. Make the continuity of the ribbon immediately legible, with small elegant assembly gaps between neighboring segments.\nScene/backdrop: generous pale premium off-white studio background.\nStyle/medium: artistic high-end photorealistic 3D rendering, beautifully resolved sculptural geometry, tactile polished surfaces, transparent colored glass with plausible refraction and reflective chrome.\nComposition/framing: widescreen 16:9, one clearly readable sculpture framed in generous negative space, three-quarter view revealing flowing depth and precise assembly.\nLighting/mood: dramatic tactile studio lighting and rich reflections, premium, contemplative, elegant.\nColor palette: deep plum #43273e glass, muted rose reflections, polished chrome, premium off-white.\nConstraints: one looping ribbon assembly only, no text, no logos, no watermark, no screen, no interface, no UI mockup, no collage.",
+      "inspection": "Floating continuous figure-eight ribbon with aligned separated chrome and plum glass segments on pale background; sculpture reads as precise assembly. No text, logos, screens, or UI."
+    }
+  ]
+}
