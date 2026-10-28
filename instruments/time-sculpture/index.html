@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f7f3ec" />
+    <link rel="icon" href="data:," />
+    <title>Time Sculpture · assembl Lab</title>
+    <link rel="stylesheet" href="../stage-two/style.css" />
+  </head>
+  <body data-instrument="time-sculpture">
+    <header>
+      <a class="brand" href="/study/">assembl <span>Lab</span></a>
+      <nav aria-label="Instruments">
+        <a href="../sonic-loom/">Sonic Loom</a
+        ><a href="../time-sculpture/">Time Sculpture</a
+        ><a href="../liquid-playground/">Liquid Playground</a>
+      </nav>
+      <span class="edition">PLAY / MAKE / REPEAT</span>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <div class="eyebrow" id="eyebrow">
+            A SMALL EXPERIMENT IN POSSIBILITY
+          </div>
+          <h1>Time Sculpture<span>✳</span></h1>
+          <p id="intro"></p>
+        </div>
+        <div class="intro-note" id="note"></div>
+      </section>
+      <section class="workspace">
+        <div class="stage" id="stage">
+          <canvas
+            id="canvas"
+            aria-label="Interactive three-dimensional artwork"
+            tabindex="0"
+          ></canvas>
+          <div class="stage-label">
+            <span class="live-dot"></span
+            ><span id="medium">Preparing your material…</span>
+          </div>
+          <div class="stage-bottom">
+            <span id="hint">Loading…</span><span id="metrics"></span>
+          </div>
+          <div id="loading" role="status">Making a little possibility…</div>
+        </div>
+        <aside>
+          <div class="panel-heading">
+            <span>YOUR PLAY SPACE</span><span id="number">01</span>
+          </div>
+          <div id="controls"></div>
+          <div class="utilities">
+            <button id="undo" disabled>↶ Undo</button
+            ><button id="reset">↺ Reset</button
+            ><button id="freeze" aria-pressed="false">Ⅱ Freeze</button
+            ><button id="save">↓ Save image</button
+            ><button id="share">↗ Share image</button
+            ><button id="print">Print</button>
+          </div>
+          <p id="status" role="status" aria-live="polite"></p>
+        </aside>
+      </section>
+      <details>
+        <summary>How did that happen? <span>+</span></summary>
+        <div id="explanation"></div>
+      </details>
+      <footer>
+        <span>Made to be played with. Keep what surprises you.</span
+        ><a href="../stage-two/README.md">Materials & credits</a>
+      </footer>
+    </main>
+    <script type="module" src="../stage-two/dist/app.js"></script>
+  </body>
+</html>
