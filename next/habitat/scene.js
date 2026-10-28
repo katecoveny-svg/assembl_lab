@@ -43,8 +43,10 @@ function update(){const s=state(),sp=$('zooSpecies').value;
  box(world,'#c9d8a1',0,.15,0,width,.22,depth,.2);
  // Visible earth strata on the model's cut sides.
  for(let i=0;i<18;i++){const x=-width/2+.3+i*(width-.6)/17;ell(world,'#dcc3a1',x,-.05,depth/2+.002,.07,.035,.018)}
- // Rounded water basin grows continuously with water access.
- if(s.water>0){const w=Math.min(.2+s.water*.017,width*.19);ell(world,'#c7b99b',width*.29,.25,1.25,w+.13,.09,.75);ell(world,'#76b9cf',width*.29,.3,1.25,w,.045,.64);ell(world,'#bfe5e8',width*.29+.14,.34,1.18,w*.65,.015,.38)}
+ // Map the full water range into the available footprint, without clamping a growing radius.
+ // Centre (.29 * width) + max radius (.21 * width - .2) + rim (.13)
+ // stays .07 units inside the land edge at every space setting.
+ if(s.water>0){const w=.16+(width*.21-.2-.16)*s.water/100;ell(world,'#c7b99b',width*.29,.25,1.25,w+.13,.09,.75);ell(world,'#76b9cf',width*.29,.3,1.25,w,.045,.64);ell(world,'#bfe5e8',width*.29+.14,.34,1.18,w*.65,.015,.38)}
  // Keep plant positions inside the changing land footprint.
  for(let i=0;i<trees;i++){const x=-width*.38+(i%4)*(width*.75/3),z=-2.15+Math.floor(i/4)*.85;tree(world,x,z,1.65+(i%3)*.3)}
  const qw=s.quiet/100*1.5;
@@ -65,7 +67,7 @@ function requestRender(){if(!frame)frame=requestAnimationFrame(render)}
 function resize(){if(!renderer||panel.hidden)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();requestRender()}
 function view(action){const offset=camera.position.clone().sub(orbit.target);if(action==='reset'){camera.position.set(9,8,11);orbit.target.set(0,.7,0)}else if(action==='top'){camera.position.set(.01,13,.01);orbit.target.set(0,0,0)}else if(action==='left'||action==='right'){offset.applyAxisAngle(new THREE.Vector3(0,1,0),action==='left'?.3:-.3);camera.position.copy(orbit.target).add(offset)}else{offset.multiplyScalar(action==='in'?.85:1.18);offset.clampLength(6,23);camera.position.copy(orbit.target).add(offset)}orbit.update();requestRender()}
 function fallback(message){shell.classList.remove('is-3d');tools.hidden=true;status.textContent=message;renderer?.dispose();renderer=null;cancelAnimationFrame(frame);frame=0}
-controlsList.forEach(el=>el.addEventListener('input',()=>{update();$('zooScore').textContent='—';$('zooMeter').style.width='0';$('zooFeedback').textContent='Design changed. Test again to compare with the illustrative targets.'}));
+controlsList.forEach(el=>el.addEventListener('input',update));
 $('zooSpecies').addEventListener('change',update);
 try{
  if(drawing)throw new Error('Drawing mode selected');
