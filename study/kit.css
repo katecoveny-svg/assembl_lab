@@ -345,3 +345,6 @@ details.kupu-all .kupu-list li{border-top:1px dashed var(--as-line);padding-top:
 @media(max-width:1000px){#app .play{grid-template-columns:minmax(0,1fr)}#app .rail{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto}#app .rail .al-dog{width:68px}#app .chips{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}}
 @media(max-width:600px){#app .stage{padding:12px;gap:12px}#app .wrap{gap:14px}#app .lesson{gap:12px}.lesson-heading{flex-basis:100%}.lesson-stages{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.lesson-stages button{padding:10px 3px;font-size:11px}.lesson-work{padding:12px}.lesson-evidence{grid-template-columns:1fr}.lesson-footer .lesson-restart{margin-left:0}#app .rail{display:block}#app .rail .al-slot{margin-top:8px}#app .caprow{flex-wrap:wrap}#app .caption{flex-basis:calc(100% - 70px)}#app .controls{padding:10px}#app .ctl.range{flex-wrap:wrap}#app .ctl.range input{min-width:60px}#app .ctl.range output{font-size:12px}}
 .lesson-tag{font:600 10px var(--as-font);padding:3px 6px;border-radius:5px;background:#eee8f8;color:#51416f}
+.lesson-navigation{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+#k-lesson-advance{min-height:44px;background:var(--as-ink);border-color:var(--as-ink);color:white;font-size:13px}
+@media(max-width:600px){.lesson-navigation{width:100%}#k-lesson-advance{width:100%}}

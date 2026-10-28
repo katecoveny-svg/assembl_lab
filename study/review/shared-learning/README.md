@@ -47,3 +47,14 @@ Screenshots before the final small Guided topic badge still represent the tested
 ## Limits
 
 3D/WebGL scenes visibly rendered in ordinary IAB, separately from the explicit `?lite` SVG fallback. The graphics backend was not interrogated, so **physical GPU acceleration is unverified**; this is not a hardware certification. No AR/camera or real mobile-device check. Not every legacy machine was manually tested. Browser Back history semantics remain the existing replaceState behavior; lesson phase adds no history entries. The legacy per-topic onStep reset behavior remains intentionally unchanged. Existing exam copy, dates and quizzes were preserved, not re-audited. No deployment, push, merge or PR was performed.
+
+## Independent review follow-up
+
+Fixed both P2 findings in a follow-up commit:
+
+- Lines' Gradient exam statement is now model-current, including 3/6 L/min, changed initial amounts, negative rates and zero rate. Optional function-valued step exam text updates on redraw; existing string-valued copy keeps its behavior.
+- Topic advancement explicitly says **Next topic** (or **Next topic: Test yourself**). A separate **Next stage: …** action sits beside the four investigation-stage buttons and expands to full width on mobile. It uses only lesson navigation, preserving state and topic hash.
+
+Verification now passes **5 model tests** and **19 browser fixture checks**, with regressions for dynamic exam text and upper stage advancement. Actual Lines B UI reads “The gradient is 6 L/min … L = 6t + 10.” At 320 CSS px it remains on `#rate` with no page overflow.
+
+Updated screenshots (supersede earlier Lines views): [desktop](review-fix-lines-desktop.jpg), [320 px](review-fix-lines-320.jpg).

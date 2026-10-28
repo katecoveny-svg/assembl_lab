@@ -38,3 +38,9 @@ test('reactions: changing run after A prevents unrelated B evidence',()=>{
  const m=model('reactions');m.prepare('A');m.cfg.tick(m.s,.21,m.st,m.api);m.capture('A');m.prepare('A');
  assert.match(m.prepare('B'),/Capture a current A/);assert.equal(m.s.c,.5);
 });
+
+test('tank explanation follows A, B and later control changes',()=>{
+ const m=model('lines');m.prepare('A');assert.match(m.st.exam(),/gradient is 3 L\/min/);
+ m.prepare('B');assert.match(m.st.exam(),/gradient is 6 L\/min/);assert.match(m.st.exam(),/L = 6t \+ 10/);
+ m.s.mA=-2;assert.match(m.st.exam(),/loses 2 litres/);m.s.mA=0;assert.match(m.st.exam(),/stays constant/);
+});

@@ -346,7 +346,7 @@ function arButton(api,cfg,want){const S=api.s3;if(!S||cfg.ar===false)return;cons
 function mountLesson(cfg,api,host,work){
   const L=cfg.lesson, stages=["Explore","Predict","Investigate","Explain"];
   let stage=0;const evidence={A:null,B:null};
-  host.innerHTML=`<div class="lesson-heading"><span class="eyebrow">Guided investigation</span><h2>${esc(L.question)}</h2></div><nav class="lesson-stages" aria-label="Investigation stages">${stages.map((x,i)=>`<button type="button" data-stage="${i}" aria-controls="k-lesson-work">${x}</button>`).join("")}</nav>`;
+  host.innerHTML=`<div class="lesson-heading"><span class="eyebrow">Guided investigation</span><h2>${esc(L.question)}</h2></div><div class="lesson-navigation"><nav class="lesson-stages" aria-label="Investigation stages">${stages.map((x,i)=>`<button type="button" data-stage="${i}" aria-controls="k-lesson-work">${x}</button>`).join("")}</nav><button class="btn" type="button" id="k-lesson-advance" aria-controls="k-lesson-work"></button></div>`;
   work.innerHTML=`<div data-panel="0"><p>${esc(L.explore)}</p></div>
     <div data-panel="1"><label for="k-prediction">${esc(L.predict)}</label><textarea id="k-prediction" rows="2" placeholder="I predict… because…"></textarea></div>
     <div data-panel="2"><p>${esc(L.investigate)}</p><div class="lesson-actions">${["A","B"].map(k=>`<button class="btn" type="button" data-prepare="${k}">Set up ${k}</button><button class="btn primary" type="button" data-capture="${k}">Capture ${k}</button>`).join("")}</div></div>
@@ -357,11 +357,12 @@ function mountLesson(cfg,api,host,work){
   function go(i){stage=Math.max(0,Math.min(3,i));buttons.forEach((b,j)=>b.setAttribute("aria-current",j===stage?"step":"false"));
     work.querySelectorAll("[data-panel]").forEach(p=>p.hidden=+p.dataset.panel!==stage);
     work.querySelector("#k-lesson-back").disabled=stage===0;
-    const next=work.querySelector("#k-lesson-next");next.hidden=stage===3;next.textContent=(stages[stage+1]||"")+" →";
+    for(const next of [work.querySelector("#k-lesson-next"),host.querySelector("#k-lesson-advance")]){next.hidden=stage===3;next.textContent="Next stage: "+(stages[stage+1]||"")+" →";}
   }
   buttons.forEach((b,i)=>b.onclick=()=>go(i));
   host.querySelector("nav").onkeydown=e=>{const i=buttons.indexOf(document.activeElement);if(i<0||!["ArrowRight","ArrowLeft","Home","End"].includes(e.key))return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?3:(i+(e.key==="ArrowRight"?1:3))%4;go(j);buttons[j].focus()};
   work.querySelector("#k-lesson-back").onclick=()=>{go(stage-1);buttons[stage].focus()};
+  host.querySelector("#k-lesson-advance").onclick=()=>{go(stage+1);buttons[stage].focus()};
   work.querySelector("#k-lesson-next").onclick=()=>{go(stage+1);buttons[stage].focus()};
   function renderEvidence(){work.querySelector("#k-evidence").innerHTML=["A","B"].map(k=>{
     const record=evidence[k];return `<section class="evidence-card"><h3>Observation ${k}</h3>${record?`<dl>${Object.entries(record.fields).map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>`:`<p>Not captured yet.</p>`}</section>`}).join("")}
@@ -471,9 +472,9 @@ function mount(cfg){logStudy("open");
     const cur=document.querySelectorAll(".step")[i];if(mounted)try{cur&&cur.scrollIntoView({inline:"nearest",block:"nearest"})}catch(e){}
     $("k-prog").style.width=((i+1)/cfg.steps.length*100).toFixed(1)+"%";
     $("k-stepno").textContent=st.k==="test"?"Test":`${i+1} of ${cfg.steps.length}`;
-    const nx=cfg.steps[i+1];nextB.hidden=!nx;if(nx)nextB.textContent=nx.k==="test"?"Test yourself →":"Next →";
+    const nx=cfg.steps[i+1];nextB.hidden=!nx;if(nx)nextB.textContent=nx.k==="test"?"Next topic: Test yourself →":"Next topic →";
     $("k-cap").innerHTML=st.cap+(st.speedLabel?`<span class="slow">${st.speedLabel}</span>`:"");
-    $("k-big").innerHTML=st.big||"";$("k-exam").textContent=st.exam||"";$("k-trap").textContent=st.trap||"";
+    $("k-big").innerHTML=st.big||"";$("k-exam").textContent=typeof st.exam==="function"?st.exam(s,st,api):st.exam||"";$("k-trap").textContent=st.trap||"";
     $("k-examcard").hidden=!st.exam;$("k-trapcard").hidden=!st.trap;$("k-bigcard").hidden=!st.big;
     if(KU.length){const sk=stepKupu(st),kc=$("k-kupu");kc.hidden=!sk.length;$("k-kupul").innerHTML=sk.map(kupuItem).join("")}
     showDeck();
@@ -488,6 +489,7 @@ function mount(cfg){logStudy("open");
     redraw();
   }
   function redraw(){const st=cfg.steps[step];
+    if(typeof st.exam==="function")$("k-exam").textContent=st.exam(s,st,api);
     $("k-main").innerHTML=cfg.drawMain(s,st,api);
     if(cfg.closeBox)$("k-close").innerHTML=cfg.drawClose(s,st,api);
     const map=cfg.chips?cfg.chips(s,st):{};

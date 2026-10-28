@@ -115,7 +115,7 @@ const steps=[
   trap:"Reading the intercept off the horizontal axis. The y-intercept is on the vertical axis, where time = 0.",chips:["rule","now","c"],onStep:()=>{s.B=false;s.mA=3;s.cA=10;s.t=0}},
  {k:"rate",lab:"Gradient",cap:"Open the tap wider. More litres every minute makes a steeper line. The gradient is rise over run.",speed:1.2,speedLabel:"1 minute ≈ 0.8 s",controls:["play","reset","cA","mA"],
   big:"<b>The big idea:</b> the gradient m is the rate of change: how much y goes up for every 1 that x goes up.",
-  exam:"The gradient is 3 because the water rises by 15 litres over 5 minutes, and 15 ÷ 5 = 3. This means the tank fills at 3 litres per minute.",
+  exam:()=>`The gradient is ${fmtN(s.mA)} L/min. ${s.mA===0?"The water level stays constant":s.mA>0?`The tap adds ${fmtN(s.mA)} litres each minute`:`The tank loses ${fmtN(-s.mA)} litres each minute`}. With ${fmtN(s.cA)} L initially, the rule is ${rule(s.mA,s.cA)}.`,
   trap:"Giving the gradient without units or meaning. Say what it is in context: \"3 litres per minute\".",chips:["rule","m","now"],onStep:()=>{s.B=false;s.t=0}},
  {k:"drain",lab:"Draining",cap:"Make the rate negative and the tank drains. The line slopes down, and where it hits zero is when the tank is empty.",speed:1.2,speedLabel:"1 minute ≈ 0.8 s",controls:["play","reset","cA","mA"],
   big:"<b>The big idea:</b> a negative gradient means y goes down as x goes up. Solve mx + c = 0 to find when it runs out.",
