@@ -1,3 +1,4 @@
+import { footprint, insideBoundary, constrainCursor } from "./boundaries.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 const $ = (id) => document.getElementById(id),
@@ -43,6 +44,30 @@ for (const [x, y, z, p] of [
   l.position.set(x, y, z);
   scene.add(l);
 }
+// Small original studio-light reflection map, generated once and used only by crystals.
+// No animation, texture download, transmission pass or additional per-frame scene.
+const lightCanvas = document.createElement("canvas");
+lightCanvas.width = 256;
+lightCanvas.height = 128;
+const lightContext = lightCanvas.getContext("2d");
+lightContext.fillStyle = "#201a30";
+lightContext.fillRect(0, 0, 256, 128);
+for (const [x, y, w, h, tint] of [
+  [18, 18, 12, 76, "#ffffff"],
+  [80, 34, 48, 14, "#fff5df"],
+  [165, 14, 8, 88, "#ffffff"],
+  [210, 65, 25, 24, "#b8d8ff"],
+]) {
+  lightContext.fillStyle = tint;
+  lightContext.fillRect(x, y, w, h);
+}
+const lightTexture = new THREE.CanvasTexture(lightCanvas);
+lightTexture.mapping = THREE.EquirectangularReflectionMapping;
+lightTexture.colorSpace = THREE.SRGBColorSpace;
+const reflectionGenerator = new THREE.PMREMGenerator(renderer);
+const crystalReflection = reflectionGenerator.fromEquirectangular(lightTexture);
+lightTexture.dispose();
+reflectionGenerator.dispose();
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
 controls.enableDamping = false;
@@ -83,15 +108,12 @@ function surface(x, y) {
   };
 }
 function fits(s, stones = state.stones) {
-  const r = s.size * (s.shape === "marquise" ? 1.4 : 1.1);
-  if (state.mode === "board") {
-    if (Math.abs(s.x) + r > 1.65 || Math.abs(s.y) + r > 2) return false;
-  } else if ((s.x / (1.25 - r)) ** 2 + (s.y / (1.75 - r)) ** 2 > 0.94)
-    return false;
+  const r = footprint(s.size, s.shape);
+  if (!insideBoundary(state.mode, s)) return false;
   return !stones.some(
     (t) =>
       Math.hypot(t.x - s.x, t.y - s.y) <
-      (t.size * (t.shape === "marquise" ? 1.4 : 1.1) + r) * 0.97,
+      (footprint(t.size, t.shape) + r) * 0.97,
   );
 }
 function gemGeometry(shape) {
@@ -200,13 +222,24 @@ function rebuild() {
   });
   for (const group of groups.values()) {
     const s = group[0][0],
-      mat = new THREE.MeshStandardMaterial({
-        color: s.color,
-        metalness:
-          s.finish === "metal" ? 0.85 : s.finish === "crystal" ? 0.4 : 0.05,
-        roughness: s.finish === "pearl" ? 0.65 : 0.16,
-        flatShading: true,
-      });
+      mat =
+        s.finish === "crystal"
+          ? new THREE.MeshPhysicalMaterial({
+              color: s.color,
+              metalness: 0.08,
+              roughness: 0.12,
+              clearcoat: 1,
+              clearcoatRoughness: 0.06,
+              envMap: crystalReflection.texture,
+              envMapIntensity: 1.15,
+              flatShading: true,
+            })
+          : new THREE.MeshStandardMaterial({
+              color: s.color,
+              metalness: s.finish === "metal" ? 0.85 : 0.05,
+              roughness: s.finish === "pearl" ? 0.65 : 0.16,
+              flatShading: true,
+            });
     const b = new THREE.InstancedMesh(geometries[s.shape], mat, group.length),
       o = new THREE.Object3D();
     b.userData.indices = [];
@@ -357,10 +390,15 @@ view.addEventListener("keydown", (e) => {
   if (e.key.startsWith("Arrow")) {
     cursor.x += e.key === "ArrowLeft" ? -0.1 : e.key === "ArrowRight" ? 0.1 : 0;
     cursor.y += e.key === "ArrowDown" ? -0.1 : e.key === "ArrowUp" ? 0.1 : 0;
-    cursor.x = Math.max(-1, Math.min(1, cursor.x));
-    cursor.y = Math.max(-1.4, Math.min(1.4, cursor.y));
-  } else if (e.key === "Enter") place(cursor.x, cursor.y);
-  else {
+  }
+  cursor = constrainCursor(
+    state.mode,
+    cursor,
+    Number($("size").value),
+    $("shape").value,
+  );
+  if (e.key === "Enter") place(cursor.x, cursor.y);
+  else if (e.key === "Delete" || e.key === "Backspace") {
     const i = state.stones.findIndex(
       (s) => Math.hypot(s.x - cursor.x, s.y - cursor.y) < 0.3,
     );
@@ -371,6 +409,11 @@ view.addEventListener("keydown", (e) => {
     }
   }
   const f = surface(cursor.x, cursor.y);
+  if (!f) {
+    target.visible = false;
+    render();
+    return;
+  }
   target.position.set(cursor.x, cursor.y, f.z + 0.2);
   target.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), f.normal);
   target.visible = true;

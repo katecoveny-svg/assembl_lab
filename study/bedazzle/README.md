@@ -43,3 +43,19 @@ Review screenshots in `evidence/`: `desktop.png`, `orbit.png`, `phone.png`, `boa
 ## Licences
 
 Three.js and its OrbitControls use the repository's existing MIT licence at `assets/vendor/three/LICENSE`. No new third-party library, model, image, font or trademarked artwork was added. All geometry, layout, material choices and starter placements are original procedural work for this instrument.
+
+## Review correction: keyboard edges and crystal finish
+
+The rectangular keyboard clamp could previously move the cursor outside the brush ellipse and dereference a missing surface. `boundaries.js` now shares conservative footprint/boundary logic with placement and projects the cursor onto a valid inset ellipse (or board rectangle) before every keyboard action. This also handles a board-to-brush or small-to-large stone change before Enter. The cursor renderer defensively handles a missing surface.
+
+Regression commands:
+
+```sh
+node --test study/bedazzle/tests/boundaries.test.mjs
+# With a Playwright CLI session already open on this route:
+playwright-cli -s=bedazzle-review run-code --filename study/bedazzle/tests/browser-boundaries.mjs
+```
+
+Results: 19 node regressions passed. Actual browser Right×20 → Up×20 → Enter placed one stone without error. The browser handler passed all 72 corner combinations (both surfaces, three sizes, three shapes, four corners) and a board-edge → brush/statement-marquise transition; zero page errors. Expanded corner coverage uses dispatched keyboard events; the original reproduction uses Playwright keyboard input.
+
+Crystal finish now uses a small 256×128 original procedural light-panel texture, prefiltered once, plus clearcoat. It uses no external assets, transmission pass, extra per-frame scene, continuous animation or new dependencies. Updated front/orbit/phone screenshots are in `evidence/`. A fresh transparent 1200×1200 PNG export passed after this material change; phone overflow remains false.
