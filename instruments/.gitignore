@@ -1,0 +1,5 @@
+node_modules/
+test-results/
+output/playwright/*.glb
+output/playwright/*.pdf
+output/playwright/results.json
