@@ -39,3 +39,11 @@ Serve the repository at `http://127.0.0.1:8341`. The `scripts/*habitat*.cjs` and
 ## Limits
 
 This upgrades one Habitat experience and the catalogue previews, not all 35 machines. Existing machine visuals and physics are unchanged. Animal models and model-fit numbers remain educational simplifications, not husbandry guidance or welfare measures. Validation used Chromium and mobile emulation; physical iPhone/Safari testing remains desirable before production. The preview needs visual review before any merge.
+
+## Review delivery
+
+Draft PR: https://github.com/katecoveny-svg/assembl_lab/pull/22
+
+Branch preview: https://assembl-lab-git-codex-study-habitat-3d-katecoveny-svgs-projects.vercel.app/study/
+
+The assembl-lab deployment check succeeds. Browser access to the preview redirects to Vercel authentication, so rendered interaction evidence was captured from the local branch build. The separate `Vercel – colmap-wasm` check fails on both this branch and baseline main `fc7eb93`; this draft changes no colmap files. Nothing was merged to production.
