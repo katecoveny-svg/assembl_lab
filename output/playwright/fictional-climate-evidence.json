@@ -1,5 +1,5 @@
 {
-  "lesson": "climate-reflectivity-1.0.0",
+  "lesson": "climate-reflectivity-1.1.0",
   "reviewDate": "2026-10-28",
   "outputType": "calculated model outputs, not measurements",
   "curriculumMapping": "proposed practices only, not assessment alignment",
@@ -10,7 +10,7 @@
   },
   "snapshots": [
     {
-      "model": "climate-reflectivity-1.0.0",
+      "model": "climate-reflectivity-1.1.0",
       "assisted": false,
       "inputs": {
         "tiles": [
@@ -132,7 +132,7 @@
       ]
     },
     {
-      "model": "climate-reflectivity-1.0.0",
+      "model": "climate-reflectivity-1.1.0",
       "assisted": false,
       "inputs": {
         "tiles": [

@@ -11,33 +11,36 @@ const out=new URL('../../../output/playwright/',import.meta.url).pathname;
 const context=await browser.newContext({viewport:{width:1280,height:900},acceptDownloads:true});
 const requests=[];context.on('request',r=>requests.push(r.url()));const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto(base);await page.waitForSelector('.s3-host canvas');
-await page.getByRole('button',{name:'Guided investigation',exact:true}).click();
+const originalCanvas=await page.locator('.s3-host canvas').elementHandle();
+await page.getByRole('button',{name:'02 Predict',exact:true}).click();
+assert.equal(await originalCanvas.evaluate(el=>el===document.querySelector('.s3-host canvas')),true);
+await page.getByRole('button',{name:'01 Notice',exact:true}).click();
 await page.getByRole('button',{name:'Next',exact:true}).click();
 await page.getByLabel('Your thinking').fill('Fictional learner: darker absorbs more.');
 await page.getByRole('button',{name:'Back',exact:true}).click();
 await page.getByRole('button',{name:'Next',exact:true}).click();
 assert.match(await page.getByLabel('Your thinking').inputValue(),/darker/);
-await page.getByRole('button',{name:'Run one model year',exact:true}).click();
+await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();
 assert.match(await page.locator('#readings').innerText(),/17.37/);
 await page.getByRole('button',{name:'Save A',exact:true}).click();
-await page.getByLabel('Surface preset').selectOption('ice');
+await page.getByRole('button',{name:'Bright 70% reflected',exact:true}).click();
 assert.match(await page.locator('#readings').innerText(),/15.00/);
-await page.getByRole('button',{name:'Run one model year',exact:true}).click();
+await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();
 await page.getByRole('button',{name:'Save B',exact:true}).click();
 assert.match(await page.locator('#comparison').innerText(),/2.92/);
 await page.screenshot({path:out+'climate-comparison.png',fullPage:true});
-await page.getByRole('button',{name:'Show me',exact:true}).click();
-await page.getByRole('button',{name:'Show bright comparison',exact:true}).click();
+await page.getByRole('button',{name:'Show me',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();
+await page.getByRole('button',{name:'Show bright comparison',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();
 for(let i=0;i<3;i++)await page.getByRole('button',{name:'Next',exact:true}).click();
 await page.getByLabel('Your thinking').fill('Fictional learner: dark ground absorbs more; heat capacity differs in nature.');
 await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();
-assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: not yet/);
+assert.match(await page.locator('#progress').textContent(),/Independent attempt recorded: not yet/);
 await page.getByRole('button',{name:'Start independent attempt',exact:true}).click();
-await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.getByRole('button',{name:'Save A',exact:true}).click();
-await page.getByLabel('Surface preset').selectOption('farm');await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.getByRole('button',{name:'Save B',exact:true}).click();
+await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();await page.getByRole('button',{name:'Save A',exact:true}).click();
+await page.getByRole('button',{name:'Farmland 20% reflected',exact:true}).click();await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();await page.getByRole('button',{name:'Save B',exact:true}).click();
 for(let i=0;i<3;i++)await page.getByRole('button',{name:'Next',exact:true}).click();
 await page.getByLabel('Your thinking').fill('Fictional learner: reflectivity affects absorbed sunlight. Evaporation is omitted.');
-await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: yes/);
+await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();assert.match(await page.locator('#progress').textContent(),/Independent attempt recorded: yes/);
 const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Export evidence (.json)',exact:true}).click();const download=await downloadPromise;await download.saveAs(out+'fictional-climate-evidence.json');
 const evidence=JSON.parse(await fs.readFile(out+'fictional-climate-evidence.json','utf8'));assert.equal(evidence.snapshots.length,2);assert.equal(evidence.progress.watchedDemonstration,true);assert.equal(evidence.progress.independentlyAttempted,true);assert.match(evidence.learnerExplanations.transfer,/Fictional/);
 // Historical success must never be used as feedback for a rejected current submission.
@@ -45,25 +48,30 @@ await page.getByRole('button',{name:'Start independent attempt',exact:true}).cli
 for(let i=0;i<3;i++)await page.getByRole('button',{name:'Next',exact:true}).click();
 await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();
 assert.match(await page.locator('#status').innerText(),/save A and B yourself/);
-assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: yes/);
-await page.getByRole('button',{name:'Show me again',exact:true}).click();
-await page.getByRole('button',{name:'Show bright comparison',exact:true}).click();
+assert.match(await page.locator('#progress').textContent(),/Independent attempt recorded: yes/);
+await page.getByRole('button',{name:'Show me again',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();
+await page.getByRole('button',{name:'Show bright comparison',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();
 await page.getByLabel('Your thinking').fill('Fictional assisted explanation');
 await page.getByRole('button',{name:'Record independent attempt',exact:true}).click();
 assert.match(await page.locator('#status').innerText(),/save A and B yourself/);
-assert.match(await page.locator('#progress').innerText(),/Independent attempt recorded: yes/);
+assert.match(await page.locator('#progress').textContent(),/Independent attempt recorded: yes/);
 await page.getByText('Embed on a school website',{exact:true}).click();
 await context.grantPermissions(['clipboard-read','clipboard-write']);await page.getByRole('button',{name:'Copy embed code',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#copy-status').textContent.includes('copied'));assert.match(await page.locator('#copy-status').innerText(),/copied/);
 await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>Promise.reject(new Error('blocked'))}}));await page.getByRole('button',{name:'Copy embed code',exact:true}).click();assert.match(await page.locator('#copy-status').innerText(),/selected/);
-await page.getByRole('button',{name:'Reset everything',exact:true}).click();assert.match(await page.locator('#progress').innerText(),/Explored: not yet/);assert.match(await page.locator('#comparison').innerText(),/Save two/);
+await page.getByText('Activity & session',{exact:true}).click();await page.getByRole('button',{name:'Reset everything',exact:true}).click();assert.match(await page.locator('#progress').textContent(),/Explored: not yet/);assert.match(await page.locator('#comparison').innerText(),/Your first surface/);
 await page.getByRole('button',{name:'Enable 3D interaction',exact:true}).click();await page.keyboard.press('ArrowRight');await page.keyboard.press('Home');await page.getByRole('button',{name:'Disable 3D interaction',exact:true}).click();
-await page.reload();assert.match(await page.locator('#progress').innerText(),/Explored: not yet/);
+await page.getByRole('button',{name:'Run one model year',exact:true}).click();
+await page.getByRole('button',{name:'Restart this surface',exact:true}).click();
+await page.waitForTimeout(1200);
+assert.match(await page.locator('#hero-temp').innerText(),/15.00/);
+assert.match(await page.locator('#hero-time').innerText(),/0.0 \/ 1/);
+await page.reload();assert.match(await page.locator('#progress').textContent(),/Explored: not yet/);
 await page.screenshot({path:out+'climate-desktop.png',fullPage:true});
-for(const width of [320,375]){await page.setViewportSize({width,height:812});await page.goto(base);await page.waitForSelector('.s3-host canvas');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('.s3-host canvas').evaluate(e=>getComputedStyle(e).pointerEvents),'none');await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.screenshot({path:out+`climate-${width}.png`,fullPage:true});}
+for(const width of [320,375]){await page.setViewportSize({width,height:812});await page.goto(base);await page.waitForSelector('.s3-host canvas');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('.s3-host canvas').evaluate(e=>getComputedStyle(e).pointerEvents),'none');await page.getByRole('button',{name:'Run one model year',exact:true}).click();await page.locator('#run').filter({hasText:'One model year complete'}).waitFor();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+`climate-${width}.png`,fullPage:true});await page.screenshot({path:out+`climate-${width}-viewport.png`});}
 // Block storage before any script executes and force the actual no-WebGL fallback.
 const fallback=await browser.newContext({viewport:{width:375,height:812},reducedMotion:'reduce'});
 await fallback.addInitScript(()=>{for(const name of ['localStorage','sessionStorage'])Object.defineProperty(window,name,{get(){throw new DOMException('Blocked','SecurityError')}});const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/.test(type)?null:original.call(this,type,...args)};});
-const fp=await fallback.newPage();await fp.goto(base);await fp.getByRole('button',{name:'Run one model year',exact:true}).click();assert.match(await fp.locator('#readings').innerText(),/17.37/);assert.equal(await fp.locator('.s3-host').count(),0);await fp.screenshot({path:out+'climate-fallback.png',fullPage:true});
+const fp=await fallback.newPage();await fp.goto(base);await fp.getByRole('button',{name:'Run one model year',exact:true}).click();await fp.locator('#run').filter({hasText:'One model year complete'}).waitFor();assert.match(await fp.locator('#readings').innerText(),/17.37/);assert.equal(await fp.locator('.s3-host').count(),0);await fp.screenshot({path:out+'climate-fallback.png',fullPage:true});
 // Hold the shared viewer module while a learner changes their view preference.
 for(const toggleCount of [1,2]){
  const delayedContext=await browser.newContext();
@@ -83,7 +91,7 @@ for(const toggleCount of [1,2]){
  assert.equal(await dp.locator('#interact').isDisabled(),drawing);
  await delayedContext.close();
 }
-const school=await context.newPage();await school.goto('http://127.0.0.1:8766/school.html');const frame=school.frameLocator('iframe');await frame.getByRole('button',{name:'Run one model year',exact:true}).click();assert.match(await frame.locator('#readings').innerText(),/17.37/);assert.equal(await frame.getByRole('button',{name:'Copy embed code',exact:true}).count(),0);assert.equal(await frame.locator('script[src="/ask.js"]').count(),0);assert.notEqual(new URL(school.url()).origin,new URL(school.frames()[1].url()).origin);await school.screenshot({path:out+'climate-cross-origin.png',fullPage:true});
+const school=await context.newPage();await school.goto('http://127.0.0.1:8766/school.html');const frame=school.frameLocator('iframe');await frame.getByRole('button',{name:'Run one model year',exact:true}).click();await frame.locator('#run').filter({hasText:'One model year complete'}).waitFor();assert.match(await frame.locator('#readings').innerText(),/17.37/);assert.equal(await frame.getByRole('button',{name:'Copy embed code',exact:true}).count(),0);assert.equal(await frame.locator('script[src="/ask.js"]').count(),0);assert.notEqual(new URL(school.url()).origin,new URL(school.frames()[1].url()).origin);await school.screenshot({path:out+'climate-cross-origin.png',fullPage:true});
 const pop=school.waitForEvent('popup');await frame.getByRole('link',{name:'Open full experience',exact:false}).click();await (await pop).close();
 const reduced=await browser.newContext({reducedMotion:'reduce'});const rp=await reduced.newPage();await rp.goto(base);await rp.waitForSelector('.s3-host canvas');assert.equal(await rp.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),true);await rp.getByRole('button',{name:'Teacher presentation',exact:true}).click();assert.equal(await rp.locator('#lesson').evaluate(e=>e.classList.contains('present')),true);await rp.screenshot({path:out+'climate-presentation.png',fullPage:true});assert.deepEqual(requests.filter(u=>!u.startsWith('http://127.0.0.1:')&&!u.startsWith('blob:')),[]);assert.deepEqual(errors,[]);console.log('PASS: flow, demo isolation, independent attempt, export, copy and fallback, reset/reopen, keyboard, 320/375px, blocked storage + no-WebGL, reduced motion, real cross-origin iframe + full-view link.');
 await browser.close();
