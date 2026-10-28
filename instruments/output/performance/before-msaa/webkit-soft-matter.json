@@ -1,0 +1,18 @@
+{
+  "frames": 301,
+  "wallMilliseconds": 5012,
+  "measuredFPS": 60.1,
+  "displayedFPS": [
+    60,
+    60,
+    60,
+    60
+  ],
+  "backend": "rapier-soft-body",
+  "stats": {
+    "particles": 162,
+    "fps": 60,
+    "displacement": 0.000025328308510208508,
+    "finite": true
+  }
+}

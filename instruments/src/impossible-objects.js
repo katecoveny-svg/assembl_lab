@@ -1,4 +1,8 @@
 import Module from "manifold-3d";
+import {
+  mergeVertices,
+  toCreasedNormals,
+} from "three/addons/utils/BufferGeometryUtils.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { studio, T } from "./scene.js";
 import {
@@ -33,7 +37,30 @@ export async function start() {
     solid,
     params = { merge: 0.6, carve: 0.43, twist: 35 },
     meta = {},
-    color = "#8ecdb6";
+    color = "#8ecdb6",
+    timer = null,
+    builtParams = null;
+  const presets = {
+    arch: { merge: 0.6, carve: 0.43, twist: 35 },
+    loop: { merge: 0.2, carve: 0.55, twist: 100 },
+    moon: { merge: 0.9, carve: 0.7, twist: -35 },
+  };
+  let presetControls;
+  function syncPreset() {
+    presetControls?.querySelectorAll("button").forEach((button) => {
+      const preset = presets[button.dataset.value];
+      button.setAttribute(
+        "aria-pressed",
+        Object.keys(preset).every((key) => preset[key] === params[key]),
+      );
+    });
+  }
+  function flushGeometry() {
+    if (builtParams !== JSON.stringify(params) && !make())
+      throw Error(
+        "Current design could not be built. Adjust the controls before exporting.",
+      );
+  }
   const material = new T.MeshPhysicalMaterial({
     color,
     roughness: 0.25,
@@ -42,6 +69,9 @@ export async function start() {
     clearcoatRoughness: 0.15,
   });
   function make() {
+    clearTimeout(timer);
+    timer = null;
+    syncPreset();
     const garbage = [];
     const keep = (x) => (garbage.push(x), x);
     try {
@@ -82,13 +112,18 @@ export async function start() {
       const geometry = new T.BufferGeometry();
       geometry.setAttribute("position", new T.BufferAttribute(verts, 3));
       geometry.setIndex(new T.BufferAttribute(new Uint32Array(m.triVerts), 1));
-      geometry.computeVertexNormals();
+      // Smooth shared curved surfaces, preserving >60-degree creases.
+      // Only normals/index packing change: positions, triangles and units do not.
+      const creased = toCreasedNormals(geometry, Math.PI / 3);
+      const previewGeometry = mergeVertices(creased);
+      creased.dispose();
+      geometry.dispose();
       const old = mesh;
       if (old) {
         s.scene.remove(old);
         old.geometry.dispose();
       }
-      mesh = new T.Mesh(geometry, material);
+      mesh = new T.Mesh(previewGeometry, material);
       s.scene.add(mesh);
       solid?.delete();
       solid = warped;
@@ -107,9 +142,12 @@ export async function start() {
         `${meta.dimensions.join(" × ")} mm\n${meta.components} connected component${meta.components !== 1 ? "s" : ""}\n${meta.triangles.toLocaleString()} triangles\nKernel: ${resultStatus}\nWall thickness: not checked`;
       $("#metrics").textContent =
         `${meta.triangles.toLocaleString()} TRIANGLES / REAL GEOMETRY`;
+      builtParams = JSON.stringify(params);
       status("Shape updated. GLB art export is ready.");
+      return true;
     } catch (e) {
       status(`Could not update: ${e.message}. Previous shape kept.`);
+      return false;
     } finally {
       garbage.forEach((x) => x.delete());
     }
@@ -127,7 +165,7 @@ export async function start() {
     },
   );
   h.install();
-  choices(
+  presetControls = choices(
     "A starting point",
     [
       ["arch", "Pebble arch"],
@@ -137,12 +175,7 @@ export async function start() {
     "arch",
     (v) => {
       h.push();
-      params =
-        v === "loop"
-          ? { merge: 0.2, carve: 0.55, twist: 100 }
-          : v === "moon"
-            ? { merge: 0.9, carve: 0.7, twist: -35 }
-            : { merge: 0.6, carve: 0.43, twist: 35 };
+      params = { ...presets[v] };
       for (const k in inputs) {
         inputs[k].value = params[k];
         inputs[k].previousElementSibling.textContent = params[k];
@@ -157,13 +190,18 @@ export async function start() {
   ]) {
     const input = range(label, min, max, params[key], step, (v) => {
       params[key] = v;
+      syncPreset();
       clearTimeout(timer);
       timer = setTimeout(make, 70);
     });
-    let timer;
     input.addEventListener("pointerdown", () => h.push());
     input.addEventListener("keydown", (e) => {
-      if (e.key.startsWith("Arrow") && !e.repeat) h.push();
+      if (
+        (e.key.startsWith("Arrow") ||
+          ["Home", "End", "PageUp", "PageDown"].includes(e.key)) &&
+        !e.repeat
+      )
+        h.push();
     });
     inputs[key] = input;
   }
@@ -198,6 +236,7 @@ export async function start() {
   $("#controls").append(exp);
   exp.onclick = async () => {
     try {
+      flushGeometry();
       const copy = mesh.clone();
       copy.scale.setScalar(0.03);
       copy.userData = {
@@ -224,6 +263,10 @@ export async function start() {
   return {
     ...s,
     backend: "manifold-wasm",
+    prepareCapture() {
+      flushGeometry();
+      s.render();
+    },
     reset() {
       h.push();
       params = { merge: 0.6, carve: 0.43, twist: 35 };

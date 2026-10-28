@@ -21,6 +21,7 @@ Open `http://localhost:4173/instruments/reality-remix/`. Prebuilt `dist/` is com
 
 ```
 npx playwright install chromium webkit
+npm run test:unit
 npm test
 ```
 

@@ -9,7 +9,8 @@ export async function start() {
   $("#hint").textContent = "Drag to brush · choose Orbit to turn";
   $("#explanation").innerHTML =
     "<p>This original scene is made from thousands of oriented, translucent 3D Gaussian ellipsoids, rendered by Spark. It is a synthetic sculpture, not a scan or a point-cloud substitute. Brushing changes Gaussian centres; dissolve changes their opacity; the vortex rotates them around an axis. Reassemble returns each one to its original position.</p><p>Undo stores up to 16 gestures. Freeze pauses reassembly; you can still edit the frozen sculpture. Lighter mode uses fewer splats and fewer screen pixels. PNG is a still image, not a 3D scene export.</p>";
-  const s = studio();
+  // Spark resolves Gaussian coverage itself; MSAA adds cost without improving splats.
+  const s = studio({ antialias: false });
   const spark = new SparkRenderer({ renderer: s.renderer });
   s.scene.add(spark);
   s.camera.position.set(0.3, 1.3, 5.8);
