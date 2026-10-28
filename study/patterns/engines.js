@@ -293,7 +293,7 @@ function drawInk(){
 function bootMurmur(){
   murmurPts = [];
   agents = [];
-  const txt = (state.kineticText || 'assembl').toLowerCase().slice(0,10);
+  const txt = (state.kineticText || 'assembl').toLowerCase().slice(0,12);
   const pg = createGraphics(W, H);
   pg.pixelDensity(1);
   pg.background(255,253,251);
