@@ -1,5 +1,7 @@
 # Vinyl integration review
 
+**Follow-up:** [P2 framing and counterweight corrections](p2-followup.md) have 60 passing tests; fresh browser verification is pending because the local preview server could not bind under the current sandbox. The screenshots below document the original integration checkpoint.
+
 Local review checkpoint, 29 October 2026. Branch `codex/learning-machine-rollout`, directly after phone fix `1bc6eea115f02bd533ccb1bca7de3db47517e977`. No publication or release is implied.
 
 Preview: <http://127.0.0.1:8795/study/m/vinyl.html?debug#spin>. Serve the repository root; `?debug` adds read-only render diagnostics. [Exact changed files](files.txt), [asset provenance and rig contract](../../../assets/models/vinyl/README.md), [design brief](../../../docs/learning-machines/assembl-3d-design-brief.md).

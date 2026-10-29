@@ -1,0 +1,6 @@
+study/m/vinyl.js
+study/review/vinyl/README.md
+study/review/vinyl/p2-files.txt
+study/review/vinyl/p2-followup.md
+study/review/vinyl/p2-tests.tap
+study/tests/vinyl-rig.test.mjs

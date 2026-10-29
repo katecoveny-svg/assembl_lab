@@ -303,8 +303,10 @@ function vinylWorld(S,asset){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE
     speaker:[[ZA.x-10.6,3.6,ZA.z+1.5],[ZA.x-5.75,1.25,ZA.z]]
   };
   function fit(){
+    const portrait=vinylPortraitView(currentView,S.camera.aspect,ZT.toArray());
+    if(portrait){S.view('vinyl',portrait.position,portrait.target,{min:2,max:45});S.goView('vinyl',true);return}
     const [p,t]=cameraSpecs[currentView],target=V3(...t),offset=V3(...p).sub(target);
-    // Portrait canvases need extra horizontal room, without shrinking desktop scenes.
+    // Other apparatus retain their established framing, including the speaker cutaway.
     const factor=(currentView==='air'?1.22:1)*Math.max(1,(currentView==='speaker'?.95:1.55)/Math.max(.55,S.camera.aspect));
     offset.multiplyScalar(factor);S.view('vinyl',target.clone().add(offset).toArray(),t,{min:2,max:45});S.goView('vinyl',true);
   }
@@ -416,7 +418,7 @@ function vinylWorld(S,asset){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE
       mechanics.forEach((label,i)=>{const spec=mechanicalNames[i],node=spec&&nodes[spec[0]];label.show(!!node);if(node)label.at(spec[2]?node.localToWorld(V3(...spec[2])):node.getWorldPosition(new THREE.Vector3())).set(spec[1])});
       description.textContent=inspection==='drive'
         ? `The belt links motor and platter. Pulleys follow the existing visual ratio 6.8:1 at ${fmt(s.rpm,1)} rpm; belt slip and torque are not simulated. The lesson's inertia is its stated estimate, not measured from this mesh.`
-        :inspection==='arm'?`The stylus touches the record at ${fmt(s.r*100,1)} cm from centre. The pivot and counterweight stay fixed while the arm follows the needle-position control. Drag the headshell where available, or use the radius slider.`
+        :inspection==='arm'?`The stylus touches the record at ${fmt(s.r*100,1)} cm from centre. The pivot stays in place; the counterweight moves with the arm as the needle-position control changes. Balance forces are not simulated. Drag the headshell where available, or use the radius slider.`
         :inspection==='speaker'?`The cone moves with the lesson's slowed phase and ${Math.round(s.amp*100)}% amplitude. The cutaway reveals the fixed magnet behind it. This is illustrative motion, not a calibrated speaker or playback loudness.`
         :zone==='A'?`Air particles oscillate in place; the compression pattern travels. Wavelength ${fmt(V_AIR/s.f,2)} m at ${fmt(s.f)} Hz. Motion is slowed and spacing exaggerated. Hear it plays a short tone only after a tap.`
         :zone==='G'?`Magnified 3 mm groove: wavelength ${fmt(speedAt(s.r)/s.f*1000,2)} mm. Recorded ${fmt(s.f)} Hz; heard ${fmt(heard())} Hz. The texture on the full record is illustrative, not encoded audio.`
@@ -428,6 +430,18 @@ function vinylWorld(S,asset){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE
       }
 
     }};
+}
+// A steeper side view turns the deck's long axis up the portrait canvas. Fitting
+// the same wide landscape angle by distance alone leaves a tiny horizontal strip.
+function vinylPortraitView(view,aspect,center){
+  if(aspect>=1.1)return null;
+  const specs={
+    deck:[[8,14,1],[-.8,.7,0]],
+    formats:[[12,18,1],[.3,.7,0]],
+    drive:[[5.8,10,1],[-.1,.65,.1]]
+  },spec=specs[view];if(!spec)return null;
+  const [offset,aim]=spec,target=aim.map((v,i)=>v+center[i]),scale=Math.max(1,.76/Math.max(.45,aspect));
+  return {target,position:target.map((v,i)=>v+offset[i]*scale)};
 }
 function vinyl3d(S){
   let world=null,asset=null,failed=false,disposed=false;
