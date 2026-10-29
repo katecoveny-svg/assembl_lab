@@ -1,5 +1,7 @@
 # Phone Blender integration · local review
 
+Follow-up: [topic-aware current inspector and cable cues](current-cues-fix.md), verified with 45 passing tests and ordinary browser reproduction. The evidence below records the initial integration.
+
 29 October 2026. Branch `codex/learning-machine-rollout`, based on the clean planning checkpoint `712ae214` and main `a482fc5`. This is a local integration, not a published release. Preview: http://127.0.0.1:8795/study/m/phone.html?debug#charge
 
 ## What changed

@@ -1,0 +1,125 @@
+[
+  {
+    "case": "energy 2000 mAh / 5 h cable",
+    "description": "This topic models battery discharge: average current 0.40 A flows from the battery to the phone, not through the charger cable. Cable charging markers are hidden.",
+    "chips": "ENERGY\n27.9 kJ\nAVERAGE POWER\n1.55 W\nAVERAGE CURRENT\n0.40 A",
+    "render": {
+      "topic": "energy",
+      "station": "CHARGE_STATION",
+      "unitsPerMetre": 30,
+      "gapMagnification": 5,
+      "physicalGapMm": 2,
+      "receiverY": 0.016500000134110453,
+      "turns": 10,
+      "phase": "constant current",
+      "chargingCurrentA": 4.3927648578811365,
+      "averageCurrentA": 0.4,
+      "cableCurrentA": 0,
+      "charge": 1,
+      "capacitorV": 0,
+      "playing": false,
+      "calls": 39,
+      "triangles": 18874,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.600000023841858,
+      "camera": [
+        0.22755077526711265,
+        11.75742534181192,
+        14.671137272783168
+      ]
+    }
+  },
+  {
+    "case": "energy charger inspector",
+    "description": "20 W charger · 85% efficiency. This topic models battery discharge: average current 0.40 A flows from the battery to the phone, not through the charger cable."
+  },
+  {
+    "case": "fast charging cable",
+    "description": "The markers illustrate current, not individual electrons. Charging current now 4.39 A.",
+    "chips": "HALF THE ENERGY\n13.9 kJ\nTIME TO 50%\n13.7 min\nINTO THE CELL\n4.4 A\n\"30 MIN\" CLAIM\nplausible",
+    "render": {
+      "topic": "fast",
+      "station": "CHARGE_STATION",
+      "unitsPerMetre": 30,
+      "gapMagnification": 5,
+      "physicalGapMm": 2,
+      "receiverY": 0.016500000134110453,
+      "turns": 10,
+      "phase": "constant current",
+      "chargingCurrentA": 4.3927648578811365,
+      "averageCurrentA": 0.4,
+      "cableCurrentA": 4.3927648578811365,
+      "charge": 0,
+      "capacitorV": 0,
+      "playing": false,
+      "calls": 38,
+      "triangles": 18708,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.600000023841858,
+      "camera": [
+        0.22755077526711265,
+        11.75742534181192,
+        14.671137272783168
+      ]
+    }
+  },
+  {
+    "case": "ccv charger",
+    "description": "20 W charger · 85% efficiency. Charging current now 4.39 A: constant current.",
+    "chips": "CHARGE\n0%\nCELL EMF\n3.50 V\nDRIVING PD\n0.70 V\nCURRENT\n4.39 A",
+    "render": {
+      "topic": "ccv",
+      "station": "CHARGE_STATION",
+      "unitsPerMetre": 30,
+      "gapMagnification": 5,
+      "physicalGapMm": 2,
+      "receiverY": 0.016500000134110453,
+      "turns": 10,
+      "phase": "constant current",
+      "chargingCurrentA": 4.3927648578811365,
+      "averageCurrentA": 0.4,
+      "cableCurrentA": 4.3927648578811365,
+      "charge": 0,
+      "capacitorV": 0,
+      "playing": false,
+      "calls": 38,
+      "triangles": 18708,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.600000023841858,
+      "camera": [
+        0.22755077526711265,
+        11.75742534181192,
+        14.671137272783168
+      ]
+    }
+  },
+  {
+    "case": "capacity cable inactive",
+    "description": "This topic does not run cable charging. Explore a charging topic to see charging current. Cable charging markers are hidden.",
+    "render": {
+      "topic": "charge",
+      "station": "CHARGE_STATION",
+      "unitsPerMetre": 30,
+      "gapMagnification": 5,
+      "physicalGapMm": 2,
+      "receiverY": 0.016500000134110453,
+      "turns": 10,
+      "phase": "constant current",
+      "chargingCurrentA": 4.3927648578811365,
+      "averageCurrentA": 0.4,
+      "cableCurrentA": 0,
+      "charge": 1,
+      "capacitorV": 0,
+      "playing": false,
+      "calls": 39,
+      "triangles": 18874,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.600000023841858,
+      "camera": [
+        0.22755077526711265,
+        11.75742534181192,
+        14.671137272783168
+      ]
+    }
+  }
+]

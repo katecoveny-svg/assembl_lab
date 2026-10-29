@@ -224,7 +224,7 @@ function phoneVisual(st){
   const k=st.k,charging=k==="fast"||k==="ccv"||k==="test";
   const fraction=charging?s.soc:k==="energy"?Math.max(.02,1-Math.min(1,s.t/(s.hours*.6))):1;
   return {topic:k,playing:s.playing,explode:k==="charge"?1:k==="energy"?.75:.3,indicatorFraction:fraction,
-    phase:chargePhase(),chargeC:Q(),energyJ:E(),averageW:Pavg(),currentA:Icc(s.soc),chargerW:s.Pchg,efficiency:s.eff,
+    phase:chargePhase(),chargeC:Q(),energyJ:E(),averageW:Pavg(),averageCurrentA:Pavg()/s.V,chargingCurrentA:Icc(s.soc),chargerW:s.Pchg,efficiency:s.eff,
     terminalV:Vterm(),lostW:Plost(),loadA:s.Iload,voltage:s.V,screenA:s.Iscreen,modemA:s.Imodem,totalA:Itot(),hoursFlat:hoursFlat(),
     receiverTurns:s.N,frequencyKHz:s.f,gapMm:s.gap,inducedV:emfW(),wirelessEfficiency:effW(),wirelessHalfMin:tW50()/60,
     capacitanceUF:s.C,resistanceOhm:s.R,capacitorV:s.vcap,capacitorFraction:s.vcap/s.V,tauMs:tau()*1000};

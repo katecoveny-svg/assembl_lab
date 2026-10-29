@@ -50,3 +50,28 @@ test('taper wording and both visual labels follow measured default and altered c
  app.s.soc=.5;app.control('Pchg').set(app.s,5);assert.equal(app.window.phase(),'constant current');app.control('r').set(app.s,.3);assert.equal(app.window.phase(),'constant current');app.control('Pchg').set(app.s,45);assert.equal(app.window.phase(),'current tapering');
  assert.match(current,/Wireless spacing is shown at 5×/);
 });
+
+test('energy inspector uses authoritative discharge current and disables cable charging for every noncharging topic',async()=>{
+ const {phoneCurrentPresentation}=await import('../m/phone-asset.js');const app=mount();
+ app.control('mAh').set(app.s,2000);app.control('hours').set(app.s,5);
+ const energy=app.topic('energy'),v=app.window.visual(energy),presentation=phoneCurrentPresentation(v);
+ assert.equal(v.averageCurrentA,.4);assert.equal(app.cfg.chips().Iavg[1],'0.40 A');assert.equal(presentation.cableCurrentA,0);
+ for(const text of [presentation.cableText,presentation.chargerText]){assert.match(text,/battery discharge: average current 0\.40 A/);assert.doesNotMatch(text,/Charging current now|4\.39 A/)}
+ // Changing the charger cannot change the discharge explanation or activate its cable.
+ app.control('Pchg').set(app.s,45);app.control('r').set(app.s,.3);assert.equal(phoneCurrentPresentation(app.window.visual(energy)).cableText,presentation.cableText);
+ for(const capacity of [2000,3349,5000])for(const hours of [2,5,12]){
+  app.control('mAh').set(app.s,capacity);app.control('hours').set(app.s,hours);
+  const value=app.window.visual(energy);assert.equal(value.averageCurrentA.toFixed(2)+' A',app.cfg.chips().Iavg[1]);assert.ok(phoneCurrentPresentation(value).cableText.includes(value.averageCurrentA.toFixed(2)+' A'));
+ }
+ for(const k of ['charge','energy','internal','circuit','wireless','capacitor','test']){
+  const value=app.window.visual(app.topic(k)),p=phoneCurrentPresentation(value);assert.equal(p.cableCurrentA,0,k);assert.doesNotMatch(p.cableText,/Charging current now/);assert.doesNotMatch(p.chargerText,/Charging current now/);
+ }
+});
+
+test('charging inspector and cable cues continue to use the original current at restart, taper, full and pause',async()=>{
+ const {phoneCurrentPresentation}=await import('../m/phone-asset.js');const app=mount();
+ for(const k of ['fast','ccv']){const st=app.topic(k);for(const soc of [0,.49,.5,.8,1])for(const playing of [false,true]){
+  app.s.soc=soc;app.s.playing=playing;const v=app.window.visual(st),p=phoneCurrentPresentation(v);
+  assert.equal(p.cableCurrentA,v.chargingCurrentA);assert.equal(v.chargingCurrentA.toFixed(2)+' A',app.cfg.chips().Inow[1]);assert.match(p.cableText,new RegExp('Charging current now '+v.chargingCurrentA.toFixed(2).replace('.','\\.')+' A'));assert.ok(p.chargerText.includes(v.phase));
+ }app.restart();assert.equal(app.window.visual(st).chargingCurrentA.toFixed(2),'4.39')}
+});

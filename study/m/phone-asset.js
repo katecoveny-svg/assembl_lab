@@ -13,8 +13,22 @@ export function applyPhonePose(rig,v){
   rig.setVisualState({explode:v.explode,indicatorFraction:v.indicatorFraction,receiverTurns:v.receiverTurns,wirelessGapM:v.gapMm/1000,heatColor:null});
   rig.nodes.QI_PHONE_ROOT.position.y=rig.rest.QI_PHONE_ROOT.position.y+v.gapMm/1000*GAP_MAGNIFICATION;
 }
+// A charger is visible as apparatus in several topics, but only charging topics
+// send current through its USB cable. Discharge is from the battery to the phone.
+export function phoneCurrentPresentation(v){
+  const rating=`${v.chargerW} W charger · ${(v.efficiency*100).toFixed(0)}% efficiency.`;
+  if(v.topic==='fast'||v.topic==='ccv')return {
+    cableCurrentA:v.chargingCurrentA,
+    cableText:`The markers illustrate current, not individual electrons. Charging current now ${v.chargingCurrentA.toFixed(2)} A.`,
+    chargerText:`${rating} Charging current now ${v.chargingCurrentA.toFixed(2)} A: ${v.phase}.`
+  };
+  const context=v.topic==='energy'
+    ?`This topic models battery discharge: average current ${v.averageCurrentA.toFixed(2)} A flows from the battery to the phone, not through the charger cable.`
+    :'This topic does not run cable charging. Explore a charging topic to see charging current.';
+  return {cableCurrentA:0,cableText:context+' Cable charging markers are hidden.',chargerText:rating+' '+context};
+}
 const PARTS={
- CHARGE_STATION:[['PHONE_BATTERY','HOT_BATTERY','Battery',v=>`${v.chargeC.toFixed(0)} C stored at full capacity · ${(v.energyJ/1000).toFixed(1)} kJ. Only the indicator changes size; the cell casing stays fixed.`],['PHONE_SCREEN','HOT_BOARD','Screen and board',v=>`Average power ${v.averageW.toFixed(2)} W. The exploded layers reveal construction; separation is illustrative.`],['CHARGER_ROOT','HOT_CHARGER','USB-C charger',v=>`${v.chargerW} W charger · ${(v.efficiency*100).toFixed(0)}% efficiency. Current now ${v.currentA.toFixed(2)} A: ${v.phase}.`],['USB_CABLE','HOT_USB','Cable and connector',v=>`The markers illustrate current, not individual electrons. Charging current now ${v.currentA.toFixed(2)} A.`]],
+ CHARGE_STATION:[['PHONE_BATTERY','HOT_BATTERY','Battery',v=>`${v.chargeC.toFixed(0)} C stored at full capacity · ${(v.energyJ/1000).toFixed(1)} kJ. Only the indicator changes size; the cell casing stays fixed.`],['PHONE_SCREEN','HOT_BOARD','Screen and board',v=>`Average power ${v.averageW.toFixed(2)} W. The exploded layers reveal construction; separation is illustrative.`],['CHARGER_ROOT','HOT_CHARGER','USB-C charger',v=>phoneCurrentPresentation(v).chargerText],['USB_CABLE','HOT_USB','Cable and connector',v=>phoneCurrentPresentation(v).cableText]],
  INTERNAL_STATION:[['INTERNAL_RESISTOR','HOT_INTERNAL_R','Internal resistance',v=>`Inside the cell model: ${v.lostW.toFixed(2)} W becomes heat. This colour cue is an estimate, not a measured temperature.`],['LOAD_DEMO',null,'External load',v=>`Outside the cell: draws ${v.loadA.toFixed(1)} A. Terminal voltage is ${v.terminalV.toFixed(2)} V after the internal voltage drop.`]],
  PARALLEL_STATION:[['PARALLEL_SCREEN','HOT_PARALLEL_SCREEN','Screen branch',v=>`${v.screenA.toFixed(1)} A at ${v.voltage.toFixed(2)} V. Each parallel branch has the same voltage.`],['PARALLEL_MODEM','HOT_MODEM','Modem branch',v=>`${v.modemA.toFixed(1)} A. Total current ${v.totalA.toFixed(2)} A; this battery lasts about ${v.hoursFlat.toFixed(1)} h in the model.`]],
  WIRELESS_STATION:[['QI_TRANSMITTER','HOT_TRANSMITTER','Transmitter · pad',v=>`Alternating current at ${v.frequencyKHz} kHz produces a changing magnetic field. Field markers are greatly slowed down.`],['QI_RECEIVER','HOT_RECEIVER','Receiver · phone',v=>`${v.receiverTurns} turns · induced emf ≈ ${v.inducedV.toFixed(1)} V (estimate). Gap ${v.gapMm.toFixed(1)} mm; displayed spacing is 5×.`]],
@@ -52,7 +66,7 @@ export async function loadPhone(S,read){
   const shellBounds=new THREE.Box3().setFromObject(nodes.QI_PHONE_SHELL),centre=shellBounds.getCenter(new THREE.Vector3());
   nodes.QI_PHONE_ROOT.worldToLocal(centre);outline.position.copy(centre);nodes.QI_PHONE_ROOT.add(outline);
   const beadGeo=new THREE.SphereGeometry(.0016,8,6),flowMat=new THREE.MeshBasicMaterial({color:'#c58668'}),blueMat=new THREE.MeshBasicMaterial({color:'#658cb9'});
-  const flowDefs=[['USB_CHARGE_PATH','CHARGE_STATION',v=>v.currentA],['INTERNAL_FLOW','INTERNAL_STATION',v=>v.loadA],['PARALLEL_FLOW_SCREEN','PARALLEL_STATION',v=>v.screenA],['PARALLEL_FLOW_MODEM','PARALLEL_STATION',v=>v.modemA],['CAP_POS_PATH','CAPACITOR_STATION',v=>1-v.capacitorFraction],['CAP_RESISTOR_TO_PLATE','CAPACITOR_STATION',v=>1-v.capacitorFraction],['CAP_NEG_PATH','CAPACITOR_STATION',v=>1-v.capacitorFraction]];
+  const flowDefs=[['USB_CHARGE_PATH','CHARGE_STATION',v=>phoneCurrentPresentation(v).cableCurrentA],['INTERNAL_FLOW','INTERNAL_STATION',v=>v.loadA],['PARALLEL_FLOW_SCREEN','PARALLEL_STATION',v=>v.screenA],['PARALLEL_FLOW_MODEM','PARALLEL_STATION',v=>v.modemA],['CAP_POS_PATH','CAPACITOR_STATION',v=>1-v.capacitorFraction],['CAP_RESISTOR_TO_PLATE','CAPACITOR_STATION',v=>1-v.capacitorFraction],['CAP_NEG_PATH','CAPACITOR_STATION',v=>1-v.capacitorFraction]];
   const flows=flowDefs.map(([name,station,current],index)=>{
     const p=contract.paths[name],points=p.points_gltf_local_m.map(a=>new THREE.Vector3(...a)),curve=new THREE.CurvePath();
     if(name==='USB_CHARGE_PATH')curve.add(new THREE.CatmullRomCurve3(points));else for(let i=1;i<points.length;i++)curve.add(new THREE.LineCurve3(points[i-1],points[i]));
@@ -114,7 +128,7 @@ export async function loadPhone(S,read){
     nodes.INTERNAL_RESISTOR.traverse(o=>{if(o.isMesh&&o.material.name==='HEAT_CUE_MAT')o.material.color.set('#edc0bb').lerp(new THREE.Color('#cc8068'),Math.min(1,v.lostW/4.8))});
     const key=[Math.round(v.indicatorFraction*100),v.phase,st.k].join('|');
     if(key!==lastScreen){lastScreen=key;const c=screenCanvas.getContext('2d');c.fillStyle='#d6e6ed';c.fillRect(0,0,768,346);c.textAlign='center';c.fillStyle='#344668';c.font='600 80px system-ui';c.fillText(Math.round(v.indicatorFraction*100)+'%',384,168);c.font='28px system-ui';c.fillText(['fast','ccv','test'].includes(st.k)?v.phase:'charge indicator',384,230);screenTexture.needsUpdate=true}
-    for(const f of flows){f.mesh.visible=f.station===active;const current=Math.max(0,f.current(v));if(v.playing&&!S.REDUCED)f.phase=(f.phase+dt*(.04+current*.035))%1;
+    for(const f of flows){f.mesh.visible=f.station===active;const current=Math.max(0,f.current(v));if(current>1e-5&&v.playing&&!S.REDUCED)f.phase=(f.phase+dt*(.04+current*.035))%1;
       for(let i=0;i<14;i++){const p=f.curve.getPoint((i/14+f.phase)%1);f.mesh.put(i,p.x,p.y+.001,p.z,current>1e-5?1:0)}f.mesh.done();}
     charges.forEach(mesh=>{for(let i=0;i<64;i++)mesh.put(i,0,-.018+Math.floor(i/8)*.0051,-.018+(i%8)*.0051,i<Math.round(v.capacitorFraction*64)?1:0);mesh.done()});
     field.visible=gapLine.visible=active==='WIRELESS_STATION';
@@ -127,7 +141,7 @@ export async function loadPhone(S,read){
     }
     const now=performance.now();if(dt>0&&timings.length<600)timings.push(now-lastFrame);lastFrame=now;
     if(/[?&]debug\b/.test(location.search)){
-      const times=timings.slice().sort((a,b)=>a-b);S.canvas.dataset.review=JSON.stringify({topic:st.k,station:active,unitsPerMetre:UNITS,gapMagnification:GAP_MAGNIFICATION,physicalGapMm:v.gapMm,receiverY:nodes.QI_PHONE_ROOT.position.y,turns:v.receiverTurns,phase:v.phase,currentA:v.currentA,charge:v.indicatorFraction,capacitorV:v.capacitorV,playing:v.playing,calls:S.renderer.info.render.calls,triangles:S.renderer.info.render.triangles,medianFrameMs:times[Math.floor(times.length*.5)]||0,p95FrameMs:times[Math.floor(times.length*.95)]||0,camera:S.camera.position.toArray()});
+      const times=timings.slice().sort((a,b)=>a-b);S.canvas.dataset.review=JSON.stringify({topic:st.k,station:active,unitsPerMetre:UNITS,gapMagnification:GAP_MAGNIFICATION,physicalGapMm:v.gapMm,receiverY:nodes.QI_PHONE_ROOT.position.y,turns:v.receiverTurns,phase:v.phase,chargingCurrentA:v.chargingCurrentA,averageCurrentA:v.averageCurrentA,cableCurrentA:phoneCurrentPresentation(v).cableCurrentA,charge:v.indicatorFraction,capacitorV:v.capacitorV,playing:v.playing,calls:S.renderer.info.render.calls,triangles:S.renderer.info.render.triangles,medianFrameMs:times[Math.floor(times.length*.5)]||0,p95FrameMs:times[Math.floor(times.length*.95)]||0,camera:S.camera.position.toArray()});
     }
   }
   return {step:activate,resize:fit,update,rig,dispose(){if(disposed)return;disposed=true;partSelect.onchange=apparatusSelect.onchange=null;label.hide();txLabel.hide();rxLabel.hide();disposePhone(root)}};
