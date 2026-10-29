@@ -236,8 +236,7 @@
       "source": "m/phone.html",
       "capture": "Blender 5.1.1 offline Cycles render; dedicated complete-apparatus card framing, not a runtime screenshot",
       "image": "phone.jpg",
-      "renderSource": "phone-card.png",
-      "renderLibraryId": "libfile_83a75d51b9808191ad237633dd6a9ffe"
+      "renderSource": "phone-card.png"
     },
     {
       "id": "queue",
@@ -257,7 +256,7 @@
       "id": "heart",
       "three": true,
       "source": "m/heart.html",
-      "capture": "Approved Blender hero framed to 800 × 500 without cropping the apparatus",
+      "capture": "Approved Blender hero framed to 800 \u00d7 500 without cropping the apparatus",
       "image": "heart.jpg",
       "assetSource": "m/heart/assets/heart_hero.png"
     }

@@ -18,4 +18,4 @@ Physics used: C = 2πr, f = rpm ÷ 60, v = fλ, ω = 2πf, v = rω, a = v²/r = 
 
 ## Blender apparatus integration
 
-The live deck and speaker now use original pastel Blender geometry. The earlier table describes the retained simplified SVG, not the physical asset dimensions. See [asset provenance and rig notes](../../assets/models/vinyl/README.md) and [integration evidence](../review/vinyl/README.md). All calculations and estimated inertia still belong to this lesson; they are not inferred from the meshes.
+The live deck and speaker now use original pastel Blender geometry. The earlier table describes the retained simplified SVG, not the physical asset dimensions. See [asset provenance and rig notes](../../assets/models/vinyl/README.md). All calculations and estimated inertia still belong to this lesson; they are not inferred from the meshes.

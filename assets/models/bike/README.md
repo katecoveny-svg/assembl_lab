@@ -4,15 +4,8 @@ Generic teaching construction for `/study/m/bike.html`, authored in Blender 5.1.
 
 ## Source provenance
 
-Reproducible source (`bike_atelier.py`, `geometry.py`, `assembl_pastel.py`, `pose_blender.py`, `render_views.py`, `export_browser.py`), editable scene, source geometry fixtures and validation reports are preserved in the complete Library delivery. Fixture code is not imported by the lesson.
+Reproducible source (`bike_atelier.py`, `geometry.py`, `assembl_pastel.py`, `pose_blender.py`, `render_views.py`, `export_browser.py`), editable scene, source geometry fixtures and validation reports are preserved in the project source archive. Fixture code is not imported by the lesson.
 
-| Item | Library identity (version 1) |
-|---|---|
-| Complete source ZIP | `libfile_c21a680402d881918c7bda4af22d05f5` |
-| Editable Blender scene | `libfile_0abee5fca1088191a5e5ec80ea44232b` |
-| Web GLB | `libfile_09502b0538608191b441f59423b0958c` |
-| Hero render | `libfile_2111094ff30c8191872e311d4ea54666` |
-| Dedicated card | `libfile_7ec31f8e48048191bde090d62f476522` |
 
 `assembl-bike-atelier-web.glb` is **2,345,060 bytes**, SHA-256 `80f731558e185c2322719535d4549f74c1c309f68d0633c7d4325ed17a3f6aa5`. All selectable alternatives total 99,528 triangles, 151 mesh/material primitives, 138 contracted rig nodes and 289 total nodes. A selected assembly uses fewer triangles and draw calls. There are 14 materials and no source textures.
 

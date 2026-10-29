@@ -4,17 +4,10 @@ Generic, unbranded teaching geometry by the Assembl Blender asset task, delivere
 
 ## Reproducible source and provenance
 
-The authoritative source family is in the sibling task's `vinyl/` delivery: `vinyl_atelier.py`, `geometry.py`, `assembl_pastel.py`, `export_browser.py`, `render_views.py`, `HANDOFF.md`, the editable `.blend`, seven renders and browser proof. These are preserved in ChatGPT Library:
+The authoritative source family is in the original source archive: `vinyl_atelier.py`, `geometry.py`, `assembl_pastel.py`, `export_browser.py`, `render_views.py`, `HANDOFF.md`, the editable `.blend`, seven renders and browser proof. These source records are retained in the project archive.
 
-| Item | Library identity |
-|---|---|
-| Complete source ZIP | `libfile_cb27415b534c8191a064e5be10ad00a4` |
-| Editable Blender scene | `libfile_dc414f00f63881919705e52a06e25820` |
-| Web GLB | `libfile_f37f2470d2288191a54a8b71959eeeb5` |
-| Hero render | `libfile_18d4d6e8fffc8191a3696014522d3481` |
-| Dedicated card render | `libfile_92f0a96531208191986d2d542f684c97` |
 
-All were confirmed version 0 at handoff. The repo GLB and pure pose controller are byte-for-byte copies of that delivery. The contract's four source paths were made repository-relative; its source hashes describe the pre-integration inputs. No geometry, rig values, material colours or transforms were edited.
+The repo GLB and pure pose controller are byte-for-byte copies of that delivery. The contract's four source paths were made repository-relative; its source hashes describe the pre-integration inputs. No geometry, rig values, material colours or transforms were edited.
 
 `assembl-vinyl-atelier-web.glb`: **3,488,316 bytes**, SHA-256 `4946dcb27e96fa0bbdc8c4e80c579f9ca226ccddafa3d88aed458513b3aae490`. 65,256 triangles; 79 mesh/material primitives; 53 contracted named rig nodes, 132 total GLB nodes; 13 materials; two shared 1024 px textures.
 
