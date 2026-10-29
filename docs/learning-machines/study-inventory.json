@@ -162,11 +162,11 @@
       "title": "The downhill machine",
       "route": "/study/m/bike.html",
       "source": "study/m/bike.js",
-      "scene": "bike3d; garage, trail, fork, stop and ski stations",
+      "scene": "Blender bikeWorld + bike-asset.js; retained forest, charts and independent ski stations",
       "stateOwner": "s/b/s.ski; tickTrail, tickStop, tickFork, SK, geoPts",
-      "scope": "Batch 01: three compatible bike builds and rider/suspension rig; retain ski scenes and controls",
+      "scope": "Local integration: FLOW/DROP/RIDGE, state-driven rider and suspension; standard/multi-draw capability selection, labelled cutaway, state-preserving graphics and fallback; ski model/scenes unchanged",
       "difficulty": "H",
-      "status": "batch-01-contract"
+      "status": "local-review"
     },
     {
       "id": "lines",

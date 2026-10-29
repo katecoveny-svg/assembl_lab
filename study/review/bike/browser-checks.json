@@ -1,0 +1,448 @@
+[
+  {
+    "check": "graphics switch both directions",
+    "passed": true,
+    "evidence": {
+      "chips": "THINKING33.3 mBRAKING35.4 mSTOPPING68.8 mGRIP μ0.40 mud",
+      "controls": [
+        [
+          "bk-plate",
+          "42"
+        ],
+        [
+          "bk-tag",
+          "RIDE"
+        ],
+        [
+          "k-limit",
+          "45"
+        ],
+        [
+          "k-m",
+          "55"
+        ],
+        [
+          "k-grip",
+          "mud"
+        ],
+        [
+          "k-v0",
+          "60"
+        ],
+        [
+          "k-tr",
+          "2"
+        ],
+        [
+          "k-k",
+          "45"
+        ],
+        [
+          "k-fh",
+          "1.2"
+        ],
+        [
+          "k-skm",
+          "72"
+        ],
+        [
+          "k-skh",
+          "120"
+        ],
+        [
+          "k-skl",
+          "400"
+        ],
+        [
+          "k-skv",
+          "34"
+        ],
+        [
+          "k-skr",
+          "30"
+        ],
+        [
+          "k-skvt",
+          "20"
+        ],
+        [
+          "k-skmu",
+          "0.5"
+        ]
+      ],
+      "hash": "#stop",
+      "play": "▶ Play"
+    }
+  },
+  {
+    "check": "work",
+    "review": {
+      "topic": "work",
+      "zone": "ski",
+      "frameMs": 16.660000000397364,
+      "build": {
+        "model": "ridge",
+        "colour": "teal",
+        "wheels": "trail",
+        "bars": "mid",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": false,
+      "x": 280.41157783319136,
+      "t": 20.280433333333043,
+      "v": 0.005093856147784993,
+      "fx": 0,
+      "renderer": "multi-draw",
+      "calls": 18,
+      "triangles": 2460,
+      "visibleBikes": 0
+    },
+    "chips": "SLOPE Θ\n17.5° (sin θ = 0.30)\nMG SIN Θ\n212 N\nAVERAGE RESISTANCE\n108 N\nAVERAGE A\n1.45 m/s²"
+  },
+  {
+    "check": "model",
+    "review": {
+      "topic": "model",
+      "zone": "ski",
+      "frameMs": 16.666666666666668,
+      "build": {
+        "model": "ridge",
+        "colour": "teal",
+        "wheels": "trail",
+        "bars": "mid",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": false,
+      "x": 280.41157783319136,
+      "t": 20.280433333333043,
+      "v": 0.005093856147784993,
+      "fx": 0,
+      "renderer": "multi-draw",
+      "calls": 6,
+      "triangles": 1116,
+      "visibleBikes": 0
+    },
+    "chips": "FRICTIONLESS √(2GH)\n48.5 m/s\nREAL EXIT SPEED\n34 m/s\nDISSIPATED\n51%"
+  },
+  {
+    "check": "turn",
+    "review": {
+      "topic": "turn",
+      "zone": "turn",
+      "frameMs": 16.666666666666668,
+      "build": {
+        "model": "ridge",
+        "colour": "teal",
+        "wheels": "trail",
+        "bars": "mid",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": false,
+      "x": 280.41157783319136,
+      "t": 20.280433333333043,
+      "v": 0.005093856147784993,
+      "fx": 0,
+      "renderer": "multi-draw",
+      "calls": 2,
+      "triangles": 64,
+      "visibleBikes": 0
+    },
+    "chips": "NEEDS MV²/R\n960 N\nFRICTION CAN GIVE\n353 N\nV MAX = √(ΜGR)\n12.1 m/s\nBERM ANGLE\n53.7°"
+  },
+  {
+    "check": "test",
+    "review": {
+      "topic": "test",
+      "zone": "trail",
+      "frameMs": 17.503333333134652,
+      "build": {
+        "model": "ridge",
+        "colour": "teal",
+        "wheels": "trail",
+        "bars": "mid",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": false,
+      "x": 280.41157783319136,
+      "t": 20.280433333333043,
+      "v": 0.005093856147784993,
+      "fx": 0,
+      "renderer": "multi-draw",
+      "calls": 45,
+      "triangles": 243912,
+      "visibleBikes": 1
+    },
+    "chips": "TIME\n20.3 s\nSTOPPING\n68.8 m\nLANDING SQUASH\n136 mm\nROTORS\n71 °C\nDISSIPATED\n51%\nV MAX = √(ΜGR)\n12.1 m/s"
+  },
+  {
+    "check": "eight challenge buttons",
+    "rows": "CHALLENGES\n1Clear the gap and finish in under 25 seconds without crashing. (Go to Drop in, set the brake speed, ride it, then come back.)\nCheck\nYes: 18.0 s on RIDGE · Trail knobs braking above 45 km/h.\n2In the mud at 40 km/h, choose a reaction time that stops you before the log at 25 m.\nCheck\nSet the trail to wet and muddy and the speed to 40 km/h first.\n3Set the spring so a 1.5 m drop uses between 75% and 95% of your RIDGE's 170 mm of travel.\nCheck\nSet the drop height to 1.5 m first (Suspension spring step).\n4Garage: on wet roots at 30 km/h with a 0.5 s reaction time, build a bike that stops within 15 m.\nCheck\nTrail knobs: μ = 0.28 on roots, 4.2 + 12.7 = 16.8 m. Braking distance = v² ÷ (2μg), so you need a bigger μ. Swap wheels in the garage.\n5Garage: FLOW has small 180 mm rotors. Build a FLOW, brake above 45 km/h (or lower) on dry hardpack, and finish a run with the rotors under 125 °C. Which parts help, and why?\nCheck\nYour last run was on RIDGE · Trail knobs. Choose FLOW in the garage, then ride again.\n6NCEA ski run (120 m drop): set a real exit speed at which less than 40% of the energy is dissipated.\nCheck\nNot yet: 51% lost at 34 m/s. You need ½mv² > 0.6 × mgh, so v > √(1.2 × 9.8 × 120) = 37.6 m/s.\n7Check turn: with μ = 0.50 and a 20 m/s entry, find the smallest radius (to the nearest 5 m) that holds the turn.\nCheck\nNot yet: at 30 m the turn needs 960 N but friction can only give 353 N. r ≥ v² ÷ (μg).\n8Trail design: keep the frictionless exit speed √(2gh) under 30 m/s by limiting the vertical drop.\nCheck\nNot yet: 120 m gives 48.5 m/s. v² = 2gh, so h must be under 30² ÷ (2 × 9.8) = 45.9 m."
+  },
+  {
+    "check": "sound toggle",
+    "pressed": "false"
+  },
+  {
+    "check": "restart graph",
+    "review": {
+      "topic": "graph",
+      "zone": "trail",
+      "frameMs": 16.705000000198684,
+      "build": {
+        "model": "ridge",
+        "colour": "teal",
+        "wheels": "trail",
+        "bars": "mid",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 2.850982272090474,
+      "t": 0.2172000000000046,
+      "v": 3.836139660383567,
+      "fx": 0,
+      "renderer": "multi-draw",
+      "calls": 48,
+      "triangles": 230524,
+      "visibleBikes": 1
+    }
+  },
+  {
+    "check": "keyboard camera and mobile overflow",
+    "dom": {
+      "focused": "CANVAS",
+      "scrollWidth": 375,
+      "width": 375
+    },
+    "review": {
+      "topic": "garage",
+      "zone": "garage",
+      "frameMs": 16.6625,
+      "build": {
+        "model": "drop",
+        "colour": "black",
+        "wheels": "dh",
+        "bars": "high",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 3.0429898528145856,
+      "t": 0.2675000000000004,
+      "v": 3.7983673591991414,
+      "fx": 0,
+      "renderer": "multi-draw",
+      "calls": 22,
+      "triangles": 69308,
+      "visibleBikes": 1
+    }
+  },
+  {
+    "check": "standard renderer desktop garage",
+    "review": {
+      "topic": "garage",
+      "zone": "garage",
+      "frameMs": 16.6625,
+      "build": {
+        "model": "drop",
+        "colour": "black",
+        "wheels": "dh",
+        "bars": "high",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 2,
+      "t": 0,
+      "v": 0,
+      "fx": 0,
+      "renderer": "standard",
+      "calls": 100,
+      "triangles": 69308,
+      "visibleBikes": 1
+    }
+  },
+  {
+    "check": "standard renderer cutaway",
+    "review": {
+      "topic": "garage",
+      "zone": "garage",
+      "frameMs": 16.666666666666668,
+      "build": {
+        "model": "drop",
+        "colour": "black",
+        "wheels": "dh",
+        "bars": "high",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 2,
+      "t": 0,
+      "v": 0,
+      "fx": 0,
+      "renderer": "standard",
+      "calls": 27,
+      "triangles": 14216,
+      "visibleBikes": 0
+    }
+  },
+  {
+    "check": "standard renderer desktop trail",
+    "review": {
+      "topic": "drop",
+      "zone": "trail",
+      "frameMs": 16.845833333333335,
+      "build": {
+        "model": "drop",
+        "colour": "black",
+        "wheels": "dh",
+        "bars": "high",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 113.6317262333403,
+      "t": 11.799699999999472,
+      "v": 12.500000000000005,
+      "fx": 0,
+      "renderer": "standard",
+      "calls": 169,
+      "triangles": 663530,
+      "visibleBikes": 1
+    }
+  },
+  {
+    "check": "standard renderer 320 trail",
+    "review": {
+      "topic": "drop",
+      "zone": "trail",
+      "frameMs": 17.341666666666665,
+      "build": {
+        "model": "drop",
+        "colour": "black",
+        "wheels": "dh",
+        "bars": "high",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 122.4756790324888,
+      "t": 12.549299999999437,
+      "v": 12.500000000000005,
+      "fx": 0,
+      "renderer": "standard",
+      "calls": 157,
+      "triangles": 604074,
+      "visibleBikes": 1
+    }
+  },
+  {
+    "check": "revised following camera, standard 320 trail",
+    "review": {
+      "topic": "drop",
+      "zone": "trail",
+      "frameMs": 22.120833333333334,
+      "build": {
+        "model": "drop",
+        "colour": "black",
+        "wheels": "dh",
+        "bars": "high",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 122.87784863981166,
+      "t": 12.582999999999734,
+      "v": 12.500000000000005,
+      "fx": 0,
+      "renderer": "standard",
+      "calls": 147,
+      "triangles": 264524,
+      "visibleBikes": 1
+    }
+  },
+  {
+    "check": "missing GLB usable fallback",
+    "status": "3D unavailable · original live diagrams, controls, challenges and ski lessons remain available",
+    "svg": true,
+    "controls": true
+  },
+  {
+    "check": "deliberate failure logs",
+    "logs": [
+      {
+        "level": "warn",
+        "message": "Bike apparatus unavailable Error: Bike asset 404\n    at read (http://127.0.0.1:8795/study/m/bike-asset.js:20:111)\n    at async Promise.all (index 0)\n    at async Module.loadBike (http://127.0.0.1:8795/study/m/bike-asset.js:21:25)\n    at async http://127.0.0.1:8795/study/m/bike.js:1126:35",
+        "timestamp": "2026-10-29T04:50:10.487Z",
+        "url": "http://127.0.0.1:8795/study/m/bike.js"
+      }
+    ]
+  },
+  {
+    "check": "restored asset, FLOW standard at 320",
+    "review": {
+      "topic": "garage",
+      "zone": "garage",
+      "frameMs": 18.12380952494485,
+      "build": {
+        "model": "flow",
+        "colour": "red",
+        "wheels": "fast",
+        "bars": "mid",
+        "guard": true,
+        "pod": true,
+        "plate": "42",
+        "tag": "RIDE"
+      },
+      "playing": true,
+      "x": 2,
+      "t": 0,
+      "v": 0,
+      "fx": 0,
+      "renderer": "standard",
+      "calls": 96,
+      "triangles": 68942,
+      "visibleBikes": 1
+    },
+    "width": {
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "check": "catalogue thumbnail",
+    "card": "m/bike.html",
+    "image": {
+      "complete": true,
+      "height": 1000,
+      "width": 1600
+    }
+  }
+]

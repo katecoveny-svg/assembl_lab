@@ -106,8 +106,10 @@
       "id": "bike",
       "three": true,
       "source": "m/bike.html",
-      "capture": "/.playmain > .canvas or experience main panel",
-      "image": "bike.jpg"
+      "capture": "Blender 5.1.1 offline render; dedicated whole-object card, not a runtime screenshot",
+      "image": "bike.jpg",
+      "mode": "blender-render",
+      "asset": "/assets/models/bike/assembl-bike-atelier-web.glb"
     },
     {
       "id": "lines",

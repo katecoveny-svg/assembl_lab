@@ -1,0 +1,496 @@
+TAP version 13
+# Subtest: late asset uses the current settings/topic/pause and only reports ready after a successful real render
+ok 1 - late asset uses the current settings/topic/pause and only reports ready after a successful real render
+  ---
+  duration_ms: 4.85025
+  type: 'test'
+  ...
+# Subtest: import, asset, build, first pose and renderer failures show live fallback and clean up owned work
+ok 2 - import, asset, build, first pose and renderer failures show live fallback and clean up owned work
+  ---
+  duration_ms: 4.249875
+  type: 'test'
+  ...
+# Subtest: exit aborts pending loading and disposes late results; no false ready or subsequent rendering
+ok 3 - exit aborts pending loading and disposes late results; no false ready or subsequent rendering
+  ---
+  duration_ms: 1.331834
+  type: 'test'
+  ...
+# Subtest: exact corrected GLB retains 138 named metre pivots and curved chain wrap
+ok 4 - exact corrected GLB retains 138 named metre pivots and curved chain wrap
+  ---
+  duration_ms: 9.212417
+  type: 'test'
+  ...
+# Subtest: all builds, bars, tyres and full fork travel map existing anchors exactly once with absolute wheel/contact poses
+ok 5 - all builds, bars, tyres and full fork travel map existing anchors exactly once with absolute wheel/contact poses
+  ---
+  duration_ms: 87.065875
+  type: 'test'
+  ...
+# Subtest: capability selection precedes batching; standard path and partial allocation failure retain visible configured geometry
+ok 6 - capability selection precedes batching; standard path and partial allocation failure retain visible configured geometry
+  ---
+  duration_ms: 3.319417
+  type: 'test'
+  ...
+# Subtest: shared geometry/material/texture cleanup runs once across instances
+ok 7 - shared geometry/material/texture cleanup runs once across instances
+  ---
+  duration_ms: 0.152667
+  type: 'test'
+  ...
+# Subtest: portrait trail camera keeps wheels and rider in frame on steep sections at both phone widths
+ok 8 - portrait trail camera keeps wheels and rider in frame on steep sections at both phone widths
+  ---
+  duration_ms: 6.535542
+  type: 'test'
+  ...
+# Subtest: all original model, geometry, audio, topics, controls, charts and challenges remain source-identical
+ok 9 - all original model, geometry, audio, topics, controls, charts and challenges remain source-identical
+  ---
+  duration_ms: 14.227875
+  type: 'test'
+  ...
+# Subtest: all three builds, tyre/bar choices and surfaces retain original stopping, fork, trail and ski outputs
+ok 10 - all three builds, tyre/bar choices and surfaces retain original stopping, fork, trail and ski outputs
+  ---
+  duration_ms: 3389.283917
+  type: 'test'
+  ...
+# Subtest: full runs, gap landing, previous-run comparison, restart and bottom-out remain equivalent
+ok 11 - full runs, gap landing, previous-run comparison, restart and bottom-out remain equivalent
+  ---
+  duration_ms: 484.990625
+  type: 'test'
+  ...
+# Subtest: graphics transfer preserves nested state, previous runs, saved build, pause and ski experiment in both directions
+ok 12 - graphics transfer preserves nested state, previous runs, saved build, pause and ski experiment in both directions
+  ---
+  duration_ms: 177.179875
+  type: 'test'
+  ...
+# Subtest: graphics transfer rejects missing, invalid, replayed and wrong-topic state without silent reuse
+ok 13 - graphics transfer rejects missing, invalid, replayed and wrong-topic state without silent reuse
+  ---
+  duration_ms: 19.675625
+  type: 'test'
+  ...
+# Subtest: all eight challenges retain successful evidence and feedback from the authoritative model
+ok 14 - all eight challenges retain successful evidence and feedback from the authoritative model
+  ---
+  duration_ms: 159.286584
+  type: 'test'
+  ...
+# Subtest: saved build, labels and model stiffness survive ordinary reload without a graphics transfer
+ok 15 - saved build, labels and model stiffness survive ordinary reload without a graphics transfer
+  ---
+  duration_ms: 7.785125
+  type: 'test'
+  ...
+# Subtest: actual v2 hierarchy follows sampled win, drop and miss timelines inside travel envelope
+ok 16 - actual v2 hierarchy follows sampled win, drop and miss timelines inside travel envelope
+  ---
+  duration_ms: 49.177959
+  type: 'test'
+  ...
+# Subtest: reduced motion stays static and never changes the model-owned result
+ok 17 - reduced motion stays static and never changes the model-owned result
+  ---
+  duration_ms: 0.474125
+  type: 'test'
+  ...
+# Subtest: claw: same seeded run produces reproducible A/B evidence; phases do not own the simulation
+ok 18 - claw: same seeded run produces reproducible A/B evidence; phases do not own the simulation
+  ---
+  duration_ms: 40.347125
+  type: 'test'
+  ...
+# Subtest: claw: changed probability, wrong sample count and unrelated run cannot be passed off as B
+ok 19 - claw: changed probability, wrong sample count and unrelated run cannot be passed off as B
+  ---
+  duration_ms: 3.74875
+  type: 'test'
+  ...
+# Subtest: claw: original RNG and formula outputs retained, payout isolated from conditional tree
+ok 20 - claw: original RNG and formula outputs retained, payout isolated from conditional tree
+  ---
+  duration_ms: 4.203084
+  type: 'test'
+  ...
+# Subtest: claw: Reset cancels animation; repeat click cannot resample an active single trial
+ok 21 - claw: Reset cancels animation; repeat click cannot resample an active single trial
+  ---
+  duration_ms: 1.361041
+  type: 'test'
+  ...
+# Subtest: sealed syringe: same gas and temperature, half volume doubles pressure
+ok 22 - sealed syringe: same gas and temperature, half volume doubles pressure
+  ---
+  duration_ms: 5.26875
+  type: 'test'
+  ...
+# Subtest: tanks: shared equation at fixed time gives 40 and 70 L, within tank capacity
+ok 23 - tanks: shared equation at fixed time gives 40 and 70 L, within tank capacity
+  ---
+  duration_ms: 3.379833
+  type: 'test'
+  ...
+# Subtest: reactions: capture requires started 2s run, and B must retain captured A ghost
+ok 24 - reactions: capture requires started 2s run, and B must retain captured A ghost
+  ---
+  duration_ms: 13.202416
+  type: 'test'
+  ...
+# Subtest: reactions: changing run after A prevents unrelated B evidence
+ok 25 - reactions: changing run after A prevents unrelated B evidence
+  ---
+  duration_ms: 5.723125
+  type: 'test'
+  ...
+# Subtest: tank explanation follows A, B and later control changes
+ok 26 - tank explanation follows A, B and later control changes
+  ---
+  duration_ms: 2.247959
+  type: 'test'
+  ...
+# Subtest: late load uses current topic/settings/pause and verifies first render before readiness
+ok 27 - late load uses current topic/settings/pause and verifies first render before readiness
+  ---
+  duration_ms: 3.99
+  type: 'test'
+  ...
+# Subtest: import/load/first-pose failure shows live diagram without false ready status
+ok 28 - import/load/first-pose failure shows live diagram without false ready status
+  ---
+  duration_ms: 3.233709
+  type: 'test'
+  ...
+# Subtest: page exit during a pending load disposes the eventual asset without claiming readiness
+ok 29 - page exit during a pending load disposes the eventual asset without claiming readiness
+  ---
+  duration_ms: 0.760167
+  type: 'test'
+  ...
+# Subtest: delivered GLB bytes, 95 nodes and metre pivots match contract; only one 30x conversion
+ok 30 - delivered GLB bytes, 95 nodes and metre pivots match contract; only one 30x conversion
+  ---
+  duration_ms: 7.207625
+  type: 'test'
+  ...
+# Subtest: absolute snapshots preserve fixed battery casing/plates and true input with separate 5x display gap
+ok 31 - absolute snapshots preserve fixed battery casing/plates and true input with separate 5x display gap
+  ---
+  duration_ms: 26.234583
+  type: 'test'
+  ...
+# Subtest: all 5–20 turn settings and one-station topic views preserve coaxial coils and bounded batches
+ok 32 - all 5–20 turn settings and one-station topic views preserve coaxial coils and bounded batches
+  ---
+  duration_ms: 1.92875
+  type: 'test'
+  ...
+# Subtest: resource disposal is deduplicated for shared GPU objects
+ok 33 - resource disposal is deduplicated for shared GPU objects
+  ---
+  duration_ms: 0.836875
+  type: 'test'
+  ...
+# Subtest: both graphics directions preserve nondefault charging/capacitor values, particles, time, pause and topic
+ok 34 - both graphics directions preserve nondefault charging/capacitor values, particles, time, pause and topic
+  ---
+  duration_ms: 19.053083
+  type: 'test'
+  ...
+# Subtest: running state is retained, snapshot is consumed once, bad/cross-topic data does not restore
+ok 35 - running state is retained, snapshot is consumed once, bad/cross-topic data does not restore
+  ---
+  duration_ms: 9.914834
+  type: 'test'
+  ...
+# Subtest: storage failure gives no navigation URL and cannot mutate the current experiment
+ok 36 - storage failure gives no navigation URL and cannot mutate the current experiment
+  ---
+  duration_ms: 1.302666
+  type: 'test'
+  ...
+# Subtest: single scientific model, all charts, controls, tick and challenge code remain unchanged
+ok 37 - single scientific model, all charts, controls, tick and challenge code remain unchanged
+  ---
+  duration_ms: 6.698791
+  type: 'test'
+  ...
+# Subtest: charging trajectories and particles match across power, efficiency, resistance, capacity and varying dt
+ok 38 - charging trajectories and particles match across power, efficiency, resistance, capacity and varying dt
+  ---
+  duration_ms: 1498.92225
+  type: 'test'
+  ...
+# Subtest: energy, internal and parallel control bounds retain identical outputs
+ok 39 - energy, internal and parallel control bounds retain identical outputs
+  ---
+  duration_ms: 216.143833
+  type: 'test'
+  ...
+# Subtest: all wireless turn counts, frequency and gap bounds use unchanged induction estimates
+ok 40 - all wireless turn counts, frequency and gap bounds use unchanged induction estimates
+  ---
+  duration_ms: 440.560042
+  type: 'test'
+  ...
+# Subtest: 25 capacitor combinations, parameter resets, stops and repeated topic/restart transitions match
+ok 41 - 25 capacitor combinations, parameter resets, stops and repeated topic/restart transitions match
+  ---
+  duration_ms: 216.628334
+  type: 'test'
+  ...
+# Subtest: five original challenge wins and failures are preserved
+ok 42 - five original challenge wins and failures are preserved
+  ---
+  duration_ms: 41.786125
+  type: 'test'
+  ...
+# Subtest: taper wording and both visual labels follow measured default and altered current limits
+ok 43 - taper wording and both visual labels follow measured default and altered current limits
+  ---
+  duration_ms: 6.050667
+  type: 'test'
+  ...
+# Subtest: energy inspector uses authoritative discharge current and disables cable charging for every noncharging topic
+ok 44 - energy inspector uses authoritative discharge current and disables cable charging for every noncharging topic
+  ---
+  duration_ms: 9.53725
+  type: 'test'
+  ...
+# Subtest: charging inspector and cable cues continue to use the original current at restart, taper, full and pause
+ok 45 - charging inspector and cable cues continue to use the original current at restart, taper, full and pause
+  ---
+  duration_ms: 13.972791
+  type: 'test'
+  ...
+# Subtest: a late asset completion uses the current topic and reset run, not captured loading state
+ok 46 - a late asset completion uses the current topic and reset run, not captured loading state
+  ---
+  duration_ms: 3.168625
+  type: 'test'
+  ...
+# Subtest: module/load failure never exposes an empty live scene and retains the diagram
+ok 47 - module/load failure never exposes an empty live scene and retains the diagram
+  ---
+  duration_ms: 2.591125
+  type: 'test'
+  ...
+# Subtest: first-frame error fails before claiming live 3D
+ok 48 - first-frame error fails before claiming live 3D
+  ---
+  duration_ms: 1.282166
+  type: 'test'
+  ...
+# Subtest: GLB matches every contracted node and metre-space pivot, with a single 25x scene conversion
+ok 49 - GLB matches every contracted node and metre-space pivot, with a single 25x scene conversion
+  ---
+  duration_ms: 7.492916
+  type: 'test'
+  ...
+# Subtest: full snapshot sets rotations without drift; blockage never overrides the supplied fan angle
+ok 50 - full snapshot sets rotations without drift; blockage never overrides the supplied fan angle
+  ---
+  duration_ms: 4.58875
+  type: 'test'
+  ...
+# Subtest: shell display clamp and cutaway change only geometry; machinery remains fixed
+ok 51 - shell display clamp and cutaway change only geometry; machinery remains fixed
+  ---
+  duration_ms: 3.671333
+  type: 'test'
+  ...
+# Subtest: crystal guard excludes rounded tank corners, fill-plane overshoot and the fixed drum
+ok 52 - crystal guard excludes rounded tank corners, fill-plane overshoot and the fixed drum
+  ---
+  duration_ms: 0.626208
+  type: 'test'
+  ...
+# Subtest: every original lesson part has an exported hotspot and pickable geometry
+ok 53 - every original lesson part has an exported hotspot and pickable geometry
+  ---
+  duration_ms: 0.493
+  type: 'test'
+  ...
+# Subtest: both renderer directions preserve the exact nondefault frozen, paused experiment and topic after mount defaults
+ok 54 - both renderer directions preserve the exact nondefault frozen, paused experiment and topic after mount defaults
+  ---
+  duration_ms: 63.071542
+  type: 'test'
+  ...
+# Subtest: playing state survives either direction, snapshot is single use, and ordinary topic changes still initialise
+ok 55 - playing state survives either direction, snapshot is single use, and ordinary topic changes still initialise
+  ---
+  duration_ms: 53.849542
+  type: 'test'
+  ...
+# Subtest: unavailable storage cannot produce a navigation target, and corrupted or mismatched transfers are not restored
+ok 56 - unavailable storage cannot produce a navigation target, and corrupted or mismatched transfers are not restored
+  ---
+  duration_ms: 36.228584
+  type: 'test'
+  ...
+# Subtest: scientific model, charts, controls, topics and challenge definitions are unchanged
+ok 57 - scientific model, charts, controls, topics and challenge definitions are unchanged
+  ---
+  duration_ms: 0.57425
+  type: 'test'
+  ...
+# Subtest: all sugar values preserve enthalpy, thermostat, ice partition and challenge results across the full run
+ok 58 - all sugar values preserve enthalpy, thermostat, ice partition and challenge results across the full run
+  ---
+  duration_ms: 1212.822916
+  type: 'test'
+  ...
+# Subtest: auger stop/restart, blocked vents and cooling toggles retain exact original trajectories
+ok 59 - auger stop/restart, blocked vents and cooling toggles retain exact original trajectories
+  ---
+  duration_ms: 83.938667
+  type: 'test'
+  ...
+# Subtest: all topic initialisation, repeated resets, student answers and 60x playback remain equivalent
+ok 60 - all topic initialisation, repeated resets, student answers and 60x playback remain equivalent
+  ---
+  duration_ms: 943.624416
+  type: 'test'
+  ...
+# Subtest: late asset uses the current settings/topic/pause and only reports ready after a successful real render
+ok 61 - late asset uses the current settings/topic/pause and only reports ready after a successful real render
+  ---
+  duration_ms: 4.821375
+  type: 'test'
+  ...
+# Subtest: import, asset, build, first pose and renderer failures show live fallback and clean up owned work
+ok 62 - import, asset, build, first pose and renderer failures show live fallback and clean up owned work
+  ---
+  duration_ms: 7.450792
+  type: 'test'
+  ...
+# Subtest: exit aborts pending loading and disposes late results; no false ready or subsequent rendering
+ok 63 - exit aborts pending loading and disposes late results; no false ready or subsequent rendering
+  ---
+  duration_ms: 1.721541
+  type: 'test'
+  ...
+# portrait projection deck 0.6341463414634146 {
+#   left: -0.805842980140196,
+#   right: 0.9414059964818874,
+#   bottom: -0.6109266387720746,
+#   top: 0.5888755921017789
+# }
+# portrait projection drive 0.6341463414634146 {
+#   left: -0.7255781880321701,
+#   right: 0.5151774493549858,
+#   bottom: -0.44451907613711866,
+#   top: 0.41973693953694685
+# }
+# portrait projection formats 0.6341463414634146 {
+#   left: -0.5833860564899551,
+#   right: 0.6273244704865892,
+#   bottom: -0.6173864052207205,
+#   top: 0.5235469959863421
+# }
+# portrait projection deck 0.7682926829268293 {
+#   left: -0.7870310292523537,
+#   right: 0.9495475649561902,
+#   bottom: -0.745571015197552,
+#   top: 0.6948966071797582
+# }
+# portrait projection drive 0.7682926829268293 {
+#   left: -0.7126893811517973,
+#   right: 0.5175223519005165,
+#   bottom: -0.5425164829069479,
+#   top: 0.49831454344247017
+# }
+# portrait projection formats 0.7682926829268293 {
+#   left: -0.5682218274788058,
+#   right: 0.6344201125341622,
+#   bottom: -0.754600771917726,
+#   top: 0.6169100068060708
+# }
+# Subtest: exact GLB, 53 named pivots and metre contract survive export
+ok 64 - exact GLB, 53 named pivots and metre contract survive export
+  ---
+  duration_ms: 4.611083
+  type: 'test'
+  ...
+# Subtest: integrated scale/reparenting keeps stylus on every playable radius and absolute model poses do not drift
+ok 65 - integrated scale/reparenting keeps stylus on every playable radius and absolute model poses do not drift
+  ---
+  duration_ms: 16.511042
+  type: 'test'
+  ...
+# Subtest: cutaways preserve fixed drive construction and return to the current record format
+ok 66 - cutaways preserve fixed drive construction and return to the current record format
+  ---
+  duration_ms: 1.173292
+  type: 'test'
+  ...
+# Subtest: resource cleanup deduplicates shared materials/textures across reparented roots
+ok 67 - resource cleanup deduplicates shared materials/textures across reparented roots
+  ---
+  duration_ms: 0.604
+  type: 'test'
+  ...
+# Subtest: counterweight follows the arm around a fixed pivot, matching the inspection explanation
+ok 68 - counterweight follows the arm around a fixed pivot, matching the inspection explanation
+  ---
+  duration_ms: 1.324167
+  type: 'test'
+  ...
+# Subtest: portrait deck framing uses canvas height without clipping the physical mechanism; other views keep their camera
+ok 69 - portrait deck framing uses canvas height without clipping the physical mechanism; other views keep their camera
+  ---
+  duration_ms: 9.24725
+  type: 'test'
+  ...
+# Subtest: science, nine topics, eight controls, charts, tick and six challenge definitions stay unchanged
+ok 70 - science, nine topics, eight controls, charts, tick and six challenge definitions stay unchanged
+  ---
+  duration_ms: 6.794083
+  type: 'test'
+  ...
+# Subtest: rotation, slowed phase, pitch, charts and outputs match the baseline across parameter bounds and all topics
+ok 71 - rotation, slowed phase, pitch, charts and outputs match the baseline across parameter bounds and all topics
+  ---
+  duration_ms: 2047.482791
+  type: 'test'
+  ...
+# Subtest: six challenge wins, failures and repeated topic/format changes retain original outcomes
+ok 72 - six challenge wins, failures and repeated topic/format changes retain original outcomes
+  ---
+  duration_ms: 113.635875
+  type: 'test'
+  ...
+# Subtest: both graphics directions preserve paused and running format/radius/frequency/angles/time/topic
+ok 73 - both graphics directions preserve paused and running format/radius/frequency/angles/time/topic
+  ---
+  duration_ms: 42.812583
+  type: 'test'
+  ...
+# Subtest: view transfer rejects invalid/replayed/cross-topic state; blocked storage leaves experiment intact
+ok 74 - view transfer rejects invalid/replayed/cross-topic state; blocked storage leaves experiment intact
+  ---
+  duration_ms: 14.3965
+  type: 'test'
+  ...
+# Subtest: audio is gesture-only, retains original tone envelope and frequency, replaces overlap and stops on topic/exit
+ok 75 - audio is gesture-only, retains original tone envelope and frequency, replaces overlap and stops on topic/exit
+  ---
+  duration_ms: 2.893959
+  type: 'test'
+  ...
+1..75
+# tests 75
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4337.1245
