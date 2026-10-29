@@ -230,8 +230,10 @@
       "id": "phone",
       "three": true,
       "source": "m/phone.html",
-      "capture": "/.playmain > .canvas or experience main panel",
-      "image": "phone.jpg"
+      "capture": "Blender 5.1.1 offline Cycles render; dedicated complete-apparatus card framing, not a runtime screenshot",
+      "image": "phone.jpg",
+      "renderSource": "phone-card.png",
+      "renderLibraryId": "libfile_83a75d51b9808191ad237633dd6a9ffe"
     },
     {
       "id": "queue",

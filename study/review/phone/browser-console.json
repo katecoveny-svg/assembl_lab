@@ -1,0 +1,8 @@
+[
+  {
+    "level": "warn",
+    "message": "Phone apparatus unavailable jd: fetch for \"http://127.0.0.1:8795/assets/models/phone/assembl-phone-atelier-web.glb\" responded with 404: File not found\n    at http://127.0.0.1:8795/assets/vendor/three/three.module.min.js:6:586432",
+    "timestamp": "2026-10-29T03:19:18.079Z",
+    "url": "http://127.0.0.1:8795/study/m/phone.js"
+  }
+]

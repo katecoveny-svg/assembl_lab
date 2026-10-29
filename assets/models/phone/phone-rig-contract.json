@@ -1,0 +1,4343 @@
+{
+  "contract": "assembl.phone.v1",
+  "asset": "assembl-phone-atelier-web.glb",
+  "route": "/study/m/phone.html",
+  "units": "metres",
+  "coordinates": {
+    "authoring": "Blender +X handset length, +Y rear, +Z up",
+    "export": "glTF +X handset length, +Y screen/up, +Z front",
+    "map": "(x,y,z) -> (x,z,-y)",
+    "legacy_scene_units_per_metre": 30,
+    "placement": "Each station includes source-inspired placement divided by 30. Apply uniform scale30 once to PHONE_LESSON. Three teaching boards are deliberately enlarged diagrams, not literal phone internals."
+  },
+  "state_owner": "Existing phone.js owns all charge/thermal/induction/capacitor functions, timing, particles, labels and challenge outcomes. Rig accepts supplied visual snapshots only. No solver, timer or RNG.",
+  "nodes": {
+    "CAM_TARGET_CAPACITOR": {
+      "parent": "CAPACITOR_STATION",
+      "translation": [
+        0,
+        0.03500000014901161,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3333333432674408,
+        0.03500000014901161,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "CAPACITOR_CELL_NEG": {
+      "parent": "CAPACITOR_CELL",
+      "translation": [
+        0,
+        0,
+        -0.030000001192092896
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2383333444595337,
+        0.024000000208616257,
+        -0.23000000417232513
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "terminal": "negative"
+      }
+    },
+    "CAPACITOR_CELL_POS": {
+      "parent": "CAPACITOR_CELL",
+      "translation": [
+        0,
+        0,
+        0.030000001192092896
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2383333444595337,
+        0.024000000208616257,
+        -0.17000000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "terminal": "positive"
+      }
+    },
+    "CAPACITOR_CELL": {
+      "parent": "CAPACITOR_STATION",
+      "translation": [
+        -0.0949999988079071,
+        0.024000000208616257,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2383333444595337,
+        0.024000000208616257,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.22733333706855774,
+          0.012999995611608028,
+          -0.22949999570846558
+        ],
+        "max": [
+          0.24933335185050964,
+          0.03522999957203865,
+          -0.1705000102519989
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "CAP_CHARGE_NEG": {
+      "parent": "CAPACITOR_DEMO",
+      "translation": [
+        0.008650004863739014,
+        0.032999999821186066,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3899833559989929,
+        0.0429999977350235,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "charge_bounds_local_m": [
+          0.0,
+          -0.02,
+          -0.02,
+          0.0,
+          0.02,
+          0.02
+        ]
+      }
+    },
+    "CAP_CHARGE_POS": {
+      "parent": "CAPACITOR_DEMO",
+      "translation": [
+        -0.008650004863739014,
+        0.032999999821186066,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3726833462715149,
+        0.0429999977350235,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "charge_bounds_local_m": [
+          0.0,
+          -0.02,
+          -0.02,
+          0.0,
+          0.02,
+          0.02
+        ]
+      }
+    },
+    "HOT_CAPACITOR": {
+      "parent": "CAPACITOR_DEMO",
+      "translation": [
+        0,
+        0.06199999898672104,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3813333511352539,
+        0.07199999690055847,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "capacitor",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "PLATE_NEG": {
+      "parent": "CAPACITOR_DEMO",
+      "translation": [
+        0.009999990463256836,
+        0.032999999821186066,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.39133334159851074,
+        0.0429999977350235,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.3863333463668823,
+          0.013999996706843376,
+          -0.22300000488758087
+        ],
+        "max": [
+          0.39633333683013916,
+          0.06599999964237213,
+          -0.17497000098228455
+        ]
+      },
+      "extras": {
+        "charge_plane": "local Y/Z face; frontend-owned charges"
+      }
+    },
+    "PLATE_POS": {
+      "parent": "CAPACITOR_DEMO",
+      "translation": [
+        -0.009999990463256836,
+        0.032999999821186066,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.37133336067199707,
+        0.0429999977350235,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.36633336544036865,
+          0.013999996706843376,
+          -0.22300000488758087
+        ],
+        "max": [
+          0.3763333559036255,
+          0.06599999964237213,
+          -0.17497000098228455
+        ]
+      },
+      "extras": {
+        "charge_plane": "local Y/Z face; frontend-owned charges"
+      }
+    },
+    "CAPACITOR_DEMO": {
+      "parent": "CAPACITOR_STATION",
+      "translation": [
+        0.04800000786781311,
+        0.009999999776482582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3813333511352539,
+        0.009999999776482582,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.36633336544036865,
+          0.013999996706843376,
+          -0.22300000488758087
+        ],
+        "max": [
+          0.39633333683013916,
+          0.06599999964237213,
+          -0.17497000098228455
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true,
+        "plate_gap_m": 0.0175
+      }
+    },
+    "HOT_SERIES_R": {
+      "parent": "SERIES_RESISTOR",
+      "translation": [
+        0,
+        0.009999999776482582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2983333468437195,
+        0.032999999821186066,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "series_r",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "SERIES_RESISTOR_A": {
+      "parent": "SERIES_RESISTOR",
+      "translation": [
+        -0.02000001072883606,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2783333361148834,
+        0.023000000044703484,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "SERIES_RESISTOR_B": {
+      "parent": "SERIES_RESISTOR",
+      "translation": [
+        0.02000001072883606,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.31833335757255554,
+        0.023000000044703484,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "SERIES_RESISTOR": {
+      "parent": "CAPACITOR_STATION",
+      "translation": [
+        -0.034999996423721313,
+        0.023000000044703484,
+        0.052000001072883606
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2983333468437195,
+        0.023000000044703484,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2788333296775818,
+          0.016499999910593033,
+          -0.1550000011920929
+        ],
+        "max": [
+          0.3178333640098572,
+          0.029500000178813934,
+          -0.14100000262260437
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "CAPACITOR_STATION": {
+      "parent": "PHONE_LESSON",
+      "translation": [
+        0.3333333432674408,
+        0,
+        -0.20000000298023224
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3333333432674408,
+        0.0,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.19333334267139435,
+          0.0,
+          -0.29500001668930054
+        ],
+        "max": [
+          0.47333335876464844,
+          0.06599999964237213,
+          -0.10500000417232513
+        ]
+      },
+      "extras": {
+        "station": true
+      }
+    },
+    "HOT_CHARGER": {
+      "parent": "CHARGER_ROOT",
+      "translation": [
+        0,
+        0.03200000151991844,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.2993333339691162,
+        0.0430000014603138,
+        0.1770000010728836
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "charger",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "USB_BRICK_PORT": {
+      "parent": "CHARGER_ROOT",
+      "translation": [
+        0.02340000867843628,
+        0.014000000432133675,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.27593332529067993,
+        0.02500000037252903,
+        0.1770000010728836
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.2762333154678345,
+          0.023250000551342964,
+          0.17249999940395355
+        ],
+        "max": [
+          -0.2756333351135254,
+          0.026750000193715096,
+          0.18150000274181366
+        ]
+      },
+      "extras": {
+        "connector": "USB-C",
+        "normal_blender": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "CHARGER_ROOT": {
+      "parent": "CHARGE_STATION",
+      "translation": [
+        -0.1459999978542328,
+        0.010999999940395355,
+        0.05700000375509262
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.2993333339691162,
+        0.010999999940395355,
+        0.1770000010728836
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.33533331751823425,
+          0.010999999940395355,
+          0.15690000355243683
+        ],
+        "max": [
+          -0.2756333351135254,
+          0.03912999853491783,
+          0.19709999859333038
+        ]
+      },
+      "extras": {
+        "nominal_dimensions_m": [
+          0.046,
+          0.028,
+          0.04
+        ],
+        "practice_power_label": "runtime-owned"
+      }
+    },
+    "CAM_TARGET_PHONE": {
+      "parent": "PHONE_ROOT",
+      "translation": [
+        -0.012000001966953278,
+        0.02500000037252903,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.12200000137090683,
+        0.03700000047683716,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "PHONE_BACK": {
+      "parent": "PHONE_ROOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.10999999940395355,
+        0.012000000104308128,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.18377500772476196,
+          0.00928999949246645,
+          0.07733333110809326
+        ],
+        "max": [
+          -0.0364999994635582,
+          0.019999999552965164,
+          0.15013332664966583
+        ]
+      },
+      "extras": {}
+    },
+    "BATTERY_INDICATOR": {
+      "parent": "PHONE_BATTERY",
+      "translation": [
+        -0.04500000178813934,
+        0.0027000010013580322,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.1550000011920929,
+        0.01720000058412552,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.1550000011920929,
+          0.01707500033080578,
+          0.10883332788944244
+        ],
+        "max": [
+          -0.08900000154972076,
+          0.01732500083744526,
+          0.11783333122730255
+        ]
+      },
+      "extras": {
+        "nonstructural": true,
+        "range": [
+          0,
+          1
+        ],
+        "fill_direction": "local +X"
+      }
+    },
+    "HOT_BATTERY": {
+      "parent": "PHONE_BATTERY",
+      "translation": [
+        -0.009999997913837433,
+        0.0040000006556510925,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.11999999731779099,
+        0.01850000023841858,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "battery",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "PHONE_BATTERY": {
+      "parent": "PHONE_ROOT",
+      "translation": [
+        0,
+        0.002499999478459358,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.10999999940395355,
+        0.014499999582767487,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.1679999977350235,
+          0.014499999582767487,
+          0.08683332800865173
+        ],
+        "max": [
+          -0.06349999457597733,
+          0.01732500083744526,
+          0.13983333110809326
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_BOARD": {
+      "parent": "PHONE_BOARD",
+      "translation": [
+        0.05000000074505806,
+        0.0030000004917383194,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.05999999865889549,
+        0.019600000232458115,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "board",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "PHONE_BOARD": {
+      "parent": "PHONE_ROOT",
+      "translation": [
+        0,
+        0.004599999636411667,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.10999999940395355,
+        0.016599999740719795,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.17800000309944153,
+          0.013599999248981476,
+          0.08133333176374435
+        ],
+        "max": [
+          -0.04099999740719795,
+          0.018449999392032623,
+          0.14483332633972168
+        ]
+      },
+      "extras": {}
+    },
+    "SCREEN_SURFACE": {
+      "parent": "PHONE_SCREEN",
+      "translation": [
+        0,
+        0.0007600001990795135,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.10999999940395355,
+        0.019760001450777054,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.17649999260902405,
+          0.019760001450777054,
+          0.0833333283662796
+        ],
+        "max": [
+          -0.04349999874830246,
+          0.019760001450777054,
+          0.1433333307504654
+        ]
+      },
+      "extras": {
+        "uv": "0..1; +U along +X, +V along Blender +Y / glTF -Z",
+        "dimensions_m": [
+          0.133,
+          0.06
+        ]
+      }
+    },
+    "PHONE_SCREEN": {
+      "parent": "PHONE_ROOT",
+      "translation": [
+        0,
+        0.007000001147389412,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.10999999940395355,
+        0.01900000125169754,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.1809999942779541,
+          0.01860000193119049,
+          0.07983332872390747
+        ],
+        "max": [
+          -0.038999997079372406,
+          0.019950000569224358,
+          0.14683333039283752
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_USB": {
+      "parent": "USB_PHONE_PORT",
+      "translation": [
+        0,
+        0.0030000004917383194,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18369999527931213,
+        0.01900000125169754,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "usb",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "USB_PHONE_PORT": {
+      "parent": "PHONE_ROOT",
+      "translation": [
+        -0.07369999587535858,
+        0.0040000006556510925,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18369999527931213,
+        0.01600000075995922,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.18424999713897705,
+          0.014650000259280205,
+          0.10918332636356354
+        ],
+        "max": [
+          -0.1834999918937683,
+          0.017350001260638237,
+          0.11748333275318146
+        ]
+      },
+      "extras": {
+        "connector": "USB-C",
+        "normal_blender": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "PHONE_ROOT": {
+      "parent": "CHARGE_STATION",
+      "translation": [
+        0.04333333671092987,
+        0.012000000104308128,
+        -0.0066666677594184875
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.10999999940395355,
+        0.012000000104308128,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.18424999713897705,
+          0.00928999949246645,
+          0.07733333110809326
+        ],
+        "max": [
+          -0.0364999994635582,
+          0.019999999552965164,
+          0.15013332664966583
+        ]
+      },
+      "extras": {
+        "nominal_dimensions_m": [
+          0.147,
+          0.008,
+          0.072
+        ],
+        "scale_scene_units_per_metre": 30
+      }
+    },
+    "USB_CABLE": {
+      "parent": "CHARGE_STATION",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.15333333611488342,
+        0.0,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.27613070607185364,
+          0.0087013253942132,
+          0.10982999950647354
+        ],
+        "max": [
+          -0.18103332817554474,
+          0.027499999850988388,
+          0.1809999942779541
+        ]
+      },
+      "extras": {}
+    },
+    "CHARGE_STATION": {
+      "parent": "PHONE_LESSON",
+      "translation": [
+        -0.15333333611488342,
+        0,
+        0.11999999731779099
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.15333333611488342,
+        0.0,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.35333335399627686,
+          0.0,
+          -0.0
+        ],
+        "max": [
+          0.046666666865348816,
+          0.03912999853491783,
+          0.23999999463558197
+        ]
+      },
+      "extras": {
+        "station": true
+      }
+    },
+    "AMMETER_ANCHOR": {
+      "parent": "INTERNAL_STATION",
+      "translation": [
+        0,
+        0.017999999225139618,
+        -0.052000001072883606
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.3333333432674408,
+        0.017999999225139618,
+        -0.25200000405311584
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.3463333547115326,
+          0.01599999889731407,
+          -0.26500001549720764
+        ],
+        "max": [
+          -0.320333331823349,
+          0.02012999914586544,
+          -0.23900000751018524
+        ]
+      },
+      "extras": {
+        "overlay": "runtime current readout"
+      }
+    },
+    "CAM_TARGET_INTERNAL": {
+      "parent": "INTERNAL_STATION",
+      "translation": [
+        0,
+        0.029999999329447746,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.3333333432674408,
+        0.029999999329447746,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "CELL_DEMO_NEG": {
+      "parent": "CELL_DEMO",
+      "translation": [
+        0,
+        0,
+        -0.030000001192092896
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.4283333420753479,
+        0.024000000208616257,
+        -0.23000000417232513
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "terminal": "negative"
+      }
+    },
+    "CELL_DEMO_POS": {
+      "parent": "CELL_DEMO",
+      "translation": [
+        0,
+        0,
+        0.030000001192092896
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.4283333420753479,
+        0.024000000208616257,
+        -0.17000000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "terminal": "positive"
+      }
+    },
+    "CELL_DEMO": {
+      "parent": "INTERNAL_STATION",
+      "translation": [
+        -0.0949999988079071,
+        0.024000000208616257,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.4283333420753479,
+        0.024000000208616257,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.43933334946632385,
+          0.012999995611608028,
+          -0.22949999570846558
+        ],
+        "max": [
+          -0.41733333468437195,
+          0.03522999957203865,
+          -0.1705000102519989
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "HOT_INTERNAL_R": {
+      "parent": "INTERNAL_RESISTOR",
+      "translation": [
+        0,
+        0.009999999776482582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.359333336353302,
+        0.032999999821186066,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "internal_r",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "INTERNAL_RESISTOR_A": {
+      "parent": "INTERNAL_RESISTOR",
+      "translation": [
+        -0.02000001072883606,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.37933334708213806,
+        0.023000000044703484,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "INTERNAL_RESISTOR_B": {
+      "parent": "INTERNAL_RESISTOR",
+      "translation": [
+        0.02000001072883606,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.33933332562446594,
+        0.023000000044703484,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "INTERNAL_RESISTOR": {
+      "parent": "INTERNAL_STATION",
+      "translation": [
+        -0.025999993085861206,
+        0.023000000044703484,
+        0.052000001072883606
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.359333336353302,
+        0.023000000044703484,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.3788333535194397,
+          0.016499999910593033,
+          -0.1550000011920929
+        ],
+        "max": [
+          -0.3398333191871643,
+          0.029500000178813934,
+          -0.14100000262260437
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "LOAD_NEG": {
+      "parent": "LOAD_DEMO",
+      "translation": [
+        0,
+        0,
+        -0.019999995827674866
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.2433333396911621,
+        0.02500000037252903,
+        -0.2199999988079071
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "LOAD_POS": {
+      "parent": "LOAD_DEMO",
+      "translation": [
+        0,
+        0,
+        0.019999995827674866
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.2433333396911621,
+        0.02500000037252903,
+        -0.18000000715255737
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "LOAD_DEMO": {
+      "parent": "INTERNAL_STATION",
+      "translation": [
+        0.09000000357627869,
+        0.02500000037252903,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.2433333396911621,
+        0.02500000037252903,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.2563333511352539,
+          0.012500000186264515,
+          -0.2175000011920929
+        ],
+        "max": [
+          -0.2303333431482315,
+          0.04000000283122063,
+          -0.18250000476837158
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "INTERNAL_STATION": {
+      "parent": "PHONE_LESSON",
+      "translation": [
+        -0.3333333432674408,
+        0,
+        -0.20000000298023224
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.3333333432674408,
+        0.0,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.47333335876464844,
+          0.0,
+          -0.29500001668930054
+        ],
+        "max": [
+          -0.19333334267139435,
+          0.04000000283122063,
+          -0.10500000417232513
+        ]
+      },
+      "extras": {
+        "station": true
+      }
+    },
+    "CAM_TARGET_PARALLEL": {
+      "parent": "PARALLEL_STATION",
+      "translation": [
+        0,
+        0.02500000037252903,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.02500000037252903,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "PARALLEL_CELL_NEG": {
+      "parent": "PARALLEL_CELL",
+      "translation": [
+        0,
+        0,
+        -0.030000001192092896
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.0949999988079071,
+        0.024000000208616257,
+        -0.23000000417232513
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "terminal": "negative"
+      }
+    },
+    "PARALLEL_CELL_POS": {
+      "parent": "PARALLEL_CELL",
+      "translation": [
+        0,
+        0,
+        0.030000001192092896
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.0949999988079071,
+        0.024000000208616257,
+        -0.17000000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "terminal": "positive"
+      }
+    },
+    "PARALLEL_CELL": {
+      "parent": "PARALLEL_STATION",
+      "translation": [
+        -0.0949999988079071,
+        0.024000000208616257,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.0949999988079071,
+        0.024000000208616257,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.10600000619888306,
+          0.012999995611608028,
+          -0.22949999570846558
+        ],
+        "max": [
+          -0.08399999141693115,
+          0.03522999957203865,
+          -0.1705000102519989
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "HOT_MODEM": {
+      "parent": "PARALLEL_MODEM",
+      "translation": [
+        0,
+        0.013999998569488525,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07900000363588333,
+        0.03199999779462814,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "modem",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "MODEM_TERMINAL_NEG": {
+      "parent": "PARALLEL_MODEM",
+      "translation": [
+        0,
+        0,
+        -0.01799999177455902
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07900000363588333,
+        0.017999999225139618,
+        -0.21799999475479126
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "MODEM_TERMINAL_POS": {
+      "parent": "PARALLEL_MODEM",
+      "translation": [
+        0,
+        0,
+        0.01799999177455902
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07900000363588333,
+        0.017999999225139618,
+        -0.18200001120567322
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "PARALLEL_MODEM": {
+      "parent": "PARALLEL_STATION",
+      "translation": [
+        0.07900000363588333,
+        0.017999999225139618,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07900000363588333,
+        0.017999999225139618,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.061500005424022675,
+          0.01599999889731407,
+          -0.21899999678134918
+        ],
+        "max": [
+          0.09650000184774399,
+          0.026499997824430466,
+          -0.1810000091791153
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "HOT_PARALLEL_SCREEN": {
+      "parent": "PARALLEL_SCREEN",
+      "translation": [
+        0,
+        0.012000000104308128,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.017999999225139618,
+        0.02800000086426735,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "parallel_screen",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "SCREEN_TERMINAL_NEG": {
+      "parent": "PARALLEL_SCREEN",
+      "translation": [
+        0,
+        0.001999998465180397,
+        -0.01799999177455902
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.017999999225139618,
+        0.017999999225139618,
+        -0.21799999475479126
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "SCREEN_TERMINAL_POS": {
+      "parent": "PARALLEL_SCREEN",
+      "translation": [
+        0,
+        0.001999998465180397,
+        0.01799999177455902
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.017999999225139618,
+        0.017999999225139618,
+        -0.18200001120567322
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "PARALLEL_SCREEN": {
+      "parent": "PARALLEL_STATION",
+      "translation": [
+        -0.017999999225139618,
+        0.01600000075995922,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.017999999225139618,
+        0.01600000075995922,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.04050000011920929,
+          0.013000000268220901,
+          -0.22100000083446503
+        ],
+        "max": [
+          0.004500001668930054,
+          0.019899999722838402,
+          -0.17900000512599945
+        ]
+      },
+      "extras": {
+        "diagram_enlarged": true
+      }
+    },
+    "RAIL_NEG": {
+      "parent": "PARALLEL_STATION",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.09577181190252304,
+          0.01719999872148037,
+          -0.25279998779296875
+        ],
+        "max": [
+          0.09000000357627869,
+          0.024744614958763123,
+          -0.22979693114757538
+        ]
+      },
+      "extras": {}
+    },
+    "RAIL_POS": {
+      "parent": "PARALLEL_STATION",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.0957999974489212,
+          0.01722818799316883,
+          -0.17021049559116364
+        ],
+        "max": [
+          0.09000000357627869,
+          0.024771811440587044,
+          -0.1472281962633133
+        ]
+      },
+      "extras": {}
+    },
+    "PARALLEL_STATION": {
+      "parent": "PHONE_LESSON",
+      "translation": [
+        0,
+        0,
+        -0.20000000298023224
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.14000000059604645,
+          0.0,
+          -0.29500001668930054
+        ],
+        "max": [
+          0.14000000059604645,
+          0.03522999957203865,
+          -0.10500000417232513
+        ]
+      },
+      "extras": {
+        "station": true
+      }
+    },
+    "CAM_TARGET_WIRELESS": {
+      "parent": "QI_PAD_ROOT",
+      "translation": [
+        0,
+        0.04500000178813934,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.054999999701976776,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "QI_PHONE_SCREEN": {
+      "parent": "QI_PHONE_ROOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.016499999910593033,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.20233333110809326,
+          0.024175001308321953,
+          0.08649999648332596
+        ],
+        "max": [
+          0.34433335065841675,
+          0.024825001135468483,
+          0.15349999070167542
+        ]
+      },
+      "extras": {}
+    },
+    "QI_PHONE_SHELL": {
+      "parent": "QI_PHONE_ROOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.016499999910593033,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.19983333349227905,
+          0.016499999910593033,
+          0.08399999886751175
+        ],
+        "max": [
+          0.34683334827423096,
+          0.02449999935925007,
+          0.15599998831748962
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_RECEIVER": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0.0020000003278255463,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.01979999989271164,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "receiver",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "QI_END_LEAD": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0.025999993085861206,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2993333339691162,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2993333339691162,
+          0.01753999851644039,
+          0.11973999440670013
+        ],
+        "max": [
+          0.3073333501815796,
+          0.018060000613331795,
+          0.12026000022888184
+        ]
+      },
+      "extras": {
+        "rest_length_m": 0.008,
+        "axis": "local +X"
+      }
+    },
+    "QI_RECEIVER_END": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0.025999993085861206,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2993333339691162,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "parameter": "outer endpoint from supplied N"
+      }
+    },
+    "QI_RX_AXIS": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "QI_TURN_01": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.26462337374687195,
+          0.01754000037908554,
+          0.11151503771543503
+        ],
+        "max": [
+          0.2824924886226654,
+          0.018059998750686646,
+          0.12893496453762054
+        ]
+      },
+      "extras": {
+        "turn_index": 1
+      }
+    },
+    "QI_TURN_02": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.26372337341308594,
+          0.01754000037908554,
+          0.11061502993106842
+        ],
+        "max": [
+          0.2833925187587738,
+          0.018059998750686646,
+          0.12983496487140656
+        ]
+      },
+      "extras": {
+        "turn_index": 2
+      }
+    },
+    "QI_TURN_03": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2628233730792999,
+          0.01754000037908554,
+          0.10971502214670181
+        ],
+        "max": [
+          0.2842925190925598,
+          0.018059998750686646,
+          0.13073498010635376
+        ]
+      },
+      "extras": {
+        "turn_index": 3
+      }
+    },
+    "QI_TURN_04": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2619233727455139,
+          0.01754000037908554,
+          0.1088150218129158
+        ],
+        "max": [
+          0.2851925492286682,
+          0.018059998750686646,
+          0.13163498044013977
+        ]
+      },
+      "extras": {
+        "turn_index": 4
+      }
+    },
+    "QI_TURN_05": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2610233724117279,
+          0.01754000037908554,
+          0.1079150140285492
+        ],
+        "max": [
+          0.2860925793647766,
+          0.018059998750686646,
+          0.13253498077392578
+        ]
+      },
+      "extras": {
+        "turn_index": 5
+      }
+    },
+    "QI_TURN_06": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2601233422756195,
+          0.01754000037908554,
+          0.10701501369476318
+        ],
+        "max": [
+          0.2869925796985626,
+          0.018059998750686646,
+          0.1334349811077118
+        ]
+      },
+      "extras": {
+        "turn_index": 6
+      }
+    },
+    "QI_TURN_07": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2592233419418335,
+          0.01754000037908554,
+          0.10611501336097717
+        ],
+        "max": [
+          0.287892609834671,
+          0.018059998750686646,
+          0.1343349814414978
+        ]
+      },
+      "extras": {
+        "turn_index": 7
+      }
+    },
+    "QI_TURN_08": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2583233416080475,
+          0.01754000037908554,
+          0.10521501302719116
+        ],
+        "max": [
+          0.28879261016845703,
+          0.018059998750686646,
+          0.1352349817752838
+        ]
+      },
+      "extras": {
+        "turn_index": 8
+      }
+    },
+    "QI_TURN_09": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2574233412742615,
+          0.01754000037908554,
+          0.10431501269340515
+        ],
+        "max": [
+          0.28969261050224304,
+          0.018059998750686646,
+          0.13613498210906982
+        ]
+      },
+      "extras": {
+        "turn_index": 9
+      }
+    },
+    "QI_TURN_10": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.25652334094047546,
+          0.01754000037908554,
+          0.10341500490903854
+        ],
+        "max": [
+          0.29059264063835144,
+          0.018059998750686646,
+          0.13703498244285583
+        ]
+      },
+      "extras": {
+        "turn_index": 10
+      }
+    },
+    "QI_TURN_11": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.25562334060668945,
+          0.01754000037908554,
+          0.10251500457525253
+        ],
+        "max": [
+          0.29149264097213745,
+          0.018059998750686646,
+          0.13793498277664185
+        ]
+      },
+      "extras": {
+        "turn_index": 11
+      }
+    },
+    "QI_TURN_12": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.25472334027290344,
+          0.01754000037908554,
+          0.10161500424146652
+        ],
+        "max": [
+          0.29239264130592346,
+          0.018059998750686646,
+          0.13883498311042786
+        ]
+      },
+      "extras": {
+        "turn_index": 12
+      }
+    },
+    "QI_TURN_13": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.25382333993911743,
+          0.01754000037908554,
+          0.10071500390768051
+        ],
+        "max": [
+          0.2932926416397095,
+          0.018059998750686646,
+          0.13973498344421387
+        ]
+      },
+      "extras": {
+        "turn_index": 13
+      }
+    },
+    "QI_TURN_14": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2529233396053314,
+          0.01754000037908554,
+          0.0998150035738945
+        ],
+        "max": [
+          0.29419267177581787,
+          0.018059998750686646,
+          0.14063498377799988
+        ]
+      },
+      "extras": {
+        "turn_index": 14
+      }
+    },
+    "QI_TURN_15": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2520233392715454,
+          0.01754000037908554,
+          0.09891500324010849
+        ],
+        "max": [
+          0.2950926721096039,
+          0.018059998750686646,
+          0.1415349841117859
+        ]
+      },
+      "extras": {
+        "turn_index": 15
+      }
+    },
+    "QI_TURN_16": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2511233389377594,
+          0.01754000037908554,
+          0.09801500290632248
+        ],
+        "max": [
+          0.2959926724433899,
+          0.018059998750686646,
+          0.1424349844455719
+        ]
+      },
+      "extras": {
+        "turn_index": 16
+      }
+    },
+    "QI_TURN_17": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2502233386039734,
+          0.01754000037908554,
+          0.09711500257253647
+        ],
+        "max": [
+          0.2968926727771759,
+          0.018059998750686646,
+          0.1433349847793579
+        ]
+      },
+      "extras": {
+        "turn_index": 17
+      }
+    },
+    "QI_TURN_18": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.24932333827018738,
+          0.01754000037908554,
+          0.09621500223875046
+        ],
+        "max": [
+          0.2977926731109619,
+          0.018059998750686646,
+          0.14423498511314392
+        ]
+      },
+      "extras": {
+        "turn_index": 18
+      }
+    },
+    "QI_TURN_19": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.24842333793640137,
+          0.01754000037908554,
+          0.09531500190496445
+        ],
+        "max": [
+          0.2986926734447479,
+          0.018059998750686646,
+          0.14513498544692993
+        ]
+      },
+      "extras": {
+        "turn_index": 19
+      }
+    },
+    "QI_TURN_20": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.24752333760261536,
+          0.01754000037908554,
+          0.09441500157117844
+        ],
+        "max": [
+          0.29959267377853394,
+          0.018059998750686646,
+          0.14603498578071594
+        ]
+      },
+      "extras": {
+        "turn_index": 20
+      }
+    },
+    "QI_RECEIVER": {
+      "parent": "QI_PHONE_ROOT",
+      "translation": [
+        0,
+        0.0012999996542930603,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.017799999564886093,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.24752333760261536,
+          0.01753999851644039,
+          0.09441500157117844
+        ],
+        "max": [
+          0.3098333477973938,
+          0.01979999989271164,
+          0.14999999105930328
+        ]
+      },
+      "extras": {
+        "turns_min": 5,
+        "turns_max": 20,
+        "spiral_inner_radius_m": 0.008,
+        "radial_pitch_m": 0.0009,
+        "wire_radius_m": 0.00026
+      }
+    },
+    "QI_PHONE_ROOT": {
+      "parent": "QI_PAD_ROOT",
+      "translation": [
+        0,
+        0.006500000134110451,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.016499999910593033,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.19983333349227905,
+          0.016499999910593033,
+          0.08399999886751175
+        ],
+        "max": [
+          0.34683334827423096,
+          0.024825001135468483,
+          0.15599998831748962
+        ]
+      },
+      "extras": {
+        "face_gap_zero_m": 0.0065,
+        "gap_range_m": [
+          0.0,
+          0.008
+        ],
+        "gap_axis": "glTF +Y",
+        "display_magnification_default": 1
+      }
+    },
+    "HOT_TRANSMITTER": {
+      "parent": "QI_TRANSMITTER",
+      "translation": [
+        -0.034000009298324585,
+        0.0010000001639127731,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.23933333158493042,
+        0.016100000590085983,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "transmitter",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "QI_TX_AXIS": {
+      "parent": "QI_TRANSMITTER",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.01510000042617321,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "QI_TRANSMITTER": {
+      "parent": "QI_PAD_ROOT",
+      "translation": [
+        0,
+        0.005100000649690628,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.01510000042617321,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2261834293603897,
+          0.01445000059902668,
+          0.07410009950399399
+        ],
+        "max": [
+          0.32298195362091064,
+          0.01575000025331974,
+          0.1683999001979828
+        ]
+      },
+      "extras": {
+        "coil_axis": "Blender +Z / glTF +Y"
+      }
+    },
+    "QI_PAD_ROOT": {
+      "parent": "WIRELESS_STATION",
+      "translation": [
+        0,
+        0.009999999776482582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.009999999776482582,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.19983333349227905,
+          0.009999999776482582,
+          0.05999999865889549
+        ],
+        "max": [
+          0.34683334827423096,
+          0.024825001135468483,
+          0.17999999225139618
+        ]
+      },
+      "extras": {}
+    },
+    "WIRELESS_STATION": {
+      "parent": "PHONE_LESSON",
+      "translation": [
+        0.273333340883255,
+        0,
+        0.11999999731779099
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.0,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.148333340883255,
+          0.0,
+          -0.0
+        ],
+        "max": [
+          0.398333340883255,
+          0.024825001135468483,
+          0.23999999463558197
+        ]
+      },
+      "extras": {
+        "station": true
+      }
+    },
+    "PHONE_LESSON": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.47333335876464844,
+          0.0,
+          -0.29500001668930054
+        ],
+        "max": [
+          0.47333335876464844,
+          0.06599999964237213,
+          0.23999999463558197
+        ]
+      },
+      "extras": {
+        "contract": "assembl.phone.v1"
+      }
+    }
+  },
+  "hotspots": {
+    "HOT_CAPACITOR": {
+      "parent": "CAPACITOR_DEMO",
+      "translation": [
+        0,
+        0.06199999898672104,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3813333511352539,
+        0.07199999690055847,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "capacitor",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_SERIES_R": {
+      "parent": "SERIES_RESISTOR",
+      "translation": [
+        0,
+        0.009999999776482582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.2983333468437195,
+        0.032999999821186066,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "series_r",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_CHARGER": {
+      "parent": "CHARGER_ROOT",
+      "translation": [
+        0,
+        0.03200000151991844,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.2993333339691162,
+        0.0430000014603138,
+        0.1770000010728836
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "charger",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_BATTERY": {
+      "parent": "PHONE_BATTERY",
+      "translation": [
+        -0.009999997913837433,
+        0.0040000006556510925,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.11999999731779099,
+        0.01850000023841858,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "battery",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_BOARD": {
+      "parent": "PHONE_BOARD",
+      "translation": [
+        0.05000000074505806,
+        0.0030000004917383194,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.05999999865889549,
+        0.019600000232458115,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "board",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_USB": {
+      "parent": "USB_PHONE_PORT",
+      "translation": [
+        0,
+        0.0030000004917383194,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18369999527931213,
+        0.01900000125169754,
+        0.1133333295583725
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "usb",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_INTERNAL_R": {
+      "parent": "INTERNAL_RESISTOR",
+      "translation": [
+        0,
+        0.009999999776482582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.359333336353302,
+        0.032999999821186066,
+        -0.14800000190734863
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "internal_r",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_MODEM": {
+      "parent": "PARALLEL_MODEM",
+      "translation": [
+        0,
+        0.013999998569488525,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07900000363588333,
+        0.03199999779462814,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "modem",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_PARALLEL_SCREEN": {
+      "parent": "PARALLEL_SCREEN",
+      "translation": [
+        0,
+        0.012000000104308128,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.017999999225139618,
+        0.02800000086426735,
+        -0.20000000298023224
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "parallel_screen",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_RECEIVER": {
+      "parent": "QI_RECEIVER",
+      "translation": [
+        0,
+        0.0020000003278255463,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.273333340883255,
+        0.01979999989271164,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "receiver",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_TRANSMITTER": {
+      "parent": "QI_TRANSMITTER",
+      "translation": [
+        -0.034000009298324585,
+        0.0010000001639127731,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.23933333158493042,
+        0.016100000590085983,
+        0.11999999731779099
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "transmitter",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    }
+  },
+  "camera_targets": {
+    "CAM_TARGET_CAPACITOR": [
+      0.3333333432674408,
+      0.03500000014901161,
+      -0.20000000298023224
+    ],
+    "CAM_TARGET_PHONE": [
+      -0.12200000137090683,
+      0.03700000047683716,
+      0.1133333295583725
+    ],
+    "CAM_TARGET_INTERNAL": [
+      -0.3333333432674408,
+      0.029999999329447746,
+      -0.20000000298023224
+    ],
+    "CAM_TARGET_PARALLEL": [
+      0.0,
+      0.02500000037252903,
+      -0.20000000298023224
+    ],
+    "CAM_TARGET_WIRELESS": [
+      0.273333340883255,
+      0.054999999701976776,
+      0.11999999731779099
+    ]
+  },
+  "paths": {
+    "USB_CHARGE_PATH": {
+      "parent": "USB_CABLE",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.1226,
+          0.025,
+          0.057
+        ],
+        [
+          -0.106,
+          0.023,
+          0.057
+        ],
+        [
+          -0.097,
+          0.012,
+          0.032
+        ],
+        [
+          -0.083,
+          0.011,
+          0.002
+        ],
+        [
+          -0.06,
+          0.014,
+          -0.00667
+        ],
+        [
+          -0.039,
+          0.016,
+          -0.00667
+        ]
+      ]
+    },
+    "INTERNAL_VISIBLE_POS": {
+      "parent": "INTERNAL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.095,
+          0.024,
+          0.03
+        ],
+        [
+          -0.095,
+          0.018,
+          0.052
+        ],
+        [
+          -0.045,
+          0.023,
+          0.052
+        ]
+      ]
+    },
+    "INTERNAL_VISIBLE_LOAD": {
+      "parent": "INTERNAL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.007,
+          0.023,
+          0.052
+        ],
+        [
+          0.09,
+          0.018,
+          0.052
+        ],
+        [
+          0.09,
+          0.025,
+          0.02
+        ]
+      ]
+    },
+    "INTERNAL_VISIBLE_RETURN": {
+      "parent": "INTERNAL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          0.09,
+          0.025,
+          -0.02
+        ],
+        [
+          0.09,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.024,
+          -0.03
+        ]
+      ]
+    },
+    "INTERNAL_FLOW": {
+      "parent": "INTERNAL_STATION",
+      "closed": true,
+      "interpretation": "Closed teaching path includes passage through component bodies; frontend owns marker timing",
+      "points_gltf_local_m": [
+        [
+          -0.095,
+          0.024,
+          0.03
+        ],
+        [
+          -0.095,
+          0.018,
+          0.052
+        ],
+        [
+          -0.026,
+          0.023,
+          0.052
+        ],
+        [
+          0.09,
+          0.018,
+          0.052
+        ],
+        [
+          0.09,
+          0.025,
+          0
+        ],
+        [
+          0.09,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.024,
+          -0.03
+        ],
+        [
+          -0.095,
+          0.024,
+          0.03
+        ]
+      ]
+    },
+    "RAIL_POS_PATH": {
+      "parent": "RAIL_POS",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.095,
+          0.024,
+          0.03
+        ],
+        [
+          -0.095,
+          0.018,
+          0.052
+        ],
+        [
+          0.09,
+          0.018,
+          0.052
+        ]
+      ]
+    },
+    "RAIL_NEG_PATH": {
+      "parent": "RAIL_NEG",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          0.09,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.024,
+          -0.03
+        ]
+      ]
+    },
+    "SCREEN_BRANCH_POS": {
+      "parent": "PARALLEL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.018,
+          0.018,
+          0.052
+        ],
+        [
+          -0.018,
+          0.018,
+          0.018
+        ]
+      ]
+    },
+    "SCREEN_BRANCH_NEG": {
+      "parent": "PARALLEL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.018,
+          0.018,
+          -0.018
+        ],
+        [
+          -0.018,
+          0.018,
+          -0.052
+        ]
+      ]
+    },
+    "PARALLEL_FLOW_SCREEN": {
+      "parent": "PARALLEL_STATION",
+      "closed": true,
+      "interpretation": "Branch-specific source current drives frontend marker phase",
+      "points_gltf_local_m": [
+        [
+          -0.095,
+          0.024,
+          0.03
+        ],
+        [
+          -0.095,
+          0.018,
+          0.052
+        ],
+        [
+          -0.018,
+          0.018,
+          0.052
+        ],
+        [
+          -0.018,
+          0.018,
+          0
+        ],
+        [
+          -0.018,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.024,
+          -0.03
+        ],
+        [
+          -0.095,
+          0.024,
+          0.03
+        ]
+      ]
+    },
+    "MODEM_BRANCH_POS": {
+      "parent": "PARALLEL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          0.079,
+          0.018,
+          0.052
+        ],
+        [
+          0.079,
+          0.018,
+          0.018
+        ]
+      ]
+    },
+    "MODEM_BRANCH_NEG": {
+      "parent": "PARALLEL_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          0.079,
+          0.018,
+          -0.018
+        ],
+        [
+          0.079,
+          0.018,
+          -0.052
+        ]
+      ]
+    },
+    "PARALLEL_FLOW_MODEM": {
+      "parent": "PARALLEL_STATION",
+      "closed": true,
+      "interpretation": "Branch-specific source current drives frontend marker phase",
+      "points_gltf_local_m": [
+        [
+          -0.095,
+          0.024,
+          0.03
+        ],
+        [
+          -0.095,
+          0.018,
+          0.052
+        ],
+        [
+          0.079,
+          0.018,
+          0.052
+        ],
+        [
+          0.079,
+          0.018,
+          0
+        ],
+        [
+          0.079,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.024,
+          -0.03
+        ],
+        [
+          -0.095,
+          0.024,
+          0.03
+        ]
+      ]
+    },
+    "CAP_POS_PATH": {
+      "parent": "CAPACITOR_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.095,
+          0.024,
+          0.03
+        ],
+        [
+          -0.095,
+          0.018,
+          0.052
+        ],
+        [
+          -0.054,
+          0.023,
+          0.052
+        ]
+      ]
+    },
+    "CAP_RESISTOR_TO_PLATE": {
+      "parent": "CAPACITOR_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          -0.016,
+          0.023,
+          0.052
+        ],
+        [
+          0.026,
+          0.023,
+          0.052
+        ],
+        [
+          0.026,
+          0.043,
+          0
+        ],
+        [
+          0.0367,
+          0.043,
+          0
+        ]
+      ]
+    },
+    "CAP_NEG_PATH": {
+      "parent": "CAPACITOR_STATION",
+      "closed": false,
+      "interpretation": "illustrative path for frontend-owned flow markers",
+      "points_gltf_local_m": [
+        [
+          0.0593,
+          0.043,
+          0
+        ],
+        [
+          0.1,
+          0.043,
+          0
+        ],
+        [
+          0.1,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.018,
+          -0.052
+        ],
+        [
+          -0.095,
+          0.024,
+          -0.03
+        ]
+      ]
+    }
+  },
+  "motion": {
+    "explode": {
+      "axis": "local +Y in exported glTF",
+      "factor_range": [
+        0,
+        1
+      ],
+      "offsets_m": {
+        "PHONE_BATTERY": 0.025,
+        "PHONE_BOARD": 0.05,
+        "PHONE_SCREEN": 0.075
+      },
+      "basis": "absolute canonical rest + supplied factor \u00d7 editorial offset; no voltage coupling"
+    },
+    "indicator": {
+      "node": "BATTERY_INDICATOR",
+      "axis": "local X scale",
+      "range": [
+        0,
+        1
+      ],
+      "nonstructural": true,
+      "note": "Battery case never changes scale. Zero hides indicator."
+    },
+    "wireless": {
+      "node": "QI_PHONE_ROOT",
+      "axis": "local +Y",
+      "physical_gap_m": [
+        0,
+        0.008
+      ],
+      "zero": "Lower face of receiver back window contacts top face of pad at canonical rest",
+      "turns": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "turn_nodes": "QI_TURN_01 through QI_TURN_20",
+      "outer_endpoint_m": ".008 + N \u00d7 .0009 on receiver local +X",
+      "end_lead": "QI_END_LEAD local X endpoint, X scale=(.034-endpoint)/.008",
+      "coaxial": "QI_TX_AXIS / QI_RX_AXIS remain same world X/Z",
+      "legacy_correction": "Actual legacy displacement .15 scene units/mm = 5\u00d7 at 30units/metre, not .18/6\u00d7. Asset/controller use true metres. Frontend may separately magnify/label diagram presentation."
+    },
+    "heat": {
+      "material": "HEAT_CUE_MAT",
+      "input": "supplied colour; estimated heat cue, not measured temperature"
+    },
+    "capacitor": {
+      "charge_anchors": [
+        "CAP_CHARGE_POS",
+        "CAP_CHARGE_NEG"
+      ],
+      "plane_axes_gltf": [
+        "Y",
+        "Z"
+      ],
+      "plane_half_extent_m": 0.02,
+      "note": "Fixed plates; charges and voltage text are frontend-owned. No voltage integration."
+    }
+  },
+  "screen": {
+    "node": "SCREEN_SURFACE",
+    "size_m": [
+      0.133,
+      0.06
+    ],
+    "uv": "0..1, U +X, V -Z; normal +Y"
+  },
+  "cutaway": {
+    "hide_only": [
+      "PHONE_BACK",
+      "QI_PHONE_SHELL",
+      "QI_PHONE_SCREEN"
+    ],
+    "preserve": [
+      "PHONE_BATTERY",
+      "PHONE_BOARD",
+      "PHONE_SCREEN",
+      "QI_RECEIVER",
+      "QI_TRANSMITTER"
+    ]
+  },
+  "export": {
+    "bytes": 1404456,
+    "sha256": "b4b19f635903b8070218b447e99cb45d0df12a03ca86b8a9c5f913c226746a42",
+    "triangles": 42816,
+    "mesh_batches": 113,
+    "rig_nodes": 95,
+    "materials": 16,
+    "textures": 0,
+    "triangles_before_reduction": 87882,
+    "active_station_budgets": {
+      "CAPACITOR_STATION": {
+        "mesh_batches": 17,
+        "triangles": 4317
+      },
+      "CHARGE_STATION": {
+        "mesh_batches": 37,
+        "triangles": 17690
+      },
+      "INTERNAL_STATION": {
+        "mesh_batches": 13,
+        "triangles": 3789
+      },
+      "PARALLEL_STATION": {
+        "mesh_batches": 14,
+        "triangles": 3126
+      },
+      "WIRELESS_STATION": {
+        "mesh_batches": 32,
+        "triangles": 13894
+      }
+    },
+    "tool": "5.1.1",
+    "round_trip": "passed",
+    "budgets_passed": true
+  },
+  "source": [
+    {
+      "path": "study/m/phone.js",
+      "sha256": "9d24ace3a46dc183760e961231ae362852a9379e030886ff9df0d293786aa803"
+    },
+    {
+      "path": "study/m/phone.parts.md",
+      "sha256": "2c2aa7bcfa74b27ccc7a0ee2b5b6a1f6df4e15c0770285da2faff28eee93933a"
+    },
+    {
+      "path": "docs/learning-machines/batch-01-contracts.md",
+      "sha256": "47eab03f189e1ed099e93243c79f01d86bdd3b78e484a7e7cd1d28c597aabd99"
+    },
+    {
+      "path": "docs/learning-machines/assembl-3d-design-brief.md",
+      "sha256": "8a52ba48d986734e4fe274b13366f1d0d3fed92f52bb131b0b0bc523c5aa4489"
+    }
+  ],
+  "limitations": [
+    "Generic educational construction, not a proprietary replica or CAD/manufacturing deliverable.",
+    "Browser glass is alpha blended; offline refraction differs.",
+    "All five stations overview consumes more draw calls than a single active apparatus.",
+    "No frontend lesson integration or physical device/AR validation in this asset-only handoff."
+  ]
+}

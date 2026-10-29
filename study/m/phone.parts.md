@@ -1,5 +1,9 @@
 # The phone machine: parts list
 
+The live scene now uses the five-apparatus Blender family described in [the asset source notes](../../assets/models/phone/README.md). Scientific values remain owned by `phone.js`. The legacy table below records the original SVG drawing, which remains the functional fallback; its material colours and drawing units do not specify the new metre-scale asset. The supplied handset is 147 × 8 × 72 mm with a 133 × 60 mm screen surface. Live wireless spacing is explicitly magnified 5×.
+
+## Original SVG drawing reference
+
 Drawn parts of the `phone` study machine (NCEA L2 AS91173, L3 AS91526), with the figure material each uses
 (`StudyKit.figMat` kind) and the truth label for every figure. Case tint: **sky** (see refs/figure/README.md).
 Drawing frame 800 × 420 units; the phone is drawn at about 1:1.4 of a real 147 × 72 mm handset so it fills the bench.

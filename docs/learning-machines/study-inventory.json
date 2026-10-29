@@ -360,11 +360,11 @@
       "title": "The phone machine",
       "route": "/study/m/phone.html",
       "source": "study/m/phone.js",
-      "scene": "phone3d; five electronics stations",
+      "scene": "Blender phone3d + phone-asset.js; five focused apparatuses",
       "stateOwner": "s; Q,E,Icc,tickCharge,tau,tickCap,emfW",
-      "scope": "Batch 01: handset, charger, cable, coils and circuit parts; preserve five challenges and estimates",
+      "scope": "Local integration and QA complete; pending independent review/release. Original model, topics, controls and checks retained; see study/review/phone/README.md.",
       "difficulty": "H",
-      "status": "batch-01-contract"
+      "status": "local-review"
     },
     {
       "id": "queue",

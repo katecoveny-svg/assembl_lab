@@ -1,10 +1,10 @@
 # Learning machine rollout tracker
 
-Source baseline: `a482fc56ab49dc7c40d39b3ef20c7f3614226dde` (PR 38), fetched and verified 29 October 2026. Isolated branch: `codex/learning-machine-rollout`. This change contains planning documents only. Claw/slushie implementation and assets remain intact.
+Source baseline: `a482fc56ab49dc7c40d39b3ef20c7f3614226dde` (PR 38), fetched and verified 29 October 2026. Isolated branch: `codex/learning-machine-rollout`. The original planning checkpoint is `712ae214`. Phone now has a bounded local Blender integration awaiting independent review and release; claw/slushie implementation and assets remain intact.
 
 ## Scope and accounting
 
-- **35 Study registry entries**, matching `study/data.js`: **2 accepted**, **3 in the next asset-contract batch**, **22 queued**, **8 retain/review without a Blender replacement**. There are 34 `m/*.html` routes plus the `m/shaky/` book. No route is counted twice.
+- **35 Study registry entries**, matching `study/data.js`: **2 accepted**, **1 locally integrated awaiting review**, **2 in the next asset-contract batch**, **22 queued**, **8 retain/review without a Blender replacement**. There are 34 `m/*.html` routes plus the `m/shaky/` book. No route is counted twice.
 - **14 separate Next panels**: tracked below, not added to the 35 Study count. Habitat is one of these panels, even where it has another catalogue card.
 - Additional Study/creative tools and **14 system/everyday catalogue worlds** are separated below. Business simulator work is a reusable brief only; this tracker does not authorize business builds.
 - “Accepted” refers to the completed claw/slushie work. Other rows are source-grounded upgrade plans, not claims of browser defects or completed visual review. Existing “3D” catalogue badges do not mean an asset meets the approved Blender standard.
@@ -54,7 +54,7 @@ State owners below remain authoritative. Scene work must never introduce a secon
 | [claims](/study/m/claims.html) · [source](../../study/m/claims.js) | SVG/HTML claim/evidence boards | s; runStudy, mulberry, gauss and source/fair-test questions | Retain source/evidence and trial charts; no 3D can/phone replacing critical-reading tasks | L · retain-review |
 | [vend](/study/m/vend.html) · [source](../../study/m/vend.js) | Custom Vend3D renderer in vend3d.js | vend.js s; tickVend/tickCoin, poseNow, fall/torque/cost helpers | Blender cabinet, coils, coin mechanism and delivery flap; preserve pose contract and displayed physics | H · queued |
 | [pinball](/study/m/pinball.html) · [source](../../study/m/pinball.js) | Custom Pinball3D table/renderer | Pinball3D.Sim in pinball3d.js; pinball.js s and challenge events | Detailed table/parts mapped to current colliders; preserve physics, input timing and shot evidence | H · queued |
-| [phone](/study/m/phone.html) · [source](../../study/m/phone.js) | phone3d; five electronics stations | s; Q,E,Icc,tickCharge,tau,tickCap,emfW | Batch 01: handset, charger, cable, coils and circuit parts; preserve five challenges and estimates | H · batch-01-contract |
+| [phone](/study/m/phone.html) · [source](../../study/m/phone.js) | Blender phone3d + phone-asset.js; five focused apparatuses | Original s and charge/current/induction/capacitor helpers; nine topics, 15 controls, five checks | Local integration verified; corrected taper explanation, labelled wireless spacing, state-preserving graphics switch; [evidence](../../study/review/phone/README.md) | H · local-review |
 | [queue](/study/m/queue.html) · [source](../../study/m/queue.js) | queue3d; arrival/checkout/ED/tree stations | s; newSim, stepSim, runFast, summarise and seeded RNG | Checkout/ED component detail; keep distributions and fictional service assumptions visible | H · queued |
 | [plan](/study/m/plan.html) · [source](../../study/m/plan.js) | plan3d; editable floor-plan and option models | s.zones/options; evalZones, move, resize, saveOption | Modular walls/furniture with exact snap/dimension anchors; preserve three options and scale export | H · queued |
 
