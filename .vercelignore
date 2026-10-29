@@ -1,0 +1,18 @@
+# Keep internal QA evidence and developer-only files out of deployments.
+output/
+docs/
+scripts/
+**/review/**
+**/tests/**
+**/tools/**
+**/*.test.*
+**/*.spec.*
+**/*.md
+!**/*LICENSE*.md
+!**/*NOTICE*.md
+!**/*.parts.md
+**/browser-export-report.json
+**/clearance-report.json
+**/rig-validation.json
+.env*
+**/.env*
