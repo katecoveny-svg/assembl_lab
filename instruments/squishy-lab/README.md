@@ -1,21 +1,8 @@
 # Squishy Lab
 
-An original, local create-then-play studio at `/instruments/squishy-lab/`. Existing `/instruments/soft-matter/` stays compatible. No Study overview, other instruments, Bedazzle or original studio files are changed.
+An original, local create-then-play studio at `/instruments/squishy-lab/`. Existing `/instruments/soft-matter/` stays compatible.
 
 Four original forms, two-colour procedural patterns, three visual finishes, qualitative feel controls, live squeeze/stretch/rotate, page-scroll mode, pause, wobble, reset and 20-step undo. Choosing **Make this shape** explicitly starts a fresh shape while retaining colours and feel; a recipe starts a new design. Both are undoable. Changing pixel quality keeps the current pose, camera and history.
-
-## Run and verify
-
-From `instruments/` (uses its existing pinned lockfile):
-
-```sh
-npm ci
-node squishy-lab/build.mjs
-node --test squishy-lab/tests/schema.test.mjs
-npx playwright test -c squishy-lab/playwright.config.js
-```
-
-Serve the repository root with a static HTTP server. The browser suite starts localhost:4173 automatically when needed. `dist/` is committed for static hosting. The new directory has an independent build; existing instrument builds are unchanged.
 
 ## What is simulated
 

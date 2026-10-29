@@ -318,7 +318,7 @@ function allenCorner(api,cfg,parent){
   try{mq&&mq.addEventListener("change",place)}catch(e){}
   render();
   const st=alState();
-  if(!st.todayPass&&cfg.steps.some(x=>x.k==="test"))nudgeT=setTimeout(()=>speak(`One challenge keeps your streak going.${api.step&&api.step.k==="test"?"":` <button type="button" class="btn al-go" data-go>Go to the challenges</button>`}`,9000),1600);
+  if(cfg.companion!=="quiet"&&!st.todayPass&&cfg.steps.some(x=>x.k==="test"))nudgeT=setTimeout(()=>speak(`One challenge keeps your streak going.${api.step&&api.step.k==="test"?"":` <button type="button" class="btn al-go" data-go>Go to the challenges</button>`}`,9000),1600);
   return {react,render,speak,el:box}}
 
 // ---- kupu Māori: verified te reo terms a machine can carry (cfg.kupu, step.kupu). ta = Te Aka Māori Dictionary word id.
@@ -341,6 +341,41 @@ function arButton(api,cfg,want){const S=api.s3;if(!S||cfg.ar===false)return;cons
     const ctl=AR.button(slot,{...what,label:o.label||(matchMedia("(max-width: 820px)").matches?"View in AR":"View in your space"),title:cfg.title||"assembly",variant:"light",style:"assembly",...(o.model?{}:{qr:location.origin+location.pathname+"#ar"})});
     api.ar=ctl;if(want)setTimeout(()=>{try{ctl.prompt()}catch(e){}},800)})
   .catch(e=>{slot.remove();console.warn("AR unavailable",e)})}
+// Optional authored investigation. Navigation never calls setStep/onStep or mutates the model.
+// Model-owned prepare/capture/reset callbacks keep units, limits and fair-test rules local.
+function mountLesson(cfg,api,host,work){
+  const L=cfg.lesson, stages=["Explore","Predict","Investigate","Explain"];
+  let stage=0;const evidence={A:null,B:null};
+  host.innerHTML=`<div class="lesson-heading"><span class="eyebrow">Guided investigation</span><h2>${esc(L.question)}</h2></div><div class="lesson-navigation"><nav class="lesson-stages" aria-label="Investigation stages">${stages.map((x,i)=>`<button type="button" data-stage="${i}" aria-controls="k-lesson-work">${x}</button>`).join("")}</nav><button class="btn" type="button" id="k-lesson-advance" aria-controls="k-lesson-work"></button></div>`;
+  work.innerHTML=`<div data-panel="0"><p>${esc(L.explore)}</p></div>
+    <div data-panel="1"><label for="k-prediction">${esc(L.predict)}</label><textarea id="k-prediction" rows="2" placeholder="I predict… because…"></textarea></div>
+    <div data-panel="2"><p>${esc(L.investigate)}</p><div class="lesson-actions">${["A","B"].map(k=>`<button class="btn" type="button" data-prepare="${k}">Set up ${k}</button><button class="btn primary" type="button" data-capture="${k}">Capture ${k}</button>`).join("")}</div></div>
+    <div data-panel="3"><p>${esc(L.explain)}</p><label for="k-explanation">Explain using your A and B evidence</label><textarea id="k-explanation" rows="3" placeholder="When I changed… I observed… This suggests…"></textarea><p class="lesson-note">Your explanation is ungraded. Notes stay on this page until you reload or restart.</p></div>
+    <div class="lesson-evidence" id="k-evidence"></div><p class="lesson-status" role="status" id="k-lesson-status"></p>
+    <div class="lesson-footer"><button class="btn" type="button" id="k-lesson-back">Back</button><button class="btn" type="button" id="k-lesson-next">Predict →</button><button class="btn lesson-restart" type="button" id="k-lesson-reset">Restart investigation</button></div>`;
+  const status=work.querySelector("#k-lesson-status"),buttons=[...host.querySelectorAll("[data-stage]")];
+  function go(i){stage=Math.max(0,Math.min(3,i));buttons.forEach((b,j)=>b.setAttribute("aria-current",j===stage?"step":"false"));
+    work.querySelectorAll("[data-panel]").forEach(p=>p.hidden=+p.dataset.panel!==stage);
+    work.querySelector("#k-lesson-back").disabled=stage===0;
+    for(const next of [work.querySelector("#k-lesson-next"),host.querySelector("#k-lesson-advance")]){next.hidden=stage===3;next.textContent="Next stage: "+(stages[stage+1]||"")+" →";}
+  }
+  buttons.forEach((b,i)=>b.onclick=()=>go(i));
+  host.querySelector("nav").onkeydown=e=>{const i=buttons.indexOf(document.activeElement);if(i<0||!["ArrowRight","ArrowLeft","Home","End"].includes(e.key))return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?3:(i+(e.key==="ArrowRight"?1:3))%4;go(j);buttons[j].focus()};
+  work.querySelector("#k-lesson-back").onclick=()=>{go(stage-1);buttons[stage].focus()};
+  host.querySelector("#k-lesson-advance").onclick=()=>{go(stage+1);buttons[stage].focus()};
+  work.querySelector("#k-lesson-next").onclick=()=>{go(stage+1);buttons[stage].focus()};
+  function renderEvidence(){work.querySelector("#k-evidence").innerHTML=["A","B"].map(k=>{
+    const record=evidence[k];return `<section class="evidence-card"><h3>Observation ${k}</h3>${record?`<dl>${Object.entries(record.fields).map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>`:`<p>Not captured yet.</p>`}</section>`}).join("")}
+  work.querySelectorAll("[data-prepare]").forEach(b=>b.onclick=()=>{const message=L.prepare(b.dataset.prepare,api.state,api,evidence);api.redraw();status.textContent=message||"Settings ready. Observe the model, then capture."});
+  work.querySelectorAll("[data-capture]").forEach(b=>b.onclick=()=>{const k=b.dataset.capture;if(k==="B"&&!evidence.A){status.textContent="Capture observation A first, then compare B.";return}const record=L.capture(k,api.state,api,evidence);
+    if(record.error){status.textContent=record.error;return}
+    evidence[k]=JSON.parse(JSON.stringify(record));if(k==="A")evidence.B=null;
+    renderEvidence();status.textContent=`Observation ${k} captured.`+(k==="A"?" Capture B after changing the one variable. Any previous B was cleared.":"");
+  });
+  work.querySelector("#k-lesson-reset").onclick=()=>{evidence.A=evidence.B=null;work.querySelectorAll("textarea").forEach(x=>x.value="");L.reset(api.state,api);api.redraw();renderEvidence();go(0);status.textContent="Investigation restarted. Notes and captures cleared.";buttons[0].focus()};
+  renderEvidence();go(0);
+  return {update(){const active=api.step.k===L.step;host.hidden=work.hidden=!active}};
+}
 function mount(cfg){logStudy("open");
   const KU=(Array.isArray(cfg.kupu)?cfg.kupu:[]).filter(kupuOk);
   const kFind=x=>typeof x==="string"?KU.find(k=>k.mi===x):(kupuOk(x)?x:null);
@@ -367,12 +402,14 @@ function mount(cfg){logStudy("open");
     <nav class="steps" aria-label="Steps"><div class="fig">${esc(cfg.fig||"")}</div><h2>${esc(cfg.railTitle||"")}</h2><div id="k-steps" style="display:contents"></div></nav>
     <div class="prog" aria-hidden="true"><i id="k-prog"></i></div>
     <div class="stage">
+      ${cfg.lesson?`<section class="lesson" id="k-lesson" aria-label="Guided investigation" hidden></section>`:""}
       <div class="caprow"><span class="stepno" id="k-stepno"></span><p class="caption" id="k-cap"></p><button class="btn nextb" type="button" id="k-next"></button></div>
       <div class="play">
         <div class="playmain"><div class="canvas ${cfg.mainPhoneBig?"phone-big":""}"><svg id="k-main" viewBox="${cfg.mainBox}" role="img" aria-label="${esc(cfg.mainLabel||cfg.title)}"></svg></div>
         <div class="controls" id="k-ctl"></div></div>
         <div class="rail"><div class="chips" id="k-chips" aria-live="polite"></div><div class="al-slot" id="k-al-slot"></div></div>
       </div>
+      ${cfg.lesson?`<section class="lesson-work" id="k-lesson-work" aria-label="Investigation notebook" hidden></section>`:""}
       <div class="lower ${cfg.closeBox?"":"noclose"}">
         ${cfg.closeBox?`<div class="canvas"><svg id="k-close" viewBox="${cfg.closeBox}" role="img" aria-label="Close-up view"></svg></div>`:""}
         <div class="side">
@@ -391,11 +428,12 @@ function mount(cfg){logStudy("open");
   <footer><p><span class="truth">Simulated</span>${cfg.truth||"A simplified model for learning. Check model answers with your teacher."}</p>${cfg.footer?`<p>${cfg.footer}</p>`:""}<p>Not made by or endorsed by NZQA or the Ministry of Education.</p><p class="as-foot">${LOCKUP}<span>assembly is made by assembl in Aotearoa.</span></p></footer>
 </div>`;
   const $=id=>document.getElementById(id);
+  let lesson=null;
   let step=0,mounted=false;const seenSteps=new Set();
   const snd=$("k-snd");const showSnd=()=>{snd.innerHTML=muted?ICO.sndOff:ICO.sndOn;snd.setAttribute("aria-pressed",muted?"false":"true");snd.setAttribute("aria-label",muted?"Sound off":"Sound on");snd.title=muted?"Sound is off":"Sound is on"};showSnd();snd.onclick=()=>{setMuted(!muted);showSnd();sfx("pop")};
   const stepsEl=$("k-steps");
   cfg.steps.forEach((st,i)=>{const b=document.createElement("button");b.className="step";b.type="button";
-    b.innerHTML=`<span class="n">${st.k==="test"?"✓":i+1}</span>${esc(st.lab)}`;b.onclick=()=>{sfx("whoosh");setStep(i)};stepsEl.appendChild(b)});
+    b.innerHTML=`<span class="n">${st.k==="test"?"✓":i+1}</span>${esc(st.lab)}${cfg.lesson?.step===st.k?`<small class="lesson-tag">Guided</small>`:""}`;b.onclick=()=>{sfx("whoosh");setStep(i)};stepsEl.appendChild(b)});
   const nextB=$("k-next");nextB.onclick=()=>{if(step<cfg.steps.length-1){sfx("whoosh");setStep(step+1);try{$("k-cap").scrollIntoView({block:"nearest",behavior:calm()?"auto":"smooth"})}catch(e){}}};
   // controls
   const ctlEl=$("k-ctl"), ctlEls={};
@@ -434,9 +472,9 @@ function mount(cfg){logStudy("open");
     const cur=document.querySelectorAll(".step")[i];if(mounted)try{cur&&cur.scrollIntoView({inline:"nearest",block:"nearest"})}catch(e){}
     $("k-prog").style.width=((i+1)/cfg.steps.length*100).toFixed(1)+"%";
     $("k-stepno").textContent=st.k==="test"?"Test":`${i+1} of ${cfg.steps.length}`;
-    const nx=cfg.steps[i+1];nextB.hidden=!nx;if(nx)nextB.textContent=nx.k==="test"?"Test yourself →":"Next →";
+    const nx=cfg.steps[i+1];nextB.hidden=!nx;if(nx)nextB.textContent=nx.k==="test"?"Next topic: Test yourself →":"Next topic →";
     $("k-cap").innerHTML=st.cap+(st.speedLabel?`<span class="slow">${st.speedLabel}</span>`:"");
-    $("k-big").innerHTML=st.big||"";$("k-exam").textContent=st.exam||"";$("k-trap").textContent=st.trap||"";
+    $("k-big").innerHTML=st.big||"";$("k-exam").textContent=typeof st.exam==="function"?st.exam(s,st,api):st.exam||"";$("k-trap").textContent=st.trap||"";
     $("k-examcard").hidden=!st.exam;$("k-trapcard").hidden=!st.trap;$("k-bigcard").hidden=!st.big;
     if(KU.length){const sk=stepKupu(st),kc=$("k-kupu");kc.hidden=!sk.length;$("k-kupul").innerHTML=sk.map(kupuItem).join("")}
     showDeck();
@@ -447,9 +485,11 @@ function mount(cfg){logStudy("open");
         try{buddy&&buddy.react(ok,before.has)}catch(e){}})}
     st.onStep&&st.onStep(s,st,api);cfg.onStep&&cfg.onStep(s,st,api);
     try{history.replaceState(null,"","#"+st.k)}catch(e){}
+    if(lesson)lesson.update();
     redraw();
   }
   function redraw(){const st=cfg.steps[step];
+    if(typeof st.exam==="function")$("k-exam").textContent=st.exam(s,st,api);
     $("k-main").innerHTML=cfg.drawMain(s,st,api);
     if(cfg.closeBox)$("k-close").innerHTML=cfg.drawClose(s,st,api);
     const map=cfg.chips?cfg.chips(s,st):{};
@@ -460,6 +500,7 @@ function mount(cfg){logStudy("open");
     const sel=()=>{const r=document.createRange();r.selectNodeContents($("k-exam"));const g=getSelection();g.removeAllRanges();g.addRange(r);b.textContent="Selected"};
     try{navigator.clipboard.writeText(txt).then(done,sel)}catch(e){sel()}};
   const api={redraw,get step(){return cfg.steps[step]},setStep,state:s};
+  if(cfg.lesson)lesson=mountLesson(cfg,api,$("k-lesson"),$("k-lesson-work"));
   let buddy=null;try{buddy=allenCorner(api,cfg,$("k-al-slot"))}catch(e){}
   const alBtn=$("k-al"),showAl=()=>{const m=!!alLoad().minimal;alBtn.setAttribute("aria-pressed",m?"true":"false");const t=m?"Tiny Allen is on: a small badge with no speech bubbles":"Tiny Allen: shrink Allen to a small badge";alBtn.title=t;alBtn.setAttribute("aria-label",t)};showAl();
   alBtn.onclick=()=>{const L=alLoad();L.minimal=!L.minimal;alSave(L);showAl();sfx("pop");buddy&&buddy.render()};

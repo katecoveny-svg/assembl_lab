@@ -7,33 +7,10 @@ Dedicated routes:
 
 All routes offer undo, reset, pause, local PNG, print and capability-detected file sharing. Sharing is invoked only by the user's Share button. No microphone/camera, accounts, uploads, sample recordings or network runtime dependencies. Video import accepts local clips up to 40 MiB / 12 seconds / 1920px longest edge and 1920×1080 total pixels. It extracts 64 letterboxed 128×128 frames with progress/cancel and releases its object URL. Clip recording is not implemented.
 
-Shared navigation outside these three new routes is deliberately left to the parent task. Existing `instruments/src`, `instruments/dist`, the original patterns studio and Study overview are untouched.
-
-## Build / run
-
-Dependencies are the repository's existing exact pins in `../package-lock.json`: Three 0.186.1, esbuild 0.28.2 and Playwright 1.64.1. No additional dependencies.
-
-With the existing `instruments/node_modules` installed:
-
-```sh
-cd instruments/stage-two
-node build.mjs
-node --test tests/fluid.test.js tests/video-limits.test.js
-# Original synthetic test fixtures; uses already-installed ffmpeg, not a runtime dependency:
-python3 tests/make-video-fixture.py
-# Serve repository root on localhost:4185 in another terminal:
-# python3 -m http.server 4185 --bind 127.0.0.1
-node ../node_modules/@playwright/test/cli.js test
-# Installed Chrome / hardware verification:
-STAGE_TWO_HEADED=1 node ../node_modules/@playwright/test/cli.js test
-```
-
-`build.mjs` writes only `stage-two/dist`; it never deletes or writes the first-stage bundle. The generated route HTML and bundle are committed for the static host.
-
 ## Materials & credits
 
 Three.js, OrbitControls and MarchingCubes: MIT, existing repository licence at [../licenses/three-MIT.txt](../licenses/three-MIT.txt). Bundled notices are also in [dist/app.js.LEGAL.txt](dist/app.js.LEGAL.txt). The shell and palette continue the existing assembl instruments design. Ribbons, notes, demo motion, volume shader, density deposition, procedural studio lighting and fluid solver implementation are original work for this addition.
 
 Time volume API references: [Data3DTexture](https://threejs.org/docs/pages/Data3DTexture.html) and [official volume example](https://threejs.org/examples/webgl_texture3d.html). No Jingfu code or assets used.
 
-Splash was inspected read-only at [`3df5d621e6f153d7269037cbd8606bd83796f3fd`](https://github.com/matsuoka-601/Splash/tree/3df5d621e6f153d7269037cbd8606bd83796f3fd). It is MIT, copyright 2025 matsuoka-601. Its source, assets, dependency installation and scripts are **not** included or executed. See [VALIDATION.md](VALIDATION.md) for the allocation review and limits of this alternative.
+Splash was inspected read-only at [`3df5d621e6f153d7269037cbd8606bd83796f3fd`](https://github.com/matsuoka-601/Splash/tree/3df5d621e6f153d7269037cbd8606bd83796f3fd). It is MIT, copyright 2025 matsuoka-601. Its source, assets, dependency installation and scripts are **not** included or executed. This is an independently implemented experimental alternative, not a port.

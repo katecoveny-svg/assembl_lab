@@ -660,6 +660,25 @@ const API=StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:re
   fig:"FIG. 34 · A RATES-OF-REACTION BENCH", railTitle:"What makes a reaction go faster",
   badge:{label:"NCEA L2 Chemistry 91166",exam:"2026-11-16T14:00:00+13:00",examText:"Mon 16 Nov, 2pm"},
   mainBox:"0 0 640 330", mainPhoneBig:true, mainLabel:"A lab bench: a conical flask of marble chips and acid in a water bath on a hot plate, a gas syringe on a clamp stand, a second flask on a balance, and a particle window magnifying the chips", closeBox:"0 0 420 260",
+  companion:"quiet",
+  lesson:{step:"conc",
+    question:"Does doubling the acid concentration double the initial reaction rate?",
+    explore:"Run marble chips in acid and watch the gas curve. Its initial slope shows the rate at the start; the dashed curve preserves a previous run.",
+    predict:"Compare 0.50 and 1.00 mol/L acid at 20°C with the same small chips. Predict the initial-rate ratio and whether the final gas amount changes.",
+    investigate:"Set up A, press Play and run for at least 2 simulated seconds, then capture A. Set up B preserves that run as the dashed curve. Press Play and capture B. Keep temperature and chip size fixed; the same marble mass and acid volume are used.",
+    explain:"Compare the captured initial rates, not the rates at different later times. Link concentration to collision frequency. Use the dashed A curve as evidence, and distinguish this illustrative rate model from a measured experiment.",
+    prepare:(slot,x,api,evidence)=>{
+      if(slot==="A"){std({c:.5});s.ghost=null;s.meas="vol";s.playing=false;return "A ready: 0.50 mol/L, 20°C, small chips. Press Play, then capture after at least 2 simulated seconds."}
+      if(!evidence.A||s.run.id!==evidence.A.raw.id||!s.run.started||s.run.t<2)return "Capture a current A run first. If you changed runs, set up A and capture it again.";
+      setting("c",1);s.meas="vol";s.playing=false;return "B ready. A remains as the dashed curve. Press Play, then capture B."},
+    capture:(slot,x,api,evidence)=>{const r=s.run;
+      if(r.rx!=="marble"||r.c!==(slot==="A"?.5:1)||r.T!==20||r.size!=="small")return {error:"Use Set up "+slot+" to keep the comparison at 20°C with small marble chips and the intended concentration."};
+      if(!r.started||r.t<2)return {error:"Press Play and let this run reach at least 2 simulated seconds before capturing."};
+      if(slot==="B"&&(!evidence.A||!s.ghost||s.ghost.id!==evidence.A.raw.id||diffs(s.ghost,r).join()!=="c"))return {error:"A must be the dashed previous run, with only concentration changed. Set up and capture A again, then set up B."};
+      const fields={Acid:r.c.toFixed(2)+" mol/L",Temperature:r.T+" °C",Marble:"0.40 g · "+SIZE_N[r.size],"Acid volume":"50 mL","Initial rate":rateTxt(r.r0)+" mL/s","Captured at":secs(r.t),"Gas collected":n1(r.x*VMAX(r.rx))+" mL"};
+      if(slot==="B")fields["Initial-rate B/A"]=(r.r0/evidence.A.raw.initialRate).toFixed(2)+" × (model)";
+      return {raw:{id:r.id,concentration:r.c,temperature:r.T,size:r.size,initialRate:r.r0,time:r.t,gas:r.x*VMAX(r.rx)},fields}},
+    reset:()=>{std({c:.5});s.ghost=null;s.meas="vol";s.playing=false}},
   state:s, steps,
   controls:[{type:"play"},
     {type:"button",id:"restart",label:"New run",onClick:()=>{newRun();s.playing=false}},

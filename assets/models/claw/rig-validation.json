@@ -1,0 +1,97 @@
+{
+  "checks": [
+    {
+      "pose": "rest",
+      "applied": {
+        "x": 0.125,
+        "depth": -0.035,
+        "drop": 0,
+        "open": 0,
+        "holdPrize": true
+      },
+      "piston_gap_m": 0.018000006675720215,
+      "finger_bounds_blender": {
+        "min": [
+          0.030719706788659096,
+          -0.1755366325378418,
+          1.1850556135177612
+        ],
+        "max": [
+          0.2759999930858612,
+          0.10553665459156036,
+          1.4070000648498535
+        ]
+      }
+    },
+    {
+      "pose": "pickup_open",
+      "applied": {
+        "x": 0.125,
+        "depth": -0.035,
+        "drop": 0.23,
+        "open": 1,
+        "holdPrize": false
+      },
+      "piston_gap_m": 0.023999929428100586,
+      "finger_bounds_blender": {
+        "min": [
+          0.013178146444261074,
+          -0.20595216751098633,
+          0.9693968296051025
+        ],
+        "max": [
+          0.314902126789093,
+          0.13595223426818848,
+          1.1769996881484985
+        ]
+      }
+    },
+    {
+      "pose": "chute_release",
+      "applied": {
+        "x": -0.32,
+        "depth": -0.27,
+        "drop": 0,
+        "open": 0.5499999999999998,
+        "holdPrize": true
+      },
+      "piston_gap_m": 0.02129995822906494,
+      "finger_bounds_blender": {
+        "min": [
+          -0.4249042868614197,
+          -0.4289388954639435,
+          1.1888853311538696
+        ],
+        "max": [
+          -0.14775100350379944,
+          -0.11106108874082565,
+          1.4069963693618774
+        ]
+      }
+    },
+    {
+      "pose": "back_right",
+      "applied": {
+        "x": 0.33,
+        "depth": 0.24,
+        "drop": 0.3,
+        "open": 1,
+        "holdPrize": true
+      },
+      "piston_gap_m": 0.023999929428100586,
+      "finger_bounds_blender": {
+        "min": [
+          0.2181781530380249,
+          0.06904781609773636,
+          0.8993968963623047
+        ],
+        "max": [
+          0.5199021697044373,
+          0.41095224022865295,
+          1.1069997549057007
+        ]
+      }
+    }
+  ],
+  "scope": "Selected extreme poses; excludes prize-pool contacts, which are lesson choreography rather than simulated physics."
+}
