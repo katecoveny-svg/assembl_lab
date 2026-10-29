@@ -1,0 +1,31 @@
+{
+  "method": "Evaluated world-space mesh bounding boxes; separated vertical extents prove non-intersection of piston and held capsule in rest pose.",
+  "revision": 2,
+  "units": "metres",
+  "piston_bounds_blender": {
+    "min": [
+      0.10799999535083771,
+      -0.052000001072883606,
+      1.347000002861023
+    ],
+    "max": [
+      0.1420000046491623,
+      -0.017999999225139618,
+      1.3930000066757202
+    ]
+  },
+  "capsule_upper_bounds_blender": {
+    "min": [
+      0.04599999636411667,
+      -0.11400000751018524,
+      1.2499215602874756
+    ],
+    "max": [
+      0.20399999618530273,
+      0.04400000348687172,
+      1.3289999961853027
+    ]
+  },
+  "piston_to_capsule_vertical_gap_m": 0.018000006675720215,
+  "scope": "Rest pose and poses produced by the supplied adapter; all claws and capsules move together. Not a general collision solver."
+}
