@@ -2,7 +2,7 @@
 
 Status: GLB and transform contract exported and re-imported successfully. Four numerical pose checks pass. Browser pickup, chute travel, jaw opening and prize detachment have been exercised and visually inspected. Final detail/rear rendering is in progress; asset and adapter are ready for frontend consumption.
 
-Do not read/replace the approved v1 assets while integrating this revision. All revised files are under `/Users/kateharland/Documents/Codex/2026-10-29/task-3/revision-02/`.
+Do not read/replace the approved v1 assets while integrating this revision. All revised files are under the local `revision-02/` authoring handoff.
 
 ## Files to consume together
 
