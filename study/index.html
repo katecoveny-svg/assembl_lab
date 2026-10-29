@@ -189,7 +189,7 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
     <div>
       <div class="eyebrow">Study machines · Aotearoa</div>
       <h1 id="h-hero">See it. Try it.<br><span class="swash">Understand it.</span></h1>
-      <p><span lang="mi">Kia ora.</span> Explore 35 hands-on machines. Choose your year, change a setting and test an idea.</p>
+      <p><span lang="mi">Kia ora.</span> Explore 35 familiar machines plus Heart Pump Lab. Choose your year, change a setting and test an idea.</p>
 
     </div>
     <figure><a href="#den" id="heroAllen" aria-label="Visit Allen's den"></a><figcaption class="script" aria-hidden="true">piece by piece.<span></span></figcaption></figure>
@@ -297,14 +297,14 @@ const LOG=K.readLog(), ST=A.state(LOG);
   $("streak").innerHTML=L.length?`<span class="num">${n}</span><span class="txt">day study streak${days.has(day(Date.now()))?"":" · study today to keep it going"}<span>${passed} challenges passed · ${tried} machine${tried===1?"":"s"} tried · saved on this device</span>${next}</span>${miles}`
    :`<span class="txt">Start a study streak<span>Open a machine and pass a challenge each day. Your streak is saved on this device, and it unlocks new places for Allen.</span></span>${miles}`})();
 // machine cards
-const THREE_PREVIEWS=new Set(["shaky", "vend", "pinball", "ai", "atoms", "bike", "civics", "claw", "climate", "data", "ecology", "energy", "fish", "genes", "inanga", "kokopu", "lines", "maps", "market", "materials", "particles", "phone", "plan", "queue", "reactions", "shapes", "sky", "slushie", "space", "vinyl"]);
+const THREE_PREVIEWS=new Set(["heart", "shaky", "vend", "pinball", "ai", "atoms", "bike", "civics", "claw", "climate", "data", "ecology", "energy", "fish", "genes", "inanga", "kokopu", "lines", "maps", "market", "materials", "particles", "phone", "plan", "queue", "reactions", "shapes", "sky", "slushie", "space", "vinyl"]);
 const GROUPS=[["science","Science"],["biochem","Chemistry and biology"],["maths","Maths and statistics"],["english","English"],["social","Social studies"],["digital","Digital technologies"],["tech","Technology and design"]];
 const gearFor=id=>A.items.filter(it=>it.m&&it.m.includes(id));
 function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(it.id));
   const ex=m.tags.filter(t=>t.startsWith("NCEA")).map(t=>t.replace(/^NCEA /,"").replace(/^(L\d) .*?(\d{5})$/,"$1 · $2")),yrs=m.tags.filter(t=>/^Year/.test(t)).sort((a,b)=>parseInt(a.replace("Year ",""))-parseInt(b.replace("Year ","")));
   const yr=yrs.length>1?`Years ${yrs[0].replace("Year ","")}–${yrs[yrs.length-1].replace("Year ","")}`:(yrs[0]||"");
   return `<a class="app" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
-  <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span>${ex.length?`<span class="app-ex">NCEA ${esc(ex.join(" + ").replace(/ \+ L1 · /g," + "))}</span>`:""}</span>
+  <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span>${ex.length?`<span class="app-ex">NCEA ${esc(ex.join(" + ").replace(/ \+ L1 · /g," + "))}</span>`:""}</span>
   <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
   <span class="app-foot"><span class="yr">${esc(yr)}</span>${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
 const byGroup={};Object.entries(D.machines).forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});

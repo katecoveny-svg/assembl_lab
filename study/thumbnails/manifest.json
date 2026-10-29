@@ -252,6 +252,14 @@
       "source": "m/plan.html",
       "capture": "/.playmain > .canvas or experience main panel",
       "image": "plan.jpg"
+    },
+    {
+      "id": "heart",
+      "three": true,
+      "source": "m/heart.html",
+      "capture": "Approved Blender hero framed to 800 × 500 without cropping the apparatus",
+      "image": "heart.jpg",
+      "assetSource": "m/heart/assets/heart_hero.png"
     }
   ]
 }
