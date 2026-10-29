@@ -675,14 +675,64 @@ const CFG={postprocessing:false,kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3
 };
 // "View in your space": the machine alone (no bench, labels or screens), at real size: 1 scene unit = 4 cm
 CFG.ar={build:S=>MG?.g,unitsPerMetre:25,scale:"real",label:"Put it on your bench"};
+// View changes reload the renderer, but carry the existing solver state once in this tab.
+// Keep this block outside the scientific model and topic initialisers.
+function slushieViewTransfer(env){
+  const param="slushie-view",prefix="assembl.slushie.view.";
+  const numbers="w reading ansE ansW anim".split(" "),flags="auger comp vents playing".split(" ");
+  const runNumbers="id w t H H0 T mi sus shell size Ein Eq Eback dmi ls".split(" ");
+  const runFlags="jam on reached started capped".split(" ");
+  const finite=x=>typeof x==="number"&&Number.isFinite(x);
+  const validRun=r=>r&&runNumbers.every(k=>finite(r[k]))&&runFlags.every(k=>typeof r[k]==="boolean")&&
+    [r.tReach,r.tIce].every(x=>x===null||finite(x))&&Array.isArray(r.pts)&&r.pts.length<=600&&r.pts.every(p=>Array.isArray(p)&&p.length===3&&p.every(finite));
+  function copyState(state){
+    if(!state||!numbers.every(k=>finite(state[k]))||!flags.every(k=>typeof state[k]==="boolean")||
+      typeof state.part!=="string"||!validRun(state.run)||(state.ghost!==null&&!validRun(state.ghost)))throw Error("Invalid experiment");
+    const out={};for(const k of [...numbers,...flags,"part","run","ghost"])out[k]=state[k];
+    for(const k of ["augRot","flowPh"])if(finite(state[k]))out[k]=state[k];
+    return out;
+  }
+  return {
+    take(topics){
+      const url=new URL(env.location.href),token=url.searchParams.get(param);if(!token)return null;
+      url.searchParams.delete(param);env.history.replaceState(null,"",url.href);
+      try{
+        const key=prefix+token,raw=env.storage().getItem(key);env.storage().removeItem(key);
+        const saved=JSON.parse(raw);
+        if(!saved||saved.version!==1||saved.path!==url.pathname||saved.topic!==url.hash.slice(1)||!topics.includes(saved.topic)||
+          !Number.isSafeInteger(saved.runId)||saved.runId<1)throw Error("Missing experiment");
+        return {state:copyState(saved.state),runId:Math.max(saved.runId,saved.state.run.id,saved.state.ghost?.id||0)};
+      }catch(e){return {error:true}}
+    },
+    prepare(state,runId,topic){
+      const url=new URL(env.location.href);url.searchParams.has("lite")?url.searchParams.delete("lite"):url.searchParams.set("lite","");
+      url.hash=topic;
+      const token=env.nonce(),key=prefix+token;
+      env.storage().setItem(key,JSON.stringify({version:1,path:url.pathname,topic,runId,state:copyState(state)}));
+      url.searchParams.set(param,token);return url.href;
+    }
+  };
+}
+const viewTransfer=slushieViewTransfer({location,history:window.history,storage:()=>window.sessionStorage,nonce:()=>window.crypto.randomUUID()});
+const savedView=viewTransfer.take(CFG.steps.map(st=>st.k));
 const API=StudyKit.mount(CFG);
+// Mount applies the topic defaults synchronously. Restore before its first animation frame.
+if(savedView&&!savedView.error){Object.assign(s,savedView.state);runId=savedView.runId;lwTick(0);API.redraw()}
+
 if(document.querySelector?.(".playmain")){
   const extra=document.createElement("section");extra.id="slushie-extra-chart";extra.className="slushie-extra-chart";extra.hidden=true;document.querySelector(".lower").before(extra);
   const canvas=document.querySelector(".playmain .canvas"),poster=document.createElement("img");poster.className="slushie-poster";poster.src="/assets/models/slushie/slushie-hero.webp";poster.alt="Static Blender render of the slushie machine";canvas.append(poster);
   const note=document.createElement("p");note.className="slushie-view-note";note.innerHTML=`<span id="slushie-load-status" role="status">Simplified live diagram · controls and charts remain available</span><a href="?lite${location.hash}" id="slushie-graphics-link">Use simplified view</a>`;canvas.after(note);
   const parts=document.createElement("div");parts.className="slushie-parts";parts.innerHTML='<label for="slushie-parts">Inside the machine</label><select id="slushie-parts" disabled><option value="">Choose a part</option></select><p id="slushie-part-description" aria-live="polite">Choose a part, or tap one in the model.</p>';note.after(parts);
   const link=note.querySelector("a"),lite=/[?&]lite\b/.test(location.search);if(lite){link.textContent="Try live 3D";parts.hidden=true;link.href=location.pathname+location.hash}
-  link.onclick=()=>{link.href=(lite?location.pathname:"?lite")+location.hash};
+  const transferStatus=document.createElement("span");transferStatus.setAttribute("role","status");note.append(transferStatus);
+  if(savedView?.error)transferStatus.textContent="The saved experiment was unavailable. This is a fresh drink.";
+  else if(savedView)transferStatus.textContent="Experiment preserved";
+  link.onclick=e=>{
+    e.preventDefault();
+    try{const target=viewTransfer.prepare(s,runId,API.step.k);location.assign(target)}
+    catch(error){transferStatus.textContent="Couldn’t preserve this experiment. Your view and drink are unchanged."}
+  };
   window.addEventListener("hashchange",()=>{link.href=(lite?location.pathname:"?lite")+location.hash});
 }
 if(/[?&]debug\b/.test(location.search))try{window.__slushie=Object.assign(window.__slushie||{},{s,LW,API,integrate,powers,phiSet,tfOf,MIN_SLUSH,MAX_SLUSH,MIN_NOJAM,outcome})}catch(e){}
