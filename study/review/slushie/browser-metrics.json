@@ -1,0 +1,102 @@
+{
+  "mobile": {
+    "overflow": false,
+    "review": {
+      "augerAngle": 0.024424721722295848,
+      "augerOn": true,
+      "bounds": [
+        [
+          -3.837711129174577,
+          0.03777419915422797,
+          -4.535968281150247
+        ],
+        [
+          2.9100006868247874,
+          8.18975418806076,
+          5.475000012665987
+        ]
+      ],
+      "calls": 84,
+      "camera": [
+        19.86880248483894,
+        12.213094347975904,
+        26.360589938371277
+      ],
+      "compressorOn": true,
+      "curveKey": "sugar|3|1|true|1|false",
+      "cutaway": false,
+      "drinkOpacity": 0.24,
+      "fanAngle": -0.09455243509492492,
+      "iceMassG": 0,
+      "jammed": false,
+      "mechanism": false,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 18.5,
+      "pixelRatio": 2,
+      "playing": false,
+      "runId": 3,
+      "shellMassG": 0,
+      "status": "ready",
+      "target": [
+        0,
+        4.1,
+        0.2
+      ],
+      "temperatureC": 19.862008760112673,
+      "topic": "sugar",
+      "triangles": 108158,
+      "unitsPerMetre": 25,
+      "ventsClear": true
+    },
+    "width": 320
+  },
+  "blockedVent": {
+    "fanAdvances": true,
+    "scene": {
+      "status": "ready",
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.5,
+      "topic": "energy",
+      "unitsPerMetre": 25,
+      "runId": 3,
+      "temperatureC": -2.7681820847662664,
+      "iceMassG": 353.6016675357249,
+      "shellMassG": 0,
+      "augerOn": true,
+      "compressorOn": true,
+      "ventsClear": false,
+      "jammed": false,
+      "playing": true,
+      "augerAngle": 247.15656053115495,
+      "fanAngle": -797.5052531420511,
+      "drinkOpacity": 0.45216100052143493,
+      "cutaway": true,
+      "mechanism": false,
+      "calls": 65,
+      "triangles": 83401,
+      "pixelRatio": 2,
+      "camera": [
+        12.204157172189399,
+        7.7428815479381115,
+        -15.98989179547116
+      ],
+      "target": [
+        0,
+        3.7999999999999994,
+        -0.4999999999999999
+      ],
+      "bounds": [
+        [
+          -3.8377111291745765,
+          0.03777419915422797,
+          -4.535968281150247
+        ],
+        [
+          2.9100006868247874,
+          8.18975418806076,
+          5.475000012665987
+        ]
+      ]
+    }
+  }
+}

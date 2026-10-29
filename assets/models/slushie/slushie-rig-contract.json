@@ -1,0 +1,1925 @@
+{
+  "contract": "assembl.slushie.v1",
+  "asset": "assembl-slushie-atelier-web.glb",
+  "units": "metres",
+  "route": "/study/m/slushie.html",
+  "coordinates": {
+    "authoring": "Blender +X right, +Y rear, +Z up",
+    "gltf": "glTF +X right, +Y up, +Z front",
+    "map": "(x,y,z) -> (x,z,-y)",
+    "legacy_scene_units_per_metre": 25,
+    "legacy_note": "Original lesson uses CM=.25 (25 scene units/metre). Scale the whole asset uniformly if keeping that scene; do not scale rig parts individually."
+  },
+  "state_owner": "Existing slushie.js owns scientific state, timer, sugar changes, thermostat and jams. This asset contains no energy model or animation timer.",
+  "mechanical_controls": {
+    "auger": {
+      "node": "AUGER_PIVOT",
+      "axis_gltf": "local +Z",
+      "angle": "existing augRot, radians",
+      "gear": "AUGER_GEAR, same angle",
+      "pinion": "MOTOR_PINION, -2.3 * augRot",
+      "note": "Caller advances angle only when existing augerOn(r) permits, including jams."
+    },
+    "fan": {
+      "node": "FAN_PIVOT",
+      "axis_gltf": "local +Z",
+      "angle": "existing accumulated fan angle, radians",
+      "note": "Actual compressor operation drives the lesson fan; blocked vents do not independently stop it."
+    },
+    "tap": {
+      "node": "TAP_HANDLE",
+      "axis_gltf": "local +X",
+      "range_radians": [
+        0,
+        0.4
+      ],
+      "note": "Optional visual hinge only. Dispensing is not modelled by the lesson; default static."
+    },
+    "ice_shell": {
+      "node": "ICE_SHELL",
+      "pivot_gltf_m": [
+        0,
+        0.236,
+        0
+      ],
+      "scale_axes": "radial X,Y; axial Z",
+      "rest_radius_m": 0.0266,
+      "max_radial_scale": 1.98,
+      "max_axial_scale": 1.04,
+      "note": "Caller supplies shell scale from existing state. Upper visual clamp prevents tank penetration; does not alter ice mass or jam outcome. Shell can intersect stalled scraper during a jam as a teaching overlay."
+    },
+    "liquid": {
+      "node": "DRINK_VOLUME",
+      "note": "Caller supplies visual tint and opacity using r.mi/1000 (drink ice fraction), not fraction of water frozen. Fill level is fixed; sugar reset remains lesson-owned."
+    },
+    "vent_blocked": {
+      "node": "VENT_OBSTRUCTION",
+      "property": "visible",
+      "note": "Boolean visual from existing s.vents. No fan or physics side effect."
+    }
+  },
+  "defaults": {
+    "hidden": [
+      "ICE_SHELL",
+      "VENT_OBSTRUCTION"
+    ],
+    "optional_presentation_prop": [
+      "SERVING_CUP"
+    ],
+    "removable_panels": [
+      "SERVICE_PANEL",
+      "LEFT_PANEL",
+      "FRONT_PANEL",
+      "REAR_PANEL",
+      "DRIVE_HOUSING",
+      "DRIVE_GUARD"
+    ],
+    "cutaway_note": "Hide panels; never reposition refrigeration machinery to reveal it."
+  },
+  "particle_region": {
+    "node": "DRINK_VOLUME",
+    "shape": "horizontal capsule clipped at fill plane, excluding fixed drum",
+    "gltf_centre_m": [
+      0,
+      0.236,
+      0.015
+    ],
+    "axis": "Z",
+    "cylinder_length_m": 0.16,
+    "radius_m": 0.0525,
+    "fill_plane_y_m": 0.264,
+    "aabb_min_m": [
+      -0.0525,
+      0.1835,
+      -0.1175
+    ],
+    "aabb_max_m": [
+      0.0525,
+      0.264,
+      0.1475
+    ],
+    "exclude_drum": {
+      "centre_m": [
+        0,
+        0.236,
+        0.015
+      ],
+      "radius_m": 0.028,
+      "cylinder_length_m": 0.13
+    },
+    "note": "Bounds alone are insufficient: clip particles to capsule, fill plane and drum exclusion. Existing instanced particles remain illustrative and model-owned."
+  },
+  "hotspots": {
+    "HOTSPOT_AUGER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.27900001406669617,
+        0.017999999225139618
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.27900001406669617,
+        0.017999999225139618
+      ],
+      "extras": {
+        "lesson_part_id": "aug"
+      }
+    },
+    "HOTSPOT_BOWL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.052000001072883606,
+        0.25,
+        0.014999999664723873
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.052000001072883606,
+        0.25,
+        0.014999999664723873
+      ],
+      "extras": {}
+    },
+    "HOTSPOT_COMPRESSOR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        -0.04500000178813934,
+        0.10999999940395355,
+        -0.03799999877810478
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.04500000178813934,
+        0.10999999940395355,
+        -0.03799999877810478
+      ],
+      "extras": {
+        "lesson_part_id": "comp"
+      }
+    },
+    "HOTSPOT_CONDENSER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.07999999821186066,
+        0.125,
+        -0.1080000028014183
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07999999821186066,
+        0.125,
+        -0.1080000028014183
+      ],
+      "extras": {
+        "lesson_part_id": "cond"
+      }
+    },
+    "HOTSPOT_DRUM": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23600000143051147,
+        0.07999999821186066
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23600000143051147,
+        0.07999999821186066
+      ],
+      "extras": {
+        "lesson_part_id": "drum"
+      }
+    },
+    "HOTSPOT_FAN": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.0430000014603138,
+        0.09700000286102295,
+        -0.07999999821186066
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0430000014603138,
+        0.09700000286102295,
+        -0.07999999821186066
+      ],
+      "extras": {
+        "lesson_part_id": "fan"
+      }
+    },
+    "HOTSPOT_MOTOR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.1889999955892563,
+        -0.14499999582767487
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.1889999955892563,
+        -0.14499999582767487
+      ],
+      "extras": {
+        "lesson_part_id": "motor"
+      }
+    },
+    "HOTSPOT_PROBE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.023000000044703484,
+        0.2939999997615814,
+        0.11999999731779099
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.023000000044703484,
+        0.2939999997615814,
+        0.11999999731779099
+      ],
+      "extras": {
+        "lesson_part_id": "probe"
+      }
+    },
+    "HOTSPOT_TAP": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.18000000715255737,
+        0.15000000596046448
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.18000000715255737,
+        0.15000000596046448
+      ],
+      "extras": {
+        "lesson_part_id": "tap"
+      }
+    },
+    "HOTSPOT_VALVE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.04500000178813934,
+        0.09000000357627869,
+        0.0560000017285347
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.04500000178813934,
+        0.09000000357627869,
+        0.0560000017285347
+      ],
+      "extras": {
+        "lesson_part_id": "valve"
+      }
+    }
+  },
+  "camera_targets": {
+    "CAMERA_TARGET_HERO": [
+      0.0,
+      0.1550000011920929,
+      0.019999999552965164
+    ],
+    "CAMERA_TARGET_MECHANISM": [
+      0.0,
+      0.23999999463558197,
+      0.004999999888241291
+    ],
+    "CAMERA_TARGET_SERVICE": [
+      0.0,
+      0.14499999582767487,
+      -0.0
+    ]
+  },
+  "pipe_paths": {
+    "PIPE_CONDENSER": {
+      "radius_m": 0.0017,
+      "path_note": "Bezier AUTO interpolation between waypoints; illustrative component routing",
+      "centreline_gltf_m": [
+        [
+          -0.086,
+          0.132,
+          -0.097
+        ],
+        [
+          0.086,
+          0.132,
+          -0.097
+        ],
+        [
+          0.086,
+          0.118,
+          -0.097
+        ],
+        [
+          -0.086,
+          0.118,
+          -0.097
+        ],
+        [
+          -0.086,
+          0.104,
+          -0.097
+        ],
+        [
+          0.086,
+          0.104,
+          -0.097
+        ],
+        [
+          0.086,
+          0.09,
+          -0.097
+        ],
+        [
+          -0.086,
+          0.09,
+          -0.097
+        ],
+        [
+          -0.086,
+          0.076,
+          -0.097
+        ],
+        [
+          0.086,
+          0.076,
+          -0.097
+        ],
+        [
+          0.086,
+          0.062,
+          -0.097
+        ],
+        [
+          -0.086,
+          0.062,
+          -0.097
+        ]
+      ]
+    },
+    "PIPE_HOT": {
+      "radius_m": 0.002,
+      "path_note": "Bezier AUTO interpolation between waypoints; illustrative component routing",
+      "centreline_gltf_m": [
+        [
+          -0.042,
+          0.122,
+          -0.038
+        ],
+        [
+          -0.042,
+          0.135,
+          -0.052
+        ],
+        [
+          -0.075,
+          0.139,
+          -0.065
+        ],
+        [
+          -0.086,
+          0.132,
+          -0.097
+        ]
+      ]
+    },
+    "PIPE_LIQUID": {
+      "radius_m": 0.0017,
+      "path_note": "Bezier AUTO interpolation between waypoints; illustrative component routing",
+      "centreline_gltf_m": [
+        [
+          0.086,
+          0.062,
+          -0.097
+        ],
+        [
+          0.09,
+          0.052,
+          -0.071
+        ],
+        [
+          0.09,
+          0.052,
+          0.012
+        ],
+        [
+          0.066,
+          0.052,
+          0.048
+        ],
+        [
+          0.026,
+          0.052,
+          0.059
+        ]
+      ]
+    },
+    "PIPE_DRYER": {
+      "radius_m": 0.0015,
+      "path_note": "Bezier AUTO interpolation between waypoints; illustrative component routing",
+      "centreline_gltf_m": [
+        [
+          0,
+          0.052,
+          0.059
+        ],
+        [
+          -0.006,
+          0.052,
+          0.066
+        ],
+        [
+          0.044,
+          0.055,
+          0.073
+        ],
+        [
+          0.045,
+          0.074,
+          0.056
+        ]
+      ]
+    },
+    "PIPE_COLD": {
+      "radius_m": 0.0025,
+      "path_note": "Bezier AUTO interpolation between waypoints; illustrative component routing",
+      "centreline_gltf_m": [
+        [
+          0.045,
+          0.095,
+          0.056
+        ],
+        [
+          0.062,
+          0.112,
+          0.023
+        ],
+        [
+          0.07,
+          0.137,
+          -0.048
+        ],
+        [
+          0.052,
+          0.166,
+          -0.139
+        ],
+        [
+          0.018,
+          0.215,
+          -0.142
+        ],
+        [
+          0.016,
+          0.236,
+          -0.129
+        ]
+      ]
+    },
+    "PIPE_SUCTION": {
+      "radius_m": 0.004,
+      "path_note": "Bezier AUTO interpolation between waypoints; illustrative component routing",
+      "centreline_gltf_m": [
+        [
+          -0.015,
+          0.236,
+          -0.128
+        ],
+        [
+          -0.022,
+          0.21,
+          -0.146
+        ],
+        [
+          -0.032,
+          0.152,
+          -0.141
+        ],
+        [
+          -0.062,
+          0.137,
+          -0.1
+        ],
+        [
+          -0.064,
+          0.115,
+          -0.06
+        ]
+      ]
+    }
+  },
+  "nodes": {
+    "AUGER_GEAR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23600000143051147,
+        -0.15800000727176666
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23600000143051147,
+        -0.15800000727176666
+      ],
+      "extras": {
+        "lesson_part_id": "aug"
+      }
+    },
+    "AUGER_MOTOR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.1889999955892563,
+        -0.13899999856948853
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.1889999955892563,
+        -0.13899999856948853
+      ],
+      "extras": {
+        "lesson_part_id": "motor"
+      }
+    },
+    "AUGER_PIVOT": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23600000143051147,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23600000143051147,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "aug",
+        "axis": "local Y in Blender / local Z in glTF",
+        "turns": 3.45
+      }
+    },
+    "BOWL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "CABINET": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "CAMERA_TARGET_HERO": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.1550000011920929,
+        0.019999999552965164
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.1550000011920929,
+        0.019999999552965164
+      ],
+      "extras": {}
+    },
+    "CAMERA_TARGET_MECHANISM": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23999999463558197,
+        0.004999999888241291
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23999999463558197,
+        0.004999999888241291
+      ],
+      "extras": {}
+    },
+    "CAMERA_TARGET_SERVICE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.14499999582767487,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.14499999582767487,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "COMPRESSOR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        -0.04500000178813934,
+        0.07999999821186066,
+        -0.03799999877810478
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.04500000178813934,
+        0.07999999821186066,
+        -0.03799999877810478
+      ],
+      "extras": {
+        "lesson_part_id": "comp"
+      }
+    },
+    "CONDENSER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "cond"
+      }
+    },
+    "DRINK_VOLUME": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "DRIP_TRAY": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "tap"
+      }
+    },
+    "DRIVE_GUARD": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "DRIVE_HOUSING": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "EVAPORATOR_DRUM": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23600000143051147,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23600000143051147,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "drum"
+      }
+    },
+    "EXPANSION_VALVE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.04500000178813934,
+        0.08299999684095383,
+        0.0560000017285347
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.04500000178813934,
+        0.08299999684095383,
+        0.0560000017285347
+      ],
+      "extras": {
+        "lesson_part_id": "valve"
+      }
+    },
+    "FAN_PIVOT": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.0430000014603138,
+        0.09700000286102295,
+        -0.0820000022649765
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0430000014603138,
+        0.09700000286102295,
+        -0.0820000022649765
+      ],
+      "extras": {
+        "lesson_part_id": "fan"
+      }
+    },
+    "AUGER_SWITCH": {
+      "parent": "FRONT_PANEL",
+      "translation": [
+        0.04699999839067459,
+        0.11999999731779099,
+        0.14000000059604645
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.04699999839067459,
+        0.11999999731779099,
+        0.14000000059604645
+      ],
+      "extras": {}
+    },
+    "COOLING_SWITCH": {
+      "parent": "FRONT_PANEL",
+      "translation": [
+        0.020999999716877937,
+        0.11999999731779099,
+        0.14000000059604645
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.020999999716877937,
+        0.11999999731779099,
+        0.14000000059604645
+      ],
+      "extras": {}
+    },
+    "STATUS_LED": {
+      "parent": "FRONT_PANEL",
+      "translation": [
+        0.07400000095367432,
+        0.11999999731779099,
+        0.1379999965429306
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07400000095367432,
+        0.11999999731779099,
+        0.1379999965429306
+      ],
+      "extras": {}
+    },
+    "FRONT_PANEL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "HOTSPOT_AUGER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.27900001406669617,
+        0.017999999225139618
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.27900001406669617,
+        0.017999999225139618
+      ],
+      "extras": {
+        "lesson_part_id": "aug"
+      }
+    },
+    "HOTSPOT_BOWL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.052000001072883606,
+        0.25,
+        0.014999999664723873
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.052000001072883606,
+        0.25,
+        0.014999999664723873
+      ],
+      "extras": {}
+    },
+    "HOTSPOT_COMPRESSOR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        -0.04500000178813934,
+        0.10999999940395355,
+        -0.03799999877810478
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.04500000178813934,
+        0.10999999940395355,
+        -0.03799999877810478
+      ],
+      "extras": {
+        "lesson_part_id": "comp"
+      }
+    },
+    "HOTSPOT_CONDENSER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.07999999821186066,
+        0.125,
+        -0.1080000028014183
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.07999999821186066,
+        0.125,
+        -0.1080000028014183
+      ],
+      "extras": {
+        "lesson_part_id": "cond"
+      }
+    },
+    "HOTSPOT_DRUM": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23600000143051147,
+        0.07999999821186066
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23600000143051147,
+        0.07999999821186066
+      ],
+      "extras": {
+        "lesson_part_id": "drum"
+      }
+    },
+    "HOTSPOT_FAN": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.0430000014603138,
+        0.09700000286102295,
+        -0.07999999821186066
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0430000014603138,
+        0.09700000286102295,
+        -0.07999999821186066
+      ],
+      "extras": {
+        "lesson_part_id": "fan"
+      }
+    },
+    "HOTSPOT_MOTOR": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.1889999955892563,
+        -0.14499999582767487
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.1889999955892563,
+        -0.14499999582767487
+      ],
+      "extras": {
+        "lesson_part_id": "motor"
+      }
+    },
+    "HOTSPOT_PROBE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.023000000044703484,
+        0.2939999997615814,
+        0.11999999731779099
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.023000000044703484,
+        0.2939999997615814,
+        0.11999999731779099
+      ],
+      "extras": {
+        "lesson_part_id": "probe"
+      }
+    },
+    "HOTSPOT_TAP": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.18000000715255737,
+        0.15000000596046448
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.18000000715255737,
+        0.15000000596046448
+      ],
+      "extras": {
+        "lesson_part_id": "tap"
+      }
+    },
+    "HOTSPOT_VALVE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0.04500000178813934,
+        0.09000000357627869,
+        0.0560000017285347
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.04500000178813934,
+        0.09000000357627869,
+        0.0560000017285347
+      ],
+      "extras": {
+        "lesson_part_id": "valve"
+      }
+    },
+    "ICE_SHELL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.23600000143051147,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.23600000143051147,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "drum",
+        "default_visible": false
+      }
+    },
+    "LEFT_PANEL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "MOTOR_PINION": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.1889999955892563,
+        -0.15800000727176666
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.1889999955892563,
+        -0.15800000727176666
+      ],
+      "extras": {
+        "lesson_part_id": "aug"
+      }
+    },
+    "PIPE_COLD": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "valve"
+      }
+    },
+    "PIPE_CONDENSER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "cond"
+      }
+    },
+    "PIPE_DRYER": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "valve"
+      }
+    },
+    "PIPE_HOT": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "comp"
+      }
+    },
+    "PIPE_LIQUID": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "cond"
+      }
+    },
+    "PIPE_SUCTION": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "comp"
+      }
+    },
+    "REAR_PANEL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "REAR_VENTS": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "cond"
+      }
+    },
+    "SERVICE_PANEL": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {}
+    },
+    "SERVING_CUP": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.05000000074505806,
+        0.16599999368190765
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.05000000074505806,
+        0.16599999368190765
+      ],
+      "extras": {
+        "presentation_prop": true
+      }
+    },
+    "TAP_BODY": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "tap"
+      }
+    },
+    "TAP_HANDLE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.1940000057220459,
+        0.1509999930858612
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.1940000057220459,
+        0.1509999930858612
+      ],
+      "extras": {
+        "lesson_part_id": "tap"
+      }
+    },
+    "TEMPERATURE_PROBE": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "lesson_part_id": "probe"
+      }
+    },
+    "VENT_OBSTRUCTION": {
+      "parent": "SLUSHIE_MACHINE",
+      "translation": [
+        0,
+        0.09600000083446503,
+        -0.14499999582767487
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.09600000083446503,
+        -0.14499999582767487
+      ],
+      "extras": {
+        "default_visible": false
+      }
+    },
+    "SLUSHIE_MACHINE": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "extras": {
+        "asset_contract": "assembl.slushie.v1",
+        "units": "metres"
+      }
+    }
+  },
+  "source_adjustments": [
+    "Rear auger span shortened from 190 to 165 mm to fit tank inner wall through full rotation. Flight still has 3.45 turns.",
+    "Drum cylindrical span shortened to 130 mm and centred with tank; rear drive spokes clear its end by 9 mm.",
+    "Probe moved forward of scraper swept volume. These are geometric corrections, not changes to scientific constants."
+  ],
+  "limits": [
+    "Visual study model, not manufactured CAD.",
+    "Browser glass uses alpha blending; differs from Cycles refraction.",
+    "Use view-specific transparency/cutaway for teaching. No built-in random particles or heat-flow simulation.",
+    "Sugar percentage in existing lesson is percentage of total 1000 g drink mass."
+  ]
+}

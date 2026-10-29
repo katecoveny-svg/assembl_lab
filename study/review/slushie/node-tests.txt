@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: actual v2 hierarchy follows sampled win, drop and miss timelines inside travel envelope
+ok 1 - actual v2 hierarchy follows sampled win, drop and miss timelines inside travel envelope
+  ---
+  duration_ms: 25.077708
+  type: 'test'
+  ...
+# Subtest: reduced motion stays static and never changes the model-owned result
+ok 2 - reduced motion stays static and never changes the model-owned result
+  ---
+  duration_ms: 0.567708
+  type: 'test'
+  ...
+# Subtest: claw: same seeded run produces reproducible A/B evidence; phases do not own the simulation
+ok 3 - claw: same seeded run produces reproducible A/B evidence; phases do not own the simulation
+  ---
+  duration_ms: 16.519875
+  type: 'test'
+  ...
+# Subtest: claw: changed probability, wrong sample count and unrelated run cannot be passed off as B
+ok 4 - claw: changed probability, wrong sample count and unrelated run cannot be passed off as B
+  ---
+  duration_ms: 3.273208
+  type: 'test'
+  ...
+# Subtest: claw: original RNG and formula outputs retained, payout isolated from conditional tree
+ok 5 - claw: original RNG and formula outputs retained, payout isolated from conditional tree
+  ---
+  duration_ms: 1.970417
+  type: 'test'
+  ...
+# Subtest: claw: Reset cancels animation; repeat click cannot resample an active single trial
+ok 6 - claw: Reset cancels animation; repeat click cannot resample an active single trial
+  ---
+  duration_ms: 2.819208
+  type: 'test'
+  ...
+# Subtest: sealed syringe: same gas and temperature, half volume doubles pressure
+ok 7 - sealed syringe: same gas and temperature, half volume doubles pressure
+  ---
+  duration_ms: 5.471458
+  type: 'test'
+  ...
+# Subtest: tanks: shared equation at fixed time gives 40 and 70 L, within tank capacity
+ok 8 - tanks: shared equation at fixed time gives 40 and 70 L, within tank capacity
+  ---
+  duration_ms: 2.540042
+  type: 'test'
+  ...
+# Subtest: reactions: capture requires started 2s run, and B must retain captured A ghost
+ok 9 - reactions: capture requires started 2s run, and B must retain captured A ghost
+  ---
+  duration_ms: 8.957958
+  type: 'test'
+  ...
+# Subtest: reactions: changing run after A prevents unrelated B evidence
+ok 10 - reactions: changing run after A prevents unrelated B evidence
+  ---
+  duration_ms: 5.537458
+  type: 'test'
+  ...
+# Subtest: tank explanation follows A, B and later control changes
+ok 11 - tank explanation follows A, B and later control changes
+  ---
+  duration_ms: 0.807792
+  type: 'test'
+  ...
+# Subtest: a late asset completion uses the current topic and reset run, not captured loading state
+ok 12 - a late asset completion uses the current topic and reset run, not captured loading state
+  ---
+  duration_ms: 2.839708
+  type: 'test'
+  ...
+# Subtest: module/load failure never exposes an empty live scene and retains the diagram
+ok 13 - module/load failure never exposes an empty live scene and retains the diagram
+  ---
+  duration_ms: 0.919459
+  type: 'test'
+  ...
+# Subtest: first-frame error fails before claiming live 3D
+ok 14 - first-frame error fails before claiming live 3D
+  ---
+  duration_ms: 0.526666
+  type: 'test'
+  ...
+# Subtest: GLB matches every contracted node and metre-space pivot, with a single 25x scene conversion
+ok 15 - GLB matches every contracted node and metre-space pivot, with a single 25x scene conversion
+  ---
+  duration_ms: 4.451459
+  type: 'test'
+  ...
+# Subtest: full snapshot sets rotations without drift; blockage never overrides the supplied fan angle
+ok 16 - full snapshot sets rotations without drift; blockage never overrides the supplied fan angle
+  ---
+  duration_ms: 3.546459
+  type: 'test'
+  ...
+# Subtest: shell display clamp and cutaway change only geometry; machinery remains fixed
+ok 17 - shell display clamp and cutaway change only geometry; machinery remains fixed
+  ---
+  duration_ms: 1.748459
+  type: 'test'
+  ...
+# Subtest: crystal guard excludes rounded tank corners, fill-plane overshoot and the fixed drum
+ok 18 - crystal guard excludes rounded tank corners, fill-plane overshoot and the fixed drum
+  ---
+  duration_ms: 0.079584
+  type: 'test'
+  ...
+# Subtest: every original lesson part has an exported hotspot and pickable geometry
+ok 19 - every original lesson part has an exported hotspot and pickable geometry
+  ---
+  duration_ms: 0.1375
+  type: 'test'
+  ...
+# Subtest: scientific model, charts, controls, topics and challenge definitions are unchanged
+ok 20 - scientific model, charts, controls, topics and challenge definitions are unchanged
+  ---
+  duration_ms: 0.93775
+  type: 'test'
+  ...
+# Subtest: all sugar values preserve enthalpy, thermostat, ice partition and challenge results across the full run
+ok 21 - all sugar values preserve enthalpy, thermostat, ice partition and challenge results across the full run
+  ---
+  duration_ms: 771.900208
+  type: 'test'
+  ...
+# Subtest: auger stop/restart, blocked vents and cooling toggles retain exact original trajectories
+ok 22 - auger stop/restart, blocked vents and cooling toggles retain exact original trajectories
+  ---
+  duration_ms: 43.537
+  type: 'test'
+  ...
+# Subtest: all topic initialisation, repeated resets, student answers and 60x playback remain equivalent
+ok 23 - all topic initialisation, repeated resets, student answers and 60x playback remain equivalent
+  ---
+  duration_ms: 416.658125
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1294.750167

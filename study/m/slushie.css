@@ -1,0 +1,18 @@
+/* Scoped to the slushie page. All other lessons retain their layout. */
+#app .playmain>.canvas{height:560px;background:#f5f1eb}
+#app .playmain>.canvas>svg{height:100%;width:100%;min-height:0}
+.slushie-poster{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f5f1eb}
+.slushie-loading .slushie-poster{display:block}.slushie-loading>svg{visibility:hidden}
+.slushie-view-note{display:flex;flex-wrap:wrap;gap:5px 14px;justify-content:space-between;margin:0;font:500 11px/1.5 var(--as-font);color:#686477}
+.slushie-view-note a{color:#554476;text-underline-offset:3px}
+.slushie-parts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;background:#f1edf6;border-radius:12px;font-size:12px;color:#292e55}
+.slushie-parts label{font-weight:600}.slushie-parts select{min-height:40px;max-width:100%;padding:6px 12px;border:1px solid #bdb2ca;border-radius:8px;background:#fff;color:#292e55;font:inherit}
+.slushie-parts p{flex-basis:100%;margin:0;line-height:1.5}.slushie-parts[hidden]{display:none}
+.slushie-parts select:focus-visible{outline:3px solid var(--as-focus);outline-offset:3px}
+#app .s3-hint{text-transform:none;letter-spacing:0;font-size:11px;max-width:calc(100% - 24px);line-height:1.4}
+#app .s3-host canvas{touch-action:pan-y}
+@media(max-width:600px){#app .playmain>.canvas{height:440px}.slushie-parts{padding:10px}.slushie-parts label{flex-basis:100%}#app .s3-hint{left:8px;bottom:8px;margin:0}}
+#app .s3-ar{top:auto;bottom:8px}
+#app .s3-hint{bottom:43px}
+
+.slushie-extra-chart{max-width:560px;margin:0 0 18px;padding:14px;border:1px solid #e6e0ec;border-radius:16px;background:#faf8fc}.slushie-extra-chart p{margin:0 0 8px;font-size:12px;font-weight:600;color:#393556}.slushie-extra-chart svg{display:block;width:100%;height:auto}.slushie-extra-chart[hidden]{display:none}
