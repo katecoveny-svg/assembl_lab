@@ -9,6 +9,15 @@ function boot(){
  let storage;try{storage=sessionStorage}catch{}let state=readSession(storage),disposed=false,frame=0,last=0,status='loading',scene=null;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),events=new AbortController();
  const listen=(el,event,fn)=>el.addEventListener(event,fn,{signal:events.signal});
+ // Reparent existing controls so reading/tab order matches the mobile layout.
+ // Their listeners and authoritative state are unchanged; restore before disposal.
+ const compact=matchMedia('(max-width: 760px)'),phaseBox=document.querySelector('.phasebox'),dock=document.querySelector('.dock');
+ const moving=[phaseBox,dock,...document.querySelectorAll('.capture-actions')].map(node=>{const slot=document.createComment('responsive home');node.before(slot);return {node,slot}});
+ function arrange(narrow=compact.matches){
+  if(narrow){$('stage').after(phaseBox);phaseBox.after(dock);for(const {node} of moving.slice(2))$('near-capture-actions').append(node)}
+  else for(const {node,slot} of moving)slot.after(node);
+ }
+ arrange();listen(compact,'change',()=>arrange());
  const hashStep=location.hash.slice(1);if(STEPS.includes(hashStep))state=reduce(state,{type:'set',key:'step',value:hashStep});
  const graphics=graphicsLifecycle(async signal=>{const {createScene}=await import('./scene.js');if(signal.aborted)throw new DOMException('Cancelled','AbortError');return createScene($('three'),signal,()=>graphics.fail(Error('Graphics context lost')))},(next,instance)=>{if(disposed)return;status=next;scene=instance;render()});
  function save(){const ok=saveSession(storage,state);if(!ok)$('privacy').textContent='Storage is unavailable. Your work stays in memory while this page remains open and is never sent anywhere. Reloading or leaving may lose it.'}
@@ -19,6 +28,7 @@ function boot(){
  function tick(t){frame=0;if(!permitted())return;if(last)state=reduce(state,{type:'advance',seconds:(t-last)/1000});last=t;render(true);frame=requestAnimationFrame(tick)}
  function render(animate=false){
   const p=phasePose(state.phase);$('phase').value=Math.round(state.phase*1000);$('phase-value').textContent=`${Math.round(state.phase*100)}%`;$('phase-name').textContent=p.phaseName;$('phase').setAttribute('aria-valuetext',`${Math.round(state.phase*100)} percent: ${p.phaseName}`);
+  $('phase-preset').value=['0.25','0.57','0.73','0.94'].find(value=>Math.abs(+value-state.phase)<0.0005)||'';
   $('valve-status').textContent=`AV valves ${p.av>.05?'opening / open':'closed'} · semilunar valves ${p.semilunar>.05?'opening / open':'closed'}`;
   graphics.update(state);if(status!=='ready')$('diagram').innerHTML=diagram(state);
   if(animate)return;
@@ -35,18 +45,20 @@ function boot(){
   $('motion-note').textContent=reduced.matches?'Reduced motion is on: use the phase slider or presets. Continuous play is disabled.':'Starts paused. Playback follows heart rate; phase proportions are fixed teaching approximations.';
   $('structure-note').textContent=structures[state.structure]||'Choose a name to trace its role. Text and arrows accompany the oxygenation colours.';
   const index=STEPS.indexOf(state.step);for(const b of document.querySelectorAll('[data-step]')){if(b.dataset.step===state.step)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')}
-  $('step-count').textContent=`${index+1} / 4 — ${state.step}`;[$('activity-title').textContent,$('activity-copy').textContent]=activities[state.step];$('topic-note').textContent=topics[state.topic];
+  $('step-count').textContent=`${index+1} / 4 — ${state.step}`;$('near-step').textContent=`${index+1} / 4 · ${state.step} — ${activities[state.step][0]}`;$('near-task').textContent=activities[state.step][1];[$('activity-title').textContent,$('activity-copy').textContent]=activities[state.step];$('topic-note').textContent=topics[state.topic];
   $('prediction-panel').hidden=!['predict','investigate','explain'].includes(state.step);$('reflection-panel').hidden=state.step!=='explain';
   for(const k of ['prediction','reflection'])if($(k).value!==state[k])$(k).value=state[k];
   $('previous').disabled=index===0;$('next').disabled=index===3;
   for(const slot of ['A','B']){const c=state[slot];$('capture-'+slot).textContent=c?`${c.heartRate} bpm × ${c.strokeVolume} mL/beat\n${c.output.toFixed(2)} L/min\n${phasePose(c.phase).phaseName} · ${c.topic}\nPrediction: ${c.prediction||'No prediction recorded.'}`:'Not captured yet.';document.querySelector(`[data-capture="${slot}"]`).disabled=!!c;document.querySelector(`[data-clear="${slot}"]`).hidden=!c}
   if(state.A&&state.B){const d=state.B.output-state.A.output;let controls=state.A.heartRate!==state.B.heartRate&&state.A.strokeVolume!==state.B.strokeVolume?'Both inputs changed. This comparison cannot isolate one input’s effect.':state.A.heartRate===state.B.heartRate&&state.A.strokeVolume===state.B.strokeVolume?'Both inputs stayed the same. Change one to investigate an effect.':'One input changed; the other stayed fixed.';$('comparison').textContent=`B − A = ${d>=0?'+':''}${d.toFixed(2)} L/min. ${controls}`}else $('comparison').textContent='Capture both settings to compare their forward output.';
+  $('near-comparison').textContent=[state.A?`A: ${state.A.output.toFixed(2)} L/min`:'A: not saved',state.B?`B: ${state.B.output.toFixed(2)} L/min`:'B: not saved'].join(' · ');
  }
  function navigate(step,push=true){if(!STEPS.includes(step))return;set('step',step);if(push&&location.hash!==`#${step}`)history.pushState(null,'',`#${step}`)}
  for(const b of document.querySelectorAll('[data-step]'))listen(b,'click',()=>navigate(b.dataset.step));
  listen($('previous'),'click',()=>navigate(STEPS[STEPS.indexOf(state.step)-1]));listen($('next'),'click',()=>navigate(STEPS[STEPS.indexOf(state.step)+1]));
- listen(window,'popstate',()=>navigate(STEPS.includes(location.hash.slice(1))?location.hash.slice(1):'explore',false));
+ listen(window,'popstate',()=>{const step=location.hash.slice(1);if(STEPS.includes(step))navigate(step,false);else if(!step)navigate('explore',false)});
  for(const k of ['heartRate','strokeVolume'])listen($(k),'input',()=>set(k,+$(k).value));
+ listen($('phase-preset'),'change',()=>set('phase',+$('phase-preset').value));
  listen($('phase'),'input',()=>set('phase',+$('phase').value/1000));
  for(const b of document.querySelectorAll('[data-phase]'))listen(b,'click',()=>set('phase',+b.dataset.phase));
  listen($('play'),'click',()=>{if(!reduced.matches)set('playing',!state.playing)});
@@ -62,6 +74,6 @@ function boot(){
  listen($('reset-yes'),'click',()=>{try{storage?.removeItem(KEY)}catch{}dispatch({type:'reset'},{persist:false});history.replaceState(null,'','#explore');$('reset-confirm').hidden=true;$('notice').textContent='This lab’s saved work was cleared. Starting settings restored.';graphics.choose(state.mode);$('reset').focus()});
  listen(reduced,'change',()=>{if(reduced.matches)set('playing',false);render()});listen(document,'visibilitychange',()=>{if(document.hidden)set('playing',false);clock()});
  render();save();graphics.choose(state.mode);
- return ()=>{if(disposed)return;state=reduce(state,{type:'set',key:'playing',value:false});save();disposed=true;cancelAnimationFrame(frame);events.abort();graphics.dispose()};
+ return ()=>{if(disposed)return;state=reduce(state,{type:'set',key:'playing',value:false});save();disposed=true;cancelAnimationFrame(frame);events.abort();graphics.dispose();arrange(false);for(const {slot} of moving)slot.remove()};
 }
 let dispose=boot();window.addEventListener('pagehide',()=>dispose());window.addEventListener('pageshow',e=>{if(e.persisted)dispose=boot()});

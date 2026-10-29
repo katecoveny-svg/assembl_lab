@@ -18,7 +18,27 @@ export async function createScene(host,signal,onLost){
  controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=false;controls.enablePan=false;controls.minZoom=.6;controls.maxZoom=2.2;controls.target.set(0,.032,0);
  scene.add(root,new T.HemisphereLight(0xffffff,0xd0c9d6,2.2));for(const [pos,power]of [[[.2,.3,.2],2.8],[[-.2,.10,.2],1.2],[[0,.2,-.2],1.8]]){const l=new T.DirectionalLight(0xffffff,power);l.position.set(...pos);scene.add(l)}
  for(const [name,label]of [['Labels_RA','Right atrium'],['Labels_RV','Right ventricle'],['Labels_LA','Left atrium'],['Labels_LV','Left ventricle'],['Labels_AorticValve','Aortic valve'],['Labels_Aorta','Aorta']]){const el=document.createElement('span');el.className='marker';el.textContent=label;el.setAttribute('aria-hidden','true');const line=document.createElement('span');line.className='marker-leader';line.setAttribute('aria-hidden','true');markers.push({node:rig.names.get(name),el,line,name});host.append(line,el)}
- function draw(){if(dead||!state)return;renderer.render(scene,camera);const {width,height}=host.getBoundingClientRect();for(const m of markers){const v=m.node.getWorldPosition(new T.Vector3()).project(camera);const x=(v.x+1)/2*width,y=(1-v.y)/2*height,offset=({Labels_RA:-55,Labels_RV:-55,Labels_LA:55,Labels_LV:55,Labels_AorticValve:-80,Labels_Aorta:45})[m.name];const tx=Math.max(45,Math.min(width-45,x+offset));m.el.style.left=`${tx}px`;m.el.style.top=`${y}px`;m.line.style.cssText=`left:${Math.min(tx,x)}px;top:${y}px;width:${Math.abs(tx-x)}px`;m.el.hidden=state.view==='outflow'?!['Labels_LV','Labels_AorticValve','Labels_Aorta'].includes(m.name):!['Labels_RA','Labels_RV','Labels_LA','Labels_LV'].includes(m.name);m.line.hidden=m.el.hidden}}
+ function draw(){
+  if(dead||!state)return;renderer.render(scene,camera);
+  const {width,height}=host.getBoundingClientRect(),compact=width<500,placed=[];
+  for(const m of markers){
+   m.el.hidden=state.view==='outflow'?!['Labels_LV','Labels_AorticValve','Labels_Aorta'].includes(m.name):!['Labels_RA','Labels_RV','Labels_LA','Labels_LV'].includes(m.name);m.line.hidden=m.el.hidden;
+   if(m.el.hidden)continue;
+   const v=m.node.getWorldPosition(new T.Vector3()).project(camera),x=(v.x+1)/2*width,y=(1-v.y)/2*height;
+   const offset=({Labels_RA:-55,Labels_RV:-55,Labels_LA:55,Labels_LV:55,Labels_AorticValve:-80,Labels_Aorta:45})[m.name];
+   const w=m.el.offsetWidth,h=m.el.offsetHeight,pad=5;
+   const tx=Math.max(w/2+pad,Math.min(width-w/2-pad,compact?(offset<0?w/2+pad:width-w/2-pad):x+offset));
+   let ty=Math.max(h/2+pad,Math.min(height-h/2-pad,y));
+   // Keep label boxes apart even after an orbit projects nearby anchors together.
+   for(const box of placed)if(Math.abs(tx-box.x)<(w+box.w)/2+5&&Math.abs(ty-box.y)<(h+box.h)/2+6){
+    const below=box.y+(h+box.h)/2+6;
+    ty=below+h/2+pad<=height?below:Math.max(h/2+pad,box.y-(h+box.h)/2-6);
+   }
+   placed.push({x:tx,y:ty,w,h});m.el.style.left=`${tx}px`;m.el.style.top=`${ty}px`;
+   const dx=tx-x,dy=ty-y;
+   m.line.style.cssText=`left:${x}px;top:${y}px;width:${Math.hypot(dx,dy)}px;transform-origin:0 50%;transform:rotate(${Math.atan2(dy,dx)}rad)`;
+  }
+ }
  function front(){camera.position.set(state?.view==='outflow'?.065:0,.10,.34);controls.target.set(.012,.032,0);camera.zoom=1;camera.updateProjectionMatrix();controls.update();draw()}
  function update(s){state=s;root.traverse(o=>o.visible=true);rig.setCutaway(s.cutaway||s.view==='outflow');rig.setArrows(s.arrows);rig.applyPhase(s.phase);
   if(s.view==='outflow')for(const o of rig.names.get('HeartRoot').children){if(!['Chamber_L_Ventricle','Valve_Mitral','Valve_Aortic','Vessels_OxygenRich','Labels'].includes(o.name)&&!o.name.startsWith('Papillary_Mitral')&&!o.name.startsWith('Chord_Mitral')&&!o.name.startsWith('Vessel_Aort'))o.visible=false}

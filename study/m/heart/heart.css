@@ -5,3 +5,29 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 .marker{z-index:2}.marker-leader{position:absolute;height:1px;background:#7a7a91;pointer-events:none;z-index:1}
+
+/* Compact mobile investigation: the same controls move beside the scene. */
+.mobile-activity,.near-captures,#phase-preset{display:none}
+@media(max-width:760px){
+ .wrap{padding-top:12px}.intro{margin:12px 0}.steps{margin:14px 0 10px}
+ .mobile-activity{display:block;background:#f3edf9;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.4}
+ .mobile-activity .eyebrow{font-size:11px;letter-spacing:.03em}.mobile-activity p{margin:5px 0}.mobile-activity a{font-size:12px}
+ #stage{height:340px;margin-top:5px}
+ .visual-column>.phasebox{margin:0 0 12px;padding:10px 0 12px;border-top:0;border-bottom:1px solid var(--as-line)}
+ .phasebox label{display:flex;justify-content:space-between;font-size:13px;font-weight:600}.phasebox strong{font-size:15px}.phasebox p{margin:4px 0 8px}.phasebox .buttons{display:grid;grid-template-columns:1fr 1fr}.phasebox .phase-preset{display:none}#phase-preset{display:block;font-size:12px;padding:8px}.phasebox #motion-note{margin-bottom:0;font-size:11px}
+ .visual-column>.dock{border:1px solid var(--as-line);border-radius:14px;padding:14px;margin-bottom:14px}.dock label{margin-top:12px}.dock .hint{margin-bottom:8px}.readout{margin:12px 0 8px;padding:12px}.readout strong{font-size:32px}
+ .near-captures{display:block;border-top:1px solid var(--as-line);padding-top:10px;font-size:13px}.near-captures p{margin:4px 0 10px}.near-captures a{font-size:12px}.capture-actions{display:flex;gap:5px;flex-wrap:wrap}.near-captures .capture-actions{flex:1}.near-captures button{flex:1;padding:8px;font-size:13px}#near-comparison{margin-top:10px}
+ .capture-grid{grid-template-columns:1fr}.capture-grid article{padding:16px}
+ .marker{font-size:13px;line-height:1.2;padding:5px 6px;max-width:102px;white-space:normal;text-align:center;background:#fff;border-color:#81768e;box-shadow:0 1px 3px #222a551a}.marker-leader{background:#53516b}
+}
+@media(max-width:760px){
+ /* Keep the anatomy in view while scrubbing phase or capturing pump settings. */
+ .bench{overflow:visible}.visual-column{min-width:0}
+ #stage{position:sticky;top:0;z-index:4;background:white;border-radius:12px}
+}
+@media(max-width:760px){.marker{width:max-content;max-width:110px}}
+@media(max-width:760px){
+ html{scroll-padding-top:350px}
+ .phasebox input,.phasebox button,.phasebox select,.dock input,.dock button{scroll-margin-top:0}
+ .near-captures .capture-actions{flex-direction:column}.near-captures button{width:100%}
+}
