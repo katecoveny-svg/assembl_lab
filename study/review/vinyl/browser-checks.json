@@ -1,0 +1,195 @@
+[
+  {
+    "case": "air 375",
+    "render": {
+      "topic": "air",
+      "zone": "A",
+      "view": "air",
+      "format": "lp",
+      "rpm": 33.333333333333336,
+      "r": 0.146,
+      "angle": 55.263756369297354,
+      "phase": 109.42223761121028,
+      "playing": true,
+      "stylusRadiusM": 0.14600000290557338,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": -55.263756369297354,
+      "coneX": 0.0416199692055467,
+      "heardHz": 440,
+      "calls": 35,
+      "triangles": 213630,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 19
+    }
+  },
+  {
+    "case": "paused single both graphics directions",
+    "before": {
+      "topic": "formats",
+      "zone": "T",
+      "view": "formats",
+      "format": "single",
+      "rpm": 45,
+      "r": 0.06,
+      "angle": 0.9600881682295607,
+      "phase": 1.4977228816723978,
+      "playing": false,
+      "stylusRadiusM": 0.060000003463690055,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": -0.9600881682295607,
+      "coneX": 0.04317694525352047,
+      "heardHz": 440,
+      "calls": 86,
+      "triangles": 70402,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.799999952316284
+    },
+    "after": {
+      "topic": "formats",
+      "zone": "T",
+      "view": "formats",
+      "format": "single",
+      "rpm": 45,
+      "r": 0.06,
+      "angle": 0.9600881682295607,
+      "phase": 1.4977228816723978,
+      "playing": false,
+      "stylusRadiusM": 0.060000003463690055,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": -0.9600881682295607,
+      "coneX": 0.04317694525352047,
+      "heardHz": 440,
+      "calls": 86,
+      "triangles": 70402,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.700000047683716
+    }
+  },
+  {
+    "case": "320 layout",
+    "layout": {
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "case": "pitch 78 rpm",
+    "render": {
+      "topic": "pitch",
+      "zone": "G",
+      "view": "pitch",
+      "format": "single",
+      "rpm": 78,
+      "r": 0.06,
+      "angle": 0.9600881682295607,
+      "phase": 1.4977228816723978,
+      "playing": false,
+      "stylusRadiusM": 0.060000003463690055,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": -0.9600881682295607,
+      "coneX": 0.04317694525352047,
+      "heardHz": 762.6666666666667,
+      "calls": 12,
+      "triangles": 28620,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.600000023841858
+    }
+  },
+  {
+    "case": "loudness 110",
+    "chips": "LOUDNESS\n110 dB\nSAFE A WEEK\n2 min",
+    "render": {
+      "topic": "loud",
+      "zone": "A",
+      "view": "air",
+      "format": "single",
+      "rpm": 78,
+      "r": 0.06,
+      "angle": 0.9600881682295607,
+      "phase": 1.4977228816723978,
+      "playing": false,
+      "stylusRadiusM": 0.060000003463690055,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": -0.9600881682295607,
+      "coneX": 0.04523608184492743,
+      "heardHz": 762.6666666666667,
+      "calls": 35,
+      "triangles": 213630,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.299999952316284
+    }
+  },
+  {
+    "case": "headshell drag",
+    "render": {
+      "topic": "centripetal",
+      "zone": "T",
+      "view": "deck",
+      "format": "single",
+      "rpm": 33.333333333333336,
+      "r": 0.075,
+      "angle": 0.9600881682295607,
+      "phase": 1.4977228816723978,
+      "playing": false,
+      "stylusRadiusM": 0.07500000322853591,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": -0.9600881682295607,
+      "coneX": 0.04523608184492743,
+      "heardHz": 325.925925925926,
+      "calls": 71,
+      "triangles": 58450,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.300000071525574
+    }
+  },
+  {
+    "case": "challenge 6 via keyboard",
+    "result": "Yes: the single's edge moves at 0.088 × 4.71 = 0.41 m/s; on the LP that is r = v ÷ ω = 11.9 cm, well inside the edge."
+  },
+  {
+    "case": "restored default deck",
+    "render": {
+      "topic": "spin",
+      "zone": "T",
+      "view": "deck",
+      "format": "lp",
+      "rpm": 33.333333333333336,
+      "r": 0.146,
+      "angle": 0,
+      "phase": 0,
+      "playing": false,
+      "stylusRadiusM": 0.14600000290557338,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": 0,
+      "coneX": 0.03999999165534973,
+      "heardHz": 440,
+      "calls": 72,
+      "triangles": 62300,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.90000009536743
+    }
+  },
+  {
+    "case": "drive cutaway",
+    "render": {
+      "topic": "spin",
+      "zone": "T",
+      "view": "drive",
+      "format": "lp",
+      "rpm": 33.333333333333336,
+      "r": 0.146,
+      "angle": 0,
+      "phase": 0,
+      "playing": false,
+      "stylusRadiusM": 0.14600000290557338,
+      "stylusHeightM": 0.06140000000596046,
+      "platterAngle": 0,
+      "coneX": 0.03999999165534973,
+      "heardHz": 440,
+      "calls": 52,
+      "triangles": 31956,
+      "medianFrameMs": 16.699999928474426,
+      "p95FrameMs": 17.899999976158142
+    }
+  }
+]

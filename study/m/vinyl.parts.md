@@ -1,6 +1,6 @@
 # The vinyl machine: parts list (turntable)
 
-Drawn parts of the `vinyl` study machine (Years 9–10 waves and circles; NCEA steps for L2 AS91171 and L3 AS91524). Case tint: **blush**.
+Original simplified-diagram parts of the `vinyl` study machine (Years 9–10 waves and circles; NCEA steps for L2 AS91171 and L3 AS91524). Case tint: **blush**.
 
 | # | Part | Real size / value | Material kind, colour | Label |
 |---|---|---|---|---|
@@ -15,3 +15,7 @@ Drawn parts of the `vinyl` study machine (Years 9–10 waves and circles; NCEA s
 | 9 | Platter (Level 3 figures) | M = 1.5 kg, R = 0.15 m, I = ½MR² = 0.0169 kg m² | — | Estimate |
 
 Physics used: C = 2πr, f = rpm ÷ 60, v = fλ, ω = 2πf, v = rω, a = v²/r = ω²r, I = ½MR², L = Iω, Ek = ½Iω².
+
+## Blender apparatus integration
+
+The live deck and speaker now use original pastel Blender geometry. The earlier table describes the retained simplified SVG, not the physical asset dimensions. See [asset provenance and rig notes](../../assets/models/vinyl/README.md) and [integration evidence](../review/vinyl/README.md). All calculations and estimated inertia still belong to this lesson; they are not inferred from the meshes.

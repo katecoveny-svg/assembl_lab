@@ -151,11 +151,11 @@
       "title": "The vinyl machine",
       "route": "/study/m/vinyl.html",
       "source": "study/m/vinyl.js",
-      "scene": "vinyl3d; turntable, magnifier and air column",
+      "scene": "Blender vinylWorld + vinyl-asset.js; retained groove/keyboard/air apparatus",
       "stateOwner": "s; rps, omega, heard, speedAt, acen and tick",
-      "scope": "Batch 01: detailed deck/arm/drive/speaker; preserve note audio and all six challenges",
+      "scope": "Local integration verified; original state, audio envelope, calculations and six challenges preserved; view transfer and labelled cutaways",
       "difficulty": "M",
-      "status": "batch-01-contract"
+      "status": "local-review"
     },
     {
       "id": "bike",

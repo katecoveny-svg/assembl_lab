@@ -97,8 +97,10 @@
       "id": "vinyl",
       "three": true,
       "source": "m/vinyl.html",
-      "capture": "/.playmain > .canvas or experience main panel",
-      "image": "vinyl.jpg"
+      "capture": "Blender 5.1.1 offline render; dedicated whole-object card, not a runtime screenshot",
+      "image": "vinyl.jpg",
+      "mode": "blender-render",
+      "asset": "/assets/models/vinyl/assembl-vinyl-atelier-web.glb"
     },
     {
       "id": "bike",

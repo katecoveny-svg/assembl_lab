@@ -1,0 +1,8 @@
+[
+  {
+    "level": "warn",
+    "message": "Vinyl apparatus unavailable Error: Vinyl asset 404\n    at read (http://127.0.0.1:8795/study/m/vinyl-asset.js:28:87)\n    at async Promise.all (index 0)\n    at async Module.loadVinyl (http://127.0.0.1:8795/study/m/vinyl-asset.js:29:26)\n    at async http://127.0.0.1:8795/study/m/vinyl.js:444:18",
+    "timestamp": "2026-10-29T03:58:32.337Z",
+    "url": "http://127.0.0.1:8795/study/m/vinyl.js"
+  }
+]

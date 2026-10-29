@@ -12,9 +12,23 @@ const omega=()=>2*Math.PI*rps(), vlin=r=>r*omega(), acen=r=>omega()*omega()*r, I
 const rps=()=>s.rpm/60, period=()=>60/s.rpm, speedAt=r=>2*Math.PI*r*rps();
 const pitchRatio=()=>s.rpm/s.disc, heard=()=>s.f*pitchRatio();
 // ---- sound (only after a tap): a short tone at the frequency you'd hear
-let actx=null;
-function beep(f,amp){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type="triangle";o.frequency.value=Math.min(8000,Math.max(40,f));
-  g.gain.setValueAtTime(0,actx.currentTime);g.gain.linearRampToValueAtTime(0.06+0.12*amp,actx.currentTime+0.03);g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+0.9);o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+0.95)}catch(e){}}
+let actx=null,activeTone=null;
+function soundStatus(text){const el=document.getElementById?.('vinyl-audio-status');if(el)el.textContent=text;const stop=document.getElementById?.('vinyl-stop');if(stop)stop.hidden=!activeTone}
+function stopSound(){const tone=activeTone;activeTone=null;if(tone)try{tone.stop();tone.disconnect()}catch(e){}soundStatus('Sound off · Hear it plays a short tone');}
+function beep(f,amp){
+  stopSound();
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    // Resume is requested only inside this explicit Hear it gesture.
+    if(actx.state==='suspended')actx.resume().catch(()=>stopSound());
+    const o=actx.createOscillator(),g=actx.createGain();activeTone=o;o.type='triangle';o.frequency.value=Math.min(8000,Math.max(40,f));
+    g.gain.setValueAtTime(0,actx.currentTime);g.gain.linearRampToValueAtTime(0.06+0.12*amp,actx.currentTime+0.03);g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+0.9);
+    o.connect(g).connect(actx.destination);o.onended=()=>{g.disconnect();o.disconnect();if(activeTone===o){activeTone=null;soundStatus('Sound off · Hear it plays a short tone')}};
+    o.start();o.stop(actx.currentTime+0.95);soundStatus(`Short tone · ${fmt(Math.min(8000,Math.max(40,f)))} Hz · device volume controls loudness`);
+  }catch(e){activeTone=null;soundStatus('Audio unavailable · frequency and charts remain available')}
+}
+window.addEventListener?.('pagehide',stopSound);
+document.addEventListener?.('visibilitychange',()=>{if(document.hidden)stopSound()});
 
 // ---- the bench figure look (StudyKit.fig): a frosted blush acrylic plinth, a steel platter, a rubber mat, a painted record
 const F=StudyKit.fig,PAL=F.palette,BL=PAL.case.blush,BL_D=F.deep(BL),FM=StudyKit.figMat;
@@ -197,11 +211,11 @@ Object.entries({"groove": ["ngaru", "auau", "tōiriiri"], "pitch": ["auau", "hau
 // ---- the 3D bench (../kit3d.js): a real turntable (the record turns by s.ang from the model, the tonearm lands at s.r and
 // can be dragged), a magnified groove whose wiggle has the model's wavelength, a keyboard for pitch, and a long frosted
 // tube of air the speaker pushes. The dust speck and its arrows use the same ω, v = rω and a = ω²r as the chips.
-function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function vinylWorld(S,asset){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const TOP=.3,tmp=new THREE.Vector3(),tv=new THREE.Vector3(),hs=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
   const ZT=V3(-3.6,0,-.4),ZG=V3(6.4,0,-.6),ZA=V3(.6,0,7.2);
   const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
-  plinth(ZT,10.6,7.4,PAL.case.blush);plinth(ZG,7.4,7.8,PAL.case.lavender);plinth(ZA,15.4,4.6,PAL.case.mint);
+  const bases=[plinth(ZT,10.6,7.4,"#eedee4"),plinth(ZG,7.4,7.8,"#e5dfef"),plinth(ZA,15.4,4.6,"#dcece3")];
   const zoneG=c=>{const g=S.group();g.position.set(c.x,TOP,c.z);return g};
   const white=mat("plastic","#ffffff",{rough:.35}),steel=mat("metal",PAL.steel,{rough:.25}),steelD=mat("metal",PAL.steelDark,{rough:.35}),rubber=mat("plastic","#3C4557",{rough:.8,coat:.05});
   const vinylM=mat("plastic","#2E3048",{rough:.22,coat:.9});
@@ -209,41 +223,14 @@ function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
 
   // ================================================================ ZONE 1: the turntable
   const gT=zoneG(ZT);const deck=S.group(gT);deck.position.set(-1.0,0,0);
-  deck.add(S.rbox(6.8,.12,5.2,.1,white,{at:[0,.06,0]}));
-  const shell=S.rbox(6.8,.62,5.2,.16,mat("acrylic",PAL.case.blush,{opacity:.3}),{at:[0,.43,0],cast:false});shell.renderOrder=3;deck.add(shell);
-  deck.add(S.rbox(6.7,.04,5.1,.1,mat("acrylic","#ffffff",{opacity:.25}),{at:[0,.73,0],cast:false}));
-  const motor=S.group(deck);motor.position.set(2.5,.12,1.6);motor.add(S.cyl(.32,.32,.4,mat("plastic",PAL.case.mint,{rough:.4}),{at:[0,.2,0],seg:24}));const pulley=S.cyl(.12,.12,.12,steel,{at:[0,.46,0],seg:16});motor.add(pulley);
-  const belt=S.tube(new THREE.CatmullRomCurve3([V3(2.5,.58,1.48),V3(1.0,.58,.85),V3(0,.58,.82),V3(-.82,.58,0),V3(0,.58,-.82),V3(.9,.58,-.7),V3(2.6,.58,1.72)],true),.025,rubber,{seg:120,closed:true});deck.add(belt);
-  deck.add(S.cyl(.84,.84,.06,steelD,{at:[0,.58,0],seg:40}));
-  const YP=.86;   // top of the platter
-  const platter=S.group(deck);platter.position.y=.75;platter.add(S.cyl(2.46,2.46,.22,steel,{at:[0,0,0],seg:96}));
-  const strobe=S.swarm(64,new THREE.SphereGeometry(.035,8,6),mat("metal",PAL.steelDark,{rough:.3}));for(let i=0;i<64;i++){const a=i/64*Math.PI*2;strobe.put(i,Math.cos(a)*2.42,0,Math.sin(a)*2.42,1)}strobe.done();strobe.position.y=.0;platter.add(strobe);
-  platter.add(S.cyl(2.38,2.38,.03,rubber,{at:[0,.125,0],seg:96}));
-  // the records: a painted groove texture on top, a vinyl edge, a two-tone label; a tick on the label shows the turning
-  function recTex(R0,lab,hole){const c=document.createElement("canvas");c.width=c.height=1024;const g=c.getContext("2d");const cx=512;
-    g.fillStyle="#2E3048";g.beginPath();g.arc(cx,cx,510,0,7);g.fill();for(let k=0;k<70;k++){const r=510*lab+(500-510*lab)*k/70;g.strokeStyle=k%14===13?"rgba(140,136,166,.75)":"rgba(80,84,112,.6)";g.lineWidth=k%14===13?4:1.4;g.beginPath();g.arc(cx,cx,r,0,7);g.stroke()}
-    g.fillStyle=LABEL;g.beginPath();g.arc(cx,cx,510*lab*.94,0,7);g.fill();g.fillStyle=LABEL2;g.beginPath();g.arc(cx,cx,510*lab*.94,0,Math.PI);g.fill();
-    g.strokeStyle="#492B3E";g.lineWidth=10;g.beginPath();g.moveTo(cx,cx-510*lab*.85);g.lineTo(cx,cx-510*lab*.55);g.stroke();
-    if(hole){g.fillStyle="#E9E4EC";g.beginPath();g.arc(cx,cx,510*hole,0,7);g.fill()}
-    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
-  function record(R,lab,hole){const g=S.group(platter);g.position.y=.155;g.add(S.cyl(R,R,.04,vinylM,{seg:96}));
-    const top=S.mesh(new THREE.CircleGeometry(R,96),new THREE.MeshPhysicalMaterial({map:recTex(R,lab,hole),roughness:.25,clearcoat:.9}),{rot:[-Math.PI/2,0,0],at:[0,.021,0]});g.add(top);return g}
-  const lp=record(R_OUT*K,.36,0),single=record(R_SINGLE*K,.42,.16);
-  if(true){const ad=S.cyl(.36,.36,.03,mat("plastic",PAL.product.butter,{rough:.4}),{at:[0,.04,0],seg:40});single.add(ad)}
-  platter.add(S.cyl(.05,.05,.3,steel,{at:[0,.2,0],seg:16}));
-  // speed buttons: tap 33 or 45
-  const btn=(x,rpm)=>{const b=S.rbox(.5,.12,.3,.05,mat("plastic","#ffffff",{rough:.35,fresh:true}),{at:[x,.78,2.25]});deck.add(b);S.pick(b,()=>{S.api.state.rpm=rpm});return {b,rpm}};
-  const btns=[btn(-2.8,100/3),btn(-2.2,45)];
-  // the tonearm: pivot back right; it swings so the stylus sits at the needle radius; drag the headshell to move it
-  const PV=V3(2.75,0,-1.75),ARM_L=3.05;const pivot=S.group(deck);pivot.position.set(PV.x,YP,PV.z);
-  deck.add(S.cyl(.34,.38,.16,steelD,{at:[PV.x,.8,PV.z],seg:32}));pivot.add(S.cyl(.16,.2,.36,steel,{at:[0,.18,0],seg:24}));
-  const arm=S.group(pivot);arm.position.y=.36;
-  arm.add(S.cyl(.045,.045,ARM_L-.35,steel,{at:[(ARM_L-.35)/2,0,0],rot:[0,0,Math.PI/2],seg:14}));
-  arm.add(S.cyl(.17,.17,.36,steelD,{at:[-.55,0,0],rot:[0,0,Math.PI/2],seg:24}));arm.add(S.cyl(.03,.03,.5,steel,{at:[-.25,0,0],rot:[0,0,Math.PI/2],seg:10}));
-  const head=S.group(arm);head.position.set(ARM_L,0,0);head.add(S.rbox(.5,.1,.26,.04,mat("plastic",PAL.product.strawberry,{rough:.35}),{at:[-.12,-.06,0]}));
-  head.add(S.rbox(.18,.12,.16,.03,mat("plastic","#ffffff"),{at:[-.02,-.17,0]}));head.add(S.cyl(.004,.02,.12,steel,{at:[0,-.29,0],seg:8}));
-  const grab=S.mesh(new THREE.SphereGeometry(.42,12,8),new THREE.MeshBasicMaterial({visible:false}));head.add(grab);
-  S.dragger(grab,{normal:V3(0,1,0),move:p=>{const lp2=deck.worldToLocal(p.clone());const rr=Math.hypot(lp2.x,lp2.z)/K;S.api.state.r=Math.round(S.clamp(rr,R_IN,RMAX())*1000)/1000}});
+  const rig=asset.rig,nodes=rig.nodes;
+  const beltPath=asset.contract.belt.centreline_gltf_m,beltLabelPoint=beltPath[0].map((v,i)=>(v+beltPath[1][i])/2);
+  const physicalDeck=nodes.DECK_ASSEMBLY;physicalDeck.scale.setScalar(K);deck.add(physicalDeck);
+  const YP=.0614*K-.2; // overlay heights follow the actual record top, not the old mesh
+  const PV=V3(2.75,0,-1.75),ARM_L=3.05,head=nodes.STYLUS;
+  const grab=S.mesh(new THREE.SphereGeometry(.028,12,8),new THREE.MeshBasicMaterial({visible:false}));nodes.STYLUS_PICK_TARGET.add(grab);
+  S.dragger(grab,{normal:V3(0,1,0),move:p=>{const q=deck.worldToLocal(p.clone());S.api.state.r=Math.round(S.clamp(Math.hypot(q.x,q.z)/K,R_IN,RMAX())*1000)/1000}});
+  for(const [name,rpm]of [['SPEED_33',100/3],['SPEED_45',45]])S.pick(nodes[name],()=>{S.api.state.rpm=rpm});
   // groove-speed markers (spin step), the dust speck and its arrows (NCEA steps)
   const ringM=(c)=>S.torus(1,.012,mat("glow",c,1.4),{rot:[Math.PI/2,0,0],cast:false,ts:96});
   const rOut=ringM(PINK),rIn=ringM(MINT),rSpk=ringM(PINK);[rOut,rIn,rSpk].forEach(r=>{r.position.y=YP+.2;deck.add(r)});
@@ -253,7 +240,7 @@ function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const sweepM=new THREE.MeshBasicMaterial({color:PINK,transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide});let sweep=null;
   // the formats bars and a record crate
   const bars=S.group(gT);bars.position.set(3.9,0,1.6);bars.add(S.rbox(1.9,.1,1.0,.05,white,{at:[0,.05,0]}));
-  const barM=[PINK,MINT,PAL.product.butter].map(c=>mat("plastic",c,{rough:.35}));const barMesh=[0,1,2].map(i=>{const b=S.cyl(.17,.17,1,barM[i],{seg:24});b.position.set(-.6+i*.6,0,0);bars.add(b);return b});
+  const barM=[PINK,MINT,"#adc8de"].map(c=>mat("plastic",c,{rough:.35}));const barMesh=[0,1,2].map(i=>{const b=S.cyl(.17,.17,1,barM[i],{seg:24});b.position.set(-.6+i*.6,0,0);bars.add(b);return b});
   const crate=S.group(gT);crate.position.set(3.9,0,-1.4);
   SLEEVES.forEach((c,i)=>crate.add(S.rbox(.1,1.25,1.25,.03,mat("plastic",c,{rough:.45}),{at:[-.75+i*.19,.68,0]})));
   const cr=S.rbox(1.95,.7,1.5,.08,mat("acrylic",PAL.case.blush,{opacity:.28}),{at:[0,.35,0],cast:false});cr.renderOrder=3;crate.add(cr);
@@ -282,9 +269,7 @@ function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const gA=zoneG(ZA);const TL=11.4,TR=.95,TX0=-5.0,TY=1.25;
   const tube=S.mesh(new THREE.CylinderGeometry(TR,TR,TL,48,1,true),mat("acrylic",PAL.case.blush,{opacity:.16}),{cast:false,rot:[0,0,Math.PI/2]});tube.position.set(TX0+TL/2,TY,0);tube.renderOrder=6;gA.add(tube);
   for(const x of [TX0+.6,TX0+TL-.6])gA.add(S.rbox(.3,TY-TR+.05,.9,.06,white,{at:[x,(TY-TR)/2,0]}));
-  const spk=S.group(gA);spk.position.set(TX0-.75,0,0);spk.add(S.rbox(1.2,2.4,1.9,.14,mat("plastic",PAL.product.strawberry,{rough:.35}),{at:[0,1.2,0]}));
-  const cone=S.mesh(new THREE.LatheGeometry([new THREE.Vector2(.12,0),new THREE.Vector2(.3,.05),new THREE.Vector2(.7,.25),new THREE.Vector2(.78,.28)],40),mat("plastic","#3C4557",{rough:.7}),{rot:[0,0,-Math.PI/2]});cone.material.side=THREE.DoubleSide;
-  const coneG=S.group(spk);coneG.position.set(.6,TY,0);coneG.add(cone);coneG.add(S.sphere(.15,mat("plastic",PAL.case.blush,{rough:.3}),{at:[.12,0,0]}));coneG.add(S.torus(.8,.05,steel,{rot:[0,Math.PI/2,0],at:[.28,0,0]}));
+  const spk=nodes.SPEAKER_ROOT;gA.add(spk);spk.scale.setScalar(K);spk.position.set(TX0-.75,0,0);
   const NXp=64,pts=[];for(let i=0;i<NXp;i++)for(let a=-2;a<=2;a++)for(let b=-2;b<=2;b++){const y=a*.34,z=b*.34;if(Math.hypot(y,z)>TR-.12)continue;pts.push({x:TX0+.15+i*(TL-.3)/(NXp-1),y,z,j:hs(pts.length)*6.28})}
   const air=S.swarm(pts.length,new THREE.SphereGeometry(.055,10,8),mat("plastic","#ffffff",{rough:.35}),{colors:true});gA.add(air);
   const fronts=[];for(let i=0;i<14;i++){const r=S.torus(TR+.04,.035,mat("glow",PINK,1.3),{rot:[0,Math.PI/2,0],cast:false});r.position.y=TY;gA.add(r);fronts.push(r)}
@@ -298,34 +283,67 @@ function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const dbMark=S.sphere(.14,mat("plastic",PAL.product.strawberry,{rough:.3}),{at:[0,.2,0]});rule.add(dbMark);
   const lLev=LEVELS.map((l,i)=>S.label({off:[0,i%2?34:-30],lead:false}).set(`${l[0]} ${l[1]}`)),lDb=S.label({cls:"big",off:[0,-56]}),lLamA=S.label({cls:"big",off:[40,30]}),lSpk=S.label({off:[-20,-60]});
 
-  // ---------------------------------------------------------------- views
-  S.view("deck",[ZT.x-.4,6.6,ZT.z+7.6],[ZT.x-.6,.8,ZT.z+.2],{min:3,max:24});
-  S.view("deckNear",[ZT.x-.7,6.1,ZT.z+7.1],[ZT.x-.6,.8,ZT.z+.2],{min:2.5,max:24});
-  S.view("formats",[ZT.x+.6,6.4,ZT.z+8.0],[ZT.x+.4,.8,ZT.z+.2],{min:3,max:24});
-  S.view("groove",[ZG.x-.3,5.8,ZG.z+5.0],[ZG.x,.4,ZG.z-1.0],{min:2.5,max:22});
-  S.view("pitch",[ZG.x-.2,6.0,ZG.z+7.6],[ZG.x,.3,ZG.z+.4],{min:2.5,max:22});
-  S.view("air",[ZA.x+.4,6.0,ZA.z+11.6],[ZA.x+.2,.9,ZA.z+.3],{min:3,max:26});
-  S.view("all",[0,15,21],[0,.2,1.6],{min:6,max:60});
-  const viewOf=k=>k==="spin"?"deck":k==="omega"||k==="centripetal"?"deckNear":k==="formats"?"formats":k==="groove"?"groove":k==="pitch"?"pitch":k==="air"||k==="loud"?"air":"all";
-  const zoneOf=v=>v==="groove"||v==="pitch"?"G":v==="air"?"A":v==="all"?"all":"T";const centers={T:ZT,G:ZG,A:ZA};
-  const LT=[lRpm,lOut,lIn,lNeedle,lV,lA,lW,lBars,lDrag],LG=[lLam,lGs,lKeys,lRec,lHeard],LA=[...lLev,lDb,lLamA,lSpk];
-  let zone="T",first=true,kk="spin",grooveKey="";S.goView("deck",true);
+  // Focused apparatus views; the test selector never renders all stations together.
+  const viewSelect=document.getElementById('vinyl-view'),testSelect=document.getElementById('vinyl-test-view');
+  const description=document.getElementById('vinyl-view-description');
+  const viewOf=k=>k==='groove'?'groove':k==='pitch'?'pitch':k==='air'||k==='loud'?'air':k==='formats'?'formats':'deck';
+  const zoneOf=v=>v==='groove'||v==='pitch'?'G':v==='air'||v==='speaker'?'A':'T';
+  const centers={T:ZT,G:ZG,A:ZA},LT=[lRpm,lOut,lIn,lNeedle,lV,lA,lW,lBars,lDrag],LG=[lLam,lGs,lKeys,lRec,lHeard],LA=[...lLev,lDb,lLamA,lSpk];
+  const mechanics=[S.label({off:[-50,-35]}),S.label({off:[25,25]}),S.label({off:[30,-35]})];
+  const frameTimes=[];let previousFrame=0;
+  let zone='T',kk='spin',inspection='lesson',testView='deck',currentView='deck',disposed=false;
+  const cameraSpecs={
+    deck:[[ZT.x-.4,7.4,ZT.z+8.4],[ZT.x-.85,.8,ZT.z+.2]],
+    formats:[[ZT.x+.4,7.6,ZT.z+9],[ZT.x+.4,.8,ZT.z+.2]],
+    arm:[[ZT.x+.5,4.3,ZT.z+4.8],[ZT.x+.6,1,ZT.z-.3]],
+    drive:[[ZT.x,6.2,ZT.z+6.2],[ZT.x-.2,.55,ZT.z+.3]],
+    groove:[[ZG.x-.3,5.8,ZG.z+5],[ZG.x,.4,ZG.z-1]],
+    pitch:[[ZG.x-.2,6, ZG.z+7.6],[ZG.x,.3,ZG.z+.4]],
+    air:[[ZA.x+.4,6,ZA.z+11.6],[ZA.x+.2,.9,ZA.z+.3]],
+    speaker:[[ZA.x-10.6,3.6,ZA.z+1.5],[ZA.x-5.75,1.25,ZA.z]]
+  };
+  function fit(){
+    const [p,t]=cameraSpecs[currentView],target=V3(...t),offset=V3(...p).sub(target);
+    // Portrait canvases need extra horizontal room, without shrinking desktop scenes.
+    const factor=(currentView==='air'?1.22:1)*Math.max(1,(currentView==='speaker'?.95:1.55)/Math.max(.55,S.camera.aspect));
+    offset.multiplyScalar(factor);S.view('vinyl',target.clone().add(offset).toArray(),t,{min:2,max:45});S.goView('vinyl',true);
+  }
+  function activate(st,changedTopic=true){
+    kk=st.k;if(changedTopic)inspection='lesson';
+    const base=kk==='test'?testView:viewOf(kk);zone=zoneOf(base);
+    currentView=inspection==='lesson'?base:inspection;
+    [gT,gG,gA].forEach((g,i)=>{g.visible=['T','G','A'][i]===zone;bases[i].visible=g.visible});
+    crate.visible=zone==='T'&&kk==='formats';gA.children.forEach(o=>o.visible=true);grab.visible=inspection!=='drive';mechanics.forEach((l,i)=>{l.hide();l.off=(inspection==='drive'?[[15,50],[-30,-35],[-30,-55]]:[[-50,-35],[25,25],[30,-35]])[i]});
+    rig.setView({assembly:zone==='A'?'speaker':'deck',serviceCutaway:inspection==='drive',speakerRearOpen:inspection==='speaker'});
+    const c=centers[zone];S.setShadowBox(zone==='A'?8:6,[c.x,0,c.z]);
+    viewSelect.innerHTML=zone==='T'?'<option value="lesson">Record and motion</option><option value="arm">Tonearm and stylus</option><option value="drive">Belt drive cutaway</option>':zone==='A'?'<option value="lesson">Speaker and air</option><option value="speaker">Inside the speaker</option>':'<option value="lesson">Magnified groove and notes</option>';
+    viewSelect.value=inspection;viewSelect.disabled=zone==='G';
+    document.getElementById('vinyl-test-label').hidden=kk!=='test';testSelect.hidden=kk!=='test';
+    LT.forEach(l=>l.hide());LG.forEach(l=>l.hide());LA.forEach(l=>l.hide());
+    if(inspection==='lesson'){
+      lRpm.show(zone==='T');lOut.show(kk==='spin');lIn.show(kk==='spin');
+      [lV,lA,lW].forEach(l=>l.show(['omega','centripetal','formats'].includes(kk)));
+      lBars.show(kk==='formats');lLam.show(base==='groove');lGs.show(base==='groove');
+      [lRec,lHeard].forEach(l=>l.show(base==='pitch'));lLamA.show(zone==='A');lSpk.show(zone==='A');
+      lLev.forEach(l=>l.show(kk==='loud'));lDb.show(kk==='loud');
+    }
+    fit();
+  }
+  viewSelect.onchange=()=>{inspection=viewSelect.value;activate(S.api.step,false)};
+  testSelect.onchange=()=>{testView=testSelect.value;inspection='lesson';activate(S.api.step,false)};
   const wp=(o,x,y,z)=>tmp.set(x,y,z).applyMatrix4(o.matrixWorld);
   return {
-    step(st){kk=st.k;const v=viewOf(st.k);zone=zoneOf(v);S.goView(v,first);first=false;const c=centers[zone];S.setShadowBox(zone==="all"?18:6,c?[c.x,0,c.z]:[0,0,0]);
-      LT.forEach(l=>l.show(zone==="T"));LG.forEach(l=>l.show(zone==="G"));LA.forEach(l=>l.show(zone==="A"));
-      const isN=["omega","centripetal","formats"].includes(st.k);[lV,lA,lW].forEach(l=>l.show(isN));[lOut,lIn].forEach(l=>l.show(st.k==="spin"));lBars.show(st.k==="formats");lLev.forEach(l=>l.show(st.k==="loud"));lDb.show(st.k==="loud");
-      if(zone==="all"){lRpm.show();lHeard.show()}[lRec,lHeard].forEach(l=>l.show(st.k==="pitch"||(zone==="all"&&l===lHeard)));lLam.show(st.k==="groove");},
+    step(st){activate(st)},resize(){activate(S.api.step,false)},
+    dispose(){if(disposed)return;disposed=true;viewSelect.onchange=testSelect.onchange=null;[...LT,...LG,...LA,...mechanics].forEach(l=>{l.hide();l.el.remove();l.ln.remove()});asset.dispose();asset.disposeRoots([...bases,gT,gG,gA])},
     update(s,st,dt,t){const k=st.k;deck.updateMatrixWorld();
       // ---- the record turns by the model's angle; the right disc for the format
-      const isSingle=s.format==="single";lp.visible=!isSingle;single.visible=isSingle;
-      platter.rotation.y=-s.ang;pulley.rotation.y=-s.ang*6.8;
-      btns.forEach(b=>{const on=Math.abs(s.rpm-b.rpm)<.01;b.b.material.color.set(on?PAL.product.butter:"#ffffff");b.b.position.y=on?.75:.78});
-      // the tonearm: circle-circle intersection puts the stylus exactly at radius s.r
-      const rr=s.r*K,d=Math.hypot(PV.x,PV.z),phiP=Math.atan2(PV.z,PV.x);const ca=S.clamp((d*d+rr*rr-ARM_L*ARM_L)/(2*d*rr),-1,1);const phN=phiP+Math.acos(ca);
-      const NX0=Math.cos(phN)*rr,NZ0=Math.sin(phN)*rr;const al=Math.atan2(NZ0-PV.z,NX0-PV.x);pivot.rotation.y=-al;
+      const isSingle=s.format==="single";
+      rig.setVisualState(asset.pose(s));
+      const rr=s.r*K,d=Math.hypot(PV.x,PV.z),phiP=Math.atan2(PV.z,PV.x);
+      const ca=S.clamp((d*d+rr*rr-ARM_L*ARM_L)/(2*d*rr),-1,1),phN=phiP+Math.acos(ca);
+      const NX0=Math.cos(phN)*rr,NZ0=Math.sin(phN)*rr;
       // ---- spin step: two grooves, same turns, different speeds
-      const spin=k==="spin";[rOut,rIn,dotO,dotI].forEach(o=>o.visible=spin);
+      const spin=k==="spin"&&inspection==="lesson";[rOut,rIn,dotO,dotI].forEach(o=>o.visible=spin);
       rOut.scale.setScalar(R_OUT*K);rIn.scale.setScalar(R_IN*K);rOut.position.y=rIn.position.y=YP+.21;
       const a0=s.ang+Math.PI*.3;
       const put=(o,r,a)=>{o.position.set(Math.cos(a)*r*K,YP+.24,Math.sin(a)*r*K)};
@@ -333,29 +351,29 @@ function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       const tang=a=>tv.set(-Math.sin(a),0,Math.cos(a));
       if(spin){vO.set(dotO.position.clone(),tang(a0).clone(),speedAt(R_OUT)*3.2);vI.set(dotI.position.clone(),tang(a0).clone(),speedAt(R_IN)*3.2)}else{vO.visible=vI.visible=false}
       // ---- NCEA: the dust speck at the needle radius, velocity along the tangent, acceleration to the centre
-      const ncea=["omega","centripetal","formats"].includes(k);speck.visible=rSpk.visible=ncea;
+      const ncea=inspection==="lesson"&&["omega","centripetal","formats"].includes(k);speck.visible=rSpk.visible=ncea;
       put(speck,s.r,a0);rSpk.scale.setScalar(s.r*K);rSpk.position.y=YP+.21;
       if(ncea){vS.set(speck.position.clone(),tang(a0).clone(),Math.min(2.2,vlin(s.r)*3.6));aS.set(speck.position.clone(),tv.set(-Math.cos(a0),0,-Math.sin(a0)).clone(),Math.min(2.0,acen(s.r)*.9))}else{vS.visible=aS.visible=false}
       // a fading trail behind whichever marker is in play: the distance it covers each second
       tAcc+=dt;if(tAcc>.05){tAcc=0;const src=spin?dotO:speck;const q=trl[ti=(ti+1)%80];q.x=src.position.x;q.z=src.position.z;q.a=1}
       for(let i=0;i<80;i++){const q=trl[i];q.a=Math.max(0,q.a-dt*.35);trail.put(i,q.x,YP+.24,q.z,(spin||ncea)?q.a*.55:0,60)}trail.done();
-      if(k==="omega"){const ang1=1;if(!sweep){sweep=S.mesh(new THREE.CircleGeometry(1,40,0,ang1),sweepM,{cast:false,rot:[Math.PI/2,0,0]});deck.add(sweep)}sweep.visible=true;sweep.scale.setScalar(s.r*K);sweep.position.y=YP+.205;sweep.rotation.z=a0-ang1}else if(sweep)sweep.visible=false;
+      if(k==="omega"&&inspection==="lesson"){const ang1=1;if(!sweep){sweep=S.mesh(new THREE.CircleGeometry(1,40,0,ang1),sweepM,{cast:false,rot:[Math.PI/2,0,0]});deck.add(sweep)}sweep.visible=true;sweep.scale.setScalar(s.r*K);sweep.position.y=YP+.205;sweep.rotation.z=a0-ang1}else if(sweep)sweep.visible=false;
       // ---- formats bars: edge speeds of the LP and the single, and the needle now
-      const vLP=R_OUT*2*Math.PI*(100/3)/60,vS7=R_SINGLE*2*Math.PI*45/60,vN=vlin(s.r);bars.visible=k==="formats"||zone==="all";
+      const vLP=R_OUT*2*Math.PI*(100/3)/60,vS7=R_SINGLE*2*Math.PI*45/60,vN=vlin(s.r);bars.visible=k==="formats"&&inspection==="lesson";
       [vLP,vS7,vN].forEach((v,i)=>{const h=Math.max(.02,v*3.2);barMesh[i].scale.y=h;barMesh[i].position.y=.1+h/2});
       // ---- labels on the deck
       const tw=(x,y,z)=>wp(deck,x,y,z);
       lRpm.at(tw(-2.5,.9,2.25)).set(`${fmt(s.rpm,1)} rpm<small>${fmt(period(),2)} s a turn · tap 33 or 45</small>`);
       lOut.at(dotO.getWorldPosition(new THREE.Vector3())).set(`Outer groove<b>${fmt(speedAt(R_OUT)*100,1)} cm/s</b><small>r = 14.6 cm · ${fmt(2*Math.PI*R_OUT,3)} m a turn</small>`);
       lIn.at(dotI.getWorldPosition(new THREE.Vector3())).set(`Inner groove<b>${fmt(speedAt(R_IN)*100,1)} cm/s</b><small>r = 6.0 cm · same rpm</small>`);
-      lNeedle.at(tw(NX0,YP+.25,NZ0)).set(`Needle<b>${fmt(s.r*100,1)} cm</b><small>groove ${fmt(speedAt(s.r),2)} m/s</small>`);lNeedle.show(zone==="T"&&!spin);
-      lDrag.at(head.getWorldPosition(new THREE.Vector3())).set("Drag the arm");lDrag.show(zone==="T"&&(k==="centripetal"||k==="formats"));
+      lNeedle.at(tw(NX0,YP+.25,NZ0)).set(`Needle<b>${fmt(s.r*100,1)} cm</b><small>groove ${fmt(speedAt(s.r),2)} m/s</small>`);lNeedle.show(zone==="T"&&!spin&&inspection==="lesson");
+      lDrag.at(head.getWorldPosition(new THREE.Vector3())).set("Drag the arm");lDrag.show(zone==="T"&&inspection!=="drive"&&(k==="centripetal"||k==="formats"));
       const sp=speck.getWorldPosition(new THREE.Vector3());
       lV.at(sp.clone().add(tang(a0).clone().multiplyScalar(Math.min(2.2,vlin(s.r)*3.6)))).set(`Velocity<b>v = rω = ${fmt(vlin(s.r),2)} m/s</b>`);
       lA.at(sp.clone().add(tv.set(-Math.cos(a0),0,-Math.sin(a0)).multiplyScalar(Math.min(2,acen(s.r)*.9)))).set(`Acceleration<b>a = ω²r = ${fmt(acen(s.r),2)} m/s²</b><small>toward the centre</small>`);
       lW.at(tw(-2.3,YP+.2,-1.9)).set(k==="omega"?`Angular velocity<b>ω = 2πf = ${fmt(omega(),2)} rad/s</b><small>pink wedge = 1 radian · T = ${fmt(2*Math.PI/omega(),2)} s · L3: L = Iω = ${fmt(I_PLATTER*omega(),3)} kg m²/s · Ek = ${fmt(.5*I_PLATTER*omega()*omega(),3)} J</small>`
         :`${isSingle?"7-inch single":"12-inch LP"}<b>ω = ${fmt(omega(),2)} rad/s</b><small>${fmt(s.rpm,1)} rpm</small>`);
-      lBars.at(wp(bars,0,.2+Math.max(vLP,vS7,vN)*3.2,0)).set(`Edge speed<b>LP ${fmt(vLP,2)} · single ${fmt(vS7,2)} m/s</b><small>needle now ${fmt(vN,2)} m/s (yellow)</small>`);
+      lBars.at(wp(bars,0,.2+Math.max(vLP,vS7,vN)*3.2,0)).set(`Edge speed<b>LP ${fmt(vLP,2)} · single ${fmt(vS7,2)} m/s</b><small>needle now ${fmt(vN,2)} m/s (blue)</small>`);
       // ---- the groove: λ = groove speed ÷ heard-at-recording frequency, drawn 3 mm across the lens
       const v=speedAt(s.r),lam=v/s.f,lamU=Math.max(.05,lam*GSC),A=.08+.22*s.amp,ph=s.phase;
       for(let g=0;g<NG;g++){const zc=(g-2)*.62,Ag=g===2?A:A*.45,pg=g===2?ph:ph*.6+g;for(let i=0;i<NX;i++){const x=-GW/2+GW*i/(NX-1);const zz=zc+Ag*Math.sin(2*Math.PI*(x+GW/2)/lamU-pg);
@@ -379,21 +397,68 @@ function vinyl3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       pts.forEach((p,i)=>{const th=2*Math.PI*(p.x-TX0)/lamA2-s.phase;const dx=Aa*Math.sin(th);air.put(i,p.x+dx,TY+p.y+Math.sin(t*3+p.j)*.01*sw,p.z,1);const dens=-Math.cos(th);cc.copy(cB).lerp(cA,S.clamp(.5+.5*dens*s.amp*1.4,0,1));air.setColorAt(i,cc)});air.done();
       const n0=Math.floor(-(.5+s.phase/(2*Math.PI)))-1;let fi=0;for(let n=n0;fi<fronts.length&&n<n0+60;n++){const x=TX0+(n+.5+s.phase/(2*Math.PI))*lamA2;if(x<TX0||x>TX0+TL)continue;fronts[fi].position.x=x;fronts[fi].visible=true;fronts[fi].material.opacity=1;fi++}
       for(;fi<fronts.length;fi++)fronts[fi].visible=false;
-      coneG.position.x=.6+.08*s.amp*Math.sin(s.phase);
+      // The physical cone uses the same slowed model phase via asset.pose(s).
       lamA.scale.x=Math.min(TL,lamA2);lamA.position.x=TX0+Math.min(TL,lamA2)/2;
       lLamA.at(wp(gA,TX0+Math.min(TL,lamA2)/2,TY-TR-.12,TR+.1)).set(`One wavelength<b>λ = ${fmt(V_AIR/s.f,2)} m</b><small>${fmt(s.f)} Hz · v = 343 m/s${V_AIR/s.f*2.6>TL*.9?" · longer than the tube":""}</small>`);
       lSpk.at(wp(gA,TX0-.75,2.5,0)).set(`Speaker<b>${fmt(s.f)} Hz · ${noteOf(s.f)}</b><small>amplitude ${Math.round(s.amp*100)}%</small>`);
       dbMark.position.x=dbX(s.db);const safeH=40*Math.pow(2,-(s.db-80)/3);
       lDb.at(wp(rule,dbX(s.db),.3,0)).set(`${fmt(s.db)} dB<small>safe about ${safeH>=1?fmt(safeH,0)+" h":fmt(safeH*60,0)+" min"} a week</small>`).cls(s.db>80?"big hot":"big");
       LEVELS.forEach((l,i)=>lLev[i].at(wp(rule,dbX(l[1]),.24,0)));
+      // Chips and the description retain all values; avoid covering a phone-size
+      // apparatus with duplicate floating labels.
+      if(S.camera.aspect<1.1&&inspection==='lesson'){
+        [lRpm,lW,lDrag,lNeedle,lGs].forEach(l=>l.hide());
+        if(k==='formats')[lV,lA].forEach(l=>l.hide());
+        if(k==='loud'){lLev.forEach(l=>l.hide());lLamA.hide();lSpk.hide()}
+      }
+      if(inspection==='speaker')gA.children.forEach(o=>o.visible=o===spk);
+      const mechanicalNames=inspection==='drive'?[['MOTOR_PULLEY_PIVOT','Motor pulley'],['DECK_ASSEMBLY','Drive belt',beltLabelPoint],['BEARING_HOUSING','Driven pulley / spindle']]:inspection==='arm'?[['TONEARM_YAW','Tonearm pivot'],['STYLUS','Stylus contact'],['COUNTERWEIGHT','Counterweight']]:inspection==='speaker'?[['SPEAKER_CABINET','Fixed magnet',[.008,1.25/K,0]],['SPEAKER_CONE','Moving cone',[0,.032,.022]]]:[];
+      mechanics.forEach((label,i)=>{const spec=mechanicalNames[i],node=spec&&nodes[spec[0]];label.show(!!node);if(node)label.at(spec[2]?node.localToWorld(V3(...spec[2])):node.getWorldPosition(new THREE.Vector3())).set(spec[1])});
+      description.textContent=inspection==='drive'
+        ? `The belt links motor and platter. Pulleys follow the existing visual ratio 6.8:1 at ${fmt(s.rpm,1)} rpm; belt slip and torque are not simulated. The lesson's inertia is its stated estimate, not measured from this mesh.`
+        :inspection==='arm'?`The stylus touches the record at ${fmt(s.r*100,1)} cm from centre. The pivot and counterweight stay fixed while the arm follows the needle-position control. Drag the headshell where available, or use the radius slider.`
+        :inspection==='speaker'?`The cone moves with the lesson's slowed phase and ${Math.round(s.amp*100)}% amplitude. The cutaway reveals the fixed magnet behind it. This is illustrative motion, not a calibrated speaker or playback loudness.`
+        :zone==='A'?`Air particles oscillate in place; the compression pattern travels. Wavelength ${fmt(V_AIR/s.f,2)} m at ${fmt(s.f)} Hz. Motion is slowed and spacing exaggerated. Hear it plays a short tone only after a tap.`
+        :zone==='G'?`Magnified 3 mm groove: wavelength ${fmt(speedAt(s.r)/s.f*1000,2)} mm. Recorded ${fmt(s.f)} Hz; heard ${fmt(heard())} Hz. The texture on the full record is illustrative, not encoded audio.`
+        :`${s.format==='single'?'7-inch single':'12-inch LP'} at ${fmt(s.rpm,1)} rpm. Needle radius ${fmt(s.r*100,1)} cm; groove speed ${fmt(speedAt(s.r),2)} m/s. ${k==='spin'?'Pink follows the outer groove; mint follows the inner groove.':'Pink marks velocity; mint points toward the centre.'} Inspect the tonearm or belt drive below.`;
+      if(/[?&]debug\b/.test(location.search)){
+        const tip=deck.worldToLocal(nodes.STYLUS.getWorldPosition(new THREE.Vector3()));
+        const now=performance.now();if(previousFrame&&now-previousFrame<250){frameTimes.push(now-previousFrame);if(frameTimes.length>300)frameTimes.shift()}previousFrame=now;const sorted=frameTimes.slice().sort((a,b)=>a-b);
+        S.canvas.dataset.review=JSON.stringify({topic:k,zone,view:currentView,format:s.format,rpm:s.rpm,r:s.r,angle:s.ang,phase:s.phase,playing:s.playing,stylusRadiusM:Math.hypot(tip.x,tip.z)/K,stylusHeightM:tip.y/K,platterAngle:nodes.PLATTER_PIVOT.rotation.y,coneX:nodes.SPEAKER_CONE.position.x,heardHz:heard(),calls:S.renderer.info.render.calls,triangles:S.renderer.info.render.triangles,medianFrameMs:sorted[Math.floor(sorted.length*.5)]||0,p95FrameMs:sorted[Math.floor(sorted.length*.95)]||0});
+      }
+
     }};
 }
-StudyKit.mount({kupu:KUPU,caseTint:"blush",scene3d:vinyl3d,
+function vinyl3d(S){
+  let world=null,asset=null,failed=false,disposed=false;
+  const originalChildren=new Set(S.scene.children);
+  const controller=new AbortController(),host=S.canvas.parentElement,figure=host.parentElement;
+  const status=()=>document.getElementById('vinyl-load-status');
+  host.style.visibility='hidden';figure.classList.remove('s3-on');figure.classList.add('vinyl-loading');
+  document.documentElement.dataset.vinylAsset='loading';
+  if(status())status().textContent='Loading live 3D · static Blender render shown';
+  const cleanup=()=>{controller.abort();if(world)world.dispose();else if(asset){asset.dispose();asset.disposeRoots(S.scene.children.filter(o=>!originalChildren.has(o)))}world=null;asset=null;host.querySelector('.s3-ov').replaceChildren()};
+  function fail(error){if(failed||disposed)return;failed=true;cleanup();host.style.display='none';host.setAttribute('aria-hidden','true');figure.classList.remove('s3-on','vinyl-loading');document.getElementById('k-main').removeAttribute('aria-hidden');document.querySelector('.vinyl-parts').hidden=true;document.documentElement.dataset.vinylAsset='fallback';if(status())status().textContent='3D unavailable · simplified live diagram, controls and charts remain available';S.api.redraw();console.warn('Vinyl apparatus unavailable',error)}
+  window.addEventListener('pagehide',e=>{if(e.persisted)return;disposed=true;cleanup()});
+  import('./vinyl-asset.js').then(async m=>{
+    if(disposed)return;
+    const loaded=await m.loadVinyl(S,controller.signal);if(disposed){loaded.dispose();return}asset=loaded;
+    S.renderer.toneMapping=S.THREE.ACESFilmicToneMapping;S.renderer.toneMappingExposure=1.05;S.scene.fog=null;S.scene.background=new S.THREE.Color('#f7f3ec');S.ground.material.opacity=.12;S.sun.intensity=2.1;
+    S.camera.near=.02*(2.2/.146);S.camera.far=150;S.camera.updateProjectionMatrix();
+    world=vinylWorld(S,asset);world.step(S.api.step);world.update(s,S.api.step,0,0);S.renderer.render(S.scene,S.camera);
+    figure.classList.remove('vinyl-loading');figure.classList.add('s3-on');host.style.visibility='visible';
+    document.getElementById('k-main').setAttribute('aria-hidden','true');host.querySelector('.s3-ov').setAttribute('aria-hidden','true');document.querySelector('.vinyl-parts').hidden=false;
+    document.documentElement.dataset.vinylAsset='ready';if(status())status().textContent='Live 3D · slowed/exaggerated teaching motion · browser materials differ from the Blender render';
+    host.querySelector('.s3-hint').textContent='Drag to turn · arrow keys · + / − to zoom · Home to reset view';
+  }).catch(fail);
+  return {step(st){if(world&&!failed)try{world.step(st)}catch(e){fail(e)}},resize(){world?.resize()},update(...args){if(world&&!failed)try{world.update(...args)}catch(e){fail(e)}}};
+}
+const CFG={postprocessing:false,ar:false,kupu:KUPU,caseTint:"blush",scene3d:vinyl3d,
   eyebrow:"Science and maths · Waves, sound and circles", title:"The vinyl machine", crumb:"Year 9 and 10 Science (waves and sound) and Maths (circles, rates and ratios), plus three NCEA Level 2–3 steps on circular motion (AS91171, AS91524)", homeHash:"y10",
   fig:"FIG. 11 · A TURNTABLE, A GROOVE AND A SPEAKER", railTitle:"From groove to ear",
   badge:{label:"Years 9–11 · NCEA L2 91171 · L3 91524"},
   mainBox:"0 0 800 420", mainPhoneBig:true, mainLabel:"A turntable with a record spinning, a magnifier showing the groove's wiggles, and a speaker pushing air", closeBox:"0 0 420 260",
-  state:s, steps, onStep:(x,st)=>{s.step=st.k},
+  state:s, steps, onStep:(x,st)=>{s.step=st.k;stopSound();const link=document.getElementById?.("vinyl-graphics-link");if(link)link.href=(/[?&]lite\b/.test(location.search)?location.pathname:"?lite")+"#"+st.k},
   controls:[{type:"play"},
     {type:"select",id:"rpm",label:"Turntable",options:[["33.333","33⅓ rpm"],["45","45 rpm"],["78","78 rpm"],["25","25 rpm (slowed)"]],get:()=>String(s.rpm>33&&s.rpm<34?"33.333":s.rpm),set:(x,v)=>{s.rpm=v==="33.333"?100/3:+v}},
     {type:"range",id:"f",label:"Note recorded",min:55,max:1760,step:1,get:()=>s.f,set:(x,v)=>{s.f=v},fmt:()=>`${fmt(s.f)} Hz · ${noteOf(s.f)}`},
@@ -418,7 +483,41 @@ StudyKit.mount({kupu:KUPU,caseTint:"blush",scene3d:vinyl3d,
     {q:"NCEA: on the LP at 33⅓ rpm, put the needle where the centripetal acceleration is 1.0 m/s².",check:()=>s.format==="lp"&&Math.abs(s.rpm-100/3)<0.01&&Math.abs(acen(s.r)-1.0)<0.03,ok:()=>`Yes: a = ω²r = ${fmt(omega(),2)}² × ${fmt(s.r,3)} = ${fmt(acen(s.r),2)} m/s² at ${fmt(s.r*100,1)} cm.`,no:()=>s.format!=="lp"||Math.abs(s.rpm-100/3)>0.01?"Choose the 12-inch LP at 33⅓ first.":`Not yet: ${fmt(acen(s.r),2)} m/s² at ${fmt(s.r*100,1)} cm. a = ω²r, so r = 1.0 ÷ ${fmt(omega()*omega(),2)} = ${fmt(100/(omega()*omega()),1)} cm.`},
     {q:"NCEA: find the LP needle position (33⅓ rpm) where the groove speed equals the 7-inch single's outer groove at 45 rpm.",check:()=>s.format==="lp"&&Math.abs(s.rpm-100/3)<0.01&&Math.abs(vlin(s.r)-R_SINGLE*2*Math.PI*0.75)<0.012,ok:()=>`Yes: the single's edge moves at 0.088 × 4.71 = ${fmt(R_SINGLE*2*Math.PI*0.75,2)} m/s; on the LP that is r = v ÷ ω = ${fmt(R_SINGLE*2*Math.PI*0.75/omega()*100,1)} cm, well inside the edge.`,no:()=>s.format!=="lp"||Math.abs(s.rpm-100/3)>0.01?"Choose the 12-inch LP at 33⅓ first.":`Not yet: ${fmt(vlin(s.r),2)} m/s at ${fmt(s.r*100,1)} cm. The single's edge does 0.41 m/s; r = v ÷ ω.`}],
   papers:[{label:"NZQA: Physics, Earth and Space Science",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/physics-earth-and-space-science/"},{label:"NZQA: Mathematics and Statistics",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/"},{label:"NZQA: L2 Physics 91171 (mechanics)",url:"https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=91171"},{label:"NZQA: L3 Physics 91524 (mechanical systems)",url:"https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=91524"}],
-  truth:"The NCEA steps use the practice pack's radii (0.146 m LP, 0.088 m single); the platter's 1.5 kg and 0.15 m for the Level 3 figures are estimates. A 12-inch LP with grooves from about 14.6 cm to 6.0 cm from the centre. Speed of sound 343 m/s (air at 20°C). Safe listening uses the WHO guide of about 80 dB for up to 40 hours a week for adults (lower for children), halving for every 3 dB louder. The groove drawing is exaggerated so you can see it, and the waves are slowed down.",
+  truth:"The NCEA steps use the practice pack's radii (0.146 m LP, 0.088 m single); the platter's 1.5 kg and 0.15 m for the Level 3 figures are estimates. A 12-inch LP with grooves from about 14.6 cm to 6.0 cm from the centre. Speed of sound 343 m/s (air at 20°C). Safe listening uses the WHO guide of about 80 dB for up to 40 hours a week for adults (lower for children), halving for every 3 dB louder. The groove drawing is exaggerated so you can see it, and the waves are slowed down. The Blender-built deck and speaker are generic educational apparatus. Belt motion uses a fixed visual pulley ratio, not a slip or torque simulation. The speaker cone is illustrative; device playback volume is not the decibel control. Browser materials differ from the offline Blender render.",
   footer:"Covers Year 9–10 waves and sound (frequency, wavelength, amplitude, v = fλ, longitudinal waves, decibels) and maths (circumference, rates, ratios). Waves ideas lead into NCEA physics. The three NCEA steps cover circular motion for L2 AS91171 (ω = 2πf, v = rω, a = v²/r) and the rotational ideas of L3 AS91524 (I, L = Iω, ½Iω²)."
-});
+};
+function vinylViewTransfer(env){
+  const param="vinyl-view",prefix="assembl.vinyl.view.",numbers="rpm disc r f amp ang t arm db hours phase".split(" ");
+  const finite=x=>typeof x==="number"&&Number.isFinite(x);
+  function copy(state){
+    if(!state||!numbers.every(k=>finite(state[k]))||typeof state.playing!=="boolean"||!["lp","single"].includes(state.format))throw Error("Invalid experiment");
+    const out={};for(const k of [...numbers,"playing"])out[k]=state[k];out.format=state.format;return out;
+  }
+  return {
+    take(topics){const url=new URL(env.location.href),token=url.searchParams.get(param);if(!token)return null;
+      url.searchParams.delete(param);env.history.replaceState(null,"",url.href);
+      try{const key=prefix+token,raw=env.storage().getItem(key);env.storage().removeItem(key);const v=JSON.parse(raw);
+        if(v.version!==1||v.path!==url.pathname||v.topic!==url.hash.slice(1)||!topics.includes(v.topic))throw Error("Missing experiment");return {state:copy(v.state)};
+      }catch(e){return {error:true}}
+    },
+    prepare(state,topic){const url=new URL(env.location.href);url.searchParams.has("lite")?url.searchParams.delete("lite"):url.searchParams.set("lite","");url.hash=topic;
+      const token=env.nonce();env.storage().setItem(prefix+token,JSON.stringify({version:1,path:url.pathname,topic,state:copy(state)}));url.searchParams.set(param,token);return url.href}
+  };
+}
+const viewTransfer=vinylViewTransfer({location,history:window.history,storage:()=>window.sessionStorage,nonce:()=>window.crypto.randomUUID()});
+const savedView=viewTransfer.take(CFG.steps.map(st=>st.k));
+const API=StudyKit.mount(CFG);
+if(savedView&&!savedView.error){Object.assign(s,savedView.state);API.redraw()}
+if(document.querySelector?.('.playmain')){
+  const canvas=document.querySelector('.playmain .canvas'),poster=document.createElement('img');poster.className='vinyl-poster';poster.src='/assets/models/vinyl/vinyl-hero.jpg';poster.alt='Static Blender render of the pastel turntable and speaker';canvas.append(poster);
+  const note=document.createElement('p');note.className='vinyl-view-note';note.innerHTML='<span id="vinyl-load-status" role="status">Simplified live diagram · controls and charts remain available</span><a id="vinyl-graphics-link" href="?lite">Use simplified view</a>';canvas.after(note);
+  const parts=document.createElement('div');parts.className='vinyl-parts';parts.hidden=true;
+  parts.innerHTML='<label id="vinyl-test-label" for="vinyl-test-view" hidden>Apparatus for your check</label><select id="vinyl-test-view" hidden><option value="deck">Turntable</option><option value="pitch">Groove and notes</option><option value="air">Speaker and air</option></select><label for="vinyl-view">Inspect</label><select id="vinyl-view"><option value="lesson">Record and motion</option></select><p id="vinyl-view-description"></p>';note.after(parts);
+  const audio=document.createElement('p');audio.className='vinyl-audio';audio.innerHTML='<span id="vinyl-audio-status" role="status">Sound off · Hear it plays a short tone</span><button type="button" id="vinyl-stop" hidden>Stop sound</button>';parts.after(audio);document.getElementById('vinyl-stop').onclick=stopSound;
+  const link=note.querySelector('a'),lite=/[?&]lite\b/.test(location.search);link.textContent=lite?'Try live 3D':'Use simplified view';link.href=(lite?location.pathname:'?lite')+location.hash;
+  const status=document.createElement('span');status.setAttribute('role','status');note.append(status);
+  if(savedView?.error)status.textContent='The saved experiment was unavailable. This is a fresh experiment.';else if(savedView)status.textContent='Experiment preserved';
+  link.onclick=e=>{e.preventDefault();try{const url=viewTransfer.prepare(s,API.step.k);stopSound();location.assign(url)}catch(error){status.textContent='Couldn’t preserve this experiment. Your view and settings are unchanged.'}};
+}
+
 })();
