@@ -10,4 +10,4 @@ Apply 30 scene units/metre once. The rig controller uses true metre gaps; `phone
 
 The adapter reads all values from `phone.js`. Charge/field markers are illustrations; circuit boards and exploded spacing are teaching enlargements. Battery casing and capacitor plates never change scale. The lower charts retain their original functions. Browser glass uses alpha blending and differs from offline Cycles refraction. Physical-device and AR validation are not claimed; the generic AR export button is disabled on this route to avoid exporting hidden stations and exaggerated spacing as a real-scale object.
 
-Verification and known limits: [local integration review](../../../study/review/phone/README.md). Run `node --test study/tests/phone*.test.mjs` from the repository root.
+Verification and known limits: local QA record (not published). Run `node --test study/tests/phone*.test.mjs` from the repository root.

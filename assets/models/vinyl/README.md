@@ -30,4 +30,4 @@ The local hero and `study/thumbnails/vinyl.jpg` are JPEG derivatives of the actu
 - Existing analytic groove, keyboard, air particles, dust/vectors, decibel scale and format bars remain frontend apparatus. One zone is visible at a time, including Test yourself.
 - GPU resources owned by the asset and lesson apparatus are disposed on failure/exit; pending fetches are aborted. Live readiness requires a successful first pose and actual render.
 
-See [integration evidence](../../../study/review/vinyl/README.md) for tests, screenshots and limits. The generic AR export is disabled because the multi-scale teaching apparatus has not been validated as an AR scene.
+See local QA record (not published) for tests, screenshots and limits. The generic AR export is disabled because the multi-scale teaching apparatus has not been validated as an AR scene.
