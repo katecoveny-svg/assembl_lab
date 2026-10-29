@@ -1,6 +1,6 @@
 # Vinyl integration review
 
-**Follow-up:** [P2 framing and counterweight corrections](p2-followup.md) have 60 passing tests; fresh browser verification is pending because the local preview server could not bind under the current sandbox. The screenshots below document the original integration checkpoint.
+**Follow-up:** [P2 framing and counterweight corrections](p2-followup.md) have 60 passing tests and fresh desktop/320/375 browser verification. The screenshots below document the original integration checkpoint; the follow-up links the corrected captures.
 
 Local review checkpoint, 29 October 2026. Branch `codex/learning-machine-rollout`, directly after phone fix `1bc6eea115f02bd533ccb1bca7de3db47517e977`. No publication or release is implied.
 

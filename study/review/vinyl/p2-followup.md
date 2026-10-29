@@ -1,6 +1,6 @@
-# Vinyl P2 follow-up — browser recheck pending
+# Vinyl P2 follow-up — browser recheck completed
 
-Bounded follow-up to `5577f72c1341813e76dc0b8050f847cd206ca526`. Two review findings are addressed in source; the fresh visual check is blocked and this is **not a visually verified release candidate**.
+Bounded follow-up to `5577f72c1341813e76dc0b8050f847cd206ca526`. Two review findings are addressed in source. The preview blocker was subsequently resolved through the normal approval mechanism, and fresh ordinary IAB captures were inspected at desktop and 320/375 widths. Independent acceptance and release remain coordinator-owned.
 
 ## Changes
 
@@ -21,7 +21,7 @@ The framing test projects actual GLB primitive bounds through the new perspectiv
 | Drive mechanism | 43.2% | 52.0% |
 | Format comparison | 57.0% | 68.6% |
 
-These are geometric projection measurements, **not rendered-browser screenshots**. They do not establish label legibility, final lighting or touch usability. All images in this directory still document the preceding commit; none is presented as proof of this framing revision.
+These are geometric projection measurements, **not rendered-browser screenshots**. They do not establish label legibility, final lighting or touch usability. The `p2-*.jpg` images listed below are fresh rendered-browser evidence for this revision. Other images document the preceding integration checkpoint.
 
 Reproduce tests from the repository root:
 
@@ -29,10 +29,14 @@ Reproduce tests from the repository root:
 node --test study/tests/vinyl*.test.mjs study/tests/phone*.test.mjs study/tests/claw*.test.mjs study/tests/slushie*.test.mjs study/tests/lesson-models.test.mjs
 ```
 
-## Exact blocker and remaining check
+## Initial blocker and approved resolution
 
 The old preview server was no longer running. IAB opening `http://127.0.0.1:8795/study/m/vinyl.html?debug#spin` returned `net::ERR_CONNECTION_REFUSED`. Starting the same local-only preview using `python3 -m http.server 8795 --bind 127.0.0.1` from this repository failed at socket binding with `PermissionError: [Errno 1] Operation not permitted` under the current sandbox.
 
-Status: server start **denied by the sandbox**, no server started; browser visual verification **pending**, not uncertain. No expanded permission was requested and no alternate execution surface was used to bypass the restriction.
+The coordinator subsequently authorised requesting this exact localhost-only server through the normal escalation approval mechanism. That request succeeded, starting the same command on the same port; no persistent network/security settings or browser permissions changed. The initial denial is resolved.
 
-Once an authorised preview is available, inspect deck, LP/single comparison and drive at both 320/375 widths; inspect tonearm wording and motion; confirm readable labels, no horizontal overflow and usable camera Home reset. Recheck desktop and the unchanged speaker cutaway. Save fresh screenshots before accepting the framing fix. Bike remains untouched and awaits its corrected asset package. No push, merge or deployment occurred.
+Fresh checks confirmed readable mechanism labels, a substantially taller deck/drive composition, camera Home reset and no horizontal overflow at 375 px. The actual counterweight moves between 6.0 and 14.6 cm needle positions while the pivot remains in place; the corrected explanation is rendered in the page. Desktop composition and speaker cutaway remain intact. No browser warnings or errors were captured during this recheck. These are emulated viewport checks, not physical phone tests.
+
+Fresh evidence: [deck 320](p2-deck-320.jpg), [drive 320](p2-drive-320.jpg), [single 320](p2-single-320.jpg), [deck 375](p2-deck-375.jpg), [drive 375](p2-drive-375.jpg), [single 375](p2-single-375.jpg), [LP 375](p2-lp-375.jpg), [inner arm](p2-arm-375.jpg), [outer arm](p2-arm-outer-375.jpg), [desktop deck](p2-deck-desktop.jpg), [desktop speaker](p2-speaker-desktop.jpg).
+
+No push, merge or deployment occurred.
