@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: units and numeric boundaries
+ok 1 - units and numeric boundaries
+  ---
+  duration_ms: 2.269167
+  type: 'test'
+  ...
+# Subtest: one phase sequence, closed intervals and no simultaneous valve groups
+ok 2 - one phase sequence, closed intervals and no simultaneous valve groups
+  ---
+  duration_ms: 12.329125
+  type: 'test'
+  ...
+# Subtest: host clock follows bpm; paused and invalid advances do nothing
+ok 3 - host clock follows bpm; paused and invalid advances do nothing
+  ---
+  duration_ms: 0.192333
+  type: 'test'
+  ...
+# Subtest: immutable captures and comparison inputs survive every topic/mode/step
+ok 4 - immutable captures and comparison inputs survive every topic/mode/step
+  ---
+  duration_ms: 1.1195
+  type: 'test'
+  ...
+# Subtest: reload transfer revalidates, retains evidence and notes, never resumes play
+ok 5 - reload transfer revalidates, retains evidence and notes, never resumes play
+  ---
+  duration_ms: 1.129916
+  type: 'test'
+  ...
+# Subtest: late completions are disposed; switching cancels in-flight model load
+ok 6 - late completions are disposed; switching cancels in-flight model load
+  ---
+  duration_ms: 0.517333
+  type: 'test'
+  ...
+# Subtest: failure keeps lifecycle usable and disposal releases successful scene exactly once
+ok 7 - failure keeps lifecycle usable and disposal releases successful scene exactly once
+  ---
+  duration_ms: 0.681958
+  type: 'test'
+  ...
+# Subtest: page disposal while loading prevents later ready notification
+ok 8 - page disposal while loading prevents later ready notification
+  ---
+  duration_ms: 0.251292
+  type: 'test'
+  ...
+# Subtest: motion gate respects reduced motion, hidden pages and disposal; manual phases remain usable
+ok 9 - motion gate respects reduced motion, hidden pages and disposal; manual phases remain usable
+  ---
+  duration_ms: 0.68625
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 115.706208

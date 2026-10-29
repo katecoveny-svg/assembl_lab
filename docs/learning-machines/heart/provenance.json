@@ -1,0 +1,33 @@
+{
+  "base_commit": "5577f72c1341813e76dc0b8050f847cd206ca526",
+  "asset_library_id": "libfile_d1070ce20fcc819184383eb8d0bd651b",
+  "hero_library_id": "libfile_af2569a994d88191a5c28f788914df9b",
+  "original_inputs_modified": false,
+  "existing_library_assets_replaced": false,
+  "files": [
+    {
+      "path": "study/m/heart/assets/heart_pump_lab.glb",
+      "sha256": "6cd2c913162438acad8df8ec30c97438f10faf7c4c500e58f4b66462f19b81ab",
+      "bytes": 839304,
+      "matches_reviewed_asset_package": true
+    },
+    {
+      "path": "study/m/heart/assets/heart_hero.png",
+      "sha256": "5bb935797fb7176acad14ebeb563ab03780ac88f3df4df5d301f44e12a333a31",
+      "bytes": 1623592,
+      "matches_reviewed_asset_package": true
+    },
+    {
+      "path": "study/m/heart/heart-rig.js",
+      "sha256": "ac25f612ef5ebe299c7f5fa231bddc4db33c6c8898f57e2b35084c41f03d0b5b",
+      "bytes": 2187,
+      "matches_reviewed_asset_package": true
+    },
+    {
+      "path": "study/m/heart/phase-pose.js",
+      "sha256": "1a03d800c30a1af76c51421305331dbe8fa7a5057b14963193a61367b6499360",
+      "bytes": 577,
+      "matches_reviewed_asset_package": true
+    }
+  ]
+}
