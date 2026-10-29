@@ -14,9 +14,9 @@ const MID=(()=>{try{return (location.pathname.split("/").pop()||"").replace(/\.h
 const CASE={sky:"#BFDDF5",mint:"#BFE8D6",lavender:"#D9CBF2",blush:"#F3B8C8",butter:"#F7E7A6",peach:"#F9D2B8"};
 const DEEP={sky:"#3A6FB8",mint:"#2A7D63",lavender:"#6A50BE",blush:"#B5466F",butter:"#8A6510",peach:"#B2552D"};
 const STINT={science:"sky",biochem:"mint",maths:"lavender",english:"blush",social:"peach",digital:"blush",tech:"butter"};
-const MTINT={slushie:"sky",space:"lavender",reactions:"peach",vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
+const MTINT={heart:"blush",slushie:"sky",space:"lavender",reactions:"peach",vend:"mint",phone:"sky",queue:"lavender",plan:"butter",bike:"peach",vinyl:"blush",pinball:"sky",shaky:"peach"};
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
-const MSUB={slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
+const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};

@@ -9,6 +9,7 @@
    - Light (trail zone only): a low warm sun through a canopy (a hidden dappling screen that only casts shadows), soft
      forest-tinted ambient light, depth haze, and faint shafts of light between the trunks.
    All textures are drawn from code (tex/texgen.js; open tex/texgen.html to regenerate them); no photographs. */
+import {disposeBikeRoots} from "../bike-asset.js";
 import * as THREE from "three";
 import {mergeGeometries} from "three/addons/utils/BufferGeometryUtils.js";
 import {Tree} from "./vendor/ez-tree/tree.js";
@@ -266,5 +267,5 @@ export async function buildForest(S,P){const t0=performance.now();let tLoaded=0;
     // the dapple screen hangs above the rider; its pattern stays fixed to the ground as it moves
     const {t,SZ,TILE}=gobo.userData;gobo.position.set(x+3,y+15,-9);t.offset.set((gobo.position.x-SZ/2)/TILE,(-gobo.position.z-SZ/2)/TILE)}
   const tBuilt=performance.now();
-  return {group,enter,leave,update,meshes,stats:()=>({trees:trees.length,ponga:ponga.length,meshes:meshes.length,loadMs:Math.round(tLoaded-t0),buildMs:Math.round(tBuilt-tLoaded),marks:marks.join(" ")})};
+  return {group,enter,leave,update,meshes,dispose(){leave();envTex.dispose();disposeBikeRoots([group])},stats:()=>({trees:trees.length,ponga:ponga.length,meshes:meshes.length,loadMs:Math.round(tLoaded-t0),buildMs:Math.round(tBuilt-tLoaded),marks:marks.join(" ")})};
 }

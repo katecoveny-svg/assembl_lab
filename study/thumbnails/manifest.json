@@ -97,15 +97,19 @@
       "id": "vinyl",
       "three": true,
       "source": "m/vinyl.html",
-      "capture": "/.playmain > .canvas or experience main panel",
-      "image": "vinyl.jpg"
+      "capture": "Blender 5.1.1 offline render; dedicated whole-object card, not a runtime screenshot",
+      "image": "vinyl.jpg",
+      "mode": "blender-render",
+      "asset": "/assets/models/vinyl/assembl-vinyl-atelier-web.glb"
     },
     {
       "id": "bike",
       "three": true,
       "source": "m/bike.html",
-      "capture": "/.playmain > .canvas or experience main panel",
-      "image": "bike.jpg"
+      "capture": "Blender 5.1.1 offline render; dedicated whole-object card, not a runtime screenshot",
+      "image": "bike.jpg",
+      "mode": "blender-render",
+      "asset": "/assets/models/bike/assembl-bike-atelier-web.glb"
     },
     {
       "id": "lines",
@@ -230,8 +234,9 @@
       "id": "phone",
       "three": true,
       "source": "m/phone.html",
-      "capture": "/.playmain > .canvas or experience main panel",
-      "image": "phone.jpg"
+      "capture": "Blender 5.1.1 offline Cycles render; dedicated complete-apparatus card framing, not a runtime screenshot",
+      "image": "phone.jpg",
+      "renderSource": "phone-card.png"
     },
     {
       "id": "queue",
@@ -246,6 +251,14 @@
       "source": "m/plan.html",
       "capture": "/.playmain > .canvas or experience main panel",
       "image": "plan.jpg"
+    },
+    {
+      "id": "heart",
+      "three": true,
+      "source": "m/heart.html",
+      "capture": "Approved Blender hero framed to 800 \u00d7 500 without cropping the apparatus",
+      "image": "heart.jpg",
+      "assetSource": "m/heart/assets/heart_hero.png"
     }
   ]
 }
