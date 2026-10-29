@@ -23,3 +23,13 @@ Artwork is generated in your browser. No account or paid generation service is n
 Exports are PNG still captures with square, portrait or wide framing. The interface reports both captured and output dimensions: a larger export can upscale the canvas and does not promise extra detail. Optional text stays local. Native sharing is feature-detected and user-triggered. A4 printing uses 12 mm margins.
 
 Desktop browser checks do not certify physical phone performance, AR, native sharing delivery or physical printing. These are creative and educational models, not scientific measurements.
+
+## Sculpture Atelier · 30 October 2026
+
+The studio opens on real parametric sculpture geometry: continuous knot, ripple halo, five-petal bloom and woven orbit. Seed, body thickness and rib count change the generated mesh. Porcelain, glass, chrome and blush resin are artistic materials; browser glass is a simplified real-time treatment and does not claim offline Cycles fidelity. Daylight, gallery and rose lighting are creative setups.
+
+The WebGL and software renderers share `atelier-shapes.js` for their centreline. WebGL uses higher mesh resolution and physical materials. The explicitly labelled software 3D path projects actual mesh geometry with simplified reflective materials; its output is not a Blender render. Saved variations remain on this device, up to eight. JSON recipes and recipe URLs preserve supported parameters, camera turn and artwork time; they do not upload anything.
+
+Modern worlds re-render at the requested PNG output dimensions before composition. Legacy drawing worlds retain canvas capture. Square output is 2400 × 2400, story 2160 × 3840 and wide 3200 × 2240. Larger pixel counts do not increase geometric detail. All outputs carry an assembl wordmark. OBJ exports contain artwork mesh geometry only; no manufacturing, collision, watertightness, physical material, metre-scale or printability claim is made.
+
+Checks: `node --test study/patterns/atelier-shapes.test.js study/patterns/atelier-mesh.test.js study/patterns/studio.test.js study/patterns/runtime.test.cjs study/patterns/caption.test.cjs` (18 passing). Browser review exercised the software path, preset changes, saved variation restoration, a 2400-square PNG download and 375px-frame layout. GPU materials and physical-device performance remain unverified in this environment. The OBJ was prepared in the UI and its generated vertices/faces were validated by tests; automated browser file transfer timed out for OBJ.

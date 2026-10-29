@@ -37,7 +37,7 @@ function studioHarness() {
     if (!ids.has(id)) ids.set(id, element(id));
     return ids.get(id);
   };
-  const materials = ['chrome','glass','coral'].map(material => {
+  const materials = ['chrome','glass','coral','porcelain'].map(material => {
     const button = element(); button.dataset.material = material; return button;
   });
   const legacy = {
@@ -61,6 +61,7 @@ function studioHarness() {
     requestAnimationFrame: () => ++stats.requested,
     cancelAnimationFrame: () => stats.cancelled++, console,
     URL: {createObjectURL: () => 'blob:test-file', revokeObjectURL() {}},
+    location:{hash:'',search:''},URLSearchParams,cleanRecipe:vm.runInNewContext(read('atelier-shapes.js').replace(/export /g,'' )+';cleanRecipe'),
     navigator: {}, File: class { constructor(parts, name) { this.name = name; } },
     captionLines: () => 0, createLiquid() {}, createGarden() {}, createSculpture() {}
   };
@@ -187,11 +188,11 @@ test('initial material, switching and reset keep exactly one truthful pressed la
   };
   // controls() is the common initial/mode-entry path; it must repair stale markup.
   h.materials[1].attributes['aria-pressed'] = 'true';
-  h.access.controls(); assertSelected('chrome');
+  h.access.controls(); assertSelected('porcelain');
   for (const button of h.materials) {
     button.onclick(); assertSelected(button.dataset.material);
     h.access.controls(); assertSelected(button.dataset.material);
   }
-  h.get('reset').onclick(); assertSelected('chrome');
-  h.access.controls(); assertSelected('chrome');
+  h.get('reset').onclick(); assertSelected('porcelain');
+  h.access.controls(); assertSelected('porcelain');
 });

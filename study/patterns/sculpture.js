@@ -5,6 +5,7 @@
  */
 import * as THREE from '../../assets/vendor/three/three.module.min.js';
 import { createCanvasSculpture } from './sculpture-canvas.js';
+import { shapePoint } from './atelier-shapes.js';
 
 const TAU = Math.PI * 2;
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
@@ -46,16 +47,12 @@ function studioEnvironment(renderer) {
 }
 
 class SculptedCurve extends THREE.Curve {
-  constructor(seed, variant) { super(); this.seed=seed;this.variant=variant; }
-  getPoint(u, target=new THREE.Vector3()) {
-    const a=u*TAU, phase=Math.sin(this.seed*.017)*.12;
-    const radius=1.02+.38*Math.cos(3*a+phase);
-    return target.set(radius*Math.cos(2*a),radius*Math.sin(2*a)*1.12,.48*Math.sin(3*a+phase));
-  }
+  constructor(seed, form) { super(); this.seed=seed;this.form=form; }
+  getPoint(u, target=new THREE.Vector3()) { return target.fromArray(shapePoint(this.form,u,this.seed)); }
 }
 
-function ribbonGeometry(seed,variant) {
-  const curve=new SculptedCurve(seed,variant), segments=360, sides=40;
+export function ribbonGeometry(seed,variant,settings={}) {
+  const curve=new SculptedCurve(seed,settings.form||'knot'), segments=360, sides=40;
   const frames=curve.computeFrenetFrames(segments,true);
   const positions=new Float32Array((segments+1)*(sides+1)*3);
   const normals=new Float32Array(positions.length);
@@ -66,11 +63,12 @@ function ribbonGeometry(seed,variant) {
     const twist=.62*Math.sin(a*2+variant*.9)+.28*Math.sin(a*3+seed*.001)+variant*.8;
     n.copy(frames.normals[i]).multiplyScalar(Math.cos(twist)).addScaledVector(frames.binormals[i],Math.sin(twist));
     b.copy(frames.binormals[i]).multiplyScalar(Math.cos(twist)).addScaledVector(frames.normals[i],-Math.sin(twist));
-    const width=.235*(1+.10*Math.sin(a*2+.7));
-    const thickness=.20;
+    const width=.235*(settings.thickness||.72)*(1+.10*Math.sin(a*2+.7));
+    const thickness=.20*(settings.thickness||.72);
     for(let j=0;j<=sides;j++) {
       const v=j/sides, theta=v*TAU;
-      pos.copy(centre).addScaledVector(n,Math.cos(theta)*width).addScaledVector(b,Math.sin(theta)*thickness);
+      const rib=settings.flutes?1+.12*Math.cos(theta*settings.flutes+u*TAU*(settings.energy||.5)*2):1;
+      pos.copy(centre).addScaledVector(n,Math.cos(theta)*width*rib).addScaledVector(b,Math.sin(theta)*thickness*rib);
       const index=i*(sides+1)+j;
       positions.set([pos.x,pos.y,pos.z],index*3);
       normal.copy(n).multiplyScalar(Math.cos(theta)/width).addScaledVector(b,Math.sin(theta)/thickness).normalize();
@@ -82,7 +80,7 @@ function ribbonGeometry(seed,variant) {
   geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
   geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
   geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));
-  geometry.setIndex(indices);geometry.computeBoundingSphere();
+  geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingSphere();
   return geometry;
 }
 
@@ -143,18 +141,20 @@ export function createSculpture(canvas) {
   const chrome=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xe8e7e1,metalness:1,roughness:.13,iridescence:.12});
   const coral=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xffb69f,metalness:.14,transmission:.46,thickness:.7,ior:1.43,iridescence:.30,attenuationColor:new THREE.Color(0xff9d8b),attenuationDistance:2});
   const mint=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xc4e7d9,metalness:.2,transmission:.46,thickness:.65,ior:1.40,iridescence:.2});
-  const materials=[glass,chrome,coral,mint];
+  const porcelain=new THREE.MeshPhysicalMaterial({...materialOptions,color:0xc9bcdf,metalness:0,roughness:.24,clearcoat:1,clearcoatRoughness:.12});
+  const materials=[glass,chrome,coral,mint,porcelain];
   let ribbons=[],seed=42,lastMaterial='',lastDark=null,width=1,height=1,disposed=false;
-  let turnX=0,turnY=0,sculpt=0;
+  let turnX=0,turnY=0,sculpt=0,shapeKey='',zoom=1;
+  const geometryKey=s=>[s.seed,s.form,s.thickness,s.flutes,s.energy].join('/');
 
-  function reset(nextSeed=42) {
+  function reset(nextSeed=42,settings={}) {
     seed=Number(nextSeed)||42;
     for(const mesh of ribbons){group.remove(mesh);mesh.geometry.dispose();}
     ribbons=[];
-    const a=new THREE.Mesh(ribbonGeometry(seed,0),glass);
+    const a=new THREE.Mesh(ribbonGeometry(seed,0,settings),glass);
     // One closed, separated strand avoids intersections between independently moving meshes.
     ribbons=[a];group.add(a);
-    turnX=0;turnY=0;sculpt=0;lastMaterial='';
+    turnX=0;turnY=0;sculpt=0;lastMaterial='';shapeKey=geometryKey({...settings,seed});
   }
   function resize(w,h,dpr=1) {
     width=Math.max(1,w);height=Math.max(1,h);
@@ -162,10 +162,10 @@ export function createSculpture(canvas) {
     renderer.setSize(width,height,false);
     camera.aspect=width/height;
     // Editorial, edge-to-edge crop on phones; a whole sculpture on wider screens.
-    const vertical=width>height?5.2:6.4;
+    const vertical=4.9/Math.min(1,width/height)/zoom;
     const distance=(vertical/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
     camera.position.set(0,.15,distance);
-    camera.lookAt(0,-.65,0);camera.updateProjectionMatrix();
+    camera.lookAt(0,0,0);camera.updateProjectionMatrix();
   }
   function interact(x,y,dx=0,dy=0) {
     turnY+=dx*3.2;turnX=clamp(turnX+dy*2.2,-.8,.8);
@@ -173,13 +173,17 @@ export function createSculpture(canvas) {
   }
   function render(time=0,settings={}) {
     if(disposed)return;
-    if(settings.seed!=null&&Number(settings.seed)!==seed)reset(settings.seed);
+    if(geometryKey(settings)!==shapeKey){const x=turnX,y=turnY;reset(settings.seed,settings);turnX=x;turnY=y;}
+    if(zoom!==(settings.zoom||1)){zoom=settings.zoom||1;resize(width,height,renderer.getPixelRatio());}
     const material=settings.material||'glass';
     if(lastMaterial!==material) {
-      ribbons[0].material=material==='chrome'?chrome:material==='coral'?coral:glass;
+      ribbons[0].material=material==='chrome'?chrome:material==='coral'?coral:material==='porcelain'?porcelain:glass;
       lastMaterial=material;
     }
-    const dark=Boolean(settings.dark);
+    const dark=Boolean(settings.dark||settings.lighting==='gallery');
+    key.color.set(settings.lighting==='rose'?0xffc6cb:0xfff5e9);
+    rim.color.set(settings.lighting==='rose'?0xc9c1ff:0xeadfff);
+    scene.environmentIntensity=settings.lighting==='gallery'?1.7:1.1;
     if(lastDark!==dark){scene.background.set(dark?'#211e3b':'#f6f3ec');shadow.material.uniforms.uDark.value=dark?1:0;backdropMaterial.uniforms.uDark.value=dark?1:0;lastDark=dark;}
     const energy=clamp(settings.energy??.5,0,1), clock=Number.isFinite(time)?time:0;
     group.rotation.set(-.1+turnX+Math.sin(clock*.16)*.07*energy,turnY+Math.sin(clock*.13)*.18*energy,-.14+sculpt+(energy-.5)*.35);
@@ -194,5 +198,12 @@ export function createSculpture(canvas) {
     backdrop.geometry.dispose();backdropMaterial.dispose();shadow.geometry.dispose();shadow.material.dispose();environment.dispose();renderer.dispose();
   }
   reset(seed);resize(canvas.clientWidth||400,canvas.clientHeight||650,globalThis.devicePixelRatio||1);
-  return {render,resize,interact,reset,dispose};
+  function exportObj(){
+    group.updateMatrixWorld(true);const lines=['# assembl Living Studio — artwork mesh; not manufacturing validated'];let offset=1;
+    for(const mesh of ribbons){const g=mesh.geometry.clone().applyMatrix4(mesh.matrixWorld),p=g.getAttribute('position'),idx=g.index;lines.push('o assembl_sculpture');
+      for(let i=0;i<p.count;i++)lines.push('v '+p.getX(i)+' '+p.getY(i)+' '+p.getZ(i));
+      for(let i=0;i<idx.count;i+=3)lines.push('f '+(idx.getX(i)+offset)+' '+(idx.getX(i+1)+offset)+' '+(idx.getX(i+2)+offset));
+      offset+=p.count;g.dispose();}return lines.join('\n');
+  }
+  return {render,resize,interact,reset,dispose,exportObj,rendererKind:'webgl',getView:()=>({turnX,turnY,sculpt}),setView:v=>{if(v){turnX=clamp(Number(v.turnX)||0,-.8,.8);turnY=Number.isFinite(v.turnY)?v.turnY:0;sculpt=clamp(Number(v.sculpt)||0,-.3,.3);}}};
 }

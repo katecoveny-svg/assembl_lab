@@ -1,3 +1,4 @@
+import {shapePoint} from './atelier-shapes.js';
 /** CPU ribbon renderer for browsers without WebGL. Real projected geometry,
  * depth-sorted surfaces and procedural reflective materials; no baked artwork. */
 const TAU=Math.PI*2;
@@ -14,16 +15,16 @@ function curve(a,v,p){
   if(v===1)return[1.07*Math.sin(2*a+.91)+.12*Math.sin(4*a+p),1.58*Math.cos(a+.37)+.10*Math.sin(3*a+p),.62*Math.cos(3*a+.6)-.12*Math.cos(a+p)];
   return[.94*Math.cos(a)+.21*Math.sin(3*a+p),1.34*Math.sin(a)+.17*Math.sin(2*a+p),.66*Math.sin(2*a+.8)+.13*Math.cos(3*a)];
 }
-function geometry(seed,variant){
+function geometry(seed,variant,settings={}){
   const vertices=[],segments=180,sides=24,p=seed*.00071;
   for(let i=0;i<=segments;i++){
-    const a=i/segments*TAU,c=curve(a,variant,p),next=curve(a+.001,variant,p),t=norm(next.map((v,k)=>v-c[k]));
+    const a=i/segments*TAU,c=shapePoint(settings.form||'knot',a/TAU,seed),next=shapePoint(settings.form||'knot',(a+.001)/TAU,seed),t=norm(next.map((v,k)=>v-c[k]));
     let n=norm([-t[1],t[0],0]),b=norm(cross(t,n));
     const twist=.62*Math.sin(a*2+variant*.9)+.28*Math.sin(a*3+seed*.001)+variant*.8;
     [n,b]=[add(mul(n,Math.cos(twist)),mul(b,Math.sin(twist))),add(mul(b,Math.cos(twist)),mul(n,-Math.sin(twist)))];
-    const width=(variant===0?.47:variant===1?.35:.24)*(1+.24*Math.sin(a*2+.7+variant)),thick=variant===0?.135:variant===1?.1:.12;
+    const width=.235*(settings.thickness||.72)*(1+.1*Math.sin(a*2+.7)),thick=.20*(settings.thickness||.72);
     for(let j=0;j<=sides;j++){
-      const theta=j/sides*TAU,point=add(c,add(mul(n,Math.cos(theta)*width),mul(b,Math.sin(theta)*thick)));
+      const theta=j/sides*TAU,rib=settings.flutes?1+.12*Math.cos(theta*settings.flutes+i/segments*TAU*(settings.energy||.5)*2):1,point=add(c,add(mul(n,Math.cos(theta)*width*rib),mul(b,Math.sin(theta)*thick*rib)));
       const normal=norm(add(mul(n,Math.cos(theta)/width),mul(b,Math.sin(theta)/thick)));
       vertices.push({p:point,n:normal});
     }
@@ -32,7 +33,7 @@ function geometry(seed,variant){
   for(let i=0;i<segments;i++)for(let j=0;j<sides;j++){const k=i*(sides+1)+j,l=k+sides+1;faces.push([k,k+1,l+1,l]);}
   return{vertices,faces};
 }
-function surface(normal,material,depth){
+function surface(normal,material,depth,lighting){
   const n=norm(normal),facing=Math.abs(n[2]),r=[2*n[0]*n[2],2*n[1]*n[2],2*n[2]*n[2]-1];
   // Procedural studio reflection: black photographic flags, soft-box strips,
   // neutral room and lilac / peach bounce cards. Reflections move with normals.
@@ -53,23 +54,28 @@ function surface(normal,material,depth){
     const mint=.21*Math.pow(Math.max(0,Math.sin(longitude*2.3+r[1]*4.1)),6);
     col=mix(col,[174,227,208],mint);
     col=col.map((v,i)=>v+overhead*56+stripe*35+rim*20);
+  }else if(material==='porcelain'){
+    const diffuse=.48+.48*Math.max(0,dot(n,norm([-.5,.75,1])));
+    col=[201,188,223].map(v=>v*diffuse+overhead*48+stripe*18);
   }else if(material==='coral'){
     col=mix(col,[251,159,144],.48);
     col=col.map(v=>v+overhead*60+stripe*50);
   }
+  if(lighting==='rose')col=mix(col,[230,172,201],.18);
+  if(lighting==='gallery')col=col.map(v=>v*.91+stripe*25);
   const ao=clamp(.96+depth*.022,.87,1);
   return col.map(v=>Math.round(clamp(v*ao,0,255)));
 }
 // Precompute a continuous reflective hemisphere. Rasterisation interpolates
 // normals per pixel, not colours per polygon: highlights remain smooth.
 const MAT_SIZE=384;
-function materialMap(material){
+function materialMap(material,lighting){
   const data=new Uint8ClampedArray(MAT_SIZE*MAT_SIZE*4);
   for(let y=0;y<MAT_SIZE;y++)for(let x=0;x<MAT_SIZE;x++){
     let nx=x/(MAT_SIZE-1)*2-1,ny=y/(MAT_SIZE-1)*2-1;
     const length=nx*nx+ny*ny;
     if(length>1){const k=1/Math.sqrt(length);nx*=k;ny*=k;}
-    const rgb=surface([nx,ny,Math.sqrt(Math.max(0,1-nx*nx-ny*ny))],material,0),i=(y*MAT_SIZE+x)*4;
+    const rgb=surface([nx,ny,Math.sqrt(Math.max(0,1-nx*nx-ny*ny))],material,0,lighting),i=(y*MAT_SIZE+x)*4;
     data[i]=rgb[0];data[i+1]=rgb[1];data[i+2]=rgb[2];data[i+3]=255;
   }
   return data;
@@ -78,9 +84,11 @@ export function createCanvasSculpture(canvas){
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx)throw new Error('This browser cannot create a drawing canvas.');
   let width=400,height=650,dpr=1,seed=42,meshes=[],turnX=0,turnY=0,sculpt=0,disposed=false;
-  let frame=null,background=null,depth=null,lastDark=null;
-  const maps={glass:materialMap('glass'),chrome:materialMap('chrome'),coral:materialMap('coral')};
-  function reset(next=42){seed=Number(next)||42;meshes=[geometry(seed,0),geometry(seed+390,1),geometry(seed+910,2)];turnX=turnY=sculpt=0;}
+  let frame=null,background=null,depth=null,lastDark=null,shapeKey='',lastSettings={},lastTime=0;
+  const geometryKey=s=>[s.seed,s.form,s.thickness,s.flutes,s.energy].join('/');
+  const makeMaps=light=>Object.fromEntries(['glass','chrome','coral','porcelain'].map(m=>[m,materialMap(m,light)]));
+  let maps=makeMaps('daylight'),lastLight='daylight';
+  function reset(next=42,settings={}){seed=Number(next)||42;meshes=[geometry(seed,0,settings)];turnX=turnY=sculpt=0;shapeKey=geometryKey({...settings,seed});}
   function resize(w,h,ratio=1){width=Math.max(1,w);height=Math.max(1,h);dpr=Math.min(1.5,Math.max(1,ratio));canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);frame=background=depth=null;}
   function interact(x,y,dx=0,dy=0){turnY+=dx*3.2;turnX=clamp(turnX+dy*2.2,-.8,.8);sculpt=clamp((x-.5)*.35+(y-.5)*.2,-.3,.3);}
   function prepareBackground(dark){
@@ -118,8 +126,10 @@ export function createCanvasSculpture(canvas){
   }
   function render(time=0,settings={}){
     if(disposed)return;
-    if(settings.seed!=null&&Number(settings.seed)!==seed)reset(settings.seed);
-    const dark=Boolean(settings.dark),energy=clamp(settings.energy??.5),scale=height/4.75;
+    if(geometryKey(settings)!==shapeKey){const x=turnX,y=turnY;reset(settings.seed,settings);turnX=x;turnY=y;}
+    lastSettings={...settings};lastTime=time;
+    if(lastLight!==settings.lighting){lastLight=settings.lighting;maps=makeMaps(lastLight);}
+    const dark=Boolean(settings.dark||settings.lighting==='gallery'),energy=clamp(settings.energy??.5),scale=Math.min(width,height)/4.9*(settings.zoom||1);
     if(!frame||lastDark!==dark)prepareBackground(dark);
     frame.data.set(background.data);depth.fill(-Infinity);
     const rx=-.1+turnX+Math.sin(time*.16)*.07*energy,ry=turnY+Math.sin(time*.13)*.18*energy,rz=-.14+sculpt+(energy-.5)*.35;
@@ -142,5 +152,8 @@ export function createCanvasSculpture(canvas){
   }
   function dispose(){disposed=true;meshes=[];frame=background=depth=null;}
   reset(seed);resize(canvas.clientWidth||400,canvas.clientHeight||650,globalThis.devicePixelRatio||1);
-  return{render,resize,interact,reset,dispose,renderer:'canvas2d'};
+  function exportObj(){const lines=['# assembl Living Studio — artwork mesh; not manufacturing validated'];let offset=1;
+    const energy=clamp(lastSettings.energy??.5),rx=-.1+turnX+Math.sin(lastTime*.16)*.07*energy,ry=turnY+Math.sin(lastTime*.13)*.18*energy,rz=-.14+sculpt+(energy-.5)*.35;
+    for(const mesh of meshes){for(const v of mesh.vertices)lines.push('v '+rotate(v.p,rx,ry+Math.sin(lastTime*.12)*.11*energy,rz).join(' '));for(const f of mesh.faces){lines.push('f '+[f[0],f[1],f[2]].map(i=>i+offset).join(' '));lines.push('f '+[f[0],f[2],f[3]].map(i=>i+offset).join(' '));}offset+=mesh.vertices.length;}return lines.join('\n');}
+  return{render,resize,interact,reset,dispose,exportObj,renderer:'canvas2d',getView:()=>({turnX,turnY,sculpt}),setView:v=>{if(v){turnX=clamp(Number(v.turnX)||0,-.8,.8);turnY=Number.isFinite(v.turnY)?v.turnY:0;sculpt=clamp(Number(v.sculpt)||0,-.3,.3);}}};
 }
