@@ -43,3 +43,16 @@ test('portrait trail camera keeps wheels and rider in frame on steep sections at
   }
  }
 });
+test('stopping camera contains the complete selected bike and rider at both ends of the track and all phone widths',async()=>{
+ const vm=await import('node:vm'),{current}=await import('./bike-harness.mjs'),app=mount(),body=current.slice(current.indexOf('  function stoppingFrame('),current.indexOf('  function benchViews('));
+ const meta=new Map(asset.nodes.filter(n=>n.mesh!==undefined).map(n=>[n.name,n]));
+ for(const aspect of [260/350,315/350,960/530,1.1])for(const sx of [0,1.5,17.9,25,100])for(const model of ['flow','drop','ridge'])for(const comp of [0,.45])for(const pitch of [0,-.02,-.08]){
+  const state={sx},before=json(state),frame=vm.runInNewContext(body+';stoppingFrame()',{S:{camera:{aspect}},s:state,SZ:{x:0,z:0},LOGX:25});assert.deepEqual(state,before);
+  const root=hierarchy(),rig=createBikeRig(root,contract),b={...app.model.STOCK(model),guard:true,pod:true},m=app.model.MODELS[model],P=app.model.geoPts(b,comp*m.travel/.025),R=app.model.riderPts(P,{pose:0,crouch:comp});
+  rig.setPose(bikePose(P,R,m,app.model.BARS[b.bars],b,{rider:true}));rig.setView({bike:true,rider:true,demo:false});root.scale.setScalar(1.5);root.position.set(Math.min(sx,25-.24-1.08*1.5),.3,0);root.rotation.z=pitch;root.updateMatrixWorld(true);
+  const camera=new T.PerspectiveCamera(32,aspect,.05,400);camera.position.fromArray(frame.position);camera.lookAt(...frame.target);camera.updateMatrixWorld(true);let count=0;
+  root.traverse(o=>{const n=meta.get(o.name);if(!n)return;for(let q=o;q;q=q.parent)if(!q.visible)return;
+   for(const prim of asset.meshes[n.mesh].primitives){const a=asset.accessors[prim.attributes.POSITION];for(const x of [a.min[0],a.max[0]])for(const y of [a.min[1],a.max[1]])for(const z of [a.min[2],a.max[2]]){const p=o.localToWorld(new T.Vector3(x,y,z)).project(camera);assert.ok(p.x>-.98&&p.x<.98&&p.y>-.98&&p.y<.98,JSON.stringify({aspect,sx,model,comp,pitch,name:o.name,p}));count++}}
+  });assert.ok(count>500,`only ${count} bounds corners checked`);
+ }
+});

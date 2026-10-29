@@ -941,19 +941,22 @@ function bikeWorld(S,asset){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new T
   const L=o=>S.label(o);
   const lab={trail:{spd:L({cls:"big",off:[-40,-74]}),seg:L({off:[-30,-50]}),crash:L({cls:"hot big",off:[0,-70]}),w:L({off:[18,10]}),n:L({off:[-20,-20]}),par:L({off:[20,16]}),res:L({off:[-24,10]}),brk:L({off:[-24,-14]}),net:L({cls:"hot",off:[24,-10]}),
       e0:L({off:[-20,-24]}),e1:L({off:[0,-34]}),e2:L({off:[20,-24]}),rot:L({off:[24,24]}),lip:L({cls:"hot",off:[-60,40]}),jump:L({cls:"big",off:[24,-30]}),gap:L({off:[0,30]})},
-    stop:{bike:L({cls:"big",off:[0,-56]}),think:L({off:[0,30],lead:false}),brake:L({off:[0,30],lead:false}),log:L({off:[20,-40]}),m0:L({off:[0,26],lead:false}),res:L({cls:"hot big",off:[0,-60]})},
+    stop:{bike:L({cls:"big",off:[0,-56]}),think:L({off:[0,30],lead:false}),brake:L({off:[0,30],lead:false}),log:L({off:[20,-40]}),m0:L({off:[0,26],lead:false}),res:L({cls:"hot big bike-stop-result",off:[0,-60]})},
     fork:{drop:L({off:[-30,-20]}),x:L({cls:"big",off:[26,-20]}),F:L({cls:"hot",off:[26,10]}),W:L({off:[-26,10]}),gauge:L({off:[20,-30]}),spr:L({off:[-30,-30]})},
     garage:{name:L({cls:"big",off:[-30,-40]}),fork:L({off:[30,-20]}),spring:L({off:[30,0]}),shock:L({off:[30,20]}),damp:L({off:[-30,30]}),wheels:L({off:[-30,30]})},
     ski:{v:L({cls:"big",off:[24,-40]}),h:L({off:[20,0]}),track:L({off:[0,-30]}),c0:L({off:[-30,-40]}),c1:L({off:[0,-64]}),c2:L({off:[26,-40]}),w:L({off:[18,10]}),par:L({off:[20,20]}),res:L({off:[-20,-20]}),v0:L({off:[-30,-30]}),v1:L({cls:"hot",off:[30,-20]})},
     turn:{fc:L({cls:"hot",off:[24,26]}),fr:L({off:[24,-30]}),ok:L({cls:"big",off:[0,-50]}),r:L({off:[-20,0],lead:false}),bank:L({off:[30,-10]})}};
   const zoneOfStep=k=>k==="garage"?"garage":TRACKSTEPS.includes(k)?"trail":k==="stop"?"stop":k==="fork"?"fork":["run","work","model"].includes(k)?"ski":k==="turn"?"turn":"trail";
   S.view("garage",[GZ.x+1.2,2.3,GZ.z+7.2],[GZ.x+.4,1.15,GZ.z],{min:2,max:20});
-  function benchViews(){const portrait=S.camera.aspect<1,bx=Math.min(s.sx,LOGX-.24-1.08*1.5);
-    S.view("stop",portrait?[SZ.x+bx-4.8,2.4,SZ.z+5.4]:[SZ.x+14,9.5,SZ.z+20],portrait?[SZ.x+bx+.8,.8,SZ.z]:[SZ.x+14,.2,SZ.z],{min:4,max:50});
+  function stoppingFrame(){const portrait=S.camera.aspect<1,bx=Math.min(s.sx,LOGX-.24-1.08*1.5),wide=Math.max(1,1.8/S.camera.aspect);
+    return portrait?{position:[SZ.x+bx-4,3.2,SZ.z+8],target:[SZ.x+bx+.15,1.1,SZ.z]}:{position:[SZ.x+12.5,.5+12*wide,SZ.z+29*wide],target:[SZ.x+12.5,.5,SZ.z]};
+  }
+  function benchViews(){const portrait=S.camera.aspect<1,stop=stoppingFrame();
+    S.view("stop",stop.position,stop.target,{min:4,max:50});
     S.view("fork",portrait?[FZ.x+1.5,3.6,FZ.z+11.5]:[FZ.x+1.2,2.3,FZ.z+7.4],[FZ.x+.7,1.25,FZ.z],{min:2,max:25});
     fback.visible=fpan.visible=!portrait;lab.fork.x.off=portrait?[10,50]:[26,-20];
   }benchViews();
-  function benchFollow(){if(zone==='stop'&&S.camera.aspect<1)S.setFollow(()=>V3(SZ.x+Math.min(s.sx,LOGX-.24-1.08*1.5)+.8,.8,SZ.z),.3,true);else S.setFollow(null)}
+  function benchFollow(){if(zone==='stop'&&S.camera.aspect<1)S.setFollow(()=>V3(...stoppingFrame().target),.8,true);else S.setFollow(null)}
   S.view("ski",[KZ.x+.2,5.8,KZ.z+13.6],[KZ.x,1.7,KZ.z],{min:3,max:30});
   S.view("turn",[TZ.x+.4,5.2,TZ.z+7.2],[TZ.x,.2,TZ.z],{min:3,max:30});
   S.view("all",[3,24,101],[3,0,66.5],{min:6,max:90});
@@ -1043,10 +1046,10 @@ function bikeWorld(S,asset){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new T
         mudS.visible=s.grip==="mud";rootS.visible=s.grip==="roots";
         for(let i=0;i<60;i++){const p=s.sdust[i];if(p)sdustP.put(i,p.x,p.y+.1,((i*37)%10)/10-.5,p.life*.7,p.r*1400);else sdustP.put(i,0,-99,0,0,1)}sdustP.done();
         const sw=v=>tl.set(SZ.x+v.x,PT+v.y,SZ.z+v.z);
-        show("stop","bike");lab.stop.bike.at(sw(V3(bx+.6,2.6,0))).set(s.sphase==="ready"?"Press play":s.sphase==="see"?`Log! (reacting…)<small>${fmt(s.v0)} km/h · ${fmt(s.tr,1)} s</small>`:braking?`Brakes on<small>${fmt(s.sv*3.6)} km/h</small>`:N.total>LOGX?"Hit the log":"Stopped");
+        show("stop","bike",s.sphase!=="stopped");lab.stop.bike.at(sw(V3(bx+.6,2.6,0))).set(s.sphase==="ready"?"Press play":s.sphase==="see"?`Log! (reacting…)<small>${fmt(s.v0)} km/h · ${fmt(s.tr,1)} s</small>`:braking?`Brakes on<small>${fmt(s.sv*3.6)} km/h</small>`:N.total>LOGX?"Hit the log":"Stopped");
         show("stop","think");lab.stop.think.at(sw(V3(N.think/2,.05,1.65))).set(`Thinking<b>${fmt(N.think,1)} m</b>`);show("stop","brake");lab.stop.brake.at(sw(V3(N.think+N.brake/2,.05,1.65))).set(`Braking<b>${fmt(N.brake,1)} m</b><small>μ = ${fmt(N.mu,2)} · ${SURF[s.grip]}</small>`);
         show("stop","log");lab.stop.log.at(sw(V3(LOGX,.5,0))).set(`Log<b>${LOGX} m</b>`);show("stop","m0");lab.stop.m0.at(sw(V3(0,.05,1.2))).set("0 m");
-        show("stop","res",s.sphase==="stopped");lab.stop.res.at(sw(V3(LOGX-4,3.6,0))).set(`${N.total>LOGX?"Hit the log":"Stopped in time"}: ${fmt(N.total,1)} m`)}
+        show("stop","res",s.sphase==="stopped");lab.stop.res.at(sw(V3(bx+.2,S.camera.aspect<1?2.9:3.6,0))).set(`${N.total>LOGX?"Hit the log":"Stopped in time"}: ${fmt(N.total,1)} m`)}
       // ---------------- the fork spring
       {const N=forkNums(),T=N.T,fh=s.fh;ledge.scale.y=fh;ledge.position.set(-1.7,fh/2,0);ledgeTop.position.set(-1.7,fh+.01,0);
         const comp=Math.min(T,s.fx)/T,B=bikes.fork;B.g.position.set(FZ.x+.75,PT+s.fy,FZ.z);B.update({b:s.b,comp,spin:0,heat:0,pose:0,crouch:comp*1.4,rider:true});

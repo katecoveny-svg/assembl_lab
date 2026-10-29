@@ -48,3 +48,8 @@ test('all eight challenges retain successful evidence and feedback from the auth
 test('saved build, labels and model stiffness survive ordinary reload without a graphics transfer',()=>{
  const tab=browser(),a=mount(current,undefined,tab);Object.assign(a.s.b,{model:'ridge',wheels:'mud',bars:'low',colour:'teal',guard:true,pod:true,plate:'42',tag:'RIDE'});a.s.k=65;a.model.save();const b=mount(current,undefined,tab);assert.deepEqual(json(b.s.b),json(a.s.b));assert.equal(b.s.k,a.s.k);
 });
+test('minimum and maximum stopping controls preserve complete outcomes for every build and surface',()=>{
+ for(const model of ['flow','drop','ridge'])for(const grip of ['dry','mud','roots'])for(const speed of [10,60])for(const reaction of [.3,2]){
+  const apps=pair();build(apps,model);set(apps,'grip',grip);set(apps,'v0',speed);set(apps,'tr',reaction);apps.forEach(a=>{a.topic('stop');a.s.playing=true;a.advance(1800)});equal(apps);assert.equal(apps[1].s.sphase,'stopped');
+ }
+});

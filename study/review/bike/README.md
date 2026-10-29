@@ -1,5 +1,7 @@
 # Bike integration review · local only
 
+**Latest stopping-view acceptance evidence:** [P2 follow-up](p2-followup.md), including nine fresh captures and 77 passing tests. It supersedes the original stopping screenshot below.
+
 Route: `/study/m/bike.html`. Branch: `codex/learning-machine-rollout`. Integration baseline: `6bbf37d` (which includes the separately committed phone/vinyl work and fresh vinyl portrait recheck). No push, merge or deployment was performed.
 
 Preview: http://127.0.0.1:8795/study/m/bike.html#garage . The localhost-only server uses the normal approved escalation for the same port; no network/security configuration or browser permissions were changed. Vinyl's earlier sandbox browser-QA blocker is resolved; its separate result remains `6bbf37d` / [vinyl evidence](../vinyl/p2-followup.md).
