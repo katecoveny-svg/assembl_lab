@@ -1,7 +1,7 @@
 # Keep internal QA evidence and developer-only files out of deployments.
-output/
-docs/
-scripts/
+**/output/**
+/docs/
+/scripts/
 **/review/**
 **/tests/**
 **/tools/**
@@ -22,3 +22,5 @@ scripts/
 !study/patterns/provenance.md
 !instruments/stage-two/README.md
 !instruments/squishy-lab/README.md
+!study/accessibility-report.md
+!study/te-reo-notes.md
