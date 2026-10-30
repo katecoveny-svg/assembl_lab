@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>A project, opened up · assembl for Whaiao</title>
+<meta name="description" content="An independent interactive project-story demonstrator: explore an illustrative pavilion, compare options and keep an after-hui discussion pack.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#fffdfb">
+<link rel="icon" href="/lab/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="story.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js"}}</script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<a class="skip" href="#project">Skip to the project</a>
+<header class="topbar">
+<a class="wordmark" href="https://www.assembl.co.nz/">assembl<span>project stories</span></a>
+<p class="prepared">A conversation with <strong>Whaiao</strong></p>
+<button class="button quiet" id="share">Copy this view <span aria-hidden="true">↗</span></button>
+</header>
+<main>
+<section class="intro">
+<div><p class="eyebrow">EXPLORE · UNDERSTAND · RETURN</p><h1>A project,<br><em>opened up.</em></h1></div>
+<div class="intro-copy"><p>Give a design conversation somewhere to live.</p><p>Move through a place, understand the choices and return to the same view after the hui.</p><span class="demo-tag">Independent assembl demonstrator</span></div>
+</section>
+<div class="truth-banner"><span class="truth-dot" aria-hidden="true"></span><p><strong>Illustrative community pavilion.</strong> This is a spatial study, not a Whaiao project, commission or approved design. No cultural narrative is invented here.</p></div>
+<section class="project-layout" id="project" aria-label="Interactive project story">
+<div class="visual-column">
+<div class="stage-heading"><div><span class="eyebrow">THE PROJECT IN VIEW</span><h2>A place to gather</h2></div><span id="model-name">Illustrative spatial study</span></div>
+<div class="spatial-stage" id="spatial-stage">
+<div id="plan" class="plan-view"></div><div id="model-host" class="model-host"></div>
+<div class="stage-top"><span class="stage-label" id="model-truth">Demonstration model · not a Whaiao design</span><button class="mini-button" id="whole-view">Whole view</button></div>
+<div class="stage-bottom"><span class="north" aria-hidden="true">N <span>↑</span></span><p>Drag to orbit · select a room or chapter<br><small>Illustrative geometry. No cost, compliance or buildability assessment.</small></p></div>
+</div>
+<div class="view-tools" role="group" aria-label="View controls">
+<button id="roof" aria-pressed="true">Open the roof</button><button id="plan-view">Plan view</button><button id="light" aria-pressed="false">Evening light</button><button id="open-model">Use an approved model</button><button id="reset-model" hidden>Return to the study</button>
+</div>
+<p class="view-status" id="view-status" role="status">Opening the spatial view. The plan and story remain available.</p>
+<div class="room-list" id="room-list" role="group" aria-label="Go to a space"></div>
+</div>
+<aside class="story-column" aria-label="Guided project story">
+<div class="story-nav-heading"><span class="eyebrow">A GUIDED LOOK</span><span id="chapter-count">1 / 5</span></div>
+<nav id="chapter-list" aria-label="Project chapters"></nav>
+<article class="chapter-copy">
+<p class="eyebrow" id="chapter-eyebrow"></p><h2 id="chapter-title" tabindex="-1"></h2><p id="chapter-story"></p>
+<div id="chapter-detail"><div class="design-choice"><span class="eyebrow">THE DESIGN CHOICE</span><h3 id="choice-title"></h3><p id="choice-reason"></p></div>
+<p class="stage-pill" id="stage-label"></p><div class="conversation"><span class="eyebrow">BRING THIS TO THE HUI</span><p id="discussion-question"></p></div></div>
+</article>
+<div class="chapter-paging"><button id="previous">← Previous</button><button id="next">Next chapter →</button></div>
+</aside>
+</section>
+
+<section class="section compare-section" id="options-section" aria-labelledby="options-title">
+<div class="section-heading"><div><p class="eyebrow">ONE QUESTION · TWO POSSIBILITIES</p><h2 id="options-title">What should the outdoor edge give us?</h2></div><p>These alternatives change the study model. They are starting points for discussion, with no approval or recommendation implied.</p></div>
+<div class="option-grid">
+<label class="option-card"><input type="radio" name="option" value="shelter" checked><span class="option-number">A / SHELTER</span><h3>The covered edge</h3><p>A deeper canopy along the shared edge, with a smaller planted area.</p><div class="option-sketch shelter-sketch" aria-hidden="true"><i></i><b></b><span></span></div><strong>More weather protection along the edge</strong></label>
+<label class="option-card"><input type="radio" name="option" value="garden"><span class="option-number">B / PLANTING</span><h3>The planted courtyard</h3><p>A shallower canopy makes room for a larger planted area in this study.</p><div class="option-sketch garden-sketch" aria-hidden="true"><i></i><b></b><span></span></div><strong>More space for a planted courtyard</strong></label>
+</div>
+<div class="comparison-readout"><div><span class="eyebrow">THE OPTION ON SCREEN</span><h3 id="option-name"></h3><p id="option-description"></p></div><div class="area"><b id="covered-area">28 m²</b><span>covered edge</span></div><div class="area"><b id="garden-area">18 m²</b><span>planted area</span></div><p class="fine">Areas are calculated from this illustrative model’s rectangles. They are not project measurements, a quantity survey or a cost estimate.</p></div>
+</section>
+
+<section class="section after-hui" aria-labelledby="hui-title">
+<div><p class="eyebrow">AFTER THE HUI</p><h2 id="hui-title">Keep the conversation<br>moving.</h2><p class="lead">Return to the same view. Keep the questions. Share a discussion pack that explains what was shown and what still needs to be decided.</p><div class="pack-preview"><span class="pack-label">YOUR DISCUSSION PACK</span><h3>A place to gather</h3><p>Five chapters · design choices · next steps</p><div><span>Selected option</span><b id="summary-option">A · The covered edge</b></div><span class="pack-stamp">ILLUSTRATIVE · FOR DISCUSSION</span></div></div>
+<div class="hui-tools"><h3>What would you like to ask?</h3><p>Questions stay on this device. They are never added to shared links.</p><form id="question-form"><label for="question" class="sr-only">Your question</label><textarea id="question" rows="3" maxlength="500" placeholder="What would you like to understand before the next hui?"></textarea><button class="button" type="submit">Keep my question</button></form><p id="question-status" class="fine" role="status">Nothing is sent to Whaiao or anyone else.</p><ol id="question-list"></ol><p id="questions-empty" class="fine">Your saved questions will appear here.</p>
+<div class="summary-controls"><label class="check"><input id="include-questions" type="checkbox"> Include my questions in the local pack</label><label class="check"><input id="include-image" type="checkbox" checked> Include the illustrative model view</label><p class="fine">A model you open locally is not included in the pack or shared link.</p><button class="button" id="prepare-summary">Prepare the after-hui pack <span aria-hidden="true">↗</span></button><button class="button quiet" id="download-json">Download the story handoff</button></div>
+<p id="share-status" class="fine" role="status"></p><input id="share-link" type="text" readonly hidden aria-label="Shareable demonstration link"><a id="last-download" hidden>Download the prepared file</a></div>
+</section>
+
+<section class="section real-project" aria-labelledby="real-title">
+<div><p class="eyebrow">FROM STUDY TO PROJECT</p><h2 id="real-title">Whaiao’s design.<br>An approved story.</h2><p>A real project would replace this study with Whaiao’s model and narrative. Project stages, viewpoints and comparisons would be agreed with the team before release.</p></div>
+<div><h3>What stays with the right people</h3><ul id="permission-list"></ul><p class="fine">This demonstrator has no publishing controls or access-control system. A live project would need its agreed audience, hosting, model revision, reviewers and permissions configured and tested.</p><details><summary>What we would need to begin</summary><ol><li>A project and audience Whaiao wants to work with.</li><li>An approved model or permission to prepare a web export.</li><li>The design choices and options they want to explain.</li><li>Named reviewers and agreement on what can be shared.</li><li>A review of the browser experience together.</li></ol></details></div>
+</section>
+</main>
+<footer class="site-footer"><a class="wordmark" href="https://www.assembl.co.nz/">assembl</a><p>Independent demonstrator prepared for a conversation with Whaiao.<br>Illustrative architecture and content. No endorsement or client relationship is claimed.</p><a href="https://www.whaiao.nz/whare.html" target="_blank" rel="noopener">Visit Whaiao’s practice ↗</a></footer>
+<dialog id="model-dialog" aria-labelledby="model-title"><div class="dialog-head"><div><span class="eyebrow">YOUR MODEL · THIS BROWSER</span><h2 id="model-title">Open an approved model.</h2></div><button id="close-model" aria-label="Close model dialog">Close</button></div><p>Choose a self-contained GLB 2.0 file, under 25 MB. It stays in this tab. Textures must be embedded, with no Draco or Meshopt compression.</p><p>Model budget: up to 600,000 vertices, 800 mesh primitives and 32 images. This viewer does not check design compliance or manufacturing detail.</p><p>Demonstration chapter anchors are hidden when your model is open. The actual project needs its own approved viewpoints and narrative.</p><input type="file" id="model-file" accept=".glb,model/gltf-binary" hidden><button id="load-model" class="button">Choose GLB</button><p class="fine" id="model-result" role="status">Use only a model you have permission to review.</p></dialog>
+<dialog id="summary-dialog" aria-labelledby="summary-title"><div class="dialog-head"><h2 id="summary-title">Your after-hui pack</h2><button id="close-summary">Close</button></div><div class="dialog-actions"><button class="button" id="download-summary">Download HTML pack</button><button class="button quiet" id="print-summary">Print / save as PDF</button></div><div id="summary-preview"></div></dialog>
+<div id="print-sheet"></div>
+<noscript><p class="no-script">This interactive story needs JavaScript. It is an illustrative study, not an approved Whaiao project.</p></noscript>
+</body></html>
