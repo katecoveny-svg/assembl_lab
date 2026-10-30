@@ -120,10 +120,10 @@ export function createSculpture(canvas) {
   // Opaque studio backdrop participates in Three's transmission render target.
   // A uniform clear colour alone provides nothing recognisable to refract.
   const backdropMaterial=new THREE.ShaderMaterial({
-    uniforms:{uDark:{value:0}},
+    uniforms:{uDark:{value:0},uBackground:{value:new THREE.Color('#fffdfb')}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader:`varying vec2 vUv;uniform float uDark;void main(){
-      vec3 cream=vec3(.92,.90,.85);vec2 p=vUv-.5;
+    fragmentShader:`varying vec2 vUv;uniform float uDark;uniform vec3 uBackground;void main(){
+      vec3 cream=uBackground;vec2 p=vUv-.5;
       float band=exp(-pow((p.x+.13*sin(p.y*8.)-.02)/.12,2.));
       float mint=exp(-pow((p.x-.18+.08*sin(p.y*6.))/.09,2.));
       vec3 c=mix(cream,vec3(.69,.60,.79),band*.35);
@@ -180,6 +180,10 @@ export function createSculpture(canvas) {
       ribbons[0].material=material==='chrome'?chrome:material==='coral'?coral:material==='porcelain'?porcelain:glass;
       lastMaterial=material;
     }
+    ribbons[0].material.color.set(settings.color||'#c9bcdf');
+    ribbons[0].material.roughness=settings.roughness??.24;
+    glass.attenuationColor.set(settings.color||'#c9bcdf');
+    backdropMaterial.uniforms.uBackground.value.set(settings.background||'#fffdfb');
     const dark=Boolean(settings.dark||settings.lighting==='gallery');
     key.color.set(settings.lighting==='rose'?0xffc6cb:0xfff5e9);
     rim.color.set(settings.lighting==='rose'?0xc9c1ff:0xeadfff);

@@ -38,3 +38,9 @@ The normal execution workspace and browser controls were unavailable when this d
 4. Keep public, hui-only and restricted material in separately permissioned deployments. A client-side toggle is not access control.
 5. Record approved options and design/model revisions in the actual source manifest.
 6. Review the browser experience with the design team and relevant knowledge holders.
+
+## Blender render upgrade — 30 October 2026
+
+The still gallery uses real Cycles renders of an independently authored pavilion, matching the two-wing demonstration layout. It is not a Whaiao design or approved model. Materials and construction details interpret the simplified browser model. Whaiao website CSS was checked directly: black, white, #5076FF and Hanken Grotesk. No logo or cultural narrative was recreated.
+
+The gallery is intentionally separate from live model controls. Roof/lighting/option changes affect the interactive model only. The gallery buttons change pre-rendered stills. Existing local questions, permission labels, share state, model import and after-hui pack remain.
