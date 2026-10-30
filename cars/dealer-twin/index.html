@@ -9,14 +9,14 @@
 <meta name="theme-color" content="#131316">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=099d2a95">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css?v=697e1ad9">
 <link rel="preload" as="image" href="assets/hero/hero-wide.webp" fetchpriority="high">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/","@sparkjsdev/spark":"https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"}}</script>
-<script src="js/variant.js?v=099d2a95" defer></script>
-<script src="js/dealer-data.js?v=099d2a95" defer></script>
-<script src="engine/model.js?v=099d2a95" defer></script>
-<script type="module" src="js/main.js?v=099d2a95"></script>
+<script src="js/variant.js?v=697e1ad9" defer></script>
+<script src="js/dealer-data.js?v=697e1ad9" defer></script>
+<script src="engine/model.js?v=697e1ad9" defer></script>
+<script type="module" src="js/main.js?v=697e1ad9"></script>
 </head>
 <body>
 <a class="sr" href="#stock">Skip to the stock</a>
@@ -24,7 +24,7 @@
   <div class="wrap bar-in">
     <a class="mark" href="#top"><b>assembl</b><span>Dealer twin · demo</span></a>
     <nav class="nav" aria-label="Sections">
-      <a href="#stock">Stock</a><a href="#intro">Departments</a><a href="#desk">Agent desk</a><a href="#market" class="opt">Reels</a><a href="#connect" class="opt">Connect</a>
+      <a href="#sim">The day</a><a href="#agents">Agent desk</a><a href="#stock">Stock</a><a href="#parts" class="opt">Parts</a><a href="#connect" class="opt">For real</a>
     </nav>
   </div>
 </header>
@@ -33,19 +33,19 @@
 <!-- ============ the showroom: Kate's illustrative image of the showroom, the stock running underneath it, the sim's live numbers -->
 <section class="show" id="show" aria-labelledby="showH">
   <div class="show-stage" id="showStage" data-asset="hero-3d">
-    <picture><img class="show-poster" id="showPoster" src="assets/hero/hero-wide.webp" alt="A silver sports car, a real 3D capture, on a stone plinth in a dark showroom with lilac cove lights" width="1600" height="900" fetchpriority="high" decoding="async"></picture>
+    <picture><img class="show-poster" id="showPoster" src="assets/hero/hero-wide.webp" alt="A silver electric sedan turning on a stone plinth in a dark showroom with lilac cove lights, an illustrative render" width="1600" height="900" fetchpriority="high" decoding="async"></picture>
     <span class="show-load" id="showLoad" aria-live="polite"></span>
   </div>
   <div class="show-copy wrap">
-    <div class="kick"><span class="pill light">Harbour Lane Motors (demo)</span><span class="pill dark">Illustrative · AI-generated 3D model, rendered</span></div>
-    <h1 id="showH">A dealer group, <em>assembled.</em></h1>
-    <p class="show-k">Fictional · three sites · every department simulated</p>
+    <div class="kick"><span class="eyebrow pill light">Harbour Lane Motors · demo</span><span class="eyebrow pill dark">Illustrative · AI-generated 3D model, rendered</span></div>
+    <h1 id="showH">Every site. Every car. <em>Running live.</em></h1>
+    <p class="show-sub">This is a working model of a fictional dealer group: 48 cars, three sites, and every department from the forecourt to the workshop, ticking through a simulated day. Press play and watch it run.</p>
   </div>
-  <div class="wrap hero-cta show-cta"><a class="btn" href="#stock">See the stock</a><a class="btn ghost" href="#intro">Watch it run</a></div>
+  <div class="wrap hero-cta show-cta"><a class="btn" href="#sim" id="watchDay">Watch a day run</a><a class="btn ghost" href="#stock">See the stock</a></div>
   <div class="show-foot">
-    <div class="rail" id="showRail" aria-label="Simulated stock · studio renders, not photographs"><div class="rail-in" id="showRailIn"></div></div>
+    <div class="rail" id="showRail" aria-label="Simulated stock · renders, not photographs"><div class="rail-in" id="showRailIn"></div></div>
     <div class="wrap show-meta">
-      <p class="rail-cap"><span class="dot" aria-hidden="true"></span>Simulated stock · studio renders, not photographs</p>
+      <p class="rail-cap"><span class="dot" aria-hidden="true"></span>Simulated stock · renders, not photographs</p>
       <div class="show-live" aria-label="The dealership right now, simulated">
         <div class="k"><b id="sHoist">–</b><span>hoists working</span></div>
         <div class="k"><b id="sPeople">–</b><span>on the floors</span></div>
@@ -58,53 +58,19 @@
   </div>
 </section>
 
-<!-- ============ the stock: a wall of cars and one in 3D -->
-<section class="stock" id="stock" aria-labelledby="stockH">
-  <div class="wrap stock-head"><h2 id="stockH">48 cars. One studio.</h2><p class="lede">Tap a car to open it the way a buyer's assistant reads it. Renders of Simulated stock.</p></div>
-  <div class="wrap spot">
-    <div class="spot-stage" id="spotStage" data-asset="stock-3d"><img class="spot-poster" id="spotPoster" alt="" loading="lazy" decoding="async"><canvas class="spot-cv" id="spotCv" aria-label="The selected car in 3D: drag to turn it"></canvas>
-      <span class="chip solid spot-truth" id="spotTruth">Render · simulated car</span></div>
-    <div class="spot-info" id="spotInfo"></div>
-  </div>
-  <div class="wrap wall2" id="wall2" role="list" aria-label="Cars in stock"></div>
-</section>
-
-<!-- ============ the twin's film: an authored sequence of stills, captioned, with the twin's live numbers underneath -->
-<section class="hero intro" id="intro" aria-labelledby="heroH" data-scroll>
-  <div class="film" id="film"><canvas id="filmCanvas" aria-hidden="true"></canvas></div>
-  <div class="wrap hero-copy" id="heroCopy">
-    <div class="who"><span class="label">Harbour Lane Motors (demo)</span><span class="chip solid">Simulated</span></div>
-    <h2 id="heroH" class="hero-h">Watch it run.</h2>
-    <p class="hero-sub">Fly through the model. Every number below is moving, minute by minute.</p>
-    
-  </div>
-  <div class="hero-foot"><div class="wrap">
-    <div class="cap" id="cap">
-      <span class="cap-n" id="capN">01 / 06</span>
-      <p class="cap-t" id="capT" aria-live="off"><small>&nbsp;</small>&nbsp;</p>
-      <button class="ctl" type="button" id="filmPause" aria-pressed="false" aria-label="Pause motion"><svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".6"/><rect x="9.4" y="3" width="2.6" height="10" rx=".6"/></svg></button>
-      <div class="segs" id="segs" role="group" aria-label="Film scenes"></div>
-    </div>
-    <div class="strip" id="strip" aria-label="The twin right now, simulated">
-      <div class="k"><b id="hHoist">–</b><span>hoists working</span></div>
-      <div class="k"><b id="hPeople">–</b><span>people in the showrooms</span></div>
-      <div class="k"><b id="hLeads">–</b><span>leads today</span></div>
-      <div class="clock"><b id="hClock">–</b><span class="chip">Simulated day</span></div>
-    </div>
-  </div></div>
-</section>
-
-
-
 <!-- ============ the twin: departments as tiles, the 3D model as the stage -->
-<section class="sec" id="twin" aria-labelledby="twinH">
+<section class="sim" id="sim" aria-labelledby="simH">
+  <div class="sim-band" id="simBand"><video class="sim-v" id="simV" muted loop playsinline preload="none" poster="assets/film/poweron/poster.webp" aria-hidden="true"></video>
+    <div class="wrap sim-copy"><span class="eyebrow pill dark">Simulated</span><h2 id="simH">A Tuesday at Harbour Lane, <em>at twenty times speed.</em></h2><p>It's 8:02 in Auckland. Hoists are filling, three people are already on the floor, and a lead came in overnight for a family SUV. Every number below is simulated. The shape is a real dealer group's: branches, stock and departments.</p></div>
+    <span class="eyebrow sim-tag">Illustrative · render</span></div>
+  <div class="sec" id="twin">
   <div class="wrap">
     <div class="head">
-      <h2 id="twinH">Every department, live.</h2>
+      <h3 id="twinH" class="h3">Every department, minute by minute.</h3>
       <div style="display:grid;gap:18px;justify-items:start">
-        <p class="lede">A simulated day across the group. Pick a department and the model flies there.</p>
+        <p class="lede">Pick a department to open its numbers. <span class="chip">Simulated</span></p>
         <div class="twin-ctl"><span class="t" id="tClock">–</span>
-          <div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="5" aria-pressed="false">Slow</button><button type="button" data-speed="12" aria-pressed="true">Normal</button><button type="button" data-speed="30" aria-pressed="false">Fast</button></div>
+          <div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="5" aria-pressed="false">5×</button><button type="button" data-speed="20" aria-pressed="true">20×</button><button type="button" data-speed="60" aria-pressed="false">60×</button></div>
           <button class="ctl" type="button" id="simPause" aria-pressed="false" aria-label="Pause the simulated day"><svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".6"/><rect x="9.4" y="3" width="2.6" height="10" rx=".6"/></svg></button>
         </div>
       </div>
@@ -121,16 +87,28 @@
       <div class="panel" id="panel" aria-live="polite"></div>
     </div>
   </div>
+</div>
+</section>
+
+<!-- ============ the agent desk, explained first, then the real thing on request -->
+<section class="sec deep explain" id="agents" aria-labelledby="agentsH">
+  <div class="wrap">
+    <div class="head"><h2 id="agentsH">Somebody's AI just asked about <em>one of your cars.</em></h2>
+      <div style="display:grid;gap:14px;justify-items:start"><p class="lede">Buyers are starting to shop through ChatGPT and Claude. Instead of scrolling listings, they type 'find me a hybrid SUV under $40k near Albany' and their assistant goes looking. The agent desk is the counter where those assistants get served.</p><span class="eyebrow pill dark">Simulated · nothing is sent to anyone</span></div></div>
+    <ol class="steps4" id="steps4">
+      <li><figure class="s4-v s4-car"><img src="img/cars/hl-002-4x3.webp" alt="Render · simulated car: 2019 Toyota Aqua G, silver metallic, front three-quarter view" loading="lazy" decoding="async"><figcaption class="s4-ask">“Is the 2019 Toyota Aqua still available? Book me a test drive on Saturday.”</figcaption></figure><span class="eyebrow">01</span><h3>The assistant asks.</h3><p>A buyer's AI asks whether the 2019 Toyota Aqua is still available and books a Saturday test drive.</p></li>
+      <li><figure class="s4-v s4-notice" aria-hidden="true"><ul><li class="ok">Price · $14,990</li><li class="ok">Kilometres</li><li class="ok">Engine and fuel</li><li class="ok">Make, model, year</li><li class="miss">WoF expiry · not shown</li><li class="miss">Money owing · not shown</li></ul></figure><span class="eyebrow">02</span><h3>The desk checks.</h3><p>It reads the dealer's own listing: price, kilometres, and the details the law says a buyer must see. If something's missing, it says so.</p></li>
+      <li><figure class="s4-v s4-approve" aria-hidden="true"><span class="eyebrow">Test drive · Saturday 10 am</span><b>2019 Toyota Aqua</b><span class="s4-btns"><i class="yes">Approve</i><i>Decline</i></span></figure><span class="eyebrow">03</span><h3>A person says yes.</h3><p>Nothing is held or booked until one of your salespeople approves it. One tap.</p></li>
+      <li><figure class="s4-v s4-rcpt" aria-hidden="true"><span class="eyebrow">Receipt · TD-25A3</span><b>2019 Toyota Aqua</b><span>Test drive approved · Sat 10:00</span><span>Asked by: buyer's assistant</span><span>Approved by: sales consultant</span><span class="s4-ok">✓ Same record for all three</span></figure><span class="eyebrow">04</span><h3>Everyone gets a receipt.</h3><p>The buyer, the salesperson and the dealer all see the same record of what was asked and what was agreed.</p></li>
+    </ol>
+    <div class="row" style="margin-top:30px"><button class="btn" type="button" id="deskOpen" aria-expanded="false" aria-controls="desk">Try it: be the buyer's assistant</button></div>
+  </div>
 </section>
 
 <!-- ============ the dealer agent desk: the buyer's assistant works the dealer's endpoint; a person approves; every decision leaves a receipt -->
-<section class="desk" id="desk" aria-labelledby="deskH" data-seat="buyer">
+<section class="desk" id="desk" aria-labelledby="deskH" data-seat="buyer" hidden>
   <div class="wrap desk-head">
-    <div class="desk-title">
-      <div class="who"><span class="label">Harbour Lane Motors (demo)</span><span class="chip">Simulated</span></div>
-      <h2 id="deskH">The dealer agent desk.</h2>
-      <p class="desk-sub">A buyer's AI assistant works the dealer's own endpoint. Holds and test drives wait for a person, and every decision leaves a receipt.</p>
-    </div>
+    <div class="desk-title"><h2 id="deskH" class="sr">The agent desk</h2><span class="eyebrow">You are the buyer's assistant. Pick a request, then switch seats and approve it.</span></div>
     <div class="desk-ctl">
       <span class="label" id="deskRole">You're the buyer</span>
       <div class="seg" id="deskSeat" role="group" aria-label="Whose seat you're in">
@@ -177,74 +155,38 @@
   </div>
 </section>
 
-<!-- ============ check any car: the live NZ register through car_check -->
-<section class="sec deep check-sec" id="check" aria-labelledby="checkH">
-  <div class="wrap">
-    <div class="check" id="checkWrap">
-      <div>
-        <h2 id="checkH">Check any car.</h2>
-        <p class="lede" style="margin-top:14px">Make, model and year. Live from NZTA's open Motor Vehicle Register, through the same car check tool.</p>
-        <form id="regForm" autocomplete="off">
-          <label>Make<input name="make" required placeholder="Suzuki" maxlength="40"></label>
-          <label>Model<input name="model" required placeholder="Swift" maxlength="60"></label>
-          <label>Year<input name="year" required inputmode="numeric" placeholder="2018" maxlength="4" pattern="(19|20)[0-9]{2}"></label>
-          <button class="btn" type="submit">Check the register</button>
-        </form>
-        <details class="ev"><summary>How the check works</summary><div class="evb">
-          <p>The car check tool (<code>car_check</code>) reads NZTA's open Motor Vehicle Register for the make, model and year: how many are registered, the NZ-new and import split, fuel, engine size and rated economy. It never looks up a plate, an owner or a listing page.</p>
-          <p>Running costs use MBIE's latest weekly fuel prices and NZTA road user charges; servicing and WOF are labelled estimates. It has no market price data and never invents one.</p>
-          <p>Endpoint: <code>/api/mcp/</code> (JSON-RPC over HTTP).</p>
-          <p>Harbour Lane Motors is the assembl lab's fictional dealer: 48 Simulated used cars across Auckland, Waikato and Bay of Plenty, each a studio render from assembl's 3D car kit, not a photograph.</p><p>The search runs through the lab's MCP endpoint (<code>search_cars</code>), the same tool an assistant such as ChatGPT or Claude would call. Each card's assistant view shows the tool's own result and a schema.org record built from the same facts.</p><p>A real dealer's stock would be published the same way, from its own feed and only on its instruction, alongside Trade Me and its website.</p>
-        </div></details>
-      </div>
-      <div class="reg" id="reg"><div class="ph">The register answer appears here: count, import split, fuel and economy.</div></div>
-    </div>
+<!-- ============ the stock: three cars large, then the wall -->
+<section class="stock" id="stock" aria-labelledby="stockH">
+  <div class="wrap stock-head"><h2 id="stockH">48 cars, <em>every one a render.</em></h2><p class="lede">Simulated stock for a fictional dealer, so you can see the idea without anyone's real cars.</p></div>
+  <div class="wrap lead3" id="lead3"></div>
+  <div class="wrap spot" id="spot" hidden>
+    <div class="spot-stage" id="spotStage" data-asset="stock-photo"><img class="spot-poster" id="spotPoster" alt="" loading="lazy" decoding="async"><canvas class="spot-cv" id="spotCv" aria-hidden="true"></canvas>
+      <span class="chip solid spot-truth" id="spotTruth">Render · simulated car</span></div>
+    <div class="spot-info" id="spotInfo"></div>
   </div>
+  <div class="wrap wall2" id="wall2" role="list" aria-label="Cars in stock"></div>
+  <p class="wrap fine stock-fine">Renders from assembl's 3D car kit, every one on the same backdrop at the same angle.</p>
 </section>
 
-<!-- ============ listing studio -->
-<section class="sec chalk" id="studio" aria-labelledby="studioH">
+
+<!-- ============ parts wait desk -->
+<section class="sec chalk" id="parts" aria-labelledby="partsH">
   <div class="wrap">
     <div class="head">
-      <h2 id="studioH">Every car, shot the same way.</h2>
-      <p class="lede">Cut out, checked and ready to list. Nothing on the car is retouched, and the original is always kept.</p>
+      <h2 id="partsH">Every part, with an honest time.</h2>
+      <p class="lede">A health-check finding becomes a part, a shelf or a supplier, a price and a promise. The advisor approves every message.</p>
     </div>
-    <div class="studio">
-      <div>
-        <div class="pair" id="pair">
-          <figure><img id="baBefore" alt="" loading="lazy" decoding="async" width="1200" height="900"><span class="chip">As supplied</span></figure>
-          <span class="arrow" aria-hidden="true"><svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
-          <figure><img id="baAfter" alt="" loading="lazy" decoding="async" width="1200" height="900"><span class="chip" data-t="src">Studio, ready to list</span></figure>
-        </div>
-        <div class="thumbs" id="baThumbs" role="group" aria-label="Choose a car"></div>
-      </div>
-      <div>
-        <h3 id="gateH">Ready to list</h3>
-        <ul class="gate" id="gate" style="margin-top:14px"></ul>
-        <div class="ready" id="ready"><svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg><b>Agent-ready listing</b><span class="chip" id="readyChip">Simulated</span></div>
-        <details class="ev" id="studioEv"><summary>What the workflow does</summary><div class="evb" id="studioEvB"></div></details>
-      </div>
-    </div>
-    <div class="wall" id="wall" aria-label="Cars from the studio"></div>
-    <div class="wallcap"><span class="label" id="wallCap"></span><span class="chip" id="wallChip">Simulated</span></div>
-    <div class="statrow" id="wfStats"></div>
-
-    <div class="walk" id="walk">
-      <div>
-        <h3>New cars can carry a 3D walkthrough.</h3>
-        <p class="lede" style="margin-top:12px">A phone walk-around becomes a Gaussian splat you can orbit, with the spec on hotspots. This example is a different car.</p>
-        <p class="credit">Sample capture “Mazda MX5 remastered” by Goran (<a href="https://superspl.at/user?id=gorank" target="_blank" rel="noopener">gorank</a>) on SuperSplat, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Levelled, scaled, cropped and thinned by assembl. Example only, not dealer stock.</p>
-      </div>
-      <div id="walkHost">
-        <div class="shot" id="walkShot"><img src="assets/walk/mx5-rf-sample.poster.webp" alt="Gaussian-splat capture of a Mazda MX-5 RF, example only" loading="lazy" decoding="async" width="1280" height="800">
-          <button class="btn" type="button" id="walkGo">Open the 3D example <span class="fine" style="color:inherit;opacity:.7">7.8 MB</span></button></div>
-      </div>
-    </div>
+    <div class="ptrack" id="ptrack" aria-label="Where each part is, live (simulated)"></div>
+    <div class="journey" id="journey"><span class="fill" id="jFill"></span></div>
+    <div class="proof" id="proof"></div>
+    <div class="partner" id="partner"><span class="chip" data-t="prop">Proposed partner</span><span><b>Partly</b> could identify the exact part and its fitment from the finding. Not connected: shown as a proposal.</span></div>
+    <details class="ev"><summary>How the month is simulated</summary><div class="evb" id="partsEv"></div></details>
   </div>
 </section>
 
+
 <!-- ============ marketing studio -->
-<section class="sec" id="market" aria-labelledby="mkH">
+<section class="sec compact" id="market" aria-labelledby="mkH">
   <div class="wrap">
     <div class="head">
       <h2 id="mkH">A reel for every car.</h2>
@@ -283,35 +225,15 @@
   </div>
 </section>
 
-<!-- ============ parts wait desk -->
-<section class="sec chalk" id="parts" aria-labelledby="partsH">
-  <div class="wrap">
-    <div class="head">
-      <h2 id="partsH">Every part, with an honest time.</h2>
-      <p class="lede">A health-check finding becomes a part, a shelf or a supplier, a price and a promise. The advisor approves every message.</p>
-    </div>
-    <div class="ptrack" id="ptrack" aria-label="Where each part is, live (simulated)"></div>
-    <div class="journey" id="journey"><span class="fill" id="jFill"></span></div>
-    <div class="proof" id="proof"></div>
-    <div class="partner" id="partner"><span class="chip" data-t="prop">Proposed partner</span><span><b>Partly</b> could identify the exact part and its fitment from the finding. Not connected: shown as a proposal.</span></div>
-    <details class="ev"><summary>How the month is simulated</summary><div class="evb" id="partsEv"></div></details>
-  </div>
-</section>
 
 <!-- ============ connect your data -->
 <section class="sec deep" id="connect" aria-labelledby="cnH">
   <div class="wrap">
     <div class="head">
-      <h2 id="cnH">Switch it from simulated to yours.</h2>
-      <p class="lede">Start with AutoPlay, then Motorcentral or your DMS export. Read-only, on your instruction, alongside the systems you already run.</p>
+      <h2 id="cnH">What it would take <em>for real.</em></h2>
+      <div style="display:grid;gap:18px;justify-items:start"><p class="lede">Three things: your stock feed, a person on each site who can approve, and a week to switch it on. We'd start with one site.</p><a class="btn" href="https://www.assembl.co.nz/contact" target="_blank" rel="noopener">Start a conversation</a></div>
     </div>
     <div id="flowHost"></div>
-    <div class="tl" role="list" aria-label="Fastest first">
-      <div role="listitem"><small>Nothing installed</small><b>Same day</b><span>CSV exports from reports you already run, mapped in the page.</span></div>
-      <div role="listitem"><small>Your team and assembl</small><b>1–2 weeks</b><span>The same exports, nightly, to a secure folder.</span></div>
-      <div role="listitem"><small>Set by AutoPlay</small><b>Weeks</b><span>A read-only feed of listings, leads and deals.</span></div>
-      <div role="listitem"><small>Set by the DMS vendor</small><b>Depends</b><span>An API for service and parts, through the vendor's partner programme.</span></div>
-    </div>
     <div class="tryx">
       <div>
         <h3>Try it with an export.</h3>
@@ -332,6 +254,7 @@
 <p>Read-only by design: aggregate tables in, nothing written back. AutoPlay lists its DMS connections in its <a href="https://autoplay.co.nz/support/dms-integration-overview" target="_blank" rel="noopener">DMS integration overview</a>; method, sync frequency and API terms aren't published, so they're confirmed with AutoPlay. Trade Me and the dealer's website keep their feeds exactly as today.</p></div></details>
   </div>
 </section>
+
 
 <!-- ============ method -->
 <section class="sec" id="method" aria-labelledby="mtH">

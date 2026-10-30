@@ -6,7 +6,7 @@ const VIEWS = [
   ["site", "Whole site"], ["machine", "Well-oiled machine"], ["showroom", "Showroom"], ["used", "Used yard and recon"],
   ["workshop", "Workshop"], ["parts", "Parts"], ["marketing", "Marketing and BDC"], ["fi", "F&I"]];
 const ONE = {
-  site: "Every department's month in one model, on public benchmarks until your exports replace them.",
+  site: "Every department's month in one model. Simulated.",
   machine: "Leads, deals, jobs and trade-ins moving between departments, minute by minute.",
   showroom: "Who's on the floor, who's buying, and what the stock costs to hold.",
   used: "Trade-ins appraised, reconditioned, photographed and back on the front line.",
@@ -28,7 +28,7 @@ export function initTwin() {
   pauseBtn(sp, !sim.playing, "the simulated day"); sp.onclick = () => { sim.playing = !sim.playing; pauseBtn(sp, !sim.playing, "the simulated day"); };
 
   // ---------------------------------------------------------------- tiles
-  tiles.innerHTML = VIEWS.map(([k, n]) => `<button class="tile" type="button" data-v="${k}" aria-pressed="${k === view}"><span class="tn">${esc(n)}</span><svg viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true" data-viz="${k}"></svg><span class="tv"><b data-tv="${k}">–</b><span data-tl="${k}"></span></span></button>`).join("");
+  tiles.innerHTML = VIEWS.map(([k, n]) => `<button class="tile" type="button" data-v="${k}" aria-pressed="${k === view}">${(CFG.tileImg || {})[k] ? `<img class="ti" src="${esc(CFG.tileImg[k])}" alt="" loading="lazy" decoding="async">` : ""}<span class="tn">${esc(n)}</span><svg viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true" data-viz="${k}"></svg><span class="tv"><b data-tv="${k}">–</b><span data-tl="${k}"></span></span></button>`).join("");
   tiles.onclick = (e) => { const b = e.target.closest("[data-v]"); if (b) select(b.dataset.v, true); };
   const tv = (k) => tiles.querySelector(`[data-tv="${k}"]`), tl = (k) => tiles.querySelector(`[data-tl="${k}"]`), vz = (k) => tiles.querySelector(`[data-viz="${k}"]`);
   const ink = "var(--deep)", faint = "var(--line2)", rose = "var(--rose)";
