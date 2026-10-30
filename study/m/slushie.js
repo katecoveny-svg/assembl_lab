@@ -376,98 +376,39 @@ function drawMain(x,st){if(has3D)return "";const r=s.run,k=st.k;if(!(s.playing&&
     if(k==="auger")pill(430,220,"Ice on the drum",`${Math.round(r.shell)} g`,X(-2),Y(AX-2.6),"start");if(k==="energy")pill(12,232,"Electricity in",`${Math.round(pw.pin)} W`,X(-17),Y(1.5),"start")}
   o+=`<text class="t-ink" x="${lens?452:628}" y="24" text-anchor="${lens?"end":"end"}">${esc(fmtT(r.T))} · ${Math.round(phi*100)}% ice · ${esc(stateNow(r))}</text>`;
   return o}
-function drawClose(x,st){const p=svgPen();PANEL[CLOSE[st.k]||"curve"](p,st);return p.out()}
+function drawClose(x,st){
+  const extra=document.getElementById?.("slushie-extra-chart"),kind=st.k==="curve"?"split":st.k==="test"?"sankey":null;
+  if(extra){extra.hidden=!kind;if(kind){const r=s.run,pw=powers(r),key=[kind,r.id,s.comp,s.vents,Math.round(r.T*10),Math.round(r.mi),Math.round(pw.qc),pw.pin].join("|");if(extra.dataset.key!==key){extra.dataset.key=key;const pen=svgPen();PANEL[kind](pen,st);extra.innerHTML='<p>'+ (kind==="split"?"Second screen · cooling and freezing":"Energy flow · the same run")+'</p><svg viewBox="0 0 420 260" role="img" aria-label="'+(kind==="split"?"Energy removed by cooling and freezing":"Current energy flow")+'">'+pen.out()+'</svg>'}}}
+  const p=svgPen();PANEL[CLOSE[st.k]||"curve"](p,st);return p.out()}
 
 // ================================================================ the 3D bench
 let has3D=false,MG=null;
-function caseBox(S,w,h,d,tint,o){o=o||{};const {THREE,mat}=S,g=new THREE.Group(),R=o.rail||.4*CM;
-  const body=S.rbox(w,h,d,R*1.4,mat("acrylic",tint,{opacity:o.opacity!=null?o.opacity:.16}),{cast:false});body.position.y=h/2;body.renderOrder=2;g.add(body);
-  const railM=mat("metal",S.PAL.steel,{rough:.3}),ballM=mat("plastic","#FFFFFF",{rough:.25}),xs=[-w/2,w/2],ys=[0,h],zs=[-d/2,d/2];
-  for(const x of xs)for(const z of zs)g.add(S.cyl(R,R,h,railM,{seg:12,at:[x,h/2,z]}));
-  for(const y of ys)for(const z of zs)g.add(S.cyl(R,R,w,railM,{seg:12,rot:[0,0,Math.PI/2],at:[0,y,z]}));
-  for(const y of ys)for(const x of xs)g.add(S.cyl(R,R,d,railM,{seg:12,rot:[Math.PI/2,0,0],at:[x,y,0]}));
-  for(const x of xs)for(const y of ys)for(const z of zs)g.add(S.sphere(R*1.9,ballM,{seg:16,at:[x,y,z]}));
-  g.userData.body=body;return g}
-// the machine alone, at real size (1 scene unit = 4 cm): used on the bench, and by "View in your space"
-function buildMachine(S){const {THREE,mat}=S,PAL=S.PAL,g=new THREE.Group();g.name="slushie machine";
-  const put=(o,x,y,z,rot)=>{o.position.set(x*CM,y*CM,z*CM);if(rot)o.rotation.set(rot[0],rot[1],rot[2]);g.add(o);return o};
-  const RB=(w,h,d,r,m,x,y,z)=>put(S.rbox(w*CM,h*CM,d*CM,r*CM,m),x,y,z);
-  const CY=(rt,rb,h,m,x,y,z,rot,seg)=>put(S.cyl(rt*CM,rb*CM,h*CM,m,{seg:seg||32}),x,y,z,rot);
-  const TU=(pts,r,m,o)=>{const tb=S.tube(pts.map(q=>[q[0]*CM,q[1]*CM,q[2]*CM]),r*CM,m,o||{});g.add(tb);return tb};
-  const steel=mat("metal",PAL.steel,{rough:.28}),steelD=mat("metal",PAL.steelDark,{rough:.35}),copper=mat("metal","#D59A6A",{rough:.32}),
-    white=mat("plastic","#FFFFFF",{rough:.4}),offW=mat("plastic","#F3F1EC",{rough:.45}),mintP=mat("plastic","#CFECDD",{rough:.35}),
-    augM=mat("plastic","#A9E0C9",{rough:.3,extra:{side:THREE.DoubleSide}}),peachP=mat("plastic","#F6B384",{rough:.35}),blushP=mat("plastic","#F3B8C8",{rough:.3}),
-    lavP=mat("plastic","#D9CBF2",{rough:.35}),rubber=mat("plastic","#3C4557",{rough:.85,coat:.05}),icyP=mat("plastic","#CFE6F7",{rough:.3}),
-    foam=mat("plastic","#DDEBF7",{rough:.8,coat:.05}),pcbM=mat("plastic","#5FA87A",{rough:.5}),dark=mat("plastic","#3A4152",{rough:.5}),glassM=mat("glass","#EEF6FF",{opacity:.13});
-  const parts={};
-  // ---- the base: a frosted case on the bench, with a low step in front for the drip tray
-  const base=caseBox(S,22*CM,15*CM,26*CM,"#D3E7F7",{opacity:.2});base.position.set(0,0,-2*CM);g.add(base);
-  RB(18,2.5,10,.8,offW,0,1.25,16);RB(16,.5,8.6,.25,steel,0,2.75,16);
-  const slats=S.swarm(11,new THREE.BoxGeometry(1,1,1),steelD,{});for(let i=0;i<11;i++)slats.putS(i,(-7+i*1.4)*CM,3.1*CM,16*CM,.32*CM,.28*CM,7.6*CM);slats.done();g.add(slats);
-  CY(1.3,1.3,1,blushP,-6.5,9.5,11.5,[Math.PI/2,0,0]);RB(2.2,1.4,.8,.3,white,-6.5,5.6,11.3);
-  const ledM=mat("glow","#7FE3B5",0,{fresh:true});put(S.sphere(.45*CM,ledM,{seg:16}),-3.6,9.5,11.2);
-  // ---- inside the base: the compressor (hot side)
-  RB(10,.6,10,.3,steelD,-5,.7,-7);[[-8,-10],[-2,-10],[-8,-4],[-2,-4]].forEach(([x,z])=>CY(.6,.6,1,rubber,x,1.4,z));
-  parts.comp=put(new THREE.Mesh(new THREE.CapsuleGeometry(3.6*CM,4*CM,8,32),peachP),-5,7.6,-7);parts.comp.castShadow=true;parts.comp.receiveShadow=true;
-  put(S.torus(3.64*CM,.2*CM,steelD,{ts:48}),-5,5.4,-7,[Math.PI/2,0,0]);RB(2.4,2.4,1.2,.4,mintP,-5,6.6,-3.3);
-  // the condenser: a copper coil threaded through steel fins, with a frame
-  const fins=S.swarm(24,new THREE.BoxGeometry(1,1,1),steel,{});for(let i=0;i<24;i++)fins.putS(i,(-8.7+i*17.4/23)*CM,8.5*CM,CDZ*CM,.08*CM,12.2*CM,2.4*CM);fins.done();g.add(fins);
-  [-9.4,9.4].forEach(x=>RB(.4,12.8,2.8,.15,steelD,x,8.5,CDZ));
-  parts.cond=fins;
-  // the fan, blowing room air through the condenser and out of the back
-  const fan=new THREE.Group();put(fan,3.5,8.2,-10.2);fan.add(S.torus(3.4*CM,.32*CM,white,{ts:48}));
-  const blades=new THREE.Group();fan.add(blades);for(let i=0;i<5;i++){const a=i*2*Math.PI/5,b=S.rbox(2.5*CM,.16*CM,1.2*CM,.08*CM,mintP);b.position.set(Math.cos(a)*1.75*CM,Math.sin(a)*1.75*CM,0);b.rotation.set(0,0,a);b.rotateX(.55);blades.add(b)}
-  blades.add(S.cyl(.8*CM,.8*CM,1*CM,white,{rot:[Math.PI/2,0,0]}));fan.add(S.cyl(1.1*CM,1.1*CM,1.6*CM,mintP,{rot:[Math.PI/2,0,0],at:[0,0,1.3*CM]}));
-  CY(.2,.2,4.4,steelD,3.5,2.6,-10.2);parts.fan=fan;parts.blades=blades;
-  const louv=S.swarm(7,new THREE.BoxGeometry(1,1,1),steel,{});for(let i=0;i<7;i++)louv.putS(i,0,(3+i*1.65)*CM,-15.35*CM,17*CM,.42*CM,.5*CM);louv.done();g.add(louv);
-  // the filter drier, the expansion valve (where the cold side starts) and the control board
-  CY(.7,.7,3.2,copper,-3,2.4,6,[0,0,Math.PI/2]);
-  parts.valve=CY(.9,.9,2.2,steel,6,6.4,5);CY(1.15,1.15,.9,lavP,6,8,5);put(S.torus(.95*CM,.18*CM,steelD,{ts:24}),6,5.3,5,[Math.PI/2,0,0]);
-  RB(5,.25,3.6,.1,pcbM,6.5,1.1,-5);RB(1.2,.4,1,.1,dark,5.6,1.45,-5.6);RB(.9,.35,.9,.1,dark,7.6,1.4,-4.2);CY(.4,.4,1,steel,7.9,1.8,-6.2);
-  // ---- the pipes: copper on the hot side, icy and insulated on the cold side
-  const PM={hot:[copper,.35],cond:[copper,.3],liq:[copper,.25],cold:[icyP,.3],evap:[steelD,.2],suct:[foam,.52]};
-  for(const sec of LOOP.secs){const pm=PM[sec.type];if(!pm)continue;TU(sec.pts,pm[1],pm[0],{seg:Math.max(24,sec.pts.length*(sec.type==="evap"?3:5)),rs:sec.type==="evap"?6:10})}
-  // ---- the rear housing (auger motor) and the saddles the bowl sits on
-  const rear=caseBox(S,10*CM,14*CM,3.4*CM,"#D3E7F7",{opacity:.17,rail:.3*CM});rear.position.set(0,15*CM,-13.6*CM);g.add(rear);
-  parts.motor=CY(1.8,1.8,2.4,mintP,0,18.6,-13.6,[Math.PI/2,0,0]);
-  const pinion=put(new THREE.Mesh(new THREE.TorusGeometry(1.35*CM,.38*CM,6,14),mintP),0,18.6,-12.3);
-  const gear=put(new THREE.Mesh(new THREE.TorusGeometry(3.2*CM,.5*CM,6,26),augM),0,AX,-12.4);
-  [-4,7].forEach(z=>{RB(4.4,3,2.2,.6,white,0,16.5,z);put(S.torus(5.75*CM,.32*CM,steel,{arc:Math.PI,ts:40}),0,AX,z,[0,0,Math.PI])});
-  // ---- the bowl: clear, with steel bands, a hatch on top, and the drink inside
-  const bowl=put(new THREE.Mesh(new THREE.CapsuleGeometry(5.6*CM,16*CM,16,56),glassM),0,AX,ZB,[Math.PI/2,0,0]);bowl.renderOrder=8;
-  [-6.5,9.5].forEach(z=>put(S.torus(5.63*CM,.3*CM,steel,{ts:64}),0,AX,z));
-  CY(2.8,2.8,1.1,blushP,0,29.6,2);CY(.7,.7,.9,white,0,30.6,2);
-  const lg=new THREE.CapsuleGeometry(5.25,16,16,56);lg.rotateX(Math.PI/2);lg.translate(0,AX,ZB);{const pa=lg.attributes.position;for(let i=0;i<pa.count;i++)if(pa.getY(i)>LEV)pa.setY(i,LEV)}lg.scale(CM,CM,CM);lg.computeVertexNormals();
-  const liqM=mat("liquid",DRINK,{fresh:true,opacity:.5});liqM.depthWrite=false;const liq=new THREE.Mesh(lg,liqM);liq.renderOrder=5;g.add(liq);
-  // ---- the evaporator drum, with the refrigerant channel wound round it, and the ice that can build up on it
-  const drumM=mat("metal",PAL.steel,{fresh:true,rough:.25});parts.drum=put(new THREE.Mesh(new THREE.CapsuleGeometry(2.6*CM,18*CM,10,40),drumM),0,AX,-2,[Math.PI/2,0,0]);parts.drum.castShadow=true;
-  const shellM=new THREE.MeshPhysicalMaterial({color:"#F2F8FF",roughness:.3,transparent:true,opacity:.62,depthWrite:false,clearcoat:1});
-  const shell=put(new THREE.Mesh(new THREE.CapsuleGeometry(2.6*CM,18*CM,10,40),shellM),0,AX,-2,[Math.PI/2,0,0]);shell.renderOrder=6;shell.visible=false;
-  // ---- the auger: a plastic spiral round the drum, turned through the back wall by the motor
-  const aug=new THREE.Group();put(aug,0,AX,0);
-  {const n=Math.round(ATURN*64),pos=[],idx=[],ri=2.95,ro=4.7;for(let i=0;i<=n;i++){const u=i/n,th=u*ATURN*2*Math.PI,z=AZ0+(AZ1-AZ0)*u,c=Math.cos(th),sn=Math.sin(th);pos.push(ri*c*CM,ri*sn*CM,z*CM,ro*c*CM,ro*sn*CM,z*CM)}
-    for(let i=0;i<n;i++){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}
-    const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();const rib=new THREE.Mesh(geo,augM);rib.castShadow=true;aug.add(rib);
-    for(const rr of [ri,ro]){const pts=[];for(let i=0;i<=n;i+=2){const u=i/n,th=u*ATURN*2*Math.PI;pts.push([rr*Math.cos(th)*CM,rr*Math.sin(th)*CM,(AZ0+(AZ1-AZ0)*u)*CM])}aug.add(S.tube(pts,(rr===ro?.28:.18)*CM,augM,{seg:n,rs:6}))}
-    aug.add(S.torus(3.8*CM,.32*CM,augM,{at:[0,0,AZ0*CM],ts:40}));parts.aug=aug}
-  // ---- the thermometer probe, the tap and its handle, and the power cord
-  parts.probe=CY(.25,.25,10,steel,1.5,26,12);RB(1.3,2.4,1.3,.45,rubber,1.5,32.2,12);CY(.3,.3,.6,mat("plastic",PAL.product.strawberry),1.5,21.2,12);
-  parts.tap=RB(3.2,3,3,.8,white,0,17.6,12.6);CY(.6,.55,2.4,steel,0,15.2,13);
-  const handle=new THREE.Group();put(handle,0,19,14);const hr=S.cyl(.42*CM,.42*CM,6*CM,blushP,{at:[0,3*CM,0]});handle.add(hr);handle.add(S.sphere(1*CM,white,{at:[0,6.2*CM,0],seg:20}));handle.rotation.x=.7;parts.handle=handle;
-  TU([[9,3,-15.2],[9,3,-16.4],[9.4,1.6,-18],[9.6,.6,-19.6]],.35,dark,{seg:30});
-  // ---- the moving parts the model drives: ice crystals on the drum and in the drink, and the refrigerant
-  const hexG=new THREE.CylinderGeometry(1,1,.34,6),iceM=mat("plastic","#F7FBFF",{rough:.22,coat:.9});
-  const drumIce=S.swarm(240,hexG,iceM,{});g.add(drumIce);const susIce=S.swarm(420,hexG,iceM,{});g.add(susIce);
-  const refr=S.swarm(170,new THREE.SphereGeometry(1,8,6),mat("plastic","#ffffff",{rough:.35}),{colors:true});g.add(refr);
-  Object.assign(parts,{liqM,drumM,shell,shellM,drumIce,susIce,refr,ledM,gear,pinion,handle,bowl,base,rear});
-  return {g,parts,S}}
+// Async asset loading never owns or restores lesson state. A late success reads the current topic/run.
+function slushie3d(S){
+  let world=null,failed=false;const host=S.canvas.parentElement,figure=host.parentElement;
+  const status=()=>document.getElementById("slushie-load-status");
+  host.style.visibility="hidden";figure.classList.remove("s3-on");figure.classList.add("slushie-loading");
+  if(status())status().textContent="Loading live 3D · static Blender render shown";
+  document.documentElement.dataset.slushieAsset="loading";
+  const fail=e=>{if(failed)return;failed=true;has3D=false;host.style.display="none";host.setAttribute("aria-hidden","true");figure.classList.remove("s3-on","slushie-loading");document.getElementById("k-main").removeAttribute("aria-hidden");document.documentElement.dataset.slushieAsset="fallback";document.querySelector(".slushie-parts").hidden=true;if(status())status().textContent="3D unavailable · simplified live diagram, controls and charts remain available";S.api.redraw();console.warn("Slushie model unavailable",e)};
+  import("./slushie-asset.js").then(async m=>{
+    const asset=await m.loadSlushie(S);m.lightSlushie(S);world=slushieBench(S,asset);
+    world.step(S.api.step);world.update(s,S.api.step,0,0);
+    document.getElementById("k-main").setAttribute("aria-hidden","true");figure.classList.remove("slushie-loading");figure.classList.add("s3-on");host.style.visibility="visible";
+    host.querySelector(".s3-ov").setAttribute("aria-hidden","true");
+    document.getElementById("slushie-parts").disabled=false;
+    document.documentElement.dataset.slushieAsset="ready";if(status())status().textContent="Live 3D · illustrative ice and heat flow · glass differs from the Blender render";
+    host.querySelector(".s3-hint").textContent="Drag to turn · + / − to zoom · Home to reset";
+  }).catch(fail);
+  return {step(st){world?.step(st)},resize(w,h){world?.resize?.(w,h)},update(...args){if(world&&!failed)try{world.update(...args)}catch(e){fail(e)}}};
+}
 
-function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector3(x,y,z),TOP=.3,tmp=V3(0,0,0);
+function slushieBench(S,asset){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector3(x,y,z),TOP=.3,tmp=V3(0,0,0);
   const steel=mat("metal",PAL.steel,{rough:.28}),white=mat("plastic","#FFFFFF",{rough:.4}),offW=mat("plastic","#F3F1EC",{rough:.45}),dark=mat("plastic","#3A4152",{rough:.5});
   // the bench: one sky plinth
-  const bench=S.rbox(27,TOP,15,.14,mat("plastic",PAL.case.sky,{rough:.55,coat:.2}));bench.position.set(.4,TOP/2,.2);S.scene.add(bench);
+  const bench=S.rbox(10,TOP,12,.14,mat("plastic","#e5ede6",{rough:.55,coat:.2}));bench.position.set(.4,TOP/2,.2);S.scene.add(bench);
   // the machine, at real size: 32 cm tall, 22 cm wide and 36 cm deep (with its drip tray)
-  MG=buildMachine(S);const mach=MG.g,PT=MG.parts;mach.position.set(0,TOP,0);S.scene.add(mach);
+  MG=asset;const mach=MG.g,PT=MG.parts;mach.position.set(0,TOP,0);S.scene.add(mach);
   const W=(x,y,z)=>mach.localToWorld(V3(x*CM,y*CM,z*CM));mach.updateMatrixWorld(true);
   // warm air leaving the back, and the power cord to a wall plug at the back of the bench
   const warm=S.puffs(36,"#F6B384");S.scene.add(warm);const WP=Array.from({length:36},()=>({life:0,x:0,y:0,z:0}));
@@ -479,7 +420,7 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
   clk.add(S.rbox(1.3,.12,1.0,.05,offW,{at:[0,.06,0]}));clk.add(S.cyl(.06,.06,1.05,steel,{at:[0,.6,-.05],seg:12}));
   clk.add(S.cyl(1.22,1.22,.16,white,{rot:[Math.PI/2,0,0],at:[0,2.25,-.1],seg:48}));const clockP=S.panel(420,420,2.3);clockP.position.set(0,2.25,.0);clk.add(clockP);
   clk.updateMatrixWorld(true);
-  S.scene.add(S.tube([W(1.5,33.4,12),W(1.5,36,12.6),V3(-1.8,TOP+2.8,4.4),V3(-4.8,TOP+.9,3.2),clk.localToWorld(V3(.3,1.2,-.2))],.05,dark,{seg:60}));
+  const probeWire=S.tube([W(1.5,33.4,12),W(1.5,36,12.6),V3(-1.8,TOP+2.8,4.4),V3(-4.8,TOP+.9,3.2),clk.localToWorld(V3(.3,1.2,-.2))],.05,dark,{seg:60});S.scene.add(probeWire);
   // ---- two screens: the cooling curve, and a second screen that follows the step
   const screen=(x,z,w,ry,y0)=>{const gg=S.group();gg.position.set(x,TOP,z);gg.rotation.y=ry;const hU=w*260/420,cy=y0+hU/2;
     for(const sx of [-w/2+.4,w/2-.4]){gg.add(S.cyl(.06,.06,cy,steel,{at:[sx,cy/2,-.12],seg:12}));gg.add(S.rbox(.7,.08,.7,.04,offW,{at:[sx,.04,-.12]}))}
@@ -496,64 +437,78 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
   const front=S.cyl(LR*LS+.05,LR*LS+.05,.02,mat("glass","#ffffff",{opacity:.07}),{rot:[Math.PI/2,0,0],at:[0,0,.22],seg:64,cast:false});front.renderOrder=9;lens.add(front);
   S.scene.add(lens);
   const lstand=S.group();lstand.position.set(7.0,TOP,4.6);lstand.add(S.rbox(1.0,.1,1.0,.04,offW,{at:[0,.05,0]}));lstand.add(S.cyl(.06,.06,2.4,steel,{at:[0,1.2,0],seg:14}));S.scene.add(lstand);
-  S.scene.add(S.tube([[7.0,TOP+2.4,4.6],[6.95,TOP+2.55,4.7],[6.7,4.5-LR*LS-.2,4.95],[6.62,4.5-LR*LS-.05,5.0]],.05,steel,{seg:24}));
+  const lensArm=S.tube([[7.0,TOP+2.4,4.6],[6.95,TOP+2.55,4.7],[6.7,4.5-LR*LS-.2,4.95],[6.62,4.5-LR*LS-.05,5.0]],.05,steel,{seg:24});S.scene.add(lensArm);
   const O=S.swarm(170,new THREE.SphereGeometry(RO*LS,10,8),mat("plastic","#ffffff",{rough:.35}),{colors:true});lens.add(O);
   const Hs=S.swarm(340,new THREE.SphereGeometry(.036*LS,7,5),mat("plastic","#ffffff",{rough:.35}),{});lens.add(Hs);
   const ring6=S.swarm(24,new THREE.TorusGeometry(.085*LS,.024*LS,6,6),mat("plastic","#F49A5E",{rough:.4}),{});lens.add(ring6);
   const ring5=S.swarm(24,new THREE.TorusGeometry(.085*LS,.024*LS,6,5),mat("plastic","#F49A5E",{rough:.4}),{});lens.add(ring5);
   const hb=S.swarm(240,new THREE.CylinderGeometry(.012*LS,.012*LS,1,5),mat("flat",PAL.deep.sky,{opacity:.75,depthWrite:false}),{});lens.add(hb);
   const fx=S.puffs(30,"#F6A27E");lens.add(fx);const fxm=S.puffs(20,"#8FC3F0");lens.add(fxm);const heatP=S.puffs(30,"#F09872");lens.add(heatP);
+  const lensRays=S.group();
   {lens.updateMatrixWorld(true);const tgt=W(2.4,AX,1),lm=mat("flat",PAL.deep.sky,{opacity:.26,depthWrite:false});
-    [[0,1],[0,-1],[1,0],[-1,0]].forEach(([a,b])=>{const p0=lens.localToWorld(V3(a*(LR*LS+.1),b*(LR*LS+.1),0));const m=S.tube([[p0.x,p0.y,p0.z],[tgt.x,tgt.y,tgt.z]],.012,lm,{seg:2,cast:false});m.renderOrder=4;S.scene.add(m)})}
+    [[0,1],[0,-1],[1,0],[-1,0]].forEach(([a,b])=>{const p0=lens.localToWorld(V3(a*(LR*LS+.1),b*(LR*LS+.1),0));const m=S.tube([[p0.x,p0.y,p0.z],[tgt.x,tgt.y,tgt.z]],.012,lm,{seg:2,cast:false});m.renderOrder=4;lensRays.add(m)})}
   // ---- picks: tap a part to name it
   const PARTS={comp:["Compressor","squeezes the refrigerant gas, so it gets hot"],cond:["Condenser","hot gas gives its heat to the air and turns to liquid"],fan:["Fan","pulls room air through the condenser, out the back"],
     valve:["Expansion valve","a narrow gap: the pressure drops and the refrigerant gets very cold"],drum:["Evaporator drum","refrigerant boils inside, taking heat from the drink"],aug:["Auger","turns round the drum, scraping off ice as it forms"],
-    tap:["Tap and drip tray","pull the handle to pour"],probe:["Thermometer probe","feeds the cooling curve"],motor:["Auger motor","turns the auger through the back wall"]};
-  [["comp",PT.comp],["cond",PT.cond],["fan",PT.fan],["valve",PT.valve],["drum",PT.drum],["aug",PT.aug],["tap",PT.tap],["tap",PT.handle],["probe",PT.probe],["motor",PT.motor]].forEach(([k,o])=>S.pick(o,()=>{s.part=k}));
+    tap:["Tap and drip tray","outlet for the drink; dispensing is not simulated"],probe:["Thermometer probe","feeds the cooling curve"],motor:["Auger motor","turns the auger through the back wall"]};
+  [["comp",PT.comp],["cond",PT.cond],["fan",PT.fan],["valve",PT.valve],["drum",PT.drum],["aug",PT.aug],["tap",PT.tap],["tap",PT.handle],["probe",PT.probe],["motor",PT.motor]].forEach(([k,o])=>{if(o)S.pick(o,()=>choosePart(k))});
+  const picker=document.getElementById("slushie-parts"),explanation=document.getElementById("slushie-part-description");
+  if(picker){for(const [key,[name]] of Object.entries(PARTS)){const option=document.createElement("option");option.value=key;option.textContent=name;picker.append(option)}picker.onchange=()=>{choosePart(picker.value);S.api.redraw()}}
   // ---- labels
   const LP={};const at={comp:[-5,13.4,-7],cond:[-8.6,13.8,-12.8],fan:[3.5,11.4,-10.2],valve:[6,8.6,5],drum:[0,AX+2.6,-6],aug:[0,AX+4.7,4],tap:[0,15,13],probe:[1.5,33.4,12],motor:[0,20.4,-15]};
   const off={comp:[-40,30],cond:[-40,-40],fan:[30,-50],valve:[40,36],drum:[-46,-56],aug:[40,-44],tap:[40,30],probe:[30,-36],motor:[-40,-30]};
   Object.keys(PARTS).forEach(k=>LP[k]=S.label({off:off[k]}));
   const lDrink=S.label({cls:"big",off:[44,-56]}),lBack=S.label({cls:"big",off:[-50,-40]}),lPow=S.label({off:[30,26]}),lLens=S.label({cls:"big",off:[30,-70]}),lShell=S.label({cls:"hot",off:[-40,50]}),lComp=S.label({off:[-40,40]});
-  // ---- views (each has a wider twin for narrow, phone-shaped canvases)
-  const view0=S.view;S.view=(name,pos,tg,o)=>{view0(name,pos,tg,o);view0(name+"_n",pos.map((v,i)=>tg[i]+(v-tg[i])*1.5),tg,Object.assign({},o,{max:(o.max||40)*1.4}))};
-  S.view("machine",[-14.2,9.8,13.6],[0,3.9,.2],{min:5,max:40});
-  S.view("curve",[-6.8,8.6,17.2],[-5.6,4.4,-1.2],{min:5,max:40});
-  S.view("bonds",[8.1,6.3,13.4],[6.1,4.4,4.6],{min:3,max:34});
-  S.view("sugar",[7.8,8.8,18.4],[5.8,4.8,-1.6],{min:5,max:40});
-  S.view("auger",[10.6,8.0,4.4],[0,6.0,.3],{min:3,max:34});
-  S.view("energy",[14.2,9.6,9.4],[4.6,4.0,-2.6],{min:5,max:40});
-  S.view("all",[.6,13.6,29.5],[0,3.8,-.8],{min:8,max:64});
+  // Focus on the active mechanism. Charts and particles retain their own topic views.
+  const frameViews=()=>{const w=S.canvas.clientWidth||700,h=S.canvas.clientHeight||560,f=Math.max(1,.8/(w/h));
+    const views={machine:[[12,9,16],[0,4.1,.2]],curve:[[-13,9,19],[-4.3,4.5,0]],bonds:[[9,6.2,13.4],[6.2,4.5,4.6]],sugar:[[14,10,20],[4,4.6,0]],auger:[[6.8,8.6,10],[0,6.15,.35]],energy:[[13,8,-17],[0,3.8,-.5]],all:[[-13,10,22],[-3.8,4,0]]};
+    for(const [name,[pos,target]] of Object.entries(views)){
+      let position=pos.map((v,i)=>target[i]+(v-target[i])*f);
+      if(name==="machine"||name==="energy"){
+        const tg=V3(...target),direction=V3(...pos).sub(tg).normalize(),right=V3(0,0,0).crossVectors(direction,V3(0,1,0)).normalize(),up=V3(0,0,0).crossVectors(right,direction).normalize();
+        const tan=Math.tan(THREE.MathUtils.degToRad(S.camera.fov/2)),bb=MG.assetBounds;let distance=0;
+        for(const point of MG.framingPoints){const p=point.clone().add(V3(0,TOP,0)).sub(tg);distance=Math.max(distance,p.dot(direction)+1.08*Math.max(Math.abs(p.dot(up))/tan,Math.abs(p.dot(right))/(tan*w/h)))}
+        position=tg.clone().addScaledVector(direction,distance).toArray();
+      }
+      S.view(name,position,target,{min:name==="auger"?4:6,max:50,dur:.6,arc:0});
+    }
+  };frameViews();
   const SHOW={machine:["comp","cond","fan","valve","drum","aug","tap","probe","motor"],curve:[lDrink,"probe"],bonds:[lLens,lDrink],sugar:[lDrink],auger:["aug",lShell,lDrink],energy:[lBack,lPow,"comp","cond","fan"],test:[lDrink,lBack,lComp]};
   S.goView("machine",true);S.setShadowBox(13,[0,0,-.5]);has3D=true;
   if(/[?&]debug\b/.test(location.search))try{window.__slushie=Object.assign(window.__slushie||{},{S,s,MG})}catch(e){}
-  let curShow=[],augRot=0,fanK=0,flowK=0,flowPh=0,augK=0,clockKey="";
-  const DI=Array.from({length:240},()=>({th:Math.random()*6.283,z:HX0-.3+Math.random()*(HX1-HX0+1),sz:0,gr:.6+Math.random()*.8,pd:0}));
+  let currentView="machine",curShow=[],augRot=0,fanAngle=0,fanK=0,flowK=0,flowPh=0,augK=0,clockKey="",lastRun=s.run.id;
+  const reviewing=new URLSearchParams(location.search).has("review");let frames=[],lastFrame=0,lastReport=0,medianFrameMs=0,p95FrameMs=0;
+  const DI=Array.from({length:240},()=>({th:Math.random()*6.283,z:-4.7+Math.random()*12.4,sz:0,gr:.6+Math.random()*.8,pd:0}));
   const SI=Array.from({length:420},(x,i)=>({th:Math.random()*6.283,rho:3.1+Math.random()*1.8,z:-11+Math.random()*24.5,rnd:Math.random(),sp:(Math.random()-.5)*4}));
+  function choosePart(key){s.part=key;Object.values(LP).concat([lDrink,lBack,lPow,lLens,lShell,lComp]).forEach(l=>l.hide());curShow=key&&LP[key]?[LP[key]]:[];curShow.forEach(l=>l.show())}
   const q=new THREE.Quaternion(),UP=V3(0,1,0),dir=V3(0,0,0),col=new THREE.Color();
   return {
-    step(st){const k=st.k,v=k==="test"?"all":k,narrow=S.canvas.clientWidth<1.35*S.canvas.clientHeight;S.goView(narrow?v+"_n":v);
-      S.setShadowBox(v==="all"?14:9,v==="all"?[0,0,-.5]:[0,0,0]);if(k!=="machine")s.part="";
-      curShow=(SHOW[k]||[]).map(x=>typeof x==="string"?LP[x]:x).slice(0,narrow?3:12);Object.values(LP).concat([lDrink,lBack,lPow,lLens,lShell,lComp]).forEach(l=>l.hide());curShow.forEach(l=>l.show())},
-    update(x,st,dt,t){const r=s.run,k=st.k,pw=powers(r),run=pw.run,aug=augerOn(r),phi=r.mi/M,red=S.REDUCED;
+    resize(){this.step(S.api.step);S.goView(currentView,true)},
+    step(st){const link=document.getElementById("slushie-graphics-link");if(link)link.href="?lite#"+st.k;const k=st.k,narrow=S.canvas.clientWidth<1.35*S.canvas.clientHeight,v=narrow&&["curve","sugar","test"].includes(k)?"machine":k==="test"?"all":k;currentView=v;frameViews();S.goView(v);
+      S.setShadowBox(v==="all"?14:9,v==="all"?[0,0,-.5]:[0,0,0]);if(k!=="machine")s.part="";MG.rig.setView({cutaway:k==="machine"||k==="energy"||k==="test",mechanism:k==="auger",showCup:false});SA.g.visible=!narrow&&(k==="curve"||k==="test");SB.g.visible=!narrow&&k==="sugar";lens.visible=k==="bonds";clk.visible=!narrow&&(k==="curve"||k==="test");probeWire.visible=false;lstand.visible=lensArm.visible=lensRays.visible=lens.visible;
+      curShow=(SHOW[k]||[]).map(x=>typeof x==="string"?LP[x]:x).slice(0,narrow?1:3);Object.values(LP).concat([lDrink,lBack,lPow,lLens,lShell,lComp]).forEach(l=>l.hide());curShow.forEach(l=>l.show())},
+    update(x,st,dt,t){const r=s.run,k=st.k,pw=powers(r),run=pw.run,aug=augerOn(r),phi=r.mi/M,red=S.REDUCED,elapsedDt=dt;
+      if(reviewing){const now=performance.now();if(lastFrame&&now-lastFrame<250)frames.push(now-lastFrame);lastFrame=now;if(now-lastReport>500){lastReport=now;frames=frames.slice(-180);const sorted=[...frames].sort((a,b)=>a-b);medianFrameMs=sorted[Math.floor(sorted.length/2)]||0;p95FrameMs=sorted[Math.floor(sorted.length*.95)]||0}}
+      if(lastRun!==r.id){lastRun=r.id;augRot=fanAngle=flowPh=0;fanK=augK=flowK=0;DI.forEach(c=>{c.sz=0;c.pd=0})}
+      if(!s.playing||red)dt=0;
       lwTick(dt*(red?.5:1));
       // motors: fan and refrigerant run with the compressor; the auger with its own motor
-      fanK=S.lerp(fanK,run?1:0,red?1:.06);augK=S.lerp(augK,aug?1:0,red?1:.08);flowK=S.lerp(flowK,run?1:0,red?1:.04);
-      PT.blades.rotation.z-=dt*fanK*16;augRot+=dt*augK*Math.PI;PT.aug.rotation.z=augRot;PT.gear.rotation.z=augRot;PT.pinion.rotation.z=-augRot*2.3;s.augRot=augRot;
+      fanK=run?S.lerp(fanK,1,.06):0;augK=aug?S.lerp(augK,1,.08):0;flowK=run?S.lerp(flowK,1,.04):0;
+      fanAngle-=dt*fanK*16;augRot+=dt*augK*Math.PI;s.augRot=augRot;
       flowPh+=dt*flowK/14;s.flowPh=flowPh;
-      for(let i=0;i<170;i++){const p=loopAt(i/170+flowPh);if(p.a.hide||!r.started&&false){PT.refr.put(i,0,-99,0,.0001);continue}PT.refr.put(i,p.x*CM,p.y*CM,p.z*CM,p.a.sz*CM);col.set(p.a.col);PT.refr.setColorAt(i,col)}PT.refr.done();
-      PT.ledM.color.set(r.jam?"#F07A8E":"#7FE3B5");PT.ledM.emissive.set(r.jam?"#F07A8E":"#7FE3B5");PT.ledM.emissiveIntensity=r.jam?1.8:run?1.6:s.comp?.35:0;
-      // the drum frosts over as it gets cold; any ice layer on it shows as a shell
-      const cold=S.clamp((6-r.T)/10,0,1)*(s.comp?1:.5);PT.drumM.color.set(PAL.steel).lerp(col.set("#EAF4FC"),cold);
-      const dl=r.shell/200;PT.shell.visible=dl>.01;if(dl>.01)PT.shell.scale.set((2.6+dl)/2.6,1+dl/11.6,(2.6+dl)/2.6);
-      // the drink turns to slush: paler and more opaque as the share of ice rises
-      PT.liqM.color.set(DRINK).lerp(col.set(FROST),r.jam?1:Math.min(1,phi/.6));PT.liqM.opacity=r.jam?.8:.3+.3*Math.min(1,phi/.6);
+      for(let i=0;i<170;i++){const p=loopAt(i/170+flowPh),v=MG.flowPoint(p);if(p.a.hide||!v){PT.refr.put(i,0,-99,0,.0001);continue}PT.refr.put(i,v.x,v.y,v.z,p.a.sz*CM*.65);col.set(p.a.col);PT.refr.setColorAt(i,col)}PT.refr.done();
+      MG.setHeat(pw.qc,pw.back,k==="machine"||k==="energy");
+      const cold=S.clamp((6-r.T)/10,0,1)*(s.comp?1:.5),dl=r.shell/200;
+      MG.rig.setVisualState({augerAngle:augRot,fanAngle,ventBlocked:!s.vents,shellVisible:dl>.01,
+        shellRadialScale:(2.6+dl)/2.6,shellAxialScale:1+dl/11.6,
+        drinkColor:mix("#f2b6a9",FROST,r.jam?1:Math.min(1,phi/.6)),drinkOpacity:r.jam?.8:.24+.36*Math.min(1,phi/.6),
+        drumColor:mix(PAL.steel,"#EAF4FC",cold),statusColor:r.jam?"#F07A8E":run?"#7FE3B5":"#B9B8C4"});
       // ice crystals on the drum: grow while ice forms, flicked off when the auger's blade passes
       const forming=run&&(r.mi>.5||r.T<tfOf(r.w)+.4),tb=ATURN*2*Math.PI/(AZ1-AZ0);
-      for(let i=0;i<240;i++){const c=DI[i];const bth=augRot+(c.z-AZ0)*tb,d=Math.atan2(Math.sin(bth-c.th),Math.cos(bth-c.th));
+      for(let i=0;i<240;i++){const c=DI[i];const bth=augRot+(c.z+6.8)*(ATURN*2*Math.PI/16.5),d=Math.atan2(Math.sin(bth-c.th),Math.cos(bth-c.th));
         if(aug&&c.pd<0&&d>=0&&d<1)c.sz=0;c.pd=d;
         c.sz=forming?Math.min(aug?1:1.6,c.sz+dt*c.gr*(aug?1.2:.45)):Math.max(0,c.sz-dt*.4);
-        const rr=2.62+dl,sc=c.sz*(.34+(aug?0:.18))*CM;if(sc<.002||c.z>AZ1){PT.drumIce.put(i,0,-99,0,.0001);continue}
+        const rr=Math.min(2.66*(1+dl/2.6),4.9),sc=c.sz*(.34+(aug?0:.18))*CM;if(sc<.002||c.z>AZ1){PT.drumIce.put(i,0,-99,0,.0001);continue}
         dir.set(Math.cos(c.th),Math.sin(c.th),0);q.setFromUnitVectors(UP,dir);PT.drumIce.putS(i,rr*Math.cos(c.th)*CM,(AX+rr*Math.sin(c.th))*CM,c.z*CM,sc,sc*1.2,sc,q)}PT.drumIce.done();
       // crystals spread through the drink: swirled by the auger, or floating up when it stops
       const nS=Math.round(Math.min(1,(r.sus/M)/.55)*420)+(r.jam?60:0),cs=(.2+.55*r.size)*CM;
@@ -562,11 +517,12 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
         else{const top=Math.PI/2+(c.rnd-.5)*1.6;c.th+=(top-c.th)*Math.min(1,dt*.8);c.rho+=(4.6-c.rho)*Math.min(1,dt*.5)}
         const lim=c.z>9.5?Math.sqrt(Math.max(0,27.5-(c.z-9.5)**2)):c.z<-6.5?Math.sqrt(Math.max(0,27.5-(c.z+6.5)**2)):5.25;const rho=Math.min(c.rho,lim-.45);
         if(rho<3.0){PT.susIce.put(i,0,-99,0,.0001);continue}let y=AX+rho*Math.sin(c.th);const xx=rho*Math.cos(c.th);if(y>LEV-.25)y=LEV-.25-c.rnd*.5;
-        PT.susIce.put(i,xx*CM,y*CM,c.z*CM,cs*(.7+.6*c.rnd)*(r.jam?1.6:1),c.th+c.sp*t*.1,c.rnd*6,c.sp)}PT.susIce.done();
+        MG.putCrystal(i,xx*CM,y*CM,c.z*CM,cs*(.7+.6*c.rnd)*(r.jam?1.6:1),c.th+c.sp*t*.1,c.rnd*6,c.sp)}PT.susIce.done();
       // warm air out of the back, sized by the heat the back gives out
       WP.forEach((c,i)=>{if(c.life<=0&&run&&Math.random()<dt*pw.back/90){const p=W((Math.random()-.5)*14,3+Math.random()*10,-15.6);c.life=1;c.x=p.x;c.y=p.y;c.z=p.z}
         if(c.life>0){c.life-=dt*.55;c.z-=dt*.9;c.y+=dt*.45}warm.put(i,c.x,c.y,c.z,Math.max(0,Math.sin(c.life*Math.PI))*.4,220)});warm.done();
       for(let i=0;i<10;i++){const u=((t*.35+i/10)%1),p=cordCurve.getPointAt(1-u);zap.put(i,p.x,p.y+.05,p.z,pw.pin>0?.75*Math.sin(u*Math.PI):0,40)}zap.done();
+      if(reviewing)S.canvas.dataset.review=JSON.stringify({status:"ready",medianFrameMs,p95FrameMs,topic:k,unitsPerMetre:25,runId:r.id,curveKey:SA.key,temperatureC:r.T,iceMassG:r.mi,shellMassG:r.shell,augerOn:aug,compressorOn:run,ventsClear:s.vents,jammed:r.jam,playing:s.playing,augerAngle:augRot,fanAngle,drinkOpacity:MG.rig.nodes.DRINK_VOLUME.children.find(o=>o.isMesh)?.material.opacity,cutaway:!MG.rig.nodes.SERVICE_PANEL.visible,mechanism:!MG.rig.nodes.DRINK_VOLUME.visible,calls:S.renderer.info.render.calls,triangles:S.renderer.info.render.triangles,pixelRatio:S.renderer.getPixelRatio(),camera:S.camera.position.toArray(),target:S.controls.target.toArray(),bounds:[MG.assetBounds.min.toArray(),MG.assetBounds.max.toArray()]});
       // ---- the particle window
       const isK=k==="bonds"||k==="sugar"||k==="test"||k==="all";let n=0,nh=0,nb=0,n6=0,n5=0;
       for(const m of LW.mols){const a=Math.max(0,Math.min(1,m.a));if(a<=.02||n>=170)continue;const jx=m.st==="ice"?Math.sin(t*13+m.rnd*40)*.008:0,jy=m.st==="ice"?Math.cos(t*11+m.rnd*30)*.008:0;
@@ -582,13 +538,15 @@ function slushie3d(S){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THREE.Vector
       for(let i=nf;i<30;i++)fx.put(i,0,0,-9,0,1);for(let i=nm;i<20;i++)fxm.put(i,0,0,-9,0,1);fx.done();fxm.done();
       let nhp=0;for(const h of LW.heat){const u=(LW.t-h.t)/.9;if(nhp<30)heatP.put(nhp++,h.x*LS,(h.y+(YD-.12-h.y)*u)*LS,.12,.9*(1-u),70)}for(let i=nhp;i<30;i++)heatP.put(i,0,0,-9,0,1);heatP.done();
       // ---- screens (redrawn only when something changed)
-      const kA=[k,r.id,r.pts.length,r.started,s.ghost&&s.ghost.id,r.tIce!=null].join("|");SA.t-=dt;
+      const kA=[k,r.id,r.pts.length,r.started,s.ghost&&s.ghost.id,r.tIce!=null].join("|");SA.t-=elapsedDt;
       if(kA!==SA.key&&SA.t<=0){SA.key=kA;SA.t=.2;SA.pn.redraw((g2,w,h)=>drawCurve(canvasPen(g2,w/420),st))}
-      const kind=SCREEN_B[k]||"sankey",kB=[kind,k,r.id,Math.round(pw.qc),pw.pin,Math.round(r.mi),Math.round(r.shell),s.auger,r.jam,Math.round(r.dmi*100),s.comp,s.vents].join("|");SB.t-=dt;
+      const kind=SCREEN_B[k]||"sankey",kB=[kind,k,r.id,Math.round(pw.qc),pw.pin,Math.round(r.mi),Math.round(r.shell),s.auger,r.jam,Math.round(r.dmi*100),s.comp,s.vents].join("|");SB.t-=elapsedDt;
       if(kB!==SB.key&&SB.t<=0){SB.key=kB;SB.t=.25;SB.pn.redraw((g2,w,h)=>PANEL[kind](canvasPen(g2,w/420),st))}
       const ck=[Math.floor(r.t/5),fmtT(r.T),Math.round(eTotal(r)/1000)].join("|");if(ck!==clockKey){clockKey=ck;clockP.redraw((g2,w,h)=>drawClock(g2,w,h,r))}
+      if(picker&&picker.value!==s.part)picker.value=s.part;
+      if(explanation)explanation.textContent=PARTS[s.part]?PARTS[s.part].join(" — "):"Choose a part, or tap one in the model.";
       // ---- labels
-      for(const kk in LP){const L=LP[kk];if(!curShow.includes(L))continue;const a=at[kk];L.at(W(a[0],a[1],a[2])).set(s.part===kk?`${PARTS[kk][0]}<small>${PARTS[kk][1]}</small>`:PARTS[kk][0]).cls(s.part===kk?"hot":"")}
+      for(const kk in LP){const L=LP[kk];if(!curShow.includes(L))continue;const a=at[kk];L.at(MG.hotspots[kk]?MG.hotspots[kk].getWorldPosition(tmp):W(a[0],a[1],a[2])).set(s.part===kk?`${PARTS[kk][0]}<small>${PARTS[kk][1]}</small>`:PARTS[kk][0]).cls(s.part===kk?"hot":"")}
       lDrink.at(W(-3.5,LEV,4)).set(`Drink<b>${fmtT(r.T)} · ${Math.round(phi*100)}% ice</b><small>${stateNow(r)}</small>`);
       lBack.at(W(0,9,-15.8)).set(`Heat out the back<b>${Math.round(pw.back)} W</b><small>${run?"heat from the drink + compressor and fan":s.comp?"compressor resting":"cooling switched off"}</small>`);
       lPow.at(V3(5.85,TOP+.6,-6.3)).set(`Electricity in<b>${Math.round(pw.pin)} W</b>`);
@@ -681,11 +639,11 @@ const CH=[
   no:()=>{const p=powers(s.run);if(!p.run)return "The compressor is resting (or switched off). Start a fresh drink, or wait for it to switch back on, then pause.";if(s.playing)return "Pause first, so the readings stay still.";
     return "Not yet. Energy in = energy out: add the heat taken from the drink to the electrical power of the compressor and fan."}}];
 // ---- mount
-const CFG={kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3d:slushie3d,
+const CFG={postprocessing:false,kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3d:slushie3d,
   eyebrow:"Chemistry · Changes of state",title:"The slushie machine",crumb:"Year 10 science · NCEA Level 2 Chemistry AS91164 Demonstrate understanding of bonding, structure, properties and energy changes",homeHash:"l2",
   fig:"FIG. 35 · A SLUSHIE MACHINE, CUT OPEN",railTitle:"How a drink turns to slush",
   badge:{label:"NCEA L2 Chemistry 91164",exam:"2026-11-16T14:00:00+13:00",examText:"Mon 16 Nov, 2pm"},
-  mainBox:"0 0 640 330",mainPhoneBig:true,mainLabel:"A countertop slushie machine on a lab bench, cut open: compressor, condenser and fan, expansion valve and a cold drum in a clear bowl with an auger, a thermometer probe wired to a lab clock, two screens and a particle window",closeBox:"0 0 420 260",
+  mainBox:"0 0 640 330",mainPhoneBig:true,mainLabel:"A countertop slushie machine on a lab bench, cut open: compressor, condenser and fan, expansion valve and a cold drum in a clear bowl with an auger, a thermometer probe, lab clock, cooling and energy diagrams, and a particle window",closeBox:"0 0 420 260",
   state:s,steps,
   controls:[{type:"play"},
     {type:"button",id:"fresh",label:"Fresh drink",onClick:()=>{newRun()}},
@@ -716,7 +674,66 @@ const CFG={kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3d:slushie3d,
   footer:"Covers AS91164 energy changes: changes of state, attractions between particles (hydrogen bonding in ice), exothermic and endothermic changes and energy calculations with E = mL. Also Year 10 science: energy transfer and transformation, conservation of energy, energy flow diagrams and percentage efficiency."
 };
 // "View in your space": the machine alone (no bench, labels or screens), at real size: 1 scene unit = 4 cm
-CFG.ar={build:S=>MG&&MG.S===S?MG.g:buildMachine(S).g,unitsPerMetre:25,scale:"real",label:"Put it on your bench"};
+CFG.ar={build:S=>MG?.g,unitsPerMetre:25,scale:"real",label:"Put it on your bench"};
+// View changes reload the renderer, but carry the existing solver state once in this tab.
+// Keep this block outside the scientific model and topic initialisers.
+function slushieViewTransfer(env){
+  const param="slushie-view",prefix="assembl.slushie.view.";
+  const numbers="w reading ansE ansW anim".split(" "),flags="auger comp vents playing".split(" ");
+  const runNumbers="id w t H H0 T mi sus shell size Ein Eq Eback dmi ls".split(" ");
+  const runFlags="jam on reached started capped".split(" ");
+  const finite=x=>typeof x==="number"&&Number.isFinite(x);
+  const validRun=r=>r&&runNumbers.every(k=>finite(r[k]))&&runFlags.every(k=>typeof r[k]==="boolean")&&
+    [r.tReach,r.tIce].every(x=>x===null||finite(x))&&Array.isArray(r.pts)&&r.pts.length<=600&&r.pts.every(p=>Array.isArray(p)&&p.length===3&&p.every(finite));
+  function copyState(state){
+    if(!state||!numbers.every(k=>finite(state[k]))||!flags.every(k=>typeof state[k]==="boolean")||
+      typeof state.part!=="string"||!validRun(state.run)||(state.ghost!==null&&!validRun(state.ghost)))throw Error("Invalid experiment");
+    const out={};for(const k of [...numbers,...flags,"part","run","ghost"])out[k]=state[k];
+    for(const k of ["augRot","flowPh"])if(finite(state[k]))out[k]=state[k];
+    return out;
+  }
+  return {
+    take(topics){
+      const url=new URL(env.location.href),token=url.searchParams.get(param);if(!token)return null;
+      url.searchParams.delete(param);env.history.replaceState(null,"",url.href);
+      try{
+        const key=prefix+token,raw=env.storage().getItem(key);env.storage().removeItem(key);
+        const saved=JSON.parse(raw);
+        if(!saved||saved.version!==1||saved.path!==url.pathname||saved.topic!==url.hash.slice(1)||!topics.includes(saved.topic)||
+          !Number.isSafeInteger(saved.runId)||saved.runId<1)throw Error("Missing experiment");
+        return {state:copyState(saved.state),runId:Math.max(saved.runId,saved.state.run.id,saved.state.ghost?.id||0)};
+      }catch(e){return {error:true}}
+    },
+    prepare(state,runId,topic){
+      const url=new URL(env.location.href);url.searchParams.has("lite")?url.searchParams.delete("lite"):url.searchParams.set("lite","");
+      url.hash=topic;
+      const token=env.nonce(),key=prefix+token;
+      env.storage().setItem(key,JSON.stringify({version:1,path:url.pathname,topic,runId,state:copyState(state)}));
+      url.searchParams.set(param,token);return url.href;
+    }
+  };
+}
+const viewTransfer=slushieViewTransfer({location,history:window.history,storage:()=>window.sessionStorage,nonce:()=>window.crypto.randomUUID()});
+const savedView=viewTransfer.take(CFG.steps.map(st=>st.k));
 const API=StudyKit.mount(CFG);
+// Mount applies the topic defaults synchronously. Restore before its first animation frame.
+if(savedView&&!savedView.error){Object.assign(s,savedView.state);runId=savedView.runId;lwTick(0);API.redraw()}
+
+if(document.querySelector?.(".playmain")){
+  const extra=document.createElement("section");extra.id="slushie-extra-chart";extra.className="slushie-extra-chart";extra.hidden=true;document.querySelector(".lower").before(extra);
+  const canvas=document.querySelector(".playmain .canvas"),poster=document.createElement("img");poster.className="slushie-poster";poster.src="/assets/models/slushie/slushie-hero.webp";poster.alt="Static Blender render of the slushie machine";canvas.append(poster);
+  const note=document.createElement("p");note.className="slushie-view-note";note.innerHTML=`<span id="slushie-load-status" role="status">Simplified live diagram · controls and charts remain available</span><a href="?lite${location.hash}" id="slushie-graphics-link">Use simplified view</a>`;canvas.after(note);
+  const parts=document.createElement("div");parts.className="slushie-parts";parts.innerHTML='<label for="slushie-parts">Inside the machine</label><select id="slushie-parts" disabled><option value="">Choose a part</option></select><p id="slushie-part-description" aria-live="polite">Choose a part, or tap one in the model.</p>';note.after(parts);
+  const link=note.querySelector("a"),lite=/[?&]lite\b/.test(location.search);if(lite){link.textContent="Try live 3D";parts.hidden=true;link.href=location.pathname+location.hash}
+  const transferStatus=document.createElement("span");transferStatus.setAttribute("role","status");note.append(transferStatus);
+  if(savedView?.error)transferStatus.textContent="The saved experiment was unavailable. This is a fresh drink.";
+  else if(savedView)transferStatus.textContent="Experiment preserved";
+  link.onclick=e=>{
+    e.preventDefault();
+    try{const target=viewTransfer.prepare(s,runId,API.step.k);location.assign(target)}
+    catch(error){transferStatus.textContent="Couldn’t preserve this experiment. Your view and drink are unchanged."}
+  };
+  window.addEventListener("hashchange",()=>{link.href=(lite?location.pathname:"?lite")+location.hash});
+}
 if(/[?&]debug\b/.test(location.search))try{window.__slushie=Object.assign(window.__slushie||{},{s,LW,API,integrate,powers,phiSet,tfOf,MIN_SLUSH,MAX_SLUSH,MIN_NOJAM,outcome})}catch(e){}
 })();

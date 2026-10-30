@@ -1,0 +1,13 @@
+{
+  "contract": "assembl.claw.v2",
+  "file": "assembl-claw-atelier-web.glb",
+  "bytes": 3174148,
+  "mesh_objects": 59,
+  "rig_nodes": 31,
+  "vertices": 61063,
+  "triangles": 99146,
+  "triangles_before_reduction": 362117,
+  "textures": 0,
+  "material_note": "Alpha glass in GLB; no render-parity promise.",
+  "motion_note": "Stable hierarchy and verified pivots; use claw-rig-controller.mjs. No lesson logic or outcome selection."
+}

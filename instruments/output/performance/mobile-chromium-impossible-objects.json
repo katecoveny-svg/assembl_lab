@@ -1,0 +1,23 @@
+{
+  "frames": 295,
+  "wallMilliseconds": 5001.800000011921,
+  "measuredFPS": 59,
+  "displayedFPS": [
+    56,
+    60,
+    59,
+    60
+  ],
+  "backend": "manifold-wasm",
+  "stats": {
+    "status": "NoError",
+    "components": 1,
+    "dimensions": [
+      67,
+      69,
+      55
+    ],
+    "triangles": 3522,
+    "fps": 60
+  }
+}

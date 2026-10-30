@@ -80,3 +80,21 @@ Original implementation, no added dependencies, no animation loop, no data persi
 Model tests check complete-turn invariance; constructive/destructive interference over the domain; analytic amplitude against sampled rendering; Voronoi ties at every height and moving boundary; current-state feedback and invalid input rejection.
 
 No build/type/lint scripts exist in the baseline package.json. Node syntax checks and five node:test tests pass. Deployment build and final browser evidence recorded in the PR/handoff.
+
+## Follow-up catalogue, palette and creation export
+
+Based on main e1ae010c57bdb62975075c437332bfb99e2d9da5 after PRs 18/19 merged externally. Preserved local changes moved to a fresh follow-up branch; no existing machines or landing-page changes are included in this follow-up.
+
+- Actual Study palette: paper #F7F3EC, navy #222A55, mint #2A7D63, sun #F7E7A6; Fredoka/Instrument Sans and existing Allen asset.
+- Catalogue accounts for all 40 source engines once across eight families. Related original lessons are explicitly distinguished from unported source engines. Search includes planned learning actions (flocking regression fixed).
+- PNG export rerenders geometry at 4×, with portrait 2160×3840, square 2400×2400 and wide 3200×2240 output. Artwork-only default; optional title/explanation; no default personal fields. Native file share only when supported and user-triggered, download fallback always available. No social/OAuth integration, uploads or video claims.
+- Actual PNG files downloaded and dimensions verified; square caption output visually inspected. Browser-generated print PDF visually inspected: one A4 page, 12 mm CSS margins. No real printer or social account was used. These export/print rendering functions were unchanged during recovery except stale preview status text.
+- Recovery browser verification at 390×844: symmetry answer 60 and challenge, waves 180-degree cancellation answer 0, nearest-site tie feedback, export invalidation on mode change, actual portrait PNG download. document scroll width equals viewport width (390). Desktop search for flocking returns the systems family. New screenshots saved in task evidence directory; earlier before/after and print evidence retained.
+- Seven Node tests pass, including all-40 coverage and flocking search regression. JS syntax checks pass. No build, typecheck or lint script is declared; none is falsely reported as run.
+- Native share-sheet delivery to another app and physical printing are intentionally untested. Protected deployment UI needs an authenticated Vercel session; local browser flows do not establish deployed UI verification.
+
+## Browser-history regression
+
+Independent QA found that browser Back restored the ready-only select value after initial catalogue rendering, leaving all eight families visible. The catalogue now rerenders in a deferred task after `pageshow`, covering restored form state without requiring an input/change event.
+
+Manual browser regression (IAB): select Related lessons ready → Back to study machines → browser Back. Confirm select remains ready and exactly one family / three related engines is rendered; repeated twice successfully. Also tested restored search: All families + flocking → Study → Back returns one family / ten engines with the query intact. Evidence: task `evidence/back-filter-fixed.txt` and `back-filter-fixed.jpg`. This requires real browser history/form restoration; the Node data tests alone do not cover it.

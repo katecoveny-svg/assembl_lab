@@ -1,0 +1,26 @@
+{
+  "name": "instruments",
+  "version": "1.0.0",
+  "description": "Three original playable assembl Lab art instruments",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "playwright test",
+    "serve": "python3 -m http.server 4173 --directory ..",
+    "test:unit": "node --test unit/*.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "@sparkjsdev/spark": "2.4.0",
+    "manifold-3d": "3.5.4",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "esbuild": "0.28.2",
+    "prettier": "3.9.10"
+  },
+  "private": true,
+  "type": "module"
+}

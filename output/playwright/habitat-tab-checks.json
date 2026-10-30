@@ -1,0 +1,34 @@
+[
+  {
+    "width": 375,
+    "lite": false,
+    "visible": true,
+    "scrollY": 0,
+    "overflow": false,
+    "selected": "true"
+  },
+  {
+    "width": 320,
+    "lite": false,
+    "visible": true,
+    "scrollY": 0,
+    "overflow": false,
+    "selected": "true"
+  },
+  {
+    "width": 375,
+    "lite": true,
+    "visible": true,
+    "scrollY": 0,
+    "overflow": false,
+    "selected": "true"
+  },
+  {
+    "width": 320,
+    "lite": true,
+    "visible": true,
+    "scrollY": 0,
+    "overflow": false,
+    "selected": "true"
+  }
+]

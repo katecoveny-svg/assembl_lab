@@ -1,0 +1,32 @@
+[
+  {
+    "particles": 180,
+    "fps": 60.00393468424158,
+    "finite": true,
+    "displacement": 2.1268338095417513e-7
+  },
+  {
+    "particles": 180,
+    "fps": 59.99999999999997,
+    "finite": true,
+    "displacement": 2.1268338095417513e-7
+  },
+  {
+    "particles": 180,
+    "fps": 60.00393468424158,
+    "finite": true,
+    "displacement": 2.1268338095417513e-7
+  },
+  {
+    "particles": 180,
+    "fps": 59.999999999999986,
+    "finite": true,
+    "displacement": 2.1268338095417513e-7
+  },
+  {
+    "particles": 180,
+    "fps": 60.00393468424153,
+    "finite": true,
+    "displacement": 2.1268338095417513e-7
+  }
+]

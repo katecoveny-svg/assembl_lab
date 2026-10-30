@@ -1,0 +1,27 @@
+/* Scoped to the Habitat panel; other studios retain their own layout. */
+#panel-zoo .zoo-case{padding:0;overflow:hidden;background:#eaf3ed;border:1px solid #b2cbbf;border-radius:24px;box-shadow:0 12px 0 -6px #dce6df}
+.habitat-viewport{position:relative;aspect-ratio: 4 / 3;min-height:280px;background:#eaf3ed}
+.habitat-viewport canvas{display:block;width:100%;height:100%;touch-action:pan-y;cursor:grab;border-radius:23px;outline-offset:-5px}
+.habitat-viewport canvas:active{cursor:grabbing}
+.habitat-viewport canvas:focus-visible{outline:3px solid #3a6fb8}
+.habitat-caption{position:absolute;top:18px;left:18px;pointer-events:none;font:600 11px var(--as-mono);letter-spacing:.12em;color:#2a654f;display:grid;gap:5px}
+.habitat-caption b{font:600 clamp(22px,3vw,34px) var(--as-display);letter-spacing:-.03em;color:#222a55}
+.habitat-caption span{font:500 11px var(--as-font);letter-spacing:0}
+.habitat-tools{display:flex;flex-wrap:wrap;gap:7px;padding:12px 0}
+.habitat-tools button{min-height:44px;min-width:44px;border:1px solid #b6c8bd;border-radius:12px;background:white;color:#222a55;font:600 13px var(--as-font);padding:8px 12px;cursor:pointer}
+.habitat-tools button:hover{background:#bfe8d6}
+.habitat-tools button:focus-visible{outline:3px solid #3a6fb8;outline-offset:2px}
+.habitat-tools button[aria-pressed=true]{background:#222a55;color:white}
+#habitatStatus,#habitatSummary{font-size:13px;line-height:1.5;margin:0;color:#4a5070}
+#habitatSummary{padding:12px 14px;border-left:3px solid #2a7d63;background:#f2f8f3;border-radius:0 12px 12px 0}
+#panel-zoo .control-stack{padding:20px;background:#f5f8f3;border:1px solid #dbe5d9;border-radius:22px}
+#panel-zoo .welfare-meter{margin-top:10px}
+#panel-zoo .welfare-meter span{font-size:11px}
+#panel-zoo .zoo-control input{min-height:36px}
+#panel-zoo .zoo-visual{gap:6px}
+#panel-zoo .zoo-case.is-3d #zooScene{display:none}
+#panel-zoo .zoo-case:not(.is-3d) .habitat-viewport{display:none}
+@media(max-width:600px){.habitat-caption{top:12px;left:12px}.habitat-caption b{font-size:24px}.habitat-viewport{aspect-ratio:1 / 1;min-height:280px}.habitat-tools{gap:6px}.habitat-tools button{padding:8px 10px}#panel-zoo .control-stack{padding:16px}}
+@media(prefers-reduced-motion:reduce){#panel-zoo .welfare-meter i{transition:none}}
+
+.habitat-mode{font:600 12px var(--as-font);color:#2a654f;display:inline-flex;align-items:center;min-height:44px;width:fit-content}

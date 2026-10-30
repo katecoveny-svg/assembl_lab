@@ -1,0 +1,13 @@
+/* Phone only: a large, uncluttered apparatus with accessible component explanations. */
+#app .playmain>.canvas{height:530px;background:#f7f3ec}
+#app .playmain>.canvas>svg{height:100%;width:100%;min-height:0}
+.phone-poster{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f7f3ec}
+.phone-loading .phone-poster{display:block}.phone-loading>svg{visibility:hidden}
+.phone-view-note{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;margin:0;font:500 11px/1.5 var(--as-font);color:#686477}
+.phone-view-note a{color:#554476;text-underline-offset:3px}
+.phone-parts{padding:12px 14px;background:#f1edf6;border-radius:12px;font-size:12px;color:#292e55}
+.phone-parts label{font-weight:600;margin-right:8px}.phone-parts select{min-height:40px;max-width:100%;padding:6px 10px;border:1px solid #bdb2ca;border-radius:8px;background:#fff;color:#292e55;font:inherit}
+.phone-parts p{margin:8px 0 0;line-height:1.5}.phone-parts [hidden],.phone-parts[hidden]{display:none}
+.phone-parts select:focus-visible{outline:3px solid var(--as-focus,#3876ba);outline-offset:3px}
+#app .s3-hint{text-transform:none;letter-spacing:0;font-size:11px;max-width:calc(100% - 24px);line-height:1.4}
+@media(max-width:600px){#app .playmain>.canvas{height:410px}.phone-parts label{display:block;margin-bottom:5px}.phone-parts select{width:100%}#app .s3-hint{left:8px;bottom:8px}}

@@ -1,0 +1,3152 @@
+{
+  "contract": "assembl.vinyl.v1",
+  "route": "/study/m/vinyl.html",
+  "asset": "assembl-vinyl-atelier-web.glb",
+  "units": "metres",
+  "coordinates": {
+    "map": "Blender (x,y,z) -> glTF (x,z,-y)",
+    "gltf": "+Y up, record in XZ plane, speaker front +X",
+    "legacy_scene_units_per_metre": 15.068493150684933,
+    "deck_origin": "Platter X/Z centre, deck feet ground Y=0. Attach DECK_ASSEMBLY at existing gT deck position (-1,0,0) in legacy units after scaling K once.",
+    "speaker_origin": "SPEAKER_ROOT has editorial hero offset; detach/reparent and replace local position for existing air zone. Physical front +X. Do not also retain hero offset.",
+    "overlay_policy": "Procedural groove magnifier, keyboard, air particles, dB scale, vectors and format bars remain existing frontend geometry."
+  },
+  "state_owner": "Existing vinyl.js owns all science, angle integration, slowed phase, audio, challenges and interaction state. Adapter accepts provided visual poses only.",
+  "nodes": {
+    "BEARING_HOUSING": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.02800000086426735,
+          0.017500001937150955,
+          -0.02800000086426735
+        ],
+        "max": [
+          0.02800000086426735,
+          0.03849999979138374,
+          0.02800000086426735
+        ]
+      },
+      "extras": {}
+    },
+    "BELT": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.055002178996801376,
+          0.03764091059565544,
+          -0.05499634891748428
+        ],
+        "max": [
+          0.17472192645072937,
+          0.03934090957045555,
+          0.11499544978141785
+        ]
+      },
+      "extras": {}
+    },
+    "CAM_TARGET_ARM": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.10999999940395355,
+        0.06800000369548798,
+        -0.019999999552965164
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.10999999940395355,
+        0.06800000369548798,
+        -0.019999999552965164
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "CAM_TARGET_DECK": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0.04800000041723251,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.04800000041723251,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "CAM_TARGET_DRIVE": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.05999999865889549,
+        0.03500000014901161,
+        0.02500000037252903
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.05999999865889549,
+        0.03500000014901161,
+        0.02500000037252903
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "DECK_SHELL": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.22599999606609344,
+          0.014000000432133675,
+          -0.17840000987052917
+        ],
+        "max": [
+          0.22599999606609344,
+          0.04899999871850014,
+          0.17299999296665192
+        ]
+      },
+      "extras": {}
+    },
+    "DECK_TOP": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.22550000250339508,
+          0.04749999940395355,
+          -0.17249999940395355
+        ],
+        "max": [
+          0.22550000250339508,
+          0.05172500014305115,
+          0.17249999940395355
+        ]
+      },
+      "extras": {}
+    },
+    "DUST_MARKER_ANCHOR": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0.06340000033378601,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.06340000033378601,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "frontend_owned": true,
+        "meaning": "centre reference; caller supplies model-driven radius and phase"
+      }
+    },
+    "FEET": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.21000000834465027,
+          0.0,
+          -0.1600000113248825
+        ],
+        "max": [
+          0.21000000834465027,
+          0.017999999225139618,
+          0.1600000113248825
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_BELT": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.10000000149011612,
+        0.038490910083055496,
+        0.05999999865889549
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.10000000149011612,
+        0.038490910083055496,
+        0.05999999865889549
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "belt",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_INNER_GROOVE": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.05999999865889549,
+        0.06340000033378601,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.05999999865889549,
+        0.06340000033378601,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "inner_groove",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_OUTER_GROOVE": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.1459999978542328,
+        0.06340000033378601,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.1459999978542328,
+        0.06340000033378601,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "outer_groove",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_MOTOR": {
+      "parent": "MOTOR_HOUSING",
+      "translation": [
+        0,
+        0.018000001087784767,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.16590909659862518,
+        0.04500000178813934,
+        0.10618181526660919
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "motor",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "MOTOR_HOUSING": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.16590909659862518,
+        0.027000000700354576,
+        0.10618181526660919
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.16590909659862518,
+        0.027000000700354576,
+        0.10618181526660919
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.14390909671783447,
+          0.017000000923871994,
+          0.08418181538581848
+        ],
+        "max": [
+          0.1879090964794159,
+          0.03972500190138817,
+          0.1281818151473999
+        ]
+      },
+      "extras": {}
+    },
+    "MOTOR_PULLEY_PIVOT": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.16590909659862518,
+        0.038490910083055496,
+        0.10618181526660919
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.16590909659862518,
+        0.038490910083055496,
+        0.10618181526660919
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.15694546699523926,
+          0.034740909934043884,
+          0.09721817821264267
+        ],
+        "max": [
+          0.1748727262020111,
+          0.0425909124314785,
+          0.11514545232057571
+        ]
+      },
+      "extras": {
+        "axis": "glTF local +Y",
+        "visual_ratio": 6.8,
+        "radius_m": 0.007963636363636362
+      }
+    },
+    "DRIVE_PULLEY": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        -0.011281818151473999,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.038490910083055496,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.055452726781368256,
+          0.034490909427404404,
+          -0.055452726781368256
+        ],
+        "max": [
+          0.055452726781368256,
+          0.04249091073870659,
+          0.055452726781368256
+        ]
+      },
+      "extras": {
+        "radius_m": 0.05415272727272726
+      }
+    },
+    "HOT_PLATTER": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0.019999999552965164,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.06977272778749466,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "platter",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "LP_DISC_LABEL_TICK": {
+      "parent": "LP_DISC",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.060499999672174454,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.0012499999720603228,
+          0.061604999005794525,
+          -0.039480000734329224
+        ],
+        "max": [
+          0.0012499999720603228,
+          0.06175500154495239,
+          -0.02632000297307968
+        ]
+      },
+      "extras": {}
+    },
+    "LP_DISC": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0.010727271437644958,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.060499999672174454,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.15240000188350677,
+          0.05959999933838844,
+          -0.15240000188350677
+        ],
+        "max": [
+          0.15240000188350677,
+          0.06175500154495239,
+          0.15240000188350677
+        ]
+      },
+      "extras": {
+        "physical_outer_radius_m": 0.1524,
+        "groove_outer_m": 0.146,
+        "groove_inner_m": 0.06
+      }
+    },
+    "MAT": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.049772728234529495,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.1574999988079071,
+          0.057072728872299194,
+          -0.1574999988079071
+        ],
+        "max": [
+          0.1574999988079071,
+          0.05960000306367874,
+          0.1574999988079071
+        ]
+      },
+      "extras": {}
+    },
+    "PLATTER": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.049772728234529495,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.1638999879360199,
+          0.042472727596759796,
+          -0.1638999879360199
+        ],
+        "max": [
+          0.1638999879360199,
+          0.057072728872299194,
+          0.1638999879360199
+        ]
+      },
+      "extras": {}
+    },
+    "SINGLE_DISC_LABEL_TICK": {
+      "parent": "SINGLE_DISC",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.060499999672174454,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.0012499999720603228,
+          0.061604999005794525,
+          -0.028560001403093338
+        ],
+        "max": [
+          0.0012499999720603228,
+          0.06175500154495239,
+          -0.019039999693632126
+        ]
+      },
+      "extras": {}
+    },
+    "SINGLE_DISC": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0.010727271437644958,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.060499999672174454,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.08889999985694885,
+          0.05959999933838844,
+          -0.08889999985694885
+        ],
+        "max": [
+          0.08889999985694885,
+          0.06260000169277191,
+          0.08889999985694885
+        ]
+      },
+      "extras": {
+        "physical_outer_radius_m": 0.0889,
+        "groove_outer_m": 0.088,
+        "groove_inner_m": 0.06
+      }
+    },
+    "SPINDLE": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.049772728234529495,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.00279999990016222,
+          0.05077272653579712,
+          -0.00279999990016222
+        ],
+        "max": [
+          0.00279999990016222,
+          0.08077272772789001,
+          0.00279999990016222
+        ]
+      },
+      "extras": {}
+    },
+    "PLATTER_PIVOT": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0.049772728234529495,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.049772728234529495,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.1638999879360199,
+          0.034490909427404404,
+          -0.1638999879360199
+        ],
+        "max": [
+          0.1638999879360199,
+          0.08077272772789001,
+          0.1638999879360199
+        ]
+      },
+      "extras": {
+        "axis": "glTF local +Y"
+      }
+    },
+    "SCREEN_LABEL_ANCHOR": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        -0.17499999701976776,
+        0.06800000369548798,
+        0.15000000596046448
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.17499999701976776,
+        0.06800000369548798,
+        0.15000000596046448
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "SERVICE_CUTAWAY": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hide_groups": [
+          "DECK_TOP",
+          "PLATTER",
+          "MAT",
+          "LP_DISC",
+          "SINGLE_DISC"
+        ]
+      }
+    },
+    "SERVICE_ELECTRONICS": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        -0.18700000643730164,
+        0.023000000044703484,
+        -0.09200000017881393
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18700000643730164,
+        0.023000000044703484,
+        -0.09200000017881393
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.2095000147819519,
+          0.022099999710917473,
+          -0.12950000166893005
+        ],
+        "max": [
+          -0.16449999809265137,
+          0.028999999165534973,
+          -0.054499998688697815
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_SPEED_33": {
+      "parent": "SPEED_33",
+      "translation": [
+        0,
+        0.006000000983476639,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18581818044185638,
+        0.058000002056360245,
+        0.14931818842887878
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "speed_33",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "SPEED_33": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        -0.18581818044185638,
+        0.052000001072883606,
+        0.14931818842887878
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18581818044185638,
+        0.052000001072883606,
+        0.14931818842887878
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.20031818747520447,
+          0.0494999997317791,
+          0.1398181915283203
+        ],
+        "max": [
+          -0.1713181734085083,
+          0.054749999195337296,
+          0.15881818532943726
+        ]
+      },
+      "extras": {
+        "press_axis": "glTF -Y",
+        "press_range_m": [
+          0.0,
+          0.002
+        ],
+        "action": "existing rpm control"
+      }
+    },
+    "HOT_SPEED_45": {
+      "parent": "SPEED_45",
+      "translation": [
+        0,
+        0.006000000983476639,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.1459999978542328,
+        0.058000002056360245,
+        0.14931818842887878
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "speed_45",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "SPEED_45": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        -0.1459999978542328,
+        0.052000001072883606,
+        0.14931818842887878
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.1459999978542328,
+        0.052000001072883606,
+        0.14931818842887878
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.16049998998641968,
+          0.0494999997317791,
+          0.1398181915283203
+        ],
+        "max": [
+          -0.1315000057220459,
+          0.054749999195337296,
+          0.15881818532943726
+        ]
+      },
+      "extras": {
+        "press_axis": "glTF -Y",
+        "press_range_m": [
+          0.0,
+          0.002
+        ],
+        "action": "existing rpm control"
+      }
+    },
+    "HOT_COUNTERWEIGHT": {
+      "parent": "COUNTERWEIGHT",
+      "translation": [
+        0,
+        0.015000000596046448,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.19295726716518402,
+        0.09596364200115204,
+        -0.15058408677577972
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "counterweight",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "COUNTERWEIGHT": {
+      "parent": "ARM_LIFT",
+      "translation": [
+        -0.035999998450279236,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.19295726716518402,
+        0.08096364140510559,
+        -0.15058408677577972
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.17631953954696655,
+          0.06746364384889603,
+          -0.1657264530658722
+        ],
+        "max": [
+          0.20876628160476685,
+          0.09446363896131516,
+          -0.13128098845481873
+        ]
+      },
+      "extras": {}
+    },
+    "CARTRIDGE": {
+      "parent": "HEADSHELL",
+      "translation": [
+        -0.004000004380941391,
+        -0.009000003337860107,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.12486624717712402,
+        0.07196363806724548,
+        0.07371757179498672
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.11700574308633804,
+          0.06646363437175751,
+          0.06385786086320877
+        ],
+        "max": [
+          0.1327267438173294,
+          0.07746364176273346,
+          0.08357728272676468
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_STYLUS": {
+      "parent": "STYLUS",
+      "translation": [
+        0,
+        0.00299999862909317,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.12370432913303375,
+        0.06440000236034393,
+        0.07754509896039963
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "stylus",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "STYLUS_PICK_TARGET": {
+      "parent": "STYLUS",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.12370432913303375,
+        0.06140000373125076,
+        0.07754509896039963
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "radius_m": 0.028,
+        "interaction": "frontend creates invisible touch target; existing needle slider and keyboard retained"
+      }
+    },
+    "STYLUS": {
+      "parent": "HEADSHELL",
+      "translation": [
+        0,
+        -0.019563637673854828,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.12370432913303375,
+        0.06140000373125076,
+        0.07754509896039963
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.12338293343782425,
+          0.06140000373125076,
+          0.07159072160720825
+        ],
+        "max": [
+          0.12574657797813416,
+          0.06762142479419708,
+          0.07786649465560913
+        ]
+      },
+      "extras": {
+        "contact_tip_local_m": [
+          0,
+          0,
+          0
+        ],
+        "touch_target_radius_m": 0.028
+      }
+    },
+    "HEADSHELL": {
+      "parent": "ARM_LIFT",
+      "translation": [
+        0.20240908861160278,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.12370432913303375,
+        0.08096364140510559,
+        0.07754509896039963
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.10646256804466248,
+          0.06140000373125076,
+          0.04769298434257507
+        ],
+        "max": [
+          0.13989520072937012,
+          0.09092859923839569,
+          0.08634582161903381
+        ]
+      },
+      "extras": {}
+    },
+    "TONEARM": {
+      "parent": "ARM_LIFT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.18250000476837158,
+        0.08096364140510559,
+        -0.11613636463880539
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.12760184705257416,
+          0.06246364489197731,
+          -0.16561609506607056
+        ],
+        "max": [
+          0.19972681999206543,
+          0.08746364712715149,
+          0.05632070079445839
+        ]
+      },
+      "extras": {}
+    },
+    "ARM_LIFT": {
+      "parent": "TONEARM_YAW",
+      "translation": [
+        0,
+        0.023890908807516098,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.18250000476837158,
+        0.08096364140510559,
+        -0.11613636463880539
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.10646256804466248,
+          0.06140000373125076,
+          -0.1657264530658722
+        ],
+        "max": [
+          0.20876628160476685,
+          0.09446363896131516,
+          0.08634582161903381
+        ]
+      },
+      "extras": {
+        "axis": "glTF local +Z",
+        "optional_view_only": true
+      }
+    },
+    "HOT_TONEARM": {
+      "parent": "TONEARM_YAW",
+      "translation": [
+        0,
+        0.024999994784593582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.18250000476837158,
+        0.08207272738218307,
+        -0.11613636463880539
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "tonearm",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "TONEARM_YAW": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.18250000476837158,
+        0.057072728872299194,
+        -0.11613636463880539
+      ],
+      "rotation_xyzw": [
+        0,
+        -0.8032681345939636,
+        0,
+        0.5956175327301025
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.18250000476837158,
+        0.057072728872299194,
+        -0.11613636463880539
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.10646256804466248,
+          0.057072725147008896,
+          -0.1657264530658722
+        ],
+        "max": [
+          0.20876628160476685,
+          0.09446363896131516,
+          0.08634582161903381
+        ]
+      },
+      "extras": {
+        "axis": "glTF local +Y",
+        "pivot_to_tip_horizontal_m": 0.20240909090909087,
+        "canonical_yaw_radians": -1.865524188401192
+      }
+    },
+    "DECK_ASSEMBLY": {
+      "parent": "VINYL_ROOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.22599999606609344,
+          0.0,
+          -0.17840000987052917
+        ],
+        "max": [
+          0.22599999606609344,
+          0.09446363896131516,
+          0.17299999296665192
+        ]
+      },
+      "extras": {}
+    },
+    "GROOVE_WINDOW_ANCHOR": {
+      "parent": "VINYL_ROOT",
+      "translation": [
+        0.6000000238418579,
+        0.02500000037252903,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.6000000238418579,
+        0.02500000037252903,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "frontend_owned": true,
+        "existing_zone": "ZG; existing 3 mm magnified groove and keyboard remain procedural"
+      }
+    },
+    "AIR_COLUMN_ANCHOR": {
+      "parent": "SPEAKER_ROOT",
+      "translation": [
+        0.06999999284744263,
+        0.08295454829931259,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.4000000059604645,
+        0.08295454829931259,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "axis": "local +X",
+        "frontend_owned": true
+      }
+    },
+    "CAM_TARGET_SPEAKER": {
+      "parent": "SPEAKER_ROOT",
+      "translation": [
+        0.03999999165534973,
+        0.08299999684095383,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3700000047683716,
+        0.08299999684095383,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {}
+    },
+    "SPEAKER_BACK": {
+      "parent": "SPEAKER_ROOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.33000001311302185,
+        0.0,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2785000205039978,
+          0.004999995231628418,
+          -0.10400000214576721
+        ],
+        "max": [
+          0.29100000858306885,
+          0.1550000011920929,
+          0.013999998569488525
+        ]
+      },
+      "extras": {}
+    },
+    "SPEAKER_CABINET": {
+      "parent": "SPEAKER_ROOT",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.33000001311302185,
+        0.0,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2900000214576721,
+          0.0,
+          -0.10900000482797623
+        ],
+        "max": [
+          0.38100001215934753,
+          0.1599999964237213,
+          0.01900000125169754
+        ]
+      },
+      "extras": {}
+    },
+    "HOT_SPEAKER_CONE": {
+      "parent": "SPEAKER_CONE",
+      "translation": [
+        0.01600000262260437,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.38600000739097595,
+        0.08295454829931259,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "speaker",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "SPEAKER_CONE": {
+      "parent": "SPEAKER_ROOT",
+      "translation": [
+        0.03999999165534973,
+        0.08295454829931259,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.3700000047683716,
+        0.08295454829931259,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.359000027179718,
+          0.035954549908638,
+          -0.09200000017881393
+        ],
+        "max": [
+          0.375,
+          0.12995454668998718,
+          0.001999996602535248
+        ]
+      },
+      "extras": {
+        "axis": "glTF local +X",
+        "excursion_range_m": [
+          -0.005309090909090908,
+          0.005309090909090908
+        ]
+      }
+    },
+    "SPEAKER_ROOT": {
+      "parent": "VINYL_ROOT",
+      "translation": [
+        0.33000001311302185,
+        0,
+        -0.04500000178813934
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.33000001311302185,
+        0.0,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          0.2785000205039978,
+          0.0,
+          -0.10900000482797623
+        ],
+        "max": [
+          0.38100001215934753,
+          0.1599999964237213,
+          0.01900000125169754
+        ]
+      },
+      "extras": {
+        "front_axis": "local +X",
+        "placement": "hero offset only; frontend repositions to existing air zone"
+      }
+    },
+    "VINYL_ROOT": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "world_bounds_gltf_m": {
+        "min": [
+          -0.22599999606609344,
+          0.0,
+          -0.17840000987052917
+        ],
+        "max": [
+          0.38100001215934753,
+          0.1599999964237213,
+          0.17299999296665192
+        ]
+      },
+      "extras": {
+        "contract": "assembl.vinyl.v1",
+        "units": "metres"
+      }
+    }
+  },
+  "hotspots": {
+    "HOT_BELT": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.10000000149011612,
+        0.038490910083055496,
+        0.05999999865889549
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.10000000149011612,
+        0.038490910083055496,
+        0.05999999865889549
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "belt",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_INNER_GROOVE": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.05999999865889549,
+        0.06340000033378601,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.05999999865889549,
+        0.06340000033378601,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "inner_groove",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_OUTER_GROOVE": {
+      "parent": "DECK_ASSEMBLY",
+      "translation": [
+        0.1459999978542328,
+        0.06340000033378601,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.1459999978542328,
+        0.06340000033378601,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "outer_groove",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_MOTOR": {
+      "parent": "MOTOR_HOUSING",
+      "translation": [
+        0,
+        0.018000001087784767,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.16590909659862518,
+        0.04500000178813934,
+        0.10618181526660919
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "motor",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_PLATTER": {
+      "parent": "PLATTER_PIVOT",
+      "translation": [
+        0,
+        0.019999999552965164,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.0,
+        0.06977272778749466,
+        -0.0
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "platter",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_SPEED_33": {
+      "parent": "SPEED_33",
+      "translation": [
+        0,
+        0.006000000983476639,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.18581818044185638,
+        0.058000002056360245,
+        0.14931818842887878
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "speed_33",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_SPEED_45": {
+      "parent": "SPEED_45",
+      "translation": [
+        0,
+        0.006000000983476639,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        -0.1459999978542328,
+        0.058000002056360245,
+        0.14931818842887878
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "speed_45",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_COUNTERWEIGHT": {
+      "parent": "COUNTERWEIGHT",
+      "translation": [
+        0,
+        0.015000000596046448,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.19295726716518402,
+        0.09596364200115204,
+        -0.15058408677577972
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "counterweight",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_STYLUS": {
+      "parent": "STYLUS",
+      "translation": [
+        0,
+        0.00299999862909317,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.12370432913303375,
+        0.06440000236034393,
+        0.07754509896039963
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "stylus",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_TONEARM": {
+      "parent": "TONEARM_YAW",
+      "translation": [
+        0,
+        0.024999994784593582,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.18250000476837158,
+        0.08207272738218307,
+        -0.11613636463880539
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "tonearm",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    },
+    "HOT_SPEAKER_CONE": {
+      "parent": "SPEAKER_CONE",
+      "translation": [
+        0.01600000262260437,
+        0,
+        0
+      ],
+      "rotation_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "world_pivot_gltf_m": [
+        0.38600000739097595,
+        0.08295454829931259,
+        -0.04500000178813934
+      ],
+      "world_bounds_gltf_m": null,
+      "extras": {
+        "hotspot_id": "speaker",
+        "label_offset_px": [
+          24,
+          -30
+        ]
+      }
+    }
+  },
+  "camera_targets": {
+    "CAM_TARGET_ARM": [
+      0.10999999940395355,
+      0.06800000369548798,
+      -0.019999999552965164
+    ],
+    "CAM_TARGET_DECK": [
+      0.0,
+      0.04800000041723251,
+      -0.0
+    ],
+    "CAM_TARGET_DRIVE": [
+      0.05999999865889549,
+      0.03500000014901161,
+      0.02500000037252903
+    ],
+    "CAM_TARGET_SPEAKER": [
+      0.3700000047683716,
+      0.08299999684095383,
+      -0.04500000178813934
+    ]
+  },
+  "motion": {
+    "platter": {
+      "node": "PLATTER_PIVOT",
+      "axis": "local +Y",
+      "absolute_angle": "-s.ang; do not add canonical rest or integrate dt"
+    },
+    "motor": {
+      "node": "MOTOR_PULLEY_PIVOT",
+      "axis": "local +Y",
+      "absolute_angle": "-s.ang * 6.8 supplied by frontend",
+      "radius_m": 0.007963636363636362,
+      "driven_radius_m": 0.05415272727272726
+    },
+    "tonearm": {
+      "node": "TONEARM_YAW",
+      "axis": "local +Y",
+      "pivot_gltf_m": [
+        0.18249999999999997,
+        0.05707272727272727,
+        -0.11613636363636362
+      ],
+      "horizontal_length_m": 0.20240909090909087,
+      "absolute_yaw_range_radians": [
+        -2.2950227777618233,
+        -1.865524188401192
+      ],
+      "default_outer_LP_yaw": -1.865524172782898,
+      "input": "existing circle-intersection yaw, supplied explicitly; independent of platter phase",
+      "stylus_node": "STYLUS",
+      "stylus_tip_local_m": [
+        0,
+        0,
+        0
+      ],
+      "surface_gltf_y_m": 0.0614
+    },
+    "lift": {
+      "node": "ARM_LIFT",
+      "axis": "local +Z",
+      "range_radians": [
+        0,
+        0.12
+      ],
+      "input": "optional view-only lift, default0; new learner control not required"
+    },
+    "speaker": {
+      "node": "SPEAKER_CONE",
+      "axis": "local +X",
+      "displacement_range_m": [
+        -0.005309090909090908,
+        0.005309090909090908
+      ],
+      "input": "existing .08*s.amp*sin(s.phase) scene-units converted by /K; supplied directly, no oscillator"
+    },
+    "speed_buttons": {
+      "nodes": [
+        "SPEED_33",
+        "SPEED_45"
+      ],
+      "axis": "local -Y",
+      "press_m": [
+        0,
+        0.002
+      ],
+      "input": "supplied visual press; click action changes the existing rpm control"
+    }
+  },
+  "records": {
+    "lp": {
+      "node": "LP_DISC",
+      "outer_radius_m": 0.1524,
+      "outer_groove_m": 0.146,
+      "inner_groove_m": 0.06
+    },
+    "single": {
+      "node": "SINGLE_DISC",
+      "outer_radius_m": 0.0889,
+      "outer_groove_m": 0.088,
+      "inner_groove_m": 0.06
+    },
+    "thickness_m": 0.0018,
+    "textures": "Shared radial UV colour and roughness; physical metre UV mapping for both formats. Grooves are illustrative density, not an audio waveform. Lighting highlights are PBR, not painted into texture.",
+    "label": "No baked rpm, frequencies or challenge answers. Frontend owns labels."
+  },
+  "belt": {
+    "parent": "DECK_ASSEMBLY",
+    "centreline_gltf_m": [
+      [
+        0.039072658866643906,
+        0.03849090909090908,
+        -0.03749459981918335
+      ],
+      [
+        0.17165507376194,
+        0.03849090909090908,
+        0.10066790133714676
+      ],
+      [
+        0.17195254564285278,
+        0.03849090909090908,
+        0.10099565982818604
+      ],
+      [
+        0.17223134636878967,
+        0.03849090909090908,
+        0.1013394445180893
+      ],
+      [
+        0.17249062657356262,
+        0.03849090909090908,
+        0.10169817507266998
+      ],
+      [
+        0.17272956669330597,
+        0.03849090909090908,
+        0.10207076370716095
+      ],
+      [
+        0.17294743657112122,
+        0.03849090909090908,
+        0.10245605558156967
+      ],
+      [
+        0.17314356565475464,
+        0.03849090909090908,
+        0.10285285115242004
+      ],
+      [
+        0.1733173429965973,
+        0.03849090909090908,
+        0.10325993597507477
+      ],
+      [
+        0.1734682321548462,
+        0.03849090909090908,
+        0.10367604345083237
+      ],
+      [
+        0.17359578609466553,
+        0.03849090909090908,
+        0.10409989207983017
+      ],
+      [
+        0.17369957268238068,
+        0.03849090909090908,
+        0.10453017055988312
+      ],
+      [
+        0.17377930879592896,
+        0.03849090909090908,
+        0.10496556013822556
+      ],
+      [
+        0.17383472621440887,
+        0.03849090909090908,
+        0.10540469735860825
+      ],
+      [
+        0.1738656610250473,
+        0.03849090909090908,
+        0.10584624111652374
+      ],
+      [
+        0.17387200891971588,
+        0.03849090909090908,
+        0.10628881305456161
+      ],
+      [
+        0.1738537698984146,
+        0.03849090909090908,
+        0.10673106461763382
+      ],
+      [
+        0.17381098866462708,
+        0.03849090909090908,
+        0.10717160999774933
+      ],
+      [
+        0.17374378442764282,
+        0.03849090909090908,
+        0.1076091080904007
+      ],
+      [
+        0.17365238070487976,
+        0.03849090909090908,
+        0.10804218798875809
+      ],
+      [
+        0.17353706061840057,
+        0.03849090909090908,
+        0.10846952348947525
+      ],
+      [
+        0.1733981817960739,
+        0.03849090909090908,
+        0.10888979583978653
+      ],
+      [
+        0.1732361614704132,
+        0.03849090909090908,
+        0.10930169373750687
+      ],
+      [
+        0.17305150628089905,
+        0.03849090909090908,
+        0.10970396548509598
+      ],
+      [
+        0.1728447824716568,
+        0.03849090909090908,
+        0.11009534448385239
+      ],
+      [
+        0.172616645693779,
+        0.03849090909090908,
+        0.11047464609146118
+      ],
+      [
+        0.17236778140068054,
+        0.03849090909090908,
+        0.11084067821502686
+      ],
+      [
+        0.17209894955158234,
+        0.03849090909090908,
+        0.11119231581687927
+      ],
+      [
+        0.17181101441383362,
+        0.03849090909090908,
+        0.11152847856283188
+      ],
+      [
+        0.17150484025478363,
+        0.03849090909090908,
+        0.1118481308221817
+      ],
+      [
+        0.17118138074874878,
+        0.03849090909090908,
+        0.11215026676654816
+      ],
+      [
+        0.17084163427352905,
+        0.03849090909090908,
+        0.11243397742509842
+      ],
+      [
+        0.1704866588115692,
+        0.03849090909090908,
+        0.11269836872816086
+      ],
+      [
+        0.17011752724647522,
+        0.03849090909090908,
+        0.11294262111186981
+      ],
+      [
+        0.16973541676998138,
+        0.03849090909090908,
+        0.11316599696874619
+      ],
+      [
+        0.16934145987033844,
+        0.03849090909090908,
+        0.11336779594421387
+      ],
+      [
+        0.16893692314624786,
+        0.03849090909090908,
+        0.11354739964008331
+      ],
+      [
+        0.16852301359176636,
+        0.03849090909090908,
+        0.11370424181222916
+      ],
+      [
+        0.16810104250907898,
+        0.03849090909090908,
+        0.11383785307407379
+      ],
+      [
+        0.1676722913980484,
+        0.03849090909090908,
+        0.1139478087425232
+      ],
+      [
+        0.16723810136318207,
+        0.03849090909090908,
+        0.1140337735414505
+      ],
+      [
+        0.16679979860782623,
+        0.03849090909090908,
+        0.11409548670053482
+      ],
+      [
+        0.16635873913764954,
+        0.03849090909090908,
+        0.11413274705410004
+      ],
+      [
+        0.165916308760643,
+        0.03849090909090908,
+        0.11414545029401779
+      ],
+      [
+        0.1654738485813141,
+        0.03849090909090908,
+        0.1141335517168045
+      ],
+      [
+        0.16503272950649261,
+        0.03849090909090908,
+        0.11409708112478256
+      ],
+      [
+        0.16459430754184723,
+        0.03849090909090908,
+        0.11403616517782211
+      ],
+      [
+        0.16415996849536896,
+        0.03849090909090908,
+        0.11395098268985748
+      ],
+      [
+        0.16373100876808167,
+        0.03849090909090908,
+        0.11384180933237076
+      ],
+      [
+        0.16330879926681519,
+        0.03849090909090908,
+        0.1137089654803276
+      ],
+      [
+        -0.017682023346424103,
+        0.03849090909090908,
+        0.051184602081775665
+      ],
+      [
+        -0.019596443510186842,
+        0.03849090909090908,
+        0.05048264328287926
+      ],
+      [
+        -0.021483077289307068,
+        0.03849090909090908,
+        0.04970910642182213
+      ],
+      [
+        -0.023339252196950353,
+        0.03849090909090908,
+        0.04886509160905694
+      ],
+      [
+        -0.02516233653411989,
+        0.03849090909090908,
+        0.047951795495247876
+      ],
+      [
+        -0.026949745517883057,
+        0.03849090909090908,
+        0.046970512958618205
+      ],
+      [
+        -0.028698944946096462,
+        0.03849090909090908,
+        0.04592263526906207
+      ],
+      [
+        -0.030407454790417135,
+        0.03849090909090908,
+        0.04480964811559132
+      ],
+      [
+        -0.03207285271250574,
+        0.03849090909090908,
+        0.04363312949991431
+      ],
+      [
+        -0.03369277749843636,
+        0.03849090909090908,
+        0.04239474749913295
+      ],
+      [
+        -0.03526493240644373,
+        0.03849090909090908,
+        0.04109625790073025
+      ],
+      [
+        -0.036787088423261255,
+        0.03849090909090908,
+        0.0397395017132014
+      ],
+      [
+        -0.03825708742443312,
+        0.03849090909090908,
+        0.03832640255585775
+      ],
+      [
+        -0.039672845234119694,
+        0.03849090909090908,
+        0.036858963931504715
+      ],
+      [
+        -0.0410323545800579,
+        0.03849090909090908,
+        0.03533926638586009
+      ],
+      [
+        -0.04233368793948728,
+        0.03849090909090908,
+        0.03376946455774045
+      ],
+      [
+        -0.043575000272006545,
+        0.03849090909090908,
+        0.032151784124197655
+      ],
+      [
+        -0.0447545316354859,
+        0.03849090909090908,
+        0.030488518644937
+      ],
+      [
+        -0.045870609681326495,
+        0.03849090909090908,
+        0.028782026310490625
+      ],
+      [
+        -0.04692165202552914,
+        0.03849090909090908,
+        0.027034726598756935
+      ],
+      [
+        -0.04790616849221036,
+        0.03849090909090908,
+        0.02524909684464634
+      ],
+      [
+        -0.04882276322638527,
+        0.03849090909090908,
+        0.02342766872769677
+      ],
+      [
+        -0.04967013667302136,
+        0.03849090909090908,
+        0.021573024682639146
+      ],
+      [
+        -0.05044708741955764,
+        0.03849090909090908,
+        0.019687794238001582
+      ],
+      [
+        -0.05115251389927656,
+        0.03849090909090908,
+        0.017774650287943724
+      ],
+      [
+        -0.0517854159531137,
+        0.03849090909090908,
+        0.015836305302606914
+      ],
+      [
+        -0.05234489624769101,
+        0.03849090909090908,
+        0.0138755074823533
+      ],
+      [
+        -0.052830161547562884,
+        0.03849090909090908,
+        0.011895036861346292
+      ],
+      [
+        -0.05324052383987148,
+        0.03849090909090908,
+        0.009897701365996835
+      ],
+      [
+        -0.05357540130981661,
+        0.03849090909090908,
+        0.007886332833863882
+      ],
+      [
+        -0.05383431916555723,
+        0.03849090909090908,
+        0.00586378299865331
+      ],
+      [
+        -0.054016910311374955,
+        0.03849090909090908,
+        0.003832919447008198
+      ],
+      [
+        -0.054122915868145105,
+        0.03849090909090908,
+        0.0017966215528224087
+      ],
+      [
+        -0.05415218554037762,
+        0.03849090909090908,
+        -0.0002422236051577228
+      ],
+      [
+        -0.054104677829307106,
+        0.03849090909090908,
+        -0.002280725336655729
+      ],
+      [
+        -0.05398046009173006,
+        0.03849090909090908,
+        -0.004315993438307909
+      ],
+      [
+        -0.05377970844450598,
+        0.03849090909090908,
+        -0.006345142291415646
+      ],
+      [
+        -0.05350270751485744,
+        0.03849090909090908,
+        -0.008365294953197789
+      ],
+      [
+        -0.0531498500368235,
+        0.03849090909090908,
+        -0.010373587235742127
+      ],
+      [
+        -0.05272163629443835,
+        0.03849090909090908,
+        -0.012367171766872959
+      ],
+      [
+        -0.05221867341242479,
+        0.03849090909090908,
+        -0.014343222027177143
+      ],
+      [
+        -0.051641674495408116,
+        0.03849090909090908,
+        -0.01629893635746498
+      ],
+      [
+        -0.050991457616870975,
+        0.03849090909090908,
+        -0.01823154193098407
+      ],
+      [
+        -0.050268944659282465,
+        0.03849090909090908,
+        -0.020138298684754287
+      ],
+      [
+        -0.04947516000704615,
+        0.03849090909090908,
+        -0.022016503204450054
+      ],
+      [
+        -0.04861122909411999,
+        0.03849090909090908,
+        -0.023863492557321966
+      ],
+      [
+        -0.04767837680836746,
+        0.03849090909090908,
+        -0.025676648067723074
+      ],
+      [
+        -0.04667792575490216,
+        0.03849090909090908,
+        -0.027453399029887377
+      ],
+      [
+        -0.045611294380888144,
+        0.03849090909090908,
+        -0.029191226352696126
+      ],
+      [
+        -0.044479994964454726,
+        0.03849090909090908,
+        -0.030887666131264452
+      ],
+      [
+        -0.04328563147057688,
+        0.03849090909090908,
+        -0.03254031314028468
+      ],
+      [
+        -0.04202989727696147,
+        0.03849090909090908,
+        -0.03414682424417307
+      ],
+      [
+        -0.04071457277316339,
+        0.03849090909090908,
+        -0.035704921719185455
+      ],
+      [
+        -0.03934152283633558,
+        0.03849090909090908,
+        -0.03721239648279139
+      ],
+      [
+        -0.03791269418719193,
+        0.03849090909090908,
+        -0.03866711122572829
+      ],
+      [
+        -0.03643011262993175,
+        0.03849090909090908,
+        -0.04006700344229483
+      ],
+      [
+        -0.03489588018003907,
+        0.03849090909090908,
+        -0.041410088354587406
+      ],
+      [
+        -0.033312172084028986,
+        0.03849090909090908,
+        -0.04269446172653332
+      ],
+      [
+        -0.03168123373536653,
+        0.03849090909090908,
+        -0.043918302563731366
+      ],
+      [
+        -0.03000537749093046,
+        0.03849090909090908,
+        -0.045079875695271644
+      ],
+      [
+        -0.028286979392536247,
+        0.03849090909090908,
+        -0.04617753423387404
+      ],
+      [
+        -0.026528475798165568,
+        0.03849090909090908,
+        -0.04720972191085775
+      ],
+      [
+        -0.024732359927679415,
+        0.03849090909090908,
+        -0.048174975282630886
+      ],
+      [
+        -0.022901178327911838,
+        0.03849090909090908,
+        -0.049071925805571966
+      ],
+      [
+        -0.021037527262156366,
+        0.03849090909090908,
+        -0.04989930177636163
+      ],
+      [
+        -0.01914404902916403,
+        0.03849090909090908,
+        -0.050655930135013245
+      ],
+      [
+        -0.017223428216871943,
+        0.03849090909090908,
+        -0.05134073812804641
+      ],
+      [
+        -0.01527838789617399,
+        0.03849090909090908,
+        -0.05195275482944502
+      ],
+      [
+        -0.013311685760130056,
+        0.03849090909090908,
+        -0.05249111251724362
+      ],
+      [
+        -0.01132611021408768,
+        0.03849090909090908,
+        -0.05295504790379022
+      ],
+      [
+        -0.009324476422259618,
+        0.03849090909090908,
+        -0.05334390321794145
+      ],
+      [
+        -0.007309622316362503,
+        0.03849090909090908,
+        -0.053657127137655386
+      ],
+      [
+        -0.005284404571975341,
+        0.03849090909090908,
+        -0.05389427557166035
+      ],
+      [
+        -0.003251694558323287,
+        0.03849090909090908,
+        -0.05405501228909073
+      ],
+      [
+        -0.001214374267228181,
+        0.03849090909090908,
+        -0.0541391093961978
+      ],
+      [
+        0.0008246677730014789,
+        0.03849090909090908,
+        -0.05414644765945917
+      ],
+      [
+        0.0028625405929480867,
+        0.03849090909090908,
+        -0.054077016674629004
+      ],
+      [
+        0.004896354880923508,
+        0.03849090909090908,
+        -0.05393091488148922
+      ],
+      [
+        0.00692322707945731,
+        0.03849090909090908,
+        -0.05370834942428084
+      ],
+      [
+        0.008940283473626631,
+        0.03849090909090908,
+        -0.053409635858013275
+      ],
+      [
+        0.010944664265431192,
+        0.03849090909090908,
+        -0.053035197701068036
+      ],
+      [
+        0.012933527628436808,
+        0.03849090909090908,
+        -0.05258556583473112
+      ],
+      [
+        0.01490405373693866,
+        0.03849090909090908,
+        -0.05206137775050545
+      ],
+      [
+        0.01685344876393177,
+        0.03849090909090908,
+        -0.051463376646270556
+      ],
+      [
+        0.018778948842220332,
+        0.03849090909090908,
+        -0.05079241037257093
+      ],
+      [
+        0.020677823983049775,
+        0.03849090909090908,
+        -0.050049430230527006
+      ],
+      [
+        0.022547381946705712,
+        0.03849090909090908,
+        -0.0492354896230732
+      ],
+      [
+        0.024384972059592017,
+        0.03849090909090908,
+        -0.04835174256143511
+      ],
+      [
+        0.026187988972376265,
+        0.03849090909090908,
+        -0.04739944202896357
+      ],
+      [
+        0.027953876353873752,
+        0.03849090909090908,
+        -0.0463799382046453
+      ],
+      [
+        0.029680130515433573,
+        0.03849090909090908,
+        -0.04529467654880878
+      ],
+      [
+        0.03136430396068752,
+        0.03849090909090908,
+        -0.044145195753739506
+      ],
+      [
+        0.033004008855629166,
+        0.03849090909090908,
+        -0.04293312556211032
+      ],
+      [
+        0.03459692041410324,
+        0.03849090909090908,
+        -0.04166018445631975
+      ],
+      [
+        0.03614078019390519,
+        0.03849090909090908,
+        -0.040328177222014504
+      ],
+      [
+        0.03763339929881786,
+        0.03849090909090908,
+        -0.03893899238925058
+      ],
+      [
+        0.0390726614820453,
+        0.03849090909090908,
+        -0.03749459955492087
+      ]
+    ],
+    "geometry": "Exact common external tangents and circular arcs; no torque or slip model."
+  },
+  "cutaway": {
+    "hide": [
+      "DECK_TOP",
+      "PLATTER",
+      "MAT",
+      "LP_DISC",
+      "SINGLE_DISC"
+    ],
+    "keep": [
+      "BELT",
+      "DRIVE_PULLEY",
+      "MOTOR_HOUSING",
+      "MOTOR_PULLEY_PIVOT",
+      "BEARING_HOUSING",
+      "SERVICE_ELECTRONICS"
+    ],
+    "speaker_rear_panel": "SPEAKER_BACK"
+  },
+  "interaction": {
+    "stylus_pick_target": "STYLUS_PICK_TARGET",
+    "touch_radius_m": 0.028,
+    "note": "Create a frontend invisible pick sphere and retain existing slider/keyboard fallback. Do not pick the tiny diamond geometry."
+  },
+  "export": {
+    "file": "assembl-vinyl-atelier-web.glb",
+    "bytes": 3488316,
+    "sha256": "4946dcb27e96fa0bbdc8c4e80c579f9ca226ccddafa3d88aed458513b3aae490",
+    "triangles": 65256,
+    "mesh_batches": 79,
+    "rig_nodes": 53,
+    "materials": 13,
+    "textures": 2,
+    "images": 2,
+    "triangles_before_reduction": 94038,
+    "tool": "5.1.1",
+    "round_trip": "passed",
+    "budgets_passed": true
+  },
+  "source": [
+    {
+      "path": "study/m/vinyl.js",
+      "sha256": "9799cf3b4d613cb591fd7b966b16de1c06bcc701e446080d3fc1ba77f0de7f16"
+    },
+    {
+      "path": "study/m/vinyl.parts.md",
+      "sha256": "ee7c1c75e7e8b6a59f10927c959cff256ea334200acfdeb8c6a09170cabde835"
+    },
+    {
+      "path": "docs/learning-machines/batch-01-contracts.md",
+      "sha256": "47eab03f189e1ed099e93243c79f01d86bdd3b78e484a7e7cd1d28c597aabd99"
+    },
+    {
+      "path": "docs/learning-machines/assembl-3d-design-brief.md",
+      "sha256": "8a52ba48d986734e4fe274b13366f1d0d3fed92f52bb131b0b0bc523c5aa4489"
+    }
+  ],
+  "limitations": [
+    "Generic educational construction; no manufacturing/physical device validation.",
+    "Estimated inertia remains .5*1.5*.15*.15 in the source; mesh geometry does not determine it.",
+    "No new audio, health claims or curriculum verification. Existing wording is outside this asset scope.",
+    "Frontend integration acceptance and model equivalence remain pending."
+  ]
+}
