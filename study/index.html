@@ -1,7 +1,10 @@
 <!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>assembly · study machines</title>
+<meta name="description" content="Interactive 3D study machines for NCEA and Years 9–10, made in Aotearoa. See how it works, piece by piece, then nail it in the exam.">
+<meta name="theme-color" content="#FFFDFB">
+<link rel="preload" as="image" href="hero/claw.webp" fetchpriority="high">
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fredoka:wght@500;600;700&family=Caveat:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap">
 <link rel="stylesheet" href="kit.css">
 <style>
 /* Layout: assembly's front room. A top bar, a hero with Allen and the countdown, the machines on the bench,
@@ -176,21 +179,186 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
 @media (max-width:620px){.opts{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}.std{grid-template-columns:1fr}.std .acts{justify-content:flex-start}.mine li{grid-template-columns:6.5em minmax(0,1fr)}.mine li .c{grid-column:2}.top nav{width:100%}.top nav a{padding:6px 10px}.count .num{font-size:44px}}
 @media (prefers-reduced-motion:reduce){.mcard{transition:none}.mcard:hover{transform:none}}
 </style>
+<style>
+/* ---- lab look (Oct 2026): paper and lilac, plum Instrument Sans with a serif-italic accent, mono kickers, calm 3D.
+   The page frame takes the lab's plum/paper tokens; the machines keep their pastel case tints. No yellow fields. */
+:root{
+  --as-bg:#FFFDFB;--as-card:#FFFFFF;--as-soft:#F5F1F2;--as-line:#EADFE4;--as-line2:#DCCDD5;
+  --as-ink:#492B3E;--as-plum:#492B3E;--as-text:#654A4E;--as-muted:#7A6268;
+  --as-sun:#ECE4F0;--as-sunsoft:#F5F1F2;--as-onsun:#492B3E;
+  --as-display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --as-serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --lilac:#ECE4F0;--chalk-f:#F5F1F2;
+  --as-shadow:0 1px 2px rgba(73,43,62,.04),0 16px 36px -26px rgba(73,43,62,.32);
+  --as-lift:0 2px 4px rgba(73,43,62,.05),0 26px 46px -28px rgba(73,43,62,.42);
+  --as-focus:#6A50BE;
+}
+html,body{background:var(--as-bg)}
+body{color:var(--as-text);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;gap:22px}
+em{font-family:var(--as-serif);font-style:italic;font-weight:400;letter-spacing:-.01em}
+.kick,.hero .kick{margin:0;font:400 11px/1.6 var(--as-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--as-muted);display:flex;align-items:center;gap:10px}
+.live{width:7px;height:7px;border-radius:50%;background:#87A494;box-shadow:0 0 0 4px #87A49422;flex:none}
+
+/* header: a calm bar, wordmark left, pill nav right */
+.top{background:transparent;border:0;border-bottom:1px solid var(--as-line);border-radius:0;box-shadow:none;padding:10px 2px 14px}
+.top .as-word{font-size:24px;font-weight:600;letter-spacing:-.03em}
+.top nav a{font:500 13px var(--as-font);color:var(--as-text);padding:8px 14px}
+.top nav a:hover{background:var(--lilac);color:var(--as-ink)}
+.top nav a.lab-link{border:1px solid var(--as-line2);color:var(--as-ink)}
+
+/* hero: one big lilac stage, copy on the left, the machines floating on the right */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:0;align-items:stretch;min-height:clamp(560px,74vh,720px);
+  padding:0;border:0;border-radius:30px;overflow:hidden;position:relative;isolation:isolate;
+  background:radial-gradient(120% 120% at 78% 40%,#F6EEF5 0%,#ECE1F1 46%,#E2D5EB 100%);
+  box-shadow:0 40px 80px -60px rgba(95,49,78,.55),inset 0 0 0 1px rgba(255,255,255,.6)}
+.hero-copy{position:relative;z-index:3;display:flex;flex-direction:column;justify-content:center;padding:clamp(28px,4.4vw,64px) 0 clamp(28px,4vw,56px) clamp(24px,4.4vw,64px)}
+.hero h1{font:500 clamp(52px,6.4vw,96px)/1 var(--as-font);letter-spacing:-.05em;color:var(--as-ink);margin:22px 0 22px;max-width:none}
+.hero h1 em{font-size:1.08em;letter-spacing:-.03em;display:inline-block}
+.hero .intro{margin:0;max-width:40ch;font-size:clamp(16px,1.4vw,18.5px);line-height:1.6;color:var(--as-text)}
+.cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+.hb{display:inline-flex;align-items:center;gap:14px;border-radius:999px;padding:12px 18px;font:500 13.5px/1.2 var(--as-font);text-decoration:none;color:var(--as-ink);
+  background:rgba(255,255,255,.62);border:1px solid rgba(73,43,62,.12);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s,transform .2s,box-shadow .2s}
+.hb:hover{background:#fff;transform:translateY(-1px)}
+.hb.primary{background:var(--as-ink);color:#fff;border-color:var(--as-ink);padding:13px 16px 13px 22px;box-shadow:0 12px 24px -14px rgba(73,43,62,.8)}
+.hb.primary:hover{background:#5A3A4F}
+.cube{display:inline-block;width:17px;height:17px;background:currentColor;transition:transform .35s;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round'%3E%3Cpath d='M4 9 16 2l12 7v14l-12 7L4 23Z'/%3E%3Cpath d='M4 9l12 7 12-7M16 16v14'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round'%3E%3Cpath d='M4 9 16 2l12 7v14l-12 7L4 23Z'/%3E%3Cpath d='M4 9l12 7 12-7M16 16v14'/%3E%3C/svg%3E") center/contain no-repeat}
+.hb:hover .cube{transform:rotate(60deg) scale(1.1)}
+/* Allen: the pared-back pastel mark on a mint disc, at badge size */
+.allen-chip{display:inline-flex;align-items:center;gap:12px;margin-top:30px;align-self:flex-start;text-decoration:none;color:var(--as-ink);
+  background:rgba(255,255,255,.55);border:1px solid rgba(73,43,62,.1);border-radius:999px;padding:5px 18px 5px 5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s}
+.allen-chip:hover{background:#fff}
+.allen-chip img{width:58px;height:58px;border-radius:50%}
+.allen-chip b{display:block;font:600 15px/1.2 var(--as-font)}
+.allen-chip small{display:block;font:400 10.5px/1.5 var(--as-mono);letter-spacing:.06em;color:var(--as-muted);text-transform:uppercase}
+
+/* the bench: captured frames of the real-time 3D machines (kit3d.js), cut out and floating over a soft plate */
+.hstage{position:relative;min-height:420px;--px:0;--py:0}
+.hplate{position:absolute;left:6%;right:2%;top:30%;bottom:6%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.75),rgba(255,255,255,0));filter:blur(6px)}
+.mx{position:absolute;display:block;text-decoration:none;z-index:var(--zi,1);
+  transform:translate(calc(var(--px)*var(--z)*1px),calc(var(--py)*var(--z)*1px));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.mx .fl{display:block;animation:mxIn 1.1s cubic-bezier(.2,1.15,.3,1) calc(.12s + var(--i)*.14s) both,mxFloat 7s ease-in-out calc(1.3s + var(--i)*.6s) infinite alternate}
+.mx img{display:block;width:100%;height:auto;filter:drop-shadow(0 22px 22px rgba(73,43,62,.16));transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.mx:hover img,.mx:focus-visible img{transform:translateY(-8px) scale(1.03)}
+.mx:focus-visible{outline:none}.mx:focus-visible .tg{outline:3px solid var(--as-focus);outline-offset:2px}
+.tg{position:absolute;left:50%;bottom:4%;transform:translate(-50%,6px);white-space:nowrap;background:#fff;color:var(--as-ink);border-radius:999px;padding:5px 12px;
+  font:500 10.5px/1.3 var(--as-mono);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 10px 20px -14px rgba(73,43,62,.6);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+.mx:hover .tg,.mx:focus-visible .tg{opacity:1;transform:translate(-50%,0)}
+.x-claw{left:30%;top:2%;width:38%;--zi:2}
+.x-vend{left:2%;top:13%;width:34%;--zi:1}
+.x-part{right:1%;top:12%;width:34%;--zi:2}
+.x-vinyl{left:4%;top:56%;width:50%;--zi:4}
+.x-atom{right:2%;top:56%;width:43%;--zi:3}
+.cb{position:absolute;z-index:5;width:44px;filter:drop-shadow(0 16px 10px rgba(62,35,57,.15));animation:cbIn 1.3s cubic-bezier(.2,1.2,.3,1) both,cbFloat 7s ease-in-out 1.4s infinite alternate;pointer-events:none}
+.cb svg{display:block;width:100%;height:auto}
+.c1{left:24%;top:6%;width:40px;animation-delay:.5s,1.6s}.c2{right:6%;top:4%;width:30px;animation-delay:.65s,1.9s}.c3{left:56%;top:46%;width:34px;animation-delay:.8s,2.1s}
+.c4{right:40%;bottom:4%;width:26px;animation-delay:.95s,2.3s}.c5{left:1%;top:52%;width:24px;animation-delay:1.1s,2.5s}
+.hero .bench-k{position:absolute;right:24px;top:20px;margin:0;z-index:6;font:400 10px/1.4 var(--as-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--as-muted);background:rgba(255,255,255,.6);padding:5px 9px;border-radius:6px}
+@keyframes mxIn{from{opacity:0;transform:translateY(-46px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes mxFloat{from{transform:translateY(0)}to{transform:translateY(-9px)}}
+@keyframes cbIn{from{opacity:0;transform:translate(-80px,50px) rotate(-40deg) scale(.4)}to{opacity:1;transform:none}}
+@keyframes cbFloat{from{transform:translateY(0) rotate(0)}to{transform:translateY(-14px) rotate(6deg)}}
+@media (prefers-reduced-motion:reduce){.mx .fl,.cb{animation:none}.mx,.mx img,.hb,.cube{transition:none}}
+
+/* whakataukī: one quiet line in the serif */
+.whaka{border-left:2px solid var(--as-ink);padding-left:20px;margin:6px 0 0}
+.whaka blockquote{font:400 clamp(22px,2.4vw,30px)/1.25 var(--as-serif);font-style:italic;color:var(--as-ink);letter-spacing:-.005em}
+.whaka figcaption{color:var(--as-text)}
+.whaka cite a{color:var(--as-ink)}
+
+/* countdown and streak: paper cards, lilac accents, no yellow */
+.count{border-radius:20px;border-color:var(--as-line);background:var(--as-card);padding:18px 22px}
+.count .num{font:500 60px/1 var(--as-font);letter-spacing:-.05em;color:var(--as-ink)}
+.count .txt{font:500 16px/1.35 var(--as-font)}
+.count.streak{background:var(--chalk-f);border-color:var(--as-line)}
+.count.streak .num{background:var(--lilac);color:var(--as-ink);border-radius:16px;padding:6px 14px 8px}
+.miles li{font:400 11px var(--as-mono);letter-spacing:.04em;border-color:var(--as-line2);background:#fff;color:var(--as-text)}
+.miles li.got{background:var(--lilac);border-color:var(--as-ink);color:var(--as-ink)}
+
+/* section heads in the lab voice */
+section.block{gap:12px}
+section.block>h2,.den-head h2{font:500 clamp(34px,4vw,54px)/1.04 var(--as-font);letter-spacing:-.045em;color:var(--as-ink);margin:2px 0 4px}
+section.block>h2 em,.den-head h2 em{font-size:1.06em}
+section.block>.kick{margin-top:30px}
+.lede{margin:0 0 6px;font-size:16px;color:var(--as-text)}
+.subj h3{font:500 21px var(--as-font);letter-spacing:-.02em}
+.subj h3 small{font:400 11px var(--as-mono);letter-spacing:.06em;text-transform:uppercase}
+
+/* machine cards keep their pastel tints; the frame goes plum */
+.app{border-radius:20px;border-color:var(--as-line);box-shadow:none}
+.app:hover{box-shadow:var(--as-lift)}
+.app-body b{font:600 18px/1.15 var(--as-font);letter-spacing:-.02em}
+.app-ex{font:500 10px var(--as-mono);letter-spacing:.04em}
+.app-foot .go{background:var(--as-ink);font-weight:500}
+
+/* Allen's den: calmer frame, smaller portrait */
+.den{border-radius:30px;background:linear-gradient(180deg,#FBF8FA,#fff);border-color:var(--as-line);box-shadow:none}
+.den-stage .pic{width:min(100%,300px)}
+.den-stage .who{font:600 20px var(--as-font)}
+.den-ctl legend{font:400 11px var(--as-mono);letter-spacing:.12em}
+.namebox input{font:600 18px var(--as-font);border-color:var(--as-line2)}
+.opt .new{background:var(--lilac);color:var(--as-ink)}
+
+/* exam index */
+.tabs button{font:500 14px var(--as-font)}
+.subject h3,.area h3{font:500 20px var(--as-font);letter-spacing:-.02em}
+.mine{background:var(--chalk-f)}
+.mine h3{font:400 11px var(--as-mono);letter-spacing:.12em}
+.std details summary{font:400 11px var(--as-mono);color:var(--as-ink)}
+.bar input[type=search],.bar select{border:1px solid var(--as-line2)}
+.hub-foot{color:var(--as-text);font-size:14px}
+
+@media (max-width:860px){
+  .hero{display:flex;flex-direction:column;min-height:0;padding:28px 0 26px}
+  .hero-copy{display:contents}
+  .hero .kick{order:1;padding:0 22px}.hero h1{order:2;padding:0 22px}.hero .intro{order:3;padding:0 22px}
+  .hstage{order:4}.cta{order:5;margin:4px 22px 0}.allen-chip{order:6;margin:18px 22px 0}
+  .hero h1{font-size:clamp(46px,12.5vw,72px);margin:14px 0 14px}
+  .hstage{min-height:0;height:clamp(290px,80vw,440px);margin:6px 0 10px}
+  .x-claw{left:30%;top:0;width:40%}.x-vend{left:0;top:10%;width:36%}.x-part{right:0;top:10%;width:35%}
+  .x-vinyl{left:0;top:52%;width:56%}.x-atom{right:0;top:54%;width:46%}
+  .hero .bench-k{right:14px;top:auto;bottom:6px}
+  .tg{display:none}
+}
+@media (max-width:520px){
+  .cta{gap:6px}.hb{padding:10px 14px;font-size:13px}
+  .hb.primary{width:100%;justify-content:space-between}
+  .top nav a.lab-link{display:none}
+  .whaka{padding-left:14px}
+}
+
+</style>
 
 <div class="wrap">
   <header class="top">
     <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
-    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a></nav>
+    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a><a href="/" class="lab-link">assembl lab</a></nav>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
-    <div>
-      <div class="eyebrow">Study machines · Aotearoa</div>
-      <h1 id="h-hero">Your exam, <span class="swash">assembled.</span></h1>
-      <p><span lang="mi">Kia ora.</span> Interactive machines for NCEA and Years 7–10. See how it works, piece by piece, then nail it in the exam. Pick your year, find your exams, run a machine, and practise with NZQA's real past papers.</p>
-      <div class="cta"><a class="btn primary big" href="#h-mach">Find a machine →</a><a class="btn big" href="#h-index">Find my exams</a><a class="btn big" href="year9/">Year 9 studio</a><a class="btn big" href="patterns/">Pattern studio</a></div>
+    <div class="hero-copy">
+      <p class="kick"><span class="live" aria-hidden="true"></span>Study machines · Aotearoa</p>
+      <h1 id="h-hero">Your exam, <em>assembled.</em></h1>
+      <p class="intro"><span lang="mi">Kia ora.</span> Thirty-five machines you can turn, pinch and test. See how it works, piece by piece, then nail it in the exam with NZQA's real past papers.</p>
+      <div class="cta"><a class="hb primary" href="#h-mach">Find a machine <i class="cube" aria-hidden="true"></i></a><a class="hb" href="#h-index">Find my exams</a><a class="hb" href="year9/">Year 9 studio</a><a class="hb" href="patterns/">Pattern studio</a></div>
+      <a class="allen-chip" href="#den" id="heroAllen"><img src="allen/pastel-mint-mark.webp" alt="" width="256" height="256" decoding="async"><span><b id="heroName">Allen</b><small>Your study sidekick · visit his den</small></span></a>
     </div>
-    <figure><a href="#den" id="heroAllen" aria-label="Visit Allen's den"></a><figcaption class="script" aria-hidden="true">piece by piece.<span></span></figcaption></figure>
+    <div class="hstage" id="bench" role="group" aria-label="Five of the study machines">
+      <div class="hplate" aria-hidden="true"></div>
+      <span class="cb c1" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#F9D2B8"/><path d="M2 18 30 34v30L2 48Z" fill="#F0B79A"/><path d="M58 18 30 34v30l28-16Z" fill="#E39E80"/></svg></span>
+      <span class="cb c2" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#D9CBF2"/><path d="M2 18 30 34v30L2 48Z" fill="#C3B0E8"/><path d="M58 18 30 34v30l28-16Z" fill="#AD98DB"/></svg></span>
+      <span class="cb c3" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#BFE8D6"/><path d="M2 18 30 34v30L2 48Z" fill="#A3D9C1"/><path d="M58 18 30 34v30l28-16Z" fill="#86C8AC"/></svg></span>
+      <span class="cb c4" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#BFDDF5"/><path d="M2 18 30 34v30L2 48Z" fill="#A2CBEC"/><path d="M58 18 30 34v30l28-16Z" fill="#86B7E0"/></svg></span>
+      <span class="cb c5" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#F3B8C8"/><path d="M2 18 30 34v30L2 48Z" fill="#E99DB2"/><path d="M58 18 30 34v30l28-16Z" fill="#DB839C"/></svg></span>
+      <a class="mx x-vend" data-m="vend" href="m/vend.html" style="--i:1;--z:.5"><span class="fl"><img src="hero/vend.webp" alt="" width="1000" height="729" decoding="async"></span><span class="tg"></span></a>
+      <a class="mx x-claw" data-m="claw" href="m/claw.html" style="--i:0;--z:.35"><span class="fl"><img src="hero/claw.webp" alt="" width="880" height="807" decoding="async" fetchpriority="high"></span><span class="tg"></span></a>
+      <a class="mx x-part" data-m="particles" href="m/particles.html" style="--i:2;--z:.7"><span class="fl"><img src="hero/particles.webp" alt="" width="1000" height="883" decoding="async"></span><span class="tg"></span></a>
+      <a class="mx x-atom" data-m="atoms" href="m/atoms.html" style="--i:4;--z:1"><span class="fl"><img src="hero/atoms.webp" alt="" width="1000" height="628" decoding="async"></span><span class="tg"></span></a>
+      <a class="mx x-vinyl" data-m="vinyl" href="m/vinyl.html" style="--i:3;--z:1.2"><span class="fl"><img src="hero/vinyl.webp" alt="" width="1000" height="448" decoding="async"></span><span class="tg"></span></a>
+      <p class="bench-k" aria-hidden="true">Real-time 3D · on the bench</p>
+    </div>
   </section>
 
   <figure class="whaka" aria-labelledby="whaka-mi">
@@ -204,13 +372,14 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
   </div>
 
   <section class="block" aria-labelledby="h-mach">
-    <h2 id="h-mach">Machines on the bench</h2>
+    <p class="kick">01 / The bench</p>
+    <h2 id="h-mach">Machines on the <em>bench.</em></h2>
     <p class="lede">Each one is a little app: pick a step, play with the drawing, then test yourself. Grouped by subject.</p>
     <div class="subjects" id="machines"></div>
   </section>
 
   <section class="block den" id="den" aria-labelledby="h-den">
-    <div class="den-head"><h2 id="h-den"><span id="denName">Allen</span>'s den</h2>
+    <div class="den-head"><p class="kick">02 / Your sidekick</p><h2 id="h-den"><span id="denName">Allen</span>'s <em>den.</em></h2>
       <p class="lede">Allen is a long-haired dachshund, named after the Allen key every kitset needs. Pass a challenge in a machine to unlock gear; keep a streak going to unlock new places. He's saved on this device.</p></div>
     <div class="den-grid">
       <div class="den-stage"><div class="pic" id="denPic" role="button" tabindex="0" aria-label="Give Allen a wiggle"></div><p class="who" id="denWho"></p></div>
@@ -219,7 +388,8 @@ section.block>h2,.den-head h2{margin:12px 0 0;font:600 clamp(26px,3.4vw,34px)/1.
   </section>
 
   <section class="block" aria-labelledby="h-index">
-    <h2 id="h-index">Every exam, year by year</h2>
+    <p class="kick">03 / Exams</p>
+    <h2 id="h-index">Every exam, <em>year by year.</em></h2>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="mine" id="mine"></div>
     <div id="panel"></div>
@@ -311,14 +481,21 @@ $("machines").innerHTML=GROUPS.filter(([k])=>byGroup[k]).map(([k,label])=>{const
   return `<div class="subj" style="--acc:${K.accentFor(list[0][0])};--acc-tint:${K.tintFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
 
 
+// ---- hero bench: name each machine from data.js, lean the bench towards the pointer
+document.querySelectorAll("#bench .mx").forEach(a=>{const m=D.machines[a.dataset.m];if(!m){a.remove();return}
+  a.setAttribute("aria-label",m.title);a.querySelector(".tg").textContent=m.title.replace(/^The /,"")});
+(function(){const b=$("bench");if(!b||matchMedia("(prefers-reduced-motion: reduce)").matches||!matchMedia("(pointer: fine)").matches)return;let raf=0;
+  b.addEventListener("pointermove",e=>{const r=b.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{b.style.setProperty("--px",(x*-18).toFixed(2));b.style.setProperty("--py",(y*-12).toFixed(2))})});
+  b.addEventListener("pointerleave",()=>{b.style.setProperty("--px",0);b.style.setProperty("--py",0)})})();
+
 // ---- Allen: hero, den and customiser
 let look=A.load();
 const shown=()=>{const n=String(look.name||"").trim();return n||"Allen"};
 const coatName=()=>(A.coats[look.coat]||A.coats.red).label.toLowerCase();
 const sceneLabel=()=>`${shown()}, a long-haired ${coatName()} dachshund, at the ${A.scenes[look.bg]?.label.toLowerCase()||"workshop"}`;
 function paint(){
-  $("heroAllen").innerHTML=A.svg(look,{scene:true,label:sceneLabel()});
-  $("heroAllen").setAttribute("aria-label",`Visit ${shown()}'s den`);
+  $("heroName").textContent=shown();
   $("denPic").innerHTML=A.svg(look,{scene:true,label:sceneLabel()});
   $("denName").textContent=shown();
   const worn=["head","eyes","neck","prop"].map(s=>look.gear[s]).filter(Boolean).map(id=>A.label(id).toLowerCase());
