@@ -21,3 +21,12 @@ test('untrusted recipes are restricted to supported geometry, materials and boun
   assert.equal(r.thickness,.25);assert.equal(r.flutes,14);assert.equal(r.zoom,1);assert.equal(r.energy,1);
   assert.equal(r.word,'PLAY');assert.equal(r.dark,false);
 });
+
+test('custom appearance survives recipe JSON and rejects invalid colour inputs', () => {
+  const recipe = cleanRecipe({color:'#4263eb',background:'#e7edff',roughness:.38});
+  assert.deepEqual(cleanRecipe(JSON.parse(JSON.stringify(recipe))), recipe);
+  const invalid = cleanRecipe({color:'url(example)',background:'#fff',roughness:10});
+  assert.equal(invalid.color, '#c9bcdf');
+  assert.equal(invalid.background, '#fffdfb');
+  assert.equal(invalid.roughness, .9);
+});

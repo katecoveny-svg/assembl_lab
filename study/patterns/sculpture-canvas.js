@@ -33,7 +33,8 @@ function geometry(seed,variant,settings={}){
   for(let i=0;i<segments;i++)for(let j=0;j<sides;j++){const k=i*(sides+1)+j,l=k+sides+1;faces.push([k,k+1,l+1,l]);}
   return{vertices,faces};
 }
-function surface(normal,material,depth,lighting){
+function surface(normal,material,depth,lighting,color,roughness=.24){
+  const tint=(color||'#c9bcdf').slice(1).match(/../g).map(x=>parseInt(x,16));
   const n=norm(normal),facing=Math.abs(n[2]),r=[2*n[0]*n[2],2*n[1]*n[2],2*n[2]*n[2]-1];
   // Procedural studio reflection: black photographic flags, soft-box strips,
   // neutral room and lilac / peach bounce cards. Reflections move with normals.
@@ -49,18 +50,19 @@ function surface(normal,material,depth,lighting){
   const peach=(.5+.5*Math.sin(longitude*1.5+r[1]*3.6))*Math.pow(1-facing,1.5)*.44;
   col=mix(col,[255,170,145],peach);
   if(material==='glass'){
-    const base=[171,148,216],trans=.20+.32*facing;
+    const base=tint,trans=.20+.32*facing;
     col=mix(col,base,trans);
     const mint=.21*Math.pow(Math.max(0,Math.sin(longitude*2.3+r[1]*4.1)),6);
     col=mix(col,[174,227,208],mint);
     col=col.map((v,i)=>v+overhead*56+stripe*35+rim*20);
   }else if(material==='porcelain'){
     const diffuse=.48+.48*Math.max(0,dot(n,norm([-.5,.75,1])));
-    col=[201,188,223].map(v=>v*diffuse+overhead*48+stripe*18);
+    col=tint.map(v=>v*diffuse+overhead*48+stripe*18);
   }else if(material==='coral'){
-    col=mix(col,[251,159,144],.48);
+    col=mix(col,tint,.48);
     col=col.map(v=>v+overhead*60+stripe*50);
   }
+  col=mix(col,tint,Math.max(0,roughness-.24)*.4);
   if(lighting==='rose')col=mix(col,[230,172,201],.18);
   if(lighting==='gallery')col=col.map(v=>v*.91+stripe*25);
   const ao=clamp(.96+depth*.022,.87,1);
@@ -69,13 +71,13 @@ function surface(normal,material,depth,lighting){
 // Precompute a continuous reflective hemisphere. Rasterisation interpolates
 // normals per pixel, not colours per polygon: highlights remain smooth.
 const MAT_SIZE=384;
-function materialMap(material,lighting){
+function materialMap(material,lighting,color,roughness){
   const data=new Uint8ClampedArray(MAT_SIZE*MAT_SIZE*4);
   for(let y=0;y<MAT_SIZE;y++)for(let x=0;x<MAT_SIZE;x++){
     let nx=x/(MAT_SIZE-1)*2-1,ny=y/(MAT_SIZE-1)*2-1;
     const length=nx*nx+ny*ny;
     if(length>1){const k=1/Math.sqrt(length);nx*=k;ny*=k;}
-    const rgb=surface([nx,ny,Math.sqrt(Math.max(0,1-nx*nx-ny*ny))],material,0,lighting),i=(y*MAT_SIZE+x)*4;
+    const rgb=surface([nx,ny,Math.sqrt(Math.max(0,1-nx*nx-ny*ny))],material,0,lighting,color,roughness),i=(y*MAT_SIZE+x)*4;
     data[i]=rgb[0];data[i+1]=rgb[1];data[i+2]=rgb[2];data[i+3]=255;
   }
   return data;
@@ -86,13 +88,13 @@ export function createCanvasSculpture(canvas){
   let width=400,height=650,dpr=1,seed=42,meshes=[],turnX=0,turnY=0,sculpt=0,disposed=false;
   let frame=null,background=null,depth=null,lastDark=null,shapeKey='',lastSettings={},lastTime=0;
   const geometryKey=s=>[s.seed,s.form,s.thickness,s.flutes,s.energy].join('/');
-  const makeMaps=light=>Object.fromEntries(['glass','chrome','coral','porcelain'].map(m=>[m,materialMap(m,light)]));
-  let maps=makeMaps('daylight'),lastLight='daylight';
+  const makeMaps=(light,color,roughness)=>Object.fromEntries(['glass','chrome','coral','porcelain'].map(m=>[m,materialMap(m,light,color,roughness)]));
+  let maps=makeMaps('daylight'),lastLight='daylight',lastColour='',lastBackground='',lastRoughness=null;
   function reset(next=42,settings={}){seed=Number(next)||42;meshes=[geometry(seed,0,settings)];turnX=turnY=sculpt=0;shapeKey=geometryKey({...settings,seed});}
   function resize(w,h,ratio=1){width=Math.max(1,w);height=Math.max(1,h);dpr=Math.min(1.5,Math.max(1,ratio));canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);frame=background=depth=null;}
   function interact(x,y,dx=0,dy=0){turnY+=dx*3.2;turnX=clamp(turnX+dy*2.2,-.8,.8);sculpt=clamp((x-.5)*.35+(y-.5)*.2,-.3,.3);}
-  function prepareBackground(dark){
-    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=dark?'#211e3b':'#f6f3ec';ctx.fillRect(0,0,width,height);
+  function prepareBackground(dark,colour){
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=dark?'#240b21':(colour||'#fffdfb');ctx.fillRect(0,0,width,height);
     ctx.save();ctx.translate(width*.5,height*.91);ctx.scale(1,.22);
     const shade=ctx.createRadialGradient(0,0,0,0,0,width*.7);shade.addColorStop(0,dark?'#00000066':'#8d7b9555');shade.addColorStop(1,'#a398ad00');ctx.fillStyle=shade;ctx.fillRect(-width,-width,width*2,width*2);ctx.restore();
     background=ctx.getImageData(0,0,canvas.width,canvas.height);
@@ -128,9 +130,9 @@ export function createCanvasSculpture(canvas){
     if(disposed)return;
     if(geometryKey(settings)!==shapeKey){const x=turnX,y=turnY;reset(settings.seed,settings);turnX=x;turnY=y;}
     lastSettings={...settings};lastTime=time;
-    if(lastLight!==settings.lighting){lastLight=settings.lighting;maps=makeMaps(lastLight);}
+    if(lastLight!==settings.lighting||lastColour!==settings.color||lastRoughness!==settings.roughness){lastLight=settings.lighting;lastColour=settings.color;lastRoughness=settings.roughness;maps=makeMaps(lastLight,lastColour,lastRoughness);}
     const dark=Boolean(settings.dark||settings.lighting==='gallery'),energy=clamp(settings.energy??.5),scale=Math.min(width,height)/4.9*(settings.zoom||1);
-    if(!frame||lastDark!==dark)prepareBackground(dark);
+    if(!frame||lastDark!==dark||lastBackground!==settings.background){lastBackground=settings.background;prepareBackground(dark,lastBackground);}
     frame.data.set(background.data);depth.fill(-Infinity);
     const rx=-.1+turnX+Math.sin(time*.16)*.07*energy,ry=turnY+Math.sin(time*.13)*.18*energy,rz=-.14+sculpt+(energy-.5)*.35;
     meshes.forEach((mesh,m)=>{

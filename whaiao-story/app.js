@@ -103,3 +103,6 @@ import('./viewer.js').then(({createViewer})=>{
  viewer=createViewer($('model-host'),select,status);$('spatial-stage').classList.add('has-3d');viewer.update(state);const c=currentChapter(),r=PROJECT.rooms.find(r=>r.id===c.room);viewer.view(c.view||r?.view||[24,21,27],c.target||r?.target||[0,0,0]);status('Illustrative 3D model ready. Drag to orbit; arrow keys turn the view.');
 }).catch(error=>{status(error.message||'Plan view is available. The story and comparisons still work.');$('plan-view').disabled=true;$('whole-view').disabled=true;$('load-model').disabled=true;$('light').disabled=true;});
 window.addEventListener('pagehide',()=>{viewer?.dispose();if(downloadURL)URL.revokeObjectURL(downloadURL);});
+
+const renderDescriptions={hero:'Illustrative two-wing pavilion, rendered in Blender with cedar, metal roofs and glazing',courtyard:'Blender detail of the illustrative courtyard, planting and glazed rooms','roof-reveal':'Blender roof-reveal view showing the illustrative rooms and furniture'};
+document.querySelectorAll('[data-render]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.render;const image=document.getElementById('render-view');image.src='renders/'+key+'.jpg';image.alt=renderDescriptions[key];document.querySelectorAll('[data-render]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));}));

@@ -27,6 +27,9 @@ export function cleanRecipe(input = {}) {
     energy: number('energy', .55, 0, 1), thickness: number('thickness', .72, .25, 1.4),
     flutes: Math.round(number('flutes', 0, 0, 14)), zoom: number('zoom', 1, .75, 1.4),
     dark: input.dark === true, tone: Math.round(number('tone', 0, 0, 3)),
+    color: /^#[0-9a-f]{6}$/i.test(input.color) ? input.color : '#c9bcdf',
+    background: /^#[0-9a-f]{6}$/i.test(input.background) ? input.background : '#fffdfb',
+    roughness: number('roughness', .24, .02, .9),
     word: typeof input.word === 'string' ? input.word.replace(/[<>"&]/g, '').slice(0,12) : 'PLAY',
   };
 }
