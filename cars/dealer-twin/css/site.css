@@ -715,7 +715,7 @@ details.more>summary::before{content:"+ "}details.more[open]>summary::before{con
 .wall-f button[aria-pressed="true"]{background:var(--deep);color:var(--on-deep);border-color:var(--deep)}
 .wall-f button[aria-pressed="true"] i{color:var(--on-deep-3)}
 .wall-f button:disabled{opacity:.42;cursor:default}
-.wall-f{padding-inline:0}
+.wall-f button:disabled{display:none}
 .sw button{background:var(--c)}
 .sw span{font:500 11px var(--mono);color:var(--on-deep-3);margin-left:4px}
 .spot-info h3 span{color:var(--on-deep-3);font-weight:400}
@@ -882,3 +882,77 @@ main{overflow-x:clip}
 .show-stage.tt .show-poster{object-fit:cover;object-position:28% 55%}
 @media (max-width:760px){.show-stage.tt .show-poster{object-position:50% 60%}}
 @media (min-width:761px){.show-stage.tt{inset:0 0 200px 0}.show-stage.tt .show-poster{object-position:38% 55%}.show-stage.tt::after{background:linear-gradient(90deg,rgba(18,17,20,.78) 0%,rgba(18,17,20,.4) 30%,rgba(18,17,20,0) 50%),linear-gradient(0deg,rgba(18,17,20,1) 0%,rgba(18,17,20,0) 26%),linear-gradient(180deg,rgba(18,17,20,.5) 0%,rgba(18,17,20,0) 16%)}}
+
+/* ================= type, matched to the lab root page (lab/lab.css): Instrument Sans 500 headings with tight tracking in plum,
+   Instrument Serif italic for the accent words, IBM Plex Mono for labels, Instrument Sans 400 for body */
+:root{--head:#3e2339}
+body{font:400 16px/1.5 var(--sans)}
+h1,h2,h3,.h3{font-family:var(--sans);font-weight:500;color:var(--head);text-wrap:balance}
+h1 em,h2 em,h3 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em}
+.show h1{font:500 clamp(58px,5.9vw,99px)/1.02 var(--sans);letter-spacing:-.047em;color:var(--on-deep);max-width:12ch}
+.show h1 em{display:block;font-size:1.08em;letter-spacing:-.03em;color:var(--on-deep)}
+.sec h2,.stock h2,.sim h2,.explain h2,.desk h2{font:500 clamp(36px,3.6vw,62px)/1.08 var(--sans);letter-spacing:-.032em}
+.sec h2 em,.stock h2 em,.sim h2 em,.explain h2 em{font-size:1.12em}
+.h3,.sec h3{font:500 21px/1.2 var(--sans);letter-spacing:-.033em}
+.deep h2,.deep h3,.sim-band h2,.explain h2,.explain h3{color:var(--on-deep)}
+.eyebrow{font:400 10px/1.6 var(--mono);letter-spacing:1.2px;text-transform:uppercase}
+.pill.eyebrow{padding:8px 14px}
+.show-live b{font:500 clamp(28px,2.6vw,40px)/1 var(--sans);letter-spacing:-.04em}
+.show-live b small{font:500 .55em var(--sans)}
+@media (max-width:950px){.show h1{font-size:66px;letter-spacing:-3px}.sec h2,.stock h2,.sim h2,.explain h2{font-size:39px;letter-spacing:-1.6px}}
+@media (max-width:760px){.show h1{font-size:clamp(46px,12vw,64px);letter-spacing:-2.4px}.sec h2,.stock h2,.sim h2,.explain h2{font-size:clamp(32px,8.6vw,39px);letter-spacing:-1.2px}}
+.show-sub{margin:20px 0 0;max-width:44ch;font-size:clamp(16px,1.3vw,18.5px);color:var(--on-deep-2)}
+@media (max-width:760px){.show-sub{font-size:15.5px;margin-top:12px}}
+
+/* ================= the simulator: a full-width band first, then the departments */
+.sim{background:var(--paper)}
+.sim-band{position:relative;min-height:62vh;background:#131316 center/cover no-repeat;display:flex;align-items:flex-end;overflow:hidden}
+.sim-v{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sim-band::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,17,20,.88) 0%,rgba(18,17,20,.35) 45%,rgba(18,17,20,0) 70%)}
+.sim-copy{position:relative;z-index:2;padding-bottom:clamp(28px,6vh,60px);display:grid;gap:14px;justify-items:start;width:100%}
+.sim-copy h2{max-width:18ch;margin:0}
+.sim-copy p{margin:0;max-width:58ch;color:var(--on-deep-2);font-size:clamp(16px,1.25vw,18px)}
+.sim-tag{position:absolute;z-index:2;right:var(--gut);top:18px;color:var(--on-deep-3)}
+.sim .sec{padding-top:clamp(40px,5vw,70px)}
+.tiles{gap:14px}
+.tile{position:relative;overflow:hidden;padding-top:0}
+.tile .ti{display:block;width:calc(100% + 28px);margin:0 -14px 12px;height:120px;object-fit:cover;border-bottom:1px solid var(--line)}
+@media (max-width:760px){.tile .ti{height:92px}}
+
+/* ================= the agent desk, explained */
+.explain{background:#16161A}
+.steps4{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;counter-reset:s}
+@media (max-width:1000px){.steps4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.steps4{grid-template-columns:1fr}}
+.steps4>li{display:grid;gap:8px;align-content:start}
+.steps4 .eyebrow{color:var(--champ)}
+.steps4 h3{margin:0;font-size:22px}
+.steps4 p{margin:0;color:var(--on-deep-2);font-size:15px}
+.s4-v{margin:0 0 6px;aspect-ratio:4/3;border-radius:var(--r-m);overflow:hidden;background:#222228;border:1px solid var(--deep-line);position:relative;display:grid}
+.s4-car img{width:100%;height:100%;object-fit:cover}
+.s4-ask{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(245,242,237,.92);color:#1A1A1E;border-radius:12px 12px 12px 3px;padding:9px 12px;font-size:12.5px;line-height:1.35}
+.s4-notice ul{list-style:none;margin:0;padding:18px;display:grid;gap:9px;align-content:center}
+.s4-notice li{font:500 12.5px var(--sans);color:var(--on-deep);display:flex;gap:10px;align-items:center}
+.s4-notice li::before{content:"✓";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#3E6A57;color:#fff;font-size:11px;flex:none}
+.s4-notice li.miss{color:var(--on-deep-3)}.s4-notice li.miss::before{content:"!";background:#9B6B3B}
+.s4-approve,.s4-rcpt{padding:20px;align-content:center;gap:10px}
+.s4-approve b,.s4-rcpt b{font:500 20px/1.2 var(--sans);color:var(--on-deep);letter-spacing:-.02em}
+.s4-btns{display:flex;gap:8px}.s4-btns i{font-style:normal;font:500 13px var(--sans);padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.25);color:var(--on-deep-2)}
+.s4-btns i.yes{background:var(--on-deep);color:#1A1A1E;border-color:var(--on-deep);box-shadow:0 0 0 6px rgba(185,166,234,.18)}
+.s4-rcpt{background:#F5F2ED}.s4-rcpt b{color:#1A1A1E}.s4-rcpt span{font:400 12px var(--mono);color:#4A4950}.s4-rcpt .eyebrow{color:#7C7486}.s4-rcpt .s4-ok{color:#3E6A57;font-weight:500}
+.explain .lede{color:var(--on-deep-2)}
+
+/* ================= stock: three large, then the wall */
+.lead3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
+@media (max-width:760px){.lead3{grid-template-columns:1fr}}
+.lc{appearance:none;border:0;padding:0;position:relative;border-radius:var(--r-l);overflow:hidden;aspect-ratio:4/3;cursor:pointer;background:#3c383c}
+.lc img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,.7,.2,1)}.lc:hover img{transform:scale(1.03)}
+.lc .ov{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;display:grid;gap:2px;color:#F5F2ED;text-align:left;background:linear-gradient(0deg,rgba(18,17,20,.7),rgba(18,17,20,0))}
+.lc .ov b{font:500 30px/1 var(--sans);letter-spacing:-.04em}
+.spot{margin-bottom:14px}
+.stock-fine{margin-top:14px;color:var(--rose)}
+.wc{aspect-ratio:4/3;background:#3c383c}
+.wall2 .wc:first-child{grid-column:auto;grid-row:auto;aspect-ratio:4/3}
+.wall2 .wc:first-child .ov b{font-size:clamp(20px,2vw,30px)}
+.wc img{object-fit:cover}
+.compact{padding:clamp(48px,6vw,84px) 0}

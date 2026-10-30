@@ -30,8 +30,8 @@ export async function initStock() {
   function draw() {
     const list = cars.filter(groups[filt][1]);
     wall.innerHTML = list.slice(0, byBrand ? 21 : 21).map(card).join("");
-    if (!sel || !list.includes(sel)) pick(list.find((c) => c.img.kind === "photo") || list[0], false);
-    else mark();
+    if (sel && !list.includes(sel)) { sel = null; $("#spot").hidden = true; }
+    mark();
   }
   const mark = () => $$(".wc", wall).forEach((b) => b.setAttribute("aria-pressed", String(sel && b.dataset.id === sel.id)));
   // the notice: how many of the Consumer Information Notice's applicable fields this listing carries
@@ -43,7 +43,7 @@ export async function initStock() {
     offers: { "@type": "Offer", price: c.priceNzd, priceCurrency: "NZD", availability: "https://schema.org/InStock", seller: { "@type": "AutoDealer", name: CFG.dealer.name } }, additionalProperty: [{ "@type": "PropertyValue", name: "truth", value: c.truthLabel }] });
   const credit = (c) => c.credit ? `<p class="note">Photo: <a href="${c.credit.page}" target="_blank" rel="noopener">${esc(c.credit.author)}</a> via Wikimedia Commons, <a href="${c.credit.licenceUrl}" target="_blank" rel="noopener">${esc(c.credit.licence)}</a>. ${esc(c.credit.change)} A sample photo of the model, not this listing's car.</p>` : "";
   function pick(c, user) {
-    if (!c) return; sel = c; mark();
+    if (!c) return; sel = c; mark(); $("#spot").hidden = false;
     const photo = c.img.kind === "photo", n = notice(c);
     st.classList.toggle("photo", photo); st.classList.toggle("cut", photo && !!cut[c.id]);
     st.classList.toggle("room", !!c.img.room); st.classList.remove("live"); poster.src = c.img.room || (photo ? (cut[c.id] || c.img.card) : c.img.card); poster.alt = c.img.alt;
@@ -58,7 +58,7 @@ export async function initStock() {
     $("#spotAi").onclick = (e) => { const p = $("#spotJson"), on = p.hidden; p.hidden = !on; e.currentTarget.setAttribute("aria-expanded", String(on)); if (on) p.textContent = JSON.stringify(schema(c), null, 2); };
     $("#spotCheck").onclick = () => window.dispatchEvent(new CustomEvent("check:model", { detail: { make: c.make, model: c.model, year: c.year } }));
     $$(".sw button", info).forEach((b) => (b.onclick = () => { $$(".sw button", info).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); three && three.setPaint(b.dataset.paint); }));
-    if (user && narrowMQ.matches) st.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (user) $("#spot").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
   }
   // 3D: loaded the first time a render takes the stage (and only where WebGL works); the poster stays until it has drawn
   function go3d(c) {
@@ -74,5 +74,9 @@ export async function initStock() {
   addEventListener("stock:brand", (e) => brand(e.detail));
   const pickId = (id) => { const c = cars.find((x) => x.id === id); if (!c) return; if (!cars.filter(groups[filt][1]).includes(c)) { filt = 0; $$("button", bar).forEach((x, i) => x.setAttribute("aria-pressed", String(i === 0))); draw(); } pick(c, false); };
   addEventListener("stock:pick", (e) => pickId(e.detail));
+  const lead = $("#lead3"), leadIds = CFG.lead3 && CFG.lead3.length ? CFG.lead3 : cars.slice(0, 3).map((c) => c.id);
+  if (lead) { lead.innerHTML = leadIds.map((id) => cars.find((c) => c.id === id)).filter(Boolean).map((c, i) => `<button class="lc" type="button" data-id="${esc(c.id)}" data-rv style="--i:${i}">
+      <img src="${esc(c.img.room || c.img.card)}" alt="${esc(c.img.alt)}" loading="lazy" decoding="async"><span class="ov"><b>$${fmt(c.priceNzd)}</b><span>${esc(c.year)} ${esc(c.make)} ${esc(c.model)}</span></span></button>`).join("");
+    lead.addEventListener("click", (e) => { const b = e.target.closest(".lc"); if (b) pick(cars.find((c) => c.id === b.dataset.id), true); }); }
   draw(); if (window.__stockBrand) brand(window.__stockBrand); if (window.__stockPick) pickId(window.__stockPick);
 }

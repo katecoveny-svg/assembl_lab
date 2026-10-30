@@ -48,7 +48,7 @@ export const sim = (() => {
   const S = { ...D.BASE }; let day = 0, d = D.newDay(S, 3), G = D.group(S), ev = D.commerceDay(S, G.F, 1), acc = 0, data = {};
   const subs = new Set(), dataSubs = new Set();
   const o = {
-    S, speed: 12, playing: true, realT: 0,
+    S, speed: 20, playing: true, realT: 0,
     get d() { return d; }, get ev() { return ev; }, get F() { return G.F; }, get P() { return G.P; }, get G() { return G; }, get day() { return day; }, get data() { return data; },
     on(f) { subs.add(f); return () => subs.delete(f); }, onData(f) { dataSubs.add(f); return () => dataSubs.delete(f); },
     recompute() { G = Object.keys(data).length ? D.fromData(data, S) : D.group(S); dataSubs.forEach((f) => f()); },
@@ -56,7 +56,7 @@ export const sim = (() => {
     newDay() { d = D.newDay(S, day + 3); ev = D.commerceDay(S, G.F, day + 1); },
     step(n) { for (let i = 0; i < n; i++) { D.step(S, d); if (d.t > D.CLOSE + 60) { day++; o.newDay(); for (let k = 0; k < 40; k++) D.step(S, d); } } },
     clock() { const m = Math.floor(d.t), h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`; },
-    dayName() { return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][day % 5]; },
+    dayName() { return ["Tuesday", "Wednesday", "Thursday", "Friday", "Monday"][day % 5]; },
     hcToday() { const t = d.t, out = []; d.jobs.forEach((j) => { const h = D.healthCheck(j, S); if (!h) return; const stage = D.hcStage(h, t); if (!stage || stage === "hoist") return; out.push({ j, h, stage }); }); return out; },
     live() { const t = d.t, s = D.dayStats(S, d), leadsT = ev.leads.filter((l) => l.t <= t), inV = ev.visits.filter((v) => v.t <= t && t < v.end);
       return { t, s, leadsT: leadsT.length, waitL: leadsT.filter((l) => l.ans > t).length, fast: leadsT.filter((l) => l.resp <= 5).length, inRoom: inV.length, people: inV.reduce((a, v) => a + v.people, 0),
@@ -66,7 +66,7 @@ export const sim = (() => {
         reconBays: [0, 1, 2].map((b) => { const r = ev.recon.find((x) => x.bay === b && x.t0 <= t && t < x.t1); return r ? (t - r.t0) / (r.t1 - r.t0) : 0; }),
         bays: Array.from({ length: S.bays }, (_, b) => d.jobs.some((j) => j.state === "work" && j.bay === b)), offices: [0, 1, 2, 3].map((k) => ev.deals.some((x) => x.office === k && x.fi0 <= t && t < x.fi1)) }; },
   };
-  o.step(165); // open the day at about 10am
+  o.step(42); // open the day at 8:02 on a Tuesday
   let pt = 0;
   onFrame((dt) => { if (o.playing) { acc += dt * o.speed; const n = Math.floor(acc); if (n) { acc -= n; o.step(n); } o.realT += dt; } pt += dt; if (pt > .25) { pt = 0; const L = o.live(); subs.forEach((f) => f(L)); } });
   return o;

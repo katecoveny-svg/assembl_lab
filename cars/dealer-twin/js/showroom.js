@@ -33,7 +33,7 @@ export function initShow() {
 
   // the rail: the dealer's own cars (photos for a dealer with photos, renders for the demo), looping under the image; each opens that car
   json(CFG.stockUrl).then((d) => {
-    const H = CFG.hero || {}, cars = d.cars.filter((c) => c.img && (c.img.rail || c.img.card)).slice(0, H.railMax || 24), inner = $("#showRailIn");
+    const H = CFG.hero || {}, cars = d.cars.filter((c) => c.img && c.img.rail !== null && (c.img.rail || c.img.card)).slice(0, H.railMax || 24), inner = $("#showRailIn");
     if (!cars.length) return;
     const one = (c, dup) => `<a class="rc" href="#stock" data-id="${esc(c.id)}"${dup ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="${esc(c.img.rail || c.img.card)}" alt="${dup ? "" : esc(c.title)}" loading="lazy" decoding="async"><span><b>${esc(c.make)}</b> ${esc(c.model)}<i>$${fmt(c.priceNzd)}</i></span></a>`;
     inner.innerHTML = cars.map((c) => one(c)).join("") + cars.map((c) => one(c, true)).join("");
