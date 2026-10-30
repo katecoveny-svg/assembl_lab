@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PROJECT,CHAPTERS,OPTIONS,safeState,stateQuery,readState,packet,escapeHtml,validateGlb} from '../data.js';
+import {PROJECT,CHAPTERS,OPTIONS,safeState,stateQuery,readState,packet,escapeHtml,validateGlb} from './data.js';
 test('shared links only encode allowlisted presentation state',()=>{
  const q=stateQuery({chapter:'outside',option:'garden',roof:'off',light:'evening',privateNotes:'secret'});
  assert.equal(q.includes('secret'),false);assert.equal(readState('?'+q).chapter,'outside');assert.equal(readState('?'+q).option,'garden');assert.equal(readState('?'+q).roof,false);

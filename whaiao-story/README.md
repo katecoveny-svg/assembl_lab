@@ -23,7 +23,7 @@ Self-contained GLB 2.0, under 25 MB, <=600,000 referenced POSITION vertices, <=8
 
 ## Checks
 From the repository root:
-node --test whaiao-story/tests/story.test.mjs
+node --test whaiao-story/validate.mjs
 node --check whaiao-story/app.js
 node --check whaiao-story/viewer.js
 
