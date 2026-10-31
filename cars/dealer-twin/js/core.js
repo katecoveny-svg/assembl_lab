@@ -10,7 +10,7 @@ export const dollars = (n) => n == null || !isFinite(n) ? "–" : "$" + fmt(Math
 export const pct = (x, d = 0) => x == null || !isFinite(x) ? "–" : fmt(x * 100, d) + "%";
 export const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 export const ease = (t) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-export const TRUTH = { sim: "Simulated", est: "Estimate", src: "Source", data: "Your data", prop: "Proposed" };
+export const TRUTH = { sim: "Simulated", est: "Estimated", src: "Source", data: "Your data", prop: "Proposed" };
 export const chip = (t, label, cls = "") => `<span class="chip ${cls}"${t && t !== "sim" ? ` data-t="${t}"` : ""}>${esc(label || TRUTH[t] || t)}</span>`;
 export const reducedMQ = matchMedia("(prefers-reduced-motion: reduce)");
 export const narrowMQ = matchMedia("(max-width: 760px)");

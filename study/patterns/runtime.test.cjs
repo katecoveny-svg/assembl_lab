@@ -63,7 +63,7 @@ function studioHarness() {
     URL: {createObjectURL: () => 'blob:test-file', revokeObjectURL() {}},
     location:{hash:'',search:''},URLSearchParams,cleanRecipe:vm.runInNewContext(read('atelier-shapes.js').replace(/export /g,'' )+';cleanRecipe'),
     navigator: {}, File: class { constructor(parts, name) { this.name = name; } },
-    captionLines: () => 0, createLiquid() {}, createGarden() {}, createSculpture() {}
+    captionLines: () => 0, createLiquid() {}, createGarden() {}, createSculpture() {}, createFluid() {}, createTuring() {}, createSlime() {}
   };
   vm.createContext(sandbox);
   vm.runInContext(source + `

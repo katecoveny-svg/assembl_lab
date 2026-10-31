@@ -11,7 +11,7 @@ const READS = {
   finance: [["price.cash", "cash_price"], ["price.includes"], ["securityInterest.registered", "security_interest"], ["ruc.outstanding", "ruc_outstanding"]],
   service: [["wof.expiry", "wof_expiry"], ["licence.expiry", "licence_expiry"], ["odometer.km", "odometer"]] };
 const STEPS = [["search_cars", "Search"], ["get_car", "Notice"], ["car_check", "Check"], ["request", "Request"], ["approval", "Approval"], ["receipt", "Receipt"]];
-const TCH = { Simulated: "sim", Source: "src", Estimate: "est", Missing: "warn", "Latest published": "src", "Your data": "data" };
+const TCH = { Simulated: "sim", Source: "src", Estimate: "est", Estimated: "est", Missing: "warn", "Latest published": "src", "Your data": "data" };
 const tchip = (t) => `<span class="tt" data-tt="${TCH[t] || "sim"}">${esc(t)}</span>`;
 const nowIso = () => new Date().toISOString();
 const clock = (iso) => new Date(iso).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" });
@@ -84,7 +84,7 @@ export async function initDesk() {
   function gate(tool, args) {
     if (!st.stepMode) return Promise.resolve();
     return new Promise((res) => { const el = document.createElement("div"); el.className = "gate-next";
-      el.innerHTML = `<span class="label">Next, the assistant calls</span><code>${esc(tool)}(${esc(JSON.stringify(args))})</code><div class="row"><button class="btn sm" type="button" data-go>Run this call</button><button class="btn ghost sm" type="button" data-all>Run the rest</button></div>`;
+      el.innerHTML = `<span class="label">Next, the assistant calls</span><code>${esc(tool)}(${esc(JSON.stringify(args))})</code><div class="row"><button class="btn sm" type="button" data-go>Next step</button><button class="btn ghost sm" type="button" data-all>Run the rest</button></div>`;
       feed.appendChild(el); toEnd(); el.querySelector("[data-go]").focus();
       el.querySelector("[data-go]").onclick = () => { el.remove(); res(); }; el.querySelector("[data-all]").onclick = () => { st.stepMode = false; $("#deskStep").checked = false; el.remove(); res(); }; });
   }
@@ -142,14 +142,14 @@ export async function initDesk() {
       else say("assistant", `You asked me to ${intent === "hold" ? "have it held" : "book a test drive"}. The dealer has to approve that, so I'm sending a request, not a booking.`);
       if (intent === "none" || my !== runId) { say("assistant", "No request sent. The notice and checks are above."); return; }
       let req;
-      if (intent === "drive") { const slot = (g.sc.testDriveSlots || [])[0]; if (!slot) { say("assistant", "There's no free test-drive time in the next week. I can ask for a hold instead."); return; }
-        req = await step("book_test_drive", { car_id: top.id, slot: slot.start }, "request"); }
+      if (intent === "drive") { const slot = (g.sc.testDriveSlots || [])[0]; if (!slot) { say("assistant", "There's no free test-drive time in the next week, so I'll ask the dealer to hold it for you instead."); intent = "hold"; req = await step("hold_car", { car_id: top.id }, "request"); }
+        else req = await step("book_test_drive", { car_id: top.id, slot: slot.start }, "request"); }
       else req = await step("hold_car", { car_id: top.id }, "request");
       if (my !== runId) return;
       enqueue({ kind: intent === "drive" ? "test_drive" : "hold", call: req, car: g.sc.car, notice: g.sc, check: chk.sc });
       mark("approval", "on");
       const hand = say("assistant", `Sent to ${esc(CFG.dealer.short)}. Nothing is booked until a person there approves it.`);
-      hand.insertAdjacentHTML("beforeend", `<button class="btn sm" type="button" data-switch>Switch seats: decide as the salesperson</button>`);
+      hand.insertAdjacentHTML("beforeend", `<button class="btn sm" type="button" data-switch>Now decide as the salesperson</button>`);
       hand.querySelector("[data-switch]").onclick = () => { seat("dealer", true); const b = queueEl.querySelector("[data-approve]"); if (b) b.focus(); };
     } catch (e) { if (my === runId) say("assistant", `${esc(e.message)} Try the request again.`); }
     finally { if (my === runId) st.lock = false; }
@@ -166,7 +166,7 @@ export async function initDesk() {
     const tab = $('#deskSeat [data-seat="dealer"]'); tab.classList.add("ping"); setTimeout(() => tab.classList.remove("ping"), 1600);
   }
   function drawQueue() {
-    if (!st.queue.length) { queueEl.innerHTML = `<p class="empty">No requests waiting. Run a scenario as the buyer and its request lands here.</p>`; return; }
+    if (!st.queue.length) { queueEl.innerHTML = `<p class="empty">Nothing to decide yet. Pick a scenario as the buyer's assistant and its request lands here.</p>`; return; }
     queueEl.innerHTML = st.queue.map((q) => { const sc = q.call.sc || {}, n = (q.notice.checks || {}).cinFields || {}, slotFree = q.kind !== "test_drive" || !!sc.slot;
       return `<article class="qcard" data-q="${q.id}"><header><span class="pill-auth">${q.kind === "hold" ? "Hold" : "Test drive"}</span><span class="tmeta">${clock(q.requestedAt)} · ${esc((q.call.meta && q.call.meta["assembl/requestRef"]) || q.id)}</span></header>
         <div class="tcar"><img src="${esc(imgOf(q.car.id))}" alt=""><div><b>${esc(q.car.title)}</b><span>${q.kind === "hold" ? `Hold until ${esc(sc.holdUntil)}` : esc(sc.slot ? sc.slot.label : "")} · from the buyer's assistant</span></div></div>
@@ -199,10 +199,10 @@ export async function initDesk() {
     return `<article class="rcpt${open ? " fresh" : ""}" data-h="${e.hash}"><header><span class="pill-auth ${ok ? "ok" : "no"}">${ok ? "Approved" : "Declined"}</span><b>${r.kind === "hold" ? "Hold" : "Test drive"} · ${esc(r.car.title)}</b>${chip("sim")}</header>
       <dl><div><dt>Record</dt><dd>${esc(r.schema)} · #${r.seq}</dd></div><div><dt>Approver</dt><dd>${esc(r.decision.by)}</dd></div><div><dt>Requested</dt><dd>${clock(r.timestamps.requested)}</dd></div><div><dt>Decided</dt><dd>${clock(r.timestamps.decided)}</dd></div>
         <div class="w"><dt>SHA-256</dt><dd class="hash">${e.hash}</dd></div><div class="w"><dt>Previous</dt><dd class="hash">${r.prev || "none, first record"}</dd></div></dl>
-      <div class="row"><button class="btn ghost sm" type="button" data-verify>Verify the hash</button><button class="btn ghost sm" type="button" data-json>View the record</button><button class="btn ghost sm" type="button" data-dl>Download</button><span class="vres" aria-live="polite"></span></div></article>`;
+      <div class="row"><button class="btn ghost sm" type="button" data-verify>Check it hasn't changed</button><button class="btn ghost sm" type="button" data-json>See the full record</button><button class="btn ghost sm" type="button" data-dl>Download</button><span class="vres" aria-live="polite"></span></div></article>`;
   }
   function drawLedger(fresh) { $("#deskLedgerN").textContent = st.ledger.length;
-    ledgerEl.innerHTML = st.ledger.length ? st.ledger.map((e) => receipt(e, e.hash === fresh)).join("") : `<p class="empty">No receipts yet. Every approval or decline writes one here, chained to the one before.</p>`; }
+    ledgerEl.innerHTML = st.ledger.length ? st.ledger.map((e) => receipt(e, e.hash === fresh)).join("") : `<p class="empty">No receipts yet. Approve or decline a request and its receipt appears here, linked to the one before it.</p>`; }
   ledgerEl.onclick = async (ev) => { const b = ev.target.closest("button"); if (!b) return; const el = b.closest("[data-h]"), e = st.ledger.find((x) => x.hash === el.dataset.h); if (!e) return;
     if (b.hasAttribute("data-verify")) { const h = await sha256(canon(e.rec)); el.querySelector(".vres").textContent = h === e.hash ? "✓ matches, recomputed in this browser" : "✗ does not match"; }
     if (b.hasAttribute("data-json")) { const p = el.querySelector("pre"); if (p) p.remove(); else el.insertAdjacentHTML("beforeend", `<pre>${jsonHTML({ ...e.rec, hash: e.hash })}</pre>`); }

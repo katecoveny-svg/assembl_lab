@@ -105,3 +105,63 @@
 @media(prefers-reduced-motion:reduce){.hc{animation:none!important}}
 @keyframes hcIn{from{opacity:0;transform:translate(-120px,60px) rotate(-40deg) scale(.4)}to{opacity:1;transform:none}}@keyframes hcFloat{from{transform:translateY(0) rotate(0)}to{transform:translateY(-16px) rotate(6deg)}}
 @media(max-width:950px){.scene-area{-webkit-mask-image:linear-gradient(180deg,#000 78%,transparent);mask-image:linear-gradient(180deg,#000 78%,transparent)}}
+
+/* ---- front pass (Oct 2026): one nav with /discover/ and /study/, a world switcher you can see, a collection with a sticky shelf bar,
+   readable mono labels (10px minimum), and calmer, larger card type. Same family as the study bench and the dealer twin. */
+#al-nav{background:var(--paper)}
+@media(min-width:951px){.hero{padding-top:18px}}
+/* world switcher: thumbnails of each world, the active one in plum */
+.world-selector{align-items:center}
+.world-selector button{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:5px 18px 5px 5px;font-size:13px;font-weight:500;color:var(--ink);transition:background .25s,color .25s}
+.world-selector button img{width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:60% 50%;background:#efe8ee;box-shadow:inset 0 0 0 1px #0000000d;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.world-selector button span{font:500 10px var(--mono);opacity:.55;margin-right:-3px}
+.world-selector button[aria-pressed=true]{background:var(--ink);color:#fff}
+.world-selector button[aria-pressed=true] img{box-shadow:0 0 0 2px #fff6}
+.world-selector button:hover img{transform:scale(1.08) rotate(-4deg)}
+.world-more{display:inline-flex;align-items:center;min-height:44px;padding:0 16px 0 10px;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--body);text-decoration:none;white-space:nowrap}
+.world-more:hover{color:var(--ink)}
+/* collection: a sticky shelf bar, readable labels, counts on each filter */
+.collection-tools{position:sticky;top:0;z-index:20;align-items:center;margin:0 -14px;padding:14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--paper) 86%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.filters{background:#f2edf1;border-radius:100px;padding:4px;gap:2px}
+.filters button{font-size:13px;padding:9px 15px;min-height:40px;color:var(--body);transition:background .2s,color .2s}
+.filters button:not([aria-pressed=true]):hover{border-color:transparent;background:#fffdfb;color:var(--ink)}
+.filters button span{font:500 10px var(--mono);opacity:.6}
+.search{min-height:48px;background:#fffdfb}
+.search input{font-size:13px;width:170px}
+.results-meta{font:400 10.5px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.card-art .art-code{font:500 10px var(--mono);letter-spacing:.1em;opacity:1;color:var(--ink);background:#ffffffc4;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:4px 9px;border-radius:100px;top:14px;left:14px}
+.card-copy h3{font-size:23px;letter-spacing:-.04em;line-height:1.12}
+.experiment-card.wide .card-copy h3{font-size:31px;letter-spacing:-.045em}
+.card-eyebrow{font:400 10.5px var(--mono);letter-spacing:.08em}
+.card-copy p.card-data{font-size:10.5px}
+.experiment-grid{gap:20px}
+@media(max-width:950px){
+  .world-selector{display:flex;overflow:hidden;border-radius:100px;padding:4px;gap:2px;margin:0 auto;max-width:100%}
+  .world-selector button{flex:1 1 0;min-width:0;justify-content:center;padding:4px 10px 4px 4px;font-size:12px}
+  .world-selector button span{display:none}
+  .world-more{display:none}
+  .collection-tools{margin:0 -5.3%;padding:12px 5.3%}
+}
+@media(max-width:600px){
+  .world-selector button{flex-direction:column;gap:4px;padding:6px 4px;border-radius:18px;font-size:11px;white-space:normal;text-align:center;line-height:1.15}
+  .world-selector{border-radius:22px}
+  .filters{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.filters::-webkit-scrollbar{display:none}
+  .filters button{font-size:12px;padding:8px 12px;min-height:40px;flex:none}
+  .filters button span{font-size:10px}
+  .search{min-height:44px}
+  .results-meta{font-size:10px}
+  .card-art .art-code{font-size:9.5px;top:10px;left:10px}
+  .card-copy h3,.experiment-card.wide .card-copy h3{font-size:22px}
+  .card-eyebrow{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.world-selector button img{transition:none}}
+@media(max-width:950px){.eyebrow,.hero .eyebrow{font-size:10px}.lab-ribbon{font-size:10px}}
+@media(max-width:600px){
+  .world-selector{width:100%;max-width:none;margin:0}
+  .world-selector button{height:auto;min-height:64px;flex:1 1 0;padding:6px 4px 8px}
+  .world-selector button img{width:34px;height:34px}
+}
+@media(max-width:520px){
+  .experiment-grid{grid-template-columns:1fr;gap:16px}
+  .experiment-card.wide{grid-column:auto}
+}

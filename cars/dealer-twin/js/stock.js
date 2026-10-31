@@ -21,7 +21,7 @@ export async function initStock() {
   let filt = 0, sel = null, three = null, threeP = null;
   const card = (c, i) => {
     const b = [c.fuelLabel && /electric|hybrid/i.test(c.fuelLabel) ? c.fuelLabel.replace("Petrol hybrid", "Hybrid") : "", /demo/i.test(c.condition || "") ? "Demo" : /new/i.test(c.condition || "") ? "New" : ""].filter(Boolean);
-    return `<button class="wc${c.img.kind === "photo" ? " photo" : ""}" type="button" role="listitem" data-id="${esc(c.id)}" aria-pressed="false" data-rv style="--i:${i % 8}">
+    return `<button class="wc${c.img.kind === "photo" ? " photo" : ""}" type="button" role="listitem" data-id="${esc(c.id)}" aria-pressed="false">
       <img src="${esc(c.img.card)}" alt="${esc(c.img.alt)}" loading="lazy" decoding="async">
       <span class="bd">${b.map((x) => `<span>${esc(x)}</span>`).join("")}<span class="t">${esc(c.img.kind === "photo" ? (S.photoBadge || "Photo") : "Render")}</span></span>
       <span class="turn">Open</span>
@@ -53,10 +53,10 @@ export async function initStock() {
       <div class="pr">$${fmt(c.priceNzd)}<small>${esc(c.priceNote || "")}</small></div>
       <div class="facts">${[c.odometerKm == null ? "km not listed" : `${fmt(c.odometerKm)} km`, c.fuelLabel, BODY[c.body] || c.bodyLabel, c.transmission, c.colour].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join("")}</div>
       ${ring(n)}
-      <div class="spot-act"><button class="btn" type="button" id="spotAi" aria-expanded="false">How an assistant sees it</button><a class="btn ghost" href="#check" id="spotCheck">Check the model</a></div>
+      <div class="spot-act"><button class="btn" type="button" id="spotAi" aria-expanded="false">See what an assistant reads</button><a class="btn ghost" href="#desk" id="spotCheck">Ask about it at the agent desk</a></div>
       <pre class="spot-json" id="spotJson" hidden></pre>${credit(c)}`;
     $("#spotAi").onclick = (e) => { const p = $("#spotJson"), on = p.hidden; p.hidden = !on; e.currentTarget.setAttribute("aria-expanded", String(on)); if (on) p.textContent = JSON.stringify(schema(c), null, 2); };
-    $("#spotCheck").onclick = () => window.dispatchEvent(new CustomEvent("check:model", { detail: { make: c.make, model: c.model, year: c.year } }));
+    $("#spotCheck").onclick = (e) => { const d = $("#desk"), o = $("#deskOpen"); if (d && o) { e.preventDefault(); if (d.hidden) o.click(); else d.scrollIntoView({ behavior: "smooth", block: "start" }); } };
     $$(".sw button", info).forEach((b) => (b.onclick = () => { $$(".sw button", info).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); three && three.setPaint(b.dataset.paint); }));
     if (user) $("#spot").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
   }
@@ -75,8 +75,9 @@ export async function initStock() {
   const pickId = (id) => { const c = cars.find((x) => x.id === id); if (!c) return; if (!cars.filter(groups[filt][1]).includes(c)) { filt = 0; $$("button", bar).forEach((x, i) => x.setAttribute("aria-pressed", String(i === 0))); draw(); } pick(c, false); };
   addEventListener("stock:pick", (e) => pickId(e.detail));
   const lead = $("#lead3"), leadIds = CFG.lead3 && CFG.lead3.length ? CFG.lead3 : cars.slice(0, 3).map((c) => c.id);
-  if (lead) { lead.innerHTML = leadIds.map((id) => cars.find((c) => c.id === id)).filter(Boolean).map((c, i) => `<button class="lc" type="button" data-id="${esc(c.id)}" data-rv style="--i:${i}">
-      <img src="${esc(c.img.room || c.img.card)}" alt="${esc(c.img.alt)}" loading="lazy" decoding="async"><span class="ov"><b>$${fmt(c.priceNzd)}</b><span>${esc(c.year)} ${esc(c.make)} ${esc(c.model)}</span></span></button>`).join("");
+  if (lead) { lead.innerHTML = leadIds.map((id) => cars.find((c) => c.id === id)).filter(Boolean).map((c, i) => `<button class="lc${i ? "" : " big"}" type="button" data-id="${esc(c.id)}">
+      <img src="${esc(c.img.room || c.img.card)}" alt="${esc(c.img.alt)}" decoding="async"${i ? ' loading="lazy"' : ""}><span class="lc-k eyebrow">${esc(c.branch || c.region || "")}</span><span class="lc-open">Open the listing</span>
+      <span class="ov"><span class="lc-make">${esc(c.make)}</span><b>${esc(c.model)}</b><span class="lc-meta">${esc(c.year)}${c.odometerKm ? ` · ${fmt(c.odometerKm)} km` : ""}</span><span class="lc-price">$${fmt(c.priceNzd)}</span></span></button>`).join("");
     lead.addEventListener("click", (e) => { const b = e.target.closest(".lc"); if (b) pick(cars.find((c) => c.id === b.dataset.id), true); }); }
   draw(); if (window.__stockBrand) brand(window.__stockBrand); if (window.__stockPick) pickId(window.__stockPick);
 }

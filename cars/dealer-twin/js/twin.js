@@ -14,7 +14,7 @@ const ONE = {
   parts: "A pick for every job. When a part isn't on the shelf, the wait desk takes over.",
   marketing: "Many enquiries arrive when the showroom is closed. Fast answers turn them into appointments.",
   fi: "Finance and insurance, office by office, deal by deal." };
-const prov = (p) => { p = p || { t: "sim" }; return p.t === "data" ? ["data", "Your data"] : p.t === "mix" ? ["data", "Your data + benchmark"] : p.t === "bench" ? ["est", "Benchmark"] : p.t === "est" ? ["est", "Estimate"] : ["sim", "Simulated"]; };
+const prov = (p) => { p = p || { t: "sim" }; return p.t === "data" ? ["data", "Your data"] : p.t === "mix" ? ["data", "Your data + benchmark"] : p.t === "bench" ? ["est", "Benchmark"] : p.t === "est" ? ["est", "Estimated"] : ["sim", "Simulated"]; };
 const pchip = (p) => { const [t, l] = prov(p); return chip(t, l); };
 
 export function initTwin() {
@@ -28,31 +28,48 @@ export function initTwin() {
   pauseBtn(sp, !sim.playing, "the simulated day"); sp.onclick = () => { sim.playing = !sim.playing; pauseBtn(sp, !sim.playing, "the simulated day"); };
 
   // ---------------------------------------------------------------- tiles
-  tiles.innerHTML = VIEWS.map(([k, n]) => `<button class="tile" type="button" data-v="${k}" aria-pressed="${k === view}">${(CFG.tileImg || {})[k] ? `<img class="ti" src="${esc(CFG.tileImg[k])}" alt="" loading="lazy" decoding="async">` : ""}<span class="tn">${esc(n)}</span><svg viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true" data-viz="${k}"></svg><span class="tv"><b data-tv="${k}">–</b><span data-tl="${k}"></span></span></button>`).join("");
+  tiles.innerHTML = VIEWS.map(([k, n]) => `<button class="tile" type="button" data-v="${k}" aria-pressed="${k === view}">${(CFG.tileImg || {})[k] ? `<img class="ti" src="${esc(CFG.tileImg[k])}" alt="" loading="lazy" decoding="async">` : ""}<span class="tn">${esc(n)}<i class="ts" data-ts="${k}"></i></span><svg viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true" data-viz="${k}"></svg><span class="tv"><b data-tv="${k}">–</b><span data-tl="${k}"></span></span></button>`).join("");
   tiles.onclick = (e) => { const b = e.target.closest("[data-v]"); if (b) select(b.dataset.v, true); };
   const tv = (k) => tiles.querySelector(`[data-tv="${k}"]`), tl = (k) => tiles.querySelector(`[data-tl="${k}"]`), vz = (k) => tiles.querySelector(`[data-viz="${k}"]`);
   const ink = "var(--deep)", faint = "var(--line2)", rose = "var(--rose)";
 
+  // live numbers ease from the old value to the new one, and a tile that changes gives a small pulse and states its mood
+  const tsel = (k) => tiles.querySelector(`[data-v="${k}"]`);
+  function setTv(k, v) {
+    const el = tv(k); if (!el) return; const html = String(v), txt = html.replace(/<[^>]+>/g, ""); if (el.dataset.html === html) return;
+    const prev = el.dataset.n != null ? +el.dataset.n : null, m = /^(\$?)([\d,]+)(?![\d.]*[km])/.exec(txt), next = m ? +m[2].replace(/,/g, "") : null;
+    el.dataset.html = html; if (next != null) el.dataset.n = next;
+    const tile = tsel(k); if (tile && prev != null) { tile.classList.remove("bump"); void tile.offsetWidth; tile.classList.add("bump"); }
+    if (prev == null || next == null || prev === next || reducedMQ.matches || Math.abs(next - prev) > 5000) { el.innerHTML = html; return; }
+    const t0 = performance.now(), d = 650, f = (now) => { const k2 = Math.min(1, (now - t0) / d), e = 1 - Math.pow(1 - k2, 3), cur = Math.round(prev + (next - prev) * e);
+      if (el.dataset.html !== html) return; el.innerHTML = html.replace(m[2], cur.toLocaleString("en-NZ")); if (k2 < 1) requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  }
+  const mood = (k, s) => { const el = tiles.querySelector(`[data-ts="${k}"]`); if (el && el.textContent !== s) { el.textContent = s; el.dataset.s = s; } };
   function tileViz(L) {
     const F = sim.F, g = F.pl.gross, parts = [g.new, g.used, g.fi, g.service, g.parts], tot = parts.reduce((a, b) => a + b, 0) || 1;
     // whole site: the month's gross, department by department, then what's left after costs
     let x = 0; vz("site").innerHTML = parts.map((v) => { const w = v / tot * 150, r = `<rect x="${x.toFixed(1)}" y="${(30 - v / tot * 60).toFixed(1)}" width="${Math.max(1, w - 3).toFixed(1)}" height="${(v / tot * 60 + 6).toFixed(1)}" rx="1.5" fill="${ink}"/>`; x += w; return r; }).join("")
       + `<rect x="160" y="${(36 - clamp(F.pl.net / tot) * 120).toFixed(1)}" width="40" height="${(clamp(F.pl.net / tot) * 120 + 8).toFixed(1)}" rx="1.5" fill="${rose}"/>`;
-    tv("site").innerHTML = money(F.pl.net); tl("site").textContent = /data|mix/.test((sim.P.net || {}).t || "") ? "net profit, a month · your data" : "net profit, a month";
-    tv("machine").textContent = fmt(sim.ev.deals.filter((x) => x.v.end <= L.t).length + L.s.done + L.usedSold); tl("machine").textContent = "deals, jobs and sales done today";
+    setTv("site", money(F.pl.net)); tl("site").textContent = /data|mix/.test((sim.P.net || {}).t || "") ? "net profit, a month · your data" : "net profit, a month";
+    setTv("machine", fmt(sim.ev.deals.filter((x) => x.v.end <= L.t).length + L.s.done + L.usedSold)); tl("machine").textContent = "deals, jobs and sales done today";
     const pp = Math.min(24, L.people); vz("showroom").innerHTML = Array.from({ length: 24 }, (_, i) => `<circle cx="${8 + (i % 12) * 16.4}" cy="${i < 12 ? 13 : 31}" r="5.2" fill="${i < pp ? ink : faint}"/>`).join("");
-    tv("showroom").textContent = L.people; tl("showroom").textContent = "people on the floors now";
+    setTv("showroom", L.people); tl("showroom").textContent = "people on the floors now";
     vz("used").innerHTML = L.reconBays.map((p, i) => `<rect x="0" y="${2 + i * 14}" width="200" height="9" rx="4.5" fill="${faint}"/><rect x="0" y="${2 + i * 14}" width="${(p * 200).toFixed(1)}" height="9" rx="4.5" fill="${ink}"/>`).join("");
-    tv("used").innerHTML = `${L.recon}<small>/3</small>`; tl("used").textContent = `recon bays working · ${L.appr} appraised`;
+    setTv("used", `${L.recon}<small>/3</small>`); tl("used").textContent = `recon bays working · ${L.appr} appraised`;
     const nb = S.bays, cw = 200 / nb; vz("workshop").innerHTML = L.bays.map((on, i) => `<rect x="${(i * cw + 1).toFixed(1)}" y="4" width="${(cw - 2.5).toFixed(1)}" height="36" rx="2" fill="${on ? ink : faint}"/>`).join("");
-    tv("workshop").innerHTML = `${L.s.inShop}<small>/${nb}</small>`; tl("workshop").textContent = `hoists working · ${L.s.queue} waiting`;
+    setTv("workshop", `${L.s.inShop}<small>/${nb}</small>`); tl("workshop").textContent = `hoists working · ${L.s.queue} waiting`;
     const fill = Math.round(F.partsFill * 20); vz("parts").innerHTML = Array.from({ length: 20 }, (_, i) => `<rect x="${(i % 10) * 20 + 1}" y="${i < 10 ? 3 : 24}" width="17" height="17" rx="2" fill="${i < fill ? ink : "var(--est)"}" opacity="${i < fill ? 1 : .55}"/>`).join("");
-    tv("parts").textContent = fmt(L.picks); tl("parts").textContent = `picks today · ${pct(F.partsFill)} off the shelf`;
+    setTv("parts", fmt(L.picks)); tl("parts").textContent = `picks today · ${pct(F.partsFill)} off the shelf`;
     const LH = F.leadHour || D.LEADHOUR, mx = Math.max(...LH), h = Math.floor(L.t / 60);
     vz("marketing").innerHTML = `<rect x="${8.5 / 24 * 200}" y="0" width="${9 / 24 * 200}" height="44" fill="var(--tint)"/>` + LH.map((v, i) => `<rect x="${(i * 200 / 24 + 1).toFixed(1)}" y="${(42 - v / mx * 38).toFixed(1)}" width="${(200 / 24 - 2.4).toFixed(1)}" height="${(v / mx * 38).toFixed(1)}" rx="1" fill="${i === h ? rose : ink}" opacity="${i <= h ? 1 : .3}"/>`).join("");
-    tv("marketing").textContent = L.leadsT; tl("marketing").textContent = `leads today · ${L.waitL} waiting`;
+    setTv("marketing", L.leadsT); tl("marketing").textContent = `leads today · ${L.waitL} waiting`;
     vz("fi").innerHTML = L.offices.map((on, i) => `<rect x="${i * 51 + 1}" y="4" width="47" height="36" rx="3" fill="${on ? ink : faint}"/>`).join("");
-    tv("fi").innerHTML = `${L.inFi}<small>/4</small>`; tl("fi").textContent = `offices in use · ${L.delivered} handed over`;
+    setTv("fi", `${L.inFi}<small>/4</small>`); tl("fi").textContent = `offices in use · ${L.delivered} handed over`;
+    const busy = L.s.inShop / nb;
+    mood("site", "This month"); mood("machine", sim.playing ? "Running" : "Paused"); mood("showroom", L.people >= 10 ? "Busy" : L.people >= 4 ? "Steady" : "Quiet");
+    mood("used", L.recon ? "Reconditioning" : "Waiting"); mood("workshop", busy > .85 ? "Full" : busy > .5 ? "Busy" : "Filling up");
+    mood("parts", "Picking"); mood("marketing", L.waitL ? `${L.waitL} to answer` : "All answered"); mood("fi", L.inFi >= 3 ? "Full" : L.inFi ? "In use" : "Free");
   }
   // the well-oiled machine tile: work moving around the loop (ambient; stops with the page's pause)
   const loopDots = 7; let loopT = 0, mvOn = true; isVisible(tiles, (v) => mvOn = v);
@@ -78,12 +95,12 @@ export function initTwin() {
     } else if (v === "machine") {
       k = kpi("ml", "leads today", { t: "sim" }) + kpi("md", "deals today", { t: "sim" }) + kpi("mj", "workshop jobs today", { t: "sim" }) + kpi("mr", "cars into recon today", { t: "sim" });
       viz = `<div class="bars" data-flows></div>`;
-      more = ev("How the day is simulated", `<p>Each minute the model moves leads, showroom visits, deals, F&I, handovers, appraisals, recon and workshop jobs. Lead timing follows a published hour-of-day curve; response odds follow US response-time studies (Estimate). The same day drives the 3D model, the tiles and the hero numbers.</p>`);
+      more = ev("How the day is simulated", `<p>Each minute the model moves leads, showroom visits, deals, F&I, handovers, appraisals, recon and workshop jobs. Lead timing follows a published hour-of-day curve; response odds follow US response-time studies (Estimated). The same day drives the 3D model, the tiles and the hero numbers.</p>`);
     } else if (v === "showroom") {
       const st = D.stock(S);
       k = kpi("sp", "people on the floors now", { t: "sim" }) + kpi("sa", "deals agreed today", { t: "sim" }) + kpi("fpd", "floor plan interest a day", { t: "est" }) + kpi("aged", "new cars over 90 days", { t: "est" });
       viz = `<div class="bars" data-funnel></div>`;
-      more = ev("Try a lever: stock and floor plan", `<div class="levers">${lever("stock", "New cars in stock", 100, 900, 10, S.stock, (x) => fmt(x))}${lever("days", "Average days to sell", 20, 120, 1, S.days, (x) => x)}${lever("apr", "Floor plan rate", 3, 10, .05, (S.apr * 100).toFixed(2), (x) => (+x).toFixed(2) + "%")}</div><p>Interest only, on the average transaction price. Rate is a proxy from an ASX-listed dealer's December 2025 report (Estimate).</p>`)
+      more = ev("Try a lever: stock and floor plan", `<div class="levers">${lever("stock", "New cars in stock", 100, 900, 10, S.stock, (x) => fmt(x))}${lever("days", "Average days to sell", 20, 120, 1, S.days, (x) => x)}${lever("apr", "Floor plan rate", 3, 10, .05, (S.apr * 100).toFixed(2), (x) => (+x).toFixed(2) + "%")}</div><p>Interest only, on the average transaction price. Rate is a proxy from an ASX-listed dealer's December 2025 report (Estimated).</p>`)
         + ev("How the showroom is counted", `<p>Five anonymous ways to count visitors: door counters, overhead 3D sensors, Wi-Fi presence, camera analytics with no images kept, and salespeople's logged walk-ins. Costs are estimates; all sit under the NZ Privacy Act 2020. Funnel shares (${pct(D.FUNNEL.close)} of visiting groups buy, ${D.FUNNEL.party} people a group, ${pct(D.FUNNEL.logged)} logged, ${pct(D.FUNNEL.td)} test drive) are estimates until door counters are fitted.</p>`)
         + ev(CFG.dealer.marqueWord === "marque" ? "Marques on each floor" : "Ranges on each floor", `<ul>${D.SITES.filter((s) => s.fn.includes("Sales")).map((s) => `<li><b>${esc(s.n)}</b>: ${esc(s.m.join(", "))}</li>`).join("")}</ul>${CFG.dealer.sitesNote || ""}`);
     } else if (v === "used") {
@@ -93,7 +110,7 @@ export function initTwin() {
     } else if (v === "workshop") {
       k = kpi("wh", "hoists working", { t: "sim" }) + kpi("wl", "labour sold today", { t: "sim" }) + kpi("whc", "health checks sent today", { t: "sim" }) + kpi("wq", "cars waiting for a bay", { t: "sim" });
       viz = `<div data-hc></div>`;
-      more = ev("Try a lever: the workshop", `<div class="levers">${lever("techs", "Technicians", Math.max(6, S.bays - 8), S.bays + 3, 1, S.techs, (x) => x)}${lever("ros", "Jobs booked a day", Math.round(S.ros * .6), Math.round(S.ros * 1.4), 1, S.ros, (x) => x)}${lever("hc", "Jobs with a video health check", 0, 1, .05, S.hc, (x) => pct(+x))}</div><p>${S.bays} hoists, $${S.rate} an hour labour rate (Estimate). Approved health-check work adds labour (Estimate).</p>`)
+      more = ev("Try a lever: the workshop", `<div class="levers">${lever("techs", "Technicians", Math.max(6, S.bays - 8), S.bays + 3, 1, S.techs, (x) => x)}${lever("ros", "Jobs booked a day", Math.round(S.ros * .6), Math.round(S.ros * 1.4), 1, S.ros, (x) => x)}${lever("hc", "Jobs with a video health check", 0, 1, .05, S.hc, (x) => pct(+x))}</div><p>${S.bays} hoists, $${S.rate} an hour labour rate (Estimated). Approved health-check work adds labour (Estimated).</p>`)
         + ev("How health checks work", `<p>The technician films each item on the hoist and marks it urgent, recommended or fine. The customer gets a link, watches it and approves items from their phone; approved work goes on the repair order. Item prices, acceptance and timing are estimates. No customer names, plates or VINs anywhere. ${CFG.dealer.hcNote || ""}</p>`);
     } else if (v === "parts") {
       k = kpi("pp", "picks today", { t: "sim" }) + kpi("pf", "of lines off the shelf first time", P.partsFill) + kpi("pg", "parts gross, a month", P.partsGross) + kpi("pt", "stock turns a year", P.partsTurn);
@@ -198,7 +215,7 @@ export function initTwin() {
     stage.after(cap);
     box.querySelector("select").onchange = (e) => { const k = e.target.value, s = D.SITES.find((x) => x.k === k), info = pack.sites[k];
       if (!s || !info) { tw.setLayout("generic"); tw.setSite(salesSite, sim.F); }
-      else { const roles = Object.fromEntries(Object.entries(info.roles || {}).map(([id, r]) => [id, { role: r.role, why: r.why, truth: "Estimate" }]));
+      else { const roles = Object.fromEntries(Object.entries(info.roles || {}).map(([id, r]) => [id, { role: r.role, why: r.why, truth: "Estimated" }]));
         if (s.fn.includes("Sales")) tw.setSite(s, sim.F); tw.setLayout(k, pack.places[info.place], roles, { fnCode: info.fnCode, elsewhere: info.elsewhere }); }
       tw.setView(view, true); const on = !!(s && info); $("#siteTruth").hidden = !on; cap.hidden = !on; };
   }

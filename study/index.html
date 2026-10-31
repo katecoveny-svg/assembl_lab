@@ -329,6 +329,9 @@ section.block>.kick{margin-top:30px}
   .whaka{padding-left:14px}
 }
 /* /lab/presentation.css restyles the older Study hero (html[data-lab-frame=study] .hero …); keep this hero's own layout */
+/* under the shared lab nav, the study bar names the app (assembly) and keeps its section links */
+html[data-lab-frame=study] .top{display:flex;align-items:center;padding:4px 0 14px}html[data-lab-frame=study] .top .as-lock{display:inline-flex}html[data-lab-frame=study] .top .as-word{font-size:21px}html[data-lab-frame=study] .top nav a{padding:8px 14px}
+@media(max-width:520px){html[data-lab-frame=study] .top .as-by{display:none}html[data-lab-frame=study] .top nav{width:auto}html[data-lab-frame=study] .top nav a{padding:8px 9px}}
 html[data-lab-frame=study] body .hero{grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);padding:0;gap:0}
 html[data-lab-frame=study] body .hero h1{font-size:clamp(52px,6.4vw,96px);line-height:1;font-weight:500;max-width:none;margin:22px 0}
 html[data-lab-frame=study] body .hero .kick{font-size:11px;line-height:1.6}
@@ -346,7 +349,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
 <div class="wrap">
   <header class="top">
     <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
-    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a><a href="/" class="lab-link">assembl lab</a></nav>
+    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a></nav>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
