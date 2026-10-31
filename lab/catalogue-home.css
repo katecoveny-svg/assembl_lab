@@ -14,3 +14,72 @@
 .destination-strip a:nth-child(2){background:#eadfeb}
 @media(prefers-reduced-motion:reduce){.visual-card img{transition:none}}
 @media(max-width:600px){.intro-gallery{grid-template-columns:1fr 1fr;gap:12px}.intro-gallery .gallery-main{grid-column:1/-1}.intro-gallery .gallery-main img{height:220px;aspect-ratio:auto;object-fit:contain}.intro-gallery img{height:155px;object-fit:contain}.intro-gallery span{font-size:12px;padding:12px}}
+
+/* ---- lab family pass (Oct 2026): the same type and fields as / and /study/. Instrument Sans in plum with an Instrument Serif
+   italic accent, IBM Plex Mono for every label, paper ground, lilac hero field, plum pills with the cube mark. */
+.lab-home{--ink:#492B3E;--body:#654A4E;--muted:#7A6268;--paper:#faf8f5;--line:#e3dcdf;--lilac:#ECE4F0;--serif:"Instrument Serif",Georgia,serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+body.lab-home{background:var(--paper);color:var(--ink)}
+.lab-home em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em}
+.lab-home a:focus-visible,.lab-home button:focus-visible,.lab-home input:focus-visible{outline-color:#6A50BE}
+.kicker,.visual-card small,.intro-gallery small,.destination-strip span,.catalogue-search{font:400 10.5px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.kicker{display:flex;align-items:center;gap:10px}
+.live{width:7px;height:7px;border-radius:50%;background:#87A494;box-shadow:0 0 0 4px #87A49422;flex:none}
+/* hero: the lilac field from the front page */
+.home-intro{margin:22px 0 36px;padding:clamp(28px,4.4vw,60px);border-radius:30px;background:radial-gradient(120% 120% at 78% 40%,#F6EEF5 0%,#ECE1F1 46%,#E2D5EB 100%);box-shadow:0 40px 80px -60px #5f314e88,inset 0 0 0 1px #ffffff80}
+.home-intro h1{font-size:clamp(46px,5.6vw,84px);font-weight:500;line-height:1;letter-spacing:-.05em;margin:18px 0 22px}
+.home-intro h1 span{display:inline-block;color:var(--ink);font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.025em;font-size:1.04em;margin-top:.06em}
+.intro-copy{font-size:clamp(16px,1.4vw,19px);color:var(--body)}
+.quiet{font:400 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.intro-gallery a{border:0;border-radius:20px;background:#ffffffb0;box-shadow:0 24px 40px -30px #3e233966;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.intro-gallery a:hover{transform:translateY(-4px);box-shadow:0 30px 50px -30px #3e233988}
+.intro-gallery span{background:#ffffffd9;font-weight:500;letter-spacing:-.01em}
+/* pills: plum primary with the lab's cube */
+.pill{font-weight:500;border-color:#d8cbd2;background:#fffdfbcc;gap:14px;transition:background .2s,transform .2s}
+.pill:hover{background:#fff;transform:translateY(-1px)}
+.pill.primary{background:var(--ink);border-color:var(--ink);padding-left:22px;box-shadow:0 12px 24px -14px #492B3Ecc}
+.pill.primary:hover{background:#5A3A4F}
+.go{display:inline-block;width:17px;height:17px;background:currentColor;flex:none;transition:transform .35s;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round'%3E%3Cpath d='M4 9 16 2l12 7v14l-12 7L4 23Z'/%3E%3Cpath d='M4 9l12 7 12-7M16 16v14'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round'%3E%3Cpath d='M4 9 16 2l12 7v14l-12 7L4 23Z'/%3E%3Cpath d='M4 9l12 7 12-7M16 16v14'/%3E%3C/svg%3E") center/contain no-repeat}
+.pill:hover .go{transform:rotate(60deg)}
+/* the three directions: pastel fields, serif accents */
+.destination-strip a{border-radius:22px;padding:24px 28px;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.destination-strip a:hover{transform:translateY(-3px)}
+.destination-strip a:nth-child(1){background:#ECE4F0}.destination-strip a:nth-child(2){background:#F9E3DA}.destination-strip a:nth-child(3){background:#E3EFE8}
+.destination-strip strong{font-size:26px;font-weight:500;letter-spacing:-.04em}
+.destination-strip small{color:var(--body)}
+/* section heads in the lab voice */
+.section-title h2{font-size:clamp(34px,4vw,54px);font-weight:500;line-height:1.04;letter-spacing:-.045em}
+.section-title h2 em{font-size:1.06em}
+.section-copy{font-size:16.5px;color:var(--body)}
+.text-link{color:var(--ink);text-decoration-color:#c9b8c4}
+.year-links a,.more-links a{font-weight:500;border-color:#e0d5db;background:#fffdfb;transition:background .2s,border-color .2s}
+.year-links a:hover,.more-links a:hover{background:#ECE4F0;border-color:#cdb9c7}
+/* cards: soft paper, lift on hover, serif-free titles */
+.visual-card{border-color:#e7dfe4;background:#fffdfb;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s}
+.visual-card:hover{transform:translateY(-6px);border-color:#d9c9d3;box-shadow:0 30px 46px -32px #3e233977}
+.visual-card h3{font-weight:500;letter-spacing:-.04em}
+.visual-card p{color:var(--body)}
+.visual-card b{font-weight:500;color:var(--ink)}
+.learning-note{background:#F5F1F2;border-radius:22px}
+.learning-note img{border-radius:50%;background:#BFE8D6}
+.create-section{background:radial-gradient(120% 120% at 20% 0%,#F6EEF5 0%,#ECE1F1 60%,#E6DAEE 100%);border-radius:30px}
+.catalogue-section{border-top-color:var(--line)}
+.catalogue-filters{background:#f2edf1;border-radius:100px;padding:4px;gap:2px}
+.catalogue-filters button{border-color:transparent;background:none;color:var(--body);min-height:40px}
+.catalogue-filters button:hover{background:#fffdfb;color:var(--ink)}
+.catalogue-filters [aria-pressed=true]{background:var(--ink);color:#fff}
+.catalogue-search input{border-color:#dccdd5;border-radius:100px;padding:12px 18px;background:#fffdfb;font:15px "Instrument Sans",system-ui,sans-serif;text-transform:none;letter-spacing:0}
+#catalogue-count{font:400 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.home-footer{border-top-color:var(--line)}
+.lab-wordmark{font-weight:400;color:var(--ink)}.lab-wordmark strong{font-weight:600}
+@media(max-width:600px){
+  .home-intro{margin:14px -6px 28px;padding:26px 20px;border-radius:24px}
+  .home-intro h1{font-size:44px}
+  .home-intro .kicker{font-size:10px}
+  .destination-strip strong{font-size:22px}
+  .section-title h2{font-size:34px}
+  .catalogue-filters{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;border-radius:100px}
+  .catalogue-filters::-webkit-scrollbar{display:none}
+  .catalogue-filters button{flex:none}
+  .intro-gallery small{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.visual-card,.intro-gallery a,.destination-strip a,.pill,.go{transition:none}.visual-card:hover,.intro-gallery a:hover,.destination-strip a:hover{transform:none}}
