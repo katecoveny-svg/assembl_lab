@@ -115,6 +115,13 @@ export function createFluid(canvas) {
       if (!dx && !dy) { inkIndex = (inkIndex + 1) % k.length; splat(sx, sy, 0, 0, k[inkIndex], .8, .003); return; }
       splat(sx, sy, dx * cx * 5200, -dy * cy * 5200, k[inkIndex], .32);
     },
+    // Sound in, ink out: loudness sets how hard a jet pours from the foot of the canvas, pitch picks the ink.
+    // The level and pitch are computed in the browser from the microphone; no audio is stored or sent.
+    sound(level, pitch) {
+      if (!sim || level < .04) return; quiet = 0;
+      const k = inks(), sweep = Math.sin(last * .7) * .28, x = .5 + sweep, f = 900 * Math.min(1, level * 2.2);
+      splat(x, .04, -sweep * f * .6, f, k[Math.min(k.length - 1, Math.floor(pitch * k.length))], .18 + level * .5, .0016 + level * .0025);
+    },
     dispose() { g.dispose(); },
   };
 }

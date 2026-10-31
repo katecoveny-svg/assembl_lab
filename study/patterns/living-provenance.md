@@ -43,3 +43,18 @@ Three worlds are real simulations rather than procedural drawings. They keep run
 - **Slime Mould** is an agent model after Jones (2010), inspired by *Physarum polycephalum*: about 98,000 agents (41,000 on phones) sense a shared trail at three points, turn, step and deposit; the trail diffuses and decays. Drawn food keeps releasing trail. Comparisons with transport networks (Tero et al. 2010, Tokyo rail) are about real slime moulds; this simplified model is not a route planner.
 
 All three keep a fixed simulation grid and display it with cover framing, so PNG export re-renders the current state at output size without restarting it. Checks: `node --test study/patterns/*.test.*` (29 passing) and a headless Chromium (SwiftShader) review at 1280 × 860 and 390 × 844 in light and dark. Real-device frame rate is unverified.
+
+## Make and test, sound and video · 31 October 2026
+
+- **Kiln** turns a drawn stroke into a lathe profile (sorted by height, resampled to 48 points and smoothed), then adds a 0.07-unit wall, a rolled rim and an inner floor. The result is one closed outline, so the 128-segment lathe mesh is a closed solid. Glazes are real-time physically based materials with a bare bisque foot; this is not a kiln, glaze-chemistry or wall-strength model. OBJ export contains the artwork mesh (1 unit ≈ 10 cm) and has not been checked for printing, watertight tolerances or food use.
+- **Flocking rules** is Craig Reynolds' boids (1987): separation, alignment and cohesion, each a capped steering force, and each weighted by its own slider. One focus bird shows its neighbourhood, its three steering arrows and their total. Time steps are fixed at 1/60 s and no coefficient drifts automatically, so two settings can be compared fairly. Dragging adds a "hawk" that birds flee. This is a model of the idea, not measured starling data.
+- **Listen** (Living Ink) uses the microphone only after you press it. Loudness (RMS) sets how hard ink pours from the foot of the canvas, and the spectral centroid (150 Hz to 4.5 kHz, on a log scale) picks the ink. Both are computed in the browser each frame; no audio is recorded, stored or sent. Leaving Living Ink, or pressing Stop, releases the microphone.
+- **Record a 6-second video** (Save) uses the browser's own MediaRecorder on the live canvas: MP4 where supported, otherwise WebM, at screen size and 30 frames a second. It is not re-rendered at a larger size, and files stay on the device.
+
+Checks: `node --test study/patterns/*.test.*` (33 passing), including vessel closure and inner-wall tests and boid steering-direction tests. Headless Chromium (SwiftShader) review covered:
+- a drawn Kiln stroke at 1280 and 390 px, a glaze change and an OBJ download (13,029 vertices, 25,600 faces);
+- flocking with a hawk drag and a zero separation weight;
+- Listen with Chromium's fake microphone;
+- a recorded MP4.
+
+Real microphones, real-device frame rates and iOS video formats are unverified.
