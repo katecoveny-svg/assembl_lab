@@ -1,4 +1,4 @@
-// A multi-franchise NZ dealer group, simulated. The group itself (sites, marques, campaigns) comes from window.DEALER_DATA. Public benchmarks only (Deloitte NZ Dealership Benchmarks 2026,
+// A multi-franchise NZ dealer group, simulated. The group itself (sites, marques, campaigns) comes from window.DEALER_DATA. Benchmarks only (Deloitte NZ Dealership Benchmarks 2026,
 // published lead-response research); job mix, labour rate, marque mix and lead outcomes are labelled estimates.
 // DEALER.fromData(tables) takes real aggregate tables (see contract/dealer-data.schema.json) and returns the same
 // shape as DEALER.group(S), switching each figure to "your data" only where the data supports it.
@@ -33,7 +33,7 @@ const DEALER = (() => {
   const chName = k => (CHANNELS.find(c => c.k === k) || { n: k === "walkin" ? "Walk-in, phone, repeat" : k.replace(/_/g, " ") }).n;
   const marqueKey = s => { const t = String(s || "").toLowerCase().replace(/trucks?|professional|motors?|new zealand|nz/g, "").trim(); const m = MARQUES.find(m => t === m.k || t.startsWith(m.k) || t === m.n.toLowerCase()); return m ? m.k : (t ? "other" : ""); };
 
-  // ------------------------------------------------------------------ public benchmarks (Deloitte NZ Dealership Benchmarks 2026, top 30% of 200+ NZ dealers)
+  // ------------------------------------------------------------------ benchmarks (Deloitte NZ Dealership Benchmarks 2026, top 30% of 200+ NZ dealers)
   const BENCH = { src: "Deloitte NZ Dealership Benchmarks 2026", netPct: [2.8, 3.0], newGpu: [3750, 4250], usedGpu: [3500, 4000], daysSupply: [50, 60], usedNew: 0.89,
     finPenNew: [.28, .30], finPenUsed: [.26, .28], finPerContract: [2500, 2900], fiPerRetail: 621, finPerUnitNew: 811, finPerUnitUsed: 658, insPerUnitNew: 40, insPerUnitUsed: 140,
     partsGp: [.24, .28], partsDays: [23, 25], partsTurns: [14, 15], serviceGp: [.60, .62], labourPerTech: 14466, absorption: [.55, .57], overheads: .408, perfIndex: [.95, 1],
