@@ -4,6 +4,8 @@ import {createGarden} from './garden.js';
 import {createFluid} from './fluid.js';
 import {createTuring} from './turing.js';
 import {createSlime} from './slime.js';
+import {createVessel} from './vessel.js';
+import {createFlock} from './flock.js';
 import {captionLines} from './caption.js';
 import {cleanRecipe} from './atelier-shapes.js';
 const el=id=>document.getElementById(id);
@@ -12,9 +14,12 @@ const modern={
  sculpture:{name:'Sculpture Atelier',hint:'Drag to turn your sculpture',description:'Four generated forms, four finishes, and your own studio lighting.',prompt:'Real 3D geometry, procedural studio lighting and reflective materials. The same shape feels different in chrome and glass. What changes?',factory:createSculpture},
  garden:{name:'Luminous Type Garden',hint:'Touch to transform',description:'Your word, grown from layers of luminous silk petals.',prompt:'Editable letters guide layers of procedural petals. Drag through them and see the letterform bend. No image generation or upload is involved.',factory:createGarden},
  // Living systems: real simulations that keep running after you let go.
- fluid:{name:'Living Ink',hint:'Drag to stir · tap to drop ink',description:'A real fluid you can stir. Inks swirl, fold and mix like pigment, and keep moving after you let go.',prompt:'This is a genuine (if coarse) fluid simulation: the ink is carried by a velocity field that is kept incompressible every frame. Swirl adds vorticity back where the grid loses it. Colours mix by absorbing light, like paint. Try stirring two inks into each other.',factory:createFluid,energy:'Swirl',swatches:true},
+ fluid:{name:'Living Ink',hint:'Drag to stir · tap to drop ink',description:'A real fluid you can stir. Inks swirl, fold and mix like pigment, and keep moving after you let go.',prompt:'This is a genuine (if coarse) fluid simulation: the ink is carried by a velocity field that is kept incompressible every frame. Swirl adds vorticity back where the grid loses it. Colours mix by absorbing light, like paint. Try stirring two inks into each other.',factory:createFluid,energy:'Swirl',swatches:true,listen:true},
  turing:{name:'Turing Garden',hint:'Paint to plant · change the word to reseed',description:'Two virtual chemicals react and spread. Spots, mazes and dividing cells grow from your word and your brushstrokes.',prompt:'The Gray–Scott reaction–diffusion model. Alan Turing proposed that reactions like this could pattern living things. Slide Pattern slowly and watch one regime turn into another. A mathematical model, not a particular animal.',factory:createTuring,energy:'Pattern',swatches:true,word:true},
- slime:{name:'Slime Mould',hint:'Draw to lay food',description:'Thousands of tiny agents follow each other’s trails and build a living network between the food you draw.',prompt:'Each agent only senses the trail just ahead, then turns and steps. Nobody plans the network. Real slime moulds have been compared with Tokyo’s rail map; this is a simplified agent model inspired by them. Draw two pieces of food and watch for the shortest link.',factory:createSlime,energy:'Wander',swatches:true}
+ slime:{name:'Slime Mould',hint:'Draw to lay food',description:'Thousands of tiny agents follow each other’s trails and build a living network between the food you draw.',prompt:'Each agent only senses the trail just ahead, then turns and steps. Nobody plans the network. Real slime moulds have been compared with Tokyo’s rail map; this is a simplified agent model inspired by them. Draw two pieces of food and watch for the shortest link.',factory:createSlime,energy:'Wander',swatches:true},
+ // Make and test: a drawn profile thrown into a vessel, and flocking with its rules on show.
+ vessel:{name:'Kiln',hint:'Draw half a silhouette · the wheel throws it',description:'Draw the outline of one side of a vessel. The wheel spins it into porcelain you can export.',prompt:'Your stroke becomes a lathe profile: every point is spun once around the axis. The walls get a thickness and a rolled rim, so the mesh is a closed solid. Ridges adds the marks of hand throwing. Real-time glaze, not a kiln simulation; the OBJ has not been checked for printing or food use.',factory:createVessel,energy:'Ridges',swatches:true},
+ flock:{name:'Flocking rules',hint:'Tap a bird to follow it · drag to be the hawk',description:'Hundreds of birds, three simple rules and no leader. The highlighted bird shows its rules as arrows.',prompt:'Craig Reynolds’ boids (1987). Each bird only sees the neighbours inside its circle. Set one rule to zero and predict what will change before you look. Fixed time steps mean the same seed and settings replay fairly. A model of the idea, not measured starling data.',factory:createFlock,energy:'Vision',sliders:[['sep','Separation',0,3,.1,1],['ali','Alignment',0,3,.1,1],['coh','Cohesion',0,3,.1,1]]}
 };
 const defaults=cleanRecipe();
 const settings={...defaults};const renderers=new Map();let active='sculpture',time=0,tempo=1,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,legacy,ready=false,last=0,raf=0;
@@ -27,17 +32,55 @@ function currentCanvas(){return modern[active]?renderers.get(active)?.canvas:leg
 function showError(error){el('render-error').textContent=error.message+' The original drawing worlds remain available under More.';el('render-error').hidden=false;console.error(error);}
 function rendererFor(id){if(renderers.has(id))return renderers.get(id);const canvas=document.createElement('canvas');canvas.setAttribute('aria-hidden','true');canvas.hidden=true;host.append(canvas);try{const renderer=modern[id].factory(canvas);canvas.dataset.renderer=renderer.renderer||renderer.rendererKind||(id==='garden'?'canvas2d':'webgl');const item={renderer,canvas};renderers.set(id,item);const r=host.getBoundingClientRect();renderer.resize(Math.round(r.width),Math.round(r.height),Math.min(devicePixelRatio||1,2));renderer.reset(settings.seed,settings);renderer.render(0,settings);return item;}catch(error){canvas.remove();throw error;}}
 function draw(){if(!ready)return;try{if(modern[active])renderers.get(active)?.renderer.render(time,settings);else legacy.render();}catch(error){paused=true;motion();showError(error);}}
-function tick(now){raf=requestAnimationFrame(tick);if(!last)last=now;if(now-last<32)return;const dt=Math.min((now-last)/1000,.07);last=now;if(!paused&&!document.hidden&&!el('settings').open&&!el('exports').open){time+=dt*tempo;for(let i=0;i<(modern[active]?1:tempo);i++)draw();}}
+function tick(now){raf=requestAnimationFrame(tick);if(!last)last=now;if(now-last<32)return;const dt=Math.min((now-last)/1000,.07);last=now;if(!paused&&!document.hidden&&((!el('settings').open&&!el('exports').open)||recording)){time+=dt*tempo;hear();for(let i=0;i<(modern[active]?1:tempo);i++)draw();}}
 function thumbnail(id){const item=renderers.get(id);if(!item||!el('thumb-'+id))return;const out=document.createElement('canvas');out.width=180;out.height=120;const c=out.getContext('2d'),source=item.canvas;const sw=source.width,sh=source.height,scale=Math.max(180/sw,120/sh);c.drawImage(source,(180-sw*scale)/2,(120-sh*scale)/2,sw*scale,sh*scale);el('thumb-'+id).src=out.toDataURL('image/png');}
 function controls(){
  syncQuick();el('studio').classList.toggle('sculpture-active',active==='sculpture');el('copy-recipe').hidden=active!=='sculpture';
  const e=modern[active]||legacy.engines[active];el('engine-tag').textContent=e.name;el('engine').value=active;el('engine-description').textContent=e.description;el('gesture-hint').textContent=e.hint;el('prompt').textContent=e.prompt;host.setAttribute('aria-label','Interactive '+e.name+'. '+e.hint+'. Arrow keys work too.');
  document.querySelectorAll('[data-mode]').forEach(b=>{const selected=b.dataset.mode===active;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
  el('swatches').hidden=!(active==='liquid'||modern[active]?.swatches);el('material-controls').hidden=active!=='sculpture';el('word-control').hidden=!(active==='garden'||modern[active]?.word);el('energy-label').textContent=modern[active]?.energy||(active==='sculpture'?'Twist':active==='garden'?'Bloom':'Flow');el('energy').setAttribute('aria-label',el('energy-label').textContent);el('energy').closest('label').hidden=!modern[active];
+ worldSliders();el('vessel-obj').hidden=active!=='vessel';el('listen').hidden=!modern[active]?.listen;
  el('dark').disabled=active==='liquid';el('live-controls').replaceChildren();if(modern[active]){const label=document.createElement('label');label.htmlFor='detail-energy';label.textContent=el('energy-label').textContent;const input=document.createElement('input');Object.assign(input,{id:'detail-energy',type:'range',min:0,max:100,value:Math.round(settings.energy*100)});input.oninput=()=>{settings.energy=Number(input.value)/100;el('energy').value=input.value;draw();invalidate();};el('live-controls').append(label,input);}
  if(!modern[active]){if(e.word){const label=document.createElement('label');label.htmlFor='legacy-word';label.textContent='Your word · up to 12 characters';const input=document.createElement('input');input.id='legacy-word';input.maxLength=12;input.value=legacy.state.text;input.type='text';input.oninput=()=>{legacy.set('text',input.value.replace(/[<>"&]/g,'').slice(0,12));invalidate();};el('live-controls').append(label,input);}for(const [key,label,min,max,step] of e.controls){const l=document.createElement('label');l.htmlFor='c-'+key;l.textContent=label;const out=document.createElement('output');out.textContent=Number(legacy.state[key].toFixed(2));l.append(out);const input=document.createElement('input');Object.assign(input,{type:'range',id:'c-'+key,min,max,step,value:legacy.state[key]});input.oninput=()=>{legacy.set(key,Number(input.value));out.textContent=Number(Number(input.value).toFixed(2));invalidate();};el('live-controls').append(l,input);}}
 }
-async function selectMode(id){const token=++version;el('render-error').hidden=true;try{for(const item of renderers.values())item.canvas.hidden=true;el('legacy-host').hidden=Boolean(modern[id]);if(modern[id]){const item=rendererFor(id);if(token!==version)return;item.canvas.hidden=false;}else{if(!legacy)legacy=await window.legacyStudioReady;if(token!==version)return;legacy.select(id);const r=host.getBoundingClientRect();legacy.resize(Math.round(r.width),Math.round(r.height));legacy.palette(settings.dark);}active=id;time=0;controls();ready=true;startupControls.forEach(button=>button.disabled=false);draw();if(modern[id])thumbnail(id);motion();invalidate();}catch(error){showError(error);el('open-settings').disabled=false;}}
+// Per-world rule sliders in the dock (Flocking rules); the world's own defaults fill any missing value.
+function worldSliders(){
+ const box=el('world-sliders'),list=modern[active]?.sliders;box.replaceChildren();box.hidden=!list;if(!list)return;el('energy').closest('label').hidden=true;
+ for(const [key,label,min,max,step,value] of list){if(!Number.isFinite(settings[key]))settings[key]=value;const l=document.createElement('label');l.className='world-slider';const t=document.createElement('span');t.textContent=label;const input=document.createElement('input');Object.assign(input,{type:'range',min,max,step,value:settings[key]});input.setAttribute('aria-label',label+' weight');input.oninput=()=>{settings[key]=Number(input.value);draw();invalidate();};l.append(t,input);box.append(l);}
+}
+el('vessel-obj').onclick=()=>{const renderer=renderers.get('vessel')?.renderer;if(!renderer?.exportObj)return;draw();downloadText(renderer.exportObj(),'assembl-vessel.obj','application/octet-stream');el('gesture-hint').textContent='OBJ ready · artwork mesh, not checked for printing';};
+// Sound to ink: loudness and pitch are measured here, in the browser. Nothing is recorded or sent.
+let listening=null;
+function stopListening(){if(!listening)return;listening.stream.getTracks().forEach(t=>t.stop());listening.ac.close();listening=null;el('listen').textContent='Listen';el('listen').setAttribute('aria-pressed','false');}
+function hear(){
+ if(!listening)return;const {an,ac,wave,spec}=listening;an.getFloatTimeDomainData(wave);let sum=0;for(const v of wave)sum+=v*v;
+ const level=Math.min(1,Math.sqrt(sum/wave.length)*4);an.getByteFrequencyData(spec);let weighted=0,total=0;for(let i=2;i<spec.length;i++){weighted+=spec[i]*i;total+=spec[i];}
+ const hz=total?weighted/total*ac.sampleRate/an.fftSize:0,pitch=hz?Math.max(0,Math.min(1,Math.log2(hz/150)/Math.log2(30))):0;
+ renderers.get(active)?.renderer.sound?.(level,pitch);
+}
+el('listen').onclick=async()=>{
+ if(listening){stopListening();return;}
+ try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const ac=new AudioContext(),an=ac.createAnalyser();an.fftSize=2048;ac.createMediaStreamSource(stream).connect(an);
+  listening={stream,ac,an,wave:new Float32Array(an.fftSize),spec:new Uint8Array(an.frequencyBinCount)};el('listen').textContent='Stop';el('listen').setAttribute('aria-pressed','true');el('gesture-hint').textContent='Listening · hum, clap or sing · nothing is recorded';if(paused){paused=false;motion();}}
+ catch(error){el('gesture-hint').textContent='Microphone unavailable · drag to stir instead';}
+};
+// Time-lapse: record six seconds of the live canvas as a video file, in the browser.
+let recording=false,videoURL=null;
+el('record').onclick=async()=>{
+ const canvas=currentCanvas();if(!canvas?.captureStream||!window.MediaRecorder){el('export-status').textContent='This browser cannot record the canvas. Capture a still instead.';return;}
+ const type=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+ const stream=canvas.captureStream(30),rec=new MediaRecorder(stream,type?{mimeType:type,videoBitsPerSecond:8e6}:{}),chunks=[],stopped=new Promise(r=>rec.onstop=r);
+ rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+ const wasPaused=paused;el('record').disabled=true;el('exports').close();recording=true;paused=false;motion();el('motion-status').textContent='● Recording 6 s';
+ rec.start(250);await new Promise(r=>setTimeout(r,6000));rec.stop();await stopped;stream.getTracks().forEach(t=>t.stop());
+ recording=false;paused=wasPaused;motion();el('record').disabled=false;
+ const blob=new Blob(chunks,{type:(rec.mimeType||type||'video/webm').split(';')[0]}),ext=blob.type.includes('mp4')?'mp4':'webm';
+ if(videoURL)URL.revokeObjectURL(videoURL);videoURL=URL.createObjectURL(blob);
+ const a=el('download-video');a.href=videoURL;a.download='assembl-'+active+'-6s.'+ext;a.hidden=false;a.textContent='Download video · '+ext.toUpperCase()+' · '+(blob.size/1048576).toFixed(1)+' MB';
+ const v=el('video-preview');v.src=videoURL;v.hidden=false;el('preview').hidden=true;v.play().catch(()=>{});
+ el('exports').showModal();el('export-status').textContent='Video ready: six seconds of the live canvas, at screen size, 30 frames a second.';
+};
+async function selectMode(id){const token=++version;if(!modern[id]?.listen)stopListening();el('render-error').hidden=true;try{for(const item of renderers.values())item.canvas.hidden=true;el('legacy-host').hidden=Boolean(modern[id]);if(modern[id]){const item=rendererFor(id);if(token!==version)return;item.canvas.hidden=false;}else{if(!legacy)legacy=await window.legacyStudioReady;if(token!==version)return;legacy.select(id);const r=host.getBoundingClientRect();legacy.resize(Math.round(r.width),Math.round(r.height));legacy.palette(settings.dark);}active=id;time=0;controls();ready=true;startupControls.forEach(button=>button.disabled=false);draw();if(modern[id])thumbnail(id);motion();invalidate();}catch(error){showError(error);el('open-settings').disabled=false;}}
 function resize(){const r=host.getBoundingClientRect(),w=Math.round(r.width),h=Math.round(r.height);if(!w||!h)return;for(const {renderer} of renderers.values())renderer.resize(w,h,Math.min(devicePixelRatio||1,2));if(legacy&&!modern[active])legacy.resize(w,h);draw();}
 new ResizeObserver(resize).observe(host);
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));
@@ -45,7 +88,7 @@ el('engine').onchange=async()=>{await selectMode(el('engine').value);el('setting
 el('open-settings').onclick=()=>{controls();el('settings').showModal();};el('close-settings').onclick=()=>el('settings').close();
 el('pause').onclick=()=>{paused=!paused;motion();};el('step').onclick=()=>{paused=true;time+=1/30;draw();motion();invalidate();};
 el('randomise').onclick=()=>{settings.seed=Math.floor(Math.random()*99999);time=0;if(modern[active]){renderers.get(active).renderer.reset(settings.seed,settings);draw();thumbnail(active);syncAtelier();}else{legacy.remix(settings.seed);controls();}invalidate();};
-el('reset').onclick=()=>{Object.assign(settings,defaults);time=0;tempo=1;el('speed').value=1;el('speed-value').textContent='1×';el('energy').value=55;el('word').value='PLAY';el('dark').checked=false;syncQuick();if(modern[active]){renderers.get(active).renderer.reset(settings.seed,settings);draw();thumbnail(active);}else{legacy.palette(false);legacy.reset();controls();}invalidate();};
+el('reset').onclick=()=>{Object.assign(settings,defaults);for(const m of Object.values(modern))for(const [key,,,,,value] of m.sliders||[])settings[key]=value;worldSliders();time=0;tempo=1;el('speed').value=1;el('speed-value').textContent='1×';el('energy').value=55;el('word').value='PLAY';el('dark').checked=false;syncQuick();if(modern[active]){renderers.get(active).renderer.reset(settings.seed,settings);draw();thumbnail(active);}else{legacy.palette(false);legacy.reset();controls();}invalidate();};
 function syncQuick(){syncAtelier();document.querySelectorAll('[data-tone]').forEach(b=>{const selected=Number(b.dataset.tone)===settings.tone;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});document.querySelectorAll('[data-material]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.material===settings.material)));}
 document.querySelectorAll('[data-tone]').forEach(b=>b.onclick=()=>{settings.tone=Number(b.dataset.tone);syncQuick();draw();invalidate();});
 document.querySelectorAll('[data-material]').forEach(b=>b.onclick=()=>{settings.material=b.dataset.material;syncQuick();draw();invalidate();});
@@ -135,3 +178,4 @@ await document.fonts.ready;
 await selectMode(initialMode);if(initialRecipe)restoreRecipe(initialRecipe);motion();requestAnimationFrame(tick);
 // Every thumbnail is a captured frame from its actual renderer, never a concept image.
 for(const id of ['liquid','garden','fluid']){try{rendererFor(id);thumbnail(id);}catch(error){console.warn(id+' thumbnail unavailable',error);}}
+
