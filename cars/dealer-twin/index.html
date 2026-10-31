@@ -10,13 +10,13 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=697e1ad9">
+<link rel="stylesheet" href="css/site.css?v=b9b68b19">
 <link rel="preload" as="image" href="assets/hero/hero-wide.webp" fetchpriority="high">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/","@sparkjsdev/spark":"https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"}}</script>
-<script src="js/variant.js?v=697e1ad9" defer></script>
-<script src="js/dealer-data.js?v=697e1ad9" defer></script>
-<script src="engine/model.js?v=697e1ad9" defer></script>
-<script type="module" src="js/main.js?v=697e1ad9"></script>
+<script src="js/variant.js?v=b9b68b19" defer></script>
+<script src="js/dealer-data.js?v=b9b68b19" defer></script>
+<script src="engine/model.js?v=b9b68b19" defer></script>
+<script type="module" src="js/main.js?v=b9b68b19"></script>
 </head>
 <body>
 <a class="sr" href="#stock">Skip to the stock</a>
@@ -24,7 +24,7 @@
   <div class="wrap bar-in">
     <a class="mark" href="#top"><b>assembl</b><span>Dealer twin · demo</span></a>
     <nav class="nav" aria-label="Sections">
-      <a href="#sim">The day</a><a href="#agents">Agent desk</a><a href="#stock">Stock</a><a href="#parts" class="opt">Parts</a><a href="#connect" class="opt">For real</a>
+      <a href="#sim">The day</a><a href="#agents">Agent desk</a><a href="#market">Content</a><a href="#stock">Stock</a><a href="#parts" class="opt">Parts</a><a href="#connect" class="opt">For real</a>
     </nav>
   </div>
 </header>
@@ -65,22 +65,18 @@
     <span class="eyebrow sim-tag">Illustrative · render</span></div>
   <div class="sec" id="twin">
   <div class="wrap">
-    <div class="head">
-      <h3 id="twinH" class="h3">Every department, minute by minute.</h3>
-      <div style="display:grid;gap:18px;justify-items:start">
-        <p class="lede">Pick a department to open its numbers. <span class="chip">Simulated</span></p>
-        <div class="twin-ctl"><span class="t" id="tClock">–</span>
-          <div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="5" aria-pressed="false">5×</button><button type="button" data-speed="20" aria-pressed="true">20×</button><button type="button" data-speed="60" aria-pressed="false">60×</button></div>
-          <button class="ctl" type="button" id="simPause" aria-pressed="false" aria-label="Pause the simulated day"><svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".6"/><rect x="9.4" y="3" width="2.6" height="10" rx=".6"/></svg></button>
-        </div>
-      </div>
+    <div class="simbar">
+      <div class="simclock"><span class="eyebrow">Simulated day</span><b class="t" id="tClock">–</b></div>
+      <p class="simhint">Eight departments, one live day. Tap one to open its numbers.</p>
+      <div class="twin-ctl"><div class="seg" role="group" aria-label="Speed"><button type="button" data-speed="5" aria-pressed="false">5×</button><button type="button" data-speed="20" aria-pressed="true">20×</button><button type="button" data-speed="60" aria-pressed="false">60×</button></div>
+          <button class="ctl" type="button" id="simPause" aria-pressed="false" aria-label="Pause the simulated day"><svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".6"/><rect x="9.4" y="3" width="2.6" height="10" rx=".6"/></svg></button></div>
     </div>
     <div class="tiles" id="tiles" role="group" aria-label="Departments"></div>
     <div class="stagewrap" id="stagewrap">
       <div class="stagecol">
       <div class="stage" id="stage">
         <img class="poster" id="poster" alt="The twin as a scale model: showroom, workshop, parts and used yard" src="assets/posters/site.webp" loading="lazy" decoding="async">
-        <button class="btn go" type="button" id="go3d"><svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.8 13.5 5v6L8 14.2 2.5 11V5z"/><path d="M2.5 5 8 8.2 13.5 5M8 8.2v6"/></svg>Run the live 3D model</button>
+        <button class="btn go" type="button" id="go3d"><svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.8 13.5 5v6L8 14.2 2.5 11V5z"/><path d="M2.5 5 8 8.2 13.5 5M8 8.2v6"/></svg>Open the 3D model</button>
         <span class="chip solid badge">Simulated</span>
       </div>
       </div>
@@ -121,7 +117,7 @@
       <header class="pane-h"><b>Buyer's assistant</b><span class="chip">Unbranded · Simulated</span></header>
       <div class="scen" id="deskScen" aria-label="Scenarios"></div>
       <form class="deskask" id="deskForm" role="search"><label class="sr" for="deskIn">Ask the assistant for a car</label><input id="deskIn" autocomplete="off" maxlength="160" placeholder="A hybrid SUV under $30k in Waikato"><button class="btn sm" type="submit">Ask</button></form>
-      <label class="stepmode"><input type="checkbox" id="deskStep"> Step through each call</label>
+      <label class="stepmode"><input type="checkbox" id="deskStep"> Go one step at a time</label>
       <div class="feedwrap" id="deskFeedWrap"><div class="feed" id="deskFeed" aria-live="polite"></div></div>
     </aside>
     <div class="centre">
@@ -155,6 +151,57 @@
   </div>
 </section>
 
+<!-- ============ the content studio: any car in stock becomes a reel, a post and captions, drafted in the browser; a person checks before it goes anywhere -->
+<section class="sec cs-sec" id="market" aria-labelledby="mkH">
+  <div class="wrap">
+    <div class="head"><h2 id="mkH">Every car, <em>ready to post.</em></h2>
+      <div class="cs-lede"><p class="lede">Pick a car. Get a reel, a post and captions in seconds, built from the car's own listing. A person checks it before anything goes out.</p><span class="eyebrow pill">Drafts only · nothing is posted</span></div></div>
+    <div class="cs">
+      <div class="cs-pick">
+        <div class="cs-find"><label class="sr" for="csQ">Search the cars</label><input id="csQ" type="search" placeholder="Search make, model or year" autocomplete="off">
+          <label class="sr" for="csBrand">Brand</label><select id="csBrand"><option value="">All brands</option></select></div>
+        <p class="cs-count" id="csCount" aria-live="polite"></p>
+        <div class="picker" id="picker" role="group" aria-label="Choose a car"></div>
+      </div>
+      <div class="cs-prev">
+        <div class="seg" role="group" aria-label="Format" id="fmt"><button type="button" data-f="portrait" aria-pressed="true">Portrait</button><button type="button" data-f="square" aria-pressed="false">Square</button><button type="button" data-f="landscape" aria-pressed="false">Landscape</button><button type="button" data-f="post" aria-pressed="false">Post image</button></div>
+        <div class="screen portrait" id="screen"><canvas id="reel" width="720" height="1280" aria-label="Preview of the draft"></canvas></div>
+        <div class="row cs-vid"><button class="btn ghost" type="button" id="reelPlay">Play preview</button><button class="btn" type="button" id="reelRec">Make the reel</button><span class="prog" id="reelProg" hidden><i></i></span></div>
+        <div class="row cs-post" hidden><div class="seg" role="group" aria-label="Post style" id="postStyle"><button type="button" data-d="editorial" aria-pressed="true">Editorial</button><button type="button" data-d="statement" aria-pressed="false">Price first</button><button type="button" data-d="blueprint" aria-pressed="false">Blueprint</button></div><button class="btn" type="button" id="postDl">Download the post</button></div>
+        <div class="out" id="reelOut" hidden></div>
+        <p class="status" id="reelStatus"></p>
+      </div>
+      <div class="cs-copy">
+        <div class="cs-caphead"><div><span class="label">Captions</span><p class="fine" style="margin:4px 0 0">Written from the listing in this browser. No AI service, nothing sent.</p></div><button class="btn ghost sm" type="button" id="csShuffle">Shuffle wording</button></div>
+        <div class="cs-caps" id="csCaps"></div>
+        <div class="cs-check">
+          <div class="cs-state" id="csState" aria-live="polite"><b>Draft</b><span>Tick all three to mark it ready.</span></div>
+          <ul class="cs-list" id="preflight" aria-label="Checks before it posts"></ul>
+        </div>
+        <details class="ev"><summary>How the drafts are made</summary><div class="evb">
+          <p>The reel is four scenes drawn on a canvas from the car's own photo: the car, the price, the facts, and a call to action. It's recorded in your browser with MediaRecorder (WebM where supported), with a caption file to match. The post image is drawn the same way at 4:5.</p>
+          <p>Captions come from hand-written templates filled with the listing's own fields. Nothing is generated by an AI service and nothing leaves this tab. Every frame and caption card carries the listing's truth label.</p>
+        </div></details>
+      </div>
+    </div>
+    <div class="board">
+      <div>
+        <h3>Every ad checked before it runs.</h3>
+        <p style="margin-top:10px;max-width:46ch">Example campaigns against the brand rules. Hollow marks need a fix.</p>
+        <div class="ci" id="ci" style="margin-top:22px"></div>
+        <details class="ev"><summary>The five brand checks</summary><div class="evb" id="ciEv"></div></details>
+      </div>
+      <div>
+        <h3>Co-op money, claimed.</h3>
+        <p style="margin-top:10px;max-width:46ch">Hours off the team each month, and co-op claimed with full evidence.</p>
+        <div id="coop" style="margin-top:22px;display:grid;gap:26px"></div>
+        <details class="ev"><summary>Hours and rebate assumptions</summary><div class="evb" id="coopEv"></div></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 <!-- ============ the stock: three cars large, then the wall -->
 <section class="stock" id="stock" aria-labelledby="stockH">
   <div class="wrap stock-head"><h2 id="stockH">48 cars, <em>every one a render.</em></h2><p class="lede">Simulated stock for a fictional dealer, so you can see the idea without anyone's real cars.</p></div>
@@ -185,45 +232,7 @@
 </section>
 
 
-<!-- ============ marketing studio -->
-<section class="sec compact" id="market" aria-labelledby="mkH">
-  <div class="wrap">
-    <div class="head">
-      <h2 id="mkH">A reel for every car.</h2>
-      <p class="lede">Pick a car. Portrait, square or landscape, with its price and facts, ready to post once someone approves it.</p>
-    </div>
-    <div class="mk">
-      <div class="screen portrait" id="screen"><canvas id="reel" width="720" height="1280" aria-label="Reel preview"></canvas></div>
-      <div class="mkctl">
-        <div><span class="label">Car</span><div class="picker" id="picker" role="group" aria-label="Choose a car for the reel" style="margin-top:8px"></div></div>
-        <div class="row"><div class="seg" role="group" aria-label="Format" id="fmt"><button type="button" data-f="portrait" aria-pressed="true">Portrait</button><button type="button" data-f="square" aria-pressed="false">Square</button><button type="button" data-f="landscape" aria-pressed="false">Landscape</button></div></div>
-        <div class="row"><button class="btn ghost" type="button" id="reelPlay">Play preview</button><button class="btn" type="button" id="reelRec">Make the video</button><span class="prog" id="reelProg" hidden><i></i></span></div>
-        <div class="out" id="reelOut" hidden></div>
-        <p class="status" id="reelStatus" style="color:var(--rose)"></p>
-        <ul class="pre" id="preflight" aria-label="Checks before it posts"></ul>
-        <details class="ev"><summary>How the reel is made</summary><div class="evb">
-          <p>Four scenes drawn on a canvas in your browser from the car's own photo or render: a slow camera move, the price, the facts, and a call to action. Nothing is uploaded. The video is recorded with the browser's MediaRecorder (WebM where supported), with a caption file to match.</p>
-          <p>Every frame carries the listing's truth label. Prices and facts come from the same record an assistant reads.</p>
-        </div></details>
-      </div>
-    </div>
-    <div class="stills" id="stills"></div>
-    <div class="board">
-      <div>
-        <h3>Every ad checked before it runs.</h3>
-        <p style="margin-top:10px;max-width:46ch">Example campaigns against the brand rules. Hollow marks need a fix.</p>
-        <div class="ci" id="ci" style="margin-top:22px"></div>
-        <details class="ev"><summary>The five brand checks</summary><div class="evb" id="ciEv"></div></details>
-      </div>
-      <div>
-        <h3>Co-op money, claimed.</h3>
-        <p style="margin-top:10px;max-width:46ch">Hours off the team each month, and co-op claimed with full evidence.</p>
-        <div id="coop" style="margin-top:22px;display:grid;gap:26px"></div>
-        <details class="ev"><summary>Hours and rebate assumptions</summary><div class="evb" id="coopEv"></div></details>
-      </div>
-    </div>
-  </div>
-</section>
+
 
 
 <!-- ============ connect your data -->
@@ -236,10 +245,10 @@
     <div id="flowHost"></div>
     <div class="tryx">
       <div>
-        <h3>Try it with an export.</h3>
-        <p style="margin-top:10px;max-width:40ch">Drop a CSV, or use a made-up sample. Files are read in this tab and never uploaded.</p>
+        <h3>Try it with your own export.</h3>
+        <p style="margin-top:10px;max-width:40ch">Drop in a CSV from your DMS, or use one of our made-up samples. The file stays in this browser tab. Nothing is uploaded.</p>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a CSV export to read in this tab" style="margin-top:20px">
-          <b style="color:var(--on-deep);font-weight:500">Drop a CSV here, or choose one</b>
+          <b style="color:var(--on-deep);font-weight:500">Drop a CSV here, or choose a file</b>
           <span class="fine" style="color:var(--on-deep-3)">Deals, stock, repair orders, parts, leads, spend, footfall or health checks</span>
           <input type="file" id="file" accept=".csv,text/csv" hidden>
         </div>
@@ -263,7 +272,7 @@
     <div class="truths">
       <div><span class="chip" data-t="src">Source</span><p>Published or measured, with the source named.</p></div>
       <div><span class="chip" data-t="data">Your data</span><p>Read from an export you supplied, in this tab only.</p></div>
-      <div><span class="chip" data-t="est">Estimate</span><p>An assumption or benchmark, with its basis in the drawer.</p></div>
+      <div><span class="chip" data-t="est">Estimated</span><p>An assumption or benchmark, with its basis in the drawer.</p></div>
       <div><span class="chip">Simulated</span><p>Made by the model. Never a real figure.</p></div>
       <div><span class="chip" data-t="prop">Proposed</span><p>An idea or partner not yet in place.</p></div>
     </div>
@@ -278,7 +287,7 @@
 
 <footer><div class="wrap">
   <div class="sign">assembl</div>
-  <p>An assembl lab demonstration. Harbour Lane Motors (demo) is fictional: its sites, stock, people and numbers are Simulated. assembl works alongside Trade Me, AutoPlay, Motorcentral and each dealer's DMS, and publishes a dealer's own stock only on that dealer's instruction.</p><p class="fine">No manufacturer, distributor or dealer marks are reproduced. Range tints are chosen for this model. Not tax advice.</p>
+  <p>An assembl lab demo. Harbour Lane Motors (demo) is made up: its sites, stock, people and numbers are all Simulated. assembl works alongside Trade Me, AutoPlay, Motorcentral and each dealer's DMS, and only publishes a dealer's own stock when that dealer asks it to.</p><p class="fine">No manufacturer, distributor or dealer logos are used. Range colours were picked for this demo. Not tax advice.</p>
 </div></footer>
 </body>
 </html>

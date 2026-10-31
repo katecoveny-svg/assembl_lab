@@ -39,3 +39,24 @@ const dark = new Set();
 bar.classList.add("dark");   // the page opens on the dark showroom
 const dio = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? dark.add(e.target) : dark.delete(e.target))); bar.classList.toggle("dark", dark.size > 0); }, { rootMargin: "-2px 0px -97% 0px" });
 ["#show", "#simBand", "#agents", "#desk", "#connect"].forEach((s) => { const el = $(s); if (el) dio.observe(el); });
+
+// the four steps: each lights as it reaches the reading line, and the line between them fills to match (reduced motion: all lit)
+const steps = $("#steps4");
+if (steps) {
+  const lis = [...steps.children];
+  const paint = () => {
+    if (reducedMQ.matches) { lis.forEach((li) => li.classList.add("on")); steps.style.setProperty("--p", "1"); return; }
+    const vh = innerHeight, tops = lis.map((li) => li.getBoundingClientRect().top), row = Math.abs(tops[1] - tops[0]) < 4;
+    const clamp = (x) => Math.max(0, Math.min(1, x));
+    // side by side: the line fills as the row climbs the screen; stacked: it follows the reading line down the list
+    const t = row ? clamp((vh * .88 - tops[0]) / (vh * .5)) : clamp((vh * .72 - tops[0]) / Math.max(1, tops[tops.length - 1] - tops[0]));
+    const lit = row ? (i) => tops[0] < vh * .88 && t >= i / (lis.length - 1) - .02 : (i) => tops[i] < vh * .72;
+    lis.forEach((li, i) => li.classList.toggle("on", lit(i)));
+    steps.style.setProperty("--p", t.toFixed(3));
+  };
+  let queued = false, near = false;
+  const onScroll = () => { if (near && !queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(); }); } };
+  new IntersectionObserver((es) => { near = es[0].isIntersecting; if (near) paint(); }, { rootMargin: "50% 0px 50% 0px" }).observe(steps);
+  addEventListener("scroll", onScroll, { passive: true }); addEventListener("resize", onScroll); reducedMQ.addEventListener?.("change", paint);
+  paint();
+}

@@ -18,7 +18,7 @@ export function createLocalEndpoint(stock, register, dealerName, stockNote, list
       [9, 12, 14].forEach((h, i) => { if (hash(c.id + k + i) % 3 === 0) return; const ds = d.toISOString().slice(0, 10); out.push({ start: `${ds}T${String(h).padStart(2, "0")}:00:00+13:00`, label: `${nz(d)}, ${h > 12 ? h - 12 : h}${h >= 12 ? "pm" : "am"}`, day: dn[0].toUpperCase() + dn.slice(1), date: ds }); }); }
     return out.slice(0, 3); }
   function notice(c) { const f = (c.cin && c.cin.fields) || [], m = {}, truth = {}, labels = {};
-    f.forEach((x) => { if (x.status === "na" || x.status === "n/a") return; m[x.key] = x.status === "missing" ? null : x.value ?? null; labels[x.key] = x.label; truth[x.key] = x.status === "missing" ? "Missing" : x.status === "derived" || x.status === "partial" ? "Estimate" : (x.truth || "Simulated"); });
+    f.forEach((x) => { if (x.status === "na" || x.status === "n/a") return; m[x.key] = x.status === "missing" ? null : x.value ?? null; labels[x.key] = x.label; truth[x.key] = x.status === "missing" ? "Missing" : x.status === "derived" || x.status === "partial" ? "Estimated" : (x.truth || "Simulated"); });
     return { m, truth, labels, present: f.filter((x) => x.status === "shown" || x.status === "derived").length, total: f.filter((x) => x.status !== "na" && x.status !== "n/a").length, missing: f.filter((x) => x.status === "missing").map((x) => ({ key: x.key, label: x.label })) }; }
   const regOf = (c) => register[`${c.make}|${c.model}|${c.year}`] || null;
 
@@ -74,11 +74,11 @@ export function createLocalEndpoint(stock, register, dealerName, stockNote, list
     running_cost(a) {
       const c = byId[a.car_id]; if (!c) throw new Error(`No car ${a.car_id}`);
       const F = window.DEALER.FUEL, g = regOf(c), km = a.km_per_week || 200, ev = c.fuel === "electric";
-      const econ = ev ? { value: 17, unit: "kWh/100km", truth: "Estimate" } : g && g.ratedEconomy ? { value: g.ratedEconomy.lPer100km * 1.15, unit: "L/100km", truth: "Estimate", basis: "Rated register figure plus 15% for real-world use" } : { value: { hatch: 6.2, suv: 8.4, wagon: 8, ute: 9.5, van: 10 }[c.body] || 8, unit: "L/100km", truth: "Estimate" };
+      const econ = ev ? { value: 17, unit: "kWh/100km", truth: "Estimated" } : g && g.ratedEconomy ? { value: g.ratedEconomy.lPer100km * 1.15, unit: "L/100km", truth: "Estimated", basis: "Rated register figure plus 15% for real-world use" } : { value: { hatch: 6.2, suv: 8.4, wagon: 8, ute: 9.5, van: 10 }[c.body] || 8, unit: "L/100km", truth: "Estimated" };
       const energy = ev ? km * econ.value / 100 * F.kwh : km * econ.value / 100 * (c.fuel === "diesel" ? F.diesel : F.petrol);
       const lines = [{ key: "energy", label: ev ? "Charging at home" : c.fuel === "diesel" ? "Diesel" : "Petrol", weekly: +energy.toFixed(2), truth: "Latest published", period: F.date }];
-      if (ev || c.fuel === "diesel") lines.push({ key: "ruc", label: "Road user charges", weekly: +(km / 1000 * (ev ? 76 : 76)).toFixed(2), truth: "Estimate" });
-      lines.push({ key: "wof_licence", label: "WOF and licence", weekly: 3.56, truth: "Estimate" }, { key: "maintenance", label: "Servicing, tyres, brakes", weekly: c.year < 2018 ? 15.4 : 12.3, truth: "Estimate" });
+      if (ev || c.fuel === "diesel") lines.push({ key: "ruc", label: "Road user charges", weekly: +(km / 1000 * (ev ? 76 : 76)).toFixed(2), truth: "Estimated" });
+      lines.push({ key: "wof_licence", label: "WOF and licence", weekly: 3.56, truth: "Estimated" }, { key: "maintenance", label: "Servicing, tyres, brakes", weekly: c.year < 2018 ? 15.4 : 12.3, truth: "Estimated" });
       const total = lines.reduce((s, l) => s + l.weekly, 0);
       const sc = { car: { id: c.id, title: c.title, truth: "Simulated" }, economy: econ, fuel: c.fuel, kmPerWeek: km, lines, totalWeekly: +total.toFixed(2), totalAnnual: Math.round(total * 52), notIncluded: ["insurance", "finance", "depreciation", "parking and tolls"] };
       return { sc, text: `About ${dollars(total)} a week at ${km} km a week. Estimate.` };

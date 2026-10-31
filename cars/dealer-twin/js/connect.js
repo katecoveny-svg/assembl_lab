@@ -53,8 +53,8 @@ export function initConnect() {
       <div class="tbl">${Object.keys(det.map).map((k) => `<span class="ok">${esc(k)}</span>`).join("")}${v.ignored.slice(0, 6).map((k) => `<span>${esc(k)} · ignored</span>`).join("")}${v.pii.map((k) => `<span style="background:#5A1F28">${esc(k)} · dropped</span>`).join("")}</div>
       ${v.reasons.length ? `<p class="fine" style="color:var(--on-deep-3)">${v.reasons.map((r) => `${r.n} ${esc(r.ex)}`).join("; ")}</p>` : ""}
       <p style="color:var(--on-deep-2)">${v.range ? `${esc(v.range[0])} to ${esc(v.range[1])}. ` : ""}The twin now reads ${figs.map((f) => esc(NAMES[f])).join(", ").toLowerCase()} from this file; scroll up and the Whole site tile has switched. ${mapped} columns matched.</p>
-      <div class="row"><button class="btn ghost sm" type="button" id="cnReset">Back to simulated</button></div>`;
-    $("#cnReset").onclick = () => { sim.clearData(); res.innerHTML = `<p style="color:var(--on-deep-3)">Back to simulated. Nothing was kept.</p>`; };
+      <div class="row"><button class="btn ghost sm" type="button" id="cnReset">Clear it and go back to simulated</button></div>`;
+    $("#cnReset").onclick = () => { sim.clearData(); res.innerHTML = `<p style="color:var(--on-deep-3)">Cleared. You're back on simulated numbers, and nothing was kept.</p>`; };
   }
   $$("[data-sample]").forEach((b) => b.onclick = () => read(`sample-${b.dataset.sample}.csv (made up)`, D.sampleCSV(b.dataset.sample)));
   drop.onclick = () => file.click(); drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); file.click(); } };
