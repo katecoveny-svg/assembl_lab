@@ -32,7 +32,8 @@
       steps:cfg.steps.map(x=>({key:x.k,title:x.lab})),
       controls:(cfg.controls||[]).map(c=>({...controlInfo(c,s),onThisStep:shown.has(c.id||c.type)})),
       readouts:readouts(),challenges:st.k==="test"?(cfg.challenges||[]).map((c,i)=>({n:i+1,q:strip(c.q)})):undefined,
-      state:stateSummary(s),papers:(cfg.papers||[]).map(p=>p.label),machines:cat}}
+      state:stateSummary(s),papers:(cfg.papers||[]).map(p=>p.label),
+      questionBank:cfg.questionBank?cfg.questionBank.list().map((x,i)=>({n:i+1,section:x.sec,step:x.step,q:x.q.slice(0,300),addedByAllen:!!x.added})):undefined,machines:cat}}
 
   // ---------- what Allen can do. Each action runs through the machine's own setters and is shown in the chat.
   function act(use){const k=cur(),i=use.input||{};
@@ -40,6 +41,8 @@
       line(`<a class="al-card" href="/study/${esc(m.href)}"><b>${esc(m.title)}</b><span>${esc(i.why||m.blurb||"")}</span></a>`);return {ok:true,shown:m.title}}
     if(!k)return {error:"No machine is open on this page. Use suggest_machine to point to one."};
     const {cfg,api}=k,s=api.state;
+    if(use.name==="add_question"){if(!cfg.questionBank)return {error:"This machine has no practice question bank."};const q=cfg.questionBank.add(i);if(!q)return {error:"Question too short."};
+      line(`<span class="al-act">Added a practice question</span>`);return {ok:true,added:q.q.slice(0,120),total:cfg.questionBank.list().length}}
     if(use.name==="go_to_step"){const n=cfg.steps.findIndex(x=>x.k===i.step);if(n<0)return {error:"Unknown step. Steps: "+cfg.steps.map(x=>x.k).join(", ")};
       api.setStep(n);line(`<span class="al-act">Went to <b>${esc(cfg.steps[n].lab)}</b></span>`);return {ok:true,step:cfg.steps[n].lab,readouts:readouts()}}
     const c=(cfg.controls||[]).find(x=>(x.id||x.type)===i.id);if(!c)return {error:"Unknown control. Controls: "+(cfg.controls||[]).map(x=>x.id||x.type).join(", ")};
@@ -133,6 +136,7 @@
   // anything on the page can open Allen: the corner dog, the past-papers card, a failed challenge
   document.addEventListener("click",e=>{const b=e.target.closest("[data-allen]");if(!b||w.contains(b))return;e.preventDefault();const m=b.dataset.allen;open(m==="exam"?"exam":"");if(m==="hint"||m==="explain")ask(null,m)});
   addEventListener("allen:open",e=>open(e.detail&&e.detail.mode));
+  addEventListener("allen:ask",e=>{const d=e.detail||{};if(!d.text)return;open();ask(d.text,"exam",null,d.display||d.text)});
 
   async function send(mark){
     busy=true;form.querySelector("button").disabled=true;const typing=document.createElement("div");typing.className="alt-typing";typing.textContent=(look().name||"Allen")+" is thinking";log.appendChild(typing);log.scrollTop=log.scrollHeight;

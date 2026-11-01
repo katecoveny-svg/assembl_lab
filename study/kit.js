@@ -18,7 +18,7 @@ const MTINT={heart:"blush",slushie:"sky",space:"lavender",reactions:"peach",vend
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
-  read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",ai:"digital",
+  read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",socials:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
 const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
 const accentFor=id=>DEEP[tintName(id)];

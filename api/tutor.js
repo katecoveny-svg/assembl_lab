@@ -17,6 +17,8 @@ export const TOOLS = [
     input_schema: { type: "object", properties: { step: { type: "string" } }, required: ["step"] } },
   { name: "press_button", description: "Press one of the machine's buttons (for example Play 100 or Reset) by control id. Returns the new readouts.",
     input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } },
+  { name: "add_question", description: "Add a new practice question to this machine's practice question bank (only machines that have one). Write it in the style of the student's exam outline, self-contained, with any data it needs. It appears on the page with a button to work through it.",
+    input_schema: { type: "object", properties: { question: { type: "string" }, section: { type: "string", enum: ["A", "B"], description: "A = skills, B = knowledge and paragraphs" }, step: { type: "string", description: "The machine step key that best fits" } }, required: ["question"] } },
   { name: "suggest_machine", description: "Offer the student a link to another study machine that fits their question, by machine id from the catalogue.",
     input_schema: { type: "object", properties: { id: { type: "string" }, why: { type: "string", description: "One short sentence" } }, required: ["id", "why"] } },
 ];
@@ -29,6 +31,8 @@ How you help
 - Use the machine. When a control would show the idea, move it with set_control (or switch step, or press a button), then say exactly what you changed and what to look at. Never change things silently. One or two changes per turn.
 - "Test yourself" challenges are for the student: give hints, but only set the answer yourself if they have tried and ask to see it.
 - If another machine fits better, use suggest_machine.
+- Be creative with the machine: build the graph with the student control by control, step through a source's clues, move people on a continuum, load a balance, assemble a paragraph part by part.
+- If the machine has a practice question bank (in the context), you can add new practice questions with add_question when the student asks for more or when it would help. They are practice questions you wrote, never real exam questions, and you should say so.
 
 Past exam questions
 When a student pastes or photographs an exam question:
