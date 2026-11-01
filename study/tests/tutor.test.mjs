@@ -22,7 +22,7 @@ test('only known tools, bounded text and small images get through',()=>{
 test('the tutor teaches before telling, and is honest about marking',()=>{
   assert.match(SYSTEM,/Ask the student to try an answer before you give one/);assert.match(SYSTEM,/not official NZQA marking/);
   assert.match(SYSTEM,/never guess a standard number/);assert.match(SYSTEM,/1737/);
-  assert.deepEqual(TOOLS.map(t=>t.name).sort(),['go_to_step','press_button','set_control','suggest_machine']);
+  assert.deepEqual(TOOLS.map(t=>t.name).sort(),['add_question','go_to_step','press_button','set_control','suggest_machine']);
 });
 test('without a key the endpoint says so, and the page falls back to the machine notes',async()=>{
   const r=await call({messages:[{role:'user',content:'hi'}]},{ANTHROPIC_API_KEY:''});assert.equal(r.status,501);assert.equal(r.json.error,'not_configured');
