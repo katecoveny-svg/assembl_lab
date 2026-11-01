@@ -37,3 +37,8 @@ test('student turns are capped per visitor; tool round trips are not counted',as
     assert.equal((await go({messages:[{role:'user',content:'second'}]})).status,429);
   }finally{globalThis.fetch=real}
 });
+test('a GET is a safe setup check: it says whether the key is there, never the key',async()=>{
+  let status=200,json;const res={status(n){status=n;return res},json(o){json=o},setHeader(){}};
+  const old={...process.env};process.env.ANTHROPIC_API_KEY='sk-secret-value';try{await handler({method:'GET',headers:{}},res)}finally{process.env=old}
+  assert.equal(status,200);assert.equal(json.configured,true);assert.ok(!JSON.stringify(json).includes('sk-secret'));
+});

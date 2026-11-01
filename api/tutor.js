@@ -92,8 +92,10 @@ const isToolReturn = m => m.content.every(b => b.type === "tool_result");
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  // A setup check anyone can open in a browser: says whether the key reached this deployment, never the key itself.
+  if (req.method === "GET") return res.status(200).json({ type: "assembl.tutor.status", configured: !!process.env.ANTHROPIC_API_KEY, model: MODEL, sharedLimits: !!process.env.UPSTASH_REDIS_REST_URL });
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(501).json({ error: "not_configured" });
+  if (!process.env.ANTHROPIC_API_KEY) { console.warn("tutor: ANTHROPIC_API_KEY is not set on this deployment; Allen is answering from machine notes"); return res.status(501).json({ error: "not_configured" }); }
   const body = req.body || {}, messages = cleanMessages(body.messages);
   if (!messages) return res.status(400).json({ error: "bad_request" });
   const context = JSON.stringify(body.context || {}).slice(0, MAX_CONTEXT);
