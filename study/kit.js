@@ -502,6 +502,8 @@ function mount(cfg){logStudy("open");
   const api={redraw,get step(){return cfg.steps[step]},setStep,state:s};
   // Allen the tutor (study/tutor.js) reads and works this machine through the same api
   try{window.StudyKit.current={api,cfg,mid};dispatchEvent(new Event("studykit:mounted"))}catch(e){}
+  // the plain-language guide: how-it-works bar, first-visit tour, walkthrough video (study/guide.js)
+  try{const g=document.createElement("script");g.src=new URL("guide.js",KIT_SRC).href;g.defer=true;document.head.appendChild(g)}catch(e){}
   if(cfg.lesson)lesson=mountLesson(cfg,api,$("k-lesson"),$("k-lesson-work"));
   let buddy=null;try{buddy=allenCorner(api,cfg,$("k-al-slot"))}catch(e){}
   const alBtn=$("k-al"),showAl=()=>{const m=!!alLoad().minimal;alBtn.setAttribute("aria-pressed",m?"true":"false");const t=m?"Tiny Allen is on: a small badge with no speech bubbles":"Tiny Allen: shrink Allen to a small badge";alBtn.title=t;alBtn.setAttribute("aria-label",t)};showAl();

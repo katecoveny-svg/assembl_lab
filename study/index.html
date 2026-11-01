@@ -357,7 +357,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
       <p class="kick"><span class="live" aria-hidden="true"></span>Study machines · Aotearoa</p>
       <h1 id="h-hero">See it. Try it.<br><em>Understand it.</em></h1>
       <p class="intro"><span lang="mi">Kia ora.</span> Explore 36 familiar machines plus Heart Pump Lab. Choose your year, change a setting and test an idea.</p>
-      <div class="cta"><a class="hb primary" href="#h-mach">Find a machine <i class="cube" aria-hidden="true"></i></a><a class="hb" href="#h-index">Find my exams</a></div>
+      <div class="cta"><a class="hb primary" href="#find">Find a machine <i class="cube" aria-hidden="true"></i></a><a class="hb" href="#h-index">Find my exams</a></div>
       <a class="allen-chip" href="#den" id="heroAllen"><img src="allen/pastel-mint-mark.webp" alt="" width="256" height="256" decoding="async"><span><b id="heroName">Allen</b><small>Your study sidekick · visit his den</small></span></a>
     </div>
     <div class="hstage" id="bench" role="group" aria-label="Five of the study machines">
@@ -377,6 +377,14 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
   </section>
 
 
+<section class="finder" id="find" aria-labelledby="find-h">
+  <h2 id="find-h">What are you studying?</h2>
+  <p class="find-sub">Type a topic, or tap your subject. Every machine works the same way: pick a topic, change the controls, read the notes, test yourself.</p>
+  <label class="find-q"><span class="sr-only">Search the study machines</span><input id="find-q" type="search" placeholder="Try graphs, government, probability, forces, poetry…" autocomplete="off"></label>
+  <div class="find-subj" id="find-subj" role="group" aria-label="Subjects"></div>
+  <p class="find-n" id="find-n" role="status" aria-live="polite"></p>
+  <button class="find-vid" type="button" id="find-vid" hidden>▶ How the study machines work</button>
+</section>
 <nav class="lab-year-paths" aria-label="Study year groups"><a href="#junior">Years 7–8</a><a href="#y9" data-study-year="y9">Year 9</a><a href="#y10" data-study-year="y10">Year 10</a><a href="#l1" data-study-year="l1">Year 11 · NCEA 1</a><a href="#l2" data-study-year="l2">Year 12 · NCEA 2</a><a href="#l3" data-study-year="l3">Year 13 · NCEA 3</a></nav>
   <section class="block" aria-labelledby="h-mach">
     <p class="kick">01 / The bench</p>
@@ -485,14 +493,15 @@ const GROUPS=[["science","Science"],["biochem","Chemistry and biology"],["maths"
 const gearFor=id=>A.items.filter(it=>it.m&&it.m.includes(id));
 function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(it.id));
   const ex=m.tags.filter(t=>t.startsWith("NCEA")).map(t=>t.replace(/^NCEA /,"").replace(/^(L\d) .*?(\d{5})$/,"$1 · $2")),yrs=m.tags.filter(t=>/^Year/.test(t)).sort((a,b)=>parseInt(a.replace("Year ",""))-parseInt(b.replace("Year ","")));
+  const find=(m.title+" "+(m.desc||"")+" "+(m.blurb||"")+" "+(m.tags||[]).join(" ")).toLowerCase();
   const yr=yrs.length>1?`Years ${yrs[0].replace("Year ","")}–${yrs[yrs.length-1].replace("Year ","")}`:(yrs[0]||"");
-  return `<a class="app" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
+  return `<a class="app" data-find="${esc(find)}" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
   <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart"||id==="socials")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span>${ex.length?`<span class="app-ex">NCEA ${esc(ex.join(" + ").replace(/ \+ L1 · /g," + "))}</span>`:""}</span>
   <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
   <span class="app-foot"><span class="yr">${esc(yr)}</span>${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
 const byGroup={};Object.entries(D.machines).forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});
 $("machines").innerHTML=GROUPS.filter(([k])=>byGroup[k]).map(([k,label])=>{const list=byGroup[k].sort((a,b)=>(b[1].tags.some(t=>t.startsWith("NCEA"))?1:0)-(a[1].tags.some(t=>t.startsWith("NCEA"))?1:0));
-  return `<div class="subj" style="--acc:${K.accentFor(list[0][0])};--acc-tint:${K.tintFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
+  return `<div class="subj" id="subj-${k}" data-subj="${k}" style="--acc:${K.accentFor(list[0][0])};--acc-tint:${K.tintFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
 
 
 // ---- hero bench: name each machine from data.js, lean the bench towards the pointer
@@ -598,4 +607,32 @@ render();
 })();
 </script>
 
-<script src="/study/navigation-paths.js" defer></script><script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script></body></html>
+<script src="/study/navigation-paths.js" defer></script><script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script><style>
+.finder{margin:0 0 22px;padding:22px;border-radius:24px;background:#F5F1F2;border:1px solid rgba(36,11,33,.08)}
+.finder h2{margin:0 0 6px;font:600 clamp(24px,3vw,32px)/1.1 "Instrument Sans",system-ui,sans-serif;letter-spacing:-.02em}
+.finder .find-sub{margin:0 0 14px;color:#654A4E;font-size:15px;line-height:1.5;max-width:70ch}
+.find-q input{width:100%;box-sizing:border-box;font:500 18px "Instrument Sans",system-ui,sans-serif;padding:14px 18px;border-radius:16px;border:1px solid rgba(36,11,33,.2);background:#fff;color:#240B21}
+.find-subj{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}.find-subj button,.find-vid{all:unset;cursor:pointer;padding:9px 15px;border-radius:999px;background:#fff;border:1px solid rgba(36,11,33,.16);font:600 14px "Instrument Sans",sans-serif;color:#240B21}
+.find-subj button[aria-pressed=true]{background:#240B21;color:#FFFDFB;border-color:#240B21}.find-vid{background:#240B21;color:#FFFDFB;margin-top:6px}
+.find-n{margin:8px 0 0;font:500 13px "IBM Plex Mono",monospace;color:#916A70}.sr-only{position:absolute;left:-9999px}
+.find-subj button:focus-visible,.find-vid:focus-visible,.find-q input:focus-visible{outline:2px solid #916A70;outline-offset:2px}
+@media (prefers-color-scheme:dark){.finder{background:#271a2a;border-color:rgba(245,241,242,.1)}.finder .find-sub{color:#cdb8c2}.find-q input,.find-subj button{background:#140e16;color:#F5F1F2;border-color:rgba(245,241,242,.2)}.find-subj button[aria-pressed=true],.find-vid{background:#F5F1F2;color:#240B21}}
+</style>
+<script>
+// The study finder: search and subject buttons filter the machine cards; the count says what is showing.
+(function(){const q=document.getElementById("find-q"),box=document.getElementById("find-subj"),n=document.getElementById("find-n");let subj="";
+  const ready=()=>document.querySelectorAll("#machines .subj").length;
+  function build(){const groups=[...document.querySelectorAll("#machines .subj")];box.innerHTML=`<button type="button" data-s="" aria-pressed="true">All subjects</button>`+groups.map(g=>`<button type="button" data-s="${g.dataset.subj}" aria-pressed="false">${g.querySelector("h3").childNodes[1].textContent.trim()}</button>`).join("");filter()}
+  function filter(){const words=q.value.toLowerCase().split(/\s+/).filter(Boolean);let shown=0;
+    document.querySelectorAll("#machines .subj").forEach(g=>{let any=0;g.querySelectorAll(".app").forEach(a=>{const ok=(!subj||g.dataset.subj===subj)&&words.every(w=>a.dataset.find.includes(w));a.hidden=!ok;if(ok){any++;shown++}});g.hidden=!any});
+    n.textContent=words.length||subj?(shown?`${shown} machine${shown===1?"":"s"} found`:"Nothing matches yet. Try a shorter word, or ask Allen (bottom right)."):""}
+  q.addEventListener("input",()=>{filter();if(q.value.length>2)document.getElementById("machines").scrollIntoView({block:"start",behavior:"smooth"})});
+  box.addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;subj=b.dataset.s;box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));filter();document.getElementById(subj?"subj-"+subj:"machines").scrollIntoView({block:"start",behavior:"smooth"})});
+  (function wait(){ready()?build():setTimeout(wait,150)})();
+  fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos.study;if(!v)return;const b=document.getElementById("find-vid");b.hidden=false;b.textContent=`▶ How the study machines work · ${v.dur} s`;
+    b.onclick=()=>{const d=document.createElement("dialog");d.style.cssText="width:min(960px,calc(100vw - 24px));padding:0;border:0;border-radius:20px;background:#140e16;overflow:hidden";
+      d.innerHTML=`<video controls autoplay playsinline style="display:block;width:100%" poster="/study/videos/study.jpg"><source src="/study/videos/study.mp4" type="video/mp4"><track kind="captions" srclang="en" label="English" src="/study/videos/study.vtt" default></video><div style="display:flex;justify-content:flex-end;padding:10px"><button type="button" style="all:unset;cursor:pointer;padding:8px 14px;border-radius:10px;background:#F5F1F2;color:#240B21;font-weight:600">Close</button></div>`;
+      document.body.appendChild(d);d.querySelector("button").onclick=()=>d.close();d.addEventListener("close",()=>d.remove());d.showModal()}}).catch(()=>{});
+})();
+</script>
+</body></html>
