@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta property="og:type" content="website"><meta property="og:site_name" content="assembl"><meta property="og:title" content="Study machines · See it. Try it. Understand it."><meta property="og:description" content="Free interactive study machines for Years 7–13 and NCEA, made in Aotearoa. Change a setting, watch what happens, then test yourself. Allen the study buddy works through exam questions with you."><meta property="og:url" content="https://www.assembl.co.nz/study"><meta property="og:image" content="https://assembl-lab.vercel.app/study/share/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Study machines on a bench: a claw machine, a vending machine, an atom model and particles, with Allen the dachshund. See it. Try it. Understand it."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://assembl-lab.vercel.app/study/share/og.jpg"><link rel="manifest" href="/study/manifest.webmanifest"><link rel="apple-touch-icon" href="/study/app/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/study/app/icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>assembly · study machines</title>
 <meta name="description" content="Interactive 3D study machines for NCEA and Years 9–10, made in Aotearoa. See how it works, piece by piece, then nail it in the exam.">
 <meta name="theme-color" content="#FFFDFB">
@@ -349,7 +349,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
 <div class="wrap">
   <header class="top">
     <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
-    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a></nav>
+    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
@@ -611,6 +611,7 @@ render();
 .finder{margin:0 0 22px;padding:22px;border-radius:24px;background:#F5F1F2;border:1px solid rgba(36,11,33,.08)}
 .finder h2{margin:0 0 6px;font:600 clamp(24px,3vw,32px)/1.1 "Instrument Sans",system-ui,sans-serif;letter-spacing:-.02em}
 .finder .find-sub{margin:0 0 14px;color:#654A4E;font-size:15px;line-height:1.5;max-width:70ch}
+.top .getapp{all:unset;cursor:pointer;margin-left:6px;padding:8px 16px;border-radius:999px;background:#240B21;color:#FFFDFB;font:600 14px "Instrument Sans",system-ui,sans-serif}.top .getapp:focus-visible{outline:2px solid #916A70;outline-offset:2px}@media (prefers-color-scheme:dark){.top .getapp{background:#F5F1F2;color:#240B21}}
 .find-q input{width:100%;box-sizing:border-box;font:500 18px "Instrument Sans",system-ui,sans-serif;padding:14px 18px;border-radius:16px;border:1px solid rgba(36,11,33,.2);background:#fff;color:#240B21}
 .find-subj{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}.find-subj button,.find-vid{all:unset;cursor:pointer;padding:9px 15px;border-radius:999px;background:#fff;border:1px solid rgba(36,11,33,.16);font:600 14px "Instrument Sans",sans-serif;color:#240B21}
 .find-subj button[aria-pressed=true]{background:#240B21;color:#FFFDFB;border-color:#240B21}.find-vid{background:#240B21;color:#FFFDFB;margin-top:6px}
@@ -618,6 +619,7 @@ render();
 .find-subj button:focus-visible,.find-vid:focus-visible,.find-q input:focus-visible{outline:2px solid #916A70;outline-offset:2px}
 @media (prefers-color-scheme:dark){.finder{background:#271a2a;border-color:rgba(245,241,242,.1)}.finder .find-sub{color:#cdb8c2}.find-q input,.find-subj button{background:#140e16;color:#F5F1F2;border-color:rgba(245,241,242,.2)}.find-subj button[aria-pressed=true],.find-vid{background:#F5F1F2;color:#240B21}}
 </style>
+<script src="app.js" defer></script>
 <script>
 // The study finder: search and subject buttons filter the machine cards; the count says what is showing.
 (function(){const q=document.getElementById("find-q"),box=document.getElementById("find-subj"),n=document.getElementById("find-n");let subj="";
@@ -628,7 +630,11 @@ render();
     n.textContent=words.length||subj?(shown?`${shown} machine${shown===1?"":"s"} found`:"Nothing matches yet. Try a shorter word, or ask Allen (bottom right)."):""}
   q.addEventListener("input",()=>{filter();if(q.value.length>2)document.getElementById("machines").scrollIntoView({block:"start",behavior:"smooth"})});
   box.addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;subj=b.dataset.s;box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));filter();document.getElementById(subj?"subj-"+subj:"machines").scrollIntoView({block:"start",behavior:"smooth"})});
-  (function wait(){ready()?build():setTimeout(wait,150)})();
+  // Shared links: /study/?find=socials opens that machine; any other word fills the search (assembl.co.nz/study/<word>).
+  const want=(new URLSearchParams(location.search).get("find")||"").trim().toLowerCase().slice(0,60);
+  function deep(){if(!want)return;const m=document.querySelector(`#machines a[href$="m/${CSS.escape(want)}.html"]`);if(m){location.replace(m.href);return}
+    q.value=want.replace(/[-_]+/g," ");filter();document.getElementById("find").scrollIntoView({block:"start"})}
+  (function wait(){ready()?(build(),deep()):setTimeout(wait,150)})();
   fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos.study;if(!v)return;const b=document.getElementById("find-vid");b.hidden=false;b.textContent=`▶ How the study machines work · ${v.dur} s`;
     b.onclick=()=>{const d=document.createElement("dialog");d.style.cssText="width:min(960px,calc(100vw - 24px));padding:0;border:0;border-radius:20px;background:#140e16;overflow:hidden";
       d.innerHTML=`<video controls autoplay playsinline style="display:block;width:100%" poster="/study/videos/study.jpg"><source src="/study/videos/study.mp4" type="video/mp4"><track kind="captions" srclang="en" label="English" src="/study/videos/study.vtt" default></video><div style="display:flex;justify-content:flex-end;padding:10px"><button type="button" style="all:unset;cursor:pointer;padding:8px 14px;border-radius:10px;background:#F5F1F2;color:#240B21;font-weight:600">Close</button></div>`;

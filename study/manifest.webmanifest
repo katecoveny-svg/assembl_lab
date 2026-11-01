@@ -1,0 +1,27 @@
+{
+  "id": "/study/",
+  "name": "assembly · study machines",
+  "short_name": "Study",
+  "description": "Interactive study machines for Years 7–13 and NCEA, made in Aotearoa. Change a setting, watch what happens, test yourself. Allen the study buddy can work the machine with you.",
+  "lang": "en-NZ",
+  "start_url": "/study/?source=app",
+  "scope": "/study/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFFDFB",
+  "theme_color": "#240B21",
+  "categories": ["education", "kids"],
+  "icons": [
+    { "src": "/study/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/study/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/study/app/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/study/share/og.jpg", "sizes": "1200x630", "type": "image/jpeg", "form_factor": "wide", "label": "The study machines" },
+    { "src": "/study/share/story.jpg", "sizes": "1080x1920", "type": "image/jpeg", "form_factor": "narrow", "label": "See it. Try it. Understand it." }
+  ],
+  "shortcuts": [
+    { "name": "Find a machine", "url": "/study/?source=app#find", "icons": [{ "src": "/study/app/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Social studies exam", "url": "/study/m/socials.html", "icons": [{ "src": "/study/app/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
