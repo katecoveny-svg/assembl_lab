@@ -2,7 +2,10 @@
 (function(){
   // not inside a lab preview embed (the home page hero): the page around it already has its own button
   if(window.__labEmbed||(/[?&]lab-preview=1\b/.test(location.search)&&window.parent!==window))return;
-  const page=(document.currentScript&&document.currentScript.dataset.page)||document.documentElement.dataset.ask||"lab", KEY="ask:"+page+":"+new Date().toISOString().slice(0,10), MAX=2;
+  const page=(document.currentScript&&document.currentScript.dataset.page)||document.documentElement.dataset.ask||"lab";
+  // study pages get Allen, the study tutor, instead of the one-off explainer
+  if(page==="study"){const t=document.createElement("script");t.src="/study/tutor.js";t.defer=true;document.head.appendChild(t);return}
+  const KEY="ask:"+page+":"+new Date().toISOString().slice(0,10), MAX=2;
   let used=0;try{used=+localStorage.getItem(KEY)||0}catch(e){}
   const css=`.askb{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:45;font:500 15px "Instrument Sans",system-ui,sans-serif}
   .askb>button{all:unset;cursor:pointer;display:flex;gap:8px;align-items:center;padding:11px 16px;border-radius:999px;background:#240B21;color:#FFFDFB;box-shadow:0 14px 34px -14px rgba(36,11,33,.7)}

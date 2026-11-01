@@ -16,6 +16,9 @@
   "api/ask.js": {
    "maxDuration": 20
   },
+  "api/tutor.js": {
+   "maxDuration": 45
+  },
   "api/mcp.js": {
    "maxDuration": 30,
    "includeFiles": "api/_feeds/snapshots/**"

@@ -300,7 +300,7 @@ function allenCorner(api,cfg,parent){
   const say=box.querySelector(".al-say"),dog=box.querySelector(".al-dog");let look=alLoad(),mood="",hideT=0,moodT=0,nudgeT=0;
   function render(){look=alLoad();box.classList.toggle("mini",!!look.minimal);
     dog.innerHTML=allenSVG(look,{mood,box:"full"});
-    dog.setAttribute("aria-label",`${look.name||"Allen"}, your study dachshund. Press for a wiggle.`)}
+    dog.setAttribute("aria-label",`Ask ${look.name||"Allen"}, your study dachshund, for help`)}
   function speak(html,ms){if(look.minimal){say.hidden=true;return}clearTimeout(hideT);say.innerHTML=html;say.hidden=false;hideT=setTimeout(()=>{say.hidden=true},ms||3600)}
   function anim(cls,ms){const s=dog.querySelector(".allen");if(!s||calm())return;s.classList.remove("wiggle","tilt");void s.getBoundingClientRect();s.classList.add(cls);setTimeout(()=>s.classList.remove(cls),ms)}
   function setMood(m,ms){mood=m;render();clearTimeout(moodT);moodT=setTimeout(()=>{mood="";render()},ms)}
@@ -310,8 +310,8 @@ function allenCorner(api,cfg,parent){
       if(fresh.length){const L=alLoad();L.seen=[...new Set([...(L.seen||[]),...fresh])];alSave(L);
         speak(`New: <b>${fresh.map(k=>esc(ALLEN.label(k))).join(", ")}</b>. It's in my den on the home page.`,7000)}
       else speak(pick(CHEERS),3200)}
-    else{setMood("puzzled",2000);anim("tilt",1600);speak(pick(HMMS),3400)}}
-  dog.onclick=()=>{setMood("happy",1600);anim("wiggle",1100);sfx("yip");if(!look.minimal)speak(pick(PETS),2600)};
+    else{setMood("puzzled",2000);anim("tilt",1600);speak(`${pick(HMMS)} <button type="button" class="btn al-go" data-allen="hint">Ask me for a hint</button>`,7000)}}
+  dog.onclick=()=>{setMood("happy",1600);anim("wiggle",1100);sfx("yip");dispatchEvent(new CustomEvent("allen:open"))};
   say.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;const i=cfg.steps.findIndex(x=>x.k==="test");if(i>=0){api.setStep(i);say.hidden=true;const ch=document.getElementById("k-challenge");try{ch&&ch.scrollIntoView({block:"nearest",behavior:calm()?"auto":"smooth"})}catch(err){}}});
   const nav=document.querySelector("nav.steps"),stage=document.querySelector(".stage");let mq=null;try{mq=matchMedia("(max-width:820px)")}catch(e){}
   const slot=document.getElementById("k-al-slot");const place=()=>{const t=parent||slot||(mq&&mq.matches?stage:nav);if(t&&box.parentNode!==t)t.appendChild(box)};place();
@@ -423,7 +423,7 @@ function mount(cfg){logStudy("open");
       </div>
     </div>
   </section>
-  ${cfg.papers?.length?`<div class="card practise"><h3>Practise with the real thing</h3><div class="papers">${cfg.papers.map(p=>`<a class="btn" href="${p.url}" target="_blank" rel="noopener">${esc(p.label)} ↗</a>`).join("")}</div><p>Past papers, marking schedules and example answers are on NZQA's site. Do one under exam time, then mark it with the schedule.</p></div>`:""}
+  ${cfg.papers?.length?`<div class="card practise"><h3>Practise with the real thing</h3><div class="papers">${cfg.papers.map(p=>`<a class="btn" href="${p.url}" target="_blank" rel="noopener">${esc(p.label)} ↗</a>`).join("")}<button class="btn" type="button" data-allen="exam">Work through a question with Allen</button></div><p>Past papers, marking schedules and example answers are on NZQA's site. Do one under exam time, then mark it with the schedule.</p></div>`:""}
   ${KU.length?`<details class="card kupu-all"><summary><span class="kh">Kupu Māori in this machine</span><span class="kn">${KU.length} terms</span></summary><ul class="kupu-list">${KU.map(kupuItem).join("")}</ul><p class="kupu-src">Each term was checked against Te Aka Māori Dictionary, which includes the Ministry of Education's Māori-medium science (Te Reo Pūtaiao) and maths (Te Reo Pāngarau) dictionaries. Some ideas have more than one term, and usage can vary between iwi and schools, so check with your teacher which one your class uses.</p></details>`:""}
   <footer><p><span class="truth">Simulated</span>${cfg.truth||"A simplified model for learning. Check model answers with your teacher."}</p>${cfg.footer?`<p>${cfg.footer}</p>`:""}<p>Not made by or endorsed by NZQA or the Ministry of Education.</p><p class="as-foot">${LOCKUP}<span>assembly is made by assembl in Aotearoa.</span></p></footer>
 </div>`;
@@ -500,6 +500,8 @@ function mount(cfg){logStudy("open");
     const sel=()=>{const r=document.createRange();r.selectNodeContents($("k-exam"));const g=getSelection();g.removeAllRanges();g.addRange(r);b.textContent="Selected"};
     try{navigator.clipboard.writeText(txt).then(done,sel)}catch(e){sel()}};
   const api={redraw,get step(){return cfg.steps[step]},setStep,state:s};
+  // Allen the tutor (study/tutor.js) reads and works this machine through the same api
+  try{window.StudyKit.current={api,cfg,mid};dispatchEvent(new Event("studykit:mounted"))}catch(e){}
   if(cfg.lesson)lesson=mountLesson(cfg,api,$("k-lesson"),$("k-lesson-work"));
   let buddy=null;try{buddy=allenCorner(api,cfg,$("k-al-slot"))}catch(e){}
   const alBtn=$("k-al"),showAl=()=>{const m=!!alLoad().minimal;alBtn.setAttribute("aria-pressed",m?"true":"false");const t=m?"Tiny Allen is on: a small badge with no speech bubbles":"Tiny Allen: shrink Allen to a small badge";alBtn.title=t;alBtn.setAttribute("aria-label",t)};showAl();
