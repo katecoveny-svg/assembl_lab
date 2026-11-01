@@ -35,6 +35,72 @@
    ],
    "destination": "/cars/",
    "permanent": false
+  },
+  {
+   "source": "/",
+   "has": [
+    {
+     "type": "host",
+     "value": "study.assembl.co.nz"
+    }
+   ],
+   "destination": "/study/",
+   "permanent": false
+  },
+  {
+   "source": "/m/:path(.*)",
+   "has": [
+    {
+     "type": "host",
+     "value": "study.assembl.co.nz"
+    }
+   ],
+   "destination": "/study/m/:path",
+   "permanent": false
+  },
+  {
+   "source": "/year9/:path(.*)",
+   "has": [
+    {
+     "type": "host",
+     "value": "study.assembl.co.nz"
+    }
+   ],
+   "destination": "/study/year9/:path",
+   "permanent": false
+  },
+  {
+   "source": "/lessons/:path(.*)",
+   "has": [
+    {
+     "type": "host",
+     "value": "study.assembl.co.nz"
+    }
+   ],
+   "destination": "/study/lessons/:path",
+   "permanent": false
+  },
+  {
+   "source": "/patterns/:path(.*)",
+   "has": [
+    {
+     "type": "host",
+     "value": "study.assembl.co.nz"
+    }
+   ],
+   "destination": "/study/patterns/:path",
+   "permanent": false
+  },
+  {
+   "source": "/teacher.html",
+   "has": [
+    {
+     "type": "host",
+     "value": "study.assembl.co.nz"
+    }
+   ],
+   "destination": "/study/teacher.html",
+   "permanent": false
   }
  ],
  "headers": [

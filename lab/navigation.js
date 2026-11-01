@@ -3,6 +3,8 @@ if (!location.pathname.startsWith('/study/patterns/') && !location.pathname.star
 (() => {
 if(window.__labEmbed)return;
 const path=location.pathname;
+// on study.assembl.co.nz the root redirects into the study, so links back to the lab go to the lab's own address
+const LAB=location.hostname==='study.assembl.co.nz'?'https://lab.assembl.co.nz':'';
 // one lab nav for /, /discover/ and /study/: / and /discover/ ship this markup static, everything else gets it here
 const scoped=path==='/study/'||path==='/study/index.html'||path.startsWith('/study/year9/')||path.startsWith('/next/');
 if(!document.querySelector('link[href^="/lab/presentation.css"]')&&!document.querySelector('link[href^="/lab/catalogue-home.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='/lab/presentation.css';document.head.append(css)}
@@ -10,7 +12,7 @@ if(scoped)document.documentElement.dataset.labFrame=path.startsWith('/next/')?'n
 const here=path==='/'||path==='/index.html'?'explore':path.startsWith('/discover/')||path.startsWith('/instruments/')||path.startsWith('/study/patterns/')||path.startsWith('/study/bedazzle/')||path.startsWith('/next/')||path.startsWith('/ar/')||path.startsWith('/study/print/')?'discover':path.startsWith('/study/')?'study':'';
 let nav=document.getElementById('al-nav');
 if(!nav){nav=document.createElement('nav');nav.id='al-nav';nav.setAttribute('aria-label','assembl lab');
-  nav.innerHTML=`<a class="al-brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a><div class="al-destinations"><a data-k="explore" href="/#explore"><span class="al-long">The experiments</span><span class="al-short">Experiments</span></a><a data-k="discover" href="/discover/"><span class="al-long">Learn &amp; create</span><span class="al-short">Create</span></a><a data-k="study" href="/study/"><span class="al-long">Study machines</span><span class="al-short">Study</span></a><a data-k="about" href="/#about"><span class="al-long">About the lab</span><span class="al-short">About</span></a></div><a class="al-cta" href="https://assembl.co.nz/" target="_top"><span class="al-long">Build with assembl</span><span class="al-short">Build with us</span><i aria-hidden="true"></i></a>`;
+  nav.innerHTML=`<a class="al-brand" href="${LAB}/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a><div class="al-destinations"><a data-k="explore" href="${LAB}/#explore"><span class="al-long">The experiments</span><span class="al-short">Experiments</span></a><a data-k="discover" href="${LAB}/discover/"><span class="al-long">Learn &amp; create</span><span class="al-short">Create</span></a><a data-k="study" href="/study/"><span class="al-long">Study machines</span><span class="al-short">Study</span></a><a data-k="about" href="${LAB}/#about"><span class="al-long">About the lab</span><span class="al-short">About</span></a></div><a class="al-cta" href="https://assembl.co.nz/" target="_top"><span class="al-long">Build with assembl</span><span class="al-short">Build with us</span><i aria-hidden="true"></i></a>`;
   document.body.prepend(nav)}
 nav.querySelectorAll('.al-destinations a').forEach(a=>{if(a.dataset.k===here)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
 })();

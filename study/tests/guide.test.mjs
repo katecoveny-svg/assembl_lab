@@ -11,7 +11,7 @@ test('each tour stop points at something the machine shell or Allen actually dra
     else if(sel==='.alt-fab')assert.match(tutor,/class="alt-fab"/);
     else assert.fail('unknown stop '+sel)}});
 test('the finder searches titles, descriptions and tags, and filters by subject',()=>{
-  assert.match(hub,/id="find-q"/);assert.match(hub,/data-find="\$\{esc\(find\)\}"/);assert.match(hub,/id="subj-\$\{k\}"/);assert.match(hub,/href="#find">Find a machine/)});
+  assert.match(hub,/id="find-q"/);assert.match(hub,/data-find="\$\{esc\(find\)\}"/);assert.match(hub,/id="subj-\$\{k\}"/);assert.match(hub,/href="#find">Pick your subject/)});
 test('every machine built on the kit has a walkthrough video with a poster and captions',()=>{
   const idx=JSON.parse(read('study/videos/index.json')).videos;
   const safe=p=>{try{return read(p)}catch(e){return ''}};
