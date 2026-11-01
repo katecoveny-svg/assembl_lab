@@ -6,7 +6,7 @@ initShow();
 const lazy = [["#stock", () => import("./stock.js").then((m) => m.initStock())], ["#twin", () => import("./twin.js").then((m) => m.initTwin())],
   ["#market", () => import("./market.js").then((m) => m.initMarket())], ["#cp", () => import("./campaigns.js").then((m) => m.initCampaigns())],
   ["#range", () => import("./range.js").then((m) => m.initRange())], ["#parts", () => import("./parts.js").then((m) => m.initParts())],
-  ["#connect", () => import("./connect.js").then((m) => m.initConnect())]];
+  ["#connect", () => import("./connect.js").then((m) => m.initConnect())], ["#agentdesk", () => import("./agentdesk.js").then((m) => m.initAgentDesk())]];
 lazy.forEach(([sel, go]) => { const el = $(sel); if (el) onNear(el, () => go().catch((e) => console.error(sel, e)), "900px 0px"); });
 
 // "Watch a day run": to the simulator, running at 20×
@@ -27,6 +27,10 @@ if (open && desk) open.addEventListener("click", () => {
   const on = desk.hidden; desk.hidden = !on; open.setAttribute("aria-expanded", String(on));
   if (on) { import("./desk.js").then((m) => { if (!desk.dataset.ready) { desk.dataset.ready = "1"; m.initDesk(); } }).catch((e) => console.error("#desk", e)); desk.scrollIntoView({ behavior: reducedMQ.matches ? "auto" : "smooth", block: "start" }); }
 });
+
+// agent-ready: copy the endpoint
+const cp = $("#arCopy");
+if (cp) cp.addEventListener("click", async () => { const u = $("#arUrl").textContent.trim(); try { await navigator.clipboard.writeText(u); cp.textContent = "Copied"; } catch { cp.textContent = u; } setTimeout(() => { cp.textContent = "Copy"; }, 1800); });
 
 // scroll reveals: anything marked data-rv rises into place once, as it enters (reduced motion: already in place, see the CSS)
 const rv = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); rv.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });

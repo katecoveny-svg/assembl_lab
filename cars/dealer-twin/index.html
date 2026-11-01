@@ -10,13 +10,14 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=57d1b8f9">
+<link rel="stylesheet" href="css/site.css?v=a39af27d">
 <link rel="preload" as="image" href="assets/hero/hero-wide.webp" fetchpriority="high">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/","@sparkjsdev/spark":"https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"}}</script>
-<script src="js/variant.js?v=57d1b8f9" defer></script>
-<script src="js/dealer-data.js?v=57d1b8f9" defer></script>
-<script src="engine/model.js?v=57d1b8f9" defer></script>
-<script type="module" src="js/main.js?v=57d1b8f9"></script>
+<script src="js/variant.js?v=a39af27d" defer></script>
+<script src="js/dealer-data.js?v=a39af27d" defer></script>
+<script src="js/agentdesk-data.js?v=a39af27d" defer></script>
+<script src="engine/model.js?v=a39af27d" defer></script>
+<script type="module" src="js/main.js?v=a39af27d"></script>
 </head>
 <body>
 <a class="sr" href="#stock">Skip to the stock</a>
@@ -97,9 +98,56 @@
       <li><figure class="s4-v s4-approve" aria-hidden="true"><span class="eyebrow">Test drive · Saturday 10 am</span><b>2019 Toyota Aqua</b><span class="s4-btns"><i class="yes">Approve</i><i>Decline</i></span></figure><span class="eyebrow">03</span><h3>A person says yes.</h3><p>Nothing is held or booked until one of your salespeople approves it. One tap.</p></li>
       <li><figure class="s4-v s4-rcpt" aria-hidden="true"><span class="eyebrow">Receipt · TD-25A3</span><b>2019 Toyota Aqua</b><span>Test drive approved · Sat 10:00</span><span>Asked by: buyer's assistant</span><span>Approved by: sales consultant</span><span class="s4-ok">✓ Same record for all three</span></figure><span class="eyebrow">04</span><h3>Everyone gets a receipt.</h3><p>The buyer, the salesperson and the dealer all see the same record of what was asked and what was agreed.</p></li>
     </ol>
-    <div class="row" style="margin-top:30px"><button class="btn" type="button" id="deskOpen" aria-expanded="false" aria-controls="desk">Try it: be the buyer's assistant</button></div>
   </div>
 </section>
+
+
+<!-- ============ the agent desk, scripted: an enquiry arrives, the agent's work assembles step by step, a person approves, a receipt follows -->
+<section class="ad" id="agentdesk" aria-labelledby="adH" data-state="idle">
+  <div class="wrap">
+    <div class="head ad-head"><div><span class="eyebrow pill ad-pill">Simulated · fictional stock and staff</span><h2 id="adH">Watch the agent <em>work an enquiry.</em></h2></div>
+      <p class="lede">Pick an enquiry. The agent searches, reads the notice, runs the checks and recommends. Then it asks: a hold or a test drive waits for a person at the dealer, and every decision leaves a receipt.</p></div>
+    <div class="ad-grid">
+      <aside class="ad-col ad-left" aria-label="The enquiry">
+        <header class="ad-colh"><b>The enquiry</b><span class="ad-lab">as it arrives</span></header>
+        <div class="ad-enqs" id="adEnq" role="group" aria-label="Pick an enquiry"></div>
+        <div class="ad-arrived" id="adArrived"></div>
+        <div class="ad-ladder-wrap"><span class="ad-lab">Authority, lowest to highest. Holds and test drives sit at level 4.</span><ol class="ad-ladder" id="adLadder"></ol></div>
+      </aside>
+      <div class="ad-col ad-centre" aria-label="The agent's work">
+        <header class="ad-colh"><b>The agent's work</b><div class="ad-shelf" id="adShelf" aria-hidden="true"></div></header>
+        <ol class="ad-steps" id="adWork" aria-live="polite"></ol>
+      </div>
+      <aside class="ad-col ad-right" aria-label="The dealer's approval">
+        <header class="ad-colh"><b>Approval</b><span class="ad-lab">a person decides</span></header>
+        <div class="ad-who" id="adWho"></div>
+        <div class="ad-queue" id="adQueue"><p class="ad-empty">Pick an enquiry on the left. When the agent asks for a hold or a test drive, the request lands here.</p></div>
+        <div class="ad-out" id="adOut" aria-live="polite"></div>
+      </aside>
+    </div>
+    <div class="row ad-foot"><button class="btn ghost" type="button" id="deskOpen" aria-expanded="false" aria-controls="desk">Try it live against the endpoint</button><span class="fine">The desk above replays records from the lab's MCP endpoint. The live desk calls it as you watch.</span></div>
+    <details class="ev"><summary>What's recorded, what's replayed, what's fictional</summary><div class="evb">
+      <p>Every tool call above (<code>search_cars</code>, <code>get_car</code>, <code>car_check</code>, <code>running_cost</code>, <code>hold_car</code>, <code>book_test_drive</code>) was made against the lab's MCP endpoint on 2 November 2026 and its record saved; the desk replays those records in the same shape, trimmed to what it shows, with site names below region level generalised. The agent's reading of the enquiry, its recommendation and the buyer's reply are scripted, not generated. The staff, the stock and the dealer are fictional. Nothing is held, booked, sent or stored.</p>
+      <p>The NZTA register counts inside <code>car_check</code> are real figures for the model (Motor Vehicle Register open data, CC BY 4.0), as read on that day. The receipt's SHA-256 is computed in your browser over the record as canonical JSON.</p>
+    </div></details>
+  </div>
+</section>
+
+<!-- ============ agent-ready: what the endpoint exposes, so a prospect's own assistant can call it -->
+<section class="sec ar" id="agentready" aria-labelledby="arH">
+  <div class="wrap ar-grid">
+    <div><span class="eyebrow pill">Agent-ready · live endpoint</span><h2 id="arH">Your assistant can <em>call this too.</em></h2></div>
+    <div class="ar-body">
+      <ol class="ar-lines">
+        <li><b>Six tools over 48 Simulated cars.</b> <code>search_cars</code>, <code>get_car</code>, <code>car_check</code> and <code>running_cost</code> read; <code>hold_car</code> and <code>book_test_drive</code> return a request a person would approve.</li>
+        <li><b>Every listing as labelled data.</b> The Consumer Information Notice field by field with its truth label, free test-drive times, and NZTA's register counts for the model.</li>
+        <li><b>Open MCP over HTTP.</b> JSON-RPC 2.0, no key, CORS open. Add it as a connector in ChatGPT or Claude, or point your own agent at it.</li>
+      </ol>
+      <div class="ar-url"><span class="ad-lab">Endpoint</span><code id="arUrl">https://assembl-lab.vercel.app/api/mcp/</code><button class="btn sm" type="button" id="arCopy">Copy</button><a class="btn ghost sm" href="../feed.json" target="_blank" rel="noopener">Stock feed</a></div>
+    </div>
+  </div>
+</section>
+
 
 <!-- ============ the dealer agent desk: the buyer's assistant works the dealer's endpoint; a person approves; every decision leaves a receipt -->
 <section class="desk" id="desk" aria-labelledby="deskH" data-seat="buyer" hidden>
