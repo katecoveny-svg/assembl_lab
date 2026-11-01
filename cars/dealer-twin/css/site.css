@@ -1161,3 +1161,74 @@ h1 em,h2 em,h3 em{font-family:var(--serif);font-style:italic;font-weight:400;let
 .cs-cap header .btn{grid-column:2;grid-row:1/3}
 @media (max-width:1180px){.cs .picker{flex-direction:row}}
 @media (max-width:760px){.simclock .t{font-size:26px;white-space:nowrap;min-width:0}}
+
+/* ---------------------------------------------------------------- the range in bricks */
+.range{background:var(--chalk);border-top:1px solid var(--line)}
+.rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.rgc{all:unset;box-sizing:border-box;cursor:pointer;display:grid;border-radius:var(--r-m);overflow:hidden;background:var(--card);border:1px solid var(--line);transition:transform .25s ease,box-shadow .25s ease,border-color .2s}
+.rgc:hover{transform:translateY(-2px);box-shadow:0 14px 34px -22px rgba(26,26,30,.45)}
+.rgc:focus-visible{outline:2px solid var(--rose);outline-offset:3px}
+.rgc[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.rgv{position:relative;display:block;aspect-ratio:4/3;background:#DCD6CE;overflow:hidden}
+.rgv img,.rgv video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rgv video{opacity:0;transition:opacity .25s}
+.rgc.run .rgv video{opacity:1}
+.rgt{display:grid;gap:2px;padding:12px 14px 14px}
+.rgt b{font:500 18px/1.2 var(--sans);color:var(--deep);letter-spacing:-.01em}
+.rgt span{font:500 11px var(--mono);letter-spacing:.04em;color:var(--rose)}
+.rg-panel{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-m);padding:clamp(16px,2vw,24px)}
+.rgp-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:end;margin-bottom:14px}
+.rgp-head h3{margin:4px 0 0;font:500 clamp(20px,2vw,26px)/1.2 var(--sans);color:var(--deep);letter-spacing:-.015em}
+.rgp-cars{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.rgp-car{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:center;padding:6px;border-radius:12px;border:1px solid var(--line)}
+.rgp-car:hover{background:var(--tint)}
+.rgp-car:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+.rgp-car img{width:76px;height:57px;object-fit:cover;border-radius:8px}
+.rgp-car b{display:block;font:500 14.5px/1.25 var(--sans);color:var(--deep)}
+.rgp-car span span{font:500 11px var(--mono);color:var(--rose)}
+.rg-fine{margin-top:16px;max-width:80ch}
+@media (max-width:760px){.rg{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:72%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}.rgc{scroll-snap-align:start}}
+
+/* ---------------------------------------------------------------- campaign ideas */
+.cp{margin-top:clamp(56px,7vw,104px);padding-top:clamp(40px,5vw,64px);border-top:1px solid var(--line)}
+.cp .cp-h{margin:0;font:500 clamp(28px,3.4vw,48px)/1.06 var(--sans);letter-spacing:-.03em;color:var(--deep);max-width:20ch}
+.cp .cp-h em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--rose)}
+.cp-body{display:grid;grid-template-columns:minmax(220px,270px) minmax(0,1fr);gap:clamp(18px,2.4vw,36px);align-items:start}
+.cp-body>*{min-width:0}
+.cp-list{display:grid;gap:4px;position:sticky;top:76px}
+.cp-list button{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;align-items:start;padding:10px 12px;border-radius:12px}
+.cp-list button:hover{background:var(--tint)}
+.cp-list button:focus-visible{outline:2px solid var(--rose);outline-offset:1px}
+.cp-list button[aria-selected="true"]{background:var(--deep);color:var(--on-deep)}
+.cp-list .n{font:500 11px/1.9 var(--mono);color:var(--rose)}
+.cp-list button[aria-selected="true"] .n{color:var(--champ)}
+.cp-list b{display:block;font:500 15px/1.3 var(--sans);color:inherit}
+.cp-list button:not([aria-selected="true"]) b{color:var(--deep)}
+.cp-list b+span{font:500 10.5px/1.4 var(--mono);letter-spacing:.03em;opacity:.72}
+.cp-card{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1fr);gap:clamp(18px,2.4vw,36px);align-items:start}
+.cp-card>*{min-width:0}
+.cp-vis{display:grid;gap:12px;position:sticky;top:76px}
+.cp-vis canvas{width:100%;height:auto;border-radius:var(--r-m);box-shadow:0 20px 50px -30px rgba(26,26,30,.5);background:var(--chalk)}
+.cp-txt{display:grid;gap:18px}
+.cp-hook{margin:0;font:400 clamp(30px,3vw,42px)/1.05 var(--serif);font-style:italic;color:var(--deep);letter-spacing:-.01em}
+.cp-brand{display:flex;gap:10px;align-items:center}
+.cp-brand select{border:1px solid var(--line2);border-radius:12px;padding:9px 12px;font:500 15px var(--sans);background:var(--card);color:var(--deep)}
+.cp-blk p{margin:6px 0 0;max-width:62ch}
+.cp-cars{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.cp-cars button{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:56px auto;gap:8px;align-items:center;padding:5px 12px 5px 5px;border:1px solid var(--line);border-radius:12px;background:var(--card);font:500 13.5px/1.25 var(--sans);color:var(--deep)}
+.cp-cars button:hover{background:var(--tint)}
+.cp-cars button:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+.cp-cars img{width:56px;height:42px;object-fit:cover;border-radius:8px}
+.cp-cars i{display:block;font:500 11px var(--mono);font-style:normal;color:var(--rose)}
+.cp-plan{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:10px}
+.cp-plan li{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:6px 14px;align-items:start;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.cp-when b{display:block;font:500 14px var(--sans);color:var(--deep)}
+.cp-when span{font:500 10.5px var(--mono);letter-spacing:.04em;color:var(--rose)}
+.cp-plan p{margin:0;font-size:15px;line-height:1.5;color:var(--deep)}
+.cp-measure{margin:8px 0 0;padding-left:1.1em;display:grid;gap:4px}
+.cp-approve{margin:0;padding:12px 14px;border-left:3px solid var(--champ);background:var(--tint);border-radius:0 10px 10px 0;font-size:14.5px}
+.cp-approve b{color:var(--deep);font-weight:600}
+.cp .ev{margin-top:22px}
+@media (max-width:1100px){.cp-card{grid-template-columns:none}.cp-vis{position:static;max-width:440px}}
+@media (max-width:760px){.cp-body{grid-template-columns:none}.cp-list{position:static;grid-auto-flow:column;grid-auto-columns:78%;overflow-x:auto;scroll-snap-type:x mandatory}.cp-list button{scroll-snap-align:start;border:1px solid var(--line)}
+  .cp-plan li{grid-template-columns:none}.cp-plan li .btn{justify-self:start}}

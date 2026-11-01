@@ -4,7 +4,8 @@ import { initShow } from "./showroom.js";
 
 initShow();
 const lazy = [["#stock", () => import("./stock.js").then((m) => m.initStock())], ["#twin", () => import("./twin.js").then((m) => m.initTwin())],
-  ["#market", () => import("./market.js").then((m) => m.initMarket())], ["#parts", () => import("./parts.js").then((m) => m.initParts())],
+  ["#market", () => import("./market.js").then((m) => m.initMarket())], ["#cp", () => import("./campaigns.js").then((m) => m.initCampaigns())],
+  ["#range", () => import("./range.js").then((m) => m.initRange())], ["#parts", () => import("./parts.js").then((m) => m.initParts())],
   ["#connect", () => import("./connect.js").then((m) => m.initConnect())]];
 lazy.forEach(([sel, go]) => { const el = $(sel); if (el) onNear(el, () => go().catch((e) => console.error(sel, e)), "900px 0px"); });
 
@@ -34,7 +35,7 @@ watchRv(); new MutationObserver(() => watchRv()).observe(document.body, { childL
 // the section in view is marked in the bar; over the dark sections the bar turns dark too
 const links = [...document.querySelectorAll(".nav a")], bar = $("#bar");
 const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === "#" + e.target.id ? "true" : "false")); }), { rootMargin: "-45% 0px -50% 0px" });
-["show", "sim", "agents", "stock", "parts", "market", "connect", "method"].forEach((id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+["show", "sim", "agents", "range", "stock", "parts", "market", "connect", "method"].forEach((id) => { const el = document.getElementById(id); if (el) io.observe(el); });
 const dark = new Set();
 bar.classList.add("dark");   // the page opens on the dark showroom
 const dio = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? dark.add(e.target) : dark.delete(e.target))); bar.classList.toggle("dark", dark.size > 0); }, { rootMargin: "-2px 0px -97% 0px" });

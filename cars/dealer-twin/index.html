@@ -10,13 +10,13 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=b9b68b19">
+<link rel="stylesheet" href="css/site.css?v=e9245f5f">
 <link rel="preload" as="image" href="assets/hero/hero-wide.webp" fetchpriority="high">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/","@sparkjsdev/spark":"https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"}}</script>
-<script src="js/variant.js?v=b9b68b19" defer></script>
-<script src="js/dealer-data.js?v=b9b68b19" defer></script>
-<script src="engine/model.js?v=b9b68b19" defer></script>
-<script type="module" src="js/main.js?v=b9b68b19"></script>
+<script src="js/variant.js?v=e9245f5f" defer></script>
+<script src="js/dealer-data.js?v=e9245f5f" defer></script>
+<script src="engine/model.js?v=e9245f5f" defer></script>
+<script type="module" src="js/main.js?v=e9245f5f"></script>
 </head>
 <body>
 <a class="sr" href="#stock">Skip to the stock</a>
@@ -24,7 +24,7 @@
   <div class="wrap bar-in">
     <a class="mark" href="#top"><b>assembl</b><span>Dealer twin · demo</span></a>
     <nav class="nav" aria-label="Sections">
-      <a href="#sim">The day</a><a href="#agents">Agent desk</a><a href="#market">Content</a><a href="#stock">Stock</a><a href="#parts" class="opt">Parts</a><a href="#connect" class="opt">For real</a>
+      <a href="#sim">The day</a><a href="#agents">Agent desk</a><a href="#market">Content</a><a href="#range" class="opt">Brands</a><a href="#stock">Stock</a><a href="#parts" class="opt">Parts</a><a href="#connect" class="opt">For real</a>
     </nav>
   </div>
 </header>
@@ -184,6 +184,19 @@
         </div></details>
       </div>
     </div>
+    <div class="cp" id="cp">
+      <div class="head cp-head"><h3 class="cp-h">A listing says what's for sale. <em>A campaign gives people a reason to look.</em></h3>
+        <div class="cs-lede"><p class="lede">Campaign ideas built from Harbour Lane's cars today. Each comes with a week of posts already written, a key visual and what a person has to approve.</p><span class="eyebrow pill">Ideas · drafts only · a person approves every offer</span></div></div>
+      <div class="cp-body">
+        <div class="cp-list" id="cpList" role="tablist" aria-label="Campaign ideas" aria-orientation="vertical"></div>
+        <div class="cp-card" id="cpCard" role="tabpanel">
+          <div class="cp-vis"><canvas id="cpCv" width="1080" height="1350" role="img" aria-label="Campaign key visual"></canvas>
+            <div class="row"><button class="btn" type="button" id="cpDl">Download the key visual</button><button class="btn ghost" type="button" id="cpAll">Copy the whole plan</button></div></div>
+          <div class="cp-txt" id="cpTxt"></div>
+        </div>
+      </div>
+      <details class="ev"><summary>How the ideas are made</summary><div class="evb"><p>Each idea is a hand-written template filled from the cars in stock today: the budget band with the widest choice, the most economical cars for the trip, the highest tow ratings, the cheapest first cars. The key visual is drawn on a canvas in this browser. No AI service writes the copy and nothing is posted. Anything with a prize, a price or a person's photo is marked for a person to approve.</p></div></details>
+    </div>
     <div class="board">
       <div>
         <h3>Every ad checked before it runs.</h3>
@@ -198,6 +211,18 @@
         <details class="ev"><summary>Hours and rebate assumptions</summary><div class="evb" id="coopEv"></div></details>
       </div>
     </div>
+  </div>
+</section>
+
+
+<!-- ============ the range in bricks: one brick model per brand in stock -->
+<section class="sec range" id="range" aria-labelledby="rangeH">
+  <div class="wrap">
+    <div class="head"><h2 id="rangeH">Every brand, <em>built brick by brick.</em></h2>
+      <div class="cs-lede"><p class="lede">One brick model for every brand on Harbour Lane's yard, built and rendered in Blender. Tap a brand to see its cars.</p><span class="eyebrow pill">Illustrative · brick models, not real cars</span></div></div>
+    <div class="rg" id="rg" role="list" aria-label="Brands in stock"></div>
+    <div class="rg-panel" id="rgPanel" aria-live="polite" hidden></div>
+    <p class="fine rg-fine">Each model is a generic body in the shape that brand sells most here, laid in small bricks: no badges, no grille, no real model's design. The colours are assembl's, not the brand's.</p>
   </div>
 </section>
 
