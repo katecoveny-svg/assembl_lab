@@ -1,0 +1,109 @@
+{
+ "videos": {
+  "ai": {
+   "dur": 30
+  },
+  "atoms": {
+   "dur": 35
+  },
+  "bike": {
+   "dur": 40
+  },
+  "civics": {
+   "dur": 34
+  },
+  "claims": {
+   "dur": 31
+  },
+  "claw": {
+   "dur": 30
+  },
+  "climate": {
+   "dur": 36
+  },
+  "data": {
+   "dur": 30
+  },
+  "ecology": {
+   "dur": 30
+  },
+  "energy": {
+   "dur": 35
+  },
+  "essay": {
+   "dur": 30
+  },
+  "fish": {
+   "dur": 35
+  },
+  "genes": {
+   "dur": 37
+  },
+  "inanga": {
+   "dur": 37
+  },
+  "kokopu": {
+   "dur": 30
+  },
+  "lines": {
+   "dur": 37
+  },
+  "maps": {
+   "dur": 30
+  },
+  "market": {
+   "dur": 34
+  },
+  "materials": {
+   "dur": 36
+  },
+  "particles": {
+   "dur": 35
+  },
+  "phone": {
+   "dur": 34
+  },
+  "pinball": {
+   "dur": 35
+  },
+  "plan": {
+   "dur": 30
+  },
+  "queue": {
+   "dur": 34
+  },
+  "reactions": {
+   "dur": 32
+  },
+  "shapes": {
+   "dur": 34
+  },
+  "sky": {
+   "dur": 37
+  },
+  "slushie": {
+   "dur": 37
+  },
+  "socials": {
+   "dur": 31
+  },
+  "space": {
+   "dur": 35
+  },
+  "study": {
+   "dur": 31
+  },
+  "text": {
+   "dur": 30
+  },
+  "vend": {
+   "dur": 34
+  },
+  "vinyl": {
+   "dur": 38
+  },
+  "words": {
+   "dur": 30
+  }
+ }
+}
