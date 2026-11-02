@@ -1,0 +1,45 @@
+WEBVTT
+
+1
+00:00:00.250 --> 00:00:01.099
+Gradient just means “how fast”.
+
+2
+00:00:01.099 --> 00:00:04.778
+How fast one thing changes when another thing changes.
+
+3
+00:00:04.778 --> 00:00:08.175
+On a straight line, gradient = rise ÷ run.
+
+4
+00:00:08.175 --> 00:00:11.571
+120 km in 2 hours: 120 ÷ 2 = 60 km per hour.
+
+5
+00:00:11.571 --> 00:00:14.967
+On a curve the gradient keeps changing.
+
+6
+00:00:14.967 --> 00:00:18.363
+The tangent at a point gives the gradient right there.
+
+7
+00:00:18.363 --> 00:00:21.759
+Differentiate to get the gradient anywhere: y = x² gives dy/dx = 2x.
+
+8
+00:00:21.759 --> 00:00:25.156
+At x = 3 the gradient is 2 × 3 = 6.
+
+9
+00:00:25.156 --> 00:00:29.684
+Where dy/dx = 0 the tangent is flat: a maximum or a minimum.
+
+10
+00:00:29.684 --> 00:00:34.242
+Give the gradient with its units, like metres per second.
+
+11
+00:00:34.212 --> 00:00:39.241
+assembly · Try it free · study.assembl.co.nz

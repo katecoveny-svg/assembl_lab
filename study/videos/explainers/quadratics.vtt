@@ -1,0 +1,45 @@
+WEBVTT
+
+1
+00:00:00.250 --> 00:00:01.115
+Where does a parabola cross, and where does it turn?
+
+2
+00:00:01.115 --> 00:00:04.865
+Three tools answer it: roots, vertex, discriminant.
+
+3
+00:00:04.865 --> 00:00:07.750
+Factorise: x² − 2x − 3 = (x + 1)(x − 3).
+
+4
+00:00:07.750 --> 00:00:11.788
+The roots are where y = 0: x = −1 and x = 3.
+
+5
+00:00:11.788 --> 00:00:15.250
+The vertex sits halfway between the roots: x = 1.
+
+6
+00:00:15.250 --> 00:00:18.712
+Put x = 1 back in: y = 1 − 2 − 3 = −4. The vertex is (1, −4).
+
+7
+00:00:18.712 --> 00:00:21.596
+The discriminant b² − 4ac tells you how many roots there are.
+
+8
+00:00:21.596 --> 00:00:25.058
+More than 0: two roots. Equal to 0: one. Less than 0: none.
+
+9
+00:00:25.058 --> 00:00:27.942
+Here b² − 4ac = 4 + 12 = 16, so two roots.
+
+10
+00:00:27.942 --> 00:00:32.588
+Write b² − 4ac, substitute, then say what its sign means.
+
+11
+00:00:32.558 --> 00:00:37.673
+assembly · Try it free · study.assembl.co.nz

@@ -57,6 +57,8 @@
     const items=[["Pick a topic",0],["Change the controls under the picture",2],["Read the notes",4],["Test yourself",5]];
     bar.innerHTML=`<b>How it works</b><ol>${items.map(([t,s],i)=>`<li><button type="button" data-stop="${s}"><i>${i+1}</i>${t}</button></li>`).join("")}</ol><span class="acts"><button type="button" data-tour>Show me around</button></span>`;
     head.insertAdjacentElement("afterend",bar);
+    // short concept explainers (study/explainers.js) add a "▶ The idea" button to this bar on paired machines
+    try{const x=document.createElement("script");x.src="/study/explainers.js";x.defer=true;document.head.appendChild(x)}catch(e){}
     bar.addEventListener("click",e=>{const s=e.target.closest("[data-stop]");if(s)return tour(+s.dataset.stop);if(e.target.closest("[data-tour]"))tour(0);if(e.target.closest("[data-vid]"))video(bar._vid)});
     fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos[mid];if(!v)return;bar._vid=v;
       bar.querySelector(".acts").insertAdjacentHTML("afterbegin",`<button class="vid" type="button" data-vid>▶ Watch how · ${v.dur} s</button>`)}).catch(()=>{});
