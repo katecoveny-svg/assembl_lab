@@ -230,7 +230,7 @@ em{font-family:var(--as-font);font-style:normal;font-weight:500;color:var(--as-r
 .allen-chip{display:inline-flex;align-items:center;gap:12px;margin-top:30px;align-self:flex-start;text-decoration:none;color:var(--as-ink);
   background:rgba(255,255,255,.55);border:1px solid rgba(73,43,62,.1);border-radius:999px;padding:5px 18px 5px 5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s}
 .allen-chip:hover{background:#fff}
-.allen-chip img{width:58px;height:58px;border-radius:50%}
+.allen-chip .av{width:58px;height:58px;border-radius:50%;display:block;overflow:hidden;flex:none}.allen-chip .av .allen{display:block;width:100%;height:100%}
 .allen-chip b{display:block;font:600 15px/1.2 var(--as-font)}
 .allen-chip small{display:block;font:400 10.5px/1.5 var(--as-mono);letter-spacing:.06em;color:var(--as-muted);text-transform:uppercase}
 
@@ -347,23 +347,116 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
 }
 
 </style>
+<style>
+/* ---- Nov 2026: year first. The hub opens with "What year are you in?", then that year's exams in date order with the
+   machine for each, then the machines. Everything below reads from window.STUDY (data.js): years, standards and sittings. */
+.hero{min-height:0}
+.hero .intro{max-width:44ch}
+.yearpick{margin:22px 0 0;display:grid;gap:10px}
+.yearpick .q{margin:0;font:600 15px var(--as-font);color:var(--as-ink)}
+.yearpick .q small{display:block;font:400 12.5px var(--as-font);color:var(--as-text);margin-top:2px}
+.years{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.years button{appearance:none;cursor:pointer;display:grid;gap:1px;text-align:left;min-width:92px;padding:10px 14px 9px;border-radius:16px;border:1.5px solid rgba(73,43,62,.16);background:rgba(255,255,255,.72);color:var(--as-ink);font:600 17px/1.1 var(--as-font);letter-spacing:-.02em;transition:background .15s,border-color .15s,transform .15s}
+.years button small{font:500 11px/1.3 var(--as-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--as-muted)}
+.years button:hover{background:#fff;transform:translateY(-1px)}
+.years button[aria-pressed="true"]{background:var(--as-ink);border-color:var(--as-ink);color:#fff}
+.years button[aria-pressed="true"] small{color:rgba(255,255,255,.75)}
+.years button:focus-visible{outline:3px solid var(--as-focus);outline-offset:2px}
+/* today's and next exam, once exams are on */
+.strip{display:grid;gap:8px;padding:14px 18px;border-radius:18px;background:var(--as-ink);color:#fff;box-shadow:var(--as-shadow)}
+.strip .k{font:400 10.5px/1.4 var(--as-mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.strip .row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font:500 14px var(--as-font)}
+.strip .row b{font-weight:600}
+.strip a{color:#fff;text-decoration:none;background:rgba(255,255,255,.14);border-radius:999px;padding:4px 11px;font:600 12.5px var(--as-font);white-space:nowrap}
+.strip a:hover{background:rgba(255,255,255,.26)}
+.strip .t{font:500 11.5px var(--as-mono);color:rgba(255,255,255,.75);letter-spacing:.04em}
+/* your exams: one row per standard, machines on the row */
+.ex-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.ex-head .n{font:500 12px var(--as-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted)}
+.ex-list{display:grid;gap:8px}
+.ex-day{margin:14px 0 2px;display:flex;align-items:center;gap:10px;font:600 14px var(--as-font);color:var(--as-ink)}
+.ex-day:first-child{margin-top:0}
+.ex-day small{font:500 11px var(--as-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted)}
+.ex-day.today b{background:var(--as-ink);color:#fff;border-radius:999px;padding:2px 10px}
+.exr{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:4px 14px;align-items:start;border:1px solid var(--as-line);border-radius:18px;padding:12px 14px;background:var(--as-card)}
+.exr .when{font:600 13px/1.35 var(--as-font);color:var(--as-ink)}
+.exr .when small{display:block;font:500 11px var(--as-mono);color:var(--as-muted);letter-spacing:.04em}
+.exr .what{min-width:0;display:grid;gap:6px}
+.exr .t{font:600 15px/1.3 var(--as-font);color:var(--as-ink);letter-spacing:-.01em}
+.exr .t .code{font:500 12px var(--as-mono);color:var(--as-muted);margin-right:7px}
+.exr .t .sub{font-weight:500;color:var(--as-text)}
+.exr .acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mch{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--as-ink);background:var(--acc-tint,#ECE4F0);border-radius:999px;padding:5px 12px 5px 6px;font:600 13px var(--as-font);box-shadow:inset 0 0 0 1px rgba(73,43,62,.1)}
+.mch:hover{box-shadow:inset 0 0 0 1.5px var(--acc,#492B3E)}
+.mch i{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:#fff;color:var(--as-ink);flex:none}
+.mch i svg{width:14px;height:14px}
+.mch.more{background:transparent;box-shadow:inset 0 0 0 1px var(--as-line2);padding:5px 12px}
+.nomach{font:500 12.5px var(--as-font);color:var(--as-muted)}
+.nomach a{color:var(--as-ink)}
+.exr .star{padding:5px 10px;font-size:12px;margin-left:auto}
+.exr.thin{padding:9px 14px;border-color:transparent;background:var(--as-soft)}.exr.thin .t{font-size:14px;font-weight:500}.exr.thin .t .sub{font-size:13px}
+.exr details{grid-column:1/-1;font-size:13.5px}
+.exr details summary{cursor:pointer;font:400 11px var(--as-mono);color:var(--as-ink);letter-spacing:.06em}
+.exr details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:2px}
+.ex-more{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+/* junior years: subjects as rows */
+.jr{display:grid;gap:10px}
+.jrow{border:1px solid var(--as-line);border-radius:18px;padding:12px 14px;background:var(--as-card);display:grid;gap:8px}
+.jrow h3{margin:0;font:600 17px var(--as-font);letter-spacing:-.01em;color:var(--as-ink);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.jrow h3 small{font:500 11px var(--as-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--as-muted)}
+.jrow .acts{display:flex;flex-wrap:wrap;gap:6px}
+.jrow details{font-size:13.5px}.jrow details summary{cursor:pointer;font:400 11px var(--as-mono);color:var(--as-ink);letter-spacing:.06em}.jrow details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:2px}
+/* machine cards: year, standard and exam on the face */
+.app-chips{display:flex;flex-wrap:wrap;gap:5px;padding:0 16px 8px}
+.pc{font:600 11px/1.2 var(--as-font);border-radius:999px;padding:4px 9px;background:var(--as-soft);color:var(--as-ink);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pc.yr{background:var(--as-ink);color:#fff}
+.pc.std{background:var(--acc-tint);box-shadow:inset 0 0 0 1px rgba(73,43,62,.1)}
+.pc.std b{font-weight:600;font-family:var(--as-mono);font-size:10.5px;margin-right:4px}
+.pc.ex{background:#fff;box-shadow:inset 0 0 0 1px var(--as-line2);color:var(--as-text)}
+.app-ex{text-transform:uppercase}
+.app-foot{padding-top:0}
+.app-foot .yr{display:none}
+.showall{appearance:none;cursor:pointer;border:1.5px solid var(--as-line2);background:var(--as-card);color:var(--as-ink);border-radius:999px;padding:8px 14px;font:600 13px var(--as-font)}
+.showall[aria-pressed="true"]{background:var(--as-ink);color:#fff;border-color:var(--as-ink)}
+.mach-note{font:500 13px var(--as-font);color:var(--as-muted);margin:0}
+/* play and explore, kept apart from exam prep */
+.play-explore{display:grid;gap:14px}
+.play-explore .lede{margin:0}
+.play-explore .study-discover{margin-top:0}
+.play-explore .creative-instruments header h2{font-size:clamp(22px,2.6vw,30px)}
+.play-links{display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:620px){
+  .hero{padding:22px 0 20px}
+  .yearpick{margin:16px 22px 0}
+  .years button{min-width:0;flex:1 1 calc(33% - 8px);padding:9px 10px 8px;font-size:15px}
+  .exr{grid-template-columns:1fr;gap:6px}
+  .exr .when{display:flex;gap:8px;align-items:baseline}.exr .when small{display:inline}
+  .app-chips{padding:0 11px 6px}.pc{font-size:10px;padding:3px 7px}
+  .yearpick{order:3}.hstage{height:clamp(220px,62vw,320px);margin:12px 0 4px}
+}
+</style>
 <link rel="stylesheet" href="thumbnails.css">
 <link rel="stylesheet" href="creative-instruments.css">
 
 <div class="wrap">
   <header class="top">
     <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
-    <nav aria-label="Sections"><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-index">Exams</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
+    <nav aria-label="Sections"><a href="#h-index">Your exams</a><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-play">Play</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
   </header>
+
+  <div class="strip" id="strip" role="region" aria-label="Today's exams" hidden></div>
 
   <section class="hero" aria-labelledby="h-hero">
     <div class="hero-copy">
       <p class="kick"><span class="live" aria-hidden="true"></span><span id="heroKick">NCEA 2026 · study machines · Aotearoa</span></p>
       <h1 id="h-hero"><span id="heroLine">Exams start Tuesday 10 November.</span><br><em>Start here.</em></h1>
-      <p class="intro"><span lang="mi">Kia ora.</span> Free study machines for Years 9–13: pick your subject, change a setting, watch what happens, then test yourself. Allen works through past exam questions with you. <span id="heroWhen"></span></p>
-      <div class="cta"><a class="hb primary" href="#find">Pick your subject <i class="cube" aria-hidden="true"></i></a><a class="hb" href="#h-index">My exam dates</a></div>
-      <p class="share"><span>Share this with your class:</span> <button type="button" id="shareLink" aria-label="Copy the link to this page">Copy link</button><span id="shareDone" role="status" aria-live="polite"></span></p>
-      <a class="allen-chip" href="#den" id="heroAllen"><img src="allen/pastel-mint-mark.webp" alt="" width="256" height="256" decoding="async"><span><b id="heroName">Allen</b><small>Your study sidekick · visit his den</small></span></a>
+      <p class="intro"><span lang="mi">Kia ora.</span> Free study machines for Years 9–13. Pick your year, find your exam, open the machine. <span id="heroWhen"></span></p>
+      <div class="yearpick" id="yearpick">
+        <p class="q" id="yq">What year are you in?<small>Your exams and machines line up to match. Saved on this device.</small></p>
+        <ul class="years" id="years" role="group" aria-labelledby="yq"></ul>
+      </div>
+      <p class="share"><span>Share with your class:</span> <button type="button" id="shareLink" aria-label="Copy the link to this page">Copy link</button><span id="shareDone" role="status" aria-live="polite"></span></p>
+      <a class="allen-chip" href="#den" id="heroAllen"><span class="av" aria-hidden="true"></span><span><b id="heroName">Allen</b><small>AI study helper · hints, not answers</small></span></a>
     </div>
     <div class="hstage" id="bench" role="group" aria-label="Five of the study machines">
       <div class="hplate" aria-hidden="true"></div>
@@ -381,48 +474,74 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
     </div>
   </section>
 
-
-<section class="finder" id="find" aria-labelledby="find-h">
-  <h2 id="find-h">Pick your subject</h2>
-  <p class="find-sub">Tap your subject or type a topic. Every machine works the same way: pick a topic, change the controls, read the notes, test yourself.</p>
-  <label class="find-q"><span class="sr-only">Search the study machines</span><input id="find-q" type="search" placeholder="Try graphs, government, probability, forces, poetry…" autocomplete="off"></label>
-  <div class="find-subj" id="find-subj" role="group" aria-label="Subjects"></div>
-  <p class="find-n" id="find-n" role="status" aria-live="polite"></p>
-  <button class="find-vid" type="button" id="find-vid" hidden>▶ How the study machines work</button>
-</section>
-<nav class="lab-year-paths" aria-label="Study year groups"><a href="#junior">Years 7–8</a><a href="#y9" data-study-year="y9">Year 9</a><a href="#y10" data-study-year="y10">Year 10</a><a href="#l1" data-study-year="l1">Year 11 · NCEA 1</a><a href="#l2" data-study-year="l2">Year 12 · NCEA 2</a><a href="#l3" data-study-year="l3">Year 13 · NCEA 3</a></nav>
-  <section class="block" aria-labelledby="h-mach">
-    <p class="kick">01 / The bench</p>
-    <h2 id="h-mach">Find your next <em>discovery.</em></h2>
-    <p class="lede">Real views from the machines. Open one, change a setting, then test your thinking. Cards marked 3D have a spatial scene; other activities use drawings, text or data.</p>
-    <details id="junior" class="lab-junior"><summary>Years 7–8: a few places to start</summary><p>Explore <a href="/study/m/inanga.html">the īnanga life cycle</a>, <a href="/study/m/claw.html">chance with the claw machine</a> or <a href="/study/m/read.html">the reading machine</a>. These are selected activities, not a complete year programme.</p></details><div class="subjects" id="machines"></div>
-  </section>
-      <div class="cta lab-study-more"><a class="btn big" href="#h-index">Find my exams</a><a class="btn big" href="year9/">Year 9 studio</a><a class="btn big" href="patterns/">Pattern studio</a><a class="btn big" href="#h-creative">Creative instruments</a></div>
-  <section class="lab-study-method" aria-label="A way to learn"><div><strong>01 Explore</strong><p>Look around. Find a question worth testing.</p></div><div><strong>02 Predict</strong><p>Say what you expect before changing anything.</p></div><div><strong>03 Try it</strong><p>Change one thing. Look for what moves.</p></div><div><strong>04 Explain</strong><p>Use the model to explain what you found.</p></div></section>
-<section class="study-discover" aria-labelledby="h-discover">
-    <a href="https://lab.assembl.co.nz/next/#zoo" aria-label="Open the interactive 3D Habitat designer"><img src="thumbnails/habitat.jpg" alt="A captured view of the 3D habitat: a kākāpō model among trees, water, shelter and logs on a mint model base" width="800" height="600" loading="lazy"></a>
-    <div class="study-discover-copy"><span class="eyebrow">Make something · Next Lab</span><h2 id="h-discover">Build a world.<br>Change what happens.</h2><p>Turn the habitat around. Add shelter, water and a quiet retreat, then compare your choices. A real 3D design model, with an honest drawing fallback.</p><a class="btn primary" href="https://lab.assembl.co.nz/next/#zoo">Open Habitat designer →</a><small><b>What is Next Lab?</b> Fourteen making studios, already here: habitats, optics, music and more. Start with one experiment and see what your choices change. Habitat is a learning model, not animal-care guidance.</small></div>
+  <section class="block" aria-labelledby="h-index" id="exams">
+    <p class="kick">01 / Your exams</p>
+    <h2 id="h-index"><span id="exTitle">Year 12</span> <em id="exEm">exams, in date order.</em></h2>
+    <p class="lede" id="exLede"></p>
+    <div class="mine" id="mine"></div>
+    <div id="panel"></div>
   </section>
 
-  <section class="creative-instruments" aria-labelledby="h-creative">
-    <header><span class="eyebrow">Creative instruments · open-ended making</span><h2 id="h-creative">What happens if you…?</h2><p>Three playful instruments for pulling ideas into shape. Start with a material, make a move, and see what surprises you.</p></header>
-    <div class="creative-grid">
-      <a class="creative-card" href="https://lab.assembl.co.nz/instruments/reality-remix/">
-        <img src="instrument-previews/reality-remix.jpg" alt="" width="800" height="500" loading="lazy" decoding="async">
-        <div class="creative-copy"><h3>Reality Remix</h3><p>Pull, dissolve and swirl a colourful point cloud into a new composition.</p></div>
-        <div class="creative-action"><span>Sculpt with colour</span><b>Play →</b></div>
-      </a>
-      <a class="creative-card" href="https://lab.assembl.co.nz/instruments/soft-matter/">
-        <img src="instrument-previews/soft-matter.jpg" alt="" width="800" height="500" loading="lazy" decoding="async">
-        <div class="creative-copy"><h3>Soft Matter</h3><p>Grab, stretch and squash a soft shape. See how the material responds.</p></div>
-        <div class="creative-action"><span>Feel the physics</span><b>Play →</b></div>
-      </a>
-      <a class="creative-card" href="https://lab.assembl.co.nz/instruments/impossible-objects/">
-        <img src="instrument-previews/impossible-objects.jpg" alt="" width="800" height="500" loading="lazy" decoding="async">
-        <div class="creative-copy"><h3>Impossible Objects</h3><p>Cut, combine and twist a solid into something unexpected.</p></div>
-        <div class="creative-action"><span>Build a curious object</span><b>Play →</b></div>
-      </a>
+  <section class="block" aria-labelledby="h-mach" id="machsec">
+    <p class="kick">02 / The machines</p>
+    <h2 id="h-mach">Machines for <em id="machYear">Year 12.</em></h2>
+    <p class="lede">Open one, change a setting, watch what happens, then test yourself. Each card says the year, the standard and the exam date.</p>
+    <div class="finder" id="find" aria-labelledby="find-h">
+      <h2 id="find-h" class="sr-only">Find a machine</h2>
+      <label class="find-q"><span class="sr-only">Search the study machines</span><input id="find-q" type="search" placeholder="Search a topic: graphs, forces, poetry, probability…" autocomplete="off"></label>
+      <div class="find-subj" id="find-subj" role="group" aria-label="Subjects"></div>
+      <p class="find-n" id="find-n" role="status" aria-live="polite"></p>
+      <div class="ex-more"><button class="showall" type="button" id="showAll" aria-pressed="false">Show every year</button><button class="find-vid" type="button" id="find-vid" hidden>▶ How the machines work</button></div>
     </div>
+    <div class="subjects" id="machines"></div>
+    <p class="mach-note" id="machNote"></p>
+  </section>
+
+  <section class="lab-study-method" aria-label="A way to learn"><div><strong>01 Explore</strong><p>Look around. Find a question worth testing.</p></div><div><strong>02 Predict</strong><p>Say what you expect before changing anything.</p></div><div><strong>03 Try it</strong><p>Change one thing. Look for what moves.</p></div><div><strong>04 Explain</strong><p>Use the model to explain what you found.</p></div></section>
+
+  <div class="stats">
+    <div class="count" id="count"></div>
+    <div class="count streak" id="streak"></div>
+  </div>
+
+  <section class="block den" id="den" aria-labelledby="h-den">
+    <div class="den-head"><p class="kick">03 / Your sidekick</p><h2 id="h-den"><span id="denName">Allen</span>'s <em>den.</em></h2>
+      <p class="lede">Allen is a long-haired dachshund, named after the Allen key every kitset needs. He's an AI study helper: hints, not answers. Pass a challenge in a machine to unlock gear; keep a streak going to unlock new places. Saved on this device.</p></div>
+    <div class="den-grid">
+      <div class="den-stage"><div class="pic" id="denPic" role="button" tabindex="0" aria-label="Give Allen a wiggle"></div><p class="who" id="denWho"></p></div>
+      <form class="den-ctl" id="denCtl" onsubmit="return false"></form>
+    </div>
+  </section>
+
+  <section class="block play-explore" aria-labelledby="h-play" id="play">
+    <p class="kick">04 / Play and explore</p>
+    <h2 id="h-play">Not exam prep. <em>Just making things.</em></h2>
+    <p class="lede">Open-ended studios for when you want to build or muck around. Good for Years 7–10, and for anyone taking a break.</p>
+    <div class="play-links"><a class="btn big" href="year9/">Year 9 studio</a><a class="btn big" href="patterns/">Pattern studio</a><a class="btn big" href="m/inanga.html">The īnanga machine</a><a class="btn big" href="m/claw.html">The claw machine</a></div>
+    <section class="study-discover" aria-labelledby="h-discover">
+      <a href="https://lab.assembl.co.nz/next/#zoo" aria-label="Open the interactive 3D Habitat designer"><img src="thumbnails/habitat.jpg" alt="A captured view of the 3D habitat: a kākāpō model among trees, water, shelter and logs on a mint model base" width="800" height="600" loading="lazy"></a>
+      <div class="study-discover-copy"><span class="eyebrow">Make something · Next Lab</span><h2 id="h-discover">Build a world.<br>Change what happens.</h2><p>Turn the habitat around. Add shelter, water and a quiet retreat, then compare your choices. A real 3D design model, with an honest drawing fallback.</p><a class="btn primary" href="https://lab.assembl.co.nz/next/#zoo">Open Habitat designer →</a><small>Habitat is a learning model, not animal-care guidance.</small></div>
+    </section>
+    <section class="creative-instruments" aria-labelledby="h-creative">
+      <header><span class="eyebrow">Creative instruments</span><h2 id="h-creative">What happens if you…?</h2><p>Three playful instruments for pulling ideas into shape.</p></header>
+      <div class="creative-grid">
+        <a class="creative-card" href="https://lab.assembl.co.nz/instruments/reality-remix/">
+          <img src="instrument-previews/reality-remix.jpg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <div class="creative-copy"><h3>Reality Remix</h3><p>Pull, dissolve and swirl a colourful point cloud into a new composition.</p></div>
+          <div class="creative-action"><span>Sculpt with colour</span><b>Play →</b></div>
+        </a>
+        <a class="creative-card" href="https://lab.assembl.co.nz/instruments/soft-matter/">
+          <img src="instrument-previews/soft-matter.jpg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <div class="creative-copy"><h3>Soft Matter</h3><p>Grab, stretch and squash a soft shape. See how the material responds.</p></div>
+          <div class="creative-action"><span>Feel the physics</span><b>Play →</b></div>
+        </a>
+        <a class="creative-card" href="https://lab.assembl.co.nz/instruments/impossible-objects/">
+          <img src="instrument-previews/impossible-objects.jpg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <div class="creative-copy"><h3>Impossible Objects</h3><p>Cut, combine and twist a solid into something unexpected.</p></div>
+          <div class="creative-action"><span>Build a curious object</span><b>Play →</b></div>
+        </a>
+      </div>
+    </section>
   </section>
 
   <figure class="whaka" aria-labelledby="whaka-mi">
@@ -430,34 +549,10 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
     <figcaption><span>Fill the basket of knowledge.</span> <cite>Whakataukī, from the Ministry of Education's <a href="https://akopanuku.education.govt.nz/assets/ResourceFiles/Resource_Nga-whakatauki_File.pdf" target="_blank" rel="noopener">Ngā Whakataukī</a> resource</cite></figcaption>
   </figure>
 
-  <div class="stats">
-    <div class="count" id="count"></div>
-    <div class="count streak" id="streak"></div>
-  </div>
-
-
-
-  <section class="block den" id="den" aria-labelledby="h-den">
-    <div class="den-head"><p class="kick">02 / Your sidekick</p><h2 id="h-den"><span id="denName">Allen</span>'s <em>den.</em></h2>
-      <p class="lede">Allen is a long-haired dachshund, named after the Allen key every kitset needs. Pass a challenge in a machine to unlock gear; keep a streak going to unlock new places. He's saved on this device.</p></div>
-    <div class="den-grid">
-      <div class="den-stage"><div class="pic" id="denPic" role="button" tabindex="0" aria-label="Give Allen a wiggle"></div><p class="who" id="denWho"></p></div>
-      <form class="den-ctl" id="denCtl" onsubmit="return false"></form>
-    </div>
-  </section>
-
-  <section class="block" aria-labelledby="h-index">
-    <p class="kick">03 / Exams</p>
-    <h2 id="h-index">Every exam, <em>year by year.</em></h2>
-    <div class="tabs" role="tablist" id="tabs"></div>
-    <div class="mine" id="mine"></div>
-    <div id="panel"></div>
-  </section>
-
   <footer class="hub-foot">
     <p>Free to use. Exam dates are from NZQA's 2026 timetable; check your admission slip, since your school's entries decide what you sit. We link to NZQA for past papers, marking schedules and exemplars instead of copying them, because NZQA restricts reproduction of its assessment material.</p>
     <p>Years 9–10 topics follow the refreshed New Zealand Curriculum: English and maths are in use from 2026; science and social sciences are required from 2027, so schools may still teach older content. Your school sets Year 9 and 10 exams.</p>
-    <p>Not made by or endorsed by NZQA or the Ministry of Education. <a href="teacher.html">Teachers: review the machines</a>.</p>
+    <p>Allen is an AI study helper made with Anthropic's Claude; messages to Allen go to Anthropic PBC (United States) to write the reply, and there is no account or tracking. Not made by or endorsed by NZQA or the Ministry of Education. <a href="teacher.html">Teachers: review the machines</a>.</p>
     <p class="as-foot" id="foot"></p>
   </footer>
 </div>
@@ -470,57 +565,112 @@ const D=window.STUDY, $=id=>document.getElementById(id), esc=s=>String(s??"").re
 const K=window.StudyKit, A=K.allen;
 const NZ={timeZone:"Pacific/Auckland"};
 const days=iso=>Math.ceil((Date.parse(iso)-Date.now())/864e5);
+const nzDay=t=>new Date(t).toLocaleDateString("en-CA",{...NZ});
 const fmtDay=iso=>new Date(iso).toLocaleDateString("en-NZ",{...NZ,weekday:"short",day:"numeric",month:"short"});
 const fmtTime=iso=>new Date(iso).toLocaleTimeString("en-NZ",{...NZ,hour:"numeric",minute:"2-digit"}).replace(":00","").replace(" ","");
+const longDay=iso=>new Date(iso).toLocaleDateString("en-NZ",{...NZ,weekday:"long",day:"numeric",month:"long"}).replace(",","");
 let mine=[];try{mine=JSON.parse(localStorage.getItem("mine")||"[]")}catch(e){}
 const saveMine=()=>{try{localStorage.setItem("mine",JSON.stringify(mine))}catch(e){}};
 $("lock").innerHTML=K.lockup;$("foot").innerHTML=K.lockup+`<span>assembly is made by assembl in Aotearoa.</span>`;
 
-// countdown
+// ---- the year: ?year=12, #l2, or the saved choice. Year 11 (the biggest cohort, first paper on day one) when nothing is known.
+const YEARS=[["y9",9,"Year 9","school exams"],["y10",10,"Year 10","school exams"],["l1",11,"Year 11","NCEA Level 1"],["l2",12,"Year 12","NCEA Level 2"],["l3",13,"Year 13","NCEA Level 3"]];
+const byNum=n=>YEARS.find(y=>y[1]===+n),byKey=k=>YEARS.find(y=>y[0]===k);
+let tab=null;
+(function(){const u=new URLSearchParams(location.search).get("year");if(u&&byNum(u))tab=byNum(u)[0];
+  const h=(location.hash||"").slice(1);if(!tab&&byKey(h))tab=h;
+  if(!tab)try{const s=localStorage.getItem("study-year");if(byKey(s))tab=s}catch(e){}
+  if(!tab)tab="l1"})();
+const Y=()=>byKey(tab),yearNum=()=>Y()[1],isNCEA=()=>yearNum()>=11;
+$("years").innerHTML=YEARS.map(([k,n,l,s])=>`<li><button type="button" id="tab-${k}" role="tab" aria-pressed="${k===tab}" aria-selected="${k===tab}" data-year="${k}">${l}<small>${s}</small></button></li>`).join("");
+$("years").addEventListener("click",e=>{const b=e.target.closest("[data-year]");if(!b)return;setYear(b.dataset.year,true)});
+function setYear(k,scroll){tab=k;try{localStorage.setItem("study-year",k)}catch(e){}
+  try{const u=new URL(location.href);u.searchParams.set("year",yearNum());u.hash="";history.replaceState(null,"",u)}catch(e){}
+  document.querySelectorAll("#years [data-year]").forEach(b=>{const on=b.dataset.year===k;b.setAttribute("aria-pressed",on);b.setAttribute("aria-selected",on)});
+  render();renderMachines();renderStrip();K.sfx("tick");
+  if(scroll)try{$("exams").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}catch(e){}}
+
+// ---- what covers what: every standard code -> the machines that carry it (from each machine's structured `standards`, and the levels table)
+const covers={};Object.entries(D.machines).forEach(([id,m])=>(m.standards||[]).forEach(s=>(covers[s.code]=covers[s.code]||new Set()).add(id)));
+const allStd=()=>["l1","l2","l3"].flatMap(l=>(D.levels[l]?.standards||[]).map(s=>({...s,level:l})));
+allStd().forEach(s=>{if(s.machine&&D.machines[s.machine])(covers[s.num]=covers[s.num]||new Set()).add(s.machine)});
+const machinesFor=code=>[...(covers[code]||[])];
+const mchip=id=>{const m=D.machines[id];return `<a class="mch" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}"><i aria-hidden="true">${K.glyph(id)}</i>${esc(m.title.replace(/^The /,""))}</a>`};
+const nomach=s=>`<span class="nomach">No machine yet${s.url?` · <a href="${s.url}" target="_blank" rel="noopener">NZQA past papers ↗</a>`:""}</span>`;
+
+// ---- countdown and headline: driven by the dates in data.js, never hard-coded
 (function(){const d=days(D.examsStart),e=days(D.examsEnd);
   $("count").innerHTML=d>0?`<span class="num">${d}</span><span class="txt">days until NCEA exams start<span>${fmtDay(D.examsStart)} to ${fmtDay(D.examsEnd)} 2026 · 9:30am and 2pm sessions</span></span>`
-   :e>=0?`<span class="num">${e}</span><span class="txt">days of NCEA exams left<span>Last exam ${fmtDay(D.examsEnd)}</span></span>`:`<span class="txt">2026 NCEA exams are finished. Next year's start ${esc(D.next||"in November")}.</span>`})();
-
-// exam-week headline: driven by the dates in data.js, never hard-coded
-(function(){const d=days(D.examsStart),e=days(D.examsEnd),L=$("heroLine"),W=$("heroWhen"),Kk=$("heroKick");
-  const longDay=iso=>new Date(iso).toLocaleDateString("en-NZ",{...NZ,weekday:"long",day:"numeric",month:"long"}).replace(",","");
+   :e>=0?`<span class="num">${e}</span><span class="txt">days of NCEA exams left<span>Last exam ${fmtDay(D.examsEnd)}</span></span>`:`<span class="txt">2026 NCEA exams are finished. Next year's start ${esc(D.next||"in November")}.</span>`;
+  const L=$("heroLine"),W=$("heroWhen"),Kk=$("heroKick");
   const togo=d>=6&&d<=8?"One week to go.":d===1?"Tomorrow.":`${d} days to go.`;
-  if(d>1){L.textContent=`Exams start ${longDay(D.examsStart)}.`;W.textContent=`${togo} NCEA papers run ${fmtDay(D.examsStart)} to ${fmtDay(D.examsEnd)}.`;Kk.textContent=`NCEA 2026 · ${d>=6&&d<=8?"one week to go":d+" days to go"}`}
+  if(d>1){L.textContent=`Exams start ${longDay(D.examsStart)}.`;W.textContent=togo;Kk.textContent=`NCEA 2026 · ${d>=6&&d<=8?"one week to go":d+" days to go"}`}
   else if(d===1){L.textContent="Exams start tomorrow.";W.textContent=`First paper ${longDay(D.examsStart)}, 9:30am.`;Kk.textContent="NCEA 2026 · exams start tomorrow"}
   else if(e>=0){L.textContent="Exams are on.";W.textContent=`${e} day${e===1?"":"s"} of NCEA exams left. Last paper ${fmtDay(D.examsEnd)}.`;Kk.textContent="NCEA 2026 · exams in progress"}
   else{L.textContent="Exams are done.";W.textContent=`Next year's start ${esc(D.next||"in November")}.`;Kk.textContent="Study machines · Aotearoa"}})();
-// share this: copies the short study address (or this page's own address when it is served from elsewhere)
+
+// ---- today's exam / next exam: shown from the first exam day to the last, for the chosen level (every level for Years 9–10)
+function renderStrip(){const el=$("strip"),today=nzDay(Date.now());const d=days(D.examsStart),e=days(D.examsEnd);
+  if(!(d<=1&&e>=0)){el.hidden=true;return}
+  const all=allStd().filter(s=>s.when).filter(s=>!isNCEA()||s.level===tab);
+  const todays=all.filter(s=>nzDay(s.when)===today).sort((a,b)=>Date.parse(a.when)-Date.parse(b.when));
+  const later=all.filter(s=>Date.parse(s.when)>Date.now()&&nzDay(s.when)!==today).sort((a,b)=>Date.parse(a.when)-Date.parse(b.when));
+  const next=later.length?later.filter(s=>nzDay(s.when)===nzDay(later[0].when)):[];
+  const line=(list,label)=>{if(!list.length)return "";const bySub={};list.forEach(s=>(bySub[s.subject+"|"+fmtTime(s.when)]=bySub[s.subject+"|"+fmtTime(s.when)]||[]).push(s));
+    return `<div class="row"><b>${label}</b>${Object.entries(bySub).map(([k,ss])=>{const [sub,t]=k.split("|");const ms=[...new Set(ss.flatMap(s=>machinesFor(s.num)))];
+      return `<span><span class="t">${esc(t)}</span> ${esc(ss[0].level.toUpperCase())} ${esc(sub)} ${ss.map(s=>s.num).join(", ")}</span>${ms.map(id=>`<a href="${D.machines[id].href}">${esc(D.machines[id].title.replace(/^The /,""))}</a>`).join("")}`}).join("")}</div>`};
+  const lvl=isNCEA()?` for ${Y()[2]}`:"";
+  el.innerHTML=`<p class="k">Exam day ${Math.max(1,1-d)} of ${days(D.examsEnd)-days(D.examsStart)+1}${lvl}</p>`+(todays.length?line(todays,"Today"):`<div class="row"><b>No${lvl} exams today.</b></div>`)+(next.length?line(next,`Next · ${fmtDay(next[0].when)}`):"");
+  el.hidden=false}
+
+// share: the short study address with the chosen year
 (function(){const b=$("shareLink"),ok=$("shareDone");if(!b)return;
-  const url=location.hostname==="study.assembl.co.nz"?"https://study.assembl.co.nz/":location.origin+"/study/";
-  b.onclick=async()=>{try{if(navigator.share&&matchMedia("(pointer: coarse)").matches){await navigator.share({title:"assembly · free NCEA study machines",url});ok.textContent="Shared";return}
-      await navigator.clipboard.writeText(url);ok.textContent="Copied · "+url.replace(/^https:\/\//,"")}catch(err){if(err&&err.name==="AbortError")return;ok.textContent=url}}})();
-// study streak (this device), plus the places it unlocks for Allen
+  const url=()=>(location.hostname==="study.assembl.co.nz"?"https://study.assembl.co.nz/":location.origin+"/study/")+`?year=${yearNum()}`;
+  b.onclick=async()=>{const u=url();try{if(navigator.share&&matchMedia("(pointer: coarse)").matches){await navigator.share({title:`assembly · ${Y()[2]} study machines`,url:u});ok.textContent="Shared";return}
+      await navigator.clipboard.writeText(u);ok.textContent="Copied · "+u.replace(/^https:\/\//,"")}catch(err){if(err&&err.name==="AbortError")return;ok.textContent=u}}})();
+
+// ---- study streak (this device), plus the places it unlocks for Allen
 const LOG=K.readLog(), ST=A.state(LOG);
-(function(){const L=LOG;
-  const day=t=>new Date(t).toLocaleDateString("en-CA",{timeZone:"Pacific/Auckland"});
-  const days=new Set(L.map(x=>x.d));let n=0,cur=Date.now();if(!days.has(day(cur)))cur-=864e5;
-  while(days.has(day(cur))){n++;cur-=864e5}
+(function(){const L=LOG;const dayset=new Set(L.map(x=>x.d));let n=0,cur=Date.now();if(!dayset.has(nzDay(cur)))cur-=864e5;
+  while(dayset.has(nzDay(cur))){n++;cur-=864e5}
   const passed=L.filter(x=>x.kind==="pass").length,tried=new Set(L.map(x=>x.m)).size;
   const miles=`<ul class="miles" aria-label="Streak milestones">${A.backgrounds.filter(b=>b.days).map(b=>`<li class="${ST.best>=b.days?"got":""}">${b.days} days · ${esc(A.scenes[b.id].label)}${ST.best>=b.days?" ✓":""}</li>`).join("")}</ul>`;
   const next=ST.nextBg?`<span>${ST.nextBg.days-ST.best} more day${ST.nextBg.days-ST.best===1?"":"s"} in a row unlocks the ${esc(A.scenes[ST.nextBg.id].label.toLowerCase())} for Allen.</span>`:"";
-  $("streak").innerHTML=L.length?`<span class="num">${n}</span><span class="txt">day study streak${days.has(day(Date.now()))?"":" · study today to keep it going"}<span>${passed} challenges passed · ${tried} machine${tried===1?"":"s"} tried · saved on this device</span>${next}</span>${miles}`
+  $("streak").innerHTML=L.length?`<span class="num">${n}</span><span class="txt">day study streak${dayset.has(nzDay(Date.now()))?"":" · study today to keep it going"}<span>${passed} challenges passed · ${tried} machine${tried===1?"":"s"} tried · saved on this device</span>${next}</span>${miles}`
    :`<span class="txt">Start a study streak<span>Open a machine and pass a challenge each day. Your streak is saved on this device, and it unlocks new places for Allen.</span></span>${miles}`})();
-// machine cards
-const THREE_PREVIEWS=new Set(["fly", "socials", "heart", "shaky", "vend", "pinball", "ai", "atoms", "bike", "civics", "claw", "climate", "data", "ecology", "energy", "fish", "genes", "inanga", "kokopu", "lines", "maps", "market", "materials", "particles", "phone", "plan", "queue", "reactions", "shapes", "sky", "slushie", "space", "vinyl"]);
+
+// ---- machine cards: year, standard and exam date on the face
+const THREE_PREVIEWS=new Set(["fly","socials","heart","shaky","vend","pinball","ai","atoms","bike","civics","claw","climate","data","ecology","energy","fish","genes","inanga","kokopu","lines","maps","market","materials","particles","phone","plan","queue","reactions","shapes","sky","slushie","space","vinyl"]);
 const GROUPS=[["science","Science"],["biochem","Chemistry and biology"],["maths","Maths and statistics"],["english","English"],["social","Social studies"],["digital","Digital technologies"],["tech","Technology and design"]];
 const gearFor=id=>A.items.filter(it=>it.m&&it.m.includes(id));
+const yearsLabel=ys=>{if(!ys||!ys.length)return "";const runs=[];ys.forEach(y=>{const r=runs[runs.length-1];if(r&&y===r[1]+1)r[1]=y;else runs.push([y,y])});
+  return (ys.length>1?"Years ":"Year ")+runs.map(([a,b])=>a===b?a:`${a}–${b}`).join(", ")};
+const subjShort=s=>({"Mathematics and Statistics":"Maths","Physics, Earth and Space Science":"PESS","Earth and Space Science":"ESS","Chemistry and Biology":"Chem & Bio","Design and Visual Communication":"DVC"})[s]||s;
+let showAll=false;
 function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(it.id));
-  const ex=m.tags.filter(t=>t.startsWith("NCEA")).map(t=>t.replace(/^NCEA /,"").replace(/^(L\d) .*?(\d{5})$/,"$1 · $2")),yrs=m.tags.filter(t=>/^Year/.test(t)).sort((a,b)=>parseInt(a.replace("Year ",""))-parseInt(b.replace("Year ","")));
-  const find=(m.title+" "+(m.desc||"")+" "+(m.blurb||"")+" "+(m.tags||[]).join(" ")).toLowerCase();
-  const yr=yrs.length>1?`Years ${yrs[0].replace("Year ","")}–${yrs[yrs.length-1].replace("Year ","")}`:(yrs[0]||"");
-  return `<a class="app" data-find="${esc(find)}" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
-  <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart"||id==="socials")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span>${ex.length?`<span class="app-ex">NCEA ${esc(ex.join(" + ").replace(/ \+ L1 · /g," + "))}</span>`:""}</span>
+  const find=(m.title+" "+(m.desc||"")+" "+(m.blurb||"")+" "+(m.tags||[]).join(" ")+" "+(m.standards||[]).map(s=>s.code+" "+s.subject+" "+s.title).join(" ")).toLowerCase();
+  // on the face: the year(s), then this year's standard first if the student has picked one
+  const stds=(m.standards||[]).slice().sort((a,b)=>(a.level===tab.toUpperCase()?0:1)-(b.level===tab.toUpperCase()?0:1));
+  const show=stds.slice(0,2);
+  const chips=[`<span class="pc yr">${esc(yearsLabel(m.years))}</span>`,
+    ...show.map(s=>`<span class="pc std" title="${esc(s.full||s.title)}"><b>${esc(s.code)}</b>${esc(subjShort(s.subject))} · ${esc(s.title)}</span>`),
+    ...(show.length&&show[0].exam?[`<span class="pc ex">Exam ${esc(fmtDay(show[0].exam))}, ${esc(fmtTime(show[0].exam))}</span>`]:[]),
+    ...(stds.length>2?[`<span class="pc">+${stds.length-2} more</span>`]:[])];
+  return `<a class="app" data-find="${esc(find)}" data-years="${(m.years||[]).join(" ")}" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
+  <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart"||id==="socials")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span><span class="app-ex">${m.level==="junior"?"Years 7–10":"NCEA "+esc(m.level)}</span></span>
   <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
-  <span class="app-foot"><span class="yr">${esc(yr)}</span>${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
-const byGroup={};Object.entries(D.machines).forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});
-$("machines").innerHTML=GROUPS.filter(([k])=>byGroup[k]).map(([k,label])=>{const list=byGroup[k].sort((a,b)=>(b[1].tags.some(t=>t.startsWith("NCEA"))?1:0)-(a[1].tags.some(t=>t.startsWith("NCEA"))?1:0));
-  return `<div class="subj" id="subj-${k}" data-subj="${k}" style="--acc:${K.accentFor(list[0][0])};--acc-tint:${K.tintFor(list[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${list.length} machine${list.length===1?"":"s"}</small></h3><div class="apps">${list.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
-
+  <span class="app-chips">${chips.join("")}</span>
+  <span class="app-foot">${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
+function renderMachines(){const y=yearNum();
+  const list=Object.entries(D.machines).filter(([id,m])=>showAll||!(m.years&&m.years.length)||m.years.includes(y));
+  const byGroup={};list.forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});
+  $("machYear").textContent=showAll?"every year.":Y()[2]+".";
+  $("machines").innerHTML=GROUPS.filter(([k])=>byGroup[k]).map(([k,label])=>{const items=byGroup[k].sort((a,b)=>((b[1].standards||[]).some(s=>s.level===tab.toUpperCase())?1:0)-((a[1].standards||[]).some(s=>s.level===tab.toUpperCase())?1:0));
+    return `<div class="subj" id="subj-${k}" data-subj="${k}" style="--acc:${K.accentFor(items[0][0])};--acc-tint:${K.tintFor(items[0][0])}"><h3><i aria-hidden="true"></i>${esc(label)}<small>${items.length} machine${items.length===1?"":"s"}</small></h3><div class="apps">${items.map(([id,m])=>appTile(id,m)).join("")}</div></div>`}).join("");
+  const hidden=Object.keys(D.machines).length-list.length;
+  $("machNote").textContent=hidden>0?`${hidden} more machine${hidden===1?"":"s"} are for other years. "Show every year" lists them all.`:"";
+  dispatchEvent(new Event("machines:rendered"))}
+$("showAll").onclick=()=>{showAll=!showAll;$("showAll").setAttribute("aria-pressed",showAll);renderMachines()};
 
 // ---- hero bench: name each machine from data.js, lean the bench towards the pointer
 document.querySelectorAll("#bench .mx").forEach(a=>{const m=D.machines[a.dataset.m];if(!m){a.remove();return}
@@ -536,7 +686,7 @@ const shown=()=>{const n=String(look.name||"").trim();return n||"Allen"};
 const coatName=()=>(A.coats[look.coat]||A.coats.red).label.toLowerCase();
 const sceneLabel=()=>`${shown()}, a long-haired ${coatName()} dachshund, at the ${A.scenes[look.bg]?.label.toLowerCase()||"workshop"}`;
 function paint(){
-  $("heroName").textContent=shown();
+  $("heroName").textContent=shown();$("heroAllen").querySelector(".av").innerHTML=A.svg(look,{box:"bust"});
   $("denPic").innerHTML=A.svg(look,{scene:true,label:sceneLabel()});
   $("denName").textContent=shown();
   const worn=["head","eyes","neck","prop"].map(s=>look.gear[s]).filter(Boolean).map(id=>A.label(id).toLowerCase());
@@ -561,7 +711,6 @@ function buildCtl(){
   $("denCtl").innerHTML=o;
   if(fresh.size){look.seen=[...new Set([...(look.seen||[]),...fresh])];A.save(look)}
 }
-// sanitise: never wear something that isn't unlocked (e.g. a cleared log)
 SLOTS.forEach(([s])=>{if(look.gear[s]&&!ST.has.has(look.gear[s]))look.gear[s]=""});if(!ST.has.has("bg:"+look.bg))look.bg="workshop";
 buildCtl();paint();
 const ctl=$("denCtl");
@@ -580,80 +729,78 @@ ctl.addEventListener("click",e=>{
 const wig=()=>{const s=$("denPic").querySelector(".allen");if(!s||matchMedia("(prefers-reduced-motion: reduce)").matches)return;s.classList.remove("wiggle");void s.getBoundingClientRect();s.classList.add("wiggle");K.sfx("yip");setTimeout(()=>s.classList.remove("wiggle"),1100)};
 $("denPic").addEventListener("click",wig);$("denPic").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();wig()}});
 
-// tabs
-const TABS=[["y9","Year 9",""],["y10","Year 10",""],["l1","Year 11","NCEA L1"],["l2","Year 12","NCEA L2"],["l3","Year 13","NCEA L3"]];
-let tab=(location.hash||"").slice(1);if(!TABS.some(t=>t[0]===tab))tab="l1";
-$("tabs").innerHTML=TABS.map(([k,l,s])=>`<button role="tab" type="button" id="tab-${k}" aria-selected="${k===tab}" aria-controls="panel">${l}${s?`<small>${s}</small>`:""}</button>`).join("");
-TABS.forEach(([k])=>$("tab-"+k).onclick=()=>{tab=k;try{history.replaceState(null,"","#"+k)}catch(e){}render()});
-
-const allStd=()=>["l1","l2","l3"].flatMap(l=>(D.levels[l]?.standards||[]).map(s=>({...s,level:l})));
+// ---- your exams: the chosen level's externals in date order, each with its machines
 function renderMine(){
   const list=allStd().filter(s=>mine.includes(s.num)).sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100"));
-  $("mine").innerHTML=`<h3><span>My exams</span><span>${list.length?`${list.length} picked · saved on this device`:"tap ☆ on any exam below to build your timetable"}</span></h3>`+
+  $("mine").hidden=!isNCEA();
+  $("mine").innerHTML=`<h3><span>My exams</span><span>${list.length?`${list.length} picked · saved on this device`:"tap ☆ on any exam below to build your own timetable"}</span></h3>`+
    (list.length?`<ol>${list.map(s=>`<li><span class="d">${s.when?fmtDay(s.when)+" "+fmtTime(s.when):"date tbc"}</span><span>${esc(s.subject)} · ${esc(s.title)}</span><span class="c">${s.when&&days(s.when)>0?days(s.when)+" days":""}</span></li>`).join("")}</ol><div><button class="btn" type="button" id="copyMine">Copy my timetable</button></div>`:"");
   const c=$("copyMine");if(c)c.onclick=()=>{const txt=list.map(s=>`${s.when?fmtDay(s.when)+" "+fmtTime(s.when):"tbc"} · ${s.subject} ${s.num} · ${s.title}`).join("\n");
     try{navigator.clipboard.writeText(txt).then(()=>{c.textContent="Copied"},()=>{c.textContent="Copy failed"})}catch(e){c.textContent="Copy failed"}};
 }
-function stdRow(s){const m=s.machine&&D.machines[s.machine];const d=s.when?days(s.when):null;
-  return `<div class="std"><div><div class="t"><span class="code">${esc(s.num)}</span>${esc(s.title)}</div>
-    <div class="meta">${s.when?`<b>${fmtDay(s.when)}, ${fmtTime(s.when)}</b>${d>0?` · ${d} days`:""}`:(/portfolio/i.test(s.format||"")?"Portfolio, submitted through your school":"Exam date to confirm")} · ${esc(s.credits?s.credits+" credits":"")}${s.format?` · ${esc(s.format)}`:""}</div></div>
-    <div class="acts">${m?`<a class="btn primary" href="${m.href}">Open machine</a>`:`<span class="soon">machine coming</span>`}
-      ${s.url?`<a class="btn" href="${s.url}" target="_blank" rel="noopener">Past papers ↗</a>`:""}
-      <button class="star" type="button" data-num="${esc(s.num)}" aria-pressed="${mine.includes(s.num)}">☆ My exams</button></div>
-    ${s.topics?.length?`<details><summary>WHAT'S EXAMINED</summary><ul>${s.topics.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></details>`:""}</div>`}
-function render(){
-  TABS.forEach(([k])=>$("tab-"+k).setAttribute("aria-selected",k===tab));
-  const L=D.levels[tab];let o="";
-  if(tab==="y9"||tab==="y10"){
-    o+=`<p class="note">${esc(L.note||"")}</p><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))">`+
-      L.areas.map(a=>`<div class="area"><h3>${esc(a.name)}</h3><div class="st">${esc(a.status||"")}</div><ul>${a.topics.map(t=>{const m=t.machine&&D.machines[t.machine];return`<li>${m?`<a href="${m.href}">${esc(t.t)}</a> · machine`:esc(t.t)}</li>`}).join("")}</ul></div>`).join("")+`</div>`;
+const shortTitle=t=>String(t).replace(/^(Demonstrate|Apply|Analyse|Interpret and apply|Evaluate|Investigate|Describe|Explain|Discuss|Respond critically to|Develop)\s+(understanding of|knowledge of)?\s*/i,"").replace(/\s+in solving problems$/,"").replace(/\s+(through close reading, )?supported by evidence$/,"").replace(/^(significant|specific|a range of|the|a)\s+/i,"").replace(/[,;:\s]+$/,"").replace(/^./,c=>c.toUpperCase());
+function stdRow(s){const ms=machinesFor(s.num);const d=s.when?days(s.when):null;const today=s.when&&nzDay(s.when)===nzDay(Date.now());
+  return `<div class="exr${ms.length?"":" thin"}" id="std-${esc(s.num)}"><div class="when">${s.when?`${fmtTime(s.when)}`:`<small>${/portfolio/i.test(s.format||"")?"Portfolio":"Date tbc"}</small>`}</div>
+    <div class="what"><div class="t"><span class="code">${esc(s.num)}</span>${esc(shortTitle(s.title))} <span class="sub">· ${esc(s.subject)}${s.credits?` · ${s.credits} cr`:""}</span></div>
+      <div class="acts">${ms.length?ms.map(mchip).join(""):nomach(s)}${ms.length&&s.url?`<a class="mch more" href="${s.url}" target="_blank" rel="noopener">NZQA ↗</a>`:""}<button class="star" type="button" data-num="${esc(s.num)}" aria-pressed="${mine.includes(s.num)}" aria-label="Add ${esc(s.num)} to my exams">☆</button></div>
+      ${s.topics?.length?`<details><summary>WHAT'S EXAMINED</summary><ul>${s.topics.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></details>`:""}</div></div>`}
+function render(){const L=D.levels[tab];let o="";
+  $("exTitle").textContent=Y()[2];
+  if(!isNCEA()){
+    $("exEm").textContent="subjects, with a machine for each.";$("exLede").textContent=L.note||"Your school sets Year 9 and 10 exams. These are the topics in the refreshed curriculum, with the machine that fits each one.";
+    o+=`<div class="jr">`+L.areas.map(a=>{const ms=[...new Set(a.topics.map(t=>t.machine).filter(m=>m&&D.machines[m]))];
+      return `<div class="jrow"><h3>${esc(a.name)}<small>${esc(a.status||"")}</small></h3><div class="acts">${ms.length?ms.map(mchip).join(""):`<span class="nomach">No machine for this yet. Allen can still help: ask him at the bottom right.</span>`}</div>
+        <details><summary>TOPICS</summary><ul>${a.topics.map(t=>{const m=t.machine&&D.machines[t.machine];return`<li>${esc(t.t)}${m?` · <a href="${m.href}">${esc(m.title)}</a>`:""}</li>`}).join("")}</ul></details></div>`}).join("")+`</div>`;
   } else {
-    const subjects=[...new Set(L.standards.map(s=>s.subject))].sort();
-    o+=`<div class="bar"><input type="search" id="q" placeholder="Search ${esc(TABS.find(t=>t[0]===tab)[2])} exams, e.g. biology, 91947, essay" aria-label="Search exams"><select id="subj" aria-label="Subject"><option value="">All subjects</option>${subjects.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div><div id="list"></div>`;
+    const subjects=[...new Set(L.standards.map(s=>s.subject))].sort();const n=L.standards.length,withM=L.standards.filter(s=>machinesFor(s.num).length).length;
+    $("exEm").textContent="exams, in date order.";$("exLede").textContent=`Every ${Y()[3]} external in order of sitting. ${withM} of the ${n} have a machine; the rest link to NZQA's past papers. Dates are from NZQA's 2026 timetable; check your admission slip.`;
+    o+=`<div class="bar"><input type="search" id="q" placeholder="Search ${esc(Y()[2])} exams: biology, 91947, essay…" aria-label="Search exams"><select id="subj" aria-label="Subject"><option value="">All subjects</option>${subjects.map(s=>`<option>${esc(s)}</option>`).join("")}</select><label class="switch" style="align-items:center"><input type="checkbox" id="onlyM"><span>Only exams with a machine</span></label></div><div class="ex-list" id="list"></div>`;
   }
   $("panel").innerHTML=o;
-  if($("q")){const go=()=>{const q=$("q").value.trim().toLowerCase(),sj=$("subj").value;
-      const rows=L.standards.filter(s=>(!sj||s.subject===sj)&&(!q||(s.num+" "+s.title+" "+s.subject+" "+(s.topics||[]).join(" ")).toLowerCase().includes(q)));
-      const by={};rows.forEach(s=>(by[s.subject]=by[s.subject]||[]).push(s));
-      const first=k=>Math.min(...by[k].map(s=>Date.parse(s.when||"2100-01-01")));
-      $("list").innerHTML=Object.keys(by).sort((a,b)=>first(a)-first(b)||a.localeCompare(b)).map(k=>`<div class="subject"><h3>${esc(k)}</h3>${by[k].sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100")).map(stdRow).join("")}</div>`).join("")||`<p class="empty">No exams match. Try a subject name or a standard number.</p>`;
+  if($("q")){const go=()=>{const q=$("q").value.trim().toLowerCase(),sj=$("subj").value,om=$("onlyM").checked;
+      const rows=L.standards.filter(s=>(!sj||s.subject===sj)&&(!om||machinesFor(s.num).length)&&(!q||(s.num+" "+s.title+" "+s.subject+" "+(s.topics||[]).join(" ")).toLowerCase().includes(q)))
+        .sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100")||a.subject.localeCompare(b.subject));
+      const today=nzDay(Date.now());let lastDay=null,out="";
+      rows.forEach(s=>{const dk=s.when?nzDay(s.when):"tbc";if(dk!==lastDay){lastDay=dk;const d=s.when?days(s.when):null;
+          out+=`<div class="ex-day${dk===today?" today":""}"><b>${s.when?fmtDay(s.when):"Date to confirm"}</b><small>${dk===today?"today":d>0?`${d} day${d===1?"":"s"} away`:""}</small></div>`}
+        out+=stdRow(s)});
+      $("list").innerHTML=out||`<p class="empty">No exams match. Try a subject name or a standard number.</p>`;
       document.querySelectorAll(".star").forEach(b=>b.onclick=()=>{const n=b.dataset.num;mine=mine.includes(n)?mine.filter(x=>x!==n):[...mine,n];saveMine();b.setAttribute("aria-pressed",mine.includes(n));renderMine()})};
-    $("q").oninput=go;$("subj").onchange=go;go()}
+    $("q").oninput=go;$("subj").onchange=go;$("onlyM").onchange=go;go()}
   renderMine();
 }
-render();
+// deep links from elsewhere (#l2, #y9) still choose the year
+addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(byKey(h))setYear(h,true)});
+render();renderMachines();renderStrip();
 })();
 </script>
 
-<script src="/study/navigation-paths.js" defer></script><script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script><style>
-.finder{margin:0 0 22px;padding:22px;border-radius:24px;background:#F5F1F2;border:1px solid rgba(36,11,33,.08)}
-.finder h2{margin:0 0 6px;font:600 clamp(24px,3vw,32px)/1.1 "Instrument Sans",system-ui,sans-serif;letter-spacing:-.02em}
-.finder .find-sub{margin:0 0 14px;color:#654A4E;font-size:15px;line-height:1.5;max-width:70ch}
+<script src="/ask.js" defer data-page="study"></script><script src="/lab/navigation.js" defer></script><style>
+.finder{margin:0;padding:16px 18px;border-radius:20px;background:#F5F1F2;border:1px solid rgba(36,11,33,.08);display:grid;gap:10px}
 .top .getapp{all:unset;cursor:pointer;margin-left:6px;padding:8px 16px;border-radius:999px;background:#240B21;color:#FFFDFB;font:600 14px "Instrument Sans",system-ui,sans-serif}.top .getapp:focus-visible{outline:2px solid #916A70;outline-offset:2px}@media (prefers-color-scheme:dark){.top .getapp{background:#F5F1F2;color:#240B21}}
-.find-q input{width:100%;box-sizing:border-box;font:500 18px "Instrument Sans",system-ui,sans-serif;padding:14px 18px;border-radius:16px;border:1px solid rgba(36,11,33,.2);background:#fff;color:#240B21}
-.find-subj{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}.find-subj button,.find-vid{all:unset;cursor:pointer;padding:9px 15px;border-radius:999px;background:#fff;border:1px solid rgba(36,11,33,.16);font:600 14px "Instrument Sans",sans-serif;color:#240B21}
-.find-subj button[aria-pressed=true]{background:#240B21;color:#FFFDFB;border-color:#240B21}.find-vid{background:#240B21;color:#FFFDFB;margin-top:6px}
-.find-n{margin:8px 0 0;font:500 13px "IBM Plex Mono",monospace;color:#916A70}.sr-only{position:absolute;left:-9999px}
+.find-q input{width:100%;box-sizing:border-box;font:500 17px "Instrument Sans",system-ui,sans-serif;padding:12px 16px;border-radius:14px;border:1px solid rgba(36,11,33,.2);background:#fff;color:#240B21}
+.find-subj{display:flex;flex-wrap:wrap;gap:6px}.find-subj button,.find-vid{all:unset;cursor:pointer;padding:8px 13px;border-radius:999px;background:#fff;border:1px solid rgba(36,11,33,.16);font:600 13px "Instrument Sans",sans-serif;color:#240B21}
+.find-subj button[aria-pressed=true]{background:#240B21;color:#FFFDFB;border-color:#240B21}.find-vid{background:#240B21;color:#FFFDFB}
+.find-n{margin:0;font:500 13px "IBM Plex Mono",monospace;color:#916A70}.find-n:empty{display:none}.sr-only{position:absolute;left:-9999px}
 .find-subj button:focus-visible,.find-vid:focus-visible,.find-q input:focus-visible{outline:2px solid #916A70;outline-offset:2px}
-@media (prefers-color-scheme:dark){.finder{background:#271a2a;border-color:rgba(245,241,242,.1)}.finder .find-sub{color:#cdb8c2}.find-q input,.find-subj button{background:#140e16;color:#F5F1F2;border-color:rgba(245,241,242,.2)}.find-subj button[aria-pressed=true],.find-vid{background:#F5F1F2;color:#240B21}}
+@media (prefers-color-scheme:dark){.finder{background:#271a2a;border-color:rgba(245,241,242,.1)}.find-q input,.find-subj button{background:#140e16;color:#F5F1F2;border-color:rgba(245,241,242,.2)}.find-subj button[aria-pressed=true],.find-vid{background:#F5F1F2;color:#240B21}}
 </style>
 <script src="app.js" defer></script>
 <script>
 // The study finder: search and subject buttons filter the machine cards; the count says what is showing.
 (function(){const q=document.getElementById("find-q"),box=document.getElementById("find-subj"),n=document.getElementById("find-n");let subj="";
-  const ready=()=>document.querySelectorAll("#machines .subj").length;
-  function build(){const groups=[...document.querySelectorAll("#machines .subj")];box.innerHTML=`<button type="button" data-s="" aria-pressed="true">All subjects</button>`+groups.map(g=>`<button type="button" data-s="${g.dataset.subj}" aria-pressed="false">${g.querySelector("h3").childNodes[1].textContent.trim()}</button>`).join("");filter()}
+  function build(){const groups=[...document.querySelectorAll("#machines .subj")];if(subj&&!groups.some(g=>g.dataset.subj===subj))subj="";
+    box.innerHTML=`<button type="button" data-s="" aria-pressed="${!subj}">All subjects</button>`+groups.map(g=>`<button type="button" data-s="${g.dataset.subj}" aria-pressed="${g.dataset.subj===subj}">${g.querySelector("h3").childNodes[1].textContent.trim()}</button>`).join("");filter()}
   function filter(){const words=q.value.toLowerCase().split(/\s+/).filter(Boolean);let shown=0;
     document.querySelectorAll("#machines .subj").forEach(g=>{let any=0;g.querySelectorAll(".app").forEach(a=>{const ok=(!subj||g.dataset.subj===subj)&&words.every(w=>a.dataset.find.includes(w));a.hidden=!ok;if(ok){any++;shown++}});g.hidden=!any});
-    n.textContent=words.length||subj?(shown?`${shown} machine${shown===1?"":"s"} found`:"Nothing matches yet. Try a shorter word, or ask Allen (bottom right)."):""}
-  q.addEventListener("input",()=>{filter();if(q.value.length>2)document.getElementById("machines").scrollIntoView({block:"start",behavior:"smooth"})});
-  box.addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;subj=b.dataset.s;box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));filter();document.getElementById(subj?"subj-"+subj:"machines").scrollIntoView({block:"start",behavior:"smooth"})});
+    n.textContent=words.length||subj?(shown?`${shown} machine${shown===1?"":"s"} found`:"Nothing matches for this year. Try \"Show every year\", a shorter word, or ask Allen (bottom right)."):""}
+  q.addEventListener("input",filter);
+  box.addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;subj=b.dataset.s;box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));filter()});
+  addEventListener("machines:rendered",build);build();
   // Shared links: /study/?find=socials opens that machine; any other word fills the search (assembl.co.nz/study/<word>).
   const want=(new URLSearchParams(location.search).get("find")||"").trim().toLowerCase().slice(0,60);
-  function deep(){if(!want)return;const m=document.querySelector(`#machines a[href$="m/${CSS.escape(want)}.html"]`);if(m){location.replace(m.href);return}
-    q.value=want.replace(/[-_]+/g," ");filter();document.getElementById("find").scrollIntoView({block:"start"})}
-  (function wait(){ready()?(build(),deep()):setTimeout(wait,150)})();
-  fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos.study;if(!v)return;const b=document.getElementById("find-vid");b.hidden=false;b.textContent=`▶ How the study machines work · ${v.dur} s`;
+  if(want){const m=window.STUDY&&window.STUDY.machines[want];if(m){location.replace(m.href)}else{q.value=want.replace(/[-_]+/g," ");filter();document.getElementById("machsec").scrollIntoView({block:"start"})}}
+  fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos.study;if(!v)return;const b=document.getElementById("find-vid");b.hidden=false;b.textContent=`▶ How the machines work · ${v.dur} s`;
     b.onclick=()=>{const d=document.createElement("dialog");d.style.cssText="width:min(960px,calc(100vw - 24px));padding:0;border:0;border-radius:20px;background:#140e16;overflow:hidden";
       d.innerHTML=`<video controls autoplay playsinline style="display:block;width:100%" poster="/study/videos/study.jpg"><source src="/study/videos/study.mp4" type="video/mp4"><track kind="captions" srclang="en" label="English" src="/study/videos/study.vtt" default></video><div style="display:flex;justify-content:flex-end;padding:10px"><button type="button" style="all:unset;cursor:pointer;padding:8px 14px;border-radius:10px;background:#F5F1F2;color:#240B21;font-weight:600">Close</button></div>`;
       document.body.appendChild(d);d.querySelector("button").onclick=()=>d.close();d.addEventListener("close",()=>d.remove());d.showModal()}}).catch(()=>{});

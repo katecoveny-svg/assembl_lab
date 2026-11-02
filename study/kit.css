@@ -63,6 +63,7 @@ h1{margin:0;font:600 clamp(24px,3.4vw,34px)/1.08 var(--as-display);letter-spacin
 .mhr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .exam{font:500 13px var(--as-font);color:var(--as-ink);background:var(--as-card);border:1px solid var(--as-line);border-radius:999px;padding:8px 14px;box-shadow:var(--as-shadow)}
 .exam b{font-weight:700;color:var(--as-ink)}
+.exam .more{font:500 11px var(--as-mono);color:var(--as-muted);cursor:help}
 .exam .dd{display:inline-block;margin-left:6px;font:600 12px var(--as-font);background:var(--acc);color:var(--acc-ink);border-radius:999px;padding:2px 9px}
 .ibtn{appearance:none;flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--as-line);background:var(--as-card);color:var(--as-muted);cursor:pointer;
   box-shadow:var(--as-shadow);transition:background .2s ease,color .2s ease,border-color .2s ease}

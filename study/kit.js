@@ -390,7 +390,9 @@ function mount(cfg){logStudy("open");
   // the machine's case tint (one pastel per machine, see refs/figure/README.md): washes the bench canvases and keys the step chip
   try{const tint=(cfg.caseTint&&(FIG_PALETTE.case[cfg.caseTint]||cfg.caseTint))||tintFor(mid);document.documentElement.style.setProperty("--case",tint);document.documentElement.style.setProperty("--acc-tint",tint)}catch(e){}
   const exam=cfg.badge?.exam?daysUntil(cfg.badge.exam):null;
-  const examTxt=cfg.badge?`${esc(cfg.badge.label)}${cfg.badge.examText?` · exam <b>${esc(cfg.badge.examText)}</b>`:""}${exam!==null&&exam>0?`<span class="dd">${exam} day${exam===1?"":"s"}</span>`:""}`:"";
+  // the year comes first ("Year 12 · NCEA L2 Physics 91171 · exam Wed 18 Nov"); data.js fills in the rest once it loads
+  const yrOf=l=>{const m=/NCEA L([123])/.exec(l||"");return m?`Year ${10+ +m[1]} · `:""};
+  const examTxt=cfg.badge?`${yrOf(cfg.badge.label)}${esc(cfg.badge.label)}${cfg.badge.examText?` · exam <b>${esc(cfg.badge.examText)}</b>`:""}${exam!==null&&exam>0?`<span class="dd">${exam} day${exam===1?"":"s"}</span>`:""}`:"";
   const home=cfg.home||"../index.html";
   app.innerHTML=`<div class="wrap">
   <header class="apphead">
@@ -503,6 +505,19 @@ function mount(cfg){logStudy("open");
   const api={redraw,get step(){return cfg.steps[step]},setStep,state:s};
   // Allen the tutor (study/tutor.js) reads and works this machine through the same api
   try{window.StudyKit.current={api,cfg,mid};dispatchEvent(new Event("studykit:mounted"))}catch(e){}
+  // the year, standard and exam date in the header, from the structured fields in data.js (years, standards)
+  try{const d=document.createElement("script");d.src=new URL("data.js",KIT_SRC).href;d.async=true;d.onload=()=>{try{const m=window.STUDY&&window.STUDY.machines&&window.STUDY.machines[mid];if(!m)return;
+      const fmtD=iso=>new Date(iso).toLocaleDateString("en-NZ",{timeZone:"Pacific/Auckland",weekday:"short",day:"numeric",month:"short"}).replace(",",""),fmtT=iso=>new Date(iso).toLocaleTimeString("en-NZ",{timeZone:"Pacific/Auckland",hour:"numeric",minute:"2-digit"}).replace(":00","").replace(" ","");
+      const ys=m.years||[],runs=[];ys.forEach(y=>{const r=runs[runs.length-1];if(r&&y===r[1]+1)r[1]=y;else runs.push([y,y])});const yl=ys.length?(ys.length>1?"Years ":"Year ")+runs.map(([a,b])=>a===b?a:`${a}–${b}`).join(", "):"";
+      const sh={"Mathematics and Statistics":"Maths","Physics, Earth and Space Science":"PESS","Earth and Space Science":"ESS","Chemistry and Biology":"Chem & Bio","Design and Visual Communication":"DVC"};
+      // the student's year (chosen on the hub) picks which standard leads
+      let yr="";try{yr=localStorage.getItem("study-year")||""}catch(e){}const lv=({l1:"L1",l2:"L2",l3:"L3"})[yr]||"";
+      const st=(m.standards||[]).slice().sort((a,b)=>((a.level===lv?0:1)-(b.level===lv?0:1))||(Date.parse(a.exam||"2100")-Date.parse(b.exam||"2100")));const first=st[0];
+      const parts=[yl];if(first){parts.push(`<b>${esc(sh[first.subject]||first.subject)} ${esc(first.code)}</b>`);if(first.exam){const dd=daysUntil(first.exam);parts.push(`exam <b>${esc(fmtD(first.exam))}, ${esc(fmtT(first.exam))}</b>`+(dd>0?`<span class="dd">${dd} day${dd===1?"":"s"}</span>`:dd===0?`<span class="dd">today</span>`:""))}
+        if(st.length>1)parts.push(`<span class="more" title="${esc(st.slice(1).map(x=>`${x.subject} ${x.code}`).join(", "))}">+${st.length-1} more</span>`)}
+      else parts.push(esc(cfg.eyebrow||""));
+      let pill=document.querySelector(".mhr .exam");if(!pill){pill=document.createElement("div");pill.className="exam";document.querySelector(".mhr").prepend(pill)}
+      pill.innerHTML=parts.filter(Boolean).join(" · ")}catch(e){}};document.head.appendChild(d)}catch(e){}
   // the plain-language guide: how-it-works bar, first-visit tour, walkthrough video (study/guide.js)
   try{const g=document.createElement("script");g.src=new URL("guide.js",KIT_SRC).href;g.defer=true;document.head.appendChild(g)}catch(e){}
   // the study app: installable to the home screen, keeps visited machines offline (study/app.js)
