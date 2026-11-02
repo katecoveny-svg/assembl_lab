@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 async function ready(page) {
-  await page.goto("/instruments/impossible-objects/");
+  await page.goto("/instruments/impossible-objects-3d/");
   await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
 }
 for (const key of ["Home", "End"])

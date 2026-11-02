@@ -39,7 +39,7 @@ test("Sonic audio is gesture-gated, bounded, recoverable, synchronised and dispo
       }
     };
   });
-  await page.goto(root + "sonic-loom/");
+  await page.goto(root + "sonic-loom-3d/");
   expect(await page.evaluate(() => audio.length)).toBe(0);
   await page.getByRole("button", { name: "▶ Play rhythm" }).click();
   await expect.poll(() => page.evaluate(() => audio[0].state)).toBe("running");
@@ -105,7 +105,7 @@ test("audio rejection is recoverable without reload", async ({ page }) => {
       return r.call(this);
     };
   });
-  await page.goto(root + "sonic-loom/");
+  await page.goto(root + "sonic-loom-3d/");
   await page.getByRole("button", { name: "▶ Play rhythm" }).click();
   await expect(page.locator("#status")).toContainText("could not start");
   await page.getByRole("button", { name: "▶ Play rhythm" }).click();
@@ -133,7 +133,7 @@ test("Time renders 4 MiB 3D texture; slice, time, threshold, undo and PNG work",
       return f.apply(this, a);
     };
   });
-  await page.goto(root + "time-sculpture/");
+  await page.goto(root + "time-sculpture-3d/");
   await expect(page.locator("#metrics")).toContainText("4.0 MiB");
   await expect
     .poll(() => page.evaluate(() => volumes.length))
@@ -194,7 +194,7 @@ test("Liquid is finite, responsive to stirring, and mobile layout fits", async (
 }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(root + "liquid-playground/");
+  await page.goto(root + "liquid-playground-3d/");
   await expect(page.locator("#metrics")).toContainText("640 PARTICLES");
   await page.getByRole("button", { name: "Ⅱ Pause", exact: true }).click();
   const before = await page.locator("canvas").screenshot();

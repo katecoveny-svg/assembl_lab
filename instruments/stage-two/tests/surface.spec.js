@@ -10,7 +10,7 @@ test("smooth 3D fluid surface, pour, stir, reset and timed rendering", async ({
     if (m.type() === "error") errors.push(m.text());
     if (m.type() === "warning") warnings.push(m.text());
   });
-  await page.goto("/instruments/liquid-playground/");
+  await page.goto("/instruments/liquid-playground-3d/");
   await expect(page.locator("#metrics")).toContainText("TRIANGLES");
   await page.getByRole("button", { name: "Ⅱ Pause", exact: true }).click();
   const initial = await page.locator("canvas").screenshot();

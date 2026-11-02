@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 async function ready(page, route = "reality-remix", query = "") {
-  await page.goto(`/instruments/${route}/${query}`);
+  await page.goto(`/instruments/${route}-3d/${query}`);
   await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
 }
 test("Auto conservatively selects 2400 splats even on a wide screen", async ({

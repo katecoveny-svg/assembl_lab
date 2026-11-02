@@ -350,7 +350,7 @@ try {
   $("#loading").textContent =
     "This 3D studio could not start. " + error.message;
   const a = document.createElement("a");
-  a.href = "../soft-matter/?mode=2d";
+  a.href = "../soft-matter-3d/?mode=2d";
   a.textContent = "Open the lighter 2D material study";
   $("#loading").append(document.createElement("br"), a);
   say("WebGL2 and WebAssembly are needed for the 3D factory.");

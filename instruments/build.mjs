@@ -20,7 +20,7 @@ for (const [route, title] of [
   ["impossible-objects", "Impossible Objects"],
 ]) {
   await writeFile(
-    `${route}/index.html`,
+    `${route}-3d/index.html`,
     (await readFile("src/shell.html", "utf8"))
       .replaceAll("{{title}}", title)
       .replaceAll("{{route}}", route),

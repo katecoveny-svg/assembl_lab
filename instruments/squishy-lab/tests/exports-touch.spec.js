@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs/promises";
 test.beforeEach(async ({ page }) => {
-  await page.goto("/instruments/squishy-lab/");
+  await page.goto("/instruments/squishy-lab-3d/");
   await page.waitForFunction(() => window.__squishy);
 });
 test("transparent PNG has clear corners and visible sculpture, share fallback downloads", async ({

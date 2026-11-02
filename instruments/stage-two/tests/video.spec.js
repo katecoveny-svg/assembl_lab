@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-const route = "/instruments/time-sculpture/",
+const route = "/instruments/time-sculpture-3d/",
   fixture = "../../output/playwright/original-motion.webm";
 async function track(page) {
   await page.addInitScript(() => {

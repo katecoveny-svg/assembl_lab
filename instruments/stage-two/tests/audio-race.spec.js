@@ -26,7 +26,7 @@ for (const action of ["Ⅱ Pause", "↺ Reset"])
         return resume.call(this);
       };
     });
-    await page.goto("/instruments/sonic-loom/");
+    await page.goto("/instruments/sonic-loom-3d/");
     await page.getByRole("button", { name: "▶ Play rhythm" }).click();
     await expect
       .poll(() => page.evaluate(() => typeof finishResume))

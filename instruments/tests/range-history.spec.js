@@ -11,7 +11,7 @@ for (const [route, query, names] of routes)
   test(`${route}${query}: all native range keys restore complete state`, async ({
     page,
   }) => {
-    await page.goto(`/instruments/${route}/${query}`);
+    await page.goto(`/instruments/${route}-3d/${query}`);
     await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
     await page.locator("#freeze").click();
     for (const name of names)
@@ -51,7 +51,7 @@ for (const [route, query, names] of routes)
 test("spring undo crosses material preset and quality changes without losing the sculpture", async ({
   page,
 }) => {
-  await page.goto("/instruments/soft-matter/");
+  await page.goto("/instruments/soft-matter-3d/");
   await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
   await page.locator("#freeze").click();
   const original = await page.evaluate(() =>
@@ -79,7 +79,7 @@ test("spring undo crosses material preset and quality changes without losing the
 test("one held key or pointer drag creates one undo step; boundary no-ops create none", async ({
   page,
 }) => {
-  await page.goto("/instruments/soft-matter/");
+  await page.goto("/instruments/soft-matter-3d/");
   await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
   await page.locator("#freeze").click();
   const slider = page.getByRole("slider", { name: "Spring", exact: true });

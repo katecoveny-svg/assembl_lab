@@ -8,7 +8,7 @@ for (const route of [
   "impossible-objects/",
 ]) {
   test(`wall-clock measurement ${route}`, async ({ page }, info) => {
-    await page.goto(`/instruments/${route}`);
+    await page.goto(`/instruments/${route}-3d/`);
     await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
     await page.waitForTimeout(2000);
     const measurement = await page.evaluate(

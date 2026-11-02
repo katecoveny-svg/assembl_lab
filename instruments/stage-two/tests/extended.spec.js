@@ -34,7 +34,7 @@ test("actual same-window tab hiding, navigation and back navigation stop audio",
       }
     };
   });
-  await page.goto(root + "sonic-loom/");
+  await page.goto(root + "sonic-loom-3d/");
   await page.getByRole("button", { name: "▶ Play rhythm" }).click();
   const session = await context.newCDPSession(page);
   const { targetInfo } = await session.send("Target.getTargetInfo");
@@ -76,7 +76,7 @@ test("keyboard pluck visibly deforms ribbons; rhythm and orbit change pixels", a
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto(root + "sonic-loom/");
+  await page.goto(root + "sonic-loom-3d/");
   const canvas = page.locator("canvas");
   await expect(
     page.getByRole("button", { name: "▶ Resume", exact: true }),
@@ -113,7 +113,7 @@ test("keyboard pluck visibly deforms ribbons; rhythm and orbit change pixels", a
 test("Time orbit reveals volume from multiple angles and keyboard slice works", async ({
   page,
 }) => {
-  await page.goto(root + "time-sculpture/");
+  await page.goto(root + "time-sculpture-3d/");
   const c = page.locator("canvas");
   const front = await c.screenshot();
   const r = await c.boundingBox();
@@ -146,7 +146,7 @@ for (const route of routes)
       });
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(root + route + "/");
+      await page.goto(root + route + "-3d/");
       await expect(
         page.getByRole("button", { name: "▶ Resume", exact: true }),
       ).toBeVisible();
@@ -207,7 +207,7 @@ test("repeated routes and measured browser animation timing", async ({
   const report = {};
   for (let iteration = 0; iteration < 2; iteration++)
     for (const route of routes) {
-      await page.goto(root + route + "/");
+      await page.goto(root + route + "-3d/");
       await expect(page.locator("#loading")).toBeHidden();
       if (!iteration) {
         if (route === "sonic-loom")
@@ -276,7 +276,7 @@ test("actual repeated route exit closes audio and back navigation rebuilds safel
     };
   });
   for (let i = 0; i < 3; i++) {
-    await page.goto(root + "sonic-loom/");
+    await page.goto(root + "sonic-loom-3d/");
     await page.getByRole("button", { name: "▶ Play rhythm" }).click();
     await page
       .getByRole("link", { name: "Time Sculpture", exact: true })

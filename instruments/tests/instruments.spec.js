@@ -4,7 +4,7 @@ const routes = ["reality-remix", "soft-matter", "impossible-objects"];
 async function ready(page, route) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(`/instruments/${route}/`);
+  await page.goto(`/instruments/${route}-3d/`);
   await expect(page.locator("body")).toHaveAttribute("data-ready", "true", {
     timeout: 45000,
   });
@@ -150,7 +150,7 @@ for (const route of routes)
 test("honest 2D fallback and download share fallback", async ({
   page,
 }, info) => {
-  await page.goto("/instruments/reality-remix/?mode=2d");
+  await page.goto("/instruments/reality-remix-3d/?mode=2d");
   await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
   await expect(page.locator("#medium")).toContainText("2D STUDY");
   await drag(page);
