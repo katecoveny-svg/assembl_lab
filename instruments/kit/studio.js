@@ -371,7 +371,7 @@ export class Studio {
     document.querySelector("#kit-palette-name").textContent = this.palette.name;
     const sw = document.querySelector(".kit-swatches");
     sw.innerHTML = this.colours.map((c, i) => `<button class="kit-swatch" style="--c:${c}" data-colour="${i}" aria-label="Colour ${i + 1}" aria-pressed="${i === s.colour}"></button>`).join("");
-    sw.querySelectorAll("[data-colour]").forEach((b) => (b.onclick = () => { this.state.colour = +b.dataset.colour; this.syncUI(); this.engine.colourChanged?.(); }));
+    sw.querySelectorAll("[data-colour]").forEach((b) => (b.onclick = () => { if (this.engine.colourEdits) this.commit(); this.state.colour = +b.dataset.colour; this.syncUI(); this.engine.colourChanged?.(); }));
     this.applyBackground();
   }
 

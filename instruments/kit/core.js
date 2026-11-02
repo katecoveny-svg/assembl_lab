@@ -72,6 +72,7 @@ export function encodeState(state, sliders = []) {
   q.set("s", String(state.seed));
   q.set("p", PALETTES[state.palette]?.id || "cubes");
   q.set("b", BACKGROUNDS[state.bg]?.id || "paper");
+  if (state.colour) q.set("c", String(state.colour));
   if (state.start) q.set("k", state.start);
   if (state.tool) q.set("t", state.tool);
   const v = sliders.map((s) => `${s.id}:${Math.round(state.values[s.id] ?? s.value)}`).join(",");
@@ -89,6 +90,8 @@ export function decodeState(search, defaults, sliders = [], starts = [], tools =
   if (p >= 0) out.palette = p;
   const b = BACKGROUNDS.findIndex((x) => x.id === q.get("b"));
   if (b >= 0) out.bg = b;
+  const c = parseInt(q.get("c"), 10);
+  if (c >= 0 && c < 6) out.colour = c;
   const k = q.get("k");
   if (k && starts.some((s) => s.id === k)) out.start = k;
   const t = q.get("t");

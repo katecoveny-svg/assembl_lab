@@ -14,13 +14,14 @@ test("share link settings round-trip and never carry names or titles", () => {
   const sliders = [{ id: "brush", min: 10, max: 100, value: 45 }];
   const starts = [{ id: "bloom" }, { id: "waves" }];
   const tools = [{ id: "push" }, { id: "paint" }];
-  const state = { seed: 777, palette: 4, bg: 1, start: "waves", tool: "paint", values: { brush: 62 }, data: "AQID" };
+  const state = { seed: 777, palette: 4, bg: 1, colour: 3, start: "waves", tool: "paint", values: { brush: 62 }, data: "AQID" };
   const q = encodeState(state, sliders);
   assert.ok(!/title|name/i.test(q));
   const back = decodeState(q, { seed: 1, palette: 0, bg: 0, start: "bloom", tool: "push", values: { brush: 45 } }, sliders, starts, tools);
   assert.equal(back.seed, 777);
   assert.equal(back.palette, 4);
   assert.equal(back.bg, 1);
+  assert.equal(back.colour, 3);
   assert.equal(back.start, "waves");
   assert.equal(back.tool, "paint");
   assert.equal(back.values.brush, 62);
