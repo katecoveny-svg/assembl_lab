@@ -5,7 +5,7 @@
 // A named (fictional) person decides three times: the scale, which defects become provisional sums, and the quote itself
 // (send, change, withdraw). After a quote is sent, a variation runs the same way. Every decision is a SHA-256 receipt chained
 // to the one before. Nothing is sent, stored or quoted: everything is Simulated; the code checks are Illustrative.
-import { callTool, draftBid, variation, canon, condition, round, VARIATIONS, NZ_TRUTH } from "./takeoff-core.js";
+import { callTool, draftBid, variation, paymentClaim, canon, condition, round, VARIATIONS, NZ_TRUTH, LEGAL_TRUTH, DEFECTS } from "./takeoff-core.js";
 import { $, $$, esc, nzd, nzd0 } from "./main.js";
 
 const CUBES = ["#F6B48E", "#C7B4F0", "#A7DEC7", "#F3A5BE", "#F2DC7C", "#A9C9F2"];
@@ -50,6 +50,8 @@ export function initAgentDesk(store) {
     return el;
   }
   const alive = (my) => my === st.run;
+  const thumbHtml = (id) => { const ph = S.photos[id]; return ph ? `<span class="thumbrow"><img class="thumb" src="${ph.thumb}" alt="Site photo"><span class="hash">SHA-256 ${ph.sha256}</span></span>` : ""; };
+  const photoRecs = () => Object.values(S.photos).map((p) => ({ defectId: p.defectId, defect: DEFECTS.find((d) => d.id === p.defectId)?.title || p.defectId, sha256: p.sha256, bytes: p.bytes, type: p.type, takenAt: p.takenAt, by: p.by, mini: p.mini }));
   const sev = (d) => `<span data-sev="${d.severity}">${esc(d.title.split(" ").slice(0, 4).join(" "))} · ${d.severity}</span>`;
 
   // ---------------------------------------------------------------- the run: steps assembling, cubes landing on the plan
@@ -130,10 +132,12 @@ export function initAgentDesk(store) {
     desk("waiting");
     queue.innerHTML = `<article class="q"><header>${badge("recommend")}<span>provisional sums · ${clock(nowIso())}</span></header>
       <h3>Hold which risks as provisional sums?</h3><p class="hint">The agent ticked the high and medium ones with a sum. Untick anything the site visit rules out. Low-severity items stay as checks.</p>
-      <ul class="picks">${dr.register.filter((d) => d.provisionalSum > 0).map((d) => `<li><label><input type="checkbox" data-pick="${d.id}" ${d.proposed ? "checked" : ""}><span>${esc(d.title)}<small>${esc(d.clause)} ${esc(d.clauseName)} · ${d.severity}</small></span><b>${nzd0(d.provisionalSum)}</b></label></li>`).join("")}</ul>
+      <ul class="picks">${dr.register.filter((d) => d.provisionalSum > 0).map((d) => `<li><label><input type="checkbox" data-pick="${d.id}" ${d.proposed ? "checked" : ""}><span>${esc(d.title)}<small>${esc(d.clause)} ${esc(d.clauseName)} · ${d.severity}</small></span><b>${nzd0(d.provisionalSum)}</b></label><div class="ph"><label class="photo-in"><input type="file" accept="image/*" capture="environment" data-photo="${d.id}" aria-label="Add a site photo for ${esc(d.title)}">Add site photo</label><span data-thumb="${d.id}">${thumbHtml(d.id)}</span></div></li>`).join("")}</ul>
+      <p class="hint">Photos stay in this browser: downscaled, hashed with SHA-256, and the hash goes on the receipt. Nothing is uploaded.</p>
       <div class="row"><button class="btn" type="button" data-ps>Confirm as ${esc(a.approver.name.split(" ")[0])}</button><span class="hint">Illustrative allowances, charged at cost with the record.</span></div>
       <p class="note">Deciding as ${esc(a.approver.name)}, ${esc(a.approver.role)}. Nothing is sent or stored: this is a simulation.</p></article>`;
     queue.scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", block: narrow.matches ? "start" : "nearest" });
+    queue.onchange = async (e) => { const inp = e.target.closest("[data-photo]"); if (!inp || !inp.files[0]) return; const slot = queue.querySelector(`[data-thumb="${inp.dataset.photo}"]`); slot.innerHTML = `<span class="hint">Hashing…</span>`; try { await store.addPhoto(inp.dataset.photo, inp.files[0], a.approver.name); slot.innerHTML = thumbHtml(inp.dataset.photo); } catch (err) { slot.innerHTML = `<span class="hint">${esc(err.message || err)}</span>`; } inp.value = ""; };
     await new Promise((resolve) => { queue.querySelector("[data-ps]").onclick = () => { store.setPS($$("[data-pick]:checked", queue).map((x) => x.dataset.pick), a.approver.name); resolve(); }; const un = store.subscribe(() => { if (my !== st.run) { un(); resolve(); } }); });
     if (!alive(my)) return;
     desk("working"); queue.innerHTML = `<p class="empty">Provisional sums decided. The agent prices.</p>`;
@@ -183,8 +187,8 @@ export function initAgentDesk(store) {
   async function receipt(rec) {
     rec = { schema: "assembl.takeoff-receipt/1", truth: "Simulated", seq: st.receipts.length + 1, ...rec, prev: st.prev };
     const hash = await sha256(canon(rec)); st.prev = hash; st.receipts.unshift({ rec, hash });
-    const colour = { quote: "#A7DEC7", withdrawal: "#F3A5BE", variation: "#F6B48E" }[rec.kind] || "#C7B4F0";
-    chain.insertAdjacentHTML("beforeend", `<li style="--c:${colour}"><span><b>#${rec.seq} · ${esc(rec.kind)} · ${esc(rec.variation?.ref || rec.bid?.ref || "")} · ${esc(rec.decision.outcome)} by ${esc(rec.decision.by)}</b><span class="hash">${hash}</span></span></li>`);
+    const colour = { quote: "#A7DEC7", withdrawal: "#F3A5BE", variation: "#F6B48E", "payment-claim": "#A9C9F2" }[rec.kind] || "#C7B4F0";
+    chain.insertAdjacentHTML("beforeend", `<li style="--c:${colour}"><span><b>#${rec.seq} · ${esc(rec.kind)} · ${esc(rec.claim?.ref || rec.variation?.ref || rec.bid?.ref || "")} · ${esc(rec.decision.outcome)} by ${esc(rec.decision.by)}</b><span class="hash">${hash}</span></span></li>`);
     return { rec, hash };
   }
   const fullJson = (e, payload) => { const art = e.target.closest("article"), pre = art.querySelector("pre.full"); if (pre) pre.remove(); else art.insertAdjacentHTML("beforeend", `<pre class="full">${esc(JSON.stringify(payload, null, 1))}</pre>`); };
@@ -195,6 +199,7 @@ export function initAgentDesk(store) {
     const bidHash = await sha256(canon(bid));
     const { rec, hash } = await receipt({ kind: "quote",
       bid: { ref: bid.ref, sheet: bid.sheet, scope: bid.scope, customer: bid.customer, lines: bid.pricing.lines.length, hours: bid.pricing.hours, provisionalSums: bid.pricing.provisionalSums.length, totalInclGst: bid.pricing.total, validDays: bid.validDays, sha256: bidHash },
+      ...(photoRecs().length ? { photos: photoRecs() } : {}),
       decision: { outcome, by: a.approver.name, role: a.approver.role, desk: "estimating", authority: "act with approval", ...(it.changed ? { change: it.changed } : {}) },
       timestamps: { asked: it.asked, drafted: bid.draftedAt, requested: it.requestedAt, decided }, readers: ["estimating", "site", "accounts", "client"] });
     st.sent = { a, bid, bidHash, receipt: hash, lines: it.lines, sheet: it.sheet, decided };
@@ -207,14 +212,16 @@ export function initAgentDesk(store) {
       <h3>Quote ${esc(bid.ref)} sent</h3>
       <dl><div><dt>Reference</dt><dd>${esc(bid.ref)}</dd></div><div><dt>Approved by</dt><dd>${esc(a.approver.name)}, ${esc(a.approver.role)}</dd></div><div><dt>When</dt><dd>${clock(decided)}, ${dayAt(decided)}</dd></div><div><dt>Authority</dt><dd>act with approval · level 4 of 6</dd></div>
         <div><dt>Ask to decision</dt><dd>${Math.max(1, Math.round((new Date(decided) - new Date(it.asked)) / 1000))} s</dd></div><div><dt>Record</dt><dd>${esc(rec.schema)} · #${rec.seq}</dd></div>
-        <div class="w"><dt>SHA-256 of the quote record, computed in this browser</dt><dd class="hash">${bidHash}</dd></div><div class="w"><dt>Receipt hash</dt><dd class="hash">${hash}</dd></div>${rec.prev ? `<div class="w"><dt>Previous receipt</dt><dd class="hash">${rec.prev}</dd></div>` : ""}</dl>
-      <div class="row"><button class="btn sm" type="button" data-print>Print / save as PDF</button><button class="btn ghost sm" type="button" data-var>Raise a variation</button><button class="btn ghost sm" type="button" data-json>Full record</button><button class="btn ghost sm" type="button" data-withdraw>Withdraw</button><button class="btn ghost sm" type="button" data-again>Another ask</button></div></article>
+        <div class="w"><dt>SHA-256 of the quote record, computed in this browser</dt><dd class="hash">${bidHash}</dd></div><div class="w"><dt>Receipt hash</dt><dd class="hash">${hash}</dd></div>${rec.prev ? `<div class="w"><dt>Previous receipt</dt><dd class="hash">${rec.prev}</dd></div>` : ""}${rec.photos ? `<div class="w"><dt>Site photos on this receipt · hashed in this browser, not uploaded</dt><dd>${rec.photos.map((ph) => `<span class="thumbrow"><img class="thumb" src="${ph.mini}" alt="Site photo: ${esc(ph.defect)}"><span><small>${esc(ph.defect)}</small><br><span class="hash">${ph.sha256}</span></span></span>`).join("")}</dd></div>` : ""}</dl>
+      <div class="row"><button class="btn sm" type="button" data-print>Print / save as PDF</button><button class="btn ghost sm" type="button" data-var>Raise a variation</button><button class="btn ghost sm" type="button" data-claim>Payment claim</button><button class="btn ghost sm" type="button" data-json>Full record</button><button class="btn ghost sm" type="button" data-withdraw>Withdraw</button><button class="btn ghost sm" type="button" data-again>Another ask</button></div></article>
       ${quoteDoc(bid, a, decided)}`;
     out.querySelector("[data-json]").onclick = (e) => fullJson(e, { receipt: { ...rec, hash }, quote: bid });
     out.querySelector("[data-again]").onclick = () => { desk("idle"); asks.scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", block: "start" }); };
     out.querySelector("[data-withdraw]").onclick = () => withdraw(a, bid, bidHash);
     out.querySelector("[data-print]").onclick = () => store.printQuote($("#bidDoc"), { builder: bid.builder, ref: bid.ref, date: dayAt(decided), schema: bid.schema, hash: bidHash, receipt: hash });
     out.querySelector("[data-var]").onclick = () => raiseVariation();
+    out.querySelector("[data-claim]").onclick = () => { $("#claimCard").scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", block: "start" }); $("#claimPanel [data-draft]")?.focus({ preventScroll: true }); };
+    st.claims = []; renderClaimPanel();
     renderVarPanel();
     if (narrow.matches) outCard.scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", block: "start" });
   }
@@ -225,7 +232,7 @@ export function initAgentDesk(store) {
         <table>${p.byTrade.map((t) => `<tr><td>${esc(t.trade)} · ${t.hours} h<br><small class="mono">${p.lines.filter((l) => l.trade === t.trade).map((l) => `${esc(l.name)} ${l.qty} ${l.unit}`).join(" · ")}</small></td><td>${nzd(t.cost)}</td></tr>`).join("")}
           <tr class="sub"><td>Materials ${nzd(p.material)} · waste ${nzd(p.waste)} · labour ${nzd(p.labour)} (${p.hours} h)</td><td>${nzd(p.cost)}</td></tr>
           <tr><td>Preliminaries and general ${p.pgPct}%</td><td>${nzd(p.pg)}</td></tr><tr><td>Margin ${p.marginPct}%</td><td>${nzd(p.margin)}</td></tr>
-          ${p.provisionalSums.map((s) => `<tr><td>Provisional sum · ${esc(s.title)}</td><td>${nzd(s.amount)}</td></tr>`).join("")}
+          ${p.provisionalSums.map((s) => { const ph = S.photos[s.id]; return `<tr class="psrow"><td>${ph ? `<img src="${ph.mini}" alt="Site photo">` : ""}Provisional sum · ${esc(s.title)}${ph ? `<br><small class="mono">site photo SHA-256 ${ph.sha256}</small>` : ""}</td><td>${nzd(s.amount)}</td></tr>`; }).join("")}
           ${variations.map((v) => `<tr><td>Variation ${esc(v.ref)} · ${esc(v.title)} · approved ${dayAt(v.at)}</td><td>${v.delta.subtotal >= 0 ? "+" : "−"}${nzd(Math.abs(v.delta.subtotal))}</td></tr>`).join("")}
           <tr><td>Subtotal excl. GST</td><td>${nzd(p.subtotal + variations.reduce((s, v) => s + v.delta.subtotal, 0))}</td></tr><tr><td>GST 15%</td><td>${nzd(p.gst + variations.reduce((s, v) => s + v.delta.gst, 0))}</td></tr><tr class="t"><td>Total incl. GST</td><td>${nzd(p.total + variations.reduce((s, v) => s + v.delta.total, 0))}</td></tr></table>
         <ul>${bid.inclusions.map((x) => `<li>Includes: ${esc(x)}</li>`).join("")}${bid.exclusions.map((x) => `<li>Excludes: ${esc(x)}</li>`).join("")}${bid.terms.map((x) => `<li>Terms: ${esc(x)}</li>`).join("")}</ul>
@@ -240,7 +247,7 @@ export function initAgentDesk(store) {
     r.querySelector("h3").textContent = `Quote ${bid.ref} withdrawn`;
     r.querySelector("dl").insertAdjacentHTML("beforeend", `<div><dt>Withdrawn by</dt><dd>${esc(a.approver.name)}</dd></div><div><dt>When</dt><dd>${clock(decided)}, ${dayAt(decided)}</dd></div><div class="w"><dt>Withdrawal receipt hash</dt><dd class="hash">${hash}</dd></div>`);
     ["[data-withdraw]", "[data-print]", "[data-var]"].forEach((s) => r.querySelector(s)?.remove()); const j = r.querySelector("[data-json]"); j.onclick = (e) => fullJson(e, { receipts: st.receipts.map((x) => ({ ...x.rec, hash: x.hash })) });
-    st.sent = null; renderVarPanel();
+    st.sent = null; renderVarPanel(); renderClaimPanel();
     store.diary("Quote withdrawn", `${bid.ref} · by ${a.approver.name}`, "#F3A5BE");
     desk("idle"); status(`Withdrawn by ${a.approver.name} at ${clock(decided)}`, "The quote is back to a draft on the desk; the receipt chain keeps every decision. Nothing was ever sent.");
     queue.innerHTML = `<p class="empty">Withdrawn. The measurements stay on the plan; ask again when the rates or the takeoff change.</p>`;
@@ -295,5 +302,73 @@ export function initAgentDesk(store) {
     };
   }
 
-  window.__agentdesk = { run: (i = 0) => run(ASKS[i]), decide, change, raiseVariation, st, ASKS };
+  // ---------------------------------------------------------------- payment claims under the Construction Contracts Act 2002
+  const claimPanel = $("#claimPanel"); st.claims = [];
+  const dayIso = (iso) => iso.slice(0, 10);
+  const addDays = (iso, n) => new Date(new Date(iso.slice(0, 10) + "T00:00:00Z").getTime() + n * 864e5).toISOString().slice(0, 10);
+  function renderClaimPanel(doc = "") {
+    const s = st.sent;
+    if (!s) { claimPanel.innerHTML = `<p class="empty">Approve a quote on the desk first. Then build a progress payment claim against it here.</p>`; return; }
+    const last = st.claims[st.claims.length - 1], n = st.claims.length + 1, today = dayIso(nowIso());
+    const pct = last ? Math.min(100, last.calc.percentComplete + 30) : 40;
+    claimPanel.innerHTML = `<form class="claim-form" data-claimform>
+      <p class="hint">Against ${esc(s.bid.ref)} · ${esc(s.bid.customer)} · approved ${nzd(s.bid.pricing.subtotal)} excl. GST${(s.variations || []).length ? ` + ${s.variations.length} variation${s.variations.length === 1 ? "" : "s"}` : ""}</p>
+      <div class="two"><label>Claim number<input type="number" name="claimNo" value="${n}" min="1" readonly></label><label>Served on<input type="date" name="served" value="${today}"></label></div>
+      <div class="two"><label>Period from<input type="date" name="from" value="${last ? addDays(last.period.to, 1) : dayIso(s.decided)}"></label><label>Period to<input type="date" name="to" value="${today}"></label></div>
+      <label>Work complete to date: <b data-pctout>${pct}%</b><input type="range" name="pct" min="${last ? last.calc.percentComplete : 0}" max="100" step="5" value="${pct}"></label>
+      <div class="two"><label>Retention %<input type="number" name="ret" value="5" min="0" max="10" step="0.5" inputmode="decimal"></label><label>Region (anniversary day)<input type="text" name="region" value="${esc(store.councilRegion())}" readonly></label></div>
+      <label class="chk"><input type="checkbox" name="res" checked><span>The client is a residential occupier (they live, or will live, in the house). This changes how retentions are treated.</span></label>
+      <div class="row"><button class="btn sm" type="submit" data-draft ${st.claimBusy ? "disabled" : ""}>Draft claim ${n}</button><span class="hint">${LEGAL_TRUTH}</span></div></form>${doc}`;
+    const f = claimPanel.querySelector("[data-claimform]");
+    f.pct.oninput = () => { f.querySelector("[data-pctout]").textContent = f.pct.value + "%"; };
+    f.onsubmit = (e) => { e.preventDefault(); draftClaim({ served: f.served.value, from: f.from.value, to: f.to.value, pct: +f.pct.value, ret: +f.ret.value || 0, res: f.res.checked }); };
+  }
+  function claimDoc(c, s, hashes) {
+    const k = c.calc, sign = c.status === "approved" ? `Served by ${esc(s.a.approver.name)}, ${esc(s.a.approver.role)}, ${esc(c.builder)}` : "Draft, waiting for approval";
+    return `<article class="claimdoc" id="claimDoc"><div class="bidhead"><div class="to"><span>To ${esc(c.customer)}</span><span>From ${esc(c.builder)} · ${esc(c.project)}</span><span>Contract ${esc(c.quoteRef)} · claim ${c.claimNo} · period ${esc(c.period.from || "–")} to ${esc(c.period.to)}</span></div><div class="ref">${esc(c.ref)}<br>served ${esc(c.served)}</div></div>
+      <h4>Progress payment claim ${c.claimNo}</h4><p class="stmt">${esc(c.statement)}</p>
+      <table><tr><td>Contract value (approved quote, excl. GST)</td><td>${nzd(k.contractValue)}</td></tr>${k.variationsValue ? `<tr><td>Approved variations</td><td>${nzd(k.variationsValue)}</td></tr>` : ""}<tr><td>Work complete to date: ${k.percentComplete}% of ${nzd(k.total)}</td><td>${nzd(k.valueToDate)}</td></tr>
+        <tr><td>Less previously claimed</td><td>−${nzd(k.previouslyClaimed)}</td></tr><tr><td>This claim</td><td>${nzd(k.thisClaim)}</td></tr><tr><td>Less retention ${k.retentionPct}%</td><td>−${nzd(k.retention)}</td></tr><tr><td>Net excl. GST</td><td>${nzd(k.net)}</td></tr><tr><td>GST 15%</td><td>${nzd(k.gst)}</td></tr><tr class="t"><td>Claimed amount incl. GST</td><td>${nzd(k.claimed)}</td></tr></table>
+      <p><b>Due for payment ${esc(c.dueDate)}</b> (${esc(c.basis.due)}). A payment schedule, if the client disputes any of it, is due by <b>${esc(c.scheduleBy)}</b> (${esc(c.basis.schedule)}).${c.holidaysKnown ? "" : " Working days outside 2026–27 count weekends and the Christmas break only."}</p>
+      <p class="law"><b>How to respond (s 21, s 22).</b> ${c.timing.map((t) => `${esc(t.ref)}: ${esc(t.text)}`).join(" ")}</p>
+      <p class="law"><b>Retentions.</b> ${esc(c.retentionNote)}</p>
+      <details><summary class="hint">Section 20 checklist</summary><ul class="checklist">${c.checklist.map((x) => `<li data-m="${x.met}"><code>${esc(x.ref)}</code><span>${esc(x.text)}<small>${esc(x.how)}</small></span></li>`).join("")}</ul></details>
+      <details><summary class="hint">Retention money rules after the 2023 amendments</summary><ul class="checklist">${c.retentionRules.map((x) => `<li data-m="check"><code>${esc(x.ref)}</code><span>${esc(x.text)}</span></li>`).join("")}</ul></details>
+      <p class="law">${c.law.map((l) => `<a class="link" href="${l.url}" target="_blank" rel="noopener">${esc(l.title)}</a>`).join(" · ")} · legislation.govt.nz</p>
+      <p class="sign">${sign}</p><p class="ad-msg">${esc(c.label)} · Simulated: fictional builder, client and contract. Not served on anyone.</p>${hashes ? `<p class="hash">Claim record SHA-256 ${hashes.doc} · receipt ${hashes.receipt}</p>` : ""}</article>`;
+  }
+  async function draftClaim(o) {
+    const s = st.sent; if (!s || st.claimBusy) return; st.claimBusy = true;
+    const my = st.run, prev = st.claims.reduce((t, c) => t + c.calc.thisClaim, 0), vars = (s.variations || []).reduce((t, v) => t + v.delta.subtotal, 0);
+    const args = { quoteRef: s.bid.ref, contractValue: s.bid.pricing.subtotal, variationsValue: round(vars), claimNo: st.claims.length + 1, periodFrom: o.from, periodTo: o.to, percentComplete: o.pct, previouslyClaimed: round(prev), retentionPct: o.ret, residentialOccupier: o.res, served: o.served, region: store.councilRegion() };
+    const c = paymentClaim({ ...args, customer: s.bid.customer, builder: s.bid.builder, project: s.bid.project, now: nowIso() });
+    if (c.error) { st.claimBusy = false; renderClaimPanel(`<p class="warn">${esc(c.error)}</p>`); return; }
+    desk("working"); status(`Payment claim ${c.claimNo}`, "The agent drafts the claim against the approved quote.");
+    const n = work.children.length;
+    step(n, { k: "payment_claim", title: `Drafts progress payment claim ${c.claimNo}, and asks a person`, auth: "act with approval", tool: "payment_claim", args, body: `<p class="sum">${esc(c.ref)} · ${nzd(c.calc.claimed)} incl. GST <span class="auth">${esc(LEGAL_TRUTH)}</span></p>` + kv([["work to date", `${c.calc.percentComplete}% · ${nzd(c.calc.valueToDate)}`], ["this claim", nzd(c.calc.thisClaim)], [`retention ${c.calc.retentionPct}%`, nzd(c.calc.retention)], ["GST 15%", nzd(c.calc.gst)], ["due", `${c.dueDate} · ${c.basis.due}`], ["schedule by", c.scheduleBy], ["s 20 checklist", `${c.checklist.filter((x) => x.met === true).length} of ${c.checklist.length} met, 1 to check`]]) + insp("payment_claim", args, c), note: c.retention && c.residentialOccupier ? "Residential occupier: the retention trust rules (s 18B) don't apply to this retention. They do to what you hold on your subbies." : `Waits for ${s.a.approver.name}.` });
+    renderClaimPanel(claimDoc(c, s));
+    await wait(300); if (my !== st.run) { st.claimBusy = false; return; }
+    desk("waiting"); status(`Waiting for ${s.a.approver.name}`, `Payment claim ${c.claimNo} is in the approval queue.`);
+    queue.innerHTML = `<article class="q"><header>${badge("act with approval")}<span>${esc(c.ref)} · ${clock(nowIso())}</span></header>
+      <h3>Serve payment claim ${c.claimNo} on ${esc(c.customer)}?</h3><p class="hint">${nzd(c.calc.claimed)} incl. GST · ${c.calc.percentComplete}% complete · due ${esc(c.dueDate)} · schedule by ${esc(c.scheduleBy)}</p>
+      <ul><li>States it is made under the Construction Contracts Act 2002 (s 20(2)(f))</li><li>Response outline and consequences attached (s 20(3))</li><li>Calculation shown; retention ${c.calc.retentionPct}%</li><li>${esc(LEGAL_TRUTH)}: use the prescribed form for a real claim (s 20(4))</li></ul>
+      <div class="row"><button class="btn" type="button" data-cok>Serve the claim</button><button class="btn ghost" type="button" data-cno>Not yet</button></div>
+      <p class="note">Deciding as ${esc(s.a.approver.name)}, ${esc(s.a.approver.role)}. Nothing is served or stored: this is a simulation.</p></article>`;
+    queue.scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", block: narrow.matches ? "start" : "nearest" });
+    queue.onclick = async (e) => {
+      const b = e.target.closest("[data-cok],[data-cno]"); if (!b) return; queue.onclick = null;
+      const ok = b.hasAttribute("data-cok"), decided = nowIso(), docHash = await sha256(canon(c));
+      const { hash } = await receipt({ kind: "payment-claim", bid: { ref: s.bid.ref, sha256: s.bidHash }, claim: { ref: c.ref, claimNo: c.claimNo, claimedInclGst: c.calc.claimed, retention: c.calc.retention, due: c.dueDate, scheduleBy: c.scheduleBy, sha256: docHash },
+        decision: { outcome: ok ? "served" : "held", by: s.a.approver.name, role: s.a.approver.role, authority: "act with approval" }, timestamps: { drafted: c.draftedAt, decided } });
+      if (ok) { c.status = "approved"; st.claims.push(c); }
+      store.diary(ok ? "Payment claim served" : "Payment claim held", `${c.ref} · ${nzd(c.calc.claimed)} incl. GST · due ${c.dueDate} · by ${s.a.approver.name}`, ok ? "#A7DEC7" : "#F2DC7C");
+      queue.innerHTML = `<p class="empty">${ok ? "Served. The claim receipt is chained to the quote's." : "Held. Nothing was served; the decision is on the chain."}</p>`;
+      desk("done"); status(`Payment claim ${c.claimNo} ${ok ? "served" : "held"} by ${s.a.approver.name} at ${clock(decided)}`, ok ? `Due ${c.dueDate}. If no payment schedule by ${c.scheduleBy}, the full amount is payable (s 22).` : "Draft kept on the desk only.");
+      st.claimBusy = false;
+      renderClaimPanel(ok ? claimDoc(c, s, { doc: docHash, receipt: hash }) + `<div class="row"><button class="btn sm" type="button" data-cprint>Print / save as PDF</button></div>` : "");
+      const pb = claimPanel.querySelector("[data-cprint]"); if (pb) pb.onclick = () => store.printQuote($("#claimDoc"), { builder: c.builder, ref: c.ref, date: c.served, schema: c.schema, hash: docHash, receipt: hash, tag: `${LEGAL_TRUTH} · Simulated` });
+    };
+  }
+
+  window.__agentdesk = { run: (i = 0) => run(ASKS[i]), decide, change, raiseVariation, draftClaim, st, ASKS };
 }

@@ -16,7 +16,7 @@
 <a class="skip" href="#desk">Skip to the desk</a>
 <header class="top glass">
   <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
-  <nav aria-label="This page"><a href="#desk">Desk</a><a href="#checks">Checks</a><a href="#rates">Quote maths</a><a href="#variations">Variations</a><a href="#agent-ready">Agent-ready</a><a href="/#explore">All worlds</a></nav>
+  <nav aria-label="This page"><a href="#desk">Desk</a><a href="#checks">Checks</a><a href="#rates">Quote maths</a><a href="#variations">Claims</a><a href="#agent-ready">Agent-ready</a><a href="/#explore">All worlds</a></nav>
   <span class="pill" data-tone="butter" title="Everything on this page is a simulation">Simulated · fictional plan and rates</span>
 </header>
 
@@ -35,6 +35,8 @@
       <h2><i class="cube" style="--c:#A9C9F2"></i>Sheet</h2>
       <div class="seg" id="sheets" role="group" aria-label="Choose a sheet"></div>
       <label class="upload"><input type="file" id="upload" accept="application/pdf"><span>Or open your own PDF</span><small>Stays in this browser. Pan with drag, zoom with the wheel or pinch.</small></label>
+      <div class="row"><button class="btn sm ghost" type="button" id="readRooms">Read room names</button><span class="hint">From the PDF's text layer</span></div>
+      <div id="labelsOut" class="labels-out" aria-live="polite"></div>
     </section>
     <section class="card" id="scaleCard" data-glow="butter">
       <h2><i class="cube" style="--c:#F2DC7C"></i>Scale</h2>
@@ -102,10 +104,18 @@
 <!-- ------------------------------------------------ checks: consent, code, defects -->
 <section class="band" id="checks" aria-labelledby="checksTitle">
   <div class="band-head"><p class="kicker">Checks · consent, Building Code, defects</p><h2 id="checksTitle">Before the price, <em>the checks.</em></h2><p>Every measured condition wakes the clauses to check and the defects to look for. The agent proposes; a person decides which risks become provisional sums. <b>Illustrative — not a compliance determination.</b> The council and a licensed building practitioner decide; the links go to MBIE's own pages.</p></div>
+  <section class="feeds card" id="feeds" aria-labelledby="feedsTitle" data-glow="lilac">
+    <div class="feeds-head"><h3 id="feedsTitle"><i class="cube" style="--c:#C7B4F0"></i>Latest published</h3><span class="hint" id="feedsWhen">Fetching MBIE determinations and Stats NZ building consents…</span></div>
+    <div class="feed-row"><span class="feed-lab">MBIE determinations</span><div class="feed-chips" id="detChips"></div></div>
+    <div class="feed-row"><span class="feed-lab">Stats NZ building consents</span><div class="feed-chips" id="consentChips"></div></div>
+    <p class="hint">Fetched by the lab's server from <a class="link" href="https://codehub.building.govt.nz/" target="_blank" rel="noopener">Building CodeHub</a> (MBIE's open copy of the determinations) and <a class="link" href="https://www.stats.govt.nz/topics/building/" target="_blank" rel="noopener">Stats NZ</a>, cached for six hours. If a source doesn't answer, the chip says <b>Last known</b> with the date it was captured. Context, not advice.</p>
+  </section>
   <div class="checks-grid">
     <div class="card" data-glow="butter">
       <h3><i class="cube" style="--c:#F2DC7C"></i>Does it need a building consent?</h3>
       <p class="hint">The Schedule 1 questions for what is in scope on this sheet, with the lab's likely answer. Building Act 2004, Schedule 1.</p>
+      <label class="field inline">Council<select id="council"></select></label>
+      <ul class="council-links" id="councilLinks"></ul>
       <div id="consentPanel" class="consent"></div>
       <p class="pill-row"><span class="pill" data-tone="butter">Illustrative</span> <a class="link" href="https://www.building.govt.nz/projects-and-consents/planning-a-successful-build/scope-and-design/check-if-you-need-consents/building-work-that-doesnt-need-a-building-consent/" target="_blank" rel="noopener">Work that doesn't need a consent · building.govt.nz</a></p>
     </div>
@@ -156,11 +166,15 @@
 
 <!-- ------------------------------------------------ variations and site diary -->
 <section class="band" id="variations" aria-labelledby="varTitle">
-  <div class="band-head"><p class="kicker">Variations · site diary</p><h2 id="varTitle">When the job changes, <em>the record changes with it.</em></h2><p>A variation is a change the client asks for after the quote is approved. The agent re-measures what it adds, re-runs the quote maths and shows the difference; the same named person approves it, and the receipt chains onto the quote's. The site diary is the stub of a record that follows: who decided what, when, and which photos were asked for.</p></div>
+  <div class="band-head"><p class="kicker">Variations · payment claims · site diary</p><h2 id="varTitle">When the job changes, <em>the record changes with it.</em></h2><p>A variation is a change the client asks for after the quote is approved. The agent re-measures what it adds, re-runs the quote maths and shows the difference; the same named person approves it, and the receipt chains onto the quote's. A progress payment claim follows the Construction Contracts Act 2002: the section 20 requirements as a checklist, the due date and payment-schedule deadline in working days, and retentions as the 2023 amendments treat them. The site diary is the stub of a record that follows: who decided what, when, and which photos were taken.</p></div>
   <div class="var-grid">
     <div class="card" data-glow="peach">
       <h3><i class="cube" style="--c:#F6B48E"></i>Variation</h3>
       <div id="varPanel"><p class="empty">Approve a quote on the desk first. Then raise the variation from the receipt, or here.</p></div>
+    </div>
+    <div class="card" data-glow="mint" id="claimCard">
+      <h3><i class="cube" style="--c:#A7DEC7"></i>Payment claim · CCA 2002 <span class="pill" data-tone="butter">Illustrative · not legal advice</span></h3>
+      <div id="claimPanel"><p class="empty">Approve a quote on the desk first. Then build a progress payment claim against it here.</p></div>
     </div>
     <div class="card" data-glow="lilac">
       <h3><i class="cube" style="--c:#C7B4F0"></i>Site diary <span class="count" id="diaryCount"></span></h3>
@@ -171,7 +185,7 @@
 
 <!-- ------------------------------------------------ agent-ready -->
 <section class="band alt" id="agent-ready" aria-labelledby="arTitle">
-  <div class="band-head"><p class="kicker">Agent-ready · the same nine tools over MCP</p><h2 id="arTitle">A builder's own assistant can call <em>the same desk.</em></h2><p>The page and the endpoint share one geometry, one condition library and one NZ reference file, so an assistant (Claude, ChatGPT, anything that speaks MCP) measures the same plan, asks the same consent questions and runs the same quote maths the person sees. Stateless and Simulated: the demo sheets only, and drafting never sends anything.</p></div>
+  <div class="band-head"><p class="kicker">Agent-ready · the same ten tools over MCP</p><h2 id="arTitle">A builder's own assistant can call <em>the same desk.</em></h2><p>The page and the endpoint share one geometry, one condition library and one NZ reference file, so an assistant (Claude, ChatGPT, anything that speaks MCP) measures the same plan, asks the same consent questions and runs the same quote maths the person sees. Stateless and Simulated: the demo sheets only, and drafting never sends anything.</p></div>
   <div class="ar-grid">
     <div class="card" data-glow="sky">
       <h3>Endpoint</h3>
@@ -181,7 +195,7 @@
     </div>
     <div class="card" data-glow="lilac">
       <h3>Try it, live</h3>
-      <p>Lists the tools, then asks <code>find_rooms</code>, <code>code_checks</code> and <code>quote</code> for A101. Read-only: a request, a record, a hash.</p>
+      <p>Lists the tools, then asks <code>find_rooms</code>, <code>code_checks</code> and <code>quote</code> for A101. Read-only: a request, a record, a hash. <code>find_rooms</code> also takes <code>labels</code> read off any drawing.</p>
       <button class="btn" type="button" id="arTry">Call the endpoint</button>
       <div class="ar-out" id="arOut"><pre class="mono">{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"code_checks","arguments":{"sheet":"A101","lines":[{"conditionId":"floor-tiles","qty":30.7}]}}}</pre></div>
     </div>
@@ -193,6 +207,7 @@
         <li><b>The risks.</b> <code>defect_register</code> proposes; a named person picks which become provisional sums.</li>
         <li><b>The quote and every variation.</b> <code>draft_bid</code> and <code>variation</code> return drafts at authority <em>act with approval</em>. A named person sends, changes or withdraws, and each decision is a hashed receipt chained to the last.</li>
         <li><b>Compliance.</b> <code>consent_check</code> and <code>code_checks</code> point at MBIE's pages. The council decides; the tool never does.</li>
+        <li><b>Payment claims.</b> <code>payment_claim</code> drafts against the approved quote with the s 20 checklist and the working-day deadlines. A person serves it; nothing here is legal advice.</li>
       </ul>
       <p class="hint">Pattern: enquiry → agent steps with tool calls and records → a named person approves → chained receipt. Built clean-room by the assembl lab; no third-party takeoff code or assets.</p>
     </div>

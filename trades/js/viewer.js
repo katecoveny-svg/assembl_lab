@@ -50,6 +50,7 @@ export function createViewer({ viewer, stage, canvas, overlay, msg, onTap, onFin
       const c = it.colour || "#A9C9F2", cls = `${it.draft ? "m-draft" : ""} ${it.hl ? "m-hl" : ""} ${it.fresh ? "m-new" : ""}`, multi = Array.isArray(it.pts[0]) && Array.isArray(it.pts[0][0]), P = multi ? it.pts.flat() : it.pts;
       if (!P.length) continue;
       let g = `<g class="${cls}" style="--c:${c}">`;
+      if (it.kind === "pin") { const [x, y] = P[0]; out.push(g + `<circle class="m-pin-ring" cx="${x}" cy="${y}" r="${rad * 2.6}"/><circle class="m-pin" cx="${x}" cy="${y}" r="${rad * 1.3}"/>${it.label ? `<text class="m-lab" x="${x}" y="${y - rad * 3.6}" text-anchor="middle" font-size="${fs}">${esc(it.label)}</text>` : ""}</g>`); continue; }
       if (multi) { g += it.pts.map((run) => `<polyline class="m-line" points="${run.map((p) => p.join(",")).join(" ")}"/>`).join(""); if (it.label) g += `<text class="m-lab" x="${cen(P)[0]}" y="${cen(P)[1]}" text-anchor="middle" font-size="${fs}">${esc(it.label)}</text>`; out.push(g + "</g>"); continue; }
       if (it.kind === "scale") g += `<path class="m-scale" d="M${P.map((p) => p.join(" ")).join("L")}"/>`;
       else if (it.kind === "area") g += P.length > 2 ? `<polygon class="m-area" points="${P.map((p) => p.join(",")).join(" ")}"/>` : `<polyline class="m-line" points="${P.map((p) => p.join(",")).join(" ")}"/>`;
@@ -102,6 +103,12 @@ export function createViewer({ viewer, stage, canvas, overlay, msg, onTap, onFin
   });
   let rt = 0; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(fit, 120); });
 
-  return { load, fit, zoomIn: () => zoomAt(1.25, ...centre()), zoomOut: () => zoomAt(0.8, ...centre()), setItems, setTool: (t) => { st.tool = t; viewer.dataset.tool = t; }, say, state: st,
+  // the page's text layer, flattened to { str, x, y, w, h } in page points, y down (x left edge, y the line's middle)
+  async function textItems() {
+    if (!st.page) return [];
+    const tc = await st.page.getTextContent(), vp = st.page.getViewport({ scale: 1 });
+    return tc.items.filter((t) => t.str && t.str.trim()).map((t) => { const [, , c, d, e, f] = t.transform, [x, y] = vp.convertToViewportPoint(e, f), h = Math.hypot(c, d) || 8; return { str: t.str, x, y: y - h * 0.35, w: t.width || t.str.length * h * 0.5, h }; });
+  }
+  return { load, fit, textItems, zoomIn: () => zoomAt(1.25, ...centre()), zoomOut: () => zoomAt(0.8, ...centre()), setItems, setTool: (t) => { st.tool = t; viewer.dataset.tool = t; }, say, state: st,
     focusOn(pts) { if (!pts || !pts.length) return; if (Array.isArray(pts[0][0])) pts = pts.flat(); const r = viewer.getBoundingClientRect(), c = cen(pts); st.tx = r.width / 2 - c[0] * st.zoom; st.ty = r.height / 2 - c[1] * st.zoom; apply(); } };
 }

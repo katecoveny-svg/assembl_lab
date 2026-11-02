@@ -172,7 +172,42 @@ button,input,select{font:inherit;color:inherit} button{cursor:pointer;-webkit-ta
   .viewer{aspect-ratio:auto;height:min(62vh,520px);min-height:320px} .rates-grid,.ar-grid,.checks-grid,.var-grid{grid-template-columns:minmax(0,1fr)} .rcpt dl{grid-template-columns:1fr} .work{max-height:none}
   .top{gap:10px}.top nav a{padding:6px 8px;font-size:.8rem} .hero h1{font-size:clamp(1.8rem,8vw,2.4rem)}
 }
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.step{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.step{opacity:1;transform:none}.fchip.skeleton{background:var(--chalk)}}
+
+
+/* ---------- latest published chips */
+.feeds{margin-bottom:16px;display:grid;gap:10px} .feeds-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline} .feeds-head h3{margin:0}
+.feed-row{display:grid;grid-template-columns:190px minmax(0,1fr);gap:10px;align-items:start} .feed-lab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-top:8px}
+.feed-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fchip{display:grid;gap:3px;max-width:360px;padding:9px 12px;border-radius:var(--r-sm);background:var(--paper-bright);box-shadow:inset 0 0 0 1.5px var(--line);text-decoration:none;font-size:.8rem;line-height:1.35;transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out);animation:land var(--dur-settle) var(--ease-spring) both}
+a.fchip:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1.5px var(--card-tint),var(--shadow-1),0 0 30px -10px var(--card-glow)} a.fchip:active{transform:scale(.98)}
+.fchip b{font-weight:600} .fchip .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:.66rem;color:var(--muted)} .fchip .big{font-family:var(--mono);font-size:1.05rem;font-weight:500;color:var(--plum)}
+.fchip[data-on]{box-shadow:inset 0 0 0 2px var(--plum)} .fchip.skeleton{min-width:220px;height:62px;background:linear-gradient(90deg,var(--chalk),var(--paper-bright),var(--chalk));background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+.pill.tiny{min-height:20px;padding:0 8px;font-size:9.5px}
+/* ---------- council links */
+.council-links{list-style:none;margin:8px 0 4px;padding:0;display:grid;gap:6px} .council-links li{font-size:.82rem;display:grid;gap:1px} .council-links small{font-family:var(--mono);font-size:.64rem;color:var(--muted)}
+/* ---------- room names off the drawing */
+.labels-out{margin-top:10px;display:grid;gap:6px;font-size:.8rem} .labels-out:empty{display:none} .labels-out .rooms{display:flex;flex-wrap:wrap;gap:4px} .labels-out .rooms span{font-size:.72rem;box-shadow:inset 0 0 0 1px var(--line);border-radius:var(--r-pill);padding:3px 9px;background:var(--chalk);animation:land var(--dur-settle) var(--ease-spring) both} .labels-out .warn{padding:8px 10px;border-radius:var(--r-sm);background:#FAF1C9}
+.labels-out details pre{margin:6px 0 0;font-family:var(--mono);font-size:.66rem;background:var(--chalk);border-radius:var(--r-xs);padding:8px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.m-pin{fill:var(--plum);stroke:#fff;stroke-width:2px;vector-effect:non-scaling-stroke} .m-pin-ring{fill:none;stroke:var(--lilac);stroke-width:3px;vector-effect:non-scaling-stroke;opacity:.9}
+.warn{padding:8px 10px;border-radius:var(--r-sm);background:#FAF1C9;font-size:.82rem}
+/* ---------- site photos */
+.photo-in{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.74rem;font-weight:600;cursor:pointer;color:var(--ink);padding:4px 10px;border-radius:var(--r-pill);box-shadow:inset 0 0 0 1.5px var(--line2);background:var(--paper-bright);transition:transform var(--dur) var(--ease-out),box-shadow var(--dur)} .photo-in:hover{transform:translateY(-1px);box-shadow:inset 0 0 0 1.5px var(--ink)} .photo-in:focus-within{box-shadow:var(--focus)}
+.photo-in input{position:absolute;width:1px;height:1px;opacity:0}
+.thumbrow{display:flex;gap:8px;align-items:center;margin-top:6px} .thumb{width:56px;height:42px;object-fit:cover;border-radius:6px;box-shadow:0 0 0 1px var(--line),0 4px 10px -6px rgba(36,11,33,.4);animation:appear var(--dur-settle) var(--ease-spring) both} .thumbrow .hash{font-size:.6rem;max-width:220px}
+.q .picks li{list-style:none} .q .picks .ph{padding:0 8px 4px} .q .picks label.photo-in{display:inline-flex;grid-template-columns:none;padding:4px 10px;background:var(--paper-bright)}
+.bid td{overflow-wrap:anywhere} .bid small.mono{word-break:break-all} .bid td:last-child{overflow-wrap:normal}
+.bid .psrow img{width:72px;height:54px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px}
+/* ---------- payment claim */
+.claim-form{display:grid;gap:8px} .claim-form .two{display:grid;grid-template-columns:1fr 1fr;gap:8px} .claim-form label{font-size:.8rem;display:grid;gap:4px} .claim-form input[type=date],.claim-form input[type=number]{border:0;box-shadow:inset 0 0 0 1.5px var(--line2);border-radius:var(--r-xs);padding:7px 9px;background:var(--paper-bright);font-family:var(--mono);font-size:.82rem;width:100%;min-width:0}
+.claim-form input[type=range]{accent-color:var(--plum);width:100%} .claim-form .chk{display:flex;gap:8px;align-items:flex-start;font-size:.8rem} .claim-form .chk input{accent-color:var(--plum);margin-top:3px}
+.claimdoc{margin-top:12px;box-shadow:var(--glass-edge);border-radius:var(--r-sm);padding:14px;background:var(--paper-bright);font-size:.8rem;animation:land var(--dur-settle) var(--ease-spring) both} .claimdoc h4{margin:0 0 6px;font-size:.98rem} .claimdoc table{width:100%;border-collapse:collapse;margin:8px 0} .claimdoc td{padding:4px 0;border-bottom:1px solid var(--line)} .claimdoc td:last-child{text-align:right;font-family:var(--mono);font-size:.76rem;white-space:nowrap} .claimdoc tr.t td{font-weight:600;border:0}
+.checklist{list-style:none;margin:8px 0;padding:0;display:grid;gap:4px} .checklist li{display:grid;grid-template-columns:18px 70px 1fr;gap:6px;font-size:.76rem;align-items:start} .checklist li::before{content:"";width:12px;height:12px;margin-top:2px;border-radius:4px;background:var(--mint);box-shadow:0 0 8px -2px var(--mint)} .checklist li[data-m=check]::before{background:var(--butter)} .checklist code{font-size:.7rem;background:none;padding:0;color:var(--rose)} .checklist small{display:block;color:var(--muted)}
+.claimdoc .to{font-size:.78rem;color:var(--muted);display:grid;gap:1px;margin-bottom:8px} .claimdoc .bidhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap} .claimdoc .ref{font-family:var(--mono);font-size:.74rem;color:var(--muted);text-align:right} .claimdoc p{margin-top:6px} .claimdoc details{margin-top:8px}
+.claimdoc .stmt{font-weight:600;margin:6px 0} .claimdoc .law{font-size:.74rem;color:var(--muted)}
+@media(min-width:1181px){.var-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:860px){.feed-row{grid-template-columns:1fr}.feed-lab{padding-top:0}.claim-form .two{grid-template-columns:1fr}.fchip{max-width:none}}
 
 /* ---------- print: the client-ready quote only */
 @media print{
@@ -180,6 +215,6 @@ button,input,select{font:inherit;color:inherit} button{cursor:pointer;-webkit-ta
   body{background:#fff;color:#000} #printArea{display:block!important;padding:0;font:12pt/1.4 var(--sans)}
   #printArea .bid{box-shadow:none;border:0;padding:0;margin:0} #printArea .bid table{font-size:11pt} #printArea .bid td:last-child{font-size:10.5pt} #printArea .ad-msg{color:#555}
   #printArea .phead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #240B21;padding-bottom:8pt;margin-bottom:12pt} #printArea .phead b{font-size:16pt;letter-spacing:-.02em} #printArea .phead span{font-family:var(--mono);font-size:9pt;color:#555;text-align:right;display:block}
-  #printArea .pfoot{margin-top:16pt;border-top:1px solid #ccc;padding-top:6pt;font-family:var(--mono);font-size:8pt;color:#555;word-break:break-all}
+  #printArea .claimdoc{box-shadow:none;padding:0} #printArea img{max-width:120px} #printArea .pfoot{margin-top:16pt;border-top:1px solid #ccc;padding-top:6pt;font-family:var(--mono);font-size:8pt;color:#555;word-break:break-all}
   @page{size:A4;margin:18mm}
 }

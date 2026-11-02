@@ -1,7 +1,8 @@
 // assembl lab · trades twin. Wires the desk: sheets, the scale a person confirms, the measuring tools, the takeoff list, the
 // checks (consent, Building Code, defects), the quote maths and totals, the site diary, the agent desk and the agent-ready
 // panel. State lives in this tab only; nothing is stored or sent.
-import { PLANS, CONDITIONS, TRADES, GST, TOOLS, nominalMmPerPt, quantity, condition, price, quote, codeChecks, consentCheck, defectRegister, round, toPt, TRADE_RATES, WASTE_PCT, H1_SCHEDULE, H1_ZONES, DEFAULT_QUOTE, DEFECTS } from "./takeoff-core.js";
+import { PLANS, CONDITIONS, TRADES, GST, TOOLS, nominalMmPerPt, quantity, condition, price, quote, codeChecks, consentCheck, defectRegister, round, toPt, TRADE_RATES, WASTE_PCT, H1_SCHEDULE, H1_ZONES, DEFAULT_QUOTE, DEFECTS, COUNCILS, NATIONAL_EXEMPT_GUIDE, councilForZone, callTool, labelsFromTextItems } from "./takeoff-core.js";
+import { FEEDS_FALLBACK } from "./feeds-fallback.js";
 import { createViewer } from "./viewer.js";
 import { initAgentDesk } from "./desk.js";
 
@@ -17,7 +18,7 @@ const clock = (iso) => new Date(iso).toLocaleTimeString("en-NZ", { hour: "numeri
 const S = {
   sheetKey: "A101", sheet: PLANS.sheets[0], uploads: {}, scales: {}, tool: "pan", cond: "carpet", draft: [], scalePts: [],
   measurements: [], rates: Object.fromEntries(CONDITIONS.map((c) => [c.id, { material: c.material, labour: c.labour }])), markup: DEFAULT_QUOTE.marginPct, pgPct: DEFAULT_QUOTE.pgPct,
-  tradeRates: { ...TRADE_RATES }, waste: { ...WASTE_PCT }, ps: new Set(), zone: 1, diary: [], seq: 0, hl: null, fresh: null,
+  tradeRates: { ...TRADE_RATES }, waste: { ...WASTE_PCT }, ps: new Set(), zone: 1, council: "auckland", pins: {}, photos: {}, diary: [], seq: 0, hl: null, fresh: null,
 };
 const listeners = new Set();
 const emit = () => listeners.forEach((f) => f());
@@ -28,7 +29,7 @@ const viewer = createViewer({ viewer: $("#viewer"), stage: $("#stage"), canvas: 
 
 // ---------------------------------------------------------------- sheets
 async function openSheet(key) {
-  S.sheetKey = key; S.sheet = PLANS.sheets.find((s) => s.id === key) || null; S.draft = []; S.scalePts = []; S.hl = null; $("#scaleForm").hidden = true;
+  S.sheetKey = key; S.sheet = PLANS.sheets.find((s) => s.id === key) || null; S.draft = []; if ($("#labelsOut")) $("#labelsOut").innerHTML = ""; S.scalePts = []; S.hl = null; $("#scaleForm").hidden = true;
   $$("#sheets button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.key === key)));
   const up = S.uploads[key];
   $("#planTitle").textContent = S.sheet ? `${S.sheet.id} · ${S.sheet.title}` : up ? up.name : "Sheet";
@@ -111,6 +112,7 @@ function draw() {
   const items = [];
   for (const m of sheetMeasurements()) { const c = condition(m.conditionId); items.push({ kind: m.kind, pts: m.pts, colour: c ? c.colour : "#A9C9F2", label: `${m.name || (c ? c.name.split(" ").slice(0, 2).join(" ") : "")} · ${fmtQ(m.qty, m.unit)}`, hl: S.hl === m.id, fresh: S.fresh === m.id }); }
   if (S.draft.length) { const c = condition(S.cond), sc = scaleOf(); const q = sc ? quantity(S.tool, S.draft, sc.mmPerPt) : 0; items.push({ kind: S.tool, pts: S.draft, colour: c ? c.colour : "#A9C9F2", draft: true, label: S.draft.length >= (S.tool === "area" ? 3 : S.tool === "length" ? 2 : 1) ? fmtQ(round(q, 2), S.tool === "count" ? "EA" : S.tool === "length" ? "m" : "m²") : "" }); }
+  for (const p of S.pins[S.sheetKey] || []) items.push({ kind: "pin", pts: [p.atPt], colour: "#240B21", label: p.areaM2 ? `${p.name} · ${p.areaM2} m²` : p.name });
   if (S.scalePts.length) items.push({ kind: "scale", pts: S.scalePts, colour: "#240B21", label: S.scalePts.length === 2 ? "scale line" : "" });
   viewer.setItems(items);
   const bar = $("#draftBar"), n = S.draft.length; bar.hidden = !n; if (n) $("#draftInfo").textContent = `${condition(S.cond)?.name || ""} · ${n} point${n === 1 ? "" : "s"}`;
@@ -157,12 +159,20 @@ function renderChecks() {
   $("#codePanel").innerHTML = code.byClause.length ? code.byClause.map((g) => `<section class="cl"><header><b>${g.clause}</b><span>${esc(g.name)}</span><a class="link std" href="${g.link}" target="_blank" rel="noopener">building.govt.nz</a></header><ul>${g.checks.map((k) => `<li>${esc(k.check)}<small>${esc(k.condition)} · ${esc(k.standard)}</small></li>`).join("")}</ul></section>`).join("") : `<p class="empty">Measure something and the clauses to check appear here, one line each, with MBIE's page.</p>`;
   const dr = defectRegister(L, sheetId); $("#defectCount").textContent = dr.count ? `${dr.count} · ${dr.register.filter((d) => d.severity === "high").length} high` : "";
   for (const id of [...S.ps]) if (!dr.register.find((d) => d.id === id)) S.ps.delete(id);
-  $("#defectPanel").innerHTML = dr.count ? dr.register.map((d) => `<div class="defect"><input type="checkbox" data-ps="${d.id}" ${S.ps.has(d.id) ? "checked" : ""} ${d.provisionalSum ? "" : "disabled"} aria-label="Hold ${esc(d.title)} as a provisional sum"><span><span class="t">${esc(d.title)}<span class="sev" data-s="${d.severity}">${d.severity}</span><span class="pill" data-tone="${SEV_TONE[d.severity]}">${d.clause}</span></span><span class="where">${esc(d.where)} · ${esc(d.why)}</span><span class="photo">${esc(d.photoCheck)}</span><span class="ps">${d.provisionalSum ? `Provisional sum ${nzd0(d.provisionalSum)} ex GST${S.ps.has(d.id) ? " · held in the quote" : ""}` : "No sum: a check, not a cost"}<a class="link" href="${d.link}" target="_blank" rel="noopener">${d.clause} ${esc(d.clauseName)}</a></span></span></div>`).join("") : `<p class="empty">Measure something and the defects to look for appear here, worst first.</p>`;
+  $("#defectPanel").innerHTML = dr.count ? dr.register.map((d) => `<div class="defect"><input type="checkbox" data-ps="${d.id}" ${S.ps.has(d.id) ? "checked" : ""} ${d.provisionalSum ? "" : "disabled"} aria-label="Hold ${esc(d.title)} as a provisional sum"><span><span class="t">${esc(d.title)}<span class="sev" data-s="${d.severity}">${d.severity}</span><span class="pill" data-tone="${SEV_TONE[d.severity]}">${d.clause}</span></span><span class="where">${esc(d.where)} · ${esc(d.why)}</span><span class="photo">${esc(d.photoCheck)}</span>${S.photos[d.id] ? `<span class="thumbrow"><img class="thumb" src="${S.photos[d.id].thumb}" alt="Site photo for ${esc(d.title)}"><span class="hash">SHA-256 ${S.photos[d.id].sha256}</span></span>` : ""}<span class="ps">${d.provisionalSum ? `Provisional sum ${nzd0(d.provisionalSum)} ex GST${S.ps.has(d.id) ? " · held in the quote" : ""}` : "No sum: a check, not a cost"}<a class="link" href="${d.link}" target="_blank" rel="noopener">${d.clause} ${esc(d.clauseName)}</a></span></span></div>`).join("") : `<p class="empty">Measure something and the defects to look for appear here, worst first.</p>`;
 }
 $("#defectPanel").addEventListener("change", (e) => { const i = e.target.closest("[data-ps]"); if (!i) return; if (i.checked) S.ps.add(i.dataset.ps); else S.ps.delete(i.dataset.ps); const d = DEFECTS.find((x) => x.id === i.dataset.ps); diary(i.checked ? "Provisional sum held" : "Provisional sum released", `${d.title} · ${nzd0(d.ps)} · by you`, "#F3A5BE"); emit(); });
 function setPS(ids, by) { S.ps = new Set(ids); const held = DEFECTS.filter((d) => S.ps.has(d.id)); diary("Provisional sums decided", `${held.length} held (${nzd0(held.reduce((s, d) => s + d.ps, 0))}) · by ${by}`, "#F3A5BE"); emit(); }
 $("#h1zone").innerHTML = H1_ZONES.map((z) => `<option value="${z.zone}">Zone ${z.zone} · ${esc(z.where)}</option>`).join("");
-$("#h1zone").addEventListener("change", (e) => { S.zone = +e.target.value; renderH1(); });
+$("#h1zone").addEventListener("change", (e) => { S.zone = +e.target.value; const c = councilForZone(S.zone); if (c) S.council = c.id; renderH1(); renderCouncil(); });
+$("#council").innerHTML = COUNCILS.map((c) => `<option value="${c.id}">${esc(c.name)} · zone ${c.zone}</option>`).join("");
+$("#council").addEventListener("change", (e) => { S.council = e.target.value; const c = COUNCILS.find((x) => x.id === S.council); S.zone = c.zone; $("#h1zone").value = String(c.zone); renderH1(); renderCouncil(); });
+const councilRegion = () => (COUNCILS.find((c) => c.id === S.council) || COUNCILS[0]).region;
+function renderCouncil() {
+  const c = COUNCILS.find((x) => x.id === S.council) || COUNCILS[0]; $("#council").value = c.id;
+  $("#councilLinks").innerHTML = [...c.links.map((l) => ({ ...l, who: c.name })), { ...NATIONAL_EXEMPT_GUIDE, who: "MBIE, national" }].map((l) => `<li><a class="link" href="${l.url}" target="_blank" rel="noopener">${esc(l.who)} · ${esc(l.title)}</a><small>link checked: ${esc(l.check)}</small></li>`).join("");
+  $$("#consentChips .fchip[data-region]").forEach((x) => x.toggleAttribute("data-on", x.dataset.region === c.region));
+}
 function renderH1() { $("#h1Table").innerHTML = `<thead><tr><th>Element</th><th>Minimum R (zone ${S.zone})</th></tr></thead><tbody>${H1_SCHEDULE.map((r) => `<tr><td>${esc(r.element)}</td><td>R${r.r[S.zone - 1].toFixed(r.r[S.zone - 1] < 1 ? 2 : 1)}</td></tr>`).join("")}</tbody>`; }
 
 // ---------------------------------------------------------------- site diary (a stub: in this tab only)
@@ -172,15 +182,66 @@ export function diary(what, detail, colour = "#C7B4F0") {
   $("#diary").innerHTML = S.diary.slice(0, 40).map((d) => `<li><time datetime="${d.at}">${clock(d.at)}</time><span><b><i class="cube" style="--c:${d.colour};width:10px;height:10px;margin-right:6px"></i>${esc(d.what)}</b><small>${esc(d.detail)}</small></span></li>`).join("");
 }
 
-// ---------------------------------------------------------------- print: the client-ready quote only
+// ---------------------------------------------------------------- site photos: downscaled and hashed in the browser, never uploaded
+async function sha256Bytes(buf) { const h = await crypto.subtle.digest("SHA-256", buf); return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join(""); }
+export async function addPhoto(defectId, file, by) {
+  if (!file || !/^image\//.test(file.type || "image/")) throw new Error("That isn't an image.");
+  if (file.size > 25e6) throw new Error("That photo is over 25 MB.");
+  const buf = await file.arrayBuffer(), sha256 = await sha256Bytes(buf);
+  const bmp = await createImageBitmap(new Blob([buf], { type: file.type || "image/jpeg" }), { imageOrientation: "from-image" });
+  const k = Math.min(1, 480 / Math.max(bmp.width, bmp.height)), c = document.createElement("canvas"); c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); bmp.close?.();
+  const thumb = c.toDataURL("image/jpeg", 0.78);
+  const m = document.createElement("canvas"), km = 160 / Math.max(c.width, c.height); m.width = Math.max(1, Math.round(c.width * Math.min(1, km))); m.height = Math.max(1, Math.round(c.height * Math.min(1, km))); m.getContext("2d").drawImage(c, 0, 0, m.width, m.height);
+  const mini = m.toDataURL("image/jpeg", 0.7);
+  const ph = { defectId, name: (file.name || "photo").slice(0, 60), type: file.type || "image/*", bytes: file.size, sha256, thumb, mini, w: c.width, h: c.height, takenAt: new Date(file.lastModified || Date.now()).toISOString(), addedAt: new Date().toISOString(), by };
+  S.photos[defectId] = ph;
+  const d = DEFECTS.find((x) => x.id === defectId); diary("Site photo added", `${d ? d.title : defectId} · SHA-256 ${sha256.slice(0, 12)}… · kept in this browser, not uploaded`, "#A9C9F2");
+  emit(); return ph;
+}
+
+// ---------------------------------------------------------------- print: the client-ready quote or claim only
 function printQuote(bidEl, meta) {
-  const area = $("#printArea"); area.innerHTML = `<div class="phead"><b>${esc(meta.builder)}</b><span>${esc(meta.ref)}<br>${esc(meta.date)}<br>Simulated · indicative only · not a quote</span></div>` + bidEl.outerHTML + `<p class="pfoot">Record ${esc(meta.schema)} · SHA-256 of the quote record ${esc(meta.hash)}${meta.receipt ? ` · receipt ${esc(meta.receipt)}` : ""} · computed in the browser, not stored · assembl lab trades twin, a simulation with a fictional builder, client and rates.</p>`;
-  area.querySelector(".bid")?.removeAttribute("id");
+  const area = $("#printArea"); area.innerHTML = `<div class="phead"><b>${esc(meta.builder)}</b><span>${esc(meta.ref)}<br>${esc(meta.date)}<br>${esc(meta.tag || "Simulated · indicative only · not a quote")}</span></div>` + bidEl.outerHTML + `<p class="pfoot">Record ${esc(meta.schema)} · SHA-256 of the record ${esc(meta.hash)}${meta.receipt ? ` · receipt ${esc(meta.receipt)}` : ""} · computed in the browser, not stored · assembl lab trades twin, a simulation with a fictional builder, client and rates.</p>`;
+  area.querySelector(".bid,.claimdoc")?.removeAttribute("id");
   const done = () => { area.innerHTML = ""; window.removeEventListener("afterprint", done); };
   window.addEventListener("afterprint", done); window.print(); setTimeout(done, 60000);
 }
 
 listeners.add(() => { draw(); renderTakeoff(); renderTotals(); renderScale(); renderChecks(); });
+
+// ---------------------------------------------------------------- latest published: MBIE determinations and Stats NZ consents
+const fmtDate = (iso) => iso ? new Date(iso + (iso.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-NZ", { day: "numeric", month: "short", year: "numeric" }) : "";
+function feedLabel(f, live) { return live ? `<span class="pill tiny" data-tone="mint">Live · fetched ${clock(f.fetchedAt)}</span>` : `<span class="pill tiny" data-tone="butter">Last known · ${fmtDate(FEEDS_FALLBACK.asAt)}</span>`; }
+function renderFeeds(data) {
+  const det = data?.feeds?.determinations, con = data?.feeds?.consents;
+  const D = det && !det.error ? { f: det, live: true } : { f: FEEDS_FALLBACK.determinations, live: false };
+  const C = con && !con.error ? { f: con, live: true } : { f: FEEDS_FALLBACK.consents, live: false };
+  $("#detChips").innerHTML = D.f.items.map((d) => `<a class="fchip" data-glow="sky" href="${d.link}" target="_blank" rel="noopener"><span class="meta">${feedLabel(D.f, D.live)}<span>${esc(d.number)} · ${fmtDate(d.date)}${d.outcome ? ` · ${esc(d.outcome)}` : ""}</span></span><b>${esc(d.title.length > 120 ? d.title.slice(0, 118) + "…" : d.title)}</b></a>`).join("");
+  const c = C.f, region = councilRegion();
+  $("#consentChips").innerHTML = `<a class="fchip" data-glow="mint" href="${c.link}" target="_blank" rel="noopener"><span class="meta">${feedLabel(c, C.live)}<span>${esc(c.month)}</span></span><span class="big">${c.monthlyDwellings != null ? c.monthlyDwellings.toLocaleString("en-NZ") : "–"}</span><b>new dwellings consented in ${esc(c.month)}</b>${c.annual ? `<span class="meta">${c.annual.dwellings.toLocaleString("en-NZ")} in the year ended ${esc(c.annual.yearEnded)} · ${esc(c.annual.change)}</span>` : ""}</a>` +
+    c.regions.map((r) => `<a class="fchip" data-glow="mint" data-region="${esc(r.region)}" ${r.region === region ? "data-on" : ""} href="${c.link}" target="_blank" rel="noopener"><span class="meta">${esc(r.region)} · year ended ${esc(c.annual?.yearEnded || c.month)}</span><span class="big">${r.dwellings.toLocaleString("en-NZ")}</span><span class="meta">${esc(r.change)} on the year before</span></a>`).join("") +
+    (c.nextRelease ? `<span class="hint" style="align-self:center">${esc(c.nextRelease)}.</span>` : "");
+  $("#feedsWhen").textContent = D.live && C.live ? `Live · fetched ${clock(det.fetchedAt)}` : D.live || C.live ? "One source live, one last known" : `Live sources didn't answer · showing last known values from ${fmtDate(FEEDS_FALLBACK.asAt)}`;
+}
+$("#detChips").innerHTML = $("#consentChips").innerHTML = `<span class="fchip skeleton" aria-hidden="true"></span><span class="fchip skeleton" aria-hidden="true"></span>`;
+(async () => { let data = null; try { const r = await fetch("/api/trades-feeds/", { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(20000) }); if (r.ok && /json/.test(r.headers.get("content-type") || "")) data = await r.json(); } catch (e) { /* fall back below */ } renderFeeds(data); })();
+
+// ---------------------------------------------------------------- room names off the drawing's text layer → find_rooms
+$("#readRooms").onclick = async () => {
+  const out = $("#labelsOut"), b = $("#readRooms"); b.disabled = true; out.innerHTML = `<p class="hint">Reading the text layer…</p>`;
+  try {
+    const items = await viewer.textItems();
+    if (!items.length) { S.pins[S.sheetKey] = []; out.innerHTML = `<p class="warn"><b>Scanned drawing: no text layer.</b> There is nothing to read, so mark rooms by hand with the Area tool.</p>`; emit(); return; }
+    const labels = labelsFromTextItems(items), args = { sheet: S.sheet ? S.sheet.id : S.sheetKey, labels }, r = callTool("find_rooms", args), rec = r.structuredContent;
+    S.pins[S.sheetKey] = rec.rooms || []; emit();
+    out.innerHTML = rec.rooms && rec.rooms.length
+      ? `<p><b>${rec.rooms.length} rooms</b> read off ${esc(S.sheet ? S.sheet.id : "your PDF")} from ${items.length} text runs. <span class="pill tiny" data-tone="butter">As written · a person checks</span></p><div class="rooms">${rec.rooms.map((x) => `<span>${esc(x.name)}${x.areaM2 ? ` · ${x.dims.a} × ${x.dims.b} m = ${x.areaM2} m²` : ""}</span>`).join("")}</div><details><summary class="hint">find_rooms with labels · the call and the record</summary><pre>${esc(JSON.stringify({ request: { name: "find_rooms", arguments: { sheet: args.sheet, labels: `${labels.length} lines` } }, record: rec }, null, 1).slice(0, 8000))}</pre></details>`
+      : `<p class="warn"><b>${items.length} text runs, but no room names matched.</b> Mark rooms by hand, or check the drawing labels its rooms (Lounge, Kitchen, Bed 1…).</p>`;
+    diary("Room names read off the drawing", `${(rec.rooms || []).length} rooms on ${S.sheet ? S.sheet.id : "an uploaded PDF"} · find_rooms with labels`, "#C7B4F0");
+  } catch (e) { out.innerHTML = `<p class="warn">Couldn't read the text layer: ${esc(String(e.message || e))}</p>`; }
+  finally { b.disabled = false; }
+};
 
 // ---------------------------------------------------------------- zoom buttons
 $("#zoomIn").onclick = viewer.zoomIn; $("#zoomOut").onclick = viewer.zoomOut; $("#zoomFit").onclick = viewer.fit;
@@ -202,9 +263,9 @@ $("#arTry").onclick = async () => {
 };
 
 // ---------------------------------------------------------------- boot
-renderSheets(); renderConds(); renderRates(); renderTotals(); renderScale(); renderH1(); renderChecks(); setTool("pan");
+renderSheets(); renderConds(); renderRates(); renderTotals(); renderScale(); renderH1(); renderCouncil(); renderChecks(); setTool("pan");
 openSheet("A101");
-const store = { S, scaleOf, setScale, openSheet, addMeasurement, lines, currentPrice, currentQuote, quoteOpts, psList, setPS, diary, printQuote, emit, viewer, condition, nominalMmPerPt, toPt, price, quote, GST,
+const store = { S, scaleOf, setScale, openSheet, addMeasurement, lines, currentPrice, currentQuote, quoteOpts, psList, setPS, diary, printQuote, addPhoto, councilRegion, emit, viewer, condition, nominalMmPerPt, toPt, price, quote, GST,
   highlight(id) { S.hl = id; emit(); }, removeByAgent(ids) { S.measurements = S.measurements.filter((m) => !ids.includes(m.id)); emit(); }, subscribe: (f) => { listeners.add(f); return () => listeners.delete(f); } };
 initAgentDesk(store);
 window.__trades = store;
