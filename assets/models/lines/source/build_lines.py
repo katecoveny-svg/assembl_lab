@@ -3,7 +3,7 @@
     .venv/bin/python assets/models/lines/source/build_lines.py            # .blend + GLB + renders + reports
     .venv/bin/python assets/models/lines/source/build_lines.py --no-render # .blend + GLB + reports only
     .venv/bin/python assets/models/lines/source/build_lines.py --preview   # quick low-sample renders
-    add --only=hero (or detail-outlet, detail-inlet) to render a single shot
+    add --only=hero (or detail-outlet, detail-inlet) to render a single shot; --samples=N overrides 64
 
 Runs with headless `bpy` 5.1.x (pip) or inside Blender 5.1 (`blender -b -P build_lines.py -- --no-render`).
 Everything is authored here from primitives: no imported meshes, no generated imagery, no textures.
@@ -620,6 +620,8 @@ light('FILL', 'AREA', (2.0, -1.4, 1.2), (70, 0, 52), 160, (1.2, 1.2), '#EEF2FF')
 light('RIM', 'AREA', (0.4, 1.4, 2.3), (-38, 0, 172), 260, (1.4, 0.6), '#FFFFFF')
 sc = scene; sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'
 SAMPLES = 24 if PREVIEW else 64
+for x in ARGS:
+    if x.startswith('--samples='): SAMPLES = int(x.split('=', 1)[1])
 sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.02
 try: sc.cycles.denoiser = 'OPENIMAGEDENOISE'
 except Exception: pass
@@ -635,9 +637,9 @@ sc.render.film_transparent = False; sc.render.image_settings.file_format = 'PNG'
 shots = [
     ('lines-hero', (-1.02, -2.80, 1.50), (0.02, -0.06, 0.66), 42, (1600, 1100), lambda: (pose('A', 40, inflow=3), pose('B', 70, inflow=6)),
      'A 40 L filling at 3 L/min, B 70 L filling at 6 L/min (lesson investigate case, t = 10 min)'),
-    ('lines-detail-outlet', (0.12, -0.95, 0.52), (-0.24, -0.18, 0.26), 50, (1200, 860), lambda: (pose('A', 40, outflow=4), pose('B', 70, inflow=6)),
+    ('lines-detail-outlet', (0.12, -0.95, 0.52), (-0.24, -0.18, 0.26), 50, (1000, 720), lambda: (pose('A', 40, outflow=4), pose('B', 70, inflow=6)),
      'A at 40 L with its drain open (rate -4 L/min, lever half open); B 70 L'),
-    ('lines-detail-inlet', (-0.75, -0.70, 1.62), (-0.31, 0.05, 1.29), 58, (1200, 860), lambda: (pose('A', 40, inflow=3), pose('B', 70, inflow=6)),
+    ('lines-detail-inlet', (-0.75, -0.70, 1.62), (-0.31, 0.05, 1.29), 58, (1000, 720), lambda: (pose('A', 40, inflow=3), pose('B', 70, inflow=6)),
      'inlet gate valve, handwheel and spout; A filling at 3 L/min'),
 ]
 ONLY = [x.split('=', 1)[1] for x in ARGS if x.startswith('--only=')]

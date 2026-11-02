@@ -14,7 +14,7 @@ Blender tanks for the existing straight-line machine, `/study/m/lines.html` (NCE
 | `lines-rig-contract.json` | Contract: units, axes, scene scale, the litres → metres mapping, the tested cases, control mappings, required nodes and every exported pivot. It is written by the build script from the exported rest pose. |
 | `lines-rig-controller.mjs` | Pure visual adapter (`createLinesRig`, `levelMetres`, `checkContract`). It has no timer, no flow integration, no random values and no state of its own. |
 | `rig-validation.json` | Measured water heights at 0, 10, 40, 70 and 100 L, clearances, GLB stats and SHA-256, and render records (engine, samples, time, posed state). |
-| `renders/*.png` | **Offline Cycles renders.** They are not the browser view. |
+| `renders/*.png`, `lines-hero.webp` | **Offline Cycles renders.** They are not the browser view. `lines-hero.png` (1600×1100, 64 samples), `lines-detail-outlet.png` and `lines-detail-inlet.png` (1000×720, 32 samples). All use adaptive sampling (threshold 0.02), OpenImageDenoise and AgX Medium High Contrast at exposure −0.4, and are posed on the lesson's A 40 L / B 70 L case. The detail shots used 32 samples because the build machine's two CPU cores were shared with other jobs; rerun with `--samples=64` for parity. `lines-hero.webp` is a WebP copy of the hero for page use. |
 | `../../study/m/lines-asset.js` | Loader. It refuses any contract other than `assembl.lines.v1` or other units, checks for missing nodes, swaps in the browser materials and returns one holder per tank. |
 
 ## Rebuild
