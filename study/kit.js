@@ -5,6 +5,8 @@
 try{document.documentElement.setAttribute("data-theme","light")}catch(e){}
 // the 3D bench (kit3d.js) is an ES module on the vendored three.js; its addons import "three", so map it before any module loads
 const KIT_SRC=(document.currentScript&&document.currentScript.src)||location.href;
+// the app icon as the tab icon on every machine (otherwise the browser asks for /favicon.ico and logs a 404)
+try{if(!document.querySelector('link[rel~="icon"]')){const l=document.createElement("link");l.rel="icon";l.type="image/png";l.href=new URL("app/icon-192.png",KIT_SRC).href;document.head.appendChild(l)}}catch(e){}
 try{if(!document.querySelector('script[type="importmap"]')){const im=document.createElement("script");im.type="importmap";
   im.textContent=JSON.stringify({imports:{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}});document.head.appendChild(im)}}catch(e){}
 // each machine is a small app with its own colour, grouped by subject
@@ -377,6 +379,30 @@ function mountLesson(cfg,api,host,work){
   renderEvidence();go(0);
   return {update(){const active=api.step.k===L.step;host.hidden=work.hidden=!active}};
 }
+/* ---- the retrieval check: one question at the end of a machine (Tier 1 item 10; EEF practice-and-feedback). A machine can
+   carry its own (cfg.retrieval = {q, options, answer, why}); these are the nine high-volume machines' questions. Picking an
+   option gives immediate feedback and the reason, and a right answer counts as a pass for the streak. */
+const RETRIEVAL={
+  text:{q:"A poem says <i>the wind whispered through the trees</i>. Which technique is that?",options:["Personification","Simile","Sibilance","Repetition"],answer:0,why:"The wind is given a human action (whispering). A simile would compare with <i>like</i> or <i>as</i>."},
+  lines:{q:"Tank A follows y = 3x + 10. What does the 10 tell you?",options:["It starts with 10 L","It fills 10 L a minute","It empties after 10 min","The gradient is 10"],answer:0,why:"The constant is the y-intercept: the level at x = 0, before the tap opens. The 3 is the gradient, 3 L a minute."},
+  data:{q:"A bar graph's axis starts at 46% instead of 0, so the bars look far more different than they are. What is this?",options:["A misleading scale","An outlier","A biased sample","A rate, not a count"],answer:0,why:"Chopping the axis stretches small differences. Always read where the axis starts before you read the bars."},
+  queue:{q:"Shoppers arrive at random, 1.6 a minute on average. Over a 2-minute window, the expected number of arrivals is…",options:["3.2","1.6","0.8","2"],answer:0,why:"A Poisson mean scales with time: 1.6 a minute × 2 minutes = 3.2 arrivals, with a lot of spread around it."},
+  genes:{q:"Both parents are Dd. What fraction of chicks are expected to be dd (pale)?",options:["1 in 4","1 in 2","3 in 4","None"],answer:0,why:"The Punnett square gives DD, Dd, Dd, dd: one in four is dd. Expected, not guaranteed; small broods vary."},
+  energy:{q:"A 70 kg jumper is winched 192 m up the Sky Tower. Which formula gives the gravitational potential energy gained?",options:["Ep = mgh","Ek = ½mv²","E = Pt","E = mcΔT"],answer:0,why:"Ep = mgh = 70 × 9.8 × 192 ≈ 132 kJ. ½mv² is kinetic energy, Pt is electrical energy over time, mcΔT is heating."},
+  vend:{q:"A can lands on a rubber pad instead of a steel tray, so it stops over a longer time. The average force on the can is…",options:["Smaller","Larger","The same","Zero"],answer:0,why:"The impulse (change in momentum) is the same either way, so F = Δp ÷ t: a longer stopping time means a smaller force."},
+  phone:{q:"A 3 349 mAh battery: how much charge is that in coulombs? (Q = It)",options:["About 12 000 C","About 3 349 C","About 1.2 C","About 56 C"],answer:0,why:"3 349 mAh = 3.349 A × 3 600 s ≈ 12 000 C. Milliamp-hours are current × time, so the hour has to become seconds."},
+  slushie:{q:"The cooling curve goes flat a little below 0 °C while the slush forms. Why does the temperature stop falling?",options:["Latent heat is being removed as ice forms","The compressor has switched off","Sugar is heating the drink","The thermometer has frozen"],answer:0,why:"While particles lock into ice, the energy removed comes out as latent heat, not as a temperature drop. Sugar is why the flat part sits below 0 °C."}
+};
+function retrievalCard(cfg,mid,host,buddy){const R=cfg.retrieval||RETRIEVAL[mid];if(!R||!host)return;
+  const key="study-retr:"+mid;let done=null;try{done=localStorage.getItem(key)}catch(e){}
+  // the options are shuffled once per page load so the answer is not always first
+  const order=R.options.map((o,i)=>i).sort(()=>Math.random()-.5);
+  host.hidden=false;host.innerHTML=`<h3>${ICO.check}One last check</h3><p class="rq">${R.q}</p><div class="ropts" role="group" aria-label="Pick one answer">${order.map(i=>`<button type="button" class="btn" data-i="${i}">${esc(R.options[i])}</button>`).join("")}</div><div class="fb" id="k-rfb" aria-live="polite"></div><p class="rnote">${done==="ok"?"You got this one before. Still true?":"One question from memory. No peeking at the notes first."}</p>`;
+  host.querySelector(".ropts").addEventListener("click",e=>{const b=e.target.closest("[data-i]");if(!b)return;const i=+b.dataset.i,ok=i===R.answer;
+    host.querySelectorAll("[data-i]").forEach(x=>{x.classList.toggle("right",+x.dataset.i===R.answer&&ok);x.classList.toggle("wrong",x===b&&!ok);x.setAttribute("aria-pressed",String(x===b))});
+    const fb=host.querySelector("#k-rfb");fb.className="fb "+(ok?"ok":"no");fb.innerHTML=ok?`<b>Yes.</b> ${R.why}`:`<b>Not that one.</b> Have another look at the machine, then try again.`;
+    sfx(ok?"win":"buzz");if(ok){logStudy("pass");burst(b);try{localStorage.setItem(key,"ok")}catch(e){}}
+    try{buddy&&buddy.react(ok)}catch(e){}})}
 function mount(cfg){logStudy("open");
   const KU=(Array.isArray(cfg.kupu)?cfg.kupu:[]).filter(kupuOk);
   const kFind=x=>typeof x==="string"?KU.find(k=>k.mi===x):(kupuOk(x)?x:null);
@@ -417,6 +443,7 @@ function mount(cfg){logStudy("open");
         ${cfg.closeBox?`<div class="canvas"><svg id="k-close" viewBox="${cfg.closeBox}" role="img" aria-label="Close-up view"></svg></div>`:""}
         <div class="side">
           <div class="card challenge" id="k-challenge" hidden></div>
+          <div class="card challenge retrieve" id="k-retrieve" hidden></div>
           <div class="deck" id="k-deck" role="tablist" aria-label="Notes for this step"></div>
           <div class="card examline" id="k-examcard" role="tabpanel"><h3>${ICO.exam}Say it in the exam</h3><p id="k-exam"></p><button class="btn copy" id="k-copy" type="button">Copy</button></div>
           <div class="card trap" id="k-trapcard" role="tabpanel"><h3>${ICO.trap}Common trap</h3><p id="k-trap"></p></div>
@@ -490,6 +517,7 @@ function mount(cfg){logStudy("open");
       (cfg.challenges||[]).forEach((x,n)=>$("k-chk"+n).onclick=()=>{const ok=x.check(s);const before=alState();if(ok)logStudy("pass");sfx(ok?"win":"buzz");const f=$("k-fb"+n);if(ok)burst($("k-chk"+n));f.className="fb "+(ok?"ok":"no");f.textContent=ok?(typeof x.ok==="function"?x.ok(s):x.ok):(typeof x.no==="function"?x.no(s):x.no);
         $("k-row"+n).classList.toggle("passed",!!ok);
         try{buddy&&buddy.react(ok,before.has)}catch(e){}})}
+    const rc=$("k-retrieve");if(rc){if(st.k==="test")retrievalCard(cfg,mid,rc,buddy);else rc.hidden=true}
     st.onStep&&st.onStep(s,st,api);cfg.onStep&&cfg.onStep(s,st,api);
     try{history.replaceState(null,"","#"+st.k)}catch(e){}
     if(lesson)lesson.update();

@@ -100,6 +100,10 @@ nav.steps .fig,nav.steps h2{display:none}
 .caprow{display:flex;gap:12px;align-items:flex-start}
 .stepno{flex:none;font:600 12px var(--as-font);color:var(--acc-deep);background:var(--acc-soft);border-radius:999px;padding:5px 10px;margin-top:2px;white-space:nowrap}
 .caption{flex:1;font-size:16px;line-height:1.45;color:var(--as-ink);min-height:2.9em;max-width:74ch;margin:0}
+.retrieve .rq{margin:0 0 10px;font-size:15px;color:var(--as-ink)}
+.retrieve .ropts{display:grid;gap:6px}.retrieve .ropts .btn{text-align:left;justify-content:flex-start}
+.retrieve .ropts .btn.right{background:var(--as-mintsoft);border-color:var(--as-mint);color:var(--as-mintink)}.retrieve .ropts .btn.wrong{border-color:var(--as-warn);color:var(--as-warn)}
+.retrieve .rnote{margin:8px 0 0;font:500 12px var(--as-font);color:var(--as-muted)}.retrieve .fb:empty{display:none}
 .caption.fold:not(.open){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:0}
 .morebtn{appearance:none;flex:none;align-self:flex-start;border:1px solid var(--as-line2);background:var(--as-card);color:var(--as-ink);border-radius:999px;padding:5px 11px;font:600 12px var(--as-font);cursor:pointer;margin-top:2px}
 @keyframes kcue{0%,100%{box-shadow:0 0 0 0 var(--acc-line)}50%{box-shadow:0 0 0 7px transparent}}
