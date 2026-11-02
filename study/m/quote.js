@@ -168,7 +168,129 @@ const steps=[
 const KUPU=[{mi:"tuhinga",en:"text, writing",ta:8648},{mi:"kaituhi",en:"writer, author",ta:2031},{mi:"taunakitanga",en:"evidence",ta:14911},{mi:"whakamārama",en:"explanation",ta:9594},{mi:"kōwae",en:"paragraph",ta:3169},{mi:"kaupapa",en:"topic, theme, purpose",ta:2439}];
 Object.entries({text:["tuhinga","kaituhi"],claim:["kaupapa"],build:["taunakitanga","whakamārama","kōwae"],check:["kōwae"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 function clear(){s.claim=null;s.ev=null;s.ex=null;s.so=null;s.active="ev";s.ticks={}}
-const api=StudyKit.mount({kupu:KUPU,
+// ================= the 3D desk (kit3d.js via l2-3d.js): the text on a reading stand with sticky tabs, claim cards that lift,
+// a four-slot paragraph machine fed from a deck of cards (drag a quote up into EVIDENCE), and the paragraph printed out to check.
+// Every tap calls the same act()/place() as the drawing, so the challenges, retrieval check and Allen see one state.
+function quote3d(S){const {THREE,mat}=S;const L=window.L2,K=L.C;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const FR=L.frames(S),hud=L.hud(S);
+  const glossy=c=>mat("plastic",c,{rough:.36}),lab=o=>S.label(o);let fontsV=0;L.fontsReady(()=>{fontsV++});
+  const TILT=.32,stand=(x,y,z)=>{const g=new THREE.Group();g.position.set(x,y,z);g.rotation.x=-TILT;S.scene.add(g);return g};
+  const desk=(x,w,d)=>S.scene.add(S.rbox(w,.3,d,.12,mat("plastic","#EFE4D8",{rough:.85,coat:.05}),{at:[x,.15,0]}));
+  const PINK="#B5466F",MUTED=K.muted,PAPER="#FFFDF8";
+  const H2=(g,t,x,y,size,o={})=>{g.font=`${o.wt||600} ${size}px ${o.mono?L.MONO:L.SANS}`;g.fillStyle=o.fill||K.ink;g.textAlign=o.a||"left";g.fillText(t,x,y)};
+  // ================= TEXT: the passage on a stand
+  const TXc=0;desk(TXc,9,5);const tStand=stand(TXc,.3,0);
+  tStand.add(S.rbox(7.1,.16,.5,.06,glossy(K.pink),{at:[0,.1,.35]}));
+  const page=L.sheet(S,{w:6.6,h:8.2,parent:tStand,t:.06});page.g.position.set(0,4.25,.08);
+  let pKey="",pRects={};
+  page.onTap(r=>{if(r)act(r)});
+  const flags=Array.from({length:6},(_,i)=>{const m=S.rbox(.36,.36,.05,.04,glossy(TECHC[i%6]));const d=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:L.glyphTex(S,String(i+1),{size:150,alpha:.9}),transparent:true,depthWrite:false}));d.position.z=.03;m.add(d);m.visible=false;page.g.add(m);return m});
+  let prevSeen={},lastSeen=null;const lTech=lab({cls:"hot",off:[18,-30]});
+  // ================= CLAIM: three cards on a stand under the question
+  const CLx=16;desk(CLx,9,5);const cStand=stand(CLx,.3,0);cStand.add(S.rbox(7.1,.16,.5,.06,glossy(K.sky),{at:[0,.1,.35]}));
+  const qCard=L.sheet(S,{w:6.6,h:1.5,parent:cStand,t:.05,edge:"#FFF3F6"});qCard.g.position.set(0,7.2,.08);
+  const claimCards=[0,1,2].map(i=>{const c=L.sheet(S,{w:6.4,h:1.75,parent:cStand,t:.08});c.g.position.set(0,5.4-i*2.05,.1);c.onTap(()=>{const id=TX().claims[i].id;act("claim:"+id)});c.z=0;return c});
+  let cKey="";
+  // ================= BUILD: the paragraph machine and the deck
+  const BX=32;desk(BX,16,6);const bStand=stand(BX,.3,0);
+  const machine=new THREE.Group();bStand.add(machine);
+  machine.add(S.rbox(6.9,4.5,.7,.18,glossy(K.lav),{at:[0,0,-.36]}));machine.add(S.rbox(7.05,.18,.82,.06,glossy(K.plum),{at:[0,2.3,-.36]}));
+  const slotPos={claim:[-1.62,.95],ev:[1.62,.95],ex:[-1.62,-1.05],so:[1.62,-1.05]};
+  const slots={};SLOTS.forEach(([k,labT,hint])=>{const sh=L.sheet(S,{w:3.08,h:1.8,parent:machine,t:.06,px:440});sh.g.position.set(slotPos[k][0],slotPos[k][1],.04);sh.onTap(()=>act("act:"+k));
+    const led=S.rbox(2.4,.08,.08,.03,mat("plastic","#D8D0DC",{rough:.5}));led.position.set(slotPos[k][0],slotPos[k][1]+1.0,.02);machine.add(led);slots[k]={sh,led,key:""}});
+  const meter=Array.from({length:8},(_,i)=>{const m=S.rbox(.5,.22,.22,.06,mat("plastic","#E6DDEA",{rough:.5}));m.position.set(-2.45+i*.7,2.58,-.36);machine.add(m);return m});
+  const receipt=L.sheet(S,{w:5.8,h:3,parent:machine,t:.03,px:760});receipt.g.position.set(0,1.4,-.5);let rY=0,rKey="";
+  const deckG=new THREE.Group();bStand.add(deckG);
+  [-1,1].forEach((d,i)=>{const b=S.rbox(6.2,2.2,.06,.08,mat("plastic",i?"#F4EEF6":"#EFE7F2",{rough:.8}));b.position.set(d*.12,-.08*(i+1),-.1-.06*i);b.rotation.z=d*.03;deckG.add(b)});
+  const front=L.sheet(S,{w:6.3,h:2.25,parent:deckG,t:.07});let dIdx=0,dActive=null,dKey="",dragOn=false,dMoved=0,dHome=V3(0,0,0);
+  const arrows=[-1,1].map(d=>{const g=new THREE.Group();const b=S.cyl(.36,.36,.16,glossy(d<0?K.peach:K.peach),{rot:[Math.PI/2,0,0],seg:32});g.add(b);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),new THREE.MeshBasicMaterial({map:L.glyphTex(S,d<0?"‹":"›",{size:220,alpha:.9,dy:-10}),transparent:true,depthWrite:false}));m.position.z=.09;g.add(m);
+    g.add(S.mesh(new THREE.SphereGeometry(.6,10,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),{cast:false}));deckG.add(g);g.position.set(d*2.4,-1.62,.08);
+    S.pick(g,()=>{const n=deckList().length;dIdx=(dIdx+d+n)%n;sfx("tick")});return g});
+  const deckList=()=>{const t=TX();return s.active==="ev"?Object.keys(t.quotes).map(id=>({id,t:t.quotes[id].t,ev:true})):(s.active==="claim"?t.claims:s.active==="ex"?t.explains:t.sowhats).map(x=>({id:x.id,t:x.t}))};
+  const evWorld=()=>slots.ev.sh.g.getWorldPosition(V3(0,0,0));
+  S.dragger(front.g,{normal:V3(0,Math.sin(TILT),Math.cos(TILT)),start:p=>{dragOn=true;dMoved=0;dHome.copy(p)},
+    move:p=>{dMoved=Math.max(dMoved,p.distanceTo(dHome));if(s.active==="ev"&&dMoved>.15){const lp=deckG.worldToLocal(p.clone());front.g.position.set(lp.x,lp.y,.5)}},
+    end:()=>{dragOn=false;const it=deckList()[dIdx];if(!it)return;if(dMoved<.15){if(it.ev)place(it.id);else act("pick:"+it.id)}else if(it.ev&&front.g.getWorldPosition(V3(0,0,0)).distanceTo(evWorld())<1.9)place(it.id);else sfx("tick")}});
+  const lDeck=lab({off:[0,0],lead:false}),lDragQ=lab({cls:"drag",off:[22,-30]}).set("drag up into EVIDENCE"),lMeter=lab({off:[16,-24]});
+  // ================= CHECK: the printed paragraph and the self-check panel
+  const CKx=48;desk(CKx,16,6);const kStand=stand(CKx,.3,0);
+  const printed=L.sheet(S,{w:6.6,h:3.7,parent:kStand,t:.03,px:800});const ticks=L.sheet(S,{w:6.6,h:3.5,parent:kStand,t:.08,edge:"#F7F1F8",px:760});ticks.onTap(r=>{if(r)act(r)});
+  const lamps=CHECKS.map((c,i)=>{const m=S.sphere(.11,mat("plastic","#E4DDE6",{rough:.4}));ticks.g.add(m);return m});let kKey="";
+  // ================= layout per aspect, and framing
+  let wide=false;function layout(){wide=S.camera.aspect>1.15;
+    if(wide){machine.position.set(-3.7,3.2,0);deckG.position.set(3.9,3.0,0);printed.g.position.set(-3.6,3.6,.05);ticks.g.position.set(3.6,3.6,.08)}
+    else{machine.position.set(0,5.3,0);deckG.position.set(0,1.9,0);printed.g.position.set(0,6.05,.05);ticks.g.position.set(0,2.15,.08)}
+    lamps.forEach((m,i)=>m.position.set(2.98,1.75-(70+(i+.5)*(ticks.PH-80)/5)/ticks.PH*3.5,.1))}
+  const dir=[0,Math.sin(TILT)+.05,Math.cos(TILT)],W=(g,x,y)=>{g.updateMatrixWorld(true);return g.localToWorld(V3(x,y,.1)).toArray()};
+  FR.add("text",{c:W(tStand,0,4.45),w:7,h:9.6,ph:8.6,dir,pad:1.01,shadow:6}).add("claim",{c:W(cStand,0,4.45),w:7,h:9.4,ph:8.4,dir,pad:1.01,shadow:6})
+    .add("build",{c:W(bStand,0,3.95),w:7.2,h:9.3,dir,pad:1.01,shadow:7}).add("buildW",{c:W(bStand,0,3.2),w:15.2,h:5.6,dir,pad:1.02,shadow:9})
+    .add("check",{c:W(kStand,0,4.15),w:7,h:8.4,dir,pad:1.01,shadow:7}).add("checkW",{c:W(kStand,0,3.6),w:14.6,h:4.6,dir,pad:1.02,shadow:9});
+  const zoneOf={text:"text",claim:"claim",build:"build",check:"check",test:"build"};let zone="text",first=true;
+  const zn=z=>(z==="build"||z==="check")&&wide?z+"W":z;
+  const all=[lTech,lDeck,lDragQ,lMeter];
+  // canvas painters
+  const card=(g,w,h,bg,border)=>{g.fillStyle=bg;L.rr(g,4,4,w-8,h-8,26);g.fill();if(border){g.strokeStyle=border.c;g.lineWidth=border.w;L.rr(g,border.w/2+4,border.w/2+4,w-border.w-8,h-border.w-8,24);g.stroke()}};
+  S.l2={page,claimCards,front,slots,ticks,arrows};// handles for automated checks
+  return{
+    resize(){const was=wide;layout();if(was!==wide||true)FR.go(zn(zone),true)},
+    step(stp){zone=zoneOf[stp.k]||"build";layout();FR.go(zn(zone),first);first=false},
+    update(st0,stp,dt,t){const k=stp.k,tx=TX(),sc=score();all.forEach(l=>l.hide());hud.clear();
+      // ---- the page
+      const seenK=JSON.stringify(s.seen),pk=s.text+"|"+seenK+"|"+fontsV;
+      if(pk!==pKey){pKey=pk;page.draw((g,w,h,R)=>{g.fillStyle=PAPER;L.rr(g,0,0,w,h,18);g.fill();const M=64;
+        H2(g,tx.title,M,104,58);H2(g,tx.form,w-M,100,24,{mono:true,fill:MUTED,a:"right",wt:500});
+        const q=L.fitFlow(g,[{t:tx.q}],{x:M,y:130,w:w-2*M,size:36,wt:600,fill:PINK},120,26);
+        g.fillStyle="#EFE6EC";g.fillRect(M,130+q.h+14,w-2*M,3);
+        const y0=130+q.h+40,f=L.fitFlow(g,segsOf(tx),{x:M,y:y0,w:w-2*M,size:46,lhf:1.36,sty:kk=>{if(!kk)return{};const i=techIndex(kk),on=s.seen[kk];return{bg:on?TECHC[i%6]:lite(TECHC[i%6],.5),wt:on?600:500}}},h-y0-110,28);
+        pRects=f.rects;for(const kk in f.rects)f.rects[kk].forEach(r=>R.push([r[0]-8,r[1]-4,r[2]+16,r[3]+8,"see:"+kk]));
+        H2(g,"— "+tx.by,w-M,Math.min(h-40,y0+f.h+52),26,{fill:MUTED,a:"right",wt:500});
+        if(!Object.values(s.seen).some(Boolean))H2(g,"TAP A HIGHLIGHT TO NAME ITS TECHNIQUE",w/2,h-34,24,{mono:true,fill:MUTED,a:"center"})})}
+      Object.keys(s.seen).forEach(id=>{if(s.seen[id]&&!prevSeen[id])lastSeen=id});prevSeen={...s.seen};if(lastSeen&&!s.seen[lastSeen])lastSeen=null;
+      const qids=Object.keys(tx.quotes);flags.forEach((m,i)=>{const id=qids[i],r=id&&pRects[id]&&pRects[id][0];m.visible=!!(r&&s.seen[id]);if(m.visible){const p=page.g.worldToLocal(page.at(r[0],r[1]));m.position.set(p.x-.12,p.y+.05,.09);m.rotation.set(-.35,0,-.2)}});
+      if(zone==="text"){hud.set(`<b>${Object.values(s.seen).filter(Boolean).length} of ${qids.length} techniques named</b>`);
+        if(lastSeen&&pRects[lastSeen]){const r=pRects[lastSeen][0];lTech.show().at(page.at(r[0],r[1])).set(`<b>${tx.quotes[lastSeen].tech}</b>`)}}
+      // ---- the claims
+      const ck=s.text+"|"+s.claim+"|"+fontsV;
+      if(ck!==cKey){cKey=ck;qCard.draw((g,w,h)=>{card(g,w,h,"#FFF3F6");H2(g,"THE QUESTION",48,58,24,{mono:true,fill:MUTED,wt:500});L.fitFlow(g,[{t:tx.q}],{x:48,y:72,w:w-96,size:40,wt:600,fill:PINK},h-90,26)});
+        claimCards.forEach((c,i)=>{const cl=tx.claims[i],on=s.claim===cl.id;c.draw((g,w,h)=>{card(g,w,h,on?SLOTC.claim:PAPER,on?{c:K.plum,w:8}:null);L.fitFlow(g,[{t:cl.t}],{x:44,y:30,w:w-88,size:42,wt:on?600:500},h-(on?100:60),28);
+          if(on){const lb=cl.kind.toUpperCase();g.font=`600 28px ${L.MONO}`;const bw=g.measureText(lb).width+40;g.fillStyle="#fff";L.rr(g,w-bw-40,h-74,bw,48,24);g.fill();H2(g,lb,w-40-bw/2,h-40,28,{mono:true,a:"center",fill:cl.s===2?K.deepMint:K.deepPeach})}})})}
+      claimCards.forEach((c,i)=>{const on=s.claim===tx.claims[i].id;c.z=L.approach(S,c.z,on?.35:0,dt,9);c.g.position.z=.1+c.z;c.g.rotation.x=on?.0:0});
+      if(zone==="claim")hud.set(`<b>${s.claim?find(tx.claims,s.claim).kind:"tap the arguable claim"}</b>`);
+      // ---- the machine
+      SLOTS.forEach(([kk,labT,hint])=>{const filled=s[kk],act0=s.active===kk,body=filled?(kk==="claim"?find(tx.claims,s.claim).t:kk==="ev"?`"${tx.quotes[s.ev].t}"`:kk==="ex"?find(tx.explains,s.ex).t:find(tx.sowhats,s.so).t):hint;
+        const key=s.text+body+act0+!!filled+fontsV,S0=slots[kk];
+        if(key!==S0.key){S0.key=key;S0.sh.draw((g,w,h)=>{card(g,w,h,filled?SLOTC[kk]:PAPER,act0?{c:K.plum,w:12}:{c:"#E4DAE2",w:4});H2(g,labT,30,52,28,{mono:true,fill:filled?K.ink:MUTED,wt:600});
+          L.fitFlow(g,[{t:body}],{x:30,y:64,w:w-60,size:30,wt:filled?500:400,fill:filled?K.ink:MUTED,lhf:1.2},h-84,17)});S0.led.material=filled?mat("glow",SLOTC[kk],1.1):mat("plastic","#D8D0DC",{rough:.5})}});
+      meter.forEach((m,i)=>{m.material=i<sc.n?mat("glow",sc.n>=7?"#7FC4A8":sc.n>=5?K.butter:K.peach,1):mat("plastic","#E6DDEA",{rough:.5})});
+      const showR=(k==="build"||k==="test")&&sc.full;rY=L.approach(S,rY,showR?1:0,dt,4);receipt.g.visible=rY>.02;receipt.g.position.y=1.0+rY*(wide?2.55:1.75);
+      const rk=paragraph().map(b=>b.t).join("|")+fontsV;if(rk!==rKey&&sc.full){rKey=rk;receipt.draw((g,w,h)=>{card(g,w,h,PAPER);H2(g,"YOUR PARAGRAPH · PRINTED",40,52,24,{mono:true,fill:MUTED,wt:500});
+        const bits=paragraph();L.fitFlow(g,bits.map((b,i)=>({t:b.t+(i<bits.length-1?" ":""),k:b.k})),{x:40,y:70,w:w-80,size:30,lhf:1.32,sty:kk=>({bg:SLOTC[kk]})},h-90,14)})}
+      // ---- the deck for the active slot
+      if(s.active!==dActive){dActive=s.active;const list=deckList(),cur=s[s.active];dIdx=Math.max(0,list.findIndex(x=>x.id===cur))}
+      const list=deckList();dIdx=Math.min(dIdx,list.length-1);const it=list[dIdx];
+      const dk=s.text+s.active+dIdx+(it&&it.id)+(it&&s[s.active]===it.id)+fontsV;
+      if(it&&dk!==dKey){dKey=dk;const chosen=s[s.active]===it.id;front.draw((g,w,h)=>{card(g,w,h,chosen?SLOTC[s.active]:it.ev?lite(TECHC[techIndex(it.id)%6],.25):PAPER,{c:chosen?K.plum:"#E4DAE2",w:chosen?10:4});
+        H2(g,`${s.active==="ev"?"QUOTE":s.active==="claim"?"CLAIM":s.active==="ex"?"EXPLANATION":"SO WHAT"} ${dIdx+1} OF ${list.length}`,40,56,26,{mono:true,fill:MUTED,wt:600});
+        L.fitFlow(g,[{t:it.ev?`"${it.t}"`:it.t}],{x:40,y:72,w:w-80,size:40,wt:500,lhf:1.26},h-140,22);
+        H2(g,chosen?"✓ IN THE SLOT":it.ev?"DRAG UP INTO EVIDENCE, OR TAP":"TAP TO PUT IT IN THE SLOT",w/2,h-32,24,{mono:true,fill:chosen?K.deepMint:MUTED,a:"center",wt:600})})}
+      if(!dragOn){front.g.position.x=L.approach(S,front.g.position.x,0,dt,12);front.g.position.y=L.approach(S,front.g.position.y,0,dt,12);front.g.position.z=L.approach(S,front.g.position.z,.08,dt,12)}
+      const bz=zone==="build";
+      if(bz){hud.set(`<b class="${sc.n>=7?"ok":sc.n>=5?"sun":""}">${sc.n} / 8 · ${sc.full?sc.level:"fill all four slots"}</b><i>machine's estimate, not an NZQA grade</i>`);
+        lDragQ.show(s.active==="ev"&&!s.ev&&!dragOn).at(front.at(front.PW*.85,front.PH*.1))}
+      // ---- the check panel
+      const kk2=paragraph().map(b=>b.t).join("|")+JSON.stringify(s.ticks)+fontsV;
+      if(kk2!==kKey){kKey=kk2;const bits=paragraph();printed.draw((g,w,h)=>{card(g,w,h,PAPER);H2(g,"YOUR PARAGRAPH",44,58,26,{mono:true,fill:MUTED,wt:600});
+          if(bits.length)L.fitFlow(g,bits.map((b,i)=>({t:b.t+(i<bits.length-1?" ":""),k:b.k})),{x:44,y:76,w:w-88,size:36,lhf:1.36,sty:q=>({bg:SLOTC[q]})},h-100,16);else L.fitFlow(g,[{t:"Nothing built yet. Go back to Build and fill the four slots."}],{x:44,y:80,w:w-88,size:36,fill:MUTED},200,20)});
+        ticks.draw((g,w,h,R)=>{card(g,w,h,"#FBF7FB");H2(g,"SELF-CHECK · TAP WHAT YOU THINK YOU DID",40,52,24,{mono:true,fill:MUTED,wt:600});const rh=(h-80)/5;
+          CHECKS.forEach(([id,labT,fn],i)=>{const y=70+i*rh,me=!!s.ticks[id],agree=fn();if(me){g.fillStyle=agree?lite(PR.lime,.55):lite(PR.peach,.55);L.rr(g,24,y+4,w-48,rh-8,18);g.fill()}
+            g.strokeStyle=K.ink;g.lineWidth=4;L.rr(g,44,y+rh/2-20,40,40,9);g.stroke();if(me){g.fillStyle=K.ink;L.rr(g,44,y+rh/2-20,40,40,9);g.fill();g.strokeStyle="#fff";g.lineWidth=6;g.beginPath();g.moveTo(53,y+rh/2);g.lineTo(61,y+rh/2+9);g.lineTo(76,y+rh/2-10);g.stroke()}
+            L.fitFlow(g,[{t:labT}],{x:104,y:y+6,w:w-104-200,size:30,wt:500,lhf:1.12},rh-10,18);
+            if(agree||me)H2(g,agree?"✓ AGREES":"✗ NOT YET",w-74,y+rh/2+10,24,{mono:true,a:"right",fill:agree?K.deepMint:K.deepPeach,wt:600});R.push([20,y,w-40,rh,"tick:"+id])})})}
+      lamps.forEach((m,i)=>{const [id,,fn]=CHECKS[i];const me=!!s.ticks[id];m.material=me?mat("glow",fn()?"#7FC4A8":K.peach,1):mat("plastic","#E4DDE6",{rough:.4})});
+      if(zone==="check"){const sc2=score();hud.set(`<b class="${sc2.n>=7?"ok":sc2.n>=5?"sun":""}">${sc2.full?`${sc2.level} · ${sc2.n} / 8`:"build a full paragraph first"}</b><i>${Object.values(s.ticks).filter(Boolean).length} of 5 ticked</i>`)}
+      hud.flush()}};
+}
+const api=StudyKit.mount({kupu:KUPU,scene3d:quote3d,postprocessing:false,
   eyebrow:"English · Studied written texts",title:"The quote-to-point machine",homeHash:"l2",
   fig:"FIG. 43 · A READING DESK WITH FOUR SLOTS",railTitle:"Claim, evidence, explain, so what",
   badge:{label:"NCEA L2 English 91098",exam:"2026-11-12T09:30:00+13:00",examText:"Thu 12 Nov, 9:30am"},
