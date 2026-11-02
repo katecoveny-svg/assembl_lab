@@ -1,3 +1,23 @@
+# Validation — art studios, 2 November 2026
+
+Scope: the seven routes now serve the kit-based art studios; the earlier 3D engines moved unchanged to `<route>-3d/`.
+
+Checked in headless Chromium (Playwright 1.56, SwiftShader WebGL) at 375 × 812 (device scale 2, touch) and 1280 × 860, against a local static server:
+- All seven studios load with **zero console errors or page errors**, no horizontal page scroll, and a drag on the canvas changes the artwork.
+- Undo restores the pre-stroke state and Redo re-applies it, through the visible buttons, on every studio (soft-body studios compared by body counts and centroids, since physics keeps settling).
+- **Download picture** produced a valid PNG (signature `89504e470d0a1a0a`) of 750 × 1624 at 375 px; **A4 poster file** produced 2480 × 3508 on every studio.
+- **Share** in headless Chromium has no file sharing, so it fell back to a PNG download as designed. Native share sheets on phones are not verified.
+- **Copy remix link** round-trips seed, palette, background, colour, start, tool, sliders and options on every studio; Impossible Objects also rebuilds the exact blocks. Strokes in the other studios are not in the link (settings only), and the UI says so.
+- **Print**: with `emulateMedia({ media: "print" })` the studio is hidden and the A4 sheet shows the artwork, the typed title, "by" + first name, the date and "made with assembl lab"; `page.pdf` saved A4 PDFs.
+- Reality Remix `?mode=2d` Canvas 2D fallback renders and edits without WebGL.
+- Unit tests: `npm run test:unit` (frame clock + kit core: seed determinism, link round-trip/sanitising, base64url, export sizes, palettes).
+
+Not verified: physical phones (frame rate, battery, iOS Safari, Web Share delivery, real printers), real audio output (Sonic Loom audio only starts after tapping Sound), MediaRecorder video on iOS. SwiftShader is slow, so desktop screenshots took tens of seconds; that is not evidence of device performance. The old 3D suites were not re-run in full; their routes were smoke-loaded after the move.
+
+Honesty notes shown in each studio's "How did that happen?": Reality Remix splats are 2D Gaussians and "push" is a drawing rule, not physics; Soft Matter and Squishy Lab use a simple spring + shape-matching model, not real jelly; Liquid Playground is a playful particle model (Clavet et al. 2005), not a fluid simulation; Sonic Loom's wiggle is a drawn fading wave.
+
+---
+
 # Validation — 28 October 2026
 
 Isolated clone: `/Users/kateharland/Documents/Codex/2026-10-28/task-4/assembl_lab`.

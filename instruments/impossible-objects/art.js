@@ -37,7 +37,7 @@ const engine = {
   sliders: [{ id: "zoom", label: "Block size", min: 40, max: 160, value: 100 }],
   how: [
     { title: "Order makes the trick", text: "In Real 3D the computer draws far blocks first. In Impossible it draws in the order you placed them, so a later block always sits on top, even if it should be behind.", svg: svgOrder },
-    { title: "Why the triangle works", text: "Three bars go along three directions. On a flat page the end lands exactly on the start, so the corner can look both in front and behind. You couldn't build it for real.", svg: svgTri },
+    { title: "Why the triangle works", text: "Three bars go along three directions. On a flat page the end lands exactly on the start, so the corner looks both in front and behind. A real one only works from one exact viewpoint.", svg: svgTri },
     { title: "Isometric drawing", text: "Every block is drawn with the same three angles, with no vanishing point. That's why far blocks look the same size as near ones, and why the eye can be fooled.", svg: svgIso },
   ],
   cueAt: [0.5, 0.2],

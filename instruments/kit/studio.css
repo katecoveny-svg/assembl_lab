@@ -142,7 +142,7 @@ button:disabled { opacity: 0.35; cursor: default; }
 .kit-how summary::-webkit-details-marker { display: none; }
 .kit-how-cards { display: grid; gap: 10px; }
 .kit-how figure { margin: 0; display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: center; padding: 10px; border-radius: 16px; background: #fff; }
-.kit-how svg { width: 76px; height: 76px; }
+.kit-how figure svg { width: 76px; height: 76px; }
 .kit-how figcaption { font-size: 13.5px; line-height: 1.45; color: var(--body); }
 .kit-how figcaption b { display: block; color: var(--plum); font-size: 14px; margin-bottom: 2px; }
 .kit-palettes { display: grid; gap: 8px; }
@@ -175,6 +175,7 @@ button:disabled { opacity: 0.35; cursor: default; }
   .kit-tray { bottom: 22px; }
 }
 @media (max-width: 640px) {
+  .kit-preview img { max-height: 24vh; }
   .kit-chip span { display: none; }
   .kit-chip { width: 40px; padding: 0; justify-content: center; }
   .kit-swatch { width: 34px; height: 34px; }
