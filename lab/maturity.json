@@ -88,6 +88,10 @@
       "stage": "model",
       "why": "A parametric model you shape and export; no live data by design."
     },
+    "trades": {
+      "stage": "model",
+      "why": "A fictional house and deck drawn by the lab, priced from rates the builder types; no live data by design, and nothing is a quote."
+    },
     "next": {
       "stage": "model",
       "why": "Fourteen studios of models and creative tools; no live data by design."
