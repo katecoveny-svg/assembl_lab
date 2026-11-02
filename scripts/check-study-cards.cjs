@@ -1,9 +1,9 @@
 async (page) => {
  const checks=[];const check=(ok,label)=>{if(!ok)throw new Error(label);checks.push(label)};
  await page.setViewportSize({width:1440,height:1000});await page.goto('http://127.0.0.1:8341/study/');
- check(await page.locator('.app-art img').count()===35,'35 machine captures replace icons');
+ check(await page.locator('.app-art img').count()===36,'36 machine captures replace icons');
  for(const img of await page.locator('.app-art img').all()){await img.scrollIntoViewIfNeeded();await img.evaluate(e=>e.decode())}
- check(await page.locator('.app-art img').evaluateAll(xs=>xs.every(x=>x.naturalWidth>0)),'all 35 JPEGs decode');
+ check(await page.locator('.app-art img').evaluateAll(xs=>xs.every(x=>x.naturalWidth>0)),'all 36 JPEGs decode');
  check(await page.locator('#heroAllen svg').count()>0,'Allen identity retained');
  await page.locator('#h-mach').scrollIntoViewIfNeeded();await page.screenshot({path:'output/playwright/study-desktop.png'});
  await page.locator('.study-discover').scrollIntoViewIfNeeded();await page.screenshot({path:'output/playwright/study-habitat-entry.png'});

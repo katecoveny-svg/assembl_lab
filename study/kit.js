@@ -18,7 +18,7 @@ const MTINT={heart:"blush",slushie:"sky",space:"lavender",reactions:"peach",vend
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
-  read:"english",words:"english",essay:"english",text:"english",maps:"social",market:"social",civics:"social",socials:"social",ai:"digital",
+  read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
 const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
 const accentFor=id=>DEEP[tintName(id)];
@@ -51,6 +51,7 @@ const GLYPH={
   words:G(`<path d="M3.5 4.5h17v11h-11l-6 4.5z"/><path d="M7.5 8.5h9M7.5 11.5h5.5"/>`),
   essay:G(`<path d="M4 20l1.2-4.6L16.4 4.2a2.1 2.1 0 0 1 3 3L8.2 18.4z"/><path d="M14.5 6 18 9.5"/>`),
   maps:G(`<path d="M2.5 6 9 3.5l6 2.5 6.5-2.5v14.5L15 20.5 9 18l-6.5 2.5z"/><path d="M9 3.5V18M15 6v14.5"/>`),
+  fly:G(`<path d="M3 12.5 20.5 5l-3.5 15-5-6.5z"/><path d="M12 13.5 20.5 5"/><path d="M3 20.5c3-1.5 6-1.5 9 0"/>`),
   market:G(`<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.6"/>`),
   data:G(`<path d="M3.5 20.5V11M8 20.5V14M3.5 20.5h9"/><circle cx="15" cy="9" r="5"/><path d="m18.6 12.6 3 3M13 10.5V9M15 10.5V7M17 10.5V8.5"/>`),
   text:G(`<path d="M3.5 4.5h11M9 4.5v15"/><path d="M14.5 11.5h6M14.5 15.5h6M14.5 19.5h4"/>`),
