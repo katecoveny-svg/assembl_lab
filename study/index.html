@@ -754,7 +754,11 @@ function render(){const L=D.levels[tab];let o="";
   $("exTitle").textContent=Y()[2];
   if(!isNCEA()){
     $("exEm").textContent="subjects, with a machine for each.";$("exLede").textContent=L.note||"Your school sets Year 9 and 10 exams. These are the topics in the refreshed curriculum, with the machine that fits each one.";
-    o+=`<div class="jr">`+L.areas.map(a=>{const ms=[...new Set(a.topics.map(t=>t.machine).filter(m=>m&&D.machines[m]))];
+    // topic-linked machines first, then any other machine written for this year in the same subject (socials, heart, read, sky…)
+    const AREA_GROUPS={"Mathematics and Statistics":["maths"],"Science":["science","biochem"],"English":["english"],"Social sciences":["social"]},yr=yearNum();
+    const linked=new Set(L.areas.flatMap(a=>a.topics.map(t=>t.machine)).filter(Boolean));
+    const extra=a=>Object.entries(D.machines).filter(([id,m])=>!linked.has(id)&&(m.years||[]).includes(yr)&&(AREA_GROUPS[a.name]||[]).includes(K.subject(id))).sort((x,y)=>(x[1].level==="junior"?0:1)-(y[1].level==="junior"?0:1)).map(([id])=>id);
+    o+=`<div class="jr">`+L.areas.map(a=>{const ms=[...new Set([...a.topics.map(t=>t.machine),...extra(a)].filter(m=>m&&D.machines[m]))];
       return `<div class="jrow"><h3>${esc(a.name)}<small>${esc(a.status||"")}</small></h3><div class="acts">${ms.length?ms.map(mchip).join(""):`<span class="nomach">No machine for this yet. Allen can still help: ask him at the bottom right.</span>`}</div>
         <details><summary>TOPICS</summary><ul>${a.topics.map(t=>{const m=t.machine&&D.machines[t.machine];return`<li>${esc(t.t)}${m?` · <a href="${m.href}">${esc(m.title)}</a>`:""}</li>`}).join("")}</ul></details></div>`}).join("")+`</div>`;
   } else {
