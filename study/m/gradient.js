@@ -202,7 +202,166 @@ const L3CH=[
   {q:"On 4 ln(x + 1) − x, find the turning point.",check:()=>s.curve==="ln"&&near(s.x,3),ok:"Yes: 4/(x + 1) − 1 = 0 gives x + 1 = 4, so x = 3, and f″ < 0 makes it a maximum.",no:()=>s.curve!=="ln"?"Not yet: choose the ln curve first.":`Not yet: f′(${fmt(s.x)}) = ${fmt(C().df(s.x))}. Hint: set 4/(x + 1) = 1.`},
 ];
 const curveOpts=(LEVEL===3?["cubic","quad","prod","sin","ln"]:["cubic","quad"]).map(k=>[k,CURVES[k].lab]);
-api=StudyKit.mount({kupu:KUPU,
+// ================= the 3D bench (kit3d.js via l2-3d.js): a cyclist on a glass hill whose tilt is the tangent, a kōwhai that grows,
+// a fuel tank that drains, and water filling the area under a rate graph. The state that marks the challenges drives all of it.
+function gradient3d(S){const {THREE,mat}=S;const L=window.L2,K=L.C;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const FR=L.frames(S),hud=L.hud(S);
+  const hitM=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  const glossy=c=>mat("plastic",c,{rough:.36}),cylGeo=new THREE.CylinderGeometry(1,1,1,16),UP=V3(0,1,0);
+  const seg=(m,a,b,r)=>{const d=b.clone().sub(a),Ln=d.length();if(Ln<1e-4){m.visible=false;return}m.visible=true;m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(UP,d.divideScalar(Ln));m.scale.set(r,Ln,r)};
+  const rodM=(c,i)=>{const m=S.mesh(cylGeo,i?mat("glow",c,i):glossy(c),{cast:!i});S.scene.add(m);return m};
+  const lab=o=>S.label(o);const st=()=>S.api.state;const dragged={};
+  const GL="assets/l2/";
+  // ================= CURVE ZONE: f on top as a glass hill with a rider, f′ (or f″) printed underneath
+  const CX=0,BW=7,BH=9.4;
+  const B=L.board(S,{x:CX,y:.45,w:BW,h:BH,panels:[{x0:.12,x1:.96,y0:.43,y1:.97,xm:XM,xM:XX,ym:-6,yM:12,xs:1,ys:2,ylab:"y = f(x)"},{x0:.12,x1:.96,y0:.05,y1:.34,xm:XM,xM:XX,ym:-6,yM:12,xs:1,ys:2,ylab:"y = f′(x)  gradient"}]});
+  const hillCap=mat("acrylic","#BFE8D6",{opacity:.62}),hillTop=mat("plastic",K.mint,{rough:.55,coat:.2});
+  const hill=new THREE.Mesh(new THREE.BufferGeometry(),[hillCap,hillTop]);hill.castShadow=true;hill.receiveShadow=true;S.scene.add(hill);
+  const ridge=L.tubes(S,glossy(K.deepMint),2,.05);
+  const HZ=.05,HD=1.3;// hill z from HZ to HZ+HD; the rider rides the middle
+  // the rider: a cyclist modelled in Blender (assets/l2/cyclist.glb), with a simple stand-in until it loads
+  const rider=new THREE.Group();S.scene.add(rider);const lean=new THREE.Group();lean.position.set(-.22,.95,0);
+  {const sb=new THREE.Group();sb.add(S.torus(.3,.03,glossy(K.plum),{at:[-.5,.33,0]}),S.torus(.3,.03,glossy(K.plum),{at:[.5,.33,0]}),S.rbox(1,.06,.06,.02,glossy(K.mint),{at:[0,.55,0],rot:[0,0,.1]}),S.sphere(.16,glossy(K.lav),{at:[-.05,1.15,0]}));sb.name="standin";rider.add(sb)}
+  rider.add(S.mesh(new THREE.SphereGeometry(1.1,10,8),hitM,{cast:false,at:[0,.7,0]}));rider.scale.setScalar(.8);
+  let wheels=[];L.glb(GL+"cyclist.glb").then(g=>{if(!g)return;const sb=rider.getObjectByName("standin");if(sb)rider.remove(sb);
+    g.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+    const r=g.scene.getObjectByName("rider");["wheel_r","wheel_f","bike"].forEach(n=>{const o=g.scene.getObjectByName(n);if(o)rider.add(o)});
+    if(r){r.position.sub(lean.position);lean.add(r)}rider.add(lean);wheels=["wheel_r","wheel_f"].map(n=>rider.getObjectByName(n)).filter(Boolean)});
+  S.dragger(rider,{normal:V3(0,0,1),start:()=>{dragged.x=1},move:p=>{const v=Math.round(S.clamp(B.inv(0,p).x,XM,XX)*20)/20;if(v!==st().x){st().x=v;visit(v);sfx("tick")}}});
+  const tangent=rodM(K.deepPink),runBar=rodM(K.butter),riseBar=rodM(K.pink),conn=S.mesh(cylGeo,mat("flat",K.plum,{opacity:.3}),{cast:false});S.scene.add(conn);
+  const dTube=L.tubes(S,glossy("#7FC4A8"),2,.05),zeroRod=rodM(K.deepPink,.6);
+  const vis=S.swarm(120,new THREE.SphereGeometry(.07,10,8),glossy(K.deepMint));S.scene.add(vis);
+  const bead=S.sphere(.13,glossy(K.pink));S.scene.add(bead);
+  // flags on the hill: lime at a turning point, butter at a point of inflection
+  const flag=col=>{const g=new THREE.Group();g.add(S.cyl(.025,.025,.7,mat("metal"),{at:[0,.35,0],seg:8}));const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(.42,-.13);sh.lineTo(0,-.26);
+    const pn=new THREE.Mesh(new THREE.ShapeGeometry(sh),mat("plastic",col,{rough:.5,extra:{side:THREE.DoubleSide}}));pn.position.y=.7;g.add(pn);g.userData.pn=pn;S.scene.add(g);return g};
+  const tFlags=[flag("#ffffff"),flag("#ffffff")],iFlags=[flag(K.butter),flag(K.butter)];
+  // concavity arc: a smile or a frown over the rider, flat at an inflection
+  const arc=new THREE.Mesh(new THREE.BufferGeometry(),mat("glow",K.butter,.9));S.scene.add(arc);let arcK=null;
+  // the grade gauge: a dial whose needle is the rider's tilt
+  const gauge=new THREE.Group();S.scene.add(gauge);const gp=S.panel(512,300,1.9);gp.position.y=1.8;gauge.add(gp);gauge.add(S.cyl(.05,.07,1.3,mat("metal"),{at:[0,.65,-.05],seg:12}));
+  gauge.add(S.rbox(2.1,1.3,.08,.06,mat("acrylic",K.lav,{opacity:.5}),{at:[0,1.8,-.06],cast:false}));
+  const needle=new THREE.Group();needle.position.set(0,1.42,.03);gauge.add(needle);needle.add(S.rbox(.06,.78,.03,.012,glossy(K.deepPink),{at:[0,.39,0]}));needle.add(S.cyl(.07,.07,.04,glossy(K.plum),{rot:[Math.PI/2,0,0]}));
+  const drawGauge=()=>gp.redraw((g,w,h)=>{g.fillStyle="#fff";L.rr(g,8,8,w-16,h-16,26);g.fill();const cx=w/2,cy=h-46;g.lineWidth=16;g.lineCap="round";
+    [[-Math.PI,-Math.PI*.62,K.pink],[-Math.PI*.6,-Math.PI*.4,K.butter],[-Math.PI*.38,0,K.mint]].forEach(([a,b,c])=>{g.strokeStyle=c;g.beginPath();g.arc(cx,cy,180,a,b);g.stroke()});
+    g.font=`600 26px ${L.SANS}`;g.fillStyle=K.ink;g.textAlign="center";g.fillText("down",cx-160,cy+30);g.fillText("flat",cx,cy-200+60);g.fillText("up",cx+165,cy+30);g.font=`600 22px ${L.MONO}`;g.fillStyle=K.muted;g.fillText("GRADE",cx,cy+34)});
+  drawGauge();L.fontsReady(drawGauge);
+  const lRide=lab({cls:"big",off:[24,-40]}),lTP=lab({cls:"ok",off:[16,-30]}),lIF=lab({cls:"sun",off:[16,-30]}),lRun=lab({off:[0,22],lead:false}),lRise=lab({off:[10,0],lead:false}),lD=lab({off:[16,-24]}),lDrag=lab({cls:"drag",off:[22,30]}).set("drag the rider"),lZero=lab({cls:"warn",off:[-80,-22],lead:false});
+  let cKey="";
+  // ================= RATES ZONE: a kōwhai seedling (Blender) beside a ruler, or a fuel tank that drains; quantity and rate graphs
+  const RX=26;const RB=L.board(S,{x:RX+2.3,y:.45,w:6.2,h:6.8,panels:[{x0:.15,x1:.96,y0:.47,y1:.96,xm:0,xM:24,ym:0,yM:60,xs:4,ys:10},{x0:.15,x1:.96,y0:.06,y1:.37,xm:0,xM:24,ym:-2,yM:4,xs:4,ys:1}]});
+  const qTube=L.tubes(S,glossy(PR.lime),2,.055),rTube=L.tubes(S,glossy("#7FC4A8"),2,.05),qTan=rodM(K.deepPink),rConn=S.mesh(cylGeo,mat("flat",K.plum,{opacity:.3}),{cast:false});S.scene.add(rConn);
+  const qBead=new THREE.Group();qBead.add(S.sphere(.17,glossy(K.pink)),S.torus(.21,.04,glossy(K.plum),{cast:false}),S.mesh(new THREE.SphereGeometry(.55,10,8),hitM,{cast:false}));S.scene.add(qBead);
+  const rBead=S.sphere(.12,glossy(K.pink));S.scene.add(rBead);
+  S.dragger(qBead,{normal:V3(0,0,1),start:()=>{dragged.t=1},move:p=>{const tm=X().tM;const v=Math.round(S.clamp(RB.inv(0,p).x,0,tm)*2)/2;if(v!==st().t){st().t=v;sfx("tick")}}});
+  const PX=RX-2.7;plinthAt(PX,0,3.2,2.6,"#ffffff",.12);
+  function plinthAt(x,z,w,d,tint,h){S.scene.add(S.rbox(w,h,d,.06,mat("plastic",tint,{rough:.6,coat:.15}),{at:[x,h/2,z]}))}
+  const plant=new THREE.Group();plant.position.set(PX-.35,.12,.2);S.scene.add(plant);const CM=.085,PS=2;// world units per cm of height
+  let stem=null,leafProto=null;const leaves=[];const SOIL=.44*PS;
+  const potStand=S.cyl(.38*PS,.26*PS,.5*PS,glossy(K.peach),{at:[0,.25*PS,0],seg:28});plant.add(potStand);
+  L.glb(GL+"kowhai.glb").then(g=>{if(!g)return;g.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});plant.remove(potStand);
+    const pot=g.scene.getObjectByName("pot"),soil=g.scene.getObjectByName("soil");stem=g.scene.getObjectByName("stem");leafProto=g.scene.getObjectByName("leaf");
+    [pot,soil].forEach(o=>{if(o){o.position.set(0,0,0);o.scale.setScalar(PS);plant.add(o)}});if(soil)soil.position.y=0;
+    if(stem){stem.position.set(0,SOIL,0);plant.add(stem)}
+    if(leafProto)for(let i=0;i<14;i++){const lf=leafProto.clone();lf.visible=false;plant.add(lf);leaves.push(lf)}});
+  const ruler=S.panel(160,1000,.5);ruler.position.set(PX+.95,SOIL+.12+60*CM/2,.2);S.scene.add(ruler);
+  {const drawR=()=>ruler.redraw((g,w,h)=>{g.fillStyle="#FBF3D6";L.rr(g,0,0,w,h,16);g.fill();const y=cm=>h-6-(cm/60)*(h-12);g.fillStyle=K.ink;g.strokeStyle=K.ink;
+      for(let c=0;c<=60;c++){const L5=c%10===0?60:c%5===0?40:22;g.lineWidth=c%10===0?4:2;g.beginPath();g.moveTo(0,y(c));g.lineTo(L5,y(c));g.stroke();if(c%10===0&&c){g.font=`600 34px ${L.MONO}`;g.fillText(c,70,y(c)+12)}}});drawR();L.fontsReady(drawR)}
+  ruler.scale.y=(60*CM)/ruler.hU;
+  const hMark=S.rbox(.62,.05,.12,.02,glossy(K.deepPink));S.scene.add(hMark);const rateArrow=S.arrow(K.deepMint,{r:.05});S.scene.add(rateArrow);
+  // the fuel tank: an acrylic cylinder, peach fuel, a tap underneath whose stream thins as the rate falls
+  const tank=new THREE.Group();tank.position.set(PX,.12,.1);S.scene.add(tank);const TR=.95,TH=3.6;
+  {const body=S.cyl(TR,TR,TH,mat("acrylic",K.sky,{opacity:.24}),{at:[0,TH/2+.2,0],seg:40,cast:false});body.renderOrder=3;tank.add(body);
+    tank.add(S.cyl(TR+.05,TR+.05,.08,glossy("#ffffff"),{at:[0,.2,0],seg:40}),S.cyl(TR+.05,TR+.05,.08,glossy("#ffffff"),{at:[0,TH+.2,0],seg:40}));
+    for(let i=0;i<=9;i++)tank.add(S.box(i%3===0?.22:.12,.025,.02,mat("flat",K.ink,{opacity:.5}),{at:[TR-.02-(i%3===0?.11:.06),.2+i/9*TH,TR*.35],cast:false}))
+    tank.add(S.tube([[TR*.6,.35,0],[TR+.25,.35,0],[TR+.4,.3,0],[TR+.42,.15,0]],.06,mat("metal")))}
+  const fuel=S.mesh(new THREE.CylinderGeometry(1,1,1,40),mat("liquid",PR.peach,{opacity:.85}),{cast:false});fuel.renderOrder=2;tank.add(fuel);
+  const stream=S.mesh(cylGeo,mat("liquid",PR.peach,{opacity:.85}),{cast:false});tank.add(stream);
+  const lQ=lab({cls:"big",off:[-30,-30]}),lRate=lab({off:[-30,30]}),lQb=lab({off:[18,-30]}),lRb=lab({off:[18,-24]}),lDt=lab({cls:"drag",off:[22,28]}).set("drag along time");
+  let rKey="";
+  // ================= ANTI ZONE: the area under the rate graph fills with water; the height graph builds from it, + c
+  const AXc=52,AB=L.board(S,{x:AXc,y:.45,w:7.4,h:8.6,panels:[{x0:.13,x1:.96,y0:.62,y1:.97,xm:0,xM:24,ym:0,yM:4,xs:4,ys:1,ylab:"growth rate, cm/week"},{x0:.13,x1:.96,y0:.05,y1:.53,xm:0,xM:24,ym:0,yM:70,xs:4,ys:10,ylab:"height, cm"}]});
+  const water=new THREE.Mesh(new THREE.BufferGeometry(),mat("liquid","#8FC3EC",{opacity:.72}));water.renderOrder=2;S.scene.add(water);let wKey="";
+  const aRate=L.tubes(S,glossy("#7FC4A8"),1,.055),aH=L.tubes(S,glossy(K.deepSky),1,.06),fam=[0,1,2,3].map(()=>L.tubes(S,mat("plastic","#D9CFE3",{rough:.6}),1,.03));
+  const col=S.mesh(new THREE.BoxGeometry(1,1,1),mat("liquid","#8FC3EC",{opacity:.8}),{cast:false});col.renderOrder=2;S.scene.add(col);const cBlock=S.mesh(new THREE.BoxGeometry(1,1,1),glossy(K.butter));S.scene.add(cBlock);
+  const aBead=new THREE.Group();aBead.add(S.sphere(.16,glossy(K.pink)),S.torus(.2,.04,glossy(K.plum),{cast:false}),S.mesh(new THREE.SphereGeometry(.55,10,8),hitM,{cast:false}));S.scene.add(aBead);
+  S.dragger(aBead,{normal:V3(0,0,1),start:()=>{dragged.a=1},move:p=>{const v=Math.round(S.clamp(AB.inv(0,p).x,0,24)*2)/2;if(v!==st().t){st().t=v;sfx("tick")}}});
+  const lArea=lab({cls:"big",off:[20,-34]}),lC=lab({cls:"sun",off:[18,20]}),lH=lab({cls:"big",off:[18,-30]}),lDa=lab({cls:"drag",off:[22,28]}).set("drag along time");
+  // ================= framing
+  FR.add("curve",{c:[CX,5,.6],w:8.2,h:10.4,dir:[.3,.36,1],pad:1.02,shadow:7}).add("curveW",{c:[CX+1.4,5,.6],w:11.2,h:10.2,dir:[.3,.36,1],pad:1.02,shadow:8})
+    .add("rates",{c:[RX+.8,3.6,.4],w:11,h:7.8,dir:[.12,.24,1],pw:10,ph:10,pad:1.04,shadow:7})
+    .add("anti",{c:[AXc,4.8,.4],w:8.4,h:9.6,dir:[.18,.18,1],pad:1.02,shadow:7});
+  const zoneOf={tangent:"curve",deriv:"curve",rules:"curve",turn:"curve",inflect:"curve",rates:"rates",anti:"anti"};
+  const all=[lRide,lTP,lIF,lRun,lRise,lD,lDrag,lZero,lQ,lRate,lQb,lRb,lDt,lArea,lC,lH,lDa];
+  let zone="curve",first=true,prev=null;const zname=z=>z==="curve"&&S.camera.aspect>1.15?"curveW":z;
+  S.l2={rider,B,qBead,aBead};// handles for automated checks
+  return{
+    resize(){if(zone==="curve"){const n=zname(zone);FR.go(n,true)}else FR.resize()},
+    step(stp){zone=zoneOf[stp.k]||"curve";FR.go(zname(zone),first);first=false;prev=null},
+    update(s,stp,dt,t){const k=stp.k;all.forEach(l=>l.hide());hud.clear();
+      if(k==="test"){const sig={curve:s.curve+"|"+s.x,rates:s.ctx+"|"+s.t};if(prev)for(const z in sig)if(sig[z]!==prev[z]&&zone!==z){zone=z;FR.go(zname(z))}prev=sig}
+      // ---- the curve zone
+      const c=C(),inflect=k==="inflect",ck=s.curve+"|"+inflect;
+      if(ck!==cKey){cKey=ck;const P0=B.P[0],P1=B.P[1];P0.ym=c.ym;P0.yM=c.yM;P0.ys=c.yM-c.ym>10?4:2;P1.ym=inflect?-8:c.dm;P1.yM=inflect?8:c.dM;P1.ys=P1.yM-P1.ym>10?4:2;P1.ylab=inflect?"y = f″(x)  bend":"y = f′(x)  gradient";B.draw();
+        const sh=new THREE.Shape(),n=120;const base=B.at(0,XM,c.ym);sh.moveTo(base.x,base.y);for(let i=0;i<=n;i++){const x=XM+(XX-XM)*i/n,p=B.at(0,x,S.clamp(c.f(x),c.ym,c.yM));sh.lineTo(p.x,p.y)}const end=B.at(0,XX,c.ym);sh.lineTo(end.x,end.y);sh.lineTo(base.x,base.y);
+        hill.geometry.dispose();hill.geometry=new THREE.ExtrudeGeometry(sh,{depth:HD,bevelEnabled:false,curveSegments:4});hill.position.z=HZ;
+        ridge.set(B.runs(0,c.f,HZ+HD+.01));dTube.set(B.runs(1,inflect?c.d2:c.df,.08))}
+      const x=s.x,y=c.f(x),m=c.df(x),cz=zone==="curve";
+      const kx=B.at(0,1,0).x-B.at(0,0,0).x,ky=B.at(0,0,1).y-B.at(0,0,0).y,th=Math.atan2(m*ky,kx);
+      const pf=B.at(0,x,S.clamp(y,c.ym,c.yM));rider.position.set(pf.x,pf.y,HZ+HD/2);rider.rotation.z=th;rider.visible=y>=c.ym&&y<=c.yM;
+      wheels.forEach(w=>w.rotation.z=-x*6);const lv=inflect||k==="test"?S.clamp(-c.d2(x)*.06,-.35,.35):0;lean.rotation.z=L.approach(S,lean.rotation.z,lv,dt,6);
+      const dir=V3(Math.cos(th),Math.sin(th),0),front=V3(pf.x,pf.y,HZ+HD+.12);seg(tangent,front.clone().addScaledVector(dir,-2.4),front.clone().addScaledVector(dir,2.4),.045);
+      const sx=x+1<=XX?1:-1,pr=B.at(0,x+sx,y,HZ+HD+.12),pq=B.at(0,x+sx,y+m*sx,HZ+HD+.12);seg(runBar,front,pr,.035);seg(riseBar,pr,pq,.035);runBar.visible=riseBar.visible=cz&&Math.abs(m*sx)<(c.yM-c.ym)&&pq.y>B.at(0,0,c.ym).y-.1&&pq.y<B.at(0,0,c.yM).y+.1;
+      const lf=inflect?c.d2:c.df,lvv=lf(x),showFull=s.showD||k!=="tangent";dTube.show(showFull);
+      if(k==="tangent"){let i=0;for(const v of s.visited){const d=c.df(v);if(i<120&&B.inside(1,v,d)){const p=B.at(1,v,d,.08);vis.put(i++,p.x,p.y,p.z)}}for(;i<120;i++)vis.put(i,0,-20,0,.0001);vis.done();vis.visible=true}else vis.visible=false;
+      bead.visible=B.inside(1,x,lvv);if(bead.visible){bead.position.copy(B.at(1,x,lvv,.12));seg(conn,front,bead.position,.012)}else conn.visible=false;
+      zeroRod.visible=(k==="turn"||inflect)&&B.inside(1,XM,0);if(zeroRod.visible)seg(zeroRod,B.at(1,XM,0,.06),B.at(1,XX,0,.06),.025);
+      const tps=(k==="turn"||k==="test"||inflect)?turningPoints(c):[],ifs=inflect?inflections(c):[];
+      tFlags.forEach((g,i)=>{const tp=tps[i];g.visible=!!tp&&tp.x>=XM&&tp.x<=XX;if(g.visible){const p=B.at(0,tp.x,c.f(tp.x));g.position.set(p.x,p.y,HZ+.2);const near=Math.abs(tp.x-x)<.06;g.userData.pn.material=mat("plastic",near?"#7FC4A8":"#ffffff",{rough:.5,extra:{side:THREE.DoubleSide}});
+        if(near&&cz)lTP.show().at(V3(p.x,p.y+.7,HZ+.2)).set(`${tp.kind==="max"?"maximum":"minimum"}<b>(${fmt(tp.x)}, ${fmt(c.f(tp.x))})</b>`)}});
+      iFlags.forEach((g,i)=>{const v=ifs[i];g.visible=v!==undefined;if(g.visible){const p=B.at(0,v,c.f(v));g.position.set(p.x,p.y,HZ+.2);if(Math.abs(v-x)<.06&&cz)lIF.show().at(V3(p.x,p.y+.7,HZ+.2)).set(`inflection<b>(${fmt(v)}, ${fmt(c.f(v))})</b>`)}});
+      // the bend arc over the rider (Level 3): curvature sign drawn as a smile or frown
+      const showArc=inflect;arc.visible=showArc;if(showArc){const ak=Math.round(S.clamp(c.d2(x),-6,6)*4)/4;if(ak!==arcK){arcK=ak;const pts=[];for(let i=-10;i<=10;i++){const u=i/10*.7;pts.push(V3(u,ak*.06*u*u*2,0))}arc.geometry.dispose();arc.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.035,8,false);
+          arc.material=mat("glow",ak>0?"#7FC4A8":ak<0?K.deepPink:K.butter,1)}arc.position.set(pf.x,pf.y+1.25,HZ+HD/2)}
+      gauge.visible=S.camera.aspect>1.15;gauge.position.set(B.at(0,XX,0).x+1.9,.0,1.2);needle.rotation.z=L.approach(S,needle.rotation.z,-th,dt,10);
+      if(cz){const dl=inflect?"f″":"f′";hud.set(`<b>${c.eq}</b><b class="ok">${dl}(${fmt(x)}) = ${fmt(lvv)}</b>`);
+        lRide.show(rider.visible).at(V3(pf.x,pf.y+.9,HZ+HD/2)).set(`gradient<b>${fmt(m)}</b>`);lRide.off=[x>3?-24:24,-44];
+        if(runBar.visible){lRun.show().at(pr.clone().lerp(front,.5)).set("run 1");lRise.show().at(pr.clone().lerp(pq,.5)).set(`rise ${fmt(m*sx)}`);lRun.off=[-20,m*sx>0?18:-34]}
+        lDrag.show(!dragged.x&&k===steps[0].k).at(V3(pf.x,pf.y+.3,HZ+HD/2));
+        if(zeroRod.visible)lZero.show().at(B.at(1,XX,0,.06)).set(inflect?"f″ = 0 here":"f′ = 0 here")}
+      // ---- rates
+      const X0=X(),fuelOn=s.ctx==="fuel",rk=s.ctx;
+      if(rk!==rKey){rKey=rk;const P0=RB.P[0],P1=RB.P[1];P0.xM=P1.xM=X0.tM;P0.xs=P1.xs=X0.tM/6;P0.ym=X0.qm;P0.yM=X0.qM;P0.ys=(X0.qM-X0.qm)/5;P1.ym=X0.rm;P1.yM=X0.rM;P1.ys=fuelOn?10:1;
+        P0.ylab=`${X0.unit} against ${X0.tunit}`;P1.ylab=`rate, ${X0.unit}/${X0.tunit.replace(/s$/,"")}`;RB.draw();
+        qTube.ms.forEach(mm=>mm.material=glossy(fuelOn?PR.peach:PR.lime));qTube.set(RB.runs(0,X0.f,.1));rTube.set(RB.runs(1,X0.df,.1))}
+      const tt=Math.min(s.t,X0.tM),q=X0.f(tt),r=X0.df(tt);plant.visible=!fuelOn;tank.visible=fuelOn;
+      const qp=RB.at(0,tt,S.clamp(q,X0.qm,X0.qM),.12);qBead.position.copy(qp);
+      const kx2=RB.at(0,1,0).x-RB.at(0,0,0).x,ky2=RB.at(0,0,1).y-RB.at(0,0,0).y,th2=Math.atan2(r*ky2,kx2),d2=V3(Math.cos(th2),Math.sin(th2),0);seg(qTan,qp.clone().addScaledVector(d2,-1.6),qp.clone().addScaledVector(d2,1.6),.04);
+      rBead.visible=RB.inside(1,tt,r);if(rBead.visible){rBead.position.copy(RB.at(1,tt,r,.12));seg(rConn,qp,rBead.position,.012)}else rConn.visible=false;
+      if(!fuelOn){const h=q;if(stem){stem.scale.set(PS,h*CM,PS)}const top=V3(plant.position.x,plant.position.y+SOIL+h*CM,plant.position.z);
+        const nL=Math.min(leaves.length,Math.max(2,Math.floor(h/4.2)));const pts=[[0,0,0],[.02,.2,0],[-.03,.42,-.01],[.03,.64,.01],[-.02,.84,-.01],[0,1,0]];
+        leaves.forEach((lf,i)=>{lf.visible=i<nL;if(!lf.visible)return;const u=(i+1)/(nL+1),j=Math.min(4,Math.floor(u*5)),f=u*5-j,a=pts[j],b=pts[j+1];
+          lf.position.set((a[0]+(b[0]-a[0])*f)*PS,SOIL+u*h*CM,(a[2]+(b[2]-a[2])*f)*PS);lf.rotation.set(0,i*2.4,.5+(1-u)*.3);lf.scale.setScalar(S.clamp(.4+h*.02*(1-u*.5),.35,1.4))});
+        hMark.visible=true;hMark.position.set(ruler.position.x-.05,plant.position.y+SOIL+.12+Math.min(60,h)*CM-.12,ruler.position.z+.06);
+        rateArrow.set(top.clone().add(V3(0,.08,0)),V3(0,r,0),.35);
+        if(zone==="rates"){lQ.show().at(top).set(`week ${fmt(tt)}<b>${fmt(q)} cm</b>`);lRate.show().at(top.clone().add(V3(0,Math.max(.1,r*.35),0))).set(`<b>${r>=0?"+":""}${fmt(r)} cm/week</b>`)}}
+      else{hMark.visible=false;rateArrow.visible=false;const lvF=S.clamp(q/450,0,1)*TH;fuel.visible=lvF>.01;fuel.scale.set(TR-.04,Math.max(.001,lvF),TR-.04);fuel.position.y=.2+lvF/2;
+        const on=q>0&&r<0;stream.visible=on;if(on){const rr2=.02+.07*Math.min(1,-r/30);stream.scale.set(rr2,.3,rr2);stream.position.set(TR+.42,0,0)}
+        if(zone==="rates"){lQ.show().at(V3(tank.position.x,tank.position.y+.2+lvF,tank.position.z)).set(`minute ${fmt(tt)}<b>${fmt(q)} L</b>`);lRate.show(on).at(V3(tank.position.x+TR+.42,.15,tank.position.z)).set(`<b>${fmt(r)} L/min</b>`)}}
+      if(zone==="rates"){hud.set(`<b>${X0.eq}</b><b class="${r<0?"warn":"ok"}">${X0.deq.split(" = ")[0]} = ${fmt(r)} ${X0.unit}/${X0.tunit.replace(/s$/,"")}</b>`);lDt.show(!dragged.t).at(qp)}
+      // ---- anti-derivative
+      const at=Math.min(s.t,24),area=-.05*at*at+3*at,cc=s.c,wk=at.toFixed(2);
+      if(wk!==wKey){wKey=wk;const sh=new THREE.Shape();const o=AB.at(0,0,0);sh.moveTo(o.x,o.y);for(let u=0;u<=at+1e-9;u+=.25){const p=AB.at(0,Math.min(u,at),CTX.kowhai.df(Math.min(u,at)));sh.lineTo(p.x,p.y)}const e=AB.at(0,at,0);sh.lineTo(e.x,e.y);sh.lineTo(o.x,o.y);
+        water.geometry.dispose();water.geometry=at>.05?new THREE.ExtrudeGeometry(sh,{depth:.5,bevelEnabled:false,curveSegments:2}):new THREE.BufferGeometry();water.position.z=.02}
+      aRate.set(AB.runs(0,CTX.kowhai.df,.56));aH.set(AB.runs(1,u=>-.05*u*u+3*u+cc,.1));
+      fam.forEach((F2,i)=>{const v=[0,4,12,16,20].filter(z=>z!==cc)[i];if(s.showAll&&v!==undefined)F2.set(AB.runs(1,u=>-.05*u*u+3*u+v,.08));else F2.show(false)});
+      const b0=AB.at(1,at,0,.3),bc=AB.at(1,at,cc,.3),bt=AB.at(1,at,Math.min(70,cc+area),.3);cBlock.visible=cc>0;cBlock.scale.set(.26,Math.max(.001,bc.y-b0.y),.26);cBlock.position.set(b0.x,(b0.y+bc.y)/2,.3);
+      col.visible=area>.05;col.scale.set(.24,Math.max(.001,bt.y-bc.y),.24);col.position.set(b0.x,(bc.y+bt.y)/2,.3);
+      aBead.position.copy(AB.at(0,at,CTX.kowhai.df(at),.6));
+      if(zone==="anti"){hud.set(`<b>h′(t) = −0.1t + 3</b><b class="ok">h(t) = −0.05t² + 3t + ${fmt(cc)}</b>`);const wa=AB.at(0,at/2,CTX.kowhai.df(at/2)/2,.5);
+        lArea.show(area>.05).at(wa).set(`area so far<b>${fmt(area)} cm</b>`);lC.show().at(bc.clone().lerp(b0,.5)).set(`start c = ${fmt(cc)} cm`);lH.show().at(bt).set(`<b>${fmt(cc)} + ${fmt(area)} = ${fmt(cc+area)} cm</b>`);lH.off=[at>14?-24:18,-30];lDa.show(!dragged.a).at(aBead.position)}
+      hud.flush()}};
+}
+api=StudyKit.mount({kupu:KUPU,scene3d:gradient3d,postprocessing:false,
   eyebrow:LEVEL===3?"Maths · Differentiation":"Maths · Calculus methods",title:"The gradient machine",homeHash:LEVEL===3?"l3":"l2",
   fig:"FIG. 42 · A TANGENT ON A RAIL, A SEEDLING AND A TANK",railTitle:"Gradients you can feel",
   badge:LEVEL===3?{label:"NCEA L3 Calculus 91578",exam:"2026-11-16T09:30:00+13:00",examText:"Mon 16 Nov, 9:30am"}:{label:"NCEA L2 Maths 91262",exam:"2026-11-19T09:30:00+13:00",examText:"Thu 19 Nov, 9:30am"},

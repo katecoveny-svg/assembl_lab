@@ -24,7 +24,7 @@ html.l2v .s3-hint{font-size:10.5px}
 .l2-hud b{display:block;background:#240B21;color:#fff;border-radius:999px;padding:6px 16px 7px;font:500 18px/1.2 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:-.01em;white-space:nowrap;box-shadow:0 3px 0 rgba(36,11,33,.12);max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .l2-hud i{display:block;font:600 11px/1.2 "Instrument Sans",system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#492B3E;background:rgba(255,255,255,.92);border:1px solid #E3DAE6;border-radius:999px;padding:4px 11px;font-style:normal;white-space:nowrap}
 .l2-hud b.pk{background:#B5466F}.l2-hud b.ok{background:#2A7D63}.l2-hud b.warn{background:#B5466F}.l2-hud b.sun{background:#F2DC7C;color:#240B21}
-@media (max-width:820px){.l2-hud{top:8px}.l2-hud b{font-size:15px;padding:5px 12px 6px}.l2-hud i{font-size:10px}}
+@media (max-width:820px){.l2-hud{top:8px}.l2-hud i{display:none}.l2-hud b{font-size:15px;padding:5px 12px 6px}.l2-hud i{font-size:10px}}
 @media (max-width:820px){html.l2v .s3-pill{font-size:10px;padding:3px 9px 4px}html.l2v .s3-pill b{font-size:14px}html.l2v .s3-pill.big b{font-size:17px}html.l2v .s3-pill.huge b{font-size:20px}}`;
   try{const st=document.createElement("style");st.id="l2v-css";st.textContent=css;document.head.appendChild(st)}catch(e){}
 
