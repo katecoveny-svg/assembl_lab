@@ -21,7 +21,7 @@ const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",ai:"digital",
-  vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech",algebra:"maths",gradient:"maths",gradient3:"maths",quote:"english",unseen:"english",unseen3:"english",engine:"science"};
+  vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech",algebra:"maths",gradient:"maths",gradient3:"maths",quote:"english",unseen:"english",unseen3:"english",engine:"science",y9english:"english"};
 const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
 const accentFor=id=>DEEP[tintName(id)];
 const tintFor=id=>CASE[tintName(id)];
@@ -68,7 +68,8 @@ const GLYPH={
   gradient:G(`<path d="M3.5 20.5h17"/><path d="M4 16c3-9 6-11 8.5-11s4.5 3 8 11"/><path d="M6.5 8.5 16 4"/><circle cx="11.2" cy="6.5" r="1.4" fill="currentColor"/>`),
   quote:G(`<path d="M5 13.5a3.5 3.5 0 1 0 3.5 3.5V11a4 4 0 0 1 2-3.5M14.5 13.5a3.5 3.5 0 1 0 3.5 3.5V11a4 4 0 0 1 2-3.5"/>`),
   unseen:G(`<path d="M3.5 5.5h9M3.5 9.5h6M3.5 13.5h5M3.5 17.5h7"/><circle cx="16" cy="12" r="4"/><path d="m19 15 2.5 2.5"/>`),
-  engine:G(`<rect x="7" y="3" width="10" height="11" rx="2"/><path d="M9 14v5h6v-5M12 3V1M9.5 8h5M9.5 11h5"/><circle cx="12" cy="20.5" r="1.3" fill="currentColor"/>`)
+  engine:G(`<rect x="7" y="3" width="10" height="11" rx="2"/><path d="M9 14v5h6v-5M12 3V1M9.5 8h5M9.5 11h5"/><circle cx="12" cy="20.5" r="1.3" fill="currentColor"/>`),
+  y9english:G(`<path d="M5 3.5h10l4 4v13H5z"/><path d="M15 3.5v4h4"/><path d="M8 11h8M8 14.5h8M8 18h5"/>`)
 };
 const glyph=id=>GLYPH[id]||GLYPH.energy;
 const ICO={
