@@ -7,7 +7,9 @@ const K=window.StudyKit||{},esc=K.esc||(s=>String(s).replace(/[&<>"']/g,c=>({"&"
 const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const Q=new URLSearchParams(location.search);
 const GKEY=(window.ASSEMBLY_GOOGLE_MAPS_KEY||Q.get("key")||"").trim();
-const WANT_GOOGLE=Q.get("google")==="1"||(!!GKEY&&Q.get("google")!=="0");
+// Google 3D is the desktop treat; phones keep LINZ (lighter tiles, no streaming budget) unless ?google=1 asks for it
+const PHONE=matchMedia("(max-width: 820px), (pointer: coarse)").matches;
+const WANT_GOOGLE=Q.get("google")==="1"||(!!GKEY&&Q.get("google")!=="0"&&!PHONE);
 const EXAG=1.5;   // vertical exaggeration on the LINZ terrain: the toy look wants hills you can read from a phone
 
 // ---------- LINZ Basemaps key: a free developer key if Kate has added one, else a per-visitor client key like the LINZ site mints
@@ -22,37 +24,37 @@ const LINZ=`https://basemaps.linz.govt.nz/v1/tiles`;
 
 // ---------- landmarks: camera, story, prompt. Heights for the Google branch are metres above the ellipsoid.
 const L=[
- {id:"aoraki",kind:"Plate boundary · mountains",name:"Aoraki / Mount Cook",sub:"Kā Tiritiri o te Moana, the Southern Alps",c:[170.06,-43.72],z:10.6,p:66,b:28,h:9000,
+ {id:"aoraki",kind:"Plate boundary · mountains",name:"Aoraki / Mount Cook",sub:"Kā Tiritiri o te Moana, the Southern Alps",c:[170.06,-43.72],z:10.6,p:66,b:28,h:9000,gh:5200,gp:58,gb:40,
   text:"Aotearoa's highest peak (3,724 m) stands where the Pacific Plate is pushed up against the Australian Plate along the Alpine Fault. The range rises about 10 mm a year, and ice and rivers carve almost as much back off.",
   prompt:"Why are the Southern Alps so high yet not getting much higher? Use the words uplift, erosion and glacier, and name the plate boundary.",
   std:["NCEA L1 Geography 91934 · natural processes","NCEA L2 Geography 91240 · large natural environment"],
   look:"Look for the braided Tasman and Hooker valleys, the long tongue of Tasman Glacier and the milky blue of Lake Pukaki."},
- {id:"taupo",kind:"Volcanic landform · caldera",name:"Taupō caldera",sub:"Taupō-nui-a-Tia, Taupō Volcanic Zone",c:[175.90,-38.78],z:9.2,p:58,b:0,h:30000,
+ {id:"taupo",kind:"Volcanic landform · caldera",name:"Taupō caldera",sub:"Taupō-nui-a-Tia, Taupō Volcanic Zone",c:[175.90,-38.78],z:9.2,p:58,b:0,h:30000,gh:16000,gp:52,gb:15,
   text:"The lake is the hole left by a supervolcano. The Ōruanui eruption about 25,500 years ago emptied so much magma that the ground collapsed into the chamber; the lake fills the caldera. Taupō erupted again around 232 CE.",
   prompt:"A cone is a hill; a caldera is a hole. Explain, step by step, how an eruption can leave a lake instead of a mountain.",
   std:["NCEA L1 Geography 91934 · natural processes","Year 9–10 Social studies · natural hazards"],
   look:"The lake is about 616 km². Trace the straight northern shore: that edge is the caldera rim. Tongariro, Ngāuruhoe and Ruapehu sit to the south."},
- {id:"rotorua",kind:"Volcanic landform · geothermal",name:"Rotorua geothermal field",sub:"Te Rotorua-nui-a-Kahumatamomoe, Te Arawa",c:[176.25,-38.14],z:10.8,p:60,b:-20,h:12000,
+ {id:"rotorua",kind:"Volcanic landform · geothermal",name:"Rotorua geothermal field",sub:"Te Rotorua-nui-a-Kahumatamomoe, Te Arawa",c:[176.25,-38.14],z:10.8,p:60,b:-20,h:12000,gh:6500,gp:56,gb:-20,
   text:"Rotorua sits inside another caldera. Rain soaks down, meets rock heated by magma a few kilometres below, and comes back up as geysers, hot springs and mud pools at Whakarewarewa and Tikitere. Te Arawa have cooked, bathed and built on this heat for centuries.",
   prompt:"Draw or describe the geothermal cycle: where the water comes from, what heats it and why it returns to the surface. Give one cultural and one economic use of the heat.",
   std:["NCEA L1 Geography 91934 · natural processes","Year 9–10 Social studies · people and environment"],
   look:"Lake Rotorua fills the caldera floor; Mokoia Island is a dome of rhyolite in the middle. The city follows the southern shore."},
- {id:"wellington",kind:"Plate boundary · fault line",name:"Wellington Fault",sub:"Te Whanganui-a-Tara, Wellington Harbour",c:[174.84,-41.24],z:11.6,p:64,b:35,h:5500,
+ {id:"wellington",kind:"Plate boundary · fault line",name:"Wellington Fault",sub:"Te Whanganui-a-Tara, Wellington Harbour",c:[174.84,-41.24],z:11.6,p:64,b:35,h:5500,gh:3000,gp:60,gb:35,
   text:"The straight western edge of the harbour is a fault scarp. The Wellington Fault runs under the Hutt Road, through Thorndon and out to Karori, moving sideways about 6–7 mm a year. In 1855 the nearby Wairarapa Fault lifted the city's shoreline 1–2 m, making the flat land where Te Aro and the Basin Reserve now sit.",
   prompt:"Find the fault line in the view. Explain how a strike-slip fault creates a straight valley edge, and what the 1855 uplift did for the city plan.",
   std:["NCEA L1 Geography 91934 · natural processes","Year 9–10 Social studies · natural hazards and cities"],
   look:"Follow the ruler-straight shore from Petone to Thorndon, then the Hutt Valley running north-east along the same line."},
- {id:"auckland",kind:"Volcanic landform · urban change",name:"Auckland volcanic field",sub:"Tāmaki Makaurau, ngā tūpuna maunga",c:[174.80,-36.86],z:11.3,p:60,b:-15,h:7000,
+ {id:"auckland",kind:"Volcanic landform · urban change",name:"Auckland volcanic field",sub:"Tāmaki Makaurau, ngā tūpuna maunga",c:[174.80,-36.86],z:11.3,p:60,b:-15,h:7000,gh:3600,gp:58,gb:-25,
   text:"About 53 small volcanoes punch through the city, each from a single eruption. Rangitoto, the youngest, grew in the harbour about 600 years ago. Maungawhau (Mt Eden), Maungakiekie (One Tree Hill) and others were pā, then quarries, and are now co-governed by mana whenua and the council.",
   prompt:"Pick one maunga. Describe how its use has changed over time (pā, farm, quarry, reserve) and who makes decisions about it now. What does that say about how a city changes?",
   std:["Year 9–10 Social studies · urban change","NCEA L1 Geography 91934 · natural processes"],
   look:"Count the cones: Maungawhau's crater sits south of the CBD, Rangitoto is the round island to the north-east, and the Manukau Harbour opens to the south-west."},
- {id:"otautahi",kind:"Urban change · rebuild",name:"Ōtautahi Christchurch rebuild",sub:"Ōtākaro Avon River red zone",c:[172.66,-43.53],z:11.8,p:58,b:10,h:5000,
+ {id:"otautahi",kind:"Urban change · rebuild",name:"Ōtautahi Christchurch rebuild",sub:"Ōtākaro Avon River red zone",c:[172.66,-43.53],z:11.8,p:58,b:10,h:5000,gh:2600,gp:58,gb:10,
   text:"The 22 February 2011 earthquake killed 185 people and broke the city centre. Along the Ōtākaro Avon, liquefaction wrecked the land so badly that about 8,000 homes were bought and cleared, leaving a 600-hectare green corridor that is now being regenerated.",
   prompt:"Urban change can be planned or forced. Give one example of each in Ōtautahi since 2011 and explain who gained and who lost from the red-zone decision.",
   std:["Year 9–10 Social studies · urban change","NCEA L1 Geography 91934 · natural processes"],
   look:"The river winds east from the city centre to the estuary; the empty green land either side is the residential red zone. The Port Hills rise to the south."},
- {id:"waitangi",kind:"Place and history",name:"Waitangi",sub:"Pēwhairangi, Bay of Islands",c:[174.09,-35.27],z:12.2,p:56,b:20,h:4500,
+ {id:"waitangi",kind:"Place and history",name:"Waitangi",sub:"Pēwhairangi, Bay of Islands",c:[174.09,-35.27],z:12.2,p:56,b:20,h:4500,gh:2200,gp:55,gb:25,
   text:"On 6 February 1840, rangatira and the Crown signed Te Tiriti o Waitangi on the lawn in front of the Treaty House. The Bay of Islands was the busiest contact zone between Māori and Europeans in the early 1800s: whalers, traders and missionaries at Kororāreka and Paihia, and Ngāpuhi settlements all around the sheltered bay.",
   prompt:"Why here? Use the landscape in the view (sheltered harbour, islands, river mouth) to explain why this became the place where Te Tiriti was signed.",
   std:["Year 9–10 Social studies · Te Tiriti and place","Aotearoa New Zealand's histories"],
@@ -134,11 +136,20 @@ async function cesiumEngine(){
   await new Promise((ok,bad)=>{const c=document.createElement("link");c.rel="stylesheet";c.href=base+"Widgets/widgets.css";document.head.appendChild(c);
     const s=document.createElement("script");s.src=base+"Cesium.js";s.onload=ok;s.onerror=()=>bad(new Error("Cesium did not load"));document.head.appendChild(s)});
   const C=window.Cesium;const host=$("f-map");host.classList.add("fly-cesium");host.innerHTML="";
-  const viewer=new C.Viewer(host,{imageryProvider:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,requestRenderMode:false,globe:false,skyAtmosphere:new C.SkyAtmosphere()});
+  const viewer=new C.Viewer(host,{imageryProvider:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,requestRenderMode:false,globe:false,skyAtmosphere:new C.SkyAtmosphere(),
+    // render at the device's real pixel ratio (Cesium's default is CSS pixels, which reads as blur on every modern screen)
+    useBrowserRecommendedResolution:false});
+  viewer.resolutionScale=Math.min(devicePixelRatio||1,2);
   viewer.scene.backgroundColor=C.Color.fromCssColorString("#8CC1EC");
+  viewer.scene.postProcessStages.fxaa.enabled=true;
   // Google Photorealistic 3D Tiles: one root request per session (billed), then tiles stream for up to three hours. Credits must stay on screen.
-  const ts=await C.Cesium3DTileset.fromUrl(`https://tile.googleapis.com/v1/3dtiles/root.json?key=${encodeURIComponent(GKEY)}`,{showCreditsOnScreen:true});
+  // Detail: a lower screen-space error pulls finer tiles (8 instead of Cesium's 16), the distance-based LOD drop is off so the
+  // horizon stays crisp in the oblique views, and the cache is big enough to hold a landmark's worth of tiles while orbiting.
+  const ts=await C.Cesium3DTileset.fromUrl(`https://tile.googleapis.com/v1/3dtiles/root.json?key=${encodeURIComponent(GKEY)}`,{showCreditsOnScreen:true,
+    maximumScreenSpaceError:8,dynamicScreenSpaceError:false,skipLevelOfDetail:false,cacheBytes:768*1024*1024,maximumCacheOverflowBytes:256*1024*1024,preloadFlightDestinations:true});
   viewer.scene.primitives.add(ts);
+  // tell the student when the detail is still streaming in, so a soft first frame is not mistaken for the finished view
+  let loadT=0;ts.loadProgress.addEventListener((pending,processing)=>{clearTimeout(loadT);if(pending+processing>0){status(`Loading detail · ${pending+processing} tiles`)}else loadT=setTimeout(()=>{if(cur>=0&&!touring)status(L[cur].name)},400)});
   $("f-badge").innerHTML=`<b>Google</b> Photorealistic 3D Tiles`;
   $("f-attr").innerHTML=`<span class="truth">Live imagery</span>3D Tiles · <b>Google Maps</b> · Map data ©Google and the providers credited on screen`;
   let orbitEv=null;
@@ -147,10 +158,10 @@ async function cesiumEngine(){
     orbitEv=()=>{viewer.camera.rotate(C.Cartesian3.UNIT_Z,-0.0006)};viewer.clock.onTick.addEventListener(orbitEv);void target};
   host.addEventListener("pointerdown",()=>{if(!touring)orbit(false)});
   return {kind:"google",
-    flyTo(l,done){orbit(false);const heading=C.Math.toRadians(l.b),pitch=C.Math.toRadians(-(90-l.p));
-      // put the camera behind the landmark so it looks across it at the chosen pitch
-      const dist=l.h*Math.tan(C.Math.toRadians(90-l.p)),dLat=(dist*Math.cos(heading))/111320,dLng=(dist*Math.sin(heading))/(111320*Math.cos(C.Math.toRadians(l.c[1])));
-      viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(l.c[0]-dLng,l.c[1]-dLat,l.h),orientation:{heading,pitch,roll:0},duration:RM?0:6,complete:()=>done&&done(),cancel:()=>done&&done()})},
+    flyTo(l,done){orbit(false);const b=l.gb??l.b,p=l.gp??l.p,h=l.gh??l.h;const heading=C.Math.toRadians(b),pitch=C.Math.toRadians(-p);
+      // put the camera behind the landmark so it looks across it at the chosen pitch (p is measured down from the horizontal)
+      const dist=h/Math.tan(C.Math.toRadians(p)),dLat=(dist*Math.cos(heading))/111320,dLng=(dist*Math.sin(heading))/(111320*Math.cos(C.Math.toRadians(l.c[1])));
+      viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(l.c[0]-dLng,l.c[1]-dLat,h),orientation:{heading,pitch,roll:0},duration:RM?0:6,easingFunction:C.EasingFunction.QUADRATIC_IN_OUT,complete:()=>done&&done(),cancel:()=>done&&done()})},
     orbit,stop(){orbit(false);viewer.camera.cancelFlight()},viewer};
 }
 
