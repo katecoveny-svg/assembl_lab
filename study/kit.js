@@ -21,7 +21,7 @@ const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
   read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",ai:"digital",
-  vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech"};
+  vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech",algebra:"maths",gradient:"maths",gradient3:"maths",quote:"english",unseen:"english",unseen3:"english"};
 const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
 const accentFor=id=>DEEP[tintName(id)];
 const tintFor=id=>CASE[tintName(id)];
@@ -63,7 +63,11 @@ const GLYPH={
   pinball:G(`<path d="M5 3.5h14a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M7 20.5 11 16M17 20.5 13 16"/><circle cx="9" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15" cy="7.5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.3"/>`),
   phone:G(`<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12.8 7.5 10.5 12h3l-2.3 4.5M10.5 5h3"/>`),
   queue:G(`<circle cx="5" cy="7" r="2.2"/><circle cx="12" cy="7" r="2.2"/><circle cx="19" cy="7" r="2.2"/><path d="M2.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M9.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M16.5 15.5c0-2 1.2-3 2.5-3s2.5 1 2.5 3M4 20.5h16"/>`),
-  plan:G(`<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 12h7v9M10 12V3M10 7h4M14 12h7M17 12v4"/>`)
+  plan:G(`<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 12h7v9M10 12V3M10 7h4M14 12h7M17 12v4"/>`),
+  algebra:G(`<path d="M3.5 20.5h17M12 3.5v17"/><path d="M5 5.5c2.5 8 4.5 10.5 7 10.5s4.5-2.5 7-10.5"/><circle cx="12" cy="16" r="1.3" fill="currentColor"/>`),
+  gradient:G(`<path d="M3.5 20.5h17"/><path d="M4 16c3-9 6-11 8.5-11s4.5 3 8 11"/><path d="M6.5 8.5 16 4"/><circle cx="11.2" cy="6.5" r="1.4" fill="currentColor"/>`),
+  quote:G(`<path d="M5 13.5a3.5 3.5 0 1 0 3.5 3.5V11a4 4 0 0 1 2-3.5M14.5 13.5a3.5 3.5 0 1 0 3.5 3.5V11a4 4 0 0 1 2-3.5"/>`),
+  unseen:G(`<path d="M3.5 5.5h9M3.5 9.5h6M3.5 13.5h5M3.5 17.5h7"/><circle cx="16" cy="12" r="4"/><path d="m19 15 2.5 2.5"/>`)
 };
 const glyph=id=>GLYPH[id]||GLYPH.energy;
 const ICO={
@@ -263,14 +267,14 @@ let alMem=null;
 function alLoad(){let v=alMem;try{const raw=localStorage.getItem(AL_KEY);if(raw)v=JSON.parse(raw)}catch(e){}v=v&&typeof v==="object"?v:{};
   return {...AL_DEFAULT,...v,gear:{...AL_DEFAULT.gear,...(v.gear||{})},seen:Array.isArray(v.seen)?v.seen:[]}}
 function alSave(look){alMem=look;try{localStorage.setItem(AL_KEY,JSON.stringify(look))}catch(e){}}
-const MNAME={bike:"the downhill machine",vinyl:"the vinyl machine",fish:"the fishing machine",claw:"the claw machine",particles:"the particle machine",atoms:"the atom machine",energy:"the energy machine",read:"the reading machine",maps:"the map machine",materials:"the materials lab",text:"the text studio",vend:"the vending machine",pinball:"the pinball table",phone:"the phone machine",queue:"the queue machine",plan:"the floor-plan studio"};
+const MNAME={bike:"the downhill machine",vinyl:"the vinyl machine",fish:"the fishing machine",claw:"the claw machine",particles:"the particle machine",atoms:"the atom machine",energy:"the energy machine",read:"the reading machine",maps:"the map machine",materials:"the materials lab",text:"the text studio",vend:"the vending machine",pinball:"the pinball table",phone:"the phone machine",queue:"the queue machine",plan:"the floor-plan studio",quote:"the quote-to-point machine",unseen:"the unfamiliar text machine"};
 const ITEMS=[
   {id:"helmet",slot:"head",label:"Downhill helmet",m:["bike"]},
   {id:"headphones",slot:"head",label:"Headphones",m:["vinyl"]},
   {id:"buckethat",slot:"head",label:"Bucket hat",m:["fish"]},
   {id:"goggles",slot:"eyes",label:"Downhill goggles",m:["bike"]},
   {id:"labgoggles",slot:"eyes",label:"Lab goggles",m:["particles","atoms","energy","materials","vend","phone","pinball"]},
-  {id:"glasses",slot:"eyes",label:"Reading glasses",m:["read","text"]},
+  {id:"glasses",slot:"eyes",label:"Reading glasses",m:["read","text","quote","unseen"]},
   {id:"bandana",slot:"neck",label:"Bandana",machines:3},
   {id:"lifejacket",slot:"neck",label:"Life jacket",passes:10},
   {id:"hivis",slot:"neck",label:"Hi-vis vest",m:["queue","plan"]},

@@ -256,9 +256,51 @@
       "id": "heart",
       "three": true,
       "source": "m/heart.html",
-      "capture": "Approved Blender hero framed to 800 \u00d7 500 without cropping the apparatus",
+      "capture": "Approved Blender hero framed to 800 × 500 without cropping the apparatus",
       "image": "heart.jpg",
       "assetSource": "m/heart/assets/heart_hero.png"
+    },
+    {
+      "id": "quote",
+      "three": false,
+      "source": "m/quote.html",
+      "capture": ".playmain > .canvas (interactive step with a worked state)",
+      "image": "quote.jpg"
+    },
+    {
+      "id": "unseen",
+      "three": false,
+      "source": "m/unseen.html",
+      "capture": ".playmain > .canvas (interactive step with a worked state)",
+      "image": "unseen.jpg"
+    },
+    {
+      "id": "unseen3",
+      "three": false,
+      "source": "m/unseen.html?level=3",
+      "capture": ".playmain > .canvas (interactive step with a worked state)",
+      "image": "unseen3.jpg"
+    },
+    {
+      "id": "algebra",
+      "three": false,
+      "source": "m/algebra.html",
+      "capture": ".playmain > .canvas (interactive step with a worked state)",
+      "image": "algebra.jpg"
+    },
+    {
+      "id": "gradient",
+      "three": false,
+      "source": "m/gradient.html",
+      "capture": ".playmain > .canvas (interactive step with a worked state)",
+      "image": "gradient.jpg"
+    },
+    {
+      "id": "gradient3",
+      "three": false,
+      "source": "m/gradient.html?level=3",
+      "capture": ".playmain > .canvas (interactive step with a worked state)",
+      "image": "gradient3.jpg"
     }
   ]
 }
