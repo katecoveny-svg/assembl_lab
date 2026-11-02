@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trades twin · plan takeoff with a person in the loop · assembl lab</title>
-<meta name="description" content="An NZ plan-takeoff desk: measure a floor plan or a deck, tag conditions, price from your own rates with GST shown separately, and watch an agent take off, price and draft a bid that a named person approves. Simulated: fictional plan and rates.">
-<meta property="og:title" content="Trades twin · assembl lab"><meta property="og:description" content="Plan takeoff, priced from your rates, with an agent that drafts and a person who approves. Simulated: fictional plan and rates.">
-<meta name="theme-color" content="#FFFDFB">
+<title>Trades twin · plan to quote with a person in the loop · assembl lab</title>
+<meta name="description" content="An NZ plan-to-quote desk: measure a floor plan or a deck, tag conditions, run the Building Code checks and the defect register, price from your own rates with waste, P&G, margin and 15% GST, and watch an agent take off, check, price and draft a quote that a named person approves. Simulated: fictional plan and rates; code checks are illustrative.">
+<meta property="og:title" content="Trades twin · assembl lab"><meta property="og:description" content="Plan to quote: takeoff, NZ Building Code checks, defects, quote maths, variations. An agent drafts; a person approves. Simulated.">
+<meta name="theme-color" content="#F8F4EF">
 <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -14,29 +14,29 @@
 </head>
 <body>
 <a class="skip" href="#desk">Skip to the desk</a>
-<header class="top">
+<header class="top glass">
   <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
-  <nav aria-label="This page"><a href="#desk">Desk</a><a href="#rates">Rates</a><a href="#agent-ready">Agent-ready</a><a href="/#explore">All worlds</a></nav>
-  <span class="sim" title="Everything on this page is a simulation">Simulated · fictional plan and rates</span>
+  <nav aria-label="This page"><a href="#desk">Desk</a><a href="#checks">Checks</a><a href="#rates">Quote maths</a><a href="#variations">Variations</a><a href="#agent-ready">Agent-ready</a><a href="/#explore">All worlds</a></nav>
+  <span class="pill" data-tone="butter" title="Everything on this page is a simulation">Simulated · fictional plan and rates</span>
 </header>
 
-<section class="hero" aria-labelledby="h1">
-  <div class="hero-cubes" aria-hidden="true"><i style="--c:#F6B48E"></i><i style="--c:#C7B4F0"></i><i style="--c:#A7DEC7"></i><i style="--c:#A9C9F2"></i><i style="--c:#F3A5BE"></i><i style="--c:#F2DC7C"></i></div>
-  <p class="eyebrow">Inside the lab / trades · construction</p>
-  <h1 id="h1">Take off the plan.<br>Price it from your rates.<br>A person sends the bid.</h1>
-  <p class="lede">A plan-takeoff desk for a small NZ builder, with an agent that finds the rooms, measures, prices and drafts, and a named person who confirms the scale and approves every bid. Metric units, GST at 15% shown on its own, indicative only.</p>
-  <ul class="chips"><li>Lot 12 Kōwhai Rise, a fictional house</li><li>pdf.js in your browser</li><li>Nothing uploaded leaves your device</li><li>Receipts hashed here, not stored</li></ul>
+<section class="hero lit" aria-labelledby="h1">
+  <div class="hero-cubes" aria-hidden="true"><i style="--c:#F6B48E;--g:var(--glow-peach)"></i><i style="--c:#C7B4F0;--g:var(--glow-lilac)"></i><i style="--c:#A7DEC7;--g:var(--glow-mint)"></i><i style="--c:#A9C9F2;--g:var(--glow-sky)"></i><i style="--c:#F3A5BE;--g:var(--glow-pink)"></i><i style="--c:#F2DC7C;--g:var(--glow-butter)"></i></div>
+  <p class="kicker">Inside the lab / trades · construction · plan to quote</p>
+  <h1 id="h1">Take off the plan.<br>Check it against the Code.<br>A person sends the quote.</h1>
+  <p class="lede">A plan-to-quote desk for a small NZ builder. An agent finds the rooms, measures, asks the consent question, lists the Building Code clauses to check and the defects to look for, prices from your rates with waste, P&amp;G, margin and GST, and drafts a quote. A named person confirms the scale, chooses the provisional sums and approves every quote and variation.</p>
+  <ul class="chips"><li>Lot 12 Kōwhai Rise, a fictional house</li><li>pdf.js in your browser</li><li>Nothing uploaded leaves your device</li><li>Receipts hashed here, chained, not stored</li><li>Code checks: illustrative, not a determination</li></ul>
 </section>
 
 <main id="desk" class="desk" data-state="idle">
   <!-- ------------------------------------------------ left: sheet, scale, tools, takeoff -->
   <aside class="col tools" aria-label="Sheet, scale and tools">
-    <section class="card">
+    <section class="card" data-glow="sky">
       <h2><i class="cube" style="--c:#A9C9F2"></i>Sheet</h2>
       <div class="seg" id="sheets" role="group" aria-label="Choose a sheet"></div>
       <label class="upload"><input type="file" id="upload" accept="application/pdf"><span>Or open your own PDF</span><small>Stays in this browser. Pan with drag, zoom with the wheel or pinch.</small></label>
     </section>
-    <section class="card" id="scaleCard">
+    <section class="card" id="scaleCard" data-glow="butter">
       <h2><i class="cube" style="--c:#F2DC7C"></i>Scale</h2>
       <p class="scale-status" id="scaleStatus"><b>Not confirmed</b><span>Measurements wait for a person to confirm the scale.</span></p>
       <div class="row"><button class="btn sm" type="button" id="scalePick" data-tool="scale">Pick two points</button><button class="btn sm ghost" type="button" id="scaleNominal" hidden>Use the title block</button></div>
@@ -46,7 +46,7 @@
         <div class="row"><button class="btn sm" type="submit">Confirm scale</button><button class="btn sm ghost" type="button" id="scaleCancel">Cancel</button></div>
       </form>
     </section>
-    <section class="card">
+    <section class="card" data-glow="mint">
       <h2><i class="cube" style="--c:#A7DEC7"></i>Measure</h2>
       <div class="seg" id="toolSeg" role="group" aria-label="Tool">
         <button type="button" data-tool="pan" aria-pressed="true">Pan</button><button type="button" data-tool="count" aria-pressed="false">Count <small>EA</small></button><button type="button" data-tool="length" aria-pressed="false">Length <small>m</small></button><button type="button" data-tool="area" aria-pressed="false">Area <small>m²</small></button>
@@ -55,7 +55,7 @@
       <p class="hint" id="toolHint">Pick a tool, then tap the plan. Finish closes the shape; Undo takes back the last point or measurement.</p>
       <div class="row"><button class="btn sm" type="button" id="finish" disabled>Finish</button><button class="btn sm ghost" type="button" id="undo">Undo</button></div>
     </section>
-    <section class="card">
+    <section class="card" data-glow="lilac">
       <h2><i class="cube" style="--c:#C7B4F0"></i>Takeoff <span class="count" id="takeoffCount">0</span></h2>
       <ol class="takeoff" id="takeoff"><li class="empty">Nothing measured yet on this sheet.</li></ol>
       <div class="row"><button class="btn sm ghost" type="button" id="clearSheet">Clear this sheet</button></div>
@@ -70,82 +70,141 @@
     </div>
     <div class="viewer" id="viewer" tabindex="0" aria-label="Plan. Drag to pan, scroll to zoom, tap to measure." data-tool="pan">
       <div class="stage" id="stage"><canvas id="pdfCanvas"></canvas><svg id="overlay" aria-hidden="true"></svg></div>
-      <div class="viewer-msg" id="viewerMsg" role="status">Loading the sheet…</div>
-      <div class="draft-bar" id="draftBar" hidden><span id="draftInfo"></span><button type="button" class="btn sm" id="finish2">Finish</button><button type="button" class="btn sm ghost" id="undo2">Undo</button></div>
+      <div class="viewer-msg glass" id="viewerMsg" role="status">Loading the sheet…</div>
+      <div class="draft-bar glass" id="draftBar" hidden><span id="draftInfo"></span><button type="button" class="btn sm" id="finish2">Finish</button><button type="button" class="btn sm ghost" id="undo2">Undo</button></div>
     </div>
-    <p class="plan-foot"><span class="sim">Simulated · fictional plan and rates</span><span class="mono" id="cursorInfo"></span></p>
+    <p class="plan-foot"><span class="pill" data-tone="butter">Simulated · fictional plan and rates</span><span class="mono" id="cursorInfo"></span></p>
   </section>
 
   <!-- ------------------------------------------------ right: the agent desk -->
   <aside class="col agent" id="agentdesk" aria-label="Agent desk">
-    <section class="card asks">
+    <section class="card asks" data-glow="peach">
       <h2><i class="cube" style="--c:#F6B48E"></i>Agent desk</h2>
-      <p class="hint">Three things a builder asks. The agent works in steps; each shows the tool it called and the record it got. A named person decides.</p>
+      <p class="hint">Three things a builder asks. The agent works in steps; each shows the tool it called and the record it got. A named person decides, twice: the provisional sums, then the quote.</p>
       <div class="ask-list" id="asks"></div>
     </section>
     <section class="card work-card">
       <div class="ad-status" id="adStatus"><span class="lab">Waiting</span><p>Pick an ask to start.</p></div>
       <ol class="work" id="adWork"></ol>
     </section>
-    <section class="card queue-card">
+    <section class="card queue-card" data-glow="pink">
       <h2><i class="cube" style="--c:#F3A5BE"></i>Approval <span class="who" id="adWho"></span></h2>
-      <div id="adQueue"><p class="empty">When the agent drafts a bid, it lands here for a person.</p></div>
+      <div id="adQueue"><p class="empty">When the agent needs a decision, it lands here for a person.</p></div>
     </section>
-    <section class="card out-card" id="adOutCard" hidden>
-      <h2><i class="cube" style="--c:#A7DEC7"></i>Receipt and bid</h2>
+    <section class="card out-card" id="adOutCard" hidden data-glow="mint">
+      <h2><i class="cube" style="--c:#A7DEC7"></i>Receipts and the quote</h2>
+      <ol class="chain" id="adChain" aria-label="Receipt chain"></ol>
       <div id="adOut"></div>
     </section>
   </aside>
 </main>
 
-<!-- ------------------------------------------------ rates and totals -->
-<section class="band" id="rates" aria-labelledby="ratesTitle">
-  <div class="band-head"><p class="eyebrow">Rates sheet · yours to edit</p><h2 id="ratesTitle">Price it from <em>your</em> rates.</h2><p>Material and labour per unit, NZD, metric. Markup goes on cost; GST at 15% is shown separately. Timber sizes are NZS 3604 names used as labels only. <b>Indicative only · not a quote.</b></p></div>
+<!-- ------------------------------------------------ checks: consent, code, defects -->
+<section class="band" id="checks" aria-labelledby="checksTitle">
+  <div class="band-head"><p class="kicker">Checks · consent, Building Code, defects</p><h2 id="checksTitle">Before the price, <em>the checks.</em></h2><p>Every measured condition wakes the clauses to check and the defects to look for. The agent proposes; a person decides which risks become provisional sums. <b>Illustrative — not a compliance determination.</b> The council and a licensed building practitioner decide; the links go to MBIE's own pages.</p></div>
+  <div class="checks-grid">
+    <div class="card" data-glow="butter">
+      <h3><i class="cube" style="--c:#F2DC7C"></i>Does it need a building consent?</h3>
+      <p class="hint">The Schedule 1 questions for what is in scope on this sheet, with the lab's likely answer. Building Act 2004, Schedule 1.</p>
+      <div id="consentPanel" class="consent"></div>
+      <p class="pill-row"><span class="pill" data-tone="butter">Illustrative</span> <a class="link" href="https://www.building.govt.nz/projects-and-consents/planning-a-successful-build/scope-and-design/check-if-you-need-consents/building-work-that-doesnt-need-a-building-consent/" target="_blank" rel="noopener">Work that doesn't need a consent · building.govt.nz</a></p>
+    </div>
+    <div class="card" data-glow="sky">
+      <h3><i class="cube" style="--c:#A9C9F2"></i>NZ Building Code checks <span class="count" id="codeCount"></span></h3>
+      <p class="hint">For each measured element: the clause, the acceptable solution it is usually read against, and one line on what to check on site.</p>
+      <div id="codePanel" class="code"></div>
+      <details class="h1">
+        <summary>H1 insulation schedule by climate zone <span class="pill" data-tone="sky">Illustrative</span></summary>
+        <label class="field inline">Climate zone<select id="h1zone"></select></label>
+        <div class="table-wrap"><table class="h1t" id="h1Table"></table></div>
+        <p class="hint">Minimum construction R-values for housing under the schedule method, as the lab read H1/AS1 5th edition. Confirm the current amendment at <a class="link" href="https://www.building.govt.nz/building-code-compliance/h-energy-efficiency/h1-energy-efficiency/" target="_blank" rel="noopener">building.govt.nz</a>.</p>
+      </details>
+    </div>
+    <div class="card" data-glow="pink">
+      <h3><i class="cube" style="--c:#F3A5BE"></i>Defects and risk register <span class="count" id="defectCount"></span></h3>
+      <p class="hint">Common NZ defects for the element types in scope, by severity, with the photo the agent asks for on site. Tick the ones to hold as a provisional sum; the quote maths picks them up.</p>
+      <div id="defectPanel" class="defects"></div>
+      <p class="pill-row"><span class="pill" data-tone="pink">Illustrative</span><span class="hint">Provisional sums are fictional allowances, charged at cost with the record.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------ rates and quote maths -->
+<section class="band alt" id="rates" aria-labelledby="ratesTitle">
+  <div class="band-head"><p class="kicker">Quote maths · yours to edit</p><h2 id="ratesTitle">Price it from <em>your</em> rates.</h2><p>Material and labour per unit, NZD, metric: m², lm, ea. Labour becomes hours at each trade's hourly rate; materials carry waste by trade; P&amp;G sits on cost, margin on cost plus P&amp;G; provisional sums are listed on their own; GST at 15% is charged on the whole. Timber sizes are NZS 3604 names used as labels only. <b>Indicative only · not a quote.</b></p></div>
   <div class="rates-grid">
-    <div class="table-wrap"><table class="rates" id="ratesTable"><thead><tr><th>Trade</th><th>Condition</th><th>Unit</th><th>Material</th><th>Labour</th></tr></thead><tbody></tbody></table></div>
-    <div class="totals card">
-      <h3>Totals by trade <span class="sim">Indicative only · not a quote</span></h3>
-      <label class="field inline">Markup on cost<span class="in"><input type="number" id="markup" value="12" min="0" max="100" step="0.5" inputmode="decimal"><b>%</b></span></label>
+    <div>
+      <div class="table-wrap"><table class="rates" id="ratesTable"><thead><tr><th>Trade</th><th>Condition</th><th>Unit</th><th>Material</th><th>Labour</th></tr></thead><tbody></tbody></table></div>
+      <div class="trade-grid">
+        <div class="table-wrap"><table class="rates trades" id="tradeTable"><thead><tr><th>Trade</th><th>$ / hour</th><th>Waste %</th><th>Hours</th></tr></thead><tbody></tbody></table></div>
+        <div class="card quote-settings" data-glow="lilac">
+          <h3>Settings</h3>
+          <label class="field inline">Preliminaries and general<span class="in"><input type="number" id="pg" value="8" min="0" max="50" step="0.5" inputmode="decimal"><b>%</b></span></label>
+          <label class="field inline">Margin<span class="in"><input type="number" id="markup" value="12" min="0" max="100" step="0.5" inputmode="decimal"><b>%</b></span></label>
+          <p class="hint">Illustrative NZ figures. Everything resets on reload; nothing is stored.</p>
+        </div>
+      </div>
+    </div>
+    <div class="totals card" data-glow="mint">
+      <h3>Quote build-up <span class="pill" data-tone="butter">Indicative only · not a quote</span></h3>
       <div class="trade-bars" id="tradeBars"><p class="empty">Measure something, or ask the agent, and the trades fill in here.</p></div>
       <dl class="sums" id="sums"></dl>
-      <p class="hint">Every line is drawn quantity × factor × (material + labour). Rates reset on reload; nothing is stored.</p>
+      <p class="hint">Every line is drawn quantity × factor × rate. Hours are labour cost ÷ the trade's hourly rate.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------ variations and site diary -->
+<section class="band" id="variations" aria-labelledby="varTitle">
+  <div class="band-head"><p class="kicker">Variations · site diary</p><h2 id="varTitle">When the job changes, <em>the record changes with it.</em></h2><p>A variation is a change the client asks for after the quote is approved. The agent re-measures what it adds, re-runs the quote maths and shows the difference; the same named person approves it, and the receipt chains onto the quote's. The site diary is the stub of a record that follows: who decided what, when, and which photos were asked for.</p></div>
+  <div class="var-grid">
+    <div class="card" data-glow="peach">
+      <h3><i class="cube" style="--c:#F6B48E"></i>Variation</h3>
+      <div id="varPanel"><p class="empty">Approve a quote on the desk first. Then raise the variation from the receipt, or here.</p></div>
+    </div>
+    <div class="card" data-glow="lilac">
+      <h3><i class="cube" style="--c:#C7B4F0"></i>Site diary <span class="count" id="diaryCount"></span></h3>
+      <ol class="diary" id="diary"><li class="empty">Decisions, photo checks and sends land here as the desk works. Nothing is stored.</li></ol>
     </div>
   </div>
 </section>
 
 <!-- ------------------------------------------------ agent-ready -->
 <section class="band alt" id="agent-ready" aria-labelledby="arTitle">
-  <div class="band-head"><p class="eyebrow">Agent-ready · the same four tools over MCP</p><h2 id="arTitle">An assistant can call the <em>same desk.</em></h2><p>The page and the endpoint share one geometry and one condition library, so a builder's own assistant (Claude, ChatGPT, anything that speaks MCP) measures the same plan the person sees. It is stateless and Simulated: the demo sheets only, and drafting a bid never sends one.</p></div>
+  <div class="band-head"><p class="kicker">Agent-ready · the same nine tools over MCP</p><h2 id="arTitle">A builder's own assistant can call <em>the same desk.</em></h2><p>The page and the endpoint share one geometry, one condition library and one NZ reference file, so an assistant (Claude, ChatGPT, anything that speaks MCP) measures the same plan, asks the same consent questions and runs the same quote maths the person sees. Stateless and Simulated: the demo sheets only, and drafting never sends anything.</p></div>
   <div class="ar-grid">
-    <div class="card">
+    <div class="card" data-glow="sky">
       <h3>Endpoint</h3>
       <p class="mono" id="arUrl">POST https://assembl-lab.vercel.app/api/takeoff/</p>
-      <p>Streamable HTTP, JSON responses, no sessions, no auth. <code>initialize</code>, <code>tools/list</code>, <code>tools/call</code>, <code>resources/read</code> (<code>takeoff://plans</code>, <code>takeoff://conditions</code>, <code>takeoff://sheets</code>).</p>
+      <p>Streamable HTTP, JSON responses, no sessions, no auth. <code>initialize</code>, <code>tools/list</code>, <code>tools/call</code>, <code>resources/read</code> (<code>takeoff://plans</code>, <code>takeoff://conditions</code>, <code>takeoff://nz-code</code>, <code>takeoff://sheets</code>).</p>
       <ul class="tool-list" id="arTools"></ul>
     </div>
-    <div class="card">
+    <div class="card" data-glow="lilac">
       <h3>Try it, live</h3>
-      <p>Lists the tools, then asks <code>find_rooms</code> for A101 and <code>draft_bid</code> for two lines. Read-only: a request, a record, a hash.</p>
+      <p>Lists the tools, then asks <code>find_rooms</code>, <code>code_checks</code> and <code>quote</code> for A101. Read-only: a request, a record, a hash.</p>
       <button class="btn" type="button" id="arTry">Call the endpoint</button>
-      <div class="ar-out" id="arOut"><pre class="mono">{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"find_rooms","arguments":{"sheet":"A101"}}}</pre></div>
+      <div class="ar-out" id="arOut"><pre class="mono">{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"code_checks","arguments":{"sheet":"A101","lines":[{"conditionId":"floor-tiles","qty":30.7}]}}}</pre></div>
     </div>
-    <div class="card">
+    <div class="card" data-glow="mint">
       <h3>What stays with people</h3>
       <ul class="plain">
         <li><b>The scale.</b> Tools default to the sheet's nominal scale and say so; a person confirms it before measurements count.</li>
-        <li><b>The rates.</b> Nothing proposes a price. The builder's own sheet is the only source.</li>
-        <li><b>The bid.</b> <code>draft_bid</code> returns a draft at authority level <em>act with approval</em>. A named person sends it, changes it or withdraws it, and each decision is a hashed receipt.</li>
+        <li><b>The rates.</b> Nothing proposes a price. The builder's own sheet is the only source; the defaults are labelled illustrative.</li>
+        <li><b>The risks.</b> <code>defect_register</code> proposes; a named person picks which become provisional sums.</li>
+        <li><b>The quote and every variation.</b> <code>draft_bid</code> and <code>variation</code> return drafts at authority <em>act with approval</em>. A named person sends, changes or withdraws, and each decision is a hashed receipt chained to the last.</li>
+        <li><b>Compliance.</b> <code>consent_check</code> and <code>code_checks</code> point at MBIE's pages. The council decides; the tool never does.</li>
       </ul>
-      <p class="hint">Pattern: enquiry → agent steps with tool calls and records → a named person approves → receipt. Built clean-room by the assembl lab; no third-party takeoff code or assets.</p>
+      <p class="hint">Pattern: enquiry → agent steps with tool calls and records → a named person approves → chained receipt. Built clean-room by the assembl lab; no third-party takeoff code or assets.</p>
     </div>
   </div>
 </section>
 
 <footer class="foot">
-  <p><b>assembl lab</b> · trades twin · Simulated: a fictional house, a fictional builder and fictional rates, drawn and priced by the lab. Not a quote, not for construction. Your own PDFs are rendered in your browser and never uploaded.</p>
-  <p><a href="/#explore">All worlds</a> · <a href="/cars/dealer-twin/">Dealer twin</a> · <a href="https://assembl.co.nz/" target="_top">Build with assembl</a></p>
+  <p><b>assembl lab</b> · trades twin · Simulated: a fictional house, a fictional builder and fictional rates, drawn and priced by the lab. Code checks and the defect register are illustrative readings of public MBIE guidance, not a compliance determination. Not a quote, not for construction. Your own PDFs are rendered in your browser and never uploaded.</p>
+  <p><a class="link" href="/#explore">All worlds</a> · <a class="link" href="/cars/dealer-twin/">Dealer twin</a> · <a class="link" href="https://assembl.co.nz/" target="_top">Build with assembl</a></p>
 </footer>
 
+<div id="printArea" aria-hidden="true"></div>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

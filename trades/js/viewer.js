@@ -47,7 +47,7 @@ export function createViewer({ viewer, stage, canvas, overlay, msg, onTap, onFin
   function render() {
     const z = st.zoom, fs = 11 / z, rad = 4.5 / z, out = [];
     for (const it of st.items) {
-      const c = it.colour || "#A9C9F2", cls = `${it.draft ? "m-draft" : ""} ${it.hl ? "m-hl" : ""}`, multi = Array.isArray(it.pts[0]) && Array.isArray(it.pts[0][0]), P = multi ? it.pts.flat() : it.pts;
+      const c = it.colour || "#A9C9F2", cls = `${it.draft ? "m-draft" : ""} ${it.hl ? "m-hl" : ""} ${it.fresh ? "m-new" : ""}`, multi = Array.isArray(it.pts[0]) && Array.isArray(it.pts[0][0]), P = multi ? it.pts.flat() : it.pts;
       if (!P.length) continue;
       let g = `<g class="${cls}" style="--c:${c}">`;
       if (multi) { g += it.pts.map((run) => `<polyline class="m-line" points="${run.map((p) => p.join(",")).join(" ")}"/>`).join(""); if (it.label) g += `<text class="m-lab" x="${cen(P)[0]}" y="${cen(P)[1]}" text-anchor="middle" font-size="${fs}">${esc(it.label)}</text>`; out.push(g + "</g>"); continue; }

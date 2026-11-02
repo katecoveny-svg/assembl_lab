@@ -1,10 +1,13 @@
 // assembl lab · trades twin. Pure takeoff logic shared by the desk in the browser and the stateless endpoint (api/takeoff.js):
-// unit conversion, polygon geometry, the condition library's pricing, and the four tools (find_rooms, measure, price, draft_bid).
-// No DOM, no network, no state. Everything it returns is labelled Simulated.
+// unit conversion, polygon geometry, the condition library's pricing, NZ quote maths (waste, labour hours, P&G, margin,
+// provisional sums, GST on the whole), the Building Code checks and defect register, and the nine tools (find_rooms, measure,
+// consent_check, code_checks, defect_register, price, quote, variation, draft_bid). No DOM, no network, no state.
+// Everything it returns is labelled Simulated or Illustrative.
 import { PLANS, CONDITIONS, TRADES, GST, MM_PER_PT } from "./plans-data.js";
+import { NZ_TRUTH, NZ_REF_DATE, CLAUSES, SCHEDULE1_LINK, H1_SCHEDULE, H1_ZONES, CONSENT_QUESTIONS, CODE_CHECKS, DEFECTS, TRADE_RATES, WASTE_PCT, EXCLUSIONS, QUOTE_TERMS, VARIATIONS } from "./nz-code.js";
 
-export { PLANS, CONDITIONS, TRADES, GST, MM_PER_PT };
-export const VERSION = "0.1.0";
+export { PLANS, CONDITIONS, TRADES, GST, MM_PER_PT, NZ_TRUTH, NZ_REF_DATE, CLAUSES, SCHEDULE1_LINK, H1_SCHEDULE, H1_ZONES, CONSENT_QUESTIONS, CODE_CHECKS, DEFECTS, TRADE_RATES, WASTE_PCT, EXCLUSIONS, QUOTE_TERMS, VARIATIONS };
+export const VERSION = "0.2.0";
 export const PT_PER_MM = 1 / MM_PER_PT;
 
 // ---------------------------------------------------------------- geometry (PDF points, or any consistent unit)
@@ -49,6 +52,55 @@ export function price(lines, rates = {}, markupPct = 12) {
   return { truth: "Simulated", label: "Indicative only · not a quote", lines: out, byTrade, cost, markupPct, markup, subtotal, gst, gstRate: GST, total, currency: "NZD" };
 }
 
+// NZ quote maths, a superset of price(): materials carry waste by trade, labour becomes hours at the trade's hourly rate,
+// preliminaries and general (P&G) sit on cost, margin sits on cost + P&G, provisional sums are listed on their own, and GST
+// at 15% is charged on the whole. Every figure is Simulated; the shape stays compatible with price() (cost, markup, subtotal…).
+export const DEFAULT_QUOTE = { pgPct: 8, marginPct: 12 };
+export function quote({ lines, rates = {}, marginPct = DEFAULT_QUOTE.marginPct, markupPct, pgPct = DEFAULT_QUOTE.pgPct, wastePct = {}, tradeRates = {}, provisionalSums = [] } = {}) {
+  if (typeof markupPct === "number" && typeof marginPct !== "number") marginPct = markupPct;
+  const out = [], W = { ...WASTE_PCT, ...(typeof wastePct === "number" ? Object.fromEntries(TRADES.map((t) => [t, wastePct])) : wastePct) }, TR = { ...TRADE_RATES, ...tradeRates };
+  for (const l of lines || []) {
+    const c = condition(l.conditionId); if (!c) continue;
+    const r = { material: c.material, labour: c.labour, ...(rates[c.id] || {}) };
+    const priced = round(l.qty * (c.factor || 1), 2), waste = W[c.trade] ?? 0;
+    const material = round(priced * r.material), wasteCost = round(material * waste / 100), labour = round(priced * r.labour), hours = round(labour / (TR[c.trade] || 75), 1);
+    out.push({ conditionId: c.id, name: c.name, trade: c.trade, drawn: round(l.qty, 2), drawnUnit: c.measure === "count" ? "EA" : c.measure === "length" ? "m" : "m²", qty: priced, unit: c.unit, rate: { material: r.material, labour: r.labour }, material, wastePct: waste, waste: wasteCost, labour, hours, hourlyRate: TR[c.trade], cost: round(material + wasteCost + labour) });
+  }
+  const byTrade = TRADES.map((t) => { const L = out.filter((l) => l.trade === t); const sum = (k) => round(L.reduce((s, l) => s + l[k], 0)); return { trade: t, material: sum("material"), waste: sum("waste"), labour: sum("labour"), hours: round(sum("hours"), 1), hourlyRate: TR[t], cost: sum("cost") }; }).filter((t) => t.cost > 0);
+  const material = round(out.reduce((s, l) => s + l.material, 0)), waste = round(out.reduce((s, l) => s + l.waste, 0)), labour = round(out.reduce((s, l) => s + l.labour, 0)), hours = round(out.reduce((s, l) => s + l.hours, 0), 1);
+  const cost = round(material + waste + labour), pg = round(cost * pgPct / 100), margin = round((cost + pg) * marginPct / 100);
+  const ps = (provisionalSums || []).filter((p) => p && p.amount > 0).map((p) => ({ id: p.id, title: p.title, amount: round(p.amount) })), provisional = round(ps.reduce((s, p) => s + p.amount, 0));
+  const subtotal = round(cost + pg + margin + provisional), gst = round(subtotal * GST), total = round(subtotal + gst);
+  return { truth: "Simulated", label: "Indicative only · not a quote", lines: out, byTrade, material, waste, labour, hours, cost, pgPct, pg, marginPct, margin, markupPct: marginPct, markup: margin, provisionalSums: ps, provisional, subtotal, gst, gstRate: GST, total, currency: "NZD", validDays: 30 };
+}
+
+// ---------------------------------------------------------------- Building Code checks, consent questions and defects for a set of lines
+const roomOf = (sheet, el) => sheet && sheet.rooms.find((r) => r.id === el);
+export function codeChecks(lines, sheetId) {
+  const seen = new Set(), out = [];
+  for (const l of lines || []) {
+    const c = condition(l.conditionId); if (!c) continue;
+    for (const k of CODE_CHECKS[c.id] || []) { const key = c.id + "|" + k.clause; if (seen.has(key)) continue; seen.add(key); const cl = CLAUSES[k.clause]; out.push({ conditionId: c.id, condition: c.name, trade: c.trade, clause: cl.id, clauseName: cl.name, standard: cl.std, check: k.check, link: cl.link }); }
+  }
+  const byClause = Object.keys(CLAUSES).map((id) => ({ clause: id, name: CLAUSES[id].name, link: CLAUSES[id].link, checks: out.filter((o) => o.clause === id) })).filter((g) => g.checks.length);
+  return { truth: NZ_TRUTH, asAt: NZ_REF_DATE, sheet: sheetId || null, checks: out, byClause, h1: { zones: H1_ZONES, schedule: H1_SCHEDULE, note: "Minimum construction R-values, housing, schedule method, as the lab read H1/AS1 5th edition. Confirm the current amendment." }, source: "https://www.building.govt.nz/building-code-compliance/" };
+}
+export function consentCheck(sheetId, lines) {
+  const sheet = sheetById(sheetId), ids = new Set((lines || []).map((l) => l.conditionId));
+  const relevant = CONSENT_QUESTIONS.filter((q) => sheetId === "A201" ? ["deck-height", "pergola", "structure", "like-for-like"].includes(q.id) : !["deck-height", "pergola"].includes(q.id));
+  const answers = relevant.map((q) => { let a = "ask the client"; if (q.id === "deck-height") a = sheet ? "yes · drawn 0.6 m above ground (demo)" : "ask"; if (q.id === "pergola") a = "yes · open frame on the drawing"; if (q.id === "plumbing") a = ids.has("fixture") ? "fixtures are drawn · confirm if any is new or moved" : "no fixture drawn"; if (q.id === "wet-area") a = ids.has("floor-tiles") || ids.has("vinyl") ? "wet-area floors are in scope · confirm the membrane" : "no wet area in scope"; if (q.id === "structure") a = ids.has("gib-wall") || ids.has("int-door") ? "walls are in scope · ask for the bracing schedule" : "nothing structural drawn"; if (q.id === "like-for-like") a = "ask the client what is replaced and what is new"; return { ...q, answer: a }; });
+  const likelyConsent = answers.some((a) => /consent likely/.test(a.likely) && !/^no /.test(a.answer) && !/nothing/.test(a.answer));
+  return { truth: NZ_TRUTH, sheet: sheetId, questions: answers, verdict: likelyConsent ? "A building consent is likely for part of this work. Confirm with the council before pricing it as exempt." : "Most of this work looks exempt under Schedule 1, if the answers hold. Confirm with the council; keep records of the work.", schedule1: SCHEDULE1_LINK };
+}
+export function defectRegister(lines, sheetId) {
+  const sheet = sheetById(sheetId), conds = new Set(), rooms = new Set(), els = new Set();
+  for (const l of lines || []) { conds.add(l.conditionId); if (l.element) { els.add(l.element); if (roomOf(sheet, l.element)) rooms.add(l.element); } }
+  const hits = DEFECTS.filter((d) => { const w = d.when; const byCond = (w.conditions || []).some((c) => conds.has(c)); const byEl = (w.elements || []).some((e) => els.has(e)); if (w.rooms && w.conditions) return byCond && (!rooms.size || w.rooms.some((r) => rooms.has(r)) || byEl); return byCond || byEl; });
+  const order = { high: 0, medium: 1, low: 2 };
+  const register = hits.sort((a, b) => order[a.severity] - order[b.severity]).map((d) => ({ id: d.id, title: d.title, where: d.where, severity: d.severity, clause: d.clause, clauseName: CLAUSES[d.clause].name, link: CLAUSES[d.clause].link, photoCheck: d.photo, why: d.why, provisionalSum: d.ps, proposed: d.severity !== "low" && d.ps > 0 }));
+  return { truth: NZ_TRUTH, sheet: sheetId, count: register.length, register, note: "The agent proposes; a named person decides which become provisional sums in the quote. Provisional sums are fictional allowances." };
+}
+
 // ---------------------------------------------------------------- the sample sheets' takeoff, from the plan data (what the tools serve)
 function elementsOf(sheet) {
   const E = [];
@@ -68,16 +120,28 @@ export const elements = (sheetId) => { const s = sheetById(sheetId); return s ? 
 
 const finishCondition = { carpet: "carpet", tiles: "floor-tiles", vinyl: "vinyl", decking: "decking", pergola: null };
 
-// ---------------------------------------------------------------- the four tools
+// ---------------------------------------------------------------- the nine tools
+const SHEET = { type: "string", enum: ["A101", "A201"], description: "Sheet id" };
+const LINES = { type: "array", description: "Measured lines", items: { type: "object", properties: { conditionId: { type: "string" }, qty: { type: "number", description: "Drawn quantity in the condition's drawn unit" }, element: { type: "string" } }, required: ["conditionId", "qty"] } };
 export const TOOLS = [
   { name: "find_rooms", title: "Find the rooms on a sheet", description: "Lists the rooms (or deck zones) the sheet shows, each with its outline in paper points, its finish and its area at the sheet's nominal scale. Simulated: the two demo sheets only.",
-    inputSchema: { type: "object", properties: { sheet: { type: "string", enum: ["A101", "A201"], description: "Sheet id" } }, required: ["sheet"] } },
+    inputSchema: { type: "object", properties: { sheet: SHEET }, required: ["sheet"] } },
   { name: "measure", title: "Measure an element", description: "Measures one named element on a sheet (a room's area, a wall's or joist's length, a count of doors or posts) under a scale in mm per paper point, and tags it with a condition. Omit scale to use the sheet's nominal scale.",
-    inputSchema: { type: "object", properties: { sheet: { type: "string", enum: ["A101", "A201"] }, element: { type: "string", description: "Element id from find_rooms or from the sheet's element list (e.g. living, walls-3, doors, posts)" }, condition: { type: "string", description: "Condition id from the library; defaults from the element" }, mmPerPt: { type: "number", description: "Confirmed scale, mm of real world per paper point" } }, required: ["sheet", "element"] } },
-  { name: "price", title: "Price the lines", description: "Prices measured lines from the rates given (material and labour per unit, NZD), with markup on cost and 15% GST shown separately. Indicative only, never a quote.",
-    inputSchema: { type: "object", properties: { lines: { type: "array", items: { type: "object", properties: { conditionId: { type: "string" }, qty: { type: "number" } }, required: ["conditionId", "qty"] } }, rates: { type: "object", description: "Overrides per condition id: { material, labour }" }, markupPct: { type: "number", default: 12 } }, required: ["lines"] } },
-  { name: "draft_bid", title: "Draft the bid", description: "Assembles a bid record for a person to approve: scope, priced lines by trade, inclusions, exclusions, and the authority level 'act with approval'. Drafting sends nothing; a named person approves before any bid leaves.",
-    inputSchema: { type: "object", properties: { sheet: { type: "string" }, scope: { type: "string" }, lines: { type: "array", items: { type: "object" } }, rates: { type: "object" }, markupPct: { type: "number" }, customer: { type: "string" } }, required: ["sheet", "lines"] } },
+    inputSchema: { type: "object", properties: { sheet: SHEET, element: { type: "string", description: "Element id from find_rooms or from the sheet's element list (e.g. living, walls-3, doors, posts)" }, condition: { type: "string", description: "Condition id from the library; defaults from the element" }, mmPerPt: { type: "number", description: "Confirmed scale, mm of real world per paper point" } }, required: ["sheet", "element"] } },
+  { name: "consent_check", title: "Does this need a building consent?", description: "Asks the Schedule 1 (Building Act 2004) questions for the work in scope and gives a likely answer per question, with the MBIE page to read. Illustrative: the council decides, never this tool.",
+    inputSchema: { type: "object", properties: { sheet: SHEET, lines: LINES }, required: ["sheet"] } },
+  { name: "code_checks", title: "NZ Building Code checks", description: "For each measured condition, the Building Code clauses to check (B1, B2, D1, E2, E3, F4, G4, G9, G12, G13, H1) with a one-line what-to-check and a building.govt.nz link, plus the H1 insulation schedule by climate zone. Illustrative, not a compliance determination.",
+    inputSchema: { type: "object", properties: { sheet: SHEET, lines: LINES }, required: ["lines"] } },
+  { name: "defect_register", title: "Common defects and risks", description: "Proposes the common NZ defects for the element types in scope (weathertightness at junctions, deck barriers, wet-area membranes, insulation gaps, cladding clearances…), each with a severity, a photo-check prompt and a fictional provisional sum. A person chooses which go into the quote.",
+    inputSchema: { type: "object", properties: { sheet: SHEET, lines: LINES }, required: ["lines"] } },
+  { name: "price", title: "Price the lines (simple)", description: "Prices measured lines from the rates given (material and labour per unit, NZD), with markup on cost and 15% GST shown separately. Indicative only, never a quote. See quote for the full NZ maths.",
+    inputSchema: { type: "object", properties: { lines: LINES, rates: { type: "object", description: "Overrides per condition id: { material, labour }" }, markupPct: { type: "number", default: 12 } }, required: ["lines"] } },
+  { name: "quote", title: "NZ quote maths", description: "Full quote maths: m²/lm/ea quantities, materials with waste % by trade, labour as hours at the trade's hourly rate, preliminaries and general (P&G), margin, provisional sums listed on their own, 15% GST on the whole, validity 30 days. Every rate is the builder's own or an illustrative default; nothing here is a quote.",
+    inputSchema: { type: "object", properties: { lines: LINES, rates: { type: "object" }, marginPct: { type: "number", default: 12 }, pgPct: { type: "number", default: 8 }, wastePct: { type: "object", description: "Per trade, %" }, tradeRates: { type: "object", description: "Per trade, NZD per hour ex GST" }, provisionalSums: { type: "array", items: { type: "object", properties: { id: { type: "string" }, title: { type: "string" }, amount: { type: "number" } } } } }, required: ["lines"] } },
+  { name: "variation", title: "Price a variation", description: "Re-measures the elements a change adds or removes, re-runs the quote and returns the delta against the approved quote, as a variation record that waits for a person to approve. Simulated.",
+    inputSchema: { type: "object", properties: { sheet: SHEET, quoteRef: { type: "string" }, add: { type: "array", items: { type: "object", properties: { element: { type: "string" }, condition: { type: "string" } } } }, remove: { type: "array", items: { type: "string" }, description: "Condition ids to drop" }, baseLines: LINES, mmPerPt: { type: "number" }, rates: { type: "object" }, marginPct: { type: "number" }, pgPct: { type: "number" }, provisionalSums: { type: "array", items: { type: "object" } } }, required: ["sheet", "add"] } },
+  { name: "draft_bid", title: "Draft the quote", description: "Assembles a quote record for a person to approve: scope, priced lines by trade with hours, waste, P&G, margin, provisional sums, GST, inclusions, exclusions, terms and the authority level 'act with approval'. Drafting sends nothing; a named person approves before any quote leaves.",
+    inputSchema: { type: "object", properties: { sheet: { type: "string" }, scope: { type: "string" }, lines: LINES, rates: { type: "object" }, marginPct: { type: "number" }, markupPct: { type: "number" }, pgPct: { type: "number" }, provisionalSums: { type: "array", items: { type: "object" } }, customer: { type: "string" } }, required: ["sheet", "lines"] } },
 ];
 
 export function callTool(name, args = {}) {
@@ -103,6 +167,33 @@ export function callTool(name, args = {}) {
       return { text: `${el.name}: ${qty} ${unit}${c ? ` · ${c.name}${c.factor ? ` → ${round(qty * c.factor)} ${c.unit}` : ""}` : ""} · scale ${args.mmPerPt ? "confirmed" : "nominal"}. Simulated.`,
         structuredContent: { truth: "Simulated", sheet: sheet.id, element: el.id, name: el.name, kind, qty, unit, conditionId: condId, condition: c ? c.name : null, pricedQty: c ? round(qty * (c.factor || 1)) : qty, pricedUnit: c ? c.unit : unit, mmPerPt: round(mm, 4), scaleStatus: args.mmPerPt ? "confirmed by a person" : "nominal", points: isMulti(pts) ? pts.map((run) => run.map((p) => p.map((v) => round(v, 1)))) : pts.map((p) => p.map((v) => round(v, 1))) } };
     }
+    case "consent_check": {
+      if (!sheet) return fail(`Unknown sheet: ${args.sheet}`);
+      const r = consentCheck(sheet.id, args.lines || []);
+      return { text: `${r.verdict} ${r.questions.length} questions. ${NZ_TRUTH}.`, structuredContent: r };
+    }
+    case "code_checks": {
+      if (!Array.isArray(args.lines)) return fail("code_checks needs lines: [{ conditionId, qty }]");
+      const r = codeChecks(args.lines, args.sheet);
+      return { text: `${r.checks.length} checks across ${r.byClause.map((g) => g.clause).join(", ") || "no clauses"} for ${new Set(args.lines.map((l) => l.conditionId)).size} conditions. ${NZ_TRUTH}.`, structuredContent: r };
+    }
+    case "defect_register": {
+      if (!Array.isArray(args.lines)) return fail("defect_register needs lines");
+      const r = defectRegister(args.lines, args.sheet);
+      return { text: `${r.count} common defects to check (${r.register.filter((d) => d.severity === "high").length} high). The agent proposes ${r.register.filter((d) => d.proposed).length} as provisional sums; a person decides. ${NZ_TRUTH}.`, structuredContent: r };
+    }
+    case "quote": {
+      if (!Array.isArray(args.lines)) return fail("quote needs lines: [{ conditionId, qty }]");
+      const q = quote(args);
+      return { text: `${q.lines.length} lines · ${q.hours} labour hours · cost $${q.cost.toLocaleString("en-NZ")} (incl. $${q.waste.toLocaleString("en-NZ")} waste) + P&G ${q.pgPct}% + margin ${q.marginPct}%${q.provisional ? ` + provisional sums $${q.provisional.toLocaleString("en-NZ")}` : ""} = $${q.subtotal.toLocaleString("en-NZ")} excl. GST · GST $${q.gst.toLocaleString("en-NZ")} · $${q.total.toLocaleString("en-NZ")} incl. GST · valid 30 days. Indicative only, not a quote. Simulated.`, structuredContent: q };
+    }
+    case "variation": {
+      if (!sheet) return fail(`Unknown sheet: ${args.sheet}`);
+      if (!Array.isArray(args.add)) return fail("variation needs add: [{ element, condition }]");
+      const v = variation({ ...args, sheet });
+      if (v.error) return fail(v.error);
+      return { text: `Variation ${v.ref}: ${v.added.length} line${v.added.length === 1 ? "" : "s"} added, ${v.removed.length} removed · ${v.delta.total >= 0 ? "+" : "−"}$${Math.abs(v.delta.total).toLocaleString("en-NZ")} incl. GST on ${v.quoteRef || "the quote"}. Waits for a named person. Simulated.`, structuredContent: v };
+    }
     case "price": {
       if (!Array.isArray(args.lines)) return fail("price needs lines: [{ conditionId, qty }]");
       const p = price(args.lines, args.rates || {}, typeof args.markupPct === "number" ? args.markupPct : 12);
@@ -111,23 +202,38 @@ export function callTool(name, args = {}) {
     case "draft_bid": {
       if (!sheet) return fail(`Unknown sheet: ${args.sheet}`);
       if (!Array.isArray(args.lines)) return fail("draft_bid needs lines");
-      const bid = draftBid({ sheet, lines: args.lines, rates: args.rates, markupPct: args.markupPct, scope: args.scope, customer: args.customer });
-      return { text: `Bid ${bid.ref} drafted for ${bid.customer}: ${bid.scope}, $${bid.pricing.total.toLocaleString("en-NZ")} incl. GST, ${bid.pricing.lines.length} lines. Status draft: it waits for a named person to approve. Simulated.`, structuredContent: bid };
+      const bid = draftBid({ sheet, lines: args.lines, rates: args.rates, marginPct: args.marginPct ?? args.markupPct, pgPct: args.pgPct, provisionalSums: args.provisionalSums, scope: args.scope, customer: args.customer });
+      return { text: `Quote ${bid.ref} drafted for ${bid.customer}: ${bid.scope}, $${bid.pricing.total.toLocaleString("en-NZ")} incl. GST, ${bid.pricing.lines.length} lines, ${bid.pricing.hours} h. Status draft: it waits for a named person to approve. Simulated.`, structuredContent: bid };
     }
     default: return fail(`Unknown tool: ${name}`);
   }
 }
 const fail = (msg, data) => ({ text: msg, structuredContent: { truth: "Simulated", error: msg, ...(data || {}) }, isError: true });
 
-export function draftBid({ sheet, lines, rates, markupPct = 12, scope, customer, seq = 1, now }) {
-  const pricing = price(lines, rates || {}, markupPct);
+export function draftBid({ sheet, lines, rates, marginPct, markupPct, pgPct, provisionalSums, scope, customer, seq = 1, now, wastePct, tradeRates }) {
+  const pricing = quote({ lines, rates: rates || {}, marginPct: typeof marginPct === "number" ? marginPct : typeof markupPct === "number" ? markupPct : DEFAULT_QUOTE.marginPct, pgPct, provisionalSums, wastePct, tradeRates });
   const trades = pricing.byTrade.map((t) => t.trade);
-  return { schema: "assembl.takeoff-bid/1", truth: "Simulated", label: "Indicative only · not a quote", status: "draft", ref: `BID-${sheet.id}-${String(seq).padStart(3, "0")}`,
+  return { schema: "assembl.takeoff-quote/1", truth: "Simulated", label: "Indicative only · not a quote", status: "draft", ref: `Q-${sheet.id}-${String(seq).padStart(3, "0")}`,
     project: PLANS.project.name, customer: customer || PLANS.project.client, builder: PLANS.project.builder, sheet: sheet.id, sheetTitle: sheet.title,
     scope: scope || `${trades.join(", ")} per sheet ${sheet.id}`, pricing,
-    inclusions: ["Materials and labour as listed", "Site clean and waste removal for these trades", "GST at 15% shown separately"],
-    exclusions: ["Consent fees and engineering", "Anything not drawn on the sheet", "Variations after approval, priced separately"],
+    inclusions: ["Materials and labour as listed, with waste and P&G", "Site clean and waste removal for these trades", "Provisional sums as listed, charged at cost with the record", "GST at 15% shown separately"],
+    exclusions: EXCLUSIONS, terms: QUOTE_TERMS,
     authority: "act with approval", requiresApproval: true, validDays: 30, ...(now ? { draftedAt: now } : {}) };
+}
+
+// a variation: measure what the change adds, drop what it removes, re-quote, and report the delta against the approved quote
+export function variation({ sheet, quoteRef, add = [], remove = [], baseLines = [], mmPerPt, rates, marginPct, pgPct, provisionalSums, seq = 1, now, wastePct, tradeRates }) {
+  if (!sheet) return { error: "variation needs a sheet" };
+  const mm = typeof mmPerPt === "number" && mmPerPt > 0 ? mmPerPt : nominalMmPerPt(sheet);
+  const added = [];
+  for (const a of add) { const r = callTool("measure", { sheet: sheet.id, element: a.element, condition: a.condition, mmPerPt: mm }); if (r.isError) return { error: r.text }; const m = r.structuredContent; added.push({ element: m.element, name: m.name, conditionId: m.conditionId, qty: m.qty, unit: m.unit, points: m.points, kind: m.kind }); }
+  const kept = baseLines.filter((l) => !remove.includes(l.conditionId)), removed = baseLines.filter((l) => remove.includes(l.conditionId));
+  const opts = { rates: rates || {}, marginPct, pgPct, provisionalSums, wastePct, tradeRates };
+  const before = quote({ lines: baseLines, ...opts }), after = quote({ lines: [...kept, ...added.map((a) => ({ conditionId: a.conditionId, qty: a.qty, element: a.element }))], ...opts });
+  const d = (k) => round(after[k] - before[k]);
+  return { schema: "assembl.takeoff-variation/1", truth: "Simulated", ref: `${quoteRef || "Q-" + sheet.id}-V${String(seq).padStart(2, "0")}`, quoteRef: quoteRef || null, sheet: sheet.id, added, removed: removed.map((l) => l.conditionId), lines: after.lines, mmPerPt: round(mm, 4),
+    delta: { cost: d("cost"), hours: round(after.hours - before.hours, 1), pg: d("pg"), margin: d("margin"), subtotal: d("subtotal"), gst: d("gst"), total: d("total") }, before: { subtotal: before.subtotal, total: before.total }, after: { subtotal: after.subtotal, total: after.total },
+    status: "draft", authority: "act with approval", requiresApproval: true, ...(now ? { draftedAt: now } : {}) };
 }
 
 // canonical JSON for hashing (sorted keys, no undefined), the same in browser and node

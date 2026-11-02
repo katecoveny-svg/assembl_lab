@@ -1,11 +1,12 @@
 // assembl lab · trades twin: the takeoff MCP endpoint. Stateless Model Context Protocol server over Streamable HTTP, the same
 // conventions as /api/mcp.js (the cars endpoint): POST one JSON-RPC 2.0 message (a batch array is accepted), JSON responses,
 // no SSE stream, no sessions, no auth, CORS open, no dependencies. GET / DELETE answer 405; OPTIONS is the CORS preflight.
-// Tools: find_rooms, measure, price, draft_bid, all pure functions over the two Simulated demo sheets (trades/js/plans-data.js);
-// draft_bid returns a draft that a named person approves on the desk: nothing here sends, stores or quotes anything.
-// Resources: the plan data, the condition library and the two sheet PDFs' URLs.
+// Tools: find_rooms, measure, consent_check, code_checks, defect_register, price, quote, variation, draft_bid: all pure functions
+// over the two Simulated demo sheets (trades/js/plans-data.js) and the Illustrative NZ reference data (trades/js/nz-code.js);
+// draft_bid and variation return drafts that a named person approves on the desk: nothing here sends, stores or quotes anything.
+// Resources: the plan data, the condition library, the NZ reference data and the two sheet PDFs' URLs.
 import { createHash } from "node:crypto";
-import { TOOLS, callTool, PLANS, CONDITIONS, GST, VERSION, canon } from "../trades/js/takeoff-core.js";
+import { TOOLS, callTool, PLANS, CONDITIONS, GST, VERSION, canon, CLAUSES, H1_SCHEDULE, H1_ZONES, CONSENT_QUESTIONS, CODE_CHECKS, DEFECTS, TRADE_RATES, WASTE_PCT, NZ_TRUTH, NZ_REF_DATE } from "../trades/js/takeoff-core.js";
 
 export const MODERN = ["2026-07-28"];
 export const LEGACY = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -15,7 +16,8 @@ const SITE_URL = "https://assembl-lab.vercel.app";
 const SERVER_INFO = { name: "assembl-takeoff-twin", title: "Plan takeoff (assembl lab demo)", version: VERSION, websiteUrl: `${SITE_URL}/trades/` };
 export const INSTRUCTIONS = "An assembl lab demonstration: Lot 12 Kōwhai Rise, its two sheets (A101 floor plan, A201 deck and pergola) and every rate are Simulated and fictional, so never present a figure as a real price. " +
   "A person confirms the scale before a measurement counts; find_rooms and measure default to the sheet's nominal scale and say so. " +
-  "price and draft_bid are indicative only, never a quote; draft_bid returns a draft that a named person at the builder approves before any bid leaves. Units are metric; GST is 15% and shown separately.";
+  "price, quote and draft_bid are indicative only, never a quote; draft_bid and variation return drafts that a named person at the builder approves before anything leaves. " +
+  "consent_check, code_checks and defect_register are Illustrative readings of public MBIE guidance, not a compliance determination: the council and a licensed practitioner decide. Units are metric; GST is 15% and shown separately on the whole.";
 const CAPS = { tools: { listChanged: false }, resources: { subscribe: false, listChanged: false }, prompts: { listChanged: false } };
 const CORS = {
   "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
@@ -25,6 +27,7 @@ const CORS = {
 const RESOURCES = [
   { uri: "takeoff://plans", name: "plans", title: "The two demo sheets as data (Simulated)", description: "Rooms, walls, doors, windows, framing: real millimetres with the paper origin and scale of each sheet.", mimeType: "application/json" },
   { uri: "takeoff://conditions", name: "conditions", title: "Condition library (NZ, metric, fictional rates)", description: "Each condition's trade, what is drawn, the priced unit and factor, and indicative material and labour rates.", mimeType: "application/json" },
+  { uri: "takeoff://nz-code", name: "nz-code", title: "NZ reference data (Illustrative)", description: "Building Code clauses with links, the H1 insulation schedule by climate zone, Schedule 1 consent questions, the defect register, and illustrative trade rates and waste percentages.", mimeType: "application/json" },
   { uri: "takeoff://sheets", name: "sheets", title: "Sheet PDFs", description: "URLs of the two one-page A3 PDFs the desk renders with pdf.js.", mimeType: "application/json" },
 ];
 
@@ -35,6 +38,7 @@ class RpcError extends Error { constructor(code, message, data, http) { super(me
 function readResource(uri) {
   if (uri === "takeoff://plans") return { uri, mimeType: "application/json", text: JSON.stringify(PLANS) };
   if (uri === "takeoff://conditions") return { uri, mimeType: "application/json", text: JSON.stringify({ truth: "Simulated", label: "Indicative only · not a quote", gst: GST, conditions: CONDITIONS }) };
+  if (uri === "takeoff://nz-code") return { uri, mimeType: "application/json", text: JSON.stringify({ truth: NZ_TRUTH, asAt: NZ_REF_DATE, clauses: CLAUSES, h1: { zones: H1_ZONES, schedule: H1_SCHEDULE }, consentQuestions: CONSENT_QUESTIONS, codeChecks: CODE_CHECKS, defects: DEFECTS, tradeRates: TRADE_RATES, wastePct: WASTE_PCT }) };
   if (uri === "takeoff://sheets") return { uri, mimeType: "application/json", text: JSON.stringify({ truth: "Simulated", sheets: PLANS.sheets.map((s) => ({ id: s.id, title: s.title, nominalScale: `1:${s.scale}`, paper: s.paper, url: `${SITE_URL}/trades/${s.file}` })) }) };
   throw new RpcError(-32002, "Resource not found", { uri });
 }
@@ -60,7 +64,7 @@ async function dispatch(msg, modern, now) {
       if (!TOOLS.find((t) => t.name === p.name)) throw new RpcError(-32602, `Unknown tool: ${p.name}`, { tools: TOOLS.map((t) => t.name) });
       const r = callTool(p.name, p.arguments || {});
       const extra = {};
-      if (p.name === "draft_bid" && !r.isError) { // the draft's hash rides in _meta, so an approver can check what they approved
+      if ((p.name === "draft_bid" || p.name === "variation") && !r.isError) { // the draft's hash rides in _meta, so an approver can check what they approved
         r.structuredContent.draftedAt = now.toISOString();
         extra._meta = { "assembl/bidHash": createHash("sha256").update(canon(r.structuredContent)).digest("hex"), "assembl/authority": "act with approval" };
       }
