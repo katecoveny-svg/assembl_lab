@@ -267,7 +267,7 @@ const CFG={postprocessing:false,ar:false,onStep:(state,st)=>{const link=document
   state:s, steps,
   controls:[{type:"play"},{type:"button",id:"restart",label:"Restart",onClick:(x,api)=>{const st=api.step;st.onStep&&st.onStep();s.playing=true}},
     {type:"range",id:"mAh",label:"Battery",min:2000,max:5000,step:1,get:()=>s.mAh,set:(x,v)=>{s.mAh=v},fmt:()=>`${fmt(s.mAh)} mAh`},
-    {type:"range",id:"hours",label:"Screen-on time",min:2,max:12,step:0.5,get:()=>s.hours,set:(x,v)=>{s.hours=v},fmt:()=>`${fmt(s.hours,1)} h`},
+    {type:"range",id:"hours",label:"Screen time",min:2,max:12,step:0.5,get:()=>s.hours,set:(x,v)=>{s.hours=v},fmt:()=>`${fmt(s.hours,1)} h`},
     {type:"range",id:"Pchg",label:"Charger",min:5,max:45,step:1,get:()=>s.Pchg,set:(x,v)=>{s.Pchg=v},fmt:()=>`${s.Pchg} W`},
     {type:"range",id:"eff",label:"Efficiency",min:0.6,max:1,step:0.05,get:()=>s.eff,set:(x,v)=>{s.eff=Math.round(v*100)/100},fmt:()=>`${Math.round(s.eff*100)}%`},
     {type:"range",id:"r",label:"Internal resistance",min:0.01,max:0.3,step:0.01,get:()=>s.r,set:(x,v)=>{s.r=Math.round(v*100)/100},fmt:()=>`${fmt(s.r,2)} Ω`},

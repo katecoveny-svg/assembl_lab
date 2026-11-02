@@ -476,7 +476,11 @@ function mount(cfg){logStudy("open");
     $("k-prog").style.width=((i+1)/cfg.steps.length*100).toFixed(1)+"%";
     $("k-stepno").textContent=st.k==="test"?"Test":`${i+1} of ${cfg.steps.length}`;
     const nx=cfg.steps[i+1];nextB.hidden=!nx;if(nx)nextB.textContent=nx.k==="test"?"Next topic: Test yourself →":"Next topic →";
-    $("k-cap").innerHTML=st.cap+(st.speedLabel?`<span class="slow">${st.speedLabel}</span>`:"");
+    // long captions fold to two lines with a "more" toggle, so the first thing a student reads is short (Tier 1 item 4)
+    const capEl=$("k-cap"),capText=String(st.cap||"").replace(/<[^>]+>/g,"");capEl.innerHTML=st.cap+(st.speedLabel?`<span class="slow">${st.speedLabel}</span>`:"");
+    capEl.classList.toggle("fold",capText.length>150);capEl.classList.remove("open");
+    let more=document.getElementById("k-more");if(capText.length>150){if(!more){more=document.createElement("button");more.id="k-more";more.type="button";more.className="morebtn";capEl.after(more)}more.hidden=false;more.textContent="More";more.setAttribute("aria-expanded","false");
+      more.onclick=()=>{const o=capEl.classList.toggle("open");more.textContent=o?"Less":"More";more.setAttribute("aria-expanded",String(o))}}else if(more)more.hidden=true;
     $("k-big").innerHTML=st.big||"";$("k-exam").textContent=typeof st.exam==="function"?st.exam(s,st,api):st.exam||"";$("k-trap").textContent=st.trap||"";
     $("k-examcard").hidden=!st.exam;$("k-trapcard").hidden=!st.trap;$("k-bigcard").hidden=!st.big;
     if(KU.length){const sk=stepKupu(st),kc=$("k-kupu");kc.hidden=!sk.length;$("k-kupul").innerHTML=sk.map(kupuItem).join("")}
@@ -533,6 +537,10 @@ function mount(cfg){logStudy("open");
     requestAnimationFrame(loop)}
   const h=(location.hash||"").slice(1),hi=cfg.steps.findIndex(x=>x.k===h),wantAR=h==="ar";
   setStep(hi>=0?hi:0);mounted=true;requestAnimationFrame(loop);
+  // one grab-me cue on a first visit: the first control on the opening step pulses for a few seconds (not under reduced motion)
+  try{const key="study-cue:"+mid;if(!localStorage.getItem(key)&&!calm()){localStorage.setItem(key,"1");
+    const st0=cfg.steps[step],first=(cfg.controls||[]).find(c=>["range","toggle","select"].includes(c.type)&&(!st0.controls||st0.controls.includes(c.id||c.type)));
+    const el=first&&ctlEls[first.id||first.type];if(el){el.classList.add("cue");const off=()=>{el.classList.remove("cue");el.removeEventListener("pointerdown",off)};el.addEventListener("pointerdown",off);setTimeout(off,7000)}}}catch(e){}
   // the real-time 3D bench: a scene factory turns the live state into a world you can turn; the SVG stays underneath as the fallback
   const f3=cfg.scene3d||SCENES[mid];
   if(f3&&!/[?&]lite\b/.test(location.search)&&(()=>{try{const c=document.createElement("canvas");return !!(c.getContext("webgl2")||c.getContext("webgl"))}catch(e){return false}})()){
