@@ -1,0 +1,1213 @@
+{
+ "contract": "assembl.particles.v1",
+ "asset": "particles-apparatus.glb",
+ "units": "metres",
+ "route": "/study/m/particles.html",
+ "coordinates": {
+  "authoring": "Blender +X right, +Y rear, +Z up",
+  "gltf": "glTF +X right, +Y up, +Z front",
+  "map": "(x,y,z) -> (x,z,-y)",
+  "legacy_scene_units_per_metre": 25,
+  "legacy_note": "The lesson's 3D bench draws particles in scene units. Apply ONE uniform root scale of 25; never scale rig parts individually."
+ },
+ "state_owner": "study/m/particles.js owns the heating model (stateFrom, boilPoint, pressureAt), the gas law pressure(), the timer, controls, lesson A/B capture and every challenge. This asset holds no physics, timer or random values.",
+ "rig": {
+  "plunger": {
+   "node": "PLUNGER_SLIDE",
+   "axis_gltf": "parent +X",
+   "input": "existing s.vol (mL)",
+   "rest_volume_mL": 60,
+   "metres_per_mL": 0.0011014182912933931,
+   "geometry_range_mL": [
+    0,
+    100
+   ],
+   "lesson_range_mL": [
+    20,
+    100
+   ],
+   "pose": "position.x = rest.x + (volume_mL - 60) * metres_per_mL"
+  },
+  "gauge_needle": {
+   "node": "GAUGE_NEEDLE_PIVOT",
+   "axis_gltf": "local +Z (dial normal, towards the viewer)",
+   "input": "existing pressure() in kPa",
+   "zero_angle_deg": 225,
+   "sweep_deg": 270,
+   "full_scale_kPa": 400,
+   "direction": "clockwise as seen from the front",
+   "pose": "rotation.z = -clamp(kPa, 0, 400) / 400 * 1.5 * PI",
+   "note": "Display clamp only; readouts keep the model's value."
+  },
+  "thermometer": {
+   "node": "THERMO_SPIRIT_PIVOT",
+   "axis_gltf": "local +Y",
+   "input": "existing stateFrom(...).T in degrees C",
+   "scale_min_C": -30.0,
+   "scale_max_C": 140.0,
+   "pose": "scale.y = clamp((T + 30) / 170, 0.01, 1)",
+   "world_y_at_min_m": 0.1245,
+   "world_y_at_max_m": 0.3245,
+   "world_xz_m": [
+    0.033,
+    -0.037
+   ]
+  },
+  "water": {
+   "node": "WATER_PIVOT",
+   "mesh": "WATER_VOLUME",
+   "axis_gltf": "local +Y",
+   "rest_height_m": 0.04,
+   "input": "liquid height in metres from the lesson's existing liqTop mapping (particle sample, not 500 mL)",
+   "pose": "scale.y = clamp(height_m / 0.040, 0.02, 2.5); visible flag from the lesson"
+  },
+  "heat_coil": {
+   "node": "HEAT_COIL",
+   "input": "heat level 0..1 already smoothed by the lesson",
+   "pose": "material colour lerp #D9CCD3 -> #E58A9E; no emission or bloom"
+  },
+  "status_led": {
+   "node": "STATUS_LED",
+   "pose": "colour #BFE8D6 when idle, #E8688A while the lesson is heating; no emission"
+  },
+  "power_knob": {
+   "node": "POWER_KNOB_PIVOT",
+   "axis_gltf": "local +Z",
+   "input": "existing s.power (kW)",
+   "range_kW": [
+    0.5,
+    3.0
+   ],
+   "pose": "rotation.z = -(clamp(kW, 0.5, 3) - 0.5) / 2.5 * 1.5 * PI"
+  }
+ },
+ "regions": {
+  "beaker_inner": {
+   "note": "Particle chamber for the heating steps (glTF metres).",
+   "centre_xz_m": [
+    0.0,
+    -0.015
+   ],
+   "floor_y_m": 0.0965,
+   "rim_y_m": 0.2235,
+   "inner_radius_m": 0.0485
+  },
+  "syringe_chamber": {
+   "note": "Particle chamber for the gas step: a cylinder from the nozzle wall to the plunger face.",
+   "axis_y_m": 0.059,
+   "axis_z_m": -0.0,
+   "nozzle_inner_x_m": 0.328,
+   "inner_radius_m": 0.017,
+   "plunger_face_x_at_rest_m": 0.394085,
+   "thumb_offset_from_face_m": 0.138,
+   "barrel_open_end_x_m": 0.446
+  },
+  "gauge": {
+   "centre_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "radius_m": 0.046
+  }
+ },
+ "nodes": {
+  "PARTICLES_APPARATUS": {
+   "parent": null,
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "asset root; apply the lesson's single uniform scale here (25 scene units per metre)"
+  },
+  "HEAT_STATION": {
+   "parent": "PARTICLES_APPARATUS",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "hotplate, beaker, thermometer and stand"
+  },
+  "HOTPLATE": {
+   "parent": "HEAT_STATION",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "empty"
+  },
+  "HOTPLATE_FEET": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "HOTPLATE_BODY": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "HOTPLATE_VENTS": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "HOTPLATE_TOP": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh",
+   "role": "pick: start/stop heating"
+  },
+  "HOTPLATE_SCREWS": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "CERAMIC_PLATE": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.015
+   ],
+   "type": "mesh"
+  },
+  "PLATE_TRIM": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.015
+   ],
+   "type": "mesh"
+  },
+  "HEAT_COIL": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.015
+   ],
+   "type": "mesh",
+   "role": "visual heat indicator; adapter tints colour only (no emission)"
+  },
+  "CONTROL_FASCIA": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "DISPLAY_FRAME": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "DISPLAY_WINDOW": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "STATUS_LED": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.01,
+    0.047,
+    0.1093
+   ],
+   "rest_translation_gltf_m": [
+    0.01,
+    0.047,
+    0.1093
+   ],
+   "type": "mesh",
+   "role": "power indicator; adapter tints colour only (no emission)"
+  },
+  "KNOB_TICKS": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "POWER_KNOB_PIVOT": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.046,
+    0.044,
+    0.1093
+   ],
+   "rest_translation_gltf_m": [
+    0.046,
+    0.044,
+    0.1093
+   ],
+   "type": "empty",
+   "role": "rotates about glTF +Z (front normal) with the existing hotplate power"
+  },
+  "POWER_KNOB": {
+   "parent": "POWER_KNOB_PIVOT",
+   "world_pivot_gltf_m": [
+    0.046,
+    0.044,
+    0.1093
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "KNOB_POINTER": {
+   "parent": "POWER_KNOB_PIVOT",
+   "world_pivot_gltf_m": [
+    0.046,
+    0.044,
+    0.1093
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "POWER_CABLE": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "BEAKER": {
+   "parent": "HEAT_STATION",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0935,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0935,
+    -0.015
+   ],
+   "type": "empty",
+   "role": "beaker; its inner volume is the particle chamber for the heating steps"
+  },
+  "BEAKER_GLASS": {
+   "parent": "BEAKER",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0935,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "BEAKER_GRADUATIONS": {
+   "parent": "BEAKER",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0935,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "WATER_PIVOT": {
+   "parent": "BEAKER",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0965,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.003,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "origin at the inner floor; scale glTF Y for the liquid height"
+  },
+  "WATER_VOLUME": {
+   "parent": "WATER_PIVOT",
+   "world_pivot_gltf_m": [
+    0.0,
+    0.0965,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh",
+   "role": "liquid display only; height is supplied by the lesson's existing visual mapping"
+  },
+  "THERMOMETER": {
+   "parent": "HEAT_STATION",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "type": "empty",
+   "role": "spirit thermometer; scale -30..140 C"
+  },
+  "THERMO_GLASS": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "THERMO_BULB": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "THERMO_SCALE_CARD": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "THERMO_TICKS": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "THERMO_SPIRIT_PIVOT": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1245,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.022,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "origin at -30 C; scale glTF Y by (T - -30) / 170"
+  },
+  "THERMO_SPIRIT": {
+   "parent": "THERMO_SPIRIT_PIVOT",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1245,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "THERMO_CAPILLARY_LOW": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.1025,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "RETORT_STAND": {
+   "parent": "HEAT_STATION",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "type": "empty"
+  },
+  "STAND_BASE": {
+   "parent": "RETORT_STAND",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "STAND_ROD": {
+   "parent": "RETORT_STAND",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "BOSS_HEAD": {
+   "parent": "RETORT_STAND",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "BOSS_SCREW": {
+   "parent": "RETORT_STAND",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "CLAMP_ARM": {
+   "parent": "RETORT_STAND",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "CLAMP_JAW": {
+   "parent": "RETORT_STAND",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.0,
+    -0.16
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAS_STATION": {
+   "parent": "PARTICLES_APPARATUS",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "sealed gas syringe on a bench with a pressure gauge"
+  },
+  "SYRINGE_PLINTH": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "SYRINGE_BOARD": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "SYRINGE_CRADLES": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "CRADLE_SCREWS": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "SYRINGE": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.328,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    -0.072,
+    0.059,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "axis along glTF +X; x = 0 is the inner face of the nozzle end (0 mL)"
+  },
+  "BARREL_GLASS": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.328,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh",
+   "role": "particle chamber for the gas-pressure step"
+  },
+  "BARREL_FLANGE": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.328,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "NOZZLE": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.328,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "NOZZLE_SLEEVE": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.328,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "BARREL_GRADUATIONS": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.328,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "PLUNGER_SLIDE": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.394085,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.066085,
+    0.0,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "x = gas-side face of the rubber head; translate along glTF +X by volume"
+  },
+  "PLUNGER_HEAD": {
+   "parent": "PLUNGER_SLIDE",
+   "world_pivot_gltf_m": [
+    0.394085,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "PLUNGER_ROD": {
+   "parent": "PLUNGER_SLIDE",
+   "world_pivot_gltf_m": [
+    0.394085,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh",
+   "role": "drag handle"
+  },
+  "THUMB_PLATE": {
+   "parent": "PLUNGER_SLIDE",
+   "world_pivot_gltf_m": [
+    0.394085,
+    0.059,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh",
+   "role": "drag handle: press or pull to change the volume"
+  },
+  "COPPER_LINE": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    -0.116,
+    0.192,
+    -0.004
+   ],
+   "type": "empty",
+   "role": "pressure gauge, face normal glTF +Z, 0-400 kPa over 270 degrees clockwise"
+  },
+  "GAUGE_CASE": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_BEZEL": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_STEM": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_DIAL": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_ARC": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_MARKS": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_NEEDLE_PIVOT": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.0006
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    0.0034
+   ],
+   "type": "empty",
+   "role": "rotate about glTF +Z: angle = -(kPa / 400) * 270 degrees from the 0 kPa rest"
+  },
+  "GAUGE_NEEDLE": {
+   "parent": "GAUGE_NEEDLE_PIVOT",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.0006
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "NEEDLE_HUB": {
+   "parent": "GAUGE_NEEDLE_PIVOT",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.0002
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    0.0004
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_LENS": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.192,
+    -0.004
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  },
+  "GAUGE_POST": {
+   "parent": "GAS_STATION",
+   "world_pivot_gltf_m": [
+    0.4,
+    0.0,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "type": "mesh"
+  }
+ },
+ "hotspots": {
+  "HOTSPOT_BEAKER": {
+   "parent": "BEAKER",
+   "world_pivot_gltf_m": [
+    -0.05,
+    0.2001,
+    -0.015
+   ],
+   "rest_translation_gltf_m": [
+    -0.05,
+    0.1066,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "beaker label"
+  },
+  "HOTSPOT_HOTPLATE": {
+   "parent": "HOTPLATE",
+   "world_pivot_gltf_m": [
+    -0.06,
+    0.07,
+    0.11
+   ],
+   "rest_translation_gltf_m": [
+    -0.06,
+    0.07,
+    0.11
+   ],
+   "type": "empty",
+   "role": "hotplate label"
+  },
+  "HOTSPOT_THERMOMETER": {
+   "parent": "THERMOMETER",
+   "world_pivot_gltf_m": [
+    0.033,
+    0.3245,
+    -0.037
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.222,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "thermometer label"
+  },
+  "HOTSPOT_GAUGE": {
+   "parent": "GAUGE",
+   "world_pivot_gltf_m": [
+    0.284,
+    0.238,
+    0.002
+   ],
+   "rest_translation_gltf_m": [
+    0.0,
+    0.046,
+    0.006
+   ],
+   "type": "empty",
+   "role": "pressure label"
+  },
+  "HOTSPOT_CHAMBER": {
+   "parent": "SYRINGE",
+   "world_pivot_gltf_m": [
+    0.3811,
+    0.0826,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.0531,
+    0.0236,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "volume label"
+  },
+  "HOTSPOT_PLUNGER": {
+   "parent": "PLUNGER_SLIDE",
+   "world_pivot_gltf_m": [
+    0.535085,
+    0.083,
+    -0.0
+   ],
+   "rest_translation_gltf_m": [
+    0.141,
+    0.024,
+    -0.0
+   ],
+   "type": "empty",
+   "role": "drag hint"
+  }
+ },
+ "asset_stats": {
+  "bytes": 929636,
+  "sha256": "f970eb5ac07cbc61ccf1c54b91a77586887ebcfc0433f03585763a5dcae42d27",
+  "triangles": 29004,
+  "meshes": 54,
+  "primitives": 54,
+  "nodes": 74,
+  "materials": 18,
+  "textures": 0,
+  "extensions_used": [
+   "KHR_materials_clearcoat"
+  ],
+  "budget": {
+   "bytes_max": 2500000,
+   "triangles_max": 80000,
+   "primitives_max": 80,
+   "textures_max": 0
+  }
+ },
+ "tooling": {
+  "blender": "5.1.2",
+  "gltf_exporter": "5.1.20",
+  "render": {
+   "engine": "Cycles (CPU)",
+   "samples": 64,
+   "denoiser": "OpenImageDenoise",
+   "rendered": true,
+   "files": {
+    "hero": "renders/particles-hero.png",
+    "detail_syringe": "renders/particles-detail-syringe.png",
+    "detail_heat": "renders/particles-detail-heat.png"
+   }
+  }
+ }
+}
