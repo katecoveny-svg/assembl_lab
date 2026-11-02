@@ -1,11 +1,14 @@
 // The stock: a wall of cars and one in the spotlight. Tap a car and it takes the stage. A dealer with photos shows its photos (a photo's
-// paint is never changed). The demo dealer is fictional and has no photos, so each listing shows a drawing of its body style, labelled
-// as such, with the listing's facts as data: make, model, year, kilometres, price. Price, badges and truth label on every card; the
-// spotlight shows the notice and how a buyer's assistant reads the same car. A multi-brand dealer filters by brand, the demo by body.
-import { CFG, $, $$, esc, fmt, json } from "./core.js";
+// paint is never changed). The demo dealer is fictional and has no photos, so each listing shows a GENERIC vehicle of its real body
+// style (an Aqua is a hatch, a Hilux a ute) in the listing's colour: an offline Cycles still on the wall, and, for the one car in the
+// spotlight only, the same Blender-built model in 3D. Every picture says "not the actual vehicle". The listing's facts are data.
+// Price, badges and truth label on every card; the spotlight shows the notice and how a buyer's assistant reads the same car.
+import { CFG, $, $$, esc, fmt, json, ambient } from "./core.js";
 
 const BODY = { hatch: "Hatch", sedan: "Sedan", suv: "SUV", ute: "Ute", van: "Van", wagon: "Wagon" };
-const isDrawing = (c) => c.img && c.img.kind === "drawing";
+const WORD = { hatch: "hatch", sedan: "sedan", wagon: "wagon", suv: "SUV", ute: "ute", van: "van" };
+// a card with the picture on chalk and the listing as data: body-style drawings and generic renders (never a real car's photo)
+const isDrawing = (c) => c.img && (c.img.kind === "drawing" || !!c.img.generic);
 
 export async function initStock() {
   const data = await json(CFG.stockUrl), cars = data.cars, wall = $("#wall2"), info = $("#spotInfo"), st = $("#spotStage"), poster = $("#spotPoster"), truth = $("#spotTruth");
@@ -61,22 +64,41 @@ export async function initStock() {
   const credit = (c) => c.credit ? `<p class="note">Photo: <a href="${c.credit.page}" target="_blank" rel="noopener">${esc(c.credit.author)}</a> via Wikimedia Commons, <a href="${c.credit.licenceUrl}" target="_blank" rel="noopener">${esc(c.credit.licence)}</a>. ${esc(c.credit.change)} A sample photo of the model, not this listing's car.</p>` : "";
   function pick(c, user) {
     if (!c) return; sel = c; mark(); $("#spot").hidden = false;
-    const photo = c.img.kind === "photo", n = notice(c), dr = isDrawing(c);
+    const photo = c.img.kind === "photo", n = notice(c), dr = isDrawing(c), gen = !!c.img.generic;
     $("#spot").classList.toggle("light", dr); st.classList.toggle("drawing", dr);
     st.classList.toggle("photo", photo); st.classList.toggle("cut", photo && !!cut[c.id]);
     st.classList.toggle("room", !!c.img.room); st.classList.remove("live"); poster.src = c.img.room || (photo ? (cut[c.id] || c.img.card) : c.img.card); poster.alt = c.img.alt;
     truth.textContent = c.img.room ? (S.roomTag || S.photoTag || "Photo") : photo ? (S.photoTag || "Photo") : dr ? (c.img.label || S.drawingTag || "Drawing · not this car") : (S.renderTag || "Render · Simulated car");
+    st.classList.toggle("generic", gen);
     info.innerHTML = `<div class="who"><span class="label">${esc(c.region || c.branch || "")}</span><span class="chip">${esc(c.truthLabel)}</span></div>
       <h3>${esc(c.year)} ${esc(c.make)} ${esc(c.model)}${c.variant ? ` <span>${esc(c.variant)}</span>` : ""}</h3>
       <div class="pr">$${fmt(c.priceNzd)}<small>${esc(c.priceNote || "")}</small></div>
       <div class="facts">${[c.odometerKm == null ? "km not listed" : `${fmt(c.odometerKm)} km`, c.fuelLabel, BODY[c.body] || c.bodyLabel, c.transmission, c.colour].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join("")}</div>
       ${ring(n)}
       <div class="spot-act"><button class="btn" type="button" id="spotAi" aria-expanded="false">See what an assistant reads</button><a class="btn ghost" href="#desk" id="spotCheck">Ask about it at the agent desk</a></div>
-      <pre class="spot-json" id="spotJson" hidden></pre>${credit(c)}${dr ? `<p class="note">Harbour Lane is a fictional dealer, so these cars have no photos. The drawing shows the body style and its typical size, at the same scale for every car on the yard. A real dealer's own photos go here.</p>` : ""}`;
+      <pre class="spot-json" id="spotJson" hidden></pre>${credit(c)}${gen ? `<p class="note">Harbour Lane is a fictional dealer, so these cars have no photos. The picture is a generic ${esc(WORD[c.body] || c.body)} built in Blender at real-world size, in the listing's colour: not the actual vehicle, and no badges or real model's design. A real dealer's own photos go here.</p>` : dr ? `<p class="note">Harbour Lane is a fictional dealer, so these cars have no photos. The drawing shows the body style and its typical size, at the same scale for every car on the yard. A real dealer's own photos go here.</p>` : ""}`;
     $("#spotAi").onclick = (e) => { const p = $("#spotJson"), on = p.hidden; p.hidden = !on; e.currentTarget.setAttribute("aria-expanded", String(on)); if (on) p.textContent = JSON.stringify(schema(c), null, 2); };
     $("#spotCheck").onclick = (e) => { const d = $("#desk"), o = $("#deskOpen"); if (d && o) { e.preventDefault(); if (d.hidden) o.click(); else d.scrollIntoView({ behavior: "smooth", block: "start" }); } };
+    ctl.hidden = !(gen && c.model3d && can3d);
+    if (gen && c.model3d && can3d && want3d) go3d(c); else if (stage) stage.pause(true);
     if (user) $("#spot").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
   }
+  // 3D: only for the car in the spotlight, only where WebGL works and data isn't being saved. The still stays until the model has
+  // drawn; a failed load or a wrong contract keeps the still. The 3D/still switch and "Reset view" keep the selection and paint.
+  const net = navigator.connection || {}, can3d = !net.saveData && (() => { try { const k = document.createElement("canvas"); return !!(k.getContext("webgl2") || k.getContext("webgl")); } catch (e) { return false; } })();
+  let stage = null, stageP = null, want3d = true;
+  const ctl = document.createElement("div"); ctl.className = "spot-ctl"; ctl.hidden = true;
+  ctl.innerHTML = `<button type="button" class="chip" id="spotView" aria-pressed="true">3D</button><button type="button" class="chip" id="spotReset">Reset view</button>`;
+  st.append(ctl);
+  const cv = $("#spotCv");
+  function go3d(c) {
+    if (!stageP) stageP = import("./vehicle-stage.js").then((m) => m.mountVehicle(cv, { paused: ambient.paused })).then((s) => { stage = s; window.__vehicleStage = s; ambient.on((p) => s.pause(p || !want3d)); return s; });
+    const id = c.id;
+    stageP.then((s) => s.setCar(c.model3d.body, c.model3d.paint)).then((r) => { if (r && sel && sel.id === id && want3d) { stage.pause(ambient.paused); stage.fit(); st.classList.add("live"); } })
+      .catch((e) => { console.warn("vehicle 3D", e); st.classList.remove("live"); ctl.hidden = true; });
+  }
+  $("#spotView").onclick = (e) => { want3d = !want3d; e.currentTarget.setAttribute("aria-pressed", String(want3d)); if (want3d && sel) go3d(sel); else { st.classList.remove("live"); stage && stage.pause(true); } };
+  $("#spotReset").onclick = () => { stage && stage.resetView(); };
   wall.addEventListener("click", (e) => { const b = e.target.closest(".wc"); if (b) pick(cars.find((c) => c.id === b.dataset.id), true); });
   bar.addEventListener("click", (e) => { const b = e.target.closest("button[data-g]"); if (!b) return; filt = +b.dataset.g; $$("button", bar).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); draw(); });
   // the hero's brand names open the wall filtered to that brand

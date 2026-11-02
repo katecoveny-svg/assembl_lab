@@ -1462,3 +1462,13 @@ h1 em,h2 em,h3 em{font-family:var(--serif);font-style:italic;font-weight:400;let
 [data-look] .spot.light{background:var(--dr-paper)}.spot.light .spot-stage{background:var(--dr-chalk)}
 @media (max-width:520px){.dr-lb .lg{display:none}.dr-d{padding:10px 12px 12px}.dr-nm{font-size:16px}.dr-pr{font-size:19px}.dr-meta{font-size:12px}}
 @media (min-width:761px){.lead3.dr3{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto}.lead3.dr3 .lc.dr.big{grid-row:auto}.lead3.dr3 .lc.dr.big .dr-fig{aspect-ratio:4/3;min-height:0}.lead3.dr3 .lc.dr .dr-nm{font-size:clamp(20px,1.9vw,28px)}.lead3.dr3 .lc.dr .dr-pr{font-size:clamp(22px,2vw,30px)}}
+/* generic Blender renders (PR B): the still on chalk, and the selected car's 3D model over it once drawn */
+.spot.light .spot-stage.generic .spot-poster{-webkit-mask-image:none;mask-image:none;object-fit:contain;padding:0}
+.spot.light .spot-stage.generic .spot-cv{display:block}
+.spot-ctl{position:absolute;right:14px;bottom:14px;z-index:3;display:flex;gap:6px}
+.spot-ctl[hidden]{display:none}
+.spot-ctl .chip{appearance:none;cursor:pointer;font:500 12px var(--sans);padding:7px 12px;border-radius:999px;border:1px solid var(--dr-line);background:rgba(255,253,251,.92);color:var(--dr-plum)}
+.spot-ctl .chip[aria-pressed="true"]{background:var(--dr-plum);color:var(--dr-paper);border-color:var(--dr-plum)}
+.spot-ctl .chip:focus-visible{outline:2px solid var(--dr-plum);outline-offset:2px}
+.dr-fig img[src*="img/stock/"]{object-fit:cover}
+@media (min-width:901px){.spot.light .spot-stage.generic{aspect-ratio:auto;min-height:420px;height:100%}}
