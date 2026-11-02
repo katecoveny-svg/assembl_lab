@@ -13,6 +13,9 @@ import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
 import {RenderPass} from "three/addons/postprocessing/RenderPass.js";
 import {UnrealBloomPass} from "three/addons/postprocessing/UnrealBloomPass.js";
 import {OutputPass} from "three/addons/postprocessing/OutputPass.js";
+// GLB models (the teardown pattern: a real part, see-through, cut open, labelled) load on demand, so the loader and the
+// meshopt decoder are imported only when a machine asks for a model
+const loadGLTF=()=>Promise.all([import("three/addons/loaders/GLTFLoader.js"),import("three/addons/libs/meshopt_decoder.module.js")]);
 
 export const PAL={paper:"#F7F3EC",ink:"#222A55",shadow:"#1B2452",
   case:{blush:"#F3B8C8",mint:"#BFE8D6",lavender:"#D9CBF2",butter:"#F7E7A6",sky:"#BFDDF5",peach:"#F9D2B8"},
@@ -154,6 +157,27 @@ export function attach(api,cfg,factory,kit){
     const hU=wU*hPx/wPx;const m=new THREE.Mesh(new THREE.PlaneGeometry(wU,hU),new THREE.MeshBasicMaterial({map:t,transparent:true,toneMapped:false,side:THREE.DoubleSide}));m.renderOrder=3;
     m.g=g;m.c=c;m.redraw=fn=>{g.clearRect(0,0,wPx,hPx);fn(g,wPx,hPx);t.needsUpdate=true};m.hU=hU;return m}
 
+  // ---------------------------------------------------------------- real parts: GLB models, see-through, cut open, labelled
+  // glb(url, {fit, onProgress}) → Promise<Group>: the model, normalised so its longest side is `fit` units, standing on y = 0
+  const glbCache=new Map();
+  async function glb(url,o={}){const [{GLTFLoader},{MeshoptDecoder}]=await loadGLTF();
+    const gltf=await (glbCache.get(url)||glbCache.set(url,new Promise((ok,bad)=>{const L=new GLTFLoader();L.setMeshoptDecoder(MeshoptDecoder);L.load(url,ok,o.onProgress,bad)})).get(url));
+    const root=gltf.scene.clone(true);root.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;if(m.material){m.material=m.material.clone();m.userData.mat0=m.material}}});
+    const box=new THREE.Box3().setFromObject(root),size=new THREE.Vector3(),ctr=new THREE.Vector3();box.getSize(size);box.getCenter(ctr);
+    const k=(o.fit??4)/Math.max(size.x,size.y,size.z,1e-6);const g=new THREE.Group();root.position.set(-ctr.x,-box.min.y,-ctr.z);root.scale.setScalar(1);g.add(root);g.scale.setScalar(k);
+    g.userData.size=size.clone().multiplyScalar(k);g.userData.k=k;g.userData.parts=[];
+    root.traverse(n=>{if(/_obj_\d+$/.test(n.name||"")){const b=new THREE.Box3().setFromObject(n),c=new THREE.Vector3();b.getCenter(c);g.userData.parts.push({name:n.name.replace(/_\d+_obj_\d+$/,"").replace(/_/g," "),node:n,center:c})}});
+    return g}
+  // seeThrough(root, amount): 0 is the real surface, 1 is frosted glass you can look through (the teardown "glass" mode)
+  function seeThrough(root,amount){const a=clamp(amount,0,1);root.traverse(m=>{if(!m.isMesh||!m.userData.mat0)return;const base=m.userData.mat0;
+    if(a<.02){if(m.material!==base){m.material.dispose&&m.material!==base&&m.material.dispose();m.material=base}return}
+    if(!m.userData.matGlass){const g=new THREE.MeshPhysicalMaterial({color:base.color?base.color.clone():new THREE.Color(0xdde3ea),map:base.map||null,roughness:.25,metalness:base.metalness??.2,clearcoat:.6,transparent:true,depthWrite:false,side:THREE.DoubleSide});m.userData.matGlass=g}
+    m.material=m.userData.matGlass;m.material.opacity=1-a*.78;m.castShadow=a<.5})}
+  // cutaway(root, normal): a clip plane through the model; returns set(t) with t from 0 (whole) to 1 (cut to the far side)
+  function cutaway(root,normal=[1,0,0]){renderer.localClippingEnabled=true;const n=new THREE.Vector3(...normal).normalize(),plane=new THREE.Plane(n,1e3);
+    root.traverse(m=>{if(m.isMesh){for(const mat of [m.userData.mat0,m.userData.matGlass].filter(Boolean)){mat.clippingPlanes=[plane];mat.clipShadows=true;mat.side=THREE.DoubleSide}}});
+    const size=root.userData.size||new THREE.Vector3(4,4,4),half=Math.abs(n.x)*size.x/2+Math.abs(n.y)*size.y/2+Math.abs(n.z)*size.z/2;
+    const api={plane,set(t){const w=root.getWorldPosition(new THREE.Vector3());const c=new THREE.Vector3(w.x,w.y+(size.y/2),w.z);plane.constant=-n.dot(c)+half-2*half*clamp(t,0,1);if(t<=0)plane.constant=1e3},off(){plane.constant=1e3}};api.set(0);return api}
   // ---------------------------------------------------------------- labels: crisp HTML pills pinned to points in the scene
   const labels=[];
   function label(o={}){const el=document.createElement("div");el.className="s3-pill"+(o.cls?" "+o.cls:"");ov.appendChild(el);
@@ -213,7 +237,7 @@ export function attach(api,cfg,factory,kit){
   try{new ResizeObserver(resize).observe(host)}catch(e){addEventListener("resize",resize)}
   let visible=true;try{new IntersectionObserver(es=>{visible=es[0].isIntersecting}).observe(host)}catch(e){}
   const clock=new THREE.Clock();let t=0;
-  const S={THREE,scene,camera,renderer,controls,canvas,PAL,HQ,mobile,REDUCED,mat,M,mesh,rbox,box,cyl,sphere,torus,tube,acrylicCase,arrow,swarm,puffs,panel,label,pick,dragger,view,goView,setFollow,shadowy,
+  const S={THREE,scene,camera,renderer,controls,canvas,PAL,HQ,mobile,REDUCED,mat,M,mesh,rbox,box,cyl,sphere,torus,tube,acrylicCase,arrow,swarm,puffs,panel,label,pick,dragger,view,goView,setFollow,shadowy,glb,seeThrough,cutaway,
     sun,ground,RoundedBoxGeometry,ease,clamp,lerp,api,kit,get t(){return t},get bloom(){return bloom},
     setShadowBox(half,center=[0,0,0]){Object.assign(sun.shadow.camera,{left:-half,right:half,top:half,bottom:-half});sun.shadow.camera.updateProjectionMatrix();
       sun.target.position.set(...center);sun.position.set(center[0]-half*.5,center[1]+half*1.1,center[2]+half*.45)},
