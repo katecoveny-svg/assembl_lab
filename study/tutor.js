@@ -93,10 +93,14 @@
   .alt-f{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(36,11,33,.08)}.alt-f textarea{flex:1;font:inherit;font-size:15px;padding:9px 12px;border-radius:14px;border:1px solid rgba(36,11,33,.2);resize:none;height:42px;max-height:120px;color:inherit;background:#fff}
   .alt-b{all:unset;cursor:pointer;padding:9px 14px;border-radius:12px;background:#240B21;color:#FFFDFB;font-weight:600;font-size:14px;text-align:center}.alt-b.q{background:transparent;color:#240B21;border:1px solid rgba(36,11,33,.2)}.alt-b[disabled]{opacity:.45;cursor:default}
   .alt-note{padding:0 14px 10px;font:500 11px/1.5 "IBM Plex Mono",monospace;color:#654A4E}
+  .alt-priv{margin:0 14px 10px;padding:12px 14px;border-radius:14px;background:#F5F1F2;border:1px solid rgba(36,11,33,.1);display:grid;gap:8px;font-size:13.5px;line-height:1.45}
+  .alt-priv[hidden]{display:none}.alt-priv b{font-weight:600}.alt-priv ul{margin:0;padding-left:18px;display:grid;gap:3px}.alt-priv a{color:inherit}
+  .alt-priv .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.alt-priv small{font:500 11px/1.5 "IBM Plex Mono",monospace;color:#654A4E}
+  .alt-help{margin:0 14px 10px;padding:10px 14px;border-radius:14px;background:#FFF4EC;border:1px solid #F3C9B0;font-size:13.5px;line-height:1.45}.alt-help[hidden]{display:none}.alt-help b{font-weight:600}
   .alt-typing{align-self:flex-start;color:#654A4E;font-size:13px}.alt-typing:after{content:"…";animation:altdots 1.2s steps(3) infinite}
   @keyframes altdots{0%{content:"."}50%{content:".."}100%{content:"..."}}
   @media (prefers-color-scheme:dark){.alt{color:#F5F1F2}.alt-fab{background:#F5F1F2;color:#240B21}.alt-p{background:#1d1420;border-color:rgba(245,241,242,.14)}.alt-h{background:#271a2a}.alt-h small,.alt-h .x,.alt-line,.alt-note,.alt-exam small{color:#cdb8c2}
-    .alt-m.al{background:#2b1f2e}.alt-m.me{background:#F5F1F2;color:#240B21}.alt-chips button,.alt-f textarea,.alt-exam textarea{background:#140e16;border-color:rgba(245,241,242,.2);color:inherit}.alt-exam{background:#271a2a}.alt-b{background:#F5F1F2;color:#240B21}.alt-b.q{background:transparent;color:#F5F1F2;border-color:rgba(245,241,242,.3)}.al-card{background:#140e16;color:#F5F1F2;border-color:#4a3a48}.al-card span{color:#cdb8c2}.al-act{background:#1f3a31;color:#bfe8d6}}
+    .alt-m.al{background:#2b1f2e}.alt-m.me{background:#F5F1F2;color:#240B21}.alt-chips button,.alt-f textarea,.alt-exam textarea{background:#140e16;border-color:rgba(245,241,242,.2);color:inherit}.alt-exam,.alt-priv{background:#271a2a;border-color:rgba(245,241,242,.14)}.alt-priv small{color:#cdb8c2}.alt-help{background:#3a2418;border-color:#7a4a2e}.alt-b{background:#F5F1F2;color:#240B21}.alt-b.q{background:transparent;color:#F5F1F2;border-color:rgba(245,241,242,.3)}.al-card{background:#140e16;color:#F5F1F2;border-color:#4a3a48}.al-card span{color:#cdb8c2}.al-act{background:#1f3a31;color:#bfe8d6}}
   @media (max-width:600px){.alt-fab{padding:5px}.alt-fab .lbl{position:absolute;left:-9999px}.alt-p{position:fixed;left:8px;right:8px;bottom:76px;width:auto;height:calc(100dvh - 96px)}}
   @media (prefers-reduced-motion:reduce){.alt-typing:after{animation:none}}`;
   const style=document.createElement("style");style.textContent=css;document.head.appendChild(style);
@@ -105,30 +109,48 @@
   w.innerHTML=`<div class="alt-p" role="dialog" aria-label="Study help" hidden>
     <div class="alt-h"><span class="av" aria-hidden="true"></span><div><b class="nm"></b><small class="sub"></small></div><button class="x" type="button" data-new>New chat</button><button class="x" type="button" data-close aria-label="Close">✕</button></div>
     <div class="alt-log" aria-live="polite"></div>
+    <div class="alt-priv" role="region" aria-label="Before you start" hidden>
+      <b>Before you start</b>
+      <ul><li>You're talking to an AI, not a person. It gives hints and guidance, not answers or marking.</li>
+        <li>What you type here is sent to <b>Anthropic PBC</b> (United States) to write the reply. assembl doesn't ask for or keep your name, email, school or location, and there's no account or tracking. See <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Anthropic's privacy policy</a> for what they do with messages.</li>
+        <li>Don't type personal details about you or anyone else. Just the study question.</li>
+        <li>If you're not okay, talk to a person: free call or text <b>1737</b>, any time. Questions about this page: <a href="mailto:hello@assembl.co.nz">hello@assembl.co.nz</a>.</li></ul>
+      <div class="row"><button class="alt-b" type="button" data-priv-ok>Okay, let's study</button><small>Shown once on this device.</small></div>
+    </div>
+    <div class="alt-help" hidden><b>If things are heavy right now, talk to a person.</b> Need to Talk? free call or text <b>1737</b>, any time. Youthline: 0800 376 633 or text 234. In an emergency call <b>111</b>.</div>
     <div class="alt-chips"></div>
     <div class="alt-exam" hidden><label for="alt-eq"><b>Paste a past exam question</b></label><textarea id="alt-eq" placeholder="Paste the whole question, with its parts (a), (b), (c)… You can also paste a screenshot or add a photo."></textarea>
       <div class="row"><button class="alt-b q" type="button" data-photo>Add a photo</button><input type="file" accept="image/*" hidden><img class="thumb" alt="" hidden><button class="alt-b" type="button" data-start>Work through it</button><button class="alt-b q" type="button" data-cancel>Cancel</button></div>
       <small>Past papers and marking schedules are on the NZQA site. Paste the question only, not your name or details.</small></div>
     <form class="alt-f"><label for="alt-q" style="position:absolute;left:-9999px">Message</label><textarea id="alt-q" rows="1" placeholder="Ask anything about this…" maxlength="2000"></textarea><button class="alt-b" type="submit">Send</button></form>
-    <p class="alt-note">AI help: it can be wrong, and it isn't official NZQA marking. Don't share personal details. <span class="left"></span></p></div>
+    <p class="alt-note">An AI, not a person. Hints and guidance, not answers or marking; it can be wrong. Don't share personal details. <span class="left"></span></p></div>
     <button class="alt-fab" type="button" aria-expanded="false"><span class="av" aria-hidden="true"></span><span class="lbl">Ask <span class="nm2"></span><small>Study help</small></span></button>`;
   document.body.appendChild(w);
   const P=w.querySelector(".alt-p"),log=w.querySelector(".alt-log"),fab=w.querySelector(".alt-fab"),form=w.querySelector(".alt-f"),q=w.querySelector("#alt-q"),chips=w.querySelector(".alt-chips"),exam=w.querySelector(".alt-exam"),eq=w.querySelector("#alt-eq"),file=exam.querySelector("input[type=file]"),thumb=exam.querySelector(".thumb");
+  const priv=w.querySelector(".alt-priv"),help=w.querySelector(".alt-help");
+  const PRIVKEY="allen-notice-v1";let agreed=false;try{agreed=localStorage.getItem(PRIVKEY)==="ok"}catch(e){}
+  // the notice shows until it is accepted once on this device; sending is held until then
+  function gate(){priv.hidden=agreed;form.hidden=!agreed;chips.hidden=!agreed;return agreed}
+  priv.querySelector("[data-priv-ok]").onclick=()=>{agreed=true;try{localStorage.setItem(PRIVKEY,"ok")}catch(e){}gate();q.focus()};
+  // a distress word anywhere in a student message shows the human-help line on the page as well as in Allen's reply
+  const HEAVY=/\b(suicid\w*|kill (?:myself|me)|end (?:it|my life)|self[- ]?harm|hurt myself|want to die|don'?t want to (?:be here|live)|cutting myself|overdose)\b/i;
+  const lookAfter=t=>{if(HEAVY.test(String(t||"")))help.hidden=false};
   let photo=null;
   function paint(){const n=name();w.querySelectorAll(".av").forEach(a=>a.innerHTML=avatar());w.querySelector(".nm").textContent=look().name||"Allen";w.querySelector(".nm2").textContent=look().name||"Allen";
     w.querySelector(".sub").textContent=cur()?`Study help · can work ${the(cur().cfg.title)}`:"Study help · pick a machine, plan, practise";
-    w.querySelector(".left").textContent=offline?"AI help is off here, so answers come from the machine's notes.":left!==null?`${left} messages left today.`:"";
+    w.querySelector(".left").textContent=offline?"AI help is off here, so answers come from the machine's notes.":left!==null?`${left} messages left today.`:"";gate();
     const k=cur(),test=k&&k.api.step.k==="test";
     const list=k?[["explain","Explain this step"],[test?"hint":"show",test?"Hint for a challenge":"Show me on the machine"],["exam","Work through an exam question"]]:[["which","Which machine fits my exam?"],["exam","Work through an exam question"],["plan","Plan my revision week"]];
     chips.innerHTML=list.map(([k,l])=>`<button type="button" data-chip="${k}">${l}</button>`).join("");fab.setAttribute("aria-label",`Ask ${n}, your study helper`)}
   const md=t=>esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
   function bubble(role,html){const d=document.createElement("div");d.className="alt-m "+(role==="user"?"me":"al");d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
   function line(html){const d=document.createElement("div");d.className="alt-line";d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight}
-  function replay(){log.innerHTML="";if(!msgs.length){bubble("assistant",md(cur()?`Kia ora, I'm ${look().name||"Allen"}. I can see ${the(cur().cfg.title)}. Ask me anything, or paste an exam question and we'll work through it together. I can move the controls to show you.`:`Kia ora, I'm ${look().name||"Allen"}. Tell me what you're studying, or paste an exam question, and I'll find the right machine and work through it with you.`));return}
+  function replay(){log.innerHTML="";if(!msgs.length){bubble("assistant",md(cur()?`Kia ora, I'm ${look().name||"Allen"}, an AI study helper. I can see ${the(cur().cfg.title)}. Tell me what you think first and I'll give you a hint, or paste an exam question and we'll work through it. I can move the controls to show you.`:`Kia ora, I'm ${look().name||"Allen"}, an AI study helper. Tell me what you're studying, or paste an exam question, and I'll find the right machine and give you hints as you go.`));return}
     for(const m of msgs)for(const b of m.content){if(b.type==="text"&&!(m.role==="user"&&b.hidden))bubble(m.role,md(b.text));if(b.type==="image")bubble("user","<i>Photo of a question</i>")}}
   const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(msgs.map(m=>({...m,content:m.content.map(b=>b.type==="image"?{type:"text",text:"[The student attached a photo of the question earlier.]",hidden:true}:b)}))))}catch(e){}};
   const wire=()=>msgs.map(m=>({role:m.role,content:m.content.map(({hidden,...b})=>b)}));
-  function open(mode){P.hidden=false;fab.setAttribute("aria-expanded","true");paint();if(!log.children.length)replay();exam.hidden=mode!=="exam";(mode==="exam"?eq:q).focus()}
+  function open(mode){P.hidden=false;fab.setAttribute("aria-expanded","true");paint();if(!log.children.length)replay();
+    if(!gate()){exam.hidden=true;priv.querySelector("[data-priv-ok]").focus();return}exam.hidden=mode!=="exam";(mode==="exam"?eq:q).focus()}
   function close(){P.hidden=true;fab.setAttribute("aria-expanded","false");fab.focus()}
   fab.onclick=()=>P.hidden?open():close();w.querySelector("[data-close]").onclick=close;
   w.querySelector("[data-new]").onclick=()=>{msgs=[];save();replay()};
@@ -157,9 +179,9 @@
   // A turn that fails is rolled back whole (student message, any half-finished tool use), so the history stays valid.
   function fail(err,mark){msgs.length=Math.min(msgs.length,mark);
     if(err==="not_configured"){offline=true;return}
-    bubble("assistant",md(err==="visitor_cap"?"That's all my help for today. Come back tomorrow, or use the Big idea and Exam line cards on the machine.":err==="daily_cap"?"I've helped a lot of students today and hit my limit. Try again tomorrow.":"I couldn't think that one through just now. Try again in a moment."))}
+    bubble("assistant",md(err==="visitor_cap"?"That's all my help for today. Come back tomorrow, or use the Big idea and Exam line cards on the machine.":err==="daily_cap"?"I've helped a lot of students today and hit my limit. Try again tomorrow.":err==="session_cap"?"That's a long session. Take a break, stretch, drink some water, then start a **New chat** when you're ready. Your notes on the machine are still there.":"I couldn't think that one through just now. Try again in a moment."))}
   async function ask(text,kind,image,display){
-    if(busy)return;const prompts={explain:"Explain this step to me, simply, using the machine.",hint:"I'm stuck on a challenge. Give me a hint, not the answer.",show:"Show me the key idea of this step on the machine.",which:"Which machine should I use for my exam, and why?",plan:"Help me plan a week of revision with these machines."};
+    if(busy||!gate())return;lookAfter(text);const prompts={explain:"Explain this step to me, simply, using the machine.",hint:"I'm stuck on a challenge. Give me a hint, not the answer.",show:"Show me the key idea of this step on the machine.",which:"Which machine should I use for my exam, and why?",plan:"Help me plan a week of revision with these machines."};
     const said=text||prompts[kind];if(!said&&!image)return;
     if(offline&&!image){bubble("user",md(said));bubble("assistant",md(note(kind)));return}
     const content=[];if(image)content.push(image);content.push({type:"text",text:said});
@@ -176,7 +198,7 @@
   exam.querySelector("[data-photo]").onclick=()=>file.click();file.onchange=()=>takePhoto(file.files[0]);
   eq.addEventListener("paste",e=>{const it=[...(e.clipboardData&&e.clipboardData.items||[])].find(i=>i.type.startsWith("image/"));if(it){e.preventDefault();takePhoto(it.getAsFile())}});
   exam.querySelector("[data-cancel]").onclick=()=>{exam.hidden=true;photo=null;thumb.hidden=true;q.focus()};
-  exam.querySelector("[data-start]").onclick=()=>{const t=eq.value.trim();if(!t&&!photo)return eq.focus();
+  exam.querySelector("[data-start]").onclick=()=>{if(!gate())return;const t=eq.value.trim();if(!t&&!photo)return eq.focus();
     const text=`Here is a past exam question. Work through it with me step by step, using this machine where it helps. Let me try each part before you give the answer.\n\n---\n${t||"(The question is in the photo.)"}`;
     exam.hidden=true;eq.value="";const img=photo;photo=null;thumb.hidden=true;
     if(offline){bubble("user",md("Here's an exam question to work through:\n\n"+(t||"(photo)")));bubble("assistant",md(local("exam")));return}
