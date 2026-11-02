@@ -79,10 +79,10 @@ const engine = {
       for (let i = 0; i < n; i++) blob(r.range(-ax * 0.7, ax * 0.7), r.range(-ay * 0.65, ay * 0.55), r.range(0.1, 0.2), i % K);
     } else if (start === "marble") {
       setG("float");
-      const bands = K, top = -ay * 0.55, hgt = ay * 1.1 / bands;
-      for (let b = 0; b < bands; b++) for (let y = 0; y < hgt; y += sp) for (let x = -ax * 0.85; x <= ax * 0.85; x += sp) {
+      const sm = 0.024, bands = Math.min(K, 4), half = ax * 0.55, total = (this.max * 0.82 * sm * sm) / (2 * half), hgt = total / bands, top = -total / 2 - 0.1;
+      for (let b = 0; b < bands; b++) for (let y = 0; y < hgt; y += sm) for (let x = -half; x <= half; x += sm) {
         if (this.f.n >= this.max * 0.9) break;
-        addParticle(this.f, x + Math.sin(x * 3 + b) * 0.02, top + b * hgt + y + Math.sin(x * 4 + b * 1.3) * 0.04, b);
+        addParticle(this.f, x, top + b * hgt + y + Math.sin(x * 4 + b * 1.3) * 0.03, (b * 2) % K);
       }
     } else if (start === "pool") {
       setG("down");
@@ -157,7 +157,7 @@ const engine = {
     const img = g.getImageData(0, 0, fw, fh), d = img.data;
     for (let p = 3; p < d.length; p += 4) {
       const a = d[p];
-      d[p] = a < 92 ? 0 : a > 132 ? 255 : ((a - 92) / 40) * 255;
+      d[p] = a < 78 ? 0 : a > 146 ? 255 : ((a - 78) / 68) * 255;
     }
     g.putImageData(img, 0, 0);
     return fc;
@@ -210,7 +210,7 @@ const engine = {
     g.globalCompositeOperation = "source-over";
     g.fillStyle = bg.colour;
     g.fillRect(0, 0, W, H);
-    const scale = exportScale || Math.max(2, Math.round(2 * this.dpr));
+    const scale = exportScale || Math.max(2, 2 * this.dpr);
     const kn = this.kept.length / 3;
     if (kn) {
       if (exportScale || !this.keptCache || this.keptCache.W !== W) {
