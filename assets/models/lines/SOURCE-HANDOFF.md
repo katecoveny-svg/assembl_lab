@@ -105,9 +105,26 @@ Idealised tanks: the inflow and outflow are whatever the lesson sets and stay co
 
 All geometry, materials and renders are original and scripted in `build_lines.py`. They were authored for assembl on 3 November 2026 with headless Blender 5.1.2 (pip `bpy`) and glTF exporter 5.1.20. Nothing was imported or traced, and no generated imagery was used.
 
+## Verification run on this branch (3 November 2026)
+
+- **Tests:** `node --test study/tests/*.test.mjs` gives 111 tests, 108 passing. The 3 failures were already failing on `main` at `e372529` before this work, and are unrelated: two in `guide.test.mjs` (finder copy, and the missing walkthrough video for `quote`) and one in `phone.test.mjs` (the "Screen time" label). The 10 new tests in `lines-rig.test.mjs` and `lines-loading.test.mjs` pass. `lesson-models.test.mjs` still passes unchanged, including "tanks: … 40 and 70 L".
+- **Browser QA** (Playwright, Chromium, **software WebGL via SwiftShader**, `?lq`):
+  - Widths 320, 375 and 1440: the Blender tanks load, and there is no horizontal page scroll.
+  - Investigate: in the scene, **Set up A** puts the top of `TANK_A_WATER` at 2.061 scene units, which is 0.3 plinth + (0.187 + 0.40) × 3. **Set up B** puts it at 2.961, which is 0.3 + (0.187 + 0.70) × 3.
+  - Capture A and B, switch to the flat drawing and back: state and evidence are identical both ways.
+  - Keyboard: canvas, Tab, Tab reaches the switch with a visible focus ring. Enter and Space toggle it, and focus stays on the button.
+  - Reduced motion: the tanks load, and the tank slide and camera moves are instant.
+  - GLB request blocked: the drawn 3D tanks are shown with an honest status.
+  - `?lite`, then **Show the 3D tanks**: 3D starts in the page with the same state, at 40 L.
+  - WebGL disabled: the drawing is shown, and the switch is disabled with a reason.
+  - No console errors other than the deliberately blocked request.
+  - Screenshots are kept outside the repo (QA scratch folder).
+
 ## Not verified
 
 - Real devices, real GPUs, iOS/Android browsers and AR were not tested. The browser QA used Chromium with **software WebGL (SwiftShader)** at about 0.3 fps, so frame rate and visual parity on hardware GPUs are unknown.
 - The offline renders and the browser output were reviewed separately. The renders show Cycles glass that the browser does not reproduce.
 - Curriculum alignment was not re-checked; the lesson content is unchanged.
 - Bloom: with emissive glows removed this machine no longer triggers bloom. QA ran with `?lq` (no post-processing), so the high-quality desktop path was only checked by code reading.
+- At 320 px and 375 px the fixed 3D camera crops the right-hand edge of the graph board. This was already the case with the drawn tanks; the graph itself is complete in the flat drawing and in the chips. At 320 px the kit's "Drag to turn" hint overlaps the "View in AR" button. That is shared kit behaviour and was not changed here.
+- Under software GL (about 0.3 fps), tank A's slide when tank B appears takes minutes rather than about half a second, so the two-tank screenshot catches it mid-slide. With reduced motion the slide is instant.
