@@ -51,7 +51,7 @@ button,input,select{font:inherit;color:inherit} button{cursor:pointer}
 .scale-status[data-ok] b::before{background:var(--mint)} .scale-status span{color:var(--muted);font-size:.78rem}
 .scale-form{margin-top:10px;display:grid;gap:8px} .scale-form label{font-size:.82rem;display:grid;gap:4px}
 .in{display:flex;align-items:center;gap:6px} .in input{width:100%;border:1px solid var(--line2);border-radius:8px;padding:6px 8px} .in select,.in b{border:1px solid var(--line2);border-radius:8px;padding:6px 8px;background:#fff}
-.field{display:grid;gap:4px;font-size:.82rem;margin-top:10px} .field select{border:1px solid var(--line2);border-radius:8px;padding:7px 8px;background:#fff;max-width:100%} .field.inline{grid-template-columns:1fr auto;align-items:center;gap:10px}
+.field{display:grid;gap:4px;font-size:.82rem;margin-top:10px} .field select{border:1px solid var(--line2);border-radius:8px;padding:7px 8px;background:#fff;width:100%;max-width:100%;min-width:0} .field.inline{grid-template-columns:1fr auto;align-items:center;gap:10px}
 .takeoff{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:320px;overflow:auto}
 .takeoff li{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center;font-size:.82rem;padding:5px 6px;border-radius:8px} .takeoff li:hover{background:var(--chalk)}
 .takeoff li i{width:12px;height:12px;border-radius:3px;background:var(--c)} .takeoff li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .takeoff li .n small{display:block;color:var(--rose);font-family:var(--mono);font-size:.66rem}
