@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Year 9 English exam kit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one calm column (max 620px), cards only where a thing is tappable or is a tool. Stories = pounamu, poems = kōkōwai. */
+:root{
+  --bg:#F2F4F1;
+  --surface:#FFFFFF;
+  --ink:#16201C;
+  --muted:#56635D;
+  --line:#D7DDD8;
+  --accent:#1F6B57;      /* pounamu: stories, main actions */
+  --accent-ink:#FFFFFF;
+  --accent-soft:#E0EEE8;
+  --ochre:#A24A2C;       /* kōkōwai: poems */
+  --ochre-soft:#F5E6DF;
+  --good:#1D7A47; --good-soft:#DDF1E4;
+  --bad:#B3261E;  --bad-soft:#F9E1DE;
+  --warn-soft:#FBF0D3; --warn-ink:#6B4E00;
+  --font-ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1513;--surface:#18211E;--ink:#E6ECE8;--muted:#9AA8A1;--line:#2C3833;
+  --accent:#5CC0A0;--accent-ink:#06120E;--accent-soft:#1B332B;
+  --ochre:#E58C6A;--ochre-soft:#3A251D;
+  --good:#6CD39A;--good-soft:#16301F;--bad:#FF8A80;--bad-soft:#3A1A18;
+  --warn-soft:#3A3115;--warn-ink:#F2D58A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1513;--surface:#18211E;--ink:#E6ECE8;--muted:#9AA8A1;--line:#2C3833;
+  --accent:#5CC0A0;--accent-ink:#06120E;--accent-soft:#1B332B;
+  --ochre:#E58C6A;--ochre-soft:#3A251D;
+  --good:#6CD39A;--good-soft:#16301F;--bad:#FF8A80;--bad-soft:#3A1A18;
+  --warn-soft:#3A3115;--warn-ink:#F2D58A;color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+#app{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:1.9rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.3rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:1rem}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.full{width:100%}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.5;cursor:default}
+.back{align-self:flex-start;min-height:44px;padding:8px 14px 8px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.chip{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--good-soft);color:var(--good);border-color:transparent}
+.chip.check{background:var(--warn-soft);color:var(--warn-ink);border-color:transparent}
+.chip.c1{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.chip.c2{background:var(--ochre-soft);color:var(--ochre);border-color:transparent}
+
+/* plan */
+.plan ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.plan li label{display:grid;grid-template-columns:26px 72px 1fr;gap:8px;align-items:start;padding:6px 2px;border-radius:10px;cursor:pointer;font-size:.95rem;line-height:1.4}
+.plan li input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
+.plan .t{font-family:var(--font-mono);font-size:.85rem;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums}
+.plan li.done .what{text-decoration:line-through;color:var(--muted)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-height:120px;min-width:0}
+.tile .name{font-size:1.15rem;font-weight:700}
+.tile.c1 .name{color:var(--accent)}
+.tile.c2 .name{color:var(--ochre)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.tile.c2 .bar>i{background:var(--ochre)}
+.tile .meta{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.mixed-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:var(--r);padding:18px;text-align:left}
+.mixed-btn .name{font-size:1.2rem;font-weight:700}
+
+/* tabs */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.95rem}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab .tick{color:var(--good);margin-left:4px}
+.tab[aria-selected="true"] .tick{color:var(--bg)}
+
+/* read */
+ol.summary{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:8px}
+.facts{display:grid;grid-template-columns:1fr;gap:10px}
+.fact{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.c2-read .fact{border-left-color:var(--ochre)}
+.fact h3{font-size:.8rem;font-family:var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:2px}
+details{border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--surface)}
+details summary{min-height:48px;display:flex;align-items:center;font-weight:600;cursor:pointer;list-style:none;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"+";font-family:var(--font-mono);color:var(--accent);width:14px}
+details[open] summary::before{content:"–"}
+details>div{padding:0 0 14px}
+
+/* quiz */
+.qhead{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.dots{display:flex;gap:4px;flex-wrap:wrap}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.dots i.r{background:var(--good)}.dots i.w{background:var(--bad)}.dots i.cur{outline:2px solid var(--ink);outline-offset:1px}
+.question{font-size:1.25rem;font-weight:600;line-height:1.35}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;min-height:56px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:1.02rem;display:flex;gap:12px;align-items:center}
+.opt .k{font-family:var(--font-mono);font-size:.85rem;color:var(--muted);width:20px;flex:0 0 auto}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.feedback{border-radius:12px;padding:12px 14px;font-weight:500}
+.feedback.right{background:var(--good-soft);color:var(--good)}
+.feedback.wrong{background:var(--bad-soft);color:var(--bad)}
+.feedback span{display:block;color:var(--ink);font-weight:400;margin-top:4px}
+.score{font-size:3rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.missed li{margin-bottom:6px}
+
+/* memorise */
+textarea,input[type=text]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{min-height:96px;resize:vertical;line-height:1.45}
+textarea.big{min-height:180px}
+.seg{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{flex:1;min-height:44px;border:0;border-radius:9px;background:transparent;font-weight:600;font-size:.92rem}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.memtext{font-size:1.15rem;line-height:2.1;overflow-wrap:anywhere}
+.memtext .line{display:block;min-height:1em}
+.memtext .gap{display:block;height:.9em}
+.w{border:0;background:transparent;padding:2px 3px;margin:0 1px;border-radius:6px;font-size:inherit;line-height:1.4}
+.w.hid{font-family:var(--font-mono);color:var(--accent);background:var(--accent-soft)}
+.w.blank{display:inline-block;border-bottom:2px solid var(--ochre);border-radius:0;color:transparent;background:transparent;min-width:2ch}
+.w.shown{background:var(--warn-soft);color:var(--warn-ink)}
+.order-built{display:flex;flex-direction:column;gap:6px}
+.order-built div{padding:8px 12px;border-radius:10px;background:var(--good-soft);color:var(--ink)}
+.lineopt{text-align:left;min-height:52px;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:1rem}
+.lineopt.shake{border-color:var(--bad);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.lineopt.shake{animation:none}.bar>i{transition:none}}
+
+/* writing */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600}
+.field .hint{font-size:.88rem;color:var(--muted)}
+.timer{display:flex;align-items:center;gap:10px;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px}
+.timer .clock{font-family:var(--font-mono);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.timer.end .clock{color:var(--bad)}
+.choices{display:flex;flex-direction:column;gap:6px}
+.choice{text-align:left;min-height:48px;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface)}
+.choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.model{background:var(--accent-soft);border-radius:12px;padding:14px;line-height:1.6}
+.model b{color:var(--accent)}
+.step-n{font-family:var(--font-mono);font-size:.8rem;color:var(--accent)}
+.note{background:var(--warn-soft);color:var(--warn-ink);border-radius:12px;padding:12px 14px;font-size:.93rem}
+.note b{color:inherit}
+.gl dt{font-weight:700}
+.gl dd{margin:0 0 10px;color:var(--muted)}
+footer{font-size:.82rem;color:var(--muted);text-align:center;padding-top:8px}
+@media (min-width:560px){.facts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div id="app" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- content ---------------- */
+var TKI = "https://eng.mataurangamaori.tki.org.nz/Support-materials/Te-Reo-Maori/Maori-Myths-Legends-and-Contemporary-Stories/";
+
+var TEXTS = {
+ turehu: {
+  num:1, cls:"c1", title:"Tūrehu", byline:"Wiremu Grace", conf:"ok", confText:"Found online (TKI)",
+  link: TKI+"Turehu",
+  heard:"Your notes say “Ty Rehu”. We think this is Tūrehu. Online it's a story in the same set as Hinewhaitiri. Your class copy may be set out as a poem. Go with your copy if anything differs.",
+  summary:[
+   "An aunty sits by the fire at night and tells the kids a spooky story from her own childhood.",
+   "Back then, her whānau camped by the sea every school holiday to fish, salt the catch and mend nets.",
+   "Small hoof prints kept appearing on the sand, and torn nets were mysteriously mended overnight.",
+   "Before dawn, she and her cousins saw the Tūrehu: tall, pale, red-haired fairy people dancing and mending a net, who then glided off into the hills.",
+   "The adults laughed, but Aunty Pare believed them. So the cousins wore kelp necklaces and cooked kūmara to stay safe."
+  ],
+  facts:[
+   ["Who","Aunty (the storyteller, as a girl), her cousins Pita and Rose, Aunty Pare, the uncles, and the kids listening by the fire."],
+   ["Where","A small, remote coastal village: beach, dunes, bush and misty hills. A holiday fishing camp above the beach."],
+   ["Big ideas","Passing knowledge down through stories. Respecting elders. Fear of the unknown. Whānau working together. Customs that keep you safe."],
+   ["Writer's tools","A story inside a story. First-person “I”. Slow-building suspense. Vivid description of the Tūrehu. Sound (the bone-flute whistle). Humour at the end. Te reo words."],
+   ["Key words","Tūrehu (fairy people), kēhua (ghost), kai (food), kūmara (sweet potato)."]
+  ],
+  think:[
+   ["Why tell it as a story inside a story?","It shows how mātauranga Māori is passed on: an elder tells the next generation by the fire, just like Aunty Pare once taught her."],
+   ["Why do the adults laugh but Aunty Pare listens?","She holds the old knowledge. The story suggests we should listen to kaumātua, even when others don't believe."],
+   ["Why is the cooked-kūmara ending clever?","Tūrehu stay away from cooked food. So when a listening child asks if any cooked kūmara is left, it shows the story has worked: they're spooked and want protection."]
+  ],
+  quiz:[
+   ["Who tells the Tūrehu story?","An aunty, by the fire, about her own childhood",["A teacher at school","The uncles, out on the boat","A child who saw them last week"],"It's a story inside a story. Aunty tells the kids what happened when she was young."],
+   ["What does Aunty warn the kids about before she starts?","It might give them nightmares",["It's a very long story","They must not tell anyone","They'll have to do the dishes"],"She wonders if they're old enough to hear it."],
+   ["Where do the Tūrehu live?","Up in the hills, hidden in the mist",["Under the sea","Inside the wharenui","In caves by the beach"],"They are fairy people of the high hills and mist."],
+   ["How did the kids get to school back then?","Three of them shared one horse",["They took the bus","They walked along the beach","An uncle drove them"],"It shows how small and remote the village was."],
+   ["When did the families camp by the sea?","In the school holidays",["Only at Christmas","On Matariki weekend","Every Sunday"],"Whole whānau gathered to fish together in the holidays."],
+   ["What kept tearing the fishing nets?","Sharks and stingrays",["Big storms","Rats in the camp","The Tūrehu"],"The kids' job was mending the nets sea creatures had ripped."],
+   ["What did the kids use to play cricket?","A bull kelp ball and a driftwood bat",["A tennis ball and a fence post","A rock and a paddle","A kūmara and a stick"],"They made their own gear from what washed up on the beach."],
+   ["What did the kids find on the wet sand?","Small hoof prints",["Bare footprints","Bird tracks","Tyre marks"],"The tracks were small and delicate, and a wave soon washed them away."],
+   ["What did Pita first think made the tracks?","Goats or pigs from the bush",["Horses","Dogs","The uncles"],"He looked for a normal explanation first."],
+   ["When did the tracks first appear?","Just after the new moon",["On a full moon","During a storm","On the last day of camp"],"Linking it to the moon makes it feel spooky and natural at the same time."],
+   ["A torn net was mended overnight. What did the kids do?","Took the credit to get praise",["Told the adults the truth","Cut it again","Hid it in the bush"],"A funny moment: they took praise for work the Tūrehu had done."],
+   ["What did the Tūrehu look like?","Tall and pale, red hair, hooves like a goat",["Small and green with wings","Long black hair and dark skin","Just like ordinary fishermen"],"They also had muddy, hairy legs and big pink eyes."],
+   ["What were the Tūrehu doing on the beach?","Dancing on the sand and mending a net",["Fishing from a waka","Stealing kūmara","Building a fire"],"Two of them were working on a net. That explains the mended nets."],
+   ["Who squealed and cried when she saw them?","Rose",["Aunty Pare","Hinewhaitiri","The narrator's mum"],"Rose's cry made the Tūrehu turn and stare at the kids."],
+   ["What sound did Pita hear as the Tūrehu left?","A thin whistle, like a bone flute",["A conch shell","Drums","A haka"],"Aunty Pare later says Tūrehu play bone flutes to lure people."],
+   ["How did most adults react to the kids' story?","They laughed and said get back to work",["They packed up camp","They went hunting for the Tūrehu","They called the police"],"This shows the gap between adults' doubt and the kids' experience."],
+   ["Who believed the kids?","Aunty Pare",["The uncles","Nobody at all","Their teacher"],"She explained who the Tūrehu are and said the kids were lucky."],
+   ["Aunty Pare said the Tūrehu were the first to make what?","Fishing nets",["Waka","Bone flutes","Fire"],"That links them to the nets being mended."],
+   ["What did the cousins wear to protect themselves?","Bull kelp necklaces and cooked kūmara",["Pounamu and feathers","Red clay on their faces","Their school uniforms"],"Tūrehu avoid cooked food, so cooked kūmara keeps you safe."],
+   ["What does a listening child ask at the very end?","If there's any cooked kūmara left",["If the Tūrehu are real","When the holidays start","Where Pita is now"],"A clever ending: the story has spooked them and they want protection."]
+  ],
+  lang:[
+   ["Tūrehu is a story inside a story. What is that called?","A frame narrative",["A cliffhanger","A diary entry","A rhyme"],"Aunty's storytelling by the fire frames her childhood memory."],
+   ["Aunty tells her memory using “I” and “we”. What point of view is that?","First person",["Third person","Second person","No narrator"],"It feels personal, like she is talking straight to you."],
+   ["Why show the hoof prints, the mended net and the kids staying up BEFORE we see the Tūrehu?","To build suspense",["To explain fishing","To fill up space","To make it funny"],"Clue after clue makes the reader nervous, so the sighting hits harder."],
+   ["The whistle is compared to a bone flute. Which sense does that appeal to?","Hearing (sound imagery)",["Taste","Smell","Touch"],"Sound makes the scene feel real and eerie."],
+   ["What is the mood when the kids see the Tūrehu before dawn?","Frightening and eerie",["Calm and happy","Angry","Boring"],"Half-light, staring eyes, kids frozen with fear."],
+   ["Why does the writer use te reo words like kai, kēhua and kūmara?","To ground the story in te ao Māori",["To confuse readers","To make it rhyme","English has no word for food"],"It shows whose world and knowledge the story comes from."],
+   ["The kids take the credit for the mended net. What does this add?","Humour",["Sadness","Violence","A twist ending"],"A cheeky moment before the scary part."]
+  ],
+  sa:[
+   ["How does the writer build suspense in Tūrehu?","Wiremu Grace builds suspense <b>one clue at a time</b>. First, small hoof prints appear on the sand and a wave washes them away, so the kids can't prove anything. Then a torn net is mended overnight, even though nobody fixed it. The kids stay up by the fire holding sticks and stones, which shows how scared they are. <b>This slow build makes the reader nervous too</b>, so when the Tūrehu finally appear before dawn, the moment feels shocking and real."],
+   ["What does Tūrehu show about passing on knowledge in a whānau?","Tūrehu shows that <b>knowledge is passed down through stories told by elders</b>. Aunty tells the kids about her own childhood by the fire. When the other adults laughed, only Aunty Pare explained who the Tūrehu were and how cooked kūmara keeps you safe. <b>This shows that mātauranga Māori lives in the memories of kaumātua</b>, and young people should listen, because that knowledge can protect them."]
+  ]
+ },
+ hine: {
+  num:2, cls:"c2", title:"Hinewhaitiri", byline:"Wiremu Grace", conf:"ok", confText:"Found online (TKI)",
+  link: TKI+"Hinewhaitiri",
+  heard:"The name means “thunder girl”: hine = girl or woman, whaitiri = thunder. Online it's a story. Your class copy may be set out as a poem. Go with your copy if anything differs.",
+  summary:[
+   "Hinewhaitiri is one of the children of the elements. She is famous for loud thunder claps.",
+   "Every autumn the elements hold a hui marangai to show off, and the storm wrecks the village below.",
+   "At her first hui she worries about the people, makes the weakest clap ever, and everyone laughs at her.",
+   "Instead of sulking, she helps the village clean up and plans ahead: widen rivers, plant trees, strengthen houses.",
+   "Old Man Mountain says to hold the hui on him. The village stays safe and Hinewhaitiri is honoured."
+  ],
+  facts:[
+   ["Who","Hinewhaitiri, the children of the elements (wind, cloud, lightning, thunder), the village people and their rangatira, Old Man Mountain."],
+   ["Where","A mountain range between the elements' home and the sea, a valley where hui were held, and a village below."],
+   ["Big ideas","Manaakitanga (care for others). Turning shame into mana. Planning ahead and working with nature. Listening to elders."],
+   ["Writer's tools","Personification (the weather as children, a talking mountain). Contrast (weak clap vs strong clap). A character who changes. Humour. A pūrākau-style ending that explains nature."],
+   ["Key words","Hui (gathering), marangai (stormy wind), rangatira (leader), whānau (family), Māui."]
+  ],
+  think:[
+   ["Why is her weak clap actually a strength?","It's weak because she cares about the people below. That same care (manaakitanga) is what later makes her a leader."],
+   ["What could Old Man Mountain stand for?","A wise kaumātua, and the land itself. He has been there since Māui's time and helps the young ones change for the better."],
+   ["What does the story teach about nature?","Storms still come, but people can prepare and work with nature. Moving the danger away is better than cleaning up every year."]
+  ],
+  quiz:[
+   ["What is Hinewhaitiri known for?","Her powerful thunder claps",["Making rainbows","Calming the sea","Lighting fires"],"Whaitiri means thunder, and hine means girl or woman."],
+   ["What is a hui marangai?","A gathering where the elements show off their skills",["A tangihanga for an elder","A fishing trip","A school sports day"],"Hui = gathering. Marangai = a stormy wind."],
+   ["What season are the hui held in?","Autumn",["Summer","Winter","Spring"],"They start when the cool sea wind changes in autumn."],
+   ["What is the signal that a hui is starting?","Two double claps of thunder",["A flash of lightning","A karanga","The sun going down"],"The signal comes when the sea wind changes."],
+   ["What happens if you're late to a hui?","Nobody waits for you",["You get punished","You have to clap first","The hui starts again"],"Latecomers simply miss out."],
+   ["What does the hui do to the village?","Fires, floods, fallen trees, roofs torn off",["Nothing at all","Brings a drought","Brings snow"],"The elements' fun is a disaster for the people."],
+   ["Why is Hinewhaitiri's thunder clap so weak?","She's thinking about the people below",["She is sick","She is too young","She forgot how"],"Her care for the villagers distracts her. It's the first sign of her kindness."],
+   ["How do the others react to her weak clap?","They laugh, the hui ends, and they shun her",["They cheer for her","They let her try again","They go and help the village"],"She is shamed in front of everyone."],
+   ["Where does she go to cry?","Alone on the mountain top",["Down to the sea","Into the village","Into a cave"],"From up there she sees the villagers cleaning up."],
+   ["What do the villagers do when she first comes down?","Run for cover",["Welcome her with a pōwhiri","Throw stones","Ask her for rain"],"They fear the storm spirits, then become grateful when she helps."],
+   ["Who explains that the storm comes back every year?","The rangatira (village leader)",["Old Man Mountain","A lightning bolt","A child"],"He describes the cycle: storm, clean up, repeat."],
+   ["Which three ideas does Hinewhaitiri suggest?","Widen rivers, plant trees, strengthen houses",["Move the village, build a wall, pray","Build boats, dig wells, leave","Fight the wind, hide, wait"],"Practical planning to protect the people."],
+   ["Old Man Mountain has stood since the time of whom?","Māui and his brothers",["Kupe","Captain Cook","Tāne Mahuta"],"It shows he is ancient and wise, like a kaumātua."],
+   ["What does Old Man Mountain advise?","Bring the hui to him so he can test the young ones",["Stop all hui forever","Leave the village","Fight the wind"],"He moves the hui away from the village and onto himself."],
+   ["How does she stop the children at the next hui?","A huge thunder clap, then: it's time for change",["She cries","She asks the rangatira to speak","She hides from them"],"She finally shows her strength, and uses it for good."],
+   ["Why is the village safe at the new hui?","It's on the mountain, rivers are wider, wind is far off",["There is no rain","The villagers leave","The hui is cancelled"],"Her plan and the mountain's plan work together."],
+   ["What does Old Man Mountain say the storm felt like?","A relaxing massage on a summer day",["A punch","An earthquake","A cold bath"],"Funny, and it shows his strength: what wrecks a village barely bothers him."],
+   ["How is Hinewhaitiri treated at the end?","Everyone applauds her as the mastermind",["She is sent away","She is still laughed at","She becomes a mountain"],"Shame turns into mana because she acted with care."],
+   ["How does the story end?","Clouds still gather on the peaks, waiting for the wind",["The elements leave forever","The village moves away","It snows"],"It explains something we can still see in nature, like a pūrākau."]
+  ],
+  lang:[
+   ["The wind, clouds and thunder are “children of the elements”. What technique is that?","Personification",["Simile","Alliteration","Onomatopoeia"],"Weather is given human form and feelings."],
+   ["Old Man Mountain talks and gives advice. What could he stand for?","A wise elder (kaumātua) and the land",["A villain","A naughty child","The sea"],"He has been there since Māui's time and guides the young ones."],
+   ["Her weak clap at the start and huge clap at the end are an example of…","Contrast",["Rhyme","Flashback","Onomatopoeia"],"Putting opposites side by side shows how far she has come."],
+   ["How does Hinewhaitiri change across the story?","From shamed to a respected leader",["From kind to cruel","She doesn't change","From leader to outcast"],"Her care for others turns shame into mana."],
+   ["Why is the story like a pūrākau?","It explains something in nature",["It's set in a city","It's a news report","It has no lesson"],"It explains why clouds gather on the mountain peaks."],
+   ["What is the main theme?","Caring for others brings mana",["The loudest always wins","Never help strangers","Storms are fun"],"Manaakitanga is what makes her a leader."],
+   ["The mountain says the storm felt like a massage. What's the effect?","Humour, and it shows how strong he is",["It makes it scarier","It shows he is weak","It describes the village"],"What wrecks a village barely tickles him."]
+  ],
+  sa:[
+   ["How does Hinewhaitiri show manaakitanga (care for others)?","Hinewhaitiri shows manaakitanga when she <b>goes down to help the village straight after being laughed at</b>. Instead of sulking, she clears rivers and helps people clean up, then suggests widening the rivers, planting trees and strengthening houses. <b>This shows that real strength is caring for others.</b> The reader learns that mana comes from what you do for people, not from how loud you are."],
+   ["How does Hinewhaitiri change during the story?","At the start, Hinewhaitiri is <b>shamed</b>: her thunder clap is the weakest ever and everyone laughs. By the end she is <b>a leader</b> who stops the others with a huge clap and moves the hui to the mountain. The change happens because she chooses to help the village and listens to Old Man Mountain. <b>This shows that kindness and listening to elders can turn shame into mana.</b>"]
+  ]
+ }
+};
+
+var LA_PROMPTS = [
+ "Explain how Tūrehu and/or Hinewhaitiri show the importance of listening to elders.",
+ "Discuss how one text shows manaakitanga, or caring for others.",
+ "Choose a character who changes or learns something. Explain how and why.",
+ "Explain how the writer uses language features to create mood or meaning."
+];
+var LA_SAMPLE = [
+ ["Question","How do Tūrehu and Hinewhaitiri show the importance of listening to elders?"],
+ ["Point 1","In Tūrehu, Aunty Pare is the only adult who believes the kids, and her knowledge keeps them safe."],
+ ["Evidence 1","She explains what the Tūrehu are and tells them to wear cooked kūmara and kelp."],
+ ["Point 2","In Hinewhaitiri, Old Man Mountain's advice solves the village's problem."],
+ ["Evidence 2","He tells her to bring the hui to him, so the storm hits the mountain, not the houses."],
+ ["Point 3","Both texts are told the way elders pass on knowledge."],
+ ["Evidence 3","Tūrehu is told by an aunty by the fire. Hinewhaitiri ends by explaining clouds on the peaks, like a pūrākau."],
+ ["Link","Mātauranga Māori is held by kaumātua. Listening to them protects the whānau and keeps the knowledge alive."]
+];
+
+var GLOSSARY = [
+ ["marae","The meeting place of a whānau, hapū or iwi: the open courtyard and its buildings."],
+ ["wharenui","Meeting house. Often seen as the body of an ancestor."],
+ ["wharekai","Dining hall."],
+ ["whānau","Family, including extended family."],
+ ["whaea","Mother, aunty, or a respected woman (also used for female teachers)."],
+ ["tūpuna / tīpuna","Ancestors."],
+ ["kaumātua","Respected elder."],
+ ["mana","Authority and respect, earned through your actions."],
+ ["manaakitanga","Care, kindness and hospitality toward others."],
+ ["kaitiakitanga","Guardianship of the land, water and people."],
+ ["whakapapa","Genealogy: how you connect to people and places."],
+ ["tūrangawaewae","A place to stand; where you belong."],
+ ["pōwhiri","Welcome ceremony onto a marae."],
+ ["hui","Gathering or meeting."],
+ ["rangatira","Chief or leader."],
+ ["pūrākau","Traditional story or legend."],
+ ["mātauranga Māori","Māori knowledge and ways of knowing."],
+ ["te ao Māori","The Māori world."],
+ ["Tūrehu","Fairy people of the hills and mist."],
+ ["whaitiri","Thunder."],
+ ["marangai","Easterly or stormy wind; stormy weather."],
+ ["kēhua","Ghost."],
+ ["kai","Food."],
+ ["kūmara","Sweet potato."],
+ ["hāngī","Food cooked in an earth oven."]
+];
+
+var PLAN = [
+ ["0:00","Poem 1, Tūrehu: Read, then Quick check","10 min"],
+ ["0:10","Poem 2, Hinewhaitiri: Read, then Quick check","10 min"],
+ ["0:20","Quick check again on the one you scored lower on","5 min"],
+ ["0:25","Mixed test: 15 recall + 10 on one text","12 min"],
+ ["0:37","One short answer with the 2-minute timer","5 min"],
+ ["0:42","Long answer: just the plan, no essay","3 min"],
+ ["Morning","Mixed test again before school. Then stop.","10 min"]
+];
+
+/* ---------------- storage (this browser only) ---------------- */
+var KEY = "y9-english-turehu-v1";
+var S = {prog:{}, text:{}, draft:{}, missed:{}, plan:{}, mixedBest:null};
+try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); for (var k in o) S[k] = o[k]; } } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+function prog(id){ return S.prog[id] || (S.prog[id] = {read:false,best:null,total:null,mem:false,sa:false,la:false}); }
+function progPct(id){
+  var p = prog(id), n = 0;
+  if (p.read) n++; if (p.best!=null && p.total && p.best/p.total>=0.8) n++; if (p.mem) n++; if (p.sa) n++; if (p.la) n++;
+  return n/5;
+}
+function draft(key, val){ if (val===undefined) return S.draft[key]||""; S.draft[key]=val; save(); }
+
+/* ---------------- helpers ---------------- */
+function h(tag, attrs){
+  var el = document.createElement(tag);
+  if (attrs) for (var a in attrs) {
+    var v = attrs[a];
+    if (v==null || v===false) continue;
+    if (a==="class") el.className = v;
+    else if (a==="text") el.textContent = v;
+    else if (a==="html") el.innerHTML = v;
+    else if (a.slice(0,2)==="on") el.addEventListener(a.slice(2), v);
+    else el.setAttribute(a, v===true ? "" : v);
+  }
+  for (var i=2;i<arguments.length;i++){
+    var c = arguments[i];
+    if (c==null || c===false) continue;
+    if (Array.isArray(c)) c.forEach(function(x){ if (x!=null && x!==false) el.appendChild(typeof x==="string"?document.createTextNode(x):x); });
+    else el.appendChild(typeof c==="string"?document.createTextNode(c):c);
+  }
+  return el;
+}
+function shuffle(a){ a=a.slice(); for (var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+var timers = [];
+function clearTimers(){ timers.forEach(function(t){ clearInterval(t); }); timers = []; }
+
+/* ---------------- app state ---------------- */
+var view = {name:"home"};
+var app = document.getElementById("app");
+function go(v){ view = v; clearTimers(); render(); try{ window.scrollTo(0,0); }catch(e){} }
+function render(){
+  app.innerHTML = "";
+  if (view.name==="home") renderHome();
+  else if (view.name==="text") renderText();
+  else if (view.name==="mixed") renderMixed();
+  else if (view.name==="glossary") renderGlossary();
+}
+
+/* ---------------- home ---------------- */
+function renderHome(){
+  app.appendChild(h("header",{class:"stack"},
+    h("p",{class:"eyebrow",text:"Year 9 English · Exam Tue 3 Nov"}),
+    h("h1",{text:"Year 9 English exam kit"}),
+    h("p",{class:"muted",text:"Read it, quiz it, write it. Short sessions beat long ones. Everything stays on this device."})
+  ));
+
+  // tonight plan
+  var ol = h("ol");
+  PLAN.forEach(function(p,i){
+    var id = "plan-"+i, done = !!S.plan[i];
+    var li = h("li",{class: done?"done":null},
+      h("label",{for:id},
+        h("input",{type:"checkbox",id:id,checked:done,onchange:function(e){ S.plan[i]=e.target.checked; save(); li.className = e.target.checked?"done":""; }}),
+        h("span",{class:"t",text:p[0]}),
+        h("span",{class:"what"}, p[1], h("span",{class:"muted small",text:" · "+p[2]}))
+      ));
+    ol.appendChild(li);
+  });
+  app.appendChild(h("section",{class:"card plan"},
+    h("div",{class:"row",style:"justify-content:space-between"}, h("h2",{text:"Tonight: 45 minutes"}), h("span",{class:"chip",text:"tick as you go"})),
+    ol,
+    h("p",{class:"small muted",text:"Then sleep. Sleep is when your brain locks in what you practised."})
+  ));
+
+  // exam shape
+  app.appendChild(h("details",{},
+    h("summary",{},"What's in the exam (our best reading)"),
+    h("div",{class:"stack small"},
+      h("p",{html:"<b>15 recall questions</b> on <b>Tūrehu</b> and <b>Hinewhaitiri</b>, both by Wiremu Grace."}),
+      h("p",{html:"<b>10 questions</b> on one of the two, printed in the exam."}),
+      h("p",{html:"<b>Writing:</b> question groups with long answers and one short answer."}),
+      h("p",{class:"note",html:"Your notes say “Ty Rehu”. We think that means <b>Tūrehu</b>. Check your class sheet."})
+    )
+  ));
+
+  app.appendChild(h("section",{class:"stack"},
+    h("h2",{text:"The two texts"}),
+    h("div",{class:"tiles"}, tile("turehu"), tile("hine"))
+  ));
+
+  // mixed
+  var mb = S.mixedBest;
+  app.appendChild(h("button",{class:"mixed-btn",id:"btn-mixed",onclick:function(){ go({name:"mixed"}); }},
+    h("span",{class:"stack",style:"gap:2px"}, h("span",{class:"name",text:"Mixed test"}), h("span",{class:"small",text:"15 recall questions across both, then 10 on one text, then 1 short answer. Like the real thing."})),
+    h("span",{style:"font-family:var(--font-mono);font-size:.9rem;white-space:nowrap",text: mb!=null ? "Best "+mb+"/25" : "Start →"})
+  ));
+
+  app.appendChild(h("button",{class:"btn full",id:"btn-glossary",onclick:function(){ go({name:"glossary"}); }},"Te reo glossary"));
+
+  app.appendChild(h("details",{},
+    h("summary",{},"Why this works"),
+    h("div",{class:"stack small"},
+      h("p",{text:"Testing yourself beats rereading. Every time you pull an answer out of memory, it gets easier next time."}),
+      h("p",{text:"Wrong answers come back a few questions later. That spacing is what makes them stick."}),
+      h("p",{text:"The mixed test jumps between the two texts, which trains you to tell them apart."}),
+      h("p",{text:"First letters give your memory a hint without giving away the answer."})
+    )
+  ));
+  app.appendChild(h("footer",{text:"No accounts. Nothing leaves this browser."}));
+}
+function tile(id){
+  var t = TEXTS[id], p = prog(id), pct = progPct(id);
+  return h("button",{class:"tile "+t.cls, id:"tile-"+id, onclick:function(){ go({name:"text",id:id,tab:"read"}); }},
+    h("span",{class:"eyebrow",text:"Poem "+t.num}),
+    h("span",{class:"name",text:t.title}),
+    h("span",{class:"chip "+(t.conf==="ok"?"ok":"check"),style:"align-self:flex-start",text:t.confText}),
+    h("span",{class:"bar","aria-hidden":"true"}, h("i",{style:"width:"+Math.round(pct*100)+"%"})),
+    h("span",{class:"meta"}, h("span",{text:Math.round(pct*5)+"/5 steps"}), h("span",{text: p.best!=null ? "Best "+p.best+"/"+p.total : (S.text[id] ? "Copy added" : "")}))
+  );
+}
+
+/* ---------------- text screen ---------------- */
+var TABS = [["read","Read"],["quiz","Quick check"],["mem","Memorise"],["sa","Short answer"],["la","Long answer"]];
+function renderText(){
+  var t = TEXTS[view.id], p = prog(view.id);
+  app.appendChild(h("button",{class:"back",id:"btn-back",onclick:function(){ go({name:"home"}); }},"← Home"));
+  app.appendChild(h("header",{class:"stack",style:"gap:6px"},
+    h("p",{class:"eyebrow",text:"Poem "+t.num}),
+    h("h1",{text:t.title}),
+    h("div",{class:"row"}, h("span",{class:"muted small",text:t.byline}), h("span",{class:"chip "+(t.conf==="ok"?"ok":"check"),text:t.confText}))
+  ));
+  var doneMap = {read:p.read, quiz:p.best!=null && p.total && p.best/p.total>=0.8, mem:p.mem, sa:p.sa, la:p.la};
+  var tabs = h("div",{class:"tabs",role:"tablist"});
+  TABS.forEach(function(tb){
+    tabs.appendChild(h("button",{class:"tab",role:"tab",id:"tab-"+tb[0],"aria-selected":String(view.tab===tb[0]),onclick:function(){ go({name:"text",id:view.id,tab:tb[0]}); }},
+      tb[1], doneMap[tb[0]] ? h("span",{class:"tick","aria-label":"done",text:"✓"}) : null));
+  });
+  app.appendChild(tabs);
+  var body = h("div",{class:"stack",style:"gap:16px"});
+  app.appendChild(body);
+  if (view.tab==="read") readStory(body, view.id);
+  else if (view.tab==="quiz") quickCheck(body, view.id);
+  else if (view.tab==="mem") memorise(body, view.id);
+  else if (view.tab==="sa") shortAnswer(body, view.id);
+  else if (view.tab==="la") longAnswer(body, view.id);
+  setTimeout(function(){ var s=document.getElementById("tab-"+view.tab); if (s && s.scrollIntoView) s.scrollIntoView({block:"nearest",inline:"center"}); },0);
+}
+
+function readStory(body, id){
+  var t = TEXTS[id];
+  if (t.cls==="c2") body.classList.add("c2-read");
+  body.appendChild(h("p",{class:"note",text:t.heard}));
+  var ol = h("ol",{class:"summary"}); t.summary.forEach(function(s){ ol.appendChild(h("li",{text:s})); });
+  body.appendChild(h("section",{class:"card"}, h("h2",{text:"In 5 lines"}), ol));
+  var facts = h("div",{class:"facts"});
+  t.facts.forEach(function(f){ facts.appendChild(h("div",{class:"fact"}, h("h3",{text:f[0]}), h("p",{text:f[1]}))); });
+  body.appendChild(facts);
+  body.appendChild(h("h2",{text:"Think deeper"}));
+  t.think.forEach(function(q){ body.appendChild(h("details",{}, h("summary",{},q[0]), h("div",{}, h("p",{text:q[1]})))); });
+  body.appendChild(h("p",{class:"small muted"}, "Summaries in our own words. Read the full text in your class copy, or on ", h("a",{href:t.link,target:"_blank",rel:"noopener"},"Te Kete Ipurangi"), "."));
+  body.appendChild(h("button",{class:"btn primary full",id:"btn-done-read",onclick:function(){ prog(id).read=true; save(); go({name:"text",id:id,tab:"quiz"}); }},"I've read it → Quick check"));
+}
+
+/* ---------------- quiz engine ---------------- */
+function bankFor(id, which){
+  var t = TEXTS[id], src = which==="lang" ? t.lang : t.quiz, tag = which==="lang" ? "-l" : "-";
+  return src.map(function(q,i){ return {qid:id+tag+i, src:id, q:q[0], a:q[1], w:q[2], why:q[3]}; });
+}
+// pick n, missed ones first, keep story order
+function pick(bank, n){
+  var missed = bank.filter(function(q){ return S.missed[q.qid]; });
+  var rest = shuffle(bank.filter(function(q){ return !S.missed[q.qid]; }));
+  var chosen = shuffle(missed).slice(0,n).concat(rest).slice(0,n);
+  return bank.filter(function(q){ return chosen.indexOf(q)>-1; });
+}
+
+function runQuiz(mount, questions, opts){
+  var queue = questions.map(function(_,i){ return i; });
+  var first = {}; // index -> true/false on first try
+  var pos = 0;
+  function step(){
+    mount.innerHTML = "";
+    if (pos>=queue.length) return finish();
+    var qi = queue[pos], q = questions[qi];
+    var dots = h("div",{class:"dots","aria-hidden":"true"});
+    questions.forEach(function(_,i){ dots.appendChild(h("i",{class: (first[i]===true?"r":first[i]===false?"w":"") + (i===qi?" cur":"")})); });
+    var retry = first[qi]===false;
+    var left = queue.length-pos;
+    var head = h("div",{class:"qhead"}, h("span",{text:(retry?"Coming back: ":"")+"Question "+(Object.keys(first).length+(retry?0:1))+" of "+questions.length}), h("span",{text:left+" left"}));
+    var srcChip = opts.showSrc ? h("span",{class:"chip "+(TEXTS[q.src].cls),style:"align-self:flex-start",text:TEXTS[q.src].title}) : null;
+    var options = shuffle([q.a].concat(q.w));
+    var box = h("div",{class:"opts"});
+    var fb = h("div");
+    var next = h("button",{class:"btn primary full",id:"btn-next",hidden:true,onclick:function(){ pos++; step(); }}, pos+1>=queue.length ? "See my score" : "Next");
+    options.forEach(function(o,i){
+      box.appendChild(h("button",{class:"opt",id:"opt-"+i,"data-correct":o===q.a?"1":null,onclick:function(){
+        var right = o===q.a;
+        Array.prototype.forEach.call(box.children,function(b){ b.disabled=true; if (b.getAttribute("data-correct")) b.classList.add("right"); });
+        if (!right) this.classList.add("wrong");
+        if (!(qi in first)) first[qi] = right;
+        if (right && !retry) delete S.missed[q.qid];
+        if (!right){ S.missed[q.qid]=1; queue.splice(Math.min(pos+4, queue.length), 0, qi); }
+        save();
+        fb.className = "feedback "+(right?"right":"wrong");
+        fb.innerHTML = "";
+        fb.appendChild(document.createTextNode(right ? "Correct." : "Not quite. It's: "+q.a));
+        fb.appendChild(h("span",{text:q.why + (right?"":" This one will come back soon.")}));
+        next.hidden = false;
+        next.textContent = pos+1>=queue.length ? "See my score" : "Next";
+        next.focus();
+      }}, h("span",{class:"k",text:"ABCD"[i]}), h("span",{text:o})));
+    });
+    mount.appendChild(h("div",{class:"card"}, head, dots, srcChip, h("p",{class:"question",text:q.q}), box, fb, next));
+  }
+  function finish(){
+    var score = 0, missed = [];
+    questions.forEach(function(q,i){ if (first[i]) score++; else missed.push(q); });
+    opts.onDone(score, questions.length, missed);
+  }
+  step();
+}
+
+function quickCheck(body, id){
+  var t = TEXTS[id];
+  var qs = pick(bankFor(id),10).concat(pick(bankFor(id,"lang"),3));
+  body.appendChild(h("p",{class:"small muted",text:"10 recall questions, then 3 about how it's written. Wrong ones come back."}));
+  var mount = h("div",{class:"stack"});
+  body.appendChild(mount);
+  runQuiz(mount, qs, {onDone:function(score,total,missed){
+    var p = prog(id);
+    if (p.best==null || score/total > p.best/p.total){ p.best=score; p.total=total; }
+    save();
+    mount.innerHTML = "";
+    mount.appendChild(resultCard(score,total,missed,
+      h("button",{class:"btn primary full",id:"btn-again",onclick:function(){ go({name:"text",id:id,tab:"quiz"}); }},"Go again (new mix)"),
+      h("button",{class:"btn full",id:"btn-to-next",onclick:function(){ go({name:"text",id:id,tab:"mem"}); }}, "Next: Memorise")
+    ));
+  }});
+}
+function resultCard(score,total,missed){
+  var pct = score/total;
+  var msg = pct>=0.9 ? "Excellent. You know this." : pct>=0.7 ? "Solid. One more round tomorrow morning." : "Good start. Do it again now. It gets easier fast.";
+  var c = h("div",{class:"card"},
+    h("p",{class:"eyebrow",text:"First-try score"}),
+    h("p",{class:"score",text:score+"/"+total}),
+    h("p",{text:msg})
+  );
+  if (missed.length){
+    var ul = h("ul",{class:"missed small"});
+    missed.forEach(function(q){ ul.appendChild(h("li",{}, q.q+" ", h("b",{text:"→ "+q.a}))); });
+    c.appendChild(h("details",{}, h("summary",{},"Ones to look at again ("+missed.length+")"), h("div",{},ul)));
+  }
+  for (var i=3;i<arguments.length;i++) c.appendChild(arguments[i]);
+  return c;
+}
+
+/* ---------------- memorise ---------------- */
+function memorise(body, id){
+  var t = TEXTS[id];
+  var txt = S.text[id]||"";
+  var intro = "Paste or type your class copy. It stays on this device only. If it's long, paste the part you most want to know, like the opening or the ending.";
+  var ta = h("textarea",{id:"mem-input",class:"big",placeholder:"Paste your copy here. Keep the line breaks.",oninput:function(){ status.textContent = ta.value.trim() ? "Not saved yet" : ""; }}, txt);
+  var status = h("span",{class:"small muted",text: txt ? "Saved on this device" : ""});
+  var editor = h("section",{class:"card"},
+    h("h2",{text: txt ? "Your copy" : "Add your poem"}),
+    h("p",{class:"small muted",text:intro}),
+    h("label",{for:"mem-input",class:"small",style:"font-weight:600"},"Text"),
+    ta,
+    h("div",{class:"row"},
+      h("button",{class:"btn primary",id:"btn-save",onclick:function(){ S.text[id]=ta.value.replace(/\r/g,"").replace(/\n{3,}/g,"\n\n").trim(); save(); render(); }},"Save"),
+      txt ? h("button",{class:"btn ghost",id:"btn-clear",onclick:function(){ if (clearArm){ delete S.text[id]; save(); render(); } else { clearArm=true; this.textContent="Tap again to clear"; } }},"Clear") : null,
+      status)
+  );
+  var clearArm = false;
+  if (txt){
+    var det = h("details",{}, h("summary",{},"Edit your copy"), h("div",{}, editor));
+    var mode = view.mode || "letters";
+    var seg = h("div",{class:"seg",role:"group","aria-label":"Practice mode"});
+    [["letters","First letters"],["gaps","Fill the gaps"],["order","Line order"]].forEach(function(m){
+      seg.appendChild(h("button",{id:"mode-"+m[0],"aria-pressed":String(mode===m[0]),onclick:function(){ view.mode=m[0]; render(); }},m[1]));
+    });
+    body.appendChild(seg);
+    var area = h("section",{class:"card"});
+    body.appendChild(area);
+    prog(id).mem = true; save();
+    if (mode==="letters") letters(area, txt);
+    else if (mode==="gaps") gaps(area, txt);
+    else order(area, txt);
+    body.appendChild(det);
+  } else {
+    body.appendChild(editor);
+    body.appendChild(h("div",{class:"card"},
+      h("h3",{text:"What you'll get"}),
+      h("p",{class:"small",html:"<b>First letters:</b> every word becomes its first letter. Say the line, then tap to check."}),
+      h("p",{class:"small",html:"<b>Fill the gaps:</b> 20%, then 50%, then 80% of words hidden."}),
+      h("p",{class:"small",html:"<b>Line order:</b> lines get shuffled. Tap them back in order."})
+    ));
+  }
+}
+var WORD = /[\p{L}\p{N}]/u;
+function splitLines(txt){ return txt.split(/\n/); }
+function abbrev(w){
+  var m = w.match(/^([^\p{L}\p{N}]*)([\p{L}\p{N}])[\p{L}\p{N}'’\-]*(.*)$/u);
+  return m ? m[1]+m[2]+m[3] : w;
+}
+function wordsOf(line){ return line.split(/(\s+)/); }
+
+function letters(area, txt){
+  area.appendChild(h("p",{class:"small muted",text:"Say each line out loud from the first letters. Tap a word to check it. Aim for a clean run with everything hidden."}));
+  var box = h("div",{class:"memtext",id:"mem-letters"});
+  var all = [];
+  splitLines(txt).forEach(function(line){
+    if (!line.trim()){ box.appendChild(h("span",{class:"gap"})); return; }
+    var l = h("span",{class:"line"});
+    wordsOf(line).forEach(function(w){
+      if (!w) return;
+      if (!WORD.test(w)){ l.appendChild(document.createTextNode(w)); return; }
+      var b = h("button",{class:"w hid","aria-label":"hidden word, tap to show",text:abbrev(w)});
+      b.onclick = function(){ var hid = b.classList.toggle("hid"); b.textContent = hid ? abbrev(w) : w; b.classList.toggle("shown",!hid); b.setAttribute("aria-label", hid?"hidden word, tap to show":w); };
+      b._full = w; all.push(b);
+      l.appendChild(b);
+    });
+    box.appendChild(l);
+  });
+  area.appendChild(box);
+  area.appendChild(h("div",{class:"row"},
+    h("button",{class:"btn",id:"btn-showall",onclick:function(){ all.forEach(function(b){ b.classList.remove("hid"); b.classList.add("shown"); b.textContent=b._full; }); }},"Show all"),
+    h("button",{class:"btn",id:"btn-hideall",onclick:function(){ all.forEach(function(b){ b.classList.add("hid"); b.classList.remove("shown"); b.textContent=abbrev(b._full); }); }},"Hide all")
+  ));
+}
+
+function gaps(area, txt){
+  var level = view.level || 20;
+  var seg = h("div",{class:"seg",role:"group","aria-label":"How many gaps"});
+  [20,50,80].forEach(function(n){ seg.appendChild(h("button",{id:"lvl-"+n,"aria-pressed":String(level===n),onclick:function(){ view.level=n; render(); }}, n+"% hidden")); });
+  area.appendChild(seg);
+  area.appendChild(h("p",{class:"small muted",text:"Say the missing word, then tap the gap to check. When it feels easy, move up a level."}));
+  var box = h("div",{class:"memtext",id:"mem-gaps"});
+  var slots = [];
+  var lines = splitLines(txt).map(function(line){ return wordsOf(line); });
+  lines.forEach(function(ws,li){ ws.forEach(function(w,wi){ if (w && WORD.test(w)) slots.push(li+":"+wi); }); });
+  var hide = {}; shuffle(slots).slice(0, Math.round(slots.length*level/100)).forEach(function(k){ hide[k]=1; });
+  var count = 0;
+  lines.forEach(function(ws,li){
+    if (!ws.join("").trim()){ box.appendChild(h("span",{class:"gap"})); return; }
+    var l = h("span",{class:"line"});
+    ws.forEach(function(w,wi){
+      if (!w) return;
+      if (hide[li+":"+wi]){
+        count++;
+        var core = w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}'’\-]+$/gu,"");
+        var lead = w.slice(0, w.indexOf(core)), trail = w.slice(w.indexOf(core)+core.length);
+        var b = h("button",{class:"w blank","aria-label":"gap, tap to show",style:"width:"+Math.max(2,core.length)+"ch",text:core});
+        b.onclick = function(){ b.classList.remove("blank"); b.classList.add("shown"); b.style.width=""; b.setAttribute("aria-label",core); };
+        if (lead) l.appendChild(document.createTextNode(lead));
+        l.appendChild(b);
+        if (trail) l.appendChild(document.createTextNode(trail));
+      } else l.appendChild(document.createTextNode(w));
+    });
+    box.appendChild(l);
+  });
+  area.appendChild(box);
+  area.appendChild(h("div",{class:"row"},
+    h("button",{class:"btn",id:"btn-newgaps",onclick:function(){ render(); }},"New gaps"),
+    h("span",{class:"small muted",text:count+" gaps"})
+  ));
+}
+
+function order(area, txt){
+  var lines = splitLines(txt).map(function(l){ return l.trim(); }).filter(Boolean);
+  var size = 6, chunks = Math.ceil(lines.length/size);
+  var c = Math.min(view.chunk||0, chunks-1);
+  if (chunks>1){
+    var seg = h("div",{class:"row"});
+    for (var i=0;i<chunks;i++) (function(i){
+      seg.appendChild(h("button",{class:"tab",id:"chunk-"+i,"aria-selected":String(i===c),onclick:function(){ view.chunk=i; render(); }},"Lines "+(i*size+1)+"–"+Math.min(lines.length,(i+1)*size)));
+    })(i);
+    area.appendChild(seg);
+  }
+  var part = lines.slice(c*size, c*size+size);
+  if (part.length<2){ area.appendChild(h("p",{class:"muted",text:"Add at least two lines to practise the order."})); return; }
+  area.appendChild(h("p",{class:"small muted",text:"Tap the lines in the right order."}));
+  var built = h("div",{class:"order-built",id:"order-built"});
+  var pool = h("div",{class:"opts",id:"order-pool"});
+  var nextIdx = 0, mistakes = 0;
+  var status = h("p",{class:"small muted"});
+  var idx = part.map(function(_,i){ return i; });
+  var sh = shuffle(idx); if (sh.join()===idx.join()) sh.reverse();
+  sh.forEach(function(i){
+    var b = h("button",{class:"lineopt",text:part[i],"data-i":String(i)});
+    b.onclick = function(){
+      if (i===nextIdx){ built.appendChild(h("div",{text:part[i]})); b.remove(); nextIdx++;
+        if (nextIdx===part.length){ status.className="feedback right"; status.textContent = mistakes ? "Done, with "+mistakes+" slip"+(mistakes>1?"s":"")+". Go again to get it clean." : "Perfect order. Try the next set or go again."; }
+      } else { mistakes++; b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); }
+    };
+    pool.appendChild(b);
+  });
+  area.appendChild(built); area.appendChild(pool); area.appendChild(status);
+  area.appendChild(h("button",{class:"btn",id:"btn-reshuffle",onclick:function(){ render(); }},"Shuffle again"));
+}
+
+/* ---------------- timer ---------------- */
+function makeTimer(seconds, label){
+  var left = seconds, iv = null;
+  var clock = h("span",{class:"clock",role:"timer","aria-label":label,text:fmt(left)});
+  var btn = h("button",{class:"btn primary",id:"btn-timer",text:"Start "+label});
+  var wrap = h("div",{class:"timer"}, clock, btn);
+  function fmt(s){ return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+  btn.onclick = function(){
+    if (iv){ clearInterval(iv); iv=null; left=seconds; clock.textContent=fmt(left); wrap.classList.remove("end"); btn.textContent="Start "+label; return; }
+    btn.textContent = "Reset";
+    iv = setInterval(function(){ left--; clock.textContent = fmt(Math.max(0,left)); if (left<=0){ clearInterval(iv); iv=null; wrap.classList.add("end"); clock.textContent="Time"; btn.textContent="Start again"; left=seconds; } }, 1000);
+    timers.push(iv);
+  };
+  return wrap;
+}
+
+/* ---------------- short answer ---------------- */
+function saPrompts(id){ return TEXTS[id].sa; }
+function shortAnswer(body, id, opts){
+  opts = opts || {};
+  var prompts = opts.prompts || saPrompts(id);
+  var pi = opts.fixed!=null ? opts.fixed : (view.pi||0);
+  var key = (opts.keyPrefix||id)+"-sa-"+pi;
+  body.appendChild(h("p",{class:"small muted",text:"Point, evidence, explain. About 4 sentences. Aim to finish in 2 minutes."}));
+  if (!opts.prompts && prompts.length>1){
+    var ch = h("div",{class:"choices"});
+    prompts.forEach(function(p,i){ ch.appendChild(h("button",{class:"choice",id:"sa-q-"+i,"aria-pressed":String(i===pi),onclick:function(){ view.pi=i; render(); }},p[0])); });
+    body.appendChild(ch);
+  } else body.appendChild(h("p",{class:"question",text:prompts[pi][0]}));
+  body.appendChild(makeTimer(120,"2 min"));
+  var fields = [["p","Point","Answer the question in one sentence."],["e","Evidence","A short quote from your copy, or a specific moment."],["x","Explain + effect","What does it show? How does it make the reader think or feel?"]];
+  var vals = {};
+  var preview = h("p",{class:"small"});
+  function upd(){ var s = ["p","e","x"].map(function(f){ return (vals[f]||"").trim(); }).filter(Boolean).join(" "); preview.textContent = s || "Your paragraph appears here as you type."; }
+  fields.forEach(function(f){
+    var k = key+"-"+f[0]; vals[f[0]] = draft(k);
+    body.appendChild(h("div",{class:"field"},
+      h("label",{for:k},f[1]), h("span",{class:"hint",text:f[2]}),
+      h("textarea",{id:k,rows:"3",oninput:function(e){ vals[f[0]]=e.target.value; draft(k,e.target.value); if (!opts.noProgress && e.target.value.trim()){ prog(id).sa=true; save(); } upd(); }}, vals[f[0]])
+    ));
+  });
+  upd();
+  body.appendChild(h("div",{class:"card"}, h("p",{class:"eyebrow",text:"Your paragraph"}), preview));
+  body.appendChild(h("details",{}, h("summary",{},"See a model paragraph"), h("div",{}, h("div",{class:"model",html:prompts[pi][1]}),
+    h("p",{class:"small muted",style:"margin-top:8px",text:"Written in our own words, no quotes from the text. In the exam, add a short quote from your copy as evidence."}))));
+}
+
+/* ---------------- long answer ---------------- */
+function longAnswer(body, id){
+  var key = id+"-la";
+  body.appendChild(h("p",{class:"small muted",text:"Plan for 3 minutes, write for 12. A plan stops you running out of ideas."}));
+  body.appendChild(makeTimer(900,"15 min"));
+  function field(k, label, hint, rows){
+    return h("div",{class:"field"}, h("label",{for:key+k},label), hint?h("span",{class:"hint",text:hint}):null,
+      h("textarea",{id:key+k,rows:String(rows||2),style:"min-height:"+(rows>2?96:64)+"px",oninput:function(e){ draft(key+k,e.target.value); if (e.target.value.trim()){ prog(id).la=true; save(); } }}, draft(key+k)));
+  }
+  var qBox = h("div",{class:"choices"});
+  var qSel = draft(key+"-qi");
+  LA_PROMPTS.forEach(function(p,i){ qBox.appendChild(h("button",{class:"choice",id:"la-q-"+i,"aria-pressed":String(String(i)===qSel),onclick:function(){ draft(key+"-qi",String(i)); var ta=document.getElementById(key+"-q"); ta.value=p; draft(key+"-q",p); Array.prototype.forEach.call(qBox.children,function(b,j){ b.setAttribute("aria-pressed",String(j===i)); }); }},p)); });
+  body.appendChild(h("section",{class:"card"},
+    h("p",{class:"step-n",text:"Step 1 of 4"}), h("h3",{text:"The question"}),
+    h("p",{class:"small muted",text:"Pick a practice question, or type the one your teacher gave."}),
+    qBox, field("-q","Question in your words","Underline the key words: explain, how, why, show.")));
+  body.appendChild(h("section",{class:"card"},
+    h("p",{class:"step-n",text:"Step 2 of 4"}), h("h3",{text:"Three points"}),
+    field("-p1","Point 1","One idea that answers the question."), field("-p2","Point 2"), field("-p3","Point 3")));
+  body.appendChild(h("section",{class:"card"},
+    h("p",{class:"step-n",text:"Step 3 of 4"}), h("h3",{text:"Evidence for each point"}),
+    field("-e1","Evidence 1","A short quote or a specific moment."), field("-e2","Evidence 2"), field("-e3","Evidence 3")));
+  body.appendChild(h("section",{class:"card"},
+    h("p",{class:"step-n",text:"Step 4 of 4"}), h("h3",{text:"Link to the big ideas"}),
+    h("p",{class:"small muted",text:"Connect to mātauranga Māori, identity or whānau. Use one te reo word you can explain, like manaakitanga, whakapapa or tūrangawaewae."}),
+    field("-l","My link",null,3)));
+  var sample = h("dl",{class:"gl small"});
+  LA_SAMPLE.forEach(function(r){ sample.appendChild(h("dt",{text:r[0]})); sample.appendChild(h("dd",{text:r[1]})); });
+  body.appendChild(h("details",{}, h("summary",{},"See a sample plan"), h("div",{}, sample)));
+  body.appendChild(h("details",{}, h("summary",{},"How to turn the plan into an essay"), h("div",{class:"stack small"},
+    h("p",{html:"<b>Intro (2 sentences):</b> name the text and writer, then answer the question in one line."}),
+    h("p",{html:"<b>3 body paragraphs:</b> point, evidence, explain. One paragraph per point."}),
+    h("p",{html:"<b>Conclusion (2 sentences):</b> sum up, then say why it matters: your link from Step 4."}))));
+}
+
+/* ---------------- mixed test ---------------- */
+function renderMixed(){
+  app.appendChild(h("button",{class:"back",id:"btn-back",onclick:function(){ go({name:"home"}); }},"← Home"));
+  app.appendChild(h("header",{class:"stack",style:"gap:6px"},
+    h("p",{class:"eyebrow",text:"Exam practice"}), h("h1",{text:"Mixed test"}),
+    h("p",{class:"muted",text:"Part 1: 15 recall questions jumping between both texts. Part 2: 10 questions on one text. Then one short answer."})));
+  var a = shuffle(pick(bankFor("turehu"),8)), b = shuffle(pick(bankFor("hine"),7));
+  var qs = []; for (var i=0;i<8;i++){ if (a[i]) qs.push(a[i]); if (b[i]) qs.push(b[i]); }
+  var given = Math.random()<0.5 ? "turehu" : "hine";
+  var used = qs.map(function(q){ return q.qid; });
+  var restRecall = shuffle(bankFor(given).filter(function(q){ return used.indexOf(q.qid)<0; })).slice(0,3);
+  var part2 = shuffle(bankFor(given,"lang").concat(restRecall)).slice(0,10);
+  var mount = h("div",{class:"stack"});
+  app.appendChild(mount);
+  var tag = h("p",{class:"eyebrow",text:"Part 1 of 2 · recall"});
+  app.insertBefore(tag, mount);
+  var s1 = 0, m1 = [];
+  runQuiz(mount, qs, {showSrc:true, onDone:function(score,total,missed){
+    s1 = score; m1 = missed;
+    mount.innerHTML = "";
+    tag.textContent = "Part 2 of 2 · 10 questions on the given text";
+    var intro = h("div",{class:"card"}, h("p",{class:"eyebrow",text:"Part 1 done: "+score+"/15"}),
+      h("h2",{text:"The given text: "+TEXTS[given].title}),
+      h("p",{class:"small muted",text:"In the exam, read the printed text first. Here, answer from memory."}),
+      h("button",{class:"btn primary full",id:"btn-part2",onclick:function(){ intro.remove(); part2run(); }},"Start part 2"));
+    mount.appendChild(intro);
+  }});
+  function part2run(){
+    var m2 = h("div",{class:"stack"}); mount.appendChild(m2);
+    runQuiz(m2, part2, {onDone:function(score,total,missed){
+      var tot = s1+score;
+      if (S.mixedBest==null || tot>S.mixedBest) S.mixedBest = tot;
+      save();
+      mount.innerHTML = "";
+      tag.textContent = "Results";
+      mount.appendChild(resultCard(tot, 15+total, m1.concat(missed)));
+      mount.appendChild(h("h2",{text:"Now: one short answer"}));
+      var sa = h("div",{class:"stack"});
+      var all = TEXTS.turehu.sa.concat(TEXTS.hine.sa);
+      var pi = Math.floor(Math.random()*all.length);
+      shortAnswer(sa, pi<2?"turehu":"hine", {prompts:all, fixed:pi, keyPrefix:"mixed", noProgress:true});
+      mount.appendChild(sa);
+      mount.appendChild(h("button",{class:"btn primary full",id:"btn-mixed-again",onclick:function(){ go({name:"mixed"}); }},"New mixed test"));
+      mount.appendChild(h("button",{class:"btn full",onclick:function(){ go({name:"home"}); }},"Back to home"));
+    }});
+  }
+}
+
+/* ---------------- glossary ---------------- */
+function renderGlossary(){
+  app.appendChild(h("button",{class:"back",id:"btn-back",onclick:function(){ go({name:"home"}); }},"← Home"));
+  app.appendChild(h("header",{class:"stack",style:"gap:6px"}, h("p",{class:"eyebrow",text:"Kupu"}), h("h1",{text:"Te reo glossary"}),
+    h("p",{class:"muted",text:"Using one of these words correctly, and explaining it, lifts an answer."})));
+  var dl = h("dl",{class:"gl card"});
+  GLOSSARY.forEach(function(g){ dl.appendChild(h("dt",{text:g[0]})); dl.appendChild(h("dd",{text:g[1]})); });
+  app.appendChild(dl);
+}
+
+render();
+})();
+</script>
+</body>
+</html>
