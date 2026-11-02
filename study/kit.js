@@ -84,7 +84,12 @@ function readLog(){try{const L=JSON.parse(localStorage.getItem("studylog")||"[]"
 let memLog=[];
 function logStudy(kind){const e={d:nzDay(Date.now()),m:(location.pathname.split("/").pop()||"").replace(".html",""),kind,t:Date.now()};
   try{const k="studylog";const L=JSON.parse(localStorage.getItem(k)||"[]");
-  L.push(e);localStorage.setItem(k,JSON.stringify(L.slice(-800)))}catch(err){memLog.push(e)}}
+  L.push(e);localStorage.setItem(k,JSON.stringify(L.slice(-800)))}catch(err){memLog.push(e)}
+  count(kind==="open"?"view":kind)}
+// anonymous aggregate counts (api/study-count.js): machine id, kind and the chosen year group, nothing else, sent as a beacon
+function count(k,m){try{if(location.protocol!=="https:"&&location.hostname!=="localhost")return;let v="";try{v=localStorage.getItem("study-year")||""}catch(e){}
+  const body=JSON.stringify({m:m||(location.pathname.split("/").pop()||"").replace(".html","")||"hub",k,v});
+  if(navigator.sendBeacon)navigator.sendBeacon("/api/study-count/",new Blob([body],{type:"application/json"}));else fetch("/api/study-count/",{method:"POST",body,headers:{"content-type":"application/json"},keepalive:true}).catch(()=>{})}catch(e){}}
 // ---- sound: a tiny Web Audio kit, quiet, only after a tap, mutable (saved on this device)
 let AC=null,muted=false;try{muted=localStorage.getItem("studysound")==="off"}catch(e){}
 function ac(){if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;AC=new C()}if(AC.state==="suspended")AC.resume();return AC}
@@ -401,7 +406,7 @@ function retrievalCard(cfg,mid,host,buddy){const R=cfg.retrieval||RETRIEVAL[mid]
   host.querySelector(".ropts").addEventListener("click",e=>{const b=e.target.closest("[data-i]");if(!b)return;const i=+b.dataset.i,ok=i===R.answer;
     host.querySelectorAll("[data-i]").forEach(x=>{x.classList.toggle("right",+x.dataset.i===R.answer&&ok);x.classList.toggle("wrong",x===b&&!ok);x.setAttribute("aria-pressed",String(x===b))});
     const fb=host.querySelector("#k-rfb");fb.className="fb "+(ok?"ok":"no");fb.innerHTML=ok?`<b>Yes.</b> ${R.why}`:`<b>Not that one.</b> Have another look at the machine, then try again.`;
-    sfx(ok?"win":"buzz");if(ok){logStudy("pass");burst(b);try{localStorage.setItem(key,"ok")}catch(e){}}
+    sfx(ok?"win":"buzz");if(ok){logStudy("pass");count("retrieval");burst(b);try{localStorage.setItem(key,"ok")}catch(e){}}
     try{buddy&&buddy.react(ok)}catch(e){}})}
 function mount(cfg){logStudy("open");
   const KU=(Array.isArray(cfg.kupu)?cfg.kupu:[]).filter(kupuOk);
@@ -497,7 +502,8 @@ function mount(cfg){logStudy("open");
   $("k-deck").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(!b)return;deckSel=b.dataset.k;sfx("tick");showDeck();const nb=$("k-deck").querySelector(`[data-k="${deckSel}"]`);nb&&nb.focus()});
   // arrow keys move between the note tabs, as a tablist should
   $("k-deck").addEventListener("keydown",e=>{if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft"&&e.key!=="Home"&&e.key!=="End")return;const tabs=[...$("k-deck").querySelectorAll("[data-k]")];const i=tabs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?tabs.length-1:(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[j].click()});
-  function setStep(i){step=i;const st=cfg.steps[i];seenSteps.add(i);
+  let completed=false;
+  function setStep(i){step=i;const st=cfg.steps[i];seenSteps.add(i);if(!completed&&seenSteps.size===cfg.steps.length){completed=true;count("complete")}
     document.querySelectorAll(".step").forEach((b,j)=>{b.setAttribute("aria-current",j===i?"true":"false");b.classList.toggle("done",seenSteps.has(j)&&j!==i)});
     const cur=document.querySelectorAll(".step")[i];if(mounted)try{cur&&cur.scrollIntoView({inline:"nearest",block:"nearest"})}catch(e){}
     $("k-prog").style.width=((i+1)/cfg.steps.length*100).toFixed(1)+"%";
@@ -674,5 +680,5 @@ function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#in
 const LOCKUP=`<span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span>`;
 // for machines with their own shell: StudyKit.companion(el) puts Allen in el; call .react(true|false) after a check (log the pass first)
 function companion(el){return allenCorner(null,{steps:[]},el||document.body)}
-window.StudyKit={mount,scenes:SCENES,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat,fig:FIGSV};
+window.StudyKit={mount,count,scenes:SCENES,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat,fig:FIGSV};
 })();

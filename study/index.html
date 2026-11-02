@@ -772,6 +772,7 @@ function render(){const L=D.levels[tab];let o="";
 // deep links from elsewhere (#l2, #y9) still choose the year
 addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(byKey(h))setYear(h,true)});
 render();renderMachines();renderStrip();
+try{K.count("view","hub")}catch(e){}
 })();
 </script>
 

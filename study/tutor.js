@@ -185,6 +185,7 @@
     const said=text||prompts[kind];if(!said&&!image)return;
     if(offline&&!image){bubble("user",md(said));bubble("assistant",md(note(kind)));return}
     const content=[];if(image)content.push(image);content.push({type:"text",text:said});
+    try{SK()&&SK().count&&SK().count("hint")}catch(e){}
     const mark=msgs.length;msgs.push({role:"user",content});bubble("user",md(display||said));if(image)bubble("user",`<img src="data:${image.source.media_type};base64,${image.source.data}" alt="Your photo of the question">`);
     await send(mark);if(offline&&msgs.length===mark){bubble("assistant",md(note(kind)))}}
   form.onsubmit=e=>{e.preventDefault();const t=q.value.trim();if(t.length<2)return;q.value="";q.style.height="";ask(t)};
