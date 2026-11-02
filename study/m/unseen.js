@@ -168,7 +168,122 @@ const steps=[
 const KUPU=[{mi:"tuhinga",en:"text, writing",ta:8648},{mi:"kaituhi",en:"writer, author",ta:2031},{mi:"kaupapa",en:"topic, theme, purpose",ta:2439},{mi:"kupu whakarite",en:"metaphor, figurative language",ta:45734},{mi:"taunakitanga",en:"evidence",ta:14911},{mi:"kōwae",en:"paragraph",ta:3169}];
 Object.entries({read:["tuhinga","kaupapa"],tag:["kupu whakarite","taunakitanga"],grow:["kōwae","kaituhi"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
 const simile=LEVEL===3?"f1":"f9";
-const api=StudyKit.mount({kupu:KUPU,
+// ================= the 3D desk (kit3d.js via l2-3d.js): the unseen page under a desk lamp, a tag card you work through in three
+// moves (a finished tag drops a coloured sticky onto its phrase), a stack that grows into a paragraph, and a real exam clock.
+// On a phone the camera moves between the page and the card; on a wide screen both sit side by side. Taps call the same act().
+function unseen3d(S){const {THREE,mat}=S;const L=window.L2,K=L.C;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const FR=L.frames(S),hud=L.hud(S);
+  const glossy=c=>mat("plastic",c,{rough:.36}),lab=o=>S.label(o);let fontsV=0;L.fontsReady(()=>{fontsV++});
+  const TILT=.32,stand=(x)=>{const g=new THREE.Group();g.position.set(x,.3,0);g.rotation.x=-TILT;S.scene.add(g);return g};
+  const desk=(x,w,d)=>S.scene.add(S.rbox(w,.3,d,.12,mat("plastic","#EFE4D8",{rough:.85,coat:.05}),{at:[x,.15,0]}));
+  const PINK="#B5466F",MUTED=K.muted,PAPER="#FFFDF8";
+  const H2=(g,t,x,y,size,o={})=>{g.font=`${o.wt||600} ${size}px ${o.mono?L.MONO:L.SANS}`;g.fillStyle=o.fill||K.ink;g.textAlign=o.a||"left";g.fillText(t,x,y)};
+  const card=(g,w,h,bg,border)=>{g.fillStyle=bg;L.rr(g,4,4,w-8,h-8,26);g.fill();if(border){g.strokeStyle=border.c;g.lineWidth=border.w;L.rr(g,border.w/2+4,border.w/2+4,w-border.w-8,h-border.w-8,24);g.stroke()}};
+  // a round key with a word on it (buttons that move the camera, not the model)
+  const keyBtn=(parent,text,w,fn,col=K.peach)=>{const g=new THREE.Group();parent.add(g);const sh=L.sheet(S,{w,h:.62,parent:g,t:.12,edge:col,r:.06});
+    sh.draw((c,W,H)=>{c.fillStyle=col;L.rr(c,0,0,W,H,H/2);c.fill();H2(c,text,W/2,H*.66,H*.46,{a:"center"})});L.fontsReady(()=>sh.draw((c,W,H)=>{c.fillStyle=col;L.rr(c,0,0,W,H,H/2);c.fill();H2(c,text,W/2,H*.66,H*.46,{a:"center"})}));
+    S.pick(sh.pan,()=>{fn();sfx("tick")});return g};
+  // the desk lamp: a warm pool of light on the page
+  const lamp=new THREE.SpotLight(0xfff1dc,0,30,.55,.6,1.2);lamp.castShadow=false;S.scene.add(lamp,lamp.target);
+  function lampModel(x){const g=new THREE.Group();g.position.set(x,.3,-1.4);g.rotation.y=-.7;S.scene.add(g);const arm=glossy(K.plum);
+    g.add(S.cyl(.5,.55,.12,arm,{at:[0,.06,0],seg:32}),S.cyl(.05,.05,3.4,mat("metal"),{at:[0,1.7,0],rot:[.25,0,0],seg:10}),S.cyl(.05,.05,2.2,mat("metal"),{at:[0,3.6,.95],rot:[-1.05,0,0],seg:10}));
+    const shade=S.cyl(.18,.55,.6,glossy(K.butter),{at:[0,3.9,2.0],rot:[-.6,0,0],seg:28,open:true});shade.material=mat("plastic",K.butter,{rough:.4,extra:{side:THREE.DoubleSide}});g.add(shade);
+    g.add(S.sphere(.16,mat("glow","#FFF4D6",2),{at:[0,3.75,2.1]}));return g}
+  // ================= READ zone
+  const RX=0;desk(RX,17,6);lampModel(RX-8);const rStand=stand(RX);rStand.add(S.rbox(7.1,.16,.5,.06,glossy(K.pink),{at:[-3.6,.1,.35]}));
+  const rPage=L.sheet(S,{w:6.6,h:7.6,parent:rStand,t:.06});
+  const ideaHead=L.sheet(S,{w:6.6,h:.8,parent:rStand,t:.03,edge:"#FFF3F6"});
+  const ideas=TX.idea.opts.map(([v],i)=>{const c=L.sheet(S,{w:6.6,h:1.2,parent:rStand,t:.08});c.onTap(()=>act("idea:"+v));c.z=0;return c});
+  let rFocus="page";const toIdeas=keyBtn(rStand,"Pick the main idea →",3.4,()=>{rFocus="ideas";FR.go(zn("read"))}),toText=keyBtn(rStand,"‹ Back to the text",3.2,()=>{rFocus="page";FR.go(zn("read"))},K.lav);
+  let rKey="",iKey="";
+  // ================= TAG zone (tag, timer, test)
+  const TGX=18;desk(TGX,17,6);lampModel(TGX-8);const tStand=stand(TGX);tStand.add(S.rbox(7.1,.16,.5,.06,glossy(K.pink),{at:[-3.6,.1,.35]}));
+  const tPage=L.sheet(S,{w:6.6,h:7.6,parent:tStand,t:.06});tPage.onTap(r=>{if(r){act(r);focus="card";FR.go(zn("tag"))}});
+  const tCard=L.sheet(S,{w:6.4,h:5.2,parent:tStand,t:.09,edge:"#FFF3F6",px:820});tCard.onTap(r=>{if(r)act(r)});
+  let focus="page";const back=keyBtn(tStand,"‹ Back to the page",3.3,()=>{focus="page";FR.go(zn("tag"))},K.lav);
+  const stickies=featIds.map((id,i)=>{const m=S.rbox(.42,.42,.04,.05,glossy(featCol(id)));const d=new THREE.Mesh(new THREE.PlaneGeometry(.34,.34),new THREE.MeshBasicMaterial({map:L.glyphTex(S,"✓",{size:170,alpha:.85}),transparent:true,depthWrite:false}));d.position.z=.03;m.add(d);m.visible=false;tPage.g.add(m);m.userData.a=0;return m});
+  // the exam clock: a dial, a sweep of time left, two hands
+  const clock=new THREE.Group();tStand.add(clock);const dial=S.panel(512,512,2.2);clock.add(dial);clock.add(S.cyl(1.18,1.18,.16,glossy(K.plum),{rot:[Math.PI/2,0,0],at:[0,0,-.1],seg:48}));
+  dial.redraw((g,w,h)=>{g.fillStyle="#FFFDF8";g.beginPath();g.arc(w/2,h/2,w/2-6,0,Math.PI*2);g.fill();g.strokeStyle=K.ink;for(let i=0;i<60;i++){const a=i/60*Math.PI*2,r0=i%5?212:196;g.lineWidth=i%5?3:7;g.beginPath();g.moveTo(w/2+Math.sin(a)*r0,h/2-Math.cos(a)*r0);g.lineTo(w/2+Math.sin(a)*230,h/2-Math.cos(a)*230);g.stroke()}});
+  const sweep=new THREE.Mesh(new THREE.CircleGeometry(.95,64,Math.PI/2,0),mat("flat",K.peach,{opacity:.55,depthWrite:false}));sweep.position.z=.01;sweep.renderOrder=2;clock.add(sweep);let sweepF=-1;
+  const hand=(len,w,c)=>{const g=new THREE.Group();g.position.z=.05;g.add(S.rbox(w,len,.04,.015,glossy(c),{at:[0,len/2-.08,0]}));clock.add(g);return g};
+  const minH=hand(.78,.08,K.ink),secH=hand(.95,.035,PINK);clock.add(S.cyl(.07,.07,.08,glossy(K.plum),{rot:[Math.PI/2,0,0],at:[0,0,.08]}));
+  let tKey="",cKey="";const lTag=lab({cls:"ok",off:[16,-30]}),lMiss=lab({cls:"warn",off:[16,-30]});let prevDone={},lastDone=null;
+  // ================= GROW zone
+  const GX=36;desk(GX,16,6);const gStand=stand(GX);
+  const gSheet=L.sheet(S,{w:6.6,h:4.6,parent:gStand,t:.04});
+  const slabs=GROW.map((m,i)=>{const sh=L.sheet(S,{w:6.2,h:.62,parent:gStand,t:.42,edge:[STC.tech,STC.eff,STC.link,STC.so,STC.so][i],r:.1});sh.a=0;return sh});
+  let gKey="";
+  // ================= layout and framing
+  // page left, card right on every screen: a phone frames one at a time and pans between them, a wide screen shows both
+  rPage.g.position.set(-3.6,4.6,.08);ideaHead.g.position.set(3.7,7.0,.06);ideas.forEach((c,i)=>c.g.position.set(3.7,5.75-i*1.42,.1));toIdeas.position.set(-3.6,.42,.25);toText.position.set(3.7,1.25,.25);
+  tPage.g.position.set(-3.6,4.6,.08);tCard.g.position.set(3.7,5.0,.1);back.position.set(2.2,1.75,.25);
+  let wide=false;function layout(){wide=S.camera.aspect>1.15;toIdeas.visible=toText.visible=back.visible=!wide;
+    if(wide){clock.position.set(3.7,1.25,.2);clock.scale.setScalar(.9);gSheet.g.position.set(-3.5,4.1,.06);slabs.forEach((sl,i)=>{sl.g.userData.y=1.0+i*.66;sl.g.position.x=3.6})}
+    else{clock.position.set(5.75,1.45,.2);clock.scale.setScalar(.62);gSheet.g.position.set(0,6.3,.06);slabs.forEach((sl,i)=>{sl.g.userData.y=.75+i*.66;sl.g.position.x=0})}}
+  const dir=[0,Math.sin(TILT)+.05,Math.cos(TILT)],W=(g,x,y)=>{g.updateMatrixWorld(true);return g.localToWorld(V3(x,y,.1)).toArray()};
+  FR.add("readPage",{c:W(rStand,-3.6,4.45),w:7,h:8.5,dir,pad:1.01,shadow:6}).add("readIdeas",{c:W(rStand,3.7,4.3),w:7,h:7.2,dir,pad:1.02,shadow:6}).add("readW",{c:W(rStand,0,4.5),w:15,h:8.4,dir,pad:1.02,shadow:9})
+    .add("tagPage",{c:W(tStand,-3.6,4.45),w:7,h:8.5,dir,pad:1.01,shadow:6}).add("tagCard",{c:W(tStand,3.7,4.3),w:7,h:7.2,dir,pad:1.02,shadow:6}).add("tagW",{c:W(tStand,0,4.5),w:15,h:8.4,dir,pad:1.02,shadow:9})
+    .add("grow",{c:W(gStand,0,4.6),w:7,h:9,dir,pad:1.01,shadow:7}).add("growW",{c:W(gStand,0,3.9),w:15,h:7,dir,pad:1.02,shadow:9});
+  const zoneOf={read:"read",tag:"tag",timer:"tag",test:"tag",grow:"grow"};let zone="read",first=true;
+  const zn=z=>wide?z+"W":z==="read"?(rFocus==="ideas"?"readIdeas":"readPage"):z==="tag"?(focus==="card"?"tagCard":"tagPage"):z;
+  const all=[lTag,lMiss];let prevCur=null,prevMiss=null,doneAt=0;
+  // the page painter, shared by the read and tag zones
+  function paint(sh,sty,opt){sh.draw((g,w,h,R)=>{g.fillStyle=PAPER;L.rr(g,0,0,w,h,18);g.fill();const M=60;H2(g,TX.title,M,96,52);H2(g,TX.form,w-M,92,22,{mono:true,fill:MUTED,a:"right",wt:500});
+    g.fillStyle="#EFE6EC";g.fillRect(M,120,w-2*M,3);const y0=140,f=L.fitFlow(g,segsOf(TX),{x:M,y:y0,w:w-2*M,size:44,lhf:1.34,sty},h-y0-80,26);
+    if(opt.tap)for(const k in f.rects)f.rects[k].forEach(r=>R.push([r[0]-8,r[1]-4,r[2]+16,r[3]+8,"tap:"+k]));sh.rects=f.rects;
+    H2(g,"— "+TX.by,w-M,Math.min(h-30,y0+f.h+44),24,{fill:MUTED,a:"right",wt:500});if(opt.note)H2(g,opt.note,w/2,h-26,22,{mono:true,fill:MUTED,a:"center"})})}
+  S.l2={rPage,tPage,tCard,ideas,toIdeas,back};// handles for automated checks
+  return{
+    resize(){layout();FR.go(zn(zone),true)},
+    step(stp){zone=zoneOf[stp.k]||"tag";if(stp.k!=="read")rFocus="page";focus=s.cur||s.miss?"card":"page";layout();FR.go(zn(zone),first);first=false},
+    update(st0,stp,dt,t){const k=stp.k,exam=k==="timer";all.forEach(l=>l.hide());hud.clear();
+      // lamp follows the zone
+      const lx=zone==="read"?RX:zone==="tag"?TGX:GX;lamp.intensity=zone==="grow"?0:18;lamp.position.set(lx-6.5,6.2,1.6);lamp.target.position.set(lx-3.6,4,-1);
+      // ---- read: page + ideas
+      const rk=fontsV+"";if(rk!==rKey){rKey=rk;paint(rPage,kk=>kk&&TX.feats[kk]?{bg:lite(featCol(kk),.55)}:{},{})}
+      const ik=s.idea+"|"+fontsV;if(ik!==iKey){iKey=ik;ideaHead.draw((g,w,h)=>{card(g,w,h,"#FFF3F6");H2(g,(TX.idea.q+" · tap one").toUpperCase(),44,h*.62,30,{mono:true,fill:PINK,wt:600})});
+        ideas.forEach((c,i)=>{const [v,txt]=TX.idea.opts[i],on=s.idea===v,ok=v===TX.idea.ans;c.draw((g,w,h)=>{card(g,w,h,on?(ok?lite(PR.lime,.5):lite(PR.peach,.5)):PAPER,on?{c:K.plum,w:8}:{c:"#E4DAE2",w:4});L.fitFlow(g,[{t:txt}],{x:44,y:26,w:w-88,size:38,wt:on?600:500,lhf:1.22},h-44,24)})})}
+      ideas.forEach((c,i)=>{const on=s.idea===TX.idea.opts[i][0];c.z=L.approach(S,c.z,on?.3:0,dt,9);c.g.position.z=.1+c.z});
+      if(zone==="read")hud.set(s.idea?`<b class="${s.idea===TX.idea.ans?"ok":"warn"}">${s.idea===TX.idea.ans?"main idea found":"not that one"}</b>`:`<b>${featIds.length} features to find</b><i>read it twice, then pick the main idea</i>`);
+      // ---- tag: the page with live highlights and stickies
+      const tagsK=JSON.stringify(s.tags)+"|"+s.cur+"|"+s.miss+"|"+exam+"|"+fontsV;
+      if(tagsK!==tKey){tKey=tagsK;paint(tPage,kk=>{if(!kk)return{};const f=TX.feats[kk],tg=s.tags[kk];if(f){const bg=done(tg)?featCol(kk):s.cur===kk?lite(featCol(kk),.3):exam?undefined:lite(featCol(kk),.62);return{bg,wt:s.cur===kk||done(tg)?600:400,ul:exam&&!done(tg)&&s.cur!==kk?false:false}}return{bg:s.miss===kk?lite(PR.peach,.5):undefined}},{tap:true,note:exam?"THE HIGHLIGHTS ARE OFF, AS IN THE EXAM":""})}
+      featIds.forEach((id,i)=>{const m=stickies[i],d=done(s.tags[id]),r=tPage.rects&&tPage.rects[id]&&tPage.rects[id][0];m.userData.a=L.approach(S,m.userData.a,d?1:0,dt,7);m.visible=!!r&&m.userData.a>.02;
+        if(m.visible){const p=tPage.g.worldToLocal(tPage.at(r[0],r[1]));m.position.set(p.x-.14,p.y+.06,.09+(1-m.userData.a)*1.4);m.rotation.set(-.3,0,-.25)}});
+      featIds.forEach(id=>{if(done(s.tags[id])&&!prevDone[id]){lastDone=id;doneAt=t}});prevDone=Object.fromEntries(featIds.map(id=>[id,done(s.tags[id])]));
+      // phone: a new phrase sends the camera to the card; a finished tag brings it back to the page
+      if(s.cur!==prevCur||s.miss!==prevMiss){if(s.cur||s.miss){if(focus!=="card"){focus="card";if(zone==="tag")FR.go(zn("tag"))}}prevCur=s.cur;prevMiss=s.miss}
+      if(!wide&&focus==="card"&&s.cur&&done(s.tags[s.cur])&&lastDone===s.cur&&t-doneAt>1.4&&zone==="tag"){focus="page";doneAt=1e9;FR.go(zn("tag"))}
+      // the tag card
+      const cur=s.cur,tg=cur?tagOf(cur):null,stage=!tg?null:tg.tech!=="ok"?"tech":tg.eff!=="ok"?"eff":tg.link!=="ok"?"link":"done";
+      const ck=[cur,s.miss,JSON.stringify(tg),fontsV,nDone()].join("|");
+      if(ck!==cKey){cKey=ck;tCard.draw((g,w,h,R)=>{card(g,w,h,"#FFF7F9",{c:"#EBC9D4",w:6});const M=44;
+        if(s.miss){H2(g,"PLAIN STATEMENT",M,70,28,{mono:true,fill:K.deepPeach});L.fitFlow(g,[{t:`"${TX.distract[s.miss]}" says what happens. No technique to tag here. Hunt for a phrase that does something extra: compares, exaggerates, repeats, surprises.`}],{x:M,y:96,w:w-2*M,size:38,lhf:1.32},h-140,22);return}
+        if(!cur){H2(g,exam?"TAP A PHRASE. THE HIGHLIGHTS ARE OFF.":"TAP A HIGHLIGHTED PHRASE TO START A TAG",M,70,26,{mono:true,fill:MUTED});H2(g,`${nDone()} of ${featIds.length} tagged`,M,130,44);return}
+        const f=TX.feats[cur];g.fillStyle=featCol(cur);L.rr(g,24,24,w-48,140,22);g.fill();L.fitFlow(g,[{t:`"${f.t}"`}],{x:M,y:34,w:w-2*M,size:36,wt:600,lhf:1.18},118,22);
+        const LAB={tech:"1 · TECHNIQUE",eff:"2 · EFFECT ON THE READER",link:LEVEL===3?"3 · LINK TO THE WRITER'S POSITION":"3 · LINK TO THE MAIN IDEA"};
+        if(stage==="done"){H2(g,"TAGGED ✓",M,212,28,{mono:true,fill:K.deepMint});L.fitFlow(g,[{t:f.tech+": ",k:"b"},{t:f.eff+", which suggests "+f.link+"."}],{x:M,y:228,w:w-2*M,size:34,lhf:1.3,sty:q=>q?{wt:700}:{}},h-250,18);return}
+        H2(g,LAB[stage],M,208,26,{mono:true,fill:MUTED});const opts=options(cur,stage),oy=222,oh=(h-oy-24)/3;
+        opts.forEach(([txt,v],i)=>{const picked=tg[stage]==="no"&&tg.pick===i&&v==="no";const y=oy+i*oh;g.fillStyle=picked?lite(PR.peach,.45):"#FFFFFF";L.rr(g,24,y+6,w-48,oh-12,20);g.fill();g.strokeStyle="#E4DAE2";g.lineWidth=3;L.rr(g,24,y+6,w-48,oh-12,20);g.stroke();
+          L.fitFlow(g,[{t:txt}],{x:M+6,y:y+16,w:w-2*M-12,size:33,lhf:1.16},oh-30,18);R.push([24,y+6,w-48,oh-12,`opt:${stage}:${v}:${i}`])})})}
+      // the clock (timer step only)
+      clock.visible=exam;if(exam){const left=s.timeLeft,tot=TX.minutes*60,fr=left/tot;if(Math.abs(fr-sweepF)>.0005){sweepF=fr;sweep.geometry.dispose();sweep.geometry=new THREE.CircleGeometry(.95,64,Math.PI/2-fr*Math.PI*2,fr*Math.PI*2)}
+        minH.rotation.z=-(1-fr)*Math.PI*2;secH.rotation.z=-((tot-left)%60)/60*Math.PI*2}
+      if(zone==="tag"){hud.set(exam?`<b class="${s.timeLeft<120?"warn":""}">${fmtT(s.timeLeft)}${s.timerDone?" · time":s.timerOn?"":" · press Start"}</b><i>${s.timerTags} tagged this run</i>`:`<b>${nDone()} of ${featIds.length} tagged</b>${stage&&stage!=="done"?`<i>move ${stage==="tech"?1:stage==="eff"?2:3} of 3</i>`:""}`);
+        if(lastDone&&done(s.tags[lastDone])&&tPage.rects&&tPage.rects[lastDone]&&(wide||focus==="page")){const r=tPage.rects[lastDone][0];lTag.show().at(tPage.at(r[0],r[1])).set(`<b>${TX.feats[lastDone].tech}</b>`)}
+        if(s.miss&&tPage.rects&&tPage.rects[s.miss]&&(wide||focus==="page")){const r=tPage.rects[s.miss][0];lMiss.show().at(tPage.at(r[0],r[1])).set("plain statement")}}
+      // ---- grow: the stack and the paragraph
+      const id=featIds.find(q=>done(s.tags[q]))||"f1",f=TX.feats[id],n=s.stage,gk=id+n+fontsV;
+      if(gk!==gKey){gKey=gk;const segs=[];if(n>=1)segs.push({t:`The writer uses ${f.tech.toLowerCase().replace(/ \(.*\)/,"")} in "${f.t}". `,k:"tech"});if(n>=2)segs.push({t:`This ${f.eff}. `,k:"eff"});if(n>=3)segs.push({t:`It suggests ${f.link}. `,k:"link"});
+        if(n>=4)segs.push({t:LEVEL===3?`The writer wants the reader to question what convenience has cost them, not just to admire the walking. `:`The writer wants us to feel how much a small comfort is worth when everything else is stripped away. `,k:"so"});
+        if(n>=5)segs.push({t:LEVEL===3?`It works because the joke and the honesty arrive together: the writer admits the rain and the long walk, so the final reversal feels earned rather than preached.`:`It works because the ordinary is never named as special; the storm does that job, so the reader arrives at the comfort the way Mia does.`,k:"so"});
+        gSheet.draw((g,w,h)=>{card(g,w,h,PAPER);H2(g,`ONE TAG → ONE PARAGRAPH · ${n} OF 5 MOVES`,44,58,26,{mono:true,fill:MUTED});L.fitFlow(g,segs,{x:44,y:78,w:w-88,size:38,lhf:1.36,sty:q=>({bg:STC[q]})},h-100,18)});
+        slabs.forEach((sl,i)=>sl.draw((g,w,h)=>{g.fillStyle=[STC.tech,STC.eff,STC.link,STC.so,STC.so][i];L.rr(g,0,0,w,h,22);g.fill();H2(g,`${i+1}  ${GROW[i]}${i>=3?(LEVEL===3?" (critical response)":" (Merit, Excellence)"):""}`,36,h*.66,h*.42,{wt:600})}))}
+      slabs.forEach((sl,i)=>{sl.a=L.approach(S,sl.a,i<n?1:0,dt,8);sl.g.visible=sl.a>.02;sl.g.position.y=sl.g.userData.y+(1-sl.a)*1.2;sl.g.position.z=.2})
+      if(zone==="grow")hud.set(`<b>${n} of 5 moves</b><i>${n>=4?"moves 4 and 5 carry the higher grades":"slide Moves to grow it"}</i>`);
+      hud.flush()}};
+}
+const api=StudyKit.mount({kupu:KUPU,scene3d:unseen3d,postprocessing:false,
   eyebrow:LEVEL===3?"English · Unfamiliar texts, critical response":"English · Unfamiliar texts",title:"The unfamiliar text machine",homeHash:LEVEL===3?"l3":"l2",
   fig:"FIG. 44 · AN UNSEEN PAGE, A TAG CARD AND A CLOCK",railTitle:"Technique, effect, idea",
   badge:LEVEL===3?{label:"NCEA L3 English 91474",exam:"2026-11-11T09:30:00+13:00",examText:"Wed 11 Nov, 9:30am"}:{label:"NCEA L2 English 91100",exam:"2026-11-12T09:30:00+13:00",examText:"Thu 12 Nov, 9:30am"},
