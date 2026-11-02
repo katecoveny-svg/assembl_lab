@@ -1,24 +1,26 @@
 {
-  "sourceHead": "cb0d83351d6cb783a398c6069e09e6859e6a6d44",
-  "method": "Browser captures of the actual initial canvas; overlay labels hidden, scene unmodified. JPEG max edge 1000px, quality 85. Display crop 8:5 centred.",
+  "updated": "2026-11-02",
+  "method": "Playwright (Chromium, SwiftShader) captures of each studio's real canvas at 800×500 CSS px, device scale 1.25, with ?thumb=1 hiding the tool tray. JPEG quality 85. No retouching.",
   "captures": [
     {
-      "route": "/instruments/reality-remix/",
-      "medium": "SYNTHETIC GAUSSIAN SCULPTURE",
-      "state": "Initial loaded composition; no scene changes",
-      "capture": "Visible canvas crop; overlay labels hidden only"
+      "route": "/instruments/reality-remix/?s=4207&k=galaxy&p=neon&b=night",
+      "file": "reality-remix.jpg",
+      "state": "Galaxy start, seed 4207, Neon colours on Night"
     },
     {
-      "route": "/instruments/soft-matter/",
-      "medium": "LIVE SOFT BODY / RAPIER",
-      "state": "Initial loaded composition; no scene changes",
-      "capture": "Visible canvas crop; overlay labels hidden only"
+      "route": "/instruments/impossible-objects/?s=31&k=penrose&v=zoom:135",
+      "file": "impossible-objects.jpg",
+      "state": "Penrose triangle start, Impossible drawing order"
     },
     {
-      "route": "/instruments/impossible-objects/",
-      "medium": "LIVE SOLID / MANIFOLD",
-      "state": "Initial loaded composition; no scene changes",
-      "capture": "Visible canvas crop; overlay labels hidden only"
+      "route": "/instruments/soft-matter/?s=1208&k=party",
+      "file": "soft-matter.jpg",
+      "state": "Jelly party start, seed 1208"
+    },
+    {
+      "route": "/instruments/squishy-lab/?s=77&k=sheet",
+      "file": "squishy-lab.jpg",
+      "state": "Sticker sheet start, seed 77"
     }
   ]
 }

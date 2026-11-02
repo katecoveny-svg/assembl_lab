@@ -91,13 +91,14 @@ const engine = {
         if (r() < 0.25) continue;
         st.opts.shape = r.pick(SHAPES)[0]; st.opts.pattern = r.pick(PATTERNS)[0]; st.opts.face = r.pick(FACES.slice(0, 3))[0];
         const x = -this.ax + ((a + 0.5) / cols) * this.ax * 2 + r.range(-0.08, 0.08), y = -this.ay + ((b + 0.5) / rows) * this.ay * 2 * 0.86 + r.range(-0.08, 0.08);
+        if (Math.hypot(x, (y - this.ay * 0.3) * 1.3) < 0.8) continue;
         const body = this.make(x, y, r.int(0, K - 1), Math.min(this.ax / cols, this.ay / rows) * 0.7);
         rotate(body, r.range(-0.5, 0.5));
         const c = copyBody(body); c.style = r() < 0.5 ? "sticker" : "glossy";
         this.kept.push(c);
       }
       Object.assign(st.opts, saved);
-      this.live = this.make(0, this.ay * 0.35, this.s.state.colour, this.radius * 0.7);
+      this.live = this.make(0, this.ay * 0.3, this.s.state.colour, this.radius * 0.72);
     } else {
       const d = DESIGNS[start] || DESIGNS.berry;
       if (!urlFirst) { st.opts.shape = d.shape; st.opts.pattern = d.pattern; st.opts.face = d.face; st.colour = d.ci; }
