@@ -32,7 +32,9 @@ def short_title(t):
     return s
 
 # fixes agreed in the Nov 2026 review (Tier 1 item 5): the vinyl machine is a waves machine, the reading machine covers unfamiliar texts
-EXTRA = {"91170": "vinyl", "91523": "vinyl", "91927": "read", "91474": "read"}
+EXTRA = {"91170": "vinyl", "91523": "vinyl", "91927": "read", "91100": "read", "91474": "read"}
+# L3 Calculus/Statistics rows confirmed against the 2026 timetable (Calculus Mon 16 Nov AM, Statistics Tue 24 Nov AM)
+VERIFIED_2026 = ["91577", "91578", "91579", "91584", "91585", "91586"]
 # machines whose tags carry no year: the years they are written for
 EXTRA_YEARS = {"heart": [9, 10]}
 SHORT_SUBJ = {"Mathematics and Statistics": "Maths", "Physics, Earth and Space Science": "PESS", "Earth and Space Science": "ESS", "Chemistry and Biology": "Chem & Bio", "Design and Visual Communication": "DVC"}
@@ -48,6 +50,10 @@ def main():
     for lv in ("l1", "l2", "l3"):
         for row in levels[lv].get("standards", []):
             std[row["num"]] = (lv, row)
+    # every exam date below was checked against the NZQA 2026 timetable PDF (www2.nzqa.govt.nz/assets/NCEA/2026-Exam-Timetable.pdf) on 2 Nov 2026
+    for code in VERIFIED_2026:
+        if code in std:
+            std[code][1]["verified"] = True
     for code, mid in EXTRA.items():
         if code not in std or mid not in machines:
             continue
