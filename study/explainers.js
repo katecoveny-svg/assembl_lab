@@ -7,9 +7,9 @@
   const BASE="/study/videos/explainers/";
   const LIST=[
     {id:"plates",title:"Why the Southern Alps are so high",std:"L1/L2 Geography",dur:39,machine:"fly"},
-    {id:"quadratics",title:"Roots, vertex, discriminant",std:"L2 Maths · 91261",dur:38,machine:null},
-    {id:"gradient",title:"Gradient is rate of change",std:"L2 Maths · 91262",dur:39,machine:null},
-    {id:"paragraph",title:"Claim, evidence, explanation, so what",std:"L2 English · 91098",dur:40,machine:null},
+    {id:"quadratics",title:"Roots, vertex, discriminant",std:"L2 Maths · 91261",dur:38,machine:"algebra"},
+    {id:"gradient",title:"Gradient is rate of change",std:"L2 Maths · 91262",dur:39,machine:"gradient"},
+    {id:"paragraph",title:"Claim, evidence, explanation, so what",std:"L2 English · 91098",dur:40,machine:"quote"},
     {id:"energy",title:"Energy is conserved",std:"L1 Science · 92047",dur:38,machine:"energy"},
     {id:"genes",title:"From gene to trait",std:"L1 Science · 92022",dur:41,machine:"genes"}];
   const css=`dialog.xvid{width:min(960px,calc(100vw - 24px));padding:0;border:0;border-radius:20px;background:#140e16;overflow:hidden}dialog.xvid::backdrop{background:rgba(20,10,20,.7)}
