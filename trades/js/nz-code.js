@@ -121,3 +121,57 @@ export const VARIATIONS = {
   A101: { id: "V-A101-skirting", title: "Add skirting to the three bedrooms", who: "Ana Peterson (fictional client), by text at 2:10 pm", add: [{ element: "bed1", condition: "skirting" }, { element: "bed2", condition: "skirting" }, { element: "bed3", condition: "skirting" }], note: "A room tagged with skirting is measured on its perimeter." },
   A201: { id: "V-A201-posts", title: "Raise the deck 300 mm: longer posts and a step", who: "Josh Peterson (fictional client), on site", add: [{ element: "posts", condition: "post" }], note: "Re-measures the posts as the new count; the handrail check (F4) is flagged again because the fall grows." },
 };
+
+// ---------------------------------------------------------------- councils: consent pages, keyed off the H1 zone / region selector
+// Each link was checked on 2 November 2026. `check` says how: curl 200, or confirmed in a browser-equivalent fetch where the
+// council's firewall refuses automated checks (Auckland answers 406 to scripts; Christchurch serves a bot challenge).
+export const COUNCILS = [
+  { id: "auckland", name: "Auckland Council", region: "Auckland", zone: 1, links: [
+    { title: "Consent exemptions", url: "https://www.aucklandcouncil.govt.nz/en/building-and-consents/consent-exemptions.html", check: "read 2 Nov 2026 (the council's firewall answers 406 to scripts)" } ] },
+  { id: "wellington", name: "Wellington City Council", region: "Wellington", zone: 3, links: [
+    { title: "Find out if you need a building consent", url: "https://wellington.govt.nz/property-rates-and-building/building-and-resource-consents/building-consents/find-out-if-you-need-a-building-consent", check: "200 on 2 Nov 2026" },
+    { title: "Applying for a building consent", url: "https://wellington.govt.nz/property-rates-and-building/building-and-resource-consents/building-consents/applying-for-a-building-consent", check: "200 on 2 Nov 2026" } ] },
+  { id: "christchurch", name: "Christchurch City Council", region: "Canterbury", zone: 4, links: [
+    { title: "Exemption from building consent", url: "https://ccc.govt.nz/consents-and-licences/building-consents/before-you-build/exemption-from-building-consent", check: "listed in search on 2 Nov 2026; the council's site serves a bot challenge to automated checks, so open it in a browser" } ] },
+];
+export const NATIONAL_EXEMPT_GUIDE = { title: "Building work that does not require a building consent · 5th edition (MBIE)", url: "https://codehub.building.govt.nz/resources/building-work-that-does-not-require-a-building-consent-fifth-edition", check: "200 on 2 Nov 2026" };
+export const councilForZone = (zone) => COUNCILS.find((c) => c.zone === Number(zone)) || null;
+
+// ---------------------------------------------------------------- Construction Contracts Act 2002: working days and the law
+// "working day" (s 5): not a weekend, Waitangi Day, Good Friday, Easter Monday, Anzac Day, the Sovereign's birthday, Matariki,
+// Labour Day (Waitangi and Anzac Mondayised), the area's anniversary day, and for ss 18 and 22 not 24 December to 5 January.
+// Dates listed for 2026 and 2027 only; outside that range the calculation says so.
+export const NZ_HOLIDAYS = {
+  national: ["2026-02-06", "2026-04-03", "2026-04-06", "2026-04-27", "2026-06-01", "2026-07-10", "2026-10-26",
+    "2027-02-08", "2027-03-26", "2027-03-29", "2027-04-26", "2027-06-07", "2027-06-25", "2027-10-25"],
+  anniversary: { Auckland: ["2026-01-26", "2027-02-01"], Wellington: ["2026-01-19", "2027-01-25"], Canterbury: ["2026-11-13", "2027-11-12"] },
+  range: ["2026-01-01", "2027-12-31"],
+};
+export const CCA = {
+  act: { title: "Construction Contracts Act 2002", url: "https://www.legislation.govt.nz/act/public/2002/46/en/latest/" },
+  amendment2023: { title: "Construction Contracts (Retention Money) Amendment Act 2023 (2023 No 12), in force 5 October 2023", url: "https://www.legislation.govt.nz/act/public/2023/12/en/latest/" },
+  s20: [
+    { ref: "s 20(2)(a)", text: "In writing" },
+    { ref: "s 20(2)(b)", text: "Contains enough detail to identify the construction contract" },
+    { ref: "s 20(2)(c)", text: "Identifies the construction work and the period it relates to" },
+    { ref: "s 20(2)(d)", text: "States the claimed amount and the due date for payment" },
+    { ref: "s 20(2)(e)", text: "Shows how the claimed amount was calculated" },
+    { ref: "s 20(2)(f)", text: "States that it is made under the Construction Contracts Act 2002" },
+    { ref: "s 20(3)(a)", text: "Comes with an outline of the process for responding to the claim" },
+    { ref: "s 20(3)(b)", text: "Comes with an explanation of the consequences of not responding, and of not paying in full" },
+    { ref: "s 20(4)", text: "That outline and explanation are in writing, in the prescribed form (Construction Contracts Regulations 2003)" },
+  ],
+  timing: [
+    { ref: "s 18", text: "If the contract says nothing, payment is due 20 working days after the claim is served." },
+    { ref: "s 21", text: "The payer may answer with a payment schedule: in writing, naming the claim, stating the scheduled amount, and if it is less, how it was calculated and why." },
+    { ref: "s 22", text: "No schedule within the contract's time, or 20 working days if the contract is silent, and the payer is liable for the full claimed amount on the due date." },
+    { ref: "s 23", text: "Then the payee may recover the unpaid amount as a debt in court, and may give notice of suspending work." },
+  ],
+  retention: [
+    { ref: "s 18B(1)", text: "The retention money rules apply to commercial construction contracts: ones where no party is a residential occupier of the premises." },
+    { ref: "s 18C", text: "Retention money is held on trust for the party it was withheld from, from the moment the contract allows it to be withheld." },
+    { ref: "ss 18D–18E", text: "It must be kept in a bank account (or covered by a complying instrument, s 18FB), separate from the business's own money." },
+    { ref: "s 18FD", text: "The party holding it reports to the other party as soon as practicable, then at least every 3 months: amounts, dates, the contract, account details." },
+    { ref: "s 18FA", text: "It is protected from the holder's other creditors." },
+  ],
+};

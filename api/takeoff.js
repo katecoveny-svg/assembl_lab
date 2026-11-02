@@ -1,7 +1,8 @@
 // assembl lab · trades twin: the takeoff MCP endpoint. Stateless Model Context Protocol server over Streamable HTTP, the same
 // conventions as /api/mcp.js (the cars endpoint): POST one JSON-RPC 2.0 message (a batch array is accepted), JSON responses,
 // no SSE stream, no sessions, no auth, CORS open, no dependencies. GET / DELETE answer 405; OPTIONS is the CORS preflight.
-// Tools: find_rooms, measure, consent_check, code_checks, defect_register, price, quote, variation, draft_bid: all pure functions
+// Tools: find_rooms (demo geometry, or labels read off any drawing's text layer), measure, consent_check, code_checks, defect_register,
+// price, quote, variation, payment_claim (Construction Contracts Act 2002), draft_bid: all pure functions
 // over the two Simulated demo sheets (trades/js/plans-data.js) and the Illustrative NZ reference data (trades/js/nz-code.js);
 // draft_bid and variation return drafts that a named person approves on the desk: nothing here sends, stores or quotes anything.
 // Resources: the plan data, the condition library, the NZ reference data and the two sheet PDFs' URLs.
@@ -17,7 +18,8 @@ const SERVER_INFO = { name: "assembl-takeoff-twin", title: "Plan takeoff (assemb
 export const INSTRUCTIONS = "An assembl lab demonstration: Lot 12 Kōwhai Rise, its two sheets (A101 floor plan, A201 deck and pergola) and every rate are Simulated and fictional, so never present a figure as a real price. " +
   "A person confirms the scale before a measurement counts; find_rooms and measure default to the sheet's nominal scale and say so. " +
   "price, quote and draft_bid are indicative only, never a quote; draft_bid and variation return drafts that a named person at the builder approves before anything leaves. " +
-  "consent_check, code_checks and defect_register are Illustrative readings of public MBIE guidance, not a compliance determination: the council and a licensed practitioner decide. Units are metric; GST is 15% and shown separately on the whole.";
+  "consent_check, code_checks and defect_register are Illustrative readings of public MBIE guidance, not a compliance determination: the council and a licensed practitioner decide. " +
+  "payment_claim is an Illustrative reading of the Construction Contracts Act 2002, not legal advice; a person approves before a claim is served. find_rooms with labels reports names and sizes as written on the drawing. Units are metric; GST is 15% and shown separately on the whole.";
 const CAPS = { tools: { listChanged: false }, resources: { subscribe: false, listChanged: false }, prompts: { listChanged: false } };
 const CORS = {
   "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
@@ -64,7 +66,7 @@ async function dispatch(msg, modern, now) {
       if (!TOOLS.find((t) => t.name === p.name)) throw new RpcError(-32602, `Unknown tool: ${p.name}`, { tools: TOOLS.map((t) => t.name) });
       const r = callTool(p.name, p.arguments || {});
       const extra = {};
-      if ((p.name === "draft_bid" || p.name === "variation") && !r.isError) { // the draft's hash rides in _meta, so an approver can check what they approved
+      if ((p.name === "draft_bid" || p.name === "variation" || p.name === "payment_claim") && !r.isError) { // the draft's hash rides in _meta, so an approver can check what they approved
         r.structuredContent.draftedAt = now.toISOString();
         extra._meta = { "assembl/bidHash": createHash("sha256").update(canon(r.structuredContent)).digest("hex"), "assembl/authority": "act with approval" };
       }
