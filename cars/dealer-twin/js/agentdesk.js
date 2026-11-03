@@ -19,7 +19,9 @@ const tchip = (t) => `<span class="ad-t" data-t="${/source|published/i.test(t) ?
 const badge = (level) => `<span class="ad-auth" data-l="${AUTH[level] ?? 0}" title="Authority level ${(AUTH[level] ?? 0) + 1} of 6">${esc(level)}</span>`;
 const cube = (i) => { const c = CUBES[i % CUBES.length]; return `<i class="ad-cube" style="--c:${c}"><b></b><b></b><b></b></i>`; };
 const call = (tool, args) => `<code class="ad-call"><span class="fn">${esc(tool)}</span>(${esc(JSON.stringify(args))})</code>`;
-const carImg = (c) => `<img src="${esc((c.image && c.image.url) || `img/cars/${c.id}-1x1.webp`)}" alt="" loading="lazy" decoding="async">`;
+// the demo dealer has no photos: a car shows the drawing of its body style (never a recoloured stand-in render)
+const BODIES = ["hatch", "sedan", "wagon", "suv", "ute", "van"];
+const carImg = (c) => `<img src="${esc(BODIES.includes(c.body) ? `img/body/${c.body}-sq.svg` : (c.image && c.image.url) || "img/body/suv-sq.svg")}" alt="" loading="lazy" decoding="async">`;
 
 // ---------------------------------------------------------------- what each record looks like on the desk
 function viewSearch(s) {
