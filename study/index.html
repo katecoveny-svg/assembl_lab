@@ -646,7 +646,7 @@ const LOG=K.readLog(), ST=A.state(LOG);
    :`<span class="txt">Start a study streak<span>Open a machine and pass a challenge each day. Your streak is saved on this device, and it unlocks new places for Allen.</span></span>${miles}`})();
 
 // ---- machine cards: year, standard and exam date on the face
-const THREE_PREVIEWS=new Set(["engine","fly","socials","earthspace","heart","shaky","vend","pinball","ai","atoms","bike","civics","claw","climate","data","ecology","energy","fish","genes","inanga","kokopu","lines","maps","market","materials","particles","phone","plan","queue","reactions","shapes","sky","slushie","space","vinyl"]);
+const THREE_PREVIEWS=new Set(["engine","fly","socials","earthspace","house","windtunnel","heart","shaky","vend","pinball","ai","atoms","bike","civics","claw","climate","data","ecology","energy","fish","genes","inanga","kokopu","lines","maps","market","materials","particles","phone","plan","queue","reactions","shapes","sky","slushie","space","vinyl"]);
 const GROUPS=[["science","Science"],["biochem","Chemistry and biology"],["maths","Maths and statistics"],["english","English"],["social","Social studies"],["digital","Digital technologies"],["tech","Technology and design"]];
 const gearFor=id=>A.items.filter(it=>it.m&&it.m.includes(id));
 const yearsLabel=ys=>{if(!ys||!ys.length)return "";const runs=[];ys.forEach(y=>{const r=runs[runs.length-1];if(r&&y===r[1]+1)r[1]=y;else runs.push([y,y])});
@@ -663,7 +663,7 @@ function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(
     ...(show.length&&show[0].exam?[`<span class="pc ex">Exam ${esc(fmtDay(show[0].exam))}, ${esc(fmtTime(show[0].exam))}</span>`]:[]),
     ...(stds.length>2?[`<span class="pc">+${stds.length-2} more</span>`]:[])];
   return `<a class="app" data-find="${esc(find)}" data-years="${(m.years||[]).join(" ")}" href="${m.href}" style="--acc:${K.accentFor(id)};--acc-tint:${K.tintFor(id)}">
-  <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart"||id==="socials"||id==="earthspace")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span><span class="app-ex">${m.level==="junior"?"Years 7–10":"NCEA "+esc(m.level)}</span></span>
+  <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart"||id==="socials"||id==="earthspace"||id==="house"||id==="windtunnel")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span><span class="app-ex">${m.level==="junior"?"Years 7–10":"NCEA "+esc(m.level)}</span></span>
   <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
   <span class="app-chips">${chips.join("")}</span>
   <span class="app-foot">${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
