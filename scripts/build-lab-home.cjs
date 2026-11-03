@@ -3,7 +3,7 @@
 // and the maturity ladder (lab/maturity.json). Run after editing either file:  node scripts/build-lab-home.cjs
 //
 // The page is static HTML on purpose: with no JS, or with reduced motion, it is the complete story. lab/story.js
-// only adds the sticky twin stage, the cube field and live data labels on top.
+// only adds the sticky twin stage, the moving DO glass orb and live data labels on top.
 //
 // Curation is presentation only. Every world in LAB_WORLDS and every instrument the old /discover/ page linked
 // appears here exactly once; scripts/check-lab-home.cjs fails if one goes missing or shows twice.
@@ -131,23 +131,8 @@ const play = PLAY.map(p => {
 const missing = Object.keys(WORLDS).filter(id => !used.has(id));
 if (missing.length) throw new Error('Worlds missing from the story: ' + missing.join(', ') + '. Add them to a chapter in scripts/build-lab-home.cjs.');
 
-const block = `<svg class="still" viewBox="0 0 300 260" aria-hidden="true" focusable="false">${(() => {
-  // the assembled block, drawn isometric: the still picture for no JS, no WebGL and reduced motion
-  const cols = ['#F3A5BE', '#C7B4F0', '#A7DEC7', '#F6B48E', '#A9C9F2', '#F2DC7C'];
-  const cubes = [];
-  for (let z = 0; z < 3; z++) for (let x = 0; x < 3; x++) cubes.push([x, z, 0]);
-  [[0, 0], [1, 0], [0, 1], [1, 1]].forEach(([x, z]) => cubes.push([x, z, 1]));
-  cubes.push([0, 0, 2]);
-  const s = 34, ox = 150, oy = 118;
-  const shade = (hex, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
-  return cubes.sort((a, b) => (a[2] - b[2]) || ((a[0] + a[1]) - (b[0] + b[1]))).map(([x, z, y], i) => {
-    const c = cols[(x * 2 + z * 3 + y * 5) % 6];
-    const px = ox + (x - z) * s * 0.866, py = oy + (x + z) * s * 0.5 - y * s;
-    const P = (dx, dy) => `${(px + dx).toFixed(1)},${(py + dy).toFixed(1)}`;
-    const h = s * 0.866, q = s * 0.5;
-    return `<g><path d="M${P(0, -q)} L${P(h, 0)} L${P(0, q)} L${P(-h, 0)}Z" fill="${c}"/><path d="M${P(-h, 0)} L${P(0, q)} L${P(0, q + s)} L${P(-h, s)}Z" fill="${shade(c, .82)}"/><path d="M${P(h, 0)} L${P(0, q)} L${P(0, q + s)} L${P(h, s)}Z" fill="${shade(c, .68)}"/></g>`;
-  }).join('');
-})()}</svg>`;
+// The DO glass orb, still: the first paint, and what no JS, no WebGL and reduced motion keep (lab/orb.js moves it)
+const orb = `<div class="orb-still"></div>`;
 
 const html = `<!doctype html>
 <html lang="en-NZ" data-feeds="ed,power,fuel,fpi" class="lab-story">
@@ -178,7 +163,7 @@ const html = `<!doctype html>
   <div class="actions"><a class="btn btn-paper" href="#twins">Walk through the twins</a><a class="btn btn-glass" href="#study">See the study machines</a></div>
   <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
  </div>
- <div class="hero-art" id="cubes">${block}</div>
+ <div class="hero-art" id="orb" aria-hidden="true">${orb}</div>
 </section>
 
 <span id="explore" class="anchor" aria-hidden="true"></span>

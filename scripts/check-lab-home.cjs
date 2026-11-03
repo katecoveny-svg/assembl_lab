@@ -26,6 +26,14 @@ async (page) => {
  await page.keyboard.press('Tab');const ring=await page.evaluate(()=>getComputedStyle(document.activeElement).outlineStyle);
  check(ring!=='none','focus ring visible');
  for(const w of [320,375,390]){await page.setViewportSize({width:w,height:800});await page.waitForTimeout(150);check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no horizontal scroll at ${w}px`)}
+ // the hero holds one DO glass orb (as on assembl.co.nz), decorative, never on the words or buttons; no pastel cubes
+ check(await page.locator('.hero .orb-still').count()===1,'one DO glass orb in the hero');
+ check(await page.locator('#orb').getAttribute('aria-hidden')==='true','the orb is decorative (aria-hidden)');
+ check(await page.evaluate(()=>!/#F2DC7C|cubes\.js|class="still"/i.test(document.documentElement.outerHTML)),'no pastel cube stack and no yellow on the home');
+ for(const w of [1440,1024,768,390,320]){await page.setViewportSize({width:w,height:900});await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(150);
+  const hit=await page.evaluate(()=>{const o=document.querySelector('.orb-still').getBoundingClientRect();const pad=24;const r=o.width/2*1.14+pad,cx=o.left+o.width/2,cy=o.top+o.height/2;
+   return [...document.querySelectorAll('.hero h1, .hero .lede, .hero .actions .btn, .hero .truth-note, .bar')].filter(e=>{const b=e.getBoundingClientRect();const dx=Math.max(b.left-cx,0,cx-b.right),dy=Math.max(b.top-cy,0,cy-b.bottom);return Math.hypot(dx,dy)<r}).map(e=>e.className||e.tagName)});
+  check(hit.length===0,`orb clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`)}
  // the old Learn & create page keeps its address and lands in the story
  await page.goto('http://127.0.0.1:8341/discover/#learn');await page.waitForURL(/\/#study$/);
  check(page.url().endsWith('/#study'),'/discover/#learn lands on the study machines');
