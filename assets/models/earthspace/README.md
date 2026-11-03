@@ -9,7 +9,11 @@ Rebuild:
    `github.com/nvkelso/natural-earth-vector/geojson/ne_50m_land.geojson` and `ne_50m_lakes.geojson`.
 2. `python make_textures.py ne_50m_land.geojson ne_50m_lakes.geojson <texdir>` (numpy + Pillow): Earth colour and
    roughness from the coastlines, with deserts placed where the real ones are; procedural clouds, Moon and Sun.
-3. `python build_earthspace.py <texdir> <outdir>` with `bpy` 5.x: builds the scene, exports the GLB, renders the hero
+3. Photo-real Earth: download NASA Blue Marble and Black Marble (public domain) as equirectangular images, e.g. the copies in
+   `github.com/vasturiano/three-globe/example/img/earth-blue-marble.jpg` and `earth-night.jpg`, then
+   `python make_nasa_textures.py earth-blue-marble.jpg earth-night.jpg <texdir>`. This replaces the painted `earth.jpg`
+   and adds `earth-lights.jpg` (city lights, shown on the night side only).
+4. `python build_earthspace.py <texdir> <outdir>` with `bpy` 5.x: builds the scene, exports the GLB, renders the hero
    (`PREVIEW=1` for a fast low-resolution test render).
 
-The surfaces are painted from data and noise, not photographs, and the machine says so.
+The Earth and its city lights are NASA imagery; the clouds, Moon and Sun are generated, and the machine says so.

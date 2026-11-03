@@ -138,7 +138,7 @@ API=StudyKit.mount({kupu:KUPU,scene3d:earthspace3d,
   eyebrow:"Science · Earth and space", title:"The Earth & Space machine", crumb:"Types of stars, distances in space, and the Earth, Moon and Sun: day and night, seasons, the Moon's phases, tides and eclipses", homeHash:"y9",
   fig:"FIG. 22 · EARTH, MOON, SUN AND STARS", railTitle:"Stars, distances, Earth, Moon and Sun",
   badge:{label:"Year 9 science"},
-  mainBox:"0 0 800 420", mainPhoneBig:true, mainLabel:"A realistic 3D Earth, Moon and Sun, made in Blender, with six types of star and a ruler out to the Andromeda Galaxy", closeBox:"0 0 420 260",
+  mainBox:"0 0 800 420", mainPhoneBig:true, mainLabel:"A realistic 3D Earth with NASA imagery and city lights at night, the Moon and Sun, made in Blender, with six types of star and a ruler out to the Andromeda Galaxy", closeBox:"0 0 420 260",
   state:s, steps,
   onStep:(x,stp)=>{if(stp.k!=="test")s.view=stp.k},
   controls:[
@@ -167,7 +167,7 @@ API=StudyKit.mount({kupu:KUPU,scene3d:earthspace3d,
     {q:"Show a first quarter moon.",check:()=>phase(s.moonDay)==="First quarter",ok:"Yes: half the face is lit. From New Zealand the lit half is on the left.",no:()=>`That's a ${phase(s.moonDay).toLowerCase()}. A first quarter comes about a week after new moon.`},
     {q:"Set up a lunar eclipse.",check:()=>eclipseNow()==="lunar",ok:"Yes: Sun, Earth and Moon in a line, with the Earth in the middle, at full moon.",no:()=>!s.lined?"The orbits need to line up first.":"Which phase must the Moon be at for the Earth to sit between it and the Sun?"}],
   papers:[{label:"NZQA past exams: Earth and Space Science (NCEA, for later years)",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/"}],
-  truth:"Sizes and distances in the 3D scene are squashed so everything fits on one screen: the real Sun is about 109 times wider than Earth and 150 million km away, and the Moon is 30 Earth-widths away. Star colours, temperatures, sizes and lifetimes are rounded textbook figures; real stars vary. The Earth's surface is painted from Natural Earth coastline data (public domain) with simplified colours, and the Moon and Sun surfaces are generated, not photographed. Day length is for Wellington, from a simple formula (within a few minutes), using sun time rather than clock time.",
+  truth:"Sizes and distances in the 3D scene are squashed so everything fits on one screen: the real Sun is about 109 times wider than Earth and 150 million km away, and the Moon is 30 Earth-widths away. Star colours, temperatures, sizes and lifetimes are rounded textbook figures; real stars vary. The Earth's surface and its city lights are NASA images (Blue Marble and Black Marble, public domain); the clouds and the Moon and Sun surfaces are generated, not photographed. Day length is for Wellington, from a simple formula (within a few minutes), using sun time rather than clock time.",
   footer:"Covers Year 9 Earth and space: types of stars (colour, temperature, size, lifetime, life cycle), distances in space (km, astronomical units and light-years, light travel time), day and night, seasons and the tilted axis, the Moon's phases as seen from New Zealand, tides (spring and neap) and solar and lunar eclipses."
 });
 
@@ -182,6 +182,17 @@ const qcss=document.createElement("style");qcss.textContent=`.qbank{margin-top:1
 function paintBank(){const list=bank.list();host.innerHTML=`<h3 id="qb-h">Practice questions</h3><p>Written for this machine in the style of a Year 9 science test, not real exam questions. Open the tool for each one, or work through it with Allen. Ask Allen for more and he'll add them here.</p><ol>${list.map((x,i)=>`<li class="${x.added?"added":""}"><b>${esc((steps.find(st=>st.k===x.step)||{lab:"Earth and space"}).lab)}${x.added?" · added by Allen":""}</b><span class="q">${esc(x.q)}</span><span class="acts">${x.step?`<button class="btn" type="button" data-qopen="${x.step}">Open the tool</button>`:""}<button class="btn primary" type="button" data-qallen="${i}">Work through it with Allen</button></span></li>`).join("")}</ol>`}
 paintBank();
 (document.querySelector(".card.practise")||document.querySelector(".bench")).insertAdjacentElement("afterend",host);
+// ---------- Go further: four of the best free space sites on the web (not made by assembl; they open in a new tab)
+const FURTHER=[["NASA's Eyes on the Solar System","https://eyes.nasa.gov/apps/solar-system/","Fly anywhere in the real solar system, with spacecraft where they are right now."],
+ ["Stellarium Web","https://stellarium-web.org/","The real night sky in your browser. Set your location to your town and find the Southern Cross, Matariki and the planets tonight."],
+ ["NASA Astronomy Picture of the Day","https://apod.nasa.gov/apod/","A new space photo every day, explained by an astronomer."],
+ ["The Scale of the Universe","https://htwins.net/scale2/","Zoom from the smallest things to the size of the universe."]];
+const further=document.createElement("section");further.className="card further";further.setAttribute("aria-labelledby","gf-h");
+further.innerHTML=`<h3 id="gf-h">Go further</h3><p>Four of the best free space sites on the web. They're not made by assembl and open in a new tab.</p><ul>${FURTHER.map(([n,u,d])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(n)} ↗</a><span>${esc(d)}</span></li>`).join("")}</ul><p class="credit">Earth images: NASA Visible Earth (Blue Marble and Black Marble).</p>`;
+const fcss=document.createElement("style");fcss.textContent=`.further{margin-top:18px}.further h3{margin:0 0 4px}.further>p{margin:0 0 12px;color:var(--as-muted,#654A4E);font-size:14px}.further ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.further li{border:1px solid var(--as-line,#E4D9DE);border-radius:14px;padding:12px 14px;display:grid;gap:4px}.further a{font-weight:600;color:var(--as-plum,#240B21)}.further a:focus-visible{outline:2px solid #916A70;outline-offset:2px}.further li span{font-size:14px;color:var(--as-muted,#654A4E);line-height:1.45}
+.further .credit{margin:12px 0 0;font:500 11px "IBM Plex Mono",monospace;color:#916A70}`;document.head.appendChild(fcss);
+host.insertAdjacentElement("afterend",further);
 host.addEventListener("click",e=>{const o=e.target.closest("[data-qopen]"),a=e.target.closest("[data-qallen]");
   if(o){const i=steps.findIndex(x=>x.k===o.dataset.qopen);if(i>=0){API.setStep(i);try{document.querySelector(".bench").scrollIntoView({behavior:RM?"auto":"smooth",block:"start"})}catch(err){}}}
   if(a){const x=bank.list()[+a.dataset.qallen];dispatchEvent(new CustomEvent("allen:ask",{detail:{display:"Work through this practice question with me:\n\n"+x.q,

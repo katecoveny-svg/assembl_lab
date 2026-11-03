@@ -43,7 +43,7 @@ export function earthspaceScene(S,L){
     if(view==='moon')V('moon',P.clone().addScaledVector(U,-.6).add(new THREE.Vector3(0,16.5,0)).toArray(),P.toArray(),{max:40});
     if(view==='eclipse')V('eclipse',P.clone().addScaledVector(W,9).addScaledVector(U,8.5).add(new THREE.Vector3(0,2.6,0)).toArray(),P.clone().addScaledVector(U,3.4).add(new THREE.Vector3(0,-.4,0)).toArray(),{max:50})}
   // ---------------------------------------------------------------- the Blender model
-  let atm=null,tide=null,moonOrbit=null,pulse=null,umbra=null;const stopObjs=[];
+  let atm=null,tide=null,moonOrbit=null,pulse=null,umbra=null;const nightUni={value:new THREE.Vector3(1,0,0)};const stopObjs=[];
   const PLACE={orrery:new THREE.Group(),gallery:new THREE.Group(),ruler:new THREE.Group()};Object.values(PLACE).forEach(g=>scene.add(g));
   new GLTFLoader().load('/assets/models/earthspace/earthspace.glb',g=>{
     const root=g.scene;root.traverse(o=>{if(o.name)N[o.name]=o;if(o.isMesh){o.castShadow=!o.material.transparent;o.receiveShadow=true;if(o.material.transparent)o.material.depthWrite=false}});
@@ -53,6 +53,9 @@ export function earthspaceScene(S,L){
     N.SUN.scale.setScalar(SUN_R);N.SUN.castShadow=N.SUN.receiveShadow=false;PLACE.orrery.add(glow('#FFB45A',SUN_R*5.5,.9),glow('#FFE9B8',SUN_R*2.9,1));
     // Earth: a little ocean shine, clouds that drift, an atmosphere rim lit on the day side
     const em=N.EARTH.material;em.roughness=1;em.metalness=0;
+    // city lights (NASA Black Marble) glow only on the night side: the emissive map fades out where the Sun is up
+    if(em.emissiveMap){em.emissive=new THREE.Color(1,1,1);em.emissiveIntensity=1.7;em.onBeforeCompile=sh=>{sh.uniforms.sunView=nightUni;
+      sh.fragmentShader='uniform vec3 sunView;\n'+sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n\ttotalEmissiveRadiance*=1.0-smoothstep(-0.12,0.2,dot(normal,sunView));')};em.needsUpdate=true}
     N.CLOUDS.castShadow=false;N.CLOUDS.material.depthWrite=false;N.CLOUDS.renderOrder=2;
     atm=new THREE.Mesh(new THREE.SphereGeometry(1.045,64,48),new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
       uniforms:{sunDir:{value:new THREE.Vector3(1,0,0)}},
@@ -111,6 +114,7 @@ export function earthspaceScene(S,L){
     N.EARTH_SPIN.rotation.y=sunAz+(s.hour-12)*15*D2R-174.8*D2R+drift;
     N.CLOUDS.rotation.y=S.REDUCED?0:t*.008;
     if(atm)atm.material.uniforms.sunDir.value.copy(N.EARTH_SYSTEM.position).multiplyScalar(-1).normalize();
+    nightUni.value.copy(N.EARTH_SYSTEM.position).multiplyScalar(-1).normalize().transformDirection(camera.matrixWorldInverse);
     // ---- Moon: angle from the phase (new moon sits between Earth and Sun), tidally locked, off the plane when not lined up
     const psi=sunAz+2*Math.PI*s.moonDay/L.LUNAR;const off=s.lined?0:1.45*Math.cos(2*Math.PI*s.moonDay/L.LUNAR);
     N.MOON.position.set(Math.cos(psi)*MO,off,-Math.sin(psi)*MO);N.MOON.rotation.y=psi+Math.PI;
