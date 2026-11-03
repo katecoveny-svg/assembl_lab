@@ -107,6 +107,12 @@
   },
   "earthspace": {
    "dur": 34
+  },
+  "windtunnel": {
+   "dur": 34
+  },
+  "world": {
+   "dur": 30
   }
  }
 }
