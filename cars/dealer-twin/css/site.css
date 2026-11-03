@@ -1407,3 +1407,58 @@ h1 em,h2 em,h3 em{font-family:var(--serif);font-style:italic;font-weight:400;let
 .ar-url code{font:500 13.5px var(--mono);color:#240B21;overflow-wrap:anywhere;flex:1 1 220px;min-width:0}
 .ar .btn{background:#240B21;border-color:#240B21;color:#F8F4EF}.ar .btn.ghost{background:transparent;color:#240B21;border-color:rgba(73,43,62,.26)}
 @media (max-width:860px){.ar-grid{grid-template-columns:1fr}}
+
+/* ============ stock: body-style drawings (the demo dealer has no photos; one drawing per body style, labelled, the listing as data).
+   Brand values are scoped here on purpose: the atelier look re-points --paper/--ink at neutral greys. */
+.stock,.rail,.steps4{--dr-paper:#FFFDFB;--dr-chalk:#F5F1F2;--dr-ink:#492B3E;--dr-plum:#240B21;--dr-rose:#916A70;--dr-line:rgba(73,43,62,.14)}
+.stock h2{font-family:var(--sans)}
+.wc.dr,.lc.dr{appearance:none;display:grid;grid-template-rows:auto 1fr;align-content:start;aspect-ratio:auto;min-height:0;padding:0;border:0;border-radius:var(--r-m);overflow:hidden;background:var(--dr-paper);color:var(--dr-ink);text-align:left;cursor:pointer;box-shadow:inset 0 0 0 1px var(--dr-line);isolation:isolate}
+.wall2 .wc.dr:first-child{aspect-ratio:auto}
+.wc.dr::after{display:none}
+.dr-fig{position:relative;display:block;aspect-ratio:4/3;background:var(--dr-chalk)}
+.dr-fig img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:none;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.wc.dr:hover img,.wc.dr:focus-visible img,.lc.dr:hover img,.lc.dr:focus-visible img{transform:scale(1.025)}
+.dr-lb{position:absolute;left:10px;bottom:8px;right:10px;font:500 10px/1.3 var(--mono);letter-spacing:.02em;color:var(--dr-rose)}
+.dr-d{display:grid;gap:3px;padding:12px 14px 14px;align-content:start}
+.dr-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px}
+.dr-mk{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dr-rose)}
+.wc.dr .bd,.lc.dr .bd{position:static;display:flex;gap:4px}
+.wc.dr .bd span,.lc.dr .bd span{font:500 10.5px var(--mono);border-radius:999px;padding:3px 8px;background:var(--dr-chalk);color:var(--dr-plum)}
+.dr-nm{font:500 clamp(18px,1.5vw,22px)/1.15 var(--sans);letter-spacing:-.02em;color:var(--dr-plum);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr-nm small{font:400 .78em var(--sans);color:var(--dr-rose);letter-spacing:0}
+.dr-meta{font:400 13px/1.35 var(--sans);color:var(--dr-ink);font-variant-numeric:tabular-nums}
+.dr-pr{margin-top:6px;font:500 clamp(20px,1.7vw,26px)/1 var(--sans);letter-spacing:-.03em;color:var(--dr-plum);font-variant-numeric:tabular-nums}
+.dr-pr small{font:500 11px var(--mono);letter-spacing:0;color:var(--dr-rose);margin-left:8px}
+.wc.dr[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--dr-plum)}
+.wc.dr:focus-visible,.lc.dr:focus-visible{outline:2px solid var(--dr-plum);outline-offset:3px}
+/* the three leads: same card, larger */
+.lc.dr.big{grid-template-rows:minmax(0,1fr) auto;aspect-ratio:auto}
+.lc.dr.big .dr-fig{aspect-ratio:auto;min-height:280px}
+.lc.dr.big .dr-nm{font-size:clamp(26px,2.6vw,40px)}
+.lc.dr.big .dr-pr{font-size:clamp(26px,2.4vw,36px)}
+.lc.dr.big .dr-d{padding:16px 20px 20px}
+@media (max-width:760px){.lc.dr.big,.lc.dr:not(.big){aspect-ratio:auto}.lc.dr.big .dr-fig{aspect-ratio:4/3;min-height:0}.lc.dr:not(.big) .dr-d{padding:10px 12px 12px}.lc.dr:not(.big) .dr-nm{font-size:16px}.lc.dr:not(.big) .dr-pr{font-size:18px}.lc.dr:not(.big) .dr-lb{display:none}}
+/* the spotlight, light for a drawing */
+[data-look] .spot.light{background:var(--dr-chalk);color:var(--dr-ink);box-shadow:inset 0 0 0 1px var(--dr-line)}
+.spot.light .spot-stage.drawing .spot-poster{-webkit-mask-image:none;mask-image:none;object-fit:contain;padding:3%}
+.spot.light .spot-stage.drawing .spot-cv{display:none}
+[data-look] .spot.light .spot-truth.chip{background:rgba(255,253,251,.92)!important;color:var(--dr-plum)!important;box-shadow:inset 0 0 0 1px var(--dr-line)}
+.spot.light .spot-info{background:var(--dr-paper)}
+.spot.light .spot-info h3{color:var(--dr-plum)}.spot.light .spot-info h3 span{color:var(--dr-rose)}
+.spot.light .spot-info .pr{color:var(--dr-plum)}.spot.light .spot-info .pr small{color:var(--dr-rose)}
+.spot.light .spot-info .facts span{background:var(--dr-chalk);color:var(--dr-ink)}
+.spot.light .spot-info .label{color:var(--dr-rose)}
+.spot.light .spot-info .btn{background:var(--dr-plum);color:var(--dr-paper);border-color:var(--dr-plum)}
+.spot.light .spot-info .btn.ghost{background:transparent;color:var(--dr-plum);border-color:var(--dr-line)}
+.spot.light .spot-info .note{color:var(--dr-rose)}
+.spot.light .spot-json{background:var(--dr-chalk);color:var(--dr-ink)}
+.spot.light .nring .bg{stroke:var(--dr-line)}.spot.light .nring .fg{stroke:var(--dr-plum)}.spot.light .nring span{color:var(--dr-ink)}.spot.light .nring b{color:var(--dr-plum)}
+/* hero rail and the agent explainer show the same drawings */
+.rc img[src*="img/body/"]{background:var(--dr-chalk,#F5F1F2);object-fit:contain}
+.s4-car img[src*="img/body/"]{object-fit:contain;background:#F5F1F2}
+.dr-pr{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}.dr-pr small{margin-left:0;white-space:nowrap}
+.wall-more{display:block;margin:18px auto 0}
+.wall-more[hidden]{display:none}
+[data-look] .spot.light{background:var(--dr-paper)}.spot.light .spot-stage{background:var(--dr-chalk)}
+@media (max-width:520px){.dr-lb .lg{display:none}.dr-d{padding:10px 12px 12px}.dr-nm{font-size:16px}.dr-pr{font-size:19px}.dr-meta{font-size:12px}}
+@media (min-width:761px){.lead3.dr3{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto}.lead3.dr3 .lc.dr.big{grid-row:auto}.lead3.dr3 .lc.dr.big .dr-fig{aspect-ratio:4/3;min-height:0}.lead3.dr3 .lc.dr .dr-nm{font-size:clamp(20px,1.9vw,28px)}.lead3.dr3 .lc.dr .dr-pr{font-size:clamp(22px,2vw,30px)}}

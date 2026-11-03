@@ -2,3 +2,5 @@
 .DS_Store
 node_modules
 *.log
+assets/models/cafe/renders/*.png
+*.blend1

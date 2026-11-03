@@ -1,15 +1,14 @@
-// The stock: a wall of cars and one in the spotlight. Tap a car and it takes the stage: in 3D where the car is a render (drag to turn,
-// swatches repaint it), as its photo where it is a photo (a photo's paint is never changed). Price, badges and truth label on every
-// card; the spotlight shows the notice and how a buyer's assistant reads the same car. A multi-brand dealer filters by brand, the demo by body.
-import { CFG, $, $$, esc, fmt, json, ambient, narrowMQ } from "./core.js";
+// The stock: a wall of cars and one in the spotlight. Tap a car and it takes the stage. A dealer with photos shows its photos (a photo's
+// paint is never changed). The demo dealer is fictional and has no photos, so each listing shows a drawing of its body style, labelled
+// as such, with the listing's facts as data: make, model, year, kilometres, price. Price, badges and truth label on every card; the
+// spotlight shows the notice and how a buyer's assistant reads the same car. A multi-brand dealer filters by brand, the demo by body.
+import { CFG, $, $$, esc, fmt, json } from "./core.js";
 
-const PAINT = { white: "#EEEDEA", ivory: "#E9E2CF", silver: "#B9BCC0", grey: "#6F7277", gray: "#6F7277", black: "#1D1D20", red: "#A3222C", blue: "#2D4173", green: "#3C5A45", orange: "#C2622A", yellow: "#D9B44A", brown: "#5E4436", bronze: "#7A5A3E" };
-const SWATCHES = [["Pearl white", "#EEEDEA"], ["Silver", "#B9BCC0"], ["Graphite", "#4A4D52"], ["Deep red", "#8E1F2B"], ["Navy", "#26365E"], ["Black", "#19191B"]];
-const paintOf = (c) => (c.render && c.render.paint) || Object.entries(PAINT).find(([k]) => (c.colour || "").toLowerCase().includes(k))?.[1] || "#8D9094";
 const BODY = { hatch: "Hatch", sedan: "Sedan", suv: "SUV", ute: "Ute", van: "Van", wagon: "Wagon" };
+const isDrawing = (c) => c.img && c.img.kind === "drawing";
 
 export async function initStock() {
-  const data = await json(CFG.stockUrl), cars = data.cars, wall = $("#wall2"), info = $("#spotInfo"), st = $("#spotStage"), poster = $("#spotPoster"), cv = $("#spotCv"), truth = $("#spotTruth");
+  const data = await json(CFG.stockUrl), cars = data.cars, wall = $("#wall2"), info = $("#spotInfo"), st = $("#spotStage"), poster = $("#spotPoster"), truth = $("#spotTruth");
   const S = CFG.stock || {}, byBrand = S.filter === "brand", cut = Object.fromEntries(((CFG.hero || {}).cars || []).filter((h) => !h.flat).map((h) => [h.id, h.src]));
   // filters: by brand (the dealer's own brands, then anything else in the used stock), the demo by body style
   const brands = data.brands || [], groups = byBrand
@@ -18,18 +17,36 @@ export async function initStock() {
   const bar = document.createElement("div"); bar.className = "wall-f wrap"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", byBrand ? "Filter by brand" : "Filter by body");
   bar.innerHTML = groups.map(([g, f], i) => { const n = cars.filter(f).length; return n || byBrand ? `<button type="button" data-g="${i}" aria-pressed="${i ? "false" : "true"}"${n ? "" : " disabled"}>${esc(g)} <i>${n}</i></button>` : ""; }).join("");
   wall.before(bar);
-  let filt = 0, sel = null, three = null, threeP = null;
+  let filt = 0, sel = null, all = false;
+  const drawn = cars.some(isDrawing), more = document.createElement("button");
+  more.type = "button"; more.className = "btn ghost wall-more"; more.hidden = true; wall.after(more);
+  more.addEventListener("click", () => { all = true; draw(); const b = wall.children[24] || wall.children[21]; b && b.focus({ preventScroll: true }); });
   const card = (c, i) => {
     const b = [c.fuelLabel && /electric|hybrid/i.test(c.fuelLabel) ? c.fuelLabel.replace("Petrol hybrid", "Hybrid") : "", /demo/i.test(c.condition || "") ? "Demo" : /new/i.test(c.condition || "") ? "New" : ""].filter(Boolean);
+    if (isDrawing(c)) return drawCard(c, b, "wc");
     return `<button class="wc${c.img.kind === "photo" ? " photo" : ""}" type="button" role="listitem" data-id="${esc(c.id)}" aria-pressed="false">
       <img src="${esc(c.img.card)}" alt="${esc(c.img.alt)}" loading="lazy" decoding="async">
       <span class="bd">${b.map((x) => `<span>${esc(x)}</span>`).join("")}<span class="t">${esc(c.img.kind === "photo" ? (S.photoBadge || "Photo") : "Render")}</span></span>
       <span class="turn">Open</span>
       <span class="ov"><b>$${fmt(c.priceNzd)}</b><span>${esc(c.year)} ${esc(c.make)} ${esc(c.model)}${c.odometerKm == null ? "" : ` · ${fmt(c.odometerKm)} km`}</span></span></button>`;
   };
+  // "Generic hatchback · drawing, not this car": the body part drops on a narrow card, the honesty part never does
+  const lbl = (c) => { const t = c.img.label || S.drawingTag || "Drawing, not this car", i = t.indexOf(" · "); return i < 0 ? esc(t) : `<span class="lg">${esc(t.slice(0, i + 3))}</span>${esc(t.slice(i + 3))}`; };
+  // a drawing card: the body-style drawing on chalk, then the listing as data. No price over a picture, no "render" claim.
+  function drawCard(c, b, cls, big) {
+    const meta = [c.year, c.odometerKm == null ? "km not listed" : `${fmt(c.odometerKm)} km`, c.transmission].filter(Boolean).map(esc).join(" · ");
+    return `<button class="${cls} dr${big ? " big" : ""}" type="button"${cls === "wc" ? ' role="listitem"' : ""} data-id="${esc(c.id)}"${cls === "wc" ? ' aria-pressed="false"' : ""}>
+      <span class="dr-fig"><img src="${esc(c.img.card)}" alt="" loading="lazy" decoding="async" width="1200" height="900"><span class="dr-lb">${lbl(c)}</span></span>
+      <span class="dr-d"><span class="dr-top"><span class="dr-mk">${esc(c.make)}</span><span class="bd">${b.map((x) => `<span>${esc(x)}</span>`).join("")}</span></span>
+        <b class="dr-nm">${esc(c.model)}${c.variant ? ` <small>${esc(c.variant)}</small>` : ""}</b>
+        <span class="dr-meta">${meta}</span>
+        <span class="dr-pr">$${fmt(c.priceNzd)}${c.priceNote ? `<small>${esc(c.priceNote)}</small>` : ""}</span></span></button>`;
+  }
   function draw() {
     const list = cars.filter(groups[filt][1]);
-    wall.innerHTML = list.slice(0, byBrand ? 21 : 21).map(card).join("");
+    const cap = drawn ? 24 : 21, open = all || list.length <= cap;
+    wall.innerHTML = list.slice(0, open ? list.length : cap).map(card).join("");
+    more.hidden = open; more.textContent = `Show all ${list.length} cars`;
     if (sel && !list.includes(sel)) { sel = null; $("#spot").hidden = true; }
     mark();
   }
@@ -44,28 +61,21 @@ export async function initStock() {
   const credit = (c) => c.credit ? `<p class="note">Photo: <a href="${c.credit.page}" target="_blank" rel="noopener">${esc(c.credit.author)}</a> via Wikimedia Commons, <a href="${c.credit.licenceUrl}" target="_blank" rel="noopener">${esc(c.credit.licence)}</a>. ${esc(c.credit.change)} A sample photo of the model, not this listing's car.</p>` : "";
   function pick(c, user) {
     if (!c) return; sel = c; mark(); $("#spot").hidden = false;
-    const photo = c.img.kind === "photo", n = notice(c);
+    const photo = c.img.kind === "photo", n = notice(c), dr = isDrawing(c);
+    $("#spot").classList.toggle("light", dr); st.classList.toggle("drawing", dr);
     st.classList.toggle("photo", photo); st.classList.toggle("cut", photo && !!cut[c.id]);
     st.classList.toggle("room", !!c.img.room); st.classList.remove("live"); poster.src = c.img.room || (photo ? (cut[c.id] || c.img.card) : c.img.card); poster.alt = c.img.alt;
-    truth.textContent = c.img.room ? (S.roomTag || S.photoTag || "Photo") : photo ? (S.photoTag || "Photo") : (S.renderTag || "Render · Simulated car");
+    truth.textContent = c.img.room ? (S.roomTag || S.photoTag || "Photo") : photo ? (S.photoTag || "Photo") : dr ? (c.img.label || S.drawingTag || "Drawing · not this car") : (S.renderTag || "Render · Simulated car");
     info.innerHTML = `<div class="who"><span class="label">${esc(c.region || c.branch || "")}</span><span class="chip">${esc(c.truthLabel)}</span></div>
       <h3>${esc(c.year)} ${esc(c.make)} ${esc(c.model)}${c.variant ? ` <span>${esc(c.variant)}</span>` : ""}</h3>
       <div class="pr">$${fmt(c.priceNzd)}<small>${esc(c.priceNote || "")}</small></div>
       <div class="facts">${[c.odometerKm == null ? "km not listed" : `${fmt(c.odometerKm)} km`, c.fuelLabel, BODY[c.body] || c.bodyLabel, c.transmission, c.colour].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join("")}</div>
       ${ring(n)}
       <div class="spot-act"><button class="btn" type="button" id="spotAi" aria-expanded="false">See what an assistant reads</button><a class="btn ghost" href="#desk" id="spotCheck">Ask about it at the agent desk</a></div>
-      <pre class="spot-json" id="spotJson" hidden></pre>${credit(c)}`;
+      <pre class="spot-json" id="spotJson" hidden></pre>${credit(c)}${dr ? `<p class="note">Harbour Lane is a fictional dealer, so these cars have no photos. The drawing shows the body style and its typical size, at the same scale for every car on the yard. A real dealer's own photos go here.</p>` : ""}`;
     $("#spotAi").onclick = (e) => { const p = $("#spotJson"), on = p.hidden; p.hidden = !on; e.currentTarget.setAttribute("aria-expanded", String(on)); if (on) p.textContent = JSON.stringify(schema(c), null, 2); };
     $("#spotCheck").onclick = (e) => { const d = $("#desk"), o = $("#deskOpen"); if (d && o) { e.preventDefault(); if (d.hidden) o.click(); else d.scrollIntoView({ behavior: "smooth", block: "start" }); } };
-    $$(".sw button", info).forEach((b) => (b.onclick = () => { $$(".sw button", info).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); three && three.setPaint(b.dataset.paint); }));
     if (user) $("#spot").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
-  }
-  // 3D: loaded the first time a render takes the stage (and only where WebGL works); the poster stays until it has drawn
-  function go3d(c) {
-    const kind = (c.render && c.render.kind) || c.body;
-    if (three) { three.setCar(kind, paintOf(c)); st.classList.add("live"); return; }
-    if (!threeP) threeP = import("./spot3d.js").then((m) => m.mountSpot(cv, { kind, paint: paintOf(c), paused: ambient.paused })).then((s) => { three = s; ambient.on((p) => s.pause(p)); return s; }).catch((e) => { console.warn("spot3d", e); return null; });
-    threeP.then((s) => { if (s && sel && sel.img.kind !== "photo") { s.setCar((sel.render && sel.render.kind) || sel.body, paintOf(sel)); requestAnimationFrame(() => st.classList.add("live")); } });
   }
   wall.addEventListener("click", (e) => { const b = e.target.closest(".wc"); if (b) pick(cars.find((c) => c.id === b.dataset.id), true); });
   bar.addEventListener("click", (e) => { const b = e.target.closest("button[data-g]"); if (!b) return; filt = +b.dataset.g; $$("button", bar).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); draw(); });
@@ -75,9 +85,10 @@ export async function initStock() {
   const pickId = (id) => { const c = cars.find((x) => x.id === id); if (!c) return; if (!cars.filter(groups[filt][1]).includes(c)) { filt = 0; $$("button", bar).forEach((x, i) => x.setAttribute("aria-pressed", String(i === 0))); draw(); } pick(c, false); };
   addEventListener("stock:pick", (e) => pickId(e.detail));
   const lead = $("#lead3"), leadIds = CFG.lead3 && CFG.lead3.length ? CFG.lead3 : cars.slice(0, 3).map((c) => c.id);
-  if (lead) { lead.innerHTML = leadIds.map((id) => cars.find((c) => c.id === id)).filter(Boolean).map((c, i) => `<button class="lc${i ? "" : " big"}" type="button" data-id="${esc(c.id)}">
+  if (lead) { lead.innerHTML = leadIds.map((id) => cars.find((c) => c.id === id)).filter(Boolean).map((c, i) => isDrawing(c) ? drawCard(c, [], "lc", !i) : `<button class="lc${i ? "" : " big"}" type="button" data-id="${esc(c.id)}">
       <img src="${esc(c.img.room || c.img.card)}" alt="${esc(c.img.alt)}" decoding="async"${i ? ' loading="lazy"' : ""}><span class="lc-k eyebrow">${esc(c.branch || c.region || "")}</span><span class="lc-open">Open the listing</span>
       <span class="ov"><span class="lc-make">${esc(c.make)}</span><b>${esc(c.model)}</b><span class="lc-meta">${esc(c.year)}${c.odometerKm ? ` · ${fmt(c.odometerKm)} km` : ""}</span><span class="lc-price">$${fmt(c.priceNzd)}</span></span></button>`).join("");
+    lead.classList.toggle("dr3", !!lead.querySelector(".lc.dr"));
     lead.addEventListener("click", (e) => { const b = e.target.closest(".lc"); if (b) pick(cars.find((c) => c.id === b.dataset.id), true); }); }
   draw(); if (window.__stockBrand) brand(window.__stockBrand); if (window.__stockPick) pickId(window.__stockPick);
 }

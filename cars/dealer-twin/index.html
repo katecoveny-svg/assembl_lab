@@ -10,14 +10,14 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=a39af27d">
+<link rel="stylesheet" href="css/site.css?v=dt5b0d1a">
 <link rel="preload" as="image" href="assets/hero/hero-wide.webp" fetchpriority="high">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/","@sparkjsdev/spark":"https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.min.js"}}</script>
-<script src="js/variant.js?v=a39af27d" defer></script>
-<script src="js/dealer-data.js?v=a39af27d" defer></script>
-<script src="js/agentdesk-data.js?v=a39af27d" defer></script>
-<script src="engine/model.js?v=a39af27d" defer></script>
-<script type="module" src="js/main.js?v=a39af27d"></script>
+<script src="js/variant.js?v=dt5b0d1a" defer></script>
+<script src="js/dealer-data.js?v=dt5b0d1a" defer></script>
+<script src="js/agentdesk-data.js?v=dt5b0d1a" defer></script>
+<script src="engine/model.js?v=dt5b0d1a" defer></script>
+<script type="module" src="js/main.js?v=dt5b0d1a"></script>
 </head>
 <body>
 <a class="sr" href="#stock">Skip to the stock</a>
@@ -44,9 +44,9 @@
   </div>
   <div class="wrap hero-cta show-cta"><a class="btn" href="#sim" id="watchDay">Watch a day run</a><a class="btn ghost" href="#stock">See the stock</a></div>
   <div class="show-foot">
-    <div class="rail" id="showRail" aria-label="Simulated stock · renders, not photographs"><div class="rail-in" id="showRailIn"></div></div>
+    <div class="rail" id="showRail" aria-label="Simulated stock · body-style drawings, not photographs"><div class="rail-in" id="showRailIn"></div></div>
     <div class="wrap show-meta">
-      <p class="rail-cap"><span class="dot" aria-hidden="true"></span>Simulated stock · renders, not photographs</p>
+      <p class="rail-cap"><span class="dot" aria-hidden="true"></span>Simulated stock · body-style drawings, not photographs</p>
       <div class="show-live" aria-label="The dealership right now, simulated">
         <div class="k"><b id="sHoist">–</b><span>hoists working</span></div>
         <div class="k"><b id="sPeople">–</b><span>on the floors</span></div>
@@ -93,7 +93,7 @@
     <div class="head"><h2 id="agentsH">Somebody's AI just asked about <em>one of your cars.</em></h2>
       <div style="display:grid;gap:14px;justify-items:start"><p class="lede">Buyers are starting to shop through ChatGPT and Claude. Instead of scrolling listings, they type 'find me a hybrid SUV under $40k near Albany' and their assistant goes looking. The agent desk is the counter where those assistants get served.</p><span class="eyebrow pill dark">Simulated · nothing is sent to anyone</span></div></div>
     <ol class="steps4" id="steps4">
-      <li><figure class="s4-v s4-car"><img src="img/cars/hl-002-4x3.webp" alt="Render · simulated car: 2019 Toyota Aqua G, silver metallic, front three-quarter view" loading="lazy" decoding="async"><figcaption class="s4-ask">“Is the 2019 Toyota Aqua still available? Book me a test drive on Saturday.”</figcaption></figure><span class="eyebrow">01</span><h3>The assistant asks.</h3><p>A buyer's AI asks whether the 2019 Toyota Aqua is still available and books a Saturday test drive.</p></li>
+      <li><figure class="s4-v s4-car"><img src="img/body/hatch.svg" alt="Drawing of a generic hatchback, side view. Not a picture of the car in the enquiry." loading="lazy" decoding="async" width="1200" height="900"><figcaption class="s4-ask">“Is the 2019 Toyota Aqua still available? Book me a test drive on Saturday.”</figcaption></figure><span class="eyebrow">01</span><h3>The assistant asks.</h3><p>A buyer's AI asks whether the 2019 Toyota Aqua is still available and books a Saturday test drive.</p></li>
       <li><figure class="s4-v s4-notice" aria-hidden="true"><ul><li class="ok">Price · $14,990</li><li class="ok">Kilometres</li><li class="ok">Engine and fuel</li><li class="ok">Make, model, year</li><li class="miss">WoF expiry · not shown</li><li class="miss">Money owing · not shown</li></ul></figure><span class="eyebrow">02</span><h3>The desk checks.</h3><p>It reads the dealer's own listing: price, kilometres, and the details the law says a buyer must see. If something's missing, it says so.</p></li>
       <li><figure class="s4-v s4-approve" aria-hidden="true"><span class="eyebrow">Test drive · Saturday 10 am</span><b>2019 Toyota Aqua</b><span class="s4-btns"><i class="yes">Approve</i><i>Decline</i></span></figure><span class="eyebrow">03</span><h3>A person says yes.</h3><p>Nothing is held or booked until one of your salespeople approves it. One tap.</p></li>
       <li><figure class="s4-v s4-rcpt" aria-hidden="true"><span class="eyebrow">Receipt · TD-25A3</span><b>2019 Toyota Aqua</b><span>Test drive approved · Sat 10:00</span><span>Asked by: buyer's assistant</span><span>Approved by: sales consultant</span><span class="s4-ok">✓ Same record for all three</span></figure><span class="eyebrow">04</span><h3>Everyone gets a receipt.</h3><p>The buyer, the salesperson and the dealer all see the same record of what was asked and what was agreed.</p></li>
@@ -277,15 +277,15 @@
 
 <!-- ============ the stock: three cars large, then the wall -->
 <section class="stock" id="stock" aria-labelledby="stockH">
-  <div class="wrap stock-head"><h2 id="stockH">48 cars, <em>every one a render.</em></h2><p class="lede">Simulated stock for a fictional dealer, so you can see the idea without anyone's real cars.</p></div>
+  <div class="wrap stock-head"><h2 id="stockH">48 cars on the yard today.</h2><p class="lede">Simulated stock for a fictional dealer, so you can see the idea without anyone's real cars. Every listing carries its price, kilometres and notice fields as data an assistant can read.</p></div>
   <div class="wrap lead3" id="lead3"></div>
   <div class="wrap spot" id="spot" hidden>
     <div class="spot-stage" id="spotStage" data-asset="stock-photo"><img class="spot-poster" id="spotPoster" alt="" loading="lazy" decoding="async"><canvas class="spot-cv" id="spotCv" aria-hidden="true"></canvas>
-      <span class="chip solid spot-truth" id="spotTruth">Render · simulated car</span></div>
+      <span class="chip solid spot-truth" id="spotTruth">Simulated car</span></div>
     <div class="spot-info" id="spotInfo"></div>
   </div>
   <div class="wrap wall2" id="wall2" role="list" aria-label="Cars in stock"></div>
-  <p class="wrap fine stock-fine">Renders from assembl's 3D car kit, every one on the same backdrop at the same angle.</p>
+  <p class="wrap fine stock-fine">Pictures are body-style drawings, one per body style, drawn at the same scale so a ute reads bigger than a hatch. They are not pictures of the listed cars. A real dealer's own photos replace them.</p>
 </section>
 
 
