@@ -24,8 +24,9 @@ close; one chalk sheet slides over it for the study machines, the playground and
 a story: what the Lab is, then the business twins, then the study machines, then a calm index of everything
 smaller, then a way back to assembl.
 
-Things gather into a useful whole: the hero's cubes assemble once into one small block, and the twins chapter
-keeps one render on a stage while you read about it.
+The hero holds one DO glass orb, the same orb as the live assembl.co.nz home (Kate, 3 Nov 2026: one glowing orb
+instead of the pastel cubes), so the Lab reads as a room in that home. The twins chapter keeps one render on a
+stage while you read about it.
 
 ## Colour
 
@@ -41,11 +42,12 @@ keeps one render on a stage while you read about it.
 | `--on` | `rgba(255,253,251,.78)` | Secondary text on plum (11.2:1 on `--deep`). |
 | `--glass`, `--glass-line` | paper at 7% / 16% | Secondary buttons and hairlines on plum. |
 | `--glow-rose` | `#F3A5BE` at 30% | Light on the stage (top right), glow behind the twin render. |
-| `--glow-lilac` | `#C7B4F0` at 24% | Light on the stage (lower left), glow behind the hero block. |
+| `--glow-lilac` | `#C7B4F0` at 24% | Light on the stage (lower left). |
+| `--do-lilac`, `--do-rose`, `--do-pearl`, `--do-spine` | `#D7B3F0`, `#E59AA2`, `#FFF3F6`, `#4A1735` | The DO mark's glass (the company site's `--as-do-*`): the hero orb only. |
 
-Pastels, **small accents only**: `#F6B48E` peach, `#C7B4F0` lilac, `#A7DEC7` mint, `#F3A5BE` pink,
-`#F2DC7C` butter, `#A9C9F2` sky. They colour the cubes, the dot in a truth chip, the stage progress line and
-light. Never a section field or a card background. No canary yellow anywhere.
+Two pastels, **small accents only**: `--lilac` `#C7B4F0` and `--pink` `#F3A5BE`. They colour the dot in a truth
+chip, the stage progress line, focus rings and light. Never a section field or a card background. No pastel
+cubes, no yellow and no neon anywhere on the home.
 
 No dark/light toggle: the plum stage and chalk sheet are the page's two fields in every colour scheme.
 
@@ -103,15 +105,20 @@ No dark/light toggle: the plum stage and chalk sheet are the page's two fields i
 
 Motion explains something or shows a change of state; otherwise nothing moves.
 
-- **The cube field (hero):** raw WebGL2 (`lab/cubes.js`, no dependencies), loaded after first paint. Fourteen
-  parts assemble once into one small block (the Lab's idea: small worlds made of parts). Afterwards the block
-  only moves when you do: scrolling turns it, a fine pointer leans it. It stops drawing when off screen.
+- **The DO glass orb (hero):** raw WebGL2 (`lab/orb.js`, no dependencies), ported from the company site's
+  `components/site/home-directions/wow/orb.ts`: one quad, the sphere shaded in the fragment shader (lilac above,
+  rose below, a see-through plum core, two slow inner lights, a pearl highlight, a thin rim, a soft bloom).
+  Loaded after first paint. It breathes (about 6.5 s) and drifts a few pixels; its inner light quickens and
+  brightens as the page opens and while a hero action is hovered or focused, then settles. It stops drawing
+  when off screen or in a hidden tab, and drops to the still orb on a slow device. It is decorative
+  (`aria-hidden`) and not a link: the Lab does not link DO, so the orb carries the family look, not a door.
 - **The twin stage:** on screens 960px and wider, one sticky frame shows the render of the twin you are
   reading; the step in view is full strength and the others step back. A counter and a line show where you
   are (3 of 6). IntersectionObserver, no scroll hijacking.
 - **Tiles:** lift 2–3px on hover. No entrance animations, no tilt.
-- **Reduced motion, no JS, no WebGL:** the complete static story. The block is an SVG still of the same
-  assembled shape; every twin shows its own render beside its words; nothing fades.
+- **Reduced motion, no JS, no WebGL:** the complete static story. The orb is a CSS still (`.orb-still`, the
+  company site's `.as-orb`), which floats slowly when motion is allowed and stands still for reduced motion;
+  every twin shows its own render beside its words; nothing fades.
 
 ## Imagery
 
@@ -130,4 +137,5 @@ Motion explains something or shows a change of state; otherwise nothing moves.
 - Skip link first; every link and button reachable by keyboard with a visible ring (lilac on plum, rose on chalk).
 - Works at 320, 375 and 1440 px with no horizontal scroll. Touch targets at least 40px.
 - `scripts/check-lab-home.cjs` checks each world appears exactly once, the routes `#twins`, `#study`,
-  `#playground`, `#about` and `#explore`, keyboard order, and widths.
+  `#playground`, `#about` and `#explore`, keyboard order, widths, and that the hero orb is decorative and clear
+  of the headline, buttons and labels at 1440, 1024, 768, 390 and 320 px.

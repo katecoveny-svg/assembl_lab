@@ -1,6 +1,6 @@
 // assembl lab home: small enhancements on top of a complete static page (see scripts/build-lab-home.cjs).
 // 1. The twin stage: on wide screens one sticky frame shows the render of whichever twin you are reading.
-// 2. The cube field: a small WebGL2 scene in the hero, loaded after first paint, skipped for reduced motion.
+// 2. The DO glass orb: a small WebGL2 scene in the hero, loaded after first paint, skipped for reduced motion.
 // 3. Live labels: /feeds.js fires "assembl:live"; the static source lines stay as the fallback.
 (() => {
   'use strict';
@@ -32,16 +32,16 @@
     show(0);
   }
 
-  /* 2 ── cube field ── */
-  const host = document.getElementById('cubes');
-  function startCubes() {
+  /* 2 ── DO glass orb ── */
+  const host = document.getElementById('orb');
+  function startOrb() {
     if (!host || reduced.matches) return;
     const probe = document.createElement('canvas');
     if (!probe.getContext('webgl2')) return;
-    import('/lab/cubes.js').then(m => m.mount(host)).catch(() => { /* the still picture stays */ });
+    import('/lab/orb.js').then(m => m.mount(host)).catch(() => { /* the still orb stays */ });
   }
-  if (document.readyState === 'complete') setTimeout(startCubes, 200);
-  else addEventListener('load', () => (window.requestIdleCallback || setTimeout)(startCubes, { timeout: 1200 }));
+  if (document.readyState === 'complete') setTimeout(startOrb, 200);
+  else addEventListener('load', () => (window.requestIdleCallback || setTimeout)(startOrb, { timeout: 1200 }));
 
   /* 3 ── live labels ── */
   function liveLabels(j) {
