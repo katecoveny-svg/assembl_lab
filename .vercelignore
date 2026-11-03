@@ -29,3 +29,6 @@
 !assets/models/phone/README.md
 !assets/models/vinyl/README.md
 !assets/models/bike/README.md
+
+# Blender source for the generic vehicle set: editable scene and script, not served.
+/assets/models/vehicles/source/

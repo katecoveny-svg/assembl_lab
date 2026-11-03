@@ -26,10 +26,11 @@ def run(pw, width, reduced=False):
     b = pw.chromium.launch()
     ctx = b.new_context(viewport={"width": width, "height": 900 if width > 600 else 780}, reduced_motion="reduce" if reduced else "no-preference")
     p = ctx.new_page()
-    errs, bad = [], []
+    errs, bad, glb = [], [], []
     p.on("pageerror", lambda e: errs.append(str(e)))
     p.on("console", lambda m: m.type == "error" and errs.append(m.text))
-    p.on("request", lambda r: ("/img/cars/" in r.url or "sedan.glb" in r.url or "spot3d" in r.url) and bad.append(r.url))
+    p.on("request", lambda r: ("/img/cars/" in r.url or "sedan.glb" in r.url or "spot3d" in r.url or "/img/stock/" in r.url) and bad.append(r.url))
+    p.on("request", lambda r: r.url.endswith(".glb") and glb.append(r.url))
     p.goto(BASE, wait_until="load")
     p.locator("#stock").scroll_into_view_if_needed()
     p.wait_for_selector("#wall2 .wc", timeout=15000)
@@ -65,7 +66,10 @@ def run(pw, width, reduced=False):
     check(sw <= width, f"{tag}: no horizontal scroll ({sw})")
     if SHOTS:
         spot.screenshot(path=f"{SHOTS}/qa-spot-{width}{'-reduced' if reduced else ''}.png")
-    check(not bad, f"{tag}: no requests for old renders / sedan.glb ({bad[:2]})")
+    b3 = p.locator("#spotView3d")
+    check(b3.is_visible() and b3.inner_text() == "View in 3D", f"{tag}: the spotlight offers 'View in 3D' over the drawing")
+    check(not glb, f"{tag}: no GLB fetched without pressing 'View in 3D' ({glb[:2]})")
+    check(not bad, f"{tag}: no requests for old renders, rendered stills or sedan.glb ({bad[:2]})")
     real = [e for e in errs if "api/mcp" not in e and "Failed to load resource" not in e]
     check(not real, f"{tag}: no console errors ({real[:2]})")
     b.close()

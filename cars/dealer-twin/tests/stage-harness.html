@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vehicle stage harness (QA only)</title>
+<!-- QA harness, not deployed (tests/ is in .vercelignore). Mounts the real spotlight stage on the real GLBs: ?body=ute&paint=red-mica -->
+<style>html,body{margin:0;background:#F5F1F2}canvas{display:block;width:100vw;height:100vh}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head><body><canvas id="cv"></canvas>
+<script type="module">
+import { mountVehicle } from "../js/vehicle-stage.js";
+const q = new URLSearchParams(location.search);
+window.__ready = mountVehicle(document.getElementById("cv"), { paused: true, capture: true })
+  .then(async (s) => { window.__stage = s; await s.setCar(q.get("body") || "hatch", q.get("paint") || "pearl-white"); s.render(); return "ok"; })
+  .catch((e) => "error: " + e.message);
+</script></body></html>

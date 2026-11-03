@@ -16,3 +16,31 @@ with make, model, year, km and price as data. The AI-generated `assets/hero/seda
 
 **Upstream:** this folder is still the output of `/home/claude/dealer-twin-v2/build.py`, which lives outside this repo. Until that
 build makes the same change (or this folder becomes the source), a rebuild will bring the old renders back.
+
+## Stock pictures: generic Blender vehicles (PR B)
+
+The drawings are replaced by a Blender-scripted set of six **generic, unbranded** vehicles (`/assets/models/vehicles/`, see its
+`SOURCE-HANDOFF.md`). Each listing maps to the body of its real model (Aqua → hatch, Hilux → ute, HiAce → van) and shows an
+offline Cycles still of that generic body in the listing's colour (`img/stock/<body>-<paint>.webp`), labelled
+"Generic hatch render · not the actual vehicle". Only the car opened in the spotlight loads its GLB (`js/vehicle-stage.js`
+through `vehicles-rig-controller.mjs`); the still stays for no WebGL, Save-Data, a failed load or a wrong contract.
+
+- Stills: `tools/compose_vehicle_images.py <png dir>` then `tools/apply_vehicle_renders.py` (idempotent).
+- Tests: `node --test cars/dealer-twin/tests/*.test.mjs`; browser: `tests/stock_browser.py`, `tests/vehicle_browser.py`;
+  runtime-only look at each GLB: `tests/stage-harness.html?body=ute&paint=silver`.
+
+## Optional generic 3D model in the spotlight (PR B)
+
+The stock wall, the lead cards and every listing keep PR A's body-style **drawings**. Opening a listing shows its drawing; a
+**"View in 3D"** button in the spotlight loads a Blender-scripted **generic, unbranded** model of the listing's real body style
+(`/assets/models/vehicles/`, see its `SOURCE-HANDOFF.md`) in the listing's colour, labelled "Generic hatch model · not the actual
+vehicle". "Back to drawing" returns; "Reset view" resets the turntable. Nothing is fetched until the button is pressed, then only
+that body's GLB (each body once). No WebGL or data saver: the button is disabled with a one-line note. A failed load or a wrong
+contract keeps the drawing, disables the button and says why. Reduced motion: no auto-turn.
+
+- Data: `data/stock.json` `model3d: {body, paint}` per listing, written by `tools/apply_vehicle_models.py` (idempotent).
+- Code: `js/stock.js` (button, labels, fallbacks), `js/vehicle-stage.js` (three.js stage) through `vehicles-rig-controller.mjs`.
+- Tests: `node --test cars/dealer-twin/tests/*.test.mjs`; browser: `tests/stock_browser.py`, `tests/vehicle_browser.py`;
+  runtime-only look at each GLB: `tests/stage-harness.html?body=ute&paint=silver`.
+- Offline Cycles listing stills can still be rendered (`--which=stills`, `tools/compose_vehicle_images.py`) but are **not shown**
+  and not committed.

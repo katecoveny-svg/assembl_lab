@@ -1,0 +1,303 @@
+{
+ "blender": "5.1.2",
+ "budget": {
+  "tris": 40000,
+  "bytes": 1200000,
+  "textures": 0
+ },
+ "vehicles": {
+  "hatch": {
+   "tris": 35852,
+   "tris_body": 14144,
+   "bytes": 975264,
+   "bbox_m": {
+    "min": [
+     -2.031,
+     -1.025,
+     0.0
+    ],
+    "max": [
+     2.036,
+     1.025,
+     1.455
+    ]
+   },
+   "measured_body": {
+    "length": 4.05,
+    "width": 1.694,
+    "height": 1.455,
+    "ground_clearance_body": 0.185
+   },
+   "materials": [
+    "ARCH",
+    "BRAKE",
+    "CALIPER",
+    "CLADDING",
+    "DRL",
+    "FRIT",
+    "GAP",
+    "GLASS",
+    "HOUSING",
+    "LENS",
+    "MIRROR_GLASS",
+    "PAINT",
+    "PLATE",
+    "PROJECTOR",
+    "RIM",
+    "RIM_INNER",
+    "SEAL",
+    "STEEL_WHEEL",
+    "TAIL_DARK",
+    "TAIL_LENS",
+    "TRIM_BLACK",
+    "TYRE",
+    "UNDER"
+   ]
+  },
+  "sedan": {
+   "tris": 36964,
+   "tris_body": 15175,
+   "bytes": 1002680,
+   "bbox_m": {
+    "min": [
+     -2.348,
+     -1.075,
+     0.0
+    ],
+    "max": [
+     2.356,
+     1.075,
+     1.489
+    ]
+   },
+   "measured_body": {
+    "length": 4.69,
+    "width": 1.795,
+    "height": 1.445,
+    "ground_clearance_body": 0.19
+   },
+   "materials": [
+    "ARCH",
+    "BRAKE",
+    "CALIPER",
+    "CLADDING",
+    "DRL",
+    "FRIT",
+    "GAP",
+    "GLASS",
+    "HOUSING",
+    "LENS",
+    "MIRROR_GLASS",
+    "PAINT",
+    "PLATE",
+    "PROJECTOR",
+    "RIM",
+    "RIM_INNER",
+    "SEAL",
+    "STEEL_WHEEL",
+    "TAIL_DARK",
+    "TAIL_LENS",
+    "TRIM_BLACK",
+    "TYRE",
+    "UNDER"
+   ]
+  },
+  "wagon": {
+   "tris": 38618,
+   "tris_body": 15976,
+   "bytes": 1043144,
+   "bbox_m": {
+    "min": [
+     -2.335,
+     -1.07,
+     0.0
+    ],
+    "max": [
+     2.341,
+     1.07,
+     1.506
+    ]
+   },
+   "measured_body": {
+    "length": 4.66,
+    "width": 1.786,
+    "height": 1.475,
+    "ground_clearance_body": 0.19
+   },
+   "materials": [
+    "ARCH",
+    "BRAKE",
+    "CALIPER",
+    "CLADDING",
+    "DRL",
+    "FRIT",
+    "GAP",
+    "GLASS",
+    "GLASS_DARK",
+    "HOUSING",
+    "LENS",
+    "MIRROR_GLASS",
+    "PAINT",
+    "PLATE",
+    "PROJECTOR",
+    "RIM",
+    "RIM_INNER",
+    "SEAL",
+    "STEEL_WHEEL",
+    "TAIL_DARK",
+    "TAIL_LENS",
+    "TRIM_BLACK",
+    "TYRE",
+    "UNDER"
+   ]
+  },
+  "suv": {
+   "tris": 39805,
+   "tris_body": 16206,
+   "bytes": 1086260,
+   "bbox_m": {
+    "min": [
+     -2.304,
+     -1.113,
+     0.0
+    ],
+    "max": [
+     2.31,
+     1.113,
+     1.709
+    ]
+   },
+   "measured_body": {
+    "length": 4.6,
+    "width": 1.855,
+    "height": 1.69,
+    "ground_clearance_body": 0.26
+   },
+   "materials": [
+    "ARCH",
+    "BRAKE",
+    "CALIPER",
+    "CLADDING",
+    "DRL",
+    "FRIT",
+    "GAP",
+    "GLASS",
+    "GLASS_DARK",
+    "HOUSING",
+    "LENS",
+    "MIRROR_GLASS",
+    "PAINT",
+    "PLATE",
+    "PROJECTOR",
+    "RIM",
+    "RIM_INNER",
+    "SEAL",
+    "STEEL_WHEEL",
+    "TAIL_DARK",
+    "TAIL_LENS",
+    "TRIM_BLACK",
+    "TYRE",
+    "UNDER"
+   ]
+  },
+  "ute": {
+   "tris": 39043,
+   "tris_body": 15688,
+   "bytes": 1059956,
+   "bbox_m": {
+    "min": [
+     -2.725,
+     -1.115,
+     0.0
+    ],
+    "max": [
+     2.677,
+     1.115,
+     1.815
+    ]
+   },
+   "measured_body": {
+    "length": 5.33,
+    "width": 1.86,
+    "height": 1.815,
+    "ground_clearance_body": 0.45
+   },
+   "materials": [
+    "ARCH",
+    "BRAKE",
+    "CALIPER",
+    "CLADDING",
+    "DRL",
+    "FRIT",
+    "GAP",
+    "GLASS",
+    "GLASS_DARK",
+    "HOUSING",
+    "LENS",
+    "MIRROR_GLASS",
+    "PAINT",
+    "PLATE",
+    "PROJECTOR",
+    "RIM",
+    "RIM_INNER",
+    "SEAL",
+    "STEEL_WHEEL",
+    "TAIL_DARK",
+    "TAIL_LENS",
+    "TRAY",
+    "TRIM_BLACK",
+    "TYRE",
+    "UNDER"
+   ]
+  },
+  "van": {
+   "tris": 37940,
+   "tris_body": 16641,
+   "bytes": 989604,
+   "bbox_m": {
+    "min": [
+     -2.638,
+     -1.129,
+     0.0
+    ],
+    "max": [
+     2.642,
+     1.129,
+     1.99
+    ]
+   },
+   "measured_body": {
+    "length": 5.265,
+    "width": 1.88,
+    "height": 1.99,
+    "ground_clearance_body": 0.25
+   },
+   "materials": [
+    "ARCH",
+    "BRAKE",
+    "CALIPER",
+    "CLADDING",
+    "DRL",
+    "FRIT",
+    "GAP",
+    "GLASS",
+    "GLASS_DARK",
+    "HOUSING",
+    "LENS",
+    "MIRROR_GLASS",
+    "PAINT",
+    "PLATE",
+    "PROJECTOR",
+    "RIM",
+    "RIM_INNER",
+    "SEAL",
+    "STEEL_WHEEL",
+    "TAIL_DARK",
+    "TAIL_LENS",
+    "TRIM_BLACK",
+    "TYRE",
+    "UNDER"
+   ]
+  }
+ }
+}
