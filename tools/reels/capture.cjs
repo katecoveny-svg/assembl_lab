@@ -16,8 +16,9 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));fs.mkdirSync(OUT,{recursive:tru
       const el=await p.$('.playmain .canvas')||await p.$('.playmain');await el.evaluate(e=>e.scrollIntoView({block:'center'}));await sleep(400);
       const bb=await el.boundingBox();await p.screenshot({path:path.join(OUT,`step${i}.jpg`),clip:bb,type:'jpeg',quality:84,timeout:180000});steps[i].img=`step${i}.jpg`}
     const heroes=[`assets/models/${ID}/${ID}-hero.jpg`,`assets/models/${ID}/${ID}-hero.webp`,`study/thumbnails/${ID}.jpg`].map(x=>path.join(root,x)).filter(fs.existsSync);
-    let hero=null;if(heroes.length){if(heroes[0].endsWith('.jpg'))fs.copyFileSync(heroes[0],path.join(OUT,'hero.jpg'));else{const q=await ctx.newPage();
-      await q.setContent(`<style>html,body{margin:0;background:#000}img{width:100vw;height:100vh;object-fit:cover;display:block}</style><img src="file://${heroes[0]}">`);await q.setViewportSize({width:1600,height:1000});await sleep(500);
-      await q.screenshot({path:path.join(OUT,'hero.jpg'),type:'jpeg',quality:86})}hero='hero.jpg'}
+    let hero=null;if(heroes.length){if(heroes[0].endsWith('.jpg'))fs.copyFileSync(heroes[0],path.join(OUT,'hero.jpg'));else{const q=await ctx.newPage();const tmp=path.join(OUT,'_hero.html');  // a file:// page may load a file:// image; about:blank may not
+      fs.writeFileSync(tmp,`<style>html,body{margin:0;background:#000}img{width:100vw;height:100vh;object-fit:cover;display:block}</style><img src="file://${heroes[0]}">`);
+      await q.setViewportSize({width:1600,height:1000});await q.goto('file://'+tmp);await sleep(500);
+      await q.screenshot({path:path.join(OUT,'hero.jpg'),type:'jpeg',quality:86});fs.rmSync(tmp,{force:true})}hero='hero.jpg'}
     fs.writeFileSync(path.join(OUT,'script.json'),JSON.stringify({id:ID,title:M.title,blurb:M.blurb||M.desc,url:`assembl.co.nz/study/${ID}`,hero,steps},null,1));
     console.log('captured',ID,steps.length,'steps →',OUT)}finally{await b.close()}})();
