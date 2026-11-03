@@ -20,7 +20,7 @@ const MTINT={engine:"peach",heart:"blush",slushie:"sky",space:"lavender",reactio
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
-  read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",earthspace:"science",ai:"digital",
+  read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",world:"social",earthspace:"science",windtunnel:"science",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech",algebra:"maths",gradient:"maths",gradient3:"maths",quote:"english",unseen:"english",unseen3:"english",engine:"science",y9english:"english"};
 const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
 const accentFor=id=>DEEP[tintName(id)];
@@ -43,6 +43,7 @@ const GLYPH={
   sky:G(`<circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="10" ry="5.2"/><circle cx="20.5" cy="9.6" r="1.6" fill="currentColor"/>`),
   particles:G(`<path d="M9 2.5h6M10 2.5v6.5l-5.4 9.3A2 2 0 0 0 6.3 21.3h11.4a2 2 0 0 0 1.7-3L14 9V2.5"/><circle cx="10" cy="16.5" r="1" fill="currentColor"/><circle cx="14" cy="18" r="1" fill="currentColor"/><circle cx="13" cy="14" r="1" fill="currentColor"/>`),
   civics:G(`<path d="M2.5 9 12 3.5 21.5 9M5 9.5v8.5M9.6 9.5v8.5M14.4 9.5v8.5M19 9.5v8.5M2.5 21h19"/>`),
+  world:G(`<circle cx="12" cy="12" r="9.5"/><circle cx="8.5" cy="14.5" r="2.2"/><circle cx="14.5" cy="9" r="3"/><circle cx="16.5" cy="16" r="1.4"/>`),
   energy:G(`<path d="M13.5 2 5 13.5h6.2L10 22l9-12.2h-6.3z"/>`),
   genes:G(`<path d="M7 2.5c0 5.5 10 6.5 10 9.5s-10 4-10 9.5M17 2.5c0 5.5-10 6.5-10 9.5s10 4 10 9.5M8.5 6h7M8.5 18h7"/>`),
   ecology:G(`<path d="M4.5 19.5C4.5 10.5 10 4.5 20 4.5c0 9.5-5.5 15-15.5 15z"/><path d="M4.5 19.5 13 11"/>`),

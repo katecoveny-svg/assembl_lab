@@ -7,7 +7,8 @@ export function windtunnelScene(S,L){
   const {THREE,scene,renderer,camera,canvas}=S,host=canvas.parentElement,figure=host.parentElement,s=L.state,FLOW=L.FLOW;
   const D2R=Math.PI/180,clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),ease=(a,b,k)=>a+(b-a)*k;
   scene.background=new THREE.Color('#F5F1F2');scene.fog=null;S.ground.visible=false;S.setShadowBox(4.6,[-.2,0,0]);
-  renderer.toneMappingExposure=1.0;if(S.bloom){S.bloom.threshold=.96;S.bloom.strength=.22;S.bloom.radius=.4}
+  // less ambient fill and a touch lower exposure, so the plum car and the room keep their contrast instead of washing out
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;scene.environmentIntensity=.28;scene.traverse(o=>{if(o.isHemisphereLight)o.intensity=.18});S.sun.intensity=2.6;if(S.bloom){S.bloom.threshold=.96;S.bloom.strength=.22;S.bloom.radius=.4}
   // ---------------------------------------------------------------- camera views (pulled back on tall, narrow screens)
   const VIEWS={drag:[[3.0,1.2,6.1],[-.55,.45,0]],downforce:[[-5.6,2.5,4.5],[-.9,.55,0]],forces:[[.3,1.25,9.4],[-.1,.62,0]],flow:[[1.2,1.75,8.6],[-.4,.62,0]],
     drs:[[-2.3,1.25,4.9],[-1.7,.72,0]],test:[[6.4,2.4,6.9],[-.1,.45,0]]};
