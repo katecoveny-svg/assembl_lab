@@ -4,3 +4,4 @@ node_modules
 *.log
 assets/models/cafe/renders/*.png
 *.blend1
+study/share/reels/

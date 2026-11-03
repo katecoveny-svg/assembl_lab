@@ -1,4 +1,5 @@
 """Blender build for the Earth & Space machine (study/m/earthspace.html).
+The Earth uses NASA Blue Marble (day) and Black Marble (city lights) via make_nasa_textures.py.
 Makes the Earth (with clouds, an axis and a pin on Aotearoa), the Moon, the Sun and six star types, exports
 earthspace.glb, and renders a Cycles hero image. Textures come from make_textures.py.
 Usage: python build_earthspace.py <texdir> <outdir>   (bpy 5.x as a Python module)
@@ -48,7 +49,10 @@ t = n.new('ShaderNodeTexImage'); t.image = img('earth.jpg'); l.new(t.outputs['Co
 r = n.new('ShaderNodeTexImage'); r.image = img('earth-rough.jpg', 'Non-Color'); sp = n.new('ShaderNodeSeparateColor')
 l.new(r.outputs['Color'], sp.inputs['Color']); l.new(sp.outputs['Green'], b.inputs['Roughness']); l.new(sp.outputs['Blue'], b.inputs['Metallic'])
 b.inputs['Specular IOR Level'].default_value = .5
+# city lights (NASA Black Marble): exported as the emissive map; the web scene shows them on the night side only
+lt = n.new('ShaderNodeTexImage'); lt.image = img('earth-lights.jpg'); l.new(lt.outputs['Color'], b.inputs['Emission Color']); b.inputs['Emission Strength'].default_value = 1.0
 earth.data.materials.append(m)
+EARTH_MAT = (m, b, lt)
 
 clouds = sphere('CLOUDS', 1.012, 96, 48); clouds.parent = spin
 m, n, l = mat('Clouds'); b = n['Principled BSDF']
@@ -108,6 +112,13 @@ axis.hide_render = True
 head.visible_shadow = False; stalk.visible_shadow = False
 moon.location = (-.27, -1.83, .2)
 sun.location = (56, 21, 8); sun.scale = (3, 3, 3); sun.visible_shadow = False
+# city lights only where it is night: emission × (1 − smoothstep(normal · sun direction))
+m, b, lt = EARTH_MAT; n = m.node_tree.nodes; l = m.node_tree.links
+geo = n.new('ShaderNodeNewGeometry'); dp = n.new('ShaderNodeVectorMath'); dp.operation = 'DOT_PRODUCT'
+dp.inputs[1].default_value = tuple(sun.location.normalized())
+l.new(geo.outputs['Normal'], dp.inputs[0])
+mr = n.new('ShaderNodeMapRange'); mr.inputs['From Min'].default_value = .15; mr.inputs['From Max'].default_value = -.15; mr.inputs['To Min'].default_value = 0; mr.inputs['To Max'].default_value = 2.5
+l.new(dp.outputs['Value'], mr.inputs['Value']); l.new(mr.outputs['Result'], b.inputs['Emission Strength'])
 # atmosphere: a thin glowing rim
 atm = sphere('ATMOS', 1.035, 96, 48); atm.parent = spin
 m, n, l = mat('Atmos'); n.remove(n['Principled BSDF']); o = n['Material Output']

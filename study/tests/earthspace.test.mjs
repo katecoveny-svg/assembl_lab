@@ -35,7 +35,7 @@ test('day lengths, Moon phases and light travel times are right',()=>{
   assert.equal(DIST.length,6);for(const [km,sec] of DIST)assert.ok(Math.abs(km/299792/sec-1)<.08,`light time for ${km} km`);
 });
 test('the hard parts are honest: practice questions, squashed scale, generated surfaces, NZ moon view',()=>{
-  assert.match(src,/not real exam questions/);assert.match(src,/squashed so everything fits/);assert.match(src,/Natural Earth coastline data \(public domain\)/);
+  assert.match(src,/not real exam questions/);assert.match(src,/squashed so everything fits/);assert.match(src,/NASA images \(Blue Marble and Black Marble, public domain\)/);assert.match(src,/Go further/);
   assert.match(src,/in the Southern Hemisphere a waxing Moon is lit on the LEFT/i);assert.ok((src.match(/\{step:"/g)||[]).length>=12,'at least 12 practice questions');
   assert.match(src,/cfg\.questionBank=bank/);
 });
