@@ -138,9 +138,9 @@ const html = `<!doctype html>
 <html lang="en-NZ" data-feeds="ed,power,fuel,fpi" class="lab-story">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>assembl lab · small worlds, useful work</title>
+<title>assembl lab · small worlds, assembled</title>
 <meta name="description" content="Working models of New Zealand places, built by assembl: business twins you can run for a day, study machines that teach one idea, and a playground of instruments. Every one says what is simulated and what is real.">
-<meta property="og:title" content="assembl lab · small worlds, useful work"><meta property="og:description" content="Business twins, study machines and a playground, built in Aotearoa. Every world says what is simulated and what is real."><meta property="og:image" content="https://assembl-lab.vercel.app/assets/models/cafe/renders/cafe-hero.webp">
+<meta property="og:title" content="assembl lab · small worlds, assembled"><meta property="og:description" content="Business twins, study machines and a playground, built in Aotearoa. Every world says what is simulated and what is real."><meta property="og:image" content="https://assembl-lab.vercel.app/assets/models/cafe/renders/cafe-hero.webp">
 <meta name="theme-color" content="#240B21"><link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/lab/story.css">
@@ -158,7 +158,7 @@ const html = `<!doctype html>
 <main>
 <section class="hero wrap" aria-labelledby="hero-title">
  <div class="hero-copy">
-  <h1 id="hero-title">Small worlds.<br>Useful work.</h1>
+  <h1 id="hero-title">Small worlds,<br>assembled.</h1>
   <p class="lede">The assembl Lab is where we build working models of New Zealand places: businesses you can run for a day, machines that teach one idea, and a few instruments to play with.</p>
   <div class="actions"><a class="btn btn-paper" href="#twins">Walk through the twins</a><a class="btn btn-glass" href="#study">See the study machines</a></div>
   <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
@@ -169,7 +169,7 @@ const html = `<!doctype html>
 <span id="explore" class="anchor" aria-hidden="true"></span>
 <section class="chapter twins wrap" id="twins" aria-labelledby="twins-title">
  <div class="ch-head">
-  <h2 id="twins-title">Run a business for a day.</h2>
+  <h2 id="twins-title">Businesses, assembled. Run one for a day.</h2>
   <p class="lede">Twins of the kinds of places New Zealand runs on. The businesses are invented; the public figures that feed them are named. Change one thing and follow where it goes.</p>
  </div>
  <div class="tw">
@@ -194,7 +194,7 @@ const html = `<!doctype html>
 <div class="sheet">
 <section class="chapter study wrap" id="study" aria-labelledby="study-title">
  <div class="ch-head">
-  <h2 id="study-title">Machines that teach one idea well.</h2>
+  <h2 id="study-title">One idea, assembled into a machine.</h2>
   <p class="lede">Each study machine turns one curriculum topic into something you can turn, test and break, then marks your answers against the same model. Years 7 to 13, in <a href="${href(studyWorld)}">assembly, the study app</a>.</p>
   <div class="actions"><a class="btn btn-plum go-world" href="${href(studyWorld)}">Open assembly</a><nav class="years" aria-label="Study machines by year">${YEARS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</nav></div>
  </div>
@@ -208,7 +208,7 @@ const html = `<!doctype html>
 
 <section class="chapter play wrap" id="playground" aria-labelledby="play-title">
  <div class="ch-head ch-head-row">
-  <h2 id="play-title">The playground.</h2>
+  <h2 id="play-title">The playground. Some assembly required.</h2>
   <p class="lede">Smaller instruments for making things. No lesson and no data: everything stays on your device.</p>
  </div>
  <ul class="index">
@@ -229,7 +229,7 @@ const html = `<!doctype html>
 
 <section class="close" aria-labelledby="close-title">
  <div class="wrap close-in">
-  <h2 id="close-title">Want a twin of your own business?</h2>
+  <h2 id="close-title">Want your business assembled as a twin?</h2>
   <p class="lede">assembl builds twins around real customer journeys, starting with public information and then, on your say-so, your own.</p>
   <div class="actions"><a class="btn btn-paper" href="https://assembl.co.nz/" target="_top">Talk to assembl</a><a class="btn btn-glass" href="${href(studyWorld)}">Study for exams</a></div>
  </div>
