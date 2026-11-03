@@ -56,7 +56,7 @@ const LAYOUT=()=>{const play=document.querySelector('.play');const wrap=document
 // Targets are found on the page at the moment each move starts, so the cursor always lands on the real control.
 async function plan(p){return p.evaluate(()=>{const vis=e=>e&&!e.closest('[hidden]')&&e.getBoundingClientRect().width>0;
   return{ranges:[...document.querySelectorAll('#k-ctl input[type=range]')].filter(vis).length,btns:[...document.querySelectorAll('#k-ctl button')].filter(vis).length,sels:[...document.querySelectorAll('#k-ctl select')].filter(vis).length,...(()=>{const bs=[...document.querySelectorAll('#k-ctl button')].filter(vis).map(b=>b.textContent.trim()).map(t=>/reset|again|next/i.test(t)?'':t);
-    let i=bs.findIndex(t=>/play\s*[\d,]+/i.test(t));if(i<0)i=bs.findIndex(t=>/^[▶✦×]|^[ABC] ·|\bplay\b|\brun\b|send|drop|double|open/i.test(t));return{act:i,actPlays:i>=0&&/\bplay\b|\brun\b/i.test(bs[i])}})(),three:!!document.querySelector('.s3-host canvas')}})}
+    let i=bs.findIndex(t=>/play\s*[\d,]+/i.test(t));if(i<0)i=bs.findIndex(t=>/^[▶✦×]|^[ABC] ·|\bplay\b|\brun\b|send|drop|double|open/i.test(t));return{act:i,actPlays:i>=0&&/\bplay\b|\brun\b/i.test(bs[i]),actToggle:i>=0&&/^▶/.test(bs[i])}})(),three:!!document.querySelector('.s3-host canvas')}})}
 const RESOLVE=t=>{const vis=e=>e&&!e.closest('[hidden]')&&e.getBoundingClientRect().width>0;const R=e=>e.getBoundingClientRect();
   if(t.t==='thumb'||t.t==='track'){const i=[...document.querySelectorAll('#k-ctl input[type=range]')].filter(vis)[t.i];const b=R(i);
     const f=t.t==='thumb'?(+i.value-+i.min)/((+i.max-+i.min)||1):t.frac;return{x:b.x+8+f*(b.width-16),y:b.y+b.height/2}}
@@ -65,7 +65,7 @@ const RESOLVE=t=>{const vis=e=>e&&!e.closest('[hidden]')&&e.getBoundingClientRec
   const b=R(document.querySelector('#reel-wrap .claw-graph')||document.querySelector('#reel-wrap .playmain>.canvas'));return{x:b.x+b.width*t.fx,y:b.y+b.height*t.fy}};
 function timeline(pl){const segs=[];let f=0;const go=(to,frames,down=false,x={})=>{segs.push({f0:f,f1:f+frames,to,down,...x});f+=frames};const hold=(frames,down=false,x={})=>go(null,frames,down,x);
   const A=pl.act;
-  if(A>=0&&pl.actPlays){go({t:'btn',i:A},14);hold(4,true);hold(30);hold(4,true);while(f<N)hold(1);return segs}  // a play button: press it twice and watch the results build (a slider would reset them)
+  if(A>=0&&pl.actPlays){go({t:'btn',i:A},14);hold(4,true);if(!pl.actToggle){hold(30);hold(4,true)}while(f<N)hold(1);return segs}  // ▶ is play/pause: press it once  // a play button: press it twice and watch the results build (a slider would reset them)
   if(A>=0){go({t:'btn',i:A},14);hold(4,true);hold(pl.ranges?8:20)}  // press the machine's action button and watch what happens
   if(pl.ranges){go({t:'thumb',i:0},A>=0?12:16);hold(3,true);go({t:'track',i:0,frac:.88},A>=0?26:32,true);hold(3)}  // then drag its slider
   else if(A<0&&pl.btns){go({t:'btn',i:0},18);hold(4,true);hold(3)}
