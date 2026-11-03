@@ -20,7 +20,7 @@ const MTINT={engine:"peach",heart:"blush",slushie:"sky",space:"lavender",reactio
 const SUBJ=Object.fromEntries(Object.entries(STINT).map(([k,t])=>[k,DEEP[t]]));
 const MSUB={heart:"biochem",slushie:"biochem",space:"science",reactions:"biochem",climate:"science",kokopu:"biochem",inanga:"biochem",shaky:"science",fish:"science",vinyl:"science",bike:"science",sky:"science",particles:"science",atoms:"science",energy:"science",claims:"science",
   genes:"biochem",ecology:"biochem",materials:"biochem",lines:"maths",shapes:"maths",claw:"maths",data:"maths",
-  read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",world:"social",earthspace:"science",windtunnel:"science",ai:"digital",
+  read:"english",words:"english",essay:"english",text:"english",maps:"social",fly:"social",market:"social",civics:"social",socials:"social",world:"social",earthspace:"science",house:"tech",windtunnel:"science",ai:"digital",
   vend:"science",pinball:"science",phone:"science",queue:"maths",plan:"tech",algebra:"maths",gradient:"maths",gradient3:"maths",quote:"english",unseen:"english",unseen3:"english",engine:"science",y9english:"english"};
 const tintName=id=>MTINT[id]||STINT[MSUB[id]||"science"]||"sky";
 const accentFor=id=>DEEP[tintName(id)];
