@@ -59,12 +59,12 @@ function drawMain(st0,step){
   if(step.k==="pressure")return drawSyringe();
   const st=stateFrom(s.Q,Tb());
   let o=F.floor(640,330);
-  // hotplate: a steel box with a glowing coil on its top
-  const glow=s.playing&&step.speed?Math.min(1,s.power/3):0.05,cx=(BX0+BX1)/2;
+  // hotplate: a steel box with a heating coil on its top that warms in colour while it is on
+  const heat=s.playing&&step.speed?Math.min(1,s.power/3):0.05,cx=(BX0+BX1)/2;
   o+=F.box(118,300,304,20,{colour:PAL.steel,kind:"metal",d:14,r:4,shadowLen:90});
   o+=`<ellipse cx="${cx+7}" cy="${296}" rx="128" ry="3.6" fill="${PAL.steelDark}" opacity=".5"/>`;
-  for(let i=0;i<5;i++)o+=`<path d="M${154+i*50},298 q12,-4 24,0 t24,0" fill="none" stroke="${PAL.product.strawberry}" stroke-width="2.4" stroke-linecap="round" opacity="${0.2+0.8*glow}"/>`;
-  o+=`<circle cx="396" cy="310" r="5.5" fill="${PAL.product.peach}" stroke="${F.mat("painted",PAL.product.peach).stroke}"/><circle cx="380" cy="310" r="2.6" fill="${PAL.product.strawberry}" opacity="${0.25+0.75*glow}"/>`;
+  for(let i=0;i<5;i++)o+=`<path d="M${154+i*50},298 q12,-4 24,0 t24,0" fill="none" stroke="${PAL.product.strawberry}" stroke-width="2.4" stroke-linecap="round" opacity="${0.2+0.8*heat}"/>`;
+  o+=`<circle cx="396" cy="310" r="5.5" fill="${PAL.product.peach}" stroke="${F.mat("painted",PAL.product.peach).stroke}"/><circle cx="380" cy="310" r="2.6" fill="${PAL.product.strawberry}" opacity="${0.25+0.75*heat}"/>`;
   // beaker: frosted glass, back wall first
   const L=BX0-6,R=BX1+6,bt=40,bb=BY1+3,ry=5;
   o+=`<path d="M${L},${bt} V${bb} A${(R-L)/2},${ry} 0 0 0 ${R},${bb} V${bt}" fill="${TINT}" fill-opacity=".22"/><ellipse cx="${cx}" cy="${bt}" rx="${(R-L)/2}" ry="${ry}" fill="${TINT}" fill-opacity=".35" stroke="${GD}" stroke-width="1.2"/>`;
@@ -129,7 +129,7 @@ function drawClose(st0,step){
     o+=`<line x1="50" y1="220" x2="390" y2="220" stroke="${AXIS}"/><line x1="50" y1="40" x2="50" y2="220" stroke="${AXIS}"/><path d="${d}" fill="none" stroke="${PS.gas}" stroke-width="2.4"/>`;
     [20,40,60,80,100].forEach(v=>o+=`<text class="t-lab" x="${X(v)}" y="236" text-anchor="middle">${v}</text>`);
     [0,100,200,300].forEach(p=>o+=`<text class="t-lab" x="44" y="${Y(p)+3.5}" text-anchor="end">${p}</text>`);
-    o+=`<text class="t-lab" x="220" y="252" text-anchor="middle">VOLUME (mL)</text><circle cx="${X(s.vol)}" cy="${Y(pressure())}" r="6" fill="${PAL.product.butter}" stroke="var(--ink)"/>`;
+    o+=`<text class="t-lab" x="220" y="252" text-anchor="middle">VOLUME (mL)</text><circle cx="${X(s.vol)}" cy="${Y(pressure())}" r="6" fill="${PAL.case.blush}" stroke="var(--ink)"/>`;
     return o;
   }
   const S=stages(Tb()),st=stateFrom(s.Q,Tb());
@@ -142,7 +142,7 @@ function drawClose(st0,step){
   // progress so far
   const done=pts.filter(p=>p[0]<=s.Q);done.push([s.Q,st.T]);
   o+=`<path d="${done.map((p,i)=>(i?"L":"M")+X(p[0])+","+Y(p[1])).join("")}" fill="none" stroke="${PS.liquid}" stroke-width="2.6" stroke-linejoin="round"/>`;
-  o+=`<circle cx="${X(s.Q)}" cy="${Y(st.T)}" r="6" fill="${PAL.product.butter}" stroke="var(--ink)"/>`;
+  o+=`<circle cx="${X(s.Q)}" cy="${Y(st.T)}" r="6" fill="${PAL.case.blush}" stroke="var(--ink)"/>`;
   o+=`<text class="t-lab" x="${X(S.q1)+4}" y="${Y(0)-8}">MELTING</text><text class="t-lab" x="${(X(S.q3)+X(S.q4))/2}" y="${Y(Tb())-8}" text-anchor="middle">BOILING: TEMPERATURE STAYS FLAT</text>`;
   o+=`<text class="t-lab" x="225" y="232" text-anchor="middle">HEAT ADDED (kJ) →</text><text class="t-lab" x="400" y="232" text-anchor="end">${Math.round(S.q5)}</text>`;
   o+=`<text class="t-big" x="14" y="252">${Math.round(s.Q)} kJ added · ${Math.floor(s.time/60)} min ${Math.round(s.time%60)} s at ${s.power.toFixed(1)} kW</text>`;
@@ -195,30 +195,48 @@ const KUPU=[
  {mi:"pae rewa",en:"melting point",ta:40108},
  {mi:"koropupū",en:"to boil, bubble up",ta:3056}];
 Object.entries({"particles": ["matūriki", "totoka", "wē", "haurehu"], "heat": ["paemahana", "matūriki"], "melt": ["rewa", "pae rewa", "totoka", "wē"], "warm": ["paemahana"], "boil": ["koropupū", "haurehu"], "mountain": ["koropupū"], "pressure": ["haurehu"]}).forEach(([k,a])=>{const st=steps.find(x=>x.k===k);if(st)st.kupu=a});
-// ---------- the 3D bench (../kit3d.js): a glass beaker of real 3D water molecules on a hotplate, a gas syringe you can push,
-// and Aoraki behind the bench for the mountain step. The molecules follow the same model as the drawing: stateFrom(s.Q) decides
-// how many are locked in the ice lattice, how many are liquid and how many have escaped as gas.
-function particles3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
-  const ZB=V3(0,0,0),ZS=V3(9,0,0);
-  const plinth=(c,w,d,tint)=>{const p=S.rbox(w,.3,d,.12,mat("plastic",tint,{rough:.55,coat:.2}));p.position.set(c.x,.15,c.z);S.scene.add(p);return p};
-  plinth(ZB,7.6,5.2,PAL.case.sky);plinth(ZS,7.2,4.6,PAL.case.mint);
-  const TOP=.3;
-  // ---------------------------------------------------------------- hotplate and beaker
-  const bench=S.group();bench.position.set(ZB.x-.6,TOP,ZB.z);
-  const plate=S.rbox(3.2,.36,3.2,.1,mat("metal",PAL.steel,{rough:.3}),{at:[0,.18,0]});bench.add(plate);
-  bench.add(S.cyl(1.38,1.38,.03,mat("plastic","#3B4262",{rough:.6}),{at:[0,.375,0],seg:64}));
-  const coilM=mat("glow","#ff6a3d",0,{fresh:true});
-  const coil=S.tube(Array.from({length:80},(_,i)=>{const a=i/79*Math.PI*8;const r=.15+1.05*(i/79);return [Math.cos(a)*r,.4,Math.sin(a)*r]}),.03,coilM,{seg:320,cast:false});bench.add(coil);
-  const knob=S.cyl(.16,.16,.12,mat("plastic",PAL.product.peach),{at:[1.25,.18,1.62],rot:[Math.PI/2,0,0]});bench.add(knob);
-  const lamp=S.sphere(.06,mat("glow",PAL.product.strawberry,0,{fresh:true}),{at:[.85,.2,1.62]});bench.add(lamp);
-  const BR=1.25,BH=2.9,B0=.42;   // beaker inner radius, height, base height
-  const beaker=S.mesh(new THREE.CylinderGeometry(BR+.04,BR+.04,BH,72,1,true),mat("glass","#E6F2FC",{opacity:.12}),{cast:false});beaker.position.y=B0+BH/2;beaker.renderOrder=6;bench.add(beaker);
-  const bbase=S.cyl(BR+.04,BR+.04,.06,mat("glass","#E6F2FC",{opacity:.35}),{at:[0,B0+.03,0],cast:false,seg:72});bbase.renderOrder=6;bench.add(bbase);
-  bench.add(S.torus(BR+.04,.03,mat("glass","#ffffff",{opacity:.5}),{at:[0,B0+BH,0],rot:[Math.PI/2,0,0],cast:false}));
-  for(let k=1;k<=4;k++){const r=S.torus(BR+.045,.006,mat("flat",PAL.deep.sky,{opacity:.5}),{at:[0,B0+k*.55,0],rot:[Math.PI/2,0,0],arc:.5,cast:false});r.rotation.z=-1.2;bench.add(r)}
-  const waterM=mat("liquid",PAL.water,{fresh:true,opacity:.22});waterM.depthWrite=false;
-  const water=S.mesh(new THREE.CylinderGeometry(BR,BR,1,64),waterM,{cast:false});water.renderOrder=5;bench.add(water);
-  const surface=S.mesh(new THREE.CircleGeometry(BR,64),mat("liquid","#DCEBFB",{fresh:true,opacity:.45}),{rot:[-Math.PI/2,0,0],cast:false});surface.material.depthWrite=false;surface.renderOrder=5;bench.add(surface);
+// ---------- the 3D bench (../kit3d.js) with the Blender apparatus (assets/models/particles, contract assembl.particles.v1):
+// a hotplate, an 800 mL beaker with a spirit thermometer on a retort stand, and a sealed 100 mL glass syringe with a pressure
+// gauge, all at real size. The GLB only DISPLAYS this lesson: the model above decides the temperature, the phase fractions,
+// the volume and the pressure, and particles-rig-controller.mjs poses the plunger, the gauge needle, the thermometer spirit,
+// the water level and the hotplate from those values. The molecules are still light instanced spheres driven by the same
+// per-frame code as before (stateFrom(s.Q) decides how many are locked in the lattice, liquid or escaped as gas), now
+// confined to the GLB's own beaker and syringe chambers. Aoraki for the mountain step stays a simple procedural backdrop.
+const TOP3=.3,graphics={live:true},SRC=(document.currentScript&&document.currentScript.src)||location.href;
+const STATUS3={loading:"Loading live 3D · offline Blender render shown while it loads",
+  ready:"Live 3D · Blender apparatus; particles drawn far bigger than real; browser glass is simpler than the offline render",
+  fallback:"3D unavailable · simplified live diagram; controls, readouts and the investigation are unchanged",
+  drawing:"Simplified live diagram · same model, controls, readouts and investigation",
+  nogl:"Simplified live diagram · this browser has no WebGL; controls, readouts and the investigation are unchanged"};
+const announce=()=>{try{document.documentElement.dispatchEvent(new Event("particles-asset"))}catch(e){}};
+function particles3d(S){
+  let world=null,failed=false;const host=S.canvas.parentElement,figure=host.parentElement;
+  const status=()=>document.getElementById("particles-load-status"),root=document.documentElement;
+  host.style.visibility="hidden";figure.classList.remove("s3-on");if(graphics.live)figure.classList.add("particles-loading");
+  root.dataset.particlesAsset="loading";if(status())status().textContent=STATUS3.loading;
+  const fail=e=>{if(failed)return;failed=true;world=null;host.style.display="none";host.setAttribute("aria-hidden","true");figure.classList.remove("s3-on","particles-loading");
+    document.getElementById("k-main").removeAttribute("aria-hidden");root.dataset.particlesAsset="fallback";
+    if(status())status().textContent=STATUS3.fallback;S.api.redraw();announce();console.warn("Particle apparatus unavailable",e)};
+  import("./particles-asset.js").then(async m=>{
+    const asset=await m.loadParticles(S,TOP3);m.lightParticles(S);world=particlesBench(S,asset);
+    world.step(S.api.step);world.update(s,S.api.step,0,0);
+    figure.classList.remove("particles-loading");root.dataset.particlesAsset="ready";host.style.visibility="visible";
+    host.querySelector(".s3-ov").setAttribute("aria-hidden","true");
+    if(graphics.live){figure.classList.add("s3-on");document.getElementById("k-main").setAttribute("aria-hidden","true")}
+    host.querySelector(".s3-hint").textContent="Drag to turn · + / − to zoom · Home to reset · drag the plunger in Gas pressure";announce();
+  }).catch(fail);
+  return {step(st){world?.step(st)},resize(w,h){world?.resize?.(w,h)},update(...args){if(world&&!failed)try{world.update(...args)}catch(e){fail(e)}}};
+}
+function particlesBench(S,asset){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);const {root,rig,R}=asset;
+  S.scene.add(root);
+  S.canvas.setAttribute("aria-label","Live 3D model of the particle apparatus: a beaker of water molecules on a hotplate with a thermometer, and a sealed syringe with a pressure gauge. Drag or use the arrow keys to orbit, + and − to zoom, Home to reset the view. The controls below change the experiment.");
+  const BX=R.beaker.x,BZ=R.beaker.z,SY=R.syringe;
+  // one pale bench under both stations
+  const deck=S.rbox(SY.x0+7-(BX-3.6),TOP3,9,.12,mat("plastic","#EFEAF4",{rough:.6,coat:.15}));deck.position.set((BX-3.6+SY.x0+7)/2,TOP3/2,(BZ+SY.z)/2-.4);S.scene.add(deck);
+  // ---------------------------------------------------------------- the beaker chamber (molecules, steam)
+  const bench=S.group();bench.position.set(BX,TOP3,BZ);
+  const BR=R.beaker.r,BH=R.beaker.rim-R.beaker.floor,B0=R.beaker.floor-TOP3;   // inner radius, height and floor (bench space)
+  const hot=n=>{const o=root.getObjectByName(n);return o?o.getWorldPosition(new THREE.Vector3()):null};
   // the molecules: a 7 × 7 × 7 ice lattice; oxygen blueberry, hydrogens white, bonds drawn while they're in the solid
   const NN=7,N=NN*NN*NN,SP=.19;
   const oGeo=new THREE.SphereGeometry(.072,16,12),hGeo=new THREE.SphereGeometry(.044,12,8);
@@ -235,18 +253,14 @@ function particles3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
   const bonds=new THREE.LineSegments(bondGeo,new THREE.LineBasicMaterial({color:PAL.deep.sky,transparent:true,opacity:.45}));bonds.frustumCulled=false;bench.add(bonds);
   const nb=[];for(let i=0;i<N;i++){const a=i%NN,b=Math.floor(i/NN)%NN,c=Math.floor(i/NN/NN);if(a<NN-1)nb.push([i,i+1]);if(b<NN-1)nb.push([i,i+NN]);if(c<NN-1)nb.push([i,i+NN*NN])}
   const steamP=S.puffs(70,"#ffffff");bench.add(steamP);const stp=[];for(let i=0;i<70;i++)stp.push({x:0,y:0,z:0,life:0});
-  // thermometer, clipped to the beaker
-  const th=S.group(bench);th.position.set(1.95,0,.2);
-  th.add(S.rbox(.5,.1,.5,.04,mat("metal",PAL.steel),{at:[0,.05,0]}));th.add(S.cyl(.02,.02,3.4,mat("metal"),{at:[.18,1.7,0],seg:8}));
-  th.add(S.cyl(.08,.08,3.0,mat("glass","#ffffff",{opacity:.3}),{at:[0,1.85,0],cast:false}));th.add(S.sphere(.13,mat("glow",PAL.product.strawberry,.5),{at:[0,.35,0]}));
-  const spirit=S.cyl(.042,.042,1,mat("glow",PAL.product.strawberry,.5),{seg:12});th.add(spirit);
-  const Ty=T=>.45+(T+30)/170*2.75;
-  const tickM=mat("flat",PAL.ink,{opacity:.6});for(let T=-20;T<=140;T+=20){const tk=S.box(.12,.008,.01,tickM,{cast:false});tk.position.set(-.1,Ty(T),.08);th.add(tk)}
-  const lTemp=S.label({cls:"big",off:[26,-6]}),lState=S.label({off:[-30,-30]}),lBoil=S.label({off:[30,0]}),lMelt=S.label({off:[30,0]});
+  const Ty=T=>R.thermo.y0+(T-R.thermo.t0)/(R.thermo.t1-R.thermo.t0)*(R.thermo.y1-R.thermo.y0);
+  const lTemp=S.label({cls:"big",off:[96,-6]}),lState=S.label({off:[-30,-30]}),lBoil=S.label({off:[22,0]}),lMelt=S.label({off:[22,0]});
   const lBeaker=S.label({off:[-30,-14]}).set("Beaker"),lPlate=S.label({off:[-34,10]}).set("Hotplate");
-  S.pick(plate,()=>{S.api.state.playing=!S.api.state.playing});S.pick(knob,()=>{S.api.state.playing=!S.api.state.playing});
+  const hpBeaker=hot("HOTSPOT_BEAKER")||V3(BX-BR,TOP3+B0+BH*.8,BZ),hpPlate=hot("HOTSPOT_HOTPLATE")||V3(BX-1.5,TOP3+1.6,BZ+2.8);
+  S.pick(rig.nodes.HOTPLATE_TOP,()=>{S.api.state.playing=!S.api.state.playing});S.pick(rig.nodes.POWER_KNOB_PIVOT,()=>{S.api.state.playing=!S.api.state.playing});
+  let heatK=0;
   // ---------------------------------------------------------------- Aoraki, rising behind the bench for the mountain step
-  const mtn=S.group();mtn.position.set(ZB.x-1,0,ZB.z-9);
+  const mtn=S.group();mtn.position.set(BX-1,0,BZ-9);
   const rockM=mat("plastic","#C9C3D8",{rough:.7,coat:.1}),snowM=mat("plastic","#ffffff",{rough:.5});
   const peak=(x,z,h,r,seg)=>{const g=new THREE.ConeGeometry(r,h,seg,4);const pos=g.attributes.position;for(let i=0;i<pos.count;i++){const y=pos.getY(i);if(y>-h/2+.01&&y<h/2-.01){pos.setX(i,pos.getX(i)*(1+.12*Math.sin(i*1.7)));pos.setZ(i,pos.getZ(i)*(1+.12*Math.cos(i*2.3)))}}g.computeVertexNormals();
     const m=S.mesh(g,rockM);m.position.set(x,h/2,z);mtn.add(m);const cap=S.mesh(new THREE.ConeGeometry(r*.36,h*.36,seg,1),snowM);cap.position.set(x,h-h*.18+.01,z);mtn.add(cap);return m};
@@ -254,53 +268,42 @@ function particles3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
   const pin=S.group(mtn);pin.add(S.cyl(.03,.03,.9,mat("metal"),{at:[0,.45,0],seg:8}));const flag=S.box(.5,.3,.02,mat("plastic",PAL.product.strawberry),{at:[.26,.75,0]});pin.add(flag);
   mtn.scale.setScalar(.001);mtn.visible=false;let mtnK=0;
   const lPlace=S.label({cls:"hot",off:[24,-20]});
-
-  // ---------------------------------------------------------------- the gas syringe
-  const syr=S.group();syr.position.set(ZS.x-.8,TOP,ZS.z);
-  const SL=4.2,SR=.75,SX0=-2.2;    // barrel length, radius, nozzle end x
-  const barrel=S.mesh(new THREE.CylinderGeometry(SR+.04,SR+.04,SL,64,1,true),mat("glass","#E6F2FC",{opacity:.12}),{cast:false,rot:[0,0,Math.PI/2]});barrel.position.set(SX0+SL/2,SR+.25,0);barrel.renderOrder=6;syr.add(barrel);
-  const endcap=S.cyl(SR+.04,SR+.04,.06,mat("glass","#E6F2FC",{opacity:.4}),{rot:[0,0,Math.PI/2],at:[SX0,SR+.25,0],cast:false});endcap.renderOrder=6;syr.add(endcap);
-  syr.add(S.cyl(.12,.16,.4,mat("glass","#E6F2FC",{opacity:.4}),{rot:[0,0,Math.PI/2],at:[SX0-.2,SR+.25,0],cast:false}));
-  for(let k=0;k<=10;k++){const tk=S.box(.012,k%5?.12:.22,.01,mat("flat",PAL.deep.sky,{opacity:.6}),{cast:false});tk.position.set(SX0+k*SL/10*.95,SR*2+.25-(k%5?.06:.11),SR*.5);syr.add(tk)}
-  for(const x of [SX0+.4,SX0+SL-.4]){const st=S.rbox(.3,.3,1.2,.06,mat("plastic","#ffffff",{rough:.4}),{at:[x,.15,0]});syr.add(st)}
-  const flange=S.rbox(.12,1.0,2.0,.05,mat("glass","#E6F2FC",{opacity:.5}),{at:[SX0+SL,SR+.25,0],cast:false});syr.add(flange);
-  const plunger=S.group(syr);
-  const head=S.cyl(SR,SR,.22,mat("plastic","#4E5468",{rough:.5}),{rot:[0,0,Math.PI/2],seg:48});plunger.add(head);
-  const rod=S.cyl(.09,.09,1,mat("metal"),{rot:[0,0,Math.PI/2],seg:16});plunger.add(rod);
-  const thumb=S.cyl(.6,.6,.12,mat("plastic",PAL.product.butter,{rough:.35}),{rot:[0,0,Math.PI/2],seg:40});plunger.add(thumb);
-  const GN=60,gas=S.swarm(GN,oGeo,mat("plastic",PAL.product.strawberry,{rough:.3}));syr.add(gas);
-  const gp=[];for(let i=0;i<GN;i++){const v=V3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize();gp.push({u:Math.random(),y:(Math.random()-.5)*1.2,z:(Math.random()-.5)*1.2,v})}
-  const flashes=S.puffs(30,"#FFD76A",{additive:true});syr.add(flashes);const fl=[];for(let i=0;i<30;i++)fl.push({y:0,z:0,life:0});let fi=0;
-  // pressure gauge on a copper pipe
-  const gauge=S.group(syr);gauge.position.set(SX0-.9,0,-.9);
-  gauge.add(S.tube([[.7,SR+.25,.9],[.25,SR+.25,.9],[0,SR+.25,.6],[0,1.4,.15],[0,2.3,0]],.04,mat("metal",PAL.copper)));
-  gauge.add(S.cyl(.62,.62,.2,mat("metal",PAL.steel,{rough:.25}),{at:[0,2.9,0],rot:[Math.PI/2,0,0],seg:48}));
-  const face=S.panel(256,256,1.05);face.position.set(0,2.9,.105);gauge.add(face);let fLast=-1;
+  // ---------------------------------------------------------------- the gas syringe chamber
+  // Gas molecules live between the nozzle wall and the plunger face of the GLB syringe. They are a sketch of collisions;
+  // the gauge and the readouts follow pressure() from the model, never these positions.
+  const GN=60,GR=.062,gas=S.swarm(GN,new THREE.SphereGeometry(GR,16,12),mat("plastic",PAL.product.strawberry,{rough:.3}));S.scene.add(gas);
+  const RR=SY.r-GR-.012,K=RR/.65;   // K rescales the original sketch speeds from its old 0.75-unit barrel to this one
+  const gp=[];for(let i=0;i<GN;i++){const v=V3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize();gp.push({u:Math.random(),y:(Math.random()-.5)*1.6*RR,z:(Math.random()-.5)*1.6*RR,v})}
+  // wall hits on the plunger face: a soft blush mark, ordinary blending (no additive glow)
+  const flashes=S.puffs(30,PAL.product.strawberry);S.scene.add(flashes);const fl=[];for(let i=0;i<30;i++)fl.push({y:0,z:0,life:0});let fi=0;
   const lPress=S.label({cls:"big",off:[30,-10]}),lVol=S.label({off:[0,-34]}),lDrag=S.label({cls:"hot",off:[24,24]}).set("Drag me");
-  let dragX=null;
-  S.dragger(thumb,{normal:V3(0,0,1),start:()=>{},move:p=>{const local=syr.worldToLocal(p.clone());const W=S.clamp(local.x-SX0-.11,SL*.2,SL);S.api.state.vol=Math.round(W/SL*100);dragX=1},end:()=>{dragX=null}});
-  S.dragger(rod,{normal:V3(0,0,1),move:p=>{const local=syr.worldToLocal(p.clone());const W=S.clamp(local.x-SX0-.11-.6,SL*.2,SL);S.api.state.vol=Math.round(W/SL*100)}});
-
+  const syr=rig.nodes.SYRINGE,perM=asset.contract.rig.plunger.metres_per_mL,local=new THREE.Vector3();let grab=null;
+  const dragVol={normal:V3(0,0,1),start:p=>{syr.worldToLocal(local.copy(p));grab={x:local.x,vol:s.vol}},
+    move:p=>{if(!grab)return;syr.worldToLocal(local.copy(p));const v=grab.vol+(local.x-grab.x)/perM;S.api.state.vol=Math.round(S.clamp(v,20,100))},end:()=>{grab=null}};
+  S.dragger(rig.nodes.THUMB_PLATE,dragVol);S.dragger(rig.nodes.PLUNGER_ROD,dragVol);
   // ---------------------------------------------------------------- views
-  S.view("beaker",[ZB.x+1.6,4.1,ZB.z+8.6],[ZB.x-.2,1.6,ZB.z],{min:3,max:20});
-  S.view("close",[ZB.x+.6,3.0,ZB.z+5.4],[ZB.x-.6,1.2,ZB.z],{min:2,max:20});
-  S.view("mountain",[ZB.x+3.6,4.6,ZB.z+11.5],[ZB.x-.6,2.6,ZB.z-2],{min:3,max:30});
-  S.view("syringe",[ZS.x+.6,3.6,ZS.z+7.4],[ZS.x-.6,1.3,ZS.z],{min:3,max:20});
-  S.view("all",[4.5,9,18],[4.5,1,0],{min:5,max:40});
+  const SCX=SY.x0+50*SY.perML;
+  S.view("beaker",[BX+4.6,8.8,BZ+19],[BX+.5,4.3,BZ],{min:4,max:34});
+  S.view("close",[BX+2.2,6.2,BZ+10.8],[BX+.1,3.5,BZ],{min:2,max:26});
+  S.view("mountain",[BX+5.5,9,BZ+24],[BX-.4,5,BZ-3],{min:4,max:44});
+  S.view("syringe",[SCX+1.2,5.8,SY.z+12.5],[SCX-1.1,3.3,SY.z],{min:3,max:28});
+  S.view("all",[(BX+SCX)/2,9,23.5],[(BX+SCX)/2,3.4,0],{min:6,max:52});
   const viewOf=k=>k==="particles"?"close":k==="mountain"?"mountain":k==="pressure"?"syringe":k==="test"?"all":"beaker";
   const benchL=[lTemp,lState,lBoil,lMelt,lBeaker,lPlate],syrL=[lPress,lVol,lDrag];
   S.goView("beaker",true);
-  const tmp=new THREE.Vector3(),dir=new THREE.Vector3();let lastT=0;
+  const tmp=new THREE.Vector3(),dir=new THREE.Vector3();
   return {
-    step(st){const v=viewOf(st.k);S.goView(v);S.setShadowBox(v==="syringe"?5:v==="all"?12:5,v==="syringe"?[ZS.x,0,ZS.z]:[ZB.x,0,ZB.z]);
-      benchL.forEach(l=>l.show(v!=="syringe"));syrL.forEach(l=>l.show(v==="syringe"||v==="all"));lPlace.show(st.k==="mountain");if(v==="all"){benchL.slice(1).forEach(l=>l.hide());lDrag.hide()}},
+    step(st){const v=viewOf(st.k);S.goView(v);S.setShadowBox(v==="all"?16:8,v==="syringe"?[SCX,0,SY.z]:v==="all"?[(BX+SCX)/2,0,0]:[BX,0,BZ]);
+      benchL.forEach(l=>l.show(v!=="syringe"));syrL.forEach(l=>l.show(v==="syringe"||v==="all"));lPlace.show(st.k==="mountain");if(v==="all"){benchL.slice(1).forEach(l=>l.hide());lDrag.hide()}
+      // phones: keep the thermometer readable; the melting and boiling marks show on their own topics only
+      if(S.canvas.clientWidth<520&&v!=="syringe"&&v!=="all"){lMelt.show(st.k==="melt");lBoil.show(st.k==="boil"||st.k==="mountain")}},
     update(s,st,dt,t){
       const Tbp=Tb(),stt=stateFrom(s.Q,Tbp),T=stt.T,sp=Math.sqrt((T+273)/273);
       const heating=s.playing&&st.speed&&st.k!=="pressure";
-      coilM.emissiveIntensity=S.lerp(coilM.emissiveIntensity,heating?2+s.power*1.8:0,.08);lamp.material.emissiveIntensity=heating?2.5:0;
+      heatK=S.lerp(heatK,heating?Math.min(1,(2+s.power*1.8)/7.4):0,S.REDUCED?1:.08);
       // ---- molecules
       const nS=Math.round(stt.solid*N),nG=Math.round(stt.gas*N);
-      const lvl=Math.max(.25,(1-stt.gas)*(N-nS)/N*1.05+(nS>0?0:0)),liqTop=B0+.05+Math.max(.25,((N-nS-nG)/N)*1.0+(nS/N)*.35);
+      const liqTop=B0+.05+Math.max(.25,((N-nS-nG)/N)*1.0+(nS/N)*.35);
       const want=i=>rank[i]>=N-nS?"solid":boilRank[i]<nG&&stt.gas>0?"gas":"liquid";
       const amp=.008+.03*S.clamp((T+20)/20,0,1.2);const LS=s.playing||!S.REDUCED?1:0;
       const lim=1.1*sp,blockTop=B0+.1+(NN-1)*SP+.1,half=(NN-1)/2*SP+.1;
@@ -310,13 +313,13 @@ function particles3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
         if(m.kind==="solid"){m.seed+=dt*22*LS;m.x=m.lx+Math.sin(m.seed*1.3)*amp;m.y=m.ly+Math.cos(m.seed*1.7)*amp;m.z=m.lz+Math.sin(m.seed*1.1+1)*amp}
         else if(m.kind==="liquid"){const k=3.2*sp*LS;m.vx+=(Math.random()-.5)*k*dt*8;m.vy+=(Math.random()-.5)*k*dt*8-.6*dt;m.vz+=(Math.random()-.5)*k*dt*8;
           m.vx=S.clamp(m.vx,-lim,lim);m.vy=S.clamp(m.vy,-lim,lim);m.vz=S.clamp(m.vz,-lim,lim);m.x+=m.vx*dt*.35;m.y+=m.vy*dt*.35;m.z+=m.vz*dt*.35;
-          const r=Math.hypot(m.x,m.z),R=BR-.09;if(r>R){m.x*=R/r;m.z*=R/r;m.vx*=-.5;m.vz*=-.5}
+          const r=Math.hypot(m.x,m.z),Rw=BR-.09;if(r>Rw){m.x*=Rw/r;m.z*=Rw/r;m.vx*=-.5;m.vz*=-.5}
           if(m.y<B0+.1){m.y=B0+.1;m.vy=Math.abs(m.vy)}if(m.y>liqTop){m.y=liqTop;m.vy=-Math.abs(m.vy)}
           if(nS>N*.2&&Math.abs(m.x)<half&&Math.abs(m.z)<half&&m.y<blockTop){const dx=half-Math.abs(m.x),dz=half-Math.abs(m.z),dy=blockTop-m.y;
             if(dy<dx&&dy<dz)m.y=blockTop;else if(dx<dz)m.x=Math.sign(m.x||1)*half;else m.z=Math.sign(m.z||1)*half}
           m.rx+=dt*2*sp;m.ry+=dt*1.6*sp}
         else{const v=2.4*sp*LS;const n=Math.hypot(m.vx,m.vy,m.vz)||1;m.vx=m.vx/n*v;m.vy=m.vy/n*v;m.vz=m.vz/n*v;m.x+=m.vx*dt;m.y+=m.vy*dt;m.z+=m.vz*dt;
-          const r=Math.hypot(m.x,m.z),R=m.y<B0+BH?BR-.08:2.6;if(r>R){const nx=m.x/r,nz=m.z/r;const dot=m.vx*nx+m.vz*nz;m.vx-=2*dot*nx;m.vz-=2*dot*nz;m.x=nx*R;m.z=nz*R}
+          const r=Math.hypot(m.x,m.z),Rw=m.y<B0+BH?BR-.08:2.6;if(r>Rw){const nx=m.x/r,nz=m.z/r;const dot=m.vx*nx+m.vz*nz;m.vx-=2*dot*nx;m.vz-=2*dot*nz;m.x=nx*Rw;m.z=nz*Rw}
           if(m.y<liqTop+.1){m.y=liqTop+.1;m.vy=Math.abs(m.vy)}if(m.y>B0+BH+2.2){m.y=B0+BH+2.2;m.vy=-Math.abs(m.vy)}m.rx+=dt*6;m.rz+=dt*5}
         e.set(m.rx,m.ry,m.rz);q.setFromEuler(e);
         O.put(i,m.x,m.y,m.z,1);O.tint(i,m.kind==="solid"?"#9CC4F0":m.kind==="liquid"?PAL.product.blueberry:PAL.product.strawberry);
@@ -324,39 +327,34 @@ function particles3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
       O.done();H1.done();H2.done();
       let bi=0;for(const [a,b] of nb){const A=mol[a],B=mol[b];if(A.kind!=="solid"||B.kind!=="solid")continue;bondPos.set([A.x,A.y,A.z,B.x,B.y,B.z],bi*6);bi++}
       bondGeo.setDrawRange(0,bi*2);bondGeo.attributes.position.needsUpdate=true;
-      const liqN=N-nS-nG;water.visible=surface.visible=liqN>N*.08;const wh=liqTop-B0+.02;water.scale.y=Math.max(.01,wh);water.position.y=B0+.03+wh/2;surface.position.y=B0+.03+wh;
+      const liqN=N-nS-nG,wh=Math.max(.01,liqTop-B0+.02);
       const boiling=stt.zone===3&&heating;for(let i=0;i<stp.length;i++){const p=stp[i];p.life-=dt;if(p.life<=0){if(boiling&&Math.random()<.3){const a=Math.random()*6.28,r=Math.random()*BR*.8;p.x=Math.cos(a)*r;p.z=Math.sin(a)*r;p.y=B0+BH-.2;p.life=2+Math.random()}else p.life=0}
         else{p.y+=dt*.5;p.x+=Math.sin(t+i)*dt*.1}steamP.put(i,p.x,p.y,p.z,p.life>0?Math.min(.5,p.life*.3):0,(3-p.life)*260+120)}steamP.done();
-      spirit.scale.y=Math.max(.02,Ty(T)-.4);spirit.position.y=.4+spirit.scale.y/2;
-      const thx=bench.position.x+1.95,thz=bench.position.z+.2;
-      lTemp.at(tmp.set(thx,TOP+Ty(T),thz)).set(`${T.toFixed(1)}°C<small>${stt.phase}</small>`);
-      lBoil.at(tmp.set(thx,TOP+Ty(Tbp),thz)).set(`Boils<b>${Tbp.toFixed(0)}°C</b>`);lMelt.at(tmp.set(thx,TOP+Ty(0),thz)).set(`Melts<b>0°C</b>`);
-      lState.at(tmp.set(bench.position.x-.5,TOP+liqTop+.15,0)).set(`${Math.round(stt.solid*100)}% ice · ${Math.round(stt.liquid*100)}% water · ${Math.round(stt.gas*100)}% steam`);
-      lBeaker.at(tmp.set(bench.position.x-BR,TOP+B0+BH*.85,0));lPlate.at(tmp.set(bench.position.x-1.5,TOP+.25,1.4));
+      // ---- the apparatus: one absolute snapshot of values the model has already calculated
+      const Wd=s.vol*SY.perML,p=pressure();
+      rig.setVisualState({volumeML:s.vol,pressureKPa:p,temperatureC:T,waterHeightM:wh/R.k,waterVisible:liqN>N*.08,heatLevel:heatK,heating,powerKW:s.power});
+      lTemp.at(tmp.set(R.thermo.x,Ty(T),R.thermo.z)).set(`${T.toFixed(1)}°C<small>${stt.phase}</small>`);
+      lBoil.at(tmp.set(R.thermo.x,Ty(Tbp),R.thermo.z)).set(`Boils<b>${Tbp.toFixed(0)}°C</b>`);lMelt.at(tmp.set(R.thermo.x,Ty(0),R.thermo.z)).set(`Melts<b>0°C</b>`);
+      lState.at(tmp.set(BX-.5,TOP3+liqTop+.15,BZ)).set(`${Math.round(stt.solid*100)}% ice · ${Math.round(stt.liquid*100)}% water · ${Math.round(stt.gas*100)}% steam`);
+      lBeaker.at(hpBeaker);lPlate.at(hpPlate);
       // ---- mountain
       const showM=st.k==="mountain";mtnK=S.lerp(mtnK,showM?1:0,S.REDUCED?1:.06);mtn.visible=mtnK>.01;mtn.scale.setScalar(Math.max(.001,mtnK));
       const altH=ALT[s.alt]/3724*6.5;pin.position.set(0,Math.min(6.5,altH),0);
       lPlace.at(tmp.set(mtn.position.x,mtnK*(Math.min(6.5,altH)+.9),mtn.position.z)).set(`${PLACES.find(p=>p[0]===s.alt)[1]}<small>air ${pressureAt(ALT[s.alt]).toFixed(0)} kPa · boils ${Tbp.toFixed(1)}°C</small>`);
-      // ---- syringe
-      const Wd=SL*s.vol/100,hx=SX0+Wd+.11;plunger.position.set(0,SR+.25,0);head.position.x=hx;const rl=SL-Wd+.9;rod.scale.y=rl;rod.position.x=hx+.11+rl/2;thumb.position.x=hx+.11+rl;
-      const spd=1.6*Math.sqrt((s.gasT+273)/293);
-      for(let i=0;i<GN;i++){const g2=gp[i];const run=st.k==="pressure"||st.k==="test";if(run){g2.u+=g2.v.x*dt*spd*(SL/Math.max(.4,Wd))*.25;g2.y+=g2.v.y*dt*spd*.45;g2.z+=g2.v.z*dt*spd*.45}
+      // ---- syringe gas (reduced motion: still unless the experiment is playing)
+      const spd=1.6*Math.sqrt((s.gasT+273)/293),hx=SY.x0+Wd;
+      const run=(st.k==="pressure"||st.k==="test")&&(s.playing||!S.REDUCED);
+      for(let i=0;i<GN;i++){const g2=gp[i];if(run){g2.u+=g2.v.x*dt*spd*(100/Math.max(9.5,s.vol))*.25;g2.y+=g2.v.y*dt*spd*.45*K;g2.z+=g2.v.z*dt*spd*.45*K}
         if(g2.u<0){g2.u=0;g2.v.x=Math.abs(g2.v.x)}if(g2.u>1){g2.u=1;g2.v.x=-Math.abs(g2.v.x);if(run){const f=fl[fi=(fi+1)%30];f.y=g2.y;f.z=g2.z;f.life=.25}}
-        const rr=Math.hypot(g2.y,g2.z),RR=SR-.1;if(rr>RR){const ny=g2.y/rr,nz=g2.z/rr;const d=g2.v.y*ny+g2.v.z*nz;g2.v.y-=2*d*ny;g2.v.z-=2*d*nz;g2.y=ny*RR;g2.z=nz*RR}
-        gas.put(i,SX0+.1+g2.u*(Wd-.12),SR+.25+g2.y,g2.z,.9)}gas.done();
-      for(let i=0;i<30;i++){const f=fl[i];f.life-=dt;flashes.put(i,hx-.12,SR+.25+f.y,f.z,f.life>0?f.life*3:0,260)}flashes.done();
-      const p=pressure();if(Math.abs(p-fLast)>.5){fLast=p;face.redraw((g2,w,h)=>{const cx=w/2,cy=h/2;g2.fillStyle="#fff";g2.beginPath();g2.arc(cx,cy,w/2-6,0,7);g2.fill();
-        g2.strokeStyle="#C9C2DC";g2.lineWidth=5;g2.beginPath();g2.arc(cx,cy,w/2-26,Math.PI*.75,Math.PI*2.25);g2.stroke();
-        for(let k=0;k<=8;k++){const a=Math.PI*(.75+1.5*k/8);g2.lineWidth=k%2?3:5;g2.beginPath();g2.moveTo(cx+Math.cos(a)*(w/2-26),cy+Math.sin(a)*(w/2-26));g2.lineTo(cx+Math.cos(a)*(w/2-44),cy+Math.sin(a)*(w/2-44));g2.stroke()}
-        g2.fillStyle="#6E6A86";g2.font="600 18px Instrument Sans, system-ui";g2.textAlign="center";g2.fillText("kPa",cx,cy+52);
-        const a=Math.PI*(.75+1.5*S.clamp(p/400,0,1));g2.strokeStyle=PAL.deep.blush;g2.lineWidth=8;g2.lineCap="round";g2.beginPath();g2.moveTo(cx,cy);g2.lineTo(cx+Math.cos(a)*(w/2-50),cy+Math.sin(a)*(w/2-50));g2.stroke();
-        g2.fillStyle="#222A55";g2.beginPath();g2.arc(cx,cy,12,0,7);g2.fill()})}
-      lPress.at(tmp.set(syr.position.x+SX0-.9,TOP+3.4,ZS.z-.9)).set(`Pressure<b>${p.toFixed(0)} kPa</b>`);
-      lVol.at(tmp.set(syr.position.x+SX0+Wd/2,TOP+SR*2+.35,0)).set(`${s.vol} mL · ${s.gasT}°C<small>${hitRate.toFixed(0)} hits a second</small>`);
-      lDrag.at(tmp.set(syr.position.x+thumb.position.x,TOP+SR+.25+.6,0));
+        const rr=Math.hypot(g2.y,g2.z);if(rr>RR){const ny=g2.y/rr,nz=g2.z/rr;const d=g2.v.y*ny+g2.v.z*nz;g2.v.y-=2*d*ny;g2.v.z-=2*d*nz;g2.y=ny*RR;g2.z=nz*RR}
+        gas.put(i,SY.x0+GR+.01+g2.u*Math.max(0,Wd-2*GR-.02),SY.y+g2.y,SY.z+g2.z,.9)}gas.done();
+      for(let i=0;i<30;i++){const f=fl[i];f.life-=dt;flashes.put(i,hx-.03,SY.y+f.y,SY.z+f.z,f.life>0?f.life*2:0,150)}flashes.done();
+      lPress.at(tmp.set(R.gauge.x,R.gauge.y+R.gauge.r+.15,R.gauge.z)).set(`Pressure<b>${p.toFixed(0)} kPa</b>`);
+      lVol.at(tmp.set(SY.x0+Wd/2,SY.y+SY.r+.12,SY.z)).set(`${s.vol} mL · ${s.gasT}°C<small>${hitRate.toFixed(0)} hits a second</small>`);
+      lDrag.at(tmp.set(hx+SY.thumb+.06,SY.y+.6,SY.z));
     }};
 }
-StudyKit.mount({kupu:KUPU,scene3d:particles3d,
+const CFG={kupu:KUPU,scene3d:particles3d,postprocessing:false,
   eyebrow:"Science · Matter and particles", title:"The particle machine", crumb:"Year 9–10 science · foundation for NCEA Level 1 Chemistry and Biology", homeHash:"y9",
   fig:"FIG. 02 · KETTLE ON A HOTPLATE", railTitle:"What heat does to particles",
   mainBox:"0 0 640 330", mainPhoneBig:true, mainLabel:"Half a kilogram of ice in a beaker on a hotplate, shown as particles, with a thermometer", closeBox:"0 0 420 260",
@@ -392,5 +390,33 @@ StudyKit.mount({kupu:KUPU,scene3d:particles3d,
     {q:"Stop the experiment while the ice is exactly half melted.",check:()=>{const S=stateFrom(s.Q,Tb());return S.zone===1&&Math.abs(S.liquid-0.5)<0.08},ok:"Yes. Notice the thermometer: still 0°C, even though heat has been going in the whole time.",no:"Not yet. Go back to Melting, press Play, and pause when the chip shows about 50% melted."}],
   truth:"A simplified model: 0.5 kg of water, standard textbook values for specific heat and latent heat, no heat lost to the room, and particles drawn far bigger than they are. Boiling points use the standard atmosphere and are close to real values.",
   footer:"Matter and the particle model is core Year 9–10 science and underpins NCEA Level 1 Chemistry and Biology."
-});
+};
+const API=StudyKit.mount(CFG);
+// ---------- graphics: live 3D or the simplified drawing, switched IN PAGE so nothing reloads. The model state, the topic,
+// the guided investigation stage, captured A/B evidence and typed notes all stay exactly as they were. ?lite still opens the
+// drawing directly (and no WebGL always does); the toggle keeps the address in step so a reload honours the choice.
+const playmain=document.querySelector?.(".playmain");
+if(playmain&&playmain.nodeType===1){
+  const canvas=document.querySelector(".playmain .canvas"),main=document.getElementById("k-main"),root=document.documentElement;
+  const poster=document.createElement("img");poster.className="particles-poster";poster.src="/assets/models/particles/particles-hero.webp";poster.alt="";poster.setAttribute("aria-hidden","true");canvas.append(poster);
+  const note=document.createElement("p");note.className="particles-view-note";
+  note.innerHTML='<span id="particles-load-status" role="status"></span><button type="button" class="particles-graphics" id="particles-graphics"></button>';
+  canvas.after(note);
+  const btn=note.querySelector("button"),status=note.querySelector("span");
+  const webgl=(()=>{try{const c=document.createElement("canvas");return !!(c.getContext("webgl2")||c.getContext("webgl"))}catch(e){return false}})();
+  graphics.live=webgl&&!/[?&]lite\b/.test(location.search);let attaching=false;
+  function sync(){const host=canvas.querySelector(".s3-host"),state=root.dataset.particlesAsset;
+    if(!webgl){btn.disabled=true;btn.textContent="Live 3D needs WebGL";status.textContent=STATUS3.nogl;return}
+    if(graphics.live&&state==="fallback"){btn.disabled=true;btn.textContent="Live 3D unavailable";status.textContent=STATUS3.fallback;return}
+    btn.disabled=false;btn.textContent=graphics.live?"Use simplified drawing":"Use live 3D";
+    if(graphics.live){if(host){host.style.display="";if(state==="ready"){canvas.classList.add("s3-on");main.setAttribute("aria-hidden","true")}else canvas.classList.add("particles-loading")}
+      status.textContent=STATUS3[state]||STATUS3.loading}
+    else{if(host)host.style.display="none";canvas.classList.remove("s3-on","particles-loading");main.removeAttribute("aria-hidden");status.textContent=STATUS3.drawing}}
+  btn.onclick=()=>{graphics.live=!graphics.live;
+    try{const url=new URL(location.href);if(graphics.live)url.searchParams.delete("lite");else url.searchParams.set("lite","");history.replaceState(history.state,"",url.href)}catch(e){}
+    if(graphics.live&&!canvas.querySelector(".s3-host")&&!attaching){attaching=true;status.textContent=STATUS3.loading;
+      import(new URL("../kit3d.js",SRC).href).then(m=>{API.s3=m.attach(API,CFG,particles3d,window.StudyKit)}).catch(e=>{console.warn("3D bench unavailable",e);root.dataset.particlesAsset="fallback"}).finally(()=>{attaching=false;sync()})}
+    sync();API.redraw()};
+  root.addEventListener?.("particles-asset",sync);sync();
+}
 })();

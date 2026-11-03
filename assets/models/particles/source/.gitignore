@@ -1,0 +1,2 @@
+# Blender writes a backup on every save; only the current .blend is kept
+*.blend1
