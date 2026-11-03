@@ -1,0 +1,14 @@
+{
+ "objects": 313,
+ "mesh_objects": 268,
+ "unique_meshes": 143,
+ "triangles_rendered": 63204,
+ "materials": 23,
+ "glb_bytes": 2150472,
+ "glb_sha256": "22a7752ce76f13d14bac7a27a8082e79f152535c0449b75a8b1978b72a41752e",
+ "blend_sha256": "3b6786ad4a8983d83cf8e5287f24a3e49a9b2d48eaf6c36179e6aef1de52bef4",
+ "blend_bytes": 557232,
+ "renders_this_run": [],
+ "render_settings": null,
+ "blender": "5.1.2"
+}
