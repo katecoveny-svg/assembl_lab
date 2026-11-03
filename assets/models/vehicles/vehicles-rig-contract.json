@@ -92,8 +92,8 @@
   "hatch": {
    "file": "hatch.glb",
    "label": "Small hybrid hatch",
-   "sha256": "c6752a2a66fd251f154a05d564d3060cbbd4a748c89a18d297c4763d2f273851",
-   "bytes": 580148,
+   "sha256": "8b16e4de668ff474a19d40a3e2ffa466df79396d9114afa641cc133011b2441a",
+   "bytes": 975264,
    "dimensions_m": {
     "length": 4.05,
     "width": 1.695,
@@ -174,8 +174,8 @@
   "sedan": {
    "file": "sedan.glb",
    "label": "Sedan",
-   "sha256": "7bb105089436dce119b644d1b0b9620bccac7c77972170b7a7e6ebba11950610",
-   "bytes": 585656,
+   "sha256": "e02a89f7add6536e254beb876121dcc512f2d3f3e915104746394668796145b7",
+   "bytes": 1002680,
    "dimensions_m": {
     "length": 4.69,
     "width": 1.8,
@@ -256,8 +256,8 @@
   "wagon": {
    "file": "wagon.glb",
    "label": "Station wagon",
-   "sha256": "c1876d858d2a4bcf8d7abf35e49b0e76116dbac13972c4b38c6cea92fc27ccce",
-   "bytes": 592916,
+   "sha256": "51cd3489fa09d17dfd0f237d3d62d06071138d27c79c31d33b73e9c9600b08fe",
+   "bytes": 1043144,
    "dimensions_m": {
     "length": 4.66,
     "width": 1.79,
@@ -338,8 +338,8 @@
   "suv": {
    "file": "suv.glb",
    "label": "Mid-size SUV",
-   "sha256": "e2ae0bfc07b1715583607911df8953fecf482e489793c0e72c6c7ff00d7927d2",
-   "bytes": 619176,
+   "sha256": "08995c880dda0ed38117802ace649dd5d94c53eac418c8ebc60bbbd33b9b264d",
+   "bytes": 1086260,
    "dimensions_m": {
     "length": 4.6,
     "width": 1.855,
@@ -347,8 +347,8 @@
     "wheelbase": 2.69,
     "track": 1.6,
     "front_overhang": 0.92,
-    "tyre": "225/60R18",
-    "tyre_diameter": 0.727
+    "tyre": "225/65R17",
+    "tyre_diameter": 0.724
    },
    "nodes": {
     "VEHICLE_ROOT": {
@@ -361,67 +361,67 @@
     "STEER_FL": {
      "pivot_gltf_m": [
       1.38,
-      0.3636,
+      0.36215,
       -0.8
      ]
     },
     "WHEEL_FL": {
      "pivot_gltf_m": [
       1.38,
-      0.3636,
+      0.36215,
       -0.8
      ]
     },
     "STEER_FR": {
      "pivot_gltf_m": [
       1.38,
-      0.3636,
+      0.36215,
       0.8
      ]
     },
     "WHEEL_FR": {
      "pivot_gltf_m": [
       1.38,
-      0.3636,
+      0.36215,
       0.8
      ]
     },
     "HUB_RL": {
      "pivot_gltf_m": [
       -1.31,
-      0.3636,
+      0.36215,
       -0.8
      ]
     },
     "WHEEL_RL": {
      "pivot_gltf_m": [
       -1.31,
-      0.3636,
+      0.36215,
       -0.8
      ]
     },
     "HUB_RR": {
      "pivot_gltf_m": [
       -1.31,
-      0.3636,
+      0.36215,
       0.8
      ]
     },
     "WHEEL_RR": {
      "pivot_gltf_m": [
       -1.31,
-      0.3636,
+      0.36215,
       0.8
      ]
     }
    },
-   "wheel_radius_m": 0.3636
+   "wheel_radius_m": 0.3621
   },
   "ute": {
    "file": "ute.glb",
    "label": "Double-cab ute",
-   "sha256": "51e58f1bbb0de778bd78f95d79f407614830af5e789c51b11e1da06dcb28f344",
-   "bytes": 613220,
+   "sha256": "dc78abff08900691207ec2c3b625b3d47089f57f95f5bdc86990ed3a08b0f44b",
+   "bytes": 1059956,
    "dimensions_m": {
     "length": 5.33,
     "width": 1.86,
@@ -502,17 +502,17 @@
   "van": {
    "file": "van.glb",
    "label": "Long-wheelbase van",
-   "sha256": "d6b1227d2a27b32adf62f782a9a841d8f88e5abcaaf6cda356be07a73948ac58",
-   "bytes": 563672,
+   "sha256": "a169dcc53bfcdf99d6a6aa0d7bf4fdbb4c771642c7a8c060c7e03d978ec7dfe3",
+   "bytes": 989604,
    "dimensions_m": {
     "length": 5.265,
     "width": 1.88,
     "height": 1.99,
     "wheelbase": 3.11,
     "track": 1.65,
-    "front_overhang": 0.76,
-    "tyre": "215/70R15",
-    "tyre_diameter": 0.682
+    "front_overhang": 0.82,
+    "tyre": "215/70R16",
+    "tyre_diameter": 0.707
    },
    "nodes": {
     "VEHICLE_ROOT": {
@@ -524,62 +524,62 @@
     },
     "STEER_FL": {
      "pivot_gltf_m": [
-      1.8725,
-      0.341,
+      1.8125,
+      0.3537,
       -0.825
      ]
     },
     "WHEEL_FL": {
      "pivot_gltf_m": [
-      1.8725,
-      0.341,
+      1.8125,
+      0.3537,
       -0.825
      ]
     },
     "STEER_FR": {
      "pivot_gltf_m": [
-      1.8725,
-      0.341,
+      1.8125,
+      0.3537,
       0.825
      ]
     },
     "WHEEL_FR": {
      "pivot_gltf_m": [
-      1.8725,
-      0.341,
+      1.8125,
+      0.3537,
       0.825
      ]
     },
     "HUB_RL": {
      "pivot_gltf_m": [
-      -1.2375,
-      0.341,
+      -1.2975,
+      0.3537,
       -0.825
      ]
     },
     "WHEEL_RL": {
      "pivot_gltf_m": [
-      -1.2375,
-      0.341,
+      -1.2975,
+      0.3537,
       -0.825
      ]
     },
     "HUB_RR": {
      "pivot_gltf_m": [
-      -1.2375,
-      0.341,
+      -1.2975,
+      0.3537,
       0.825
      ]
     },
     "WHEEL_RR": {
      "pivot_gltf_m": [
-      -1.2375,
-      0.341,
+      -1.2975,
+      0.3537,
       0.825
      ]
     }
    },
-   "wheel_radius_m": 0.341
+   "wheel_radius_m": 0.3537
   }
  }
 }

@@ -16,7 +16,7 @@ import json, pathlib, re
 HERE = pathlib.Path(__file__).resolve().parent.parent
 CONTRACT = json.loads((HERE.parent.parent / "assets" / "models" / "vehicles" / "vehicles-rig-contract.json").read_text())
 WORD = {"hatch": "hatch", "sedan": "sedan", "wagon": "wagon", "suv": "SUV", "ute": "ute", "van": "van"}
-VERSION = "dt5b0d2b"
+VERSION = "dt5b0d3c"
 
 
 def paint_of(colour):
