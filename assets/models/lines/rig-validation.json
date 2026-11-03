@@ -1,0 +1,106 @@
+{
+  "metres_per_litre": 0.01,
+  "interior_floor_z_blender_m": 0.187,
+  "cases": [
+    {
+      "litres": 0,
+      "water_top_z_blender_m": 0.1871,
+      "expected_m": 0.187,
+      "error_mm": 0.1,
+      "volume_from_geometry_L": 0.01
+    },
+    {
+      "litres": 10,
+      "water_top_z_blender_m": 0.287,
+      "expected_m": 0.287,
+      "error_mm": 0.0,
+      "volume_from_geometry_L": 10.0
+    },
+    {
+      "litres": 40,
+      "water_top_z_blender_m": 0.587,
+      "expected_m": 0.587,
+      "error_mm": 0.0,
+      "volume_from_geometry_L": 40.0
+    },
+    {
+      "litres": 70,
+      "water_top_z_blender_m": 0.887,
+      "expected_m": 0.887,
+      "error_mm": -0.0,
+      "volume_from_geometry_L": 70.0
+    },
+    {
+      "litres": 100,
+      "water_top_z_blender_m": 1.187,
+      "expected_m": 1.187,
+      "error_mm": 0.0,
+      "volume_from_geometry_L": 100.0
+    }
+  ],
+  "clearances_m": {
+    "stand_A_to_stand_B (authoring layout)": 0.13,
+    "trough_A_to_stand_B": 0.18028,
+    "float_A_bbox_to_outlet_valve_A": 0.94181,
+    "nozzle_tip_above_wall_top": 0.053
+  },
+  "glb": {
+    "bytes": 881232,
+    "triangles_from_blender_polygons": 30232,
+    "mesh_objects": 46,
+    "materials": 16,
+    "sha256": "53c4a38271d0148c8a7e631913f152ae3a96a62a99c187c221c93635ed0fbeec"
+  },
+  "renders": [
+    {
+      "file": "renders/lines-hero.png",
+      "label": "Offline render (Cycles), not the browser view",
+      "engine": "Cycles (CPU)",
+      "samples": 64,
+      "adaptive_threshold": 0.02,
+      "denoise": "OpenImageDenoise",
+      "view_transform": "AgX - Medium High Contrast, exposure -0.4",
+      "resolution": [
+        1600,
+        1100
+      ],
+      "seconds": 1958.2,
+      "state": "A 40 L filling at 3 L/min, B 70 L filling at 6 L/min (lesson investigate case, t = 10 min)",
+      "glb_sha256_at_render": "9a5d11052889f24438c7cdedaec8f5df01637f44084684d8afcb22ba6123a834"
+    },
+    {
+      "file": "renders/lines-detail-outlet.png",
+      "label": "Offline render (Cycles), not the browser view",
+      "engine": "Cycles (CPU)",
+      "samples": 32,
+      "adaptive_threshold": 0.02,
+      "denoise": "OpenImageDenoise",
+      "view_transform": "AgX - Medium High Contrast, exposure -0.4",
+      "resolution": [
+        1000,
+        720
+      ],
+      "seconds": 565.8,
+      "state": "A at 40 L with its drain open (rate -4 L/min, lever half open); B 70 L",
+      "glb_sha256_at_render": "53c4a38271d0148c8a7e631913f152ae3a96a62a99c187c221c93635ed0fbeec"
+    },
+    {
+      "file": "renders/lines-detail-inlet.png",
+      "label": "Offline render (Cycles), not the browser view",
+      "engine": "Cycles (CPU)",
+      "samples": 32,
+      "adaptive_threshold": 0.02,
+      "denoise": "OpenImageDenoise",
+      "view_transform": "AgX - Medium High Contrast, exposure -0.4",
+      "resolution": [
+        1000,
+        720
+      ],
+      "seconds": 212.3,
+      "state": "inlet gate valve, handwheel and spout; A filling at 3 L/min",
+      "glb_sha256_at_render": "53c4a38271d0148c8a7e631913f152ae3a96a62a99c187c221c93635ed0fbeec"
+    }
+  ],
+  "blender": "5.1.2",
+  "gltf_exporter": "5.1.20"
+}

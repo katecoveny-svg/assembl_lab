@@ -1,0 +1,439 @@
+{
+ "contract": "assembl.cafe.v1",
+ "asset": "cafe-venue.glb",
+ "route": "/cafe/",
+ "stage": "/assets/twin/2/stage.js (v2 = v1 + loadTwinAsset); the other stage twins stay on v1",
+ "units": "metres",
+ "coordinates": {
+  "authoring": "Blender +X right, +Y away from the street, +Z up",
+  "gltf": "glTF/three.js +X right, +Y up, +Z towards the street",
+  "map": "(x, y, z) -> (x, z, -y)",
+  "plan": "Identical to the page plan in cafe/index.html createCafeScene (FY = 0.15 m finished floor). The GLB is added at identity: no scale, no offset."
+ },
+ "state_owner": "The CAFE model in cafe/index.html owns every queue, order, ticket, plate, table, stock level, special, roster and number. The GLB has no state, timer or logic. visualStateFromModel() only reads the model; setVisualState() only sets visibility, pivots, one scale and emissive levels.",
+ "required_nodes": [
+  "CAFE_VENUE",
+  "ESPRESSO_MAIN",
+  "ESPRESSO_MAIN_PORTAFILTER_L",
+  "ESPRESSO_MAIN_PORTAFILTER_R",
+  "ESPRESSO_MAIN_CUP_STACK",
+  "GRINDER_MAIN",
+  "STATION_2",
+  "QUEUE_ZONE",
+  "QUEUE_SPOT_00",
+  "QUEUE_SPOT_01",
+  "QUEUE_SPOT_02",
+  "QUEUE_SPOT_03",
+  "QUEUE_SPOT_04",
+  "QUEUE_SPOT_05",
+  "CAB_SCONE_0",
+  "CAB_SCONE_1",
+  "CAB_SCONE_2",
+  "CAB_SCONE_3",
+  "CAB_SCONE_4",
+  "CAB_SCONE_5",
+  "CAB_SCONE_6",
+  "CAB_SCONE_7",
+  "CAB_SCONE_SPECIAL",
+  "CAB_TOASTIE_0",
+  "CAB_TOASTIE_1",
+  "CAB_TOASTIE_2",
+  "CAB_TOASTIE_3",
+  "CAB_TOASTIE_4",
+  "CAB_TOASTIE_5",
+  "CAB_TOASTIE_6",
+  "CAB_TOASTIE_7",
+  "CAB_TOASTIE_SPECIAL",
+  "CAB_SALAD_0",
+  "CAB_SALAD_1",
+  "CAB_SALAD_2",
+  "CAB_SALAD_3",
+  "CAB_SALAD_4",
+  "CAB_SALAD_5",
+  "CAB_SALAD_6",
+  "CAB_SALAD_7",
+  "CAB_SALAD_SPECIAL",
+  "CAB_BROWNIE_0",
+  "CAB_BROWNIE_1",
+  "CAB_BROWNIE_2",
+  "CAB_BROWNIE_3",
+  "CAB_BROWNIE_4",
+  "CAB_BROWNIE_5",
+  "CAB_BROWNIE_6",
+  "CAB_BROWNIE_7",
+  "CAB_BROWNIE_SPECIAL",
+  "CAB_MUFFIN_0",
+  "CAB_MUFFIN_1",
+  "CAB_MUFFIN_2",
+  "CAB_MUFFIN_3",
+  "CAB_MUFFIN_4",
+  "CAB_MUFFIN_5",
+  "CAB_MUFFIN_6",
+  "CAB_MUFFIN_7",
+  "CAB_MUFFIN_SPECIAL",
+  "PASS_LAMP_BULB_1",
+  "PASS_LAMP_BULB_2",
+  "PASS_LAMP_BULB_3",
+  "RANGE_FLAME_L",
+  "RANGE_FLAME_R",
+  "APP_TABLET_SCREEN",
+  "HOST_STAND",
+  "BAR",
+  "BIN_FOOD_LID",
+  "BIN_FOOD_FILL",
+  "UMBRELLA_10_CANOPY",
+  "UMBRELLA_11_CANOPY",
+  "UMBRELLA_12_CANOPY",
+  "UMBRELLA_13_CANOPY",
+  "PENDANT_0_BULB",
+  "PENDANT_1_BULB",
+  "PENDANT_2_BULB",
+  "PENDANT_3_BULB",
+  "PENDANT_4_BULB",
+  "PENDANT_5_BULB",
+  "PENDANT_6_BULB",
+  "PENDANT_7_BULB",
+  "PENDANT_8_BULB",
+  "AWNING",
+  "TABLE_00",
+  "TABLE_01",
+  "TABLE_02",
+  "TABLE_03",
+  "TABLE_04",
+  "TABLE_05",
+  "TABLE_06",
+  "TABLE_07",
+  "TABLE_08",
+  "TABLE_09",
+  "TABLE_10",
+  "TABLE_11",
+  "TABLE_12",
+  "TABLE_13",
+  "TABLE_00_CANDLE",
+  "TABLE_01_CANDLE",
+  "TABLE_02_CANDLE",
+  "TABLE_03_CANDLE",
+  "TABLE_04_CANDLE",
+  "TABLE_05_CANDLE",
+  "TABLE_06_CANDLE",
+  "TABLE_07_CANDLE",
+  "TABLE_08_CANDLE",
+  "TABLE_09_CANDLE",
+  "TABLE_10_CANDLE",
+  "TABLE_11_CANDLE",
+  "TABLE_12_CANDLE",
+  "TABLE_13_CANDLE",
+  "MENU_BOARD_FACE",
+  "ROSTER_BOARD_FACE",
+  "DOOR_LEAF"
+ ],
+ "part_groups": "Node extras.twin_part names the page pickable group (G[...]) each authored part joins: counter, coffee, cabinet, app, door, kitchen, pass, office, board, bin, tables, out, footpath. Nodes without one (walls) are not pickable but still block picks.",
+ "controls": {
+  "mode": {
+   "nodes": [
+    "ESPRESSO_MAIN_CUP_STACK",
+    "BAR",
+    "HOST_STAND",
+    "TABLE_xx_CANDLE"
+   ],
+   "source": "S.mode",
+   "rule": "café: cup stack; dinner: bar shelves and taps, host stand, candles"
+  },
+  "station": {
+   "node": "STATION_2",
+   "source": "S.station (Proposed lever \"Second grinder and station\")",
+   "rule": "visible in café mode while the lever is on; it is a proposal, not equipment the venue has"
+  },
+  "queue": {
+   "nodes": [
+    "QUEUE_SPOT_00",
+    "QUEUE_SPOT_01",
+    "QUEUE_SPOT_02",
+    "QUEUE_SPOT_03",
+    "QUEUE_SPOT_04",
+    "QUEUE_SPOT_05"
+   ],
+   "source": "d.counterQ.length",
+   "rule": "spot i shows the occupied (blush) material while i < queue length; people themselves are the page instanced figures",
+   "pivots_gltf_m": {
+    "QUEUE_SPOT_00": [
+     7.3,
+     0.166,
+     2
+    ],
+    "QUEUE_SPOT_01": [
+     7.3,
+     0.166,
+     2.65
+    ],
+    "QUEUE_SPOT_02": [
+     7.3,
+     0.166,
+     3.3
+    ],
+    "QUEUE_SPOT_03": [
+     7.3,
+     0.166,
+     3.95
+    ],
+    "QUEUE_SPOT_04": [
+     7.3,
+     0.166,
+     4.6
+    ],
+    "QUEUE_SPOT_05": [
+     6.6,
+     0.166,
+     5.25
+    ]
+   }
+  },
+  "espresso": {
+   "nodes": [
+    "ESPRESSO_MAIN_PORTAFILTER_L",
+    "ESPRESSO_MAIN_PORTAFILTER_R"
+   ],
+   "axis_gltf": "local +Y",
+   "source": "d.espQ.length > 0",
+   "rule": "angle 0 (locked in) while coffees are queued; L +0.7 rad, R -0.7 rad (swung out) when idle",
+   "pivots_gltf_m": {
+    "L": [
+     3.18,
+     1.325,
+     0.88
+    ],
+    "R": [
+     3.62,
+     1.325,
+     0.88
+    ]
+   }
+  },
+  "kitchen": {
+   "nodes": [
+    "RANGE_FLAME_L",
+    "RANGE_FLAME_R"
+   ],
+   "source": "min(1, d.kitQ.length / 6)",
+   "rule": "visible when load > 0; emissive 0.6 + 0.8 x load (blue gas flame)"
+  },
+  "pass": {
+   "nodes": [
+    "PASS_LAMP_BULB_1",
+    "PASS_LAMP_BULB_2",
+    "PASS_LAMP_BULB_3"
+   ],
+   "source": "plates at the pass: d.pass with out < 0 and not app (-2)",
+   "rule": "emissive 1.4 while plates wait; 0.25 during trading hours; 0 closed"
+  },
+  "app": {
+   "node": "APP_TABLET_SCREEN",
+   "source": "an app order placed in the last 1.5 simulated minutes",
+   "rule": "emissive 1.2, else 0.15"
+  },
+  "bin": {
+   "nodes": [
+    "BIN_FOOD_FILL",
+    "BIN_FOOD_LID"
+   ],
+   "source": "d.binKg",
+   "rule": "fill scale Y = clamp(binKg / 28, 0.02, 1) x 0.9 about its base; lid -0.5 rad about local X (hinge) above 22 kg",
+   "pivots_gltf_m": {
+    "fill": [
+     -6.6,
+     0.2,
+     -7.6
+    ],
+    "lid_hinge": [
+     -6.6,
+     1.235,
+     -8.07
+    ]
+   }
+  },
+  "umbrellas": {
+   "nodes": [
+    "UMBRELLA_10_CANOPY",
+    "UMBRELLA_11_CANOPY",
+    "UMBRELLA_12_CANOPY",
+    "UMBRELLA_13_CANOPY"
+   ],
+   "source": "K.outdoorOK(d.wx, t, mode) during trading hours, smoothed by the page (instant under reduced motion)",
+   "rule": "u in 0..1: radial scale 0.18 + 0.82u, axial 2 - u, about the apex",
+   "pivots_gltf_m": {
+    "UMBRELLA_10_CANOPY": [
+     -7.6,
+     2.59,
+     8.1
+    ],
+    "UMBRELLA_11_CANOPY": [
+     -4.4,
+     2.59,
+     8.1
+    ],
+    "UMBRELLA_12_CANOPY": [
+     -1.2,
+     2.59,
+     8.1
+    ],
+    "UMBRELLA_13_CANOPY": [
+     2,
+     2.59,
+     8.1
+    ]
+   }
+  },
+  "lamps": {
+   "nodes": [
+    "PENDANT_0_BULB",
+    "PENDANT_1_BULB",
+    "PENDANT_2_BULB",
+    "PENDANT_3_BULB",
+    "PENDANT_4_BULB",
+    "PENDANT_5_BULB",
+    "PENDANT_6_BULB",
+    "PENDANT_7_BULB",
+    "PENDANT_8_BULB"
+   ],
+   "source": "page lamp level (dark and open), the same value that drives the maquette lights",
+   "rule": "emissive 1.6 x level"
+  },
+  "street_view": {
+   "node": "AWNING",
+   "rule": "visible only in the street view (as the maquette)"
+  },
+  "cabinet": {
+   "nodes": [
+    "CAB_SCONE_0..7",
+    "CAB_TOASTIE_0..7",
+    "CAB_SALAD_0..7",
+    "CAB_BROWNIE_0..7",
+    "CAB_MUFFIN_0..7"
+   ],
+   "source": "d.stock[item]",
+   "rule": "portion k visible while k < min(8, ceil(stock / 4)) (the maquette rule); CAB_ITEM_SPECIAL visible while d.special[item]"
+  },
+  "boards": {
+   "nodes": [
+    "MENU_BOARD_FACE",
+    "ROSTER_BOARD_FACE"
+   ],
+   "rule": "UV 0..1 faces; the page draws both live (menu: items on the menu, current price, sold out, on special; roster: rostered vs needed). glTF UVs: canvas textures need flipY = false."
+  }
+ },
+ "tables": {
+  "TABLE_00": [
+   -8,
+   0.15,
+   -1.3
+  ],
+  "TABLE_01": [
+   -8,
+   0.15,
+   0.6
+  ],
+  "TABLE_02": [
+   -8,
+   0.15,
+   2.5
+  ],
+  "TABLE_03": [
+   -8,
+   0.15,
+   4.4
+  ],
+  "TABLE_04": [
+   0,
+   0.15,
+   4.6
+  ],
+  "TABLE_05": [
+   -5.3,
+   0.15,
+   -0.8
+  ],
+  "TABLE_06": [
+   -5.3,
+   0.15,
+   2
+  ],
+  "TABLE_07": [
+   -2.4,
+   0.15,
+   -0.8
+  ],
+  "TABLE_08": [
+   -2.4,
+   0.15,
+   2
+  ],
+  "TABLE_09": [
+   -3.9,
+   0.15,
+   4.65
+  ],
+  "TABLE_10": [
+   -7.6,
+   0.11,
+   8.1
+  ],
+  "TABLE_11": [
+   -4.4,
+   0.11,
+   8.1
+  ],
+  "TABLE_12": [
+   -1.2,
+   0.11,
+   8.1
+  ],
+  "TABLE_13": [
+   2,
+   0.11,
+   8.1
+  ]
+ },
+ "defaults": {
+  "hidden_by_rig_on_load": [
+   "STATION_2",
+   "BAR",
+   "HOST_STAND",
+   "TABLE_xx_CANDLE",
+   "CAB_ITEM_SPECIAL",
+   "AWNING",
+   "RANGE_FLAME_L/R"
+  ]
+ },
+ "browser_simplifications": [
+  "Glass (shopfront, cabinet, hopper, door) is flat alpha with no refraction or reflection; it does not match the Cycles render.",
+  "Lamp, heat-lamp, flame and screen light is emissive material only; the page keeps its own warm point lights.",
+  "No textures in the GLB; floor boards are shallow geometry seams; the two boards are live canvases drawn by the page.",
+  "Materials do not switch with the page dark theme (the maquette card does)."
+ ],
+ "limits": [
+  "Kinematic display geometry, not a fit-out drawing, an equipment spec or a measured venue.",
+  "The venue is fictional. Equipment is generic and unbranded.",
+  "Nothing in the model is live data; everything it shows is the simulation's state."
+ ],
+ "budget": {
+  "glb_bytes_max": 4000000,
+  "triangles_max": 150000,
+  "materials_max": 26,
+  "textures_max": 0
+ },
+ "actual": {
+  "glb_bytes": 2150472,
+  "glb_sha256": "22a7752ce76f13d14bac7a27a8082e79f152535c0449b75a8b1978b72a41752e",
+  "triangles_rendered": 63204,
+  "triangles_unique_meshes": 36356,
+  "nodes": 313,
+  "meshes": 143,
+  "primitives": 265,
+  "materials": 23,
+  "textures": 0,
+  "extensions_used": [
+   "KHR_materials_clearcoat"
+  ],
+  "generator": "Khronos glTF Blender I/O v5.1.20"
+ }
+}

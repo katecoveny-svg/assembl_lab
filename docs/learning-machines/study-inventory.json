@@ -184,11 +184,11 @@
       "title": "The particle machine",
       "route": "/study/m/particles.html",
       "source": "study/m/particles.js",
-      "scene": "particles3d; hotplate, vessel and syringe",
+      "scene": "Blender particles-apparatus.glb (assembl.particles.v1) + particles-asset.js; instanced molecules",
       "stateOwner": "s; stages, stateFrom, boilPoint, pressureAt",
       "scope": "Detailed vessel/heater and piston; retain schematic particles, altitude and heating/gas plots",
       "difficulty": "M",
-      "status": "queued"
+      "status": "local-review"
     },
     {
       "id": "energy",

@@ -1,0 +1,63 @@
+{
+ "note": "Offline Cycles renders of the café venue (assets/models/cafe/source/build_cafe.py). Offline renders do not prove browser quality; see SOURCE-HANDOFF.md. Plates and dockets on the pass, the menu text, ground and footpath are render-only props in these stills (not in the GLB). Raw output, no grading or retouching. PNG originals are not committed (about 1.6 MB each); rebuild to regenerate them.",
+ "engine": "Cycles, CPU (bpy 5.1.2, headless)",
+ "samples": 64,
+ "denoiser": "OpenImageDenoise",
+ "resolution": [
+  1440,
+  900
+ ],
+ "view_transform": "AgX",
+ "lighting": "Sun (3.2, 6 deg angle) and a flat cream world (0.9); no HDRI",
+ "stills": {
+  "cafe-hero.webp": {
+   "camera_plan_m": {
+    "eye": [
+     16.0,
+     19.0,
+     24.0
+    ],
+    "target": [
+     0.0,
+     0.0,
+     0.5
+    ],
+    "fov_deg": 34
+   },
+   "render_wall_time": "35 min 35 s on a heavily shared 2-core container"
+  },
+  "cafe-counter-detail.webp": {
+   "camera_plan_m": {
+    "eye": [
+     8.6,
+     2.9,
+     5.2
+    ],
+    "target": [
+     4.4,
+     1.2,
+     0.9
+    ],
+    "fov_deg": 38
+   },
+   "render_wall_time": "about 72 min on a heavily shared 2-core container"
+  },
+  "cafe-pass-detail.webp": {
+   "camera_plan_m": {
+    "eye": [
+     -0.6,
+     2.4,
+     0.6
+    ],
+    "target": [
+     2.0,
+     1.3,
+     -2.7
+    ],
+    "fov_deg": 42
+   },
+   "render_wall_time": "33 min 39 s on a heavily shared 2-core container (separate CAFE_SHOTS run with --no-export)"
+  }
+ },
+ "illustrative_state": "Three queue spots taken; heat lamps, pendants and gas flames on; cabinet portions scone 6, toastie 7, salad 4, brownie 8, muffin 5; awning, bar, host stand, candles, second station and special tags hidden (café mode, levers off)."
+}
