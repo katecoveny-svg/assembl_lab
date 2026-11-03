@@ -805,4 +805,39 @@ svg.addEventListener("pointerdown",e=>{const p=pt(e),v=viewNow();
 svg.addEventListener("pointermove",e=>{if(!drag)return;const p=pt(e);s[drag]=toKm(p);API.redraw()});
 const end=()=>{if(drag){drag=null;s.secP=1;sfx("tick");API.redraw()}};svg.addEventListener("pointerup",end);svg.addEventListener("pointercancel",end);
 kick();
+
+// ---------- Try it on a real map: OpenStreetMap (© OpenStreetMap contributors, ODbL), with a "teleport" to real places in
+// Aotearoa and one map-skill question for each. The map loads from openstreetmap.org in an iframe, so it needs a connection.
+(()=>{const PL=[
+  ["wellington","Te Whanganui-a-Tara Wellington",-41.288,174.778,"North is up. Which direction would a ship sail from the city to leave the harbour for the open sea?"],
+  ["aoraki","Aoraki/Mount Cook",-43.62,170.17,"Find Aoraki/Mount Cook and the Tasman Glacier. Which direction does the glacier flow?"],
+  ["taupo","Taupō",-38.69,176.07,"Describe where the town sits on the lake: which side of Lake Taupō is it on?"],
+  ["rotorua","Rotorua",-38.137,176.252,"Which direction is Lake Rotorua from the city centre?"],
+  ["auckland","Tāmaki Makaurau Auckland",-36.88,174.76,"Auckland sits on a narrow isthmus between two harbours. Name them and give the direction of each from Maungawhau / Mount Eden."],
+  ["christchurch","Ōtautahi Christchurch",-43.515,172.68,"Find the Ōtākaro Avon River. Which direction does it flow to reach the estuary and the sea?"],
+  ["waitangi","Waitangi",-35.27,174.08,"The Treaty Grounds sit beside which bay? Which town is just across the river to the south?"],
+  ["napier","Ahuriri Napier",-39.48,176.89,"Land raised by the 1931 Hawke's Bay earthquake now holds the airport. In which direction is the airport from the city centre?"],
+  ["kaikoura","Kaikōura",-42.41,173.69,"Describe the shape of the coast here. What kind of landform does the town sit beside?"],
+  ["dunedin","Ōtepoti Dunedin",-45.85,170.6,"Otago Harbour is long and narrow. In which direction does it run from the city out to the sea?"]];
+  let at=0;const sec=document.createElement("section");sec.className="card realmap";sec.setAttribute("aria-labelledby","rm-h");
+  const fmtLL=(la,lo)=>`${Math.abs(la).toFixed(2)}° S, ${lo.toFixed(2)}° E`;
+  const embed=([,,la,lo])=>{const d=.07,w=.11;return `https://www.openstreetmap.org/export/embed.html?bbox=${(lo-w).toFixed(4)}%2C${(la-d).toFixed(4)}%2C${(lo+w).toFixed(4)}%2C${(la+d).toFixed(4)}&layer=mapnik&marker=${la}%2C${lo}`};
+  const big=([,,la,lo])=>`https://www.openstreetmap.org/?mlat=${la}&mlon=${lo}#map=13/${la}/${lo}`;
+  sec.innerHTML=`<h3 id="rm-h">Try it on a real map</h3><p>The same skills on real places in Aotearoa. North is up; the marker shows the place. Pick a place, or teleport somewhere new.</p>
+  <div class="rm-ctl"><label class="rm-pl"><span>Place</span><select id="rm-sel">${PL.map((x,i)=>`<option value="${i}">${x[1]}</option>`).join("")}</select></label><button class="btn primary" type="button" id="rm-go">Teleport somewhere in Aotearoa</button></div>
+  <div class="rm-grid"><div class="rm-frame"><iframe id="rm-map" title="OpenStreetMap" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+  <div class="rm-q"><small id="rm-ll"></small><b id="rm-name"></b><p id="rm-ask"></p><a id="rm-big" target="_blank" rel="noopener">Open a bigger map ↗</a></div></div>
+  <p class="rm-credit">Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>. Loads from openstreetmap.org, so it needs a connection.</p>`;
+  const css=document.createElement("style");css.textContent=`.realmap{margin-top:18px}.realmap h3{margin:0 0 4px}.realmap>p{margin:0 0 12px;color:var(--as-muted,#654A4E);font-size:14px}
+  .rm-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}.rm-pl{display:flex;align-items:center;gap:8px;font:600 14px "Instrument Sans",sans-serif;color:var(--as-ink,#492B3E)}.rm-ctl select{font:500 15px "Instrument Sans",sans-serif;padding:9px 12px;border-radius:12px;border:1px solid var(--as-line2,#DCCDD5);background:#fff;color:var(--as-ink,#492B3E)}
+  .rm-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}@media (max-width:760px){.rm-grid{grid-template-columns:1fr}}
+  .rm-frame{border-radius:16px;overflow:hidden;border:1px solid var(--as-line,#E4D9DE);aspect-ratio:4/3;background:#F5F1F2}.rm-frame iframe{width:100%;height:100%;border:0;display:block}
+  .rm-q{display:grid;align-content:start;gap:8px}.rm-q small{font:500 12px "IBM Plex Mono",monospace;color:#916A70;letter-spacing:.04em}.rm-q b{font-size:20px}.rm-q p{margin:0;line-height:1.5}
+  .rm-q a,.rm-credit a{color:var(--as-plum,#240B21);font-weight:600}.rm-credit{margin:10px 0 0;font:500 11px "IBM Plex Mono",monospace;color:#916A70}`;document.head.appendChild(css);
+  function show(i){at=i;const x=PL[i];sec.querySelector("#rm-sel").value=String(i);sec.querySelector("#rm-map").src=embed(x);sec.querySelector("#rm-big").href=big(x);
+    sec.querySelector("#rm-name").textContent=x[1];sec.querySelector("#rm-ask").textContent=x[4];sec.querySelector("#rm-ll").textContent=fmtLL(x[2],x[3])}
+  sec.querySelector("#rm-sel").addEventListener("change",e=>show(+e.target.value));
+  sec.querySelector("#rm-go").addEventListener("click",()=>{let j=at;while(PL.length>1&&j===at)j=Math.floor(Math.random()*PL.length);show(j)});
+  show(0);(document.querySelector(".card.practise")||document.querySelector(".bench")).insertAdjacentElement("afterend",sec);
+})();
 })();
