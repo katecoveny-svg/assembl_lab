@@ -27,14 +27,15 @@ h1{font-weight:600;font-size:104px;line-height:1;letter-spacing:-.035em;margin:2
 </style></head><body>${inner}</body></html>`;
 async function frames(browser){
   // 1. capture each step of the machine (the real page, as a student sees it)
-  const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1.6});const p=await ctx.newPage();
+  const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1.4});const p=await ctx.newPage();
   await p.addInitScript(()=>{try{localStorage.setItem('study-tour-v1','done')}catch(e){}});
-  await p.goto(`${BASE}/study/${M.href}`,{waitUntil:'load'});await p.waitForFunction(()=>window.StudyKit&&window.StudyKit.current,null,{timeout:60000});
+  await p.goto(`${BASE}/study/${M.href}?lq`,{waitUntil:'load'});  // ?lq: the kit's lighter 3D (no bloom), quick to captureawait p.waitForFunction(()=>window.StudyKit&&window.StudyKit.current,null,{timeout:60000});
   await sleep(9000);  // let the 3D model load and settle
   const steps=await p.evaluate(()=>window.StudyKit.current.cfg.steps.map(s=>({lab:s.lab,cap:s.cap,k:s.k})));
   const shots=[];const use=steps.filter(s=>s.k!=='test').slice(0,5);
   for(let i=0;i<use.length;i++){await p.evaluate(k=>{const K=window.StudyKit.current;K.api.setStep(K.cfg.steps.findIndex(s=>s.k===k))},use[i].k);await sleep(7000);
-    const f=path.join(tmp,`shot${i}.png`);await (await p.$('.playmain .canvas')||await p.$('.playmain')).screenshot({path:f});shots.push({...use[i],f})}
+    const f=path.join(tmp,`shot${i}.png`);const el=await p.$('.playmain .canvas')||await p.$('.playmain');await el.evaluate(e=>e.scrollIntoView({block:'center'}));await sleep(400);
+    const bb=await el.boundingBox();await p.screenshot({path:f,clip:bb,timeout:180000});shots.push({...use[i],f})}  // clip, not element screenshot: live 3D never 'settles'
   await ctx.close();
   // 2. the script: hook, one line per step, call to action (all from the catalogue and the machine's own steps)
   const hero=[`study/thumbnails/${ID}.jpg`].map(x=>path.join(root,x)).find(fs.existsSync);
