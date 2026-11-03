@@ -13,12 +13,12 @@ python3 -m venv .venv && .venv/bin/pip install bpy==5.1.2           # once, not 
 .venv/bin/python assets/models/vehicles/source/build_vehicles.py --no-export --render --which=sheet \
     --sheet-views=front,side,rear --out=<png dir>                    # review contact-sheet views only
 python3 cars/dealer-twin/tools/compose_vehicle_images.py <png dir>   # PNG -> WebP on assembl chalk (#F5F1F2); needs Pillow
-python3 cars/dealer-twin/tools/apply_vehicle_renders.py              # points the 48 listings at their stills
+python3 cars/dealer-twin/tools/apply_vehicle_models.py               # gives the 48 listings model3d {body, paint} (drawings stay)
 node --test cars/dealer-twin/tests/*.test.mjs
 ```
 
 Built here with bpy 5.1.2 (glTF exporter 5.1.20). Renders: **Cycles, CPU, OpenImageDenoise**. Hero 1200×750 and detail 800×600
-at **96 samples**; listing stills 640×480 at **64 samples**. `--debug` prints every cutter and boolean; `--no-export` leaves the
+at **96 samples**; optional listing stills 640×480 at **64 samples** (rendered for review, not used by the page). `--debug` prints every cutter and boolean; `--no-export` leaves the
 committed GLBs alone while iterating.
 
 ## How the bodies are made (why they no longer read as game cars)
@@ -95,8 +95,14 @@ Budget: **≤ 1.2 MB, ≤ 40,000 triangles, 0 textures**, no Draco/meshopt (the 
 | van | 37,940 | 989,604 |
 
 All in budget, but the SUV and ute are within 1.2k triangles of the cap and the bytes rose from about 0.6 MB (the boolean-cut
-openings and split crease normals add vertices). Loading is unchanged: the stock wall shows only WebP stills; **only the car opened
-in the spotlight fetches a GLB**, after the click, only where WebGL works and Save-Data is off; each body is fetched once.
+openings and split crease normals add vertices).
+
+**How the page uses them (Kate's "Drawings + 3D option", 3 Nov 2026):** the stock wall, lead cards and every listing keep PR A's
+body-style drawings. In the spotlight, a **"View in 3D"** button loads only that listing's body GLB in its colour, labelled
+"Generic <body> model · not the actual vehicle"; "Back to drawing" returns. Nothing is fetched until the button is pressed; each
+body is fetched once. No WebGL or data saver: the button is disabled with a one-line note. A failed load keeps the drawing. The
+offline listing stills (`--which=stills`) are not shown and not committed; the hero/detail renders and the contact sheet are for
+review only.
 
 ## Honest limits
 

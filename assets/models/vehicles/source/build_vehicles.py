@@ -12,7 +12,7 @@ Writes (next to this folder):
   vehicles-rig-contract.json           node names, pivots, axes, colourways, budgets (generated from the real nodes)
   build-report.json                    triangles, bytes, materials, dimensions per vehicle
   <out>/<body>-hero.png, -detail.png   Cycles, transparent background (composited onto chalk by tools/compose_vehicle_images.py)
-  <out>/stills/<body>-<paint>.png      Cycles listing stills, one fixed camera and scale for every body
+  <out>/stills/<body>-<paint>.png      Cycles listing stills, one fixed camera and scale (review only: the page shows drawings)
   <out>/sheet/<body>-{front,side}.png  contact-sheet views (review only)
 
 HOW THE BODY IS MADE. Each body is lofted from longitudinal feature curves measured from the FRONT of the vehicle (x, metres):

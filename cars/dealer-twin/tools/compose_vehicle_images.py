@@ -5,6 +5,7 @@
 
 <png_dir> is the --out folder of assets/models/vehicles/source/build_vehicles.py --render:
   <png_dir>/stills/<body>-<paint>.png  -> cars/dealer-twin/img/stock/<body>-<paint>.webp (480x360) and -sq.webp (360x360)
+    (optional, review only: the page shows PR A's drawings, so these stills are NOT referenced or committed)
     Stills are cut from the 640x480 render through ONE fixed window (STILL_CROP) for every body, so a ute stays bigger than a
     hatch; the window is the union of all 22 cars' bounds plus margin (measured: cars span x 150-543, y 137-344).
   <png_dir>/<body>-{hero,rear,detail}.png -> assets/models/vehicles/renders/<body>-{hero,rear,detail}.webp

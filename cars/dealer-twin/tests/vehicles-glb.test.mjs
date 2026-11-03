@@ -112,14 +112,26 @@ test("rig controller: spins wheels, steers within limits, repaints one material,
   assert.throws(() => createVehicleRig(hierarchy(glb("van").json), { ...contract, contract: "nope" }));
 });
 
-test("every listing shows a generic render of the body of its real model, in its own colour, labelled not the actual vehicle", () => {
+test("every listing keeps its drawing; the generic 3D model of its real body, in its own colour, is opt-in only", () => {
   for (const c of stock.cars) {
-    assert.equal(c.img.kind, "render"); assert.equal(c.img.generic, true);
-    assert.deepEqual(c.model3d, { body: c.body, paint: paintForColour(contract, c.colour) });
-    assert.equal(contract.paints[c.model3d.paint].label.toLowerCase(), c.colour.toLowerCase());
-    assert.equal(c.img.card, `img/stock/${c.body}-${c.model3d.paint}.webp`);
-    assert.match(c.img.label, /render · not the actual vehicle$/);
-    assert.match(c.img.alt, /Not the actual vehicle\.$/);
-    for (const f of [c.img.card, c.img.sq]) assert.ok(existsSync(new URL(`../${f}`, import.meta.url)), f);
+    assert.equal(c.img.kind, "drawing", c.id);
+    assert.equal(c.img.card, `img/body/${c.body}.svg`, c.id);
+    assert.ok(!/img\/stock\//.test(JSON.stringify(c)), `${c.id} references no rendered still`);
+    assert.deepEqual(c.model3d, { body: c.body, paint: paintForColour(contract, c.colour) }, c.id);
+    assert.equal(contract.paints[c.model3d.paint].label.toLowerCase(), c.colour.toLowerCase(), c.id);
+    assert.ok(contract.vehicles[c.model3d.body], c.id);
   }
+});
+
+test("the spotlight loads a GLB only from the 'View in 3D' button, labels it generic, and keeps the drawing as the fallback", () => {
+  const js = readFileSync(new URL("../js/stock.js", import.meta.url), "utf8"), page = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(js, />View in 3D</); assert.match(js, /Back to drawing/); assert.match(js, /Reset view/);
+  assert.match(js, /Generic \$\{WORD\[sel\.body\] \|\| sel\.body\} model · not the actual vehicle/);
+  assert.equal((js.match(/import\("\.\/vehicle-stage\.js"\)/g) || []).length, 1, "one lazy import of the 3D stage");
+  const go = js.slice(js.indexOf("function pick("), js.indexOf("function show3d("));
+  assert.ok(!/go3d\(/.test(go), "opening a listing never starts the 3D load");
+  assert.match(js, /btn3\.onclick = \(\) => \{[^\n]*go3d\(sel\)/, "only the button starts it");
+  assert.match(js, /WebGL, which is off/); assert.match(js, /data saver/); assert.match(js, /didn't load, so the drawing stays/);
+  assert.ok(!/img\/stock\//.test(page) && !/img\/stock\//.test(js), "no rendered stills on the page");
+  assert.ok(!existsSync(new URL("../img/stock/", import.meta.url)), "rendered stills are not committed");
 });
