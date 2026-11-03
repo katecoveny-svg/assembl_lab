@@ -1,0 +1,60 @@
+// assembl lab home: small enhancements on top of a complete static page (see scripts/build-lab-home.cjs).
+// 1. The twin stage: on wide screens one sticky frame shows the render of whichever twin you are reading.
+// 2. The cube field: a small WebGL2 scene in the hero, loaded after first paint, skipped for reduced motion.
+// 3. Live labels: /feeds.js fires "assembl:live"; the static source lines stay as the fallback.
+(() => {
+  'use strict';
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* 1 ── twin stage ── */
+  const steps = [...document.querySelectorAll('.tw-step')];
+  const frames = [...document.querySelectorAll('.tw-frame')];
+  const count = document.querySelector('.tw-count b');
+  const bar = document.querySelector('.tw-bar');
+  let active = -1;
+  function show(i) {
+    if (i === active) return;
+    active = i;
+    steps.forEach((s, k) => s.toggleAttribute('data-on', k === i));
+    frames.forEach((f, k) => {
+      f.toggleAttribute('data-on', k === i);
+      // warm the next render so the swap never shows an empty frame
+      if (k === i + 1 || k === i) f.querySelector('img')?.removeAttribute('loading');
+    });
+    if (count) count.textContent = String(i + 1);
+    if (bar) bar.style.setProperty('--p', ((i + 1) / steps.length).toFixed(4));
+  }
+  if (steps.length && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) if (e.isIntersecting) show(Number(e.target.dataset.i));
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    steps.forEach(s => io.observe(s));
+    show(0);
+  }
+
+  /* 2 ── cube field ── */
+  const host = document.getElementById('cubes');
+  function startCubes() {
+    if (!host || reduced.matches) return;
+    const probe = document.createElement('canvas');
+    if (!probe.getContext('webgl2')) return;
+    import('/lab/cubes.js').then(m => m.mount(host)).catch(() => { /* the still picture stays */ });
+  }
+  if (document.readyState === 'complete') setTimeout(startCubes, 200);
+  else addEventListener('load', () => (window.requestIdleCallback || setTimeout)(startCubes, { timeout: 1200 }));
+
+  /* 3 ── live labels ── */
+  function liveLabels(j) {
+    const f = id => j && j.feeds && j.feeds[id] && !j.feeds[id].error ? j.feeds[id] : null;
+    const set = (id, t) => document.querySelectorAll(`[data-live="${id}"]`).forEach(el => { if (t) el.textContent = t; });
+    const ed = f('ed'), power = f('power'), fuel = f('fuel'), fpi = f('fpi');
+    try {
+      if (ed && ed.values.national) set('ed', `Health NZ: ${ed.values.national.pct}% seen in 6 h · ${ed.values.national.quarter}`);
+      if (power) set('home', `Wholesale power ${power.value}c/kWh · ${power.values.date.slice(5)}`);
+      if (fuel) set('office', `Petrol 91 $${fuel.values.petrol91Dollars.toFixed(2)} · ${fuel.period}`);
+      if (fpi) { const t = `Food prices ${fpi.value > 0 ? '+' : ''}${fpi.value}% a year · ${fpi.period}`; ['kitchen', 'store', 'food'].forEach(id => set(id, t)); }
+    } catch (err) { /* keep the static labels */ }
+  }
+  addEventListener('assembl:live', e => liveLabels(e.detail));
+  if (window.__assemblLive) liveLabels(window.__assemblLive);
+})();
