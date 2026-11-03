@@ -1,0 +1,589 @@
+{
+  "contract": "assembl.lines.v1",
+  "asset": "lines-tanks.glb",
+  "units": "metres",
+  "route": "/study/m/lines.html",
+  "coordinates": {
+    "authoring": "Blender +X right, +Y rear, +Z up; tank fronts face -Y",
+    "gltf": "glTF +X right, +Y up, +Z front",
+    "map": "(x,y,z) -> (x,z,-y)",
+    "scene_units_per_metre": 3,
+    "scene_note": "The existing lines3d tank drew 100 L as TH = 3.0 scene units. The browser applies ONE uniform scale of 3 to each tank root; never scale parts individually.",
+    "authored_layout_x_m": {
+      "A": -0.31,
+      "B": 0.31
+    },
+    "layout_note": "Each TANK_<k> root may be translated as a whole (the lesson slides tank A aside when B appears). Nothing inside a tank moves except the controls below."
+  },
+  "state_owner": "study/m/lines.js owns s (mA, cA, mB, cB, t, B, playing) and lev(m, c, t) = m*t + c. The adapter receives litres already computed by lev(); it never integrates flow, advances time, clamps the lesson model or decides whether a tap runs.",
+  "level_mapping": {
+    "interior_plan_m": [
+      0.4,
+      0.25
+    ],
+    "plan_area_m2": 0.1,
+    "metres_per_litre": 0.01,
+    "formula": "level_m = clamp(litres, 0, 100) * 0.01   (1 L = 0.001 m^3 over 0.1 m^2 = 10 mm)",
+    "display_clamp_note": "The 0..100 L clamp is the same display clamp the existing drawing uses (clamp(lev, 0, 100)); readouts still show the unclamped model value.",
+    "floor_y_gltf_m": 0.187,
+    "full_litres": 100.0,
+    "full_height_m": 1.0,
+    "tested_cases": [
+      {
+        "litres": 40,
+        "level_m": 0.4,
+        "water_top_y_gltf_m": 0.587,
+        "water_node_scale_y": 0.4,
+        "scene_units_above_floor": 1.2
+      },
+      {
+        "litres": 70,
+        "level_m": 0.7,
+        "water_top_y_gltf_m": 0.887,
+        "water_node_scale_y": 0.7,
+        "scene_units_above_floor": 2.1
+      }
+    ]
+  },
+  "controls": {
+    "water": {
+      "node": "TANK_<k>_WATER",
+      "pivot": "interior floor",
+      "property": "scale.y (glTF local +Y)",
+      "value": "level_m / 1.00  (= litres / 100), absolute",
+      "visible": "litres > 0.2 (as the existing drawing)"
+    },
+    "float": {
+      "node": "TANK_<k>_FLOAT",
+      "property": "position.y",
+      "value": "floor_y + max(level_m, 0.023)",
+      "note": "Below 2.3 L the float rests on its stop collar. Visual only; the float is also the drag handle for the start level."
+    },
+    "inlet_stream": {
+      "node": "TANK_<k>_INLET_STREAM",
+      "pivot": "nozzle tip",
+      "property": "scale.y",
+      "rest_length_m": 1.113,
+      "value": "(nozzle_y - (floor_y + level_m)) / (nozzle_y - floor_y)",
+      "radius_scale": "0.6 + 0.9 * min(1, rate / 8)  (x and z)",
+      "visible": "caller passes filling = rate > 0 && t < 20 && litres < 100 (the existing condition)"
+    },
+    "drain_stream": {
+      "node": "TANK_<k>_DRAIN_STREAM",
+      "pivot": "drain spout tip",
+      "property": "visible + radius scale",
+      "visible": "caller passes draining = rate < 0 && litres > 0 (the existing condition)",
+      "radius_scale": "0.6 + 0.9 * min(1, -rate / 8)"
+    },
+    "inlet_handwheel": {
+      "node": "TANK_<k>_INLET_HANDWHEEL",
+      "axis_gltf": "local +Y",
+      "value": "rotation.y = -min(1, max(0, rate) / 8) * 1.5 * PI",
+      "note": "Illustrative valve opening from the lesson rate. Valve hydraulics are not modelled."
+    },
+    "outlet_lever": {
+      "node": "TANK_<k>_OUTLET_LEVER",
+      "axis_gltf": "local +Y",
+      "value": "rotation.y = -min(1, max(0, -rate) / 8) * PI / 2",
+      "note": "Quarter-turn ball valve: closed across the pipe, open along it. Illustrative only."
+    }
+  },
+  "tanks": {
+    "A": {
+      "root": "TANK_A",
+      "water": "TANK_A_WATER",
+      "float": "TANK_A_FLOAT",
+      "inlet_stream": "TANK_A_INLET_STREAM",
+      "drain_stream": "TANK_A_DRAIN_STREAM",
+      "inlet_handwheel": "TANK_A_INLET_HANDWHEEL",
+      "outlet_lever": "TANK_A_OUTLET_LEVER",
+      "floor_anchor": "TANK_A_FLOOR",
+      "label_anchor": "TANK_A_LABEL_ANCHOR",
+      "nozzle_anchor": "TANK_A_NOZZLE_TIP"
+    },
+    "B": {
+      "root": "TANK_B",
+      "water": "TANK_B_WATER",
+      "float": "TANK_B_FLOAT",
+      "inlet_stream": "TANK_B_INLET_STREAM",
+      "drain_stream": "TANK_B_DRAIN_STREAM",
+      "inlet_handwheel": "TANK_B_INLET_HANDWHEEL",
+      "outlet_lever": "TANK_B_OUTLET_LEVER",
+      "floor_anchor": "TANK_B_FLOOR",
+      "label_anchor": "TANK_B_LABEL_ANCHOR",
+      "nozzle_anchor": "TANK_B_NOZZLE_TIP"
+    }
+  },
+  "required_nodes": [
+    "TANK_A",
+    "TANK_A_DRAIN_STREAM",
+    "TANK_A_FLOAT",
+    "TANK_A_FLOOR",
+    "TANK_A_INLET_HANDWHEEL",
+    "TANK_A_INLET_STREAM",
+    "TANK_A_LABEL_ANCHOR",
+    "TANK_A_NOZZLE_TIP",
+    "TANK_A_OUTLET_LEVER",
+    "TANK_A_WATER",
+    "TANK_B",
+    "TANK_B_DRAIN_STREAM",
+    "TANK_B_FLOAT",
+    "TANK_B_FLOOR",
+    "TANK_B_INLET_HANDWHEEL",
+    "TANK_B_INLET_STREAM",
+    "TANK_B_LABEL_ANCHOR",
+    "TANK_B_NOZZLE_TIP",
+    "TANK_B_OUTLET_LEVER",
+    "TANK_B_WATER"
+  ],
+  "browser_materials": {
+    "ACRYLIC_CLEAR": "Authored as Principled transmission (IOR 1.49) for Cycles. Replaced in the browser by an alpha-blended clear-coat material (opacity 0.14, no refraction, no transmission pass).",
+    "WATER_A, WATER_B, STREAM_A, STREAM_B": "Authored as tinted transmission (IOR 1.333). Replaced in the browser by alpha-blended clear-coat materials in the lesson colours (#7FB7E8 / #F2A7BE).",
+    "others": "Used as exported (metallic-roughness + KHR_materials_clearcoat). No textures."
+  },
+  "budget": {
+    "glb_bytes_max": 2500000,
+    "triangles_max": 80000,
+    "textures_max": 0,
+    "primitives_max": 80,
+    "actual": {
+      "bytes": 881232,
+      "triangles": 30232
+    }
+  },
+  "simulation_limits": "Idealised tanks: the inflow and outflow rates are whatever the lesson sets and stay constant. No fluid dynamics, pressure-dependent drain rate, sloshing, meniscus or valve hydraulics are modelled. Streams are illustrative.",
+  "nodes": {
+    "TANK_A": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": null
+    },
+    "TANK_A_ACRYLIC": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_BASE_PAN": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_DRAIN_STREAM": {
+      "world_pivot_gltf_m": [
+        -0.19,
+        0.118,
+        0.24
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_FASTENERS": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_FEET": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_FLOAT": {
+      "world_pivot_gltf_m": [
+        -0.145,
+        1.187,
+        0.088
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_FLOAT_ROD": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_FLOOR": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.187,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_FRAME": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_INLET_HANDWHEEL": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        1.419,
+        -0.15
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_INLET_PIPE": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_INLET_STREAM": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        1.3,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_INLET_VALVE": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_LABEL_ANCHOR": {
+      "world_pivot_gltf_m": [
+        -0.52,
+        1.267,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_NAMEPLATE": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_NOZZLE_TIP": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        1.3,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_OUTLET_LEVER": {
+      "world_pivot_gltf_m": [
+        -0.19,
+        0.232,
+        0.19
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_OUTLET_PIPE": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_OUTLET_VALVE": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_SCALE": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_SCALE_INK": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_SPOUT": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_STAND": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_TROUGH": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_TROUGH_WATER": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_A_WATER": {
+      "world_pivot_gltf_m": [
+        -0.31,
+        0.187,
+        -0.0
+      ],
+      "parent": "TANK_A"
+    },
+    "TANK_B": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": null
+    },
+    "TANK_B_ACRYLIC": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_BASE_PAN": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_DRAIN_STREAM": {
+      "world_pivot_gltf_m": [
+        0.43,
+        0.118,
+        0.24
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_FASTENERS": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_FEET": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_FLOAT": {
+      "world_pivot_gltf_m": [
+        0.475,
+        1.187,
+        0.088
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_FLOAT_ROD": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_FLOOR": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.187,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_FRAME": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_INLET_HANDWHEEL": {
+      "world_pivot_gltf_m": [
+        0.31,
+        1.419,
+        -0.15
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_INLET_PIPE": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_INLET_STREAM": {
+      "world_pivot_gltf_m": [
+        0.31,
+        1.3,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_INLET_VALVE": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_LABEL_ANCHOR": {
+      "world_pivot_gltf_m": [
+        0.1,
+        1.267,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_NAMEPLATE": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_NOZZLE_TIP": {
+      "world_pivot_gltf_m": [
+        0.31,
+        1.3,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_OUTLET_LEVER": {
+      "world_pivot_gltf_m": [
+        0.43,
+        0.232,
+        0.19
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_OUTLET_PIPE": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_OUTLET_VALVE": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_SCALE": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_SCALE_INK": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_SPOUT": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_STAND": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_TROUGH": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_TROUGH_WATER": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.0,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    },
+    "TANK_B_WATER": {
+      "world_pivot_gltf_m": [
+        0.31,
+        0.187,
+        -0.0
+      ],
+      "parent": "TANK_B"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+/* the straight-line machine: the graphics switch under the bench (3D tanks or the flat drawing, same experiment) */
+.lines-view-note{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;margin:6px 0 0;font:500 11.5px/1.5 var(--as-font);color:#686477}
+.lines-view-note .btn{padding:7px 14px;font-size:13px;min-height:40px}
+.lines-view-note .btn:disabled{opacity:.55;cursor:not-allowed}

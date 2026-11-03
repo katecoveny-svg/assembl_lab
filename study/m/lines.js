@@ -73,10 +73,10 @@ function drawMain(st0,st){
   o+=tank(both?24:80,"Tank A",s.mA,s.cA,COLA);
   if(both)o+=tank(158,"Tank B",s.mB,s.cB,COLB);
   o+=axes(100,"WATER (L)","TIME (MINUTES)",20);
-  if(st.k==="ineq"||s.shade){o+=`<rect x="${GX0}" y="${GY0}" width="${GX1-GX0}" height="${gy(50)-GY0}" fill="${PAL.product.butter}" opacity=".22"/><line x1="${GX0}" x2="${GX1}" y1="${gy(50)}" y2="${gy(50)}" stroke="#C9A227" stroke-width="1.6" stroke-dasharray="4 3"/><text class="t-lab" x="${GX1-4}" y="${gy(50)-6}" text-anchor="end">L ≥ 50</text>`;
+  if(st.k==="ineq"||s.shade){o+=`<rect x="${GX0}" y="${GY0}" width="${GX1-GX0}" height="${gy(50)-GY0}" fill="${TINT}" opacity=".38"/><line x1="${GX0}" x2="${GX1}" y1="${gy(50)}" y2="${gy(50)}" stroke="#222A55" stroke-width="1.6" stroke-dasharray="4 3"/><text class="t-lab" x="${GX1-4}" y="${gy(50)-6}" text-anchor="end">L ≥ 50</text>`;
     // highlight times where A above 50
     let a=null,b=null;for(let t=0;t<=TMAX;t+=0.05){const v=lev(s.mA,s.cA,t);if(v>=50&&v<=100){if(a===null)a=t;b=t}}
-    if(a!==null)o+=`<line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="${PAL.product.butter}" stroke-width="5"/><line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="#C9A227" stroke-width="1"/>`}
+    if(a!==null)o+=`<line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="${TINT}" stroke-width="5"/><line x1="${gx(a)}" x2="${gx(b)}" y1="${GY1-2}" y2="${GY1-2}" stroke="#6A50BE" stroke-width="1"/>`}
   const lines=[[s.mA,s.cA,COLA]];if(both)lines.push([s.mB,s.cB,COLB]);
   lines.forEach(([m,c,col])=>{o+=`<path d="${linePath(m,c,100,TMAX)}" fill="none" stroke="${DEEP[col]}" stroke-width="1.4" opacity=".35"/>`+series(linePath(m,c,100,s.t),col,2.6);
     const v=lev(m,c,s.t);if(v>=0&&v<=100)o+=`<circle cx="${gx(s.t)}" cy="${gy(v)}" r="5" fill="${col}" stroke="var(--ink)"/>`});
@@ -181,10 +181,10 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
       c.strokeStyle="#8F9BAA";c.lineWidth=3;c.strokeRect(X0,Y0,X1-X0,Y1-Y0);
       c.font="600 22px 'Instrument Sans',system-ui";c.fillStyle="#222A55";c.textAlign="center";c.fillText(xlab,(X0+X1)/2,Y1+68);c.textAlign="left";c.fillText(ylab,X0,Y0-14)})};
     return B}
-  // a series on a board: ghost line, glowing drawn-so-far tube, live bead, and two grab handles (start and slope)
+  // a series on a board: ghost line, drawn-so-far tube, live bead, and two grab handles (start and slope)
   function series(B,col,deep){const o={};
-    o.ghost=S.mesh(cylGeo,mat("flat",deep,{opacity:.35}),{cast:false});o.line=S.mesh(cylGeo,mat("glow",deep,.7),{cast:false});
-    o.bead=S.sphere(.11,mat("glow",col,.9));o.h0=S.sphere(.12,mat("plastic","#ffffff",{rough:.3}));o.h1=S.sphere(.12,mat("plastic","#ffffff",{rough:.3}));
+    o.ghost=S.mesh(cylGeo,mat("flat",deep,{opacity:.35}),{cast:false});o.line=S.mesh(cylGeo,mat("plastic",deep,{rough:.35}),{cast:false});
+    o.bead=S.sphere(.11,mat("plastic",col,{rough:.3}));o.h0=S.sphere(.12,mat("plastic","#ffffff",{rough:.3}));o.h1=S.sphere(.12,mat("plastic","#ffffff",{rough:.3}));
     for(const h of [o.h0,o.h1]){h.add(S.torus(.13,.035,mat("plastic",col,{rough:.3}),{cast:false}));h.add(S.mesh(new THREE.SphereGeometry(.34,10,8),hitM,{cast:false}))}
     B.g.add(o.ghost,o.line,o.bead,o.h0,o.h1);
     o.set=(m,c,t,showH)=>{const full=clipT(m,c,B.max,0,TMAX),done=clipT(m,c,B.max,0,t);
@@ -220,10 +220,37 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
     const lab=S.label({off:[-26,-30]});
     return {g,key,water,wm,surf,stream,drain,out,drops,dr,float,lab,x:0}}
   const TA=tank("A"),TBk=tank("B");
+  // ---- the Blender tanks (assets/models/lines, contract assembl.lines.v1). They load on demand; the drawn tanks above stay
+  // in charge until the asset and its first frame succeed, and come back if anything fails. The same lev() drives both.
+  let GT=null,gtFailed=false;const doc=typeof document!=="undefined"?document:null;
+  const gtMark=v=>{try{doc.documentElement.dataset.linesTanks=v}catch(e){}};
+  const gtStatus=t=>{const el=doc&&doc.getElementById&&doc.getElementById("lines-load-status");if(el)el.textContent=t};
+  const gtTank=(s,k)=>{const m=s["m"+k],c=s["c"+k],L=lev(m,c,s.t),v=S.clamp(L,0,100);
+    // the same tap and drain conditions the drawn tanks use
+    return {litres:L,rate:m,filling:m>0&&s.t<TMAX&&v<100,draining:m<0&&v>0}};
+  function gtApply(s,k){if(!GT)return;const both=s.B;
+    GT.holders.A.position.x=TA.x;GT.holders.B.position.x=-1.75;GT.holders.A.visible=true;GT.holders.B.visible=both;
+    if(k!=="scooter")for(const key of both?["A","B"]:["A"])GT.rig.setTank(key,gtTank(s,key));}
+  function gtFail(e){if(gtFailed)return;gtFailed=true;if(GT){for(const h of Object.values(GT.holders))h.parent&&h.parent.remove(h)}GT=null;
+    TA.g.visible=true;gtMark("fallback");gtStatus("Blender tanks unavailable · simplified 3D tanks shown, same model and readouts");console.warn("Lines tanks unavailable",e)}
+  gtMark("loading");gtStatus("Loading the Blender tanks · simplified tanks shown meanwhile");
+  import("./lines-asset.js").then(m=>m.loadLinesTanks(S)).then(a=>{
+    const k=a.scale,fy=TOP+a.contract.level_mapping.floor_y_gltf_m*k,perL=a.contract.level_mapping.metres_per_litre*k;
+    for(const key of ["A","B"]){const h=a.holders[key];h.position.set(key==="A"?TA.x:-1.75,TOP,0);h.visible=false;S.scene.add(h);
+      const T=a.rig.tanks[key];
+      // the float is still the drag handle for the starting amount; the handwheel still starts and pauses the clock
+      T.float.add(S.mesh(new THREE.SphereGeometry(.1,10,8),hitM,{cast:false}));
+      S.dragger(T.float,{normal:V3(0,0,1),move:p=>{const st=S.api.state;const v=(p.y-fy)/perL;st["c"+key]=S.clamp(Math.round((v-st["m"+key]*st.t)/5)*5,0,100)}});
+      T.wheel.add(S.mesh(new THREE.SphereGeometry(.07,10,8),hitM,{cast:false}));S.pick(T.wheel,()=>{S.api.state.playing=!S.api.state.playing})}
+    GT=Object.assign(a,{fy,perL});
+    gtApply(S.api.state,S.api.step.k); // first frame inside the promise: a broken rig falls back before claiming the Blender tanks
+    gtMark("blender");gtStatus("Live 3D · Blender tanks · glass simplified for the browser");
+  }).catch(gtFail);
   // ring marks drawn round a tank at a level (50 L line, meeting level)
-  const ringAt=(col,w)=>{const g=S.group();const m=mat("glow",col,1.1);
-    for(const [sx,sz,rx,rz] of [[0,1,w,.04],[0,-1,w,.04],[1,0,.04,w],[-1,0,.04,w]])g.add(S.box(rx,.035,rz,m,{at:[sx*w/2,0,sz*w/2],cast:false}));return g};
-  const ring50=ringAt(P.product.butter,TW+.08),ringMeetA=ringAt(P.deep.lavender,TW+.08),ringMeetB=ringAt(P.deep.lavender,TW+.08);
+  const ringAt=(col,w)=>{const g=S.group();const m=mat("plastic",col,{rough:.35});const bars=[[0,1],[0,-1],[1,0],[-1,0]].map(([sx,sz])=>{const b=S.box(1,.035,1,m,{cast:false});g.add(b);return [b,sx,sz]});
+    // size(wx, wz): the drawn tanks are square; the Blender tanks are 0.42 x 0.27 m outside, so the ring follows the tank in use
+    g.size=(wx,wz)=>{for(const [b,sx,sz] of bars){b.scale.set(sx?.04:wx,1,sx?wz:.04);b.position.set(sx*wx/2,0,sz*wz/2)}return g};return g.size(w,w)};
+  const ring50=ringAt(P.ink,TW+.08),ringMeetA=ringAt(P.deep.lavender,TW+.08),ringMeetB=ringAt(P.deep.lavender,TW+.08);
   const tb=board(3.25,TOP+.55+2.15,-.6,6,4.3);tb.draw(100,20,"WATER (L)","TIME (MINUTES)");
   const serA=series(tb,COL.A,DEEPC.A),serB=series(tb,COL.B,DEEPC.B);
   const setC=k=>q=>{S.api.state["c"+k]=S.clamp(Math.round(q.v/5)*5,0,100)};
@@ -233,9 +260,9 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   // rise and run blocks, the staircase, the ineq band, the marker rings on the board
   const blocks=Array.from({length:10},(_,i)=>{const b=S.mesh(boxGeo,mat("plastic",i%2?P.case.blush:P.case.mint,{rough:.4}));b.visible=false;tb.g.add(b);return b});
   const runM=mat("plastic","#9ED9BF",{rough:.4}),riseM=mat("plastic","#E8A0B8",{rough:.4});blocks.forEach((b,i)=>b.material=i%2?riseM:runM);
-  const band=S.mesh(boxGeo,mat("flat",P.product.butter,{opacity:.24,depthWrite:false}),{cast:false});band.renderOrder=4;tb.g.add(band);
-  const tAxis=S.mesh(boxGeo,mat("glow",P.product.butter,1.3),{cast:false});tb.g.add(tAxis);
-  const dash50=S.swarm(40,boxGeo,mat("plastic","#C9A227",{rough:.4}));tb.g.add(dash50);
+  const band=S.mesh(boxGeo,mat("flat",P.case.lavender,{opacity:.4,depthWrite:false}),{cast:false});band.renderOrder=4;tb.g.add(band);
+  const tAxis=S.mesh(boxGeo,mat("plastic",P.deep.lavender,{rough:.35}),{cast:false});tb.g.add(tAxis);
+  const dash50=S.swarm(40,boxGeo,mat("plastic",P.ink,{rough:.4}));tb.g.add(dash50);
   const mk=()=>{const r=S.torus(.2,.035,mat("plastic",P.ink,{rough:.3}),{cast:false});tb.g.add(r);return r};
   const mkStart=mk(),mkMeet=mk(),mkEmpty=mk();const drop=S.mesh(cylGeo,mat("flat",P.ink,{opacity:.4}),{cast:false});tb.g.add(drop);
   // the table of values card for "Find the rule"
@@ -264,8 +291,8 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   const RA=rider("A"),RB=rider("B");
   const coinGeo=new THREE.CylinderGeometry(.1,.1,.028,22);const coins={A:S.swarm(240,coinGeo,mat("metal","#ffffff",{rough:.3}),{colors:true,cast:true}),B:S.swarm(240,coinGeo,mat("metal","#ffffff",{rough:.3}),{colors:true,cast:true})};
   coins.A.castShadow=coins.B.castShadow=true;S.scene.add(coins.A,coins.B);const CZ={A:ZS+2.75,B:ZS-.45};
-  const gate=S.group();for(const z of [ZS+.05,ZS+2])gate.add(S.cyl(.04,.04,1.6,mat("glow",P.product.butter,1.3),{at:[0,TOP+.8,z],seg:12,cast:false}));
-  gate.add(S.cyl(.04,.04,1.95,mat("glow",P.product.butter,1.3),{at:[0,TOP+1.6,ZS+1.02],rot:[Math.PI/2,0,0],seg:12,cast:false}));S.scene.add(gate);
+  const gate=S.group();for(const z of [ZS+.05,ZS+2])gate.add(S.cyl(.04,.04,1.6,mat("plastic",P.deep.lavender,{rough:.35}),{at:[0,TOP+.8,z],seg:12,cast:false}));
+  gate.add(S.cyl(.04,.04,1.95,mat("plastic",P.deep.lavender,{rough:.35}),{at:[0,TOP+1.6,ZS+1.02],rot:[Math.PI/2,0,0],seg:12,cast:false}));S.scene.add(gate);
   const sb=board(SX+3.45,TOP+.55+2.0,ZS-.9,5.6,4);sb.draw(15,5,"COST ($)","MINUTES RIDDEN");
   const scA=series(sb,COL.A,DEEPC.A),scB=series(sb,COL.B,DEEPC.B);
   const mkS=S.torus(.2,.035,mat("plastic",P.ink,{rough:.3}),{cast:false});sb.g.add(mkS);
@@ -274,20 +301,23 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
   const lCA=S.label({off:[-30,-44],cls:"big"}),lCB=S.label({off:[30,-60],cls:"big"}),lCoinA=S.label({off:[70,26]}),lGate=S.label({off:[16,-26],cls:"hot"}),lSRule=S.label({cls:"hot",off:[0,-30],lead:false}),lSMeet=S.label({off:[20,-30]});
 
   // ---------------------------------------------------------------- views
-  S.view("tank",[1.4,4.2,12.6],[.9,2.35,0],{min:4,max:28});
+  S.view("tank",[1.2,4.3,10.8],[1.3,2.6,0],{min:4,max:28}); // closer and a little higher: the Blender tanks stand on a 0.16 m stand
   S.view("rule",[-.6,4.0,12.2],[-.3,2.3,0],{min:4,max:28});
-  S.view("two",[1.0,4.3,12.8],[.6,2.35,0],{min:4,max:28});
+  S.view("two",[.9,4.4,11.0],[1.0,2.6,0],{min:4,max:28});
   S.view("scooter",[SX+.4,6.8,ZS+13.8],[SX+.3,1.7,ZS+.3],{min:4,max:28});
   S.view("all",[-8,17,28],[-8,1,-1.5],{min:6,max:60});
   const tankL=[TA.lab,TBk.lab,lRule,lRuleB,lNow,lStart,lRun,lRise,lMeet,lEmpty,l50,lBand,lDrag,lStair],scL=[lCA,lCB,lCoinA,lGate,lSRule,lSMeet];
   let K="start";S.goView("tank",true);const tmp=V3(0,0,0),wp=(B,v)=>B.g.localToWorld(v.clone());
   return {
+    get tanks(){return GT?"blender":gtFailed?"fallback":"loading"},
     step(st,s){K=st.k;const v=K==="scooter"?"scooter":K==="test"?"all":K==="rule"?"rule":K==="meet"?"two":"tank";S.goView(v);
       S.setShadowBox(v==="all"?20:7.5,v==="scooter"?[SX,0,ZS]:v==="all"?[-9,0,-1]:[.6,0,0]);
       [...tankL,...scL].forEach(l=>l.hide())},
     update(s,st,dt,t){const k=st.k,both=s.B,run=s.playing&&st.speed;
       // ---- tanks
-      TA.x=S.lerp(TA.x,both?-3.6:-2.5,S.REDUCED?1:.08);TA.g.position.x=TA.x;TBk.g.position.x=-1.75;TBk.g.visible=both;
+      TA.x=S.lerp(TA.x,both?-3.6:-2.5,S.REDUCED?1:.08);TA.g.position.x=TA.x;TBk.g.position.x=-1.75;TBk.g.visible=both&&!GT;TA.g.visible=!GT;
+      if(GT)try{gtApply(s,k)}catch(e){gtFail(e)}
+      const LyN=v=>GT?GT.fy+S.clamp(v,0,100)*GT.perL:Ly(v);
       for(const T of k==="scooter"?[]:both?[TA,TBk]:[TA]){const m=s["m"+T.key],c=s["c"+T.key],v=S.clamp(lev(m,c,s.t),0,100),h=Math.max(.002,v/100*TH);
         T.water.visible=v>.2;T.water.scale.set(TW-.04,h,TW-.04);T.water.position.y=TB+h/2;T.surf.visible=v>.2;T.surf.position.y=TB+h+.002+(run?Math.sin(t*9)*.004:0);
         const tap=m>0&&s.t<TMAX&&v<100,yTap=TB+TH+.4;T.stream.visible=tap;if(tap){const r=.025+.06*Math.min(1,m/8);T.stream.scale.set(r,yTap-(TB+h),r);T.stream.position.set(0,(yTap+TB+h)/2,0)}
@@ -295,8 +325,9 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
         for(let i=0;i<24;i++){const d=T.dr[i];if(run)d.y=(d.y+dt*(1.3+i%3*.2))%1;const on=(i<12?tap:dOn);
           if(i<12)T.drops.put(i,(i%3-1)*.02,yTap-d.y*(yTap-TB-h),((i>>2)%3-1)*.02,on?.03:0);else T.drops.put(i,TW/2+.5,TB-.05-d.y*(TB-.05-TOP-.16),.2,on?.025:0)}T.drops.done();
         T.float.position.set(-TW/2+.25,TB+h+.06,TW/2-.25);
-        T.lab.show(k!=="scooter").at(tmp.set(T.g.position.x-TW/2,TB+TH,0)).set(`Tank ${T.key}<b>${fmtN(Math.round(lev(m,c,s.t)*10)/10)} L</b>`)}
-      ring50.visible=k==="ineq"||s.shade;ring50.position.set(TA.x,Ly(50),0);
+        T.lab.show(k!=="scooter").at(GT?tmp.set(T.g.position.x-.63,GT.fy+3.24,0):tmp.set(T.g.position.x-TW/2,TB+TH,0)).set(`Tank ${T.key}<b>${fmtN(Math.round(lev(m,c,s.t)*10)/10)} L</b>`)}
+      for(const r of [ring50,ringMeetA,ringMeetB])GT?r.size(1.34,.88):r.size(TW+.08,TW+.08);
+      ring50.visible=k==="ineq"||s.shade;ring50.position.set(TA.x,LyN(50),0);
       // ---- tank board
       const showH=k!=="test"&&k!=="scooter";serA.set(s.mA,s.cA,s.t,showH);[serB.ghost,serB.line,serB.bead,serB.h0,serB.h1].forEach(o=>o.visible=false);if(both)serB.set(s.mB,s.cB,s.t,showH);
       lRule.show(k!=="scooter").at(wp(tb,V3(-tb.W/2+1.2,tb.H/2,0))).set(`<b>${rule(s.mA,s.cA,"t",both?"A":"L")}</b>`);lRule.el.style.setProperty("--acc",DEEPC.A);
@@ -313,7 +344,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
       const X=both?meet(s.mA,s.cA,s.mB,s.cB):null,xOk=X&&X.t>=0&&X.t<=TMAX&&X.y>=0&&X.y<=100;mkMeet.visible=!!xOk&&k!=="scooter";
       if(xOk){mkMeet.position.copy(tb.at(X.t,X.y));const lv=Math.abs(s.t-X.t)<.4;mkMeet.scale.setScalar(lv?1.35+Math.sin(t*8)*.1:1);seg(drop,tb.at(X.t,X.y),tb.at(X.t,0),.012);
         lMeet.show(k!=="scooter").at(wp(tb,mkMeet.position)).set(`level at <b>${fmtN(Math.round(X.t*10)/10)} min</b>`)}else{drop.visible=false;lMeet.hide()}
-      ringMeetA.visible=ringMeetB.visible=!!xOk&&k!=="scooter";if(xOk){ringMeetA.position.set(TA.x,Ly(X.y),0);ringMeetB.position.set(-1.75,Ly(X.y),0)}
+      ringMeetA.visible=ringMeetB.visible=!!xOk&&k!=="scooter";if(xOk){ringMeetA.position.set(TA.x,LyN(X.y),0);ringMeetB.position.set(-1.75,LyN(X.y),0)}
       const e=emptyAt(s.mA,s.cA),eOk=k==="drain"&&e!==null&&e<=TMAX;mkEmpty.visible=eOk;if(eOk){mkEmpty.position.copy(tb.at(e,0));lEmpty.show().at(wp(tb,mkEmpty.position)).set(`empty at <b>${fmtN(Math.round(e*10)/10)} min</b>`)}else lEmpty.hide();
       const ineq=k==="ineq"||s.shade;band.visible=tAxis.visible=dash50.visible=ineq;l50.show(ineq);lBand.hide();
       if(ineq){const a=tb.at(0,50),b=tb.at(TMAX,100);bar(band,a.x,a.y,b.x,b.y,.04,.01,.02);for(let i=0;i<40;i++){const p=tb.at(i/40*TMAX+.12,50);dash50.putS(i,p.x,p.y,.08,.13,.03,.04)}dash50.done();
@@ -336,7 +367,7 @@ function lines3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vector
       lSRule.show(k==="scooter").at(wp(sb,V3(-sb.W/2+1.6,sb.H/2,0))).set(`<b>${rule(s.rateA,s.feeA,"t","A")}</b><small>${rule(s.rateB,s.feeB,"t","B")}</small>`);
       lSMeet.show(k==="scooter"&&!!xsOk).at(wp(sb,mkS.position)).set(xsOk?`same price<b>$${XS.y.toFixed(2)}</b>`:"")}};
 }
-StudyKit.mount({kupu:KUPU,scene3d:lines3d,
+const CFG={kupu:KUPU,scene3d:lines3d,
   eyebrow:"Maths · Linear relationships", title:"The straight-line machine", crumb:"Year 9–10 maths · NCEA Level 1 Mathematics and Statistics", homeHash:"y9",
   fig:"FIG. 03 · TWO TANKS AND A PLOTTER", railTitle:"What y = mx + c really means",
   badge:{label:"NCEA L1 Maths 91947", exam:"2026-11-10T09:30:00+13:00", examText:"Tue 10 Nov, 9:30am"},
@@ -378,5 +409,27 @@ StudyKit.mount({kupu:KUPU,scene3d:lines3d,
   papers:[{label:"NZQA: Mathematics and Statistics",url:"https://www2.nzqa.govt.nz/ncea/subjects/subject/mathematics-and-statistics"}],
   truth:"The scooter companies and their prices are made up for practice. Tanks are idealised: the flow rate never changes.",
   footer:"Linear relationships (y = mx + c, rules from tables, simultaneous equations, inequalities) are Year 9–10 maths content and are examined through reasoning in NCEA Level 1 standard 91947."
-});
+};
+const API=StudyKit.mount(CFG);
+// ---------- graphics switch: 3D tanks ⇄ flat drawing inside the page. Nothing reloads, so the experiment, the topic, the clock
+// and any captured A/B evidence stay exactly as they are. Reset stays explicit: the Reset control (clock to 0) and
+// Restart investigation (clears evidence). The switch never resets anything.
+if(typeof document!=="undefined"&&document.createElement&&document.querySelector(".playmain .canvas"))(function linesGraphics(){
+  const canvas=document.querySelector(".playmain .canvas"),note=document.createElement("p");note.className="lines-view-note";
+  note.innerHTML='<span id="lines-load-status" role="status"></span><button type="button" class="btn" id="lines-graphics"></button>';
+  canvas.after(note);
+  const btn=note.querySelector("#lines-graphics"),status=note.querySelector("#lines-load-status");
+  const gl=(()=>{try{const c=document.createElement("canvas");return !!(c.getContext("webgl2")||c.getContext("webgl"))}catch(e){return false}})();
+  const host=()=>canvas.querySelector(".s3-host"),on=()=>!!host()&&!host().hidden&&canvas.classList.contains("s3-on");
+  const label=()=>{btn.textContent=on()?"Show the flat drawing":"Show the 3D tanks";btn.disabled=!gl&&!on()};
+  if(!gl)status.textContent="3D needs WebGL · the drawing shows the same model";
+  else if(/[?&]lite\b/.test(location.search))status.textContent="Simplified view · the drawing shows the same model";
+  btn.onclick=()=>{
+    if(on()){canvas.classList.remove("s3-on");host().hidden=true;status.textContent="Flat drawing · same experiment, nothing reset";label();btn.focus();return}
+    if(host()){host().hidden=false;canvas.classList.add("s3-on");API.redraw();status.textContent=document.documentElement.dataset.linesTanks==="blender"?"Live 3D · Blender tanks · glass simplified for the browser":"Live 3D · same experiment, nothing reset";label();return}
+    if(!gl)return;btn.disabled=true;status.textContent="Starting 3D…";
+    import("../kit3d.js").then(m=>{API.s3=m.attach(API,CFG,lines3d,StudyKit);label()}).catch(e=>{status.textContent="3D unavailable · the drawing shows the same model";btn.disabled=false;console.warn(e)})};
+  // kit.js starts the 3D bench on its own after mount; keep the button honest once it has (or has not)
+  label();const t0=Date.now(),poll=setInterval(()=>{label();if(host()||Date.now()-t0>20000)clearInterval(poll)},400);
+})();
 })();
