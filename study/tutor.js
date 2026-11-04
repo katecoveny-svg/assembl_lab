@@ -1,4 +1,4 @@
-/* Allen, the study tutor. The floating Allen opens a chat that knows the machine you're on and can work it:
+/* The study helper (formerly "Allen"). The floating button opens a chat that knows the machine you're on and can work it:
    he moves controls, switches steps and presses buttons through the machine's own setters, and every change
    shows up as a line in the chat. Paste (or photograph) a past exam question and he works through it with you.
    The agent runs at /api/tutor; when it is off or out of turns he answers from the machine's own notes instead. */
@@ -9,7 +9,7 @@
   const KEY="allen-chat:"+location.pathname, CAPKEY="allen-left:"+new Date().toISOString().slice(0,10);
   const SK=()=>window.StudyKit, cur=()=>window.StudyKit&&window.StudyKit.current;
   const the=t=>"the "+String(t||"machine").replace(/^the\s+/i,"");
-  const look=()=>{try{return SK().allen.load()}catch(e){return {name:"Allen"}}}, name=()=>esc(look().name||"Allen");
+  const look=()=>({name:"the study helper"}), name=()=>"the study helper";   // no character: one plain helper (Nov 2026)
   let msgs=[];try{msgs=JSON.parse(sessionStorage.getItem(KEY)||"[]")}catch(e){}
   let busy=false,offline=false,left=null;try{left=localStorage.getItem(CAPKEY)}catch(e){}
 
@@ -104,7 +104,7 @@
   @media (max-width:600px){.alt-fab{padding:5px}.alt-fab .lbl{position:absolute;left:-9999px}.alt-p{position:fixed;left:8px;right:8px;bottom:76px;width:auto;height:calc(100dvh - 96px)}}
   @media (prefers-reduced-motion:reduce){.alt-typing:after{animation:none}}`;
   const style=document.createElement("style");style.textContent=css;document.head.appendChild(style);
-  const avatar=mood=>{try{return SK().allen.svg(look(),{box:"bust",mood})}catch(e){return `<img src="/study/allen/pastel-mint-mark.webp" alt="">`}};
+  const avatar=()=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#240B21" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16v10H9.5L5 19.5v-4H4z"/><path d="M9 9.5h6M9 12.5h4"/></svg>`;
   const w=document.createElement("div");w.className="alt";
   w.innerHTML=`<div class="alt-p" role="dialog" aria-label="Study help" hidden>
     <div class="alt-h"><span class="av" aria-hidden="true"></span><div><b class="nm"></b><small class="sub"></small></div><button class="x" type="button" data-new>New chat</button><button class="x" type="button" data-close aria-label="Close">✕</button></div>
@@ -136,16 +136,16 @@
   const HEAVY=/\b(suicid\w*|kill (?:myself|me)|end (?:it|my life)|self[- ]?harm|hurt myself|want to die|don'?t want to (?:be here|live)|cutting myself|overdose)\b/i;
   const lookAfter=t=>{if(HEAVY.test(String(t||"")))help.hidden=false};
   let photo=null;
-  function paint(){const n=name();w.querySelectorAll(".av").forEach(a=>a.innerHTML=avatar());w.querySelector(".nm").textContent=look().name||"Allen";w.querySelector(".nm2").textContent=look().name||"Allen";
+  function paint(){const n=name();w.querySelectorAll(".av").forEach(a=>a.innerHTML=avatar());w.querySelector(".nm").textContent="Study help";w.querySelector(".nm2").textContent="for help";
     w.querySelector(".sub").textContent=cur()?`Study help · can work ${the(cur().cfg.title)}`:"Study help · pick a machine, plan, practise";
     w.querySelector(".left").textContent=offline?"AI help is off here, so answers come from the machine's notes.":left!==null?`${left} messages left today.`:"";gate();
     const k=cur(),test=k&&k.api.step.k==="test";
     const list=k?[["explain","Explain this step"],[test?"hint":"show",test?"Hint for a challenge":"Show me on the machine"],["exam","Work through an exam question"]]:[["which","Which machine fits my exam?"],["exam","Work through an exam question"],["plan","Plan my revision week"]];
-    chips.innerHTML=list.map(([k,l])=>`<button type="button" data-chip="${k}">${l}</button>`).join("");fab.setAttribute("aria-label",`Ask ${n}, your study helper`)}
+    chips.innerHTML=list.map(([k,l])=>`<button type="button" data-chip="${k}">${l}</button>`).join("");fab.setAttribute("aria-label","Open the study helper")}
   const md=t=>esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
   function bubble(role,html){const d=document.createElement("div");d.className="alt-m "+(role==="user"?"me":"al");d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
   function line(html){const d=document.createElement("div");d.className="alt-line";d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight}
-  function replay(){log.innerHTML="";if(!msgs.length){bubble("assistant",md(cur()?`Kia ora, I'm ${look().name||"Allen"}, an AI study helper. I can see ${the(cur().cfg.title)}. Tell me what you think first and I'll give you a hint, or paste an exam question and we'll work through it. I can move the controls to show you.`:`Kia ora, I'm ${look().name||"Allen"}, an AI study helper. Tell me what you're studying, or paste an exam question, and I'll find the right machine and give you hints as you go.`));return}
+  function replay(){log.innerHTML="";if(!msgs.length){bubble("assistant",md(cur()?`Kia ora, I'm an AI study helper. I can see ${the(cur().cfg.title)}. Tell me what you think first and I'll give you a hint, or paste an exam question and we'll work through it. I can move the controls to show you.`:`Kia ora, I'm an AI study helper. Tell me what you're studying, or paste an exam question, and I'll find the right machine and give you hints as you go.`));return}
     for(const m of msgs)for(const b of m.content){if(b.type==="text"&&!(m.role==="user"&&b.hidden))bubble(m.role,md(b.text));if(b.type==="image")bubble("user","<i>Photo of a question</i>")}}
   const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(msgs.map(m=>({...m,content:m.content.map(b=>b.type==="image"?{type:"text",text:"[The student attached a photo of the question earlier.]",hidden:true}:b)}))))}catch(e){}};
   const wire=()=>msgs.map(m=>({role:m.role,content:m.content.map(({hidden,...b})=>b)}));
@@ -161,7 +161,7 @@
   addEventListener("allen:ask",e=>{const d=e.detail||{};if(!d.text)return;open();ask(d.text,"exam",null,d.display||d.text)});
 
   async function send(mark){
-    busy=true;form.querySelector("button").disabled=true;const typing=document.createElement("div");typing.className="alt-typing";typing.textContent=(look().name||"Allen")+" is thinking";log.appendChild(typing);log.scrollTop=log.scrollHeight;
+    busy=true;form.querySelector("button").disabled=true;const typing=document.createElement("div");typing.className="alt-typing";typing.textContent="Thinking";log.appendChild(typing);log.scrollTop=log.scrollHeight;
     try{for(let round=0;round<5;round++){
       const r=await fetch("/api/tutor/",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messages:wire(),context:context()})});
       const j=await r.json().catch(()=>({}));

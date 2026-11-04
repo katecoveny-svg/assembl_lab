@@ -437,7 +437,7 @@ function mount(cfg){logStudy("open");
     <a class="back" href="${home}${cfg.homeHash?"#"+cfg.homeHash:""}" aria-label="All study machines" title="All study machines">${ICO.back}</a>
     <span class="appicon" aria-hidden="true">${glyph(mid)}</span>
     <div class="apptitle"><div class="eyebrow">${esc(cfg.eyebrow)}</div><h1>${esc(cfg.title)}</h1></div>
-    <div class="mhr">${cfg.badge?`<div class="exam">${examTxt}</div>`:""}<button class="ibtn snd" type="button" id="k-snd" aria-pressed="true"></button><button class="ibtn" type="button" id="k-al" aria-pressed="false">${ICO.paw}</button>${hasCH?`<button class="ibtn txt" type="button" id="k-reo" aria-pressed="false" title="Add the te reo Māori term in brackets to readouts">Reo</button>`:""}</div>
+    <div class="mhr">${cfg.badge?`<div class="exam">${examTxt}</div>`:""}<button class="ibtn snd" type="button" id="k-snd" aria-pressed="true"></button>${hasCH?`<button class="ibtn txt" type="button" id="k-reo" aria-pressed="false" title="Add the te reo Māori term in brackets to readouts">Reo</button>`:""}</div>
   </header>
   <section class="bench" aria-label="${esc(cfg.title)}">
     <nav class="steps" aria-label="Steps"><div class="fig">${esc(cfg.fig||"")}</div><h2>${esc(cfg.railTitle||"")}</h2><div id="k-steps" style="display:contents"></div></nav>
@@ -448,7 +448,7 @@ function mount(cfg){logStudy("open");
       <div class="play">
         <div class="playmain"><div class="canvas ${cfg.mainPhoneBig?"phone-big":""}"><svg id="k-main" viewBox="${cfg.mainBox}" role="img" aria-label="${esc(cfg.mainLabel||cfg.title)}"></svg></div>
         <div class="controls" id="k-ctl"></div></div>
-        <div class="rail"><div class="chips" id="k-chips" aria-live="polite"></div><div class="al-slot" id="k-al-slot"></div></div>
+        <div class="rail"><div class="chips" id="k-chips" aria-live="polite"></div></div>
       </div>
       ${cfg.lesson?`<section class="lesson-work" id="k-lesson-work" aria-label="Investigation notebook" hidden></section>`:""}
       <div class="lower ${cfg.closeBox?"":"noclose"}">
@@ -465,7 +465,7 @@ function mount(cfg){logStudy("open");
       </div>
     </div>
   </section>
-  ${cfg.papers?.length?`<div class="card practise"><h3>Practise with the real thing</h3><div class="papers">${cfg.papers.map(p=>`<a class="btn" href="${p.url}" target="_blank" rel="noopener">${esc(p.label)} ↗</a>`).join("")}<button class="btn" type="button" data-allen="exam">Work through a question with Allen</button></div><p>Past papers, marking schedules and example answers are on NZQA's site. Do one under exam time, then mark it with the schedule.</p></div>`:""}
+  ${cfg.papers?.length?`<div class="card practise"><h3>Practise with the real thing</h3><div class="papers">${cfg.papers.map(p=>`<a class="btn" href="${p.url}" target="_blank" rel="noopener">${esc(p.label)} ↗</a>`).join("")}<button class="btn" type="button" data-allen="exam">Work through a question with the study helper</button></div><p>Past papers, marking schedules and example answers are on NZQA's site. Do one under exam time, then mark it with the schedule.</p></div>`:""}
   ${KU.length?`<details class="card kupu-all"><summary><span class="kh">Kupu Māori in this machine</span><span class="kn">${KU.length} terms</span></summary><ul class="kupu-list">${KU.map(kupuItem).join("")}</ul><p class="kupu-src">Each term was checked against Te Aka Māori Dictionary, which includes the Ministry of Education's Māori-medium science (Te Reo Pūtaiao) and maths (Te Reo Pāngarau) dictionaries. Some ideas have more than one term, and usage can vary between iwi and schools, so check with your teacher which one your class uses.</p></details>`:""}
   <footer><p><span class="truth">Simulated</span>${cfg.truth||"A simplified model for learning. Check model answers with your teacher."}</p>${cfg.footer?`<p>${cfg.footer}</p>`:""}<p>Not made by or endorsed by NZQA or the Ministry of Education.</p><p class="as-foot">${LOCKUP}<span>assembly is made by assembl in Aotearoa.</span></p></footer>
 </div>`;
@@ -548,7 +548,7 @@ function mount(cfg){logStudy("open");
     const sel=()=>{const r=document.createRange();r.selectNodeContents($("k-exam"));const g=getSelection();g.removeAllRanges();g.addRange(r);b.textContent="Selected"};
     try{navigator.clipboard.writeText(txt).then(done,sel)}catch(e){sel()}};
   const api={redraw,get step(){return cfg.steps[step]},setStep,state:s};
-  // Allen the tutor (study/tutor.js) reads and works this machine through the same api
+  // the study helper (study/tutor.js) reads and works this machine through the same api
   try{window.StudyKit.current={api,cfg,mid};dispatchEvent(new Event("studykit:mounted"))}catch(e){}
   // the year, standard and exam date in the header, from the structured fields in data.js (years, standards)
   try{const d=document.createElement("script");d.src=new URL("data.js",KIT_SRC).href;d.async=true;d.onload=()=>{try{const m=window.STUDY&&window.STUDY.machines&&window.STUDY.machines[mid];if(!m)return;
@@ -568,9 +568,7 @@ function mount(cfg){logStudy("open");
   // the study app: installable to the home screen, keeps visited machines offline (study/app.js)
   try{const a=document.createElement("script");a.src=new URL("app.js",KIT_SRC).href;a.defer=true;document.head.appendChild(a)}catch(e){}
   if(cfg.lesson)lesson=mountLesson(cfg,api,$("k-lesson"),$("k-lesson-work"));
-  let buddy=null;try{buddy=allenCorner(api,cfg,$("k-al-slot"))}catch(e){}
-  const alBtn=$("k-al"),showAl=()=>{const m=!!alLoad().minimal;alBtn.setAttribute("aria-pressed",m?"true":"false");const t=m?"Tiny Allen is on: a small badge with no speech bubbles":"Tiny Allen: shrink Allen to a small badge";alBtn.title=t;alBtn.setAttribute("aria-label",t)};showAl();
-  alBtn.onclick=()=>{const L=alLoad();L.minimal=!L.minimal;alSave(L);showAl();sfx("pop");buddy&&buddy.render()};
+  const buddy=null;   // no corner companion: the bench stays calm (the study helper is one button, bottom right)
   const reoBtn=$("k-reo");if(reoBtn){const showReo=()=>{reoBtn.setAttribute("aria-pressed",reoOn?"true":"false")};showReo();reoBtn.onclick=()=>{setReo(!reoOn);showReo();sfx("pop");redraw()}}
   let visible=true,last=null;try{new IntersectionObserver(es=>visible=es[0].isIntersecting).observe($("k-main"))}catch(e){}
   function loop(ts){const st=cfg.steps[step];
@@ -685,7 +683,7 @@ const FIGSV=(()=>{const P=FIG_PALETTE,num=v=>Math.round(v*10)/10;
 function figRim(shader){shader.fragmentShader=shader.fragmentShader.replace("#include <dithering_fragment>","#include <dithering_fragment>\n#ifndef FLAT_SHADED\n{float figRim=pow(1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition))),2.6);gl_FragColor.rgb*=1.0-FIG_RIM*figRim;}\n#endif")}
 // the lockup: a hex-socket mark, "assembly", and "by assembl"
 const LOCKUP=`<span class="as-word"><svg class="as-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="var(--as-sun)" stroke="var(--as-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M12 8.2 15.3 10.1v3.8L12 15.8 8.7 13.9v-3.8z" fill="var(--as-ink)"/></svg>assembly</span><span class="as-by">by assembl</span>`;
-// for machines with their own shell: StudyKit.companion(el) puts Allen in el; call .react(true|false) after a check (log the pass first)
-function companion(el){return allenCorner(null,{steps:[]},el||document.body)}
+// for machines with their own shell: StudyKit.companion(el) once put Allen in el; it is now a quiet stub
+function companion(el){return {react(){},render(){},speak(){},el:null}}   // the corner companion was retired (Nov 2026); machines keep calling this safely
 window.StudyKit={mount,count,scenes:SCENES,glyph,accentFor,tintFor,tints:CASE,subject:id=>MSUB[id]||"science",icons:ICO,esc,daysUntil,sfx,tone,burst,allen:ALLEN,lockup:LOCKUP,readLog,companion,kupuItem,teAka:TEAKA,figMat,fig:FIGSV};
 })();

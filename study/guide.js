@@ -6,14 +6,18 @@
   const q=new URLSearchParams(location.search),VIDEO_MODE=q.has("video"),RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mid=(location.pathname.split("/").pop()||"").replace(/\.html?$/,"");
   const css=`.howbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:0 0 14px;padding:12px 16px;border-radius:18px;background:#F5F1F2;border:1px solid rgba(36,11,33,.08);font:500 14px/1.35 "Instrument Sans",system-ui,sans-serif;color:#240B21}
-  .howbar>b{font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#916A70}
+  .howbar>.howtog{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:32px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#916A70}
+  .howbar>.howtog::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}
+  .howbar>.howtog[aria-expanded="true"]::after{transform:rotate(-135deg) translateY(-1px)}.howbar>.howtog:focus-visible{outline:2px solid #916A70;outline-offset:3px;border-radius:6px}
+  .howbar.compact ol{display:none}.howbar.compact{padding:6px 8px 6px 14px;gap:8px 12px}.howbar.compact .acts{margin-left:auto}
   .howbar ol{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;padding:0;list-style:none;flex:1}
   .howbar li button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 2px;border-radius:8px}.howbar li button:hover{text-decoration:underline;text-underline-offset:3px}.howbar li button:focus-visible{outline:2px solid #916A70;outline-offset:2px}
   .howbar li i{font-style:normal;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#240B21;color:#FFFDFB;font:600 12px "Instrument Sans",sans-serif;flex:none}
   .howbar .acts{display:flex;gap:8px;flex-wrap:wrap}.howbar .acts button{all:unset;cursor:pointer;padding:8px 14px;border-radius:999px;font-weight:600;font-size:14px;background:#fff;border:1px solid rgba(36,11,33,.16)}
   .howbar .acts button.vid{background:#240B21;color:#FFFDFB;border-color:#240B21}.howbar .acts button:focus-visible{outline:2px solid #916A70;outline-offset:2px}
   @media (prefers-color-scheme:dark){.howbar{background:#271a2a;color:#F5F1F2;border-color:rgba(245,241,242,.1)}.howbar li i{background:#F5F1F2;color:#240B21}.howbar .acts button{background:#140e16;color:#F5F1F2;border-color:rgba(245,241,242,.2)}.howbar .acts button.vid{background:#F5F1F2;color:#240B21}}
-  @media (max-width:640px){.howbar ol{flex-direction:column;gap:2px}.howbar .acts{width:100%}.howbar .acts button{flex:1;text-align:center}}
+  @media (max-width:640px){.howbar ol{flex-direction:column;gap:2px}.howbar:not(.compact) .acts{width:100%}.howbar:not(.compact) .acts button{flex:1;text-align:center}
+    .howbar.compact{flex-wrap:nowrap}.howbar.compact .acts{flex-wrap:nowrap}.howbar.compact .acts button{padding:7px 11px;font-size:13px;white-space:nowrap}.howbar.compact [data-tour]{display:none}}
   .tour-ring{position:fixed;z-index:80;border-radius:16px;box-shadow:0 0 0 4px #F2DC8A,0 0 0 9999px rgba(36,11,33,.55);pointer-events:none;transition:all .35s ease}
   .tour-tip{position:fixed;z-index:81;width:min(340px,calc(100vw - 24px));padding:16px 18px;border-radius:18px;background:#FFFDFB;color:#240B21;box-shadow:0 24px 60px -24px rgba(0,0,0,.6);font:400 16px/1.45 "Instrument Sans",system-ui,sans-serif;transition:top .35s ease,left .35s ease}
   .tour-tip b{display:block;font-size:18px;margin-bottom:4px}.tour-tip small{display:block;font:500 11px "IBM Plex Mono",monospace;color:#916A70;margin-bottom:6px}
@@ -55,8 +59,12 @@
   function mount(){const head=document.querySelector(".apphead");if(!head||document.querySelector(".howbar"))return;
     const bar=document.createElement("div");bar.className="howbar";bar.setAttribute("role","region");bar.setAttribute("aria-label","How this machine works");
     const items=[["Pick a topic",0],["Change the controls under the picture",2],["Read the notes",4],["Test yourself",5]];
-    bar.innerHTML=`<b>How it works</b><ol>${items.map(([t,s],i)=>`<li><button type="button" data-stop="${s}"><i>${i+1}</i>${t}</button></li>`).join("")}</ol><span class="acts"><button type="button" data-tour>Show me around</button></span>`;
+    bar.innerHTML=`<button type="button" class="howtog" aria-expanded="false">How it works</button><ol>${items.map(([t,s],i)=>`<li><button type="button" data-stop="${s}"><i>${i+1}</i>${t}</button></li>`).join("")}</ol><span class="acts"><button type="button" data-tour>Show me around</button></span>`;
     head.insertAdjacentElement("afterend",bar);
+    // compact by default so the machine itself is on the first screen; the four steps open on demand
+    let seen0=false;try{seen0=localStorage.getItem("study-tour-v1")==="done"}catch(e){}
+    const tog=bar.querySelector(".howtog"),setOpen=o=>{bar.classList.toggle("compact",!o);tog.setAttribute("aria-expanded",String(o))};
+    setOpen(!seen0&&matchMedia("(min-width: 900px)").matches);tog.onclick=()=>setOpen(bar.classList.contains("compact"));
     // short concept explainers (study/explainers.js) add a "▶ The idea" button to this bar on paired machines
     try{const x=document.createElement("script");x.src="/study/explainers.js";x.defer=true;document.head.appendChild(x)}catch(e){}
     bar.addEventListener("click",e=>{const s=e.target.closest("[data-stop]");if(s)return tour(+s.dataset.stop);if(e.target.closest("[data-tour]"))tour(0);if(e.target.closest("[data-vid]"))video(bar._vid)});
