@@ -45,7 +45,7 @@ const STAGE = [
   { id: 'ed', kind: 'Health', img: ['/assets/posters/ed.webp', 1206, 872], alt: 'The emergency department twin: waiting room, triage and treatment bays' },
   { id: 'dairy', kind: 'Manufacturing', img: ['/assets/posters/dairy.webp', 1206, 872], alt: 'The dairy plant twin: milk silos, dryer tower and tanker bay' },
   { id: 'energy', kind: 'Energy retail', img: ['/assets/posters/energy.webp', 1200, 840], alt: 'The energy retailer twin: a street of four houses on one power network' },
-  { id: 'cars', kind: 'Vehicle retail', img: ['/assets/models/vehicles/renders/suv-hero.webp', 1200, 750], alt: 'Offline render of a demo SUV from the agent-ready cars world' },
+  { id: 'cars', kind: 'Vehicle retail', img: ['/assets/models/vehicles/renders/golf-hero.webp', 1200, 750], alt: 'Offline render of the Simulated 2021 Volkswagen Golf, the hero car of the agent-ready cars world' },
 ];
 const MORE_TWINS = [
   { id: 'retail', line: 'The trade yard at 6am, the empty bins at 4pm.' },

@@ -608,6 +608,7 @@ export const MODEL_ECONOMY = [
   [/sportage/i, "petrol", 8.0], [/ioniq.*(ev|electric)/i, "electric", 13.8], [/ioniq/i, "hybrid", 3.9], [/tucson/i, "petrol", 8.0], [/outlander.*(phev|plug)/i, "plug-in hybrid", 6.5],
   [/outlander/i, "petrol", 8.1], [/ranger/i, "diesel", 8.9], [/hilux/i, "diesel", 8.5], [/hiace/i, "diesel", 8.6], [/model ?3|model ?y|tesla/i, "electric", 15.0], [/atto ?3/i, "electric", 16.0],
   [/zs ?ev|mg4|mg ?4/i, "electric", 17.8], [/demio|mazda ?2/i, "petrol", 5.2], [/mazda ?3/i, "petrol", 6.4], [/yaris.*hybrid/i, "hybrid", 3.6], [/yaris/i, "petrol", 5.0],
+  [/golf/i, "petrol", 5.8],
 ];
 const DEFAULT_ECONOMY = { petrol: 7.5, diesel: 8.5, hybrid: 4.5, "plug-in hybrid": 6.5, electric: 17.0 };
 // the comparison car: a typical car of the same body on the other fuel (Estimate)

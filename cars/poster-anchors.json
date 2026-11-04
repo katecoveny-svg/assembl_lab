@@ -5,44 +5,44 @@
  "anchors": [
   {
    "id": "dash",
-   "x": 671,
-   "y": 413,
-   "visible": true
-  },
-  {
-   "id": "labels",
-   "x": 737,
-   "y": 386,
-   "visible": true
-  },
-  {
-   "id": "sticker",
-   "x": 694,
-   "y": 387,
-   "visible": true
-  },
-  {
-   "id": "tag",
-   "x": 765,
-   "y": 438,
-   "visible": true
-  },
-  {
-   "id": "door",
-   "x": 548,
-   "y": 459,
-   "visible": true
-  },
-  {
-   "id": "filler",
-   "x": 373,
+   "x": 676,
    "y": 408,
    "visible": true
   },
   {
+   "id": "labels",
+   "x": 728,
+   "y": 376,
+   "visible": true
+  },
+  {
+   "id": "sticker",
+   "x": 699,
+   "y": 378,
+   "visible": true
+  },
+  {
+   "id": "tag",
+   "x": 819,
+   "y": 446,
+   "visible": true
+  },
+  {
+   "id": "door",
+   "x": 555,
+   "y": 485,
+   "visible": true
+  },
+  {
+   "id": "filler",
+   "x": 333,
+   "y": 421,
+   "visible": true
+  },
+  {
    "id": "flag",
-   "x": 373,
-   "y": 273,
+   "x": 365,
+   "y": 285,
    "visible": true
   }
  ]
