@@ -1188,17 +1188,19 @@ def build_vehicle(body_key):
             nm, before = c.name, len(body.data.polygons)
             boolean(body, c)
             if ARGS.get("debug"): print("  cut", nm, before, "->", len(body.data.polygons), flush=True)
+    # delete the window caps, then drop their material slots and re-point every face by material NAME (Mesh.materials.pop
+    # already shifts the indices above the removed slot; shifting them again by hand would move faces onto the wrong material)
     me = body.data
     bm = bmesh.new(); bm.from_mesh(me)
     capi = [i for i, m in enumerate(me.materials) if m and m.name == "CAP_OPEN"]
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in capi], context="FACES")
-    for f in bm.faces: f.material_index -= sum(1 for i in capi if i < f.material_index)
     bm.to_mesh(me); bm.free()
+    face_mat = [me.materials[p.material_index].name for p in me.polygons]
     for i in sorted(capi, reverse=True): me.materials.pop(index=i)
-    for f, mi in zip(me.polygons, [p.material_index for p in me.polygons]): f.material_index = mi
+    names = [m.name for m in me.materials]
+    for p, nm in zip(me.polygons, face_mat): p.material_index = names.index(nm)
     # the underbody is dark only where it faces the ground: where the sill ramps up into a bumper it is the bumper
-    me = body.data
-    ui, pi = [m.name for m in me.materials].index("UNDER"), [m.name for m in me.materials].index("CLADDING" if S["cladding"] else "PAINT")
+    ui, pi = names.index("UNDER"), names.index("CLADDING" if S["cladding"] else "PAINT")
     for p in me.polygons:
         if p.material_index == ui and p.normal.z > -.55: p.material_index = pi
     sharpen(body, 40)

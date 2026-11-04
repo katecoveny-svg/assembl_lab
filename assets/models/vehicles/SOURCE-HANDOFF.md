@@ -87,12 +87,12 @@ Budget: **≤ 1.2 MB, ≤ 40,000 triangles, 0 textures**, no Draco/meshopt (the 
 
 | Body | Triangles | GLB bytes |
 |---|---|---|
-| hatch | 35,852 | 975,264 |
-| sedan | 36,964 | 1,002,680 |
-| wagon | 38,618 | 1,043,144 |
-| SUV | 39,805 | 1,086,260 |
-| ute | 39,043 | 1,059,956 |
-| van | 37,940 | 989,604 |
+| hatch | 35,852 | 976,052 |
+| sedan | 36,964 | 1,003,472 |
+| wagon | 38,618 | 1,043,936 |
+| SUV | 39,805 | 1,087,052 |
+| ute | 39,043 | 1,060,760 |
+| van | 37,940 | 990,388 |
 
 All in budget, but the SUV and ute are within 1.2k triangles of the cap and the bytes rose from about 0.6 MB (the boolean-cut
 openings and split crease normals add vertices).
