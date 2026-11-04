@@ -35,14 +35,14 @@
   },
   {
    "id": "filler",
-   "x": 333,
-   "y": 421,
+   "x": 332,
+   "y": 422,
    "visible": true
   },
   {
    "id": "flag",
    "x": 365,
-   "y": 285,
+   "y": 292,
    "visible": true
   }
  ]

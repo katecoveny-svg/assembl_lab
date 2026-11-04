@@ -38,22 +38,22 @@ GOLF = dict(label="Five-door hatch (2020-on Golf)", L=4.284, W=1.789, H=1.456, w
     # the centre-line top: an upright nose, a short bonnet rising to the cowl, a steep raked screen, the long flat roof, the raked
     # tailgate glass and an almost vertical lower tailgate
     crest=[(0, .735), (.008, .762), (.025, .780), (.055, .793), (.09, .801), (.13, .807), (.22, .826), (.40, .862), (.65, .906), (.90, .944), (1.04, .961), (1.14, .972),
-           (1.20, .979), (1.28, 1.025), (1.42, 1.111), (1.57, 1.201), (1.72, 1.287), (1.84, 1.351), (1.94, 1.397), (2.04, 1.427), (2.20, 1.446), (2.50, 1.456),
-           (2.85, 1.456), (3.15, 1.450), (3.45, 1.438), (3.68, 1.423), (3.80, 1.412), (3.83, 1.400), (3.87, 1.362), (3.94, 1.285), (4.02, 1.185), (4.09, 1.090),
-           (4.14, 1.030), (4.18, .985), (4.22, .935), (4.25, .875), (4.268, .80), (4.278, .72), (4.284, .62)],
+           (1.20, .979), (1.28, 1.025), (1.42, 1.111), (1.57, 1.201), (1.72, 1.287), (1.84, 1.351), (1.94, 1.397), (2.04, 1.427), (2.20, 1.447), (2.38, 1.456), (2.55, 1.454),
+           (2.85, 1.444), (3.15, 1.423), (3.45, 1.394), (3.68, 1.366), (3.80, 1.350), (3.84, 1.338), (3.88, 1.292), (3.94, 1.215), (4.00, 1.135), (4.05, 1.072),
+           (4.085, 1.033), (4.13, .995), (4.19, .945), (4.235, .885), (4.262, .80), (4.276, .72), (4.284, .62)],
     # the beltline: wing tops in front (the bonnet's side shut lines), the base of the side glass rising gently to the rear
-    belt=[(0, .725), (.03, .758), (.08, .772), (.16, .786), (.35, .815), (.65, .858), (.95, .898), (1.15, .922), (1.34, .940), (1.8, .953), (2.4, .968), (3.0, .99),
-          (3.5, 1.010), (3.85, 1.020), (4.02, 1.012), (4.12, .99), (4.20, .94), (4.25, .86), (4.284, .68)],
-    rail=[(1.67, 1.27), (1.92, 1.36), (2.3, 1.392), (2.8, 1.398), (3.2, 1.385), (3.55, 1.352), (3.82, 1.30)],
+    belt=[(0, .725), (.03, .758), (.08, .772), (.16, .786), (.35, .815), (.65, .858), (.95, .898), (1.15, .922), (1.34, .940), (1.8, .953), (2.4, .968), (2.85, .982), (3.02, .992),
+          (3.18, 1.016), (3.36, 1.047), (3.62, 1.062), (3.85, 1.062), (4.0, 1.046), (4.10, 1.016), (4.18, .958), (4.24, .87), (4.284, .68)],
+    rail=[(1.67, 1.27), (1.92, 1.36), (2.3, 1.393), (2.6, 1.392), (2.9, 1.378), (3.2, 1.352), (3.45, 1.322), (3.65, 1.29), (3.82, 1.255)],
     setF=[(0, 0), (.4, .005), (.6, .014), (.75, .030), (.85, .055), (.92, .095), (.96, .14), (.985, .20), (1, .29)],
     setR=[(0, 0), (.4, .005), (.6, .016), (.75, .036), (.87, .068), (.95, .112), (1, .18)],
-    ws=(1.20, 2.00), rw=(3.84, 4.15), ws_band=.046, rw_band=.15,
-    # front door glass to the B-pillar; the rear door glass ends on the forward-leaning C-pillar (its rear edge leans forward
-    # as it rises), which leaves the thick solid pillar the car is known for
-    windows=[(None, (2.385, 2.35)), ((2.465, 2.43), (3.40, 3.08))], appliques=[(2.385, 2.465)],
-    gaps=[1.30, 2.425, 3.44], bonnet=.115, tailgate=4.15, tg=dict(hw=.60, z=(.64, .885)),
-    head=dict(c=(.62, .30), th=(10, 80), h=(.068, .112), margin=.010),
-    grille=dict(hw=.43, h=.052, margin=.010), intake=dict(hw=.60, z=(.235, .455)),
+    ws=(1.20, 2.00), rw=(3.85, 4.085), ws_band=.046, rw_band=.15,
+    # front door glass to the B-pillar; the rear door glass ends early, on a short steep edge where the belt kicks up, leaving
+    # the wide solid C-pillar (about half a metre at the belt, its base ahead of its top) that the car is known for
+    windows=[(None, (2.385, 2.35)), ((2.465, 2.43), (3.33, 3.335))], appliques=[(2.385, 2.465)],
+    gaps=[1.30, 2.425, 3.42], bonnet=.115, tailgate=4.085, tg=dict(hw=.60, z=(.64, .885)),
+    head=dict(c=(.62, .30), th=(10, 80), h=(.068, .094), margin=.010),
+    grille=dict(hw=.43, h=.032, margin=.010), intake=dict(hw=.60, z=(.235, .455)),
     tail=dict(c=(.32, .22), th=(6, 74)), plate_f=.355, plate_r=.705)
 
 PAINTS = {"kings-red": ("#8E1119", .5, .27, "Kings Red metallic"), "moonstone": ("#8A8C8D", .10, .30, "Moonstone Grey"),
@@ -179,7 +179,7 @@ def spoiler(B, bvh):
     """The roof spoiler: a body-colour blade that carries the roof line back over the tailgate glass, a dark underside, and
     small end plates that drop down the sides of the glass."""
     S = B.S
-    x0, x1 = S["rw"][0] - .10, S["rw"][0] + .085          # starts on the roof, overhangs the glass
+    x0, x1 = S["rw"][0] - .10, S["rw"][0] + .13           # starts on the roof, overhangs the glass
     tp = bv.top_proj(B)
     ny = 13
     top, und = [], []
@@ -303,12 +303,11 @@ def build_golf():
         for i, s in enumerate(ss):
             u = i / N
             ze = q(s) - hd["margin"]
-            hgt = hd["h"][0] + (hd["h"][1] - hd["h"][0]) * u ** 1.3
-            # the lower edge kicks down a little at the inner end, then runs straight and tapers round the corner
-            hgt += .008 * max(0., 1 - u / .18) ** 2
+            # a point at the inner end (into the light bar), full depth by a third of the way out, tapering again as it wraps
+            hgt = .024 + (hd["h"][1] - .024) * bv.smooth(0., .34, u) * (1 - .28 * bv.smooth(.80, 1., u))
             top.append((s, ze)); bot.append((s, ze - hgt))
         lamp_top[side] = (top[0], bot[0])
-        strip = bv.m_strip(top, bot, nv=4, round_r=.022)
+        strip = bv.m_strip(top, bot, nv=4, round_r=.010)
         c = bv.cutter("CUT_HEAD", bvh, cp, strip, depth=.028, wall="HOUSING", cap="HOUSING")
         if c: cuts.append(c)
         lens = bv.panel("HEAD_LENS", bvh, cp, strip, -.001, mats=("LENS",))
