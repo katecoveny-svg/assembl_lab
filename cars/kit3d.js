@@ -13,6 +13,7 @@
 //     .windscreenHalf(t)                                how far the windscreen glass reaches either side of the centre at t
 //     .shadowTex                                        a contact shadow for an (L + 0.7) × (W + 0.7) plane under the car
 //   kit.shadowTex         the hatch's contact shadow (older callers)
+//   kit.shadowFor(S)      a contact shadow for any car of S = { L, W, wf, wb, tw } (metres), e.g. a loaded model
 //
 // Axes: the car faces +x, y is up, it stands on y = 0, and +z is the driver's side of a right-hand-drive car.
 export function buildCarKit(THREE) {
@@ -313,7 +314,7 @@ export function buildCarKit(THREE) {
     parts.mirrors.setAttribute("color", new THREE.BufferAttribute(new Float32Array(parts.mirrors.attributes.position.count * 3).fill(1), 3)); // drawn with the body's material, which reads vertex colours
     return Object.assign(parts, P, { T: TYPES[kind], L: S.L, W: S.W, H: S.H, map: (x, y, z) => V3(x, y, z), shadowTex: shadowTexture(S) });
   }
-  const kit = { TYPES, merge };
+  const kit = { TYPES, merge, shadowFor: (S) => shadowTexture(S) }; // shadowFor({ L, W, wf, wb, tw }): the same contact shadow for any car (the /cars/ GLB hero)
   for (const kind of Object.keys(SPEC)) Object.defineProperty(kit, kind, { enumerable: true, get: () => built[kind] || (built[kind] = build(kind)) });
   Object.defineProperty(kit, "shadowTex", { enumerable: true, get: () => kit.hatch.shadowTex });
   return kit;

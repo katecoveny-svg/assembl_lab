@@ -1,12 +1,15 @@
-// The hero: one studio maquette of the car on paper (/cars/kit3d.js, lit by /cars/look3d.js), carrying the parts each notice
-// field describes. Renders only when something changes (a beat turns the car, the stage resizes, the theme flips): there is no
+// The hero: the car on paper in the studio (/cars/look3d.js), carrying the parts each notice field describes. When the car's
+// record names a model (render.glb: a Blender-built GLB, /cars/glbkit.js) that is the car; otherwise, or if it fails to load,
+// a studio maquette of its body (/cars/kit3d.js). Renders only when something changes (a beat turns the car, the stage resizes, the theme flips): there is no
 // idle loop and no decorative motion.
 // createStage(canvas, car, { reduced, dark, bare, fit, introFit, narrow, onFrame })   fit(W, H): framing while labels need room;
 //   introFit(W, H): the closer framing for the opening beat, before any label is on the stage
-//   → { ready, setBeat(i) → Promise, anchors() → [{ id, x, y, visible }], snapshot(opts) → dataURL, resize(), setTheme(dark) }
+//   → { ready, setBeat(i) → Promise, anchors() → [{ id, x, y, visible }], snapshot(opts) → dataURL, resize(), setTheme(dark), model }
+//   opts.maquette: ignore render.glb (model: "maquette" | "glb" says which one is on the stage)
 import * as THREE from "three";
 import { buildCarKit } from "./kit3d.js";
 import { studio, carMaterials, maquettePaint } from "./look3d.js";
+import { loadGlbKit } from "./glbkit.js";
 
 // where the car turns for each beat (radians about y; the camera sits off the front-right quarter, so +yaw shows the driver's side and rear)
 export const YAW = [0.18, -0.30, -0.42, -0.36, -0.52, 0.62, 1.18, 2.15, 0.30];
@@ -29,12 +32,22 @@ export async function createStage(canvas, car, opts = {}) {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
   const look = await studio(THREE, renderer, scene, { dark: !!opts.dark });
 
-  const kit = buildCarKit(THREE), kind = car.render.kind in kit.TYPES ? car.render.kind : "suv", K = kit[kind], T = K.T;
-  const contactMat = new THREE.MeshBasicMaterial({ map: K.shadowTex, transparent: true, depthWrite: false, opacity: 0.5, color: 0x240b21 });
-  const contact = new THREE.Mesh(new THREE.PlaneGeometry(K.L + 0.7, K.W + 0.7), contactMat); contact.rotation.x = -Math.PI / 2; contact.position.y = 0.003; scene.add(contact);
-  const MAT = carMaterials(THREE, maquettePaint(THREE, car.render.paint)), std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: new THREE.Color(c), ...o });
+  const kit = buildCarKit(THREE), kind = car.render.kind in kit.TYPES ? car.render.kind : car.body in kit.TYPES ? car.body : "suv";
+  const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: new THREE.Color(c), ...o });
   const carG = new THREE.Group(); scene.add(carG);
-  for (const p of ["body", "glass", "tyres", "rims", "heads", "tails", "trim", "mirrors"]) { const m = new THREE.Mesh(K[p], MAT[p === "mirrors" ? "body" : p]); m.castShadow = p !== "glass" && p !== "mirrors"; m.receiveShadow = !["body", "glass", "heads", "tails", "mirrors"].includes(p); carG.add(m); }
+  let K = null, paintColor = null, model = "maquette";
+  if (car.render.glb && !opts.maquette) {
+    try { K = await loadGlbKit(THREE, car.render, kit); carG.add(K.group); paintColor = K.paint; model = "glb"; }
+    catch (e) { K = null; console.warn("[cars] the 3D model didn't load, showing the maquette:", e && e.message); }
+  }
+  if (!K) {
+    K = kit[kind];
+    const MAT = carMaterials(THREE, maquettePaint(THREE, car.render.paint)); paintColor = MAT.body.color;
+    for (const p of ["body", "glass", "tyres", "rims", "heads", "tails", "trim", "mirrors"]) { const m = new THREE.Mesh(K[p], MAT[p === "mirrors" ? "body" : p]); m.castShadow = p !== "glass" && p !== "mirrors"; m.receiveShadow = !["body", "glass", "heads", "tails", "mirrors"].includes(p); carG.add(m); }
+  }
+  const T = K.T;
+  const contactMat = new THREE.MeshBasicMaterial({ map: K.shadowTex || kit[kind].shadowTex, transparent: true, depthWrite: false, opacity: 0.5, color: 0x240b21 });
+  const contact = new THREE.Mesh(new THREE.PlaneGeometry(K.L + 0.7, K.W + 0.7), contactMat); contact.rotation.x = -Math.PI / 2; contact.position.y = 0.003; scene.add(contact);
 
   // ---- the parts the notice talks about -----------------------------------------------------------------------------
   // opts.bare skips them (and the pins' anchors) for a clean studio render of the car alone: src/cars/_build/render-cars.mjs
@@ -78,7 +91,7 @@ export async function createStage(canvas, car, opts = {}) {
     0.5, 0.117, doorAt, 0.006);
   // fuel filler flap, driver's-side rear quarter, above the back of the rear wheel
   const fillAt = K.sideAt(T.wb - T.wr * 0.75, T.belt - 0.13, 1);
-  const flapMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(MAT.body.color).multiplyScalar(0.9), roughness: 0.36, clearcoat: 0.6 });
+  const flapMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(paintColor).multiplyScalar(0.9), roughness: 0.36, clearcoat: 0.6 });
   const flap = new THREE.Mesh(new THREE.CircleGeometry(0.07, 32), flapMat); flap.position.copy(fillAt.p).addScaledVector(fillAt.n, 0.003); flap.quaternion.copy(facing(fillAt.n)); carG.add(flap);
   const rim = new THREE.Mesh(new THREE.RingGeometry(0.07, 0.077, 32), std("#240B21", { roughness: 0.6, transparent: true, opacity: 0.5 })); rim.position.copy(fillAt.p).addScaledVector(fillAt.n, 0.004); rim.quaternion.copy(facing(fillAt.n)); carG.add(rim);
   // the import origin: a small flag on the roof, towards the back
@@ -142,5 +155,5 @@ export async function createStage(canvas, car, opts = {}) {
   }
   if (opts.dark) { contactMat.color.set(0x000000); contactMat.opacity = 0.72; }
   resize();
-  return { setBeat, anchors, resize, render, snapshot, setTheme, get yaw() { return yaw; }, renderer };
+  return { setBeat, anchors, resize, render, snapshot, setTheme, get yaw() { return yaw; }, renderer, model };
 }
