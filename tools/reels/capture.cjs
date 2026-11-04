@@ -1,6 +1,7 @@
 // Capture a study machine for the Remotion study Reels (assemblnz remotion/src/study): one screenshot per step plus
 // the Blender hero, and a script.json with the machine's own title, blurb and step lines (nothing invented).
 // Usage: node tools/reels/capture.cjs <baseUrl> <machineId> <outDir>      (needs Playwright; Pillow-free: JPEG via Chromium)
+// Then run tools/reels/play.cjs on the same outDir to record a clip of each step being played with (the Reels use those).
 const {chromium}=require('playwright');const fs=require('fs');const path=require('path');
 const [,,BASE='http://localhost:8123',ID,OUT]=process.argv;
 if(!ID||!OUT){console.error('usage: node tools/reels/capture.cjs <baseUrl> <machineId> <outDir>');process.exit(1)}
