@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta property="og:type" content="website"><meta property="og:site_name" content="assembl"><meta property="og:title" content="assembly · free NCEA study machines"><meta property="og:description" content="Exam week sorted: free interactive study machines for Years 9–13 and NCEA, made in Aotearoa. Pick your subject, change a setting, watch what happens, then test yourself. Allen works through past exam questions with you."><meta property="og:url" content="https://study.assembl.co.nz/"><link rel="canonical" href="https://study.assembl.co.nz/study/"><meta property="og:image" content="https://assembl-lab.vercel.app/study/share/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Exams are coming. Start here. Free study machines for Years 9–13 at study.assembl.co.nz: a claw machine, a vending machine, an atom model and particles on a bench, with Allen the dachshund."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="assembly · free NCEA study machines"><meta name="twitter:description" content="Free interactive study machines for Years 9–13 and NCEA. Pick your subject, try it, test yourself. Allen works through past exam questions with you."><meta name="twitter:image" content="https://assembl-lab.vercel.app/study/share/og.jpg"><link rel="manifest" href="/study/manifest.webmanifest"><link rel="apple-touch-icon" href="/study/app/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/study/app/icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta property="og:type" content="website"><meta property="og:site_name" content="assembl"><meta property="og:title" content="assembly · free NCEA study machines"><meta property="og:description" content="Exam week sorted: free interactive study machines for Years 9–13 and NCEA, made in Aotearoa. Pick your subject, change a setting, watch what happens, then test yourself. A study helper works through past exam questions with you."><meta property="og:url" content="https://study.assembl.co.nz/"><link rel="canonical" href="https://study.assembl.co.nz/study/"><meta property="og:image" content="https://assembl-lab.vercel.app/study/share/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Exams are coming. Start here. Free study machines for Years 9–13 at study.assembl.co.nz: a claw machine, a vending machine, an atom model and particles on a bench."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="assembly · free NCEA study machines"><meta name="twitter:description" content="Free interactive study machines for Years 9–13 and NCEA. Pick your subject, try it, test yourself. A study helper works through past exam questions with you."><meta name="twitter:image" content="https://assembl-lab.vercel.app/study/share/og.jpg"><link rel="manifest" href="/study/manifest.webmanifest"><link rel="apple-touch-icon" href="/study/app/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/study/app/icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>assembly · study machines</title>
 <meta name="description" content="Free interactive study machines for NCEA Levels 1–3 and Years 9–10, made in Aotearoa. Pick your subject, change a setting, watch what happens, then test yourself before the exam.">
 <meta name="theme-color" content="#FFFDFB">
@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="kit.css">
 <style>
-/* Layout: assembly's front room. A top bar, a hero with Allen and the countdown, the machines on the bench,
-   Allen's den (customise him with gear you've earned), then a year-by-year index of every exam with links out to the real papers. */
+/* Layout: assembly's front room. A top bar, a hero with the countdown, the machines on the bench,
+   then a year-by-year index of every exam with links out to the real papers. */
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;background:var(--as-card);border:1px solid var(--as-line);border-radius:22px;padding:12px 14px 12px 18px;box-shadow:var(--as-shadow)}
 .top .as-lock{display:inline-flex;align-items:baseline;margin-right:auto;text-decoration:none}
 .top .as-word{font-size:26px}
@@ -442,7 +442,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
 <div class="wrap">
   <header class="top">
     <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
-    <nav aria-label="Sections"><a href="#h-index">Your exams</a><a href="#h-mach">Machines</a><a href="#den">Allen's den</a><a href="#h-play">Play</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
+    <nav aria-label="Sections"><a href="#h-index">Your exams</a><a href="#h-mach">Machines</a><a href="#h-play">Play</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
   </header>
 
   <div class="strip" id="strip" role="region" aria-label="Today's exams" hidden></div>
@@ -457,15 +457,9 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
         <ul class="years" id="years" role="group" aria-labelledby="yq"></ul>
       </div>
       <p class="share"><span>Share with your class:</span> <button type="button" id="shareLink" aria-label="Copy the link to this page">Copy link</button><span id="shareDone" role="status" aria-live="polite"></span></p>
-      <a class="allen-chip" href="#den" id="heroAllen"><span class="av" aria-hidden="true"></span><span><b id="heroName">Allen</b><small>AI study helper · hints, not answers</small></span></a>
     </div>
     <div class="hstage" id="bench" role="group" aria-label="Five of the study machines">
       <div class="hplate" aria-hidden="true"></div>
-      <span class="cb c1" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#F9D2B8"/><path d="M2 18 30 34v30L2 48Z" fill="#F0B79A"/><path d="M58 18 30 34v30l28-16Z" fill="#E39E80"/></svg></span>
-      <span class="cb c2" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#D9CBF2"/><path d="M2 18 30 34v30L2 48Z" fill="#C3B0E8"/><path d="M58 18 30 34v30l28-16Z" fill="#AD98DB"/></svg></span>
-      <span class="cb c3" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#BFE8D6"/><path d="M2 18 30 34v30L2 48Z" fill="#A3D9C1"/><path d="M58 18 30 34v30l28-16Z" fill="#86C8AC"/></svg></span>
-      <span class="cb c4" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#BFDDF5"/><path d="M2 18 30 34v30L2 48Z" fill="#A2CBEC"/><path d="M58 18 30 34v30l28-16Z" fill="#86B7E0"/></svg></span>
-      <span class="cb c5" aria-hidden="true"><svg viewBox="0 0 60 66"><path d="M30 2 58 18 30 34 2 18Z" fill="#F3B8C8"/><path d="M2 18 30 34v30L2 48Z" fill="#E99DB2"/><path d="M58 18 30 34v30l28-16Z" fill="#DB839C"/></svg></span>
       <a class="mx x-vend" data-m="vend" href="m/vend.html" style="--i:1;--z:.5"><span class="fl"><img src="hero/vend.webp" alt="" width="1000" height="729" decoding="async"></span><span class="tg"></span></a>
       <a class="mx x-claw" data-m="claw" href="m/claw.html" style="--i:0;--z:.35"><span class="fl"><img src="hero/claw.webp" alt="" width="880" height="807" decoding="async" fetchpriority="high"></span><span class="tg"></span></a>
       <a class="mx x-part" data-m="particles" href="m/particles.html" style="--i:2;--z:.7"><span class="fl"><img src="hero/particles.webp" alt="" width="1000" height="883" decoding="async"></span><span class="tg"></span></a>
@@ -505,24 +499,11 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
     <div class="count streak" id="streak"></div>
   </div>
 
-  <section class="block den" id="den" aria-labelledby="h-den">
-    <div class="den-head"><p class="kick">03 / Your sidekick</p><h2 id="h-den"><span id="denName">Allen</span>'s <em>den.</em></h2>
-      <p class="lede">Allen is a long-haired dachshund, named after the Allen key every kitset needs. He's an AI study helper: hints, not answers. Pass a challenge in a machine to unlock gear; keep a streak going to unlock new places. Saved on this device.</p></div>
-    <div class="den-grid">
-      <div class="den-stage"><div class="pic" id="denPic" role="button" tabindex="0" aria-label="Give Allen a wiggle"></div><p class="who" id="denWho"></p></div>
-      <form class="den-ctl" id="denCtl" onsubmit="return false"></form>
-    </div>
-  </section>
-
   <section class="block play-explore" aria-labelledby="h-play" id="play">
-    <p class="kick">04 / Play and explore</p>
+    <p class="kick">03 / Play and explore</p>
     <h2 id="h-play">Not exam prep. <em>Just making things.</em></h2>
     <p class="lede">Open-ended studios for when you want to build or muck around. Good for Years 7–10, and for anyone taking a break.</p>
     <div class="play-links"><a class="btn big" href="year9/">Year 9 studio</a><a class="btn big" href="patterns/">Pattern studio</a><a class="btn big" href="m/inanga.html">The īnanga machine</a><a class="btn big" href="m/claw.html">The claw machine</a></div>
-    <section class="study-discover" aria-labelledby="h-discover">
-      <a href="https://lab.assembl.co.nz/next/#zoo" aria-label="Open the interactive 3D Habitat designer"><img src="thumbnails/habitat.jpg" alt="A captured view of the 3D habitat: a kākāpō model among trees, water, shelter and logs on a mint model base" width="800" height="600" loading="lazy"></a>
-      <div class="study-discover-copy"><span class="eyebrow">Make something · Next Lab</span><h2 id="h-discover">Build a world.<br>Change what happens.</h2><p>Turn the habitat around. Add shelter, water and a quiet retreat, then compare your choices. A real 3D design model, with an honest drawing fallback.</p><a class="btn primary" href="https://lab.assembl.co.nz/next/#zoo">Open Habitat designer →</a><small>Habitat is a learning model, not animal-care guidance.</small></div>
-    </section>
     <section class="creative-instruments" aria-labelledby="h-creative">
       <header><span class="eyebrow">Creative instruments · make your own art</span><h2 id="h-creative">What happens if you…?</h2><p>Four art studios. Make something, then download it, print it or send a remix link to a friend. Nothing is uploaded and there are no accounts.</p></header>
       <div class="creative-grid">
@@ -558,7 +539,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
   <footer class="hub-foot">
     <p>Free to use. Exam dates are from NZQA's 2026 timetable; check your admission slip, since your school's entries decide what you sit. We link to NZQA for past papers, marking schedules and exemplars instead of copying them, because NZQA restricts reproduction of its assessment material.</p>
     <p>Years 9–10 topics follow the refreshed New Zealand Curriculum: English and maths are in use from 2026; science and social sciences are required from 2027, so schools may still teach older content. Your school sets Year 9 and 10 exams.</p>
-    <p>Allen is an AI study helper made with Anthropic's Claude; messages to Allen go to Anthropic PBC (United States) to write the reply, and there is no account or tracking. Not made by or endorsed by NZQA or the Ministry of Education. <a href="teacher.html">Teachers: review the machines</a>.</p>
+    <p>The study helper is an AI made with Anthropic's Claude; messages to it go to Anthropic PBC (United States) to write the reply, and there is no account or tracking. Not made by or endorsed by NZQA or the Ministry of Education. <a href="teacher.html">Teachers: review the machines</a>.</p>
     <p class="as-foot" id="foot"></p>
   </footer>
 </div>
@@ -635,15 +616,15 @@ function renderStrip(){const el=$("strip"),today=nzDay(Date.now());const d=days(
   b.onclick=async()=>{const u=url();try{if(navigator.share&&matchMedia("(pointer: coarse)").matches){await navigator.share({title:`assembly · ${Y()[2]} study machines`,url:u});ok.textContent="Shared";return}
       await navigator.clipboard.writeText(u);ok.textContent="Copied · "+u.replace(/^https:\/\//,"")}catch(err){if(err&&err.name==="AbortError")return;ok.textContent=u}}})();
 
-// ---- study streak (this device), plus the places it unlocks for Allen
+// ---- study streak (this device)
 const LOG=K.readLog(), ST=A.state(LOG);
 (function(){const L=LOG;const dayset=new Set(L.map(x=>x.d));let n=0,cur=Date.now();if(!dayset.has(nzDay(cur)))cur-=864e5;
   while(dayset.has(nzDay(cur))){n++;cur-=864e5}
   const passed=L.filter(x=>x.kind==="pass").length,tried=new Set(L.map(x=>x.m)).size;
-  const miles=`<ul class="miles" aria-label="Streak milestones">${A.backgrounds.filter(b=>b.days).map(b=>`<li class="${ST.best>=b.days?"got":""}">${b.days} days · ${esc(A.scenes[b.id].label)}${ST.best>=b.days?" ✓":""}</li>`).join("")}</ul>`;
-  const next=ST.nextBg?`<span>${ST.nextBg.days-ST.best} more day${ST.nextBg.days-ST.best===1?"":"s"} in a row unlocks the ${esc(A.scenes[ST.nextBg.id].label.toLowerCase())} for Allen.</span>`:"";
+  const miles="";
+  const next="";
   $("streak").innerHTML=L.length?`<span class="num">${n}</span><span class="txt">day study streak${dayset.has(nzDay(Date.now()))?"":" · study today to keep it going"}<span>${passed} challenges passed · ${tried} machine${tried===1?"":"s"} tried · saved on this device</span>${next}</span>${miles}`
-   :`<span class="txt">Start a study streak<span>Open a machine and pass a challenge each day. Your streak is saved on this device, and it unlocks new places for Allen.</span></span>${miles}`})();
+   :`<span class="txt">Start a study streak<span>Open a machine and pass a challenge each day. Your streak is saved on this device.</span></span>${miles}`})();
 
 // ---- machine cards: year, standard and exam date on the face
 const THREE_PREVIEWS=new Set(["engine","fly","socials","earthspace","house","windtunnel","heart","shaky","vend","pinball","ai","atoms","bike","civics","claw","climate","data","ecology","energy","fish","genes","inanga","kokopu","lines","maps","market","materials","particles","phone","plan","queue","reactions","shapes","sky","slushie","space","vinyl"]);
@@ -666,7 +647,7 @@ function appTile(id,m){const g=gearFor(id),got=g.length&&g.every(it=>ST.has.has(
   <span class="app-art"><img src="thumbnails/${id}.jpg" alt="" width="800" height="500" loading="lazy" decoding="async"><span class="app-mode">${(id==="claw"||id==="slushie"||id==="phone"||id==="vinyl"||id==="bike"||id==="heart"||id==="socials"||id==="earthspace"||id==="house"||id==="windtunnel")?"Blender render · open 3D lesson":THREE_PREVIEWS.has(id)?"3D scene":"Interactive activity"}</span><span class="app-ex">${m.level==="junior"?"Years 7–10":"NCEA "+esc(m.level)}</span></span>
   <span class="app-body"><b>${esc(m.title)}</b><span class="app-bl">${esc(m.blurb||m.desc)}</span></span>
   <span class="app-chips">${chips.join("")}</span>
-  <span class="app-foot">${g.length?`<span class="gearnote${got?" got":""}" title="${got?"Unlocked":"Pass a challenge here to unlock"} for Allen: ${esc(g.map(it=>it.label).join(" + "))}">${got?"✓ ":""}${esc(g.map(it=>it.label).join(" + "))}</span>`:""}<span class="go" aria-hidden="true">Open</span></span></a>`}
+  <span class="app-foot"><span class="go" aria-hidden="true">Open</span></span></a>`}
 function renderMachines(){const y=yearNum();
   const list=Object.entries(D.machines).filter(([id,m])=>showAll||!(m.years&&m.years.length)||m.years.includes(y));
   const byGroup={};list.forEach(([id,m])=>{const k=K.subject(id);(byGroup[k]=byGroup[k]||[]).push([id,m])});
@@ -685,55 +666,6 @@ document.querySelectorAll("#bench .mx").forEach(a=>{const m=D.machines[a.dataset
   b.addEventListener("pointermove",e=>{const r=b.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{b.style.setProperty("--px",(x*-18).toFixed(2));b.style.setProperty("--py",(y*-12).toFixed(2))})});
   b.addEventListener("pointerleave",()=>{b.style.setProperty("--px",0);b.style.setProperty("--py",0)})})();
-
-// ---- Allen: hero, den and customiser
-let look=A.load();
-const shown=()=>{const n=String(look.name||"").trim();return n||"Allen"};
-const coatName=()=>(A.coats[look.coat]||A.coats.red).label.toLowerCase();
-const sceneLabel=()=>`${shown()}, a long-haired ${coatName()} dachshund, at the ${A.scenes[look.bg]?.label.toLowerCase()||"workshop"}`;
-function paint(){
-  $("heroName").textContent=shown();$("heroAllen").querySelector(".av").innerHTML=A.svg(look,{box:"bust"});
-  $("denPic").innerHTML=A.svg(look,{scene:true,label:sceneLabel()});
-  $("denName").textContent=shown();
-  const worn=["head","eyes","neck","prop"].map(s=>look.gear[s]).filter(Boolean).map(id=>A.label(id).toLowerCase());
-  $("denWho").innerHTML=`${esc(shown())}<small>${esc(A.coats[look.coat]?.label||"Red")} coat${worn.length?" · "+esc(worn.join(", ")):""} · ${esc(A.scenes[look.bg]?.label||"Workshop")}</small>`;
-}
-const SLOTS=[["head","Head"],["eyes","Eyes"],["neck","Neck"],["prop","Carrying"]];
-const thumbBox={head:"bust",eyes:"bust",neck:"neck",prop:"full"};
-function opt(name,value,checked,locked,inner,why,isNew){
-  return `<label class="opt${locked?" locked":""}"><input class="vh" type="radio" name="${name}" value="${esc(value)}"${checked?" checked":""}${locked?" disabled":""}><span class="opt-in">${inner}${locked?`<span class="lk">${esc(why)}</span>`:""}</span>${isNew?`<span class="new" aria-label="new">NEW</span>`:""}</label>`}
-function buildCtl(){
-  const seen=new Set(look.seen||[]),fresh=new Set([...ST.has].filter(k=>!seen.has(k)));
-  const plain={...look,gear:{}};
-  let o=`<div class="namebox"><label for="alName" class="den-ctl-l" style="font:600 12px var(--as-font);letter-spacing:.08em;text-transform:uppercase;color:var(--as-muted);width:100%">Name</label><input id="alName" maxlength="16" autocomplete="off" spellcheck="false" value="${esc(look.name)}"></div>`;
-  o+=`<fieldset><legend>Coat</legend><div class="opts">${Object.entries(A.coats).map(([k,c])=>opt("coat",k,look.coat===k,false,`<span class="thumb">${A.svg({...plain,coat:k},{box:"bust" })}</span><span class="nm">${esc(c.label)}</span>`)).join("")}</div></fieldset>`;
-  o+=`<fieldset><legend>Collar</legend><div class="opts swatches">${A.collars.map(([hex,lab])=>opt("collar",hex,look.collar===hex,false,`<span class="dot" style="background:${hex}"></span><span class="nm">${esc(lab)}</span>`)).join("")}</div></fieldset>`;
-  SLOTS.forEach(([slot,lab])=>{
-    o+=`<fieldset><legend>${lab}</legend><div class="opts">`+opt("g-"+slot,"",!look.gear[slot],false,`<span class="thumb">${A.svg(plain,{box:thumbBox[slot] })}</span><span class="nm">Nothing</span>`)+
-      A.items.filter(it=>it.slot===slot).map(it=>{const ok=ST.has.has(it.id);return opt("g-"+slot,it.id,look.gear[slot]===it.id&&ok,!ok,`<span class="thumb">${A.svg({...plain,gear:{[slot]:it.id}},{box:thumbBox[slot] })}</span><span class="nm">${esc(it.label)}</span>`,ST.why[it.id],ok&&fresh.has(it.id))}).join("")+`</div></fieldset>`});
-  o+=`<fieldset><legend>Place</legend><div class="opts">${A.backgrounds.map(b=>{const ok=ST.has.has("bg:"+b.id);return opt("bg",b.id,look.bg===b.id&&ok,!ok,`<span class="thumb wide">${A.svg({...look,bg:b.id},{scene:true })}</span><span class="nm">${esc(A.scenes[b.id].label)}</span>`,b.days?`Reach a ${b.days}-day streak`:"",ok&&b.days&&fresh.has("bg:"+b.id))}).join("")}</div></fieldset>`;
-  o+=`<label class="switch"><input type="checkbox" id="alMin"${look.minimal?" checked":""}><span>Tiny Allen in the machines<small>A small badge with no speech bubbles. Handy for Years 11–13, or anyone who wants a quieter bench.</small></span></label>`;
-  o+=`<div class="denbtns"><button type="button" class="btn" id="alRand">Surprise me</button><button type="button" class="btn" id="alReset">Back to plain Allen</button></div>`;
-  $("denCtl").innerHTML=o;
-  if(fresh.size){look.seen=[...new Set([...(look.seen||[]),...fresh])];A.save(look)}
-}
-SLOTS.forEach(([s])=>{if(look.gear[s]&&!ST.has.has(look.gear[s]))look.gear[s]=""});if(!ST.has.has("bg:"+look.bg))look.bg="workshop";
-buildCtl();paint();
-const ctl=$("denCtl");
-ctl.addEventListener("change",e=>{const t=e.target;
-  if(t.name==="coat")look.coat=t.value;else if(t.name==="collar")look.collar=t.value;else if(t.name==="bg")look.bg=t.value;
-  else if(t.name&&t.name.startsWith("g-"))look.gear[t.name.slice(2)]=t.value;else if(t.id==="alMin")look.minimal=t.checked;
-  A.save(look);paint();K.sfx("pop");
-  if(t.name==="coat"||t.name==="collar"){const f=document.activeElement&&document.activeElement.name,v=document.activeElement&&document.activeElement.value;buildCtl();const back=f&&ctl.querySelector(`input[name="${f}"][value="${CSS.escape(v)}"]`);back&&back.focus()}});
-ctl.addEventListener("input",e=>{if(e.target.id==="alName"){look.name=e.target.value.slice(0,16);A.save(look);paint()}});
-ctl.addEventListener("click",e=>{
-  if(e.target.id==="alRand"){const pickOne=a=>a[Math.floor(Math.random()*a.length)];
-    look.coat=pickOne(Object.keys(A.coats));look.collar=pickOne(A.collars)[0];
-    SLOTS.forEach(([s])=>{look.gear[s]=pickOne(["",...A.items.filter(it=>it.slot===s&&ST.has.has(it.id)).map(it=>it.id)])});
-    look.bg=pickOne(A.backgrounds.filter(b=>ST.has.has("bg:"+b.id))).id;A.save(look);buildCtl();paint();K.sfx("pop");$("alRand").focus()}
-  if(e.target.id==="alReset"){look={...A.defaults,name:look.name,seen:look.seen,minimal:look.minimal,gear:{...A.defaults.gear}};A.save(look);buildCtl();paint();K.sfx("pop");$("alReset").focus()}});
-const wig=()=>{const s=$("denPic").querySelector(".allen");if(!s||matchMedia("(prefers-reduced-motion: reduce)").matches)return;s.classList.remove("wiggle");void s.getBoundingClientRect();s.classList.add("wiggle");K.sfx("yip");setTimeout(()=>s.classList.remove("wiggle"),1100)};
-$("denPic").addEventListener("click",wig);$("denPic").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();wig()}});
 
 // ---- your exams: the chosen level's externals in date order, each with its machines
 function renderMine(){
@@ -759,7 +691,7 @@ function render(){const L=D.levels[tab];let o="";
     const linked=new Set(L.areas.flatMap(a=>a.topics.map(t=>t.machine)).filter(Boolean));
     const extra=a=>Object.entries(D.machines).filter(([id,m])=>!linked.has(id)&&(m.years||[]).includes(yr)&&(AREA_GROUPS[a.name]||[]).includes(K.subject(id))).sort((x,y)=>(x[1].level==="junior"?0:1)-(y[1].level==="junior"?0:1)).map(([id])=>id);
     o+=`<div class="jr">`+L.areas.map(a=>{const ms=[...new Set([...a.topics.map(t=>t.machine),...extra(a)].filter(m=>m&&D.machines[m]))];
-      return `<div class="jrow"><h3>${esc(a.name)}<small>${esc(a.status||"")}</small></h3><div class="acts">${ms.length?ms.map(mchip).join(""):`<span class="nomach">No machine for this yet. Allen can still help: ask him at the bottom right.</span>`}</div>
+      return `<div class="jrow"><h3>${esc(a.name)}<small>${esc(a.status||"")}</small></h3><div class="acts">${ms.length?ms.map(mchip).join(""):`<span class="nomach">No machine for this yet. The study helper can still help: it is at the bottom right.</span>`}</div>
         <details><summary>TOPICS</summary><ul>${a.topics.map(t=>{const m=t.machine&&D.machines[t.machine];return`<li>${esc(t.t)}${m?` · <a href="${m.href}">${esc(m.title)}</a>`:""}</li>`}).join("")}</ul></details></div>`}).join("")+`</div>`;
   } else {
     const subjects=[...new Set(L.standards.map(s=>s.subject))].sort();const n=L.standards.length,withM=L.standards.filter(s=>machinesFor(s.num).length).length;
@@ -810,7 +742,7 @@ try{K.count("view","hub")}catch(e){}
     box.innerHTML=`<button type="button" data-s="" aria-pressed="${!subj}">All subjects</button>`+groups.map(g=>`<button type="button" data-s="${g.dataset.subj}" aria-pressed="${g.dataset.subj===subj}">${g.querySelector("h3").childNodes[1].textContent.trim()}</button>`).join("");filter()}
   function filter(){const words=q.value.toLowerCase().split(/\s+/).filter(Boolean);let shown=0;
     document.querySelectorAll("#machines .subj").forEach(g=>{let any=0;g.querySelectorAll(".app").forEach(a=>{const ok=(!subj||g.dataset.subj===subj)&&words.every(w=>a.dataset.find.includes(w));a.hidden=!ok;if(ok){any++;shown++}});g.hidden=!any});
-    n.textContent=words.length||subj?(shown?`${shown} machine${shown===1?"":"s"} found`:"Nothing matches for this year. Try \"Show every year\", a shorter word, or ask Allen (bottom right)."):""}
+    n.textContent=words.length||subj?(shown?`${shown} machine${shown===1?"":"s"} found`:"Nothing matches for this year. Try \"Show every year\", a shorter word, or ask the study helper (bottom right)."):""}
   q.addEventListener("input",filter);
   box.addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;subj=b.dataset.s;box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));filter()});
   addEventListener("machines:rendered",build);build();
