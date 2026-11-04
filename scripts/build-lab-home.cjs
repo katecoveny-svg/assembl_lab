@@ -3,7 +3,7 @@
 // and the maturity ladder (lab/maturity.json). Run after editing either file:  node scripts/build-lab-home.cjs
 //
 // The page is static HTML on purpose: with no JS, or with reduced motion, it is the complete story. lab/story.js
-// only adds the sticky twin stage, the moving DO glass orb and live data labels on top.
+// only adds the moving DO glass orb and live data labels on top.
 //
 // Curation is presentation only. Every world in LAB_WORLDS and every instrument the old /discover/ page linked
 // appears here exactly once; scripts/check-lab-home.cjs fails if one goes missing or shows twice.
@@ -63,6 +63,11 @@ const HOME = [
 
 /* ── chapter 3: study machines (real offline renders, linked to their machine pages) ── */
 const MACHINES = [
+  { href: '/study/m/windtunnel.html', title: 'The wind tunnel', line: 'An F1-style race car in a wind tunnel: drag, downforce and power, F = ½ρv²CdA.', meta: 'Physics · NCEA Level 1–2', img: ['/assets/models/windtunnel/windtunnel-hero.jpg', 1600, 1000], alt: 'Offline render of a race car in a wind tunnel with smoke lines over the wings' },
+  { href: '/study/m/earthspace.html', title: 'Earth & Space', line: 'Star colours, light-years, day and night, the Moon’s phases and eclipses.', meta: 'Science · Year 9', img: ['/assets/models/earthspace/earthspace-hero.jpg', 1600, 1000], alt: 'Offline render of the Sun, Earth and Moon with a row of stars by colour' },
+  { href: '/study/m/house.html', title: 'The house design machine', line: 'Site a house on a hillside, then plan, section and download real CAD drawings.', meta: 'DVC · Technology', img: ['/assets/models/house/house-hero.jpg', 1600, 1000], alt: 'Offline render of a modern house on a terraced hillside' },
+  { href: '/study/m/world.html', title: 'Guess the world', line: 'Every country since 1800 in one moving chart. Guess first, then see the real data.', meta: 'Social studies · Statistics', img: ['/study/thumbnails/world.jpg', 800, 500], alt: 'A bubble chart of income against life expectancy for every country' },
+  { href: '/study/m/socials.html', title: 'The social studies desk', line: 'Graphs, sources, values and government: the Year 9 exam on one desk.', meta: 'Social studies · Year 9', img: ['/assets/models/socials/socials-hero.webp', 1600, 1000], alt: 'Offline render of a study desk with a graph board, clock and figures' },
   { href: '/study/m/claw.html', title: 'The claw machine', line: 'Relative frequency, tree diagrams and expected value: is it worth $2?', meta: 'Maths · Years 9–11', img: ['/lab/previews/claw-blender.webp', 923, 1050], alt: 'Offline render of the claw machine cabinet' },
   { href: '/study/m/slushie.html', title: 'The slushie machine', line: 'Freezing, latent heat, sugar and energy flow inside a slushie machine.', meta: 'Science · Years 9–10', img: ['/lab/previews/slushie-blender.webp', 923, 1050], alt: 'Offline render of the slushie machine' },
   { href: '/study/m/particles.html', title: 'The particle machine', line: 'Heating curves, melting, boiling and gas pressure, from ice to steam.', meta: 'Science · Years 9–10', img: ['/lab/previews/particles-blender.webp', 1400, 1050], alt: 'Offline render of the particle apparatus: beaker on a hot plate, thermometer and syringe' },
@@ -76,14 +81,12 @@ const YEARS = [['/study/#junior', 'Years 7–8'], ['/study/#y9', 'Year 9'], ['/s
 const STUDY_DOORS = [
   { id: 'year9', line: 'A study sprint, an app builder, pixel analysis and an AI judgement check. No login.', truth: 'live' },
   { id: 'print', line: 'Shape a downhill bike, check its drawing, export STL or 3MF for your printer.', truth: 'live' },
-  { id: 'next', line: 'Fourteen studios: history, optics, weather, business, music and the Kaitiaki 2040 game.', truth: 'sim' },
 ];
 
 /* ── chapter 4: the playground, a calm index (no thumbnails: these are instruments, not models) ── */
 const PLAY = [
   { href: '/study/patterns/', title: 'Living Studio', line: 'Sculpt real geometry, style the light, export the mesh.', truth: 'live' },
   { world: 'ar', title: 'assembl AR', line: 'Make 3D text or a framed photo and place it in your room.', truth: 'live' },
-  { href: '/next/#zoo', title: 'Habitat designer', line: 'Compare space, shelter and water in a habitat. A teaching model.', truth: 'sim' },
   { href: '/instruments/reality-remix/', title: 'Reality Remix', line: 'Push and swirl thousands of colour splats into a picture.', truth: 'ill' },
   { href: '/instruments/impossible-objects/', title: 'Impossible Objects', line: 'Flip the drawing order to build a Penrose triangle.', truth: 'ill' },
   { href: '/instruments/time-sculpture/', title: 'Time Sculpture', line: 'Draw a stroke and watch it echo into a sculpture.', truth: 'ill' },
@@ -108,7 +111,6 @@ const stageSteps = STAGE.map((s, i) => {
   </div>
  </li>`;
 }).join('\n ');
-const stageFrames = STAGE.map((s, i) => `<figure class="tw-frame" data-i="${i}"${i === 0 ? ' data-on' : ''}><img src="${s.img[0]}" alt="" width="${s.img[1]}" height="${s.img[2]}" ${i === 0 ? '' : 'loading="lazy" '}decoding="async"></figure>`).join('');
 
 const rowTile = (w, line, truth, opts = {}) => {
   const pic = opts.pic ? `<span class="row-pic frame">${img(opts.pic, '', 240, 170)}</span>` : '';
@@ -117,7 +119,10 @@ const rowTile = (w, line, truth, opts = {}) => {
 const moreTwins = MORE_TWINS.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: w.poster || `/assets/posters/${w.id}.webp` }); }).join('\n  ');
 const homeRows = HOME.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: `/assets/posters/${w.id}.webp` }); }).join('\n  ');
 
-const machines = MACHINES.map((m, i) => `<li class="mc${i < 2 ? ' mc-lead' : ''}"><a href="${m.href}">
+// two lead cards, then rows of three; a short last row stretches so the grid never ends with a gap
+const tail = (MACHINES.length - 2) % 3;
+const mcClass = i => (i < 2 ? ' mc-lead' : tail && i >= MACHINES.length - tail ? (tail === 2 ? ' mc-wide' : ' mc-full') : '');
+const machines = MACHINES.map((m, i) => `<li class="mc${mcClass(i)}"><a href="${m.href}">
   <figure class="frame">${img(m.img[0], m.alt, m.img[1], m.img[2])}</figure>
   <span class="mc-copy"><span class="kind">${esc(m.meta)}</span><strong>${esc(m.title)}</strong><span class="row-line">${esc(m.line)}</span><span class="meta">${chip('sim')}</span></span>
  </a></li>`).join('\n ');
@@ -173,10 +178,6 @@ const html = `<!doctype html>
   <p class="lede">Twins of the kinds of places New Zealand runs on. The businesses are invented; the public figures that feed them are named. Change one thing and follow where it goes.</p>
  </div>
  <div class="tw">
-  <div class="tw-stage" aria-hidden="true">
-   <div class="tw-stage-frame frame">${stageFrames}</div>
-   <div class="tw-progress"><span class="tw-count"><b>1</b> of ${STAGE.length}</span><span class="tw-bar"><i></i></span></div>
-  </div>
   <ol class="tw-steps">
  ${stageSteps}
   </ol>

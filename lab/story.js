@@ -1,36 +1,9 @@
 // assembl lab home: small enhancements on top of a complete static page (see scripts/build-lab-home.cjs).
-// 1. The twin stage: on wide screens one sticky frame shows the render of whichever twin you are reading.
 // 2. The DO glass orb: a small WebGL2 scene in the hero, loaded after first paint, skipped for reduced motion.
 // 3. Live labels: /feeds.js fires "assembl:live"; the static source lines stay as the fallback.
 (() => {
   'use strict';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-
-  /* 1 ── twin stage ── */
-  const steps = [...document.querySelectorAll('.tw-step')];
-  const frames = [...document.querySelectorAll('.tw-frame')];
-  const count = document.querySelector('.tw-count b');
-  const bar = document.querySelector('.tw-bar');
-  let active = -1;
-  function show(i) {
-    if (i === active) return;
-    active = i;
-    steps.forEach((s, k) => s.toggleAttribute('data-on', k === i));
-    frames.forEach((f, k) => {
-      f.toggleAttribute('data-on', k === i);
-      // warm the next render so the swap never shows an empty frame
-      if (k === i + 1 || k === i) f.querySelector('img')?.removeAttribute('loading');
-    });
-    if (count) count.textContent = String(i + 1);
-    if (bar) bar.style.setProperty('--p', ((i + 1) / steps.length).toFixed(4));
-  }
-  if (steps.length && 'IntersectionObserver' in window) {
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) if (e.isIntersecting) show(Number(e.target.dataset.i));
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    steps.forEach(s => io.observe(s));
-    show(0);
-  }
 
   /* 2 ── DO glass orb ── */
   const host = document.getElementById('orb');

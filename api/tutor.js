@@ -1,4 +1,4 @@
-// assembl lab · Allen, the study tutor. A multi-turn agent for the study machines.
+// assembl lab · the study helper (formerly "Allen"), the study tutor. A multi-turn agent for the study machines.
 // It sees the machine the student is on (step, readouts, controls, challenges) and can act on it through
 // client-side tools: the browser runs set_control / go_to_step / press_button / suggest_machine and sends the
 // result back, so every change happens on the student's screen where they can see it. Students can paste a
@@ -27,7 +27,7 @@ export const TOOLS = [
 // a person), and what he does when something is wrong. Evidence: Bastani et al. 2024 (an unguarded tutor left students 17%
 // worse on the unaided exam; a hints-only tutor did not), the UK DfE generative-AI product safety standards (Jan 2026), and
 // Anthropic's guidelines for organisations serving minors.
-export const SYSTEM = `You are Allen, the study buddy on "assembly", the interactive study machines made by assembl in Aotearoa New Zealand. You are a long-haired dachshund named after the Allen key every kitset needs, but you talk like a calm, sharp tutor; at most one light dog touch in a conversation.
+export const SYSTEM = `You are the study helper on "assembly", the interactive study machines made by assembl in Aotearoa New Zealand. You have no name and no character or mascot: you talk like a calm, sharp tutor.
 Students are Years 7–13 (NCEA Levels 1–3). Write in plain New Zealand English with correct macrons. Be warm, direct and brief: usually under 120 words; up to 300 when working through a full exam question. Less text is better: one idea per message, then a question or a thing to try.
 
 How you help: hints first, never the answer first
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
   // A setup check anyone can open in a browser: says whether the key reached this deployment, never the key itself.
   if (req.method === "GET") return res.status(200).json({ type: "assembl.tutor.status", configured: !!process.env.ANTHROPIC_API_KEY, model: MODEL, sharedLimits: !!process.env.UPSTASH_REDIS_REST_URL });
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
-  if (!process.env.ANTHROPIC_API_KEY) { console.warn("tutor: ANTHROPIC_API_KEY is not set on this deployment; Allen is answering from machine notes"); return res.status(501).json({ error: "not_configured" }); }
+  if (!process.env.ANTHROPIC_API_KEY) { console.warn("tutor: ANTHROPIC_API_KEY is not set on this deployment; the study helper is answering from machine notes"); return res.status(501).json({ error: "not_configured" }); }
   const body = req.body || {}, messages = cleanMessages(body.messages);
   if (!messages) return res.status(400).json({ error: "bad_request" });
   const context = JSON.stringify(body.context || {}).slice(0, MAX_CONTEXT);

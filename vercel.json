@@ -26,6 +26,11 @@
  },
  "redirects": [
   {
+   "source": "/next/:path*",
+   "destination": "/",
+   "permanent": false
+  },
+  {
    "source": "/",
    "has": [
     {
