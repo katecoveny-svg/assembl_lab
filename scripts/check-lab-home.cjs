@@ -16,10 +16,12 @@ async (page) => {
  check(await page.locator('.tw-step .truth[data-k="sim"]').count()===await page.locator('.tw-step').count(),'every twin says Simulated');
  const imgs=await page.locator('main img').evaluateAll(xs=>xs.map(x=>x.getAttribute('src')));
  check(imgs.every(s=>!/instrument-previews|soft-matter|squishy/.test(s)),'no cartoon-face previews on the page');
- // sticky stage follows the reading position
- await page.locator('#twin-dairy').scrollIntoViewIfNeeded();await page.evaluate(()=>{const e=document.getElementById('twin-dairy');scrollTo(0,e.offsetTop+e.offsetHeight/2-innerHeight/2+document.querySelector('.tw').offsetTop)});await page.waitForTimeout(700);
- check(await page.locator('.tw-step[data-on]').getAttribute('id')==='twin-dairy','stage tracks the twin in view');
- check(await page.locator('.tw-frame[data-on]').count()===1,'one render on the stage at a time');
+ // the twins are a grid of cards: every twin shows its render, and no sticky stage is left behind
+ check(await page.locator('.tw-stage, .tw-frame').count()===0,'no sticky twin stage');
+ check(await page.locator('.tw-step .tw-pic img').count()===await page.locator('.tw-step').count(),'every twin card shows its render');
+ // the newest study machines are on the home (the wind tunnel's race car leads), and the Next Lab has gone
+ for(const m of ['windtunnel','earthspace','house','world','socials'])check(tiles.includes('/study/m/'+m+'.html'),m+' machine on the home');
+ check(tiles.every(h=>!/^\/next\//.test(h||'')),'no Next Lab links');
  // keyboard: skip link first, focus visible
  await page.evaluate(()=>scrollTo(0,0));await page.keyboard.press('Tab');
  check(await page.evaluate(()=>document.activeElement.className)==='skip','skip link is the first tab stop');
