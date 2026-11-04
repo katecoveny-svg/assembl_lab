@@ -55,6 +55,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .marks{position:absolute;inset:0;pointer-events:none}
 .mark{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--deep);color:var(--paper);font:500 10px/20px var(--mono);text-align:center;opacity:0;transform:scale(.4);transition:opacity .35s,transform .35s cubic-bezier(.2,.8,.2,1.2)}
 .mark.on{opacity:1;transform:scale(1)}.mark.away{opacity:.28}
+/* a mark nudged off its spot (narrow screens) keeps a small dot on the exact place it points to */
+.mark.moved::after{content:"";position:absolute;left:calc(50% + var(--ax,0px) - 2.5px);top:calc(50% + var(--ay,0px) - 2.5px);width:5px;height:5px;border-radius:50%;background:var(--deep);box-shadow:0 0 0 1.5px var(--paper);z-index:-1}
 .stage-cap{position:absolute;left:var(--gut);right:var(--gut);bottom:18px;margin:0;font-size:11px;color:var(--rose);display:flex;gap:8px;align-items:center;flex-wrap:wrap;transition:opacity .4s}
 .stage.collapsed .stage-cap{opacity:0}
 .pins{list-style:none;margin:0;padding:0;position:absolute;inset:0;pointer-events:none}

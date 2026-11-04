@@ -99,6 +99,30 @@ function anchors() {
   return posterAnchors.anchors.map((a) => ({ id: a.id, x: ox + a.x * s, y: oy + a.y * s, visible: true }));
 }
 const SIDE = { dash: "R", labels: "R", sticker: "R", tag: "R", door: "L", filler: "L", flag: "L" };
+// narrow screens: the odometer, the WOF labels and the price sticker all sit on the windscreen, a few pixels apart, so their
+// numbered marks would stack. Push the shown marks apart (just far enough to read every number) and leave a small dot on the
+// exact spot whenever a mark had to move.
+const MARK_GAP = 24;
+function spreadMarks(on, A) {
+  const pts = on.map((p) => A[p.id] && { id: p.id, ax: A[p.id].x, ay: A[p.id].y, x: A[p.id].x, y: A[p.id].y }).filter(Boolean);
+  for (let it = 0; it < 40; it++) {
+    let moved = false;
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const a = pts[i], b = pts[j]; let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      if (d >= MARK_GAP) continue;
+      if (d < 0.01) { dx = j % 2 ? 1 : -1; dy = -0.6; d = Math.hypot(dx, dy); } // same spot: split sideways and up
+      const push = (MARK_GAP - d) / 2 + 0.5, ux = dx / d, uy = dy / d;
+      a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push; moved = true;
+    }
+    if (!moved) break;
+  }
+  for (const pt of pts) {
+    const m = marksEl.querySelector(`[data-id="${pt.id}"]`), dx = pt.ax - pt.x, dy = pt.ay - pt.y;
+    m.style.left = pt.x + "px"; m.style.top = pt.y + "px";
+    m.style.setProperty("--ax", dx.toFixed(1) + "px"); m.style.setProperty("--ay", dy.toFixed(1) + "px");
+    m.classList.toggle("moved", Math.hypot(dx, dy) > 12); // under 12 px the mark still covers its spot
+  }
+}
 function layout() {
   const A = Object.fromEntries(anchors().map((a) => [a.id, a])), carBox = $("#stage-car").getBoundingClientRect(), W = carBox.width, H = carBox.height, wide = !narrow();
   const on = PINS.filter((p) => p.beat <= beat && beat < 8);
@@ -108,7 +132,7 @@ function layout() {
     m.style.left = a.x + "px"; m.style.top = a.y + "px"; m.classList.toggle("on", isOn && !wide); m.classList.toggle("away", !a.visible);
     li.classList.toggle("away", isOn && !a.visible);
   }
-  if (!wide) { leadersEl.querySelectorAll("line,circle").forEach((x) => x.setAttribute("opacity", 0)); return; }
+  if (!wide) { leadersEl.querySelectorAll("line,circle").forEach((x) => x.setAttribute("opacity", 0)); spreadMarks(on, A); return; }
   // desktop: labels beside the car, kept apart, with a leader line to the part
   for (const side of ["L", "R"]) {
     const list = on.filter((p) => SIDE[p.id] === side).map((p) => ({ p, a: A[p.id], li: pinsEl.querySelector(`[data-id="${p.id}"]`) })).filter((x) => x.a).sort((x, y) => x.a.y - y.a.y);
