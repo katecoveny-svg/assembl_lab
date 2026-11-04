@@ -92,8 +92,8 @@
   "hatch": {
    "file": "hatch.glb",
    "label": "Small hybrid hatch",
-   "sha256": "8b16e4de668ff474a19d40a3e2ffa466df79396d9114afa641cc133011b2441a",
-   "bytes": 975264,
+   "sha256": "db53e0de0291cd3090d260a9205aa910b8a209410a36f1d90f410c0c7adca0dc",
+   "bytes": 976052,
    "dimensions_m": {
     "length": 4.05,
     "width": 1.695,
@@ -174,8 +174,8 @@
   "sedan": {
    "file": "sedan.glb",
    "label": "Sedan",
-   "sha256": "e02a89f7add6536e254beb876121dcc512f2d3f3e915104746394668796145b7",
-   "bytes": 1002680,
+   "sha256": "8bfa20fbbf1651265642f87b0590cc1077cd7ebe9cc0ab99a80ac8307db20fa9",
+   "bytes": 1003472,
    "dimensions_m": {
     "length": 4.69,
     "width": 1.8,
@@ -256,8 +256,8 @@
   "wagon": {
    "file": "wagon.glb",
    "label": "Station wagon",
-   "sha256": "51cd3489fa09d17dfd0f237d3d62d06071138d27c79c31d33b73e9c9600b08fe",
-   "bytes": 1043144,
+   "sha256": "9dee2648da53dca5ded4aa8950387e299bf4e42bddf7f1a9f2a99e9b1bebb03a",
+   "bytes": 1043936,
    "dimensions_m": {
     "length": 4.66,
     "width": 1.79,
@@ -338,8 +338,8 @@
   "suv": {
    "file": "suv.glb",
    "label": "Mid-size SUV",
-   "sha256": "08995c880dda0ed38117802ace649dd5d94c53eac418c8ebc60bbbd33b9b264d",
-   "bytes": 1086260,
+   "sha256": "ceace006a382fd8c7e2d9ca15a949f1b6bd543254c1f766a2145b6c4731e9f48",
+   "bytes": 1087052,
    "dimensions_m": {
     "length": 4.6,
     "width": 1.855,
@@ -420,8 +420,8 @@
   "ute": {
    "file": "ute.glb",
    "label": "Double-cab ute",
-   "sha256": "dc78abff08900691207ec2c3b625b3d47089f57f95f5bdc86990ed3a08b0f44b",
-   "bytes": 1059956,
+   "sha256": "b4f46d456ff32780b4b7760c7ce475c4087b3a282a992c88b6be1b542f3e41c4",
+   "bytes": 1060760,
    "dimensions_m": {
     "length": 5.33,
     "width": 1.86,
@@ -502,8 +502,8 @@
   "van": {
    "file": "van.glb",
    "label": "Long-wheelbase van",
-   "sha256": "a169dcc53bfcdf99d6a6aa0d7bf4fdbb4c771642c7a8c060c7e03d978ec7dfe3",
-   "bytes": 989604,
+   "sha256": "c87b5962c2129a0f399611f6a9eb181c6d44ac053e4a641744ecd12a11d1e963",
+   "bytes": 990388,
    "dimensions_m": {
     "length": 5.265,
     "width": 1.88,

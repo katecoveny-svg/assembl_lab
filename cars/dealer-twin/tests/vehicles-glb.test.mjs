@@ -85,6 +85,16 @@ for (const body of BODIES) test(`${body}: real-world size in metres, origin at g
   assert.ok(D.length > 3.9 && D.length < 5.4 && D.height > 1.4 && D.height < 2.05, "plausible road-vehicle size");
 });
 
+// the cutter walls keep their own materials once the window caps are dropped (a by-hand index shift on top of
+// Mesh.materials.pop used to turn the headlamp pockets into SEAL and the ute's tub floor into HOUSING)
+for (const body of BODIES) test(`${body}: BODY keeps its cut-opening materials: lamp housings are HOUSING, no build-time caps`, () => {
+  const { json } = glb(body), node = json.nodes.find((n) => n.name === "BODY");
+  const mats = json.meshes[node.mesh].primitives.map((p) => json.materials[p.material].name);
+  for (const m of ["PAINT", "SEAL", "HOUSING", "TRIM_BLACK", "UNDER"]) assert.ok(mats.includes(m), `BODY has ${m} (has ${mats})`);
+  assert.ok(!json.materials.some((m) => m.name === "CAP_OPEN"), "no CAP_OPEN material exported");
+  assert.equal(mats.includes("TRAY"), body === "ute", "only the ute's tub uses TRAY");
+});
+
 test("tyre and proportion sanity: a small hatch is ~4.05 m, a ute is the longest, a van the tallest", () => {
   const d = (b) => contract.vehicles[b].dimensions_m;
   assert.ok(Math.abs(d("hatch").length - 4.05) < .02);
