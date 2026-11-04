@@ -1,4 +1,4 @@
-// Reality Remix: a picture made of thousands of soft colour splats.
+// Reality Remix: a picture made of thousands of colour splats (flat-topped, so the picture stays crisp).
 // Push, swirl, scatter, mend, paint and tint them. WebGL2 with a Canvas 2D fallback.
 import { launch } from "../kit/studio.js";
 import { hexToRgb } from "../kit/core.js";
@@ -35,7 +35,7 @@ const engine = {
   ],
   options: [{ id: "motion", label: "Movement", value: "shimmer", choices: [{ id: "shimmer", label: "Shimmer" }, { id: "still", label: "Still" }] }],
   how: [
-    { title: "It's all splats", text: "Your picture is thousands of soft ovals of colour. Each one fades out from its middle (a 2D Gaussian), so overlapping splats blend like wet paint.", svg: svgSplats },
+    { title: "It's all splats", text: "Your picture is thousands of ovals of colour. Each one is solid in the middle and fades quickly at its edge, so overlapping splats blend like wet paint but the picture stays crisp.", svg: svgSplats },
     { title: "Every splat remembers home", text: "Mend and Rebuild pull splats back to where the seed first put them. Spring back makes them drift home by themselves. It's a drawing rule, not real physics.", svg: svgHome },
     { title: "Same seed, same picture", text: "The seed number feeds a random-number recipe. Same seed and settings make the same starting picture, fitted to your screen. That's what a remix link shares.", svg: svgSeed },
   ],
@@ -79,16 +79,16 @@ const engine = {
         float ph = float(gl_InstanceID) * 0.618;
         vec2 p = pa.xy + uShimmer * 0.007 * vec2(sin(uTime * 0.9 + ph * 7.0), cos(uTime * 0.7 + ph * 5.0));
         float c = cos(pa.z), s = sin(pa.z);
-        vec2 q = corner * vec2(pa.w, sc.x) * uSize * 2.6;
+        vec2 q = corner * vec2(pa.w, sc.x) * uSize * 1.8;
         vec2 w = p + vec2(c * q.x - s * q.y, s * q.x + c * q.y);
         gl_Position = vec4(w.x * uScale.x, -w.y * uScale.y, 0.0, 1.0);
-        vUv = corner * 2.6; vCol = vec4(sc.yzw, al);
+        vUv = corner * 1.8; vCol = vec4(sc.yzw, al);
       }`;
     const fs = `#version 300 es
       precision mediump float;
       in vec2 vUv; in vec4 vCol; out vec4 o;
       void main(){
-        float g = exp(-0.5 * dot(vUv, vUv));
+        float r2 = dot(vUv, vUv), g = exp(-0.5 * r2 * r2);   // flat-topped: same size, crisp edge (a plain Gaussian read as out of focus)
         if (g < 0.035) discard;
         float a = vCol.a * g;
         vec3 col = vCol.rgb * (0.92 + 0.16 * g);
@@ -382,8 +382,8 @@ const engine = {
       const g = c.getContext("2d"), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
       const [r, gg, b] = hexToRgb(hex);
       for (let s = 0; s <= 6; s++) {
-        const d = (s / 6) * 3;
-        grd.addColorStop(s / 6, `rgba(${r},${gg},${b},${Math.exp(-0.5 * d * d).toFixed(3)})`);
+        const d = (s / 6) * 1.8;
+        grd.addColorStop(s / 6, `rgba(${r},${gg},${b},${Math.exp(-0.5 * d * d * d * d).toFixed(3)})`);
       }
       g.fillStyle = grd;
       g.fillRect(0, 0, 64, 64);
@@ -401,7 +401,7 @@ const engine = {
       const c = Math.cos(this.a[i]), s = Math.sin(this.a[i]), kx = this.sx[i] * sz * m, ky = this.sy[i] * sz * m;
       g.setTransform(c * kx, s * kx, -s * ky, c * ky, W / 2 + this.x[i] * m, H / 2 + this.y[i] * m);
       g.globalAlpha = this.al[i];
-      g.drawImage(this.sprites[this.ci[i] % this.sprites.length], -3, -3, 6, 6);
+      g.drawImage(this.sprites[this.ci[i] % this.sprites.length], -1.8, -1.8, 3.6, 3.6);
     }
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalAlpha = 1;
