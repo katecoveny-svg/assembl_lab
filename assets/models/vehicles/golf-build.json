@@ -1,0 +1,170 @@
+{
+ "generator": "assets/models/vehicles/source/build_golf.py",
+ "blender": "5.2.3 LTS",
+ "file": "golf.glb",
+ "label": "Five-door hatch (2020-on Golf)",
+ "note": "No badges, logos or lettering; blank number plates. Original geometry, no textures.",
+ "sha256": "43e8170b7daea8904ad4967bda3a11e2379d276892271e54c667920b195a41eb",
+ "bytes": 1172360,
+ "tris": 42173,
+ "tris_body": 18231,
+ "budget": {
+  "tris": 60000,
+  "bytes": 2000000,
+  "textures": 0
+ },
+ "paint_material": "PAINT",
+ "paints": {
+  "kings-red": {
+   "hex": "#8E1119",
+   "metallic": 0.5,
+   "roughness": 0.27,
+   "label": "Kings Red metallic",
+   "clearcoat": 1.0
+  },
+  "moonstone": {
+   "hex": "#8A8C8D",
+   "metallic": 0.1,
+   "roughness": 0.3,
+   "label": "Moonstone Grey",
+   "clearcoat": 1.0
+  },
+  "pure-white": {
+   "hex": "#ECEDEA",
+   "metallic": 0.0,
+   "roughness": 0.28,
+   "label": "Pure White",
+   "clearcoat": 1.0
+  },
+  "atlantic-blue": {
+   "hex": "#1E3653",
+   "metallic": 0.65,
+   "roughness": 0.28,
+   "label": "Atlantic Blue metallic",
+   "clearcoat": 1.0
+  }
+ },
+ "hero_paint": "kings-red",
+ "dimensions_m": {
+  "length": 4.284,
+  "width": 1.789,
+  "height": 1.456,
+  "wheelbase": 2.636,
+  "track": 1.55,
+  "front_overhang": 0.86,
+  "tyre": "225/45R17",
+  "tyre_diameter": 0.634
+ },
+ "measured_body": {
+  "length": 4.284,
+  "width": 1.789,
+  "height": 1.456,
+  "ground_clearance_body": 0.178
+ },
+ "wheel_radius_m": 0.3171,
+ "nodes": {
+  "VEHICLE_ROOT": {
+   "pivot_gltf_m": [
+    0.0,
+    0.0,
+    -0.0
+   ]
+  },
+  "STEER_FL": {
+   "pivot_gltf_m": [
+    1.282,
+    0.31715,
+    -0.775
+   ]
+  },
+  "WHEEL_FL": {
+   "pivot_gltf_m": [
+    1.282,
+    0.31715,
+    -0.775
+   ]
+  },
+  "STEER_FR": {
+   "pivot_gltf_m": [
+    1.282,
+    0.31715,
+    0.775
+   ]
+  },
+  "WHEEL_FR": {
+   "pivot_gltf_m": [
+    1.282,
+    0.31715,
+    0.775
+   ]
+  },
+  "HUB_RL": {
+   "pivot_gltf_m": [
+    -1.354,
+    0.31715,
+    -0.775
+   ]
+  },
+  "WHEEL_RL": {
+   "pivot_gltf_m": [
+    -1.354,
+    0.31715,
+    -0.775
+   ]
+  },
+  "HUB_RR": {
+   "pivot_gltf_m": [
+    -1.354,
+    0.31715,
+    0.775
+   ]
+  },
+  "WHEEL_RR": {
+   "pivot_gltf_m": [
+    -1.354,
+    0.31715,
+    0.775
+   ]
+  }
+ },
+ "stations_gltf_m": {
+  "cowl": 0.942,
+  "roof_front": 0.142,
+  "roof_rear": -1.708,
+  "bonnet_front": 2.027,
+  "belt": 0.9854,
+  "sill": 0.178,
+  "wheel_radius": 0.3171,
+  "length": 4.284,
+  "width": 1.789,
+  "height": 1.456
+ },
+ "materials": [
+  "ARCH",
+  "BRAKE",
+  "CALIPER",
+  "CLADDING",
+  "FRIT",
+  "GAP",
+  "GLASS",
+  "GLASS_DARK",
+  "HONEY",
+  "HOUSING",
+  "LENS",
+  "LIGHTBAR",
+  "MIRROR_GLASS",
+  "PAINT",
+  "PLATE",
+  "PROJECTOR",
+  "RIM",
+  "RIM_INNER",
+  "SEAL",
+  "STEEL_WHEEL",
+  "TAIL_DARK",
+  "TAIL_LENS",
+  "TAIL_LINE",
+  "TRIM_BLACK",
+  "TYRE",
+  "UNDER"
+ ]
+}

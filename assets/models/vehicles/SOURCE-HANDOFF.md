@@ -120,3 +120,31 @@ review only.
   distinctive "face"); arch flares on the cars show a soft reflection kink above the front wheel; the van front grille reads
   slightly soft; panel gaps are 9 mm painted bands rather than modelled grooves.
 - **Not verified:** real phones, Safari, AR, accuracy against any real vehicle's drawings.
+
+## The /cars/ hero: a five-door Golf (`golf.glb`)
+
+Not part of the generic set or its contract (the contract tests expect exactly six bodies). Built by `source/build_golf.py`,
+which imports `build_vehicles.py` and reuses its loft, cutters, panels, wheels and studio, with Golf-specific curves and parts:
+a crisper shoulder line, bonnet creases, a lower door feature line, slim LED headlamps joined by a light bar over a narrow upper
+grille, a wide lower intake with corner air curtains, horizontal tail lamps split with the tailgate, a roof spoiler, the thick
+forward-leaning C-pillar and five double-spoke 17" alloys. **No badges, logos or lettering; blank plates.** Original geometry.
+
+```sh
+/path/to/python-with-bpy assets/models/vehicles/source/build_golf.py                       # golf.glb + golf-build.json (~10 s)
+/path/to/python-with-bpy assets/models/vehicles/source/build_golf.py --render --which=hero,sheet \
+    --samples=96 --sheet-samples=64 --sheet-res=800x500 --out=<png dir>                    # Cycles: golf-hero + sheet views (~2 min)
+node --test cars/tests/*.test.mjs
+```
+
+Real dimensions: 4.284 × 1.789 × 1.456 m, wheelbase 2.636, front overhang 0.86, track 1.55, 225/45R17. About 42k triangles and
+1.17 MB (its own budget: 60k / 2 MB). The /cars/ stage loads it through `cars/glbkit.js`, which measures the windscreen, bonnet,
+roof, doors and belt off the model by ray casts, so the notice parts land on the right panels; the kit3d hatch is the fallback.
+`renders/golf-hero.webp` and `renders/golf-contact-sheet.webp` are offline Cycles renders (render-only: thin glass, interior
+blockout, a faint glow in the lamp housings), not the browser runtime.
+
+Known limits: the side glass in the rear three-quarter catches the studio's bright side strips; panel gaps are painted bands; the
+lower door feature line is subtle. A likeness of the car's proportions and graphics, not a measured replica.
+
+Note for `build_vehicles.py`: after the window caps are deleted it shifts face material indices by hand and `Mesh.materials.pop`
+shifts them again, so faces after a removed slot move one material down (lamp housings come out as `SEAL`). `build_golf.py`
+re-points faces by material name instead; the generic GLBs were left as they are (their contract pins their sha256).

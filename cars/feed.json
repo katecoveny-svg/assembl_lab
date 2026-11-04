@@ -2747,47 +2747,55 @@
   {
    "id": "hl-014",
    "truth": "Simulated",
-   "title": "2019 Toyota RAV4 Hybrid GX AWD",
-   "make": "Toyota",
-   "model": "RAV4",
-   "variant": "Hybrid GX AWD",
-   "year": 2019,
-   "body": "suv",
+   "title": "2021 Volkswagen Golf Life 1.4 TSI",
+   "make": "Volkswagen",
+   "model": "Golf",
+   "variant": "Life 1.4 TSI",
+   "year": 2021,
+   "body": "hatch",
    "seats": 5,
-   "drivetrain": "AWD",
-   "transmission": "CVT",
-   "fuel": "hybrid",
-   "fuelLabel": "Petrol hybrid",
-   "priceNzd": 33990,
-   "odometerKm": 62140,
+   "drivetrain": "FWD",
+   "transmission": "Automatic (8-speed)",
+   "fuel": "petrol",
+   "fuelLabel": "Petrol",
+   "priceNzd": 26990,
+   "odometerKm": 48310,
    "site": "hamilton",
-   "colour": "Red mica",
-   "imported": true,
-   "towingKg": 1500,
+   "colour": "Kings Red metallic",
+   "imported": false,
+   "towingKg": 1400,
    "economy": {
-    "value": 4.8,
+    "value": 5.8,
     "unit": "L/100km",
     "truth": "Estimate",
-    "basis": "Typical combined fuel use for a Toyota RAV4 of this era (manufacturer test figures); not measured on this car. RightCar shows the figure for a real plate."
+    "basis": "Typical combined fuel use for a Volkswagen Golf 1.4 TSI of this era (manufacturer test figures); not measured on this car. RightCar shows the figure for a real plate."
    },
    "safety": {
     "stars": 5,
     "truth": "Simulated",
     "basis": "RightCar-style star rating invented for this demo. Real ratings: rightcar.govt.nz"
    },
-   "headline": "Hybrid AWD, imported 2021, one NZ owner",
+   "headline": "NZ-new, one owner, serviced on schedule",
    "highlights": [
     "Two keys",
-    "Roof rails",
-    "Tow bar fitted"
+    "Digital instrument display",
+    "Adaptive cruise control"
    ],
    "hold": {
     "status": "available",
     "truth": "Simulated"
    },
    "render": {
-    "kind": "suv",
-    "paint": "#A0726F"
+    "kind": "hatch",
+    "paint": "#A65A5E",
+    "model": "golf",
+    "glb": "/assets/models/vehicles/golf.glb",
+    "glbPaint": {
+     "hex": "#A3161E",
+     "metalness": 0.4,
+     "roughness": 0.32,
+     "label": "Kings Red metallic"
+    }
    },
    "images": [
     {
@@ -2795,7 +2803,7 @@
      "width": 1200,
      "height": 900,
      "url": "https://assembl-lab.vercel.app/cars/img/hl-014-4x3.webp",
-     "alt": "Render · simulated car: 2019 Toyota RAV4 Hybrid GX AWD, red mica, front three-quarter view",
+     "alt": "Render · simulated car: 2021 Volkswagen Golf Life 1.4 TSI, kings red metallic, front three-quarter view",
      "label": "Render · simulated car",
      "kind": "render"
     },
@@ -2804,7 +2812,7 @@
      "width": 800,
      "height": 800,
      "url": "https://assembl-lab.vercel.app/cars/img/hl-014-1x1.webp",
-     "alt": "Render · simulated car: 2019 Toyota RAV4 Hybrid GX AWD, red mica, front three-quarter view",
+     "alt": "Render · simulated car: 2021 Volkswagen Golf Life 1.4 TSI, kings red metallic, front three-quarter view",
      "label": "Render · simulated car",
      "kind": "render"
     }
@@ -2833,7 +2841,7 @@
     },
     "price.cash": {
      "label": "Cash price (NZD)",
-     "value": 33990,
+     "value": 26990,
      "truth": "Simulated"
     },
     "price.includes": {
@@ -2849,28 +2857,28 @@
     },
     "vehicle.makeModel": {
      "label": "Make and model",
-     "value": "Toyota RAV4 Hybrid GX AWD",
+     "value": "Volkswagen Golf Life 1.4 TSI",
      "truth": "Simulated"
     },
     "vehicle.year": {
      "label": "Vehicle year",
-     "value": 2019,
+     "value": 2021,
      "truth": "Simulated"
     },
     "vehicle.engineCapacity": {
      "label": "Engine capacity (cc)",
-     "value": 2487,
+     "value": 1395,
      "truth": "Simulated"
     },
     "vehicle.vin": {
      "label": "VIN or chassis number",
-     "value": "DEMO-AXAH54-4110866",
+     "value": "DEMO-CD1Q14-2104014",
      "truth": "Simulated",
      "note": "Invented. Contains letters (O, Q) that no real VIN uses, so it can never match a real car."
     },
     "odometer.km": {
      "label": "Actual distance travelled (km)",
-     "value": 62140,
+     "value": 48310,
      "truth": "Simulated"
     },
     "odometer.mayBeInaccurate": {
@@ -2880,9 +2888,8 @@
     },
     "radio.fm88to108": {
      "label": "Receives 88–108 MHz without a band expander",
-     "value": false,
-     "truth": "Simulated",
-     "note": "Japanese-market radio; needs a band expander for NZ FM"
+     "value": true,
+     "truth": "Simulated"
     },
     "wof.expiry": {
      "label": "WOF or CoF expiry",
@@ -2917,7 +2924,7 @@
     },
     "fuel.type": {
      "label": "Operating fuel type",
-     "value": "Petrol hybrid",
+     "value": "Petrol",
      "truth": "Simulated"
     },
     "ruc.applies": {
@@ -2932,18 +2939,21 @@
     },
     "import.yearFirstRegisteredOverseas": {
      "label": "Year first registered overseas",
-     "value": 2019,
-     "truth": "Simulated"
+     "value": null,
+     "truth": "Simulated",
+     "note": "Not applicable: NZ-new"
     },
     "import.countryLastRegistered": {
      "label": "Country where last registered",
-     "value": "Japan",
-     "truth": "Simulated"
+     "value": null,
+     "truth": "Simulated",
+     "note": "Not applicable: NZ-new"
     },
     "import.damaged": {
      "label": "Imported as a damaged vehicle",
      "value": "no",
-     "truth": "Simulated"
+     "truth": "Simulated",
+     "note": "Not applicable: NZ-new"
     }
    },
    "featured": true

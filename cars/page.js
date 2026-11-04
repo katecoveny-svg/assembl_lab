@@ -56,7 +56,8 @@ const PINS = [
   { id: "tag", beat: 4, k: "Money owing", v: () => (hero.cin["securityInterest.registered"].value === "no" ? "None stated" : "Registered"), s: () => "Stated, not searched: PPSR", t: () => "Simulated", ld: "owing" },
   { id: "door", beat: 5, k: "Safety", v: () => "★★★★★".slice(0, hero.safety.stars), s: () => "RightCar-style stars", t: () => "Simulated", ld: "safety" },
   { id: "filler", beat: 6, k: "Running cost", v: () => `${money(energy().weekly, 2)} a week`, s: () => `Petrol, 200 km · ${energy().period || ""}`, t: () => energy().truth, ld: "run" },
-  { id: "flag", beat: 7, k: "Import", v: () => `${hero.cin["import.countryLastRegistered"].value}, ${hero.cin["import.yearFirstRegisteredOverseas"].value}`, s: () => `NZ ${hero.cin["registration.yearFirstRegisteredNz"].value} · not damaged`, t: () => "Simulated", ld: "import" },
+  { id: "flag", beat: 7, k: "Import", v: () => (hero.imported ? `${hero.cin["import.countryLastRegistered"].value}, ${hero.cin["import.yearFirstRegisteredOverseas"].value}` : "NZ-new"),
+    s: () => (hero.imported ? `NZ ${hero.cin["registration.yearFirstRegisteredNz"].value} · not damaged` : `First registered in NZ ${hero.cin["registration.yearFirstRegisteredNz"].value}`), t: () => "Simulated", ld: "import" },
 ];
 const stageEl = $("#stage"), pinsEl = $("#pins"), marksEl = $("#marks"), leadersEl = $("#leaders"), recordEl = $("#record"), canvas = $("#car3d"), poster = $("#poster");
 $("#cap-title").textContent = hero.title;
@@ -241,7 +242,8 @@ function agentChecks() {
     [qc.licence.ok ? "pass" : "fail", "Licence", fmtDate(lic), `${qc.licence.monthsLeft} months left`, "Simulated"],
     ["pass", "Odometer", `${hero.odometerKm.toLocaleString("en-NZ")} km`, `About ${qc.odometer.kmPerYear.toLocaleString("en-NZ")} km a year; not flagged`, "Simulated"],
     ["open", "Money owing", "none stated", "A PPSR search is still to run before paying", "Simulated"],
-    ["pass", "Import", `${hero.cin["import.countryLastRegistered"].value} ${hero.cin["import.yearFirstRegisteredOverseas"].value} → NZ ${hero.cin["registration.yearFirstRegisteredNz"].value}`, "Not imported damaged. Radio needs a band expander", "Simulated"],
+    ["pass", "Import", hero.imported ? `${hero.cin["import.countryLastRegistered"].value} ${hero.cin["import.yearFirstRegisteredOverseas"].value} → NZ ${hero.cin["registration.yearFirstRegisteredNz"].value}` : `NZ-new · first registered ${hero.cin["registration.yearFirstRegisteredNz"].value}`,
+      hero.imported ? `Not imported damaged.${hero.cin["radio.fm88to108"].value ? "" : " Radio needs a band expander"}` : `Not a used import.${hero.cin["radio.fm88to108"].value ? " Radio takes NZ FM" : " Radio needs a band expander"}`, "Simulated"],
     ["pass", "Running cost", `${money(RC.totalWeekly, 2)} a week`, `At 200 km: ${RC.lines.map((l) => l.label.toLowerCase()).join(", ")}`, energy().truth],
     ["open", "Economy", `${hero.economy.value} ${hero.economy.unit}`, "Typical for the model; RightCar has this car's figure", "Estimate"],
     ["pass", "Test drive", `${sl.length} free slots this week`, sat.length ? `Saturday: ${sat.map((s) => s.label.split(", ")[1]).join(", ")}` : "None free on Saturday", "Simulated"],
