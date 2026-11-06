@@ -67,7 +67,7 @@ export function runChecks(P) {
 
   // ---------------------------------------------------------------- D1 door widths on the accessible route (number unconfirmed)
   const routeDoors = ops.filter((o) => isDoor(o) && o.kind !== "opening");
-  if (routeDoors.length) {
+  if (routeDoors.length && !housing) {
     const min = routeDoors.reduce((m, o) => (clearWidth(o) < clearWidth(m) ? o : m), routeDoors[0]);
     out.push(R({ id: "d1door", clause: "D1", title: "Door clear widths on the accessible route", doc: "D1/AS1 · NZS 4121", verified: false, status: "info",
       measured: `narrowest ${clearWidth(min)} mm (${min.id}${min.note ? ", " + min.note : ""})`, limit: "NZS 4121 clear opening (figure to confirm)", elements: [min.id],
@@ -76,7 +76,12 @@ export function runChecks(P) {
 
   // ---------------------------------------------------------------- G1 sanitary fixtures (ratios unconfirmed)
   const people = rooms.reduce((s, r) => s + (r.occupants || 0), 0), fx = rooms.reduce((acc, r) => { for (const [k, v] of Object.entries(r.fixtures || {})) acc[k] = (acc[k] || 0) + v; return acc; }, {});
-  out.push(R({ id: "g1", clause: "G1", title: "Sanitary fixtures", doc: "G1/AS1", verified: false, status: "info", measured: `${fx.pan || 0} pans, ${fx.urinal || 0} urinals, ${fx.basin || 0} basins for ${people} people`,
+  if (housing) {
+    const has = (re) => rooms.some((r) => re.test(r.name) || re.test(r.use));
+    out.push(R({ id: "g1", clause: "G1", title: "Household fixtures", doc: "G1/AS1", status: has(/wc/i) && has(/bath|shower|ensuite/i) && has(/kitchen/i) ? "pass" : "info",
+      measured: ["WC", "bath or shower", "kitchen"].filter((k, i) => !has([/wc/i, /bath|shower|ensuite/i, /kitchen/i][i])).map((k) => `no ${k} identified`).join(", ") || "WC, bath or shower and kitchen identified",
+      limit: "a WC, a basin, a bath or shower, a kitchen sink and laundry facilities", why: "Read from room names; a fixture plan confirms it." }));
+  } else out.push(R({ id: "g1", clause: "G1", title: "Sanitary fixtures", doc: "G1/AS1", verified: false, status: "info", measured: `${fx.pan || 0} pans, ${fx.urinal || 0} urinals, ${fx.basin || 0} basins for ${people} people`,
     limit: "G1/AS1 ratios for the use (to confirm)", elements: rooms.filter((r) => r.fixtures).map((r) => r.id), why: "Fixture ratios for assembly occupancies were not confirmed in research." }));
 
   // ---------------------------------------------------------------- G7 natural light (housing) / H1 glazing (housing, 6th edition)
@@ -101,8 +106,16 @@ export function runChecks(P) {
   const ridge = P.roof?.ridgeH || Math.max(...P.walls.map((w) => w.h));
   out.push(R({ id: "e2-scope", clause: "E2", title: "Within E2/AS1 scope", doc: "E2/AS1", status: ridge <= 10000 && (P.meta.storeys || 1) <= 3 ? "pass" : "fail", measured: `${(ridge / 1000).toFixed(1)} m high, ${P.meta.storeys || 1} storey`, limit: "≤ 10 m and ≤ 3 storeys",
     why: "Inside the scope, the E2/AS1 risk matrix still has to be scored (wind zone, eaves, envelope complexity, decks); those inputs are not in the model yet." }));
-  const falls = (P.levels || []).filter((l) => l.fall >= 1000);
-  out.push(R({ id: "f4", clause: "F4", title: "Barriers where a fall is 1 m or more", doc: "F4/AS1", status: falls.length ? "info" : "pass", measured: falls.length ? `${falls.length} level(s) with a fall of 1 m or more` : "no fall of 1 m or more in the model", limit: housing ? "barrier 1000 mm (900 on stairs)" : "barrier 1100 mm in other buildings; no 100 mm sphere through", why: "Add mezzanines, decks and stairs to the model and this check measures their edges." }));
+  // F4: every deck or level edge with a fall of 1 m or more needs a barrier (1000 mm in housing, 1100 mm in other buildings)
+  const need = housing ? 1000 : 1100, edges = [...(P.decks || []).map((d) => ({ id: d.id, name: d.name || d.id, fall: d.fall ?? (P.site?.floorAboveGround || 0), barrier: d.barrier || 0 })), ...(P.levels || []).filter((l) => l.fall).map((l) => ({ id: l.id, name: l.name, fall: l.fall, barrier: l.barrier || 0 }))];
+  const high = edges.filter((e) => e.fall >= 1000);
+  if (!high.length) out.push(R({ id: "f4", clause: "F4", title: "Barriers where a fall is 1 m or more", doc: "F4/AS1", status: "pass", measured: "no edge with a fall of 1 m or more in the model", limit: `barrier ${need} mm where the fall is 1 m or more`, why: "Add decks, mezzanines and stairs to the model and this check measures their edges." }));
+  for (const e of high) out.push(R({ id: `f4-${e.id}`, clause: "F4", title: `Barrier height · ${e.name}`, doc: "F4/AS1", edition: "as researched Nov 2026",
+    status: e.barrier >= need ? "pass" : "fail", measured: e.barrier ? `${e.barrier} mm barrier, ${e.fall} mm fall` : `no barrier, ${e.fall} mm fall`, limit: `≥ ${need} mm${housing ? " (900 mm on stairs)" : ""}; no opening a 100 mm sphere passes; no toeholds 150–760 mm`, elements: [e.id],
+    why: "The barrier height is measured from the model; openings and climbability depend on the balustrade product, so confirm those on its drawing." }));
+  for (const st of P.stairs || []) out.push(R({ id: `d1st-${st.id}`, clause: "D1", title: `Stair geometry · ${st.name || st.id}`, doc: "D1/AS1", verified: false, status: "info",
+    measured: st.rise && st.going ? `rise ${st.rise} mm, going ${st.going} mm` : "riser and going not in the model", limit: "older edition: rise ≤ 190, going ≥ 280 (private stairs differ; confirm)", elements: [st.id],
+    why: "Stair limits came from an older amendment in research, so this shows the measurement until the current D1/AS1 table is confirmed." }));
   out.push(R({ id: "b1", clause: "B1", title: "Structure", doc: "B1 · NZS 3604", status: "out", measured: "—", limit: "—", why: "Structural design (spans, bracing, foundations) is out of scope for this pre-check; an engineer or NZS 3604 designer confirms it." }));
   return out;
 }

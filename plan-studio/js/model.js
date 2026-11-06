@@ -161,3 +161,22 @@ function describe(f, a, b) {
   return `${nice} changed`;
 }
 export const revLetter = (i) => String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : "");
+
+// ------------------------------------------------------------------------------------------------ the roof, as a height field
+// roofZ(P, x, y): the underside height of the roof at a plan point. gable: eaves at both sides rising to the ridge (ridge along
+// "x" or "y"); mono: a single slope from `eaves` on the low side (low: "w" | "e" | "s" | "n") to `ridgeH` on the high side;
+// flat: `eaves` everywhere. The 3D walls, the elevations and the section all read it, so they always agree.
+export function roofZ(P, x, y) {
+  const R = P.roof || {}, b = polyBox(P.rooms.length ? P.rooms.flatMap((r) => r.poly) : P.walls.flatMap((w) => [w.a, w.b]));
+  const eaves = R.eaves ?? 2700, top = R.ridgeH ?? eaves;
+  if (R.type === "gable") {
+    const [c, lo, hi] = R.ridge === "y" ? [x, b.x0, b.x1] : [y, b.y0, b.y1], half = (hi - lo) / 2;
+    return eaves + (top - eaves) * Math.max(0, 1 - Math.abs(c - (lo + hi) / 2) / half);
+  }
+  if (R.type === "mono") {
+    const t = R.low === "w" ? (x - b.x0) / (b.x1 - b.x0) : R.low === "e" ? (b.x1 - x) / (b.x1 - b.x0) : R.low === "s" ? (y - b.y0) / (b.y1 - b.y0) : (b.y1 - y) / (b.y1 - b.y0);
+    return eaves + (top - eaves) * t;
+  }
+  return eaves;
+}
+export const footprint = (P) => polyBox(P.rooms.length ? P.rooms.flatMap((r) => r.poly) : P.walls.flatMap((w) => [w.a, w.b]));

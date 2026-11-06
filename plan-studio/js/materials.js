@@ -30,11 +30,15 @@ export const MATERIALS = {
   "lining-plasterboard": { name: "Plasterboard lining, painted", cat: "lining", maker: "Generic; paint colour per Resene chart (Resene publishes RGB and LRV)", hex: "#ece8e3", approx: true, rough: 0.9, links: ["https://www.resene.co.nz/"] },
   "slab-concrete": { name: "Concrete slab, polished", cat: "floor", maker: "Generic", hex: "#a8a29d", approx: true, pattern: "concrete", rough: 0.5 },
   "timber-ceiling": { name: "Timber ceiling battens", cat: "lining", maker: "Generic", hex: "#a5835f", approx: true, pattern: "boards-h", rough: 0.6 },
+  "deck-timber": { name: "Timber decking, H3.2 pine or hardwood", cat: "deck", maker: "Generic: select a species and profile", hex: "#8c6d4f", approx: true, pattern: "boards-h", rough: 0.75,
+    note: "H3.2 minimum for pine; stainless or hot-dip galvanised fixings; drainage gaps." },
+  "timber-pile": { name: "Timber pile, H5", cat: "structure", maker: "Generic: NZS 3604 or specific design", hex: "#7a6a58", approx: true, rough: 0.8 },
+  "cladding-cedar-board-batten": { name: "Cedar board and batten, natural", cat: "cladding", maker: "Generic: select a supplier", hex: "#9a7655", approx: true, pattern: "boards-v", rough: 0.75 },
   "cultural-panel": { name: "Reserved: cultural design panel", cat: "cultural", maker: "Commissioned with mana whenua and the artists", hex: "#b89a77", approx: true, rough: 0.7, reserved: true,
     note: "A placeholder only. Carving, kōwhaiwhai and tukutuku are designed with mana whenua and the artists, not taken from a texture library." },
 };
 
-export const CATEGORY_LABEL = { cladding: "Cladding", roof: "Roofing", glazing: "Glazing", door: "Doors", lining: "Linings", floor: "Floors", cultural: "Cultural design" };
+export const CATEGORY_LABEL = { cladding: "Cladding", roof: "Roofing", glazing: "Glazing", door: "Doors", lining: "Linings", floor: "Floors", deck: "Decks", structure: "Structure", cultural: "Cultural design" };
 export const byCategory = (cat) => Object.entries(MATERIALS).filter(([, m]) => m.cat === cat).map(([id, m]) => ({ id, ...m }));
 
 // small procedural textures (canvas), so the 3D model reads as the material without shipping anyone's image files
