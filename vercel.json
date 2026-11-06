@@ -22,6 +22,12 @@
   "api/mcp.js": {
    "maxDuration": 30,
    "includeFiles": "api/_feeds/snapshots/**"
+  },
+  "api/plan-read.js": {
+   "maxDuration": 60
+  },
+  "api/plan-render.js": {
+   "maxDuration": 20
   }
  },
  "redirects": [
