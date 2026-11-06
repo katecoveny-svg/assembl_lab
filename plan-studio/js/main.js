@@ -122,6 +122,11 @@ function renderMaterials() {
   const pick = (cat, value, key) => `<label>${CATEGORY_LABEL[cat]}<select data-mat="${key}">${byCategory(cat).filter((m) => !m.reserved).map((m) => `<option value="${m.id}" ${m.id === value ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select><span class="mono" style="font-size:11px">${esc(MATERIALS[value]?.maker || "")}${MATERIALS[value]?.data ? " · " + Object.entries(MATERIALS[value].data).map(([k, v]) => `${k} ${v}`).join(" · ") : ""}</span></label>`;
   $("#matPick").innerHTML = pick("cladding", cur, "cladding") + pick("roof", P.roof.mat, "roof");
 }
+// looks: a starting set of real product selections (inspiration from style presets, but each one is a specifiable product)
+const LOOKS = [["Bach", "cladding-cedar-board-batten", "roof-standing-seam"], ["Light weatherboard", "cladding-fibre-cement", "roof-colorsteel-titania"], ["Metal", "cladding-colorsteel-cloud", "roof-standing-seam"], ["Timber shiplap", "cladding-vertical", "roof-standing-seam"]];
+$("#looks").innerHTML = LOOKS.map(([n], i) => `<button type="button" data-look="${i}">${n}</button>`).join("");
+$("#looks").addEventListener("click", (e) => { const b = e.target.closest("button[data-look]"); if (!b) return; const [, clad, roof] = LOOKS[+b.dataset.look];
+  P.walls.filter((w) => w.kind === "ext" && w.mat !== "glass-curtain").forEach((w) => (w.mat = clad)); P.roof.mat = roof; $$("#looks button").forEach((x) => x.classList.toggle("on", x === b)); renderMaterials(); changed(); });
 $("#matPick").addEventListener("change", (e) => { const k = e.target.dataset.mat, v = e.target.value; if (k === "cladding") P.walls.filter((w) => w.kind === "ext" && w.mat !== "glass-curtain").forEach((w) => (w.mat = v)); if (k === "roof") P.roof.mat = v; renderMaterials(); changed(); });
 
 // ------------------------------------------------------------------------------------------------ visuals
@@ -150,32 +155,98 @@ $("#btnFly").addEventListener("click", async () => {
 async function aiStatus() {
   try {
     const s = await fetch("/api/plan-render").then((r) => r.json()); state.ai = s;
-    if (!s.configured) { $("#aiStatus").textContent = "Not connected yet. When FAL_KEY is added to the project, this restyles a view of the true model through fal.ai: you see the price and confirm before anything is spent."; return; }
+    if (!s.configured) { $("#aiStatus").textContent = "Not connected yet. When FAL_KEY is added to the project, this restyles a still or makes a short hero clip from the true model through fal.ai: you see the price and confirm before anything is spent."; return; }
     $("#aiStatus").textContent = "Connected to fal.ai."; $("#aiBox").hidden = false;
-    $("#aiPreset").innerHTML = Object.entries(s.endpoints).filter(([, v]) => v.kind === "image").map(([k], i) => `<button data-p="${k}" class="${i ? "" : "on"}">${k === "still-edit" ? "Photoreal still" : k === "still-depth" ? "Depth-locked still" : k}</button>`).join("");
-    state.aiPreset = Object.keys(s.endpoints).find((k) => s.endpoints[k].kind === "image"); $("#aiEst").textContent = s.endpoints[state.aiPreset]?.est || "";
+    const E = s.endpoints, group = (kind, title) => { const ks = Object.keys(E).filter((k) => E[k].kind === kind && k !== "upscale"); return ks.length ? `<h4>${title}</h4>` + ks.map((k) => `<button type="button" data-p="${k}">${esc(E[k].name || k)}<small>${esc(E[k].est)}</small></button>`).join("") : ""; };
+    $("#aiPreset").innerHTML = group("image", "Stills") + group("video", "Hero clips");
+    pickAi(Object.keys(E).find((k) => E[k].kind === "image") || Object.keys(E)[0]);
   } catch { $("#aiStatus").textContent = "AI enhance is unavailable from here (the page needs the lab's /api)."; }
 }
-$("#aiPreset").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; state.aiPreset = b.dataset.p; $$("#aiPreset button").forEach((x) => x.classList.toggle("on", x === b)); $("#aiEst").textContent = state.ai.endpoints[state.aiPreset].est; });
+function pickAi(k) {
+  const ep = state.ai.endpoints[k]; state.aiPreset = k; $$("#aiPreset button").forEach((x) => x.classList.toggle("on", x.dataset.p === k));
+  $("#aiEst").textContent = `Estimate: ${ep.est}. Confirm the current price on fal.ai.`; $("#aiNote").textContent = ep.note || "";
+  $("#btnAi").textContent = ep.kind === "video" ? (ep.keyframes ? `Render ${ep.keyframes.n} keyframes and make the clip` : ep.guide ? `Record a ${ep.guide.seconds} s guide and make the clip` : "Make a clip from this view") : "Enhance this view";
+}
+$("#aiPreset").addEventListener("click", (e) => { const b = e.target.closest("button[data-p]"); if (b) pickAi(b.dataset.p); });
 $("#aiConfirm").addEventListener("change", (e) => ($("#btnAi").disabled = !e.target.checked));
+const toDataURL = (blob) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+const jpeg = async (blob, q = 0.88) => { const bmp = await createImageBitmap(blob), c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height; c.getContext("2d").drawImage(bmp, 0, 0); return new Promise((r) => c.toBlob(r, "image/jpeg", q)); };
+// burn the label into every frame of a returned clip (re-recorded in the browser; the label cannot be cropped off a frame)
+async function labelVideo(blob, label) {
+  const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto";
+  const loaded = new Promise((r, x) => { v.onloadeddata = r; v.onerror = () => x(new Error("the clip could not be decoded")); }); v.src = URL.createObjectURL(blob); await loaded;
+  const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; const g = c.getContext("2d");
+  const type = ["video/mp4;codecs=avc1", "video/webm;codecs=vp9", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) || "video/webm";
+  const rec = new MediaRecorder(c.captureStream(30), { mimeType: type, videoBitsPerSecond: c.width * c.height * 5 }), chunks = []; rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  const draw = () => { g.drawImage(v, 0, 0, c.width, c.height); stage.S.burnLabel(g, c.width, c.height, label); };
+  draw(); rec.start();
+  // draw every frame until the clip ends (a recorded clip may report no duration, so also stop when playback stops advancing)
+  await new Promise((done) => {
+    let last = -1, still = 0; const tick = setInterval(() => { draw(); if (v.ended) return finish(); if (v.currentTime === last) { if (++still > 30) finish(); } else { still = 0; last = v.currentTime; } }, 1000 / 30);
+    const finish = () => { clearInterval(tick); done(); }; v.onended = finish; v.play().catch(finish);
+  });
+  draw(); rec.stop(); await new Promise((r) => (rec.onstop = r)); URL.revokeObjectURL(v.src); return new Blob(chunks, { type: type.split(";")[0] });
+}
+const PROMPT = () => { const mats = [...new Set(P.walls.map((w) => MATERIALS[w.mat]?.name).filter(Boolean))].join(", ");
+  return `Photoreal architectural visualisation of this exact building. Keep every wall, opening, roof line and proportion exactly as shown; do not add or remove building elements. Materials: ${mats}; roof ${MATERIALS[P.roof.mat]?.name}. New Zealand light, native planting kept low, no people, no text, no logos.`; };
 $("#btnAi").addEventListener("click", async () => {
-  if (!stage) await boot3d(); const b = $("#btnAi"); b.disabled = true;
-  const beauty = await stage.S.still(stage, 1280, 800, ""), img = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(beauty); });
-  const depth = stage.S.depthPass(stage, 1280, 800), mats = [...new Set(P.walls.map((w) => MATERIALS[w.mat]?.name).filter(Boolean))].join(", ");
-  const prompt = `Photoreal architectural photograph of this exact building. Keep every wall, opening, roof line and proportion exactly as shown; do not add or remove elements. Materials: ${mats}; roof ${MATERIALS[P.roof.mat]?.name}. New Zealand light, natural landscaping, no text, no logos.`;
-  const input = state.aiPreset === "still-depth" ? { prompt, control_lora_image_url: depth, image_size: { width: 1280, height: 800 } } : { prompt, image_urls: [img] };
-  const r = await fetch("/api/plan-render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ preset: state.aiPreset, input, confirm: true }) }).then((x) => x.json()).catch(() => null);
-  if (!r?.job) { alert("The request did not start: " + (r?.error || "network")); b.disabled = false; return; }
-  for (let i = 0; i < 90; i++) {
-    await new Promise((x) => setTimeout(x, 2000));
+  if (!stage) await boot3d(); const b = $("#btnAi"), prog = $("#aiProg"), ep = state.ai.endpoints[state.aiPreset], preset = state.aiPreset; b.disabled = true;
+  const fail = (m) => { prog.textContent = ""; alert(m); b.disabled = !$("#aiConfirm").checked; };
+  let input;
+  const upload = async (blob) => {   // a signed upload straight to fal storage; returns the file's https URL
+    const up = await fetch("/api/plan-render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ upload: { content_type: blob.type, size: blob.size } }) }).then((x) => x.json());
+    if (!up.upload_url) throw new Error("upload refused: " + (up.error || "network"));
+    const put = await fetch(up.upload_url, { method: "PUT", headers: { "content-type": blob.type }, body: blob }); if (!put.ok) throw new Error("upload failed (" + put.status + ")");
+    return up.file_url;
+  };
+  try {
+    if (ep.keyframes) {
+      // exact stills of the true model along the camera path, pinned to frames of the clip (24 fps)
+      const K = ep.keyframes, last = K.seconds * 24 - 1; prog.textContent = `Rendering ${K.n} keyframes…`;
+      const shots = await stage.S.pathStills(stage, { kind: state.path, n: K.n, w: K.w, h: K.h }), keyframes = [];
+      for (const [i, s] of shots.entries()) { prog.textContent = `Uploading keyframe ${i + 1} of ${shots.length}…`; keyframes.push({ image_url: await upload(await jpeg(s.blob, 0.9)), frame_index: Math.round(s.t * last) }); }
+      const move = state.path === "orbit" ? "A slow, steady orbit around the building" : "A smooth, steady walk-in: from the street, up to the entry, through it and into the main room";
+      input = { prompt: `${move}, passing exactly through each keyframe. ${PROMPT()} The building never changes between keyframes: same walls, openings, roof and materials.`, keyframes, duration: K.seconds, aspect_ratio: "16:9" };
+    } else if (preset === "clip-depth") {
+      // the guide: a short approach through the real model, no label (the label goes on the result); its depth holds the geometry
+      prog.textContent = "Recording the guide…"; stage.recording = true;
+      const g = ep.guide, guide = await stage.S.recordFlythrough(stage, { w: g.w, h: g.h, seconds: g.seconds, kind: state.path, label: "", onProgress: (t) => (prog.textContent = `Recording the guide ${Math.round(t * 100)}%`) });
+      stage.recording = false; stage.view("street"); stage.sync();
+      prog.textContent = "Uploading the guide…";
+      const videoUrl = await upload(guide), ref = await toDataURL(await jpeg(await stage.S.still(stage, 1280, 720, ""), 0.85));
+      input = { prompt: PROMPT() + " Smooth steady camera exactly following the guide.", video_url: videoUrl, ref_image_url: ref, negative_prompt: "extra buildings, extra windows, changed roof, warped walls, people, text, watermark" };
+    } else {
+      const shot = await stage.S.still(stage, 1280, ep.kind === "video" ? 720 : 800, ""), img = await toDataURL(await jpeg(shot));
+      if (preset === "still-depth") input = { prompt: PROMPT(), control_lora_image_url: img, image_size: { width: 1280, height: 800 } };   // fal reads its depth
+      else if (preset === "still-edit") input = { prompt: PROMPT(), image_urls: [img] };
+      else input = { prompt: PROMPT() + " Slow, steady camera push-in; the building does not move or change.", image_url: img };
+    }
+  } catch (e) { stage.recording = false; return fail("Could not prepare the request: " + e.message); }   // includes a refused upload
+  prog.textContent = "Sending…";
+  const r = await fetch("/api/plan-render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ preset, input, confirm: true }) }).then((x) => x.json()).catch(() => null);
+  if (!r?.job) return fail("The request did not start: " + (r?.error || "network") + (r?.missing ? " (" + r.missing.join(", ") + ")" : ""));
+  const label = `AI-enhanced visualisation${preset === "clip-still" || preset === "clip" ? " · illustrative motion" : ep.keyframes ? " · motion between model keyframes" : ""} · ${provLabel()}`, t0 = Date.now();
+  for (let i = 0; i < (ep.kind === "video" ? 300 : 90); i++) {
+    await new Promise((x) => setTimeout(x, ep.kind === "video" ? 4000 : 2000));
     const s = await fetch(`/api/plan-render?job=${encodeURIComponent(r.job)}`).then((x) => x.json()).catch(() => null);
+    prog.textContent = `${s?.status === "IN_QUEUE" ? `Queued${s.queue_position != null ? " #" + s.queue_position : ""}` : "Working"} · ${Math.round((Date.now() - t0) / 1000)} s`;
     if (s?.status === "COMPLETED" && s.url) {
-      const im = await fetch(s.url).then((x) => x.blob()); const bmp = await createImageBitmap(im), c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
-      const g = c.getContext("2d"); g.drawImage(bmp, 0, 0); stage.S.burnLabel(g, c.width, c.height, "AI-enhanced visualisation · " + provLabel());
-      addOutput(await new Promise((x) => c.toBlob(x, "image/png")), `${P.meta.number}-ai.png`, "img", "AI-enhanced"); break;
+      const got = await fetch(s.url).then((x) => x.blob());
+      if (ep.kind === "video") { prog.textContent = "Labelling the clip…"; const out = await labelVideo(got, label); addOutput(out, `${P.meta.number}-hero-${preset}.${out.type.includes("mp4") ? "mp4" : "webm"}`, "video", "AI-enhanced hero clip"); }
+      else { const bmp = await createImageBitmap(got), c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height; const g = c.getContext("2d"); g.drawImage(bmp, 0, 0); stage.S.burnLabel(g, c.width, c.height, label);
+        addOutput(await new Promise((x) => c.toBlob(x, "image/png")), `${P.meta.number}-ai.png`, "img", "AI-enhanced"); }
+      break;
     }
   }
-  b.disabled = false;
+  prog.textContent = ""; b.disabled = !$("#aiConfirm").checked;
+});
+// the client view set: five consistent cameras in one light, the way a renderer would hand them over
+$("#btnSet").addEventListener("click", async () => {
+  if (!stage) await boot3d(); const b = $("#btnSet"); b.disabled = true; const light = $("#lights button.on")?.dataset.light || "day";
+  const set = [["street", "Street"], ["cornerA", "Corner"], ["rear", "Rear"], ["cornerB", "Opposite corner"], ["interior", "Interior"]];
+  stage.setCutaway(false); stage.light(light);
+  for (const [i, [v, n]] of set.entries()) { $("#setProg").textContent = `${i + 1} of ${set.length}: ${n}`; stage.view(v); addOutput(await stage.S.still(stage, 1920, 1080, provLabel()), `${P.meta.number}-${String(i + 1).padStart(2, "0")}-${v}.png`, "img", `${n} · ${light}`); }
+  $("#setProg").textContent = ""; stage.view("aerial"); stage.sync(); b.disabled = false;
 });
 
 // ------------------------------------------------------------------------------------------------ present & export

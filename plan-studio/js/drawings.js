@@ -2,7 +2,7 @@
 // so the same code renders on the page, prints to PDF, and runs in tests. Every sheet carries the MBIE minimum title-block
 // fields (drawing number and title, designer, owner, address, scale, version date) and a revision table; anything changed since
 // the previous revision is clouded and tagged with the revision letter.
-import { polyArea, polyBox, openingSpan, isDoor, wallFacing, diffModels, revLetter, wallById } from "./model.js";
+import { polyArea, polyBox, openingSpan, isDoor, wallFacing, diffModels, revLetter, wallById, roofZ, footprint, isGlazed, pointInPoly } from "./model.js";
 import { DISCLAIMER } from "./code.js";
 import { MATERIALS } from "./materials.js";
 
@@ -63,7 +63,8 @@ function cloud(x0, y0, x1, y1, rev) {
 
 // ------------------------------------------------------------------------------------------------ plan
 export function planSheet(P, opts = {}) {
-  const sc = 100, X0 = 30, Y0 = 250, toX = (x) => X0 + x / sc, toY = (y) => Y0 - y / sc;      // paper origin at the plan's south-west
+  const sc = 100, all = [...P.rooms.flatMap((r) => r.poly), ...P.walls.flatMap((w) => [w.a, w.b]), ...(P.decks || []).flatMap((d) => d.poly)], ex = polyBox(all);
+  const X0 = 20 + (285 - (ex.x1 - ex.x0) / sc) / 2 - ex.x0 / sc + 8, Y0 = 268 - (240 - (ex.y1 - ex.y0) / sc) / 2 + ex.y0 / sc, toX = (x) => X0 + x / sc, toY = (y) => Y0 - y / sc;   // centred on the sheet
   let g = "";
   // grids from the external and main internal wall lines
   const gx = [...new Set(P.walls.filter((w) => w.a[0] === w.b[0] && (w.kind === "ext" || w.h >= 4000)).map((w) => w.a[0]))].sort((a, b) => a - b);
@@ -74,7 +75,15 @@ export function planSheet(P, opts = {}) {
   // grid dimension chains (north and west)
   const dimH = (xs, y, lab) => { let s = ""; for (let i = 0; i < xs.length - 1; i++) { const a = toX(xs[i]), b = toX(xs[i + 1]); s += line(a, y, b, y, HAIR) + line(a, y - 1.2, a, y + 1.2, HAIR) + line(b, y - 1.2, b, y + 1.2, HAIR) + txt((a + b) / 2, y - 1, Math.round(xs[i + 1] - xs[i]), { size: 2, anchor: "middle", mono: 1 }); } return s; };
   const dimV = (ys, x) => { let s = ""; for (let i = 0; i < ys.length - 1; i++) { const a = toY(ys[i]), b = toY(ys[i + 1]); s += line(x, a, x, b, HAIR) + line(x - 1.2, a, x + 1.2, a, HAIR) + line(x - 1.2, b, x + 1.2, b, HAIR) + txt(x - 1, (a + b) / 2, Math.round(ys[i + 1] - ys[i]), { size: 2, anchor: "middle", mono: 1, rot: -90 }); } return s; };
-  g += dimH(gx, toY(bx.y1) - 8) + dimH([gx[0], gx[gx.length - 1]], toY(bx.y1) - 4) + dimV(gy, toX(bx.x0) - 8) + dimV([gy[0], gy[gy.length - 1]], toX(bx.x0) - 4);
+  const te = Math.max(...P.walls.filter((w) => w.kind === "ext").map((w) => w.t), 0) / 2;
+  g += dimH(gx, toY(bx.y1) - 8) + dimH([gx[0] - te, gx[gx.length - 1] + te], toY(bx.y1) - 4) + dimV(gy, toX(bx.x0) - 8) + dimV([gy[0] - te, gy[gy.length - 1] + te], toX(bx.x0) - 4);
+  // decks: timber boards (light), their edge, and the barrier height
+  for (const dk of P.decks || []) {
+    const pts = dk.poly.map((p) => [toX(p[0]), toY(p[1])]), cid = "dk-" + dk.id; g += `<clipPath id="${cid}">${poly(pts, "#000")}</clipPath>` + poly(pts, "#f1e9df", INK, HAIR);
+    const b = polyBox(dk.poly); g += `<g clip-path="url(#${cid})">`; for (let yy = b.y0 + 140; yy < b.y1; yy += 140) g += line(toX(b.x0), toY(yy), toX(b.x1), toY(yy), 0.06, "#c8b8a6"); g += "</g>";
+    const lab = [b.x0 + 900, b.y0 + 900];
+    g += txt(toX(lab[0]), toY(lab[1]), `${(dk.name || "DECK").toUpperCase()}`, { size: 2, anchor: "middle", weight: 600, fill: SOFT }) + (dk.barrier ? txt(toX(lab[0]), toY(lab[1]) + 3, `barrier ${dk.barrier}`, { size: 1.7, anchor: "middle", mono: 1, fill: SOFT }) : "");
+  }
   // rooms: light tone, tag with name and area
   for (const r of P.rooms) {
     g += poly(r.poly.map((p) => [toX(p[0]), toY(p[1])]), r.use === "wc" || r.use === "wc-accessible" ? "#f4f1f2" : "#fbfafa");
@@ -137,76 +146,122 @@ export function planSheet(P, opts = {}) {
   return frame(P, "A101", "Ground floor plan", "1:100", g, revs);
 }
 
-// ------------------------------------------------------------------------------------------------ elevations (1:200, four on one sheet)
+// ------------------------------------------------------------------------------------------------ elevations (four on one sheet)
+// Any roof: the wall top follows roofZ along the face, the roof silhouette is the highest roofZ across the building's depth.
 export function elevationsSheet(P) {
-  const sc = 200, faces = { N: null, E: null, S: null, W: null }, ext = P.walls.filter((w) => w.kind === "ext");
-  const slots = { N: [22, 125], S: [170, 125], E: [22, 250], W: [170, 250] };
-  let g = "";
-  const R = P.roof || {}, ridgeAlongY = R.ridge === "y", bx = polyBox(P.rooms.flatMap((r) => r.poly));
-  for (const face of Object.keys(faces)) {
+  const fp = footprint(P), ext = P.walls.filter((w) => w.kind === "ext");
+  const R = P.roof || {}, oh = R.overhang || 0, fag = P.site?.floorAboveGround || 0, th = 250, N = 40;
+  // first pass: what each face needs on paper (walls, roof overhang, decks seen from that side, the roof's highest point)
+  const faces = {};
+  for (const face of ["N", "S", "E", "W"]) {
     const walls = ext.filter((w) => wallFacing(P, w).face === face); if (!walls.length) continue;
-    const out = wallFacing(P, walls[0]).out, right = [-out[1], out[0]], u = (p) => p[0] * right[0] + p[1] * right[1];
-    const us = walls.flatMap((w) => [u(w.a), u(w.b)]), u0 = Math.min(...us), u1 = Math.max(...us);
-    const [ox, oy] = slots[face], X = (v) => ox + (v - u0) / sc, Y = (z) => oy - z / sc;
-    const eaves = R.eaves || Math.max(...walls.map((w) => w.h)), ridge = R.ridgeH || eaves, oh = R.overhang || 0;
-    const gable = R.type === "gable" && ((ridgeAlongY && (face === "N" || face === "S")) || (!ridgeAlongY && (face === "E" || face === "W")));
-    // ground, walls, roof silhouette
-    g += line(X(u0) - 6, Y(0), X(u1) + 6, Y(0), BOLD);
-    g += `<rect x="${f1(X(u0))}" y="${f1(Y(eaves))}" width="${f1((u1 - u0) / sc)}" height="${f1(eaves / sc)}" fill="#f3efe9" stroke="${INK}" stroke-width="${MED}"/>`;
-    if (gable) g += poly([[X(u0) - oh / sc, Y(eaves - 150)], [X((u0 + u1) / 2), Y(ridge + 120)], [X(u1) + oh / sc, Y(eaves - 150)], [X(u1) + oh / sc, Y(eaves)], [X((u0 + u1) / 2), Y(ridge)], [X(u0) - oh / sc, Y(eaves)]], "#4a4246", INK, HAIR)
-      + poly([[X(u0), Y(eaves)], [X((u0 + u1) / 2), Y(ridge)], [X(u1), Y(eaves)]], "#f3efe9", INK, MED);
-    else { g += `<rect x="${f1(X(u0) - oh / sc)}" y="${f1(Y(ridge + 120))}" width="${f1((u1 - u0 + 2 * oh) / sc)}" height="${f1((ridge + 120 - eaves) / sc)}" fill="#8b8487" stroke="${INK}" stroke-width="${MED}"/>`;
-      for (let v = u0 - oh + 500; v < u1 + oh; v += 500) g += line(X(v), Y(ridge + 120), X(v), Y(eaves), 0.1, "#5d5659"); }
-    // cladding hint: vertical board lines on the cladding walls
-    for (const w of walls) { if (w.mat === "glass-curtain") continue; const a = u(w.a), b = u(w.b); for (let v = Math.min(a, b); v < Math.max(a, b); v += 600) g += line(X(v), Y(0), X(v), Y(eaves), 0.08, "#b9aeb2"); }
-    // openings on this face
+    const out = wallFacing(P, walls[0]).out, right = [-out[1], out[0]], u = (p) => p[0] * right[0] + p[1] * right[1], v = (p) => p[0] * out[0] + p[1] * out[1];
+    const us = walls.flatMap((w) => [u(w.a), u(w.b)]), u0 = Math.min(...us), u1 = Math.max(...us), c = v(walls[0].a);
+    const corners = [[fp.x0, fp.y0], [fp.x1, fp.y1], [fp.x0, fp.y1], [fp.x1, fp.y0]], vs = corners.map(v), vmin = Math.min(...vs), vmax = Math.max(...vs);
+    const pt = (uu, vv) => [right[0] * uu + out[0] * vv, right[1] * uu + out[1] * vv];
+    const topW = (uu) => roofZ(P, ...pt(Math.max(u0, Math.min(u1, uu)), c)), topR = (uu) => { let m = -1e9; for (let k = 0; k <= 16; k++) m = Math.max(m, roofZ(P, ...pt(Math.max(u0, Math.min(u1, uu)), vmin + ((vmax - vmin) * k) / 16))); return m; };
+    const U = (k, a = u0, b = u1) => a + ((b - a) * k) / N, hiZ = Math.max(...Array.from({ length: N + 1 }, (_, k) => topR(U(k))));
+    const du = (P.decks || []).flatMap((dk) => dk.poly.map(u)), umin = Math.min(u0 - oh, ...du), umax = Math.max(u1 + oh, ...du);
+    faces[face] = { walls, u, u0, u1, topW, topR, U, hiZ, umin, umax };
+  }
+  // pick the largest standard scale at which every face, its level marks and its title fit a quarter of the drawing area
+  const F = Object.values(faces), wMax = Math.max(...F.map((f) => f.umax - f.umin)), zTop = Math.max(...F.map((f) => f.hiZ)) + th, zBot = -Math.max(fag, 0);
+  const sc = [50, 100, 200, 250, 500].find((s) => wMax / s + 26 <= 142 && (zTop - zBot) / s + 22 <= 128) || 500;
+  const blockH = (zTop - zBot) / sc + 22, pad = Math.max(0, (136 - blockH) / 2), colX = [16, 162], rowTop = [14 + pad, 150 + pad], slot = { N: [0, 0], S: [1, 0], E: [0, 1], W: [1, 1] };
+  let g = "";
+  for (const face of ["N", "S", "E", "W"]) {
+    if (!faces[face]) continue;
+    const { walls, u, u0, u1, topW, topR, U, umin } = faces[face];
+    const ox = colX[slot[face][0]], oy = rowTop[slot[face][1]] + 6 + zTop / sc, X = (vv) => ox + (vv - umin) / sc, Y = (z) => oy - z / sc;
+    // ground under a raised floor, piles, the floor line
+    g += line(X(umin) - 4, Y(-fag), X(faces[face].umax) + 4, Y(-fag), BOLD);
+    if (fag > 300) { for (let vv = u0 + 300; vv <= u1; vv += 1800) g += line(X(vv), Y(-150), X(vv), Y(-fag), MED, "#6d5d63"); g += line(X(u0), Y(-150), X(u1), Y(-150), MED); }
+    // wall face up to the roof line along this face
+    const wallPts = [[X(u0), Y(0)], [X(u1), Y(0)]]; for (let k = N; k >= 0; k--) wallPts.push([X(U(k)), Y(topW(U(k)))]);
+    const curtain = walls.every((w) => w.mat === "glass-curtain");
+    g += poly(wallPts, curtain ? "#9fb3bd" : "#f3efe9", INK, MED);
+    if (!curtain) for (const w of walls) { const a = u(w.a), b = u(w.b); for (let vv = Math.min(a, b) + 300; vv < Math.max(a, b); vv += 300) g += line(X(vv), Y(0), X(vv), Y(topW(vv)), 0.07, "#c4b9bd"); }
+    // roof: from the wall top (and the eaves overhang) up to the silhouette
+    const rp = []; for (let k = 0; k <= N; k++) { const uu = U(k, u0 - oh, u1 + oh); rp.push([X(uu), Y(Math.max(topR(uu), topW(uu)) + th)]); }
+    for (let k = N; k >= 0; k--) { const uu = U(k, u0 - oh, u1 + oh); rp.push([X(uu), Y(Math.min(topW(uu), topR(uu)) - 40)]); }
+    g += poly(rp, "#5d5659", INK, HAIR);
+    // openings
     for (const o of P.openings.filter((x) => walls.some((w) => w.id === x.wall))) {
       const s = openingSpan(P, o), a = u(s.a), b = u(s.b), lo = Math.min(a, b), hi = Math.max(a, b);
-      const top = o.kind === "glazing" && gable ? null : o.sill + o.h;
-      if (o.kind === "glazing" && gable) {   // glazed gable: fill the triangle too, with mullions
-        const mid = (u0 + u1) / 2, roofAt = (v) => eaves + (ridge - eaves) * (1 - Math.abs(v - mid) / ((u1 - u0) / 2)) - 250;
-        const pts = [[lo, o.sill], [hi, o.sill]]; for (let v = hi; v >= lo; v -= 400) pts.push([v, roofAt(v)]);
-        g += poly(pts.map(([v, z]) => [X(v), Y(z)]), "#9fb3bd", INK, MED);
-        for (let v = lo + 1200; v < hi; v += 1200) g += line(X(v), Y(o.sill), X(v), Y(roofAt(v)), 0.15, "#3f4c52");
-        for (const z of [1200, 2400, 3600, 4800, 6000]) { const xs = pts.filter(([, zz]) => zz > z).map(([v]) => v); if (xs.length > 1) g += line(X(Math.min(...xs)), Y(z), X(Math.max(...xs)), Y(z), 0.12, "#3f4c52"); }
+      if (o.kind === "glazing") {
+        const pts = [[lo, o.sill], [hi, o.sill]]; for (let k = N; k >= 0; k--) { const uu = lo + ((hi - lo) * k) / N; pts.push([uu, Math.min(o.sill + o.h, topW(uu) - 250) > o.sill + o.h - 1 ? topW(uu) - 250 : o.sill + o.h]); }
+        g += poly(pts.map(([q, z]) => [X(q), Y(z)]), "#9fb3bd", INK, MED);
+        for (let q = lo + 1200; q < hi; q += 1200) g += line(X(q), Y(o.sill), X(q), Y(topW(q) - 250), 0.15, "#3f4c52");
       } else {
-        g += `<rect x="${f1(X(lo))}" y="${f1(Y(top))}" width="${f1((hi - lo) / sc)}" height="${f1(o.h / sc)}" fill="${isDoor(o) ? "#c9b6a0" : "#9fb3bd"}" stroke="${INK}" stroke-width="${MED}"/>`;
-        if (o.kind === "door-double") g += line(X((lo + hi) / 2), Y(top), X((lo + hi) / 2), Y(o.sill), HAIR);
+        g += `<rect x="${f1(X(lo))}" y="${f1(Y(o.sill + o.h))}" width="${f1((hi - lo) / sc)}" height="${f1(o.h / sc)}" fill="${isDoor(o) && o.mat !== "door-glazed" ? "#c9b6a0" : "#9fb3bd"}" stroke="${INK}" stroke-width="${MED}"/>`;
+        if (o.kind === "door-double") g += line(X((lo + hi) / 2), Y(o.sill + o.h), X((lo + hi) / 2), Y(o.sill), HAIR);
       }
     }
-    // level marks
-    for (const [z, lab] of [[0, "±0"], [eaves, `+${eaves}`], ...(gable || R.type !== "flat" ? [[ridge, `+${ridge}`]] : [])]) g += line(X(u1) + oh / sc + 1, Y(z), X(u1) + oh / sc + 5, Y(z), HAIR) + txt(X(u1) + oh / sc + 5.5, Y(z) + 0.7, lab, { size: 1.8, mono: 1 });
+    // decks seen from this side: the deck edge and its balustrade
+    for (const dk of P.decks || []) {
+      const du = dk.poly.map(u), dl = Math.min(...du), dh = Math.max(...du);
+      g += `<rect x="${f1(X(dl))}" y="${f1(Y(0))}" width="${f1((dh - dl) / sc)}" height="${f1(200 / sc)}" fill="#a58a6c" stroke="${INK}" stroke-width="${HAIR}"/>`;
+      if (dk.barrier) g += `<rect x="${f1(X(dl))}" y="${f1(Y(dk.barrier))}" width="${f1((dh - dl) / sc)}" height="${f1(dk.barrier / sc)}" fill="#cfdde3" fill-opacity=".55" stroke="${INK}" stroke-width="${HAIR}"/>`;
+      if (fag > 300) for (let q = dl + 300; q <= dh; q += 1800) g += line(X(q), Y(-200), X(q), Y(-fag), MED, "#6d5d63");
+    }
+    const hiZ = faces[face].hiZ, loZ = Math.min(...Array.from({ length: N + 1 }, (_, k) => topW(U(k))));
+    const marks = [[0, "FFL ±0"], [loZ, `+${Math.round(loZ)}`], ...(hiZ - loZ > 50 ? [[hiZ, `+${Math.round(hiZ)}`]] : []), ...(fag > 300 ? [[-fag, `ground −${fag}`]] : [])];
+    const mx = X(faces[face].umax); for (const [z, lab] of marks) g += line(mx + 1, Y(z), mx + 5, Y(z), HAIR) + txt(mx + 5.5, Y(z) + 0.7, lab, { size: 1.8, mono: 1 });
     const names = { N: "North", S: "South", E: "East", W: "West" };
-    g += txt(ox, oy + 9, `${names[face]} elevation`, { size: 3.2, weight: 600 }) + txt(ox + 38, oy + 9, "1:200", { size: 2.2, mono: 1, fill: SOFT });
-    const mats = [...new Set(walls.map((w) => w.mat))].map(matName).join(" · ") + " · " + matName(R.mat);
-    g += txt(ox, oy + 13.5, mats, { size: 1.8, fill: SOFT });
+    g += txt(ox, oy + fag / sc + 9, `${names[face]} elevation`, { size: 3.2, weight: 600 }) + txt(ox + 38, oy + fag / sc + 9, `1:${sc}`, { size: 2.2, mono: 1, fill: SOFT });
+    g += txt(ox, oy + fag / sc + 13.5, [...new Set(walls.map((w) => w.mat))].map(matName).join(" · ") + " · " + matName(R.mat), { size: 1.8, fill: SOFT });
   }
-  return frame(P, "A201", "Elevations", "1:200", g, P.revisions || []);
+  return frame(P, "A201", "Elevations", `1:${sc}`, g, P.revisions || []);
 }
 
-// ------------------------------------------------------------------------------------------------ section A–A (east–west through the hall)
-export function sectionSheet(P, yCut) {
-  const sc = 100, bx = polyBox(P.rooms.flatMap((r) => r.poly)), y = yCut ?? (bx.y0 + bx.y1) / 2, X0 = 40, Z0 = 220;
-  const X = (x) => X0 + (x - bx.x0) / sc, Y = (z) => Z0 - z / sc, R = P.roof || {}, eaves = R.eaves || 3000, ridge = R.ridgeH || eaves, oh = R.overhang || 0;
-  let g = line(X(bx.x0) - 15, Y(0) + (P.slab?.t || 150) / sc, X(bx.x1) + 15, Y(0) + (P.slab?.t || 150) / sc, BOLD);
-  g += `<rect x="${f1(X(bx.x0))}" y="${f1(Y(0))}" width="${f1((bx.x1 - bx.x0) / sc)}" height="${f1((P.slab?.t || 150) / sc)}" fill="#9b9497" stroke="${INK}" stroke-width="${MED}"/>`;
-  // cut walls (walls crossing the section line)
+// ------------------------------------------------------------------------------------------------ section A–A
+// Cut across the roof's fall so the section shows its profile: a roof that rises along y (mono to the north or south, or a gable
+// whose ridge runs east–west) is cut north–south; anything else east–west. The largest standard scale that fits is used.
+export function sectionSheet(P, cutAt) {
+  const R = P.roof || {}, bx = footprint(P), oh = R.overhang || 0, slabT = P.slab?.t || 150, fag = P.site?.floorAboveGround || 0;
+  const alongY = (R.type === "mono" && (R.low === "n" || R.low === "s")) || (R.type === "gable" && R.ridge !== "y");
+  // s runs along the cut, c is the fixed coordinate of the cut line
+  const [s0, s1, c0, c1] = alongY ? [bx.y0, bx.y1, bx.x0, bx.x1] : [bx.x0, bx.x1, bx.y0, bx.y1], c = cutAt ?? (c0 + c1) / 2;
+  const XY = (sv) => (alongY ? [c, sv] : [sv, c]), rz = (sv) => roofZ(P, ...XY(Math.max(s0, Math.min(s1, sv))));
+  let zTop = 0; for (let k = 0; k <= 24; k++) zTop = Math.max(zTop, rz(s0 + ((s1 - s0) * k) / 24)); zTop += 250;
+  // decks the cut passes through (their extent along the cut counts toward the drawing's width)
+  const deckSpans = (P.decks || []).map((dk) => { const pts = []; for (let k = 0; k <= 200; k++) { const sv = s0 - 8000 + ((s1 - s0 + 16000) * k) / 200; if (pointInPoly(XY(sv), dk.poly)) pts.push(sv); } return pts.length ? { dk, dl: Math.min(...pts), dh: Math.max(...pts) } : null; }).filter(Boolean);
+  const sMin = Math.min(s0 - oh, ...deckSpans.map((d) => d.dl)), sMax = Math.max(s1 + oh, ...deckSpans.map((d) => d.dh));
+  const W = sMax - sMin, H = zTop + Math.max(fag, slabT);
+  const sc = [50, 100, 200, 500].find((v) => W / v + 32 <= 287 && H / v + 30 <= 250) || 500;
+  const X0 = 16 + (289 - (W / sc + 32)) / 2 + (s0 - sMin) / sc, Z0 = 16 + (271 - (H / sc + 30)) / 2 + zTop / sc;
+  const X = (sv) => X0 + (sv - s0) / sc, Y = (z) => Z0 - z / sc, pos = (p) => (alongY ? p[1] : p[0]), across = (p) => (alongY ? p[0] : p[1]);
+  let g = fag > 300 ? "" : line(X(s0 - oh) - 4, Y(0) + slabT / sc, X(s1 + oh) + 2, Y(0) + slabT / sc, BOLD);
+  g += `<rect x="${f1(X(s0))}" y="${f1(Y(0))}" width="${f1((s1 - s0) / sc)}" height="${f1(slabT / sc)}" fill="#9b9497" stroke="${INK}" stroke-width="${MED}"/>`;
+  // walls the cut line crosses: walls that run across the cut direction
   for (const w of P.walls) {
-    if (w.a[0] !== w.b[0]) continue; const ylo = Math.min(w.a[1], w.b[1]), yhi = Math.max(w.a[1], w.b[1]); if (y < ylo || y > yhi) continue;
-    const cut = P.openings.find((o) => o.wall === w.id && (() => { const s = openingSpan(P, o); return y >= Math.min(s.a[1], s.b[1]) && y <= Math.max(s.a[1], s.b[1]); })());
-    const h = w.kind === "ext" ? eaves : w.h, x = w.a[0];
-    if (cut) { g += `<rect x="${f1(X(x) - w.t / 2 / sc)}" y="${f1(Y(h))}" width="${f1(w.t / sc)}" height="${f1((h - cut.sill - cut.h) / sc)}" fill="#2a2226"/>`; if (cut.sill > 0) g += `<rect x="${f1(X(x) - w.t / 2 / sc)}" y="${f1(Y(cut.sill))}" width="${f1(w.t / sc)}" height="${f1(cut.sill / sc)}" fill="#2a2226"/>`; }
-    else g += `<rect x="${f1(X(x) - w.t / 2 / sc)}" y="${f1(Y(h))}" width="${f1(w.t / sc)}" height="${f1(h / sc)}" fill="#2a2226"/>`;
+    if (pos(w.a) !== pos(w.b)) continue; const lo = Math.min(across(w.a), across(w.b)), hi = Math.max(across(w.a), across(w.b)); if (c < lo || c > hi) continue;
+    const cut = P.openings.find((o) => o.wall === w.id && (() => { const sp = openingSpan(P, o); return c >= Math.min(across(sp.a), across(sp.b)) && c <= Math.max(across(sp.a), across(sp.b)); })());
+    const sv = pos(w.a), h = w.kind === "ext" ? rz(sv) : w.h, x = X(sv) - w.t / 2 / sc, wd = f1(w.t / sc);
+    if (cut) { g += `<rect x="${f1(x)}" y="${f1(Y(h))}" width="${wd}" height="${f1((h - cut.sill - cut.h) / sc)}" fill="#2a2226"/>`; if (cut.sill > 0) g += `<rect x="${f1(x)}" y="${f1(Y(cut.sill))}" width="${wd}" height="${f1(cut.sill / sc)}" fill="#2a2226"/>`;
+      if (isGlazed(cut)) g += `<rect x="${f1(x + w.t / 4 / sc)}" y="${f1(Y(cut.sill + cut.h))}" width="${f1(w.t / 2 / sc)}" height="${f1(cut.h / sc)}" fill="#9fb3bd" stroke="${INK}" stroke-width="${HAIR}"/>`; }
+    else g += `<rect x="${f1(x)}" y="${f1(Y(h))}" width="${wd}" height="${f1(h / sc)}" fill="#2a2226"/>`;
   }
-  // roof: gable across the section when the ridge runs north–south
-  const mid = (bx.x0 + bx.x1) / 2;
-  if (R.type === "gable" && R.ridge === "y") g += poly([[X(bx.x0 - oh), Y(eaves - 120)], [X(mid), Y(ridge + 60)], [X(bx.x1 + oh), Y(eaves - 120)], [X(bx.x1 + oh), Y(eaves + 60)], [X(mid), Y(ridge + 240)], [X(bx.x0 - oh), Y(eaves + 60)]], "#4a4246", INK, MED);
-  else g += `<rect x="${f1(X(bx.x0 - oh))}" y="${f1(Y(ridge + 200))}" width="${f1((bx.x1 - bx.x0 + 2 * oh) / sc)}" height="${f1(2)}" fill="#4a4246"/>`;
+  // the roof along the cut, any shape, with its overhang continuing the pitch
+  const rp = [], N = 48, a0 = s0 - oh, a1 = s1 + oh, slope = (rz(s0 + 10) - rz(s0)) / 10, slope1 = (rz(s1) - rz(s1 - 10)) / 10;
+  const rr = (sv) => (sv < s0 ? rz(s0) - (s0 - sv) * slope : sv > s1 ? rz(s1) + (sv - s1) * slope1 : rz(sv));
+  for (let k = 0; k <= N; k++) { const sv = a0 + ((a1 - a0) * k) / N; rp.push([X(sv), Y(rr(sv) + 250)]); }
+  for (let k = N; k >= 0; k--) { const sv = a0 + ((a1 - a0) * k) / N; rp.push([X(sv), Y(rr(sv))]); }
+  g += poly(rp, "#4a4246", INK, MED);
+  // decks the cut passes through, the ground and piles under a raised floor
+  for (const { dk, dl, dh } of deckSpans) {
+    g += `<rect x="${f1(X(dl))}" y="${f1(Y(0))}" width="${f1((dh - dl) / sc)}" height="${f1(200 / sc)}" fill="#a58a6c" stroke="${INK}" stroke-width="${HAIR}"/>`;
+    if (dk.barrier) for (const e of [dl, dh]) if (e < s0 - 1 || e > s1 + 1) g += line(X(e), Y(0), X(e), Y(dk.barrier), MED, "#3f4c52");
+    if (fag > 300) for (let sv = dl + 300; sv <= dh; sv += 1800) if (sv < s0 || sv > s1) g += line(X(sv), Y(-200), X(sv), Y(-fag), MED, "#6d5d63");
+  }
+  if (fag > 300) { g += line(X(sMin) - 4, Y(-fag), X(sMax) + 2, Y(-fag), BOLD); for (let sv = s0 + 300; sv <= s1; sv += 1800) g += line(X(sv), Y(-slabT), X(sv), Y(-fag), MED, "#6d5d63"); }
   // rooms cut, labelled at mid height
-  for (const r of P.rooms) { const b = polyBox(r.poly); if (y < b.y0 || y > b.y1) continue; g += txt(X((b.x0 + b.x1) / 2), Y(1500), r.name.toUpperCase(), { size: 2.2, anchor: "middle", weight: 600, fill: SOFT }); }
-  for (const [z, lab] of [[0, "FFL ±0"], [eaves, `Eaves +${eaves}`], [ridge, `Ridge +${ridge}`]]) g += line(X(bx.x1) + 6, Y(z), X(bx.x1) + 14, Y(z), HAIR) + txt(X(bx.x1) + 15, Y(z) + 0.7, lab, { size: 2, mono: 1 });
-  g += txt(X0, 250, "Section A–A", { size: 4, weight: 600 }) + txt(X0 + 34, 250, `1:100 · cut at y = ${Math.round(y)} mm, looking north`, { size: 2.4, mono: 1, fill: SOFT });
-  return frame(P, "A301", "Section A–A", "1:100", g, P.revisions || []);
+  for (const r of P.rooms) { if (!pointInPoly(XY((Math.max(s0, polyBox(r.poly)[alongY ? "y0" : "x0"]) + Math.min(s1, polyBox(r.poly)[alongY ? "y1" : "x1"])) / 2), r.poly)) continue; const b = polyBox(r.poly), m = alongY ? (b.y0 + b.y1) / 2 : (b.x0 + b.x1) / 2; g += txt(X(m), Y(1500), r.name.toUpperCase(), { size: 2.2, anchor: "middle", weight: 600, fill: SOFT }); }
+  const zs = [...new Set([0, Math.round(rz(s0)), Math.round(rz(s1)), Math.round(rz((s0 + s1) / 2)), ...(fag > 300 ? [-fag] : [])])];
+  for (const z of zs) g += line(X(sMax) + 4, Y(z), X(sMax) + 12, Y(z), HAIR) + txt(X(sMax) + 13, Y(z) + 0.7, z > 0 ? `+${z}` : z < 0 ? `ground −${-z}` : "FFL ±0", { size: 2, mono: 1 });
+  const ty = Y(-Math.max(fag, slabT)) + 12, dir = alongY ? `cut at x = ${Math.round(c)} mm, looking east` : `cut at y = ${Math.round(c)} mm, looking north`;
+  g += txt(X(sMin), ty, "Section A–A", { size: 4, weight: 600 }) + txt(X(sMin) + 34, ty, `1:${sc} · ${dir}`, { size: 2.4, mono: 1, fill: SOFT });
+  return frame(P, "A301", "Section A–A", `1:${sc}`, g, P.revisions || []);
 }
 
 // ------------------------------------------------------------------------------------------------ code pre-check schedule

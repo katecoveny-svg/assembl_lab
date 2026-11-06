@@ -1,0 +1,136 @@
+/* assembl lab · Plan Studio landing. The lab's DESIGN.md: one plum world, a chalk sheet for the work, renders shown whole. */
+:root {
+  --deep: #240B21; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --ink: #492B3E; --muted: #654A4E; --rose: #916A70;
+  --on: rgba(255, 253, 251, .78); --glass: rgba(255, 253, 251, .07); --glass-line: rgba(255, 253, 251, .16);
+  --glow-rose: rgba(243, 165, 190, .30); --glow-lilac: rgba(199, 180, 240, .24); --lilac: #C7B4F0; --pink: #F3A5BE;
+  --sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --t-h1: clamp(46px, 6.6vw, 96px); --t-h2: clamp(32px, 3.8vw, 54px); --t-h3: clamp(21px, 1.7vw, 25px); --t-lede: clamp(17px, 1.3vw, 20px);
+  --gutter: clamp(16px, 5vw, 64px); --max: 1240px; --gap: clamp(88px, 10vw, 152px);
+  --r-frame: 28px; --r-tile: 22px; --r-sheet: 44px;
+  --sh-tile: 0 0 0 1px rgba(73, 43, 62, .08), 0 10px 30px -12px rgba(36, 11, 33, .18);
+  --sh-lift: 0 40px 90px -30px rgba(0, 0, 0, .65), 0 0 0 1px rgba(255, 253, 251, .06);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--deep); color: var(--paper); font: 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+.mono { font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: .01em; }
+.skip { position: absolute; left: -999px; top: 8px; z-index: 10; background: var(--paper); color: var(--deep); padding: 10px 14px; border-radius: 10px; }
+.skip:focus { left: 12px; }
+:focus-visible { outline: 2px solid var(--lilac); outline-offset: 3px; border-radius: 6px; }
+.sheet :focus-visible { outline-color: var(--rose); }
+
+/* ------------------------------------------------------------------ header */
+.bar { display: flex; align-items: center; gap: 24px; max-width: calc(var(--max) + 2 * var(--gutter)); margin: 0 auto; padding: 20px var(--gutter); }
+.brand { display: flex; align-items: center; gap: 7px; text-decoration: none; font-size: 18px; }
+.brand svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; } .brand span { color: var(--on); }
+.bar nav { display: flex; gap: 22px; margin-left: auto; } .bar nav a { color: var(--on); text-decoration: none; font-weight: 500; font-size: 15px; }
+.bar nav a:hover { color: var(--paper); }
+
+/* ------------------------------------------------------------------ buttons */
+.btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; font-weight: 600; text-decoration: none; transition: transform .15s ease, background .15s ease; }
+.btn.sm { min-height: 40px; padding: 0 16px; font-size: 15px; }
+.btn.paper { background: var(--paper); color: var(--deep); } .btn.paper:hover { transform: translateY(-1px); }
+.btn.glass { background: var(--glass); color: var(--paper); box-shadow: inset 0 0 0 1px var(--glass-line); } .btn.glass:hover { background: rgba(255, 253, 251, .12); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+
+/* ------------------------------------------------------------------ hero */
+.hero { max-width: calc(var(--max) + 2 * var(--gutter)); margin: 0 auto; padding: clamp(40px, 7vw, 96px) var(--gutter) var(--gap); position: relative; }
+.hero::before { content: ""; position: absolute; inset: -120px -40vw 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(700px 380px at 85% 8%, var(--glow-rose), transparent 70%), radial-gradient(620px 360px at 5% 62%, var(--glow-lilac), transparent 70%); }
+.hero > * { position: relative; z-index: 1; }
+h1 { font-size: var(--t-h1); line-height: .96; letter-spacing: -.045em; font-weight: 600; margin: 0; max-width: 13ch; }
+.lede { font-size: var(--t-lede); line-height: 1.5; color: var(--on); max-width: 46ch; margin: 24px 0 0; }
+.hero-image { margin: clamp(48px, 6vw, 80px) 0 0; }
+.hero-image img { width: 100%; border-radius: var(--r-frame); box-shadow: var(--sh-lift); }
+figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 16px; font-size: 14px; color: var(--on); }
+.chip { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11.5px; font-weight: 500; line-height: 1.2; padding: 5px 10px; border-radius: 999px; background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line); color: var(--paper); white-space: nowrap; }
+.chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--rose); }
+.chip.live i { background: var(--lilac); } .chip.sim i { background: var(--pink); }
+.todo { background: rgba(243, 165, 190, .18); outline: 1px dashed var(--pink); border-radius: 4px; padding: 0 4px; color: var(--paper); }
+
+/* ------------------------------------------------------------------ the chalk sheet */
+.sheet { background: var(--chalk); color: var(--ink); margin: 0 clamp(6px, 1vw, 16px); border-radius: var(--r-sheet); padding: var(--gap) var(--gutter); }
+.sheet .lede { color: var(--muted); }
+.sheet .chip { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(73, 43, 62, .14); }
+.sheet.second { border-radius: var(--r-sheet) var(--r-sheet) 0 0; }
+.sheet.third { border-radius: 0; padding-top: 0; } .sheet.fourth { border-radius: 0 0 var(--r-sheet) var(--r-sheet); padding-top: 0; }
+.chapter-head, .journey, .formats, .also, .mats, .note, .honest, .facts { max-width: var(--max); margin-left: auto; margin-right: auto; }
+.chapter-head { margin-bottom: clamp(40px, 5vw, 72px); }
+h2 { font-size: var(--t-h2); line-height: 1.04; letter-spacing: -.035em; font-weight: 600; margin: 0; max-width: 18ch; }
+h3 { font-size: var(--t-h3); line-height: 1.15; letter-spacing: -.02em; font-weight: 600; margin: 0 0 12px; }
+
+/* journey: the steps, each with its own output; on wide screens one sticky stage shows the step in view */
+.journey { display: grid; gap: 56px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 72px; counter-reset: step; }
+.step figure { margin: 0 0 24px; } .step figure img { width: 100%; border-radius: var(--r-tile); box-shadow: var(--sh-tile); background: var(--paper); }
+.step p { margin: 0; color: var(--muted); max-width: 46ch; }
+.step .proof { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 18px; font-size: 14px; color: var(--muted); }
+.stage { display: none; }
+@media (min-width: 960px) {
+  html.js .journey { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(40px, 5vw, 80px); }
+  /* the frame takes the image's own shape: no empty box around a landscape render */
+  html.js .stage { display: flex; flex-direction: column; justify-content: center; position: sticky; top: 0; align-self: start; height: 100vh; }
+  html.js .stage .frame { width: fit-content; max-width: 100%; border-radius: var(--r-tile); box-shadow: var(--sh-tile); background: var(--paper); overflow: hidden; }
+  html.js .stage img { display: block; max-width: 100%; max-height: calc(100vh - 140px); width: auto; height: auto; }
+  html.js .stage-meta { display: flex; align-items: center; gap: 14px; height: 40px; margin-top: 8px; color: var(--muted); }
+  html.js .stage-meta .line { flex: 1; height: 2px; background: rgba(73, 43, 62, .12); border-radius: 2px; overflow: hidden; }
+  html.js .stage-meta .line span { display: block; height: 100%; width: 0; background: var(--rose); transition: width .3s ease; }
+  html.js .step figure { display: none; }
+  html.js .steps { gap: 0; }
+  html.js .step { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; opacity: .38; transition: opacity .3s ease; }
+  html.js .step.on { opacity: 1; }
+  html.js .step:first-child { min-height: 64vh; justify-content: flex-start; padding-top: 12vh; }
+}
+
+/* ------------------------------------------------------------------ proof band, on plum */
+.proof-band { padding: var(--gap) var(--gutter); position: relative; }
+.proof-band::before { content: ""; position: absolute; inset: 0 -20vw; pointer-events: none; background: radial-gradient(560px 300px at 80% 30%, var(--glow-rose), transparent 70%); opacity: .6; }
+.proof-band > * { position: relative; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 0; }
+.facts div { border-top: 1px solid var(--glass-line); padding-top: 22px; }
+.facts dt { color: var(--on); font-size: 15px; } .facts dd { margin: 6px 0 10px; font-size: clamp(44px, 5vw, 72px); line-height: 1; font-weight: 600; letter-spacing: -.04em; }
+.facts p { margin: 0; color: var(--on); }
+
+/* ------------------------------------------------------------------ formats */
+.formats { display: flex; align-items: flex-end; gap: clamp(12px, 1.6vw, 24px); }
+.formats figure { margin: 0; } .formats img { width: 100%; border-radius: 18px; box-shadow: var(--sh-tile); background: var(--paper); }
+.formats figcaption { color: var(--ink); font-weight: 600; font-size: 14px; margin-top: 12px; display: grid; gap: 2px; } .formats figcaption .mono { color: var(--muted); font-weight: 500; }
+.f-reel { flex: 0 0 17%; } .f-feed { flex: 0 0 21%; } .f-square { flex: 0 0 24%; } .f-sheet { flex: 1 1 auto; }
+.also, .honest { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 56px; margin-bottom: var(--gap); }
+.also li, .honest li { background: var(--paper); border-radius: var(--r-tile); box-shadow: var(--sh-tile); padding: 24px; display: grid; gap: 8px; align-content: start; }
+.also b, .honest b { font-size: 17px; color: var(--ink); } .also span, .honest span { color: var(--muted); }
+.honest { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 auto; }
+
+/* ------------------------------------------------------------------ materials */
+.mats { list-style: none; padding: 0; margin-top: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.mats li { background: var(--paper); border-radius: var(--r-tile); box-shadow: var(--sh-tile); padding: 20px; display: grid; gap: 6px; align-content: start; }
+.mats .sw { width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: var(--sw); box-shadow: inset 0 0 0 1px rgba(73, 43, 62, .1); margin-bottom: 10px; }
+.mats .sw.glass { background: linear-gradient(135deg, rgba(255, 255, 255, .55), transparent 45%), var(--sw); }
+.mats b { color: var(--ink); } .mats .mono { color: var(--ink); } .mats small { color: var(--muted); font-size: 13px; }
+.note { color: var(--muted); font-size: 14px; padding-right: max(0px, calc(100% - 72ch)); margin-top: 24px; margin-bottom: var(--gap); }
+
+/* ------------------------------------------------------------------ close */
+.close { max-width: calc(var(--max) + 2 * var(--gutter)); margin: 0 auto; padding: var(--gap) var(--gutter); position: relative; }
+.close::before { content: ""; position: absolute; inset: -80px -40vw; pointer-events: none; background: radial-gradient(520px 300px at calc(40vw + 10%) 50%, var(--glow-lilac), transparent 70%); }
+.close > * { position: relative; }
+.close h2 { font-size: clamp(36px, 5vw, 72px); max-width: 16ch; }
+.foot { background: var(--plum); color: var(--on); padding: 40px var(--gutter) 56px; font-size: 14px; }
+.foot p { max-width: var(--max); margin: 0 auto 10px; } .foot a { color: var(--paper); }
+
+/* ------------------------------------------------------------------ smaller screens */
+@media (max-width: 959px) {
+  .facts { grid-template-columns: 1fr; gap: 24px; }
+  .also { grid-template-columns: 1fr; } .mats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formats { flex-wrap: wrap; align-items: flex-end; }
+  .f-reel { flex: 0 0 calc(40% - 8px); } .f-feed { flex: 0 0 calc(60% - 8px); } .f-square { flex: 0 0 calc(45% - 8px); } .f-sheet { flex: 1 1 calc(55% - 8px); }
+}
+@media (max-width: 640px) {
+  :root { --r-sheet: 28px; }
+  .bar nav { display: none; } .bar .btn { margin-left: auto; }
+  .mats, .honest { grid-template-columns: 1fr; }
+  .f-square, .f-sheet { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+.stage-field { overflow-x: clip; }   /* glows reach past the content box; never past the page */

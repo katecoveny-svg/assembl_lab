@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan Studio · plans in, a model you can trust out · assembl lab</title>
+<meta name="description" content="Upload a 2D plan. assembl measures its linework, builds the 3D model, pre-checks it against the NZ Building Code live, keeps the working drawings in step, and makes stills, flythroughs and client presentations with real NZ materials.">
+<meta property="og:title" content="Plan Studio · assembl lab"><meta property="og:description" content="Plans in. A model you can trust out: measured, checked, drawn and presented.">
+<meta name="theme-color" content="#240B21">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/studio.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+</head>
+<body>
+<a class="skip" href="#studio">Skip to the studio</a>
+<header class="top">
+  <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
+  <a class="crumb" href="/plan-studio/">Plan Studio</a>
+  <span class="proj" id="projName">Tōtara Grove community hall</span>
+  <span class="chip mono" id="truthChip" data-tone="sim">Demonstration · fictional building</span>
+  <div class="top-actions"><button class="btn ghost sm" id="btnRevision" type="button">Issue revision</button><a class="btn ghost sm" href="/">All of the lab</a></div>
+</header>
+
+<section class="hero" aria-labelledby="h1">
+  <p class="kicker mono">Inside the lab · architecture · plan to model</p>
+  <h1 id="h1">Plans in.<br>A model you can trust out.</h1>
+  <p class="lede">Upload a 2D plan. Plan Studio measures the drawing's own linework, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and makes stills, flythroughs and client presentations with real NZ materials. Every element shows where it came from and how sure we are.</p>
+  <ul class="chips"><li>Measured from your PDF, not guessed</li><li>Evidence on every element</li><li>Live NZ Building Code pre-check (advisory)</li><li>Drawings with revision clouds</li><li>IFC · DXF · GLB · USDZ</li><li>Socials, client hi-res, presentations</li></ul>
+</section>
+
+<main id="studio" class="studio">
+  <nav class="steps" aria-label="Steps" role="tablist">
+    <button role="tab" data-tab="plans" aria-selected="true"><i>1</i>Plans</button>
+    <button role="tab" data-tab="model"><i>2</i>Model</button>
+    <button role="tab" data-tab="code"><i>3</i>Code check<span class="badge" id="codeBadge"></span></button>
+    <button role="tab" data-tab="drawings"><i>4</i>Drawings</button>
+    <button role="tab" data-tab="visuals"><i>5</i>Visuals</button>
+    <button role="tab" data-tab="present"><i>6</i>Present &amp; export</button>
+  </nav>
+
+  <div class="work">
+    <!-- 1 · plans -->
+    <section class="panel" data-panel="plans" aria-label="Plans">
+      <div class="cols">
+        <div class="card">
+          <h2>Bring a plan</h2>
+          <label class="drop" id="drop"><input type="file" id="file" accept="application/pdf,image/png,image/jpeg,image/webp"><b>Drop a floor plan here</b><span>A CAD-exported PDF is measured exactly in your browser. A scan or photo is read by AI and marked "inferred".</span></label>
+          <p class="hint">Your file stays in this browser. Only an image you choose to have AI read is sent, and it is not stored.</p>
+          <div class="row"><button class="btn" id="btnDemo" type="button">Use the demo hall</button><a class="btn ghost" href="../tests/fixtures/demo-plan.pdf" download>Download the demo PDF to try the reader</a></div>
+        </div>
+        <div class="card" id="readCard" hidden>
+          <h2>What we read</h2>
+          <div class="scale" id="scaleBox"></div>
+          <div id="readStats" class="stats"></div>
+          <div class="row"><button class="btn" id="btnUseRead" type="button">Build the model from this</button></div>
+        </div>
+      </div>
+      <div class="sheetview" id="sheetView" hidden><canvas id="pdfCanvas"></canvas><svg id="readOverlay" aria-label="What was detected"></svg></div>
+      <ol class="legend mono" id="readLegend" hidden><li><i class="ev hi"></i>measured, high confidence</li><li><i class="ev mid"></i>measured, check</li><li><i class="ev lo"></i>inferred or low confidence</li></ol>
+    </section>
+
+    <!-- 2 · model -->
+    <section class="panel" data-panel="model" aria-label="Model" hidden>
+      <div class="stagewrap">
+        <canvas id="stage3d" aria-label="3D model"></canvas>
+        <div class="stagebar">
+          <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="rear">Rear</button><button data-view="cornerA">Corner</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
+          <div class="seg" id="lights"><button data-light="day" class="on">Day</button><button data-light="golden">Golden hour</button><button data-light="dusk">Dusk</button></div>
+        </div>
+      </div>
+      <div class="cols">
+        <div class="card"><h2>Materials</h2><p class="hint">Start from a look, then change any product. Each look is real product selections, not a style prompt.</p><div class="seg" id="looks"></div><div id="matPick" class="matpick" style="margin-top:12px"></div><p class="hint">Screen colours are approximate. Choose from the maker's physical swatch: COLORSTEEL publishes reflectance, not RGB.</p></div>
+        <div class="card"><h2>Elements</h2><div class="seg" id="elTabs"><button data-el="openings" class="on">Openings</button><button data-el="walls">Walls</button><button data-el="rooms">Rooms</button></div><div class="tablewrap"><table id="elTable"></table></div></div>
+      </div>
+    </section>
+
+    <!-- 3 · code -->
+    <section class="panel" data-panel="code" aria-label="Code check" hidden>
+      <div class="card">
+        <h2>NZ Building Code pre-check</h2>
+        <p class="hint" id="codeDisclaimer"></p>
+        <div class="tally" id="codeTally"></div>
+        <ul class="checks" id="codeList"></ul>
+      </div>
+    </section>
+
+    <!-- 4 · drawings -->
+    <section class="panel" data-panel="drawings" aria-label="Drawings" hidden>
+      <div class="drawbar"><div class="seg" id="sheetTabs"></div><div class="row"><button class="btn ghost sm" id="btnSvg" type="button">SVG</button><button class="btn ghost sm" id="btnPdf" type="button">PDF set</button><button class="btn ghost sm" id="btnDxf" type="button">DXF plan</button></div></div>
+      <div class="sheet" id="sheetHost"></div>
+    </section>
+
+    <!-- 5 · visuals -->
+    <section class="panel" data-panel="visuals" aria-label="Visuals" hidden>
+      <div class="cols three">
+        <div class="card"><h2>Stills</h2><p class="hint">Rendered from the true model at the exact size. The label says it is a visualisation of model revision <span class="mono" id="revLabel">–</span>.</p>
+          <div class="presets" id="stillPresets"></div>
+          <div class="row"><button class="btn" id="btnSet" type="button">Client view set<small>5 views · one light · 1920 × 1080</small></button></div><p class="mono hint" id="setProg"></p></div>
+        <div class="card"><h2>Flythrough</h2><p class="hint">Recorded in your browser along a path through the real model.</p>
+          <div class="seg" id="flyShape"><button data-shape="reel" class="on">Reel 9:16</button><button data-shape="wide">16:9</button></div>
+          <div class="seg" id="flyPath"><button data-path="approach" class="on">Approach and enter</button><button data-path="orbit">Orbit</button></div>
+          <div class="row"><button class="btn" id="btnFly" type="button">Record 12 s</button><span class="mono hint" id="flyProg"></span></div></div>
+        <div class="card"><h2>AI enhance and hero clips</h2><p class="hint">Optional and paid. Stills, view sets and flythroughs above are free; use this for the occasional hero image or clip.</p><p class="hint" id="aiStatus">Checking…</p>
+          <div id="aiBox" hidden><div class="aipick" id="aiPreset"></div><p class="hint" id="aiNote"></p><p class="mono hint" id="aiEst"></p>
+            <label class="check"><input type="checkbox" id="aiConfirm"> I understand this spends money with fal.ai</label><div class="row"><button class="btn" id="btnAi" type="button" disabled>Enhance this view</button><span class="mono hint" id="aiProg"></span></div></div>
+          <p class="hint">Structure comes from the true model: a depth pass for stills, a guide clip recorded through the model for the geometry-locked hero clip. The AI restyles light and materials, not the design. Results carry "AI-enhanced visualisation".</p></div>
+      </div>
+      <div class="outputs" id="outputs" aria-live="polite"></div>
+    </section>
+
+    <!-- 6 · present & export -->
+    <section class="panel" data-panel="present" aria-label="Present and export" hidden>
+      <div class="cols">
+        <div class="card"><h2>Client presentation</h2><p class="hint">A 16:9 deck from the model: the building, the plans, the materials board with real product data, the code pre-check summary and what happens next. Opens ready to print to PDF.</p>
+          <div class="row"><button class="btn" id="btnDeck" type="button">Build the presentation</button></div></div>
+        <div class="card"><h2>Files</h2>
+          <div class="files"><button class="btn ghost" data-x="ifc" type="button">IFC4 model<small>Revit · ArchiCAD · Solibri</small></button><button class="btn ghost" data-x="glb" type="button">GLB<small>web and three.js</small></button><button class="btn ghost" data-x="usdz" type="button">USDZ<small>iPhone AR</small></button><button class="btn ghost" data-x="dxf" type="button">DXF plan<small>CAD layers</small></button><button class="btn ghost" data-x="json" type="button">Project JSON<small>the source of truth</small></button><button class="btn ghost" data-x="blend" type="button">Studio render pack<small>Blender hero stills</small></button></div></div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="inspector" aria-label="Inspector">
+    <h2>Inspector</h2>
+    <div id="inspect"><p class="hint">Select a wall, opening or room in a table, or a check, to see its evidence.</p></div>
+    <h3>Live pre-check</h3>
+    <div class="tally small" id="sideTally"></div>
+    <h3>Revisions</h3>
+    <ol class="revs mono" id="revList"><li class="hint">None issued</li></ol>
+  </aside>
+</main>
+
+<footer class="foot"><p>Plan Studio is an assembl lab build. The Building Code pre-check is advisory: the Acceptable Solutions are one way to comply and only a building consent authority grants consent. The demo building is fictional. Screen colours are approximate.</p></footer>
+<script type="module" src="../js/main.js"></script>
+</body>
+</html>

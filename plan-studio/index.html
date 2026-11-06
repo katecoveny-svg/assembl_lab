@@ -3,133 +3,191 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan Studio · plans in, a model you can trust out · assembl lab</title>
-<meta name="description" content="Upload a 2D plan. assembl measures its linework, builds the 3D model, pre-checks it against the NZ Building Code live, keeps the working drawings in step, and makes stills, flythroughs and client presentations with real NZ materials.">
-<meta property="og:title" content="Plan Studio · assembl lab"><meta property="og:description" content="Plans in. A model you can trust out: measured, checked, drawn and presented.">
+<title>Plan Studio · assembl lab</title>
+<meta name="description" content="Upload a 2D plan. Plan Studio measures it, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and makes stills, clips and client presentations with real NZ materials.">
+<meta property="og:title" content="Plan Studio · assembl lab">
+<meta property="og:description" content="Plans in. A model you can trust out: measured, checked, drawn and presented.">
+<meta property="og:image" content="/plan-studio/media/project-dusk.webp">
 <meta name="theme-color" content="#240B21">
 <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/studio.css">
-<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
-<a class="skip" href="#studio">Skip to the studio</a>
-<header class="top">
-  <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
-  <span class="crumb">Plan Studio</span>
-  <span class="proj" id="projName">Tōtara Grove community hall</span>
-  <span class="chip mono" id="truthChip" data-tone="sim">Demonstration · fictional building</span>
-  <div class="top-actions"><button class="btn ghost sm" id="btnRevision" type="button">Issue revision</button><a class="btn ghost sm" href="/">All of the lab</a></div>
-</header>
+<a class="skip" href="#main">Skip to the content</a>
 
-<section class="hero" aria-labelledby="h1">
-  <p class="kicker mono">Inside the lab · architecture · plan to model</p>
-  <h1 id="h1">Plans in.<br>A model you can trust out.</h1>
-  <p class="lede">Upload a 2D plan. Plan Studio measures the drawing's own linework, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and makes stills, flythroughs and client presentations with real NZ materials. Every element shows where it came from and how sure we are.</p>
-  <ul class="chips"><li>Measured from your PDF, not guessed</li><li>Evidence on every element</li><li>Live NZ Building Code pre-check (advisory)</li><li>Drawings with revision clouds</li><li>IFC · DXF · GLB · USDZ</li><li>Socials, client hi-res, presentations</li></ul>
-</section>
+<div class="stage-field">
+  <header class="bar">
+    <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
+    <nav aria-label="On this page"><a href="#how">How it works</a><a href="#formats">Outputs</a><a href="#pilot">Pilot</a></nav>
+    <a class="btn paper sm" href="studio/">Open the studio</a>
+  </header>
 
-<main id="studio" class="studio">
-  <nav class="steps" aria-label="Steps" role="tablist">
-    <button role="tab" data-tab="plans" aria-selected="true"><i>1</i>Plans</button>
-    <button role="tab" data-tab="model"><i>2</i>Model</button>
-    <button role="tab" data-tab="code"><i>3</i>Code check<span class="badge" id="codeBadge"></span></button>
-    <button role="tab" data-tab="drawings"><i>4</i>Drawings</button>
-    <button role="tab" data-tab="visuals"><i>5</i>Visuals</button>
-    <button role="tab" data-tab="present"><i>6</i>Present &amp; export</button>
-  </nav>
-
-  <div class="work">
-    <!-- 1 · plans -->
-    <section class="panel" data-panel="plans" aria-label="Plans">
-      <div class="cols">
-        <div class="card">
-          <h2>Bring a plan</h2>
-          <label class="drop" id="drop"><input type="file" id="file" accept="application/pdf,image/png,image/jpeg,image/webp"><b>Drop a floor plan here</b><span>A CAD-exported PDF is measured exactly in your browser. A scan or photo is read by AI and marked "inferred".</span></label>
-          <p class="hint">Your file stays in this browser. Only an image you choose to have AI read is sent, and it is not stored.</p>
-          <div class="row"><button class="btn" id="btnDemo" type="button">Use the demo hall</button><a class="btn ghost" href="tests/fixtures/demo-plan.pdf" download>Download the demo PDF to try the reader</a></div>
-        </div>
-        <div class="card" id="readCard" hidden>
-          <h2>What we read</h2>
-          <div class="scale" id="scaleBox"></div>
-          <div id="readStats" class="stats"></div>
-          <div class="row"><button class="btn" id="btnUseRead" type="button">Build the model from this</button></div>
+  <main id="main">
+    <section class="hero" aria-labelledby="h1">
+      <div class="hero-words">
+        <h1 id="h1">Plans in.<br>A model you can trust out.</h1>
+        <p class="lede">Upload a 2D plan. Plan Studio measures it, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and turns it into stills, clips and a client presentation with real New Zealand materials.</p>
+        <div class="actions">
+          <a class="btn paper" href="studio/">Open the studio</a>
+          <a class="btn glass" href="https://assembl.co.nz/">Talk to assembl</a>
         </div>
       </div>
-      <div class="sheetview" id="sheetView" hidden><canvas id="pdfCanvas"></canvas><svg id="readOverlay" aria-label="What was detected"></svg></div>
-      <ol class="legend mono" id="readLegend" hidden><li><i class="ev hi"></i>measured, high confidence</li><li><i class="ev mid"></i>measured, check</li><li><i class="ev lo"></i>inferred or low confidence</li></ol>
+      <figure class="hero-image">
+        <img src="media/project-dusk.webp" srcset="media/project-dusk-800.webp 800w, media/project-dusk.webp 2000w" sizes="(min-width: 1320px) 1240px, calc(100vw - 2 * var(--gutter))"
+             width="2000" height="1116" alt="A two-storey concrete and dark timber house on a bush hillside at dusk, its rooms lit warm behind full-height glazing" fetchpriority="high">
+        <figcaption><span class="chip"><i aria-hidden="true"></i>Project image</span><span>The kind of work Plan Studio is built for. Image: <span class="todo">[credit to confirm]</span>, used with permission. Not a Plan Studio render.</span></figcaption>
+      </figure>
     </section>
 
-    <!-- 2 · model -->
-    <section class="panel" data-panel="model" aria-label="Model" hidden>
-      <div class="stagewrap">
-        <canvas id="stage3d" aria-label="3D model"></canvas>
-        <div class="stagebar">
-          <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
-          <div class="seg" id="lights"><button data-light="day" class="on">Day</button><button data-light="golden">Golden hour</button><button data-light="dusk">Dusk</button></div>
+    <!-- the chalk sheet: the journey, one step at a time, with the real output of each step -->
+    <section class="sheet" id="how" aria-labelledby="how-h">
+      <div class="chapter-head">
+        <h2 id="how-h">One model, from the plan to the client meeting.</h2>
+        <p class="lede">Every view below comes from the same project model. Change a wall and the code check, the drawings, the renders and the presentation follow. These are real outputs from the demo hall, a fictional building.</p>
+      </div>
+      <div class="journey">
+        <div class="stage" aria-hidden="true">
+          <div class="frame"><img id="stageImg" src="media/step-read.webp" alt="" width="1622" height="1564"></div>
+          <div class="stage-meta"><span class="mono" id="stageCount">1 of 6</span><span class="line"><span id="stageLine"></span></span></div>
         </div>
-      </div>
-      <div class="cols">
-        <div class="card"><h2>Materials</h2><div id="matPick" class="matpick"></div><p class="hint">Screen colours are approximate. Choose from the maker's physical swatch: COLORSTEEL publishes reflectance, not RGB.</p></div>
-        <div class="card"><h2>Elements</h2><div class="seg" id="elTabs"><button data-el="openings" class="on">Openings</button><button data-el="walls">Walls</button><button data-el="rooms">Rooms</button></div><div class="tablewrap"><table id="elTable"></table></div></div>
-      </div>
-    </section>
-
-    <!-- 3 · code -->
-    <section class="panel" data-panel="code" aria-label="Code check" hidden>
-      <div class="card">
-        <h2>NZ Building Code pre-check</h2>
-        <p class="hint" id="codeDisclaimer"></p>
-        <div class="tally" id="codeTally"></div>
-        <ul class="checks" id="codeList"></ul>
-      </div>
-    </section>
-
-    <!-- 4 · drawings -->
-    <section class="panel" data-panel="drawings" aria-label="Drawings" hidden>
-      <div class="drawbar"><div class="seg" id="sheetTabs"></div><div class="row"><button class="btn ghost sm" id="btnSvg" type="button">SVG</button><button class="btn ghost sm" id="btnPdf" type="button">PDF set</button><button class="btn ghost sm" id="btnDxf" type="button">DXF plan</button></div></div>
-      <div class="sheet" id="sheetHost"></div>
-    </section>
-
-    <!-- 5 · visuals -->
-    <section class="panel" data-panel="visuals" aria-label="Visuals" hidden>
-      <div class="cols three">
-        <div class="card"><h2>Stills</h2><p class="hint">Rendered from the true model at the exact size. The label says it is a visualisation of model revision <span class="mono" id="revLabel">–</span>.</p>
-          <div class="presets" id="stillPresets"></div></div>
-        <div class="card"><h2>Flythrough</h2><p class="hint">Recorded in your browser along a path through the real model.</p>
-          <div class="seg" id="flyShape"><button data-shape="reel" class="on">Reel 9:16</button><button data-shape="wide">16:9</button></div>
-          <div class="seg" id="flyPath"><button data-path="approach" class="on">Approach and enter</button><button data-path="orbit">Orbit</button></div>
-          <div class="row"><button class="btn" id="btnFly" type="button">Record 12 s</button><span class="mono hint" id="flyProg"></span></div></div>
-        <div class="card"><h2>AI enhance</h2><p class="hint" id="aiStatus">Checking…</p>
-          <div id="aiBox" hidden><div class="seg" id="aiPreset"></div><p class="mono hint" id="aiEst"></p><label class="check"><input type="checkbox" id="aiConfirm"> I understand this spends money with fal.ai</label><div class="row"><button class="btn" id="btnAi" type="button" disabled>Enhance this view</button></div></div>
-          <p class="hint">Structure comes from the model's depth pass, so the AI restyles light and materials, not the design. Results carry "AI-enhanced visualisation".</p></div>
-      </div>
-      <div class="outputs" id="outputs" aria-live="polite"></div>
-    </section>
-
-    <!-- 6 · present & export -->
-    <section class="panel" data-panel="present" aria-label="Present and export" hidden>
-      <div class="cols">
-        <div class="card"><h2>Client presentation</h2><p class="hint">A 16:9 deck from the model: the building, the plans, the materials board with real product data, the code pre-check summary and what happens next. Opens ready to print to PDF.</p>
-          <div class="row"><button class="btn" id="btnDeck" type="button">Build the presentation</button></div></div>
-        <div class="card"><h2>Files</h2>
-          <div class="files"><button class="btn ghost" data-x="ifc" type="button">IFC4 model<small>Revit · ArchiCAD · Solibri</small></button><button class="btn ghost" data-x="glb" type="button">GLB<small>web and three.js</small></button><button class="btn ghost" data-x="usdz" type="button">USDZ<small>iPhone AR</small></button><button class="btn ghost" data-x="dxf" type="button">DXF plan<small>CAD layers</small></button><button class="btn ghost" data-x="json" type="button">Project JSON<small>the source of truth</small></button><button class="btn ghost" data-x="blend" type="button">Studio render pack<small>Blender hero stills</small></button></div></div>
+        <ol class="steps">
+          <li class="step" data-img="media/step-read.webp" data-w="1622" data-h="1564">
+            <figure><img src="media/step-read-800.webp" srcset="media/step-read-800.webp 800w, media/step-read.webp 1400w" sizes="(min-width: 960px) 1px, 100vw" width="1622" height="1564" loading="lazy" alt="The demo floor plan PDF with the walls, openings and rooms Plan Studio detected drawn over it"></figure>
+            <h3>Read the plan</h3>
+            <p>A CAD-exported PDF is measured from its own linework, in your browser: walls are pairs of parallel edges a wall-thickness apart, openings are the gaps, rooms come from the labels, and the scale is read off the sheet. A scan or photo is read by AI and marked inferred.</p>
+            <p class="proof"><span class="chip live"><i aria-hidden="true"></i>Live</span><span>Every element carries its source and how sure we are</span></p>
+          </li>
+          <li class="step" data-img="media/step-model.webp" data-w="1600" data-h="900">
+            <figure><img src="media/step-model-800.webp" srcset="media/step-model-800.webp 800w, media/step-model.webp 1600w" sizes="(min-width: 960px) 1px, 100vw" width="1600" height="900" loading="lazy" alt="Aerial view of the demo hall's 3D model at golden hour, with a glazed gable and timber cladding"></figure>
+            <h3>Build the model</h3>
+            <p>Walls are cut around their openings, the roof follows its real pitch, decks and piles sit at their true heights. Change a material, a window or a wall in the inspector and everything downstream updates.</p>
+            <p class="proof"><span class="chip live"><i aria-hidden="true"></i>Live</span><span>IFC4, DXF, GLB and USDZ from the same model</span></p>
+          </li>
+          <li class="step" data-img="media/step-code.webp" data-w="2208" data-h="1640">
+            <figure><img src="media/step-code-800.webp" srcset="media/step-code-800.webp 800w, media/step-code.webp 1400w" sizes="(min-width: 960px) 1px, 100vw" width="2208" height="1640" loading="lazy" alt="The NZ Building Code pre-check list for the demo hall, with fail, needs-info and pass results per clause"></figure>
+            <h3>Pre-check the code, live</h3>
+            <p>Deterministic rules re-run on every edit: ventilation, accessible WCs, escape routes, barriers, glazing and more, each with its clause, document, edition, the measured value and the limit. A figure not yet confirmed against the current MBIE document can never pass.</p>
+            <p class="proof"><span class="chip"><i aria-hidden="true"></i>Advisory</span><span>A pre-check, not a consent decision</span></p>
+          </li>
+          <li class="step" data-img="media/step-drawings.webp" data-w="2222" data-h="1572">
+            <figure><img src="media/step-drawings-800.webp" srcset="media/step-drawings-800.webp 800w, media/step-drawings.webp 1600w" sizes="(min-width: 960px) 1px, 100vw" width="2222" height="1572" loading="lazy" alt="An A3 ground floor plan sheet of the demo hall with grids, dimensions, door swings, room tags and a title block"></figure>
+            <h3>Keep the drawings in step</h3>
+            <p>A3 sheets with grids, dimensions, door swings, room tags and the MBIE minimum title-block fields: plan, elevations, section and the code schedule. Issue a revision and whatever changed is clouded and listed in the revision table.</p>
+            <p class="proof"><span class="chip live"><i aria-hidden="true"></i>Live</span><span>PDF set, SVG and DXF with CAD layers</span></p>
+          </li>
+          <li class="step" data-img="media/step-dusk.webp" data-w="1600" data-h="900">
+            <figure><img src="media/step-dusk-800.webp" srcset="media/step-dusk-800.webp 800w, media/step-dusk.webp 1600w" sizes="(min-width: 960px) 1px, 100vw" width="1600" height="900" loading="lazy" alt="Blender render of the demo hall at dusk, its hall lit warm behind a full-height glazed wall"></figure>
+            <h3>Show it in real light</h3>
+            <p>Stills and flythroughs from the browser, in day, golden-hour or dusk light, at the exact size each channel needs. For hero images, the studio render pack goes to Blender for physically based light.</p>
+            <p class="proof"><span class="chip sim"><i aria-hidden="true"></i>Visualisation</span><span>Each render names the model revision it shows</span></p>
+          </li>
+          <li class="step" data-img="media/step-deck.webp" data-w="1920" data-h="1080">
+            <figure><img src="media/step-deck-800.webp" srcset="media/step-deck-800.webp 800w, media/step-deck.webp 1600w" sizes="(min-width: 960px) 1px, 100vw" width="1920" height="1080" loading="lazy" alt="The cover slide of the demo hall's client presentation, the building's render under its name"></figure>
+            <h3>Present it to the client</h3>
+            <p>A 16:9 deck built from the model: the building, the approach, the plan and elevations, a materials board with the makers' own figures, the pre-check summary and the next steps. It opens ready to print to PDF.</p>
+            <p class="proof"><span class="chip live"><i aria-hidden="true"></i>Live</span><span>Built from the model, so it never falls behind it</span></p>
+          </li>
+        </ol>
       </div>
     </section>
-  </div>
 
-  <aside class="inspector" aria-label="Inspector">
-    <h2>Inspector</h2>
-    <div id="inspect"><p class="hint">Select a wall, opening or room in a table, or a check, to see its evidence.</p></div>
-    <h3>Live pre-check</h3>
-    <div class="tally small" id="sideTally"></div>
-    <h3>Revisions</h3>
-    <ol class="revs mono" id="revList"><li class="hint">None issued</li></ol>
-  </aside>
-</main>
+    <!-- proof, on plum -->
+    <section class="proof-band" aria-labelledby="proof-h">
+      <div class="chapter-head">
+        <h2 id="proof-h">Measured, not guessed.</h2>
+        <p class="lede">We test the reader against a plan whose true geometry we know. These are the results on the demo plan, from the test suite that runs with every change.</p>
+      </div>
+      <dl class="facts">
+        <div><dt>Walls recovered</dt><dd>12 of 12</dd><p class="mono">demo-plan.pdf · plan-studio tests</p></div>
+        <div><dt>Rooms recovered</dt><dd>9 of 9</dd><p class="mono">named from the plan's own labels</p></div>
+        <div><dt>IFC4 schema issues</dt><dd>0</dd><p class="mono">validated with IfcOpenShell</p></div>
+      </dl>
+    </section>
 
-<footer class="foot"><p>Plan Studio is an assembl lab build. The Building Code pre-check is advisory: the Acceptable Solutions are one way to comply and only a building consent authority grants consent. The demo building is fictional. Screen colours are approximate.</p></footer>
-<script type="module" src="js/main.js"></script>
+    <!-- outputs -->
+    <section class="sheet second" id="formats" aria-labelledby="formats-h">
+      <div class="chapter-head">
+        <h2 id="formats-h">Every format, from one model.</h2>
+        <p class="lede">Socials, client hi-res, print and CAD, all rendered from the same revision, at the exact size each one needs. A one-click view set gives the client street, corners, rear and interior in one light.</p>
+      </div>
+      <div class="formats">
+        <figure class="f-reel"><img src="media/format-reel-800.webp" srcset="media/format-reel-800.webp 800w, media/format-reel.webp 1080w" sizes="(min-width: 960px) 280px, 45vw" width="1080" height="1920" loading="lazy" alt="Portrait street view of the demo hall at golden hour, sized for a Reel or Story"><figcaption>Reel and Story <span class="mono">1080 × 1920</span></figcaption></figure>
+        <figure class="f-feed"><img src="media/format-feed-800.webp" srcset="media/format-feed-800.webp 800w, media/format-feed.webp 1080w" sizes="(min-width: 960px) 300px, 45vw" width="1080" height="1350" loading="lazy" alt="Corner view of the demo hall in daylight, sized for a 4:5 feed post"><figcaption>Feed 4:5 <span class="mono">1080 × 1350</span></figcaption></figure>
+        <figure class="f-square"><img src="media/format-square-800.webp" srcset="media/format-square-800.webp 800w, media/format-square.webp 1080w" sizes="(min-width: 960px) 300px, 45vw" width="1080" height="1080" loading="lazy" alt="Street view of the demo hall at dusk, square"><figcaption>Square <span class="mono">1080 × 1080</span></figcaption></figure>
+        <figure class="f-sheet"><img src="media/sheet-elevations-800.webp" srcset="media/sheet-elevations-800.webp 800w, media/sheet-elevations.webp 1600w" sizes="(min-width: 960px) 620px, 92vw" width="2222" height="1572" loading="lazy" alt="An A3 elevations sheet of the demo hall: north, south, east and west"><figcaption>A3 working drawings <span class="mono">PDF · SVG · DXF</span></figcaption></figure>
+      </div>
+      <ul class="also">
+        <li><b>Client 4K and print</b><span>3840 × 2160 and 6000 px stills, with the model revision burned into the corner.</span></li>
+        <li><b>Flythroughs</b><span>12-second approach or orbit, recorded in your browser as MP4, in 9:16 or 16:9.</span></li>
+        <li><b>Hero clips, when you want one</b><span>An optional paid step: exact stills of the real model are pinned along the camera path and the AI fills only the motion between them, labelled AI-enhanced on every frame. You see the price before anything is spent.</span></li>
+      </ul>
+    </section>
+
+    <!-- materials -->
+    <section class="sheet third" aria-labelledby="mat-h">
+      <div class="chapter-head">
+        <h2 id="mat-h">Real New Zealand materials.</h2>
+        <p class="lede">Pick a look, then any product. We carry only what makers publish, with the source and the date we read it. Where their documents disagree, you see the range.</p>
+      </div>
+      <ul class="mats">
+        <li><span class="sw" style="--sw:#d8d6cf" aria-hidden="true"></span><b>COLORSTEEL® MAXAM, Titania</b><span class="mono">LRV 68–69% · TSR 65–67%</span><small>New Zealand Steel. Two of their documents differ, so both are shown.</small></li>
+        <li><span class="sw" style="--sw:#e4e3dd" aria-hidden="true"></span><b>COLORSTEEL® MAXAM, Cloud</b><span class="mono">LRV 74–76% · TSR 69–72%</span><small>New Zealand Steel.</small></li>
+        <li><span class="sw glass" style="--sw:#7f969f" aria-hidden="true"></span><b>Viridian ClimaTech SuperGreen 6+12+6</b><span class="mono">VLT 60% · U 1.50 W/m²K · SHGC 0.33</span><small>Viridian performance data, read from an extract: check the PDF.</small></li>
+        <li><span class="sw" style="--sw:#9a7655" aria-hidden="true"></span><b>Cedar board and batten</b><span class="mono">generic · select a supplier</span><small>Shown with its E2 cavity detail still to confirm.</small></li>
+      </ul>
+      <p class="note">Screen colours are approximate: COLORSTEEL publishes reflectance, not RGB, so choose from the physical swatch. Carving, kōwhaiwhai and tukutuku are never offered as textures: those surfaces are reserved for design with mana whenua and the artists.</p>
+    </section>
+
+    <!-- honesty -->
+    <section class="sheet fourth" aria-labelledby="honest-h">
+      <div class="chapter-head">
+        <h2 id="honest-h">Honest about what it knows.</h2>
+      </div>
+      <ul class="honest">
+        <li><b>Advisory, never "compliant"</b><span>The pre-check flags what to look at. Building consent authorities grant consent; the pre-check never says approved.</span></li>
+        <li><b>Inferred is marked inferred</b><span>Anything read by AI from a scan or photo says so, with its confidence, until a person confirms it.</span></li>
+        <li><b>AI images say they are AI</b><span>Enhanced stills and clips carry "AI-enhanced visualisation" on the image itself, and the model revision they came from.</span></li>
+        <li><b>Your drawings stay yours</b><span>A PDF is read in your browser. Nothing is uploaded unless you choose to have AI read an image.</span></li>
+      </ul>
+    </section>
+
+    <!-- close -->
+    <section class="close" id="pilot" aria-labelledby="pilot-h">
+      <h2 id="pilot-h">In pilot with Te Whare Whaihanga.</h2>
+      <p class="lede">We are building Plan Studio with practising New Zealand architects, on live projects. Try it now with the demo hall, or talk to us about a pilot for your practice.</p>
+      <div class="actions">
+        <a class="btn paper" href="studio/">Open the studio</a>
+        <a class="btn glass" href="https://assembl.co.nz/">Talk to assembl</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Plan Studio is part of the assembl lab. The NZ Building Code pre-check is advisory: it is not a compliance determination, and it uses figures researched in November 2026 that must be confirmed against the current MBIE documents. The demo hall is fictional.</p>
+    <p><a href="/">All of the lab</a> · <a href="https://assembl.co.nz/">assembl.co.nz</a></p>
+  </footer>
+</div>
+
+<script>
+// The journey stage: on wide screens one sticky frame shows the output of the step you are reading.
+// Without JS, or on narrow screens, every step shows its own image.
+(() => {
+  const steps = [...document.querySelectorAll(".step")], img = document.getElementById("stageImg"), count = document.getElementById("stageCount"), bar = document.getElementById("stageLine");
+  if (!("IntersectionObserver" in window) || !steps.length) return;
+  document.documentElement.classList.add("js");
+  steps.forEach((s) => { const i = new Image(); i.src = s.dataset.img; });          // warm the cache so swaps are instant
+  let cur = -1;
+  const show = (i) => {
+    if (i === cur) return; cur = i; const s = steps[i];
+    steps.forEach((x, k) => x.classList.toggle("on", k === i));
+    img.src = s.dataset.img; img.width = +s.dataset.w; img.height = +s.dataset.h;
+    count.textContent = `${i + 1} of ${steps.length}`; bar.style.width = `${((i + 1) / steps.length) * 100}%`;
+  };
+  const io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) show(steps.indexOf(e.target)); }, { rootMargin: "-45% 0px -45% 0px" });
+  steps.forEach((s) => io.observe(s)); show(0);
+})();
+</script>
 </body>
 </html>

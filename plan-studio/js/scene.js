@@ -3,10 +3,11 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { MATERIALS, textureCanvas } from "./materials.js";
-import { openingSpan, polyBox, isDoor, wallFacing } from "./model.js";
+import { openingSpan, polyBox, isDoor, wallFacing, roofZ } from "./model.js";
 
 const M = (v) => v / 1000;
 const V3 = (x, y, z = 0) => new THREE.Vector3(M(x), M(z), -M(y));     // plan (x, y) at height z
+const plan = (v) => [v.x * 1000, -v.z * 1000];                          // back from three.js to plan mm
 
 const matCache = new Map();
 export function material(id, opts = {}) {
@@ -50,7 +51,8 @@ export function buildModel(P, opts = {}) {
   const frame = material("window-thermal", { frame: true }), glass = material("glass-curtain"), door = material("door-timber");
   for (const w of P.walls) {
     const L = Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]), d = [(w.b[0] - w.a[0]) / L, (w.b[1] - w.a[1]) / L];
-    const ext = w.kind === "ext", e = ext ? w.t / 2 : 0, h = ext ? eaves : w.h, curtain = w.mat === "glass-curtain";
+    const ext = w.kind === "ext", e = ext ? w.t / 2 : 0, curtain = w.mat === "glass-curtain";
+    const h = ext ? Math.min(roofZ(P, ...w.a), roofZ(P, ...w.b)) : w.h;          // external walls run up to the roof; above that, an infill
     const wm = material(curtain ? "window-thermal" : (ext ? w.mat : "lining-plasterboard"), curtain ? { frame: true } : {});
     const ops = P.openings.filter((o) => o.wall === w.id).sort((a, b) => a.at - b.at);
     let s = -e;
@@ -71,25 +73,23 @@ export function buildModel(P, opts = {}) {
       } else if (isDoor(o) && o.kind !== "opening") fg.add(wallBox(w.a, d, o0 + 10, o1 - 10, 45, 0, o.h, door, -w.t / 2 + 30));
     }
     if (L + e > s) g.add(wallBox(w.a, d, s, L + e, w.t, 0, h, wm));
-    // gable infill above the eaves on walls square to the ridge
-    if (ext && R.type === "gable") {
-      const along = Math.abs(d[0]) > 0.5 ? "x" : "y", square = (R.ridge === "y" && along === "x") || (R.ridge === "x" && along === "y");
-      if (square) {
-        const half = (along === "x" ? bx.x1 - bx.x0 : bx.y1 - bx.y0) / 2, mid = along === "x" ? (bx.x0 + bx.x1) / 2 : (bx.y0 + bx.y1) / 2;
-        const shape = new THREE.Shape(); const p0 = along === "x" ? bx.x0 : bx.y0;
-        shape.moveTo(M(-e), M(eaves)); shape.lineTo(M(half), M(ridge) - 0.12); shape.lineTo(M(2 * half + e), M(eaves)); shape.lineTo(M(-e), M(eaves));
+    // infill between the wall top and the roof line (gable ends, the high side of a monopitch, its raking side walls)
+    if (ext) {
+      const prof = [];
+      for (let k = 0; k <= 48; k++) { const sAt = -e + ((L + 2 * e) * k) / 48, p = [w.a[0] + d[0] * sAt, w.a[1] + d[1] * sAt]; prof.push([sAt, roofZ(P, p[0], p[1]) - 60]); }
+      if (prof.some(([, z]) => z > h + 30)) {
+        const shape = new THREE.Shape(); shape.moveTo(M(prof[0][0]), M(h));
+        for (const [sAt, z] of prof) shape.lineTo(M(sAt), M(Math.max(h, z)));
+        shape.lineTo(M(prof[prof.length - 1][0]), M(h)); shape.lineTo(M(prof[0][0]), M(h));
         const geo = new THREE.ExtrudeGeometry(shape, { depth: M(w.t), bevelEnabled: false });
-        const mat = curtain ? glass : material(w.mat);
-        const tri = new THREE.Mesh(geo, mat); tri.castShadow = true;
-        // place: local x along +x/+y from the footprint corner, depth across the wall
-        const wy = w.a[1], wx = w.a[0];
-        if (along === "x") { tri.position.set(M(p0), 0, -M(wy) - M(w.t) / 2); }
-        else { tri.rotation.y = Math.PI / 2; tri.position.set(M(wx) - M(w.t) / 2, 0, -M(p0)); }
-        g.add(tri);
-        if (curtain) for (let m = 1200; m < 2 * half; m += 1200) {           // mullions up into the gable
-          const top = eaves + (ridge - eaves) * (1 - Math.abs(m - half) / half) - 150; if (top <= eaves) continue;
-          const pt = along === "x" ? [p0 + m, wy] : [wx, p0 + m], dd = along === "x" ? [1, 0] : [0, 1];
-          g.add(wallBox([pt[0] - dd[0] * 25, pt[1] - dd[1] * 25], dd, 0, 50, 70, eaves, top, frame));
+        const pos = geo.attributes.position, uv = geo.attributes.uv; for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / 1.12, pos.getY(i) / 1.12);
+        const inf = new THREE.Mesh(geo, curtain ? glass : wm); inf.castShadow = true;
+        // local x along the wall, local z across it; place at the wall start, turned to the wall direction
+        const holder = new THREE.Group(); holder.position.copy(V3(w.a[0], w.a[1], 0)); holder.rotation.y = Math.atan2(d[1], d[0]);
+        inf.position.set(0, 0, -M(w.t) / 2); holder.add(inf); g.add(holder);
+        if (curtain) for (let m = 1200; m < L; m += 1200) {           // mullions up into the infill
+          const p = [w.a[0] + d[0] * m, w.a[1] + d[1] * m], top = roofZ(P, p[0], p[1]) - 150; if (top <= h + 50) continue;
+          g.add(wallBox([p[0] - d[0] * 25, p[1] - d[1] * 25], d, 0, 50, 70, h, top, frame));
         }
       }
     }
@@ -97,19 +97,43 @@ export function buildModel(P, opts = {}) {
   // roof: a gable, or a single slope, with overhang and fascia thickness
   if (!opts.cutaway) {
     const roofMat = material(R.mat || "roof-standing-seam"), th = 250;
-    const span = R.ridge === "y" ? [bx.x0 - oh, bx.x1 + oh] : [bx.y0 - oh, bx.y1 + oh], len = R.ridge === "y" ? [bx.y0 - oh, bx.y1 + oh] : [bx.x0 - oh, bx.x1 + oh];
-    const mid = (span[0] + span[1]) / 2, half = (span[1] - span[0]) / 2, slope = (ridge - eaves) / (half - oh), dropOh = oh * slope;
+    const alongY = R.type === "mono" ? (R.low === "w" || R.low === "e") : R.ridge === "y";        // the roof's extrusion runs along plan y
+    const span = alongY ? [bx.x0 - oh, bx.x1 + oh] : [bx.y0 - oh, bx.y1 + oh], len = alongY ? [bx.y0 - oh, bx.y1 + oh] : [bx.x0 - oh, bx.x1 + oh];
+    const mid = (span[0] + span[1]) / 2, half = (span[1] - span[0]) / 2;
     const sh = new THREE.Shape();
-    if (R.type === "gable") { sh.moveTo(M(-half), M(eaves - dropOh)); sh.lineTo(0, M(ridge)); sh.lineTo(M(half), M(eaves - dropOh)); sh.lineTo(M(half), M(eaves - dropOh + th)); sh.lineTo(0, M(ridge + th)); sh.lineTo(M(-half), M(eaves - dropOh + th)); }
+    if (R.type === "gable") { const slope = (ridge - eaves) / (half - oh), dropOh = oh * slope; sh.moveTo(M(-half), M(eaves - dropOh)); sh.lineTo(0, M(ridge)); sh.lineTo(M(half), M(eaves - dropOh)); sh.lineTo(M(half), M(eaves - dropOh + th)); sh.lineTo(0, M(ridge + th)); sh.lineTo(M(-half), M(eaves - dropOh + th)); }
+    else if (R.type === "mono") {
+      const slope = (ridge - eaves) / (2 * (half - oh)), lowFirst = R.low === "w" || R.low === "s";
+      const zA = lowFirst ? eaves - oh * slope : ridge + oh * slope, zB = lowFirst ? ridge + oh * slope : eaves - oh * slope;
+      sh.moveTo(M(-half), M(zA)); sh.lineTo(M(half), M(zB)); sh.lineTo(M(half), M(zB + th)); sh.lineTo(M(-half), M(zA + th));
+    }
     else { sh.moveTo(M(-half), M(eaves)); sh.lineTo(M(half), M(eaves)); sh.lineTo(M(half), M(eaves + th)); sh.lineTo(M(-half), M(eaves + th)); }
     const geo = new THREE.ExtrudeGeometry(sh, { depth: M(len[1] - len[0]), bevelEnabled: false });
     // world-scale UVs for the seams: u across the slope, v along the ridge
     const pos = geo.attributes.position, uv = geo.attributes.uv;
     for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getZ(i) / 1.12 * 2, pos.getX(i) / 1.12);
     const roof = new THREE.Mesh(geo, roofMat); roof.castShadow = roof.receiveShadow = true; roof.name = "ROOF";
-    if (R.ridge === "y") roof.position.set(M(mid), 0, -M(len[1]));        // shape across x, extruded along +z from the north end
+    if (alongY) roof.position.set(M(mid), 0, -M(len[1]));        // shape across x, extruded along +z from the north end
     else { roof.rotation.y = Math.PI / 2; roof.position.set(M(len[0]), 0, -M(mid)); }
     root.add(roof);
+  }
+  // decks (with barriers where they stand high) and the piles under a raised floor
+  const fag = P.site?.floorAboveGround || 0, deckMat = material("deck-timber"), post = new THREE.CylinderGeometry(0.09, 0.09, 1, 10), postMat = material("timber-pile");
+  const piles = (poly) => { if (fag < 300) return; const b = polyBox(poly); for (let x = b.x0 + 300; x <= b.x1; x += 1800) for (let y = b.y0 + 300; y <= b.y1; y += 1800) { const m = new THREE.Mesh(post, postMat); m.scale.y = M(fag); m.position.copy(V3(x, y, -fag / 2 - 150)); m.castShadow = true; root.add(m); } };
+  piles(bx ? [[bx.x0, bx.y0], [bx.x1, bx.y1]] : []);
+  for (const dk of P.decks || []) {
+    const sh = new THREE.Shape(dk.poly.map(([x, y]) => new THREE.Vector2(M(x), M(y))));
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.19, bevelEnabled: false }); geo.rotateX(-Math.PI / 2); geo.translate(0, -0.2, 0);
+    const pos = geo.attributes.position, uv = geo.attributes.uv; for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / 1.12, pos.getZ(i) / 1.12);
+    const m = new THREE.Mesh(geo, deckMat); m.receiveShadow = m.castShadow = true; m.name = "DECK_" + dk.id; m.userData = { kind: "deck", id: dk.id }; root.add(m);
+    piles(dk.poly);
+    if (dk.barrier) for (let i = 0; i < dk.poly.length; i++) {       // glass balustrade on the open edges (not along the house)
+      const a = dk.poly[i], b2 = dk.poly[(i + 1) % dk.poly.length], midp = [(a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2];
+      if (midp[0] > bx.x0 - 60 && midp[0] < bx.x1 + 60 && midp[1] > bx.y0 - 60 && midp[1] < bx.y1 + 60) continue;
+      if ((dk.open || []).includes(i)) continue;
+      const Lg = Math.hypot(b2[0] - a[0], b2[1] - a[1]); if (Lg < 200) continue; const dd = [(b2[0] - a[0]) / Lg, (b2[1] - a[1]) / Lg];
+      root.add(wallBox(a, dd, 0, Lg, 15, 0, dk.barrier, glass)); root.add(wallBox(a, dd, 0, Lg, 50, dk.barrier - 40, dk.barrier, frame));
+    }
   }
   // furniture: banquet tables in an assembly room, so a render reads at the right scale
   if (opts.furniture !== false) {
@@ -155,6 +179,7 @@ export function createStage(canvas, P, opts = {}) {
     // a paved forecourt on the entry side (the face with the main door)
     const entry = P.openings.find((o) => /entry/i.test(o.note || "")) || P.openings.find(isDoor), sp = entry && openingSpan(P, entry);
     if (sp) { const f = wallFacing(P, sp.w).out; pave.scale.set(14, 1, 1); pave.scale.set(f[0] ? 12 : 16, f[0] ? 16 : 12, 1); pave.position.copy(V3(sp.mid[0] + f[0] * 6500, sp.mid[1] + f[1] * 6500, 0)).setY(0.003); }
+    const fag = M(P.site?.floorAboveGround || 0); ground.position.y = -fag - 0.002; pave.position.y = -fag + 0.003;
     interior.position.copy(c).setY(M((P.roof?.eaves || 3000) - 400));
     sun.target.position.copy(c); target.copy(c).setY(1.6);
     light(mode);
@@ -177,6 +202,11 @@ export function createStage(canvas, P, opts = {}) {
     street: () => { const b = bx(), e = P.openings.find((o) => /entry/i.test(o.note || "")), s = e && openingSpan(P, e), f = s ? wallFacing(P, s.w).out : [0, 1]; const m = s ? s.mid : [(b.x0 + b.x1) / 2, b.y1];
       return { pos: V3(m[0] + f[0] * 26000 - f[1] * 9000, m[1] + f[1] * 26000 + f[0] * 9000, 1650), look: V3((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, 3300), fov: 34 }; },
     interior: () => { const r = P.rooms.find((x) => x.use === "assembly") || P.rooms[0], b = polyBox(r.poly); return { pos: V3(b.x1 - 1500, b.y0 + 1800, 1600), look: V3(b.x0 + 3000, b.y1 - 2000, 2600), fov: 58 }; },
+    // the opposite side and two corners: with street and interior, the client view set (one look, consistent cameras)
+    rear: () => { const b = bx(), c = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2], v = VIEWS.street(), p = plan(v.pos);
+      return { pos: V3(2 * c[0] - p[0], 2 * c[1] - p[1], 1650), look: V3(c[0], c[1], 3300), fov: 34 }; },
+    cornerA: () => { const b = bx(), c = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2], r = Math.max(b.x1 - b.x0, b.y1 - b.y0); return { pos: V3(b.x1 + r * 0.9, b.y1 + r * 0.9, r * 0.35 + 2000), look: V3(c[0], c[1], 2500), fov: 32 }; },
+    cornerB: () => { const b = bx(), c = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2], r = Math.max(b.x1 - b.x0, b.y1 - b.y0); return { pos: V3(b.x0 - r * 0.9, b.y0 - r * 0.9, r * 0.35 + 2000), look: V3(c[0], c[1], 2500), fov: 32 }; },
     plan: () => { const b = bx(); return { pos: V3((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2 - 1, 48000), look: V3((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, 0), fov: 28 }; },
   };
   function view(name) { const v = VIEWS[name](); camera.position.copy(v.pos); camera.fov = v.fov; camera.lookAt(v.look); target.copy(v.look); camera.updateProjectionMatrix(); return v; }
@@ -206,6 +236,19 @@ export function burnLabel(g, w, h, label) {
   g.fillStyle = "#FFFDFB"; g.fillText(label, pad * 2, h - pad - s * 0.5);
 }
 
+// exact stills at evenly spaced moments along the flythrough path: the keyframes an AI clip is pinned to (same easing and
+// lens as a recorded flythrough, so a keyframe clip and a browser flythrough describe the same move)
+export async function pathStills(stage, { kind = "approach", n = 4, w = 1280, h = 720 } = {}) {
+  const { camera } = stage, path = flyPath(stage, kind), pos = camera.position.clone(), quat = camera.quaternion.clone(), fov = camera.fov, out = [];
+  camera.fov = h > w ? 58 : 42; camera.updateProjectionMatrix();
+  for (let k = 0; k < n; k++) {
+    const t = n === 1 ? 0 : k / (n - 1), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    camera.position.copy(path.pos.getPoint(e)); camera.lookAt(path.look(e)); out.push({ t, blob: await still(stage, w, h, "") });
+  }
+  camera.position.copy(pos); camera.quaternion.copy(quat); camera.fov = fov; camera.updateProjectionMatrix(); stage.render();
+  return out;
+}
+
 // a flythrough along a camera path, recorded in the browser (WebM in Chrome/Firefox, MP4 in Safari)
 export function flyPath(stage, kind = "approach") {
   const P = stage.P, b = polyBox(P.rooms.flatMap((r) => r.poly)), c = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
@@ -230,12 +273,14 @@ export async function recordFlythrough(stage, { w = 1080, h = 1920, seconds = 12
   const type = types.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "video/webm";
   const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: w * h * 4 }), chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  const path = flyPath(stage, kind), total = seconds * fps; rec.start();
-  for (let i = 0; i <= total; i++) {
-    const t = i / total, e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  // the camera follows the clock, so the clip lasts exactly `seconds`: a slow device drops frames rather than playing in slow motion
+  const path = flyPath(stage, kind), dur = seconds * 1000; rec.start(); const t0 = performance.now();
+  for (let i = 0, t = 0; t < 1; i++) {
+    t = Math.min(1, (performance.now() - t0) / dur); const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     camera.position.copy(path.pos.getPoint(e)); camera.lookAt(path.look(e)); stage.render();
     g.drawImage(renderer.domElement, 0, 0, w, h); if (label) burnLabel(g, w, h, label);
-    onProgress?.(t); await new Promise((r) => setTimeout(r, 1000 / fps));
+    // always yield a little: the browser stamps a captured frame only when the main thread is free
+    onProgress?.(t); const due = t0 + ((i + 1) * 1000) / fps; await new Promise((r) => setTimeout(r, Math.max(12, due - performance.now())));
   }
   rec.stop(); await new Promise((r) => (rec.onstop = r));
   renderer.setPixelRatio(ratio); renderer.setSize(size.x, size.y, false); camera.aspect = aspect; camera.fov = fov; camera.updateProjectionMatrix();
