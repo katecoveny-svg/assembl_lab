@@ -1,6 +1,7 @@
 # assembl lab · Plan Studio (plans in, a model you can trust out)
 
-Public build at `/plan-studio/`. Static HTML, CSS and ES modules; three.js r170 from `/assets/vendor`, pdf.js 4.10.38 from cdnjs (pinned).
+Public landing page at `/plan-studio/` (`index.html`, `css/landing.css`, images in `media/`); the working studio is at `/plan-studio/studio/`.
+The landing page's project image is a real project shared with permission (credit line still to confirm); every other image on it is real output from the fictional demo hall. Static HTML, CSS and ES modules; three.js r170 from `/assets/vendor`, pdf.js 4.10.38 from cdnjs (pinned).
 One project model (`js/model.js`, JSON) is the source of truth; the 3D scene, the code pre-check, the working drawings, the exports and
 the client presentation are all derived from it and refresh on every edit.
 

@@ -93,9 +93,18 @@ VIEW = {
 }
 sc.render.engine = "CYCLES"; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True; sc.cycles.device = "CPU"
 sc.render.resolution_x, sc.render.resolution_y = W, H; sc.view_settings.view_transform = "AgX"; sc.view_settings.exposure = -0.6
-interior_glow = bpy.data.lights.new("glow", "POINT"); glow = bpy.data.objects.new("glow", interior_glow); sc.collection.objects.link(glow)
-glow.location = (ctr.x, ctr.y, maxs.z * 0.55); interior_glow.color = (1, 0.8, 0.55); interior_glow.shadow_soft_size = 3; glow.visible_camera = False; glow.visible_glossy = False
+# dusk interior light: a grid of small warm lamps under the ceiling, hidden from camera, reflections and glass, so the rooms glow
+# without a visible light source floating in the frame
+glows = []
+for i in range(3):
+    for j in range(2):
+        d = bpy.data.lights.new(f"glow{i}{j}", "POINT"); d.color = (1, 0.8, 0.55); d.shadow_soft_size = 0.25
+        o = bpy.data.objects.new(f"glow{i}{j}", d); sc.collection.objects.link(o)
+        o.location = (mins.x + size.x * (i + 0.5) / 3, mins.y + size.y * (j + 0.5) / 2, min(2.6, maxs.z * 0.45))
+        for attr in ("visible_camera", "visible_glossy", "visible_transmission"): setattr(o, attr, False)
+        glows.append(d)
 for v in VIEWS:
     place, (elev, azim, strength, warm) = VIEW[v]
-    place(); light(elev, azim, strength, warm); interior_glow.energy = 9000 if v == "dusk" else 0
+    place(); light(elev, azim, strength, warm)
+    for d in glows: d.energy = 1500 if v == "dusk" else 0
     sc.render.filepath = os.path.join(OUT, f"{v}.png"); bpy.ops.render.render(write_still=True); print("wrote", sc.render.filepath)
