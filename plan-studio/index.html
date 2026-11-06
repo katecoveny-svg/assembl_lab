@@ -66,12 +66,12 @@
       <div class="stagewrap">
         <canvas id="stage3d" aria-label="3D model"></canvas>
         <div class="stagebar">
-          <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
+          <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="rear">Rear</button><button data-view="cornerA">Corner</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
           <div class="seg" id="lights"><button data-light="day" class="on">Day</button><button data-light="golden">Golden hour</button><button data-light="dusk">Dusk</button></div>
         </div>
       </div>
       <div class="cols">
-        <div class="card"><h2>Materials</h2><div id="matPick" class="matpick"></div><p class="hint">Screen colours are approximate. Choose from the maker's physical swatch: COLORSTEEL publishes reflectance, not RGB.</p></div>
+        <div class="card"><h2>Materials</h2><p class="hint">Start from a look, then change any product. Each look is real product selections, not a style prompt.</p><div class="seg" id="looks"></div><div id="matPick" class="matpick" style="margin-top:12px"></div><p class="hint">Screen colours are approximate. Choose from the maker's physical swatch: COLORSTEEL publishes reflectance, not RGB.</p></div>
         <div class="card"><h2>Elements</h2><div class="seg" id="elTabs"><button data-el="openings" class="on">Openings</button><button data-el="walls">Walls</button><button data-el="rooms">Rooms</button></div><div class="tablewrap"><table id="elTable"></table></div></div>
       </div>
     </section>
@@ -96,14 +96,16 @@
     <section class="panel" data-panel="visuals" aria-label="Visuals" hidden>
       <div class="cols three">
         <div class="card"><h2>Stills</h2><p class="hint">Rendered from the true model at the exact size. The label says it is a visualisation of model revision <span class="mono" id="revLabel">–</span>.</p>
-          <div class="presets" id="stillPresets"></div></div>
+          <div class="presets" id="stillPresets"></div>
+          <div class="row"><button class="btn" id="btnSet" type="button">Client view set<small>5 views · one light · 1920 × 1080</small></button></div><p class="mono hint" id="setProg"></p></div>
         <div class="card"><h2>Flythrough</h2><p class="hint">Recorded in your browser along a path through the real model.</p>
           <div class="seg" id="flyShape"><button data-shape="reel" class="on">Reel 9:16</button><button data-shape="wide">16:9</button></div>
           <div class="seg" id="flyPath"><button data-path="approach" class="on">Approach and enter</button><button data-path="orbit">Orbit</button></div>
           <div class="row"><button class="btn" id="btnFly" type="button">Record 12 s</button><span class="mono hint" id="flyProg"></span></div></div>
-        <div class="card"><h2>AI enhance</h2><p class="hint" id="aiStatus">Checking…</p>
-          <div id="aiBox" hidden><div class="seg" id="aiPreset"></div><p class="mono hint" id="aiEst"></p><label class="check"><input type="checkbox" id="aiConfirm"> I understand this spends money with fal.ai</label><div class="row"><button class="btn" id="btnAi" type="button" disabled>Enhance this view</button></div></div>
-          <p class="hint">Structure comes from the model's depth pass, so the AI restyles light and materials, not the design. Results carry "AI-enhanced visualisation".</p></div>
+        <div class="card"><h2>AI enhance and hero clips</h2><p class="hint">Optional and paid. Stills, view sets and flythroughs above are free; use this for the occasional hero image or clip.</p><p class="hint" id="aiStatus">Checking…</p>
+          <div id="aiBox" hidden><div class="aipick" id="aiPreset"></div><p class="hint" id="aiNote"></p><p class="mono hint" id="aiEst"></p>
+            <label class="check"><input type="checkbox" id="aiConfirm"> I understand this spends money with fal.ai</label><div class="row"><button class="btn" id="btnAi" type="button" disabled>Enhance this view</button><span class="mono hint" id="aiProg"></span></div></div>
+          <p class="hint">Structure comes from the true model: a depth pass for stills, a guide clip recorded through the model for the geometry-locked hero clip. The AI restyles light and materials, not the design. Results carry "AI-enhanced visualisation".</p></div>
       </div>
       <div class="outputs" id="outputs" aria-live="polite"></div>
     </section>
