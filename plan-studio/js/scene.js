@@ -236,6 +236,19 @@ export function burnLabel(g, w, h, label) {
   g.fillStyle = "#FFFDFB"; g.fillText(label, pad * 2, h - pad - s * 0.5);
 }
 
+// exact stills at evenly spaced moments along the flythrough path: the keyframes an AI clip is pinned to (same easing and
+// lens as a recorded flythrough, so a keyframe clip and a browser flythrough describe the same move)
+export async function pathStills(stage, { kind = "approach", n = 4, w = 1280, h = 720 } = {}) {
+  const { camera } = stage, path = flyPath(stage, kind), pos = camera.position.clone(), quat = camera.quaternion.clone(), fov = camera.fov, out = [];
+  camera.fov = h > w ? 58 : 42; camera.updateProjectionMatrix();
+  for (let k = 0; k < n; k++) {
+    const t = n === 1 ? 0 : k / (n - 1), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    camera.position.copy(path.pos.getPoint(e)); camera.lookAt(path.look(e)); out.push({ t, blob: await still(stage, w, h, "") });
+  }
+  camera.position.copy(pos); camera.quaternion.copy(quat); camera.fov = fov; camera.updateProjectionMatrix(); stage.render();
+  return out;
+}
+
 // a flythrough along a camera path, recorded in the browser (WebM in Chrome/Firefox, MP4 in Safari)
 export function flyPath(stage, kind = "approach") {
   const P = stage.P, b = polyBox(P.rooms.flatMap((r) => r.poly)), c = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
