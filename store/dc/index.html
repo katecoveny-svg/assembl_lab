@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<script src="/lab/preview-head.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Grocery DC Twin</title>
+<meta name="description" content="A simulated grocery distribution centre in South Auckland, built from NVIDIA SimReady 3D assets: inbound, putaway, picking, wrapping and dispatch, with every figure computed by the page's own model.">
+<meta property="og:title" content="Grocery DC twin · assembl lab">
+<meta property="og:description" content="A fictional South Auckland grocery DC running one simulated shift, built from NVIDIA SimReady assets. Every figure is simulated.">
+<meta property="og:image" content="https://lab.assembl.co.nz/store/dc/poster.webp">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="modulepreload" href="/assets/vendor/three/three.module.min.js">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<style>
+/* site-v2 overlay palette: aubergine ground and panels, ivory text, dusty rose accents. No violet, no glass. */
+:root{
+  --aubergine:#180B18; --plum:#21121F; --ivory:#F9F6F2; --rose:#D9BACB; --rose-mauve:#D4B6C7; --soft:#B8A8B2; --line:rgba(217,186,203,.18); --line2:rgba(249,246,242,.10);
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--aubergine);color:var(--ivory);font-family:var(--sans)}
+body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+[hidden]{display:none!important}
+a{color:var(--rose)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+.skip{position:absolute;left:-999px;top:8px;z-index:50;background:var(--ivory);color:var(--aubergine);padding:10px 16px;border-radius:999px}
+.skip:focus{left:12px}
+
+.dc{position:relative;flex:1;min-height:0;overflow:hidden}
+.stage{position:absolute;inset:0}
+#c{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.mono{font-family:var(--mono);font-weight:500;letter-spacing:0}
+.chip{display:inline-flex;align-items:center;gap:7px;font:500 11.5px/1 var(--mono);color:var(--ivory);border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:var(--aubergine);white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--rose)}
+.chip.quiet::before{background:var(--soft)}
+
+/* overlay cards */
+.card{background:var(--aubergine);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.title{position:absolute;left:20px;top:20px;max-width:390px;padding:18px 20px 16px;z-index:5}
+.title .kicker{margin:0 0 10px;font:500 11.5px/1 var(--mono);color:var(--soft)}
+.title h1{margin:0;font-weight:400;font-size:clamp(24px,2.1vw,32px);line-height:1.08;letter-spacing:-.025em}
+.title p.sub{margin:8px 0 12px;color:var(--soft);font-size:14px;line-height:1.45}
+.title .chips{display:flex;flex-wrap:wrap;gap:8px}
+
+.panel{position:absolute;right:20px;top:20px;bottom:96px;width:320px;padding:20px 20px 16px;overflow:auto;z-index:5;scrollbar-width:thin;scrollbar-color:rgba(217,186,203,.25) transparent}
+.panel header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.clock{font-size:40px;line-height:1;letter-spacing:-.03em;font-weight:400}
+.clock-sub{display:block;margin-top:6px;font:500 11.5px/1.3 var(--mono);color:var(--soft)}
+.panel h2{margin:20px 0 8px;font:500 11.5px/1 var(--mono);color:var(--rose);letter-spacing:0}
+.panel dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:7px 12px;font-size:14px}
+.panel dt{color:var(--soft)}
+.panel dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;color:var(--ivory)}
+.event{margin:14px 0 0;padding:10px 12px;border-radius:14px;background:var(--plum);font-size:13px;line-height:1.4;color:var(--soft)}
+.doors{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:13px}
+.doors li{display:grid;grid-template-columns:22px 1fr auto;grid-template-areas:"n l s" "n b b";gap:4px 8px;align-items:center}
+.d-n{grid-area:n;font:500 12px/1 var(--mono);color:var(--rose);align-self:start;padding-top:2px}
+.d-l{grid-area:l}
+.d-s{grid-area:s;color:var(--soft);font-size:12.5px;text-align:right}
+.d-bar{grid-area:b;height:4px;border-radius:4px;background:rgba(249,246,242,.12);overflow:hidden}
+.d-bar i{display:block;height:100%;background:var(--rose);transform-origin:0 50%;transform:scaleX(0);transition:transform .4s}
+.doors li[data-state="away"] .d-l{color:var(--soft)}
+details{margin-top:18px;border-top:1px solid var(--line2);padding-top:12px}
+summary{cursor:pointer;font-size:14px;color:var(--ivory);list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:32px}
+summary::after{content:"+";font:400 18px/1 var(--sans);color:var(--rose)}
+details[open] summary::after{content:"–"}
+details dl{grid-template-columns:1fr;gap:2px;margin-top:8px}
+details dt{color:var(--ivory);font-size:13px;margin-top:8px}
+details dd{text-align:left;color:var(--soft);font-size:13px;line-height:1.45}
+details p{color:var(--soft);font-size:13px;line-height:1.5;margin:8px 0}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:12.5px;color:var(--soft)}
+.legend i{display:inline-block;width:16px;height:2px;margin-right:6px;vertical-align:middle;background:var(--rose)}
+.legend i.v{background:var(--ivory)}
+
+/* tour caption */
+.tour{position:absolute;left:20px;bottom:96px;width:min(430px,calc(100% - 400px));padding:16px 18px;z-index:5}
+.tour .step{margin:0 0 8px;font:500 11.5px/1 var(--mono);color:var(--soft)}
+.tour h2{margin:0 0 6px;font-weight:400;font-size:20px;letter-spacing:-.015em}
+.tour p{margin:0;color:var(--soft);font-size:14px;line-height:1.5}
+
+/* bottom bar */
+.bar{position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;border-radius:999px;z-index:6}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;min-width:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--plum);cursor:pointer;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:rgba(217,186,203,.5)}
+.btn.primary{background:var(--ivory);color:var(--aubergine);border-color:var(--ivory)}
+.btn svg{width:16px;height:16px;fill:currentColor}
+.btn.icon{padding:0;width:44px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--plum)}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:inline-flex;align-items:center;height:36px;padding:0 13px;border-radius:999px;font:500 12.5px/1 var(--mono);color:var(--soft)}
+.seg input:checked+span{background:var(--ivory);color:var(--aubergine)}
+.seg input:focus-visible+span{outline:2px solid var(--rose)}
+.toggle{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 6px;font-size:14px;color:var(--soft);cursor:pointer}
+.toggle input{width:18px;height:18px;accent-color:#D9BACB;margin:0}
+.bar .grow{flex:1}
+.credit{font-size:12px;color:var(--soft);line-height:1.35;max-width:430px;text-align:right;padding-right:8px}
+.credit a{color:var(--ivory)}
+
+/* 3D tags */
+.tags{position:absolute;inset:0;pointer-events:none;z-index:3}
+.tag{position:absolute;left:0;top:0;pointer-events:auto;display:flex;flex-direction:column;gap:2px;padding:7px 11px 8px;border-radius:12px;background:var(--aubergine);border:1px solid var(--line);color:var(--ivory);text-align:left;cursor:pointer;visibility:hidden;white-space:nowrap;will-change:transform}
+.tag::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--aubergine);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.tag b{font-weight:500;font-size:13px}
+.tag span{font:500 10.5px/1.2 var(--mono);color:var(--soft)}
+.tag.on{border-color:var(--rose)}
+.tag.quiet{cursor:default;opacity:.9}
+.tag.door{cursor:default;padding:5px 9px 6px}
+.tag.door b{font-size:12px}
+
+/* loading and fallback */
+.loader{position:absolute;inset:0;display:grid;place-items:center;z-index:20;background:var(--aubergine);transition:opacity .5s}
+.loader.done{opacity:0;pointer-events:none}
+.loader .box{width:min(420px,calc(100% - 40px))}
+.loader h2{margin:0 0 6px;font-weight:400;font-size:26px;letter-spacing:-.02em}
+.loader p{margin:0 0 18px;color:var(--soft);font-size:14.5px;line-height:1.5}
+.track{height:3px;background:rgba(249,246,242,.12);border-radius:3px;overflow:hidden}
+#load-bar{height:100%;background:var(--rose);transform-origin:0 50%;transform:scaleX(0);transition:transform .2s}
+.load-meta{display:flex;justify-content:space-between;margin-top:10px;font:500 11.5px/1.3 var(--mono);color:var(--soft)}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;z-index:21;background:var(--aubergine);padding:20px}
+.fallback img{max-width:min(900px,100%);border-radius:22px;display:block;margin-bottom:16px}
+.fallback p{max-width:620px;color:var(--soft);line-height:1.5}
+#debug{position:absolute;right:20px;top:4px;z-index:9;font:500 11px var(--mono);color:var(--soft)}
+.panel-toggle,.m-clock{display:none}
+
+/* laptops: narrower panel */
+@media (max-width:1180px){ .panel{width:300px} .tour{width:min(420px,calc(100% - 360px))} .credit{display:none} }
+/* phones and small tablets: title strip on top, caption and controls at the bottom, figures in a sheet */
+@media (max-width:760px){
+  .title{left:12px;right:12px;top:12px;max-width:none;padding:12px 14px;border-radius:18px}
+  .title .kicker,.title p.sub{display:none}
+  .title h1{font-size:20px}
+  .title .chips{margin-top:8px;gap:6px}
+  .chip{font-size:10.5px;padding:5px 8px}
+  .tour{left:12px;right:12px;width:auto;bottom:136px;padding:12px 14px;border-radius:18px}
+  .tour h2{font-size:17px}
+  .tour p{font-size:13px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .bar{left:12px;right:12px;bottom:12px;border-radius:22px;padding:8px;gap:6px}
+  .bar .btn span{display:none}
+  .bar .btn{padding:0;width:44px}
+  #tour-prev{display:none}
+  .panel-toggle.btn{width:auto;padding:0 12px;margin-left:auto}
+  .m-clock{font-weight:500;font-variant-numeric:tabular-nums}
+  .toggle{display:none}
+  .seg span{padding:0 8px;height:34px}
+  .panel{top:auto;left:12px;right:12px;bottom:76px;width:auto;max-height:0;padding:0 16px;opacity:0;pointer-events:none;transition:max-height .3s,opacity .2s,padding .3s}
+  .panel.open{max-height:58vh;padding:16px;opacity:1;pointer-events:auto;z-index:8}
+  .panel-toggle,.m-clock{display:inline-flex}
+  .bar .grow,.credit{display:none}
+  .tag span{display:none}
+  .tag{padding:5px 9px}
+  .tag.door{display:none}
+}
+@media (max-width:340px){ .seg label:nth-child(3){display:none} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;scroll-behavior:auto!important} }
+html.sim-paused .clock{color:var(--soft)}
+html.clean .card,html.clean .tags,html.clean #al-nav,html.clean #debug{display:none!important}
+</style>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the figures</a>
+<main class="dc" id="dc">
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a simulated grocery distribution centre. Drag to orbit, scroll or pinch to zoom." tabindex="0"></canvas>
+    <div class="tags" id="tags"></div>
+  </div>
+
+  <section class="card title" aria-labelledby="dc-title">
+    <p class="kicker">assembl lab · twin</p>
+    <h1 id="dc-title">Grocery distribution centre</h1>
+    <p class="sub">A fictional South Auckland DC running one simulated morning shift: trucks in, stock stored, store orders picked, wrapped and sent.</p>
+    <div class="chips"><span class="chip">Simulated</span><span class="chip quiet">Example DC, not a real site</span></div>
+  </section>
+
+  <aside class="card panel" id="panel" aria-label="Simulated figures" tabindex="-1">
+    <header>
+      <div><span class="clock" data-k="clock">05:00</span><span class="clock-sub">Shift clock · model speed <span data-k="speed">4×</span></span></div>
+      <span class="chip">Simulated</span>
+    </header>
+    <p class="event" data-k="event" aria-live="off">The shift has just started</p>
+
+    <h2>Inbound</h2>
+    <dl><dt>Supplier trucks in</dt><dd data-k="trucksIn">0</dd><dt>Pallets received</dt><dd data-k="received">0</dd><dt>Waiting to be checked</dt><dd data-k="toCheck">0</dd><dt>Waiting for putaway</dt><dd data-k="toPut">0</dd></dl>
+    <h2>Storage</h2>
+    <dl><dt>Reserve decks in use</dt><dd data-k="reserve">0%</dd><dt>Pick faces at reorder point</dt><dd data-k="facesLow">0</dd><dt>Let-downs to pick faces</dt><dd data-k="replens">0</dd><dt>Pallets put away</dt><dd data-k="putaways">0</dd></dl>
+    <h2>Picking</h2>
+    <dl><dt>Cartons an hour, last 15 min</dt><dd data-k="cph">warming up</dd><dt>Cartons picked</dt><dd data-k="cartons">0</dd><dt>Store pallets built</dt><dd data-k="storePallets">0</dd><dt>Totes picked</dt><dd data-k="totes">0</dd><dt>Short picks</dt><dd data-k="shorts">0</dd></dl>
+    <h2>Wrap and label</h2>
+    <dl><dt>Pallets waiting to wrap</dt><dd data-k="queue">0</dd><dt>Wrappers busy</dt><dd data-k="wrapUtil">0%</dd><dt>Pallets wrapped</dt><dd data-k="wrapped">0</dd></dl>
+    <h2>Docks</h2>
+    <ul class="doors" id="doors" aria-label="Dock doors"></ul>
+    <dl style="margin-top:10px"><dt>Pallets loaded on trucks</dt><dd data-k="loaded">0</dd><dt>Store trucks sent</dt><dd data-k="trucksOut">0</dd></dl>
+    <h2>Busy time since 05:00</h2>
+    <dl><dt>Pallet pickers</dt><dd data-k="uPick">0%</dd><dt>Forklifts</dt><dd data-k="uFork">0%</dd><dt>Order pickers</dt><dd data-k="uOP">0%</dd></dl>
+    <div class="legend" aria-label="Path colours"><span><i></i>People</span><span><i class="v"></i>Vehicles</span></div>
+
+    <details>
+      <summary>How this model works</summary>
+      <p>Each worker and vehicle takes its next job by a fixed rule: pickers build pallets for the store truck that needs them most, order pickers let pallets down to faces before they put new stock away, and forklifts serve the oldest waiting pallet. A job lasts as long as its route divided by its speed, plus its handling times. These are assumptions, not measurements:</p>
+      <dl id="assume"></dl>
+      <p>What the model leaves out: vehicles do not block each other, nobody takes a break, and there are no damages, mis-picks or chilled stock.</p>
+    </details>
+    <details>
+      <summary>What is real here</summary>
+      <p>The racking, pallets, cartons, totes, roller conveyor, forklifts, order pickers, pallet jacks, dock gates, carts, label printers and safety kit are NVIDIA SimReady 3D models (CC BY 4.0), loaded from web copies in <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a> of <a href="https://huggingface.co/datasets/nvidia/simready-assets">nvidia/simready-assets</a>, simplified for the browser. The floor, wall and carton textures come from the same set.</p>
+      <p>The building, trucks, wrappers and people are simple models made for this page. The DC, its layout and its stores are fictional; the store routes use real South Auckland suburb names only as places. Every figure in this panel is Simulated.</p>
+    </details>
+  </aside>
+
+  <section class="card tour" id="tour" aria-live="polite" aria-atomic="true">
+    <p class="step" id="tour-step">Tour · 1 of 8</p>
+    <h2 id="tour-title">The whole building</h2>
+    <p id="tour-text"></p>
+  </section>
+
+  <div class="card bar" role="toolbar" aria-label="Tour and model controls">
+    <button class="btn icon" id="tour-prev" type="button" aria-label="Previous tour stop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6"/></svg></button>
+    <button class="btn primary" id="tour-play" type="button" aria-pressed="true"></button>
+    <button class="btn icon" id="tour-next" type="button" aria-label="Next tour stop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6"/></svg></button>
+    <div class="seg" role="radiogroup" aria-label="Model speed">
+      <label><input type="radio" name="speed" value="1"><span>1×</span></label>
+      <label><input type="radio" name="speed" value="4" checked><span>4×</span></label>
+      <label><input type="radio" name="speed" value="12"><span>12×</span></label>
+    </div>
+    <button class="btn" id="sim-run" type="button" aria-pressed="true"></button>
+    <label class="toggle"><input type="checkbox" id="t-paths" checked> Paths</label>
+    <label class="toggle"><input type="checkbox" id="t-labels" checked> Labels</label>
+    <button class="btn panel-toggle" id="panel-toggle" type="button" aria-expanded="false" aria-controls="panel" aria-label="All figures"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" stroke="currentColor" stroke-width="1.6" fill="none"/></svg><b class="m-clock" data-k="m-clock">05:00</b><span>All figures</span></button>
+    <span class="grow"></span>
+    <p class="credit">3D assets: <a href="https://huggingface.co/datasets/nvidia/simready-assets">NVIDIA SimReady</a> (CC BY 4.0), via <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a>. Simulated figures.</p>
+  </div>
+
+  <div class="loader" id="loader" role="status">
+    <div class="box">
+      <h2>Opening the distribution centre</h2>
+      <p>Loading the NVIDIA SimReady models: racking, forklifts, conveyor, pallets and dock gear.</p>
+      <div class="track"><div id="load-bar"></div></div>
+      <div class="load-meta"><span id="load-text">Starting</span><span id="load-pct">0%</span></div>
+    </div>
+  </div>
+  <div class="fallback" id="fallback" hidden>
+    <div>
+      <img src="/store/dc/poster.webp" alt="Still image of the simulated grocery distribution centre from above: racking on the left, wrappers in the middle, dock doors and trucks on the right" width="1440" height="900">
+      <p>This browser could not start 3D graphics, so here is a still of the twin. It shows a fictional South Auckland grocery DC built from NVIDIA SimReady 3D assets (CC BY 4.0); its figures are simulated.</p>
+    </div>
+  </div>
+  <div id="debug" aria-hidden="true"></div>
+</main>
+<script src="/lab/navigation.js"></script>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
