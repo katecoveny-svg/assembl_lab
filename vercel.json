@@ -37,6 +37,16 @@
    "permanent": false
   },
   {
+   "source": "/cars/dealer-twin/private/:path*",
+   "destination": "/cars/dealer-twin/",
+   "permanent": false
+  },
+  {
+   "source": "/whaiao-story/:path*",
+   "destination": "/",
+   "permanent": false
+  },
+  {
    "source": "/",
    "has": [
     {
