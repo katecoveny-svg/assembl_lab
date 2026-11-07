@@ -174,7 +174,51 @@ void main() {
   gl_FragColor = vec4(col, 1.0);
 }`;
 
-export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio, sizeScale = 1 } = {}) {
+// the light pipeline on its own (accumulate → resolve → half-size bloom → plum ground), for pages that draw their own points
+// with the standard look (the Plan Studio point cloud, the studio's model view). Their points material must write premultiplied
+// colour with ADDITIVE_PREMULTIPLIED below.
+export const ADDITIVE_PREMULTIPLIED = { transparent: true, depthWrite: false, depthTest: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor,
+  blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor };
+export function createPipeline(renderer, { bloom = 0.7 } = {}) {
+  const rtOpt = { type: THREE.HalfFloatType, depthBuffer: false };
+  const acc = new THREE.WebGLRenderTarget(4, 4, rtOpt), cloud = new THREE.WebGLRenderTarget(4, 4, rtOpt), hA = new THREE.WebGLRenderTarget(2, 2, rtOpt), hB = new THREE.WebGLRenderTarget(2, 2, rtOpt);
+  const quadScene = new THREE.Scene(), quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); quadScene.add(quad);
+  const mk = (frag, u) => new THREE.ShaderMaterial({ uniforms: u, vertexShader: QUAD_V, fragmentShader: frag, depthTest: false, depthWrite: false });
+  const resolveM = mk(RESOLVE, { tAcc: { value: null } }), blurM = mk(BLUR, { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } });
+  const finalM = mk(FINAL, { tCloud: { value: null }, tBloom: { value: null }, uLiftAt: { value: new THREE.Vector2(0.62, 0.5) }, uAspect: { value: 1 }, uBloom: { value: bloom } });
+  const pass = (m, target) => { quad.material = m; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
+  return {
+    setLift: (x, y) => finalM.uniforms.uLiftAt.value.set(x, y), setBloom: (b) => (finalM.uniforms.uBloom.value = b),
+    resize(pw, ph, aspect) { acc.setSize(pw, ph); cloud.setSize(pw, ph); hA.setSize(Math.max(1, pw >> 1), Math.max(1, ph >> 1)); hB.setSize(Math.max(1, pw >> 1), Math.max(1, ph >> 1)); finalM.uniforms.uAspect.value = aspect; },
+    render(scene, camera, target = null) {
+      renderer.setRenderTarget(acc); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, camera);
+      resolveM.uniforms.tAcc.value = acc.texture; pass(resolveM, cloud);
+      blurM.uniforms.tSrc.value = cloud.texture; blurM.uniforms.uDir.value.set(1.6 / hA.width, 0); pass(blurM, hA);
+      blurM.uniforms.tSrc.value = hA.texture; blurM.uniforms.uDir.value.set(0, 1.6 / hA.height); pass(blurM, hB);
+      blurM.uniforms.tSrc.value = hB.texture; blurM.uniforms.uDir.value.set(3.2 / hA.width, 0); pass(blurM, hA);
+      blurM.uniforms.tSrc.value = hA.texture; blurM.uniforms.uDir.value.set(0, 3.2 / hA.height); pass(blurM, hB);
+      finalM.uniforms.tCloud.value = cloud.texture; finalM.uniforms.tBloom.value = hB.texture; renderer.setClearColor(GROUND, 1); pass(finalM, target);
+    },
+    dispose() { [acc, cloud, hA, hB].forEach((t) => t.dispose()); },
+  };
+}
+// the shared GLSL for any page that colours its own points: the tone ramp and the iridescent highlight palette
+export const GLSL_TONES = /* glsl */ `
+vec3 pcRamp(float l) {
+  vec3 c[6]; c[0] = ${vec(TONES[0])}; c[1] = ${vec(TONES[1])}; c[2] = ${vec(TONES[2])}; c[3] = ${vec(TONES[3])}; c[4] = ${vec(TONES[4])}; c[5] = ${vec(TONES[5])};
+  float x = clamp(l, 0.0, 1.0) * 5.0; int i = int(min(floor(x), 4.0)); float f = x - float(i); vec3 a = c[0], b = c[1];
+  for (int k = 0; k < 5; k++) if (k == i) { a = c[k]; b = c[k + 1]; }
+  return mix(a, b, smoothstep(0.0, 1.0, f));
+}
+vec3 pcIrid(float k) {
+  vec3 c[5]; c[0] = ${vec(IRID[0])}; c[1] = ${vec(IRID[1])}; c[2] = ${vec(IRID[2])}; c[3] = ${vec(IRID[3])}; c[4] = ${vec(IRID[4])};
+  float x = fract(k) * 5.0; int i = int(floor(x)); float f = x - float(i); vec3 a = c[0], b = c[1];
+  for (int j = 0; j < 5; j++) if (j == i) { a = c[j]; b = c[j == 4 ? 0 : j + 1]; }
+  return mix(a, b, smoothstep(0.0, 1.0, f));
+}
+vec3 pcLook(float L, float k) { vec3 c = pcRamp(L); if (L > 0.7) c = mix(c, pcIrid(k), min(0.6, (L - 0.7) / 0.3 * 0.6)); return c; }`;
+
+export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio, sizeScale = 1, sway: swayOn = true } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: false });
   const PR = pixelRatio ?? Math.min(window.devicePixelRatio || 1, 1.75); renderer.setPixelRatio(PR); renderer.setClearColor(GROUND, 1);
   const N = budget ?? (Math.min(window.innerWidth, window.innerHeight) < 700 ? 80000 : 300000);
@@ -189,31 +233,14 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   const mat = new THREE.ShaderMaterial({ uniforms: U, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, depthTest: false,
     blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; group.add(pts);
-  // passes: accumulate → resolve → half-size blur → composite over the plum ground
-  const rtOpt = { type: THREE.HalfFloatType, depthBuffer: false };
-  let acc = new THREE.WebGLRenderTarget(4, 4, rtOpt), cloud = new THREE.WebGLRenderTarget(4, 4, rtOpt), hA = new THREE.WebGLRenderTarget(2, 2, rtOpt), hB = new THREE.WebGLRenderTarget(2, 2, rtOpt);
-  const quadScene = new THREE.Scene(), quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); quadScene.add(quad);
-  const mk = (frag, u) => new THREE.ShaderMaterial({ uniforms: u, vertexShader: QUAD_V, fragmentShader: frag, depthTest: false, depthWrite: false });
-  const resolveM = mk(RESOLVE, { tAcc: { value: null } }), blurM = mk(BLUR, { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } });
-  const finalM = mk(FINAL, { tCloud: { value: null }, tBloom: { value: null }, uLiftAt: { value: new THREE.Vector2(0.62, 0.5) }, uAspect: { value: 1 }, uBloom: { value: 0.7 } });
-  const pass = (m, target) => { quad.material = m; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
+  const pipe = createPipeline(renderer);
   let W = 1, H = 1;
   function resize() {
     const w = canvas.clientWidth || canvas.parentElement.clientWidth, h = canvas.clientHeight || canvas.parentElement.clientHeight; if (w === W && h === H) return; W = w; H = h;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    const pw = Math.max(2, Math.round(w * PR)), ph = Math.max(2, Math.round(h * PR)); acc.setSize(pw, ph); cloud.setSize(pw, ph); hA.setSize(pw >> 1, ph >> 1); hB.setSize(pw >> 1, ph >> 1);
-    finalM.uniforms.uAspect.value = w / h; U.uSize.value = 2.6 * Math.sqrt(300000 / N) * Math.min(1.25, Math.max(0.75, h / 900)) * sizeScale;
+    const pw = Math.max(2, Math.round(w * PR)), ph = Math.max(2, Math.round(h * PR)); pipe.resize(pw, ph, w / h); U.uSize.value = 2.6 * Math.sqrt(300000 / N) * Math.min(1.25, Math.max(0.75, h / 900)) * sizeScale;
   }
-  function render() {
-    resize();
-    renderer.setRenderTarget(acc); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, camera);
-    resolveM.uniforms.tAcc.value = acc.texture; pass(resolveM, cloud);
-    blurM.uniforms.tSrc.value = cloud.texture; blurM.uniforms.uDir.value.set(1.6 / hA.width, 0); pass(blurM, hA);
-    blurM.uniforms.tSrc.value = hA.texture; blurM.uniforms.uDir.value.set(0, 1.6 / hA.height); pass(blurM, hB);
-    blurM.uniforms.tSrc.value = hB.texture; blurM.uniforms.uDir.value.set(3.2 / hA.width, 0); pass(blurM, hA);
-    blurM.uniforms.tSrc.value = hA.texture; blurM.uniforms.uDir.value.set(0, 3.2 / hA.height); pass(blurM, hB);
-    finalM.uniforms.tCloud.value = cloud.texture; finalM.uniforms.tBloom.value = hB.texture; renderer.setClearColor(GROUND, 1); pass(finalM, null);
-  }
+  function render() { resize(); pipe.render(scene, camera); }
   // forms and morphing
   let cur = null, next = null, tween = null;
   const load = (arrP, arrL, f) => { const g = f.n === N ? f : resample(f, N); arrP.set(g.pos); arrL.set(g.light); for (let i = 0; i < N; i++) kind[i] = g.kind[i]; return g; };
@@ -241,7 +268,7 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
     U.uTime.value = now / 1000;
     if (tween) { const k = Math.min(1, (now - tween.t0) / tween.ms); U.uT.value = k; if (k >= 1) { tween = null; cur = next; } }
     if (scanT) { const k = (now - scanT.t0) / scanT.ms; if (k >= 1) { scanT = null; U.uScan.value = 0; } else { U.uScan.value = Math.sin(Math.PI * k); U.uScanY.value = scanT.y0 + (scanT.y1 - scanT.y0) * k; } }
-    if (!reduceMotion) { sway = Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08; group.rotation.y = sway; }
+    if (!reduceMotion && swayOn) { sway = Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08; group.rotation.y = sway; }
     onFrame?.(now); render();
   }
   function start() { if (running) return; running = true; requestAnimationFrame(frame); }
@@ -253,6 +280,6 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
     return { x: (tmp.x * 0.5 + 0.5) * W, y: (-tmp.y * 0.5 + 0.5) * H, visible: tmp.z < 1 };
   }
   return { N, renderer, camera, group, uniforms: U, setForm, assembleFrom, scan, start, stop, render, project, resize,
-    setLift: (x, y) => finalM.uniforms.uLiftAt.value.set(x, y), pause: (v) => { paused = v; if (!v) render(); }, get paused() { return paused; }, set onFrame(fn) { onFrame = fn; },
-    morphing: () => !!tween, dispose: () => { stop(); geo.dispose(); mat.dispose(); [acc, cloud, hA, hB].forEach((t) => t.dispose()); renderer.dispose(); } };
+    setLift: pipe.setLift, pause: (v) => { paused = v; if (!v) render(); }, get paused() { return paused; }, set onFrame(fn) { onFrame = fn; },
+    morphing: () => !!tween, dispose: () => { stop(); geo.dispose(); mat.dispose(); pipe.dispose(); renderer.dispose(); } };
 }

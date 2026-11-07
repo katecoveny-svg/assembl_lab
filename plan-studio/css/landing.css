@@ -1,8 +1,8 @@
 /* assembl lab · Plan Studio landing. The lab's DESIGN.md: one plum world, a chalk sheet for the work, renders shown whole. */
 :root {
-  --deep: #240B21; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --ink: #492B3E; --muted: #654A4E; --rose: #916A70;
+  --deep: #21121F; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --ink: #492B3E; --muted: #654A4E; --rose: #916A70;
   --on: rgba(255, 253, 251, .78); --glass: rgba(255, 253, 251, .07); --glass-line: rgba(255, 253, 251, .16);
-  --glow-rose: rgba(243, 165, 190, .30); --glow-lilac: rgba(199, 180, 240, .24); --lilac: #C7B4F0; --pink: #F3A5BE;
+  --glow-rose: rgba(244, 190, 218, .14); --glow-lilac: rgba(217, 186, 203, .1); --lilac: #D9BACB; --pink: #F4BEDA;
   --sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
   --t-h1: clamp(46px, 6.6vw, 96px); --t-h2: clamp(32px, 3.8vw, 54px); --t-h3: clamp(21px, 1.7vw, 25px); --t-lede: clamp(17px, 1.3vw, 20px);
   --gutter: clamp(16px, 5vw, 64px); --max: 1240px; --gap: clamp(88px, 10vw, 152px);
@@ -134,3 +134,30 @@ h3 { font-size: var(--t-h3); line-height: 1.15; letter-spacing: -.02em; font-wei
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 .stage-field { overflow-x: clip; }   /* glows reach past the content box; never past the page */
+
+/* ------------------------------------------------------------------ the point-cloud look (Nov 2026)
+   The whole page sits on the assembl point-cloud ground: deep plum with a soft lift, glass tiles, the tone ramp's rose and ivory
+   for text and accents. No chalk sheet, no lavender. Real outputs (the PDF read, the code list, the A3 sheets, the Blender render,
+   the deck) stay framed as what they are; the model itself is shown as points. */
+:root { --deep: #21121F; --plum: #2E1A2C; --lilac: #D9BACB; --pink: #F4BEDA; --glow-rose: rgba(244, 190, 218, .14); --glow-lilac: rgba(217, 186, 203, .1);
+  --glass: rgba(249, 246, 242, .05); --glass-line: rgba(249, 246, 242, .13); --paper: #F9F6F2; --on: rgba(249, 246, 242, .76); }
+body { background: var(--deep); }
+.hero::before { background: radial-gradient(760px 420px at 78% 30%, rgba(46, 26, 44, .9), transparent 72%); }
+.hero-cloud { margin: clamp(40px, 5vw, 72px) 0 0; }
+.cloud-frame { position: relative; aspect-ratio: 16 / 10; border-radius: 28px; overflow: hidden; background: var(--deep); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.cloud-frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .6s ease; }
+.cloud-frame .cloud-still { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cloud-frame.live canvas { opacity: 1; } .cloud-frame.live .cloud-still { visibility: hidden; }
+.sheet, .sheet.second, .sheet.third, .sheet.fourth { background: transparent; color: var(--paper); border-radius: 0; margin: 0; }
+.sheet .lede, .sheet .step p, .sheet .step .proof, .sheet .note, .also span, .honest span, .mats small, .formats figcaption .mono { color: var(--on); }
+.sheet h2, .sheet h3, .also b, .honest b, .mats b, .mats .mono, .formats figcaption { color: var(--paper); }
+.sheet .chip { background: var(--glass); color: var(--paper); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.step figure img, .formats img, html.js .stage .frame { background: var(--deep); box-shadow: inset 0 0 0 1px var(--glass-line), 0 30px 70px -40px rgba(0, 0, 0, .8); }
+html.js .stage-meta { color: var(--on); } html.js .stage-meta .line { background: var(--glass-line); } html.js .stage-meta .line span { background: #D9BACB; }
+.also li, .honest li, .mats li { background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.mats .sw { box-shadow: inset 0 0 0 1px var(--glass-line); }
+.sheet :focus-visible { outline-color: #D9BACB; }
+.proof-band::before { background: radial-gradient(560px 300px at 80% 30%, rgba(244, 190, 218, .12), transparent 70%); }
+.close::before { background: radial-gradient(520px 300px at calc(40vw + 10%) 50%, rgba(217, 186, 203, .1), transparent 70%); }
+.foot { background: #180B18; }
+.chip.live i { background: #D9BACB; } .chip.sim i { background: #F4BEDA; }

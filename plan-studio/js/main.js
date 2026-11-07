@@ -34,6 +34,7 @@ function changed(opts = {}) {
   $("#projName").textContent = P.meta.name; $("#truthChip").textContent = P.meta.status || "";
   if (state.tab === "drawings") drawSheets(); else sheets = [];
   if (stage && opts.geometry !== false) { clearTimeout(t3d); t3d = setTimeout(() => { stage.rebuild(P); stage.render(); }, 120); }
+  if (cloud && opts.geometry !== false) { clearTimeout(tCloud); tCloud = setTimeout(() => cloud.rebuild(false), 500); }
 }
 
 // ------------------------------------------------------------------------------------------------ code check
@@ -113,7 +114,36 @@ async function boot3d() {
   ctl.addEventListener("change", () => { if (!stage.recording) stage.render(); });
   const sync = () => { ctl.target.copy(stage.target); ctl.update(); stage.render(); }; stage.sync = sync; sync();
   addEventListener("resize", () => { stage.resize(); stage.render(); });
+  bootCloud().catch((e) => { console.warn("Point-cloud view unavailable:", e.message); setLook("solid"); $("#look").hidden = true; });
 }
+// the model as a point cloud (the default look): the shared engine (lab/pc/engine.js) draws points sampled from the same model,
+// through the same camera you orbit; an edit re-assembles the cloud. Solid is one tap away for materials and stills.
+let cloud = null, cloudLook = "cloud", tCloud;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const glassWeight = (m) => (m.material?.transparent && m.material.opacity < 1 ? 0.18 : m.name === "SLAB" ? 0.5 : 1);
+async function bootCloud() {
+  const { createEngine, objectForm } = await import("/lab/pc/engine.js");
+  cloud = createEngine($("#cloud3d"), { budget: innerWidth < 760 ? 80000 : 220000, sway: false, reduceMotion }); cloud.setLift(0.5, 0.48);
+  const sizeBase = 2.6 * Math.sqrt(300000 / cloud.N);
+  cloud.onFrame = () => {           // follow the solid stage's camera exactly
+    const c = stage.camera, e = cloud.camera; e.position.copy(c.position); e.quaternion.copy(c.quaternion); e.fov = c.fov; e.near = 0.1; e.far = 4000; e.updateProjectionMatrix();
+    const d = c.position.distanceTo(stage.ctl.target); cloud.uniforms.uNear.value = d * 0.6; cloud.uniforms.uFar.value = d * 1.9;
+    cloud.uniforms.uSize.value = sizeBase * Math.min(1.25, Math.max(0.75, cloud.renderer.domElement.clientHeight / 900)) * (d / 3.4);
+  };
+  const form = () => objectForm(stage.S.buildModel(P, { furniture: true }), cloud.N, { weight: glassWeight, edgeShare: 0.36, groundShare: 0.08 });
+  cloud.rebuild = (first) => {
+    const f = form(); let top = 0; for (let i = 0; i < f.n; i++) top = Math.max(top, f.pos[i * 3 + 1]);
+    if (first) cloud.assembleFrom(f, { offset: [0, 0, 0], scale: 1, ms: 3000 }); else cloud.setForm(f, { offset: [0, 0, 0], scale: 1, ms: 1400 });
+    setTimeout(() => cloud.scan(2600, -0.2, top + 0.4), first ? 2600 : 1200);
+  };
+  cloud.rebuild(true); setLook(cloudLook);
+  new IntersectionObserver(([x]) => { if (cloudLook === "cloud" && x.isIntersecting) cloud.start(); else cloud.stop(); }).observe($("#cloud3d"));
+}
+function setLook(look) {
+  cloudLook = look; $$("#look button").forEach((b) => { const on = b.dataset.look === look; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+  $("#cloud3d").hidden = look !== "cloud"; if (!cloud) return; if (look === "cloud") cloud.start(); else { cloud.stop(); stage?.render(); }
+}
+$("#look").addEventListener("click", (e) => { const b = e.target.closest("button[data-look]"); if (b) setLook(b.dataset.look); });
 $("#views").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#views button").forEach((x) => x.classList.toggle("on", x === b)); const cut = b.dataset.view === "plan"; stage.setCutaway(cut); stage.view(b.dataset.view); stage.sync(); });
 $("#lights").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#lights button").forEach((x) => x.classList.toggle("on", x === b)); stage.light(b.dataset.light); stage.render(); });
 

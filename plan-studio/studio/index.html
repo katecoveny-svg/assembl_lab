@@ -65,7 +65,9 @@
     <section class="panel" data-panel="model" aria-label="Model" hidden>
       <div class="stagewrap">
         <canvas id="stage3d" aria-label="3D model"></canvas>
+        <canvas id="cloud3d" aria-hidden="true"></canvas>
         <div class="stagebar">
+          <div class="seg" id="look" role="group" aria-label="Model look"><button type="button" data-look="cloud" class="on" aria-pressed="true">Point cloud</button><button type="button" data-look="solid" aria-pressed="false">Solid</button></div>
           <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="rear">Rear</button><button data-view="cornerA">Corner</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
           <div class="seg" id="lights"><button data-light="day" class="on">Day</button><button data-light="golden">Golden hour</button><button data-light="dusk">Dusk</button></div>
         </div>

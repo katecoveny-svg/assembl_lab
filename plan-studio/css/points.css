@@ -1,7 +1,7 @@
 /* assembl lab · Plan Studio point cloud. The lab's plum world (DESIGN.md): the cloud on the deep plum stage, controls in glass. */
 :root {
-  --deep: #240B21; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --rose: #916A70; --muted: #654A4E;
-  --on: rgba(255, 253, 251, .78); --glass: rgba(255, 253, 251, .07); --glass-line: rgba(255, 253, 251, .16); --lilac: #C7B4F0; --pink: #F3A5BE;
+  --deep: #21121F; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --rose: #916A70; --muted: #654A4E;
+  --on: rgba(255, 253, 251, .78); --glass: rgba(255, 253, 251, .07); --glass-line: rgba(255, 253, 251, .16); --lilac: #D9BACB; --pink: #F4BEDA;
   --sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
 }
 * { box-sizing: border-box; }
@@ -23,7 +23,7 @@ button { font: inherit; cursor: pointer; }
 .btn.line:hover, .btn.glass:hover { background: rgba(255, 253, 251, .12); }
 .btn[aria-pressed="true"] { background: var(--paper); color: var(--deep); box-shadow: none; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-.stage { position: fixed; inset: 0; background: radial-gradient(1200px 700px at 60% 40%, #34142f 0%, var(--deep) 60%); }
+.stage { position: fixed; inset: 0; background: var(--deep); }
 #cloud { display: block; width: 100%; height: 100%; touch-action: none; }
 .loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--on); margin: 0; }
 .loading[hidden] { display: none; }

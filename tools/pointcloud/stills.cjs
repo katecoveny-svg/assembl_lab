@@ -8,6 +8,10 @@ const P = (id, src, w = 1206, h = 824, extra = {}) => ({ id, kind: 'image', src,
 const JOBS = [
   { id: 'jump-sims', kind: 'glb', src: '/assets/models/cafe/cafe-venue.glb', w: 800, h: 500 }, { id: 'jump-study', kind: 'glb', src: '/assets/models/windtunnel/windtunnel.glb', w: 800, h: 500, rot: 0.75, camY: 0.6, lookY: 0.12 },
   { id: 'jump-architecture', kind: 'hall', w: 800, h: 500 }, { id: 'jump-play', kind: 'knot', w: 800, h: 500 },
+  // Plan Studio landing: the hero fallback, the model step and the three social formats (the same views the point-cloud page exports)
+  { id: 'ps-hero', kind: 'hall', w: 1600, h: 1000, rot: 0.62, scale: 1.3, n: 180000, sizeScale: 1.45 }, { id: 'ps-model', kind: 'hall', w: 1600, h: 900, rot: 0.9, camY: 1.5, lookY: 0.1, scale: 1.2, n: 180000, sizeScale: 1.45 },
+  { id: 'ps-reel', kind: 'hall', w: 1080, h: 1920, rot: 0.6, camY: 1.1, camZ: 3.6, lookY: 0.16, scale: 0.5, n: 180000, sizeScale: 1.3 }, { id: 'ps-feed', kind: 'hall', w: 1080, h: 1350, rot: -0.55, camY: 0.95, lookY: 0.18, scale: 0.68, n: 180000, sizeScale: 1.35 },
+  { id: 'ps-square', kind: 'hall', w: 1080, h: 1080, rot: 1.2, camY: 0.75, lookY: 0.22, scale: 0.98, n: 180000, sizeScale: 1.35 },
 ];
 (async () => {
   const only = process.argv.slice(2); fs.mkdirSync(OUT, { recursive: true });

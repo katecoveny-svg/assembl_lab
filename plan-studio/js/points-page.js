@@ -7,6 +7,7 @@ import { demoProject } from "./model.js";
 import { runChecks, summarise } from "./code.js";
 import { burnLabel } from "./scene.js";
 import { buildCloud, cloudPoints } from "./points.js";
+import { createPipeline } from "/lab/pc/engine.js";
 
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -17,7 +18,8 @@ function valid(p) { return !!(p && Array.isArray(p.walls) && Array.isArray(p.roo
 
 // ------------------------------------------------------------------------------------------------ stage
 const canvas = $("#cloud"), renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setClearColor(0x240b21, 0);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const pipe = createPipeline(renderer);                // the assembl point-cloud light: additive accumulation, bloom, plum ground
 const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(36, 1, 0.1, 600);
 const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.autoRotateSpeed = 0.6; controls.maxPolarAngle = Math.PI * 0.49;
 let cloud = null, pts = null, U = null, N = matchMedia("(max-width: 640px)").matches ? 500000 : 1500000;
@@ -27,11 +29,12 @@ const anims = new Set();      // running tweens; the loop renders while any run 
 function offset(w, h) { const pw = $("#panel").offsetWidth; if (w > 900 && pw) camera.setViewOffset(w, h, -(pw + 24) / 2, 0, w, h); else camera.clearViewOffset(); }
 function size() {
   const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; offset(w, h); camera.updateProjectionMatrix();
-  if (U) U.uPR.value = renderer.getContext().drawingBufferHeight / 900;
+  const gl = renderer.getContext(); pipe.resize(gl.drawingBufferWidth, gl.drawingBufferHeight, w / h); pipe.setLift(w > 900 ? 0.6 : 0.5, 0.5);
+  if (U) U.uPR.value = gl.drawingBufferHeight / 900;
 }
 function frame() {
   if (U) { U.uSize.value = 22 * Math.sqrt(1500000 / N); const d = camera.position.distanceTo(controls.target), L = Math.max(cloud.size[0], cloud.size[2]); U.uFog.value.set(d - L * 0.05, d + L * 2.2); }
-  renderer.render(scene, camera);
+  pipe.render(scene, camera);
 }
 let looping = false;
 function kick() { if (looping) return; looping = true; requestAnimationFrame(loop); }
@@ -72,10 +75,10 @@ let mode = 0, exploded = false;      // 0 scan, 1 material, 2 code check, 3 evid
 const results = runChecks(P);
 function legend() {
   const dot = (c, t) => `<span><i style="background:${c}"></i>${t}</span>`, el = $("#legend");
-  if (mode === 0) el.innerHTML = "Scan light: colour rises with height, from plum at the floor to paper at the ridge; every edge of the model is drawn brighter.";
+  if (mode === 0) el.innerHTML = "Scan light: every point carries the light on its surface, from plum in shadow to ivory in the sun, and every edge of the model is drawn brighter.";
   else if (mode === 1) el.innerHTML = "True material colours, shaded by a fixed sun. Screen colours are approximate.";
-  else if (mode === 2) { const s = summarise(runChecks(P)); el.innerHTML = dot("#d9334d", `Fails (${s.fail})`) + dot("#dba83d", `Needs info (${s.info})`) + dot("#54ad7a", `Passes (${s.pass})`) + dot("#6f5f69", "Not checked") + `<span>Rooms, walls and openings named by each NZBC pre-check result. Advisory, not a consent decision.</span>`; }
-  else { const demo = [...P.walls, ...P.openings].every((e) => e.ev?.src === "demo"); el.innerHTML = dot("#54ad7a", "High confidence") + dot("#dba83d", "Medium") + dot("#d9334d", "Low: check it") + dot("#6f5f69", "No evidence record") + (demo ? "<span>Demo data: every element here is marked demo, confidence 1. An imported plan shows what was measured and what was inferred.</span>" : "<span>How sure the reader was of each element, from its evidence record.</span>"); }
+  else if (mode === 2) { const s = summarise(runChecks(P)); el.innerHTML = dot("#F4BEDA", `Fails (${s.fail}): brightest, pulsing`) + dot("#FCCEBC", `Needs info (${s.info})`) + dot("#D4A8C6", `Passes (${s.pass})`) + dot("#5E3A58", "Not checked") + `<span>Rooms, walls and openings named by each NZBC pre-check result. Advisory, not a consent decision.</span>`; }
+  else { const demo = [...P.walls, ...P.openings].every((e) => e.ev?.src === "demo"); el.innerHTML = dot("#D4A8C6", "High confidence") + dot("#FCCEBC", "Medium") + dot("#F4BEDA", "Low: check it (pulsing)") + dot("#5E3A58", "No evidence record") + (demo ? "<span>Demo data: every element here is marked demo, confidence 1. An imported plan shows what was measured and what was inferred.</span>" : "<span>How sure the reader was of each element, from its evidence record.</span>"); }
 }
 $("#mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-mode]"); if (!b) return; mode = +b.dataset.mode; $$("#mode button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); U.uMode.value = mode; legend(); kick(); });
 $("#btnAssemble").addEventListener("click", () => { if (reduce) return; U.uAssemble.value = 0; tween(4200, (t) => (U.uAssemble.value = t), null, (t) => t); });
@@ -98,15 +101,17 @@ function out(blob, name, kind) {
 }
 function atSize(w, h, fn) {      // render at an exact size, keeping the look (point sizes follow the frame height)
   const old = new THREE.Vector2(); renderer.getSize(old); const pr = renderer.getPixelRatio(), aspect = camera.aspect;
-  renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.clearViewOffset(); camera.updateProjectionMatrix(); U.uPR.value = h / 900;
+  renderer.setPixelRatio(1); renderer.setSize(w, h, false); pipe.resize(w, h, w / h); pipe.setLift(0.5, 0.5); camera.aspect = w / h; camera.clearViewOffset(); camera.updateProjectionMatrix(); U.uPR.value = h / 900;
   const r = fn(); renderer.setPixelRatio(pr); renderer.setSize(old.x, old.y, false); camera.aspect = aspect; camera.updateProjectionMatrix(); size(); return r;
 }
-$("#btnStill").addEventListener("click", async () => {
-  const w = 3840, h = 2160, c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d");
+async function stillAt(w, h) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d");
   atSize(w, h, () => { g.fillStyle = "#240B21"; g.fillRect(0, 0, w, h); frame(); g.drawImage(renderer.domElement, 0, 0); });
   burnLabel(g, w, h, label()); kick();
-  out(await new Promise((r) => c.toBlob(r, "image/png")), `${P.meta.number || "project"}-point-cloud-4k.png`, "img");
-});
+  out(await new Promise((r) => c.toBlob(r, "image/png")), `${P.meta.number || "project"}-point-cloud-${w}x${h}.png`, "img");
+}
+$("#btnStill").addEventListener("click", () => stillAt(3840, 2160));
+document.querySelectorAll("[data-still]").forEach((b) => b.addEventListener("click", () => stillAt(+b.dataset.w, +b.dataset.h)));   // 4:5 and square, for socials
 async function orbitClip(w, h) {
   const btns = [$("#btnReel"), $("#btnWide"), $("#btnStill")]; btns.forEach((b) => (b.disabled = true));
   const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d");
