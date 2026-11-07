@@ -6,19 +6,17 @@
    Keep in step with the main repo: when a component changes there, change its twin here and update the commit above.
 
    Lab-only differences, on purpose:
-   - Wordmark takes `suffix` ("lab") and links to the Lab home. The image is /site-v2/glass-a-512.webp (same file as
-     public/home/world/glass-a-512.webp), with 96px and 192px copies in srcset.
+   - Wordmark takes `suffix` ("lab") and links to the Lab home. Since 8 Nov 2026 its mark is the flat mark A, drawn
+     inline (MARK_A); the glass "a" images are retired.
    - SiteNav / SiteFooter take their links as arguments: the Lab's chapters plus absolute links back to assembl.co.nz.
-   - GlassAssemble renders its four pieces at rest in the HTML (no JS shows the whole "a"); `trigger: 'load'` assembles
-     once on page load with CSS instead of with scroll. */
+   - markAssemble (was GlassAssemble) renders the flat mark's four parts at rest in the HTML (no JS shows the whole "a");
+     `trigger: 'load'` assembles once on page load with CSS instead of with scroll. */
 'use strict';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const attrs = o => Object.entries(o || {}).filter(([, v]) => v !== undefined && v !== false && v !== null)
   .map(([k, v]) => (v === true ? ` ${k}` : ` ${k}="${esc(v)}"`)).join('');
 
-const GLASS_A_SRC = '/site-v2/glass-a-512.webp';
-const GLASS_A_SRCSET = '/site-v2/glass-a-96.webp 96w, /site-v2/glass-a-192.webp 192w, /site-v2/glass-a-512.webp 512w';
 
 const PATHS = { 'up-right': 'M7 17 17 7M8 7h9v9', down: 'M12 5v14M6 13l6 6 6-6', right: 'M5 12h14M13 6l6 6-6 6' };
 
@@ -43,16 +41,19 @@ function eyebrow(html, { dot = true, tag = 'p', className, id } = {}) {
   return `<${tag}${attrs({ id })} class="${cls}">${html}</${tag}>`;
 }
 
-/** Wordmark.tsx → GlassA: the transparent glass "a" on its own, decorative. */
-function glassA(size = 34, { className, eager = false } = {}) {
+/** The flat mark A (Kate, 8 Nov 2026): shoulder, stem, bowl and a dusty-rose dot, ivory on dark. Same geometry as
+    lib/brand/mark-a.ts in assemblnz-f0afd79d. Replaces the retired glass "a". */
+const MARK_A = '<path d="M66 82 C72 56 132 52 132 84" fill="none" stroke="#F9F6F2" stroke-width="14" stroke-linecap="round"/><line x1="132" y1="76" x2="132" y2="160" fill="none" stroke="#F9F6F2" stroke-width="14" stroke-linecap="round"/><path d="M132 112 C132 90 64 90 64 128 C64 166 132 166 132 136" fill="none" stroke="#F9F6F2" stroke-width="14" stroke-linecap="round"/><circle cx="160" cy="160" r="10" fill="#D9BACB"/>';
+/** The mark on its own, inline SVG, decorative. */
+function markA(size = 34, { className } = {}) {
   const cls = ['v2-wordmark-a', className].filter(Boolean).join(' ');
-  return `<img src="${GLASS_A_SRC}" srcset="${GLASS_A_SRCSET}" sizes="${size}px" alt="" width="512" height="512" class="${cls}" style="width:${size}px;height:${size}px" aria-hidden="true"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async">`;
+  return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" style="width:${size}px;height:${size}px" aria-hidden="true" focusable="false">${MARK_A}</svg>`;
 }
 
-/** Wordmark.tsx: glass "a" + lowercase "assembl" + the dusty-rose dot. Lab adds `suffix` ("lab"). */
+/** Wordmark.tsx: the flat mark A + lowercase "assembl" + the dusty-rose dot. Lab adds `suffix` ("lab"). */
 function wordmark({ href, size = 24, mark = 34, dot = true, suffix, label = 'assembl home', eager = false, className, extra } = {}) {
   const style = `--v2-wm-size:${size}px;--v2-wm-a:${mark}px`;
-  const body = `${glassA(mark, { eager })}<span>assembl${dot ? '<span class="v2-wordmark-dot" aria-hidden="true">.</span>' : ''}</span>${suffix ? `<span class="lab-wm-suffix">${esc(suffix)}</span>` : ''}`;
+  const body = `${markA(mark)}<span>assembl${dot ? '<span class="v2-wordmark-dot" aria-hidden="true">.</span>' : ''}</span>${suffix ? `<span class="lab-wm-suffix">${esc(suffix)}</span>` : ''}`;
   const cls = ['v2-wordmark', className].filter(Boolean).join(' ');
   return href
     ? `<a href="${esc(href)}" class="${cls}" style="${style}" aria-label="${esc(label)}"${attrs(extra)}>${body}</a>`
@@ -90,16 +91,17 @@ function ticker({ items, label, seconds = 38, className }) {
   return `<div class="${['v2-ticker', className].filter(Boolean).join(' ')}" role="region" aria-label="${esc(label)}" style="--v2-ticker-s:${seconds}s"><div class="v2-ticker-track">${row(false)}${row(true)}</div></div>`;
 }
 
-/** GlassAssemble.tsx: four quarters of the glass "a" (same clips and scatter), decorative. */
+/** The flat mark assembling: its four real parts (shoulder, stem, bowl, dot) scatter and come together, decorative.
+    Keeps the GlassAssemble class names and scatter values so site-v2.js and lab.css drive the motion unchanged. */
 const PIECES = [
-  { clip: 'inset(0 49.6% 49.6% 0)', x: -46, y: -34, r: -20 },
-  { clip: 'inset(0 0 49.6% 49.6%)', x: 48, y: -40, r: 16 },
-  { clip: 'inset(49.6% 49.6% 0 0)', x: -40, y: 44, r: 14 },
-  { clip: 'inset(49.6% 0 0 49.6%)', x: 44, y: 38, r: -18 },
+  { part: '<path d="M66 82 C72 56 132 52 132 84" fill="none" stroke="#F9F6F2" stroke-width="14" stroke-linecap="round"/>', x: -46, y: -34, r: -20 },
+  { part: '<line x1="132" y1="76" x2="132" y2="160" fill="none" stroke="#F9F6F2" stroke-width="14" stroke-linecap="round"/>', x: 48, y: -40, r: 16 },
+  { part: '<path d="M132 112 C132 90 64 90 64 128 C64 166 132 166 132 136" fill="none" stroke="#F9F6F2" stroke-width="14" stroke-linecap="round"/>', x: -40, y: 44, r: 14 },
+  { part: '<circle cx="160" cy="160" r="10" fill="#D9BACB"/>', x: 44, y: 38, r: -18 },
 ];
-function glassAssemble({ size = 320, className, trigger = 'scroll', eager = false } = {}) {
-  const pieces = PIECES.map(p => `<div class="v2-glass-piece" style="clip-path:${p.clip};--px:${p.x}%;--py:${p.y}%;--pr:${p.r}deg" data-x="${p.x}" data-y="${p.y}" data-r="${p.r}"><img src="${GLASS_A_SRC}" srcset="${GLASS_A_SRCSET}" sizes="${size}px" alt="" width="512" height="512"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></div>`).join('');
-  return `<div class="${['v2-glass-assemble', className].filter(Boolean).join(' ')}" style="max-width:${size}px" aria-hidden="true" data-v2-assemble="${trigger}">${pieces}</div>`;
+function markAssemble({ size = 320, className, trigger = 'scroll' } = {}) {
+  const pieces = PIECES.map(p => `<div class="v2-glass-piece" style="--px:${p.x}%;--py:${p.y}%;--pr:${p.r}deg" data-x="${p.x}" data-y="${p.y}" data-r="${p.r}"><svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">${p.part}</svg></div>`).join('');
+  return `<div class="${['v2-glass-assemble', 'v2-mark-assemble', className].filter(Boolean).join(' ')}" style="max-width:${size}px" aria-hidden="true" data-v2-assemble="${trigger}">${pieces}</div>`;
 }
 
 /** SiteNav.tsx: floating nav over a dark hero, plum glass bar once scrolled; Menu below 880px. */
@@ -126,4 +128,4 @@ function siteFooter({ home, links, legal, note, strip }) {
 </footer>`;
 }
 
-module.exports = { esc, arrow, button, brand, eyebrow, glassA, wordmark, split, reveal, parallax, ticker, glassAssemble, siteNav, siteFooter, GLASS_A_SRC, GLASS_A_SRCSET };
+module.exports = { esc, arrow, button, brand, eyebrow, markA, wordmark, split, reveal, parallax, ticker, markAssemble, siteNav, siteFooter, MARK_A };
