@@ -2,8 +2,10 @@
 // Builds the Lab home (/index.html) as one scroll story from the catalogue (lab/catalogue.js = window.LAB_WORLDS)
 // and the maturity ladder (lab/maturity.json). Run after editing either file:  node scripts/build-lab-home.cjs
 //
-// The page is static HTML on purpose: with no JS, or with reduced motion, it is the complete story. lab/story.js
-// only adds the moving DO glass orb and live data labels on top.
+// The page is static HTML on purpose: with no JS, or with reduced motion, it is the complete story. It wears the
+// site-v2 look ported from assembl.co.nz (/site-v2/: tokens, CSS, and markup.cjs, the string twins of the foundation's
+// components). /site-v2/site-v2.js adds the same motion as the main site (split-text headlines, reveals, parallax,
+// the glass "a" assembling); lab/story.js adds live data labels.
 //
 // Curation is presentation only. Every world in LAB_WORLDS and every instrument the old /discover/ page linked
 // appears here exactly once; scripts/check-lab-home.cjs fails if one goes missing or shows twice.
@@ -11,6 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const v2 = require('../site-v2/markup.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const sandbox = { window: {} };
@@ -98,6 +101,7 @@ const PLAY = [
 ];
 
 /* ── markup ── */
+const goArrow = v2.arrow('right', 18);
 const stageSteps = STAGE.map((s, i) => {
   const w = take(s.id);
   return `<li class="tw-step" data-i="${i}" id="twin-${w.id}">
@@ -107,14 +111,14 @@ const stageSteps = STAGE.map((s, i) => {
    <h3>${esc(w.title)}</h3>
    <p class="line">${esc(w.desc)}</p>
    <div class="meta">${chip('sim')}${dataLine(w)}</div>
-   <a class="go" href="${href(w)}">${esc(w.action)}<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+   <a class="go" href="${href(w)}"><span>${esc(w.action)}</span>${goArrow}</a>
   </div>
  </li>`;
 }).join('\n ');
 
 const rowTile = (w, line, truth, opts = {}) => {
   const pic = opts.pic ? `<span class="row-pic frame">${img(opts.pic, '', 240, 170)}</span>` : '';
-  return `<li><a class="row${pic ? '' : ' row-type'}" href="${opts.href || href(w)}">${pic}<span class="row-copy"><strong>${esc(opts.title || w.title)}</strong><span class="row-line">${esc(line)}</span><span class="meta">${chip(truth)}${w && !opts.noData ? `<span class="src" title="${esc(stageOf(w.id).why)}"><span class="src-stage" data-stage="${stageOf(w.id).stage}">${esc(stageOf(w.id).label)}</span> <span data-live="${w.id}">${esc(w.data)}</span></span>` : ''}</span></span></a></li>`;
+  return `<li><a class="row${pic ? '' : ' row-type'}" href="${opts.href || href(w)}">${pic}<span class="row-copy"><strong>${esc(opts.title || w.title)}</strong><span class="row-line">${esc(line)}</span><span class="meta">${chip(truth)}${w && !opts.noData ? `<span class="src" title="${esc(stageOf(w.id).why)}"><span class="src-stage" data-stage="${stageOf(w.id).stage}">${esc(stageOf(w.id).label)}</span> <span data-live="${w.id}">${esc(w.data)}</span></span>` : ''}</span></span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>`;
 };
 const moreTwins = MORE_TWINS.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: w.poster || `/assets/posters/${w.id}.webp` }); }).join('\n  ');
 const homeRows = HOME.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: `/assets/posters/${w.id}.webp` }); }).join('\n  ');
@@ -136,8 +140,27 @@ const play = PLAY.map(p => {
 const missing = Object.keys(WORLDS).filter(id => !used.has(id));
 if (missing.length) throw new Error('Worlds missing from the story: ' + missing.join(', ') + '. Add them to a chapter in scripts/build-lab-home.cjs.');
 
-// The DO glass orb, still: the first paint, and what no JS, no WebGL and reduced motion keep (lab/orb.js moves it)
-const orb = `<div class="orb-still"></div>`;
+/* ── site-v2 chrome (8 Nov 2026): the foundation's SiteNav and SiteFooter, with the Lab's own doors ── */
+const MAIN = 'https://assembl.co.nz';
+const top = { target: '_top' };
+const labMark = (size, mark, eager) => v2.wordmark({ href: '/', size, mark, suffix: 'lab', label: 'assembl lab home', eager });
+const nav = v2.siteNav({
+  home: labMark(23, 32, true),
+  links: [{ href: '#twins', label: 'Twins' }, { href: '#study', label: 'Study machines' }, { href: '#playground', label: 'Playground' }, { href: '#about', label: 'Labels' }],
+  cta: { href: `${MAIN}/`, label: 'assembl.co.nz', extra: top },
+});
+const footer = v2.siteFooter({
+  home: labMark(22, 34),
+  links: [
+    { href: '#twins', label: 'Twins' }, { href: '/study/', label: 'Study machines' }, { href: '#playground', label: 'Playground' }, { href: '#about', label: 'How to read the labels' },
+    { href: `${MAIN}/`, label: 'assembl.co.nz', extra: top }, { href: `${MAIN}/ai-ready`, label: 'Website check', extra: top }, { href: `${MAIN}/trust`, label: 'Trust', extra: top },
+    { href: `${MAIN}/about`, label: 'About', extra: top }, { href: `${MAIN}/contact`, label: 'Contact', extra: top },
+  ],
+  legal: [{ href: `${MAIN}/legal/privacy`, label: 'Privacy', extra: top }, { href: `${MAIN}/legal/terms`, label: 'Terms', extra: top }, { href: `${MAIN}/legal/disclaimer`, label: 'Disclaimer', extra: top }],
+  note: 'Independent assembl concepts. Simulated data unless marked live with a named source. Not medical, financial or energy advice. In an emergency, call 111.',
+  strip: ['Made in Aotearoa', '© 2026 <span class="v2-brand">assembl</span>'],
+});
+const tickerItems = [...STAGE, ...MORE_TWINS].map(s => WORLDS[s.id].title);
 
 const html = `<!doctype html>
 <html lang="en-NZ" data-feeds="ed,power,fuel,fpi" class="lab-story">
@@ -146,97 +169,116 @@ const html = `<!doctype html>
 <title>assembl lab · small worlds, assembled</title>
 <meta name="description" content="Working models of New Zealand places, built by assembl: business twins you can run for a day, study machines that teach one idea, and a playground of instruments. Every one says what is simulated and what is real.">
 <meta property="og:title" content="assembl lab · small worlds, assembled"><meta property="og:description" content="Business twins, study machines and a playground, built in Aotearoa. Every world says what is simulated and what is real."><meta property="og:image" content="https://assembl-lab.vercel.app/assets/models/cafe/renders/cafe-hero.webp">
-<meta name="theme-color" content="#240B21"><link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#21121F"><link rel="icon" href="/site-v2/glass-a-96.webp" type="image/webp"><link rel="apple-touch-icon" href="/site-v2/glass-a-192.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/lab/story.css">
+<link rel="preload" as="image" href="/site-v2/glass-a-512.webp" type="image/webp">
+<link rel="stylesheet" href="/site-v2/site-v2.css"><link rel="stylesheet" href="/site-v2/lab.css"><link rel="stylesheet" href="/lab/story.css">
 <script>document.documentElement.classList.add('js');</script>
+<script src="/site-v2/site-v2.js" defer></script>
 <script src="/lab/story.js" defer></script>
 </head>
-<body>
+<body class="site-v2">
 <a class="skip" href="#twins">Skip to the twins</a>
-<div class="world" aria-hidden="true"></div>
-<header class="bar wrap">
- <a class="brand" href="/" aria-label="assembl lab home"><b>assembl</b> lab</a>
- <nav aria-label="Chapters"><a href="#twins">Twins</a><a href="#study">Study machines</a><a href="#playground">Playground</a></nav>
- <a class="bar-cta" href="https://assembl.co.nz/" target="_top">assembl.co.nz</a>
-</header>
+${nav}
 <main>
-<section class="hero wrap" aria-labelledby="hero-title">
- <div class="hero-copy">
-  <h1 id="hero-title">Small worlds,<br>assembled.</h1>
-  <p class="lede">The assembl Lab is where we build working models of New Zealand places: businesses you can run for a day, machines that teach one idea, and a few instruments to play with.</p>
-  <div class="actions"><a class="btn btn-paper" href="#twins">Walk through the twins</a><a class="btn btn-glass" href="#study">See the study machines</a></div>
-  <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
+<section class="hero v2-tone-plum" aria-labelledby="hero-title">
+ <div class="hero-glow" aria-hidden="true"></div>
+ <div class="wrap hero-in">
+  <div class="hero-copy">
+   ${v2.eyebrow(`The ${v2.brand()} lab · Aotearoa`)}
+   ${v2.split({ tag: 'h1', id: 'hero-title', className: 'v2-display-xl', trigger: 'load', lines: ['Small worlds,', { text: 'assembled.', accent: true }] })}
+   <p class="v2-lede lede">The assembl Lab is where we build working models of New Zealand places: businesses you can run for a day, machines that teach one idea, and a few instruments to play with.</p>
+   <div class="actions">${v2.button({ href: '#twins', label: 'Walk through the twins', icon: 'down', size: 'lg' })}${v2.button({ href: '#study', label: 'See the study machines', variant: 'secondary', icon: 'down' })}</div>
+   <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
+  </div>
+  ${v2.parallax(v2.glassAssemble({ size: 520, trigger: 'load', eager: true }), { distance: 140, offset: 'hero', className: 'hero-art' }).replace('<div class="hero-art"', '<div class="hero-art" id="glass-a" aria-hidden="true"')}
  </div>
- <div class="hero-art" id="orb" aria-hidden="true">${orb}</div>
 </section>
+${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, className: 'v2-tone-plum lab-ticker' })}
 
 <span id="explore" class="anchor" aria-hidden="true"></span>
-<section class="chapter twins wrap" id="twins" aria-labelledby="twins-title">
+<section class="chapter twins v2-tone-aubergine" id="twins" aria-labelledby="twins-title">
+ <div class="wrap">
  <div class="ch-head">
-  <h2 id="twins-title">Businesses, assembled. Run one for a day.</h2>
-  <p class="lede">Twins of the kinds of places New Zealand runs on. The businesses are invented; the public figures that feed them are named. Change one thing and follow where it goes.</p>
+  ${v2.eyebrow('Business twins')}
+  ${v2.split({ tag: 'h2', id: 'twins-title', className: 'v2-h2', lines: ['Businesses, assembled.', { text: 'Run one for a day.', accent: true }] })}
+  <p class="v2-lede lede v2-secondary">Twins of the kinds of places New Zealand runs on. The businesses are invented; the public figures that feed them are named. Change one thing and follow where it goes.</p>
  </div>
  <div class="tw">
-  <ol class="tw-steps">
+  ${v2.reveal(`
  ${stageSteps}
-  </ol>
+  `, { tag: 'ol', className: 'tw-steps' })}
  </div>
+ <hr class="v2-hairline more-rule">
  <div class="more">
-  <div class="more-col"><h3>More businesses</h3><ul class="rows">
+  <div class="more-col"><h3>More businesses</h3>${v2.reveal(`
   ${moreTwins}
-  </ul></div>
-  <div class="more-col"><h3>Closer to home</h3><ul class="rows">
+  `, { tag: 'ul', className: 'rows' })}</div>
+  <div class="more-col"><h3>Closer to home</h3>${v2.reveal(`
   ${homeRows}
-  </ul></div>
+  `, { tag: 'ul', className: 'rows' })}</div>
+ </div>
  </div>
 </section>
 
 <div class="sheet">
-<section class="chapter study wrap" id="study" aria-labelledby="study-title">
+<section class="chapter study v2-tone-ivory" id="study" aria-labelledby="study-title">
+ <div class="wrap">
  <div class="ch-head">
-  <h2 id="study-title">One idea, assembled into a machine.</h2>
-  <p class="lede">Each study machine turns one curriculum topic into something you can turn, test and break, then marks your answers against the same model. Years 7 to 13, in <a href="${href(studyWorld)}">assembly, the study app</a>.</p>
-  <div class="actions"><a class="btn btn-plum go-world" href="${href(studyWorld)}">Open assembly</a><nav class="years" aria-label="Study machines by year">${YEARS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</nav></div>
+  ${v2.eyebrow('Study machines')}
+  ${v2.split({ tag: 'h2', id: 'study-title', className: 'v2-h2', lines: ['One idea,', { text: 'assembled into a machine.', accent: true }] })}
+  <p class="v2-lede lede v2-secondary">Each study machine turns one curriculum topic into something you can turn, test and break, then marks your answers against the same model. Years 7 to 13, in <a href="${href(studyWorld)}">assembly, the study app</a>.</p>
+  <div class="actions">${v2.button({ href: href(studyWorld), label: 'Open assembly', icon: 'right', className: 'go-world' })}<nav class="years" aria-label="Study machines by year">${YEARS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</nav></div>
  </div>
- <ul class="machines">
+ ${v2.reveal(`
  ${machines}
- </ul>
- <div class="doors"><h3>Also in assembly</h3><ul class="rows rows-3">
+ `, { tag: 'ul', className: 'machines' })}
+ <div class="doors"><h3>Also in assembly</h3>${v2.reveal(`
   ${doors}
- </ul></div>
-</section>
-
-<section class="chapter play wrap" id="playground" aria-labelledby="play-title">
- <div class="ch-head ch-head-row">
-  <h2 id="play-title">The playground. Some assembly required.</h2>
-  <p class="lede">Smaller instruments for making things. No lesson and no data: everything stays on your device.</p>
+ `, { tag: 'ul', className: 'rows rows-3' })}</div>
  </div>
- <ul class="index">
-  ${play}
- </ul>
 </section>
 
-<section class="chapter about wrap" id="about" aria-labelledby="about-title">
- <h2 id="about-title">How to read the labels.</h2>
- <dl class="labels">
+<section class="chapter play v2-tone-blush" id="playground" aria-labelledby="play-title">
+ <div class="wrap">
+ <div class="ch-head ch-head-row">
+  <div class="ch-title">${v2.eyebrow('The playground')}
+  ${v2.split({ tag: 'h2', id: 'play-title', className: 'v2-h2', lines: ['The playground.', { text: 'Some assembly required.', accent: true }] })}</div>
+  <p class="v2-lede lede v2-secondary">Smaller instruments for making things. No lesson and no data: everything stays on your device.</p>
+ </div>
+ ${v2.reveal(`
+  ${play}
+ `, { tag: 'ul', className: 'index' })}
+ </div>
+</section>
+
+<section class="chapter about v2-tone-ivory" id="about" aria-labelledby="about-title">
+ <div class="wrap">
+ ${v2.eyebrow('Labels')}
+ ${v2.split({ tag: 'h2', id: 'about-title', className: 'v2-h2', lines: [{ text: 'How to read the labels.', accent: false }] })}
+ ${v2.reveal(`
   <div><dt>${chip('sim')}</dt><dd>A model of a place or a system. The place is invented; any public figures it uses are named on the page.</dd></div>
   <div><dt><span class="src-stage" data-stage="shadow">Shadow</span></dt><dd>Public data reaches the model each day or month, from Stats NZ, MBIE, Health NZ or the Electricity Authority. Nothing flows back.</dd></div>
   <div><dt>${chip('live')}</dt><dd>A working tool. It makes a real file or object on your device.</dd></div>
   <div><dt>${chip('ill')}</dt><dd>Art to play with. It makes no claim about the world.</dd></div>
- </dl>
+ `, { tag: 'dl', className: 'labels' })}
+ </div>
 </section>
 </div>
 
-<section class="close" aria-labelledby="close-title">
+<section class="close v2-tone-rose-mauve" aria-labelledby="close-title">
  <div class="wrap close-in">
-  <h2 id="close-title">Want your business assembled as a twin?</h2>
-  <p class="lede">assembl builds twins around real customer journeys, starting with public information and then, on your say-so, your own.</p>
-  <div class="actions"><a class="btn btn-paper" href="https://assembl.co.nz/" target="_top">Talk to assembl</a><a class="btn btn-glass" href="${href(studyWorld)}">Study for exams</a></div>
+  <div class="close-copy">
+   ${v2.eyebrow(`Work with ${v2.brand()}`)}
+   ${v2.split({ tag: 'h2', id: 'close-title', className: 'v2-h2', trigger: 'assemble', lines: ['Want your business', { text: 'assembled as a twin?', accent: true }] })}
+   <p class="v2-lede lede v2-secondary">assembl builds twins around real customer journeys, starting with public information and then, on your say-so, your own.</p>
+   <div class="actions">${v2.button({ href: `${MAIN}/`, label: 'Talk to assembl', size: 'lg', extra: top })}${v2.button({ href: href(studyWorld), label: 'Study for exams', variant: 'secondary', icon: 'right' })}</div>
+  </div>
+  ${v2.glassAssemble({ size: 300, className: 'close-a' })}
  </div>
 </section>
 </main>
-<footer class="foot wrap"><p><b>assembl</b> lab. Made in Aotearoa.</p><p>Independent assembl concepts. Simulated data unless marked live with a named source. Not medical, financial or energy advice. In an emergency, call 111.</p><p>© 2026 assembl</p></footer>
+${footer}
 <script src="/ask.js" defer data-page="lab"></script>
 <script src="/feeds.js" defer></script>
 </body>
