@@ -23,7 +23,7 @@ const TIERS = {
   low: { dpr: 1.0, shadow: 0, ao: false, bloom: false, msaa: 0 },
 };
 const ORDER = ['low', 'mid', 'high'];
-let tier = params.get('quality') in TIERS ? params.get('quality') : phone ? 'low' : (navigator.hardwareConcurrency || 8) <= 4 ? 'mid' : 'high';
+let tier = params.get('quality') in TIERS ? params.get('quality') : phone ? 'low' : 'mid'; // desktops start at mid; a strong GPU starts at high (below)
 const fixedTier = params.has('quality');
 if (params.has('clean')) document.documentElement.classList.add('clean'); // ?clean: no overlays, for stills
 
@@ -35,6 +35,10 @@ try {
   if (!renderer.capabilities.isWebGL2) throw new Error('WebGL2 needed');
 } catch (e) { noWebGL(); throw e; }
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+if (!params.has('quality') && !phone) { // a discrete or high-end GPU starts at high; everything else stays at mid
+  try { const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); const name = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : '';
+    if (/NVIDIA|GeForce|RTX|Radeon RX|Apple M\d (Pro|Max|Ultra)/i.test(name)) tier = 'high'; } catch (e) { /* keep mid */ }
+}
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.info.autoReset = false;
 
@@ -308,7 +312,7 @@ function noWebGL() {
 const clock = new THREE.Clock(); let acc = 0, frames = 0, fpsT = 0, fps = 0, panelT = 0, pathT = 0, sinceStart = 0, downgraded = 0;
 const fv = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
 function frame() {
-  const dt = Math.min(clock.getDelta(), 0.1); sinceStart += dt;
+  const raw = clock.getDelta(), dt = Math.min(raw, 0.1); sinceStart += raw;
   if (simRunning) { acc += dt * speed; let steps = 0; while (acc > 0.1 && steps < 40) { sim.step(0.1); acc -= 0.1; steps++; } if (steps >= 40) acc = 0; }
   world.speed = simRunning ? speed : 0;
   world.sync(simRunning ? dt : 0, camera.position);
@@ -343,7 +347,7 @@ function frame() {
   if (composer) composer.render(dt); else renderer.render(scene, camera);
   window.__dc.calls = renderer.info.render.calls; window.__dc.tris = renderer.info.render.triangles;
   // fps, and a one-step quality drop if this device can't hold about 24 fps
-  frames++; fpsT += dt;
+  frames++; fpsT += raw; // real elapsed time, not the clamped step
   if (fpsT >= 1) { fps = frames / fpsT; frames = 0; fpsT = 0; window.__dc.fps = fps; window.__dc.calls = renderer.info.render.calls; window.__dc.tris = renderer.info.render.triangles; if (params.has('debug')) $('#debug').textContent = `${fps.toFixed(0)} fps · ${tier} · ${renderer.info.render.calls} calls · ${(renderer.info.render.triangles / 1e6).toFixed(2)}M tris`; }
   if (!fixedTier && sinceStart > 5 && fps && fps < 24 && downgraded < 2 && ORDER.indexOf(tier) > 0 && sinceStart - (window.__dc.lastDrop || 0) > 4) {
     tier = ORDER[ORDER.indexOf(tier) - 1]; downgraded++; window.__dc.lastDrop = sinceStart; applyTier();
