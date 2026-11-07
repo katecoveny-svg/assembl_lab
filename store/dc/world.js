@@ -8,7 +8,7 @@ import * as L from './layout.js';
 
 const BASE = '/assets/models/simready/';
 export const ASSET_FILES = { // bytes, for the progress bar
-  rack: 178212, pallet: 69648, forklift: 959684, orderpicker: 859120, palletjack: 215596, conveyor: 287584,
+  rack: 247028, pallet: 69648, forklift: 959684, orderpicker: 859120, palletjack: 215596, conveyor: 287584,
   dockgate: 68180, railguard: 13788, machineguard: 33428, cart: 135640, printer: 96552, extinguisher: 117424,
   firstaid: 63988, tote: 14328, carton: 18268,
 };
@@ -16,7 +16,7 @@ export const TEX_FILES = ['floor_albedo', 'floor_orm', 'floor_normal', 'carton_a
 
 const C = { // world colours: realistic materials, not brand colours (the brand lives in the overlays)
   wall: 0xd7d3cc, plinth: 0x8f8a84, steel: 0x56616b, roof: 0x9a9690, door: 0xb9bec3, rubber: 0x1c1c1e,
-  vest: 0xd8cf3c, vest2: 0xe07a2a, trouser: 0x2b2f36, shirt: 0x3b4149, yard: 0x3b3a39, truck: 0xe9e6df,
+  vest: 0xd8cf3c, vest2: 0xe07a2a, trouser: 0x2b2f36, shirt: 0x3b4149, yard: 0x3b3a39, truck: 0xd9d6cf,
 };
 
 // ── helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ export class World {
     const roof = new THREE.Mesh(new THREE.PlaneGeometry(W, D), roofMat); roof.rotation.x = Math.PI / 2; roof.position.set(floor.position.x, H.h + 0.45, floor.position.z); this.roof.add(roof);
     const purlin = new THREE.InstancedMesh(new THREE.BoxGeometry(W, 0.18, 0.1), steel, Math.floor(D / 1.8)); let k = 0;
     for (let z = H.z0 + 1; z < H.z1; z += 1.8) { this.tmp.makeTranslation(floor.position.x, H.h + 0.3, z); purlin.setMatrixAt(k++, this.tmp); } purlin.count = k; this.roof.add(purlin);
-    const sky = std({ color: 0xffffff, emissive: 0xf4f1ea, emissiveIntensity: 1.4, roughness: 1 });
+    const sky = std({ color: 0xffffff, emissive: 0xf4f1ea, emissiveIntensity: 3.2, roughness: 1 });
     for (const z of [-8, 8]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(W - 8, 1.4), sky); s.rotation.x = Math.PI / 2; s.position.set(floor.position.x, H.h + 0.43, z); this.roof.add(s); }
     const housing = std({ color: 0x9aa0a6, roughness: 0.4, metalness: 0.7 });
     const lens = std({ color: 0xffffff, emissive: 0xfff6e8, emissiveIntensity: 9, roughness: 0.3 });
@@ -390,7 +390,7 @@ export class World {
     spots.forEach(([x, z, a], i) => { this.tmp.makeTranslation(x, 0, z).multiply(new THREE.Matrix4().makeRotationY(a)); ex.set(i, this.tmp); }); ex.commit(spots.length);
     place(this.A.firstaid, 12.6, 19.82, Math.PI, 1.45); place(this.A.firstaid, -35.85, 2, Math.PI / 2, 1.45);
     // chargers: plain wall-mounted units
-    const ch = std({ color: 0x3a4148, roughness: 0.5, metalness: 0.4 }), chl = std({ color: 0x2e8c60, emissive: 0x2e8c60, emissiveIntensity: 2.2 });
+    const ch = std({ color: 0x3a4148, roughness: 0.5, metalness: 0.4 }), chl = std({ color: 0x2e8c60, emissive: 0x2e8c60, emissiveIntensity: 5 });
     const chg = new THREE.Group(); this.root.add(chg);
     for (let i = 0; i < 3; i++) { const p = L.CHARGE(i); box(0.6, 1.0, 0.3, ch, p.x, 1.1, L.HALL.z1 - 0.3, chg); box(0.12, 0.05, 0.02, chl, p.x, 1.45, L.HALL.z1 - 0.46, chg); }
     bake(chg);

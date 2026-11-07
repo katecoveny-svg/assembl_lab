@@ -33,7 +33,7 @@ const ASSETS = [
     drop: /button|switch|pedal/, minPart: 0.16 },
   { key: 'palletjack', src: 'palletJack_lowProfile_a01', ratio: 0.04, error: 0.02, tex: 512, groups: [] },
   { key: 'conveyor', src: 'conveyor_belt_a05', ratio: 0.03, error: 0.02, tex: 512, groups: [] },
-  { key: 'rack', src: 'rack_large_empty_a01', ratio: 0.06, error: 0.012, tex: 512, groups: [], sloppy: 2400 },
+  { key: 'rack', src: 'rack_large_empty_a01', ratio: 0.06, error: 0.012, tex: 512, groups: [] },
   { key: 'pallet', src: 'pallet_b01', ratio: 0.15, error: 0.025, tex: 512, groups: [] },
   { key: 'dockgate', src: 'barrier_gate_safetyDock_a02', ratio: 0.04, error: 0.02, tex: 256,
     groups: [[/barrier_gate|wheel/, 'arm']] },

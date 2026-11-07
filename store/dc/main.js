@@ -42,7 +42,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x150f15);
 scene.fog = new THREE.Fog(0x150f15, 110, 300);
 const camera = new THREE.PerspectiveCamera(38, 1, 0.3, 700);
-camera.position.set(44, 34, 46);
+camera.position.set(75.5, 45, 42);
 const controls = new OrbitControls(camera, canvas);
 controls.target.set(-2, 0, 0); controls.enableDamping = true; controls.dampingFactor = 0.08;
 controls.maxPolarAngle = 1.47; controls.minDistance = 3.5; controls.maxDistance = 150; controls.screenSpacePanning = false;
@@ -75,7 +75,7 @@ function applyTier() {
       gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
       composer.addPass(gtao);
     }
-    if (T.bloom) { bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.32, 0.35, 1.05); composer.addPass(bloom); }
+    if (T.bloom) { bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.35, 0.35, 2.4); composer.addPass(bloom); } // threshold above lit white paint: only emitters bloom
     composer.addPass(new OutputPass());
   }
   resize();
@@ -83,7 +83,11 @@ function applyTier() {
 }
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
-  renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < 700 ? 48 : 38; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < 700 ? 48 : 38;
+  // on wide screens the figures panel covers the right; shift the picture's centre left so the scene sits in the open
+  const d = params.has('clean') ? 0 : w > 1180 ? 170 : w > 760 ? 150 : 0;
+  if (d) { camera.aspect = (w + 2 * d) / h; camera.setViewOffset(w + 2 * d, h, 2 * d, 0, w, h); } else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
   if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
 }
 new ResizeObserver(resize).observe(stage);
@@ -104,7 +108,9 @@ async function loadAll() {
   await Promise.all([
     ...Object.keys(ASSET_FILES).map(k => gl.loadAsync(`/assets/models/simready/${k}.glb`, e => { got[k] = e.loaded; progress(); }).then(g => {
       got[k] = ASSET_FILES[k]; progress();
-      g.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) for (const t of ['map', 'normalMap', 'roughnessMap', 'metalnessMap']) if (m[t]) m[t].anisotropy = aniso; } });
+      g.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { for (const t of ['map', 'normalMap', 'roughnessMap', 'metalnessMap']) if (m[t]) m[t].anisotropy = aniso;
+        // glass with transmission makes three.js render the whole scene a second time; plain see-through glass is enough here
+        if (m.transmission > 0) { m.transmission = 0; m.transparent = true; m.opacity = Math.min(m.opacity, 0.35); m.depthWrite = false; } } } });
       assets[k] = g.scene;
     })),
     ...TEX_FILES.map(k => tl.loadAsync(`/assets/models/simready/tex/${k}.webp`).then(t => { t.colorSpace = /albedo/.test(k) ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = aniso; tex[k] = t; })),
@@ -115,8 +121,8 @@ async function loadAll() {
 // ── tour ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Each stop is a camera position and target (or an agent to follow), with one plain caption.
 const STOPS = [
-  { id: 'overview', title: 'The whole building', pos: [44, 34, 46], target: [8, 0, 1],
-    text: 'A fictional ambient grocery DC in South Auckland, about 72 by 40 metres, running a simulated morning shift. Stock arrives on the right, is stored on the left, and leaves again on the right.' },
+  { id: 'overview', title: 'The whole building', pos: [75.5, 45, 42], target: [8, 0, 1],
+    text: 'A fictional ambient grocery DC in South Auckland, about 72 by 40 metres, running a simulated morning shift. Trucks dock at the front; stock is stored in the racking at the back, picked, wrapped and sent out again.' },
   { id: 'inbound', title: 'Inbound', pos: [14, 8.5, -1.5], target: [30, 0.6, -13.5],
     text: 'Supplier trucks back onto doors 1 and 2. A forklift unloads each pallet into a staging lane, and the receiver checks it against the delivery before it can be stored.' },
   { id: 'putaway', title: 'Putaway and let-down', follow: { kind: 'orderPicker', n: 0 }, off: [5.5, 4.2, 6.5],
@@ -138,7 +144,10 @@ function stopView(s, out = { pos: new THREE.Vector3(), target: new THREE.Vector3
   if (s.follow && world) {
     const v = world.views.filter(x => x.a.kind === s.follow.kind)[s.follow.n];
     out.target.set(v.g.position.x, 1.0 + (v.a.pose.lift || 0) * 0.55, v.g.position.z);
-    out.pos.set(out.target.x + s.off[0], out.target.y + s.off[1], out.target.z + s.off[2]);
+    // in the racking, look along the aisle from its open end instead of through the racks
+    const inRacks = v.g.position.x < L.AISLE_ENTRY_X + 0.5 && v.g.position.z < L.AISLES[3] - 1;
+    const off = inRacks ? [6.8, 3.0 + (v.a.pose.lift || 0) * 0.4, 0] : s.off;
+    out.pos.set(out.target.x + off[0], out.target.y + off[1], out.target.z + off[2]);
   } else { out.pos.fromArray(s.pos); out.target.fromArray(s.target); }
   if (camera.aspect < 1) out.pos.sub(out.target).multiplyScalar(Math.min(1.7, 1.05 / camera.aspect)).add(out.target); // portrait: stand back
   return out;
@@ -267,6 +276,8 @@ function fillAssumptions() {
 const ICON = {
   play: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4.5v11l9-5.5z"/></svg>',
   pause: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 4.5h3v11h-3zM11.5 4.5h3v11h-3z"/></svg>',
+  modelPause: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 6.5h1.8v7H7.5zM10.7 6.5h1.8v7h-1.8z"/></svg>',
+  modelPlay: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.2 6.3v7.4l5.6-3.7z"/></svg>',
 };
 let speed = 4, simRunning = !reduce;
 function wire() {
@@ -285,7 +296,7 @@ function wire() {
 }
 function syncRun() {
   $('#sim-run').setAttribute('aria-pressed', String(simRunning));
-  $('#sim-run').innerHTML = simRunning ? ICON.pause + '<span>Pause model</span>' : ICON.play + '<span>Run model</span>'; $('#sim-run').setAttribute('aria-label', simRunning ? 'Pause model' : 'Run model');
+  $('#sim-run').innerHTML = simRunning ? ICON.modelPause + '<span>Pause model</span>' : ICON.modelPlay + '<span>Run model</span>'; $('#sim-run').setAttribute('aria-label', simRunning ? 'Pause model' : 'Run model');
   document.documentElement.classList.toggle('sim-paused', !simRunning);
 }
 function noWebGL() {
