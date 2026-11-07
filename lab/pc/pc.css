@@ -1,0 +1,68 @@
+/* assembl lab · the home's point-cloud stage. Nothing here applies until lab/pc/home.js has a working engine (html.pc-on):
+   without WebGL the page is the site-v2 story unchanged. Colours are the point-cloud standard's plum ground and tone ramp. */
+.pc-stage, .pc-pause[hidden] { display: none; }
+.pc-run { position: relative; }
+.pc-on .pc-run { overflow: clip; }                         /* the sticky stage never leaves the opening run */
+.pc-on .pc-run ~ * { position: relative; z-index: 1; }
+.pc-on .pc-stage { display: block; position: sticky; top: 0; height: 100vh; height: 100svh; margin-bottom: -100vh; margin-bottom: -100svh; z-index: 0; pointer-events: none; }
+.pc-on .pc-stage canvas { display: block; width: 100%; height: 100%; }
+.pc-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pc-leaders path { fill: none; stroke: rgba(249, 246, 242, .42); stroke-width: 1; stroke-dasharray: 3 4; }
+.pc-leaders path.new { stroke: #D9BACB; stroke-dasharray: none; }
+.pc-leaders circle { fill: #F9F6F2; } .pc-leaders circle.ring { fill: none; stroke: rgba(249, 246, 242, .5); stroke-width: 1; }
+.pc-on .pc-run > section { position: relative; z-index: 1; background: transparent; }
+.pc-on .pc-run .hero-glow { display: none; }
+.pc-on #mark-a .v2-mark-assemble { opacity: 0; }           /* the cloud draws the mark here; the flat mark stays for no-JS */
+
+/* the doors */
+.jump { padding: clamp(72px, 9vw, 128px) 0 clamp(64px, 8vw, 112px); }
+.jump .ch-head { max-width: 720px; margin-bottom: clamp(28px, 4vw, 48px); }
+.jump-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.jump-tile { position: relative; display: grid; height: 100%; text-decoration: none; color: inherit; border-radius: 22px; overflow: hidden;
+  background: rgba(33, 18, 31, .55); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .2s ease, box-shadow .2s ease; }
+.jump-tile:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .45); }
+.jump-tile:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
+.jump-pic { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #21121F; }
+.jump-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.jump-copy { display: grid; gap: 6px; padding: 18px 20px 20px; align-content: start; }
+.jump-copy strong { font-size: 19px; font-weight: 500; letter-spacing: -.01em; }
+.jump-copy .row-line { color: var(--v2-fg-2, rgba(249, 246, 242, .72)); font-size: 15px; }
+.jump-copy .truth { justify-self: start; margin-top: 4px; }
+.jump-tile .row-go { position: absolute; right: 16px; top: 16px; color: #F9F6F2; opacity: .8; }
+
+/* the architecture chapter: the hall sits on the left (drawn by the stage), the words on the right, callouts tied to the hall */
+.arch { min-height: 100vh; min-height: 100svh; display: grid; align-items: center; padding: clamp(80px, 9vw, 120px) 0; }
+.arch-in { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(24px, 4vw, 64px); align-items: center; min-height: 70vh; }
+.arch-slot { min-height: 50vh; }
+.arch-copy { display: grid; gap: clamp(18px, 2.4vw, 28px); justify-items: start; }
+.arch-copy .lede { max-width: 42ch; }
+.arch-copy .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.arch-copy .truth-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; font-size: 14px; color: var(--v2-fg-2, rgba(249, 246, 242, .72)); }
+.arch-callouts { list-style: none; margin: 0; padding: 0; }
+.arch-callout { display: grid; gap: 4px; max-width: 270px; padding: 14px 16px; border-radius: 16px; background: rgba(33, 18, 31, .62); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 14px; line-height: 1.4; color: rgba(249, 246, 242, .82); }
+.arch-callout strong { font-weight: 500; color: #F9F6F2; font-size: 15px; }
+.pc-on .arch-callout { position: absolute; opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+.pc-on .arch-callout.on { opacity: 1; transform: none; }
+.pc-on .arch-callout[data-anchor="ridge"] { left: 2%; top: 2%; }
+.pc-on .arch-callout[data-anchor="entry"] { left: 0; bottom: 4%; }
+.pc-on .arch-callout[data-anchor="wc"] { left: 34%; bottom: -2%; }
+.typing.caret::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: #D9BACB; animation: pc-caret 1s steps(2) infinite; }
+@keyframes pc-caret { 50% { opacity: 0; } }
+html:not(.pc-on) .arch-callouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; grid-column: 1 / -1; }
+html:not(.pc-on) .arch-slot { display: none; }
+html:not(.pc-on) .arch-in { grid-template-columns: 1fr; min-height: 0; }
+
+/* pause motion: icon only, bottom right while the opening run is on screen */
+.pc-on .pc-pause { position: fixed; right: 18px; bottom: 18px; z-index: 30; width: 44px; height: 44px; border-radius: 999px; border: 0; display: grid; place-items: center; cursor: pointer;
+  color: #F9F6F2; background: rgba(33, 18, 31, .72); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.pc-on .pc-pause:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
+.pc-on .pc-pause.off-run { opacity: 0; pointer-events: none; }
+
+@media (max-width: 759px) {
+  .arch-in { grid-template-columns: 1fr; }
+  .arch-slot { min-height: 46vh; order: -1; }
+  .pc-on .arch-callout { position: static; opacity: 1; transform: none; max-width: none; margin-top: 10px; }
+  .arch-callouts { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .pc-on .arch-callout { transition: none; } .typing.caret::after { animation: none; } .jump-tile { transition: none; } }
