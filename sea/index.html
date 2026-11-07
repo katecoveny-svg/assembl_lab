@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sea state · assembl lab</title>
+<meta name="description" content="A water taxi and a harbour ferry on a sea made of code: the waves come from the wind, fetch and swell you set, the light is computed, and every move the boat makes is physics. Sea state and an approximate ride-comfort reading, as an operator would ask.">
+<meta name="theme-color" content="#21121F">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="sea.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the controls</a>
+<header class="bar">
+  <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
+  <span class="here">Sea state</span>
+  <span class="chip"><i aria-hidden="true"></i>Simulated · conditions set by you, not a forecast · <span id="truthView">Point cloud</span></span>
+  <button class="icon" id="btnPause" type="button" aria-pressed="false" aria-label="Pause motion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+  <button class="btn glass sm" id="btnPanel" type="button" aria-expanded="false" aria-controls="panel">Conditions</button>
+</header>
+
+<main>
+  <canvas id="sea" aria-label="A boat on the sea, drawn in real time. Use W and S for throttle, A and D to steer, Space for autopilot, 1 to 5 for cameras." role="img"></canvas>
+  <p class="loading mono" id="loading" aria-live="polite">Building the sea…</p>
+
+  <section class="hud" aria-label="Instruments" aria-live="off">
+    <div class="speed"><b id="hudSpeed">0</b><span>knots</span></div>
+    <div class="lines">
+      <p id="hudHdg">000° N</p>
+      <p id="hudSea">Sea state</p>
+      <p id="hudRide">Ride</p>
+      <p class="mono" id="hudWater"></p>
+    </div>
+  </section>
+
+  <section class="drive" aria-label="Helm">
+    <button class="btn line" id="btnAuto" type="button" aria-pressed="true">Autopilot on</button>
+    <div class="helm">
+      <button class="steer" id="steerL" type="button" aria-label="Steer to port">‹</button>
+      <label class="thr"><span>Throttle</span><input type="range" id="throttle" min="0" max="100" value="40" aria-label="Throttle"></label>
+      <button class="steer" id="steerR" type="button" aria-label="Steer to starboard">›</button>
+    </div>
+    <div class="seg" id="cam" role="group" aria-label="Camera"><button type="button" data-cam="chase">Chase</button><button type="button" data-cam="aerial">Aerial</button><button type="button" data-cam="side">Side</button><button type="button" data-cam="bow">Bow</button><button type="button" data-cam="free">Free</button></div>
+  </section>
+
+  <section class="panel" id="panel" aria-labelledby="ptitle" data-open="false">
+    <h1 id="ptitle">Sea state</h1>
+    <p class="lede">The sea is made of code, the light is computed and every move the boat makes is physics. Set the wind and the swell, take the helm, and see the sea state and how the ride feels.</p>
+
+    <div class="group" role="group" aria-labelledby="l-pre"><span class="label" id="l-pre">Conditions</span><div class="chips" id="presets"></div></div>
+
+    <div class="group">
+      <label class="slider"><span>Wind <b id="windVal"></b></span><input type="range" id="wind" min="0" max="40" step="1"></label>
+      <label class="slider"><span>Wind from <b id="windFromVal"></b></span><input type="range" id="windFrom" min="0" max="359" step="1"></label>
+      <label class="slider"><span>Swell <b id="swellVal"></b></span><input type="range" id="swell" min="0" max="3" step="0.1"></label>
+      <label class="slider"><span>Choppiness <b id="chopVal"></b></span><input type="range" id="chop" min="0" max="90" step="1"></label>
+      <label class="slider"><span>Whitecaps <b id="whitecapsVal"></b></span><input type="range" id="whitecaps" min="0" max="100" step="1"></label>
+    </div>
+
+    <div class="group" role="group" aria-labelledby="l-water"><span class="label" id="l-water">Water</span>
+      <div class="seg" id="water"><button type="button" data-v="harbour">Inner harbour</button><button type="button" data-v="gulf">Hauraki Gulf</button><button type="button" data-v="ocean">Open ocean</button></div></div>
+    <div class="group" role="group" aria-labelledby="l-time"><span class="label" id="l-time">Time of day</span>
+      <div class="seg" id="time"><button type="button" data-v="dawn">Dawn</button><button type="button" data-v="day">Day</button><button type="button" data-v="golden">Golden hour</button><button type="button" data-v="dusk">Dusk</button></div></div>
+    <div class="group" role="group" aria-labelledby="l-boat"><span class="label" id="l-boat">Boat</span>
+      <div class="seg" id="boat"><button type="button" data-v="taxi">Water taxi · 10.5 m</button><button type="button" data-v="ferry">Harbour ferry · 16 m</button></div></div>
+    <div class="group" role="group" aria-labelledby="l-view"><span class="label" id="l-view">Look</span>
+      <div class="seg" id="view"><button type="button" data-v="cloud">Point cloud</button><button type="button" data-v="photo">Photoreal</button></div></div>
+
+    <div class="group"><button class="btn line" id="btnLink" type="button">Copy link</button>
+      <p class="hint">Wave heights come from the wind, the fetch of the water you pick and the swell, using the standard wave-growth formulas. Ride is the vertical acceleration at a passenger seat, a 10-second rms, read against the ISO 2631-1 comfort bands; it is unweighted, so approximate. The boats are fictional, drawn in code.</p></div>
+  </section>
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

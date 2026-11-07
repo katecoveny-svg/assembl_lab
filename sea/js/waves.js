@@ -72,6 +72,7 @@ export function packUniforms(waves, uWA, uWB) {
 // the shared GLSL: displacement, analytic normal and the horizontal Jacobian (where it folds, the crest breaks into foam).
 // Short trains fade with distance so the far sea does not shimmer.
 export const GLSL_WAVES = /* glsl */ `
+#define HAS_UTIME
 uniform vec4 uWA[${MAXW}]; uniform vec4 uWB[${MAXW}]; uniform float uTime;
 void gerstner(vec2 xz, float dist, out vec3 P, out vec3 N, out float J) {
   P = vec3(xz.x, 0.0, xz.y); vec3 T = vec3(1.0, 0.0, 0.0), B = vec3(0.0, 0.0, 1.0);
