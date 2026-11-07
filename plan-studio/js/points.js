@@ -8,6 +8,7 @@ import { buildModel } from "./scene.js";
 import { MATERIALS } from "./materials.js";
 import { polyBox, pointInPoly, footprint } from "./model.js";
 import { runChecks } from "./code.js";
+import { GLSL_TONES, ADDITIVE_PREMULTIPLIED } from "/lab/pc/engine.js";
 
 const M = (v) => v / 1000;
 export const GROUP = { ground: 0, floor: 1, wall: 2, glass: 3, frame: 4, roof: 5, deck: 6, furniture: 7 };
@@ -118,15 +119,18 @@ export function buildCloud(P, { total = 1200000, seed = 7 } = {}) {
   return { count: k, position: posA.subarray(0, k * 3), color: colA.subarray(0, k * 3), aux: auxA.subarray(0, k * 4), centre: [cx, 0, cz], size: [width, height, depth], scanner: [sx, gy, sz] };
 }
 
+// the assembl point-cloud look (lab/pc/engine.js): light → tone ramp, iridescence on highlights only, additive premultiplied
+// light with bloom (drawn through the shared pipeline), sparkles. The code-check and evidence views stay inside the palette: what
+// needs looking at is the brightest, pulsing pink; what is fine sits back in mauve.
 const VERT = /* glsl */ `
 attribute vec4 aux;                 // seed, group (+0.25 on an edge), evidence confidence (-1 none), worst code-check status (0 none, 1 pass, 2 info, 3 fail)
 uniform float uAssemble, uSweep, uExplode, uCutY, uSize, uPR, uMode, uHeight, uTime;
-uniform vec2 uFog;                  // distance fade: points further from the camera sink toward the plum
+uniform vec2 uFog;                  // depth fade: further points darker and softer
 uniform vec3 uCentre;
-varying vec3 vCol; varying float vVis;
+varying vec3 vCol; varying float vVis, vAlpha, vSpark;
 float h1(float n) { return fract(sin(n) * 43758.5453123); }
 vec3 h3(float n) { return vec3(h1(n), h1(n + 1.7), h1(n + 3.3)) * 2.0 - 1.0; }
-vec3 ramp(float t) { vec3 a = vec3(0.36, 0.15, 0.33), b = vec3(0.57, 0.42, 0.44), c = vec3(1.0, 0.99, 0.98); return t < 0.5 ? mix(a, b, t * 2.0) : mix(b, c, t * 2.0 - 1.0); }
+${GLSL_TONES}
 void main() {
   float seed = aux.x, g = floor(aux.y + 0.01), edge = step(0.2, fract(aux.y)); vec3 p = position;
   // explode: the roof lifts, walls and openings step out from the centre, furniture rises
@@ -138,40 +142,48 @@ void main() {
   float delay = order * 0.55 + clamp(position.y / max(uHeight, 1.0), 0.0, 1.0) * 0.22 + h1(seed) * 0.2;
   float t = clamp((uAssemble * 1.4 - delay) / 0.38, 0.0, 1.0); t = t * t * (3.0 - 2.0 * t);
   vec3 from = p + h3(seed) * vec3(5.5, 2.0, 5.5) + vec3(0.0, 5.0, 0.0);
+  float fly = sin(3.14159 * t);
   p = mix(from, p, t);
-  // colour by mode: 0 scan, 1 material, 2 code check, 3 evidence
-  // material: lifted toward paper, the way a scan reads on a dark ground (dark roofing and cladding stay legible)
-  vec3 col = g < 0.5 ? color : 1.0 - (1.0 - color) * 0.66;
-  float flag = 0.0;
-  if (uMode < 0.5) { if (g > 0.5) { float hh = clamp(position.y / max(uHeight, 1.0), 0.0, 1.0); col = ramp(0.18 + hh * 0.82) * (edge > 0.5 ? 1.25 : 0.92); flag = edge * 0.4; } }
-  else if (uMode > 1.5 && uMode < 2.5) {
-    float s = aux.w; vec3 grey = vec3(dot(color, vec3(0.3, 0.55, 0.15))) * 0.45 + 0.16;
-    col = s > 2.5 ? vec3(1.0, 0.3, 0.4) : s > 1.5 ? vec3(1.0, 0.78, 0.32) : s > 0.5 ? vec3(0.42, 0.86, 0.6) : (g < 0.5 ? color : grey);
-    flag = s > 0.5 ? 1.0 : 0.0;
-  } else if (uMode > 2.5) {
-    float c = aux.z; vec3 grey = vec3(dot(color, vec3(0.3, 0.55, 0.15))) * 0.45 + 0.16;
-    col = c < 0.0 ? (g < 0.5 ? color : grey) : c >= 0.85 ? vec3(0.42, 0.86, 0.6) : c >= 0.6 ? vec3(1.0, 0.78, 0.32) : vec3(1.0, 0.3, 0.4);
-  }
-  // the scan sweep: a band of light rising through the model
+  vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
+  float fade = 1.0 - smoothstep(uFog.x, uFog.y, -mv.z) * 0.6;
+  // the light each point carries: its baked shading (sun on the surface), edges brighter, darker toward the ground
+  float L = clamp(dot(color, vec3(0.3, 0.55, 0.15)) * 1.25 + edge * 0.3, 0.0, 1.0);
+  if (g < 0.5) L *= 0.55;
   float band = exp(-pow((position.y - uSweep) / 0.14, 2.0));
-  col = mix(col, vec3(1.0, 0.86, 0.91), band * 0.85);
-  vCol = col;
+  L = clamp(L + band * 0.55 + fly * 0.2, 0.0, 1.0);
+  float k = uTime * 0.025 + p.x * 0.05 + p.y * 0.04 + seed * 0.0002, pulse = 0.5 + 0.5 * sin(uTime * 2.2 + seed);
+  vec3 col = pcLook(L * (0.7 + 0.3 * fade), k);
+  float flag = 0.0;
+  if (uMode > 0.5 && uMode < 1.5) { col = mix(1.0 - (1.0 - color) * 0.66, col, g < 0.5 ? 1.0 : 0.25); }        // material, lifted for the dark ground
+  else if (uMode > 1.5 && uMode < 2.5) {                                                                     // code check
+    float s = aux.w;
+    col = s > 2.5 ? mix(${'vec3(0.957, 0.745, 0.855)'}, ${'vec3(0.976, 0.965, 0.949)'}, pulse * 0.5) : s > 1.5 ? ${'vec3(0.988, 0.808, 0.737)'} : s > 0.5 ? ${'vec3(0.831, 0.659, 0.776)'} * 0.85 : pcRamp(L * 0.42);
+    flag = s > 2.5 ? 1.0 : s > 0.5 ? 0.4 : 0.0;
+  } else if (uMode > 2.5) {                                                                                   // evidence
+    float c = aux.z;
+    col = c < 0.0 ? pcRamp(L * 0.42) : c >= 0.85 ? ${'vec3(0.831, 0.659, 0.776)'} * 0.85 : c >= 0.6 ? ${'vec3(0.988, 0.808, 0.737)'} : mix(${'vec3(0.957, 0.745, 0.855)'}, ${'vec3(0.976, 0.965, 0.949)'}, pulse * 0.5);
+    flag = c >= 0.0 && c < 0.6 ? 1.0 : 0.0;
+  }
+  vSpark = h1(seed * 7.13) < 0.02 && g > 0.5 ? 1.0 : 0.0;
+  float tw = vSpark * (0.5 + 0.5 * sin(uTime * 2.4 + seed * 0.61));
+  vCol = col * (1.0 + tw * 0.9) * (0.75 + 0.25 * fade);
   // the plan cut hides everything above a height (the ground always stays)
   vVis = (g > 0.5 && position.y > uCutY) ? 0.0 : 1.0;
-  vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
-  vCol = mix(vCol, vec3(0.14, 0.043, 0.13), smoothstep(uFog.x, uFog.y, -mv.z) * 0.5);
-  float sz = uSize * uPR * (0.65 + 0.7 * h1(seed + 9.0)) * (1.0 + band * 0.8) * (g < 0.5 ? 0.8 : 1.0) * (1.0 + flag * 0.35);
+  vAlpha = (g < 0.5 ? 0.55 : 1.0) * (0.6 + 0.4 * fade);
+  float sz = uSize * uPR * (0.65 + 0.7 * h1(seed + 9.0)) * (1.0 + band * 0.8 + tw * 1.6) * (g < 0.5 ? 0.8 : 1.0) * (1.0 + flag * 0.4) * (1.0 + fly * 0.4);
   gl_PointSize = vVis * max(t, 0.05) * sz / max(-mv.z, 0.1);
 }`;
 const FRAG = /* glsl */ `
-varying vec3 vCol; varying float vVis;
+varying vec3 vCol; varying float vVis, vAlpha, vSpark;
 void main() {
   if (vVis < 0.5) discard;
-  vec2 c = gl_PointCoord - 0.5; float r = dot(c, c); if (r > 0.25) discard;
-  gl_FragColor = vec4(vCol * (1.0 - r * 0.6), 1.0);   // colours are already sRGB: no output conversion
+  vec2 c = gl_PointCoord - 0.5; float a;
+  if (vSpark > 0.5) { vec2 q = abs(c); a = max(1.0 - smoothstep(0.0, 0.07, min(q.x, q.y)), 0.0) * (1.0 - smoothstep(0.2, 0.5, max(q.x, q.y))); a = max(a, 1.0 - smoothstep(0.0, 0.18, length(c))); }
+  else a = 1.0 - smoothstep(0.28, 0.5, length(c));
+  a *= vAlpha; if (a < 0.01) discard;
+  gl_FragColor = vec4(vCol * a, a);    // premultiplied, accumulated additively by the shared pipeline
 }`;
 
-// a THREE.Points ready to add to a scene, with the uniforms the page drives
 export function cloudPoints(cloud) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(cloud.position, 3));
@@ -179,7 +191,7 @@ export function cloudPoints(cloud) {
   g.setAttribute("aux", new THREE.BufferAttribute(cloud.aux, 4));
   const uniforms = { uAssemble: { value: 1 }, uSweep: { value: -100 }, uExplode: { value: 0 }, uCutY: { value: 100 }, uSize: { value: 22 }, uPR: { value: 1 }, uMode: { value: 0 },
     uHeight: { value: cloud.size[1] }, uTime: { value: 0 }, uFog: { value: new THREE.Vector2(20, 80) }, uCentre: { value: new THREE.Vector3(...cloud.centre) } };
-  const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, vertexColors: true });
+  const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, vertexColors: true, ...ADDITIVE_PREMULTIPLIED });
   const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.name = "PLAN_STUDIO_POINT_CLOUD";
   return { points: pts, uniforms };
 }

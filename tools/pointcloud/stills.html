@@ -12,14 +12,14 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 const loadImg = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("image " + src)); i.src = src; });
 window.renderStill = async (job) => {
   const c = document.getElementById("c"); c.style.width = job.w + "px"; c.style.height = job.h + "px"; c.width = job.w; c.height = job.h;
-  const N = job.n || (job.kind === "image" ? 300000 : 160000), e = createEngine(c, { budget: N, reduceMotion: true, pixelRatio: 1, sizeScale: job.kind === "image" ? Math.max(1, 900 / job.h) * 0.9 : 1 });
+  const N = job.n || (job.kind === "image" ? 300000 : 160000), e = createEngine(c, { budget: N, reduceMotion: true, pixelRatio: 1, sizeScale: job.sizeScale ?? (job.kind === "image" ? Math.max(1, 900 / job.h) * 0.9 : 1) });
   let f, scale = 1, offset = [0, 0, 0], rot = job.rot ?? 0;
   if (job.kind === "image") {
     f = normalise(imageForm(await loadImg(job.src), N, { maxSide: 520, crop: job.crop }), 1, { ground: false });
     e.camera.position.set(0, 0, 3.4); e.camera.lookAt(0, 0, 0); e.camera.aspect = job.w / job.h; e.camera.updateProjectionMatrix();
     const vis = 2 * 3.4 * Math.tan((15 * Math.PI) / 180) * (job.w / job.h); scale = vis * (job.fill ?? 1.04);
     e.setLift(0.5, 0.5);
-  } else if (job.kind === "hall") { f = await hallForm(N); offset = [0, 0.02, 0]; scale = job.scale ?? 1.35; rot = job.rot ?? 0.5; e.camera.position.set(0, 0.7, 3.2); e.camera.lookAt(0, 0.22, 0); e.setLift(0.5, 0.55); }
+  } else if (job.kind === "hall") { f = await hallForm(N); offset = [0, 0.02, 0]; scale = job.scale ?? 1.35; rot = job.rot ?? 0.5; e.camera.position.set(0, job.camY ?? 0.7, job.camZ ?? 3.2); e.camera.lookAt(0, job.lookY ?? 0.22, 0); e.setLift(0.5, 0.55); }
   else if (job.kind === "glb") {
     const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder); const g = await gl.loadAsync(job.src);
     g.scene.traverse((o) => { if (o.isMesh && /glass|window/i.test(o.material?.name || "")) o.userData.glass = true; });

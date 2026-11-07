@@ -1,7 +1,7 @@
 /* assembl Plan Studio · the plum world (DESIGN.md tokens), a chalk sheet for the work. */
 :root {
-  --deep: #240B21; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --ink: #492B3E; --muted: #654A4E; --rose: #916A70;
-  --on: rgba(255, 253, 251, .78); --line: rgba(73, 43, 62, .14); --lilac: #C7B4F0; --pink: #F3A5BE;
+  --deep: #21121F; --plum: #3A1536; --paper: #FFFDFB; --chalk: #F5F1F2; --ink: #492B3E; --muted: #654A4E; --rose: #916A70;
+  --on: rgba(255, 253, 251, .78); --line: rgba(73, 43, 62, .14); --lilac: #D9BACB; --pink: #F4BEDA;
   --pass: #2f6b46; --fail: #B0213A; --info: #8a6d1f; --out: #6d5d63;
   --sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
   --r: 14px;
@@ -92,3 +92,39 @@ td input, td select { width: 86px; padding: 3px 5px; } tr.sel { background: #f6e
 .aipick button.on { border-color: var(--deep); box-shadow: inset 0 0 0 1px var(--deep); } .aipick small { font-family: var(--mono); font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
 .aipick h4 { margin: 6px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
 a.crumb { text-decoration: none; } a.crumb:hover { color: var(--paper); }
+
+/* ------------------------------------------------------------------ the point-cloud look (Nov 2026)
+   The studio sits on the assembl point-cloud ground: deep plum, glass panels, rose and ivory text. The model view defaults to the
+   point cloud (lab/pc/engine.js) with Solid one tap away. Real artefacts (the PDF being read, the A3 sheets) stay white paper.
+   Code-check statuses use the cloud's palette: pink fails, peach needs info, mauve passes. */
+:root { --deep: #21121F; --plum: #2E1A2C; --lilac: #D9BACB; --pink: #F4BEDA; --pass: #D4A8C6; --fail: #F4BEDA; --info: #FCCEBC; --out: #5E3A58;
+  --glass: rgba(249, 246, 242, .05); --glass-line: rgba(249, 246, 242, .13); --paper: #F9F6F2; --on: rgba(249, 246, 242, .76); }
+html, body { background: var(--deep); }
+.top { background: rgba(33, 18, 31, .9); }
+.hero { background: radial-gradient(640px 320px at 80% 20%, rgba(244, 190, 218, .1), transparent), radial-gradient(520px 280px at 10% 80%, rgba(217, 186, 203, .08), transparent); }
+.studio { background: #1B0E1A; color: var(--paper); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.steps { border-bottom-color: var(--glass-line); }
+.steps button { color: var(--on); } .steps button[aria-selected="true"] { background: var(--paper); color: var(--deep); }
+.inspector { background: rgba(249, 246, 242, .03); border-left-color: var(--glass-line); color: var(--on); }
+.inspector h2, h2 { color: var(--paper); } .inspector h3 { color: var(--on); }
+.card, .checks li, .outputs figure, .inspect-ev, .stats div { background: var(--glass); border-color: var(--glass-line); color: var(--paper); }
+.hint, .checks .m, .checks .src, .stats span, .legend, .matpick label { color: var(--on); }
+.checks li:hover { border-color: #D9BACB; }
+.drop { background: rgba(249, 246, 242, .03); border-color: #8E6585; } .drop.over { background: rgba(249, 246, 242, .07); } .drop span { color: var(--on); }
+.seg { background: rgba(249, 246, 242, .07); } .seg button { color: var(--on); } .seg button.on { background: var(--paper); color: var(--deep); }
+.stagewrap { background: var(--deep); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.stagebar .seg { background: rgba(33, 18, 31, .78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+#cloud3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+#cloud3d[hidden] { display: none; }
+select, input[type="number"], input[type="text"] { background: rgba(249, 246, 242, .06); color: var(--paper); border-color: var(--glass-line); }
+select option { background: #21121F; color: var(--paper); }
+th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(--glass-line); } tr.sel { background: rgba(244, 190, 218, .1); }
+.pill, .tally span, .badge { color: #21121F; } .pill.out, .tally .out { color: var(--paper); }
+.checks .unv { color: var(--info); }
+.studio .btn { background: var(--paper); color: var(--deep); } .studio .btn small { color: #654A4E; }
+.studio .btn.ghost { background: transparent; color: var(--paper); border-color: var(--glass-line); } .studio .btn.ghost small { color: var(--on); }
+.files .btn { color: var(--paper); }
+.outputs a { color: #D9BACB; } .outputs img, .outputs video { background: var(--deep); }
+.sheet, .sheetview { background: #fff; }
+.foot { background: #180B18; }
+.btn:focus-visible, .steps button:focus-visible, .seg button:focus-visible { outline-color: #D9BACB; }

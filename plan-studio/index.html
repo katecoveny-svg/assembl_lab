@@ -7,12 +7,13 @@
 <meta name="description" content="Upload a 2D plan. Plan Studio measures it, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and makes stills, clips and client presentations with real NZ materials.">
 <meta property="og:title" content="Plan Studio · assembl lab">
 <meta property="og:description" content="Plans in. A model you can trust out: measured, checked, drawn and presented.">
-<meta property="og:image" content="/plan-studio/media/project-dusk.webp">
+<meta property="og:image" content="/lab/pc/stills/ps-hero.webp">
 <meta name="theme-color" content="#240B21">
 <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/landing.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to the content</a>
@@ -34,10 +35,10 @@
           <a class="btn glass" href="https://assembl.co.nz/">Talk to assembl</a>
         </div>
       </div>
-      <figure class="hero-image">
-        <img src="media/project-dusk.webp" srcset="media/project-dusk-800.webp 800w, media/project-dusk.webp 2000w" sizes="(min-width: 1320px) 1240px, calc(100vw - 2 * var(--gutter))"
-             width="2000" height="1116" alt="A two-storey concrete and dark timber house on a bush hillside at dusk, its rooms lit warm behind full-height glazing" fetchpriority="high">
-        <figcaption><span class="chip"><i aria-hidden="true"></i>Project image</span><span>The kind of work Plan Studio is built for. Image: <span class="todo">[credit to confirm]</span>, used with permission. Not a Plan Studio render.</span></figcaption>
+      <figure class="hero-cloud">
+        <div class="cloud-frame"><canvas id="heroCloud" aria-hidden="true"></canvas>
+        <img class="cloud-still" src="/lab/pc/stills/ps-hero.webp" width="1600" height="1000" alt="The demo hall as a point cloud: walls, glazing, roof and banquet tables drawn in points of light" fetchpriority="high"></div>
+        <figcaption><span class="chip"><i aria-hidden="true"></i>Example · fictional demo hall</span><span>Every point is sampled from the model, so the cloud is exactly as accurate as the plan.</span></figcaption>
       </figure>
     </section>
 
@@ -59,8 +60,8 @@
             <p>A CAD-exported PDF is measured from its own linework, in your browser: walls are pairs of parallel edges a wall-thickness apart, openings are the gaps, rooms come from the labels, and the scale is read off the sheet. A scan or photo is read by AI and marked inferred.</p>
             <p class="proof"><span class="chip live"><i aria-hidden="true"></i>Live</span><span>Every element carries its source and how sure we are</span></p>
           </li>
-          <li class="step" data-img="media/step-model.webp" data-w="1600" data-h="900">
-            <figure><img src="media/step-model-800.webp" srcset="media/step-model-800.webp 800w, media/step-model.webp 1600w" sizes="(min-width: 960px) 1px, 100vw" width="1600" height="900" loading="lazy" alt="Aerial view of the demo hall's 3D model at golden hour, with a glazed gable and timber cladding"></figure>
+          <li class="step" data-img="/lab/pc/stills/ps-model.webp" data-w="1600" data-h="900">
+            <figure><img src="/lab/pc/stills/ps-model.webp" sizes="(min-width: 960px) 1px, 100vw" width="1600" height="900" loading="lazy" alt="The demo hall's model as a point cloud, seen from above: walls, glazing, the gable roof and the tables"></figure>
             <h3>Build the model</h3>
             <p>Walls are cut around their openings, the roof follows its real pitch, decks and piles sit at their true heights. Change a material, a window or a wall in the inspector and everything downstream updates.</p>
             <p class="proof"><span class="chip live"><i aria-hidden="true"></i>Live</span><span>IFC4, DXF, GLB and USDZ from the same model</span></p>
@@ -113,9 +114,9 @@
         <p class="lede">Socials, client hi-res, print and CAD, all rendered from the same revision, at the exact size each one needs. A one-click view set gives the client street, corners, rear and interior in one light.</p>
       </div>
       <div class="formats">
-        <figure class="f-reel"><img src="media/format-reel-800.webp" srcset="media/format-reel-800.webp 800w, media/format-reel.webp 1080w" sizes="(min-width: 960px) 280px, 45vw" width="1080" height="1920" loading="lazy" alt="Portrait street view of the demo hall at golden hour, sized for a Reel or Story"><figcaption>Reel and Story <span class="mono">1080 × 1920</span></figcaption></figure>
-        <figure class="f-feed"><img src="media/format-feed-800.webp" srcset="media/format-feed-800.webp 800w, media/format-feed.webp 1080w" sizes="(min-width: 960px) 300px, 45vw" width="1080" height="1350" loading="lazy" alt="Corner view of the demo hall in daylight, sized for a 4:5 feed post"><figcaption>Feed 4:5 <span class="mono">1080 × 1350</span></figcaption></figure>
-        <figure class="f-square"><img src="media/format-square-800.webp" srcset="media/format-square-800.webp 800w, media/format-square.webp 1080w" sizes="(min-width: 960px) 300px, 45vw" width="1080" height="1080" loading="lazy" alt="Street view of the demo hall at dusk, square"><figcaption>Square <span class="mono">1080 × 1080</span></figcaption></figure>
+        <figure class="f-reel"><img src="/lab/pc/stills/ps-reel.webp" width="1080" height="1920" loading="lazy" alt="The demo hall as a point cloud, portrait, sized for a Reel or Story"><figcaption>Reel and Story <span class="mono">1080 × 1920</span></figcaption></figure>
+        <figure class="f-feed"><img src="/lab/pc/stills/ps-feed.webp" width="1080" height="1350" loading="lazy" alt="The demo hall as a point cloud, from the corner, sized for a 4:5 feed post"><figcaption>Feed 4:5 <span class="mono">1080 × 1350</span></figcaption></figure>
+        <figure class="f-square"><img src="/lab/pc/stills/ps-square.webp" width="1080" height="1080" loading="lazy" alt="The demo hall as a point cloud, square, looking into the glazed gable"><figcaption>Square <span class="mono">1080 × 1080</span></figcaption></figure>
         <figure class="f-sheet"><img src="media/sheet-elevations-800.webp" srcset="media/sheet-elevations-800.webp 800w, media/sheet-elevations.webp 1600w" sizes="(min-width: 960px) 620px, 92vw" width="2222" height="1572" loading="lazy" alt="An A3 elevations sheet of the demo hall: north, south, east and west"><figcaption>A3 working drawings <span class="mono">PDF · SVG · DXF</span></figcaption></figure>
       </div>
       <ul class="also">
@@ -156,7 +157,7 @@
 
     <!-- close -->
     <section class="close" id="pilot" aria-labelledby="pilot-h">
-      <h2 id="pilot-h">In pilot with Te Whare Whaihanga.</h2>
+      <h2 id="pilot-h">Built with practising architects.</h2>
       <p class="lede">We are building Plan Studio with practising New Zealand architects, on live projects. Try it now with the demo hall, or talk to us about a pilot for your practice.</p>
       <div class="actions">
         <a class="btn paper" href="studio/">Open the studio</a>
@@ -189,6 +190,21 @@
   const io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) show(steps.indexOf(e.target)); }, { rootMargin: "-45% 0px -45% 0px" });
   steps.forEach((s) => io.observe(s)); show(0);
 })();
+</script>
+<script type="module">
+// the hero: the demo hall as a live point cloud (lab/pc/engine.js). Without WebGL the still below it stays.
+import { createEngine } from "/lab/pc/engine.js";
+import { hallForm } from "/lab/pc/forms.js";
+const canvas = document.getElementById("heroCloud"), reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+try {
+  const e = createEngine(canvas, { reduceMotion: reduce, budget: innerWidth < 760 ? 80000 : 220000 });
+  e.camera.position.set(0, 0.74, 3.2); e.camera.lookAt(0, 0.24, 0); e.setLift(0.5, 0.52);
+  const hall = await hallForm(e.N);
+  e.assembleFrom(hall, { offset: [0, 0.02, 0], scale: innerWidth < 760 ? 1.05 : 1.12, ms: 3400 }); e.start();
+  canvas.closest(".cloud-frame").classList.add("live");
+  if (!reduce) { setTimeout(() => e.scan(3000, -0.02, 0.6), 3600); setInterval(() => !document.hidden && e.scan(3000, -0.02, 0.6), 9000); }
+  new IntersectionObserver(([x]) => (x.isIntersecting ? e.start() : e.stop())).observe(canvas);
+} catch (err) { console.warn("Point cloud unavailable:", err.message); }
 </script>
 </body>
 </html>
