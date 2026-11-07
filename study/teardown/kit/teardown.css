@@ -1,0 +1,202 @@
+/* assembl study teardown kit: the console around a study model.
+   Calm warm-ivory studio (or aubergine night), plum ink lines, dusty rose accents, Instrument Sans 400 for words,
+   IBM Plex Mono for live numbers and labels. No violet, no glows, no glass. Every value shown here is written by
+   teardown.js from the frame's state; this file only lays it out. */
+.tdk{
+  --g:#F9F6F2;          /* studio ground: warm ivory */
+  --panel:#FDFBF8;      /* ivory paper panel */
+  --panel-2:#F1EAE9;    /* soft blush, quiet fills */
+  --ink:#33212F;        /* plum ink: text and lines */
+  --mute:#756771;       /* muted mauve: secondary text on light (4.95:1 on ivory) */
+  --line:rgba(51,33,47,.14);
+  --accent:#7E5570;     /* rose on light: the part doing the work */
+  --rose:#D9BACB;       /* dusty rose */
+  --card:#21121F;       /* deep plum: the title card */
+  --card-ink:#F9F6F2;
+  --card-mute:#B8A8B2;
+  --chip:#EADCDF;       /* pale rose: truth chips */
+  --on:#33212F;         /* pressed button fill */
+  --on-ink:#F9F6F2;
+  --focus:#7E5570;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Instrument Sans',system-ui,sans-serif;
+  --ease:cubic-bezier(.65,0,.35,1);
+  color:var(--ink);background:var(--g);font-family:var(--sans);font-weight:400;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+  box-sizing:border-box;min-height:100vh
+}
+.tdk[data-mode=night]{
+  --g:#180B18;--panel:#21121F;--panel-2:#2A1828;--ink:#F9F6F2;--mute:#B8A8B2;--line:rgba(217,186,203,.18);
+  --accent:#D9BACB;--card:#21121F;--chip:#3A2436;--on:#D9BACB;--on-ink:#180B18;--focus:#D9BACB
+}
+.tdk *,.tdk *::before,.tdk *::after{box-sizing:border-box}
+html:has(.tdk),body:has(.tdk){background:#F9F6F2;margin:0}
+html:has(.tdk[data-mode=night]),body:has(.tdk[data-mode=night]){background:#180B18}
+.tdk button,.tdk input,.tdk select{font:inherit;color:inherit}
+.tdk :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.tdk .mono{font-family:var(--mono)}
+.tdk .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------------------------------------------------------------- layout: three columns on desktop */
+.tdk-console{display:grid;grid-template-columns:300px minmax(0,1fr) 320px;gap:16px;padding:16px;
+  min-height:calc(100vh - var(--tdk-top,60px));align-items:stretch}
+.tdk-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tdk-centre{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (min-width:1181px){
+  /* the stage and its controls stay in view while the side panels scroll */
+  .tdk-centre{position:sticky;top:12px;align-self:start;height:calc(100vh - var(--tdk-top,60px) - 32px);min-height:560px}
+}
+.tdk-pn{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:14px 16px;min-width:0}
+.tdk-pn h2,.tdk-pn h3{margin:0;font-weight:400;font-size:15px;letter-spacing:-.01em;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tdk-pn .tdk-pn-sub{font-family:var(--mono);font-size:11px;color:var(--mute);margin:4px 0 0;line-height:1.45}
+
+/* title card: the one deep plum anchor, top left */
+.tdk-title{background:var(--card);color:var(--card-ink);border-color:transparent;padding:18px 18px 16px}
+.tdk[data-mode=night] .tdk-title{border-color:var(--line)}
+.tdk-title h1{margin:0;font-weight:400;font-size:27px;line-height:1.08;letter-spacing:-.025em}
+.tdk-title .tdk-sub{margin:6px 0 0;font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--card-mute)}
+.tdk-live{margin-top:14px;display:flex;align-items:baseline;gap:8px}
+.tdk-live-n{font-family:var(--mono);font-size:46px;line-height:1;letter-spacing:-.04em;color:#D9BACB}
+.tdk-live-u{font-family:var(--mono);font-size:12px;color:var(--card-mute)}
+.tdk-live-l{font-family:var(--mono);font-size:11px;color:var(--card-mute);margin-top:4px}
+.tdk-live-s{margin-top:10px;font-size:17px;letter-spacing:-.01em;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.tdk-live-s span{font-family:var(--mono);font-size:12px;color:var(--card-mute)}
+.tdk-level{margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--card-mute);border-top:1px solid rgba(217,186,203,.18);padding-top:10px}
+
+/* readouts */
+.tdk-read{display:grid;gap:0;margin-top:8px}
+.tdk-read div{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.tdk-read div:first-child{border-top:0}
+.tdk-read b{font-family:var(--mono);font-weight:400;font-size:12.5px;white-space:nowrap}
+
+/* truth chips */
+.tdk-chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;font-weight:400;line-height:1;
+  padding:4px 7px;border-radius:999px;background:var(--chip);color:var(--ink);white-space:nowrap;cursor:help}
+.tdk-chip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.tdk-title .tdk-chip{background:rgba(217,186,203,.16);color:var(--card-ink)}
+.tdk-title .tdk-chip::before{background:#D9BACB}
+.tdk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+
+/* ---------------------------------------------------------------- the stage */
+.tdk-stage{position:relative;flex:1 1 auto;min-height:300px;border-radius:24px;overflow:hidden;background:var(--g);border:1px solid var(--line)}
+.tdk-stage canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;touch-action:none;cursor:grab}
+.tdk-stage canvas:active{cursor:grabbing}
+.tdk-stage canvas:focus-visible{outline-offset:-3px}
+.tdk-legend{position:absolute;left:16px;top:14px;display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10.5px;color:var(--mute);pointer-events:none;max-width:calc(100% - 140px)}
+.tdk-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.tdk-legend span.on{color:var(--ink)}
+.tdk-mark{position:absolute;right:14px;bottom:12px;display:flex;align-items:center;gap:6px;font-size:14px;letter-spacing:-.02em;color:var(--ink);pointer-events:none;opacity:.9}
+.tdk-mark svg{width:20px;height:20px}
+.tdk-mark em{font-style:normal;color:var(--accent)}
+.tdk-hint{position:absolute;left:16px;bottom:12px;font-family:var(--mono);font-size:10.5px;color:var(--mute);pointer-events:none}
+.tdk-status{position:absolute;right:14px;top:12px;font-family:var(--mono);font-size:10.5px;color:var(--mute);pointer-events:none;text-align:right}
+.tdk-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:24px;text-align:center}
+.tdk-stage.no3d .tdk-fallback{display:flex}
+.tdk-stage.no3d canvas{display:none}
+.tdk-fallback svg{width:min(100%,420px);height:auto}
+.tdk-fallback p{margin:0;font-family:var(--mono);font-size:11px;color:var(--mute);max-width:44ch}
+
+/* callouts: a label and a thin leader into the part */
+.tdk-calls{position:absolute;inset:0;pointer-events:none}
+.tdk-calls svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tdk-calls line{stroke:var(--ink);stroke-width:1;opacity:.55}
+.tdk-calls circle{fill:var(--g);stroke:var(--ink);stroke-width:1.2}
+.tdk-call{position:absolute;max-width:170px;transform:translateY(-50%);transition:opacity .2s}
+.tdk-call b{display:block;font-weight:400;font-size:13px;line-height:1.2;white-space:nowrap}
+.tdk-call span{display:block;font-family:var(--mono);font-size:10.5px;color:var(--mute);margin-top:2px;white-space:nowrap}
+.tdk-call.r{text-align:right}
+.tdk-call.hot b{color:var(--accent)}
+.tdk-calls.off{display:none}
+
+/* ---------------------------------------------------------------- the dock: transport, assembly, subsystems, views */
+.tdk-dock{display:grid;gap:8px;padding:10px 14px;flex:none}
+.tdk-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px}
+.tdk-row .tdk-k{font-family:var(--mono);font-size:10.5px;color:var(--mute);margin-right:4px;min-width:74px}
+.tdk-btn{appearance:none;border:1px solid var(--line);background:transparent;border-radius:999px;min-height:32px;padding:0 13px;
+  font-size:13px;line-height:1;cursor:pointer;white-space:nowrap;transition:background .2s var(--ease),color .2s var(--ease),border-color .2s}
+.tdk-btn:hover{border-color:var(--ink)}
+.tdk-btn[aria-pressed=true]{background:var(--on);color:var(--on-ink);border-color:var(--on)}
+.tdk-btn.primary{background:var(--on);color:var(--on-ink);border-color:var(--on);min-width:84px}
+.tdk-btn:disabled{opacity:.45;cursor:default}
+.tdk-range{display:flex;align-items:center;gap:8px;flex:1 1 160px;min-width:140px}
+.tdk-range input{flex:1;accent-color:var(--accent);min-width:0}
+.tdk-range output{font-family:var(--mono);font-size:11px;min-width:40px;text-align:right}
+.tdk-sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+
+/* inputs */
+.tdk-inputs{display:grid;gap:10px;margin-top:10px}
+.tdk-in label{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.tdk-in output{font-family:var(--mono);font-size:12px}
+.tdk-in input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0}
+.tdk-in p{margin:3px 0 0;font-family:var(--mono);font-size:10.5px;color:var(--mute);line-height:1.45}
+.tdk-tog{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+
+/* charts */
+.tdk-chart svg{display:block;width:100%;height:auto;margin-top:8px;overflow:visible}
+.tdk-chart .ax{stroke:var(--line);stroke-width:1}
+.tdk-chart .gr{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.tdk-chart .band{fill:var(--panel-2)}
+.tdk-chart .bt{font-family:var(--mono);font-size:8.5px;fill:var(--mute)}
+.tdk-chart .tk{font-family:var(--mono);font-size:8.5px;fill:var(--mute)}
+.tdk-chart .s0{fill:none;stroke:var(--ink);stroke-width:1.6}
+.tdk-chart .s1{fill:none;stroke:var(--accent);stroke-width:1.6}
+.tdk-chart .s2{fill:none;stroke:var(--mute);stroke-width:1.4;stroke-dasharray:4 3}
+.tdk-chart .cur{stroke:var(--accent);stroke-width:1}
+.tdk-chart .dot{fill:var(--accent);stroke:var(--panel);stroke-width:1.5}
+.tdk-chart .fillloop{fill:var(--rose);opacity:.28}
+.tdk-chart .val{font-family:var(--mono);font-size:11px;color:var(--ink)}
+.tdk-chart .key{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:6px}
+.tdk-chart .key i{display:inline-block;width:12px;height:2px;vertical-align:middle;margin-right:5px;background:var(--ink)}
+
+/* schematic */
+.tdk-schem svg{display:block;width:100%;height:auto;margin-top:6px}
+.tdk-schem .formula{font-family:var(--mono);font-size:10.5px;color:var(--mute);margin:6px 0 0;line-height:1.5}
+
+/* ---------------------------------------------------------------- below the console: learn, sources, keys */
+.tdk-below{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;padding:0 16px 40px}
+.tdk-learn ol{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tdk-learn li{border-top:1px solid var(--line);padding-top:10px;min-width:0}
+.tdk-learn li b{display:block;font-weight:400;font-size:15px}
+.tdk-learn li p{margin:6px 0 8px;font-size:14px;line-height:1.5;color:var(--ink)}
+.tdk-learn li .tdk-btn{min-height:30px;font-size:12px}
+.tdk-src ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.tdk-src li{font-size:13px;line-height:1.45}
+.tdk-src a{color:var(--ink);text-decoration-color:var(--accent);text-underline-offset:3px}
+.tdk-src li span{display:block;font-family:var(--mono);font-size:10.5px;color:var(--mute)}
+.tdk-keys{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.7}
+.tdk-keys kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:5px;padding:0 5px;color:var(--ink)}
+.tdk-checks{margin-top:14px;font-family:var(--mono);font-size:10.5px;color:var(--mute);line-height:1.6}
+.tdk-checks b{font-weight:400;color:var(--ink)}
+
+/* ---------------------------------------------------------------- tablet and phone: one column, the stage near the top */
+@media (max-width:1180px){
+  .tdk-console{grid-template-columns:minmax(0,1fr);gap:12px;padding:12px}
+  .tdk-col,.tdk-centre{display:contents}
+  .tdk-title{order:1}
+  .tdk-stage{order:2;min-height:0;height:clamp(320px,62vh,560px);flex:none}
+  .tdk-dock{order:3}
+  .tdk-readp{order:4}
+  .tdk-chart{order:5}
+  .tdk-schem{order:6}
+  .tdk-inp{order:7}
+  .tdk-below{grid-template-columns:minmax(0,1fr);padding:0 12px 32px;gap:12px}
+}
+@media (min-width:700px) and (max-width:1180px){
+  .tdk-console{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tdk-title,.tdk-stage,.tdk-dock{grid-column:1/-1}
+}
+@media (max-width:700px){
+  .tdk-learn ol{grid-template-columns:minmax(0,1fr)}
+  .tdk-title h1{font-size:24px}
+  .tdk-live-n{font-size:40px}
+  .tdk-legend{font-size:9.5px;gap:4px 10px;max-width:calc(100% - 24px)}
+  .tdk-hint{display:none}
+  .tdk-status{top:auto;bottom:12px;left:16px;right:auto;text-align:left;max-width:58%;font-size:9.5px}
+  .tdk-row .tdk-k{min-width:0;width:100%}
+  .tdk-btn{min-height:40px}
+  .tdk-call b{font-size:12px}
+  .tdk-call span{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .tdk-btn,.tdk-call{transition:none}
+}
