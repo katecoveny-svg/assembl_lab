@@ -241,6 +241,8 @@ $("#btnAi").addEventListener("click", async () => {
   prog.textContent = ""; b.disabled = !$("#aiConfirm").checked;
 });
 // the client view set: five consistent cameras in one light, the way a renderer would hand them over
+// the point cloud opens on this project: handed over in this tab's session storage (stays in the browser)
+$("#btnPoints").addEventListener("click", () => { try { sessionStorage.setItem("planstudio.project", JSON.stringify(P)); } catch { /* storage blocked: the page falls back to the demo */ } });
 $("#btnSet").addEventListener("click", async () => {
   if (!stage) await boot3d(); const b = $("#btnSet"); b.disabled = true; const light = $("#lights button.on")?.dataset.light || "day";
   const set = [["street", "Street"], ["cornerA", "Corner"], ["rear", "Rear"], ["cornerB", "Opposite corner"], ["interior", "Interior"]];

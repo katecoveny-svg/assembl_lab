@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Point cloud · Plan Studio · assembl lab</title>
+<meta name="description" content="A plan model as a point cloud: every point sampled from the true model, coloured by material, by the NZ Building Code pre-check, by evidence or by height.">
+<meta name="theme-color" content="#240B21">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/points.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the controls</a>
+<header class="bar">
+  <a class="brand" href="/" aria-label="assembl lab home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8 16 1l12 7v15l-12 8L4 23Z M4 8l12 8 12-8 M16 16v15"/></svg><b>assembl</b><span>lab</span></a>
+  <a class="crumb" href="/plan-studio/">Plan Studio</a><span class="sep" aria-hidden="true">/</span><span class="here">Point cloud</span>
+  <a class="btn glass sm" href="/plan-studio/studio/">Open the studio</a>
+</header>
+
+<main>
+  <div class="stage" id="stage">
+    <canvas id="cloud" aria-label="The building as a point cloud. Drag to orbit, scroll or pinch to zoom." role="img"></canvas>
+    <p class="loading mono" id="loading" aria-live="polite">Sampling the model…</p>
+  </div>
+
+  <section class="panel" id="panel" aria-labelledby="ptitle">
+    <div class="ptop">
+      <h1 id="ptitle"><span id="pname">Tōtara Grove community hall</span></h1>
+      <p class="truth"><span class="chip"><i aria-hidden="true"></i><span id="ptruth">Sampled from model PS-001 · not a scan</span></span><span class="mono count" id="pcount"></span></p>
+    </div>
+
+    <div class="group" role="group" aria-labelledby="l-colour"><span class="label" id="l-colour">Colour by</span>
+      <div class="seg" id="mode"><button type="button" data-mode="0" aria-pressed="true">Scan</button><button type="button" data-mode="1" aria-pressed="false">Material</button><button type="button" data-mode="2" aria-pressed="false">Code check</button><button type="button" data-mode="3" aria-pressed="false">Evidence</button></div>
+      <p class="legend" id="legend"></p>
+    </div>
+
+    <div class="group" role="group" aria-labelledby="l-show"><span class="label" id="l-show">Show</span>
+      <div class="row">
+        <button type="button" class="btn line" id="btnAssemble">Assemble</button>
+        <button type="button" class="btn line" id="btnSweep">Scan sweep</button>
+        <button type="button" class="btn line" id="btnExplode" aria-pressed="false">Explode</button>
+        <button type="button" class="btn line" id="btnOrbit" aria-pressed="false">Orbit</button>
+      </div>
+      <label class="slider"><span>Plan cut <b class="mono" id="cutVal">off</b></span><input type="range" id="cut" min="0" max="100" value="100" aria-describedby="cutHelp"></label>
+      <p class="hint" id="cutHelp">Lower it to cut the building at a height and look inside.</p>
+    </div>
+
+    <div class="group" role="group" aria-labelledby="l-detail"><span class="label" id="l-detail">Detail</span>
+      <div class="seg" id="density"><button type="button" data-n="500000" aria-pressed="false">0.5 M</button><button type="button" data-n="1500000" aria-pressed="true">1.5 M</button><button type="button" data-n="3000000" aria-pressed="false">3 M points</button></div>
+    </div>
+
+    <div class="group" role="group" aria-labelledby="l-save"><span class="label" id="l-save">Save</span>
+      <div class="row">
+        <button type="button" class="btn paper" id="btnStill">Still 4K</button>
+        <button type="button" class="btn line" id="btnReel">Orbit clip 9:16</button>
+        <button type="button" class="btn line" id="btnWide">Orbit clip 16:9</button>
+      </div>
+      <p class="mono hint" id="saveProg" aria-live="polite"></p>
+      <div class="outs" id="outs"></div>
+    </div>
+
+    <div class="group"><label class="file"><input type="file" id="file" accept="application/json,.json"><span>Open a project JSON</span></label>
+      <p class="hint">A project saved from the studio. It is read in this browser only and never uploaded.</p></div>
+  </section>
+</main>
+<script type="module" src="../js/points-page.js"></script>
+</body>
+</html>
