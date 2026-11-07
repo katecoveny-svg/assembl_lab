@@ -6,8 +6,9 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const M = (hex, o = {}) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.45, metalness: 0, ...o });
 export const MAT = {
-  hull: M("#f1eeea", { roughness: 0.32 }), antifoul: M("#4a2238", { roughness: 0.75 }), stripe: M("#654A4E", { roughness: 0.4 }), plum: M("#240B21", { roughness: 0.45 }),
-  deck: M("#bfb7b2", { roughness: 0.85 }), white: M("#f6f3f0", { roughness: 0.4 }), glass: M("#1b1520", { roughness: 0.06, metalness: 0.3, envMapIntensity: 1.6 }),
+  // hull panels are open shells lofted from sections: draw both faces so they read from any angle
+  hull: M("#f1eeea", { roughness: 0.32, side: THREE.DoubleSide }), antifoul: M("#4a2238", { roughness: 0.75, side: THREE.DoubleSide }), stripe: M("#654A4E", { roughness: 0.4, side: THREE.DoubleSide }), plum: M("#240B21", { roughness: 0.45, side: THREE.DoubleSide }),
+  deck: M("#bfb7b2", { roughness: 0.85, side: THREE.DoubleSide }), white: M("#f6f3f0", { roughness: 0.4 }), glass: M("#1b1520", { roughness: 0.06, metalness: 0.3, envMapIntensity: 1.6 }),
   engine: M("#1d1a20", { roughness: 0.35, metalness: 0.2 }), steel: M("#d2d6da", { roughness: 0.22, metalness: 0.95 }), rubber: M("#2a2629", { roughness: 0.9 }),
   red: M("#c8293f", { emissive: "#5a0c18" }), green: M("#1f9e5a", { emissive: "#06301a" }),
 };
@@ -87,7 +88,7 @@ export function waterTaxi() {
   g.add(box(0.1, 0.1, 0.1, MAT.red, -H.hb(0.6), H.sh(0.6) + 0.12, H.z(0.6)), box(0.1, 0.1, 0.1, MAT.green, H.hb(0.6), H.sh(0.6) + 0.12, H.z(0.6)));
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   return { group: g, name: "Water taxi", lengthM: 10.5,
-    phys: { mass: 6200, dims: [3.2, 1.6, 10.5], points: buoyancyPoints(H, 7, 3, -0.38), smax: 0.9, thrust: 26000, vmax: 17.5, planing: 0.62, lat: 9000, yaw: 2.4, sternZ: H.z(0) + 0.3, seat: new THREE.Vector3(0.6, 0.9, H.z(0.45)), bow: new THREE.Vector3(0, 0.1, H.z(0.94)), beam: 3.2, cog: -0.05 } };
+    phys: { mass: 6200, dims: [3.2, 1.6, 10.5], points: buoyancyPoints(H, 7, 3, -0.38), smax: 0.9, thrust: 23000, vmax: 15.2, planing: 0.62, lat: 9000, yaw: 0.75, sternZ: H.z(0) + 0.3, seat: new THREE.Vector3(0.6, 0.9, H.z(0.45)), bow: new THREE.Vector3(0, 0.1, H.z(0.94)), beam: 3.2, cog: -0.05 } };
 }
 
 // ------------------------------------------------------------------------------------------------ the harbour ferry
@@ -110,7 +111,7 @@ export function ferry() {
   g.add(box(0.14, 0.14, 0.14, MAT.red, -2.4, dy + 2.45, H.z(0.6)), box(0.14, 0.14, 0.14, MAT.green, 2.4, dy + 2.45, H.z(0.6)));
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   return { group: g, name: "Harbour ferry", lengthM: 16,
-    phys: { mass: 30000, dims: [5.2, 3, 16], points: buoyancyPoints(H, 8, 3, -0.9), smax: 2.2, thrust: 34000, vmax: 6.2, planing: 0, lat: 60000, yaw: 1.3, sternZ: H.z(0) + 0.4, seat: new THREE.Vector3(1.2, 1.5, H.z(0.4)), bow: new THREE.Vector3(0, 0.3, H.z(0.95)), beam: 5.2, cog: 0.4 } };
+    phys: { mass: 30000, dims: [5.2, 3, 16], points: buoyancyPoints(H, 8, 3, -0.9), smax: 2.2, thrust: 34000, vmax: 6.2, planing: 0, lat: 60000, yaw: 0.45, sternZ: H.z(0) + 0.4, propY: -1.05, seat: new THREE.Vector3(1.2, 1.5, H.z(0.4)), bow: new THREE.Vector3(0, 0.3, H.z(0.95)), beam: 5.2, cog: 0.4 } };
 }
 
 // a lateral mark (IALA region A: port red can, starboard green cone), bobbing on the sea
