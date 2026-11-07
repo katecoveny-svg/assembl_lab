@@ -19,8 +19,9 @@ experiment nav) but their bodies are not covered by this file until someone move
   - `site-v2/tokens.mjs`: `tokens.ts`, same values, types removed.
   - `site-v2/markup.cjs`: string twins of Button, Eyebrow/Brand, Wordmark/GlassA, SplitTextReveal, Reveal, Parallax,
     Ticker, GlassAssemble, SiteNav and SiteFooter, for the static build.
-  - `site-v2/site-v2.js`: their client-side motion in plain JS (nav, reveals, split text, parallax, glass "a").
-  - `site-v2/glass-a-512.webp` (+ 96 and 192 px copies): the transparent glass "a", the only logo.
+  - `site-v2/site-v2.js`: their client-side motion in plain JS (nav, reveals, split text, parallax, the mark assembling).
+  - The logo is the flat mark A (8 Nov 2026), drawn inline by `site-v2/markup.cjs` (`MARK_A`), with `site-v2/mark-a.svg`,
+    `lab/favicon.svg` (the app tile) and `site-v2/mark-a-{32,180,192}.png`. The glass "a" files are retired.
   - `site-v2/lab.css`: Lab-only rules (the "lab" suffix, truth chips, the experiment nav). No new colours.
   Each ported file names the source commit in its header. To sync: change the main repo first, re-copy, update the
   commit in each header.
@@ -34,7 +35,7 @@ experiment nav) but their bodies are not covered by this file until someone move
    sits in `.v2-brand` so it stays lowercase. "assembly" is the study app's own name and stays.
 2. **No violet or lavender** anywhere: no `#C7B4F0`, `#D7B3F0`, `#6A50BE` or similar text, glows, rings or lights.
    (The old DO orb and its lilac light are gone from the home.)
-3. **Logo: the transparent glass "a" only.** Never a version with a white or pink tile behind it.
+3. **Logo: the flat mark A** (four parts: shoulder, stem, bowl and a dusty-rose dot), ivory on dark, plum ink on light. No glass.
 4. Negative space: one idea per screen, wide gutters (`--v2-gutter`), tall sections (`--v2-section`), hairlines.
 5. Motion is transform and opacity only, and every effect has a static state for reduced motion and no JS.
 6. Truth labels stay wherever they apply: Simulated, Live, Illustrative, Model/Shadow, "Fictional", draft notices.
@@ -75,7 +76,7 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
   ring). The word carries the meaning; the mark is a second cue.
 - **Buttons:** the foundation's pill (`v2-btn-primary`: ivory on plum, plum on light), text link with arrow
   (`v2-btn-secondary`), outlined pill (`v2-btn-ghost`). Sentence case, named for what happens.
-- **Home nav:** glass "a" + "assembl." + "lab", four chapter links, an outlined pill back to assembl.co.nz; Menu
+- **Home nav:** the flat mark + "assembl." + "lab", four chapter links, an outlined pill back to assembl.co.nz; Menu
   below 880px.
 - **Experiment nav (`lab/navigation.js`):** the same wordmark, The experiments, Playground, Study machines, About
   the lab, and "Build with assembl" back to assembl.co.nz; Menu below 880px. Solid plum, not sticky, so it never
@@ -85,9 +86,9 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
 
 ## Motion
 
-- **Hero:** the H1 rises word by word on load (CSS only); the glass "a" assembles from four pieces on load and
+- **Hero:** the H1 rises word by word on load (CSS only); the flat mark assembles from its four parts on load and
   drifts with scroll parallax.
-- **Chapter heads:** words rise as they enter the screen. **The close:** words and the glass "a" assemble with scroll.
+- **Chapter heads:** words rise as they enter the screen. **The close:** words and the flat mark assemble with scroll.
 - **Cards and rows:** fade and lift in, staggered (Reveal); lift 2 to 4px on hover.
 - **Ticker:** a slow line of the twins under the hero; pauses on hover; a static wrapped row for reduced motion.
 - **Reduced motion, no JS:** the complete static page, everything visible, nothing moves.
@@ -104,5 +105,5 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
 - Skip link first; every link and button keyboard-reachable with a visible ring in the tone's focus colour.
 - Works at 320, 375, 390 and 1440 px with no horizontal scroll. Touch targets at least 44px.
 - `scripts/check-lab-home.cjs` checks each world appears exactly once, the routes `#twins`, `#study`,
-  `#playground`, `#about` and `#explore`, keyboard order, widths, no violet, lowercase brand, and that the glass "a"
+  `#playground`, `#about` and `#explore`, keyboard order, widths, no violet, lowercase brand, and that the flat mark
   is decorative and clear of the headline, buttons and labels at 1440, 1024, 768, 390 and 320 px.

@@ -34,7 +34,7 @@ ul, ol { padding: 0; list-style: none; }
 .truth-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--v2-small); color: var(--v2-fg-2); }
 .truth-note span:last-child { margin-left: 6px; }
 .hero-art { position: relative; justify-self: end; width: min(100%, 520px); pointer-events: none; will-change: transform; }
-.hero-art::before { content: ''; position: absolute; inset: 12%; border-radius: 50%; background: radial-gradient(closest-side, rgba(217, 186, 203, .22), transparent 75%); filter: blur(12px); }
+/* 8 Nov 2026: no halo behind the flat mark (the brand has no glows). */
 .lab-ticker { margin: 0; }
 
 /* ── chapters: tall, quiet, one heading each ── */

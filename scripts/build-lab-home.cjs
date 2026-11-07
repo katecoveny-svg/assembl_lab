@@ -5,7 +5,7 @@
 // The page is static HTML on purpose: with no JS, or with reduced motion, it is the complete story. It wears the
 // site-v2 look ported from assembl.co.nz (/site-v2/: tokens, CSS, and markup.cjs, the string twins of the foundation's
 // components). /site-v2/site-v2.js adds the same motion as the main site (split-text headlines, reveals, parallax,
-// the glass "a" assembling); lab/story.js adds live data labels.
+// the flat mark A assembling from its four parts); lab/story.js adds live data labels.
 //
 // Curation is presentation only. Every world in LAB_WORLDS and every instrument the old /discover/ page linked
 // appears here exactly once; scripts/check-lab-home.cjs fails if one goes missing or shows twice.
@@ -169,9 +169,8 @@ const html = `<!doctype html>
 <title>assembl lab · small worlds, assembled</title>
 <meta name="description" content="Working models of New Zealand places, built by assembl: business twins you can run for a day, study machines that teach one idea, and a playground of instruments. Every one says what is simulated and what is real.">
 <meta property="og:title" content="assembl lab · small worlds, assembled"><meta property="og:description" content="Business twins, study machines and a playground, built in Aotearoa. Every world says what is simulated and what is real."><meta property="og:image" content="https://assembl-lab.vercel.app/assets/models/cafe/renders/cafe-hero.webp">
-<meta name="theme-color" content="#21121F"><link rel="icon" href="/site-v2/glass-a-96.webp" type="image/webp"><link rel="apple-touch-icon" href="/site-v2/glass-a-192.webp">
+<meta name="theme-color" content="#21121F"><link rel="icon" href="/lab/favicon.svg" type="image/svg+xml"><link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="/site-v2/glass-a-512.webp" type="image/webp">
 <link rel="stylesheet" href="/site-v2/site-v2.css"><link rel="stylesheet" href="/site-v2/lab.css"><link rel="stylesheet" href="/lab/story.css">
 <script>document.documentElement.classList.add('js');</script>
 <script src="/site-v2/site-v2.js" defer></script>
@@ -191,7 +190,7 @@ ${nav}
    <div class="actions">${v2.button({ href: '#twins', label: 'Walk through the twins', icon: 'down', size: 'lg' })}${v2.button({ href: '#study', label: 'See the study machines', variant: 'secondary', icon: 'down' })}</div>
    <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
   </div>
-  ${v2.parallax(v2.glassAssemble({ size: 520, trigger: 'load', eager: true }), { distance: 140, offset: 'hero', className: 'hero-art' }).replace('<div class="hero-art"', '<div class="hero-art" id="glass-a" aria-hidden="true"')}
+  ${v2.parallax(v2.markAssemble({ size: 520, trigger: 'load' }), { distance: 140, offset: 'hero', className: 'hero-art' }).replace('<div class="hero-art"', '<div class="hero-art" id="mark-a" aria-hidden="true"')}
  </div>
 </section>
 ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, className: 'v2-tone-plum lab-ticker' })}
@@ -274,7 +273,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
    <p class="v2-lede lede v2-secondary">assembl builds twins around real customer journeys, starting with public information and then, on your say-so, your own.</p>
    <div class="actions">${v2.button({ href: `${MAIN}/`, label: 'Talk to assembl', size: 'lg', extra: top })}${v2.button({ href: href(studyWorld), label: 'Study for exams', variant: 'secondary', icon: 'right' })}</div>
   </div>
-  ${v2.glassAssemble({ size: 300, className: 'close-a' })}
+  ${v2.markAssemble({ size: 300, className: 'close-a' })}
  </div>
 </section>
 </main>
