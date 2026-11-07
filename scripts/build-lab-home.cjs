@@ -100,12 +100,26 @@ const PLAY = [
   { href: '/study/bedazzle/', title: 'Bedazzle Studio', line: 'A little sparkle, entirely your own.', truth: 'ill' },
 ];
 
+/* ── point cloud (Nov 2026): the assembl point-cloud look across the home. The pictures are stills rendered by the shared engine
+   (tools/pointcloud/stills.cjs → lab/pc/stills/*.webp); a picture that has not been rendered yet keeps its original render. ── */
+const still = (id, fallback) => (fs.existsSync(path.join(ROOT, `lab/pc/stills/${id}.webp`)) ? `/lab/pc/stills/${id}.webp` : fallback);
+const pcAlt = (alt) => `Point cloud of ${alt.replace(/^(Offline render of |Render of )/i, '').replace(/^The /, 'the ').replace(/^A /, 'a ')}`;
+/* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched) */
+const JUMP = [
+  { href: '#twins', title: 'Business sims', line: 'Run a café, an emergency department or a dairy plant for a day.', still: 'jump-sims', truth: 'sim' },
+  { href: '/plan-studio/', title: 'Architecture lab', line: 'Plans in, a measured 3D model out, pre-checked against the NZ Building Code.', still: 'jump-architecture', truth: 'live' },
+  ...(fs.existsSync(path.join(ROOT, 'sea/index.html')) ? [{ href: '/sea/', title: 'Sea State', line: 'A water taxi and a ferry on a sea made of code, with a ride-comfort reading.', still: 'jump-sea', truth: 'sim' }] : []),
+  { href: '/study/', title: 'Study machines', line: 'Thirty-five machines that each teach one idea, Years 7 to 13.', still: 'jump-study', truth: 'sim' },
+  { href: '#playground', title: 'Playground', line: 'Instruments for making things. Everything stays on your device.', still: 'jump-play', truth: 'ill' },
+];
+const jumpTiles = JUMP.map(j => `<li><a class="jump-tile" href="${j.href}">${fs.existsSync(path.join(ROOT, `lab/pc/stills/${j.still}.webp`)) ? `<span class="jump-pic">${img(`/lab/pc/stills/${j.still}.webp`, '', 800, 500)}</span>` : ''}<span class="jump-copy"><strong>${esc(j.title)}</strong><span class="row-line">${esc(j.line)}</span>${chip(j.truth)}</span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>`).join('\n  ');
+
 /* ── markup ── */
 const goArrow = v2.arrow('right', 18);
 const stageSteps = STAGE.map((s, i) => {
   const w = take(s.id);
   return `<li class="tw-step" data-i="${i}" id="twin-${w.id}">
-  <figure class="tw-pic frame">${img(s.img[0], s.alt, s.img[1], s.img[2], i === 0)}</figure>
+  <figure class="tw-pic frame">${still('twin-' + s.id, null) ? img(still('twin-' + s.id), pcAlt(s.alt), s.img[1], s.img[2], i === 0) : img(s.img[0], s.alt, s.img[1], s.img[2], i === 0)}</figure>
   <div class="tw-copy">
    <p class="kind">${esc(s.kind)}</p>
    <h3>${esc(w.title)}</h3>
@@ -120,8 +134,8 @@ const rowTile = (w, line, truth, opts = {}) => {
   const pic = opts.pic ? `<span class="row-pic frame">${img(opts.pic, '', 240, 170)}</span>` : '';
   return `<li><a class="row${pic ? '' : ' row-type'}" href="${opts.href || href(w)}">${pic}<span class="row-copy"><strong>${esc(opts.title || w.title)}</strong><span class="row-line">${esc(line)}</span><span class="meta">${chip(truth)}${w && !opts.noData ? `<span class="src" title="${esc(stageOf(w.id).why)}"><span class="src-stage" data-stage="${stageOf(w.id).stage}">${esc(stageOf(w.id).label)}</span> <span data-live="${w.id}">${esc(w.data)}</span></span>` : ''}</span></span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>`;
 };
-const moreTwins = MORE_TWINS.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: w.poster || `/assets/posters/${w.id}.webp` }); }).join('\n  ');
-const homeRows = HOME.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: `/assets/posters/${w.id}.webp` }); }).join('\n  ');
+const moreTwins = MORE_TWINS.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: still('row-' + w.id, w.poster || `/assets/posters/${w.id}.webp`) }); }).join('\n  ');
+const homeRows = HOME.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: still('row-' + w.id, `/assets/posters/${w.id}.webp`) }); }).join('\n  ');
 
 // two lead cards, then rows of three; a short last row stretches so the grid never ends with a gap
 const tail = (MACHINES.length - 2) % 3;
@@ -171,15 +185,19 @@ const html = `<!doctype html>
 <meta property="og:title" content="assembl lab · small worlds, assembled"><meta property="og:description" content="Business twins, study machines and a playground, built in Aotearoa. Every world says what is simulated and what is real."><meta property="og:image" content="https://assembl-lab.vercel.app/assets/models/cafe/renders/cafe-hero.webp">
 <meta name="theme-color" content="#21121F"><link rel="icon" href="/lab/favicon.svg" type="image/svg+xml"><link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-v2/site-v2.css"><link rel="stylesheet" href="/site-v2/lab.css"><link rel="stylesheet" href="/lab/story.css">
+<link rel="stylesheet" href="/site-v2/site-v2.css"><link rel="stylesheet" href="/site-v2/lab.css"><link rel="stylesheet" href="/lab/story.css"><link rel="stylesheet" href="/lab/pc/pc.css">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <script>document.documentElement.classList.add('js');</script>
 <script src="/site-v2/site-v2.js" defer></script>
 <script src="/lab/story.js" defer></script>
+<script type="module" src="/lab/pc/home.js"></script>
 </head>
 <body class="site-v2">
 <a class="skip" href="#twins">Skip to the twins</a>
 ${nav}
 <main>
+<div class="pc-run v2-tone-plum">
+<div class="pc-stage" aria-hidden="true"><canvas id="pc-canvas"></canvas><svg class="pc-leaders"></svg></div>
 <section class="hero v2-tone-plum" aria-labelledby="hero-title">
  <div class="hero-glow" aria-hidden="true"></div>
  <div class="wrap hero-in">
@@ -193,6 +211,37 @@ ${nav}
   ${v2.parallax(v2.markAssemble({ size: 520, trigger: 'load' }), { distance: 140, offset: 'hero', className: 'hero-art' }).replace('<div class="hero-art"', '<div class="hero-art" id="mark-a" aria-hidden="true"')}
  </div>
 </section>
+<section class="jump v2-tone-plum" id="jump" aria-labelledby="jump-title">
+ <div class="wrap">
+  <div class="ch-head">
+   ${v2.eyebrow('Go straight to')}
+   <h2 class="v2-h2" id="jump-title">Every part of the lab, one step away.</h2>
+  </div>
+  ${v2.reveal(`
+  ${jumpTiles}
+  `, { tag: 'ul', className: 'jump-grid' })}
+ </div>
+</section>
+
+<section class="arch v2-tone-plum" id="architecture" aria-labelledby="arch-title">
+ <div class="wrap arch-in">
+  <div class="arch-slot" aria-hidden="true"></div>
+  <div class="arch-copy">
+   ${v2.eyebrow('Architecture lab · Plan Studio')}
+   ${v2.split({ tag: 'h2', id: 'arch-title', className: 'v2-h2', lines: ['Plans in.', { text: 'A model you can trust out.', accent: true }] })}
+   <p class="v2-lede lede v2-secondary">Upload a 2D plan. Plan Studio measures it, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and makes the client presentation.</p>
+   <div class="actions">${v2.button({ href: '/plan-studio/', label: 'Open Plan Studio', icon: 'right' })}${v2.button({ href: '/plan-studio/points/', label: 'See the point cloud', variant: 'secondary', icon: 'right' })}</div>
+   <p class="truth-note"><span class="truth" data-k="sim">Example · fictional demo hall</span><span>The building here is the studio's demo, not a client's.</span></p>
+  </div>
+  <ul class="arch-callouts">
+   <li class="arch-callout" data-anchor="entry"><strong>Measured from your PDF</strong><span class="typing">Walls, openings and rooms read from the drawing's own linework, each with its evidence.</span></li>
+   <li class="arch-callout" data-anchor="wc"><strong>NZ Building Code pre-check</strong><span class="typing">The accessible WC passes; three rooms need more ventilation. Advisory, re-run on every edit.</span></li>
+   <li class="arch-callout" data-anchor="ridge"><strong>Drawings that keep up</strong><span class="typing">Plans, elevations and a section, with revision clouds when the model changes.</span></li>
+  </ul>
+ </div>
+</section>
+<button type="button" class="pc-pause" aria-label="Pause motion" aria-pressed="false" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+</div>
 ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, className: 'v2-tone-plum lab-ticker' })}
 
 <span id="explore" class="anchor" aria-hidden="true"></span>
