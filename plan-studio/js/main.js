@@ -165,7 +165,7 @@ async function aiStatus() {
 function pickAi(k) {
   const ep = state.ai.endpoints[k]; state.aiPreset = k; $$("#aiPreset button").forEach((x) => x.classList.toggle("on", x.dataset.p === k));
   $("#aiEst").textContent = `Estimate: ${ep.est}. Confirm the current price on fal.ai.`; $("#aiNote").textContent = ep.note || "";
-  $("#btnAi").textContent = ep.kind === "video" ? (ep.guide ? `Record a ${ep.guide.seconds} s guide and make the clip` : "Make a clip from this view") : "Enhance this view";
+  $("#btnAi").textContent = ep.kind === "video" ? (ep.keyframes ? `Render ${ep.keyframes.n} keyframes and make the clip` : ep.guide ? `Record a ${ep.guide.seconds} s guide and make the clip` : "Make a clip from this view") : "Enhance this view";
 }
 $("#aiPreset").addEventListener("click", (e) => { const b = e.target.closest("button[data-p]"); if (b) pickAi(b.dataset.p); });
 $("#aiConfirm").addEventListener("change", (e) => ($("#btnAi").disabled = !e.target.checked));
@@ -193,29 +193,39 @@ $("#btnAi").addEventListener("click", async () => {
   if (!stage) await boot3d(); const b = $("#btnAi"), prog = $("#aiProg"), ep = state.ai.endpoints[state.aiPreset], preset = state.aiPreset; b.disabled = true;
   const fail = (m) => { prog.textContent = ""; alert(m); b.disabled = !$("#aiConfirm").checked; };
   let input;
+  const upload = async (blob) => {   // a signed upload straight to fal storage; returns the file's https URL
+    const up = await fetch("/api/plan-render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ upload: { content_type: blob.type, size: blob.size } }) }).then((x) => x.json());
+    if (!up.upload_url) throw new Error("upload refused: " + (up.error || "network"));
+    const put = await fetch(up.upload_url, { method: "PUT", headers: { "content-type": blob.type }, body: blob }); if (!put.ok) throw new Error("upload failed (" + put.status + ")");
+    return up.file_url;
+  };
   try {
-    if (preset === "clip-depth") {
+    if (ep.keyframes) {
+      // exact stills of the true model along the camera path, pinned to frames of the clip (24 fps)
+      const K = ep.keyframes, last = K.seconds * 24 - 1; prog.textContent = `Rendering ${K.n} keyframes…`;
+      const shots = await stage.S.pathStills(stage, { kind: state.path, n: K.n, w: K.w, h: K.h }), keyframes = [];
+      for (const [i, s] of shots.entries()) { prog.textContent = `Uploading keyframe ${i + 1} of ${shots.length}…`; keyframes.push({ image_url: await upload(await jpeg(s.blob, 0.9)), frame_index: Math.round(s.t * last) }); }
+      const move = state.path === "orbit" ? "A slow, steady orbit around the building" : "A smooth, steady walk-in: from the street, up to the entry, through it and into the main room";
+      input = { prompt: `${move}, passing exactly through each keyframe. ${PROMPT()} The building never changes between keyframes: same walls, openings, roof and materials.`, keyframes, duration: K.seconds, aspect_ratio: "16:9" };
+    } else if (preset === "clip-depth") {
       // the guide: a short approach through the real model, no label (the label goes on the result); its depth holds the geometry
       prog.textContent = "Recording the guide…"; stage.recording = true;
       const g = ep.guide, guide = await stage.S.recordFlythrough(stage, { w: g.w, h: g.h, seconds: g.seconds, kind: state.path, label: "", onProgress: (t) => (prog.textContent = `Recording the guide ${Math.round(t * 100)}%`) });
       stage.recording = false; stage.view("street"); stage.sync();
       prog.textContent = "Uploading the guide…";
-      const up = await fetch("/api/plan-render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ upload: { content_type: guide.type, size: guide.size } }) }).then((x) => x.json());
-      if (!up.upload_url) return fail("The guide clip could not be uploaded: " + (up.error || "network"));
-      const put = await fetch(up.upload_url, { method: "PUT", headers: { "content-type": guide.type }, body: guide }); if (!put.ok) return fail("The guide upload was refused (" + put.status + ").");
-      const ref = await toDataURL(await jpeg(await stage.S.still(stage, 1280, 720, ""), 0.85));
-      input = { prompt: PROMPT() + " Smooth steady camera exactly following the guide.", video_url: up.file_url, ref_image_url: ref, negative_prompt: "extra buildings, extra windows, changed roof, warped walls, people, text, watermark" };
+      const videoUrl = await upload(guide), ref = await toDataURL(await jpeg(await stage.S.still(stage, 1280, 720, ""), 0.85));
+      input = { prompt: PROMPT() + " Smooth steady camera exactly following the guide.", video_url: videoUrl, ref_image_url: ref, negative_prompt: "extra buildings, extra windows, changed roof, warped walls, people, text, watermark" };
     } else {
       const shot = await stage.S.still(stage, 1280, ep.kind === "video" ? 720 : 800, ""), img = await toDataURL(await jpeg(shot));
-      if (preset === "still-depth") input = { prompt: PROMPT(), control_lora_image_url: stage.S.depthPass(stage, 1280, 800), image_size: { width: 1280, height: 800 } };
+      if (preset === "still-depth") input = { prompt: PROMPT(), control_lora_image_url: img, image_size: { width: 1280, height: 800 } };   // fal reads its depth
       else if (preset === "still-edit") input = { prompt: PROMPT(), image_urls: [img] };
       else input = { prompt: PROMPT() + " Slow, steady camera push-in; the building does not move or change.", image_url: img };
     }
-  } catch (e) { stage.recording = false; return fail("Could not prepare the request: " + e.message); }
+  } catch (e) { stage.recording = false; return fail("Could not prepare the request: " + e.message); }   // includes a refused upload
   prog.textContent = "Sending…";
   const r = await fetch("/api/plan-render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ preset, input, confirm: true }) }).then((x) => x.json()).catch(() => null);
   if (!r?.job) return fail("The request did not start: " + (r?.error || "network") + (r?.missing ? " (" + r.missing.join(", ") + ")" : ""));
-  const label = `AI-enhanced visualisation${preset === "clip-still" || preset === "clip" ? " · illustrative motion" : ""} · ${provLabel()}`, t0 = Date.now();
+  const label = `AI-enhanced visualisation${preset === "clip-still" || preset === "clip" ? " · illustrative motion" : ep.keyframes ? " · motion between model keyframes" : ""} · ${provLabel()}`, t0 = Date.now();
   for (let i = 0; i < (ep.kind === "video" ? 300 : 90); i++) {
     await new Promise((x) => setTimeout(x, ep.kind === "video" ? 4000 : 2000));
     const s = await fetch(`/api/plan-render?job=${encodeURIComponent(r.job)}`).then((x) => x.json()).catch(() => null);
@@ -231,6 +241,8 @@ $("#btnAi").addEventListener("click", async () => {
   prog.textContent = ""; b.disabled = !$("#aiConfirm").checked;
 });
 // the client view set: five consistent cameras in one light, the way a renderer would hand them over
+// the point cloud opens on this project: handed over in this tab's session storage (stays in the browser)
+$("#btnPoints").addEventListener("click", () => { try { sessionStorage.setItem("planstudio.project", JSON.stringify(P)); } catch { /* storage blocked: the page falls back to the demo */ } });
 $("#btnSet").addEventListener("click", async () => {
   if (!stage) await boot3d(); const b = $("#btnSet"); b.disabled = true; const light = $("#lights button.on")?.dataset.light || "day";
   const set = [["street", "Street"], ["cornerA", "Corner"], ["rear", "Rear"], ["cornerB", "Opposite corner"], ["interior", "Interior"]];

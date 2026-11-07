@@ -28,14 +28,21 @@ async (page) => {
  await page.keyboard.press('Tab');const ring=await page.evaluate(()=>getComputedStyle(document.activeElement).outlineStyle);
  check(ring!=='none','focus ring visible');
  for(const w of [320,375,390]){await page.setViewportSize({width:w,height:800});await page.waitForTimeout(150);check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no horizontal scroll at ${w}px`)}
- // the hero holds one DO glass orb (as on assembl.co.nz), decorative, never on the words or buttons; no pastel cubes
- check(await page.locator('.hero .orb-still').count()===1,'one DO glass orb in the hero');
- check(await page.locator('#orb').getAttribute('aria-hidden')==='true','the orb is decorative (aria-hidden)');
+ // site-v2 (8 Nov 2026): the hero holds the flat mark A assembling from its parts (the logo), decorative, never on the words or
+ // buttons; no DO orb, no pastel cubes, no violet or lavender anywhere on the home or its stylesheets
+ check(await page.locator('.hero .v2-mark-assemble').count()===1,'one flat mark A in the hero');
+ check(await page.locator('#mark-a').getAttribute('aria-hidden')==='true','the flat mark is decorative (aria-hidden)');
+ check(await page.locator('img[src*="glass-a"], link[href*="glass-a"]').count()===0,'no glass "a" image or icon left on the home');
+ check(await page.locator('.orb-still, #orb').count()===0,'no DO orb left on the home');
+ check(await page.evaluate(()=>[...document.images].every(i=>!/assembl-assembled|logo-tile/.test(i.src))),'no logo with a tile behind it');
  check(await page.evaluate(()=>!/#F2DC7C|cubes\.js|class="still"/i.test(document.documentElement.outerHTML)),'no pastel cube stack and no yellow on the home');
+ const css=await page.evaluate(async()=>(await Promise.all(['/lab/story.css','/site-v2/lab.css','/site-v2/site-v2.css'].map(u=>fetch(u).then(r=>r.text())))).join('\n')+document.documentElement.outerHTML);
+ check(!/#(8b5cf6|a78bfa|c4b5fd|7c3aed|ddd6fe|c7b4f0|d7b3f0|6a50be|c99bda)\b|violet-|purple-/i.test(css.replace(/\/\*[\s\S]*?\*\//g,'')),'no violet or lavender colours');
+ check(await page.evaluate(()=>!/\bAssembl\b|\bAssemble\b|\bASSEMBL\b/.test(document.body.innerText.replace(/assembly/gi,''))),'brand word is lowercase assembl in the copy');
  for(const w of [1440,1024,768,390,320]){await page.setViewportSize({width:w,height:900});await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(150);
-  const hit=await page.evaluate(()=>{const o=document.querySelector('.orb-still').getBoundingClientRect();const pad=24;const r=o.width/2*1.14+pad,cx=o.left+o.width/2,cy=o.top+o.height/2;
-   return [...document.querySelectorAll('.hero h1, .hero .lede, .hero .actions .btn, .hero .truth-note, .bar')].filter(e=>{const b=e.getBoundingClientRect();const dx=Math.max(b.left-cx,0,cx-b.right),dy=Math.max(b.top-cy,0,cy-b.bottom);return Math.hypot(dx,dy)<r}).map(e=>e.className||e.tagName)});
-  check(hit.length===0,`orb clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`)}
+  const hit=await page.evaluate(()=>{const a=document.querySelector('.hero .v2-mark-assemble').getBoundingClientRect();const pad=8;
+   return [...document.querySelectorAll('.hero h1, .hero .lede, .hero .actions .v2-btn, .hero .truth-note, .v2-nav')].filter(e=>{const b=e.getBoundingClientRect();return !(b.right<a.left+pad||b.left>a.right-pad||b.bottom<a.top+pad||b.top>a.bottom-pad)}).map(e=>e.className||e.tagName)});
+  check(hit.length===0,`the mark clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`)}
  // the old Learn & create page keeps its address and lands in the story
  await page.goto('http://127.0.0.1:8341/discover/#learn');await page.waitForURL(/\/#study$/);
  check(page.url().endsWith('/#study'),'/discover/#learn lands on the study machines');

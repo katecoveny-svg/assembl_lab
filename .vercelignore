@@ -32,3 +32,8 @@
 
 # Blender source for the generic vehicle set: editable scene and script, not served.
 /assets/models/vehicles/source/
+
+# Not for public serving (also redirected away in vercel.json): the sign-in-only dealer twin landing, and the
+# Whaiao conversation demonstrator, which the practice has not approved for public use.
+/cars/dealer-twin/private/
+/whaiao-story/

@@ -1,0 +1,69 @@
+/* assembl lab: Lab-only rules on top of the ported site-v2 foundation (/site-v2/site-v2.css, from assemblnz-f0afd79d
+   at 2fa1750d8). Palette, type and buttons come from the foundation; nothing here adds a colour. Covers the shared
+   chrome every Lab page gets: the wordmark's "lab" suffix, truth chips, the hero "a" assembling on load, and the
+   injected experiment nav (#al-nav, markup from /lab/navigation.js). */
+
+/* the Lab's wordmark: the flat mark A + "assembl." + a quieter "lab" */
+.lab-wm-suffix { margin-left: -.12em; color: var(--v2-fg-2, #B8A8B2); font-weight: 400; letter-spacing: -.03em; }
+
+/* ── truth chips (IBM Plex Mono, the foundation's only mono use). Tone-aware: they read --v2-fg / --v2-accent.
+   The label carries the meaning; the mark beside it is a second cue, not colour alone:
+   Simulated = filled rose dot, Live = filled dot in the text colour, Illustrative = hollow rose ring. ── */
+.site-v2 .truth { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: var(--v2-r-pill); font: 500 11.5px/1.2 var(--v2-mono); letter-spacing: .02em; white-space: nowrap;
+  color: var(--v2-fg); background: color-mix(in srgb, var(--v2-fg) 5%, transparent); box-shadow: inset 0 0 0 1px var(--v2-line); }
+.site-v2 .truth::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--v2-accent); flex: none; }
+.site-v2 .truth[data-k='live']::before { background: var(--v2-fg); }
+.site-v2 .truth[data-k='ill']::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--v2-accent); }
+.site-v2 .src { display: inline-flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font: 500 11.5px/1.4 var(--v2-mono); color: var(--v2-fg-2); }
+.site-v2 .src-stage { padding: 3px 7px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--v2-line); font: 500 11.5px/1.2 var(--v2-mono); color: var(--v2-fg-2); }
+
+/* ── the flat mark A assembling once on load (hero). No JS or reduced motion: the whole "a" at rest. ── */
+html.js .v2-glass-assemble[data-v2-assemble='load'] .v2-glass-piece { animation: lab-piece-in 1.7s var(--v2-ease) both; animation-delay: .25s; }
+html.js .v2-glass-assemble[data-v2-assemble='load'] .v2-glass-piece:nth-child(2) { animation-delay: .34s; }
+html.js .v2-glass-assemble[data-v2-assemble='load'] .v2-glass-piece:nth-child(3) { animation-delay: .43s; }
+html.js .v2-glass-assemble[data-v2-assemble='load'] .v2-glass-piece:nth-child(4) { animation-delay: .52s; }
+@keyframes lab-piece-in { from { transform: translate(var(--px), var(--py)) rotate(var(--pr)); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
+
+/* ── the experiment nav, injected at the top of every experiment page by /lab/navigation.js ──
+   A solid plum band (the foundation's SiteNav with `solid`, not floating): it sits above each page's own artwork
+   and never covers it. #al-nav prefixes guard against each page's own global styles. */
+#al-nav.site-v2 { position: relative; z-index: 30; display: flex; align-items: center; gap: 16px; min-height: 72px; margin: 0;
+  padding: 10px max(16px, calc((100vw - 1440px) / 2 + 40px)); background: var(--v2-plum); color: var(--v2-ivory);
+  font: 400 14.5px/1.4 var(--v2-font); letter-spacing: -.005em; border: 0; border-bottom: 1px solid rgba(249, 246, 242, .08); box-shadow: none; text-align: left; }
+#al-nav.site-v2 a { text-decoration: none; border: 0; margin: 0; }
+#al-nav.site-v2 img { max-width: none; border: 0; box-shadow: none; }
+#al-nav.site-v2 .v2-wordmark { color: var(--v2-ivory); margin-right: auto; min-height: 44px; }
+#al-nav.site-v2 .al-destinations { display: flex; align-items: center; gap: clamp(4px, 1.6vw, 24px); }
+#al-nav.site-v2 .al-destinations a { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; color: rgba(249, 246, 242, .82); background: none; font-size: 14.5px; transition: color var(--v2-fast); }
+#al-nav.site-v2 .al-destinations a:hover, #al-nav.site-v2 .al-destinations a[aria-current] { color: var(--v2-ivory); }
+#al-nav.site-v2 .al-destinations a[aria-current]::after { content: ''; position: absolute; left: 50%; bottom: 6px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--v2-rose); }
+#al-nav.site-v2 .al-cta { margin-left: 8px; }
+#al-nav.site-v2 .al-menu-btn { display: none; min-height: 44px; padding: 0 18px; margin: 0; border: 0; border-radius: var(--v2-r-pill); background: transparent; color: var(--v2-ivory);
+  box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .28); font: 500 14px/1 var(--v2-font); cursor: pointer; }
+#al-nav.site-v2 .al-menu { position: absolute; top: 100%; left: 0; right: 0; z-index: 40; display: grid; gap: 2px; padding: 10px 12px 14px; background: var(--v2-aubergine); box-shadow: 0 24px 40px -24px rgba(12, 4, 11, .8); }
+#al-nav.site-v2 .al-menu[hidden] { display: none; }
+#al-nav.site-v2 .al-menu a { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 16px; border-radius: 16px; color: var(--v2-ivory); font-size: 18px; letter-spacing: -.01em; }
+#al-nav.site-v2 .al-menu a:hover { background: rgba(249, 246, 242, .06); }
+#al-nav.site-v2 .al-menu a[aria-current] { box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14); }
+#al-nav.site-v2 .al-menu .al-menu-cta { margin-top: 6px; background: var(--v2-ivory); color: var(--v2-plum); font-size: 15px; font-weight: 500; }
+#al-nav.site-v2 :is(a, button):focus-visible { outline: 2px solid var(--v2-rose); outline-offset: 3px; border-radius: 8px; }
+#al-nav.site-v2 .v2-btn:focus-visible { border-radius: var(--v2-r-pill); }
+@media (max-width: 880px) {
+  #al-nav.site-v2 { min-height: 64px; padding-left: 16px; padding-right: 12px; }
+  #al-nav.site-v2 .al-destinations, #al-nav.site-v2 .al-cta { display: none; }
+  #al-nav.site-v2 .al-menu-btn { display: inline-flex; align-items: center; }
+}
+@media (min-width: 881px) { #al-nav.site-v2 .al-menu { display: none !important; } }
+@media print { #al-nav.site-v2 { display: none; } }
+
+/* Reduced motion: the foundation's ticker (site-v2.css at 2fa1750d8) keeps its list at max-content width, so the static
+   row is clipped instead of wrapping. Local fix until the main repo has one: let the list take the row and wrap. */
+@media (prefers-reduced-motion: reduce) {
+  .site-v2 .v2-ticker-track { display: block; }
+  .site-v2 .v2-ticker-list { flex: initial; padding: 14px clamp(28px, 4vw, 64px) 14px 0; }
+  .site-v2 .v2-ticker-list li { padding-top: 8px; padding-bottom: 8px; }
+}
+
+/* Flat mark A (8 Nov 2026): the assembling pieces are inline SVG parts, not glass image quarters. */
+.v2-glass-piece svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.v2-mark-assemble { aspect-ratio: 1; }

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matariki sky explorer · assembl lab</title>
+<meta name="description" content="A Lab experiment: the Matariki star cluster, also known as the Pleiades (M45), drawn in 3D from Gaia DR3 and the HYG star database, with the pre-dawn sky from a place in Aotearoa. Educational, not production. Cultural layer is a draft pending cultural review.">
+<!-- Unlisted and not indexed until the cultural layer has been reviewed. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#240B21">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/matariki-sky/sky.css">
+<script src="/lab/navigation.js" defer></script>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js"}}</script>
+<script src="/assets/vendor/astronomy-engine/astronomy.browser.min.js" defer></script>
+<script type="module" src="/matariki-sky/sky.js"></script>
+</head>
+<body>
+<a class="skip" href="#controls">Skip to the controls</a>
+
+<header class="bar">
+ <p class="lab-flag"><span class="dot" aria-hidden="true"></span>Lab experiment, educational, not production</p>
+</header>
+
+<main id="main">
+ <section class="intro" aria-labelledby="title">
+  <h1 id="title">Matariki, from Aotearoa to the cluster.</h1>
+  <p class="lede">Matariki, also known as the Pleiades (M45), drawn from real star catalogues. Start under the pre-dawn sky from a place in Aotearoa, then fly about 444 light-years out to the cluster and turn it to see its depth.</p>
+  <p class="chips">
+   <span class="chip" data-k="data">Real catalogue positions</span>
+   <span class="chip" data-k="draft"><a href="#matariki">Cultural layer: draft, pending cultural review</a></span>
+  </p>
+ </section>
+
+ <section class="explorer" aria-label="Sky explorer">
+  <div class="view" id="view" tabindex="0" role="application"
+       aria-roledescription="3D star view"
+       aria-label="3D star view of Matariki"
+       aria-describedby="view-help">
+   <canvas id="sky" aria-hidden="true"></canvas>
+   <div class="labels" id="labels" aria-hidden="true"></div>
+   <div class="ring" id="ring" aria-hidden="true" hidden></div>
+   <p class="hud" id="hud" aria-hidden="true"></p>
+   <div class="flying" id="flying" hidden>
+    <p class="flying-note" id="flying-note">Flying out to Matariki</p>
+    <button type="button" class="btn glass small" id="skip">Skip to the cluster</button>
+   </div>
+   <noscript><p class="nojs">This explorer needs JavaScript and WebGL. The sources and dates below still apply.</p></noscript>
+   <p class="nogl" id="nogl" hidden>This device could not start WebGL, so the 3D view is not available. The rise times, star list and sources still work.</p>
+  </div>
+  <p class="help" id="view-help">Drag to look around, scroll or pinch to zoom. Keyboard: arrow keys to look or turn, plus and minus to zoom, [ and ] to step through the bright stars, Enter to show a star, F to fly, Escape to close.</p>
+
+  <div class="side">
+   <div class="panel" id="controls" tabindex="-1">
+    <div class="modes" role="group" aria-label="View">
+     <button type="button" class="mode" id="mode-sky" aria-pressed="true">Sky from here</button>
+     <button type="button" class="mode" id="mode-space" aria-pressed="false">The cluster in 3D</button>
+    </div>
+
+    <div class="group" id="sky-controls">
+     <label class="field"><span>Place</span>
+      <select id="place"></select>
+     </label>
+     <label class="field"><span>Date</span>
+      <input type="date" id="date" value="2027-06-27" min="2022-01-01" max="2052-12-31">
+     </label>
+     <div class="quick" role="group" aria-label="Matariki 2027 dates">
+      <button type="button" data-date="2027-06-25">25 June <small>holiday</small></button>
+      <button type="button" data-date="2027-06-27">27</button>
+      <button type="button" data-date="2027-06-28">28</button>
+      <button type="button" data-date="2027-06-29">29</button>
+      <button type="button" data-date="2027-06-30">30 June</button>
+     </div>
+     <p class="quick-note">Matariki 2027: public holiday Friday 25 June; Tangaroa lunar period 27–30 June (<a href="#src-mbie">source</a>).</p>
+     <label class="field"><span>Time (NZ) <output id="time-out" for="time">06:15</output></span>
+      <input type="range" id="time" min="0" max="1439" step="5" value="375">
+     </label>
+     <div class="readout" id="readout" aria-live="polite"></div>
+     <button type="button" class="btn glass" id="look">Look at Matariki</button>
+    </div>
+
+    <div class="group" id="space-controls" hidden>
+     <label class="check"><input type="checkbox" id="depth"> <span>Colour by distance</span></label>
+     <p class="legend" id="legend" hidden><span class="near">nearer</span><span class="bar-grad" aria-hidden="true"></span><span class="far">farther</span><br><span class="legend-note">Grey: no individual distance (drawn at the cluster distance). Background stars dimmed.</span></p>
+     <div class="row-btns">
+      <button type="button" class="btn glass" id="side">View from the side</button>
+      <button type="button" class="btn glass" id="front">View from Earth’s side</button>
+     </div>
+    </div>
+
+    <button type="button" class="btn paper" id="fly">Fly to Matariki</button>
+   </div>
+
+   <div class="panel stars">
+    <h2 class="h-panel" id="bright-title">Bright stars of the cluster</h2>
+    <ol class="star-list" id="star-list" aria-labelledby="bright-title"></ol>
+   </div>
+
+   <aside class="panel info" id="info" aria-labelledby="info-title" hidden tabindex="-1">
+    <div class="info-head">
+     <h2 class="h-panel" id="info-title">Star</h2>
+     <button type="button" class="close" id="info-close" aria-label="Close star details">×</button>
+    </div>
+    <div id="info-body"></div>
+   </aside>
+   <p class="sr-only" id="announce" aria-live="polite"></p>
+  </div>
+ </section>
+
+ <div class="sheet">
+  <section class="block" id="matariki" aria-labelledby="matariki-title">
+   <p class="draft-flag">Draft, pending cultural review</p>
+   <h2 id="matariki-title">Matariki</h2>
+   <p class="lede-s">Matariki is the Māori name for this star cluster. It is also known as the Pleiades, and in Messier’s catalogue as M45. This page puts Matariki first and shows both names.</p>
+
+   <h3>The names of the stars</h3>
+   <p>Te Papa lists the stars of Matariki as:</p>
+   <ul class="names" lang="mi">
+    <li>Matariki</li><li>Pōhutukawa</li><li>Tupuānuku</li><li>Tupuārangi</li><li>Waitī</li><li>Waitā</li><li>Ururangi</li><li>Waipunarangi</li><li>Hiwa-i-te-Rangi</li>
+   </ul>
+   <p class="cite">Spellings as published by Te Papa Tongarewa in <a href="https://tepapa.govt.nz/digital-museum/explore-digital-museum/matariki-maori-new-year/matariki-regional-variations/matariki" rel="noopener">“The Matariki star cluster – are there seven or nine stars?”</a>, checked 7 November 2026. Te Papa notes that “the information that you will find on this website and in other sources will differ because different iwi share different kōrero regarding Matariki.”</p>
+   <p>Which name belongs to which star is <strong>not shown</strong> in this draft. Te Papa’s page does not match the names to individual stars, and other sources spell some names differently, so the matching and the spellings are left for the cultural advisers to confirm.</p>
+
+   <div class="slot" role="note" aria-label="Placeholder for kōrero">
+    <p class="slot-title">Kōrero to be provided by cultural advisers.</p>
+    <p>Nothing here describes what each star represents. That kōrero is not written by assembl.</p>
+   </div>
+
+   <h3 id="dates">Matariki 2027</h3>
+   <dl class="facts">
+    <div><dt>Public holiday</dt><dd>Friday 25 June 2027</dd></div>
+    <div><dt>Tangaroa lunar period</dt><dd>27–30 June 2027</dd></div>
+   </dl>
+   <p class="cite" id="src-mbie">From the Matariki Advisory Group’s <a href="https://www.mbie.govt.nz/assets/matariki-dates-2022-to-2052-matariki-advisory-group.pdf" rel="noopener">Matariki dates 2022 to 2052</a> (MBIE).</p>
+  </section>
+
+  <section class="block" id="how" aria-labelledby="how-title">
+   <h2 id="how-title">How this is made.</h2>
+   <ul class="plain">
+    <li><strong>Cluster stars.</strong> <span id="n-members">About 450</span> stars brighter than Gaia magnitude 15, picked from Gaia DR3 by where they are, how far away they are (parallax) and how they move across the sky (proper motion). It is a simple selection, not a published membership list, so a few field stars may be in it and some members are missed.</li>
+    <li><strong>Depth.</strong> A star is placed at its own Gaia DR3 distance when its parallax is better than 2% and its astrometry is clean. Otherwise, including the brightest stars, it is drawn at the cluster distance along its own line of sight: 136.2 ± 1.2 parsecs, about 444 light-years (Melis et al. 2014). Individual distances still carry about a parsec of parallax noise, so part of the depth you see is measurement.</li>
+    <li><strong>The sky behind.</strong> <span id="n-sky">About 8,900</span> stars to magnitude 6.5 from the HYG database, at their catalogue distances. Brightness changes with your distance from each star as you fly.</li>
+    <li><strong>Colour.</strong> Approximate, from each star’s colour index (B−V or Gaia BP−RP) converted to a temperature. Dust is ignored.</li>
+    <li><strong>Sky from here.</strong> Rise times, twilight and positions come from Astronomy Engine for the place and NZ time you choose, at sea level with a flat horizon. Rise times include atmospheric refraction; the star field does not.</li>
+   </ul>
+  </section>
+
+  <section class="block" id="sources" aria-labelledby="sources-title">
+   <h2 id="sources-title">Sources and licences.</h2>
+   <ul class="plain sources">
+    <li><strong>Gaia DR3.</strong> This work has made use of data from the European Space Agency (ESA) mission <a href="https://www.cosmos.esa.int/gaia" rel="noopener">Gaia</a>, processed by the Gaia Data Processing and Analysis Consortium (<a href="https://www.cosmos.esa.int/web/gaia/dpac/consortium" rel="noopener">DPAC</a>). Funding for the DPAC has been provided by national institutions, in particular the institutions participating in the Gaia Multilateral Agreement. Gaia data: ESA/Gaia/DPAC, <a href="https://creativecommons.org/licenses/by-sa/3.0/igo/" rel="noopener">CC BY-SA 3.0 IGO</a>.</li>
+    <li><strong>HYG database v4.4</strong> by David Nash (astronexus), <a href="https://codeberg.org/astronexus/hyg" rel="noopener">codeberg.org/astronexus/hyg</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener">CC BY-SA 4.0</a>. Background stars, HIP and HD numbers, IAU names and spectral types.</li>
+    <li><strong>Our star file</strong>, <a href="/matariki-sky/data/stars.json">stars.json</a>, is derived from both and shared under <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener">CC BY-SA 4.0</a>.</li>
+    <li><strong>Cluster distance.</strong> C. Melis, M. J. Reid, A. J. Mioduszewski, J. R. Stauffer and G. C. Bower (2014), “A VLBI resolution of the Pleiades distance controversy”, <em>Science</em> 345, 1029, <a href="https://doi.org/10.1126/science.1256101" rel="noopener">doi:10.1126/science.1256101</a>.</li>
+    <li><strong>Astronomy Engine</strong> 2.1.19 by Don Cross, <a href="https://github.com/cosinekitty/astronomy" rel="noopener">MIT licence</a>. <strong>three.js</strong> r170, MIT licence.</li>
+    <li><strong>Star names</strong>: Te Papa Tongarewa (above). <strong>Dates</strong>: Matariki Advisory Group via MBIE (above).</li>
+   </ul>
+  </section>
+ </div>
+</main>
+
+<footer class="foot">
+ <p><a href="/">Back to the Lab</a> · Lab experiment, educational, not production · Cultural layer: draft, pending cultural review</p>
+</footer>
+</body>
+</html>

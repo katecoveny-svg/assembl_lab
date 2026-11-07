@@ -327,7 +327,7 @@ details.vz-more[open]>summary{margin-bottom:8px}
     </div>
     <div class="hdr-r">
       <div class="wm" id="wm" title="assembl">assembl<small id="wmSub">journey twin</small></div>
-      <label class="rpick"><span>Preview as</span><select id="rSel" aria-label="Preview the twin as one retailer; names and public market share from the Electricity Authority"><option value="">assembl (generic)</option></select></label>
+      <label class="rpick"><span>Market data for</span><select id="rSel" aria-label="Show one real retailer's public market share alongside the generic twin; names and shares from the Electricity Authority"><option value="">assembl (generic)</option></select></label>
       <span class="rtheme" id="rTheme" hidden></span>
       <div class="modes" role="group" aria-label="The retailer as it is, or with every proposed lever on"><button type="button" data-mode="asis" aria-pressed="true">As it is</button><button type="button" data-mode="all" aria-pressed="false">Every lever on</button></div>
     </div>
@@ -1072,11 +1072,16 @@ const WH = K.WH, RT = K.RT;
 
 // ---------------- the retailer context (white-label). R is null for the generic assembl view, or {slug, name, code, sharePct, rank, of}
 // from the Electricity Authority's retailer list. Set from ?r=<slug> / ?retailer=, from #r-<slug> (artifact viewers pass plain anchors),
-// from the "Preview as" picker, or window.__energy.setRetailer(slug). Names and public market share only: no logo, colour or wordmark of any
+// from the "Market data for" picker, or window.__energy.setRetailer(slug). Names and public market share only: no logo, colour or wordmark of any
 // real retailer is reproduced; the accent hue is a proposal derived from the slug.
+// Public build: choosing a real retailer adds only its public market data (name, share of connections, regional footprint). The page
+// stays an independent assembl concept: no "prepared for", no retailer wordmark, title, theme or app header, and no simulated cost
+// put in a real company's name. Set WHITE_LABEL true only in a private pitch build that the named retailer has agreed to see.
+const WHITE_LABEL = false;
 const PLACE = (document.documentElement.dataset.place || document.documentElement.dataset.feedsPlace || "auckland").toLowerCase(), PL = K.PLACE_MAP[PLACE] || K.PLACE_MAP.auckland;
 let R = null, wantSlug = null;
-const rn = () => R ? R.name : "Your power company", poss = () => R ? R.name + "'s" : "your power company's", possT = () => R ? R.name + "'s" : "the retailer's";
+const WL = () => WHITE_LABEL ? R : null; // the retailer the page speaks as: only ever in a private white-label build
+const rn = () => WL() ? R.name : "Your power company", poss = () => R ? R.name + "'s" : "your power company's", possT = () => WL() ? R.name + "'s" : "the retailer's";
 const MAC = { Taupo: "Taupō", Whangarei: "Whangārei", Otorohanga: "Ōtorohanga" }, locName = s => MAC[s] || s;
 const LEDE0 = $("lede").textContent;
 function slugFromUrl() { try { const q = new URLSearchParams(location.search), s = q.get("r") || q.get("retailer"); if (s) return s.toLowerCase(); } catch (e) { } const m = /^#r-([a-z0-9-]+)/i.exec(location.hash || ""); return m ? m[1].toLowerCase() : null; }
@@ -1087,16 +1092,17 @@ function picker() { const sel = $("rSel"); sel.innerHTML = `<option value="">ass
 $("rSel").onchange = () => setRetailer($("rSel").value || null);
 addEventListener("hashchange", () => { const s = slugFromUrl(); if ((s || null) !== wantSlug) setRetailer(s, true); });
 function applyRetailer() { const root = document.documentElement;
-  if (R) { root.dataset.retailer = R.slug; root.style.setProperty("--brand-h", K.hueFor(R.slug)); } else { delete root.dataset.retailer; root.style.removeProperty("--brand-h"); }
-  $("wm").firstChild.textContent = R ? R.name : "assembl"; $("wm").title = R ? `Proposed theme — replace with ${R.name}'s brand kit` : "assembl"; $("wmSub").textContent = R ? "journey twin · prepared by assembl" : "journey twin";
-  $("eyebrow").textContent = R ? `Energy retailer journey twin · prepared by assembl for ${R.name} · demonstration` : "Energy retailer journey twin · independent assembl concept";
-  $("title").textContent = R ? `Four journeys through ${R.name}` : "Four journeys through one power company";
-  $("lede").textContent = R ? `${R.name}, which bills ${fmt(R.sharePct, 1)}% of New Zealand's electricity connections (#${R.rank} of ${R.of} retailers, Electricity Authority), seen from eight simulated homes on one street: a household switching in, one moving house, one opening a bill 40% higher than last month's, and one plugging in a new EV. The households, journeys and figures are simulated; the name and market share are the only real things on this page. The part that matters most is the wait, and what the customer sees while they wait.` : LEDE0;
-  $("rTheme").hidden = !R; $("rTheme").innerHTML = R ? `<i></i>Proposed theme · replace with ${esc(R.name)}'s brand kit` : ""; $("rSel").value = R ? R.slug : "";
-  $("footSign").textContent = R ? R.name : "assembl"; $("wlFoot").hidden = !R;
-  $("wlFoot").textContent = R ? `Prepared by assembl for ${R.name} · demonstration. ${R.name}'s name and share of connections are public data from the Electricity Authority; everything else here is simulated or an estimate, and no ${R.name} plan, price, system or customer is represented. The colours are a proposed theme, not ${R.name}'s brand.` : "";
-  document.querySelectorAll("[data-r]").forEach(el => { if (el.dataset.r0 == null) el.dataset.r0 = el.textContent; el.textContent = R ? (el.dataset.r.includes("{R}") ? el.dataset.r.replace("{R}", R.name) : R.name) : el.dataset.r0; });
-  document.title = R ? `${R.name} · Energy Retailer Journey Twin` : "Energy Retailer Journey Twin";
+  const W = WL();
+  if (W) { root.dataset.retailer = R.slug; root.style.setProperty("--brand-h", K.hueFor(R.slug)); } else { delete root.dataset.retailer; root.style.removeProperty("--brand-h"); }
+  $("wm").firstChild.textContent = W ? R.name : "assembl"; $("wm").title = W ? `Proposed theme — replace with ${R.name}'s brand kit` : "assembl"; $("wmSub").textContent = W ? "journey twin · prepared by assembl" : "journey twin";
+  $("eyebrow").textContent = W ? `Energy retailer journey twin · prepared by assembl for ${R.name} · demonstration` : R ? `Energy retailer journey twin · independent assembl concept · ${R.name}'s public market data` : "Energy retailer journey twin · independent assembl concept";
+  $("title").textContent = W ? `Four journeys through ${R.name}` : "Four journeys through one power company";
+  $("lede").textContent = R && !W ? `A generic New Zealand electricity retailer, not ${R.name} or any real one, seen from eight simulated homes on one street: a household switching in, one moving house, one opening a bill 40% higher than last month's, and one plugging in a new EV. For market context, ${R.name} bills ${fmt(R.sharePct, 1)}% of New Zealand's electricity connections (#${R.rank} of ${R.of} retailers, Electricity Authority); that public figure is the only thing on this page about ${R.name}. The part that matters most is the wait, and what the customer sees while they wait.` : R ? `${R.name}, which bills ${fmt(R.sharePct, 1)}% of New Zealand's electricity connections (#${R.rank} of ${R.of} retailers, Electricity Authority), seen from eight simulated homes on one street: a household switching in, one moving house, one opening a bill 40% higher than last month's, and one plugging in a new EV. The households, journeys and figures are simulated; the name and market share are the only real things on this page. The part that matters most is the wait, and what the customer sees while they wait.` : LEDE0;
+  $("rTheme").hidden = !R; $("rTheme").innerHTML = W ? `<i></i>Proposed theme · replace with ${esc(R.name)}'s brand kit` : R ? `Public market data only · not affiliated with ${esc(R.name)}` : ""; $("rSel").value = R ? R.slug : "";
+  $("footSign").textContent = W ? R.name : "assembl"; $("wlFoot").hidden = !R;
+  $("wlFoot").textContent = R && !W ? `Independent assembl concept, not prepared for or endorsed by ${R.name}. ${R.name}'s name and share of connections are public data from the Electricity Authority; the retailer, households, journeys and figures are simulated or estimates, and no ${R.name} plan, price, system or customer is represented.` : R ? `Prepared by assembl for ${R.name} · demonstration. ${R.name}'s name and share of connections are public data from the Electricity Authority; everything else here is simulated or an estimate, and no ${R.name} plan, price, system or customer is represented. The colours are a proposed theme, not ${R.name}'s brand.` : "";
+  document.querySelectorAll("[data-r]").forEach(el => { if (el.dataset.r0 == null) el.dataset.r0 = el.textContent; el.textContent = W ? (el.dataset.r.includes("{R}") ? el.dataset.r.replace("{R}", R.name) : R.name) : el.dataset.r0; });
+  document.title = W ? `${R.name} · Energy Retailer Journey Twin` : "Energy Retailer Journey Twin";
   if (Y) { phone(true); rates(); } }
 
 // ---------------- 3D
@@ -1220,9 +1226,9 @@ function ratesResidential() { const T = K.tariffFor(PLACE), N = T.national, me =
     VZ.rows(rows, { lw: "7em", vw: "3.6em", aria: `Residential price, lines and energy: ${me} ${fmt(T.totalCents, 1)} cents, New Zealand ${fmt(N.totalCents, 1)} cents per kilowatt hour` }) + VZ.legend([["var(--brand)", "lines"], ["color-mix(in srgb,var(--brand) 42%,transparent)", "energy, retail and other"]]) +
     `<div class="rstrip" role="img" aria-label="${T.of} places from cheapest to dearest, ${me} marked at number ${T.rank}">${strip}</div><p class="src">All ${T.of} places MBIE surveys, cheapest to dearest, ${esc(me)} marked.</p>` +
     `<p class="src foot">A modelled average across every retailer in the area, not any retailer's plan · survey of ${longDate(T.surveyDate)}. ${srcLink(T.source, "MBIE, Quarterly Survey of Domestic Electricity Prices")}</p>`; }
-function ratesPlan() { const who = R ? R.name : "a retailer", p = R ? R.name + "'s" : "a retailer's";
-  $("rPlan").innerHTML = `<h3><span>${esc(p)} plan here</span>${lab("data", "Your data · not connected")}</h3><div class="rslot"><span class="v">—</span><span>${esc(p[0].toUpperCase() + p.slice(1))} tariff appears here when ${R ? esc(R.name) : "the retailer"} connects its plan data. No public dataset carries retailer plans, so this twin never shows a price it has not been given.</span></div>` +
-    `<p class="src foot">Until then, the journeys on the phone quote MBIE's area average as an Estimate and say so. Connect the plan through the data contract below${R ? `; ${esc(who)} keeps its own figures in its own tab` : ""}.</p>`; }
+function ratesPlan() { const W = WL(), who = W ? R.name : "a retailer", p = W ? R.name + "'s" : "a retailer's";
+  $("rPlan").innerHTML = `<h3><span>${esc(p)} plan here</span>${lab("data", "Your data · not connected")}</h3><div class="rslot"><span class="v">—</span><span>${esc(p[0].toUpperCase() + p.slice(1))} tariff appears here when ${W ? esc(R.name) : "the retailer"} connects its plan data. No public dataset carries retailer plans, so this twin never shows a price it has not been given.</span></div>` +
+    `<p class="src foot">Until then, the journeys on the phone quote MBIE's area average as an Estimate and say so. Connect the plan through the data contract below${W ? `; ${esc(who)} keeps its own figures in its own tab` : ""}.</p>`; }
 function ratesWho() { const G = K.regionShare(PLACE, 8), mine = R && R.slug, hi = Math.max(10, ...G.top.map(r => r.sharePct)), dim = "color-mix(in srgb,var(--ink) 30%,transparent)";
   const rows = G.top.map(r => ({ label: esc(r.name), value: r.sharePct, color: r.slug === mine ? "var(--brand)" : dim, cls: r.slug === mine ? "me" : "", text: fmt(r.sharePct, 1) + "%", tip: `${fmt(r.sharePct, 1)}% of the region's connections\n${r.name} · ${fmt(r.icps)} ICPs · ${G.region}` }));
   if (G.others) rows.push({ label: `${G.othersN} others`, value: G.others / G.total * 100, color: "var(--vz0)", text: fmt(G.others / G.total * 100, 1) + "%", tip: `${fmt(G.others / G.total * 100, 1)}% between ${G.othersN} smaller retailers\n${fmt(G.others)} ICPs · ${G.region}` });

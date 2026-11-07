@@ -57,7 +57,7 @@ button,input,select{font:inherit;color:inherit} button{cursor:pointer;-webkit-ta
 
 /* ---------- top, hero */
 .top{display:flex;align-items:center;gap:18px;padding:10px clamp(16px,3vw,32px);position:sticky;top:0;z-index:60;border-radius:0}
-.brand{display:flex;align-items:center;gap:6px;text-decoration:none;font-weight:600} .brand svg{width:22px;height:22px;fill:none;stroke:var(--plum);stroke-width:1.8;stroke-linejoin:round} .brand span{color:var(--rose);font-weight:400}
+.brand{display:flex;align-items:center;gap:6px;text-decoration:none;font-weight:600} .brand svg{width:22px;height:22px;fill:none;stroke:var(--plum);stroke-width:1.8;stroke-linejoin:round} .brand img{width:24px;height:24px;flex:none;display:block} .brand span{color:var(--rose);font-weight:400}
 .top nav{display:flex;gap:2px;margin-left:auto;overflow-x:auto;scrollbar-width:none} .top nav::-webkit-scrollbar{display:none} .top nav a{text-decoration:none;font-size:.86rem;padding:7px 11px;border-radius:var(--r-pill);white-space:nowrap;transition:background var(--dur),transform var(--dur) var(--ease-out)} .top nav a:hover{background:var(--chalk);transform:translateY(-1px)}
 .top .pill{display:none}@media(min-width:960px){.top .pill{display:inline-flex}}
 .hero{position:relative;isolation:isolate;padding:clamp(36px,6vw,80px) clamp(16px,3vw,32px) clamp(24px,4vw,44px);max-width:1400px;margin:0 auto;overflow:hidden}

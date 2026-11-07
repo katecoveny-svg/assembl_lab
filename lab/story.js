@@ -1,21 +1,9 @@
 // assembl lab home: small enhancements on top of a complete static page (see scripts/build-lab-home.cjs).
-// 2. The DO glass orb: a small WebGL2 scene in the hero, loaded after first paint, skipped for reduced motion.
+// Motion (split-text headlines, reveals, parallax, the glass "a" assembling) is /site-v2/site-v2.js, ported from
+// assembl.co.nz on 8 Nov 2026; it replaced the DO glass orb (lab/orb.js), which carried lilac light.
 // 3. Live labels: /feeds.js fires "assembl:live"; the static source lines stay as the fallback.
 (() => {
   'use strict';
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-
-  /* 2 ── DO glass orb ── */
-  const host = document.getElementById('orb');
-  function startOrb() {
-    if (!host || reduced.matches) return;
-    const probe = document.createElement('canvas');
-    if (!probe.getContext('webgl2')) return;
-    import('/lab/orb.js').then(m => m.mount(host)).catch(() => { /* the still orb stays */ });
-  }
-  if (document.readyState === 'complete') setTimeout(startOrb, 200);
-  else addEventListener('load', () => (window.requestIdleCallback || setTimeout)(startOrb, { timeout: 1200 }));
-
   /* 3 ── live labels ── */
   function liveLabels(j) {
     const f = id => j && j.feeds && j.feeds[id] && !j.feeds[id].error ? j.feeds[id] : null;
