@@ -180,7 +180,7 @@ const steps=[
   trap:"Saying a vacuum stops radiation. Radiation can cross a vacuum; the shiny surfaces reduce it.",chips:["mug","flask"],onStep:()=>{s.tc=0}},
  {k:"circuit",lab:"Circuits",cap:"Turn up the voltage or change the lamp's resistance. The current, the power and the brightness follow V = IR and P = VI.",speed:1,speedLabel:"live",controls:["play","V","R"],
   big:"<b>The big idea:</b> voltage pushes, resistance resists, and current is the result. Power is the rate electrical energy is transformed.",
-  exam:"With a 12 V battery and a 24 Ω lamp, the current is I = V ÷ R = 12 ÷ 24 = 0.5 A. The power is P = VI = 12 × 0.5 = 6 W, so the lamp transforms 6 joules of electrical energy into light and heat every second.",
+  exam:"Worked example (fixed values, independent of the sliders): with a 12 V battery and a 24 Ω lamp, the current is I = V ÷ R = 12 ÷ 24 = 0.5 A. The power is P = VI = 12 × 0.5 = 6 W, so the lamp transforms 6 joules of electrical energy into light and heat every second.",
   trap:"Writing the unit of power as J. Power is in watts: joules per second.",chips:["current","power"]},
  {k:"test",lab:"Test yourself",cap:"Use the sliders to set up each one, then press Check. The machine marks you with the same formulas it runs.",speed:0,controls:["m","h","km","kP","V","R"],
   big:"<b>Exam tip:</b> write the formula, substitute with units, give the answer with units, then say what it means in the context.",
