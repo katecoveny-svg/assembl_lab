@@ -377,7 +377,7 @@ export async function createTeardown(cfg) {
   let narrowView = innerWidth <= 700;
   function aspectDist(v) {
     const a = camera.aspect || 1;
-    return {...v, dist: (narrowView ? (v.narrowDist ?? v.dist ?? 60) : (v.dist ?? 60)) * (a < 0.62 ? Math.min(1.35, 0.62 / a) : 1)};
+    return {...v, target: narrowView ? (v.narrowTarget ?? v.target) : v.target, dist: (narrowView ? (v.narrowDist ?? v.dist ?? 60) : (v.dist ?? 60)) * (a < 0.62 ? Math.min(1.35, 0.62 / a) : 1)};
   }
   function setView(k, instant = reduce) {
     const v = views[k];
