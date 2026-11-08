@@ -2,6 +2,7 @@
 // plum ground with a soft lift, a six-stop plum → rose → ivory tone ramp, iridescence on highlights only, premultiplied additive
 // accumulation (dense places brighten, never blow out), a soft bloom, sparkles, assembling with a stagger, a reading scan and
 // depth fade. Forms are plain arrays (positions, light 0–1, kind) and morph into each other, so one cloud can carry a journey.
+// The main repo ports this file as components/pointcloud/engine.js: keep the two in step.
 import * as THREE from "three";
 
 export const TONES = ["#3A2238", "#5E3A58", "#8E6585", "#D9BACB", "#F0DCE6", "#F9F6F2"];
@@ -11,7 +12,10 @@ export const KIND = { surface: 0, edge: 1, ground: 2, highlight: 3 };
 const KEY = new THREE.Vector3(-0.45, 0.8, 0.55).normalize();          // key light: above, front, left
 
 export function rng(seed = 1) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const vec = (hex) => { const c = new THREE.Color(hex); return `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; };
+// a hex colour as a GLSL vec3 of its sRGB components, unchanged. Since three r152 a THREE.Color holds linear values, and these shaders
+// write straight to the screen with no output conversion, so passing c.r/c.g/c.b drew every tone far too dark (#21121F came out
+// about #060205, a near-black box on the plum page). Same fix as components/pointcloud/engine.js in the main repo (PR #1832).
+const vec = (hex) => { const c = new THREE.Color(hex).getRGB({ r: 0, g: 0, b: 0 }, THREE.SRGBColorSpace); return `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; };
 
 // ------------------------------------------------------------------------------------------------ forms
 // A form: { n, pos: Float32Array(n*3), light: Float32Array(n), kind: Uint8Array(n), anchors: { name: [x,y,z] } }
@@ -167,8 +171,12 @@ void main() { vec4 s = texture2D(tSrc, vUv) * 0.2270270270;
   s += (texture2D(tSrc, vUv + uDir * 1.3846153846) + texture2D(tSrc, vUv - uDir * 1.3846153846)) * 0.3162162162;
   s += (texture2D(tSrc, vUv + uDir * 3.2307692308) + texture2D(tSrc, vUv - uDir * 3.2307692308)) * 0.0702702703; gl_FragColor = s; }`;
 const FINAL = /* glsl */ `
-uniform sampler2D tCloud, tBloom; uniform vec2 uLiftAt; uniform float uAspect, uBloom; varying vec2 vUv;
+uniform sampler2D tCloud, tBloom; uniform vec2 uLiftAt; uniform float uAspect, uBloom, uClear; varying vec2 vUv;
 void main() {
+  if (uClear > 0.5) {                            // no ground (stills for a page that is already plum): premultiplied light over clear
+    vec4 c = texture2D(tCloud, vUv); vec3 col = c.rgb + texture2D(tBloom, vUv).rgb * uBloom;
+    gl_FragColor = vec4(col, clamp(max(c.a, max(col.r, max(col.g, col.b))), 0.0, 1.0)); return;
+  }
   vec2 q = (vUv - uLiftAt) * vec2(uAspect, 1.0);
   vec3 bg = mix(${vec(LIFT)}, ${vec(GROUND)}, smoothstep(0.05, 1.3, length(q)));
   vec4 c = texture2D(tCloud, vUv); vec3 col = bg * (1.0 - c.a) + c.rgb + texture2D(tBloom, vUv).rgb * uBloom;
@@ -181,13 +189,13 @@ void main() {
 // colour with ADDITIVE_PREMULTIPLIED below.
 export const ADDITIVE_PREMULTIPLIED = { transparent: true, depthWrite: false, depthTest: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor,
   blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor };
-export function createPipeline(renderer, { bloom = 0.7 } = {}) {
+export function createPipeline(renderer, { bloom = 0.7, clear = false } = {}) {
   const rtOpt = { type: THREE.HalfFloatType, depthBuffer: false };
   const acc = new THREE.WebGLRenderTarget(4, 4, rtOpt), cloud = new THREE.WebGLRenderTarget(4, 4, rtOpt), hA = new THREE.WebGLRenderTarget(2, 2, rtOpt), hB = new THREE.WebGLRenderTarget(2, 2, rtOpt);
   const quadScene = new THREE.Scene(), quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); quadScene.add(quad);
   const mk = (frag, u) => new THREE.ShaderMaterial({ uniforms: u, vertexShader: QUAD_V, fragmentShader: frag, depthTest: false, depthWrite: false });
   const resolveM = mk(RESOLVE, { tAcc: { value: null } }), blurM = mk(BLUR, { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } });
-  const finalM = mk(FINAL, { tCloud: { value: null }, tBloom: { value: null }, uLiftAt: { value: new THREE.Vector2(0.62, 0.5) }, uAspect: { value: 1 }, uBloom: { value: bloom } });
+  const finalM = mk(FINAL, { tCloud: { value: null }, tBloom: { value: null }, uLiftAt: { value: new THREE.Vector2(0.62, 0.5) }, uAspect: { value: 1 }, uBloom: { value: bloom }, uClear: { value: clear ? 1 : 0 } });
   const pass = (m, target) => { quad.material = m; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
   return {
     setLift: (x, y) => finalM.uniforms.uLiftAt.value.set(x, y), setBloom: (b) => (finalM.uniforms.uBloom.value = b),
@@ -199,7 +207,7 @@ export function createPipeline(renderer, { bloom = 0.7 } = {}) {
       blurM.uniforms.tSrc.value = hA.texture; blurM.uniforms.uDir.value.set(0, 1.6 / hA.height); pass(blurM, hB);
       blurM.uniforms.tSrc.value = hB.texture; blurM.uniforms.uDir.value.set(3.2 / hA.width, 0); pass(blurM, hA);
       blurM.uniforms.tSrc.value = hA.texture; blurM.uniforms.uDir.value.set(0, 3.2 / hA.height); pass(blurM, hB);
-      finalM.uniforms.tCloud.value = cloud.texture; finalM.uniforms.tBloom.value = hB.texture; renderer.setClearColor(GROUND, 1); pass(finalM, target);
+      finalM.uniforms.tCloud.value = cloud.texture; finalM.uniforms.tBloom.value = hB.texture; renderer.setClearColor(GROUND, clear ? 0 : 1); pass(finalM, target);
     },
     dispose() { [acc, cloud, hA, hB].forEach((t) => t.dispose()); },
   };
@@ -220,9 +228,12 @@ vec3 pcIrid(float k) {
 }
 vec3 pcLook(float L, float k) { vec3 c = pcRamp(L); if (L > 0.7) c = mix(c, pcIrid(k), min(0.6, (L - 0.7) / 0.3 * 0.6)); return c; }`;
 
-export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio, sizeScale = 1, sway: swayOn = true } = {}) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: false });
-  const PR = pixelRatio ?? Math.min(window.devicePixelRatio || 1, 1.75); renderer.setPixelRatio(PR); renderer.setClearColor(GROUND, 1);
+// clear: draw no ground, for stills shown on a page that is already plum (the PNG keeps its alpha, so no box edge ever shows)
+export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio, sizeScale = 1, sway: swayOn = true, clear = false } = {}) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: clear, premultipliedAlpha: true, powerPreference: "high-performance", preserveDrawingBuffer: false });
+  const PR = pixelRatio ?? Math.min(window.devicePixelRatio || 1, 1.75); renderer.setPixelRatio(PR); renderer.setClearColor(GROUND, clear ? 0 : 1);
+  // paint the plum ground at once: an opaque WebGL canvas is black until its first frame
+  if (!clear) { renderer.setRenderTarget(null); renderer.clear(); }
   const N = budget ?? (Math.min(window.innerWidth, window.innerHeight) < 700 ? 80000 : 300000);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50), group = new THREE.Group(); scene.add(group);
   camera.position.set(0, 0.55, 3.4); camera.lookAt(0, 0.32, 0);
@@ -235,7 +246,7 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   const mat = new THREE.ShaderMaterial({ uniforms: U, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, depthTest: false,
     blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; group.add(pts);
-  const pipe = createPipeline(renderer);
+  const pipe = createPipeline(renderer, { clear });
   let W = 1, H = 1;
   function resize() {
     const w = canvas.clientWidth || canvas.parentElement.clientWidth, h = canvas.clientHeight || canvas.parentElement.clientHeight; if (w === W && h === H) return; W = w; H = h;
@@ -263,13 +274,13 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
     cur = null; setForm(sc, { offset: opts.offset, scale: 1, tilt: opts.tilt, immediate: true }); setForm(f, { ...opts, ms: opts.ms ?? 3200 });
   }
   function scan(ms = 2600, y0 = -0.05, y1 = 1.2) { if (reduceMotion) return; scanT = { t0: performance.now(), ms, y0, y1 }; }
-  let scanT = null, sway = 0, paused = false, running = false, onFrame = null;
+  let scanT = null, sway = 0, swayAmp = 1, paused = false, running = false, onFrame = null;
   function frame(now) {
     if (!running) return; requestAnimationFrame(frame); if (paused) return;
     U.uTime.value = now / 1000;
     if (tween) { const k = Math.min(1, (now - tween.t0) / tween.ms); U.uT.value = k; if (k >= 1) { tween = null; cur = next; } }
     if (scanT) { const k = (now - scanT.t0) / scanT.ms; if (k >= 1) { scanT = null; U.uScan.value = 0; } else { U.uScan.value = Math.sin(Math.PI * k); U.uScanY.value = scanT.y0 + (scanT.y1 - scanT.y0) * k; } }
-    if (!reduceMotion && swayOn) { sway = Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08; U.uSway.value = sway; }
+    if (!reduceMotion && swayOn) { sway = (Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08) * swayAmp; U.uSway.value = sway; }
     onFrame?.(now); render();
   }
   function start() { if (running) return; running = true; requestAnimationFrame(frame); }
@@ -283,5 +294,5 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   }
   return { N, renderer, camera, group, uniforms: U, setForm, assembleFrom, scan, start, stop, render, project, resize,
     setLift: pipe.setLift, pause: (v) => { paused = v; if (!v) render(); }, get paused() { return paused; }, set onFrame(fn) { onFrame = fn; },
-    morphing: () => !!tween, dispose: () => { stop(); geo.dispose(); mat.dispose(); pipe.dispose(); renderer.dispose(); } };
+    setSway: (a) => { swayAmp = a; }, morphing: () => !!tween, dispose: () => { stop(); geo.dispose(); mat.dispose(); pipe.dispose(); renderer.dispose(); } };
 }

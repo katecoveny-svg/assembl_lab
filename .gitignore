@@ -5,3 +5,4 @@ node_modules
 assets/models/cafe/renders/*.png
 *.blend1
 study/share/reels/
+tools/pointcloud/.cache/

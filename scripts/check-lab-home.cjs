@@ -30,9 +30,18 @@ async (page) => {
  for(const w of [320,375,390]){await page.setViewportSize({width:w,height:800});await page.waitForTimeout(150);check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no horizontal scroll at ${w}px`)}
  // point cloud (Nov 2026): the hero holds the twins as one small world (a point-cloud diorama, with a still for no WebGL), decorative,
  // never on the words or buttons; its labels are real links to the twin cards; no DO orb, no pastel cubes, no violet or lavender
- check(await page.locator('.hero #hero-world img').count()===1,'the hero shows the small world (a still without WebGL)');
+ // the hero (Nov 2026): Tāmaki Makaurau Auckland from open map data (a still without WebGL), big, decorative, never on the words.
+ // Landmark callouts are real DOM text; twins are pinned on real sites of their kind as examples, never named, each saying so.
+ check(await page.locator('.hero #hero-world img').count()===1,'the hero shows Auckland (a still without WebGL)');
  check(await page.locator('#hero-world').getAttribute('aria-hidden')==='true','the hero picture is decorative (aria-hidden)');
  check(await page.locator('.hero-tags a[href^="#twin-"]').count()===6,'the hero names its six twins, each linked to its card');
+ for(const a of ['rangitoto','waitemata','bridge','skytower','maungawhau'])check(await page.locator(`.hero-callout[data-anchor="${a}"] strong`).count()===1,`landmark callout: ${a}`);
+ const pins=await page.locator('.hero-pin').evaluateAll(xs=>xs.map(x=>({site:x.dataset.site,text:x.textContent})));
+ check(pins.length>=4&&pins.every(p=>/twin/.test(p.text)&&/Example, not a model of this/.test(p.text)),`every twin pin is a twin plus its truth line (${pins.length} pins)`);
+ const akl=await page.evaluate(async()=>(await fetch('/assets/models/auckland/auckland-points.json')).json());
+ check(pins.every(p=>akl.sites[p.site])&&!/"names?"\s*:/.test(JSON.stringify(akl.sites)),'pins sit on baked sites, and the sites carry coordinates only (no names)');
+ check(await page.locator('#about').getByText('none models the business or institution there').count()===1,'the labels say the twin sites are examples');
+ check(await page.getByText(/LINZ \(CC BY 4\.0\)/).count()>=1&&await page.getByText(/OpenStreetMap contributors/).count()>=1,'open data is credited');
  check(await page.locator('img[src*="glass-a"], link[href*="glass-a"]').count()===0,'no glass "a" image or icon left on the home');
  check(await page.locator('.orb-still, #orb').count()===0,'no DO orb left on the home');
  check(await page.evaluate(()=>[...document.images].every(i=>!/assembl-assembled|logo-tile/.test(i.src))),'no logo with a tile behind it');
@@ -43,7 +52,20 @@ async (page) => {
  for(const w of [1440,1024,768,390,320]){await page.setViewportSize({width:w,height:900});await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(150);
   const hit=await page.evaluate(()=>{const a=document.querySelector('#hero-world').getBoundingClientRect();const pad=8;
    return [...document.querySelectorAll('.hero h1, .hero .lede, .hero .actions .v2-btn, .hero .truth-note, .v2-nav')].filter(e=>{const b=e.getBoundingClientRect();return !(b.right<a.left+pad||b.left>a.right-pad||b.bottom<a.top+pad||b.top>a.bottom-pad)}).map(e=>e.className||e.tagName)});
-  check(hit.length===0,`the small world clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`)}
+  check(hit.length===0,`the map clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`);
+  // big, and asymmetric: beside the words on a wide screen (most of the hero), above them on a narrow one
+  const box=await page.evaluate(()=>{const a=document.querySelector('#hero-world').getBoundingClientRect(),h=document.querySelector('.hero h1').getBoundingClientRect();return {l:a.left,w:a.width,h:a.height,t:a.top,cx:a.left+a.width/2,h1:h.top}});
+  check(w>=960?box.cx>w*0.6&&box.w>=w*0.55&&box.h>=900*0.7:box.t<box.h1&&box.w>=w*0.9,`the map is big at ${w}px (${Math.round(box.w)}×${Math.round(box.h)})`)}
+ // with WebGL: the landmark callouts appear, each tied to an anchor on screen, none over the words or the buttons
+ await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>scrollTo(0,0));
+ if(await page.evaluate(()=>document.documentElement.classList.contains('pc-on'))){
+  await page.waitForFunction(()=>document.querySelectorAll('.hero-callout.on').length>=3,null,{timeout:30000});
+  const over=await page.evaluate(()=>{const words=[...document.querySelectorAll('.hero h1, .hero .lede, .hero .actions .v2-btn, .hero .truth-note, .hero-tags, .v2-nav')].map(e=>e.getBoundingClientRect());
+   return [...document.querySelectorAll('.hero-callout.on, .hero-pin.on')].filter(e=>{const b=e.getBoundingClientRect();return words.some(a=>!(b.right<a.left||b.left>a.right||b.bottom<a.top||b.top>a.bottom))}).map(e=>e.dataset.anchor||e.dataset.site)});
+  check(over.length===0,'no callout covers the words or buttons'+(over.length?' ('+over.join(', ')+')':''));
+  const dots=await page.evaluate(()=>[...document.querySelectorAll('.pc-leaders circle.ring')].every(c=>{const x=+c.getAttribute('cx'),y=+c.getAttribute('cy');return x>0&&y>0&&x<innerWidth&&y<innerHeight}));
+  check(dots&&await page.locator('.pc-leaders path').count()>=await page.locator('.hero-callout.on, .hero-pin.on').count(),'every leader line reaches an anchor on screen');
+ }
  // the old Learn & create page keeps its address and lands in the story
  await page.goto('http://127.0.0.1:8341/discover/#learn');await page.waitForURL(/\/#study$/);
  check(page.url().endsWith('/#study'),'/discover/#learn lands on the study machines');
