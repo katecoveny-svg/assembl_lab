@@ -19,21 +19,21 @@ $('#month').innerHTML = MONTHS.map((m, i) => `<option value="${i}"${i === opts.m
 const tank = () => { const k = sim.tankers.find(t => t.bay != null && t.state !== 'leave'); return k ? { x: k.pose.x, y: 1.5, z: k.pose.z + 4, off: [16, 11, 18] } : { x: -62, y: 1, z: 0, off: [18, 12, 22] }; };
 const agent = (kind, n = 0) => { const a = sim.agents.filter(x => x.kind === kind && (x.active ?? true))[n] || sim.agents.find(x => x.kind === kind); return { x: a.pose.x, y: 1 + (a.pose.lift || 0) * 0.5, z: a.pose.z }; };
 const STOPS = [
-  { id: 'overview', title: 'The whole plant', pos: [46, 74, 128], target: [-4, 2, -6],
+  { id: 'overview', title: 'The whole plant', pos: [46, 74, 128], target: [-4, 2, -6], fit: [[-78, 0, -15], [-78, 0, 15], [-40, 4, 26], [-36, 20, -21], [17, 44, -18], [29, 58, -26], [80, 0, -30], [80, 0, 12], [87, 3, 6]],
     text: 'A fictional New Zealand-style milk powder plant on one simulated day. Milk comes in by tanker on the left, is stored in six silos, dried to powder in the tower, and leaves on the right as 25 kg bags in containers.' },
-  { id: 'bays', title: 'Tanker bays', pos: [-30, 30, 44], target: [-62, 1, 4],
+  { id: 'bays', title: 'Tanker bays', pos: [-30, 30, 44], target: [-62, 1, 4], fit: [[-78, 0, -15], [-46, 0, -15], [-78, 0, 15], [-46, 7, 15], [-40, 3, 26]],
     text: () => `About ${num(sim.perDay)} tankers a day at this point in the season, more after each milking. A tanker takes the first free bay; the driver connects the hose, and nothing is pumped until the milk passes its test.` },
-  { id: 'test', title: 'Milk testing', follow: 'sampler', off: [6, 5, 9],
+  { id: 'test', title: 'Milk testing', follow: 'sampler', off: [8, 18, -12],
     text: 'A technician walks out to each tanker for a sample and back to the lab for a rapid test. While she is out at one bay, the next tanker waits, so the test is often what holds a bay up.' },
-  { id: 'silos', title: 'Raw milk silos', pos: [-6, 22, 30], target: [-28, 8, -14],
+  { id: 'silos', title: 'Raw milk silos', pos: [-6, 22, 30], target: [-28, 8, -14], fit: [[-39, 0, -5], [-17, 0, -5], [-39, 20, -24], [-17, 20, -24]],
     text: 'Six stainless silos, 300,000 litres each in this model. The lit gauges show how full they are. They buffer the gap between milk arriving in waves and the dryer drawing it steadily.' },
-  { id: 'dryer', title: 'Evaporator and dryer', pos: [58, 36, 50], target: [6, 13, -14],
+  { id: 'dryer', title: 'Evaporator and dryer', pos: [58, 36, 50], target: [6, 13, -14], fit: [[-9, 0, -4], [-9, 22, -28], [26, 40, -30], [32, 0, -9], [29, 52, -26], [26, 0, -6]],
     text: 'Falling-film evaporators take most of the water out, and the spray dryer turns the concentrate into powder at up to 30 tonnes an hour. About every 20 hours of running, the evaporator stops for a clean of about 4 hours, and milk keeps arriving.' },
-  { id: 'packing', title: 'Bagging and palletising', pos: [42, 13, 2], target: [52, 1, -18],
+  { id: 'packing', title: 'Bagging and palletising', pos: [42, 13, 2], target: [52, 1, -18], fit: [[36, 0, -25], [66, 0, -25], [38, 0, -11], [66, 0, -11], [55, 4.2, -23]],
     text: 'Two baggers fill 25 kg sacks at up to 12 a minute each. Belts carry them through a check-weigher to gantry palletisers that stack forty to a pallet, and the wrapper and label printer finish it.' },
-  { id: 'store', title: 'Finished goods store', follow: 'forklift', off: [7, 5, 8],
+  { id: 'store', title: 'Finished goods store', pos: [84, 17, 20], target: [58, 2, -4], fit: [[36, 0, -6.5], [68, 0, -6.5], [36, 6, -1.5], [68, 6, -1.5], [75, 0, -18], [75, 0, 10]],
     text: 'Forklifts clear the pick-up stands into the racking. New powder waits there for its test results before it ships, so containers are loaded from older stock. If the forklifts fall behind, pallets back up all the way to the baggers.' },
-  { id: 'dock', title: 'Containers out', pos: [104, 16, 26], target: [80, 1, 1],
+  { id: 'dock', title: 'Containers out', pos: [104, 16, 26], target: [80, 1, 1], fit: [[73, 0, -6], [88, 0, -6], [73, 0, 10], [88, 3, 10]],
     text: 'A 20 ft container takes 22 one-tonne pallets, two high. Each door gets a new truck a while after the last one leaves.' },
 ];
 const tour = createTour({ stops: STOPS, viewer, follow: k => k === 'tanker' ? tank() : agent(k) });
