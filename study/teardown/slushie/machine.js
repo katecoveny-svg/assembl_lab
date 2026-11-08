@@ -9,7 +9,7 @@ export function build(kit){
  const et=new T.CanvasTexture(ec);et.mapping=T.EquirectangularReflectionMapping;et.colorSpace=T.SRGBColorSpace;kit.scene.environment=et;kit.scene.environmentIntensity=.7;
  const softbox=new T.DirectionalLight('#f6e5ee',1.5);softbox.position.set(40,16,14);kit.scene.add(softbox);
  const rim=new T.DirectionalLight('#ffffff',1.1);rim.position.set(-20,30,-30);kit.scene.add(rim);
- const plum=kit.mat('#46273e',{rough:.24,metal:.35}),dark=kit.mat(C.plum,{rough:.3,metal:.4}),steel=kit.mat(C.mist,{rough:.24,metal:.38}),white=kit.mat(C.paleRose,{rough:.32}),copper=kit.mat('#a66c58',{rough:.3,metal:.55});
+ const plum=kit.mat('#46273e',{rough:.24,metal:.35}),dark=kit.mat(C.plum,{rough:.3,metal:.4}),steel=kit.mat('#959ba2',{rough:.14,metal:.94}),white=kit.mat(C.paleRose,{rough:.32}),copper=kit.mat('#b8754f',{rough:.22,metal:.82});
  const group=()=>new T.Group();
  function mesh(g,mat,pos=[0,0,0],parent){const o=new T.Mesh(g,mat);o.position.set(...pos);if(parent)parent.add(o);return o}
  function box(w,h,d,p,m=plum,r=.6,parent){return mesh(new RoundedBoxGeometry(w,h,d,3,r),m,p,parent)}
@@ -63,19 +63,29 @@ box(26,3,43,[0,-18,3],plum,1.4,frame);box(25,1.5,31,[0,3,-1],plum,.65,frame);box
  kit.part('Motor and belt drive',drive,{sub:'mix',explode:[0,0,-15],order:2,edges:false});
  const cooling=group();
  const compressor=mesh(new T.CapsuleGeometry(4.7,5,6,24),dark,[5,-8,7],cooling);
- ring(4.72,[5,-6,7],steel,cooling).rotation.x=Math.PI/2;
+ ring(4.72,[5,-6,7],dark,cooling).rotation.x=Math.PI/2;
  box(11,1,12,[5,-14,7],steel,.6,cooling);for(const x of [1,9])for(const z of [3,11]){cyl(.6,.7,[x,-13.5,z],steel,cooling).rotation.x=Math.PI/2}
  // Condenser grid, warm return, expansion line and cold drum form a connected closed loop.
- for(let x=2;x<=9;x+=.6)box(.12,14,5,[x,-7,-5],steel,.03,cooling);
- for(let y=-13;y<=-1;y+=1.4)pipe([[2,y,-2],[9,y,-2],[9,y+.7,-2],[2,y+.7,-2]],.18,copper,cooling);
+ // Fin edges face the cutaway: gaps reveal the fan, rather than a solid plate.
+ const fins=kit.mat('#46434a',{rough:.32,metal:.8});
+ for(let y=-13;y<=-1;y+=.42)box(3,.1,11,[7.8,y,-7],fins,.02,cooling);
+ for(const z of [-12.8,-1.2])box(3.3,14,.45,[7.8,-7,z],steel,.08,cooling);
+ for(const y of [-14,0])box(3.3,.5,12,[7.8,y,-7],steel,.08,cooling);
+ const coil=[];for(let i=0;i<9;i++){const y=-12.5+i*1.4;coil.push([9.65,y,i%2?-1.8:-12.2],[9.65,y,i%2?-12.2:-1.8])}pipe(coil,.21,copper,cooling);
  pipe([[5,-4,7],[7,0,7],[8,0,3],[9,-1,2],[9,-1,-2]],.3,copper,cooling);
  pipe([[2,-13,-2],[1,-14,3],[0,-9,5],[-1,-2,5],[-1,3,0],[-1,15,-14]],.19,copper,cooling);
  pipe([[1,15,-14],[-8,15,-17],[-9,1,-14],[-9,-6,-7],[0,-10,-7],[5,-8,3]],.38,steel,cooling);
  
  
- const fan=group();fan.position.set(6,-7,-10);cyl(1.1,1,[0,0,0],dark,fan);for(let i=0;i<7;i++){const a=i*Math.PI*2/7;const f=box(1.8,4,.35,[2*Math.sin(a),2*Math.cos(a),0],dark,.7,fan);f.rotation.z=-a+.5}cooling.add(fan);ring(4.7,[6,-7,-10],steel,cooling);
- kit.part('Refrigeration loop',cooling,{sub:'cooling',explode:[0,-6,8],order:1,edges:false});kit.anchor('Heat out',cooling,[8,-4,-2]);
- const tap=group();pipe([[0,7,13],[0,7,18],[0,4,20]],1.15,steel,tap);cyl(1.65,3,[0,7,17],steel,tap);box(.9,5,1,[0,11,18],steel,.4,tap);mesh(new T.SphereGeometry(1.15,20,12),steel,[0,13.5,18],tap);
+ const fan=group();fan.position.set(5,-7,-7);fan.rotation.y=Math.PI/2;cyl(1.1,1,[0,0,0],dark,fan);for(let i=0;i<7;i++){const a=i*Math.PI*2/7;const f=box(1.8,4,.35,[2*Math.sin(a),2*Math.cos(a),0],dark,.7,fan);f.rotation.z=-a+.5}cooling.add(fan);ring(4.7,[5,-7,-7],steel,cooling).rotation.y=Math.PI/2;
+ box(2.4,3.4,2,[5,-7,11],dark,.5,cooling);
+ for(const z of [3.5,5.5]){const collar=cyl(.55,1.2,[9.5,-8,z],copper,cooling);collar.rotation.y=Math.PI/2;const nut=mesh(new T.CylinderGeometry(.65,.65,.6,6),steel,[9.5,-8,z],cooling);nut.rotation.z=Math.PI/2}
+ for(const x of [1.5,8.5])for(const z of [3,11]){const foot=mesh(new T.CylinderGeometry(.75,.75,.9,16),dark,[x,-13.5,z],cooling);mesh(new T.CylinderGeometry(.32,.32,1,6),steel,[x,-13.4,z],cooling)}
+ kit.part('Refrigeration loop' ,cooling,{sub:'cooling',explode:[0,-6,8],order:1,edges:false});kit.anchor('Heat out',cooling,[8,-4,-2]);
+ const tap=group();pipe([[0,7,13],[0,7,18],[0,4,20]],1.15,steel,tap);cyl(1.65,3,[0,7,17],steel,tap);box(.7,5,.7,[0,11,18],steel,.25,tap);mesh(new T.SphereGeometry(1.15,20,12),steel,[0,13.5,18],tap);
+ for(const z of [15.3,16,17.6])ring(1.45,[0,7,z],steel,tap);
+ for(let i=0;i<24;i++){const a=i*Math.PI/12;cyl(.055,1.1,[1.48*Math.cos(a),7+1.48*Math.sin(a),16],dark,tap)}
+ const drain=cyl(.85,.3,[0,3.8,20],dark,tap);drain.rotation.x=Math.PI/2;
  box(12,.7,10,[0,-15.9,20],steel,.8,tap);for(let x=-5;x<=5;x+=1)box(.24,.08,8,[x,-15.5,20],dark,.08,tap);
  const cup=mesh(new T.CylinderGeometry(3,2.4,8,40,1,true),kit.mat(C.ivory,{opacity:.18,rough:.12}),[0,-11.3,20],tap);ring(3,[0,-7.3,20],steel,tap).rotation.x=Math.PI/2;
  kit.part('Tap and drip tray',tap,{sub:'body',explode:[0,0,12],order:5,edges:false});

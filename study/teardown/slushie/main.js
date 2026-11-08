@@ -8,7 +8,7 @@ const api=await createTeardown({id:'slushie',title:'Make it slush.',subtitle:'Co
  build,truth:[truth],live:{label:'Ice fraction',unit:'%',digits:0,value:s=>s.ice*100,a:s=>s.stage,b:s=>fmt(s.temperature,1)+' °C'},readouts:[{label:'Time in batch',get:s=>fmt(s.seconds/60,1)+' min'},{label:'Heat removed',get:s=>fmt(s.energy/1000,1)+' kJ'}],
  status:()=> 'Drag to explore · teaching model',say:s=>s.stage,
  subsystems:[{key:'bowl',label:'Bowl'},{key:'mix',label:'Mixing'},{key:'cooling',label:'Cooling'},{key:'body',label:'Body'}],
- views:{hero:{label:'Hero',az:70,el:10,dist:137,narrowDist:195,target:[0,3,0]},rear:{label:'Drive side',az:135,el:15,dist:145,narrowDist:180,target:[0,3,0]},apart:{hidden:true,az:30,el:20,dist:230,narrowDist:290,target:[0,3,0]}},
+ views:{exploded:{hidden:true,az:65,el:15,dist:220,narrowDist:290,target:[0,4,0]},hero:{label:'Hero',az:70,el:10,dist:137,narrowDist:195,target:[0,3,0]},rear:{label:'Drive side',az:135,el:15,dist:145,narrowDist:180,target:[0,3,0]},apart:{hidden:true,az:30,el:20,dist:230,narrowDist:290,target:[0,3,0]}},
  callouts:[],sources:[{label:'OpenStax: phase change and latent heat',href:'https://openstax.org/books/college-physics-2e/pages/14-3-phase-change-and-latent-heat',note:'Q = mcΔT before freezing; Q = mL during freezing. Values used: c = 4,180 J kg⁻¹ K⁻¹ and L = 334,000 J kg⁻¹.'},{label:'Original Assembl teaching design',note:'Geometry is illustrative, not a manufacturer’s model. A helical scraper turns around a cold drum; the refrigeration circuit carries heat away. Real drinks freeze over a range because of dissolved sugar.'}],
 });
 api.setLabels(false);
