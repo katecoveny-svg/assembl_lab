@@ -36,7 +36,7 @@ createTeardown({
     {anchor:'rod',label:'Massless rod',side:'left',at:.47,value:s=>fmt(s.length,2)+' m pivot to bob'},
     {anchor:'bob',label:'Bob',side:'right',at:.64,value:s=>fmt(s.mass,1)+' kg · '+fmt(Math.abs(s.speed),3)+' m/s'}],
   subsystems:[{key:'swing',label:'Rod and bob'},{key:'pivot',label:'Pivot bearing'},{key:'frame',label:'Support and scale'}],
-  views:{hero:{label:'Hero',az:24,el:7,dist:250,target:[0,-52,0]},front:{label:'Front',az:0,el:1,dist:245,target:[0,-52,0]},pivot:{label:'Pivot',az:25,el:12,dist:40,target:[0,0,0]},apart:{hidden:true,az:26,el:9,dist:270,target:[0,-43,0]}},
+  views:{hero:{label:'Hero',az:24,el:7,dist:300,target:[0,-50,0]},front:{label:'Front',az:0,el:1,dist:290,target:[0,-50,0]},pivot:{label:'Pivot',az:25,el:12,dist:40,target:[0,0,0]},apart:{hidden:true,az:26,el:9,dist:270,target:[0,-43,0]}},
   learn:[
     {step:'Explore',text:'Watch the bob pass the lowest point. Which energy is greatest there? Pause and step through the cycle to compare the two energy bars.',show:{view:'front',play:true,select:'all'}},
     {step:'Predict',text:'Would a heavier bob have a longer period? Predict first, then double its mass. Compare period and total energy, not the decorative playback speed.'},
