@@ -374,9 +374,10 @@ export async function createTeardown(cfg) {
   const inSel = (p) => selected === 'all' || p.sub === selected;
   const cutOn = (p) => act.cut && (selected === 'all' ? p.cut === 'all' : p.sub === selected && p.cut !== false);
 
+  let narrowView = innerWidth <= 700;
   function aspectDist(v) {
     const a = camera.aspect || 1;
-    return {...v, dist: (v.dist ?? 60) * (a < 0.62 ? Math.min(1.35, 0.62 / a) : 1)};
+    return {...v, dist: (narrowView ? (v.narrowDist ?? v.dist ?? 60) : (v.dist ?? 60)) * (a < 0.62 ? Math.min(1.35, 0.62 / a) : 1)};
   }
   function setView(k, instant = reduce) {
     const v = views[k];
@@ -660,6 +661,8 @@ export async function createTeardown(cfg) {
     if (renderer) renderer.setSize(SW, SH, false);
     camera.aspect = SW / SH;
     camera.updateProjectionMatrix();
+    const nextNarrow = innerWidth <= 700;
+    if (nextNarrow !== narrowView) { narrowView = nextNarrow; setView(viewKey, true); }
     calls.forEach((k) => (k.w = 0));
     if (labelsAuto) setLabels(SW >= 640);
   }
