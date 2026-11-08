@@ -93,6 +93,7 @@ const STUDY_DOORS = [
 const PLAY = [
   { href: '/study/patterns/', title: 'Living Studio', line: 'Sculpt real geometry, style the light, export the mesh.', truth: 'live' },
   { world: 'ar', title: 'assembl AR', line: 'Make 3D text or a framed photo and place it in your room.', truth: 'live' },
+  { href: '/instruments/particle-studio/', title: 'Particle Studio', line: 'Design a million-point particle system as code and export it to the engine.', truth: 'ill' },
   { href: '/instruments/reality-remix/', title: 'Reality Remix', line: 'Push and swirl thousands of colour splats into a picture.', truth: 'ill' },
   { href: '/instruments/impossible-objects/', title: 'Impossible Objects', line: 'Flip the drawing order to build a Penrose triangle.', truth: 'ill' },
   { href: '/instruments/time-sculpture/', title: 'Time Sculpture', line: 'Draw a stroke and watch it echo into a sculpture.', truth: 'ill' },

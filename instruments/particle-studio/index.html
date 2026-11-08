@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en-NZ" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#21121F">
+<title>Particle Studio · assembl lab</title>
+<meta name="description" content="Design a GPU particle system three ways at once: compose blocks, drag in the scene, edit the code. A million points in the assembl point-cloud look, with export straight into the lab's shared engine. Everything stays on your device.">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/site-v2/site-v2.css">
+<link rel="stylesheet" href="/site-v2/lab.css">
+<link rel="stylesheet" href="studio.css?v=20261108">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<script>document.documentElement.classList.replace('no-js','js');</script>
+<script src="/lab/navigation.js" defer></script>
+<script type="module" src="main.js?v=20261108"></script>
+</head>
+<body class="site-v2 v2-tone-plum">
+<a class="skip" href="#ps-main">Skip to the studio</a>
+<main id="ps-main" class="ps site-v2 v2-tone-plum" aria-label="Particle Studio">
+  <canvas id="ps-canvas" aria-label="The particle scene. Drag to orbit, scroll to dolly, drag a handle to move a field." tabindex="0"></canvas>
+  <div id="ps-handles" aria-label="Field handles"></div>
+
+  <header class="ps-top">
+    <div class="ps-title">
+      <h1 class="v2-eyebrow v2-eyebrow-dot ps-eyebrow">Particle Studio <span class="truth" data-k="ill">Illustrative</span></h1>
+      <label class="ps-name"><span class="sr-only">Design name</span><input id="ps-name" type="text" maxlength="60" value="Untitled" autocomplete="off" spellcheck="false"></label>
+    </div>
+    <div class="ps-actions" role="toolbar" aria-label="Studio">
+      <details class="ps-menu" id="ps-presets"><summary class="ps-btn">Presets</summary><ul class="ps-menu-list" id="ps-preset-list"></ul></details>
+      <button type="button" class="ps-btn" id="ps-surprise">Surprise me</button>
+      <button type="button" class="ps-btn" id="ps-share">Share</button>
+      <button type="button" class="ps-btn ps-btn-solid" id="ps-export">Export</button>
+      <button type="button" class="ps-btn ps-toggle" id="ps-blocks-toggle" aria-pressed="true" aria-controls="ps-blocks">Blocks</button>
+      <button type="button" class="ps-btn ps-toggle" id="ps-code-toggle" aria-pressed="true" aria-controls="ps-code">Code</button>
+      <button type="button" class="ps-btn ps-icon" id="ps-pause" aria-pressed="false" aria-label="Pause motion" title="Pause motion"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <aside class="ps-panel ps-blocks" id="ps-blocks" aria-label="Blocks">
+    <header class="ps-panel-head"><h2 class="ps-h">Blocks</h2><p class="ps-sub v2-secondary">Compose the system. Every change writes itself into the code.</p><button type="button" class="ps-close" data-close="ps-blocks" aria-label="Close blocks">×</button></header>
+    <div class="ps-panel-body">
+      <details class="ps-sec" open><summary><span>Emitters</span><span class="ps-count v2-mono" id="ps-emit-count"></span></summary><div id="ps-emitters" class="ps-list"></div><div class="ps-row"><button type="button" class="ps-btn ps-btn-sm" id="ps-add-emitter">Add emitter</button><span class="ps-hint v2-secondary">Drop an image or a .glb onto the scene to sample it.</span></div></details>
+      <details class="ps-sec" open><summary><span>Fields</span><span class="ps-count v2-mono" id="ps-field-count"></span></summary><div id="ps-fields" class="ps-list"></div><div class="ps-row"><label class="ps-add"><span class="sr-only">Add a field</span><select id="ps-add-field"><option value="">Add a field…</option></select></label><span class="ps-hint v2-secondary">Wells, vortices and orbits have a handle in the scene: drag it.</span></div></details>
+      <details class="ps-sec"><summary><span>Look</span></summary><div id="ps-look" class="ps-grid"></div><p class="ps-lock v2-secondary"><span class="v2-mono">palette locked</span> The tones are the assembl point-cloud standard: plum ground, a plum → rose → ivory ramp, iridescence only on highlights. Every point cloud on the lab shares it, so a design exported from here matches the site exactly. Bloom, exposure, size, iridescence, sparkle share, trails and depth fade are yours.</p></details>
+      <details class="ps-sec"><summary><span>Camera</span></summary><div id="ps-camera" class="ps-grid"></div></details>
+      <details class="ps-sec"><summary><span>Timeline</span><span class="ps-count v2-mono" id="ps-key-count"></span></summary><div id="ps-timeline" class="ps-grid"></div><div id="ps-keys" class="ps-list"></div><div class="ps-row"><button type="button" class="ps-btn ps-btn-sm" id="ps-add-key">Add a morph target</button><span class="ps-hint v2-secondary">Targets morph into one another along the timeline; the attract field pulls points to them.</span></div></details>
+    </div>
+  </aside>
+
+  <aside class="ps-panel ps-code" id="ps-code" aria-label="Code">
+    <header class="ps-panel-head">
+      <h2 class="ps-h">Code</h2><p class="ps-sub v2-secondary">The design is this module. It runs live as you type.</p>
+      <div class="ps-code-tools">
+        <button type="button" class="ps-btn ps-btn-sm" id="ps-run">Run</button>
+        <button type="button" class="ps-btn ps-btn-sm" id="ps-api-toggle" aria-expanded="false" aria-controls="ps-api">API</button>
+        <button type="button" class="ps-btn ps-btn-sm" id="ps-copy">Copy</button>
+        <button type="button" class="ps-btn ps-btn-sm" id="ps-rewrite" title="Rewrite the code from the blocks">Tidy</button>
+      </div>
+      <button type="button" class="ps-close" data-close="ps-code" aria-label="Close code">×</button>
+    </header>
+    <div id="ps-editor"></div>
+    <p class="ps-code-note v2-secondary">Runs in a scope that sees only <code class="v2-mono">studio</code>: no page, no network. Errors show here with their line; the last good design keeps running.</p>
+  </aside>
+
+  <aside class="ps-api" id="ps-api" hidden aria-label="Studio API">
+    <header class="ps-panel-head"><h2 class="ps-h">The studio API</h2><p class="ps-sub v2-secondary">What a design can say. Every example runs.</p><button type="button" class="ps-close" data-close="ps-api" aria-label="Close API">×</button></header>
+    <div class="ps-api-body" id="ps-api-body"></div>
+  </aside>
+
+  <footer class="ps-bar">
+    <div class="ps-transport">
+      <button type="button" class="ps-btn ps-icon" id="ps-play" aria-pressed="true" aria-label="Pause the timeline"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path class="i-pause" d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path class="i-play" d="M7 5l12 7-12 7z" fill="currentColor"/></svg></button>
+      <label class="ps-scrub"><span class="sr-only">Timeline</span><input id="ps-scrub" type="range" min="0" max="1000" value="0"></label>
+      <output class="v2-mono ps-time" id="ps-time" for="ps-scrub">0.0 s</output>
+      <label class="ps-loop v2-mono"><input type="checkbox" id="ps-loop" checked> loop</label>
+    </div>
+    <div class="ps-status v2-mono" aria-live="off">
+      <span id="ps-stat-n" title="Particles alive in the simulation">— points</span>
+      <span id="ps-stat-fps" title="Frames per second, as measured on this device">— fps</span>
+      <span id="ps-stat-budget" title="The particle budget adapts to the frame time">auto</span>
+    </div>
+    <p class="ps-note v2-secondary">Everything stays on your device: no uploads, no analytics, no accounts. Dropped images and models never leave the browser. The scene is illustrative, a drawing rule, not a physical model.</p>
+  </footer>
+
+  <nav class="ps-tabs" aria-label="Panels">
+    <button type="button" class="ps-tab" data-tab="ps-blocks" aria-pressed="false">Blocks</button>
+    <button type="button" class="ps-tab" data-tab="ps-code" aria-pressed="false">Code</button>
+    <button type="button" class="ps-tab" id="ps-export-tab">Export</button>
+  </nav>
+
+  <dialog class="ps-dialog" id="ps-export-dlg" aria-labelledby="ps-export-h">
+    <header class="ps-panel-head"><h2 class="ps-h" id="ps-export-h">Export</h2><p class="ps-sub v2-secondary">Made here, saved to your device. Nothing is sent anywhere.</p><button type="button" class="ps-close" data-close="ps-export-dlg" aria-label="Close export">×</button></header>
+    <div class="ps-dlg-body">
+      <section class="ps-xs"><h3>The design</h3><p class="v2-secondary">The code is the design: paste it back in and it runs.</p><div class="ps-row"><button type="button" class="ps-btn ps-btn-sm" id="x-copy-code">Copy code</button><button type="button" class="ps-btn ps-btn-sm" id="x-dl-code">Download .js</button></div></section>
+      <section class="ps-xs"><h3>Still</h3><p class="v2-secondary">A PNG of the scene as it is now, at the canvas size.</p><div class="ps-row"><button type="button" class="ps-btn ps-btn-sm" data-png="1">PNG 1×</button><button type="button" class="ps-btn ps-btn-sm" data-png="2">PNG 2×</button><button type="button" class="ps-btn ps-btn-sm" data-png="4">PNG 4×</button></div></section>
+      <section class="ps-xs"><h3>Video</h3><p class="v2-secondary">A WebM recorded live from the canvas, so the frame rate is this device's.</p><div class="ps-row"><button type="button" class="ps-btn ps-btn-sm" data-webm="5">5 s</button><button type="button" class="ps-btn ps-btn-sm" data-webm="10">10 s</button><button type="button" class="ps-btn ps-btn-sm" data-webm="15">15 s</button><span class="v2-mono ps-rec" id="x-rec" hidden>recording</span></div></section>
+      <section class="ps-xs ps-xs-engine"><h3>Export to the assembl engine</h3>
+        <p class="v2-secondary">Bakes <strong>this frame's points</strong> into the lab's compact points file (<span class="v2-mono">.bin</span> + <span class="v2-mono">.json</span> header: position, light, kind, part, phase, anchors) and a form module that reads it with <span class="v2-mono">makeForm</span>, ready for <span class="v2-mono">lab/pc/forms.js</span>-style code. Only the frame's points are exported, not the live simulation. Bake a second frame to export a morph pair as two forms.</p>
+        <div class="ps-row"><label class="ps-add"><span class="sr-only">Points to export</span><select id="x-count"><option value="60000">60k points</option><option value="150000" selected>150k points</option><option value="300000">300k points</option></select></label><button type="button" class="ps-btn ps-btn-sm ps-btn-solid" id="x-bake-a">Bake this frame</button><button type="button" class="ps-btn ps-btn-sm" id="x-bake-b">Bake as frame B</button></div>
+        <div class="ps-row" id="x-files" hidden><button type="button" class="ps-btn ps-btn-sm" id="x-dl-bin">Download points .bin</button><button type="button" class="ps-btn ps-btn-sm" id="x-dl-json">Download header .json</button><button type="button" class="ps-btn ps-btn-sm" id="x-dl-form">Download form .js</button><span class="v2-mono" id="x-baked"></span></div>
+        <div class="ps-compare" id="x-compare" hidden>
+          <figure><figcaption class="v2-mono">studio · this frame</figcaption><img id="x-studio-still" alt="The studio's render of the baked frame"></figure>
+          <figure><figcaption class="v2-mono">in the engine · live (lab/pc/engine.js)</figcaption><canvas id="x-engine" width="640" height="420" aria-label="The exported form, rendered live by the shared point-cloud engine"></canvas></figure>
+        </div>
+        <p class="v2-secondary ps-small" id="x-engine-note" hidden>The right side is the real shared engine drawing the file you just exported, decoded from its bytes. That is what the site will show.</p>
+      </section>
+      <section class="ps-xs"><h3>Share link</h3><p class="v2-secondary">The whole design, compressed into the address. No server holds it.</p><div class="ps-row"><input class="ps-link v2-mono" id="x-link" type="text" readonly aria-label="Share link"><button type="button" class="ps-btn ps-btn-sm" id="x-copy-link">Copy link</button></div></section>
+    </div>
+  </dialog>
+
+  <div class="ps-nogl" id="ps-nogl" hidden>
+    <div class="ps-nogl-in">
+      <p class="v2-eyebrow v2-eyebrow-dot">Particle Studio <span class="truth" data-k="ill">Illustrative</span></p>
+      <h2 class="v2-h3">This studio needs WebGL2</h2>
+      <p class="v2-body">The simulation runs a million particles on the graphics card through WebGL2 render-to-texture, which this browser does not offer. Here is a still of the default design, the mark assembling from a scatter. The code and the presets are readable on a device with WebGL2.</p>
+      <img src="still.webp" alt="A still from Particle Studio: the assembl mark as a dense cloud of plum, rose and ivory points, a few sparkling, on a deep plum ground." width="1440" height="900">
+      <p class="ps-note v2-secondary">Everything stays on your device: no uploads, no analytics, no accounts.</p>
+    </div>
+  </div>
+
+  <div class="ps-toast v2-mono" id="ps-toast" role="status" aria-live="polite"></div>
+  <noscript><p class="ps-nogl-in" style="padding:24px">Particle Studio is an instrument that runs in your browser, so it needs JavaScript turned on.</p></noscript>
+</main>
+</body>
+</html>
