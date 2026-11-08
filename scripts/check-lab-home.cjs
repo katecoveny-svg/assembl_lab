@@ -28,10 +28,11 @@ async (page) => {
  await page.keyboard.press('Tab');const ring=await page.evaluate(()=>getComputedStyle(document.activeElement).outlineStyle);
  check(ring!=='none','focus ring visible');
  for(const w of [320,375,390]){await page.setViewportSize({width:w,height:800});await page.waitForTimeout(150);check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no horizontal scroll at ${w}px`)}
- // site-v2 (8 Nov 2026): the hero holds the flat mark A assembling from its parts (the logo), decorative, never on the words or
- // buttons; no DO orb, no pastel cubes, no violet or lavender anywhere on the home or its stylesheets
- check(await page.locator('.hero .v2-mark-assemble').count()===1,'one flat mark A in the hero');
- check(await page.locator('#mark-a').getAttribute('aria-hidden')==='true','the flat mark is decorative (aria-hidden)');
+ // point cloud (Nov 2026): the hero holds the twins as one small world (a point-cloud diorama, with a still for no WebGL), decorative,
+ // never on the words or buttons; its labels are real links to the twin cards; no DO orb, no pastel cubes, no violet or lavender
+ check(await page.locator('.hero #hero-world img').count()===1,'the hero shows the small world (a still without WebGL)');
+ check(await page.locator('#hero-world').getAttribute('aria-hidden')==='true','the hero picture is decorative (aria-hidden)');
+ check(await page.locator('.hero-tags a[href^="#twin-"]').count()===6,'the hero names its six twins, each linked to its card');
  check(await page.locator('img[src*="glass-a"], link[href*="glass-a"]').count()===0,'no glass "a" image or icon left on the home');
  check(await page.locator('.orb-still, #orb').count()===0,'no DO orb left on the home');
  check(await page.evaluate(()=>[...document.images].every(i=>!/assembl-assembled|logo-tile/.test(i.src))),'no logo with a tile behind it');
@@ -40,9 +41,9 @@ async (page) => {
  check(!/#(8b5cf6|a78bfa|c4b5fd|7c3aed|ddd6fe|c7b4f0|d7b3f0|6a50be|c99bda)\b|violet-|purple-/i.test(css.replace(/\/\*[\s\S]*?\*\//g,'')),'no violet or lavender colours');
  check(await page.evaluate(()=>!/\bAssembl\b|\bAssemble\b|\bASSEMBL\b/.test(document.body.innerText.replace(/assembly/gi,''))),'brand word is lowercase assembl in the copy');
  for(const w of [1440,1024,768,390,320]){await page.setViewportSize({width:w,height:900});await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(150);
-  const hit=await page.evaluate(()=>{const a=document.querySelector('.hero .v2-mark-assemble').getBoundingClientRect();const pad=8;
+  const hit=await page.evaluate(()=>{const a=document.querySelector('#hero-world').getBoundingClientRect();const pad=8;
    return [...document.querySelectorAll('.hero h1, .hero .lede, .hero .actions .v2-btn, .hero .truth-note, .v2-nav')].filter(e=>{const b=e.getBoundingClientRect();return !(b.right<a.left+pad||b.left>a.right-pad||b.bottom<a.top+pad||b.top>a.bottom-pad)}).map(e=>e.className||e.tagName)});
-  check(hit.length===0,`the mark clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`)}
+  check(hit.length===0,`the small world clear of the headline, buttons and labels at ${w}px${hit.length?' (touches '+hit.join(', ')+')':''}`)}
  // the old Learn & create page keeps its address and lands in the story
  await page.goto('http://127.0.0.1:8341/discover/#learn');await page.waitForURL(/\/#study$/);
  check(page.url().endsWith('/#study'),'/discover/#learn lands on the study machines');

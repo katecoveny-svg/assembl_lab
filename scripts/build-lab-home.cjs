@@ -104,6 +104,8 @@ const PLAY = [
    (tools/pointcloud/stills.cjs → lab/pc/stills/*.webp); a picture that has not been rendered yet keeps its original render. ── */
 const still = (id, fallback) => (fs.existsSync(path.join(ROOT, `lab/pc/stills/${id}.webp`)) ? `/lab/pc/stills/${id}.webp` : fallback);
 const pcAlt = (alt) => `Point cloud of ${alt.replace(/^(Offline render of |Render of )/i, '').replace(/^The /, 'the ').replace(/^A /, 'a ')}`;
+/* the hero: every business twin on one piece of land by a harbour (lab/pc/worlds.js), each named on the model and linked to its card */
+const HERO_TAGS = [['dairy', 'Dairy plant'], ['ed', 'Emergency department'], ['energy', 'Energy street'], ['cars', 'Car yard'], ['cafe', 'Café'], ['store', 'Supermarket']];
 /* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched) */
 const JUMP = [
   { href: '#twins', title: 'Business sims', line: 'Run a café, an emergency department or a dairy plant for a day.', still: 'jump-sims', truth: 'sim' },
@@ -134,14 +136,16 @@ const rowTile = (w, line, truth, opts = {}) => {
   const pic = opts.pic ? `<span class="row-pic frame">${img(opts.pic, '', 240, 170)}</span>` : '';
   return `<li><a class="row${pic ? '' : ' row-type'}" href="${opts.href || href(w)}">${pic}<span class="row-copy"><strong>${esc(opts.title || w.title)}</strong><span class="row-line">${esc(line)}</span><span class="meta">${chip(truth)}${w && !opts.noData ? `<span class="src" title="${esc(stageOf(w.id).why)}"><span class="src-stage" data-stage="${stageOf(w.id).stage}">${esc(stageOf(w.id).label)}</span> <span data-live="${w.id}">${esc(w.data)}</span></span>` : ''}</span></span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>`;
 };
-const moreTwins = MORE_TWINS.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: still('row-' + w.id, w.poster || `/assets/posters/${w.id}.webp`) }); }).join('\n  ');
-const homeRows = HOME.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: still('row-' + w.id, `/assets/posters/${w.id}.webp`) }); }).join('\n  ');
+// the smaller twins are a calm typed index on the plum ground (a picture only once one is rendered in the point-cloud look)
+const moreTwins = MORE_TWINS.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: still('row-' + w.id, null) }); }).join('\n  ');
+const homeRows = HOME.map(t => { const w = take(t.id); return rowTile(w, t.line, 'sim', { pic: still('row-' + w.id, null) }); }).join('\n  ');
 
 // two lead cards, then rows of three; a short last row stretches so the grid never ends with a gap
 const tail = (MACHINES.length - 2) % 3;
 const mcClass = i => (i < 2 ? ' mc-lead' : tail && i >= MACHINES.length - tail ? (tail === 2 ? ' mc-wide' : ' mc-full') : '');
+const mcId = (m) => m.href.replace(/^.*\/m\/|\.html$/g, '');
 const machines = MACHINES.map((m, i) => `<li class="mc${mcClass(i)}"><a href="${m.href}">
-  <figure class="frame">${img(m.img[0], m.alt, m.img[1], m.img[2])}</figure>
+  <figure class="frame">${still('mc-' + mcId(m), null) ? img(still('mc-' + mcId(m)), pcAlt(m.alt), 1280, 960) : img(m.img[0], m.alt, m.img[1], m.img[2])}</figure>
   <span class="mc-copy"><span class="kind">${esc(m.meta)}</span><strong>${esc(m.title)}</strong><span class="row-line">${esc(m.line)}</span><span class="meta">${chip('sim')}</span></span>
  </a></li>`).join('\n ');
 const studyWorld = take('study');
@@ -208,7 +212,8 @@ ${nav}
    <div class="actions">${v2.button({ href: '#twins', label: 'Walk through the twins', icon: 'down', size: 'lg' })}${v2.button({ href: '#study', label: 'See the study machines', variant: 'secondary', icon: 'down' })}</div>
    <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
   </div>
-  ${v2.parallax(v2.markAssemble({ size: 520, trigger: 'load' }), { distance: 140, offset: 'hero', className: 'hero-art' }).replace('<div class="hero-art"', '<div class="hero-art" id="mark-a" aria-hidden="true"')}
+  <div class="hero-art hero-world" id="hero-world" aria-hidden="true">${img(still('hero-world', '/lab/pc/stills/hero-world.webp'), '', 1600, 1100)}</div>
+  <ul class="hero-tags" aria-label="The twins on the model">${HERO_TAGS.map(([id, t]) => `<li><a href="#twin-${id}" data-anchor="${id}">${esc(t)}</a></li>`).join('')}</ul>
  </div>
 </section>
 <section class="jump v2-tone-plum" id="jump" aria-labelledby="jump-title">
@@ -245,7 +250,7 @@ ${nav}
 ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, className: 'v2-tone-plum lab-ticker' })}
 
 <span id="explore" class="anchor" aria-hidden="true"></span>
-<section class="chapter twins v2-tone-aubergine" id="twins" aria-labelledby="twins-title">
+<section class="chapter twins v2-tone-plum" id="twins" aria-labelledby="twins-title">
  <div class="wrap">
  <div class="ch-head">
   ${v2.eyebrow('Business twins')}
@@ -269,8 +274,8 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
  </div>
 </section>
 
-<div class="sheet">
-<section class="chapter study v2-tone-ivory" id="study" aria-labelledby="study-title">
+<div class="sheet pc-lower">
+<section class="chapter study v2-tone-plum" id="study" aria-labelledby="study-title">
  <div class="wrap">
  <div class="ch-head">
   ${v2.eyebrow('Study machines')}
@@ -287,7 +292,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
  </div>
 </section>
 
-<section class="chapter play v2-tone-blush" id="playground" aria-labelledby="play-title">
+<section class="chapter play v2-tone-plum" id="playground" aria-labelledby="play-title">
  <div class="wrap">
  <div class="ch-head ch-head-row">
   <div class="ch-title">${v2.eyebrow('The playground')}
@@ -300,7 +305,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
  </div>
 </section>
 
-<section class="chapter about v2-tone-ivory" id="about" aria-labelledby="about-title">
+<section class="chapter about v2-tone-plum" id="about" aria-labelledby="about-title">
  <div class="wrap">
  ${v2.eyebrow('Labels')}
  ${v2.split({ tag: 'h2', id: 'about-title', className: 'v2-h2', lines: [{ text: 'How to read the labels.', accent: false }] })}
@@ -314,7 +319,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
 </section>
 </div>
 
-<section class="close v2-tone-rose-mauve" aria-labelledby="close-title">
+<section class="close v2-tone-plum" aria-labelledby="close-title">
  <div class="wrap close-in">
   <div class="close-copy">
    ${v2.eyebrow(`Work with ${v2.brand()}`)}

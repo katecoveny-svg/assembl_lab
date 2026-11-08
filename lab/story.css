@@ -1,6 +1,7 @@
 /* assembl lab home, site-v2 (8 Nov 2026). Built by scripts/build-lab-home.cjs; tokens and rules: /DESIGN.md.
    The look is the foundation ported from assembl.co.nz (/site-v2/site-v2.css + /site-v2/lab.css): deep plum hero,
-   aubergine twins, warm ivory and soft blush for the study machines, playground and labels, rose mauve close.
+   aubergine twins, warm ivory and soft blush for the study machines, playground and labels, rose mauve close. Since the
+   point-cloud home (Nov 2026) every chapter is on the plum tone; lab/pc/pc.css carries the overrides for the dark cards.
    This file is layout only: every colour is a foundation token (var(--v2-*)), read through the section's tone class.
    Every render is shown whole, at its own proportions, with rounded corners. */
 
