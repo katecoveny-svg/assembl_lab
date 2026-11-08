@@ -106,15 +106,23 @@ const still = (id, fallback) => (fs.existsSync(path.join(ROOT, `lab/pc/stills/${
 const pcAlt = (alt) => `Point cloud of ${alt.replace(/^(Offline render of |Render of )/i, '').replace(/^The /, 'the ').replace(/^A /, 'a ')}`;
 /* the hero: every business twin on one piece of land by a harbour (lab/pc/worlds.js), each named on the model and linked to its card */
 const HERO_TAGS = [['dairy', 'Dairy plant'], ['ed', 'Emergency department'], ['energy', 'Energy street'], ['cars', 'Car yard'], ['cafe', 'Café'], ['store', 'Supermarket']];
-/* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched) */
+/* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched).
+   Exam season (Nov 2026): the study machines door leads, two columns wide, showing three of the machines themselves as
+   point clouds (their stills from the study chapter below, so no extra bytes), each named underneath. */
 const JUMP = [
+  { href: '/study/', title: 'Study machines', line: 'Free 3D machines for Years 7 to 13 and NCEA. Change one setting, watch what happens, then test yourself. No sign-up.', still: 'jump-study', truth: 'sim',
+    trio: [['claw', 'The claw machine'], ['heart', 'Heart Pump Lab'], ['windtunnel', 'The wind tunnel']] },
   { href: '#twins', title: 'Business sims', line: 'Run a café, an emergency department or a dairy plant for a day.', still: 'jump-sims', truth: 'sim' },
   { href: '/plan-studio/', title: 'Architecture lab', line: 'Plans in, a measured 3D model out, pre-checked against the NZ Building Code.', still: 'jump-architecture', truth: 'live' },
   ...(fs.existsSync(path.join(ROOT, 'sea/index.html')) ? [{ href: '/sea/', title: 'Sea State', line: 'A water taxi and a ferry on a sea made of code, with a ride-comfort reading.', still: 'jump-sea', truth: 'sim' }] : []),
-  { href: '/study/', title: 'Study machines', line: 'Thirty-five machines that each teach one idea, Years 7 to 13.', still: 'jump-study', truth: 'sim' },
   { href: '#playground', title: 'Playground', line: 'Instruments for making things. Everything stays on your device.', still: 'jump-play', truth: 'ill' },
 ];
-const jumpTiles = JUMP.map(j => `<li><a class="jump-tile" href="${j.href}">${fs.existsSync(path.join(ROOT, `lab/pc/stills/${j.still}.webp`)) ? `<span class="jump-pic">${img(`/lab/pc/stills/${j.still}.webp`, '', 800, 500)}</span>` : ''}<span class="jump-copy"><strong>${esc(j.title)}</strong><span class="row-line">${esc(j.line)}</span>${chip(j.truth)}</span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>`).join('\n  ');
+const jumpPic = j => {
+  const trio = (j.trio || []).filter(([id]) => fs.existsSync(path.join(ROOT, `lab/pc/stills/mc-${id}.webp`)));
+  if (trio.length === 3) return `<span class="jump-pic jump-trio" aria-hidden="true">${trio.map(([id, name]) => `<span class="trio-cell">${img(`/lab/pc/stills/mc-${id}.webp`, '', 1280, 960)}<span class="trio-k">${esc(name)}</span></span>`).join('')}</span>`;
+  return fs.existsSync(path.join(ROOT, `lab/pc/stills/${j.still}.webp`)) ? `<span class="jump-pic">${img(`/lab/pc/stills/${j.still}.webp`, '', 800, 500)}</span>` : '';
+};
+const jumpTiles = JUMP.map(j => `<li${j.trio ? ' class="jump-lead"' : ''}><a class="jump-tile" href="${j.href}">${jumpPic(j)}<span class="jump-copy"><strong>${esc(j.title)}</strong><span class="row-line">${esc(j.line)}</span>${chip(j.truth)}</span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>`).join('\n  ');
 
 /* ── markup ── */
 const goArrow = v2.arrow('right', 18);
