@@ -50,10 +50,12 @@ function markA(size = 34, { className } = {}) {
   return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" style="width:${size}px;height:${size}px" aria-hidden="true" focusable="false">${MARK_A}</svg>`;
 }
 
-/** Wordmark.tsx: the flat mark A + lowercase "assembl" + the dusty-rose dot. Lab adds `suffix` ("lab"). */
-function wordmark({ href, size = 24, mark = 34, dot = true, suffix, label = 'assembl home', eager = false, className, extra } = {}) {
+/** Wordmark.tsx: lowercase "assembl" + the dusty-rose dot. Lab adds `suffix` ("lab").
+    8 Nov 2026 (Kate): the "a." mark is off everywhere until a new one is chosen, so the wordmark is text only.
+    `showMark` still draws the flat mark where explicitly asked. Mirrors components/site-v2/Wordmark.tsx in the main repo. */
+function wordmark({ href, size = 24, mark = 34, dot = true, showMark = false, suffix, label = 'assembl home', eager = false, className, extra } = {}) {
   const style = `--v2-wm-size:${size}px;--v2-wm-a:${mark}px`;
-  const body = `${markA(mark)}<span>assembl${dot ? '<span class="v2-wordmark-dot" aria-hidden="true">.</span>' : ''}</span>${suffix ? `<span class="lab-wm-suffix">${esc(suffix)}</span>` : ''}`;
+  const body = `${showMark ? markA(mark) : ''}<span>assembl${dot ? '<span class="v2-wordmark-dot" aria-hidden="true">.</span>' : ''}</span>${suffix ? `<span class="lab-wm-suffix">${esc(suffix)}</span>` : ''}`;
   const cls = ['v2-wordmark', className].filter(Boolean).join(' ');
   return href
     ? `<a href="${esc(href)}" class="${cls}" style="${style}" aria-label="${esc(label)}"${attrs(extra)}>${body}</a>`
