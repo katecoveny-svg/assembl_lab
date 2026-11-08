@@ -39,7 +39,7 @@ if(renderer){
  }
  controls=new OrbitControls(camera,$('scene'));controls.enableDamping=!calm;controls.dampingFactor=.08;controls.enablePan=false;controls.minDistance=7;controls.maxDistance=18;controls.maxPolarAngle=Math.PI/2.05;controls.minPolarAngle=.15;
  function size(){const w=$('scene').clientWidth,h=$('scene').clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();resetView();}
- function resetView(){const mobile=$('scene').clientWidth<760;camera.position.set(mobile?6:5.5,mobile?8:6.8,mobile?9:9);controls.target.set(mobile?0:-.7,.2,0);controls.update();}
+ function resetView(){const mobile=$('scene').clientWidth<760;camera.position.set(mobile?6:5.5,mobile?8:6.8,mobile?9:9);if(mobile)camera.position.multiplyScalar(Math.max(1,.87/camera.aspect));controls.target.set(mobile?0:-.7,.2,0);controls.update();}
  $('reset').onclick=resetView;new ResizeObserver(size).observe($('scene'));size();$('status').hidden=true;
  $('scene').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','=',' '].includes(e.key))return;e.preventDefault();if(e.key===' '){$('play').click();return;}const offset=camera.position.clone().sub(controls.target),s=new T.Spherical().setFromVector3(offset);if(e.key==='ArrowLeft')s.theta-=.12;if(e.key==='ArrowRight')s.theta+=.12;if(e.key==='ArrowUp')s.phi-=.12;if(e.key==='ArrowDown')s.phi+=.12;if(e.key==='+'||e.key==='=')s.radius*=.9;if(e.key==='-')s.radius*=1.1;s.phi=T.MathUtils.clamp(s.phi,.15,Math.PI/2.05);s.radius=T.MathUtils.clamp(s.radius,7,18);camera.position.copy(controls.target).add(new T.Vector3().setFromSpherical(s));controls.update();});
 }
