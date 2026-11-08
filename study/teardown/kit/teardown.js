@@ -788,6 +788,7 @@ export async function createTeardown(cfg) {
         requestAnimationFrame(() => {
           pend = false;
           resample();
+          step(0); // Keep below-stage mobile readouts in sync even when animation is offscreen.
         });
       }
     });
