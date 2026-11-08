@@ -51,6 +51,7 @@ const STAGE = [
   { id: 'cars', kind: 'Vehicle retail', img: ['/assets/models/vehicles/renders/golf-hero.webp', 1200, 750], alt: 'Offline render of the Simulated 2021 Volkswagen Golf, the hero car of the agent-ready cars world' },
 ];
 const MORE_TWINS = [
+  { id: 'delivery', line: 'One grocery order, picked, swapped and driven over real Auckland streets.' },
   { id: 'retail', line: 'The trade yard at 6am, the empty bins at 4pm.' },
   { id: 'stay', line: 'Bookings, cleaning, check-in and what each booking site takes.' },
   { id: 'office', line: 'Three floors, 120 desks, and the commute that fills them.' },
