@@ -1,6 +1,7 @@
 // assembl lab · Tāmaki Makaurau Auckland as a point-cloud form, read from the baked points file (tools/pointcloud/bake-auckland.mjs →
 // assets/models/auckland/auckland-points.{json,bin}). Terrain, coastline and buildings are open data (LINZ via AWS Terrain Tiles;
-// OpenStreetMap via OpenFreeMap); the Harbour Bridge's rise and truss are drawn for scale. Heights are exaggerated 5× (header.verticalExaggeration).
+// OpenStreetMap via OpenFreeMap). Heights are exaggerated 5× (header.verticalExaggeration);
+// the Sky Tower and the Harbour Bridge are modelled from their published dimensions.
 // The file is in a weighted random order, so a phone asks for just the first n points (an HTTP Range request) and still gets the
 // whole map; a server that ignores Range sends it all and the rest is simply not used.
 import { makeForm } from "./engine.js";
@@ -22,6 +23,8 @@ export async function aucklandForm(n = 300000) {
   }
   f.anchors = Object.fromEntries(Object.entries(h.anchors).map(([k, a]) => [k, a.slice()]));
   f.sites = Object.fromEntries(Object.entries(h.sites || {}).map(([k, st]) => [k, st.anchor.slice()]));   // twin id → roof top of its example site
+  f.sitesGround = Object.fromEntries(Object.entries(h.sites || {}).map(([k, st]) => [k, (st.ground || st.anchor).slice()]));   // the plot's centre on the ground
+  f.sitesPlot = Object.fromEntries(Object.entries(h.sites || {}).map(([k, st]) => [k, st.plot || 0.003]));                   // the plot's radius
   f.height = y1; f.header = h;
   return f;
 }
