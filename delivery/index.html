@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en-NZ" data-place="auckland" data-strip="off" data-feeds="foodprices,weather">
+<head>
+<script src="/lab/preview-head.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Supermarket order to doorstep · assembl lab</title>
+<meta name="description" content="One online grocery order on an Example day, from the order to the doorstep over real Auckland streets as a point cloud: picking, a swap, packing, the van's route, live ETAs as drafts, a missed delivery recovered. Simulated, with Stats NZ food prices.">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site-v2/site-v2.css">
+<link rel="stylesheet" href="/site-v2/lab.css">
+<link rel="stylesheet" href="/delivery/delivery.css">
+<link rel="preload" href="/assets/models/delivery/delivery-points.json" as="fetch" crossorigin>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<style>html,body{background:#21121F}</style>
+<noscript><link rel="stylesheet" href="/delivery/nojs.css"></noscript>
+</head>
+<body class="site-v2 v2-tone-plum">
+<a class="skip" href="#sim">Skip to the sim</a>
+<script src="/lab/navigation.js"></script>
+<main id="main">
+ <section class="sim" id="sim" aria-labelledby="sim-title">
+  <header class="sim-head">
+   <p class="v2-eyebrow">Retail · a customer journey</p>
+   <h1 id="sim-title" class="sim-h1">Supermarket order <span class="v2-accent">to doorstep</span></h1>
+   <p class="sim-lede">One online grocery order on an Example Tuesday, over real Auckland streets. Six small agents watch, suggest and draft; a person says yes to anything that goes to a customer.</p>
+   <p class="sim-truth"><span class="truth">Simulated</span><span class="truth" data-k="live" id="price-chip">Stats NZ prices · snapshot</span><span class="truth" data-k="ill">Illustrative route and interior</span></p>
+  </header>
+
+  <div class="sim-stage" id="stage">
+   <div class="sim-controls" role="group" aria-label="Sim controls">
+    <button type="button" class="ctl ctl-play" id="play" aria-label="Pause motion" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" class="i-pause"><path d="M8 5v14M16 5v14"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="i-play"><path d="M8 5l11 7-11 7z"/></svg></button>
+    <button type="button" class="ctl" id="prev" aria-label="Previous stage"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" class="ctl" id="next" aria-label="Next stage"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    <label class="speed"><span>Speed</span><select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    <button type="button" class="wrong" id="wrong" aria-pressed="true"><span class="sw" aria-hidden="true"></span><span class="wrong-t">Make it go wrong<small>Out of stock · traffic · nobody home</small></span></button>
+    <button type="button" class="ctl-text" id="restart">Restart</button>
+   </div>
+   <div class="stage-box" id="stage-box">
+   <img class="stage-still" id="stage-still" src="/delivery/still.webp" width="1400" height="1076" alt="Auckland's eastern suburbs as a point cloud: streets, buildings and the coast around the Example supermarket site, with the van's route out to six fictional households.">
+   <canvas id="map" aria-hidden="true"></canvas>
+   <svg class="leaders" aria-hidden="true"></svg>
+   <p class="stage-k" id="callouts-k">On the map</p>
+   <ul class="callouts" id="callouts" aria-label="On the map">
+    <li class="co co-store" data-anchor="store"><strong>Supermarket twin</strong><span class="co-truth">Example, not a model of this site</span><span class="co-line" data-line>Order in. 13 items.</span></li>
+    <li class="co co-van" data-anchor="van"><strong>Van 1</strong><span class="co-line" data-line>Waiting at the store</span><span class="co-truth">Simulated · drawn larger than life</span></li>
+    <li class="co co-home" data-anchor="A"><strong>Household A</strong><span class="co-line" data-line>Window 3:30–4:30 pm</span><span class="co-truth">Fictional · a real street, no address</span></li>
+    <li class="co co-home" data-anchor="B"><strong>Household B</strong><span class="co-line" data-line>Window 4:00–5:00 pm</span><span class="co-truth">Fictional · a real street, no address</span></li>
+    <li class="co co-home" data-anchor="C"><strong>Household C</strong><span class="co-line" data-line>Window 4:00–5:00 pm</span><span class="co-truth">Fictional · a real street, no address</span></li>
+    <li class="co co-home co-focus" data-anchor="D"><strong>Household D</strong><span class="co-line" data-line>Window 4:00–5:00 pm</span><span class="co-truth">Fictional · the order we follow</span></li>
+    <li class="co co-home" data-anchor="E"><strong>Household E</strong><span class="co-line" data-line>Window 4:30–5:30 pm</span><span class="co-truth">Fictional · a real street, no address</span></li>
+    <li class="co co-home" data-anchor="F"><strong>Household F</strong><span class="co-line" data-line>Window 4:30–5:30 pm</span><span class="co-truth">Fictional · a real street, no address</span></li>
+   </ul>
+   <figure class="inset" id="inset" hidden>
+    <canvas id="floor" aria-hidden="true"></canvas>
+    <figcaption><strong>Inside the store</strong><span class="inset-line" id="inset-line">Picking: 0 of 13</span><span class="truth" data-k="ill">Illustrative interior · not this store's layout</span></figcaption>
+   </figure>
+   </div>
+   <p class="map-credit">Real streets, buildings and coast, about 7 km across; heights ×3. Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Map data © OpenStreetMap contributors, via OpenFreeMap.</p>
+  </div>
+
+
+  <section class="sim-panel" id="panel" aria-live="polite" aria-labelledby="pn-title">
+   <div class="pn-head"><span class="pn-n mono" id="pn-n">Stage 1 of 8</span><span class="pn-clock mono" id="pn-clock">Example Tuesday · 10:42 am</span></div>
+   <h2 class="pn-title" id="pn-title">Order placed</h2>
+   <p class="pn-what" id="pn-what">The Example customer at household D orders 13 items for delivery on Tuesday, 4:00–5:00 pm. At Stats NZ average prices the basket comes to about $87.88. The Intent agent reads it and flags one risk: butter was running low on the shelf this morning.</p>
+   <div class="agent" id="pn-agent"><span class="agent-name">Intent agent</span><span class="auth" data-auth="observe">observe</span><span class="agent-does">Reads the order: what's in it, the window and any note for the driver.</span></div>
+   <ul class="msgs" id="pn-msgs"><li class="msg" data-kind="order"><span class="msg-to">To household D · from the Intent agent</span><p>Thanks, your order is in for Tuesday, 4:00–5:00 pm. 13 items. We'll message you if anything changes.</p><span class="msg-state">Draft · waiting for a person's yes</span></li></ul>
+   <div class="decide" id="pn-decide" hidden></div>
+   <div class="proof-mini" id="pn-proof" hidden></div>
+  </section>
+
+  <nav class="sim-steps" aria-label="Stages of the journey">
+   <ol id="steps">
+    <li><button type="button" data-stage="0" aria-current="step"><span class="st-n">1</span><span class="st-t">Order placed</span></button></li>
+    <li><button type="button" data-stage="1"><span class="st-n">2</span><span class="st-t">Picking</span></button></li>
+    <li><button type="button" data-stage="2"><span class="st-n">3</span><span class="st-t">Out of stock</span></button></li>
+    <li><button type="button" data-stage="3"><span class="st-n">4</span><span class="st-t">Packed and loaded</span></button></li>
+    <li><button type="button" data-stage="4"><span class="st-n">5</span><span class="st-t">On the road</span></button></li>
+    <li><button type="button" data-stage="5"><span class="st-n">6</span><span class="st-t">Windows kept</span></button></li>
+    <li><button type="button" data-stage="6"><span class="st-n">7</span><span class="st-t">Nobody home</span></button></li>
+    <li><button type="button" data-stage="7"><span class="st-n">8</span><span class="st-t">Proof</span></button></li>
+   </ol>
+  </nav>
+ </section>
+
+ <section class="band proof" id="proof" aria-labelledby="proof-title">
+  <div class="band-in">
+   <div class="band-head">
+    <p class="v2-eyebrow">The proof</p>
+    <h2 id="proof-title" class="band-h2">What the run <span class="v2-accent">shows</span></h2>
+    <p class="band-lede">Measured at the end of the Example day. <span class="truth">Simulated</span> Every figure comes from this one run of the sim, not from a real store or real customers.</p>
+   </div>
+   <dl class="proof-grid" id="proof-grid">
+    <div><dt>Orders delivered in their window</dt><dd><b>6 of 6</b><span>One rebooked by the customer to 7:00–8:00 pm and delivered at 7:21 pm on the evening run.</span></dd></div>
+    <div><dt>Substitutions accepted</dt><dd><b>1 of 1</b><span>Butter swapped for another 500 g butter after the customer said yes.</span></dd></div>
+    <div><dt>Missed delivery recovered</dt><dd><b>1 of 1</b><span>Nobody home at D. The customer chose to rebook.</span></dd></div>
+    <div><dt>Customer effort saved</dt><dd><b>59 min</b><span>Across the six households, from the assumptions below.</span></dd></div>
+    <div><dt>Messages sent by assembl</dt><dd><b>0</b><span>10 drafts written. Each waits for a person's yes.</span></dd></div>
+   </dl>
+   <ul class="assume" id="assume">
+    <li>An ETA you can trust, so no one waits by the door: 6 min × 6 households</li>
+    <li>A swap settled in one reply, not a refund claim later: 9 min × 1</li>
+    <li>A missed drop rebooked in one reply, not a call to support: 14 min × 1</li>
+   </ul>
+  </div>
+ </section>
+
+ <section class="band agents" id="agents" aria-labelledby="agents-title">
+  <div class="band-in band-split">
+   <div class="band-head">
+    <p class="v2-eyebrow">Who does what</p>
+    <h2 id="agents-title" class="band-h2">Six small agents, <span class="v2-accent">each with a limit</span></h2>
+    <p class="band-lede">Each agent has one job and a written limit on what it may do alone. None of them sends a message, moves money or changes an order. A person approves every draft.</p>
+   </div>
+   <ul class="roster" id="roster">
+    <li><strong>Intent agent</strong><span class="auth" data-auth="observe">observe</span><p>Reads the order: what's in it, the window and any note for the driver.</p></li>
+    <li><strong>Picking agent</strong><span class="auth" data-auth="observe">observe</span><p>Follows the pick: which aisle, what's found, what's missing.</p></li>
+    <li><strong>Substitution agent</strong><span class="auth" data-auth="recommend">recommend</span><p>Finds swaps for anything out of stock. It suggests; the customer decides.</p></li>
+    <li><strong>Route agent</strong><span class="auth" data-auth="act with approval">act with approval</span><p>Plans the van's drops around the windows. The dispatcher approves the run before it goes.</p></li>
+    <li><strong>Wait agent</strong><span class="auth" data-auth="draft">draft</span><p>Keeps every ETA honest and drafts the message. A person sends it.</p></li>
+    <li><strong>Resolution agent</strong><span class="auth" data-auth="recommend">recommend</span><p>When a drop fails, offers the customer options. Nothing changes without their yes.</p></li>
+   </ul>
+  </div>
+ </section>
+
+ <section class="band basket" id="basket" aria-labelledby="basket-title">
+  <div class="band-in band-split rev">
+   <div class="band-head">
+    <p class="v2-eyebrow">The basket</p>
+    <h2 id="basket-title" class="band-h2">Priced from <span class="v2-accent">Stats NZ</span></h2>
+    <p class="band-lede">Household D's 13 items at Stats NZ average retail prices. The swap prices are simulated: Stats NZ publishes one average for butter, not one per brand or size.</p>
+    <p class="src" id="price-src"><span class="truth" data-k="live">Snapshot</span> Stats NZ average retail prices, September 2026, built into this page. On the lab site the latest published month replaces them.</p>
+   </div>
+   <table class="bk" id="bk">
+    <caption class="sr">Household D's basket with prices</caption>
+    <thead><tr><th scope="col">Item</th><th scope="col">Qty</th><th scope="col">Average price</th><th scope="col">Line</th></tr></thead>
+    <tbody id="bk-body"></tbody>
+    <tfoot><tr><th scope="row" colspan="3">Basket</th><td id="bk-total">$87.88</td></tr></tfoot>
+   </table>
+  </div>
+ </section>
+
+ <section class="band words" id="in-words" aria-labelledby="words-title">
+  <div class="band-in">
+   <div class="band-head">
+    <p class="v2-eyebrow">The journey in words</p>
+    <h2 id="words-title" class="band-h2">Order to doorstep, <span class="v2-accent">step by step</span></h2>
+    <p class="band-lede">The same run as the map, as text. It follows your choices and the "make it go wrong" switch.</p>
+   </div>
+   <ol class="words-list" id="words">
+    <li><strong>Order placed, 10:42 am.</strong> The Example customer at household D orders 13 items for Tuesday, 4:00–5:00 pm. The Intent agent (observe) reads the order and flags butter as low. Draft to D: order confirmed.</li>
+    <li><strong>Picking, 2:05 pm.</strong> A picker walks the aisles of an illustrative store. The Picking agent (observe) follows: 12 of 13 found, the butter shelf is empty.</li>
+    <li><strong>Out of stock, 2:31 pm.</strong> The Substitution agent (recommend) suggests another 500 g butter at the same price, or two 250 g blocks for $1.10 more. Draft to D asking which. The customer approves another 500 g butter.</li>
+    <li><strong>Packed and loaded, 2:40 pm.</strong> Six orders in chilled, frozen and ambient crates, loaded last drop first. The Route agent (act with approval) plans 27.1 km and six drops; the dispatcher approves.</li>
+    <li><strong>On the road, 3:45 pm.</strong> The van leaves. The Wait agent (draft) drafts ETAs for A (3:54 pm) and B (4:08 pm).</li>
+    <li><strong>Windows kept.</strong> A and B delivered in their windows. Traffic adds 12 minutes on the way to C; the Wait agent redrafts C (4:31 pm) and D (4:44 pm), both still inside their windows.</li>
+    <li><strong>Nobody home, 4:42 pm.</strong> No answer at D. The Resolution agent (recommend) drafts two options: rebook for 7:00–8:00 pm, or a safe place. The customer rebooks. E (5:01 pm) and F (5:17 pm) get their groceries in their windows. The van is back at 5:25 pm; D's order arrives at 7:21 pm on the evening run.</li>
+    <li><strong>Proof.</strong> 6 of 6 in their window, 1 of 1 swap accepted, 1 of 1 missed delivery recovered, about 59 minutes of customer effort saved, 0 messages sent by assembl. All simulated.</li>
+   </ol>
+  </div>
+ </section>
+
+ <section class="band about" id="about" aria-labelledby="about-title">
+  <div class="band-in band-split">
+   <div class="band-head">
+    <p class="v2-eyebrow">What's real here</p>
+    <h2 id="about-title" class="band-h2">Real streets, <span class="v2-accent">a made-up day</span></h2>
+   </div>
+   <div class="about-copy">
+    <p>The map is real: about 7 km of Auckland's eastern suburbs, every street, building footprint and stretch of coast from open data, with heights exaggerated three times. The supermarket stands on a real site of its kind, the same one the lab home pins: <b>Supermarket twin · Example, not a model of this site</b>. Nothing on this page models the business there.</p>
+    <p>The households are fictional. Each is a point part-way along a real local street, never a house and never a number. The van's route is the shortest drive over those streets through all six; it ignores one-way rules and turns, so treat it as illustrative.</p>
+    <p>The day is simulated: the order, the pick, the swap, the windows, the traffic and the missed delivery. The basket's prices are Stats NZ averages (latest published when the lab's feed answers). Rain in the live weather slows the van by a tenth. Every message is a draft; nothing is sent.</p>
+    <p class="src">Maturity: <span class="src-stage">Shadow</span> One-way public data (food prices, weather) reaches a simulated store, van and customers.</p>
+    <p class="credits" id="credits">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Map data © OpenStreetMap contributors, via OpenFreeMap. Food prices: Stats NZ, CC BY 4.0. Weather: Open-Meteo.</p>
+   </div>
+  </div>
+ </section>
+</main>
+<footer class="foot">
+ <p><a href="/">assembl lab</a> · Free public-good simulations by assembl. <a href="/assets/models/delivery/SOURCE.md">Map data and provenance</a></p>
+</footer>
+<script src="/feeds.js"></script>
+<script src="/ask.js" data-page="store"></script>
+<script type="module" src="/delivery/delivery.js"></script>
+</body>
+</html>

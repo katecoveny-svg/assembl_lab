@@ -1,0 +1,10 @@
+/* assembl lab · Supermarket order to doorstep, with JavaScript off: the same as without WebGL (delivery.css, .dl-nogl), so the
+   still, the callouts as a list and the journey in words; the controls do nothing without the script, so they step aside. */
+.sim-stage { position: relative; height: auto; min-height: 0; }
+.stage-box { flex: none; height: auto; min-height: 0; }
+.stage-still { position: static; height: auto; opacity: 1; }
+.leaders, .sim-controls, .inset { display: none; }
+.stage-k { display: block; }
+.callouts { position: static; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 8px; margin: 0 0 16px; }
+.co { position: static; width: auto; max-width: none; opacity: 1; visibility: visible; }
+.sim-steps button { pointer-events: none; }
