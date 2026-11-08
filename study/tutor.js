@@ -112,7 +112,7 @@
     <div class="alt-priv" role="region" aria-label="Before you start" hidden>
       <b>Before you start</b>
       <ul><li>You're talking to an AI, not a person. It gives hints and guidance, not answers or marking.</li>
-        <li>What you type here is sent to <b>Anthropic PBC</b> (United States) to write the reply. assembl doesn't ask for or keep your name, email, school or location, and there's no account or tracking. See <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Anthropic's privacy policy</a> for what they do with messages.</li>
+        <li>What you type here is sent to <b>Anthropic PBC</b> (United States) to write the reply. assembl doesn't ask for or keep your name, email, school or location, and no account is required. We count anonymous machine views and interactions to improve the tools. See <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Anthropic's privacy policy</a> for what they do with messages.</li>
         <li>Don't type personal details about you or anyone else. Just the study question.</li>
         <li>If you're not okay, talk to a person: free call or text <b>1737</b>, any time. Questions about this page: <a href="mailto:hello@assembl.co.nz">hello@assembl.co.nz</a>.</li></ul>
       <div class="row"><button class="alt-b" type="button" data-priv-ok>Okay, let's study</button><small>Shown once on this device.</small></div>
