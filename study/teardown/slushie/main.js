@@ -12,6 +12,7 @@ const api=await createTeardown({id:'slushie',title:'Make it slush.',subtitle:'Co
  callouts:[],sources:[{label:'OpenStax: phase change and latent heat',href:'https://openstax.org/books/college-physics-2e/pages/14-3-phase-change-and-latent-heat',note:'Q = mcΔT before freezing; Q = mL during freezing. Values used: c = 4,180 J kg⁻¹ K⁻¹ and L = 334,000 J kg⁻¹.'},{label:'Original Assembl teaching design',note:'Geometry is illustrative, not a manufacturer’s model. A helical scraper turns around a cold drum; the refrigeration circuit carries heat away. Real drinks freeze over a range because of dissolved sugar.'}],
 });
 api.setLabels(false);
+const fallback=document.querySelector('.tdk-fallback p');if(fallback)fallback.textContent='Your browser could not start 3D. The numerical cooling model still works; try a WebGL-capable browser to inspect the machine.';
 const $=s=>document.querySelector(s);
 const left=$('.tdk-console > .tdk-col');
 const actions=document.createElement('div');actions.className='slush-actions';
