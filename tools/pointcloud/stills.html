@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { createEngine, imageForm, objectForm, normalise } from "/lab/pc/engine.js";
 import { hallForm } from "/lab/pc/forms.js";
+import { worldForm, twinForm, seaForm } from "/lab/pc/worlds.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 const loadImg = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("image " + src)); i.src = src; });
@@ -23,12 +24,42 @@ window.renderStill = async (job) => {
   else if (job.kind === "glb") {
     const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder); const g = await gl.loadAsync(job.src);
     g.scene.traverse((o) => { if (o.isMesh && /glass|window/i.test(o.material?.name || "")) o.userData.glass = true; });
+    // a few models carry a room or a layout for their page: keep only what is near the object (within), or set parts out for a still (place)
+    if (job.within) { g.scene.updateMatrixWorld(true); g.scene.traverse((o) => { if (!o.isMesh) return; const b = new THREE.Box3().setFromObject(o), c = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3()); if (Math.hypot(c.x, c.z) > job.within || Math.max(sz.x, sz.z) > job.within * 2 || c.y > (job.maxY ?? Infinity)) o.visible = false; }); }
+    for (const [pre, [x, y, z, sc, sx]] of Object.entries(job.place || {})) g.scene.traverse((o) => { if (!o.isMesh || !o.name.startsWith(pre)) return; o.position.set(x ?? o.position.x * (sx ?? 1), y ?? o.position.y, z ?? o.position.z); o.scale.multiplyScalar(sc ?? 1); });
     f = normalise(objectForm(g.scene, N, { edgeShare: 0.36, groundShare: 0.06, weight: (m) => (m.userData.glass ? 0.25 : 1) }), 1.5);
     scale = job.scale ?? 1.3; rot = job.rot ?? 0.55; e.camera.position.set(0, job.camY ?? 0.75, 3.2); e.camera.lookAt(0, job.lookY ?? 0.2, 0); e.setLift(0.5, 0.55);
   }
+  else if (job.kind === "world" || job.kind === "twin" || job.kind === "sea") {
+    f = job.kind === "world" ? await worldForm(N) : job.kind === "sea" ? await seaForm(N) : twinForm(job.id.replace(/^twin-/, ""), N);
+    scale = job.scale ?? 1; rot = job.rot ?? 0; e.camera.position.set(0, job.camY ?? 1.5, job.camZ ?? 3.1); e.camera.lookAt(0, job.lookY ?? 0.05, 0); e.setLift(0.5, 0.5);
+  }
+  else if (job.kind === "bubbles") {               // Guess the world: countries as bubbles on income × life expectancy, two axes and a floor grid
+    const g = new THREE.Group(), r = ((s) => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
+    g.add(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.012, 0.012)).translateX(0.1), new THREE.Mesh(new THREE.BoxGeometry(0.012, 1.3, 0.012)).translateY(0.65).translateX(-1));
+    for (let i = 0; i <= 8; i++) g.add(new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.004, 0.6)).translateX(-1 + i * 0.275).translateZ(-0.3));
+    for (let i = 0; i < 95; i++) { const inc = r(), life = 0.2 + 0.62 * Math.pow(inc, 0.55) + (r() - 0.5) * 0.3, pop = Math.pow(r(), 5); const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.025 + 0.13 * pop, 1)); m.position.set(-0.95 + inc * 2.05, 0.1 + life * 1.1, (r() - 0.5) * 0.9); g.add(m); }
+    f = normalise(objectForm(g, N, { edgeShare: 0.3, groundShare: 0.05 }), 1.5); rot = job.rot ?? 0.25; e.camera.position.set(0, 0.7, 3.2); e.camera.lookAt(0, 0.5, 0); e.setLift(0.5, 0.5);
+  }
   else if (job.kind === "knot") { const m = new THREE.Mesh(new THREE.TorusKnotGeometry(0.42, 0.13, 260, 28, 2, 3)); m.position.y = 0.6; f = normalise(objectForm(m, N, { edgeShare: 0.2, groundShare: 0.06 }), 1.1); scale = job.scale ?? 1.25; e.camera.position.set(0, 0.6, 3.3); e.camera.lookAt(0, 0.42, 0); e.setLift(0.5, 0.5); }
-  e.group.rotation.y = rot; e.setForm(f, { immediate: true, offset, scale }); e.render();
+  e.group.rotation.y = rot; e.setForm(f, { immediate: true, offset, scale });
+  if (job.fit || /world|twin|sea/.test(job.kind)) fit(e, f, job);
+  e.render();
   const url = c.toDataURL("image/png"); e.dispose(); return url;
 };
+// frame the object: zoom so it fills `fit` of the picture (by its projected points, ground excluded), then centre it with a view offset
+function fit(e, f, job) {
+  const [fw, fh] = job.fit || [0.84, 0.8], cy = job.cy ?? 0.5, idx = [];
+  for (let i = 0; i < f.n && idx.length < 6000; i += Math.max(1, Math.floor(f.n / 6000))) if (f.kind[i] !== 2) idx.push(i);
+  const box = () => { e.resize(); e.group.updateMatrixWorld(); e.camera.updateMatrixWorld(); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    const xs = [], ys = []; for (const i of idx) { const q = e.project([f.pos[i * 3], f.pos[i * 3 + 1], f.pos[i * 3 + 2]]); xs.push(q.x); ys.push(q.y); }
+    xs.sort((a, b) => a - b); ys.sort((a, b) => a - b); const at = (v, t) => v[Math.min(v.length - 1, Math.floor(t * v.length))];   // 1% trimmed: a stray part never sets the frame
+    return { x0: at(xs, 0.01), x1: at(xs, 0.99), y0: at(ys, 0.01), y1: at(ys, 0.99) }; };
+  for (let pass = 0; pass < 3; pass++) {
+    const b = box(); e.camera.zoom *= Math.min((fw * job.w) / (b.x1 - b.x0), (fh * job.h) / (b.y1 - b.y0)); e.camera.updateProjectionMatrix();
+    const c = box(), vo = e.camera.view; const ox = (vo?.offsetX || 0) + ((c.x0 + c.x1) / 2 - job.w / 2), oy = (vo?.offsetY || 0) + ((c.y0 + c.y1) / 2 - job.h * cy);
+    e.camera.setViewOffset(job.w, job.h, ox, oy, job.w, job.h);
+  }
+}
 window.ready = true;
 </script></body></html>

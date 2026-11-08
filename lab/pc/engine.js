@@ -110,7 +110,7 @@ export function imageForm(img, n, { maxSide = 420, depth = 0.04, seed = 7, crop 
 const VERT = /* glsl */ `
 attribute vec3 aA, aB; attribute float aLA, aLB, aSeed, aKind;
 uniform float uT, uTime, uScanY, uScan, uSize, uPR, uNear, uFar, uReduce;
-uniform vec3 uOffA, uOffB; uniform float uScaleA, uScaleB;
+uniform vec3 uOffA, uOffB; uniform float uScaleA, uScaleB, uTiltA, uTiltB, uSway;
 varying vec3 vCol; varying float vAlpha, vSpark;
 float h1(float n) { return fract(sin(n) * 43758.5453123); }
 vec3 h3(float n) { return vec3(h1(n), h1(n + 1.31), h1(n + 2.71)) * 2.0 - 1.0; }
@@ -127,10 +127,12 @@ vec3 irid(float k) {
   for (int j = 0; j < 5; j++) if (j == i) { a = c[j]; b = c[j == 4 ? 0 : j + 1]; }
   return mix(a, b, smoothstep(0.0, 1.0, f));
 }
+// a form's pose about its own centre: the slow sway (yaw), then its tilt toward the camera (a site model is seen from above)
+vec3 pose(vec3 q, float tilt) { float c = cos(uSway), s = sin(uSway); q = vec3(c * q.x + s * q.z, q.y, -s * q.x + c * q.z); float ct = cos(tilt), st = sin(tilt); return vec3(q.x, ct * q.y - st * q.z, st * q.y + ct * q.z); }
 void main() {
   // the stagger: each point leaves and lands at its own moment; mid-flight it is lifted off its path and glows a little
   float t = clamp(uT * 1.6 - aSeed * 0.6, 0.0, 1.0); t = t * t * (3.0 - 2.0 * t);
-  vec3 a = aA * uScaleA + uOffA, b = aB * uScaleB + uOffB, d = b - a;
+  vec3 a = pose(aA * uScaleA, uTiltA) + uOffA, b = pose(aB * uScaleB, uTiltB) + uOffB, d = b - a;
   float fly = sin(3.14159 * t);
   vec3 p = mix(a, b, t) + h3(aSeed * 97.0) * fly * (0.12 + 0.35 * length(d));
   float L = mix(aLA, aLB, t);
@@ -229,7 +231,7 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   geo.setAttribute("position", new THREE.BufferAttribute(A, 3)); geo.setAttribute("aA", new THREE.BufferAttribute(A, 3)); geo.setAttribute("aB", new THREE.BufferAttribute(B, 3));
   geo.setAttribute("aLA", new THREE.BufferAttribute(LA, 1)); geo.setAttribute("aLB", new THREE.BufferAttribute(LB, 1)); geo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1)); geo.setAttribute("aKind", new THREE.BufferAttribute(kind, 1));
   const U = { uT: { value: 1 }, uTime: { value: 0 }, uScanY: { value: -10 }, uScan: { value: 0 }, uSize: { value: 2.2 }, uPR: { value: PR }, uNear: { value: 2.4 }, uFar: { value: 4.6 }, uReduce: { value: reduceMotion ? 1 : 0 },
-    uOffA: { value: new THREE.Vector3() }, uOffB: { value: new THREE.Vector3() }, uScaleA: { value: 1 }, uScaleB: { value: 1 } };
+    uOffA: { value: new THREE.Vector3() }, uOffB: { value: new THREE.Vector3() }, uScaleA: { value: 1 }, uScaleB: { value: 1 }, uTiltA: { value: 0 }, uTiltB: { value: 0 }, uSway: { value: 0 } };
   const mat = new THREE.ShaderMaterial({ uniforms: U, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, depthTest: false,
     blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; group.add(pts);
@@ -244,14 +246,13 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   // forms and morphing
   let cur = null, next = null, tween = null;
   const load = (arrP, arrL, f) => { const g = f.n === N ? f : resample(f, N); arrP.set(g.pos); arrL.set(g.light); for (let i = 0; i < N; i++) kind[i] = g.kind[i]; return g; };
-  function setForm(f, { offset = [0, 0, 0], scale = 1, ms = 2400, immediate = false } = {}) {
+  function setForm(f, { offset = [0, 0, 0], scale = 1, tilt = 0, ms = 2400, immediate = false } = {}) {
     if (!cur || immediate || reduceMotion) {
-      cur = { f: load(A, LA, f), offset, scale }; B.set(A); LB.set(LA); U.uOffA.value.set(...offset); U.uOffB.value.set(...offset); U.uScaleA.value = U.uScaleB.value = scale; U.uT.value = 1;
+      cur = { f: load(A, LA, f), offset, scale, tilt }; B.set(A); LB.set(LA); U.uOffA.value.set(...offset); U.uOffB.value.set(...offset); U.uScaleA.value = U.uScaleB.value = scale; U.uTiltA.value = U.uTiltB.value = tilt; U.uT.value = 1;
       geo.attributes.aA.needsUpdate = geo.attributes.aB.needsUpdate = geo.attributes.aLA.needsUpdate = geo.attributes.aLB.needsUpdate = geo.attributes.aKind.needsUpdate = true; next = null; return;
     }
-    if (tween && U.uT.value < 1) { A.set(B); LA.set(LB); U.uOffA.value.copy(U.uOffB.value); U.uScaleA.value = U.uScaleB.value; }
-    else if (next) { A.set(B); LA.set(LB); U.uOffA.value.copy(U.uOffB.value); U.uScaleA.value = U.uScaleB.value; }
-    next = { f: load(B, LB, f), offset, scale }; U.uOffB.value.set(...offset); U.uScaleB.value = scale; U.uT.value = 0;
+    if ((tween && U.uT.value < 1) || next) { A.set(B); LA.set(LB); U.uOffA.value.copy(U.uOffB.value); U.uScaleA.value = U.uScaleB.value; U.uTiltA.value = U.uTiltB.value; }
+    next = { f: load(B, LB, f), offset, scale, tilt }; U.uOffB.value.set(...offset); U.uScaleB.value = scale; U.uTiltB.value = tilt; U.uT.value = 0;
     geo.attributes.aA.needsUpdate = geo.attributes.aB.needsUpdate = geo.attributes.aLA.needsUpdate = geo.attributes.aLB.needsUpdate = geo.attributes.aKind.needsUpdate = true;
     tween = { t0: performance.now(), ms };
   }
@@ -259,7 +260,7 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   function assembleFrom(f, opts = {}) {
     if (reduceMotion) return setForm(f, { ...opts, immediate: true });
     const sc = makeForm(N), rr = rng(21); for (let i = 0; i < N; i++) { const th = rr() * Math.PI * 2, ph = Math.acos(2 * rr() - 1), R = 0.9 + rr() * 1.4; sc.pos.set([Math.sin(ph) * Math.cos(th) * R, 0.4 + Math.cos(ph) * R * 0.6, Math.sin(ph) * Math.sin(th) * R], i * 3); sc.light[i] = 0.1 + rr() * 0.25; sc.kind[i] = 0; }
-    cur = null; setForm(sc, { offset: opts.offset, scale: 1, immediate: true }); setForm(f, { ...opts, ms: opts.ms ?? 3200 });
+    cur = null; setForm(sc, { offset: opts.offset, scale: 1, tilt: opts.tilt, immediate: true }); setForm(f, { ...opts, ms: opts.ms ?? 3200 });
   }
   function scan(ms = 2600, y0 = -0.05, y1 = 1.2) { if (reduceMotion) return; scanT = { t0: performance.now(), ms, y0, y1 }; }
   let scanT = null, sway = 0, paused = false, running = false, onFrame = null;
@@ -268,15 +269,16 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
     U.uTime.value = now / 1000;
     if (tween) { const k = Math.min(1, (now - tween.t0) / tween.ms); U.uT.value = k; if (k >= 1) { tween = null; cur = next; } }
     if (scanT) { const k = (now - scanT.t0) / scanT.ms; if (k >= 1) { scanT = null; U.uScan.value = 0; } else { U.uScan.value = Math.sin(Math.PI * k); U.uScanY.value = scanT.y0 + (scanT.y1 - scanT.y0) * k; } }
-    if (!reduceMotion && swayOn) { sway = Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08; group.rotation.y = sway; }
+    if (!reduceMotion && swayOn) { sway = Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08; U.uSway.value = sway; }
     onFrame?.(now); render();
   }
   function start() { if (running) return; running = true; requestAnimationFrame(frame); }
   function stop() { running = false; }
   // where a point of the current form lands on screen (for callout leader lines)
   const tmp = new THREE.Vector3();
-  function project(p, { offset = cur?.offset || [0, 0, 0], scale = cur?.scale || 1 } = {}) {
-    tmp.set(p[0] * scale + offset[0], p[1] * scale + offset[1], p[2] * scale + offset[2]); tmp.applyMatrix4(group.matrixWorld).project(camera);
+  function project(p, { offset = (next || cur)?.offset || [0, 0, 0], scale = (next || cur)?.scale || 1, tilt = (next || cur)?.tilt || 0 } = {}) {
+    const c = Math.cos(U.uSway.value), s = Math.sin(U.uSway.value), x = p[0] * scale, y = p[1] * scale, z = p[2] * scale, xr = c * x + s * z, zr = -s * x + c * z, ct = Math.cos(tilt), st = Math.sin(tilt);
+    tmp.set(xr + offset[0], ct * y - st * zr + offset[1], st * y + ct * zr + offset[2]); tmp.applyMatrix4(group.matrixWorld).project(camera);
     return { x: (tmp.x * 0.5 + 0.5) * W, y: (-tmp.y * 0.5 + 0.5) * H, visible: tmp.z < 1 };
   }
   return { N, renderer, camera, group, uniforms: U, setForm, assembleFrom, scan, start, stop, render, project, resize,

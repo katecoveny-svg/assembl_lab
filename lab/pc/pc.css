@@ -12,7 +12,18 @@
 .pc-leaders circle { fill: #F9F6F2; } .pc-leaders circle.ring { fill: none; stroke: rgba(249, 246, 242, .5); stroke-width: 1; }
 .pc-on .pc-run > section { position: relative; z-index: 1; background: transparent; }
 .pc-on .pc-run .hero-glow { display: none; }
-.pc-on #mark-a .v2-mark-assemble { opacity: 0; }           /* the cloud draws the mark here; the flat mark stays for no-JS */
+/* the hero's small world: a still without WebGL; once the cloud draws, the still steps aside and the labels follow the model */
+.hero-world { width: 100%; justify-self: stretch; aspect-ratio: 16 / 11; }
+.hero-world img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity .8s ease; }
+.pc-ready .hero-world img { opacity: 0; }
+.hero-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
+.hero-tags a { display: inline-block; padding: 7px 13px; border-radius: 999px; font-size: 14px; line-height: 1.2; white-space: nowrap; color: #F9F6F2; text-decoration: none;
+  background: rgba(33, 18, 31, .7); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.hero-tags a:hover { box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .6); }
+.hero-tags a:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
+.pc-on .hero-tags { position: fixed; inset: 0; z-index: 5; pointer-events: none; display: block; }
+.pc-on .hero-tags a { position: absolute; left: 0; top: 0; pointer-events: auto; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility 0s linear .5s; }
+.pc-on .hero-tags a.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
 
 /* the doors */
 .jump { padding: clamp(72px, 9vw, 128px) 0 clamp(64px, 8vw, 112px); }
@@ -53,8 +64,8 @@ html:not(.pc-on) .arch-callouts { display: grid; grid-template-columns: repeat(a
 html:not(.pc-on) .arch-slot { display: none; }
 html:not(.pc-on) .arch-in { grid-template-columns: 1fr; min-height: 0; }
 
-/* pause motion: icon only, bottom right while the opening run is on screen */
-.pc-on .pc-pause { position: fixed; right: 18px; bottom: 18px; z-index: 30; width: 44px; height: 44px; border-radius: 999px; border: 0; display: grid; place-items: center; cursor: pointer;
+/* pause motion: icon only, bottom right just above the Ask button, while the opening run is on screen */
+.pc-on .pc-pause { position: fixed; right: 18px; bottom: 76px; z-index: 30; width: 44px; height: 44px; border-radius: 999px; border: 0; display: grid; place-items: center; cursor: pointer;
   color: #F9F6F2; background: rgba(33, 18, 31, .72); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .pc-on .pc-pause:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
 .pc-on .pc-pause.off-run { opacity: 0; pointer-events: none; }
@@ -65,4 +76,20 @@ html:not(.pc-on) .arch-in { grid-template-columns: 1fr; min-height: 0; }
   .pc-on .arch-callout { position: static; opacity: 1; transform: none; max-width: none; margin-top: 10px; }
   .arch-callouts { grid-column: 1 / -1; }
 }
-@media (prefers-reduced-motion: reduce) { .pc-on .arch-callout { transition: none; } .typing.caret::after { animation: none; } .jump-tile { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pc-on .arch-callout, .pc-on .hero-tags a, .hero-world img { transition: none; } .typing.caret::after { animation: none; } .jump-tile { transition: none; } }
+@media (min-width: 900px) { .hero-in { grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); } .hero-world { margin-right: calc(-1 * clamp(0px, 3vw, 48px)); } }
+
+/* the lower chapters on the same plum ground: twin cards and study machines show point-cloud stills of their own models,
+   cards are translucent plum with a hairline (as the doors are), and a hairline divides each chapter from the next */
+.sheet.pc-lower { background: transparent; }
+.sheet.pc-lower > .chapter:first-child { border-radius: 0; }
+.pc-lower > .chapter, .close { border-top: 1px solid rgba(249, 246, 242, .1); }
+.twins .frame, .pc-lower .frame { background: #21121F; }
+.pc-lower .mc a { --v2-fg-2: var(--v2-mauve-on-dark); background: rgba(249, 246, 242, .035); box-shadow: inset 0 0 0 1px var(--v2-line); color: var(--v2-fg); }
+.pc-lower .mc a:hover { box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .24), 0 40px 70px -46px rgba(217, 186, 203, .45); }
+.pc-lower .mc .frame { background: #21121F; }
+.twins .tw-pic img { object-fit: cover; }
+.pc-lower .mc .frame img { object-fit: contain; }
+.pc-lower .doors .row { --v2-fg-2: var(--v2-mauve-on-dark); background: rgba(249, 246, 242, .035); box-shadow: inset 0 0 0 1px var(--v2-line); }
+.pc-lower .doors .row:hover { background: rgba(249, 246, 242, .07); }
+.pc-lower .years a:hover { background: rgba(249, 246, 242, .08); }
