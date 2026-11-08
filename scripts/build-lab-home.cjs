@@ -55,6 +55,7 @@ const MORE_TWINS = [
   { id: 'retail', line: 'The trade yard at 6am, the empty bins at 4pm.' },
   { id: 'moving', line: 'One tenant moves across Auckland, and never says anything twice.' },
   { id: 'stay', line: 'Bookings, cleaning, check-in and what each booking site takes.' },
+  { id: 'viaduct', line: 'One restaurant on the real waterfront, 5 pm to midnight.' },
   { id: 'office', line: 'Three floors, 120 desks, and the commute that fills them.' },
   { id: 'tourism', line: 'Visitors, guest nights and spend, region by region.' },
   { id: 'trades', line: 'Measure a plan, check the Building Code, price it from your rates.' },
