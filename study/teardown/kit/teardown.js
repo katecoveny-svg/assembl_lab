@@ -38,7 +38,6 @@ export const fmt = (x, d = 0) => {
 };
 
 // The flat "assembled a": shoulder, stem, bowl and a rose dot. Thicker strokes below 24 px, per the brand guidelines.
-const MARK = `<svg viewBox="0 0 200 200" aria-hidden="true"><path d="M66 82 C72 56 132 52 132 84" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round"/><line x1="132" y1="76" x2="132" y2="160" stroke="currentColor" stroke-width="18" stroke-linecap="round"/><path d="M132 112 C132 90 64 90 64 128 C64 166 132 166 132 136" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round"/><circle cx="160" cy="160" r="14" fill="var(--accent)"/></svg>`;
 
 const chip = (t) => (t ? `<span class="tdk-chip" title="${esc(t.note || '')}" tabindex="0">${esc(t.label)}</span>` : '');
 
@@ -157,7 +156,7 @@ export async function createTeardown(cfg) {
         </div>
         <div class="tdk-calls${labelsOn ? '' : ' off'}" aria-hidden="true"><svg></svg></div>
         <div class="tdk-hint">Drag to turn · scroll to zoom · keys: space, ← →, 1–${Math.min(9, viewKeys.length)}</div>
-        <div class="tdk-mark">${MARK}<span>assembl<em>.</em> study</span></div>
+        <div class="tdk-mark"><span>assembl<em>.</em> study</span></div>
         <div class="tdk-fallback"><svg viewBox="0 0 268 ${cfg.schematic?.height || 150}" data-schem-big></svg><p>3D could not start on this device, so the drawing shows the same model. Every number still comes from it.</p></div>
       </div>
       <div class="tdk-pn tdk-dock" role="group" aria-label="Machine controls">

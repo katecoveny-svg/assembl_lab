@@ -335,7 +335,6 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
    <p class="v2-lede lede v2-secondary">assembl builds twins around real customer journeys, starting with public information and then, on your say-so, your own.</p>
    <div class="actions">${v2.button({ href: `${MAIN}/`, label: 'Talk to assembl', size: 'lg', extra: top })}${v2.button({ href: href(studyWorld), label: 'Study for exams', variant: 'secondary', icon: 'right' })}</div>
   </div>
-  ${v2.markAssemble({ size: 300, className: 'close-a' })}
  </div>
 </section>
 </main>

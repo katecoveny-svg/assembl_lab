@@ -20,8 +20,10 @@ experiment nav) but their bodies are not covered by this file until someone move
   - `site-v2/markup.cjs`: string twins of Button, Eyebrow/Brand, Wordmark/GlassA, SplitTextReveal, Reveal, Parallax,
     Ticker, GlassAssemble, SiteNav and SiteFooter, for the static build.
   - `site-v2/site-v2.js`: their client-side motion in plain JS (nav, reveals, split text, parallax, the mark assembling).
-  - The logo is the flat mark A (8 Nov 2026), drawn inline by `site-v2/markup.cjs` (`MARK_A`), with `site-v2/mark-a.svg`,
-    `lab/favicon.svg` (the app tile) and `site-v2/mark-a-{32,180,192}.png`. The glass "a" files are retired.
+  - Headers, footers and the experiment nav show the wordmark text alone, `assembl.` (rose dot) + `lab`. Kate took the
+    "a." mark off every page on 8 Nov 2026 ("terrible"), as on assembl.co.nz, until a new mark is chosen. `MARK_A` in
+    `site-v2/markup.cjs` stays only for `wordmark({ showMark: true })`, the favicons (`lab/favicon.svg`,
+    `site-v2/mark-a-{32,180,192}.png`) and share images, which keep it for now, as the main site's do. The glass "a" files are retired.
   - `site-v2/lab.css`: Lab-only rules (the "lab" suffix, truth chips, the experiment nav). No new colours.
   Each ported file names the source commit in its header. To sync: change the main repo first, re-copy, update the
   commit in each header.
@@ -35,7 +37,8 @@ experiment nav) but their bodies are not covered by this file until someone move
    sits in `.v2-brand` so it stays lowercase. "assembly" is the study app's own name and stays.
 2. **No violet or lavender** anywhere: no `#C7B4F0`, `#D7B3F0`, `#6A50BE` or similar text, glows, rings or lights.
    (The old DO orb and its lilac light are gone from the home.)
-3. **Logo: the flat mark A** (four parts: shoulder, stem, bowl and a dusty-rose dot), ivory on dark, plum ink on light. No glass.
+3. **Logo: the wordmark only.** Lowercase `assembl` with the dusty-rose dot, ivory on dark, plum ink on light. No "a." mark in
+   headers, footers or page furniture (8 Nov 2026), and no glass.
 4. Negative space: one idea per screen, wide gutters (`--v2-gutter`), tall sections (`--v2-section`), hairlines.
 5. Motion is transform and opacity only, and every effect has a static state for reduced motion and no JS.
 6. Truth labels stay wherever they apply: Simulated, Live, Illustrative, Model/Shadow, "Fictional", draft notices.
