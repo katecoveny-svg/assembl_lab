@@ -22,7 +22,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const http = require('http');
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const {chromium} = require('playwright');
 
 const argv = process.argv.slice(2);
@@ -51,22 +51,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const n = (x) => Number(x).toLocaleString('en-NZ');
 
 // ------------------------------------------------------------------ a tiny static server for local runs
-const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.woff2': 'font/woff2', '.wasm': 'application/wasm'};
-function serve(root) {
-  return new Promise((resolve) => {
-    const srv = http.createServer((req, res) => {
-      let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-      let f = path.join(root, p);
-      if (!f.startsWith(root)) return res.writeHead(403).end();
-      if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, 'index.html');
-      if (!fs.existsSync(f)) return res.writeHead(404).end('not found');
-      res.writeHead(200, {'content-type': MIME[path.extname(f)] || 'application/octet-stream'});
-      fs.createReadStream(f).pipe(res);
-    });
-    srv.listen(0, '127.0.0.1', () => resolve(srv));
-  });
-}
+const {serve} = require('./static-server.cjs');
 
 // ------------------------------------------------------------------ the frame sampler, injected before the page runs
 // WebGL contexts are asked to keep their drawing buffer, so the sampler can read the frame that is on screen. Each
@@ -265,7 +250,7 @@ async function record(page, seconds) {
         const sheet = await ctx.newPage();
         await sheet.setViewportSize({width: 1500, height: 900});
         await sheet.setContent(`<style>body{margin:0;background:#F9F6F2;font:12px 'IBM Plex Mono',monospace;color:#33212F}div{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px}figure{margin:0;position:relative}img{width:100%;display:block;border-radius:8px}figcaption{position:absolute;left:8px;top:6px;background:#F9F6F2;padding:2px 6px;border-radius:6px}</style><div>${tiles
-          .map((t) => `<figure><img src="data:image/png;base64,${t.b64}"><figcaption>${t.label}</figcaption></figure>`)
+          .map((t) => `<figure><img src="data:image/png;base64,${t.b64}"><figcaption>${escapeHtml(t.label)}</figcaption></figure>`)
           .join('')}</div>`);
         await sheet.waitForTimeout(300);
         const f = path.join(OUT, `${id}-sheet.png`);
