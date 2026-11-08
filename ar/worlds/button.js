@@ -21,13 +21,13 @@ const CSS = `
 .war-btn{appearance:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 16px 9px 12px;border:0;border-radius:999px;background:#F9F6F2;color:#21121F;
  font:600 14px/1.1 "Instrument Sans",system-ui,-apple-system,sans-serif;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .war-btn svg{width:20px;height:20px;flex:none}
-.war-btn.alt{background:transparent;color:#F9F6F2;box-shadow:inset 0 0 0 1px rgba(217,186,203,.45)}
+.war-btn.war-alt{background:transparent;color:#F9F6F2;box-shadow:inset 0 0 0 1px rgba(217,186,203,.45)}
 .war-btn:hover{filter:brightness(.96)}
-.war-btn.alt:hover{background:rgba(249,246,242,.08)}
+.war-btn.war-alt:hover{background:rgba(249,246,242,.08)}
 .war-btn:focus-visible{outline:2px solid #D9BACB;outline-offset:3px}
 .war-btn[disabled]{cursor:progress;opacity:.75}
 .war.light .war-btn{background:#21121F;color:#F9F6F2}
-.war.light .war-btn.alt{background:transparent;color:#21121F;box-shadow:inset 0 0 0 1px rgba(51,33,47,.3)}
+.war.light .war-btn.war-alt{background:transparent;color:#21121F;box-shadow:inset 0 0 0 1px rgba(51,33,47,.3)}
 .war.light .war-btn:focus-visible{outline-color:#756771}
 .war-msg{flex-basis:100%;margin:0;font:400 11.5px/1.4 "IBM Plex Mono",ui-monospace,monospace;color:#D9BACB}
 .war.light .war-msg{color:#756771}
@@ -54,7 +54,7 @@ export function worldButton(host, { world: id, variant = 'dark', labels = null }
   const insideName = w.kind === 'place' ? MODES.inside.name : w.inside.verb;
   const L = { table: (labels && labels.table) || 'View in AR', inside: (labels && labels.inside) || insideName };
   wrap.innerHTML = `<button type="button" class="war-btn" data-mode="table" aria-label="${esc(w.name)} in AR, on your table">${ICON.ar}<span>${esc(L.table)}</span></button>`
-    + `<button type="button" class="war-btn alt" data-mode="inside" aria-label="${esc(w.name)} in AR: ${esc(insideName.toLowerCase())}">${ICON.inside}<span>${esc(L.inside)}</span></button><p class="war-msg" role="status" aria-live="polite"></p>`;
+    + `<button type="button" class="war-btn war-alt" data-mode="inside" aria-label="${esc(w.name)} in AR: ${esc(insideName.toLowerCase())}">${ICON.inside}<span>${esc(L.inside)}</span></button><p class="war-msg" role="status" aria-live="polite"></p>`;
   host.appendChild(wrap);
   const msg = wrap.querySelector('.war-msg');
   let pop = null, shade = null, last = null;
