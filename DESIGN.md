@@ -93,8 +93,10 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
   point cloud (`lab/pc/auckland.js`, baked from open data by `tools/pointcloud/bake-auckland.mjs`; provenance in
   `assets/models/auckland/SOURCE.md`): true horizontal scale, heights ×5, most of the hero on the right. It assembles onto its
   own still (rendered on no ground, so no box edge), sways slowly, and a reading scan passes over it. Callouts name public
-  landmarks with facts only; twins are pinned on real sites of their kind, each labelled "Example, not a model of this site",
-  and no business or institution is ever named. Reduced motion: one still frame with every callout. No WebGL: the still,
+  landmarks with facts only (a landmark falls back to its name when space is short). Every twin is pinned on a real site of
+  its kind as a numbered chip (a numbered dot on a phone), its truth line "Example, not a model of this site" on hover or
+  focus and in the key under the map; the focused twin's plot gets a ring and a reading pulse, moving slowly from twin to
+  twin. No business or institution is ever named. Reduced motion: one still frame with every callout. No WebGL: the still,
   with the callouts and pins as lists.
 - **Chapter heads:** words rise as they enter the screen. **The close:** words and the flat mark assemble with scroll.
 - **Cards and rows:** fade and lift in, staggered (Reveal); lift 2 to 4px on hover.

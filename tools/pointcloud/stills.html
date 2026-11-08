@@ -47,6 +47,12 @@ window.renderStill = async (job) => {
   else if (job.kind === "knot") { const m = new THREE.Mesh(new THREE.TorusKnotGeometry(0.42, 0.13, 260, 28, 2, 3)); m.position.y = 0.6; f = normalise(objectForm(m, N, { edgeShare: 0.2, groundShare: 0.06 }), 1.1); scale = job.scale ?? 1.25; e.camera.position.set(0, 0.6, 3.3); e.camera.lookAt(0, 0.42, 0); e.setLift(0.5, 0.5); }
   e.group.rotation.y = rot; e.setForm(f, { immediate: true, offset, scale, tilt: job.tilt ?? 0 });
   if (job.fit || /world|twin|sea|auckland/.test(job.kind)) fit(e, f, job);
+  // a detail view: the same framing, zoomed in on one anchor or twin site (for checking what the map holds up close)
+  if (job.zoomTo) {
+    const a = f.anchors?.[job.zoomTo] || f.sites?.[job.zoomTo]; if (!a) throw new Error("no anchor " + job.zoomTo);
+    e.camera.zoom *= job.zoom || 8; e.camera.updateProjectionMatrix(); e.resize();
+    for (let pass = 0; pass < 2; pass++) { e.camera.updateMatrixWorld(); const p = e.project([a[0], a[1] * (job.zoomY ?? 0.6), a[2]]), vo = e.camera.view; e.camera.setViewOffset(job.w, job.h, (vo?.offsetX || 0) + p.x - job.w / 2, (vo?.offsetY || 0) + p.y - job.h / 2, job.w, job.h); }
+  }
   // where each anchor lands in the picture (0–1), for pages that pin static labels on the still
   window.lastAnchors = Object.fromEntries(Object.entries(f.anchors || {}).map(([k, a]) => { const p = e.project(a); return [k, [+(p.x / job.w).toFixed(4), +(p.y / job.h).toFixed(4)]]; }));
   e.render();

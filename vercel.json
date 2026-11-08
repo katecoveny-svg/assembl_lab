@@ -154,6 +154,50 @@
      "value": "no-referrer"
     }
    ]
+  },
+  {
+   "source": "/ar/worlds/files/(.*)\\.usdz",
+   "headers": [
+    {
+     "key": "Content-Type",
+     "value": "model/vnd.usdz+zip"
+    },
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=3600"
+    },
+    {
+     "key": "Access-Control-Allow-Origin",
+     "value": "*"
+    }
+   ]
+  },
+  {
+   "source": "/ar/worlds/files/(.*)\\.glb",
+   "headers": [
+    {
+     "key": "Content-Type",
+     "value": "model/gltf-binary"
+    },
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=3600"
+    },
+    {
+     "key": "Access-Control-Allow-Origin",
+     "value": "*"
+    }
+   ]
+  }
+ ],
+ "rewrites": [
+  {
+   "source": "/ar/w/:id/",
+   "destination": "/ar/w/index.html"
+  },
+  {
+   "source": "/ar/w/:id",
+   "destination": "/ar/w/index.html"
   }
  ]
 }

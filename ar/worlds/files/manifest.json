@@ -1,0 +1,602 @@
+{
+ "cafe-inside": {
+  "animated_tracks": 10,
+  "dropped": [],
+  "glb_bytes": 372956,
+  "glb_bytes_uncompressed": 3301084,
+  "glb_draco": true,
+  "loop_seconds": 8,
+  "moving_parts": 7,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1,
+  "seconds_to_build": 3,
+  "size_m": {
+   "x": 22.006,
+   "y": 3.275,
+   "z": 20.393
+  },
+  "triangles": 70344,
+  "triangles_before": 67006,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 2719221
+ },
+ "cafe-table": {
+  "animated_tracks": 10,
+  "dropped": [],
+  "glb_bytes": 372872,
+  "glb_bytes_uncompressed": 3300996,
+  "glb_draco": true,
+  "loop_seconds": 8,
+  "moving_parts": 7,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.03333333333333333,
+  "seconds_to_build": 2,
+  "size_m": {
+   "x": 0.607,
+   "y": 0.109,
+   "z": 0.562
+  },
+  "triangles": 70344,
+  "triangles_before": 67006,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 2719220
+ },
+ "claw-inside": {
+  "animated_tracks": 27,
+  "dropped": [],
+  "glb_bytes": 461048,
+  "glb_bytes_uncompressed": 2506752,
+  "glb_draco": true,
+  "loop_seconds": 9,
+  "moving_parts": 15,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1,
+  "seconds_to_build": 2,
+  "size_m": {
+   "x": 1.63,
+   "y": 2.177,
+   "z": 1.431
+  },
+  "triangles": 99146,
+  "triangles_before": 88682,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 2027665
+ },
+ "claw-table": {
+  "animated_tracks": 27,
+  "dropped": [],
+  "glb_bytes": 461072,
+  "glb_bytes_uncompressed": 2506776,
+  "glb_draco": true,
+  "loop_seconds": 9,
+  "moving_parts": 15,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.25,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 0.407,
+   "y": 0.544,
+   "z": 0.358
+  },
+  "triangles": 99146,
+  "triangles_before": 88682,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 2027778
+ },
+ "dairy-inside": {
+  "animated_tracks": 3,
+  "dropped": [
+   {
+    "count": 446,
+    "name": "repeated buffers",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 450,
+    "name": "repeated boxes",
+    "reason": "smallest repeated items, over the budget"
+   }
+  ],
+  "glb_bytes": 1903916,
+  "glb_bytes_uncompressed": 6303092,
+  "glb_draco": true,
+  "loop_seconds": 12,
+  "moving_parts": 3,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1,
+  "seconds_to_build": 7,
+  "size_m": {
+   "x": 401.054,
+   "y": 58.795,
+   "z": 388.873
+  },
+  "triangles": 145182,
+  "triangles_before": 597413,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 5139046
+ },
+ "dairy-table": {
+  "animated_tracks": 3,
+  "dropped": [
+   {
+    "count": 446,
+    "name": "repeated buffers",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 450,
+    "name": "repeated boxes",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 51,
+    "name": "repeated planes",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 9,
+    "name": "repeated cylinders",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 148,
+    "name": "buffer part",
+    "reason": "smallest parts, over the budget"
+   },
+   {
+    "count": 2,
+    "name": "sphere part",
+    "reason": "smallest parts, over the budget"
+   }
+  ],
+  "glb_bytes": 1331476,
+  "glb_bytes_uncompressed": 4903516,
+  "glb_draco": true,
+  "loop_seconds": 12,
+  "moving_parts": 3,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.0033333333333333335,
+  "seconds_to_build": 5,
+  "size_m": {
+   "x": 0.693,
+   "y": 0.196,
+   "z": 0.433
+  },
+  "triangles": 108770,
+  "triangles_before": 597413,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 4181161
+ },
+ "dc-inside": {
+  "animated_tracks": 2,
+  "dropped": [
+   {
+    "count": 979,
+    "name": "repeated buffers",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 40,
+    "name": "repeated planes",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 831,
+    "name": "repeated boxes",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 2,
+    "name": "mesh_2",
+    "reason": "smallest parts, over the budget"
+   },
+   {
+    "count": 296,
+    "name": "buffer part",
+    "reason": "smallest parts, over the budget"
+   },
+   {
+    "count": 3,
+    "name": "sphere part",
+    "reason": "smallest parts, over the budget"
+   }
+  ],
+  "glb_bytes": 2025128,
+  "glb_bytes_uncompressed": 7148956,
+  "glb_draco": true,
+  "loop_seconds": 10,
+  "moving_parts": 2,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1,
+  "seconds_to_build": 7,
+  "size_m": {
+   "x": 160,
+   "y": 12.21,
+   "z": 200
+  },
+  "triangles": 145254,
+  "triangles_before": 1090911,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 5441554
+ },
+ "dc-table": {
+  "animated_tracks": 2,
+  "dropped": [
+   {
+    "count": 979,
+    "name": "repeated buffers",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 40,
+    "name": "repeated planes",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 831,
+    "name": "repeated boxes",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 2,
+    "name": "mesh_2",
+    "reason": "smallest parts, over the budget"
+   },
+   {
+    "count": 335,
+    "name": "buffer part",
+    "reason": "smallest parts, over the budget"
+   },
+   {
+    "count": 3,
+    "name": "sphere part",
+    "reason": "smallest parts, over the budget"
+   }
+  ],
+  "glb_bytes": 1636916,
+  "glb_bytes_uncompressed": 5577324,
+  "glb_draco": true,
+  "loop_seconds": 10,
+  "moving_parts": 2,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.006666666666666667,
+  "seconds_to_build": 4,
+  "size_m": {
+   "x": 0.707,
+   "y": 0.081,
+   "z": 0.44
+  },
+  "triangles": 111461,
+  "triangles_before": 1090911,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 4282108
+ },
+ "earth-inside": {
+  "animated_tracks": 3,
+  "dropped": [],
+  "glb_bytes": 1645632,
+  "glb_bytes_uncompressed": 2399708,
+  "glb_draco": true,
+  "loop_seconds": 24,
+  "moving_parts": 3,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1.5,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 6.476,
+   "y": 4.35,
+   "z": 3.036
+  },
+  "triangles": 35320,
+  "triangles_before": 60,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 2070554
+ },
+ "earth-table": {
+  "animated_tracks": 3,
+  "dropped": [],
+  "glb_bytes": 641400,
+  "glb_bytes_uncompressed": 1395468,
+  "glb_draco": true,
+  "loop_seconds": 24,
+  "moving_parts": 3,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.13,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 0.561,
+   "y": 0.377,
+   "z": 0.263
+  },
+  "triangles": 35320,
+  "triangles_before": 60,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 1157287
+ },
+ "ed-inside": {
+  "animated_tracks": 1,
+  "dropped": [
+   {
+    "count": 2531,
+    "name": "repeated buffers",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 24,
+    "name": "repeated spheres",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 28,
+    "name": "repeated boxes",
+    "reason": "smallest repeated items, over the budget"
+   }
+  ],
+  "glb_bytes": 1132768,
+  "glb_bytes_uncompressed": 4978400,
+  "glb_draco": true,
+  "loop_seconds": 12,
+  "moving_parts": 1,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1,
+  "seconds_to_build": 5,
+  "size_m": {
+   "x": 263.985,
+   "y": 5.075,
+   "z": 243.865
+  },
+  "triangles": 133990,
+  "triangles_before": 1084948,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 3446502
+ },
+ "ed-table": {
+  "animated_tracks": 1,
+  "dropped": [
+   {
+    "count": 2540,
+    "name": "repeated buffers",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 24,
+    "name": "repeated spheres",
+    "reason": "smallest repeated items, over the budget"
+   },
+   {
+    "count": 28,
+    "name": "repeated boxes",
+    "reason": "smallest repeated items, over the budget"
+   }
+  ],
+  "glb_bytes": 991988,
+  "glb_bytes_uncompressed": 3446648,
+  "glb_draco": true,
+  "loop_seconds": 12,
+  "moving_parts": 1,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.00625,
+  "seconds_to_build": 3,
+  "size_m": {
+   "x": 0.738,
+   "y": 0.032,
+   "z": 0.438
+  },
+  "triangles": 100492,
+  "triangles_before": 1084948,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 2673673
+ },
+ "f1-inside": {
+  "animated_tracks": 3,
+  "dropped": [],
+  "glb_bytes": 175132,
+  "glb_bytes_uncompressed": 948816,
+  "glb_draco": true,
+  "loop_seconds": 8,
+  "moving_parts": 3,
+  "ok": true,
+  "page_errors": [],
+  "scale": 1,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 3.885,
+   "y": 1.14,
+   "z": 5.067
+  },
+  "triangles": 49548,
+  "triangles_before": 42320,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 619160
+ },
+ "f1-table": {
+  "animated_tracks": 3,
+  "dropped": [],
+  "glb_bytes": 175160,
+  "glb_bytes_uncompressed": 948844,
+  "glb_draco": true,
+  "loop_seconds": 8,
+  "moving_parts": 3,
+  "ok": true,
+  "page_errors": [],
+  "scale": 0.125,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 0.486,
+   "y": 0.142,
+   "z": 0.633
+  },
+  "triangles": 49548,
+  "triangles_before": 42320,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 619243
+ },
+ "heart-inside": {
+  "animated_tracks": 35,
+  "dropped": [],
+  "glb_bytes": 220712,
+  "glb_bytes_uncompressed": 743896,
+  "glb_draco": true,
+  "loop_seconds": 3.75,
+  "moving_parts": 25,
+  "ok": true,
+  "page_errors": [],
+  "scale": 14,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 1.779,
+   "y": 2.57,
+   "z": 1.008
+  },
+  "triangles": 33302,
+  "triangles_before": 15518,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 468925
+ },
+ "heart-table": {
+  "animated_tracks": 35,
+  "dropped": [],
+  "glb_bytes": 214484,
+  "glb_bytes_uncompressed": 711512,
+  "glb_draco": true,
+  "loop_seconds": 3.75,
+  "moving_parts": 25,
+  "ok": true,
+  "page_errors": [],
+  "scale": 3,
+  "seconds_to_build": 1,
+  "size_m": {
+   "x": 0.381,
+   "y": 0.551,
+   "z": 0.216
+  },
+  "triangles": 31522,
+  "triangles_before": 15518,
+  "usd_validators": [],
+  "usdchecker_arkit": {
+   "checker": "complianceChecker.py",
+   "errors": [],
+   "failed": [],
+   "ok": true,
+   "warnings": []
+  },
+  "usdz_bytes": 447197
+ }
+}

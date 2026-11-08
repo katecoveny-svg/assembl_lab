@@ -8,7 +8,7 @@
 //   - keeps to a triangle budget: lowers segment counts first, then drops the smallest instanced items,
 //     then rounds off rounded boxes, then drops the smallest remaining parts, and reports what it did
 //   - optionally keeps only what a camera can see (view: camera), for scenes with several stations side by side
-//   - centres the result on its base (y = 0) and scales it to real metres or a tabletop size
+//   - centres the result on its base (y = 0) and scales it to real metres or a tabletop size (keepOrigin: true leaves the origin alone)
 import * as THREE from 'three';
 import { mergeGeometries } from '../vendor/three/utils/BufferGeometryUtils.js';
 
@@ -384,7 +384,8 @@ export function snapshot(root, options = {}) {
     const across = Math.max(size.x, size.z) * toM, tall = size.y * toM;
     k = toM * Math.min(opts.tableSize / Math.max(across, 1e-6), opts.tableMaxHeight / Math.max(tall, 1e-6));
   } else if (typeof opts.scale === 'number' && opts.scale > 0) k = toM * opts.scale;
-  const final = new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-centre.x, -box.min.y, -centre.z));
+  // keepOrigin: leave the origin where it is (the AR worlds bake moving parts separately and put them back in place)
+  const final = opts.keepOrigin ? new THREE.Matrix4().makeScale(k, k, k) : new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-centre.x, -box.min.y, -centre.z));
   let n = 0;
   for (const [mat, geos] of byMat) {
     const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
