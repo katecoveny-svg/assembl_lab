@@ -2,7 +2,13 @@
  * Mechanical detail is illustrative; the electrical area/angle stay in model.js. */
 export function build(kit) {
   const {THREE:T,COLOURS:C}=kit;
-  const materials={paint:kit.mat(C.roseInk,{metal:.18,rough:.38}),steel:kit.mat(C.mist,{metal:.72,rough:.27}),dark:kit.mat(C.ink,{metal:.12,rough:.66}),wire:kit.mat(C.rose,{metal:.65,rough:.3}),ceramic:kit.mat(C.ivory,{rough:.35})};
+  // Neutral studio reflection cards let metal read as metal, rather than pink plastic.
+  // Local to this model; no external HDR assets or extra network requests.
+  if (typeof document !== 'undefined' && kit.scene) {
+    const faces=Array.from({length:6},(_,i)=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#333039';x.fillRect(0,0,128,128);const g=x.createLinearGradient(0,0,128,128);g.addColorStop(0,'#b5b1b3');g.addColorStop(.5,'#55515a');g.addColorStop(1,'#24212a');x.fillStyle=g;x.fillRect(0,0,128,128);x.fillStyle=i===2?'#fffaf6':'#e9e5e2';x.fillRect(i%2?12:85,8,18,112);return c;});
+    const env=new T.CubeTexture(faces);env.colorSpace=T.SRGBColorSpace;env.needsUpdate=true;kit.scene.environment=env;kit.scene.environmentIntensity=.7;
+  }
+  const materials={paint:kit.mat(C.roseInk,{metal:.18,rough:.38}),steel:kit.mat('#CBD1D3',{metal:.8,rough:.24}),dark:kit.mat(C.ink,{metal:.12,rough:.66}),wire:kit.mat('#B77C67',{metal:.7,rough:.28}),ceramic:kit.mat(C.ivory,{rough:.35})};
   const mesh=(g,m,x=0,y=0,z=0)=>{const o=new T.Mesh(g,materials[m]||kit.mat(m,{rough:.5}));o.position.set(x,y,z);return o;};
   // Small manufactured edge radii catch light without a noisy wireframe outline.
   const box=(w,h,d,m,x=0,y=0,z=0,r=.18)=>{

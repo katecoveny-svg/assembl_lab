@@ -725,6 +725,11 @@ export async function createTeardown(cfg) {
   }
   function toggle(name, on) {
     act[name] = on ?? !act[name];
+    // Optional model-specific framing keeps exploded hardware inside short stages.
+    if (name === 'explode' && views.exploded) {
+      if (act.explode) setView('exploded');
+      else if (viewKey === 'exploded') setView(viewKeys[0]);
+    }
     $$(`[data-tgl=${name}]`).forEach((b) => b.setAttribute('aria-pressed', String(act[name])));
   }
   let labelsAuto = !q.has('nolabels') && !q.has('labels');
