@@ -70,7 +70,8 @@ async function start() {
     for (const [id, c] of Object.entries(CH)) { if (!c.el) continue; const r = c.el.getBoundingClientRect(); const d = r.top <= mid && r.bottom >= mid ? 0 : Math.min(Math.abs(r.top - mid), Math.abs(r.bottom - mid)); if (d < bestD) { bestD = d; best = id; } }
     if (best && (best !== "arch" || forms.hall)) go(best);
   }
-  addEventListener("scroll", () => requestAnimationFrame(pick), { passive: true });
+  // (with motion paused no frames run, so the hero's labels are updated here as the page scrolls)
+  addEventListener("scroll", () => requestAnimationFrame(() => { pick(); if (engine.paused && active === "hero") drawHero(performance.now()); }), { passive: true });
   // on resize the map is placed again at once; its labels step aside and come back placed for the new screen
   let relayT;
   addEventListener("resize", () => { const c = active && CH[active]; if (c) { engine.resize(); engine.setForm(c.form(), { ...c.place(), immediate: true }); if (active === "hero" && labelsOn) { layout = null; hideLabels(); clearTimeout(relayT); relayT = setTimeout(layoutLabels, 350); } } });
@@ -101,20 +102,37 @@ async function start() {
   }
 
   // ---------------------------------------------------------------------------------------------- the hero's labels
-  // landmarks (name and one fact) and twin pins (the twin and its truth line). Each label is placed once, beside its anchor where
-  // it covers no other label, no other anchor and none of the hero's words or buttons, then follows its anchor as the map sways.
+  // Landmarks: a name and one fact (the name alone when space is short). Twins: a numbered chip tied to its site, its truth line on
+  // hover or focus and always in the key under the map (a numbered dot on a phone). Each label is placed once, beside its anchor,
+  // where it covers no other label, no anchor, no leader line and none of the hero's words or buttons, then follows its anchor
+  // as the map sways. Every twin is always placed: when a chip has no room it becomes its numbered dot.
   const labels = [...document.querySelectorAll(".hero-callout, .hero-pin")].map((el) => ({ el, pin: el.classList.contains("hero-pin"), key: el.dataset.anchor || el.dataset.site }));
+  const keyItems = [...document.querySelectorAll(".hero-key li[data-site]")];
   const anchorOf = (l) => (l.pin ? forms.world.sites?.[l.key] : forms.world.anchors[l.key]);
+  let hoverSite = null, focusSite = null, focusAt = 0;
+  function setFocus(id) {
+    if (id === focusSite) return; focusSite = id; focusAt = performance.now();
+    labels.forEach((l) => l.pin && l.el.classList.toggle("focus", l.key === id)); keyItems.forEach((k) => k.classList.toggle("focus", k.dataset.site === id));
+  }
+  for (const el of [...labels.filter((l) => l.pin).map((l) => l.el), ...keyItems]) {
+    const id = el.dataset.site, on = () => { hoverSite = id; setFocus(id); }, off = () => { if (hoverSite === id) hoverSite = null; };
+    el.addEventListener("mouseenter", on); el.addEventListener("focusin", on); el.addEventListener("mouseleave", off); el.addEventListener("focusout", off);
+  }
+  // without a pointer on one, the focus moves slowly from twin to twin (it stays put with reduced motion)
+  if (!reduce) setInterval(() => { if (hoverSite || active !== "hero" || !layout || engine.paused) return; const ids = labels.filter((l) => l.pin && layout.has(l)).map((l) => l.key); if (ids.length) setFocus(ids[(ids.indexOf(focusSite) + 1) % ids.length]); }, 4200);
 
   function hideLabels() { labels.forEach((l) => l.el.classList.remove("on")); }
   function layoutLabels() {
-    const W = innerWidth, H = innerHeight, wide = W >= 1100, compact = W < 1280;
-    const avoid = [...document.querySelectorAll(".hero .v2-eyebrow, .hero h1, .hero .lede, .hero .actions, .hero .truth-note, .hero .hero-tags, .v2-nav, .pc-pause, .hero-credit, .askb")]
+    const W = innerWidth, H = innerHeight, phone = W < 760, roomy = W >= 1280;
+    const avoid = [...document.querySelectorAll(".hero .v2-eyebrow, .hero h1, .hero .lede, .hero .actions, .hero .truth-note, .hero .hero-tags, .v2-nav, .pc-pause, .hero-credit, .hero-key, .askb")]
       .map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.bottom > 0 && r.top < H);
-    // who claims space first, when the screen is crowded: the tallest landmarks, then the twins with cards here, then the rest
-    const RANK = ["skytower", "bridge", "rangitoto", "maungawhau", "ed", "cars", "waitemata", "store", "cafe", "retail", "stay", "office"], rank = (l) => { const i = RANK.indexOf(l.key); return i < 0 ? 99 : i; };
-    const items = labels.filter((l) => anchorOf(l) && (!l.pin || wide)).sort((a, b) => rank(a) - rank(b));
-    labels.forEach((l) => l.el.classList.toggle("compact", !l.pin && (compact || l.key === "waitemata")));   // the harbour: its name on the water, as on a chart
+    // and the Sky Tower itself, top to foot: no label may hide it
+    const sk = forms.world.anchors.skytower; if (sk) { const t = engine.project(sk), b = engine.project([sk[0], 0, sk[2]]); avoid.push({ left: Math.min(t.x, b.x) - 10, right: Math.max(t.x, b.x) + 10, top: t.y, bottom: b.y, body: true }); }
+    // who claims space first: the two tallest landmarks and the harbour's name, then every twin (small, and never dropped), then the
+    // other landmarks (each falls back to its name alone)
+    const RANK = ["skytower", "rangitoto", "waitemata", "ed", "cars", "store", "cafe", "retail", "stay", "office", "bridge", "maungawhau"], rank = (l) => { const i = RANK.indexOf(l.key); return i < 0 ? 99 : i; };
+    const items = labels.filter((l) => anchorOf(l)).sort((a, b) => rank(a) - rank(b));
+    labels.forEach((l) => { l.el.classList.toggle("compact", !l.pin && (!roomy || l.key === "waitemata")); l.el.classList.toggle("dot", l.pin && phone); });   // the harbour: its name on the water, as on a chart
     const pts = new Map(items.map((l) => [l, engine.project(anchorOf(l))]));
     const placed = [], lines = []; layout = new Map();
     const hits = (r, a, pad = 8) => !(r.right + pad < a.left || r.left - pad > a.right || r.bottom + pad < a.top || r.top - pad > a.bottom);
@@ -124,32 +142,54 @@ async function start() {
     for (const s of sample) { if (s[1] < 0.0004) continue; const q = engine.project(s); if (q.x >= 0 && q.y >= 0 && q.x < W && q.y < H) dens[Math.floor(q.y / CELL) * cols + Math.floor(q.x / CELL)]++; }
     const cover = (r) => { let c = 0; for (let y = Math.max(0, Math.floor(r.top / CELL)); y <= Math.min(H / CELL - 1, Math.floor(r.bottom / CELL)); y++) for (let x = Math.max(0, Math.floor(r.left / CELL)); x <= Math.min(cols - 1, Math.floor(r.right / CELL)); x++) c += dens[y * cols + x]; return c; };
     const crosses = (p, r, a) => { for (let k = 0; k <= 12; k++) { const t = k / 12, x = p.x + ((r.left + r.right) / 2 - p.x) * t, y = p.y + ((r.top + r.bottom) / 2 - p.y) * t; if (x > a.left && x < a.right && y > a.top && y < a.bottom) return true; } return false; };
-    for (const l of items) {
-      const p = pts.get(l); if (p.x < 12 || p.x > W - 12 || p.y < 90 || p.y > H - 12) continue;
-      if (avoid.some((a) => hits({ left: p.x, right: p.x, top: p.y, bottom: p.y }, a, 4))) continue;   // an anchor under the words: no label
-      const w = l.el.offsetWidth, h = l.el.offsetHeight; let best = null;
-      for (const dx of [-w - 170, -w - 90, -w - 30, -w * 0.82, -w / 2, -w * 0.18, 30, 90, 170])
-        for (const dy of [-h - 320, -h - 260, -h - 200, -h - 150, -h - 104, -h - 64, -h - 30, -h / 2, 30, 70, 120, 180, 240]) {
+    const tryPlace = (l, p, maxDist) => {
+      const w = l.el.offsetWidth, h = l.el.offsetHeight, s = Math.max(1, w / 120); let best = null;
+      for (const dx of [-w - 170, -w - 90, -w - 40, -w - 14, -w * 0.82, -w / 2, -w * 0.18, 14, 40, 90, 170])
+        for (const dy of [-h - 300, -h - 230, -h - 170, -h - 120, -h - 80, -h - 48, -h - 22, -h / 2, 22, 48, 80, 120, 170, 230]) {
           const r = { left: p.x + dx, top: p.y + dy, right: p.x + dx + w, bottom: p.y + dy + h };
           if (r.left < 10 || r.top < 84 || r.right > W - 10 || r.bottom > H - 10) continue;
-          if (avoid.some((a) => hits(r, a)) || placed.some((a) => hits(r, a))) continue;
-          if (items.some((o) => hits(r, { left: pts.get(o).x, right: pts.get(o).x, top: pts.get(o).y, bottom: pts.get(o).y }, o === l ? 14 : 10))) continue;   // never over an anchor, its own included
+          if (avoid.some((a) => hits(r, a)) || placed.some((a) => hits(r, a, 6))) continue;
+          if (items.some((o) => hits(r, { left: pts.get(o).x, right: pts.get(o).x, top: pts.get(o).y, bottom: pts.get(o).y }, o === l ? 12 : 9))) continue;   // never over an anchor, its own included
           if (placed.some((a) => crosses(p, r, a)) || lines.some(([lp, lr]) => crosses(lp, lr, r))) continue;   // no line under a label
-          const gx = Math.max(r.left - p.x, 0, p.x - r.right), gy = Math.max(r.top - p.y, 0, p.y - r.bottom), dist = Math.hypot(gx, gy); if (dist > (l.pin ? 110 : 230)) continue; const score = cover(r) + dist * 3.2;   // a twin's label stays close to its site
+          const gx = Math.max(r.left - p.x, 0, p.x - r.right), gy = Math.max(r.top - p.y, 0, p.y - r.bottom), dist = Math.hypot(gx, gy); if (dist > maxDist) continue;
+          const score = cover(r) / s + dist * 3.2;
           if (!best || score < best[0]) best = [score, dx, dy, r];
         }
+      return best;
+    };
+    for (const l of items) {
+      const p = pts.get(l); if (p.x < 12 || p.x > W - 12 || p.y < 90 || p.y > H - 12) continue;
+      if (avoid.some((a) => !a.body && hits({ left: p.x, right: p.x, top: p.y, bottom: p.y }, a, 4))) continue;   // an anchor under the words: no label
+      let best = tryPlace(l, p, l.pin ? 130 : 230);
+      if (!best && !l.pin && !l.el.classList.contains("compact")) { l.el.classList.add("compact"); best = tryPlace(l, p, 230); }   // a landmark: its name alone
+      if (!best && l.pin && !l.el.classList.contains("dot")) { l.el.classList.add("dot"); best = tryPlace(l, p, 110); }              // a twin: its numbered dot
+      if (!best && l.pin) best = tryPlace(l, p, 200);
       if (best) { placed.push(best[3]); lines.push([p, best[3]]); layout.set(l, [best[1], best[2]]); }
     }
+    if (!focusSite || !layout.has(labels.find((l) => l.key === focusSite))) setFocus(labels.find((l) => l.pin && layout.has(l))?.key || null);
+  }
+  // the focused twin's plot, as a ring on the ground that the reading pulse runs out from. Its size is set on screen (a plot of
+  // 50–220 m is only a few pixels across at this scale) and its shape follows the ground's tilt, so it lies flat on the map.
+  function plotRing(id, k) {
+    const g = forms.world.sitesGround?.[id]; if (!g) return "";
+    const c = engine.project(g), e = engine.project([g[0] + 0.01, g[1], g[2]]), n = engine.project([g[0], g[1], g[2] + 0.01]);
+    const ux = e.x - c.x, uy = e.y - c.y, vx = n.x - c.x, vy = n.y - c.y, s = (22 + 46 * k) / Math.max(1e-3, Math.hypot(ux, uy));
+    let d = ""; for (let i = 0; i <= 48; i++) { const t = (i / 48) * Math.PI * 2, a = Math.cos(t) * s, b = Math.sin(t) * s; d += `${i ? "L" : "M"}${(c.x + ux * a + vx * b).toFixed(1)},${(c.y + uy * a + vy * b).toFixed(1)}`; }
+    return d;
   }
   function drawHero(now) {
-    const show = labelsOn && layout && !engine.morphing() && scrollY < innerHeight * 0.55; const parts = [];
+    // on a phone the words scroll up over the map at once, so the labels step aside as soon as the page moves
+    const show = labelsOn && layout && !engine.morphing() && scrollY < (innerWidth < 760 ? 40 : innerHeight * 0.55); const parts = [];
     for (const l of labels) {
       const off = show && layout.get(l); l.el.classList.toggle("on", !!off); if (!off) continue;
       const p = engine.project(anchorOf(l)), x = Math.round(p.x + off[0]), y = Math.round(p.y + off[1]);
       l.el.style.transform = `translate(${x}px, ${y}px)`;
       parts.push(leader(p, { left: x, top: y, right: x + l.el.offsetWidth, bottom: y + l.el.offsetHeight }, false));
-      // a twin's site: a slow reading pulse on its building (a still ring with reduced motion)
-      if (l.pin) { const k = reduce ? 0.5 : ((now - scanAt) / 2600 + labels.indexOf(l) * 0.17) % 1; parts.push(`<circle cx="${p.x}" cy="${p.y}" r="${(6 + 16 * k).toFixed(1)}" class="pulse" style="opacity:${(0.75 * (1 - k)).toFixed(2)}"/>`); }
+      if (l.pin && l.key === focusSite) {
+        const k = reduce ? 0 : ((now - focusAt) / 2400) % 1;
+        const ring = plotRing(l.key, 0); parts.push(`<path d="${ring}" class="plot-under"/><path d="${ring}" class="plot"/>`);
+        if (!reduce) parts.push(`<path d="${plotRing(l.key, k)}" class="pulse" style="opacity:${(0.8 * (1 - k)).toFixed(2)}"/>`);
+      }
     }
     svg.innerHTML = parts.join("");
   }

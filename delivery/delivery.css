@@ -1,0 +1,224 @@
+/* assembl lab · Supermarket order to doorstep. The site-v2 plum page with the point-cloud map on the right (most of the screen)
+   and the journey on the left; stacked on a phone, map first. Colours are the foundation's plum, rose and ivory and the
+   point-cloud standard's tones; nothing new. Instrument Sans for reading, IBM Plex Mono only for truth labels, authority,
+   clocks and draft states. Without WebGL (html.dl-nogl, or nojs.css) the map is a still and its callouts are a list. */
+html { background: #21121F; }
+[hidden] { display: none !important; }
+body { margin: 0; min-height: 100vh; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mono, .site-v2 .mono { font-family: var(--v2-mono); }
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 100; padding: 10px 16px; border-radius: 999px; background: var(--v2-ivory); color: var(--v2-plum); font: 500 14px/1 var(--v2-font); text-decoration: none; }
+.skip:focus { left: 16px; outline: 2px solid var(--v2-rose); outline-offset: 3px; }
+.site-v2 :is(button, select, a):focus-visible { outline: 2px solid var(--v2-rose); outline-offset: 3px; }
+
+/* ── the sim: words on the left, the map on the right (sticky, most of the width) ── */
+.sim { display: grid; grid-template-columns: minmax(360px, 35%) minmax(0, 1fr); grid-template-areas: "head stage" "panel stage" "steps stage";
+  grid-template-rows: auto auto 1fr; column-gap: clamp(20px, 2.6vw, 44px); padding: 0 0 0 max(16px, 3.4vw); }
+.sim-head { grid-area: head; display: grid; gap: 14px; padding-top: clamp(28px, 5vh, 56px); }
+.sim-h1 { margin: 0; font-weight: 400; font-size: clamp(36px, 3.7vw, 60px); line-height: 1; letter-spacing: -.04em; text-wrap: balance; }
+.sim-lede { margin: 0; max-width: 44ch; font-size: 16.5px; line-height: 1.55; color: rgba(249, 246, 242, .86); }
+.sim-truth { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 0; }
+.sim-stage { grid-area: stage; position: sticky; top: 0; align-self: start; height: calc(100vh - 72px); height: calc(100svh - 72px); min-height: 560px; display: flex; flex-direction: column; }
+.stage-box { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.stage-box canvas#map { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+/* the still is the first paint (and the whole picture without WebGL); the canvas stays transparent until it has drawn a frame */
+.stage-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity .9s ease; pointer-events: none; }
+.dl-on .stage-box canvas#map { display: block; opacity: 0; transition: opacity .9s ease; }
+.dl-live .stage-box canvas#map { opacity: 1; }
+.dl-ready .stage-still { opacity: 0; }
+.leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.leaders path { fill: none; stroke: rgba(249, 246, 242, .58); stroke-width: 1; stroke-dasharray: 3 4; }
+.leaders path.new { stroke: #D9BACB; stroke-dasharray: none; }
+.leaders circle { fill: #F9F6F2; } .leaders circle.ring { fill: none; stroke: rgba(249, 246, 242, .5); stroke-width: 1; }
+.leaders circle.pulse { fill: none; stroke: #D9BACB; stroke-width: 1.2; }
+.map-credit { margin: 0; padding: 8px 18px 14px 0; align-self: flex-start; max-width: 62ch; text-align: left; font: 500 10.5px/1.6 var(--v2-mono); letter-spacing: .02em; color: var(--v2-fg-2); }
+
+/* callouts: real DOM text. Without WebGL, a list under the still; with the map, each tied to its place by a leader line */
+.stage-k { display: none; margin: 12px 0 8px; font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--v2-fg-2); }
+.callouts { list-style: none; position: absolute; inset: 0; margin: 0; padding: 0; pointer-events: none; }
+.co { display: grid; gap: 2px; padding: 9px 12px 10px; border-radius: 16px; background: rgba(33, 18, 31, .74); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 12.5px; line-height: 1.35; color: rgba(249, 246, 242, .8); }
+.co strong { font-weight: 500; font-size: 14px; color: #F9F6F2; display: flex; align-items: center; gap: 7px; }
+.co-truth { font: 500 10.5px/1.4 var(--v2-mono); color: rgba(217, 186, 203, .9); letter-spacing: .01em; }
+.co-store { box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .55); }
+.co-van { box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .32); }
+.co-home strong::before { content: ""; width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(249, 246, 242, .6); flex: none; }
+.co-home[data-st="delivered"] strong::before { background: #F9F6F2; box-shadow: none; }
+.co-home[data-st="door"] strong::before, .co-home[data-st="next"] strong::before { background: #D9BACB; box-shadow: 0 0 0 3px rgba(217, 186, 203, .25); }
+.co-home[data-st="missed"] strong::before { box-shadow: inset 0 0 0 2px #F4BEDA; }
+.co-home[data-st="rebooked"] strong::before { background: transparent; box-shadow: inset 0 0 0 2px #D9BACB, 0 0 0 3px rgba(217, 186, 203, .2); }
+.co-home[data-st="missed"], .co-home[data-st="door"] { box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .6); }
+.co { position: absolute; left: 0; top: 0; width: max-content; max-width: 252px; opacity: 0; visibility: hidden; transition: opacity .45s ease, visibility 0s linear .45s; }
+.co.on { opacity: 1; visibility: visible; transition: opacity .45s ease; }
+.co.compact { padding: 5px 10px 6px; border-radius: 13px; max-width: 200px; }
+.co.compact .co-truth { display: none; }
+.co.compact strong { font-size: 12.5px; }
+.co.compact .co-line { font-size: 11.5px; }
+.co.tiny .co-line { display: none; }
+
+/* the picker's walk: a small card on the map's lower left while the order is in the store */
+.inset { position: absolute; left: 0; bottom: 6px; z-index: 2; width: min(320px, 44%); margin: 0; padding: 10px 10px 12px; border-radius: 18px; background: rgba(24, 11, 24, .78);
+  box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.inset canvas { display: block; width: 100%; aspect-ratio: 5 / 3; }
+.inset figcaption { display: grid; gap: 4px; padding: 6px 4px 0; font-size: 12.5px; color: rgba(249, 246, 242, .82); }
+.inset figcaption strong { font-weight: 500; color: #F9F6F2; font-size: 14px; }
+.inset .truth { justify-self: start; white-space: normal; }
+/* without WebGL (or without JS): the still in the flow, the callouts as a list under it, the inset in the flow too */
+.dl-nogl .sim-stage { position: relative; height: auto; min-height: 0; }
+.dl-nogl .stage-box { flex: none; }
+.dl-nogl .stage-still { position: static; height: auto; opacity: 1; }
+.dl-nogl .leaders { display: none; }
+.dl-nogl .stage-k { display: block; }
+.dl-nogl .callouts { position: static; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 8px; margin: 0 0 16px; }
+.dl-nogl .co { position: static; width: auto; max-width: none; opacity: 1; visibility: visible; transform: none !important; }
+.dl-nogl .inset { position: relative; left: auto; bottom: auto; width: min(360px, 100%); margin: 0 0 16px; }
+
+/* ── controls ── */
+.sim-head { padding-bottom: 22px; }
+.sim-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 18px 18px 6px 0; position: relative; z-index: 3; }
+.ctl { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--v2-ivory); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .3); cursor: pointer; }
+.ctl:hover { box-shadow: inset 0 0 0 1px #D9BACB; }
+.ctl svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ctl-play { background: var(--v2-ivory); color: var(--v2-plum); box-shadow: none; }
+.ctl-play:hover { background: #fff; box-shadow: none; }
+.ctl-play .i-play path { fill: currentColor; stroke: none; }
+.ctl-play .i-pause path { stroke-width: 2.4; }
+.ctl-play .i-play, .ctl-play[aria-pressed="true"] .i-pause { display: none; }
+.ctl-play[aria-pressed="true"] .i-play { display: block; }
+.speed { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .3); font-size: 13.5px; color: rgba(249, 246, 242, .82); }
+.speed select { min-height: 40px; border: 0; background: transparent; color: var(--v2-ivory); font: 500 14px var(--v2-font); padding: 0 4px; cursor: pointer; }
+.speed select option { color: #21121F; }
+.wrong { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 16px 4px 8px; border: 0; border-radius: 999px; background: transparent; color: var(--v2-ivory); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .3); font: 500 14px/1.15 var(--v2-font); text-align: left; cursor: pointer; }
+.wrong small { display: block; font-weight: 400; font-size: 11.5px; color: var(--v2-fg-2); }
+.wrong .sw { position: relative; flex: none; width: 34px; height: 20px; border-radius: 999px; background: rgba(249, 246, 242, .16); transition: background .2s ease; }
+.wrong .sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--v2-ivory); transition: transform .2s ease; }
+.wrong[aria-pressed="true"] .sw { background: #8E6585; }
+.wrong[aria-pressed="true"] .sw::after { transform: translateX(14px); }
+.ctl-text { min-height: 44px; padding: 0 12px; border: 0; background: none; color: rgba(249, 246, 242, .82); font: 500 14px var(--v2-font); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(249, 246, 242, .3); cursor: pointer; }
+.ctl-text:hover { color: var(--v2-ivory); text-decoration-color: #D9BACB; }
+
+/* ── the stage panel: what happened, the agent and its authority, the drafts, the choice ── */
+.sim-panel { grid-area: panel; display: grid; gap: 12px; align-content: start; padding: 18px 20px 20px; border-radius: 20px; background: rgba(249, 246, 242, .035); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12); }
+.pn-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font-size: 11.5px; letter-spacing: .04em; color: var(--v2-fg-2); }
+.pn-clock { color: #D9BACB; }
+.pn-title { margin: 0; font-weight: 400; font-size: clamp(24px, 2vw, 30px); line-height: 1.1; letter-spacing: -.025em; }
+.pn-what { margin: 0; font-size: 15px; line-height: 1.55; color: rgba(249, 246, 242, .86); max-width: 56ch; }
+.agent { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 2px; }
+.agent-name { font-weight: 500; font-size: 14.5px; }
+.agent-does { flex-basis: 100%; font-size: 13px; color: var(--v2-fg-2); }
+@media (min-width: 960px) and (max-height: 960px) { .sim-panel .agent-does { display: none; } .sim-panel { gap: 10px; } }
+.auth { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 8px; border-radius: 999px; font: 500 11px/1.3 var(--v2-mono); letter-spacing: .02em; color: #F0DCE6; box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .45); white-space: nowrap; }
+.auth::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #D9BACB; }
+.auth[data-auth="observe"]::before { background: transparent; box-shadow: inset 0 0 0 1px #D9BACB; }
+.auth[data-auth="act with approval"]::before { border-radius: 1px; }
+.msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.msgs:empty { display: none; }
+.msg { display: grid; gap: 4px; padding: 10px 13px 11px; border-radius: 16px; border: 1px dashed rgba(217, 186, 203, .55); background: rgba(33, 18, 31, .55); animation: msg-in .5s ease both; }
+.msg-to { font-size: 12px; color: var(--v2-fg-2); }
+.msg p { margin: 0; font-size: 14px; line-height: 1.5; color: #F9F6F2; }
+.msg-state { justify-self: start; font: 500 11px/1.3 var(--v2-mono); color: #D9BACB; }
+.msg-state::before { content: "◌ "; }
+@keyframes msg-in { from { opacity: 0; transform: translateY(4px); } }
+.decide { display: grid; gap: 10px; padding: 12px 14px 14px; border-radius: 16px; background: rgba(217, 186, 203, .08); box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .3); }
+.decide-k { margin: 0; font-size: 13px; color: rgba(249, 246, 242, .86); }
+.decide-k b { font-weight: 500; color: #F9F6F2; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice { min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--v2-ivory); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .4); font: 500 14px var(--v2-font); cursor: pointer; text-align: left; }
+.choice:first-child { background: var(--v2-ivory); color: var(--v2-plum); box-shadow: none; }
+.choice:hover { box-shadow: inset 0 0 0 1px #D9BACB; }
+.choice:first-child:hover { background: #fff; }
+.choice small { font-weight: 400; opacity: .78; margin-left: 6px; }
+.decide-wait { margin: 0; font: 500 11px/1.4 var(--v2-mono); color: var(--v2-fg-2); }
+.decide-done { margin: 0; font-size: 14px; color: #F9F6F2; }
+.decide-done .mono { display: block; margin-top: 3px; font-size: 11px; color: #D9BACB; }
+.proof-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.proof-mini div { padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12); }
+.proof-mini b { display: block; font-weight: 400; font-size: 26px; letter-spacing: -.02em; color: #F9F6F2; }
+.proof-mini span { font-size: 12.5px; color: var(--v2-fg-2); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── the stepper ── */
+.sim-steps { grid-area: steps; padding: 18px 0 40px; }
+.sim-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 14px; }
+.sim-steps button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 4px 6px; border: 0; border-radius: 10px; background: none; color: rgba(249, 246, 242, .62); font: 400 14px/1.2 var(--v2-font); text-align: left; cursor: pointer; }
+.sim-steps button:hover { color: var(--v2-ivory); }
+.st-n { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; font: 500 11px var(--v2-mono); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .28); }
+.sim-steps button.done { color: rgba(249, 246, 242, .82); }
+.sim-steps button.done .st-n { background: rgba(249, 246, 242, .14); box-shadow: none; }
+.sim-steps button[aria-current] { color: #F9F6F2; }
+.sim-steps button[aria-current] .st-n { background: #D9BACB; color: #21121F; box-shadow: none; }
+
+/* ── the bands below the sim ── */
+.band { padding: clamp(72px, 9vw, 128px) max(16px, 3.4vw); }
+.band:nth-of-type(odd) { background: var(--v2-aubergine); }
+.band-in { max-width: 1320px; display: grid; gap: clamp(28px, 4vw, 56px); }
+.band-split { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); align-items: start; }
+.band-split.rev { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); }
+.band-split.rev .band-head { order: 2; }
+.band-head { display: grid; gap: 16px; align-content: start; max-width: 620px; }
+.band-h2 { margin: 0; font-weight: 400; font-size: clamp(32px, 3.6vw, 56px); line-height: 1.04; letter-spacing: -.035em; text-wrap: balance; }
+.band-lede { margin: 0; font-size: 16.5px; line-height: 1.6; color: rgba(249, 246, 242, .84); max-width: 52ch; }
+.band-lede .truth { margin: 0 4px; vertical-align: 1px; }
+.proof-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; margin: 0; }
+.proof-grid > div { display: grid; gap: 8px; align-content: start; padding: 20px 20px 22px; border-radius: 22px; box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12); }
+.proof-grid dt { font-size: 13.5px; color: var(--v2-fg-2); }
+.proof-grid dd { margin: 0; display: grid; gap: 8px; }
+.proof-grid b { font-weight: 400; font-size: clamp(38px, 3.6vw, 54px); line-height: 1; letter-spacing: -.035em; color: #F9F6F2; }
+.proof-grid span { font-size: 13.5px; line-height: 1.5; color: rgba(249, 246, 242, .78); }
+.assume { margin: 0; padding: 0 0 0 18px; display: grid; gap: 6px; font: 500 12px/1.5 var(--v2-mono); color: var(--v2-fg-2); }
+.roster { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.roster li { display: grid; gap: 8px; align-content: start; padding: 18px 18px 20px; border-radius: 20px; box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12); }
+.roster strong { font-weight: 500; font-size: 17px; }
+.roster .auth { justify-self: start; }
+.roster p { margin: 0; font-size: 14.5px; line-height: 1.5; color: rgba(249, 246, 242, .8); }
+.bk { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.bk th, .bk td { padding: 10px 8px; text-align: left; border-bottom: 1px solid rgba(249, 246, 242, .1); font-weight: 400; }
+.bk thead th { font: 500 11px/1.3 var(--v2-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--v2-fg-2); }
+.bk td:nth-child(n+2), .bk th:nth-child(n+2) { text-align: right; font-variant-numeric: tabular-nums; }
+.bk tr.out td:first-child::after { content: " · out of stock"; color: #D9BACB; font-size: 12.5px; }
+.bk tr.swap td { color: #D9BACB; }
+.bk tfoot th, .bk tfoot td { border: 0; padding-top: 14px; font-weight: 500; color: #F9F6F2; }
+.bk tfoot th { text-align: left; }
+.words-list { margin: 0; padding: 0 0 0 22px; display: grid; gap: 14px; max-width: 78ch; font-size: 16px; line-height: 1.6; color: rgba(249, 246, 242, .86); }
+.words-list strong { font-weight: 500; color: #F9F6F2; }
+.words-list li::marker { font: 500 12px var(--v2-mono); color: #D9BACB; }
+.about-copy { display: grid; gap: 16px; max-width: 64ch; font-size: 16px; line-height: 1.65; color: rgba(249, 246, 242, .86); }
+.about-copy p { margin: 0; }
+.about-copy b { font-weight: 500; color: #F9F6F2; }
+.credits { font: 500 11.5px/1.7 var(--v2-mono); color: var(--v2-fg-2); }
+.foot { padding: 28px max(16px, 3.4vw) 40px; border-top: 1px solid rgba(249, 246, 242, .08); font-size: 14px; color: var(--v2-fg-2); }
+.foot p { margin: 0; }
+.foot a { color: var(--v2-ivory); text-underline-offset: 3px; }
+
+/* ── narrower screens: the map first, then the controls, the panel and the steps ── */
+@media (max-width: 959px) {
+  .sim { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "panel" "steps"; grid-template-rows: none; padding: 0 16px; }
+  .sim-head { padding-bottom: 0; }
+  .sim-stage .stage-box { order: 1; } .sim-stage .sim-controls { order: 2; padding: 12px 16px 10px; } .sim-stage .map-credit { order: 3; }
+  .sim-head { padding-top: 22px; gap: 10px; }
+  .sim-h1 { font-size: clamp(32px, 9vw, 44px); }
+  .sim-lede { font-size: 15px; }
+  .sim-stage { position: relative; height: auto; min-height: 0; margin: 10px -16px 0; }
+  .stage-box { flex: none; }
+  .stage-box { height: min(60vh, 500px); height: min(60svh, 500px); min-height: 360px; }
+  .dl-nogl .stage-box { height: auto; min-height: 0; padding: 0 16px; }
+  .map-credit { align-self: stretch; padding: 4px 16px 0; text-align: left; }
+  .inset { width: min(210px, 52%); padding: 7px 7px 9px; border-radius: 14px; left: 8px; bottom: 4px; }
+  .inset figcaption { font-size: 11px; padding-top: 4px; }
+  .inset figcaption strong { font-size: 12.5px; }
+  .inset .truth { font-size: 10px; padding: 3px 8px 3px 7px; }
+  .co { max-width: 170px; }
+  .wrong small { display: none; }
+  .sim-panel { padding: 16px 16px 18px; }
+  .band-split, .band-split.rev { grid-template-columns: minmax(0, 1fr); }
+  .band-split.rev .band-head { order: 0; }
+}
+@media (max-width: 420px) { .speed span { display: none; } .speed { padding-left: 10px; } }
+@media (prefers-reduced-motion: reduce) { .msg { animation: none; } .co, .co.on { transition: none; } .dl-on .stage-box canvas#map, .dl-on .stage-still { transition: none; } }
+/* the still (delivery/still.cjs renders it from this page with ?still): only the map, on no ground */
+.dl-still, .dl-still body { background: transparent !important; }
+.dl-still body > :not(main), .dl-still main > :not(.sim), .dl-still .sim > :not(.sim-stage), .dl-still .sim-stage > :not(.stage-box), .dl-still .stage-box > :not(canvas) { display: none !important; }
+.dl-still .sim { display: block; padding: 0; }
+.dl-still .sim-stage { position: fixed; inset: 0; height: 100vh; min-height: 0; margin: 0; }
+.dl-still .stage-box { background: none; height: 100vh; }
+.dl-still .stage-box canvas#map { opacity: 1; transition: none; }

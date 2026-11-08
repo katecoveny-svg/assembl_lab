@@ -3,22 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>assembl AR · make it here, place it in your room</title>
-<meta name="description" content="Make 3D text, a 3D logo from an SVG or a framed photo, or pick an assembl model. Scan the code with a phone to place it in your room. It opens in the phone's browser, with no app.">
-<meta name="theme-color" content="#FFFDFB">
+<title>assembl AR · worlds you can stand in</title>
+<meta name="description" content="Immersive assembl worlds in augmented reality: a working milk powder plant on your table, a real-size race car in the driveway, a doorway into an emergency department. On iPhone, iPad and Android, in the phone's own browser, no app. Below: make your own 3D text, logo or photo frame.">
+<meta name="theme-color" content="#21121F">
 <link rel="icon" href="/lab/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/ar/ar.css">
+<link rel="stylesheet" href="/ar/worlds/worlds.css">
+<link rel="modulepreload" href="/ar/worlds/worlds.js"><link rel="modulepreload" href="/ar/worlds/gallery.js">
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <script src="/ask.js" defer data-page="lab"></script>
 <script src="/lab/navigation.js" defer></script>
 </head>
 <body class="studio-page">
-<a class="skip" href="#studio">Skip to the studio</a>
+<a class="skip" href="#worlds">Skip to the worlds</a>
 <main>
+  <div class="worlds-scope worlds-band">
+    <header class="w-wrap w-hero">
+      <p class="w-eyebrow"><b>assembl ar</b><span>Lab · in your phone’s own browser</span><span>No app, no account</span></p>
+      <h1>Worlds you can<br><span>stand in.</span></h1>
+      <p class="w-lede">Put a working milk powder plant on your desk, park a real-size race car in the driveway, or walk through a doorway into an emergency department. Pick a world, then pick how big.</p>
+      <p class="w-device" id="wDevice"><i aria-hidden="true"></i><span>Checking what this device can do…</span></p>
+    </header>
+    <section class="w-wrap" id="worlds" aria-labelledby="worlds-h" tabindex="-1">
+      <h2 class="vh" id="worlds-h">AR worlds</h2>
+      <ul class="w-grid" id="wGrid"><li class="w-card"><div class="w-body"><p>The worlds need JavaScript. Each one also has its own page: <a href="/ar/w/f1/">race car</a>, <a href="/ar/w/claw/">claw machine</a>, <a href="/ar/w/heart/">heart pump</a>, <a href="/ar/w/earth/">Earth and Moon</a>, <a href="/ar/w/dairy/">milk powder plant</a>, <a href="/ar/w/ed/">emergency department</a>, <a href="/ar/w/dc/">grocery warehouse</a>, <a href="/ar/w/cafe/">café</a>.</p></div></li></ul>
+    </section>
+    <section class="w-wrap" aria-labelledby="w-devices">
+      <h2 class="w-h2" id="w-devices">What each device does</h2>
+      <dl class="w-how">
+        <div><dt>iPhone and iPad<small>Safari or any iOS browser</small></dt><dd>AR Quick Look opens the world from a file made for it. On your table, pinch to resize. Step inside keeps it at real size: the race car is 5.6 m long, the plant is life size around you.</dd><dd>iPhone has no web AR (WebXR), so the models loop a short animation instead of running the live simulation.</dd></div>
+        <div><dt>Android<small>Chrome with Google Play Services for AR</small></dt><dd>The live world runs in the browser. It builds itself on your table and the model keeps going: tankers queue, patients wait. Step inside puts a doorway on the floor; walk through it.</dd><dd>Without web AR, Google’s Scene Viewer opens the same files as iPhone.</dd></div>
+        <div><dt>Meta Quest<small>The Quest browser</small></dt><dd>Passthrough AR, the same as Android: point the controller at the floor and pull the trigger to place it.</dd></div>
+        <div><dt>A computer<small>Any modern browser</small></dt><dd>A 3D preview of each world and a big assembl AR code. Scan it with a phone, or print the card for a classroom wall.</dd></div>
+      </dl>
+      <p class="w-tested" id="wTested"><b>Tested so far:</b> the gallery, every world’s page, its codes and its 3D preview in desktop Chromium; the Android path (placing, the model running, the doorway) in a WebXR emulator; and every iPhone file with Pixar’s USD checker for AR Quick Look. Not yet tried on a real iPhone, Android phone or Quest.</p>
+      <p class="w-credit">Dairy plant, emergency department and grocery warehouse: 3D assets: NVIDIA SimReady (CC BY 4.0), via codepawl/simready-glb. Every figure in those worlds is Simulated, from each page’s own model.</p>
+    </section>
+  </div>
+  <div class="make-band" id="make">
   <header class="intro wrap">
-    <p class="eyebrow"><b>assembl ar</b><span>Lab · runs in your browser</span><span>No app, no account</span></p>
+    <p class="eyebrow"><b>Make your own</b><span>Runs in your browser</span><span>Nothing is uploaded</span></p>
     <h1>Make it here.<br><span>Place it in your room.</span></h1>
     <p class="lede">Shape a 3D object, then scan its code with a phone to stand it on your table or hang it on your wall. The phone’s own browser does the rest.</p>
   </header>
@@ -106,7 +132,7 @@
       <li><span class="truth proposed">Proposed</span><b>Hosted uploads</b><p>Photos, detailed logos and your own 3D files need somewhere to live before they can have a code. Not built: they stay on your device for now.</p></li>
       <li><span class="truth proposed">Proposed</span><b>Scan counts</b><p>How many people placed it, and on what device. Not built: this page records nothing.</p></li>
       <li><span class="truth proposed">Proposed</span><b>Editable codes</b><p>Print a code once and change what it shows later. Needs accounts and hosting. Not built.</p></li>
-      <li><span class="truth proposed">Proposed</span><b>More kinds</b><p>Scans, splats, portals and face filters. Not built.</p></li>
+      <li><span class="truth proposed">Proposed</span><b>More kinds</b><p>Scans, splats and face filters. Not built. (Portals are built for the worlds above, on Android.)</p></li>
     </ul>
   </section>
 
@@ -119,12 +145,15 @@
         <li><a href="https://github.com/kazuhikoarase/qrcode-generator">QR Code Generator</a> by Kazuhiko Arase (MIT). “QR Code” is a registered trademark of DENSO WAVE.</li>
         <li><a href="https://github.com/Instrument/instrument-sans">Instrument Sans</a> and <a href="https://github.com/IBM/plex">IBM Plex Mono</a> (SIL Open Font License 1.1), via Fontsource, converted to outlines for 3D letters.</li>
         <li>Cars: assembl’s own Blender models. Downhill bike: the assembly Print Lab’s parametric model.</li>
+        <li>Worlds: the milk powder plant, emergency department and grocery warehouse use 3D assets from NVIDIA SimReady (CC BY 4.0), via <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a>, with each page’s own simulation. The race car, claw machine, heart pump, Earth and Moon and café are assembl’s own Blender models; the Earth uses NASA Blue Marble and Black Marble imagery (public domain). People are plain figures, never a likeness.</li>
+        <li>The iPhone files for the worlds are made offline with three.js and Pixar’s OpenUSD (<code>usd-core</code>, Modified Apache 2.0) and checked with its AR Quick Look checks.</li>
         <li>AR launch patterns follow Google’s <a href="https://modelviewer.dev">model-viewer</a> (Apache 2.0); no model-viewer code is bundled.</li>
         <li>Inspired by <a href="https://ar-code.com">AR Code</a>. Not affiliated.</li>
       </ul>
     </details>
     <p class="mono">assembl lab · an experiment · nothing you make here leaves your browser unless you share its link</p>
   </footer>
+  </div>
 </main>
 
 <dialog class="sheet" id="sheet" aria-labelledby="sheetTitle">
@@ -132,6 +161,7 @@
   <div id="sheetBody"></div>
 </dialog>
 
+<script type="module">import { mountGallery } from '/ar/worlds/gallery.js'; mountGallery(document.getElementById('wGrid'), document.getElementById('wDevice'));</script>
 <script type="module" src="/ar/js/studio.js"></script>
 </body>
 </html>
