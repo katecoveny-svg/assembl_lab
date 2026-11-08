@@ -513,10 +513,15 @@ async def run_buttons(b=None):
     own = b is None
     if own:
         b = await browser(PW)
+    only = set(filter(None, os.environ.get('BUTTON_ONLY', '').split(',')))
     for wid, path in BUTTON_PAGES:
+        if only and wid not in only:
+            continue
         for w, h in [(1440, 900), (390, 844)]:
             ctx = await b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1)
             pg = await ctx.new_page(); errs = watch(pg, f'{path} {w}')
+            # the static test server has no serverless functions (/api/...); any other missing file still counts
+            missing = []; pg.on('response', lambda r: missing.append(r.url) if r.status == 404 and '/api/' not in r.url else None)
             try:
                 await pg.goto(BASE + path, wait_until='load', timeout=180000)
                 try:
@@ -529,17 +534,27 @@ async def run_buttons(b=None):
                 await no_scroll(pg, w, path)
                 if has:
                     await pg.locator('.war').first.scroll_into_view_if_needed(timeout=180000)
-                    await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}.png', timeout=300000)
+                    try:
+                        await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}.png', timeout=300000)
+                    except Exception:
+                        pass
                     await pg.click('.war .war-btn[data-mode="table"]', timeout=180000)
                     await pg.wait_for_selector('.war-pop svg', timeout=120000)
-                    await pg.wait_for_timeout(400)
-                    await pg.locator('.war-pop').screenshot(path=f'{OUT}/worlds_button_pop_{wid}_{w}.png', timeout=180000)
+                    # decode the code on a blank page: the machines and the café keep drawing 3D, which makes screenshots of
+                    # their own pages very slow in SwiftShader
+                    svg = await pg.evaluate("document.querySelector('.war-pop svg').outerHTML")
+                    q = await ctx.new_page(); await q.set_content(f'<body style="margin:0"><div id="q" style="display:inline-block;padding:40px;background:#fff">{svg}</div></body>')
+                    await q.locator('#q').screenshot(path=f'{OUT}/worlds_button_pop_{wid}_{w}.png'); await q.close()
                     got = decode_qr(f'{OUT}/worlds_button_pop_{wid}_{w}.png')
                     check(f'{path} at {w} px: the code sheet opens {wid} on a phone', got == f'{LIVE}/ar/w/{wid}/?mode=table', got)
-                    await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}_code.png', timeout=300000)
+                    try:
+                        await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}_code.png', timeout=300000)
+                    except Exception:
+                        pass
                     await pg.keyboard.press('Escape')
                     check(f'{path} at {w} px: Escape closes the code sheet', await pg.locator('.war-pop').count() == 0)
-                check(f'{path} at {w} px has no page errors', not quiet(errs), quiet(errs)[:3])
+                bad = [e for e in quiet(errs) if 'status of 404' not in e] + missing
+                check(f'{path} at {w} px has no page errors or missing files', not bad, bad[:3])
             except Exception as e:
                 check(f'{path} at {w} px: page checks ran', False, repr(e)[:160])
             await ctx.close()
@@ -604,17 +619,22 @@ async def run_xr(p):
         check('xr: IWER points at iwer.min.js (npm install iwer)', False); return
     b = await browser(p)
     # a table world: placed with the headset's trigger, builds itself
-    ctx, pg, errs = await xr_session(b, '/ar/w/claw/?mode=table', 'xr claw table')
-    await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 1)'); await pg.wait_for_timeout(600)
-    await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 0)'); await pg.wait_for_timeout(600)
-    check('xr claw table: the trigger (an XR select) places it', await pg.evaluate('window.__arxr.placed'))
-    await pg.wait_for_timeout(300); await pg.screenshot(path=f'{OUT}/xr_claw_assembling.png', timeout=300000)
-    await pg.wait_for_function('window.__arxr.assembled', timeout=300000)
-    check('xr claw table: it builds itself piece by piece, then runs', True)
-    await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_claw_table.png', timeout=300000)
-    check('xr claw table: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
+    only = set(filter(None, os.environ.get('XR_ONLY', '').split(',')))
+    if not only or 'claw' in only:
+      ctx, pg, errs = await xr_session(b, '/ar/w/claw/?mode=table', 'xr claw table')
+      await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 1)'); await pg.wait_for_timeout(600)
+      await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 0)'); await pg.wait_for_timeout(600)
+      check('xr claw table: the trigger (an XR select) places it', await pg.evaluate('window.__arxr.placed'))
+      await pg.wait_for_timeout(300); await pg.screenshot(path=f'{OUT}/xr_claw_assembling.png', timeout=300000)
+      await pg.wait_for_function('window.__arxr.assembled', timeout=300000)
+      check('xr claw table: it builds itself piece by piece, then runs', True)
+      await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_claw_table.png', timeout=300000)
+      check('xr claw table: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
     # the live sims tick
-    for wid, read in [('dairy', 'window.__arxr.world.sim.t'), ('ed', 'window.__arxr.world.status()'), ('dc', 'window.__arxr.world.status()')]:
+    only = set(filter(None, os.environ.get('XR_ONLY', '').split(',')))
+    for wid, read in [('dairy', 'window.__arxr.world.sim.t'), ('ed', 'window.__arxr.world.status()'), ('dc', 'window.__arxr.world.sim.t')]:
+      if only and wid not in only:
+        continue
       try:
         ctx, pg, errs = await xr_session(b, f'/ar/w/{wid}/?mode=table&motion=reduce', f'xr {wid} table')
         await pg.evaluate('window.__arxr.place()')
@@ -632,6 +652,8 @@ async def run_xr(p):
         check(f'xr {wid} table: checks ran', False, repr(e)[:160])
     # step inside: the doorway, then walk through it
     for wid in ['cafe', 'ed']:
+      if only and wid + '-inside' not in only:
+        continue
       try:
         ctx, pg, errs = await xr_session(b, f'/ar/w/{wid}/?mode=inside&motion=reduce', f'xr {wid} inside')
         await pg.evaluate('window.__arxr.place()')
