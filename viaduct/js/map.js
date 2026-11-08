@@ -90,7 +90,7 @@ function layer(engine, n, mode, extra = {}) {
 
 // ------------------------------------------------------------------------------------------------ the map
 export function createMap(canvas, { reduce = false, phone = false, clear = false } = {}) {
-  const budget = phone ? 72000 : 285000;
+  const budget = phone ? 68000 : 285000;
   const engine = createEngine(canvas, { budget, reduceMotion: reduce, sizeScale: phone ? 1.05 : 1, clear });
   engine.camera.position.set(0, 0.62, 3.3); engine.camera.lookAt(0, 0.2, 0);
   return { engine, budget, nLights: phone ? 7000 : 22402, nPeople: phone ? 1100 : 2600, nRain: phone ? 2600 : 7500 };

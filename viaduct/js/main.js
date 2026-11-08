@@ -79,7 +79,7 @@ function renderStatic() {
 }
 
 // ------------------------------------------------------------------------------------------------ the moment
-let lastKey = null;
+let lastKey = null, lastChapter = null;
 function render(force = false) {
   const t = state.t, key = Math.floor(t * 2) + (state.wrong ? "w" : "") + [...state.set].join("");
   if (!force && key === lastKey) return; lastKey = key;
@@ -93,7 +93,7 @@ function render(force = false) {
   $("c-seated").textContent = covers;
   $("c-wait").textContent = mo.waiting.length;
   $("c-pass").textContent = mo.load ?? 0; $("c-ticket").textContent = mo.ticket ? `${Math.round(mo.ticket)} min avg` : "on the pass";
-  $("c-wx").textContent = mo.rain > 0.5 ? "Storm" : mo.rain > 0.05 ? "Rain" : t < night.rain.flag ? "Dry" : t < night.rain.start - 12 ? "Rain due" : "Dry";
+  $("c-wx").textContent = mo.rain > 0.68 ? "Storm" : mo.rain > 0.05 ? "Rain" : t < night.rain.flag ? "Dry" : t < night.rain.start - 12 ? "Rain due" : "Dry";
   $("c-deck").textContent = t >= night.deck.closeAt ? "deck shut" : "deck open";
   // the pass through the night so far
   const S = night.series, upto = Math.max(1, Math.min(S.length - 1, Math.floor(t))), maxL = Math.max(10, ...S.map((s) => s.load));
@@ -118,6 +118,8 @@ function render(force = false) {
   const cnt = (s) => floor.filter((f) => f.state === s).length;
   $("plan-sum").textContent = `${cnt("seated") + cnt("waiting") + cnt("late") + cnt("eating")} of ${floor.filter((f) => f.state !== "closed").length} open tables in use · ${cnt("waiting") + cnt("late")} waiting for food${cnt("late") ? ` (${cnt("late")} late)` : ""} · ${cnt("clearing")} clearing · ${cnt("booked")} booked soon`;
   renderPhone(t, mo);
+  // the stage's cards change size with the chapter (the proof cards are taller): place the callouts again, clear of them
+  if (mo.chapter.id !== lastChapter) { const first = lastChapter == null; lastChapter = mo.chapter.id; if (!first) requestAnimationFrame(() => window.__viaduct.layoutLabels?.()); }
   window.__viaduct.moment = { t, clock: mo.clock, chapter: mo.chapter.id, covers, waiting: mo.waiting.length };
 }
 function setLive(k, text) { const el = document.querySelector(`[data-live="${k}"]`); if (el && el.textContent !== text) el.textContent = text; }
@@ -257,7 +259,14 @@ async function startGL() {
         }
       if (best) { placed.push(best[3]); lines.push([p, best[3]]); layout.set(c, [best[1], best[2]]); }
     }
-    // no WebGL-style list for anything left without a place (still real text in the page's text version)
+    notesKey = null;
+  }
+  // anything left without a clear place beside its anchor is listed on the map (small screens), so every callout is always there
+  let notesKey = null;
+  function syncNotes() {
+    const left = layout ? callouts.filter((c) => !layout.has(c)) : [], key = left.map((c) => c.el.textContent).join("|");
+    if (key === notesKey) return; notesKey = key;
+    $("map-notes").innerHTML = labelsOn ? left.map((c) => `<span><b>${esc(c.el.querySelector("strong").textContent)}</b>${c.primary ? ` · ${esc(c.el.querySelector("span").textContent)}` : ""}</span>`).join("") : "";
   }
   function drawLabels(now) {
     const show = labelsOn && layout && !map.engine.morphing(); const parts = []; const o = mapOffset();
@@ -271,7 +280,7 @@ async function startGL() {
       parts.push(`<path d="${d}" class="${c.primary ? "key" : ""}"/><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5"/><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" class="ring"/>`);
       if (c.key === "restaurant" || (c.key === "wait" && window.__viaduct.moment?.waiting)) { const k = reduce ? 0.5 : ((now / 2600) + (c.key === "wait" ? 0.5 : 0)) % 1; parts.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(7 + 16 * k).toFixed(1)}" class="pulse" style="opacity:${(0.75 * (1 - k)).toFixed(2)}"/>`); }
     }
-    svg.innerHTML = parts.join("");
+    svg.innerHTML = parts.join(""); syncNotes();
   }
   // each frame: the night at this moment, on both clouds
   let shown = false, lastPlanT = -1;
