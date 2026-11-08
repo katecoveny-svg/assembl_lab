@@ -82,14 +82,16 @@ html:has(.tdk[data-mode=night]),body:has(.tdk[data-mode=night]){background:#180B
 .tdk-stage canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;touch-action:none;cursor:grab}
 .tdk-stage canvas:active{cursor:grabbing}
 .tdk-stage canvas:focus-visible{outline-offset:-3px}
-.tdk-legend{position:absolute;left:16px;top:14px;display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10.5px;color:var(--mute);pointer-events:none;max-width:calc(100% - 140px)}
+.tdk-stage-meta{position:absolute;left:12px;right:12px;top:10px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;pointer-events:none;z-index:1}
+.tdk-legend{display:flex;flex:1 1 200px;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10.5px;line-height:1.5;color:var(--mute)}
+.tdk-legend span{white-space:nowrap}
 .tdk-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
 .tdk-legend span.on{color:var(--ink)}
 .tdk-mark{position:absolute;right:14px;bottom:12px;display:flex;align-items:center;gap:6px;font-size:14px;letter-spacing:-.02em;color:var(--ink);pointer-events:none;opacity:.9}
 .tdk-mark svg{width:20px;height:20px}
 .tdk-mark em{font-style:normal;color:var(--accent)}
 .tdk-hint{position:absolute;left:16px;bottom:12px;font-family:var(--mono);font-size:10.5px;color:var(--mute);pointer-events:none}
-.tdk-status{position:absolute;right:14px;top:12px;font-family:var(--mono);font-size:10.5px;color:var(--mute);pointer-events:none;text-align:right}
+.tdk-status{flex:0 1 auto;font-family:var(--mono);font-size:10.5px;line-height:1.5;color:var(--ink);text-align:left}
 .tdk-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:24px;text-align:center}
 .tdk-stage.no3d .tdk-fallback{display:flex}
 .tdk-stage.no3d canvas{display:none}
@@ -189,9 +191,9 @@ html:has(.tdk[data-mode=night]),body:has(.tdk[data-mode=night]){background:#180B
   .tdk-learn ol{grid-template-columns:minmax(0,1fr)}
   .tdk-title h1{font-size:24px}
   .tdk-live-n{font-size:40px}
-  .tdk-legend{font-size:9.5px;gap:4px 10px;max-width:calc(100% - 24px)}
+  .tdk-legend{font-size:9.5px;gap:4px 10px}
   .tdk-hint{display:none}
-  .tdk-status{top:auto;bottom:12px;left:16px;right:auto;text-align:left;max-width:58%;font-size:9.5px}
+  .tdk-status{font-size:9.5px}
   .tdk-row .tdk-k{min-width:0;width:100%}
   .tdk-btn{min-height:40px}
   .tdk-call b{font-size:12px}
