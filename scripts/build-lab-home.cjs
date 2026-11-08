@@ -51,8 +51,11 @@ const STAGE = [
   { id: 'cars', kind: 'Vehicle retail', img: ['/assets/models/vehicles/renders/golf-hero.webp', 1200, 750], alt: 'Offline render of the Simulated 2021 Volkswagen Golf, the hero car of the agent-ready cars world' },
 ];
 const MORE_TWINS = [
+  { id: 'delivery', line: 'One grocery order, picked, swapped and driven over real Auckland streets.' },
   { id: 'retail', line: 'The trade yard at 6am, the empty bins at 4pm.' },
+  { id: 'moving', line: 'One tenant moves across Auckland, and never says anything twice.' },
   { id: 'stay', line: 'Bookings, cleaning, check-in and what each booking site takes.' },
+  { id: 'viaduct', line: 'One restaurant on the real waterfront, 5 pm to midnight.' },
   { id: 'office', line: 'Three floors, 120 desks, and the commute that fills them.' },
   { id: 'tourism', line: 'Visitors, guest nights and spend, region by region.' },
   { id: 'trades', line: 'Measure a plan, check the Building Code, price it from your rates.' },

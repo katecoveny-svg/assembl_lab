@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en-NZ" data-feeds="power,tariffs" data-ask="moving">
+<head>
+<meta charset="utf-8">
+<title>Moving house · assembl lab</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A lab sim: one Example tenant moves across Auckland, from Calgary Street in Sandringham to a rental a few kilometres away. Seven agents draft every step, and nothing is sent until the tenant says yes. Rents from Tenancy Services; power from the wholesale price feed.">
+<meta name="theme-color" content="#21121F">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<!-- critical paint: plum from the first frame, so the page never shows a dark or white box before the styles and the cloud arrive -->
+<style>html,body{margin:0;background:#21121F;color:#F9F6F2}body{font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}.mv-world{background:#21121F}</style>
+<script>document.documentElement.classList.add("js")</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site-v2/site-v2.css">
+<link rel="stylesheet" href="/site-v2/lab.css">
+<link rel="stylesheet" href="/moving/moving.css">
+<link rel="preload" href="/assets/models/moving/moving-points.json" as="fetch" crossorigin>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+</head>
+<body class="site-v2 v2-tone-plum">
+<a class="skip mv-skip" href="#sim">Skip to the sim</a>
+<main id="main">
+
+<section id="sim" class="mv-sim" aria-labelledby="mv-title">
+  <div class="mv-world">
+    <img class="mv-still" src="/moving/still.webp" srcset="/moving/still-sm.webp 780w, /moving/still.webp 1600w" sizes="100vw" width="1600" height="928" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
+    <canvas id="mv-canvas" aria-hidden="true"></canvas>
+    <svg class="mv-leaders" aria-hidden="true"></svg>
+    <ol id="mv-callouts" class="mv-callouts" aria-label="On the map"></ol>
+  </div>
+
+  <div class="mv-panel">
+    <div class="mv-head">
+      <p class="v2-eyebrow v2-eyebrow-dot">Lab sim · property and energy</p>
+      <h1 id="mv-title" class="mv-h1">Moving house, <span class="v2-accent">said once.</span></h1>
+      <p class="mv-lede">Sam, an Example tenant, leaves a flat on Calgary Street in Sandringham for a rental across Auckland. Seven agents do the legwork. Every message and form is a draft until Sam says yes, and this sim sends nothing.</p>
+      <p class="mv-nogl-note">This browser can't draw the 3D map, so the picture is a still of the whole move. The journey plays here, and every step is written out below.</p>
+      <p class="mv-chips"><span class="truth" data-k="sim">Simulated · a fictional tenant</span><span class="src-stage" title="On the lab's maturity ladder: one-way public data reaches the page">Shadow</span></p>
+    </div>
+    <div class="mv-controls" role="group" aria-label="Journey controls">
+      <button id="mv-play" class="mv-icon" type="button" aria-label="Pause motion" aria-pressed="false" data-state="playing">
+        <svg class="i-pause" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="i-play" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+      </button>
+      <button id="mv-prev" class="mv-icon" type="button" aria-label="Previous stage"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+      <ol id="mv-dots" class="mv-dots" aria-label="Stages"></ol>
+      <button id="mv-next" class="mv-icon" type="button" aria-label="Next stage"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+      <button id="mv-wrong" class="mv-switch" type="button" role="switch" aria-checked="false"><span class="mv-knob" aria-hidden="true"></span>Make it go wrong</button>
+    </div>
+    <div id="mv-stage-card" class="mv-stage-card" aria-live="polite">
+      <p class="mv-stage-k"><span>Nine stages</span></p>
+      <h2 class="mv-stage-t">Searching to settling in</h2>
+      <p class="mv-stage-line">The journey, step by step, is written out below the map.</p>
+    </div>
+  </div>
+</section>
+
+<section class="mv-section v2-tone-aubergine" id="journey" aria-labelledby="journey-h">
+  <div class="mv-in mv-in-journey">
+    <div class="mv-side">
+      <p class="v2-eyebrow v2-eyebrow-dot">The journey as text</p>
+      <h2 id="journey-h" class="v2-h3">Nine stages, <span class="v2-accent">one set of answers.</span></h2>
+      <p class="mv-p" id="mv-mode-note">Showing the version where things go to plan.</p>
+      <p class="mv-p mv-quiet">The same journey as the map, in words: who did what, what was drafted, and where Sam said yes.</p>
+    </div>
+    <ol id="mv-text" class="mv-text">
+      <li><h3>1 · Searching</h3><p>A shortlist built from what Sam needs, asking the smallest useful question each time.</p></li>
+      <li><h3>2 · Viewing booked</h3><p>A viewing request, drafted from what Sam has already said.</p></li>
+      <li><h3>3 · Application</h3><p>Documents shared once, with consent. While it's assessed, the moving plan gets made.</p></li>
+      <li><h3>4 · Tenancy agreed, bond to approve</h3><p>The agreement read and summarised. The bond form goes to the bond-holding step as an approval.</p></li>
+      <li><h3>5 · Moving day booked</h3><p>Three quotes, one recommendation, one yes.</p></li>
+      <li><h3>6 · Power and internet from day one</h3><p>Connected at the new place from the move-in date, closed at the old one.</p></li>
+      <li><h3>7 · Change of address</h3><p>The new address, given once and used everywhere.</p></li>
+      <li><h3>8 · Settling in</h3><p>Keys, a condition record and the old bond, with nothing left hanging.</p></li>
+      <li><h3>9 · Proof</h3><p>What Sam didn't have to repeat, what Sam said yes to, and what the move costs to run.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="mv-section v2-tone-plum" id="figures" aria-labelledby="figures-h">
+  <div class="mv-in">
+    <div class="mv-side">
+      <p class="v2-eyebrow v2-eyebrow-dot">The published figures</p>
+      <h2 id="figures-h" class="v2-h3">Real rents, <span class="v2-accent">a real power price.</span></h2>
+      <p class="mv-p">The streets, the rents and the power price are public data. The tenant, the listings, the businesses and every count in the journey are Simulated.</p>
+    </div>
+    <div class="mv-figs">
+      <div class="mv-fig">
+        <h3>Median weekly rent, new bonds</h3>
+        <table class="mv-table">
+          <caption><span class="truth" data-k="live">Latest published</span> April to June 2026 · all dwellings and bedroom counts · by Stats NZ area</caption>
+          <thead><tr><th scope="col">Street in the sim</th><th scope="col">Area</th><th scope="col">Median</th><th scope="col">New bonds</th></tr></thead>
+          <tbody id="fig-rents">
+            <tr><td>Calgary Street, Sandringham (leaving)</td><td>Sandringham East</td><td>$570</td><td>15</td></tr>
+            <tr><td>Lonsdale Street, Ellerslie (shortlist 1)</td><td>Ellerslie Central</td><td>$650</td><td>33</td></tr>
+            <tr><td>Haydn Avenue, Royal Oak (shortlist 2)</td><td>Royal Oak East (Auckland)</td><td>$600</td><td>39</td></tr>
+          </tbody>
+        </table>
+        <p class="mv-src">Source: <a href="https://www.tenancy.govt.nz/about-tenancy-services/data-and-statistics/rental-bond-data/" target="_blank" rel="noopener">Tenancy Services (MBIE), rental bond data</a>, detailed quarterly file, quarter starting 1 April 2026. CC BY 3.0 NZ. A small area's median moves a lot from quarter to quarter.</p>
+      </div>
+      <div class="mv-fig">
+        <h3>Power</h3>
+        <dl class="mv-dl">
+          <dt>Wholesale price, yesterday's average</dt><dd><span id="fig-wholesale">11.39c/kWh <span class="truth" data-k="live">Snapshot · built into this page</span></span><span class="src" id="fig-wholesale-src">Electricity Authority EMI · Ōtāhuhu · 22 October 2026 (interim)</span></dd>
+          <dt>Residential price, all retailers' average</dt><dd><span id="fig-retail">41.3c/kWh <span class="truth" data-k="live">Latest published · copied into this page</span></span><span class="src" id="fig-retail-src">MBIE, Quarterly Survey of Domestic Electricity Prices · Auckland Central · survey of 15 August 2026</span></dd>
+          <dt>Estimated first bill at the new place</dt><dd><span id="fig-bill">about $211 <span class="truth" data-k="ill">Estimate</span></span><span class="src" id="fig-bill-how">30 days × 17 kWh a day (Simulated use) × 41.3c/kWh.</span></dd>
+        </dl>
+        <p class="mv-src">The wholesale price is the lab's live feed when it answers (the same one the energy twin reads); here it says Live or Latest published. MBIE's price is a modelled average for an 8,000 kWh a year household, not any retailer's plan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mv-section v2-tone-aubergine" id="agents" aria-labelledby="agents-h">
+  <div class="mv-in">
+    <div class="mv-side">
+      <p class="v2-eyebrow v2-eyebrow-dot">Who does what</p>
+      <h2 id="agents-h" class="v2-h3">Seven agents, <span class="v2-accent">each with a limit.</span></h2>
+      <p class="mv-p">Observe, draft, recommend, or act with approval: never more. Nothing leaves without Sam's yes, and in this sim nothing leaves at all.</p>
+    </div>
+    <ul class="mv-agents">
+      <li><strong>Intent</strong><span class="mv-auth">observe</span><span class="mv-auth">recommend</span><p>Works out what Sam needs, one small question at a time.</p></li>
+      <li><strong>Search</strong><span class="mv-auth">observe</span><span class="mv-auth">recommend</span><p>Builds and ranks the shortlist from Sam's answers.</p></li>
+      <li><strong>Application</strong><span class="mv-auth">draft</span><span class="mv-auth">act with approval</span><p>Drafts viewing requests and applications; shares documents only with consent.</p></li>
+      <li><strong>Tenancy</strong><span class="mv-auth">observe</span><span class="mv-auth">draft</span><p>Reads the agreement, drafts the bond form, keeps the condition record. No tenancy advice.</p></li>
+      <li><strong>Utilities</strong><span class="mv-auth">draft</span><span class="mv-auth">act with approval</span><p>Lines up power and internet from the move-in date and closes the old ones.</p></li>
+      <li><strong>Moving</strong><span class="mv-auth">draft</span><span class="mv-auth">act with approval</span><p>Plans the move, asks movers for quotes, drafts the change-of-address list.</p></li>
+      <li><strong>Resolution</strong><span class="mv-auth">recommend</span><span class="mv-auth">draft</span><p>Steps in when something goes wrong and finds the next option.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="mv-section v2-tone-plum" id="truth" aria-labelledby="truth-h">
+  <div class="mv-in">
+    <div class="mv-side">
+      <p class="v2-eyebrow v2-eyebrow-dot">What's real here</p>
+      <h2 id="truth-h" class="v2-h3">Real streets. <span class="v2-accent">A made-up move.</span></h2>
+    </div>
+    <div class="mv-truth">
+      <ul class="mv-legend">
+        <li><span class="truth" data-k="sim">Simulated</span> Sam, the listings, the businesses, the dates, the quotes and every count in the journey.</li>
+        <li><span class="truth" data-k="live">Live</span> or <span class="truth" data-k="live">Latest published</span> The rents and power prices, with their source and date.</li>
+        <li><span class="truth" data-k="ill">Illustrative</span> The Example house, drawn over the new street (not any real house), and the businesses' generic locations. The first bill is an Estimate.</li>
+        <li><span class="src-stage">Shadow</span> Where this sits on the lab's maturity ladder: public data reaches the page one way. Nothing flows back, and no real tenancy is mirrored.</li>
+      </ul>
+      <p class="mv-p">No business in the journey is real: each is labelled "· Example" and stands at a generic location. The streets are ordinary residential streets, shown as whole blocks; no house is singled out and no house number is used.</p>
+      <p class="mv-p">This is not tenancy advice. The real rules on bonds, notice and tenancy agreements are at <a href="https://www.tenancy.govt.nz/" target="_blank" rel="noopener">Tenancy Services</a>.</p>
+      <p class="mv-credit" id="mv-credit">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Map data © OpenStreetMap contributors, via OpenFreeMap. Rents: Tenancy Services (MBIE) rental bond data, April to June 2026 (CC BY 3.0 NZ). Areas: Stats NZ (CC BY 4.0). Power: Electricity Authority EMI; MBIE. Terrain ×5 and buildings ×3 in height; distances true to scale.</p>
+    </div>
+  </div>
+</section>
+</main>
+<script src="/moving/journey.js" defer></script>
+<script type="module" src="/moving/scene.js"></script>
+<script src="/feeds.js" defer></script><script src="/ask.js" defer data-page="moving"></script><script src="/lab/navigation.js" defer></script>
+</body>
+</html>

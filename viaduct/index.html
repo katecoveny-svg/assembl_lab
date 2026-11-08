@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en-NZ" data-feeds="weather,calendar" data-ask="viaduct">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Friday night on the Viaduct · assembl lab</title>
+<meta name="description" content="A fictional restaurant on the real Auckland waterfront, from 5 pm to midnight: bookings, walk-ins along the promenade, an honest waitlist, a kitchen under pressure, rain, a no-show and the close-out, with six agents that act only within their authority. Simulated; the map is open data.">
+<meta name="theme-color" content="#21121F">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<style>html,body{margin:0;background:#21121F;color:#F9F6F2}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site-v2/site-v2.css">
+<link rel="stylesheet" href="/site-v2/lab.css">
+<link rel="stylesheet" href="viaduct.css">
+<link rel="preload" href="still-map.webp" as="image">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<script>document.documentElement.classList.add("js");</script>
+</head>
+<body class="site-v2 v2-tone-plum">
+<a class="skip" href="#controls">Skip to the controls</a>
+<main id="main">
+
+<section class="stage" id="stage" aria-labelledby="title">
+  <div class="map" id="map" aria-hidden="true">
+    <img class="still" id="map-still" src="still-map.webp" alt="" width="1600" height="1000" decoding="async">
+    <canvas id="map-canvas"></canvas>
+    <p class="map-notes" id="map-notes"></p>
+  </div>
+  <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+
+  <header class="intro">
+    <p class="v2-eyebrow v2-eyebrow-dot">Lab sim · Hospitality</p>
+    <h1 id="title">Friday night on the Viaduct</h1>
+    <p class="lede">A fictional restaurant on the real Auckland waterfront, 5 pm to midnight. Walk-ins come along the promenade; six agents keep the night honest.</p>
+    <p class="chips"><span class="truth" data-k="sim">Simulated night and guests</span> <span class="truth" data-k="ill">Example restaurant, drawn</span></p>
+  </header>
+
+  <div class="console" id="console">
+    <div class="now">
+      <p class="clock"><time id="clock">5:00 pm</time> <span class="day">Example Friday</span></p>
+      <p class="sun mono" id="sun">Sunset, calculated for Auckland</p>
+      <h2 class="chapter" id="chapter-title" aria-live="polite">Bookings fill up</h2>
+      <p class="chapter-line" id="chapter-line">The book fills through the early evening.</p>
+    </div>
+    <dl class="counts" id="counts">
+      <div><dt>Seated</dt><dd id="c-seated">0</dd><span class="u">covers</span></div>
+      <div><dt>Waitlist</dt><dd id="c-wait">0</dd><span class="u">parties</span></div>
+      <div><dt>Tickets</dt><dd id="c-pass">0</dd><span class="u" id="c-ticket">on the pass</span></div>
+      <div><dt>Weather</dt><dd id="c-wx">Dry</dd><span class="u" id="c-deck">deck open</span></div>
+    </dl>
+    <svg class="spark" id="spark" viewBox="0 0 300 36" preserveAspectRatio="none" role="img" aria-label="Tickets on the pass through the night so far"></svg>
+    <div class="controls" id="controls" tabindex="-1">
+      <div class="row">
+        <button type="button" class="pp" id="pp" aria-label="Pause motion" aria-pressed="false"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg></button>
+        <label class="scrub"><span class="sr">Time of night</span><input type="range" id="scrub" min="0" max="420" step="1" value="0" aria-valuetext="5:00 pm"></label>
+        <div class="speed" role="radiogroup" aria-label="Speed"><button type="button" role="radio" data-speed="1" aria-checked="false">1×</button><button type="button" role="radio" data-speed="2" aria-checked="true">2×</button><button type="button" role="radio" data-speed="5" aria-checked="false">5×</button></div>
+      </div>
+      <ol class="ticks" id="ticks" aria-label="Jump to a moment"></ol>
+      <div class="wrong">
+        <button type="button" class="switch" id="wrong" aria-pressed="false"><span class="knob" aria-hidden="true"></span>Make it go wrong</button>
+        <fieldset id="wrong-set" disabled><legend class="sr">What goes wrong</legend>
+          <label><input type="checkbox" value="rain" checked> Rainstorm</label>
+          <label><input type="checkbox" value="group" checked> Big walk-in group</label>
+          <label><input type="checkbox" value="kitchen" checked> Kitchen behind</label>
+        </fieldset>
+      </div>
+    </div>
+    <p class="credit mono">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Map data © OpenStreetMap contributors, via OpenFreeMap.</p>
+  </div>
+
+  <ol class="feed" id="feed" aria-label="Latest from the agents" aria-live="polite"></ol>
+
+  <ul class="callouts" id="callouts" aria-label="On the map">
+    <li class="callout key" data-anchor="restaurant"><strong>Example restaurant, drawn</strong><span data-live="rest">A fictional pavilion and deck on the basin's promenade</span></li>
+    <li class="callout key" data-anchor="wait"><strong>The waitlist, waiting nearby</strong><span data-live="wait">Guests wait where they like, not in a queue</span></li>
+    <li class="callout key" data-anchor="wharf"><strong>Walk-ins along the promenade</strong><span data-live="wharf">From Princes Wharf, Wynyard Quarter and the city</span></li>
+    <li class="callout mark" data-anchor="viaduct"><strong>Viaduct Harbour</strong><span>The marina basin</span></li>
+    <li class="callout mark" data-anchor="wynyard"><strong>Wynyard Quarter</strong><span>Across the footbridge</span></li>
+    <li class="callout mark" data-anchor="skytower"><strong>Sky Tower</strong><span>328 m, at true height</span></li>
+  </ul>
+
+  <aside class="plan" aria-labelledby="plan-h">
+    <div class="plan-head"><h2 id="plan-h">The floor tonight</h2><span class="truth" data-k="ill">Example restaurant, drawn</span></div>
+    <div class="plan-view" aria-hidden="true"><img class="still" id="plan-still" src="still-plan.webp" alt="" width="720" height="440" decoding="async"><canvas id="plan-canvas"></canvas></div>
+    <ul class="legend mono" id="legend">
+      <li data-s="seated">Seated</li><li data-s="waiting">Waiting for food</li><li data-s="late">Late</li><li data-s="clearing">Clearing</li><li data-s="booked">Booked soon</li><li data-s="closed">Closed</li>
+    </ul>
+    <p class="plan-sum" id="plan-sum" aria-live="polite"></p>
+  </aside>
+
+  <aside class="phone" aria-labelledby="phone-h">
+    <div class="device">
+      <div class="bar mono"><span id="ph-time">5:00</span><span>Example restaurant</span></div>
+      <h2 id="phone-h" class="sr">A guest's phone</h2>
+      <p class="who"><span id="ph-who">A guest's phone</span> <span class="truth" data-k="sim">Fictional guest</span></p>
+      <div class="screen" id="ph-screen"></div>
+    </div>
+  </aside>
+</section>
+
+<section class="sec agents" id="agents" aria-labelledby="agents-h">
+  <div class="sec-in">
+    <p class="v2-eyebrow v2-eyebrow-dot">Who does what</p>
+    <h2 class="v2-h3" id="agents-h">Six specialists, <span class="v2-accent">each on a short lead</span></h2>
+    <p class="sec-lede">Every agent has one job and a stated authority. A message only goes to a guest when the limits staff set cover it, or when the host or duty manager approves it. Everything else waits as a draft.</p>
+    <ul class="agent-grid" id="agent-grid"></ul>
+    <details class="log"><summary>Every agent action so far tonight <span class="mono" id="log-n"></span></summary><ol id="log"></ol></details>
+  </div>
+</section>
+
+<section class="sec proof" id="proof" aria-labelledby="proof-h">
+  <div class="sec-in">
+    <p class="v2-eyebrow v2-eyebrow-dot">Proof</p>
+    <h2 class="v2-h3" id="proof-h">The night, <span class="v2-accent">in numbers</span></h2>
+    <p class="sec-lede"><span class="truth" data-k="sim">Simulated</span> One fictional restaurant on one fictional Friday, generated from fixed seeds, so the same settings always give the same night. The comparison runs the same night without the agents.</p>
+    <div class="proof-grid" id="proof-grid"></div>
+  </div>
+</section>
+
+<section class="sec night" id="night" aria-labelledby="night-h">
+  <div class="sec-in">
+    <p class="v2-eyebrow v2-eyebrow-dot">The night, in words</p>
+    <h2 class="v2-h3" id="night-h">Everything that happens, <span class="v2-accent">in order</span></h2>
+    <p class="sec-lede" id="night-lede">The same timeline as the map, as text. It changes when you make the night go wrong.</p>
+    <ol class="night-list" id="night-list"></ol>
+  </div>
+</section>
+
+<section class="sec data" id="data" aria-labelledby="data-h">
+  <div class="sec-in">
+    <p class="v2-eyebrow v2-eyebrow-dot">What is real here</p>
+    <h2 class="v2-h3" id="data-h">Real waterfront, <span class="v2-accent">fictional night</span></h2>
+    <ul class="truths">
+      <li><span class="truth" data-k="sim">Simulated</span> The night, the guests, the bookings, the kitchen, the messages and every number in the proof. Guests are fictional. No real restaurant, bar or venue is shown or named.</li>
+      <li><span class="truth" data-k="ill">Illustrative</span> The Example restaurant: a pavilion and deck drawn on an open stretch of the basin's promenade, where the map has no building. It is not any real business or building.</li>
+      <li><span class="mono tag">Open data</span> The waterfront: the real coastline, marina basin, wharves and pontoons, building footprints and heights, paths and roads, and the terrain. Heights are true scale. The guests' walking routes are worked out on the real map.</li>
+      <li><span class="mono tag">Calculated</span> <span id="sun-long">Sunset for Auckland, from the standard solar equations.</span></li>
+      <li id="feed-weather"><span class="mono tag">Weather</span> <span>Checking the live weather feed…</span></li>
+      <li id="feed-holiday"><span class="mono tag">Holidays</span> <span>Checking the public holidays feed…</span></li>
+      <li><span class="src-stage" data-stage="model">Model</span> Where this sits on the lab's maturity ladder: a simulation with no live connection to any restaurant. Weather and holidays arrive as context only; nothing flows back.</li>
+    </ul>
+    <p class="credit-long mono">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Map data © OpenStreetMap contributors, via OpenFreeMap. Tiles © OpenMapTiles. Weather: Open-Meteo. Holidays: Nager.Date. No alcohol is promoted: guests can pre-order drinks, neutrally, and New Zealand host responsibility applies.</p>
+    <ul class="nogl" id="nogl-list" aria-label="On the map (still picture)"></ul>
+  </div>
+</section>
+
+</main>
+<noscript><style>.console .controls,.phone,.callouts{display:none}</style></noscript>
+<script type="module" src="js/main.js"></script>
+<script src="/feeds.js" defer></script>
+<script src="/ask.js" defer data-page="viaduct"></script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>

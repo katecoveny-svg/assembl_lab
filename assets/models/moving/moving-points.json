@@ -1,0 +1,335 @@
+{
+ "format": "assembl-points/2",
+ "count": 292000,
+ "stride": 10,
+ "layout": "x:u16 y:u16 z:u16 light:u8 kind:u8 layer:u8 group:u8, little-endian, interleaved; weighted random order (any prefix is a fair sample of every layer)",
+ "bounds": {
+  "x": [
+   -1.0451646033891382,
+   1.0449765720548096
+  ],
+  "y": [
+   0,
+   0.1891406738579641
+  ],
+  "z": [
+   -0.7944101754990204,
+   0.7977429883189048
+  ]
+ },
+ "kinds": {
+  "surface": 115263,
+  "edge": 167137,
+  "ground": 9600,
+  "highlight": 0
+ },
+ "layers": {
+  "city": 196000,
+  "old": 32000,
+  "b": 32000,
+  "a": 32000
+ },
+ "groups": {
+  "1": "old street",
+  "2": "street b",
+  "3": "street a",
+  "4": "old block",
+  "5": "block b",
+  "6": "block a"
+ },
+ "units": "engine units: the larger of width and depth is 2.1; y = terrain × 5, buildings × 3",
+ "metresPerUnit": 5935.89,
+ "terrainExaggeration": 5,
+ "buildingExaggeration": 3,
+ "area": {
+  "west": 174.705,
+  "east": 174.845,
+  "south": -36.928,
+  "north": -36.842,
+  "widthKm": 12.5,
+  "depthKm": 9.5
+ },
+ "streets": {
+  "old": {
+   "name": "Calgary Street",
+   "suburb": "Sandringham",
+   "layer": 1,
+   "group": 1,
+   "block": 4,
+   "anchor": [
+    -0.53353,
+    0.03524,
+    0.1398
+   ],
+   "lonlat": [
+    174.73943,
+    -36.8925
+   ],
+   "cropRadius": 0.05559,
+   "line": [
+    [
+     -0.53586,
+     0.03501,
+     0.13917
+    ],
+    [
+     -0.52314,
+     0.03629,
+     0.14261
+    ]
+   ],
+   "sa2": {
+    "code": "138200",
+    "name": "Sandringham East"
+   }
+  },
+  "b": {
+   "name": "Lonsdale Street",
+   "suburb": "Ellerslie",
+   "layer": 2,
+   "group": 2,
+   "block": 5,
+   "anchor": [
+    0.52598,
+    0.0349,
+    0.14385
+   ],
+   "lonlat": [
+    174.81007,
+    -36.89272
+   ],
+   "cropRadius": 0.05559,
+   "line": [
+    [
+     0.53257,
+     0.03862,
+     0.12838
+    ],
+    [
+     0.51954,
+     0.03401,
+     0.15899
+    ]
+   ],
+   "sa2": {
+    "code": "143300",
+    "name": "Ellerslie Central"
+   }
+  },
+  "a": {
+   "name": "Haydn Avenue",
+   "suburb": "Royal Oak",
+   "layer": 3,
+   "group": 3,
+   "block": 6,
+   "anchor": [
+    0.0342,
+    0.06509,
+    0.4094
+   ],
+   "lonlat": [
+    174.77728,
+    -36.90698
+   ],
+   "cropRadius": 0.05559,
+   "line": [
+    [
+     0.00311,
+     0.05675,
+     0.43029
+    ],
+    [
+     0.02902,
+     0.06357,
+     0.41311
+    ],
+    [
+     0.03449,
+     0.06517,
+     0.40919
+    ],
+    [
+     0.03907,
+     0.06649,
+     0.40679
+    ],
+    [
+     0.04712,
+     0.0687,
+     0.40408
+    ],
+    [
+     0.0509,
+     0.06982,
+     0.4024
+    ],
+    [
+     0.06482,
+     0.07502,
+     0.39281
+    ]
+   ],
+   "sa2": {
+    "code": "143400",
+    "name": "Royal Oak East (Auckland)"
+   }
+  }
+ },
+ "shortlistC": {
+  "suburb": "Mount Albert",
+  "anchor": [
+   -0.777,
+   0.03234,
+   -0.02235
+  ],
+  "lonlat": [
+   174.7232,
+   -36.8838
+  ]
+ },
+ "places": {
+  "pm": {
+   "label": "Property manager",
+   "anchor": [
+    0.018,
+    0.04446,
+    -0.30177
+   ],
+   "lonlat": [
+    174.7762,
+    -36.8688
+   ]
+  },
+  "movers": {
+   "label": "Movers",
+   "anchor": [
+    0.6375,
+    0.02945,
+    0.39491
+   ],
+   "lonlat": [
+    174.8175,
+    -36.9062
+   ]
+  },
+  "power": {
+   "label": "Power retailer",
+   "anchor": [
+    -0.228,
+    0.05098,
+    -0.48433
+   ],
+   "lonlat": [
+    174.7598,
+    -36.859
+   ]
+  },
+  "internet": {
+   "label": "Internet provider",
+   "anchor": [
+    -0.432,
+    0.03995,
+    -0.23285
+   ],
+   "lonlat": [
+    174.7462,
+    -36.8725
+   ]
+  }
+ },
+ "landmarks": {
+  "maungawhau": {
+   "anchor": [
+    -0.1664,
+    0.15768,
+    -0.13192
+   ],
+   "heightM": 187
+  },
+  "maungakiekie": {
+   "anchor": [
+    0.12408,
+    0.15822,
+    0.28022
+   ],
+   "heightM": 188
+  }
+ },
+ "distancesKm": {
+  "oldToB": 6.3,
+  "oldToA": 3.7
+ },
+ "rents": {
+  "quarterStart": "2026-04-01",
+  "quarter": "April to June 2026",
+  "measure": "median weekly rent of new bonds lodged in the quarter, all dwelling types and bedroom counts",
+  "areas": {
+   "old": {
+    "sa2": "138200",
+    "area": "Sandringham East",
+    "medianWeekly": 570,
+    "lowerQuartile": 495,
+    "upperQuartile": 780,
+    "newBonds": 15,
+    "activeBonds": 375,
+    "previousQuarterMedian": 600
+   },
+   "b": {
+    "sa2": "143300",
+    "area": "Ellerslie Central",
+    "medianWeekly": 650,
+    "lowerQuartile": 530,
+    "upperQuartile": 710,
+    "newBonds": 33,
+    "activeBonds": 396,
+    "previousQuarterMedian": 740
+   },
+   "a": {
+    "sa2": "143400",
+    "area": "Royal Oak East (Auckland)",
+    "medianWeekly": 600,
+    "lowerQuartile": 475,
+    "upperQuartile": 700,
+    "newBonds": 39,
+    "activeBonds": 510,
+    "previousQuarterMedian": 600
+   }
+  },
+  "source": {
+   "name": "Tenancy Services (MBIE), rental bond data, detailed quarterly file by SA2",
+   "url": "https://www.tenancy.govt.nz/about-tenancy-services/data-and-statistics/rental-bond-data/",
+   "file": "https://www.tenancy.govt.nz/assets/Uploads/Tenancy/Rental-bond-data/Detailed-Quarterly-Tenancy-Q1-2020-Q3-2026.csv",
+   "licence": "CC BY 3.0 NZ, credit the Ministry of Business, Innovation and Employment"
+  }
+ },
+ "sources": [
+  {
+   "what": "terrain",
+   "source": "AWS Terrain Tiles (Terrarium), zoom 13",
+   "url": "https://registry.opendata.aws/terrain-tiles/",
+   "upstream": "LINZ NZ 8 m Digital Elevation Model",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "what": "roads, buildings, coastline and lakes",
+   "source": "OpenFreeMap vector tiles (OpenMapTiles schema), zoom 14, 20261101_080013_pt",
+   "url": "https://openfreemap.org",
+   "upstream": "OpenStreetMap",
+   "licence": "ODbL 1.0 (© OpenStreetMap contributors); tiles © OpenMapTiles"
+  },
+  {
+   "what": "which area each street is in (code and name only)",
+   "source": "Stats NZ Statistical Area 2 2019 boundaries (generalised), via Eagle Technology's public ArcGIS layer",
+   "url": "https://services.arcgis.com/XTtANUDT8Va4DLwI/arcgis/rest/services/Statistical_Area_2_2019_Clipped_generalised/FeatureServer/0",
+   "licence": "CC BY 4.0, Stats NZ"
+  },
+  {
+   "what": "median weekly rents",
+   "source": "Tenancy Services (MBIE) rental bond data",
+   "url": "https://www.tenancy.govt.nz/about-tenancy-services/data-and-statistics/rental-bond-data/",
+   "licence": "CC BY 3.0 NZ"
+  }
+ ],
+ "built": "2026-11-08",
+ "script": "tools/pointcloud/bake-moving.mjs"
+}
