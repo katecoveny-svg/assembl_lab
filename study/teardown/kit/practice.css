@@ -1,0 +1,32 @@
+.assembl-practice{--practice-bg:#180B18;--practice-card:#21121F;--practice-ink:#F9F6F2;--practice-muted:#D4B6C7;--practice-line:#756771;box-sizing:border-box;background:var(--practice-bg);color:var(--practice-ink);font-family:'Instrument Sans',system-ui,sans-serif;max-width:1180px;margin:0 auto;padding:48px 24px 64px;line-height:1.6}
+.assembl-practice *{box-sizing:border-box}
+.assembl-practice .practice-header{max-width:760px;margin-bottom:28px}
+.assembl-practice h2{font-size:clamp(28px,4vw,44px);line-height:1.15;letter-spacing:-.03em;margin:10px 0 16px;font-weight:500}
+.assembl-practice h3{font-size:22px;line-height:1.3;font-weight:500;margin:0 0 16px}
+.assembl-practice p{margin:0 0 16px}
+.assembl-practice .practice-kicker{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--practice-muted)}
+.assembl-practice .practice-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.assembl-practice .practice-question{min-width:0;padding:26px;background:var(--practice-card);border:1px solid var(--practice-line);border-radius:24px;overflow-wrap:anywhere}
+.assembl-practice .practice-prompt,.assembl-practice .practice-copy{white-space:pre-line}
+.assembl-practice label{display:block;font-weight:500;margin:20px 0 8px}
+.assembl-practice button,.assembl-practice input{font:inherit;min-height:44px;border-radius:12px;border:1px solid var(--practice-line)}
+.assembl-practice button{color:#180B18;background:#D9BACB;padding:10px 16px;cursor:pointer;font-weight:500}
+.assembl-practice button:hover{background:#F1EAE9}
+.assembl-practice input{width:100%;min-width:0;background:#180B18;color:#F9F6F2;padding:10px 12px;font-variant-numeric:tabular-nums}
+.assembl-practice .practice-input-row{display:flex;gap:10px;align-items:start}
+.assembl-practice .practice-input-row button{flex-shrink:0}
+.assembl-practice .practice-tolerance{font-size:12px;color:var(--practice-muted);margin-top:8px}
+.assembl-practice .practice-feedback{font-size:14px;margin:12px 0;color:var(--practice-ink)}
+.assembl-practice .practice-feedback:empty{display:none}
+.assembl-practice .practice-feedback[data-kind=match]{border-left:3px solid #D9BACB;padding-left:12px}
+.assembl-practice details{border-top:1px solid var(--practice-line);padding:14px 0}
+.assembl-practice summary{cursor:pointer;min-height:30px;font-weight:500;color:#D9BACB}
+.assembl-practice .practice-copy{margin-top:12px;font-size:15px}
+.assembl-practice :focus-visible{outline:3px solid #D9BACB;outline-offset:4px}
+@media(max-width:700px){.assembl-practice{padding:32px 16px 44px}.assembl-practice .practice-list{grid-template-columns:minmax(0,1fr)}.assembl-practice .practice-question{padding:20px}.assembl-practice .practice-input-row{flex-wrap:wrap}.assembl-practice .practice-input-row input{flex:1 1 140px}}
+@media print{body:has(.assembl-practice){background:white!important;color:black!important}body:has(.assembl-practice)>:not(.assembl-practice){display:none!important}.assembl-practice{max-width:none;padding:0;margin:0;background:white;color:black}.assembl-practice .practice-list{display:block}.assembl-practice .practice-question{background:white;color:black;border:1px solid #777;border-radius:0;margin:0 0 16px;break-inside:avoid}.assembl-practice .practice-kicker,.assembl-practice summary{color:black}.assembl-practice .practice-form,.assembl-practice .practice-print,.assembl-practice .practice-hint{display:none}.assembl-practice .practice-answer>.practice-copy{display:block!important}.assembl-practice .practice-answer::details-content{display:block!important;content-visibility:visible!important}.assembl-practice .practice-answer>summary{list-style:none;font-weight:600}.assembl-practice .practice-answer>summary::marker{content:''}.assembl-practice .practice-header{margin-bottom:20px}}
+
+.assembl-practice .practice-scope,.assembl-practice .practice-misconception{font-size:14px;color:var(--practice-muted)}
+.assembl-practice .practice-sources{margin-top:32px;font-size:14px}.assembl-practice .practice-sources a{color:#D9BACB;text-underline-offset:3px}
+@media print{.assembl-practice .practice-scope,.assembl-practice .practice-misconception,.assembl-practice .practice-sources a{color:black}}
+.practice-jump{display:block;max-width:1440px;margin:0 auto;padding:14px 24px;background:#180B18;color:#F9F6F2;font:500 14px 'Instrument Sans',sans-serif;text-decoration:underline;text-underline-offset:4px}.practice-jump:focus-visible{outline:3px solid #D9BACB;outline-offset:-4px}@media print{.practice-jump{display:none}}

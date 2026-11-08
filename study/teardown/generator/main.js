@@ -39,7 +39,7 @@ createTeardown({
     {anchor:'Load',label:'Resistive load',side:'right',at:.7,value:s=>fmt(s.R)+' Ω · '+fmt(s.power,2)+' W'}
   ],
   subsystems:[{key:'rotor',label:'Winding and shaft'},{key:'field',label:'Magnetic field'},{key:'output',label:'Rings and load'},{key:'frame',label:'Bench and bearings'}],
-  views:{hero:{label:'Hero',az:28,el:22,dist:105,target:[4,3,0]},front:{label:'Front',az:0,el:12,dist:100,target:[3,3,0]},top:{label:'Along the shaft',az:0,el:80,dist:105,target:[0,3,0]},apart:{hidden:true,az:28,el:28,dist:145,target:[4,7,0]}},
+  views:{hero:{label:'Hero',az:28,el:22,dist:105,narrowDist:215,target:[4,3,0]},front:{label:'Front',az:0,el:12,dist:100,narrowDist:215,target:[3,3,0]},top:{label:'Along the shaft',az:0,el:80,dist:105,narrowDist:215,target:[0,3,0]},apart:{hidden:true,az:28,el:28,dist:185,narrowDist:240,target:[4,15,0],narrowTarget:[4,7,0]}},
   learn:[
     {step:'Explore',text:'Pause and step through 0°, 90°, 180° and 270°. Compare the flux and voltage curves. The largest flux is not the largest voltage.',show:{play:false,view:'front'}},
     {step:'Predict',text:'What happens to peak voltage if rotation speed doubles? What happens to average load power when resistance doubles?'},
