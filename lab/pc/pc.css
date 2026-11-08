@@ -12,18 +12,63 @@
 .pc-leaders circle { fill: #F9F6F2; } .pc-leaders circle.ring { fill: none; stroke: rgba(249, 246, 242, .5); stroke-width: 1; }
 .pc-on .pc-run > section { position: relative; z-index: 1; background: transparent; }
 .pc-on .pc-run .hero-glow { display: none; }
-/* the hero's small world: a still without WebGL; once the cloud draws, the still steps aside and the labels follow the model */
-.hero-world { width: 100%; justify-self: stretch; aspect-ratio: 16 / 11; }
-.hero-world img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity .8s ease; }
+.pc-on .pc-stage canvas { opacity: 0; transition: opacity .9s ease; }  /* transparent until the cloud has drawn its first frame */
+.pc-live .pc-stage canvas { opacity: 1; }
+.pc-leaders circle.pulse { fill: none; stroke: #D9BACB; stroke-width: 1.2; }
+
+/* the hero: Tāmaki Makaurau Auckland as a point cloud, big, on the right; the words keep the left. Without WebGL the still (rendered
+   on no ground, so no box edge) fills the same box, and the landmarks and twin sites are lists under the hero. */
+.hero-world { position: relative; width: 100%; aspect-ratio: 4 / 3; pointer-events: none; }
+.hero-world.hero-art { width: 100%; justify-self: auto; will-change: auto; }
+.hero-world img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity .9s ease; }
 .pc-ready .hero-world img { opacity: 0; }
-.hero-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
-.hero-tags a { display: inline-block; padding: 7px 13px; border-radius: 999px; font-size: 14px; line-height: 1.2; white-space: nowrap; color: #F9F6F2; text-decoration: none;
-  background: rgba(33, 18, 31, .7); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.hero-tags a:hover { box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .6); }
-.hero-tags a:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
-.pc-on .hero-tags { position: fixed; inset: 0; z-index: 5; pointer-events: none; display: block; }
-.pc-on .hero-tags a { position: absolute; left: 0; top: 0; pointer-events: auto; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility 0s linear .5s; }
-.pc-on .hero-tags a.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
+@media (min-width: 960px) {
+  /* most of the hero: from just inside the copy's right edge (only the map's faded western margin runs under the words) to past
+     the right edge of the screen */
+  .hero-world, .hero-world.hero-art { position: absolute; z-index: 0; top: 96px; bottom: auto; height: calc(100svh - 148px); left: 49%; right: -5vw; width: auto; aspect-ratio: auto; }
+  .hero-in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-block: clamp(104px, 13vh, 150px) clamp(48px, 7vh, 96px); }
+  .hero-copy { gap: clamp(20px, 2.6vw, 32px); }
+}
+@media (max-width: 959px) {
+  .hero { display: flex; flex-direction: column; }
+  .hero-world, .hero-world.hero-art { order: -1; margin-top: 76px; width: 100%; aspect-ratio: 5 / 4; max-height: 62vh; }
+  .hero .hero-in { padding-top: 8px; }
+}
+@media (min-width: 960px) { .hero-copy h1 { width: min-content; } }   /* its box is its words, so the map can come close */
+.hero-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 18px; font-size: 14px; line-height: 20px; }
+.hero-tags-k { font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--v2-fg-2); margin-right: 2px; }
+.hero-tags a { display: inline-block; padding: 12px 0; color: var(--v2-fg); text-decoration: none; background: linear-gradient(rgba(249, 246, 242, .28), rgba(249, 246, 242, .28)) 0 calc(100% - 10px) / 100% 1px no-repeat; }
+.hero-tags a:hover { background-image: linear-gradient(#D9BACB, #D9BACB); }
+.hero-tags a:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; border-radius: 4px; }
+/* landmarks and twin pins: real DOM text. Without WebGL, two short lists; with the cloud, each is tied to its place by a leader line */
+.hero-notes { display: grid; gap: 12px; padding-bottom: clamp(40px, 6vw, 72px); }
+.hero-notes-k { margin: 10px 0 0; font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--v2-fg-2); }
+.pc-on .hero-notes-k { display: none; }
+.hero-callouts, .hero-pins { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+.hero-callout, .hero-pin a { display: grid; gap: 3px; padding: 11px 14px 12px; border-radius: 16px; background: rgba(33, 18, 31, .66); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 13px; line-height: 1.4; color: rgba(249, 246, 242, .8); align-content: start; }
+.hero-callout strong, .hero-pin strong { font-weight: 500; color: #F9F6F2; font-size: 14.5px; }
+.hero-pin a { text-decoration: none; box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .5); }
+.hero-pin a:hover { box-shadow: inset 0 0 0 1px #D9BACB; }
+.hero-pin a:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
+.hero-pin span { font-size: 12px; color: rgba(249, 246, 242, .72); }
+.hero-credit { margin: 0; max-width: 78ch; font: 500 10.5px/1.6 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; color: var(--v2-fg-2); }
+.pc-on .hero-notes { padding: 0; }
+.pc-on .hero-callouts, .pc-on .hero-pins { position: fixed; inset: 0; z-index: 5; display: block; pointer-events: none; }
+.pc-on .hero-callout, .pc-on .hero-pin { position: absolute; left: 0; top: 0; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility 0s linear .5s; }
+.pc-on .hero-callout { max-width: 200px; padding: 8px 11px 9px; font-size: 12px; line-height: 1.35; gap: 2px; }
+.pc-on .hero-callout strong { font-size: 13.5px; }
+.pc-on .hero-pin a { padding: 6px 11px 7px; border-radius: 13px; gap: 0; white-space: nowrap; pointer-events: auto; }
+.pc-on .hero-pin strong { font-size: 13px; }
+.pc-on .hero-pin span { font-size: 10.5px; }
+.pc-on .hero-callout.on, .pc-on .hero-pin.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
+.pc-on .hero-callout.compact { padding: 7px 12px 8px; border-radius: 14px; white-space: nowrap; }
+.pc-on .hero-callout.compact span { display: none; }
+.pc-on .hero-callout.compact strong { font-size: 13.5px; }
+@media (min-width: 960px) { .pc-on .hero-credit { position: absolute; z-index: 1; right: 196px; top: calc(100svh - 76px); max-width: min(60ch, 32vw); text-align: right; } }
+@media (min-width: 1200px) { .hero-tags { flex-wrap: nowrap; width: max-content; } }
+.hero-credit a { color: inherit; text-underline-offset: 3px; }
+@media (max-width: 959px) { .pc-on .hero-notes { padding: 0 0 28px; } }
 
 /* the doors */
 .jump { padding: clamp(72px, 9vw, 128px) 0 clamp(64px, 8vw, 112px); }
@@ -88,8 +133,7 @@ html:not(.pc-on) .arch-in { grid-template-columns: 1fr; min-height: 0; }
   .pc-on .arch-callout { position: static; opacity: 1; transform: none; max-width: none; margin-top: 10px; }
   .arch-callouts { grid-column: 1 / -1; }
 }
-@media (prefers-reduced-motion: reduce) { .pc-on .arch-callout, .pc-on .hero-tags a, .hero-world img { transition: none; } .typing.caret::after { animation: none; } .jump-tile, .jump-trio .trio-cell img { transition: none; } .jump-tile:hover .trio-cell img { transform: scale(1.14); } }
-@media (min-width: 900px) { .hero-in { grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); } .hero-world { margin-right: calc(-1 * clamp(0px, 3vw, 48px)); } }
+@media (prefers-reduced-motion: reduce) { .pc-on .arch-callout, .pc-on .hero-callout, .pc-on .hero-pin, .hero-world img, .pc-on .pc-stage canvas { transition: none; } .typing.caret::after { animation: none; } .jump-tile, .jump-trio .trio-cell img { transition: none; } .jump-tile:hover .trio-cell img { transform: scale(1.14); } }
 
 /* the lower chapters on the same plum ground: twin cards and study machines show point-cloud stills of their own models,
    cards are translucent plum with a hairline (as the doors are), and a hairline divides each chapter from the next */

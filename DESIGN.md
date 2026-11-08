@@ -89,8 +89,13 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
 
 ## Motion
 
-- **Hero:** the H1 rises word by word on load (CSS only); the flat mark assembles from its four parts on load and
-  drifts with scroll parallax.
+- **Hero:** the H1 rises word by word on load (CSS only). Since Nov 2026 the hero's picture is Tāmaki Makaurau Auckland as a
+  point cloud (`lab/pc/auckland.js`, baked from open data by `tools/pointcloud/bake-auckland.mjs`; provenance in
+  `assets/models/auckland/SOURCE.md`): true horizontal scale, heights ×5, most of the hero on the right. It assembles onto its
+  own still (rendered on no ground, so no box edge), sways slowly, and a reading scan passes over it. Callouts name public
+  landmarks with facts only; twins are pinned on real sites of their kind, each labelled "Example, not a model of this site",
+  and no business or institution is ever named. Reduced motion: one still frame with every callout. No WebGL: the still,
+  with the callouts and pins as lists.
 - **Chapter heads:** words rise as they enter the screen. **The close:** words and the flat mark assemble with scroll.
 - **Cards and rows:** fade and lift in, staggered (Reveal); lift 2 to 4px on hover.
 - **Ticker:** a slow line of the twins under the hero; pauses on hover; a static wrapped row for reduced motion.
@@ -108,5 +113,6 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
 - Skip link first; every link and button keyboard-reachable with a visible ring in the tone's focus colour.
 - Works at 320, 375, 390 and 1440 px with no horizontal scroll. Touch targets at least 44px.
 - `scripts/check-lab-home.cjs` checks each world appears exactly once, the routes `#twins`, `#study`,
-  `#playground`, `#about` and `#explore`, keyboard order, widths, no violet, lowercase brand, and that the flat mark
-  is decorative and clear of the headline, buttons and labels at 1440, 1024, 768, 390 and 320 px.
+  `#playground`, `#about` and `#explore`, keyboard order, widths, no violet, lowercase brand, and that the hero's map
+  is decorative, big, and clear of the headline, buttons and labels at 1440, 1024, 768, 390 and 320 px, that its callouts
+  never cover the words, and that every twin pin carries its truth line and no name.

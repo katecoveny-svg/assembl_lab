@@ -14,8 +14,10 @@ const JOBS = [
   // Plan Studio landing: the hero fallback, the model step and the three social formats (the same views the point-cloud page exports)
   { id: 'ps-hero', kind: 'hall', w: 1600, h: 1000, rot: 0.62, scale: 1.3, n: 180000, sizeScale: 1.45 }, { id: 'ps-model', kind: 'hall', w: 1600, h: 900, rot: 0.9, camY: 1.5, lookY: 0.1, scale: 1.2, n: 180000, sizeScale: 1.45 },
   { id: 'ps-reel', kind: 'hall', w: 1080, h: 1920, rot: 0.6, camY: 1.1, camZ: 3.6, lookY: 0.16, scale: 0.5, n: 180000, sizeScale: 1.3 }, { id: 'ps-feed', kind: 'hall', w: 1080, h: 1350, rot: -0.55, camY: 0.95, lookY: 0.18, scale: 0.68, n: 180000, sizeScale: 1.35 },
-  // the lab home: the hero's diorama (its no-WebGL picture), the twin cards and Sea State's door
-  { id: 'hero-world', kind: 'world', w: 1600, h: 1100, n: 240000, sizeScale: 1.3, rot: -0.12 },
+  // the lab home: the hero's Auckland (its first paint and no-WebGL picture: on no ground, framed and tilted as the live hero, so
+  // the still fades into the live cloud with no seam), the twin cards and Sea State's door
+  { id: 'hero-auckland', kind: 'auckland', w: 1280, h: 960, n: 220000, sizeScale: 1.25, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },
+  { id: 'hero-auckland-sm', kind: 'auckland', w: 720, h: 540, n: 120000, sizeScale: 0.9, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },   // phones
   ...['store', 'ed', 'dairy', 'energy', 'cars'].map((t) => ({ id: 'twin-' + t, kind: 'twin', w: 1440, h: 900, n: 200000, sizeScale: 1.35, rot: 0.5, camY: 1.15, lookY: 0.12 })),
   { id: 'twin-cafe', kind: 'glb', src: '/assets/models/cafe/cafe-venue.glb', w: 1440, h: 900, n: 220000, sizeScale: 1.35 },
   { id: 'jump-sea', kind: 'sea', w: 800, h: 500, rot: 0.5, camY: 0.9, lookY: 0.08 },

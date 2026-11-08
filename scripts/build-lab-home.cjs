@@ -104,8 +104,32 @@ const PLAY = [
    (tools/pointcloud/stills.cjs → lab/pc/stills/*.webp); a picture that has not been rendered yet keeps its original render. ── */
 const still = (id, fallback) => (fs.existsSync(path.join(ROOT, `lab/pc/stills/${id}.webp`)) ? `/lab/pc/stills/${id}.webp` : fallback);
 const pcAlt = (alt) => `Point cloud of ${alt.replace(/^(Offline render of |Render of )/i, '').replace(/^The /, 'the ').replace(/^A /, 'a ')}`;
-/* the hero: every business twin on one piece of land by a harbour (lab/pc/worlds.js), each named on the model and linked to its card */
-const HERO_TAGS = [['dairy', 'Dairy plant'], ['ed', 'Emergency department'], ['energy', 'Energy street'], ['cars', 'Car yard'], ['cafe', 'Café'], ['store', 'Supermarket']];
+/* the hero (Nov 2026): Tāmaki Makaurau Auckland as a point cloud, baked from open data by tools/pointcloud/bake-auckland.mjs
+   (assets/models/auckland/auckland-points.*) and drawn by lab/pc/home.js. Callouts name real public landmarks with facts only.
+   Twins stand on real sites of their kind as examples (the bake finds a site by category and keeps only its coordinates);
+   no business or institution is named, and each pin says it is not a model of that site. */
+const AKL = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/models/auckland/auckland-points.json'), 'utf8'));
+const HERO_CALLOUTS = [   // in the order they claim space on the map
+  ['skytower', 'Sky Tower', '328 m. The tallest freestanding structure in the Southern Hemisphere when it opened in 1997.'],
+  ['rangitoto', 'Rangitoto', 'The youngest of Auckland’s volcanoes, about 600 years old. 260 m high.'],
+  ['bridge', 'Auckland Harbour Bridge', 'Opened in 1959, 1,020 m long. Clip-on lanes added in 1969 took it to eight.'],
+  ['maungawhau', 'Maungawhau / Mount Eden', 'The highest volcanic cone on the isthmus: 196 m, with a crater 50 m deep.'],
+  ['waitemata', 'Waitematā Harbour', 'Auckland’s main harbour, opening east to the Hauraki Gulf.'],
+].filter(([id]) => AKL.anchors[id]);
+const HERO_PINS = [   // the twins with cards on this page first: on a crowded screen the last ones give way
+  ['ed', 'City ED twin', '#twin-ed', 'Example, not a model of this hospital'],
+  ['cars', 'Car yard twin', '#twin-cars', 'Example, not a model of this site'],
+  ['store', 'Supermarket twin', '#twin-store', 'Example, not a model of this site'],
+  ['cafe', 'Café twin', '#twin-cafe', 'Example, not a model of this café'],
+  ['retail', 'Trade yard twin', href(WORLDS.retail), 'Example, not a model of this site'],
+  ['stay', 'Stay twin', href(WORLDS.stay), 'Example, not a model of this site'],
+  ['office', 'Office twin', href(WORLDS.office), 'Example, not a model of this site'],
+].filter(([id]) => AKL.sites && AKL.sites[id]);
+const heroCallouts = HERO_CALLOUTS.map(([id, t, line]) => `<li class="hero-callout" data-anchor="${id}"><strong>${esc(t)}</strong><span>${esc(line)}</span></li>`).join('');
+const heroPins = HERO_PINS.map(([id, t, h, truth]) => `<li class="hero-pin" data-site="${id}"><a href="${h}"><strong>${esc(t)}</strong><span>${esc(truth)}</span></a></li>`).join('');
+const AKL_CREDIT = `Tāmaki Makaurau Auckland from open map data at true scale, heights ×${AKL.verticalExaggeration}. The Harbour Bridge’s arch is drawn for scale. Elevation: LINZ (CC BY 4.0). Map data © OpenStreetMap contributors.`;
+/* the twins the hero links to: plain links, no place implied (pins on the map carry the sites) */
+const HERO_TAGS = [['cafe', 'Café'], ['store', 'Supermarket'], ['ed', 'Emergency department'], ['dairy', 'Dairy plant'], ['energy', 'Energy street'], ['cars', 'Car yard']];
 /* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched).
    Exam season (Nov 2026): the study machines door leads, two columns wide, showing three of the machines themselves as
    point clouds (their stills from the study chapter below, so no extra bytes), each named underneath. */
@@ -219,9 +243,16 @@ ${nav}
    <p class="v2-lede lede">The assembl Lab is where we build working models of New Zealand places: businesses you can run for a day, machines that teach one idea, and a few instruments to play with.</p>
    <div class="actions">${v2.button({ href: '#twins', label: 'Walk through the twins', icon: 'down', size: 'lg' })}${v2.button({ href: '#study', label: 'See the study machines', variant: 'secondary', icon: 'down' })}</div>
    <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
+   <ul class="hero-tags" aria-label="Business twins in the lab"><li class="hero-tags-k">Twins</li>${HERO_TAGS.map(([id, t]) => `<li><a href="#twin-${id}">${esc(t)}</a></li>`).join('')}</ul>
   </div>
-  <div class="hero-art hero-world" id="hero-world" aria-hidden="true">${img(still('hero-world', '/lab/pc/stills/hero-world.webp'), '', 1600, 1100)}</div>
-  <ul class="hero-tags" aria-label="The twins on the model">${HERO_TAGS.map(([id, t]) => `<li><a href="#twin-${id}" data-anchor="${id}">${esc(t)}</a></li>`).join('')}</ul>
+ </div>
+ <div class="hero-art hero-world" id="hero-world" aria-hidden="true"><img src="/lab/pc/stills/hero-auckland.webp" srcset="/lab/pc/stills/hero-auckland-sm.webp 720w, /lab/pc/stills/hero-auckland.webp 1280w" sizes="(min-width: 960px) 62vw, 100vw" alt="" width="1280" height="960" fetchpriority="high" decoding="async"></div>
+ <div class="wrap hero-notes">
+  <p class="hero-notes-k" aria-hidden="true">On the map</p>
+  <ul class="hero-callouts" aria-label="On the map">${heroCallouts}</ul>
+  <p class="hero-notes-k" aria-hidden="true">Twins on real sites of their kind, as examples</p>
+  <ul class="hero-pins" aria-label="Twins on the map, each an example on a real site of its kind">${heroPins}</ul>
+  <p class="hero-credit">${esc(AKL_CREDIT)} <a href="#about">Sources</a></p>
  </div>
 </section>
 <section class="jump v2-tone-plum" id="jump" aria-labelledby="jump-title">
@@ -323,6 +354,10 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
   <div><dt>${chip('live')}</dt><dd>A working tool. It makes a real file or object on your device.</dd></div>
   <div><dt>${chip('ill')}</dt><dd>Art to play with. It makes no claim about the world.</dd></div>
  `, { tag: 'dl', className: 'labels' })}
+ <div class="map-note">
+  <p>The city at the top of this page is built from open map data at true scale. Twins sit on real sites of their kind as examples; none models the business or institution there.</p>
+  <p class="map-credit">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Coastline and buildings: © OpenStreetMap contributors (ODbL), via OpenFreeMap and © OpenMapTiles. Heights ×${AKL.verticalExaggeration}; the Harbour Bridge’s arch is drawn for scale.</p>
+ </div>
  </div>
 </section>
 </div>
