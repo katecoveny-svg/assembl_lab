@@ -3,7 +3,9 @@
 // client-side tools: the browser runs set_control / go_to_step / press_button / suggest_machine and sends the
 // result back, so every change happens on the student's screen where they can see it. Students can paste a
 // past exam question (text or a photo) and work through it.
-// Needs ANTHROPIC_API_KEY. Optional shared caps: UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN.
+// Requires the dedicated, provider-capped Study workspace key. Never fall back to the shared
+// ANTHROPIC_API_KEY: that would bypass Study's budget and affect other tools.
+// Needs STUDY_ANTHROPIC_API_KEY. Optional shared caps: UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN.
 // TUTOR_MODEL (default claude-sonnet-5-5), TUTOR_DAILY_CAP (whole site, default 3000 turns/day),
 // TUTOR_PER_VISITOR (default 40 student turns/day; tool round trips are not counted), TUTOR_SESSION_CAP (default 24 student turns per chat).
 const MODEL = process.env.TUTOR_MODEL || "claude-sonnet-5-5";
@@ -109,9 +111,9 @@ const isToolReturn = m => m.content.every(b => b.type === "tool_result");
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   // A setup check anyone can open in a browser: says whether the key reached this deployment, never the key itself.
-  if (req.method === "GET") return res.status(200).json({ type: "assembl.tutor.status", configured: !!process.env.ANTHROPIC_API_KEY, model: MODEL, sharedLimits: !!process.env.UPSTASH_REDIS_REST_URL });
+  if (req.method === "GET") return res.status(200).json({ type: "assembl.tutor.status", configured: !!process.env.STUDY_ANTHROPIC_API_KEY, model: MODEL, sharedLimits: !!process.env.UPSTASH_REDIS_REST_URL });
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
-  if (!process.env.ANTHROPIC_API_KEY) { console.warn("tutor: ANTHROPIC_API_KEY is not set on this deployment; the study helper is answering from machine notes"); return res.status(501).json({ error: "not_configured" }); }
+  if (!process.env.STUDY_ANTHROPIC_API_KEY) { console.warn("tutor: STUDY_ANTHROPIC_API_KEY is not set on this deployment; the study helper is answering from machine notes"); return res.status(501).json({ error: "not_configured" }); }
   const body = req.body || {}, messages = cleanMessages(body.messages);
   if (!messages) return res.status(400).json({ error: "bad_request" });
   const context = JSON.stringify(body.context || {}).slice(0, MAX_CONTEXT);
@@ -129,7 +131,7 @@ export default async function handler(req, res) {
   }
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      headers: { "content-type": "application/json", "x-api-key": process.env.STUDY_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ model: MODEL, max_tokens: 1200, tools: TOOLS,
         system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }, { type: "text", text: `The student is on this page right now (live machine state, JSON):\n${context}` }],
         messages }) });

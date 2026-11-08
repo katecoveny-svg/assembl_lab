@@ -45,8 +45,8 @@ test('a chat has a session cap, counted over the whole conversation, tool round 
   assert.equal(studentTurns(msgs),5);
   const real=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({content:[{type:'text',text:'ok'}],stop_reason:'end_turn'}),{status:200});
   try{const long=[];for(let i=0;i<30;i++){long.push({role:'user',content:'q'+i});long.push({role:'assistant',content:'a'+i})}long.push({role:'user',content:'one more'});
-    const r=await call({messages:long},{ANTHROPIC_API_KEY:'k',TUTOR_SESSION_CAP:'24'});assert.equal(r.status,429);assert.equal(r.json.error,'session_cap');
-    const ok=await call({messages:[{role:'user',content:'first'}]},{ANTHROPIC_API_KEY:'k'});assert.equal(ok.status,200);assert.equal(ok.headers['x-tutor-session-left'],'23');
+    const r=await call({messages:long},{STUDY_ANTHROPIC_API_KEY:'k',TUTOR_SESSION_CAP:'24'});assert.equal(r.status,429);assert.equal(r.json.error,'session_cap');
+    const ok=await call({messages:[{role:'user',content:'first'}]},{STUDY_ANTHROPIC_API_KEY:'k'});assert.equal(ok.status,200);assert.equal(ok.headers['x-tutor-session-left'],'23');
   }finally{globalThis.fetch=real}
 });
 test('the page shows a privacy notice before the first message, naming Anthropic PBC and not claiming "not retained"',async()=>{
@@ -57,11 +57,11 @@ test('the page shows a privacy notice before the first message, naming Anthropic
   assert.match(ui,/data-priv-ok/);assert.match(ui,/if\(busy\|\|!gate\(\)\)return/,'sending waits for the notice to be accepted');
 });
 test('without a key the endpoint says so, and the page falls back to the machine notes',async()=>{
-  const r=await call({messages:[{role:'user',content:'hi'}]},{ANTHROPIC_API_KEY:''});assert.equal(r.status,501);assert.equal(r.json.error,'not_configured');
+  const r=await call({messages:[{role:'user',content:'hi'}]},{STUDY_ANTHROPIC_API_KEY:''});assert.equal(r.status,501);assert.equal(r.json.error,'not_configured');
 });
 test('student turns are capped per visitor; tool round trips are not counted',async()=>{
   const real=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({content:[{type:'text',text:'ok'}],stop_reason:'end_turn'}),{status:200});
-  try{const env={ANTHROPIC_API_KEY:'k',TUTOR_PER_VISITOR:'1'};const ip='10.9.9.9';
+  try{const env={STUDY_ANTHROPIC_API_KEY:'k',TUTOR_PER_VISITOR:'1'};const ip='10.9.9.9';
     const go=async body=>{let status=200,json,h={};const res={status(n){status=n;return res},json(o){json=o},setHeader(k,v){h[k]=v}};const old={...process.env};Object.assign(process.env,env);try{await handler({method:'POST',body,headers:{'x-forwarded-for':ip}},res)}finally{process.env=old}return {status,json,h}};
     assert.equal((await go({messages:[{role:'user',content:'first'}]})).status,200);
     const tool={messages:[{role:'user',content:'first'},{role:'assistant',content:[{type:'tool_use',id:'t1',name:'go_to_step',input:{step:'test'}}]},{role:'user',content:[{type:'tool_result',tool_use_id:'t1',content:'{"ok":true}'}]}]};
@@ -71,6 +71,22 @@ test('student turns are capped per visitor; tool round trips are not counted',as
 });
 test('a GET is a safe setup check: it says whether the key is there, never the key',async()=>{
   let status=200,json;const res={status(n){status=n;return res},json(o){json=o},setHeader(){}};
-  const old={...process.env};process.env.ANTHROPIC_API_KEY='sk-secret-value';try{await handler({method:'GET',headers:{}},res)}finally{process.env=old}
+  const old={...process.env};process.env.STUDY_ANTHROPIC_API_KEY='sk-secret-value';try{await handler({method:'GET',headers:{}},res)}finally{process.env=old}
   assert.equal(status,200);assert.equal(json.configured,true);assert.ok(!JSON.stringify(json).includes('sk-secret'));
+});
+
+test('a shared uncapped key never enables the tutor or becomes a fallback',async()=>{
+  const real=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw Error('must not call provider')};
+  try{const r=await call({messages:[{role:'user',content:'hint please'}]},{STUDY_ANTHROPIC_API_KEY:'',ANTHROPIC_API_KEY:'shared-key'});
+    assert.equal(r.status,501);assert.equal(r.json.error,'not_configured');assert.equal(calls,0);
+  }finally{globalThis.fetch=real}
+});
+test('provider calls use only the dedicated Study key, including when capped',async()=>{
+  const real=globalThis.fetch;let keys=[];globalThis.fetch=async(url,opts)=>{
+    assert.equal(url,'https://api.anthropic.com/v1/messages');keys.push(opts.headers['x-api-key']);
+    return new Response(JSON.stringify({error:{type:'rate_limit_error',message:'workspace spend cap'}}),{status:429});
+  };
+  try{const r=await call({messages:[{role:'user',content:'hint please'}]},{STUDY_ANTHROPIC_API_KEY:'study-key',ANTHROPIC_API_KEY:'shared-key',UPSTASH_REDIS_REST_URL:'',UPSTASH_REDIS_REST_TOKEN:''});
+    assert.equal(r.status,502);assert.deepEqual(keys,['study-key']);
+  }finally{globalThis.fetch=real}
 });
