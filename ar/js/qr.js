@@ -152,7 +152,9 @@ export function qrSVG(text, opts = {}) {
 // ---------------------------------------------------------------- the card
 // A downloadable card: rounded, an object thumbnail, the code and a plain instruction. All text is drawn as paths
 // from the bundled fonts, so the SVG and PNG look the same everywhere.
-export async function cardSVG({ url, title = '', detail = '', kind = '', thumb = null, centreThumb = null, style = 'assembly', centre = 'thumb', host = '' }) {
+// heading, steps and foot are optional (the AR worlds use them); the defaults are the studio's own wording.
+export async function cardSVG({ url, title = '', detail = '', kind = '', thumb = null, centreThumb = null, style = 'assembly', centre = 'thumb', host = '',
+  heading = ['Scan to place it', 'in your space'], steps = ['1  Open your phone camera', '2  Point it at the code', '3  Tap the link that appears'], foot = 'iPhone, iPad and Android · no app' }) {
   const [sans, mono] = await Promise.all([loadFont('medium'), loadFont('mono')]);
   const m = planQR(url);
   if (!m) return null;
@@ -179,13 +181,12 @@ export async function cardSVG({ url, title = '', detail = '', kind = '', thumb =
   out += qrMarkup(m, { x: qx, y: qy, size: qs, style, centre: centreOpt });
   // words beside it
   const wx = qx + qs + 22, ww = W - P - wx;
-  out += T(sans, 'Scan to place it', { size: 33, x: wx, y: qy + 62, fill: PAL.plum, maxWidth: ww, minSize: 24, tracking: -12 });
-  out += T(sans, 'in your space', { size: 33, x: wx, y: qy + 102, fill: PAL.plum, maxWidth: ww, minSize: 24, tracking: -12 });
+  out += T(sans, heading[0] || '', { size: 33, x: wx, y: qy + 62, fill: PAL.plum, maxWidth: ww, minSize: 24, tracking: -12 });
+  out += T(sans, heading[1] || '', { size: 33, x: wx, y: qy + 102, fill: PAL.plum, maxWidth: ww, minSize: 24, tracking: -12 });
   out += T(sans, title, { size: 21, x: wx, y: qy + 156, fill: PAL.ink, maxWidth: ww, minSize: 15 });
-  const steps = ['1  Open your phone camera', '2  Point it at the code', '3  Tap the link that appears'];
   steps.forEach((s, i) => { out += T(mono, s, { size: 12.5, x: wx, y: qy + 206 + i * 24, fill: PAL.muted, maxWidth: ww }); });
   out += `<path d="M${P} ${H - 104}H${W - P}" stroke="${PAL.line}" stroke-width="2"/>`;
-  out += T(mono, 'iPhone, iPad and Android · no app', { size: 13, x: P, y: H - 62, fill: PAL.muted, maxWidth: 380 });
+  out += T(mono, foot, { size: 13, x: P, y: H - 62, fill: PAL.muted, maxWidth: 380 });
   if (host) out += T(mono, host, { size: 13, x: W - P, y: H - 62, align: 'end', fill: PAL.rose, maxWidth: 240 });
   out += '</svg>';
   return { svg: out, matrix: m };

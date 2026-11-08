@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><title>assembl AR worlds · export (tool)</title>
+<meta name="robots" content="noindex">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+</head><body style="font:14px system-ui;padding:20px">
+<p>Used by <code>ar/tools/build_worlds.py</code> to make the AR worlds' GLB files in a headless browser. Nothing to see here.</p>
+<script type="module">
+import * as THREE from 'three';
+import { exportWorld } from '/ar/worlds/export.js';
+const renderer = new THREE.WebGLRenderer();   // for texture limits while the twins load
+window.__export = async (id, mode, opts = {}) => {
+  const { glb, report } = await exportWorld(id, mode, { renderer, ...opts });
+  const bytes = new Uint8Array(glb); let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return { b64: btoa(s), report };
+};
+window.__ready = true;
+</script></body></html>
