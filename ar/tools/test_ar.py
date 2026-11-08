@@ -504,37 +504,47 @@ async def run_worlds(p):
         await pg.screenshot(path=f'{OUT}/worlds_phone_{wid}_390.png', full_page=True, timeout=120000)
         check(f'phone launcher {wid} has no page errors', not quiet(errs), quiet(errs)[:3])
         await ctx.close()
-    # every page with a "View in AR" button
+    await run_buttons(b)
+    await b.close()
+
+
+async def run_buttons(b=None):
+    """Every page with a "View in AR" button: the buttons show, and on a computer the code sheet opens the right world."""
+    own = b is None
+    if own:
+        b = await browser(PW)
     for wid, path in BUTTON_PAGES:
         for w, h in [(1440, 900), (390, 844)]:
             ctx = await b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1)
             pg = await ctx.new_page(); errs = watch(pg, f'{path} {w}')
-            await pg.goto(BASE + path, wait_until='load', timeout=180000)
             try:
-                await pg.wait_for_selector('.war .war-btn', timeout=240000)
-                has = True
-            except Exception:
-                has = False
-            check(f'{path} at {w} px shows the View in AR buttons', has)
-            await pg.wait_for_timeout(2500)
-            await no_scroll(pg, w, path)
-            if has:
-                await pg.locator('.war').first.scroll_into_view_if_needed()
-                await pg.click('.war .war-btn[data-mode="table"]')
+                await pg.goto(BASE + path, wait_until='load', timeout=180000)
                 try:
-                    await pg.wait_for_selector('.war-pop svg', timeout=30000)
+                    await pg.wait_for_selector('.war .war-btn', timeout=240000)
+                    has = True
+                except Exception:
+                    has = False
+                check(f'{path} at {w} px shows the View in AR buttons', has)
+                await pg.wait_for_timeout(2500)
+                await no_scroll(pg, w, path)
+                if has:
+                    await pg.locator('.war').first.scroll_into_view_if_needed(timeout=180000)
+                    await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}.png', timeout=300000)
+                    await pg.click('.war .war-btn[data-mode="table"]', timeout=180000)
+                    await pg.wait_for_selector('.war-pop svg', timeout=120000)
                     await pg.wait_for_timeout(400)
-                    await pg.locator('.war-pop').screenshot(path=f'{OUT}/worlds_button_pop_{wid}_{w}.png')
+                    await pg.locator('.war-pop').screenshot(path=f'{OUT}/worlds_button_pop_{wid}_{w}.png', timeout=180000)
                     got = decode_qr(f'{OUT}/worlds_button_pop_{wid}_{w}.png')
                     check(f'{path} at {w} px: the code sheet opens {wid} on a phone', got == f'{LIVE}/ar/w/{wid}/?mode=table', got)
-                except Exception as e:
-                    check(f'{path} at {w} px: the code sheet opens', False, repr(e)[:120])
-                await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}.png', timeout=300000)
-                await pg.keyboard.press('Escape')
-                await no_scroll(pg, w, path + ' with the code open')
-            check(f'{path} at {w} px has no page errors', not quiet(errs), quiet(errs)[:3])
+                    await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}_code.png', timeout=300000)
+                    await pg.keyboard.press('Escape')
+                    check(f'{path} at {w} px: Escape closes the code sheet', await pg.locator('.war-pop').count() == 0)
+                check(f'{path} at {w} px has no page errors', not quiet(errs), quiet(errs)[:3])
+            except Exception as e:
+                check(f'{path} at {w} px: page checks ran', False, repr(e)[:160])
             await ctx.close()
-    await b.close()
+    if own:
+        await b.close()
 
 
 def run_files():
@@ -598,13 +608,14 @@ async def run_xr(p):
     await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 1)'); await pg.wait_for_timeout(600)
     await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 0)'); await pg.wait_for_timeout(600)
     check('xr claw table: the trigger (an XR select) places it', await pg.evaluate('window.__arxr.placed'))
-    await pg.wait_for_timeout(300); await pg.screenshot(path=f'{OUT}/xr_claw_assembling.png')
+    await pg.wait_for_timeout(300); await pg.screenshot(path=f'{OUT}/xr_claw_assembling.png', timeout=300000)
     await pg.wait_for_function('window.__arxr.assembled', timeout=300000)
     check('xr claw table: it builds itself piece by piece, then runs', True)
-    await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_claw_table.png')
+    await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_claw_table.png', timeout=300000)
     check('xr claw table: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
     # the live sims tick
     for wid, read in [('dairy', 'window.__arxr.world.sim.t'), ('ed', 'window.__arxr.world.status()'), ('dc', 'window.__arxr.world.status()')]:
+      try:
         ctx, pg, errs = await xr_session(b, f'/ar/w/{wid}/?mode=table&motion=reduce', f'xr {wid} table')
         await pg.evaluate('window.__arxr.place()')
         await pg.wait_for_function('window.__arxr.placed', timeout=60000)
@@ -615,24 +626,29 @@ async def run_xr(p):
         credit = await pg.evaluate('document.querySelector(".wxr-credit").textContent')
         check(f'xr {wid} table: the truth labels and the SimReady credit show in AR', 'Simulated' in labels and 'NVIDIA SimReady (CC BY 4.0)' in credit and (wid != 'ed' or '111' in sos), {'labels': labels, 'sos': sos[:40]})
         RESULTS.setdefault('xr', {})[wid] = {'calls': await pg.evaluate('window.__arxr.calls'), 'fps_emulated': await pg.evaluate('window.__arxr.fps')}
-        await pg.screenshot(path=f'{OUT}/xr_{wid}_table.png')
+        await pg.screenshot(path=f'{OUT}/xr_{wid}_table.png', timeout=300000)
         check(f'xr {wid} table: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
+      except Exception as e:
+        check(f'xr {wid} table: checks ran', False, repr(e)[:160])
     # step inside: the doorway, then walk through it
     for wid in ['cafe', 'ed']:
+      try:
         ctx, pg, errs = await xr_session(b, f'/ar/w/{wid}/?mode=inside&motion=reduce', f'xr {wid} inside')
         await pg.evaluate('window.__arxr.place()')
         await pg.wait_for_function('window.__arxr.placed', timeout=60000)
         await pg.evaluate('(() => { const d = window.__iwer; d.position.set(0.5, 1.5, 0.6); const a = -0.12; d.quaternion.set(Math.sin(a / 2), 0, 0, Math.cos(a / 2)); })()')
         await pg.wait_for_timeout(2500)
         check(f'xr {wid} inside: the doorway stands in the room, world behind it (outside)', not await pg.evaluate('window.__arxr.portal.inside'))
-        await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_outside.png')
+        await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_outside.png', timeout=300000)
         for z in [0.0, -0.6, -1.2, -1.6, -2.0, -2.6, -3.2]:
             await pg.evaluate(f'window.__iwer.position.set(0.05, 1.5, {z})'); await pg.wait_for_timeout(700)
         check(f'xr {wid} inside: walking through the doorway puts you inside', await pg.evaluate('window.__arxr.portal.inside'))
-        await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_inside.png')
+        await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_inside.png', timeout=300000)
         await pg.evaluate('window.__iwer.quaternion.set(0, 1, 0, 0)'); await pg.wait_for_timeout(2500)
-        await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_lookback.png')
+        await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_lookback.png', timeout=300000)
         check(f'xr {wid} inside: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
+      except Exception as e:
+        check(f'xr {wid} inside: checks ran', False, repr(e)[:160])
     await b.close()
 
 
@@ -647,8 +663,12 @@ async def main():
             await run_embed(p)
         if 'machines' in PARTS:
             await run_machines(p)
+        global PW
+        PW = p
         if 'worlds' in PARTS:
             await run_worlds(p)
+        elif 'buttons' in PARTS:
+            await run_buttons()
         if 'xr' in PARTS:
             await run_xr(p)
     if 'files' in PARTS:

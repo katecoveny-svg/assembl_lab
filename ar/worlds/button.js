@@ -32,7 +32,8 @@ const CSS = `
 .war-msg{flex-basis:100%;margin:0;font:400 11.5px/1.4 "IBM Plex Mono",ui-monospace,monospace;color:#D9BACB}
 .war.light .war-msg{color:#756771}
 .war-msg:empty{display:none}
-.war-pop{position:absolute;z-index:80;top:calc(100% + 10px);left:0;width:min(320px,calc(100vw - 24px));padding:16px 16px 14px;border-radius:22px;background:#F9F6F2;color:#33212F;
+.war-shade{position:fixed;inset:0;z-index:2147482999;background:rgba(24,11,24,.55)}
+.war-pop{position:fixed;z-index:2147483000;top:50%;left:50%;transform:translate(-50%,-50%);width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:16px 16px 14px;border-radius:22px;background:#F9F6F2;color:#33212F;
  box-shadow:0 0 0 1px rgba(51,33,47,.12),0 24px 48px -24px rgba(0,0,0,.6);font:400 13.5px/1.45 "Instrument Sans",system-ui,sans-serif;text-align:left}
 .war-pop svg.war-qr{display:block;width:100%;height:auto;border-radius:14px}
 .war-pop h3{margin:10px 34px 2px 0;font:600 17px/1.25 "Instrument Sans",system-ui,sans-serif;color:#21121F}
@@ -56,22 +57,22 @@ export function worldButton(host, { world: id, variant = 'dark', labels = null }
     + `<button type="button" class="war-btn alt" data-mode="inside" aria-label="${esc(w.name)} in AR: ${esc(insideName.toLowerCase())}">${ICON.inside}<span>${esc(L.inside)}</span></button><p class="war-msg" role="status" aria-live="polite"></p>`;
   host.appendChild(wrap);
   const msg = wrap.querySelector('.war-msg');
-  let pop = null, last = null;
-  function closePop() { if (!pop) return; pop.remove(); pop = null; document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onOut, true); last && last.focus(); }
+  let pop = null, shade = null, last = null;
+  function closePop() { if (!pop) return; pop.remove(); shade && shade.remove(); pop = shade = null; document.removeEventListener('keydown', onKey); last && last.focus(); }
   const onKey = e => { if (e.key === 'Escape') closePop(); };
-  const onOut = e => { if (pop && !wrap.contains(e.target)) closePop(); };
   async function sheet(mode, btn) {
     closePop(); last = btn;
     const { qrSVG } = await import('../js/qr.js');
-    pop = document.createElement('div'); pop.className = 'war-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', `Scan to open ${w.name} on a phone`);
+    // a small dialog in the middle of the screen, above everything, so no card or 3D frame can cover or clip it
+    shade = document.createElement('div'); shade.className = 'war-shade'; shade.addEventListener('click', closePop);
+    pop = document.createElement('div'); pop.className = 'war-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-modal', 'true'); pop.setAttribute('aria-label', `Scan to open ${w.name} on a phone`);
     const url = worldURL(id, mode);
     pop.innerHTML = `<button type="button" class="war-x" aria-label="Close">×</button>${qrSVG(url, { size: 288, style: 'assembly', centre: { kind: 'cube' } }).replace('<svg ', '<svg class="war-qr" ')}
       <h3>Scan to open it on your phone</h3><p>${esc(w.name)}, ${esc(mode === 'table' ? 'on your table' : insideName.toLowerCase())}. iPhone, iPad and Android, no app.</p>
       <span class="war-link">${esc(shortLink(id, mode))}</span><a class="war-more" href="${esc(url.replace(/^https:\/\/lab\.assembl\.co\.nz/, ''))}">3D preview and a card to print →</a>`;
-    wrap.appendChild(pop);
-    const r = pop.getBoundingClientRect(); if (r.right > innerWidth - 12) pop.style.left = Math.min(0, innerWidth - 12 - r.right) + 'px';
+    document.body.append(shade, pop);
     pop.querySelector('.war-x').addEventListener('click', closePop); pop.querySelector('.war-x').focus();
-    document.addEventListener('keydown', onKey); setTimeout(() => document.addEventListener('pointerdown', onOut, true), 0);
+    document.addEventListener('keydown', onKey);
   }
   wrap.addEventListener('click', async e => {
     const b = e.target.closest('.war-btn'); if (!b) return;

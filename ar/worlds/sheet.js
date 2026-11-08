@@ -3,6 +3,7 @@
 import { qrSVG, cardSVG, svgToPNG, STYLES } from '../js/qr.js';
 import { world as worldInfo, worldURL, shortLink, posterURL, modeOf, MODES, HOST } from './worlds.js';
 import { esc } from '../js/ui.js';
+import { modeLabel } from './ui.js';
 
 const slugName = (id, mode) => `assembl-ar-${id}-${mode}`;
 function save(blob, name) {
@@ -28,7 +29,7 @@ export function mountSheet(host, { id, mode = 'table', onMode = null, style = 'a
   host.classList.add('wsheet');
   host.innerHTML = `
     <div class="ws-modes" role="radiogroup" aria-label="Which way in">
-      ${Object.values(MODES).map(x => `<label><input type="radio" name="ws-mode-${id}" value="${x.id}"><span><b>${x.name}</b><small></small></span></label>`).join('')}
+      ${Object.values(MODES).map(x => `<label><input type="radio" name="ws-mode-${id}" value="${x.id}"><span><b>${esc(modeLabel(w, x.id))}</b><small></small></span></label>`).join('')}
     </div>
     <div class="ws-code"><div class="ws-qr" aria-live="polite"></div>
       <div class="ws-copy"><h2>Scan to open it on your phone</h2>
@@ -49,7 +50,7 @@ export function mountSheet(host, { id, mode = 'table', onMode = null, style = 'a
     $('.ws-qr').innerHTML = svg ? svg.replace('<svg ', `<svg class="ws-qrsvg" aria-label="${esc('assembl AR code for ' + w.name + ', ' + MODES[m].name)}" `).replace(' aria-label="QR code"', '') : '<p>That link is too long for a code.</p>';
     $('.ws-short').textContent = shortLink(id, m); $('.ws-short').href = url();
     $('.ws-what').textContent = m === 'table' ? `${w.name}, ${w.table.note.toLowerCase()}. iPhone opens AR Quick Look; Android runs the live world in Chrome.`
-      : `${w.name}: ${w.inside.note.charAt(0).toLowerCase() + w.inside.note.slice(1)}. ${w.kind === 'place' ? 'On Android you walk through a doorway into it; iPhone places the life-size world around you.' : 'It stays at that size.'}`;
+      : `${w.inside.note}. ${w.kind === 'place' ? 'On Android the doorway stands in your room; iPhone puts the life-size world round you, without a doorway.' : 'It stays at that size.'}`;
     const local = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
     $('.ws-local').hidden = !local; if (local) $('.ws-local').textContent = `This page is running on ${location.host}, so the code points at the live lab (${HOST}).`;
   }
