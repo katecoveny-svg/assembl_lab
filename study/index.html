@@ -436,6 +436,51 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
   .yearpick{order:3}.hstage{height:clamp(220px,62vw,320px);margin:12px 0 4px}
 }
 </style>
+<style>
+/* ---- Nov 2026, exam week: the best machines lead. The most finished 3D machines sit right under the hero, the chosen
+   year's first; the exam timetable follows, folded to the next few exams that have a machine, with one tap for the rest. */
+.lead-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0;padding:0;list-style:none}
+.lc{position:relative;display:grid;grid-template-rows:auto 1fr auto;min-width:0;border-radius:20px;background:var(--as-card);border:1px solid var(--as-line);overflow:hidden;transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease}
+.lc:hover{transform:translateY(-3px);box-shadow:var(--as-lift);border-color:var(--as-line2)}
+.lc:focus-within{outline:3px solid var(--as-ink);outline-offset:2px}
+.lc-pic{position:relative;display:block;aspect-ratio:8/5;overflow:hidden;background:color-mix(in srgb,var(--acc-tint,#F5F1F2) 40%,#fff)}
+.lc-pic img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s ease}
+.lc:hover .lc-pic img{transform:scale(1.035)}
+.lc-you{position:absolute;left:10px;top:10px;font:500 10px/1.3 var(--as-mono);letter-spacing:.06em;text-transform:uppercase;background:var(--as-ink);color:#fff;border-radius:999px;padding:4px 9px}
+.lc-body{display:grid;gap:4px;align-content:start;min-width:0;padding:12px 14px 8px}
+.lc-sub{font:500 11px/1.4 var(--as-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--as-muted)}
+.lc-t{font:600 17px/1.2 var(--as-font);letter-spacing:-.02em;color:var(--as-ink)}
+.lc-t a{color:inherit;text-decoration:none}
+.lc-t a::after{content:"";position:absolute;inset:0;z-index:1}
+.lc-t a:focus-visible{outline:none}
+.lc-bl{font-size:13.5px;line-height:1.4;color:var(--as-text)}
+.lc-ex{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;min-width:0;padding:0 14px 14px}
+.lc-ex a{font:600 12px var(--as-font);color:var(--as-ink);text-underline-offset:3px;white-space:nowrap}
+.lead-more{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0}
+.lead-more a{text-decoration:none;color:var(--as-ink);border:1.5px solid var(--as-line2);background:var(--as-card);border-radius:999px;padding:8px 14px;font:600 13px var(--as-font)}
+.lead-more a:first-child{background:var(--as-ink);border-color:var(--as-ink);color:#fff}
+.lead-more a:focus-visible{outline:3px solid var(--as-ink);outline-offset:2px}
+/* the timetable fold */
+.ex-fold{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:4px}
+.ex-fold .ex-n{margin:0;font:500 13px var(--as-font);color:var(--as-muted)}
+.ex-fold .linkbtn{all:unset;cursor:pointer;font:600 13px var(--as-font);color:var(--as-ink);text-decoration:underline;text-underline-offset:3px}
+.ex-fold .linkbtn:focus-visible,.ex-fold .showall:focus-visible{outline:3px solid var(--as-ink);outline-offset:2px}
+.exr.thin .nomach{font-size:12px}
+@media (max-width:1100px){.lead-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:860px){.lead-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+@media (max-width:620px){
+  .lc{border-radius:16px}
+  .lc-you{left:6px;top:6px;font-size:9px;padding:3px 7px}
+  .lc-body{padding:10px 11px 6px;gap:3px}
+  .lc-sub{font-size:9.5px}
+  .lc-t{font-size:15px}
+  .lc-bl{display:none}
+  .lc-ex{padding:0 11px 11px;gap:4px 8px}
+  .lc-ex .pc{font-size:10px;padding:3px 7px;white-space:normal}
+  .lc-ex a{font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){.lc,.lc-pic img{transition:none}.lc:hover{transform:none}.lc:hover .lc-pic img{transform:none}}
+</style>
 <link rel="stylesheet" href="thumbnails.css">
 <link rel="stylesheet" href="creative-instruments.css">
 <link rel="stylesheet" href="hub-responsive.css">
@@ -443,7 +488,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
 <div class="wrap">
   <header class="top">
     <a class="as-lock" href="#" id="lock" aria-label="assembly, by assembl"></a>
-    <nav aria-label="Sections"><a href="#h-index">Your exams</a><a href="#h-mach">Machines</a><a href="#h-play">Play</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
+    <nav aria-label="Sections"><a href="#lead">Machines</a><a href="#exams">Your exams</a><a href="#h-play">Play</a></nav><button type="button" class="getapp" data-get-app hidden>Get the app</button>
   </header>
 
   <div class="strip" id="strip" role="region" aria-label="Today's exams" hidden></div>
@@ -470,8 +515,16 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
     </div>
   </section>
 
+  <section class="block lead" aria-labelledby="h-lead" id="lead">
+    <p class="kick">01 / Start with a machine</p>
+    <h2 id="h-lead">Start with <em>a machine.</em></h2>
+    <p class="lede">The most finished 3D machines in assembly, <span id="leadFor">Year 11's first</span>. Open one, change a setting, watch what happens, then test yourself.</p>
+    <ul class="lead-grid" id="leadGrid"></ul>
+    <p class="lead-more"><a href="#machsec" id="leadAll">Every machine</a><a href="#exams">Your exam timetable</a></p>
+  </section>
+
   <section class="block" aria-labelledby="h-index" id="exams">
-    <p class="kick">01 / Your exams</p>
+    <p class="kick">02 / Your exams</p>
     <h2 id="h-index"><span id="exTitle">Year 12</span> <em id="exEm">exams, in date order.</em></h2>
     <p class="lede" id="exLede"></p>
     <div class="mine" id="mine"></div>
@@ -479,7 +532,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
   </section>
 
   <section class="block" aria-labelledby="h-mach" id="machsec">
-    <p class="kick">02 / The machines</p>
+    <p class="kick">03 / Every machine</p>
     <h2 id="h-mach">Machines for <em id="machYear">Year 12.</em></h2>
     <p class="lede">Open one, change a setting, watch what happens, then test yourself. Each card says the year, the standard and the exam date.</p>
     <div class="finder" id="find" aria-labelledby="find-h">
@@ -512,7 +565,7 @@ html[data-lab-frame=study] body .hero .intro{font-size:clamp(16px,1.4vw,18.5px);
   </div>
 
   <section class="block play-explore" aria-labelledby="h-play" id="play">
-    <p class="kick">03 / Play and explore</p>
+    <p class="kick">04 / Play and explore</p>
     <h2 id="h-play">Not exam prep. <em>Just making things.</em></h2>
     <p class="lede">Open-ended studios for when you want to build or muck around. Good for Years 7–10, and for anyone taking a break.</p>
     <div class="play-links"><a class="btn big" href="year9/">Year 9 studio</a><a class="btn big" href="patterns/">Pattern studio</a><a class="btn big" href="m/inanga.html">The īnanga machine</a><a class="btn big" href="m/claw.html">The claw machine</a></div>
@@ -586,8 +639,8 @@ $("years").addEventListener("click",e=>{const b=e.target.closest("[data-year]");
 function setYear(k,scroll){tab=k;try{localStorage.setItem("study-year",k)}catch(e){}
   try{const u=new URL(location.href);u.searchParams.set("year",yearNum());u.hash="";history.replaceState(null,"",u)}catch(e){}
   document.querySelectorAll("#years [data-year]").forEach(b=>{const on=b.dataset.year===k;b.setAttribute("aria-pressed",on);b.setAttribute("aria-selected",on)});
-  render();renderMachines();renderStrip();K.sfx("tick");
-  if(scroll)try{$("exams").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}catch(e){}}
+  renderLead();render();renderMachines();renderStrip();K.sfx("tick");
+  if(scroll)try{$("lead").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}catch(e){}}
 
 // ---- what covers what: every standard code -> the machines that carry it (from each machine's structured `standards`, and the levels table)
 const covers={};Object.entries(D.machines).forEach(([id,m])=>(m.standards||[]).forEach(s=>(covers[s.code]=covers[s.code]||new Set()).add(id)));
@@ -671,6 +724,36 @@ function renderMachines(){const y=yearNum();
   dispatchEvent(new Event("machines:rendered"))}
 $("showAll").onclick=()=>{showAll=!showAll;$("showAll").setAttribute("aria-pressed",showAll);renderMachines()};
 
+// ---- start with a machine (Nov 2026): the most finished 3D machines lead, the chosen year's first, then the rest in this order.
+// Picked by finish: a Blender or real-time 3D scene, a rig with its own tests, and practice questions. The four-stroke engine is a
+// teardown (teardown/four-stroke/), not a data.js machine, so its card carries its own details; its standard is the one its page states.
+const LEAD=[
+  {id:"lines",sub:"Maths"},
+  {id:"energy",sub:"Physics"},
+  {id:"slushie",sub:"Chemistry"},
+  {id:"four-stroke",sub:"Physics",tint:"engine",title:"The four-stroke engine",href:"teardown/four-stroke/",img:"teardown/four-stroke/poster.jpg",years:[12],yrs:"NCEA Level 2",
+   blurb:"Take a one-cylinder engine apart. One crank angle drives every part and every gauge: pressure, torque and work per cycle.",standards:[{code:"91171",level:"L2"}]},
+  {id:"windtunnel",sub:"Physics"},
+  {id:"claw",sub:"Maths"},
+  {id:"particles",sub:"Science"},
+  {id:"heart",sub:"Biology"},
+  {id:"vinyl",sub:"Physics"},
+  {id:"phone",sub:"Physics"}];
+const LEAD_N=8;
+const stdFromLevels=(code,level)=>{const s=(D.levels[String(level).toLowerCase()]?.standards||[]).find(x=>x.num===code);return s?{code,level,exam:s.when,url:s.url}:null};
+function renderLead(){const y=yearNum(),lv=tab.toUpperCase();
+  const items=LEAD.map((e,i)=>{const m=D.machines[e.id]||{};const years=e.years||m.years||[];
+    return {...e,i,title:e.title||m.title,href:e.href||m.href,img:e.img||`thumbnails/${e.id}.jpg`,blurb:e.blurb||m.blurb||m.desc||"",years,
+      stds:(e.standards||m.standards||[]).map(s=>s.exam||s.url?s:stdFromLevels(s.code,s.level)).filter(Boolean),mine:years.includes(y)}}).filter(x=>x.title&&x.href);
+  items.sort((a,b)=>(b.mine-a.mine)||(a.i-b.i));
+  const mineN=items.filter(x=>x.mine).length;
+  $("leadFor").textContent=mineN?`with ${Y()[2]}'s first`:"for every year";
+  $("leadGrid").innerHTML=items.slice(0,LEAD_N).map((x,i)=>{const s=x.stds.slice().sort((a,b)=>(a.level===lv?0:1)-(b.level===lv?0:1))[0];
+    return `<li class="lc" style="--acc:${K.accentFor(x.tint||x.id)};--acc-tint:${K.tintFor(x.tint||x.id)}">
+    <span class="lc-pic"><img src="${x.img}" alt="" width="800" height="500" ${i<4?'fetchpriority="low"':'loading="lazy"'} decoding="async">${x.mine?`<span class="lc-you">For ${esc(Y()[2])}</span>`:""}</span>
+    <span class="lc-body"><span class="lc-sub">${esc(x.sub)} · ${esc(x.yrs||yearsLabel(x.years))}</span><b class="lc-t"><a href="${x.href}">${esc(x.title)}</a></b><span class="lc-bl">${esc(x.blurb)}</span></span>
+    ${s?`<span class="lc-ex"><span class="pc ex">NCEA ${esc(s.level)} · ${esc(s.code)}${s.exam?` · Exam ${esc(fmtDay(s.exam))}, ${esc(fmtTime(s.exam))}`:""}</span>${s.url?`<a href="${s.url}" target="_blank" rel="noopener" aria-label="NZQA past papers for ${esc(s.code)}">Past papers ↗</a>`:""}</span>`:"<span></span>"}</li>`}).join("")}
+
 // ---- hero bench: name each machine from data.js, lean the bench towards the pointer
 document.querySelectorAll("#bench .mx").forEach(a=>{const m=D.machines[a.dataset.m];if(!m){a.remove();return}
   a.setAttribute("aria-label",m.title);a.querySelector(".tg").textContent=m.title.replace(/^The /,"")});
@@ -694,6 +777,8 @@ function stdRow(s){const ms=machinesFor(s.num);const d=s.when?days(s.when):null;
     <div class="what"><div class="t"><span class="code">${esc(s.num)}</span>${esc(shortTitle(s.title))} <span class="sub">· ${esc(s.subject)}${s.credits?` · ${s.credits} cr`:""}</span></div>
       <div class="acts">${ms.length?ms.map(mchip).join(""):nomach(s)}${ms.length&&s.url?`<a class="mch more" href="${s.url}" target="_blank" rel="noopener">NZQA ↗</a>`:""}<button class="star" type="button" data-num="${esc(s.num)}" aria-pressed="${mine.includes(s.num)}" aria-label="Add ${esc(s.num)} to my exams">☆</button><button class="star lnk" type="button" data-link="${esc(s.num)}" aria-label="Copy a link to ${esc(s.num)}">Link</button></div>
       ${s.topics?.length?`<details><summary>WHAT'S EXAMINED</summary><ul>${s.topics.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></details>`:""}</div></div>`}
+// the timetable opens folded to the next few exams that have a machine; both choices are one tap away and kept while you switch years
+const EX_FEW=6;let exAll=false,exNoM=false;
 function render(){const L=D.levels[tab];let o="";
   $("exTitle").textContent=Y()[2];
   if(!isNCEA()){
@@ -708,30 +793,40 @@ function render(){const L=D.levels[tab];let o="";
   } else {
     const subjects=[...new Set(L.standards.map(s=>s.subject))].sort();const n=L.standards.length,withM=L.standards.filter(s=>machinesFor(s.num).length).length;
     $("exEm").textContent="exams, in date order.";$("exLede").textContent=`Every ${Y()[3]} external in order of sitting. ${withM} of the ${n} have a machine; the rest link to NZQA's past papers. Dates are from NZQA's 2026 timetable; check your admission slip.`;
-    o+=`<div class="bar"><input type="search" id="q" placeholder="Search ${esc(Y()[2])} exams: biology, 91947, essay…" aria-label="Search exams"><select id="subj" aria-label="Subject"><option value="">All subjects</option>${subjects.map(s=>`<option>${esc(s)}</option>`).join("")}</select><label class="switch" style="align-items:center"><input type="checkbox" id="onlyM"><span>Only exams with a machine</span></label></div><div class="ex-list" id="list"></div>`;
+    o+=`<div class="bar"><input type="search" id="q" placeholder="Search ${esc(Y()[2])} exams: biology, 91947, essay…" aria-label="Search exams"><select id="subj" aria-label="Subject"><option value="">All subjects</option>${subjects.map(s=>`<option>${esc(s)}</option>`).join("")}</select><label class="switch" style="align-items:center"><input type="checkbox" id="noM"${exNoM?" checked":""}><span>Show exams with no machine yet (${n-withM})</span></label></div><div class="ex-list" id="list"></div><div class="ex-fold" id="exFold"></div>`;
   }
   $("panel").innerHTML=o;
-  if($("q")){const go=()=>{const q=$("q").value.trim().toLowerCase(),sj=$("subj").value,om=$("onlyM").checked;
-      const rows=L.standards.filter(s=>(!sj||s.subject===sj)&&(!om||machinesFor(s.num).length)&&(!q||(s.num+" "+s.title+" "+s.subject+" "+(s.topics||[]).join(" ")).toLowerCase().includes(q)))
-        .sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100")||a.subject.localeCompare(b.subject));
+  if($("q")){const go=()=>{const q=$("q").value.trim().toLowerCase(),sj=$("subj").value,inc=exNoM=$("noM").checked;
+      const hit=L.standards.filter(s=>(!sj||s.subject===sj)&&(!q||(s.num+" "+s.title+" "+s.subject+" "+(s.topics||[]).join(" ")).toLowerCase().includes(q)));
+      const noM=hit.filter(s=>!machinesFor(s.num).length).length;
+      const rows=hit.filter(s=>inc||machinesFor(s.num).length).sort((a,b)=>Date.parse(a.when||"2100")-Date.parse(b.when||"2100")||a.subject.localeCompare(b.subject));
+      // folded: the next few exams still to sit (a paper stays "next" until three hours after it starts); a search or subject shows every match
+      const looking=!!(q||sj),soon=Date.now()-3*36e5;
+      const shown=exAll||looking?rows:rows.filter(s=>!s.when||Date.parse(s.when)>=soon).slice(0,EX_FEW);
       const today=nzDay(Date.now());let lastDay=null,out="";
-      rows.forEach(s=>{const dk=s.when?nzDay(s.when):"tbc";if(dk!==lastDay){lastDay=dk;const d=s.when?days(s.when):null;
+      shown.forEach(s=>{const dk=s.when?nzDay(s.when):"tbc";if(dk!==lastDay){lastDay=dk;const d=s.when?days(s.when):null;
           out+=`<div class="ex-day${dk===today?" today":""}"><b>${s.when?fmtDay(s.when):"Date to confirm"}</b><small>${dk===today?"today":d>0?`${d} day${d===1?"":"s"} away`:""}</small></div>`}
         out+=stdRow(s)});
-      $("list").innerHTML=out||`<p class="empty">No exams match. Try a subject name or a standard number.</p>`;
+      $("list").innerHTML=out||(rows.length?`<p class="empty">No ${esc(Y()[2])} exams left to sit. "Show all" lists the whole timetable.</p>`:`<p class="empty">No exams ${inc?"":"with a machine "}match. Try a subject name or a standard number.</p>`);
+      const what=inc?"exams":"exams with a machine",more=rows.length-shown.length;
+      $("exFold").innerHTML=(!looking&&(more>0||exAll)?`<p class="ex-n">${exAll?`All ${rows.length} ${what}.`:`The next ${shown.length} of ${rows.length} ${what}.`}</p><button class="showall" type="button" id="exMore" aria-controls="list" aria-expanded="${exAll}">${exAll?"Show the next few":`Show all ${rows.length} ${what}`}</button>`:"")+
+        (!inc&&noM?`<p class="ex-n">${noM} ${noM===1?"exam has":"exams have"} no machine yet and ${noM===1?"is":"are"} hidden. <button class="linkbtn" type="button" id="exNoM">Show ${noM===1?"it":"them"}</button></p>`:"");
+      const mb=$("exMore");if(mb)mb.onclick=()=>{exAll=!exAll;go();$("exMore")?.focus()};
+      const nb=$("exNoM");if(nb)nb.onclick=()=>{$("noM").checked=true;go();$("noM").focus()};
       document.querySelectorAll(".star[data-num]").forEach(b=>b.onclick=()=>{const n=b.dataset.num;mine=mine.includes(n)?mine.filter(x=>x!==n):[...mine,n];saveMine();b.setAttribute("aria-pressed",mine.includes(n));renderMine()});
       // per-standard share links for Discord, newsletters and class chats: study.assembl.co.nz/?year=12&std=91171
       document.querySelectorAll(".star[data-link]").forEach(b=>b.onclick=async()=>{const u=(location.hostname==="study.assembl.co.nz"?"https://study.assembl.co.nz/":location.origin+"/study/")+`?year=${yearNum()}&std=${b.dataset.link}`;
         try{if(navigator.share&&matchMedia("(pointer: coarse)").matches){await navigator.share({title:`assembly · ${b.dataset.link}`,url:u});return}await navigator.clipboard.writeText(u);b.textContent="Copied";setTimeout(()=>b.textContent="Link",1500)}catch(e){if(e&&e.name==="AbortError")return;b.textContent="Copy failed";setTimeout(()=>b.textContent="Link",1500)}})};
-    $("q").oninput=go;$("subj").onchange=go;$("onlyM").onchange=go;go()}
+    $("q").oninput=go;$("subj").onchange=go;$("noM").onchange=go;go()}
   renderMine();
 }
 // deep links from elsewhere (#l2, #y9) still choose the year
 addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(byKey(h))setYear(h,true)});
 (function(){const std=(new URLSearchParams(location.search).get("std")||"").trim();if(!/^\d{5}$/.test(std))return;const row=allStd().find(s=>s.num===std);if(row&&row.level!==tab)tab=row.level;
+  exAll=exNoM=true; // a shared exam link opens the whole timetable, so the linked row is there to land on
   document.querySelectorAll("#years [data-year]").forEach(b=>{const on=b.dataset.year===tab;b.setAttribute("aria-pressed",on);b.setAttribute("aria-selected",on)});
   addEventListener("load",()=>{const el=$("std-"+std);if(!el)return;el.classList.add("hl");el.scrollIntoView({block:"center"})},{once:true})})();
-render();renderMachines();renderStrip();
+renderLead();render();renderMachines();renderStrip();
 try{K.count("view","hub")}catch(e){}
 })();
 </script>

@@ -101,8 +101,9 @@
   @keyframes altdots{0%{content:"."}50%{content:".."}100%{content:"..."}}
   @media (prefers-color-scheme:dark){.alt{color:#F5F1F2}.alt-fab{background:#F5F1F2;color:#240B21}.alt-p{background:#1d1420;border-color:rgba(245,241,242,.14)}.alt-h{background:#271a2a}.alt-h small,.alt-h .x,.alt-line,.alt-note,.alt-exam small{color:#cdb8c2}
     .alt-m.al{background:#2b1f2e}.alt-m.me{background:#F5F1F2;color:#240B21}.alt-chips button,.alt-f textarea,.alt-exam textarea{background:#140e16;border-color:rgba(245,241,242,.2);color:inherit}.alt-exam,.alt-priv{background:#271a2a;border-color:rgba(245,241,242,.14)}.alt-priv small{color:#cdb8c2}.alt-help{background:#3a2418;border-color:#7a4a2e}.alt-b{background:#F5F1F2;color:#240B21}.alt-b.q{background:transparent;color:#F5F1F2;border-color:rgba(245,241,242,.3)}.al-card{background:#140e16;color:#F5F1F2;border-color:#4a3a48}.al-card span{color:#cdb8c2}.al-act{background:#1f3a31;color:#bfe8d6}}
-  @media (max-width:600px){.alt-fab{padding:5px}.alt-fab .lbl{position:absolute;left:-9999px}.alt-p{position:fixed;left:8px;right:8px;bottom:76px;width:auto;height:calc(100dvh - 96px)}}
-  @media (prefers-reduced-motion:reduce){.alt-typing:after{animation:none}}`;
+  @media (max-width:600px){.alt-fab{padding:5px}.alt-fab .lbl{position:absolute;left:-9999px}.alt-p{position:fixed;left:8px;right:8px;bottom:76px;width:auto;height:calc(100dvh - 96px)}
+    .alt{transition:transform .25s ease,opacity .25s ease}.alt.away{transform:translateY(96px);opacity:0;pointer-events:none}body::after{content:"";display:block;height:76px}}
+  @media (prefers-reduced-motion:reduce){.alt-typing:after{animation:none}.alt{transition:none}}`;
   const style=document.createElement("style");style.textContent=css;document.head.appendChild(style);
   const avatar=()=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#240B21" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16v10H9.5L5 19.5v-4H4z"/><path d="M9 9.5h6M9 12.5h4"/></svg>`;
   const w=document.createElement("div");w.className="alt";
@@ -153,6 +154,11 @@
     if(!gate()){exam.hidden=true;priv.querySelector("[data-priv-ok]").focus();return}exam.hidden=mode!=="exam";(mode==="exam"?eq:q).focus()}
   function close(){P.hidden=true;fab.setAttribute("aria-expanded","false");fab.focus()}
   fab.onclick=()=>P.hidden?open():close();w.querySelector("[data-close]").onclick=close;
+  // on a phone the button steps aside while you read down the page (so it never sits on a row's buttons), and comes back when
+  // you scroll up or reach the end; the spacer above lets the last row scroll clear of it. Same pattern as the Lab's /ask.js.
+  {const narrow=matchMedia("(max-width:600px)");let lastY=scrollY;
+    addEventListener("scroll",()=>{if(!narrow.matches||!P.hidden){w.classList.remove("away");lastY=scrollY;return}const y=scrollY,end=y+innerHeight>=document.documentElement.scrollHeight-40;
+      if(y>lastY+8&&!end){w.classList.add("away");lastY=y}else if(y<lastY-8||end){w.classList.remove("away");lastY=y}},{passive:true})}
   w.querySelector("[data-new]").onclick=()=>{msgs=[];save();replay()};
   addEventListener("keydown",e=>{if(e.key==="Escape"&&!P.hidden)close()});
   // anything on the page can open Allen: the corner dog, the past-papers card, a failed challenge
