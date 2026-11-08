@@ -1,0 +1,15 @@
+/* The hub is a single constrained column, not a min-content-sized implicit
+   grid track. Large thumbnail intrinsic widths must never widen a phone. */
+.wrap,
+.wrap :where(section.block, .play-explore, .creative-instruments, .subjects, .subj, .finder) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.wrap > *,
+.wrap :where(section.block, .play-explore, .creative-instruments, .subjects, .subj, .finder) > * {
+  min-width: 0;
+}
+/* The compact catalogue uses two equal, shrinkable tracks on phones. */
+@media (max-width: 620px) {
+  .wrap .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wrap .apps > * { min-width: 0; }
+}
