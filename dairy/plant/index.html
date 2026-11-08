@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<script src="/lab/preview-head.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dairy Plant Floor</title>
+<meta name="description" content="A simulated New Zealand-style milk powder plant for one day: tankers queue for the bays, milk fills the silos, the dryer runs until its evaporator needs cleaning, and bags become pallets and containers. Built from NVIDIA SimReady 3D assets; every figure is computed by the page's own model.">
+<meta property="og:title" content="Dairy plant floor · assembl lab">
+<meta property="og:description" content="A fictional milk powder plant running one simulated day, built from NVIDIA SimReady assets. Every figure is simulated.">
+<meta property="og:image" content="https://lab.assembl.co.nz/dairy/plant/poster.webp">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="modulepreload" href="/assets/vendor/three/three.module.min.js">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/3/overlay.css">
+<style>
+.lever select{font:500 13px var(--sans);color:var(--ivory);background:var(--plum);border:1px solid var(--line);border-radius:999px;height:36px;padding:0 12px;max-width:100%}
+.whole{margin-top:10px;width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.whole th,.whole td{padding:6px 4px;border-top:1px solid var(--line2);text-align:right;vertical-align:top}
+.whole th:first-child,.whole td:first-child{text-align:left;color:var(--ivory)}
+.whole th{font:500 10.5px/1.3 var(--mono);color:var(--soft);border-top:0}
+.whole tr.best td:first-child{color:var(--rose)}
+.panel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the figures</a>
+<main class="twin" id="twin">
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a simulated milk powder plant: tanker bays on the left, six silos, the evaporator hall and dryer tower in the middle, the packing hall and container dock on the right. Drag to orbit, scroll or pinch to zoom." tabindex="0"></canvas>
+    <div class="tags" id="tags"></div>
+  </div>
+
+  <section class="card title" aria-labelledby="t-title">
+    <p class="kicker">assembl lab · twin</p>
+    <h1 id="t-title">Milk powder plant floor</h1>
+    <p class="sub">One simulated day at a fictional New Zealand powder plant: tankers in, milk tested and stored, dried to powder, bagged, palletised and sent out in containers.</p>
+    <div class="chips"><span class="chip">Simulated</span><span class="chip quiet">Example plant, not a real site</span></div>
+  </section>
+
+  <aside class="card panel" id="panel" aria-label="Simulated figures" tabindex="-1">
+    <header>
+      <div><span class="clock" data-k="clock">05:00</span><span class="clock-sub"><span data-k="month">October</span> · model speed <span data-k="speed">20×</span></span></div>
+      <span class="chip">Simulated</span>
+    </header>
+    <p class="event" data-k="event" aria-live="off">The model day has just started</p>
+
+    <h2>Change one thing</h2>
+    <div class="levers">
+      <div class="lever"><div class="lv-h"><label for="month">Month of the season</label><b data-k="perDay">157 tankers a day</b></div>
+        <select id="month" aria-describedby="month-note"></select>
+        <small id="month-note">Starts the day again. Milk per day follows the season model's monthly shares (DCANZ, 2022/23).</small></div>
+      <div class="lever"><div class="lv-h"><span id="bays-l">Unloading bays open</span><b data-k="baysBusy">0 busy</b></div>
+        <div class="seg" role="radiogroup" aria-labelledby="bays-l"><label><input type="radio" name="bays" value="3"><span>3</span></label><label><input type="radio" name="bays" value="4" checked><span>4</span></label><label><input type="radio" name="bays" value="5"><span>5</span></label></div></div>
+      <div class="lever"><div class="lv-h"><span id="fork-l">Forklifts in the packing hall</span><b data-k="forkBusy">0% busy</b></div>
+        <div class="seg" role="radiogroup" aria-labelledby="fork-l"><label><input type="radio" name="forks" value="1"><span>1</span></label><label><input type="radio" name="forks" value="2" checked><span>2</span></label><label><input type="radio" name="forks" value="3"><span>3</span></label></div></div>
+      <div class="row2"><button class="btn ghost" type="button" id="jump">Skip to 16:00</button><button class="btn ghost" type="button" id="restart">Start the day again</button></div>
+    </div>
+
+    <h2>Tankers</h2>
+    <dl><dt>Arrived today</dt><dd data-k="tankersIn">0</dd><dt>Unloaded</dt><dd data-k="unloaded">0</dd><dt>Waiting for a bay now</dt><dd data-k="queue">0</dd><dt>Longest wait now</dt><dd data-k="waitNow">none</dd><dt>Average wait, last 2 h</dt><dd data-k="avgWait">0 min</dd><dt>Waited over 30 min today</dt><dd data-k="longWaits">0</dd><dt>Milk received</dt><dd data-k="litres">0 L</dd></dl>
+    <h2>Silos and dryer</h2>
+    <dl><dt>Raw milk in the silos</dt><dd data-k="silo">0%</dd><dt>Dryer</dt><dd data-k="dryer">Running</dd><dt>Powder an hour now</dt><dd data-k="rate">0 t</dd><dt>Evaporator clean</dt><dd data-k="clean">in 0 h</dd><dt>Powder made today</dt><dd data-k="powderT">0 t</dd></dl>
+    <div class="meter" aria-hidden="true"><i data-m="silo"></i></div>
+    <h2>Packing</h2>
+    <dl><dt>Powder bins</dt><dd data-k="bins">0%</dd><dt>25 kg bags filled</dt><dd data-k="bags">0</dd><dt>Bags on the belts</dt><dd data-k="onBelts">0</dd><dt>Pallets made</dt><dd data-k="palletsMade">0</dd><dt>Pallets waiting for a forklift</dt><dd data-k="pd">0</dd><dt>Pallets in the store</dt><dd data-k="store">0</dd></dl>
+    <h2>Containers</h2>
+    <ul class="doors" id="doors" aria-label="Container doors"></ul>
+    <dl style="margin-top:10px"><dt>Containers sealed today</dt><dd data-k="boxes">0</dd><dt>Powder shipped</dt><dd data-k="shipped">0 t</dd></dl>
+
+    <h2>A whole day, side by side</h2>
+    <p class="src">Each row runs the full day again from 05:00 with one change. Same tankers, same seed. Simulated.</p>
+    <button class="btn ghost" type="button" id="compare">Run the comparison</button>
+    <div id="whole" aria-live="polite"></div>
+
+    <details>
+      <summary>How this model works</summary>
+      <p>Tankers arrive at a rate that follows the hour, take the first free bay, connect, wait for their milk to pass a test, pump into the silos and leave. The dryer runs at full rate while the silos have milk, stops when they run low and for each evaporator clean. Two baggers fill 25 kg sacks; gantry palletisers stack forty to a pallet; the wrapper and a label printer finish it; forklifts put it away, and later load older, released stock into containers. Inputs:</p>
+      <dl id="assume"></dl>
+      <p>What the model leaves out: breakdowns, staff breaks, product changeovers, rejected milk and the cream, butter and skim streams. Heat, power and prices are on the season page.</p>
+    </details>
+    <details>
+      <summary>What is real here</summary>
+      <p>The forklifts, pallets, racking, belt conveyors, roller outfeeds, label printer, stainless IBC, QA bench, rail and machine guards and safety kit are NVIDIA SimReady 3D models (CC BY 4.0), loaded from web copies in <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a> of <a href="https://huggingface.co/datasets/nvidia/simready-assets">nvidia/simready-assets</a>, simplified for the browser. The floor and wall textures come from the same set.</p>
+      <p>The silos, evaporator, dryer tower, tankers, container trucks, palletisers, wrapper, buildings and people are simple models made for this page. The plant is fictional. Six inputs are the season model's own figures on <a href="/dairy/">the dairy plant twin</a>: peak milk of 4.4 million litres a day, monthly shares from DCANZ's national 2022/23 curve, 28,000 litres a tanker, about 7.5 litres of milk a kilogram of whole milk powder, a 30 t/h dryer and about 22 t a container. Everything else is an assumption listed above, and every figure in this panel is Simulated.</p>
+    </details>
+  </aside>
+
+  <section class="card tour" id="tour" aria-live="polite" aria-atomic="true">
+    <p class="step" id="tour-step">Tour · 1 of 8</p>
+    <h2 id="tour-title">The whole plant</h2>
+    <p id="tour-text"></p>
+  </section>
+
+  <div class="card bar" role="toolbar" aria-label="Tour and model controls">
+    <button class="btn icon" id="tour-prev" type="button" aria-label="Previous tour stop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6"/></svg></button>
+    <button class="btn primary" id="tour-play" type="button" aria-pressed="true"></button>
+    <button class="btn icon" id="tour-next" type="button" aria-label="Next tour stop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6"/></svg></button>
+    <div class="seg" role="radiogroup" aria-label="Model speed">
+      <label><input type="radio" name="speed" value="4"><span>4×</span></label>
+      <label><input type="radio" name="speed" value="20" checked><span>20×</span></label>
+      <label><input type="radio" name="speed" value="120"><span>120×</span></label>
+    </div>
+    <button class="btn" id="sim-run" type="button" aria-pressed="true"></button>
+    <label class="toggle"><input type="checkbox" id="t-paths" checked> Paths</label>
+    <label class="toggle"><input type="checkbox" id="t-labels" checked> Labels</label>
+    <button class="btn panel-toggle" id="panel-toggle" type="button" aria-expanded="false" aria-controls="panel" aria-label="All figures"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" stroke="currentColor" stroke-width="1.6" fill="none"/></svg><b class="m-clock" data-k="m-clock">05:00</b><span>All figures</span></button>
+    <span class="grow"></span>
+    <p class="credit">3D assets: <a href="https://huggingface.co/datasets/nvidia/simready-assets">NVIDIA SimReady</a> (CC BY 4.0), via <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a>. Simulated figures.</p>
+  </div>
+
+  <div class="loader" id="loader" role="status">
+    <div class="box">
+      <h2>Opening the plant</h2>
+      <p>Loading the NVIDIA SimReady models: forklifts, racking, belt conveyors, pallets and plant kit.</p>
+      <div class="track"><div id="load-bar"></div></div>
+      <div class="load-meta"><span id="load-text">Starting</span><span id="load-pct">0%</span></div>
+    </div>
+  </div>
+  <div class="fallback" id="fallback" hidden>
+    <div>
+      <img src="/dairy/plant/poster.webp" alt="Still image of the simulated milk powder plant from above: tanker bays, silos, the dryer tower and the packing hall" width="1440" height="900">
+      <p>This browser could not start 3D graphics, so here is a still of the twin. It shows a fictional milk powder plant built partly from NVIDIA SimReady 3D assets (CC BY 4.0); its figures are simulated. The <a href="/dairy/">season model</a> works without 3D.</p>
+    </div>
+  </div>
+  <div id="debug" aria-hidden="true"></div>
+</main>
+<script src="/lab/navigation.js"></script>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
