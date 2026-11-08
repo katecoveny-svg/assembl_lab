@@ -26,4 +26,6 @@ meshopt compression (`scripts/simready/pipeline.mjs`). The changes are ours; the
 | tex/floor_*.webp, tex/panel_*.webp | textures from modular_warehouse_h10m_straight_a04 |
 | tex/carton_*.webp | textures from box_cardboard_c01 |
 
-Used by the grocery distribution centre twin at /store/dc/, which credits NVIDIA SimReady on screen.
+Used by the grocery distribution centre twin at /store/dc/, and in part by the dairy plant floor (/dairy/plant/) and the
+emergency department floor (/ed/floor/), which all credit NVIDIA SimReady on screen. Their own models are in dairy/ and ed/,
+each with its own notice.
