@@ -1,0 +1,38 @@
+// Atlas extends the existing Lab open-map bake: no API key, tile requests or continuous render loop.
+const points=[
+ ['harbour','Waitematā Harbour',174.801,-36.831,'The harbour','Trace the shoreline between the city centre and the North Shore. Notice how the harbour shapes the street network.','Find two places that look close across the water. Would a journey by road follow the same line?'],
+ ['bridge','Auckland Harbour Bridge',174.745,-36.83,'Connections','The bridge connects the central isthmus with the North Shore. Its mapped road line spans a narrow part of the harbour.','Follow the roads away from each end. How does one crossing organise many journeys?'],
+ ['rangitoto','Rangitoto',174.86,-36.787,'Island and shore','Find the island northeast of the city centre. Its coastline is mapped here; this flat map does not show the volcanic relief.','Compare the island’s sparse streets with the city centre. What can a street map tell you, and what can it leave out?'],
+ ['eden','Maungawhau / Mount Eden',174.764,-36.877,'Land and city','The open space around Maungawhau breaks the surrounding pattern of streets and building footprints.','Turn buildings off, then on. How does this change the way you see open space?'],
+ ['city','City centre',174.765,-36.849,'Urban fabric','Look at the dense network of streets and larger mapped footprints near the waterfront. Footprints show shape, not the number of people inside.','Compare a city block with the surrounding suburbs. What would you need to know before comparing population density?'],
+ ['devonport','Devonport',174.797,-36.829,'Across the water','This peninsula sits across the harbour from the city centre. Water separates places that appear close on the map.','Trace a possible road connection around the harbour. What other kinds of connection could be useful?'],
+ ['domain','Auckland Domain',174.775,-36.86,'Open space','A large open space sits beside a much finer grain of city streets. Mapped park boundaries are simplified.','Hide the streets. Which parts of the city remain easiest to recognise?']
+];
+const host=document.querySelector('#map'),status=document.querySelector('#map-status'),select=document.querySelector('#places');
+for(const p of points){const o=document.createElement('option');o.value=p[0];o.textContent=p[1];select.append(o);}
+let choose=()=>{};select.addEventListener('change',()=>{if(select.value)choose(select.value,true)});
+const lessons={harbour:'harbour',connections:'bridge',land:'city'};
+document.querySelectorAll('[data-lesson]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-lesson]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));choose(lessons[b.dataset.lesson],true)});
+try{
+ const [response,meta]=await Promise.all([fetch('/auckland/map.svg'),fetch('/auckland/map-data.json').then(r=>{if(!r.ok)throw Error();return r.json()})]);if(!response.ok)throw Error();
+ const doc=new DOMParser().parseFromString(await response.text(),'image/svg+xml');if(doc.querySelector('parsererror'))throw Error();
+ const svg=document.importNode(doc.documentElement,true);svg.setAttribute('aria-hidden','true');host.querySelector('#fallback').replaceWith(svg);status.textContent='';
+ const NS='http://www.w3.org/2000/svg',W=meta.width,H=meta.height,a=meta.area;
+ const merc=lat=>Math.log(Math.tan(Math.PI/4+lat*Math.PI/360));
+ const project=(lon,lat)=>[(lon-a.west)/(a.east-a.west)*W,(merc(a.north)-merc(lat))/(merc(a.north)-merc(a.south))*H];
+ let view={x:0,y:0,w:W,h:H},active='harbour';
+ const labels=document.createElementNS(NS,'g');svg.append(labels);
+ const markers=points.map((p,i)=>{const [x,y]=project(p[2],p[3]),g=document.createElementNS(NS,'g');g.classList.add('marker');g.dataset.place=p[0];g.innerHTML=`<circle r="11"/><text y="4">${i+1}</text><text class="place-label" x="16" y="4" text-anchor="start">${p[1]}</text>`;g.addEventListener('click',()=>choose(p[0],false));labels.append(g);return {g,x,y};});
+ function draw(){if(!host.clientWidth||!host.clientHeight)return;view.w=Math.max(W/6,Math.min(W,view.w));view.h=view.w*H/W;view.x=Math.max(0,Math.min(W-view.w,view.x));view.y=Math.max(0,Math.min(H-view.h,view.y));svg.setAttribute('viewBox',`${view.x} ${view.y} ${view.w} ${view.h}`);for(const m of markers){m.g.setAttribute('transform',`translate(${m.x} ${m.y}) scale(${view.w/Math.min(host.clientWidth,host.clientHeight*W/H)})`);m.g.classList.toggle('active',m.g.dataset.place===active);const label=m.g.querySelector('.place-label'),small=host.clientWidth<500,isActive=m.g.dataset.place===active;
+ label.style.display=isActive||(!small&&['rangitoto','eden','bridge'].includes(m.g.dataset.place))?'':'none';
+ label.setAttribute('x',small?'0':m.x>W*.7?'-16':'16');label.setAttribute('y',small?'-20':'4');label.style.textAnchor=small?'middle':m.x>W*.7?'end':'start';
+ const selected=markers.find(k=>k.g.dataset.place===active);const pixels=Math.min(host.clientWidth,host.clientHeight*W/H)/view.w;
+ m.g.style.display=!isActive&&selected&&Math.hypot(m.x-selected.x,m.y-selected.y)*pixels<25?'none':'';}const km=view.w/W>.6?5:2;const pixelLength=km/21.1*W/view.w*Math.min(host.clientWidth,host.clientHeight*W/H);document.querySelector('#scale').style.width=pixelLength+'px';document.querySelector('#scale').textContent=`≈ ${km} km`;}
+ function zoom(f){const old=view.w;view.w=Math.max(W/6,Math.min(W,view.w*f));view.x+=(old-view.w)/2;view.y+=(old-view.w)*H/W/2;draw();}
+ choose=(id,focus)=>{const p=points.find(x=>x[0]===id);if(!p)return;active=id;select.value=id;document.querySelectorAll('[data-lesson]').forEach(b=>b.setAttribute('aria-pressed',String(lessons[b.dataset.lesson]===id)));document.querySelector('#place-category').textContent=p[4];document.querySelector('#place-title').textContent=p[1];document.querySelector('#place-copy').textContent=p[5];document.querySelector('#question').textContent=p[6];document.querySelector('#place-source').href=`https://www.openstreetmap.org/#map=15/${p[3]}/${p[2]}`;if(focus){const [x,y]=project(p[2],p[3]);view={x:x-W/4,y:y-H/4,w:W/2,h:H/2};}draw();};
+ document.querySelector('#plus').onclick=()=>zoom(.7);document.querySelector('#minus').onclick=()=>zoom(1/.7);document.querySelector('#reset').onclick=()=>{view={x:0,y:0,w:W,h:H};draw()};
+ host.addEventListener('keydown',e=>{const keys=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-','Home'];if(!keys.includes(e.key))return;e.preventDefault();if(e.key==='+'||e.key==='=')zoom(.7);else if(e.key==='-')zoom(1/.7);else if(e.key==='Home'){view={x:0,y:0,w:W,h:H};draw()}else{view.x+=e.key==='ArrowLeft'?-view.w*.1:e.key==='ArrowRight'?view.w*.1:0;view.y+=e.key==='ArrowUp'?-view.h*.1:e.key==='ArrowDown'?view.h*.1:0;draw()}});
+ let drag=null;host.addEventListener('pointerdown',e=>{if(e.target.closest('.marker'))return;drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};host.setPointerCapture(e.pointerId)});host.addEventListener('pointermove',e=>{if(!drag)return;const scale=Math.min(host.clientWidth/view.w,host.clientHeight/view.h);view.x=drag.vx-(e.clientX-drag.x)/scale;view.y=drag.vy-(e.clientY-drag.y)/scale;draw()});host.addEventListener('pointerup',()=>drag=null);host.addEventListener('pointercancel',()=>drag=null);
+ document.querySelectorAll('[data-layer]').forEach(input=>input.onchange=()=>{svg.querySelector('#'+input.dataset.layer).style.display=input.checked?'':'none'});
+ new ResizeObserver(draw).observe(host);choose('harbour',false);
+}catch(e){status.textContent='Interactive map unavailable. The static map and source notes remain available.';document.querySelectorAll('.map-toolbar button,[data-layer],.lessons button,#places').forEach(b=>b.disabled=true);console.warn('Atlas could not load',e);}

@@ -1,6 +1,6 @@
 // assembl lab · the home's point-cloud journey. One cloud, on a sticky stage behind the opening chapters: it assembles as Tāmaki
 // Makaurau Auckland in the hero (open map data at true scale, heights exaggerated; lab/pc/auckland.js), with callouts on real public
-// landmarks and the twins pinned on real sites of their kind as examples. It loosens into a calm field behind the doors and
+// landmarks. It loosens into a calm field behind the doors and
 // re-forms as the Plan Studio demo hall in the architecture chapter, where callouts (real DOM text) are tied to real parts of the
 // building by leader lines. Without WebGL, or with the script blocked, the page is the complete site-v2 story with a still of the
 // same map and the callouts as lists.
@@ -11,17 +11,24 @@ import { aucklandForm } from "./auckland.js";
 
 const run = document.querySelector(".pc-run"), canvas = document.getElementById("pc-canvas"), svg = document.querySelector(".pc-leaders"), root = document.documentElement;
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const TILT = 0.66, HERO_SWAY = 0.3;                  // the map seen from about 40° up; a slow sway, small so the map keeps its place
+const TILT = 0.72, HERO_SWAY = 0.12;                  // the map seen from about 40° up; a slow sway, small so the map keeps its place
 let engine;
-try { engine = createEngine(canvas, { reduceMotion: reduce }); } catch (e) { console.warn("Point cloud unavailable:", e.message); }
+try { if (!new URLSearchParams(location.search).has("poster")) engine = createEngine(canvas, { reduceMotion: reduce, budget: innerWidth < 760 ? 80000 : 180000, pixelRatio: Math.min(devicePixelRatio || 1, 1.5), sizeScale: .62 }); } catch (e) { console.warn("Point cloud unavailable:", e.message); }
 if (engine && run) start();
 
 async function start() {
   root.classList.add("pc-on");                        // the canvas stays transparent (opacity 0) until its first frame: the still shows
   engine.resize();                                    // the camera must know the stage's real shape before anything is placed
-  const phone = innerWidth < 760;
+  let phone = innerWidth < 760;
   let world;
   try { world = await aucklandForm(engine.N); } catch (e) { console.warn("Auckland points:", e.message); root.classList.remove("pc-on"); engine.dispose(); return; }
+  // Retain every source coordinate; tune only the visual weight. Settled mode removes distracting sparkles.
+  world.mode = new Float32Array(world.n).fill(8);
+  for (let i = 0; i < world.n; i++) world.light[i] *= world.pos[i * 3 + 1] < .0004 ? .45 : .72;
+  const detailWorld = { ...world, light: world.light.slice() };
+  const hb=world.header.nztmBounds,db=world.header.coneBoundsNZTM,mpu=world.header.metresPerUnit;
+  if(db) for(let i=0;i<world.n;i++){const x=world.pos[i*3]*mpu+(hb.minX+hb.maxX)/2,y=(hb.minY+hb.maxY)/2-world.pos[i*3+2]*mpu;if(x>db[0]&&x<db[2]&&y>db[1]&&y<db[3])world.light[i]*=.22;}
+  let heroView = "overview";
   const forms = { world, field: fieldForm(Math.min(engine.N, 160000)) };
   // where on screen a chapter wants the cloud
   const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), hit = new THREE.Vector3();
@@ -36,25 +43,36 @@ async function start() {
       let b = box(); scale *= Math.min((r.width * 0.94) / (b.x1 - b.x0), (r.height * 0.94) / (b.y1 - b.y0)); b = box();
       const a = worldAt((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2), t = worldAt(cx, cy); offset = [offset[0] + t[0] - a[0], offset[1] + t[1] - a[1], 0];
     }
-    return { offset, scale, tilt: TILT };
+    const tilt = heroView === "plan" ? 1.42 : TILT;
+    if (heroView === "city") {
+      scale *= 3.1;
+      const a = world.anchors.rangitoto, ct = Math.cos(tilt), st = Math.sin(tilt);
+      offset = worldAt(cx, cy); offset[0] -= a[0] * scale; offset[1] -= (ct * a[1] * .5 - st * a[2]) * scale;
+    }
+    return { offset, scale, tilt };
   }
   const heroBox = () => { const r = document.getElementById("hero-world")?.getBoundingClientRect(); return r && r.width > 40 ? r : { left: innerWidth * 0.45, right: innerWidth, top: 80, bottom: innerHeight, width: innerWidth * 0.55, height: innerHeight - 80 }; };
   const CH = {
-    hero: { el: document.getElementById("hero-title")?.closest("section"), form: () => forms.world, place: () => fitMap(heroBox()), sway: HERO_SWAY,
+    hero: { el: document.getElementById("hero-title")?.closest("section"), form: () => heroView === "city" ? detailWorld : forms.world, place: () => fitMap(heroBox()), sway: HERO_SWAY,
       lift: () => { const r = heroBox(); return [(r.left + r.width / 2) / innerWidth, 1 - (r.top + r.height / 2) / innerHeight]; } },
     jump: { el: document.getElementById("jump"), form: () => forms.field, place: () => ({ offset: [0, phone ? -0.3 : -0.42, 0.2], scale: 1 }), lift: () => [0.5, 0.25] },
-    arch: { el: document.getElementById("architecture"), form: () => forms.hall, place: () => { const x = slotX(document.querySelector(".arch-slot"), innerWidth * 0.33), p = worldAt(x, innerHeight * (phone ? 0.34 : 0.55)); return { offset: [p[0], p[1] - 0.16, 0], scale: phone ? 0.6 : 0.86 }; }, lift: () => [phone ? 0.5 : 0.32, 0.55] },
+    arch: { el: document.getElementById("architecture"), form: () => forms.hall, place: () => { const x = slotX(document.querySelector(".arch-slot"), innerWidth * 0.33), p = worldAt(x, innerHeight * (phone ? 0.34 : 0.55)); return { offset: [p[0], p[1] - 0.16, 0], scale: phone ? 0.6 : 0.76 }; }, lift: () => [phone ? 0.5 : 0.32, 0.55] },
   };
   let active = null, labelsOn = false, labelT, scanT, scanAt = 0, layout = null;
+  function clipHero() {
+    const r = heroBox();
+    canvas.style.clipPath = active === "hero" ? `inset(${Math.max(0,r.top)}px ${Math.max(0,innerWidth-r.right)}px ${Math.max(0,innerHeight-r.bottom)}px ${Math.max(0,r.left)}px round 24px)` : "none";
+  }
   function go(id, first = false) {
-    if (id === active || !CH[id]) return; const c = CH[id], f = c.form(); if (!f) return; active = id;
+    if (id === active || !CH[id]) return; const c = CH[id], f = c.form(); if (!f) return; active = id; root.dataset.pcChapter = id; clipHero();
     engine.resize(); const pl = c.place(); engine.setLift(...c.lift()); engine.setSway(c.sway ?? 1);
-    if (first) engine.assembleFrom(f, { ...pl, ms: 3200 }); else engine.setForm(f, { ...pl, ms: 2400 });
+    if (first) engine.assembleFrom(f, { ...pl, ms: 1800 }); else engine.setForm(f, { ...pl, ms: 1500 });
+    if (engine.paused) { engine.setForm(f, { ...pl, immediate: true }); engine.render(); } else engine.start();
     document.querySelectorAll(".arch-callout").forEach((el) => el.classList.toggle("on", id === "arch"));
     labelsOn = false; layout = null; clearTimeout(labelT); clearTimeout(scanT); hideLabels();
     if (id === "hero") {
-      const wait = reduce ? 0 : first ? 3300 : 2500;
-      labelT = setTimeout(() => { labelsOn = true; layoutLabels(); }, wait);
+      const wait = reduce ? 0 : first ? 1900 : 1600;
+      labelT = setTimeout(() => { labelsOn = true; layoutLabels(); if (reduce) { drawHero(performance.now()); engine.render(); } }, wait);
       // after it assembles, a reading scan passes over the map from the near shore to the far one
       scanT = setTimeout(() => { const [y0, y1] = scanRange(pl); engine.scan(3400, y0, y1); scanAt = performance.now(); }, reduce ? 0 : wait - 300);
     }
@@ -63,6 +81,11 @@ async function start() {
   // the map's height range on screen as the scan sees it (world y after the tilt)
   function scanRange(pl) { const ct = Math.cos(pl.tilt), st = Math.sin(pl.tilt); let a = Infinity, b = -Infinity; for (const p of sample) { const y = pl.offset[1] + pl.scale * (ct * p[1] - st * p[2]); if (y < a) a = y; if (y > b) b = y; } return [a - 0.03, b + 0.03]; }
 
+  document.querySelectorAll("[data-cloud-view]").forEach((button) => button.addEventListener("click", () => {
+    heroView = button.dataset.cloudView;
+    document.querySelectorAll("[data-cloud-view]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
+    if (active === "hero") { active = null; go("hero"); }
+  }));
   let shown = false;
   // which chapter holds the middle of the screen
   function pick() {
@@ -71,10 +94,10 @@ async function start() {
     if (best && (best !== "arch" || forms.hall)) go(best);
   }
   // (with motion paused no frames run, so the hero's labels are updated here as the page scrolls)
-  addEventListener("scroll", () => requestAnimationFrame(() => { pick(); if (engine.paused && active === "hero") drawHero(performance.now()); }), { passive: true });
+  addEventListener("scroll", () => requestAnimationFrame(() => { pick(); clipHero(); if (active === "hero") { const c = CH.hero; engine.setForm(c.form(), { ...c.place(), immediate: true }); drawHero(performance.now()); engine.render(); } }), { passive: true });
   // on resize the map is placed again at once; its labels step aside and come back placed for the new screen
   let relayT;
-  addEventListener("resize", () => { const c = active && CH[active]; if (c) { engine.resize(); engine.setForm(c.form(), { ...c.place(), immediate: true }); if (active === "hero" && labelsOn) { layout = null; hideLabels(); clearTimeout(relayT); relayT = setTimeout(layoutLabels, 350); } } });
+  addEventListener("resize", () => { phone = innerWidth < 760; clipHero(); const c = active && CH[active]; if (c) { engine.resize(); engine.setForm(c.form(), { ...c.place(), immediate: true }); if (reduce || engine.paused) engine.render(); if (active === "hero" && labelsOn) { layout = null; hideLabels(); clearTimeout(relayT); relayT = setTimeout(layoutLabels, 350); } } });
   // only draw while the opening run is on screen, and never in a hidden tab
   const pauseBtn = document.querySelector(".pc-pause");
   new IntersectionObserver(([e]) => { if (e.isIntersecting) engine.start(); else engine.stop(); pauseBtn?.classList.toggle("off-run", !e.isIntersecting); }, { rootMargin: "120px" }).observe(run);
@@ -83,8 +106,14 @@ async function start() {
   engine.onFrame = (now) => {
     // the canvas fades in only once it has drawn a frame (no black or empty box in between). The still, framed exactly as the live
     // map, stays while the points fly in and land on it, then steps aside: no seam between the picture and the cloud
-    if (!shown) { shown = true; requestAnimationFrame(() => root.classList.add("pc-live")); setTimeout(() => root.classList.add("pc-ready"), reduce ? 0 : 2900); }
-    if (active === "hero") return drawHero(now);
+    if (!shown) { shown = true; requestAnimationFrame(() => root.classList.add("pc-live")); setTimeout(() => root.classList.add("pc-ready"), reduce ? 0 : 1700); }
+    if (reduce) engine.stop();
+    if (active === "hero") {
+      const r = heroBox();
+      canvas.style.clipPath = `inset(${Math.max(0,r.top)}px ${Math.max(0,innerWidth-r.right)}px ${Math.max(0,innerHeight-r.bottom)}px ${Math.max(0,r.left)}px round 24px)`;
+      return drawHero(now);
+    }
+    canvas.style.clipPath = "none";
     if (active !== "arch" || !forms.hall || engine.morphing()) { svg.replaceChildren(); return; }
     const parts = [];
     for (const el of callouts) {
@@ -127,12 +156,12 @@ async function start() {
     const avoid = [...document.querySelectorAll(".hero .v2-eyebrow, .hero h1, .hero .lede, .hero .actions, .hero .truth-note, .hero .hero-tags, .v2-nav, .pc-pause, .hero-credit, .hero-key, .askb")]
       .map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.bottom > 0 && r.top < H);
     // and the Sky Tower itself, top to foot: no label may hide it
-    const sk = forms.world.anchors.skytower; if (sk) { const t = engine.project(sk), b = engine.project([sk[0], 0, sk[2]]); avoid.push({ left: Math.min(t.x, b.x) - 10, right: Math.max(t.x, b.x) + 10, top: t.y, bottom: b.y, body: true }); }
+    const sk = forms.world.anchors.citycentre; if (sk) { const t = engine.project(sk), b = engine.project([sk[0], 0, sk[2]]); avoid.push({ left: Math.min(t.x, b.x) - 10, right: Math.max(t.x, b.x) + 10, top: t.y, bottom: b.y, body: true }); }
     // who claims space first: the two tallest landmarks and the harbour's name, then every twin (small, and never dropped), then the
     // other landmarks (each falls back to its name alone)
-    const RANK = ["skytower", "rangitoto", "waitemata", "ed", "cars", "store", "cafe", "retail", "stay", "office", "viaduct", "moving", "bridge", "maungawhau"], rank = (l) => { const i = RANK.indexOf(l.key); return i < 0 ? 99 : i; };
-    const items = labels.filter((l) => anchorOf(l)).sort((a, b) => rank(a) - rank(b));
-    labels.forEach((l) => { l.el.classList.toggle("compact", !l.pin && (!roomy || l.key === "waitemata")); l.el.classList.toggle("dot", l.pin && phone); });   // the harbour: its name on the water, as on a chart
+    const RANK = ["citycentre", "rangitoto", "waitemata", "ed", "cars", "store", "cafe", "retail", "stay", "office", "viaduct", "moving", "maungawhau", "maungawhau"], rank = (l) => { const i = RANK.indexOf(l.key); return i < 0 ? 99 : i; };
+    const items = labels.filter((l) => anchorOf(l) && (heroView !== "city" || l.key === "rangitoto")).sort((a, b) => rank(a) - rank(b));
+    labels.forEach((l) => { l.el.classList.toggle("compact", !l.pin); l.el.classList.toggle("dot", l.pin && phone); });   // the harbour: its name on the water, as on a chart
     const pts = new Map(items.map((l) => [l, engine.project(anchorOf(l))]));
     const placed = [], lines = []; layout = new Map();
     const hits = (r, a, pad = 8) => !(r.right + pad < a.left || r.left - pad > a.right || r.bottom + pad < a.top || r.top - pad > a.bottom);
@@ -179,7 +208,7 @@ async function start() {
   }
   function drawHero(now) {
     // on a phone the words scroll up over the map at once, so the labels step aside as soon as the page moves
-    const show = labelsOn && layout && !engine.morphing() && scrollY < (innerWidth < 760 ? 40 : innerHeight * 0.55); const parts = [];
+    const show = innerWidth >= 760 && labelsOn && layout && !engine.morphing() && scrollY < (innerWidth < 760 ? 40 : innerHeight * 0.55); const parts = [];
     for (const l of labels) {
       const off = show && layout.get(l); l.el.classList.toggle("on", !!off); if (!off) continue;
       const p = engine.project(anchorOf(l)), x = Math.round(p.x + off[0]), y = Math.round(p.y + off[1]);
@@ -206,11 +235,13 @@ async function start() {
     }
   }
   // go: the first chapter assembles from a scatter
+  canvas.addEventListener("webglcontextlost", (event) => { event.preventDefault(); engine.stop(); root.classList.remove("pc-on", "pc-live", "pc-ready"); document.querySelectorAll("[data-cloud-view]").forEach(b => b.disabled = true); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) engine.stop(); else if (!engine.paused) engine.start(); });
   engine.start(); go("hero", true);
   // the hall is built from the studio's own model code, after the first paint
   hallForm(engine.N).then((h) => { forms.hall = h; pick(); }).catch((e) => console.warn("Hall form:", e.message));
   // Pause motion (icon only)
   const pause = document.querySelector(".pc-pause");
   pause?.removeAttribute("hidden");
-  pause?.addEventListener("click", () => { const p = !engine.paused; engine.pause(p); pause.setAttribute("aria-pressed", String(p)); pause.setAttribute("aria-label", p ? "Play motion" : "Pause motion"); });
+  pause?.addEventListener("click", () => { const p = !engine.paused; engine.setStill(p); engine.pause(p); pause.setAttribute("aria-pressed", String(p)); pause.setAttribute("aria-label", p ? "Play motion" : "Pause motion"); });
 }

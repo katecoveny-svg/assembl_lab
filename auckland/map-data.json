@@ -1,0 +1,22 @@
+{
+  "area": {
+    "west": 174.668,
+    "east": 174.905,
+    "south": -36.93,
+    "north": -36.762
+  },
+  "width": 1200,
+  "height": 1063,
+  "zoom": 13,
+  "tiles": 42,
+  "tileTemplate": "https://tiles.openfreemap.org/planet/20261101_080013_pt/{z}/{x}/{y}.pbf",
+  "built": "2026-11-08T22:05:30.355Z",
+  "licence": "ODbL 1.0",
+  "attribution": "OpenFreeMap © OpenMapTiles · © OpenStreetMap contributors",
+  "features": {
+    "park": 638,
+    "water": 280,
+    "building": 32,
+    "transportation": 7228
+  }
+}

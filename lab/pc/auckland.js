@@ -1,12 +1,8 @@
-// assembl lab · Tāmaki Makaurau Auckland as a point-cloud form, read from the baked points file (tools/pointcloud/bake-auckland.mjs →
-// assets/models/auckland/auckland-points.{json,bin}). Terrain, coastline and buildings are open data (LINZ via AWS Terrain Tiles;
-// OpenStreetMap via OpenFreeMap). Heights are exaggerated 5× (header.verticalExaggeration);
-// the Sky Tower and the Harbour Bridge are modelled from their published dimensions.
-// The file is in a weighted random order, so a phone asks for just the first n points (an HTTP Range request) and still gets the
-// whole map; a server that ignores Range sends it all and the rest is simply not used.
+// Terrain-only form from offline LINZ national DEM overview sampling. See linz-terrain.json for provenance.
+// Heights exaggerated 5x; no building heights or modelled landmarks. Not raw LiDAR returns.
 import { makeForm } from "./engine.js";
 
-const BASE = "/assets/models/auckland/auckland-points";
+const BASE = "/assets/models/auckland/linz-terrain";
 let headerP = null;
 export const aucklandHeader = () => (headerP ??= fetch(BASE + ".json").then((r) => { if (!r.ok) throw new Error("auckland header " + r.status); return r.json(); }));
 

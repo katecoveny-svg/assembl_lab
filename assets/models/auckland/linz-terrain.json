@@ -1,0 +1,182 @@
+{
+  "waterMask": {
+    "source": "https://tiles.openfreemap.org/planet/20261101_080013_pt/{z}/{x}/{y}.pbf",
+    "licence": "ODbL 1.0",
+    "attribution": "OpenFreeMap © OpenMapTiles · © OpenStreetMap contributors",
+    "method": "OSM polygon even-odd containment; mapped water omitted regardless of elevation; low land preserved"
+  },
+  "verticalDatum": "NZVD2016 (EPSG:7839), per LINZ national DEM documentation",
+  "datasetDocumentation": "https://data.linz.govt.nz/layer/121859-new-zealand-lidar-1m-dem/",
+  "format": "assembl-points/1",
+  "count": 145087,
+  "stride": 8,
+  "bounds": {
+    "x": [
+      -1.0468883547008545,
+      1.0468821022727297
+    ],
+    "y": [
+      -0.0005326631379161935,
+      0.12612818769396714
+    ],
+    "z": [
+      -0.9281250000000001,
+      0.9281250000000001
+    ]
+  },
+  "area": {
+    "west": 174.668,
+    "east": 174.905,
+    "south": -36.93,
+    "north": -36.762
+  },
+  "nztmBounds": {
+    "minX": 1748544,
+    "maxX": 1770048,
+    "minY": 5911168,
+    "maxY": 5930240
+  },
+  "metresPerUnit": 10240,
+  "verticalExaggeration": 5,
+  "spacingMetres": 64,
+  "coneSpacingMetres": 16,
+  "coneBoundsNZTM": [
+    1762964.2877963316,
+    5924142.465224072,
+    1768964.2877963316,
+    5930142.465224072
+  ],
+  "anchors": {
+    "citycentre": [
+      -0.20268544592361196,
+      0.011805229168654088,
+      0.02302749453310753
+    ],
+    "rangitoto": [
+      0.6507513507219301,
+      0.10077341845097665,
+      -0.6286161818497931
+    ],
+    "maungawhau": [
+      -0.19901249275371813,
+      0.07965995640677545,
+      0.33091845806793574
+    ]
+  },
+  "sites": {},
+  "sources": [
+    {
+      "code": "BA31",
+      "url": "https://nz-elevation.s3.ap-southeast-2.amazonaws.com/new-zealand/new-zealand/dem_1m/2193/BA31.json",
+      "properties": {
+        "created": "2024-12-03T00:51:13Z",
+        "updated": "2026-01-18T17:04:26Z",
+        "processing:datetime": "2026-01-18T17:04:26Z",
+        "processing:software": {
+          "gdal": "GDAL 3.10.3, released 2025/04/01",
+          "linz/topo-imagery": "https://github.com/linz/topo-imagery/commit/e0bac515cfb3e5ceebf4d5bba3ac5d41ac633b34"
+        },
+        "processing:version": "v7.14.0",
+        "start_datetime": "2016-08-15T12:00:00Z",
+        "end_datetime": "2024-06-26T12:00:00Z",
+        "datetime": null
+      },
+      "checksum": "1220c1a264b8d6eb7f693263776eb7fa05dc1418884e682a57149bf556b4cfd83fa8",
+      "geoKeys": {
+        "GTModelTypeGeoKey": 1,
+        "GTRasterTypeGeoKey": 1,
+        "GTCitationGeoKey": "NZGD2000 / New Zealand Transverse Mercator 2000",
+        "GeogCitationGeoKey": "NZGD2000",
+        "GeogAngularUnitsGeoKey": 9102,
+        "ProjectedCSTypeGeoKey": 2193,
+        "ProjLinearUnitsGeoKey": 9001
+      },
+      "surveys": [
+        "auckland-south_2016-2017",
+        "auckland-north_2016-2018",
+        "auckland-part-1_2024"
+      ]
+    },
+    {
+      "code": "BA32",
+      "url": "https://nz-elevation.s3.ap-southeast-2.amazonaws.com/new-zealand/new-zealand/dem_1m/2193/BA32.json",
+      "properties": {
+        "created": "2024-12-03T00:51:13Z",
+        "updated": "2026-01-18T17:04:26Z",
+        "processing:datetime": "2026-01-18T17:04:26Z",
+        "processing:software": {
+          "gdal": "GDAL 3.10.3, released 2025/04/01",
+          "linz/topo-imagery": "https://github.com/linz/topo-imagery/commit/e0bac515cfb3e5ceebf4d5bba3ac5d41ac633b34"
+        },
+        "processing:version": "v7.14.0",
+        "start_datetime": "2016-08-15T12:00:00Z",
+        "end_datetime": "2024-11-03T11:00:00Z",
+        "datetime": null
+      },
+      "checksum": "12203c69c37279be6fd15b101d5e59bef559551b08d365835f8d2bb848e13e6f13cf",
+      "geoKeys": {
+        "GTModelTypeGeoKey": 1,
+        "GTRasterTypeGeoKey": 1,
+        "GTCitationGeoKey": "NZGD2000 / New Zealand Transverse Mercator 2000",
+        "GeogCitationGeoKey": "NZGD2000",
+        "GeogAngularUnitsGeoKey": 9102,
+        "ProjectedCSTypeGeoKey": 2193,
+        "ProjLinearUnitsGeoKey": 9001
+      },
+      "surveys": [
+        "auckland-south_2016-2017",
+        "auckland-north_2016-2018",
+        "auckland-part-1_2024",
+        "auckland-part-2_2024"
+      ]
+    },
+    {
+      "code": "BA32",
+      "url": "https://nz-elevation.s3.ap-southeast-2.amazonaws.com/new-zealand/new-zealand/dem_1m/2193/BA32.json",
+      "properties": {
+        "created": "2024-12-03T00:51:13Z",
+        "updated": "2026-01-18T17:04:26Z",
+        "processing:datetime": "2026-01-18T17:04:26Z",
+        "processing:software": {
+          "gdal": "GDAL 3.10.3, released 2025/04/01",
+          "linz/topo-imagery": "https://github.com/linz/topo-imagery/commit/e0bac515cfb3e5ceebf4d5bba3ac5d41ac633b34"
+        },
+        "processing:version": "v7.14.0",
+        "start_datetime": "2016-08-15T12:00:00Z",
+        "end_datetime": "2024-11-03T11:00:00Z",
+        "datetime": null
+      },
+      "checksum": "12203c69c37279be6fd15b101d5e59bef559551b08d365835f8d2bb848e13e6f13cf",
+      "geoKeys": {
+        "GTModelTypeGeoKey": 1,
+        "GTRasterTypeGeoKey": 1,
+        "GTCitationGeoKey": "NZGD2000 / New Zealand Transverse Mercator 2000",
+        "GeogCitationGeoKey": "NZGD2000",
+        "GeogAngularUnitsGeoKey": 9102,
+        "ProjectedCSTypeGeoKey": 2193,
+        "ProjLinearUnitsGeoKey": 9001
+      },
+      "surveys": [
+        "auckland-south_2016-2017",
+        "auckland-north_2016-2018",
+        "auckland-part-1_2024",
+        "auckland-part-2_2024"
+      ]
+    }
+  ],
+  "built": "2026-11-08T23:03:42.364Z",
+  "licence": "CC-BY-4.0",
+  "provider": [
+    {
+      "name": "Toitū Te Whenua Land Information New Zealand",
+      "roles": [
+        "host",
+        "licensor",
+        "processor",
+        "producer"
+      ]
+    }
+  ],
+  "collection": "https://nz-elevation.s3.ap-southeast-2.amazonaws.com/new-zealand/new-zealand/dem_1m/2193/collection.json",
+  "limitations": "Bare-earth DEM, overview sampled at approximately 64 m, bilinearly interpolated within cells for irregular point spacing. Not raw LiDAR points. Missing data omitted, not filled with sea level. No buildings/tower/bridge. Heights visually exaggerated 5x. Acquisition varies by contributing survey; see sheet metadata."
+}
