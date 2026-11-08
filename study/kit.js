@@ -350,6 +350,11 @@ function arButton(api,cfg,want){const S=api.s3;if(!S||cfg.ar===false)return;cons
   if(!document.getElementById("s3-ar-css")){const st=document.createElement("style");st.id="s3-ar-css";
     st.textContent=".s3-ar{position:absolute;right:10px;bottom:8px;z-index:4;pointer-events:auto;max-width:calc(100% - 20px)}.s3-ar .aar-btn{box-shadow:0 2px 0 rgba(27,36,82,.08);padding:7px 14px 7px 10px;font-size:13px;gap:7px;min-height:0}.s3-ar .aar-btn svg{width:18px;height:18px}@media (max-width:820px){.s3-ar{right:6px;bottom:5px}.s3-ar .aar-btn{padding:5px 10px 5px 8px;font-size:11.5px}.s3-ar .aar-btn svg{width:15px;height:15px}}";document.head.appendChild(st)}
   const slot=document.createElement("div");slot.className="s3-ar";host.appendChild(slot);
+  // machines that are also assembl AR worlds get the world's own files: on your desk, or at real size (or giant)
+  const AW={windtunnel:"f1",claw:"claw",earthspace:"earth"}[MID];
+  if(AW&&!cfg.ar){if(!document.getElementById("s3-arw-css")){const st=document.createElement("style");st.id="s3-arw-css";st.textContent=".s3-ar .war{margin:0;gap:6px;justify-content:flex-end}.s3-ar .war-btn{min-height:0;padding:7px 13px 7px 9px;font-size:13px;gap:6px}.s3-ar .war-btn svg{width:17px;height:17px}.s3-ar .war-pop{top:auto;bottom:calc(100% + 10px);left:auto;right:0}@media (max-width:820px){.s3-ar .war-btn{padding:5px 10px 5px 8px;font-size:11.5px}.s3-ar .war-btn svg{width:15px;height:15px}}";document.head.appendChild(st)}
+    import("/ar/worlds/button.js").then(m=>{const c=m.worldButton(slot,{world:AW,variant:"light",labels:{table:matchMedia("(max-width: 820px)").matches?"View in AR":"On your desk"}});api.ar=c;
+      if(want)setTimeout(()=>{try{slot.scrollIntoView({behavior:"smooth",block:"center"});c.el.querySelector("button").focus({preventScroll:true})}catch(e){}},800)}).catch(e=>{slot.remove();console.warn("AR unavailable",e)});return}
   import("/ar/embed.js").then(m=>{const AR=m.default||m,o=cfg.ar||{};
     const what=o.model?{model:o.model,params:o.params||{},scale:o.scale||"real"}:o.build?{object:()=>o.build(S),unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"real"}
       :{object:()=>S.scene,camera:()=>S.camera,unitsPerMetre:o.unitsPerMetre||1,scale:o.scale||"table"};
