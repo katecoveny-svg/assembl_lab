@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>assembl AR world</title>
+<meta name="description" content="Open an assembl world in augmented reality: on your table, or step inside at life size. iPhone, iPad and Android, in the phone's own browser, no app.">
+<meta name="theme-color" content="#21121F">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/ar/worlds/worlds.css">
+<style>html,body{margin:0;background:#21121F}*{box-sizing:border-box}.skip{position:absolute;left:-9999px;top:8px;background:#F9F6F2;color:#21121F;padding:8px 14px;border-radius:999px;z-index:99}.skip:focus{left:16px}</style>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<script src="/lab/navigation.js" defer></script>
+</head>
+<body class="worlds-scope">
+<a class="skip" href="#wl-info">Skip to the world</a>
+<div class="wl">
+  <div class="w-wrap wl-top"><a href="/ar/">← assembl AR worlds</a><span class="w-eyebrow"><b>assembl ar</b></span></div>
+  <main class="w-wrap wl-main">
+    <section class="wl-stage wl-desk" id="wl-stage" aria-label="3D preview">
+      <div class="wl-tags" id="wl-tags"></div>
+      <div class="wl-over"><span class="wl-status" id="wl-status"></span></div>
+      <p class="wl-hint" id="wl-hint"></p>
+      <div class="wl-load" id="wl-load" role="status"><div><span id="wl-load-t">Building…</span><div class="bar"><i></i></div></div></div>
+      <div class="wl-learn" id="wl-learn" role="dialog" aria-labelledby="wl-learn-t" hidden><button type="button" aria-label="Close">×</button><h3 id="wl-learn-t"></h3><p></p></div>
+    </section>
+    <section class="wl-info" id="wl-info" tabindex="-1">
+      <img class="wl-phone" id="wl-poster-phone" alt="" width="640" height="480" style="width:100%;height:auto;border-radius:24px;margin-bottom:16px;background:#180B18">
+      <p class="w-eyebrow"><span>World</span><span id="wl-device"></span></p>
+      <h1 id="wl-name">assembl AR</h1>
+      <p class="wl-line" id="wl-line"></p>
+      <div class="w-chips" id="wl-chips"></div>
+      <p class="wl-sos" id="wl-sos" role="note" hidden></p>
+      <div class="wl-phone"><div class="wl-big" id="wl-big"></div><p class="w-msg" id="wl-msg" role="status" aria-live="polite"></p></div>
+      <div class="wl-desk" id="wl-sheet"></div>
+      <div class="wl-about">
+        <h2>Why this one</h2><p id="wl-why"></p>
+        <p>From <a id="wl-from" href="/ar/"></a> in the lab.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="w-wrap wl-foot"><p id="wl-credit"></p><p>assembl lab · an experiment · this page records nothing</p></footer>
+</div>
+<script type="module" src="/ar/worlds/launcher.js"></script>
+</body>
+</html>
