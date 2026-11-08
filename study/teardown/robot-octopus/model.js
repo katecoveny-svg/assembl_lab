@@ -4,6 +4,7 @@ export const ARM_LENGTH = 24;
 export function sample(time, {frequency = .5, wavelength = 12, mode = 'ripple'} = {}) {
   if (!Number.isFinite(time) || !Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(wavelength) || wavelength <= 0) throw new RangeError('Finite time and positive frequency/wavelength required');
   return {time, frequency, wavelength, speed: frequency * wavelength, period: 1 / frequency,
+    wave: Array.from({length:81},(_,j)=>({fraction:j/80, displacement: Math.sin(TAU*(j/80*ARM_LENGTH/wavelength-frequency*time))})),
     arms: Array.from({length: 8}, (_, arm) => Array.from({length: 17}, (_, j) => {
       const distance = j / 16 * ARM_LENGTH;
       const phase = TAU * (distance / wavelength - frequency * time + (mode === 'ripple' ? arm / 8 : 0));

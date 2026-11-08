@@ -60,7 +60,7 @@ function render(now){
    positions.forEach((p,j)=>{const r=.11*(1-j/22);joints[j].position.copy(p);joints[j].scale.setScalar(r);if(j<16){const next=positions[j+1],link=links[j];link.position.copy(p).add(next).multiplyScalar(.5);dir.subVectors(next,p);link.quaternion.setFromUnitVectors(unitY,dir.clone().normalize());link.scale.set(r*.9,dir.length(),r*.9);pads[j].position.copy(link.position);pads[j].position.y-=r*.9;pads[j].scale.setScalar(1-j/24);}});
   }controls.update();renderer.render(scene,camera);
  }
- const points=Array.from({length:81},(_,j)=>{const x=j/80*280,distance=j/80*24,y=32-Math.sin(TAU*(distance/params.wavelength-params.frequency*clock))*20;return `${j?'L':'M'}${x.toFixed(1)},${y.toFixed(1)}`;});$('wavePath').setAttribute('d',points.join(' '));
+ const points=s.wave.map((p,j)=>`${j?'L':'M'}${(p.fraction*280).toFixed(1)},${(32-p.displacement*20).toFixed(1)}`);$('wavePath').setAttribute('d',points.join(' '));
  requestAnimationFrame(render);
 }
 updateUI();requestAnimationFrame(render);
