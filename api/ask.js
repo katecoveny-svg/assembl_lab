@@ -5,6 +5,7 @@ const MODEL = process.env.ASK_MODEL || "claude-haiku-5-5";
 const DAILY_CAP = +(process.env.DAILY_CAP || 300), PER_VISITOR = +(process.env.PER_VISITOR || 2);
 const PAGES = {
   home: "the Kiwi home energy twin: a simulated NZ house heating through a winter's night, with insulation, heat pump, hot water, solar and battery options and paybacks. Uses live Auckland weather and the wholesale power price where shown.",
+  moving: "Moving house: a simulated NZ rental move across Auckland (search, viewing, application, bond, movers, power and internet, change of address) by a fictional Example tenant; businesses are generic; rents are Tenancy Services medians labelled Latest published. Not tenancy advice: point people to Tenancy Services.",
   kitchen: "the kitchen machine: a food planner for NZ households (kids' weeks, trips away) priced with Stats NZ food price figures, producing a shopping list.",
   food: "Food Flow Aotearoa: where NZ household food goes, food waste costs, food rescue and hardship grants. Simulated with public figures.",
   everyday: "Every Day Counts: NZ school attendance, why kids miss school, and healthy sleep, screen time and movement guidelines.",
@@ -13,6 +14,7 @@ const PAGES = {
   dairy: "the dairy plant twin: a generic, simulated NZ milk-powder plant through the season (evaporators, spray dryer, boilers, power price, farmgate link), not any real company.",
   study: "assembly study machines by assembl: interactive visual study tools for NZ secondary students (forces with downhill bikes, waves with vinyl, probability with a claw machine, density and light with fishing, AI, English, maps, economics, reading).",
   store: "the supermarket twin: a simulated suburban NZ supermarket through the day (checkout queues, markdowns, food rescue at close, chiller doors), not any real retailer.",
+  delivery: "Supermarket order to doorstep: one simulated online grocery order on an Example Tuesday over real Auckland streets (terrain and streets from open data), from picking and a substitution to a van route to six fictional households and one missed delivery; six small agents draft and recommend, and every message to a customer stays a draft until a person says yes. The supermarket is an example on a real site of its kind, not a model of any retailer.",
   cafe: "the café and restaurant twin: a fictional NZ café by day and restaurant by night (queues, espresso machine, kitchen pass, roster, food waste, weekly P&L) with proposed changes; figures are simulated except where labelled with Stats NZ or other sources.",
   tourism: "the Aotearoa tourism flow simulator: a 3D map of NZ visitor flows by region and month built on Stats NZ international travel and MBIE accommodation and spend data, with simulated what-ifs and frozen forecasts.",
   stay: "the accommodation twin: a fictional NZ boutique lodge, motel and holiday park simulated booking by booking (check-in queue, housekeeping, OTA commission, direct bookings) benchmarked against MBIE accommodation occupancy for the chosen region.",
