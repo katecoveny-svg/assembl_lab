@@ -5,6 +5,7 @@ const MODEL = process.env.ASK_MODEL || "claude-haiku-5-5";
 const DAILY_CAP = +(process.env.DAILY_CAP || 300), PER_VISITOR = +(process.env.PER_VISITOR || 2);
 const PAGES = {
   home: "the Kiwi home energy twin: a simulated NZ house heating through a winter's night, with insulation, heat pump, hot water, solar and battery options and paybacks. Uses live Auckland weather and the wholesale power price where shown.",
+  moving: "Moving house: a simulated NZ rental move across Auckland (search, viewing, application, bond, movers, power and internet, change of address) by a fictional Example tenant; businesses are generic; rents are Tenancy Services medians labelled Latest published. Not tenancy advice: point people to Tenancy Services.",
   kitchen: "the kitchen machine: a food planner for NZ households (kids' weeks, trips away) priced with Stats NZ food price figures, producing a shopping list.",
   food: "Food Flow Aotearoa: where NZ household food goes, food waste costs, food rescue and hardship grants. Simulated with public figures.",
   everyday: "Every Day Counts: NZ school attendance, why kids miss school, and healthy sleep, screen time and movement guidelines.",

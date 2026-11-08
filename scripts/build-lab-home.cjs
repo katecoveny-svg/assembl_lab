@@ -53,6 +53,7 @@ const STAGE = [
 const MORE_TWINS = [
   { id: 'delivery', line: 'One grocery order, picked, swapped and driven over real Auckland streets.' },
   { id: 'retail', line: 'The trade yard at 6am, the empty bins at 4pm.' },
+  { id: 'moving', line: 'One tenant moves across Auckland, and never says anything twice.' },
   { id: 'stay', line: 'Bookings, cleaning, check-in and what each booking site takes.' },
   { id: 'office', line: 'Three floors, 120 desks, and the commute that fills them.' },
   { id: 'tourism', line: 'Visitors, guest nights and spend, region by region.' },
