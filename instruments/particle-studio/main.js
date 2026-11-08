@@ -62,7 +62,7 @@ async function boot() {
     curTargets = null; setMorph(true);
     emitAnchors = ef.anchors;
     // a warm start when the emitters were reset: short-lived particles are spread along their paths, not one blob at the spout
-    if (warm && s.emitters.some((e) => e.life)) for (let i = 0; i < 70; i++) sim.step(1 / 30);
+    if (warm && s.emitters.some((e) => e.life)) for (let i = 0; i < 150; i++) sim.step(1 / 30);
     api.N = sim.N; $("#ps-stat-budget").textContent = s.budget === "auto" ? `auto · ${fmtN(sim.N)}` : `fixed · ${fmtN(sim.N)}`;
     if (reduce || paused) settle();
     placeHandles();
@@ -288,7 +288,8 @@ async function boot() {
   $("#x-copy-code").addEventListener("click", async () => { try { await navigator.clipboard.writeText(code); toast("Code copied"); } catch { toast("Could not reach the clipboard"); } });
   $("#x-dl-code").addEventListener("click", () => X.download(new Blob([code], { type: "text/javascript" }), `${X.slug(spec.name)}.design.js`));
   $$("[data-png]").forEach((b) => b.addEventListener("click", () => { const k = +b.dataset.png; placeCamera(sim.time); const cv = sim.still(k); cv.toBlob((blob) => { X.download(blob, `${X.slug(spec.name)}@${k}x.png`); toast(`PNG ${cv.width}×${cv.height} saved`); }, "image/png"); }));
-  $$("[data-webm]").forEach((b) => b.addEventListener("click", async () => { const s = +b.dataset.webm, rec = $("#x-rec"); rec.hidden = false; dlg.close(); try { const blob = await X.recordCanvas(canvas, s, (k) => (rec.textContent = `recording ${Math.round(k * s)} / ${s} s`)); X.download(blob, `${X.slug(spec.name)}-${s}s.webm`); toast("WebM saved"); } catch (e) { toast(e.message); } rec.hidden = true; }));
+  $$("[data-webm]").forEach((b) => b.addEventListener("click", async () => { const s = +b.dataset.webm, rec = $("#x-rec"); rec.hidden = false; dlg.close(); try { const blob = await X.recordCanvas(canvas, s, { onTick: (k) => (rec.textContent = `recording ${Math.round(k * s)} / ${s} s`), onFrame: (fn) => (afterDraw = fn) }); X.download(blob, `${X.slug(spec.name)}-${s}s.webm`); toast(`WebM saved (${(blob.size / 1e6).toFixed(1)} MB)`); } catch (e) { toast(e.message); } afterDraw = null; rec.hidden = true; }));
+  let afterDraw = null;
   let baked = { a: null, b: null };
   async function bake(slot) {
     const count = +$("#x-count").value; placeCamera(sim.time);
@@ -321,10 +322,11 @@ async function boot() {
     const dt = Math.min(1 / 30, Math.max(0.001, (now - last) / 1000)); last = now; frames++;   // a slow device slows the system down; it never blows up
     if (now - fpsT > 1000) { api.fps = Math.round(frames * 1000 / (now - fpsT)); $("#ps-stat-fps").textContent = paused || reduce ? "still" : `${api.fps} fps`; $("#ps-stat-n").textContent = `${fmtN(aliveEstimate())} points`; frames = 0; fpsT = now; }
     if (document.hidden || !spec) return;
+    if ((paused || reduce) && afterDraw) { sim.draw(); afterDraw(); }
     if (!paused && !reduce) {
       if (tl.playing && !tl.scrubbing) { tl.t += dt / spec.timeline.seconds; if (tl.t >= 1) tl.t = spec.timeline.loop ? tl.t - 1 : 1; scrub.value = Math.round(tl.t * 1000); }
       timeOut.value = `${(tl.t * spec.timeline.seconds).toFixed(1)} s`;
-      setMorph(); sim.step(dt); placeCamera(sim.time); sim.draw(); placeHandles();
+      setMorph(); sim.step(dt); placeCamera(sim.time); sim.draw(); placeHandles(); afterDraw?.();
       // the budget follows the frame time: halve when slow, climb when there is room (auto only, never under a fixed budget)
       ema = ema * 0.92 + dt * 1000 * 0.08;
       if (spec.budget === "auto" && !fixed && now - lastChange > 4000 && now > 5000) {
@@ -346,6 +348,7 @@ async function boot() {
   else if (shared) setSpec(shared, { reset: true });
   else setSpec(clone((presetById(params.get("preset")) || PRESETS[0]).spec), { reset: true });
   addEventListener("hashchange", async () => { const s = X.seedFromHash(location.hash); if (s != null) return setSpec(surprise(s), { reset: true }); const sh = await X.decodeShare(location.hash); if (sh) setSpec(sh, { reset: true }); });
+  api.seek = (t) => { tl.t = Math.min(1, Math.max(0, t)); scrub.value = Math.round(tl.t * 1000); setMorph(); if (paused || reduce) settle(150); };
   api.loadPreset = loadPreset; api.loadSurprise = loadSurprise; api.setCode = (c) => { editor.set(c); applyCode(c, true); }; api.ready = true;
   root.classList.add("ps-on");
   requestAnimationFrame(frame);

@@ -101,13 +101,17 @@ export async function decodeShare(hash) {
 export const seedFromHash = (hash) => { const m = /(?:^|[#&])seed=(\d+)/.exec(hash); return m ? +m[1] : null; };
 
 // --- a short WebM of the canvas (MediaRecorder); resolves to a Blob
-export function recordCanvas(canvas, seconds, onTick) {
+// Frames are requested by hand after each draw (captureStream(0) + requestFrame), so the recording follows the real frame loop
+// whatever the browser decides a WebGL canvas has changed. `onFrame` receives the function to call after each draw.
+export function recordCanvas(canvas, seconds, { onTick, onFrame } = {}) {
   return new Promise((resolve, reject) => {
     if (!("MediaRecorder" in window) || !canvas.captureStream) return reject(new Error("This browser cannot record a canvas (MediaRecorder is missing)."));
-    const stream = canvas.captureStream(30), mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
-    const rec = new MediaRecorder(stream, { mimeType: mime || undefined, videoBitsPerSecond: 12_000_000 }), chunks = [];
+    const stream = canvas.captureStream(0), track = stream.getVideoTracks()[0], mime = ["video/webm;codecs=vp8", "video/webm;codecs=vp9", "video/webm"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
+    const rec = new MediaRecorder(stream, { mimeType: mime || undefined, videoBitsPerSecond: 10_000_000 }), chunks = [];
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data); rec.onerror = (e) => reject(e.error || new Error("recording failed"));
-    rec.onstop = () => resolve(new Blob(chunks, { type: mime || "video/webm" }));
-    rec.start(250); const t0 = performance.now(); const tick = () => { const k = Math.min(1, (performance.now() - t0) / (seconds * 1000)); onTick?.(k); if (k < 1) requestAnimationFrame(tick); else rec.stop(); }; tick();
+    rec.onstop = () => { onFrame?.(null); track.stop(); resolve(new Blob(chunks, { type: mime || "video/webm" })); };
+    const request = () => { try { track.requestFrame?.(); } catch {} };
+    rec.start(250); onFrame?.(request); request();
+    const t0 = performance.now(); const tick = () => { const k = Math.min(1, (performance.now() - t0) / (seconds * 1000)); onTick?.(k); if (k < 1) requestAnimationFrame(tick); else rec.stop(); }; tick();
   });
 }
