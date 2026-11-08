@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {at,checks,G} from '../../../study/teardown/pendulum/model.js';
+const close=(a,b,eps=1e-10)=>assert.ok(Math.abs(a-b)<eps,`${a} != ${b}`);
+test('pendulum hand calculations pass',()=>{for(const c of checks())assert.ok((c.abs?Math.abs(c.got-c.want):Math.abs(c.got-c.want)/(Math.abs(c.want)||1))<=c.tol,c.name);});
+test('energy conservation across all controls and phases',()=>{for(const length of [.3,.6,1])for(const mass of [.1,.5,1])for(const amplitude of [2,8,10])for(let p=0;p<360;p+=3){const s=at(p,{length,mass,amplitude});close(s.K+s.U,s.E);close(s.x*s.x+s.y*s.y,length*length);assert.ok(s.K>=0&&s.U>=0);}});
+test('period scales with square root of length and not mass',()=>{close(at(0,{length:.9}).period/at(0,{length:.4}).period,1.5);close(at(0,{mass:.1}).period,at(0,{mass:1}).period);});
+test('turning points and centre agree with geometry and energy',()=>{const a=at(0),b=at(180),c=at(90);close(a.speed,0);close(b.speed,0);close(a.x,-b.x);close(c.angle,0);close(c.U,0);close(c.K,c.E);assert.ok(at(90).speed<0);assert.ok(at(270).speed>0);});
+test('phase wraps deterministically and invalid controls remain finite',()=>{assert.deepEqual(at(-10),at(350));assert.deepEqual(at(730),at(10));for(const val of [NaN,Infinity,-Infinity,-99,999]){const s=at(val,{length:val,mass:val,amplitude:val});for(const v of Object.values(s))if(typeof v==='number')assert.ok(Number.isFinite(v));}});
+test('restoring torque and derivative use the same small-angle model',()=>{const p=42,h=1e-4,s=at(p),dt=2*h*Math.PI/180/Math.sqrt(G/s.length);const derivative=(at(p+h).angle-at(p-h).angle)/dt;close(derivative,s.angularVelocity,1e-8);close(s.torque,-s.mass*G*s.length*s.angle);});
+test('pendulum browser modules parse',async()=>{const {execFileSync}=await import('node:child_process');const {fileURLToPath}=await import('node:url');for(const file of ['main.js','machine.js'])execFileSync(process.execPath,['--check',fileURLToPath(new URL('../../../study/teardown/pendulum/'+file,import.meta.url))]);});
