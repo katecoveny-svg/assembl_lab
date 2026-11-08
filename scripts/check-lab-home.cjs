@@ -65,6 +65,17 @@ async (page) => {
   check(over.length===0,'no callout covers the words or buttons'+(over.length?' ('+over.join(', ')+')':''));
   const dots=await page.evaluate(()=>[...document.querySelectorAll('.pc-leaders circle.ring')].every(c=>{const x=+c.getAttribute('cx'),y=+c.getAttribute('cy');return x>0&&y>0&&x<innerWidth&&y<innerHeight}));
   check(dots&&await page.locator('.pc-leaders path').count()>=await page.locator('.hero-callout.on, .hero-pin.on').count(),'every leader line reaches an anchor on screen');
+  // every twin pin shows at 1440×900, on screen, clear of the words and of each other, with the key and its truth line beside the map
+  const nPins=await page.locator('.hero-pin').count();
+  await page.waitForFunction(n=>document.querySelectorAll('.hero-pin.on').length===n,nPins,{timeout:20000}).catch(()=>{});
+  const pinBoxes=await page.evaluate(()=>[...document.querySelectorAll('.hero-pin')].map(e=>{const b=e.querySelector('a').getBoundingClientRect();return {site:e.dataset.site,on:e.classList.contains('on'),l:b.left,t:b.top,r:b.right,b:b.bottom}}));
+  const offscreen=pinBoxes.filter(p=>!p.on||p.l<0||p.t<0||p.r>1440||p.b>900).map(p=>p.site);
+  check(offscreen.length===0,`all ${nPins} twin pins visible on screen at 1440×900`+(offscreen.length?' (missing '+offscreen.join(', ')+')':''));
+  const clash=pinBoxes.some((a,i)=>pinBoxes.some((b,j)=>j>i&&!(a.r<=b.l||a.l>=b.r||a.b<=b.t||a.t>=b.b)));
+  check(!clash,'no two twin pins overlap');
+  check(await page.locator('.hero-key li[data-site]').count()===nPins&&await page.locator('.hero-key').isVisible()&&/not a model of the business or institution there/.test(await page.locator('.hero-key').innerText()),'the key lists every twin with its truth line');
+  check(await page.locator('.hero-pin .pin-truth').evaluateAll(xs=>xs.every(x=>/^Example, not a model of this /.test(x.textContent))),'every pin keeps its own truth line in the page');
+  check(await page.locator('.hero-callout.on').count()>=4,'the landmarks stay on the map with the twins');
  }
  // the old Learn & create page keeps its address and lands in the story
  await page.goto('http://127.0.0.1:8341/discover/#learn');await page.waitForURL(/\/#study$/);

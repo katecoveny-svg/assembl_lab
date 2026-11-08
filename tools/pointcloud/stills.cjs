@@ -16,8 +16,10 @@ const JOBS = [
   { id: 'ps-reel', kind: 'hall', w: 1080, h: 1920, rot: 0.6, camY: 1.1, camZ: 3.6, lookY: 0.16, scale: 0.5, n: 180000, sizeScale: 1.3 }, { id: 'ps-feed', kind: 'hall', w: 1080, h: 1350, rot: -0.55, camY: 0.95, lookY: 0.18, scale: 0.68, n: 180000, sizeScale: 1.35 },
   // the lab home: the hero's Auckland (its first paint and no-WebGL picture: on no ground, framed and tilted as the live hero, so
   // the still fades into the live cloud with no seam), the twin cards and Sea State's door
-  { id: 'hero-auckland', kind: 'auckland', w: 1280, h: 960, n: 220000, sizeScale: 1.25, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },
-  { id: 'hero-auckland-sm', kind: 'auckland', w: 720, h: 540, n: 120000, sizeScale: 0.9, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },   // phones
+  // three sizes for srcset: retina desktops, desktops, phones; every point the bake has, smaller points as the picture grows
+  { id: 'hero-auckland-2x', kind: 'auckland', w: 1760, h: 1320, n: 300000, sizeScale: 1.05, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },
+  { id: 'hero-auckland', kind: 'auckland', w: 1280, h: 960, n: 300000, sizeScale: 0.98, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },
+  { id: 'hero-auckland-sm', kind: 'auckland', w: 720, h: 540, n: 160000, sizeScale: 0.82, tilt: 0.66, fit: [0.94, 0.94], trim: 0.002, clear: true },   // phones
   ...['store', 'ed', 'dairy', 'energy', 'cars'].map((t) => ({ id: 'twin-' + t, kind: 'twin', w: 1440, h: 900, n: 200000, sizeScale: 1.35, rot: 0.5, camY: 1.15, lookY: 0.12 })),
   { id: 'twin-cafe', kind: 'glb', src: '/assets/models/cafe/cafe-venue.glb', w: 1440, h: 900, n: 220000, sizeScale: 1.35 },
   { id: 'jump-sea', kind: 'sea', w: 800, h: 500, rot: 0.5, camY: 0.9, lookY: 0.08 },
