@@ -45,22 +45,26 @@
 .hero-notes-k { margin: 10px 0 0; font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--v2-fg-2); }
 .pc-on .hero-notes-k { display: none; }
 .hero-callouts, .hero-pins { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 10px; }
-.hero-callout, .hero-pin a { display: grid; gap: 3px; padding: 11px 14px 12px; border-radius: 16px; background: rgba(33, 18, 31, .66); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14);
+.hero-callout, .hero-pin { display: grid; gap: 3px; padding: 11px 14px 12px; border-radius: 16px; background: rgba(33, 18, 31, .66); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .14);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 13px; line-height: 1.4; color: rgba(249, 246, 242, .8); align-content: start; }
 .hero-callout strong, .hero-pin strong { font-weight: 500; color: #F9F6F2; font-size: 14.5px; }
-.hero-pin a { text-decoration: none; box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .5); }
-.hero-pin a:hover { box-shadow: inset 0 0 0 1px #D9BACB; }
-.hero-pin a:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; }
-.hero-pin span { font-size: 12px; color: rgba(249, 246, 242, .72); }
+.hero-pin { box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .5); }
+.hero-pin a { color: inherit; text-decoration: none; }
+.hero-pin .pin-chip:hover strong, .hero-pin .pin-more:hover { color: #D9BACB; }
+.hero-pin a:focus-visible { outline: 2px solid #D9BACB; outline-offset: 3px; border-radius: 6px; }
+.hero-pin .pin-card { display: grid; gap: 3px; }
+.hero-pin .pin-more { font-size: 13px; color: #F9F6F2; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(217, 186, 203, .6); }
+.hero-pin .pin-truth { font-size: 12px; color: rgba(249, 246, 242, .72); }
 .hero-credit { margin: 0; max-width: 78ch; font: 500 10.5px/1.6 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; color: var(--v2-fg-2); }
 .pc-on .hero-notes { padding: 0; }
 .pc-on .hero-callouts, .pc-on .hero-pins { position: fixed; inset: 0; z-index: 5; display: block; pointer-events: none; }
 .pc-on .hero-callout, .pc-on .hero-pin { position: absolute; left: 0; top: 0; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility 0s linear .5s; }
 .pc-on .hero-callout { max-width: 200px; padding: 8px 11px 9px; font-size: 12px; line-height: 1.35; gap: 2px; }
 .pc-on .hero-callout strong { font-size: 13.5px; }
-.pc-on .hero-pin a { padding: 6px 11px 7px; border-radius: 13px; gap: 0; white-space: nowrap; pointer-events: auto; }
+.pc-on .hero-pin { padding: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.pc-on .hero-pin .pin-chip { padding: 6px 11px 7px; border-radius: 13px; white-space: nowrap; pointer-events: auto; background: rgba(33, 18, 31, .66); box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.pc-on .hero-pin .pin-chip:hover { box-shadow: inset 0 0 0 1px #D9BACB; }
 .pc-on .hero-pin strong { font-size: 13px; }
-.pc-on .hero-pin span { font-size: 10.5px; }
 .pc-on .hero-callout.on, .pc-on .hero-pin.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
 .pc-on .hero-callout.compact { padding: 7px 12px 8px; border-radius: 14px; white-space: nowrap; }
 .pc-on .hero-callout.compact span { display: none; }
@@ -73,15 +77,18 @@
    focus, and always in the key under the map. Without WebGL the pins are the list above, each with its truth line. */
 .pin-n, .hero-pin .pin-n { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 999px; background: #D9BACB; color: #21121F; font-size: 11px; font-weight: 600; line-height: 1; }
 html:not(.pc-on) .hero-pin .pin-n, .hero-key { display: none; }
-.pc-on .hero-pin a { position: relative; display: flex; align-items: center; gap: 7px; padding: 4px 11px 4px 4px; border-radius: 999px; }
+.pc-on .hero-pin .pin-chip { display: flex; align-items: center; gap: 7px; padding: 4px 11px 4px 4px; border-radius: 999px; }
 .pc-on .hero-pin strong { font-size: 12.5px; }
 .pc-on .hero-pin .pin-n { font-size: 11px; color: #21121F; }
-.pc-on .hero-pin .pin-truth { position: absolute; left: 0; top: calc(100% + 6px); padding: 5px 10px 6px; border-radius: 10px; white-space: nowrap; font-size: 11.5px; color: #F9F6F2;
-  background: rgba(33, 18, 31, .92); box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .4); opacity: 0; visibility: hidden; transition: opacity .2s ease; }
-.pc-on .hero-pin a:hover .pin-truth, .pc-on .hero-pin a:focus-visible .pin-truth { opacity: 1; visibility: visible; }
+/* the card under a chip: any further sim on the same site, then the truth line; shown on hover or focus */
+.pc-on .hero-pin .pin-card { position: absolute; left: 0; top: calc(100% + 6px); display: grid; gap: 4px; padding: 6px 10px 7px; border-radius: 10px; white-space: nowrap; font-size: 11.5px; color: #F9F6F2;
+  background: rgba(33, 18, 31, .92); box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .4); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; pointer-events: none; }
+.pc-on .hero-pin .pin-more { font-size: 12.5px; pointer-events: auto; }
+.pc-on .hero-pin .pin-truth { font-size: 11.5px; color: rgba(249, 246, 242, .82); }
+.pc-on .hero-pin:hover .pin-card, .pc-on .hero-pin:focus-within .pin-card { opacity: 1; visibility: visible; transition: opacity .2s ease; }
 .pc-on .hero-pin:hover, .pc-on .hero-pin:focus-within { z-index: 2; }
-.pc-on .hero-pin.focus a { box-shadow: inset 0 0 0 1px #D9BACB, 0 0 0 4px rgba(217, 186, 203, .16); }
-.pc-on .hero-pin.dot a { padding: 3px; }
+.pc-on .hero-pin.focus .pin-chip { box-shadow: inset 0 0 0 1px #D9BACB, 0 0 0 4px rgba(217, 186, 203, .16); }
+.pc-on .hero-pin.dot .pin-chip { padding: 3px; }
 .pc-on .hero-pin.dot strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* the focused twin's plot: an ivory ring on a plum halo, so it reads on the busiest part of the map; a rose pulse runs out from it */
 .pc-leaders path.plot-under { stroke: rgba(33, 18, 31, .78); stroke-dasharray: none; stroke-width: 5; }
@@ -90,13 +97,14 @@ html:not(.pc-on) .hero-pin .pin-n, .hero-key { display: none; }
 .pc-on .hero-key { display: block; margin: 0; padding: 11px 14px 12px; border-radius: 16px; background: rgba(33, 18, 31, .66); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .hero-key-k { margin: 0 0 8px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--v2-fg-2); }
-.hero-key ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, max-content); gap: 6px 18px; }
+.hero-key ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, max-content); gap: 6px 18px; }
+.hero-key .key-and { color: rgba(249, 246, 242, .5); font-weight: 400; padding: 0 1px; }
 .hero-key-truth { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: rgba(249, 246, 242, .72); }
 .hero-key li { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.35; color: rgba(249, 246, 242, .72); white-space: nowrap; }
 .hero-key li strong { font-weight: 500; color: #F9F6F2; }
 .hero-key li.focus strong { color: #D9BACB; }
-@media (min-width: 960px) { .pc-on .hero-key { position: absolute; z-index: 1; left: calc(49% + 20px); top: calc(100svh - 196px); max-width: calc(51% - var(--v2-gutter) - 20px); } }
-@media (max-width: 1279px) and (min-width: 960px) { .hero-key ol { grid-template-columns: repeat(3, max-content); } .pc-on .hero-key { top: calc(100svh - 208px); } }
+@media (min-width: 960px) { .pc-on .hero-key { position: absolute; z-index: 1; left: calc(49% + 20px); top: calc(100svh - 222px); max-width: calc(51% - var(--v2-gutter) - 20px); } }
+@media (max-width: 1279px) and (min-width: 960px) { .hero-key ol { grid-template-columns: repeat(2, max-content); } .pc-on .hero-key { top: calc(100svh - 262px); } }
 @media (max-width: 959px) { .pc-on .hero-key { padding: 4px 0 24px; } .hero-key ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* the doors */

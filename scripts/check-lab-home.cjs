@@ -37,9 +37,14 @@ async (page) => {
  check(await page.locator('.hero-tags a[href^="#twin-"]').count()===6,'the hero names its six twins, each linked to its card');
  for(const a of ['rangitoto','waitemata','bridge','skytower','maungawhau'])check(await page.locator(`.hero-callout[data-anchor="${a}"] strong`).count()===1,`landmark callout: ${a}`);
  const pins=await page.locator('.hero-pin').evaluateAll(xs=>xs.map(x=>({site:x.dataset.site,text:x.textContent})));
- check(pins.length>=4&&pins.every(p=>/twin/.test(p.text)&&/Example, not a model of this/.test(p.text)),`every twin pin is a twin plus its truth line (${pins.length} pins)`);
+ check(pins.length>=9&&pins.every(p=>/twin|Moving house|Friday night on the Viaduct/.test(p.text)&&/Example, not a model of this|Example restaurant, drawn/.test(p.text)),`every pin is a sim plus its truth line (${pins.length} pins)`);
+ // one store, two sims: the supermarket twin and the delivery sim share one numbered pin; the fixed-spot sims say what they are
+ const storeLinks=await page.locator('.hero-pin[data-site="store"] a').evaluateAll(as=>as.map(a=>a.getAttribute('href')));
+ check(storeLinks.length===2&&storeLinks.includes('#twin-store')&&storeLinks.includes('/delivery/'),'the store pin carries the supermarket twin and the delivery sim');
+ check(/not a model of this street/.test(pins.find(p=>p.site==='moving')?.text||'')&&/Example restaurant, drawn/.test(pins.find(p=>p.site==='viaduct')?.text||''),'the moving-house street and the Viaduct restaurant say they are examples');
  const akl=await page.evaluate(async()=>(await fetch('/assets/models/auckland/auckland-points.json')).json());
  check(pins.every(p=>akl.sites[p.site])&&!/"names?"\s*:/.test(JSON.stringify(akl.sites)),'pins sit on baked sites, and the sites carry coordinates only (no names)');
+ check(akl.sites.moving?.fixed===true&&akl.sites.viaduct?.fixed===true&&Math.abs(akl.sites.moving.lonlat[0]-174.81007)<1e-4&&Math.abs(akl.sites.viaduct.lonlat[1]+36.84302)<1e-4,'the two fixed-spot sims sit at their given coordinates');
  check(await page.locator('#about').getByText('none models the business or institution there').count()===1,'the labels say the twin sites are examples');
  check(await page.getByText(/LINZ \(CC BY 4\.0\)/).count()>=1&&await page.getByText(/OpenStreetMap contributors/).count()>=1,'open data is credited');
  check(await page.locator('img[src*="glass-a"], link[href*="glass-a"]').count()===0,'no glass "a" image or icon left on the home');
@@ -74,7 +79,8 @@ async (page) => {
   const clash=pinBoxes.some((a,i)=>pinBoxes.some((b,j)=>j>i&&!(a.r<=b.l||a.l>=b.r||a.b<=b.t||a.t>=b.b)));
   check(!clash,'no two twin pins overlap');
   check(await page.locator('.hero-key li[data-site]').count()===nPins&&await page.locator('.hero-key').isVisible()&&/not a model of the business or institution there/.test(await page.locator('.hero-key').innerText()),'the key lists every twin with its truth line');
-  check(await page.locator('.hero-pin .pin-truth').evaluateAll(xs=>xs.every(x=>/^Example, not a model of this /.test(x.textContent))),'every pin keeps its own truth line in the page');
+  check(await page.locator('.hero-pin .pin-truth').evaluateAll(xs=>xs.every(x=>/^Example, not a model of this |^Example restaurant, drawn$/.test(x.textContent))),'every pin keeps its own truth line in the page');
+  check(await page.locator('.hero-key li[data-site="store"]').innerText().then(t=>/Supermarket twin/.test(t)&&/Supermarket order to doorstep/.test(t)),'the key shows both sims on the store pin');
   check(await page.locator('.hero-callout.on').count()>=4,'the landmarks stay on the map with the twins');
  }
  // the old Learn & create page keeps its address and lands in the story
