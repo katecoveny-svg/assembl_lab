@@ -9,3 +9,16 @@
 .slush-view-controls{z-index:3;bottom:8px;pointer-events:auto}
 @media(max-width:850px){.tdk-centre{display:flex;height:450px;flex:none;margin-bottom:16px}.tdk-stage{height:100%;min-height:0;flex:1 1 auto}.tdk-inp,.slush-actions,.batch-scrub,.tdk-readp{position:relative;z-index:4}.tdk-stage canvas{touch-action:pan-y}}
 @media(max-width:400px){.tdk-centre{height:395px}.tdk-stage{min-height:0;height:100%}}
+/* Current Assembl type contract: main app/layout.tsx + styles/site-v2.css, 8 Nov.
+   Instrument Sans is the editorial/UI family; mono belongs only to proof. */
+:root{--font-body:'Instrument Sans';--v2-font:var(--font-body),system-ui,sans-serif;--v2-mono:'IBM Plex Mono',ui-monospace,monospace}
+body,.tdk{font-family:var(--v2-font)}
+.tdk{--sans:var(--v2-font);--mono:var(--v2-mono)}
+.brand a{font-family:var(--v2-font);font-weight:500;letter-spacing:-.04em}
+.brand>span{font-family:var(--v2-font);font-weight:500;letter-spacing:.16em}
+.tdk-title h1{font-family:var(--v2-font);font-weight:400;letter-spacing:-.045em;line-height:.98;text-wrap:balance}
+.tdk-live-n,.tdk-live-u,.tdk-live-l,.tdk-live-s span,.tdk-read b,.tdk-chip,.tdk-status,.tdk-in label,.tdk-in output,.batch-scrub,.tdk-btn,.mini-note{font-family:var(--v2-font)}
+.tdk-live-n{font-weight:400;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.tdk-live-l,.tdk-status{font-size:12px;letter-spacing:0;line-height:1.45}
+.tdk-chip{font-size:11px}.tdk-read b{font-size:14px}.tdk-in label{font-size:15px}.tdk-btn{font-weight:500}
+.tdk-src .tdk-checks{font-family:var(--v2-mono)}
