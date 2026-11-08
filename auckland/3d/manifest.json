@@ -1,0 +1,25 @@
+{
+  "name": "Tāmaki Makaurau — tabletop terrain",
+  "units": "metres",
+  "mapWidthMetres": 0.7,
+  "mapDepthMetres": 0.6208333333333333,
+  "horizontalScale": 0.00003255208333333333,
+  "scaleDenominator": 30720,
+  "verticalExaggeration": 5,
+  "meshGridMetres": 112,
+  "triangles": 37300,
+  "source": "../../assets/models/auckland/linz-terrain.json",
+  "dataDate": "2026-11-08T23:03:42.364Z",
+  "verticalDatum": "NZVD2016 (EPSG:7839), per LINZ national DEM documentation",
+  "waterMask": {
+    "source": "https://tiles.openfreemap.org/planet/20261101_080013_pt/{z}/{x}/{y}.pbf",
+    "licence": "ODbL 1.0",
+    "attribution": "OpenFreeMap © OpenMapTiles · © OpenStreetMap contributors",
+    "method": "OSM polygon even-odd containment; mapped water omitted regardless of elevation; low land preserved"
+  },
+  "licences": [
+    "LINZ CC BY 4.0",
+    "OSM derived dataset ODbL 1.0"
+  ],
+  "limits": "Inverse-distance interpolation of up to four existing LINZ samples; omit cells >110m from data and triangles with water/nodata vertices. Coastline discretised to mesh grid. No buildings. Not navigation, hazard or survey data."
+}

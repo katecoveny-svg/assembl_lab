@@ -1,0 +1,17 @@
+{
+  "glbVersion": 2,
+  "trianglesIncludingBase": 37316,
+  "glbBufferViewsWithinBounds": true,
+  "usdzStoredAnd64ByteAligned": true,
+  "usdzMetresAndYUp": true,
+  "files": {
+    "auckland-tabletop.glb": {
+      "bytes": 3208408,
+      "sha256": "65b4e4b47e3900fac258b0fc1d4c080cf5f67f54a3d39a18733c20fb6520ac3d"
+    },
+    "auckland-tabletop.usdz": {
+      "bytes": 6166880,
+      "sha256": "4eea16fed39fdcea548b614eca774c2ef6589abeecfc090cc69b1c1c364d8d07"
+    }
+  }
+}

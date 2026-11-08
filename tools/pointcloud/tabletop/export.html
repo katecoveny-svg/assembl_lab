@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Auckland tabletop export</title><script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script></head><body><p>Offline terrain export tool</p><script type="module">
+import * as T from 'three';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {USDZExporter} from 'three/addons/exporters/USDZExporter.js';
+const data=await(await fetch('./mesh.json')).json(),root=new T.Group();root.name='Auckland_tabletop_70cm_5x_relief';root.userData=data.manifest;
+const mat=(color)=>new T.MeshStandardMaterial({color,roughness:.88,metalness:0});
+const depth=data.manifest.mapDepthMetres;
+const base=new T.Mesh(new T.BoxGeometry(.74,.016,depth+.10),mat('#332332'));base.position.set(0,.008,.025);base.name='Presentation_plinth_not_geographic';root.add(base);
+const sea=new T.Mesh(new T.PlaneGeometry(.7,depth).rotateX(-Math.PI/2),mat('#b39bab'));sea.position.y=.0162;sea.name='Mapped_water_background_not_bathymetry';root.add(sea);
+const tex=await new T.TextureLoader().loadAsync('/auckland/preview.webp');tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=4;
+const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(data.pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(data.uv,2));g.setIndex(data.indices);g.computeVertexNormals();
+const terrain=new T.Mesh(g,new T.MeshStandardMaterial({map:tex,roughness:.94,metalness:0}));terrain.name='LINZ_bare_earth_5x_vertical_exaggeration';root.add(terrain);
+const c=document.createElement('canvas');c.width=2048;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle='#332332';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#fbf6f0';ctx.font='56px sans-serif';ctx.fillText('TĀMAKI MAKAURAU / AUCKLAND',50,68);ctx.font='30px sans-serif';ctx.fillText('70 cm map · 1:30,720 horizontal · heights exaggerated 5× · N ↑',50,124);ctx.font='25px sans-serif';ctx.fillText('Terrain: LINZ CC BY 4.0 · Map: © OpenStreetMap / OpenMapTiles · ODbL',50,177);ctx.fillText('assembl lab · Educational terrain, not survey / hazard / navigation data',50,218);
+const plaqueTex=new T.CanvasTexture(c);plaqueTex.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(.70,.075).rotateX(-Math.PI/2),new T.MeshStandardMaterial({map:plaqueTex,roughness:1}));plaque.position.set(0,.0163,depth/2+.045);plaque.name='Scale_and_source_plaque';root.add(plaque);root.updateMatrixWorld(true);
+const b64=b=>{let s='';const a=new Uint8Array(b);for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode(...a.subarray(i,i+32768));return btoa(s)};
+window.exportTerrain=async()=>{const glb=await new GLTFExporter().parseAsync(root,{binary:true,maxTextureSize:2048});const usdz=await new USDZExporter().parseAsync(root,{quickLookCompatible:true,maxTextureSize:2048,includeAnchoringProperties:true,ar:{anchoring:{type:'plane'},planeAnchoring:{alignment:'horizontal'}}});return {glb:b64(glb),usdz:b64(usdz),bounds:new T.Box3().setFromObject(root).getSize(new T.Vector3()).toArray()};};window.ready=true;
+</script></body></html>
