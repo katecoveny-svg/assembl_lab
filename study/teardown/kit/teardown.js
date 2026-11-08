@@ -101,7 +101,7 @@ export async function createTeardown(cfg) {
   let playing = false;
   let cycleSeconds = cfg.cycleSeconds || 6;
   const SPEEDS = cfg.speeds || [cycleSeconds * 2, cycleSeconds, cycleSeconds / 2];
-  let mode = q.get('mode') === 'night' ? 'night' : 'light';
+  let mode = q.get('mode') === 'light' ? 'light' : 'night';
   let selected = 'all';
   const act = {isolate: false, cut: !!cfg.cutOnStart, explode: false};
   let labelsOn = !(q.has('nolabels'));
@@ -151,9 +151,11 @@ export async function createTeardown(cfg) {
     <div class="tdk-centre">
       <div class="tdk-stage">
         <canvas tabindex="0" aria-label="${esc(cfg.canvasLabel || cfg.title + ' in 3D')}. Arrow keys turn the view, plus and minus zoom, Home resets."></canvas>
+        <div class="tdk-stage-meta">
         <div class="tdk-legend" aria-hidden="true">${(cfg.legend?.items || []).map((it) => `<span data-leg="${esc(it.key)}"><i style="background:${it.colour}"></i>${esc(it.label)}</span>`).join('')}</div>
-        <div class="tdk-calls${labelsOn ? '' : ' off'}" aria-hidden="true"><svg></svg></div>
         <div class="tdk-status" data-live="status"></div>
+        </div>
+        <div class="tdk-calls${labelsOn ? '' : ' off'}" aria-hidden="true"><svg></svg></div>
         <div class="tdk-hint">Drag to turn · scroll to zoom · keys: space, ← →, 1–${Math.min(9, viewKeys.length)}</div>
         <div class="tdk-mark">${MARK}<span>assembl<em>.</em> study</span></div>
         <div class="tdk-fallback"><svg viewBox="0 0 268 ${cfg.schematic?.height || 150}" data-schem-big></svg><p>3D could not start on this device, so the drawing shows the same model. Every number still comes from it.</p></div>
