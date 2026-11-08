@@ -1,9 +1,10 @@
-// Asset pipeline for the SimReady grocery DC twin (store/dc/). Not served (scripts/ is in .vercelignore).
+// Asset pipeline for the SimReady twins (store/dc/, dairy/plant/, ed/floor/). Not served (scripts/ is in .vercelignore).
 // Run it outside the repo, with the tools installed there, never committed:
 //   npm i @gltf-transform/cli@4      (brings @gltf-transform/core, functions, extensions, meshoptimizer, sharp)
 //   cp scripts/simready/pipeline.mjs <tooldir>/ && cd <tooldir>
 //   node pipeline.mjs <dir of raw SimReady GLBs from codepawl/simready-glb glb/> <out dir> [key,key]
-// then copy <out dir>/*.glb to assets/models/simready/ and update ASSET_FILES sizes in store/dc/world.js.
+// then copy <out dir>/*.glb to assets/models/simready/ (and <out dir>/dairy/, <out dir>/ed/ to the same subfolders), and
+// update the byte sizes in each twin's ASSET_FILES (store/dc/world.js, dairy/plant/world.js, ed/floor/world.js).
 // It reads NVIDIA SimReady GLBs (via codepawl/simready-glb, CC BY 4.0), groups the parts the twin animates,
 // simplifies geometry to a browser budget, joins draw calls, shrinks textures, and writes meshopt-compressed GLBs.
 import { NodeIO } from '@gltf-transform/core';
@@ -45,6 +46,21 @@ const ASSETS = [
   { key: 'firstaid', src: 'safety_firstAidCabinet_wallMounted_a01', ratio: 0.1, error: 0.02, tex: 256, groups: [] },
   { key: 'tote', src: 'crate_blue_a08', ratio: 0.015, error: 0.06, tex: 256, groups: [], sloppy: 700 },
   { key: 'carton', src: 'box_cardboard_b01', ratio: 1, error: 0, tex: 256, groups: [] },
+  // dairy plant (dairy/plant/): the packing hall's belt conveyor, the CIP chemical IBC and the QA bench
+  { dir: 'dairy', key: 'beltconveyor', src: 'conveyor_belt_a08', ratio: 0.025, error: 0.02, tex: 512, groups: [], drop: /button/, minPart: 0.06 },
+  { dir: 'dairy', key: 'ibc', src: 'ibcTank_steel_stainless_a01', ratio: 0.03, error: 0.02, tex: 512, groups: [] },
+  { dir: 'dairy', key: 'bench', src: 'table_metal_stainless_a03', ratio: 0.3, error: 0.02, tex: 256, groups: [] },
+  // emergency department (ed/floor/): beds are about a million triangles each in the source, so they get the hardest pass
+  { dir: 'ed', key: 'bed', src: 'bed_hospital_standard_a01', ratio: 0.009, error: 0.03, tex: 512, groups: [], minPart: 0.05, sloppy: 7000 },
+  { dir: 'ed', key: 'curtain', src: 'screen_hospital_b01', ratio: 0.008, error: 0.03, tex: 512, groups: [] },
+  { dir: 'ed', key: 'sofa', src: 'sofa_visitor_a01', ratio: 0.015, error: 0.03, tex: 256, groups: [] },
+  { dir: 'ed', key: 'ivpole', src: 'IV_pole_a01', ratio: 0.008, error: 0.03, tex: 256, groups: [], minPart: 0.04, sloppy: 1800 },
+  { dir: 'ed', key: 'monitor', src: 'monitor_patient_a01', ratio: 0.012, error: 0.03, tex: 256, groups: [], minPart: 0.04, sloppy: 2600 },
+  { dir: 'ed', key: 'crashcart', src: 'trolley_emergency_a01', ratio: 0.012, error: 0.03, tex: 256, groups: [], minPart: 0.04 },
+  { dir: 'ed', key: 'wheelchair', src: 'wheelChair_c01', ratio: 0.008, error: 0.03, tex: 256, groups: [], minPart: 0.04 },
+  { dir: 'ed', key: 'desk', src: 'desk_a01', ratio: 0.012, error: 0.02, tex: 256, groups: [], sloppy: 3000 },
+  { dir: 'ed', key: 'stool', src: 'stool_mobile_padded_vinyl_a01', ratio: 0.04, error: 0.03, tex: 256, groups: [], minPart: 0.03 },
+  { dir: 'ed', key: 'surgicallight', src: 'light_surgical_ceiling_mobile_a01', ratio: 0.015, error: 0.03, tex: 256, groups: [], drop: /button|switcher/ },
 ];
 
 
@@ -92,7 +108,12 @@ for (const a of ASSETS) {
   const doc = await io.read(`${RAW}/${a.src}.glb`);
   const root = doc.getRoot();
   const scene = root.getDefaultScene() || root.listScenes()[0];
-  const top = scene.listChildren()[0]; // "Geometry"
+  let top = scene.listChildren()[0]; // "Geometry" in most files
+  // a few files (beds, carts, monitors, curtains) have several root nodes, or a root that is the object itself:
+  // gather them under one identity "Geometry" node so the parts below are all regrouped the same way
+  if (scene.listChildren().length > 1 || top.getMesh() || top.getName() !== 'Geometry') {
+    const wrap = doc.createNode('Geometry'); for (const n of [...scene.listChildren()]) wrap.addChild(n); scene.addChild(wrap); top = wrap;
+  }
   const before = triCount(doc);
 
   // Strip physics extras and joint frames; regroup the parts.
@@ -139,7 +160,8 @@ for (const a of ASSETS) {
   const names = root.listNodes().map(n => n.getName()).filter(Boolean);
   const after = triCount(doc);
   const draws = root.listMeshes().reduce((s, m) => s + m.listPrimitives().length, 0);
-  await io.write(`${OUT}/${a.key}.glb`, doc);
-  const kb = (fs.statSync(`${OUT}/${a.key}.glb`).size / 1024).toFixed(0);
+  const file = `${OUT}/${a.dir ? a.dir + '/' : ''}${a.key}.glb`; fs.mkdirSync(file.replace(/\/[^/]+$/, ''), { recursive: true });
+  await io.write(file, doc);
+  const kb = (fs.statSync(file).size / 1024).toFixed(0);
   console.log(`${a.key.padEnd(13)} ${String(before).padStart(8)} → ${String(after).padStart(7)} tris, ${draws} draws, ${kb} KB, nodes: ${names.join(',')}`);
 }

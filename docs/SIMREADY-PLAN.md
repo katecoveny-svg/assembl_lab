@@ -86,6 +86,11 @@ Most twins already have a working model and figures, so the work is the scene an
 
 Total for everything above: about 21 builder-days, or about a week with three builders after the shared kit lands.
 
+## Progress
+
+- 8 Nov 2026: shared kit (`assets/twin/3/`), the dairy plant floor (`/dairy/plant/`) and the emergency department floor
+  (`/ed/floor/`), in one draft PR. Scores against this standard for every twin are in `docs/twins-standard.md`.
+
 ## Order
 
 1. Shared kit (needed by everything else).

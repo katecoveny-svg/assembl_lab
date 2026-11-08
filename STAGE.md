@@ -33,3 +33,22 @@ Breaking changes to the stage go in a new folder (`assets/twin/2/`), so existing
 - Keep the procedural maquette as the fallback (no WebGL still shows the poster, as in v1).
 
 The café's asset, contract, adapter and rebuild script are in `assets/models/cafe/` (see its `SOURCE-HANDOFF.md`).
+
+## Kit v3: NVIDIA SimReady twins (`assets/twin/3/`)
+
+v3 is not a new version of the maquette stage. It's the shared base for twins built to the grocery DC standard
+(`/store/dc/`, method and estimates in `docs/SIMREADY-PLAN.md`), pulled out of the DC so each SimReady twin starts from
+the same renderer, overlays and controls:
+
+- `kit.js`: renderer and light (PBR, room environment, one soft key light, GTAO and bloom by tier), quality tiers with a
+  one-step drop below about 24 fps and `?quality=low|mid|high`, the meshopt GLB loader with one progress bar, `Instanced`,
+  `Repeat`, `bake()` (now safe for quantised meshopt attributes), shadow stand-ins, plain figures in hi-vis, food-plant
+  whites or scrubs, the guided tour, 3D tags, path lines and the focus ring, and the bottom bar (tour, speed, run or
+  pause the model, the phone figures sheet). `?clean`, `?stop=N`, `?t=` and `?frames=N` work as on the DC.
+- `path.js`: the DC's `Path` (jobs timed by distance over speed plus handling), with `back()` for trailers that follow
+  their truck. No rendering, so a twin's `sim.js` imports it and runs in Node.
+- `overlay.css`: the DC's site-v2 overlays (title card, figures panel, tour caption, bottom bar, tags, loader, still).
+
+A twin brings `layout.js` (the plan, shared by model and scene), `sim.js` (the model, no rendering, tested headless),
+`world.js` (the scene and a `sync()` that draws the model's state) and `main.js` (the wiring). Uses: `/dairy/plant/` and
+`/ed/floor/`. The DC itself still has its own copies; moving it onto the kit is a small follow-up.

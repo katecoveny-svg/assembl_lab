@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<script src="/lab/preview-head.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Emergency Department Floor</title>
+<meta name="description" content="The simulated emergency department from the lab's ED twin, on a floor of NVIDIA SimReady hospital beds, curtains and monitors: where the queues form and why patients waiting for a ward bed hold up the whole department. Every figure is simulated.">
+<meta property="og:title" content="Emergency department floor · assembl lab">
+<meta property="og:description" content="A generic city ED, simulated minute by minute on NVIDIA SimReady hospital kit. Not any real hospital; every figure is simulated.">
+<meta property="og:image" content="https://lab.assembl.co.nz/ed/floor/poster.webp">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="modulepreload" href="/assets/vendor/three/three.module.min.js">
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
+<link rel="stylesheet" href="/assets/twin/3/overlay.css">
+<style>
+.lever select{font:500 13px var(--sans);color:var(--ivory);background:var(--plum);border:1px solid var(--line);border-radius:999px;height:36px;padding:0 12px;max-width:100%}
+.whole{margin-top:10px;width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.whole th,.whole td{padding:6px 4px;border-top:1px solid var(--line2);text-align:right;vertical-align:top}
+.whole th:first-child,.whole td:first-child{text-align:left;color:var(--ivory)}
+.whole th{font:500 10.5px/1.3 var(--mono);color:var(--soft);border-top:0}
+.whole tr.best td:first-child{color:var(--rose)}
+.panel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sos{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(240,122,110,.55);border-radius:12px;font-size:12.5px;line-height:1.4;color:var(--ivory)}
+.sos b{font-family:var(--mono);font-weight:500}
+.toggle.wide{display:flex;height:auto;align-items:flex-start;color:var(--ivory)}
+.toggle.wide small{display:block;color:var(--soft);font-size:12.5px}
+@media (max-width:760px){.title .sos{display:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the figures</a>
+<main class="twin" id="twin">
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a simulated emergency department: the waiting room and minors on the left, triage, four rows of curtained cubicles, resus and the ambulance bay on the right. Drag to orbit, scroll or pinch to zoom." tabindex="0"></canvas>
+    <div class="tags" id="tags"></div>
+  </div>
+
+  <section class="card title" aria-labelledby="t-title">
+    <p class="kicker">assembl lab · twin</p>
+    <h1 id="t-title">Emergency department floor</h1>
+    <p class="sub">The lab's simulated city ED, minute by minute: where the queues form, and why patients waiting for a ward bed hold up the whole department.</p>
+    <div class="chips"><span class="chip">Simulated</span><span class="chip quiet">Not any real hospital</span></div>
+    <p class="sos" role="note"><b>In an emergency, call 111.</b> Please don't delay because you've heard services are busy. This is a simulation, not medical advice.</p>
+  </section>
+
+  <aside class="card panel" id="panel" aria-label="Simulated figures" tabindex="-1">
+    <header>
+      <div><span class="clock" data-k="clock">10:00</span><span class="clock-sub"><span data-k="day">Monday</span> · model speed <span data-k="speed">10 min a second</span></span></div>
+      <span class="chip">Simulated</span>
+    </header>
+    <h2>Seen within 6 hours, last 24 h</h2>
+    <dl><dt>This department</dt><dd data-k="p6">0%</dd><dt>All of New Zealand</dt><dd><span id="nz">74.4%</span></dd></dl>
+    <div class="meter" aria-hidden="true"><i data-m="p6"></i></div>
+    <p class="src">Target 95%. New Zealand figure: <span id="nz-src">Health NZ, January–March 2026</span>, Latest published. On the lab site the <a href="/ed/">department page</a> shows the newest quarter and your district.</p>
+
+    <h2>Change one thing</h2>
+    <div class="levers">
+      <div class="lever"><div class="lv-h"><span id="doc-l">Doctors on the floor</span><b data-k="doctorsV">6</b></div>
+        <div class="seg" role="radiogroup" aria-labelledby="doc-l"><label><input type="radio" name="doctors" value="4"><span>4</span></label><label><input type="radio" name="doctors" value="6"><span>6</span></label><label><input type="radio" name="doctors" value="8"><span>8</span></label><label><input type="radio" name="doctors" value="10"><span>10</span></label></div></div>
+      <div class="lever"><div class="lv-h"><span id="bed-l">Extra ward beds upstairs</span><b data-k="bedsV">none</b></div>
+        <div class="seg" role="radiogroup" aria-labelledby="bed-l"><label><input type="radio" name="beds" value="0"><span>none</span></label><label><input type="radio" name="beds" value="14"><span>+14</span></label><label><input type="radio" name="beds" value="28"><span>+28</span></label></div></div>
+      <label class="toggle wide"><input type="checkbox" id="ft"><span>Fast-track stream<small>Two clinicians see triage 4 and 5 in minors.</small></span></label>
+      <label class="toggle wide"><input type="checkbox" id="early"><span>Ward discharges before 11am<small>Beds upstairs free up earlier.</small></span></label>
+      <div class="row2"><button class="btn ghost" type="button" id="reset">Back to a normal week</button><button class="btn ghost" type="button" id="restart">Start again</button></div>
+    </div>
+
+    <h2>Right now</h2>
+    <dl><dt>People in the department</dt><dd data-k="inED">0</dd><dt>Waiting to be seen</dt><dd data-k="wait">0</dd><dt>Waiting for a ward bed</dt><dd data-k="board">0</dd><dt>Ambulances waiting 15+ min</dt><dd data-k="ramp">0</dd><dt>Median wait to see a doctor</dt><dd data-k="med">0 min</dd><dt>Longest stay so far</dt><dd data-k="long">0 min</dd><dt>Arrivals this hour</dt><dd data-k="rate">0</dd></dl>
+    <h2>Spaces and staff</h2>
+    <dl><dt>Cubicles in use</dt><dd data-k="cub">0</dd><dt>Resus bays</dt><dd data-k="resus">0</dd><dt>Minors chairs</dt><dd data-k="ft">0</dd><dt>Doctors</dt><dd data-k="docs">0</dd><dt>Ward beds free upstairs</dt><dd data-k="ward">0</dd></dl>
+
+    <h2>A week for each change</h2>
+    <p class="src">The department page's comparison: one simulated week each from your settings, same arrivals. Simulated.</p>
+    <button class="btn ghost" type="button" id="compare">Run the comparison</button>
+    <div id="whole" aria-live="polite"></div>
+
+    <details>
+      <summary>How this model works</summary>
+      <p>It is the department page's model, unchanged: a generic large city ED of about 280 visits a day. Each minute, people arrive (busier late morning to evening, and on Sundays and Mondays), two nurses triage them, the most urgent go first into resus, cubicles or minors, a doctor sees them, tests and observation follow, then they go home or wait for a ward bed. Ward beds free up mostly in the afternoon.</p>
+      <p>The triage mix (1: 0.7%, 2: 11%, 3: 42%, 4: 39.6%, 5: 6.7%) and the busier Sundays and Mondays are from the Ministry of Health's national ED data (2014/15, the latest detailed public release). The hour-by-hour arrivals, treatment times, admission rates and staffing are estimates chosen so the baseline lands near the national result. Scenario results show direction and size, not forecasts.</p>
+    </details>
+    <details>
+      <summary>What is real here</summary>
+      <p>The hospital beds, cubicle curtains, patient monitors, IV poles, sofas, desks, stools, crash cart, surgical lights, wheelchairs and extinguisher are NVIDIA SimReady 3D models (CC BY 4.0), loaded from web copies in <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a> of <a href="https://huggingface.co/datasets/nvidia/simready-assets">nvidia/simready-assets</a>, simplified for the browser. The floor texture comes from the same set.</p>
+      <p>The building, ambulances and people are simple models made for this page; the people are plain figures, never anyone real. The department is not any real hospital. Built by assembl as an independent concept, not commissioned by, affiliated with or endorsed by Health New Zealand | Te Whatu Ora or any hospital.</p>
+    </details>
+  </aside>
+
+  <section class="card tour" id="tour" aria-live="polite" aria-atomic="true">
+    <p class="step" id="tour-step">Tour · 1 of 8</p>
+    <h2 id="tour-title">The whole department</h2>
+    <p id="tour-text"></p>
+  </section>
+
+  <div class="card bar" role="toolbar" aria-label="Tour and model controls">
+    <button class="btn icon" id="tour-prev" type="button" aria-label="Previous tour stop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6"/></svg></button>
+    <button class="btn primary" id="tour-play" type="button" aria-pressed="true"></button>
+    <button class="btn icon" id="tour-next" type="button" aria-label="Next tour stop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6"/></svg></button>
+    <div class="seg" role="radiogroup" aria-label="Model speed, minutes a second">
+      <label><input type="radio" name="speed" value="2"><span>2 min</span></label>
+      <label><input type="radio" name="speed" value="10" checked><span>10 min</span></label>
+      <label><input type="radio" name="speed" value="60"><span>1 h</span></label>
+    </div>
+    <button class="btn" id="sim-run" type="button" aria-pressed="true"></button>
+    <label class="toggle"><input type="checkbox" id="t-paths" checked> Paths</label>
+    <label class="toggle"><input type="checkbox" id="t-labels" checked> Labels</label>
+    <button class="btn panel-toggle" id="panel-toggle" type="button" aria-expanded="false" aria-controls="panel" aria-label="All figures"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" stroke="currentColor" stroke-width="1.6" fill="none"/></svg><b class="m-clock" data-k="m-clock">10:00</b><span>All figures</span></button>
+    <span class="grow"></span>
+    <p class="credit">3D assets: <a href="https://huggingface.co/datasets/nvidia/simready-assets">NVIDIA SimReady</a> (CC BY 4.0), via <a href="https://huggingface.co/datasets/codepawl/simready-glb">codepawl/simready-glb</a>. Simulated figures.</p>
+  </div>
+
+  <div class="loader" id="loader" role="status">
+    <div class="box">
+      <h2>Opening the department</h2>
+      <p>Loading the NVIDIA SimReady models: hospital beds, curtains, monitors and resus kit.</p>
+      <div class="track"><div id="load-bar"></div></div>
+      <div class="load-meta"><span id="load-text">Starting</span><span id="load-pct">0%</span></div>
+    </div>
+  </div>
+  <div class="fallback" id="fallback" hidden>
+    <div>
+      <img src="/ed/floor/poster.webp" alt="Still image of the simulated emergency department from above: waiting room, triage, curtained cubicles, resus and the ambulance bay" width="1440" height="900">
+      <p>This browser could not start 3D graphics, so here is a still of the twin. It shows a generic city ED (not any real hospital) built partly from NVIDIA SimReady 3D assets (CC BY 4.0); its figures are simulated. The <a href="/ed/">department page</a> works without 3D.</p>
+    </div>
+  </div>
+  <div id="debug" aria-hidden="true"></div>
+</main>
+<script src="/lab/navigation.js"></script>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
