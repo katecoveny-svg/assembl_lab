@@ -375,7 +375,7 @@ async function dc(ctx) {
   const animNodes = [], animFns = [];
   for (const [v, dist] of [[fk, 8], [op, 6]]) { if (!v) continue; const p0 = v.g.position.clone(), yaw = v.g.rotation.y, d = v3(Math.sin(yaw), 0, Math.cos(yaw)); animNodes.push(v.g); animFns.push(pingPong(v.g, p0, p0.clone().addScaledVector(d, dist), yaw, 10, 0.3)); }
   return {
-    root, size, tags, world,
+    root, size, tags, world, sim,
     tick(dt, cam) {
       state.acc += dt * state.speed; let n = 0; while (state.acc > 0.1 && n < 80) { sim.step(0.1); state.acc -= 0.1; n++; } if (n >= 80) state.acc = 0;
       world.speed = state.speed; world.sync(dt, cam ? state.cam.copy(cam).sub(off) : far);
