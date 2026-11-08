@@ -2,7 +2,7 @@
   "id": "/study/",
   "name": "assembly · study machines",
   "short_name": "Study",
-  "description": "Interactive study machines for Years 7–13 and NCEA, made in Aotearoa. Change a setting, watch what happens, test yourself. Allen the study buddy can work the machine with you.",
+  "description": "Interactive study machines for Years 7–13 and NCEA, made in Aotearoa. Change a setting, watch what happens, test yourself. An AI study helper can work through the machine with you.",
   "lang": "en-NZ",
   "start_url": "/study/?source=app",
   "scope": "/study/",
