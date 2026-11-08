@@ -1,6 +1,6 @@
 """assembl AR end-to-end checks (Playwright, Chromium with SwiftShader WebGL).
 
-  python3 ar/tools/test_ar.py http://127.0.0.1:8964 OUT_DIR [studio] [qr] [viewer] [layout] [embed] [machines]
+  python3 ar/tools/test_ar.py http://127.0.0.1:8964 OUT_DIR [studio] [qr] [viewer] [layout] [embed] [machines] [worlds] [files] [xr]
 
 Needs: playwright (with Chromium), opencv-python-headless, trimesh, usd-core. Serve the repo root first, e.g.
   python3 -m http.server 8964 --directory /path/to/repo
@@ -15,15 +15,24 @@ What it checks
   layout   1280 and 400 px: no horizontal scroll; screenshots
   embed    the demo page's buttons; the desktop popover's code decodes to the right URL; files from a custom object
   machines genes, vend and kokopu scenes snapshot, export and validate under about 15 MB
+  worlds   the AR worlds: /ar/ (eight cards) at 1440 and 390 px; every world's launcher on a computer (3D preview builds,
+           the code decodes to its short link for both modes, the print card's code decodes); the phone layout
+           (?device=quicklook); and every page with a "View in AR" button (the code sheet's code decodes). No page errors,
+           no sideways scroll, screenshots of all of it
+  files    every pre-built USDZ passes usdchecker --arkit (see usd_check.py) and is under 20 MB; every GLB parses
+  xr       the Android path in a WebXR emulator (Meta's IWER, file named by IWER=.../iwer.min.js): the session starts,
+           hit-test places the world, it builds itself, the model ticks, and the doorway flips when you walk through it
+  (worlds and xr need the /ar/w/:id/ rewrite: serve with ar/tools/serve.py, not plain http.server)
 """
 import asyncio, json, os, struct, sys, time, zipfile, io
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import cv2
 from playwright.async_api import async_playwright
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8964'
 OUT = sys.argv[2] if len(sys.argv) > 2 else './ar-test-out'
-PARTS = set(sys.argv[3:]) or {'studio', 'qr', 'viewer', 'layout', 'embed', 'machines'}
+PARTS = set(sys.argv[3:]) or {'studio', 'qr', 'viewer', 'layout', 'embed', 'machines', 'worlds', 'files', 'xr'}
 THREE128 = os.environ.get('THREE128')
 ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
 os.makedirs(OUT, exist_ok=True)
@@ -404,6 +413,245 @@ async def run_machines(p):
     await b.close()
 
 
+# ---------------------------------------------------------------- AR worlds
+WORLD_IDS = ['f1', 'claw', 'heart', 'earth', 'dairy', 'ed', 'dc', 'cafe']
+LIVE = 'https://lab.assembl.co.nz'
+BUTTON_PAGES = [('dairy', '/dairy/plant/?frames=2'), ('ed', '/ed/floor/?frames=2'), ('dc', '/store/dc/?frames=2'), ('cafe', '/cafe/'),
+                ('f1', '/study/m/windtunnel.html'), ('claw', '/study/m/claw.html'), ('earth', '/study/m/earthspace.html'), ('heart', '/study/m/heart.html')]
+NOISE = ('GPU stall', 'favicon', 'fonts.g', 'Failed to load resource: net::ERR', 'WebGL', 'feeds', '/api/')
+
+
+def quiet(errs):
+    return [e for e in errs if not any(n in e for n in NOISE)]
+
+
+async def no_scroll(pg, w, name):
+    sw = await pg.evaluate('document.documentElement.scrollWidth')
+    return check(f'{name} at {w} px has no sideways scroll', sw <= w, f'scrollWidth {sw}')
+
+
+async def run_worlds(p):
+    b = await browser(p)
+    # the gallery
+    for w, h in [(1440, 900), (390, 844)]:
+        ctx = await b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1)
+        pg = await ctx.new_page(); errs = watch(pg, f'/ar/ {w}')
+        await pg.goto(BASE + '/ar/', wait_until='load', timeout=180000)
+        await pg.wait_for_function('document.querySelectorAll(".w-card[data-world]").length === 8', timeout=60000)
+        await pg.wait_for_timeout(1500)
+        n = await pg.locator('.w-card[data-world] a.w-mode').count()
+        check(f'/ar/ at {w} px shows 8 worlds with two ways in each', n == 16, n)
+        await no_scroll(pg, w, '/ar/')
+        await pg.screenshot(path=f'{OUT}/worlds_ar_{w}.png', timeout=120000)
+        for y in range(0, 12000, 600):   # let the lazy posters load before the full-page picture
+            await pg.evaluate(f'window.scrollTo(0, {y})'); await pg.wait_for_timeout(80)
+        await pg.evaluate('window.scrollTo(0, 0)'); await pg.wait_for_timeout(1200)
+        await pg.screenshot(path=f'{OUT}/worlds_ar_{w}_full.png', full_page=True, timeout=180000)
+        check(f'/ar/ at {w} px has no page errors', not quiet(errs), quiet(errs)[:3])
+        await ctx.close()
+    # each world's launcher on a computer: the 3D preview (built from the same code as the phone), and the code sheet
+    INSIDE_PREVIEW = {'f1', 'heart', 'cafe', 'dairy'}   # life-size previews are slow in SwiftShader; these cover objects and the doorway
+    for wid in WORLD_IDS:
+        for w, h in [(1440, 900), (390, 844)]:
+            modes = ['table', 'inside'] if (w == 1440 and wid in INSIDE_PREVIEW) else ['table']
+            for mode in modes:
+                ctx = await b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1)
+                pg = await ctx.new_page(); errs = watch(pg, f'launcher {wid} {mode} {w}')
+                await pg.goto(f'{BASE}/ar/w/{wid}/?mode={mode}&frames=3&motion=reduce', wait_until='load', timeout=180000)
+                await pg.wait_for_selector('.ws-qr svg', timeout=60000)
+                try:
+                    await pg.wait_for_function('(window.__wl && document.documentElement.classList.contains("still")) || document.getElementById("wl-load-t").textContent.includes("couldn")', timeout=900000)
+                    ok3d = await pg.evaluate('!!window.__wl')
+                except Exception:
+                    ok3d = False
+                check(f'launcher {wid} ({mode}) at {w} px: the 3D preview builds', ok3d)
+                if ok3d and w == 1440:
+                    info = await pg.evaluate('({ calls: window.__wl.calls, tris: window.__wl.triangles, size: window.__wl.world.size, tags: window.__wl.world.tags.length, status: window.__wl.status(), portal: !!window.__wl.portal })')
+                    RESULTS.setdefault('previews', {})[f'{wid}-{mode}'] = info
+                await pg.wait_for_timeout(800)
+                await no_scroll(pg, w, f'launcher {wid} ({mode})')
+                await pg.screenshot(path=f'{OUT}/worlds_launcher_{wid}_{mode}_{w}.png', timeout=300000)
+                check(f'launcher {wid} ({mode}) at {w} px has no page errors', not quiet(errs), quiet(errs)[:3])
+                await ctx.close()
+        # the code sheet for both modes, and the print card (without the 3D, which the checks above cover)
+        ctx = await b.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1, accept_downloads=True)
+        pg = await ctx.new_page(); errs = watch(pg, f'sheet {wid}')
+        await pg.goto(f'{BASE}/ar/w/{wid}/?mode=table&preview=0', wait_until='load', timeout=120000)
+        await pg.wait_for_selector('.ws-qr svg', timeout=60000)
+        for mode in ['table', 'inside']:
+            if mode == 'inside':
+                await pg.click('.ws-modes input[value="inside"]', force=True); await pg.wait_for_timeout(500)
+            await pg.locator('.ws-qr').screenshot(path=f'{OUT}/worlds_code_{wid}_{mode}.png')
+            got = decode_qr(f'{OUT}/worlds_code_{wid}_{mode}.png')
+            check(f'launcher {wid}: the {mode} code opens {LIVE}/ar/w/{wid}/?mode={mode}', got == f'{LIVE}/ar/w/{wid}/?mode={mode}', got)
+        for kind in ['png', 'svg']:
+            async with pg.expect_download(timeout=180000) as dl:
+                await pg.click(f'[data-dl="{kind}"]', timeout=120000)
+            d = await dl.value; await d.save_as(f'{OUT}/worlds_card_{wid}.{kind}')
+        got = decode_qr(f'{OUT}/worlds_card_{wid}.png')
+        check(f'launcher {wid}: the printed card (PNG) decodes; the SVG is there too', got == f'{LIVE}/ar/w/{wid}/?mode=inside' and os.path.getsize(f'{OUT}/worlds_card_{wid}.svg') > 10000, got)
+        check(f'launcher {wid}: code sheet has no page errors', not quiet(errs), quiet(errs)[:3])
+        await ctx.close()
+    # the phone layout (forced, since this browser has no AR)
+    for wid in ['dairy', 'f1']:
+        ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+        pg = await ctx.new_page(); errs = watch(pg, f'phone {wid}')
+        await pg.goto(f'{BASE}/ar/w/{wid}/?mode=inside&device=quicklook', wait_until='load', timeout=120000)
+        await pg.wait_for_selector('#wl-big .w-mode', timeout=60000)
+        first = await pg.get_attribute('#wl-big .w-mode.picked', 'data-mode')
+        check(f'phone launcher {wid}: the mode from the link comes first', first == 'inside', first)
+        await no_scroll(pg, 390, f'phone launcher {wid}')
+        await pg.screenshot(path=f'{OUT}/worlds_phone_{wid}_390.png', full_page=True, timeout=120000)
+        check(f'phone launcher {wid} has no page errors', not quiet(errs), quiet(errs)[:3])
+        await ctx.close()
+    await run_buttons(b)
+    await b.close()
+
+
+async def run_buttons(b=None):
+    """Every page with a "View in AR" button: the buttons show, and on a computer the code sheet opens the right world."""
+    own = b is None
+    if own:
+        b = await browser(PW)
+    for wid, path in BUTTON_PAGES:
+        for w, h in [(1440, 900), (390, 844)]:
+            ctx = await b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1)
+            pg = await ctx.new_page(); errs = watch(pg, f'{path} {w}')
+            try:
+                await pg.goto(BASE + path, wait_until='load', timeout=180000)
+                try:
+                    await pg.wait_for_selector('.war .war-btn', timeout=240000)
+                    has = True
+                except Exception:
+                    has = False
+                check(f'{path} at {w} px shows the View in AR buttons', has)
+                await pg.wait_for_timeout(2500)
+                await no_scroll(pg, w, path)
+                if has:
+                    await pg.locator('.war').first.scroll_into_view_if_needed(timeout=180000)
+                    await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}.png', timeout=300000)
+                    await pg.click('.war .war-btn[data-mode="table"]', timeout=180000)
+                    await pg.wait_for_selector('.war-pop svg', timeout=120000)
+                    await pg.wait_for_timeout(400)
+                    await pg.locator('.war-pop').screenshot(path=f'{OUT}/worlds_button_pop_{wid}_{w}.png', timeout=180000)
+                    got = decode_qr(f'{OUT}/worlds_button_pop_{wid}_{w}.png')
+                    check(f'{path} at {w} px: the code sheet opens {wid} on a phone', got == f'{LIVE}/ar/w/{wid}/?mode=table', got)
+                    await pg.screenshot(path=f'{OUT}/worlds_page_{wid}_{w}_code.png', timeout=300000)
+                    await pg.keyboard.press('Escape')
+                    check(f'{path} at {w} px: Escape closes the code sheet', await pg.locator('.war-pop').count() == 0)
+                check(f'{path} at {w} px has no page errors', not quiet(errs), quiet(errs)[:3])
+            except Exception as e:
+                check(f'{path} at {w} px: page checks ran', False, repr(e)[:160])
+            await ctx.close()
+    if own:
+        await b.close()
+
+
+def run_files():
+    import usd_check
+    files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'worlds', 'files')
+    out = {}
+    for wid in WORLD_IDS:
+        for mode in ['table', 'inside']:
+            u = os.path.join(files, f'{wid}-{mode}.usdz'); g = os.path.join(files, f'{wid}-{mode}.glb')
+            if not check(f'{wid}-{mode}: USDZ and GLB exist', os.path.exists(u) and os.path.exists(g)):
+                continue
+            r = usd_check.check(u)
+            check(f'{wid}-{mode}.usdz passes usdchecker --arkit ({r["arkit"]["checker"]}) and the USD validators', r['ok'], {'arkit': r['arkit']['errors'][:2] + r['arkit']['failed_checks'][:2], 'validators': r['validators'][:2]})
+            check(f'{wid}-{mode}.usdz is under 20 MB', r['bytes'] < 20e6, f"{r['bytes'] / 1e6:.2f} MB, {r['triangles']:,} triangles, {r['size_m']} m, loop {r['seconds']} s")
+            head = open(g, 'rb').read(12)
+            check(f'{wid}-{mode}.glb is a glTF 2 binary', head[:4] == b'glTF' and struct.unpack('<I', head[4:8])[0] == 2, f'{os.path.getsize(g) / 1e6:.2f} MB')
+            out[f'{wid}-{mode}'] = {'usdz_mb': round(r['bytes'] / 1e6, 2), 'glb_mb': round(os.path.getsize(g) / 1e6, 2), 'triangles': r['triangles'], 'size_m': r['size_m'], 'animated_s': r['seconds']}
+    RESULTS['files'] = out
+
+
+XR_SETUP = r"""
+(() => {
+  if (!window.IWER || window.__iwer) return;
+  const d = new IWER.XRDevice(IWER.metaQuest3);
+  const room = document.createElement('canvas'); room.width = 512; room.height = 512;
+  const g = room.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 512);
+  gr.addColorStop(0, '#cfc8c2'); gr.addColorStop(0.52, '#bdb5ae'); gr.addColorStop(0.53, '#8c7f74'); gr.addColorStop(1, '#6f6359'); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  room.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+  // a synthetic environment with one floor at y = 0: a hit test returns where the ray meets it
+  d[IWER.P_DEVICE].sem = { environmentCanvas: room, trackedPlanes: new Set(), trackedMeshes: new Set(), render() {},
+    computeHitTestResults(m) { const ox = m[12], oy = m[13], oz = m[14], dx = -m[8], dy = -m[9], dz = -m[10]; if (dy > -1e-4) return [];
+      const t = -oy / dy; if (t < 0 || t > 20) return []; const r = new Float32Array(16); r[0] = r[5] = r[10] = r[15] = 1; r[12] = ox + dx * t; r[14] = oz + dz * t; return [r]; } };
+  d.installRuntime({ forceInstall: true });
+  d.position.set(0, 1.5, 0); const a = -0.7; d.quaternion.set(Math.sin(a / 2), 0, 0, Math.cos(a / 2));
+  window.__iwer = d;
+})();
+"""
+
+
+async def xr_session(b, path, name):
+    ctx = await b.new_context(viewport={'width': 412, 'height': 860})
+    await ctx.add_init_script(open(os.environ['IWER']).read() + '\n' + XR_SETUP)
+    pg = await ctx.new_page(); errs = watch(pg, name)
+    await pg.goto(BASE + path, wait_until='load', timeout=120000)
+    await pg.wait_for_selector('#wl-big .w-mode', timeout=60000)
+    await pg.click('#wl-big .w-mode.picked')
+    await pg.wait_for_function('window.__arxr && window.__arxr.session', timeout=60000)
+    check(f'{name}: the immersive-ar session starts from the tap', True)
+    await pg.evaluate('window.__arxr.renderer.domElement.style.display = "block"')
+    await pg.wait_for_function('window.__arxr.world && window.__arxr.reticle.visible', timeout=420000)
+    check(f'{name}: hit-test finds the floor and shows the ring', True)
+    return ctx, pg, errs
+
+
+async def run_xr(p):
+    if not os.environ.get('IWER'):
+        check('xr: IWER points at iwer.min.js (npm install iwer)', False); return
+    b = await browser(p)
+    # a table world: placed with the headset's trigger, builds itself
+    ctx, pg, errs = await xr_session(b, '/ar/w/claw/?mode=table', 'xr claw table')
+    await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 1)'); await pg.wait_for_timeout(600)
+    await pg.evaluate('window.__iwer.controllers.right.updateButtonValue("trigger", 0)'); await pg.wait_for_timeout(600)
+    check('xr claw table: the trigger (an XR select) places it', await pg.evaluate('window.__arxr.placed'))
+    await pg.wait_for_timeout(300); await pg.screenshot(path=f'{OUT}/xr_claw_assembling.png', timeout=300000)
+    await pg.wait_for_function('window.__arxr.assembled', timeout=300000)
+    check('xr claw table: it builds itself piece by piece, then runs', True)
+    await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_claw_table.png', timeout=300000)
+    check('xr claw table: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
+    # the live sims tick
+    for wid, read in [('dairy', 'window.__arxr.world.sim.t'), ('ed', 'window.__arxr.world.status()'), ('dc', 'window.__arxr.world.status()')]:
+      try:
+        ctx, pg, errs = await xr_session(b, f'/ar/w/{wid}/?mode=table&motion=reduce', f'xr {wid} table')
+        await pg.evaluate('window.__arxr.place()')
+        await pg.wait_for_function('window.__arxr.placed', timeout=60000)
+        a = await pg.evaluate(read); await pg.wait_for_timeout(9000); z = await pg.evaluate(read)
+        check(f'xr {wid} table: the model keeps running ({a} → {z})', a != z)
+        labels = await pg.evaluate('[...document.querySelectorAll(".wxr-chip")].map(e => e.textContent)')
+        sos = await pg.evaluate('(document.querySelector(".wxr-sos") || {}).textContent || ""')
+        credit = await pg.evaluate('document.querySelector(".wxr-credit").textContent')
+        check(f'xr {wid} table: the truth labels and the SimReady credit show in AR', 'Simulated' in labels and 'NVIDIA SimReady (CC BY 4.0)' in credit and (wid != 'ed' or '111' in sos), {'labels': labels, 'sos': sos[:40]})
+        RESULTS.setdefault('xr', {})[wid] = {'calls': await pg.evaluate('window.__arxr.calls'), 'fps_emulated': await pg.evaluate('window.__arxr.fps')}
+        await pg.screenshot(path=f'{OUT}/xr_{wid}_table.png', timeout=300000)
+        check(f'xr {wid} table: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
+      except Exception as e:
+        check(f'xr {wid} table: checks ran', False, repr(e)[:160])
+    # step inside: the doorway, then walk through it
+    for wid in ['cafe', 'ed']:
+      try:
+        ctx, pg, errs = await xr_session(b, f'/ar/w/{wid}/?mode=inside&motion=reduce', f'xr {wid} inside')
+        await pg.evaluate('window.__arxr.place()')
+        await pg.wait_for_function('window.__arxr.placed', timeout=60000)
+        await pg.evaluate('(() => { const d = window.__iwer; d.position.set(0.5, 1.5, 0.6); const a = -0.12; d.quaternion.set(Math.sin(a / 2), 0, 0, Math.cos(a / 2)); })()')
+        await pg.wait_for_timeout(2500)
+        check(f'xr {wid} inside: the doorway stands in the room, world behind it (outside)', not await pg.evaluate('window.__arxr.portal.inside'))
+        await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_outside.png', timeout=300000)
+        for z in [0.0, -0.6, -1.2, -1.6, -2.0, -2.6, -3.2]:
+            await pg.evaluate(f'window.__iwer.position.set(0.05, 1.5, {z})'); await pg.wait_for_timeout(700)
+        check(f'xr {wid} inside: walking through the doorway puts you inside', await pg.evaluate('window.__arxr.portal.inside'))
+        await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_inside.png', timeout=300000)
+        await pg.evaluate('window.__iwer.quaternion.set(0, 1, 0, 0)'); await pg.wait_for_timeout(2500)
+        await pg.screenshot(path=f'{OUT}/xr_{wid}_portal_lookback.png', timeout=300000)
+        check(f'xr {wid} inside: no page errors', not quiet(errs), quiet(errs)[:3]); await ctx.close()
+      except Exception as e:
+        check(f'xr {wid} inside: checks ran', False, repr(e)[:160])
+    await b.close()
+
+
 async def main():
     t = time.time()
     async with async_playwright() as p:
@@ -415,6 +663,16 @@ async def main():
             await run_embed(p)
         if 'machines' in PARTS:
             await run_machines(p)
+        global PW
+        PW = p
+        if 'worlds' in PARTS:
+            await run_worlds(p)
+        elif 'buttons' in PARTS:
+            await run_buttons()
+        if 'xr' in PARTS:
+            await run_xr(p)
+    if 'files' in PARTS:
+        run_files()
     passed = sum(c['ok'] for c in RESULTS['checks'])
     print(f'\n{passed}/{len(RESULTS["checks"])} checks passed in {round(time.time() - t)} s')
     with open(f'{OUT}/results-{"-".join(sorted(PARTS))}.json', 'w') as f:

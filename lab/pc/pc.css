@@ -65,10 +65,39 @@
 .pc-on .hero-callout.compact { padding: 7px 12px 8px; border-radius: 14px; white-space: nowrap; }
 .pc-on .hero-callout.compact span { display: none; }
 .pc-on .hero-callout.compact strong { font-size: 13.5px; }
-@media (min-width: 960px) { .pc-on .hero-credit { position: absolute; z-index: 1; right: 196px; top: calc(100svh - 76px); max-width: min(60ch, 32vw); text-align: right; } }
+@media (min-width: 960px) { .pc-on .hero-credit { position: absolute; z-index: 1; right: 196px; top: calc(100svh - 64px); max-width: min(78ch, 40vw); text-align: right; } }
 @media (min-width: 1200px) { .hero-tags { flex-wrap: nowrap; width: max-content; } }
 .hero-credit a { color: inherit; text-underline-offset: 3px; }
 @media (max-width: 959px) { .pc-on .hero-notes { padding: 0 0 28px; } }
+/* twin pins on the map: a numbered chip (a numbered dot on a phone, or where a chip has no room); the truth line shows on hover or
+   focus, and always in the key under the map. Without WebGL the pins are the list above, each with its truth line. */
+.pin-n, .hero-pin .pin-n { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 999px; background: #D9BACB; color: #21121F; font-size: 11px; font-weight: 600; line-height: 1; }
+html:not(.pc-on) .hero-pin .pin-n, .hero-key { display: none; }
+.pc-on .hero-pin a { position: relative; display: flex; align-items: center; gap: 7px; padding: 4px 11px 4px 4px; border-radius: 999px; }
+.pc-on .hero-pin strong { font-size: 12.5px; }
+.pc-on .hero-pin .pin-n { font-size: 11px; color: #21121F; }
+.pc-on .hero-pin .pin-truth { position: absolute; left: 0; top: calc(100% + 6px); padding: 5px 10px 6px; border-radius: 10px; white-space: nowrap; font-size: 11.5px; color: #F9F6F2;
+  background: rgba(33, 18, 31, .92); box-shadow: inset 0 0 0 1px rgba(217, 186, 203, .4); opacity: 0; visibility: hidden; transition: opacity .2s ease; }
+.pc-on .hero-pin a:hover .pin-truth, .pc-on .hero-pin a:focus-visible .pin-truth { opacity: 1; visibility: visible; }
+.pc-on .hero-pin:hover, .pc-on .hero-pin:focus-within { z-index: 2; }
+.pc-on .hero-pin.focus a { box-shadow: inset 0 0 0 1px #D9BACB, 0 0 0 4px rgba(217, 186, 203, .16); }
+.pc-on .hero-pin.dot a { padding: 3px; }
+.pc-on .hero-pin.dot strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* the focused twin's plot: an ivory ring on a plum halo, so it reads on the busiest part of the map; a rose pulse runs out from it */
+.pc-leaders path.plot-under { stroke: rgba(33, 18, 31, .78); stroke-dasharray: none; stroke-width: 5; }
+.pc-leaders path.plot { stroke: #F9F6F2; stroke-dasharray: none; stroke-width: 1.4; }
+.pc-leaders path.pulse { stroke: #F0DCE6; stroke-dasharray: none; stroke-width: 1.6; }
+.pc-on .hero-key { display: block; margin: 0; padding: 11px 14px 12px; border-radius: 16px; background: rgba(33, 18, 31, .66); box-shadow: inset 0 0 0 1px rgba(249, 246, 242, .12);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.hero-key-k { margin: 0 0 8px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--v2-fg-2); }
+.hero-key ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, max-content); gap: 6px 18px; }
+.hero-key-truth { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: rgba(249, 246, 242, .72); }
+.hero-key li { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.35; color: rgba(249, 246, 242, .72); white-space: nowrap; }
+.hero-key li strong { font-weight: 500; color: #F9F6F2; }
+.hero-key li.focus strong { color: #D9BACB; }
+@media (min-width: 960px) { .pc-on .hero-key { position: absolute; z-index: 1; left: calc(49% + 20px); top: calc(100svh - 196px); max-width: calc(51% - var(--v2-gutter) - 20px); } }
+@media (max-width: 1279px) and (min-width: 960px) { .hero-key ol { grid-template-columns: repeat(3, max-content); } .pc-on .hero-key { top: calc(100svh - 208px); } }
+@media (max-width: 959px) { .pc-on .hero-key { padding: 4px 0 24px; } .hero-key ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* the doors */
 .jump { padding: clamp(72px, 9vw, 128px) 0 clamp(64px, 8vw, 112px); }

@@ -51,6 +51,7 @@ const STAGE = [
   { id: 'cars', kind: 'Vehicle retail', img: ['/assets/models/vehicles/renders/golf-hero.webp', 1200, 750], alt: 'Offline render of the Simulated 2021 Volkswagen Golf, the hero car of the agent-ready cars world' },
 ];
 const MORE_TWINS = [
+  { id: 'delivery', line: 'One grocery order, picked, swapped and driven over real Auckland streets.' },
   { id: 'retail', line: 'The trade yard at 6am, the empty bins at 4pm.' },
   { id: 'stay', line: 'Bookings, cleaning, check-in and what each booking site takes.' },
   { id: 'office', line: 'Three floors, 120 desks, and the commute that fills them.' },
@@ -116,7 +117,7 @@ const HERO_CALLOUTS = [   // in the order they claim space on the map
   ['maungawhau', 'Maungawhau / Mount Eden', 'The highest volcanic cone on the isthmus: 196 m, with a crater 50 m deep.'],
   ['waitemata', 'Waitematā Harbour', 'Auckland’s main harbour, opening east to the Hauraki Gulf.'],
 ].filter(([id]) => AKL.anchors[id]);
-const HERO_PINS = [   // the twins with cards on this page first: on a crowded screen the last ones give way
+const HERO_PINS = [   // numbered in this order on the map and in its key; every one is shown
   ['ed', 'City ED twin', '#twin-ed', 'Example, not a model of this hospital'],
   ['cars', 'Car yard twin', '#twin-cars', 'Example, not a model of this site'],
   ['store', 'Supermarket twin', '#twin-store', 'Example, not a model of this site'],
@@ -126,8 +127,11 @@ const HERO_PINS = [   // the twins with cards on this page first: on a crowded s
   ['office', 'Office twin', href(WORLDS.office), 'Example, not a model of this site'],
 ].filter(([id]) => AKL.sites && AKL.sites[id]);
 const heroCallouts = HERO_CALLOUTS.map(([id, t, line]) => `<li class="hero-callout" data-anchor="${id}"><strong>${esc(t)}</strong><span>${esc(line)}</span></li>`).join('');
-const heroPins = HERO_PINS.map(([id, t, h, truth]) => `<li class="hero-pin" data-site="${id}"><a href="${h}"><strong>${esc(t)}</strong><span>${esc(truth)}</span></a></li>`).join('');
-const AKL_CREDIT = `Tāmaki Makaurau Auckland from open map data at true scale, heights ×${AKL.verticalExaggeration}. The Harbour Bridge’s arch is drawn for scale. Elevation: LINZ (CC BY 4.0). Map data © OpenStreetMap contributors.`;
+const heroPins = HERO_PINS.map(([id, t, h, truth], i) => `<li class="hero-pin" data-site="${id}"><a href="${h}"><span class="pin-n" aria-hidden="true">${i + 1}</span><strong>${esc(t)}</strong><span class="pin-truth">${esc(truth)}</span></a></li>`).join('');
+/* the key under the map: the numbered twins and the truth line they share, always visible beside the cloud (each chip carries
+   its own truth line too, shown on hover or focus) */
+const heroKey = HERO_PINS.map(([id, t], i) => `<li data-site="${id}"><span class="pin-n">${i + 1}</span><strong>${esc(t)}</strong></li>`).join('');
+const AKL_CREDIT = `Auckland from open map data at true scale, heights ×${AKL.verticalExaggeration}; Sky Tower and Harbour Bridge drawn from published dimensions. Elevation: LINZ (CC BY 4.0). Map data © OpenStreetMap contributors.`;
 /* the twins the hero links to: plain links, no place implied (pins on the map carry the sites) */
 const HERO_TAGS = [['cafe', 'Café'], ['store', 'Supermarket'], ['ed', 'Emergency department'], ['dairy', 'Dairy plant'], ['energy', 'Energy street'], ['cars', 'Car yard']];
 /* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched).
@@ -246,12 +250,13 @@ ${nav}
    <ul class="hero-tags" aria-label="Business twins in the lab"><li class="hero-tags-k">Twins</li>${HERO_TAGS.map(([id, t]) => `<li><a href="#twin-${id}">${esc(t)}</a></li>`).join('')}</ul>
   </div>
  </div>
- <div class="hero-art hero-world" id="hero-world" aria-hidden="true"><img src="/lab/pc/stills/hero-auckland.webp" srcset="/lab/pc/stills/hero-auckland-sm.webp 720w, /lab/pc/stills/hero-auckland.webp 1280w" sizes="(min-width: 960px) 62vw, 100vw" alt="" width="1280" height="960" fetchpriority="high" decoding="async"></div>
+ <div class="hero-art hero-world" id="hero-world" aria-hidden="true"><img src="/lab/pc/stills/hero-auckland.webp" srcset="/lab/pc/stills/hero-auckland-sm.webp 720w, /lab/pc/stills/hero-auckland.webp 1280w, /lab/pc/stills/hero-auckland-2x.webp 1760w" sizes="(min-width: 960px) 56vw, 100vw" alt="" width="1280" height="960" fetchpriority="high" decoding="async"></div>
  <div class="wrap hero-notes">
   <p class="hero-notes-k" aria-hidden="true">On the map</p>
   <ul class="hero-callouts" aria-label="On the map">${heroCallouts}</ul>
   <p class="hero-notes-k" aria-hidden="true">Twins on real sites of their kind, as examples</p>
   <ul class="hero-pins" aria-label="Twins on the map, each an example on a real site of its kind">${heroPins}</ul>
+  <div class="hero-key" aria-hidden="true"><p class="hero-key-k">Twins on the map</p><ol>${heroKey}</ol><p class="hero-key-truth">Each is an example on a real site of its kind, not a model of the business or institution there.</p></div>
   <p class="hero-credit">${esc(AKL_CREDIT)} <a href="#about">Sources</a></p>
  </div>
 </section>
@@ -356,7 +361,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
  `, { tag: 'dl', className: 'labels' })}
  <div class="map-note">
   <p>The city at the top of this page is built from open map data at true scale. Twins sit on real sites of their kind as examples; none models the business or institution there.</p>
-  <p class="map-credit">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Coastline and buildings: © OpenStreetMap contributors (ODbL), via OpenFreeMap and © OpenMapTiles. Heights ×${AKL.verticalExaggeration}; the Harbour Bridge’s arch is drawn for scale.</p>
+  <p class="map-credit">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Coastline and buildings: © OpenStreetMap contributors (ODbL), via OpenFreeMap and © OpenMapTiles. Heights ×${AKL.verticalExaggeration}. The Sky Tower and the Harbour Bridge are drawn from their published dimensions (approximate), the tower ${AKL.verticalExaggeration}× in all directions so its shape reads.</p>
  </div>
  </div>
 </section>
