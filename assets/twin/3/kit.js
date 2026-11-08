@@ -69,7 +69,7 @@ export function createViewer(o) {
   renderer.shadowMap.autoUpdate = false;
 
   let composer = null;
-  const v = { renderer, scene, camera, controls, sun, hemi, get tier() { return tier; }, fps: 0, offset: o.offset ?? true };
+  const v = { renderer, scene, camera, controls, sun, hemi, stage: o.stage, get tier() { return tier; }, fps: 0, offset: o.offset ?? true };
   function applyTier() {
     const T = TIERS[tier];
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, T.dpr));
@@ -299,22 +299,61 @@ export function animatePerson(p, moving, dt, speed = 1.2, pose = 'walk') {
 // stops: [{ id, title, text, pos, target } | { ..., follow: key, off: [x,y,z] }], follow(key) → { x, y, z } or null
 export const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 export function createTour({ stops, viewer, follow, dwell = 11, followDwell = 13, onGo }) {
-  const { camera, controls } = viewer, t0 = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+  const { camera, controls } = viewer, t0 = { pos: new THREE.Vector3(), target: new THREE.Vector3() }, framed = new WeakMap();
   const T = { on: !reduce, i: 0, t: 0, fly: null, chosen: null, stops };
   function view(s, out = t0) {
     const f = s.follow ? follow(s.follow) : null;
     if (f) { out.target.set(f.x, f.y ?? 1, f.z); const off = f.off || s.off || [6, 4, 6]; out.pos.set(f.x + off[0], (f.y ?? 1) + off[1], f.z + off[2]); }
+    else if (s.fit && viewer.stage) { const r = frame(s); out.pos.copy(r.pos); out.target.copy(r.target); return out; }
     else { out.pos.fromArray(s.pos); out.target.fromArray(s.target); }
     if (camera.aspect < 1) out.pos.sub(out.target).multiplyScalar(Math.min(1.7, 1.05 / camera.aspect)).add(out.target); // portrait: stand back
+    if (f && viewer.stage) slideToOpen(out);
     return out;
+  }
+  // whatever the tour follows sits in the middle of the largest open area, not under a card
+  function slideToOpen(out) {
+    const Lr = cardRects(viewer.stage), R = openRects(Lr).sort((a, b) => (b.x1 - b.x0) * (b.y1 - b.y0) - (a.x1 - a.x0) * (a.y1 - a.y0))[0]; if (!R) return;
+    _cam.copy(camera); _cam.updateProjectionMatrix(); _cam.position.copy(out.pos); _cam.lookAt(out.target); _cam.updateMatrixWorld();
+    _v.copy(out.target).project(_cam); const x = (_v.x + 1) / 2 * Lr.w, y = (1 - _v.y) / 2 * Lr.h;
+    const dir = _w.copy(out.pos).sub(out.target), dist = dir.length(); dir.normalize();
+    const fwd = _f.set(-dir.x, 0, -dir.z).normalize(), right = _r.crossVectors(fwd, _up).normalize(), wpp = 2 * dist * Math.tan(_cam.fov * Math.PI / 360) / Lr.h;
+    const sh = _s.copy(right).multiplyScalar((x - (R.x0 + R.x1) / 2) * wpp).addScaledVector(fwd, -(y - (R.y0 + R.y1) / 2) * wpp / Math.max(0.2, dir.y));
+    out.pos.add(sh); out.target.add(sh);
+  }
+  // a stop with fit: [[x,y,z], …] keeps its viewing direction, then moves in or out and slides sideways so those points
+  // fill the largest open area of the picture (the band under the title card, or the column beside the cards), clear of
+  // the title card, the figures panel, the tour caption and the bar
+  function frame(s) {
+    const Lr = cardRects(viewer.stage), rects = openRects(Lr);
+    const key = `${Lr.w | 0}|${Lr.h | 0}|${rects.map(r => `${r.x0 | 0},${r.y0 | 0},${r.x1 | 0},${r.y1 | 0}`).join(';')}|${camera.fov}|${camera.aspect.toFixed(3)}`;
+    const hit = framed.get(s); if (hit && hit.key === key) return hit;
+    _cam.copy(camera); _cam.updateProjectionMatrix();
+    const T0 = new THREE.Vector3().fromArray(s.target), dir = new THREE.Vector3().fromArray(s.pos).sub(T0), d0 = dir.length(); dir.normalize();
+    const fwd = new THREE.Vector3(-dir.x, 0, -dir.z).normalize(), right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize(), sinP = Math.max(0.2, dir.y);
+    const tan = Math.tan(_cam.fov * Math.PI / 360), lo = controls.minDistance * 1.1, hi = controls.maxDistance * 0.95;
+    let best = null;
+    for (const R of rects.length ? rects : [{ x0: 14, y0: 14, x1: Lr.w - 14, y1: Lr.h - 14 }]) {
+      const T = T0.clone(); let dist = d0;
+      for (let it = 0; it < 32; it++) {
+        _cam.position.copy(T).addScaledVector(dir, dist); _cam.lookAt(T); _cam.updateMatrixWorld();
+        let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+        for (const p of s.fit) { _v.fromArray(p).project(_cam); const x = (_v.x + 1) / 2 * Lr.w, y = (1 - _v.y) / 2 * Lr.h; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+        const wpp = 2 * dist * tan / Lr.h, k = Math.max((x1 - x0) / ((R.x1 - R.x0) * 0.92), (y1 - y0) / ((R.y1 - R.y0) * 0.92));
+        T.addScaledVector(right, ((x0 + x1) / 2 - (R.x0 + R.x1) / 2) * wpp * 0.7).addScaledVector(fwd, -((y0 + y1) / 2 - (R.y0 + R.y1) / 2) * wpp / sinP * 0.7);
+        dist = THREE.MathUtils.clamp(dist * Math.pow(k, 0.7), lo, hi);
+      }
+      if (!best || dist < best.dist) best = { dist, T };
+    }
+    const r = { key, target: best.T, pos: best.T.clone().addScaledVector(dir, best.dist) }; framed.set(s, r); return r;
   }
   function go(i, instant = reduce) {
     T.i = (i + stops.length) % stops.length; T.t = 0; const s = stops[T.i];
     try { s.do && s.do(); } catch (e) { console.warn('tour stop', e); }
-    T.fly = instant ? null : { from: camera.position.clone(), fromT: controls.target.clone(), t: 0, dur: 2.8 };
-    if (instant) { const v = view(s); camera.position.copy(v.pos); controls.target.copy(v.target); if (T.chosen != null && !s.follow) T.chosen = null; }
+    // the caption first: its height decides where the open picture ends, and so how a framed stop is framed
     const st = $('#tour-step'); if (st) st.textContent = `Tour · ${T.i + 1} of ${stops.length}`;
     $('#tour-title').textContent = s.title; $('#tour-text').textContent = typeof s.text === 'function' ? s.text() : s.text;
+    T.fly = instant ? null : { from: camera.position.clone(), fromT: controls.target.clone(), t: 0, dur: 2.8 };
+    if (instant) { const v = view(s); camera.position.copy(v.pos); controls.target.copy(v.target); if (T.chosen != null && !s.follow) T.chosen = null; }
     document.querySelectorAll('.tag[data-stop]').forEach(t => t.classList.toggle('on', +t.dataset.stop === T.i));
     onGo && onGo(T.i, s);
   }
@@ -344,6 +383,34 @@ export function createTour({ stops, viewer, follow, dwell = 11, followDwell = 13
   return T;
 }
 
+// ── the overlay cards, measured: where the open picture is ───────────────────────────────────────────────────────
+const _cam = new THREE.PerspectiveCamera(), _v = new THREE.Vector3(), _w = new THREE.Vector3(), _f = new THREE.Vector3(), _r = new THREE.Vector3(), _s = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+export function cardRects(stage) {
+  const s = stage.getBoundingClientRect(), cards = [];
+  for (const el of document.querySelectorAll('.card')) {
+    if (stage.contains(el)) continue; const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) continue;
+    const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || +cs.opacity < 0.05) continue;
+    cards.push({ el, x0: r.left - s.left, y0: r.top - s.top, x1: r.right - s.left, y1: r.bottom - s.top });
+  }
+  return { w: s.width, h: s.height, cards };
+}
+// the open parts of the picture: the band between the title card and the tour caption, and the column right of both
+export function openRects(Lr) {
+  const g = c => Lr.cards.find(k => k.el.classList.contains(c)), t = g('title'), p = g('panel'), tr = g('tour'), b = g('bar');
+  const R = (p && p.x0 > Lr.w * 0.4 ? p.x0 : Lr.w) - 14, B = (b ? b.y0 : Lr.h) - 12, col = Math.max(t ? t.x1 : 0, tr ? tr.x1 : 0) + 14;
+  return [{ x0: 14, x1: R, y0: t ? t.y1 + 12 : 14, y1: Math.min(tr ? tr.y0 - 12 : B, B) }, { x0: col, x1: R, y0: 14, y1: B }].filter(r => r.x1 - r.x0 > 90 && r.y1 - r.y0 > 90);
+}
+export function clearBox(Lr) {
+  const g = c => Lr.cards.find(k => k.el.classList.contains(c)), p = g('panel'), tr = g('tour'), b = g('bar');
+  return { x0: 14, x1: (p && p.x0 > Lr.w * 0.4 ? p.x0 : Lr.w) - 14, y0: 14, y1: Math.min(tr ? tr.y0 : Lr.h, b ? b.y0 : Lr.h) - 12, title: g('title') };
+}
+// the bottom bar's real height as --bar-h, so the tour caption and the figures panel always sit above it, however it wraps
+export function watchBar() {
+  const bar = document.querySelector('.card.bar'); if (!bar) return;
+  const setH = () => document.documentElement.style.setProperty('--bar-h', `${Math.round(bar.getBoundingClientRect().height)}px`);
+  setH(); new ResizeObserver(setH).observe(bar);
+}
+
 // ── 3D tags: buttons pinned to places in the scene; tapping one flies the camera there ───────────────────────────
 // defs: [{ text, sub, pos:[x,y,z], stop (tour index or null), quiet, near (only show within this camera distance) }]
 export function createTags(container, defs, onPick) {
@@ -354,13 +421,20 @@ export function createTags(container, defs, onPick) {
     if (t.stop != null) { el.dataset.stop = t.stop; el.type = 'button'; el.addEventListener('click', () => onPick && onPick(t.stop)); }
     el.innerHTML = `<b>${t.text}</b>${t.sub ? `<span>${t.sub}</span>` : ''}`; container.append(el); return el;
   });
+  // a tag whose anchor falls under a card (title, figures, tour caption, bar) is hidden; near the stage's edge it is
+  // nudged in so it is never clipped. Sizes are read before anything is written, so the page lays out once a frame.
+  const stage = container.parentElement;
   function place(camera, w, h, show = true, dist = 0) {
+    const cards = stage ? cardRects(stage).cards : [], size = els.map(el => [el.offsetWidth, el.offsetHeight]);
     defs.forEach((t, i) => {
       const el = els[i]; if (t.near && dist > t.near) { el.style.visibility = 'hidden'; return; }
       v3.fromArray(typeof t.pos === 'function' ? t.pos() : t.pos).project(camera);
-      const vis = show && !t.hidden && v3.z < 1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05;
+      let vis = show && !t.hidden && v3.z < 1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05;
+      let x = (v3.x + 1) / 2 * w; const y = (1 - v3.y) / 2 * h, [tw, th] = size[i];
+      if (vis) { x = Math.min(w - tw / 2 - 6, Math.max(tw / 2 + 6, x)); const r = [x - tw / 2, y - th - 8, x + tw / 2, y];
+        if (r[1] < 4 || cards.some(c => r[0] < c.x1 + 6 && r[2] > c.x0 - 6 && r[1] < c.y1 + 6 && r[3] > c.y0 - 6)) vis = false; }
       el.style.visibility = vis ? 'visible' : 'hidden';
-      if (vis) el.style.transform = `translate(${((v3.x + 1) / 2 * w).toFixed(1)}px, ${((1 - v3.y) / 2 * h).toFixed(1)}px) translate(-50%, -100%)`;
+      if (vis) el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
     });
   }
   function setText(i, text, sub) { const el = els[i], html = `<b>${text}</b>${sub ? `<span>${sub}</span>` : ''}`; if (el._h !== html) { el._h = html; el.innerHTML = html; } }
@@ -409,6 +483,7 @@ export function wireBar(tour, state, onChange = () => {}) {
     document.documentElement.classList.toggle('sim-paused', !state.running);
   };
   run.addEventListener('click', () => { state.running = !state.running; sync(); onChange(state); });
+  watchBar();
   const pt = $('#panel-toggle');
   if (pt) pt.addEventListener('click', () => { const open = $('#panel').classList.toggle('open'); pt.setAttribute('aria-expanded', String(open)); pt.querySelector('span').textContent = open ? 'Hide figures' : 'All figures'; });
   addEventListener('keydown', e => {
