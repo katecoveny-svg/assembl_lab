@@ -294,13 +294,21 @@ for (const t of TWIN_SITES) {
   s.blds.forEach((b) => (b.site = t.id));
   sites[t.id] = { x: cx, z: cz, top, plotR, blds: s.blds };
 }
-console.log("twin sites:", Object.fromEntries(Object.entries(sites).map(([k, s]) => [k, `${s.blds.length} building(s), ${Math.round(s.top)} m, plot ${Math.round(s.plotR)} m`])));
+// sims on a fixed spot rather than a building of a kind: the moving-house sim's street (the middle of a residential street in
+// Ellerslie, not any house) and the Viaduct sim's drawn restaurant (a spot on the open promenade, not a building). Coordinates only;
+// the page says each is an example. A fixed site gets its ground height from the terrain and a plot ring, no building points.
+const FIXED_SITES = [
+  { id: "moving", lonlat: [174.81007, -36.89272], plotR: 70, top: 6 },
+  { id: "viaduct", lonlat: [174.76058, -36.84302], plotR: 40, top: 6 },
+];
+for (const f of FIXED_SITES) { const [x, z] = toM(...f.lonlat); sites[f.id] = { x, z, top: f.top, plotR: f.plotR, blds: [], fixed: true }; }
+console.log("twin sites:", Object.fromEntries(Object.entries(sites).map(([k, s]) => [k, s.fixed ? `fixed spot, plot ${Math.round(s.plotR)} m` : `${s.blds.length} building(s), ${Math.round(s.top)} m, plot ${Math.round(s.plotR)} m`])));
 // each site as a place, not a dot: its real footprint and walls in bright edges, a lit roof, and a rose ring around the plot
 {
   const ids = Object.keys(sites), perSite = Math.round((TOTAL * SHARE.sites) / Math.max(1, ids.length));
   for (const id of ids) {
     const st = sites[id], g0 = landH(...toLL(st.x, st.z)), lens = st.blds.map((b) => { let p = 0; const r = b.rings[0]; for (let i = 0; i + 1 < r.length; i++) p += Math.hypot(r[i + 1][0] - r[i][0], r[i + 1][1] - r[i][1]); return p * (1 + b.h / 12); });
-    const tot = lens.reduce((a, b) => a + b, 0), nRing = Math.round(perSite * 0.2), nB = perSite - nRing;
+    const tot = lens.reduce((a, b) => a + b, 0), nRing = Math.round(perSite * (st.fixed ? 0.5 : 0.2)), nB = perSite - nRing;
     st.blds.forEach((b, bi) => {
       const r0 = b.rings[0], g = landH(...toLL(...b.c)), n = Math.max(60, Math.round((nB * lens[bi]) / tot));
       for (let k = 0; k < n;) {
@@ -416,8 +424,9 @@ const header = {
   area: { ...BOUNDS, widthKm: +(WIDTH / 1000).toFixed(1), depthKm: +(DEPTH / 1000).toFixed(1) },
   anchors,
   // twins on real sites of their kind, as examples: twin id → anchor (roof top), ground (the plot's centre on the ground), plot
-  // radius (engine units) and the site's centre in lon/lat. No names.
-  sites: Object.fromEntries(Object.entries(sites).map(([id, st]) => { const ll = toLL(st.x, st.z); return [id, { anchor: anchor(st.x, st.z, st.g0 + st.top), ground: anchor(st.x, st.z, st.g0), plot: +(st.plotR * S).toFixed(5), lonlat: [+ll[0].toFixed(5), +ll[1].toFixed(5)] }]; })),
+  // radius (engine units) and the site's centre in lon/lat; `fixed` marks a sim placed on a given spot (a street, a promenade),
+  // not a building found by kind. No names.
+  sites: Object.fromEntries(Object.entries(sites).map(([id, st]) => { const ll = toLL(st.x, st.z); return [id, { anchor: anchor(st.x, st.z, st.g0 + st.top), ground: anchor(st.x, st.z, st.g0), plot: +(st.plotR * S).toFixed(5), lonlat: [+ll[0].toFixed(5), +ll[1].toFixed(5)], ...(st.fixed ? { fixed: true } : {}) }]; })),
   sources: [
     { what: "terrain", source: "AWS Terrain Tiles (Terrarium), zoom 13, and zoom 15 on the volcanic cones", url: "https://registry.opendata.aws/terrain-tiles/", upstream: "LINZ NZ 8 m Digital Elevation Model", licence: "CC BY 4.0" },
     { what: "coastline, lakes, buildings, and the kinds of place used to choose twin sites (category and position only)", source: "OpenFreeMap vector tiles (OpenMapTiles schema), zoom 14, " + VEC.split("/")[4], url: "https://openfreemap.org", upstream: "OpenStreetMap", licence: "ODbL 1.0 (© OpenStreetMap contributors); tiles © OpenMapTiles" },

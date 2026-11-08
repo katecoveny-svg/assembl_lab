@@ -119,20 +119,24 @@ const HERO_CALLOUTS = [   // in the order they claim space on the map
   ['maungawhau', 'Maungawhau / Mount Eden', 'The highest volcanic cone on the isthmus: 196 m, with a crater 50 m deep.'],
   ['waitemata', 'Waitematā Harbour', 'Auckland’s main harbour, opening east to the Hauraki Gulf.'],
 ].filter(([id]) => AKL.anchors[id]);
+/* one numbered pin per site; a pin can carry more than one sim (the supermarket twin and the delivery sim share one store), and
+   two sims sit on fixed spots rather than buildings (a street, a promenade), each with its own truth line */
 const HERO_PINS = [   // numbered in this order on the map and in its key; every one is shown
-  ['ed', 'City ED twin', '#twin-ed', 'Example, not a model of this hospital'],
-  ['cars', 'Car yard twin', '#twin-cars', 'Example, not a model of this site'],
-  ['store', 'Supermarket twin', '#twin-store', 'Example, not a model of this site'],
-  ['cafe', 'Café twin', '#twin-cafe', 'Example, not a model of this café'],
-  ['retail', 'Trade yard twin', href(WORLDS.retail), 'Example, not a model of this site'],
-  ['stay', 'Stay twin', href(WORLDS.stay), 'Example, not a model of this site'],
-  ['office', 'Office twin', href(WORLDS.office), 'Example, not a model of this site'],
-].filter(([id]) => AKL.sites && AKL.sites[id]);
+  { id: 'ed', links: [['City ED twin', '#twin-ed']], truth: 'Example, not a model of this hospital' },
+  { id: 'cars', links: [['Car yard twin', '#twin-cars']], truth: 'Example, not a model of this site' },
+  { id: 'store', links: [['Supermarket twin', '#twin-store'], ['Supermarket order to doorstep', href(WORLDS.delivery)]], truth: 'Example, not a model of this site' },
+  { id: 'cafe', links: [['Café twin', '#twin-cafe']], truth: 'Example, not a model of this café' },
+  { id: 'retail', links: [['Trade yard twin', href(WORLDS.retail)]], truth: 'Example, not a model of this site' },
+  { id: 'stay', links: [['Stay twin', href(WORLDS.stay)]], truth: 'Example, not a model of this site' },
+  { id: 'office', links: [['Office twin', href(WORLDS.office)]], truth: 'Example, not a model of this site' },
+  { id: 'moving', links: [['Moving house', href(WORLDS.moving)]], truth: 'Example, not a model of this street' },
+  { id: 'viaduct', links: [['Friday night on the Viaduct', href(WORLDS.viaduct)]], truth: 'Example restaurant, drawn' },
+].filter(({ id }) => AKL.sites && AKL.sites[id]);
 const heroCallouts = HERO_CALLOUTS.map(([id, t, line]) => `<li class="hero-callout" data-anchor="${id}"><strong>${esc(t)}</strong><span>${esc(line)}</span></li>`).join('');
-const heroPins = HERO_PINS.map(([id, t, h, truth], i) => `<li class="hero-pin" data-site="${id}"><a href="${h}"><span class="pin-n" aria-hidden="true">${i + 1}</span><strong>${esc(t)}</strong><span class="pin-truth">${esc(truth)}</span></a></li>`).join('');
+const heroPins = HERO_PINS.map(({ id, links, truth }, i) => `<li class="hero-pin" data-site="${id}"><a class="pin-chip" href="${links[0][1]}"><span class="pin-n" aria-hidden="true">${i + 1}</span><strong>${esc(links[0][0])}</strong></a><span class="pin-card">${links.slice(1).map(([t, h]) => `<a class="pin-more" href="${h}">${esc(t)}</a>`).join('')}<span class="pin-truth">${esc(truth)}</span></span></li>`).join('');
 /* the key under the map: the numbered twins and the truth line they share, always visible beside the cloud (each chip carries
    its own truth line too, shown on hover or focus) */
-const heroKey = HERO_PINS.map(([id, t], i) => `<li data-site="${id}"><span class="pin-n">${i + 1}</span><strong>${esc(t)}</strong></li>`).join('');
+const heroKey = HERO_PINS.map(({ id, links }, i) => `<li data-site="${id}"><span class="pin-n">${i + 1}</span><strong>${links.map(([t]) => esc(t)).join(' <span class="key-and">·</span> ')}</strong></li>`).join('');
 const AKL_CREDIT = `Auckland from open map data at true scale, heights ×${AKL.verticalExaggeration}; Sky Tower and Harbour Bridge drawn from published dimensions. Elevation: LINZ (CC BY 4.0). Map data © OpenStreetMap contributors.`;
 /* the twins the hero links to: plain links, no place implied (pins on the map carry the sites) */
 const HERO_TAGS = [['cafe', 'Café'], ['store', 'Supermarket'], ['ed', 'Emergency department'], ['dairy', 'Dairy plant'], ['energy', 'Energy street'], ['cars', 'Car yard']];
@@ -258,7 +262,7 @@ ${nav}
   <ul class="hero-callouts" aria-label="On the map">${heroCallouts}</ul>
   <p class="hero-notes-k" aria-hidden="true">Twins on real sites of their kind, as examples</p>
   <ul class="hero-pins" aria-label="Twins on the map, each an example on a real site of its kind">${heroPins}</ul>
-  <div class="hero-key" aria-hidden="true"><p class="hero-key-k">Twins on the map</p><ol>${heroKey}</ol><p class="hero-key-truth">Each is an example on a real site of its kind, not a model of the business or institution there.</p></div>
+  <div class="hero-key" aria-hidden="true"><p class="hero-key-k">Twins on the map</p><ol>${heroKey}</ol><p class="hero-key-truth">Each is an example on a real site of its kind, not a model of the business or institution there. The move's street and the Viaduct restaurant are drawn examples too.</p></div>
   <p class="hero-credit">${esc(AKL_CREDIT)} <a href="#about">Sources</a></p>
  </div>
 </section>

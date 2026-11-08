@@ -18,6 +18,10 @@ holds the bounds, the vertical exaggeration, the landmark anchors, the twin site
 - **Twin sites:** each twin with a real-world kind (car yard, supermarket, ED, café, trade yard, stay, office) is placed on a real
   site of that kind, chosen by category near a named part of the city. The header keeps only the twin id and coordinates. The
   page labels each one "Example, not a model of this site". Home and kitchen are not pinned: they would point at someone's house.
+  The supermarket site also carries the delivery sim (one numbered pin, two links). Two sims sit on fixed spots given to the bake
+  (`FIXED_SITES`), not buildings found by kind: the moving-house sim's street (the middle of a residential street in Ellerslie,
+  no house) and the Viaduct sim's drawn restaurant (a spot on the open promenade, no building). They are marked `fixed` in the
+  header and get a plot ring only.
 - **Not used:** LINZ's own API (needs a key), Overpass (unreachable from the build machine). Overture Maps would also work for
   buildings; OpenFreeMap was used because it carries the coastline, buildings and categories in one set of tiles.
 - **Built:** see `built` in the JSON header and the tile release in its `sources`.

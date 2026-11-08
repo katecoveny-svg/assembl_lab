@@ -1,6 +1,6 @@
 {
  "format": "assembl-points/1",
- "count": 300000,
+ "count": 298876,
  "stride": 8,
  "layout": "x:u16 y:u16 z:u16 light:u8 kind:u8, little-endian, interleaved; weighted random order (any prefix is a fair sample)",
  "bounds": {
@@ -18,8 +18,8 @@
   ]
  },
  "kinds": {
-  "surface": 77579,
-  "edge": 211921,
+  "surface": 76974,
+  "edge": 211402,
   "ground": 0,
   "highlight": 10500
  },
@@ -190,6 +190,42 @@
     174.74822,
     -36.85691
    ]
+  },
+  "moving": {
+   "anchor": [
+    0.2088,
+    0.0234,
+    0.5138
+   ],
+   "ground": [
+    0.2088,
+    0.0204,
+    0.5138
+   ],
+   "plot": 0.00696,
+   "lonlat": [
+    174.81007,
+    -36.89272
+   ],
+   "fixed": true
+  },
+  "viaduct": {
+   "anchor": [
+    -0.2297,
+    0.0039,
+    -0.0328
+   ],
+   "ground": [
+    -0.2297,
+    0.001,
+    -0.0328
+   ],
+   "plot": 0.00398,
+   "lonlat": [
+    174.76058,
+    -36.84302
+   ],
+   "fixed": true
   }
  },
  "sources": [

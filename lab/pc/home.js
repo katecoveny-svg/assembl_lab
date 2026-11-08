@@ -130,7 +130,7 @@ async function start() {
     const sk = forms.world.anchors.skytower; if (sk) { const t = engine.project(sk), b = engine.project([sk[0], 0, sk[2]]); avoid.push({ left: Math.min(t.x, b.x) - 10, right: Math.max(t.x, b.x) + 10, top: t.y, bottom: b.y, body: true }); }
     // who claims space first: the two tallest landmarks and the harbour's name, then every twin (small, and never dropped), then the
     // other landmarks (each falls back to its name alone)
-    const RANK = ["skytower", "rangitoto", "waitemata", "ed", "cars", "store", "cafe", "retail", "stay", "office", "bridge", "maungawhau"], rank = (l) => { const i = RANK.indexOf(l.key); return i < 0 ? 99 : i; };
+    const RANK = ["skytower", "rangitoto", "waitemata", "ed", "cars", "store", "cafe", "retail", "stay", "office", "viaduct", "moving", "bridge", "maungawhau"], rank = (l) => { const i = RANK.indexOf(l.key); return i < 0 ? 99 : i; };
     const items = labels.filter((l) => anchorOf(l)).sort((a, b) => rank(a) - rank(b));
     labels.forEach((l) => { l.el.classList.toggle("compact", !l.pin && (!roomy || l.key === "waitemata")); l.el.classList.toggle("dot", l.pin && phone); });   // the harbour: its name on the water, as on a chart
     const pts = new Map(items.map((l) => [l, engine.project(anchorOf(l))]));
