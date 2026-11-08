@@ -13,3 +13,9 @@
   .wrap .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wrap .apps > * { min-width: 0; }
 }
+/* The injected explainer rail has auto margins and a 1200px intrinsic width.
+   Keep horizontal scrolling inside its .xrow, not on the document. */
+.wrap > .xwatch { width: 100%; max-width: 100%; }
+/* Card contents must shrink too; clipping a wide implicit track is not a fix. */
+.wrap .app { grid-template-columns: minmax(0, 1fr); }
+.wrap .app > * { min-width: 0; }
