@@ -11,7 +11,7 @@ createTeardown({
     {key:'rpm',label:'Rotation speed',min:0,max:600,step:20,value:120,format:v=>fmt(v)+' rpm',note:'The display slows rotation for inspection. At 0 rpm the phase can still be explored, but emf is zero.'},
     {key:'field',label:'Magnetic field',min:0,max:.8,step:.05,value:.2,format:v=>fmt(v,2)+' T',note:'Uniform field; independent of the coil’s current in this idealisation.'},
     {key:'resistance',label:'Load resistance',min:5,max:100,step:5,value:20,format:v=>fmt(v)+' Ω',note:'A purely resistive load. Current and load power change; ideal emf does not.'}
-  ]},build,step:10,cycleSeconds:6,
+  ]},build,step:10,cycleSeconds:6,explodeScale:.25,
   bands:[{from:0,to:180,label:'Positive output'},{from:180,to:360,label:'Negative output'}],
   live:{label:'Generated emf',unit:'V',digits:2,value:s=>s.emf,a:s=>s.direction,b:s=>fmt(s.theta)+'° coil angle'},
   say:s=>s.direction,
