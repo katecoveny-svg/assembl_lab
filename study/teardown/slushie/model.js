@@ -10,7 +10,7 @@ export function at(seconds=0,inputs={}){
  const energy=Math.min(cooling*t,capacity);
  const ice=Math.max(0,Math.min(1,(energy-sensible)/(SPEC.mass*SPEC.latent)));
  const temperature=Math.max(0,SPEC.startTemperature-energy/(SPEC.mass*SPEC.cp));
- return {seconds:t,cooling,rpm,energy,temperature,ice,angle:t*rpm*Math.PI/30,stage:ice>=1?'Frozen solid':ice>=.2?'Slush zone':ice>0?'Ice is forming':'Cooling liquid',freezeStart:cooling?sensible/cooling:Infinity};
+ return {seconds:t,cooling,rpm,energy,temperature,ice,angle:t*rpm*Math.PI/30,stage:cooling===0?'No cooling':ice>=1?'Frozen solid':ice>=.2?'Slush zone':ice>0?'Ice is forming':'Cooling liquid',freezeStart:cooling?sensible/cooling:Infinity};
 }
 export function checks(){return [
 {name:'Start temperature',got:at(0).temperature,want:20,unit:'°C'},
