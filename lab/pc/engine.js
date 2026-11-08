@@ -1,21 +1,28 @@
+// The main repo ports this file as components/pointcloud/engine.js (katecoveny-svg/assemblnz-f0afd79d): keep the two in step.
+// Below this first line the two files are identical: change one, copy the change to the other.
 // assembl lab · the shared point-cloud engine. One look for every point cloud in the lab (the assembl point-cloud standard):
 // plum ground with a soft lift, a six-stop plum → rose → ivory tone ramp, iridescence on highlights only, premultiplied additive
 // accumulation (dense places brighten, never blow out), a soft bloom, sparkles, assembling with a stagger, a reading scan and
 // depth fade. Forms are plain arrays (positions, light 0–1, kind) and morph into each other, so one cloud can carry a journey.
-// The main repo ports this file as components/pointcloud/engine.js: keep the two in step.
+// Optional per-point arrays `mode` and `part` let a form give its parts a state (settled, drifting in, frozen, broken, scanned,
+// edges only, sparse) and pick one part out (setHighlight). Forms without them draw exactly as before (mode 0, part 0).
+// createEngine's opt-in options are off by default: `ordered` (land part by part) and `clear` (no ground, for stills with alpha);
+// `sway: false` turns the slow sway off. setYaw turns the form, setSway scales the sway, setStill holds a still frame.
 import * as THREE from "three";
 
 export const TONES = ["#3A2238", "#5E3A58", "#8E6585", "#D9BACB", "#F0DCE6", "#F9F6F2"];
 export const IRID = ["#F9F6F2", "#F4BEDA", "#D4A8C6", "#FCCEBC", "#ECBCD6"];
 export const GROUND = "#21121F", LIFT = "#2E1A2C";
 export const KIND = { surface: 0, edge: 1, ground: 2, highlight: 3 };
+// per-point states (form.mode). 0 is the default look. Only 0 and solid shimmer and sparkle.
+export const MODE = { normal: 0, solid: 1, drifting: 2, frozen: 3, broken: 4, scanned: 5, edges: 6, sparse: 7, settled: 8 };
 const KEY = new THREE.Vector3(-0.45, 0.8, 0.55).normalize();          // key light: above, front, left
 
 export function rng(seed = 1) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-// a hex colour as a GLSL vec3 of its sRGB components, unchanged. Since three r152 a THREE.Color holds linear values, and these shaders
-// write straight to the screen with no output conversion, so passing c.r/c.g/c.b drew every tone far too dark (#21121F came out
-// about #060205, a near-black box on the plum page). Same fix as components/pointcloud/engine.js in the main repo (PR #1832).
-const vec = (hex) => { const c = new THREE.Color(hex).getRGB({ r: 0, g: 0, b: 0 }, THREE.SRGBColorSpace); return `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; };
+// a hex colour as a GLSL vec3 of its sRGB components, unchanged. These shaders write straight to the screen with no colour-space
+// conversion, so they need the palette's own (sRGB) values. Since three r152 a THREE.Color holds linear values, and passing c.r/c.g/c.b
+// drew every tone far too dark (#21121F came out about #060205, a near-black box on the plum page); reading them back as sRGB fixes it.
+const vec = (hex) => { const c = { r: 0, g: 0, b: 0 }; new THREE.Color(hex).getRGB(c, THREE.SRGBColorSpace); return `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; };
 
 // ------------------------------------------------------------------------------------------------ forms
 // A form: { n, pos: Float32Array(n*3), light: Float32Array(n), kind: Uint8Array(n), anchors: { name: [x,y,z] } }
@@ -23,8 +30,9 @@ export function makeForm(n) { return { n, pos: new Float32Array(n * 3), light: n
 // resample any form to exactly n points (morphing needs equal counts), shuffled so a subset is still a fair sample
 export function resample(f, n, seed = 3) {
   const r = rng(seed), o = makeForm(n); o.anchors = f.anchors;
-  for (let i = 0; i < n; i++) { const j = i < f.n ? i : Math.floor(r() * f.n), k = Math.floor(r() * f.n), s = i < f.n ? j : k; o.pos.set(f.pos.subarray(s * 3, s * 3 + 3), i * 3); o.light[i] = f.light[s]; o.kind[i] = f.kind[s]; }
-  for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); for (let a = 0; a < 3; a++) { const t = o.pos[i * 3 + a]; o.pos[i * 3 + a] = o.pos[j * 3 + a]; o.pos[j * 3 + a] = t; } const tl = o.light[i]; o.light[i] = o.light[j]; o.light[j] = tl; const tk = o.kind[i]; o.kind[i] = o.kind[j]; o.kind[j] = tk; }
+  const extra = ["mode", "part"].filter((k) => f[k]); for (const k of extra) o[k] = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const j = i < f.n ? i : Math.floor(r() * f.n), k = Math.floor(r() * f.n), s = i < f.n ? j : k; o.pos.set(f.pos.subarray(s * 3, s * 3 + 3), i * 3); o.light[i] = f.light[s]; o.kind[i] = f.kind[s]; for (const x of extra) o[x][i] = f[x][s]; }
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); for (let a = 0; a < 3; a++) { const t = o.pos[i * 3 + a]; o.pos[i * 3 + a] = o.pos[j * 3 + a]; o.pos[j * 3 + a] = t; } const tl = o.light[i]; o.light[i] = o.light[j]; o.light[j] = tl; const tk = o.kind[i]; o.kind[i] = o.kind[j]; o.kind[j] = tk; for (const x of extra) { const tx = o[x][i]; o[x][i] = o[x][j]; o[x][j] = tx; } }
   return o;
 }
 // recentre on the ground (y = 0) and scale so the larger of width and depth is `size`
@@ -112,8 +120,8 @@ export function imageForm(img, n, { maxSide = 420, depth = 0.04, seed = 7, crop 
 
 // ------------------------------------------------------------------------------------------------ the engine
 const VERT = /* glsl */ `
-attribute vec3 aA, aB; attribute float aLA, aLB, aSeed, aKind;
-uniform float uT, uTime, uScanY, uScan, uSize, uPR, uNear, uFar, uReduce;
+attribute vec3 aA, aB; attribute float aLA, aLB, aSeed, aKind, aMode, aPart;
+uniform float uT, uTime, uScanY, uScan, uSize, uPR, uNear, uFar, uReduce, uHi, uOrdered, uParts, uSpan;
 uniform vec3 uOffA, uOffB; uniform float uScaleA, uScaleB, uTiltA, uTiltB, uSway;
 varying vec3 vCol; varying float vAlpha, vSpark;
 float h1(float n) { return fract(sin(n) * 43758.5453123); }
@@ -135,21 +143,53 @@ vec3 irid(float k) {
 vec3 pose(vec3 q, float tilt) { float c = cos(uSway), s = sin(uSway); q = vec3(c * q.x + s * q.z, q.y, -s * q.x + c * q.z); float ct = cos(tilt), st = sin(tilt); return vec3(q.x, ct * q.y - st * q.z, st * q.y + ct * q.z); }
 void main() {
   // the stagger: each point leaves and lands at its own moment; mid-flight it is lifted off its path and glows a little
-  float t = clamp(uT * 1.6 - aSeed * 0.6, 0.0, 1.0); t = t * t * (3.0 - 2.0 * t);
+  // an ordered form lands part by part (aPart is the part's place in the build order), each part with a small stagger of its own
+  float order = uOrdered > 0.5 ? aPart / max(uParts - 1.0, 1.0) * 0.45 + aSeed * 0.15 : aSeed * 0.6;
+  float t = clamp(uT * 1.6 - order, 0.0, 1.0); t = t * t * (3.0 - 2.0 * t);
   vec3 a = pose(aA * uScaleA, uTiltA) + uOffA, b = pose(aB * uScaleB, uTiltB) + uOffB, d = b - a;
   float fly = sin(3.14159 * t);
   vec3 p = mix(a, b, t) + h3(aSeed * 97.0) * fly * (0.12 + 0.35 * length(d));
   float L = mix(aLA, aLB, t);
   float scan = uScan * exp(-pow((p.y - uScanY) / 0.035, 2.0));
   L = clamp(L + scan * 0.55 + fly * 0.22, 0.0, 1.0);
+  // per-point states (MODE in JS); mode 0 is untouched
+  float m = aMode, live = 1.0 - uReduce, stateA = 1.0;
+  if (m > 1.5 && m < 2.5) {            // drifting in: streams toward its place and never quite lands (that share is not built yet)
+    float ph = fract(uTime * 0.08 + aSeed * 13.0), e = pow(1.0 - ph, 1.6);
+    p += (h3(aSeed * 31.7) * 0.22 + vec3(0.0, 0.1, 0.0)) * e * t * live;
+    stateA = live > 0.5 ? smoothstep(0.0, 0.12, ph) * (1.0 - smoothstep(0.88, 1.0, ph)) * 0.8 : 0.4;
+    L *= live > 0.5 ? 0.7 : 0.45;
+  } else if (m > 2.5 && m < 3.5) {     // on hold: stopped mid-air, dim
+    p += (h3(aSeed * 23.1) * (0.015 + 0.035 * h1(aSeed * 2.9)) + vec3(0.0, 0.03, 0.0)) * t;
+    L *= 0.8; stateA = 0.9;
+  } else if (m > 3.5 && m < 4.5) {     // failed: a share of the points pulled off true
+    float off = step(0.45, h1(aSeed * 5.7));
+    p += ((vec3(0.05, -0.03, 0.02) + h3(aSeed * 17.3) * 0.05) * off + h3(aSeed * 3.3) * 0.008) * t;
+    p += h3(aSeed * 41.0) * 0.003 * sin(uTime * 3.0 + aSeed * 40.0) * live;
+    L = min(L, 0.72);
+  } else if (m > 4.5 && m < 5.5) {     // inspected: a slow reading scan passes through
+    float sy = uSpan * ((live > 0.5 ? fract(uTime * 0.07 + 0.3) : 0.55) * 1.1 - 0.05);
+    L = min(L, 0.66) + 0.55 * exp(-pow((aB.y - sy) / (0.05 * uSpan + 0.01), 2.0));
+  } else if (m > 5.5 && m < 6.5) {     // designed: edges only, drawn faintly in light
+    L *= 0.55; stateA = 0.62;
+  } else if (m > 6.5 && m < 7.5) {     // consented: a sparse, quiet cloud
+    L *= 0.55; stateA = 0.72;
+  } else if (m > 7.5) {                // built but still under construction: settled, no shimmer
+    L = min(L, 0.68);
+  }
+  // one part picked out: it brightens, the rest step back
+  float hi = uHi < -0.5 ? 0.0 : (abs(aPart - uHi) < 0.5 ? 1.0 : -1.0);
+  if (hi > 0.5) { L = min(1.0, L * 1.2 + 0.14); stateA = max(stateA, 0.8); } else if (hi < -0.5) { L *= 0.55; stateA *= 0.6; }
+  L = clamp(L, 0.0, 1.0);
+  bool shimmer = m < 1.5;
   vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
   float dist = -mv.z, fade = clamp(1.15 - (dist - uNear) / max(uFar - uNear, 0.01), 0.35, 1.0);
   vec3 col = ramp(L * (0.7 + 0.3 * fade));
-  if (L > 0.7) { float k = uTime * 0.025 + p.x * 0.55 + p.y * 0.35 + aSeed * 0.15; col = mix(col, irid(k), min(0.6, (L - 0.7) / 0.3 * 0.6)); }
-  vSpark = h1(aSeed * 7.13) < 0.02 && aKind != 2.0 ? 1.0 : 0.0;
+  if (L > 0.7 && shimmer) { float k = uTime * 0.025 * live + p.x * 0.55 + p.y * 0.35 + aSeed * 0.15; col = mix(col, irid(k), min(0.6, (L - 0.7) / 0.3 * 0.6)); }
+  vSpark = h1(aSeed * 7.13) < 0.02 && aKind != 2.0 && shimmer ? 1.0 : 0.0;
   float tw = vSpark * (uReduce > 0.5 ? 0.6 : 0.5 + 0.5 * sin(uTime * 2.4 + aSeed * 61.0));
   vCol = col * (1.0 + tw * 0.9);
-  vAlpha = (aKind == 2.0 ? 0.55 : 1.0) * (0.6 + 0.4 * fade);
+  vAlpha = (aKind == 2.0 ? 0.55 : 1.0) * (0.6 + 0.4 * fade) * stateA;
   gl_PointSize = uSize * uPR * (0.7 + 0.6 * h1(aSeed * 13.7)) * (1.0 + tw * 1.8) * (1.0 + fly * 0.4) / max(dist, 0.05);
 }`;
 const FRAG = /* glsl */ `
@@ -228,8 +268,9 @@ vec3 pcIrid(float k) {
 }
 vec3 pcLook(float L, float k) { vec3 c = pcRamp(L); if (L > 0.7) c = mix(c, pcIrid(k), min(0.6, (L - 0.7) / 0.3 * 0.6)); return c; }`;
 
+// ordered: the number of parts in the build order (aPart), so an assembly lands part by part; 0 lands every point on its own seed
 // clear: draw no ground, for stills shown on a page that is already plum (the PNG keeps its alpha, so no box edge ever shows)
-export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio, sizeScale = 1, sway: swayOn = true, clear = false } = {}) {
+export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio, sizeScale = 1, sway: swayOn = true, ordered = 0, clear = false } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: clear, premultipliedAlpha: true, powerPreference: "high-performance", preserveDrawingBuffer: false });
   const PR = pixelRatio ?? Math.min(window.devicePixelRatio || 1, 1.75); renderer.setPixelRatio(PR); renderer.setClearColor(GROUND, clear ? 0 : 1);
   // paint the plum ground at once: an opaque WebGL canvas is black until its first frame
@@ -237,12 +278,14 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   const N = budget ?? (Math.min(window.innerWidth, window.innerHeight) < 700 ? 80000 : 300000);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50), group = new THREE.Group(); scene.add(group);
   camera.position.set(0, 0.55, 3.4); camera.lookAt(0, 0.32, 0);
-  const geo = new THREE.BufferGeometry(), A = new Float32Array(N * 3), B = new Float32Array(N * 3), LA = new Float32Array(N), LB = new Float32Array(N), seed = new Float32Array(N), kind = new Float32Array(N);
+  const geo = new THREE.BufferGeometry(), A = new Float32Array(N * 3), B = new Float32Array(N * 3), LA = new Float32Array(N), LB = new Float32Array(N), seed = new Float32Array(N), kind = new Float32Array(N), mode = new Float32Array(N), part = new Float32Array(N);
   const r = rng(9); for (let i = 0; i < N; i++) seed[i] = r();
   geo.setAttribute("position", new THREE.BufferAttribute(A, 3)); geo.setAttribute("aA", new THREE.BufferAttribute(A, 3)); geo.setAttribute("aB", new THREE.BufferAttribute(B, 3));
   geo.setAttribute("aLA", new THREE.BufferAttribute(LA, 1)); geo.setAttribute("aLB", new THREE.BufferAttribute(LB, 1)); geo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1)); geo.setAttribute("aKind", new THREE.BufferAttribute(kind, 1));
+  geo.setAttribute("aMode", new THREE.BufferAttribute(mode, 1)); geo.setAttribute("aPart", new THREE.BufferAttribute(part, 1));
   const U = { uT: { value: 1 }, uTime: { value: 0 }, uScanY: { value: -10 }, uScan: { value: 0 }, uSize: { value: 2.2 }, uPR: { value: PR }, uNear: { value: 2.4 }, uFar: { value: 4.6 }, uReduce: { value: reduceMotion ? 1 : 0 },
-    uOffA: { value: new THREE.Vector3() }, uOffB: { value: new THREE.Vector3() }, uScaleA: { value: 1 }, uScaleB: { value: 1 }, uTiltA: { value: 0 }, uTiltB: { value: 0 }, uSway: { value: 0 } };
+    uOffA: { value: new THREE.Vector3() }, uOffB: { value: new THREE.Vector3() }, uScaleA: { value: 1 }, uScaleB: { value: 1 }, uTiltA: { value: 0 }, uTiltB: { value: 0 }, uSway: { value: 0 },
+    uHi: { value: -1 }, uOrdered: { value: ordered > 0 ? 1 : 0 }, uParts: { value: Math.max(1, ordered) }, uSpan: { value: 1 } };
   const mat = new THREE.ShaderMaterial({ uniforms: U, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, depthTest: false,
     blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; group.add(pts);
@@ -256,7 +299,13 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   function render() { resize(); pipe.render(scene, camera); }
   // forms and morphing
   let cur = null, next = null, tween = null;
-  const load = (arrP, arrL, f) => { const g = f.n === N ? f : resample(f, N); arrP.set(g.pos); arrL.set(g.light); for (let i = 0; i < N; i++) kind[i] = g.kind[i]; return g; };
+  const load = (arrP, arrL, f) => {
+    const g = f.n === N ? f : resample(f, N); arrP.set(g.pos); arrL.set(g.light); for (let i = 0; i < N; i++) kind[i] = g.kind[i];
+    if (g.mode) mode.set(g.mode); else mode.fill(0);
+    if (g.part) part.set(g.part); else part.fill(0);
+    if (g.height) U.uSpan.value = g.height;
+    geo.attributes.aMode.needsUpdate = geo.attributes.aPart.needsUpdate = true; return g;
+  };
   function setForm(f, { offset = [0, 0, 0], scale = 1, tilt = 0, ms = 2400, immediate = false } = {}) {
     if (!cur || immediate || reduceMotion) {
       cur = { f: load(A, LA, f), offset, scale, tilt }; B.set(A); LB.set(LA); U.uOffA.value.set(...offset); U.uOffB.value.set(...offset); U.uScaleA.value = U.uScaleB.value = scale; U.uTiltA.value = U.uTiltB.value = tilt; U.uT.value = 1;
@@ -274,13 +323,13 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
     cur = null; setForm(sc, { offset: opts.offset, scale: 1, tilt: opts.tilt, immediate: true }); setForm(f, { ...opts, ms: opts.ms ?? 3200 });
   }
   function scan(ms = 2600, y0 = -0.05, y1 = 1.2) { if (reduceMotion) return; scanT = { t0: performance.now(), ms, y0, y1 }; }
-  let scanT = null, sway = 0, swayAmp = 1, paused = false, running = false, onFrame = null;
+  let scanT = null, sway = 0, swayAmp = 1, yaw = 0, still = false, paused = false, running = false, onFrame = null;
   function frame(now) {
     if (!running) return; requestAnimationFrame(frame); if (paused) return;
     U.uTime.value = now / 1000;
     if (tween) { const k = Math.min(1, (now - tween.t0) / tween.ms); U.uT.value = k; if (k >= 1) { tween = null; cur = next; } }
     if (scanT) { const k = (now - scanT.t0) / scanT.ms; if (k >= 1) { scanT = null; U.uScan.value = 0; } else { U.uScan.value = Math.sin(Math.PI * k); U.uScanY.value = scanT.y0 + (scanT.y1 - scanT.y0) * k; } }
-    if (!reduceMotion && swayOn) { sway = (Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08) * swayAmp; U.uSway.value = sway; }
+    sway = !reduceMotion && swayOn && !still ? (Math.sin(now / 1000 * 0.11) * 0.22 + Math.sin(now / 1000 * 0.047) * 0.08) * swayAmp : 0; U.uSway.value = sway + yaw;
     onFrame?.(now); render();
   }
   function start() { if (running) return; running = true; requestAnimationFrame(frame); }
@@ -292,7 +341,10 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
     tmp.set(xr + offset[0], ct * y - st * zr + offset[1], st * y + ct * zr + offset[2]); tmp.applyMatrix4(group.matrixWorld).project(camera);
     return { x: (tmp.x * 0.5 + 0.5) * W, y: (-tmp.y * 0.5 + 0.5) * H, visible: tmp.z < 1 };
   }
-  return { N, renderer, camera, group, uniforms: U, setForm, assembleFrom, scan, start, stop, render, project, resize,
+  // a still frame on request (a page's "pause all motion"): any morph lands, drift and twinkle stop, the sway rests
+  function setStill(v) { still = !!v; U.uReduce.value = still || reduceMotion ? 1 : 0; if (still) { if (tween) { tween = null; U.uT.value = 1; cur = next; } scanT = null; U.uScan.value = 0; sway = 0; U.uSway.value = yaw; } render(); }
+  return { N, renderer, camera, group, uniforms: U, setForm, assembleFrom, scan, start, stop, render, project, resize, setStill,
+    setHighlight: (i) => { U.uHi.value = i == null || i < 0 ? -1 : i; render(); }, setYaw: (v) => { yaw = v; U.uSway.value = sway + yaw; render(); }, get yaw() { return yaw; },
     setLift: pipe.setLift, pause: (v) => { paused = v; if (!v) render(); }, get paused() { return paused; }, set onFrame(fn) { onFrame = fn; },
     setSway: (a) => { swayAmp = a; }, morphing: () => !!tween, dispose: () => { stop(); geo.dispose(); mat.dispose(); pipe.dispose(); renderer.dispose(); } };
 }
