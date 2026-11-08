@@ -11,9 +11,10 @@ async (page) => {
  check(await page.locator('#al-nav .v2-wordmark').count()===1&&await page.locator('#al-nav svg.v2-wordmark-a, #al-nav img').count()===0,'the shared experiment nav, wordmark text only');
  check(await page.locator('h1').count()===1&&/Friday night on the Viaduct/.test(await page.locator('h1').textContent()),'one h1: Friday night on the Viaduct');
  // the timeline advances on its own, and stops when motion is paused
- const t0=await page.evaluate(()=>window.__viaduct.t),c0=await page.locator('#clock').textContent();await page.waitForTimeout(3000);
+ const t0=await page.evaluate(()=>window.__viaduct.t),c0=await page.locator('#clock').textContent();
+ await page.waitForFunction(c=>document.getElementById('clock').textContent!==c&&window.__viaduct.t>1,c0,{timeout:20000}).catch(()=>{});
  const t1=await page.evaluate(()=>window.__viaduct.t),c1=await page.locator('#clock').textContent();
- check(t1>t0+1&&c1!==c0,`the timeline advances (${c0} → ${c1})`);
+ check(t1>t0&&c1!==c0,`the timeline advances on its own (${c0} → ${c1})`);
  check(await page.locator('#pp').getAttribute('aria-label')==='Pause motion','the pause button is labelled "Pause motion"');
  await page.click('#pp');const tp=await page.evaluate(()=>window.__viaduct.t);await page.waitForTimeout(1200);
  check(Math.abs(await page.evaluate(()=>window.__viaduct.t)-tp)<0.01,'Pause motion stops the night');

@@ -61,8 +61,8 @@ void main() {
     else { on = uDusk * (uReduce > 0.5 ? 0.75 : 0.55 + 0.45 * sin(uTime * 1.9 + aSeed * 47.0)); size *= 0.8; }
   } else if (uMode > 1.5) {                            // the rain: drops falling through the night air, faint
     float sp = 0.16 + 0.1 * h1(aSeed * 9.1);
-    q.y = 0.42 * (1.0 - fract(aSeed * 7.3 + uTime * sp * (1.0 - uReduce)));
-    on = uRain * step(h1(aSeed * 2.3), uRain * 1.2);
+    q.y = 0.42 * (1.0 - fract(aSeed * 7.3 + uTime * sp * (1.0 - uReduce))) + aKind * 0.009;    // three points a drop: a short streak
+    on = uRain * step(h1(aSeed * 2.3), uRain * 1.2) * (1.0 - aKind * 0.3);
   }
   vec3 p = pose(q * uScaleB, uTiltB) + uOffB;
   vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
@@ -112,7 +112,9 @@ export function attachNight(map, data, { reduce = false } = {}) {
   for (let i = 0; i < data.lights.n; i++) lights.size[i] = data.lights.kind[i] === 10 ? 0.85 : data.lights.kind[i] === 11 ? 1.5 : 1.1;
   // the rain: drops over the map, more over the water and promenade in front
   const rain = layer(engine, map.nRain, 2); const rr = rng(91);
-  for (let i = 0; i < map.nRain; i++) { rain.pos[i * 3] = data.bounds.x[0] + rr() * (data.bounds.x[1] - data.bounds.x[0]); rain.pos[i * 3 + 2] = data.bounds.z[0] + rr() * (data.bounds.z[1] - data.bounds.z[0]); rain.light[i] = 0.38 + rr() * 0.2; rain.size[i] = 0.9; }
+  for (let i = 0; i < map.nRain; i += 3) { const x = data.bounds.x[0] + rr() * (data.bounds.x[1] - data.bounds.x[0]), z = data.bounds.z[0] + rr() * (data.bounds.z[1] - data.bounds.z[0]), L = 0.5 + rr() * 0.22, sd = rr();
+    for (let k = 0; k < 3 && i + k < map.nRain; k++) { const j = i + k; rain.pos[j * 3] = x; rain.pos[j * 3 + 2] = z; rain.light[j] = L; rain.size[j] = 0.85; rain.kind[j] = k; rain.seed[j] = sd; } }
+  rain.geo.attributes.aSeed.needsUpdate = rain.geo.attributes.aKind.needsUpdate = true;
   // the people: rewritten every frame from the night
   const people = layer(engine, map.nPeople, 1); people.pos.fill(0); people.geo.setDrawRange(0, 0);
   for (const L of [lights, rain]) L.geo.attributes.position.needsUpdate = true;
@@ -125,16 +127,16 @@ export function attachNight(map, data, { reduce = false } = {}) {
 
   function update(night, t, now) {
     let k = 0; const P = people.pos, Lt = people.light, Z = people.size, max = people.n;
-    const put = (p, l, z = 1.6) => { if (k >= max) return; P[k * 3] = p[0]; P[k * 3 + 1] = p[1]; P[k * 3 + 2] = p[2]; Lt[k] = l; Z[k] = z; k++; };
+    const put = (p, l, z = 5.5) => { if (k >= max) return; P[k * 3] = p[0]; P[k * 3 + 1] = p[1]; P[k * 3 + 2] = p[2]; Lt[k] = l; Z[k] = z; k++; };
     const jit = (i, j) => (((i * 9301 + j * 49297) % 233280) / 233280 - 0.5);
     const wet = night.rainAt(t);
     for (const p of night.parties) {
       if (p.arrive == null) continue;
       const route = R[p.route] || R.east, walk = walkM(route), wk = p.kind === "walkin";
-      const lightOf = wk ? 0.96 : 0.82;
+      const lightOf = wk ? 1 : 0.9;
       const party = (pos, l, spread = 1.1) => { for (let j = 0; j < Math.min(p.size, 12); j++) put([pos[0] + jit(p.id, j) * spread * S * 2.2, pos[1], pos[2] + jit(j, p.id) * spread * S * 2.2], l); };
       // walking in along the promenade
-      if (t >= p.arrive - walk && t < p.arrive) { party(along(route, ((t - (p.arrive - walk)) / walk) * route.len, (jit(p.id, 7)) * 3 * S), lightOf); continue; }
+      if (t >= p.arrive - walk && t < p.arrive) { const d = ((t - (p.arrive - walk)) / walk) * route.len, side = jit(p.id, 7) * 3 * S; party(along(route, d, side), lightOf); for (let k = 1; k <= 4; k++) put(along(route, d - k * 7 * S, side), lightOf * (0.75 - k * 0.12), 4.2 - k * 0.5); continue; }
       if (t < p.arrive) continue;
       // turned away or chose not to wait: back the way they came
       if ((p.state === "lost" || p.state === "toolate") && p.balked !== false && p.lostAt != null && !p.reneged) { if (t < p.lostAt + 4) party(along(route, ((t - p.lostAt) / walk) * route.len, 2 * S, true), 0.7); continue; }
@@ -142,14 +144,14 @@ export function attachNight(map, data, { reduce = false } = {}) {
       if (p.joinAt != null) {
         const tw = walkM(R.toWait), back = p.returnAt ?? p.calledAt ?? Infinity;
         if (t < p.joinAt + tw && t < back) { party(along(R.toWait, ((t - p.joinAt) / tw) * R.toWait.len), lightOf); continue; }
-        if (t < back && t < (p.lostAt ?? Infinity)) { const a = now / 1000; const c = R.toWait.pts[R.toWait.pts.length - 1]; for (let j = 0; j < Math.min(p.size, 12); j++) { const ang = jit(p.id, j) * 6.28 + (reduce ? 0 : a * 0.08 * (j % 2 ? 1 : -1)), rad = (4 + 7 * Math.abs(jit(j, p.id + 3))) * S; put([c[0] + Math.cos(ang + p.id) * rad, c[1], c[2] + Math.sin(ang + p.id) * rad], 0.9 + 0.08 * Math.sin(a * 1.3 + p.id)); } continue; }
+        if (t < back && t < (p.lostAt ?? Infinity)) { const a = now / 1000; const c = R.toWait.pts[R.toWait.pts.length - 1]; for (let j = 0; j < Math.min(p.size, 12); j++) { const ang = jit(p.id, j) * 6.28 + (reduce ? 0 : a * 0.08 * (j % 2 ? 1 : -1)), rad = (6 + 11 * Math.abs(jit(j, p.id + 3))) * S; put([c[0] + Math.cos(ang + p.id) * rad, c[1], c[2] + Math.sin(ang + p.id) * rad], 0.93 + 0.07 * Math.sin(a * 1.3 + p.id), 6); } continue; }
         if (p.reneged && t < p.lostAt + 5) { party(along(R.east, R.east.len - 110 * S - ((t - p.lostAt) / walkM(R.east)) * R.east.len, 2 * S), 0.62); continue; }
         if (t >= back && t < back + tw && (p.seatedAt == null || t < p.seatedAt + 0.5)) { party(along(R.toWait, ((t - back) / tw) * R.toWait.len, 0, true), 0.98); continue; }
       }
       // at the table: a glint per diner at their table in the Example restaurant (the deck empties when the rain comes)
       if (p.seatedAt != null && t >= p.seatedAt && t < (p.leaveAt ?? Infinity)) {
         const tb = tablePos[latest(night, p, t) || p.table]; if (!tb) continue;
-        for (let j = 0; j < Math.min(p.size, 12); j++) { const a = (j / Math.max(1, p.size)) * 6.283; put(data.plan(tb.u + Math.cos(a) * 0.9, tb.v + Math.sin(a) * 0.7, 1.1), 0.8, 1.25); }
+        for (let j = 0; j < Math.min(p.size, 12); j++) { const a = (j / Math.max(1, p.size)) * 6.283; put(data.plan(tb.u + Math.cos(a) * 0.9, tb.v + Math.sin(a) * 0.7, 1.1), 0.86, 2.6); }
         continue;
       }
       // leaving: out along their route
@@ -157,7 +159,7 @@ export function attachNight(map, data, { reduce = false } = {}) {
     }
     // the Friday crowd on the waterfront (fewer in the rain)
     const n = Math.floor(amb.length * crowd(t, wet));
-    for (let i = 0; i < n; i++) { const a = amb[i], d = ((a.ph + (t * a.sp * 75 * S) / a.r.len) % 1) * a.r.len; put(along(a.r, d, a.side, a.rev), 0.42 + 0.2 * a.k, 1.25); }
+    for (let i = 0; i < n; i++) { const a = amb[i], d = ((a.ph + (t * a.sp * 75 * S) / a.r.len) % 1) * a.r.len; put(along(a.r, d, a.side, a.rev), 0.5 + 0.22 * a.k, 3.4); }
     people.geo.setDrawRange(0, k);
     people.geo.attributes.position.needsUpdate = people.geo.attributes.aLight.needsUpdate = people.geo.attributes.aSize.needsUpdate = true;
     // the night: dusk (street lights on around sunset), windows lighting up into the evening and going out toward midnight, the rain

@@ -92,16 +92,18 @@ function render(force = false) {
   const covers = floor.reduce((a, f) => a + (f.party && !["held", "booked"].includes(f.state) && !(f.party.group && f.id !== 9) ? f.party.size : 0), 0);
   $("c-seated").textContent = covers;
   $("c-wait").textContent = mo.waiting.length;
-  $("c-pass").textContent = mo.load ?? 0; $("c-ticket").textContent = mo.ticket ? `tickets · ${Math.round(mo.ticket)} min avg` : "tickets";
+  $("c-pass").textContent = mo.load ?? 0; $("c-ticket").textContent = mo.ticket ? `${Math.round(mo.ticket)} min avg` : "on the pass";
   $("c-wx").textContent = mo.rain > 0.5 ? "Storm" : mo.rain > 0.05 ? "Rain" : t < night.rain.flag ? "Dry" : t < night.rain.start - 12 ? "Rain due" : "Dry";
-  $("c-deck").textContent = t >= night.deck.closeAt ? "deck closed" : "deck open";
+  $("c-deck").textContent = t >= night.deck.closeAt ? "deck shut" : "deck open";
   // the pass through the night so far
   const S = night.series, upto = Math.max(1, Math.min(S.length - 1, Math.floor(t))), maxL = Math.max(10, ...S.map((s) => s.load));
   const pts = S.slice(0, upto + 1).map((s, i) => `${(i / T_END * 300).toFixed(1)},${(34 - (s.load / maxL) * 30).toFixed(1)}`).join(" ");
   $("spark").innerHTML = `<polygon class="area" points="0,34 ${pts} ${(upto / T_END * 300).toFixed(1)},34"/><polyline points="${pts}"/><line x1="${(upto / T_END * 300).toFixed(1)}" x2="${(upto / T_END * 300).toFixed(1)}" y1="0" y2="36"/>`;
   // feed: the latest three agent actions
   const done = night.events.filter((e) => e.t <= t + 0.01), recent = done.slice(-3).reverse();
-  $("feed").innerHTML = recent.map((e, i) => evHTML(e, i === 0 && t - e.t < 6 ? "fresh" : "")).join("") || `<li><div class="meta"><time>${clock(0)}</time><b>Booking</b><span class="auth">act within limits</span></div>The book is open. Bookings made earlier in the week are already on the floor plan.<span class="status ok">Within the limits staff set</span></li>`;
+  const M = night.metrics, B = base.metrics;
+  if (mo.chapter.id === "proof") $("feed").innerHTML = `<li class="fresh"><div class="meta"><b>Proof</b><span class="auth">Simulated</span></div><span class="pv">${M.covers}</span> covers served. Walk-ins quoted <span class="pv">${M.quoted}</span> min on average and waited <span class="pv">${M.actual}</span>; ${M.inRangeN} of ${M.waitedN} no longer than their range.<span class="status">Same night without the agents: told ${B.quoted} min, waited ${B.actual}</span></li><li class="fresh"><div class="meta"><b>Proof</b><span class="auth">Simulated</span></div><span class="pv">${M.kept}</span> of ${M.walkins} walk-ins kept, <span class="pv">${M.refilled}</span> of ${M.noShows} no-show${M.noShows === 1 ? "" : "s"} refilled, <span class="pv">${M.approvals}</span> staff approvals. <a href="#proof">The full proof</a><span class="status">Without the agents: ${B.kept} of ${B.walkins} kept, ${B.refilled} of ${B.noShows} refilled</span></li>`;
+  else $("feed").innerHTML = recent.map((e, i) => evHTML(e, i === 0 && t - e.t < 6 ? "fresh" : "")).join("") || `<li><div class="meta"><time>${clock(0)}</time><b>Booking</b><span class="auth">act within limits</span></div>The book is open. Bookings made earlier in the week are already on the floor plan.<span class="status ok">Within the limits staff set</span></li>`;
   $("log").innerHTML = done.map((e) => evHTML(e)).join(""); $("log-n").textContent = `${done.length} so far`;
   document.querySelectorAll("[data-count]").forEach((el) => { const n = done.filter((e) => e.agent === el.dataset.count).length; el.textContent = `${n} action${n === 1 ? "" : "s"} so far tonight`; });
   document.querySelectorAll("#night-list li").forEach((li) => li.classList.toggle("future", +li.dataset.t > t + 0.01));
@@ -185,7 +187,7 @@ addEventListener("keydown", (e) => { if (e.target.matches("input, textarea")) re
 // ------------------------------------------------------------------------------------------------ the clock
 let lastNow = performance.now();
 function tick(now) {
-  requestAnimationFrame(tick); const dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+  requestAnimationFrame(tick); const dt = Math.min(0.25, (now - lastNow) / 1000); lastNow = now;
   if (state.playing && !scrubbing && ready) { state.t = Math.min(T_END, state.t + dt * state.speed); if (state.t >= T_END) setPlaying(false); }
   render();
 }
@@ -219,7 +221,7 @@ async function startGL() {
     const pf = mapMod.fitter(plan.engine, plan.form, 0.06), pr = { left: 0, top: 0, width: plan.engine.renderer.domElement.clientWidth, height: plan.engine.renderer.domElement.clientHeight }; pr.right = pr.width; pr.bottom = pr.height;
     plan.place = pf.fit(pr, plan.engine.renderer.domElement, 0.92);
   } catch (e) { console.warn("Floor plan:", e.message); plan = null; }
-  gl = { map, plan, data, nightL, frame: null };
+  gl = { map, plan, data, nightL, frame: null }; window.__viaduct._gl = gl;
   // callouts: placed once beside their anchors (clear of the words, the phone, the plan and each other), then they follow the map
   const callouts = [...document.querySelectorAll(".callout")].map((el) => ({ el, key: el.dataset.anchor, primary: el.classList.contains("key") }));
   const svg = $("leaders");
