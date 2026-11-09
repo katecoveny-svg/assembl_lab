@@ -1,0 +1,474 @@
+{
+  "conservativeProjectedCBD": [
+    1756430,
+    5919960,
+    1758210,
+    5921560
+  ],
+  "skyTower": [
+    {
+      "bounds": [
+        1756960.0,
+        5920080.0,
+        1757439.99899292,
+        5920799.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3603.laz",
+        "version": "LAS 1.4",
+        "num_points": "5056994",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756960.000",
+        "max_x": "1757439.999",
+        "min_y": "5920080.000",
+        "max_y": "5920799.999",
+        "min_z": "-602.603",
+        "max_z": "960.985",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3603.laz"
+      }
+    }
+  ],
+  "cbd": [
+    {
+      "bounds": [
+        1756480.0,
+        5919360.0,
+        1756959.99899292,
+        5920079.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3702.laz",
+        "version": "LAS 1.4",
+        "num_points": "3705714",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756480.000",
+        "max_x": "1756959.999",
+        "min_y": "5919360.000",
+        "max_y": "5920079.999",
+        "min_z": "-596.081",
+        "max_z": "156.593",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3702.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756960.0,
+        5920080.0,
+        1757439.99899292,
+        5920799.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3603.laz",
+        "version": "LAS 1.4",
+        "num_points": "5056994",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756960.000",
+        "max_x": "1757439.999",
+        "min_y": "5920080.000",
+        "max_y": "5920799.999",
+        "min_z": "-602.603",
+        "max_z": "960.985",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3603.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757920.0,
+        5919360.0,
+        1758399.99899292,
+        5920079.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3705.laz",
+        "version": "LAS 1.4",
+        "num_points": "7479846",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757920.000",
+        "max_x": "1758399.999",
+        "min_y": "5919360.000",
+        "max_y": "5920079.999",
+        "min_z": "-613.425",
+        "max_z": "983.319",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3705.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756480.0,
+        5920800.0,
+        1756959.99899292,
+        5921519.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3502.laz",
+        "version": "LAS 1.4",
+        "num_points": "4604964",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756480.000",
+        "max_x": "1756959.999",
+        "min_y": "5920800.000",
+        "max_y": "5921519.999",
+        "min_z": "-602.753",
+        "max_z": "932.966",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3502.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757440.0,
+        5919360.0,
+        1757919.99899292,
+        5920079.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3704.laz",
+        "version": "LAS 1.4",
+        "num_points": "4157096",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757440.000",
+        "max_x": "1757919.999",
+        "min_y": "5919360.000",
+        "max_y": "5920079.999",
+        "min_z": "-614.026",
+        "max_z": "939.731",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3704.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757440.0,
+        5921520.027,
+        1757919.99899292,
+        5922239.998984863
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3404.laz",
+        "version": "LAS 1.4",
+        "num_points": "38370",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757440.000",
+        "max_x": "1757919.999",
+        "min_y": "5921520.027",
+        "max_y": "5922239.999",
+        "min_z": "-619.450",
+        "max_z": "914.560",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3404.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756960.0,
+        5919360.0,
+        1757439.99899292,
+        5920079.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3703.laz",
+        "version": "LAS 1.4",
+        "num_points": "6804791",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756960.000",
+        "max_x": "1757439.999",
+        "min_y": "5919360.000",
+        "max_y": "5920079.999",
+        "min_z": "-581.160",
+        "max_z": "990.810",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3703.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756000.0,
+        5920080.0,
+        1756479.99899292,
+        5920799.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3601.laz",
+        "version": "LAS 1.4",
+        "num_points": "4500778",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756000.000",
+        "max_x": "1756479.999",
+        "min_y": "5920080.000",
+        "max_y": "5920799.999",
+        "min_z": "-622.384",
+        "max_z": "944.878",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3601.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756960.024,
+        5921520.024,
+        1757439.991010498,
+        5922239.990003418
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3403.laz",
+        "version": "LAS 1.4",
+        "num_points": "16339",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756960.024",
+        "max_x": "1757439.991",
+        "min_y": "5921520.024",
+        "max_y": "5922239.990",
+        "min_z": "-627.763",
+        "max_z": "287.131",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3403.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756480.0,
+        5921520.0,
+        1756959.993988037,
+        5922239.984985352
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3402.laz",
+        "version": "LAS 1.4",
+        "num_points": "1387232",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756480.000",
+        "max_x": "1756959.994",
+        "min_y": "5921520.000",
+        "max_y": "5922239.985",
+        "min_z": "-628.034",
+        "max_z": "904.888",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3402.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756480.0,
+        5920080.0,
+        1756959.99899292,
+        5920799.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3602.laz",
+        "version": "LAS 1.4",
+        "num_points": "4730936",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756480.000",
+        "max_x": "1756959.999",
+        "min_y": "5920080.000",
+        "max_y": "5920799.999",
+        "min_z": "-618.375",
+        "max_z": "970.940",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3602.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756960.0,
+        5920800.0,
+        1757439.99899292,
+        5921519.986022949
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3503.laz",
+        "version": "LAS 1.4",
+        "num_points": "2471174",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756960.000",
+        "max_x": "1757439.999",
+        "min_y": "5920800.000",
+        "max_y": "5921519.986",
+        "min_z": "-629.178",
+        "max_z": "876.089",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3503.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757440.0,
+        5920080.0,
+        1757919.99899292,
+        5920799.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3604.laz",
+        "version": "LAS 1.4",
+        "num_points": "4287350",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757440.000",
+        "max_x": "1757919.999",
+        "min_y": "5920080.000",
+        "max_y": "5920799.999",
+        "min_z": "-626.023",
+        "max_z": "957.064",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3604.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756000.0,
+        5921520.0,
+        1756479.99899292,
+        5922239.99798584
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3401.laz",
+        "version": "LAS 1.4",
+        "num_points": "430088",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756000.000",
+        "max_x": "1756479.999",
+        "min_y": "5921520.000",
+        "max_y": "5922239.998",
+        "min_z": "-632.920",
+        "max_z": "919.705",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3401.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756000.0,
+        5920800.0,
+        1756479.99899292,
+        5921519.99798584
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3501.laz",
+        "version": "LAS 1.4",
+        "num_points": "2531052",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756000.000",
+        "max_x": "1756479.999",
+        "min_y": "5920800.000",
+        "max_y": "5921519.998",
+        "min_z": "-631.858",
+        "max_z": "199.688",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3501.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757920.0010000002,
+        5921520.01,
+        1758399.9859853517,
+        5922239.997976074
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3405.laz",
+        "version": "LAS 1.4",
+        "num_points": "100424",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757920.001",
+        "max_x": "1758399.986",
+        "min_y": "5921520.010",
+        "max_y": "5922239.998",
+        "min_z": "-630.067",
+        "max_z": "179.406",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3405.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757920.0,
+        5920800.0,
+        1758399.99899292,
+        5921519.981994629
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3505.laz",
+        "version": "LAS 1.4",
+        "num_points": "2918171",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757920.000",
+        "max_x": "1758399.999",
+        "min_y": "5920800.000",
+        "max_y": "5921519.982",
+        "min_z": "-619.449",
+        "max_z": "944.862",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3505.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757440.0,
+        5920800.0,
+        1757919.99899292,
+        5921519.942016602
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3504.laz",
+        "version": "LAS 1.4",
+        "num_points": "2538641",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757440.000",
+        "max_x": "1757919.999",
+        "min_y": "5920800.000",
+        "max_y": "5921519.942",
+        "min_z": "-629.431",
+        "max_z": "958.102",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3504.laz"
+      }
+    },
+    {
+      "bounds": [
+        1757920.0,
+        5920080.0,
+        1758399.99899292,
+        5920799.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3605.laz",
+        "version": "LAS 1.4",
+        "num_points": "6539561",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1757920.000",
+        "max_x": "1758399.999",
+        "min_y": "5920080.000",
+        "max_y": "5920799.999",
+        "min_z": "-576.743",
+        "max_z": "972.107",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3605.laz"
+      }
+    },
+    {
+      "bounds": [
+        1756000.0,
+        5919360.0,
+        1756479.99899292,
+        5920079.9990234375
+      ],
+      "attributes": {
+        "file_name": "CL2_BA32_2024_1000_3701.laz",
+        "version": "LAS 1.4",
+        "num_points": "7855872",
+        "point_type": "6",
+        "point_size": "30",
+        "min_x": "1756000.000",
+        "max_x": "1756479.999",
+        "min_y": "5919360.000",
+        "max_y": "5920079.999",
+        "min_z": "-562.298",
+        "max_z": "977.087",
+        "URL": "https://opentopography.s3.sdsc.edu/pc-bulk/NZ24_Auckland/CL2_BA32_2024_1000_3701.laz"
+      }
+    }
+  ]
+}

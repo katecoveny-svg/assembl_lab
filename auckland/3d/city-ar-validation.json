@@ -1,0 +1,20 @@
+{
+  "glbVersion": 2,
+  "finitePositions": true,
+  "bufferViewsWithinBounds": true,
+  "uniformCoreScale": true,
+  "usdzStoredAligned64": true,
+  "usdzMetresYUp": true,
+  "triangles": 26215,
+  "files": {
+    "auckland-city.glb": {
+      "bytes": 3838108,
+      "sha256": "e2ba6a8943e5d836a4b07ea6d6e13e7651497ccb2af1f604e102f768ca727e7a"
+    },
+    "auckland-city.usdz": {
+      "bytes": 8702715,
+      "sha256": "d70d98871df992c9bf75cc3c272409e07a094b88bfe1429e5453710cbb314ed8"
+    }
+  },
+  "limits": "Structural checks and Apple usdchecker, not a full Khronos glTF validator or physical-device AR test."
+}

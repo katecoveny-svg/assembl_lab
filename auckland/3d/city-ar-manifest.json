@@ -1,0 +1,85 @@
+{
+  "units": "metres",
+  "upAxis": "Y",
+  "verticalExaggeration": 1,
+  "uniformXYZScale": 0.0003873969869351494,
+  "scaleDenominator": 2581.3313828571436,
+  "cropWidthMetres": 0.7,
+  "cropDepthMetres": 0.6458404880022576,
+  "modelDimensionsMetres": [
+    0.7200000286102295,
+    0.16392459958047326,
+    0.71334047567127
+  ],
+  "projectedCRS": "EPSG:2193",
+  "verticalDatum": "NZVD2016 EPSG:7839",
+  "projectedBounds": {
+    "west": 1756416.233472,
+    "east": 1758223.16544,
+    "south": 5919911.411712,
+    "north": 5921578.540032
+  },
+  "sourceBuildingBboxWGS84": [
+    174.755,
+    -36.853,
+    174.774,
+    -36.839
+  ],
+  "heightCounts": {
+    "tagged": 121,
+    "estimated": 408,
+    "unknown": 662
+  },
+  "landmark": {
+    "name": "Sky Tower — simplified OSM parts",
+    "parts": 16,
+    "taggedHeightMetres": 328,
+    "unverified": true,
+    "omittedParts": 9,
+    "source": "https://www.openstreetmap.org/relation/19745928"
+  },
+  "geometryParity": {
+    "tagged": {
+      "vertices": 15060,
+      "identical": true
+    },
+    "estimated": {
+      "vertices": 43416,
+      "identical": true
+    },
+    "unknown": {
+      "vertices": 11748,
+      "identical": true
+    },
+    "skytower": {
+      "vertices": 7041,
+      "identical": true
+    }
+  },
+  "source": "https://api.openstreetmap.org/api/0.6/map?bbox=174.755,-36.853,174.774,-36.839",
+  "sourceRetrieved": "2026-11-09T05:36:05.708Z",
+  "limits": "Same CBD building meshes as browser, same terrain surface clipped to extent. Uniform XYZ scaling only; wider harbour excluded. Building bases use coarse terrain at centroid. Flat roofs, tagged heights unverified, levels-derived estimates, unknown flat footprints. Sky Tower is 16 simplified OSM-tagged parts, with 9 unsupported/height-unknown parts omitted; no interiors or architectural-detail claim. Native AR has no browser selectors. Device placement untested.",
+  "cropCornersWGS84": [
+    {
+      "lat": -36.853780113351434,
+      "lon": 174.75452676741793
+    },
+    {
+      "lat": -36.853479265398825,
+      "lon": 174.77478640922394
+    },
+    {
+      "lat": -36.838457891584696,
+      "lon": 174.77443915809812
+    },
+    {
+      "lat": -36.83875857623599,
+      "lon": 174.75418347526815
+    }
+  ],
+  "realWorldCropDimensionsMetres": [
+    1806.9319679997861,
+    1667.1283200001344
+  ],
+  "geographicGroundReference": "Original LINZ NZVD2016 elevations; shared source y = 0.018 + elevationMetres / 30720. Native core applies one uniform XYZ scale and presentation translation. Water plane and plinth are presentation geometry, not sea level or bathymetry."
+}
