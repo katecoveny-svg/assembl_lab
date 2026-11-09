@@ -26,3 +26,16 @@ Actual cloud Chromium UI checks passed: identical repeat; pack B replacement los
 Limitations / merge gates: WebGL failed in this cloud browser and the existing still-image fallback appeared. Actual 3D orbit / movement and the visual replay integration remain unverified. The Locate button now explicitly reports this fallback. Device emulation is unavailable by browser policy; the phone CSS check used a real 390px iframe viewport, not a physical phone. Reduced-motion browser behaviour has not been verified. Local static server has no `/api/live/`, so contextual feeds return 404 and are absent; the exercise is independent of them. No full production backend check was performed.
 
 Before merge, verify interactive 3D and reduced motion on a WebGL-capable desktop and a physical phone. Review model assumptions with a dairy maintenance practitioner before presenting this as anything beyond a judgement exercise.
+
+## Follow-up WebGL and reduced-motion verification
+
+The initial browser limitation was resolved using a separate normal Chromium window launched with `--use-angle=swiftshader --force-prefers-reduced-motion` and an isolated temporary profile. No sandbox-disabling flag, unsafe SwiftShader flag, DevTools override or managed-policy change was used. A local-only QA frame visibly reported `Reduced motion: true` and `WebGL stage: true`.
+
+Observed in the actual rendered scene: camera navigation to the dryer and fan; manual orbit changes the viewing angle; pack C at hour 30 shows a red warning ring and failed / unplanned-stop callout; moving to hour 38 clears the warning and resumes the contextual flow. Pack A at hour 8 shows planned inspection / service. QA found and fixed a red planned-service ring and vague available-state callout: planned service is now amber, and the fan callout reads the replay state directly. Keyboard comparison, slider stepping and reset also worked with reduced motion enabled. Existing ambient plant animation slows in reduced-motion mode; it is not fully static. The new exercise has no automatic replay or animated result transitions.
+
+Saved evidence outside the repository:
+- `../dairy-qa/results-reduced-motion.png`: pack C cost comparison ($50,000 versus $56,000).
+- `../dairy-qa/replay-stop.png`: WebGL fan failure and red ring.
+- `../dairy-qa/replay-service.png`: corrected amber planned-service ring and callout.
+
+This supersedes the earlier unverified-WebGL and unverified-reduced-motion notes. Physical iPhone / Safari and the production backend are still not tested. Current main was re-fetched and remains `48605a51b4095d0677c64f24aabc861ae44aa068`, the PR base; no other work is displaced. Ten focused dairy model/plant tests passed again after the display correction.
