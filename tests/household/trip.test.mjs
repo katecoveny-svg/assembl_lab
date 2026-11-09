@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {tripCost,exampleTrip,observation} from '../../household/trip-model.mjs';
+const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
+test('trip refill saving minus detour fuel: independent expected result',()=>{const r=tripCost(exampleTrip());near(r.pumpDifference,6);near(r.extraLitres,.48);near(r.drivingDifference,1.344);near(r.net,4.656);near(r.extraMinutes,11);near(r.breakEvenLitres,8.96);});
+test('small refill makes cheaper pump uneconomic',()=>{const s=exampleTrip();s.litres=5;near(tripCost(s).net,-.594);});
+test('extra parking and tolls counted once',()=>{const s=exampleTrip();s.baseFees=2;s.nextFees=7;near(tripCost(s).net,-.344);});
+test('shorter reordered trip produces negative extra cost',()=>{const s=exampleTrip();s.nextKm=12;s.nextMinutes=20;const r=tripCost(s);near(r.drivingDifference,-1.344);near(r.net,7.344);near(r.extraMinutes,-12);});
+test('identical routes/prices has zero net',()=>{const s=exampleTrip();s.nextKm=s.baseKm;s.nextMinutes=s.baseMinutes;s.nextPrice=s.basePrice;near(tripCost(s).net,0);assert.equal(tripCost(s).breakEvenLitres,null);});
+test('no refill can still compare routing cost alone',()=>{const s=exampleTrip();s.litres=0;near(tripCost(s).net,-1.344);});
+test('prices must be dated, sourced and not future-dated',()=>{const s=exampleTrip();s.nextObserved='';assert.throws(()=>tripCost(s));s.nextObserved=new Date(Date.now()+600000).toISOString();assert.throws(()=>tripCost(s));s.nextObserved=new Date().toISOString();s.nextSource=' ';assert.throws(()=>tripCost(s));});
+test('stale price distinguished from retrieval time',()=>{const s=exampleTrip();s.nextObserved=new Date(Date.now()-25*3600000).toISOString();assert.equal(tripCost(s).stale,true);});
+test('reject invalid units, negatives, huge and nonfinite values',()=>{for(const [k,v] of [['efficiency',0],['nextPrice',0],['basePrice',-1],['litres',201],['baseKm',Infinity],['nextMinutes',NaN],['drivingPrice',''],['grade','unknown']]){const s=exampleTrip();s[k]=v;assert.throws(()=>tripCost(s),k);}});
+test('not an annual estimate: exactly one fill and one full route difference',()=>{for(const litres of [0,1,10,40,100,200]){const s=exampleTrip();s.litres=litres;near(tripCost(s).net,litres*.15-1.344);}});
