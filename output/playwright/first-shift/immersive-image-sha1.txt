@@ -1,0 +1,3 @@
+97e4b549fed75ba961e0ed18c6f5e6923a7c9f0e  output/playwright/first-shift/immersive-counter.jpg
+113f938fc6c5663b10220cb74a0fad759be7b464  output/playwright/first-shift/immersive-desktop.jpg
+dff09ac776c9384f3271598ec24f1c0017932e31  output/playwright/first-shift/immersive-mobile.jpg

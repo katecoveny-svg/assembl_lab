@@ -1,0 +1,9 @@
+/Users/kateharland/Documents/Codex/2026-11-09/task-14/business-lab/output/playwright/first-shift/immersive-counter.jpg
+  pixelWidth: 1440
+  pixelHeight: 1199
+/Users/kateharland/Documents/Codex/2026-11-09/task-14/business-lab/output/playwright/first-shift/immersive-desktop.jpg
+  pixelWidth: 1440
+  pixelHeight: 1199
+/Users/kateharland/Documents/Codex/2026-11-09/task-14/business-lab/output/playwright/first-shift/immersive-mobile.jpg
+  pixelWidth: 375
+  pixelHeight: 1290

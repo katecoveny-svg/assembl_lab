@@ -1131,6 +1131,7 @@ const CAFE = (() => {
 
 </script>
 <script type="module">
+import { mountFirstShift } from "./first-shift.js";
 import { THREE, createStage, nzDate, calm, loadTwinAsset } from "/assets/twin/2/stage.js";
 import { createCafeRig, visualStateFromModel, CONTRACT as CAFE_RIG } from "/assets/models/cafe/cafe-rig-controller.mjs";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
@@ -1143,7 +1144,7 @@ function createCafeScene({ canvas, box, lite }) {
 const K = CAFE;
 const FY = 0.15;                                  // floor level
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), col = n => new THREE.Color(css(n) || "#999");
-function sizeCanvas() { const w = box.clientWidth || 800, h = w < 600 ? Math.max(440, Math.min(innerHeight * 0.72, 600)) : Math.max(window.__minH || 440, Math.min(innerHeight * 0.74, w * 0.62)); canvas.style.height = Math.round(h) + "px"; }
+function sizeCanvas() { const w = box.clientWidth || 800, h = new URLSearchParams(location.search).has("shift") ? (w < 600 ? 450 : Math.min(740, Math.max(560, innerHeight * .66))) : w < 600 ? Math.max(440, Math.min(innerHeight * 0.72, 600)) : Math.max(window.__minH || 440, Math.min(innerHeight * 0.74, w * 0.62)); canvas.style.height = Math.round(h) + "px"; }
 sizeCanvas();
 const stage = createStage({ id: "cafe", canvas, box, place: "auckland", extent: 17, tableY: -0.72, controls: { minDistance: 5, maxDistance: 70, maxPolarAngle: Math.PI * 0.47 }, ao: { radius: 0.45 }, tilt: 3.5, tiltBand: 0.22, onResize: () => resize() });
 const SM = stage.M, geo = stage.geo, camera = stage.camera, renderer = stage.renderer;
@@ -1427,7 +1428,7 @@ const lerp = (a, b, u) => a + (b - a) * u, clamp = (x, a, b) => Math.max(a, Math
 const hrand = s => { let x = (s * 2246822519 + 0x9E3779B9) >>> 0 || 1; return () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 1e6) / 1e6; }; };
 function waitSpot(p, k) { const r = hrand(p.id * 7 + k); return mode === "cafe" ? [0.6 + r() * 2.4, 2.2 + r() * 1.3] : [5.2 + r() * 1.4, 4.4 + r() * 1.1]; }
 function sync(dt, d, S, simT) {
-  const t = simT, raining = K.isRain(d.wx, t), M_ = K.MODES[S.mode], h = t / 60, kk = Math.min(1, dt * 6);
+  const t = simT, raining = K.isRain(d.wx, t), M_ = K.MODES[S.mode], h = t / 60, kk = dt === 0 ? 1 : Math.min(1, dt * 6);
   lights(dt, h, raining, t >= M_.start && t < M_.end, S, d);
   // ---- customers
   let n = 0; const seen = new Set(), qIndex = new Map(); d.counterQ.forEach((id, i) => qIndex.set(id, i));
@@ -1516,7 +1517,7 @@ function sync(dt, d, S, simT) {
   if (espBusy) { const rate = Math.min(1, d.espQ.length / 4) * 22 * dt * (lite ? 0.5 : 1); for (let k = 0; k < rate + (Math.random() < rate % 1 ? 1 : 0); k++) { steamPos.set([3.2 + Math.random() * 0.4, FY + 1.6, CZ - 0.05 + (Math.random() - .5) * 0.2], si * 3); steamLife[si] = 1.4; si = (si + 1) % SN; } }
   for (let i = 0; i < SN; i++) { if (steamLife[i] > 0) { steamLife[i] -= dt; steamPos[i * 3 + 1] += dt * 0.45; steamPos[i * 3] += Math.sin(t + i) * dt * 0.05; } else steamPos[i * 3 + 1] = -50; } steamGeo.attributes.position.needsUpdate = true;
   steam.material.opacity = dark ? 0.3 : 0.5;
-  const appNew = d.parties.slice(from, d.next).some(p => p.type === "app" && p.orderAt != null && t - p.orderAt < 1.5); tabGlow.material.opacity = appNew ? 0.6 + 0.3 * Math.sin(performance.now() / 120) : 0.08;
+  const appNew = d.parties.slice(from, d.next).some(p => p.type === "app" && p.orderAt != null && t - p.orderAt < 1.5); tabGlow.material.opacity = appNew ? (dt === 0 ? 0.6 : 0.6 + 0.3 * Math.sin(performance.now() / 120)) : 0.08;
   // ---- weather: rain, umbrellas, puddles
   rainK += ((raining ? 1 : 0) - rainK) * Math.min(1, dt * 1.5); rainLines.visible = rainK > 0.02; M.rain.opacity = 0.55 * rainK;
   if (rainLines.visible) { const tt = performance.now() / 1000; for (let i = 0; i < RN; i++) { const [x, z, o] = rainSeed[i]; const y = 9 - ((tt * 7 + o) % 9); rainPos.set([x + 0.05, y, z, x, y - 0.35, z], i * 6); } rainGeo.attributes.position.needsUpdate = true; }
@@ -1668,7 +1669,7 @@ addEventListener("resize", () => { tw.resize(); });
 const TAGS = [{ id: "till", p: [7.3, 2.75, 2.4] }, { id: "coffee", p: [3.2, 2.5, 1.0] }, { id: "cab", p: [5.6, 2.2, 1.2] }, { id: "kit", p: [3.4, 3.3, -4.8] }, { id: "pass", p: [2.0, 2.3, -2.3] },
   { id: "tables", p: [-4.0, 2.7, 1.4] }, { id: "out", p: [-3.0, 3.3, 8.1] }, { id: "app", p: [1.6, 2.2, 1.6] }, { id: "bin", p: [-6.6, 2.0, -7.6] }, { id: "board", p: [-6.7, 3.3, -5.9] }, { id: "door", p: [5.6, 2.5, 5.0] }, { id: "sky", p: [0, 4.6, 10.5] }];
 const VIEWTAGS = { venue: ["till", "coffee", "kit", "tables", "out", "bin"], counter: ["till", "coffee", "cab", "app"], kitchen: ["kit", "pass", "board"], dining: ["tables", "pass", "door", "out"], street: ["out", "sky", "app", "till"], office: ["board", "bin"] };
-const TE = {}; TAGS.forEach(t => { const e = document.createElement("div"); e.className = "tag"; e.hidden = true; $("tags").appendChild(e); TE[t.id] = e; });
+const TE = {}; TAGS.forEach(t => { const e = document.createElement("div"); e.className = "tag"; e.dataset.tag = t.id; e.hidden = true; $("tags").appendChild(e); TE[t.id] = e; });
 function tags(st) { const t = d.t, M = K.MODES[S.mode], placed = twBlocked(), set = (id, html, cls = "") => { TE[id].innerHTML = html; TE[id].className = "tag " + cls; };
   const on = r => K.staffAt(d.roster, r, t), cafe = S.mode === "cafe", raining = K.isRain(d.wx, t), outOK = K.outdoorOK(d.wx, t, S.mode);
   if (cafe) { const w = d.counterQ.length; set("till", `<b>Till</b> ${w ? w + " in the queue" : "no queue"}<br><span class="m">${on("counter")} on the counter</span>`, w > 5 ? "warn" : ""); }
@@ -1990,7 +1991,7 @@ let last = performance.now(), visible = true, pt = 0, ct = 0; try { new Intersec
 function frame(dt) {
   if (true) { const M = K.MODES[S.mode];
     if (playing) { acc += dt * speed; while (acc >= 1) { K.step(S, d); acc -= 1; if (d.t >= M.end) { dow = (dow + 1) % 7; $("dow").value = dow; d = K.newDay(S, dow, wxFor(dow)); charts(); } } }
-    tw.sync(dt, d, S, d.t + (playing ? acc : 0)); pt += dt; ct += dt; if (pt > 0.25) { pt = 0; tags(live()); } if (ct > 2) { ct = 0; charts(); } }
+    tw.sync((reduce || !playing) && new URLSearchParams(location.search).has("shift") ? 0 : dt, d, S, d.t + (playing ? acc : 0)); pt += dt; ct += dt; if (pt > 0.25) { pt = 0; tags(live()); } if (ct > 2) { ct = 0; charts(); } }
 }
 tw.resize(); theme(); syncInputs(); srcTable(); setView("venue", true); setMode("cafe");
 // ---------------- 3D detail: the Blender-authored venue (default) or the simple maquette. ?model=maquette starts on the maquette.
@@ -2003,7 +2004,7 @@ document.querySelectorAll("[data-gfx]").forEach(b => b.onclick = () => { gfxWant
 if (!tw.stage.ok) { $("gfxSeg").hidden = true; $("gfxNote").textContent = ""; }
 else tw.loadModel().then(() => { tw.setGraphics(gfxWant); gfxUI(tw.gfx === "model" ? "Detailed model (Blender). People, plates and cups come from the simulation." : "Simple maquette. The simulation is unchanged."); })
   .catch(e => { console.warn("café model:", e && e.message); tw.setGraphics("maquette"); gfxUI("The detailed model could not load, so this is the simple maquette. The simulation is unchanged."); });
-tw.sync(0.016, d, S, d.t); tags(live()); fetchWeather();
+tw.sync(0.016, d, S, d.t); tags(live()); if (!new URLSearchParams(location.search).has("shift")) fetchWeather();
 window.__cafe = { S, graphics: v => (v ? tw.setGraphics(v) : tw.gfx), advance: (sec = 0.3) => tw.stage.advance(sec, 0.1), setView, recompute, jump, speed: setSpeed, setMode, state: () => d, week: () => W, proof: () => PR, loadSamples, play: v => { playing = v; $("pause").textContent = playing ? "Pause" : "Play"; },
   setDay: v => { dow = v; $("dow").value = v; newDayKeep(); charts(); }, setWeather: v => { $("wxSel").value = v; $("wxSel").onchange({ target: $("wxSel") }); },
   apply: on => { K.LEVERS.filter(l => l.modes.includes(S.mode)).forEach(l => S[l.k] = !!on); changed(true); }, lever: (k, v) => { S[k] = v; changed(true); } };
@@ -2095,6 +2096,19 @@ function twBlocked() { const sb = $("stagebox").getBoundingClientRect(); return 
 function twTop() { const v = $("stagebox").querySelector(".views"), sb = $("stagebox").getBoundingClientRect(); return v ? Math.max(44, v.getBoundingClientRect().bottom - sb.top + 4) : 44; }
 
 tw.onFrame(frame);
+if (new URLSearchParams(location.search).has('shift')) {
+  const css = document.createElement('link'); css.rel='stylesheet'; css.href='./first-shift.css'; css.onload=()=>tw.resize(); document.head.append(css);
+  if(innerWidth<=760 && !new URLSearchParams(location.search).has('quality')) tw.stage.setTier('low');
+  const setup = (roster, station) => ({...K.BASE, mode:'cafe',month:9,weather:'typical',roster,station});
+  mountFirstShift({
+    evaluate(roster,station) { const config=setup(roster,station), day=K.newDay(config,1,K.typicalWeather(1)); while(day.t<600) K.step(config,day); return K.dayStats(config,day); },
+    reset(roster,station) { Object.assign(S,setup(roster,station)); dow=1; wxMode='typical'; playing=false; acc=0; d=K.newDay(S,1,K.typicalWeather(1)); jump(8); tw.sync(0,d,S,d.t); tags(live()); },
+    stats:()=>K.dayStats(S,d), minutes:()=>d.t, time:()=>hLabel(d.t/60),
+    graphics:()=>tw.gfx, modelReady:()=>tw.ready, modelStatus:()=>$("gfxNote").textContent.includes("could not")?"Detailed venue unavailable · simple maquette":"Loading the authored venue…",
+    view:(name,instant=false)=>{ if(name==='hero') tw.stage.flyTo(innerWidth<=760 ? {p:[10,19,24],t:[0,0,1]} : {p:[15,12,20],t:[0,0.5,0]}, {instant:instant||reduce}); else setView(name,reduce); },
+    object:()=>tw.stage.root, play:value=>{playing=value;speed=6;}, jump, onFrame:fn=>tw.onFrame(fn)
+  });
+}
 })();
 
 </script>

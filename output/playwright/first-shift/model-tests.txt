@@ -1,0 +1,23 @@
+[
+  {
+    "plan": "baseline",
+    "walked": 12,
+    "labour": 539.9625000000001
+  },
+  {
+    "plan": "station",
+    "walked": 12,
+    "labour": 539.9625000000001
+  },
+  {
+    "plan": "roster",
+    "walked": 9,
+    "labour": 588.5
+  },
+  {
+    "plan": "both",
+    "walked": 9,
+    "labour": 588.5
+  }
+]
+PASS: deterministic replay, common customer cohort, endpoint, finite costs, decision tradeoff

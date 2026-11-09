@@ -1,0 +1,123 @@
+TAP version 13
+# Subtest: the business model script is byte-identical to the baseline (3D work must not touch it)
+ok 1 - the business model script is byte-identical to the baseline (3D work must not touch it)
+  ---
+  duration_ms: 0.701792
+  type: 'test'
+  ...
+# Subtest: every behaviour snapshot matches the golden baseline (queue, pass, kitchen, tables, stock, P&L, proof)
+ok 2 - every behaviour snapshot matches the golden baseline (queue, pass, kitchen, tables, stock, P&L, proof)
+  ---
+  duration_ms: 3202.783042
+  type: 'test'
+  ...
+# Subtest: the model is deterministic: the same settings give the same day twice
+ok 3 - the model is deterministic: the same settings give the same day twice
+  ---
+  duration_ms: 45.277542
+  type: 'test'
+  ...
+# Subtest: a lever changes outcomes, not the customers (arrivals drawn lever-free)
+ok 4 - a lever changes outcomes, not the customers (arrivals drawn lever-free)
+  ---
+  duration_ms: 24.984125
+  type: 'test'
+  ...
+# Subtest: operational state the 3D scene reads stays within its physical meaning through a busy day
+ok 5 - operational state the 3D scene reads stays within its physical meaning through a busy day
+  ---
+  duration_ms: 42.609916
+  type: 'test'
+  ...
+# Subtest: honesty labels are not removed: Simulated / Live / Proposed / Estimate / Source and key statements
+ok 6 - honesty labels are not removed: Simulated / Live / Proposed / Estimate / Source and key statements
+  ---
+  duration_ms: 1.93225
+  type: 'test'
+  ...
+# Subtest: assistance authority levels are unchanged (Observe, Recommend, Act with approval, Act within limits)
+ok 7 - assistance authority levels are unchanged (Observe, Recommend, Act with approval, Act within limits)
+  ---
+  duration_ms: 0.108875
+  type: 'test'
+  ...
+# Subtest: GLB matches its contract: id, every required node, measured pivots, bytes and hash
+ok 8 - GLB matches its contract: id, every required node, measured pivots, bytes and hash
+  ---
+  duration_ms: 10.91
+  type: 'test'
+  ...
+# Subtest: budget: at most 4 MB, 150k rendered triangles, 26 materials, zero textures, no compression extensions
+ok 9 - budget: at most 4 MB, 150k rendered triangles, 26 materials, zero textures, no compression extensions
+  ---
+  duration_ms: 0.177625
+  type: 'test'
+  ...
+# Subtest: authored in the page plan: tables, queue spots and stations sit where the simulation puts people
+ok 10 - authored in the page plan: tables, queue spots and stations sit where the simulation puts people
+  ---
+  duration_ms: 5.830209
+  type: 'test'
+  ...
+# Subtest: rig: each state lands on its node, repeated calls do not drift, and bad input cannot throw
+ok 11 - rig: each state lands on its node, repeated calls do not drift, and bad input cannot throw
+  ---
+  duration_ms: 6.14975
+  type: 'test'
+  ...
+# Subtest: the rig refuses a GLB with missing nodes
+ok 12 - the rig refuses a GLB with missing nodes
+  ---
+  duration_ms: 4.117
+  type: 'test'
+  ...
+# Subtest: visualStateFromModel only reads the model, and shows what the maquette shows
+ok 13 - visualStateFromModel only reads the model, and shows what the maquette shows
+  ---
+  duration_ms: 177.262375
+  type: 'test'
+  ...
+# Subtest: stage v2 is additive: v1 untouched, the café alone opts in, the other eight twins stay on v1
+ok 14 - stage v2 is additive: v1 untouched, the café alone opts in, the other eight twins stay on v1
+  ---
+  duration_ms: 11.137917
+  type: 'test'
+  ...
+# [
+#   {
+#     "plan": "baseline",
+#     "walked": 12,
+#     "labour": 539.9625000000001
+#   },
+#   {
+#     "plan": "station",
+#     "walked": 12,
+#     "labour": 539.9625000000001
+#   },
+#   {
+#     "plan": "roster",
+#     "walked": 9,
+#     "labour": 588.5
+#   },
+#   {
+#     "plan": "both",
+#     "walked": 9,
+#     "labour": 588.5
+#   }
+# ]
+# PASS: deterministic replay, common customer cohort, endpoint, finite costs, decision tradeoff
+# Subtest: cafe/tests/first-shift.test.mjs
+ok 3 - cafe/tests/first-shift.test.mjs
+  ---
+  duration_ms: 312.292916
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3371.23325
