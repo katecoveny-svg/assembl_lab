@@ -4,11 +4,13 @@ on:
     paths:
       - 'household/**'
       - 'tests/household/**'
+      - 'scripts/household/**'
       - '.github/workflows/household-manual.yml'
   pull_request:
     paths:
       - 'household/**'
       - 'tests/household/**'
+      - 'scripts/household/**'
       - '.github/workflows/household-manual.yml'
 permissions:
   contents: read
