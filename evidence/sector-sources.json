@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Source discovery and integration gates; these entries are not connected measurements or simulation inputs.",
+  "checkedOn": "2026-11-09",
+  "sources": [
+    {
+      "id": "lcdb6-mainland",
+      "sector": "agriculture",
+      "sourceUrl": "https://lris.scinfo.org.nz/layer/123148-lcdb-v60-land-cover-database-version-60-mainland-new-zealand/",
+      "licence": {"name": "CC BY 4.0", "url": "https://creativecommons.org/licenses/by/4.0/"},
+      "kind": "published benchmark",
+      "observedPeriod": "Summer 2023/24 (latest mapped epoch; earlier epochs also present)",
+      "version": "LCDB 6.0; DOI 10.26060/WM99-RY32",
+      "scope": "Mainland New Zealand land-cover polygons, EPSG:2193",
+      "units": "Land-cover class; not pasture health, crop yield or soil moisture",
+      "status": "metadata verified; no polygons fetched; not connected",
+      "gate": "Locate actual agriculture route, choose an explicit non-personal study extent, verify download access and attach acquisition/version attribution before an overlay. Do not label live.",
+      "attribution": "Manaaki Whenua / Landcare Research"
+    },
+    {
+      "id": "smap-current-soil",
+      "sector": "agriculture",
+      "sourceUrl": "https://lris.scinfo.org.nz/",
+      "licence": {"name": "CC BY-NC-ND (current S-map layer listings)", "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"},
+      "kind": "published benchmark",
+      "status": "restricted; not fetched or connected",
+      "gate": "No commercial ingestion or derivatives under the listed terms; obtain suitable permission before reconsidering. Check each exact layer licence."
+    },
+    {
+      "id": "nzta-monthly-fleet",
+      "sector": "automotive",
+      "sourceUrl": "https://www.nzta.govt.nz/resources/new-zealand-motor-vehicle-register-statistics/new-zealand-vehicle-fleet-open-data-sets",
+      "licence": null,
+      "kind": "published benchmark",
+      "status": "discovered; direct source returned HTTP 403; not fetched or connected",
+      "gate": "Verify exact downloadable monthly CSV and applicable NZTA licence before ingestion. Aggregate national/region statistics only; no personal registration queries. Publication month differs from fleet snapshot date."
+    },
+    {
+      "id": "building-code-schedule1",
+      "sector": "architecture",
+      "sourceUrl": "https://www.legislation.govt.nz/regulation/public/1992/0150/latest/DLM1926533.html",
+      "licence": null,
+      "kind": "published benchmark",
+      "version": "Parent consolidation displayed as at 15 January 2026 when checked",
+      "status": "source identified; link-only; not connected",
+      "gate": "Keep Building Act, Building Regulations Schedule 1, and MBIE AS/VM records distinct. Resolve a pinned version, applicable commencement/transitional dates and reproduction rights before ingestion. No compliance verdict."
+    },
+    {
+      "id": "mbie-as-vm",
+      "sector": "architecture",
+      "sourceUrl": "https://www.building.govt.nz/building-code-compliance/how-the-building-code-works/different-ways-to-comply/acceptable-solutions-and-verification-methods",
+      "licence": {"name": "MBIE specific Crown copyright terms; redistribution restricted", "url": "https://www.building.govt.nz/building-code-compliance/how-the-building-code-works/different-ways-to-comply/acceptable-solutions-and-verification-methods"},
+      "kind": "published benchmark",
+      "status": "terms verified; link-only; no document corpus copied",
+      "gate": "Use edition/amendment, effective-from and transition-end metadata per document. Published terms allow accurate personal/business reproduction but restrict redistribution/sale. No copied NZ Standards or automatic compliance signoff."
+    }
+  ]
+}
