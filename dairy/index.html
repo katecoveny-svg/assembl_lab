@@ -3,7 +3,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a milk powder plant on a plinth with the live board beside it; the AI layer (agents, proof ledger, evidence drawer) under the stage; then the season, energy and the farm-gate link; then the calculation and overseas examples. */
+/* Layout: a milk powder plant on a plinth with the live board beside it; the AI layer (agents, illustrative ledger, evidence drawer) under the stage; then the season, energy and the farm-gate link; then the calculation and overseas examples. */
 :root{--paper:#FFFDFB;--chalk:#F5F1F2;--ink:#492B3E;--body:#654A4E;--rose:#916A70;--line:#E4DADD;--live:#D9822B;--good:#3F7A55;--alert:#B3261E;--milk:#4F7C93;--coal:#6B6268;--elec:#3F7E9C;--foul:#A9773F;
   --scene-plinth:#E9E1D6;--scene-ground:#C9D8BC;--scene-floor:#EEEAE6;--scene-wall:#F4F1EE;--scene-edge:#492B3E;--scene-road:#B9B4B4;
   --display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
@@ -159,16 +159,19 @@ footer p{margin:0 0 4px}
 @media (max-width:520px){.lw .nm{max-width:14ch;font-size:11.5px}.lw{gap:5px 8px}.big{font-size:28px}.total{font-size:32px}.kv .v{font-size:15px}.tag{font-size:10px}.hud{font-size:10px}}
 </style>
 
+<link rel="stylesheet" href="/dairy/decision.css">
 <div class="wrap">
   <div class="top">
     <div>
       <div class="eyebrow">Dairy plant twin · generic, public information only</div>
       <h1>A milk powder plant through the season</h1>
-      <p class="sub">One large New Zealand-style powder plant, from tanker to train. Move through the season and watch October's flood of milk meet the dryer's limit, the boilers swap coal for electricity, and a cold winter morning test the grid. Then switch on the AI layer and see what each tool changes, what it's reported to do elsewhere, and who stays in charge.</p>
+      <p class="sub">One large New Zealand-style powder plant, from tanker to train. Move through the season and watch October's flood of milk meet the dryer's limit, the boilers swap coal for electricity, and a cold winter morning test the grid. Start with the maintenance decision lab below: compare the same 48 hours, inspect uncertainty and justify your response. The wider AI explorer remains an illustrative set of assumptions, not a combined forecast.</p>
       <p class="sub" style="margin-top:8px"><a href="/dairy/plant/" style="color:var(--ink)">Walk the plant floor</a>: one simulated day in 3D, from the tanker bays to the container dock, built from NVIDIA SimReady models. Same plant, same season figures.</p>
     </div>
   </div>
 
+  <section class="decision-lab" id="decision-lab" aria-label="Maintenance decision lab"><p>Loading decision exercise…</p></section>
+  <script type="module" src="/dairy/decision.js"></script>
   <div class="main">
     <div class="stagebox" id="stagebox">
       <canvas id="scene" aria-label="3D model of a dairy plant with tankers, silos, evaporators, a spray dryer, boilers and a rail siding. Hover or tap a part for its live number; Explore lists every part."></canvas>
@@ -209,14 +212,14 @@ footer p{margin:0 0 4px}
       <div>
         <div class="eyebrow">The AI layer · eight tools, people stay in charge</div>
         <h2 id="aiTitle">Switch on the AI, one tool at a time</h2>
-        <p class="sub">Each tool is something dairy processors already use somewhere in the world. Switch one on and the plant above responds: steadier dryer, longer evaporator runs, tankers re-planned, the electrode boiler easing off when power is dear. The ledger adds up what it's worth for this plant's season, and the drawer shows the evidence and the limits.</p>
+        <p class="sub">Each tool is something dairy processors already use somewhere in the world. Switch one on and the plant above responds: steadier dryer, longer evaporator runs, tankers re-planned, the electrode boiler easing off when power is dear. The ledger is an illustrative gross sum of separate assumptions, with overlaps and costs unresolved; it is not an ROI forecast. Use the decision lab for a controlled comparison. The drawer separates case reports from assumptions.</p>
       </div>
       <div class="btns"><button type="button" class="btn primary" id="allOn">Switch all on</button><button type="button" class="btn" id="allOff">Switch all off</button></div>
     </div>
     <div class="aigrid">
       <div class="agents" id="agents" role="group" aria-label="AI tools"></div>
       <div class="card ledger" aria-live="polite">
-        <h3><span>Proof ledger</span><span>this season, this plant</span></h3>
+        <h3><span>Illustrative ledger</span><span>this season, this plant</span></h3>
         <div><div class="total" id="aiTotal">$0<small>a season</small></div></div>
         <p class="per" id="aiPer">Switch on a tool to see what it's worth.</p>
         <div class="vz" id="ledgerViz"></div>
@@ -228,8 +231,8 @@ footer p{margin:0 0 4px}
           <div><span class="v" id="aiCO2">0</span><span class="l">t CO₂ avoided</span></div>
           <div><span class="v" id="aiOn">0 of 8</span><span class="l">tools on</span></div>
         </div>
-        <h3 style="margin-top:4px"><span>What the tools did</span><span>plant time</span></h3>
-        <ul class="log" id="log"><li class="empty">Nothing yet. Each action appears here with who approved it.</li></ul>
+        <h3 style="margin-top:4px"><span>Illustrative tool activity</span><span>plant time</span></h3>
+        <ul class="log" id="log"><li class="empty">Scripted illustrations only. No real actions or approvals.</li></ul>
       </div>
     </div>
     <div class="card drawer" id="drawer"></div>
@@ -383,18 +386,17 @@ const TOOLS=[
    return {rev:rev+peak,cost:ecost,t,gj,co2:gj*A.ef,lines:[["Powder this season",fmt(A.T)+" t","sim"],["Moisture nearer spec",""+fmt(dm*100,2)+" points","rep"],["Extra powder sold",fmt(t)+" t","sim"],["At an illustrative WMP price","$"+fmt(A.wmpNZ)+"/t","est"],["Energy per tonne","−1%","rep"],["Heat saved",fmt(gj)+" GJ","sim"],["At this plant's heat cost","$"+fmt(A.heatCost,1)+"/GJ","est"],...(peak?[["Peak milk dried instead of diverted",fmt(A.over)+" t × $500","est"]]:[])],
     formula:`${fmt(A.T)} t × 0.15% × $${fmt(A.wmpNZ)} + 1% of ${fmt(A.heat/1e3)}k GJ × $${fmt(A.heatCost,1)}`}}},
  {id:"cip",name:"Fouling and smart cleaning",short:"Predicts evaporator fouling and cleans on condition, not on a fixed timer.",auth:2,authNote:"Proposes when to start a clean; the shift lead confirms. Cleaning validation rules still apply.",
-  what:"Tracks heat-transfer loss in each evaporator effect and predicts when fouling will cost more than a clean. Runs get longer, and each clean stops when sensors show the plant is clean rather than after a fixed time.",
+  what:"Tracks heat-transfer loss in each evaporator effect and predicts when fouling will cost more than a clean. Any proposed timing change requires site-specific validation. AI does not establish cleanliness or override validated cleaning endpoints.",
   data:["Steam and vapour temperatures and pressures","Feed and concentrate flow and solids","Cleaning conductivity, flow, temperature, turbidity","Cleaning history"],
   rep:[{t:"Self-learning cleaning control with optical residue sensing: 35% less cleaning water and 55% less pump energy. Cleaning takes 15–20% of production time in food plants.",u:"https://www.dairyindustries.com/?p=32215",w:"Academic (Fraunhofer and FAU)"},{t:"A fouling model validated on an industrial four-effect dairy evaporator 'substantially reduces prediction error' (no figure published).",u:"https://psecommunity.org/LAPSE:2026.0368v1",w:"Academic (DTU and GEA, 2026)"}],
   calc(A){const c0=A.H/20,c1=A.H/23,per0=1200+60*2.5+120*A.heatCost,per1=1020+48*2.5+96*A.heatCost,cost=c0*per0-c1*per1,gj=c0*120-c1*96,hrs=c0*4-c1*3.2;
    return {rev:0,cost,t:0,gj,co2:gj*A.ef,hrs,lines:[["Evaporator hours this season",fmt(A.H)+" h","sim"],["Run between cleans","20 h → 23 h","est"],["Cleans this season",fmt(c0)+" → "+fmt(c1),"sim"],["Water, chemicals and heat per clean","−20%, −15%, −20%","est"],["Evaporator time recovered",fmt(hrs)+" h","sim"],["Cost saved",money(cost),"sim"]],
     formula:`${fmt(c0)} cleans × $${fmt(per0)} − ${fmt(c1)} cleans × $${fmt(per1)}`}}},
- {id:"maint",name:"Predictive maintenance",short:"Spots a failing fan bearing or atomiser early, so the fix is planned, not a peak-season breakdown.",auth:1,authNote:"Recommends; maintenance planners decide when to act.",
+ {id:"maint",name:"Predictive maintenance",short:"Flags unusual equipment behaviour; inspection can confirm or miss a fault. Try the decision lab.",auth:1,authNote:"Recommends; maintenance planners decide when to act.",
   what:"Watches vibration, temperature and motor current on fans, pumps and the atomiser. When a pattern looks like early failure it raises a work order, so the repair happens in a quiet hour instead of a stop in October.",
   data:["Vibration sensors on fans, pumps, atomiser","Motor current and temperature","Work-order history"],
-  rep:[{t:"A German plant handling 4.7 million litres a day caught a faulty pump early with AI predictive maintenance, saving 'in the low six figures'.",u:"https://www.foodmanufacturing.com/facility/news/22943058/siemens-supports-sachsenmilch-with-aibacked-predictive-maintenance",w:"Vendor and customer"},{t:"An infant-nutrition lighthouse tracks every micro-stop under one minute; 12% efficiency and 19% cost improvement across its programme.",u:"https://www.foodbusinessmea.com/danone-opole-leads-other-danone-plants-in-adopting-cutting-edge-technologies-at-scale-wef/",w:"World Economic Forum (reported)"}],
-  calc(A){const t=12*DRYER_TPH,cost=t*500+150000;
-   return {...ZERO,cost,lines:[["Unplanned dryer stops avoided","1 a season, 12 h","est"],["Peak powder not diverted",fmt(t)+" t × $500","est"],["Emergency repair premium avoided","$150k","est"],["Cost saved",money(cost),"sim"]],formula:`${fmt(t)} t × $500 + $150,000`}}},
+  rep:[{t:"A German plant handling 4.7 million litres a day caught a faulty pump early with AI predictive maintenance, saving 'in the low six figures'.",u:"https://press.siemens.com/global/en/pressrelease/siemens-advances-predictive-maintenance-artificial-intelligence-sachsenmilch",w:"Vendor and customer"},{t:"An infant-nutrition lighthouse tracks every micro-stop under one minute; 12% efficiency and 19% cost improvement across its programme.",u:"https://www.foodbusinessmea.com/danone-opole-leads-other-danone-plants-in-adopting-cutting-edge-technologies-at-scale-wef/",w:"World Economic Forum (reported)"}],
+  calc(A){return {...ZERO,lines:[["Maintenance benefit","Use the 48-hour decision lab","sim"],["Annual benefit","Not extrapolated","est"]],note:"No guaranteed annual saving. Compare inspection costs, false alarms and missed faults in the decision lab above.",formula:"Excluded: bounded comparison above"}}},
  {id:"supply",name:"Milk forecast and tanker routing",short:"Forecasts tomorrow's milk farm by farm and re-plans tanker runs.",auth:1,authNote:"Recommends routes; dispatchers and drivers keep the final say.",
   what:"Forecasts each farm's milk from the season, weather, herd and history, so the plant knows what's coming. Then plans tanker runs so fewer kilometres are driven and trucks arrive evenly.",
   data:["Daily pickups and vat readings","Weather and pasture growth","Farm locations and roads","Tanker capacity and shifts"],
@@ -559,7 +561,7 @@ const P={h:6,foul:0,run:0,cip:0,cipLeft:0,maint:{ph:0,state:"ok",t:0},dryWob:0,m
 const LOG=[];
 function stamp(){const d=Math.floor(P.h/24)+1,hh=Math.floor(P.h%24),mm=Math.floor((P.h%1)*60/10)*10;return `Day ${d}<br>${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`}
 function log(text,who,bad){LOG.unshift({s:stamp(),text,who,bad});LOG.length=Math.min(LOG.length,5);renderLog()}
-function renderLog(){const el=$("log");if(!LOG.length){el.innerHTML='<li class="empty">Nothing yet. Each action appears here with who approved it.</li>';return}el.innerHTML=LOG.map(e=>`<li class="${e.bad?"bad":""}"><time>${e.s}</time><span>${e.text}<span class="who">${e.who}</span></span></li>`).join("")}
+function renderLog(){const el=$("log");if(!LOG.length){el.innerHTML='<li class="empty">Scripted illustrations only. No real actions or approvals.</li>';return}el.innerHTML=LOG.map(e=>`<li class="${e.bad?"bad":""}"><time>${e.s}</time><span>${e.text}<span class="who">${e.who}</span></span></li>`).join("")}
 function price(h){const x=h%24;return 95+260*Math.exp(-((x-8)**2)/3)+300*Math.exp(-((x-18.5)**2)/3.5)}// illustrative intraday $/MWh, winter-like
 function ribVal(x,ph){return 0.5+0.28*Math.sin(x*0.19+ph*0.5)+0.16*Math.sin(x*0.53-ph*0.9)+0.06*Math.sin(x*1.7+ph*1.3)}
 
@@ -574,18 +576,15 @@ const FROST=new THREE.Color(0xEEF1F3);
 const lightHour=()=>hold!=null?hold:P.h%24;
 let ebMW=0,gridNow=0,heatE=0,heatB=0,stoppedNow=false,cleaningNow=false,intensityNow=0;
 function anim(dt){const on=AI.on,intensity=D.t/(DRYER_TPH*24);intensityNow=intensity;P.h+=dt;
-  // ---- predictive maintenance cycle (60 plant hours): without the tool, a bearing fails at hour 34 and the dryer stops 5 h
-  const mc=P.maint;mc.ph+=dt;if(mc.ph>=60){mc.ph-=60;mc.state="ok"}
-  if(on.maint){if(mc.state==="ok"&&mc.ph>18&&mc.ph<30){mc.state="warn";log("Fan bearing wear predicted 16 hours ahead. Fix booked for the 02:00 low-intake window.","Recommended · planner approved")}
-    if(mc.state==="warn"&&mc.ph>=30){mc.state="fixed";log("Planned bearing swap done in 40 minutes. No unplanned stop.","Done by maintenance team")}
-    if(mc.state==="stop")mc.state="ok"}
-  else{if(mc.state==="ok"&&mc.ph>34&&mc.ph<39){mc.state="stop";log("Unplanned dryer stop: fan bearing failed with no warning. Milk waits in the silos.","No tool on",true)}if(mc.state==="stop"&&mc.ph>=39)mc.state="ok";if(mc.state!=="stop"&&mc.state!=="ok"&&mc.ph<1)mc.state="ok"}
-  const stopped=!on.maint&&mc.state==="stop";stoppedNow=stopped;
-  AIOBJ.warn.visible=!!(stopped||(on.maint&&mc.state==="warn"));if(AIOBJ.warn.visible){const k=1+0.18*Math.sin(P.h*6);AIOBJ.warn.scale.set(k,k,k);DM.warn.color.set(stopped?0xB3261E:0xD9822B)}
+  // Maintenance state comes only from the fixed decision replay; toggles cannot repair equipment.
+  const mc=P.maint, decision=window.__dairyDecisionScene;
+  mc.state=decision?.state||"ok";
+  const stopped=!!decision?.stopped;stoppedNow=stopped;
+  AIOBJ.warn.visible=!!(stopped||mc.state==="warn");if(AIOBJ.warn.visible){const k=1+0.18*Math.sin(P.h*6);AIOBJ.warn.scale.set(k,k,k);DM.warn.color.set(stopped?0xB3261E:0xD9822B)}
   // ---- evaporator fouling and cleaning
   const runLen=on.cip?23:20,cipLen=on.cip?3.2:4;
   if(P.cipLeft>0){P.cipLeft-=dt;P.foul=Math.max(0,P.foul-dt/cipLen*1.2);if(P.cipLeft<=0){P.cipLeft=0;P.foul=0;P.run=0}}
-  else{P.run+=dt*(intensity>0.02?1:0.3);P.foul=Math.min(1,P.run/24);if(P.run>=runLen){P.cipLeft=cipLen;log(on.cip?`Evaporator clean started after ${runLen} h: predicted fouling limit reached. Clean will stop on sensor reading.`:`Evaporator clean started after ${runLen} h on the fixed timer.`,on.cip?"Recommended · shift lead confirmed":"Fixed schedule")}}
+  else{P.run+=dt*(intensity>0.02?1:0.3);P.foul=Math.min(1,P.run/24);if(P.run>=runLen){P.cipLeft=cipLen;log(on.cip?`Evaporator clean started after ${runLen} h: predicted fouling limit reached. Validated cleaning endpoints still govern completion.`:`Evaporator clean started after ${runLen} h on the fixed timer.`,on.cip?"Recommended · shift lead confirmed":"Fixed schedule")}}
   const cleaning=P.cipLeft>0;cleaningNow=cleaning;AIOBJ.foul.forEach((m,i)=>{const f=Math.max(0.001,P.foul*(0.92+i*0.03));m.scale.y=f*18;m.position.y=f*9;m.visible=P.foul>0.01});
   if(cleaning)rate("cip",70,dt,()=>{const i=Math.floor(Math.random()*4),a=Math.random()*6.28,x=EVAP[i].position.x;emit([x+Math.cos(a)*1.3,0.5+Math.random()*2,Math.sin(a)*1.3],[-Math.sin(a)*1.2,4+Math.random()*3,Math.cos(a)*1.2],3.4,C.cip,0.7)});
   // ---- water vapour off the evaporator (not while cleaning)
@@ -659,11 +658,11 @@ function tags(){const w=canvas.clientWidth,h=canvas.clientHeight,on=AI.on,mc=P.m
   tg[0].className="tag"+(on.supply?" hl":"");tg[0].innerHTML=`<b>Tanker reception</b><br><span class="m">${fmt(D.tankers)} loads a day</span>${on.supply?`<br><span class="a">forecast ±1.5% · 7% fewer km</span>`:""}`;
   tg[1].innerHTML=`<b>Silos</b><br><span class="m">${fmt(D.L/1e6,2)} M litres</span>`;
   tg[2].className="tag"+(on.cip?" hl":"");tg[2].innerHTML=`<b>Evaporator</b><br>${P.cipLeft>0?`<span class="a">cleaning · ${fmt(P.cipLeft,1)} h left</span>`:`<span class="m">fouling ${fmt(P.foul*100)}% · run ${fmt(P.run,0)} of ${on.cip?23:20} h</span>`}`;
-  tg[3].className="tag"+(on.dryer?" hl":"");tg[3].innerHTML=`<b>Spray dryer</b><br><span class="m">${fmt(D.hrs,1)} h · ${fmt(D.t)} t powder</span><br>${!on.maint&&mc.state==="stop"?`<span class="r">stopped: fan bearing failed</span>`:on.dryer?`<span class="a">moisture 3.00% ± 0.06</span>`:`<span class="m">moisture 2.85% ± 0.20</span>`}`;
+  tg[3].className="tag"+(on.dryer?" hl":"");tg[3].innerHTML=`<b>Spray dryer</b><br><span class="m">${fmt(D.hrs,1)} h · ${fmt(D.t)} t powder</span><br>${mc.state==="stop"?`<span class="r">scenario: unplanned stop</span>`:mc.state==="service"?`<span class="a">scenario: planned service</span>`:on.dryer?`<span class="a">moisture 3.00% ± 0.06</span>`:`<span class="m">moisture 2.85% ± 0.20</span>`}`;
   tg[4].className="tag"+(on.energy?" hl":"");tg[4].innerHTML=`<b>Electrode boiler</b><br><span class="${S.grid?"r":"m"}">${S.grid?"off: grid emergency":S.eb?(P.dr?fmt(S.eb*0.25)+" of "+S.eb+" MW":fmt(ebMW)+" of "+S.eb+" MW"):"none"}</span>${on.energy&&S.eb?`<br><span class="a">power $${fmt(price(P.h))}/MWh · store ${fmt(P.store*100)}%</span>`:""}`;
   tg[5].className="tag hl";tg[5].innerHTML=`<b>Packing and store</b>${on.quality?`<br><span class="a">release 5 → 2 days</span>`:""}${on.vision?`<br><span class="a">camera checks every bag</span>`:""}`;
   tg[7].className="tag hl";tg[7].innerHTML=`<b>Price signal</b> <span class="m">illustrative</span><br><span class="a">orange: butter or AMF pays more</span>`;
-  tg[6].className="tag";tg[6].innerHTML=on.maint?`<b>Dryer fan</b><br><span class="a">bearing wear predicted · fix booked</span>`:`<b>Dryer fan</b><br><span class="r">failed · unplanned stop</span>`;
+  tg[6].className="tag";tg[6].innerHTML=`<b>Dryer fan · scenario</b><br><span class="${mc.state==="stop"?"r":"a"}">${mc.state==="stop"?"unplanned stop":mc.state==="service"?"planned inspection / service":"alert · planner decides"}</span>`;
   if(CMP!=null){const g=dayOf(CMP);tg[8].className="tag";tg[8].innerHTML=`<b>Ghost: ${MONTHS[CMP]}</b><br><span class="m">dryer ${fmt(g.hrs,1)} h · ${fmt(g.boxes)} containers</span><br><span class="m">now: ${fmt(D.hrs,1)} h · ${fmt(D.boxes)}</span>`}
   const kept=[...box.querySelectorAll(".views,.hud,.tw-tools,.tw-dialwrap,.tw-tour:not([hidden]),.tw-following:not([hidden]),.badge")].map(e=>e.getBoundingClientRect());
   [3,8,2,4,0,6,7,5,1].forEach(i=>{const el=tg[i];if(el.hidden)return;let r=el.getBoundingClientRect();const lx=parseFloat(el.style.left),half=r.width/2,nx=Math.min(w-half-6,Math.max(half+6,lx));if(nx!==lx){el.style.left=nx+"px";r=el.getBoundingClientRect()}if(kept.some(k=>r.left<k.right+4&&r.right>k.left-4&&r.top<k.bottom+4&&r.bottom>k.top-4)){el.hidden=true;return}kept.push(r)});
@@ -711,7 +710,7 @@ function buildAgents(){$("agents").innerHTML=TOOLS.map(t=>`<button type="button"
   $("caseChips").innerHTML=Object.entries(kinds).map(([k,n])=>`<span>${k}<b>${n}</b></span>`).join("");
   $("cases").innerHTML=CASES.map(c=>`<div class="case"><span class="k">${c.k}</span><b>${c.n}</b><p>${c.t}</p><small>${c.w} · <a href="${c.u}" target="_blank" rel="noopener">source</a></small></div>`).join("")}
 function setAI(id,on){const t=TOOLS.find(x=>x.id===id);if(!t)return;AI.on[id]=!!on;if(on)AI.sel=id;
-  if(on&&id==="maint"&&P.maint.state==="stop")P.maint.state="ok";
+
   if(on)log(`${t.name} switched on. ${t.authNote}`,AUTH[t.auth]);renderAI()}
 let lastR=null;
 function renderAI(){const A=seasonAgg(),res={};let tot={rev:0,cost:0,t:0,gj:0,co2:0},n=0;
@@ -720,7 +719,7 @@ function renderAI(){const A=seasonAgg(),res={};let tot={rev:0,cost:0,t:0,gj:0,co
     if(AI.on[t.id]){n++;for(const k in tot)tot[k]+=r[k]||0}});
   lastR={A,res,tot,n};const sum=tot.rev+tot.cost,c=A.kgms?sum/A.kgms*100:0;
   $("aiTotal").innerHTML=`${n?"+":""}${money(sum)}<small>a season</small>`;
-  $("aiPer").innerHTML=n?`About <b>${fmt(c,1)} cents per kgMS</b> across this plant's ${fmt(A.kgms/1e6,1)} million kgMS, or <b>${fmt(sum/(A.kgms*S.price)*100,2)}%</b> of the milk's value at $${fmt(S.price,2)}. Before the cost of building and running the tools.`:"Switch on a tool to see what it's worth for this plant.";
+  $("aiPer").innerHTML=n?`About <b>${fmt(c,1)} cents per kgMS</b> across this plant's ${fmt(A.kgms/1e6,1)} million kgMS, or <b>${fmt(sum/(A.kgms*S.price)*100,2)}%</b> of the milk's value at $${fmt(S.price,2)}. Illustrative gross sum; overlapping effects have not been reconciled. Not a causal comparison or ROI. Maintenance is excluded; use the decision lab.`:"Explore assumed effects. Totals are not a validated benefit forecast.";
   $("aiRev").textContent=money(tot.rev);$("aiCost").textContent=money(tot.cost);$("aiT").textContent=fmt(tot.t);$("aiGJ").textContent=fmt(tot.gj);$("aiCO2").textContent=fmt(tot.co2);$("aiOn").textContent=`${n} of 8`;
   $("hudText").textContent=n?`AI layer · ${n} of 8 on · +${money(sum)} a season`:"AI layer off";
   drawLedger();drawDrawer();drawCalc()}
@@ -753,7 +752,7 @@ function update(){D=dayOf(S.m);const sz=season();
 const R_=(id,key,lab,f=v=>+v)=>{$(id).oninput=e=>{S[key]=f(e.target.value);$(id+"V").textContent=lab(S[key]);update()}};
 R_("month","m",v=>MONTHS[v]);R_("vol","vol",v=>Math.round(v*100)+"%",v=>+v/100);R_("ebMW","eb",v=>v?v+" MW":"none");R_("gj","gj",v=>v+" GJ");R_("price","price",v=>"$"+fmt(v,2)+"/kgMS");
 $("backup").onchange=e=>{S.backup=e.target.value;update()};$("grid").onchange=e=>{S.grid=e.target.checked;update()};
-$("allOn").onclick=()=>{TOOLS.forEach(t=>AI.on[t.id]=true);if(P.maint.state==="stop")P.maint.state="ok";log("All eight tools switched on. Each keeps its own authority level.","People stay in charge");renderAI()};
+$("allOn").onclick=()=>{TOOLS.forEach(t=>AI.on[t.id]=true);log("All eight tools switched on. Each keeps its own authority level.","People stay in charge");renderAI()};
 $("allOff").onclick=()=>{TOOLS.forEach(t=>AI.on[t.id]=false);log("All tools switched off. The plant runs on its normal controls.","Manual");renderAI()};
 // ---------------- camera, touch, tour, compare, sound and the time dial
 const VIEWS={above:{p:[14,132,78],t:[-2,0,-6]},all:{p:[60,64,98],t:[0,2,-4]},dryer:{p:[40,30,34],t:[16,12,-3]},energy:{p:[-12,22,30],t:[-34,6,-8]}};stage.views=VIEWS;
@@ -765,7 +764,7 @@ pk(G.rec,{title:"Tanker reception",view:{p:[-2,26,46],t:[-26,3,10]},hint:"milk a
 pk(G.silos,{title:"Silos",view:{p:[4,32,44],t:[-13,8,8]},hint:"raw milk waiting",panel:"#milk",value:()=>`${fmt(D.L/1e6,2)} M litres today<br><span class="m">${fmt(D.L*KGMS_PER_L/1e3)}k kg of milk solids</span>`});
 pk(G.evap,{title:"Evaporator",view:{p:[34,32,34],t:[11,11,0]},hint:"boils water off the milk",panel:"#water",value:()=>`${fmt(D.water)} t of water boiled off today<br>${P.cipLeft>0?`<span class="a">cleaning · ${fmt(P.cipLeft,1)} h left</span>`:`<span class="m">fouling ${fmt(P.foul*100)}% · run ${fmt(P.run,0)} of ${AI.on.cip?23:20} h</span>`}`});
 pk(G.dryer,{title:"Spray dryer",hint:"the plant's bottleneck",panel:"#dryViz",value:()=>`${fmt(D.hrs,1)} of 24 h · ${fmt(D.t)} t powder<br>${D.over>0?`<span class="r">${fmt(D.over)} t over the 22-hour limit</span>`:`<span class="m">${fmt(22-D.hrs,1)} h below the 22-hour limit</span>`}`,view:VIEWS.dryer});
-pk(G.fan,{title:"Dryer fan",view:{p:[44,14,22],t:[29,1,3]},hint:"watched for bearing wear",panel:'[data-ai="maint"]',value:()=>P.maint.state==="stop"&&!AI.on.maint?`<span class="r">failed · unplanned stop</span>`:AI.on.maint?`<span class="a">${P.maint.state==="warn"?"wear predicted · fix booked":"healthy · watched"}</span>`:`<span class="m">no monitoring: fails without warning about once a season</span>`});
+pk(G.fan,{title:"Dryer fan",view:{p:[44,14,22],t:[29,1,3]},hint:"watched for bearing wear",panel:'[data-ai="maint"]',value:()=>P.maint.state==="stop"?`<span class="r">failed · unplanned stop</span>`:AI.on.maint?`<span class="a">${P.maint.state==="warn"?"simulated alert · planner decides":"illustrative monitoring"}</span>`:`<span class="m">Use the decision lab to inspect a fixed maintenance trace</span>`});
 pk(G.eb,{title:"Electrode boiler",view:{p:[-16,18,26],t:[-38,4,-1]},hint:"heat from electricity",panel:"#heatViz",value:()=>S.grid?`<span class="r">off for the morning: grid emergency</span>`:S.eb?`${fmt(ebMW,1)} of ${S.eb} MW now<br><span class="m">${fmt(D.elecFrac*100)}% of today's heat</span>`:`<span class="m">none (raise it in Boilers and the grid)</span>`});
 pk(G.coal,{title:"Backup boilers",view:{p:[-4,28,10],t:[-30,10,-16]},hint:"coal, gas or wood",panel:"#co2Viz",value:()=>`${bkName()} · ${fmt((1-D.elecFrac)*100)}% of today's heat<br><span class="m">${fmt(D.co2)} t CO₂ today</span>`,truth:"Estimate",source:"Emission factors: MfE and estimates (see notes)"});
 pk(G.grid,{title:"Grid connection",view:{p:[-10,26,52],t:[-38,8,18]},hint:"power for the boiler and plant",panel:"#gridMW",value:()=>`${fmt(gridNow,1)} MW from the grid now<br>${S.grid?`<span class="r">electrode boilers off: the grid asked big users to cut load</span>`:`<span class="m">electrode boiler ${fmt(ebMW,1)} MW · plant ${fmt(gridNow-ebMW,1)} MW</span>`}`,source:"Record national demand 7,415 MW, 6 Aug 2026"});
