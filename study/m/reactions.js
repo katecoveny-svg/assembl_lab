@@ -7,6 +7,7 @@ const K=StudyKit,F=K.fig,P=F.palette,esc=K.esc;
 const INK="#262E5C",MUTED="#6E6A86",GRID="#ECE6F0",LINE="#DCD6EA",ACC="#B2552D",SKYD="#3A6FB8",GHOST="#9AA3B5",MINTD="#2A7D63",BROWN="#9A4A22";
 
 // ================================================================ the model
+const motionAllowed=()=>!(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches);
 const R=8.314,T0=293.15,VM=24.06;                 // L per mole of gas at 20 °C and 101.3 kPa (ideal gas law)
 const M_CACO3=100.1,M_CO2=44.0,M_O2=32.0;           // g/mol from the NCEA periodic table values (Ca 40.1, C 12.0, O 16.0)
 const MARBLE=0.40,ACID_L=0.050,N_M=MARBLE/M_CACO3;  // 0.40 g of marble (the limiting reactant) and 50 mL of acid (in excess)
@@ -588,37 +589,37 @@ const steps=[
   big:"<b>The big idea:</b> collision theory. Particles must collide to react, and a collision only works if it has at least the activation energy (Ea) and the particles are lined up the right way. The rate of reaction is the number of successful collisions per second.",
   exam:"For a reaction to happen, the reactant particles must collide with enough energy (at least the activation energy) and in the correct orientation. This is called a successful collision. The rate of reaction is the number of successful collisions per unit of time.",
   trap:"Saying particles react whenever they touch. Most collisions bounce off, because they don't have enough energy or they hit the wrong way round.",
-  chips:["coll","succ","enough"],onStep:()=>{std({size:"large"});s.playing=true}},
+  chips:["coll","succ","enough"],onStep:()=>{std({size:"large"});s.playing=motionAllowed()}},
  {k:"measure",lab:"Measuring rate",cap:"Press Play. The chips tip into the acid and CO₂ pushes the syringe out. A second flask sits on a balance with a cotton wool plug: the gas escapes, so the mass drops. Both give a graph that is steep at first, then flattens.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","meas"],
   big:"<b>The big idea:</b> rate is how fast a product forms or a reactant is used up. On the graph it is the gradient: steepest at the start, flatter as the reactants are used up, and flat once the marble has gone.",
   exam:"The gradient of the graph is the rate of reaction. It is steepest at the start because the reactant particles are most concentrated, so there are the most successful collisions per second. As the marble and acid are used up there are fewer reactant particles to collide, so the rate decreases and the curve flattens. It is flat when all the marble has reacted.",
   trap:"Saying the reaction slows because the gas 'fills up'. It slows because there are fewer reactant particles left to collide, and stops when the limiting reactant (here, the marble) is used up.",
-  chips:["gas","time","r0","rnow"],onStep:()=>{std();s.playing=true}},
+  chips:["gas","time","r0","rnow"],onStep:()=>{std();s.playing=motionAllowed()}},
  {k:"conc",lab:"Concentration",cap:"Change the acid concentration. More acid particles in the same volume means more collisions every second. Run one line, change the concentration, and the first run stays on the graph as a dashed line.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","c","meas"],
   big:"<b>The big idea:</b> higher concentration means more particles per unit volume, so collisions happen more often and there are more successful collisions per second. The share of collisions that succeed doesn't change.",
   exam:"Increasing the concentration of the acid increases the number of acid particles per unit volume. Particles collide more frequently, so there are more successful collisions per second and the rate of reaction increases. The same mass of marble is used, so the same total volume of CO₂ forms; it just forms sooner.",
   trap:"Saying the particles move faster at a higher concentration. They don't: there are more of them, so collisions happen more often.",
-  chips:["acid","coll","r0","gas"],onStep:()=>{std({c:.5});s.playing=true}},
+  chips:["acid","coll","r0","gas"],onStep:()=>{std({c:.5});s.playing=motionAllowed()}},
  {k:"temp",lab:"Temperature",cap:"Turn the hot plate up, or drop the bath to 10 °C with ice. Hotter particles move faster, so they collide more often, and more of the collisions have enough energy. The energy screen shows the spread of collision energies.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","T"],
   big:"<b>The big idea:</b> temperature works in two ways: more frequent collisions, and a bigger share of collisions with at least the activation energy. The second effect is the bigger one. In this model the rate roughly doubles for every 10 °C rise.",
   exam:"At a higher temperature the particles have more kinetic energy and move faster. They collide more frequently, and a greater proportion of the collisions have energy equal to or greater than the activation energy. So there are more successful collisions per second and the rate of reaction increases.",
   trap:"Saying the activation energy gets lower when it's hotter. The activation energy stays the same; more of the particles have enough energy to get over it.",
-  chips:["temp","enough","r0","tend"],onStep:()=>{std();s.playing=true}},
+  chips:["temp","enough","r0","tend"],onStep:()=>{std();s.playing=motionAllowed()}},
  {k:"surface",lab:"Surface area",cap:"The same 0.40 g of marble as large chips, small chips or powder. Tap a dish or use the menu. Only particles on the outside of a piece can be hit by acid, so smaller pieces give the acid more to collide with.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","size"],
   big:"<b>The big idea:</b> cutting a solid into smaller pieces puts more of its particles on the surface. More particles can collide with the acid at once, so there are more successful collisions per second.",
   exam:"Powdered marble has a much greater surface area than the same mass of large chips. More calcium carbonate particles are exposed to the acid, so more collisions happen per second, giving more successful collisions per second and a faster rate of reaction. The total volume of CO₂ is the same because the mass of marble is the same.",
   trap:"Saying powder has 'more particles'. The same mass has the same number of particles; powder has more of them on the surface, where the acid can reach them.",
-  chips:["size","surf","r0","tend"],onStep:()=>{std({size:"large"});s.playing=true}},
+  chips:["size","surf","r0","tend"],onStep:()=>{std({size:"large"});s.playing=motionAllowed()}},
  {k:"catalyst",lab:"Catalyst",cap:"Now hydrogen peroxide: 2H₂O₂ → 2H₂O + O₂. On its own it breaks down so slowly you'd wait days for this much oxygen. Press the MnO₂ button (or tap the brown bottle) to add 0.50 g of manganese(IV) oxide, and oxygen pours out. The MnO₂ is still there at the end.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","cat","T"],
   big:"<b>The big idea:</b> a catalyst provides an alternative pathway with a lower activation energy. A greater share of collisions now have enough energy, so the rate increases. The catalyst is not used up.",
   exam:"Manganese(IV) oxide is a catalyst. It provides an alternative reaction pathway with a lower activation energy. A greater proportion of collisions now have energy equal to or greater than the activation energy, so there are more successful collisions per second and the rate of reaction increases. The catalyst is not used up, so 0.50 g of MnO₂ is left at the end.",
   trap:"Saying a catalyst gives the particles more energy or makes them move faster. It lowers the energy they need, by giving the reaction a different route.",
-  chips:["cat","enough","r0","gas"],onStep:()=>{std({rx:"perox",cat:false});s.playing=true}},
+  chips:["cat","enough","r0","gas"],onStep:()=>{std({rx:"perox",cat:false});s.playing=motionAllowed()}},
  {k:"equil",lab:"Equilibrium",cap:"A sealed tube of brown NO₂ dips into the bath. NO₂ molecules pair up to make colourless N₂O₄, and N₂O₄ splits back, both at the same time. Heat the bath and the tube goes darker; cool it and it goes paler.",speed:1,speedLabel:"real time",controls:["T"],
   big:"<b>The big idea:</b> dynamic equilibrium. In a closed system the forward and reverse reactions keep going at the same rate, so the amounts stay the same. Change the temperature and the equilibrium shifts to oppose the change.",
   exam:"2NO₂(g) ⇌ N₂O₄(g) is exothermic in the forward direction. At equilibrium the forward and reverse reactions happen at the same rate, so the concentrations stay constant. Increasing the temperature favours the endothermic reverse reaction, so the position of equilibrium shifts left: more brown NO₂ forms and the colour darkens. Kc gets smaller, because only a change in temperature changes the value of Kc.",
   trap:"Saying the reactions stop at equilibrium. Both keep going; they just go at the same rate.",
-  chips:["temp","no2","fwd","rev","kc"],onStep:()=>{std();s.playing=true}},
+  chips:["temp","no2","fwd","rev","kc"],onStep:()=>{std();s.playing=motionAllowed()}},
  {k:"test",lab:"Test yourself",cap:"Four challenges. Set up a run, press Play (or Skip to the end), then press Check. The machine marks you from the same model that runs the bench.",speed:SP,speedLabel:"10× real time",controls:["play","restart","skip","rx","T","c","size","cat","meas"],
   big:"<b>Exam tip:</b> for every factor, say what changes about the particles, link it to the frequency of successful collisions, then to the rate. When you talk about the total amount of product, name the limiting reactant.",
   chips:["gas","time","r0","tend"],onStep:()=>{std();s.playing=false}}];
@@ -655,7 +656,7 @@ const CH=[
   ok:()=>{const r=[s.run,s.ghost].find(r=>r&&r.rx==="perox"&&r.T===20&&r.t50!=null&&r.t50<20);return `Yes: 50 mL in ${secs(r.t50)}. The MnO₂ gives a pathway with a lower activation energy, so far more collisions succeed. It isn't used up.`},
   no:()=>{const r=s.run;return r.rx!=="perox"?"Switch the reaction to hydrogen peroxide.":r.T!==20?"Keep the bath at 20 °C for this one.":!r.cat?"At 20 °C without help it would take days. What can lower the activation energy?":"Run it until 50 mL is collected, then Check."}}];
 // ---- mount
-const API=StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:reactions3d,
+const API=StudyKit.mount({kupu:KUPU,caseTint:"#eadce9",accent:"#62415f",scene3d:reactions3d,
   eyebrow:"Chemistry · Rates of reaction", title:"The reaction machine", crumb:"Year 9–10 science · NCEA Level 2 Chemistry AS91166 Demonstrate understanding of chemical reactivity", homeHash:"l2",
   fig:"FIG. 34 · A RATES-OF-REACTION BENCH", railTitle:"What makes a reaction go faster",
   badge:{label:"NCEA L2 Chemistry 91166",exam:"2026-11-16T14:00:00+13:00",examText:"Mon 16 Nov, 2pm"},
@@ -666,7 +667,7 @@ const API=StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:re
     explore:"Run marble chips in acid and watch the gas curve. Its initial slope shows the rate at the start; the dashed curve preserves a previous run.",
     predict:"Compare 0.50 and 1.00 mol/L acid at 20°C with the same small chips. Predict the initial-rate ratio and whether the final gas amount changes.",
     investigate:"Set up A, press Play and run for at least 2 simulated seconds, then capture A. Set up B preserves that run as the dashed curve. Press Play and capture B. Keep temperature and chip size fixed; the same marble mass and acid volume are used.",
-    explain:"Compare the captured initial rates, not the rates at different later times. Link concentration to collision frequency. Use the dashed A curve as evidence, and distinguish this illustrative rate model from a measured experiment.",
+    explain:"Compare the captured initial rates, not the rates at different later times. Link concentration to collision frequency. Use the dashed A curve as evidence, and distinguish this illustrative rate model from a measured experiment. Native AR is a static apparatus reference: close it to return here for runs and captures.",
     prepare:(slot,x,api,evidence)=>{
       if(slot==="A"){std({c:.5});s.ghost=null;s.meas="vol";s.playing=false;return "A ready: 0.50 mol/L, 20°C, small chips. Press Play, then capture after at least 2 simulated seconds."}
       if(!evidence.A||s.run.id!==evidence.A.raw.id||!s.run.started||s.run.t<2)return "Capture a current A run first. If you changed runs, set up A and capture it again.";
@@ -678,7 +679,8 @@ const API=StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:re
       const fields={Acid:r.c.toFixed(2)+" mol/L",Temperature:r.T+" °C",Marble:"0.40 g · "+SIZE_N[r.size],"Acid volume":"50 mL","Initial rate":rateTxt(r.r0)+" mL/s","Captured at":secs(r.t),"Gas collected":n1(r.x*VMAX(r.rx))+" mL"};
       if(slot==="B")fields["Initial-rate B/A"]=(r.r0/evidence.A.raw.initialRate).toFixed(2)+" × (model)";
       return {raw:{id:r.id,concentration:r.c,temperature:r.T,size:r.size,initialRate:r.r0,time:r.t,gas:r.x*VMAX(r.rx)},fields}},
-    reset:()=>{std({c:.5});s.ghost=null;s.meas="vol";s.playing=false}},
+    reset:()=>{std({c:.5});s.ghost=null;s.meas="vol";s.playing=false},
+    check:{question:"Why is B initially faster without making twice as much final CO₂?",options:["More concentrated acid gives particles more kinetic energy at the same temperature.","Twice the concentration always doubles every reaction rate and final yield.","More acid particles per volume increase collision frequency; the same limiting marble controls final gas amount."],answer:2,feedback:["Temperature is unchanged, so concentration alone does not raise the particles' average kinetic energy. It increases acid particles per volume and collision opportunities at the marble surface.","This model makes initial rate proportional to acid concentration under these conditions. Real rate laws need experimental evidence. Acid is in excess in both runs; the same 0.40 g marble limits the final CO₂, so faster does not mean more product.","At fixed temperature and chip size, the model doubles initial rate when concentration doubles. Both acid amounts are in excess, so the same marble amount produces the same final CO₂. Your early captures compare initial rates; to observe final yield, run both conditions to completion. The 2× rate is this illustrative model's rule, not a universal law."]}},
   state:s, steps,
   controls:[{type:"play"},
     {type:"button",id:"restart",label:"New run",onClick:()=>{newRun();s.playing=false}},
@@ -711,12 +713,12 @@ const API=StudyKit.mount({kupu:KUPU,caseTint:"peach",accent:"#B2552D",scene3d:re
     fwd:["FORWARD",`${n1(LW.eq?LW.eq.fwd.length/5:0)} a second`],rev:["REVERSE",`${n1(LW.eq?LW.eq.rev.length/5:0)} a second`],
     kc:["Kc vs 20 °C",`× ${kcRatio(s.T)>=1?n2(kcRatio(s.T)):kcRatio(s.T).toFixed(3)}`]}},
   challenges:CH,
-  papers:[{label:"NZQA: Chemistry past exams",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/chemistry/"},
+  papers:[{label:"Collision theory: OpenStax",url:"https://openstax.org/books/chemistry/pages/12-5-collision-theory"},{label:"NZQA: Chemistry past exams",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/chemistry/"},
     {label:"2025 paper, AS91166",url:"https://www.nzqa.govt.nz/nqfdocs/ncea-resource/exams/2025/91166-exm-2025.pdf"},
     {label:"2025 marking schedule",url:"https://www.nzqa.govt.nz/nqfdocs/ncea-resource/schedules/2025/91166-ass-2025.pdf"},
     {label:"2024 paper (rate graph question)",url:"https://www.nzqa.govt.nz/nqfdocs/ncea-resource/exams/2024/91166-exm-2024.pdf"}],
   truth:"The amounts and equations are real: 0.40 g of marble (CaCO₃, 100.1 g mol⁻¹) with 50 mL of hydrochloric acid in excess, and 25 mL of 0.32 mol L⁻¹ hydrogen peroxide with 0.50 g of manganese(IV) oxide (the amount in RSC Education's practical). Gas volumes are calculated for 20 °C and 101.3 kPa (24.1 L per mole); the balance readings are illustrative. How fast each run goes is illustrative: the rate constants, the activation energies (50 kJ mol⁻¹ for marble; 75 and 50 kJ mol⁻¹ for peroxide without and with the catalyst) and the surface factors for chips and powder were chosen to show the trends, not measured. The model holds each flask at the bath temperature, treats the rate as proportional to acid concentration, and ignores CO₂ that dissolves in the acid. The particle window is a slowed-down sketch that exaggerates the differences so you can see them. For the NO₂ tube, how Kc changes with temperature uses ΔH = −57 kJ mol⁻¹ (Chemguide); the share of NO₂ in the window is illustrative.",
-  footer:"Covers AS91166 rates of reaction: collision theory and activation energy; the effect of concentration, temperature, surface area and a catalyst; energy profiles; reading rate from a graph. Introduces dynamic equilibrium and the effect of temperature on it. Also Year 9–10 science: chemical reactions and reaction rates."
+  footer:"Practise selected reactivity ideas, not a complete exam checklist: collision theory and activation energy; the effect of concentration, temperature, surface area and a catalyst; energy profiles; reading rate from a graph. Introduces dynamic equilibrium and the effect of temperature on it. Also Year 9–10 science: chemical reactions and reaction rates."
 });
 window.__RX={s,LW,warm:n=>{for(let i=0;i<n;i++)lensTick(.05,API.step)}};   // a hook for automated checks
 })();

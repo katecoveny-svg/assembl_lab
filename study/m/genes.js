@@ -113,7 +113,7 @@ const steps=[
   big:"<b>The big idea:</b> in small populations allele frequencies drift by chance, and alleles get lost. Every black robin alive today descends from one female, Old Blue.",
   exam:"In a small population, chance events decide which individuals breed, so allele frequencies can change a lot between generations and alleles can be lost completely. The black robin fell to five birds in 1980, so today's population of about 445 has very little genetic variation, which makes it more vulnerable to disease.",
   trap:"Thinking a population that grows back also gets its variation back. Lost alleles only return through mutation or migration.",chips:["N","freq","lost"],onStep:()=>{s.sel=0;s.mig=0;s.mu=0;resetPop(5,0.5)}},
- {k:"survival",lab:"Survival",cap:"A new predator spots pale birds more easily. Fewer pale birds survive to breed, so the d allele gets rarer, but never quite vanishes, because carriers hide it.",speed:1,speedLabel:"≈ 4 generations a second",controls:POP,
+ {k:"survival",lab:"Survival",cap:"A new predator spots pale birds more easily. Fewer pale birds survive to breed, so the d allele gets rarer, and can persist in dark Dd carriers. In a finite population, chance can still remove it.",speed:1,speedLabel:"≈ 4 generations a second",controls:POP,
   big:"<b>The big idea:</b> when one phenotype survives better, its alleles are passed on more. That's natural selection changing allele frequency.",
   exam:"Pale dd birds are more likely to be eaten, so fewer survive to breed and pass on the d allele. Over generations the frequency of d falls. It falls slowly once it's rare, because most d alleles are in dark Dd carriers that aren't selected against.",
   trap:"Saying the birds change colour to survive. Individuals don't change; the population's allele frequencies do.",chips:["freq","pale","sel"],onStep:()=>{s.mig=0;s.mu=0;s.sel=0.3;resetPop(500,0.3)}},
@@ -278,7 +278,7 @@ function genes3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       tiles.forEach((T,n)=>{const g=[P2[0][T.i],P2[1][T.j]].sort().join("").replace("dD","Dd");T.m.color.set(g==="dd"?"#FFF7E6":g==="DD"?"#DCD8EE":"#ECE8F7");
         tileBirds.put(n,PX+(T.j-.5)*PC,TOP+.38,PZ+(T.i-.5)*PC,.17,g,.6);lTile[n].at(tmp.set(ZC.x+PX+(T.j-.5)*PC,TOP+.7,PZ+(T.i-.5)*PC)).set(`<b>${g}</b>`)});tileBirds.done();
       if(s.kids!==kidsRef){kidsRef=s.kids;kidsT=0}kidsT+=dt;
-      for(let i=0;i<24;i++){const g=s.kids[i];const pop=S.clamp((kidsT-i*.04)*4,0,1);const x=-3.2+(i%12)*.58,z=1.75+Math.floor(i/12)*.75;
+      for(let i=0;i<24;i++){const g=s.kids[i];const pop=S.REDUCED?1:S.clamp((kidsT-i*.04)*4,0,1);const x=-3.2+(i%12)*.58,z=1.75+Math.floor(i/12)*.75;
         chicks.put(i,x,TOP+.22,z,g?.17*S.ease(pop):0,g,.4+Math.sin(i)*.4,Math.max(0,Math.sin(t*4+i))*.03*R)}chicks.done();
       const cnt={DD:0,Dd:0,dd:0};s.kids.forEach(g=>cnt[g]++);
       lMum.at(tmp.set(ZC.x+parentAt[0].x,TOP+1.5,parentAt[0].z)).set(`Mother<b>${s.pA}</b>`);lDad.at(tmp.set(ZC.x+parentAt[1].x,TOP+1.5,parentAt[1].z)).set(`Father<b>${s.pB}</b>`);
@@ -340,11 +340,21 @@ function genes3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
       lGraph.at(tmp.set(-4.7,TOP+2.6,-3.2)).set("Allele frequency");
     }};
 }
-StudyKit.mount({kupu:KUPU,scene3d:genes3d,
+StudyKit.mount({kupu:KUPU,caseTint:"#eadce9",accent:"#62415f",scene3d:genes3d,
   eyebrow:"Biology · Genetic variation", title:"The gene pool machine", crumb:"NCEA Level 1 Chemistry and Biology · genetic variation · also Year 9–10 genetics", homeHash:"l1",
   fig:"FIG. 06 · AN ISLAND OF BIRDS", railTitle:"How variation is made and changed",
   badge:{label:"NCEA L1 Chem & Bio 92022",exam:"2026-11-19T14:00:00+13:00",examText:"Thu 19 Nov, 2pm"},
   mainBox:"0 0 640 330", mainPhoneBig:true, mainLabel:"A population of birds with dark and pale feathers", closeBox:"0 0 420 260",
+  lesson:{step:"cross",
+    question:"Does a predicted ratio tell us exactly which chicks will hatch?",
+    explore:"Try the Mother and Father menus. Each chick gets one allele from each parent. In this invented one-gene model, dd is pale; DD and Dd are dark.",
+    predict:"Compare Dd × Dd with Dd × dd, each with 24 chicks. Predict the probability of a pale chick. Would every brood have exactly the expected number?",
+    investigate:"Set up A creates 24 chicks from Dd × Dd; capture A. Set up B creates 24 chicks from Dd × dd; capture B. Only the father's genotype changes. Compare proportions as well as counts. Repeating a setup gives a new chance sample.",
+    explain:"Use the captured parent genotypes and pale counts. Explain how each parent can pass on d. Separate the predicted probability for each chick from the observed fraction in this brood. A different count does not disprove the probability. Native AR shows a static DNA reference, not breeding: close it to return to these controls.",
+    prepare:(slot,x,api,evidence)=>{if(slot==="B"&&!evidence.A)return "Capture A first, then compare B.";s.pA="Dd";s.pB=slot==="A"?"Dd":"dd";s.playing=false;cross(24);return slot+" ready: "+s.pA+" × "+s.pB+", 24 chicks. Read the counts, then capture."},
+    capture:(slot)=>{const father=slot==="A"?"Dd":"dd";if(s.pA!=="Dd"||s.pB!==father||s.kids.length!==24)return {error:"Use Set up "+slot+" and keep its parents and 24-chick sample unchanged."};const pale=s.kids.filter(g=>g==="dd").length,probability=slot==="A"?.25:.5;return {raw:{mother:s.pA,father:s.pB,total:24,pale,probability,genotypes:s.kids.slice()},fields:{Parents:s.pA+" × "+s.pB,"Pale probability":probability*100+"% per chick","Expected pale":24*probability+" of 24 (not guaranteed)","Observed pale":pale+" of 24 ("+Math.round(pale/24*100)+"%)"}}},
+    reset:()=>{s.pA=s.pB="Dd";s.playing=false;cross(24)},
+    check:{question:"B has a 50% probability of a pale chick. What follows?",options:["Exactly 12 of the 24 chicks must be pale.","Each chick has a 1 in 2 chance of being pale; a brood can differ from 12.","A dark Dd parent cannot pass on the pale allele."],answer:1,feedback:["Twelve is the expected count across many such broods, not a quota. Independent allele choices can produce fewer or more than 12 pale chicks in one brood.","The Dd parent passes d with probability 1/2; the dd parent always passes d. So P(dd) = 1/2. Observed counts vary by chance; B need not have exactly twice A's pale count.","A Dd parent is dark because D is dominant, but still carries d and can pass it on. Appearance does not reveal every allele a parent carries."]}},
   state:s, steps,
   controls:[{type:"play"},{type:"button",id:"restart",label:"Restart",onClick:(x,api)=>{api.step.onStep&&api.step.onStep()}},
     {type:"range",id:"N",label:"Birds",min:5,max:500,step:5,get:()=>s.N,set:(x,v)=>{s.N=v;sampleBirds()},fmt:()=>String(s.N)},
@@ -368,8 +378,8 @@ StudyKit.mount({kupu:KUPU,scene3d:genes3d,
     {q:"Pick the chick's real father from the DNA profile.",check:()=>s.gelPick===G.real,ok:"Yes: he carries every band the chick didn't get from its mother.",no:"Not that one. Find a chick band the mother doesn't have, then find the male who does."},
     {q:"Choose two parents that can never have a pale chick, but can have chicks that carry pale.",check:()=>{const set=[s.pA,s.pB].sort().join();return set==="DD,Dd"||set==="Dd,DD"||set==="DD,dd"||set==="dd,DD"},ok:"Yes: with one DD parent every chick gets a D, so all are dark, but some carry d.",no:()=>`Not yet: ${s.pA} × ${s.pB} gives ${expPale()}. One parent must be DD and the other must carry d.`},
     {q:"Run a population until one allele is lost completely.",check:()=>s.p===0||s.p===1,ok:"Yes: with so few birds, chance alone removed an allele. Only mutation or migration can bring it back.",no:"Not yet. Make the population very small, press Play and watch the graph."}],
-  papers:[{label:"NZQA: Chemistry and Biology",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/chemistry-and-biology/"},{label:"DOC: black robin",url:"https://www.doc.govt.nz/news/media-releases/2025-media-releases/more-habitat-needed-for-black-robins/"}],
+  papers:[{label:"Inheritance probabilities: OpenStax",url:"https://openstax.org/books/concepts-biology/pages/8-2-laws-of-inheritance"},{label:"NZQA: Chemistry and Biology",url:"https://www2.nzqa.govt.nz/ncea/subjects/past-exams-and-exemplars/chemistry-and-biology/"},{label:"DOC: black robin",url:"https://www.doc.govt.nz/news/media-releases/2025-media-releases/more-habitat-needed-for-black-robins/"}],
   truth:"The birds and their feather gene are invented to show the ideas; real traits often involve many genes. Black robin facts (five birds in 1980, all descended from Old Blue, about 445 today) are from the Department of Conservation.",
-  footer:"Covers AS 92022: sources of variation (mutation, sexual reproduction), what changes it in populations (small populations, survival, migration), allele frequency, and gene tracking with DNA profiles."
+  footer:"Practise selected inheritance ideas, not a complete exam checklist: sources of variation (mutation, sexual reproduction), what changes it in populations (small populations, survival, migration), allele frequency, and gene tracking with DNA profiles."
 });
 })();

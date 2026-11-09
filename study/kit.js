@@ -364,35 +364,45 @@ function arButton(api,cfg,want){if(["slushie","bike","phone","claw","windtunnel"
 // Optional authored investigation. Navigation never calls setStep/onStep or mutates the model.
 // Model-owned prepare/capture/reset callbacks keep units, limits and fair-test rules local.
 function mountLesson(cfg,api,host,work){
-  const L=cfg.lesson, stages=["Explore","Predict","Investigate","Explain"];
+  const L=cfg.lesson, stages=L.check?["Try","Predict","Investigate","Explain","Check"]:["Explore","Predict","Investigate","Explain"];
+  const lastStage=stages.length-1;
+  if(L.check){host.classList.add("has-check");work.classList.add("has-check");host.style.setProperty("--lesson-stage-count",stages.length)}
   let stage=0;const evidence={A:null,B:null};
   host.innerHTML=`<div class="lesson-heading"><span class="eyebrow">Guided investigation</span><h2>${esc(L.question)}</h2></div><div class="lesson-navigation"><nav class="lesson-stages" aria-label="Investigation stages">${stages.map((x,i)=>`<button type="button" data-stage="${i}" aria-controls="k-lesson-work">${x}</button>`).join("")}</nav><button class="btn" type="button" id="k-lesson-advance" aria-controls="k-lesson-work"></button></div>`;
   work.innerHTML=`<div data-panel="0"><p>${esc(L.explore)}</p></div>
     <div data-panel="1"><label for="k-prediction">${esc(L.predict)}</label><textarea id="k-prediction" rows="2" placeholder="I predict… because…"></textarea></div>
     <div data-panel="2"><p>${esc(L.investigate)}</p><div class="lesson-actions">${["A","B"].map(k=>`<button class="btn" type="button" data-prepare="${k}">Set up ${k}</button><button class="btn primary" type="button" data-capture="${k}">Capture ${k}</button>`).join("")}</div></div>
     <div data-panel="3"><p>${esc(L.explain)}</p><label for="k-explanation">Explain using your A and B evidence</label><textarea id="k-explanation" rows="3" placeholder="When I changed… I observed… This suggests…"></textarea><p class="lesson-note">Your explanation is ungraded. Notes stay on this page until you reload or restart.</p></div>
+    ${L.check?`<div data-panel="4"><fieldset class="lesson-check"><legend>${esc(L.check.question)}</legend>${L.check.options.map((option,i)=>`<label><input type="radio" name="lesson-check" value="${i}"> <span>${esc(option)}</span></label>`).join("")}</fieldset><button class="btn primary" type="button" id="k-check-reason">Check my reasoning</button><p id="k-check-feedback" role="status"></p><p class="lesson-note">This checks the selected claim against your captured model comparison, not your written explanation or an exam grade.</p></div>`:""}
     <div class="lesson-evidence" id="k-evidence"></div><p class="lesson-status" role="status" id="k-lesson-status"></p>
     <div class="lesson-footer"><button class="btn" type="button" id="k-lesson-back">Back</button><button class="btn" type="button" id="k-lesson-next">Predict →</button><button class="btn lesson-restart" type="button" id="k-lesson-reset">Restart investigation</button></div>`;
   const status=work.querySelector("#k-lesson-status"),buttons=[...host.querySelectorAll("[data-stage]")];
-  function go(i){stage=Math.max(0,Math.min(3,i));buttons.forEach((b,j)=>b.setAttribute("aria-current",j===stage?"step":"false"));
+  function go(i){stage=Math.max(0,Math.min(lastStage,i));buttons.forEach((b,j)=>b.setAttribute("aria-current",j===stage?"step":"false"));
     work.querySelectorAll("[data-panel]").forEach(p=>p.hidden=+p.dataset.panel!==stage);
     work.querySelector("#k-lesson-back").disabled=stage===0;
-    for(const next of [work.querySelector("#k-lesson-next"),host.querySelector("#k-lesson-advance")]){next.hidden=stage===3;next.textContent="Next stage: "+(stages[stage+1]||"")+" →";}
+    for(const next of [work.querySelector("#k-lesson-next"),host.querySelector("#k-lesson-advance")]){next.hidden=stage===lastStage;next.textContent="Next stage: "+(stages[stage+1]||"")+" →";}
   }
   buttons.forEach((b,i)=>b.onclick=()=>go(i));
-  host.querySelector("nav").onkeydown=e=>{const i=buttons.indexOf(document.activeElement);if(i<0||!["ArrowRight","ArrowLeft","Home","End"].includes(e.key))return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?3:(i+(e.key==="ArrowRight"?1:3))%4;go(j);buttons[j].focus()};
+  host.querySelector("nav").onkeydown=e=>{const i=buttons.indexOf(document.activeElement);if(i<0||!["ArrowRight","ArrowLeft","Home","End"].includes(e.key))return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?lastStage:(i+(e.key==="ArrowRight"?1:lastStage))%stages.length;go(j);buttons[j].focus()};
   work.querySelector("#k-lesson-back").onclick=()=>{go(stage-1);buttons[stage].focus()};
   host.querySelector("#k-lesson-advance").onclick=()=>{go(stage+1);buttons[stage].focus()};
   work.querySelector("#k-lesson-next").onclick=()=>{go(stage+1);buttons[stage].focus()};
+  function clearCheck(){if(!L.check)return;work.querySelectorAll('input[name="lesson-check"]').forEach(x=>x.checked=false);work.querySelector('#k-check-feedback').textContent=""}
+  if(L.check)work.querySelector('#k-check-reason').onclick=()=>{
+    const output=work.querySelector('#k-check-feedback'),pick=work.querySelector('input[name="lesson-check"]:checked');
+    if(!evidence.A||!evidence.B){output.textContent="Capture A and B in Investigate first. Use those observations as evidence.";return}
+    if(!pick){output.textContent="Choose a claim first, then check your reasoning.";return}
+    const n=Number(pick.value);output.textContent=(n===L.check.answer?"That claim fits. ":"Reconsider this claim. ")+L.check.feedback[n];
+  };
   function renderEvidence(){work.querySelector("#k-evidence").innerHTML=["A","B"].map(k=>{
     const record=evidence[k];return `<section class="evidence-card"><h3>Observation ${k}</h3>${record?`<dl>${Object.entries(record.fields).map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>`:`<p>Not captured yet.</p>`}</section>`}).join("")}
   work.querySelectorAll("[data-prepare]").forEach(b=>b.onclick=()=>{const message=L.prepare(b.dataset.prepare,api.state,api,evidence);api.redraw();status.textContent=message||"Settings ready. Observe the model, then capture."});
   work.querySelectorAll("[data-capture]").forEach(b=>b.onclick=()=>{const k=b.dataset.capture;if(k==="B"&&!evidence.A){status.textContent="Capture observation A first, then compare B.";return}const record=L.capture(k,api.state,api,evidence);
     if(record.error){status.textContent=record.error;return}
-    evidence[k]=JSON.parse(JSON.stringify(record));if(k==="A")evidence.B=null;
+    clearCheck();evidence[k]=JSON.parse(JSON.stringify(record));if(k==="A")evidence.B=null;
     renderEvidence();status.textContent=`Observation ${k} captured.`+(k==="A"?" Capture B after changing the one variable. Any previous B was cleared.":"");
   });
-  work.querySelector("#k-lesson-reset").onclick=()=>{evidence.A=evidence.B=null;work.querySelectorAll("textarea").forEach(x=>x.value="");L.reset(api.state,api);api.redraw();renderEvidence();go(0);status.textContent="Investigation restarted. Notes and captures cleared.";buttons[0].focus()};
+  work.querySelector("#k-lesson-reset").onclick=()=>{clearCheck();evidence.A=evidence.B=null;work.querySelectorAll("textarea").forEach(x=>x.value="");L.reset(api.state,api);api.redraw();renderEvidence();go(0);status.textContent="Investigation restarted. Notes and captures cleared.";buttons[0].focus()};
   renderEvidence();go(0);
   return {update(){const active=api.step.k===L.step;host.hidden=work.hidden=!active}};
 }
