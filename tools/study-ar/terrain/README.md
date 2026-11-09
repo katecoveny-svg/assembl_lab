@@ -1,0 +1,15 @@
+# Aoraki bounded elevation derivative
+
+`aoraki-dem.json` is the committed, reproducible elevation input for `../export-fly.html`. It contains geographic bounds, metre extents, source tile identifiers, extraction date, sampling method and licence URLs. It contains no API credentials. The native export needs no network data service at runtime.
+
+Four 256 × 256 LINZ elevation tiles were retrieved through LINZ's normally allocated standard-access key on 9 November 2026. No Google endpoint, private data or paid service was used. Decode opaque Terrain-RGB pixels as `-10000 + (R*65536 + G*256 + B)*0.1` metres. All source pixels were opaque; no missing data was replaced with invented heights.
+
+For each output grid point, longitude varies west to east, latitude north to south. Convert to zoom-11 global pixel coordinates with the standard Web Mercator formula, subtract 0.5 to locate pixel centres, and bilinearly sample the four adjacent source pixels. Round the result to 0.1 m (encoding precision, not claimed accuracy). Local extents use mean Earth radius 6,371,008.8 m, longitude multiplied by cosine of the centre latitude. The 129 × 129 crop and source metadata are retained, so rebuilding does not require re-fetching a changing source.
+
+Run the existing local `tools/study-ar/serve.py`, open `/tools/study-ar/export-fly.html`, call `exportFly()` and POST its result to `/export`. This uses the existing vendored Three GLB/USDZ exporters. Update only Fly's byte sizes and bounds in the manifest after regeneration. No QR change is needed: the existing Fly QR still opens its lesson.
+
+The 50 cm terrain is horizontally 1:35,425 and vertically 1:23,617 (1.5× exaggeration). The full display including interpretive plaque is approximately 51 × 16 × 75 cm. The 1 cm plinth is decorative; minimum extracted elevation is the vertical display datum. Feature markers identify extrema in the sampled grid, not a surveyed summit. North is negative Z, east positive X. The native plaque and public `study/ar/fly-source.html` retain attribution and interpretation.
+
+Source terms: https://www.linz.govt.nz/products-services/data/licensing-and-using-data/attributing-linz-basemaps-data and https://basemaps.linz.govt.nz/docs/user-guide/technical-documentation/ . Elevation is available for cartographic reuse under CC BY 4.0. The source product combines elevation surveys and contour-derived data; no assertion is made that every crop pixel comes from a particular survey. Source age and resolution vary. No buildings, trees, imagery, precise glacier boundaries, hazard modelling or current snow cover are represented.
+
+Validation: full suite 211/211; finite elevation/bounds/scale tests, source/attribution links, GLB terrain vertex and triangle counts, native byte budgets, USDZ ZIP CRC/stored entries/64-byte alignment. Browser model inspected, phone controls and scrolling checked, iPhone Quick Look and Android intent paths exercised by capability emulation. Physical native phone placement remains **untested**.

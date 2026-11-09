@@ -264,10 +264,22 @@
       "id": "fly",
       "title": "The fly-over machine",
       "page": "/study/m/fly.html",
-      "status": "needs-export-review",
-      "note": "Fly-over streams MapLibre LINZ aerial imagery and Terrain-RGB tiles (CC BY 4.0), with 1.5\u00d7 vertical exaggeration. There is no committed bounded terrain mesh. A native export still needs an approved location/extent, attributed local elevation/imagery extract, and explicit horizontal/vertical scales. No Google Maps activation, streamed-tile dump or paid service was used.",
+      "status": "exported",
+      "note": "Aoraki / Mount Cook: bounded LINZ elevation relief, 170.03\u2013170.25\u00b0 E and 43.53\u201343.69\u00b0 S. A 17.71 \u00d7 17.79 km region at horizontal 1:35,425, vertical 1:23,617 (1.5\u00d7 exaggeration); terrain width 50 cm. Labels identify sampled high ridge and valley, north and 5 km scale. Bilinear 129\u00d7129 cartographic grid; maximum sample is not a surveyed summit. No buildings, trees, aerial imagery or current glacier boundaries. Static relief; flight controls stay in the browser. Elevation \u00a9 LINZ, CC BY 4.0; cropped/resampled by assembl.",
       "qr": "/study/ar/qr/fly.svg",
-      "coverageReason": "Fly-over streams MapLibre LINZ aerial imagery and Terrain-RGB tiles (CC BY 4.0), with 1.5\u00d7 vertical exaggeration. There is no committed bounded terrain mesh. A native export still needs an approved location/extent, attributed local elevation/imagery extract, and explicit horizontal/vertical scales. No Google Maps activation, streamed-tile dump or paid service was used."
+      "coverageReason": "Aoraki / Mount Cook: bounded LINZ elevation relief, 170.03\u2013170.25\u00b0 E and 43.53\u201343.69\u00b0 S. A 17.71 \u00d7 17.79 km region at horizontal 1:35,425, vertical 1:23,617 (1.5\u00d7 exaggeration); terrain width 50 cm. Labels identify sampled high ridge and valley, north and 5 km scale. Bilinear 129\u00d7129 cartographic grid; maximum sample is not a surveyed summit. No buildings, trees, aerial imagery or current glacier boundaries. Static relief; flight controls stay in the browser. Elevation \u00a9 LINZ, CC BY 4.0; cropped/resampled by assembl.",
+      "glb": "/study/ar/models/fly.glb",
+      "usdz": "/study/ar/models/fly.usdz",
+      "source": "tools/study-ar/export-fly.html",
+      "creditUrl": "/study/ar/fly-source.html",
+      "physicalDeviceTested": false,
+      "boundsMetres": [
+        0.5125000001862645,
+        0.1643633761484026,
+        0.7497244575680917
+      ],
+      "glbBytes": 1163496,
+      "usdzBytes": 2925460
     },
     {
       "id": "market",

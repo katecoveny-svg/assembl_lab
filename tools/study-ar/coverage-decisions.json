@@ -100,8 +100,8 @@
     "reason": "The existing rod-lever investigation with a 2 kg load, 2.4 m rod and 0.5 m grip distance. Pivot, effort/load arrows and reference lines are retained with a native moment equation. Miniature static teaching diagram; force calculations and grip changes stay in the browser."
   },
   "fly": {
-    "status": "needs-export-review",
-    "reason": "Fly-over streams MapLibre LINZ aerial imagery and Terrain-RGB tiles (CC BY 4.0), with 1.5× vertical exaggeration. There is no committed bounded terrain mesh. A native export still needs an approved location/extent, attributed local elevation/imagery extract, and explicit horizontal/vertical scales. No Google Maps activation, streamed-tile dump or paid service was used."
+    "status": "exported",
+    "reason": "Aoraki / Mount Cook: bounded LINZ elevation relief, 170.03–170.25° E and 43.53–43.69° S. A 17.71 × 17.79 km region at horizontal 1:35,425, vertical 1:23,617 (1.5× exaggeration); terrain width 50 cm. Labels identify sampled high ridge and valley, north and 5 km scale. Bilinear 129×129 cartographic grid; maximum sample is not a surveyed summit. No buildings, trees, aerial imagery or current glacier boundaries. Static relief; flight controls stay in the browser. Elevation © LINZ, CC BY 4.0; cropped/resampled by assembl."
   },
   "particles": {
     "status": "exported",

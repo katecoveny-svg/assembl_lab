@@ -1,4 +1,20 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {routeFor,sceneViewerURL} from '../../study/ar/delivery.js';
+test('Aoraki relief preserves geographic extent, metre scales, provenance and sampled elevation',()=>{
+ const d=JSON.parse(fs.readFileSync('tools/study-ar/terrain/aoraki-dem.json'));const m=JSON.parse(fs.readFileSync('study/ar/manifest.json')).experiences.find(e=>e.id==='fly');
+ assert.deepEqual(d.boundsWGS84,{west:170.03,east:170.25,south:-43.69,north:-43.53});
+ assert.equal(d.elevationsMetres.length,d.gridSize**2);assert.ok(d.elevationsMetres.every(Number.isFinite));
+ assert.ok(d.widthMetres>17700&&d.widthMetres<17730);assert.ok(d.depthMetres>17780&&d.depthMetres<17810);
+ assert.equal(d.tableWidthMetres,.5);assert.equal(d.verticalExaggeration,1.5);
+ assert.equal(Math.min(...d.elevationsMetres),d.elevationMinMetres);assert.equal(Math.max(...d.elevationsMetres),d.elevationMaxMetres);
+ assert.ok(d.elevationMaxMetres>3600&&d.elevationMaxMetres<3724);assert.ok(d.elevationMinMetres>600&&d.elevationMinMetres<700);
+ assert.equal(d.source.tiles.length,4);assert.equal(d.source.licence,'CC BY 4.0');assert.equal(m.status,'exported');assert.equal(m.physicalDeviceTested,false);
+ const b=fs.readFileSync('.'+m.glb),j=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)));const terrain=j.nodes.find(n=>n.name==='LINZ_Aoraki_bounded_elevation');assert.ok(terrain);
+ const primitive=j.meshes[terrain.mesh].primitives[0],p=j.accessors[primitive.attributes.POSITION];assert.equal(p.count,129**2);assert.equal(j.accessors[primitive.indices].count,128*128*6);
+ assert.ok(Math.abs((p.max[0]-p.min[0])-.5)<1e-6);assert.ok(Math.abs((p.max[1]-p.min[1])-(d.elevationMaxMetres-d.elevationMinMetres)*.5/d.widthMetres*1.5)<1e-6);
+ for(const name of ['Feature_1','Feature_2','North','Distance_scale','Interpretation_scale_and_attribution'])assert.ok(j.nodes.some(n=>n.name===name),name);
+ const source=fs.readFileSync('study/ar/fly-source.html','utf8');assert.ok(source.includes(d.source.copyright)&&source.includes(d.source.attribution));assert.match(source,/not a surveyed|not surveyed/);
+ assert.ok(fs.statSync('.'+m.glb).size<1_500_000);assert.ok(fs.statSync('.'+m.usdz).size<4_000_000);
+});
 const e={status:'exported',title:'Test & learn',page:'/study/m/slushie.html',glb:'/study/ar/models/slushie.glb',usdz:'/study/ar/models/slushie.usdz'};
 test('capabilities and unavailable exports',()=>{assert.equal(routeFor({...e,status:'needs-export-review'},{quickLook:true}),'unavailable');assert.equal(routeFor(e,{secure:false,quickLook:true}),'insecure');assert.equal(routeFor(e,{quickLook:true}),'quick-look');assert.equal(routeFor(e,{android:true}),'scene-viewer');assert.equal(routeFor(e,{}),'download')});
 test('Android asset and lesson fallback correctly encoded',()=>{const u=sceneViewerURL(e,'https://study.assembl.co.nz');assert.match(u,/mode=ar_preferred/);assert.match(u,/S.browser_fallback_url=https%3A%2F%2Fstudy.assembl.co.nz%2Fstudy%2Fm%2Fslushie.html%3Far-fallback%3D1/)});

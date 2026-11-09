@@ -85,6 +85,12 @@ app.innerHTML=`<div class="fly-map" id="f-map" role="img" aria-label="A 3D map o
  <div class="std"><span class="truth">Simulated</span>${l.std.map(s=>`<span>${esc(s)}</span>`).join("")}</div>
  <div class="row"><button class="btn" type="button" data-go="${i}">Fly here</button><button class="btn" type="button" data-prev="${i}" aria-label="Previous landmark">←</button><button class="btn" type="button" data-next="${i}" aria-label="Next landmark">→</button></div></div></div>`).join("")}</div>
 <div class="fly-dots" aria-hidden="true">${L.map(()=>"<i></i>").join("")}</div></nav>`;
+// A bounded Aoraki model only; other flight destinations remain browser maps.
+const arHost=document.createElement('section');arHost.dataset.studyAr='fly';
+arHost.setAttribute('aria-label','Aoraki tabletop relief');
+document.querySelector('#card-aoraki > p').after(arHost);
+import('/study/ar/lesson.js').then(m=>m.mountLessonAR('fly'));
+const arCredit=document.createElement('p');arCredit.innerHTML='Aoraki relief only · <a href="/study/ar/fly-source.html">Scale, LINZ source & licence</a>';arHost.after(arCredit);
 const $=id=>document.getElementById(id);
 const status=t=>{$("f-status").textContent=t||""};
 const sfx=n=>{try{K.sfx&&K.sfx(n)}catch(e){}};

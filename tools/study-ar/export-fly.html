@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>Bounded Aoraki relief export</title>
+<script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js"}}</script>
+<iframe src="./export-assets.html" hidden></iframe>
+<script type="module">
+import * as T from 'three';
+const d=await fetch('./terrain/aoraki-dem.json').then(r=>r.json());
+window.exportFly=async()=>{
+ const root=new T.Group(),n=d.gridSize,h=d.elevationsMetres,s=d.tableWidthMetres/d.widthMetres,w=.5,depth=d.depthMetres*s;
+ const pos=[],colors=[],idx=[],low=new T.Color('#916a70'),high=new T.Color('#fff9ff');
+ for(let j=0;j<n;j++)for(let i=0;i<n;i++){const v=h[j*n+i],f=(v-d.elevationMinMetres)/(d.elevationMaxMetres-d.elevationMinMetres);pos.push((i/(n-1)-.5)*w,.01+(v-d.elevationMinMetres)*s*d.verticalExaggeration,(j/(n-1)-.5)*depth);colors.push(...low.clone().lerp(high,f).toArray());}
+ for(let j=0;j<n-1;j++)for(let i=0;i<n-1;i++){const a=j*n+i;idx.push(a,a+n,a+1,a+1,a+n,a+n+1)}
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.setIndex(idx);g.computeVertexNormals();const terrain=new T.Mesh(g,new T.MeshStandardMaterial({vertexColors:true,roughness:.95}));terrain.name='LINZ_Aoraki_bounded_elevation';root.add(terrain);
+ const mat=new T.MeshStandardMaterial({color:'#55324f',roughness:.9});const base=new T.Mesh(new T.BoxGeometry(w,.01,depth),mat);base.position.y=.005;root.add(base);
+ const edge=[];for(let i=0;i<n;i++)edge.push(i);for(let j=1;j<n;j++)edge.push(j*n+n-1);for(let i=n-2;i>=0;i--)edge.push((n-1)*n+i);for(let j=n-2;j>0;j--)edge.push(j*n);
+ const sides=[],si=[];for(let k=0;k<edge.length;k++){const a=edge[k],b=edge[(k+1)%edge.length],t=sides.length/3;sides.push(pos[a*3],.01,pos[a*3+2],...pos.slice(a*3,a*3+3),...pos.slice(b*3,b*3+3),pos[b*3],.01,pos[b*3+2]);si.push(t,t+1,t+2,t,t+2,t+3)}const sg=new T.BufferGeometry();sg.setAttribute('position',new T.Float32BufferAttribute(sides,3));sg.setIndex(si);sg.computeVertexNormals();root.add(new T.Mesh(sg,mat));
+ function label(lines,width,height,x,y,z,name){const c=document.createElement('canvas');c.width=2048;c.height=Math.round(2048*height/width);const ctx=c.getContext('2d');ctx.fillStyle='#33212f';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.font=(lines.length===1?'600':'58')+'px sans-serif';lines.forEach((line,i)=>ctx.fillText(line,45,lines.length===1?c.height*.78:80+i*80));const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const p=new T.Mesh(new T.PlaneGeometry(width,height).rotateX(-Math.PI/2),new T.MeshStandardMaterial({map:tex,roughness:1}));p.position.set(x,y,z);p.name=name;root.add(p);}
+ for(const [num,v,color] of [[1,d.elevationMaxMetres,'#a74f70'],[2,d.elevationMinMetres,'#446879']]){const k=h.indexOf(v),x=pos[k*3],y=pos[k*3+1],z=pos[k*3+2];const pin=new T.Mesh(new T.CylinderGeometry(.0015,.0015,.025,8),new T.MeshStandardMaterial({color}));pin.position.set(x,y+.0125,z);root.add(pin);label([String(num)],.025,.015,x,y+.026,z,'Feature_'+num);}
+ label(['AORAKI / MOUNT COOK · elevation relief',`1: sampled high ridge ${d.elevationMaxMetres.toFixed(0)} m · 2: valley ${d.elevationMinMetres.toFixed(0)} m`,'Compare sharp ridges with broad glacial valleys.',`Horizontal 1:${Math.round(1/s).toLocaleString('en-NZ')} · vertical ×1.5 (1:${Math.round(1/(s*1.5)).toLocaleString('en-NZ')})`,'170.03–170.25° E · 43.53–43.69° S','Elevation © LINZ · CC BY 4.0 · resampled by assembl','study.assembl.co.nz/study/ar/fly-source.html','Static cartographic model · no buildings · not a survey'],.5,.18,0,.001,depth/2+.105,'Interpretation_scale_and_attribution');
+ label(['N ↑'],.05,.025,-.21,.002,-depth/2-.025,'North');
+ const bar=new T.Mesh(new T.BoxGeometry(5000*s,.003,.005),mat);bar.position.set(.1,.002,-depth/2-.018);root.add(bar);label(['5 km'],.065,.025,.1,.002,-depth/2-.04,'Distance_scale');
+ const frame=document.querySelector('iframe');for(let i=0;i<100&&!frame.contentWindow.exportRoot;i++)await new Promise(r=>setTimeout(r,100));return frame.contentWindow.exportRoot(root,'fly');
+};
+</script>

@@ -1,6 +1,6 @@
-# Study AR coverage — release candidate v4
+# Study AR coverage — published suite + Aoraki relief
 
-32 prepared native pairs; 21 web-first lessons; 1 pending terrain extract. All native pairs remain physically untested. QR sharing covers all 54 routes and does not imply AR coverage.
+33 prepared native pairs; 21 web-first lessons; no pending export candidates. All native pairs remain physically untested. QR sharing covers all 54 routes and does not imply AR coverage.
 
 | ID | Route | Status | Exact learning / export boundary |
 |---|---|---|---|
@@ -20,7 +20,7 @@
 | words | /study/m/words.html | web-first | Vocabulary, language choices and written explanations require readable text and feedback rather than a placed object. |
 | essay | /study/m/essay.html | web-first | Planning and assessing essay structure depends on text editing and comparison; no native object is proposed. |
 | maps | /study/m/maps.html | web-first | The lesson compares mapped distributions and development indicators; an unlabelled map mesh would lose the evidence and controls needed for interpretation. |
-| fly | /study/m/fly.html | needs-export-review | Fly-over streams MapLibre LINZ aerial imagery and Terrain-RGB tiles (CC BY 4.0), with 1.5× vertical exaggeration. There is no committed bounded terrain mesh. A native export still needs an approved location/extent, attributed local elevation/imagery extract, and explicit horizontal/vertical scales. No Google Maps activation, streamed-tile dump or paid service was used. |
+| fly | /study/m/fly.html | exported | Aoraki / Mount Cook: bounded LINZ elevation relief, 170.03–170.25° E and 43.53–43.69° S. A 17.71 × 17.79 km region at horizontal 1:35,425, vertical 1:23,617 (1.5× exaggeration); terrain width 50 cm. Labels identify sampled high ridge and valley, north and 5 km scale. Bilinear 129×129 cartographic grid; maximum sample is not a surveyed summit. No buildings, trees, aerial imagery or current glacier boundaries. Static relief; flight controls stay in the browser. Elevation © LINZ, CC BY 4.0; cropped/resampled by assembl. |
 | market | /study/m/market.html | web-first | Supply, demand, price and quantity are explored through changing graphs; a static AR prop would not preserve the economic relationships. |
 | claw | /study/m/claw.html | exported | Prepared AR Worlds teaching model · 1:4 model. Native animation, where present, is pre-recorded; browser lesson controls do not travel into the viewer. |
 | ai | /study/m/ai.html | web-first | The lesson’s learning task is reasoning about AI and evaluating outputs, not inspecting a physical machine; keep its interactive evidence and explanations. |

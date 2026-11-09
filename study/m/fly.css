@@ -99,3 +99,6 @@ body{font-family:var(--as-font);color:var(--as-ink)}
   .fly-band.bottom{height:28%}
 }
 @media (prefers-reduced-motion:reduce){.fly-plane svg,.fly-plane .prop{animation:none}}
+
+/* Keep the Aoraki model downloads and attribution reachable in the fixed map. */
+#card-aoraki{max-height:56vh;overflow-y:auto;overscroll-behavior:contain}

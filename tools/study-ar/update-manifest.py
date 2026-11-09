@@ -6,6 +6,9 @@ selected=json.loads((r/'tools/study-ar/selected-scenes.json').read_text())
 for id,spec in selected.items():
  if not (r/f'study/ar/models/{id}.json').exists():continue
  e=entries[id];e.update(status='exported',glb=f'/study/ar/models/{id}.glb',usdz=f'/study/ar/models/{id}.usdz',note=spec['note'],physicalDeviceTested=False,source='tools/study-ar/selected-scenes.json',boundsMetres=json.loads((r/f'study/ar/models/{id}.json').read_text())['boundsMetres'])
+# The bounded terrain export has its own source/provenance page.
+if (r/'study/ar/models/fly.json').exists():
+ e=entries['fly'];e.update(status='exported',glb='/study/ar/models/fly.glb',usdz='/study/ar/models/fly.usdz',source='tools/study-ar/export-fly.html',creditUrl='/study/ar/fly-source.html',physicalDeviceTested=False,boundsMetres=json.loads((r/'study/ar/models/fly.json').read_text())['boundsMetres'],note=json.loads((r/'tools/study-ar/coverage-decisions.json').read_text())['fly']['reason'])
 worlds=json.loads((r/'ar/worlds/files/manifest.json').read_text())
 for id,world,scale in [('heart','heart','3× anatomical teaching scale'),('claw','claw','1:4 model'),('windtunnel','f1','1:8 race car'),('earthspace','earth','Earth–Moon distances and sizes are not to scale')]:
  w=worlds[world+'-table'];e=entries[id];e.update(status='exported',glb=f'/ar/worlds/files/{world}-table.glb',usdz=f'/ar/worlds/files/{world}-table.usdz',note=f'Prepared AR Worlds teaching model · {scale}. Native animation, where present, is pre-recorded; browser lesson controls do not travel into the viewer.',physicalDeviceTested=False,source='ar/worlds/files/manifest.json',previewInLesson=True,boundsMetres=[w['size_m'][k] for k in ['x','y','z']])
