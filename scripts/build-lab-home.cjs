@@ -319,6 +319,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
   ${moreTwins}
   `, { tag: 'ul', className: 'rows' })}</div>
   <div class="more-col"><h3>Closer to home</h3>${v2.reveal(`
+  <li><a class="row row-type" href="/household/"><span class="row-copy"><strong>Household Edit</strong><span class="row-line">Power bills, food, school costs and the true cost of a fuel detour.</span><span class="meta"><span class="truth" data-k="sim">Manual inputs</span><span class="src">Local calculations · Google feeds not connected</span></span></span><span class="row-go" aria-hidden="true">↗</span></a></li>
   ${homeRows}
   `, { tag: 'ul', className: 'rows' })}</div>
  </div>
