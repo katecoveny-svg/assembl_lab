@@ -1,5 +1,6 @@
 // Impossible Objects: build with isometric blocks, then switch the drawing
 // order to make shapes that can't exist (Penrose triangle, impossible frame).
+import { enhance } from "../play-space/workspace.js";
 import { launch } from "../kit/studio.js";
 import { shade, bytesToB64url, b64urlToBytes } from "../kit/core.js";
 
@@ -31,12 +32,12 @@ const engine = {
   ],
   surpriseStarts: ["penrose", "frame", "city", "ziggurat"],
   options: [
-    { id: "depth", label: "Drawing order", value: "trick", choices: [{ id: "real", label: "Real 3D" }, { id: "trick", label: "Impossible" }] },
+    { id: "depth", label: "Drawing order", value: "trick", choices: [{ id: "real", label: "Depth sorted" }, { id: "trick", label: "Impossible" }] },
     { id: "style", label: "Style", value: "soft", choices: [{ id: "soft", label: "Soft" }, { id: "outline", label: "Outlined" }, { id: "colouring", label: "Colouring-in" }] },
   ],
   sliders: [{ id: "zoom", label: "Block size", min: 40, max: 160, value: 100 }],
   how: [
-    { title: "Order makes the trick", text: "In Real 3D the computer draws far blocks first. In Impossible it draws in the order you placed them, so a later block always sits on top, even if it should be behind.", svg: svgOrder },
+    { title: "Order makes the trick", text: "Depth sorted draws far blocks first. In Impossible it draws in the order you placed them, so a later block always sits on top, even if it should be behind.", svg: svgOrder },
     { title: "Why the triangle works", text: "Three bars go along three directions. On a flat page the end lands exactly on the start, so the corner looks both in front and behind. A real one only works from one exact viewpoint.", svg: svgTri },
     { title: "Isometric drawing", text: "Every block is drawn with the same three angles, with no vanishing point. That's why far blocks look the same size as near ones, and why the eye can be fooled.", svg: svgIso },
   ],
@@ -338,9 +339,9 @@ launch({
   title: "Impossible Objects",
   hook: "Build with blocks. Then build what can't exist.",
   engine,
-  palette: 0,
-  bg: 0,
+  palette: 6,
+  bg: 2,
   seed: 31,
   classic: "../impossible-objects-3d/",
   classicLabel: "Try the older 3D solid-shape lab (with 3D file export)",
-});
+}).then(enhance);

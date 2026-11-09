@@ -1,5 +1,6 @@
 // Time Sculpture: every stroke you draw is remembered with its timing,
 // then replayed as echoes that turn and shrink, building a sculpture of time.
+import { enhance } from "../play-space/workspace.js";
 import { launch } from "../kit/studio.js";
 import { hexToRgb } from "../kit/core.js";
 
@@ -216,9 +217,9 @@ launch({
   title: "Time Sculpture",
   hook: "Draw once. Watch time echo it into a sculpture.",
   engine,
-  palette: 4,
-  bg: 3,
+  palette: 6,
+  bg: 1,
   seed: 606,
   classic: "../time-sculpture-3d/",
   classicLabel: "Try the older 3D time-volume lab (with video import)",
-});
+}).then(enhance);
