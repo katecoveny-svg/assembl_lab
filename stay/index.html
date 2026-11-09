@@ -1312,7 +1312,7 @@ function anchor(n) { if (!L) return null; if (n === "desk") return L.desk.clone(
   if (n === "hk") { const tr = trolleys.find(x => x.visible); return tr ? tr.position.clone().add(new THREE.Vector3(0, 2.4, 0)) : null; } if (n === "dump") return L.dump ? L.dump.clone().add(new THREE.Vector3(0, 3.6, 0)) : null; return null; }
 stage.start();
 if (/[?&]debug\b/.test(location.search)) window.__scene = { scene: stage.scene, stage, bodyI, renderer: stage.renderer, THREE };
-return { applyTheme, setMode, setView, resize, sync, project, anchor, setRain: v => { forcedRain = v == null ? null : !!v; }, setLiveWeather, setPlace, setGhost, onFrame: fn => stage.onFrame(fn),
+return { focusArrivals: () => { jar.visible=false;envI.visible=false;coinI.visible=false; }, applyTheme, setMode, setView, resize, sync, project, anchor, setRain: v => { forcedRain = v == null ? null : !!v; }, setLiveWeather, setPlace, setGhost, onFrame: fn => stage.onFrame(fn),
   get view() { return view; }, get aspect() { return stage.camera.aspect; }, get live() { return WXT.live && forcedRain == null; }, renderer: stage.renderer, VIEWS, viewOf: n => viewOf(mode, n), stage,
   specs: () => SPECS, get L() { return L; }, info };
 }
@@ -1802,6 +1802,12 @@ window.__accom = { S, setMode, setRegion, setView, jump, speed: setSpeed, play, 
   lever: (k, v) => { S[k] = v; if (k === "cabins") tw.setMode(S.mode, K.roomsOf(S)); recompute(true); }, apply: on => { K.LEVERS.filter(l => l.modes.includes(S.mode)).forEach(l => S[l.k] = !!on); if (S.mode === "park") tw.setMode(S.mode, K.roomsOf(S)); recompute(true); },
   state: () => ({ year: Y, asIs: A, day: V, t, proof: PR, info }), proof: () => PR, ready: () => !!PR,
   tour: i => ST.tour.start(i || 0), compare: id => { CMPK = id || null; ghostKey = ""; ghostUpdate(); }, busiestDay, waveDay, stage: ST, scene: tw };
+if (new URLSearchParams(location.search).has('arrival')) {
+  play(false);
+  const style=document.createElement('link');style.rel='stylesheet';style.href='./arrival-rush.css';style.onload=()=>tw.resize();document.head.append(style);
+  import('./arrival-rush.js').then(({mountArrivalRush})=>mountArrivalRush({K,api:window.__accom,select:(year,i,minute)=>{Object.assign(S,year.S);Y=year;day=i;t=minute;newDay();info=tw.sync(0,V,Y,t);}})).catch(()=>{const p=document.createElement('p');p.textContent='Arrival Rush unavailable. The full accommodation model remains available.';document.querySelector('.masthead').append(p);});
+}
+
 })();
 
 </script>
