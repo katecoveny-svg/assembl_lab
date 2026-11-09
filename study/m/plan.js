@@ -192,7 +192,7 @@ const CH=[
 function plan3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const TOP=.3,SITE=9.5;   // the site's long side in world units
   const boardM=S.rbox(13.6,.3,9.4,.14,mat("plastic",PAL.case.butter,{rough:.55,coat:.2}));boardM.position.set(.9,.15,0);S.scene.add(boardM);
-  const model=S.group();model.position.set(-.6,TOP,0);
+  const model=S.group();model.name="AR_ED_PLAN";model.position.set(-.6,TOP,0);
   let built=null,k=1,zoneM={},fixedM=[],floor=null,walls=[];
   const wallM=mat("plastic","#FFFDF8",{rough:.5,coat:.2}),doorM=mat("plastic",PAL.product.butter,{rough:.4});
   const W2=(x,y)=>V3((x-B().W/2)*k,0,(y-B().H/2)*k);
@@ -204,7 +204,7 @@ function plan3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
     const T=.12,H=.42;const wall=(x,z,ww,dd)=>{const m=S.rbox(ww,H,dd,.03,wallM,{at:[x,H/2,z]});model.add(m);walls.push(m)};
     wall(0,-h/2-T/2,w+2*T,T);wall(0,h/2+T/2,w+2*T,T);wall(-w/2-T/2,0,T,h);wall(w/2+T/2,0,T,h);
     Bz.fixed.forEach(f=>{const c=W2(f.x+f.w/2,f.y+f.h/2);const m=S.rbox(T*1.6,H*1.1,f.h*k,.03,doorM,{at:[c.x+(f.x>1?T/2:-T/2),H*.55,c.z]});model.add(m);fixedM.push(m);m.userData.f=f});
-    Bz.zones.forEach(zd=>{const g=S.group(model);const tint=new THREE.Color(zd.c);
+    Bz.zones.forEach(zd=>{const g=S.group(model);g.userData.arLabel=zd.label;const tint=new THREE.Color(zd.c);
       const slab=S.rbox(1,1,1,.04,mat("plastic",zd.c,{rough:.45,fresh:true}));g.add(slab);
       const rim=S.mesh(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),new THREE.LineBasicMaterial({color:PAL.ink,transparent:true,opacity:.35}));const rimL=new THREE.LineSegments(rim.geometry,rim.material);g.add(rimL);
       const glow=S.box(1,1,1,new THREE.MeshBasicMaterial({color:"#D4486B",transparent:true,opacity:0,depthWrite:false}),{cast:false});g.add(glow);

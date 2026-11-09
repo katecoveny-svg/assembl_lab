@@ -351,3 +351,6 @@ const startAt=Math.min(LESSONS.length-1,Math.max(0,qL>0?qL-1:(parseInt(store.get
 logStudy("open");
 Promise.race([Promise.all([document.fonts.load(`600 80px ${DISPLAY}`),document.fonts.load(`700 150px ${DISPLAY}`),document.fonts.load(`500 40px ${SANS}`)]),new Promise(r=>setTimeout(r,1500))])
   .finally(()=>{resize();go(startAt,true);requestAnimationFrame(loop);setTimeout(()=>$("hint").classList.add("gone"),6000)});
+
+// Read-only build/QA hook; simulation inputs are not changed.
+if(new URLSearchParams(location.search).has("ar-export"))window.STUDY_SHAKY_EXPORT={get root(){return group},get lesson(){return LESSONS[cur]?.id}};

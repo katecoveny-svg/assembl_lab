@@ -224,7 +224,7 @@ function inanga3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   const waterM=mat("liquid","#5FA8F0",{opacity:.42,depthWrite:false}),surfM=mat("liquid","#CFE6FA",{opacity:.3,depthWrite:false});
 
   // ================================================================ the bank case: soil, water, grass, the tide staff
-  const bk=S.group();bk.position.set(CX,TOP,0);
+  const bk=S.group();bk.name="AR_INANGA_BANK";bk.position.set(CX,TOP,0);
   const cas=S.acrylicCase(8.4,3.4,2.8,PAL.case.mint,{opacity:.08});cas.position.set(CX,TOP,0);S.scene.add(cas);
   {const sh=new THREE.Shape();sh.moveTo(-4.15,0);PS.forEach(p=>sh.lineTo(p[0],p[1]));sh.lineTo(4.15,0);sh.closePath();
     const g=new THREE.ExtrudeGeometry(sh,{depth:2.7,bevelEnabled:false});g.translate(0,0,-1.35);bk.add(S.mesh(g,mat("plastic","#E9D2B4",{rough:.8,coat:.08})))}

@@ -295,7 +295,7 @@ function fish3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x
     const vol=S.mesh(new THREE.LatheGeometry(pr,48),mat("plastic","#A9D9BF",{rough:.7,coat:.1}));vol.position.set(8.6,0,-3.9);vol.scale.set(1,1,.55);S.scene.add(vol)}
   const sun=S.sphere(.55,mat("glow",PAL.product.butter,1.3),{cast:false});sun.position.set(14,7.5,-14);S.scene.add(sun);
   // ================================================================ lever zone: the rod on a pivot, your front hand, the hanging fish
-  const lz=S.group();lz.position.set(ZL.x,TOP,ZL.z);const PX=-2.1,PY=1.55;
+  const lz=S.group();lz.name="AR_FISH_LEVER";lz.position.set(ZL.x,TOP,ZL.z);const PX=-2.1,PY=1.55;
   lz.add(S.rbox(5.6,2.6,.12,.06,mat("plastic","#ffffff",{rough:.5}),{at:[.4,1.55,-1.4]}));
   const pivot=S.mesh(new THREE.CylinderGeometry(0,.3,.62,3),steelD);pivot.rotation.y=Math.PI/6;pivot.position.set(PX,PY-.37,0);lz.add(pivot);lz.add(S.rbox(.8,PY-.68,.6,.06,white,{at:[PX,(PY-.68)/2,0]}));
   const glove=c=>{const g=new THREE.Group();g.add(S.rbox(.2,.16,.24,.07,mat("plastic",c,{rough:.5})));return g};

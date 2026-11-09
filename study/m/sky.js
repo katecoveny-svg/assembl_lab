@@ -333,7 +333,7 @@ function sky3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(x,
   const mc=document.createElement("canvas");mc.width=256;mc.height=128;{const g=mc.getContext("2d");g.fillStyle="#E9E6DD";g.fillRect(0,0,256,128);let sd=3;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
     for(let i=0;i<40;i++){g.fillStyle=`rgba(150,145,135,${.15+r()*.2})`;g.beginPath();g.arc(r()*256,r()*128,2+r()*9,0,7);g.fill()}}
   const moonTex=new THREE.CanvasTexture(mc);moonTex.colorSpace=THREE.SRGBColorSpace;
-  const earthSys=S.group();      // moves around the orbit
+  const earthSys=S.group();earthSys.name="AR_EARTH_MOON";      // moves around the orbit
   const tilt=S.group(earthSys);  // holds the fixed axis direction
   const AX=V3(0,Math.cos(EPS),-Math.sin(EPS));tilt.quaternion.setFromUnitVectors(V3(0,1,0),AX);
   const spin=S.group(tilt);

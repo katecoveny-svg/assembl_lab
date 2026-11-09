@@ -353,10 +353,10 @@ function kokopu3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
     return {g,body,skin:skinM,pect,eyes,pose,point,L}}
 
   // ---- the stream pool: a frosted case with gravel, an undercut bank, ferns, a log and a grassy margin
-  const pool=S.group();
+  const pool=S.group();pool.name="AR_KOKOPU_POOL";
   const caseW=9.2,caseD=5.2,caseH=3.2;
-  const box=S.acrylicCase(caseW,caseH,caseD,PAL.case.mint,{opacity:.2});pool.add(box);
-  const plinth=S.rbox(caseW+.5,.32,caseD+.5,.14,mat("plastic",PAL.case.mint,{rough:.55,coat:.2}));plinth.position.y=-.16;pool.add(plinth);
+  const box=S.acrylicCase(caseW,caseH,caseD,PAL.case.mint,{opacity:.2});pool.add(box);box.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.name="AR_CASE_PALE"}});
+  const plinth=S.rbox(caseW+.5,.32,caseD+.5,.14,mat("plastic",PAL.case.mint,{rough:.55,coat:.2}));plinth.position.y=-.16;pool.add(plinth);plinth.material=plinth.material.clone();plinth.material.name="AR_CASE_PALE";
   // gravel
   const pebG=new THREE.SphereGeometry(1,14,10);const NPEB=900;const pebs=S.swarm(NPEB,pebG,mat("plastic","#ffffff",{rough:.78,coat:.06}),{colors:true});pool.add(pebs);
   const PEB=["#A89878","#8C7B60","#C2B08C","#76695A","#9C8F7C","#B9A47E","#6D6A66","#8F8A80","#C9B795"];

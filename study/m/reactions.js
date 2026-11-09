@@ -398,7 +398,7 @@ function reactions3d(S){const {THREE,mat}=S,P3=S.PAL;const V3=(x,y,z)=>new THREE
   const B0=TOP+.6;   // bath floor
   const bath=S.acrylicCase(4.0,2.2,3.6,P3.case.sky,{opacity:.1});bath.position.set(HP.x,B0,HP.z);S.scene.add(bath);
   const waterM=mat("liquid","#8CC2EE",{fresh:true,opacity:.2});waterM.depthWrite=false;const water=S.rbox(3.88,1.72,3.48,.06,waterM,{cast:false});water.position.set(HP.x,B0+.88,HP.z);water.renderOrder=3;S.scene.add(water);
-  const flaskA=makeFlask(V3(HP.x,B0+.04,HP.z),"bung");
+  const flaskA=makeFlask(V3(HP.x,B0+.04,HP.z),"bung");flaskA.g.name="AR_REACTION_FLASK";
   // bath thermometer
   const th=S.group();th.position.set(HP.x-1.62,B0,HP.z+1.42);
   th.add(S.cyl(.075,.075,3.1,mat("glass","#ffffff",{opacity:.3}),{at:[0,1.65,0],cast:false}));th.add(S.sphere(.12,mat("glow",P3.product.strawberry,.6),{at:[0,.18,0]}));

@@ -234,7 +234,7 @@ function particlesBench(S,asset){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new T
   // one pale bench under both stations
   const deck=S.rbox(SY.x0+7-(BX-3.6),TOP3,9,.12,mat("plastic","#EFEAF4",{rough:.6,coat:.15}));deck.position.set((BX-3.6+SY.x0+7)/2,TOP3/2,(BZ+SY.z)/2-.4);S.scene.add(deck);
   // ---------------------------------------------------------------- the beaker chamber (molecules, steam)
-  const bench=S.group();bench.position.set(BX,TOP3,BZ);
+  const bench=S.group();bench.name="AR_PARTICLE_LATTICE";bench.position.set(BX,TOP3,BZ);
   const BR=R.beaker.r,BH=R.beaker.rim-R.beaker.floor,B0=R.beaker.floor-TOP3;   // inner radius, height and floor (bench space)
   const hot=n=>{const o=root.getObjectByName(n);return o?o.getWorldPosition(new THREE.Vector3()):null};
   // the molecules: a 7 × 7 × 7 ice lattice; oxygen blueberry, hydrogens white, bonds drawn while they're in the solid

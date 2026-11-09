@@ -56,6 +56,7 @@
     d.innerHTML=`<video controls autoplay playsinline preload="metadata" poster="/study/videos/${mid}.jpg"><source src="/study/videos/${mid}.mp4" type="video/mp4"><track kind="captions" srclang="en" label="English" src="/study/videos/${mid}.vtt" default></video><div class="bar"><span>How to use this machine · ${info.dur||30} seconds</span><button type="button">Close</button></div>`;
     document.body.appendChild(d);d.querySelector("button").onclick=()=>d.close();d.addEventListener("close",()=>d.remove());d.showModal()}
 
+  function written(info){const d=document.createElement("dialog");d.className="howvid";d.setAttribute("aria-label","Written walkthrough");const body=document.createElement("div");body.style.cssText="padding:24px;background:#fff;color:#33212f;font:16px/1.5 Instrument Sans,system-ui";const h=document.createElement("h2");h.textContent=info.title;body.append(h);for(const step of info.steps){const h=document.createElement("h3"),p=document.createElement("p");h.textContent=step.title;p.textContent=step.text;body.append(h,p)}const close=document.createElement("button");close.type="button";close.textContent="Close";close.onclick=()=>d.close();body.append(close);d.append(body);document.body.append(d);d.addEventListener("close",()=>d.remove());d.showModal()}
   function mount(){const head=document.querySelector(".apphead");if(!head||document.querySelector(".howbar"))return;
     const bar=document.createElement("div");bar.className="howbar";bar.setAttribute("role","region");bar.setAttribute("aria-label","How this machine works");
     const items=[["Pick a topic",0],["Change the controls under the picture",2],["Read the notes",4],["Test yourself",5]];
@@ -67,8 +68,8 @@
     setOpen(!seen0&&matchMedia("(min-width: 900px)").matches);tog.onclick=()=>setOpen(bar.classList.contains("compact"));
     // short concept explainers (study/explainers.js) add a "▶ The idea" button to this bar on paired machines
     try{const x=document.createElement("script");x.src="/study/explainers.js";x.defer=true;document.head.appendChild(x)}catch(e){}
-    bar.addEventListener("click",e=>{const s=e.target.closest("[data-stop]");if(s)return tour(+s.dataset.stop);if(e.target.closest("[data-tour]"))tour(0);if(e.target.closest("[data-vid]"))video(bar._vid)});
-    fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos[mid];if(!v)return;bar._vid=v;
+    bar.addEventListener("click",e=>{const s=e.target.closest("[data-stop]");if(s)return tour(+s.dataset.stop);if(e.target.closest("[data-tour]"))tour(0);if(e.target.closest("[data-vid]"))video(bar._vid);if(e.target.closest("[data-written]"))written(bar._written)});
+    fetch("/study/videos/index.json").then(r=>r.ok?r.json():null).then(j=>{const v=j&&j.videos&&j.videos[mid];if(!v){const f=j?.walkthroughs?.[mid];if(f){bar._written=f;bar.querySelector(".acts").insertAdjacentHTML("afterbegin",`<button type="button" data-written>Read walkthrough</button>`)}return;}bar._vid=v;
       bar.querySelector(".acts").insertAdjacentHTML("afterbegin",`<button class="vid" type="button" data-vid>▶ Watch how · ${v.dur} s</button>`)}).catch(()=>{});
     // first visit to any machine: show the tour once (never during recordings or automated checks)
     let seen=false;try{seen=localStorage.getItem("study-tour-v1")==="done"}catch(e){}

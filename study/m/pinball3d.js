@@ -216,7 +216,7 @@ function create(THREE,canvas,opts){opts=opts||{};
     mint:F("plastic",PAL.mintPlastic),rubber:F("rubber",0x3C4557),pcb:F("painted",PAL.pcb),dark:F("plastic",0x2E3340),white:F("painted",0xFFFFFF,{rough:0.35}),
     blush:F("painted",0xF3B8C8,{rough:0.28}),butter:F("painted",0xF3D56E,{rough:0.28}),lime:F("painted",0xAFD873,{rough:0.28}),peach:F("painted",PAL.product.peach,{rough:0.28}),lavender:F("painted",0xD9CBF2,{rough:0.3}),
     steelBall:F("metal",0xDDE4EC,{rough:0.18}),display:F("plastic",0x1F2430,{emissive:0x2C3A55,emissiveIntensity:0.5,rim:0}),led:F("plastic",0xCFF3E6,{emissive:0x4FE3A0,emissiveIntensity:2.0,rim:0}),
-    knob:F("painted",0xF3B8C8,{rough:0.3})};Mt.playfield.envMapIntensity=0.4;
+    knob:F("painted",0xF3B8C8,{rough:0.3})};Mt.playfield.envMapIntensity=0.4;Mt.rail.name="AR_CASE_RAIL";Mt.pane.name="AR_CASE_PANE";Mt.floor.name="AR_CASE_FLOOR";Mt.playfield.name="AR_CASE_PLAYFIELD";
   // the table group: X = table x, Y = height above the playfield, Z = −table y; then the whole table is tilted 6.5° so the back rises
   const root=new THREE.Group();root.scale.setScalar(S);scene.add(root);const table=new THREE.Group();table.rotation.x=TABLE.TILT*DEG;table.position.set(0,110,0);root.add(table);
   const V=(x,y,z)=>new THREE.Vector3(x,z,-y);

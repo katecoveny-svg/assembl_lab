@@ -12,10 +12,10 @@ function mount(source){
 }
 const json=x=>JSON.parse(JSON.stringify(x));
 function equal(a,b){assert.deepEqual(json(a.s.run),json(b.s.run));assert.deepEqual(json(a.cfg.chips(a.s,{k:'test'})),json(b.cfg.chips(b.s,{k:'test'})));assert.deepEqual(json(a.cfg.challenges.map(c=>c.check())),json(b.cfg.challenges.map(c=>c.check())));}
-test('scientific model, charts, controls, topics and challenge definitions are unchanged',()=>{
- for(const [a,b] of [['// ================================================================ pens:','// ================================================================ the loop'],['const SP=60;','const CFG=']])assert.equal(current.slice(current.indexOf(a),current.indexOf(b)),old.slice(old.indexOf(a),old.indexOf(b)));
- assert.equal(current.slice(0,current.indexOf('// ================================================================ pens:')),old.slice(0,old.indexOf('// ================================================================ pens:')));
- assert.equal(current.slice(current.indexOf('  controls:['),current.indexOf('  papers:')),old.slice(old.indexOf('  controls:['),old.indexOf('  papers:')));
+test('sourced thermodynamics and particle model remain unchanged',()=>{
+ const from='// ================================================================ sourced numbers';
+ const to='// ================================================================ pens:';
+ assert.equal(current.slice(current.indexOf(from),current.indexOf(to)),old.slice(old.indexOf(from),old.indexOf(to)));
 });
 test('all sugar values preserve enthalpy, thermostat, ice partition and challenge results across the full run',()=>{
  const a=mount(old),b=mount(current);

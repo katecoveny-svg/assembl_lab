@@ -117,5 +117,97 @@
   "house": {
    "dur": 34
   }
+ },
+ "walkthroughs": {
+  "quote": {
+   "type": "tour",
+   "title": "Quote · written walkthrough",
+   "steps": [
+    {
+     "title": "Choose a text and question",
+     "text": "Read the original passage and the question. Identify the aspect the question asks you to discuss."
+    },
+    {
+     "title": "Build your paragraph",
+     "text": "Choose a claim, drag a relevant quotation into Evidence, then select an explanation and a so-what statement that connect back to the question."
+    },
+    {
+     "title": "Check and improve",
+     "text": "Read the self-check rubric and revisit any weak link between claim, evidence and explanation. This is practice feedback, not an official grade."
+    }
+   ]
+  },
+  "unseen": {
+   "type": "tour",
+   "title": "Unseen · written walkthrough",
+   "steps": [
+    {
+     "title": "Read the passage",
+     "text": "Read the unfamiliar text and its question before selecting language features."
+    },
+    {
+     "title": "Connect technique and effect",
+     "text": "Tag a technique, explain its effect in this passage and link it to the writer’s idea. Use the text as evidence."
+    },
+    {
+     "title": "Evaluate your explanation",
+     "text": "Use the lesson prompts to check that your response explains how the language works, rather than simply naming a technique."
+    }
+   ]
+  },
+  "algebra": {
+   "type": "tour",
+   "title": "Algebra · written walkthrough",
+   "steps": [
+    {
+     "title": "Choose an equation",
+     "text": "Start on the first topic and read the equation and the worked guidance."
+    },
+    {
+     "title": "Change one step",
+     "text": "Use the available controls to manipulate the equation. Compare the new expression with the previous one and explain why equality is preserved."
+    },
+    {
+     "title": "Test yourself",
+     "text": "Open Test yourself and use Check to review your answer. Return to the notes when a step is unclear."
+    }
+   ]
+  },
+  "gradient": {
+   "type": "tour",
+   "title": "Gradient · written walkthrough",
+   "steps": [
+    {
+     "title": "Start with a tangent",
+     "text": "Choose the tangent topic and move the input. Compare the point on the curve with the slope readout."
+    },
+    {
+     "title": "Connect the rule and graph",
+     "text": "Change one control at a time and compare the derivative feedback with the graph. Read the notes for the rule being used."
+    },
+    {
+     "title": "Apply and check",
+     "text": "Try the linked-rate or derivative questions at your selected level, then use Test yourself to check your reasoning."
+    }
+   ]
+  },
+  "engine": {
+   "type": "tour",
+   "title": "Engine · written walkthrough",
+   "steps": [
+    {
+     "title": "Choose a mechanism topic",
+     "text": "Start with the first engine topic. Read the caption to see which part or relationship you are investigating."
+    },
+    {
+     "title": "Change one setting",
+     "text": "Use the controls under the model and watch the linked numbers. Explain how the piston movement or force changes with that setting."
+    },
+    {
+     "title": "Explain and check",
+     "text": "Read the exam line and trap, then try Test yourself. The prepared AR piston is static; return to this lesson for motion and calculations."
+    }
+   ]
+  }
  }
 }

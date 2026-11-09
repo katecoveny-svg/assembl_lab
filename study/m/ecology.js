@@ -144,6 +144,7 @@ function ecology3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector
   const ST=d=>lerpA(SOIL,d)*.042;                         // soil thickness (exaggerated)
   const tmp=new THREE.Vector3();
   const rnd=(()=>{let x=12345;return()=>(x=(x*16807)%2147483647)/2147483647})();
+  const arBeachStart=new Set(S.scene.children);
   // ---------------------------------------------------------------- the ground: shingle with a soil layer on top, cut away at the front
   const ext=(pts,m)=>{const sh=new THREE.Shape(pts.map(p=>new THREE.Vector2(p[0],p[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:HD*2,bevelEnabled:false,curveSegments:4});g.translate(0,0,-HD);return S.mesh(g,m)};
   const shP=[[X(0),TOP]];for(let d=0;d<=40;d+=1)shP.push([X(d),SF(d)-ST(d)]);shP.push([X(40)+.8,SF(40)-.08],[X(40)+.8,TOP]);
@@ -210,6 +211,7 @@ function ecology3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector
   const heat=S.puffs(60,PAL.hot,{additive:true});S.scene.add(heat);const hp=Array.from({length:60},()=>({x:0,y:0,z:0,life:0}));
   const spray=S.puffs(80,"#ffffff");S.scene.add(spray);const sp=Array.from({length:80},()=>({x:0,y:0,z:0,vx:0,vy:0,life:0}));
   const nutr=S.puffs(70,PAL.product.lime,{additive:true});S.scene.add(nutr);const np=Array.from({length:70},()=>({d:rnd()*16,z:(rnd()-.5)*HD*1.9,f:rnd(),ph:rnd()*6}));
+  for(const o of S.scene.children)if(!arBeachStart.has(o)&&o!==sun&&o!==heat&&o!==spray&&o!==nutr)o.userData.studyARBeach=true;
   // ---------------------------------------------------------------- the energy pyramid: stacked blocks, ~10% passing up each level
   const EN=[10000,1000,100,10],PH=.62;
   const pyr=S.group();pyr.position.set(ZP.x,TOP,ZP.z);

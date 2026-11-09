@@ -257,6 +257,7 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
   let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const R=()=>S.REDUCED?0:1;
   const white=mat("plastic","#ffffff",{rough:.4});
+  const arAlbedoStart=new Set(S.scene.children);
   // ================================================================ the Earth energy rig
   const DX=.4,DZ=.2,CW=5.0,CHt=1.0,CD=2.7;
   const box3=S.acrylicCase(CW,CHt,CD,P.case.sky,{opacity:.2});box3.position.set(DX,TOP,DZ);S.scene.add(box3);
@@ -279,6 +280,7 @@ function climate3d(S){const {THREE,mat}=S,P=S.PAL;const V3=(x,y,z)=>new THREE.Ve
   const fp=[[-.36,-.36],[.36,-.32],[-.34,.36],[.38,.36]];
   // the selected tile: a thin glowing frame
   const selF=S.group();{const fm=mat("glow",P.deep.sky,.9);[[0,-.6,1.24,.05],[0,.6,1.24,.05],[-.6,0,.05,1.24],[.6,0,.05,1.24]].forEach(([x,z,w,d])=>selF.add(S.box(w,.05,d,fm,{at:[x,0,z],cast:false})))}
+  for(const o of S.scene.children)if(!arAlbedoStart.has(o))o.userData.studyARAlbedo=true;
   // clouds: ten soft puffy clusters between the tiles and the blanket
   const CY=TOP+2.2,cloudAt=[];for(let k=0;k<10;k++)cloudAt.push([DX+((k%5)-2)*1.0+(Math.floor(k/5)?.45:-.1),CY+(k%3)*.12,DZ+(Math.floor(k/5)-.5)*1.1]);
   const cOrder=[0,7,3,5,1,8,4,9,2,6];

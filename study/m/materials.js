@@ -491,7 +491,7 @@ function materials3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vect
   const stationBase=x=>{const b=S.rbox(2.4,.1,2.5,.05,mat("plastic","#ffffff",{rough:.5,coat:.2}),{at:[x,.05,.55]});gB.add(b);return b};
   // -- station 1: does it conduct? battery, bulb and a sample clipped into the loop
   const X1=-4.1,X2=-1.37,X3=1.37,X4=4.1;stationBase(X1);stationBase(X2);stationBase(X3);stationBase(X4);
-  const c1=S.group(gB);c1.position.set(X1,.1,.55);
+  const c1=S.group(gB);c1.name="AR_MATERIAL_CIRCUIT";c1.position.set(X1,.1,.55);
   const bat=S.group(c1);bat.position.set(-.62,.2,-.55);bat.rotation.x=Math.PI/2;bat.add(S.cyl(.17,.17,.62,mat("plastic",PAL.product.butter,{rough:.35}),{seg:32}));bat.add(S.cyl(.17,.17,.1,ink,{at:[0,-.33,0],seg:32}));bat.add(S.cyl(.06,.06,.06,steel,{at:[0,.34,0],seg:16}));
   c1.add(S.cyl(.12,.14,.2,steel,{at:[.25,.1,-.75],seg:24}));
   const bulb1=S.sphere(.26,mat("glass","#ffffff",{opacity:.22}),{at:[.25,.44,-.75],cast:false});bulb1.renderOrder=6;c1.add(bulb1);

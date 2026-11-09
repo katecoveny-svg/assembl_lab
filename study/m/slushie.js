@@ -6,7 +6,7 @@
 // freezing points of sugar syrup. The machine's powers, its thermostat setting, the slush bands, the crystal sizes and the particle
 // window are the model's own, and the page says so.
 const K=StudyKit,F=K.fig,P=F.palette,esc=K.esc;
-const INK="#262E5C",MUTED="#6E6A86",GRID="#ECE6F0",AXIS="#8F9BAA",GHOST="#9AA3B5",SKYD="#3A6FB8",MINTD="#2A7D63",PEACHD="#B2552D",LAVD="#6A50BE";
+const INK="#240B21",MUTED="#654A60",GRID="#EADFE8",AXIS="#9B8396",GHOST="#A89AA5",SKYD="#70506F",MINTD="#62435E",PEACHD="#916A70",LAVD="#70506F";
 const ICEC="#8FC3F0",WARMC="#F6B384",ELEC="#C9B8F0",DRINK="#E8688A",FROST="#F7E3EA";
 
 // ================================================================ sourced numbers
@@ -391,8 +391,9 @@ function slushie3d(S){
   if(status())status().textContent="Loading live 3D · static Blender render shown";
   document.documentElement.dataset.slushieAsset="loading";
   const fail=e=>{if(failed)return;failed=true;has3D=false;host.style.display="none";host.setAttribute("aria-hidden","true");figure.classList.remove("s3-on","slushie-loading");document.getElementById("k-main").removeAttribute("aria-hidden");document.documentElement.dataset.slushieAsset="fallback";document.querySelector(".slushie-parts").hidden=true;if(status())status().textContent="3D unavailable · simplified live diagram, controls and charts remain available";S.api.redraw();console.warn("Slushie model unavailable",e)};
+  S.canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();fail("WebGL context lost")});
   import("./slushie-asset.js").then(async m=>{
-    const asset=await m.loadSlushie(S);m.lightSlushie(S);world=slushieBench(S,asset);
+    const asset=await m.loadSlushie(S);if(failed)return;m.lightSlushie(S);world=slushieBench(S,asset);
     world.step(S.api.step);world.update(s,S.api.step,0,0);
     document.getElementById("k-main").setAttribute("aria-hidden","true");figure.classList.remove("slushie-loading");figure.classList.add("s3-on");host.style.visibility="visible";
     host.querySelector(".s3-ov").setAttribute("aria-hidden","true");
@@ -467,7 +468,7 @@ function slushieBench(S,asset){const {THREE,mat}=S,PAL=S.PAL,V3=(x,y,z)=>new THR
       if(name==="machine"||name==="energy"){
         const tg=V3(...target),direction=V3(...pos).sub(tg).normalize(),right=V3(0,0,0).crossVectors(direction,V3(0,1,0)).normalize(),up=V3(0,0,0).crossVectors(right,direction).normalize();
         const tan=Math.tan(THREE.MathUtils.degToRad(S.camera.fov/2)),bb=MG.assetBounds;let distance=0;
-        for(const point of MG.framingPoints){const p=point.clone().add(V3(0,TOP,0)).sub(tg);distance=Math.max(distance,p.dot(direction)+1.08*Math.max(Math.abs(p.dot(up))/tan,Math.abs(p.dot(right))/(tan*w/h)))}
+        for(const point of MG.framingPoints){const p=point.clone().add(V3(0,TOP,0)).sub(tg);distance=Math.max(distance,p.dot(direction)+1.24*Math.max(Math.abs(p.dot(up))/tan,Math.abs(p.dot(right))/(tan*w/h)))}
         position=tg.clone().addScaledVector(direction,distance).toArray();
       }
       S.view(name,position,target,{min:name==="auger"?4:6,max:50,dur:.6,arc:0});
@@ -569,11 +570,11 @@ const SP=60;
 const std=o=>{Object.assign(s,{w:20,auger:true,comp:true,vents:true},o||{});newRun()};
 const primeToIce=more=>{const r=s.run;let n=0;while(r.mi<(more||1)&&!r.capped&&n++<6000)integrate(r,1,true)};
 const steps=[
- {k:"machine",lab:"The machine",cap:"A countertop slushie machine, cut open. Electricity drives a compressor that pumps refrigerant round a sealed loop. In the steel drum inside the bowl, the refrigerant takes heat from the drink. At the back, the condenser and fan give that heat to the room. Tap a part to name it.",speed:SP,speedLabel:"60× real time",controls:["play","fresh"],
+ {k:"machine",lab:"Make slush",cap:"Choose your sugar. Predict: ice block, smooth slush or runny syrup? Press Play, then skip ahead to test your mix.",speed:SP,speedLabel:"60× real time",controls:["play","fresh","skip","w"],
   big:"<b>The big idea:</b> a slushie machine doesn't add cold. It moves heat. The refrigerant soaks up heat from the drink at the cold drum, the compressor pushes it round to the warm condenser at the back, and the fan blows that heat into the room. Electrical energy keeps the loop going.",
   exam:"The refrigerant evaporates inside the drum, absorbing heat from the drink, so the drink cools. The compressor squeezes the gas, which raises its temperature. In the condenser the refrigerant condenses and releases heat to the room. The machine transfers heat from the cold drink to the warmer room, using electrical energy to do it.",
   trap:"Saying the machine puts 'cold' into the drink. Cold isn't something that moves: heat moves out of the drink and into the refrigerant.",
-  chips:["pin","qc","qout","temp"],onStep:()=>{std();s.playing=true}},
+  chips:["state","temp","ice","time"],onStep:()=>{std();s.playing=false}},
  {k:"curve",lab:"Cooling curve",cap:"Pure water this time (0% sugar). Press Play and watch the probe. The temperature falls, then stays flat at 0 °C while ice forms, even though the machine keeps taking heat out. The second screen splits the energy into cooling and freezing.",speed:SP,speedLabel:"60× real time",controls:["play","fresh","skip","w"],
   big:"<b>The big idea:</b> on a cooling curve, a sloping line means the particles are slowing down, so the temperature falls. The flat part is the change of state. The energy removed there comes from attractions forming as the water freezes, not from the particles slowing, so the temperature stays the same.",
   exam:"While the water freezes, its temperature stays at 0 °C. Heat is still being removed, but this energy is released as attractions (intermolecular forces) form between the water molecules as they join the solid, so the particles don't slow down and the temperature stays the same. Energy for a temperature change is E = mcΔT; energy for a change of state is E = mL, with L = 334 J g⁻¹ for water.",
@@ -639,16 +640,16 @@ const CH=[
   no:()=>{const p=powers(s.run);if(!p.run)return "The compressor is resting (or switched off). Start a fresh drink, or wait for it to switch back on, then pause.";if(s.playing)return "Pause first, so the readings stay still.";
     return "Not yet. Energy in = energy out: add the heat taken from the drink to the electrical power of the compressor and fan."}}];
 // ---- mount
-const CFG={postprocessing:false,kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3d:slushie3d,
-  eyebrow:"Chemistry · Changes of state",title:"The slushie machine",crumb:"Year 10 science · NCEA Level 2 Chemistry AS91164 Demonstrate understanding of bonding, structure, properties and energy changes",homeHash:"l2",
+const CFG={postprocessing:false,kupu:KUPU,caseTint:"lavender",accent:"#70506F",scene3d:slushie3d,
+  eyebrow:"Chemistry · Changes of state",title:"Can you make the perfect slush?",crumb:"Year 10 science · NCEA Level 2 Chemistry AS91164 Demonstrate understanding of bonding, structure, properties and energy changes",homeHash:"l2",
   fig:"FIG. 35 · A SLUSHIE MACHINE, CUT OPEN",railTitle:"How a drink turns to slush",
   badge:{label:"NCEA L2 Chemistry 91164",exam:"2026-11-16T14:00:00+13:00",examText:"Mon 16 Nov, 2pm"},
   mainBox:"0 0 640 330",mainPhoneBig:true,mainLabel:"A countertop slushie machine on a lab bench, cut open: compressor, condenser and fan, expansion valve and a cold drum in a clear bowl with an auger, a thermometer probe, lab clock, cooling and energy diagrams, and a particle window",closeBox:"0 0 420 260",
   state:s,steps,
   controls:[{type:"play"},
-    {type:"button",id:"fresh",label:"Fresh drink",onClick:()=>{newRun()}},
+    {type:"button",id:"fresh",label:"Reset drink",onClick:()=>{s.playing=false;newRun()}},
     {type:"button",id:"skip",label:"Skip 5 min",onClick:()=>{const r=s.run;if(r.capped)return;integrate(r,300,true)}},
-    {type:"range",id:"w",label:"Sugar",min:0,max:40,step:1,get:()=>s.w,set:(x,v)=>{v=Math.round(v);if(s.w!==v){s.w=v;newRun()}},fmt:()=>s.w+"%"},
+    {type:"range",id:"w",label:"Sugar · % by mass",min:0,max:40,step:1,get:()=>s.w,set:(x,v)=>{v=Math.round(v);if(s.w!==v){s.w=v;s.playing=false;newRun()}},fmt:()=>s.w+"%"},
     {type:"toggle",id:"auger",label:"Auger",get:()=>s.auger,set:(x,v)=>{s.auger=v},labelFn:()=>s.run.jam?"Auger: jammed":s.auger?"Auger: on":"Auger: off"},
     {type:"toggle",id:"comp",label:"Cooling",get:()=>s.comp,set:(x,v)=>{s.comp=v;if(v)s.run.on=true},labelFn:()=>s.comp?"Cooling: on":"Cooling: off"},
     {type:"toggle",id:"vents",label:"Back vents",get:()=>!s.vents,set:(x,v)=>{s.vents=!v},labelFn:()=>s.vents?"Back vents: clear":"Back vents: blocked"},
@@ -674,7 +675,7 @@ const CFG={postprocessing:false,kupu:KUPU,caseTint:"sky",accent:"#3A6FB8",scene3
   footer:"Covers AS91164 energy changes: changes of state, attractions between particles (hydrogen bonding in ice), exothermic and endothermic changes and energy calculations with E = mL. Also Year 10 science: energy transfer and transformation, conservation of energy, energy flow diagrams and percentage efficiency."
 };
 // "View in your space": the machine alone (no bench, labels or screens), at real size: 1 scene unit = 4 cm
-CFG.ar={build:S=>MG?.g,unitsPerMetre:25,scale:"real",label:"Put it on your bench"};
+CFG.ar=false; // Shared pre-exported native AR delivery owns the dedicated action slot.
 // View changes reload the renderer, but carry the existing solver state once in this tab.
 // Keep this block outside the scientific model and topic initialisers.
 function slushieViewTransfer(env){
@@ -715,15 +716,39 @@ function slushieViewTransfer(env){
 }
 const viewTransfer=slushieViewTransfer({location,history:window.history,storage:()=>window.sessionStorage,nonce:()=>window.crypto.randomUUID()});
 const savedView=viewTransfer.take(CFG.steps.map(st=>st.k));
+// This page has its own optional Explain disclosure instead of the automatic suite tour.
+window.__studyGuide=true;
 const API=StudyKit.mount(CFG);
 // Mount applies the topic defaults synchronously. Restore before its first animation frame.
 if(savedView&&!savedView.error){Object.assign(s,savedView.state);runId=savedView.runId;lwTick(0);API.redraw()}
 
 if(document.querySelector?.(".playmain")){
+  const controls=document.getElementById("k-ctl"),rail=document.querySelector(".rail");
+  rail.prepend(controls);
+  const mission=document.createElement("p");mission.className="slushie-mission";mission.textContent="1 · Pick a mix   2 · Run it   3 · Compare";controls.before(mission);
+  const hint=document.createElement("p");hint.className="slushie-control-hint";hint.textContent="Changing sugar starts a fresh drink. Skip 5 min advances the same simulation. Aim for 25–55% ice in this teaching model.";controls.after(hint);
+  const prediction=document.createElement("label");prediction.className="slushie-prediction";prediction.innerHTML='<span>My prediction</span><select aria-label="My prediction"><option value="">Choose before you run…</option><option>Ice block</option><option>Smooth slush</option><option>Runny syrup</option></select>';controls.before(prediction);
+  const detail=document.createElement("details");detail.className="slushie-explain";detail.innerHTML='<summary>Explain it · graphs, big ideas & exam practice</summary>';const lower=document.querySelector(".lower");lower.before(detail);detail.append(lower);
+  const practice=document.querySelector(".practise");if(practice)detail.append(practice);
+  const openExam=()=>{if(API.step.k==="test")detail.open=true};
+  document.getElementById("k-steps").addEventListener("click",openExam);document.getElementById("k-next").addEventListener("click",openExam);window.addEventListener("hashchange",openExam);openExam();
+  const sourceDetails=document.createElement("details");sourceDetails.className="slushie-explain";sourceDetails.innerHTML='<summary>Model assumptions & sources</summary>';const footer=document.querySelector("#app footer");footer.before(sourceDetails);sourceDetails.append(footer);
+  const truth=document.createElement("p");truth.className="slushie-truth";truth.textContent="Simplified teaching model · original machine design, not validated appliance physics. Sugar lowers the freezing point; the slush and jam thresholds are illustrative.";document.querySelector(".play").after(truth);
+  // AR integration point: the suite AR worker can append its direct action here.
+  const arSlot=document.createElement("div");arSlot.id="slushie-ar-action";arSlot.dataset.studyAr="slushie";arSlot.setAttribute("aria-label","View in your space");rail.append(arSlot);
+  // Move the same controls (not copies) so keyboard order follows the phone layout.
+  const phone=matchMedia("(max-width:760px)"),playmain=document.querySelector(".playmain"),nav=document.querySelector("nav.steps");
+  const topics=document.createElement("details");topics.className="slushie-topics";const topicSummary=document.createElement("summary");topics.append(topicSummary);nav.before(topics);topics.append(nav);
+  const quick=document.createElement("p");quick.className="slushie-quick";quick.textContent="Pick sugar. Predict the texture. Press Play.";playmain.prepend(quick);
+  const topicState=()=>{topicSummary.textContent="Topics · "+API.step.lab;quick.hidden=API.step.k!=="machine";document.querySelector(".bench").dataset.slushieMission=String(API.step.k==="machine")};
+  const layout=()=>{if(phone.matches){playmain.insertBefore(controls,quick.nextSibling);topics.open=false}else{hint.before(controls);topics.open=true}topicState()};
+  phone.addEventListener("change",layout);layout();
+  nav.addEventListener("click",e=>{topicState();if(phone.matches&&e.target.closest("button")){topics.open=false;topicSummary.focus()}});
+  document.getElementById("k-next").addEventListener("click",topicState);window.addEventListener("hashchange",topicState);
   const extra=document.createElement("section");extra.id="slushie-extra-chart";extra.className="slushie-extra-chart";extra.hidden=true;document.querySelector(".lower").before(extra);
   const canvas=document.querySelector(".playmain .canvas"),poster=document.createElement("img");poster.className="slushie-poster";poster.src="/assets/models/slushie/slushie-hero.webp";poster.alt="Static Blender render of the slushie machine";canvas.append(poster);
   const note=document.createElement("p");note.className="slushie-view-note";note.innerHTML=`<span id="slushie-load-status" role="status">Simplified live diagram · controls and charts remain available</span><a href="?lite${location.hash}" id="slushie-graphics-link">Use simplified view</a>`;canvas.after(note);
-  const parts=document.createElement("div");parts.className="slushie-parts";parts.innerHTML='<label for="slushie-parts">Inside the machine</label><select id="slushie-parts" disabled><option value="">Choose a part</option></select><p id="slushie-part-description" aria-live="polite">Choose a part, or tap one in the model.</p>';note.after(parts);
+  const parts=document.createElement("div");parts.className="slushie-parts";parts.innerHTML='<label for="slushie-parts">Inside the machine</label><select id="slushie-parts" disabled><option value="">Choose a part</option></select><p id="slushie-part-description" aria-live="polite">Choose a part, or tap one in the model.</p>';detail.append(parts);
   const link=note.querySelector("a"),lite=/[?&]lite\b/.test(location.search);if(lite){link.textContent="Try live 3D";parts.hidden=true;link.href=location.pathname+location.hash}
   const transferStatus=document.createElement("span");transferStatus.setAttribute("role","status");note.append(transferStatus);
   if(savedView?.error)transferStatus.textContent="The saved experiment was unavailable. This is a fresh drink.";

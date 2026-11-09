@@ -256,8 +256,8 @@ function energy3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3
   const lHeight=S.label({off:[-22,-10]}),lSpeed=S.label({off:[22,-10],cls:"hot"});
 
   // ---------------------------------------------------------------- jug zone
-  const jug=S.group();jug.position.set(ZK.x,TOP,ZK.z);
-  const base=S.rbox(1.6,.18,1.6,.08,mat("plastic",PAL.product.peach,{rough:.3}),{at:[0,.09,0]});jug.add(base);
+  const jug=S.group();jug.name="AR_ENERGY_JUG";jug.position.set(ZK.x,TOP,ZK.z);
+  const base=S.rbox(1.6,.18,1.6,.08,mat("plastic",PAL.product.peach,{rough:.3}),{at:[0,.09,0]});jug.add(base);base.material=base.material.clone();base.material.name="AR_CASE_ROSE";
   const ring=S.torus(.55,.025,mat("glow","#ff6a3d",0),{at:[0,.19,0],rot:[Math.PI/2,0,0]});jug.add(ring);
   const prof=[];const JH=1.7;for(let i=0;i<=20;i++){const y=i/20*JH;prof.push(new THREE.Vector2(.62-.07*(y/JH)+.02*Math.sin(y/JH*Math.PI),y))}
   const shell=S.mesh(new THREE.LatheGeometry(prof,64),mat("acrylic",PAL.case.sky,{opacity:.3}),{cast:false});shell.position.y=.2;shell.renderOrder=4;jug.add(shell);

@@ -134,7 +134,7 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
     const d=NR*1.85;for(let it=0;it<140;it++){for(const p of P)p.multiplyScalar(.97);
       for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){tmp.subVectors(P[j],P[i]);const L=tmp.length();if(L<d){if(L<1e-5)tmp.set(Math.sin(i+j),Math.cos(i*j),.3);tmp.setLength((d-L)*.5);P[j].add(tmp);P[i].sub(tmp)}}}
     return packCache[N]=P}
-  const nucG=S.group();nucG.position.copy(AC);
+  const nucG=S.group();nucG.name="AR_ATOM_NUCLEUS";nucG.position.copy(AC);
   const ballGeo=new THREE.SphereGeometry(NR,24,18);
   const protons=S.swarm(20,ballGeo,mat("plastic",PAL.product.strawberry,{rough:.3}),{cast:true});
   const neutrons=S.swarm(22,ballGeo,mat("plastic","#E4DBF6",{rough:.3}),{cast:true});nucG.add(protons,neutrons);
@@ -144,7 +144,7 @@ function atoms3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   const spark=S.puffs(40,"#C8F08A",{additive:true});nucG.add(spark);const spk=[];for(let i=0;i<40;i++)spk.push({p:V3(0,0,0),v:V3(0,0,0),life:0});
   // ---------------------------------------------------------------- electron shells: tilted frosted rings with glowing electron beads
   const RAD=[1.05,1.55,2.05,2.55],CAP=[2,8,8,2];
-  const shG=S.group();shG.position.copy(AC);shG.rotation.set(-.98,.22,0);
+  const shG=S.group();shG.name="AR_ATOM_SHELLS";shG.position.copy(AC);shG.rotation.set(-.98,.22,0);
   const ringTilt=[[.0,.0],[.1,-.14],[-.12,.1],[.08,.16]];
   const rings=RAD.map((r,i)=>{const g=new THREE.Group();g.rotation.set(ringTilt[i][0],ringTilt[i][1],0);shG.add(g);
     const solid=S.torus(r,.016,S.M.plastic(PAL.deep.sky,{rough:.35}),{cast:false,ts:128,rs:8});g.add(solid);

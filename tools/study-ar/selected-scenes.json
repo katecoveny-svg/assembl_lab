@@ -1,0 +1,214 @@
+{
+  "inanga": {
+    "step": "restore",
+    "nodes": [
+      "AR_INANGA_BANK"
+    ],
+    "scale": 0.07,
+    "state": {
+      "t": 1,
+      "fence": true,
+      "mow": false,
+      "plant": true
+    },
+    "labels": [
+      "Īnanga spawning bank · restored state",
+      "Fenced, unmown, planted · spring high tide",
+      "Pink: spring / blue: neap high-water marks",
+      "Miniature cross-section; heights illustrative"
+    ],
+    "note": "Restored īnanga spawning-bank cross-section: fenced, unmown and planted, at the lesson’s spring high tide. Native grass strip and tide marks are preserved; pink is spring and blue is neap high water. Miniature illustrative landscape, not geographic scale. Egg development and restoration comparisons remain live in the browser."
+  },
+  "kokopu": {
+    "step": "fish",
+    "nodes": [
+      "AR_KOKOPU_POOL"
+    ],
+    "scale": 0.06,
+    "state": {
+      "hour": 12,
+      "level": 0
+    },
+    "labels": [
+      "Banded kōkopu · sheltered stream pool",
+      "Undercut bank, fern cover, log and grassy margin",
+      "Low-water habitat snapshot · not geographic scale",
+      "Sensing, flood timing and behaviour stay online"
+    ],
+    "note": "The authored banded kōkopu in its low-water stream habitat: undercut bank, fern cover, log and grassy margin. A miniature habitat cross-section, not a field survey or measured fish replica. Daytime static snapshot; lateral-line sensing, flood timing and odour-choice experiments stay in the lesson."
+  },
+  "ecology": {
+    "step": "transect",
+    "selection": "beach",
+    "scale": 0.035,
+    "state": {
+      "walk": 0
+    },
+    "labels": [
+      "Shingle beach transect · top 0 m to sea 40 m",
+      "Quadrats at 5 m intervals · soil depth exaggerated",
+      "Tall plants / shorter cover / bare shingle → sea",
+      "Static teaching transect; data stay in the lesson"
+    ],
+    "note": "The existing 0–40 m shingle-beach transect, isolated from the separate energy pyramid. Quadrats are placed every 5 m; soil thickness is exaggerated. The native plaque retains the top-to-sea direction and plant-zone key. Miniature illustrative sampling layout; live graphs and food-web population changes remain in the browser."
+  },
+  "energy": {
+    "step": "heat",
+    "nodes": [
+      "AR_ENERGY_JUG"
+    ],
+    "scale": 0.15,
+    "state": {
+      "km": 1,
+      "kP": 2200,
+      "T": 15,
+      "boiled": 0,
+      "kt": 0
+    },
+    "labels": [
+      "Heating water · 1 kg initially at 15°C",
+      "Electrical input: 2.2 kW · E = Pt = mcΔT",
+      "Static jug / coil / thermometer; no native heating",
+      "Miniature apparatus; return for energy readouts"
+    ],
+    "note": "One selected heating apparatus: jug, coil, water and thermometer, initially 1 kg of water at 15°C with a 2.2 kW setting. The label relates E=Pt to mcΔT. Miniature teaching apparatus; no heating, boiling or live energy calculation in the native viewer."
+  },
+  "particles": {
+    "step": "heat",
+    "nodes": [
+      "HEAT_STATION",
+      "AR_PARTICLE_LATTICE"
+    ],
+    "scale": 0.04,
+    "state": {
+      "Q": 0,
+      "time": 0
+    },
+    "labels": [
+      "Ice lattice on a hotplate · initial solid state",
+      "Blue oxygen / white hydrogen · enlarged molecules",
+      "Molecular scale differs from apparatus scale",
+      "Static lattice; heating and phase change stay online"
+    ],
+    "note": "Only the heating station and its initial solid-water lattice are exported, not the separate gas syringe or mountain. Oxygen/hydrogen colours and the enlarged-molecule scale warning are retained. Apparatus and molecular dimensions intentionally use different scales; phase change, motion and temperature readouts remain in the lesson."
+  },
+  "reactions": {
+    "step": "measure",
+    "nodes": [
+      "AR_REACTION_FLASK"
+    ],
+    "scale": 0.14,
+    "state": {},
+    "labels": [
+      "Marble + acid · flask before mixing",
+      "Chips held in inner vial; bung seals the flask",
+      "More exposed surface → more collision opportunities",
+      "Static apparatus; rate / gas collection stay online"
+    ],
+    "note": "Selected sealed flask before mixing marble chips with acid, including its inner vial. The plaque explains surface area and collision opportunities; this model supports apparatus inspection, not reaction-rate measurement. Miniature teaching apparatus; no native collisions, catalyst experiment or gas collection."
+  },
+  "fish": {
+    "step": "lever",
+    "nodes": [
+      "AR_FISH_LEVER"
+    ],
+    "scale": 0.1,
+    "state": {
+      "L": 2.4,
+      "d": 0.5,
+      "m": 2
+    },
+    "labels": [
+      "Fishing rod lever · 2 kg load, 2.4 m rod",
+      "Back hand: pivot · front hand: upward effort",
+      "Grip 0.5 m from pivot · effort × 0.5 = 19.6 × 2.4",
+      "Static force diagram; miniature apparatus"
+    ],
+    "note": "The existing rod-lever investigation with a 2 kg load, 2.4 m rod and 0.5 m grip distance. Pivot, effort/load arrows and reference lines are retained with a native moment equation. Miniature static teaching diagram; force calculations and grip changes stay in the browser."
+  },
+  "materials": {
+    "step": "bench",
+    "nodes": [
+      "AR_MATERIAL_CIRCUIT"
+    ],
+    "scale": 0.25,
+    "state": {
+      "mat": "cu",
+      "temp": 20
+    },
+    "labels": [
+      "Copper sample in the electrical test circuit",
+      "Battery → wire → sample → lamp → battery",
+      "Copper conducts via mobile electrons",
+      "Static apparatus; not a moving-particle model"
+    ],
+    "note": "One existing electrical-conductivity test circuit with the copper sample selected at 20°C, isolated from six other test areas and molecular diagrams. The native key identifies battery, sample and lamp, and explains mobile electrons. Static miniature apparatus; changing materials and particle-state experiments remain in the browser."
+  },
+  "plan": {
+    "step": "explore",
+    "nodes": [
+      "AR_ED_PLAN"
+    ],
+    "scale": 0.06315789473684211,
+    "state": {
+      "sel": ""
+    },
+    "labels": [
+      "ED starting brief · 30 m × 20 m interior",
+      "Plan geometry 1:50; wall heights exaggerated",
+      "Room labels retained · initial layout, not approved",
+      "Return to the lesson to edit and test constraints"
+    ],
+    "note": "The lesson’s initial emergency-department layout, with room labels embedded. The 30 m × 20 m interior is shown at 1:50 in plan; wall/slab heights are exaggerated. It intentionally remains the starting design, not an approved clinical layout or saved student revision. Dragging, alternative layouts and constraint checks stay in the lesson."
+  },
+  "climate": {
+    "step": "albedo",
+    "selection": "albedo",
+    "scale": 0.1,
+    "state": {},
+    "labels": [
+      "Albedo surface comparison · schematic tiles",
+      "Ice reflects more sunlight than dark ocean",
+      "Forest, farm and city are illustrative surface types",
+      "Static surface key; no radiation or climate simulation"
+    ],
+    "note": "Only the authored surface-tile albedo comparison is selected: ice, ocean, forest, farm and city features. The native plaque explains the light/dark reflection comparison. This is a schematic, not Earth geography; moving radiation, greenhouse feedback and carbon-cycle calculations remain in the lesson."
+  },
+  "sky": {
+    "step": "phase",
+    "nodes": [
+      "AR_EARTH_MOON"
+    ],
+    "scale": 0.12,
+    "state": {},
+    "labels": [
+      "Earth–Moon geometry · 23.44° Earth tilt",
+      "Size, distance and time scales differ",
+      "Snapshot: 23 Oct 2026 NZDT · orbit/axis study",
+      "Native lighting does NOT show Moon phase or season"
+    ],
+    "note": "The existing Earth–Moon geometry at the lesson’s initial 23 October 2026 NZDT state, with the tilted Earth axis and lunar orbit. Separate size/distance scales are declared on the model. Native environmental lighting does not reproduce solar illumination, phases, tides or seasons; use the browser for those investigations."
+  },
+  "space": {
+    "step": "tour",
+    "nodes": [
+      "AR_BODY_saturn"
+    ],
+    "scale": 1,
+    "fitMetres": 0.5,
+    "waitTextures": true,
+    "state": {
+      "days": 0,
+      "scale": "display",
+      "focus": "saturn",
+      "region": "sol"
+    },
+    "labels": [
+      "Saturn and rings · 50 cm teaching display",
+      "Rings span about 1.11–2.35 Saturn radii",
+      "Procedural surface, not a photograph",
+      "No orbital time or solar-shadow simulation"
+    ],
+    "note": "Saturn and its authored ring geometry, isolated from the solar-system, HR and life-cycle views. Ring radii follow the lesson’s 1.11–2.35 Saturn-radius construction; the complete planet/rings display is resized to 50 cm. Procedural surface texture, not a photograph. Native environmental lighting does not reproduce the lesson’s solar shadows or orbital motion."
+  }
+}

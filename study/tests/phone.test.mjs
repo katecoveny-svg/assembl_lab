@@ -6,9 +6,11 @@ const set=(apps,id,v)=>apps.forEach(a=>a.control(id).set(a.s,v));
 test('single scientific model, all charts, controls, tick and challenge code remain unchanged',()=>{
  for(const [a,b] of [['const s=','// ---- drawing'],['function drawClose','const steps='],['const CH=','// every number'],['  controls:[','  papers:']]){
   assert.ok(original.includes(a)&&current.includes(a),a);const endOld=original.indexOf(b,original.indexOf(a)),endNew=current.indexOf(b,current.indexOf(a));assert.ok(endOld>0&&endNew>0,b);
-  assert.equal(current.slice(current.indexOf(a),endNew),original.slice(original.indexOf(a),endOld));
+  // Approved current UI copy is "Screen time"; only this historical label differs.
+  const expected=original.slice(original.indexOf(a),endOld).replace('id:"hours",label:"Screen-on time"','id:"hours",label:"Screen time"');
+  assert.equal(current.slice(current.indexOf(a),endNew),expected);
  }
- const a=mount();assert.equal(a.cfg.steps.length,9);assert.equal(a.cfg.controls.length,15);assert.equal(a.cfg.challenges.length,5);
+ const a=mount();assert.equal(a.control("hours").label,"Screen time");assert.equal(a.cfg.steps.length,9);assert.equal(a.cfg.controls.length,15);assert.equal(a.cfg.challenges.length,5);
 });
 test('charging trajectories and particles match across power, efficiency, resistance, capacity and varying dt',()=>{
  for(const P of [5,20,45])for(const eff of [.6,.85,1])for(const r of [.01,.08,.3])for(const mAh of [2000,3349,5000]){

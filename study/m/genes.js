@@ -226,7 +226,7 @@ function genes3d(S){const {THREE,mat,PAL}=S;const V3=(x,y,z)=>new THREE.Vector3(
   // ---------------------------------------------------------------- a DNA double helix that turns; in the mutation step one base pair changes
   const hz=S.group();hz.position.set(-5.05,TOP,3.3);
   hz.add(S.cyl(.6,.7,.3,mat("plastic","#ffffff",{rough:.4}),{at:[0,.15,0]}));
-  const helix=S.group(hz);helix.position.y=.45;
+  const helix=S.group(hz);helix.name="AR_DNA_HELIX";helix.position.y=.45;
   const HN=22,HH=2.7,HR=.42,turns=2;const strand=k=>Array.from({length:60},(_,i)=>{const u=i/59,a=u*turns*Math.PI*2+k*Math.PI;return [Math.cos(a)*HR,u*HH,Math.sin(a)*HR]});
   helix.add(S.tube(strand(0),.05,mat("plastic",PAL.product.strawberry,{rough:.3}),{seg:200}));helix.add(S.tube(strand(1),.05,mat("plastic",PAL.product.blueberry,{rough:.3}),{seg:200}));
   const rungGeo=new THREE.CylinderGeometry(.035,.035,1,8);rungGeo.rotateZ(Math.PI/2);

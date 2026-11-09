@@ -17,6 +17,9 @@ export async function loadSlushie(S){
     fetch('/assets/models/slushie/slushie-rig-contract.json').then(r=>{if(!r.ok)throw new Error('Slushie contract '+r.status);return r.json()})
   ]);
   if(contract.contract!=='assembl.slushie.v1')throw new Error('Unsupported slushie rig');
+  // Preserve metal/glass mechanisms; recolour only the original painted polymers.
+  const palette={'Polymer | soft mint':'#b9a0b9','Polymer | warm coral':'#aa7c86','Enamel | warm ivory':'#f8f5f8','Paint | deep assembl navy':'#302032','Rubber | soft dark navy':'#302032'};
+  gltf.scene.traverse(o=>{if(o.isMesh)for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(palette[m.name])m.color.set(palette[m.name]);});
   const rig=createSlushieRig(gltf.scene),g=new THREE.Group();
   gltf.scene.scale.setScalar(contract.coordinates.legacy_scene_units_per_metre);g.add(gltf.scene);
   const assetBounds=new THREE.Box3().setFromObject(gltf.scene,true);
@@ -59,7 +62,7 @@ export async function loadSlushie(S){
 
 export function lightSlushie(S){
   const {THREE,scene,renderer}=S;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;scene.background=new THREE.Color('#f5f1eb');scene.fog=null;scene.environmentIntensity=.5;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;scene.background=new THREE.Color('#ffffff');scene.fog=null;scene.environmentIntensity=.5;
   const env=new THREE.Scene();env.background=new THREE.Color('#d9d7d3');
   for(const [x,y,z,sx,sy,sz,c] of [[-4,3,0,.1,6,7,0xffffff],[4,3,-2,.1,6,4,0xd6d7e8],[0,7,0,8,.1,8,0xffffff],[0,2,-5,6,5,.1,0x595b71]]){
     const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),new THREE.MeshBasicMaterial({color:c}));o.position.set(x,y,z);env.add(o);

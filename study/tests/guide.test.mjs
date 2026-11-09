@@ -11,11 +11,11 @@ test('each tour stop points at something the machine shell or Allen actually dra
     else if(sel==='.alt-fab')assert.match(tutor,/class="alt-fab"/);
     else assert.fail('unknown stop '+sel)}});
 test('the finder searches titles, descriptions and tags, and filters by subject',()=>{
-  assert.match(hub,/id="find-q"/);assert.match(hub,/data-find="\$\{esc\(find\)\}"/);assert.match(hub,/id="subj-\$\{k\}"/);assert.match(hub,/href="#find">Pick your subject/)});
-test('every machine built on the kit has a walkthrough video with a poster and captions',()=>{
-  const idx=JSON.parse(read('study/videos/index.json')).videos;
+  assert.match(hub,/id="find-q"/);assert.match(hub,/data-find="\$\{esc\(find\)\}"/);assert.match(hub,/id="subj-\$\{k\}"/);assert.match(hub,/href="#machsec" id="leadAll">Every machine/);assert.match(hub,/id="find" aria-labelledby="find-h"/)});
+test('every kit machine has a real video or an explicit usable walkthrough fallback',()=>{
+  const media=JSON.parse(read('study/videos/index.json')),idx=media.videos;
   const safe=p=>{try{return read(p)}catch(e){return ''}};
   const kitIds=Object.keys(D.machines).filter(id=>/kit\.js/.test(safe('study/'+D.machines[id].href))&&/mount\(\{/.test(safe('study/'+D.machines[id].href.replace(/\.html$/,'.js'))));
-  for(const id of [...kitIds,'study']){assert.ok(idx[id],'no video for '+id);assert.ok(idx[id].dur>=15&&idx[id].dur<=60,id+' length '+idx[id].dur);
+  for(const id of [...kitIds,'study']){if(!idx[id]){const f=media.walkthroughs?.[id];assert.ok(f,'no walkthrough for '+id);assert.equal(f.type,'tour');assert.ok(f.steps.length>=3);for(const step of f.steps){assert.ok(step.title&&step.text);assert.ok(step.text.length>30)}assert.match(guide,/walkthroughs/);assert.match(guide,/data-written/);continue;}assert.ok(idx[id].dur>=15&&idx[id].dur<=60,id+' length '+idx[id].dur);
     for(const ext of ['mp4','jpg'])assert.ok(fs.statSync(new URL(`study/videos/${id}.${ext}`,root)).size>5000,`${id}.${ext}`);
     assert.match(read(`study/videos/${id}.vtt`),/^WEBVTT\n\n1\n00:00:00\.000 -->/,id+'.vtt')}});

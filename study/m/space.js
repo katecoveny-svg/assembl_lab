@@ -551,7 +551,7 @@ function space3d(S){
   function poleQuat(pole){if(!pole)return new THREE.Quaternion();const p=eqDir(pole[0],pole[1]);return new THREE.Quaternion().setFromUnitVectors(V3(0,1,0),p)}
   function rockGeo(seed,irr){const g=new THREE.IcosahedronGeometry(1,4);const p=g.attributes.position;for(let i=0;i<p.count;i++){tmp.fromBufferAttribute(p,i);const n=NOISE.fbm(tmp.x*1.6+seed,tmp.y*1.6,tmp.z*1.6,4);tmp.multiplyScalar(1+n*0.55);tmp.x*=irr[0];tmp.y*=irr[1];tmp.z*=irr[2];p.setXYZ(i,tmp.x,tmp.y,tmp.z)}g.computeVertexNormals();return g}
   ALL.forEach((b,bi)=>{if(b.id==="sun"){B3.sun={b,g:SOL,mesh:sunMesh,size:1};return}
-    const g=new THREE.Group();SOL.add(g);const tilt=new THREE.Group();tilt.quaternion.copy(poleQuat(b.pole||(b.p?BY[b.p].pole:null)));g.add(tilt);
+    const g=new THREE.Group();g.name="AR_BODY_"+b.id;SOL.add(g);const tilt=new THREE.Group();tilt.quaternion.copy(poleQuat(b.pole||(b.p?BY[b.p].pole:null)));g.add(tilt);
     const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(b.col),roughness:0.92,metalness:0});
     const geo=b.irr?rockGeo(bi*3.1,b.irr):unit;const mesh=new THREE.Mesh(geo,mat);tilt.add(mesh);
     if(b.shape)mesh.scale.set(b.shape[0],b.shape[2],b.shape[1]);

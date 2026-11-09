@@ -204,7 +204,7 @@ function shapes3d(S){const {THREE,mat,PAL:P}=S;const V3=(x,y,z)=>new THREE.Vecto
   const lAu=S.label({off:[30,-20]}),lAl=S.label({off:[30,-20]}),lAl2=S.label({off:[-30,-20]}),lFG=S.label({cls:"hot big",off:[0,-30],lead:false});
 
   // ---------------------------------------------------------------- prism station: a turntable; the prism builds up one 1 m slice at a time
-  const KV=.24;plinth(ZV,6.6,5.6,P.case.butter);const tt=S.group();tt.position.set(ZV.x,TOP,ZV.z);
+  const KV=.24;plinth(ZV,6.6,5.6,P.case.butter);const tt=S.group();tt.name="AR_PRISM_STATION";tt.position.set(ZV.x,TOP,ZV.z);
   tt.add(S.cyl(2.5,2.6,.12,mat("plastic","#ffffff",{rough:.4}),{at:[0,.06,0],seg:64}));const spin=S.group(tt);spin.position.y=.12;
   spin.add(S.cyl(2.35,2.35,.03,mat("plastic",P.case.lavender,{rough:.4}),{at:[0,.015,0],seg:64}));
   const slices=S.swarm(16,new THREE.BufferGeometry(),mat("plastic",P.product.peach,{rough:.35}),{colors:true,cast:true});slices.castShadow=true;slices.receiveShadow=true;spin.add(slices);
