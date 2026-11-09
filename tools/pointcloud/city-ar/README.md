@@ -10,7 +10,7 @@ Sky Tower was absent because the original importer selected closed building ways
 
 ## Scale
 
-EPSG:2193 projected metres, NZVD2016 (EPSG:7839). Exact bounds, WGS84 corners, source provenance, geometry parity and ground-reference formula are in `city-ar-manifest.json`. Crop is about 1806.932 × 1667.128 real metres, presented 0.70 × 0.64584 metres, scale approximately 1:2581.331. Whole presentation including base measures 0.720 × 0.163925 × 0.713340 metres (XYZ). Native apps may let users resize uniformly. Presentation base and water backdrop are not geographic elevations/bathymetry.
+EPSG:2193 projected metres, NZVD2016 (EPSG:7839). Exact bounds, WGS84 corners, source provenance, geometry parity and ground-reference formula are in `city-ar-manifest.json`. Crop is about 1806.932 × 1667.128 real metres, presented 0.70 × 0.64584 metres, scale approximately 1:2581.331. Whole presentation including base measures 0.720 × 0.163925 × 0.713340 metres (XYZ). Default launch requests fixed scale: Quick Look allowsContentScaling=0 and Scene Viewer resizable=false. Downloaded files opened independently may allow resizing, which changes scale. Presentation base and water backdrop are presentation elements; water is now the shared NZVD2016 zero reference plane, not an observed tide or bathymetry.
 
 ## Reproduction and checks
 
@@ -21,7 +21,7 @@ node --experimental-strip-types tools/pointcloud/city-ar/finalize.mjs
 /usr/bin/usdchecker --arkit auckland/3d/auckland-city.usdz
 ```
 
-`review.html` loads actual exported GLB for visual inspection. Final checks: 26,215 triangles; finite positions; valid buffer ranges; uniform core scale; all four geometry parity groups identical; USDZ stored entries aligned to 64 bytes, Y up/metres. GLB 3,838,108 bytes; USDZ 8,702,715 bytes. Apple validator reports Success (system duplicate-plugin registration diagnostics also printed). Not a full Khronos validator. Actual GLB desktop rendering inspected, eight draw calls. Browser Sky Tower view inspected at 320px, no horizontal overflow. Earlier synthetic HTTPS browser check verified same-phone Quick Look and Scene Viewer targets; local HTTP correctly disables launch while downloads remain available. Physical iPhone/Android placement, camera permission and native materials are NOT tested. Native AR does not include browser selectors/quiz controls.
+`review.html` loads actual exported GLB for visual inspection. Final checks: 26,215 triangles; finite positions; valid buffer ranges; uniform core scale; all four geometry parity groups identical; USDZ stored entries aligned to 64 bytes, Y up/metres. GLB 3,838,232 bytes; USDZ 8,702,714 bytes. Apple validator reports Success (system duplicate-plugin registration diagnostics also printed). Not a full Khronos validator. Actual GLB desktop rendering inspected, eight draw calls. Browser Sky Tower view inspected at 320px, no horizontal overflow. Earlier synthetic HTTPS browser check verified same-phone Quick Look and Scene Viewer targets; local HTTP correctly disables launch while downloads remain available. Physical iPhone/Android placement, camera permission and native materials are NOT tested. Native AR does not include browser selectors/quiz controls.
 
 ## Accurate future heights: bounded research, no replacement yet
 

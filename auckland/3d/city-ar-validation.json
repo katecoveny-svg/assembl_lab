@@ -8,12 +8,12 @@
   "triangles": 26215,
   "files": {
     "auckland-city.glb": {
-      "bytes": 3838108,
-      "sha256": "e2ba6a8943e5d836a4b07ea6d6e13e7651497ccb2af1f604e102f768ca727e7a"
+      "bytes": 3838232,
+      "sha256": "c2cd8698576d398989b6c178f6355b52cc89d267ddb7edc765630436bcc4fa1b"
     },
     "auckland-city.usdz": {
-      "bytes": 8702715,
-      "sha256": "d70d98871df992c9bf75cc3c272409e07a094b88bfe1429e5453710cbb314ed8"
+      "bytes": 8702714,
+      "sha256": "5576811746170027cff11b414c3e34b587cd92c02b865fdc0d447373dd13ec4f"
     }
   },
   "limits": "Structural checks and Apple usdchecker, not a full Khronos glTF validator or physical-device AR test."

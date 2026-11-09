@@ -1,4 +1,9 @@
 {
+  "waterDatum": {
+    "sourceY": 0.018,
+    "elevationNZVD2016Metres": 0,
+    "meaning": "Datum reference surface, not observed tide or bathymetry"
+  },
   "units": "metres",
   "upAxis": "Y",
   "verticalExaggeration": 1,
@@ -81,5 +86,5 @@
     1806.9319679997861,
     1667.1283200001344
   ],
-  "geographicGroundReference": "Original LINZ NZVD2016 elevations; shared source y = 0.018 + elevationMetres / 30720. Native core applies one uniform XYZ scale and presentation translation. Water plane and plinth are presentation geometry, not sea level or bathymetry."
+  "geographicGroundReference": "Original LINZ NZVD2016 elevations; shared source y = 0.018 + elevationMetres / 30720. Native core applies one uniform XYZ scale and presentation translation. Water reference plane is NZVD2016 zero, not an observed tide or bathymetry. Plinth is presentation geometry."
 }

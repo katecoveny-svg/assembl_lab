@@ -1,10 +1,11 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+export const WATER_DATUM_Y=.018;
 export async function createCityModel(){
  const root=new T.Group();root.name='Auckland_CBD_source_aware_city_1x';
  const [gltf,data]=await Promise.all([new GLTFLoader().loadAsync('/auckland/3d/auckland-tabletop.glb'),fetch('/auckland/3d/city-buildings.json').then(r=>{if(!r.ok)throw Error('City data unavailable');return r.json()})]);
- gltf.scene.traverse(o=>{if(!o.isMesh)return;if(o.name.includes('LINZ_bare')){const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,.018+(p.getY(i)-.018)/5);p.needsUpdate=true;o.geometry.computeVertexNormals();}if(o.name.includes('plaque')||o.name.includes('plinth'))o.visible=false;});root.add(gltf.scene);
+ gltf.scene.traverse(o=>{if(!o.isMesh)return;if(o.name.includes('water_background'))o.position.y=WATER_DATUM_Y;if(o.name.includes('LINZ_bare')){const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,.018+(p.getY(i)-.018)/5);p.needsUpdate=true;o.geometry.computeVertexNormals();}if(o.name.includes('plaque')||o.name.includes('plinth'))o.visible=false;});root.add(gltf.scene);
  const groups={},palette={tagged:'#63384f',estimated:'#c29cab',unknown:'#9b9196'};let triangles=0;
  for(const kind of Object.keys(palette)){const geometries=[];data.buildings.forEach((b,id)=>{if(b.kind!==kind)return;const shape=new T.Shape(b.points.map(([x,z])=>new T.Vector2(x,-z)));let g=kind==='unknown'?new T.ShapeGeometry(shape):new T.ExtrudeGeometry(shape,{depth:b.height*data.scale,bevelEnabled:false,steps:1,curveSegments:1});g.rotateX(-Math.PI/2);g.translate(0,b.ground+.000003,0);if(g.index)g=g.toNonIndexed();g.deleteAttribute('uv');g.setAttribute('feature',new T.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(id),1));geometries.push(g);});const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());const m=new T.Mesh(merged,new T.MeshStandardMaterial({color:palette[kind],roughness:.9,side:T.DoubleSide}));triangles+=merged.attributes.position.count/3;groups[kind]=m;root.add(m);}
  const landmark=await(await fetch('/auckland/3d/skytower-parts.json')).json(),parts=[];
