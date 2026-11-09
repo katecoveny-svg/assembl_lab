@@ -126,6 +126,8 @@
   }
  ],
  "headers": [
+  {"source":"/ed/floor/tabletop/models/(.*)\\.usdz","headers":[{"key":"Content-Type","value":"model/vnd.usdz+zip"}]},
+  {"source":"/ed/floor/tabletop/models/(.*)\\.glb","headers":[{"key":"Content-Type","value":"model/gltf-binary"}]},
   {"source":"/study/ar/models/(.*)\\.usdz","headers":[{"key":"Content-Type","value":"model/vnd.usdz+zip"}]},
   {"source":"/study/ar/models/(.*)\\.glb","headers":[{"key":"Content-Type","value":"model/gltf-binary"}]},
   {
