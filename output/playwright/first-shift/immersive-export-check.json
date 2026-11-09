@@ -1,0 +1,32 @@
+{
+  "glb_bytes": 3918308,
+  "meshes": 70,
+  "materials": 70,
+  "bounds_metres": {
+    "min": [
+      -0.1899999976158142,
+      0,
+      -0.1899999976158142
+    ],
+    "max": [
+      0.1899999976158142,
+      0.05517491325736046,
+      0.1899999976158142
+    ],
+    "size": [
+      0.3799999952316284,
+      0.05517491325736046,
+      0.3799999952316284
+    ]
+  },
+  "usdz_bytes": 11988207,
+  "usdz_entries": 73,
+  "checks": [
+    "GLB v2 header and size",
+    "tabletop maximum dimension 0.38m",
+    "grounded y minimum",
+    "positive bounds",
+    "authored oak steel and mint materials",
+    "USDZ ZIP integrity"
+  ]
+}
