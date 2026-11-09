@@ -6,3 +6,5 @@
 
 #arrival-time{pointer-events:auto;accent-color:var(--rose);width:130px;min-height:44px;padding:0 8px}.arrival-rush #stagebox[data-arrival-view]:not([data-arrival-view=whole]) .arrival-placard{display:none}.arrival-rush input:focus-visible{outline:3px solid var(--rose);outline-offset:3px}
 @media(max-width:760px){#arrival-time{width:115px}.arrival-bottom #arrival-now{flex-basis:100%;font-size:10px}}
+
+.arrival-caveat{color:var(--ink);border-top:1px solid var(--line);padding-top:12px;font-weight:500}

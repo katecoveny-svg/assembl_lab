@@ -56,3 +56,13 @@ Final inspected files: Downloads/`arrival-rush-illustrative (1).glb` and `(1).us
 Local evidence directory: `/Users/kateharland/Documents/Codex/2026-11-09/task-14/arrival-evidence/` — desktop-light.jpg, desktop-dark.jpg, mobile-light.jpg, mobile-dark.jpg, reception.jpg, contrast.json, export.json. Exports remain outside the repository; no private assets uploaded.
 
 This is a useful focused prototype over the real model, not the final exceptional architectural visual. The inherited maquette remains simplified and light-mode materials are pale. Independent review should assess venue/readability, whether the disclosed outlier is the right teaching case, and native AR on actual phones. Refresh current main and preserve concurrent work before any integration/publication. No production release has been attempted.
+
+## Local review corrections — 9 November 2026
+
+Independent review corrections are scoped to the opt-in adapter. Reception camera now uses position (6, 13, 18), target (-5, 1, 10.4), clearing the foreground tree from the desk and queue without changing geometry or paths. Original /stay/ camera is unchanged.
+
+A persistent outcome-adjacent statement reads “Selected stress day, not typical trading or annual ROI.” Completed self-check-in outcomes explicitly say all rooms were ready for their arrivals, 2 of 5 parties use self check-in, and housekeeping is unchanged. These are results for the selected model day, not commercial recommendations.
+
+Rechecked 9 model/regression tests, adapter syntax and whitespace checks. Browser inspection confirmed the clear reception view at 2:20pm and completed self-check-in facts. Corrected evidence: reception-revised-light.jpg and reception-revised-dark.jpg (1440px wide); outcome-revised-mobile-light.jpg and outcome-revised-mobile-dark.jpg (375px wide, reduced-motion emulation). These supersede reception.jpg. Previously recorded full theme-matrix, keyboard, original-route and static export checks remain applicable; these corrections do not modify the engine, geometry or exporter. Physical-device AR remains untested.
+
+Refetched origin/main: still 10636b51fd7f3bd72f0ac42b5b0e052fd4944d12, already the prototype baseline; no concurrent changes to integrate. Publication is explicitly blocked pending specific stay-feature approval: the parent reports approval review denied publication because earlier permission covered First Shift only. No push or deployment was attempted for these corrections.
