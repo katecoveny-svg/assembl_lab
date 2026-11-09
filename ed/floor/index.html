@@ -129,7 +129,9 @@
   <div id="debug" aria-hidden="true"></div>
 </main>
 <script src="/lab/navigation.js"></script>
-<script type="module" src="/ar/worlds/button.js" data-world="ed" data-into=".card.title"></script>
-<script type="module" src="./main.js"></script>
+<script type="module">
+if(new URLSearchParams(location.search).has('winter')) import('./winter/main.js');
+else { const ar=document.createElement('script');ar.type='module';ar.src='/ar/worlds/button.js';ar.dataset.world='ed';ar.dataset.into='.card.title';document.body.append(ar);import('./main.js'); }
+</script>
 </body>
 </html>
