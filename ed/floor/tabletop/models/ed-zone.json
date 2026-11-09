@@ -1,0 +1,125 @@
+{
+  "sourceCommit": "0f035e3",
+  "sourceUnits": "metres",
+  "scale": 0.0625,
+  "selection": "CUBICLES[0:2]; original equipment transforms; curtains lowered as in browser",
+  "boundsMetres": [
+    0.5162904858589172,
+    0.14687488935887813,
+    0.37867439206121956
+  ],
+  "min": [
+    -0.2581452429294586,
+    0,
+    -0.18933719603060978
+  ],
+  "max": [
+    0.2581452429294586,
+    0.14687488935887813,
+    0.1893371960306098
+  ],
+  "triangles": 29602,
+  "meshes": 89,
+  "normalErrors": 0,
+  "textures": [
+    [
+      512,
+      512
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      256,
+      256
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      512,
+      512
+    ],
+    [
+      1024,
+      128
+    ]
+  ],
+  "snapshot": "Static unoccupied venue, not current simulation state",
+  "licence": "NVIDIA SimReady CC BY 4.0 via codepawl; derivative by assembl",
+  "physicalDeviceTested": false,
+  "bytes": {
+    "glb": 2395068,
+    "usdz": 4394966
+  }
+}
