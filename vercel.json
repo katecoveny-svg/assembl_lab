@@ -1,4 +1,5 @@
 {
+ "git": {"deploymentEnabled": {"codex/nz-data-mcp": false}},
  "cleanUrls": false,
  "trailingSlash": true,
  "regions": [
