@@ -7,3 +7,8 @@
 @media(max-width:959px){.hero .hero-world{position:relative;inset:auto;width:calc(100% - 32px);height:330px;max-height:none;aspect-ratio:auto;margin:90px 16px 0;order:-2}.cloud-instrument{position:relative;inset:auto;order:-1;margin:18px 24px 28px;gap:16px}.cloud-caption{min-width:100%}.cloud-caption strong{font-size:22px}.cloud-views{width:100%;justify-content:space-between}.cloud-views button{flex:1}.hero .hero-in{min-height:0;padding-top:10px;padding-bottom:28px}.hero .hero-copy{max-width:100%;gap:20px}.hero .hero-copy h1{font-size:62px}.hero .lede{font-size:17px}.hero .hero-notes{padding:0 24px 30px}.hero .hero-credit{max-width:100%;font-size:9px}.hero-callouts{display:none!important}.hero .hero-world img{opacity:1}.pc-ready .hero .hero-world img{opacity:0}.hero .truth-note{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.pc-on .pc-stage canvas,.hero-world img{transition:none!important}}
 html:not(.pc-on) .cloud-views{display:none}
+
+/* Sourced city mesh replaces the hero cloud only; architecture motion stays intact. */
+#city-hero{position:absolute;inset:0;width:100%;height:100%;border-radius:24px;opacity:0;touch-action:pan-y}.city-ready #city-hero{opacity:1}.city-ready .hero-world img{visibility:hidden}.hero .hero-world{overflow:hidden;background:#ede5e9}.hero .hero-callouts{display:none!important}html[data-pc-chapter="hero"] .pc-stage canvas,html[data-pc-chapter="hero"] .pc-leaders{visibility:hidden}.city-secondary{font-size:12px;color:#d4bbcd}html:not(.pc-on) .cloud-views{display:flex}.hero .hero-world img{opacity:1!important}.cloud-instrument{gap:10px 16px}
+
+.city-key{font:10px/1.6 'Instrument Sans',sans-serif;color:#cdb6c6}.cloud-caption{min-width:230px}html[data-pc-chapter="hero"] .pc-pause{display:none}

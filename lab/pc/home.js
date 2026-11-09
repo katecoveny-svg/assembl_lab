@@ -67,7 +67,7 @@ async function start() {
     if (id === active || !CH[id]) return; const c = CH[id], f = c.form(); if (!f) return; active = id; root.dataset.pcChapter = id; clipHero();
     engine.resize(); const pl = c.place(); engine.setLift(...c.lift()); engine.setSway(c.sway ?? 1);
     if (first) engine.assembleFrom(f, { ...pl, ms: 1800 }); else engine.setForm(f, { ...pl, ms: 1500 });
-    if (engine.paused) { engine.setForm(f, { ...pl, immediate: true }); engine.render(); } else engine.start();
+    if (id === "hero") { engine.stop(); } else if (engine.paused) { engine.setForm(f, { ...pl, immediate: true }); engine.render(); } else engine.start();
     document.querySelectorAll(".arch-callout").forEach((el) => el.classList.toggle("on", id === "arch"));
     labelsOn = false; layout = null; clearTimeout(labelT); clearTimeout(scanT); hideLabels();
     if (id === "hero") {
@@ -81,9 +81,9 @@ async function start() {
   // the map's height range on screen as the scan sees it (world y after the tilt)
   function scanRange(pl) { const ct = Math.cos(pl.tilt), st = Math.sin(pl.tilt); let a = Infinity, b = -Infinity; for (const p of sample) { const y = pl.offset[1] + pl.scale * (ct * p[1] - st * p[2]); if (y < a) a = y; if (y > b) b = y; } return [a - 0.03, b + 0.03]; }
 
-  document.querySelectorAll("[data-cloud-view]").forEach((button) => button.addEventListener("click", () => {
+  document.querySelectorAll("[data-legacy-cloud-view]").forEach((button) => button.addEventListener("click", () => {
     heroView = button.dataset.cloudView;
-    document.querySelectorAll("[data-cloud-view]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
+    document.querySelectorAll("[data-legacy-cloud-view]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
     if (active === "hero") { active = null; go("hero"); }
   }));
   let shown = false;
@@ -94,13 +94,13 @@ async function start() {
     if (best && (best !== "arch" || forms.hall)) go(best);
   }
   // (with motion paused no frames run, so the hero's labels are updated here as the page scrolls)
-  addEventListener("scroll", () => requestAnimationFrame(() => { pick(); clipHero(); if (active === "hero") { const c = CH.hero; engine.setForm(c.form(), { ...c.place(), immediate: true }); drawHero(performance.now()); engine.render(); } }), { passive: true });
+  addEventListener("scroll", () => requestAnimationFrame(() => { pick(); clipHero(); if (active === "hero" && !document.getElementById("city-hero")) { const c = CH.hero; engine.setForm(c.form(), { ...c.place(), immediate: true }); drawHero(performance.now()); engine.render(); } }), { passive: true });
   // on resize the map is placed again at once; its labels step aside and come back placed for the new screen
   let relayT;
   addEventListener("resize", () => { phone = innerWidth < 760; clipHero(); const c = active && CH[active]; if (c) { engine.resize(); engine.setForm(c.form(), { ...c.place(), immediate: true }); if (reduce || engine.paused) engine.render(); if (active === "hero" && labelsOn) { layout = null; hideLabels(); clearTimeout(relayT); relayT = setTimeout(layoutLabels, 350); } } });
   // only draw while the opening run is on screen, and never in a hidden tab
   const pauseBtn = document.querySelector(".pc-pause");
-  new IntersectionObserver(([e]) => { if (e.isIntersecting) engine.start(); else engine.stop(); pauseBtn?.classList.toggle("off-run", !e.isIntersecting); }, { rootMargin: "120px" }).observe(run);
+  new IntersectionObserver(([e]) => { if (e.isIntersecting && active !== "hero") engine.start(); else engine.stop(); pauseBtn?.classList.toggle("off-run", !e.isIntersecting); }, { rootMargin: "120px" }).observe(run);
   // leader lines: from each callout to its anchor, drawn on the sticky stage (stage coordinates = the viewport)
   const callouts = [...document.querySelectorAll(".arch-callout")];
   engine.onFrame = (now) => {
@@ -235,7 +235,7 @@ async function start() {
     }
   }
   // go: the first chapter assembles from a scatter
-  canvas.addEventListener("webglcontextlost", (event) => { event.preventDefault(); engine.stop(); root.classList.remove("pc-on", "pc-live", "pc-ready"); document.querySelectorAll("[data-cloud-view]").forEach(b => b.disabled = true); });
+  canvas.addEventListener("webglcontextlost", (event) => { event.preventDefault(); engine.stop(); root.classList.remove("pc-on", "pc-live", "pc-ready"); document.querySelectorAll("[data-legacy-cloud-view]").forEach(b => b.disabled = true); });
   document.addEventListener("visibilitychange", () => { if (document.hidden) engine.stop(); else if (!engine.paused) engine.start(); });
   engine.start(); go("hero", true);
   // the hall is built from the studio's own model code, after the first paint

@@ -1,0 +1,3 @@
+import {cityScene} from './city-scene.js';
+const canvas=document.querySelector('#city-hero');
+try{if(new URLSearchParams(location.search).has('poster'))throw Error('Poster selected');const city=await cityScene(canvas,{onReady:s=>window.cityStats=s});document.documentElement.classList.add('city-ready');document.querySelectorAll('[data-cloud-view]').forEach(b=>b.onclick=()=>{city.view(b.dataset.cloudView);document.querySelectorAll('[data-cloud-view]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});window.cityReady=true;}catch{document.querySelectorAll('[data-cloud-view]').forEach(b=>b.disabled=true);}
