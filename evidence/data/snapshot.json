@@ -1,0 +1,751 @@
+{
+  "schemaVersion": 1,
+  "receipts": [
+    {
+      "url": "https://catalogue.data.govt.nz/api/3/action/resource_show?id=4b292323-9fcc-41f8-814b-3c7b19cf14b3",
+      "retrievedAt": "2026-11-09T08:24:16.808Z",
+      "sha256": "0b7d4dadc94d0307a98ecdcc56938c48fdff2b7efd70537858fc38c1beb382c4"
+    },
+    {
+      "url": "https://catalogue.data.govt.nz/api/3/action/package_show?id=c1923d33-e781-46c9-9ea1-d9b850082be4",
+      "retrievedAt": "2026-11-09T08:24:16.930Z",
+      "sha256": "d0097b33147cd1b47b0f2dde011c71f1ee23649da7eedf7600db49e5bc6f1d6f"
+    },
+    {
+      "url": "https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=4b292323-9fcc-41f8-814b-3c7b19cf14b3&limit=5&fields=School_Id,Org_Name,Org_Type,Regional_Council,Status",
+      "retrievedAt": "2026-11-09T08:24:17.064Z",
+      "sha256": "c4e529bc3389d8a4869df8d1876f5f00fe99cc7c972ebbb34e587bbd9c2cdfb7"
+    },
+    {
+      "url": "https://api.geonet.org.nz/quake?MMI=3",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "sha256": "f3d3c6ec628a218d644fcbcd5da8cdfbdbca8bca125b7d5280335ffa71cffaee"
+    }
+  ],
+  "records": [
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p841271",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p841271",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-08T06:29:33.794Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p841271",
+        "time": "2026-11-08T06:29:33.794Z",
+        "mag": 2.600859581297106,
+        "depth": 8.589152336120605,
+        "locality": "10 km north-east of Christchurch",
+        "lon": 172.740219116,
+        "lat": -43.476783752,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p837898",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p837898",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-07T00:32:25.541Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p837898",
+        "time": "2026-11-07T00:32:25.541Z",
+        "mag": 2.581769870642457,
+        "depth": 20.942392349243164,
+        "locality": "10 km west of Taumarunui",
+        "lon": 175.111312866,
+        "lat": -38.927307129,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p837394",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p837394",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-06T20:03:41.541Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p837394",
+        "time": "2026-11-06T20:03:41.541Z",
+        "mag": 2.1407037605271118,
+        "depth": 3.969524621963501,
+        "locality": "5 km south of Whakatane",
+        "lon": 176.992111206,
+        "lat": -38.027271271,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p836449",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p836449",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-06T11:40:16.465Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p836449",
+        "time": "2026-11-06T11:40:16.465Z",
+        "mag": 2.4478244840792325,
+        "depth": 5,
+        "locality": "5 km south of Whakatane",
+        "lon": 176.990371704,
+        "lat": -38.017593384,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p836163",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p836163",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-06T09:07:54.763Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p836163",
+        "time": "2026-11-06T09:07:54.763Z",
+        "mag": 2.140880436195528,
+        "depth": 12.4506254196167,
+        "locality": "5 km south of Te Araroa",
+        "lon": 178.371047974,
+        "lat": -37.705387115,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p835860",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p835860",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-06T06:26:20.785Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p835860",
+        "time": "2026-11-06T06:26:20.785Z",
+        "mag": 2.6871022540578204,
+        "depth": 16.736759185791016,
+        "locality": "15 km west of Masterton",
+        "lon": 175.450515747,
+        "lat": -40.910736084,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p833359",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p833359",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-05T08:13:41.347Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p833359",
+        "time": "2026-11-05T08:13:41.347Z",
+        "mag": 2.646682810059664,
+        "depth": 17.550100326538086,
+        "locality": "20 km west of Gisborne",
+        "lon": 177.759140015,
+        "lat": -38.649726868,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p833144",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p833144",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-05T06:19:07.410Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p833144",
+        "time": "2026-11-05T06:19:07.410Z",
+        "mag": 2.5087545133567577,
+        "depth": 25.26664924621582,
+        "locality": "5 km south of Napier",
+        "lon": 176.916549683,
+        "lat": -39.549434662,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p831325",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p831325",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-04T14:10:14.886Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p831325",
+        "time": "2026-11-04T14:10:14.886Z",
+        "mag": 2.891291151175434,
+        "depth": 25.08990478515625,
+        "locality": "15 km north-east of Wairoa",
+        "lon": 177.620132446,
+        "lat": -38.96628952,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p831136",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p831136",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-04T12:29:38.460Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p831136",
+        "time": "2026-11-04T12:29:38.460Z",
+        "mag": 2.413513506838814,
+        "depth": 15.440574645996094,
+        "locality": "10 km north-west of Tolaga Bay",
+        "lon": 178.200027466,
+        "lat": -38.281597137,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p830315",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p830315",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-04T05:11:56.252Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p830315",
+        "time": "2026-11-04T05:11:56.252Z",
+        "mag": 2.169610880817505,
+        "depth": 10.568747520446777,
+        "locality": "5 km south-west of Ruatoria",
+        "lon": 178.264190674,
+        "lat": -37.953529358,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p829637",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p829637",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-03T23:10:49.061Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p829637",
+        "time": "2026-11-03T23:10:49.061Z",
+        "mag": 4.125881446869914,
+        "depth": 59.33455657958984,
+        "locality": "20 km south-east of St Arnaud",
+        "lon": 172.971298218,
+        "lat": -42.003051758,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p827389",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p827389",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-03T03:13:16.089Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p827389",
+        "time": "2026-11-03T03:13:16.089Z",
+        "mag": 2.7440541989309395,
+        "depth": 19.23172378540039,
+        "locality": "5 km east of Porangahau",
+        "lon": 176.713790894,
+        "lat": -40.283615112,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p827387",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p827387",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-03T03:12:05.613Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p827387",
+        "time": "2026-11-03T03:12:05.613Z",
+        "mag": 2.4203088215328616,
+        "depth": 15.404626846313477,
+        "locality": "5 km east of Porangahau",
+        "lon": 176.721786499,
+        "lat": -40.271373749,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p826979",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p826979",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-02T23:35:14.950Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p826979",
+        "time": "2026-11-02T23:35:14.950Z",
+        "mag": 4.170805016273881,
+        "depth": 40.46538162231445,
+        "locality": "20 km north-east of Taihape",
+        "lon": 176.042327881,
+        "lat": -39.560283661,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p826285",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p826285",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-02T17:24:57.332Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p826285",
+        "time": "2026-11-02T17:24:57.332Z",
+        "mag": 2.110985068761481,
+        "depth": 5,
+        "locality": "Within 5 km of Whakatane",
+        "lon": 176.997528076,
+        "lat": -38.000671387,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p826274",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p826274",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-02T17:18:48.466Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p826274",
+        "time": "2026-11-02T17:18:48.466Z",
+        "mag": 2.5424800321188226,
+        "depth": 4.640496730804443,
+        "locality": "5 km south of Whakatane",
+        "lon": 176.990661621,
+        "lat": -38.017654419,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p826016",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p826016",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-02T15:01:30.511Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p826016",
+        "time": "2026-11-02T15:01:30.511Z",
+        "mag": 2.75332916120605,
+        "depth": 4.873359203338623,
+        "locality": "5 km south of Whakatane",
+        "lon": 176.975784302,
+        "lat": -38.02456665,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "geonet:2026p824644",
+      "classification": "live",
+      "source": {
+        "url": "https://www.geonet.org.nz/earthquake/2026p824644",
+        "endpoint": "https://api.geonet.org.nz/quake?MMI=3",
+        "attribution": "Earth Sciences New Zealand / GeoNet and sponsors NHC, LINZ, NEMA and MBIE",
+        "license": {
+          "name": "CC BY 3.0 NZ",
+          "url": "https://creativecommons.org/licenses/by/3.0/nz/"
+        },
+        "policyUrl": "https://www.geonet.org.nz/policy"
+      },
+      "observedAt": "2026-11-02T02:50:43.015Z",
+      "observationBasis": "Earthquake origin time; magnitude and depth may be revised",
+      "retrievedAt": "2026-11-09T08:24:17.249Z",
+      "scope": "NZ region; MMI ≥3 feed, at most 20 recent events; not a complete catalogue",
+      "units": "magnitude; depth km; WGS84 longitude/latitude degrees",
+      "maxAgeMs": 300000,
+      "value": {
+        "id": "2026p824644",
+        "time": "2026-11-02T02:50:43.015Z",
+        "mag": 4.300108977353487,
+        "depth": 100.12541961669922,
+        "locality": "30 km south-west of Milford Sound",
+        "lon": 167.553390503,
+        "lat": -44.840126038,
+        "quality": "best"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "school:1009",
+      "classification": "published benchmark",
+      "source": {
+        "url": "https://catalogue.data.govt.nz/dataset/c1923d33-e781-46c9-9ea1-d9b850082be4",
+        "endpoint": "https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=4b292323-9fcc-41f8-814b-3c7b19cf14b3&limit=5&fields=School_Id,Org_Name,Org_Type,Regional_Council,Status",
+        "attribution": "New Zealand Ministry of Education, Education Counts",
+        "license": {
+          "name": "CC BY 4.0",
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        }
+      },
+      "observedAt": "2026-11-08T18:45:32.802845Z",
+      "observationBasis": "Resource last-modified timestamp, not a per-school observation date",
+      "retrievedAt": "2026-11-09T08:24:17.064Z",
+      "scope": "Five API-returned institutions; illustrative directory sample, not representative or complete; no enrolment eligibility inference",
+      "units": "institution directory attributes",
+      "maxAgeMs": 86400000,
+      "value": {
+        "id": 1009,
+        "name": "Dargaville Primary School",
+        "type": "Contributing",
+        "region": "Northland Region",
+        "status": "Open"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "school:3756",
+      "classification": "published benchmark",
+      "source": {
+        "url": "https://catalogue.data.govt.nz/dataset/c1923d33-e781-46c9-9ea1-d9b850082be4",
+        "endpoint": "https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=4b292323-9fcc-41f8-814b-3c7b19cf14b3&limit=5&fields=School_Id,Org_Name,Org_Type,Regional_Council,Status",
+        "attribution": "New Zealand Ministry of Education, Education Counts",
+        "license": {
+          "name": "CC BY 4.0",
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        }
+      },
+      "observedAt": "2026-11-08T18:45:32.802845Z",
+      "observationBasis": "Resource last-modified timestamp, not a per-school observation date",
+      "retrievedAt": "2026-11-09T08:24:17.064Z",
+      "scope": "Five API-returned institutions; illustrative directory sample, not representative or complete; no enrolment eligibility inference",
+      "units": "institution directory attributes",
+      "maxAgeMs": 86400000,
+      "value": {
+        "id": 3756,
+        "name": "Karitane School",
+        "type": "Contributing",
+        "region": "Otago Region",
+        "status": "Open"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "school:544",
+      "classification": "published benchmark",
+      "source": {
+        "url": "https://catalogue.data.govt.nz/dataset/c1923d33-e781-46c9-9ea1-d9b850082be4",
+        "endpoint": "https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=4b292323-9fcc-41f8-814b-3c7b19cf14b3&limit=5&fields=School_Id,Org_Name,Org_Type,Regional_Council,Status",
+        "attribution": "New Zealand Ministry of Education, Education Counts",
+        "license": {
+          "name": "CC BY 4.0",
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        }
+      },
+      "observedAt": "2026-11-08T18:45:32.802845Z",
+      "observationBasis": "Resource last-modified timestamp, not a per-school observation date",
+      "retrievedAt": "2026-11-09T08:24:17.064Z",
+      "scope": "Five API-returned institutions; illustrative directory sample, not representative or complete; no enrolment eligibility inference",
+      "units": "institution directory attributes",
+      "maxAgeMs": 86400000,
+      "value": {
+        "id": 544,
+        "name": "Al-Madinah School",
+        "type": "Composite",
+        "region": "Auckland Region",
+        "status": "Open"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "school:1450",
+      "classification": "published benchmark",
+      "source": {
+        "url": "https://catalogue.data.govt.nz/dataset/c1923d33-e781-46c9-9ea1-d9b850082be4",
+        "endpoint": "https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=4b292323-9fcc-41f8-814b-3c7b19cf14b3&limit=5&fields=School_Id,Org_Name,Org_Type,Regional_Council,Status",
+        "attribution": "New Zealand Ministry of Education, Education Counts",
+        "license": {
+          "name": "CC BY 4.0",
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        }
+      },
+      "observedAt": "2026-11-08T18:45:32.802845Z",
+      "observationBasis": "Resource last-modified timestamp, not a per-school observation date",
+      "retrievedAt": "2026-11-09T08:24:17.064Z",
+      "scope": "Five API-returned institutions; illustrative directory sample, not representative or complete; no enrolment eligibility inference",
+      "units": "institution directory attributes",
+      "maxAgeMs": 86400000,
+      "value": {
+        "id": 1450,
+        "name": "Pukekohe East School",
+        "type": "Contributing",
+        "region": "Auckland Region",
+        "status": "Open"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "school:1327",
+      "classification": "published benchmark",
+      "source": {
+        "url": "https://catalogue.data.govt.nz/dataset/c1923d33-e781-46c9-9ea1-d9b850082be4",
+        "endpoint": "https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=4b292323-9fcc-41f8-814b-3c7b19cf14b3&limit=5&fields=School_Id,Org_Name,Org_Type,Regional_Council,Status",
+        "attribution": "New Zealand Ministry of Education, Education Counts",
+        "license": {
+          "name": "CC BY 4.0",
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        }
+      },
+      "observedAt": "2026-11-08T18:45:32.802845Z",
+      "observationBasis": "Resource last-modified timestamp, not a per-school observation date",
+      "retrievedAt": "2026-11-09T08:24:17.064Z",
+      "scope": "Five API-returned institutions; illustrative directory sample, not representative or complete; no enrolment eligibility inference",
+      "units": "institution directory attributes",
+      "maxAgeMs": 86400000,
+      "value": {
+        "id": 1327,
+        "name": "Kauri Park School",
+        "type": "Contributing",
+        "region": "Auckland Region",
+        "status": "Open"
+      }
+    }
+  ]
+}
