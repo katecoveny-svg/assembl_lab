@@ -9,3 +9,17 @@ test('missing, stale, future and invalid records remain distinct',()=>{const r=s
 test('schema changes fail closed rather than returning fake or silently partial records',()=>{assert.throws(()=>quakeRecords({},new Date().toISOString()));assert.throws(()=>quakeRecords({type:'FeatureCollection',features:[{properties:{}}]},new Date().toISOString()));assert.throws(()=>schoolRecords({success:true,result:{records:[]}}, {},{},new Date().toISOString()));});
 test('valid empty earthquake feed is empty, not invented',()=>assert.deepEqual(quakeRecords({type:'FeatureCollection',features:[]},new Date().toISOString()),[]));
 test('unknown classifications and missing reporting date explanation rejected',()=>{assert.throws(()=>validateRecord({...snapshot.records[0],classification:'verified'}));assert.throws(()=>validateRecord({...snapshot.records[0],observationBasis:''}));});
+
+test('source context maps requested contract without keys or claiming continuous live',async()=>{
+ const {toSourceContext,describe}=await import('../records.mjs');const r=snapshot.records[0],dto=toSourceContext(r,Date.parse(r.retrievedAt));
+ for(const key of ['sourceUrl','licence','observedAt','retrievedAt','freshness','kind'])assert.ok(key in dto);
+ assert.match(describe(r),/saved snapshot/);assert.equal(dto.freshness,'recently retrieved');
+});
+test('unavailable, interrupted and malformed snapshots reject without replacement records',async()=>{
+ const {loadSnapshot}=await import('../load.mjs');
+ await assert.rejects(loadSnapshot(async()=>({ok:false})));
+ await assert.rejects(loadSnapshot(async()=>{throw new DOMException('Aborted','AbortError');}));
+ await assert.rejects(loadSnapshot(async()=>({ok:true,json:async()=>({schemaVersion:2,records:[]})})));
+ await assert.rejects(loadSnapshot(async()=>({ok:true,json:async()=>({...snapshot,records:[{...snapshot.records[0],value:{}}]})})));
+ assert.deepEqual(await loadSnapshot(async()=>({ok:true,json:async()=>snapshot})),snapshot.records);
+});

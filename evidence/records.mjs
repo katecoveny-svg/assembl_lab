@@ -17,3 +17,9 @@ export function freshness(r, now = Date.now()) {
 export function describe(r, now = Date.now()) {
  return `${r.classification === 'live' ? 'live source / saved snapshot' : r.classification === 'published benchmark' ? 'published reference / directory sample' : r.classification} · ${freshness(r, now)} · ${r.observedAt ? `reported ${r.observedAt}` : 'reporting date not supplied'} · retrieved ${r.retrievedAt}`;
 }
+
+// Boundary DTO for public-data consumers; calculated freshness must never be cached as truth.
+export function toSourceContext(record, now=Date.now()) {
+ const r=validateRecord(record);
+ return {id:r.id,sourceUrl:r.source.url,licence:{...r.source.license},observedAt:r.observedAt,retrievedAt:r.retrievedAt,freshness:freshness(r,now),kind:r.classification,scope:r.scope,units:r.units,observationBasis:r.observationBasis,attribution:r.source.attribution,value:r.value};
+}
