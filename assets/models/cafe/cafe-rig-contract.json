@@ -422,13 +422,13 @@
   "textures_max": 16
  },
  "actual": {
-  "glb_bytes": 5665572,
-  "glb_sha256": "82ddc92ec041cd252066907cd8ca1127b16c941d42c30be04e4bfa59a7f2b88b",
-  "triangles_rendered": 137261,
-  "triangles_unique_meshes": 62151,
+  "glb_bytes": 5668424,
+  "glb_sha256": "b9b5d6c23c4d00832a546bd4857ff4c32b2f5dea877b838f1077e58cd9d009b1",
+  "triangles_rendered": 137741,
+  "triangles_unique_meshes": 62211,
   "nodes": 319,
   "meshes": 142,
-  "primitives": 261,
+  "primitives": 264,
   "materials": 25,
   "textures": 14,
   "extensions_used": [

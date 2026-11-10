@@ -78,7 +78,7 @@ export const WORLDS = [
   {
     id: 'cafe', name: 'Café', line: 'A neighbourhood café: counter, kitchen pass and tables.',
     kind: 'place', from: '/cafe/', fromName: 'Café twin',
-    labels: ['Example café'], credit: 'Made in Blender for assembl lab. People are plain figures, not likenesses.',
+    labels: ['Example café'], credit: 'Made in Blender for assembl lab; ambientCG surfaces and a Poly Haven plant (CC0). Architectural view with illustrative cabinet stock.',
     table: { scale: 1 / 30, note: 'The whole venue, about 60 cm across' },
     inside: { scale: 1, note: 'Life size: walk through a doorway to the counter', verb: 'Life size' },
     why: 'A café is a place many teenagers work in first. Standing behind the counter at real size makes the job feel real.'

@@ -281,7 +281,7 @@ details.vz-more[open]>summary{margin-bottom:8px}
   <div class="main">
     <div class="stagebox" id="stagebox">
       <canvas id="scene" aria-label="3D model of a café, cut away so you can see in. Hover or tap a part for its live number; Explore lists every part. The model shows street and footpath tables at the front, the counter with the coffee machine and food cabinet, the dining room, the kitchen line and pass at the back, an office with the roster board, and the bins in the back yard"></canvas>
-      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="venue" aria-pressed="true">Whole venue</button><button type="button" data-view="counter">Counter and coffee</button><button type="button" data-view="interior">Inside the café</button><button type="button" data-view="kitchen">Kitchen and pass</button><button type="button" data-view="dining">Tables</button><button type="button" data-view="street">Street and weather</button><button type="button" data-view="office">Roster and bin</button></div>
+      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="venue" aria-pressed="true">Whole venue</button><button type="button" data-view="counter">Counter and coffee</button><button type="button" data-view="interior">Inside the café</button><button type="button" data-view="cabinet">Food display</button><button type="button" data-view="kitchen">Kitchen and pass</button><button type="button" data-view="dining">Tables</button><button type="button" data-view="street">Street and weather</button><button type="button" data-view="office">Roster and bin</button></div>
       <div id="tags"></div>
       <div class="key" aria-hidden="true"><span style="--k:var(--t-seated)">seated</span><span style="--k:var(--t-ordered)">waiting for food</span><span style="--k:var(--t-eating)">eating</span><span style="--k:var(--t-paying)">paying</span><span style="--k:var(--t-held)">held for a booking</span><span style="--k:var(--live)">waiting too long</span><span style="--k:var(--alert)">walked away</span></div>
       <div class="badge" id="badge">SIMULATED</div>
@@ -1391,9 +1391,9 @@ function lights(dt, h, raining, open, S, d) {
   SM.timber.emissive.setHex(0x3a2210); SM.timber.emissiveIntensity = lightK * 0.15; }
 
 // ---------------- camera views (the stage flies between them)
-const VIEWS = { interior: { p: [8.4, 1.8, 5.3], t: [4.4, 1.25, 0.9] }, venue: { p: [11.5, 15, 18.5], t: [0, 0, 0.2] }, counter: { p: [9.5, 7.2, 10.5], t: [4.6, 1, 1.2] }, kitchen: { p: [4, 10.5, 4.6], t: [3.2, 0.6, -3.6] },
+const VIEWS = { cabinet: { p: [6.8, 1.8, 3.5], t: [5.55, 1.48, 1.2] }, interior: { p: [8.4, 1.8, 5.3], t: [4.4, 1.25, 0.9] }, venue: { p: [11.5, 15, 18.5], t: [0, 0, 0.2] }, counter: { p: [9.5, 7.2, 10.5], t: [4.6, 1, 1.2] }, kitchen: { p: [4, 10.5, 4.6], t: [3.2, 0.6, -3.6] },
   dining: { p: [-1, 9.5, 11.5], t: [-4, 0.5, 1.6] }, street: { p: [2, 6.5, 22], t: [0, 0.8, 7.6] }, office: { p: [-1.2, 7, 1.6], t: [-7, 0.9, -5.6] } };
-const VIEWS_N = { interior: { p: [8.6, 2.2, 5.6], t: [4.4, 1.25, 0.9] }, venue: { p: [5, 24, 19.5], t: [0, 0, 0.6] }, counter: { p: [6.5, 9, 12], t: [4.6, 1, 1.4] }, kitchen: { p: [3.6, 13, 5], t: [3.2, 0.6, -3.8] },
+const VIEWS_N = { cabinet: { p: [6.8, 2.0, 4.2], t: [5.55, 1.48, 1.2] }, interior: { p: [8.6, 2.2, 5.6], t: [4.4, 1.25, 0.9] }, venue: { p: [5, 24, 19.5], t: [0, 0, 0.6] }, counter: { p: [6.5, 9, 12], t: [4.6, 1, 1.4] }, kitchen: { p: [3.6, 13, 5], t: [3.2, 0.6, -3.8] },
   dining: { p: [-3, 13, 13], t: [-4, 0.5, 1.8] }, street: { p: [1, 9.5, 27], t: [0, 0.8, 8] }, office: { p: [-2.5, 10, 2.5], t: [-7, 0.6, -5.8] } };
 stage.views = VIEWS;
 let view = "venue";
@@ -1574,6 +1574,8 @@ function setActivity(visible) {
 }
 setActivity(false);
 function setGraphics(kind) { gfx = kind === "model" && rig ? "model" : "maquette";
+  // Authored portions already follow stock through the rig; never cover them with fallback cubes.
+  cabFood.visible = gfx !== "model";
   MAQ.forEach(([o, p]) => { if (gfx === "model") { if (o.parent) o.parent.remove(o); } else if (!o.parent) p.add(o); });
   glbTop.forEach(o => { o.visible = gfx === "model"; }); boardKey = ""; menuKey = ""; return gfx; }
 async function loadModel() {

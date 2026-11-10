@@ -389,17 +389,19 @@ async function dc(ctx) {
 }
 
 async function cafe(ctx) {
-  const g = await loadGLB('/assets/models/cafe/cafe-venue.glb', ctx.onProgress, 2150472);
+  const g = await loadGLB('/assets/models/cafe/cafe-venue.glb', ctx.onProgress, 5668424);
   const [{ createCafeRig }, kit] = await Promise.all([import('/assets/models/cafe/cafe-rig-controller.mjs'), import('/assets/twin/3/kit.js')]);
   const venue = g.scene; calmGlass(venue);
-  try { const rig = createCafeRig(venue, THREE); rig.setVisualState({ mode: 'day', queue: 3, lamps: 0, espresso: 1, umbrellas: true }); } catch (e) { /* the venue still shows without its rig */ }
+  const rig = createCafeRig(venue, THREE);
+  // A clearly illustrative stocked architectural view, not the live café simulation.
+  rig.setVisualState({ mode: 'cafe', queue: 0, lamps: .2, drinksQueued: 0, umbrellas: [1,1,1,1], cabinet: { scone: 8, toastie: 8, salad: 8, brownie: 8, muffin: 8 } });
   const inner = new THREE.Group(); inner.add(venue);
   venue.updateMatrixWorld(true);
   const wp = n => { const o = venue.getObjectByName(n); if (!o) return null; const b = new THREE.Box3().setFromObject(o, true); if (b.isEmpty()) return o.getWorldPosition(new THREE.Vector3()); return b.getCenter(new THREE.Vector3()); };
   // plain figures (never a likeness): two staff behind the counter, a short queue and a few people at tables
   const people = [], staff = [];
   const outfit = (vest, trouser = 0x343842) => ({ vest, band: vest, shirt: vest, trouser });
-  const add = (i, o, x, z, yaw, pose) => { const p = kit.makePerson(i, o); p.position.set(x, 0.15, z); p.rotation.y = yaw; kit.animatePerson(p, false, 0, 1, pose); inner.add(p); people.push(p); return p; };
+  const add = (i, o, x, z, yaw, pose) => { const p = kit.makePerson(i, o); p.position.set(x, 0.15, z); p.rotation.y = yaw; kit.animatePerson(p, false, 0, 1, pose); p.visible = ctx.activity === true; inner.add(p); people.push(p); return p; };
   const esp = wp('ESPRESSO_MAIN') || v3(4.5, 1, -1.5), pass = wp('PASS') || v3(3, 1, -4);
   staff.push(add(1, outfit(0x2f2a2e, 0x2b2730), esp.x, esp.z - 0.75, 0, 'work'));
   staff.push(add(4, outfit(0xe9e6e1, 0x3a3a3f), pass.x, pass.z - 0.8, 0, 'work'));
@@ -425,9 +427,9 @@ async function cafe(ctx) {
   ].filter(Boolean);
   // the baked loop and the live motion: the staff work, the front of the queue steps up to the counter and back
   const animNodes = [], animFns = [];
-  for (const s of staff) { const u = s.userData; animNodes.push(u.armL, u.armR); }
+  for (const s of (ctx.activity ? staff : [])) { const u = s.userData; animNodes.push(u.armL, u.armR); }
   animFns.push(t => { for (const s of staff) { const u = s.userData, w = Math.sin(t / 0.38 + u.phase) * 0.35; u.armL.rotation.x = -0.9 + w; u.armR.rotation.x = -0.75 - w; } });
-  if (walker && Q[0]) {
+  if (ctx.activity && walker && Q[0]) {
     const from = walker.position.clone(), to = from.clone().add(v3(-0.9, 0, 0)); const u = walker.userData;
     animNodes.push(walker, u.legL, u.legR);
     animFns.push(t => { const D = 8, k = (t % D) / D, f = k < 0.5 ? seg(k, 0.1, 0.4) : 1 - seg(k, 0.6, 0.9); walker.position.lerpVectors(from, to, f);
@@ -436,9 +438,9 @@ async function cafe(ctx) {
   const at = t => animFns.forEach(f => f(t));
   let t = 0;
   return {
-    root, size, tags, tick(dt) { t += dt; at(t); }, status: () => '',
+    root, size, tags, tick(dt) { t += dt; at(t); }, status: () => ctx.activity ? 'Illustrative activity figures' : 'Architectural view · illustrative stocked cabinet',
     enter: face(5.2, 5.2, 2, -2, off),
-    anim: { duration: 8, nodes: animNodes, at },
+    anim: { duration: ctx.activity ? 8 : 0, nodes: animNodes, at },
     pieces: () => inner.children.flatMap(c => c === venue ? venue.children : [c])
   };
 }

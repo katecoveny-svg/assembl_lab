@@ -617,6 +617,23 @@ for j, kk in enumerate(CAB_ITEMS):
     bmp.to_mesh(me)
     bmp.free()
     me.materials.append(M[m])
+    if kk == 'toastie':
+        # Two triangular slices, a toasted crust and visible filling, sharing one stock-slot mesh.
+        layers = bmesh.new()
+        for radius, depth, lift, material in [(.075,.012,-.011,0),(.071,.008,-.002,1),(.068,.004,.003,2),(.075,.012,.011,0)]:
+            made = bmesh.ops.create_cone(layers, cap_ends=True, cap_tris=False, segments=3,
+                                         radius1=radius, radius2=radius, depth=depth)['verts']
+            for v in made: v.co.z += lift
+            for face in {face for v in made for face in v.link_faces}: face.material_index=material
+        # Small parallel toasted ridges on the upper slice; kept shallow for believable scale.
+        for offset in (-.022,0,.022):
+            made=bmesh.ops.create_cube(layers,size=1)['verts']
+            bmesh.ops.scale(layers,vec=(.052,.002,.001),verts=made)
+            bmesh.ops.translate(layers,vec=(0,offset,.0175),verts=made)
+            for face in {face for v in made for face in v.link_faces}: face.material_index=3
+        toasted=bpy.data.meshes.new('portion_toastie_layered');layers.to_mesh(toasted);layers.free()
+        for material in ('bake','white','leaf','cocoa'): toasted.materials.append(M[material])
+        me=toasted
     if kk == 'muffin':  # a baked top on a blush paper case
         top = bm_sphere(0.05, 20, 10)
         for v in top.verts:
