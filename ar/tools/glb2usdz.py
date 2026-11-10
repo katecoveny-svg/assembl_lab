@@ -1,4 +1,6 @@
-"""GLB to USDZ for AR Quick Look, with Pixar's OpenUSD (pip install usd-core).
+"""GLB to USDZ for AR Quick Look, with Pixar's OpenUSD.
+
+  Dependencies: python3 -m pip install usd-core numpy Pillow
 
   python3 ar/tools/glb2usdz.py in.glb out.usdz [--anchor horizontal|vertical]
 
