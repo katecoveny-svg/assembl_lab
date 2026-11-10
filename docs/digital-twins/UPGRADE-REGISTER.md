@@ -17,7 +17,7 @@ All nine pages passed inline-module syntax checks and browser checks at 375 × 8
 | Emergency department `/ed/` | Presentation and sharp camera; public safety notice preserved | Audit existing `/ed/floor/` SimReady assets; improve surface detail without changing patient-flow assumptions |
 | Dairy `/dairy/` | Presentation and sharp camera | Audit existing `/dairy/plant/`; pipe joins, stainless roughness and signage; retain operational colours |
 | Home-energy `/home/` | Presentation and sharp camera | Insulation/roof cutaway, furnishings and landscape; preserve energy controls |
-| Office `/office/` | Presentation and sharp camera | Desk/chair kits, glazing, ceiling lighting and interior material scale |
+| Office `/office/` | Presentation, sharp camera and 120 detailed instanced workstations with oak tops, metal legs, monitor stands, keyboards and upholstered task chairs | Glazing, ceiling lighting and scanned interior material scale |
 | Lodge `/stay/` | Presentation and sharp camera | Guest-room furnishings, breakfast deck and lighting; preserve room-state visibility |
 | Hardware retail `/retail/` | Presentation and sharp camera | Timber racks, shelves, packaged goods and yard surfaces |
 | Tourism `/tourism/` | Presentation and sharp camera | Terrain, regional landmark fidelity and readable geographic scale; keep data map clear |
@@ -27,3 +27,19 @@ Additional twins linked by the Lab home are `/energy/`, `/cars/`, `/delivery/`, 
 ## Release evidence
 
 No Lab deployment yet for this pass. The main-site homepage release is separate: assemblnz-f0afd79d PR #1864, production merge fa9bb187c16d53a31a424511e725b4e3525ecb8e. Its live media-path correction is tracked separately. Do not infer that a homepage release publishes this Lab repository.
+
+## Additional source classification
+
+Inspected the remaining routes before applying a generic scene upgrade:
+
+- Energy uses a Three.js r128 street renderer with cohort, tariff and CSV controls.
+- Cars has a dedicated GLB stage and poster fallback; retain its records and annotations.
+- Delivery combines a point-cloud map with a separate floor canvas.
+- Moving uses a geographic scene and fictional tenant journey.
+- Viaduct separates its waterfront map from restaurant-plan canvas and simulated agent states.
+- Trades is a PDF.js plan viewer with SVG measurement overlays, not a 3D room.
+- Household is a local browser editor with strict CSP, not a stage-based twin.
+- Kitchen has its own Three.js interactive fridge, food selection and door control.
+- Food and Everyday are explanatory interactive calculations, not building scenes.
+
+These are classified, not visually upgraded. Office Level 1 camera and detailed workstation geometry were reviewed in the browser without console errors; inline module syntax passed. Screenshot: task outputs `scene-upgrade/office-workstations.png`. Changes are pushed to draft Lab PR #127, not deployed.
