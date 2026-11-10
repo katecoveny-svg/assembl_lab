@@ -1,0 +1,223 @@
+{
+  "encoding": "RGBM",
+  "range": 4,
+  "maps": [
+    {
+      "name": "floor",
+      "origin": [
+        -8.89,
+        0.167,
+        5.89
+      ],
+      "u": [
+        17.78,
+        0,
+        0
+      ],
+      "v": [
+        0,
+        0,
+        -11.78
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "min": 0,
+      "max": 0.5596377849578857,
+      "mean": 0.08270754665136337,
+      "max_quantisation_error": 0.0009853541851043701,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "floor.webp",
+      "bytes": 653522,
+      "sha256": "70df08f4f4350a9ddd87bdbeaba28cfda550d21c54c3df83168b0d27ac18a0c1"
+    },
+    {
+      "name": "ceiling",
+      "origin": [
+        -8.89,
+        3.248,
+        -5.89
+      ],
+      "u": [
+        17.78,
+        0,
+        0
+      ],
+      "v": [
+        0,
+        0,
+        11.78
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "min": 0,
+      "max": 0.5537300109863281,
+      "mean": 0.08164206892251968,
+      "max_quantisation_error": 0.0009154677391052246,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "ceiling.webp",
+      "bytes": 674116,
+      "sha256": "e3d1c99e400a74c038adb4b3e5fe54dca1e753f6d250224f506047eb48f6547a"
+    },
+    {
+      "name": "right",
+      "origin": [
+        8.899,
+        0.16,
+        -5.89
+      ],
+      "u": [
+        0,
+        0,
+        11.78
+      ],
+      "v": [
+        0,
+        3.08,
+        0
+      ],
+      "size": [
+        1024,
+        256
+      ],
+      "min": 0,
+      "max": 0.32839757204055786,
+      "mean": 0.05603666231036186,
+      "max_quantisation_error": 0.0005599558353424072,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "right.webp",
+      "bytes": 159040,
+      "sha256": "a2e2e1c6e47d50a5e87ffb94a87bacb29745591d133dbfaf739c29697b5e85a6"
+    },
+    {
+      "name": "left",
+      "origin": [
+        -8.899,
+        0.16,
+        5.89
+      ],
+      "u": [
+        0,
+        0,
+        -11.78
+      ],
+      "v": [
+        0,
+        3.08,
+        0
+      ],
+      "size": [
+        1024,
+        256
+      ],
+      "min": 0,
+      "max": 0.5121949315071106,
+      "mean": 0.07086973637342453,
+      "max_quantisation_error": 0.001030564308166504,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "left.webp",
+      "bytes": 137000,
+      "sha256": "9e03a2e365e110ba8d33e97cab945a3fed895335fc7bb1bae9d3e0ab93044870"
+    },
+    {
+      "name": "back",
+      "origin": [
+        -0.5,
+        0.16,
+        -5.877
+      ],
+      "u": [
+        9.39,
+        0,
+        0
+      ],
+      "v": [
+        0,
+        3.08,
+        0
+      ],
+      "size": [
+        1024,
+        256
+      ],
+      "min": 0,
+      "max": 0.22425946593284607,
+      "mean": 0.02104128897190094,
+      "max_quantisation_error": 0.0002767294645309448,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "back.webp",
+      "bytes": 134738,
+      "sha256": "5e016c5858bb4b7e83611c0ad21435ee8b879877ccef14f0c9c5db192073cb19"
+    },
+    {
+      "name": "counter-front",
+      "origin": [
+        1.55,
+        0.25,
+        1.622
+      ],
+      "u": [
+        6.9,
+        0,
+        0
+      ],
+      "v": [
+        0,
+        0.94,
+        0
+      ],
+      "size": [
+        1024,
+        256
+      ],
+      "min": 0,
+      "max": 0.2658199071884155,
+      "mean": 0.14702020585536957,
+      "max_quantisation_error": 0.00036881864070892334,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "counter-front.webp",
+      "bytes": 146668,
+      "sha256": "ddfd4b72542ca1ae4441062d8ec2332a44da20bf869650c00674a6fd5778149a"
+    },
+    {
+      "name": "counter-top",
+      "origin": [
+        1.45,
+        1.207,
+        1.625
+      ],
+      "u": [
+        7.1,
+        0,
+        0
+      ],
+      "v": [
+        0,
+        0,
+        -0.95
+      ],
+      "size": [
+        1024,
+        256
+      ],
+      "min": 0,
+      "max": 0.17236314713954926,
+      "mean": 0.03236166015267372,
+      "max_quantisation_error": 0.00021526217460632324,
+      "processing": "OpenImageDenoise HDR, image-only; raw EXR retained",
+      "file": "counter-top.webp",
+      "bytes": 180976,
+      "sha256": "ca42d7bc19540ebf00c2e45929c322f3923e9e5fac1aa915e1b30881f8d8f2c9"
+    }
+  ],
+  "source_sha256": "0833a77fef267f00d7e7114c3805b086c638b44da4bd74e54af4ba84353ec1cf",
+  "source_glb_sha256": "57ed57cde617b38c05f25629b7f7bebf4936bd39d18673d8e5914407161b76f8",
+  "samples": 128,
+  "ceiling_height": 3.25,
+  "limitation": "Uniform sky transport for fixed shell. No direct sun, practical lamps or dynamic furniture/stock shadows are baked. Not a measured lighting calculation.",
+  "processed": true,
+  "totalBytes": 2086060
+}

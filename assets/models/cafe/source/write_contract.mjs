@@ -63,7 +63,9 @@ const contract = {
     'ambientCG timber, fabric and terrazzo PBR textures; both boards are live canvases drawn by the page.',
     'Materials do not switch with the page dark theme (the maquette card does).'],
   limits: ['Kinematic display geometry, not a fit-out drawing, an equipment spec or a measured venue.', 'The venue is fictional. Equipment is generic and unbranded.', 'Nothing in the model is live data; everything it shows is the simulation\'s state.'],
-  budget: { glb_bytes_max: 8000000, triangles_max: 150000, materials_max: 26, textures_max: 16 },
+  // Detail allowance for linked ambientCG pastry/cookie scans and hollow vessels.
+  // This is a delivery ceiling, not a claim of physical-phone performance.
+  budget: { glb_bytes_max: 12000000, triangles_max: 380000, materials_max: 28, textures_max: 24 },
   actual: { glb_bytes: bytes.length, glb_sha256: createHash('sha256').update(bytes).digest('hex'), triangles_rendered: tris, triangles_unique_meshes: uniqueTris, nodes: json.nodes.length,
     meshes: json.meshes.length, primitives: json.meshes.reduce((a, m) => a + m.primitives.length, 0), materials: (json.materials || []).length, textures: (json.textures || []).length,
     extensions_used: json.extensionsUsed || [], generator: json.asset.generator },

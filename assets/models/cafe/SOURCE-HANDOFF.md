@@ -1,14 +1,30 @@
 # Café twin venue: source handoff
 
-## 10 November material refinement — local candidate
+## 11 November counter detail — current local candidate
 
-The current branch refines the authored venue with ambientCG Wood041, Fabric041 and Terrazzo019L, physical glass, revised lighting, three licensed Poly Haven pot plants and an eye-level browser view. Provenance is in `textures/NOTICE.md`. The existing simulation and rig names remain the state authority.
+The current venue is **11,137,204 bytes / 352,087 rendered triangles**, with 28 materials and 23 textures. It adds hollow cups, pouring pitchers, an open knock box, machine-panel/gauge details and licensed ambientCG cookie/croissant scans. The original scans and editable venue remain separate from browser derivatives. See [the counter review](../../../docs/digital-twins/CAFE-COUNTER-REVIEW.md) for sources, measured budgets, 24 passing checks and actual browser captures. Sky transport was rebaked (2,086,060 bytes). GLB/map URLs now carry version hashes to prevent stale assets. The schematic street planting is confined to maquette mode.
 
-Current optimised asset: **5,668,424 bytes, 137,741 rendered triangles, 25 materials, 14 textures**. Plant display meshes are reduced before instancing; original source scans remain intact. The original 150k geometry cap is restored, with a 16-texture cap. Mobile LOD/performance acceptance is outstanding. Texture compression retains alpha on leaves.
+Both prepared AR packages include the detail, ceiling and floor infill, retain all 341,717 visible triangles and pass OpenUSD/ARKit file validation. Their USDZ files are 19.14 MB each. Browser shader lighting is not included, glass is approximated and real-device placement remains unverified. Overall photographic quality and deployment remain open.
 
-Build with installed Blender 5.1.x: `blender -b -t 2 --python assets/models/cafe/source/build_cafe.py -- --no-render`; run `source/optimise.mjs` with the dependencies named in its header, then `source/write_contract.mjs`. Float-derived helper names are formatted to avoid a Blender 5.1.1 numeric-suffix crash.
+The dated entries below record earlier passes; their counts and release statements are historical.
 
-The intermediate material-only Cycles render and desktop browser scene were inspected. Fresh counter-detail and overview renders have been inspected after refining pendants, food geometry and plant density. Final Blender reopen/render and mobile visual review remain outstanding. The later cabinet/AR follow-up below supersedes this pass: current architectural GLB/USDZ files are rebuilt on the branch; the public deployment is still unchanged. No deployment or physical phone AR verification has occurred.
+## 11 November sky transport and enclosure — local review
+
+The browser adds a cutaway ceiling, counter-floor infill, seven Cycles sky-transport maps (2,081,976 bytes), pendant-aligned downlights and ceiling rain occlusion. The GLB/master remain unchanged. See [the review](../../../docs/digital-twins/CAFE-DAYLIGHT-REVIEW.md) for reproduction, source hashes, 23 passing tests, browser evidence and limitations. This browser-only lighting layer is not in the prepared AR snapshot. Overall photorealism is still unfinished.
+
+## 10 November scanned food and decision workbench — review candidate
+
+The current branch adds an ambientCG 3DCake001 photogrammetry muffin to the earlier Wood041, Fabric041 and Terrazzo019L material pass. The 49,861-triangle master with 2K maps remains separate from the 13,373-triangle browser derivative with 1K colour, normal and AO maps. Eight stocked positions reuse one mesh and keep the existing stock/depletion rig. Provenance, source hashes and transformation details are in `source/muffin-source.json` and `textures/NOTICE.md`.
+
+Current optimised venue: **6,941,244 bytes, 241,461 rendered triangles, 26 materials, 17 textures**. The geometry budget is now 250k to retain scanned silhouette and seams across eight reused portions; it is not a claim of measured phone performance. Other foods remain authored approximations. The scene still falls short of the supplied photographic reference.
+
+Rebuild with Blender 5.1.x using `source/build_cafe.py`, then `source/optimise.mjs` and `source/write_contract.mjs`. `source/prepare-food.mjs` recreates the master/browser scan pair from the original uncompressed input; dependencies are named in its header. `source/review-food.py` renders each derivative under the same studio lighting. Source scans are not overwritten.
+
+The main browser retains physical glass with reduced roughness and excludes transmissive panes from opaque shadow/ambient-occlusion treatment. Static AR files approximate transmission with alpha 0.06: cabinet food is clearer, but USDZ and GLB glass are not visually identical. Fresh tabletop/full-size files retain all 234,089 export triangles, with no dropped or simplified meshes. Both pass OpenUSD validators and ARKit compliance; both were reopened and the tabletop cabinet was rendered in Blender. Physical iOS/Android placement remains unverified. AR stays an architectural snapshot; simulation decisions and activity stay in the browser.
+
+The café page now opens with three reversible experiments and a comparison of the active selection against the original setup under the same demand, season, costs and weather. It shows weekly EBITDA, waste, walk-aways and staff-hours. A text decision brief records inputs, changes, results and the manager-review boundary. Full settings, accounts, data comparison, sources and proposed AI authority remain available under Go deeper. Imported data is explicitly a separate comparison, not a calibrated or connected simulation. First Shift remains independent.
+
+PRs #127 and #128 were verified merged before this pass. This branch is a new review candidate; its changes are not claimed deployed. Desktop/mobile browser checks and model tests are recorded in `docs/digital-twins/CAFE-DECISION-REVIEW.md`.
 
 The sections below describe the **3 November baseline**, retained to explain its rig and original tradeoffs; its zero-texture and size statements are historical.
 

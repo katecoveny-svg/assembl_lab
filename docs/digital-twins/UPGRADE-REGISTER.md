@@ -1,8 +1,17 @@
 # Digital twin upgrade register — 10 November 2026
 
+## 11 November — café counter detail, local checkpoint
+
+[Counter review](CAFE-COUNTER-REVIEW.md): ambientCG cookie/croissant scans, hollow vessels, machine detail, eye-level coffee camera and legacy planting confined to the maquette. Current browser GLB 11.14 MB / 352,087 rendered triangles; sky maps rebaked. 24 tests pass; desktop/mobile viewport reviewed. Fresh table/full-size AR files retain 341,717 triangles, pass USD/ARKit file checks and remain physically untested. Source-versioned URLs fix stale model/map loading. Not deployed; the full photorealism target remains open.
+
+
 Workflow: installed Codex skill `digital-twin-upgrade`; portable source also in the main assembl repository at `docs/factory/digital-twin-upgrade/SKILL.md`.
 
 ## Current pass
+
+11 November follow-up: [sky transport and enclosure](CAFE-DAYLIGHT-REVIEW.md). Local only; 23 tests pass. Prepared AR files retain their earlier snapshot and do not contain the browser lighting layer.
+
+Latest café follow-up: [decision workbench, scanned food and daylight review](CAFE-DECISION-REVIEW.md). This supersedes the older 5.66 MB café size below: the current local venue is 6.94 MB. The user has rejected overall café realism, so passing code/asset checks are not visual acceptance. The homepage Blender room-master-v3 was also rejected and must not be propagated to other twins. Finish the reference scene before multiplying its furnishing or planting choices.
 
 The nine stage-based twins now opt into `assets/twin/editorial.css`: clearer typography, calmer panels, more deliberate spacing and mobile controls. Their camera blur is disabled so detail remains readable. This is a presentation improvement, not a claim of photorealistic replacement geometry.
 

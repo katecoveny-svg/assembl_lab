@@ -45,7 +45,7 @@ test('GLB matches its contract: id, every required node, measured pivots, bytes 
   assert.equal(createHash('sha256').update(bytes).digest('hex'), contract.actual.glb_sha256);
 });
 
-test('budget: at most 8 MB, 150k rendered triangles, 26 materials, 16 PBR textures, no compression extensions', () => {
+test('budget: at most 12 MB, 380k rendered triangles, 28 materials, 24 PBR textures, no compression extensions', () => {
   const b = contract.budget, a = contract.actual;
   assert.ok(bytes.length <= b.glb_bytes_max, `${bytes.length} bytes`);
   assert.ok(a.triangles_rendered <= b.triangles_max, `${a.triangles_rendered} tris`);
@@ -58,6 +58,47 @@ test('budget: at most 8 MB, 150k rendered triangles, 26 materials, 16 PBR textur
   }
   assert.ok(!(asset.extensionsUsed || []).some(e => /draco|meshopt/i.test(e)), 'the twin stage loader has no Draco or meshopt decoder');
   assert.match(asset.asset.generator, /Blender|glTF-Transform/);
+});
+
+test('scanned muffins keep their UV materials and rest on both cabinet shelves', () => {
+  const nodes = asset.nodes.filter(n => /^CAB_MUFFIN_[0-7]$/.test(n.name));
+  assert.equal(nodes.length, 8);
+  assert.equal(new Set(nodes.map(n => n.mesh)).size, 1, 'stock portions share the scan geometry');
+  const root = hierarchy();
+  for (const node of nodes) {
+    const primitives = asset.meshes[node.mesh].primitives;
+    const lowest = Math.min(...primitives.map(p => asset.accessors[p.attributes.POSITION].min[1]));
+    const slot = Number(node.name.split('_').at(-1));
+    const shelf = .15 + (slot >= 4 ? 1.376 : 1.12);
+    assert.ok(Math.abs(wp(root.getObjectByName(node.name)).y + lowest - shelf) < .0001, node.name + ' should touch its shelf');
+    for (const p of primitives) {
+      const m = asset.materials[p.material];
+      assert.match(m.name, /muffin_scan/);
+      assert.ok(m.pbrMetallicRoughness.baseColorTexture && m.normalTexture && m.occlusionTexture);
+      assert.ok(p.attributes.TEXCOORD_0 !== undefined);
+    }
+  }
+});
+
+test('counter scans retain their maps, scale and shared geometry without becoming stock nodes', () => {
+  const cookie=asset.nodes.filter(n=>/^DISPLAY_COOKIE_\d+$/.test(n.name));
+  const pastry=asset.nodes.filter(n=>/^DISPLAY_CROISSANT_\d+$/.test(n.name));
+  assert.equal(cookie.length,5);assert.equal(pastry.length,2);
+  for(const [nodes,width] of [[cookie,.062],[pastry,.18]]) {
+    assert.equal(new Set(nodes.map(n=>n.mesh)).size,1,'copies share the scan mesh');
+    for(const node of nodes){
+      assert.equal(node.extras.licence,'CC0-1.0');
+      assert.equal(node.extras.role,'static styling, not simulated stock');
+      assert.ok(!REQUIRED_NODES.includes(node.name));
+      for(const primitive of asset.meshes[node.mesh].primitives){
+        const mat=asset.materials[primitive.material],pos=asset.accessors[primitive.attributes.POSITION];
+        assert.ok(mat.normalTexture && mat.occlusionTexture && mat.pbrMetallicRoughness.baseColorTexture);
+        assert.ok(primitive.attributes.TEXCOORD_0!==undefined);
+        assert.ok(Math.abs(Math.max(pos.max[0]-pos.min[0],pos.max[2]-pos.min[2])-width)<.0001);
+        assert.ok(Math.abs(pos.min[1])<.0001,'scan base is grounded');
+      }
+    }
+  }
 });
 
 test('authored in the page plan: tables, queue spots and stations sit where the simulation puts people', () => {
@@ -127,7 +168,7 @@ test('stage v2 is additive: v1 untouched, the café alone opts in, the other eig
   const v2 = readFileSync(new URL('../../assets/twin/2/stage.js', import.meta.url), 'utf8');
   assert.match(v2, /export \* from '\.\.\/1\/stage\.js'/);
   assert.match(v2, /spec\.contract !== contract/);
-  assert.ok(html.includes('from "/assets/twin/2/stage.js"') && !html.includes('from "/assets/twin/1/stage.js"'));
+  assert.ok(html.includes('from "/assets/twin/2/stage.js?v=counter-20261111"') && !html.includes('from "/assets/twin/1/stage.js"'));
   for (const t of ['dairy', 'home', 'store', 'ed', 'office', 'tourism', 'stay', 'retail']) {
     const h = readFileSync(new URL(`../../${t}/index.html`, import.meta.url), 'utf8');
     assert.ok(h.includes('/assets/twin/1/stage.js') && !h.includes('/assets/twin/2/'), t);

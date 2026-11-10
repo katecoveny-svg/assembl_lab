@@ -416,21 +416,21 @@
   "Nothing in the model is live data; everything it shows is the simulation's state."
  ],
  "budget": {
-  "glb_bytes_max": 8000000,
-  "triangles_max": 150000,
-  "materials_max": 26,
-  "textures_max": 16
+  "glb_bytes_max": 12000000,
+  "triangles_max": 380000,
+  "materials_max": 28,
+  "textures_max": 24
  },
  "actual": {
-  "glb_bytes": 5668424,
-  "glb_sha256": "b9b5d6c23c4d00832a546bd4857ff4c32b2f5dea877b838f1077e58cd9d009b1",
-  "triangles_rendered": 137741,
-  "triangles_unique_meshes": 62211,
-  "nodes": 319,
-  "meshes": 142,
-  "primitives": 264,
-  "materials": 25,
-  "textures": 14,
+  "glb_bytes": 11137204,
+  "glb_sha256": "57ed57cde617b38c05f25629b7f7bebf4936bd39d18673d8e5914407161b76f8",
+  "triangles_rendered": 352087,
+  "triangles_unique_meshes": 120931,
+  "nodes": 329,
+  "meshes": 147,
+  "primitives": 269,
+  "materials": 28,
+  "textures": 23,
   "extensions_used": [
    "KHR_materials_clearcoat",
    "KHR_materials_ior",

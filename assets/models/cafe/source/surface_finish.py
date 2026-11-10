@@ -79,4 +79,6 @@ def refine(materials, collection, texture_dir):
     glass.inputs['Alpha'].default_value = 1
     glass.inputs['Transmission Weight'].default_value = 1
     glass.inputs['IOR'].default_value = 1.45
-    glass.inputs['Roughness'].default_value = .06
+    # A display cabinet has polished glass, not a frosted surface. Roughness
+    # compounds across its front, shelf and back panes in transmission.
+    glass.inputs['Roughness'].default_value = .008
