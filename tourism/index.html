@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-feeds="fx,calendar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-feeds="fx,calendar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Aotearoa Tourism Flows</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -424,6 +424,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <style>
 /* tourism on the twin stage: the views and layer chips share the top-left corner; the legend sits above the play bar */
 .ovtop{position:absolute;left:12px;top:12px;display:grid;gap:6px;justify-items:start;max-width:calc(100% - 340px);z-index:1;pointer-events:none}
@@ -702,7 +703,7 @@ sizeCanvas();
 let hourNow = 15, dayRun = false;// the sun's hour (the dial's hand); tap the dial's centre to let the day run
 const stage = createStage({ id: "tourism", canvas, box, place: "nz", north: Math.PI, extent: 80, tableY: -1.08,
   controls: { minDistance: 25, maxDistance: 330, maxPolarAngle: Math.PI * 0.44, enablePan: true, screenSpacePanning: false },
-  ao: { radius: 2.2, intensity: 0.8 }, tilt: 1.8, tiltBand: 0.3,
+  ao: { radius: 2.2, intensity: 0.8 }, tilt: 0, tiltBand: 0.3,
   onResize: () => { sizeCanvas(); stage.resize(); pointsScale(); drawSeason(); },
   onTheme: () => applyTheme() });
 if (LITE && !/[?&]quality=/.test(location.search)) stage.setTier("low");

@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fuel,power,weather"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fuel,power,weather"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Auckland Office Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -315,6 +315,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <script>
 // One model drives the motion, the meters and the yearly numbers.
 const TWIN = (() => {
@@ -479,7 +480,7 @@ function stateAt(p,h){
 const canvas=$("scene"), box=$("stagebox");
 function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||380,Math.min(innerHeight*0.72,w*0.78));canvas.style.height=Math.round(h)+"px"}
 sizeCanvas();
-const stage=createStage({id:"office",canvas,box,place:"auckland",extent:34,controls:{minDistance:12,maxDistance:150},ao:{radius:1.1},tilt:3.5,tableY:-1.12,
+const stage=createStage({id:"office",canvas,box,place:"auckland",extent:34,controls:{minDistance:12,maxDistance:150},ao:{radius:1.1},tilt: 0,tableY:-1.12,
   onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
 const SM=stage.M, geo=stage.geo, RY=3*FG;
 const grp=(x=0,y=0,z=0,parent)=>{const g=new THREE.Group();g.position.set(x,y,z);(parent||stage.root).add(g);return g};
@@ -523,14 +524,41 @@ for(let f=0;f<3;f++){const y=f*FG,g=grp(0,y,0);G.fl.push(g);
   const lamp=new THREE.Mesh(new THREE.PlaneGeometry(18,17.5),new THREE.MeshBasicMaterial({map:LAMP_TEX,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,color:0xF2C86A}));
   lamp.rotation.x=-Math.PI/2;lamp.position.set(-2.3,0.37,-0.6);g.add(lamp);
   floorFx.push({lamp,y,air:null})}
-// desks and monitors, instanced across all three floors
-const desks=new THREE.InstancedMesh(geo.rbox(1.4,0.06,0.75,0.02),SM.timber,120),deskBase=new THREE.InstancedMesh(geo.rbox(1.34,0.66,0.68,0.04),SM.card2,120),mons=new THREE.InstancedMesh(geo.rbox(0.55,0.34,0.05,0.02),SM.dark,120);
-desks.castShadow=deskBase.castShadow=mons.castShadow=true;desks.receiveShadow=deskBase.receiveShadow=true;
-for(let f=0;f<3;f++)for(let k=0;k<40;k++){const r=Math.floor(k/8),c=k%8,i=f*40+k,x=-7.5+c*1.55,z=ROWS[r],y=f*FG+0.35;
-  dummy.position.set(x,y+0.72,z);dummy.rotation.set(0,0,0);dummy.updateMatrix();desks.setMatrixAt(i,dummy.matrix);
-  dummy.position.set(x,y+0.36,z);dummy.updateMatrix();deskBase.setMatrixAt(i,dummy.matrix);
-  dummy.position.set(x,y+0.95,z-SEAT[r]*0.35);dummy.updateMatrix();mons.setMatrixAt(i,dummy.matrix)}
-stage.root.add(deskBase,desks,mons);
+// Detailed workstations remain instanced: 120 seats, no change to occupancy or energy.
+const workstationParts=[];
+function workstationPart(name,geometry,material,offset,rotation=0,yaw=0){
+  const mesh=new THREE.InstancedMesh(geometry,material,120);mesh.name=name;
+  mesh.castShadow=mesh.receiveShadow=true;stage.root.add(mesh);
+  workstationParts.push({mesh,offset,rotation,yaw});return mesh;
+}
+const chairFabric=SM.tint(0x654a4e,{roughness:.93});
+const deskMetal=SM.tint(0x6d686b,{roughness:.48,metalness:.55});
+workstationPart("Oak desktop",geo.rbox(1.4,.055,.75,.02),SM.timber,[0,.73,0]);
+for(const x of[-.58,.58]){
+  workstationPart("Desk leg",geo.rbox(.045,.7,.045,.008),deskMetal,[x,.35,0]);
+  workstationPart("Desk foot",geo.rbox(.055,.035,.62,.01),deskMetal,[x,.025,0]);
+}
+workstationPart("Cable tray",geo.rbox(1.1,.06,.12,.012),deskMetal,[0,.66,-.18]);
+workstationPart("Monitor frame",geo.rbox(.55,.34,.035,.015),SM.dark,[0,1.02,-.22]);
+workstationPart("Monitor stand",geo.rbox(.035,.14,.035,.006),deskMetal,[0,.81,-.22]);
+workstationPart("Monitor foot",geo.rbox(.23,.015,.16,.008),deskMetal,[0,.77,-.22]);
+workstationPart("Keyboard",geo.rbox(.38,.018,.13,.008),SM.dark,[0,.77,.14]);
+workstationPart("Task chair seat",geo.rbox(.46,.08,.46,.055),chairFabric,[0,.46,.72]);
+workstationPart("Task chair back",geo.rbox(.46,.45,.07,.055),chairFabric,[0,.75,.94],-.1);
+workstationPart("Chair stem",geo.cyl(.035,.36,10),deskMetal,[0,.23,.72]);
+for(const x of[-.23,.23])workstationPart("Chair arm",geo.rbox(.035,.035,.29,.012),deskMetal,[x,.66,.72]);
+for(let spoke=0;spoke<5;spoke++){
+  const a=spoke*Math.PI*2/5;
+  workstationPart("Chair base spoke",geo.rbox(.035,.025,.24,.008),deskMetal,[Math.sin(a)*.12,.07,.72+Math.cos(a)*.12],0,a);
+  workstationPart("Chair caster",geo.sphere(.035,1),SM.dark,[Math.sin(a)*.24,.035,.72+Math.cos(a)*.24]);
+}
+for(let f=0;f<3;f++)for(let k=0;k<40;k++){
+  const r=Math.floor(k/8),c=k%8,i=f*40+k,x=-7.5+c*1.55,z=ROWS[r],y=f*FG+.35,sign=Math.sign(SEAT[r]);
+  for(const {mesh,offset,rotation,yaw} of workstationParts){
+    dummy.position.set(x+offset[0],y+offset[1],z+sign*offset[2]);
+    dummy.rotation.set(sign*rotation,(sign<0?Math.PI:0)+sign*yaw,0);dummy.scale.set(1,1,1);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+  }
+}
 // columns tying the floors, and the glass lift shaft in the core
 for(const [x,z] of [[-14.6,-9.6],[14.6,-9.6],[-14.6,9.6],[14.6,9.6]])put(geo.cyl(0.12,RY),OM.mull,x,RY/2,z,{});
 const lift=put(geo.rbox(1.6,RY,1.6,0.05),OM.glass,CORE.x+1.2,RY/2+0.3,CORE.z,{cast:false});

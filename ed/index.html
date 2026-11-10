@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-feeds="ed,urgentcare,wastewater,calendar,weather,edhistory" data-district="auckland-district"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-feeds="ed,urgentcare,wastewater,calendar,weather,edhistory" data-district="auckland-district"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Emergency Department Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -327,6 +327,7 @@ details.tbl[open] summary{margin-bottom:6px}
 
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <script type="module">import { ED } from "/ed/sim.js"; window.ED = ED;</script>
 <script type="module">
 import {THREE,createStage,nzDate} from "/assets/twin/1/stage.js";
@@ -347,7 +348,7 @@ start();
 const canvas=$("scene"),box=$("stagebox");
 function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||420,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=Math.round(h)+"px"}
 sizeCanvas();
-const stage=createStage({id:"ed",canvas,box,place:"auckland",extent:36,controls:{minDistance:10,maxDistance:120},ao:{radius:1.1},tilt:4,
+const stage=createStage({id:"ed",canvas,box,place:"auckland",extent:36,controls:{minDistance:10,maxDistance:120},ao:{radius:1.1},tilt: 0,
   onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
 const {M,geo}=stage;const dummy=new THREE.Object3D();
 const put=(g,mat,x,y,z,o={})=>stage.mesh(g,mat,[x,y,z],o);

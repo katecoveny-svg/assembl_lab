@@ -1,0 +1,38 @@
+[
+  {
+    "id": "Wood041",
+    "source": "https://ambientcg.com/a/Wood041",
+    "licence": "CC0-1.0",
+    "downloaded": "2026-11-10",
+    "archiveSHA256": "84dc97abec809e606b21961db07f6ed05d590b71a3a132e34d9db52cae9ed84b",
+    "maps": [
+      "Color",
+      "NormalGL",
+      "Roughness"
+    ]
+  },
+  {
+    "id": "Fabric041",
+    "source": "https://ambientcg.com/a/Fabric041",
+    "licence": "CC0-1.0",
+    "downloaded": "2026-11-10",
+    "archiveSHA256": "4597421c2bca4ed743d6f96af5efd6f4f93dec725b7b4a9c1ec8cd98d5a3f122",
+    "maps": [
+      "Color",
+      "NormalGL",
+      "Roughness"
+    ]
+  },
+  {
+    "id": "Fabric030",
+    "source": "https://ambientcg.com/a/Fabric030",
+    "licence": "CC0-1.0",
+    "downloaded": "2026-11-10",
+    "archiveSHA256": "82d4d00ccf901cf4707c5489005945ab8574933fc60437e26c6737f0436699e0",
+    "maps": [
+      "Color",
+      "NormalGL",
+      "Roughness"
+    ]
+  }
+]

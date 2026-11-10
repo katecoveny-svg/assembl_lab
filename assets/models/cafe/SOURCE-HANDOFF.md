@@ -1,5 +1,18 @@
 # Café twin venue: source handoff
 
+## 10 November material refinement — local candidate
+
+The current branch refines the authored venue with ambientCG Wood041, Fabric041 and Terrazzo019L, physical glass, revised lighting, three licensed Poly Haven pot plants and an eye-level browser view. Provenance is in `textures/NOTICE.md`. The existing simulation and rig names remain the state authority.
+
+Current optimised asset: **5,665,572 bytes, 137,261 rendered triangles, 25 materials, 14 textures**. Plant display meshes are reduced before instancing; original source scans remain intact. The original 150k geometry cap is restored, with a 16-texture cap. Mobile LOD/performance acceptance is outstanding. Texture compression retains alpha on leaves.
+
+Build with installed Blender 5.1.x: `blender -b -t 2 --python assets/models/cafe/source/build_cafe.py -- --no-render`; run `source/optimise.mjs` with the dependencies named in its header, then `source/write_contract.mjs`. Float-derived helper names are formatted to avoid a Blender 5.1.1 numeric-suffix crash.
+
+The intermediate material-only Cycles render and desktop browser scene were inspected. Fresh counter-detail and overview renders have been inspected after refining pendants, food geometry and plant density. Final Blender reopen/render and mobile visual review remain outstanding. Separate static GLB/USDZ review candidates have been refreshed; they do not replace the animated production AR files. AR snapshot source now has a café-only PBR-preservation option, but published AR files are still the earlier versions. No deployment or physical phone AR verification has occurred.
+
+The sections below describe the **3 November baseline**, retained to explain its rig and original tradeoffs; its zero-texture and size statements are historical.
+
+
 **Contract:** `assembl.cafe.v1` · **Route:** `/cafe/` · **Stage:** `/assets/twin/2/stage.js` (v1 + `loadTwinAsset`) · **Status:** integrated on branch `claude/3d-cafe`, awaiting Kate's review. Not released.
 
 ## What it is
@@ -87,3 +100,7 @@ Run here, in a cloud container with software GL only (SwiftShader), under heavy 
 - Playwright (Chromium headless, SwiftShader): 1440, 375 and 320 widths; keyboard focus and Enter on the 3D-detail buttons; reduced motion; no WebGL (poster); GLB 404 and wrong contract id (maquette fallback, honest note); state kept across the model/maquette switch; café, dinner and station-lever states. See the PR for results and screenshot paths.
 
 Not verified: any real GPU, phone, tablet or browser other than headless Chromium; frame rate or memory on real devices; AR (none is offered); visual parity between the Cycles stills and the browser (they are reviewed separately and differ by design, see above); screen-reader output beyond the existing labels and live region.
+
+## 10 November follow-up: presentation and activity view
+
+The current local browser defaults to the architectural venue without primitive people. `Show simulated activity` restores the customer, staff and comparison figures; this is a visual toggle only, and does not alter the underlying simulated day. The camera blur is off. The nine stage-based twins share an opt-in editorial stylesheet. See `docs/digital-twins/UPGRADE-REGISTER.md` for current evidence and remaining fidelity work; the historical verification sections above do not describe this new pass's deployment or device status.

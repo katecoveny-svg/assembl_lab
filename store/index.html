@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fpi,foodprices,weather,grocery,rts"><head><script src="/lab/preview-head.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="fpi,foodprices,weather,grocery,rts"><head><script src="/lab/preview-head.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Supermarket Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -394,6 +394,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <script>
 // A generic, fictional mid-size New Zealand suburban supermarket, simulated minute by minute.
 // Deterministic: every day is generated from a seeded RNG, so the same settings always give the same numbers.
@@ -739,7 +740,7 @@ const canvas=$("scene"),box=$("stagebox");
 const LITE=/[?&]lite\b/.test(location.search); // kept for old test links; ?quality=low is the stage's own switch
 function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.68));canvas.style.height=Math.round(h)+"px"}
 sizeCanvas();
-const stage=createStage({id:"store",canvas,box,place:"auckland",extent:42,tableY:-0.81,controls:{minDistance:8,maxDistance:150},ao:{radius:1.1},tilt:2.4,tiltBand:0.24,
+const stage=createStage({id:"store",canvas,box,place:"auckland",extent:42,tableY:-0.81,controls:{minDistance:8,maxDistance:150},ao:{radius:1.1},tilt: 0,tiltBand:0.24,
   onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
 const scene=stage.root,camera=stage.camera,controls=stage.controls,geo=stage.geo,SM=stage.M;
 const std=(o={})=>new THREE.MeshStandardMaterial(Object.assign({roughness:.9},o));

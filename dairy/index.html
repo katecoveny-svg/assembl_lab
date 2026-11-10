@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-place="hamilton" data-feeds="gdt,fx,power,weather"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-place="hamilton" data-feeds="gdt,fx,power,weather"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Dairy Plant Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -338,6 +338,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <script type="module">
 import {THREE,createStage,nzDate,clamp,smooth,calm} from "/assets/twin/1/stage.js";
 (()=>{
@@ -437,7 +438,7 @@ const CASES=[
 const canvas=$("scene"),box=$("stagebox");
 function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.72));canvas.style.height=Math.round(h)+"px"}
 sizeCanvas();
-const stage=createStage({id:"dairy",canvas,box,place:"hamilton",extent:50,controls:{minDistance:14,maxDistance:170},ao:{radius:2.4},tilt:4,
+const stage=createStage({id:"dairy",canvas,box,place:"hamilton",extent:50,controls:{minDistance:14,maxDistance:170},ao:{radius:2.4},tilt: 0,
   onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
 const {M,geo}=stage;
 const grp=(x=0,y=0,z=0,parent)=>{const g=new THREE.Group();g.position.set(x,y,z);(parent||stage.root).add(g);return g};

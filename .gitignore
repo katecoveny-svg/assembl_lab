@@ -9,3 +9,7 @@ tools/pointcloud/.cache/
 
 tools/pointcloud/.map-cache/
 output/
+
+# Local Blender build intermediates
+assets/models/cafe/source/__pycache__/
+assets/models/cafe/source/cafe-review.blend

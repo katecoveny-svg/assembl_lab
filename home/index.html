@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="power,genmix,fuel,weather"><head><script src="/lab/preview-head.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-place="auckland" data-feeds="power,genmix,fuel,weather"><head><script src="/lab/preview-head.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Kiwi Home Energy Twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -479,6 +479,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <style>.tw .flowkey{right:140px;bottom:46px}.tw .key{bottom:12px}@media (max-width:640px){.tw .flowkey{display:none}}html.tw-poster .key,html.tw-poster .flowkey{display:none!important}</style>
 
 <script>
@@ -765,7 +766,7 @@ const wx=x=>x+OX, wz=z=>z+OZ, cx=R=>wx((R.x[0]+R.x[1])/2), cz=R=>wz((R.z[0]+R.z[
 const canvas=$("scene"),box=$("stagebox");
 function sizeCanvas(){const w=box.clientWidth||800,h=Math.max(window.__minH||440,Math.min(innerHeight*0.74,w*0.74));canvas.style.height=Math.round(h)+"px"}
 sizeCanvas();
-const stage=createStage({id:"home",canvas,box,place:"auckland",extent:16,tableY:-0.72,fov:undefined,controls:{minDistance:6,maxDistance:60,maxPolarAngle:Math.PI*0.47},ao:{radius:0.5,intensity:0.75},tilt:3,tiltBand:0.2,
+const stage=createStage({id:"home",canvas,box,place:"auckland",extent:16,tableY:-0.72,fov:undefined,controls:{minDistance:6,maxDistance:60,maxPolarAngle:Math.PI*0.47},ao:{radius:0.5,intensity:0.75},tilt: 0,tiltBand:0.2,
   onResize:()=>{sizeCanvas();stage.resize()},onTheme:()=>applyTheme()});
 const renderer=stage.renderer||{capabilities:{getMaxAnisotropy:()=>1}};
 const SMALL=Math.min(screen.width||1280,screen.height||800)<700;
