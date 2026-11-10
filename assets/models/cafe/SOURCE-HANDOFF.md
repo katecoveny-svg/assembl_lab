@@ -4,11 +4,11 @@
 
 The current branch refines the authored venue with ambientCG Wood041, Fabric041 and Terrazzo019L, physical glass, revised lighting, three licensed Poly Haven pot plants and an eye-level browser view. Provenance is in `textures/NOTICE.md`. The existing simulation and rig names remain the state authority.
 
-Current optimised asset: **5,665,572 bytes, 137,261 rendered triangles, 25 materials, 14 textures**. Plant display meshes are reduced before instancing; original source scans remain intact. The original 150k geometry cap is restored, with a 16-texture cap. Mobile LOD/performance acceptance is outstanding. Texture compression retains alpha on leaves.
+Current optimised asset: **5,668,424 bytes, 137,741 rendered triangles, 25 materials, 14 textures**. Plant display meshes are reduced before instancing; original source scans remain intact. The original 150k geometry cap is restored, with a 16-texture cap. Mobile LOD/performance acceptance is outstanding. Texture compression retains alpha on leaves.
 
 Build with installed Blender 5.1.x: `blender -b -t 2 --python assets/models/cafe/source/build_cafe.py -- --no-render`; run `source/optimise.mjs` with the dependencies named in its header, then `source/write_contract.mjs`. Float-derived helper names are formatted to avoid a Blender 5.1.1 numeric-suffix crash.
 
-The intermediate material-only Cycles render and desktop browser scene were inspected. Fresh counter-detail and overview renders have been inspected after refining pendants, food geometry and plant density. Final Blender reopen/render and mobile visual review remain outstanding. Separate static GLB/USDZ review candidates have been refreshed; they do not replace the animated production AR files. AR snapshot source now has a café-only PBR-preservation option, but published AR files are still the earlier versions. No deployment or physical phone AR verification has occurred.
+The intermediate material-only Cycles render and desktop browser scene were inspected. Fresh counter-detail and overview renders have been inspected after refining pendants, food geometry and plant density. Final Blender reopen/render and mobile visual review remain outstanding. The later cabinet/AR follow-up below supersedes this pass: current architectural GLB/USDZ files are rebuilt on the branch; the public deployment is still unchanged. No deployment or physical phone AR verification has occurred.
 
 The sections below describe the **3 November baseline**, retained to explain its rig and original tradeoffs; its zero-texture and size statements are historical.
 
@@ -104,3 +104,13 @@ Not verified: any real GPU, phone, tablet or browser other than headless Chromiu
 ## 10 November follow-up: presentation and activity view
 
 The current local browser defaults to the architectural venue without primitive people. `Show simulated activity` restores the customer, staff and comparison figures; this is a visual toggle only, and does not alter the underlying simulated day. The camera blur is off. The nine stage-based twins share an opt-in editorial stylesheet. See `docs/digital-twins/UPGRADE-REGISTER.md` for current evidence and remaining fidelity work; the historical verification sections above do not describe this new pass's deployment or device status.
+
+## Cabinet and AR follow-up — 10 November
+
+The detailed browser view now hides the fallback cabinet cubes. They previously obscured the authored portions even when Detailed model was selected. Food display is a new close-up camera; toasties now have layered bread and filling. Stock depletion remains controlled by the same rig. Fifteen café tests pass; browser detailed/fallback switching was exercised.
+
+The AR world now uses the rig's actual `cafe` mode and explicit illustrative stock, instead of an unsupported `day` mode that emptied the cabinet. Architectural AR defaults to no activity figures. The shared placement animation preserves hidden objects (two regression tests).
+
+The USDZ converter now carries normal maps and packed roughness/metallic channels, each with independent UV transforms. Non-unit normal strength is baked into a separate PNG for ARKit-compatible decoding. Two Python regression tests cover the channels, transformed UVs, normal strength and missing-UV rejection.
+
+Both current café GLB/USDZ pairs are rebuilt in `ar/worlds/files`; 130,369 triangles, approximately 7.9 MB GLB and 10.4 MB USDZ per mode, without Draco. Both pass ARKit ComplianceChecker and OpenUSD validators. Tabletop GLB and USDZ were reopened/rendered in Blender and visually compared. Manifest stores hashes and distinguishes file validation from physical-device validation. Phone placement/performance remains unverified; this branch has not been deployed.

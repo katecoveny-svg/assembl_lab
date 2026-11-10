@@ -52,7 +52,7 @@ export function assembler(root, pieces, { height = 1, duration = 2.4, onLand = n
     box.getCenter(c); root.worldToLocal(c);
     root.localToWorld(a.set(0, 0, 0)); root.localToWorld(b.set(0, height, 0));
     const pa = p.parent.worldToLocal(a.clone()), pb = p.parent.worldToLocal(b.clone());
-    items.push({ p, rest: p.position.clone(), up: pb.sub(pa), key: Math.hypot(c.x, c.z) + c.y * 0.15, landed: false });
+    items.push({ p, rest: p.position.clone(), up: pb.sub(pa), key: Math.hypot(c.x, c.z) + c.y * 0.15, visible: p.visible, landed: false });
   }
   items.sort((x, y) => x.key - y.key);
   const n = items.length, each = Math.min(0.7, duration * 0.45), gap = n > 1 ? (duration - each) / (n - 1) : 0;
@@ -62,15 +62,15 @@ export function assembler(root, pieces, { height = 1, duration = 2.4, onLand = n
     for (let i = 0; i < n; i++) {
       const it = items[i], u = Math.min(1, Math.max(0, (t - i * gap) / each));
       it.p.position.copy(it.rest).addScaledVector(it.up, 1 - back(u));
-      it.p.visible = u > 0 || it.p.userData.__wasHidden;
+      it.p.visible = u > 0 && it.visible;
       if (u >= 1 && !it.landed) { it.landed = true; landed++; onLand && onLand(landed, n); }
     }
   }
   return {
     count: n,
-    start() { t = 0; done = false; landed = 0; for (const it of items) { it.landed = false; it.p.userData.__wasHidden = !it.p.visible; } apply(); },
+    start() { if (done) for (const it of items) it.visible = it.p.visible; t = 0; done = false; landed = 0; for (const it of items) it.landed = false; apply(); },
     update(dt) { if (done) return true; t += dt; apply(); if (t >= (n - 1) * gap + each) { this.finish(); } return done; },
-    finish() { for (const it of items) { it.p.position.copy(it.rest); if (!it.p.userData.__wasHidden) it.p.visible = true; delete it.p.userData.__wasHidden; } done = true; },
+    finish() { for (const it of items) { it.p.position.copy(it.rest); it.p.visible = it.visible; } done = true; },
     get done() { return done; }
   };
 }

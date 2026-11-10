@@ -18,7 +18,8 @@ export async function createPreview(canvas, id, { mode = 'table', onProgress, on
   const { OrbitControls } = await import('/assets/vendor/three/addons/controls/OrbitControls.js');
   const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = 1.5;
   controls.listenToKeyEvents && controls.listenToKeyEvents(canvas);
-  await lights(scene, renderer);
+  const lighting = await lights(scene, renderer, { env: id === 'cafe' ? .45 : .85 });
+  if (id === 'cafe') { renderer.toneMappingExposure = .92; lighting.hemi.intensity = .35; }
   // a quiet floor: an aubergine disc with a fine ring, so the diorama sits on something
   const floor = new THREE.Mesh(new THREE.CircleGeometry(1, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2b1a29, roughness: 0.95 }));
   floor.position.y = -0.001; scene.add(floor);
@@ -26,6 +27,20 @@ export async function createPreview(canvas, id, { mode = 'table', onProgress, on
   const ctx = { renderer, onProgress, scale: info[mode].scale, mode };
   const w = await buildWorld(id, ctx);
   const k = mode === 'table' ? info.table.scale : info.inside.scale;
+  if (id === 'cafe') {
+    // The detailed café needs contact shadows to read as a room, rather than white card.
+    const span = Math.max(w.size.x, w.size.z) * k;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    lighting.key.castShadow = true; lighting.key.shadow.mapSize.set(1024,1024);
+    lighting.key.shadow.camera.left = lighting.key.shadow.camera.bottom = -span;
+    lighting.key.shadow.camera.right = lighting.key.shadow.camera.top = span;
+    lighting.key.shadow.camera.near = Math.max(.001,span*.01); lighting.key.shadow.camera.far = span*8;
+    lighting.key.shadow.normalBias = span*.0003; lighting.key.shadow.bias = -.0001;
+    lighting.key.position.set(-span*.8,span*2,span*.8);
+    lighting.key.shadow.camera.updateProjectionMatrix();
+    w.root.traverse(o=>{ if(o.isMesh){o.receiveShadow=true;o.castShadow=![].concat(o.material).some(m=>m.transparent && m.opacity<.5);} });
+  }
+
   w.rescale && w.rescale();
   const holder = new THREE.Group(); scene.add(holder);
   let portal = null, figure = null;

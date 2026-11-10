@@ -1,11 +1,13 @@
-"""GLB to USDZ for AR Quick Look, with Pixar's OpenUSD (pip install usd-core).
+"""GLB to USDZ for AR Quick Look, with Pixar's OpenUSD.
+
+  Dependencies: python3 -m pip install usd-core numpy Pillow
 
   python3 ar/tools/glb2usdz.py in.glb out.usdz [--anchor horizontal|vertical]
 
 Writes a binary crate (.usdc) root layer, about four times smaller than three.js's text USDZ, and keeps:
   - the node tree, with each node's transform
   - meshes as triangles with normals and texture coordinates (subdivision off, so Quick Look draws them as authored)
-  - UsdPreviewSurface materials: base colour (factor and texture), metallic, roughness, opacity, emissive; glTF's
+  - UsdPreviewSurface materials: base colour (factor and texture), metallic/roughness channels, tangent normal maps, opacity, emissive; glTF's
     KHR_texture_transform is baked into the coordinates; vertex colours are not read (split them into materials first)
   - glTF animation on translation, rotation and scale, as USD transform time samples (Quick Look plays these on a loop)
   - AR Quick Look's plane anchoring (horizontal or vertical)
@@ -13,6 +15,7 @@ Packed with UsdUtils.CreateNewARKitUsdzPackage (stored, 64-byte aligned). Check 
 """
 import hashlib, json, os, struct, sys, shutil, tempfile
 import numpy as np
+from PIL import Image
 from pxr import Usd, UsdGeom, UsdShade, Sdf, Gf, Vt, UsdUtils
 
 COMP = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
@@ -20,7 +23,8 @@ NCOMP = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}
 
 
 def read_glb(path):
-    b = open(path, 'rb').read()
+    with open(path, 'rb') as source:
+        b = source.read()
     magic, ver, length = struct.unpack('<4sII', b[:12])
     assert magic == b'glTF' and ver == 2, 'not a glTF 2 binary'
     jl, _ = struct.unpack('<I4s', b[12:20])
@@ -106,7 +110,8 @@ def convert(glb, usdz, anchor='horizontal'):
                 tex_files[i] = seen[h]; continue
             ext = 'jpg' if img.get('mimeType') == 'image/jpeg' else 'png'
             rel = f'textures/tex_{i}.{ext}'
-            open(os.path.join(tmp, rel), 'wb').write(data)
+            with open(os.path.join(tmp, rel), 'wb') as texture_file:
+                texture_file.write(data)
             tex_files[i] = seen[h] = rel
 
         # materials
@@ -132,6 +137,7 @@ def convert(glb, usdz, anchor='horizontal'):
             alpha_mode = m.get('alphaMode', 'OPAQUE')
             tinfo = pbr.get('baseColorTexture')
             tex_ext = None
+            channel_uvs = {}
             if tinfo is not None and j['textures'][tinfo['index']].get('source') in tex_files:
                 tex_ext = tinfo.get('extensions', {}).get('KHR_texture_transform')
                 rd = UsdShade.Shader.Define(stage, path + '/st')
@@ -158,11 +164,69 @@ def convert(glb, usdz, anchor='horizontal'):
                 sh.CreateInput('diffuseColor', Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*[float(c) for c in bc[:3]]))
                 if alpha_mode != 'OPAQUE':
                     sh.CreateInput('opacity', Sdf.ValueTypeNames.Float).Set(float(bc[3]))
+            # Surface-detail maps are linear data, not sRGB colour. Each has its own
+            # UV primvar so independent glTF texture transforms survive conversion.
+            def detail_texture(name, info):
+                if info is None:
+                    return None
+                texture = j['textures'][info['index']]
+                if texture.get('source') not in tex_files:
+                    raise ValueError(f"Missing embedded {name} texture in material {nm}")
+                transform = info.get('extensions', {}).get('KHR_texture_transform')
+                coord = (transform or {}).get('texCoord', info.get('texCoord', 0))
+                primvar = 'st_' + name
+                channel_uvs[primvar] = (coord, transform)
+                reader = UsdShade.Shader.Define(stage, path + '/' + primvar)
+                reader.CreateIdAttr('UsdPrimvarReader_float2')
+                reader.CreateInput('varname', Sdf.ValueTypeNames.String).Set(primvar)
+                reader.CreateOutput('result', Sdf.ValueTypeNames.Float2)
+                tx = UsdShade.Shader.Define(stage, path + '/' + name)
+                tx.CreateIdAttr('UsdUVTexture')
+                tx.CreateInput('file', Sdf.ValueTypeNames.Asset).Set(Sdf.AssetPath('./' + tex_files[texture['source']]))
+                tx.CreateInput('st', Sdf.ValueTypeNames.Float2).ConnectToSource(reader.ConnectableAPI(), 'result')
+                sampler = j.get('samplers', [{}])[texture.get('sampler', 0)] if j.get('samplers') else {}
+                wrap = {33071: 'clamp', 33648: 'mirror', 10497: 'repeat'}
+                for axis in ('S', 'T'):
+                    tx.CreateInput('wrap' + axis, Sdf.ValueTypeNames.Token).Set(wrap.get(sampler.get('wrap' + axis, 10497), 'repeat'))
+                tx.CreateInput('sourceColorSpace', Sdf.ValueTypeNames.Token).Set('raw')
+                return tx
+
+            normal_info = m.get('normalTexture')
+            normal = detail_texture('normalMap', normal_info)
+            if normal:
+                strength = float(normal_info.get('scale', 1.0))
+                # UsdPreviewSurface consumes tangent normals in [-1,1].
+                # https://openusd.org/release/spec_usdpreviewsurface.html
+                if strength != 1.0:
+                    # ARKit's normal validator requires the canonical 2/-1 decode.
+                    # Bake glTF's XY strength into a separate image, never the source texture.
+                    original = normal.GetInput('file').Get().path
+                    destination = 'textures/normal_' + hashlib.sha1((original + repr(strength)).encode()).hexdigest()[:16] + '.png'
+                    image_path = os.path.join(tmp, destination)
+                    if not os.path.exists(image_path):
+                        with Image.open(os.path.join(tmp, original)) as image:
+                            data = np.asarray(image.convert('RGB'), dtype=np.float32) / 255 * 2 - 1
+                        data[:, :, :2] *= strength
+                        lengths = np.linalg.norm(data, axis=2, keepdims=True)
+                        data /= np.maximum(lengths, 1e-8)
+                        encoded = np.rint(np.clip(data * .5 + .5, 0, 1) * 255).astype(np.uint8)
+                        Image.fromarray(encoded).save(image_path)
+                    normal.GetInput('file').Set(Sdf.AssetPath('./' + destination))
+                normal.CreateInput('scale', Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(2, 2, 2, 1))
+                normal.CreateInput('bias', Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(-1, -1, -1, 0))
+                normal.CreateOutput('rgb', Sdf.ValueTypeNames.Float3)
+                sh.CreateInput('normal', Sdf.ValueTypeNames.Normal3f).ConnectToSource(normal.ConnectableAPI(), 'rgb')
+            mr = detail_texture('metallicRoughness', pbr.get('metallicRoughnessTexture'))
+            if mr:
+                mr.CreateInput('scale', Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(1, float(pbr.get('roughnessFactor', 1)), float(pbr.get('metallicFactor', 1)), 1))
+                for input_name, channel in (('roughness', 'g'), ('metallic', 'b')):
+                    mr.CreateOutput(channel, Sdf.ValueTypeNames.Float)
+                    sh.CreateInput(input_name, Sdf.ValueTypeNames.Float).ConnectToSource(mr.ConnectableAPI(), channel)
             if alpha_mode == 'MASK':
                 sh.CreateInput('opacityThreshold', Sdf.ValueTypeNames.Float).Set(float(m.get('alphaCutoff', 0.5)))
             mat.CreateSurfaceOutput().ConnectToSource(sh.ConnectableAPI(), 'surface')
             mats.append(mat)
-            mat_info.append({'double': bool(m.get('doubleSided')), 'tex_ext': tex_ext})
+            mat_info.append({'double': bool(m.get('doubleSided')), 'tex_ext': tex_ext, 'channel_uvs': channel_uvs})
         default_mat = None
 
         # animation: node index -> {path: (times, values)}
@@ -212,6 +276,14 @@ def convert(glb, usdz, anchor='horizontal'):
                     st = np.stack([uv[:, 0], 1.0 - uv[:, 1]], 1).astype(np.float32)
                     pv = UsdGeom.PrimvarsAPI(um).CreatePrimvar('st', Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
                     pv.Set(Vt.Vec2fArray.FromNumpy(st))
+                for primvar, (coord, transform) in info.get('channel_uvs', {}).items():
+                    attribute = f'TEXCOORD_{coord}'
+                    if attribute not in att:
+                        raise ValueError(f"Missing {attribute} required by {primvar} on {nm}")
+                    uv = uv_transform(accessor(j, binc, att[attribute]).astype(np.float64), transform)
+                    values = np.stack([uv[:, 0], 1.0 - uv[:, 1]], 1).astype(np.float32)
+                    pv = UsdGeom.PrimvarsAPI(um).CreatePrimvar(primvar, Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
+                    pv.Set(Vt.Vec2fArray.FromNumpy(values))
                 um.CreateDoubleSidedAttr(info['double'])
                 if mi_ is not None and mi_ < len(mats):
                     UsdShade.MaterialBindingAPI.Apply(um.GetPrim()).Bind(mats[mi_])

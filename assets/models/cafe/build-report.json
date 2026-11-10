@@ -2,26 +2,15 @@
  "objects": 319,
  "mesh_objects": 271,
  "unique_meshes": 142,
- "triangles_rendered": 137261,
+ "triangles_rendered": 137741,
  "materials": 25,
- "glb_bytes": 5665572,
- "glb_sha256": "82ddc92ec041cd252066907cd8ca1127b16c941d42c30be04e4bfa59a7f2b88b",
- "blend_sha256": "ea397c13288708a6534fe205791075bd004a12fcd25639ff93ce09a7b682901f",
- "blend_bytes": 9142833,
- "renders_this_run": [
-  "renders/cafe-hero.png"
- ],
- "render_settings": {
-  "engine": "Cycles (CPU)",
-  "samples": 16,
-  "denoiser": "OpenImageDenoise",
-  "resolution": [
-   960,
-   600
-  ],
-  "view_transform": "AgX"
- },
+ "glb_bytes": 5668424,
+ "glb_sha256": "b9b5d6c23c4d00832a546bd4857ff4c32b2f5dea877b838f1077e58cd9d009b1",
+ "blend_sha256": "8277301686584980653067103372c50f003dc994069ee9e3025ec37b1f582964",
+ "blend_bytes": 9141457,
+ "renders_this_run": [],
+ "render_settings": null,
  "blender": "5.1.1",
- "source_glb_bytes": 11904512,
+ "source_glb_bytes": 11907444,
  "texture_optimisation": "glTF Transform 4.5.1; JPEG 88, 1024 maximum; no geometry compression"
 }
