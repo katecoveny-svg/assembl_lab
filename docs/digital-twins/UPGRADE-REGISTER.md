@@ -1,5 +1,9 @@
 # Digital twin upgrade register — 10 November 2026
 
+## 11 November — clearer café display glass
+
+[Display-glass review](CAFE-DISPLAY-GLASS-REVIEW.md): browser-only thin-pane reflections preserve a sharp view through the cabinet. The source model, scans, simulation and prepared AR files are unchanged. All 24 tests pass; desktop, evening and 375 px browser views inspected without console errors. A procedural brownie candidate was rejected and excluded. Menu-matched food and overall photorealism remain open.
+
 ## 11 November — café counter detail, local checkpoint
 
 [Counter review](CAFE-COUNTER-REVIEW.md): ambientCG cookie/croissant scans, hollow vessels, machine detail, eye-level coffee camera and legacy planting confined to the maquette. Current browser GLB 11.14 MB / 352,087 rendered triangles; sky maps rebaked. 24 tests pass; desktop/mobile viewport reviewed. Fresh table/full-size AR files retain 341,717 triangles, pass USD/ARKit file checks and remain physically untested. Source-versioned URLs fix stale model/map loading. Not deployed; the full photorealism target remains open.

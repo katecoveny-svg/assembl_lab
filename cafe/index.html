@@ -1137,6 +1137,7 @@ const CAFE = (() => {
 import { mountFirstShift } from "./first-shift.js";
 import { mountDecisionDesk } from "./decision-workbench.mjs";
 import { createFoodService, pendingPassItems } from "./plated-food.mjs";
+import { prepareDisplayGlass } from "./display-glass.mjs";
 import { createCafeCeiling, createCafeFloorInfill, attachCafeDaylight } from "./daylight.mjs?v=counter-20261111";
 import { THREE, createStage, nzDate, calm, loadTwinAsset } from "/assets/twin/2/stage.js?v=counter-20261111";
 import { createCafeRig, visualStateFromModel, CONTRACT as CAFE_RIG } from "/assets/models/cafe/cafe-rig-controller.mjs";
@@ -1607,6 +1608,7 @@ async function loadModel() {
   if (!stage.ok) throw new Error("WebGL is not available");
   const { scene: g, contract: venueSpec } = await loadTwinAsset({ url: "/assets/models/cafe/cafe-venue.glb", contractUrl: "/assets/models/cafe/cafe-rig-contract.json", contract: CAFE_RIG, rootNode: "CAFE_VENUE" });
   const r = createCafeRig(g, THREE), venue = g.getObjectByName("CAFE_VENUE");
+  prepareDisplayGlass(g);
   const ceiling = createCafeCeiling(), floorInfill = createCafeFloorInfill(g); g.add(ceiling, floorInfill);
   // A missing lighting map must leave the existing interactive model usable.
   try { cafeDaylight = await attachCafeDaylight(g, venueSpec.actual?.glb_sha256); }

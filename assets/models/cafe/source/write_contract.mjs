@@ -58,7 +58,7 @@ const contract = {
   },
   tables: Object.fromEntries(Array.from({ length: 14 }, (_, i) => [`TABLE_${P(i)}`, pivot(`TABLE_${P(i)}`)])),
   defaults: { hidden_by_rig_on_load: ['STATION_2', 'BAR', 'HOST_STAND', 'TABLE_xx_CANDLE', 'CAB_ITEM_SPECIAL', 'AWNING', 'RANGE_FLAME_L/R'] },
-  browser_simplifications: ['Glass uses glTF transmission; mobile AR may simplify it. Browser and Cycles lighting differ.',
+  browser_simplifications: ['The browser replaces cafe_glass_simplified with a thin Fresnel-alpha pane to keep overlapping display glass sharp. The source retains physical transmission; prepared AR uses its documented alpha approximation. Browser, Cycles and AR lighting differ.',
     'Lamp, heat-lamp, flame and screen light is emissive material only; the page keeps its own warm point lights.',
     'ambientCG timber, fabric and terrazzo PBR textures; both boards are live canvases drawn by the page.',
     'Materials do not switch with the page dark theme (the maquette card does).'],
