@@ -1,0 +1,56 @@
+[
+  {
+    "asset": "3DCookie001",
+    "author": "ambientCG",
+    "source": "https://ambientcg.com/a/3DCookie001",
+    "licence": "CC0-1.0",
+    "licenceUrl": "https://docs.ambientcg.com/license/",
+    "verified": "2026-11-11",
+    "sourceArchiveSha256": "0d461cb2a5baf1ff1f4edc8b225cc420a9da864354895c8f7d757dacfd42da52",
+    "original": {
+      "bytes": 13038404,
+      "sha256": "eb275e1e5a79ed99e349ad7b0f1f51ad19dccfe33d63fa9862c86fac0c417cc0"
+    },
+    "master": {
+      "file": "cookie-master.glb",
+      "triangles": 50000,
+      "bytes": 7041832,
+      "sha256": "ddcf90883f675d73a125bcd8115c3da770441c9c0a8169da81cee400d0bc7ead"
+    },
+    "browser": {
+      "file": "cookie-browser.glb",
+      "triangles": 13282,
+      "bytes": 1834968,
+      "sha256": "8e1ce87f3864da7b9c91661ca8f82529a8b500872cea6a215486cb7a393466e6"
+    },
+    "changes": "Unchanged source geometry in 2K master. Browser preserves UVs, colour, normal and occlusion; meshoptimizer error limit 0.003, locked borders, 1K JPEG quality 92. No geometry compression. Source approximate dimensions retained at placement.",
+    "use": "Static display props, separate from simulated menu and stock."
+  },
+  {
+    "asset": "3DPastry001",
+    "author": "ambientCG",
+    "source": "https://ambientcg.com/a/3DPastry001",
+    "licence": "CC0-1.0",
+    "licenceUrl": "https://docs.ambientcg.com/license/",
+    "verified": "2026-11-11",
+    "sourceArchiveSha256": "7c77c3c79baa5f0d17ecf681f904f6462806915971b2cd04847e6215bf2df9a8",
+    "original": {
+      "bytes": 13175512,
+      "sha256": "3387443f28e32db027901307744dcc4028eb09021ddd864b955954ad5bd54059"
+    },
+    "master": {
+      "file": "croissant-master.glb",
+      "triangles": 49999,
+      "bytes": 6543864,
+      "sha256": "400caa29b36ba8a1c43e175bf61023eebcda3be6cca31d3620ba850857ed04e7"
+    },
+    "browser": {
+      "file": "croissant-browser.glb",
+      "triangles": 11751,
+      "bytes": 1831392,
+      "sha256": "8fec098a83dfc73cd80f7c3e7c84e7292230cbe3516fe0502b08748976ee7a30"
+    },
+    "changes": "Unchanged source geometry in 2K master. Browser preserves UVs, colour, normal and occlusion; meshoptimizer error limit 0.003, locked borders, 1K JPEG quality 92. No geometry compression. Source approximate dimensions retained at placement.",
+    "use": "Static display props, separate from simulated menu and stock."
+  }
+]

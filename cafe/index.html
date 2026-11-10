@@ -462,6 +462,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
 <link rel="stylesheet" href="/assets/twin/editorial.css">
+<link rel="stylesheet" href="./decision-workbench.css">
 <style>.tw .views{max-width:calc(100% - 360px)}@media (max-width:640px){.tw .views{max-width:none}.tw .views button{padding:4px 8px;font-size:10.5px}.tw .badge{top:auto;bottom:12px;left:12px;right:auto}}.tw .key{max-width:calc(100% - 300px)}.stagebox{background:#EAE4DC}html.tw-poster .key,html.tw-poster .ghosttag{display:none!important}.ghosttag{z-index:1;box-shadow:0 0 0 1.5px #8E6E88,0 6px 16px -10px rgba(0,0,0,.4)}</style>
 <script>
 // A generic, fictional New Zealand neighbourhood venue that trades as a café (breakfast and lunch, coffee-led)
@@ -1134,11 +1135,15 @@ const CAFE = (() => {
 </script>
 <script type="module">
 import { mountFirstShift } from "./first-shift.js";
-import { THREE, createStage, nzDate, calm, loadTwinAsset } from "/assets/twin/2/stage.js";
+import { mountDecisionDesk } from "./decision-workbench.mjs";
+import { createFoodService, pendingPassItems } from "./plated-food.mjs";
+import { prepareDisplayGlass } from "./display-glass.mjs";
+import { createCafeCeiling, createCafeFloorInfill, attachCafeDaylight } from "./daylight.mjs?v=counter-20261111";
+import { THREE, createStage, nzDate, calm, loadTwinAsset } from "/assets/twin/2/stage.js?v=counter-20261111";
 import { createCafeRig, visualStateFromModel, CONTRACT as CAFE_RIG } from "/assets/models/cafe/cafe-rig-controller.mjs";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 // keep lamp glows, glass, rings, steam and ghosts out of the ambient-occlusion buffer (the stock pass only skips points and lines)
-GTAOPass.prototype.overrideVisibility = function () { const cache = this._visibilityCache; this.scene.traverse(o => { cache.set(o, o.visible); const m = o.material; if (o.isPoints || o.isLine || o.isSprite || (m && !Array.isArray(m) && m.transparent && m.depthWrite === false)) o.visible = false; }); };
+GTAOPass.prototype.overrideVisibility = function () { const cache = this._visibilityCache; this.scene.traverse(o => { cache.set(o, o.visible); const m = o.material; if (o.isPoints || o.isLine || o.isSprite || (m && (Array.isArray(m) ? m : [m]).some(x => x && (x.transmission > 0 || (x.transparent && x.depthWrite === false))))) o.visible = false; }); };
 // The venue in 3D, on the shared twin stage (/assets/twin/1): a cutaway maquette of one room on a plinth, street at the front,
 // kitchen and office at the back, lit by the real Auckland sun for the day and minute the model is at.
 // Plan units are metres. x runs left to right (the street is +z), y is up.
@@ -1150,6 +1155,8 @@ function sizeCanvas() { const w = box.clientWidth || 800, h = new URLSearchParam
 sizeCanvas();
 const stage = createStage({ id: "cafe", canvas, box, place: "auckland", extent: 17, tableY: -0.72, controls: { minDistance: 1.2, maxDistance: 70, maxPolarAngle: Math.PI * 0.47 }, ao: { radius: 0.45 }, tilt: 0, tiltBand: 0.22, onResize: () => resize() });
 const SM = stage.M, geo = stage.geo, camera = stage.camera, renderer = stage.renderer;
+// Architectural appearance follows the simulated daylight, not the website's UI theme.
+const architecturalDay = new THREE.Color(0xDFE7E8), architecturalNight = new THREE.Color(0x202831);
 // everything built while a part's group is current goes into that group, so the part can be hovered and pinned as one
 let CUR = null; const G = {};
 const part = name => { const g = new THREE.Group(); g.name = name; stage.root.add(g); G[name] = g; CUR = g; return g; };
@@ -1181,7 +1188,13 @@ const M = {
   scooter: std({ color: 0xE9E4DE, roughness: .4 }), bottle: std({ roughness: .15, metalness: .1, transparent: true, opacity: .85 }), candle: new THREE.MeshBasicMaterial({ color: 0xFFC46B }),
   umb: std({ roughness: .9, side: THREE.DoubleSide }), rain: new THREE.LineBasicMaterial({ color: 0xB9D4E6, transparent: true, opacity: .55 }) };
 // warm interior light for evenings: a few lamps over the room, the bar and the kitchen
-const warm = [[-4, 2.6, 1.2, 12], [-1, 2.6, 4.4, 9], [4.6, 2.6, 2.2, 10], [3.6, 2.6, -4.2, 10]].map(([x, y, z, r]) => { const l = new THREE.PointLight(0xFFB873, 0, r, 1.6); l.position.set(x, y, z); stage.root.add(l); return l; });
+// Downward light starts at the actual pendant bulbs. Broad point lights above
+// the counter used to paint orange discs onto the ceiling and back wall.
+const warm = [[-5.3,-.8],[-5.3,2],[-2.4,-.8],[-2.4,2],[-3.9,4.65],[-8,1.55],[0,4.6],[3,3.2],[6.3,3.2]].map(([x,z]) => {
+  const l = new THREE.SpotLight(0xFFDFBD, 0, 8, Math.PI * .35, .85, 2);
+  l.position.set(x, FY + 2.31, z); l.target.position.set(x, FY, z);
+  stage.root.add(l, l.target); return l;
+});
 function add(m, cast = true, recv = true) { m.castShadow = cast; m.receiveShadow = recv; scene.add(m); return m; }
 function boxM(w, h, d, mat, x, y, z, cast = true, parent) { const m = new THREE.Mesh(geo.rbox(w, h, d), mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; (parent || CUR || stage.root).add(m); return m; }
 function cyl(rt, rb, h, mat, x, y, z, seg = 18, cast = true) { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; scene.add(m); return m; }
@@ -1205,12 +1218,13 @@ const road = boxM(26, 0.05, 4.2, M.road, 0, 0.03, 12.5, false);
 boxM(8.2, 0.08, 4.4, M.yard, -5, 0.04, -8.2, false);                // back yard
 for (let x = -9; x <= -1; x += 0.25) boxM(0.08, 1.1, 0.04, M.oak, x, 0.55, -10.4, true);   // a low fence round the yard
 boxM(8.1, 0.06, 0.06, M.oak, -5, 1.0, -10.4, false);
-// street trees and planters: felt canopies on timber trunks
+// Legacy schematic planting belongs only to the simplified maquette.
+const maquettePlanting = [];
 function tree(x, z, s) { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.CylinderGeometry(.1 * s, .14 * s, 2.2 * s, 10), M.trunk); t.position.y = 1.1 * s;
   [[0, 2.6, 0, 1.1], [.5, 3.1, .2, .8], [-.45, 2.9, -.3, .7]].forEach(([a, b, c, r]) => { const m = new THREE.Mesh(geo.sphere(r * s, 2), M.leaf); m.position.set(a * s, b * s, c * s); g.add(m); });
-  g.add(t); g.traverse(o => { o.castShadow = true; o.receiveShadow = true; }); g.position.set(x, 0.1, z); g.rotation.y = x; stage.root.add(g); }
+  g.add(t); g.traverse(o => { o.castShadow = true; o.receiveShadow = true; }); g.position.set(x, 0.1, z); g.rotation.y = x; stage.root.add(g); maquettePlanting.push(g); }
 tree(-11.5, 9.4, 1); tree(11.5, 9.4, 0.95); tree(-12.5, -4, 1.1); tree(12.3, -5, 0.9);
-[[-9.6, 6.6], [9.6, 6.6]].forEach(([x, z]) => { boxM(0.6, 0.5, 2.2, M.pot, x, 0.35, z + 0.6); const b = new THREE.Mesh(geo.sphere(.42, 2), M.leaf); b.position.set(x, 0.85, z + 0.6); b.scale.set(1, .7, 2.2); add(b); });
+[[-9.6, 6.6], [9.6, 6.6]].forEach(([x, z]) => { maquettePlanting.push(boxM(0.6, 0.5, 2.2, M.pot, x, 0.35, z + 0.6)); const b = new THREE.Mesh(geo.sphere(.42, 2), M.leaf); b.position.set(x, 0.85, z + 0.6); b.scale.set(1, .7, 2.2); add(b); maquettePlanting.push(b); });
 
 // everything built from here to the scooter is the procedural maquette of the venue (kept as the fallback for the authored model)
 const preVenue = new Set(); stage.root.traverse(o => preVenue.add(o));
@@ -1349,15 +1363,14 @@ const pBody = new THREE.InstancedMesh(new THREE.CylinderGeometry(.17, .21, .9, 1
 pBody.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAXP * 3), 3); pBody.castShadow = true; stage.root.add(pBody, pHead);
 const sBody = new THREE.InstancedMesh(new THREE.CylinderGeometry(.17, .21, .95, 12), M.staff, MAXS), sHead = new THREE.InstancedMesh(new THREE.SphereGeometry(.15, 14, 10), M.head, MAXS), sApron = new THREE.InstancedMesh(new THREE.BoxGeometry(.3, .5, .05), M.apron, MAXS);
 sBody.castShadow = true; stage.root.add(sBody, sHead, sApron);
-const MAXPL = 90; const plates = new THREE.InstancedMesh(new THREE.CylinderGeometry(.13, .1, .03, 16), M.plate, MAXPL), foods = new THREE.InstancedMesh(new THREE.SphereGeometry(.08, 10, 6), M.food, MAXPL);
-foods.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAXPL * 3), 3); stage.root.add(plates, foods);
+const foodService = createFoodService(stage.root, 90);
 const MAXC = 50; const cups = new THREE.InstancedMesh(new THREE.CylinderGeometry(.045, .035, .1, 10), M.cup, MAXC); cups.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAXC * 3), 3); stage.root.add(cups);
 const MAXT = 24; const tickets = new THREE.InstancedMesh(new THREE.PlaneGeometry(.12, .2), M.ticket, MAXT); stage.root.add(tickets);
 const MAXF = 40; const cabFood = new THREE.InstancedMesh(new THREE.BoxGeometry(.13, .08, .13), std({ roughness: .8 }), MAXF); cabFood.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAXF * 3), 3); stage.root.add(cabFood);
 // the ghost queue (Compare): the same customers under another choice, standing beside the real queue
 const MAXG = 24, ghostMat = new THREE.MeshStandardMaterial({ color: 0x8E6E88, emissive: 0x8E6E88, emissiveIntensity: 0.25, transparent: true, opacity: 0.48, depthWrite: false, roughness: 1 });
 const gBody = new THREE.InstancedMesh(geo.capsule(0.18, 0.72), ghostMat, MAXG); gBody.count = 0; gBody.raycast = () => {}; gBody.frustumCulled = false; stage.root.add(gBody);
-[pBody, pHead, sBody, sHead, sApron, plates, foods, cups, tickets, cabFood].forEach(m => { m.raycast = () => {}; m.frustumCulled = false; });
+[pBody, pHead, sBody, sHead, sApron, cups, tickets, cabFood].forEach(m => { m.raycast = () => {}; m.frustumCulled = false; });
 const dm = new THREE.Object3D();
 const CLOTHES = [0x8A6F7A, 0x5E7C93, 0x7E8F6E, 0xB59A84, 0x5A5458, 0xA8786A, 0x6F7FA6, 0xC9B9A8, 0x7A6A8E, 0x4F6B63, 0xD4B48C, 0x3F4A5C].map(c => new THREE.Color(c));
 const FOODC = { bene: 0xF2C14E, big: 0xB5633C, avo: 0x8DB85A, fritter: 0xE3B24C, burger: 0xC98A4B, bircher: 0xE8DCC2, soup: 0xD9772E, mush: 0x8A6A4E, scone: 0xE0B871, toastie: 0xD7A35E, salad: 0x7FB069, brownie: 0x5C3A2A, muffin: 0xC28E5C,
@@ -1382,18 +1395,29 @@ function applyTheme(isDark) { dark = isDark;
 
 // ---------------- light: the real Auckland sun for the model's month, weekday and minute; warm lamps when it's dark and the venue is open
 const dayOfMonth = (month, dow) => { const first = new Date(Date.UTC(2026, month, 1)).getUTCDay(), want = (dow + 1) % 7; let dd = 1 + ((want - first + 7) % 7); while (dd < 12) dd += 7; return dd; };
-let lightK = 0;
+let lightK = 0, cafeDaylight = null;
 function lights(dt, h, raining, open, S, d) {
   stage.setClock(nzDate(2026, S.month, dayOfMonth(S.month, d.dow || 0), h));
   stage.setWeather({ rain: 0, cloud: raining ? 0.72 : 0.12, wet: rainK, fog: 0, wind: [0.3, 0.1] });
+  // Cloud already reduces the sun's energy. It must not make an opaque ceiling
+  // partially transparent to direct light through the stage's shadow fade.
+  if (cafeDaylight && 'intensity' in stage.sun.shadow) stage.sun.shadow.intensity = 1;
+  const daylight = stage.clock.day;
+  cafeDaylight?.setDaylight(daylight, raining ? .72 : .12);
+  stage.scene.background.lerpColors(architecturalNight, architecturalDay, daylight);
+  if (stage.scene.fog) stage.scene.fog.color.copy(stage.scene.background);
+  stage.hemi.color.setHex(0xF3F5F5); stage.hemi.groundColor.setHex(0xC1B7A6);
+  stage.hemi.intensity = .28 + .68 * daylight;
+  stage.scene.environmentIntensity = .22 + .50 * daylight;
+  if (renderer) renderer.toneMappingExposure = 1;
   const dk = 1 - stage.clock.day, want = open ? Math.max(0.25, dk) : dk * 0.25; lightK += (want - lightK) * Math.min(1, dt * 2.5);
-  warm.forEach(l => l.intensity = lightK * 7); pendBulbs.forEach(g => g.material.opacity = lightK * 0.6); M.bulb.color.setRGB(1, 0.88 * (0.5 + lightK * 0.5), 0.6 * (0.5 + lightK * 0.5));
+  warm.forEach(l => l.intensity = lightK * 50); pendBulbs.forEach(g => g.material.opacity = lightK * 0.6); M.bulb.color.setRGB(1, 0.88 * (0.5 + lightK * 0.5), 0.6 * (0.5 + lightK * 0.5));
   SM.timber.emissive.setHex(0x3a2210); SM.timber.emissiveIntensity = lightK * 0.15; }
 
 // ---------------- camera views (the stage flies between them)
-const VIEWS = { cabinet: { p: [6.8, 1.8, 3.5], t: [5.55, 1.48, 1.2] }, interior: { p: [8.4, 1.8, 5.3], t: [4.4, 1.25, 0.9] }, venue: { p: [11.5, 15, 18.5], t: [0, 0, 0.2] }, counter: { p: [9.5, 7.2, 10.5], t: [4.6, 1, 1.2] }, kitchen: { p: [4, 10.5, 4.6], t: [3.2, 0.6, -3.6] },
+const VIEWS = { cabinet: { p: [6.8, 1.8, 3.5], t: [5.55, 1.48, 1.2] }, interior: { p: [8.4, 1.8, 5.3], t: [4.4, 1.25, 0.9] }, venue: { p: [11.5, 15, 18.5], t: [0, 0, 0.2] }, counter: { p: [4.8, 1.95, -0.5], t: [3.10, 1.45, 1.12] }, kitchen: { p: [4, 10.5, 4.6], t: [3.2, 0.6, -3.6] },
   dining: { p: [-1, 9.5, 11.5], t: [-4, 0.5, 1.6] }, street: { p: [2, 6.5, 22], t: [0, 0.8, 7.6] }, office: { p: [-1.2, 7, 1.6], t: [-7, 0.9, -5.6] } };
-const VIEWS_N = { cabinet: { p: [6.8, 2.0, 4.2], t: [5.55, 1.48, 1.2] }, interior: { p: [8.6, 2.2, 5.6], t: [4.4, 1.25, 0.9] }, venue: { p: [5, 24, 19.5], t: [0, 0, 0.6] }, counter: { p: [6.5, 9, 12], t: [4.6, 1, 1.4] }, kitchen: { p: [3.6, 13, 5], t: [3.2, 0.6, -3.8] },
+const VIEWS_N = { cabinet: { p: [6.8, 2.0, 4.2], t: [5.55, 1.48, 1.2] }, interior: { p: [8.6, 2.2, 5.6], t: [4.4, 1.25, 0.9] }, venue: { p: [5, 24, 19.5], t: [0, 0, 0.6] }, counter: { p: [4.9, 2.05, -1.0], t: [3.10, 1.45, 1.12] }, kitchen: { p: [3.6, 13, 5], t: [3.2, 0.6, -3.8] },
   dining: { p: [-3, 13, 13], t: [-4, 0.5, 1.8] }, street: { p: [1, 9.5, 27], t: [0, 0.8, 8] }, office: { p: [-2.5, 10, 2.5], t: [-7, 0.6, -5.8] } };
 stage.views = VIEWS;
 let view = "venue";
@@ -1483,14 +1507,15 @@ function sync(dt, d, S, simT) {
     dm.position.y = FY + 1.1; dm.updateMatrix(); sHead.setMatrixAt(i, dm.matrix); dm.position.set(s ? v.x : 0, FY + 0.6, s ? v.z + 0.2 : 0); dm.updateMatrix(); sApron.setMatrixAt(i, dm.matrix); }
   sBody.instanceMatrix.needsUpdate = true; sHead.instanceMatrix.needsUpdate = true; sApron.instanceMatrix.needsUpdate = true;
   // ---- plates: waiting on the pass, being carried, on tables while eating
-  let pn = 0; const putPlate = (x, y, z, k) => { if (pn >= MAXPL) return; dm.rotation.set(0, 0, 0); dm.scale.set(1, 1, 1); dm.position.set(x, y, z); dm.updateMatrix(); plates.setMatrixAt(pn, dm.matrix); dm.position.y = y + 0.05; dm.updateMatrix(); foods.setMatrixAt(pn, dm.matrix); foods.setColorAt(pn, new THREE.Color(FOODC[k] || 0xDDBB88)); pn++; };
+  foodService.reset();
+  const putPlate = (x, y, z, key) => foodService.place(x, y, z, key);
   const carried = new Set(carry.map(c => c[2]));
-  let pi = 0; d.pass.forEach(tk => { if (carried.has(tk.id)) return; tk.items.forEach(x => { if (pi < 12) { putPlate(0.75 + (pi % 6) * 0.45, FY + 1.23, -2.25 - Math.floor(pi / 6) * 0.25, x.k); pi++; } }); });
-  carry.forEach(([x, z, id]) => { const tk = d.pass.find(k => k.id === id); if (tk) tk.items.slice(0, 3).forEach((it, j) => putPlate(x + 0.22 * (j - 1), FY + 1.05, z + 0.25, it.k)); });
+  pendingPassItems(d.pass, carried).forEach((item, pi) => putPlate(0.75 + (pi % 6) * 0.45, FY + 1.23, -2.25 - Math.floor(pi / 6) * 0.25, item.k));
+  // Carried plates only accompany visible activity figures; the simulation still runs in architectural view.
+  if (activityVisible) carry.forEach(([x, z, id]) => { const tk = d.pass.find(k => k.id === id); if (tk) tk.items.slice(0, 3).forEach((it, j) => putPlate(x + 0.22 * (j - 1), FY + 1.05, z + 0.25, it.k)); });
   d.tables.forEach((T, i) => { if (T.party < 0) return; const p = d.parties[T.party]; if (!p || T.state !== "eating" && T.state !== "paying") return; const ks = p.items.filter(k => K.ITEM[k].st === "kit" || K.ITEM[k].st === "cab"); const sp = seatPos[i];
     const y = (T.zone === "out" ? 0.1 : FY) + 0.8; ks.slice(0, sp.length).forEach((k, j) => { const [sx, sz] = sp[j], [cx, cz] = TPOS[i]; putPlate(lerp(sx, cx, 0.55), y, lerp(sz, cz, 0.55), k); }); });
-  dm.scale.set(0, 0, 0); dm.updateMatrix(); for (let i = pn; i < MAXPL; i++) { plates.setMatrixAt(i, dm.matrix); foods.setMatrixAt(i, dm.matrix); }
-  plates.instanceMatrix.needsUpdate = true; foods.instanceMatrix.needsUpdate = true; foods.instanceColor.needsUpdate = true;
+  foodService.commit();
   // ---- cups: drinks queued at the machine (or bar), ready at the pickup, and on tables
   let cn = 0; const putCup = (x, y, z, c) => { if (cn >= MAXC) return; dm.rotation.set(0, 0, 0); dm.scale.set(1, 1, 1); dm.position.set(x, y, z); dm.updateMatrix(); cups.setMatrixAt(cn, dm.matrix); cups.setColorAt(cn, c); cn++; };
   const cupC = new THREE.Color(0xFFFFFF), takeC = new THREE.Color(0xC9A27A), wineC = new THREE.Color(0x8E2F3A);
@@ -1522,7 +1547,7 @@ function sync(dt, d, S, simT) {
   const appNew = d.parties.slice(from, d.next).some(p => p.type === "app" && p.orderAt != null && t - p.orderAt < 1.5); tabGlow.material.opacity = appNew ? (dt === 0 ? 0.6 : 0.6 + 0.3 * Math.sin(performance.now() / 120)) : 0.08;
   // ---- weather: rain, umbrellas, puddles
   rainK += ((raining ? 1 : 0) - rainK) * Math.min(1, dt * 1.5); rainLines.visible = rainK > 0.02; M.rain.opacity = 0.55 * rainK;
-  if (rainLines.visible) { const tt = performance.now() / 1000; for (let i = 0; i < RN; i++) { const [x, z, o] = rainSeed[i]; const y = 9 - ((tt * 7 + o) % 9); rainPos.set([x + 0.05, y, z, x, y - 0.35, z], i * 6); } rainGeo.attributes.position.needsUpdate = true; }
+  if (rainLines.visible) { const tt = performance.now() / 1000; for (let i = 0; i < RN; i++) { const [x, z, o] = rainSeed[i]; const bottom = cafeDaylight && Math.abs(x) < 9 && Math.abs(z) < 6 ? 3.6 : .35; const y = 9 - ((tt * 7 + o) % (9 - bottom)); rainPos.set([x + 0.05, y, z, x, y - 0.35, z], i * 6); } rainGeo.attributes.position.needsUpdate = true; }
   puddles.forEach(p => p.material.opacity = 0.5 * rainK); M.path.roughness = 0.95 - 0.6 * rainK;
   umbrellas.forEach(u => { const c = u.getObjectByName("canopy"); const open = K.outdoorOK(d.wx, t, S.mode) && t >= M_.open && t < M_.close; const s = c.scale.x + ((open ? 1 : 0.18) - c.scale.x) * Math.min(1, dt * 2); c.scale.set(s, open ? 1 : 2.4 - 1.4 * s, s); c.position.y = open ? 2.25 : 1.75; });
   awning.visible = view === "street";
@@ -1546,7 +1571,7 @@ function project(p) { const s = stage.project(v3.set(p[0], p[1], p[2])); return 
 // ---------------- graphics: the Blender-authored venue (GLB, stage v2) with this maquette as the fallback.
 // Switching changes only what is drawn: the simulation, its state, the panels and every label carry on untouched.
 let gfx = "maquette", rig = null; const glbTop = [], umbK = [0, 0, 0, 0];
-const MODEL_GLOWS = [grillGlow, rangeGlow, ...passLamps, ...espLight, tabGlow];   // the model's own lamp, flame and screen materials carry these states
+const MODEL_GLOWS = [grillGlow, rangeGlow, ...passLamps, ...espLight, ...pendBulbs, tabGlow];   // the model's own lamp, flame and screen materials carry these states
 const boardTexG = new THREE.CanvasTexture(boardCanvas); boardTexG.colorSpace = THREE.SRGBColorSpace; boardTexG.anisotropy = 4;
 // the menu board over the back bench, drawn live from the model's menu: what is on, today's price, sold out, on special
 const menuCanvas = document.createElement("canvas"); menuCanvas.width = 1024; menuCanvas.height = 440; const menuTex = new THREE.CanvasTexture(menuCanvas); menuTex.colorSpace = THREE.SRGBColorSpace; menuTex.anisotropy = 4;
@@ -1576,12 +1601,18 @@ setActivity(false);
 function setGraphics(kind) { gfx = kind === "model" && rig ? "model" : "maquette";
   // Authored portions already follow stock through the rig; never cover them with fallback cubes.
   cabFood.visible = gfx !== "model";
+  maquettePlanting.forEach(o => { o.visible = gfx !== "model"; });
   MAQ.forEach(([o, p]) => { if (gfx === "model") { if (o.parent) o.parent.remove(o); } else if (!o.parent) p.add(o); });
   glbTop.forEach(o => { o.visible = gfx === "model"; }); boardKey = ""; menuKey = ""; return gfx; }
 async function loadModel() {
   if (!stage.ok) throw new Error("WebGL is not available");
-  const { scene: g } = await loadTwinAsset({ url: "/assets/models/cafe/cafe-venue.glb", contractUrl: "/assets/models/cafe/cafe-rig-contract.json", contract: CAFE_RIG, rootNode: "CAFE_VENUE" });
+  const { scene: g, contract: venueSpec } = await loadTwinAsset({ url: "/assets/models/cafe/cafe-venue.glb", contractUrl: "/assets/models/cafe/cafe-rig-contract.json", contract: CAFE_RIG, rootNode: "CAFE_VENUE" });
   const r = createCafeRig(g, THREE), venue = g.getObjectByName("CAFE_VENUE");
+  prepareDisplayGlass(g);
+  const ceiling = createCafeCeiling(), floorInfill = createCafeFloorInfill(g); g.add(ceiling, floorInfill);
+  // A missing lighting map must leave the existing interactive model usable.
+  try { cafeDaylight = await attachCafeDaylight(g, venueSpec.actual?.glb_sha256); }
+  catch (error) { console.warn("Café daylight unavailable; using live lighting", error); g.remove(ceiling); }
   stage.root.add(g); g.updateMatrixWorld(true);
   // each authored part joins the page's own pickable group for that part, so hover, pin, Explore and the tour work unchanged
   const partsIn = o => { const s = new Set(); o.traverse(x => { if (x.userData && x.userData.twin_part) s.add(x.userData.twin_part); }); return s; };
@@ -1662,6 +1693,7 @@ const hLabel = h => { const hh = Math.floor(h) % 24, mm = Math.round((h - Math.f
 const lab = (c, t) => `<span class="lab ${c}">${esc(t)}</span>`;
 const LITE = /[?&]lite\b/.test(location.search);   // test runs only: cheaper rendering in software GL
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let decisionDesk = null;
 let dow = 1, speed = 6, playing = !reduce, acc = 0, wxMode = "typical", liveWx = null, DATA = {};
 const wxFor = dw => wxMode === "live" && liveWx ? liveWx[dw] : K.typicalWeather(dw, wxMode === "dry" ? "dry" : "typical");
 const wxWeek = () => wxMode === "live" && liveWx ? liveWx : null;
@@ -1727,7 +1759,7 @@ function live() { const st = K.dayStats(S, d), t = d.t, cafe = S.mode === "cafe"
 // ---------------- the week
 let W = null, A = null, PR = null, prKey = "";
 const leverKey = () => JSON.stringify([S.mode, S.demand, S.month, wxMode, liveWx ? 1 : 0, S.commission, S.rent]);
-function recompute() { W = K.week(S, wxWeek()); A = K.week({ ...S, ...K.AS_IS }, wxWeek()); plTable(); bandsPanel(); leverCards(); meChart(); wasteChart(); charts();
+function recompute() { W = K.week(S, wxWeek()); A = K.week({ ...S, ...K.AS_IS }, wxWeek()); plTable(); bandsPanel(); leverCards(); meChart(); wasteChart(); charts(); decisionDesk?.update();
   const k = leverKey(); if (k !== prKey) { prKey = k; PR = null; $("proofP").textContent = "Running every change against the venue as it is…"; setTimeout(() => { if (prKey !== k) return; PR = K.proof(S, wxWeek()); proofPanel(); leverCards(); }, 30); } else if (PR) proofPanel(); }
 function plTable() { const a = A, w = W, Y = fromYour(); const r = (n, va, vb, cls = "", yd) => `<tr class="${cls}"><td>${n}</td><td class="n">${va == null ? "" : money(va)}</td><td class="n">${vb == null ? "" : money(vb)}</td><td class="n">${vb == null ? "" : pct(vb / w.revenue, 1)}</td>${Y ? `<td class="n" style="color:var(--data)">${yd == null ? "–" : yd}</td>` : ""}</tr>`;
   const dt = x => (x.salesInc - x.appInc - x.directInc) / K.GST;
@@ -1989,9 +2021,9 @@ function jump(h) { const M = K.MODES[S.mode], target = Math.round(Math.max(M.sta
 function newDayKeep() { const t = d.t; d = K.newDay(S, dow, wxFor(dow)); while (d.t < t && d.t < K.MODES[S.mode].end - 1) K.step(S, d); }
 $("hour").oninput = e => jump(+e.target.value);
 function setMode(m, keepTime) { S.mode = m; document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false")); const cafe = m === "cafe", M = K.MODES[m];
-  $("title").textContent = cafe ? "A neighbourhood café, running live" : "A neighbourhood restaurant and bar, running live"; $("kTitle").textContent = cafe ? "Kitchen and coffee" : "Kitchen and bar";
-  $("lede").textContent = cafe ? "One fictional New Zealand venue, minute by minute: who arrives and when, the coffee queue and the kitchen pass, the roster against the work, what goes in the bin, and what the week leaves after wages, food, rent and app commission."
-    : "The same room after dark: bookings and walk-ins, table turns, the kitchen pass and the bar, no-shows, the roster against the work, what goes in the bin, and what the week leaves after wages, food, rent and app commission.";
+  $("title").textContent = cafe ? "Try tomorrow, today." : "Rehearse a better service."; $("kTitle").textContent = cafe ? "Kitchen and coffee" : "Kitchen and bar";
+  $("lede").textContent = cafe ? "Test a roster, a prep plan or a new ordering channel. See what changes before you change the real café."
+    : "Test staffing, prep and bookings before the doors open. See the trade-offs across a whole week.";
   $("hour").min = M.start / 60; $("hour").max = (M.end - 1) / 60; $("demH").textContent = cafe ? "Customers by hour" : "Covers by hour"; tw.setMode(m);
   if (!keepTime) { dow = cafe ? 1 : 4; $("dow").value = dow; }
   d = K.newDay(S, dow, wxFor(dow)); jump(keepTime ? keepTime : cafe ? 8.1 : 19.25); aiTable(); recompute(); }
@@ -2024,6 +2056,15 @@ tw.sync(0.016, d, S, d.t); tags(live()); if (!new URLSearchParams(location.searc
 window.__cafe = { S, graphics: v => (v ? tw.setGraphics(v) : tw.gfx), activity: v => (v == null ? tw.activity : tw.setActivity(v)), advance: (sec = 0.3) => tw.stage.advance(sec, 0.1), setView, recompute, jump, speed: setSpeed, setMode, state: () => d, week: () => W, proof: () => PR, loadSamples, play: v => { playing = v; $("pause").textContent = playing ? "Pause" : "Play"; },
   setDay: v => { dow = v; $("dow").value = v; newDayKeep(); charts(); }, setWeather: v => { $("wxSel").value = v; $("wxSel").onchange({ target: $("wxSel") }); },
   apply: on => { K.LEVERS.filter(l => l.modes.includes(S.mode)).forEach(l => S[l.k] = !!on); changed(true); }, lever: (k, v) => { S[k] = v; changed(true); } };
+if (!new URLSearchParams(location.search).has("shift")) {
+  decisionDesk = mountDecisionDesk({
+    state: () => S, baseline: () => A, current: () => W, levers: K.LEVERS,
+    change: (key, value) => { S[key] = value; changed(true); },
+    reset: () => { K.LEVERS.forEach(l => S[l.k] = false); changed(true); },
+    focus: view => setView(view, reduce), resize: () => tw.resize(),
+    money, fmt, weather: () => wxMode === "live" && liveWx ? "Auckland live weather forecast" : wxMode === "dry" ? "Dry week" : "Typical spring week"
+  });
+}
 // ---------------- the twin stage: touch any part, a guided tour, a ghost of another choice, quiet sound, and a dial for month and minute
 const ST = tw.stage, Gp = tw.G, SIMU = "Simulated";
 const onNow = r => K.staffAt(d.roster, r, d.t), statsNow = () => K.dayStats(S, d);

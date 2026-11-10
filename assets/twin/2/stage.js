@@ -26,9 +26,13 @@ const withTimeout = (p, ms, what) => !ms ? p : new Promise((res, rej) => {
  */
 export async function loadTwinAsset(o) {
   const { url, contractUrl, contract, rootNode, timeoutMs = 0 } = o;
-  const spec = await withTimeout(fetch(contractUrl).then(r => { if (!r.ok) throw new Error(`rig contract ${r.status}`); return r.json(); }), timeoutMs, 'rig contract');
+  const spec = await withTimeout(fetch(contractUrl, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(`rig contract ${r.status}`); return r.json(); }), timeoutMs, 'rig contract');
   if (!spec || spec.contract !== contract) throw new Error(`unsupported rig contract ${spec && spec.contract} (want ${contract})`);
-  const gltf = await withTimeout(new GLTFLoader().loadAsync(url), timeoutMs, 'GLB');
+  // A rebuilt venue keeps its filename. Tie its cache key to the measured contract
+  // so a newly deployed page cannot silently keep displaying the previous geometry.
+  const assetUrl = new URL(url, location.href);
+  if (spec.actual?.glb_sha256) assetUrl.searchParams.set('v', spec.actual.glb_sha256);
+  const gltf = await withTimeout(new GLTFLoader().loadAsync(assetUrl.href), timeoutMs, 'GLB');
   const scene = gltf.scene;
   const root = scene.getObjectByName(rootNode);
   if (!root) throw new Error(`GLB has no ${rootNode} node`);
@@ -38,14 +42,14 @@ export async function loadTwinAsset(o) {
   return { scene, contract: spec, gltf };
 }
 
-/** Shadows on solid parts; simplified alpha glass neither casts shadows nor writes depth (and so stays out of AO). */
+/** Shadows on solid parts; transmissive glass must not cast an opaque shadow. */
 export function prepareAsset(scene) {
   scene.traverse(m => {
     if (!m.isMesh) return;
     const mats = Array.isArray(m.material) ? m.material : [m.material];
-    const clear = mats.some(x => x && x.transparent);
+    const clear = mats.some(x => x && (x.transparent || x.transmission > 0));
     m.castShadow = !clear; m.receiveShadow = true;
-    if (clear) mats.forEach(x => { x.depthWrite = false; });
+    mats.filter(x => x?.transparent).forEach(x => { x.depthWrite = false; });
   });
   return scene;
 }

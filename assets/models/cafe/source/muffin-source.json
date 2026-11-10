@@ -1,0 +1,27 @@
+{
+  "asset": "3DCake001",
+  "author": "Lennart Demes / ambientCG",
+  "source": "https://ambientcg.com/view?id=3DCake001",
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://docs.ambientcg.com/license/",
+  "verified": "2026-11-10",
+  "sourceArchiveSha256": "671e91be00fded5c5c7e5dcaf9a6c4b6f396a2fffa9e6c02d4588ab625ab6f7b",
+  "input": {
+    "bytes": 11498272,
+    "sha256": "19137f81a2b51d89f49269f43019df637dd7dd7960cc7ffabeadbcff17a6db54"
+  },
+  "master": {
+    "file": "muffin-master.glb",
+    "triangles": 49861,
+    "bytes": 5074924,
+    "sha256": "9084a59739304efb43d9f99a8706240e5b83512a9eefa2095a152cb888eb6cde"
+  },
+  "browser": {
+    "file": "muffin-browser.glb",
+    "triangles": 13373,
+    "bytes": 1388632,
+    "sha256": "4bb2531452ca431e7c4d8f410f9ca0f8dc897c0a789354ae1d8cf48087cb7bd6"
+  },
+  "changes": "Master retains source geometry with 2K JPEG maps. Browser: meshoptimizer simplification, locked borders, 1K JPEG maps. No geometry compression. Venue sets width to 100 mm; illustrative portion size, not a product specification.",
+  "status": "candidate; physical device performance unverified"
+}

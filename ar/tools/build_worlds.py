@@ -27,7 +27,7 @@ POSTERS = '--posters' in sys.argv
 ARGV = [a for a in sys.argv if a != '--posters']
 MODES = ARGV[3].split(',') if len(ARGV) > 3 else ['table', 'inside']
 OUT = os.path.join(HERE, '..', 'worlds', 'files')
-# triangle budgets: phones in Quick Look stay smooth around 100 to 200 thousand; life size gets a little more detail
+# Delivery allowances, not a guarantee of performance on physical phones.
 BUDGET = {'table': 120000, 'inside': 160000}
 LIMIT_MB = 20
 ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
@@ -62,13 +62,18 @@ async def main():
                 await pg.goto(BASE + '/ar/tools/export-worlds.html', wait_until='load')
                 await pg.wait_for_function('window.__ready', timeout=60000)
                 tex = 2048 if (wid == 'earth' and mode == 'inside') else 1024   # the giant Earth keeps its full NASA picture
-                r = await pg.evaluate('([id, mode, max, tex]) => window.__export(id, mode, { maxTriangles: max, maxTexture: tex })', [wid, mode, BUDGET[mode], tex])
+                budget = BUDGET[mode]
+                if wid == 'cafe':
+                    contract_path = os.path.join(HERE, '..', '..', 'assets', 'models', 'cafe', 'cafe-rig-contract.json')
+                    with open(contract_path) as f:
+                        budget = json.load(f)['budget']['triangles_max']
+                r = await pg.evaluate('([id, mode, max, tex]) => window.__export(id, mode, { maxTriangles: max, maxTexture: tex })', [wid, mode, budget, tex])
                 await pg.close()
                 glb = os.path.join(OUT, f'{wid}-{mode}.glb'); usdz = os.path.join(OUT, f'{wid}-{mode}.usdz')
                 open(glb, 'wb').write(base64.b64decode(r['b64']))
                 st = glb2usdz.convert(glb, usdz)
                 raw_glb = os.path.getsize(glb)
-                draco = draco_glb(glb)
+                draco = False if wid == 'cafe' else draco_glb(glb)
                 chk = usd_check.check(usdz)
                 rep = r['report']
                 entry = {'glb_bytes': os.path.getsize(glb), 'glb_draco': draco, 'glb_bytes_uncompressed': raw_glb, 'usdz_bytes': os.path.getsize(usdz), 'triangles': chk['triangles'], 'triangles_before': rep['trianglesBefore'],

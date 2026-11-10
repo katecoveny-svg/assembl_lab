@@ -38,9 +38,10 @@ function stripShadowProxies(root) {
   root.traverse(o => { if (o.layers && o.layers.mask === 2) gone.push(o); });
   for (const o of gone) o.parent && o.parent.remove(o);
 }
-// glass that refracts makes three.js render the scene twice; plain see-through glass reads the same in AR
-function calmGlass(root) {
-  root.traverse(o => { if (!o.isMesh) return; for (const m of [].concat(o.material)) if (m && m.transmission > 0) { m.transmission = 0; m.transparent = true; m.opacity = Math.min(m.opacity ?? 1, 0.35); m.depthWrite = false; } });
+// Approximate refraction with alpha glass for mobile viewers. Multiple cabinet
+// panes need a lighter opacity so stacked surfaces do not hide the food.
+function calmGlass(root, opacity = .35) {
+  root.traverse(o => { if (!o.isMesh) return; for (const m of [].concat(o.material)) if (m && m.transmission > 0) { m.transmission = 0; m.transparent = true; m.opacity = Math.min(m.opacity ?? 1, opacity); m.depthWrite = false; } });
 }
 // centre a group's footprint on the origin, on the ground
 function centreOn(root, inner, box) {
@@ -389,9 +390,14 @@ async function dc(ctx) {
 }
 
 async function cafe(ctx) {
-  const g = await loadGLB('/assets/models/cafe/cafe-venue.glb', ctx.onProgress, 5668424);
+  const contractResponse = await fetch('/assets/models/cafe/cafe-rig-contract.json', { cache: 'no-cache' });
+  if (!contractResponse.ok) throw new Error('Café asset contract unavailable');
+  const spec = await contractResponse.json();
+  const g = await loadGLB('/assets/models/cafe/cafe-venue.glb?v=' + spec.actual.glb_sha256, ctx.onProgress, spec.actual.glb_bytes);
   const [{ createCafeRig }, kit] = await Promise.all([import('/assets/models/cafe/cafe-rig-controller.mjs'), import('/assets/twin/3/kit.js')]);
-  const venue = g.scene; calmGlass(venue);
+  const venue = g.scene; calmGlass(venue, .06);
+  const { createCafeCeiling, createCafeFloorInfill } = await import('/cafe/daylight.mjs?v=counter-20261111');
+  venue.add(createCafeCeiling(), createCafeFloorInfill(venue));
   const rig = createCafeRig(venue, THREE);
   // A clearly illustrative stocked architectural view, not the live café simulation.
   rig.setVisualState({ mode: 'cafe', queue: 0, lamps: .2, drinksQueued: 0, umbrellas: [1,1,1,1], cabinet: { scone: 8, toastie: 8, salad: 8, brownie: 8, muffin: 8 } });

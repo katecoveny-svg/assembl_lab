@@ -51,7 +51,10 @@ function rootMatrix(root, node, out = new THREE.Matrix4()) {
   return out.multiplyMatrices(new THREE.Matrix4().copy(root.matrixWorld).invert(), node.matrixWorld);
 }
 
-export async function exportWorld(id, mode, { maxTriangles = 180000, fps = 20, renderer = null, maxTexture = 1024 } = {}) {
+export async function exportWorld(id, mode, { maxTriangles = null, fps = 20, renderer = null, maxTexture = 1024 } = {}) {
+  // The cafe includes repeated photo-scanned food. Retain the reviewed geometry;
+  // a generic cap must not silently remove small portions or cabinet fittings.
+  maxTriangles ??= id === 'cafe' ? 380000 : 180000;
   mode = modeOf(mode);
   const info = worldInfo(id), k = mode === 'table' ? info.table.scale : info.inside.scale;
   const w = await buildWorld(id, { renderer, mode, scale: k });
@@ -65,6 +68,7 @@ export async function exportWorld(id, mode, { maxTriangles = 180000, fps = 20, r
   nodes.forEach(n => { n.visible = false; });
   const stillBudget = Math.round(maxTriangles * (nodes.length ? 0.85 : 1));
   const still = snapshot(root, { scale: 1, unitsPerMetre: 1, keepOrigin: true, preservePBR: id === 'cafe', maxTriangles: stillBudget, maxBytes: 1e12, maxTexture, name: `${id} still` });
+  if (id === 'cafe' && still.report.dropped.length) throw new Error('Cafe export exceeded its geometry budget. Review the assets before removing visible parts.');
   nodes.forEach((n, i) => { n.visible = wasVisible[i]; });
   // the snapshot keeps every face's own corners; welding shared corners (same place, normal and texture point) roughly
   // halves the vertices, and with them the file

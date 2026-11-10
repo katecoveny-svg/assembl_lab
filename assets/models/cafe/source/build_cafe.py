@@ -492,6 +492,8 @@ join('QUEUE_BARRIER', posts, QUEUE, twin_part='counter')
 
 # ================================================================================================ COFFEE: espresso machine + grinder
 COFFEE = group('COFFEE', 'coffee')
+sys.path.insert(0, HERE)
+import counter_detail
 
 
 def espresso_machine(prefix, X, Y, Z, facing, parent, cups=True):
@@ -521,6 +523,7 @@ def espresso_machine(prefix, X, Y, Z, facing, parent, cups=True):
         body.append(box(f'group_neck{gx}', 0.1, 0.08, 0.07, X + gx, Y + 0.22, Z + s * 0.25, 'steel', 0.01))
     # hot water tap
     body.append(tube(prefix + '_hotwater', [(X, Y + 0.3, Z + s * 0.25), (X, Y + 0.3, Z + s * 0.32), (X, Y + 0.18, Z + s * 0.34)], 0.008, 'steel'))
+    body += counter_detail.espresso_details(globals(), prefix, X, Y, Z, s)
     join(prefix + '_BODY', body, E, twin_part='coffee')
     pf = {}
     for side, gx in (('L', -0.22), ('R', 0.22)):
@@ -537,7 +540,7 @@ def espresso_machine(prefix, X, Y, Z, facing, parent, cups=True):
     if cups:
         cs = []
         for i in range(8):
-            cs += [cyl(f'cup{i}', 0.042, 0.032, 0.07, X - 0.33 + (i % 4) * 0.09, Y + 0.505 + (i // 4) * 0.072, Z - 0.05, 'white', 12)]
+            cs += counter_detail.cup(globals(), f'cup{i}', X - .30 + (i % 4) * .18, Y + .471 + (i // 4) * .057, Z - .04)
         join(f'{prefix}_CUP_STACK', cs, E, twin_part='coffee', state='visible in café mode')
     # milk jugs and knock box beside the machine (static)
     return E, pf
@@ -558,11 +561,9 @@ def grinder(prefix, X, Y, Z, parent):
 
 ESP_MAIN, PF_MAIN = espresso_machine('ESPRESSO_MAIN', 3.4, FY + 1.055, 1.15, -1, COFFEE)
 GRINDER_MAIN = grinder('GRINDER_MAIN', 4.18, FY + 1.055, 1.18, COFFEE)
-# knock box + two milk jugs on the counter (static)
-kb = [box('knockbox', 0.14, 0.12, 0.18, 2.75, FY + 1.115, 1.0, 'char', 0.02), cyl('kb_bar', 0.008, 0.008, 0.14, 2.75, FY + 1.17, 1.0, 'steel', 8, axis='X')]
-for j, jx in enumerate((2.42, 2.54)):
-    kb.append(cyl(f'jug{j}', 0.038, 0.045, 0.1, jx, FY + 1.105, 0.95, 'steel', 14))
-join('BARISTA_TOOLS', kb, COFFEE, twin_part='coffee')
+# Detailed static tools and licensed countertop styling; stock nodes stay separate.
+counter_detail.barista_tools(globals(), COFFEE, FY)
+counter_detail.display_food(globals(), COFFEE, FY, HERE)
 # second station on the back bench (the Proposed lever "Second grinder and station")
 STATION2 = empty('STATION_2', COFFEE, twin_part='coffee', state='visible only when the Proposed lever "station" is on (café mode)')
 ESP2, PF2 = espresso_machine('ESPRESSO_SECOND', 3.3, FY + 0.94, -1.55, 1, STATION2, cups=False)
@@ -634,23 +635,11 @@ for j, kk in enumerate(CAB_ITEMS):
         toasted=bpy.data.meshes.new('portion_toastie_layered');layers.to_mesh(toasted);layers.free()
         for material in ('bake','white','leaf','cocoa'): toasted.materials.append(M[material])
         me=toasted
-    if kk == 'muffin':  # a baked top on a blush paper case
-        top = bm_sphere(0.05, 20, 10)
-        for v in top.verts:
-            a=math.atan2(v.co.y,v.co.x)
-            v.co *= 1+.04*math.sin(a*9+v.co.z*90)
-        bmesh.ops.translate(top, vec=(0, 0, 0.025), verts=top.verts)
-        tme = bpy.data.meshes.new('_mt'); top.to_mesh(tme); top.free()
-        tme.materials.append(M['bake'])
-        bm3 = bmesh.new(); bm3.from_mesh(me); bm3.from_mesh(tme); bpy.data.meshes.remove(tme)
-        for f in bm3.faces:
-            pass
-        me2 = bpy.data.meshes.new('portion_muffin_full'); bm3.to_mesh(me2); bm3.free()
-        me2.materials.append(M['blush']); me2.materials.append(M['bake'])
-        n_case = len(me.polygons)
-        for i, poly in enumerate(me2.polygons):
-            poly.material_index = 0 if i < n_case else 1
-        me = me2
+    if kk == 'muffin':
+        # A photo-scanned muffin, shared by all eight stock slots.
+        sys.path.insert(0, HERE)
+        from food_scan import load_muffin
+        me = load_muffin(os.path.join(HERE, 'muffin-browser.glb'))
     if kk == 'salad':  # leaves heaped in a white bowl
         bowl = bm_cyl(0.065, 0.045, 0.045, 14)
         leaves = bmesh.new()
@@ -677,7 +666,7 @@ for j, kk in enumerate(CAB_ITEMS):
         Y = FY + (1.376 if k >= 4 else 1.12)
         Z = CZ - 0.18 + ((k // 2) % 2) * 0.24
         h = {'scone': 0.025, 'toastie': 0.0175, 'salad': 0.0225, 'brownie': 0.0175, 'muffin': 0.0225}[kk]
-        o = instance(f'CAB_{kk.upper()}_{k}', me, X, Y + h, Z, rot_y=(k * 0.7 if kk == 'toastie' else 0), parent=holder, menu_item=kk, portion_index=k)
+        o = instance(f'CAB_{kk.upper()}_{k}', me, X, Y + h, Z, rot_y=(k * 0.7 if kk in ('toastie', 'muffin') else 0), parent=holder, menu_item=kk, portion_index=k)
     tag = [box(f'tag_{kk}', 0.13, 0.05, 0.008, 4.7 + j * 0.42 + 0.085, FY + 1.095, CZ + 0.336, 'navy', 0.003)]
     join(f'CAB_{kk.upper()}_SPECIAL', tag, holder, twin_part='cabinet', menu_item=kk, state='visible while d.special[item] is true')
 
@@ -1138,6 +1127,7 @@ def render_all():
     demo_state()
     shots = [('cafe-hero', (16.0, 19.0, 24.0), (0.0, 0.0, 0.5), 34),
              ('cafe-counter-detail', (8.6, 2.9, 5.2), (4.4, 1.2, 0.9), 38),
+             ('cafe-food-detail', (5.95, 1.75, 3.7), (5.6, 1.46, 1.2), 48),
              ('cafe-pass-detail', (-0.6, 2.4, 0.6), (2.0, 1.3, -2.7), 42)]
     only = [x for x in os.environ.get('CAFE_SHOTS', '').split(',') if x]   # e.g. CAFE_SHOTS=cafe-pass-detail renders one still
     out = []
