@@ -64,7 +64,7 @@ export async function exportWorld(id, mode, { maxTriangles = 180000, fps = 20, r
   const wasVisible = nodes.map(n => n.visible);
   nodes.forEach(n => { n.visible = false; });
   const stillBudget = Math.round(maxTriangles * (nodes.length ? 0.85 : 1));
-  const still = snapshot(root, { scale: 1, unitsPerMetre: 1, keepOrigin: true, maxTriangles: stillBudget, maxBytes: 1e12, maxTexture, name: `${id} still` });
+  const still = snapshot(root, { scale: 1, unitsPerMetre: 1, keepOrigin: true, preservePBR: id === 'cafe', maxTriangles: stillBudget, maxBytes: 1e12, maxTexture, name: `${id} still` });
   nodes.forEach((n, i) => { n.visible = wasVisible[i]; });
   // the snapshot keeps every face's own corners; welding shared corners (same place, normal and texture point) roughly
   // halves the vertices, and with them the file
@@ -92,7 +92,7 @@ export async function exportWorld(id, mode, { maxTriangles = 180000, fps = 20, r
     (function pair(a, b) { for (let j = 0; j < a.children.length; j++) { const ca = a.children[j], cb = b.children[j]; if (!cb) continue; if (isMoving.has(ca)) cb.visible = false; else pair(ca, cb); } })(n, c);
     c.position.set(0, 0, 0); c.quaternion.identity(); c.scale.set(1, 1, 1); c.visible = true;
     const g = new THREE.Group(); g.add(c); g.updateMatrixWorld(true);
-    const snap = snapshot(g, { scale: 1, unitsPerMetre: 1, keepOrigin: true, maxTriangles: share, maxBytes: 1e12, maxTexture, name: `moving ${i}` }); weld(snap.group);
+    const snap = snapshot(g, { scale: 1, unitsPerMetre: 1, keepOrigin: true, preservePBR: id === 'cafe', maxTriangles: share, maxBytes: 1e12, maxTexture, name: `moving ${i}` }); weld(snap.group);
     const node = new THREE.Group(); node.name = `moving_${i}`;
     for (const m of [...snap.group.children]) node.add(m);
     rootMatrix(root, n).decompose(node.position, node.quaternion, node.scale);

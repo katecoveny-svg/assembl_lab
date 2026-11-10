@@ -45,14 +45,19 @@ test('GLB matches its contract: id, every required node, measured pivots, bytes 
   assert.equal(createHash('sha256').update(bytes).digest('hex'), contract.actual.glb_sha256);
 });
 
-test('budget: at most 4 MB, 150k rendered triangles, 26 materials, zero textures, no compression extensions', () => {
+test('budget: at most 8 MB, 150k rendered triangles, 26 materials, 16 PBR textures, no compression extensions', () => {
   const b = contract.budget, a = contract.actual;
   assert.ok(bytes.length <= b.glb_bytes_max, `${bytes.length} bytes`);
   assert.ok(a.triangles_rendered <= b.triangles_max, `${a.triangles_rendered} tris`);
   assert.ok((asset.materials || []).length <= b.materials_max);
-  assert.equal((asset.textures || []).length, 0); assert.equal((asset.images || []).length, 0);
+  assert.ok((asset.textures || []).length > 0 && asset.textures.length <= b.textures_max);
+  assert.ok(asset.materials.some(m => m.normalTexture));
+  for (const mesh of asset.meshes) for (const p of mesh.primitives) {
+    const m = asset.materials[p.material];
+    if (m.normalTexture || m.pbrMetallicRoughness?.baseColorTexture) assert.ok(p.attributes.TEXCOORD_0 !== undefined, 'textured primitives need UVs');
+  }
   assert.ok(!(asset.extensionsUsed || []).some(e => /draco|meshopt/i.test(e)), 'the twin stage loader has no Draco or meshopt decoder');
-  assert.match(asset.asset.generator, /Blender/);
+  assert.match(asset.asset.generator, /Blender|glTF-Transform/);
 });
 
 test('authored in the page plan: tables, queue spots and stations sit where the simulation puts people', () => {

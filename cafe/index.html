@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ" data-feeds="fpi,foodprices,weather,calendar"><head><script src="/lab/preview-head.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en-NZ" data-feeds="fpi,foodprices,weather,calendar"><head><script src="/lab/preview-head.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body class="twin-editorial">
 <title>Café and Restaurant Twin</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -274,13 +274,14 @@ details.vz-more[open]>summary{margin-bottom:8px}
     <select id="wxSel" aria-label="Weather"><option value="typical">Typical spring week</option><option value="dry">A dry week</option><option value="live">Live forecast, Auckland</option></select>
     <span class="wxchip" id="wxChip"><i></i><span id="wxText"></span></span>
     <div class="seg" role="group" aria-label="3D detail" id="gfxSeg"><button type="button" data-gfx="model" aria-pressed="false">Detailed model</button><button type="button" data-gfx="maquette" aria-pressed="true">Simple maquette</button></div>
+    <button type="button" class="btn" id="activityView" aria-pressed="false">Show simulated activity</button>
     <span class="gfxnote" id="gfxNote" role="status" aria-live="polite">Loading the detailed model…</span>
   </div>
 
   <div class="main">
     <div class="stagebox" id="stagebox">
       <canvas id="scene" aria-label="3D model of a café, cut away so you can see in. Hover or tap a part for its live number; Explore lists every part. The model shows street and footpath tables at the front, the counter with the coffee machine and food cabinet, the dining room, the kitchen line and pass at the back, an office with the roster board, and the bins in the back yard"></canvas>
-      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="venue" aria-pressed="true">Whole venue</button><button type="button" data-view="counter">Counter and coffee</button><button type="button" data-view="kitchen">Kitchen and pass</button><button type="button" data-view="dining">Tables</button><button type="button" data-view="street">Street and weather</button><button type="button" data-view="office">Roster and bin</button></div>
+      <div class="views" role="group" aria-label="Camera views"><button type="button" data-view="venue" aria-pressed="true">Whole venue</button><button type="button" data-view="counter">Counter and coffee</button><button type="button" data-view="interior">Inside the café</button><button type="button" data-view="kitchen">Kitchen and pass</button><button type="button" data-view="dining">Tables</button><button type="button" data-view="street">Street and weather</button><button type="button" data-view="office">Roster and bin</button></div>
       <div id="tags"></div>
       <div class="key" aria-hidden="true"><span style="--k:var(--t-seated)">seated</span><span style="--k:var(--t-ordered)">waiting for food</span><span style="--k:var(--t-eating)">eating</span><span style="--k:var(--t-paying)">paying</span><span style="--k:var(--t-held)">held for a booking</span><span style="--k:var(--live)">waiting too long</span><span style="--k:var(--alert)">walked away</span></div>
       <div class="badge" id="badge">SIMULATED</div>
@@ -460,6 +461,7 @@ if(window.__assemblLive)draw(window.__assemblLive);
 <script src="/assets/connect/connect.js"></script>
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <link rel="stylesheet" href="/assets/twin/1/stage.css">
+<link rel="stylesheet" href="/assets/twin/editorial.css">
 <style>.tw .views{max-width:calc(100% - 360px)}@media (max-width:640px){.tw .views{max-width:none}.tw .views button{padding:4px 8px;font-size:10.5px}.tw .badge{top:auto;bottom:12px;left:12px;right:auto}}.tw .key{max-width:calc(100% - 300px)}.stagebox{background:#EAE4DC}html.tw-poster .key,html.tw-poster .ghosttag{display:none!important}.ghosttag{z-index:1;box-shadow:0 0 0 1.5px #8E6E88,0 6px 16px -10px rgba(0,0,0,.4)}</style>
 <script>
 // A generic, fictional New Zealand neighbourhood venue that trades as a café (breakfast and lunch, coffee-led)
@@ -1146,7 +1148,7 @@ const FY = 0.15;                                  // floor level
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), col = n => new THREE.Color(css(n) || "#999");
 function sizeCanvas() { const w = box.clientWidth || 800, h = new URLSearchParams(location.search).has("shift") ? (w < 600 ? 450 : Math.min(740, Math.max(560, innerHeight * .66))) : w < 600 ? Math.max(440, Math.min(innerHeight * 0.72, 600)) : Math.max(window.__minH || 440, Math.min(innerHeight * 0.74, w * 0.62)); canvas.style.height = Math.round(h) + "px"; }
 sizeCanvas();
-const stage = createStage({ id: "cafe", canvas, box, place: "auckland", extent: 17, tableY: -0.72, controls: { minDistance: 5, maxDistance: 70, maxPolarAngle: Math.PI * 0.47 }, ao: { radius: 0.45 }, tilt: 3.5, tiltBand: 0.22, onResize: () => resize() });
+const stage = createStage({ id: "cafe", canvas, box, place: "auckland", extent: 17, tableY: -0.72, controls: { minDistance: 1.2, maxDistance: 70, maxPolarAngle: Math.PI * 0.47 }, ao: { radius: 0.45 }, tilt: 0, tiltBand: 0.22, onResize: () => resize() });
 const SM = stage.M, geo = stage.geo, camera = stage.camera, renderer = stage.renderer;
 // everything built while a part's group is current goes into that group, so the part can be hovered and pinned as one
 let CUR = null; const G = {};
@@ -1389,9 +1391,9 @@ function lights(dt, h, raining, open, S, d) {
   SM.timber.emissive.setHex(0x3a2210); SM.timber.emissiveIntensity = lightK * 0.15; }
 
 // ---------------- camera views (the stage flies between them)
-const VIEWS = { venue: { p: [11.5, 15, 18.5], t: [0, 0, 0.2] }, counter: { p: [9.5, 7.2, 10.5], t: [4.6, 1, 1.2] }, kitchen: { p: [4, 10.5, 4.6], t: [3.2, 0.6, -3.6] },
+const VIEWS = { interior: { p: [8.4, 1.8, 5.3], t: [4.4, 1.25, 0.9] }, venue: { p: [11.5, 15, 18.5], t: [0, 0, 0.2] }, counter: { p: [9.5, 7.2, 10.5], t: [4.6, 1, 1.2] }, kitchen: { p: [4, 10.5, 4.6], t: [3.2, 0.6, -3.6] },
   dining: { p: [-1, 9.5, 11.5], t: [-4, 0.5, 1.6] }, street: { p: [2, 6.5, 22], t: [0, 0.8, 7.6] }, office: { p: [-1.2, 7, 1.6], t: [-7, 0.9, -5.6] } };
-const VIEWS_N = { venue: { p: [5, 24, 19.5], t: [0, 0, 0.6] }, counter: { p: [6.5, 9, 12], t: [4.6, 1, 1.4] }, kitchen: { p: [3.6, 13, 5], t: [3.2, 0.6, -3.8] },
+const VIEWS_N = { interior: { p: [8.6, 2.2, 5.6], t: [4.4, 1.25, 0.9] }, venue: { p: [5, 24, 19.5], t: [0, 0, 0.6] }, counter: { p: [6.5, 9, 12], t: [4.6, 1, 1.4] }, kitchen: { p: [3.6, 13, 5], t: [3.2, 0.6, -3.8] },
   dining: { p: [-3, 13, 13], t: [-4, 0.5, 1.8] }, street: { p: [1, 9.5, 27], t: [0, 0.8, 8] }, office: { p: [-2.5, 10, 2.5], t: [-7, 0.6, -5.8] } };
 stage.views = VIEWS;
 let view = "venue";
@@ -1564,6 +1566,13 @@ function drawMenu(d, S) { const items = K.MENU[S.mode], secs = K.SECTIONS[S.mode
       if (out) { const w = g.measureText(it.n).width; g.fillRect(x + 8, y - 6, Math.min(w, cw - 92), 1.5); } }); });
   g.fillStyle = SOFT; g.font = "500 14px IBM Plex Mono, monospace"; g.fillText("SIMULATED MENU · FICTIONAL VENUE · PRICES INCL. GST", 28, H - 18);
   menuTex.needsUpdate = true; }
+let activityVisible = false;
+function setActivity(visible) {
+  activityVisible = !!visible;
+  [pBody, pHead, sBody, sHead, sApron, gBody].forEach(mesh => { mesh.visible = activityVisible; });
+  return activityVisible;
+}
+setActivity(false);
 function setGraphics(kind) { gfx = kind === "model" && rig ? "model" : "maquette";
   MAQ.forEach(([o, p]) => { if (gfx === "model") { if (o.parent) o.parent.remove(o); } else if (!o.parent) p.add(o); });
   glbTop.forEach(o => { o.visible = gfx === "model"; }); boardKey = ""; menuKey = ""; return gfx; }
@@ -1579,7 +1588,7 @@ async function loadModel() {
   r.setBoardTexture("roster", boardTexG); r.setBoardTexture("menu", menuTex);
   glbTop.forEach(o => { o.visible = false; }); rig = r; return r; }
 stage.start();
-return { applyTheme, setView, setMode, resize, sync, project, get view() { return view; }, get aspect() { return camera.aspect; }, TPOS, renderer, stage, G, setGraphics, loadModel, get gfx() { return gfx; }, get ready() { return !!rig; }, ghostQueue, onFrame: fn => stage.onFrame(fn) };
+return { applyTheme, setView, setMode, resize, sync, project, get view() { return view; }, get aspect() { return camera.aspect; }, TPOS, renderer, stage, G, setGraphics, setActivity, get activity() { return activityVisible; }, loadModel, get gfx() { return gfx; }, get ready() { return !!rig; }, ghostQueue, onFrame: fn => stage.onFrame(fn) };
 }
 
 (() => {
@@ -1997,15 +2006,20 @@ tw.resize(); theme(); syncInputs(); srcTable(); setView("venue", true); setMode(
 // ---------------- 3D detail: the Blender-authored venue (default) or the simple maquette. ?model=maquette starts on the maquette.
 // Reset: choose either button again, or reload. The simulation's day, time, levers and data stay as they are either way.
 let gfxWant = new URLSearchParams(location.search).get("model") === "maquette" ? "maquette" : "model";
+$("activityView").onclick = () => {
+  const visible = tw.setActivity(!tw.activity);
+  $("activityView").setAttribute("aria-pressed", String(visible));
+  $("activityView").textContent = visible ? "Hide simulated activity" : "Show simulated activity";
+};
 function gfxUI(note) { document.querySelectorAll("[data-gfx]").forEach(b => b.setAttribute("aria-pressed", b.dataset.gfx === tw.gfx ? "true" : "false")); if (note != null) $("gfxNote").textContent = note; }
 document.querySelectorAll("[data-gfx]").forEach(b => b.onclick = () => { gfxWant = b.dataset.gfx;
   if (gfxWant === "model" && !tw.ready) { gfxUI($("gfxNote").textContent.startsWith("Loading") ? null : "The detailed model is not available here; this is the simple maquette."); return; }
-  tw.setGraphics(gfxWant); gfxUI(gfxWant === "model" ? "Detailed model (Blender). People, plates and cups come from the simulation." : "Simple maquette. The simulation is unchanged."); });
+  tw.setGraphics(gfxWant); gfxUI(gfxWant === "model" ? "Detailed venue. Activity figures are optional; the simulation continues." : "Simple maquette. The simulation is unchanged."); });
 if (!tw.stage.ok) { $("gfxSeg").hidden = true; $("gfxNote").textContent = ""; }
-else tw.loadModel().then(() => { tw.setGraphics(gfxWant); gfxUI(tw.gfx === "model" ? "Detailed model (Blender). People, plates and cups come from the simulation." : "Simple maquette. The simulation is unchanged."); })
+else tw.loadModel().then(() => { tw.setGraphics(gfxWant); gfxUI(tw.gfx === "model" ? "Detailed venue. Activity figures are optional; the simulation continues." : "Simple maquette. The simulation is unchanged."); })
   .catch(e => { console.warn("café model:", e && e.message); tw.setGraphics("maquette"); gfxUI("The detailed model could not load, so this is the simple maquette. The simulation is unchanged."); });
 tw.sync(0.016, d, S, d.t); tags(live()); if (!new URLSearchParams(location.search).has("shift")) fetchWeather();
-window.__cafe = { S, graphics: v => (v ? tw.setGraphics(v) : tw.gfx), advance: (sec = 0.3) => tw.stage.advance(sec, 0.1), setView, recompute, jump, speed: setSpeed, setMode, state: () => d, week: () => W, proof: () => PR, loadSamples, play: v => { playing = v; $("pause").textContent = playing ? "Pause" : "Play"; },
+window.__cafe = { S, graphics: v => (v ? tw.setGraphics(v) : tw.gfx), activity: v => (v == null ? tw.activity : tw.setActivity(v)), advance: (sec = 0.3) => tw.stage.advance(sec, 0.1), setView, recompute, jump, speed: setSpeed, setMode, state: () => d, week: () => W, proof: () => PR, loadSamples, play: v => { playing = v; $("pause").textContent = playing ? "Pause" : "Play"; },
   setDay: v => { dow = v; $("dow").value = v; newDayKeep(); charts(); }, setWeather: v => { $("wxSel").value = v; $("wxSel").onchange({ target: $("wxSel") }); },
   apply: on => { K.LEVERS.filter(l => l.modes.includes(S.mode)).forEach(l => S[l.k] = !!on); changed(true); }, lever: (k, v) => { S[k] = v; changed(true); } };
 // ---------------- the twin stage: touch any part, a guided tour, a ghost of another choice, quiet sound, and a dial for month and minute

@@ -130,6 +130,12 @@ function convertMaterial(m, tint, ctx) {
   o.color.copy(m.color || new THREE.Color(1, 1, 1));
   if (tint) o.color.multiply(tint);
   o.map = copyTexture(m.map, ctx.textures, ctx.opts.maxTexture, ctx.report);
+  if (ctx.opts.preservePBR) {
+    o.normalMap = copyTexture(m.normalMap, ctx.textures, ctx.opts.maxTexture, ctx.report);
+    o.roughnessMap = copyTexture(m.roughnessMap, ctx.textures, ctx.opts.maxTexture, ctx.report);
+    o.metalnessMap = copyTexture(m.metalnessMap, ctx.textures, ctx.opts.maxTexture, ctx.report);
+    if (m.normalScale) o.normalScale.copy(m.normalScale);
+  }
   if (m.isMeshStandardMaterial) { o.roughness = m.roughness; o.metalness = m.metalness; }
   else if (m.isMeshPhongMaterial) { o.roughness = THREE.MathUtils.clamp(1 - (m.shininess || 30) / 120, 0.15, 0.9); o.metalness = 0; }
   else { o.roughness = 0.85; o.metalness = 0; }
@@ -154,7 +160,7 @@ function convertMaterial(m, tint, ctx) {
   }
   o.side = THREE.FrontSide;
   o.userData.wasDoubleSided = m.side === THREE.DoubleSide || m.side === THREE.BackSide;
-  o.userData.needsUV = !!(o.map || o.emissiveMap);
+  o.userData.needsUV = !!(o.map || o.emissiveMap || o.normalMap || o.roughnessMap || o.metalnessMap);
   ctx.materials.set(key, o);
   return o;
 }
