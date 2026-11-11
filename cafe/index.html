@@ -1594,7 +1594,7 @@ function drawMenu(d, S) { const items = K.MENU[S.mode], secs = K.SECTIONS[S.mode
 let activityVisible = false;
 function setActivity(visible) {
   activityVisible = !!visible;
-  [pBody, pHead, sBody, sHead, sApron, gBody].forEach(mesh => { mesh.visible = activityVisible; });
+  [pBody, pHead, sBody, sHead, sApron, gBody, ...tableRings].forEach(mesh => { mesh.visible = activityVisible; });
   return activityVisible;
 }
 setActivity(false);
