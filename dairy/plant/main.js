@@ -148,10 +148,9 @@ function updatePaths() {
   if (params.has('stop')) { tour.on = false; tour.chosen = STOPS[+params.get('stop')]?.follow ? +params.get('stop') : null; tour.go(+params.get('stop'), true); } else tour.go(0, true);
   tour.set(tour.on && !params.has('stop'));
   world.sync(0.016, camera.position, 1); updatePanel();
+  if(params.get('pitch')==='1') { const {installPitch}=await import('./pitch-overlay.js'); installPitch({THREE,scene,camera,controls,tour}); }
   viewer.renderer.compile(scene, camera);
   $('#loader').classList.add('done'); setTimeout(() => { $('#loader').hidden = true; }, 600);
   document.documentElement.classList.add('ready');
   clock.getDelta(); requestAnimationFrame(frame);
 })();
-
-if(params.get('pitch')==='1') import('./pitch-overlay.js').then(({installPitch})=>installPitch({THREE,scene,camera,controls}));
