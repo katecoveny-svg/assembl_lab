@@ -1,5 +1,5 @@
 // Illustrative outage-pitch visual overlay. No plant controls or external APIs.
-export function installPitch({THREE,scene,camera,controls}) {
+export function installPitch({THREE,scene,camera,controls,tour}) {
  const g=new THREE.Group();g.position.set(25,0,20);scene.add(g);
  const steel=new THREE.MeshStandardMaterial({color:0xbcc5ca,metalness:.86,roughness:.28});
  const paint=new THREE.MeshStandardMaterial({color:0x443046,metalness:.25,roughness:.42});
@@ -29,7 +29,7 @@ export function installPitch({THREE,scene,camera,controls}) {
  function apply(data){clear();const pts=targets[data.service]||targets.Cooling;for(const p of pts){const ring=new THREE.Mesh(new THREE.TorusGeometry(3,.10,8,48),new THREE.MeshBasicMaterial({color:data.approved?0x6b9b81:0xf0a647}));ring.rotation.x=Math.PI/2;ring.position.set(...p);scene.add(ring);markers.push(ring);}
  badge.textContent=(data.approved?'SIMULATED RESPONSE APPROVED':'POTENTIAL IMPACT')+' · '+data.service+' · '+(data.fault==='false'?'false-alarm scenario':data.fault==='missed'?'missed-fault scenario':'true-fault scenario')+'. No live data or action.';
  lamp.material.emissiveIntensity=data.approved?.15:1.2;
- if(data.focus){camera.position.set(38,9,35);controls.target.set(25,1,20);controls.update();}
+ if(data.focus){tour.set(false);tour.chosen=null;tour.fly=null;document.querySelector('#tour-title').textContent='Cooling pump CP-04';document.querySelector('#tour-text').textContent='Illustrative skid for the outage workshop. Not a surveyed asset or live equipment.';camera.position.set(38,9,35);controls.target.set(25,1,20);controls.update();}
  }
  window.addEventListener('message',e=>{if(e.source!==parent||e.origin!==location.origin||e.data?.type!=='assembl-outage')return;const d=e.data;if(!Object.hasOwn(targets,d.service)||!['true','false','missed'].includes(d.fault))return;apply(d);});
  parent.postMessage({type:'assembl-plant-ready'},location.origin);
