@@ -153,3 +153,5 @@ function updatePaths() {
   document.documentElement.classList.add('ready');
   clock.getDelta(); requestAnimationFrame(frame);
 })();
+
+if(params.get('pitch')==='1') import('./pitch-overlay.js').then(({installPitch})=>installPitch({THREE,scene,camera,controls}));
