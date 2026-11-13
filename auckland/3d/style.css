@@ -6,3 +6,17 @@
 #building-picker{display:block;width:100%;margin:8px 0 18px;padding:10px;background:#382333;color:#f8f4ef;border:1px solid #947689;border-radius:8px}#building-source{font-size:12px}
 
 @media(max-width:420px){.toolbar{flex-direction:column;gap:8px;align-items:flex-start}.toolbar span{max-width:100%;line-height:1.5}.toolbar span:last-child{align-self:flex-end}}
+
+/* 13 Nov 2026: the standard of the Lab home and assembl.co.nz's new home page (see /site-v2/standard.css). Inky plum ground,
+   a warm ivory viewer, display type at 500, controls that lift and light on hover, and a footer with the way back. */
+body{background:#180b18}
+header>a{font-weight:500;letter-spacing:-.05em}header small{color:#cbbbc6;font-weight:400}
+.intro h1{font-weight:500;letter-spacing:-.065em;line-height:.97}.eyebrow{color:#d9bacb;letter-spacing:.14em}
+.viewer{background:#f6f1ed;color:#240b21;border-radius:32px;box-shadow:0 40px 100px #0a020e99}#stage{background:#f1ebe6}.toolbar,.hint{color:#654a4e}
+aside h2,.sources h2{font-weight:500;letter-spacing:-.045em}
+.views button{transition:background .2s,color .2s,translate .25s cubic-bezier(.2,.8,.2,1),box-shadow .3s}.views button[aria-pressed=true]{background:#240b21;border-color:#240b21;color:#fffdfb}
+.views button:hover:not(:disabled){translate:0 -2px;box-shadow:0 12px 26px -14px #240b2199}
+.cta{border-radius:40px;padding:14px 20px;transition:translate .25s cubic-bezier(.2,.8,.2,1),box-shadow .3s,background .3s}.cta:not([aria-disabled=true]):hover{translate:0 -2px;box-shadow:0 0 34px #c78cbd66}
+.sources a,.downloads a,.lab-way a{transition:color .2s,text-shadow .3s}.sources a:hover,.downloads a:hover,.lab-way a:hover{color:#fffdf9;text-shadow:0 0 22px #e8c9dc}
+.lab-way{max-width:1600px;margin:auto;padding:22px 4%;border-top:1px solid #f5e9f11f;display:flex;flex-wrap:wrap;gap:4px 24px;align-items:center;font-size:13px;color:#cbbbc6}.lab-way span{margin-right:auto}.lab-way a{display:inline-flex;align-items:center;min-height:44px;color:#e7dae3;text-decoration:none}
+@media(prefers-reduced-motion:reduce){.views button,.cta,.sources a,.downloads a,.lab-way a{transition:none}.views button:hover:not(:disabled),.cta:hover{translate:none}}

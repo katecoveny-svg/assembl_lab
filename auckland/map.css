@@ -5,3 +5,17 @@
 #scale{min-width:0;flex-shrink:0}
 /* The fixed extract defines the frame: no blank bands that could be mistaken for missing tiles. */
 #map{height:auto;aspect-ratio:1200 / 1063}
+
+/* 13 Nov 2026: the standard of the Lab home and assembl.co.nz's new home page (see /site-v2/standard.css). Inky plum ground,
+   a warm ivory workspace, display type at 500, controls that lift and light on hover, and a way back to assembl.co.nz. */
+body{background:#180b18!important}.skip:focus{background:#180b18}
+.brand{font-weight:500;letter-spacing:-.05em}.brand small{color:#cbbbc6}
+h1{font-weight:500;letter-spacing:-.065em;line-height:.95}h1 em{color:#e8c9dc}
+h2{letter-spacing:-.045em}.notes h2{font-weight:500;letter-spacing:-.055em;line-height:1}
+.workspace{background:#f6f1ed;color:#240b21;border-radius:32px;box-shadow:0 40px 100px #0a020e99}
+aside article p,aside>p{color:#654a4e}.lessons button{color:#654a4e}.lessons button[aria-pressed=true]{background:#fffdfb;color:#240b21;box-shadow:inset 0 0 0 1px #240b2118}.caption,.attribution,.map-tag{color:#654a4e}
+header>a:nth-child(2),footer a,.notes a{transition:color .2s,text-shadow .3s}header>a:nth-child(2):hover,footer a:hover,.notes a:hover{color:#fffdf9;text-shadow:0 0 22px #e8c9dc}
+.map-toolbar button,.lessons button{transition:background .2s,translate .25s cubic-bezier(.2,.8,.2,1),box-shadow .3s}
+.map-toolbar button:hover,.lessons button:hover{translate:0 -2px;box-shadow:0 12px 26px -14px #240b2199}
+footer{flex-wrap:wrap;gap:10px 24px;align-items:center}footer a{display:inline-flex;align-items:center;min-height:44px;color:#e7dae3;text-decoration:none}footer nav{display:flex;flex-wrap:wrap;gap:4px 22px;margin-left:auto}
+@media(prefers-reduced-motion:reduce){.map-toolbar button,.lessons button,header a,footer a,.notes a{transition:none}.map-toolbar button:hover,.lessons button:hover{translate:none}}
