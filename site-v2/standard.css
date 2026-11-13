@@ -1,0 +1,155 @@
+/* assembl lab · the 13 November 2026 standard, layered on the site-v2 foundation (/site-v2/site-v2.css + /site-v2/lab.css).
+
+   ADAPTED FROM katecoveny-svg/assemblnz-f0afd79d at commit bd88e9324abcfdfe3b44ca1b817c5d0493e3808f
+   ("Home page: house fly-through hero, three motion explainers, 3D chrome orb, footer with depth", 13 Nov 2026):
+   components/site/reconciled-home/home.module.css (ground, hero outcomes, hover glow, the footer with depth, the chrome
+   wordmark), agency.module.css (display type, eyebrows, buttons, the chrome gradient) and motion.module.css (the
+   Illustration tag, lift and glow, the still chrome form). Values are copied; class names are the Lab's own. Both
+   repositories are assembl's. To sync: change the main repo first, re-copy the values, update the commit above.
+
+   Opt in with class="lab-std" beside "site-v2" (the Lab home, the experiment nav, the shared footer). Nothing here
+   touches a page that has not opted in, so twins and machines keep their own artwork until someone moves them.
+
+   Palette. Ground: inky plum #180B18. Surfaces: warm ivory #F6F1ED, paper #FFFDFB, chalk #F5F1F2. Locked ink for light
+   surfaces: deep plum #240B21 (headings), mulberry #654A4E (body), heather #916A70 (large type, dividers, marks only:
+   it is not a body-text colour). On the plum ground, type is ivory with rose #D9BACB labels and petal #E8C9DC accents,
+   as on assembl.co.nz. Never mulberry or heather text on plum. Liquid chrome is an accent: the footer wordmark, the
+   closing form, the hero's status mark. Nowhere else.
+   Type. Instrument Sans 400/500. IBM Plex Mono for labels, sources, dates and status only.
+   Motion. Staged entrances, lift and glow on hover, transform and opacity only. Base styles are the finished frame, so
+   no script, no WebGL or reduced motion all rest on it. No spinners, no idle loops. */
+
+.site-v2.lab-std, .lab-std .site-v2 {
+  --v2-plum: #180B18; --v2-aubergine: #180B18; --v2-raised: #2B162A; --v2-window: #21121F;
+  --v2-ivory: #F6F1ED; --v2-paper: #FFFDFB; --v2-chalk: #F5F1F2; --v2-deep: #240B21; --v2-mulberry: #654A4E; --v2-heather: #916A70;
+  --v2-rose: #D9BACB; --v2-petal: #E8C9DC; --v2-glow: #C78CBD; --v2-ink: #240B21; --v2-blush: #F5F1F2; --v2-pale-rose: #EFE7E9;
+  --v2-mauve-on-dark: #CBBBC6; --v2-soft-on-dark: #E7DAE3; --v2-mauve: #654A4E; --v2-mauve-deep: #654A4E; --v2-ink-soft: #654A4E; --v2-rose-ink: #916A70; --v2-rose-ink-deep: #654A4E;
+  --v2-chrome: linear-gradient(145deg, #F8EFF8 0%, #A49AAA 15%, #FFF 21%, #33293E 26%, #0F0719 36%, #B8A8C0 44%, #FFF5FF 49%, #55465D 52%, #D8C6DC 62%, #272033 69%, #F1E7ED 80%, #6D5D77 89%, #F7EFF8 100%);
+  --v2-chrome-type: linear-gradient(115deg, #F8EFF8 0%, #A49AAA 12%, #FFF 20%, #5A4A63 28%, #1D1226 38%, #B8A8C0 47%, #FFF5FF 53%, #55465D 60%, #D8C6DC 70%, #3A2E46 80%, #F1E7ED 90%, #8D7C97 100%);
+  --v2-display-xl: clamp(46px, 8vw, 132px); --v2-h2: clamp(38px, 5.6vw, 92px); --v2-h3: clamp(26px, 2.6vw, 40px); --v2-eyebrow: 10.5px;
+  --v2-gutter: clamp(16px, 5vw, 96px); --v2-section: clamp(88px, 13vh, 168px); --v2-r-card: 24px; --v2-r-panel: 32px;
+  --v2-lift: cubic-bezier(.2, .8, .2, 1);
+  --v2-bg: var(--v2-plum); --v2-fg: #F9F6F2; --v2-fg-2: var(--v2-mauve-on-dark); --v2-accent: var(--v2-petal); --v2-label: var(--v2-rose);
+  --v2-line: rgba(245, 233, 241, .14); --v2-focus: var(--v2-rose); --v2-btn-bg: #F9F6F2; --v2-btn-fg: #281725; --v2-btn-hover: #FFFDFB;
+  --v2-card: rgba(249, 246, 242, .04); --v2-card-line: rgba(245, 233, 241, .14); --v2-card-glow: 0 0 0 1px rgba(232, 201, 220, .5), 0 34px 80px -34px rgba(199, 140, 189, .55);
+}
+.lab-std .v2-tone-plum, .lab-std .v2-tone-aubergine, .lab-std.v2-tone-plum {
+  --v2-bg: var(--v2-plum); --v2-fg: #F9F6F2; --v2-fg-2: var(--v2-mauve-on-dark); --v2-accent: var(--v2-petal); --v2-label: var(--v2-rose);
+  --v2-line: rgba(245, 233, 241, .14); --v2-focus: var(--v2-rose); --v2-btn-bg: #F9F6F2; --v2-btn-fg: #281725; --v2-btn-hover: #FFFDFB;
+  --v2-card: rgba(249, 246, 242, .04); --v2-card-line: rgba(245, 233, 241, .14); --v2-card-glow: 0 0 0 1px rgba(232, 201, 220, .5), 0 34px 80px -34px rgba(199, 140, 189, .55);
+}
+/* light surfaces sit on the plum ground as panels and cards: warm ivory, with paper cards on it */
+.lab-std .v2-tone-ivory, .lab-std .v2-tone-blush, .lab-std .v2-tone-pale, .lab-std .v2-tone-rose-mauve {
+  --v2-bg: var(--v2-ivory); --v2-fg: var(--v2-deep); --v2-fg-2: var(--v2-mulberry); --v2-accent: var(--v2-heather); --v2-label: var(--v2-mulberry);
+  --v2-line: rgba(36, 11, 33, .14); --v2-focus: var(--v2-deep); --v2-btn-bg: var(--v2-deep); --v2-btn-fg: #FFFDFB; --v2-btn-hover: #3A1A35;
+  --v2-card: var(--v2-paper); --v2-card-line: rgba(36, 11, 33, .1); --v2-card-glow: 0 0 0 1px rgba(145, 106, 112, .45), 0 34px 70px -36px rgba(36, 11, 33, .5);
+}
+.lab-std .v2-tone-blush { --v2-bg: var(--v2-chalk); }
+
+/* ── type: Instrument Sans 500 for display, tight; IBM Plex Mono for labels ── */
+.lab-std .v2-display-xl, .lab-std .v2-display, .lab-std .v2-h2, .lab-std .v2-h3 { font-weight: 500; }
+.lab-std .v2-display-xl { line-height: .93; letter-spacing: -.07em; }
+.lab-std .v2-display { line-height: .95; letter-spacing: -.065em; }
+.lab-std .v2-h2 { line-height: .98; letter-spacing: -.06em; }
+.lab-std .v2-h3 { line-height: 1.05; letter-spacing: -.045em; }
+.lab-std .v2-lede { font-size: clamp(17px, 1.45vw, 21px); line-height: 1.5; letter-spacing: 0; }
+.lab-std .v2-tone-plum .v2-lede, .lab-std .v2-tone-plum .v2-lede.v2-secondary { color: var(--v2-soft-on-dark); }
+.lab-std .v2-eyebrow { gap: 10px; font: 500 var(--v2-eyebrow)/1.8 var(--v2-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--v2-label); }
+.lab-std .v2-eyebrow-dot::before { display: none; }
+.lab-std .v2-brand { letter-spacing: .06em; }
+.lab-std ::selection { background: var(--v2-petal); color: var(--v2-deep); }
+
+/* ── buttons: lift 2px and light a soft glow on hover; press to 97% ── */
+.lab-std .v2-btn { transition: background-color var(--v2-fast) ease, color var(--v2-fast) ease, translate .25s var(--v2-lift), box-shadow .3s ease, transform var(--v2-fast) ease; }
+.lab-std .v2-btn-primary:hover, .lab-std .v2-btn-primary:focus-visible { transform: none; translate: 0 -2px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .2), 0 10px 40px rgba(232, 201, 220, .4); }
+.lab-std .v2-btn-ghost { box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .5); }
+.lab-std .v2-btn-ghost:hover, .lab-std .v2-btn-ghost:focus-visible { translate: 0 -2px; background: rgba(232, 201, 220, .08); box-shadow: inset 0 0 0 1px var(--v2-petal), 0 0 34px rgba(199, 140, 189, .34); }
+.lab-std :is(.v2-tone-ivory, .v2-tone-blush) .v2-btn-primary:hover, .lab-std :is(.v2-tone-ivory, .v2-tone-blush) .v2-btn-primary:focus-visible { box-shadow: 0 14px 40px -12px rgba(36, 11, 33, .55); }
+.lab-std :is(.v2-tone-ivory, .v2-tone-blush) .v2-btn-ghost { box-shadow: inset 0 0 0 1px rgba(36, 11, 33, .3); }
+.lab-std :is(.v2-tone-ivory, .v2-tone-blush) .v2-btn-ghost:hover { background: rgba(36, 11, 33, .05); box-shadow: inset 0 0 0 1px var(--v2-deep), 0 14px 34px -16px rgba(36, 11, 33, .4); }
+.lab-std .v2-btn:active { transform: scale(.97); }
+
+/* ── truth chips and source lines: mono labels. The word carries the meaning; the mark is a second cue. ── */
+.lab-std .truth, .site-v2.lab-std .truth { padding: 6px 11px 6px 9px; font: 500 10px/1.2 var(--v2-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--v2-fg); background: color-mix(in srgb, var(--v2-fg) 6%, transparent); box-shadow: inset 0 0 0 1px var(--v2-line); }
+.lab-std .src, .lab-std .src-stage, .site-v2.lab-std .src, .site-v2.lab-std .src-stage { font: 400 11px/1.5 var(--v2-mono); letter-spacing: .02em; }
+.lab-std .src-stage { font-weight: 500; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+
+/* ── the ticker: a small rose dot between worlds, not a sparkle ── */
+.lab-std .v2-ticker { border-color: var(--v2-line); }
+.lab-std .v2-ticker-list li { font-size: clamp(15px, 1.2vw, 18px); letter-spacing: -.02em; color: var(--v2-soft-on-dark); }
+.lab-std .v2-ticker-sep { width: 5px; height: 5px; border-radius: 50%; background: var(--v2-rose); font-size: 0; }
+
+/* ── home nav: glass once scrolled, links that light up, a pill back to assembl.co.nz ── */
+.lab-std .v2-nav-wrap[data-scrolled] .v2-nav { background: rgba(24, 11, 24, .9); box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .12), 0 18px 40px -26px rgba(8, 2, 9, .8); }
+.lab-std .v2-nav-links a, #al-nav.lab-std .al-destinations a { transition: color .2s ease, text-shadow .3s ease; }
+.lab-std .v2-nav-links a:hover, #al-nav.lab-std .al-destinations a:hover { color: #FFFDF9; text-shadow: 0 0 22px var(--v2-petal); }
+.lab-std .v2-nav-menu { background: rgba(24, 11, 24, .96); }
+.lab-std .v2-nav-menu .v2-nav-menu-cta { background: #F9F6F2; color: #281725; }
+.lab-std .v2-wordmark { letter-spacing: -.05em; }
+.lab-std .lab-wm-suffix { color: var(--v2-mauve-on-dark); }
+
+/* ── the experiment nav on every other Lab page: the same inky band ── */
+#al-nav.site-v2.lab-std { background: #180B18; color: #F9F6F2; border-bottom: 1px solid rgba(245, 233, 241, .12); }
+#al-nav.site-v2.lab-std .al-destinations a[aria-current]::after { background: var(--v2-petal); }
+#al-nav.site-v2.lab-std .al-menu { background: #180B18; box-shadow: 0 24px 40px -24px rgba(8, 2, 9, .85); }
+#al-nav.site-v2.lab-std .al-menu .al-menu-cta { background: #F9F6F2; color: #281725; }
+
+/* ── cards: one physics. Lift and light a glow on hover; rows lift less. Opt in with .lab-card or use the hooks below. ── */
+.lab-std .lab-card { background: var(--v2-card); box-shadow: inset 0 0 0 1px var(--v2-card-line); border-radius: var(--v2-r-card); transition: translate .5s var(--v2-lift), box-shadow .4s ease, background-color .3s ease; }
+.lab-std .lab-card:hover, .lab-std .lab-card:focus-within { translate: 0 -4px; box-shadow: var(--v2-card-glow); }
+
+/* ── staged entrance: each piece carries its place in --i and arrives once. The base style is the finished frame. ── */
+.lab-std .lab-stage > :not(.v2-split) { animation: lab-arrive .9s var(--v2-lift) both; animation-delay: calc(.12s + var(--i, 0) * 90ms); }
+@keyframes lab-arrive { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+/* ── the Illustration tag (as on assembl.co.nz's explainers) and other picture labels ── */
+.lab-std .lab-tag { display: inline-block; padding: 7px 10px; border-radius: 20px; background: rgba(24, 11, 24, .72); color: #FFFDFB; font: 500 9px/1 var(--v2-mono); letter-spacing: .12em; text-transform: uppercase; }
+
+/* ── liquid chrome, used sparingly: a still form whose reflection moves only when it is hovered or focused ── */
+.lab-std .lab-chrome { background: var(--v2-chrome); background-size: 230% 230%; background-position: 35% 40%; box-shadow: inset 3px 5px 5px rgba(255, 255, 255, .6), inset -5px -7px 8px rgba(9, 0, 18, .7), 0 24px 44px rgba(10, 0, 22, .5);
+  transition: background-position 1.6s cubic-bezier(.2, .7, .2, 1), translate .5s var(--v2-lift); }
+
+/* ── the footer with depth: a glow rising from below, link pills that light up, the wordmark in liquid chrome ── */
+.lab-foot.site-v2 { position: relative; overflow: hidden; background: #180B18; color: #F9F6F2; border-top: 1px solid rgba(245, 233, 241, .12); padding: clamp(56px, 9vh, 104px) var(--v2-gutter) 28px; font-size: 14px; }
+.lab-foot::before { content: ''; position: absolute; left: 50%; bottom: -46%; width: 110vw; height: 86%; translate: -50% 0; background: radial-gradient(closest-side, rgba(156, 74, 148, .34), rgba(156, 74, 148, 0)); pointer-events: none; }
+.lab-foot-top { position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 28px 5vw; }
+.lab-foot-line { margin: 0; max-width: 20ch; font-size: clamp(22px, 2.3vw, 34px); font-weight: 400; letter-spacing: -.04em; line-height: 1.15; color: #FFFDF9; }
+.lab-foot-sub { display: block; margin-top: 10px; max-width: 38ch; font-size: 15px; letter-spacing: 0; line-height: 1.5; color: #CBBBC6; }
+.lab-foot-groups { display: grid; gap: 18px; max-width: 660px; justify-items: end; }
+.lab-foot-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.lab-foot-nav a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 16px; border-radius: 30px; box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .15); color: #E7DAE3; text-decoration: none;
+  transition: color .2s ease, background-color .25s ease, box-shadow .3s ease, translate .25s var(--v2-lift); }
+.lab-foot-nav a:hover, .lab-foot-nav a:focus-visible { color: #FFFDF9; background: rgba(232, 201, 220, .08); box-shadow: inset 0 0 0 1px rgba(232, 201, 220, .6), 0 0 30px rgba(199, 140, 189, .4); translate: 0 -2px; }
+.lab-foot-nav svg { flex: none; opacity: .8; }
+.lab-foot-k { margin: 0; font: 500 10px/1.8 var(--v2-mono, 'IBM Plex Mono', ui-monospace, monospace); letter-spacing: .14em; text-transform: uppercase; color: #A28C9C; }
+.lab-foot-mark { position: relative; display: block; width: fit-content; max-width: 100%; margin: clamp(40px, 7vh, 80px) 0 14px -.05em; font-size: clamp(54px, 16.4vw, 300px); font-weight: 500; letter-spacing: -.08em; line-height: .86; text-decoration: none; white-space: nowrap; transition: filter .5s ease; }
+.lab-foot-chrome { color: transparent; background: var(--v2-chrome-type); background-size: 240% 100%; background-position: 12% 0; -webkit-background-clip: text; background-clip: text; transition: background-position 1.6s cubic-bezier(.2, .7, .2, 1); }
+.lab-foot-mark:hover, .lab-foot-mark:focus-visible { filter: drop-shadow(0 0 46px rgba(199, 140, 189, .47)); }
+.lab-foot-mark:hover .lab-foot-chrome, .lab-foot-mark:focus-visible .lab-foot-chrome { background-position: 88% 0; }
+.lab-foot-suffix { color: transparent; -webkit-text-stroke: 1px rgba(232, 201, 220, .6); letter-spacing: -.07em; transition: -webkit-text-stroke-color .5s ease; }
+.lab-foot-mark:hover .lab-foot-suffix { -webkit-text-stroke-color: #FFFDF9; }
+.lab-foot-note { position: relative; margin: 0; max-width: 92ch; font-size: 13px; line-height: 1.6; color: #CBBBC6; }
+.lab-foot-base { position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 24px; margin-top: 22px; padding: 18px 0 0; border-top: 1px solid rgba(245, 233, 241, .12);
+  font: 500 10px/1.8 var(--v2-mono, 'IBM Plex Mono', ui-monospace, monospace); letter-spacing: .12em; text-transform: uppercase; color: #A28C9C; }
+.lab-foot-base a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: #E7DAE3; text-decoration: none; transition: color .2s ease, text-shadow .3s ease; }
+.lab-foot-base a:hover { color: #FFFDF9; text-shadow: 0 0 20px var(--v2-petal, #E8C9DC); }
+.lab-foot-base nav { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+/* the fixed Ask button sits bottom right: keep the last line clear of it */
+.lab-foot-base { padding-right: min(190px, 34vw); }
+.lab-foot :is(a, button):focus-visible { outline: 2px solid #D9BACB; outline-offset: 4px; border-radius: 30px; }
+@media (max-width: 760px) {
+  .lab-foot-groups { justify-items: start; }
+  .lab-foot-nav { justify-content: flex-start; gap: 7px; }
+  .lab-foot-nav a { padding: 0 13px; font-size: 13px; }
+  .lab-foot-base { padding-right: 0; padding-bottom: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-std .lab-stage > :not(.v2-split) { animation: none !important; }
+  .lab-std .v2-btn, .lab-std .lab-card, .lab-std .lab-chrome, .lab-foot-nav a, .lab-foot-mark, .lab-foot-chrome, .lab-foot-suffix { transition: none !important; }
+  .lab-std .v2-btn:hover, .lab-std .lab-card:hover, .lab-foot-nav a:hover { translate: none; }
+}
+@media (forced-colors: active) {
+  .lab-std .lab-chrome { background: ButtonFace; border: 2px solid ButtonText; box-shadow: none; }
+  .lab-foot-chrome, .lab-foot-suffix { color: CanvasText; background: none; -webkit-text-stroke: 0; }
+}

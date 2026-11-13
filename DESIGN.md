@@ -3,9 +3,56 @@
 The design system for the Lab home (`/`, built by `scripts/build-lab-home.cjs`), the shared Lab chrome on every
 experiment page (`lab/navigation.js`), and anything new on this site.
 
-**Since 8 Nov 2026 the Lab wears site-v2**, the look Kate locked for assembl.co.nz from her mockup: deep plum, dusty
-rose, warm ivory; lots of negative space; large, thin, well-spaced type; modern pill buttons; scroll parallax and
-motion text. The foundation is ported, not re-invented: see "Where this comes from".
+**Since 13 Nov 2026 the Lab wears the standard of assembl.co.nz's new home page** (Kate: "I need the lab.assembl page
+brought up to the same standard"), layered on the site-v2 foundation of 8 Nov: an inky plum ground with warm ivory
+surfaces, Instrument Sans at 500 for display, IBM Plex Mono labels, a first screen that says what the Lab is, lift and
+glow on hover, a footer with depth, liquid chrome used sparingly, and a clear way back to assembl.co.nz. Where this
+section and an older one below disagree, this one wins. The audit behind it: `docs/lab-standard-audit.md`.
+
+## The 13 November standard
+
+- **Where it comes from:** `katecoveny-svg/assemblnz-f0afd79d` at `bd88e9324abcfdfe3b44ca1b817c5d0493e3808f`,
+  `components/site/reconciled-home/` (`home.module.css`, `agency.module.css`, `motion.module.css`, `Home.tsx`), with
+  ADR-015 and `docs/assembl-brand-system.md`. Adapted, with the source named in each file's header, into:
+  - `site-v2/standard.css`: the shared layer (tokens, type, buttons, truth chips, nav, footer, chrome, card physics).
+  - `lab/home.css`: the home's own composition. It replaced `auckland/home.css`.
+  - `site-v2/markup.cjs`: `outcomes()` and `deepFooter()`.
+- **Opt in:** a page takes the standard with `class="site-v2 lab-std"` on `<body>` and a link to `standard.css` after
+  `site-v2.css` and `lab.css`. The experiment nav (`lab/navigation.js`) always wears it. Nothing else changes on a page
+  that has not opted in. Moved so far: `/`, `/evidence/`, `/audience-studio/`; `/auckland/` and `/auckland/3d/` carry
+  the same values in their own stylesheets.
+- **Ground and surfaces:** inky plum `#180B18` everywhere. Light is a surface on it, never a full-bleed section: warm
+  ivory `#F6F1ED` panels (radius 32), paper `#FFFDFB` cards on a panel, chalk `#F5F1F2` as the quiet alternative.
+  Point-cloud stills carry `#21121F`; their frames match it, so a still reads as a raised plum window.
+- **Ink:** on plum, ivory `#F9F6F2`, secondary `#CBBBC6`, rose `#D9BACB` labels, petal `#E8C9DC` for one accent line.
+  On ivory and paper, deep plum `#240B21` headings, mulberry `#654A4E` body, heather `#916A70` for large type,
+  dividers and marks only (it is not a body-text colour). Never mulberry or heather text on plum.
+- **Type:** Instrument Sans 400 and 500 only (600 is no longer loaded). Display at 500, tracking -.06 to -.07em.
+  IBM Plex Mono 400 and 500 for eyebrows, truth chips, sources, dates and status, and for nothing else.
+- **First screen:** a label, the headline, one sentence that says what the Lab is, three doors (`outcomes`), the
+  three truth labels, and one strong picture of assembl's own. The picture is a finished still first; live 3D loads
+  over it and says so ("Still" becomes "Live 3D"). On a phone the words come before the picture.
+- **Motion:** staged entrances (`.lab-stage`, each child's place in `--i`), split-text heads, reveals on scroll.
+  Hover lifts and lights: buttons and doors 2px, cards 4px, the city 6px, each with a soft glow in a shadow. Base
+  styles are the finished frame, so no script, no WebGL and reduced motion all rest on it. No spinners, no fake waits,
+  no idle loops beyond the ticker (which pauses on hover and wraps flat under reduced motion).
+- **Liquid chrome, sparingly:** the footer wordmark, the still form at the close. Its reflection moves only on hover.
+- **Footer:** `deepFooter()`: a glow rising from below, link pills that light up, `assembl.` in chrome with `lab` in
+  outline, the independent-concept note, a mono base line with the legal links.
+- **Way back:** an outlined "assembl.co.nz" pill in the home nav and in the experiment nav; an agency group in the footer.
+- **Copy:** plain New Zealand English, macrons on te reo Māori, name the work rather than writing bare "AI" in new
+  copy, no "seamless", "leverage" or "supercharge". Any concept that names a real organisation carries: "Independent
+  assembl concept. Not commissioned by, affiliated with or endorsed by [organisation]. Simulated data unless explicitly
+  stated otherwise."
+- **`index.html` is build output.** Edit `scripts/build-lab-home.cjs`, run it, then run `scripts/check-lab-home.cjs`.
+  Editing the page by hand is what put the two out of step from 9 to 13 Nov.
+
+## The site-v2 foundation (8 Nov 2026)
+
+The look Kate locked for assembl.co.nz from her mockup of 8 Nov: deep plum, dusty rose, warm ivory; lots of negative
+space; modern pill buttons; scroll parallax and motion text. The foundation is ported, not re-invented: see "Where
+this comes from". Colours, weights, the footer and the hero described from here on are the foundation's; the section
+above supersedes them wherever a page has opted in.
 
 Twin, machine and instrument pages keep their own artwork and interactions. They sit inside the site-v2 chrome (the
 experiment nav) but their bodies are not covered by this file until someone moves them.
@@ -40,7 +87,8 @@ experiment nav) but their bodies are not covered by this file until someone move
 3. **Logo: the wordmark only.** Lowercase `assembl` with the dusty-rose dot, ivory on dark, plum ink on light. No "a." mark in
    headers, footers or page furniture (8 Nov 2026), and no glass.
 4. Negative space: one idea per screen, wide gutters (`--v2-gutter`), tall sections (`--v2-section`), hairlines.
-5. Motion is transform and opacity only, and every effect has a static state for reduced motion and no JS.
+5. Motion is transform and opacity only (and `translate`, `scale`, shadow and colour on hover), and every effect has a
+   static state for reduced motion and no JS.
 6. Truth labels stay wherever they apply: Simulated, Live, Illustrative, Model/Shadow, "Fictional", draft notices.
    A reconstruction is never presented as a scan.
 
@@ -117,6 +165,8 @@ pairs: `site-v2/tokens.mjs` and the main repo's `docs/brand/site-v2.md`.
 - Skip link first; every link and button keyboard-reachable with a visible ring in the tone's focus colour.
 - Works at 320, 375, 390 and 1440 px with no horizontal scroll. Touch targets at least 44px.
 - `scripts/check-lab-home.cjs` checks each world appears exactly once, the routes `#twins`, `#study`,
-  `#playground`, `#about` and `#explore`, keyboard order, widths, no violet, lowercase brand, and that the hero's map
-  is decorative, big, and clear of the headline, buttons and labels at 1440, 1024, 768, 390 and 320 px, that its callouts
-  never cover the words, and that every twin pin carries its truth line and no name.
+  `#playground`, `#about` and `#explore`, keyboard order, widths, no violet, lowercase brand; and, since 13 Nov, the
+  inky ground, the two font families, the three doors and three truth labels in the hero, that the headline, the lede
+  and the doors sit in the first screen and clear of the city at 1440, 1024, 768, 390, 375 and 320 px, the footer's
+  wordmark, note and links back to assembl.co.nz, the banned words, and that reduced motion rests on the finished
+  frame. It is a Playwright page function run against the repo served at `http://127.0.0.1:8341/`.

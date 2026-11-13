@@ -130,4 +130,29 @@ function siteFooter({ home, links, legal, note, strip }) {
 </footer>`;
 }
 
-module.exports = { esc, arrow, button, brand, eyebrow, markA, wordmark, split, reveal, parallax, ticker, markAssemble, siteNav, siteFooter, MARK_A };
+/* ── 13 November 2026 standard (styles: /site-v2/standard.css) ──
+   ADAPTED FROM katecoveny-svg/assemblnz-f0afd79d components/site/reconciled-home/Home.tsx at commit
+   bd88e9324abcfdfe3b44ca1b817c5d0493e3808f: the footer with depth (a line, link pills, the wordmark in liquid chrome,
+   a mono base) and the hero's outcome links. Class names are the Lab's own (lab-foot-*, outcomes). */
+
+/** Home.tsx → OUTCOMES: what you can do here, each linked to its chapter. items: [{href, title, line}] */
+function outcomes(items, { label = 'What you can do here' } = {}) {
+  return `<ul class="outcomes" aria-label="${esc(label)}">${items.map(o => `<li><a href="${esc(o.href)}"><b>${esc(o.title)}</b><span>${esc(o.line)}</span></a></li>`).join('')}</ul>`;
+}
+
+/** Home.tsx → footer. groups: [{label, links:[{href,label,extra,out}]}]; `line`, `sub` and `note` are trusted HTML.
+    `mark` is the big chrome wordmark's href; `out: true` adds the up-right arrow for a link that leaves the Lab. */
+function deepFooter({ line, sub, groups, markHref = '#top', markLabel = 'assembl lab, back to the top', suffix = 'lab', note, base, legal }) {
+  const a = l => `<a href="${esc(l.href)}"${attrs(l.extra)}>${esc(l.label)}${l.out ? arrow('up-right', 13) : ''}</a>`;
+  return `<footer class="lab-foot site-v2 lab-std" data-site-footer>
+ <div class="lab-foot-top">
+  <p class="lab-foot-line">${line}${sub ? `<span class="lab-foot-sub">${sub}</span>` : ''}</p>
+  <div class="lab-foot-groups">${groups.map(g => `<p class="lab-foot-k">${esc(g.label)}</p><nav class="lab-foot-nav" aria-label="${esc(g.label)}">${g.links.map(a).join('')}</nav>`).join('')}</div>
+ </div>
+ <a class="lab-foot-mark" href="${esc(markHref)}" aria-label="${esc(markLabel)}"><span class="lab-foot-chrome">assembl.</span>${suffix ? `<span class="lab-foot-suffix">${esc(suffix)}</span>` : ''}</a>
+ ${note ? `<p class="lab-foot-note">${note}</p>` : ''}
+ <div class="lab-foot-base"><span>${base}</span>${legal ? `<nav aria-label="Legal">${legal.map(a).join('')}</nav>` : ''}</div>
+</footer>`;
+}
+
+module.exports = { esc, arrow, button, brand, eyebrow, markA, wordmark, split, reveal, parallax, ticker, markAssemble, siteNav, siteFooter, outcomes, deepFooter, MARK_A };
