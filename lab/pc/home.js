@@ -13,7 +13,7 @@ const run = document.querySelector(".pc-run"), canvas = document.getElementById(
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TILT = 0.72, HERO_SWAY = 0.12;                  // the map seen from about 40° up; a slow sway, small so the map keeps its place
 let engine;
-try { if (!new URLSearchParams(location.search).has("poster")) engine = createEngine(canvas, { reduceMotion: reduce, budget: innerWidth < 760 ? 80000 : 180000, pixelRatio: Math.min(devicePixelRatio || 1, 1.5), sizeScale: .62 }); } catch (e) { console.warn("Point cloud unavailable:", e.message); }
+try { if (!new URLSearchParams(location.search).has("poster")) engine = createEngine(canvas, { reduceMotion: reduce, budget: innerWidth < 760 ? 80000 : 180000, pixelRatio: Math.min(devicePixelRatio || 1, 1.5), sizeScale: .62, clear: true /* 13 Nov 2026: no painted ground, so the cloud sits on the page's own inky plum (#180B18) */ }); } catch (e) { console.warn("Point cloud unavailable:", e.message); }
 if (engine && run) start();
 
 async function start() {

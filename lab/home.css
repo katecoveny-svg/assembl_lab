@@ -1,0 +1,160 @@
+/* assembl lab home · composition for the 13 November 2026 standard. Loaded last, after story.css and pc/pc.css.
+   Tokens, type, buttons, chips, the nav and the footer come from /site-v2/standard.css (the shared layer); this file is
+   the home's own layout: the hero with the Auckland city, the doors, the ivory panels, the close.
+   It replaces /auckland/home.css (9 Nov 2026), which placed the city and its controls at fixed pixel offsets over the
+   old hero; the rules that still matter (the city canvas, its view buttons, hiding the point-cloud stage behind the
+   hero) are carried here. Base styles are the finished frame: no script, no WebGL and reduced motion all rest on it. */
+
+html.lab-story { background: #180B18; }
+.lab-story .wrap { width: min(1360px, 100% - 2 * var(--v2-gutter)); }
+
+/* ── hero: what the lab is, three doors, and the city (a finished still first; the live 3D city loads over it) ── */
+.lab-story .hero { display: block; overflow: clip; }
+.lab-story .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(min(900px, 90vw) min(640px, 70vh) at 76% 40%, rgba(199, 140, 189, .16), transparent 70%); }
+.lab-story .hero .hero-in { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(28px, 4.4vw, 80px); align-items: center;
+  min-height: min(940px, 100svh); padding-block: clamp(108px, 14vh, 148px) clamp(28px, 5vh, 56px); }
+.lab-story .hero-copy { gap: clamp(18px, 2.1vw, 28px); max-width: none; }
+.lab-story .hero-copy h1 { width: auto; max-width: none; font-size: clamp(46px, 6.5vw, 112px); line-height: .93; letter-spacing: -.07em; color: #FFFDF9; }
+.lab-story .hero-copy h1 .v2-accent { color: var(--v2-petal); }
+.lab-story .hero .lede { max-width: 38ch; font-size: clamp(17px, 1.45vw, 21px); color: var(--v2-soft-on-dark); }
+.lab-story .truth-note { gap: 8px; font-size: 13.5px; color: var(--v2-fg-2); }
+
+/* the three doors: what you can do here, each linked to its chapter (as the outcomes are on assembl.co.nz) */
+.outcomes { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+.outcomes li { flex: 1 1 172px; }
+.outcomes a { display: flex; flex-direction: column; gap: 3px; height: 100%; padding: 14px 18px 15px; border-radius: 18px; color: inherit; text-decoration: none;
+  background: rgba(43, 22, 42, .6); box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .2); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transition: background-color .25s ease, translate .25s var(--v2-lift), box-shadow .3s ease; }
+.outcomes a:hover, .outcomes a:focus-visible { translate: 0 -2px; background: rgba(43, 22, 42, .92); box-shadow: inset 0 0 0 1px rgba(232, 201, 220, .7), 0 0 40px rgba(199, 140, 189, .4); }
+.outcomes b { font-weight: 500; font-size: 19px; letter-spacing: -.03em; line-height: 1.2; color: #FFFDF9; }
+.outcomes span { font-size: 13px; line-height: 1.35; color: var(--v2-soft-on-dark); }
+
+/* the city: an ivory surface on the plum ground */
+.hero-city { position: relative; z-index: 1; display: grid; gap: 16px; min-width: 0; margin: 0; }
+.city-frame { position: relative; isolation: isolate; aspect-ratio: 976 / 600; border-radius: var(--v2-r-panel); overflow: hidden; background: #EDE5E9;
+  box-shadow: 0 40px 100px rgba(10, 2, 14, .6); transition: translate .5s var(--v2-lift), box-shadow .5s ease; }
+.hero-city:hover .city-frame, .hero-city:focus-within .city-frame { translate: 0 -6px; box-shadow: 0 54px 120px rgba(10, 2, 14, .8), 0 0 70px rgba(199, 140, 189, .25); }
+.city-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#city-hero { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; touch-action: pan-y; transition: opacity .8s ease; }
+.city-ready #city-hero { opacity: 1; }
+.city-ready .city-frame img { visibility: hidden; }
+.city-status { position: absolute; left: 14px; top: 14px; z-index: 2; pointer-events: none; }
+.city-status .when-live, .city-ready .city-status .when-still { display: none; }
+.city-ready .city-status .when-live { display: inline; }
+.cloud-instrument { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 20px; align-items: end; }
+.cloud-caption { display: grid; gap: 6px; min-width: 0; margin: 0; }
+.cloud-caption > span { font: 500 10px/1.6 var(--v2-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--v2-rose); }
+.cloud-caption strong { font-size: clamp(19px, 1.6vw, 23px); font-weight: 500; letter-spacing: -.035em; line-height: 1.15; color: #FFFDF9; }
+.city-key { font: 400 10.5px/1.6 var(--v2-mono); letter-spacing: .02em; color: var(--v2-fg-2); }
+.cloud-views { display: flex; gap: 2px; padding: 4px; border-radius: 99px; box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .2); }
+.cloud-views button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 99px; background: transparent; color: var(--v2-soft-on-dark); font: 400 13px/1 var(--v2-font); cursor: pointer; transition: background-color .2s ease, color .2s ease; }
+.cloud-views button:hover { color: #FFFDF9; background: rgba(232, 201, 220, .1); }
+.cloud-views button[aria-pressed='true'] { background: #F9F6F2; color: #281725; }
+.cloud-views button:disabled { opacity: .4; cursor: default; }
+.city-links { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 24px; border-top: 1px solid var(--v2-line); }
+.cloud-atlas-link, .city-secondary { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; color: #F9F6F2; text-decoration: none; font-size: 15px; transition: color .2s ease, text-shadow .3s ease; }
+.city-secondary { font-size: 13.5px; color: var(--v2-soft-on-dark); }
+.cloud-atlas-link:hover, .city-secondary:hover { color: #FFFDF9; text-shadow: 0 0 22px var(--v2-petal); }
+.cloud-atlas-link svg, .city-secondary svg { transition: translate .25s var(--v2-lift); }
+.cloud-atlas-link:hover svg, .city-secondary:hover svg { translate: 3px -3px; }
+.lab-story .hero-credit { position: static; max-width: none; margin: 0; text-align: left; font: 400 10px/1.7 var(--v2-mono); letter-spacing: .02em; color: var(--v2-fg-2); }
+.lab-story .hero-callouts { display: none !important; }
+/* the point-cloud stage stays out of the hero: the city has that screen to itself */
+html[data-pc-chapter='hero'] .pc-stage canvas, html[data-pc-chapter='hero'] .pc-leaders { visibility: hidden; }
+html[data-pc-chapter='hero'] .pc-pause { display: none; }
+.lab-story .pc-leaders path { stroke: rgba(217, 186, 203, .45); stroke-dasharray: none; }
+.lab-story .pc-pause { z-index: 8; }
+.lab-story.pc-on .pc-pause { background: rgba(24, 11, 24, .78); }
+
+/* ── chapters ── */
+.lab-story .chapter { padding-block: var(--v2-section); }
+.lab-story .ch-head { margin-bottom: clamp(40px, 5vw, 80px); }
+.lab-story .ch-head h2 { max-width: 13ch; }
+.lab-story .more h3, .lab-story .doors h3 { font: 500 10.5px/1.8 var(--v2-mono); letter-spacing: .14em; color: var(--v2-label); }
+.lab-story .kind { font: 500 10px/1.6 var(--v2-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--v2-label); }
+
+/* the doors and the twin cards: translucent plum with a hairline; lift and glow on hover */
+.lab-story .jump-tile { border-radius: var(--v2-r-card); background: rgba(43, 22, 42, .5); box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .14); transition: translate .5s var(--v2-lift), box-shadow .4s ease; }
+.lab-story .jump-tile:hover, .lab-story .jump-tile:focus-visible { transform: none; translate: 0 -4px; box-shadow: var(--v2-card-glow); }
+.lab-story .jump-copy strong { letter-spacing: -.03em; }
+.lab-story .jump-lead .jump-copy strong { font-size: 24px; }
+.lab-story .tw-step { border-radius: var(--v2-r-card); background: var(--v2-card); transition: translate .5s var(--v2-lift), box-shadow .4s ease; }
+.lab-story .tw-step:hover, .lab-story .tw-step:focus-within { transform: none; translate: 0 -4px; box-shadow: var(--v2-card-glow); }
+.lab-story .tw-copy h3 { font-weight: 500; letter-spacing: -.045em; line-height: 1.05; }
+.lab-story .tw-copy .line { color: var(--v2-soft-on-dark); }
+.lab-story .row { background: var(--v2-card); box-shadow: inset 0 0 0 1px var(--v2-card-line); transition: translate .35s var(--v2-lift), background-color .3s ease, box-shadow .35s ease; }
+.lab-story .row:hover, .lab-story .row:focus-visible { transform: none; translate: 0 -2px; background: rgba(249, 246, 242, .07); box-shadow: inset 0 0 0 1px rgba(232, 201, 220, .5), 0 22px 50px -30px rgba(199, 140, 189, .6); }
+.lab-story .row-copy strong { letter-spacing: -.03em; }
+.lab-story .arch-callout { background: rgba(24, 11, 24, .74); box-shadow: inset 0 0 0 1px rgba(232, 201, 220, .22); }
+
+/* ── ivory panels: the study machines and the labels sit on warm ivory, with paper cards ── */
+.lab-story .chapter.on-panel { padding-block: clamp(20px, 3vw, 44px); }
+.lab-panel { border-radius: var(--v2-r-panel); padding: clamp(40px, 6vw, 96px) clamp(24px, 5vw, 80px); background: var(--v2-bg); color: var(--v2-fg); box-shadow: 0 40px 100px rgba(10, 2, 14, .5); }
+.lab-panel .lede a { color: var(--v2-deep); }
+.lab-panel .years a { color: var(--v2-deep); box-shadow: inset 0 0 0 1px rgba(36, 11, 33, .22); transition: background-color .2s ease, translate .25s var(--v2-lift); }
+.lab-panel .years a:hover { background: rgba(36, 11, 33, .06); translate: 0 -2px; }
+.lab-panel .mc a { --v2-fg-2: var(--v2-mulberry); background: var(--v2-paper); color: var(--v2-deep); box-shadow: inset 0 0 0 1px rgba(36, 11, 33, .08); transition: translate .5s var(--v2-lift), box-shadow .4s ease; }
+.lab-panel .mc a:hover, .lab-panel .mc a:focus-visible { transform: none; translate: 0 -4px; box-shadow: var(--v2-card-glow); }
+.lab-panel .mc .frame { background: #21121F; }            /* the point-cloud stills carry this ground; the frame matches it */
+.lab-panel .mc .frame img { object-fit: contain; }
+.lab-panel .mc-copy strong { font-weight: 500; letter-spacing: -.04em; }
+.lab-panel .doors .row { --v2-fg-2: var(--v2-mulberry); background: var(--v2-paper); box-shadow: inset 0 0 0 1px rgba(36, 11, 33, .08); }
+.lab-panel .doors .row:hover, .lab-panel .doors .row:focus-visible { background: var(--v2-paper); box-shadow: var(--v2-card-glow); }
+.lab-panel .row-go { box-shadow: inset 0 0 0 1px rgba(36, 11, 33, .2); }
+.about-in { display: grid; gap: clamp(20px, 2.4vw, 32px); justify-items: start; }
+.lab-panel .labels dd { color: var(--v2-mulberry); }
+.map-note { display: grid; gap: 12px; max-width: 96ch; margin-top: clamp(16px, 2vw, 28px); padding-top: 22px; border-top: 1px solid var(--v2-line); font-size: 15px; line-height: 1.6; color: var(--v2-mulberry); }
+.map-credit { font: 400 10.5px/1.7 var(--v2-mono); letter-spacing: .02em; }
+
+/* ── the playground: a calm index on hairlines; a line lights and steps aside on hover ── */
+.lab-story .ix { transition: translate .3s var(--v2-lift), border-color .3s ease; }
+.lab-story .ix strong { font-weight: 500; letter-spacing: -.035em; transition: color .2s ease, text-shadow .3s ease; }
+.lab-story .ix:hover, .lab-story .ix:focus-visible { translate: 4px 0; border-top-color: var(--v2-petal); }
+.lab-story .ix:hover strong { text-decoration: none; color: #FFFDF9; text-shadow: 0 0 22px var(--v2-petal); }
+
+/* ── the close: one line, one way to start, and a still chrome form whose reflection moves when the section is hovered ── */
+.lab-story .close { border-top: 0; }
+.lab-story .close-in { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); }
+.close-orb { position: relative; isolation: isolate; justify-self: center; width: clamp(190px, 25vw, 360px); aspect-ratio: 1; }
+.close-orb::before { content: ''; position: absolute; inset: -18%; z-index: -1; border-radius: 50%; opacity: .75; transition: scale .6s var(--v2-lift), opacity .6s ease;
+  background: radial-gradient(closest-side, rgba(199, 140, 189, .4) 0%, rgba(143, 63, 138, .2) 45%, rgba(143, 63, 138, 0) 72%); }
+.close-orb i { position: absolute; inset: 14%; border-radius: 44% 56% 57% 43% / 53% 39% 61% 47%; }
+.close-orb i::after { content: ''; position: absolute; inset: 5%; border-radius: inherit; mix-blend-mode: screen; opacity: .7; pointer-events: none;
+  background: radial-gradient(ellipse at 25% 12%, #FFF 0%, rgba(255, 255, 255, 0) 24%), radial-gradient(ellipse at 76% 84%, rgba(245, 213, 252, .67) 0%, rgba(255, 255, 255, 0) 33%); }
+.close:hover .close-orb::before { scale: 1.16; opacity: 1; }
+.close:hover .close-orb i { background-position: 85% 75%; }
+.close-status { max-width: 60ch; margin: 0; padding-top: 20px; border-top: 1px solid var(--v2-line); font-size: 14px; line-height: 1.65; color: var(--v2-fg-2); }
+.close-status a { color: #FFFDF9; text-decoration: none; border-bottom: 1px solid var(--v2-rose); }
+
+/* Ask about this: the same inky glass as the nav */
+.lab-story .askb > button { background: rgba(24, 11, 24, .9) !important; color: #F9F6F2 !important; box-shadow: inset 0 0 0 1px rgba(245, 233, 241, .2), 0 14px 34px -14px rgba(0, 0, 0, .8) !important; transition: box-shadow .3s ease, translate .25s cubic-bezier(.2, .8, .2, 1); }
+.lab-story .askb > button:hover { translate: 0 -2px; box-shadow: inset 0 0 0 1px rgba(232, 201, 220, .7), 0 0 34px rgba(199, 140, 189, .45) !important; }
+
+/* ── responsive ── */
+@media (max-width: 1100px) {
+  .cloud-instrument { grid-template-columns: 1fr; }
+  .cloud-views { justify-self: start; }
+}
+@media (max-width: 959px) {
+  .lab-story .hero .hero-in { grid-template-columns: 1fr; min-height: 0; gap: 36px; padding-block: 104px 40px; }
+  .lab-story .close-in { grid-template-columns: 1fr; }
+  .close-orb { order: -1; justify-self: start; width: min(46vw, 200px); }
+}
+@media (max-width: 720px) {
+  .outcomes { gap: 7px; }
+  .outcomes li { flex: 1 1 100%; }
+  .outcomes a { flex-direction: row; align-items: baseline; gap: 10px; padding: 13px 14px; border-radius: 14px; }
+  .outcomes b { font-size: 16px; white-space: nowrap; }
+  .outcomes span { font-size: 12.5px; }
+  .city-frame { aspect-ratio: 5 / 4; border-radius: 24px; }
+  .cloud-views { width: 100%; }
+  .cloud-views button { flex: 1; padding: 0 8px; min-height: 44px; }
+  /* panels run edge to edge on a phone, so the cards inside keep their width */
+  .lab-panel { margin-inline: calc(-1 * var(--v2-gutter) + 6px); padding: 44px 14px 28px; border-radius: 26px; }
+  .lab-panel .ch-head, .lab-panel .doors h3, .about-in > :not(.labels) { padding-inline: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .city-frame, #city-hero, .outcomes a, .lab-story .jump-tile, .lab-story .tw-step, .lab-story .row, .lab-panel .mc a, .lab-story .ix, .close-orb::before, .lab-story .pc-stage canvas { transition: none !important; }
+  .hero-city:hover .city-frame, .outcomes a:hover, .lab-story .jump-tile:hover, .lab-story .tw-step:hover, .lab-story .row:hover, .lab-panel .mc a:hover, .lab-story .ix:hover, .lab-panel .years a:hover { translate: none; }
+}

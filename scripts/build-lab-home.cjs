@@ -3,9 +3,14 @@
 // and the maturity ladder (lab/maturity.json). Run after editing either file:  node scripts/build-lab-home.cjs
 //
 // The page is static HTML on purpose: with no JS, or with reduced motion, it is the complete story. It wears the
-// site-v2 look ported from assembl.co.nz (/site-v2/: tokens, CSS, and markup.cjs, the string twins of the foundation's
-// components). /site-v2/site-v2.js adds the same motion as the main site (split-text headlines, reveals, parallax,
-// the flat mark A assembling from its four parts); lab/story.js adds live data labels.
+// site-v2 foundation ported from assembl.co.nz (/site-v2/: tokens, CSS, and markup.cjs, the string twins of the
+// foundation's components) and, since 13 Nov 2026, the standard of the main site's new home page on top of it
+// (/site-v2/standard.css for the shared layer, /lab/home.css for this page: inky plum ground, warm ivory panels,
+// outcome links in the hero, lift and glow on hover, a footer with depth). /site-v2/site-v2.js adds the motion
+// (split-text headlines, reveals, parallax); lab/story.js adds live data labels.
+//
+// index.html is this script's output. Do not edit index.html by hand: it was edited directly on 9 Nov 2026 (the
+// Auckland 3D city hero) and this script and scripts/check-lab-home.cjs fell out of step with the page until 13 Nov.
 //
 // Curation is presentation only. Every world in LAB_WORLDS and every instrument the old /discover/ page linked
 // appears here exactly once; scripts/check-lab-home.cjs fails if one goes missing or shows twice.
@@ -108,39 +113,22 @@ const PLAY = [
    (tools/pointcloud/stills.cjs → lab/pc/stills/*.webp); a picture that has not been rendered yet keeps its original render. ── */
 const still = (id, fallback) => (fs.existsSync(path.join(ROOT, `lab/pc/stills/${id}.webp`)) ? `/lab/pc/stills/${id}.webp` : fallback);
 const pcAlt = (alt) => `Point cloud of ${alt.replace(/^(Offline render of |Render of )/i, '').replace(/^The /, 'the ').replace(/^A /, 'a ')}`;
-/* the hero (Nov 2026): Tāmaki Makaurau Auckland as a point cloud, baked from open data by tools/pointcloud/bake-auckland.mjs
-   (assets/models/auckland/auckland-points.*) and drawn by lab/pc/home.js. Callouts name real public landmarks with facts only.
-   Twins stand on real sites of their kind as examples (the bake finds a site by category and keeps only its coordinates);
-   no business or institution is named, and each pin says it is not a model of that site. */
-const AKL = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/models/auckland/auckland-points.json'), 'utf8'));
-const HERO_CALLOUTS = [   // in the order they claim space on the map
-  ['skytower', 'Sky Tower', '328 m. The tallest freestanding structure in the Southern Hemisphere when it opened in 1997.'],
-  ['rangitoto', 'Rangitoto', 'The youngest of Auckland’s volcanoes, about 600 years old. 260 m high.'],
-  ['bridge', 'Auckland Harbour Bridge', 'Opened in 1959, 1,020 m long. Clip-on lanes added in 1969 took it to eight.'],
-  ['maungawhau', 'Maungawhau / Mount Eden', 'The highest volcanic cone on the isthmus: 196 m, with a crater 50 m deep.'],
-  ['waitemata', 'Waitematā Harbour', 'Auckland’s main harbour, opening east to the Hauraki Gulf.'],
-].filter(([id]) => AKL.anchors[id]);
-/* one numbered pin per site; a pin can carry more than one sim (the supermarket twin and the delivery sim share one store), and
-   two sims sit on fixed spots rather than buildings (a street, a promenade), each with its own truth line */
-const HERO_PINS = [   // numbered in this order on the map and in its key; every one is shown
-  { id: 'ed', links: [['City ED twin', '#twin-ed']], truth: 'Example, not a model of this hospital' },
-  { id: 'cars', links: [['Car yard twin', '#twin-cars']], truth: 'Example, not a model of this site' },
-  { id: 'store', links: [['Supermarket twin', '#twin-store'], ['Supermarket order to doorstep', href(WORLDS.delivery)]], truth: 'Example, not a model of this site' },
-  { id: 'cafe', links: [['Café twin', '#twin-cafe']], truth: 'Example, not a model of this café' },
-  { id: 'retail', links: [['Trade yard twin', href(WORLDS.retail)]], truth: 'Example, not a model of this site' },
-  { id: 'stay', links: [['Stay twin', href(WORLDS.stay)]], truth: 'Example, not a model of this site' },
-  { id: 'office', links: [['Office twin', href(WORLDS.office)]], truth: 'Example, not a model of this site' },
-  { id: 'moving', links: [['Moving house', href(WORLDS.moving)]], truth: 'Example, not a model of this street' },
-  { id: 'viaduct', links: [['Friday night on the Viaduct', href(WORLDS.viaduct)]], truth: 'Example restaurant, drawn' },
-].filter(({ id }) => AKL.sites && AKL.sites[id]);
+/* the hero (9 Nov 2026): the Auckland city centre as a sourced 3D model (auckland/3d/home-city.js draws it over its own
+   poster, auckland/3d/city-poster.webp). The landmark notes stay in the page for the point-cloud script, hidden while the
+   city has the hero. No business or institution is named. */
+const HERO_CALLOUTS = [
+  ['citycentre', 'City centre', 'Bare-earth elevation beneath the city.'],
+  ['rangitoto', 'Rangitoto', 'Island and volcanic landform.'],
+  ['maungawhau', 'Maungawhau', 'Volcanic landform in the LINZ DEM.'],
+];
 const heroCallouts = HERO_CALLOUTS.map(([id, t, line]) => `<li class="hero-callout" data-anchor="${id}"><strong>${esc(t)}</strong><span>${esc(line)}</span></li>`).join('');
-const heroPins = HERO_PINS.map(({ id, links, truth }, i) => `<li class="hero-pin" data-site="${id}"><a class="pin-chip" href="${links[0][1]}"><span class="pin-n" aria-hidden="true">${i + 1}</span><strong>${esc(links[0][0])}</strong></a><span class="pin-card">${links.slice(1).map(([t, h]) => `<a class="pin-more" href="${h}">${esc(t)}</a>`).join('')}<span class="pin-truth">${esc(truth)}</span></span></li>`).join('');
-/* the key under the map: the numbered twins and the truth line they share, always visible beside the cloud (each chip carries
-   its own truth line too, shown on hover or focus) */
-const heroKey = HERO_PINS.map(({ id, links }, i) => `<li data-site="${id}"><span class="pin-n">${i + 1}</span><strong>${links.map(([t]) => esc(t)).join(' <span class="key-and">·</span> ')}</strong></li>`).join('');
-const AKL_CREDIT = `Auckland from open map data at true scale, heights ×${AKL.verticalExaggeration}; Sky Tower and Harbour Bridge drawn from published dimensions. Elevation: LINZ (CC BY 4.0). Map data © OpenStreetMap contributors.`;
-/* the twins the hero links to: plain links, no place implied (pins on the map carry the sites) */
-const HERO_TAGS = [['cafe', 'Café'], ['store', 'Supermarket'], ['ed', 'Emergency department'], ['dairy', 'Dairy plant'], ['energy', 'Energy street'], ['cars', 'Car yard']];
+const CITY_VIEWS = [['city', 'City centre'], ['waterfront', 'Waterfront'], ['overview', 'Harbour']];
+/* what you can do in the lab, in the first screen, each linked to its chapter (as the three outcomes are on assembl.co.nz) */
+const OUTCOMES = [
+  { href: '#twins', title: 'Run a business', line: 'a café, an emergency department or a dairy plant, for a day' },
+  { href: '#study', title: 'Learn one idea', line: 'study machines for Years 7 to 13' },
+  { href: '#architecture', title: 'See a plan in 3D', line: 'Plan Studio and the Auckland city model' },
+];
 /* the doors: straight to each part of the lab (not world tiles, so the check's "exactly once" count is untouched).
    Exam season (Nov 2026): the study machines door leads, two columns wide, showing three of the machines themselves as
    point clouds (their stills from the study chapter below, so no extra bytes), each named underneath. */
@@ -205,21 +193,22 @@ if (missing.length) throw new Error('Worlds missing from the story: ' + missing.
 const MAIN = 'https://assembl.co.nz';
 const top = { target: '_top' };
 const labMark = (size, mark, eager) => v2.wordmark({ href: '/', size, mark, suffix: 'lab', label: 'assembl lab home', eager });
+const out = { target: '_top', rel: 'noopener' };
 const nav = v2.siteNav({
   home: labMark(23, 32, true),
-  links: [{ href: '#twins', label: 'Twins' }, { href: '#study', label: 'Study machines' }, { href: '#playground', label: 'Playground' }, { href: '#about', label: 'Labels' }],
+  links: [{ href: '#twins', label: 'Twins' }, { href: '#study', label: 'Study machines' }, { href: '/auckland/3d/', label: 'Auckland in 3D' }, { href: '#playground', label: 'Playground' }, { href: '#about', label: 'Labels' }],
   cta: { href: `${MAIN}/`, label: 'assembl.co.nz', extra: top },
 });
-const footer = v2.siteFooter({
-  home: labMark(22, 34),
-  links: [
-    { href: '#twins', label: 'Twins' }, { href: '/study/', label: 'Study machines' }, { href: '#playground', label: 'Playground' }, { href: '#about', label: 'How to read the labels' },
-    { href: `${MAIN}/`, label: 'assembl.co.nz', extra: top }, { href: `${MAIN}/ai-ready`, label: 'Website check', extra: top }, { href: `${MAIN}/trust`, label: 'Trust', extra: top },
-    { href: `${MAIN}/about`, label: 'About', extra: top }, { href: `${MAIN}/contact`, label: 'Contact', extra: top },
+const footer = v2.deepFooter({
+  line: 'Made in Aotearoa.',
+  sub: 'The lab is where assembl shows its working: twins, study machines and instruments, each labelled for what is real.',
+  groups: [
+    { label: 'In the lab', links: [{ href: '#twins', label: 'Twins' }, { href: '/study/', label: 'Study machines' }, { href: '/plan-studio/', label: 'Plan Studio' }, { href: '/auckland/3d/', label: 'Auckland in 3D' }, { href: '#playground', label: 'Playground' }, { href: '#about', label: 'How to read the labels' }] },
+    { label: 'The agency', links: [{ href: `${MAIN}/`, label: 'assembl.co.nz', extra: out, out: true }, { href: `${MAIN}/get-found`, label: 'Get found', extra: out, out: true }, { href: `${MAIN}/ai-ready`, label: 'Website check', extra: out, out: true }, { href: `${MAIN}/contact`, label: 'Contact', extra: out, out: true }] },
   ],
-  legal: [{ href: `${MAIN}/legal/privacy`, label: 'Privacy', extra: top }, { href: `${MAIN}/legal/terms`, label: 'Terms', extra: top }, { href: `${MAIN}/legal/disclaimer`, label: 'Disclaimer', extra: top }],
   note: 'Independent assembl concepts. Simulated data unless marked live with a named source. Not medical, financial or energy advice. In an emergency, call 111.',
-  strip: ['Made in Aotearoa', '© 2026 <span class="v2-brand">assembl</span>'],
+  base: '© 2026 <span class="v2-brand">assembl</span> · Made in Aotearoa New Zealand',
+  legal: [{ href: `${MAIN}/legal/privacy`, label: 'Privacy', extra: out }, { href: `${MAIN}/legal/terms`, label: 'Terms', extra: out }, { href: `${MAIN}/legal/disclaimer`, label: 'Disclaimer', extra: out }],
 });
 const tickerItems = [...STAGE, ...MORE_TWINS].map(s => WORLDS[s.id].title);
 
@@ -230,47 +219,42 @@ const html = `<!doctype html>
 <title>assembl lab · small worlds, assembled</title>
 <meta name="description" content="Working models of New Zealand places, built by assembl: business twins you can run for a day, study machines that teach one idea, and a playground of instruments. Every one says what is simulated and what is real.">
 <meta property="og:title" content="assembl lab · small worlds, assembled"><meta property="og:description" content="Business twins, study machines and a playground, built in Aotearoa. Every world says what is simulated and what is real."><meta property="og:image" content="https://assembl-lab.vercel.app/assets/models/cafe/renders/cafe-hero.webp">
-<meta name="theme-color" content="#21121F"><link rel="icon" href="/lab/favicon.svg" type="image/svg+xml"><link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-v2/site-v2.css"><link rel="stylesheet" href="/site-v2/lab.css"><link rel="stylesheet" href="/lab/story.css"><link rel="stylesheet" href="/lab/pc/pc.css">
+<meta name="theme-color" content="#180B18"><link rel="icon" href="/lab/favicon.svg" type="image/svg+xml"><link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site-v2/site-v2.css"><link rel="stylesheet" href="/site-v2/lab.css"><link rel="stylesheet" href="/lab/story.css"><link rel="stylesheet" href="/lab/pc/pc.css"><link rel="stylesheet" href="/site-v2/standard.css"><link rel="stylesheet" href="/lab/home.css">
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <script>document.documentElement.classList.add('js');</script>
 <script src="/site-v2/site-v2.js" defer></script>
 <script src="/lab/story.js" defer></script>
-<script type="module" src="/lab/pc/home.js"></script>
+<script type="module" src="/lab/pc/home.js"></script><script type="module" src="/auckland/3d/home-city.js"></script>
 </head>
-<body class="site-v2">
+<body class="site-v2 lab-std" id="top">
 <a class="skip" href="#twins">Skip to the twins</a>
 ${nav}
 <main>
 <div class="pc-run v2-tone-plum">
 <div class="pc-stage" aria-hidden="true"><canvas id="pc-canvas"></canvas><svg class="pc-leaders"></svg></div>
 <section class="hero v2-tone-plum" aria-labelledby="hero-title">
- <div class="hero-glow" aria-hidden="true"></div>
  <div class="wrap hero-in">
-  <div class="hero-copy">
-   ${v2.eyebrow(`The ${v2.brand()} lab · Aotearoa`)}
+  <div class="hero-copy lab-stage">
+   ${v2.eyebrow(`${v2.brand()} lab / Aotearoa New Zealand`, { dot: false })}
    ${v2.split({ tag: 'h1', id: 'hero-title', className: 'v2-display-xl', trigger: 'load', lines: ['Small worlds,', { text: 'assembled.', accent: true }] })}
-   <p class="v2-lede lede">The assembl Lab is where we build working models of New Zealand places: businesses you can run for a day, machines that teach one idea, and a few instruments to play with.</p>
-   <div class="actions">${v2.button({ href: '#twins', label: 'Walk through the twins', icon: 'down', size: 'lg' })}${v2.button({ href: '#study', label: 'See the study machines', variant: 'secondary', icon: 'down' })}</div>
-   <p class="truth-note">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
-   <ul class="hero-tags" aria-label="Business twins in the lab"><li class="hero-tags-k">Twins</li>${HERO_TAGS.map(([id, t]) => `<li><a href="#twin-${id}">${esc(t)}</a></li>`).join('')}</ul>
+   <p class="v2-lede lede" style="--i:3">Working models of New Zealand places, built by assembl. Run a business for a day, learn one idea on a machine, or see a plan in 3D before it is built.</p>
+   ${v2.outcomes(OUTCOMES).replace('<ul ', '<ul style="--i:4" ')}
+   <p class="truth-note" style="--i:5">${chip('sim')}${chip('ill')}${chip('live')}<span>Every world carries one of these labels.</span></p>
   </div>
- </div>
- <div class="hero-art hero-world" id="hero-world" aria-hidden="true"><img src="/lab/pc/stills/hero-auckland.webp" srcset="/lab/pc/stills/hero-auckland-sm.webp 720w, /lab/pc/stills/hero-auckland.webp 1280w, /lab/pc/stills/hero-auckland-2x.webp 1760w" sizes="(min-width: 960px) 56vw, 100vw" alt="" width="1280" height="960" fetchpriority="high" decoding="async"></div>
- <div class="wrap hero-notes">
-  <p class="hero-notes-k" aria-hidden="true">On the map</p>
-  <ul class="hero-callouts" aria-label="On the map">${heroCallouts}</ul>
-  <p class="hero-notes-k" aria-hidden="true">Twins on real sites of their kind, as examples</p>
-  <ul class="hero-pins" aria-label="Twins on the map, each an example on a real site of its kind">${heroPins}</ul>
-  <div class="hero-key" aria-hidden="true"><p class="hero-key-k">Twins on the map</p><ol>${heroKey}</ol><p class="hero-key-truth">Each is an example on a real site of its kind, not a model of the business or institution there. The move's street and the Viaduct restaurant are drawn examples too.</p></div>
-  <p class="hero-credit">${esc(AKL_CREDIT)} <a href="#about">Sources</a></p>
+  <figure class="hero-city lab-stage" aria-label="The Auckland city centre in 3D">
+   <div class="city-frame" id="hero-world" style="--i:2"><img src="/auckland/3d/city-poster.webp" alt="The Auckland city centre from the north-east as a 3D model: plum blocks for buildings on pale terrain, the Sky Tower in the middle and the harbour in front" width="976" height="561" fetchpriority="high" decoding="async"><canvas id="city-hero" tabindex="0" aria-label="Auckland CBD in 3D. Drag to orbit real mapped buildings."></canvas><span class="lab-tag city-status"><span class="when-still">Still</span><span class="when-live">Live 3D · drag to turn</span></span></div>
+   <figcaption class="cloud-instrument" style="--i:4"><p class="cloud-caption"><span>Tāmaki Makaurau / Auckland</span><strong>The city, grounded in real data.</strong><small class="city-key">CBD extract · plum: tagged heights · rose: estimates · grey: unknown</small></p><div class="cloud-views" role="group" aria-label="Auckland city view">${CITY_VIEWS.map(([k, t], i) => `<button type="button" data-cloud-view="${k}" aria-pressed="${i === 0}">${t}</button>`).join('')}</div><p class="city-links"><a class="cloud-atlas-link" href="/auckland/3d/">Explore the 3D city ${v2.arrow('up-right', 15)}</a><a href="/auckland/" class="city-secondary">Open the 2D atlas ${v2.arrow('up-right', 13)}</a></p></figcaption>
+   <ul class="hero-callouts" aria-label="Auckland landmarks">${heroCallouts}</ul>
+   <p class="hero-credit" style="--i:5">LINZ terrain + © OpenStreetMap CBD footprints · browser heights ×1. Plum: tagged heights (unverified); rose: mapped levels ×3 m estimate; grey: unknown heights, flat footprints. <a href="/auckland/3d/city-buildings.json">Sources &amp; limits</a></p>
+  </figure>
  </div>
 </section>
 <section class="jump v2-tone-plum" id="jump" aria-labelledby="jump-title">
  <div class="wrap">
   <div class="ch-head">
-   ${v2.eyebrow('Go straight to')}
+   ${v2.eyebrow('Go straight to', { dot: false })}
    <h2 class="v2-h2" id="jump-title">Every part of the lab, one step away.</h2>
   </div>
   ${v2.reveal(`
@@ -283,11 +267,11 @@ ${nav}
  <div class="wrap arch-in">
   <div class="arch-slot" aria-hidden="true"></div>
   <div class="arch-copy">
-   ${v2.eyebrow('Architecture lab · Plan Studio')}
+   ${v2.eyebrow('Architecture lab / Plan Studio', { dot: false })}
    ${v2.split({ tag: 'h2', id: 'arch-title', className: 'v2-h2', lines: ['Plans in.', { text: 'A model you can trust out.', accent: true }] })}
    <p class="v2-lede lede v2-secondary">Upload a 2D plan. Plan Studio measures it, builds the 3D model, pre-checks it against the NZ Building Code as you edit, keeps the working drawings in step, and makes the client presentation.</p>
    <div class="actions">${v2.button({ href: '/plan-studio/', label: 'Open Plan Studio', icon: 'right' })}${v2.button({ href: '/plan-studio/points/', label: 'See the point cloud', variant: 'secondary', icon: 'right' })}</div>
-   <p class="truth-note"><span class="truth" data-k="sim">Example · fictional demo hall</span><span>The building here is the studio's demo, not a client's.</span></p>
+   <p class="truth-note"><span class="truth" data-k="sim">Example · fictional demo hall</span><span>The building here is the studio's demo, not a client's. The pre-check is advisory, not a statement of compliance.</span></p>
   </div>
   <ul class="arch-callouts">
    <li class="arch-callout" data-anchor="entry"><strong>Measured from your PDF</strong><span class="typing">Walls, openings and rooms read from the drawing's own linework, each with its evidence.</span></li>
@@ -304,7 +288,7 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
 <section class="chapter twins v2-tone-plum" id="twins" aria-labelledby="twins-title">
  <div class="wrap">
  <div class="ch-head">
-  ${v2.eyebrow('Business twins')}
+  ${v2.eyebrow('Business twins', { dot: false })}
   ${v2.split({ tag: 'h2', id: 'twins-title', className: 'v2-h2', lines: ['Businesses, assembled.', { text: 'Run one for a day.', accent: true }] })}
   <p class="v2-lede lede v2-secondary">Twins of the kinds of places New Zealand runs on. The businesses are invented; the public figures that feed them are named. Change one thing and follow where it goes.</p>
  </div>
@@ -319,18 +303,18 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
   ${moreTwins}
   `, { tag: 'ul', className: 'rows' })}</div>
   <div class="more-col"><h3>Closer to home</h3>${v2.reveal(`
-  <li><a class="row row-type" href="/household/"><span class="row-copy"><strong>Household Edit</strong><span class="row-line">Power bills, food, school costs and the true cost of a fuel detour.</span><span class="meta"><span class="truth" data-k="sim">Manual inputs</span><span class="src">Local calculations · Google feeds not connected</span></span></span><span class="row-go" aria-hidden="true">↗</span></a></li>
+  <li><a class="row row-type" href="/household/"><span class="row-copy"><strong>Household Edit</strong><span class="row-line">Power bills, food, school costs and the true cost of a fuel detour.</span><span class="meta"><span class="truth" data-k="sim">Manual inputs</span><span class="src">Local calculations · Google feeds not connected</span></span></span><span class="row-go" aria-hidden="true">${v2.arrow('up-right', 16)}</span></a></li>
   ${homeRows}
   `, { tag: 'ul', className: 'rows' })}</div>
  </div>
  </div>
 </section>
 
-<div class="sheet pc-lower">
-<section class="chapter study v2-tone-plum" id="study" aria-labelledby="study-title">
+<section class="chapter on-panel study v2-tone-plum" id="study" aria-labelledby="study-title">
  <div class="wrap">
+ <div class="lab-panel v2-tone-ivory">
  <div class="ch-head">
-  ${v2.eyebrow('Study machines')}
+  ${v2.eyebrow('Study machines', { dot: false })}
   ${v2.split({ tag: 'h2', id: 'study-title', className: 'v2-h2', lines: ['One idea,', { text: 'assembled into a machine.', accent: true }] })}
   <p class="v2-lede lede v2-secondary">Each study machine turns one curriculum topic into something you can turn, test and break, then marks your answers against the same model. Years 7 to 13, in <a href="${href(studyWorld)}">assembly, the study app</a>.</p>
   <div class="actions">${v2.button({ href: href(studyWorld), label: 'Open assembly', icon: 'right', className: 'go-world' })}<nav class="years" aria-label="Study machines by year">${YEARS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</nav></div>
@@ -342,12 +326,13 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
   ${doors}
  `, { tag: 'ul', className: 'rows rows-3' })}</div>
  </div>
+ </div>
 </section>
 
 <section class="chapter play v2-tone-plum" id="playground" aria-labelledby="play-title">
  <div class="wrap">
  <div class="ch-head ch-head-row">
-  <div class="ch-title">${v2.eyebrow('The playground')}
+  <div class="ch-title">${v2.eyebrow('The playground', { dot: false })}
   ${v2.split({ tag: 'h2', id: 'play-title', className: 'v2-h2', lines: ['The playground.', { text: 'Some assembly required.', accent: true }] })}</div>
   <p class="v2-lede lede v2-secondary">Smaller instruments for making things. No lesson and no data: everything stays on your device.</p>
  </div>
@@ -357,9 +342,10 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
  </div>
 </section>
 
-<section class="chapter about v2-tone-plum" id="about" aria-labelledby="about-title">
+<section class="chapter on-panel about v2-tone-plum" id="about" aria-labelledby="about-title">
  <div class="wrap">
- ${v2.eyebrow('Labels')}
+ <div class="lab-panel v2-tone-ivory about-in">
+ ${v2.eyebrow('Labels', { dot: false })}
  ${v2.split({ tag: 'h2', id: 'about-title', className: 'v2-h2', lines: [{ text: 'How to read the labels.', accent: false }] })}
  ${v2.reveal(`
   <div><dt>${chip('sim')}</dt><dd>A model of a place or a system. The place is invented; any public figures it uses are named on the page.</dd></div>
@@ -368,21 +354,23 @@ ${v2.ticker({ items: tickerItems, label: 'Worlds in the lab', seconds: 46, class
   <div><dt>${chip('ill')}</dt><dd>Art to play with. It makes no claim about the world.</dd></div>
  `, { tag: 'dl', className: 'labels' })}
  <div class="map-note">
-  <p>The city at the top of this page is built from open map data at true scale. Twins sit on real sites of their kind as examples; none models the business or institution there.</p>
-  <p class="map-credit">Elevation: LINZ (CC BY 4.0) via AWS Terrain Tiles. Coastline and buildings: © OpenStreetMap contributors (ODbL), via OpenFreeMap and © OpenMapTiles. Heights ×${AKL.verticalExaggeration}. The Sky Tower and the Harbour Bridge are drawn from their published dimensions (approximate), the tower ${AKL.verticalExaggeration}× in all directions so its shape reads.</p>
+  <p>The browser city combines LINZ bare-earth terrain with a bounded Auckland CBD extract of OpenStreetMap building footprints. Terrain and buildings use ×1 vertical scale. Height tags are not independently verified; mapped floor counts produce explicitly labelled estimates, while unknown heights stay flat. The separate 2D atlas shows streets and footprints. The city AR download uses the same CBD building geometry and a crop of the terrain at uniform ×1 scale. Browser controls and the wider harbour do not carry into AR. The older terrain-only asset remains a separate ×5 model.</p>
+  <p class="map-credit">Terrain: Toitū Te Whenua Land Information New Zealand (CC BY 4.0), national 1 m DEM mosaic, sampled from overviews at approximately 64 m, with a 16 m Rangitoto detail. NZTM2000 horizontal coordinates; NZVD2016 elevations. The browser city and native AR terrain further resample this source to approximately 112 m. Browser city and city AR heights are ×1; the older terrain-only AR relief is ×5. Survey dates vary across the extract; this is not current-condition or survey-grade information. Missing cells are omitted. Water is masked using © OpenStreetMap contributors / OpenMapTiles via OpenFreeMap (ODbL 1.0); low-lying land is retained. <a href="/assets/models/auckland/linz-terrain.json">Terrain source metadata</a> · <a href="/auckland/3d/city-buildings.json">City footprint and height sources</a> · <a href="/auckland/3d/city-ar-manifest.json">City AR scale and crop</a>. None of these views predicts hazards.</p>
+ </div>
  </div>
  </div>
 </section>
-</div>
 
 <section class="close v2-tone-plum" aria-labelledby="close-title">
  <div class="wrap close-in">
   <div class="close-copy">
-   ${v2.eyebrow(`Work with ${v2.brand()}`)}
-   ${v2.split({ tag: 'h2', id: 'close-title', className: 'v2-h2', trigger: 'assemble', lines: ['Want your business', { text: 'assembled as a twin?', accent: true }] })}
-   <p class="v2-lede lede v2-secondary">assembl builds twins around real customer journeys, starting with public information and then, on your say-so, your own.</p>
-   <div class="actions">${v2.button({ href: `${MAIN}/`, label: 'Talk to assembl', size: 'lg', extra: top })}${v2.button({ href: href(studyWorld), label: 'Study for exams', variant: 'secondary', icon: 'right' })}</div>
+   ${v2.eyebrow(`Work with ${v2.brand()}`, { dot: false })}
+   ${v2.split({ tag: 'h2', id: 'close-title', className: 'v2-h2', lines: ['Want your business', { text: 'assembled as a twin?', accent: true }] })}
+   <p class="v2-lede lede v2-secondary">The lab is the workshop of assembl, a New Zealand marketing and advertising agency. Twins and 3D walk-throughs are how we show what's possible, starting with public information and then, on your say-so, your own.</p>
+   <div class="actions">${v2.button({ href: `${MAIN}/contact`, label: 'Talk to assembl', size: 'lg', extra: out })}${v2.button({ href: `${MAIN}/`, label: 'See assembl.co.nz', variant: 'ghost', extra: out })}</div>
+   <p class="close-status">Everything in the lab is a concept or a teaching model, labelled for what is simulated. Studying for exams? <a href="${href(studyWorld)}">Open assembly, the study app</a>.</p>
   </div>
+  ${v2.parallax('<i class="lab-chrome"></i>', { distance: 70, className: 'close-orb' }).replace('<div ', '<div aria-hidden="true" ')}
  </div>
 </section>
 </main>

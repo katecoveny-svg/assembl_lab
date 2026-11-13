@@ -1,1 +1,23 @@
-body{margin:0;background:#21121f;color:#f6f0e8;font-family:'Instrument Sans',sans-serif}main{max-width:980px;margin:auto;padding:64px 24px}h1{font-size:clamp(48px,8vw,96px);font-weight:300;letter-spacing:-.04em;margin:36px 0}p{line-height:1.65;max-width:75ch}a{color:#d8a7b1}select{font:inherit;padding:12px;border-radius:24px;margin:16px;background:#f6f0e8;color:#21121f}article{border-top:1px solid #785663;padding:24px 0;overflow-wrap:anywhere}h2{font-size:24px;font-weight:400}.badge{color:#d8a7b1;font-size:14px}a:focus-visible,select:focus-visible{outline:3px solid #d8a7b1;outline-offset:5px}
+/* Public evidence · assembl lab. Tokens, type, buttons and the nav come from the shared layer (/site-v2/standard.css, the
+   13 Nov 2026 standard); this file is the page's own layout. Each saved record is a paper card on the inky plum ground. */
+html{background:#180b18}body{margin:0;font-size:17px;line-height:1.6}
+.skip{position:absolute;left:12px;top:-80px;z-index:80;padding:12px 18px;border-radius:999px;background:#f9f6f2;color:#180b18;font-weight:500;text-decoration:none}.skip:focus{top:12px}
+main{max-width:1040px;margin:auto;padding:clamp(48px,9vh,104px) clamp(16px,5vw,48px) 56px;display:grid;gap:22px;justify-items:start}
+main h1{margin:4px 0 6px}.v2-lede{max-width:56ch}
+.limits,.credit,#status{margin:0;max-width:75ch;font-size:15px;line-height:1.65;color:var(--v2-fg-2)}
+main a{color:#f9f6f2;text-underline-offset:4px;text-decoration-thickness:1px;transition:color .2s,text-shadow .3s}main a:hover{color:#fffdf9;text-shadow:0 0 22px #e8c9dc}
+.pick{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:10px;font:500 10.5px/1.8 var(--v2-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--v2-rose)}
+select{min-height:48px;padding:0 44px 0 20px;border:0;border-radius:999px;background:#f9f6f2;color:#281725;font:500 15px/1 var(--v2-font);letter-spacing:0;text-transform:none;cursor:pointer;transition:translate .25s cubic-bezier(.2,.8,.2,1),box-shadow .3s}
+select:hover{translate:0 -2px;box-shadow:0 10px 40px #e8c9dc66}
+#status{font:400 11px/1.7 var(--v2-mono);letter-spacing:.02em}
+#records{display:grid;gap:14px;width:100%}
+article{padding:26px clamp(20px,3vw,34px) 24px;border-radius:24px;background:#fffdfb;color:#654a4e;overflow-wrap:anywhere;box-shadow:0 30px 70px #0a020e80;transition:translate .5s cubic-bezier(.2,.8,.2,1),box-shadow .4s}
+article:hover{translate:0 -4px;box-shadow:0 0 0 1px #e8c9dc80,0 34px 80px -30px #c78cbd99}
+article h2{margin:0 0 10px;font-size:clamp(22px,2.2vw,28px);font-weight:500;letter-spacing:-.04em;line-height:1.1;color:#240b21}
+article p{margin:6px 0;max-width:80ch;font-size:15px;line-height:1.6}
+article .badge{display:inline-block;margin:0 0 8px;padding:6px 11px;border-radius:12px;background:#240b210d;box-shadow:inset 0 0 0 1px #240b2124;color:#240b21;font:500 10px/1.5 var(--v2-mono);letter-spacing:.08em;text-transform:uppercase}
+article a{color:#240b21;font-size:14px}article a:hover{color:#240b21;text-shadow:none;text-decoration-thickness:2px}
+.lab-way{max-width:1040px;margin:auto;padding:22px clamp(16px,5vw,48px) 40px;border-top:1px solid #f5e9f11f;display:flex;flex-wrap:wrap;gap:4px 24px;align-items:center;font-size:13px;color:#cbbbc6}.lab-way span{margin-right:auto}
+.lab-way a{display:inline-flex;align-items:center;min-height:44px;color:#e7dae3;text-decoration:none;transition:color .2s,text-shadow .3s}.lab-way a:hover{color:#fffdf9;text-shadow:0 0 22px #e8c9dc}
+select:focus-visible{outline:2px solid #d9bacb;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){article,select,main a,.lab-way a{transition:none}article:hover,select:hover{translate:none}}
