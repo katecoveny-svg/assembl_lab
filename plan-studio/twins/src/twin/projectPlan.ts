@@ -3,7 +3,9 @@ import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { strToU8, zipSync } from 'fflate';
 import { buildHome, type BuildingSpec, type Placement } from './homes';
-import { PALETTES } from './furniture';
+import { toFinishes } from './furniture';
+import { complete, fromURL, PRESETS } from './finishes';
+import { finishesPanel } from './finishesUI';
 import { setInteriorLights } from './fitout';
 import { fillSlots } from './library';
 import { planting, type Species } from './plants';
@@ -28,7 +30,18 @@ interface PlanModel {
 
 type Input = { kind: 'plan'; plan: PlanModel; name: string } | { kind: 'ifc' | 'glb'; bytes: ArrayBuffer; name: string };
 
+const KEEP = 'assembl-twin-dropped-plan';
+
 function chooser(app: App): Promise<{ input: Input; palette: string }> {
+  // applying a finishes schedule reloads the page: reuse the plan model dropped before it
+  if (new URLSearchParams(location.search).has('fin')) {
+    try {
+      const kept = JSON.parse(sessionStorage.getItem(KEEP) ?? 'null') as { plan: PlanModel; name: string } | null;
+      if (kept?.plan?.buildings) return Promise.resolve({ input: { kind: 'plan', plan: kept.plan, name: kept.name }, palette: 'cedar-charcoal' });
+    } catch {
+      /* storage unavailable: ask again */
+    }
+  }
   return new Promise((resolve) => {
     const stage = app.canvas.parentElement!;
     const o = document.createElement('div');
@@ -36,7 +49,7 @@ function chooser(app: App): Promise<{ input: Input; palette: string }> {
     o.innerHTML = `<div class="card drop-card">
       <h2>Drop a plan, get a twin</h2>
       <p>Drop a <b>plan model</b> (.json from Plan to 4D) and the houses are generated from it: walls, openings, roof, decks, then every room furnished from its name and finished in the palette you pick. Drop an <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender and it is shown as it is.</p>
-      <label class="slider">Finishes <select id="dropPalette">${Object.entries(PALETTES)
+      <label class="slider">Finishes <select id="dropPalette">${Object.entries(PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name}</option>`)
         .join('')}</select></label>
       <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
@@ -46,6 +59,12 @@ function chooser(app: App): Promise<{ input: Input; palette: string }> {
     const pal = () => (o.querySelector('#dropPalette') as HTMLSelectElement).value;
     const done = (input: Input) => {
       o.remove();
+      if (input.kind === 'plan')
+        try {
+          sessionStorage.setItem(KEEP, JSON.stringify({ plan: input.plan, name: input.name }));
+        } catch {
+          /* too big or blocked: finishes changes will ask for the file again */
+        }
       resolve({ input, palette: pal() });
     };
     const read = async (f: File) => {
@@ -95,7 +114,9 @@ export const projectPlan: Project = {
   ],
   async build(app: App): Promise<Built> {
     const { input, palette } = await chooser(app);
-    const fin = PALETTES[palette];
+    const fromQ = new URLSearchParams(location.search).has('fin') ? fromURL() : null;
+    const sched = fromQ ?? { s: complete(PRESETS[palette]?.s ?? PRESETS['cedar-charcoal'].s), name: PRESETS[palette]?.name ?? 'Cedar and charcoal' };
+    const fin = toFinishes(sched.s, sched.name);
     const q = app.quality;
     const M = twinMats(q);
     document.getElementById('title')!.textContent = input.kind === 'plan' ? input.plan.job?.title ?? input.name : input.name;
@@ -234,6 +255,7 @@ export const projectPlan: Project = {
       },
     ];
     return {
+      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
       radius,
@@ -244,7 +266,7 @@ export const projectPlan: Project = {
       exports,
       sources: [
         `Input: ${input.name}.`,
-        input.kind === 'plan' ? 'Walls, openings, partitions, rooms, roof and decks from the plan model; fit-out from room names; finishes from the chosen palette. Everything not in the plan model is proposed.' : 'Shown as received; element data from the file.',
+        input.kind === 'plan' ? 'Walls, openings, partitions, rooms, roof and decks from the plan model; fit-out from room names; finishes from the schedule. Everything not in the plan model is proposed.' : 'Shown as received; element data from the file.',
         'Furniture: Kōwhai Studio library pieces where available, otherwise assembl’s own procedural pieces.',
       ],
     };

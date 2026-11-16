@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boxUV, type Quality } from '../objects/util';
-import { twinMats, type TwinMats } from './mats';
+import { twinMats, twinMatsFor, type TwinMats } from './mats';
 import { fitOut } from './fitout';
 import { interiorMats, ribbedMetal, type Finishes } from './furniture';
 import { pbr, paint } from '../objects/tex';
@@ -196,7 +196,7 @@ function claddingMat(kind: 'metal' | 'white', q: Quality, d: { tex: number }) {
 }
 
 export function buildHome(o: HomeOptions) {
-  const M = twinMats(o.quality);
+  const M = twinMatsFor(o.quality, o.finishes);
   const frame = new HomeFrame(o.placement);
   const L = o.spec.levels[0];
   const plate = L.plate;
