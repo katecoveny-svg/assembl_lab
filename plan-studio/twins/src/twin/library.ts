@@ -121,6 +121,27 @@ export function libraryItem(role: string): Promise<THREE.Object3D | null> {
             }
           }
         });
+        if (['nikau', 'pohutukawa', 'silver_fern'].includes(it.role)) {
+          const all = new THREE.Box3().setFromObject(inner);
+          const H = all.max.y - all.min.y;
+          const drop: THREE.Object3D[] = [];
+          inner.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (!m.isMesh) return;
+            const b = new THREE.Box3().setFromObject(m);
+            // the generator sits each specimen on a studio mound with pebbles: not wanted in a garden bed
+            if (b.max.y - all.min.y < H * 0.09 && !m.geometry.getAttribute('color')) drop.push(m);
+            if (m.geometry.getAttribute('color')) {
+              const mat = (m.material as THREE.MeshStandardMaterial).clone();
+              mat.map = null;
+              mat.vertexColors = true;
+              mat.color.setRGB(0.62, 0.72, 0.55);
+              mat.side = THREE.DoubleSide;
+              m.material = mat;
+            }
+          });
+          for (const d of drop) d.removeFromParent();
+        }
         const box = new THREE.Box3().setFromObject(inner);
         const c = box.getCenter(new THREE.Vector3());
         const fit = it.fit ?? 'floor';
