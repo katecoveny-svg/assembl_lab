@@ -9,7 +9,9 @@ import { syntheticCapture } from './scan';
 import { planting, type Placement as PlantAt, type Species } from './plants';
 import { PALETTES } from './furniture';
 import { setInteriorLights } from './fitout';
-import { fillSlots } from './library';
+import { fillSlots, slot } from './library';
+import { bedPlanting, mulchBed, palingFence, pathRibbon, weatherboardSet } from './landscape';
+import { pbr } from '../objects/tex';
 import { exportIFC, loadIFC } from './ifc';
 import type { App, Built, Key, Layer, Project } from './app';
 
@@ -84,6 +86,18 @@ export const project16a: Project = {
     const terrain = site.terrain(q);
     const retaining = site.retaining(q);
     const existing = site.existingDwelling(q);
+    {
+      const wb = weatherboardSet(q === 'hq' ? 1024 : 512);
+      const wm = pbr(wb, 'existing_weatherboards_indicative');
+      for (const t of [wm.map, wm.normalMap, wm.roughnessMap, wm.metalnessMap, wm.aoMap]) if (t) t.repeat.set(1 / wb.tile, 1 / wb.tile);
+      existing.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (m.isMesh && (m.material as THREE.Material).name === 'existing_wall_massing') {
+          m.material = wm;
+          m.userData.note = `${m.userData.note ?? ''} Painted weatherboards are indicative: cladding and openings were not surveyed.`.trim();
+        }
+      });
+    }
     const lines = site.lines();
     const ground = new THREE.Group();
     ground.name = 'survey_ground';
@@ -128,6 +142,9 @@ export const project16a: Project = {
       return toV3(e, n, placements[key].ffl + h);
     };
     const onGround = (e: number, n: number, h = 1.6) => toV3(e, n, site.ground(e, n) + h);
+    // test hook: place the camera in a home's own frame (u, v in metres, h above its floor)
+    (window as unknown as { __at: unknown }).__at = (key: string, u: number, v: number, h: number) => at(key, u, v, h);
+    (window as unknown as { __onGround: unknown }).__onGround = onGround;
     const B = data.boundary;
     const path: Key[] = [
       { label: 'Aerial', eye: toV3(-14, -46, 78), look: toV3(22, -14, 48) },
@@ -205,6 +222,173 @@ export const project16a: Project = {
         void nd;
       }
       const g = planting(list, 'Proposed planting from the plan model (not on the drawings), moved onto the surveyed site; positions shifted where they would sit on a building, deck or the drive.');
+      // --- the landscape plan (proposed): paths from RC-05, beds, fence, hedge, specimens, outdoor living
+      const G = site.ground;
+      const L = new THREE.Group();
+      L.name = 'landscape';
+      // permeable paths, read from the area plan RC-05 (lines labelled "permeable surface"); 1.0 m assumed
+      const paths: Pt[][] = [
+        [
+          [12.2, -8.95],
+          [11.8, -10.3],
+          [9.8, -17.1],
+          [13.6, -26.0],
+        ],
+        [
+          [11.8, -10.3],
+          [20.7, -10.9],
+          [28.1, -8.7],
+          [28.6, -7.7],
+        ],
+        [
+          [31.9, -4.4],
+          [33.2, -6.9],
+          [37.9, -16.8],
+          [40.8, -20.8],
+        ],
+      ];
+      paths.forEach((pp, i) => L.add(pathRibbon(`path_${i + 1}`, pp, 1.0, G, q, 'Route from RC-05 (permeable surface); width assumed 1.0 m; gravel and edging proposed')));
+      const nearPath = (e: number, n: number, r = 0.75) =>
+        paths.some((pp) =>
+          pp.some((a, i) => {
+            if (!i) return false;
+            const b = pp[i - 1];
+            const dx = b[0] - a[0];
+            const dn = b[1] - a[1];
+            const t = Math.max(0, Math.min(1, ((e - a[0]) * dx + (n - a[1]) * dn) / (dx * dx + dn * dn)));
+            return Math.hypot(e - (a[0] + dx * t), n - (a[1] + dn * t)) < r;
+          }),
+        );
+      const inHome = (e: number, n: number) =>
+        keys.some(({ key }) => {
+          const pl = placements[key];
+          const du = (e - pl.origin[0]) * pl.u[0] + (n - pl.origin[1]) * pl.u[1];
+          const dv = (e - pl.origin[0]) * pl.v[0] + (n - pl.origin[1]) * pl.v[1];
+          return (du > -0.08 && du < 10.83 && dv > -0.08 && dv < 6.04) || inPoly([du, dv], decks[key].north) || inPoly([du, dv], decks[key].south);
+        });
+      const free = (e: number, n: number) => inPoly([e, n], site.lot) && !data.impervious.polys.some((p) => inPoly([e, n], p)) && !inHome(e, n) && !nearPath(e, n) && !inPoly([e, n], data.existing.outline);
+      // beds along each home: shady south walls get ferns, ends get layered natives
+      const bedList: PlantAt[] = [];
+      const beds = new THREE.Group();
+      beds.name = 'planted_beds';
+      let seed = 11;
+      for (const { key } of keys) {
+        const fr = frames[key];
+        const sd = decks[key].south;
+        const du0 = Math.min(...sd.map((p) => p[0]));
+        const du1 = Math.max(...sd.map((p) => p[0]));
+        const strips: { uv: Pt[]; shade: boolean; back: Pt }[] = [];
+        const rect = (a: number, b: number, c: number, d: number): Pt[] => [
+          [a, c],
+          [b, c],
+          [b, d],
+          [a, d],
+        ];
+        // under and beside the south deck, and along the south wall where there is no deck
+        if (du0 > 0.6) strips.push({ uv: rect(-0.6, du0 - 0.1, 6.08, 7.6), shade: true, back: [0, 6] });
+        if (du1 < 10.2) strips.push({ uv: rect(du1 + 0.15, 11.3, 6.08, 7.6), shade: true, back: [0, 6] });
+        strips.push({ uv: rect(du0, du1, 7.08, 8.0), shade: true, back: [0, 7] });
+        // the two ends
+        strips.push({ uv: rect(-1.5, -0.12, 0.3, 6.0), shade: false, back: [-1.5, 0] });
+        strips.push({ uv: rect(10.86, 12.0, 0.3, 6.0), shade: false, back: [12, 0] });
+        for (const st of strips) {
+          const poly = st.uv.map(([u, v]) => fr.en(u, v));
+          if (!poly.some(([e, n]) => free(e, n))) continue;
+          const backE = fr.en(st.back[0] === 0 ? (st.uv[0][0] + st.uv[1][0]) / 2 : st.back[0], st.back[1]);
+          const pl = bedPlanting(poly, G, { back: backE, shade: st.shade, density: 1.1, seed: seed++, skip: (e, n) => !free(e, n) });
+          if (!pl.length) continue;
+          bedList.push(...pl);
+          beds.add(mulchBed(`bed_${key}_${seed}`, poly, (e, n) => (free(e, n) || inHome(e, n) ? G(e, n) : G(e, n) - 0.2), q));
+        }
+      }
+      // a bed inside the rear fence and down the west side, behind the hedge line
+      const B = data.boundary;
+      const inset = (a: Pt, b: Pt, d0: number, d1: number): Pt[] => {
+        const dx = b[0] - a[0];
+        const dn = b[1] - a[1];
+        const l = Math.hypot(dx, dn);
+        // inward normal for a clockwise lot is to the right of travel
+        const nx = dn / l;
+        const nn = -dx / l;
+        return [
+          [a[0] + nx * d0, a[1] + nn * d0],
+          [b[0] + nx * d0, b[1] + nn * d0],
+          [b[0] + nx * d1, b[1] + nn * d1],
+          [a[0] + nx * d1, a[1] + nn * d1],
+        ];
+      };
+      for (const [a, b] of [
+        [B.SW, B.NW],
+        [B.NE, B.E],
+      ] as [Pt, Pt][]) {
+        const poly = inset(a, b, 0.08, 1.1);
+        const pl = bedPlanting(poly, G, { back: a, shade: false, density: 0.9, seed: seed++, skip: (e, n) => !free(e, n) });
+        bedList.push(...pl);
+      }
+      g.add(planting(bedList, 'Proposed planting beds (not on the drawings): layered natives, ferns on the shady south sides.'));
+      L.add(beds);
+      // the surveyed hedge, clipped
+      const hd = data.hedge as Pt[];
+      const hedge: PlantAt[] = [];
+      for (let i = 1; i < hd.length; i++) {
+        const [a, b] = [hd[i - 1], hd[i]];
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        for (let s2 = 0; s2 <= len; s2 += 0.55) {
+          const e = a[0] + ((b[0] - a[0]) * s2) / len;
+          const n = a[1] + ((b[1] - a[1]) * s2) / len;
+          hedge.push({ sp: s2 % 1.1 < 0.55 ? 'coprosma' : 'hebe', x: e, y: site.existing(e, n), z: -n, s: 1.45 });
+        }
+      }
+      const hg = planting(hedge, 'Hedge on the survey (species not recorded), drawn clipped.', 'survey');
+      hg.name = 'hedge';
+      g.add(hg);
+      // boundary fence on the side and rear boundaries
+      L.add(palingFence('fence_west', [B.SW, B.NW], G, q), palingFence('fence_rear', [B.NW, B.NE], G, q), palingFence('fence_east', [B.NE, B.E], G, q));
+      // specimens from the library: nīkau by each entry, ponga in the shade, pōhutukawa out front
+      const spec = (role: string, e: number, n: number, sc = 1, rot = 0) => {
+        if (!inPoly([e, n], site.lot)) return;
+        const o = slot(role);
+        o.position.set(e, G(e, n), -n);
+        o.scale.setScalar(sc);
+        o.rotation.y = rot;
+        L.add(o);
+      };
+      for (const { key } of keys) {
+        const fr = frames[key];
+        const [e1, n1] = fr.en(key === '16C' ? 7.2 : 1.6, 7.0);
+        spec('nikau', e1, n1, 1.6, 0.3);
+        const [e2, n2] = fr.en(key === '16C' ? 9.8 : 0.4, 7.1);
+        spec('silver_fern', e2, n2, 1.3, 1.1);
+        const [e3, n3] = fr.en(-0.9, 4.6);
+        spec('silver_fern', e3, n3, 1.15, 2.2);
+      }
+      g.add(planting([{ sp: 'tikouka', x: 33.0, y: G(33.0, -25.5), z: 25.5, s: 1.1 }, { sp: 'tikouka', x: 34.2, y: G(34.2, -24.6), z: 24.6, s: 0.85 }], 'Proposed tī kōuka by the forecourt (not on the drawings).'));
+      // outdoor living on the decks: lounge setting on each north deck, planters by the front doors, a barbecue
+      for (const { key } of keys) {
+        const fr = frames[key];
+        const h = homeObjs[key];
+        const ffl = placements[key].ffl;
+        const put = (role: string, u: number, v: number, rot: number) => {
+          const o = slot(role);
+          const [e, n] = fr.en(u, v);
+          o.position.set(e, ffl - 0.03, -n);
+          o.rotation.y = fr.rotationY + rot;
+          L.add(o);
+        };
+        put('deck_lounge', key === '16C' ? 4.6 : 4.4, -1.75, 0);
+        put('bbq', key === '16C' ? 6.6 : 8.6, -0.5, Math.PI);
+        put('planters', key === '16C' ? 3.6 : 5.2, 6.4, 0);
+        void h;
+      }
+      // a car on the forecourt (generic, unbranded)
+      {
+        const o = slot('car');
+        o.position.set(25.5, G(25.5, -27.5), 27.5);
+        o.rotation.y = 0.35;
+        L.add(o);
+      }
+      void fillSlots(L);
+      g.add(L);
       const trees = planting(
         data.trees.map(([e, n]) => ({ sp: 'coprosma' as Species, x: e, y: site.existing(e, n), z: -n, s: 3.2 })),
         'Existing tree on the survey; species not recorded, drawn as a generic native canopy.',
@@ -212,7 +396,7 @@ export const project16a: Project = {
       );
       trees.name = 'existing_trees';
       g.add(trees);
-      app.log(`Planting: ${list.length} proposed plants and ${data.trees.length} surveyed trees.`);
+      app.log(`Landscape: ${list.length + bedList.length} proposed plants in beds, paths from RC-05, boundary fence, ${data.trees.length} surveyed trees.`);
       return g;
     };
 
@@ -239,7 +423,7 @@ export const project16a: Project = {
       { id: 'homes', label: 'Proposed homes', note: 'generated from the plan model', visible: true, object: homes, model: true },
       { id: 'ground', label: 'Survey ground', note: 'cut to pads, with retaining', visible: true, object: ground },
       { id: 'existing', label: 'Existing dwelling', note: 'massing only', visible: true, object: existing },
-      { id: 'planting', label: 'Native planting', note: 'proposed in the plan model; trees from the survey', visible: true, make: plantLayer },
+      { id: 'planting', label: 'Landscape and planting', note: 'paths from RC-05; beds, fence and outdoor furniture proposed; trees and hedge from the survey', visible: true, make: plantLayer },
       { id: 'lines', label: 'Boundary, contours, services', visible: true, object: lines, traced: false },
       { id: 'envelope', label: 'Planning envelope', note: 'HIRB 2.5 m + 45°, 8 m', visible: false, make: () => {
         const g = site.envelopeMesh();

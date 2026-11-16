@@ -57,8 +57,8 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const mixRGB = (a: RGB, b: RGB, t: number): RGB => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
 const hex = (h: number): RGB => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
 
-/** Run a per-pixel shader over a size×size tile: returns colour (sRGB 0..1), height, roughness, metalness. */
-function bake(size: number, tile: number, fn: (u: number, v: number) => { c: RGB; h: number; r: number; m: number }, normalStrength: number, name: string): PBRSet {
+/** Run a per-pixel shader over a size×size tile: returns colour (sRGB 0..1), height, roughness, metalness, and optionally occlusion (default 1). */
+function bake(size: number, tile: number, fn: (u: number, v: number) => { c: RGB; h: number; r: number; m: number; o?: number }, normalStrength: number, name: string): PBRSet {
   const n = size * size;
   const col = new Uint8ClampedArray(new ArrayBuffer(n * 4));
   const orm = new Uint8ClampedArray(new ArrayBuffer(n * 4));
@@ -71,7 +71,7 @@ function bake(size: number, tile: number, fn: (u: number, v: number) => { c: RGB
       col[i * 4 + 1] = s.c[1] * 255;
       col[i * 4 + 2] = s.c[2] * 255;
       col[i * 4 + 3] = 255;
-      orm[i * 4] = 255;
+      orm[i * 4] = s.o === undefined ? 255 : clamp01(s.o) * 255;
       orm[i * 4 + 1] = clamp01(s.r) * 255;
       orm[i * 4 + 2] = clamp01(s.m) * 255;
       orm[i * 4 + 3] = 255;
@@ -125,8 +125,12 @@ export function pbr(set: PBRSet, name: string, extra: THREE.MeshPhysicalMaterial
 
 // --- the surfaces ----------------------------------------------------------------------------
 
-/** Timber: growth rings along the board (U = along the grain), pores, figure, finish. */
-export function wood(size: number, o: { light: number; dark: number; tile?: number; rings?: number; figure?: number; gloss?: number; seed?: number; pores?: number; name?: string }) {
+/**
+ * Timber: growth rings along the board (U = along the grain), pores, figure, finish.
+ * `straight` (0 to 1, default 0) calms the ring warp toward straight, quarter-sawn grain, and
+ * `relief` scales the normal map (default 1); both leave the default surface unchanged.
+ */
+export function wood(size: number, o: { light: number; dark: number; tile?: number; rings?: number; figure?: number; gloss?: number; seed?: number; pores?: number; name?: string; straight?: number; relief?: number }) {
   const L = hex(o.light);
   const D = hex(o.dark);
   const rings = o.rings ?? 18;
@@ -137,12 +141,16 @@ export function wood(size: number, o: { light: number; dark: number; tile?: numb
     o.tile ?? 0.4,
     (u, v) => {
       // rings: bands across V, warped along U by slow noise so they flow like flat-sawn grain
-      const warp = fbm(u, v, 2, 3, 4, seed) * 2.2 + fbm(u, v, 1, 8, 3, seed + 5) * 0.6;
+      const warp = (fbm(u, v, 2, 3, 4, seed) * 2.2 + fbm(u, v, 1, 8, 3, seed + 5) * 0.6) * (1 - 0.85 * (o.straight ?? 0));
       const r = v * rings + warp * 3;
       const band = Math.pow(0.5 + 0.5 * Math.sin(r * Math.PI * 2), 3);
-      const fine = fbm(u, v, 64, 2, 3, seed + 9);
-      const pore = (o.pores ?? 0.5) * Math.max(0, fbm(u, v, 128, 6, 2, seed + 13) - 0.62) * 3;
-      const fig = (o.figure ?? 0.15) * Math.sin((u * 40 + warp * 6) * Math.PI);
+      // with `straight`, the fine streak runs with the grain rather than across it
+      const st = o.straight ?? 0;
+      const fine = st > 0 ? fbm(u, v, 64, 2, 3, seed + 9) * (1 - st) + fbm(u, v, 2, 96, 3, seed + 9) * st : fbm(u, v, 64, 2, 3, seed + 9);
+      // with `straight`, pores are drawn out along the grain and the cross-figure is calmed
+      const poreN = st > 0 ? fbm(u, v, 128, 6, 2, seed + 13) * (1 - st) + fbm(u, v, 8, 160, 2, seed + 13) * st : fbm(u, v, 128, 6, 2, seed + 13);
+      const pore = (o.pores ?? 0.5) * Math.max(0, poreN - 0.62) * 3;
+      const fig = (o.figure ?? 0.15) * Math.sin((u * 40 + warp * 6) * Math.PI) * (1 - st);
       // latewood bands read, but softly: most of the board is the fine streak
       const streak = fbm(u, v, 3, 90, 3, seed + 21);
       let t = clamp01(band * 0.38 + fine * 0.3 + streak * 0.32 + fig * 0.15);
@@ -155,7 +163,7 @@ export function wood(size: number, o: { light: number; dark: number; tile?: numb
         m: 0,
       };
     },
-    gloss > 0.6 ? 0.5 : 1.6,
+    (gloss > 0.6 ? 0.5 : 1.6) * (o.relief ?? 1),
     o.name ?? 'wood',
   );
 }
@@ -331,9 +339,14 @@ export function plastic(size: number, o: { colour: number; rough: number; tile?:
   );
 }
 
-/** Hot-dip galvanised steel: zinc spangle crystals, each its own grey and sheen. */
-export function galvanised(size: number, o: { tile?: number; seed?: number; name?: string } = {}) {
+/**
+ * Hot-dip galvanised steel: zinc spangle crystals, each its own grey and sheen. `wear` (0 to 1,
+ * default 0, which leaves the surface as new) dulls it toward weathered zinc: matte grey-white
+ * patina in blotches, and a few rust-brown freckles where the coating has gone.
+ */
+export function galvanised(size: number, o: { tile?: number; seed?: number; name?: string; wear?: number } = {}) {
   const seed = o.seed ?? 31;
+  const wear = o.wear ?? 0;
   const n = 14;
   return bake(
     size,
@@ -364,7 +377,27 @@ export function galvanised(size: number, o: { tile?: number; seed?: number; name
       const tone = 0.62 + 0.22 * hash(id, 7, seed + 2);
       const edge = Math.min(1, (second - best) * n * 6);
       const k = tone * (0.92 + 0.08 * edge);
-      return { c: [k, k * 1.01, k * 1.03], h: edge * 0.3 + hash(id, 3, seed) * 0.2, r: 0.28 + 0.2 * hash(id, 5, seed + 3), m: 1 };
+      const c: RGB = [k, k * 1.01, k * 1.03];
+      let r = 0.28 + 0.2 * hash(id, 5, seed + 3);
+      let m = 1;
+      let h = edge * 0.3 + hash(id, 3, seed) * 0.2;
+      if (wear > 0) {
+        // patina: zinc carbonate dulls the spangle in drifts; rust where the zinc has gone
+        const drift = clamp01((fbm(u, v, 4, 4, 4, seed + 40) - 0.35) * 2.2) * wear;
+        const fleck = clamp01((fbm(u, v, 40, 40, 3, seed + 44) - 0.66) * 6) * wear * clamp01(fbm(u, v, 3, 3, 3, seed + 46) * 2 - 0.6);
+        const pat: RGB = [0.66, 0.67, 0.64];
+        const rust: RGB = [0.42, 0.25, 0.14];
+        // weathering dulls everything a little and the drifts a lot, flattening the spangle
+        const dull = clamp01(0.45 * wear + drift);
+        const t = mixRGB(mixRGB(c, pat, dull * 0.85), rust, fleck);
+        c[0] = t[0];
+        c[1] = t[1];
+        c[2] = t[2];
+        r = mix(r, 0.72, dull) + fleck * 0.2;
+        m = mix(1, 0.35, dull) * (1 - fleck);
+        h = h * (1 - 0.75 * dull) + fleck * 0.6 + drift * 0.1;
+      }
+      return { c, h, r, m };
     },
     0.4,
     o.name ?? 'galvanised_steel',
@@ -398,6 +431,205 @@ export function weatherboardPaint(size: number, o: { colour: number; cover?: num
   );
 }
 
-// shared with the twin (src/twin): the baking helpers
+/** Cast or precast concrete: broad mottling, sand grain, dark aggregate flecks and bug holes. */
+export function concrete(size: number, o: { colour: number; tile?: number; seed?: number; pores?: number; mottle?: number; rough?: number; name?: string }) {
+  const C = hex(o.colour);
+  const seed = o.seed ?? 71;
+  const pores = o.pores ?? 1;
+  const mottle = o.mottle ?? 1;
+  return bake(
+    size,
+    o.tile ?? 0.4,
+    (u, v) => {
+      const mot = fbm(u, v, 3, 3, 4, seed);
+      const mid = fbm(u, v, 20, 20, 3, seed + 3);
+      const sand = fbm(u, v, 256, 256, 1, seed + 5);
+      const grit = fbm(u, v, 128, 128, 2, seed + 7);
+      const fleck = grit > 0.68 ? (grit - 0.68) * 4 : grit < 0.3 ? -(0.3 - grit) * 2 : 0;
+      const pore = pores * clamp01((fbm(u, v, 72, 72, 2, seed + 9) - 0.71) * 7);
+      const k = 0.92 + (mot - 0.5) * 0.2 * mottle + (mid - 0.5) * 0.08 + (sand - 0.5) * 0.12 - fleck * 0.18 - pore * 0.45;
+      return {
+        c: [C[0] * k, C[1] * k, C[2] * k * 0.99],
+        h: sand * 0.35 + mid * 0.3 + Math.abs(fleck) * 0.3 - pore * 1.6,
+        r: (o.rough ?? 0.86) + (sand - 0.5) * 0.1 + pore * 0.08 - (mot - 0.5) * 0.06,
+        m: 0,
+      };
+    },
+    1.1,
+    o.name ?? 'concrete',
+  );
+}
+
+/**
+ * Weathered, unpainted timber (old fence posts, battens): silvered grey with long streaks along
+ * the grain (U), raised latewood, open checks (drying splits) running with the grain, and
+ * optional pale lichen.
+ */
+export function weatheredWood(size: number, o: { light: number; dark: number; tile?: number; seed?: number; checks?: number; lichen?: number; name?: string }) {
+  const L = hex(o.light);
+  const D = hex(o.dark);
+  const seed = o.seed ?? 81;
+  const checks = o.checks ?? 1;
+  const lichen = o.lichen ?? 0;
+  const lanes = 7;
+  return bake(
+    size,
+    o.tile ?? 0.5,
+    (u, v) => {
+      const streak = fbm(u, v, 2, 40, 3, seed);
+      const fine = fbm(u, v, 6, 180, 2, seed + 1);
+      const warp = fbm(u, v, 2, 3, 3, seed + 2);
+      // latewood ridges stand proud where the soft earlywood has worn away
+      const ring = Math.pow(0.5 + 0.5 * Math.sin((v * 22 + warp * 3) * Math.PI * 2), 4);
+      // checks: a few long splits per tile, opening and closing along their length
+      const cv = v * lanes + (fbm(u, v, 1, 3, 3, seed + 3) - 0.5) * 0.9;
+      const lane = Math.floor(cv);
+      const f = cv - lane;
+      const open = noise(u * 3, lane + 0.5, 3, lanes, seed + 4);
+      const w = Math.max(0, open - 0.5) * 0.09 * checks;
+      const crack = w > 0 ? 1 - THREE.MathUtils.smoothstep(Math.abs(f - 0.5), w * 0.35, w) : 0;
+      const blot = clamp01((fbm(u, v, 5, 5, 4, seed + 6) - 0.62) * 5) * lichen;
+      const lich: RGB = [0.66, 0.68, 0.58];
+      let c = mixRGB(L, D, clamp01(streak * 0.55 + fine * 0.35 + ring * 0.15));
+      c = mixRGB(c, lich, blot * (0.5 + 0.5 * fine));
+      const k = 1 - crack * 0.7;
+      return {
+        c: [c[0] * k, c[1] * k, c[2] * k],
+        h: streak * 0.25 + fine * 0.3 + ring * 0.35 - crack * 1.4 + blot * 0.15,
+        r: 0.9 + (fine - 0.5) * 0.08 - ring * 0.04,
+        m: 0,
+      };
+    },
+    2.0,
+    o.name ?? 'weathered_timber',
+  );
+}
+
+/** Mattress ticking: a tight twill with woven stripes running along U. */
+export function ticking(size: number, o: { ground: number; stripe: number; tile?: number; seed?: number; name?: string }) {
+  const G = hex(o.ground);
+  const S = hex(o.stripe);
+  const seed = o.seed ?? 91;
+  const n = 160;
+  return bake(
+    size,
+    o.tile ?? 0.1,
+    (u, v) => {
+      // two stripe repeats per tile: one broad stripe flanked by two fine ones
+      const sv = (v * 2) % 1;
+      const stripe = (sv > 0.1 && sv < 0.26) || (sv > 0.32 && sv < 0.35) || (sv > 0.01 && sv < 0.04) ? 1 : 0;
+      const x = u * n;
+      const y = v * n;
+      const diag = (Math.floor(x) + Math.floor(y)) % 3;
+      const fx = x - Math.floor(x);
+      const fy = y - Math.floor(y);
+      const t = diag === 0 ? Math.sin(fx * Math.PI) : Math.sin(fy * Math.PI) * 0.8;
+      const fuzz = fbm(u, v, 64, 64, 2, seed);
+      const c = stripe ? mixRGB(S, G, 0.08 * (1 - t)) : G;
+      const k = 0.86 + t * 0.12 + (fuzz - 0.5) * 0.06;
+      return { c: [c[0] * k, c[1] * k, c[2] * k], h: t * 0.8 + fuzz * 0.2, r: 0.8 - t * 0.06, m: 0 };
+    },
+    1.2,
+    o.name ?? 'ticking',
+  );
+}
+
+/** Woven galvanised wire mesh (a leaf strainer): raised wires, dark openings between them. */
+export function wireMesh(size: number, o: { openings?: number; wire?: number; tile?: number; seed?: number; name?: string } = {}) {
+  const n = o.openings ?? 40;
+  const w = o.wire ?? 0.28;
+  const seed = o.seed ?? 97;
+  return bake(
+    size,
+    o.tile ?? 0.1,
+    (u, v) => {
+      const x = u * n;
+      const y = v * n;
+      const fx = x - Math.floor(x);
+      const fy = y - Math.floor(y);
+      const dx = Math.abs(fx - 0.5) * 2;
+      const dy = Math.abs(fy - 0.5) * 2;
+      // a wire runs along each cell border; over-under alternates
+      const onX = 1 - THREE.MathUtils.smoothstep(1 - dx, w * 0.6, w);
+      const onY = 1 - THREE.MathUtils.smoothstep(1 - dy, w * 0.6, w);
+      const over = (Math.floor(x + 0.5) + Math.floor(y + 0.5)) % 2 === 0;
+      const wire = Math.max(onX, onY);
+      const hgt = over ? onX * 0.9 + onY * 0.5 : onY * 0.9 + onX * 0.5;
+      const sp = 0.66 + 0.18 * fbm(u, v, 12, 12, 3, seed);
+      const hole = 0.05;
+      const k = mix(hole, sp, wire);
+      return { c: [k, k * 1.01, k * 1.02], h: hgt, r: mix(0.9, 0.35, wire), m: wire };
+    },
+    1.6,
+    o.name ?? 'wire_mesh',
+  );
+}
+
+/**
+ * Paint over a pressed or moulded relief whose height (metres) is given over one tile by
+ * `height(u, v)`, u and v in 0..1. Bakes an occlusion term (how far the surroundings rise above
+ * each point) into the ORM's red channel and darkens crevices a little in the base colour, as
+ * aged paint does. `relief` (0..1) puts the relief's fine detail (the height less a 5 mm blur)
+ * into the normal map, for a lighter mesh that cannot carry it; 0 leaves only the paint's own
+ * orange peel, for a mesh that already has the relief. Use with pbr(…, { aoMap: set.orm }).
+ */
+export function reliefPaint(size: number, o: { colour: number; gloss: number; tile: number; height: (u: number, v: number) => number; relief?: number; cavity?: number; seed?: number; name?: string }) {
+  const C = hex(o.colour);
+  const seed = o.seed ?? 101;
+  const relief = o.relief ?? 0;
+  const cavity = o.cavity ?? 1;
+  // the height field once, on the pixel grid (wrapping)
+  const H = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) H[y * size + x] = o.height((x + 0.5) / size, (y + 0.5) / size);
+  const at = (x: number, y: number) => H[(((y % size) + size) % size) * size + (((x % size) + size) % size)];
+  const px = o.tile / size; // metres per pixel
+  const radii = [0.0025, 0.006, 0.012].map((m) => Math.max(1, Math.round(m / px)));
+  const blur = Math.max(1, Math.round(0.0025 / px));
+  const dirs = Array.from({ length: 8 }, (_, i) => [Math.cos((i * Math.PI) / 4), Math.sin((i * Math.PI) / 4)]);
+  return bake(
+    size,
+    o.tile,
+    (u, v) => {
+      const x = Math.floor(u * size);
+      const y = Math.floor(v * size);
+      const h = at(x, y);
+      // occlusion: mean horizon slope over 8 directions at three radii
+      let occ = 0;
+      for (const r of radii) for (const [dx, dy] of dirs) occ += clamp01((at(x + Math.round(dx * r), y + Math.round(dy * r)) - h) / (r * px));
+      occ /= radii.length * dirs.length;
+      const ao = 1 - clamp01(occ * 1.3) * 0.75 * cavity;
+      const lo = (at(x - blur, y) + at(x + blur, y) + at(x, y - blur) + at(x, y + blur) + at(x - blur, y - blur) + at(x + blur, y + blur) + at(x - blur, y + blur) + at(x + blur, y - blur) + h) / 9;
+      const peel = fbm(u, v, 48, 48, 3, seed);
+      const k = (0.96 + (peel - 0.5) * 0.03) * (0.86 + 0.14 * ao);
+      return {
+        c: [C[0] * k, C[1] * k, C[2] * k],
+        h: (h - lo) * relief + peel * 0.00004,
+        r: mix(0.7, 0.22, o.gloss) + (peel - 0.5) * 0.06 + (1 - ao) * 0.12,
+        m: 0,
+        o: ao,
+      };
+    },
+    64 / o.tile,
+    o.name ?? 'relief_paint',
+  );
+}
+
+/**
+ * A uniform ambient-occlusion texture for the inside of an enclosed piece (a cabinet's shelves
+ * and back), so light from the environment doesn't fill it: R = `value`, used as an aoMap.
+ */
+export function flatOcclusion(value: number, name = 'interior_occlusion') {
+  const c = document.createElement('canvas');
+  c.width = c.height = 4;
+  const g = c.getContext('2d')!;
+  const k = Math.round(clamp01(value) * 255);
+  g.fillStyle = `rgb(${k},255,0)`;
+  g.fillRect(0, 0, 4, 4);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.NoColorSpace;
+  t.name = name;
+  return t;
+}
+
 export { bake, fbm, hex, mix, clamp01 };
 export type { RGB };

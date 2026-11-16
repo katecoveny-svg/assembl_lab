@@ -67,10 +67,10 @@ function terrazzo(size: number, seed: number) {
 function planks(size: number, o: { light: number; dark: number; seed: number; name: string }) {
   const L = hex(o.light);
   const D = hex(o.dark);
-  const rows = 6;
+  const rows = 12;
   return bake(
     size,
-    rows * 0.185,
+    rows * 0.18,
     (u, v) => {
       const r = Math.floor(v * rows);
       const off = ((r * 0.37) % 1 + 1) % 1;
@@ -79,11 +79,13 @@ function planks(size: number, o: { light: number; dark: number; seed: number; na
       const seg = Math.floor(along / segL);
       const fv = v * rows - r;
       const fu = (along % segL) / segL;
-      const seam = fv < 0.025 || fu < 0.006;
+      const seam = fv < 0.018 || fu < 0.003;
+      // each board its own tone, as real engineered oak is laid from mixed boards
+      const tone = fbm(r * 0.37 + seg * 0.11, r * 0.53, 1, 1, 1, o.seed + 77) - 0.5;
       const g = fbm(u, v, 12, 96, 4, o.seed + r * 7 + seg * 13);
       const t = Math.min(1, Math.max(0, 0.45 + 0.6 * (g - 0.5) + 0.25 * (fbm(u, v, 2, 6, 2, o.seed + r) - 0.5)));
-      const k = seam ? 0.55 : 1;
-      return { c: [mix(L[0], D[0], t) * k, mix(L[1], D[1], t) * k, mix(L[2], D[2], t) * k], h: seam ? 0 : 0.7 + g * 0.08, r: seam ? 0.8 : 0.42 + 0.1 * g, m: 0 };
+      const k = (seam ? 0.6 : 1) * (1 + tone * 0.18);
+      return { c: [mix(L[0], D[0], t) * k, mix(L[1], D[1], t) * k, mix(L[2], D[2], t) * k], h: seam ? 0 : 0.7 + g * 0.08, r: seam ? 0.8 : 0.48 + 0.12 * g, m: 0, o: seam ? 0.7 : 1 };
     },
     1.6,
     o.name,
@@ -105,6 +107,22 @@ function tiles(size: number, o: { colour: number; grout: number; n: number; tile
     },
     2,
     o.name,
+  );
+}
+/** interior wall paint on plasterboard: flat, faintly mottled, low sheen (no brush streaks) */
+function plasterPaint(size: number, colour: number, seed: number) {
+  const C = hex(colour);
+  return bake(
+    size,
+    2.4,
+    (u, v) => {
+      const n = fbm(u, v, 5, 5, 4, seed);
+      const f = fbm(u, v, 96, 96, 2, seed + 3);
+      const k = 0.982 + 0.024 * n + 0.01 * (f - 0.5);
+      return { c: [C[0] * k, C[1] * k, C[2] * k], h: 0.5 + 0.2 * f, r: 0.84 + 0.08 * n, m: 0 };
+    },
+    0.08,
+    'plaster_paint',
   );
 }
 /** ribbed metal cladding: 25 mm ribs at 300 mm centres, painted */
@@ -147,6 +165,13 @@ export interface InteriorMats {
   appliance: THREE.MeshPhysicalMaterial;
   lampGlow: THREE.MeshStandardMaterial;
   accent: THREE.MeshPhysicalMaterial;
+  /** walls and ceilings inside: matte paint in the palette's wall colour */
+  wallPaint: THREE.MeshPhysicalMaterial;
+  /** skirtings and trims: the wall colour in semi-gloss */
+  trim: THREE.MeshPhysicalMaterial;
+  /** glazed planter pots */
+  pot: THREE.MeshPhysicalMaterial;
+  soil: THREE.MeshStandardMaterial;
 }
 
 const cache = new Map<string, InteriorMats>();
@@ -166,7 +191,8 @@ export function interiorMats(q: Quality, f: Finishes): InteriorMats {
     cabinet: paint(d.texS, { colour: f.cabinetry, gloss: 0.35, tile: 0.8, seed: 156, name: 'cabinet_lacquer' }),
     tile: tiles(d.texS, { colour: 0xe9e6e0, grout: 0xc9c4bc, n: 4, tile: 0.6, name: 'wall_tile_150', gloss: 1 }),
     wallTile: tiles(d.texS, { colour: 0xd9d4ca, grout: 0xb4ada2, n: 2, tile: 1.2, name: 'bath_tile_600' }),
-    steel: metal(d.texS, { tint: 0xb8b8b4, rough: 0.32, brush: 0.6, tile: 0.4, seed: 157, name: 'brushed_steel' }),
+    steel: metal(d.texS, { tint: 0xb8b8b4, rough: 0.34, brush: 0.35, tile: 0.15, seed: 157, name: 'brushed_steel' }),
+    wallPaint: plasterPaint(d.texS, f.walls, 158),
   };
   const ph = (o: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(o);
   const m: InteriorMats = {
@@ -191,6 +217,10 @@ export function interiorMats(q: Quality, f: Finishes): InteriorMats {
     appliance: ph({ name: 'appliance_enamel', color: 0x2a2a2c, roughness: 0.3, metalness: 0.2, clearcoat: 0.6 }),
     lampGlow: new THREE.MeshStandardMaterial({ name: 'lamp_glow', color: 0xfff1d6, emissive: new THREE.Color(0xffd9a0), emissiveIntensity: 0, roughness: 0.4 }),
     accent: ph({ name: 'accent_fabric', color: f.accent, roughness: 0.85, sheen: 0.5, sheenColor: new THREE.Color(0xfff0e0) }),
+    wallPaint: pbr(sets.wallPaint, 'interior_wall_paint'),
+    trim: ph({ name: 'skirting_semigloss', color: f.walls, roughness: 0.35, clearcoat: 0.3, clearcoatRoughness: 0.4 }),
+    pot: ph({ name: 'glazed_planter', color: 0xd8d2c6, roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.2 }),
+    soil: new THREE.MeshStandardMaterial({ name: 'potting_mix', color: 0x2e241c, roughness: 1 }),
   };
   cache.set(key, m);
   return m;
@@ -255,11 +285,6 @@ export function bedside(M: InteriorMats) {
   g.add(mesh('bedside_top', box(0.45, 0.03, 0.38, 0, 0.5, 0, 0.9), M.walnut));
   g.add(mesh('bedside_drawer', box(0.43, 0.16, 0.36, 0, 0.4, 0, 0.9), M.walnut));
   g.add(mesh('bedside_legs', mergeGeometries([-1, 1].flatMap((sx) => [-1, 1].map((sz) => box(0.025, 0.32, 0.025, sx * 0.2, 0.16, sz * 0.16, 0.9, 'y')))), M.walnut));
-  // the library's table lamp sits here when it is available
-  const slot = new THREE.Group();
-  slot.name = 'slot_table_lamp';
-  slot.position.set(0.04, 0.515, -0.04);
-  g.add(slot);
   return tagged(g, 'bedside_table', 'furniture', 'walnut');
 }
 
@@ -377,13 +402,17 @@ export function kitchenRun(M: InteriorMats, len: number, opts: { sinkAt?: number
   g.add(mesh('benchtop', box(runL + 0.02, 0.04, D + 0.02, x0 + runL / 2, H + 0.02, 0, 0.8), M.bench));
   g.add(mesh('cooktop', box(0.58, 0.006, 0.5, ox, H + 0.043, 0, 0.4), M.blackGlass));
   const sx = opts.sinkAt != null ? Math.min(x0 + runL - 0.45, Math.max(x0 + 0.45, opts.sinkAt)) : x0 + runL - 0.6;
-  g.add(mesh('sink', box(0.55, 0.012, 0.42, sx, H + 0.042, 0.02, 0.4), M.steel));
+  g.add(mesh('sink', box(0.55, 0.012, 0.42, sx, H + 0.042, 0.02, 0.4), M.appliance));
   const tap = grp('tap');
   const neck = new THREE.TorusGeometry(0.11, 0.012, 10, 24, Math.PI);
   neck.rotateY(Math.PI / 2);
-  neck.translate(sx, H + 0.33, -0.14);
-  tap.add(mesh('tap_body', cyl(0.018, 0.022, 0.3, sx, H + 0.19, -0.25, 16), M.chrome), mesh('tap_spout', neck, M.chrome));
-  g.add(tap);
+  neck.translate(0, 0.29, 0.11);
+  tap.add(mesh('tap_body', cyl(0.018, 0.022, 0.3, 0, 0.15, 0, 16), M.chrome), mesh('tap_spout', neck, M.chrome));
+  tap.userData.fallback = true;
+  const tapSlot = grp('slot_tap');
+  tapSlot.position.set(sx, H + 0.04, -0.25);
+  tapSlot.add(tap);
+  g.add(tapSlot);
   // splashback and uppers (not across a window)
   const sb: THREE.BufferGeometry[] = [];
   const up: THREE.BufferGeometry[] = [];
