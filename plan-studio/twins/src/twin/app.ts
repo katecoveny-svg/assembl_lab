@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTexturesLib.js';
+import { applyCameraFromURL, cameraQuery, shareSheet, viewLink } from './share';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
@@ -43,6 +44,8 @@ export interface Built {
   /** world y range the section slider covers */
   section: [number, number];
   labels?: { text: string; at: THREE.Vector3 }[];
+  /** a dropped plan to upload so a shared link can rebuild it */
+  sharePlan?: () => unknown;
   /** extra info rows for the inspector, from a world point */
   probe?: (p: THREE.Vector3) => [string, string][];
   /** ground (or floor) height for walk mode */
@@ -111,6 +114,8 @@ export class App {
   private exposureBase = 0.62;
   private day = 1;
   private windowLights: THREE.RectAreaLight[] = [];
+  lastStill: Blob | null = null;
+  lastVideo: Blob | null = null;
 
   constructor(project: Project, canvas: HTMLCanvasElement) {
     this.project = project;
@@ -176,6 +181,7 @@ export class App {
     const { eye, look } = this.built.view;
     this.camera.position.copy(eye);
     this.controls.target.copy(look);
+    applyCameraFromURL(this);
     this.controls.maxDistance = this.built.radius * 6;
     this.sun.shadow.mapSize.set(4096, 4096);
     this.sun.shadow.radius = 3;
@@ -194,6 +200,7 @@ export class App {
     addEventListener('resize', () => this.resize());
     this.initInspector();
     this.initWalk();
+    this.initShare();
     if (!new URLSearchParams(location.search).has('nopost')) this.setupPipeline();
     // two daylight panels that follow you into a room and sit in its two nearest glazed openings
     THREE.RectAreaLightNode.setLTC(RectAreaLightTexturesLib.init());
@@ -735,6 +742,7 @@ export class App {
         rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
         rec.onstop = async () => {
           const blob = new Blob(chunks, { type: 'video/webm' });
+          this.lastVideo = blob;
           if (this.save) {
             await this.save(`${this.project.key}-flythrough.webm`, blob).catch(() => void 0);
             this.log(`Fly-through recorded (${(blob.size / 1e6).toFixed(1)} MB WebM) and offered for download.`);
@@ -779,6 +787,7 @@ export class App {
     else this.renderer.render(this.scene, this.camera);
     const url = this.canvas.toDataURL('image/png');
     const blob = await (await fetch(url)).blob();
+    this.lastStill = blob;
     await this.save(`${this.project.key}-view.png`, blob);
     this.log(`Raster still (${this.canvas.width} × ${this.canvas.height}) offered for download.`);
   }
@@ -841,6 +850,7 @@ export class App {
       pt.renderSample();
       const url = this.canvas.toDataURL('image/png');
       const blob = await (await fetch(url)).blob();
+      this.lastStill = blob;
       this.log(`Path-traced still done in ${((performance.now() - t0) / 1000).toFixed(0)} s.`);
       if (this.save) await this.save(`${this.project.key}-pathtraced.png`, blob);
       await new Promise((r) => setTimeout(r, 2500));
@@ -902,6 +912,26 @@ export class App {
     this.camera.getWorldDirection(d);
     const head = Math.atan2(d.x * this.north2.y - d.z * this.north2.x, d.x * this.north2.x + d.z * this.north2.y);
     (document.getElementById('north') as HTMLElement).style.transform = `rotate(${head}rad)`;
+  }
+
+  initShare() {
+    const fin = () => new URLSearchParams(location.search).get('fin');
+    document.getElementById('shareView')?.addEventListener('click', () => {
+      if (this.built.sharePlan) {
+        const q = new URLSearchParams();
+        if (fin()) q.set('fin', fin()!);
+        q.set('cam', cameraQuery(this));
+        void shareSheet(this, { kind: 'scene', title: document.getElementById('title')?.textContent ?? this.project.title, plan: this.built.sharePlan(), query: q.toString() }, { needsUpload: true });
+      } else void shareSheet(this, { kind: 'scene', title: this.project.title }, { needsUpload: false, link: viewLink(this) });
+    });
+    document.getElementById('shareStill')?.addEventListener('click', () => {
+      if (!this.lastStill) return this.log('Make a still first: Path-trace this view, or Raster PNG.');
+      void shareSheet(this, { kind: 'still', title: `${this.project.title}: still`, blob: this.lastStill }, { needsUpload: true });
+    });
+    document.getElementById('shareVideo')?.addEventListener('click', () => {
+      if (!this.lastVideo) return this.log('Record a fly-through first: Record WebM.');
+      void shareSheet(this, { kind: 'video', title: `${this.project.title}: fly-through`, blob: this.lastVideo }, { needsUpload: true });
+    });
   }
 
   /** where is the camera: in a room of a fitted-out home? adapt exposure, ambient and window daylight */

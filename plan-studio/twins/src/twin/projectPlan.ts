@@ -32,7 +32,26 @@ type Input = { kind: 'plan'; plan: PlanModel; name: string } | { kind: 'ifc' | '
 
 const KEEP = 'assembl-twin-dropped-plan';
 
-function chooser(app: App): Promise<{ input: Input; palette: string }> {
+async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } | null> {
+  try {
+    const m = await (await fetch(`https://lab.assembl.co.nz/api/twin-share?id=${encodeURIComponent(id)}`)).json();
+    if (!m?.planUrl) return null;
+    const plan = (await (await fetch(m.planUrl)).json()) as PlanModel;
+    return plan?.buildings ? { plan, name: m.title ?? 'Shared plan' } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function chooser(app: App): Promise<{ input: Input; palette: string }> {
+  // a shared link: rebuild the plan that was shared
+  const sid = new URLSearchParams(location.search).get('share');
+  if (sid) {
+    app.log('Opening the shared plan…');
+    const got = await fromShare(sid);
+    if (got) return { input: { kind: 'plan', plan: got.plan, name: got.name }, palette: 'cedar-charcoal' };
+    app.log('That shared plan could not be loaded; drop a file instead.');
+  }
   // applying a finishes schedule reloads the page: reuse the plan model dropped before it
   if (new URLSearchParams(location.search).has('fin')) {
     try {
@@ -255,6 +274,7 @@ export const projectPlan: Project = {
       },
     ];
     return {
+      sharePlan: input.kind === 'plan' ? () => input.plan : undefined,
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,

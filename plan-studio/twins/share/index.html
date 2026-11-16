@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shared from the assembl twin · assembl lab</title>
+<meta name="description" content="A still, fly-through or interactive view shared from the assembl twin." />
+<meta name="theme-color" content="#21121F" />
+<style>
+:root{--plum:#21121f;--ink:#33212f;--ivory:#f9f6f2;--rose:#d9bacb;--mauve:#756771;--line:#e3d8da}
+*{box-sizing:border-box}body{margin:0;background:var(--ivory);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.brand{font-weight:700;letter-spacing:-.03em;font-size:22px;color:var(--plum);text-decoration:none}.label{font:11px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.14em;color:var(--mauve)}
+main{max-width:1100px;margin:0 auto;padding:20px}
+h1{font-weight:500;letter-spacing:-.02em;font-size:clamp(24px,4vw,40px);margin:8px 0 4px}
+.media{margin:16px 0;background:#ece5e1;border-radius:14px;overflow:hidden}
+.media img,.media video{display:block;width:100%;height:auto}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-block;padding:10px 16px;border-radius:999px;border:1px solid var(--plum);color:var(--plum);text-decoration:none;font-size:15px}
+.pill.solid{background:var(--plum);color:var(--ivory)}
+.note{color:var(--mauve);font-size:14px;max-width:62ch}
+.cta{background:var(--plum);color:var(--ivory);border-radius:14px;padding:28px;margin:16px 0}.cta p{color:#d9cbd2}
+.cta .pill{border-color:var(--rose);color:var(--plum);background:var(--rose)}
+</style>
+</head>
+<body>
+<header><a class="brand" href="/">assembl</a><span class="label">shared from the twin</span></header>
+<main id="main" aria-live="polite"><p class="note">Loading…</p></main>
+<script>
+(async () => {
+  const main = document.getElementById("main");
+  const esc = (s) => String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const id = new URLSearchParams(location.search).get("id") || "";
+  if (!/^[a-f0-9]{12}$/.test(id)) { main.innerHTML = '<h1>Nothing to show</h1><p class="note">This link is missing its share id.</p>'; return; }
+  let m;
+  try { const r = await fetch("/api/twin-share?id=" + id); if (!r.ok) throw new Error(r.status); m = await r.json(); }
+  catch { main.innerHTML = '<h1>Not found</h1><p class="note">This share could not be found. It may have been removed.</p>'; return; }
+  document.title = m.title + " · assembl";
+  const when = new Date(m.created).toLocaleString("en-NZ", { dateStyle: "medium", timeStyle: "short" });
+  let media = "";
+  if (m.kind === "still" && m.fileUrl) media = `<div class="media"><img src="${esc(m.fileUrl)}" alt="${esc(m.title)}" /></div>`;
+  if (m.kind === "video" && m.fileUrl) media = `<div class="media"><video src="${esc(m.fileUrl)}" controls playsinline loop muted autoplay></video></div>`;
+  const open = m.kind === "scene" ? `${esc(m.page)}?share=${id}${m.query ? "&" + esc(m.query) : ""}` : "";
+  main.innerHTML = `<p class="label">${esc(m.kind === "scene" ? "interactive view" : m.kind === "video" ? "fly-through" : "still")} · ${esc(when)}</p>
+    <h1>${esc(m.title)}</h1>${media}
+    ${m.kind === "scene" ? `<div class="cta"><h2 style="margin:0 0 6px;font-weight:500">Walk through it</h2><p>Opens the live 3D twin in your browser, at the shared view and finishes.</p><a class="pill" href="${open}">Open the interactive twin</a></div>` : ""}
+    <div class="row">${m.fileUrl ? `<a class="pill solid" href="${esc(m.fileUrl)}" download>Download</a>` : ""}<a class="pill" href="/plan-studio/twins/drop/">Make your own</a></div>
+    <p class="note">${esc(m.label)}</p>`;
+})();
+</script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>

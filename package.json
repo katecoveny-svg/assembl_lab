@@ -1,1 +1,8 @@
-{"name": "assembl-lab", "private": true, "type": "module"}
+{
+ "name": "assembl-lab",
+ "private": true,
+ "type": "module",
+ "dependencies": {
+  "@vercel/blob": "^2.9.0"
+ }
+}

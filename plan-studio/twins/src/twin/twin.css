@@ -101,3 +101,9 @@ ul.small li { margin: 4px 0; }
 .finGroup .slider { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 6px 0; }
 .finGroup select { max-width: 60%; }
 .pill.primary { background: #21121f; color: #f9f6f2; border-color: #21121f; }
+
+/* share sheet */
+.share-sheet { position: fixed; inset: 0; background: rgba(33, 18, 31, 0.42); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.share-card { max-width: 360px; width: 100%; background: #f9f6f2; }
+.share-qr { display: block; margin: 8px auto; border-radius: 8px; }
+.share-url { width: 100%; font: 12px ui-monospace, monospace; padding: 8px; border: 1px solid rgba(51, 33, 47, 0.2); border-radius: 8px; background: #fff; margin: 6px 0 10px; }
