@@ -76,6 +76,7 @@ export const SURFACES: Surface[] = [
       { id: 'concrete', label: 'Polished concrete', spec: 'Ground and polished concrete slab, light exposure, sealed', p: { kind: 'concrete' } },
       { id: 'terrazzo', label: 'Terrazzo tiles', spec: '600 × 600 terrazzo tiles, warm white with dark aggregate', p: { kind: 'terrazzo' } },
       { id: 'tile', label: 'Porcelain tile, stone look', spec: '600 × 600 porcelain, stone look, matt', p: { kind: 'tile' } },
+      { id: 'rimu', label: 'Rimu boards', spec: 'Rimu tongue-and-groove floorboards, sanded and clear finished (as in the existing house)', p: { kind: 'oak', light: 0xc27a48, dark: 0x7d3b22 } },
     ],
   },
   {
@@ -100,6 +101,7 @@ export const SURFACES: Surface[] = [
       { id: 'oak', label: 'Oak veneer', spec: 'Crown-cut oak veneer doors, natural matt', p: { colour: 0xc9a77c } },
       { id: 'plum', label: 'Painted, deep plum', spec: 'Painted MDF doors, satin, deep plum', p: { colour: 0x3a1f33 } },
       { id: 'sage', label: 'Painted, sage', spec: 'Painted MDF doors, satin, sage green', p: { colour: 0x8a957c } },
+      { id: 'slate', label: 'Painted, slate grey', spec: 'Painted MDF doors, satin, slate grey, with tall white pantry doors', p: { colour: 0x50555b } },
     ],
   },
   {
@@ -120,6 +122,7 @@ export const SURFACES: Surface[] = [
       { id: 'white-gloss', label: 'Gloss tile, white', spec: '150 × 150 glazed ceramic tile, gloss white, pale grout', p: { colour: 0xe9e6e0, grout: 0xc9c4bc, n: 4, gloss: 1 } },
       { id: 'clay', label: 'Glazed tile, clay', spec: '150 × 150 glazed tile, warm clay, pale grout', p: { colour: 0xb98a6c, grout: 0xd9cfc2, n: 4, gloss: 1 } },
       { id: 'green', label: 'Glazed tile, deep green', spec: '150 × 150 glazed tile, deep green, pale grout', p: { colour: 0x3e5a4a, grout: 0xcfcabf, n: 4, gloss: 1 } },
+      { id: 'white-large', label: 'Gloss tile, white 300 × 600', spec: '300 × 600 glazed ceramic tile, gloss white, pale grout', p: { colour: 0xf0efea, grout: 0xdedbd5, n: 2, gloss: 1 } },
       { id: 'match', label: 'Matches the benchtop', spec: 'Full-height slab to match the benchtop', p: { match: 1 } },
     ],
   },
@@ -155,6 +158,7 @@ export const SURFACES: Surface[] = [
       { id: 'stone', label: 'Stone linen, charcoal accents', spec: 'Upholstery in stone linen; accents in charcoal', p: { fabric: 0xd6d0c4, accent: 0x3a3836 } },
       { id: 'tobacco', label: 'Tobacco wool, cream accents', spec: 'Upholstery in tobacco wool; accents in cream', p: { fabric: 0x9a7f6a, accent: 0xe8e0d0 } },
       { id: 'plum', label: 'Plum velvet, rose accents', spec: 'Upholstery in deep plum; accents in dusty rose', p: { fabric: 0x5b2a4a, accent: 0xd9bacb } },
+      { id: 'grey-linen', label: 'Grey linen, green velvet accents', spec: 'Upholstery in grey linen weave; accents in moss green velvet', p: { fabric: 0xbdb8ae, accent: 0x5f6b45 } },
     ],
   },
 ];
@@ -162,6 +166,7 @@ export const SURFACES: Surface[] = [
 export type Schedule = Record<string, string>;
 
 export const PRESETS: Record<string, { name: string; s: Schedule }> = {
+  'as-lived': { name: 'As lived at 16A (from photos)', s: { cladding: 'blackstain', roof: 'charcoal', joinery: 'black', decking: 'vitex', floor: 'rimu', walls: 'bright-white', cabinetry: 'slate', bench: 'stone', splashback: 'white-large', metal: 'chrome', bathTile: 'white', fabric: 'grey-linen' } },
   'cedar-charcoal': { name: 'Cedar and charcoal', s: { cladding: 'blackstain', roof: 'charcoal', joinery: 'black', decking: 'kwila', floor: 'oak', walls: 'warm-white', cabinetry: 'white', bench: 'stone', splashback: 'white-gloss', metal: 'black', bathTile: 'stone', fabric: 'oatmeal' } },
   'white-black': { name: 'White walls, black joinery, dark metal', s: { cladding: 'metal', roof: 'black', joinery: 'black', decking: 'vitex', floor: 'oak', walls: 'bright-white', cabinetry: 'charcoal', bench: 'marble', splashback: 'match', metal: 'black', bathTile: 'white', fabric: 'stone' } },
   'warm-oak': { name: 'Warm oak and terrazzo', s: { cladding: 'cedar', roof: 'grey', joinery: 'bronze', decking: 'pale', floor: 'oak', walls: 'greige', cabinetry: 'oak', bench: 'terrazzo', splashback: 'clay', metal: 'brass', bathTile: 'terracotta', fabric: 'tobacco' } },

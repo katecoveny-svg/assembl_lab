@@ -355,3 +355,50 @@ export function weatherboardSet(size: number, colour = 0xe6e0d4) {
     'weatherboard_painted',
   );
 }
+
+/** painted brick, as on the existing house (from Kate's photos): 230 × 76 mm bricks, 10 mm recessed joints, pitted face, white paint */
+export function paintedBrickSet(size: number, colour = 0xeef0ee) {
+  const C = hex(colour);
+  const courses = 8;
+  const course = 0.086;
+  return bake(
+    size,
+    courses * course,
+    (u, v) => {
+      const r = Math.floor(v * courses);
+      const fv = v * courses - r;
+      const perRow = 2.98;
+      const along = u * perRow + (r % 2) * 0.5;
+      const fu = along - Math.floor(along);
+      const joint = fv < 0.12 || fu < 0.042;
+      const pit = fbm(u, v, 90, 90, 2, 341) > 0.74 ? 1 : 0;
+      const n = fbm(u, v, 24, 24, 3, 342);
+      const k = joint ? 0.9 : (0.96 + 0.05 * n) * (pit ? 0.88 : 1);
+      return { c: [C[0] * k, C[1] * k, C[2] * k * 1.005], h: joint ? 0.0 : 0.75 + 0.1 * n - pit * 0.25, r: 0.8 + 0.08 * n, m: 0, o: joint ? 0.72 : 1 };
+    },
+    3.0,
+    'painted_brick',
+  );
+}
+
+/** profiled concrete roof tiles, weathered charcoal brown (existing house roof, from Kate's photos) */
+export function concreteTileSet(size: number, colour = 0x4a403a) {
+  const C = hex(colour);
+  return bake(
+    size,
+    0.9,
+    (u, v) => {
+      const rows = 2.4;
+      const r = v * rows;
+      const fr = r - Math.floor(r);
+      const wave = Math.sin(u * Math.PI * 2 * 3) * 0.5 + 0.5;
+      const lap = fr > 0.9 ? 0.55 : 1;
+      const n = fbm(u, v, 12, 12, 4, 351);
+      const lichen = fbm(u, v, 5, 5, 3, 352) > 0.68 ? 0.85 : 1;
+      const k = lap * (0.82 + 0.25 * wave) * (0.92 + 0.12 * n) * lichen;
+      return { c: [C[0] * k, C[1] * k, C[2] * k], h: wave * 0.8 + (fr > 0.9 ? -0.3 : 0), r: 0.8, m: 0 };
+    },
+    2.4,
+    'concrete_roof_tile',
+  );
+}

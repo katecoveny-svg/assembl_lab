@@ -285,30 +285,105 @@ export function cabbageTree(seed: number, height = 4) {
   return g.build();
 }
 
+/** one broad leaf: an oval card (tip, two shoulders, base) facing n */
+function leaf(g: Geo, c: V3, n: V3, along: V3, l: number, tone: THREE.Color, rim: THREE.Color) {
+  const side = n.clone().cross(along).normalize();
+  const tip = c.clone().addScaledVector(along, l);
+  const base = c.clone().addScaledVector(along, -l * 0.55);
+  const s1 = c.clone().addScaledVector(along, l * 0.15).addScaledVector(side, l * 0.38).addScaledVector(n, l * 0.06);
+  const s2 = c.clone().addScaledVector(along, l * 0.15).addScaledVector(side, -l * 0.38).addScaledVector(n, l * 0.06);
+  const i0 = g.vert(base, tone);
+  const i1 = g.vert(s1, rim);
+  const i2 = g.vert(tip, rim);
+  const i3 = g.vert(s2, rim);
+  g.tri(i0, i1, i2);
+  g.tri(i0, i2, i3);
+}
+
+/** a broadleaf shrub (coprosma, hebe, kawakawa): leaves filling a few overlapping lobes, darker inside */
 export function shrub(seed: number, size = 0.9, hex = 0x3f5f2a) {
   const R = rng(seed);
   const g = new Geo();
-  const n = Math.round(260 * size);
-  for (let i = 0; i < n; i++) {
-    const u = R() * Math.PI * 2;
-    const v = Math.acos(1 - R() * 1.7);
-    const r = size * (0.45 + 0.1 * R()) * Math.sqrt(0.6 + 0.4 * R());
-    const c = V(Math.cos(u) * Math.sin(v) * r, size * 0.45 + Math.cos(v) * size * 0.42, Math.sin(u) * Math.sin(v) * r);
-    const nrm = c.clone().sub(V(0, size * 0.45, 0)).normalize();
-    const t1 = nrm.clone().cross(V(0, 1, 0.3)).normalize();
-    const l = 0.07 * (0.8 + 0.5 * R());
-    const tone = C(hex, 0.75 + 0.45 * R());
-    const a = g.vert(c.clone().addScaledVector(t1, -l), tone);
-    const b = g.vert(c.clone().addScaledVector(t1, l), tone);
-    const d = g.vert(c.clone().addScaledVector(nrm.clone().cross(t1), l * 0.6).addScaledVector(nrm, 0.01), tone);
-    const e = g.vert(c.clone().addScaledVector(nrm.clone().cross(t1), -l * 0.6).addScaledVector(nrm, 0.01), tone);
-    g.tri(a, d, b);
-    g.tri(a, b, e);
-  }
-  // a few stems under the canopy
-  for (let i = 0; i < 6; i++) {
+  const lobes: { c: V3; r: number }[] = [];
+  const nl = 3 + Math.floor(R() * 3);
+  for (let i = 0; i < nl; i++) {
     const a = R() * Math.PI * 2;
-    g.tube([V(), V(Math.cos(a) * 0.2 * size, size * 0.5, Math.sin(a) * 0.2 * size)], [0.025, 0.015], 5, () => C(0x4b3b2b));
+    const d = i === 0 ? 0 : size * (0.18 + 0.2 * R());
+    const r = size * (i === 0 ? 0.48 : 0.3 + 0.14 * R());
+    lobes.push({ c: V(Math.cos(a) * d, r * 0.85 + size * 0.05 + (i === 0 ? 0 : R() * size * 0.2), Math.sin(a) * d), r });
+  }
+  const n = Math.round(1100 * size * size + 200);
+  const base = C(hex);
+  for (let i = 0; i < n; i++) {
+    const lb = lobes[Math.floor(R() * lobes.length)];
+    const u = R() * Math.PI * 2;
+    const v = Math.acos(1 - 2 * R());
+    const depth = Math.pow(R(), 0.25);
+    const dir = V(Math.cos(u) * Math.sin(v), Math.cos(v) * 0.85, Math.sin(u) * Math.sin(v));
+    const c = lb.c.clone().addScaledVector(dir, lb.r * depth);
+    if (c.y < 0.03) continue;
+    const out = dir.clone().normalize();
+    const nrm = out.multiplyScalar(0.6).add(V(0, 0.55, 0)).add(V(R() - 0.5, R() - 0.5, R() - 0.5).multiplyScalar(0.7)).normalize();
+    const along = V(R() - 0.5, 0.2, R() - 0.5).cross(nrm).normalize();
+    const l = size * 0.045 * (0.75 + 0.5 * R());
+    const lit = 0.45 + 0.55 * depth * (0.75 + 0.25 * (c.y / (size * 1.2)));
+    const tone = base.clone().multiplyScalar(lit * (0.85 + 0.3 * R()));
+    leaf(g, c, nrm, along, l, tone, tone.clone().multiplyScalar(1.08));
+  }
+  for (let i = 0; i < 7; i++) {
+    const a = R() * Math.PI * 2;
+    g.tube([V(), V(Math.cos(a) * 0.18 * size, size * 0.45, Math.sin(a) * 0.18 * size)], [0.022, 0.012], 5, () => C(0x4b3b2b));
+  }
+  return g.build();
+}
+
+/** a clipped hedge (griselinia, pittosporum, karo) of length L along +x: a dark core with leaves over its faces */
+export function hedge(seed: number, L: number, h = 1.6, w = 0.8, hex = 0x3d6a2a) {
+  const R = rng(seed);
+  const g = new Geo();
+  const base = C(hex);
+  // core, so the leaf cover never shows daylight through it
+  const core = C(hex, 0.32);
+  const corners = [
+    [-0.02, 0.05, -w / 2 + 0.07],
+    [L + 0.02, 0.05, -w / 2 + 0.07],
+    [L + 0.02, h - 0.07, -w / 2 + 0.07],
+    [-0.02, h - 0.07, -w / 2 + 0.07],
+    [-0.02, 0.05, w / 2 - 0.07],
+    [L + 0.02, 0.05, w / 2 - 0.07],
+    [L + 0.02, h - 0.07, w / 2 - 0.07],
+    [-0.02, h - 0.07, w / 2 - 0.07],
+  ].map(([x, y, z]) => g.vert(V(x, y, z), core));
+  const quad = (a: number, b: number, c: number, d: number) => {
+    g.tri(corners[a], corners[b], corners[c]);
+    g.tri(corners[a], corners[c], corners[d]);
+  };
+  quad(0, 3, 2, 1);
+  quad(4, 5, 6, 7);
+  quad(3, 7, 6, 2);
+  quad(0, 4, 7, 3);
+  quad(1, 2, 6, 5);
+  const faces: { o: V3; a: V3; b: V3; n: V3; area: number }[] = [
+    { o: V(0, 0, -w / 2), a: V(L, 0, 0), b: V(0, h, 0), n: V(0, 0, -1), area: L * h },
+    { o: V(0, 0, w / 2), a: V(L, 0, 0), b: V(0, h, 0), n: V(0, 0, 1), area: L * h },
+    { o: V(0, h, -w / 2), a: V(L, 0, 0), b: V(0, 0, w), n: V(0, 1, 0), area: L * w },
+    { o: V(0, 0, -w / 2), a: V(0, 0, w), b: V(0, h, 0), n: V(-1, 0, 0), area: w * h },
+    { o: V(L, 0, -w / 2), a: V(0, 0, w), b: V(0, h, 0), n: V(1, 0, 0), area: w * h },
+  ];
+  for (const f of faces) {
+    const n = Math.round(f.area * 260);
+    for (let i = 0; i < n; i++) {
+      const s = R();
+      const t = R();
+      const c = f.o.clone().addScaledVector(f.a, s).addScaledVector(f.b, t).addScaledVector(f.n, (R() - 0.7) * 0.07);
+      // rounded top edges: pull corners in a little
+      if (f.n.y === 0 && c.y > h - 0.12) c.addScaledVector(f.n, -(c.y - (h - 0.12)) * 0.6);
+      const nrm = f.n.clone().multiplyScalar(0.7).add(V(R() - 0.5, R() - 0.3, R() - 0.5).multiplyScalar(0.8)).normalize();
+      const along = V(R() - 0.5, R() - 0.5, R() - 0.5).cross(nrm).normalize();
+      const lit = (0.7 + 0.3 * Math.min(1, c.y / h)) * (f.n.y > 0 ? 1.1 : 1) * (0.82 + 0.3 * R());
+      const tone = base.clone().multiplyScalar(lit);
+      leaf(g, c, nrm, along, 0.045 * (0.8 + 0.4 * R()), tone, tone.clone().multiplyScalar(1.08));
+    }
   }
   return g.build();
 }

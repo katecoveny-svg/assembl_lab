@@ -6,13 +6,13 @@ import planJson from './plan16a.json';
 import { Site, toV3, inPoly, type SiteData } from './site';
 import { buildHome, HomeFrame, northDeckPolygon, southDeckPolygon, type BuildingSpec, type Drawn, type Placement } from './homes';
 import { syntheticCapture } from './scan';
-import { planting, type Placement as PlantAt, type Species } from './plants';
+import { hedge, plantMaterial, planting, type Placement as PlantAt, type Species } from './plants';
 import { toFinishes } from './furniture';
 import { fromURL } from './finishes';
 import { finishesPanel } from './finishesUI';
 import { setInteriorLights } from './fitout';
 import { fillSlots, slot } from './library';
-import { bedPlanting, mulchBed, palingFence, pathRibbon, weatherboardSet } from './landscape';
+import { bedPlanting, concreteTileSet, mulchBed, paintedBrickSet, palingFence, pathRibbon } from './landscape';
 import { pbr } from '../objects/tex';
 import { exportIFC, loadIFC } from './ifc';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -89,16 +89,74 @@ export const project16a: Project = {
     const retaining = site.retaining(q);
     const existing = site.existingDwelling(q);
     {
-      const wb = weatherboardSet(q === 'hq' ? 1024 : 512);
-      const wm = pbr(wb, 'existing_weatherboards_indicative');
-      for (const t of [wm.map, wm.normalMap, wm.roughnessMap, wm.metalnessMap, wm.aoMap]) if (t) t.repeat.set(1 / wb.tile, 1 / wb.tile);
+      // the existing house as photographed by Kate: painted white brick, white awning windows, dark concrete tile hip roof
+      const brick = paintedBrickSet(q === 'hq' ? 1024 : 512);
+      const wm = pbr(brick, 'existing_painted_brick');
+      const tiles = concreteTileSet(q === 'hq' ? 1024 : 512);
+      const rm = pbr(tiles, 'existing_concrete_tiles', { side: THREE.DoubleSide });
+      for (const [m, t] of [
+        [wm, brick.tile],
+        [rm, tiles.tile],
+      ] as const)
+        for (const tx of [m.map, m.normalMap, m.roughnessMap, m.metalnessMap, m.aoMap]) if (tx) tx.repeat.set(1 / t, 1 / t);
       existing.traverse((o) => {
         const m = o as THREE.Mesh;
-        if (m.isMesh && (m.material as THREE.Material).name === 'existing_wall_massing') {
+        if (!m.isMesh) return;
+        const name = (m.material as THREE.Material).name;
+        if (name === 'existing_wall_massing') {
           m.material = wm;
-          m.userData.note = `${m.userData.note ?? ''} Painted weatherboards are indicative: cladding and openings were not surveyed.`.trim();
-        }
+          m.userData.note = 'Outline and heights from the survey. Painted brick, roof tiles and white joinery from photos of the house; window positions are indicative, not surveyed.';
+        } else if (/existing_roof/.test(name)) m.material = rm;
       });
+      // indicative white awning windows and fascia, so the house reads as a house
+      const white = new THREE.MeshPhysicalMaterial({ name: 'white_aluminium_joinery', color: 0xf2f2ef, roughness: 0.4, clearcoat: 0.3 });
+      const glass = new THREE.MeshPhysicalMaterial({ name: 'glass', color: 0x2c3438, roughness: 0.05, metalness: 0.1, clearcoat: 1 });
+      const E = data.existing;
+      for (const part of [E.west, E.east]) {
+        const r = part.rect as Pt[];
+        for (let i = 0; i < 4; i++) {
+          const a = r[i];
+          const b = r[(i + 1) % 4];
+          const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          const n = Math.floor((len - 1.2) / 3.4);
+          if (n < 1) continue;
+          const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+          // outward normal: away from the rect centre
+          const cx = (r[0][0] + r[2][0]) / 2;
+          const cn = (r[0][1] + r[2][1]) / 2;
+          let nx = Math.sin(ang);
+          let nn = -Math.cos(ang);
+          const mx = (a[0] + b[0]) / 2;
+          const mn = (a[1] + b[1]) / 2;
+          if ((mx - cx) * nx + (mn - cn) * nn < 0) {
+            nx = -nx;
+            nn = -nn;
+          }
+          for (let k = 0; k < n; k++) {
+            const t = (k + 0.5) / n;
+            const e = a[0] + (b[0] - a[0]) * t + nx * 0.02;
+            const nN = a[1] + (b[1] - a[1]) * t + nn * 0.02;
+            const w = k % 2 ? 1.2 : 1.8;
+            const win = new THREE.Group();
+            win.name = 'existing_window_indicative';
+            const fr = new THREE.Mesh(new THREE.BoxGeometry(w, 1.15, 0.08), white);
+            const gl = new THREE.Mesh(new THREE.BoxGeometry(w - 0.12, 1.03, 0.02).translate(0, 0, 0.035), glass);
+            const mull = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.03, 0.03).translate(w > 1.5 ? -w / 6 : 0, 0, 0.05), white);
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.04, 0.14).translate(0, -0.6, 0.04), white);
+            win.add(fr, gl, mull, sill);
+            win.position.set(e, part.ffl + 0.95 + 0.575, -nN);
+            win.lookAt(e + nx, part.ffl + 1.5, -(nN + nn));
+            win.traverse((o) => {
+              const mm = o as THREE.Mesh;
+              if (mm.isMesh) {
+                mm.castShadow = mm.receiveShadow = true;
+                mm.userData = { kind: 'existing', name: 'Window (indicative)', source: 'assumed', note: 'White aluminium awning windows as in the photos; positions are not surveyed.' };
+              }
+            });
+            existing.add(win);
+          }
+        }
+      }
     }
     const lines = site.lines();
     const ground = new THREE.Group();
@@ -329,21 +387,23 @@ export const project16a: Project = {
       }
       g.add(planting(bedList, 'Proposed planting beds (not on the drawings): layered natives, ferns on the shady south sides.'));
       L.add(beds);
-      // the surveyed hedge, clipped
-      const hd = data.hedge as Pt[];
-      const hedge: PlantAt[] = [];
-      for (let i = 1; i < hd.length; i++) {
-        const [a, b] = [hd[i - 1], hd[i]];
-        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        for (let s2 = 0; s2 <= len; s2 += 0.55) {
-          const e = a[0] + ((b[0] - a[0]) * s2) / len;
-          const n = a[1] + ((b[1] - a[1]) * s2) / len;
-          hedge.push({ sp: s2 % 1.1 < 0.55 ? 'coprosma' : 'hebe', x: e, y: site.existing(e, n), z: -n, s: 1.45 });
+      // the surveyed hedge, as a clipped broadleaf hedge
+      {
+        const hd = data.hedge as Pt[];
+        const hg = new THREE.Group();
+        hg.name = 'hedge';
+        for (let i = 1; i < hd.length; i++) {
+          const [a, b] = [hd[i - 1], hd[i]];
+          const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          const m = new THREE.Mesh(hedge(5 + i, len, 1.7, 0.85), plantMaterial());
+          m.position.set(a[0], Math.min(site.existing(...a), site.existing(...b)) - 0.05, -a[1]);
+          m.rotation.y = Math.atan2(b[1] - a[1], b[0] - a[0]);
+          m.castShadow = m.receiveShadow = true;
+          m.userData = { kind: 'planting', name: 'Hedge, clipped broadleaf', source: 'survey', note: 'Hedge line from the survey; species not recorded, drawn as clipped broadleaf like the hedges on site.' };
+          hg.add(m);
         }
+        g.add(hg);
       }
-      const hg = planting(hedge, 'Hedge on the survey (species not recorded), drawn clipped.', 'survey');
-      hg.name = 'hedge';
-      g.add(hg);
       // boundary fence on the side and rear boundaries
       L.add(palingFence('fence_west', [B.SW, B.NW], G, q), palingFence('fence_rear', [B.NW, B.NE], G, q), palingFence('fence_east', [B.NE, B.E], G, q));
       // specimens from the library: nīkau by each entry, ponga in the shade, pōhutukawa out front
@@ -359,10 +419,16 @@ export const project16a: Project = {
         const fr = frames[key];
         const [e1, n1] = fr.en(key === '16C' ? 7.2 : 1.6, 7.0);
         spec('nikau', e1, n1, 1.6, 0.3);
-        const [e2, n2] = fr.en(key === '16C' ? 9.8 : 0.4, 7.1);
-        spec('silver_fern', e2, n2, 1.3, 1.1);
-        const [e3, n3] = fr.en(-0.9, 4.6);
-        spec('silver_fern', e3, n3, 1.15, 2.2);
+        // ponga in the shade of the south side
+        const pongas: PlantAt[] = [];
+        for (const [u, v, sc] of [
+          [key === '16C' ? 9.8 : 0.4, 7.1, 0.85],
+          [-0.9, 4.6, 0.75],
+        ] as [number, number, number][]) {
+          const [e, n] = fr.en(u, v);
+          if (inPoly([e, n], site.lot)) pongas.push({ sp: 'ponga', x: e, y: G(e, n), z: -n, s: sc });
+        }
+        if (pongas.length) g.add(planting(pongas, 'Proposed ponga (silver tree fern) on the shady south side.'));
       }
       g.add(planting([{ sp: 'tikouka', x: 33.0, y: G(33.0, -25.5), z: 25.5, s: 1.1 }, { sp: 'tikouka', x: 34.2, y: G(34.2, -24.6), z: 24.6, s: 0.85 }], 'Proposed tī kōuka by the forecourt (not on the drawings).'));
       // outdoor living on the decks: lounge setting on each north deck, planters by the front doors, a barbecue
