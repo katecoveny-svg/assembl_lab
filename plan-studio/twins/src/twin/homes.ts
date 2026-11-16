@@ -2,6 +2,9 @@ import * as THREE from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boxUV, type Quality } from '../objects/util';
 import { twinMats, type TwinMats } from './mats';
+import { fitOut } from './fitout';
+import { interiorMats, ribbedMetal, type Finishes } from './furniture';
+import { pbr, paint } from '../objects/tex';
 
 // A home generated from a plan model (assembl.plan-model.v1): walls, openings, partitions,
 // rooms and fit-out from the plan file; decks, spa and stairs from what RC-06 draws; roof
@@ -146,7 +149,7 @@ export class HomeFrame {
 }
 
 /** the north deck as drawn: from the wall out to the rear and side yards */
-export function northDeckPolygon(frame: HomeFrame, drawn: Drawn, limits: Limit[]) {
+export function northDeckPolygon(frame: HomeFrame, drawn: Drawn, limits: Limit[]): Pt[] {
   let poly: Pt[] = [
     [drawn.northDeck.u0, -8],
     [drawn.northDeck.u1, -8],
@@ -170,12 +173,26 @@ export function southDeckPolygon(drawn: Drawn): Pt[] {
 export interface HomeOptions {
   key: string;
   spec: BuildingSpec;
-  drawn: Drawn;
+  /** decks, spa and stair as drawn; without it the plan model's own deck rectangles are used */
+  drawn?: Drawn;
   placement: Placement;
   limits: Limit[];
   /** proposed ground RL at site (e, n) */
   ground: (e: number, n: number) => number;
   quality: Quality;
+  /** furnish the rooms and apply this finishes palette */
+  finishes?: Finishes;
+}
+
+const claddingCache = new Map<string, THREE.MeshPhysicalMaterial>();
+function claddingMat(kind: 'metal' | 'white', q: Quality, d: { tex: number }) {
+  const k = `${kind}/${q}`;
+  let m = claddingCache.get(k);
+  if (!m) {
+    m = kind === 'metal' ? pbr(ribbedMetal(d.tex, 0x2b2d30), 'ribbed_metal_cladding_dark', { clearcoat: 0.3, clearcoatRoughness: 0.4 }) : pbr(paint(d.tex, { colour: 0xf3f2ee, gloss: 0.25, tile: 1.0, seed: 77, name: 'white_painted_cladding' }), 'white_painted_cladding');
+    claddingCache.set(k, m);
+  }
+  return m;
 }
 
 export function buildHome(o: HomeOptions) {
@@ -244,11 +261,12 @@ export function buildHome(o: HomeOptions) {
         [a, op.head],
       ];
     });
-    const cladM = w.cladding === 'blackstain' ? M.blackstain : M.cedar;
-    const cladT = (w.cladding === 'blackstain' ? M.sets.blackstain : M.sets.cedar).tile;
+    const kind = o.finishes?.cladding ?? w.cladding;
+    const cladM = kind === 'metal' || kind === 'white' ? claddingMat(kind, o.quality, M.d) : kind === 'blackstain' ? M.blackstain : M.cedar;
+    const cladT = kind === 'metal' ? 0.6 : kind === 'white' ? 1.0 : (kind === 'blackstain' ? M.sets.blackstain : M.sets.cedar).tile;
     const th = w.thickness;
     const outer = mesh('cladding', skin(outline, holes, 0, 0.022, cladT), cladM);
-    tag(outer, asset, 'IfcCovering', { predefinedType: 'CLADDING', material: w.cladding === 'blackstain' ? 'cedar shiplap, black stain' : 'cedar shiplap, natural stain', source: w.source ?? 'written' });
+    tag(outer, asset, 'IfcCovering', { predefinedType: 'CLADDING', material: kind === 'metal' ? 'dark ribbed metal cladding, vertical' : kind === 'white' ? 'white painted cladding' : kind === 'blackstain' ? 'cedar shiplap, black stain' : 'cedar shiplap, natural stain', source: o.finishes?.cladding ? 'proposed' : w.source ?? 'written' });
     const core = mesh('framing_core', skin(outline.map(([s, y]) => [s, Math.min(y, gable ? y : plate)] as Pt), holes, 0.022, th - 0.035, t('lining')), M.lining);
     const lin = mesh('lining', skin(inner, holes, th - 0.013, 0.013, t('lining')), M.lining);
     g.add(outer, core, lin);
@@ -316,7 +334,8 @@ export function buildHome(o: HomeOptions) {
 
   // --- floor, rooms, fit-out -----------------------------------------------------------------
   const tW = 0.113;
-  const floor = mesh('floor_oak', boxAt(W - 2 * tW, 0.02, D - 2 * tW, W / 2, -0.01, D / 2, t('oak'), 'x'), M.oak);
+  const IM = o.finishes ? interiorMats(o.quality, o.finishes) : null;
+  const floor = mesh('floor_finish', boxAt(W - 2 * tW, 0.02, D - 2 * tW, W / 2, -0.01, D / 2, IM ? IM.sets.floor.tile : t('oak'), 'x'), IM ? IM.floor : M.oak);
   tag(floor, asset, 'IfcCovering', { predefinedType: 'FLOORING', material: 'engineered oak on 20 mm particleboard', source: 'proposed' });
   root.add(floor);
   const roomsG = grp('spaces');
@@ -333,7 +352,7 @@ export function buildHome(o: HomeOptions) {
     sp.userData = { kind: 'space', name: r.name, area: r.labelledArea ?? +(r.w * r.d).toFixed(2), labelled: r.labelledArea != null, source: r.source ?? 'written' };
     roomsG.add(sp);
   }
-  for (const f of L.fitout ?? []) {
+  for (const f of o.finishes ? [] : L.fitout ?? []) {
     const mat = f.finish === 'stone' ? M.bench : M.oak;
     const b = mesh(`fitout_${f.id}`, boxAt(f.u1 - f.u0, f.y1 - f.y0, f.v1 - f.v0, (f.u0 + f.u1) / 2, (f.y0 + f.y1) / 2, (f.v0 + f.v1) / 2, t('bench'), 'x'), mat);
     tag(b, asset, 'IfcFurnishingElement', { name: f.name, material: f.finish, source: 'proposed' });
@@ -367,14 +386,36 @@ export function buildHome(o: HomeOptions) {
   ], -0.02, gy, 'floor', 0.19));
 
   // --- decks, spa, stair ----------------------------------------------------------------------
-  const nd = northDeckPolygon(frame, o.drawn, o.limits);
-  if (nd.length >= 3) root.add(deck(asset, 'north_deck', nd, M, gy, [], 'scaled'));
-  const sd = southDeckPolygon(o.drawn);
-  const stairEdge = o.drawn.stair.side === 'east' ? 'east' : 'south';
-  root.add(deck(asset, 'south_deck', sd, M, gy, ['s'], 'scaled', stairEdge === 'south' ? [o.drawn.stair.u0, o.drawn.stair.u1] : null, stairEdge === 'east' ? sd[1][0] : null));
-  root.add(spa(asset, o.drawn.spa, M));
-  root.add(stair(asset, o.drawn, M, gy));
+  let nd: Pt[] = [];
+  let sd: Pt[] = [];
+  if (o.drawn) {
+    nd = northDeckPolygon(frame, o.drawn, o.limits);
+    if (nd.length >= 3) root.add(deck(asset, 'north_deck', nd, M, gy, [], 'scaled'));
+    sd = southDeckPolygon(o.drawn);
+    const stairEdge = o.drawn.stair.side === 'east' ? 'east' : 'south';
+    root.add(deck(asset, 'south_deck', sd, M, gy, ['s'], 'scaled', stairEdge === 'south' ? [o.drawn.stair.u0, o.drawn.stair.u1] : null, stairEdge === 'east' ? sd[1][0] : null));
+    root.add(spa(asset, o.drawn.spa, M));
+    root.add(stair(asset, o.drawn, M, gy));
+  } else {
+    const ds = (L as unknown as { decks?: { id: string; u0: number; u1: number; v0: number; v1: number; rail?: string[] }[] }).decks ?? [];
+    for (const dk of ds) {
+      let poly: Pt[] = [
+        [dk.u0, dk.v0],
+        [dk.u1, dk.v0],
+        [dk.u1, dk.v1],
+        [dk.u0, dk.v1],
+      ];
+      for (const l of o.limits) poly = clipHalf(poly, frame.limit(l));
+      if (poly.length >= 3) root.add(deck(asset, `deck_${dk.id.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, poly, M, gy, dk.rail ?? [], 'scaled'));
+      if (dk.v1 <= 0.01) nd = poly;
+      else sd = poly;
+    }
+  }
 
+  if (o.finishes) {
+    const ceilAt = (_u: number, v: number) => plate + (3 - Math.abs(v - 3)) * tan15;
+    root.add(fitOut(o.spec, o.quality, o.finishes, ceilAt));
+  }
   root.userData.decks = { north: nd, south: sd };
   return root;
 }

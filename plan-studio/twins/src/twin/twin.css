@@ -87,3 +87,10 @@ ul.small li { margin: 4px 0; }
   .pill.ghost { display: inline-block; margin-left: auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+
+.dropzone { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(249, 246, 242, 0.92); padding: 16px; }
+.dropzone.over { background: rgba(217, 186, 203, 0.55); }
+.drop-card { max-width: 560px; }
+.drop-card h2 { margin: 0 0 8px; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; color: var(--plum); }
+.drop-card p { font-size: 14px; }
+.drop-card select { margin-left: 8px; }

@@ -73,7 +73,7 @@ export class App {
   camera = new THREE.PerspectiveCamera(42, 1, 0.05, 6000);
   controls!: OrbitControls;
   sun = new THREE.DirectionalLight(0xfff4e6, 3.2);
-  hemi = new THREE.HemisphereLight(0xdfe8f0, 0x6b6248, 0.6);
+  hemi = new THREE.HemisphereLight(0xeee8df, 0x8a7458, 0.6);
   clip = new THREE.ClippingGroup();
   modelRoot = new THREE.Group();
   plain = new THREE.Group();
@@ -320,7 +320,7 @@ export class App {
     const old = this.skyTex;
     this.skyTex = t;
     this.scene.background = null;
-    this.scene.environmentIntensity = 0.06 + 0.22 * day;
+    this.scene.environmentIntensity = 0.05 + 0.15 * day;
     this.scene.fog = new THREE.Fog(hor.getHex(), this.built.radius * 3, this.built.radius * 9);
     if (old) setTimeout(() => old.dispose(), 500);
   }
