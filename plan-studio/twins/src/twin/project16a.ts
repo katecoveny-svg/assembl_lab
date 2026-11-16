@@ -7,6 +7,9 @@ import { Site, toV3, inPoly, type SiteData } from './site';
 import { buildHome, HomeFrame, northDeckPolygon, southDeckPolygon, type BuildingSpec, type Drawn, type Placement } from './homes';
 import { syntheticCapture } from './scan';
 import { planting, type Placement as PlantAt, type Species } from './plants';
+import { PALETTES } from './furniture';
+import { setInteriorLights } from './fitout';
+import { fillSlots } from './library';
 import { exportIFC, loadIFC } from './ifc';
 import type { App, Built, Key, Layer, Project } from './app';
 
@@ -58,15 +61,25 @@ export const project16a: Project = {
       for (const [uu, vv] of nd) for (const d of [-0.3, 0.3]) for (const e of [-0.3, 0.3]) pts.push(f.en(uu + d, vv + e));
       site.addPad(key, pts, pl.ffl - 0.45);
     }
-    // 2. homes on the cut ground
+    // 2. homes on the cut ground, fitted out with the chosen finishes palette
+    const palKey = new URLSearchParams(location.search).get('palette') ?? 'cedar-charcoal';
+    const fin = PALETTES[palKey] ?? PALETTES['cedar-charcoal'];
     const homes = new THREE.Group();
     homes.name = 'proposed_homes';
     const homeObjs: Record<string, THREE.Object3D> = {};
     for (const { key, spec } of keys) {
-      const h = buildHome({ key, spec, drawn: data.drawn[key] as Drawn, placement: placements[key], limits: site.yardLimits(key), ground: site.ground, quality: q });
+      const h = buildHome({ key, spec, drawn: data.drawn[key] as Drawn, placement: placements[key], limits: site.yardLimits(key), ground: site.ground, quality: q, finishes: fin });
       homeObjs[key] = h;
       homes.add(h);
     }
+    app.log('Placing library pieces…');
+    await fillSlots(homes);
+    const fitouts: THREE.Object3D[] = [];
+    homes.traverse((o) => {
+      if (o.name === 'fit_out') fitouts.push(o);
+    });
+    app.onSun.push((night) => setInteriorLights(fitouts, night));
+
     // 3. survey layer
     const terrain = site.terrain(q);
     const retaining = site.retaining(q);
@@ -203,6 +216,24 @@ export const project16a: Project = {
       return g;
     };
 
+    const finPanel = document.createElement('section');
+    finPanel.className = 'card';
+    finPanel.innerHTML = `<h3>Finishes and fit-out</h3><label class="slider">Palette <select id="palette">${Object.entries(PALETTES)
+      .map(([k, v]) => `<option value="${k}" ${k === palKey ? 'selected' : ''}>${v.name}</option>`)
+      .join('')}</select></label><p class="small">Rooms are furnished from their names in the plan model: beds and wardrobes, sofa and rug, dining setting, kitchen joinery, bathroom fixtures. Pieces from the Kōwhai Studio library are used where they fit; the rest are assembl's own. All proposed, not drawn.</p><div class="row wrap"><button class="pill" id="evening">See it at dusk</button></div>`;
+    finPanel.querySelector('#palette')!.addEventListener('change', (e) => {
+      const u = new URL(location.href);
+      u.searchParams.set('palette', (e.target as HTMLSelectElement).value);
+      location.href = u.toString();
+    });
+    finPanel.querySelector('#evening')!.addEventListener('click', () => {
+      const d = document.getElementById('sundate') as HTMLInputElement;
+      const t = document.getElementById('suntime') as HTMLInputElement;
+      d.value = `${new Date().getFullYear()}-12-21`;
+      t.value = '21.5';
+      t.dispatchEvent(new Event('input'));
+    });
+
     // 8. layers
     const layers: Layer[] = [
       { id: 'homes', label: 'Proposed homes', note: 'generated from the plan model', visible: true, object: homes, model: true },
@@ -332,7 +363,7 @@ export const project16a: Project = {
         return rows;
       },
       support,
-      panels: [checks],
+      panels: [finPanel, checks],
       exports,
       sources: [
         'Draft resource-consent set, issue A, 12 May 2025, by the project architect: RC-02 survey, RC-04 site plan, RC-05 area plan, RC-06 plans, RC-07 sections, RC-08/09 elevations. Marked "for information only".',

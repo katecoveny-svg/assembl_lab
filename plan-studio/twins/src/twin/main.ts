@@ -4,10 +4,11 @@ import { App, type Project } from './app';
 const loaders: Record<string, () => Promise<Project>> = {
   '16a': async () => (await import('./project16a')).project16a,
   cafe: async () => (await import('./projectCafe')).projectCafe,
+  plan: async () => (await import('./projectPlan')).projectPlan,
 };
 
 async function boot() {
-  const key = document.body.dataset.project ?? '16a';
+  const key = new URLSearchParams(location.search).get('project') ?? document.body.dataset.project ?? '16a';
   const status = document.getElementById('status')!;
   if (!('gpu' in navigator)) status.textContent = 'No WebGPU in this browser: starting the WebGL 2 fallback…';
   try {

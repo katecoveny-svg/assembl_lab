@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Drop a plan, get a twin · assembl lab</title>
+    <meta name="description" content="Drop a plan model, IFC or GLB and get a furnished, finished three.js r187 twin to render: live WebGPU view, path-traced stills, fly-through video and downloads." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/twin-CiVXwSz_.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/OrbitControls-Bf5wCyS7.js">
+    <link rel="stylesheet" crossorigin href="./assets/twin-CV0o2jkk.css">
+  </head>
+  <body data-project="plan">
+    <a class="skip" href="#panel">Skip to the twin controls</a>
+    <header>
+      <div class="brand"><span class="word">assembl.</span><span class="kick mono" id="kicker">plan to twin</span></div>
+      <h1 id="title">Loading…</h1>
+      <div class="chips" id="chips"><span class="chip" id="renderer">starting renderer…</span></div>
+      <button class="pill ghost" id="panelToggle" aria-label="Show or hide the panel">Panel</button>
+    </header>
+    <main>
+      <div class="stage">
+        <canvas id="c" aria-label="3D view of the site and buildings"></canvas>
+        <div id="labels" aria-hidden="true"></div>
+        <div id="tip" class="tip" hidden></div>
+        <aside id="inspect" class="inspect card" hidden></aside>
+        <div class="compass" title="North"><svg id="north" viewBox="0 0 40 40" width="40" height="40" aria-label="North arrow"><circle cx="20" cy="20" r="18" fill="rgba(249,246,242,.9)" stroke="#33212F" stroke-opacity=".3"/><path d="M20 6 L25 22 L20 19 L15 22 Z" fill="#21121F"/><text x="20" y="34" text-anchor="middle" font-size="8" font-family="IBM Plex Mono" fill="#33212F">N</text></svg></div>
+        <p id="status" class="status mono" role="status" aria-live="polite"></p>
+      </div>
+      <nav class="panel" id="panel" aria-label="Twin controls">
+        <section class="card"><h3>Layers</h3><div id="layers"></div></section>
+        <section class="card">
+          <h3>Sun</h3>
+          <div class="grid2">
+            <label>Date <input type="date" id="sundate" /></label>
+            <label>Time <output id="suntimeout" class="mono"></output><input type="range" id="suntime" min="5" max="23" step="0.5" /></label>
+          </div>
+          <div class="row wrap"><button class="pill" data-sunpreset="06-21 12">Midwinter noon</button><button class="pill" data-sunpreset="09-22 9">Equinox 9 am</button><button class="pill" data-sunpreset="12-21 17">Midsummer 5 pm</button></div>
+          <p class="mono small" id="sunread"></p>
+        </section>
+        <section class="card">
+          <h3>Look inside</h3>
+          <label class="slider">X-ray <output id="xrayout" class="mono">solid</output><input type="range" id="xray" min="0.15" max="1" step="0.01" value="1" /></label>
+          <label class="slider"><span><input type="checkbox" id="sectionOn" /> Section</span> <output id="sectionout" class="mono">off</output><input type="range" id="section" /></label>
+        </section>
+        <section class="card">
+          <h3>Fly-through</h3>
+          <div class="row wrap" id="keys"></div>
+          <div class="row wrap"><button class="pill solid" id="play">Play</button><button class="pill" id="record">Record WebM</button><button class="pill" id="walk">Walk</button></div>
+        </section>
+        <section class="card">
+          <h3>Stills</h3>
+          <div class="row wrap">
+            <select id="samples" aria-label="Samples"><option value="64">64 samples (quick)</option><option value="256" selected>256 samples</option><option value="1024">1024 samples</option></select>
+            <button class="pill solid" id="trace">Path-trace this view</button>
+            <button class="pill" id="shot">Raster PNG</button>
+          </div>
+          <p class="small" id="traceNote">Path tracing uses three-gpu-pathtracer on WebGPU: real light bounces, soft shadows and glass. Lines and splats are left out.</p>
+        </section>
+        <div id="extra"></div>
+        <section class="card"><h3>Downloads</h3><div class="row wrap" id="exports"></div></section>
+        <section class="card"><h3>Sources and limits</h3><ul id="sources" class="small"></ul></section>
+      </nav>
+    </main>
+  <script src="/lab/navigation.js" defer></script></body>
+</html>
