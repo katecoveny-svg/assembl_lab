@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boxUV, detail, type Quality } from '../objects/util';
 import { bake, fbm, hex, linen, metal, mix, paint, pbr, wood, woolPile, type PBRSet } from '../objects/tex';
+import { complete, pick, PRESETS, type Schedule } from './finishes';
 
 // Interior pieces for the fit-out step, at real sizes, in local axes: origin on the floor at the
 // footprint centre, front facing +z, y up. Each returns a named group tagged kind 'furniture'
@@ -14,21 +15,50 @@ export interface Finishes {
   /** exterior cladding override: undefined keeps each wall's own */
   cladding?: 'cedar' | 'blackstain' | 'metal' | 'white';
   joinery: number;
-  floor: 'oak' | 'concrete' | 'tile';
+  joineryTimber?: boolean;
+  roof: number;
+  decking: [number, number];
+  floor: 'oak' | 'concrete' | 'tile' | 'terrazzo';
+  floorTone: [number, number];
   walls: number;
   bench: 'stone' | 'terrazzo' | 'marble';
+  splash: { colour: number; grout: number; n: number; gloss: number } | 'match';
   cabinetry: number;
+  bathTile: [number, number];
   fabric: number;
   accent: number;
   metalTrim: number;
+  /** the schedule these came from, for the spec and the URL */
+  schedule: Schedule;
 }
 
-export const PALETTES: Record<string, Finishes> = {
-  'cedar-charcoal': { name: 'Cedar and charcoal', joinery: 0x1d1d1f, floor: 'oak', walls: 0xf1ede6, bench: 'stone', cabinetry: 0xe9e4da, fabric: 0xb8ab96, accent: 0x8a5a3c, metalTrim: 0x2a2a2a },
-  'white-black': { name: 'White walls, black joinery, dark metal', cladding: 'metal', joinery: 0x141414, floor: 'oak', walls: 0xf6f5f1, bench: 'marble', cabinetry: 0x2b2b2d, fabric: 0xd6d0c4, accent: 0x6e4a32, metalTrim: 0x1a1a1a },
-  'warm-oak': { name: 'Warm oak and terrazzo', joinery: 0x3b3027, floor: 'oak', walls: 0xf3ece2, bench: 'terrazzo', cabinetry: 0xc9a77c, fabric: 0x9a7f6a, accent: 0x7a4b3a, metalTrim: 0xa98544 },
-  'plum-rose': { name: 'assembl plum and rose', joinery: 0x21121f, floor: 'oak', walls: 0xf9f6f2, bench: 'marble', cabinetry: 0xd9bacb, fabric: 0x5b2a4a, accent: 0x21121f, metalTrim: 0xb08a4a },
-};
+/** render parameters from a finishes schedule */
+export function toFinishes(s: Schedule, name = 'Custom schedule'): Finishes {
+  const P = (k: string) => pick(s, k).p;
+  const sp = P('splashback');
+  const fl = P('floor');
+  return {
+    name,
+    cladding: P('cladding').kind as Finishes['cladding'],
+    joinery: P('joinery').colour as number,
+    joineryTimber: s.joinery === 'timber',
+    roof: P('roof').colour as number,
+    decking: [P('decking').light as number, P('decking').dark as number],
+    floor: fl.kind as Finishes['floor'],
+    floorTone: [(fl.light as number) ?? 0xcfae80, (fl.dark as number) ?? 0x9b7650],
+    walls: P('walls').colour as number,
+    bench: P('bench').kind as Finishes['bench'],
+    splash: sp.match ? 'match' : { colour: sp.colour as number, grout: sp.grout as number, n: sp.n as number, gloss: sp.gloss as number },
+    cabinetry: P('cabinetry').colour as number,
+    bathTile: [P('bathTile').colour as number, P('bathTile').grout as number],
+    fabric: P('fabric').fabric as number,
+    accent: P('fabric').accent as number,
+    metalTrim: P('metal').colour as number,
+    schedule: s,
+  };
+}
+
+export const PALETTES: Record<string, Finishes> = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, toFinishes(complete(v.s), v.name)]));
 
 // --- extra surfaces ----------------------------------------------------------------------------------
 function marble(size: number, o: { base: number; vein: number; seed: number; name: string }) {
@@ -51,11 +81,11 @@ function marble(size: number, o: { base: number; vein: number; seed: number; nam
 function terrazzo(size: number, seed: number) {
   return bake(
     size,
-    0.6,
+    0.45,
     (u, v) => {
-      const cell = fbm(u, v, 30, 30, 1, seed);
-      const chip = cell > 0.68 ? 1 : 0;
-      const tint = fbm(u, v, 30, 30, 1, seed + 9);
+      const cell = Math.max(fbm(u, v, 70, 70, 1, seed), fbm(u + 0.37, v + 0.11, 110, 110, 1, seed + 3) * 0.97);
+      const chip = cell > 0.72 ? 1 : 0;
+      const tint = fbm(u, v, 70, 70, 1, seed + 9);
       const base: [number, number, number] = [0.9, 0.88, 0.84];
       const c: [number, number, number] = chip ? (tint > 0.5 ? [0.55, 0.42, 0.4] : [0.35, 0.33, 0.32]) : base;
       return { c, h: chip ? 0.6 : 0.5, r: 0.25, m: 0 };
@@ -176,7 +206,7 @@ export interface InteriorMats {
 
 const cache = new Map<string, InteriorMats>();
 export function interiorMats(q: Quality, f: Finishes): InteriorMats {
-  const key = `${q}/${f.name}`;
+  const key = `${q}/${JSON.stringify({ ...f, schedule: undefined, name: undefined })}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const d = q === 'hq' ? detail('hq') : { ...detail('web'), tex: 1024, texS: 512 };
@@ -186,12 +216,19 @@ export function interiorMats(q: Quality, f: Finishes): InteriorMats {
     wool: woolPile(d.texS, { a: 0xd9d0c0, b: 0x9a8b78, tile: 0.4, name: 'wool' }),
     oak: wood(d.texS, { light: 0xcaa97c, dark: 0x9d7a52, rings: 18, gloss: 0.35, tile: 0.9, seed: 141, name: 'oak' }),
     walnut: wood(d.texS, { light: 0x7a553a, dark: 0x4a3122, rings: 14, gloss: 0.4, tile: 0.9, seed: 142, name: 'walnut' }),
-    floor: f.floor === 'oak' ? planks(d.tex, { light: 0xcfae80, dark: 0x9b7650, seed: 151, name: 'oak_plank_floor' }) : f.floor === 'tile' ? tiles(d.tex, { colour: 0xd8d2c8, grout: 0xa8a29a, n: 2, tile: 1.2, name: 'floor_tile' }) : marble(d.tex, { base: 0xa6a29a, vein: 0x8f8a82, seed: 152, name: 'polished_concrete' }),
+    floor:
+      f.floor === 'oak'
+        ? planks(d.tex, { light: f.floorTone[0], dark: f.floorTone[1], seed: 151, name: 'oak_plank_floor' })
+        : f.floor === 'tile'
+          ? tiles(d.tex, { colour: 0xd8d2c8, grout: 0xa8a29a, n: 2, tile: 1.2, name: 'floor_tile' })
+          : f.floor === 'terrazzo'
+            ? terrazzo(d.tex, 159)
+            : marble(d.tex, { base: 0xa6a29a, vein: 0x8f8a82, seed: 152, name: 'polished_concrete' }),
     bench: f.bench === 'marble' ? marble(d.tex, { base: 0xf1eee9, vein: 0x8f8c88, seed: 153, name: 'marble' }) : f.bench === 'terrazzo' ? terrazzo(d.tex, 154) : marble(d.tex, { base: 0xe8e4dc, vein: 0xd6d0c4, seed: 155, name: 'engineered_stone' }),
     cabinet: paint(d.texS, { colour: f.cabinetry, gloss: 0.35, tile: 0.8, seed: 156, name: 'cabinet_lacquer' }),
-    tile: tiles(d.texS, { colour: 0xe9e6e0, grout: 0xc9c4bc, n: 4, tile: 0.6, name: 'wall_tile_150', gloss: 1 }),
-    wallTile: tiles(d.texS, { colour: 0xd9d4ca, grout: 0xb4ada2, n: 2, tile: 1.2, name: 'bath_tile_600' }),
-    steel: metal(d.texS, { tint: 0xb8b8b4, rough: 0.34, brush: 0.35, tile: 0.15, seed: 157, name: 'brushed_steel' }),
+    tile: f.splash === 'match' ? (null as unknown as PBRSet) : tiles(d.texS, { colour: f.splash.colour, grout: f.splash.grout, n: f.splash.n, tile: 0.6, name: 'splashback_tile_150', gloss: f.splash.gloss }),
+    wallTile: tiles(d.texS, { colour: f.bathTile[0], grout: f.bathTile[1], n: 2, tile: 1.2, name: 'bath_tile_600' }),
+    steel: metal(d.texS, { tint: 0xb8b8b4, rough: 0.36, brush: 0.12, tile: 0.25, seed: 157, name: 'brushed_steel' }),
     wallPaint: plasterPaint(d.texS, f.walls, 158),
   };
   const ph = (o: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(o);
@@ -203,10 +240,10 @@ export function interiorMats(q: Quality, f: Finishes): InteriorMats {
     wool: pbr(sets.wool, 'wool'),
     oak: pbr(sets.oak, 'oak'),
     walnut: pbr(sets.walnut, 'walnut'),
-    floor: pbr(sets.floor, 'floor_finish', { clearcoat: f.floor === 'oak' ? 0.25 : 0.5, clearcoatRoughness: 0.35 }),
+    floor: pbr(sets.floor, 'floor_finish', { clearcoat: f.floor === 'oak' ? 0.2 : 0.5, clearcoatRoughness: 0.35 }),
     bench: pbr(sets.bench, 'benchtop', { clearcoat: 0.4, clearcoatRoughness: 0.15 }),
     cabinet: pbr(sets.cabinet, 'cabinet_lacquer'),
-    tile: pbr(sets.tile, 'splashback_tile'),
+    tile: f.splash === 'match' ? pbr(sets.bench, 'splashback_slab', { clearcoat: 0.4, clearcoatRoughness: 0.15 }) : pbr(sets.tile, 'splashback_tile'),
     wallTile: pbr(sets.wallTile, 'bathroom_tile'),
     steel: pbr(sets.steel, 'brushed_steel'),
     chrome: ph({ name: 'chrome', color: 0xdddddd, metalness: 1, roughness: 0.08 }),

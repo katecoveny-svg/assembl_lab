@@ -94,3 +94,10 @@ ul.small li { margin: 4px 0; }
 .drop-card h2 { margin: 0 0 8px; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; color: var(--plum); }
 .drop-card p { font-size: 14px; }
 .drop-card select { margin-left: 8px; }
+
+/* finishes schedule */
+.finGroup { border: 0; border-top: 1px solid rgba(51, 33, 47, 0.12); margin: 10px 0 0; padding: 8px 0 0; }
+.finGroup legend { font: 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.12em; color: #756771; padding: 0 6px 0 0; }
+.finGroup .slider { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 6px 0; }
+.finGroup select { max-width: 60%; }
+.pill.primary { background: #21121f; color: #f9f6f2; border-color: #21121f; }

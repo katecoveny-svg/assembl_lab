@@ -117,6 +117,30 @@ export interface TwinMats {
 }
 
 const cache = new Map<Quality, TwinMats>();
+const finCache = new Map<string, TwinMats>();
+
+/** the twin's materials with the exterior finishes of a schedule: roofing, joinery and decking colours */
+export function twinMatsFor(q: Quality, fin?: { joinery: number; joineryTimber?: boolean; roof: number; decking: [number, number] }): TwinMats {
+  const base = twinMats(q);
+  if (!fin) return base;
+  const k = `${q}/${fin.joinery}/${fin.joineryTimber}/${fin.roof}/${fin.decking.join(',')}`;
+  const hit = finCache.get(k);
+  if (hit) return hit;
+  const d = base.d;
+  const roof = metal(d.texS, { tint: fin.roof, rough: 0.48, brush: 0.1, tile: 0.6, seed: 71, name: 'prepainted_steel' });
+  const joinery = fin.joineryTimber ? wood(d.texS, { light: 0x9a7655, dark: 0x6f5038, rings: 12, gloss: 0.3, tile: 0.4, seed: 73, name: 'timber_joinery' }) : metal(d.texS, { tint: fin.joinery, rough: 0.42, brush: 0.15, tile: 0.4, seed: 72, name: 'aluminium_powdercoat' });
+  const decking = wood(d.tex, { light: fin.decking[0], dark: fin.decking[1], rings: 14, gloss: 0.05, tile: 0.7, seed: 52, name: 'decking' });
+  const m: TwinMats = {
+    ...base,
+    sets: { ...base.sets, roof, joinery, decking },
+    roof: pbr(roof, 'roof_profiled_metal', { clearcoat: 0.2, clearcoatRoughness: 0.5, side: THREE.DoubleSide }),
+    flashing: pbr(roof, 'flashing_steel', { clearcoat: 0.2 }),
+    joinery: pbr(joinery, fin.joineryTimber ? 'timber_joinery' : 'aluminium_joinery'),
+    decking: pbr(decking, 'decking'),
+  };
+  finCache.set(k, m);
+  return m;
+}
 
 export function twinMats(q: Quality): TwinMats {
   const hit = cache.get(q);
