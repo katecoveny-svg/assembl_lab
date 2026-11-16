@@ -78,6 +78,11 @@ export const project16a: Project = {
     // 4. checks
     homes.updateMatrixWorld(true);
     const check = site.check([homes]);
+    const perHome = keys.map(({ key }) => {
+      const c = site.check([homeObjs[key]]);
+      const by = c.breaches.length ? site.envelope(c.worst.at.x, -c.worst.at.z).by : '';
+      return { key, n: c.breaches.length, worst: c.worst.over, margin: c.margin, by };
+    });
     const pin = new THREE.Group();
     pin.name = 'envelope_breaches';
     for (const b of check.breaches.slice(0, 400)) {
@@ -126,11 +131,13 @@ export const project16a: Project = {
     checks.className = 'card';
     const margin = check.margin;
     checks.innerHTML = `<h3>Checks</h3>
-      <p><b>Height in relation to boundary and 8 m height.</b> ${
-        check.breaches.length
-          ? `<span class="bad">${check.breaches.length} sampled points above the envelope; worst ${(w.over * 1000).toFixed(0)} mm (${env.by}).</span>`
-          : `No sampled point of either home is above the envelope. Tightest margin ${margin.toFixed(2)} m, at RL ${w.at.y.toFixed(2)} (${env.by}).`
-      } RC-06 marks small areas "exceeding HIRB" at both north-east corners; at the fitted levels this check does not reproduce them, so the architect's levels or method differ. Ask which ground levels they used at the rear boundary.</p>
+      <p><b>Height in relation to boundary and 8 m height.</b> ${perHome
+        .map((h) =>
+          h.n
+            ? `<span class="bad">${h.key}: roof above the envelope at ${h.n} sampled points, up to ${(h.worst * 1000).toFixed(0)} mm (${h.by}).</span>`
+            : `${h.key}: inside the envelope, tightest margin ${h.margin.toFixed(2)} m.`,
+        )
+        .join(' ')} RC-06 itself marks small areas "exceeding HIRB" at the north-east corners. This check samples the roof surfaces against HIRB from surveyed ground at each side and rear boundary; it is indicative, not a compliance assessment, and depends on the fitted datum (±0.2 m).</p>
       <p><b>Levels.</b> Drawing RLs sit ${data.datumOffset.toFixed(2)} m above survey datum (fitted, sd 0.22 m). 16C floor RL ${data.units['16C'].ffl.toFixed(2)}, 16D floor RL ${data.units['16D'].ffl.toFixed(2)} (drawings 507.700 and 507.320).</p>
       <p><b>Placement.</b> Long sides at bearings ${data.units['16C'].bearing.toFixed(1)}° and ${data.units['16D'].bearing.toFixed(1)}°. The Plan to 4D model treats the sheet top as north; it is rotated ${(90 - data.units['16C'].bearing).toFixed(0)}° from true north.</p>
       <p><b>Earthworks (assumed).</b> Ground cut to 0.45 m below each floor under the homes and decks (subfloor clearance). Retaining: ${runs.map((r) => `${r.key} ${r.length} m, up to ${r.maxH} m high`).join('; ') || 'none'}.</p>`;
@@ -293,7 +300,7 @@ export const project16a: Project = {
         label: 'Site data (JSON)',
         note: 'Boundary, terrain grid, contours, placement, datum fit and the envelope check',
         run: async () => {
-          const out = { ...data, check: { breaches: check.breaches.length, tightestMargin: +margin.toFixed(3), tightestAt: [w.at.x, w.at.y, w.at.z], governedBy: env.by }, retaining: runs };
+          const out = { ...data, check: { breaches: check.breaches.length, tightestMargin: +margin.toFixed(3), tightestAt: [w.at.x, w.at.y, w.at.z], governedBy: env.by, perHome }, retaining: runs };
           return { name: 'two-timber-homes-16a-site.json', blob: new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' }) };
         },
       },
