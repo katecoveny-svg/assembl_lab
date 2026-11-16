@@ -210,6 +210,10 @@ export function buildHome(o: HomeOptions) {
   /** ground under home point (u, v), as a height relative to the floor */
   const gy = (u: number, v: number) => o.ground(...frame.en(u, v)) - o.placement.ffl;
   const t = (key: keyof TwinMats) => (M.sets[key as string] ?? M.sets.lining).tile;
+  // inside faces: the palette's matte wall paint when a fit-out is asked for
+  const IMw = o.finishes ? interiorMats(o.quality, o.finishes) : null;
+  const inMat = IMw ? IMw.wallPaint : M.lining;
+  const inTile = IMw ? IMw.sets.wallPaint.tile : t('lining');
 
   // --- exterior walls ----------------------------------------------------------------------
   const wallsG = grp('walls');
@@ -268,7 +272,7 @@ export function buildHome(o: HomeOptions) {
     const outer = mesh('cladding', skin(outline, holes, 0, 0.022, cladT), cladM);
     tag(outer, asset, 'IfcCovering', { predefinedType: 'CLADDING', material: kind === 'metal' ? 'dark ribbed metal cladding, vertical' : kind === 'white' ? 'white painted cladding' : kind === 'blackstain' ? 'cedar shiplap, black stain' : 'cedar shiplap, natural stain', source: o.finishes?.cladding ? 'proposed' : w.source ?? 'written' });
     const core = mesh('framing_core', skin(outline.map(([s, y]) => [s, Math.min(y, gable ? y : plate)] as Pt), holes, 0.022, th - 0.035, t('lining')), M.lining);
-    const lin = mesh('lining', skin(inner, holes, th - 0.013, 0.013, t('lining')), M.lining);
+    const lin = mesh('lining', skin(inner, holes, th - 0.013, 0.013, inTile), inMat);
     g.add(outer, core, lin);
     tag(g, asset, 'IfcWall', { predefinedType: 'SOLIDWALL', name: w.name, thickness: th, cladding: w.cladding, source: w.source ?? 'written', material: '90 × 45 timber frame, building wrap, cavity battens, cedar shiplap; 10 mm plasterboard' });
     // place: wall-local (s, y, z) → home (u, y, v)
@@ -316,7 +320,7 @@ export function buildHome(o: HomeOptions) {
     } else {
       out.push([len, ceil(p.at) - 0.005], [0, ceil(p.at) - 0.005]);
     }
-    const g = mesh(`partition_${p.id}`, skin(out, [], -th / 2, th, t('lining')), M.lining);
+    const g = mesh(`partition_${p.id}`, skin(out, [], -th / 2, th, inTile), inMat);
     tag(g, asset, 'IfcWall', { predefinedType: 'PARTITIONING', thickness: th, source: p.source ?? 'written', note: p.thickness < 0.09 ? `plan model gives ${Math.round(p.thickness * 1000)} mm; drawn at 90 mm` : '', material: '70 × 45 timber frame, 10 mm plasterboard both sides' });
     if (p.axis === 'x') g.position.set(p.from, 0, p.at);
     else {
@@ -367,9 +371,9 @@ export function buildHome(o: HomeOptions) {
       g.rotateX(side === 0 ? Math.PI / 2 - Math.atan(tan15) : Math.PI / 2 + Math.atan(tan15));
       const vMid = side === 0 ? (tW + 3) / 2 : (3 + D - tW) / 2;
       g.translate(W / 2, ceil(vMid), vMid);
-      geos.push(boxUV(g, 1, 'x'));
+      geos.push(boxUV(g, IMw ? inTile : 1, 'x'));
     }
-    const c = mesh('ceiling_raking', mergeGeometries(geos), M.lining);
+    const c = mesh('ceiling_raking', mergeGeometries(geos), inMat);
     tag(c, asset, 'IfcCovering', { predefinedType: 'CEILING', material: '10 mm plasterboard on rafters', source: 'scaled', note: 'raking ceiling read from sections B and E' });
     root.add(c);
   }

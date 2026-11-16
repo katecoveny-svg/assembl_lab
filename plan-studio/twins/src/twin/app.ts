@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTexturesLib.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
@@ -101,6 +102,15 @@ export class App {
   private highlight = new THREE.Box3Helper(new THREE.Box3(), 0xd9bacb);
   private labelsEl: HTMLElement;
   private north2 = new THREE.Vector2(0, -1);
+  // interiors: the eye adapts indoors (exposure up), the sky's ambient is mostly shut out by walls
+  // and roof, and daylight comes in through the glazing of the room you are in
+  private interiors: THREE.Object3D[] | null = null;
+  inside = 0;
+  private envBase = 0.2;
+  private hemiBase = 0.26;
+  private exposureBase = 0.62;
+  private day = 1;
+  private windowLights: THREE.RectAreaLight[] = [];
 
   constructor(project: Project, canvas: HTMLCanvasElement) {
     this.project = project;
@@ -185,6 +195,14 @@ export class App {
     this.initInspector();
     this.initWalk();
     if (!new URLSearchParams(location.search).has('nopost')) this.setupPipeline();
+    // two daylight panels that follow you into a room and sit in its two nearest glazed openings
+    THREE.RectAreaLightNode.setLTC(RectAreaLightTexturesLib.init());
+    for (let i = 0; i < 2; i++) {
+      const l = new THREE.RectAreaLight(0xfbf8f2, 0, 1, 1);
+      l.name = `window_daylight_${i}`;
+      this.windowLights.push(l);
+      this.scene.add(l);
+    }
     this.renderer.setAnimationLoop(() => this.frame());
     this.log(this.webgpu ? 'Ready. Drag to orbit, scroll to zoom, click a part to inspect it.' : 'Ready on the WebGL 2 fallback. Drag to orbit, click a part to inspect it.');
     (window as unknown as { __twin: App }).__twin = this;
@@ -265,7 +283,8 @@ export class App {
     this.sun.target.position.copy(f);
     this.sun.intensity = s.alt > 0 ? 0.8 + 4.2 * Math.min(1, up * 1.6) : 0;
     this.sun.color.setHSL(0.09, 0.6, 0.55 + 0.4 * Math.min(1, up * 2));
-    this.hemi.intensity = 0.08 + 0.18 * Math.min(1, up * 2 + 0.15);
+    this.hemiBase = 0.08 + 0.18 * Math.min(1, up * 2 + 0.15);
+    this.hemi.intensity = this.hemiBase;
     this.makeSky(s.v, s.alt);
     this.sky.sunPosition.value.copy(s.v).multiplyScalar(1000);
     this.envSky.sunPosition.value.copy(s.v).multiplyScalar(1000);
@@ -320,7 +339,9 @@ export class App {
     const old = this.skyTex;
     this.skyTex = t;
     this.scene.background = null;
-    this.scene.environmentIntensity = 0.05 + 0.15 * day;
+    this.envBase = 0.05 + 0.15 * day;
+    this.day = day;
+    this.scene.environmentIntensity = this.envBase;
     this.scene.fog = new THREE.Fog(hor.getHex(), this.built.radius * 3, this.built.radius * 9);
     if (old) setTimeout(() => old.dispose(), 500);
   }
@@ -775,7 +796,7 @@ export class App {
       const pts = new THREE.Scene();
       pts.background = this.skyTex;
       pts.environment = this.skyTex;
-      pts.environmentIntensity = this.scene.environmentIntensity;
+      pts.environmentIntensity = this.envBase;
       const sun = this.sun.clone();
       sun.target = this.sun.target.clone();
       pts.add(sun, sun.target);
@@ -865,6 +886,7 @@ export class App {
     if (this.playing) this.stepPlay();
     else if (this.walk.on) this.stepWalk(dt);
     else this.controls.update();
+    this.updateInterior(dt);
     if (this.pipeline) {
       try {
         this.pipeline.render();
@@ -880,6 +902,67 @@ export class App {
     this.camera.getWorldDirection(d);
     const head = Math.atan2(d.x * this.north2.y - d.z * this.north2.x, d.x * this.north2.x + d.z * this.north2.y);
     (document.getElementById('north') as HTMLElement).style.transform = `rotate(${head}rad)`;
+  }
+
+  /** where is the camera: in a room of a fitted-out home? adapt exposure, ambient and window daylight */
+  private tmpV = new THREE.Vector3();
+  updateInterior(dt: number) {
+    if (!this.interiors) {
+      this.interiors = [];
+      this.scene.traverse((o) => {
+        if (o.userData.interior) this.interiors!.push(o);
+      });
+    }
+    const p = this.camera.position;
+    let hit: { o: THREE.Object3D; l: THREE.Vector3 } | null = null;
+    const shown = (o: THREE.Object3D | null): boolean => !o || (o.visible && shown(o.parent));
+    for (const o of this.interiors) {
+      if (!shown(o)) continue;
+      const l = o.worldToLocal(this.tmpV.copy(p));
+      const rooms = o.userData.interior.rooms as { u0: number; u1: number; v0: number; v1: number; ceil: number }[];
+      if (rooms.some((r) => l.x > r.u0 - 0.06 && l.x < r.u1 + 0.06 && l.z > r.v0 - 0.06 && l.z < r.v1 + 0.06 && l.y > -0.3 && l.y < r.ceil + 0.25)) {
+        hit = { o, l: l.clone() };
+        break;
+      }
+    }
+    const target = hit ? 1 : 0;
+    const k = 1 - Math.exp(-dt / 0.35);
+    this.inside += (target - this.inside) * (Math.abs(target - this.inside) < 0.01 ? 1 : k);
+    const f = this.inside;
+    this.renderer.toneMappingExposure = this.exposureBase * (1 + 1.3 * f);
+    this.scene.environmentIntensity = this.envBase * (1 - 0.82 * f);
+    // indoors the fill is light bounced off timber floors and warm walls, not open sky
+    this.hemi.intensity = this.hemiBase * (1 - 0.25 * f);
+    this.hemi.color.setRGB(0.93 + 0.07 * f, 0.91 + 0.05 * f, 0.87 - 0.02 * f);
+    this.hemi.groundColor.setRGB(0.54 + 0.26 * f, 0.45 + 0.22 * f, 0.35 + 0.13 * f);
+    this.labelsEl.style.opacity = String(1 - f);
+    if (hit) {
+      const wins = hit.o.userData.interior.windows as { c: [number, number, number]; n: [number, number]; w: number; h: number }[];
+      const L = hit.l;
+      // the openings that light this spot most: big glazing nearby, inside face toward the camera
+      const near = wins
+        .map((w) => {
+          const d = Math.hypot(w.c[0] - L.x, w.c[2] - L.z);
+          return { w, d, facing: (L.x - w.c[0]) * w.n[0] + (L.z - w.c[2]) * w.n[1], score: (w.w * w.h) / (d + 1.5) ** 2 };
+        })
+        .filter((x) => x.facing > -0.2 && x.d < 10)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, this.windowLights.length);
+      this.windowLights.forEach((light, i) => {
+        const x = near[i];
+        if (!x) {
+          light.intensity = 0;
+          return;
+        }
+        const c = hit!.o.localToWorld(new THREE.Vector3(...x.w.c));
+        const t = hit!.o.localToWorld(new THREE.Vector3(x.w.c[0] + x.w.n[0], x.w.c[1] - 0.25, x.w.c[2] + x.w.n[1]));
+        light.position.copy(c);
+        light.width = x.w.w * 0.95;
+        light.height = x.w.h * 0.95;
+        light.lookAt(t);
+        light.intensity = 9 * this.day * f * (1 - this.night);
+      });
+    } else for (const l of this.windowLights) l.intensity = 0;
   }
 
   private labelEls: HTMLElement[] = [];

@@ -38,9 +38,15 @@ it is. Raster PDFs are calibrated and traced in Plan to 4D first. Nothing droppe
   wardrobe) by simple placement rules. All fit-out is labelled proposed.
 - `src/twin/furniture.ts`: assembl's own pieces at real sizes, and the finishes palettes (cladding, floor, benchtop,
   cabinetry, fabric, trims).
-- `src/twin/library.ts`: Kate's Kōwhai Studio library (WebOpt 512 px GLBs, CC BY 4.0) fills matching slots first.
-  Items that approximate a third party's trademarked shape are marked `public: false` and are compiled out of public
-  builds (`VITE_PUBLIC_BUILD=1`); their files are not copied here.
+- `src/twin/library.ts`: Kate's asset library fills matching slots first: the 33 Kōwhai Studio pieces exported from
+  her generator (CC BY 4.0) and pieces from her curated asset site (cleared by Kate). Files are meshopt + WebP GLBs
+  served as base64 text at `twin/lib/<ID>.glb.b64.txt` (5.2 MB binary in all). Every slot keeps an assembl procedural
+  piece as its fallback.
+- `src/twin/landscape.ts`: paths draped on the ground, mulched beds with layered native planting (ferns on the shady
+  south sides), a 1.8 m paling fence on the side and rear boundaries, indicative weatherboards for the existing house.
+  Path routes are read from the area plan RC-05 ("permeable surface"); widths, beds, fence and furniture are proposed.
+- Interiors: matte wall paint, skirtings, sheer curtains at glazing, plants and styling. Indoors the viewer adapts like
+  an eye: exposure rises, sky ambient falls, and two daylight panels sit in the room's largest nearby openings.
 - `src/twin/plants.ts`: native planting as geometry (harakeke, nīkau, tree ferns, ground ferns, tussock, tī kōuka,
   shrubs), so it casts real shadows and path-traces.
 

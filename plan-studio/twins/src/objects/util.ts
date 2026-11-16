@@ -122,3 +122,42 @@ export function group(name: string, ...children: THREE.Object3D[]) {
   if (children.length) g.add(...children);
   return g;
 }
+
+/**
+ * UVs for a round part from CylinderGeometry or LatheGeometry (whose own uv.x runs round it):
+ * U = along `axis` in metres / tile (the grain of a post, the length of a tube), V = round the
+ * circumference, rounded to whole tiles so the seam meets. End caps get a planar projection.
+ */
+export function roundUV(g: THREE.BufferGeometry, tile: number, radius: number, axis: Axis = 'y') {
+  if (!g.getAttribute('normal')) g.computeVertexNormals();
+  const p = g.getAttribute('position');
+  const n = g.getAttribute('normal');
+  const uv = g.getAttribute('uv');
+  const turns = Math.max(1, Math.round((2 * Math.PI * radius) / tile));
+  const ai = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+  const [bi, ci] = ai === 0 ? [1, 2] : ai === 1 ? [0, 2] : [0, 1];
+  const get = (a: THREE.BufferAttribute | THREE.InterleavedBufferAttribute, k: number, i: number) => (k === 0 ? a.getX(i) : k === 1 ? a.getY(i) : a.getZ(i));
+  for (let i = 0; i < p.count; i++) {
+    if (Math.abs(get(n, ai, i)) > 0.9) uv.setXY(i, get(p, bi, i) / tile, get(p, ci, i) / tile);
+    else uv.setXY(i, get(p, ai, i) / tile, uv.getX(i) * turns);
+  }
+  uv.needsUpdate = true;
+  return g;
+}
+
+/** UVs for a TubeGeometry: U along the tube in metres / tile, V round it in whole tiles */
+export function tubeUV(g: THREE.BufferGeometry, length: number, radius: number, tile: number) {
+  const uv = g.getAttribute('uv');
+  const turns = Math.max(1, Math.round((2 * Math.PI * radius) / tile));
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * length) / tile, uv.getY(i) * turns);
+  uv.needsUpdate = true;
+  return g;
+}
+
+/** a placement that stands a +Y-axis part, centred on the origin, on the segment a → b */
+export function alongSeg(a: THREE.Vector3, b: THREE.Vector3, spin = 0) {
+  const dir = new THREE.Vector3().subVectors(b, a).normalize();
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  if (spin) q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), spin));
+  return new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(1, 1, 1));
+}
