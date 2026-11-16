@@ -37,3 +37,6 @@
 # Whaiao conversation demonstrator, which the practice has not approved for public use.
 /cars/dealer-twin/private/
 /whaiao-story/
+
+# Plan to twin: editable source, not served
+/plan-studio/twins/src/
