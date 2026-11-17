@@ -93,8 +93,8 @@ function checks() {
   const order = { fail: 0, info: 1, pass: 2, out: 3 };
   const rs = [...results].sort((a, b) => order[a.status] - order[b.status]);
   $("#ds-code").innerHTML = `<p class="mono label">NZ Building Code pre-check · ${results.length} items</p>
-    <ol class="checks">${rs.map((r) => `<li class="ck ${r.status}"><span class="mono cl">${esc(r.clause)}</span><b>${esc(r.title)}</b>
-      <span class="ms">${esc(r.measured || "")}${r.limit ? ` <i>against ${esc(r.limit)}</i>` : ""}</span><span class="mono st">${STATUS[r.status]}</span></li>`).join("")}</ol>
+    <ol class="checks">${rs.map((r) => `<li class="ck peek ${r.status}" tabindex="0"><span class="mono cl">${esc(r.clause)}</span><b>${esc(r.title)}</b><span class="mono st">${STATUS[r.status]}</span>
+      <span class="more"><span><span class="ms">${esc(r.measured || "Needs a figure from the designer")}${r.limit ? ` <i>against ${esc(r.limit)}</i>` : ""}</span></span></span></li>`).join("")}</ol>
     <p class="small disc">${esc(DISCLAIMER)}</p>`;
 }
 function drawSheet(animate) {
@@ -143,10 +143,11 @@ async function mist(THREE) {
   const c = document.createElement("canvas"); c.width = 1600; c.height = 900; const g = c.getContext("2d");
   g.drawImage(img, 0, 0, img.width, img.height * 0.6, 0, 0, c.width, c.height);
   const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
+  const P = [101, 74, 78], R = [227, 208, 210], B = [255, 253, 251];   // three shades: dusty plum, muted rose, bone
   for (let i = 0; i < px.length; i += 4) {
-    const l = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255, t = Math.min(1, Math.max(0, (l + 0.05) / 1.0));
-    const r = 107 + (246 - 107) * t, gg = 97 + (242 - 97) * t, b = 102 + (239 - 102) * t;   // plum-grey to bone
-    px[i] = r * 0.7 + px[i] * 0.3 * 0.55 + 255 * 0.3 * 0.45; px[i + 1] = gg * 0.7 + px[i + 1] * 0.3 * 0.55 + 255 * 0.3 * 0.45; px[i + 2] = b * 0.7 + px[i + 2] * 0.3 * 0.55 + 255 * 0.3 * 0.45;
+    const t = Math.min(1, Math.max(0, (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255 + 0.05));
+    const k = t < 0.5 ? t * 2 : (t - 0.5) * 2, a = t < 0.5 ? P : R, b2 = t < 0.5 ? R : B;
+    px[i] = a[0] + (b2[0] - a[0]) * k; px[i + 1] = a[1] + (b2[1] - a[1]) * k; px[i + 2] = a[2] + (b2[2] - a[2]) * k;
   }
   g.putImageData(d, 0, 0);
   mistTex = new THREE.CanvasTexture(c); mistTex.colorSpace = THREE.SRGBColorSpace; return mistTex;
@@ -154,10 +155,10 @@ async function mist(THREE) {
 function collage(on) {
   const T = stage.THREE, scene = stage.scene;
   if (!WHITE.wall) {
-    WHITE.wall = new T.MeshStandardMaterial({ color: "#FFFFFF", emissive: "#EFEAE6", emissiveIntensity: 0.42, roughness: 1, metalness: 0 });
-    WHITE.glass = new T.MeshStandardMaterial({ color: "#E9EEF0", roughness: 0.1, transparent: true, opacity: 0.16, depthWrite: false });
-    WHITE.edge = new T.LineBasicMaterial({ color: "#2E1028", transparent: true, opacity: 0.55 });
-    WHITE.ground = new T.MeshStandardMaterial({ color: "#E4DFD8", roughness: 1 });
+    WHITE.wall = new T.MeshStandardMaterial({ color: "#FFFDFB", emissive: "#FFFDFB", emissiveIntensity: 0.38, roughness: 1, metalness: 0 });
+    WHITE.glass = new T.MeshStandardMaterial({ color: "#E3D0D2", roughness: 0.1, transparent: true, opacity: 0.16, depthWrite: false });
+    WHITE.edge = new T.LineBasicMaterial({ color: "#654A4E", transparent: true, opacity: 0.6 });
+    WHITE.ground = new T.MeshStandardMaterial({ color: "#E3D0D2", roughness: 1 });
   }
   const ground = scene.children.filter((o) => o.isMesh && (o.geometry?.type === "CircleGeometry" || o.geometry?.type === "PlaneGeometry"));
   if (on) {
@@ -169,7 +170,7 @@ function collage(on) {
       if (!o.material.transparent && o.geometry) { const e = new T.LineSegments(new T.EdgesGeometry(o.geometry, 28), WHITE.edge); e.userData.collage = true; o.add(e); }
     });
     if (mistTex) scene.background = mistTex;
-    scene.fog = new T.Fog("#EEE9E6", 70, 240);
+    scene.fog = new T.Fog("#FFFDFB", 70, 240);
   } else {
     for (const [o, m] of saved) o.material = m; saved.clear();
     const kill = []; stage.model?.traverse((o) => { if (o.userData.collage) kill.push(o); }); kill.forEach((o) => { o.parent.remove(o); o.geometry.dispose(); });
@@ -191,7 +192,7 @@ async function boot3d() {
 }
 async function bootCloud() {
   const { createEngine, objectForm } = await import("/lab/pc/engine.js");
-  cloud = createEngine($("#ds-cloud"), { budget: innerWidth < 760 ? 70000 : 200000, sway: false, reduceMotion: reduce }); cloud.setLift(0.5, 0.48);
+  cloud = createEngine($("#ds-cloud"), { budget: innerWidth < 760 ? 70000 : 200000, sway: false, reduceMotion: reduce }); cloud.setLift(0.5, 0.48); cloud.setTritone?.(true);
   const sizeBase = 2.6 * Math.sqrt(300000 / cloud.N);
   cloud.onFrame = () => {
     const c = stage.camera, e = cloud.camera; e.position.copy(c.position); e.quaternion.copy(c.quaternion); e.fov = c.fov; e.near = 0.1; e.far = 4000; e.updateProjectionMatrix();

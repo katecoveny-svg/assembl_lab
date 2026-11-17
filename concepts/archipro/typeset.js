@@ -15,7 +15,7 @@ function set(el) {
       let c, r;
       if (phone) { c = hero ? 1 + (i * 2 + j) % 2 * 2 : 1 + ((i % 2) * 2) + j; r = (hero ? 2 : 2) + (hero ? Math.floor((i * 2 + j) / 2) : i); }
       else if (hero) { c = 3 + (i * 2 + j) * span; r = 2 + i; }
-      else { const c0 = cols - chunks.length * 2 + 1; c = c0 + i * 2 + j; r = 2 + i; }
+      else { const flip = box.classList.contains("flip"), c0 = flip ? 1 : cols - chunks.length * 2 + 1; c = c0 + i * 2 + j; r = 2 + i; }
       const crop = (i + j) % 3 === 0 ? "-8%" : (i + j) % 3 === 1 ? "6%" : "-2%";
       html += `<span class="g" style="grid-column:${c} / span ${span};grid-row:${r};--y:${crop};--k:${k++}"><i>${ch}</i></span>`;
     });

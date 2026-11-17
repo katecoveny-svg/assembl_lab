@@ -54,7 +54,7 @@ async function start() {
   let data;
   try { data = await load(); } catch { document.getElementById("cloud-cap").textContent = "The 3D view couldn't load. The house is shown live in idea 03."; return; }
   const eng = createEngine(canvas, { budget: small ? 70000 : 120000, reduceMotion: reduce, sway: !reduce, sizeScale: small ? 0.85 : 1 });
-  eng.setLift?.(0.5, 0.48);
+  eng.setLift?.(0.5, 0.48); eng.setTritone?.(true);
   const form = toForm(data, Math.min(data.N, eng.N));
   // frame the homes themselves (not the ground disc): their centre, seen from the north-east, a little above
   const view = { offset: [0, 0, 0], scale: 1.5, tilt: 0 };

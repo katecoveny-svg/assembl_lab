@@ -211,7 +211,7 @@ void main() { vec4 s = texture2D(tSrc, vUv) * 0.2270270270;
   s += (texture2D(tSrc, vUv + uDir * 1.3846153846) + texture2D(tSrc, vUv - uDir * 1.3846153846)) * 0.3162162162;
   s += (texture2D(tSrc, vUv + uDir * 3.2307692308) + texture2D(tSrc, vUv - uDir * 3.2307692308)) * 0.0702702703; gl_FragColor = s; }`;
 const FINAL = /* glsl */ `
-uniform sampler2D tCloud, tBloom; uniform vec2 uLiftAt; uniform float uAspect, uBloom, uClear; varying vec2 vUv;
+uniform sampler2D tCloud, tBloom; uniform vec2 uLiftAt; uniform float uAspect, uBloom, uClear, uTri; varying vec2 vUv;
 void main() {
   if (uClear > 0.5) {                            // no ground (stills for a page that is already plum): premultiplied light over clear
     vec4 c = texture2D(tCloud, vUv); vec3 col = c.rgb + texture2D(tBloom, vUv).rgb * uBloom;
@@ -220,6 +220,11 @@ void main() {
   vec2 q = (vUv - uLiftAt) * vec2(uAspect, 1.0);
   vec3 bg = mix(${vec(LIFT)}, ${vec(GROUND)}, smoothstep(0.05, 1.3, length(q)));
   vec4 c = texture2D(tCloud, vUv); vec3 col = bg * (1.0 - c.a) + c.rgb + texture2D(tBloom, vUv).rgb * uBloom;
+  if (uTri > 0.5) {                              // optional three-shade look: dusty plum, rose and bone only (pages that ask for it)
+    float l = clamp(dot(col, vec3(0.299, 0.587, 0.114)) * 1.15, 0.0, 1.0);
+    vec3 ink = vec3(0.396, 0.290, 0.306), rose = vec3(0.890, 0.816, 0.824), bone = vec3(1.0, 0.992, 0.984);
+    col = l < 0.5 ? mix(ink, rose, smoothstep(0.0, 1.0, l * 2.0)) : mix(rose, bone, smoothstep(0.0, 1.0, (l - 0.5) * 2.0));
+  }
   col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;   // dither: no banding in the lift
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -235,10 +240,10 @@ export function createPipeline(renderer, { bloom = 0.7, clear = false } = {}) {
   const quadScene = new THREE.Scene(), quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); quadScene.add(quad);
   const mk = (frag, u) => new THREE.ShaderMaterial({ uniforms: u, vertexShader: QUAD_V, fragmentShader: frag, depthTest: false, depthWrite: false });
   const resolveM = mk(RESOLVE, { tAcc: { value: null } }), blurM = mk(BLUR, { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } });
-  const finalM = mk(FINAL, { tCloud: { value: null }, tBloom: { value: null }, uLiftAt: { value: new THREE.Vector2(0.62, 0.5) }, uAspect: { value: 1 }, uBloom: { value: bloom }, uClear: { value: clear ? 1 : 0 } });
+  const finalM = mk(FINAL, { tCloud: { value: null }, tBloom: { value: null }, uLiftAt: { value: new THREE.Vector2(0.62, 0.5) }, uAspect: { value: 1 }, uBloom: { value: bloom }, uClear: { value: clear ? 1 : 0 }, uTri: { value: 0 } });
   const pass = (m, target) => { quad.material = m; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
   return {
-    setLift: (x, y) => finalM.uniforms.uLiftAt.value.set(x, y), setBloom: (b) => (finalM.uniforms.uBloom.value = b),
+    setLift: (x, y) => finalM.uniforms.uLiftAt.value.set(x, y), setBloom: (b) => (finalM.uniforms.uBloom.value = b), setTritone: (on) => (finalM.uniforms.uTri.value = on ? 1 : 0),
     resize(pw, ph, aspect) { acc.setSize(pw, ph); cloud.setSize(pw, ph); hA.setSize(Math.max(1, pw >> 1), Math.max(1, ph >> 1)); hB.setSize(Math.max(1, pw >> 1), Math.max(1, ph >> 1)); finalM.uniforms.uAspect.value = aspect; },
     render(scene, camera, target = null) {
       renderer.setRenderTarget(acc); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, camera);
@@ -345,6 +350,6 @@ export function createEngine(canvas, { budget, reduceMotion = false, pixelRatio,
   function setStill(v) { still = !!v; U.uReduce.value = still || reduceMotion ? 1 : 0; if (still) { if (tween) { tween = null; U.uT.value = 1; cur = next; } scanT = null; U.uScan.value = 0; sway = 0; U.uSway.value = yaw; } render(); }
   return { N, renderer, camera, group, uniforms: U, setForm, assembleFrom, scan, start, stop, render, project, resize, setStill,
     setHighlight: (i) => { U.uHi.value = i == null || i < 0 ? -1 : i; render(); }, setYaw: (v) => { yaw = v; U.uSway.value = sway + yaw; render(); }, get yaw() { return yaw; },
-    setLift: pipe.setLift, pause: (v) => { paused = v; if (!v) render(); }, get paused() { return paused; }, set onFrame(fn) { onFrame = fn; },
+    setLift: pipe.setLift, setTritone: pipe.setTritone, pause: (v) => { paused = v; if (!v) render(); }, get paused() { return paused; }, set onFrame(fn) { onFrame = fn; },
     setSway: (a) => { swayAmp = a; }, morphing: () => !!tween, dispose: () => { stop(); geo.dispose(); mat.dispose(); pipe.dispose(); renderer.dispose(); } };
 }
