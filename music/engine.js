@@ -32,8 +32,9 @@ export class Studio {
     const s = this.scene = new THREE.Scene();
     s.background = new THREE.Color('#F2ECE7');
     const pm = new THREE.PMREMGenerator(r);
-    s.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    s.environment = this.envRoom = pm.fromScene(new RoomEnvironment(), 0.04).texture;
     s.environmentIntensity = 0.85;
+    this.pmrem = pm;
     s.add(new THREE.HemisphereLight(0xfffaf5, 0xe6d9df, 0.55));
     const key = this.key = new THREE.DirectionalLight(0xfff4ec, 2.1);
     key.position.set(2.2, 5.5, 3.2); key.castShadow = true;
@@ -71,6 +72,9 @@ export class Studio {
   /* ───────────── loading an instrument ───────────── */
   async load(def) {
     this.unload();
+    // a photo studio for gloss finishes: a dark room with softboxes, so lacquer shows crisp highlights instead of a grey wash
+    if (def.studioEnv === 'softbox') { this.scene.environment = this.envSoftbox ||= this.softbox(); this.scene.environmentIntensity = def.studioEnvIntensity ?? 1; }
+    else { this.scene.environment = this.envRoom; this.scene.environmentIntensity = 0.85; }
     this.def = def; this.mode = 'overview'; this.selected = null; this.filter = 'all';
     this.e = this.eGoal = 0; this.k = this.kGoal = 0; this.zoom = 1;
     this.heroMode = !!def.hero; this.heroBlend = def.hero ? 1 : 0;
@@ -162,6 +166,25 @@ export class Studio {
     if (this.hero) { this.stage.remove(this.hero); this.hero = null; }
     this.parts = []; this.pickables = []; this.def = null; this.built = null;
     this.ui.closeCard?.();
+  }
+
+  softbox() {
+    const sc = new THREE.Scene();
+    const room = new THREE.Mesh(new THREE.BoxGeometry(24, 14, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color('#3a2e33').multiplyScalar(0.9), side: THREE.BackSide }));
+    room.position.y = 5; sc.add(room);
+    const panel = (w, h, k, x, y, z, col = '#fff7f2') => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k), side: THREE.DoubleSide }));
+      m.position.set(x, y, z); m.lookAt(0, 0.5, 0); sc.add(m);
+    };
+    panel(6, 6, 2.2, 0, 10, 0); // a big soft overhead
+    for (let i = 0; i < 3; i++) { // three tall strip boxes round the set, so a highlight reads from any side
+      const a = i * Math.PI * 2 / 3 + 0.4;
+      panel(1.1, 5.5, 6.5, Math.cos(a) * 8, 5.5, Math.sin(a) * 8);
+    }
+    panel(14, 1.4, 0.9, 0, 0.6, -10, '#f3d9e3'); // a low dusty-rose bounce
+    const tex = this.pmrem.fromScene(sc, 0.015).texture;
+    sc.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+    return tex;
   }
 
   loadHero(h) {

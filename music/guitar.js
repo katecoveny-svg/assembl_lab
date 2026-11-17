@@ -52,6 +52,40 @@ const shapeOf = (pts, holes = []) => { const s = new THREE.Shape(pts); for (cons
 const circle = (cx, cy, r, n = 64, cw = false) => { const a = []; for (let i = 0; i < n; i++) { const t = (cw ? -1 : 1) * i / n * Math.PI * 2; a.push(new THREE.Vector2(cx + Math.cos(t) * r, cy + Math.sin(t) * r)); } return a; };
 const ring = (cx, cy, r0, r1, z0, z1, mat) => H.extrude(shapeOf(circle(cx, cy, r1), [circle(cx, cy, r0, 64, true)]), z0, z1, mat, { curve: 64 });
 
+const area = (p) => { let a = 0; for (let i = 0; i < p.length; i++) { const q = p[(i + 1) % p.length]; a += p[i].x * q.y - q.x * p[i].y; } return a / 2; };
+const ccw = (p) => (area(p) < 0 ? p.slice().reverse() : p.slice());
+// a band of width w along an open chain of points, on the outward (left-hand-normal) side
+function stripAlong(chain, w) {
+  const out = chain.map((p, i) => {
+    const a = chain[Math.max(0, i - 1)], b = chain[Math.min(chain.length - 1, i + 1)];
+    const t = new THREE.Vector2(b.x - a.x, b.y - a.y).normalize();
+    return new THREE.Vector2(p.x + t.y * w, p.y - t.x * w);
+  });
+  return new THREE.Shape([...out, ...chain.slice().reverse()]);
+}
+// a shape from quadratic segments: ['M', x, y] then ['Q', cx, cy, x, y] …, placed by scale, turn and offset
+function quadShape(segs, k, turn, ox, oy, mirror = false) {
+  const c = Math.cos(turn), sn = Math.sin(turn);
+  const tf = (x, y) => { const X = (mirror ? -x : x) * k, Y = y * k; return [ox + X * c - Y * sn, oy + X * sn + Y * c]; };
+  const pts = []; let cur = null;
+  for (const sg of segs) {
+    if (sg[0] === 'M') { cur = [sg[1], sg[2]]; pts.push(cur); continue; }
+    const [cx, cy, x, y] = sg.slice(1);
+    for (let i = 1; i <= 10; i++) { const t = i / 10, u = 1 - t; pts.push([u * u * cur[0] + 2 * u * t * cx + t * t * x, u * u * cur[1] + 2 * u * t * cy + t * t * y]); }
+    cur = [x, y];
+  }
+  return { pts: ccw(pts.map(([x, y]) => new THREE.Vector2(...tf(x, y)))), at: tf };
+}
+// a tūī in flight, side-on, head to +x (our own drawing for the pickguard inlay; the white tuft at the throat is the poi)
+const TUI = [['M', 1.02, 0.13], ['Q', 0.95, 0.21, 0.86, 0.21], ['Q', 0.84, 0.31, 0.74, 0.31], ['Q', 0.64, 0.30, 0.60, 0.22],
+  ['Q', 0.56, 0.40, 0.42, 0.62], ['Q', 0.36, 0.74, 0.30, 0.80], ['Q', 0.29, 0.70, 0.24, 0.66], ['Q', 0.25, 0.58, 0.19, 0.55], ['Q', 0.21, 0.46, 0.15, 0.43],
+  ['Q', 0.17, 0.32, 0.22, 0.22], ['Q', 0.10, 0.17, 0.02, 0.17], ['Q', -0.14, 0.21, -0.30, 0.24], ['Q', -0.44, 0.17, -0.38, 0.01], ['Q', -0.18, 0.02, 0.00, 0.04],
+  ['Q', 0.18, -0.16, 0.44, -0.13], ['Q', 0.58, -0.11, 0.64, -0.04], ['Q', 0.66, -0.12, 0.72, -0.10], ['Q', 0.78, -0.07, 0.74, -0.02],
+  ['Q', 0.79, 0.04, 0.86, 0.09], ['Q', 0.95, 0.10, 1.02, 0.13]];
+// one wing of the bridge inlay: a swept feather shape, root at the origin, tip to +x
+const WING = [['M', 0, 0.02], ['Q', 0.45, 0.30, 1.0, 0.10], ['Q', 0.82, 0.02, 0.70, 0.0], ['Q', 0.80, -0.06, 0.62, -0.10], ['Q', 0.66, -0.16, 0.48, -0.16],
+  ['Q', 0.20, -0.14, 0, -0.04], ['Q', -0.03, -0.01, 0, 0.02]];
+
 // a brace: flat glued face, tapered (scalloped) ends, hanging from a surface
 function braceMesh(len, w, h, mat, hangDown = true) {
   const L = len / 2, s = new THREE.Shape();
@@ -93,7 +127,7 @@ export default {
     const tRose = grainTex('#3a2219', '#140806', { stripes: 160, wobble: 1.2, seed: 5, rough: true }); tRose.repeat.set(3, 8);
     const tMaple = grainTex('#e7d2ac', '#b99a6c', { stripes: 70, wobble: 1.6, seed: 7 }); tMaple.repeat.set(3, 3);
     const M = {
-      black: new THREE.MeshPhysicalMaterial({ color: '#0c0a0b', roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 }),
+      black: new THREE.MeshPhysicalMaterial({ color: '#050405', roughness: 0.62, specularIntensity: 0.25, clearcoat: 1, clearcoatRoughness: 0.035 }), // matte paint under a sharp clear coat
       cream: new THREE.MeshPhysicalMaterial({ color: '#efe3c6', roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.2 }),
       spruce: new THREE.MeshStandardMaterial({ color: '#ffffff', map: tSpruce, roughness: 0.72 }),
       mahog: new THREE.MeshPhysicalMaterial({ color: '#ffffff', map: tMahog, roughness: 0.45, clearcoat: 0.6, clearcoatRoughness: 0.25 }),
@@ -106,7 +140,7 @@ export default {
       steel: new THREE.MeshStandardMaterial({ color: '#4c4a4a', metalness: 0.9, roughness: 0.35 }),
       pearl: new THREE.MeshPhysicalMaterial({ color: '#f5f0e6', roughness: 0.22, iridescence: 1, iridescenceIOR: 1.5, iridescenceThicknessRange: [200, 600], clearcoat: 1 }),
       red: new THREE.MeshStandardMaterial({ color: '#c3231c', roughness: 0.65 }),
-      guard: new THREE.MeshPhysicalMaterial({ color: '#16110f', roughness: 0.25, clearcoat: 0.8 }),
+      guard: new THREE.MeshPhysicalMaterial({ color: '#0e0b0c', roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.09 }),
     };
     const poly = outlinePoints();
     const g = (...meshes) => { const o = new THREE.Group(); meshes.forEach((m) => o.add(m)); return o; };
@@ -139,7 +173,8 @@ export default {
     }
     const bindOuter = offset(poly, 0.0042);
     const binding = (z0, z1) => H.extrude(shapeOf(bindOuter, [offset(poly, -0.0005).slice().reverse()]), z0, z1, M.cream, { curve: 2 });
-    part({ id: 'bindTop', name: 'Binding, top edge', cat: 'trim', obj: g(binding(TOP - 0.0085, TOP + 0.0004)), explode: V(0, 0, 0.32), delay: 0.24,
+    const purf = H.extrude(shapeOf(offset(poly, -0.0058), [offset(poly, -0.0073).slice().reverse()]), TOP - 0.0003, TOP + 0.00035, M.cream, { curve: 2 });
+    part({ id: 'bindTop', name: 'Binding, top edge', cat: 'trim', obj: g(binding(TOP - 0.0085, TOP + 0.0004), purf), explode: V(0, 0, 0.32), delay: 0.24,
       desc: 'A cream strip set into a channel routed round the edge. It seals the end grain and protects the corner where top meets side.',
       spec: 'Ivoroid plastic · 2 × 6 mm', role: 'Protection and a crisp outline.' });
     part({ id: 'bindBack', name: 'Binding, back edge', cat: 'trim', obj: g(binding(BACK - 0.0004, BACK + 0.0085)), explode: V(0, 0, -0.32), delay: 0.29,
@@ -233,9 +268,9 @@ export default {
       for (let j = 1; j < 6; j++) r.push(V(-w + (2 * w * j) / 6, y, -0.0115));
       rings.push(r.reverse());
     }
-    part({ id: 'neck', name: 'Neck', cat: 'neck', obj: neckFrame(g(H.loft(rings, M.mahog))), explode: V(0, 0.32, 0), delay: 0.2,
+    part({ id: 'neck', name: 'Neck', cat: 'neck', obj: neckFrame(g(H.loft(rings, M.black))), explode: V(0, 0.32, 0), delay: 0.2,
       desc: 'The long handle, carved to a rounded C shape. It has to stay straight under about 70 kg of string tension, which is why it is reinforced inside.',
-      spec: 'Mahogany · C profile · glued dovetail joint', role: 'Holds the strings at the right length and height.' });
+      spec: 'Mahogany under black lacquer · C profile · glued dovetail joint', role: 'Holds the strings at the right length and height.' });
     const heel = [];
     for (let i = 0; i <= 10; i++) {
       const y = (i / 10) * 0.085, w = boardHalf(y), d = 0.15 - (0.15 - 0.045) * Math.pow(i / 10, 0.7);
@@ -244,7 +279,7 @@ export default {
       for (let j = 1; j < 6; j++) r.push(V(-w + (2 * w * j) / 6, y, -0.0116));
       heel.push(r.reverse());
     }
-    part({ id: 'heel', name: 'Heel', cat: 'neck', obj: neckFrame(g(H.loft(heel, M.mahog))), explode: V(0, 0.22, -0.14), delay: 0.2,
+    part({ id: 'heel', name: 'Heel', cat: 'neck', obj: neckFrame(g(H.loft(heel, M.black))), explode: V(0, 0.22, -0.14), delay: 0.2,
       desc: 'The deep, rounded foot of the neck where it meets the body. The dovetail tenon hidden inside it locks into the neck block.',
       spec: 'Mahogany, stacked', role: 'Joins neck to body.' });
     part({ id: 'truss', name: 'Truss rod', cat: 'neck', obj: neckFrame(g(H.rod(V(0, 0.02, -0.021), V(0, NUT_Y - 0.004, -0.021), 0.0028, M.steel, 10))), explode: V(0, 0.32, 0.075), delay: 0.18,
@@ -283,9 +318,11 @@ export default {
     const hs = [[0.0425, 0], [0.047, 0.013], [0.067, 0.037], [0.075, 0.064], [0.077, 0.128], [0.079, 0.214], [0.08, 0.277], [0.076, 0.304], [0.061, 0.313], [0.031, 0.316], [0, HL]];
     const hsPts = [...hs.map(([x, y]) => new THREE.Vector2(x, y)), ...hs.slice(0, -1).reverse().map(([x, y]) => new THREE.Vector2(-x, y))];
     const hShape = new THREE.Shape(hsPts.slice().reverse());
-    part({ id: 'headstock', name: 'Headstock', cat: 'head', obj: headFrame(g(H.extrude(hShape, -0.022, -0.0016, M.mahog))), explode: V(0, 0.56, -0.02), delay: 0.14,
-      desc: 'The head of the neck, angled back about 14 degrees so the strings press firmly down onto the nut.', spec: 'Mahogany · 14° back angle', role: 'Carries the tuners.' });
-    part({ id: 'veneer', name: 'Headstock face', cat: 'head', obj: headFrame(g(H.extrude(hShape, -0.0016, 0, M.black))), explode: V(0, 0.56, 0.07), delay: 0.12,
+    part({ id: 'headstock', name: 'Headstock', cat: 'head', obj: headFrame(g(H.extrude(hShape, -0.022, -0.0016, M.black))), explode: V(0, 0.56, -0.02), delay: 0.14,
+      desc: 'The head of the neck, angled back about 14 degrees so the strings press firmly down onto the nut.', spec: 'Mahogany under black lacquer · 14° back angle', role: 'Carries the tuners.' });
+    const hsChain = [...hs.slice(1).map(([x, y]) => new THREE.Vector2(x, y)), ...hs.slice(1, -1).reverse().map(([x, y]) => new THREE.Vector2(-x, y))];
+    const hsBind = H.extrude(stripAlong(hsChain, 0.0026), -0.0019, 0.00025, M.cream, { curve: 2 });
+    part({ id: 'veneer', name: 'Headstock face', cat: 'head', obj: headFrame(g(H.extrude(hShape, -0.0016, 0, M.black), hsBind)), explode: V(0, 0.56, 0.07), delay: 0.12,
       desc: 'A thin black veneer over the front of the headstock. On this guitar it is left plain: the maker\'s logo usually goes here.', spec: 'Black veneer, lacquered', role: 'Finish.' });
     const tc = [[0, 0.012], [0.017, 0.012], [0.023, 0.05], [0.021, 0.076], [0.012, 0.091], [0, 0.095]];
     const tcPts = [...tc.map(([x, y]) => new THREE.Vector2(x, y)), ...tc.slice(1, -1).reverse().map(([x, y]) => new THREE.Vector2(-x, y))];
@@ -320,9 +357,10 @@ export default {
     /* ── bridge ── */
     const bs = [[0, 0.03], [0.075, 0.03], [0.1, 0.022], [0.132, 0.016], [0.151, 0.008], [0.153, 0], [0.151, -0.008], [0.132, -0.016], [0.1, -0.022], [0.075, -0.03], [0, -0.03]];
     const bPts = [...bs.map(([x, y]) => new THREE.Vector2(x, y - 0.572)), ...bs.slice(1, -1).reverse().map(([x, y]) => new THREE.Vector2(-x, y - 0.572))].reverse();
-    part({ id: 'bridge', name: 'Bridge', cat: 'bridge', obj: g(H.extrude(new THREE.Shape(bPts), TOP, TOP + 0.0135, M.rose, { bevel: 0.0012 })), explode: V(0, 0, 0.6), delay: 0.12,
-      desc: 'Glued to the top, the bridge anchors the strings and passes their vibration into the soundboard. Its wings spread the load.',
-      spec: 'Rosewood · glued, no screws', role: 'Couples strings to the top.' });
+    const wings = [-1, 1].map((sg) => { const w = quadShape(WING, 0.062, 0, sg * 0.082, -0.5715, sg < 0); return H.extrude(new THREE.Shape(w.pts), TOP + 0.0136, TOP + 0.0149, M.pearl, { curve: 2 }); });
+    part({ id: 'bridge', name: 'Bridge', cat: 'bridge', obj: g(H.extrude(new THREE.Shape(bPts), TOP, TOP + 0.0135, M.rose, { bevel: 0.0012 }), ...wings), explode: V(0, 0, 0.6), delay: 0.12,
+      desc: 'Glued to the top, the bridge anchors the strings and passes their vibration into the soundboard. Its wings spread the load, and each carries a pearl feather.',
+      spec: 'Rosewood with pearl inlays · glued, no screws', role: 'Couples strings to the top.' });
     const SAD = -0.557, SADZ = 0.0975;
     part({ id: 'saddle', name: 'Saddle', cat: 'bridge', obj: g(H.box(0.118, 0.0045, 0.019, M.bone, 0, SAD, SADZ - 0.0095)), explode: V(0, 0, 0.68), delay: 0.04,
       desc: 'The bone strip the strings cross on the bridge. Nut to saddle is the scale length. Its height sets the action: how far the strings sit above the frets.',
@@ -341,8 +379,15 @@ export default {
       desc: 'Rings inlaid round the soundhole. Mostly decoration, they also stop the edge of the hole from splitting.', spec: 'Cream and black purfling', role: 'Decoration and protection.' });
     const pg = [[0.0601, -0.2349], [0.11, -0.205], [0.175, -0.21], [0.225, -0.255], [0.25, -0.33], [0.243, -0.42], [0.21, -0.49], [0.155, -0.515], [0.105, -0.48], [0.075, -0.42], [0.0546, -0.36]];
     for (let a = -40; a <= 40; a += 10) { const t = a * Math.PI / 180; pg.push([Math.cos(t) * 0.0855, SH.y + Math.sin(t) * 0.0855]); }
-    part({ id: 'guard', name: 'Pickguard', cat: 'trim', obj: g(H.extrude(new THREE.Shape(pg.map(([x, y]) => new THREE.Vector2(x, y)).reverse()), TOP + 0.0002, TOP + 0.0011, M.guard)), explode: V(0, 0, 0.55), delay: 0.2,
-      desc: 'A thin plastic plate that stops a pick from scratching the top.', spec: 'Black celluloid · 0.5 mm', role: 'Protection.' });
+    // one smooth line through the drawn points, so the guard reads as a cut curve, not a polygon
+    const pgCurve = new THREE.CatmullRomCurve3(pg.map(([x, y]) => V(x, y, 0)), true, 'centripetal');
+    const pgPoly = ccw(pgCurve.getSpacedPoints(160).slice(0, -1).map((p) => new THREE.Vector2(p.x, p.y)));
+    const pgBind = H.extrude(shapeOf(offset(pgPoly, 0.0024), [pgPoly.slice().reverse()]), TOP + 0.0002, TOP + 0.00125, M.cream, { curve: 2 });
+    const tui = quadShape(TUI, 0.112, 0.42, 0.138, -0.43);
+    const eye = tui.at(0.80, 0.22), eyeHole = circle(eye[0], eye[1], 0.0029, 20, true);
+    const tuiM = H.extrude(shapeOf(tui.pts, [eyeHole]), TOP + 0.0009, TOP + 0.00145, M.pearl, { curve: 2 });
+    part({ id: 'guard', name: 'Pickguard', cat: 'trim', obj: g(H.extrude(new THREE.Shape(pgPoly), TOP + 0.0002, TOP + 0.0011, M.guard), pgBind, tuiM), explode: V(0, 0, 0.55), delay: 0.2,
+      desc: 'A thin plastic plate that stops a pick from scratching the top. This one carries a pearl tūī in flight, drawn for assembl.', spec: 'Black celluloid, cream edge, pearl inlay · 0.5 mm', role: 'Protection, and the guitar\'s signature.' });
 
     /* ── strings: each one a cylinder whose middle can actually swing ── */
     const strings = [];
@@ -356,6 +401,7 @@ export default {
       const wound = i < 4;
       const u = { uAmp: { value: 0 }, uStop: { value: 1 }, uLen: { value: S.distanceTo(N) }, uDir: { value: V(1, 0, 0) } };
       const mat = new THREE.MeshStandardMaterial({ color: wound ? '#c99d62' : '#e1dfdc', metalness: 1, roughness: wound ? 0.38 : 0.18 });
+      mat.emissive = new THREE.Color('#D9BACB'); mat.emissiveIntensity = 0;
       mat.userData.unique = true; mat.userData.u = u;
       mat.onBeforeCompile = (sh) => {
         Object.assign(sh.uniforms, u);
@@ -407,24 +453,30 @@ export default {
     const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.36), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
     pad.position.set(0, -0.415, TOP + 0.004); pad.userData.playTarget = { pad: true }; pad.userData.noShadow = true;
     holder.add(pad);
+    for (const st of strings) {
+      const S = saddlePts[st.i], N = nutPts[st.i], d = N.clone().sub(S);
+      const halo = new THREE.Mesh(new THREE.CylinderGeometry(0.0036, 0.0036, d.length(), 10, 1, true),
+        new THREE.MeshBasicMaterial({ color: '#D9BACB', transparent: true, opacity: 0, depthWrite: false }));
+      halo.position.copy(S).addScaledVector(d, 0.5); halo.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize());
+      halo.userData.noShadow = true; halo.renderOrder = 2; halo.visible = false; st.halo = halo; holder.add(halo);
+    }
     const ui = document.createElement('div'); ui.className = 'playpanel';
     ui.innerHTML = `<span class="pp-label">Chord</span>${Object.keys(CHORDS).map((c) => `<button type="button" data-chord="${c}" aria-pressed="false">${c}</button>`).join('')}<button type="button" class="pp-strum" data-strum>Strum</button><span class="pp-note">Drag across the strings, or press 1–6</span>`;
 
-    const pluck = (i, { when = 0, gain = 0.55, vel = null } = {}) => {
+    const pluck = (i, { when = 0, gain = 0.55, vel = null, silent = false } = {}) => {
       const n = frets[i];
       if (n < 0) return;
       const midi = OPEN[i] + n;
       const s = strings[i];
-      s.stopper?.(0);
-      s.stopper = studio.sound.pluck(midi, { when, gain, vel, mute, pan: (i - 2.5) * 0.12 });
+      if (!silent) { s.stopper?.(0); s.stopper = studio.sound.pluck(midi, { when, gain, vel, mute, pan: (i - 2.5) * 0.12 }); }
       const v = vel == null ? 0.7 : vel;
-      setTimeout(() => { s.t = 0; s.amp = (0.0028 + (5 - i) * 0.0003) * (0.5 + v) * (mute ? 0.5 : 1); s.stop = Math.pow(2, -n / 12); s.freq = Math.min(midiHz(midi), 30) * 0.5 + 9; s.decay = mute ? 9 : 1.6; }, when * 1000);
+      setTimeout(() => { s.midi = midi; s.vel = v; s.t = 0; s.amp = (0.0028 + (5 - i) * 0.0003) * (0.5 + v) * (mute ? 0.5 : 1); s.stop = Math.pow(2, -n / 12); s.freq = Math.min(midiHz(midi), 30) * 0.5 + 9; s.decay = mute ? 9 : 1.6; }, when * 1000);
       studio.ui.flash?.(`${NAMES[i]} · ${noteName(midi)}`);
     };
-    const strum = (down = true, vel = 0.7) => {
-      studio.sound.ensure();
+    const strum = (down = true, vel = 0.7, { silent = false } = {}) => {
+      if (!silent) studio.sound.ensure();
       const order = down ? [0, 1, 2, 3, 4, 5] : [5, 4, 3, 2, 1, 0], gap = 0.03 - vel * 0.02;
-      order.filter((i) => frets[i] >= 0).forEach((i, k) => pluck(i, { when: k * gap, gain: 0.42, vel: vel * (down ? 1 : 0.85) }));
+      order.filter((i) => frets[i] >= 0).forEach((i, k) => pluck(i, { when: k * gap, gain: 0.42, vel: vel * (down ? 1 : 0.85), silent }));
     };
     const setChord = (name) => { if (!CHORDS[name]) return; chord = name; frets = CHORDS[name].slice(); showChord(); };
     // a finger on the neck: tap a string between two frets to hold it there; tap the same spot again to let go
@@ -490,12 +542,16 @@ export default {
       tick(dt) {
         holder.matrix.copy(studio.root.matrixWorld); holder.matrixWorldNeedsUpdate = true;
         for (const s of strings) {
-          if (s.amp <= 0) { s.u.uAmp.value = 0; continue; }
+          if (s.amp <= 0) { s.u.uAmp.value = 0; s.level = 0; s.vib.material.emissiveIntensity = 0; s.halo.visible = false; continue; }
           s.t += dt;
           const env = Math.exp(-s.t * (s.decay || 1.6));
           s.u.uAmp.value = s.amp * env * Math.sin(s.t * s.freq * Math.PI * 2);
           s.u.uStop.value = s.stop;
-          if (env < 0.01) s.amp = 0;
+          s.level = env * Math.min(1, 0.45 + (s.vel ?? 0.7) * 0.6);
+          const glow = Math.min(1, s.level * 1.4);
+          s.vib.material.emissiveIntensity = 0.85 * glow; // under 1, so it never blooms out the wire
+          s.halo.visible = glow > 0.02; s.halo.material.opacity = 0.42 * glow;
+          if (env < 0.01) { s.amp = 0; s.level = 0; }
         }
       },
       async demo(alive, wait) {
@@ -508,6 +564,12 @@ export default {
         setMute: (on) => { mute = on; changed(); }, get mute() { return mute; },
         get chord() { return chord; }, get frets() { return frets.slice(); }, names: NAMES,
         clear: () => { frets = [0, 0, 0, 0, 0, 0]; chord = 'Open'; showChord(); },
+        // one reading per string, from the same state that moves the strings
+        state: () => strings.map((st, i) => { const m = frets[i] < 0 ? null : (st.level > 0 ? st.midi : OPEN[i] + frets[i]);
+          return { name: NAMES[i], muted: frets[i] < 0, midi: m, note: m == null ? '–' : noteName(m), hz: m == null ? 0 : midiHz(m), level: st.level || 0 }; }),
+        // where a pick crosses the strings over the soundhole, in instrument space
+        strumLine: () => [V(-0.1, -0.375, TOP + 0.028), V(0.1, -0.375, TOP + 0.028)],
+        fretPoint: (i, n) => strPoint(i, n),
         on: (f) => listeners.push(f),
       },
       actions: [{ label: 'Play', id: 'play', toggle: () => studio.setMode(studio.mode === 'play' ? 'overview' : 'play'), pressed: () => studio.mode === 'play' }],
