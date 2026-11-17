@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play piano · assembl lab</title>
+<meta name="description" content="A white baby grand you can play in your browser: press the keys, or play from your computer keyboard. Watch the hammers strike and the dampers lift.">
+<meta name="theme-color" content="#180B18">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../play.css">
+<link rel="stylesheet" href="./piano.css">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body class="play piano">
+<main class="stage" id="stage">
+  <div class="canvas" id="canvas"></div>
+  <header class="mast">
+    <div>
+      <p class="eyebrow">assembl lab / music</p>
+      <h1>Play piano.</h1>
+      <p class="line">Press the keys, or play from your computer keyboard.</p>
+      <div class="views" id="views" role="group" aria-label="Look at">
+        <button type="button" data-v="whole" aria-pressed="true">Whole</button>
+        <button type="button" data-v="keys" aria-pressed="false">Keys</button>
+        <button type="button" data-v="inside" aria-pressed="false">Inside</button>
+        <button type="button" data-v="hammers" aria-pressed="false">Hammers</button>
+        <button type="button" class="lbl" id="lblBtn" aria-pressed="true">Labels</button>
+      </div>
+    </div>
+    <nav class="more" aria-label="More instruments">
+      <a href="/music/play/">Guitar</a>
+      <a href="/music/?i=snare">Snare drum</a>
+      <a class="how" href="/music/?i=piano">See the action →</a>
+    </nav>
+  </header>
+  <p class="nowplaying" id="now" aria-live="polite">C4</p>
+  <div class="labels" id="labels" aria-label="Parts"></div>
+  <aside class="card" id="card" hidden><button type="button" class="x" id="cardX" aria-label="Close">×</button><p class="k" id="cardK"></p><h2 id="cardH"></h2><p id="cardP"></p><p class="spec" id="cardS"></p></aside>
+  <aside class="scope" id="scope" aria-label="Live sound">
+    <p class="k"><span class="dot"></span>Live sound <span class="tag" id="scopeTag">live</span></p>
+    <canvas id="wave" width="480" height="120" aria-hidden="true"></canvas>
+    <ol class="strs" id="strs"></ol>
+  </aside>
+  <div class="pick" id="pick" aria-hidden="true"></div>
+  <p class="coach" id="coach">Press a key <span aria-hidden="true">↓</span></p>
+  <div class="loading" id="loading">Tuning up…</div>
+  <section class="dock" aria-label="Play">
+    <div class="pads" id="pads" role="toolbar" aria-label="Chords"></div>
+    <div class="side">
+      <button type="button" class="strum pedal" id="pedal" aria-pressed="false">Sustain pedal</button>
+      <div class="seg oct" role="group" aria-label="Octave for the computer keys">
+        <button type="button" id="octDown" aria-label="Octave down">−</button>
+        <span id="octLabel">C4</span>
+        <button type="button" id="octUp" aria-label="Octave up">+</button>
+      </div>
+    </div>
+  </section>
+  <p class="keys">Keys: A W S E D F T G Y H U J K O L P ; play notes · Z X octave · Space holds the sustain pedal · <span class="truth">Modelled in code · sound made in your browser</span></p>
+</main>
+<script type="module" src="./piano.js"></script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>

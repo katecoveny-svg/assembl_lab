@@ -1,0 +1,18 @@
+/* assembl lab · play piano: the guitar page's layout, with piano controls. */
+.piano .stage { background: #EADDE0; }
+.piano .pads { grid-template-columns: repeat(6, 74px); }
+.piano .pad { height: 78px; gap: 2px; }
+.piano .pad small { font: 400 10px/1 var(--mono); letter-spacing: .04em; opacity: .6; }
+.piano .pedal { font-size: 16px; }
+.piano .pedal[aria-pressed="true"] { background: var(--rose); color: var(--ink); }
+.piano .oct { align-items: center; justify-content: space-between; }
+.piano .oct span { font: 500 12px/1 var(--mono); color: var(--ink); }
+.piano .oct button { flex: 0 0 34px; font-size: 16px; color: var(--ink); }
+.piano .strs li.empty { opacity: 0; }
+/* the tour's fingertip */
+.pick.finger { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: rgba(162, 97, 127, .85); border: 2px solid var(--paper); }
+@media (max-width: 900px) {
+  .piano .pads { grid-template-columns: repeat(6, 1fr); }
+  .piano .pad { height: 56px; }
+  .piano .pad small { display: none; }
+}
