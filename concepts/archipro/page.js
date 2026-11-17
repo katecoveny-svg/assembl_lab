@@ -32,10 +32,13 @@ function gate({ kicker = "Needs your approval", title, body, yes = "Approve", no
 $("#facts").innerHTML = FACTS.map((f) => `<li><b>${esc(f.n)}</b><span>${esc(f.what)}</span><a href="${f.url}" target="_blank" rel="noopener">${esc(f.src)} ↗</a></li>`).join("");
 
 // ---------------------------------------------------------------------------------------------- chapter nav
-const navLinks = $$(".chapters a"), chapterIds = ["catalogue", "specify", "home", "join", "team"];
+const navLinks = $$(".chapters a"), chapterIds = ["catalogue", "specify", "drawings", "home", "join", "team"];
 let navTick = 0;
 const navHere = () => { navTick = 0; const y = innerHeight * 0.45; let cur = null; for (const id of chapterIds) { const t = document.getElementById(id).getBoundingClientRect(); if (t.top < y && t.bottom > 0) cur = id; } navLinks.forEach((a) => a.classList.toggle("here", a.hash === "#" + cur)); };
 addEventListener("scroll", () => { if (!navTick) navTick = requestAnimationFrame(navHere); }, { passive: true }); navHere();
+// the header is clear over the hero, then a bone bar
+const topBar = $(".top"), solid = () => topBar.classList.toggle("solid", scrollY > innerHeight * 0.82);
+addEventListener("scroll", solid, { passive: true }); solid();
 
 // ---------------------------------------------------------------------------------------------- 01 the catalogue
 // Reads a question into filters, searches the sample feed, and answers with citations that point home.
@@ -69,8 +72,15 @@ function callText(f, q) {
   return `archipro.search_products(${JSON.stringify(args, null, 2)})`;
 }
 let shown = null;
+let feed = null;
 function showRecord(p, mode = $(".seg [aria-selected=true]").dataset.seen) {
   shown = p; const el = $("#record");
+  if (mode === "feed") {
+    el.classList.remove("page");
+    if (feed) el.innerHTML = `<span class="c">// archipro-feed.json, the sample file an agent would read: ${feed.records?.length ?? 0} records</span>\n` + pretty({ ...feed, records: (feed.records || []).slice(0, 2), "…": `${Math.max(0, (feed.records?.length ?? 0) - 2)} more records` });
+    else { el.textContent = "Loading the sample feed…"; fetch("./feed.json").then((r) => r.json()).then((j) => { feed = j; showRecord(p, "feed"); }).catch(() => (el.textContent = "The sample feed didn't load.")); }
+    return;
+  }
   if (mode === "record") { el.classList.remove("page"); el.innerHTML = pretty(record(p)); }
   else {
     el.classList.add("page");
@@ -112,6 +122,10 @@ function ask(q) {
   stagger($$(".step", tr));
   $$(".rec", tr).forEach((b) => b.addEventListener("click", () => { $$(".rec", tr).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); showRecord(byId[b.dataset.id]); }));
   if (kept[0]) { showRecord(kept[0].p); $(".rec", tr)?.setAttribute("aria-pressed", "true"); }
+  $("#ask").value = q;
+  return { query: q, understood: { element: f.cat || "any", exposure_zone: f.zone || null, upkeep: f.upkeep || null, thermally_broken: !!f.tb, max_lead_weeks: f.lead || null },
+    found: kept.map((k) => ({ id: k.p.id, name: k.p.name, supplier: `${k.p.supplier} (sample)`, why: k.why, upkeep: k.p.upkeep, lead_weeks: k.p.lead, price_band: k.p.band, note: k.p.note || "" })),
+    ruled_out: r.out.slice(0, 4).map((o) => ({ name: o.p.name, because: o.no.join(", ") })) };
 }
 $("#asks").innerHTML = ASK_EXAMPLES.map((q) => `<button class="pill">${esc(q)}</button>`).join("");
 $$("#asks .pill").forEach((b) => b.addEventListener("click", () => { $("#ask").value = b.textContent; ask(b.textContent); }));
@@ -169,6 +183,7 @@ function schedule() {
   $("#schedule").innerHTML = ids.length ? ids.map((id) => { const p = byId[id]; return `<li><span><b>${CATS[p.cat].label}</b>${esc(specLine(p))}</span><button class="x" aria-label="Remove ${esc(p.name)}" data-rm="${p.cat}">×</button></li>`; }).join("") : '<li class="empty">Add a product to start the schedule.</li>';
   $$("[data-rm]").forEach((b) => b.addEventListener("click", () => { spec.delete(b.dataset.rm); schedule(); compare(); }));
   $("#csv").disabled = $("#samples").disabled = !ids.length;
+  document.dispatchEvent(new CustomEvent("ap:spec", { detail: Object.fromEntries(spec) }));
   // the code register, from the studio: what the designer must review, never a pass
   const clauses = [...new Set(ids.flatMap((id) => byId[id].clauses))];
   const rules = RULES.filter((r) => ["nz.consent", "nz.restricted_design", ...(clauses.includes("H1") ? ["nz.h1"] : []), "nz.planning"].includes(r.id));
@@ -335,3 +350,33 @@ $("#runs").innerHTML = [
   ["NZ$29.15", "the most a full plan reading could cost: quoted, then held for approval. Nothing was spent", "Approval before spend"],
   ["94", "automated tests passing on the plan-reading service", "Studio checkpoint, Nov 2026"],
 ].map(([b, s, m]) => `<li><b>${b}</b><span>${s}</span><small>${m}</small></li>`).join("");
+
+// ---------------------------------------------------------------------------------------------- for the studio guide
+// The guide's tools call these. Each one changes only this page, the way a person could with the controls, and returns
+// what happened so the guide can say it.
+const goTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+window.__page = {
+  go: goTo,
+  ask(q) { goTo("catalogue"); return ask(String(q || "").slice(0, 160)) || { query: q, found: [] }; },
+  setSpec(cat, id, { quiet = false, zone } = {}) {
+    const p = byId[id]; if (!p || p.cat !== cat) return null;
+    if (zone && ZONES[zone]) { brief.zone = zone; $$('[data-brief="zone"] button').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === zone))); }
+    if (["cladding", "roof", "joinery", "decking"].includes(cat)) { brief.cat = cat; $$('[data-brief="cat"] button').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === cat))); }
+    spec.set(cat, id); schedule(); compare();
+    if (!quiet) goTo("specify");
+    const fits = p.zones.includes(brief.zone);
+    return { added: p.name, supplier: `${p.supplier} (sample)`, element: CATS[cat].label, exposure_zone: brief.zone, suits_zone: fits, line: specLine(p), schedule: ORDER.map((c) => spec.get(c)).filter(Boolean).map((x) => byId[x].name) };
+  },
+  spec: () => Object.fromEntries(spec),
+  catOf: (id) => byId[id]?.cat,
+  home({ picks: next = {}, month, hour } = {}) {
+    let moved = false;
+    for (const [c, id] of Object.entries(next)) if (byId[id]?.cat === c && picks[c] !== undefined && picks[c] !== id) { picks[c] = id; moved = true; }
+    if (month) { const m = Math.min(12, Math.max(1, Math.round(month))); sunState.md = `${String(m).padStart(2, "0")}-21`; $$("#season .pill").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.md === sunState.md))); }
+    if (hour) { sunState.h = Math.min(21, Math.max(6, Math.round(hour * 2) / 2)); $("#hour").value = sunState.h; $("#hour-out").textContent = `${String(Math.floor(sunState.h)).padStart(2, "0")}:${sunState.h % 1 ? "30" : "00"}`; }
+    board(); goTo("home");
+    if (!frame) openTwin(); else if (moved) rebuild(); else setSun();
+    return { on_the_house: Object.fromEntries(Object.entries(picks).map(([c, id]) => [c, byId[id].name])), sun: `${sunState.md} at ${sunState.h}:00`,
+      warnings: Object.values(picks).map((id) => byId[id]).filter((p) => p.zones.length && !p.zones.includes(SITE_ZONE)).map((p) => `${p.name}: ${p.note || "not rated for Zone " + SITE_ZONE}`) };
+  },
+};
