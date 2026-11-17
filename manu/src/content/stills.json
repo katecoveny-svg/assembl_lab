@@ -1,0 +1,578 @@
+{
+ "tui": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.1841,
+    "y": 0.3126,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.3769,
+    "y": 0.2983,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.2944,
+    "y": 0.2883,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.3821,
+    "y": 0.2584,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4046,
+    "y": 0.3054,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.31,
+    "y": 0.4283,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3676,
+    "y": 0.5774,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.4976,
+    "y": 0.4477,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.5362,
+    "y": 0.5089,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.6043,
+    "y": 0.8625,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "korimako": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.2268,
+    "y": 0.3236,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.3889,
+    "y": 0.3123,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.312,
+    "y": 0.3007,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.3938,
+    "y": 0.2726,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4163,
+    "y": 0.3194,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.3201,
+    "y": 0.4367,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3737,
+    "y": 0.5797,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.5058,
+    "y": 0.4556,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.5437,
+    "y": 0.5136,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.5908,
+    "y": 0.8557,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "piwakawaka": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.2941,
+    "y": 0.3413,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.4017,
+    "y": 0.3367,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.3384,
+    "y": 0.3221,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.4056,
+    "y": 0.2966,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4287,
+    "y": 0.3436,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.3301,
+    "y": 0.4667,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3806,
+    "y": 0.6016,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.5182,
+    "y": 0.4797,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.556,
+    "y": 0.5307,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.6237,
+    "y": 0.814,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "tauhou": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.2533,
+    "y": 0.3579,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.3833,
+    "y": 0.3484,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.3102,
+    "y": 0.3373,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.3882,
+    "y": 0.3074,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4108,
+    "y": 0.3555,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.3171,
+    "y": 0.4798,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3734,
+    "y": 0.6138,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.5054,
+    "y": 0.4836,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.5449,
+    "y": 0.5367,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.5815,
+    "y": 0.8296,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "miromiro": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.3082,
+    "y": 0.3169,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.424,
+    "y": 0.3167,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.3493,
+    "y": 0.3,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.4262,
+    "y": 0.2777,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4506,
+    "y": 0.3236,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.3407,
+    "y": 0.448,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3867,
+    "y": 0.5795,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.5358,
+    "y": 0.4655,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.573,
+    "y": 0.5162,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.5551,
+    "y": 0.8487,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "toutouwai": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.3104,
+    "y": 0.2409,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.4292,
+    "y": 0.2433,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.36,
+    "y": 0.2266,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.4327,
+    "y": 0.2068,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4556,
+    "y": 0.2501,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.3505,
+    "y": 0.356,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3906,
+    "y": 0.4984,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.53,
+    "y": 0.4001,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.5635,
+    "y": 0.4575,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.5622,
+    "y": 0.8798,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "hihi": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.2508,
+    "y": 0.3145,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.3949,
+    "y": 0.3065,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.3214,
+    "y": 0.2936,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.3997,
+    "y": 0.2671,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.4222,
+    "y": 0.3135,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.3247,
+    "y": 0.4281,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3755,
+    "y": 0.5731,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.5087,
+    "y": 0.449,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.5461,
+    "y": 0.5072,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.5988,
+    "y": 0.7649,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ },
+ "kereru": {
+  "anchors": [
+   {
+    "id": "bill",
+    "x": 0.2494,
+    "y": 0.3715,
+    "front": true
+   },
+   {
+    "id": "eye",
+    "x": 0.3533,
+    "y": 0.36,
+    "front": true
+   },
+   {
+    "id": "forehead",
+    "x": 0.3085,
+    "y": 0.3458,
+    "front": true
+   },
+   {
+    "id": "crown",
+    "x": 0.361,
+    "y": 0.3185,
+    "front": true
+   },
+   {
+    "id": "ear",
+    "x": 0.3816,
+    "y": 0.3673,
+    "front": true
+   },
+   {
+    "id": "throat",
+    "x": 0.2838,
+    "y": 0.4721,
+    "front": true
+   },
+   {
+    "id": "breast",
+    "x": 0.3486,
+    "y": 0.621,
+    "front": true
+   },
+   {
+    "id": "shoulder",
+    "x": 0.4937,
+    "y": 0.4549,
+    "front": true
+   },
+   {
+    "id": "wing",
+    "x": 0.5432,
+    "y": 0.5138,
+    "front": true
+   },
+   {
+    "id": "tail",
+    "x": 0.6121,
+    "y": 0.7661,
+    "front": true
+   },
+   {
+    "id": "feet",
+    "x": 0.4804,
+    "y": 0.7425,
+    "front": true
+   }
+  ],
+  "w": 1000,
+  "h": 800
+ }
+}

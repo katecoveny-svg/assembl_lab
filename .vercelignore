@@ -43,3 +43,5 @@
 
 # Design inventory: editable source, not served
 /plan-studio/library/src/
+# Manu (birds teaching section): editable source and build scripts, not served
+/manu/src/

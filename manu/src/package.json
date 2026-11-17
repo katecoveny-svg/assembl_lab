@@ -1,0 +1,23 @@
+{
+  "name": "manu-teach",
+  "private": true,
+  "description": "Manu: a teaching section of assembl lab, built on the manu three.js bird library (Feather engine by Theo Tillberg, MIT)",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "@types/three": "^0.187.0",
+    "axe-core": "^4.14.1",
+    "meshoptimizer": "^1.3.0",
+    "sharp": "^0.35.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  }
+}
