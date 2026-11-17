@@ -21,6 +21,13 @@
       <p class="eyebrow">assembl lab / music</p>
       <h1>Play guitar.</h1>
       <p class="line">Pick a chord, then swipe across the strings.</p>
+      <div class="views" id="views" role="group" aria-label="Look at">
+        <button type="button" data-v="whole" aria-pressed="true">Whole</button>
+        <button type="button" data-v="soundhole" aria-pressed="false">Soundhole</button>
+        <button type="button" data-v="neck" aria-pressed="false">Neck</button>
+        <button type="button" data-v="head" aria-pressed="false">Headstock</button>
+        <button type="button" class="lbl" id="lblBtn" aria-pressed="true">Labels</button>
+      </div>
     </div>
     <nav class="more" aria-label="More instruments">
       <a href="/music/?i=snare">Snare drum</a>
@@ -29,6 +36,14 @@
     </nav>
   </header>
   <p class="nowplaying" id="now" aria-live="polite">G</p>
+  <div class="labels" id="labels" aria-label="Parts"></div>
+  <aside class="card" id="card" hidden><button type="button" class="x" id="cardX" aria-label="Close">×</button><p class="k" id="cardK"></p><h2 id="cardH"></h2><p id="cardP"></p><p class="spec" id="cardS"></p></aside>
+  <aside class="scope" id="scope" aria-label="Live sound">
+    <p class="k"><span class="dot"></span>Live sound <span class="tag" id="scopeTag">live</span></p>
+    <canvas id="wave" width="480" height="120" aria-hidden="true"></canvas>
+    <ol class="strs" id="strs"></ol>
+  </aside>
+  <div class="pick" id="pick" aria-hidden="true"></div>
   <p class="coach" id="coach">Swipe across the strings <span aria-hidden="true">↕</span></p>
   <div class="loading" id="loading">Tuning up…</div>
   <section class="dock" aria-label="Play">
@@ -41,7 +56,7 @@
       </div>
     </div>
   </section>
-  <p class="keys">Keys: 1–9 chords · Space strum · Shift + Space strum up · tap the neck to fret your own notes</p>
+  <p class="keys">Keys: 1–9 chords · Space strum · Shift + Space strum up · tap the neck to fret your own notes · <span class="truth">Modelled in code · sound made in your browser</span></p>
 </main>
 <script type="module" src="./play.js"></script>
 <script src="/lab/navigation.js" defer></script>
