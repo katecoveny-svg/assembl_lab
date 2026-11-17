@@ -1,0 +1,21 @@
+{
+  "name": "assembl-design-inventory",
+  "private": true,
+  "version": "1.0.0",
+  "description": "assembl design inventory: a 3D asset library for the Plan Studio twin tool (lab.assembl.co.nz/plan-studio/library/)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4317"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lab.assembl.co.nz/plan-studio/library/catalogue.schema.json",
+  "title": "assembl design inventory catalogue (assembl.design-inventory.v1)",
+  "description": "One entry per real item. URLs are relative to catalogue.json (base /plan-studio/library/ on the lab). Sizes are measured from the model files or copied from a named source; none is verified against a real product. Rights: cleared for use by Kate Hudson (owner), not independently verified; commercial use is not claimed.",
+  "type": "object",
+  "required": ["schema", "built", "snapshot", "live", "base", "categories", "collections", "items"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema": { "const": "assembl.design-inventory.v1" },
+    "title": { "type": "string" },
+    "built": { "type": "string", "format": "date-time", "description": "When this file was generated." },
+    "snapshot": { "type": "string", "format": "date", "description": "Date the source data was read." },
+    "live": { "const": false, "description": "This is a static snapshot, not a live database." },
+    "note": { "type": "string" },
+    "base": { "type": "string", "description": "Site path the relative URLs resolve against when this file is served from the lab." },
+    "urlsRelativeTo": { "type": "string" },
+    "rightsDefault": { "$ref": "#/$defs/rights" },
+    "categories": {
+      "type": "array",
+      "description": "Shelf tabs, in display order.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "count"],
+        "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "count": { "type": "integer" } }
+      }
+    },
+    "collections": {
+      "type": "array",
+      "description": "The sources an item can come from. An item merged from two sources lists both.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "count", "source"],
+        "properties": {
+          "id": { "enum": ["curated", "kowhai", "twin", "objects", "manu"] },
+          "title": { "type": "string" },
+          "count": { "type": "integer" },
+          "source": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "properties": { "items": { "type": "integer" }, "glbBytes": { "type": "integer" } }
+    },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "rights": {
+      "type": "object",
+      "required": ["status", "label", "commercialUse"],
+      "properties": {
+        "status": { "const": "cleared-by-owner" },
+        "label": { "type": "string" },
+        "commercialUse": { "const": "not claimed" }
+      }
+    },
+    "file": {
+      "type": "object",
+      "required": ["role", "label", "url", "format", "bytes", "sha256"],
+      "properties": {
+        "role": { "enum": ["web", "full", "master"], "description": "web: the compressed GLB the viewer loads (the only role deployed in v1)." },
+        "label": { "type": "string" },
+        "url": { "type": "string", "description": "Relative to catalogue.json." },
+        "format": { "enum": ["glb", "blend"] },
+        "mime": { "type": "string" },
+        "bytes": { "type": "integer" },
+        "sha256": { "type": "string" },
+        "gltf": { "type": "string" },
+        "extensionsRequired": { "type": "array", "items": { "type": "string" }, "description": "A loader must support these, e.g. EXT_meshopt_compression (three.js: GLTFLoader.setMeshoptDecoder)." },
+        "triangles": { "type": "integer" },
+        "meshes": { "type": "integer" },
+        "materials": { "type": "integer" },
+        "textures": { "type": "integer" },
+        "derivedFrom": { "type": "string" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["id", "title", "description", "category", "type", "collections", "sourceIds", "materials", "dimensions", "formats", "files", "preview", "licence", "rights", "verification", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Stable inventory id: <collection>-<source key>." },
+        "title": { "type": "string", "description": "Neutral descriptive title, no brand or product names." },
+        "description": { "type": "string" },
+        "category": { "type": "string", "description": "One of categories[].id." },
+        "categoryTitle": { "type": "string" },
+        "type": { "type": "string", "description": "Finer kind, e.g. Sofa, Bird, Screen wall." },
+        "scientificName": { "type": "string" },
+        "collections": { "type": "array", "items": { "type": "string" } },
+        "sourceIds": {
+          "type": "object",
+          "description": "The item's id in each source: curated (assets.json id), kowhai (generator id), twin (LIBRARY id), objects (info key), manu (species or sprig key), generator (id the curated piece was supplied under).",
+          "additionalProperties": { "type": "string" }
+        },
+        "twinRole": { "type": "string", "description": "The library role the twin fills with this piece (slot_<role>). Present only for the 39 twin pieces." },
+        "twin": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "role": { "type": "string" },
+            "fit": { "enum": ["floor", "wall", "hang"] },
+            "turnRadians": { "type": "number" }
+          }
+        },
+        "materials": { "type": "array", "items": { "type": "string" }, "description": "Materials the model depicts. Not product specifications." },
+        "materialTags": { "type": "array", "items": { "type": "string" }, "description": "Material families derived by keyword from materials and description." },
+        "dimensions": {
+          "type": "object",
+          "required": ["stated", "modelBoundsMm", "verified"],
+          "properties": {
+            "stated": { "type": "string" },
+            "statedSource": { "type": "string" },
+            "modelBoundsMm": {
+              "type": "object",
+              "properties": { "x": { "type": "integer" }, "y": { "type": "integer" }, "z": { "type": "integer" } },
+              "description": "Bounding box of the GLB, measured by the inventory build. x across, y up, z depth."
+            },
+            "modelBoundsNote": { "type": "string" },
+            "scale": { "type": "string" },
+            "verified": { "const": false }
+          }
+        },
+        "formats": { "type": "array", "items": { "type": "string" } },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/file" }, "description": "Only files that are deployed with the inventory." },
+        "preview": {
+          "type": "object",
+          "properties": { "url": { "type": "string" }, "kind": { "type": "string" }, "width": { "type": "integer" }, "height": { "type": "integer" }, "note": { "type": "string" } }
+        },
+        "sourceStill": { "type": "object", "properties": { "url": { "type": "string" }, "kind": { "type": "string" }, "note": { "type": "string" } } },
+        "swatch": { "type": ["string", "null"], "description": "Median colour of the model in its preview render." },
+        "licence": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "url": { "type": ["string", "null"] },
+            "attribution": { "type": "string" },
+            "scope": { "type": "string" },
+            "statedBySource": { "type": "string" }
+          }
+        },
+        "rights": { "$ref": "#/$defs/rights" },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "readiness": { "const": "preview", "description": "No item is production-verified in v1." },
+            "readinessLabel": { "type": "string" },
+            "sourceStatus": { "type": "string" },
+            "dimensionalAccuracy": { "const": "unverified" },
+            "photoreal": { "const": "not claimed" },
+            "notes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "provenance": { "type": "array", "items": { "type": "string" } },
+        "family": {
+          "type": "object",
+          "description": "Same form in other finishes. Only real files.",
+          "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "members": { "type": "array", "items": { "type": "string" } } }
+        },
+        "notDeployed": {
+          "type": "array",
+          "description": "Other versions that exist but are not served here. Text only: never a link.",
+          "items": {
+            "type": "object",
+            "properties": { "label": { "type": "string" }, "bytes": { "type": "integer" }, "where": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

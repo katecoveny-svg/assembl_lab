@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design inventory · Plan Studio · assembl lab</title>
+    <meta name="description" content="assembl’s design inventory for Plan Studio: 78 real 3D pieces from Kate Hudson’s curated assets, Kōwhai Studio and assembl’s own procedural objects, each with its size, source, rights and download." />
+    <meta name="theme-color" content="#180B18" />
+    <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-Bxz2AL3i.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CWJOgc0N.css">
+  </head>
+  <body class="inv-page">
+    <a class="skip" href="#shelf">Skip to the shelf</a>
+
+    <div class="toolbar" role="navigation" aria-label="Plan Studio">
+      <p class="crumbs"><a href="/plan-studio/">Plan Studio</a><span aria-hidden="true">/</span><span aria-current="page">Design inventory</span></p>
+      <div class="tool-links">
+        <a class="pill" href="/plan-studio/twins/16a/">16A twin<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+        <a class="pill" href="/plan-studio/twins/drop/">Drop a plan<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      </div>
+    </div>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="h1">
+        <div class="hero-text">
+          <p class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Plan Studio · design inventory</p>
+          <h1 id="h1"><span class="w">The</span> <span class="w">design</span> <span class="w accent">inventory</span></h1>
+          <p class="lede">
+            <span data-count="items">78</span> real 3D pieces from four sources: Kate Hudson’s curated assets, the Kōwhai Studio pieces the twin furnishes rooms with, and assembl’s own procedural objects, birds and planting. Turn each one in 3D, check its size, source and rights, and take the file.
+          </p>
+          <ul class="truth" aria-label="Truth labels for every piece">
+            <li class="chip ring">Preview assets, not production-verified</li>
+            <li class="chip dot">Rights cleared by Kate Hudson (owner), not independently verified</li>
+            <li class="chip ring">Sizes measured from the model files, not from real products</li>
+          </ul>
+          <div class="hero-actions">
+            <a class="btn primary" href="#shelf">Browse the shelf</a>
+            <a class="btn ghost" href="#inventory">Search the inventory</a>
+          </div>
+        </div>
+        <svg class="ink hero-ink" data-ink="hero"></svg>
+      </section>
+
+      <p id="boot-error" class="boot-error" role="alert" hidden></p>
+      <p id="route-note" class="route-note" role="status" hidden></p>
+
+      <section class="panel shelf-panel" id="shelf" aria-labelledby="shelf-h" tabindex="-1">
+        <div class="panel-head">
+          <h2 id="shelf-h" class="eyebrow mono"><span class="dot" aria-hidden="true"></span>On the shelf</h2>
+          <p class="small hint">Click, swipe or use the arrow keys. The active piece turns to face you and loads in 3D.</p>
+        </div>
+        <div id="shelf-root" class="shelf-root">
+          <noscript><p class="small">The shelf needs JavaScript. The catalogue itself is plain JSON: <a href="./catalogue.json">catalogue.json</a>.</p></noscript>
+        </div>
+      </section>
+
+      <div class="horizon" aria-hidden="true"><svg class="ink" data-ink="horizon"></svg></div>
+
+      <section class="panel inventory-panel" id="inventory" aria-labelledby="inv-h" tabindex="-1">
+        <div class="panel-head split">
+          <div>
+            <p class="eyebrow mono"><span class="dot" aria-hidden="true"></span>The inventory</p>
+            <h2 id="inv-h" class="h2">Search every piece</h2>
+          </div>
+          <p class="lede-sm">Filter by category, source, material, licence and review status. Each piece opens in the same 3D detail view and downloads as the GLB this page serves.</p>
+        </div>
+        <div id="inventory-root"></div>
+      </section>
+
+      <section class="closing" aria-label="What comes next, and the sources">
+        <div class="later" aria-labelledby="later-h">
+          <p class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Coming later</p>
+          <h2 id="later-h" class="h2">Not built yet</h2>
+          <ul class="later-list">
+            <li><h3>Saved collections</h3><p>Pin pieces to a project list. Needs accounts and storage.</p><span class="chip ring">Not built yet</span></li>
+            <li><h3>Upload and review</h3><p>Add a model, check its scale and rights, and approve it in. Today pieces arrive when the catalogue is rebuilt.</p><span class="chip ring">Not built yet</span></li>
+            <li><h3>Material variants</h3><p>Swap finishes on one form. Two families exist today as separate files: the freestanding bath and the electric guitar.</p><span class="chip ring">Not built yet</span></li>
+            <li><h3>Placing pieces from the twin</h3><p>The twin still reads its own library list. This catalogue carries the same ids and roles, so it can read this file instead.</p><span class="chip ring">Not built yet</span></li>
+          </ul>
+          <svg class="ink planting-ink" data-ink="planting"></svg>
+        </div>
+        <div class="sources" id="sources" aria-labelledby="src-h">
+          <p class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Sources and limits</p>
+          <h2 id="src-h" class="h2">Where the pieces come from</h2>
+          <p>This page reads <a href="./catalogue.json">catalogue.json</a> (<a href="./catalogue.schema.json">schema</a>), a static snapshot built on <span data-count="snapshot">17 November 2026</span>. It is not a live database: pieces change when the catalogue is rebuilt. An item found in two sources is one entry listing both.</p>
+          <ul class="collections" id="collections-list"></ul>
+          <h3 class="h3">Limits</h3>
+          <ul class="plain limits">
+            <li>Every piece is a preview asset. None is verified as production-ready, photorealistic or dimensionally accurate.</li>
+            <li>Rights: cleared for use by Kate Hudson (owner); not independently verified. Commercial use is not claimed for any piece.</li>
+            <li>Model bounds are measured from each file. Stated sizes are copied from the source and can differ from the bounds.</li>
+            <li>The birds and sprigs are drawn at a common field-guide size, not life size.</li>
+            <li>Previews are this build’s own renders (three.js, studio light, ivory ground). Nine pieces also show the Blender render from Kate’s curated site.</li>
+            <li>Only compressed GLBs are served (<span data-count="glb">28 MB</span> in all). Blender masters and uncompressed GLBs exist for some pieces and are listed in each piece’s detail, but are not deployed here.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p class="foot-word"><span>assembl<span class="rose">.</span></span><span class="outline">lab</span></p>
+      <nav class="foot-links" aria-label="Back to the tool">
+        <a class="pill" href="/plan-studio/twins/16a/">16A twin</a>
+        <a class="pill" href="/plan-studio/twins/drop/">Drop a plan</a>
+        <a class="pill" href="/plan-studio/">Plan Studio</a>
+        <a class="pill" href="/">assembl lab</a>
+      </nav>
+      <p class="small mono foot-base">Design inventory · Preview assets · Rights cleared by Kate Hudson (owner), not independently verified</p>
+    </footer>
+
+    <dialog id="detail" class="detail" aria-labelledby="d-title" aria-describedby="d-desc">
+      <div class="d-surface">
+        <div class="d-ink" aria-hidden="true"><span class="blob wash-rose"></span><span class="blob wash-pale"></span><span class="blob wash-ink"></span></div>
+        <div class="d-grid">
+          <div class="d-view">
+            <div class="d-stage" tabindex="0" role="group" aria-roledescription="3D viewer" data-state="still">
+              <img class="d-still" alt="" width="720" height="720" />
+              <div class="d-gl"></div>
+              <div class="v-bar" aria-hidden="true"><span></span></div>
+            </div>
+            <div class="v-tools" role="toolbar" aria-label="3D view controls">
+              <button type="button" class="tool" data-act="reset">Reset view</button>
+              <button type="button" class="tool icon" data-act="in" aria-label="Zoom in">+</button>
+              <button type="button" class="tool icon" data-act="out" aria-label="Zoom out">−</button>
+              <button type="button" class="tool" data-act="rotate" aria-pressed="false">Turn</button>
+              <button type="button" class="tool" data-act="bounds" aria-pressed="false">Bounds</button>
+            </div>
+            <p class="v-status mono" role="status" aria-live="polite"></p>
+            <button type="button" class="btn ghost small v-retry" hidden>Try the 3D model again</button>
+          </div>
+          <div class="d-info">
+            <p class="d-eyebrow mono"><span class="mask"><span class="line"></span></span></p>
+            <h2 id="d-title" tabindex="-1"><span class="mask"><span class="line"></span></span></h2>
+            <p class="d-sci"><span class="mask"><span class="line"></span></span></p>
+            <p id="d-desc" class="d-desc"></p>
+            <div class="d-body"></div>
+          </div>
+        </div>
+        <button type="button" class="d-close" aria-label="Close the detail view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+    </dialog>
+    <script src="/lab/navigation.js" defer></script>
+  </body>
+</html>
