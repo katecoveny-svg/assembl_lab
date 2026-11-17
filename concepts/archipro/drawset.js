@@ -217,7 +217,7 @@ function setLook(next) {
   stage.setCutaway(plan); stage.view(plan ? "plan" : look === "collage" ? "rear" : "aerial");
   if (look === "collage") {
     stage.light("day"); collage(true);
-    const t = stage.target, c = stage.camera.position; c.sub(t).multiplyScalar(0.62).add(t); c.y += 1.6; stage.camera.lookAt(t);
+    const t = stage.target, c = stage.camera.position; c.sub(t).multiplyScalar(stage.camera.aspect < 1.2 ? 0.95 : 0.74).add(t); c.y += 1.6; stage.camera.lookAt(t);
   }
   $(".ds-stage").dataset.look = look; stage.ctl.target.copy(stage.target); baseOff = stage.camera.position.clone().sub(stage.ctl.target); userMoved = plan; stage.ctl.enableRotate = !plan; stage.ctl.update();
   const pts = look === "cloud" || look === "plan";
