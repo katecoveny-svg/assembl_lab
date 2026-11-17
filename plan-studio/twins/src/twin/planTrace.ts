@@ -49,9 +49,9 @@ export async function openPdf(bytes: ArrayBuffer) {
   return L.getDocument({ data: new Uint8Array(bytes.slice(0)) }).promise;
 }
 
-interface TextItem { str: string; x: number; y: number; h: number }
+export interface TextItem { str: string; x: number; y: number; h: number }
 /** text runs in viewport points at scale 1 (x right, y down from the top of the sheet) */
-async function pageText(page: PDFPageProxy): Promise<TextItem[]> {
+export async function pageText(page: PDFPageProxy): Promise<TextItem[]> {
   const vp = page.getViewport({ scale: 1 });
   const tc = await page.getTextContent();
   const out: TextItem[] = [];
@@ -66,7 +66,7 @@ async function pageText(page: PDFPageProxy): Promise<TextItem[]> {
 const ROOM_RE = /^(master\s+)?(bed(room)?\s*\d*|lounge|living(\s+room)?|kitchen(ette)?|bath(room)?|ensuite|en-suite|wc|toilet|dining|laundry|office|study|garage|entry|foyer|hall(way)?|family|rumpus|media|scullery|pantry|w\.?i\.?r\.?|studio|store|utility|mud\s*room|guest|lobby|reception|cafe|café|shop|retail)\b/i;
 const isRoomLabel = (s: string) => s.length <= 26 && ROOM_RE.test(s);
 
-export interface SheetInfo { page: number; title: string; score: number; rooms: number }
+export interface SheetInfo { page: number; title: string; score: number; rooms: number; role: 'plan' | 'site' | 'elevation' | 'section' | 'other' }
 /** what each sheet is: the floor plans score highest */
 export async function surveySheets(doc: PDFDocumentProxy): Promise<SheetInfo[]> {
   const out: SheetInfo[] = [];
@@ -85,7 +85,9 @@ export async function surveySheets(doc: PDFDocumentProxy): Promise<SheetInfo[]> 
     if (all.length > 6000) score -= 4;
     // the sheet's title: the largest run that names a kind of drawing
     const titled = items.filter((t) => /plan|elevation|section|site|layout/i.test(t.str) && t.str.length < 60).sort((a, b) => b.h - a.h);
-    out.push({ page: p, title: titled[0]?.str ?? (rooms ? `${rooms} room labels` : 'no text'), score, rooms });
+    const title = titled[0]?.str ?? (rooms ? `${rooms} room labels` : 'no text');
+    const role = /\brefer\b|\bsee\b/i.test(title) ? 'other' : PLAN_TITLE.test(title.trim()) || score >= 10 ? 'plan' : /site\s*(layout|plan)|area\s*plans?|landscap/i.test(title) ? 'site' : /elevation/i.test(title) ? 'elevation' : /\bsections?\b/i.test(title) ? 'section' : 'other';
+    out.push({ page: p, title, score, rooms, role });
   }
   return out;
 }
@@ -130,7 +132,7 @@ const paperName = (mm: number) => Object.entries(PAPER).find(([, v]) => Math.abs
 //  - ink is joined through mid-grey lines too, so glazing and doors do not split the building into pieces;
 //  - the cluster holding the most heavy ink (ink that survives thinning: walls, not text or hatching) is the plan,
 //    with any heavy clusters right beside it.
-function titleBand(items: TextItem[], W: number, H: number): { bottom?: number; right?: number } {
+export function titleBand(items: TextItem[], W: number, H: number): { bottom?: number; right?: number } {
   const adm = items.filter((t) => /drawing\s*(no|number|title)?\b|^scale\b|\bproject\b|checked|drawn|revision|\brev\b|general notes|do not scale|copyright/i.test(t.str));
   const bottom = adm.filter((t) => t.y > H * 0.6), right = adm.filter((t) => t.x > W * 0.65 && t.y <= H * 0.6);
   if (bottom.length >= 3 && bottom.length >= right.length) return { bottom: Math.min(...bottom.map((t) => t.y - t.h)) - 10 };
@@ -237,7 +239,7 @@ function planClusters(items: TextItem[], scale: number | null, pageW: number, pa
   return out;
 }
 
-async function renderRegion(page: PDFPageProxy, box: [number, number, number, number], longEdge = 1568) {
+export async function renderRegion(page: PDFPageProxy, box: [number, number, number, number], longEdge = 1568) {
   const w = box[2] - box[0], h = box[3] - box[1];
   const s = longEdge / Math.max(w, h);
   const vp = page.getViewport({ scale: s });
@@ -274,10 +276,10 @@ interface AiPlan {
   dimensions: { text: string; x1: number; y1: number; x2: number; y2: number }[];
   notes: string;
 }
-async function aiRead(canvas: HTMLCanvasElement): Promise<{ plan: AiPlan; model: string }> {
+export async function aiRead<T = AiPlan>(canvas: HTMLCanvasElement, mode: 'plan' | 'site' | 'elevation' = 'plan'): Promise<{ plan: T; model: string }> {
   let url = canvas.toDataURL('image/png');
   if (url.length > 4_200_000) url = canvas.toDataURL('image/jpeg', 0.88);
-  const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: url }) });
+  const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: url, mode }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const why: Record<string, string> = {
@@ -289,7 +291,7 @@ async function aiRead(canvas: HTMLCanvasElement): Promise<{ plan: AiPlan; model:
     };
     throw new Error(why[j.error] ?? `the AI plan reader answered ${r.status}${j.error ? ` (${j.error})` : ''}`);
   }
-  return { plan: j.plan as AiPlan, model: j.model ?? 'AI' };
+  return { plan: j.plan as T, model: j.model ?? 'AI' };
 }
 
 /** mm per image pixel from the dimension strings the reader found: the median of the long ones */
@@ -439,7 +441,7 @@ export async function readImage(file: File, progress: Progress): Promise<TraceRe
 }
 
 // ------------------------------------------------------------------------------------------------ into a twin building
-export interface BuildOpts { plate: number; pitch: number; floor: number }
+export interface BuildOpts { plate: number; pitch: number; floor: number; roof?: 'gable' | 'skillion' | 'flat'; high?: 'v0' | 'v1'; roofSrc?: Src }
 export interface Built {
   building: BuildingSpec & { origin: [number, number]; floorLevel: number };
   W: number;
@@ -450,6 +452,8 @@ export interface Built {
   labels: { at: Pt; text: string }[];
   /** sheet position of the footprint's top-left corner, real mm */
   sheetMm: Pt;
+  /** the read's drawing frame (crop mm) to home metres, and the footprint's box in that frame */
+  drawing: { toHome: (mm: Pt) => Pt; box: [number, number, number, number] };
 }
 
 interface Line { h: boolean; c: number; s0: number; s1: number; t: number; ext: boolean; conf: number }
@@ -683,7 +687,8 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
   }
   rep.push(`${partsOk.length} inside walls${snapped ? ` (${snapped} placed on written dimensions)` : ''}, ${rooms.length} rooms, ${nExt} openings in the outside walls, ${nInt} inside doors and openings. Opening positions ${ir.src === 'ai' ? 'read by AI, ± about 150 mm' : 'measured'}; heights and sills assumed.`);
   if (decks.length) rep.push(`${decks.length} deck${decks.length > 1 ? 's' : ''} as drawn${ir.src === 'ai' ? ' (AI extents, check)' : ''}.`);
-  rep.push(`Roof assumed: gable, ${o.pitch}°, ridge along the long side; floor ${o.floor.toFixed(2)} m above the ground; ceiling plate ${o.plate.toFixed(2)} m. Check them against the elevations.`);
+  const rf = o.roof ?? 'gable';
+  rep.push(`Roof ${o.roofSrc && o.roofSrc !== 'assumed' ? 'from the elevations' : 'assumed'}: ${rf === 'skillion' ? `skillion, ${o.pitch}°, high over the ${o.high === 'v0' ? 'north' : 'south'} wall` : rf === 'flat' ? 'flat' : `gable, ${o.pitch}°, ridge along the long side`}; floor ${o.floor.toFixed(2)} m above the ground; ceiling plate ${o.plate.toFixed(2)} m.`);
 
   const wall = (id: string, name: string, axis: 'x' | 'z', at: number, to: number, out: number, ops: Opening[], src: Src): WallSpec => ({ id, name, axis, at: r3(at), from: 0, to: r3(to), out, thickness: r3(te), cladding: 'cedar', source: src, openings: ops.sort((a, b) => a.a - b.a) });
   const building = {
@@ -691,7 +696,7 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     name: ir.label,
     origin: [0, 0] as [number, number],
     floorLevel: o.floor,
-    roof: { type: 'gable', ridge: 'x', pitchDeg: o.pitch, eave: 0.45, verge: 0.25, cover: 'profiled metal', source: 'assumed' as Src },
+    roof: { type: rf, ridge: 'x', pitchDeg: o.pitch, eave: 0.45, verge: 0.25, cover: 'profiled metal', source: (o.roofSrc ?? 'assumed') as Src, ...(rf === 'skillion' ? { high: o.high ?? 'v1' } : {}) },
     levels: [
       {
         plate: o.plate,
@@ -715,7 +720,12 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
   for (const d of decks) { const c = [P(d.u0, d.v0), P(d.u1, d.v0), P(d.u1, d.v1), P(d.u0, d.v1)]; for (let i = 0; i < 4; i++) overlay.push({ a: c[i], b: c[(i + 1) % 4], kind: 'deck' }); }
   const labels = rooms.map((r) => ({ at: P(r.u + r.w / 2, r.v + r.d / 2), text: r.name }));
   const tl = Tinv([x0, y0]);
-  return { building, W, D, report: rep, overlay, labels, sheetMm: [ir.offsetMm[0] + tl[0], ir.offsetMm[1] + tl[1]] };
+  const cs = [Tinv([x0, y0]), Tinv([x0 + Wmm, y0]), Tinv([x0 + Wmm, y0 + Dmm]), Tinv([x0, y0 + Dmm])];
+  const drawing = {
+    toHome: (q: Pt): Pt => { const t = T(q); return [(t[0] - x0) / 1000, (t[1] - y0) / 1000]; },
+    box: [Math.min(...cs.map((c) => c[0])), Math.min(...cs.map((c) => c[1])), Math.max(...cs.map((c) => c[0])), Math.max(...cs.map((c) => c[1]))] as [number, number, number, number],
+  };
+  return { building, W, D, report: rep, overlay, labels, sheetMm: [ir.offsetMm[0] + tl[0], ir.offsetMm[1] + tl[1]], drawing };
 }
 
 /** a plan model from one or more traced buildings, placed as they sit on the sheet */

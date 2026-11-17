@@ -8,7 +8,8 @@ import { complete, fromURL, PRESETS } from './finishes';
 import { finishesPanel } from './finishesUI';
 import { setInteriorLights } from './fitout';
 import { fillSlots } from './library';
-import { planting, type Species } from './plants';
+import { planting, type Species, type Placement as PlantPlacement } from './plants';
+import { bedPlanting, mulchBed, pathRibbon } from './landscape';
 import { twinMats } from './mats';
 import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
@@ -24,9 +25,56 @@ interface PlanModel {
   schema?: string;
   job?: { title?: string; nickname?: string; what?: string };
   north?: { deg?: number };
-  site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number } };
+  site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number }; features?: SiteFeature[] };
   buildings: (BuildingSpec & { origin: [number, number]; floorLevel?: number })[];
   planting?: Record<string, unknown>;
+}
+
+/** something drawn on the site plan, in the plan model's frame (x, z) */
+export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; source?: string }
+
+/** the site plan's paths, pads, walls, beds and trees on the ground */
+function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
+  const land = new THREE.Group();
+  land.name = 'site_from_plan';
+  const en = (p: [number, number]): [number, number] => [p[0], -p[1]];
+  const plants: PlantPlacement[] = [];
+  const concrete = new THREE.MeshStandardMaterial({ color: 0xbcb6ad, roughness: 0.92 });
+  const timber = new THREE.MeshStandardMaterial({ color: 0x46403a, roughness: 0.85 });
+  F.forEach((f, i) => {
+    const pts = f.pts.map(en);
+    if ((f.kind === 'path' || f.kind === 'driveway' || f.kind === 'steps') && pts.length >= 2) {
+      land.add(pathRibbon(`${f.kind}_${i + 1}`, pts, f.width ?? (f.kind === 'driveway' ? 3 : 1.2), groundAt, q, `${f.kind} from the site plan`));
+    } else if ((f.kind === 'parking' || f.kind === 'patio' || f.kind === 'pad') && pts.length >= 3) {
+      // laid on the ground like a bed, in concrete
+      const m = mulchBed(`${f.kind}_${i + 1}`, pts, (e, n) => groundAt(e, n) + 0.04, q);
+      m.traverse((o) => { if ((o as THREE.Mesh).isMesh) { (o as THREE.Mesh).material = concrete; o.receiveShadow = true; } });
+      m.userData = { kind: f.kind, name: f.kind === 'parking' ? 'Parking' : f.kind === 'patio' ? 'Patio' : 'Concrete pad', source: f.source ?? 'ai', note: 'outline from the site plan, laid on the ground' };
+      land.add(m);
+    } else if (f.kind === 'retaining' && pts.length >= 2) {
+      const h = f.height ?? 1.2;
+      for (let k = 0; k < pts.length - 1; k++) {
+        const [a, b] = [pts[k], pts[k + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (L < 0.2) continue;
+        const mid: [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], y = groundAt(mid[0], mid[1]);
+        const g = new THREE.BoxGeometry(L, h + 0.3, 0.2);
+        g.rotateY(Math.atan2(b[1] - a[1], b[0] - a[0]));
+        g.translate(mid[0], y + h / 2 - 0.15, -mid[1]);
+        const m = new THREE.Mesh(g, timber);
+        m.name = `retaining_${i + 1}_${k + 1}`; m.castShadow = m.receiveShadow = true;
+        m.userData = { kind: 'retaining', name: 'Retaining wall', height: h, source: f.source ?? 'ai', note: f.height ? 'height from the drawing' : 'height assumed 1.2 m' };
+        land.add(m);
+      }
+    } else if (f.kind === 'bed' && pts.length >= 3) {
+      land.add(mulchBed(`bed_${i + 1}`, pts, groundAt, q));
+      plants.push(...(bedPlanting(pts, groundAt, { density: 0.8, seed: 11 + i }) as PlantPlacement[]));
+    } else if (f.kind === 'tree' && pts[0]) {
+      const [e, n] = pts[0];
+      plants.push({ sp: 'tikouka', x: e, y: groundAt(e, n), z: -n, s: Math.max(0.8, Math.min(2, (f.r ?? 2) / 2)) });
+    }
+  });
+  if (plants.length) land.add(planting(plants, 'Planting from the site plan; species proposed.'));
+  return land;
 }
 
 type Input = { kind: 'plan'; plan: PlanModel; name: string } | { kind: 'ifc' | 'glb'; bytes: ArrayBuffer; name: string };
@@ -155,6 +203,7 @@ export const projectPlan: Project = {
     let groundAt = (_e: number, _n: number) => 0;
     const fitouts: THREE.Object3D[] = [];
     let plantObj: THREE.Object3D | null = null;
+    let landObj: THREE.Object3D | null = null;
     const keys: Key[] = [];
 
     if (input.kind === 'plan') {
@@ -211,6 +260,7 @@ export const projectPlan: Project = {
         }
         plantObj = planting(list, 'Planting from the plan model (proposed).');
       }
+      if (P.site?.features?.length) landObj = siteLayer(P.site.features, groundAt, q);
       // keys: aerial, then each building's front and living space
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.8, radius * 0.9)), look: centre.clone() });
       for (const b of P.buildings) {
@@ -263,6 +313,7 @@ export const projectPlan: Project = {
       { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
     if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: 'from the plan model', visible: true, object: plantObj });
+    if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
 
     const exports: Built['exports'] = [
       {
