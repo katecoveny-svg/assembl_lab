@@ -7,9 +7,10 @@ import * as THREE from "three";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const canvas = document.getElementById("field");
 const windows = [...document.querySelectorAll("[data-scene]")];
-const SRC = { homes: "./media/two-homes-render.webp", twin: "./media/16a-still.webp", house: "./media/nz-house.webp" };
-const FOCUS = { homes: [0, 0.04], twin: [0, 0], house: [0, 0.02], drawing: [-0.06, 0] };   // nudge the crop toward the subject
-const MIST = { homes: 1, twin: 1, house: 1, drawing: 1 };                         // how far each picture goes to muted rose
+const SRC = { homes: "./media/two-homes-render.webp", twin: "./media/16a-still.webp", house: "./media/draw-section.webp", photo: "./media/nz-house.webp" };
+const UNDER = { house: "photo" };                     // a drawing with the real picture underneath, shown where you point
+const FOCUS = { homes: [0, 0.04], twin: [0, 0], house: [0, 0.3], photo: [0, 0.1], drawing: [-0.06, 0] };   // nudge the crop toward the subject
+const MIST = { homes: 1, twin: 1, house: 1, drawing: 1, photo: 1 };                         // how far each picture goes to muted rose
 
 function fallback() {
   document.documentElement.classList.add("no-field");
@@ -30,6 +31,7 @@ else {
   const U = {
     uRes: { value: new THREE.Vector2(1, 1) }, uTile: { value: 24 }, uTex: { value: blank }, uCover: { value: new THREE.Vector4(1, 1, 0, 0) },
     uScatter: { value: 1 }, uIntro: { value: reduce ? 1 : 0 }, uPointer: { value: new THREE.Vector3(-9999, -9999, 150) }, uFlip: { value: 0 }, uMist: { value: 0.9 },
+    uUnder: { value: blank }, uCoverU: { value: new THREE.Vector4(1, 1, 0, 0) }, uHasUnder: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: U, transparent: true, depthTest: false,
@@ -45,13 +47,13 @@ else {
         float s = clamp((uScatter - (1.0 - order) * 0.55) / 0.45, 0.0, 1.0); s = s * s * (3.0 - 2.0 * s);
         float i = clamp((uIntro - order * 0.6) / 0.4, 0.0, 1.0); i = 1.0 - pow(1.0 - i, 3.0);
         float f = clamp((uFlip - order * 0.55) / 0.45, 0.0, 1.0); f = sin(f * 3.14159265);  // a picture change: tiles turn edge-on and back
-        vec2 pd = centre - uPointer.xy; float near = exp(-dot(pd, pd) / (uPointer.z * uPointer.z));
+        vec2 pd = centre - uPointer.xy; float near = exp(-dot(pd, pd) / (uPointer.z * uPointer.z)); near = near * near * (3.0 - 2.0 * near);
         float away = max(s, 1.0 - i);
         vec3 axis = normalize(vec3(aSeed.y - 0.5, aSeed.z - 0.5, 0.0) + 1e-4);
-        float ang = away * (1.2 + aSeed.w * 1.6) + f * 1.52 + near * 0.55 * (aSeed.w - 0.5);
+        float ang = away * (1.2 + aSeed.w * 1.6) + f * 1.52 + near * (0.5 + aSeed.w * 0.7) * (aSeed.y > 0.5 ? 1.0 : -1.0);
         vec3 p = rot(axis, ang) * vec3(position.x * uTile, -position.y * uTile, 0.0) * mix(1.0, 0.86, max(away, f));
         vec3 drift = (aSeed.xyz - 0.5) * vec3(uRes.x * 0.5, uRes.y * 0.5, 0.0) + vec3(0.0, -uRes.y * 0.2, 300.0 + aSeed.w * 700.0);
-        vec3 w = vec3(centre, 0.0) + p + vec3(0.0, 0.0, near * 46.0 + f * 80.0) + drift * away;
+        vec3 w = vec3(centre, 0.0) + p + vec3(0.0, 0.0, near * (60.0 + aSeed.w * 70.0) + f * 80.0) + drift * away;
         float k = 1.0 / max(0.2, 1.0 - w.z / 1500.0);
         vec2 sc = (w.xy - uRes * 0.5) * k + uRes * 0.5;
         gl_Position = vec4(sc.x / uRes.x * 2.0 - 1.0, 1.0 - sc.y / uRes.y * 2.0, 0.0, 1.0);
@@ -61,7 +63,7 @@ else {
         vAlpha = (1.0 - s * s) * i; vNear = near;
       }`,
     fragmentShader: /* glsl */ `
-      uniform sampler2D uTex; uniform vec4 uCover; uniform float uMist;
+      uniform sampler2D uTex, uUnder; uniform vec4 uCover, uCoverU; uniform float uMist, uHasUnder;
       varying vec2 vUv; varying float vFace, vAlpha, vGlint, vNear;
       void main() {
         vec2 u = (vUv - 0.5) * uCover.xy + 0.5 + uCover.zw;
@@ -71,7 +73,11 @@ else {
         vec3 plum = vec3(0.396, 0.290, 0.306), rose = vec3(0.890, 0.816, 0.824), bone = vec3(1.0, 0.992, 0.984);
         vec3 tri = l < 0.5 ? mix(plum, rose, smoothstep(0.0, 1.0, l * 2.0)) : mix(rose, bone, smoothstep(0.0, 1.0, (l - 0.5) * 2.0));
         c = mix(c, tri, m);
-        c *= 0.42 + 0.58 * vFace;
+        if (uHasUnder > 0.5) {                          // the real picture, underneath the drawing, where you point
+          vec2 w = (vUv - 0.5) * uCoverU.xy + 0.5 + uCoverU.zw;
+          c = mix(c, texture2D(uUnder, vec2(w.x, 1.0 - w.y)).rgb, smoothstep(0.08, 0.7, vNear));
+        }
+        c *= mix(1.0, 0.55 + 0.45 * vFace, step(0.001, 1.0 - vFace));
         c += vGlint * vec3(1.0, 0.992, 0.984) * 0.4 + pow(1.0 - vFace, 5.0) * vec3(0.890, 0.816, 0.824) * 0.16;
         gl_FragColor = vec4(c, vAlpha);
       }`,
@@ -95,7 +101,7 @@ else {
   const tex = {}, aspect = {};
   const loader = new THREE.TextureLoader();
   const prep = (t) => { t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; return t; };
-  for (const [id, src] of Object.entries(SRC)) loader.load(src, (t) => { tex[id] = prep(t); aspect[id] = t.image.width / t.image.height; if (current === id) use(id); });
+  for (const [id, src] of Object.entries(SRC)) loader.load(src, (t) => { tex[id] = prep(t); aspect[id] = t.image.width / t.image.height; if (current === id || UNDER[current] === id) use(current); });
   // the drawing: the live A101 sheet from chapter 03, rasterised on bone paper
   let drawingSvg = "", tDraw = 0;
   document.addEventListener("ap:sheets", (e) => { if (e.detail?.A101 && e.detail.A101 !== drawingSvg) { drawingSvg = e.detail.A101; clearTimeout(tDraw); tDraw = setTimeout(rasterise, 500); } });
@@ -108,16 +114,22 @@ else {
     const t = prep(new THREE.CanvasTexture(c)); tex.drawing?.dispose(); tex.drawing = t; aspect.drawing = c.width / c.height;
     if (current === "drawing") use("drawing"); else kick();
   }
-  function cover() {
-    const id = current, a = aspect[id] || 16 / 9, W = U.uRes.value.x, H = U.uRes.value.y, s = Math.max(W / a, H) ;
+  function fit(id, v) {
+    const a = aspect[id] || 16 / 9, W = U.uRes.value.x, H = U.uRes.value.y, s = Math.max(W / a, H);
     const dw = a * s, dh = s, f = FOCUS[id] || [0, 0];
-    U.uCover.value.set(W / dw, H / dh, f[0] * (1 - W / dw), f[1] * (1 - H / dh));
+    v.set(W / dw, H / dh, f[0] * (1 - W / dw), f[1] * (1 - H / dh));
   }
+  function cover() { fit(current, U.uCover.value); const u = UNDER[current]; if (u) fit(u, U.uCoverU.value); }
   let current = windows[0]?.dataset.scene || "homes", flipT = 0;
-  function use(id) { if (!tex[id]) return; U.uTex.value = tex[id]; U.uMist.value = MIST[id] ?? 0.5; cover(); kick(); }
+  function use(id) {
+    if (!tex[id]) return; U.uTex.value = tex[id]; U.uMist.value = MIST[id] ?? 0.5;
+    const u = UNDER[id]; U.uHasUnder.value = u && tex[u] ? 1 : 0; if (u && tex[u]) U.uUnder.value = tex[u];
+    cover(); kick();
+  }
   function change(id) {
     if (id === current) return;
     current = id;
+    // if the field is mostly assembled, turn the tiles over to the new picture; otherwise swap while they are apart
     // if the field is mostly assembled, turn the tiles over to the new picture; otherwise swap while they are apart
     if (U.uScatter.value < 0.6 && !reduce) { flipT = performance.now(); setTimeout(() => use(id), 380); } else use(id);
   }
@@ -138,6 +150,9 @@ else {
   const point = (e) => { U.uPointer.value.x = e.clientX; U.uPointer.value.y = e.clientY; U.uPointer.value.z = e.pointerType === "touch" ? 120 : 150; kick(); };
   addEventListener("pointermove", point, { passive: true }); addEventListener("pointerdown", point, { passive: true });
   addEventListener("pointerup", (e) => { if (e.pointerType === "touch") setTimeout(() => { U.uPointer.value.x = -9999; kick(); }, 900); }, { passive: true });
+  // a finger dragging across a picture scrubs the squares too (a scroll gesture cancels pointer events)
+  addEventListener("touchmove", (e) => { const t = e.touches[0]; if (!t) return; U.uPointer.value.x = t.clientX; U.uPointer.value.y = t.clientY; U.uPointer.value.z = 120; kick(); }, { passive: true });
+  addEventListener("touchend", () => setTimeout(() => { U.uPointer.value.x = -9999; kick(); }, 700), { passive: true });
   document.addEventListener("pointerleave", () => { U.uPointer.value.x = -9999; kick(); });
 
   // ---------------------------------------------------------------------------------------------- frames, only while something moves
