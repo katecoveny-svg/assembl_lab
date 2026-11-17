@@ -98,7 +98,8 @@ const STUDY_DOORS = [
 const PLAY = [
   { href: '/study/patterns/', title: 'Living Studio', line: 'Sculpt real geometry, style the light, export the mesh.', truth: 'live' },
   { world: 'ar', title: 'assembl AR', line: 'Make 3D text or a framed photo and place it in your room.', truth: 'live' },
-  { href: '/music/', title: 'Instrument studies', line: 'Take a guitar, a snare drum and a piano action apart, part by part, then play them.', truth: 'ill' },
+  { href: '/music/play/', title: 'Play guitar', line: 'An acoustic guitar to play in your browser: pick a chord and swipe across the strings.', truth: 'ill' },
+  { href: '/music/', title: 'Instrument studies', line: 'See how a guitar, a snare drum and a piano action are made, part by part.', truth: 'ill' },
   { href: '/instruments/particle-studio/', title: 'Particle Studio', line: 'Design a million-point particle system as code and export it to the engine.', truth: 'ill' },
   { href: '/instruments/reality-remix/', title: 'Reality Remix', line: 'Push and swirl thousands of colour splats into a picture.', truth: 'ill' },
   { href: '/instruments/impossible-objects/', title: 'Impossible Objects', line: 'Flip the drawing order to build a Penrose triangle.', truth: 'ill' },

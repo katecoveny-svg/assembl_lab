@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play guitar · assembl lab</title>
+<meta name="description" content="An acoustic guitar you can play in your browser. Pick a chord and swipe across the strings, or tap the neck to fret your own notes.">
+<meta name="theme-color" content="#180B18">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./play.css">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body class="play">
+<main class="stage" id="stage">
+  <div class="canvas" id="canvas"></div>
+  <header class="mast">
+    <div>
+      <p class="eyebrow">assembl lab / music</p>
+      <h1>Play guitar.</h1>
+      <p class="line">Pick a chord, then swipe across the strings.</p>
+    </div>
+    <nav class="more" aria-label="More instruments">
+      <a href="/music/?i=snare">Snare drum</a>
+      <a href="/music/?i=piano">Piano</a>
+      <a class="how" href="/music/?i=guitar">See how it’s made →</a>
+    </nav>
+  </header>
+  <p class="nowplaying" id="now" aria-live="polite">G</p>
+  <p class="coach" id="coach">Swipe across the strings <span aria-hidden="true">↕</span></p>
+  <div class="loading" id="loading">Tuning up…</div>
+  <section class="dock" aria-label="Play">
+    <div class="pads" id="pads" role="toolbar" aria-label="Chords"></div>
+    <div class="side">
+      <button type="button" class="strum" id="strum" aria-label="Strum">Strum</button>
+      <div class="seg" role="group" aria-label="How the notes ring">
+        <button type="button" id="ring" aria-pressed="true">Ring</button>
+        <button type="button" id="mute" aria-pressed="false">Mute</button>
+      </div>
+    </div>
+  </section>
+  <p class="keys">Keys: 1–9 chords · Space strum · Shift + Space strum up · tap the neck to fret your own notes</p>
+</main>
+<script type="module" src="./play.js"></script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>
