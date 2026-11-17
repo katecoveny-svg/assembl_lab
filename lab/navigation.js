@@ -13,7 +13,7 @@ if(!document.querySelector('link[href^="/lab/presentation.css"]')&&!document.que
 // up). It only touches elements that opt in with class "lab-std": this nav, not the page under it.
 for(const href of ['/site-v2/site-v2.css','/site-v2/lab.css','/site-v2/standard.css'])if(!document.querySelector(`link[href^="${href}"]`)){const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.append(l)}
 if(scoped)document.documentElement.dataset.labFrame=path.startsWith('/next/')?'next':path==='/study/'||path==='/study/index.html'?'study':path.startsWith('/study/year9/')?'year9':'home';
-const here=path==='/'||path==='/index.html'?'explore':path.startsWith('/discover/')||path.startsWith('/instruments/')||path.startsWith('/study/patterns/')||path.startsWith('/study/bedazzle/')||path.startsWith('/next/')||path.startsWith('/ar/')||path.startsWith('/study/print/')?'discover':path.startsWith('/study/')?'study':'';
+const here=path==='/'||path==='/index.html'?'explore':path.startsWith('/discover/')||path.startsWith('/instruments/')||path.startsWith('/music/')||path.startsWith('/study/patterns/')||path.startsWith('/study/bedazzle/')||path.startsWith('/next/')||path.startsWith('/ar/')||path.startsWith('/study/print/')?'discover':path.startsWith('/study/')?'study':'';
 // The experiment nav, site-v2 (8 Nov 2026): the flat mark A + "assembl." + lab, the Lab's doors, and a pill back to assembl.co.nz.
 // Same pieces as the foundation's SiteNav (solid), styled by /site-v2/lab.css. A Menu button takes over below 880px.
 const arrow='<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';

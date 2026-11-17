@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Instrument studies · assembl lab</title>
+<meta name="description" content="Take a guitar, a snare drum and a piano action apart in 3D. Explode them, lay every part out flat, read what each one does, then play them. Sound is made in your browser.">
+<meta name="theme-color" content="#180B18">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./music.css">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body class="music">
+<a class="skip" href="#controls">Skip to the controls</a>
+<main class="stage" id="stage">
+  <div class="canvas" id="canvas"></div>
+
+  <header class="mast">
+    <div class="mast-l">
+      <p class="eyebrow" id="eyebrow">assembl lab / instrument studies</p>
+      <h1 id="title">Acoustic guitar.</h1>
+      <p class="line" id="line"></p>
+    </div>
+    <nav class="pick" aria-label="Choose an instrument">
+      <a href="?i=guitar" data-i="guitar">Guitar</a>
+      <a href="?i=snare" data-i="snare">Snare drum</a>
+      <a href="?i=piano" data-i="piano">Piano action</a>
+    </nav>
+    <div class="mast-r">
+      <p id="stat1"></p>
+      <p class="state" id="state" aria-live="polite">Assembled</p>
+      <p id="stat2"></p>
+      <button type="button" class="heroBtn" id="heroBtn" hidden aria-pressed="true">Generated model</button>
+    </div>
+  </header>
+
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+  <div class="flash" id="flash" aria-live="polite"></div>
+  <div class="knoll" id="knollLabels" aria-hidden="true"></div>
+  <div class="loading" id="loading">Building the parts…</div>
+
+  <aside class="card" id="card" hidden aria-labelledby="cardTitle">
+    <button type="button" class="back" id="cardBack">← Back to overview</button>
+    <p class="code" id="cardCode"></p>
+    <h2 id="cardTitle"></h2>
+    <p id="cardDesc"></p>
+    <dl>
+      <div><dt>Made of</dt><dd id="cardSpec"></dd></div>
+      <div><dt>Its job</dt><dd id="cardRole"></dd></div>
+    </dl>
+    <div class="nav"><button type="button" id="cardPrev">← Prev</button><span id="cardCount"></span><button type="button" id="cardNext">Next →</button></div>
+  </aside>
+
+  <div class="playwrap" id="play" hidden></div>
+
+  <section class="dock" id="controls" aria-label="Controls">
+    <p class="hint" id="hint"></p>
+    <div class="bar">
+      <div class="row">
+        <button type="button" class="b demo" id="demo" aria-pressed="false"><span class="ico">▷</span> Demo</button>
+        <span class="lab" id="barLabel">Guitar</span>
+        <label class="slide"><span class="sr">Explode</span><input type="range" id="explode" min="0" max="100" value="0" step="1"></label>
+        <output id="pct" for="explode">0%</output>
+        <button type="button" class="b" id="knoll" aria-pressed="false">Lay flat</button>
+        <span id="actions"></span>
+        <div class="search">
+          <label class="sr" for="search">Search parts</label>
+          <input id="search" type="search" placeholder="Search parts…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="results">
+          <ul id="results" role="listbox" hidden></ul>
+        </div>
+      </div>
+      <div class="chips" id="chips" role="toolbar" aria-label="Part groups"></div>
+    </div>
+    <p class="truth" id="truth"></p>
+  </section>
+</main>
+<noscript><p class="nojs">This study needs JavaScript and WebGL.</p></noscript>
+<script type="module" src="./main.js"></script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>
