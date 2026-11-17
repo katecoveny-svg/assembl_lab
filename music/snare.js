@@ -184,7 +184,8 @@ export default {
 
     return {
       ready() { holder.matrix.copy(studio.root.matrixWorld); padHolder.matrix.copy(studio.root.matrixWorld); studio.stage.add(holder, padHolder); studio.ui.setPlayPanel?.(panel); },
-      mode(m) { stick.visible = m === 'play'; studio.controls.enabled = m !== 'play'; studio.ui.showPlay?.(m === 'play'); },
+      mode(m) { stick.visible = m === 'play'; studio.controls.enabled = true; studio.ui.showPlay?.(m === 'play'); },
+      grabs(hit) { return !!hit?.object.userData.playTarget; },
       pickList(mode) { return mode === 'play' ? [pad] : null; },
       pointer(kind, ev, h) {
         if (studio.mode !== 'play' || kind !== 'down' || !h) return;

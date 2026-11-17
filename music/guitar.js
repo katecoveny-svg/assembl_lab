@@ -74,7 +74,7 @@ export default {
   ],
   root: { rotation: new THREE.Euler(-Math.PI / 2, -0.62, 0, 'YXZ'), lift: 0.004 },
   cam: { dir: V(0.32, 1.05, 0.95), homeFit: 0.9, explodeFit: 0.95, play: { target: V(0, -0.12, 0.09), radius: 0.95, dir: V(0.49, 0.85, 0.35) } },
-  hero: { url: './guitar-model.glb', tune: (m) => { m.roughness = 1; m.metalness = 1; } },
+  hero: { url: new URL('./guitar-model.glb', import.meta.url).href, tune: (m) => { m.roughness = 1; m.metalness = 1; } },
   truth: 'Assembled view: a Meshy AI model made for assembl, brand marks painted out. Parts: modelled in code to match it. Sound: synthesised in your browser.',
   stats: (n) => [`${n} parts · 6 strings · 20 frets`, 'Dreadnought, steel strung'],
   hint: 'Scroll to explode · Drag to turn · Click a part to inspect · Play to strum',
@@ -397,6 +397,10 @@ export default {
     };
     // marks live in instrument space; attach to a holder that follows the root
     const holder = new THREE.Group(); holder.matrixAutoUpdate = false; holder.add(marks);
+    // an invisible pad over the top, just under the strings: a strum can start beside the strings and still play
+    const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.36), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
+    pad.position.set(0, -0.415, TOP + 0.004); pad.userData.playTarget = { pad: true }; pad.userData.noShadow = true;
+    holder.add(pad);
     const ui = document.createElement('div'); ui.className = 'playpanel';
     ui.innerHTML = `<span class="pp-label">Chord</span>${Object.keys(CHORDS).map((c) => `<button type="button" data-chord="${c}" aria-pressed="false">${c}</button>`).join('')}<button type="button" class="pp-strum" data-strum>Strum</button><span class="pp-note">Drag across the strings, or press 1–6</span>`;
 
@@ -425,6 +429,7 @@ export default {
       if (b.dataset.strum !== undefined) strum();
     });
 
+    const KEEP = new Set(['strings']);
     let dragHits = new Set(), lastStrumDir = 0, lastP = null, speed = 0;
     let boardMesh = null;
     // any touch over the fingerboard (a string's touch zone included) frets a note; strumming happens over the body
@@ -445,20 +450,23 @@ export default {
         studio.ui.setPlayPanel?.(ui);
         boardMesh = studio.parts.find((p) => p.id === 'board')?.inner.children[0] || null;
       },
-      get forceParts() { return studio.mode === 'play'; },
+      // the play page keeps the real model on show and draws only the moving strings over it
+      get forceParts() { return studio.mode === 'play' && !studio.def?.heroPlay; },
+      get heroKeep() { return studio.def?.heroPlay ? KEEP : null; },
       mode(m) {
         marks.visible = m === 'play';
-        studio.controls.enabled = m !== 'play';
+        studio.controls.enabled = true;
         studio.ui.showPlay?.(m === 'play');
       },
-      pickList(mode) { return mode === 'play' ? [...strings.map((s) => s.pick), ...(boardMesh ? [boardMesh] : [])] : null; },
+      grabs(hit) { return !!hit && (!!hit.object.userData.playTarget || hit.object === boardMesh); },
+      pickList(mode) { return mode === 'play' ? [...strings.map((s) => s.pick), pad, ...(boardMesh ? [boardMesh] : [])] : null; },
       pointer(kind, ev, hit) {
         if (studio.mode !== 'play') return;
         const now = performance.now();
         if (kind === 'down') { dragHits = new Set(); studio.sound.ensure(); lastP = { x: ev.clientX, y: ev.clientY, t: now }; speed = 0; if (boardHit(hit)) { dragHits.add('board'); return; } }
         if (kind === 'drag' && lastP) { const dt = Math.max(1, now - lastP.t); speed = speed * 0.5 + 0.5 * (Math.hypot(ev.clientX - lastP.x, ev.clientY - lastP.y) / dt); lastP = { x: ev.clientX, y: ev.clientY, t: now }; }
         if (dragHits.has('board')) return;
-        if ((kind === 'down' || kind === 'drag') && hit?.object.userData.playTarget) {
+        if ((kind === 'down' || kind === 'drag') && hit?.object.userData.playTarget?.string !== undefined) {
           const i = hit.object.userData.playTarget.string;
           if (!dragHits.has(i)) { dragHits.add(i); pluck(i, { gain: 0.5, vel: kind === 'down' ? 0.55 : Math.min(1, 0.35 + speed / 1.2) }); }
         }

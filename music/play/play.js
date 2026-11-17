@@ -39,7 +39,7 @@ async function start() {
   // wide screens: the guitar across the screen; tall screens: looking up the neck, so you swipe sideways across the strings
   const wide = innerWidth > innerHeight * 0.9;
   const dir = wide ? V(0.55, 0.8, 0.42) : V(-0.42, 0.9, 0.62);
-  const def = { ...guitar, hero: null, cam: { ...guitar.cam, dir, play: { target: V(0, wide ? 0.0 : -0.2, 0.08), radius: wide ? 0.8 : 0.68, dir } } };
+  const def = { ...guitar, heroPlay: true, cam: { ...guitar.cam, dir, play: { target: V(0, wide ? 0.0 : -0.2, 0.08), radius: wide ? 0.8 : 0.68, dir } } };
   await studio.load(def);
   // a soft warm light behind it
   const cv = document.createElement('canvas'); cv.width = cv.height = 512;
