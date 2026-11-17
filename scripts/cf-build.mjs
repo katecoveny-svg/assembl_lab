@@ -49,11 +49,18 @@ for (const r of v.redirects ?? []) {
   redirects.push(`${src} ${dst} ${r.permanent ? 301 : 302}`);
 }
 for (const r of v.rewrites ?? []) {
-  const src = r.source.replace(/:\w+\/?$/, '*');
-  const line = `${src} ${r.destination} 200`;
+  // Cloudflare strips index.html, so rewrite to the folder; a named segment keeps the folder itself from matching
+  const dst = r.destination.replace(/index\.html$/, '');
+  const line = `${r.source} ${dst} 200`;
   if (!redirects.includes(line)) redirects.push(line);
 }
 writeFileSync(join(OUT, '_redirects'), redirects.join('\n') + '\n');
+
+// a real not-found page (without one, Cloudflare Pages answers every unknown address with the home page)
+if (!existsSync(join(OUT, '404.html'))) writeFileSync(join(OUT, '404.html'), `<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Not found · assembl lab</title>
+<style>body{margin:0;min-height:100svh;display:grid;place-items:center;background:#21121F;color:#F9F6F2;font-family:system-ui,sans-serif;text-align:center;padding:24px}a{color:#D9BACB}</style></head>
+<body><main><p style="font:500 28px/1 system-ui;letter-spacing:-.05em">assembl<span style="color:#D9BACB">.</span> lab</p><p>There's nothing at this address.</p><p><a href="/">Back to the lab</a></p></main></body></html>
+`);
 
 // headers: the site-wide security headers, CORS and caching for the AR folders, and the USDZ type on every .usdz
 const H = [];
