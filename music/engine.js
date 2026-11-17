@@ -169,7 +169,7 @@ export class Studio {
     this.loader.load(h.url, (g) => {
       if (this.def !== want) return;
       const m = g.scene;
-      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.material.transparent = false; if (h.tune) h.tune(o.material); } });
+      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.material.transparent = false; if (h.tune) h.tune(o.material, this); } });
       const holder = new THREE.Group(); holder.add(m);
       m.position.copy(h.position || V()); m.rotation.copy(h.rotation || new THREE.Euler()); m.scale.setScalar(h.scale || 1);
       holder.matrixAutoUpdate = false;
