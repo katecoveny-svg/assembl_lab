@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play the amp · assembl lab</title>
+<meta name="description" content="A valve amp head on a 4×12 cabinet, in your browser. Plug the guitar in, turn the knobs and hear the tone change; watch the valves glow and the speakers move.">
+<meta name="theme-color" content="#180B18">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../play.css">
+<link rel="stylesheet" href="./amp.css">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body class="play amp">
+<main class="stage" id="stage">
+  <div class="canvas" id="canvas"></div>
+  <header class="mast">
+    <div>
+      <p class="eyebrow">assembl lab / music</p>
+      <h1>Turn it up.</h1>
+      <p class="line">Pick a chord, then drag the knobs on the amp.</p>
+      <div class="views" id="views" role="group" aria-label="Look at">
+        <button type="button" data-v="whole" aria-pressed="true">Whole</button>
+        <button type="button" data-v="controls" aria-pressed="false">Controls</button>
+        <button type="button" data-v="speakers" aria-pressed="false">Speakers</button>
+        <button type="button" data-v="valves" aria-pressed="false">Valves</button>
+        <button type="button" class="lbl" id="lblBtn" aria-pressed="true">Labels</button>
+      </div>
+    </div>
+    <nav class="more" aria-label="More instruments">
+      <a href="/music/play/">Guitar</a>
+      <a href="/music/play/piano/">Piano</a>
+      <a class="how" href="/music/?i=snare">Snare drum →</a>
+    </nav>
+  </header>
+  <p class="nowplaying" id="now" aria-live="polite">E5</p>
+  <div class="labels" id="labels" aria-label="Parts"></div>
+  <aside class="card" id="card" hidden><button type="button" class="x" id="cardX" aria-label="Close">×</button><p class="k" id="cardK"></p><h2 id="cardH"></h2><p id="cardP"></p><p class="spec" id="cardS"></p></aside>
+  <aside class="scope" id="scope" aria-label="Live sound">
+    <p class="k"><span class="dot"></span>Live signal <span class="tag" id="scopeTag">live</span></p>
+    <canvas id="wave" width="480" height="120" aria-hidden="true"></canvas>
+    <p class="sub">Tone, set by the knobs</p>
+    <canvas id="eq" width="480" height="110" aria-hidden="true"></canvas>
+    <div class="sliders" id="sliders"></div>
+  </aside>
+  <div class="pick" id="pick" aria-hidden="true"></div>
+  <p class="coach" id="coach">Pick a chord below <span aria-hidden="true">↓</span></p>
+  <div class="loading" id="loading">Tuning up…</div>
+  <section class="dock" aria-label="Play">
+    <div class="pads" id="pads" role="toolbar" aria-label="Chords"></div>
+    <div class="side">
+      <button type="button" class="strum" id="strum" aria-label="Strum">Strum</button>
+      <div class="seg" role="group" aria-label="How the notes ring">
+        <button type="button" id="ring" aria-pressed="true">Ring</button>
+        <button type="button" id="mute" aria-pressed="false">Mute</button>
+      </div>
+    </div>
+  </section>
+  <p class="keys">Keys: 1–9 chords · Space strum · M palm mute · drag a knob up or down to turn it · <span class="truth">Modelled in code · sound made in your browser</span></p>
+</main>
+<script type="module" src="./amp-play.js"></script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>

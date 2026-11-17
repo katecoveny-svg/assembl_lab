@@ -99,6 +99,7 @@ const PLAY = [
   { href: '/study/patterns/', title: 'Living Studio', line: 'Sculpt real geometry, style the light, export the mesh.', truth: 'live' },
   { world: 'ar', title: 'assembl AR', line: 'Make 3D text or a framed photo and place it in your room.', truth: 'live' },
   { href: '/music/play/', title: 'Play guitar', line: 'An acoustic guitar to play in your browser: pick a chord and swipe across the strings.', truth: 'ill' },
+  { href: '/music/play/amp/', title: 'Turn it up', line: 'A valve amp and 4×12 cabinet: plug the guitar in, turn the knobs, watch the valves glow and the speakers move.', truth: 'ill' },
   { href: '/music/play/piano/', title: 'Play piano', line: 'A white baby grand to play in your browser: watch the hammers strike and the dampers lift.', truth: 'ill' },
   { href: '/music/', title: 'Instrument studies', line: 'See how a guitar, a snare drum and a piano action are made, part by part.', truth: 'ill' },
   { href: '/instruments/particle-studio/', title: 'Particle Studio', line: 'Design a million-point particle system as code and export it to the engine.', truth: 'ill' },

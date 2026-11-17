@@ -61,7 +61,7 @@ async function start() {
     { n: 3, id: 'strings', at: () => P.stringMid(30) },
     { n: 4, id: 'hammers', at: () => V(0.28, 0.85, -0.155) },
     { n: 5, id: 'dampers', at: () => V(-0.2, 0.905, -0.235) },
-    { n: 6, id: 'keys', at: () => P.keyTop(67) },
+    { n: 6, id: 'keys', at: () => P.keyTop(67).add(V(0, -0.035, 0.05)) }, // on the key slip, so it never covers a key
     { n: 7, id: 'pedals', at: () => V(0.06, 0.1, 0.27) },
     { n: 8, id: 'soundboard', at: () => V(-0.38, 0.81, -0.55) },
   ];
