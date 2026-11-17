@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Five places AI pays at ArchiPro · an independent concept by assembl</title>
+<meta name="description" content="A working concept by Kate Hudson at assembl: five ideas for ArchiPro, each running on this page, with a real Plan to 4D model at the centre.">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./concept.css">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the ideas</a>
+
+<header class="top" id="top">
+  <a class="mark" href="https://assembl.co.nz" aria-label="assembl.co.nz">assembl<span>.</span></a>
+  <nav class="chapters" aria-label="The five ideas">
+    <a href="#catalogue"><b>01</b> Catalogue</a>
+    <a href="#specify"><b>02</b> Specify</a>
+    <a href="#home"><b>03</b> Home</a>
+    <a href="#join"><b>04</b> Join</a>
+    <a href="#team"><b>05</b> Team</a>
+  </nav>
+  <span class="for">Concept for ArchiPro</span>
+</header>
+
+<main id="main">
+
+<!-- hero -->
+<section class="hero" aria-labelledby="hero-h">
+  <div class="hero-copy">
+    <p class="eyebrow mono">An independent concept · prepared for ArchiPro · November 2026</p>
+    <h1 id="hero-h">Five places AI pays at ArchiPro.</h1>
+    <div class="hero-side">
+    <p class="lede">Every product in a project, readable by the assistants people now research with, and placed on the house they're actually building. Five ideas, each running on this page, so you can try them yourself.</p>
+    <div class="cta">
+      <a class="link" href="#catalogue">Start with the catalogue ↘</a>
+      <a class="link" href="#home">See it on a real house ↘</a>
+    </div>
+    <ul class="truth" aria-label="What is real on this page">
+      <li><span class="chip live">Live</span> the 16A model, made by Plan to 4D from real drawings</li>
+      <li><span class="chip sample">Sample</span> suppliers, products, practice and queue</li>
+      <li><span class="chip proposed">Proposed</span> the feed licence and every integration</li>
+    </ul>
+    </div>
+  </div>
+  <figure class="hero-stage">
+    <canvas id="cloud" aria-hidden="true"></canvas>
+    <div class="tags" id="tags" aria-hidden="true"></div>
+    <noscript><p class="mono">The 3D view needs JavaScript. Everything it shows is also written below.</p></noscript>
+  </figure>
+  <p class="cap hero-cap"><span>Every product, tagged in the project.</span> <span class="mono" id="cloud-cap">16A, two timber homes. Sampled from the Plan to 4D model, not a scan.</span></p>
+</section>
+
+<!-- the evidence -->
+<section class="facts" aria-labelledby="facts-h">
+  <p class="kicker mono" id="facts-h">00 / Why now</p>
+  <h2 class="facts-title">ArchiPro's own numbers say research has moved.</h2>
+  <ol class="fact-row" id="facts"></ol>
+</section>
+
+<!-- 01 catalogue -->
+<section class="chapter" id="catalogue" aria-labelledby="cat-h">
+  <div class="chapter-head">
+    <p class="kicker mono">01 / The catalogue</p>
+    <h2 id="cat-h">The catalogue AI assistants quote.</h2>
+    <p class="sub">When someone asks ChatGPT or Claude for a product, the answer should come from ArchiPro, link to ArchiPro, and send the enquiry through ArchiPro. That needs the catalogue published as licensed, structured data, not just pages.</p>
+  </div>
+  <div class="cat-grid">
+    <div class="console" id="console">
+      <p class="mono label">Ask as a homeowner or an architect would</p>
+      <div class="asks" id="asks"></div>
+      <form class="askform" id="askform" autocomplete="off">
+        <label class="sr" for="ask">Your question</label>
+        <input id="ask" name="ask" maxlength="160" placeholder="Try: black window joinery for a coastal house">
+        <button class="btn primary" type="submit">Ask</button>
+      </form>
+      <div class="trace" id="trace" aria-live="polite"></div>
+    </div>
+    <aside class="seen">
+      <div class="seg" role="tablist" aria-label="What the assistant reads">
+        <button role="tab" aria-selected="false" data-seen="page">Today: a web page</button>
+        <button role="tab" aria-selected="true" data-seen="record">Agent-ready: a record</button>
+      </div>
+      <pre class="record mono" id="record" tabindex="0"></pre>
+      <p class="small">The assistant gets typed fields, the licence and a link home, instead of guessing from a page. <a href="./feed.json" target="_blank" rel="noopener">Open the sample feed file</a> an agent would read.</p>
+    </aside>
+  </div>
+  <div class="measure">
+    <p class="mono label">What we'd measure</p>
+    <ul><li>Sessions that arrive from an AI answer</li><li>Enquiries from those sessions, on platform and on suppliers' sites</li><li>Licensed feed calls, by partner</li></ul>
+  </div>
+</section>
+
+<!-- 02 specify -->
+<section class="chapter alt" id="specify" aria-labelledby="spec-h">
+  <div class="chapter-head">
+    <p class="kicker mono">02 / Specify</p>
+    <h2 id="spec-h">A specification assistant for architects.</h2>
+    <p class="sub">Set the brief once. The assistant shortlists from the catalogue, shows the trade-offs side by side, and writes the specification lines. It prepares the Building Code review for the designer; it never says a product complies.</p>
+  </div>
+  <div class="spec-brief" id="brief">
+    <fieldset>
+      <legend class="mono label">Element</legend>
+      <div class="pills" data-brief="cat"></div>
+    </fieldset>
+    <fieldset>
+      <legend class="mono label">Site exposure (NZS 3604)</legend>
+      <div class="pills" data-brief="zone"></div>
+    </fieldset>
+    <fieldset>
+      <legend class="mono label">What matters most</legend>
+      <div class="pills" data-brief="pri"></div>
+    </fieldset>
+  </div>
+  <div class="spec-grid">
+    <div class="compare" id="compare" aria-live="polite"></div>
+    <aside class="schedule">
+      <p class="mono label">Specification, draft</p>
+      <ol id="schedule" class="lines"><li class="empty">Add a product to start the schedule.</li></ol>
+      <div class="sched-actions">
+        <button class="btn" id="csv" disabled>Download schedule (CSV)</button>
+        <button class="btn primary" id="samples" disabled>Request samples</button>
+      </div>
+      <div class="code" id="code"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- 03 home -->
+<section class="chapter" id="home" aria-labelledby="home-h">
+  <div class="chapter-head">
+    <p class="kicker mono">03 / Home</p>
+    <h2 id="home-h">A homeowner companion, on their real site.</h2>
+    <p class="sub">From a brief to a shortlist to products on the house itself, in the real sun. This is the actual Plan to 4D twin of 16A, two timber homes from Kate's own resource-consent drawings. Pick a product and the house rebuilds with it.</p>
+  </div>
+  <div class="home-grid">
+    <div class="twin" id="twin">
+      <div class="twin-still" id="twin-still">
+        <img src="./media/16a-still.webp" alt="The 16A twin: two timber homes on their sloping site in afternoon sun." width="1600" height="890" loading="lazy" decoding="async">
+        <button class="btn primary load" id="twin-load">Open the live twin</button>
+        <p class="mono still-note">Still from the twin. The live model is about 3 MB.</p>
+      </div>
+      <div class="sun" id="sun" hidden>
+        <p class="mono label">Sun at the site</p>
+        <div class="pills" id="season"></div>
+        <label class="mono slider-l" for="hour">Time <output id="hour-out">15:00</output></label>
+        <input type="range" id="hour" min="6" max="21" step="0.5" value="15">
+      </div>
+    </div>
+    <aside class="board">
+      <p class="mono label">Your shortlist</p>
+      <div id="picks"></div>
+      <div class="board-foot">
+        <p class="small" id="board-note">Every pick is a sample product. The twin shows its finish; colours on screen are approximate.</p>
+        <button class="btn primary" id="ask-pro">Ask an architect about this</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- 04 join -->
+<section class="chapter alt" id="join" aria-labelledby="join-h">
+  <div class="chapter-head">
+    <p class="kicker mono">04 / Join</p>
+    <h2 id="join-h">From trial to paying member, self-serve.</h2>
+    <p class="sub">A practice names its website. An agent reads only that site, drafts the profile, matches products in its projects to the catalogue and suggests a plan. The practice owner checks it and presses publish. Nothing goes live before that.</p>
+  </div>
+  <div class="join-grid">
+    <div class="site" id="site"></div>
+    <div class="profile" id="profile" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- 05 team -->
+<section class="chapter" id="team" aria-labelledby="team-h">
+  <div class="chapter-head">
+    <p class="kicker mono">05 / Team</p>
+    <h2 id="team-h">Agent teams across three markets.</h2>
+    <p class="sub">Small teams in Auckland, Sydney and Los Angeles, with agents doing the preparation overnight. Each card is work an agent drafted. Nothing leaves ArchiPro until the named person approves it.</p>
+  </div>
+  <div class="clocks" id="clocks"></div>
+  <div class="queue" id="queue"></div>
+  <details class="log">
+    <summary class="mono">Audit log <span id="log-n">0</span></summary>
+    <ol id="log"></ol>
+  </details>
+</section>
+
+<!-- the studio, as proof -->
+<section class="proof" aria-labelledby="proof-h">
+  <div class="proof-head">
+    <p class="kicker mono">06 / Already working</p>
+    <h2 id="proof-h">The same way of working, running in assembl's architecture studio.</h2>
+    <p class="sub">The studio is a working team of 33 specialist agents for architecture, each with a named human reviewer and written limits. Its Building Code register is metadata only: it prepares the reviewer and can't claim compliance. These are its own records and measured runs.</p>
+  </div>
+  <figure class="plate">
+    <img src="./media/two-homes-render.webp" alt="Two timber homes at dusk, with a fire pit and curved timber seating." width="1920" height="1080" loading="lazy" decoding="async">
+    <figcaption class="cap"><span>Two homes.</span> <span class="mono">A render, not a photograph. From assembl.co.nz.</span></figcaption>
+  </figure>
+  <div class="proof-grid">
+    <div class="roster" id="roster"></div>
+    <div class="rules" id="rules"></div>
+  </div>
+  <ul class="runs" id="runs"></ul>
+</section>
+
+<!-- how -->
+<section class="how" aria-labelledby="how-h">
+  <p class="kicker mono">07 / First ninety days</p>
+  <h2 id="how-h">How I'd start.</h2>
+  <ol class="steps">
+    <li><span class="mono">Weeks 1–3</span><h3>Pick one, set the baseline.</h3><p>Choose the idea with the clearest number behind it, likely the catalogue feed. Agree the measure, the window and where the data comes from before building anything.</p></li>
+    <li><span class="mono">Weeks 4–8</span><h3>Ship it to a small group.</h3><p>A real feed, a real assistant integration, a few suppliers who opt in. Every change on a branch, tested in a browser, previewed, and approved before it goes live.</p></li>
+    <li><span class="mono">Weeks 9–12</span><h3>Read the evidence, then widen.</h3><p>Show what moved, what it cost and what went wrong. Expand only if it clears the bar we set in week one.</p></li>
+  </ol>
+  <div class="me">
+    <p>Kate Hudson, founder of assembl. Thirteen years in brand and marketing strategy, starting as CRM manager at BMW. Now building with agents every day.</p>
+    <p class="links"><a class="link" href="https://assembl.co.nz">assembl.co.nz ↗</a> <a class="link" href="https://lab.assembl.co.nz">The lab ↗</a> <a class="link" href="/plan-studio/">Plan Studio ↗</a></p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p>Independent assembl concept. Not commissioned by, affiliated with or endorsed by ArchiPro. Simulated data unless explicitly stated otherwise. Supplier and practice names are invented for this concept; any likeness to a real business is coincidence. ArchiPro figures are from the sources linked beside them. The render of two homes is from assembl.co.nz.</p>
+  <div class="end"><a class="mark" href="https://assembl.co.nz">assembl<span>.</span></a><span class="mono">Kate Hudson · Tāmaki Makaurau · 2026</span></div>
+</footer>
+
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h" hidden>
+  <div class="gate-card">
+    <p class="mono label" id="gate-k">Needs your approval</p>
+    <h3 id="gate-h"></h3>
+    <div id="gate-body"></div>
+    <div class="gate-actions">
+      <button class="btn" id="gate-no">Not now</button>
+      <button class="btn primary" id="gate-yes">Approve</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./page.js"></script>
+<script type="module" src="./hero.js"></script>
+</body>
+</html>

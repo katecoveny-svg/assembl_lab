@@ -1,0 +1,851 @@
+{
+  "feed": {
+    "name": "archipro-feed",
+    "version": "0.1-concept",
+    "licence": "proposed",
+    "updated": "2026-11-18"
+  },
+  "notice": "Independent assembl concept. Not commissioned by, affiliated with or endorsed by ArchiPro. Every supplier and product here is invented sample data; specs are illustrative, not maker data.",
+  "tools": [
+    {
+      "name": "search_products",
+      "input": {
+        "category": "cladding | roof | joinery | decking | floor | bench",
+        "exposure_zone": "B | C | D | E (NZS 3604)",
+        "upkeep": "Low | Medium | High",
+        "thermally_broken": "boolean",
+        "max_lead_weeks": "number",
+        "text": "free text"
+      },
+      "returns": "records, ranked, with the reasons each was kept or excluded"
+    },
+    {
+      "name": "get_product",
+      "input": {
+        "id": "archipro:<id>"
+      },
+      "returns": "one record"
+    },
+    {
+      "name": "enquire",
+      "input": {
+        "id": "archipro:<id>",
+        "message": "text"
+      },
+      "returns": "a draft enquiry; sent only after the person confirms"
+    }
+  ],
+  "records": [
+    {
+      "@type": "Product",
+      "id": "archipro:mf-cedar-oil",
+      "name": "Vertical cedar shiplap, natural oil",
+      "brand": {
+        "name": "Marlow & Finch Timber",
+        "sample": true
+      },
+      "category": "Cladding",
+      "description": "135 mm cover, kiln-dried western red cedar, penetrating oil.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal)",
+        "upkeep": "Medium",
+        "upkeep_note": "Re-oil every two to three years.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 3,
+        "price_band": "$$",
+        "note": "Stainless fixings in Zone D."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/mf-cedar-oil (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:mf-cedar-black",
+      "name": "Vertical cedar shiplap, black stain",
+      "brand": {
+        "name": "Marlow & Finch Timber",
+        "sample": true
+      },
+      "category": "Cladding",
+      "description": "135 mm cover, cedar with a pigmented black stain.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Low",
+        "upkeep_note": "Re-stain every five to seven years.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 3,
+        "price_band": "$$",
+        "note": "Stainless fixings in Zones D and E."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/mf-cedar-black (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:os-rib-charcoal",
+      "name": "Ribbed steel cladding, charcoal",
+      "brand": {
+        "name": "Ordinal Steelworks",
+        "sample": true
+      },
+      "category": "Cladding",
+      "description": "Trapezoidal rib at 300 mm centres, prefinished charcoal.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed)",
+        "upkeep": "Low",
+        "upkeep_note": "Wash sheltered areas the rain doesn't reach.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 5,
+        "price_band": "$$",
+        "note": "Zone D and E need the marine-grade coating."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/os-rib-charcoal (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:pb-fc-white",
+      "name": "Fibre-cement weatherboard, painted white",
+      "brand": {
+        "name": "Plainsong Building Products",
+        "sample": true
+      },
+      "category": "Cladding",
+      "description": "Smooth bevel-back boards, low-sheen white.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Low",
+        "upkeep_note": "Repaint every eight to ten years.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 2,
+        "price_band": "$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/pb-fc-white (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:os-corr-charcoal",
+      "name": "Corrugate, charcoal",
+      "brand": {
+        "name": "Ordinal Steelworks",
+        "sample": true
+      },
+      "category": "Roofing",
+      "description": "Corrugated prefinished steel, standard coating.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed)",
+        "upkeep": "Low",
+        "upkeep_note": "Wash unwashed areas yearly.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 4,
+        "price_band": "$",
+        "note": "Not for Zone D or E: use the marine coating."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/os-corr-charcoal (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:os-corr-black-marine",
+      "name": "Corrugate, black, marine coating",
+      "brand": {
+        "name": "Ordinal Steelworks",
+        "sample": true
+      },
+      "category": "Roofing",
+      "description": "Corrugated steel, marine-grade coating for coastal sites.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Low",
+        "upkeep_note": "Wash unwashed areas every three months near surf.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 6,
+        "price_band": "$$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/os-corr-black-marine (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:nb-corr-grey",
+      "name": "Corrugate, warm grey",
+      "brand": {
+        "name": "Northbeam Roofing",
+        "sample": true
+      },
+      "category": "Roofing",
+      "description": "Corrugated prefinished steel, warm mid grey.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal)",
+        "upkeep": "Low",
+        "upkeep_note": "Wash unwashed areas twice a year.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 4,
+        "price_band": "$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/nb-corr-grey (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:nb-corr-zinc",
+      "name": "Corrugate, unpainted zinc-aluminium",
+      "brand": {
+        "name": "Northbeam Roofing",
+        "sample": true
+      },
+      "category": "Roofing",
+      "description": "Unpainted zinc-aluminium coated steel.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed)",
+        "upkeep": "Low",
+        "upkeep_note": "Keep clear of copper and lead run-off.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 3,
+        "price_band": "$",
+        "note": "Not for coastal or sea-spray sites."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture"
+      ],
+      "url": "archipro.co.nz/product/nb-corr-zinc (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:hj-tb-black",
+      "name": "Thermally broken aluminium, matt black",
+      "brand": {
+        "name": "Halcyon Joinery",
+        "sample": true
+      },
+      "category": "Window and door joinery",
+      "description": "Thermally broken frames, double glazed, low-E, argon fill.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Low",
+        "upkeep_note": "Wash frames and tracks every three months near the sea.",
+        "durability": "15 years, maker's statement (B2)",
+        "thermally_broken": true,
+        "lead_time_weeks": 7,
+        "price_band": "$$$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture",
+        "H1 Energy efficiency"
+      ],
+      "url": "archipro.co.nz/product/hj-tb-black (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:hj-tb-bronze",
+      "name": "Thermally broken aluminium, dark bronze",
+      "brand": {
+        "name": "Halcyon Joinery",
+        "sample": true
+      },
+      "category": "Window and door joinery",
+      "description": "Thermally broken, anodised dark bronze, double glazed, low-E.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal)",
+        "upkeep": "Low",
+        "upkeep_note": "Wash frames every six months.",
+        "durability": "15 years, maker's statement (B2)",
+        "thermally_broken": true,
+        "lead_time_weeks": 9,
+        "price_band": "$$$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture",
+        "H1 Energy efficiency"
+      ],
+      "url": "archipro.co.nz/product/hj-tb-bronze (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:sw-std-white",
+      "name": "Aluminium, white powdercoat",
+      "brand": {
+        "name": "Southroad Windows",
+        "sample": true
+      },
+      "category": "Window and door joinery",
+      "description": "Standard aluminium frames, double glazed.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal)",
+        "upkeep": "Low",
+        "upkeep_note": "Wash frames every six months.",
+        "durability": "15 years, maker's statement (B2)",
+        "thermally_broken": false,
+        "lead_time_weeks": 4,
+        "price_band": "$",
+        "note": "Not thermally broken: check the H1 calculation."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture",
+        "H1 Energy efficiency"
+      ],
+      "url": "archipro.co.nz/product/sw-std-white (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:qs-timber-clear",
+      "name": "Timber joinery, clear finish",
+      "brand": {
+        "name": "Quarter Sawn Joinery",
+        "sample": true
+      },
+      "category": "Window and door joinery",
+      "description": "Timber sashes and frames, clear finish, double glazed.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal)",
+        "upkeep": "Medium",
+        "upkeep_note": "Recoat the exterior every three to four years.",
+        "durability": "15 years, maker's statement (B2)",
+        "thermally_broken": true,
+        "lead_time_weeks": 10,
+        "price_band": "$$$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "E2 External moisture",
+        "H1 Energy efficiency"
+      ],
+      "url": "archipro.co.nz/product/qs-timber-clear (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:mf-hw-oiled",
+      "name": "Hardwood decking 140 × 19, oiled",
+      "brand": {
+        "name": "Marlow & Finch Timber",
+        "sample": true
+      },
+      "category": "Decking",
+      "description": "Dense red-brown hardwood, pre-oiled, certified source.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Medium",
+        "upkeep_note": "Re-oil yearly to keep the colour.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 2,
+        "price_band": "$$",
+        "note": "Tannin can stain paving in the first months."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "D1 Access routes (slip resistance)"
+      ],
+      "url": "archipro.co.nz/product/mf-hw-oiled (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:mf-hw-silver",
+      "name": "Hardwood decking 140 × 19, left to silver",
+      "brand": {
+        "name": "Marlow & Finch Timber",
+        "sample": true
+      },
+      "category": "Decking",
+      "description": "Hardwood left unfinished to weather to silver grey.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Low",
+        "upkeep_note": "Wash yearly. No oil needed.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 2,
+        "price_band": "$$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "D1 Access routes (slip resistance)"
+      ],
+      "url": "archipro.co.nz/product/mf-hw-silver (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:ng-hw-pale",
+      "name": "Pale hardwood decking, oiled",
+      "brand": {
+        "name": "Northgrain Timber",
+        "sample": true
+      },
+      "category": "Decking",
+      "description": "Pale, fine-grained hardwood, oiled.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal)",
+        "upkeep": "Medium",
+        "upkeep_note": "Re-oil every year or two.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 4,
+        "price_band": "$$"
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "D1 Access routes (slip resistance)"
+      ],
+      "url": "archipro.co.nz/product/ng-hw-pale (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:pb-comp-charcoal",
+      "name": "Composite decking, charcoal",
+      "brand": {
+        "name": "Plainsong Building Products",
+        "sample": true
+      },
+      "category": "Decking",
+      "description": "Capped composite boards, grooved fixing.",
+      "spec": {
+        "exposure_zones": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "exposure_note": "Zone B, low (sheltered inland); Zone C, medium (inland, exposed); Zone D, high (coastal); Zone E, sea spray",
+        "upkeep": "Low",
+        "upkeep_note": "Wash twice a year.",
+        "durability": "15 years, maker's statement (B2)",
+        "lead_time_weeks": 3,
+        "price_band": "$$",
+        "note": "Dark boards get hot underfoot in full sun."
+      },
+      "code_to_review": [
+        "B2 Durability",
+        "D1 Access routes (slip resistance)"
+      ],
+      "url": "archipro.co.nz/product/pb-comp-charcoal (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:lr-oak-natural",
+      "name": "Engineered oak, natural matt",
+      "brand": {
+        "name": "Long Reach Floors",
+        "sample": true
+      },
+      "category": "Flooring",
+      "description": "180 mm engineered European oak, natural matt lacquer.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "Low",
+        "upkeep_note": "Recoat high-traffic areas every eight to ten years.",
+        "lead_time_weeks": 3,
+        "price_band": "$$"
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/lr-oak-natural (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:lr-oak-smoked",
+      "name": "Engineered oak, smoked",
+      "brand": {
+        "name": "Long Reach Floors",
+        "sample": true
+      },
+      "category": "Flooring",
+      "description": "180 mm engineered oak, smoked, matt oil.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "Medium",
+        "upkeep_note": "Maintenance oil every year or two.",
+        "lead_time_weeks": 5,
+        "price_band": "$$$"
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/lr-oak-smoked (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:gw-concrete",
+      "name": "Ground and polished concrete",
+      "brand": {
+        "name": "Greywacke Surfaces",
+        "sample": true
+      },
+      "category": "Flooring",
+      "description": "Light exposure grind, sealed.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "Low",
+        "upkeep_note": "Reseal every few years.",
+        "lead_time_weeks": 1,
+        "price_band": "$$",
+        "note": "Good thermal mass under north glazing."
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/gw-concrete (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:rr-rimu",
+      "name": "Recovered rimu tongue-and-groove",
+      "brand": {
+        "name": "Second Growth Recovery",
+        "sample": true
+      },
+      "category": "Flooring",
+      "description": "Recovered rimu boards, sanded and clear finished.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "Medium",
+        "upkeep_note": "Recoat every ten years or so.",
+        "lead_time_weeks": 8,
+        "price_band": "$$$",
+        "note": "Recovered timber only."
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/rr-rimu (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:ql-stone",
+      "name": "Engineered stone, low silica, warm white",
+      "brand": {
+        "name": "Quarry Lane Surfaces",
+        "sample": true
+      },
+      "category": "Benchtops",
+      "description": "20 mm low-silica engineered stone, eased edge.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "Low",
+        "upkeep_note": "Wipe clean. Avoid hot pans.",
+        "lead_time_weeks": 3,
+        "price_band": "$$",
+        "note": "Fabricators cut it wet, with dust controls."
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/ql-stone (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:ql-marble",
+      "name": "Honed marble, white with grey vein",
+      "brand": {
+        "name": "Quarry Lane Surfaces",
+        "sample": true
+      },
+      "category": "Benchtops",
+      "description": "20 mm honed marble.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "High",
+        "upkeep_note": "Seal yearly. It will etch with citrus.",
+        "lead_time_weeks": 6,
+        "price_band": "$$$"
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/ql-marble (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    },
+    {
+      "@type": "Product",
+      "id": "archipro:gw-terrazzo",
+      "name": "Terrazzo, warm white",
+      "brand": {
+        "name": "Greywacke Surfaces",
+        "sample": true
+      },
+      "category": "Benchtops",
+      "description": "30 mm terrazzo with dark aggregate.",
+      "spec": {
+        "use": "interior",
+        "upkeep": "Medium",
+        "upkeep_note": "Reseal every year or two.",
+        "lead_time_weeks": 7,
+        "price_band": "$$$"
+      },
+      "code_to_review": [],
+      "url": "archipro.co.nz/product/gw-terrazzo (sample path)",
+      "enquire": "through ArchiPro",
+      "licence": {
+        "feed": "archipro-feed 0.1-concept",
+        "attribution": "Show 'on ArchiPro' and link to the url",
+        "cache_days": 7,
+        "status": "proposed"
+      },
+      "updated": "2026-11-18"
+    }
+  ]
+}
