@@ -10,7 +10,8 @@ const windows = [...document.querySelectorAll("[data-scene]")];
 const SRC = { homes: "./media/two-homes-render.webp", twin: "./media/16a-still.webp", house: "./media/draw-section.webp", photo: "./media/nz-house.webp" };
 const UNDER = { house: "photo" };                     // a drawing with the real picture underneath, shown where you point
 const FOCUS = { homes: [0, 0.04], twin: [0, 0], house: [0, 0.3], photo: [0, 0.1], drawing: [-0.06, 0] };   // nudge the crop toward the subject
-const MIST = { homes: 1, twin: 1, house: 1, drawing: 1, photo: 1 };                         // how far each picture goes to muted rose
+const MIST = { homes: 1, twin: 1, house: 1, drawing: 1, photo: 1 };
+const LIFT = { homes: 0.42, twin: 0.42, photo: 0.3 };   // photos under type sit high-key, so plum text always reads                         // how far each picture goes to muted rose
 
 function fallback() {
   document.documentElement.classList.add("no-field");
@@ -31,7 +32,7 @@ else {
   const U = {
     uRes: { value: new THREE.Vector2(1, 1) }, uTile: { value: 24 }, uTex: { value: blank }, uCover: { value: new THREE.Vector4(1, 1, 0, 0) },
     uScatter: { value: 1 }, uIntro: { value: reduce ? 1 : 0 }, uPointer: { value: new THREE.Vector3(-9999, -9999, 150) }, uFlip: { value: 0 }, uMist: { value: 0.9 },
-    uUnder: { value: blank }, uCoverU: { value: new THREE.Vector4(1, 1, 0, 0) }, uHasUnder: { value: 0 },
+    uLift: { value: 0 }, uUnder: { value: blank }, uCoverU: { value: new THREE.Vector4(1, 1, 0, 0) }, uHasUnder: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: U, transparent: true, depthTest: false,
@@ -63,13 +64,13 @@ else {
         vAlpha = (1.0 - s * s) * i; vNear = near;
       }`,
     fragmentShader: /* glsl */ `
-      uniform sampler2D uTex, uUnder; uniform vec4 uCover, uCoverU; uniform float uMist, uHasUnder;
+      uniform sampler2D uTex, uUnder; uniform vec4 uCover, uCoverU; uniform float uMist, uHasUnder, uLift;
       varying vec2 vUv; varying float vFace, vAlpha, vGlint, vNear;
       void main() {
         vec2 u = (vUv - 0.5) * uCover.xy + 0.5 + uCover.zw;
         vec3 c = texture2D(uTex, vec2(u.x, 1.0 - u.y)).rgb;
         // three shades only: dusty plum, muted rose and bone; the pointer (or a finger) brings the true colour back
-        float m = uMist * (1.0 - smoothstep(0.2, 0.8, vNear)), l = smoothstep(0.0, 0.92, dot(c, vec3(0.299, 0.587, 0.114)));
+        float m = uMist * (1.0 - smoothstep(0.2, 0.8, vNear)), l = smoothstep(0.0, 0.92, dot(c, vec3(0.299, 0.587, 0.114))); l = uLift + (1.0 - uLift) * l;
         vec3 plum = vec3(0.396, 0.290, 0.306), rose = vec3(0.890, 0.816, 0.824), bone = vec3(1.0, 0.992, 0.984);
         vec3 tri = l < 0.5 ? mix(plum, rose, smoothstep(0.0, 1.0, l * 2.0)) : mix(rose, bone, smoothstep(0.0, 1.0, (l - 0.5) * 2.0));
         c = mix(c, tri, m);
@@ -122,7 +123,7 @@ else {
   function cover() { fit(current, U.uCover.value); const u = UNDER[current]; if (u) fit(u, U.uCoverU.value); }
   let current = windows[0]?.dataset.scene || "homes", flipT = 0;
   function use(id) {
-    if (!tex[id]) return; U.uTex.value = tex[id]; U.uMist.value = MIST[id] ?? 0.5;
+    if (!tex[id]) return; U.uTex.value = tex[id]; U.uMist.value = MIST[id] ?? 0.5; U.uLift.value = LIFT[id] ?? 0;
     const u = UNDER[id]; U.uHasUnder.value = u && tex[u] ? 1 : 0; if (u && tex[u]) U.uUnder.value = tex[u];
     cover(); kick();
   }
