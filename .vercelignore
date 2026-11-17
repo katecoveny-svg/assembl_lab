@@ -40,3 +40,6 @@
 
 # Plan to twin: editable source, not served
 /plan-studio/twins/src/
+
+# Design inventory: editable source, not served
+/plan-studio/library/src/
