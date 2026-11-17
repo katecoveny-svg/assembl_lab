@@ -6,7 +6,7 @@
 //     the rectangular home the twin builds. Every element keeps where it came from: written, traced, read by AI, assumed.
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import type { BuildingSpec, Opening, PartitionSpec, RoomSpec, Src, WallSpec } from './homes';
-import { modelFromDrawing, readPdfPage, toReal, findScale } from './planread';
+import { modelFromDrawing, readPdfPage, toReal } from './planread';
 
 type Pt = [number, number];
 const PT_MM = 25.4 / 72;
@@ -74,14 +74,119 @@ export async function surveySheets(doc: PDFDocumentProxy): Promise<SheetInfo[]> 
     const items = await pageText(await doc.getPage(p));
     const all = items.map((t) => t.str).join(' ');
     const rooms = items.filter((t) => isRoomLabel(t.str)).length;
+    // titles are short runs: "Ground Floor Plan", "SITE SECTIONS". Long runs are notes ("refer floor plans for wall types"),
+    // which must not make a notes sheet look like a plan.
+    const titles = items.map((t) => t.str.trim()).filter((t) => t.length <= 40);
     let score = rooms * 3;
-    if (/floor\s*plans?|ground\s*(floor|level)|first\s*floor|upper\s*floor|level\s*\d+\s*plan|proposed\s*plans?/i.test(all)) score += 6;
-    for (const re of [/elevation/i, /\bsection\b/i, /site\s*plan|location\s*plan|coverage/i, /roof\s*plan/i]) if (re.test(all)) score -= 4;
+    if (titles.some((t) => PLAN_TITLE.test(t))) score += 10;
+    else if (/floor\s*plans?|ground\s*(floor|level)|first\s*floor|upper\s*floor|level\s*\d+\s*plan|proposed\s*plans?/i.test(all)) score += 3;
+    for (const re of [/elevation/i, /\bsections?\b/i, /site\s*(plan|layout)|location\s*plan|area\s*plans?|coverage/i, /roof\s*plan/i, /wall\s*types|partition\s*walls|notes\s*(&|and)\s*legends?|legends?$|schedule|cover\s*sheet|planning\s*controls|sketch\s*views?/i])
+      if (titles.some((t) => re.test(t))) score -= 4;
+    if (all.length > 6000) score -= 4;
     // the sheet's title: the largest run that names a kind of drawing
     const titled = items.filter((t) => /plan|elevation|section|site|layout/i.test(t.str) && t.str.length < 60).sort((a, b) => b.h - a.h);
     out.push({ page: p, title: titled[0]?.str ?? (rooms ? `${rooms} room labels` : 'no text'), score, rooms });
   }
   return out;
+}
+const PLAN_TITLE = /^((proposed|existing|new)\s+)?((ground|first|second|third|upper|lower|mezzanine|basement|attic)\s+)?(floor\s+)?plans?$|^level\s*\d+\s*(floor\s*)?plan$/i;
+
+// ------------------------------------------------------------------------------------------------ the drawing's scale
+// "1:50" from the sheet text, with two traps handled:
+//  - title-block templates that list every standard scale ("1:500 1:1000 1:200 … 1:10") in one place: ignored.
+//  - a scale written for a bigger paper size ("1 : 25@A1", "A1 SCALE") on a sheet printed smaller: converted to the scale
+//    the drawing actually has on this PDF (1:25 at A1 is 1:50 on an A3 page).
+const PAPER: Record<string, number> = { A0: 1189, A1: 841, A2: 594, A3: 420, A4: 297 };
+export function sheetScale(items: TextItem[], pageW: number, pageH: number): { scale: number; note: string } | null {
+  const hits = items.flatMap((t) => {
+    const m = t.str.match(/\b1\s*[:：]\s*(\d{2,4})\b(?:\s*@\s*(A[0-4]))?/i);
+    return m ? [{ t, s: +m[1], paper: m[2]?.toUpperCase() }] : [];
+  });
+  const legend = (h: (typeof hits)[number]) => hits.filter((o) => o !== h && o.s !== h.s && Math.hypot(o.t.x - h.t.x, o.t.y - h.t.y) < 80).length >= 3;
+  const real = hits.filter((h) => !legend(h));
+  if (!real.length) return null;
+  const score = new Map<number, number>(), first = new Map<number, number>();
+  real.forEach((h, i) => {
+    const nearTitle = items.some((t) => t.str.length <= 40 && /plan|elevation|section/i.test(t.str) && Math.hypot(t.x - h.t.x, t.y - h.t.y) < 60);
+    score.set(h.s, (score.get(h.s) || 0) + 1 + (h.paper ? 1 : 0) + (nearTitle ? 2 : 0));
+    if (!first.has(h.s)) first.set(h.s, i);
+  });
+  const best = [...score.entries()].sort((a, b) => b[1] - a[1] || first.get(a[0])! - first.get(b[0])!)[0][0];
+  let paper = real.find((h) => h.s === best && h.paper)?.paper || real.find((h) => h.paper)?.paper;
+  if (!paper) { const m = items.map((t) => t.str.match(/\b(A[0-4])\s*SCALE\b/i) || t.str.match(/@\s*(A[0-4])\b/i)).find(Boolean); if (m) paper = m[1].toUpperCase(); }
+  const pageLong = Math.max(pageW, pageH) * PT_MM;
+  const others = [...new Set(real.map((h) => h.s))].filter((s) => s !== best);
+  const also = others.length ? ` (also saw ${others.map((s) => `1:${s}`).join(', ')})` : '';
+  if (paper && PAPER[paper] && Math.abs(PAPER[paper] / pageLong - 1) > 0.08) {
+    const eff = Math.round((best * PAPER[paper]) / pageLong);
+    return { scale: eff, note: `Read "1:${best} at ${paper}" from the sheet${also}. This PDF is ${paperName(pageLong)}, so the drawing is 1:${eff} at this size.` };
+  }
+  return { scale: best, note: `Read "1:${best}" from the sheet text${also}.` };
+}
+const paperName = (mm: number) => Object.entries(PAPER).find(([, v]) => Math.abs(v / mm - 1) < 0.04)?.[0] ?? `${Math.round(mm)} mm`;
+
+// the drawing on a sheet with no room labels. Solid walls are the heaviest ink on a plan sheet.
+//  - the title block is found from its own words (drawing no., scale, checked, general notes…) and left out;
+//  - ink is joined through mid-grey lines too, so glazing and doors do not split the building into pieces;
+//  - the cluster holding the most heavy ink (ink that survives thinning: walls, not text or hatching) is the plan,
+//    with any heavy clusters right beside it.
+function titleBand(items: TextItem[], W: number, H: number): { bottom?: number; right?: number } {
+  const adm = items.filter((t) => /drawing\s*(no|number|title)?\b|^scale\b|\bproject\b|checked|drawn|revision|\brev\b|general notes|do not scale|copyright/i.test(t.str));
+  const bottom = adm.filter((t) => t.y > H * 0.6), right = adm.filter((t) => t.x > W * 0.65 && t.y <= H * 0.6);
+  if (bottom.length >= 3 && bottom.length >= right.length) return { bottom: Math.min(...bottom.map((t) => t.y - t.h)) - 10 };
+  if (right.length >= 3) return { right: Math.min(...right.map((t) => t.x)) - 10 };
+  return {};
+}
+async function inkBox(page: PDFPageProxy, items: TextItem[]): Promise<[number, number, number, number] | null> {
+  const vp = page.getViewport({ scale: 1 });
+  const { canvas, s } = await renderRegion(page, [0, 0, vp.width, vp.height], 1400);
+  const W = canvas.width, H = canvas.height, N = W * H, px = canvas.getContext('2d')!.getImageData(0, 0, W, H).data;
+  const band = titleBand(items, vp.width, vp.height);
+  const yMax = band.bottom ? Math.floor(band.bottom * s) : H, xMax = band.right ? Math.floor(band.right * s) : W;
+  const dark = new Uint8Array(N), grey = new Uint8Array(N);
+  for (let y = 0; y < yMax; y++) for (let x = 0; x < xMax; x++) {
+    const i = y * W + x, l = 0.2126 * px[i * 4] + 0.7152 * px[i * 4 + 1] + 0.0722 * px[i * 4 + 2];
+    dark[i] = l < 70 ? 1 : 0; grey[i] = l < 170 ? 1 : 0;
+  }
+  const erode = (a: Uint8Array) => { const o = new Uint8Array(N); for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x; o[i] = a[i] & a[i - 1] & a[i + 1] & a[i - W] & a[i + W]; } return o; };
+  const heavy = erode(erode(dark));
+  // close hairline gaps in the grey ink (separable 7 × 7 box)
+  const R = 3, row = new Uint8Array(N), J = new Uint8Array(N);
+  for (let y = 0; y < H; y++) { const pre = new Int32Array(W + 1); for (let x = 0; x < W; x++) pre[x + 1] = pre[x] + grey[y * W + x]; for (let x = 0; x < W; x++) row[y * W + x] = pre[Math.min(W, x + R + 1)] - pre[Math.max(0, x - R)] > 0 ? 1 : 0; }
+  for (let x = 0; x < W; x++) { const pre = new Int32Array(H + 1); for (let y = 0; y < H; y++) pre[y + 1] = pre[y] + row[y * W + x]; for (let y = 0; y < H; y++) J[y * W + x] = pre[Math.min(H, y + R + 1)] - pre[Math.max(0, y - R)] > 0 ? 1 : 0; }
+  const seen = new Uint8Array(N), stack: number[] = [];
+  const comps: { b: [number, number, number, number]; heavy: number }[] = [];
+  for (let i = 0; i < N; i++) {
+    if (!J[i] || seen[i]) continue;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1, hv = 0;
+    seen[i] = 1; stack.push(i);
+    while (stack.length) {
+      const k = stack.pop()!, x = k % W, y = (k / W) | 0;
+      if (heavy[k]) hv++;
+      if (grey[k]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x > 0 && J[k - 1] && !seen[k - 1]) { seen[k - 1] = 1; stack.push(k - 1); }
+      if (x < W - 1 && J[k + 1] && !seen[k + 1]) { seen[k + 1] = 1; stack.push(k + 1); }
+      if (y > 0 && J[k - W] && !seen[k - W]) { seen[k - W] = 1; stack.push(k - W); }
+      if (y < H - 1 && J[k + W] && !seen[k + W]) { seen[k + W] = 1; stack.push(k + W); }
+    }
+    if (hv < 50 || x1 < 0) continue;
+    if (x1 - x0 > W * 0.85 || y1 - y0 > H * 0.85) continue; // the sheet frame
+    if (hv / ((x1 - x0 + 1) * (y1 - y0 + 1)) > 0.45) continue; // a filled block: a logo or a solid band
+    comps.push({ b: [x0, y0, x1, y1], heavy: hv });
+  }
+  if (!comps.length) return null;
+  comps.sort((p, q) => q.heavy - p.heavy);
+  const u = [...comps[0].b] as [number, number, number, number], used = new Set([0]), gap = 0.05 * W;
+  for (let grew = true; grew; ) {
+    grew = false;
+    comps.forEach((c, j) => {
+      if (used.has(j)) return;
+      const dx = Math.max(0, c.b[0] - u[2], u[0] - c.b[2]), dy = Math.max(0, c.b[1] - u[3], u[1] - c.b[3]);
+      if (Math.max(dx, dy) < gap) { u[0] = Math.min(u[0], c.b[0]); u[1] = Math.min(u[1], c.b[1]); u[2] = Math.max(u[2], c.b[2]); u[3] = Math.max(u[3], c.b[3]); used.add(j); grew = true; }
+    });
+  }
+  const pw = (u[2] - u[0]) * 0.08 + 6, ph = (u[3] - u[1]) * 0.08 + 6;
+  return [Math.max(0, (u[0] - pw) / s), Math.max(0, (u[1] - ph) / s), Math.min(vp.width, (u[2] + pw) / s), Math.min(vp.height, (u[3] + ph) / s)];
 }
 
 // ------------------------------------------------------------------------------------------------ where the plans are
@@ -233,7 +338,7 @@ export async function readSheet(doc: PDFDocumentProxy, pageNo: number, progress:
   const page = await doc.getPage(pageNo);
   const vp1 = page.getViewport({ scale: 1 });
   const items = await pageText(page);
-  const sc = findScale(items);
+  const sc = sheetScale(items, vp1.width, vp1.height);
   const scale: number | null = sc?.scale ?? null;
 
   // 1. exact linework
@@ -278,7 +383,10 @@ export async function readSheet(doc: PDFDocumentProxy, pageNo: number, progress:
   const st = await aiStatus();
   if (!st.configured) throw new Error('This sheet has no measurable linework (its plan is a picture inside the PDF), and the AI plan reader is not set up on the lab.');
   let clusters = planClusters(items, scale, vp1.width, vp1.height);
-  if (!clusters.length) clusters = [{ box: [0, 0, vp1.width, vp1.height], label: 'Traced plan', n: 0 }];
+  if (!clusters.length) {
+    progress('No room names on this sheet: finding the plan by its linework…');
+    clusters = [{ box: (await inkBox(page, items)) ?? [0, 0, vp1.width, vp1.height], label: 'Traced plan', n: 0 }];
+  }
   progress(clusters.length > 1 ? `Found ${clusters.length} plans on this sheet. Reading them with the AI plan reader (about half a minute)…` : 'Reading the plan with the AI plan reader (about half a minute)…');
   const reads = await Promise.all(
     clusters.map(async (c) => {

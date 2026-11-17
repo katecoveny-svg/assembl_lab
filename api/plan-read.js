@@ -24,7 +24,7 @@ export const SYSTEM = `You read architectural floor plans for assembl Plan Studi
 Return only what you can see on the drawing, in image pixel coordinates (origin top-left, x right, y down).
 - Walls: centrelines from end to end, merged across door and window openings; thickness_px across the wall; external true for the building envelope.
 - Openings: the two ends of each door, window, glazed wall or doorless opening along its wall.
-- Rooms: the room name as written and the room's bounding box.
+- Rooms: the room name as written and the room's bounding box. Where a room's tag is blank or shows only "?" (an unplaced tag in the drawing software), name the room from what is drawn in it (bed: Bedroom; toilet, basin, shower: Bathroom; bench and hob: Kitchen; sofa: Living; table: Dining), give it a confidence of 0.5 or less, and say in notes that the names were inferred.
 - Dimensions: every dimension string you can read with its two witness points.
 Give each element a confidence from 0 to 1 that reflects how clearly it is drawn. Do not invent elements you cannot see; leave them out and say so in notes.`;
 
