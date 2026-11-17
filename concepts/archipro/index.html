@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Six places AI pays at ArchiPro · an independent concept by assembl</title>
+<meta name="description" content="A working concept by Kate Hudson at assembl: six ideas for ArchiPro, each running on this page, with Plan Studio drawing a real set and a live studio guide that drives it.">
+<link rel="icon" href="/lab/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./concept.css">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>
+<a class="skip" href="#main">Skip to the ideas</a>
+
+<header class="top" id="top">
+  <a class="mark" href="#main" aria-label="assembl, back to the top">assembl<span>.</span></a>
+  <nav class="chapters" aria-label="The six ideas">
+    <a href="#catalogue"><b>01</b> Catalogue</a>
+    <a href="#specify"><b>02</b> Specify</a>
+    <a href="#drawings"><b>03</b> Drawings</a>
+    <a href="#home"><b>04</b> Home</a>
+    <a href="#join"><b>05</b> Join</a>
+    <a href="#team"><b>06</b> Team</a>
+  </nav>
+  <button class="talk" type="button" data-guide-open>Talk to the studio <i aria-hidden="true"></i></button>
+</header>
+
+<main id="main">
+
+<!-- hero: the field assembles the two homes behind a visible grid -->
+<section class="hero window" data-scene="homes" aria-labelledby="hero-h">
+  <div class="lines" aria-hidden="true"></div>
+  <div class="giant" data-word="six" data-at="hero" aria-hidden="true"></div>
+  <div class="hero-in">
+    <p class="hero-k">An independent concept<br>prepared for ArchiPro<br>November 2026</p>
+    <h1 id="hero-h">Six places AI pays at ArchiPro.</h1>
+    <p class="hero-n"><b>06</b><span>ideas, each working on this page</span></p>
+    <p class="hero-cap mono">Two homes, rendered. Not a photograph.</p>
+  </div>
+</section>
+
+<!-- the brief, then the evidence -->
+<section class="intro" aria-label="What this is">
+  <p class="lede">Every product in a project, readable by the assistants people now research with, specified by architects, drawn into the set and placed on the house they're building. Six ideas, each one working here. Ask the studio guide and it will drive the page for you.</p>
+  <ul class="truth" aria-label="What is real on this page">
+    <li><span class="chip live">Live</span> Plan Studio drawing the set, the 16A model and the studio guide</li>
+    <li><span class="chip sample">Sample</span> suppliers, products, practice, house and queue</li>
+    <li><span class="chip proposed">Proposed</span> the feed licence and every integration</li>
+  </ul>
+</section>
+
+<section class="facts" id="why" aria-labelledby="facts-h">
+  <div class="sec-k"><span class="mono">00</span><h2 id="facts-h">ArchiPro's own numbers say research has moved.</h2></div>
+  <ol class="fact-row" id="facts"></ol>
+</section>
+
+<!-- the project, tagged -->
+<section class="cloudplate" aria-labelledby="cloud-h">
+  <div class="cloud-head"><p class="mono">16A · two timber homes · Plan to 4D</p><h2 id="cloud-h">Every product, tagged in the project.</h2></div>
+  <figure class="hero-stage">
+    <canvas id="cloud" aria-hidden="true"></canvas>
+    <div class="tags" id="tags" aria-hidden="true"></div>
+    <noscript><p class="mono">The 3D view needs JavaScript. Everything it shows is also written below.</p></noscript>
+  </figure>
+  <p class="cap"><span class="mono" id="cloud-cap">Sampled from the Plan to 4D model, not a scan.</span></p>
+</section>
+
+<!-- 01 catalogue -->
+<section class="chapter" id="catalogue" aria-labelledby="cat-h">
+  <header class="cover">
+    <p class="cover-t">the catalogue, <s>found</s> quoted</p><p class="cover-n">01</p>
+    <div class="lines" aria-hidden="true"></div>
+    <div class="giant" data-word="quoted" aria-hidden="true"></div>
+    <div class="cover-c"><h2 id="cat-h">The catalogue AI assistants quote.</h2>
+    <p class="sub">When someone asks ChatGPT or Claude for a product, the answer should come from ArchiPro, link to ArchiPro and send the enquiry through ArchiPro. That needs the catalogue published as licensed, structured data, not just pages.</p></div>
+  </header>
+  <div class="cat-grid">
+    <div class="console" id="console">
+      <p class="label">Ask as a homeowner or an architect would</p>
+      <div class="asks" id="asks"></div>
+      <form class="askform" id="askform" autocomplete="off">
+        <label class="sr" for="ask">Your question</label>
+        <input id="ask" name="ask" maxlength="160" placeholder="Try: black window joinery for a coastal house">
+        <button class="btn primary" type="submit">Ask</button>
+      </form>
+      <div class="trace" id="trace" aria-live="polite"></div>
+    </div>
+    <aside class="seen">
+      <div class="seg" role="tablist" aria-label="What the assistant reads">
+        <button role="tab" aria-selected="false" data-seen="page">Today: a web page</button>
+        <button role="tab" aria-selected="true" data-seen="record">Agent-ready: a record</button>
+        <button role="tab" aria-selected="false" data-seen="feed">The feed</button>
+      </div>
+      <pre class="record mono" id="record" tabindex="0"></pre>
+      <p class="small">The assistant gets typed fields, the licence and a link home, instead of guessing from a page.</p>
+    </aside>
+  </div>
+  <div class="measure">
+    <p class="label">What we'd measure</p>
+    <ul><li>Sessions that arrive from an AI answer</li><li>Enquiries from those sessions, on platform and on suppliers' sites</li><li>Licensed feed calls, by partner</li></ul>
+  </div>
+</section>
+
+<!-- 02 specify -->
+<section class="chapter" id="specify" aria-labelledby="spec-h">
+  <header class="cover">
+    <p class="cover-t">the specification, <s>copied</s> written</p><p class="cover-n">02</p>
+    <div class="lines" aria-hidden="true"></div>
+    <div class="giant" data-word="specify" aria-hidden="true"></div>
+    <div class="cover-c"><h2 id="spec-h">A specification assistant for architects.</h2>
+    <p class="sub">Set the brief once. The assistant shortlists from the catalogue, shows the trade-offs side by side and writes the specification lines. It prepares the Building Code review for the designer; it never says a product complies.</p></div>
+  </header>
+  <div class="spec-brief" id="brief">
+    <fieldset><legend class="label">Element</legend><div class="pills" data-brief="cat"></div></fieldset>
+    <fieldset><legend class="label">Site exposure (NZS 3604)</legend><div class="pills" data-brief="zone"></div></fieldset>
+    <fieldset><legend class="label">What matters most</legend><div class="pills" data-brief="pri"></div></fieldset>
+  </div>
+  <div class="spec-grid">
+    <div class="compare" id="compare" aria-live="polite"></div>
+    <aside class="schedule">
+      <p class="label">Specification, draft</p>
+      <ol id="schedule" class="lines-l"><li class="empty">Add a product to start the schedule.</li></ol>
+      <div class="sched-actions">
+        <button class="btn" id="csv" disabled>Download schedule (CSV)</button>
+        <button class="btn primary" id="samples" disabled>Request samples</button>
+      </div>
+      <div class="code" id="code"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- the field again: the live plan -->
+<section class="window plate" data-scene="drawing" aria-label="The specification, on the drawings">
+  <div class="lines" aria-hidden="true"></div>
+  <p class="plate-t">the spec, <s>described</s> drawn</p><p class="plate-n">A101</p>
+  <p class="plate-cap mono">The ground floor plan from chapter 03, drawn live from the model.</p>
+</section>
+
+<!-- 03 drawings: Plan Studio -->
+<section class="chapter" id="drawings" aria-labelledby="draw-h">
+  <header class="cover">
+    <p class="cover-t">the drawing set, <s>described</s> drawn</p><p class="cover-n">03</p>
+    <div class="lines" aria-hidden="true"></div>
+    <div class="giant" data-word="drawn" aria-hidden="true"></div>
+    <div class="cover-c"><h2 id="draw-h">From a brief to a printed set, on this page.</h2>
+    <p class="sub">This is assembl Plan Studio running here. One model of a fictional house drives the 3D, four A3 sheets, an advisory Building Code pre-check and the IFC and DXF files. The products in your specification are named on the elevations. Change the brief and every sheet redraws.</p></div>
+  </header>
+  <div class="ds">
+    <figure class="ds-stage">
+      <canvas id="ds-solid" aria-hidden="true"></canvas>
+      <canvas id="ds-cloud" aria-hidden="true"></canvas>
+      <div class="ds-look" id="ds-look" role="group" aria-label="3D view">
+        <button data-look="collage" aria-pressed="true">Collage</button><button data-look="cloud" aria-pressed="false">Point cloud</button><button data-look="solid" aria-pressed="false">Solid</button><button data-look="plan" aria-pressed="false">Plan</button>
+      </div>
+      <figcaption class="mono ds-cap">Sample house, fictional. Drag to turn it.</figcaption>
+    </figure>
+    <aside class="ds-levers" id="ds-levers"></aside>
+  </div>
+  <ol class="ds-figs" id="ds-figs" aria-label="The model, measured"></ol>
+  <div class="ds-sheets">
+    <div class="ds-tabs" id="ds-tabs" role="tablist" aria-label="Sheets"></div>
+    <div class="ds-paper"><div class="ds-sheet" id="ds-sheet" role="img"></div></div>
+    <div class="ds-actions">
+      <button class="btn primary" id="ds-print">Print the set, A3</button>
+      <button class="btn" id="ds-ifc">IFC</button>
+      <button class="btn" id="ds-dxf">DXF</button>
+      <button class="btn" id="ds-svg">This sheet, SVG</button>
+      <button class="btn" id="ds-json">Model, JSON</button>
+    </div>
+  </div>
+  <div class="ds-code" id="ds-code"></div>
+</section>
+
+<!-- 04 home -->
+<section class="chapter" id="home" aria-labelledby="home-h">
+  <header class="cover">
+    <p class="cover-t">the home, <s>imagined</s> placed</p><p class="cover-n">04</p>
+    <div class="lines" aria-hidden="true"></div>
+    <div class="giant" data-word="placed" aria-hidden="true"></div>
+    <div class="cover-c"><h2 id="home-h">A homeowner companion, on their real site.</h2>
+    <p class="sub">From a brief to a shortlist to products on the house itself, in the real sun. This is the Plan to 4D twin of 16A, two timber homes from Kate's own resource-consent drawings. Pick a product and the house rebuilds with it.</p></div>
+  </header>
+  <div class="home-grid">
+    <div class="twin" id="twin">
+      <div class="twin-still" id="twin-still">
+        <img src="./media/16a-still.webp" alt="The 16A twin: two timber homes on their sloping site in afternoon sun." width="1600" height="890" loading="lazy" decoding="async">
+        <button class="btn primary load" id="twin-load">Open the live twin</button>
+        <p class="mono still-note">Still from the twin. The live model is about 3 MB.</p>
+      </div>
+      <div class="sun" id="sun" hidden>
+        <p class="label">Sun at the site</p>
+        <div class="pills" id="season"></div>
+        <label class="mono slider-l" for="hour">Time <output id="hour-out">15:00</output></label>
+        <input type="range" id="hour" min="6" max="21" step="0.5" value="15">
+      </div>
+    </div>
+    <aside class="board">
+      <p class="label">Your shortlist</p>
+      <div id="picks"></div>
+      <div class="board-foot">
+        <p class="small" id="board-note">Every pick is a sample product. The twin shows its finish; colours on screen are approximate.</p>
+        <button class="btn primary" id="ask-pro">Ask an architect about this</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- 05 join -->
+<section class="chapter" id="join" aria-labelledby="join-h">
+  <header class="cover">
+    <p class="cover-t">the member, <s>chased</s> joined</p><p class="cover-n">05</p>
+    <div class="lines" aria-hidden="true"></div>
+    <div class="giant" data-word="joined" aria-hidden="true"></div>
+    <div class="cover-c"><h2 id="join-h">From trial to paying member, self-serve.</h2>
+    <p class="sub">A practice names its website. An agent reads only that site, drafts the profile, matches products in its projects to the catalogue and suggests a plan. The practice owner checks it and presses publish. Nothing goes live before that.</p></div>
+  </header>
+  <div class="join-grid">
+    <div class="site" id="site"></div>
+    <div class="profile" id="profile" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- 06 team -->
+<section class="chapter" id="team" aria-labelledby="team-h">
+  <header class="cover">
+    <p class="cover-t">the work, <s>sent</s> approved</p><p class="cover-n">06</p>
+    <div class="lines" aria-hidden="true"></div>
+    <div class="giant" data-word="approved" aria-hidden="true"></div>
+    <div class="cover-c"><h2 id="team-h">Agent teams across three markets.</h2>
+    <p class="sub">Small teams in Auckland, Sydney and Los Angeles, with agents doing the preparation overnight. Each card is work an agent drafted. Nothing leaves ArchiPro until the named person approves it.</p></div>
+  </header>
+  <div class="clocks" id="clocks"></div>
+  <div class="queue" id="queue"></div>
+  <details class="log">
+    <summary class="mono">Audit log <span id="log-n">0</span></summary>
+    <ol id="log"></ol>
+  </details>
+</section>
+
+<!-- the field again: assembl's own work -->
+<section class="window plate" data-scene="cafe" aria-label="Already working">
+  <div class="lines" aria-hidden="true"></div>
+  <p class="plate-t">the studio, <s>proposed</s> working</p><p class="plate-n">07</p>
+  <p class="plate-cap mono">A render from assembl's café twin, not a photograph.</p>
+</section>
+
+<!-- 07 the studio, as proof -->
+<section class="proof" id="studio" aria-labelledby="proof-h">
+  <div class="sec-k"><span class="mono">07</span><h2 id="proof-h">The same way of working, running in assembl's architecture studio.</h2></div>
+  <p class="sub proof-sub">The studio is a working team of 33 specialist agents for architecture, each with a named human reviewer and written limits. Its Building Code register is metadata only: it prepares the reviewer and can't claim compliance. These are its own records and measured runs.</p>
+  <ul class="runs" id="runs"></ul>
+  <div class="proof-grid">
+    <div class="roster" id="roster"></div>
+    <div class="rules" id="rules"></div>
+  </div>
+</section>
+
+<!-- 08 how -->
+<section class="how" id="plan" aria-labelledby="how-h">
+  <div class="sec-k"><span class="mono">08</span><h2 id="how-h">How I'd start.</h2></div>
+  <ol class="steps">
+    <li><b class="big">01</b><span class="mono">Weeks 1–3</span><h3>Pick one, set the baseline.</h3><p>Choose the idea with the clearest number behind it, likely the catalogue feed. Agree the measure, the window and where the data comes from before building anything.</p></li>
+    <li><b class="big">02</b><span class="mono">Weeks 4–8</span><h3>Ship it to a small group.</h3><p>A real feed, a real assistant integration, a few suppliers who opt in. Every change on a branch, tested in a browser, previewed and approved before it goes live.</p></li>
+    <li><b class="big">03</b><span class="mono">Weeks 9–12</span><h3>Read the evidence, then widen.</h3><p>Show what moved, what it cost and what went wrong. Expand only if it clears the bar we set in week one.</p></li>
+  </ol>
+  <div class="me">
+    <p>Kate Hudson, founder of assembl. Thirteen years in brand and marketing strategy, starting as CRM manager at BMW. Now building with agents every day.</p>
+    <button class="btn primary" type="button" data-guide-open>Ask the studio guide anything</button>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p>Independent assembl concept. Not commissioned by, affiliated with or endorsed by ArchiPro. Simulated data unless explicitly stated otherwise. Supplier, practice and house details are invented for this concept; any likeness to a real business is coincidence. ArchiPro figures are from the public sources cited beside them. The renders of two homes and the café are assembl's own. The studio guide runs on Claude through the Anthropic API; its voice, when switched on, is generated by ElevenLabs. Conversations are not stored.</p>
+  <div class="end"><span class="mark">assembl<span>.</span></span><span class="mono">Kate Hudson · Tāmaki Makaurau · 2026</span></div>
+</footer>
+
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h" hidden>
+  <div class="gate-card">
+    <p class="label" id="gate-k">Needs your approval</p>
+    <h3 id="gate-h"></h3>
+    <div id="gate-body"></div>
+    <div class="gate-actions">
+      <button class="btn" id="gate-no">Not now</button>
+      <button class="btn primary" id="gate-yes">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- the studio guide -->
+<button class="guide-fab" id="guide-fab" type="button" aria-controls="guide" aria-expanded="false" data-guide-open><i aria-hidden="true"></i><span>Studio guide</span></button>
+<aside class="guide" id="guide" aria-labelledby="guide-h" hidden>
+  <header class="guide-top">
+    <div><h2 id="guide-h">Studio guide</h2><p class="mono" id="guide-status">Checking the connection…</p></div>
+    <button class="x" id="guide-close" type="button" aria-label="Close the studio guide">×</button>
+  </header>
+  <div class="guide-log" id="guide-log" aria-live="polite"></div>
+  <div class="guide-try" id="guide-try"></div>
+  <form class="guide-form" id="guide-form" autocomplete="off">
+    <label class="sr" for="guide-in">Ask the studio guide</label>
+    <input id="guide-in" maxlength="600" placeholder="Ask, or tell it what to change">
+    <button type="button" class="mic" id="guide-mic" aria-pressed="false" hidden><span class="sr">Speak instead of typing</span><i aria-hidden="true"></i></button>
+    <button class="btn primary" type="submit">Send</button>
+  </form>
+  <div class="guide-foot">
+    <button class="voice" id="guide-voice" type="button" aria-pressed="true">Voice on</button>
+    <span class="mono" id="guide-voice-l"></span>
+  </div>
+</aside>
+
+<script type="module" src="./typeset.js"></script>
+<script type="module" src="./page.js"></script>
+<script type="module" src="./drawset.js"></script>
+<script type="module" src="./field.js"></script>
+<script type="module" src="./hero.js"></script>
+<script type="module" src="./agent.js"></script>
+</body>
+</html>

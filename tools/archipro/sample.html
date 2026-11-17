@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>16A to points (build tool)</title>
+<!-- Build tool, not a page. Loads the 16A homes GLB exported from the live twin (/plan-studio/twins/16a/, "Homes (GLB)"),
+     samples it into the lab's point-cloud form with a part id per point, and writes concepts/archipro/16a-points.bin.
+     Run it headless (tools/archipro/sample.py). Parts: 0 other, 1 cladding, 2 roof, 3 joinery, 4 decking, 5 floor, 6 bench. -->
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { makeForm, lightFor, KIND, rng, normalise } from "/lab/pc/engine.js";
+
+const PARTS = [
+  [1, /cedar|shiplap|cladding|weatherboard/i],
+  [2, /roof|flashing/i],
+  [3, /joinery|glass_double|sash|black_glass/i],
+  [4, /^decking|treated_pine_h5/i],
+  [5, /floor_finish|^oak$/i],
+  [6, /benchtop/i],
+];
+const WEIGHT = { 0: 0.3, 1: 1.25, 2: 1.0, 3: 0.9, 4: 1.0, 5: 0.55, 6: 0.8 };
+const partOf = (m) => { const n = m.material?.name || ""; for (const [k, re] of PARTS) if (re.test(n)) return k; return 0; };
+const interior = /interior_wall|plasterboard|skirting|painted_door|HERO-|WINDOW-|Curtain|cabinet|appliance|vitreous|spa_|print_paper|linen|wool|brass|chrome|walnut|potting|planter|foliage/i;
+
+const url = new URLSearchParams(location.search).get("glb");
+const gltf = await new GLTFLoader().loadAsync(url);
+const root = gltf.scene; root.updateMatrixWorld(true);
+const N = +(new URLSearchParams(location.search).get("n") || 120000);
+
+// triangles and edges with their part, area-weighted, then one draw per point (the engine's objectForm, plus part ids)
+const tris = [], edges = []; let tw = 0, ew = 0, ymin = Infinity, ymax = -Infinity;
+const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), ab = new THREE.Vector3(), ac = new THREE.Vector3(), mtx = new THREE.Matrix4();
+root.traverse((m) => {
+  if (!m.isMesh || !m.visible) return;
+  const part = partOf(m), name = m.material?.name || "";
+  let w = WEIGHT[part]; if (part === 0 && interior.test(name)) w = 0.12; if (/glass/i.test(name)) w *= 0.45;
+  const g = m.geometry, p = g.attributes.position, idx = g.index, cnt = idx ? idx.count : p.count;
+  const mats = m.isInstancedMesh ? Array.from({ length: m.count }, (_, i) => { m.getMatrixAt(i, mtx); return new THREE.Matrix4().multiplyMatrices(m.matrixWorld, mtx); }) : [m.matrixWorld];
+  for (const M of mats) {
+    for (let i = 0; i < cnt; i += 3) {
+      a.fromBufferAttribute(p, idx ? idx.getX(i) : i).applyMatrix4(M); b.fromBufferAttribute(p, idx ? idx.getX(i + 1) : i + 1).applyMatrix4(M); c.fromBufferAttribute(p, idx ? idx.getX(i + 2) : i + 2).applyMatrix4(M);
+      const nn = new THREE.Vector3().crossVectors(ab.subVectors(b, a), ac.subVectors(c, a)), ar = nn.length() / 2; if (ar < 1e-9) continue;
+      tris.push([a.clone(), b.clone(), c.clone(), nn.normalize(), ar * w, part]); tw += ar * w;
+      ymin = Math.min(ymin, a.y, b.y, c.y); ymax = Math.max(ymax, a.y, b.y, c.y);
+    }
+    if (w < 0.2) continue;
+    const eg = new THREE.EdgesGeometry(g, 30), ep = eg.attributes.position;
+    for (let i = 0; i < ep.count; i += 2) { const e0 = new THREE.Vector3().fromBufferAttribute(ep, i).applyMatrix4(M), e1 = new THREE.Vector3().fromBufferAttribute(ep, i + 1).applyMatrix4(M), L = e0.distanceTo(e1); if (L > 1e-6) { edges.push([e0, e1, L * w, part]); ew += L * w; } }
+    eg.dispose();
+  }
+});
+const r = rng(11), H = Math.max(ymax - ymin, 1e-6), f = makeForm(N); f.part = new Float32Array(N); let k = 0;
+const put = (x, y, z, L, kind, part) => { if (k >= N) return; f.pos[k * 3] = x; f.pos[k * 3 + 1] = y; f.pos[k * 3 + 2] = z; f.light[k] = L; f.kind[k] = kind; f.part[k] = part; k++; };
+const nS = Math.round(N * 0.6), nE = Math.round(N * 0.32);
+const cum = new Float64Array(tris.length); let acc = 0; tris.forEach((t, i) => { acc += t[4]; cum[i] = acc; });
+const pick = (cm, u) => { let lo = 0, hi = cm.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (cm[mid] < u) lo = mid + 1; else hi = mid; } return lo; };
+for (let i = 0; i < nS; i++) {
+  const t = tris[pick(cum, r() * acc)]; let u = r(), v = r(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
+  const x = t[0].x + (t[1].x - t[0].x) * u + (t[2].x - t[0].x) * v, y = t[0].y + (t[1].y - t[0].y) * u + (t[2].y - t[0].y) * v, z = t[0].z + (t[1].z - t[0].z) * u + (t[2].z - t[0].z) * v;
+  put(x, y, z, lightFor(t[3], 0, (y - ymin) / H), KIND.surface, t[5]);
+}
+const ecum = new Float64Array(edges.length); let eacc = 0; edges.forEach((e, i) => { eacc += e[2]; ecum[i] = eacc; });
+for (let i = 0; i < nE; i++) { const e = edges[pick(ecum, r() * eacc)], u = r(), j = 0.0015 * H, y = e[0].y + (e[1].y - e[0].y) * u; put(e[0].x + (e[1].x - e[0].x) * u + (r() - .5) * j, y + (r() - .5) * j, e[0].z + (e[1].z - e[0].z) * u + (r() - .5) * j, Math.min(1, 0.55 + 0.45 * ((y - ymin) / H)), KIND.edge, e[3]); }
+const box = new THREE.Box3().setFromObject(root), cx = (box.min.x + box.max.x) / 2, cz = (box.min.z + box.max.z) / 2, R = Math.max(box.max.x - box.min.x, box.max.z - box.min.z) * 0.72;
+while (k < N) { const rr = R * Math.sqrt(r()), th = r() * Math.PI * 2; put(cx + Math.cos(th) * rr, ymin - 0.002 * H, cz + Math.sin(th) * rr, 0.16 * (1 - rr / R) + 0.04, KIND.ground, 0); }
+// shuffle so any prefix is a fair sample (phones load fewer points)
+for (let i = N - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); for (let q = 0; q < 3; q++) { const t = f.pos[i * 3 + q]; f.pos[i * 3 + q] = f.pos[j * 3 + q]; f.pos[j * 3 + q] = t; } [f.light[i], f.light[j]] = [f.light[j], f.light[i]]; [f.kind[i], f.kind[j]] = [f.kind[j], f.kind[i]]; [f.part[i], f.part[j]] = [f.part[j], f.part[i]]; }
+normalise(f, 1);
+// pack: header JSON (bounds, counts) + uint16 xyz + uint8 light, kind, part
+const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+for (let i = 0; i < N; i++) for (let q = 0; q < 3; q++) { const v = f.pos[i * 3 + q]; lo[q] = Math.min(lo[q], v); hi[q] = Math.max(hi[q], v); }
+const counts = [0, 0, 0, 0, 0, 0, 0]; for (let i = 0; i < N; i++) counts[f.part[i]]++;
+const head = new TextEncoder().encode(JSON.stringify({ v: 1, n: N, lo, hi, height: f.height, counts, source: "16A two timber homes, exported from the live twin (Plan to 4D model), sampled from surfaces: not a scan" }));
+const pad = (4 - ((4 + head.length) % 4)) % 4, total = 4 + head.length + pad + N * 6 + N * 3;
+const buf = new ArrayBuffer(total), dv = new DataView(buf); dv.setUint32(0, head.length + pad, true); new Uint8Array(buf, 4, head.length).set(head); for (let i = 0; i < pad; i++) dv.setUint8(4 + head.length + i, 32);
+const P = new Uint16Array(buf, 4 + head.length + pad, N * 3), L = new Uint8Array(buf, 4 + head.length + pad + N * 6, N * 3);
+for (let i = 0; i < N; i++) { for (let q = 0; q < 3; q++) P[i * 3 + q] = Math.round(((f.pos[i * 3 + q] - lo[q]) / (hi[q] - lo[q] || 1)) * 65535); L[i] = Math.round(f.light[i] * 255); L[N + i] = f.kind[i]; L[2 * N + i] = f.part[i]; }
+window.__out = { bytes: new Uint8Array(buf), counts, tris: tris.length, edges: edges.length };
+document.title = "done";
+</script>
