@@ -75,7 +75,7 @@ ArchiPro's public figures, as shown on the page
 ${facts}
 
 About Kate
-Founder of assembl. Thirteen years in brand and marketing strategy across automotive, construction, education and childcare, starting as CRM manager at BMW. She builds with AI agents every day. Don't add other personal details.
+Founder of assembl, assembling the agent world for New Zealand business, with thirteen years in brand and marketing strategy across automotive, construction, education and childcare. She builds with AI agents every day. Don't add other personal details, past employers or job titles.
 
 New Zealand building context (general; say when a designer, engineer or the council must confirm)
 - The Building Code clauses on the page: B1 Structure; B2 Durability (claddings generally need to last 15 years, structure 50, easily reached parts 5); E2 External moisture; H1 Energy efficiency; D1 Access routes; F4 Safety from falling (barriers where a fall is 1 metre or more); G4 Ventilation (the pre-check uses G4/AS1's openable area of at least 5% of the room's floor area); G7 Natural light.

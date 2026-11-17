@@ -7,9 +7,9 @@ import * as THREE from "three";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const canvas = document.getElementById("field");
 const windows = [...document.querySelectorAll("[data-scene]")];
-const SRC = { homes: "./media/two-homes-render.webp", twin: "./media/16a-still.webp", cafe: "./media/cafe-render.webp" };
-const FOCUS = { homes: [0, 0.04], twin: [0, 0], cafe: [0, -0.02], drawing: [-0.06, 0] };   // nudge the crop toward the subject
-const MIST = { homes: 0.9, twin: 0.5, cafe: 0.45, drawing: 0 };                             // how far each picture goes to pale monochrome
+const SRC = { homes: "./media/two-homes-render.webp", twin: "./media/16a-still.webp", house: "./media/nz-house.webp" };
+const FOCUS = { homes: [0, 0.04], twin: [0, 0], house: [0, 0.02], drawing: [-0.06, 0] };   // nudge the crop toward the subject
+const MIST = { homes: 1, twin: 1, house: 1, drawing: 1 };                         // how far each picture goes to muted rose
 
 function fallback() {
   document.documentElement.classList.add("no-field");
@@ -23,10 +23,10 @@ try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false
 if (!ok) fallback();
 else {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  renderer.setClearColor("#21121F", 1);
+  renderer.setClearColor("#E3D0D2", 1);
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // pictures pass straight through: no tone shift
   const scene = new THREE.Scene(), camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const blank = new THREE.DataTexture(new Uint8Array([33, 18, 31, 255]), 1, 1); blank.needsUpdate = true;
+  const blank = new THREE.DataTexture(new Uint8Array([227, 208, 210, 255]), 1, 1); blank.needsUpdate = true;
   const U = {
     uRes: { value: new THREE.Vector2(1, 1) }, uTile: { value: 24 }, uTex: { value: blank }, uCover: { value: new THREE.Vector4(1, 1, 0, 0) },
     uScatter: { value: 1 }, uIntro: { value: reduce ? 1 : 0 }, uPointer: { value: new THREE.Vector3(-9999, -9999, 150) }, uFlip: { value: 0 }, uMist: { value: 0.9 },
@@ -66,12 +66,13 @@ else {
       void main() {
         vec2 u = (vUv - 0.5) * uCover.xy + 0.5 + uCover.zw;
         vec3 c = texture2D(uTex, vec2(u.x, 1.0 - u.y)).rgb;
-        // pale architectural mist: desaturate, lift, soften; the pointer brings the true colour back
-        float m = uMist * (1.0 - smoothstep(0.25, 0.85, vNear)), l = dot(c, vec3(0.299, 0.587, 0.114));
-        vec3 mist = mix(vec3(0.5, 0.46, 0.48), vec3(0.975, 0.962, 0.952), smoothstep(-0.1, 0.85, l));
-        c = mix(c, mix(vec3(l), mist, 0.78), m);
+        // three shades only: dusty plum, muted rose and bone; the pointer (or a finger) brings the true colour back
+        float m = uMist * (1.0 - smoothstep(0.2, 0.8, vNear)), l = smoothstep(0.0, 0.92, dot(c, vec3(0.299, 0.587, 0.114)));
+        vec3 plum = vec3(0.396, 0.290, 0.306), rose = vec3(0.890, 0.816, 0.824), bone = vec3(1.0, 0.992, 0.984);
+        vec3 tri = l < 0.5 ? mix(plum, rose, smoothstep(0.0, 1.0, l * 2.0)) : mix(rose, bone, smoothstep(0.0, 1.0, (l - 0.5) * 2.0));
+        c = mix(c, tri, m);
         c *= 0.42 + 0.58 * vFace;
-        c += vGlint * vec3(0.98, 0.88, 0.92) * 0.55 + pow(1.0 - vFace, 5.0) * vec3(0.85, 0.73, 0.8) * 0.18;
+        c += vGlint * vec3(1.0, 0.992, 0.984) * 0.4 + pow(1.0 - vFace, 5.0) * vec3(0.890, 0.816, 0.824) * 0.16;
         gl_FragColor = vec4(c, vAlpha);
       }`,
   });
@@ -134,7 +135,9 @@ else {
     return bestVis;
   }
   addEventListener("scroll", () => { measure(); kick(); }, { passive: true });
-  addEventListener("pointermove", (e) => { U.uPointer.value.x = e.clientX; U.uPointer.value.y = e.clientY; kick(); }, { passive: true });
+  const point = (e) => { U.uPointer.value.x = e.clientX; U.uPointer.value.y = e.clientY; U.uPointer.value.z = e.pointerType === "touch" ? 120 : 150; kick(); };
+  addEventListener("pointermove", point, { passive: true }); addEventListener("pointerdown", point, { passive: true });
+  addEventListener("pointerup", (e) => { if (e.pointerType === "touch") setTimeout(() => { U.uPointer.value.x = -9999; kick(); }, 900); }, { passive: true });
   document.addEventListener("pointerleave", () => { U.uPointer.value.x = -9999; kick(); });
 
   // ---------------------------------------------------------------------------------------------- frames, only while something moves

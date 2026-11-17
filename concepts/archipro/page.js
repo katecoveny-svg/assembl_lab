@@ -112,12 +112,12 @@ function ask(q) {
   const kept = r.kept;
   const answer = kept.length
     ? `<p>${kept.length === 1 ? "One product" : `${["", "", "Two", "Three"][kept.length]} products`} on ArchiPro fit${f.zone ? ` a ${ZONES[f.zone].split(", ")[1].replace(")", "")} site (NZS 3604 Zone ${f.zone})` : ""}${f.upkeep ? " with low upkeep" : ""}:</p>
-       <ul>${kept.map((k, i) => `<li><b>${esc(k.p.name)}</b>, ${esc(k.p.supplier)}. ${esc(k.p.upkeepNote)}${k.p.note ? " " + esc(k.p.note) : ""}<span class="cite" title="In the live feed this opens the product's page on ArchiPro">on ArchiPro [${i + 1}]</span></li>`).join("")}</ul>
+       <ul>${kept.map((k, i) => `<li class="peek" tabindex="0"><b>${esc(k.p.name)}</b> <span class="cite" title="In the live feed this opens the product's page on ArchiPro">on ArchiPro [${i + 1}]</span><span class="more"><span>${esc(k.p.supplier)}. ${esc(k.p.upkeepNote)}${k.p.note ? " " + esc(k.p.note) : ""}</span></span></li>`).join("")}</ul>
        <p>Each links to its ArchiPro page, where you can enquire with the supplier.${f.zone ? " Your designer confirms the exposure zone for the exact site." : ""}</p>`
     : `<p>Nothing in the sample catalogue fits all of that. Try fewer conditions, or another element.</p>`;
   tr.innerHTML = `<p class="q">“${esc(q)}”</p>
     <div class="step"><p class="mono k">1 · The assistant calls the feed</p><pre class="call">${esc(callText(f, q))}</pre></div>
-    <div class="step"><p class="mono k">2 · ArchiPro returns records</p><div class="recs">${kept.map((k) => `<button class="rec" data-id="${k.p.id}" aria-pressed="false"><span class="sw" style="${sw(k.p)}"></span><span>${esc(k.p.name)}<small>${esc(k.p.supplier)} · ${k.why.join(", ") || "matches the words"}</small></span></button>`).join("") || '<p class="meta">No records kept</p>'}</div><p class="meta">${kept.length} of ${r.total} kept${esc(ex)} · licence archipro-feed 0.1, proposed</p></div>
+    <div class="step"><p class="mono k">2 · ArchiPro returns records</p><div class="recs">${kept.map((k, i) => `<button class="rec" data-id="${k.p.id}" aria-pressed="false"><span class="sw" style="${sw(k.p)}"></span><span class="ix">${String(i + 1).padStart(2, "0")}</span><span class="nm">${esc(k.p.name)}<small>${esc(k.p.supplier)} · ${k.why.join(", ") || "matches the words"}</small></span></button>`).join("")}</div></div>
     <div class="step"><p class="mono k">3 · The answer, citing ArchiPro</p><div class="answer">${answer}</div></div>`;
   stagger($$(".step", tr));
   $$(".rec", tr).forEach((b) => b.addEventListener("click", () => { $$(".rec", tr).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); showRecord(byId[b.dataset.id]); }));
@@ -180,7 +180,7 @@ function specLine(p) {
 }
 function schedule() {
   const ids = ORDER.map((c) => spec.get(c)).filter(Boolean);
-  $("#schedule").innerHTML = ids.length ? ids.map((id) => { const p = byId[id]; return `<li><span><b>${CATS[p.cat].label}</b>${esc(specLine(p))}</span><button class="x" aria-label="Remove ${esc(p.name)}" data-rm="${p.cat}">×</button></li>`; }).join("") : '<li class="empty">Add a product to start the schedule.</li>';
+  $("#schedule").innerHTML = ids.length ? ids.map((id) => { const p = byId[id]; return `<li class="peek" tabindex="0"><span><b>${esc(p.name)}</b><span class="mono el">${CATS[p.cat].label} · ${esc(p.supplier)}</span><span class="more"><span>${esc(specLine(p))}</span></span></span><button class="x" aria-label="Remove ${esc(p.name)}" data-rm="${p.cat}">×</button></li>`; }).join("") : '<li class="empty">Add a product to start the schedule.</li>';
   $$("[data-rm]").forEach((b) => b.addEventListener("click", () => { spec.delete(b.dataset.rm); schedule(); compare(); }));
   $("#csv").disabled = $("#samples").disabled = !ids.length;
   document.dispatchEvent(new CustomEvent("ap:spec", { detail: Object.fromEntries(spec) }));
@@ -322,7 +322,7 @@ function clocks() {
 clocks(); setInterval(clocks, 20000);
 const logEl = $("#log");
 const log = (q, what) => { const { h, m } = localParts(q.tz); logEl.insertAdjacentHTML("afterbegin", `<li>${String(h).padStart(2, "0")}:${m} ${q.market} · ${esc(q.agent)} · ${esc(what)} · ${esc(q.owner)}</li>`); $("#log-n").textContent = logEl.children.length; };
-$("#queue").innerHTML = QUEUE.map((q) => `<article class="qc" id="${q.id}"><div class="head"><span class="mono who">${q.agent} agent · ${q.market}</span><span class="mono state">Waiting for approval</span></div><h3>${esc(q.title)}</h3><p>${esc(q.why)}</p><div class="draft" data-draft>${esc(q.draft)}</div><div class="acts"><button class="btn primary" data-act="ok">Approve</button><button class="btn" data-act="edit">Edit</button><button class="btn" data-act="no">Decline</button><span class="owner">${esc(q.owner)}</span></div></article>`).join("");
+$("#queue").innerHTML = QUEUE.map((q) => `<article class="qc" id="${q.id}"><div class="head"><span class="mono who">${q.agent} agent · ${q.market}</span><span class="mono state">Waiting for approval</span></div><h3>${esc(q.title)}</h3><div class="peek why" tabindex="0"><span class="mono">Why this card <i class="plus" aria-hidden="true"></i></span><span class="more"><span><p>${esc(q.why)}</p></span></span></div><div class="draft" data-draft>${esc(q.draft)}</div><div class="acts"><button class="btn primary" data-act="ok">Approve</button><button class="btn" data-act="edit">Edit</button><button class="btn" data-act="no">Decline</button><span class="owner">${esc(q.owner)}</span></div></article>`).join("");
 QUEUE.forEach((q) => {
   const el = $("#" + q.id), st = $(".state", el), dr = $("[data-draft]", el);
   $("[data-act=ok]", el).addEventListener("click", async () => {
@@ -342,8 +342,8 @@ QUEUE.forEach((q) => {
 });
 
 // ---------------------------------------------------------------------------------------------- the studio, as proof
-$("#roster").innerHTML = ROSTER.map((r) => `<article class="sp"><span class="mono">Specialist · ${STUDIO_TOTAL} in the studio</span><b>${esc(r.name)}</b><p>${esc(r.does)}</p><p class="lim"><b>Reviewed by</b> ${esc(r.reviewer)}.<br>${esc(r.limit)}</p></article>`).join("");
-$("#rules").innerHTML = `<p class="mono label">The studio's code register</p><p class="small" style="margin:0 0 10px">${esc(RULES_NOTE)}.</p><ol>${RULES.map((r) => `<li><a href="${r.url}" target="_blank" rel="noopener">${esc(r.title)} ↗</a><small>${esc(r.authority)} · ${esc(r.reviewer)}</small><span class="mono">${esc(r.status)}</span></li>`).join("")}</ol>`;
+$("#roster").innerHTML = ROSTER.map((r, i) => `<article class="sp peek" tabindex="0"><span class="mono">${String(i + 1).padStart(2, "0")} / ${STUDIO_TOTAL}</span><b>${esc(r.name)}</b><span class="role">Reviewed by ${esc(r.reviewer.charAt(0).toLowerCase() + r.reviewer.slice(1))}</span><span class="more"><span><span class="does">${esc(r.does)}</span><span class="lim">${esc(r.limit)}</span></span></span><i class="plus" aria-hidden="true"></i></article>`).join("");
+$("#rules").innerHTML = `<p class="mono label">The studio's code register</p><p class="small" style="margin:0 0 10px">${esc(RULES_NOTE)}.</p><ol>${RULES.map((r) => `<li class="peek" tabindex="0"><span class="t">${esc(r.title)}</span><span class="mono">${esc(r.status)}</span><span class="more"><span><small>${esc(r.authority)} · reviewer: ${esc(r.reviewer)} · <a href="${r.url}" target="_blank" rel="noopener">source ↗</a></small></span></span></li>`).join("")}</ol>`;
 $("#runs").innerHTML = [
   ["65.2 s", "a 48-frame fly-through rendered on the GPU, branded and delivered, on a laptop", "Measured local run · not a cloud benchmark"],
   ["1.87 M", "triangles rendered headless in Blender Cycles on Metal, without reducing the scene", "Measured local run"],
