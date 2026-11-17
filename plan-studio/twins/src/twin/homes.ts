@@ -25,8 +25,8 @@ export interface RoomSpec { id: string; name: string; u: number; v: number; w: n
 export interface BuildingSpec {
   id: string;
   name: string;
-  roof: { type: string; ridge: string; pitchDeg: number; eave: number; verge: number; cover: string; source?: Src };
-  levels: { plate: number; walls: WallSpec[]; partitions: PartitionSpec[]; rooms: RoomSpec[]; fitout?: { id: string; name: string; u0: number; u1: number; v0: number; v1: number; y0: number; y1: number; finish: string }[] }[];
+  roof: { type: string; ridge: string; pitchDeg: number; eave: number; verge: number; cover: string; source?: Src; high?: 'v0' | 'v1' };
+  levels: { plate: number; walls: WallSpec[]; partitions: PartitionSpec[]; rooms: RoomSpec[]; stairs?: { id: string; poly: Pt[]; source?: Src }[]; fitout?: { id: string; name: string; u0: number; u1: number; v0: number; v1: number; y0: number; y1: number; finish: string }[] }[];
 }
 export interface Drawn { northDeck: { u0: number; u1: number }; spa: { u: number; v: number; d: number }; southDeck: { u0: number; u1: number; v1: number }; stair: { u0: number; u1: number; side: 'south' | 'east' } }
 export interface Placement { origin: Pt; u: Pt; v: Pt; ffl: number; bearing: number }
@@ -36,6 +36,16 @@ export interface Limit { a: Pt; n: Pt; offset: number; name: string }
 const tan15 = Math.tan((15 * Math.PI) / 180);
 
 /** the footprint (outer faces) and the roof's half-span and pitch, from the plan model: ridge along u at v = D / 2 */
+/** height of the ceiling plane above the floor at home row v: a gable rises to a ridge at D/2, a skillion rises across
+ *  the plan to its high side, a flat roof stays at the plate */
+export function ceilingAt(spec: BuildingSpec, plate: number) {
+  const { D, hs, tanP } = footprint(spec);
+  const t = spec.roof?.type ?? 'gable';
+  if (t === 'skillion') return (v: number) => plate + Math.max(0, Math.min(D, spec.roof.high === 'v0' ? D - v : v)) * tanP;
+  if (t === 'flat') return (_v: number) => plate;
+  return (v: number) => plate + (hs - Math.abs(v - hs)) * tanP;
+}
+
 export function footprint(spec: BuildingSpec) {
   const L = spec.levels[0];
   const xs = L.walls.filter((w) => w.axis === 'x');
@@ -229,42 +239,24 @@ export function buildHome(o: HomeOptions) {
   const wallsG = grp('walls');
   root.add(wallsG);
   const y0 = -0.36;
-  const gableTop = (s: number) => plate + 0.19 + (hs - Math.abs(s - hs)) * tanP;
+  const ceilV = ceilingAt(o.spec, plate);
+  const skill = o.spec.roof?.type === 'skillion', isGable = (o.spec.roof?.type ?? 'gable') === 'gable';
   for (const w of L.walls) {
     const g = grp(`wall_${w.id}_${w.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`);
     const len = w.to - w.from;
-    const gable = w.axis === 'z';
+    // end walls run across the slope (along v) and follow the roof: a triangle under a gable, a rake under a skillion
+    const gable = w.axis === 'z' && (isGable || skill);
     // wall-local s runs so that the outside face is at z = 0 and the inside at z = thickness
     const mirror = (w.axis === 'x' && w.out > 0) || (w.axis === 'z' && w.out < 0);
     const sOf = (x: number) => (mirror ? len - (x - w.from) : x - w.from);
+    const vOf = (s: number) => (mirror ? w.to - s : w.from + s);
+    const tops = isGable ? [len, mirror ? w.to - hs : hs - w.from, 0] : [len, 0];
     const outline: Pt[] = gable
-      ? [
-          [0, y0],
-          [len, y0],
-          [len, gableTop(mirror ? 0 : len)],
-          [len / 2, gableTop(hs)],
-          [0, gableTop(mirror ? len : 0)],
-        ]
-      : [
-          [0, y0],
-          [len, y0],
-          [len, plate + 0.12],
-          [0, plate + 0.12],
-        ];
+      ? [[0, y0], [len, y0], ...tops.map((t) => [t, ceilV(vOf(t)) + 0.19] as Pt)]
+      : [[0, y0], [len, y0], [len, ceilV(w.at) + 0.12], [0, ceilV(w.at) + 0.12]];
     const inner: Pt[] = gable
-      ? [
-          [0.0, -0.015],
-          [len, -0.015],
-          [len, plate + (hs - Math.abs((mirror ? 0 : len) - hs)) * tanP],
-          [len / 2, plate + hs * tanP],
-          [0, plate + (hs - Math.abs((mirror ? len : 0) - hs)) * tanP],
-        ]
-      : [
-          [0, -0.015],
-          [len, -0.015],
-          [len, plate],
-          [0, plate],
-        ];
+      ? [[0.0, -0.015], [len, -0.015], ...tops.map((t) => [t, ceilV(vOf(t))] as Pt)]
+      : [[0, -0.015], [len, -0.015], [len, ceilV(w.at)], [0, ceilV(w.at)]];
     const holes: Pt[][] = (w.openings ?? []).map((op) => {
       const a = Math.min(sOf(op.a), sOf(op.b));
       const b = Math.max(sOf(op.a), sOf(op.b));
@@ -281,7 +273,7 @@ export function buildHome(o: HomeOptions) {
     const th = w.thickness;
     const outer = mesh('cladding', skin(outline, holes, 0, 0.022, cladT), cladM);
     tag(outer, asset, 'IfcCovering', { predefinedType: 'CLADDING', material: kind === 'metal' ? 'dark ribbed metal cladding, vertical' : kind === 'white' ? 'white painted cladding' : kind === 'blackstain' ? 'cedar shiplap, black stain' : 'cedar shiplap, natural stain', source: o.finishes?.cladding ? 'proposed' : w.source ?? 'written' });
-    const core = mesh('framing_core', skin(outline.map(([s, y]) => [s, Math.min(y, gable ? y : plate)] as Pt), holes, 0.022, th - 0.035, t('lining')), M.lining);
+    const core = mesh('framing_core', skin(outline.map(([s, y]) => [s, Math.min(y, gable ? y : ceilV(w.at))] as Pt), holes, 0.022, th - 0.035, t('lining')), M.lining);
     const lin = mesh('lining', skin(inner, holes, th - 0.013, 0.013, inTile), inMat);
     g.add(outer, core, lin);
     tag(g, asset, 'IfcWall', { predefinedType: 'SOLIDWALL', name: w.name, thickness: th, cladding: w.cladding, source: w.source ?? 'written', material: '90 × 45 timber frame, building wrap, cavity battens, cedar shiplap; 10 mm plasterboard' });
@@ -311,7 +303,7 @@ export function buildHome(o: HomeOptions) {
   // --- interior partitions -----------------------------------------------------------------
   const partsG = grp('partitions');
   root.add(partsG);
-  const ceil = (v: number) => plate + (hs - Math.abs(v - hs)) * tanP;
+  const ceil = ceilV;
   for (const p of L.partitions) {
     const th = Math.max(0.09, p.thickness);
     const len = p.to - p.from;
@@ -376,15 +368,23 @@ export function buildHome(o: HomeOptions) {
   // --- raking ceiling ------------------------------------------------------------------------
   {
     const geos: THREE.BufferGeometry[] = [];
-    for (const side of [0, 1]) {
-      const g = new THREE.PlaneGeometry(W - 2 * tW, (hs - tW) / Math.cos(Math.atan(tanP)), 1, 1);
-      g.rotateX(side === 0 ? Math.PI / 2 - Math.atan(tanP) : Math.PI / 2 + Math.atan(tanP));
-      const vMid = side === 0 ? (tW + hs) / 2 : (hs + D - tW) / 2;
-      g.translate(W / 2, ceil(vMid), vMid);
+    if (isGable) {
+      for (const side of [0, 1]) {
+        const g = new THREE.PlaneGeometry(W - 2 * tW, (hs - tW) / Math.cos(Math.atan(tanP)), 1, 1);
+        g.rotateX(side === 0 ? Math.PI / 2 - Math.atan(tanP) : Math.PI / 2 + Math.atan(tanP));
+        const vMid = side === 0 ? (tW + hs) / 2 : (hs + D - tW) / 2;
+        g.translate(W / 2, ceil(vMid), vMid);
+        geos.push(boxUV(g, IMw ? inTile : 1, 'x'));
+      }
+    } else {
+      const slope = skill ? Math.atan(tanP) * (o.spec.roof.high === 'v0' ? 1 : -1) : 0;
+      const g = new THREE.PlaneGeometry(W - 2 * tW, (D - 2 * tW) / Math.cos(slope), 1, 1);
+      g.rotateX(Math.PI / 2 + slope);
+      g.translate(W / 2, ceil(D / 2), D / 2);
       geos.push(boxUV(g, IMw ? inTile : 1, 'x'));
     }
     const c = mesh('ceiling_raking', mergeGeometries(geos), inMat);
-    tag(c, asset, 'IfcCovering', { predefinedType: 'CEILING', material: '10 mm plasterboard on rafters', source: 'scaled', note: 'raking ceiling read from sections B and E' });
+    tag(c, asset, 'IfcCovering', { predefinedType: 'CEILING', material: '10 mm plasterboard on rafters', source: 'scaled', note: isGable ? 'raking ceiling under the gable' : skill ? 'raking ceiling under the skillion' : 'flat ceiling' });
     root.add(c);
   }
 
@@ -411,27 +411,91 @@ export function buildHome(o: HomeOptions) {
     root.add(spa(asset, o.drawn.spa, M));
     root.add(stair(asset, o.drawn, M, gy));
   } else {
-    const ds = (L as unknown as { decks?: { id: string; u0: number; u1: number; v0: number; v1: number; rail?: string[] }[] }).decks ?? [];
+    const ds = (L as unknown as { decks?: { id: string; u0: number; u1: number; v0: number; v1: number; rail?: string[]; poly?: Pt[]; source?: Src }[] }).decks ?? [];
     for (const dk of ds) {
-      let poly: Pt[] = [
+      let poly: Pt[] = dk.poly && dk.poly.length >= 3 ? dk.poly.map((p) => [p[0], p[1]] as Pt) : [
         [dk.u0, dk.v0],
         [dk.u1, dk.v0],
         [dk.u1, dk.v1],
         [dk.u0, dk.v1],
       ];
       for (const l of o.limits) poly = clipHalf(poly, frame.limit(l));
-      if (poly.length >= 3) root.add(deck(asset, `deck_${dk.id.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, poly, M, gy, dk.rail ?? [], 'scaled'));
+      if (poly.length >= 3) root.add(deck(asset, `deck_${dk.id.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, poly, M, gy, dk.rail ?? [], dk.source ?? 'scaled', null, null, { W, D }));
       if (dk.v1 <= 0.01) nd = poly;
       else sd = poly;
     }
   }
 
+  // outside stairs from the site plan: they start at the deck or floor end nearest the house and step down to the ground
+  for (const st of L.stairs ?? []) {
+    const anchors: Pt[][] = [[[0, 0], [W, 0], [W, D], [0, D]], ...((L as unknown as { decks?: { poly?: Pt[] }[] }).decks ?? []).map((d) => d.poly ?? []).filter((p) => p.length >= 3)];
+    const sg = outStair(asset, st.id, st.poly, M, gy, -0.05, anchors, st.source ?? 'scaled');
+    if (sg) root.add(sg);
+  }
+
   if (o.finishes) {
-    const ceilAt = (_u: number, v: number) => plate + (hs - Math.abs(v - hs)) * tanP;
+    const ceilAt = (_u: number, v: number) => ceilV(v);
     root.add(fitOut(o.spec, o.quality, o.finishes, ceilAt));
   }
   root.userData.decks = { north: nd, south: sd };
   return root;
+}
+
+
+// --- outside stair ---------------------------------------------------------------------------------
+function distToPoly(p: Pt, poly: Pt[]) {
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length], dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2));
+    best = Math.min(best, Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy));
+  }
+  return best;
+}
+function outStair(asset: string, id: string, poly: Pt[], M: TwinMats, gy: (u: number, v: number) => number, topY: number, anchors: Pt[][], source: Src) {
+  if (poly.length < 3) return null;
+  // the stair's run is its outline's long axis
+  const c: Pt = [poly.reduce((a, p) => a + p[0], 0) / poly.length, poly.reduce((a, p) => a + p[1], 0) / poly.length];
+  let sxx = 0, syy = 0, sxy = 0;
+  for (const p of poly) { const x = p[0] - c[0], y = p[1] - c[1]; sxx += x * x; syy += y * y; sxy += x * y; }
+  const ang = 0.5 * Math.atan2(2 * sxy, sxx - syy), d: Pt = [Math.cos(ang), Math.sin(ang)], n: Pt = [-d[1], d[0]];
+  const along = poly.map((p) => (p[0] - c[0]) * d[0] + (p[1] - c[1]) * d[1]), across = poly.map((p) => (p[0] - c[0]) * n[0] + (p[1] - c[1]) * n[1]);
+  const L = Math.max(...along) - Math.min(...along), w = Math.min(1.6, Math.max(0.8, Math.max(...across) - Math.min(...across)));
+  if (L < 0.6) return null;
+  const e1: Pt = [c[0] - (d[0] * L) / 2, c[1] - (d[1] * L) / 2], e2: Pt = [c[0] + (d[0] * L) / 2, c[1] + (d[1] * L) / 2];
+  const near = (p: Pt) => Math.min(...anchors.map((a) => distToPoly(p, a)));
+  const [top, bot] = near(e1) <= near(e2) ? [e1, e2] : [e2, e1];
+  const dir: Pt = [(bot[0] - top[0]) / L, (bot[1] - top[1]) / L];
+  const drop = topY - gy(bot[0], bot[1]);
+  if (drop < 0.15) return null;
+  const nR = Math.max(2, Math.round(drop / 0.18)), rise = drop / nR, going = L / nR;
+  const yaw = -Math.atan2(dir[1], dir[0]), ft = M.sets.decking.tile;
+  const treads: THREE.BufferGeometry[] = [], frame: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < nR; i++) {
+    const s = (i + 0.5) * going, p: Pt = [top[0] + dir[0] * s, top[1] + dir[1] * s];
+    const b = new THREE.BoxGeometry(going + 0.03, 0.035, w);
+    b.rotateY(yaw); b.translate(p[0], topY - (i + 1) * rise - 0.0175, p[1]);
+    treads.push(boxUV(b, ft, 'x'));
+  }
+  const slope = Math.atan2(drop, L), sl = Math.hypot(L, drop);
+  for (const side of [-1, 1]) {
+    const o: Pt = [(top[0] + bot[0]) / 2 + n[0] * side * (w / 2), (top[1] + bot[1]) / 2 + n[1] * side * (w / 2)];
+    const str = new THREE.BoxGeometry(sl, 0.24, 0.045);
+    str.rotateZ(-slope); str.rotateY(yaw); str.translate(o[0], topY - drop / 2 - 0.12, o[1]);
+    frame.push(boxUV(str, ft, 'x'));
+    const rail = new THREE.BoxGeometry(sl, 0.045, 0.07);
+    rail.rotateZ(-slope); rail.rotateY(yaw); rail.translate(o[0], topY - drop / 2 + 0.9, o[1]);
+    frame.push(boxUV(rail, ft, 'x'));
+    for (const t of [0.05, 0.5, 0.95]) {
+      const q: Pt = [top[0] + dir[0] * L * t + n[0] * side * (w / 2), top[1] + dir[1] * L * t + n[1] * side * (w / 2)];
+      const y = topY - drop * t;
+      const post = new THREE.BoxGeometry(0.07, 0.95, 0.07); post.translate(q[0], y + 0.42, q[1]); frame.push(boxUV(post, ft, 'y'));
+    }
+  }
+  const g = grp(`stair_${id.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`);
+  g.add(mesh('treads', mergeGeometries(treads), M.decking), mesh('stringers_and_rails', mergeGeometries(frame), M.decking));
+  tag(g, asset, 'IfcStair', { predefinedType: 'STRAIGHT_RUN_STAIR', risers: nR, rise: +rise.toFixed(3), going: +going.toFixed(3), width: +w.toFixed(2), source, note: 'outline from the site plan; risers and going worked out from the fall to the ground' });
+  return g;
 }
 
 // --- joinery ------------------------------------------------------------------------------------
@@ -520,7 +584,61 @@ function corrugate(width: number, length: number, p = 0.0762, dep = 0.017) {
   return g;
 }
 
+/** a mono-pitch (skillion) roof, or a flat one laid to a small fall: one plane rising to the high side */
+function roofMono(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy: (u: number, v: number) => number) {
+  const r = spec.roof;
+  const { W, D } = footprint(spec);
+  const g = grp('roof');
+  const flat = r.type === 'flat';
+  const a = ((flat ? 2 : r.pitchDeg) * Math.PI) / 180, tn = Math.tan(a);
+  const hiV0 = r.high === 'v0';
+  tag(g, asset, 'IfcRoof', { predefinedType: flat ? 'FLAT_ROOF' : 'SHED_ROOF', pitch: flat ? 2 : r.pitchDeg, high: hiV0 ? 'v0' : 'v1', eave: r.eave, verge: r.verge, cover: r.cover, source: r.source ?? 'written' });
+  const rise = (v: number) => (hiV0 ? D - v : v) * tn;
+  const top = (v: number) => plate + 0.22 + (flat ? 0 : rise(v));
+  const u0 = -r.verge, u1 = W + r.verge, vLo = hiV0 ? D + r.eave : -r.eave, vHi = hiV0 ? -r.eave : D + r.eave;
+  const run = D + 2 * r.eave, len = run / Math.cos(flat ? 0 : a), tilt = flat ? 0 : hiV0 ? a : -a;
+  const s = corrugate(u1 - u0, len);
+  s.rotateX(tilt);
+  s.translate((u0 + u1) / 2, top(D / 2) + 0.01, D / 2);
+  const cover = mesh('roof_sheets', boxUV(s, M.sets.roof.tile, 'z'), M.roof);
+  tag(cover, asset, 'IfcCovering', { predefinedType: 'ROOFING', material: 'profiled metal roof sheeting, pre-painted steel; corrugate profile assumed', source: r.source ?? 'written' });
+  g.add(cover);
+  const un = new THREE.PlaneGeometry(u1 - u0, len);
+  un.rotateX(Math.PI / 2 + tilt);
+  un.translate((u0 + u1) / 2, top(D / 2) - 0.02, D / 2);
+  const soffit = mesh('soffit_and_underlay', boxUV(un, 1, 'x'), M.lining);
+  soffit.castShadow = false;
+  g.add(soffit);
+  const ft = M.sets.roof.tile, trims: THREE.BufferGeometry[] = [];
+  for (const v of [vLo, vHi]) {
+    const out = v < D / 2 ? -1 : 1, y = top(v);
+    trims.push(boxAt(u1 - u0 + 0.05, 0.22, 0.025, (u0 + u1) / 2, y - 0.1, v + out * 0.0125, ft));
+    if (v === vLo) { trims.push(boxAt(u1 - u0 + 0.05, 0.11, 0.004, (u0 + u1) / 2, y - 0.07, v + out * 0.14, ft)); trims.push(boxAt(u1 - u0 + 0.05, 0.004, 0.125, (u0 + u1) / 2, y - 0.125, v + out * 0.08, ft)); }
+    else trims.push(boxAt(u1 - u0 + 0.05, 0.004, 0.16, (u0 + u1) / 2, y + 0.03, v - out * 0.06, ft));
+  }
+  for (const u of [u0, u1]) {
+    const b = new THREE.BoxGeometry(0.025, 0.24, len + 0.02);
+    b.rotateX(tilt);
+    b.translate(u + (u === u0 ? -0.0125 : 0.0125), top(D / 2) - 0.08, D / 2);
+    trims.push(boxUV(b, ft, 'z'));
+  }
+  const trim = mesh('fascia_gutter_barges_flashing', mergeGeometries(trims), M.flashing);
+  tag(trim, asset, 'IfcCovering', { predefinedType: 'ROOFING', material: 'pre-painted steel fascia, quad gutter on the low edge, barges and an apron flashing on the high edge', source: 'assumed' });
+  g.add(trim);
+  const dps: THREE.BufferGeometry[] = [];
+  for (const u of [0.25, W - 0.25]) {
+    const v = hiV0 ? D + 0.17 : -0.17, gr = gy(u, v), h = top(vLo) - 0.12 - gr;
+    if (h <= 0.1) continue;
+    const c = new THREE.CylinderGeometry(0.04, 0.04, h, 12);
+    c.translate(u, gr + h / 2, v);
+    dps.push(boxUV(c, ft, 'y'));
+  }
+  if (dps.length) g.add(tag(mesh('downpipes', mergeGeometries(dps), M.flashing), asset, 'IfcPipeSegment', { predefinedType: 'RIGIDSEGMENT', material: '80 mm round downpipe, pre-painted steel', source: 'assumed' }));
+  return g;
+}
+
 function roof(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy: (u: number, v: number) => number) {
+  if (spec.roof?.type === 'skillion' || spec.roof?.type === 'flat') return roofMono(spec, plate, M, asset, gy);
   const r = spec.roof;
   const { W, D, hs } = footprint(spec);
   const g = grp('roof');
@@ -657,11 +775,11 @@ function subfloor(asset: string, M: TwinMats, poly: Pt[], topY: number, gy: (u: 
   return g;
 }
 
-function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: number, v: number) => number, rails: string[], source: Src, stairGap: [number, number] | null = null, skipU: number | null = null) {
+function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: number, v: number) => number, rails: string[], source: Src, stairGap: [number, number] | null = null, skipU: number | null = null, house: { W: number; D: number } | null = null) {
   const g = grp(name);
   const top = -0.05;
   const bt = 0.032;
-  tag(g, asset, 'IfcSlab', { predefinedType: 'LANDING', name: name.replace('_', ' '), source, area: +polyArea(poly).toFixed(2), note: 'outline scaled from RC-06; clipped to the 1 m yards' });
+  tag(g, asset, 'IfcSlab', { predefinedType: 'LANDING', name: name.replace('_', ' '), source, area: +polyArea(poly).toFixed(2), note: house ? 'outline from the site plan' : 'outline scaled from RC-06; clipped to the 1 m yards' });
   let vMin = Infinity;
   let vMax = -Infinity;
   for (const [, v] of poly) {
@@ -694,8 +812,10 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
     const along = Math.hypot(B[0] - A[0], B[1] - A[1]);
     if (along < 0.3) continue;
     const onWall = Math.abs(A[1]) < 1e-6 && Math.abs(B[1]) < 1e-6;
-    const onSouthWall = Math.abs(A[1] - 6) < 1e-6 && Math.abs(B[1] - 6) < 1e-6;
-    if (onWall || onSouthWall) continue;
+    const onSouthWall = !house && Math.abs(A[1] - 6) < 1e-6 && Math.abs(B[1] - 6) < 1e-6;
+    // an edge along the house's own walls needs no barrier
+    const onHouse = house && [[0, 0.25], [1, 0.25]].some(([ax]) => [0, ax === 0 ? house.W : house.D].some((c) => Math.abs(A[ax] - c) < 0.25 && Math.abs(B[ax] - c) < 0.25));
+    if (onWall || onSouthWall || onHouse) continue;
     if (skipU != null && Math.abs(A[0] - skipU) < 1e-6 && Math.abs(B[0] - skipU) < 1e-6) continue;
     const mid: Pt = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
     const fall = top - gy(mid[0], mid[1]);

@@ -129,3 +129,12 @@ ul.small li { margin: 4px 0; }
 .share-card { max-width: 360px; width: 100%; background: #f9f6f2; }
 .share-qr { display: block; margin: 8px auto; border-radius: 8px; }
 .share-url { width: 100%; font: 12px ui-monospace, monospace; padding: 8px; border: 1px solid rgba(51, 33, 47, 0.2); border-radius: 8px; background: #fff; margin: 6px 0 10px; }
+
+/* the rest of the set: what each sheet is read for */
+.trace-card .tr-set { margin: 10px 0; padding: 10px 12px; border: 1px solid #e6dadf; border-radius: 14px; background: #fffdfb; }
+.trace-card .tr-set p { margin: 0 0 8px; }
+.trace-card .tr-setrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 0; border-top: 1px solid #f0e8ec; font-size: 13px; }
+.trace-card .tr-setrow select { max-width: 150px; }
+.trace-card .tr-extra { margin: 8px 0; padding: 10px 12px; border-radius: 14px; background: #f5f1f2; }
+.trace-card .tr-extra p { margin: 0 0 4px; }
+.trace-card .tr-extra ul { margin: 0; padding-left: 18px; }

@@ -1,7 +1,8 @@
 // The trace card on the drop page: a PDF sheet or a picture of a plan in, a plan model out, with every step shown.
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { App } from './app';
-import { openPdf, planModel, readImage, readSheet, sheetThumb, surveySheets, toBuilding, type Built, type BuildOpts, type TraceRead } from './planTrace';
+import { openPdf, planModel, readImage, readSheet, sheetThumb, surveySheets, toBuilding, type Built, type BuildOpts, type SheetInfo, type TraceRead } from './planTrace';
+import { defaultRoles, fallPlane, guessHigh, interpretElevations, readElevSheet, readSiteSheet, registerSite, type ElevRead, type ElevResult, type Role, type SiteRead, type SiteResult } from './planSet';
 
 const COL = { ext: '#21121F', part: '#756771', door: '#B4466F', window: '#B4466F', slider: '#B4466F', opening: '#D4B6C7', deck: '#8A7B5C' } as const;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -60,11 +61,16 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       <p class="small" id="trStatus">Opening the drawing…</p>
       <div class="tr-sheet" id="trSheetRow" hidden><label class="slider">Sheet <select id="trSheet"></select></label><canvas id="trThumb" class="tr-thumb"></canvas></div>
       <div id="trAsk" class="tr-ask" hidden><p id="trAskText"></p><button class="pill solid" id="trAi">Read it with the AI plan reader</button></div>
+      <div id="trSet" class="tr-set" hidden><p class="small"><b>The rest of the set.</b> The AI plan reader can also read a site plan (decks, stairs, paths, planting) and elevations (roof, heights, ground). Change what each sheet is for, or skip it.</p><div id="trSetList"></div></div>
       <div id="trPlans" class="tr-plans"></div>
+      <div id="trExtra" class="tr-extra" hidden></div>
       <div id="trOpts" class="tr-opts" hidden>
-        <label>Ceiling <input id="trPlate" type="number" value="2.4" step="0.05" min="2" max="4"> m</label>
-        <label>Roof pitch <input id="trPitch" type="number" value="15" step="1" min="3" max="45">°</label>
-        <label>Floor above ground <input id="trFloor" type="number" value="0.6" step="0.05" min="0" max="3"> m</label>
+        <label>Roof <select id="trRoof"><option value="gable">Gable</option><option value="skillion">Skillion</option><option value="flat">Flat</option></select></label>
+        <label id="trHighL" hidden>High side <select id="trHigh"><option value="v0">over the north wall</option><option value="v1">over the south wall</option></select></label>
+        <label>Ceiling <input id="trPlate" type="number" value="2.4" step="0.05" min="2" max="4.5"> m</label>
+        <label>Roof pitch <input id="trPitch" type="number" value="15" step="1" min="2" max="45">°</label>
+        <label>Floor above ground <input id="trFloor" type="number" value="0.6" step="0.05" min="0" max="6"> m</label>
+        <label id="trDropL" hidden>Ground falls <input id="trDrop" type="number" value="0" step="0.1" min="0" max="12"> m under the high side</label>
       </div>
       <div class="row wrap"><button class="pill solid" id="trBuild" disabled>Build the twin</button></div>
       <p class="small tr-truth">Sizes come from the written dimensions where they agree with the drawing. Positions read by AI are ± about 150 mm. Heights, roof, finishes and furniture are assumed or proposed until you change them.</p>`;
@@ -79,6 +85,10 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
     let built: (Built | null)[] = [];
     let include: boolean[] = [];
     let token = 0;
+    let sheets: SheetInfo[] = [];
+    let roles = new Map<number, Role>();
+    let siteRead: SiteRead | null = null, elevReads: ElevRead[] = [], elev: ElevResult | null = null, site: SiteResult | null = null;
+    let roofSrc: 'assumed' | 'ai' = 'assumed';
     const finish = (v: { plan: Record<string, unknown>; name: string } | null) => {
       token++;
       card.remove();
@@ -86,7 +96,48 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       resolve(v);
     };
     $('trBack').addEventListener('click', () => finish(null));
-    const opts = (): BuildOpts => ({ plate: +($('trPlate') as HTMLInputElement).value || 2.4, pitch: +($('trPitch') as HTMLInputElement).value || 15, floor: Math.max(0, +($('trFloor') as HTMLInputElement).value || 0) });
+    const val = (id: string) => ($(id) as HTMLInputElement).value;
+    const opts = (): BuildOpts => ({ plate: +val('trPlate') || 2.4, pitch: +val('trPitch') || 15, floor: Math.max(0, +val('trFloor') || 0), roof: val('trRoof') as BuildOpts['roof'], high: val('trHigh') as 'v0' | 'v1', roofSrc });
+    const setVal = (id: string, v: string | number) => { ($(id) as HTMLInputElement).value = String(v); };
+    const extrasWanted = () => [...roles.entries()].filter(([p, r]) => r !== 'skip' && p !== page);
+    const showSet = () => {
+      const list = $('trSetList');
+      const others = sheets.filter((x) => x.page !== page);
+      $('trSet').hidden = !others.length;
+      list.innerHTML = others.map((x) => `<label class="tr-setrow"><span>${x.page}: ${esc(x.title.slice(0, 40))}</span><select data-page="${x.page}"><option value="skip">Skip</option><option value="site" ${roles.get(x.page) === 'site' ? 'selected' : ''}>Site plan</option><option value="elevation" ${roles.get(x.page) === 'elevation' ? 'selected' : ''}>Elevations</option></select></label>`).join('');
+      list.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => { roles.set(+el.dataset.page!, el.value as Role); }));
+    };
+    // the site plan and the elevations, read after the floor plan
+    const readExtras = async (progress: (m: string) => void) => {
+      siteRead = null; elevReads = []; elev = null; site = null;
+      const notes: string[] = [];
+      for (const [p, r] of extrasWanted()) {
+        const info = sheets.find((x) => x.page === p)!;
+        try {
+          if (r === 'site' && !siteRead) siteRead = await readSiteSheet(doc!, info, progress);
+          if (r === 'elevation') elevReads.push(await readElevSheet(doc!, info, progress));
+        } catch (e) { notes.push(`Sheet ${p}: ${(e as Error).message}.`); }
+      }
+      if (elevReads.length) {
+        elev = interpretElevations(elevReads);
+        if (elev.roof) { setVal('trRoof', elev.roof); roofSrc = 'ai'; }
+        if (elev.pitch) setVal('trPitch', elev.pitch);
+        if (elev.plate) setVal('trPlate', elev.plate);
+        if (elev.hUp != null) setVal('trFloor', elev.hUp.toFixed(2));
+        if (elev.hUp != null && elev.hDown != null) setVal('trDrop', Math.max(0, elev.hDown - elev.hUp).toFixed(1));
+      }
+      return notes;
+    };
+    let extraNotes: string[] = [];
+    const showExtra = () => {
+      const lines = [...(site?.report ?? []), ...(elev?.report ?? []), ...extraNotes];
+      const sk = val('trRoof') === 'skillion';
+      $('trHighL').hidden = !sk; $('trDropL').hidden = !elev;
+      if (sk && elev) lines.push(`High side: ${val('trHigh') === 'v0' ? 'north' : 'south'} wall (${highFromPlan ? 'assumed: over the more glazed side' : 'as you set it'}). The ground is taken to fall away under it.`);
+      $('trExtra').hidden = !lines.length;
+      $('trExtra').innerHTML = lines.length ? `<p class="small"><b>From the other sheets</b></p><ul class="small">${lines.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
+    };
+    let highFromPlan = true;
 
     const render = () => {
       const box = $('trPlans');
@@ -99,6 +150,15 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
           return null;
         }
       });
+      if (built[0] && highFromPlan && val('trRoof') === 'skillion') setVal('trHigh', guessHigh(built[0]));
+      if (built[0] && val('trRoof') === 'skillion' && built[0].building.roof.high !== val('trHigh')) built[0] = toBuilding(reads[0], 'traced-1', opts());
+      site = siteRead && built[0] ? registerSite(siteRead, built[0]) : null;
+      if (site?.ok && built[0]) {
+        const L = built[0].building.levels[0] as unknown as { decks: unknown[]; stairs?: unknown[] };
+        if (site.decks.length) L.decks = site.decks;
+        if (site.stairs.length) L.stairs = site.stairs;
+      }
+      showExtra();
       reads.forEach((ir, i) => {
         const b = built[i];
         const el = document.createElement('div');
@@ -130,7 +190,8 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       ($('trBuild') as HTMLButtonElement).disabled = !n;
       $('trBuild').textContent = n > 1 ? `Build the twin (${n} homes)` : 'Build the twin';
     };
-    for (const id of ['trPlate', 'trPitch', 'trFloor']) $(id).addEventListener('change', render);
+    for (const id of ['trPlate', 'trPitch', 'trFloor', 'trRoof', 'trDrop']) $(id).addEventListener('change', render);
+    $('trHigh').addEventListener('change', () => { highFromPlan = false; render(); });
 
     const run = async (useAi: boolean) => {
       const my = ++token;
@@ -155,22 +216,45 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         }
         reads = got;
         include = got.map(() => true);
-        status(got.length > 1 ? `${got.length} plans read from sheet ${page}. Untick any you don’t want, check them, then build.` : 'Plan read. Check it against your drawing, then build.');
+        if (useAi && doc && extrasWanted().length) extraNotes = await readExtras(progress);
+        if (my !== token) return;
+        status(got.length > 1 ? `${got.length} plans read from sheet ${page}. Untick any you don’t want, check them, then build.` : elevReads.length || siteRead ? 'Set read. Check it against your drawings, then build.' : 'Plan read. Check it against your drawing, then build.');
         render();
+        if (!useAi && doc && extrasWanted().length) {
+          $('trAskText').textContent = 'The floor plan was measured from its linework. The AI plan reader can also read the site plan and elevations you picked above: a crop of each sheet goes to the lab’s reader (Claude, by Anthropic) for this read and is not stored.';
+          ($('trAi') as HTMLButtonElement).textContent = 'Read the rest of the set with the AI plan reader';
+          $('trAsk').hidden = false;
+        }
       } catch (e) {
         if (my === token) status(`Couldn’t read it: ${(e as Error).message}`);
       } finally {
         clearInterval(tick);
       }
     };
-    $('trAi').addEventListener('click', () => void run(true));
+    $('trAi').addEventListener('click', () => {
+      if (reads.length && reads[0].src === 'drawing') {
+        // the floor plan is already measured: read only the rest of the set
+        const my = ++token; $('trAsk').hidden = true;
+        void (async () => { try { extraNotes = await readExtras((m) => my === token && status(m)); if (my === token) { status('Set read. Check it against your drawings, then build.'); render(); } } catch (e) { status(`Couldn’t read it: ${(e as Error).message}`); } })();
+      } else void run(true);
+    });
     $('trBuild').addEventListener('click', () => {
       const chosen = built.filter((b, i): b is Built => !!b && (reads.length === 1 || include[i]));
       if (!chosen.length) return;
       const title = chosen.length === 1 ? chosen[0].building.name : base;
       const note = `${doc ? `sheet ${page} of ` : ''}${file.name}`;
       const north = reads.find((r) => r.north != null)?.north ?? null;
-      finish({ plan: planModel(chosen, title === 'Traced plan' ? base : title, north, note), name: `${title} (traced)` });
+      const pm = planModel(chosen, title === 'Traced plan' ? base : title, north, note) as Record<string, unknown> & { site?: Record<string, unknown> };
+      const o = opts();
+      const site2: Record<string, unknown> = {};
+      if (elev && elev.hUp != null && +val('trDrop') > 0.05) {
+        const downhill = (o.roof === 'skillion' ? o.high : guessHigh(chosen[0])) ?? 'v1';
+        site2.fall = fallPlane(chosen[0], o.floor, o.floor + +val('trDrop'), downhill, o.floor);
+      }
+      if (site?.ok && site.features.length) site2.features = site.features;
+      if (Object.keys(site2).length) pm.site = site2;
+      const sheetsUsed = [page, ...extrasWanted().map(([p]) => p)].sort((a, b) => a - b);
+      finish({ plan: pm, name: `${title} (traced${sheetsUsed.length > 1 ? ` from sheets ${sheetsUsed.join(', ')}` : ''})` });
     });
 
     void (async () => {
@@ -178,9 +262,11 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         if (isPdf) {
           doc = await openPdf(await file.arrayBuffer());
           status(`Looking through ${doc.numPages} sheet${doc.numPages > 1 ? 's' : ''} for the floor plan…`);
-          const sheets = await surveySheets(doc);
+          sheets = await surveySheets(doc);
           const best = [...sheets].sort((a, b) => b.score - a.score)[0];
           page = best.page;
+          roles = defaultRoles(sheets, page);
+          showSet();
           const sel = $('trSheet') as HTMLSelectElement;
           sel.innerHTML = sheets.map((s) => `<option value="${s.page}" ${s.page === page ? 'selected' : ''}>${s.page}: ${esc(s.title.slice(0, 46))}${s.page === best.page ? ' (floor plan?)' : ''}</option>`).join('');
           $('trSheetRow').hidden = doc.numPages < 2;
@@ -191,7 +277,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
             t.height = c.height;
             t.getContext('2d')!.drawImage(c, 0, 0);
           };
-          sel.addEventListener('change', () => { page = +sel.value; void thumb(); void run(false); });
+          sel.addEventListener('change', () => { page = +sel.value; roles.set(page, 'skip'); showSet(); void thumb(); void run(false); });
           void thumb();
         }
         await run(false);
