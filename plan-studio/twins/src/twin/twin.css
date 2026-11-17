@@ -94,6 +94,28 @@ ul.small li { margin: 4px 0; }
 .drop-card h2 { margin: 0 0 8px; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; color: var(--plum); }
 .drop-card p { font-size: 14px; }
 .drop-card select { margin-left: 8px; }
+.dropzone { overflow: auto; }
+.trace-card [hidden] { display: none !important; }
+.trace-card { width: min(1180px, 100%); max-height: calc(100% - 8px); overflow: auto; }
+.tr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tr-head h2 { margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: var(--plum); overflow-wrap: anywhere; }
+.tr-sheet { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 6px 0; }
+.tr-sheet select { margin-left: 8px; max-width: 360px; }
+.tr-thumb { position: static; inset: auto; display: block; touch-action: auto; width: 180px; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.tr-ask { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #F1EAE9; margin: 8px 0; }
+.tr-ask p { margin: 0 0 8px; font-size: 13px; }
+.tr-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin: 8px 0; }
+.tr-plan { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; min-width: 0; }
+.tr-plan canvas { position: static; inset: auto; display: block; width: auto; max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0; touch-action: auto; }
+.tr-plan-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tr-name { flex: 1 1 140px; min-width: 0; font: inherit; font-weight: 600; color: var(--plum); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; background: var(--ivory); }
+.tr-size { margin: 2px 0; font-size: 18px; color: var(--plum); letter-spacing: -0.01em; }
+.tr-report { margin: 4px 0 0; padding-left: 18px; color: var(--muted, #756771); }
+.tr-report li { margin: 2px 0; }
+.tr-len input, .tr-opts input { width: 5.5em; font: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; background: var(--ivory); }
+.tr-opts { display: flex; gap: 16px; flex-wrap: wrap; margin: 6px 0 10px; font-size: 13px; }
+.tr-truth { margin-top: 8px; }
+@media (max-width: 640px) { .tr-plans { grid-template-columns: 1fr; } .tr-thumb { width: 120px; } }
 
 /* finishes schedule */
 .finGroup { border: 0; border-top: 1px solid rgba(51, 33, 47, 0.12); margin: 10px 0 0; padding: 8px 0 0; }

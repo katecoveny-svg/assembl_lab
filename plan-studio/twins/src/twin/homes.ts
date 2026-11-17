@@ -15,7 +15,7 @@ import { pbr, paint } from '../objects/tex';
 // Home-local axes: x = u (along the long side, from the north-west outside corner),
 // z = v (across, south), y = up from finished floor level.
 
-export type Src = 'written' | 'scaled' | 'assumed' | 'proposed' | 'survey';
+export type Src = 'written' | 'scaled' | 'assumed' | 'proposed' | 'survey' | 'traced' | 'ai';
 type Pt = [number, number];
 
 export interface Opening { id: string; kind: string; type?: string; name: string; a: number; b: number; sill: number; head: number; source?: Src; open?: boolean }
@@ -34,6 +34,17 @@ export interface Placement { origin: Pt; u: Pt; v: Pt; ffl: number; bearing: num
 export interface Limit { a: Pt; n: Pt; offset: number; name: string }
 
 const tan15 = Math.tan((15 * Math.PI) / 180);
+
+/** the footprint (outer faces) and the roof's half-span and pitch, from the plan model: ridge along u at v = D / 2 */
+export function footprint(spec: BuildingSpec) {
+  const L = spec.levels[0];
+  const xs = L.walls.filter((w) => w.axis === 'x');
+  const zs = L.walls.filter((w) => w.axis === 'z');
+  const W = Math.max(...xs.map((w) => w.to), ...zs.map((w) => w.at), 1);
+  const D = Math.max(...zs.map((w) => w.to), ...xs.map((w) => w.at), 1);
+  const pitch = ((spec.roof?.pitchDeg ?? 15) * Math.PI) / 180;
+  return { W, D, hs: D / 2, tanP: Math.tan(pitch) };
+}
 
 function hashId(s: string) {
   let h1 = 0x811c9dc5;
@@ -200,8 +211,7 @@ export function buildHome(o: HomeOptions) {
   const frame = new HomeFrame(o.placement);
   const L = o.spec.levels[0];
   const plate = L.plate;
-  const W = 10.8;
-  const D = 6.0;
+  const { W, D, hs, tanP } = footprint(o.spec);
   const asset = `unit_${o.key}`;
   const root = grp(asset);
   root.position.set(o.placement.origin[0], o.placement.ffl, -o.placement.origin[1]);
@@ -219,7 +229,7 @@ export function buildHome(o: HomeOptions) {
   const wallsG = grp('walls');
   root.add(wallsG);
   const y0 = -0.36;
-  const gableTop = (s: number) => plate + 0.19 + (3 - Math.abs(s - 3)) * tan15;
+  const gableTop = (s: number) => plate + 0.19 + (hs - Math.abs(s - hs)) * tanP;
   for (const w of L.walls) {
     const g = grp(`wall_${w.id}_${w.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`);
     const len = w.to - w.from;
@@ -232,7 +242,7 @@ export function buildHome(o: HomeOptions) {
           [0, y0],
           [len, y0],
           [len, gableTop(mirror ? 0 : len)],
-          [len / 2, gableTop(3)],
+          [len / 2, gableTop(hs)],
           [0, gableTop(mirror ? len : 0)],
         ]
       : [
@@ -245,9 +255,9 @@ export function buildHome(o: HomeOptions) {
       ? [
           [0.0, -0.015],
           [len, -0.015],
-          [len, plate + (3 - Math.abs((mirror ? 0 : len) - 3)) * tan15],
-          [len / 2, plate + 3 * tan15],
-          [0, plate + (3 - Math.abs((mirror ? len : 0) - 3)) * tan15],
+          [len, plate + (hs - Math.abs((mirror ? 0 : len) - hs)) * tanP],
+          [len / 2, plate + hs * tanP],
+          [0, plate + (hs - Math.abs((mirror ? len : 0) - hs)) * tanP],
         ]
       : [
           [0, -0.015],
@@ -301,7 +311,7 @@ export function buildHome(o: HomeOptions) {
   // --- interior partitions -----------------------------------------------------------------
   const partsG = grp('partitions');
   root.add(partsG);
-  const ceil = (v: number) => plate + (3 - Math.abs(v - 3)) * tan15;
+  const ceil = (v: number) => plate + (hs - Math.abs(v - hs)) * tanP;
   for (const p of L.partitions) {
     const th = Math.max(0.09, p.thickness);
     const len = p.to - p.from;
@@ -367,9 +377,9 @@ export function buildHome(o: HomeOptions) {
   {
     const geos: THREE.BufferGeometry[] = [];
     for (const side of [0, 1]) {
-      const g = new THREE.PlaneGeometry(W - 2 * tW, (3 - tW) / Math.cos(Math.atan(tan15)), 1, 1);
-      g.rotateX(side === 0 ? Math.PI / 2 - Math.atan(tan15) : Math.PI / 2 + Math.atan(tan15));
-      const vMid = side === 0 ? (tW + 3) / 2 : (3 + D - tW) / 2;
+      const g = new THREE.PlaneGeometry(W - 2 * tW, (hs - tW) / Math.cos(Math.atan(tanP)), 1, 1);
+      g.rotateX(side === 0 ? Math.PI / 2 - Math.atan(tanP) : Math.PI / 2 + Math.atan(tanP));
+      const vMid = side === 0 ? (tW + hs) / 2 : (hs + D - tW) / 2;
       g.translate(W / 2, ceil(vMid), vMid);
       geos.push(boxUV(g, IMw ? inTile : 1, 'x'));
     }
@@ -417,7 +427,7 @@ export function buildHome(o: HomeOptions) {
   }
 
   if (o.finishes) {
-    const ceilAt = (_u: number, v: number) => plate + (3 - Math.abs(v - 3)) * tan15;
+    const ceilAt = (_u: number, v: number) => plate + (hs - Math.abs(v - hs)) * tanP;
     root.add(fitOut(o.spec, o.quality, o.finishes, ceilAt));
   }
   root.userData.decks = { north: nd, south: sd };
@@ -512,22 +522,21 @@ function corrugate(width: number, length: number, p = 0.0762, dep = 0.017) {
 
 function roof(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy: (u: number, v: number) => number) {
   const r = spec.roof;
-  const W = 10.8;
-  const D = 6.0;
+  const { W, D, hs } = footprint(spec);
   const g = grp('roof');
   tag(g, asset, 'IfcRoof', { predefinedType: 'GABLE_ROOF', pitch: r.pitchDeg, eave: r.eave, verge: r.verge, cover: r.cover, source: r.source ?? 'written' });
   const a = (r.pitchDeg * Math.PI) / 180;
   const tn = Math.tan(a);
-  const top = (v: number) => plate + 0.22 + (3 - Math.abs(v - 3)) * tn;
+  const top = (v: number) => plate + 0.22 + (hs - Math.abs(v - hs)) * tn;
   const u0 = -r.verge;
   const u1 = W + r.verge;
-  const runV = 3 + r.eave;
+  const runV = hs + r.eave;
   const len = runV / Math.cos(a);
   const sheets: THREE.BufferGeometry[] = [];
   for (const side of [-1, 1]) {
     const s = corrugate(u1 - u0, len);
     s.rotateX(side < 0 ? -a : a);
-    const vMid = side < 0 ? 3 - runV / 2 : 3 + runV / 2;
+    const vMid = side < 0 ? hs - runV / 2 : hs + runV / 2;
     s.translate((u0 + u1) / 2, top(vMid) + 0.01, vMid);
     sheets.push(boxUV(s, M.sets.roof.tile, 'z'));
   }
@@ -539,7 +548,7 @@ function roof(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy:
   for (const side of [-1, 1]) {
     const s = new THREE.PlaneGeometry(u1 - u0, len);
     s.rotateX(Math.PI / 2 + (side < 0 ? -a : a));
-    const vMid = side < 0 ? 3 - runV / 2 : 3 + runV / 2;
+    const vMid = side < 0 ? hs - runV / 2 : hs + runV / 2;
     s.translate((u0 + u1) / 2, top(vMid) - 0.02, vMid);
     under.push(boxUV(s, 1, 'x'));
   }
@@ -561,7 +570,7 @@ function roof(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy:
     for (const side of [-1, 1]) {
       const b = new THREE.BoxGeometry(0.025, 0.22, len + 0.02);
       b.rotateX(side < 0 ? -a : a);
-      const vMid = side < 0 ? 3 - runV / 2 : 3 + runV / 2;
+      const vMid = side < 0 ? hs - runV / 2 : hs + runV / 2;
       b.translate(u + (u === u0 ? -0.0125 : 0.0125), top(vMid) - 0.08, vMid);
       trims.push(boxUV(b, ft, 'z'));
     }
@@ -570,7 +579,7 @@ function roof(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy:
     const c = new THREE.BoxGeometry(u1 - u0 + 0.06, 0.004, 0.2);
     c.translate(0, 0, side * 0.1);
     c.rotateX(side < 0 ? -a : a);
-    c.translate((u0 + u1) / 2, top(3) + 0.03, 3);
+    c.translate((u0 + u1) / 2, top(hs) + 0.03, hs);
     trims.push(boxUV(c, ft, 'x'));
   }
   const trim = mesh('fascia_gutters_barges_ridge', mergeGeometries(trims), M.flashing);

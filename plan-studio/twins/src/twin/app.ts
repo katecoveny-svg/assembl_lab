@@ -1033,6 +1033,8 @@ function srcLabel(s: string) {
   if (k.startsWith('assumed')) return 'Assumed';
   if (k.startsWith('proposed')) return 'Proposed by assembl';
   if (k.startsWith('survey')) return 'From the survey';
+  if (k.startsWith('traced')) return 'Traced from the drawing linework';
+  if (k === 'ai') return 'Read from the drawing by AI: check';
   if (k.startsWith('simulated')) return 'Simulated';
   if (/^d\b|^d$/.test(k)) return 'D · drawing-labelled';
   if (/^r/.test(k)) return 'R · raster proportion';

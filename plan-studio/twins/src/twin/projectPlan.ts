@@ -11,6 +11,7 @@ import { fillSlots } from './library';
 import { planting, type Species } from './plants';
 import { twinMats } from './mats';
 import { exportIFC, loadIFC } from './ifc';
+import { traceDrawing } from './traceUI';
 import type { App, Built, Key, Layer, Project } from './app';
 
 // The tool's front door: drop a plan model (assembl.plan-model.v1, as Plan to 4D saves it) and
@@ -67,15 +68,16 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     o.className = 'dropzone';
     o.innerHTML = `<div class="card drop-card">
       <h2>Drop a plan, get a twin</h2>
-      <p>Drop a <b>plan model</b> (.json from Plan to 4D) and the houses are generated from it: walls, openings, roof, decks, then every room furnished from its name and finished in the palette you pick. Drop an <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender and it is shown as it is.</p>
+      <p>Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p>
       <label class="slider">Finishes <select id="dropPalette">${Object.entries(PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name}</option>`)
         .join('')}</select></label>
-      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
-      <p class="small">Raster PDFs: calibrate and trace them in Plan to 4D first; it saves the plan model this page reads. Nothing you drop leaves your browser.</p>
+      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
+      <p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p>
     </div>`;
     stage.append(o);
     const pal = () => (o.querySelector('#dropPalette') as HTMLSelectElement).value;
+    let tracing = false;
     const done = (input: Input) => {
       o.remove();
       if (input.kind === 'plan')
@@ -97,7 +99,14 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
           app.log(`That JSON isn't a plan model: ${(e as Error).message}`);
         }
       } else if (ext === 'ifc' || ext === 'glb') done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
-      else app.log('Drop a .json plan model, an .ifc or a .glb.');
+      else if (ext === 'pdf' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp') {
+        if (tracing) return;
+        tracing = true;
+        const got = await traceDrawing(app, f, o);
+        tracing = false;
+        if (got) done({ kind: 'plan', plan: got.plan as unknown as PlanModel, name: got.name });
+        else app.log('Waiting for a plan.');
+      } else app.log('Drop a PDF of the plans, a picture of a plan, a .json plan model, an .ifc or a .glb.');
     };
     (o.querySelector('#dropFile') as HTMLInputElement).addEventListener('change', (e) => {
       const f = (e.target as HTMLInputElement).files?.[0];
