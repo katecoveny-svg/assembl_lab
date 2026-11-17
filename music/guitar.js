@@ -74,7 +74,13 @@ export default {
   ],
   root: { rotation: new THREE.Euler(-Math.PI / 2, -0.62, 0, 'YXZ'), lift: 0.004 },
   cam: { dir: V(0.32, 1.05, 0.95), homeFit: 0.9, explodeFit: 0.95, play: { target: V(0, -0.12, 0.09), radius: 0.95, dir: V(0.49, 0.85, 0.35) } },
-  hero: { url: new URL('./guitar-model.glb', import.meta.url).href, tune: (m) => { m.roughness = 1; m.metalness = 1; } },
+  hero: { url: new URL('./guitar-model.glb', import.meta.url).href, tune: (m, studio) => {
+    // the model's gloss map is patchy (each texture island has its own shine), which turns black lacquer into a grey mosaic;
+    // treat it as one even gloss finish, not metal, and keep the studio's reflection on it low
+    m.roughnessMap = null; m.metalnessMap = null; m.roughness = 0.36; m.metalness = 0;
+    m.normalScale.set(0.3, 0.3);
+    m.envMap = studio.scene.environment; m.envMapIntensity = 0.4; // a per-material envMap, so this intensity is honoured
+  } },
   truth: 'Assembled view: a Meshy AI model made for assembl, brand marks painted out. Parts: modelled in code to match it. Sound: synthesised in your browser.',
   stats: (n) => [`${n} parts · 6 strings · 20 frets`, 'Dreadnought, steel strung'],
   hint: 'Scroll to explode · Drag to turn · Click a part to inspect · Play to strum',
