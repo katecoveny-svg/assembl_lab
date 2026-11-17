@@ -352,6 +352,14 @@ export class Studio {
       this.setExplode(this.eGoal + ev.deltaY * 0.0011);
       this.ui.sync?.();
     }, { passive: false, capture: true });
+    // while playing, a press on the instrument itself plays it; a press anywhere else turns the view
+    this.host.addEventListener('pointerdown', (ev) => {
+      if (this.mode !== 'play') { this.controls.enabled = true; return; }
+      const grab = this.built?.grabs ? this.built.grabs(this.pickAt(ev)) : true;
+      this.controls.enabled = !grab;
+    }, { capture: true });
+    const release = () => { if (this.mode === 'play') this.controls.enabled = true; };
+    addEventListener('pointerup', release); addEventListener('pointercancel', release);
     const pts = new Map(); let pinch = 0;
     el.addEventListener('pointerdown', (ev) => {
       pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
@@ -366,7 +374,8 @@ export class Studio {
       this.pointerMoved = true;
       if (pts.has(ev.pointerId)) pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); this.zoom = clamp(this.zoom * (pinch / d), 0.35, 2.2); pinch = d; }
-      if (ev.buttons) this.built?.pointer?.('drag', ev, this.pickAt(ev));
+      // a drag that began on the instrument plays it; one that began on the background only turns the view
+      if (ev.buttons && (this.mode !== 'play' || !this.controls.enabled)) this.built?.pointer?.('drag', ev, this.pickAt(ev));
     });
     const up = (ev) => {
       pts.delete(ev.pointerId); if (pts.size < 2) pinch = 0;
@@ -431,7 +440,8 @@ export class Studio {
     this.k = this.kGoal > this.k ? Math.min(this.kGoal, this.k + dt * kRate) : Math.max(this.kGoal, this.k - dt * kRate * 1.3);
     const lift = this.liftE * smooth(this.e) * (1 - inOut(this.k));
     // hero (the generated model) shows only while everything is assembled
-    const heroOn = this.hero && this.heroMode && this.eGoal < 0.005 && this.kGoal === 0 && this.mode === 'overview' && !this.built?.forceParts;
+    const keep = this.mode === 'play' ? this.built?.heroKeep : null; // parts drawn over the hero while playing (the strings)
+    const heroOn = this.hero && this.heroMode && this.eGoal < 0.005 && this.kGoal === 0 && (this.mode === 'overview' || !!keep) && !this.built?.forceParts;
     this.heroBlend = damp(this.heroBlend, heroOn ? 1 : 0, 9, dt);
     if (!this.hero) this.heroBlend = 0;
     const hb = this.heroBlend;
@@ -469,7 +479,7 @@ export class Studio {
       if (insp && p !== insp) op = Math.min(op, 0.12);
       if (p === this.hovered && this.mode !== 'play') glow = 0.55;
       if (p === insp) glow = 0.35;
-      op *= 1 - hb;
+      if (!(this.mode === 'play' && this.built?.heroKeep?.has(p.cat))) op *= 1 - hb;
       const look = `${op.toFixed(2)}|${glow}`;
       p.obj.visible = op > 0.005;
       if (look === p.look) continue;

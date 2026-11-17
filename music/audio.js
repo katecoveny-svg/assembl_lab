@@ -26,13 +26,30 @@ export class Sound {
       this.verb = verb;
       this.bus = ctx.createGain(); this.bus.connect(this.master); this.bus.connect(verb);
       // guitar body: a couple of low resonances and a softened top
-      const f1 = this.peak(98, 1.3, 5), f2 = this.peak(196, 1.6, 3.5), f3 = this.peak(410, 1, 1.5);
+      const f1 = this.peak(98, 1.3, 4), f2 = this.peak(196, 1.6, 3), f3 = this.peak(410, 1, 1.5);
       const hs = ctx.createBiquadFilter(); hs.type = 'highshelf'; hs.frequency.value = 3800; hs.gain.value = -5;
-      f1.connect(f2); f2.connect(f3); f3.connect(hs); hs.connect(this.bus);
+      f1.connect(f2); f2.connect(f3); f3.connect(hs);
+      // dry string plus the body's ring
+      const body = ctx.createConvolver(); body.normalize = true; body.buffer = this.bodyIR();
+      const dry = ctx.createGain(); dry.gain.value = 0.55; const wetB = ctx.createGain(); wetB.gain.value = 0.75;
+      hs.connect(dry); hs.connect(body); body.connect(wetB); dry.connect(this.bus); wetB.connect(this.bus);
       this.guitarIn = f1;
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
+  }
+
+  // an acoustic guitar body as a sum of decaying resonances: the air in the box, the top and back plates, and a little wood noise
+  bodyIR() {
+    const sr = this.ctx.sampleRate, n = Math.floor(sr * 0.35), b = this.ctx.createBuffer(2, n, sr);
+    const modes = [[102, 1.0, 0.09], [196, 0.8, 0.07], [228, 0.5, 0.06], [395, 0.45, 0.05], [520, 0.35, 0.04], [760, 0.25, 0.03], [1150, 0.18, 0.02], [1900, 0.1, 0.012], [2800, 0.06, 0.008]];
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c);
+      d[0] = 1;
+      for (const [f, a, t] of modes) { const ff = f * (1 + (c ? 0.012 : -0.008)), ph = Math.random() * 6.28; for (let i = 1; i < n; i++) d[i] += a * Math.exp(-i / (sr * t)) * Math.sin(2 * Math.PI * ff * i / sr + ph) * 0.35; }
+      let lp = 0; for (let i = 1; i < n; i++) { lp += 0.3 * ((Math.random() * 2 - 1) - lp); d[i] += lp * 0.05 * Math.exp(-i / (sr * 0.02)); }
+    }
+    return b;
   }
 
   peak(freq, q, gain) { const f = this.ctx.createBiquadFilter(); f.type = 'peaking'; f.frequency.value = freq; f.Q.value = q; f.gain.value = gain; return f; }
@@ -74,15 +91,26 @@ export class Sound {
     return b;
   }
 
-  // a plucked note; returns a stop() for damping
-  pluck(midi, { when = 0, gain = 0.6, bright = 0.55, pan = 0 } = {}) {
+  // a plucked note; returns a stop() for damping. vel 0..1 sets loudness and brightness; mute damps it like a palm.
+  pluck(midi, { when = 0, gain = 0.6, bright = 0.55, pan = 0, vel = null, mute = false } = {}) {
     const ctx = this.ensure(); if (!ctx) return () => {};
-    const src = ctx.createBufferSource(); src.buffer = this.ksBuffer(midi, bright);
-    const g = ctx.createGain(); g.gain.value = gain;
+    const v = vel == null ? 0.7 : Math.max(0.15, Math.min(1, vel));
+    const br = vel == null ? bright : 0.3 + v * 0.55;
+    const src = ctx.createBufferSource(); src.buffer = this.ksBuffer(midi, Math.round(br * 10) / 10);
+    src.detune.value = (Math.random() - 0.5) * 6;
+    const g = ctx.createGain(), t = ctx.currentTime + 0.005 + when, lvl = gain * (vel == null ? 1 : 0.45 + v * 0.75);
+    g.gain.setValueAtTime(lvl, t);
+    let tail = src;
+    if (mute) { const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900 + v * 600; src.connect(lp); tail = lp; g.gain.setTargetAtTime(0, t + 0.03, 0.09); }
     const p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    src.connect(g); if (p) { p.pan.value = pan; g.connect(p); p.connect(this.guitarIn); } else g.connect(this.guitarIn);
-    const t = ctx.currentTime + 0.005 + when; src.start(t);
-    return (after = 0) => { const s = ctx.currentTime + after; g.gain.cancelScheduledValues(s); g.gain.setValueAtTime(g.gain.value, s); g.gain.setTargetAtTime(0, s, 0.03); src.stop(s + 0.3); };
+    tail.connect(g); if (p) { p.pan.value = pan; g.connect(p); p.connect(this.guitarIn); } else g.connect(this.guitarIn);
+    src.start(t);
+    // the pick leaving the string: a tiny bright click
+    const ck = ctx.createBufferSource(); ck.buffer = this.noise(0.6);
+    const hp = ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = 3200; hp.Q.value = 0.8;
+    const cg = ctx.createGain(); cg.gain.setValueAtTime(0.06 * v * gain * 2, t); cg.gain.exponentialRampToValueAtTime(0.0005, t + 0.012);
+    ck.connect(hp); hp.connect(cg); cg.connect(this.guitarIn); ck.start(t, Math.random() * 0.4); ck.stop(t + 0.02);
+    return (after = 0) => { const s = ctx.currentTime + after; g.gain.cancelScheduledValues(s); g.gain.setValueAtTime(g.gain.value, s); g.gain.setTargetAtTime(0, s, 0.03); try { src.stop(s + 0.3); } catch {} };
   }
 
   /* ── snare ── */

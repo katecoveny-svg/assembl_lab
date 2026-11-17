@@ -29,7 +29,7 @@ const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B�
 const noteName = (m) => `${NOTE[m % 12]}${Math.floor(m / 12) - 1}`;
 const CHORDS = {
   Open: [0, 0, 0, 0, 0, 0], E: [0, 2, 2, 1, 0, 0], Em: [0, 2, 2, 0, 0, 0], A: [-1, 0, 2, 2, 2, 0], Am: [-1, 0, 2, 2, 1, 0],
-  D: [-1, -1, 0, 2, 3, 2], G: [3, 2, 0, 0, 3, 3], C: [-1, 3, 2, 0, 1, 0],
+  D: [-1, -1, 0, 2, 3, 2], Dm: [-1, -1, 0, 2, 3, 1], G: [3, 2, 0, 0, 3, 3], C: [-1, 3, 2, 0, 1, 0], F: [1, 3, 3, 2, 1, 1],
 };
 
 function outlinePoints(n = 150) {
@@ -74,7 +74,7 @@ export default {
   ],
   root: { rotation: new THREE.Euler(-Math.PI / 2, -0.62, 0, 'YXZ'), lift: 0.004 },
   cam: { dir: V(0.32, 1.05, 0.95), homeFit: 0.9, explodeFit: 0.95, play: { target: V(0, -0.12, 0.09), radius: 0.95, dir: V(0.49, 0.85, 0.35) } },
-  hero: { url: './guitar-model.glb', tune: (m) => { m.roughness = 1; m.metalness = 1; } },
+  hero: { url: new URL('./guitar-model.glb', import.meta.url).href, tune: (m) => { m.roughness = 1; m.metalness = 1; } },
   truth: 'Assembled view: a Meshy AI model made for assembl, brand marks painted out. Parts: modelled in code to match it. Sound: synthesised in your browser.',
   stats: (n) => [`${n} parts · 6 strings · 20 frets`, 'Dreadnought, steel strung'],
   hint: 'Scroll to explode · Drag to turn · Click a part to inspect · Play to strum',
@@ -377,7 +377,8 @@ export default {
     const fingerMat = new THREE.MeshStandardMaterial({ color: '#C77FA7', roughness: 0.35, emissive: '#7a3060', emissiveIntensity: 0.25 });
     const mutedMat = new THREE.MeshStandardMaterial({ color: '#5b3a52', roughness: 0.5 });
     const marks = new THREE.Group(); marks.visible = false;
-    let chord = 'G', fingerMeshes = [];
+    let chord = 'G', fingerMeshes = [], frets = CHORDS.G.slice(), mute = false, listeners = [];
+    const changed = () => listeners.forEach((f) => f());
     const strPoint = (i, n) => { // world point on string i, behind fret n
       const y = n === 0 ? NUT_Y + 0.012 : (fretY(n - 1) * 0.35 + fretY(n) * 0.65);
       const N = nutPts[i], S = saddlePts[i];
@@ -387,53 +388,87 @@ export default {
     const showChord = () => {
       for (const m of fingerMeshes) { marks.remove(m); m.geometry.dispose(); }
       fingerMeshes = [];
-      CHORDS[chord].forEach((n, i) => {
+      frets.forEach((n, i) => {
         if (n > 0) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 20, 12), fingerMat); m.position.copy(strPoint(i, n)); m.position.z += 0.004; marks.add(m); fingerMeshes.push(m); }
         if (n < 0) { const m = new THREE.Mesh(new THREE.TorusGeometry(0.0055, 0.0016, 8, 20), mutedMat); m.position.copy(neckPt(xn(i), NUT_Y - 0.02, 0.012)); marks.add(m); fingerMeshes.push(m); }
       });
       ui.querySelectorAll('[data-chord]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.chord === chord)));
+      changed();
     };
     // marks live in instrument space; attach to a holder that follows the root
     const holder = new THREE.Group(); holder.matrixAutoUpdate = false; holder.add(marks);
+    // an invisible pad over the top, just under the strings: a strum can start beside the strings and still play
+    const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.36), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
+    pad.position.set(0, -0.415, TOP + 0.004); pad.userData.playTarget = { pad: true }; pad.userData.noShadow = true;
+    holder.add(pad);
     const ui = document.createElement('div'); ui.className = 'playpanel';
     ui.innerHTML = `<span class="pp-label">Chord</span>${Object.keys(CHORDS).map((c) => `<button type="button" data-chord="${c}" aria-pressed="false">${c}</button>`).join('')}<button type="button" class="pp-strum" data-strum>Strum</button><span class="pp-note">Drag across the strings, or press 1–6</span>`;
 
-    const pluck = (i, { when = 0, gain = 0.55 } = {}) => {
-      const n = CHORDS[chord][i];
+    const pluck = (i, { when = 0, gain = 0.55, vel = null } = {}) => {
+      const n = frets[i];
       if (n < 0) return;
       const midi = OPEN[i] + n;
       const s = strings[i];
       s.stopper?.(0);
-      s.stopper = studio.sound.pluck(midi, { when, gain, bright: 0.45 + Math.random() * 0.2, pan: (i - 2.5) * 0.12 });
-      setTimeout(() => { s.t = 0; s.amp = 0.0042 + (5 - i) * 0.0003; s.stop = Math.pow(2, -n / 12); s.freq = Math.min(midiHz(midi), 30) * 0.5 + 9; }, when * 1000);
+      s.stopper = studio.sound.pluck(midi, { when, gain, vel, mute, pan: (i - 2.5) * 0.12 });
+      const v = vel == null ? 0.7 : vel;
+      setTimeout(() => { s.t = 0; s.amp = (0.0028 + (5 - i) * 0.0003) * (0.5 + v) * (mute ? 0.5 : 1); s.stop = Math.pow(2, -n / 12); s.freq = Math.min(midiHz(midi), 30) * 0.5 + 9; s.decay = mute ? 9 : 1.6; }, when * 1000);
       studio.ui.flash?.(`${NAMES[i]} · ${noteName(midi)}`);
     };
-    const strum = (down = true) => { studio.sound.ensure(); const order = down ? [0, 1, 2, 3, 4, 5] : [5, 4, 3, 2, 1, 0]; order.forEach((i, k) => pluck(i, { when: k * 0.022, gain: 0.42 })); };
+    const strum = (down = true, vel = 0.7) => {
+      studio.sound.ensure();
+      const order = down ? [0, 1, 2, 3, 4, 5] : [5, 4, 3, 2, 1, 0], gap = 0.03 - vel * 0.02;
+      order.filter((i) => frets[i] >= 0).forEach((i, k) => pluck(i, { when: k * gap, gain: 0.42, vel: vel * (down ? 1 : 0.85) }));
+    };
+    const setChord = (name) => { if (!CHORDS[name]) return; chord = name; frets = CHORDS[name].slice(); showChord(); };
+    // a finger on the neck: tap a string between two frets to hold it there; tap the same spot again to let go
+    const fretAt = (i, n) => { frets[i] = frets[i] === n ? 0 : n; chord = 'Your chord'; showChord(); pluck(i, { vel: 0.6 }); };
     ui.addEventListener('click', (ev) => {
       const b = ev.target.closest('button'); if (!b) return;
-      if (b.dataset.chord) { chord = b.dataset.chord; showChord(); strum(); }
+      if (b.dataset.chord) { setChord(b.dataset.chord); strum(); }
       if (b.dataset.strum !== undefined) strum();
     });
 
-    let dragHits = new Set(), lastStrumDir = 0;
+    const KEEP = new Set(['strings']);
+    let dragHits = new Set(), lastStrumDir = 0, lastP = null, speed = 0;
+    let boardMesh = null;
+    // any touch over the fingerboard (a string's touch zone included) frets a note; strumming happens over the body
+    const boardHit = (hit) => {
+      if (!hit || !boardMesh) return false;
+      const p = boardMesh.worldToLocal(hit.point.clone());
+      if (p.y > NUT_Y + 0.01 || p.y < fretY(19) || Math.abs(p.x) > boardHalf(p.y) + 0.012) return false;
+      let n = 1; while (n < 20 && fretY(n) > p.y) n++;
+      const t = (NUT_Y - p.y) / SCALE_LEN;
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < 6; i++) { const x = xn(i) + (xb(i) - xn(i)) * t, d = Math.abs(x - p.x); if (d < bd) { bd = d; best = i; } }
+      studio.sound.ensure(); fretAt(best, n);
+      return true;
+    };
     return {
       ready() {
         holder.matrix.copy(studio.root.matrixWorld); studio.stage.add(holder); showChord();
         studio.ui.setPlayPanel?.(ui);
+        boardMesh = studio.parts.find((p) => p.id === 'board')?.inner.children[0] || null;
       },
-      get forceParts() { return studio.mode === 'play'; },
+      // the play page keeps the real model on show and draws only the moving strings over it
+      get forceParts() { return studio.mode === 'play' && !studio.def?.heroPlay; },
+      get heroKeep() { return studio.def?.heroPlay ? KEEP : null; },
       mode(m) {
         marks.visible = m === 'play';
-        studio.controls.enabled = m !== 'play';
+        studio.controls.enabled = true;
         studio.ui.showPlay?.(m === 'play');
       },
-      pickList(mode) { return mode === 'play' ? strings.map((s) => s.pick) : null; },
+      grabs(hit) { return !!hit && (!!hit.object.userData.playTarget || hit.object === boardMesh); },
+      pickList(mode) { return mode === 'play' ? [...strings.map((s) => s.pick), pad, ...(boardMesh ? [boardMesh] : [])] : null; },
       pointer(kind, ev, hit) {
         if (studio.mode !== 'play') return;
-        if (kind === 'down') { dragHits = new Set(); studio.sound.ensure(); }
-        if ((kind === 'down' || kind === 'drag') && hit?.object.userData.playTarget) {
+        const now = performance.now();
+        if (kind === 'down') { dragHits = new Set(); studio.sound.ensure(); lastP = { x: ev.clientX, y: ev.clientY, t: now }; speed = 0; if (boardHit(hit)) { dragHits.add('board'); return; } }
+        if (kind === 'drag' && lastP) { const dt = Math.max(1, now - lastP.t); speed = speed * 0.5 + 0.5 * (Math.hypot(ev.clientX - lastP.x, ev.clientY - lastP.y) / dt); lastP = { x: ev.clientX, y: ev.clientY, t: now }; }
+        if (dragHits.has('board')) return;
+        if ((kind === 'down' || kind === 'drag') && hit?.object.userData.playTarget?.string !== undefined) {
           const i = hit.object.userData.playTarget.string;
-          if (!dragHits.has(i)) { dragHits.add(i); pluck(i, { gain: 0.5 }); }
+          if (!dragHits.has(i)) { dragHits.add(i); pluck(i, { gain: 0.5, vel: kind === 'down' ? 0.55 : Math.min(1, 0.35 + speed / 1.2) }); }
         }
       },
       click(hit) {
@@ -443,7 +478,7 @@ export default {
       key(ev) {
         if (studio.mode !== 'play') { if (ev.key === ' ' && !ev.repeat) { studio.setMode('play'); strum(); return true; } return false; }
         if (/^[1-6]$/.test(ev.key)) { studio.sound.ensure(); pluck(Number(ev.key) - 1); return true; }
-        if (ev.key === ' ') { strum((lastStrumDir = 1 - lastStrumDir) === 1); return true; }
+        if (ev.key === ' ') { strum(!ev.shiftKey, 0.75); return true; }
         return false;
       },
       tick(dt) {
@@ -451,7 +486,7 @@ export default {
         for (const s of strings) {
           if (s.amp <= 0) { s.u.uAmp.value = 0; continue; }
           s.t += dt;
-          const env = Math.exp(-s.t * 1.6);
+          const env = Math.exp(-s.t * (s.decay || 1.6));
           s.u.uAmp.value = s.amp * env * Math.sin(s.t * s.freq * Math.PI * 2);
           s.u.uStop.value = s.stop;
           if (env < 0.01) s.amp = 0;
@@ -461,6 +496,13 @@ export default {
         studio.setMode('play'); await wait(1300);
         for (const c of ['G', 'C', 'D', 'G']) { if (!alive()) return; chord = c; showChord(); strum(); await wait(1100); }
         if (!alive()) return; studio.setMode('overview');
+      },
+      play: {
+        chords: Object.keys(CHORDS), shapes: CHORDS, setChord, strum, pluck,
+        setMute: (on) => { mute = on; changed(); }, get mute() { return mute; },
+        get chord() { return chord; }, get frets() { return frets.slice(); }, names: NAMES,
+        clear: () => { frets = [0, 0, 0, 0, 0, 0]; chord = 'Open'; showChord(); },
+        on: (f) => listeners.push(f),
       },
       actions: [{ label: 'Play', id: 'play', toggle: () => studio.setMode(studio.mode === 'play' ? 'overview' : 'play'), pressed: () => studio.mode === 'play' }],
       hoverText(hp) { if (hp?.string === undefined) return null; const i = hp.string, n = CHORDS[chord][i]; return n < 0 ? `${NAMES[i]} string · not played in ${chord}` : `${NAMES[i]} string · ${noteName(OPEN[i] + n)} · tap to pluck`; },

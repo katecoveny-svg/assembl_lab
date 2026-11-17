@@ -245,10 +245,11 @@ export default {
     return {
       ready() { studio.ui.setPlayPanel?.(panel); km = keyMeshes(); },
       mode(m) {
-        studio.controls.enabled = m !== 'play'; studio.ui.showPlay?.(m === 'play');
+        studio.controls.enabled = true; studio.ui.showPlay?.(m === 'play');
         if (m !== 'play') for (const k of keys) release(k);
         else { const ctx = studio.sound.ensure(); if (ctx) { let i = 0; const next = () => { if (i < KEYS) { studio.sound.pianoBuffer(BASE + i++); setTimeout(next, 30); } }; next(); } }
       },
+      grabs(hit) { return !!keyOf(hit); },
       pickList(mode) { return mode === 'play' ? km : null; },
       pointer(kind, ev, hit) {
         if (studio.mode !== 'play') return;
