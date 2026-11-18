@@ -37,7 +37,7 @@ function fitPanel() {
   panel.style.top = `${Math.round(vv.offsetTop + 10)}px`; panel.style.bottom = "auto"; panel.style.height = `${Math.round(Math.min(780, vv.height - 20))}px`;
 }
 vv?.addEventListener("resize", fitPanel); vv?.addEventListener("scroll", fitPanel); addEventListener("orientationchange", () => setTimeout(fitPanel, 300));
-function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); fitPanel(); assemble(); if (innerWidth > 600) input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
+function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); if (!eleven || !live) check(); fitPanel(); assemble(); if (innerWidth > 600) input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
 function close() { panel.hidden = true; fab.setAttribute("aria-expanded", "false"); stopVoice(); fab.focus({ preventScroll: true }); }
 $$("[data-guide-open]").forEach((b) => b.addEventListener("click", open));
 $("#guide-close").addEventListener("click", close);
@@ -173,20 +173,29 @@ function scripted(t) {
 }
 
 // ---------------------------------------------------------------------------------------------- voice out
-let audio = null;
+// one audio element for the ElevenLabs voice, unlocked by the first tap or key in the guide: phones (Safari above all)
+// only let a page play sound that starts inside a tap, and the voice arrives a moment after the tap
+const player = new Audio(); player.preload = "auto"; let audioUrl = "", unlocked = false;
+const SILENT = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAACAAAA/oAR0dHR0dHR0dHR0dHYmJiYmJiYmJiYmJifHx8fHx8fHx8fHx8fJaWlpaWlpaWlpaWlrGxsbGxsbGxsbGxsbHLy8vLy8vLy8vLy8vl5eXl5eXl5eXl5eXl////////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQC1AAAAAAAAAP6yysejgAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
+function unlock() {
+  if (unlocked) return; unlocked = true;
+  try { player.src = SILENT; const p = player.play(); if (p && p.then) p.then(() => player.pause()).catch(() => { unlocked = false; }); } catch { unlocked = false; }
+  if ("speechSynthesis" in window) { try { speechSynthesis.speak(new SpeechSynthesisUtterance("")); } catch {} }
+}
+for (const t of [panel, fab, ...document.querySelectorAll("[data-guide-open], #room-ask")]) { t.addEventListener("pointerdown", unlock, true); t.addEventListener("keydown", unlock, true); }
 function browserVoice() {
   const vs = speechSynthesis?.getVoices?.() || [];
   return vs.find((v) => /en[-_]NZ/i.test(v.lang)) || vs.find((v) => /en[-_]AU/i.test(v.lang)) || vs.find((v) => /en[-_]GB/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
 }
 if ("speechSynthesis" in window) speechSynthesis.addEventListener?.("voiceschanged", label);
-function stopVoice() { if (audio) { audio.pause(); URL.revokeObjectURL(audio.src); audio = null; } if ("speechSynthesis" in window) speechSynthesis.cancel(); }
+function stopVoice() { player.pause(); if (audioUrl) { URL.revokeObjectURL(audioUrl); audioUrl = ""; } if ("speechSynthesis" in window) speechSynthesis.cancel(); }
 async function voice(text) {
   if (!voiceOn) return;
   const clean = text.replace(/[*_#`>]/g, "").replace(/\s+/g, " ").trim().slice(0, 680);
   if (eleven) {
     try {
       const r = await fetch("/api/archipro-voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: clean }) });
-      if (r.ok) { stopVoice(); audio = new Audio(URL.createObjectURL(await r.blob())); await audio.play(); return; }
+      if (r.ok) { const blob = await r.blob(); stopVoice(); audioUrl = URL.createObjectURL(blob); player.src = audioUrl; await player.play(); return; }
       if (r.status === 503) { eleven = false; label(); }
     } catch { /* fall through to the browser voice */ }
   }
