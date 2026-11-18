@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>16A services: plan to 4D · assembl lab</title>
+<meta name="description" content="The 16A west home's services, generated from its plan model: heat pump and extract fans, drainage and vents, water supply and electrical, placed on the plan, assembled in 3D and pre-checked against the NZ Building Code. An advisory simulation on a design study.">
+<meta property="og:title" content="16A services: plan to 4D · assembl lab">
+<meta property="og:description" content="Every pipe, duct and cable for a small timber home, placed from its plan, assembled in 3D and pre-checked. Advisory, on a design study.">
+<meta name="theme-color" content="#FFFDFB">
+<link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png">
+<link rel="canonical" href="https://lab.assembl.co.nz/plan-studio/twins/services/">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./services.css?v=1">
+<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the checks</a>
+<main class="wrap">
+  <canvas id="stage" aria-label="3D view of the 16A west home with its services: ducts, pipes, cables and fixtures"></canvas>
+
+  <section class="card count" aria-live="polite">
+    <p class="kick mono">Plan to 4D · services · 16A west home</p>
+    <p class="big"><span id="count">0</span> <span class="of mono" id="count-of">/ 0</span></p>
+    <p class="cap mono" id="count-cap">plan symbols placed</p>
+  </section>
+
+  <section class="card legend-card" aria-label="Systems">
+    <div id="legend"></div>
+    <p class="hint mono">Tap a system to hide or show it</p>
+  </section>
+
+  <p id="clash" class="clash mono" role="status"></p>
+
+  <aside class="card panel" id="panel" aria-labelledby="panel-h">
+    <p class="kick mono" id="panel-h">Pre-check · computed from the model</p>
+    <ul id="checks" class="checks"></ul>
+    <ul id="stats" class="stats"></ul>
+    <p class="mono small"><span id="parts-total">0</span> parts in all</p>
+  </aside>
+
+  <nav class="bar" aria-label="Playback">
+    <button id="play" type="button">Pause</button>
+    <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Scrub through the build">
+    <button id="skip" type="button">Skip to the model</button>
+    <a class="back" href="/plan-studio/twins/16a/">Walk the 16A model&nbsp;↗</a>
+  </nav>
+
+  <p class="fine">Generated from the 16A plan model. The services are proposed by the tool, not taken from the consent drawings. This is an advisory pre-check on a design study: no pipe sizing, load calculations or heat loss, and figures to confirm against the current Acceptable Solutions. It is not a compliance check, and no substitute for a licensed plumber or electrician, or your building consent authority.</p>
+</main>
+<script type="module" src="./scene.js?v=1"></script>
+<script src="/lab/navigation.js" defer></script>
+</body>
+</html>
