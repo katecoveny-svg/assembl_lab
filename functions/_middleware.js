@@ -7,7 +7,8 @@ export async function onRequest({ request, next, env }) {
   if (url.pathname === '/six') return Response.redirect(new URL('/six/' + url.search, url), 301);
   if (url.pathname.startsWith('/six/') && env?.ASSETS) {
     const res = await env.ASSETS.fetch(new Request(new URL('/concepts/archipro/' + url.pathname.slice(5) + url.search, url), request));
-    return new Response(res.body, res);
+    // the page changes often while it's being shown around: make phones check for a newer copy every time
+    const out = new Response(res.body, res); out.headers.set('cache-control', 'public, max-age=0, must-revalidate'); return out;
   }
   if (host === 'auto.assembl.co.nz' && url.pathname === '/') return Response.redirect(new URL('/cars/', url), 302);
   if (host === 'study.assembl.co.nz') {
