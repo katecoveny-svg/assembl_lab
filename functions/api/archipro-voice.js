@@ -45,6 +45,11 @@ export async function onRequest({ request, env }) {
   const style = clamp(body?.style, 0, 0.6, clamp(env.ELEVENLABS_STYLE, 0, 1, 0.3));
   const stability = clamp(env.ELEVENLABS_STABILITY, 0, 1, 0.38);
   if (!text) return json(400, { error: "text_required" });
+  // a script read in several requests (a video's lines) keeps one accent and one tone when each request knows the lines
+  // either side of it (ElevenLabs request stitching); a steadier setting can be asked for the same reason
+  const ctx = (v) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
+  const stitch = {}; if (ctx(body?.previous_text)) stitch.previous_text = ctx(body.previous_text); if (ctx(body?.next_text)) stitch.next_text = ctx(body.next_text);
+  const nativeStab = clamp(body?.stability, 0.3, 0.9, 0.5);
   const today = new Date().toISOString().slice(0, 10); if (today !== day) { day = today; chars = 0; }
   if (chars + text.length > +(env.ARCHIPRO_VOICE_DAILY_CHARS || 60000)) return json(429, { error: "daily_cap" });
   chars += text.length;
@@ -52,7 +57,7 @@ export async function onRequest({ request, env }) {
     const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "audio/mpeg", "xi-api-key": env.ELEVENLABS_API_KEY },
-      body: JSON.stringify({ text, model_id: model, voice_settings: native ? { stability: 0.5, similarity_boost: 0.8, speed } : { stability, similarity_boost: 0.8, style, use_speaker_boost: true, speed } }),
+      body: JSON.stringify({ text, model_id: model, ...stitch, voice_settings: native ? { stability: nativeStab, similarity_boost: 0.8, speed } : { stability, similarity_boost: 0.8, style, use_speaker_boost: true, speed } }),
     });
     if (!r.ok) {
       // say why (the provider's own status word, never the key), and avoid 502, which Cloudflare replaces with a bare error page
