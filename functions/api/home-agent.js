@@ -14,10 +14,10 @@ function cors(request) {
 const json = (request, status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store", ...cors(request) } });
 
 export const TOOLS = [
-  { name: "go_to", description: "Scroll the home page to a section: top (the landing screen), what (what assembl does), work (the drawing of a house in the bush that turns into the real house), homes (two homes, rendered), start (how to start a project).",
+  { name: "go_to", description: "Scroll the home page to a section: top (the landing screen), what (what assembl does), work (a section drawing that turns over to a picture of a house), homes (two homes, rendered), start (how to start a project).",
     input_schema: { type: "object", properties: { section: { type: "string", enum: ["top", "what", "work", "homes", "start"] } }, required: ["section"] } },
-  { name: "turn_picture", description: "On the work or homes section, turn the whole picture over, square by square: on the work section, from the line drawing to the real house; on homes, from three shades to full colour. Scrolls there first.",
-    input_schema: { type: "object", properties: { section: { type: "string", enum: ["work", "homes"] }, show_real: { type: "boolean", description: "true shows the real house or full colour; false turns it back" } }, required: ["section", "show_real"] } },
+  { name: "turn_picture", description: "On the work or homes section, turn the whole picture over, square by square: on the work section, from the line drawing to the picture of a house underneath; on homes, from three shades to full colour. Scrolls there first.",
+    input_schema: { type: "object", properties: { section: { type: "string", enum: ["work", "homes"] }, show_real: { type: "boolean", description: "true shows the picture underneath or full colour; false turns it back" } }, required: ["section", "show_real"] } },
 ];
 const TOOL_NAMES = new Set(TOOLS.map((t) => t.name));
 
@@ -36,9 +36,9 @@ What assembl does, as the site says it
 - Sectors on the site: property, hospitality, retail, schools and automotive.
 
 What is on the page
-- The landing screen: a photograph of a house in the bush in three shades; pointing at it turns squares over to the full-colour photo.
+- The landing screen: a picture of a house in the bush in three shades; pointing at it turns squares over to full colour.
 - What we do: the four services above, over a line drawing of a gabled pavilion.
-- Work: "From a 2D plan to a model you can explore." A section drawing of a house in the bush, with the real house underneath.
+- Work: "From a 2D plan to a model you can explore." A section drawing of a house; turning it over shows a picture of a house in the bush underneath, in colour. Never say the drawing and the picture are the same building.
 - Two homes, rendered: a render, not a photograph.
 - Start: "Your next project. Start here." and a Start a conversation button that opens an email.
 
