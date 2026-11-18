@@ -4,7 +4,7 @@
 // instance, default 60000 characters a day). Text is not stored. Without the key, the page falls back to the browser's
 // own voice and says so.
 // Delivery (Kate, 18 Nov): a touch quicker and a little more lively than the voice's default. Optional env overrides:
-// ELEVENLABS_SPEED (0.7 to 1.2, default 1.08), ELEVENLABS_STYLE (0 to 1, default 0.3), ELEVENLABS_STABILITY (default 0.38).
+// ELEVENLABS_SPEED (0.7 to 1.2, default 1.12), ELEVENLABS_STYLE (0 to 1, default 0.3), ELEVENLABS_STABILITY (default 0.38).
 // A request may nudge speed and style within safe limits (used to compare takes); everything else is fixed here.
 const MAX_CHARS = 700;
 const clamp = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -31,7 +31,7 @@ export async function onRequest({ request, env }) {
   let body; try { body = await request.json(); } catch { return json(400, { error: "bad_json" }); }
   let text = String(body?.text ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_CHARS);
   for (const [re, to] of SAY(env)) text = text.replace(re, (m) => (m[0] === "k" ? to.toLowerCase() : to));
-  const speed = clamp(body?.speed, 0.9, 1.2, clamp(env.ELEVENLABS_SPEED, 0.7, 1.2, 1.08));
+  const speed = clamp(body?.speed, 0.9, 1.2, clamp(env.ELEVENLABS_SPEED, 0.7, 1.2, 1.12));
   const style = clamp(body?.style, 0, 0.6, clamp(env.ELEVENLABS_STYLE, 0, 1, 0.3));
   const stability = clamp(env.ELEVENLABS_STABILITY, 0, 1, 0.38);
   if (!text) return json(400, { error: "text_required" });
