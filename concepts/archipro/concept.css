@@ -612,7 +612,7 @@ main > section.proof { background: var(--paper); padding: var(--space) var(--gut
 
 /* the studio guide, on a phone: the screen assembles from squares when it opens, and each step the agent takes shows
    as it runs. The device frame is the one place corners are round, because it is drawing a phone. */
-.guide.phone { width: min(392px, calc(100vw - 24px)); height: min(800px, calc(100vh - 40px)); bottom: 20px; padding: 46px 0 10px; border: 11px solid var(--ink);
+.guide.phone { width: min(392px, calc(100vw - 24px)); height: min(800px, calc(100vh - 40px)); height: min(800px, calc(100dvh - 40px)); bottom: 20px; padding: 46px 0 10px; border: 11px solid var(--ink);
   border-radius: 54px !important; overflow: hidden; background: var(--bone); box-shadow: 0 50px 120px -40px rgba(101, 74, 78, .55), 0 0 0 1px rgba(101, 74, 78, .25); }
 .guide.phone::before { content: ""; position: absolute; top: 12px; left: 50%; width: 112px; height: 30px; margin-left: -56px; background: var(--ink); border-radius: 20px !important; z-index: 3; }
 .guide.phone::after { content: ""; position: absolute; bottom: 7px; left: 50%; width: 128px; height: 4px; margin-left: -64px; background: var(--ink); opacity: .5; border-radius: 4px !important; z-index: 3; }
@@ -632,7 +632,7 @@ main > section.proof { background: var(--paper); padding: var(--space) var(--gut
 .gstep.done { color: var(--ink); }
 @keyframes steprun { 0% { background: transparent; } 100% { background: var(--ink); } }
 @media (max-width: 600px) {
-  .guide.phone { left: 0; right: 0; margin: 0 auto; bottom: 10px; width: min(380px, calc(100vw - 20px)); height: min(760px, calc(100vh - 20px)); border-width: 9px; border-radius: 46px !important; }
+  .guide.phone { left: 0; right: 0; margin: 0 auto; bottom: 10px; width: min(380px, calc(100vw - 20px)); height: min(760px, calc(100vh - 20px)); height: min(760px, calc(100dvh - 20px)); border-width: 9px; border-radius: 46px !important; }
 }
 @media (prefers-reduced-motion: reduce) { .guide-sq { display: none; } .gstep.run i { animation: none; background: var(--ink); } }
 
@@ -688,3 +688,6 @@ main > section.interior { position: relative; height: 380vh; padding: 0; backgro
 /* the floating guide waits until you're past the landing screen */
 .guide-fab { transition: opacity .4s var(--ease), transform .5s var(--ease); }
 .guide-fab:not(.show) { opacity: 0; pointer-events: none; transform: translateY(16px); }
+
+/* once a question is asked, the suggestions step aside so the answer has the room */
+.guide.asked .guide-try { display: none; }

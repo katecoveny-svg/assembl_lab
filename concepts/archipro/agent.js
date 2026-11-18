@@ -29,7 +29,15 @@ function assemble() {
   let html = ""; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const d = (c / cols) * 0.35 + (r / rows) * 0.45 + Math.random() * 0.18; html += `<i style="--d:${(d * 0.9).toFixed(2)}s"></i>`; }
   g.innerHTML = html; panel.append(g); setTimeout(() => g.remove(), 1800);
 }
-function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); assemble(); input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
+// on a phone, size the guide to the part of the screen you can actually see (Safari's toolbars and the keyboard
+// cover the bottom of the layout viewport), so the box you type in is never hidden
+const vv = window.visualViewport;
+function fitPanel() {
+  if (panel.hidden || innerWidth > 600 || !vv) { panel.style.height = panel.style.top = panel.style.bottom = ""; return; }
+  panel.style.top = `${Math.round(vv.offsetTop + 10)}px`; panel.style.bottom = "auto"; panel.style.height = `${Math.round(Math.min(780, vv.height - 20))}px`;
+}
+vv?.addEventListener("resize", fitPanel); vv?.addEventListener("scroll", fitPanel); addEventListener("orientationchange", () => setTimeout(fitPanel, 300));
+function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); fitPanel(); assemble(); if (innerWidth > 600) input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
 function close() { panel.hidden = true; fab.setAttribute("aria-expanded", "false"); stopVoice(); fab.focus({ preventScroll: true }); }
 $$("[data-guide-open]").forEach((b) => b.addEventListener("click", open));
 $("#guide-close").addEventListener("click", close);
@@ -77,7 +85,7 @@ const DOING = { search_catalogue: (a) => `Searching the sample catalogue: “${a
 
 form.addEventListener("submit", (e) => { e.preventDefault(); const t = input.value.trim(); if (t && !busy) send(t); });
 async function send(text) {
-  busy = true; input.value = ""; you(text); stopVoice();
+  busy = true; input.value = ""; panel.classList.add("asked"); you(text); stopVoice();
   let w = waiting();
   try {
     if (live === null) await check();
