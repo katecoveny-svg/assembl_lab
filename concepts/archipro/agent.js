@@ -16,6 +16,10 @@ const TRY = ["Fix the kitchen ventilation, then show me the schedule", "Make the
 
 // ---------------------------------------------------------------------------------------------- open and close
 panel.classList.add("phone");
+// the floating guide waits until you're past the landing screen, so it never sits on top of it
+const roomSec = document.getElementById("room-sec");
+const showFab = () => { const r = roomSec?.getBoundingClientRect(), inRoom = r && r.top < innerHeight * 0.5 && r.bottom > innerHeight * 0.5; fab.classList.toggle("show", scrollY > innerHeight * 0.85 && !inRoom); };
+addEventListener("scroll", showFab, { passive: true }); showFab();
 // the phone's screen assembles from squares, in a broken diagonal, each time it opens
 function assemble() {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -63,8 +67,8 @@ function you(text) { const el = document.createElement("div"); el.className = "m
 function waiting() { return step("Reading the page and thinking"); }
 // one line per thing the agent does: an open square while it runs, filled when it's done
 function step(text) {
-  const el = document.createElement("div"); el.className = "step run"; el.innerHTML = `<i aria-hidden="true"></i><span>${esc(text)}</span>`;
-  el.done = (t) => { el.className = "step done"; if (t) el.querySelector("span").textContent = t; };
+  const el = document.createElement("div"); el.className = "gstep run"; el.innerHTML = `<i aria-hidden="true"></i><span>${esc(text)}</span>`;
+  el.done = (t) => { el.className = "gstep done"; if (t) el.querySelector("span").textContent = t; };
   el.textContent2 = (t) => { el.querySelector("span").textContent = t; };
   log.append(el); log.scrollTop = log.scrollHeight; return el;
 }

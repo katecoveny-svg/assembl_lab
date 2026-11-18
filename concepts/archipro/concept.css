@@ -625,40 +625,66 @@ main > section.proof { background: var(--paper); padding: var(--space) var(--gut
 .guide-sq { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 1fr; pointer-events: none; }
 .guide-sq i { background: var(--rose); transform-origin: 50% 50%; animation: sqlift .7s var(--ease) both; animation-delay: var(--d); }
 @keyframes sqlift { 0% { transform: none; opacity: 1; } 100% { transform: translateY(-14px) scale(.2); opacity: 0; } }
-.step { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: baseline; font: 400 12.5px/1.45 var(--mono); color: var(--mulberry); }
-.step i { width: 9px; height: 9px; border: 1.5px solid var(--ink); align-self: center; }
-.step.run i { animation: steprun 1s steps(2, jump-none) infinite; }
-.step.done i { background: var(--ink); }
-.step.done { color: var(--ink); }
+.gstep { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: baseline; font: 400 12.5px/1.45 var(--mono); color: var(--mulberry); }
+.gstep i { width: 9px; height: 9px; border: 1.5px solid var(--ink); align-self: center; }
+.gstep.run i { animation: steprun 1s steps(2, jump-none) infinite; }
+.gstep.done i { background: var(--ink); }
+.gstep.done { color: var(--ink); }
 @keyframes steprun { 0% { background: transparent; } 100% { background: var(--ink); } }
 @media (max-width: 600px) {
   .guide.phone { left: 0; right: 0; margin: 0 auto; bottom: 10px; width: min(380px, calc(100vw - 20px)); height: min(760px, calc(100vh - 20px)); border-width: 9px; border-radius: 46px !important; }
 }
-@media (prefers-reduced-motion: reduce) { .guide-sq { display: none; } .step.run i { animation: none; background: var(--ink); } }
+@media (prefers-reduced-motion: reduce) { .guide-sq { display: none; } .gstep.run i { animation: none; background: var(--ink); } }
 
-/* a room, assembled as you scroll: true colour, because finishes are the point here. The heading sits on white above
-   the room, which is framed by the page like a photograph. */
-main > section.interior { position: relative; height: 560vh; padding: 0; background: var(--bone); }
-.room-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 18px; padding: 84px var(--gutter) 18px; box-sizing: border-box; }
-.room-stage { position: relative; overflow: hidden; background: #EEE7E1; }
-.room-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.no-room .room-stage { background: center / cover no-repeat url(./media/two-homes-render.webp); }
+/* the studio guide, furnishing a room: a rendered room laid out in squares in the three shades, a phone beside it where
+   the guide works through the request, and the squares over each product turning to true colour as it is placed */
+main > section.interior { position: relative; height: 380vh; padding: 0; background: var(--bone); }
+.room-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 18px; padding: 84px var(--gutter) 22px; box-sizing: border-box; }
 .room-head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 16px; align-items: end; }
 .room-head .mono { grid-column: 1 / span 3; color: var(--mulberry); margin: 0 0 6px; }
 .room-head h2 { grid-column: 4 / span 9; margin: 0; font: 500 clamp(32px, 4vw, 64px)/.96 var(--sans); letter-spacing: -.05em; color: var(--ink); }
+.room-body { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 360px); gap: 18px; min-height: 0; }
+.room-stage { position: relative; overflow: hidden; background: var(--rose); min-height: 0; }
+.room-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.no-room .room-stage { background: center / cover no-repeat url(./media/room-a.webp); }
 .room-card { position: absolute; left: 16px; bottom: 16px; z-index: 3; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 18px; align-items: center; max-width: min(560px, calc(100% - 32px));
   background: var(--bone); padding: 14px 20px 14px 16px; opacity: 0; transform: translateY(14px); transition: opacity .5s var(--ease), transform .6s var(--ease); }
 .room-card.on { opacity: 1; transform: none; }
 .room-card b { font: 500 60px/.8 var(--sans); font-variation-settings: "wdth" 78; letter-spacing: -.065em; color: var(--ink); }
 .room-card .nm { margin: 0 0 4px; font: 500 18px/1.2 var(--sans); letter-spacing: -.02em; color: var(--ink); }
 .room-card .mono { margin: 0; font-size: 11.5px; color: var(--mulberry); }
-.room-cap { position: absolute; right: 14px; top: 14px; z-index: 2; margin: 0; font-size: 11px; color: var(--ink); background: rgba(255, 253, 251, .88); padding: 6px 10px; }
+.room-cap { position: absolute; right: 14px; top: 14px; z-index: 2; margin: 0; font-size: 11px; color: var(--ink); background: rgba(255, 253, 251, .9); padding: 6px 10px; }
 .room-tags { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .rt { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font: 500 12.5px/1 var(--sans); color: var(--ink); opacity: 0; transition: opacity .5s var(--ease); }
 .rt i { width: 10px; height: 10px; background: var(--ink); box-shadow: 0 0 0 3px rgba(255, 253, 251, .9); margin-left: -5px; flex: none; }
-.rt b { font: 400 11px var(--mono); background: rgba(255, 253, 251, .9); padding: 3px 5px; }
-.rt em { font-style: normal; background: rgba(255, 253, 251, .9); padding: 4px 7px; display: none; }
+.rt b { font: 400 11px var(--mono); background: rgba(255, 253, 251, .92); padding: 3px 5px; }
+.rt em { font-style: normal; background: rgba(255, 253, 251, .92); padding: 4px 7px; display: none; }
 .rt.cur em { display: inline; }
 .rt.on { opacity: 1; }
-@media (max-width: 760px) { .room-pin { padding: 70px 12px 12px; gap: 12px; } .room-head .mono, .room-head h2 { grid-column: 1 / -1; } .room-cap { display: none; } .room-card b { font-size: 44px; } .room-card .nm { font-size: 15px; } .rt em { max-width: 52vw; overflow: hidden; text-overflow: ellipsis; } }
-@media (prefers-reduced-motion: reduce) { main > section.interior { height: 100vh; } }
+/* the phone: drawn as a device, so here the corners are round */
+.room-phone { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; border: 10px solid var(--ink); border-radius: 46px !important; background: var(--bone); padding: 44px 0 14px; overflow: hidden;
+  box-shadow: 0 40px 90px -40px rgba(101, 74, 78, .5); opacity: 0; transform: translateY(24px); transition: opacity .8s var(--ease), transform 1s var(--ease); }
+.room-phone.in { opacity: 1; transform: none; }
+.room-phone::before { content: ""; position: absolute; top: 11px; left: 50%; width: 96px; height: 26px; margin-left: -48px; background: var(--ink); border-radius: 16px !important; z-index: 4; }
+.rp-top { padding: 4px 18px 12px; border-bottom: 1px solid var(--line); }
+.rp-h { margin: 0 0 3px; font: 500 21px/1.1 var(--sans); letter-spacing: -.03em; color: var(--ink); }
+.rp-top .mono { margin: 0; font-size: 10.5px; color: var(--mulberry); }
+.rp-log { overflow-y: auto; padding: 14px 16px; display: grid; align-content: start; gap: 12px; scroll-behavior: smooth; }
+.rp-log .msg { font-size: 14.5px; line-height: 1.45; }
+.rp-log .msg.you { justify-self: end; background: var(--ink); color: var(--ivory); padding: 10px 13px; border-radius: 16px 16px 4px 16px !important; max-width: 92%; }
+.rp-log .gstep[hidden], .rp-log .msg[hidden] { display: none; }
+.rp-ask { margin: 8px 16px 0; min-height: 46px; border: 0; background: var(--ink); color: var(--ivory); font: 500 14.5px var(--sans); cursor: pointer; border-radius: 12px !important; }
+.rp-ask:hover { background: var(--mulberry); }
+.room-phone .guide-sq { border-radius: 36px !important; overflow: hidden; }
+@media (max-width: 900px) {
+  .room-pin { padding: 70px 12px 12px; gap: 12px; }
+  .room-head .mono, .room-head h2 { grid-column: 1 / -1; }
+  .room-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; }
+  .room-phone { border-width: 7px; border-radius: 30px !important; padding-top: 34px; }
+  .room-phone::before { top: 7px; width: 70px; height: 20px; margin-left: -35px; }
+  .room-card, .room-cap { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { main > section.interior { height: auto; } .room-pin { position: relative; height: 100vh; } .room-phone { opacity: 1; transform: none; } }
+/* the floating guide waits until you're past the landing screen */
+.guide-fab { transition: opacity .4s var(--ease), transform .5s var(--ease); }
+.guide-fab:not(.show) { opacity: 0; pointer-events: none; transform: translateY(16px); }
