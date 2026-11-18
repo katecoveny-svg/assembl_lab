@@ -32,6 +32,9 @@ export async function onRequest({ request, env }) {
   let text = String(body?.text ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_CHARS);
   // models: multilingual v2 has no Māori; Eleven v3 lists Māori (mi) and v4 speaks 90+ languages with IPA support.
   // A request may pick one of these to compare takes; the default stays ELEVENLABS_MODEL until a voice is chosen.
+  // voices on trial (added to the account's My Voices from the ElevenLabs library, 18 Nov): a request may name one to compare takes
+  const VOICES = { wikitoria: "kb3tldKFXsDhAalrgD0r", mark: "rqqwhOVfRQlKcUmG0Q18" };
+  const voiceId = VOICES[body?.voice] || env.ELEVENLABS_VOICE_ID;
   const MODELS = new Set(["eleven_multilingual_v2", "eleven_v3", "eleven_v4", "eleven_turbo_v2_5", "eleven_flash_v2_5"]);
   const model = MODELS.has(body?.model) ? body.model : (env.ELEVENLABS_MODEL || "eleven_multilingual_v2");
   const native = model === "eleven_v3" || model === "eleven_v4";
@@ -45,7 +48,7 @@ export async function onRequest({ request, env }) {
   if (chars + text.length > +(env.ARCHIPRO_VOICE_DAILY_CHARS || 60000)) return json(429, { error: "daily_cap" });
   chars += text.length;
   try {
-    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(env.ELEVENLABS_VOICE_ID)}?output_format=mp3_44100_128`, {
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "audio/mpeg", "xi-api-key": env.ELEVENLABS_API_KEY },
       body: JSON.stringify({ text, model_id: model, voice_settings: native ? { stability: 0.5, similarity_boost: 0.8, speed } : { stability, similarity_boost: 0.8, style, use_speaker_boost: true, speed } }),
