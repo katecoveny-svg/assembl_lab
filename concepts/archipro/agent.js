@@ -15,7 +15,17 @@ const TRY = ["Fix the kitchen ventilation, then show me the schedule", "Make the
   "Put black joinery and cedar on the real house at sunset", "What would you do in the first ninety days?"];
 
 // ---------------------------------------------------------------------------------------------- open and close
-function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
+panel.classList.add("phone");
+// the phone's screen assembles from squares, in a broken diagonal, each time it opens
+function assemble() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  panel.querySelector(".guide-sq")?.remove();
+  const g = document.createElement("div"); g.className = "guide-sq"; g.setAttribute("aria-hidden", "true");
+  const cols = 6, rows = Math.max(10, Math.round(cols * panel.clientHeight / Math.max(1, panel.clientWidth)));
+  let html = ""; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const d = (c / cols) * 0.35 + (r / rows) * 0.45 + Math.random() * 0.18; html += `<i style="--d:${(d * 0.9).toFixed(2)}s"></i>`; }
+  g.innerHTML = html; panel.append(g); setTimeout(() => g.remove(), 1800);
+}
+function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); assemble(); input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
 function close() { panel.hidden = true; fab.setAttribute("aria-expanded", "false"); stopVoice(); fab.focus({ preventScroll: true }); }
 $$("[data-guide-open]").forEach((b) => b.addEventListener("click", open));
 $("#guide-close").addEventListener("click", close);
@@ -50,12 +60,21 @@ function say(text, { did = [], speak = true, note = false } = {}) {
   return el;
 }
 function you(text) { const el = document.createElement("div"); el.className = "msg you"; el.textContent = text; log.append(el); log.scrollTop = log.scrollHeight; }
-function waiting() { const el = document.createElement("div"); el.className = "msg it wait"; el.textContent = "Working on it…"; log.append(el); log.scrollTop = log.scrollHeight; return el; }
+function waiting() { return step("Reading the page and thinking"); }
+// one line per thing the agent does: an open square while it runs, filled when it's done
+function step(text) {
+  const el = document.createElement("div"); el.className = "step run"; el.innerHTML = `<i aria-hidden="true"></i><span>${esc(text)}</span>`;
+  el.done = (t) => { el.className = "step done"; if (t) el.querySelector("span").textContent = t; };
+  el.textContent2 = (t) => { el.querySelector("span").textContent = t; };
+  log.append(el); log.scrollTop = log.scrollHeight; return el;
+}
+const DOING = { search_catalogue: (a) => `Searching the sample catalogue: “${a.query || ""}”`, add_to_specification: () => "Adding it to the specification", change_house: () => "Changing the house and redrawing the set",
+  show_drawing: (a) => `Opening sheet ${a.sheet || ""}`, print_drawing_set: () => "Preparing the A3 set to print", show_on_home: () => "Putting the products on the 16A twin", go_to: (a) => `Going to ${a.chapter || "the page"}` };
 
 form.addEventListener("submit", (e) => { e.preventDefault(); const t = input.value.trim(); if (t && !busy) send(t); });
 async function send(text) {
   busy = true; input.value = ""; you(text); stopVoice();
-  const w = waiting();
+  let w = waiting();
   try {
     if (live === null) await check();
     if (!live) { const r = scripted(text); w.remove(); say(r.text, { did: r.did }); return; }
@@ -75,18 +94,19 @@ async function send(text) {
       const uses = j.content.filter((b) => b.type === "tool_use");
       if (j.stop_reason !== "tool_use" || !uses.length) {
         const text = j.content.filter((b) => b.type === "text").map((b) => b.text).join("\n\n").trim();
-        w.remove(); say(text || (did.length ? "Done." : "I'm not sure how to help with that here."), { did });
+        w.done("Answered"); say(text || (did.length ? "Done." : "I'm not sure how to help with that here."), { did });
         return;
       }
       const results = [];
+      w.done("Planned the next step");
       for (const u of uses) {
-        let out, err = false;
-        try { const r = await run(u.name, u.input || {}); out = r.result; if (r.did) did.push(r.did); }
-        catch (e) { out = { error: String(e?.message || e) }; err = true; }
+        let out, err = false; const st = step((DOING[u.name] || (() => u.name))(u.input || {}));
+        try { const r = await run(u.name, u.input || {}); out = r.result; if (r.did) did.push(r.did); st.done(r.did); }
+        catch (e) { out = { error: String(e?.message || e) }; err = true; st.done("Couldn't do that step"); }
         results.push({ type: "tool_result", tool_use_id: u.id, content: JSON.stringify(out).slice(0, 7500), ...(err ? { is_error: true } : {}) });
       }
       history.push({ role: "user", content: results });
-      w.textContent = did.length ? `${did[did.length - 1]}…` : "Working on it…";
+      w = step("Checking the result");
     }
     w.remove(); say("That took more steps than I'm allowed in one go. Here's where it got to; ask me to carry on.", { did });
   } finally { busy = false; }
