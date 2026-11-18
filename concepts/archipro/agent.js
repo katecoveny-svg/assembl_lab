@@ -12,7 +12,7 @@ const small = () => matchMedia("(max-width: 600px)").matches;
 let live = null, route = "primary", modelName = "Claude Fable 5.2", busy = false, voiceOn = true, eleven = false;
 const history = [];
 const TRY = ["Fix the kitchen ventilation, then show me the schedule", "Make the living wing 11 metres and print the plans", "Which cladding suits a sea-spray site?",
-  "Put black joinery and cedar on the real house at sunset", "What would you do in the first ninety days?"];
+  "Put black joinery and cedar on the real house at sunset", "Why Kate for AI Special Projects?", "What would you do in the first ninety days?"];
 
 // ---------------------------------------------------------------------------------------------- open and close
 panel.classList.add("phone");
@@ -153,6 +153,7 @@ async function run(name, a) {
 // ---------------------------------------------------------------------------------------------- the scripted fallback (no AI)
 function scripted(t) {
   const q = t.toLowerCase(), S = window.__studio, P = window.__page, pre = "Scripted reply (the live guide isn't switched on for this preview). ";
+  if (/why kate|special projects|the role|hire|ninety|90 days/.test(q)) { P.go("plan"); return { text: `${pre}Kate made this page as a working sample for the Director, AI Special Projects role. Every idea on it runs. She'd start with one idea and an agreed baseline, ship it to a small group, then widen only on the evidence, with named people approving each step. Her architecture studio already works this way, with 33 specialist agents and a human reviewer for each.`, did: ["Went to the first ninety days"] }; }
   if (/print/.test(q)) { const n = S.print(); return { text: `${pre}I've opened the print dialog with all ${n} sheets at A3 landscape.`, did: ["Opened the print dialog"] }; }
   if (/kitchen|ventilat/.test(q)) { S.go(); const r = S.set({ kitchenWindow: 3600 }); S.showSheet("A901"); return { text: `${pre}I widened the kitchen window to 3.6 metres. ${r.precheck.fail ? `${r.precheck.fail} item still to resolve.` : "Nothing is left to resolve in the pre-check."} The schedule is on sheet A901.`, did: ["Changed the house: kitchen window 3.6 m", "Showed sheet A901"] }; }
   const w = q.match(/(\d+(?:\.\d+)?)\s*(?:m\b|metres?|meters?)/);
