@@ -44,7 +44,11 @@ export async function onRequest({ request, env }) {
       headers: { "content-type": "application/json", accept: "audio/mpeg", "xi-api-key": env.ELEVENLABS_API_KEY },
       body: JSON.stringify({ text, model_id: env.ELEVENLABS_MODEL || "eleven_multilingual_v2", voice_settings: { stability, similarity_boost: 0.8, style, use_speaker_boost: true, speed } }),
     });
-    if (!r.ok) { console.warn("archipro-voice: provider error", r.status, (await r.text()).slice(0, 200)); return json(502, { error: "voice_error" }); }
+    if (!r.ok) {
+      // say why (the provider's own status word, never the key), and avoid 502, which Cloudflare replaces with a bare error page
+      const t = await r.text(); let reason = ""; try { reason = String(JSON.parse(t)?.detail?.status || "").slice(0, 60); } catch {}
+      console.warn("archipro-voice: provider error", r.status, t.slice(0, 200)); return json(503, { error: "voice_error", provider_status: r.status, reason });
+    }
     return new Response(r.body, { status: 200, headers: { "content-type": "audio/mpeg", "cache-control": "no-store", ...H } });
-  } catch (e) { console.warn("archipro-voice: failed", e?.message); return json(502, { error: "upstream" }); }
+  } catch (e) { console.warn("archipro-voice: failed", e?.message); return json(503, { error: "upstream" }); }
 }
