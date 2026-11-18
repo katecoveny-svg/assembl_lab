@@ -30,7 +30,13 @@ export async function onRequest({ request, env }) {
   if (!ready) return json(503, { error: "not_configured" });
   let body; try { body = await request.json(); } catch { return json(400, { error: "bad_json" }); }
   let text = String(body?.text ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_CHARS);
-  for (const [re, to] of SAY(env)) text = text.replace(re, (m) => (m[0] === "k" ? to.toLowerCase() : to));
+  // models: multilingual v2 has no Māori; Eleven v3 lists Māori (mi) and v4 speaks 90+ languages with IPA support.
+  // A request may pick one of these to compare takes; the default stays ELEVENLABS_MODEL until a voice is chosen.
+  const MODELS = new Set(["eleven_multilingual_v2", "eleven_v3", "eleven_v4", "eleven_turbo_v2_5", "eleven_flash_v2_5"]);
+  const model = MODELS.has(body?.model) ? body.model : (env.ELEVENLABS_MODEL || "eleven_multilingual_v2");
+  const native = model === "eleven_v3" || model === "eleven_v4";
+  // the respellings are for the English-only models; v3 and v4 know te reo Māori, so they get the real words
+  if (!native && !body?.raw) for (const [re, to] of SAY(env)) text = text.replace(re, (m) => (m[0] === "k" ? to.toLowerCase() : to));
   const speed = clamp(body?.speed, 0.9, 1.2, clamp(env.ELEVENLABS_SPEED, 0.7, 1.2, 1.12));
   const style = clamp(body?.style, 0, 0.6, clamp(env.ELEVENLABS_STYLE, 0, 1, 0.3));
   const stability = clamp(env.ELEVENLABS_STABILITY, 0, 1, 0.38);
@@ -42,9 +48,9 @@ export async function onRequest({ request, env }) {
     const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(env.ELEVENLABS_VOICE_ID)}?output_format=mp3_44100_128`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "audio/mpeg", "xi-api-key": env.ELEVENLABS_API_KEY },
-      body: JSON.stringify({ text, model_id: env.ELEVENLABS_MODEL || "eleven_multilingual_v2", voice_settings: { stability, similarity_boost: 0.8, style, use_speaker_boost: true, speed } }),
+      body: JSON.stringify({ text, model_id: model, voice_settings: native ? { stability: 0.5, similarity_boost: 0.8, speed } : { stability, similarity_boost: 0.8, style, use_speaker_boost: true, speed } }),
     });
-    if (!r.ok) { console.warn("archipro-voice: provider error", r.status, (await r.text()).slice(0, 200)); return json(502, { error: "voice_error" }); }
+    if (!r.ok) { const t = (await r.text()).slice(0, 300); console.warn("archipro-voice: provider error", r.status, t); return json(502, { error: "voice_error", status: r.status, detail: /model|voice_settings|speed|stability/i.test(t) ? t.replace(/[^\w\s.,:"{}\-]/g, "").slice(0, 200) : undefined }); }
     return new Response(r.body, { status: 200, headers: { "content-type": "audio/mpeg", "cache-control": "no-store", ...H } });
   } catch (e) { console.warn("archipro-voice: failed", e?.message); return json(502, { error: "upstream" }); }
 }
