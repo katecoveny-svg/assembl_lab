@@ -15,5 +15,9 @@ export async function onRequest({ request, next, env }) {
     if (url.pathname === '/') return Response.redirect(new URL('/study/', url), 302);
     for (const [re, to] of STUDY) if (re.test(url.pathname)) return Response.redirect(new URL(url.pathname.replace(re, to) + url.search, url), 302);
   }
+  // the shared lab bar and the twin fixes are unversioned and loaded by every lab page: make browsers check for a newer copy
+  if (url.pathname === '/lab/navigation.js' || url.pathname.startsWith('/plan-studio/twins/css/')) {
+    const res = await next(); const out = new Response(res.body, res); out.headers.set('cache-control', 'public, max-age=0, must-revalidate'); return out;
+  }
   return next();
 }
