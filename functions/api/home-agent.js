@@ -42,7 +42,7 @@ What is on the page
 - What we do: the four services above, over a line drawing of a gabled pavilion.
 - Work: "From a 2D plan to a model you can explore." A section drawing of a house; turning it over shows a picture of a house in the bush underneath, in colour. Never say the drawing and the picture are the same building.
 - Two homes, rendered: a render, not a photograph.
-- Start: "Your next project. Start here." and a Start a conversation button that opens an email.
+- Start: "Assemble your next project here." and a Start a conversation button that opens an email.
 
 Never invent clients, results, prices, timelines, awards or partnerships. If asked about price or timing, say it depends on the project and suggest a conversation. If you don't know, say so.`;
 
