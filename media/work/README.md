@@ -7,3 +7,4 @@ Served from lab.assembl.co.nz because assembl.co.nz is deployed by direct upload
 - `*-poster.jpg`: first frames.
 
 Both are visualisations, not photographs, and are labelled that way on the page. The street address of the Waiheke house is deliberately not used.
+- `16a-model-to-site.mp4`: two timber homes, 16A, from above: a white model turns into the finished homes and garden. Source: Kate's fal.ai export (Jvbdmiazvod1UUdmqJ24s_video.mp4, 6 s), re-encoded H.264 1600 px, no audio.
