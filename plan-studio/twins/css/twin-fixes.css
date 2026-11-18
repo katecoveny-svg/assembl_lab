@@ -1,0 +1,9 @@
+/* small fixes on top of the built twin stylesheet (kept apart so a rebuild doesn't lose them) */
+.tip[hidden], .inspect[hidden] { display: none !important; }   /* the hidden tooltip showed as a dark pill */
+header h1 { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) {
+  header { gap: 10px; padding: 0 12px; }
+  header .kick { display: none; }
+  header a.pill[href*="library"] { display: none !important; }    /* "Design inventory" crowded the phone header */
+  header h1 { flex: 1; font-size: 15px; }
+}
