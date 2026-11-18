@@ -164,7 +164,7 @@ main { position: relative; z-index: 1; }
 .twins li:nth-child(even) .peek { margin-left: 18%; }
 .twins .peek:nth-child(even) { margin-left: 0; }
 @media (max-width: 760px) {
-  .nav a:nth-child(-n+3) { display: none; }
+  .nav a:nth-child(-n+2) { display: none; }
   .chip.city { grid-column: 1 / -1; grid-row: 6; align-self: start; justify-self: start; margin: 8px var(--gutter) 0; }
   .hero .cta { grid-row: 5; align-self: start; margin-top: 10px; }
   .k { grid-column: 1 / -1; }
@@ -180,3 +180,40 @@ main { position: relative; z-index: 1; }
   .twins .peek .go { top: 12px; }
 }
 .hero .sub { background: var(--white); padding: 10px 14px; margin-left: calc(var(--gutter) - 14px); }
+
+/* ---------------------------------------------------------------------------------------------- 18 Nov 2026: two worlds */
+/* the house: the plan turns over to its model; two ways in, side by side */
+.acts { grid-column: 5 / -1; grid-row: var(--rows); align-self: end; justify-self: start; display: flex; flex-wrap: wrap; gap: 10px; margin: 0 var(--gutter) 22px 0; }
+.acts .open { margin: 0; }
+.manu .open { grid-column: 1 / span 4; margin-left: var(--gutter); }
+@media (max-width: 760px) {
+  .acts { grid-column: 1 / -1; grid-row: 5; margin: 0 var(--gutter) 10px; }
+  .acts .open { min-height: 44px; padding: 11px 14px; font-size: 14px; }
+  .manu .open { grid-row: 6; align-self: end; margin-bottom: 22px; }
+}
+
+/* the header sits on a white bar over the footer, where there is no picture behind it */
+.top { transition: background .3s, border-color .3s; border-bottom: 1px solid transparent; }
+.solid-top .top { background: rgba(255, 253, 251, .94); backdrop-filter: blur(8px); border-bottom-color: var(--line); }
+
+/* footer: plum, as on assembl.co.nz */
+.site-foot { position: relative; z-index: 1; background: var(--plum); color: var(--white); padding: clamp(56px, 8vh, 88px) var(--gutter) 28px; }
+.sf-in { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); row-gap: 36px; }
+.sf-mark { margin: 0; grid-column: 1 / span 4; font: 600 clamp(36px, 4vw, 60px)/1 var(--sans); letter-spacing: -.055em; }
+.sf-mark a { text-decoration: none; }
+.sf-mark span { opacity: .55; }
+.sf-line { margin: 0; grid-column: 1 / span 4; grid-row: 2; max-width: 22em; font-size: 15px; opacity: .9; }
+.sf-nav { grid-column: 6 / -1; grid-row: 1 / span 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; font-size: 15px; }
+.sf-nav div { display: grid; align-content: start; gap: 10px; }
+.sf-nav .mono { margin: 0 0 4px; opacity: .7; }
+.sf-nav a { text-decoration: none; width: fit-content; border-bottom: 1px solid transparent; }
+.sf-nav a:hover { border-bottom-color: currentColor; }
+.sf-fine { margin: 0; grid-column: 1 / -1; padding-top: 18px; border-top: 1px solid rgba(255, 253, 251, .25); opacity: .75; line-height: 1.5; }
+.site-foot :focus-visible { outline-color: var(--white); }
+@media (max-width: 760px) {
+  .sf-mark, .sf-line, .sf-nav { grid-column: 1 / -1; grid-row: auto; }
+  .sf-nav { grid-template-columns: 1fr 1fr; row-gap: 28px; }
+  .sf-nav div:nth-child(2) { order: 3; grid-column: 1 / -1; }
+}
+.hero, .manu { --ln: var(--line); }
+@media (max-width: 760px) { .hero h1 { background: var(--white); padding: 4px 10px 8px; margin-left: calc(var(--gutter) - 10px); margin-right: auto; width: fit-content; } }

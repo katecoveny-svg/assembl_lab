@@ -9,14 +9,16 @@ const canvas = document.getElementById("field");
 const windows = [...document.querySelectorAll("[data-scene]")];
 // the lab's pictures: each world as it really runs (captured from the live pages), shown in the three shades until you
 // point at it; Plan Studio's floor plan has its 3D model underneath
-const V = "?v=20261118a";   // pictures are versioned so a browser never mixes an old picture with a new page
+const V = "?v=20261118b";   // pictures are versioned so a browser never mixes an old picture with a new page
 const IMG = (n) => `/lab/v3/img/${n}.webp${V}`;
-const SRC = { city: IMG("city"), plan: IMG("plan"), model: IMG("model"), cafe: IMG("cafe"), ed: IMG("ed"), dairy: IMG("dairy"), home: IMG("home"),
-  retail: IMG("retail"), trades: IMG("trades"), claw: IMG("claw"), heart: IMG("heart"), sheet: IMG("sheet") };
-const UNDER = { plan: "model" };                     // the plan, with the model built from it underneath
-const FOCUS = { city: [0, 0.6], plan: [0, 0.45], model: [0, 0.4], cafe: [0, 0.4], ed: [0, 0.4], dairy: [0, 0.35], home: [0, 0.4], retail: [0, 0.45], trades: [0, 0.4], claw: [0, 0.5], heart: [0, 0.4], sheet: [0, 0.3] };
-const MIST = { city: 1, plan: 1, cafe: 1, ed: 1, dairy: 1, home: 1, retail: 1, trades: 1, claw: 1, heart: 1, sheet: 0.6 };
-const LIFT = { city: 0.1 };                         // the renders are light already: no lift, so plum shows in their shadows
+// the lab's two worlds: the 16A floor plan drawn from its plan model, with the three.js model built from it underneath;
+// Manu's birds as they render on their own pages; and assembl's own house sketches to close
+const SRC = { birds: IMG("birds"), plan16a: IMG("plan16a"), model16a: IMG("model16a"), tui: IMG("tui"), sketches: IMG("sketches") };
+const UNDER = { plan16a: "model16a" };              // the plan, with the model built from it underneath
+// focus: where the crop sits when a window is narrower than the picture (phones): -0.5 left edge, 0 centre, 0.5 right edge
+const FOCUS = { birds: [0.16, 0], plan16a: [0.3, 0], model16a: [0.1, 0], tui: [0.2, 0], sketches: [0.3, 0] };
+const MIST = { birds: 1, plan16a: 1, tui: 1, sketches: 0.6 };
+const LIFT = {};
 
 function fallback() {
   document.documentElement.classList.add("no-field");

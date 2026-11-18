@@ -4,89 +4,88 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>assembl lab · small worlds, assembled</title>
-<meta name="description" content="Working models of New Zealand places and businesses, built by assembl: Plan Studio, business twins you can run for a day, the Auckland city centre in 3D and study machines. Every one says what is simulated and what is real.">
+<meta name="description" content="Two working three.js worlds by assembl: Plan to 4D, which turns a 2D plan into a house you can walk around, and Manu, the birds of Aotearoa up close.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="assembl lab">
 <meta property="og:title" content="assembl lab · small worlds, assembled">
-<meta property="og:description" content="Working models of New Zealand places and businesses, built by assembl in Tāmaki Makaurau Auckland.">
-<meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/city.webp">
+<meta property="og:description" content="A 2D plan turned into a house you can walk around, and the birds of Aotearoa up close. Built in three.js by assembl in Tāmaki Makaurau Auckland.">
+<meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/model16a.webp">
+<meta property="og:url" content="https://lab.assembl.co.nz/">
 <meta name="theme-color" content="#FFFDFB">
 <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
 <link rel="canonical" href="https://lab.assembl.co.nz/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/lab/v3/lab.css?v=20261118a">
+<link rel="stylesheet" href="/lab/v3/lab.css?v=20261118b">
 <script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js" } }</script>
 </head>
 <body>
 <canvas id="field" aria-hidden="true"></canvas>
-<a class="skip" href="#plan">Skip to the worlds</a>
+<a class="skip" href="#house">Skip to the worlds</a>
 
 <header class="top">
   <a class="mark" href="#top" aria-label="assembl lab, back to the top">assembl<span>.</span><em class="lab">lab</em></a>
-  <nav class="nav" aria-label="Main"><a href="#plan">Plan Studio</a><a href="#twins">Twins</a><a href="#study">Study</a><a href="https://assembl.co.nz/">assembl.co.nz&nbsp;↗</a></nav>
+  <nav class="nav" aria-label="Main"><a href="#house">Plan to 4D</a><a href="#manu">Manu</a><a href="https://www.assembl.co.nz/">assembl.co.nz&nbsp;↗</a></nav>
 </header>
 
 <main>
 
-<section class="window hero" id="top" data-scene="city" aria-labelledby="hero-h">
+<section class="window hero" id="top" data-scene="birds" aria-labelledby="hero-h">
   <div class="lines" aria-hidden="true"></div>
   <div class="cells">
     <h1 id="hero-h">Small worlds, assembled.</h1>
-    <p class="sub">Working models of New Zealand places and businesses, built by assembl. Every one says what is simulated and what is real.</p>
-    <a class="cta" href="#plan">See the worlds</a>
-    <a class="chip city" href="/auckland/3d/">Tāmaki Makaurau in 3D · real map data, heights estimated&nbsp;↗</a>
+    <p class="sub">Two working worlds in three.js, built by assembl in Tāmaki Makaurau Auckland.</p>
+    <a class="cta" href="#house">See the worlds</a>
   </div>
   <p class="word" aria-hidden="true"><span class="ws"><span style="--k:0"><i>a</i></span><span style="--k:1"><i>s</i></span><span style="--k:2"><i>s</i></span><span style="--k:3"><i>e</i></span><span style="--k:4"><i>m</i></span><span style="--k:5"><i>b</i></span><span style="--k:6"><i>l</i></span><span class="dot" style="--k:7"><i>.</i></span></span></p>
 </section>
 
-<section class="window work plan" id="plan" data-scene="plan" aria-labelledby="plan-h">
+<section class="window work house" id="house" data-scene="plan16a" aria-labelledby="house-h">
   <div class="lines" aria-hidden="true"></div>
   <div class="cells">
-    <p class="k mono">01 / Plan Studio <span class="truth">Live</span></p>
-    <h2 id="plan-h">From a 2D plan to a model you can explore.</h2>
-    <p class="say">Upload a floor plan. Get a measured 3D model, an A3 drawing set and an advisory Building Code pre-check.</p>
+    <p class="k mono">01 / Plan to 4D <span class="truth">Live</span></p>
+    <h2 id="house-h">From a 2D plan to a house you can walk around.</h2>
+    <p class="say">Two timber homes, built in three.js from their own consent drawings: real walls, doors and rooms, in the real sun. A model, not a scan.</p>
     <button class="turn" type="button" aria-pressed="false" data-on="Back to the plan" data-off="See the model">See the model</button>
-    <a class="open" href="/plan-studio/">Open Plan Studio&nbsp;↗</a>
+    <div class="acts"><a class="open solid" href="/plan-studio/twins/16a/">Walk the 16A model&nbsp;↗</a><a class="open" href="/plan-studio/twins/drop/">Drop in your own plan&nbsp;↗</a></div>
   </div>
 </section>
 
-<section class="window services twins" id="twins" data-scene="cafe" aria-labelledby="twins-h">
+<section class="window work2 manu" id="manu" data-scene="tui" aria-labelledby="manu-h">
   <div class="lines" aria-hidden="true"></div>
   <div class="cells">
-    <p class="k mono">02 / Business twins <span class="truth">Simulated</span></p>
-    <h2 id="twins-h">Run a business for a day.</h2>
-    <ol class="list">
-      <li><a class="peek" href="/cafe/" data-twin="cafe"><b>01</b><span class="nm">Café</span><span class="more"><span>A morning rush, a menu change, a new roster.</span></span><i class="go" aria-hidden="true">↗</i></a></li>
-      <li><a class="peek" href="/ed/" data-twin="ed"><b>02</b><span class="nm">Emergency department</span><span class="more"><span>Triage, cubicles and the waiting room, minute by minute.</span></span><i class="go" aria-hidden="true">↗</i></a></li>
-      <li><a class="peek" href="/dairy/" data-twin="dairy"><b>03</b><span class="nm">Dairy plant</span><span class="more"><span>A milk powder plant, from tanker to dryer, through the season.</span></span><i class="go" aria-hidden="true">↗</i></a></li>
-      <li><a class="peek" href="/home/" data-twin="home"><b>04</b><span class="nm">Home energy</span><span class="more"><span>A Kiwi home with its power bill, heating and car, running live.</span></span><i class="go" aria-hidden="true">↗</i></a></li>
-      <li><a class="peek" href="/retail/" data-twin="retail"><b>05</b><span class="nm">Hardware store</span><span class="more"><span>From the six o’clock utes to the Saturday queue.</span></span><i class="go" aria-hidden="true">↗</i></a></li>
-      <li><a class="peek" href="/trades/" data-twin="trades"><b>06</b><span class="nm">Trades quote</span><span class="more"><span>Take off the plan, check it, and a person sends the quote.</span></span><i class="go" aria-hidden="true">↗</i></a></li>
-    </ol>
+    <p class="k mono">02 / Manu <span class="truth">Live</span></p>
+    <h2 id="manu-h">Birds of Aotearoa, up close.</h2>
+    <p class="say">Eight native birds in three.js, feather by feather. Turn each one, see how it lives, then test yourself. Stylised models, not scans.</p>
+    <a class="open solid" href="/manu/">Meet the birds&nbsp;↗</a>
   </div>
 </section>
 
-<section class="window work2 study" id="study" data-scene="claw" aria-labelledby="study-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <p class="k mono">03 / Study machines <span class="truth">Simulated</span></p>
-    <h2 id="study-h">One idea at a time.</h2>
-    <p class="say">Free 3D machines for Years 7 to 13 and NCEA. Change one setting, watch what happens, then test yourself. No sign-up.</p>
-    <a class="open solid" href="/study/">Open the study machines&nbsp;↗</a>
-  </div>
-</section>
-
-<section class="window start" id="start" data-scene="sheet" aria-labelledby="start-h">
+<section class="window start" id="start" data-scene="sketches" aria-labelledby="start-h">
   <div class="lines" aria-hidden="true"></div>
   <div class="cells">
     <h2 id="start-h">Want a world of your own?</h2>
-    <a class="btn" href="mailto:assembl@assembl.co.nz?subject=A%20world%20of%20our%20own">Talk to assembl</a>
-    <p class="foot mono">assembl. lab · Tāmaki Makaurau Auckland · every world says what is simulated and what is real</p>
+    <a class="btn" href="https://www.assembl.co.nz/#start">Talk to assembl</a>
+    <p class="foot mono">assembl. lab · Tāmaki Makaurau Auckland</p>
   </div>
 </section>
 
 </main>
 
-<script type="module" src="/lab/v3/field.js?v=20261118a"></script>
-<script type="module" src="/lab/v3/motion.js?v=20261118a"></script>
+<footer class="site-foot">
+  <div class="sf-in">
+    <p class="sf-mark"><a href="https://www.assembl.co.nz/" aria-label="assembl home">assembl<span>.</span></a></p>
+    <p class="sf-line">Small worlds from assembl: strategy, creative and digital for the agentic era. Tāmaki Makaurau Auckland, Aotearoa New Zealand.</p>
+    <nav class="sf-nav" aria-label="Footer">
+      <div><p class="mono">The lab</p><a href="/plan-studio/twins/16a/">Plan to 4D</a><a href="/manu/">Manu</a></div>
+      <div><p class="mono">assembl</p><a href="https://www.assembl.co.nz/">assembl.co.nz</a><a href="https://www.assembl.co.nz/#faq">FAQ</a><a href="https://www.assembl.co.nz/#start">Start a conversation</a></div>
+      <div><p class="mono">Legal</p><a href="https://www.assembl.co.nz/privacy/">Privacy policy</a><a href="https://www.assembl.co.nz/terms/">Terms and conditions</a></div>
+    </nav>
+    <p class="sf-fine mono">© 2026 assembl. Models and renders in the lab are visualisations, not photographs or scans.</p>
+  </div>
+</footer>
+
+<script type="module" src="/lab/v3/field.js?v=20261118b"></script>
+<script type="module" src="/lab/v3/motion.js?v=20261118b"></script>
 </body>
 </html>
