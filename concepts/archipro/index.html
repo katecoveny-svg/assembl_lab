@@ -61,15 +61,21 @@
   <ol class="fact-row" id="facts"></ol>
 </section>
 
-<!-- the project, tagged -->
-<section class="cloudplate" aria-labelledby="cloud-h">
-  <div class="cloud-head"><p class="mono">16A · two timber homes · Plan to 4D</p><h2 id="cloud-h">Every product, tagged in the project.</h2></div>
-  <figure class="hero-stage">
-    <canvas id="cloud" aria-hidden="true"></canvas>
-    <div class="tags" id="tags" aria-hidden="true"></div>
-    <noscript><p class="mono">The 3D view needs JavaScript. Everything it shows is also written below.</p></noscript>
-  </figure>
-  <p class="cap"><span class="mono" id="cloud-cap">Sampled from the Plan to 4D model, not a scan.</span></p>
+<!-- a room, assembled as you scroll -->
+<section class="interior" id="room-sec" aria-labelledby="room-h">
+  <div class="room-pin">
+    <div class="room-head"><p class="mono">Sample products · a room, assembled as you scroll</p><h2 id="room-h">Every product, placed in the room.</h2></div>
+    <div class="room-stage">
+      <canvas id="room" aria-hidden="true"></canvas>
+      <div class="room-tags" id="room-tags" aria-hidden="true"></div>
+      <div class="room-card" id="room-card"><b id="room-n">01</b><div><p class="nm" id="room-nm">Scroll to furnish the room</p><p class="mono" id="room-sup">Sample products</p></div></div>
+      <p class="room-cap mono">A 3D room built in code from sample products, not a photograph.</p>
+    </div>
+    <ol class="sr">
+      <li>Engineered oak, natural matt</li><li>Thermally broken aluminium joinery, matt black</li><li>Engineered stone benchtop, low silica, warm white</li>
+      <li>Three-seat sofa</li><li>Armchair, coffee tables and rug</li><li>Dining table and four chairs</li><li>Pendant and floor lamp</li><li>Kitchen mixer, counter stools and a fern</li>
+    </ol>
+  </div>
 </section>
 
 <!-- 01 catalogue -->
@@ -324,7 +330,7 @@
 <script type="module" src="./page.js"></script>
 <script type="module" src="./drawset.js"></script>
 <script type="module" src="./field.js"></script>
-<script type="module" src="./hero.js"></script>
+<script type="module" src="./interior.js"></script>
 <script type="module" src="./agent.js"></script>
 <script type="module" src="./motion.js"></script>
 </body>
