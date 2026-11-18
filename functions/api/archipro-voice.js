@@ -1,6 +1,6 @@
 // assembl lab · the studio guide's voice on the ArchiPro concept page: text in, speech out, through ElevenLabs.
 // Cloudflare Pages Function. Needs the ELEVENLABS_API_KEY secret and ELEVENLABS_VOICE_ID (the New Zealand voice chosen in
-// ElevenLabs). Optional: ELEVENLABS_MODEL (default eleven_multilingual_v2), ARCHIPRO_VOICE_DAILY_CHARS (per running
+// ElevenLabs). Locked (Kate, 18 Nov): Tāne on Eleven v4, which speaks te reo Māori. ARCHIPRO_VOICE_DAILY_CHARS (per running
 // instance, default 60000 characters a day). Text is not stored. Without the key, the page falls back to the browser's
 // own voice and says so.
 // Delivery (Kate, 18 Nov): a touch quicker and a little more lively than the voice's default. Optional env overrides:
@@ -30,13 +30,14 @@ export async function onRequest({ request, env }) {
   if (!ready) return json(503, { error: "not_configured" });
   let body; try { body = await request.json(); } catch { return json(400, { error: "bad_json" }); }
   let text = String(body?.text ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_CHARS);
+  text = text.replace(/[\s,.;:!–—-]*\bng[āa]\s+mihi(\s+nui)?(\s+ki\s+a\s+koe)?[.!]*\s*$/i, ".").replace(/^\.$/, "").replace(/\.\.$/, ".").trim();   // no 'Ngā mihi' sign-off (Kate)
   // models: multilingual v2 has no Māori; Eleven v3 lists Māori (mi) and v4 speaks 90+ languages with IPA support.
-  // A request may pick one of these to compare takes; the default stays ELEVENLABS_MODEL until a voice is chosen.
-  // voices on trial (added to the account's My Voices from the ElevenLabs library, 18 Nov): a request may name one to compare takes
+  // Locked to Eleven v4 (Kate chose Tāne on v4, 18 Nov); a request may still pick another model only to compare takes.
+  // the voice is Tāne (ELEVENLABS_VOICE_ID). Wikitoria Maree on v4 is kept as the woman's voice, if one is ever wanted (Kate, 18 Nov)
   const VOICES = { wikitoria: "kb3tldKFXsDhAalrgD0r", mark: "rqqwhOVfRQlKcUmG0Q18" };
   const voiceId = VOICES[body?.voice] || env.ELEVENLABS_VOICE_ID;
   const MODELS = new Set(["eleven_multilingual_v2", "eleven_v3", "eleven_v4", "eleven_turbo_v2_5", "eleven_flash_v2_5"]);
-  const model = MODELS.has(body?.model) ? body.model : (env.ELEVENLABS_MODEL || "eleven_multilingual_v2");
+  const model = MODELS.has(body?.model) ? body.model : "eleven_v4";
   const native = model === "eleven_v3" || model === "eleven_v4";
   // the respellings are for the models without Māori; v3 and v4 get the real words
   if (!native && !body?.raw) for (const [re, to] of SAY(env)) text = text.replace(re, (m) => (m[0] === "k" ? to.toLowerCase() : to));
