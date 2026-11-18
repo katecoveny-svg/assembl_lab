@@ -128,3 +128,12 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
 .sheet, .sheetview { background: #fff; }
 .foot { background: #180B18; }
 .btn:focus-visible, .steps button:focus-visible, .seg button:focus-visible { outline-color: #D9BACB; }
+/* phones: one tidy header row: the mark, the project name on one line, and the two actions as small pills */
+@media (max-width: 640px) {
+  .top { gap: 10px; padding: 10px 14px; }
+  .top .brand span { display: none; }
+  .top .proj { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+  .top-actions { margin-left: 0; gap: 6px; flex: none; }
+  .top-actions .btn.sm { padding: 6px 10px; font-size: 12.5px; white-space: nowrap; }
+}
+@media (max-width: 380px) { .top-actions a.btn { display: none; } }
