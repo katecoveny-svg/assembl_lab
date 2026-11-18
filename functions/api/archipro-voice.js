@@ -8,8 +8,8 @@
 // A request may nudge speed and style within safe limits (used to compare takes); everything else is fixed here.
 const MAX_CHARS = 700;
 const clamp = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
-// words the voice gets wrong, respelled so they come out right. "Kia ora" should flow as one phrase, not two words.
-const SAY = (env) => [[/\bkia\s+ora\b/gi, env.ELEVENLABS_KIA_ORA || "Kiaora"]];
+// words the voice gets wrong, respelled so they come out right. "Kia ora" is said "keyaura" (Kate), one flowing phrase.
+const SAY = (env) => [[/\bkia\s+ora\b/gi, env.ELEVENLABS_KIA_ORA || "Keyaura"]];
 let day = "", chars = 0;
 // the assembl.co.nz home page (a separate static site) uses this voice too, so its origins get CORS headers
 const ALLOW = new Set(["assembl.co.nz", "www.assembl.co.nz", "assembl-home.pages.dev"]);
