@@ -13,26 +13,27 @@ if(!document.querySelector('link[href^="/lab/presentation.css"]')&&!document.que
 // up). It only touches elements that opt in with class "lab-std": this nav, not the page under it.
 for(const href of ['/site-v2/site-v2.css','/site-v2/lab.css','/site-v2/standard.css'])if(!document.querySelector(`link[href^="${href}"]`)){const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.append(l)}
 if(scoped)document.documentElement.dataset.labFrame=path.startsWith('/next/')?'next':path==='/study/'||path==='/study/index.html'?'study':path.startsWith('/study/year9/')?'year9':'home';
-const here=path==='/'||path==='/index.html'?'explore':path.startsWith('/discover/')||path.startsWith('/instruments/')||path.startsWith('/music/')||path.startsWith('/study/patterns/')||path.startsWith('/study/bedazzle/')||path.startsWith('/next/')||path.startsWith('/ar/')||path.startsWith('/study/print/')?'discover':path.startsWith('/study/')?'study':'';
-// The experiment nav, site-v2 (8 Nov 2026): the flat mark A + "assembl." + lab, the Lab's doors, and a pill back to assembl.co.nz.
-// Same pieces as the foundation's SiteNav (solid), styled by /site-v2/lab.css. A Menu button takes over below 880px.
-const arrow='<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
-const doors=[['explore',`${LAB}/#explore`,'The experiments'],['discover',`${LAB}/#playground`,'Playground'],['study','/study/','Study machines'],['about',`${LAB}/#about`,'About the lab']];
+// The lab bar (18 Nov 2026): the assembl.co.nz system, kept quiet. White, plum ink, square corners, one hairline;
+// the mark goes back to the lab, and one link goes to assembl.co.nz. No menus of old experiments.
 let nav=document.getElementById('al-nav');
-if(!nav){nav=document.createElement('nav');nav.id='al-nav';nav.className='site-v2 v2-tone-plum lab-std';nav.setAttribute('aria-label','assembl lab');
-  // critical paint until the stylesheets arrive: plum band, small flat mark
-  if(!document.getElementById('al-nav-critical')){const st=document.createElement('style');st.id='al-nav-critical';st.textContent='#al-nav{display:flex;align-items:center;gap:16px;min-height:72px;padding:10px 16px;background:#180B18;color:#F9F6F2;font:400 14.5px/1.4 "Instrument Sans",system-ui,sans-serif}#al-nav a{color:inherit;text-decoration:none}#al-nav .v2-wordmark{display:inline-flex;align-items:center;gap:.45em;margin-right:auto;font-size:22px;letter-spacing:-.05em}#al-nav .al-menu[hidden]{display:none}@media(max-width:880px){#al-nav .al-destinations,#al-nav .al-cta{display:none}}';document.head.append(st)}
-  nav.innerHTML=`<a class="v2-wordmark al-brand" href="${LAB}/" aria-label="assembl lab home" style="--v2-wm-size:22px;--v2-wm-a:32px"><span>assembl<span class="v2-wordmark-dot" aria-hidden="true">.</span></span><span class="lab-wm-suffix">lab</span></a><div class="al-destinations">${doors.map(([k,h,t])=>`<a data-k="${k}" href="${h}">${t}</a>`).join('')}</div><a class="v2-btn v2-btn-ghost v2-btn-sm al-cta" href="https://assembl.co.nz/" target="_top"><span class="v2-btn-label">assembl.co.nz</span><span class="v2-btn-icon" data-dir="up-right">${arrow}</span></a><button type="button" class="al-menu-btn" aria-expanded="false" aria-controls="al-menu">Menu</button><div class="al-menu" id="al-menu" hidden>${doors.map(([k,h,t])=>`<a data-k="${k}" href="${h}">${t}${arrow}</a>`).join('')}<a class="al-menu-cta" href="https://assembl.co.nz/" target="_top">assembl.co.nz${arrow}</a></div>`;
+if(!nav){nav=document.createElement('nav');nav.id='al-nav';nav.className='lab-min';nav.setAttribute('aria-label','assembl lab');
+  if(!document.getElementById('al-nav-min')){const st=document.createElement('style');st.id='al-nav-min';st.textContent=
+  '#al-nav.lab-min{all:initial;box-sizing:border-box;position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:0 clamp(16px,3.4vw,56px);background:#FFFDFB;color:#654A4E;border-bottom:1px solid rgba(101,74,78,.2);font:400 14px/1.3 "Instrument Sans","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}'+
+  '#al-nav.lab-min *{box-sizing:border-box;border-radius:0}'+
+  '#al-nav.lab-min a{color:#654A4E;text-decoration:none;background:none;border:0;margin:0;padding:0}'+
+  '#al-nav.lab-min .lm-mark{display:inline-flex;align-items:center;gap:10px;font:600 21px/1 "Instrument Sans","Helvetica Neue",Arial,sans-serif;letter-spacing:-.05em}'+
+  '#al-nav.lab-min .lm-mark i{font-style:normal;opacity:.55}'+
+  '#al-nav.lab-min .lm-mark em{font:500 11px/1 "IBM Plex Mono",ui-monospace,Menlo,monospace;font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;background:#654A4E;color:#FFFDFB}'+
+  '#al-nav.lab-min .lm-out{display:inline-flex;align-items:center;min-height:44px;border-bottom:1px solid transparent}'+
+  '#al-nav.lab-min .lm-out span{display:inline-block;padding:3px 0;border-bottom:1px solid transparent}'+
+  '#al-nav.lab-min .lm-out:hover span{border-bottom-color:#654A4E}'+
+  '#al-nav.lab-min a:focus-visible{outline:1.5px solid #654A4E;outline-offset:3px}'+
+  '@media print{#al-nav.lab-min{display:none}}';document.head.append(st)}
+  nav.innerHTML=`<a class="lm-mark" href="${LAB}/" aria-label="assembl lab home"><span>assembl<i>.</i></span><em>lab</em></a><a class="lm-out" href="https://www.assembl.co.nz/" target="_top"><span>assembl.co.nz&nbsp;↗</span></a>`;
   // after a page's own skip link, so "Skip to …" stays the first tab stop
   const first=document.body.firstElementChild;
   if(first&&first.matches('a.skip,a.skip-link,a[class*="skip"]'))first.after(nav);else document.body.prepend(nav);
-  const btn=nav.querySelector('.al-menu-btn'),menu=nav.querySelector('.al-menu');
-  const set=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',String(v));btn.textContent=v?'Close':'Menu'};
-  btn.addEventListener('click',()=>set(menu.hidden));
-  menu.addEventListener('click',e=>{if(e.target.closest('a'))set(false)});
-  addEventListener('keydown',e=>{if(e.key==='Escape'&&!menu.hidden){set(false);btn.focus()}});
 }
-nav.querySelectorAll('[data-k]').forEach(a=>{if(a.dataset.k===here)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
 })();
 } else {
 (() => {

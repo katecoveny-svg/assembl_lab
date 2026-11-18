@@ -35,3 +35,8 @@ for (const a of $$(".twins .peek")) {
   const show = () => { if (!twins) return; twins.dataset.scene = a.dataset.twin; window.__field?.change(a.dataset.twin); $$(".twins .peek").forEach((p) => p.classList.toggle("on", p === a)); };
   a.addEventListener("pointerenter", show); a.addEventListener("focus", show);
 }
+
+// over the footer there is no picture behind the header, so it sits on a white bar to stay readable
+const solidFrom = document.querySelector(".site-foot");
+if (solidFrom) new IntersectionObserver(([e]) => document.body.classList.toggle("solid-top", e.isIntersecting || e.boundingClientRect.top < 0),
+  { rootMargin: "0px 0px -100% 0px" }).observe(solidFrom);
