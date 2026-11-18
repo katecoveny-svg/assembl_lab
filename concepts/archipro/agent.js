@@ -34,16 +34,17 @@ function assemble() {
 const vv = window.visualViewport;
 function fitPanel() {
   if (panel.hidden || innerWidth > 600 || !vv) { panel.style.height = panel.style.top = panel.style.bottom = ""; return; }
-  panel.style.top = `${Math.round(vv.offsetTop + 10)}px`; panel.style.bottom = "auto"; panel.style.height = `${Math.round(Math.min(780, vv.height - 20))}px`;
+  const isLow = panel.classList.contains("low"), h = Math.round(isLow ? vv.height * (panel.classList.contains("touring") ? 0.3 : 0.42) : Math.min(780, vv.height - 20));
+  panel.style.top = `${Math.round(isLow ? vv.offsetTop + vv.height - h - 8 : vv.offsetTop + 10)}px`; panel.style.bottom = "auto"; panel.style.height = `${h}px`;
 }
 vv?.addEventListener("resize", fitPanel); vv?.addEventListener("scroll", fitPanel); addEventListener("orientationchange", () => setTimeout(fitPanel, 300));
-function open() { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); if (!eleven || !live) check(); fitPanel(); assemble(); if (innerWidth > 600) input.focus({ preventScroll: true }); if (!log.children.length) hello(); }
-function close() { panel.hidden = true; fab.setAttribute("aria-expanded", "false"); stopVoice(); fab.focus({ preventScroll: true }); }
+function open(opts = {}) { panel.hidden = false; fab.setAttribute("aria-expanded", "true"); if (!eleven || !live) check(); fitPanel(); assemble(); if (innerWidth > 600) input.focus({ preventScroll: true }); if (!log.children.length && !opts.quiet) hello(); }
+function close() { stopTour(); panel.hidden = true; fab.setAttribute("aria-expanded", "false"); stopVoice(); fab.focus({ preventScroll: true }); }
 $$("[data-guide-open]").forEach((b) => b.addEventListener("click", open));
 $("#guide-close").addEventListener("click", close);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) close(); });
-$("#guide-try").innerHTML = TRY.map((t) => `<button type="button">${esc(t)}</button>`).join("");
-$("#guide-try").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !busy) send(b.textContent); });
+$("#guide-try").innerHTML = `<button type="button" class="tour-chip" data-tour>Take the two-minute tour, with voice</button>` + TRY.map((t) => `<button type="button">${esc(t)}</button>`).join("");
+$("#guide-try").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || busy) return; if (b.hasAttribute("data-tour")) tour(); else send(b.textContent); });
 function hello() {
   say("Kia ora. I can walk you through the six ideas, or just do things on the page: find products, write the spec, change the house and redraw the set, print it, or put products on the real 16A homes. What would you like to see?", { speak: false });
 }
@@ -85,7 +86,7 @@ const DOING = { search_catalogue: (a) => `Searching the sample catalogue: “${a
 
 form.addEventListener("submit", (e) => { e.preventDefault(); const t = input.value.trim(); if (t && !busy) send(t); });
 async function send(text) {
-  busy = true; input.value = ""; panel.classList.add("asked"); you(text); stopVoice();
+  stopTour(); busy = true; input.value = ""; panel.classList.add("asked"); you(text); stopVoice();
   let w = waiting();
   try {
     if (live === null) await check();
@@ -133,7 +134,7 @@ function snapshot() {
 
 // ---------------------------------------------------------------------------------------------- tools: the same controls a person has
 const m = (v) => (v == null ? undefined : Math.round(+v * 1000));
-const low = () => { if (small()) panel.classList.add("low"); };
+const low = () => { if (small()) { panel.classList.add("low"); fitPanel(); } };
 async function run(name, a) {
   const P = window.__page, S = window.__studio;
   if (name === "search_catalogue") { low(); const r = P.ask(a.query); return { result: r, did: `Searched the sample catalogue: “${a.query}”` }; }
@@ -217,4 +218,81 @@ if (SR) {
     rec.start();
   });
 }
-panel.addEventListener("pointerdown", () => panel.classList.remove("low"));
+panel.addEventListener("pointerdown", () => { if (!touring && panel.classList.contains("low")) { panel.classList.remove("low"); fitPanel(); } });
+
+// ---------------------------------------------------------------------------------------------- the tour: the guide walks you through, out loud
+// Each stop scrolls the page and says one or two sentences in the ElevenLabs voice (or the browser's, or silently), then
+// moves on when the line finishes. Closing the guide, asking a question or pressing Stop ends it.
+const TOUR = [
+  { to: null, line: "Kia ora, I'm the studio guide. Kate built this page for ArchiPro's Director, AI Special Projects role: six ideas, each one working right here. I'll take you round in about two minutes." },
+  { to: "why", line: "First, why now. ArchiPro's own numbers show far more people arriving from AI assistants than a year ago." },
+  { to: "room-sec", room: true, line: "Here's me at work. Ask for a room and I furnish it from the sample catalogue, one product at a time, each one tagged as it lands." },
+  { to: "catalogue", line: "Idea one: the catalogue AI assistants quote. Published as structured data, so when someone asks ChatGPT or Claude, the answer and the enquiry come back through ArchiPro." },
+  { to: "specify", line: "Two: a specification assistant for architects. Set the brief once, and it shortlists, compares the trade-offs and writes the spec lines. It never says a product complies." },
+  { to: "drawings", line: "Three: from a brief to a printed set. Change the house and the 3D, the four A3 sheets and the code pre-check all redraw." },
+  { to: "home", line: "Four: a homeowner companion, with products shown on a real house, in the real sun for its site." },
+  { to: "join", line: "Five: from trial to paying member, self-serve. An agent drafts a practice's profile from its own website, and the owner checks it before anything goes live." },
+  { to: "team", line: "Six: agent teams in Auckland, Sydney and Los Angeles. Agents prepare the work overnight, and nothing leaves ArchiPro until a named person approves it." },
+  { to: "plan", line: "And this is how Kate would start: pick one idea, agree the baseline first, ship it to a small group, and widen only on the evidence. Ask me anything, or tap a suggestion." },
+];
+let touring = false, tourId = 0, gliding = 0;
+const pill = document.createElement("button"); pill.type = "button"; pill.className = "tour-pill"; pill.hidden = true;
+pill.innerHTML = `<i aria-hidden="true"></i><span>Tour playing · tap to stop</span>`; document.body.append(pill);
+pill.addEventListener("click", () => stopTour());
+function goTo(id) {
+  if (!id) { scrollTo({ top: 0, behavior: "smooth" }); return; }
+  const el = document.getElementById(id); if (!el) return;
+  scrollTo({ top: el.getBoundingClientRect().top + scrollY - 64, behavior: "smooth" });
+}
+// the room fills as you scroll it, so the tour scrolls through it slowly while the line plays
+function glide(el, ms, id) {
+  const from = el.getBoundingClientRect().top + scrollY, to = from + el.offsetHeight - innerHeight, t0 = performance.now(); gliding = id;
+  const stop = () => { gliding = 0; }; addEventListener("wheel", stop, { once: true, passive: true }); addEventListener("touchstart", stop, { once: true, passive: true });
+  (function frame(now) {
+    if (gliding !== id || id !== tourId) return;
+    const k = Math.min(1, (now - t0) / ms), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    scrollTo({ top: from + (to - from) * e, behavior: "instant" }); if (k < 1) requestAnimationFrame(frame); else gliding = 0;
+  })(t0);
+}
+function speakWait(text, id) {
+  return new Promise((resolve) => {
+    let over = false; const done = () => { if (!over) { over = true; resolve(); } };
+    const quiet = () => setTimeout(done, Math.max(2600, text.length * 62));
+    if (!voiceOn) return quiet();
+    const clean = text.replace(/\s+/g, " ").trim().slice(0, 680);
+    (async () => {
+      if (eleven) {
+        try {
+          const r = await fetch("/api/archipro-voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: clean }) });
+          if (r.ok) {
+            const blob = await r.blob(); if (id !== tourId) return done();
+            stopVoice(); audioUrl = URL.createObjectURL(blob); player.src = audioUrl; player.onended = () => { player.onended = null; done(); };
+            await player.play(); setTimeout(done, clean.length * 120 + 6000); return;
+          }
+        } catch { /* fall back to the browser's voice */ }
+      }
+      if ("speechSynthesis" in window && browserVoice()) {
+        const u = new SpeechSynthesisUtterance(clean), v = browserVoice(); u.voice = v; u.lang = v.lang;
+        u.onend = done; u.onerror = done; speechSynthesis.cancel(); speechSynthesis.speak(u); setTimeout(done, clean.length * 95 + 5000); return;
+      }
+      quiet();
+    })();
+  });
+}
+async function tour() {
+  if (touring) return; touring = true; const id = ++tourId; unlock();
+  open({ quiet: true }); panel.classList.add("asked", "touring"); low();
+  for (const s of TOUR) {
+    if (id !== tourId) break;
+    const tuck = !!s.room; panel.classList.toggle("tucked", tuck); pill.hidden = !tuck;
+    const m = say(s.line, { speak: false }); log.scrollTop = Math.max(0, m.offsetTop - 10);
+    if (s.room) { const el = document.getElementById(s.to); goTo(s.to); setTimeout(() => { if (id === tourId && el) glide(el, Math.max(9000, s.line.length * 70), id); }, 900); }
+    else goTo(s.to);
+    await speakWait(s.line, id);
+    if (id !== tourId) break; await new Promise((r) => setTimeout(r, s.room ? 1600 : 450));
+  }
+  if (id === tourId) { touring = false; gliding = 0; panel.classList.remove("touring", "tucked"); pill.hidden = true; }
+}
+function stopTour() { if (!touring) return; touring = false; tourId++; gliding = 0; player.onended = null; stopVoice(); panel.classList.remove("touring", "tucked"); pill.hidden = true; fitPanel(); }
+document.querySelectorAll("[data-tour]").forEach((b) => { if (!b.closest("#guide-try")) b.addEventListener("click", () => tour()); });
+$("#guide-stop")?.addEventListener("click", stopTour);
