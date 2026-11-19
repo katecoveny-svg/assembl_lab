@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Architecture experiments · assembl. lab</title>
+<meta name="description" content="An early geometry and export proof, alongside Assembl's live architecture experiments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color:#362529;background:#fffdfb;font:16px/1.55 'Instrument Sans',system-ui,sans-serif;--plum:#654a4e;--rose:#e3d0d2;--rule:#aa9195}
+*{box-sizing:border-box}body{margin:0}a{color:inherit;text-underline-offset:.2em}a:focus-visible{outline:2px solid;outline-offset:4px}main,header,footer{max-width:1120px;margin:auto;padding-inline:clamp(20px,6vw,70px)}header{display:flex;align-items:center;justify-content:space-between;min-height:76px;gap:16px}.brand{font-size:30px;font-weight:500;letter-spacing:-.05em;text-decoration:none;color:var(--plum)}.mono{font:600 .72rem/1.5 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}.hero{background:var(--rose);padding:clamp(25px,7vw,82px) clamp(20px,6vw,64px);border:1px solid var(--rule)}h1,h2,h3,p{margin:0 0 .68em}h1{font-size:clamp(2.6rem,7vw,5.8rem);line-height:1;letter-spacing:-.065em;margin-bottom:.35em;font-weight:500}h2{font-size:clamp(1.65rem,4vw,2.9rem);letter-spacing:-.04em;line-height:1.1}h3{font-size:1.15rem}p{max-width:65ch}.hero p:last-child{margin-bottom:0}.section{padding:clamp(28px,6vw,68px) 0;border-bottom:1px solid var(--rule)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{border:1px solid var(--rule);padding:18px;min-width:0}.card>p{margin:.3em 0}.asset{display:block;width:100%;background:#eee6e2;aspect-ratio:4/3;object-fit:contain;margin-bottom:14px}footer{padding-block:20px;color:var(--plum)}@media(max-width:660px){.grid{grid-template-columns:1fr}.hero{margin-inline:0}}
+</style>
+</head>
+<body>
+<header><a class="brand" href="https://lab.assembl.co.nz/">assembl.</a><span class="mono">Lab / Architecture</span></header>
+<main>
+<section class="hero">
+<p class="mono">01 / Architecture experiments</p>
+<h1>From drawing<br>to model.</h1>
+<p>An early Assembl geometry study and export, alongside the tools you can try in the Lab today.</p>
+</section>
+<section class="section" aria-labelledby="pavilion">
+<p class="mono">02 / Original Codex study</p>
+<h2 id="pavilion">The pavilion</h2>
+<p>A synthetic 8 × 6 m pavilion, not a client project. This is an early proof that one model can produce a plan, a 3D file and a short walkthrough. It’s not a finished photoreal render or an engineering check.</p>
+<div class="grid">
+<article class="card"><video class="asset" controls playsinline preload="metadata" poster="render.webp" aria-label="Early synthetic pavilion walkthrough"><source src="walkthrough.mp4" type="video/mp4"><a href="walkthrough.mp4">Download the walkthrough</a></video><h3>Watch the walkthrough</h3><p><a href="walkthrough.mp4">Open the MP4</a> · <a href="render.webp">View the still</a></p></article>
+<article class="card"><img class="asset" src="plan.svg" alt="Technical floor plan of the synthetic pavilion"><h3>Inspect the plan and model</h3><p><a href="plan.svg">Open the vector plan</a> · <a href="building.glb" download>Download the GLB model</a></p></article>
+</div>
+</section>
+<section class="section" aria-labelledby="lab">
+<p class="mono">03 / Explore the Lab</p>
+<h2 id="lab">Try the interactive tools</h2>
+<div class="grid">
+<article class="card"><h3><a href="https://lab.assembl.co.nz/plan-studio/twins/services/">Services in 3D</a></h3><p>Explore proposed pipe, duct and cable routes. The software’s checks are advisory.</p></article>
+<article class="card"><h3><a href="https://lab.assembl.co.nz/plan-studio/twins/16a/">Walk the 16A model</a></h3><p>Explore the house and see its construction sequence.</p></article>
+</div>
+</section>
+</main>
+<footer class="mono">assembl. lab · Tāmaki Makaurau Auckland</footer>
+</body>
+</html>
