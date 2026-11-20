@@ -106,6 +106,7 @@ async function send(text) {
         return;
       }
       if (j.route === "fallback" && route !== "fallback") { route = "fallback"; modelName = j.model; label(); }
+      if (j.route === "other" && j.label && modelName !== j.label) { modelName = j.label; label(); }
       history.push({ role: "assistant", content: j.content });
       const uses = j.content.filter((b) => b.type === "tool_use");
       if (j.stop_reason !== "tool_use" || !uses.length) {
