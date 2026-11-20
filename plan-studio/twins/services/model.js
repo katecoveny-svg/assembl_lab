@@ -488,6 +488,7 @@ export function buildServices(model, buildingId) {
   const firstPerBed = beds.map((r) => ({ room: r.name, dist: Math.min(...firstAlarm.filter((d) => d.room === r.name).map((d) => (inRoom(alarms.slice(0, 1), d.r) ? 0 : d.dist))) }));
 
   // ------------------------------------------------------------------ clashes: first pass, then each system on its own level, then nudge any left
+  { const n = {}, pre = { hvac: "A", water: "W", drain: "D", elec: "E" }; for (const r of runs) { n[r.sys] = (n[r.sys] || 0) + 1; r.id = `${pre[r.sys]}-${String(n[r.sys]).padStart(2, "0")}`; } }
   for (const r of runs) r.firstPts = r.first == null ? r.pts.map((p) => p.slice()) : r.pts.map((p) => [p[0], Math.abs(p[1] - r.first) < 0.6 ? r.first : p[1], p[2]]);
   const firstClashes = clashes(runs, true);
   const levelled = clashes(runs, false);
@@ -558,14 +559,16 @@ function segsOf(r, first) {
 }
 function clashes(runs, first) {
   const segs = runs.flatMap((r) => segsOf(r, first));
-  let count = 0; const at = [], pairs = [];
+  const pairs = [], byPair = new Map();
   for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
     const s = segs[i], t = segs[j];
     if (s.sys === t.sys) continue;
     const { d, p } = segDist(s.a, s.b, t.a, t.b);
-    if (d < s.rad + t.rad - 1e-4) { count++; at.push(p); pairs.push([s, t]); }
+    if (d < s.rad + t.rad - 1e-4) { pairs.push([s, t]); const k = s.run.id + "|" + t.run.id, gap = d - s.rad - t.rad, was = byPair.get(k); if (!was || gap < was.gap) byPair.set(k, { a: s.run, b: t.run, gap, at: p }); }
   }
-  return { count, at, pairs };
+  // one issue per pair of runs, worst contact first. Straight-segment proxies at design sizes: approximate, not exact solids
+  const issues = [...byPair.values()].sort((x, y) => x.gap - y.gap).map((x, i) => ({ id: `C-${String(i + 1).padStart(2, "0")}`, ...x, tol: 0, proxy: true }));
+  return { count: issues.length, at: issues.map((x) => x.at), pairs, issues };
 }
 function clashCountOf(run, runs) {
   const mine = segsOf(run, false), others = runs.filter((r) => r !== run && r.sys !== run.sys).flatMap((r) => segsOf(r, false));

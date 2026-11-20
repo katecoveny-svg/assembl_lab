@@ -9,7 +9,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
-import { SYSTEMS, HOT, buildServices } from "./model.js?v=3";
+import { SYSTEMS, HOT, buildServices } from "./model.js?v=4";
 
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const phone = matchMedia("(max-width: 860px)").matches || (navigator.hardwareConcurrency || 8) <= 4;
@@ -27,6 +27,8 @@ if (qs.get("plan") === "dropped") {
   if (!model) $("#source").textContent = "That plan isn't in this tab any more, so this is the 16A plan.";
 }
 if (!model) model = await (await fetch("./plan16a.json")).json();
+// the plan revision every clash is bound to: a hash of the plan model
+const REV = (() => { let h = 0x811c9dc5; const s = JSON.stringify(model); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, "0"); })();
 const homes = model.buildings.filter((b) => b.levels?.[0]?.rooms?.length && b.levels[0].walls?.length);
 const RESULTS = new Map(homes.map((b) => [b.id, buildServices(model, b.id)]));
 const is16A = planName === "16A";
@@ -64,7 +66,7 @@ controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enabled =
 controls.maxPolarAngle = Math.PI * 0.47; controls.minPolarAngle = 0.05;
 // lens effects on larger screens (off on phones and low-power devices)
 let composer = null, bokeh = null;
-if ((!phone || qs.get("fx") === "1") && qs.get("fx") !== "0") {
+if (qs.get("fx") === "1") {   // optional lens pass, presentation only; clash review always renders sharp
   scene.background = new THREE.Color(0xf6efec); scene.backgroundIntensity = 1.8; renderer.setClearAlpha(1);   // the lens passes need a solid ground behind the model
   composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
   composer.addPass(new RenderPass(scene, camera));
@@ -135,6 +137,7 @@ const M = {
   clash: new THREE.LineBasicMaterial({ color: 0x654a4e, transparent: true, opacity: 0, toneMapped: false, depthTest: false }),
   ring: new THREE.MeshBasicMaterial({ color: 0xd9bacb, transparent: true, opacity: 0, toneMapped: false, depthTest: false, depthWrite: false }),
   tip: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, toneMapped: false }),
+  prop: new THREE.LineDashedMaterial({ color: 0x654a4e, dashSize: 0.07, gapSize: 0.045, transparent: true, opacity: 0, depthTest: false, toneMapped: false }),
   clip: std({ color: 0xb9b3b1, metalness: 0.6, roughness: 0.4 }),
 };
 const PIPE = {
@@ -164,7 +167,7 @@ function build(sel) {
   const ids = sel === "all" ? homes.map((b) => b.id) : [sel];
   const floor0 = Math.min(...ids.map((id) => homes.find((b) => b.id === id).floorLevel ?? 0));
   const root = new THREE.Group(); scene.add(root);
-  const out = { root, pieces: [], symbols: [], homes: [], clashes: [], fittings: [], flows: [], lamps: [], leds: [], pools: [], clashPts: [], shots: [], sysGroups: [], walls: [], planMats: [], tips: null, ids };
+  const out = { root, pieces: [], symbols: [], homes: [], clashes: [], fittings: [], flows: [], lamps: [], leds: [], pools: [], clashPts: [], shots: [], issues: [], pileXZ: [], sysGroups: [], walls: [], planMats: [], tips: null, ids };
   const bb = new THREE.Box3();
   let groundY = Infinity;
   const placed = ids.map((id) => {
@@ -235,7 +238,7 @@ function buildHome(S, g, out, G) {
       piles.add(mesh(new THREE.BoxGeometry(fw - 0.02, 0.1, 0.09), M.joist, F.u0 + fw / 2, -0.22, bz));
       for (let i = 0; i <= nx; i++) {
         const px = nudge(F.u0 + 0.12 + ((fw - 0.24) * i) / nx, (q) => horiz.some(([a, b]) => segPointXZ(a, b, q, bz) < 0.17) || risers.some((r) => Math.hypot(r[0] - q, r[1] - bz) < 0.17)); if (px == null) continue;
-        const h = -0.27 - G; piles.add(mesh(new THREE.BoxGeometry(0.125, h, 0.125), M.pile, px, -0.27 - h / 2, bz), mesh(new THREE.BoxGeometry(0.32, 0.07, 0.32), M.pad, px, G + 0.035, bz));
+        const h = -0.27 - G; out.pileXZ.push([px + g.position.x, bz + g.position.z]); piles.add(mesh(new THREE.BoxGeometry(0.125, h, 0.125), M.pile, px, -0.27 - h / 2, bz), mesh(new THREE.BoxGeometry(0.32, 0.07, 0.32), M.pad, px, G + 0.035, bz));
       }
     }
   }
@@ -286,6 +289,7 @@ function buildHome(S, g, out, G) {
     out.pieces.push({ sys: s.sys, obj: o, parts: s.sys === "elec" ? 1 : 0, home: o.position.clone(), label: s.label, pick: true });
   }
   // ------------------------------------------------ runs: tubes with rounded bends, laid on the first-pass route, then rerouted
+  const hotRuns = new Set(S.firstClashes.issues.flatMap((i) => [i.a, i.b]));
   const runsSorted = [...S.runs].sort((a, b) => ORDER.indexOf(a.sys) - ORDER.indexOf(b.sys));
   for (const r of runsSorted) {
     const isDuct = r.kind === "duct", rad = isDuct ? r.w / 2 : r.sys === "water" ? Math.max(r.r, 0.019) : r.sys === "elec" ? Math.max(r.r, 0.0125) : r.kind === "refrig" ? 0.036 : r.sys === "drain" ? Math.max(r.r, 0.03) : r.r;
@@ -308,21 +312,21 @@ function buildHome(S, g, out, G) {
     out.pieces.push({ sys: r.sys, run: r, mesh: m, segs, radial, curveF, curveI, len: lenF, parts, rad, label: r.label, pick: true, dur: Math.max(0.45, Math.min(1.3, lenF / 6)), group: SG[r.sys], hot: r.hot });
     // fittings and clips go on once the route is final
     fittingsFor(r, curveF, rad, SG[r.sys], out);
+    // the proposed reroute of a clashing run, as a dashed diff, until it is approved
+    if (hotRuns.has(r)) { const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curveF.getSpacedPoints(Math.max(8, Math.ceil(lenF / 0.05)))), M.prop); ln.computeLineDistances(); ln.renderOrder = 7; ln.raycast = () => {}; SG[r.sys].add(ln); }
     // flow beads along the final route (not on drops, vents or refrigerant lines)
     if (!["drop", "vent", "refrig", "duct"].includes(r.kind)) {
       const n = Math.max(1, Math.min(9, Math.round(lenF / 0.85)));
       for (let i = 0; i < n; i++) out.flows.push({ curve: curveF, len: lenF, phase: i / n, sys: r.sys, hot: r.hot, rad, group: SG[r.sys] });
     }
   }
-  // first-pass clash points, on their flattened levels: one square cell each
-  const seen = [];
-  for (const p of S.firstClashes.at) {
-    out.clashPts.push(V3(p[0], p[1], p[2]).add(g.position));
-    if (seen.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]) < 0.1)) continue; seen.push(p);
+  // first-pass clashes: one square cell per issue (a pair of runs), selectable
+  for (const issue of S.firstClashes.issues) {
+    const p = issue.at; out.clashPts.push(V3(p[0], p[1], p[2]).add(g.position));
     const cg = new THREE.Group(); cg.position.set(p[0], p[1], p[2]);
     const cell = new THREE.LineSegments(CELL_EDGE, M.clash); cell.renderOrder = 6;
     const fillM = new THREE.Mesh(CELL_BOX, M.ring); fillM.renderOrder = 5;
-    cg.add(cell, fillM); g.add(cg); out.clashes.push({ g: cg });
+    cg.add(cell, fillM); g.add(cg); out.clashes.push({ g: cg }); out.issues.push({ issue, g: cg, home: nameOf(S.building) });
   }
   out.homes.push({ S, g, SG });
 }
@@ -588,6 +592,7 @@ function panelFor() {
 
 // ---------------------------------------------------------------------------------------------------- timeline
 const END = 31;
+const HOLD = 23.3; let approved = reduce;
 let t = reduce ? END : 0, playing = !reduce, userMoved = false, explode = 0, explodeGoal = 0, orbit = 0;
 const ease = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 const back = (x) => { x = Math.min(1, Math.max(0, x)); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
@@ -599,6 +604,7 @@ const EXPL = { drain: -0.95, water: -0.48, fix: 0, elec: 0.55, hvac: 1.15 };
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v = V3(), _s = V3();
 
 function apply(dt, now) {
+  if (!approved && t > HOLD) t = HOLD;   // a reroute is only applied after approval
   const k3 = span(8.0, 10.6); shotW = 0;
   // camera: top-down plan, then a slow tilt into 3D, then (until someone takes over) a slow turn round the model
   if (!userMoved) {
@@ -621,9 +627,9 @@ function apply(dt, now) {
     camera.lookAt(controls.target);
   }
   controls.enabled = t >= 10.6;
-  controls.minDistance = shotW > 0.001 ? 0.4 : cam.minD; controls.maxPolarAngle = Math.PI * (shotW > 0.001 ? 0.62 : 0.47);
-  workLight.intensity = 7 * shotW; if (shotW > 0.001) workLight.position.copy(camera.position).add(_p.set(0, 0.2, 0));
-  if (bokeh) { bokeh.uniforms.focus.value = camera.position.distanceTo(controls.target); bokeh.uniforms.aperture.value = 0.0003 + 0.0065 * shotW; }
+  const close = shotW > 0.001 || (t >= 19.4 && t < 26); controls.minDistance = close ? 0.4 : cam.minD; controls.maxPolarAngle = Math.PI * (close ? 0.62 : 0.47);
+  const wl = Math.max(shotW, selIssue != null && t < 26 ? 1 : 0); workLight.intensity = 7 * wl; if (wl > 0.001) workLight.position.copy(camera.position).add(_p.set(0, 0.2, 0));
+  if (bokeh) { bokeh.uniforms.focus.value = camera.position.distanceTo(controls.target); bokeh.uniforms.aperture.value = 0.0003; }
   setShift(k3);
   // plan and floor: the plan fades in, then the floor turns to a pale sheet you can see the subfloor through
   for (const { mat } of W.planMats) mat.opacity = Math.min(1, t / 0.8) * (1 - span(8.4, 10.8));
@@ -663,6 +669,8 @@ function apply(dt, now) {
   W.tips.count = tips; W.tips.instanceMatrix.needsUpdate = true;
   // the first pass's clash points flash, then clear as each system moves to its own level
   const c = span(19.4, 19.9) * (1 - span(24.5, 25.3));
+  M.prop.opacity = 0.95 * span(20.4, 21.2) * (1 - span(23.5, 24.6));
+  $("#issues").classList.toggle("show", t >= 19.4 && t < 26 && W.issues.length > 0); $("#approve").hidden = approved; $("#undo").hidden = !approved || !W.issues.length;
   M.clash.opacity = c; M.ring.opacity = c * (0.16 + 0.1 * Math.sin(now / 240));
   for (const x of W.clashes) x.g.visible = c > 0.01;
   const nFirst = W.ids.reduce((s, id) => s + RESULTS.get(id).firstClashes.count, 0), nFinal = W.ids.reduce((s, id) => s + RESULTS.get(id).finalClashes.count, 0);
@@ -726,6 +734,36 @@ function flows(on, now) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------------- clash review: issues, evidence, approval
+const swatch = (r) => hex(r.sys === "water" && r.hot ? HOT : SYSTEMS[r.sys].color);
+let selIssue = null, goal = null;
+controls.addEventListener("start", () => { goal = null; });
+function issuesFor() {
+  selIssue = null; goal = null; $("#evidence").hidden = true;
+  $("#issues-h").textContent = `${W.issues.length} clashes · first pass`;
+  $("#issue-list").innerHTML = W.issues.map((x, i) => `<button type="button" data-i="${i}" aria-label="${x.issue.id}: ${x.issue.a.label} and ${x.issue.b.label}"><span class="mono">${x.issue.id}</span><i style="background:${swatch(x.issue.a)}"></i><i style="background:${swatch(x.issue.b)}"></i><span class="mono mm">${Math.round(-x.issue.gap * 1000)} mm</span></button>`).join("");
+}
+$("#issue-list").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) selectIssue(Number(b.dataset.i)); });
+function selectIssue(i) {
+  const x = W.issues[i]; if (!x) return;
+  selIssue = i; if (approved || t < 20) { approved = false; t = HOLD; } playing = false; userMoved = true;
+  const q = x.g.getWorldPosition(V3()), bb = W.bounds;
+  const ds = [[q.x - bb.min.x, V3(-1, 0, 0)], [bb.max.x - q.x, V3(1, 0, 0)], [q.z - bb.min.z, V3(0, 0, -1)], [bb.max.z - q.z, V3(0, 0, 1)]].sort((a, b) => a[0] - b[0]);
+  // stand just outside the nearest wall, on whichever side gives the clearest line past the piles
+  const dir = ds[0][1], side = V3(dir.z, 0, -dir.x);
+  const pos = [-1.3, -0.8, -0.4, 0.4, 0.8, 1.3].map((k) => q.clone().addScaledVector(dir, 1.9).addScaledVector(side, k)).map((p) => ({ p, c: Math.min(9, ...W.pileXZ.map(([x, z]) => segPointXZ([p.x, 0, p.z], [q.x, 0, q.z], x, z))) })).sort((a, b) => b.c - a.c)[0].p;
+  pos.y = q.y < 0 ? Math.max(W.ground + 0.2, q.y - 0.02) : q.y + 0.5;
+  goal = { pos, tgt: q };
+  for (const b of $("#issue-list").children) b.setAttribute("aria-pressed", String(Number(b.dataset.i) === i));
+  W.issues.forEach((y, k) => y.g.scale.setScalar(k === i ? 1.25 : 0.6));
+  const is = x.issue, m = (v) => v.toFixed(2);
+  $("#evidence").hidden = false;
+  $("#evidence").innerHTML = `<p class="mono">${is.id} · first pass · rev ${REV}${W.ids.length > 1 ? " · " + x.home : ""}</p><p class="ev-t">${is.a.id} ${is.a.label}<br>× ${is.b.id} ${is.b.label}</p><p class="mono">overlap ${Math.round(-is.gap * 1000)} mm · rule: surfaces closer than ${is.tol} mm · x ${m(is.at[0])} y ${m(is.at[1])} z ${m(is.at[2])} m</p><p class="mono">Approximate: straight-segment proxies at design sizes, not exact solids.</p>`;
+  history.replaceState(null, "", location.pathname + location.search + `#${is.id}@${REV}`);
+}
+$("#approve").addEventListener("click", () => { approved = true; t = Math.max(t, HOLD); playing = true; userMoved = false; goal = null; selIssue = null; W.issues.forEach((y) => y.g.scale.setScalar(1)); $("#evidence").hidden = true; history.replaceState(null, "", location.pathname + location.search); });
+$("#undo").addEventListener("click", () => { approved = false; t = HOLD; playing = false; userMoved = false; explodeGoal = 0; });
+
 // hover and tap labels
 const tip = $("#tip"), ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let lastPick = 0;
@@ -775,18 +813,24 @@ new ResizeObserver(() => frame()).observe(canvas);
 
 // ---------------------------------------------------------------------------------------------------- start, switch home, playback
 function choose(id, replay) {
-  sel = id; build(sel); flowMeshes(); frame(); panelFor();
-  if (replay) { t = reduce ? END : 9.0; playing = !reduce; userMoved = false; orbit = 0; }
+  sel = id; build(sel); flowMeshes(); frame(); panelFor(); issuesFor();
+  if (replay) { approved = reduce; t = reduce ? END : 9.0; playing = !reduce; userMoved = false; orbit = 0; }
   const u = new URL(location.href); if (id === homes[0].id) u.searchParams.delete("home"); else u.searchParams.set("home", id); history.replaceState(null, "", u);
 }
 choose(sel, false);
+{ // a saved issue view reopens only on the plan revision it was made on
+  const m = location.hash.match(/^#(C-\d+)@([0-9a-f]{8})$/);
+  if (m && m[2] !== REV) $("#source").textContent = "That saved view is from another plan revision, so it was not reopened. ";
+  else if (m) { const i = W.issues.findIndex((x) => x.issue.id === m[1]); if (i >= 0) selectIssue(i); }
+}
 let last = performance.now();
 renderer.setAnimationLoop((now) => {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (playing) { t = Math.min(END, t + dt); if (t >= END) playing = false; }
+  if (playing) { const nt = t + dt; if (!approved && W.issues.length && nt >= HOLD) { t = HOLD; playing = false; } else { if (!W.issues.length) approved = true; t = Math.min(END, nt); if (t >= END) playing = false; } }
+  if (goal) { const k = 1 - Math.exp(-dt * 4); camera.position.lerp(goal.pos, k); controls.target.lerp(goal.tgt, k); if (camera.position.distanceTo(goal.pos) < 0.01) goal = null; }
   apply(dt, now); controls.update(); if (composer) composer.render(dt); else renderer.render(scene, camera);
 });
-$("#play").addEventListener("click", () => { if (t >= END) { t = 0; userMoved = false; orbit = 0; explodeGoal = 0; } playing = !playing; });
+$("#play").addEventListener("click", () => { if (t >= END) { t = 0; userMoved = false; orbit = 0; explodeGoal = 0; approved = false; } playing = !playing; });
 $("#skip").addEventListener("click", () => { t = END; playing = false; });
 $("#seek").addEventListener("input", (e) => { t = (Number(e.target.value) / 1000) * END; playing = false; if (t < 10.6) userMoved = false; });
 $("#apart").addEventListener("click", (e) => { explodeGoal = explodeGoal ? 0 : 1; e.currentTarget.setAttribute("aria-pressed", String(!!explodeGoal)); e.currentTarget.textContent = explodeGoal ? "Put it back together" : "Pull the systems apart"; });
@@ -806,4 +850,4 @@ addEventListener("drop", async (e) => {
   } catch { $("#source").textContent = "That file isn't a plan model. Drop the .json that Plan to 4D saves, or use the drop tool for a PDF."; }
 });
 if (!is16A) $("#source").textContent = `Services for ${planName}, read from the plan you dropped into Plan to 4D. It stays in this browser tab.`;
-window.__services = { RESULTS, setT: (x) => { t = x; playing = false; }, explode: (v) => { explodeGoal = v; explode = v; }, choose, cam: (p, tg) => { userMoved = true; camera.position.set(...p); controls.target.set(...tg); camera.lookAt(controls.target); } };
+window.__services = { RESULTS, setT: (x) => { approved = x > HOLD; t = x; playing = false; }, selectIssue, state: () => ({ t, approved, selIssue, rev: REV, issues: W.issues.length }), explode: (v) => { explodeGoal = v; explode = v; }, choose, cam: (p, tg) => { userMoved = true; camera.position.set(...p); controls.target.set(...tg); camera.lookAt(controls.target); } };
