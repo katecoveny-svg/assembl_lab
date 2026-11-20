@@ -57,6 +57,12 @@
           <p class="small" id="traceNote">Path tracing uses three-gpu-pathtracer on WebGPU: real light bounces, soft shadows and glass. Lines and splats are left out.</p>
         </section>
         <section class="card">
+          <h3>Arrange and review</h3>
+          <div class="row wrap"><button class="pill" id="moveMode" aria-pressed="false">Move furniture</button><button class="pill" id="pinMode" aria-pressed="false">Add a pin</button></div>
+          <ul id="pins" class="pins"></ul>
+          <p class="small">Furniture snaps to 100 mm and stays proposed. Pins are saved in this browser only.</p>
+        </section>
+        <section class="card">
           <h3>Share</h3>
           <div class="row wrap"><button class="pill solid" id="shareView">Interactive link</button><button class="pill" id="shareStill">Latest still</button><button class="pill" id="shareVideo">Latest fly-through</button></div>
           <p class="small">A link and a QR code for a phone. The interactive link opens this view with these finishes; stills and fly-throughs are saved to the lab first.</p>

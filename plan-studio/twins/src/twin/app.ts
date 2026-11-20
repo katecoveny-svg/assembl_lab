@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTexturesLib.js';
+import { initArrange } from './arrange';
 import { applyCameraFromURL, cameraQuery, shareSheet, viewLink } from './share';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
@@ -198,6 +199,7 @@ export class App {
     this.buildUI();
     this.resize();
     addEventListener('resize', () => this.resize());
+    initArrange(this);
     this.initInspector();
     this.initWalk();
     this.initShare();
