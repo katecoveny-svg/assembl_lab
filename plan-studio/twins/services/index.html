@@ -12,7 +12,7 @@
 <link rel="canonical" href="https://lab.assembl.co.nz/plan-studio/twins/services/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="./services.css?v=4">
+<link rel="stylesheet" href="./services.css?v=5">
 <script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
 </head>
 <body>
@@ -35,12 +35,22 @@
   <p id="clash" class="clash mono" role="status"></p>
   <p id="tip" class="tip mono" hidden></p>
 
+  <aside class="card issues" id="issues" aria-labelledby="issues-h">
+    <p class="kick mono" id="issues-h"></p>
+    <div id="issue-list" class="issue-list"></div>
+    <div id="evidence" class="evidence" hidden></div>
+    <button id="approve" type="button">Approve reroute</button>
+    <p class="mono note">Dashed: the proposed reroute. Nothing moves until you approve.</p>
+  </aside>
+
   <aside class="card panel" id="panel" aria-labelledby="panel-h">
     <p class="kick mono" id="panel-h">Pre-check · tap for the working</p>
     <ul id="checks" class="checks"></ul>
     <ul id="stats" class="stats"></ul>
     <ul id="notes" class="notes"></ul>
     <p class="mono small"><span id="parts-total">0</span> parts in all</p>
+    <button id="undo" type="button">Undo reroute</button>
+    <p class="mono note">Rechecked after the reroute. Zero flags does not mean compliant.</p>
   </aside>
 
   <nav class="bar" aria-label="Playback">
@@ -54,7 +64,7 @@
   <p class="fine"><span id="source"></span><span class="sq" aria-hidden="true"></span>Sample · proposed by the tool from the plan · advisory, not a compliance check</p>
   <div class="dropzone" id="dropzone" aria-hidden="true"><p>Drop a plan model (.json) to see its services</p></div>
 </main>
-<script type="module" src="./scene.js?v=4"></script>
+<script type="module" src="./scene.js?v=5"></script>
 <script src="/lab/navigation.js" defer></script>
 </body>
 </html>

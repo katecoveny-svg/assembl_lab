@@ -124,3 +124,28 @@ p, ul { margin: 0; } ul { padding: 0; list-style: none; }
 }
 .count { background: rgba(255, 253, 251, .9); padding: 14px 18px 16px; left: 20px; top: 20px; }
 @media (max-width: 860px) { .count { padding: 10px 10px 12px; left: 12px; } }
+
+/* v5: clash review. Issues bound to a plan revision, evidence on select, reroute only after approval */
+.issues { right: 20px; top: 232px; bottom: 86px; width: 250px; padding: 14px 16px; overflow-y: auto; opacity: 0; transform: translateX(16px); transition: opacity .4s var(--ease), transform .5s var(--ease); pointer-events: none; display: flex; flex-direction: column; gap: 12px; }
+.issues.show { opacity: 1; transform: none; pointer-events: auto; }
+.issue-list { display: grid; gap: 2px; }
+.issue-list button { display: grid; grid-template-columns: 44px 12px 12px 1fr; gap: 6px; align-items: center; min-height: 32px; border: 0; background: none; color: inherit; padding: 0 6px; cursor: pointer; text-align: left; }
+.issue-list button[aria-pressed="true"] { background: var(--rose); }
+.issue-list i { width: 11px; height: 11px; box-shadow: inset 0 0 0 1px rgba(101, 74, 78, .5); }
+.issue-list .mm { text-align: right; }
+.evidence { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.evidence[hidden] { display: none; }
+.evidence .mono { font-size: 10.5px; line-height: 1.45; }
+.ev-t { font-size: 13px; line-height: 1.35; }
+#approve, #undo { min-height: 44px; border: 0; background: var(--plum); color: var(--white); font: 500 14px/1 var(--sans); cursor: pointer; flex: none; }
+#undo { background: var(--white); color: var(--plum); box-shadow: inset 0 0 0 1px var(--plum); width: 100%; margin-top: 10px; }
+#approve[hidden], #undo[hidden] { display: none; }
+.note { font-size: 10.5px; line-height: 1.45; opacity: .85; margin-top: 6px; }
+.panel .small { display: none; }
+@media (max-width: 860px) {
+  .issues { left: 12px; right: 12px; top: auto; bottom: 104px; width: auto; max-height: 36%; }
+  .issue-list { grid-template-columns: 1fr 1fr; }
+  .issue-list button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .issues { transition: none; } }
+.issues #approve { order: -3; } .issues .note { order: -2; margin-top: 0; } .issues .evidence { order: -1; }
