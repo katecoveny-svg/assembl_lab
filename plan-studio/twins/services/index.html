@@ -12,7 +12,7 @@
 <link rel="canonical" href="https://lab.assembl.co.nz/plan-studio/twins/services/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="./services.css?v=3">
+<link rel="stylesheet" href="./services.css?v=4">
 <script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
 </head>
 <body>
@@ -29,14 +29,14 @@
 
   <section class="card legend-card" aria-label="Systems">
     <div id="legend"></div>
-    <p class="hint mono">Tap a system to hide or show it</p>
+    
   </section>
 
   <p id="clash" class="clash mono" role="status"></p>
   <p id="tip" class="tip mono" hidden></p>
 
   <aside class="card panel" id="panel" aria-labelledby="panel-h">
-    <p class="kick mono" id="panel-h">Pre-check · computed from the model</p>
+    <p class="kick mono" id="panel-h">Pre-check · tap for the working</p>
     <ul id="checks" class="checks"></ul>
     <ul id="stats" class="stats"></ul>
     <ul id="notes" class="notes"></ul>
@@ -51,10 +51,10 @@
     <a class="back" href="/plan-studio/twins/drop/">Use your own plan&nbsp;↗</a>
   </nav>
 
-  <p class="fine"><span id="source">Generated from the 16A plan model (drop your own plan model here, or use the drop tool).</span> The services are proposed by the tool, not taken from consent drawings: an advisory pre-check on a design study<span class="more">, with no sizing, loads or heat loss, pipes drawn fuller than life, and figures to confirm against the current Acceptable Solutions</span>. Not a compliance check, and no substitute for a licensed plumber or electrician, or your building consent authority.</p>
+  <p class="fine"><span id="source"></span><span class="sq" aria-hidden="true"></span>Sample · proposed by the tool from the plan · advisory, not a compliance check</p>
   <div class="dropzone" id="dropzone" aria-hidden="true"><p>Drop a plan model (.json) to see its services</p></div>
 </main>
-<script type="module" src="./scene.js?v=3"></script>
+<script type="module" src="./scene.js?v=4"></script>
 <script src="/lab/navigation.js" defer></script>
 </body>
 </html>

@@ -5,18 +5,18 @@
 // Units: metres. Inside a building: u east and v south of its north-west outside corner, y up from the finished floor.
 
 export const SYSTEMS = {
-  hvac:  { name: "Heating and ventilation", color: 0x6f93c9 },
-  drain: { name: "Drainage and vents",      color: 0x9a6b4f },
-  water: { name: "Water supply",            color: 0x4ba3c7 },
-  elec:  { name: "Electrical",              color: 0x8b6fb8 },
-  fix:   { name: "Fixtures and appliances", color: 0x6e6468 },
+  hvac:  { name: "Air", color: 0xb4bac1 },
+  drain: { name: "Waste", color: 0x8d9498 },
+  water: { name: "Water", color: 0x2f6fb5 },
+  elec:  { name: "Power", color: 0xf1ece4 },
+  fix:   { name: "Fixtures", color: 0x654a4e },
 };
-export const HOT = 0xc7655a;
+export const HOT = 0xc23b32;
 
 // final layout: each system keeps to its own height, which is what clears most clashes
-export const LEVEL = { ceilElec: 2.42, ceilRefrig: 2.52, ceilDuct: 2.64, underWater: -0.14, underDrain: -0.36 };
+export const LEVEL = { ceilElec: 2.42, ceilRefrig: 2.52, ceilDuct: 2.64, underWater: -0.32, underDrain: -0.52 };
 // the first pass routes everything in the ceiling at one height and under the floor at another, as a quick sketch would
-export const FIRST = { ceil: 2.45, under: -0.25 };
+export const FIRST = { ceil: 2.45, under: -0.42 };
 const FALL = 1 / 50;
 const PRI = { elec: 0, water: 1, hvac: 2, drain: 3 };   // who moves first when two runs clash
 
@@ -305,7 +305,7 @@ export function buildServices(model, buildingId) {
     add({ sys: "water", kind: "toby", ...toby, label: "Toby and meter at the boundary" });
     add({ sys: "water", kind: "tv", u: cyl.u + 0.3 * (Math.abs(cyl.face[0]) > 0.5 ? 0 : 1), v: cyl.v + 0.3 * (Math.abs(cyl.face[0]) > 0.5 ? 1 : 0), label: "Tempering valve, 50 °C" });
     const mid = cw.axis === "x" ? [toby.u, wY, cyl.v] : [cyl.u, wY, toby.v];
-    runs.push({ sys: "water", kind: "main", r: 0.016, label: "Water main", pts: dedupe([[toby.u, -0.5, toby.v], [entry.u, -0.5, entry.v], [entry.u, wY, entry.v], mid, [cyl.u, 0.2, cyl.v]]), first: FIRST.under });
+    runs.push({ sys: "water", kind: "main", r: 0.016, label: "Water main", pts: dedupe([[toby.u, -0.9, toby.v], [entry.u, -0.9, entry.v], [entry.u, wY, entry.v], mid, [cyl.u, 0.2, cyl.v]]), first: FIRST.under });
     manifold = [cyl.u + 0.18, wY, cyl.v];
     for (const f of fixtures) {
       const need = { shower: [true, false], basin: [true, false], wc: [false], sink: [true, false], dish: [false], washer: [true, false], tub: [true, false] }[f.kind];
@@ -349,7 +349,7 @@ export function buildServices(model, buildingId) {
     add({ sys: "drain", kind: "gully", ...gully, label: "Gully trap, below every fixture" });
     const exit = mw.at + (mw.out ?? 1) * 0.25, yG = yAt(aG);
     drainMain = { sys: "drain", kind: "main", r: 0.055, label: "Drain, DN100, falling to the gully", fall: FALL,
-      pts: dedupe([P(aUp, yAt(aUp)), P(aG, yG), P(aG, yG - Math.abs(exit - line) * FALL, exit), [gully.u, -0.55, gully.v]]), first: FIRST.under };
+      pts: dedupe([P(aUp, yAt(aUp)), P(aG, yG), P(aG, yG - Math.abs(exit - line) * FALL, exit), [gully.u, yG - Math.abs(exit - line) * FALL - 0.05, gully.v]]), first: FIRST.under };
     runs.push(drainMain);
     const vp = P(aUp, yAt(aUp));
     add({ sys: "drain", kind: "vent", u: vp[0], v: vp[2], label: "Vent through the roof" });
