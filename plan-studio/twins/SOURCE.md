@@ -52,7 +52,7 @@ it is. Raster PDFs are calibrated and traced in Plan to 4D first. Nothing droppe
 
 ## Rebuild
 
-The source builds with Vite inside a project that has `three@0.187`, `three-gpu-pathtracer@0.0.28`, `web-ifc@0.0.79`
-and `fflate`: put `src/twin` and `src/objects` under `src/`, `twin.html` at the root, add it to Vite's
+The source builds with Vite inside a project that has `three@0.187`, `three-gpu-pathtracer@0.0.28`, `web-ifc@0.0.79`,
+`pdfjs-dist`, `qrcode`, `@vercel/blob` and `fflate`: put `src/twin` and `src/objects` under `src/`, `twin.html` at the root, add it to Vite's
 `rollupOptions.input`, and serve `web-ifc.wasm` as base64 text at `twin/web-ifc.wasm.b64.txt` and library GLBs as `twin/lib/<ID>.glb.b64.txt`. Build with `VITE_PUBLIC_BUILD=1` for this site. Then copy the page and
 the assets it loads into `plan-studio/twins/<name>/` and add `<script src="/lab/navigation.js" defer>` before `</body>`; the drop page is the same build with `<body data-project="plan">`.
