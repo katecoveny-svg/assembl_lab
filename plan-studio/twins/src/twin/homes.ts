@@ -541,6 +541,13 @@ function joinery(op: Opening, a: number, b: number, th: number, M: TwinMats, ass
     const slide = sash(mid - 0.025 + off, b - f + off, zc + 0.022, 'sliding_panel');
     g.add(fixed, slide);
     tag(g, asset, 'IfcDoor', { predefinedType: 'DOOR', operation: 'SLIDING', overallWidth: Math.round(w * 1000), overallHeight: Math.round(h * 1000), material: 'aluminium, double glazed', source: op.source ?? 'scaled', open: !!op.open });
+  } else if (op.kind === 'door' && (op as unknown as { material?: string }).material === 'cedar') {
+    const dw = b - a - 2 * f, boards: THREE.BufferGeometry[] = [], nb = Math.max(4, Math.round(dw / 0.09));
+    for (let k = 0; k < nb; k++) boards.push(boxAt(dw / nb - 0.004, op.head - f - 0.01, 0.046, a + f + ((k + 0.5) * dw) / nb, (op.head - f) / 2, zc, M.sets.cedar.tile, 'y'));
+    const leaf = mesh('door_leaf_cedar', mergeGeometries(boards), M.cedar);
+    const pull = mesh('pull_handle', boxAt(0.025, 0.9, 0.03, b - f - 0.12, 1.1, zc - 0.055, jt, 'y'), M.joinery);
+    g.add(leaf, pull);
+    tag(g, asset, 'IfcDoor', { predefinedType: 'DOOR', operation: 'SINGLE_SWING', overallWidth: Math.round(w * 1000), overallHeight: Math.round(h * 1000), material: 'cedar board feature door in a black aluminium frame', source: op.source ?? 'scaled' });
   } else if (op.kind === 'door') {
     const leaf = sash(a + f, b - f, zc, 'door_leaf', 0.09);
     const handle = mesh('handle', boxAt(0.02, 0.18, 0.03, b - f - 0.08, 1.0, zc - 0.04, jt, 'y'), M.joinery);
@@ -728,7 +735,7 @@ function roof(spec: BuildingSpec, plate: number, M: TwinMats, asset: string, gy:
 
 // --- subfloor and decks ---------------------------------------------------------------------------
 /** bearers along u, joists along v, piles to ground, for a convex outline at top level `topY` */
-function subfloor(asset: string, M: TwinMats, poly: Pt[], topY: number, gy: (u: number, v: number) => number, name: string, joistH = 0.14) {
+function subfloor(asset: string, M: TwinMats, poly: Pt[], topY: number, gy: (u: number, v: number) => number, name: string, joistH = 0.14, post: { size: number; gap: number } = { size: 0.125, gap: 1.6 }) {
   const g = grp(`${name}_framing`);
   const ft = M.sets.framing.tile;
   const joistTop = topY;
@@ -754,19 +761,19 @@ function subfloor(asset: string, M: TwinMats, poly: Pt[], topY: number, gy: (u: 
   // bearers along u, ≤ 1.6 m apart, with piles ≤ 1.6 m apart
   const bearers: THREE.BufferGeometry[] = [];
   const piles: THREE.BufferGeometry[] = [];
-  const nb = Math.max(2, Math.ceil((vMax - vMin - 0.3) / 1.6) + 1);
+  const nb = Math.max(2, Math.ceil((vMax - vMin - 0.3) / post.gap) + 1);
   for (let i = 0; i < nb; i++) {
     const v = vMin + 0.15 + (i * (vMax - vMin - 0.3)) / (nb - 1);
     const sp = spanAt(poly, 0, v);
     if (!sp || sp[1] - sp[0] < 0.3) continue;
     bearers.push(boxAt(sp[1] - sp[0] - 0.1, bearerH, 0.09, (sp[0] + sp[1]) / 2, bearerTop - bearerH / 2, v, ft, 'x'));
-    const np = Math.max(2, Math.ceil((sp[1] - sp[0] - 0.3) / 1.6) + 1);
+    const np = Math.max(2, Math.ceil((sp[1] - sp[0] - 0.3) / post.gap) + 1);
     for (let k = 0; k < np; k++) {
       const u = sp[0] + 0.15 + (k * (sp[1] - sp[0] - 0.3)) / (np - 1);
       const gr = gy(u, v);
       const h = bearerTop - bearerH - gr + 0.05;
       if (h < 0.05) continue;
-      piles.push(boxAt(0.125, h, 0.125, u, gr - 0.05 + h / 2, v, M.sets.pile.tile, 'y'));
+      piles.push(boxAt(post.size, h, post.size, u, gr - 0.05 + h / 2, v, M.sets.pile.tile, 'y'));
     }
   }
   if (joists.length) g.add(tag(mesh(`${name}_joists`, mergeGeometries(joists), M.framing), asset, 'IfcMember', { predefinedType: 'JOIST', material: `radiata pine H3.2, ${Math.round(joistH * 1000)} × 45 at 450 centres`, source: 'assumed' }));
@@ -800,12 +807,14 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
     boards.push(boxUV(g, M.sets.decking.tile, 'x'));
   }
   if (boards.length) g.add(tag(mesh(`${name}_boards`, mergeGeometries(boards), M.decking), asset, 'IfcCovering', { predefinedType: 'FLOORING', material: 'hardwood decking 140 × 32, 5 mm gaps (TD)', source: 'written' }));
-  g.add(subfloor(asset, M, poly, top - bt, gy, name));
+  g.add(subfloor(asset, M, poly, top - bt, gy, name, 0.14, rails.includes('posts') ? { size: 0.19, gap: 3.4 } : undefined));
   // barriers on edges with a fall of 1 m or more (NZBC F4), or where the plan model asks
   const posts: THREE.BufferGeometry[] = [];
   const rail: THREE.BufferGeometry[] = [];
   const battens: THREE.BufferGeometry[] = [];
   const ft = M.sets.decking.tile;
+  const gPosts: THREE.BufferGeometry[] = [];
+  const gPanes: THREE.BufferGeometry[] = [];
   for (let i = 0; i < poly.length; i++) {
     const A = poly[i];
     const B = poly[(i + 1) % poly.length];
@@ -834,6 +843,15 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
     for (const [s0, s1] of segs) {
       const L = s1 - s0;
       if (L < 0.2) continue;
+      if (rails.includes('glass')) {
+        // glass barrier: slim black posts, a slim top rail, clear panels between
+        const ng = Math.max(1, Math.ceil(L / 1.4));
+        for (let k = 0; k <= ng; k++) { const p = at(s0 + (k * L) / ng); gPosts.push(new THREE.BoxGeometry(0.05, 1.04, 0.05).translate(p[0], top + 0.52, p[1])); }
+        const c0 = at((s0 + s1) / 2);
+        gPosts.push(new THREE.BoxGeometry(L, 0.035, 0.06).rotateY(-ang).translate(c0[0], top + 1.04, c0[1]));
+        for (let k = 0; k < ng; k++) { const c = at(s0 + ((k + 0.5) * L) / ng); gPanes.push(new THREE.BoxGeometry(L / ng - 0.09, 0.9, 0.012).rotateY(-ang).translate(c[0], top + 0.55, c[1])); }
+        continue;
+      }
       const np = Math.max(1, Math.ceil(L / 1.5));
       for (let k = 0; k <= np; k++) {
         const p = at(s0 + (k * L) / np);
@@ -854,6 +872,12 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
         battens.push(boxUV(b, ft, 'y'));
       }
     }
+  }
+  if (gPosts.length) {
+    const bal = grp(`${name}_balustrade`);
+    bal.add(mesh('posts_and_rail', mergeGeometries(gPosts), M.joinery), mesh('glass_panels', mergeGeometries(gPanes), M.glass));
+    tag(bal, asset, 'IfcRailing', { predefinedType: 'BALUSTRADE', material: 'toughened glass panels, black aluminium posts and top rail', source: 'scaled', rule: 'glass barrier as the 3D sketch shows; barrier where the fall is 1 m or more' });
+    g.add(bal);
   }
   if (posts.length) {
     const bal = grp(`${name}_balustrade`);

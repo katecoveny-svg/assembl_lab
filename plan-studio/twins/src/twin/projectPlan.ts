@@ -30,6 +30,9 @@ interface PlanModel {
   site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number }; features?: SiteFeature[]; terrain?: Terrain };
   buildings: (BuildingSpec & { origin: [number, number]; floorLevel?: number })[];
   planting?: Record<string, unknown>;
+  views?: Terrain['views'];
+  /** a finished model of the building (GLB, Y up, metres) shown instead of generating it from the walls: its floor level, and the colour for its metal cladding */
+  asBuilt?: { glb: string; ffl: number; cladding?: string; note?: string };
 }
 
 /** Real ground for the site, in the plan model's frame: a square grid of levels (rows along z, columns along x, relative to
@@ -92,6 +95,7 @@ async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, 
   const g = new THREE.Group(); g.name = 'bush_from_survey';
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
   const nearT = trees.filter(([x, z]) => Math.hypot(x - centre[0], z - centre[1]) < 48), farT = trees.filter(([x, z]) => Math.hypot(x - centre[0], z - centre[1]) >= 48);
+  const lite = matchMedia('(max-width: 760px)').matches;   // phones get the same trees with fewer leaf cards
   const nearGeo = crownGeo(3, 4);
   for (const [list, geo, shadow] of [[nearT, nearGeo, true], [farT, crownGeo(1, 2), false]] as [typeof trees, THREE.BufferGeometry, boolean][]) {
     if (!list.length) continue;
@@ -103,7 +107,7 @@ async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, 
       // the photo sees the canopy from above in its own shade: lift it, keep its hue, vary tree to tree
       c.set(`#${hex}`); const lift = 1.55 + rnd(s + 3) * 0.6, warm = 0.95 + rnd(s + 1) * 0.22;
       c.setRGB(Math.min(0.9, c.r * lift * warm), Math.min(0.9, c.g * lift * 1.06), Math.min(0.9, c.b * lift * 0.62)); crowns.setColorAt(i, c.clone().multiplyScalar(0.55));
-      const nearTree = geo === nearGeo, nc = nearTree ? 110 : 14, rx = r * 1.02, c2 = c.clone();
+      const nearTree = geo === nearGeo, nc = lite ? (nearTree ? 36 : 6) : nearTree ? 110 : 14, rx = r * 1.02, c2 = c.clone();
       for (let k = 0; k < nc; k++) {
         const u = rnd(s + k * 3.1) * 2 - 1, ph = rnd(s + k * 7.7) * 6.283, sr = Math.sqrt(1 - u * u), dx = sr * Math.cos(ph), dz = sr * Math.sin(ph), dy = Math.max(-0.35, u);
         const tangent = rnd(s + k * 1.3) < 0.6, j = (a: number) => rnd(s + k * a) * 2 - 1;
@@ -125,6 +129,28 @@ async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, 
   g.userData = { kind: 'planting', name: 'Bush', source: 'survey', note: 'One crown per tree top in the LiDAR canopy; height and spread from the survey, colour from the aerial photo. Species not identified.' };
   return g;
 }
+/** a finished building model, set on the plan model's frame: the model's front runs along +Z, so it is turned to put the downhill wall at x = 0 */
+async function asBuiltModel(a: NonNullable<PlanModel['asBuilt']>) {
+  const gltf = await new GLTFLoader().loadAsync(a.glb), inner = gltf.scene, root = new THREE.Group();
+  root.name = 'as_built'; inner.rotation.y = -Math.PI / 2; inner.position.y = -a.ffl; root.add(inner);
+  const seen = new Set<THREE.Material>();
+  inner.traverse((o) => {
+    const m = o as THREE.Mesh; if (!m.isMesh) return;
+    m.castShadow = m.receiveShadow = true;
+    const nm = o.name.replace(/_/g, ' ').replace(/\s*\d{3}$/, '').trim(), [head, tail] = nm.split('|').map((x) => x.trim());
+    const mat = m.material as THREE.MeshPhysicalMaterial;
+    o.userData = { ...o.userData, kind: 'element', name: head || nm, material: (mat?.name ?? '').replace(/\s*\|\s*/, ', '), source: 'model', note: tail ? `${tail}; from the developed Blender model` : 'from the developed Blender model' };
+    if (!mat || seen.has(mat)) return; seen.add(mat);
+    if (/glass/i.test(mat.name)) { mat.transmission = 0; mat.transparent = true; mat.opacity = 0.2; mat.color.set(0xa9bcc0); mat.roughness = 0.02; mat.metalness = 0; mat.envMapIntensity = 2.2; mat.depthWrite = false; mat.side = THREE.DoubleSide; m.castShadow = false; }
+    else if (/cladding/i.test(mat.name)) { mat.color.set(a.cladding ?? '#4a4d4f'); mat.metalness = 0.4; mat.roughness = 0.46; mat.clearcoat = 0.25; mat.clearcoatRoughness = 0.4; }
+    else if (/concrete/i.test(mat.name)) { mat.color.set(0x8d8b85); mat.roughness = 0.92; mat.metalness = 0; }
+    else if (/joinery/i.test(mat.name)) { mat.color.set(0x111213); mat.metalness = 0.35; mat.roughness = 0.36; }
+    mat.needsUpdate = true;
+  });
+  inner.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && /glass/i.test((m.material as THREE.Material)?.name ?? '')) m.castShadow = false; });
+  return root;
+}
+
 /** timber stairs down a line, from one level to another */
 function flight(pts: [number, number][], levels: [number, number], w: number, groundAt: (x: number, z: number) => number, mat: THREE.Material) {
   const segs = pts.slice(1).map((b, i) => ({ a: pts[i], b, L: Math.hypot(b[0] - pts[i][0], b[1] - pts[i][1]) })), L = segs.reduce((t, s) => t + s.L, 0);
@@ -134,6 +160,7 @@ function flight(pts: [number, number][], levels: [number, number], w: number, gr
     const p = at((k + 0.5) * going), y = levels[0] + (k + 1) * rise;
     const t = new THREE.BoxGeometry(going + 0.02, 0.045, w); t.rotateY(-p.ang); t.translate(p.x, y - 0.0225, p.z); parts.push(t);
     for (const side of [-1, 1]) { const sx = p.x - Math.sin(p.ang) * side * (w / 2 - 0.03) * -1, sz = p.z + Math.cos(p.ang) * side * (w / 2 - 0.03) * -1; const st = new THREE.BoxGeometry(going + 0.02, 0.24, 0.045); st.rotateY(-p.ang); st.translate(sx, y - 0.17, sz); parts.push(st); }
+    for (const side of [-1, 1]) { const bx = p.x + Math.sin(p.ang) * side * (w / 2 - 0.02), bz = p.z - Math.cos(p.ang) * side * (w / 2 - 0.02); parts.push(new THREE.BoxGeometry(0.03, 0.95, 0.03).translate(bx, y + 0.475, bz)); const hr = new THREE.BoxGeometry(going + 0.04, 0.04, 0.06); hr.rotateY(-p.ang); hr.translate(bx, y + 0.97, bz); parts.push(hr); }
     if (k % 4 === 3) { const gy = groundAt(p.x, p.z), h = y - 0.3 - gy; if (h > 0.15) for (const side of [-1, 1]) { const po = new THREE.BoxGeometry(0.1, h, 0.1); po.translate(p.x + Math.sin(p.ang) * side * (w / 2 - 0.05), gy + h / 2, p.z - Math.cos(p.ang) * side * (w / 2 - 0.05)); parts.push(po); } }
   }
   const m = new THREE.Mesh(mergeGeometries(parts)!, mat); m.castShadow = m.receiveShadow = true; m.name = 'stairs';
@@ -228,6 +255,16 @@ async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } 
 }
 
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
+  // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
+  const pu = new URLSearchParams(location.search).get('plan');
+  if (pu && /^[\w./-]+\.json$/.test(pu) && !pu.includes('//')) {
+    try {
+      app.log('Opening the model…');
+      const base = new URL(pu, location.href), plan = (await (await fetch(base.href)).json()) as PlanModel;
+      if (plan.asBuilt?.glb) plan.asBuilt.glb = new URL(plan.asBuilt.glb, base).href;
+      if (plan.buildings) return { input: { kind: 'plan', plan, name: plan.job?.title ?? 'Plan model' }, palette: 'cedar-charcoal' };
+    } catch (e) { console.warn('plan model could not be opened', e); app.log('That model could not be opened; drop a file instead.'); }
+  }
   // a shared link: rebuild the plan that was shared
   const sid = new URLSearchParams(location.search).get('share');
   if (sid) {
@@ -369,7 +406,8 @@ export const projectPlan: Project = {
         return y;
       };
       const box = new THREE.Box3();
-      for (const b of P.buildings) {
+      if (P.asBuilt) { app.log('Loading the building model…'); const h = await asBuiltModel(P.asBuilt); model.add(h); h.updateMatrixWorld(true); box.expandByObject(h); }
+      else for (const b of P.buildings) {
         const pl: Placement = { origin: [b.origin[0], -b.origin[1]], u: [1, 0], v: [0, -1], ffl: b.floorLevel ?? 0, bearing: 90 };
         app.log(`Generating ${b.name ?? b.id}…`);
         const h = buildHome({ key: b.id, spec: b, placement: pl, limits: [], ground: groundAt, quality: q, finishes: fin });
@@ -415,10 +453,12 @@ export const projectPlan: Project = {
         keys.push({ label: 'From below', eye: stand(centre.clone().addScaledVector(dn, 24).addScaledVector(side, 13).setY(centre.y + 3), 6), look: centre.clone() });
         keys.push({ label: 'Aerial', eye: centre.clone().addScaledVector(dn, 34).addScaledVector(side, -20).setY(centre.y + 30), look: centre.clone() });
         keys.push({ label: 'Deck side', eye: stand(centre.clone().addScaledVector(side, 17).addScaledVector(dn, 9).setY(centre.y + 1), 2.5), look: centre.clone() });
-        if (T.views?.length) { keys.length = 0; for (const v of T.views) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
         if (T.trees?.length) bushObj = await bush(T.trees, plane, [centre.x, centre.z]);
       }
-      for (const b of P.buildings) {
+      { const V = T?.views ?? P.views;
+        if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
+      }
+      if (!(T?.views ?? P.views)?.length) for (const b of P.buildings) {
         const ffl = b.floorLevel ?? 0;
         const o = new THREE.Vector3(b.origin[0], ffl, b.origin[1]);
         keys.push({ label: `${b.name ?? b.id} outside`, eye: o.clone().add(new THREE.Vector3(-3, 1.6, 14)), look: o.clone().add(new THREE.Vector3(5.4, 1.2, 3)) });
