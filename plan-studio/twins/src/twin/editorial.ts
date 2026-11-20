@@ -126,18 +126,19 @@ export function applyEditorial(model: THREE.Object3D) {
       return;
     }
     const m = mesh.material as THREE.MeshPhysicalMaterial;
-    if (!m || Array.isArray(m) || seen.has(m)) return;
+    if (!m || Array.isArray(m)) return;
+    // clear glazing with a soft sky reflection. Single-sided on purpose: drawn double-sided, the screen-space
+    // occlusion pass leaves a pale fringe along every frame
+    if (/glass/.test(m.name ?? '')) { mesh.material = (pane ??= new THREE.MeshPhysicalMaterial({ name: 'glass_clear', color: 0xc9dde0, transparent: true, opacity: 0.1, roughness: 0.03, metalness: 0, envMapIntensity: 1.2, depthWrite: false, side: THREE.FrontSide })); return; }
+    if (seen.has(m)) return;
     seen.add(m);
     if (/decking/.test(m.name ?? '')) { m.color.set(0xa9805f); m.envMapIntensity = 0.4; m.needsUpdate = true; }
-    if (/glass/.test(m.name ?? '')) {
-      m.transmission = 0; m.transparent = true; m.opacity = 0.09; m.color.set(0xc9dde0); m.roughness = 0.03; m.metalness = 0;
-      m.envMapIntensity = 1.0; m.clearcoat = 1; m.clearcoatRoughness = 0.04; m.depthWrite = false; m.side = THREE.DoubleSide; m.userData.day = true; m.needsUpdate = true;
-    }
   });
   return soffits;
 }
 let soffit: THREE.MeshStandardMaterial | null = null;
 let core: THREE.MeshStandardMaterial | null = null;
+let pane: THREE.MeshPhysicalMaterial | null = null;
 function soffitMat(M: InteriorMaterials) {
   if (soffit) return soffit;
   const t = createScandiOakTextures();

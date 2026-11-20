@@ -640,12 +640,13 @@ export class App {
         if (mm.userData.baseTransparent === undefined) {
           mm.userData.baseTransparent = mm.transparent;
           mm.userData.baseOpacity = mm.opacity;
+          mm.userData.baseDepthWrite = mm.depthWrite;
         }
-        const glass = (mm.transmission ?? 0) > 0;
+        const glass = (mm.transmission ?? 0) > 0 || /glass/.test(mm.name ?? '');
         if (opacity >= 0.999) {
           mm.transparent = mm.userData.baseTransparent;
           mm.opacity = mm.userData.baseOpacity;
-          mm.depthWrite = true;
+          mm.depthWrite = mm.userData.baseDepthWrite ?? true;
         } else if (!glass) {
           mm.transparent = true;
           mm.opacity = opacity;
