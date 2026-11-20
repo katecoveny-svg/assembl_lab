@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { editorialSky, LOOK, type Mood } from './editorial';
 import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTexturesLib.js';
 import { initArrange } from './arrange';
 import { applyCameraFromURL, cameraQuery, shareSheet, viewLink } from './share';
@@ -44,6 +45,12 @@ export interface Built {
   fog?: [number, number];
   /** a photographed sky (equirectangular) and where its sun sits across the picture, 0 to 1 */
   skyPhoto?: { url: string; sunU: number };
+  /** 'editorial': a brighter, warmer presentation: filmic tone curve, sky fill, soft haze, late-afternoon sun */
+  look?: 'editorial';
+  /** the outward normal of the façade the opening view looks at: the opening hour is chosen so low sun falls on it */
+  sunFace?: THREE.Vector3;
+  /** thins or thickens the editorial haze (1 = as designed) */
+  fogScale?: number;
   /** the hour of day the sun opens at (default 15) */
   sunHour?: number;
   maxDistance?: number;
@@ -185,6 +192,20 @@ export class App {
     this.setupDownloads();
     this.log('Building the model…');
     this.built = await this.project.build(this);
+    if (this.built.look === 'editorial') {
+      this.editorial = true; this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.exposureBase = 0.98;
+      this.hemi.color.set(0xdce8f8); this.hemi.groundColor.set(0x4c443a);
+      this.fill = new THREE.DirectionalLight(0xa4bede, 0.5); this.scene.add(this.fill, this.fill.target);
+      // alive until touched: a slow turn about the building from outside, back after 25 s of stillness
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !new URLSearchParams(location.search).has('still')) {
+        this.orbitOn = true;
+        this.controls.autoRotateSpeed = 0.35;
+        let idle = 0;
+        const rest = () => { this.orbitOn = false; clearTimeout(idle); idle = window.setTimeout(() => (this.orbitOn = true), 25000); };
+        this.controls.addEventListener('start', rest);
+        for (const ev of ['pointerdown', 'wheel', 'keydown'] as const) window.addEventListener(ev, rest, { passive: true });
+      }
+    }
     if (this.built.skyPhoto) {
       try {
         const t = await new THREE.TextureLoader().loadAsync(this.built.skyPhoto.url);
@@ -196,6 +217,9 @@ export class App {
     const { eye, look } = this.built.view;
     this.camera.position.copy(eye);
     this.controls.target.copy(look);
+    // on a tall, narrow screen step back along the view so the building still fits across it
+    const asp = this.canvas.clientWidth / Math.max(1, this.canvas.clientHeight);
+    if (this.editorial && asp < 1.0) this.camera.position.copy(look).add(eye.clone().sub(look).multiplyScalar(Math.min(1.5, 1.05 / Math.max(0.5, asp))));
     applyCameraFromURL(this);
     this.controls.maxDistance = this.built.maxDistance ?? this.built.radius * 6;
     this.sun.shadow.mapSize.set(4096, 4096);
@@ -314,6 +338,7 @@ export class App {
     this.night = Math.max(0, Math.min(1, (2 - s.alt) / 8));
     this.updateEnv();
     this.usePhotoSky(s.v, s.alt);
+    if (this.editorial) this.useEditorialSky(s.v, s.alt);
     for (const cb of this.onSun) cb(this.night, s.alt);
     const out = document.getElementById('sunread');
     if (out) out.textContent = s.alt > 0 ? `Sun ${fmt(s.alt, 0)}° up, bearing ${fmt(s.azFromNorth, 0)}°` : 'Sun below the horizon';
@@ -370,11 +395,16 @@ export class App {
     if (old) setTimeout(() => old.dispose(), 500);
   }
 
+  /** callbacks run every frame with the time step in seconds (planting in the breeze) */
+  onFrame: ((dt: number) => void)[] = [];
   /** callbacks for projects that react to the time of day (lights on at dusk) */
   onSun: ((night: number, alt: number) => void)[] = [];
 
   /** a photographed sky, when the project brings one: used as the backdrop and the fill light by day, turned so its sun sits where the sun is */
   photoSky: THREE.Texture | null = null;
+  private editorial = false;
+  private orbitOn = false;
+  private fill: THREE.DirectionalLight | null = null;
   private photoOn = false;
   private photoEnv: THREE.Texture | null = null;
   private usePhotoSky(dir: THREE.Vector3, alt: number) {
@@ -386,6 +416,33 @@ export class App {
     this.scene.background = this.photoSky; this.scene.environment = this.photoEnv ?? this.photoSky;
     this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
     this.envBase = 2.7; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1.2;
+  }
+  /** the editorial look: a soft painted sky that lights the scene, warm haze, a low key light and cool fill */
+  private edSky: THREE.Texture | null = null;
+  private edEnv: THREE.Texture | null = null;
+  private edMood = '';
+  private useEditorialSky(dir: THREE.Vector3, alt: number) {
+    const mood: Mood = alt < 2 ? 'dusk' : alt < 26 ? 'golden' : 'day';
+    if (mood !== this.edMood) {
+      this.edMood = mood;
+      const old = [this.edSky, this.edEnv];
+      this.edSky = editorialSky(mood);
+      this.edEnv = null;
+      if (this.pmrem) { try { this.edEnv = this.pmrem.fromEquirectangular(this.edSky).texture; } catch (e) { console.warn('sky light failed', e); } }
+      setTimeout(() => old.forEach((t) => t?.dispose()), 500);
+    }
+    this.photoOn = true; this.sky.visible = false;
+    const rot = -Math.atan2(dir.z, dir.x) + this.photoTurn;
+    this.scene.background = this.edSky; this.scene.environment = this.edEnv ?? this.edSky;
+    this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
+    const L = LOOK[mood];
+    this.envBase = L.env; this.scene.environmentIntensity = L.env; this.scene.backgroundIntensity = 1;
+    this.scene.fog = new THREE.FogExp2(L.fog, L.fogDensity * (this.built.fogScale ?? 1));
+    this.sun.color.setHex(L.sun); this.sun.intensity = alt > -2 ? L.sunI : 0;
+    this.hemiBase = L.hemi; this.hemi.intensity = L.hemi;
+    const f = this.built.focus, R = this.built.radius * 3;
+    if (this.fill) { this.fill.position.copy(f).add(new THREE.Vector3(-dir.x, 0.7, -dir.z).multiplyScalar(R)); this.fill.target.position.copy(f); this.fill.intensity = L.fill; }
+    this.exposureBase = L.exposure;
   }
   /** a test hook: extra turn of the photographed sky, radians */
   photoTurn = 0;
@@ -449,7 +506,19 @@ export class App {
     const time = document.getElementById('suntime') as HTMLInputElement;
     const y = now.getFullYear();
     date.value = `${y}-12-21`;
-    time.value = String(this.built.sunHour ?? 15);
+    let h0 = this.built.sunHour ?? (this.built.look === 'editorial' ? 18.5 : 15);
+    const face = this.built.sunFace;
+    if (this.built.sunHour === undefined && this.built.look === 'editorial' && face) {
+      // open at the golden hour that lights the face being looked at
+      let best = -2;
+      for (const h of [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5]) {
+        const sd = this.sunDir(App.nzToUTC(y, 12, 21, h));
+        if (sd.alt < 9 || sd.alt > 27) continue;
+        const d = sd.v.x * face.x + sd.v.z * face.z;
+        if (d > best) { best = d; h0 = h; }
+      }
+    }
+    time.value = String(h0);
     const apply = () => {
       const [yy, mm, dd] = date.value.split('-').map(Number);
       const h = Number(time.value);
@@ -930,8 +999,9 @@ export class App {
     if (this.paused) return;
     if (this.playing) this.stepPlay();
     else if (this.walk.on) this.stepWalk(dt);
-    else this.controls.update();
+    else { this.controls.autoRotate = this.orbitOn && this.inside < 0.01; this.controls.update(); }
     this.updateInterior(dt);
+    for (const cb of this.onFrame) cb(dt);
     if (this.pipeline) {
       try {
         this.pipeline.render();
@@ -994,7 +1064,7 @@ export class App {
     const k = 1 - Math.exp(-dt / 0.35);
     this.inside += (target - this.inside) * (Math.abs(target - this.inside) < 0.01 ? 1 : k);
     const f = this.inside;
-    this.renderer.toneMappingExposure = this.exposureBase * (1 + 1.3 * f);
+    this.renderer.toneMappingExposure = this.exposureBase * (1 + (this.editorial ? 0.22 : 1.3) * f);
     this.scene.environmentIntensity = this.envBase * (1 - 0.82 * f);
     // indoors the fill is light bounced off timber floors and warm walls, not open sky
     this.hemi.intensity = this.hemiBase * (1 - 0.25 * f);
@@ -1025,7 +1095,7 @@ export class App {
         light.width = x.w.w * 0.95;
         light.height = x.w.h * 0.95;
         light.lookAt(t);
-        light.intensity = 9 * this.day * f * (1 - this.night);
+        light.intensity = (this.editorial ? 3.6 : 9) * this.day * f * (1 - this.night);
       });
     } else for (const l of this.windowLights) l.intensity = 0;
   }

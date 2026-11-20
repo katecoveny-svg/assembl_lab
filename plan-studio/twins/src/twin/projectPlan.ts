@@ -13,6 +13,8 @@ import { planting, type Species, type Placement as PlantPlacement } from './plan
 import { bedPlanting, mulchBed, pathRibbon } from './landscape';
 import { twinMats } from './mats';
 import { scanSet, scanTex, scannedFinishes } from './scanned';
+import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
+import { scandi } from './fitout';
 import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -27,7 +29,7 @@ interface PlanModel {
   schema?: string;
   job?: { title?: string; nickname?: string; what?: string };
   north?: { deg?: number };
-  site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number }; features?: SiteFeature[]; terrain?: Terrain };
+  site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number; source?: string }; north?: [number, number]; sunHour?: number; features?: SiteFeature[]; terrain?: Terrain };
   buildings: (BuildingSpec & { origin: [number, number]; floorLevel?: number })[];
   planting?: Record<string, unknown>;
   views?: Terrain['views'];
@@ -256,13 +258,26 @@ async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } 
 
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
   // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
-  const pu = new URLSearchParams(location.search).get('plan');
+  const qs = new URLSearchParams(location.search);
+  // the page opens on a finished example, with the drop a tap away, rather than on a card of text
+  const example = !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop');
+  const pu = qs.get('plan') ?? (example ? 'hero.plan.json' : null);
   if (pu && /^[\w./-]+\.json$/.test(pu) && !pu.includes('//')) {
     try {
       app.log('Opening the model…');
       const base = new URL(pu, location.href), plan = (await (await fetch(base.href)).json()) as PlanModel;
       if (plan.asBuilt?.glb) plan.asBuilt.glb = new URL(plan.asBuilt.glb, base).href;
-      if (plan.buildings) return { input: { kind: 'plan', plan, name: plan.job?.title ?? 'Plan model' }, palette: 'cedar-charcoal' };
+      if (plan.buildings) {
+        if (example) {
+          const a = document.createElement('a');
+          a.className = 'pill solid';
+          a.href = '?drop=1';
+          a.textContent = 'Drop your own plan';
+          a.style.cssText = 'position:absolute;left:12px;top:12px;z-index:6;text-decoration:none;box-shadow:0 6px 24px rgba(51,33,47,.18)';
+          app.canvas.parentElement!.append(a);
+        }
+        return { input: { kind: 'plan', plan, name: plan.job?.title ?? 'Plan model' }, palette: 'cedar-charcoal' };
+      }
     } catch (e) { console.warn('plan model could not be opened', e); app.log('That model could not be opened; drop a file instead.'); }
   }
   // a shared link: rebuild the plan that was shared
@@ -286,14 +301,17 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     const stage = app.canvas.parentElement!;
     const o = document.createElement('div');
     o.className = 'dropzone';
-    o.innerHTML = `<div class="card drop-card">
-      <h2>Drop a plan, get a twin</h2>
-      <p>Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p>
+    // the finished example sits behind the card, so the page is a picture first and words second
+    o.style.cssText = "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
+    o.innerHTML = `<div class="card drop-card" style="max-width:440px;background:rgba(249,246,242,.94);backdrop-filter:blur(10px)">
+      <h2>Drop your plan</h2>
+      <p>A PDF, a picture of a plan, an IFC or a plan model. It comes back as a measured 3D home you can walk through, furnished and lit.</p>
+      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
       <label class="slider">Finishes <select id="dropPalette">${Object.entries(PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name}</option>`)
         .join('')}</select></label>
-      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
-      <p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p>
+      <details class="small" style="margin-top:10px"><summary>How it reads a plan, and what leaves your browser</summary><p class="small">Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p><p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p></details>
+      <p class="small" style="margin:10px 0 0"><a href="./">Back to the example</a> · The picture behind is the example: a rendering of a plan model, not a photograph.</p>
     </div>`;
     stage.append(o);
     const pal = () => (o.querySelector('#dropPalette') as HTMLSelectElement).value;
@@ -376,6 +394,9 @@ export const projectPlan: Project = {
     const fitouts: THREE.Object3D[] = [];
     let plantObj: THREE.Object3D | null = null;
     let landObj: THREE.Object3D | null = null;
+    let lightObj: THREE.Object3D | null = null;
+    let sunFace: THREE.Vector3 | undefined;
+    let siteNorth: [number, number] | undefined;
     let terrain: Terrain | null = null;
     let bushObj: THREE.Object3D | null = null;
     const keys: Key[] = [];
@@ -405,6 +426,8 @@ export const projectPlan: Project = {
         for (const p of pads) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) y = Math.min(y, p.y);
         return y;
       };
+      scandi.on = true;
+      siteNorth = T?.north ?? P.site?.north;
       const box = new THREE.Box3();
       if (P.asBuilt) { app.log('Loading the building model…'); const h = await asBuiltModel(P.asBuilt); model.add(h); h.updateMatrixWorld(true); box.expandByObject(h); }
       else for (const b of P.buildings) {
@@ -415,13 +438,33 @@ export const projectPlan: Project = {
         h.updateMatrixWorld(true);
         box.expandByObject(h);
       }
-      if (T) { app.log('Loading scanned materials…'); try { const fin0 = (P.buildings[0] as unknown as { finish?: { claddingProfile?: string; claddingColour?: string } }).finish; await scannedFinishes(model, M.sets, fin0?.claddingProfile === 'metal' ? { cladding: 'metal', claddingColour: fin0.claddingColour ? new THREE.Color(fin0.claddingColour).getHex() : undefined } : {}); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
+      { app.log('Loading scanned materials…'); try { const fin0 = (P.buildings[0] as unknown as { finish?: { claddingProfile?: string; claddingColour?: string } }).finish; await scannedFinishes(model, M.sets, fin0?.claddingProfile === 'metal' ? { cladding: 'metal', claddingColour: fin0.claddingColour ? new THREE.Color(fin0.claddingColour).getHex() : undefined } : {}); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
       app.log('Placing library pieces…');
       await fillSlots(model);
       model.traverse((o) => {
         if (o.name === 'fit_out') fitouts.push(o);
       });
-      app.onSun.push((night) => setInteriorLights(fitouts, night));
+      // clear glass, a timber soffit, and the rooms lit by day as well so the interior reads from outside
+      if (!T) applyEditorial(model);
+      const moodOf = (alt: number): Mood => (alt < 2 ? 'dusk' : alt < 26 ? 'golden' : 'day');
+      app.onSun.push((night, alt) => setInteriorLights(fitouts, T ? Math.max(night, 0.42) : Math.max(night, LOOK[moodOf(alt)].rooms)));
+      if (!T && !P.asBuilt) {
+        const runs: EaveRun[] = [];
+        for (const b of P.buildings) {
+          const y0 = b.floorLevel ?? 0;
+          for (const w of b.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; out: number; openings: { a: number; b: number; kind: string }[] }[]) {
+            for (const o of w.openings ?? []) {
+              if (o.b - o.a < 1.1) continue;
+              const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(b.origin[0] + t, y0, b.origin[1] + w.at) : new THREE.Vector3(b.origin[0] + w.at, y0, b.origin[1] + t));
+              runs.push({ a: pt(o.a + 0.1), b: pt(o.b - 0.1), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0) });
+            }
+          }
+        }
+        model.updateMatrixWorld(true);
+        lightObj = eaveLights(model, runs);
+        const lo = lightObj;
+        app.onSun.push((night, alt) => setEaveLights(lo, night, moodOf(alt)));
+      }
       centre = box.getCenter(new THREE.Vector3());
       radius = Math.max(14, box.getSize(new THREE.Vector3()).length() * 0.9);
       // planting from the plan model, in its own frame
@@ -457,6 +500,28 @@ export const projectPlan: Project = {
       }
       { const V = T?.views ?? P.views;
         if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
+      }
+      let heroFront: { nrm: THREE.Vector3; along: THREE.Vector3 } | null = null;
+      if (!T && P.buildings[0]) {
+        // the opening view: eye height, square-on to the most glazed wall, a little off-centre
+        const b0 = P.buildings[0], ws = b0.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
+        const best = [...ws].sort((p1, p2) => p2.openings.reduce((t, o) => t + o.b - o.a, 0) - p1.openings.reduce((t, o) => t + o.b - o.a, 0))[0];
+        if (best) {
+          const mid = (best.from + best.to) / 2, len = best.to - best.from, dist = Math.max(10, len * 1.35), ox = b0.origin[0], oz = b0.origin[1], y0 = b0.floorLevel ?? 0;
+          const wm = best.axis === 'x' ? new THREE.Vector3(ox + mid, y0, oz + best.at) : new THREE.Vector3(ox + best.at, y0, oz + mid);
+          const nrm = best.axis === 'x' ? new THREE.Vector3(0, 0, best.out) : new THREE.Vector3(best.out, 0, 0), along = new THREE.Vector3(-nrm.z, 0, nrm.x);
+          if (!P.views?.length) keys.unshift({ label: 'Hero', eye: wm.clone().addScaledVector(nrm, dist).addScaledVector(along, dist * 0.32).setY(y0 + 1.45), look: wm.clone().setY(y0 + 1.25) });
+          heroFront = { nrm, along };
+          sunFace = nrm;
+        }
+      }
+      if (!T && !P.planting && heroFront) {
+        const hf = heroFront, sz = box.getSize(new THREE.Vector3()), bx = box.clone().expandByScalar(1.3);
+        const halfAlong = (Math.abs(hf.along.x) * sz.x + Math.abs(hf.along.z) * sz.z) / 2, halfDepth = (Math.abs(hf.nrm.x) * sz.x + Math.abs(hf.nrm.z) * sz.z) / 2;
+        const np = nativePlanting({ centre, front: hf.nrm, along: hf.along, halfAlong, halfDepth, groundAt: (x, z) => groundAt(x, -z), keepOut: (x, z) => x > bx.min.x && x < bx.max.x && z > bx.min.z && z < bx.max.z });
+        plantObj = np.group;
+        let tt = 0;
+        app.onFrame.push((dt) => { tt += dt; for (const n of np.sway) { n.node.rotation.z = Math.sin(tt * 0.9 + n.phase) * n.amp; n.node.rotation.x = Math.cos(tt * 0.7 + n.phase * 1.3) * n.amp * 0.6; } });
       }
       if (!(T?.views ?? P.views)?.length) for (const b of P.buildings) {
         const ffl = b.floorLevel ?? 0;
@@ -523,7 +588,7 @@ export const projectPlan: Project = {
     g.computeVertexNormals();
     const uv = g.getAttribute('uv');
     for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / M.sets.lawn.tile, -p.getZ(i) / M.sets.lawn.tile);
-    const ground = new THREE.Mesh(g, M.lawn);
+    const ground = new THREE.Mesh(g, input.kind === 'plan' && !terrain ? hillsideMat(M.sets.lawn.tile) : M.lawn);
     ground.name = 'ground';
     ground.receiveShadow = true;
     ground.userData = { kind: 'terrain', name: 'Ground', source: 'assumed', note: 'From the plan model’s fall plane, or flat; not a survey.' };
@@ -533,7 +598,8 @@ export const projectPlan: Project = {
       realGround ? { id: 'ground', label: 'Ground', note: 'LiDAR ground and aerial photo; cut to a platform under the house', visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
     if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: 'tree tops from the LiDAR canopy; species not identified', visible: true, object: bushObj });
-    if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: 'from the plan model', visible: true, object: plantObj });
+    if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: plantObj.name === 'native_planting' ? 'proposed, to frame the building; not from the plan' : 'from the plan model', visible: true, object: plantObj });
+    if (lightObj) layers.push({ id: 'lights', label: 'Soffit lights', note: 'proposed downlights over the glazed walls', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
 
     const exports: Built['exports'] = [
@@ -559,8 +625,9 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(terrain ? { fog: [220, 2600] as [number, number], maxDistance: 600, shadowRadius: 42, sunHour: terrain.sunHour ?? 10, skyPhoto: { url: `${BASE}../tex/sky.webp`, sunU: 0.5947 } } : {}),
-      north: terrain?.north ? new THREE.Vector2(terrain.north[0], terrain.north[1]) : undefined,
+      ...(terrain ? {} : { look: 'editorial' as const, sunFace, sunHour: input.kind === 'plan' ? input.plan.site?.sunHour : undefined }),
+      ...(terrain ? { fog: [220, 2600] as [number, number], maxDistance: 600, shadowRadius: 42, sunHour: terrain.sunHour ?? 10 } : {}),
+      north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
       radius,
       view: { eye: keys[0].eye, look: keys[0].look },
       path: keys,

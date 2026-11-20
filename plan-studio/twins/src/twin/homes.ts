@@ -392,12 +392,14 @@ export function buildHome(o: HomeOptions) {
   root.add(roof(o.spec, plate, M, asset, gy));
 
   // --- subfloor: bearers, joists, piles --------------------------------------------------------
+  // a floor well above the ground stands on fewer, heavier poles
+  const floorDrop = Math.max(...([[0, 0], [W, 0], [W, D], [0, D]] as Pt[]).map(([u, v]) => -0.3 - gy(u, v)));
   root.add(subfloor(asset, M, [
     [0.05, 0.05],
     [W - 0.05, 0.05],
     [W - 0.05, D - 0.05],
     [0.05, D - 0.05],
-  ], -0.02, gy, 'floor', 0.19));
+  ], -0.02, gy, 'floor', 0.19, floorDrop > 1.6 ? { size: 0.25, gap: 4.4 } : undefined));
 
   // --- decks, spa, stair ----------------------------------------------------------------------
   let nd: Pt[] = [];
@@ -807,7 +809,7 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
     boards.push(boxUV(g, M.sets.decking.tile, 'x'));
   }
   if (boards.length) g.add(tag(mesh(`${name}_boards`, mergeGeometries(boards), M.decking), asset, 'IfcCovering', { predefinedType: 'FLOORING', material: 'hardwood decking 140 × 32, 5 mm gaps (TD)', source: 'written' }));
-  g.add(subfloor(asset, M, poly, top - bt, gy, name, 0.14, rails.includes('posts') ? { size: 0.19, gap: 3.4 } : undefined));
+  g.add(subfloor(asset, M, poly, top - bt, gy, name, 0.14, rails.includes('posts') ? { size: 0.22, gap: 4.4 } : undefined));
   // barriers on edges with a fall of 1 m or more (NZBC F4), or where the plan model asks
   const posts: THREE.BufferGeometry[] = [];
   const rail: THREE.BufferGeometry[] = [];
