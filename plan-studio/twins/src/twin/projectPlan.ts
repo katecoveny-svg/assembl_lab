@@ -12,6 +12,7 @@ import { fillSlots } from './library';
 import { planting, type Species, type Placement as PlantPlacement } from './plants';
 import { bedPlanting, mulchBed, pathRibbon } from './landscape';
 import { twinMats } from './mats';
+import { scanSet, scanTex, scannedFinishes } from './scanned';
 import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -61,7 +62,7 @@ function sheet(c: [number, number], size: number, seg: number, y: (x: number, z:
   return g;
 }
 /** bush from the canopy survey: one crown per tree top, its height and spread from the survey, its colour from the photo */
-function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: number) => number, centre: [number, number]) {
+async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: number) => number, centre: [number, number]) {
   const rnd = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
   // a crown: lumpy lobes, smooth, darker underneath and in the folds, so a lit canopy reads with depth
   const crownGeo = (detail: number, lobesN: number) => {
@@ -81,20 +82,35 @@ function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: num
     return mergeGeometries(lobes)!;
   };
   const leaf = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 });
-  const bark = new THREE.MeshStandardMaterial({ color: 0x2e2620, roughness: 0.95 });
+  const [bc, bn, br] = await scanSet('bark', 1, 1);
+  for (const t of [bc, bn, br]) t.repeat.set(2, 5);
+  const bark = new THREE.MeshStandardMaterial({ color: 0x9a8f84, roughness: 1, map: bc, normalMap: bn, roughnessMap: br });
+  // leaves: cards of scanned leaves standing off the crown, so the edge of a tree is leaves and sky, not a smooth lump
+  const leafTex = await scanTex('leaves', true); leafTex.wrapS = leafTex.wrapT = THREE.ClampToEdgeWrapping;
+  const cardM = new THREE.MeshStandardMaterial({ map: leafTex, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.62, metalness: 0 });
+  const cardSpec: { x: number; y: number; z: number; s: number; nx: number; ny: number; nz: number; c: THREE.Color }[] = [];
   const g = new THREE.Group(); g.name = 'bush_from_survey';
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
   const nearT = trees.filter(([x, z]) => Math.hypot(x - centre[0], z - centre[1]) < 48), farT = trees.filter(([x, z]) => Math.hypot(x - centre[0], z - centre[1]) >= 48);
-  for (const [list, geo, shadow] of [[nearT, crownGeo(3, 4), true], [farT, crownGeo(1, 2), false]] as [typeof trees, THREE.BufferGeometry, boolean][]) {
+  const nearGeo = crownGeo(3, 4);
+  for (const [list, geo, shadow] of [[nearT, nearGeo, true], [farT, crownGeo(1, 2), false]] as [typeof trees, THREE.BufferGeometry, boolean][]) {
     if (!list.length) continue;
     const crowns = new THREE.InstancedMesh(geo, leaf, list.length), trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.5, 0.7, 1, 7), bark, list.length);
     list.forEach(([x, z, h, r, hex], i) => {
       const gy = groundAt(x, z), rv = Math.max(r * 0.8, h * 0.3), cy = gy + h - rv * 0.8, s = i + x * 7.3;
       q.setFromAxisAngle(up, rnd(s) * 6.283);
-      m.compose(new THREE.Vector3(x, cy, z), q, new THREE.Vector3(r * (0.9 + rnd(s + 9) * 0.25), rv, r * (0.9 + rnd(s + 5) * 0.25))); crowns.setMatrixAt(i, m);
+      m.compose(new THREE.Vector3(x, cy, z), q, new THREE.Vector3(r * 0.86 * (0.9 + rnd(s + 9) * 0.25), rv * 0.86, r * 0.86 * (0.9 + rnd(s + 5) * 0.25))); crowns.setMatrixAt(i, m);
       // the photo sees the canopy from above in its own shade: lift it, keep its hue, vary tree to tree
       c.set(`#${hex}`); const lift = 1.55 + rnd(s + 3) * 0.6, warm = 0.95 + rnd(s + 1) * 0.22;
-      c.setRGB(Math.min(0.9, c.r * lift * warm), Math.min(0.9, c.g * lift * 1.06), Math.min(0.9, c.b * lift * 0.62)); crowns.setColorAt(i, c);
+      c.setRGB(Math.min(0.9, c.r * lift * warm), Math.min(0.9, c.g * lift * 1.06), Math.min(0.9, c.b * lift * 0.62)); crowns.setColorAt(i, c.clone().multiplyScalar(0.55));
+      const nearTree = geo === nearGeo, nc = nearTree ? 110 : 14, rx = r * 1.02, c2 = c.clone();
+      for (let k = 0; k < nc; k++) {
+        const u = rnd(s + k * 3.1) * 2 - 1, ph = rnd(s + k * 7.7) * 6.283, sr = Math.sqrt(1 - u * u), dx = sr * Math.cos(ph), dz = sr * Math.sin(ph), dy = Math.max(-0.35, u);
+        const tangent = rnd(s + k * 1.3) < 0.6, j = (a: number) => rnd(s + k * a) * 2 - 1;
+        const n = tangent ? new THREE.Vector3(dx, dy * 0.8, dz) : new THREE.Vector3(j(2.3), j(4.1) * 0.6, j(5.9)); n.normalize();
+        const shade = 0.72 + 0.5 * Math.max(0, dy) + 0.2 * rnd(s + k * 9.1);
+        cardSpec.push({ x: x + dx * rx * 0.96, y: cy + dy * rv * 0.96, z: z + dz * rx * 0.96, s: r * (nearTree ? 0.36 + rnd(s + k) * 0.3 : 0.62 + rnd(s + k) * 0.5), nx: n.x, ny: n.y, nz: n.z, c: c2.clone().multiplyScalar(shade) });
+      }
       const th = Math.max(0.6, cy - gy), tr = Math.max(0.06, Math.min(0.2, h * 0.013)) * (0.8 + rnd(s + 4) * 0.5);
       m.compose(new THREE.Vector3(x, gy + th / 2 - 0.1, z), q, new THREE.Vector3(tr, th, tr)); trunks.setMatrixAt(i, m);
     });
@@ -102,6 +118,10 @@ function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: num
     crowns.castShadow = shadow; crowns.receiveShadow = true; trunks.castShadow = shadow; crowns.frustumCulled = trunks.frustumCulled = false;
     g.add(crowns, trunks);
   }
+  const cards = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), cardM, cardSpec.length), zAxis = new THREE.Vector3(0, 0, 1), v = new THREE.Vector3();
+  cardSpec.forEach((k, i) => { q.setFromUnitVectors(zAxis, v.set(k.nx, k.ny, k.nz)); m.compose(new THREE.Vector3(k.x, k.y, k.z), q, new THREE.Vector3(k.s * 2, k.s * 2, 1)); cards.setMatrixAt(i, m); cards.setColorAt(i, k.c.multiplyScalar(2.4)); });
+  cards.instanceMatrix.needsUpdate = true; if (cards.instanceColor) cards.instanceColor.needsUpdate = true; cards.frustumCulled = false; cards.receiveShadow = true; cards.name = 'leaves';
+  g.add(cards);
   g.userData = { kind: 'planting', name: 'Bush', source: 'survey', note: 'One crown per tree top in the LiDAR canopy; height and spread from the survey, colour from the aerial photo. Species not identified.' };
   return g;
 }
@@ -357,6 +377,7 @@ export const projectPlan: Project = {
         h.updateMatrixWorld(true);
         box.expandByObject(h);
       }
+      if (T) { app.log('Loading scanned materials…'); try { await scannedFinishes(model, M.sets); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
       app.log('Placing library pieces…');
       await fillSlots(model);
       model.traverse((o) => {
@@ -380,6 +401,9 @@ export const projectPlan: Project = {
         plantObj = planting(list, 'Planting from the plan model (proposed).');
       }
       if (P.site?.features?.length) landObj = siteLayer(P.site.features, groundAt, q);
+      if (T && landObj) {
+        try { const [dc, dn, dr] = await scanSet('deck', 1.8, 1.8); const stairM = new THREE.MeshStandardMaterial({ color: 0xd9d2c6, map: dc, normalMap: dn, roughnessMap: dr, roughness: 1 }); landObj.traverse((o) => { if (o.name === 'stairs') (o as THREE.Mesh).material = stairM; }); } catch { /* keep the plain timber */ }
+      }
       // keys: aerial, then each building's front and living space
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.8, radius * 0.9)), look: centre.clone() });
       if (T) {
@@ -392,7 +416,7 @@ export const projectPlan: Project = {
         keys.push({ label: 'Aerial', eye: centre.clone().addScaledVector(dn, 34).addScaledVector(side, -20).setY(centre.y + 30), look: centre.clone() });
         keys.push({ label: 'Deck side', eye: stand(centre.clone().addScaledVector(side, 17).addScaledVector(dn, 9).setY(centre.y + 1), 2.5), look: centre.clone() });
         if (T.views?.length) { keys.length = 0; for (const v of T.views) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
-        if (T.trees?.length) bushObj = bush(T.trees, plane, [centre.x, centre.z]);
+        if (T.trees?.length) bushObj = await bush(T.trees, plane, [centre.x, centre.z]);
       }
       for (const b of P.buildings) {
         const ffl = b.floorLevel ?? 0;
@@ -428,7 +452,14 @@ export const projectPlan: Project = {
     if (terrain) {
       const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
       const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: T.photo ? await photoTex(T.photo) : null });
-      const near = new THREE.Mesh(sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01), nearM);
+      const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
+      try {
+        // forest-floor relief at its real size, on a second set of coordinates measured in metres
+        const p = ng.getAttribute('position'), uv1 = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv1[i * 2] = p.getX(i) / 2.3; uv1[i * 2 + 1] = p.getZ(i) / 2.3; }
+        ng.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
+        const [, fn, fr] = await scanSet('floor', 2.3, 2.3); fn.channel = fr.channel = 1; nearM.normalMap = fn; nearM.roughnessMap = fr; nearM.normalScale.set(1.4, 1.4); nearM.roughness = 1;
+      } catch (e) { console.warn('forest floor relief unavailable', e); }
+      const near = new THREE.Mesh(ng, nearM);
       near.receiveShadow = true; near.name = 'ground_survey'; realGround.add(near);
       if (T.far) {
         const F = T.far, farM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, map: F.photo ? await photoTex(F.photo) : null });
