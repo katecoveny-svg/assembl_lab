@@ -49,6 +49,9 @@ export interface Built {
   look?: 'editorial';
   /** the outward normal of the façade the opening view looks at: the opening hour is chosen so low sun falls on it */
   sunFace?: THREE.Vector3;
+  siteChip?: { text: string; title?: string };
+  /** a building standing in shade (bush all round): lifts sky light and exposure the way a camera would */
+  shade?: number;
   /** thins or thickens the editorial haze (1 = as designed) */
   fogScale?: number;
   /** the hour of day the sun opens at (default 15) */
@@ -435,14 +438,15 @@ export class App {
     const rot = -Math.atan2(dir.z, dir.x) + this.photoTurn;
     this.scene.background = this.edSky; this.scene.environment = this.edEnv ?? this.edSky;
     this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
-    const L = LOOK[mood];
-    this.envBase = L.env; this.scene.environmentIntensity = L.env; this.scene.backgroundIntensity = 1;
+    const L = LOOK[mood], sh = this.built.shade ?? 1;
+    this.envBase = L.env * sh; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1;
     this.scene.fog = new THREE.FogExp2(L.fog, L.fogDensity * (this.built.fogScale ?? 1));
     this.sun.color.setHex(L.sun); this.sun.intensity = alt > -2 ? L.sunI : 0;
-    this.hemiBase = L.hemi; this.hemi.intensity = L.hemi;
+    this.hemiBase = L.hemi * sh; this.hemi.intensity = this.hemiBase;
+    if (sh > 1) { this.hemi.color.set(0xe6ebee); this.hemi.groundColor.set(0x5a5f48); }
     const f = this.built.focus, R = this.built.radius * 3;
     if (this.fill) { this.fill.position.copy(f).add(new THREE.Vector3(-dir.x, 0.7, -dir.z).multiplyScalar(R)); this.fill.target.position.copy(f); this.fill.intensity = L.fill; }
-    this.exposureBase = L.exposure;
+    this.exposureBase = L.exposure * (1 + (sh - 1) * 0.22);
   }
   /** a test hook: extra turn of the photographed sky, radians */
   photoTurn = 0;
@@ -549,6 +553,8 @@ export class App {
       s.className = `chip ${c.tone ?? 'plain'}`;
       s.textContent = c.text;
       if (c.title) s.title = c.title;
+      // a project that found surveyed ground says so in place of the generic site chip
+      if (this.built.siteChip && c.text.startsWith('Site:')) { s.textContent = this.built.siteChip.text; s.title = this.built.siteChip.title ?? ''; s.className = 'chip plain'; }
       chips.append(s);
     }
     const layers = document.getElementById('layers')!;

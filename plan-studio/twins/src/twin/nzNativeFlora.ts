@@ -10,7 +10,7 @@ export interface SwayNode {
   amp: number;
 }
 
-function createArchedBladeGeometry(
+export function createArchedBladeGeometry(
   width: number,
   length: number,
   archDrop: number,

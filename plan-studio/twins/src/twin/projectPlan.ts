@@ -15,6 +15,8 @@ import { twinMats } from './mats';
 import { scanSet, scanTex, scannedFinishes } from './scanned';
 import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
 import { scandi } from './fitout';
+import { createArchedBladeGeometry } from './nzNativeFlora';
+import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -115,7 +117,8 @@ async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, 
         const tangent = rnd(s + k * 1.3) < 0.6, j = (a: number) => rnd(s + k * a) * 2 - 1;
         const n = tangent ? new THREE.Vector3(dx, dy * 0.8, dz) : new THREE.Vector3(j(2.3), j(4.1) * 0.6, j(5.9)); n.normalize();
         const shade = 0.72 + 0.5 * Math.max(0, dy) + 0.2 * rnd(s + k * 9.1);
-        cardSpec.push({ x: x + dx * rx * 0.96, y: cy + dy * rv * 0.96, z: z + dz * rx * 0.96, s: r * (nearTree ? 0.36 + rnd(s + k) * 0.3 : 0.62 + rnd(s + k) * 0.5), nx: n.x, ny: n.y, nz: n.z, c: c2.clone().multiplyScalar(shade) });
+        const bloom = r >= 4.2 && dy > 0.15 && rnd(s + k * 11.3) < 0.16;
+        cardSpec.push({ x: x + dx * rx * 0.96, y: cy + dy * rv * 0.96, z: z + dz * rx * 0.96, s: r * (nearTree ? 0.36 + rnd(s + k) * 0.3 : 0.62 + rnd(s + k) * 0.5) * (bloom ? 0.55 : 1), nx: n.x, ny: n.y, nz: n.z, c: bloom ? new THREE.Color(0.34, 0.035, 0.05) : c2.clone().multiplyScalar(shade) });
       }
       const th = Math.max(0.6, cy - gy), tr = Math.max(0.06, Math.min(0.2, h * 0.013)) * (0.8 + rnd(s + 4) * 0.5);
       m.compose(new THREE.Vector3(x, gy + th / 2 - 0.1, z), q, new THREE.Vector3(tr, th, tr)); trunks.setMatrixAt(i, m);
@@ -128,7 +131,37 @@ async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, 
   cardSpec.forEach((k, i) => { q.setFromUnitVectors(zAxis, v.set(k.nx, k.ny, k.nz)); m.compose(new THREE.Vector3(k.x, k.y, k.z), q, new THREE.Vector3(k.s * 2, k.s * 2, 1)); cards.setMatrixAt(i, m); cards.setColorAt(i, k.c.multiplyScalar(2.4)); });
   cards.instanceMatrix.needsUpdate = true; if (cards.instanceColor) cards.instanceColor.needsUpdate = true; cards.frustumCulled = false; cards.receiveShadow = true; cards.name = 'leaves';
   g.add(cards);
-  g.userData = { kind: 'planting', name: 'Bush', source: 'survey', note: 'One crown per tree top in the LiDAR canopy; height and spread from the survey, colour from the aerial photo. Species not identified.' };
+  // ponga (tree ferns) under the canopy near the building, as in regenerating coastal bush: one beside most trees, clear of the open ground
+  {
+    const parts: THREE.BufferGeometry[] = [];
+    const frond = createArchedBladeGeometry(0.95, 2.2, 0.95, false, 8), e = new THREE.Euler(), mm = new THREE.Matrix4(), one = new THREE.Vector3(1, 1, 1);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + (i % 2) * 0.22, tier = i % 2, f = frond.clone();
+      f.applyMatrix4(mm.compose(new THREE.Vector3(0, 1, 0), new THREE.Quaternion().setFromEuler(e.set(0.58 + tier * 0.34, a, 0, 'YXZ')), one.clone().multiplyScalar(tier === 0 ? 1.05 : 0.82)));
+      parts.push(f);
+    }
+    const crownG = mergeGeometries(parts)!;
+    const fm = new THREE.MeshStandardMaterial({ map: createPongaFrondTexture(), alphaTest: 0.35, roughness: 0.68, side: THREE.DoubleSide, color: 0xd8e8c4 });
+    const tm = new THREE.MeshStandardMaterial({ color: 0x3a2e26, roughness: 0.96 });
+    const spots: [number, number, number, number][] = [];
+    const open = (x: number, z: number) => nearT.every(([tx, tz, , tr]) => Math.hypot(tx - x, tz - z) > tr * 0.35) && Math.min(...nearT.map(([tx, tz]) => Math.hypot(tx - x, tz - z))) < 4.5;
+    nearT.forEach(([x, z, h], i) => {
+      if (h < 5 || rnd(i * 3.7) < 0.3) return;
+      const a = rnd(i * 5.1) * 6.283, d = 1.6 + rnd(i * 2.3) * 1.6, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
+      if (open(px, pz)) spots.push([px, pz, 1.6 + rnd(i * 9.9) * 2.6, 0.95 + rnd(i * 4.4) * 0.5]);
+    });
+    if (spots.length) {
+      const heads = new THREE.InstancedMesh(crownG, fm, spots.length), stems = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.09, 0.14, 1, 8).translate(0, 0.5, 0), tm, spots.length);
+      spots.forEach(([x, z, th, sc], i) => {
+        const gy = groundAt(x, z) - 0.2; q.setFromAxisAngle(up, rnd(i * 6.1) * 6.283);
+        m.compose(new THREE.Vector3(x, gy + th - sc, z), q, new THREE.Vector3(sc, sc, sc)); heads.setMatrixAt(i, m);
+        m.compose(new THREE.Vector3(x, gy, z), q, new THREE.Vector3(1, th, 1)); stems.setMatrixAt(i, m);
+      });
+      heads.castShadow = stems.castShadow = true; heads.receiveShadow = true; heads.frustumCulled = stems.frustumCulled = false; heads.name = 'ponga_fronds'; stems.name = 'ponga_trunks';
+      g.add(heads, stems);
+    }
+  }
+  g.userData = { kind: 'planting', name: 'Bush', source: 'survey', note: 'One crown per tree top in the LiDAR canopy; height and spread from the survey, colour from the aerial photo. Species are not identified by the survey: the forms shown (kānuka and broadleaf crowns, pōhutukawa in flower on the broadest, ponga beneath) are typical of regenerating coastal bush here and are proposed.' };
   return g;
 }
 /** a finished building model, set on the plan model's frame: the model's front runs along +Z, so it is turned to put the downhill wall at x = 0 */
@@ -445,10 +478,11 @@ export const projectPlan: Project = {
         if (o.name === 'fit_out') fitouts.push(o);
       });
       // clear glass, a timber soffit, and the rooms lit by day as well so the interior reads from outside
-      if (!T) applyEditorial(model);
+      const ed = !P.asBuilt; // the editorial look, on a flat pad or on surveyed ground; a finished building model keeps its own
+      if (ed) applyEditorial(model);
       const moodOf = (alt: number): Mood => (alt < 2 ? 'dusk' : alt < 26 ? 'golden' : 'day');
-      app.onSun.push((night, alt) => setInteriorLights(fitouts, T ? Math.max(night, 0.42) : Math.max(night, LOOK[moodOf(alt)].rooms)));
-      if (!T && !P.asBuilt) {
+      app.onSun.push((night, alt) => setInteriorLights(fitouts, !ed ? Math.max(night, 0.42) : Math.max(night, LOOK[moodOf(alt)].rooms)));
+      if (ed) {
         const runs: EaveRun[] = [];
         for (const b of P.buildings) {
           const y0 = b.floorLevel ?? 0;
@@ -502,7 +536,7 @@ export const projectPlan: Project = {
         if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
       }
       let heroFront: { nrm: THREE.Vector3; along: THREE.Vector3 } | null = null;
-      if (!T && P.buildings[0]) {
+      if (ed && P.buildings[0]) {
         // the opening view: eye height, square-on to the most glazed wall, a little off-centre
         const b0 = P.buildings[0], ws = b0.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
         const best = [...ws].sort((p1, p2) => p2.openings.reduce((t, o) => t + o.b - o.a, 0) - p1.openings.reduce((t, o) => t + o.b - o.a, 0))[0];
@@ -510,7 +544,7 @@ export const projectPlan: Project = {
           const mid = (best.from + best.to) / 2, len = best.to - best.from, dist = Math.max(10, len * 1.35), ox = b0.origin[0], oz = b0.origin[1], y0 = b0.floorLevel ?? 0;
           const wm = best.axis === 'x' ? new THREE.Vector3(ox + mid, y0, oz + best.at) : new THREE.Vector3(ox + best.at, y0, oz + mid);
           const nrm = best.axis === 'x' ? new THREE.Vector3(0, 0, best.out) : new THREE.Vector3(best.out, 0, 0), along = new THREE.Vector3(-nrm.z, 0, nrm.x);
-          if (!P.views?.length) keys.unshift({ label: 'Hero', eye: wm.clone().addScaledVector(nrm, dist).addScaledVector(along, dist * 0.32).setY(y0 + 1.45), look: wm.clone().setY(y0 + 1.25) });
+          if (!(T?.views ?? P.views)?.length && !T) keys.unshift({ label: 'Hero', eye: wm.clone().addScaledVector(nrm, dist).addScaledVector(along, dist * 0.32).setY(y0 + 1.45), look: wm.clone().setY(y0 + 1.25) });
           heroFront = { nrm, along };
           sunFace = nrm;
         }
@@ -557,6 +591,8 @@ export const projectPlan: Project = {
     if (terrain) {
       const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
       const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: T.photo ? await photoTex(T.photo) : null });
+      // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
+      if (input.kind === 'plan' && !input.plan.asBuilt) nearM.color.setRGB(1.12, 1.04, 0.84);
       const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
       try {
         // forest-floor relief at its real size, on a second set of coordinates measured in metres
@@ -597,7 +633,7 @@ export const projectPlan: Project = {
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: 'LiDAR ground and aerial photo; cut to a platform under the house', visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
-    if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: 'tree tops from the LiDAR canopy; species not identified', visible: true, object: bushObj });
+    if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
     if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: plantObj.name === 'native_planting' ? 'proposed, to frame the building; not from the plan' : 'from the plan model', visible: true, object: plantObj });
     if (lightObj) layers.push({ id: 'lights', label: 'Soffit lights', note: 'proposed downlights over the glazed walls', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
@@ -625,8 +661,9 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(terrain ? {} : { look: 'editorial' as const, sunFace, sunHour: input.kind === 'plan' ? input.plan.site?.sunHour : undefined }),
-      ...(terrain ? { fog: [220, 2600] as [number, number], maxDistance: 600, shadowRadius: 42, sunHour: terrain.sunHour ?? 10 } : {}),
+      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 2.1 : 1 } : {}),
+      ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: 'Site: LINZ LiDAR and aerial photo', title: terrain.source ?? '' } } : {}),
+      ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
       radius,
       view: { eye: keys[0].eye, look: keys[0].look },
