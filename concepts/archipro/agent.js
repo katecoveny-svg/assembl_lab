@@ -9,7 +9,7 @@ const panel = $("#guide"), log = $("#guide-log"), form = $("#guide-form"), input
 const status = $("#guide-status"), voiceBtn = $("#guide-voice"), voiceL = $("#guide-voice-l"), mic = $("#guide-mic");
 const small = () => matchMedia("(max-width: 600px)").matches;
 
-let live = null, route = "primary", modelName = "Claude Fable 5.2", busy = false, voiceOn = true, eleven = false;
+let down = false, live = null, route = "primary", modelName = "Claude Fable 5.2", busy = false, voiceOn = true, eleven = false;
 const history = [];
 const TRY = ["Fix the kitchen ventilation, then show me the schedule", "Make the living wing 11 metres and print the plans", "Which cladding suits a sea-spray site?",
   "Put black joinery and cedar on the real house at sunset", "Why Kate for AI Special Projects?", "What would you do in the first ninety days?"];
@@ -57,7 +57,7 @@ async function check() {
   label();
 }
 function label() {
-  status.textContent = live ? `Live · ${modelName} · acts on this page only` : "Offline here · scripted replies, not AI · acts on this page only";
+  status.textContent = live ? `Live · ${modelName} · acts on this page only` : (down ? "Model unreachable · scripted replies, not AI · acts on this page only" : "Offline here · scripted replies, not AI · acts on this page only");
   const bv = browserVoice();
   voiceL.textContent = !voiceOn ? "Replies are text only" : eleven ? "New Zealand voice by ElevenLabs" : bv ? `Browser voice: ${bv.name}${/NZ/i.test(bv.lang) ? "" : " (not a New Zealand voice)"}` : "No voice in this browser";
 }
@@ -98,7 +98,10 @@ async function send(text) {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         history.pop();
-        if (j.error === "not_configured") { live = false; label(); const r = scripted(text); w.remove(); say(r.text, { did: r.did }); return; }
+        if (j.error === "not_configured" || j.error === "model_error" || j.error === "upstream" || !j.error) {
+          // the model can't be reached: say so on the status line and carry on with the scripted guide, so the walk-through still works
+          down = j.error !== "not_configured"; live = false; label(); const r = scripted(text); w.remove(); say(r.text, { did: r.did }); return;
+        }
         w.remove(); say(j.error === "daily_cap" || j.error === "busy" ? "The guide has had a lot of questions today and needs a breather. Everything on the page still works by hand." : j.error === "conversation_too_long" ? "This conversation has got long. Close the guide and open it again to start fresh." : "I couldn't reach the model just then. Try again in a moment; the page itself still works.", { speak: false });
         return;
       }
@@ -161,7 +164,7 @@ async function run(name, a) {
 
 // ---------------------------------------------------------------------------------------------- the scripted fallback (no AI)
 function scripted(t) {
-  const q = t.toLowerCase(), S = window.__studio, P = window.__page, pre = "Scripted reply (the live guide isn't switched on for this preview). ";
+  const q = t.toLowerCase(), S = window.__studio, P = window.__page, pre = down ? "Scripted reply (the live model can't be reached right now). " : "Scripted reply (the live guide isn't switched on for this preview). ";
   if (/why kate|special projects|the role|hire|ninety|90 days/.test(q)) { P.go("plan"); return { text: `${pre}Kate made this page as a working sample for the Director, AI Special Projects role. Every idea on it runs. She'd start with one idea and an agreed baseline, ship it to a small group, then widen only on the evidence, with named people approving each step. Her architecture studio already works this way, with 33 specialist agents and a human reviewer for each.`, did: ["Went to the first ninety days"] }; }
   if (/print/.test(q)) { const n = S.print(); return { text: `${pre}I've opened the print dialog with all ${n} sheets at A3 landscape.`, did: ["Opened the print dialog"] }; }
   if (/kitchen|ventilat/.test(q)) { S.go(); const r = S.set({ kitchenWindow: 3600 }); S.showSheet("A901"); return { text: `${pre}I widened the kitchen window to 3.6 metres. ${r.precheck.fail ? `${r.precheck.fail} item still to resolve.` : "Nothing is left to resolve in the pre-check."} The schedule is on sheet A901.`, did: ["Changed the house: kitchen window 3.6 m", "Showed sheet A901"] }; }
