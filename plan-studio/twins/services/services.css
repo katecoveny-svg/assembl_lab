@@ -94,3 +94,33 @@ p, ul { margin: 0; } ul { padding: 0; list-style: none; }
   .clash { top: auto; bottom: 112px; }
 }
 @media (prefers-reduced-motion: reduce) { .panel, .clash, .checks li, .lg-bar b { transition: none; } }
+
+/* v4: show, don't write. A giant numeral, short labels, working behind a tap */
+.count { background: none; box-shadow: none; backdrop-filter: none; padding: 0; left: 28px; top: 24px; }
+.count .big { font-size: 132px; line-height: .8; letter-spacing: -.065em; font-stretch: 78%; margin-top: 14px; }
+.count .of { font-size: 13px; letter-spacing: 0; font-stretch: 100%; }
+.count .cap { margin-top: 14px; text-transform: uppercase; letter-spacing: .08em; opacity: .9; }
+.legend-card { width: 210px; }
+.lg { grid-template-columns: 12px 1fr 46px; min-height: 30px; }
+.lg i { box-shadow: inset 0 0 0 1px rgba(101, 74, 78, .5); }
+.lg-bar { display: none; }
+.panel { top: 232px; width: 250px; }
+.checks { gap: 6px; }
+.checks li[data-id] { cursor: pointer; }
+.ct { font-size: 13px; }
+.checks .cv, .checks .cf { display: none; }
+.checks li.open .cv, .checks li.open .cf { display: block; }
+.stats, .small, .clash { display: none; }
+.fine { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; opacity: .85; }
+.fine .sq { width: 9px; height: 9px; background: var(--plum); flex: none; }
+.fine #source:empty { display: none; }
+@media (max-width: 860px) {
+  .count { left: 14px; top: 12px; width: calc(50% - 16px); }
+  .count .big { font-size: 68px; margin-top: 8px; }
+  .legend-card { width: calc(50% - 16px); }
+  .panel { top: auto; width: auto; max-height: 30%; }
+  .fine { font-size: 9.5px; }
+  .fine #source { display: none; }
+}
+.count { background: rgba(255, 253, 251, .9); padding: 14px 18px 16px; left: 20px; top: 20px; }
+@media (max-width: 860px) { .count { padding: 10px 10px 12px; left: 12px; } }
