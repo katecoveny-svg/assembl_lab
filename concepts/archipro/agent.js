@@ -257,11 +257,19 @@ function glide(el, ms, id) {
     scrollTo({ top: from + (to - from) * e, behavior: "instant" }); if (k < 1) requestAnimationFrame(frame); else gliding = 0;
   })(t0);
 }
+// The browser only allows sound after a tap. Until then the tour runs on captions; the first tap brings the voice in.
+let soundBlocked = false, auto = false;
+function blocked(then) {
+  if (!soundBlocked) { soundBlocked = true; say("Captions are on. Tap anywhere for the voice.", { speak: false, note: true }); }
+  then();
+}
+addEventListener("pointerdown", () => { if (soundBlocked) { soundBlocked = false; unlock(); } }, true);
+addEventListener("keydown", () => { if (soundBlocked) { soundBlocked = false; unlock(); } }, true);
 function speakWait(text, id) {
   return new Promise((resolve) => {
     let over = false; const done = () => { if (!over) { over = true; resolve(); } };
     const quiet = () => setTimeout(done, Math.max(2600, text.length * 62));
-    if (!voiceOn) return quiet();
+    if (!voiceOn || soundBlocked) return quiet();
     const clean = text.replace(/\s+/g, " ").trim().slice(0, 680);
     (async () => {
       if (eleven) {
@@ -270,9 +278,13 @@ function speakWait(text, id) {
           if (r.ok) {
             const blob = await r.blob(); if (id !== tourId) return done();
             stopVoice(); audioUrl = URL.createObjectURL(blob); player.src = audioUrl; player.onended = () => { player.onended = null; done(); };
-            await player.play(); setTimeout(done, clean.length * 120 + 6000); return;
+            try { await player.play(); } catch { return blocked(quiet); }   // no sound without a tap: carry on with captions
+            setTimeout(done, clean.length * 120 + 6000); return;
           }
         } catch { /* fall back to the browser's voice */ }
+      }
+      if (!unlocked && !navigator.userActivation?.hasBeenActive) return blocked(quiet);
+      {
       }
       if ("speechSynthesis" in window && browserVoice()) {
         const u = new SpeechSynthesisUtterance(clean), v = browserVoice(); u.voice = v; u.lang = v.lang;
@@ -284,6 +296,7 @@ function speakWait(text, id) {
 }
 async function tour() {
   if (touring) return; touring = true; const id = ++tourId; unlock();
+  if (live === null) await check();
   open({ quiet: true }); panel.classList.add("asked", "touring"); low();
   for (const s of TOUR) {
     if (id !== tourId) break;
@@ -299,3 +312,8 @@ async function tour() {
 function stopTour() { if (!touring) return; touring = false; tourId++; gliding = 0; player.onended = null; stopVoice(); panel.classList.remove("touring", "tucked"); pill.hidden = true; fitPanel(); }
 document.querySelectorAll("[data-tour]").forEach((b) => { if (!b.closest("#guide-try")) b.addEventListener("click", () => tour()); });
 $("#guide-stop")?.addEventListener("click", stopTour);
+// The walk-through starts by itself: with the voice where the browser allows it, with captions where it doesn't.
+// Scrolling the page yourself stops it. Add ?notour to the address to open the page quietly.
+const userStop = (e) => { if (auto && touring && e.isTrusted && !panel.contains(e.target)) stopTour(); };
+addEventListener("wheel", userStop, { passive: true }); addEventListener("touchmove", userStop, { passive: true });
+if (!/[?&]notour\b/.test(location.search) && !location.hash) setTimeout(() => { if (!touring && panel.hidden && scrollY < 60) { auto = true; tour(); } }, 2200);
