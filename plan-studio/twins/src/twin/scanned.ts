@@ -28,16 +28,23 @@ const RULES: { re: RegExp; set: string; size: number; tileKey: string; colour: n
   { re: /treated_pine/, set: 'post', size: 1.8, tileKey: 'framing', colour: 0x8e8a84, metal: 0, label: 'scanned weathered timber' },
 ];
 const done = new WeakSet<THREE.Material>();
-export async function scannedFinishes(root: THREE.Object3D, tiles: Record<string, { tile: number }>) {
+export async function scannedFinishes(root: THREE.Object3D, tiles: Record<string, { tile: number }>, opts: { cladding?: 'metal'; claddingColour?: number } = {}) {
   const mats = new Set<THREE.MeshPhysicalMaterial>();
   root.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.MeshPhysicalMaterial | undefined; if (m && !Array.isArray(m) && m.name) mats.add(m); });
   let n = 0;
   for (const m of mats) {
-    const r = RULES.find((x) => x.re.test(m.name)); if (!r || done.has(m)) continue; done.add(m);
+    let r = RULES.find((x) => x.re.test(m.name)); if (!r || done.has(m)) continue; done.add(m);
+    // profiled metal wall cladding: the steel sheet scan, ribs upright, in the scheduled colour
+    if (opts.cladding === 'metal' && /cedar_shiplap/.test(m.name)) r = { re: /./, set: 'roof', size: 2.0, tileKey: 'blackstain', colour: opts.claddingColour ?? 0x4a4d4f, metal: 0.35, label: 'scanned profiled steel sheet, ribs upright (Paneldek as specified; profile indicative)' };
     const tile = tiles[m.name.includes('pile') || m.name.includes('h5') ? 'pile' : r.tileKey]?.tile ?? 1;
     const [col, nor, rgh] = await scanSet(r.set, r.size, tile, r.turn);
     m.map = col; m.normalMap = nor; m.roughnessMap = rgh; m.metalnessMap = null; m.aoMap = null; m.roughness = 1; m.metalness = r.metal; m.color.set(r.colour); m.normalScale.set(1, 1);
+    if (r.metal > 0) { m.clearcoat = 0.25; m.clearcoatRoughness = 0.45; }
     m.userData.scanned = r.label; m.needsUpdate = true; n++;
+  }
+  // glass by day: dark, sharp reflections of sky and bush, the room dim behind it
+  for (const m of mats) if (/glass/.test(m.name) && !done.has(m)) {
+    done.add(m); m.transmission = 0; m.transparent = true; m.opacity = 0.42; m.color.set(0x161c1f); m.roughness = 0.015; m.metalness = 0; m.envMapIntensity = 2.6; m.specularIntensity = 1; m.reflectivity = 0.6; m.depthWrite = false; m.needsUpdate = true; n++;
   }
   return n;
 }

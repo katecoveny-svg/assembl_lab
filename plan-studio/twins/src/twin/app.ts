@@ -42,6 +42,8 @@ export interface Built {
   radius: number;
   /** optional overrides for big sites: haze range in metres, how far the camera may pull back, and the half-width the sun's shadows cover */
   fog?: [number, number];
+  /** a photographed sky (equirectangular) and where its sun sits across the picture, 0 to 1 */
+  skyPhoto?: { url: string; sunU: number };
   /** the hour of day the sun opens at (default 15) */
   sunHour?: number;
   maxDistance?: number;
@@ -183,6 +185,12 @@ export class App {
     this.setupDownloads();
     this.log('Building the model…');
     this.built = await this.project.build(this);
+    if (this.built.skyPhoto) {
+      try {
+        const t = await new THREE.TextureLoader().loadAsync(this.built.skyPhoto.url);
+        t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; this.photoSky = t;
+      } catch (e) { console.warn('photographed sky unavailable; using the drawn sky', e); }
+    }
     if (this.built.north) this.north2.copy(this.built.north).normalize();
     for (const l of this.built.layers) await this.setLayer(l, l.visible);
     const { eye, look } = this.built.view;
@@ -305,6 +313,7 @@ export class App {
     this.envSky.sunPosition.value.copy(s.v).multiplyScalar(1000);
     this.night = Math.max(0, Math.min(1, (2 - s.alt) / 8));
     this.updateEnv();
+    this.usePhotoSky(s.v, s.alt);
     for (const cb of this.onSun) cb(this.night, s.alt);
     const out = document.getElementById('sunread');
     if (out) out.textContent = s.alt > 0 ? `Sun ${fmt(s.alt, 0)}° up, bearing ${fmt(s.azFromNorth, 0)}°` : 'Sun below the horizon';
@@ -364,8 +373,26 @@ export class App {
   /** callbacks for projects that react to the time of day (lights on at dusk) */
   onSun: ((night: number, alt: number) => void)[] = [];
 
+  /** a photographed sky, when the project brings one: used as the backdrop and the fill light by day, turned so its sun sits where the sun is */
+  photoSky: THREE.Texture | null = null;
+  private photoOn = false;
+  private photoEnv: THREE.Texture | null = null;
+  private usePhotoSky(dir: THREE.Vector3, alt: number) {
+    const on = !!this.photoSky && alt > 8;
+    this.photoOn = on; this.sky.visible = !on;
+    if (!on || !this.photoSky || !this.built.skyPhoto) { if (this.scene.background === this.photoSky) this.scene.background = null; return; }
+    const rot = (this.built.skyPhoto.sunU - 0.5) * 2 * Math.PI - Math.atan2(dir.z, dir.x) + this.photoTurn;
+    if (!this.photoEnv && this.pmrem) { try { this.photoEnv = this.pmrem.fromEquirectangular(this.photoSky).texture; } catch (e) { console.warn('sky light from the photo failed', e); } }
+    this.scene.background = this.photoSky; this.scene.environment = this.photoEnv ?? this.photoSky;
+    this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
+    this.envBase = 1.9; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1.15;
+  }
+  /** a test hook: extra turn of the photographed sky, radians */
+  photoTurn = 0;
+
   /** the sky as image-based light: PMREM of a second SkyMesh, refreshed when the sun moves */
   async updateEnv() {
+    if (this.photoOn) return;
     if (!this.pmrem) return;
     if (this.envBusy) {
       this.envAgain = true;

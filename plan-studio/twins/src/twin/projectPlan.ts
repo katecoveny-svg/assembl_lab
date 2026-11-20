@@ -377,7 +377,7 @@ export const projectPlan: Project = {
         h.updateMatrixWorld(true);
         box.expandByObject(h);
       }
-      if (T) { app.log('Loading scanned materials…'); try { await scannedFinishes(model, M.sets); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
+      if (T) { app.log('Loading scanned materials…'); try { const fin0 = (P.buildings[0] as unknown as { finish?: { claddingProfile?: string; claddingColour?: string } }).finish; await scannedFinishes(model, M.sets, fin0?.claddingProfile === 'metal' ? { cladding: 'metal', claddingColour: fin0.claddingColour ? new THREE.Color(fin0.claddingColour).getHex() : undefined } : {}); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
       app.log('Placing library pieces…');
       await fillSlots(model);
       model.traverse((o) => {
@@ -519,7 +519,7 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(terrain ? { fog: [220, 2600] as [number, number], maxDistance: 600, shadowRadius: 42, sunHour: terrain.sunHour ?? 10 } : {}),
+      ...(terrain ? { fog: [220, 2600] as [number, number], maxDistance: 600, shadowRadius: 42, sunHour: terrain.sunHour ?? 10, skyPhoto: { url: `${BASE}../tex/sky.webp`, sunU: 0.5947 } } : {}),
       north: terrain?.north ? new THREE.Vector2(terrain.north[0], terrain.north[1]) : undefined,
       radius,
       view: { eye: keys[0].eye, look: keys[0].look },
