@@ -112,6 +112,17 @@ function clean(messages) {
   return out[0].role === "user" ? out : null;
 }
 
+// Why the model refused, as one plain word and nothing else from the provider's reply. 502s are avoided on
+// purpose: Cloudflare replaces a 502 body with its own page, so the browser never saw the reason.
+function why(status, t) {
+  let type = "", msg = ""; try { const e = JSON.parse(t)?.error; type = String(e?.type || ""); msg = String(e?.message || ""); } catch {}
+  if (/credit balance|billing/i.test(msg)) return "credit";
+  if (status === 401 || status === 403 || /authentication|permission/.test(type)) return "key";
+  if (status === 429 || status === 529 || /overloaded|rate_limit/.test(type)) return "busy";
+  if (status === 400) return "request";
+  return "other";
+}
+
 async function ask(env, model, messages, state) {
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -146,10 +157,10 @@ export async function onRequest({ request, env }) {
     if (!r.ok && model === MODEL && (r.status === 404 || r.status === 400)) {
       const t = await r.text();
       if (/model/i.test(t) && /not.?found|not available|does not exist|invalid/i.test(t)) { console.warn("archipro-agent: primary model unavailable, falling back"); model = FALLBACK; r = await ask(env, model, messages, state); }
-      else { console.warn("archipro-agent: request refused", r.status, t.slice(0, 300)); return json(502, { error: "model_error" }); }
+      else { console.warn("archipro-agent: request refused", r.status, t.slice(0, 300)); return json(503, { error: "model_error", upstream: r.status, why: why(r.status, t) }); }
     }
-    if (!r.ok) { console.warn("archipro-agent: model error", r.status, (await r.text()).slice(0, 300)); return json(r.status === 429 ? 429 : 502, { error: r.status === 429 ? "busy" : "model_error" }); }
+    if (!r.ok) { const t = await r.text(); console.warn("archipro-agent: model error", r.status, t.slice(0, 300)); return json(r.status === 429 ? 429 : 503, { error: r.status === 429 ? "busy" : "model_error", upstream: r.status, why: why(r.status, t) }); }
     const j = await r.json();
     return json(200, { type: "assembl.archipro.agent", model: j.model || model, route: model === MODEL ? "primary" : "fallback", stop_reason: j.stop_reason, content: j.content || [] });
-  } catch (e) { console.warn("archipro-agent: failed", e?.message); return json(502, { error: "upstream" }); }
+  } catch (e) { console.warn("archipro-agent: failed", e?.message); return json(503, { error: "upstream" }); }
 }
