@@ -40,6 +40,12 @@ export interface Built {
   layers: Layer[];
   focus: THREE.Vector3;
   radius: number;
+  /** optional overrides for big sites: haze range in metres, how far the camera may pull back, and the half-width the sun's shadows cover */
+  fog?: [number, number];
+  /** the hour of day the sun opens at (default 15) */
+  sunHour?: number;
+  maxDistance?: number;
+  shadowRadius?: number;
   view: { eye: THREE.Vector3; look: THREE.Vector3 };
   path: Key[];
   /** world y range the section slider covers */
@@ -183,10 +189,10 @@ export class App {
     this.camera.position.copy(eye);
     this.controls.target.copy(look);
     applyCameraFromURL(this);
-    this.controls.maxDistance = this.built.radius * 6;
+    this.controls.maxDistance = this.built.maxDistance ?? this.built.radius * 6;
     this.sun.shadow.mapSize.set(4096, 4096);
     this.sun.shadow.radius = 3;
-    const r = this.built.radius;
+    const r = this.built.shadowRadius ?? this.built.radius;
     const sc = this.sun.shadow.camera as THREE.OrthographicCamera;
     sc.left = sc.bottom = -r;
     sc.right = sc.top = r;
@@ -351,7 +357,7 @@ export class App {
     this.envBase = 0.05 + 0.15 * day;
     this.day = day;
     this.scene.environmentIntensity = this.envBase;
-    this.scene.fog = new THREE.Fog(hor.getHex(), this.built.radius * 3, this.built.radius * 9);
+    this.scene.fog = new THREE.Fog(hor.getHex(), this.built.fog?.[0] ?? this.built.radius * 3, this.built.fog?.[1] ?? this.built.radius * 9);
     if (old) setTimeout(() => old.dispose(), 500);
   }
 
@@ -416,7 +422,7 @@ export class App {
     const time = document.getElementById('suntime') as HTMLInputElement;
     const y = now.getFullYear();
     date.value = `${y}-12-21`;
-    time.value = '15';
+    time.value = String(this.built.sunHour ?? 15);
     const apply = () => {
       const [yy, mm, dd] = date.value.split('-').map(Number);
       const h = Number(time.value);
