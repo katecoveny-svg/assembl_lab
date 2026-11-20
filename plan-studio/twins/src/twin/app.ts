@@ -385,7 +385,7 @@ export class App {
     if (!this.photoEnv && this.pmrem) { try { this.photoEnv = this.pmrem.fromEquirectangular(this.photoSky).texture; } catch (e) { console.warn('sky light from the photo failed', e); } }
     this.scene.background = this.photoSky; this.scene.environment = this.photoEnv ?? this.photoSky;
     this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
-    this.envBase = 1.9; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1.15;
+    this.envBase = 2.7; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1.2;
   }
   /** a test hook: extra turn of the photographed sky, radians */
   photoTurn = 0;
