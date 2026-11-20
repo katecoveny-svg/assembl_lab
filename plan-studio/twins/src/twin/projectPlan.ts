@@ -15,6 +15,8 @@ import { twinMats } from './mats';
 import { scanSet, scanTex, scannedFinishes } from './scanned';
 import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
 import { scandi } from './fitout';
+import { scandiMats, suite } from './editorial';
+import { buildScandiDiningSuite } from './scandiInteriors';
 import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
@@ -493,6 +495,18 @@ export const projectPlan: Project = {
               runs.push({ a: pt(o.a + 0.1), b: pt(o.b - 0.1), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0) });
             }
           }
+        }
+        // a table and chairs on the largest deck: something of known size to read the building against
+        for (const b of P.buildings) {
+          const ds = ((b.levels[0] as unknown as { decks?: { u0: number; u1: number; v0: number; v1: number; drop?: number }[] }).decks ?? []).filter((d) => Math.min(d.u1 - d.u0, d.v1 - d.v0) >= 3.2).sort((p1, p2) => (p2.u1 - p2.u0) * (p2.v1 - p2.v0) - (p1.u1 - p1.u0) * (p1.v1 - p1.v0))[0];
+          if (!ds) continue;
+          const alongU = ds.u1 - ds.u0 >= ds.v1 - ds.v0, long = Math.max(ds.u1 - ds.u0, ds.v1 - ds.v0);
+          const t = suite(buildScandiDiningSuite(scandiMats(), long >= 5.5 ? 3 : 2, 0), 'Outdoor table and chairs', 'oak and linen; shown for scale');
+          // towards the house end of the deck's long side, clear of the edge
+          const cu = alongU ? ds.u0 + (ds.u1 - ds.u0) * 0.62 : (ds.u0 + ds.u1) / 2, cv = alongU ? (ds.v0 + ds.v1) / 2 : ds.v0 + (ds.v1 - ds.v0) * 0.62;
+          t.position.set(b.origin[0] + cu, (b.floorLevel ?? 0) - (ds.drop ?? 0.05) + 0.005, b.origin[1] + cv);
+          t.rotation.y = alongU ? 0 : Math.PI / 2;
+          model.add(t);
         }
         model.updateMatrixWorld(true);
         lightObj = eaveLights(model, runs);

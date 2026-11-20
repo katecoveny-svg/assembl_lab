@@ -548,22 +548,25 @@ export function buildScandiDiningSuite(mats: InteriorMaterials, perSide = 3, cei
   }
 
   // Sculptural warm alabaster & brass oval lantern pendant suspended above dining table
-  // the lantern hangs about 850 mm clear of the table whatever the ceiling
-  const lanternY = Math.min(ceiling - 0.5, 1.72);
-  const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 14), mats.tapwareMat);
-  canopy.position.set(0, ceiling - 0.015, 0);
-  g.add(canopy);
-  const rodLen = Math.max(0.05, ceiling - 0.03 - (lanternY + 0.16));
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, rodLen, 8), mats.tapwareMat);
-  rod.position.set(0, ceiling - 0.03 - rodLen / 2, 0);
-  g.add(rod);
-  const alabaster = new THREE.Mesh(
-    new THREE.SphereGeometry(0.42, 26, 18),
-    new THREE.MeshStandardMaterial({ color: 0xf7eee0, emissive: 0xffd292, emissiveIntensity: 1.4, roughness: 0.34 })
-  );
-  alabaster.scale.set(1.15, 0.44, 1.15);
-  alabaster.position.set(0, lanternY, 0);
-  g.add(alabaster);
+  // no ceiling (a table outdoors): no lantern
+  if (ceiling > 0) {
+    // the lantern hangs about 850 mm clear of the table whatever the ceiling
+    const lanternY = Math.min(ceiling - 0.5, 1.72);
+    const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 14), mats.tapwareMat);
+    canopy.position.set(0, ceiling - 0.015, 0);
+    g.add(canopy);
+    const rodLen = Math.max(0.05, ceiling - 0.03 - (lanternY + 0.16));
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, rodLen, 8), mats.tapwareMat);
+    rod.position.set(0, ceiling - 0.03 - rodLen / 2, 0);
+    g.add(rod);
+    const alabaster = new THREE.Mesh(
+      new THREE.SphereGeometry(0.42, 26, 18),
+      new THREE.MeshStandardMaterial({ color: 0xf7eee0, emissive: 0xffd292, emissiveIntensity: 1.4, roughness: 0.34 })
+    );
+    alabaster.scale.set(1.15, 0.44, 1.15);
+    alabaster.position.set(0, lanternY, 0);
+    g.add(alabaster);
+  }
 
   return g;
 }

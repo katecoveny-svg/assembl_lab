@@ -775,7 +775,12 @@ function subfloor(asset: string, M: TwinMats, poly: Pt[], topY: number, gy: (u: 
       const gr = gy(u, v);
       const h = bearerTop - bearerH - gr + 0.05;
       if (h < 0.05) continue;
-      piles.push(boxAt(post.size, h, post.size, u, gr - 0.05 + h / 2, v, M.sets.pile.tile, 'y'));
+      if (post.size >= 0.2) {
+        // a pole house stands on round poles
+        const cyl = new THREE.CylinderGeometry(post.size * 0.56, post.size * 0.6, h, 16);
+        cyl.translate(u, gr - 0.05 + h / 2, v);
+        piles.push(cyl);
+      } else piles.push(boxAt(post.size, h, post.size, u, gr - 0.05 + h / 2, v, M.sets.pile.tile, 'y'));
     }
   }
   if (joists.length) g.add(tag(mesh(`${name}_joists`, mergeGeometries(joists), M.framing), asset, 'IfcMember', { predefinedType: 'JOIST', material: `radiata pine H3.2, ${Math.round(joistH * 1000)} × 45 at 450 centres`, source: 'assumed' }));
