@@ -192,24 +192,65 @@ async function asBuiltModel(a: NonNullable<PlanModel['asBuilt']>) {
 }
 
 /** timber stairs down a line, from one level to another */
-function flight(pts: [number, number][], levels: [number, number], w: number, groundAt: (x: number, z: number) => number, mat: THREE.Material) {
+type StairBarrier = 'glass' | 'balusters';
+interface StairMats { timber: THREE.Material; glass: THREE.Material; metal: THREE.Material }
+/** a raking glass barrier along a line that falls from y0 to y1: 12 mm panels about 1.2 m long with 20 mm gaps, two fixings each, a slim cap rail */
+function rakedGlass(a: [number, number], b: [number, number], y0: number, y1: number, panes: THREE.BufferGeometry[], trim: THREE.BufferGeometry[], foot = -0.06) {
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (L < 0.25) return;
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), pitch = Math.atan2(y1 - y0, L), n = Math.max(1, Math.round(L / 1.2)), pw = L / n;
+  const P = (d: number) => [a[0] + ((b[0] - a[0]) * d) / L, y0 + ((y1 - y0) * d) / L, a[1] + ((b[1] - a[1]) * d) / L];
+  for (let k = 0; k < n; k++) {
+    const d0 = k * pw + 0.01, d1 = (k + 1) * pw - 0.01, A = P(d0), B = P(d1);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([A[0], A[1] + foot, A[2], B[0], B[1] + foot, B[2], B[0], B[1] + 1.0, B[2], A[0], A[1] + 1.0, A[2]], 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+    g.setIndex([0, 1, 2, 0, 2, 3]); g.computeVertexNormals(); panes.push(g.toNonIndexed());
+    for (const f of [0.22, 0.78]) { const C = P(d0 + (d1 - d0) * f); trim.push(new THREE.CylinderGeometry(0.022, 0.022, 0.16, 12).translate(C[0], C[1] + foot + 0.05, C[2])); }
+  }
+  const M = P(L / 2), rail = new THREE.BoxGeometry(Math.hypot(L, y1 - y0) + 0.02, 0.022, 0.042);
+  rail.rotateZ(pitch); rail.rotateY(-ang); rail.translate(M[0], M[1] + 1.011, M[2]); trim.push(rail);
+}
+/** a flight of timber steps with stringers along a centre line: levels[0] at the first point, levels[1] at the last */
+function flight(pts: [number, number][], levels: [number, number], w: number, groundAt: (x: number, z: number) => number, mats: StairMats, barrier: StairBarrier = 'glass') {
   const segs = pts.slice(1).map((b, i) => ({ a: pts[i], b, L: Math.hypot(b[0] - pts[i][0], b[1] - pts[i][1]) })), L = segs.reduce((t, s) => t + s.L, 0);
-  const n = Math.max(2, Math.ceil(Math.abs(levels[0] - levels[1]) / 0.18)), rise = (levels[1] - levels[0]) / n, going = L / n, parts: THREE.BufferGeometry[] = [];
+  const n = Math.max(2, Math.ceil(Math.abs(levels[0] - levels[1]) / 0.18)), rise = (levels[1] - levels[0]) / n, going = L / n, parts: THREE.BufferGeometry[] = [], panes: THREE.BufferGeometry[] = [], trim: THREE.BufferGeometry[] = [];
   const at = (d: number) => { let r = d; for (const s of segs) { if (r <= s.L) return { x: s.a[0] + ((s.b[0] - s.a[0]) * r) / s.L, z: s.a[1] + ((s.b[1] - s.a[1]) * r) / s.L, ang: Math.atan2(s.b[1] - s.a[1], s.b[0] - s.a[0]) }; r -= s.L; } const s = segs[segs.length - 1]; return { x: s.b[0], z: s.b[1], ang: Math.atan2(s.b[1] - s.a[1], s.b[0] - s.a[0]) }; };
   for (let k = 0; k < n; k++) {
     const p = at((k + 0.5) * going), y = levels[0] + (k + 1) * rise;
     const t = new THREE.BoxGeometry(going + 0.02, 0.045, w); t.rotateY(-p.ang); t.translate(p.x, y - 0.0225, p.z); parts.push(t);
-    for (const side of [-1, 1]) { const sx = p.x - Math.sin(p.ang) * side * (w / 2 - 0.03) * -1, sz = p.z + Math.cos(p.ang) * side * (w / 2 - 0.03) * -1; const st = new THREE.BoxGeometry(going + 0.02, 0.24, 0.045); st.rotateY(-p.ang); st.translate(sx, y - 0.17, sz); parts.push(st); }
-    for (const side of [-1, 1]) { const bx = p.x + Math.sin(p.ang) * side * (w / 2 - 0.02), bz = p.z - Math.cos(p.ang) * side * (w / 2 - 0.02); parts.push(new THREE.BoxGeometry(0.03, 0.95, 0.03).translate(bx, y + 0.475, bz)); const hr = new THREE.BoxGeometry(going + 0.04, 0.04, 0.06); hr.rotateY(-p.ang); hr.translate(bx, y + 0.97, bz); parts.push(hr); }
+    for (const side of [-1, 1]) { const sx = p.x + Math.sin(p.ang) * side * (w / 2 - 0.03), sz = p.z - Math.cos(p.ang) * side * (w / 2 - 0.03); const st = new THREE.BoxGeometry(going + 0.02, 0.24, 0.045); st.rotateY(-p.ang); st.translate(sx, y - 0.14, sz); parts.push(st); }
+    if (barrier === 'balusters') for (const side of [-1, 1]) { const bx = p.x + Math.sin(p.ang) * side * (w / 2 - 0.02), bz = p.z - Math.cos(p.ang) * side * (w / 2 - 0.02); parts.push(new THREE.BoxGeometry(0.03, 0.95, 0.03).translate(bx, y + 0.475, bz)); const hr = new THREE.BoxGeometry(going + 0.04, 0.04, 0.06); hr.rotateY(-p.ang); hr.translate(bx, y + 0.97, bz); parts.push(hr); }
     if (k % 4 === 3) { const gy = groundAt(p.x, p.z), h = y - 0.3 - gy; if (h > 0.15) for (const side of [-1, 1]) { const po = new THREE.BoxGeometry(0.1, h, 0.1); po.translate(p.x + Math.sin(p.ang) * side * (w / 2 - 0.05), gy + h / 2, p.z - Math.cos(p.ang) * side * (w / 2 - 0.05)); parts.push(po); } }
   }
-  const m = new THREE.Mesh(mergeGeometries(parts)!, mat); m.castShadow = m.receiveShadow = true; m.name = 'stairs';
+  const g = new THREE.Group(); g.name = 'stairs';
+  const m = new THREE.Mesh(mergeGeometries(parts)!, mats.timber); m.castShadow = m.receiveShadow = true; m.name = 'stairs';
   m.userData = { kind: 'steps', name: 'Stairs', ifcClass: 'IfcStair', source: 'scaled', note: `${n} risers of ${Math.round(Math.abs(rise) * 1000)} mm; position from the layout plan, flights simplified` };
-  return m;
+  g.add(m);
+  if (barrier === 'glass') {
+    // glass each side, raked with the flight, standing just outside the stringers
+    let d = 0;
+    for (const sg of segs) {
+      const ang = Math.atan2(sg.b[1] - sg.a[1], sg.b[0] - sg.a[0]), ya = levels[0] + ((levels[1] - levels[0]) * d) / L, yb = levels[0] + ((levels[1] - levels[0]) * (d + sg.L)) / L;
+      for (const side of [-1, 1]) { const ox = Math.sin(ang) * side * (w / 2 + 0.012), oz = -Math.cos(ang) * side * (w / 2 + 0.012); rakedGlass([sg.a[0] + ox, sg.a[1] + oz], [sg.b[0] + ox, sg.b[1] + oz], ya, yb, panes, trim); }
+      d += sg.L;
+    }
+    addBarrier(g, panes, trim, mats, 'Stair balustrade');
+  }
+  return g;
+}
+function addBarrier(g: THREE.Object3D, panes: THREE.BufferGeometry[], trim: THREE.BufferGeometry[], mats: StairMats, name: string) {
+  if (!panes.length) return;
+  const note = 'glass to match the deck balustrade, at the owner’s request; the 17 November elevation draws baluster rails on the stair, so the barrier type is assumed';
+  const gl = new THREE.Mesh(mergeGeometries(panes)!, mats.glass); gl.name = 'stair_balustrade_glass'; gl.renderOrder = 2;
+  gl.userData = { kind: 'steps', name, ifcClass: 'IfcRailing', source: 'assumed', note };
+  const tr = new THREE.Mesh(mergeGeometries(trim.map((q) => (q.index ? q.toNonIndexed() : q)))!, mats.metal); tr.name = 'stair_balustrade_rail'; tr.castShadow = true;
+  tr.userData = { kind: 'steps', name, ifcClass: 'IfcRailing', source: 'assumed', note };
+  g.add(gl, tr);
 }
 
 /** something drawn on the site plan, in the plan model's frame (x, z) */
-export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean }
+export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean; staging?: string; barrier?: 'glass' | 'balusters' }
 
 /** the site plan's paths, pads, walls, beds and trees on the ground */
 function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
@@ -218,11 +259,14 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
   const en = (p: [number, number]): [number, number] => [p[0], -p[1]];
   const plants: PlantPlacement[] = [];
   const concrete = new THREE.MeshStandardMaterial({ color: 0xbcb6ad, roughness: 0.92 });
-  const timber = new THREE.MeshStandardMaterial({ color: 0x46403a, roughness: 0.85 });
+  const timber = new THREE.MeshStandardMaterial({ color: 0x6b5139, roughness: 0.82 }); timber.name = 'stair_hardwood';
+  const stairMats: StairMats = { timber, glass: new THREE.MeshPhysicalMaterial({ color: 0xe6f0ee, transparent: true, opacity: 0.2, roughness: 0.04, metalness: 0, side: THREE.DoubleSide, depthWrite: false }), metal: new THREE.MeshStandardMaterial({ color: 0x1b1c1d, roughness: 0.5, metalness: 0.6 }) };
+  stairMats.glass.name = 'balustrade_glass';
+  const stairEnds: [number, number][] = F.filter((f) => f.kind === 'steps' && f.levels).flatMap((f) => [f.pts[0], f.pts[f.pts.length - 1]]);
   F.forEach((f, i) => {
     const pts = f.pts.map(en);
     if (f.kind === 'steps' && f.levels && f.pts.length >= 2) {
-      land.add(flight(f.pts, f.levels, f.width ?? 1, (x, z) => groundAt(x, -z), timber));
+      land.add(flight(f.pts, f.levels, f.width ?? 1, (x, z) => groundAt(x, -z), stairMats, f.barrier ?? 'glass'));
     } else if (f.kind === 'boundary' && f.pts.length >= 3) {
       const v: THREE.Vector3[] = [];
       f.pts.forEach((a, k) => { const b = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 1.5)); for (let t = 0; t < n; t++) { const x = a[0] + ((b[0] - a[0]) * t) / n, z = a[1] + ((b[1] - a[1]) * t) / n; v.push(new THREE.Vector3(x, groundAt(x, -z) + 0.25, z)); } });
@@ -242,6 +286,21 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
       const m = new THREE.Mesh(mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!, timber); m.castShadow = m.receiveShadow = true; m.name = `landing_${i + 1}`;
       m.userData = { kind: 'steps', name: 'Stair landing', ifcClass: 'IfcSlab', source: f.source ?? 'scaled', note: 'landing level is assumed where the drawings do not write it' };
       land.add(m);
+      if ((f.barrier ?? 'glass') === 'glass') {
+        // glass along each edge of the landing, left open where a flight arrives or leaves
+        const panes: THREE.BufferGeometry[] = [], trim: THREE.BufferGeometry[] = [];
+        f.pts.forEach((a, k) => {
+          const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]), nP = Math.max(1, Math.round(L / 0.2));
+          const open = (t: number) => { const px = a[0] + (b2[0] - a[0]) * t, pz = a[1] + (b2[1] - a[1]) * t; return stairEnds.some((e) => Math.hypot(e[0] - px, e[1] - pz) < 0.62); };
+          let run: number | null = null;
+          for (let q = 0; q <= nP; q++) {
+            const closed = q < nP && !open((q + 0.5) / nP);
+            if (closed && run === null) run = q;
+            if (!closed && run !== null) { const t0 = run / nP, t1 = q / nP; rakedGlass([a[0] + (b2[0] - a[0]) * t0, a[1] + (b2[1] - a[1]) * t0], [a[0] + (b2[0] - a[0]) * t1, a[1] + (b2[1] - a[1]) * t1], y, y, panes, trim, -0.1); run = null; }
+          }
+        });
+        addBarrier(land, panes, trim, stairMats, 'Landing balustrade');
+      }
     } else if ((f.kind === 'parking' || f.kind === 'patio' || f.kind === 'pad') && f.levels && f.pts.length >= 3) {
       // a level slab at a stated height, cut to its drawn outline, with a low wall where the ground stands above or below it
       const y = f.levels[0], sh = new THREE.Shape(f.pts.map((q) => new THREE.Vector2(q[0], -q[1])));
@@ -259,6 +318,7 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
       });
       const m = new THREE.Mesh(mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!, concrete); m.castShadow = m.receiveShadow = true; m.name = `${f.kind}_${i + 1}`;
       m.userData = { kind: f.kind, name: f.kind === 'parking' ? 'Car bay' : 'Slab', ifcClass: 'IfcSlab', source: f.source ?? 'scaled', note: 'level slab at the stated height; walls where the ground stands above or below it are indicative' };
+      if (f.staging) m.userData.staging = f.staging;   // for the photo-render prompt: wanted in the picture, not in the model
       land.add(m);
       if (f.kind === 'parking' && f.car) {
         // a car on the bay, along its longer side, for scale
