@@ -1,0 +1,9 @@
+{
+  "name": "architecture-db-tests",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Local dry run of the arch database migrations on PGlite (no Supabase, no network port).",
+  "type": "module",
+  "scripts": { "test": "node --test *.test.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "^0.5.17" }
+}
