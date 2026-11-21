@@ -1,51 +1,49 @@
 # Practice database: owner note
 
 ## What it is for
-This is the shared memory for an architecture practice. It holds projects, the seven stages, tasks, documents, approvals, RFIs, site visits, variations, defects and an activity log. Many people in one firm can sign in and see the same work. Nobody outside the firm can.
+The shared memory for an architecture practice. Projects, the seven stages, tasks, documents, approvals, RFIs, site visits, variations, defects and an activity log. Everyone in the firm sees the same work. Nobody outside can.
 
-It is written for Supabase. Every table sits in its own schema called `arch`, so it cannot clash with anything else in a shared project.
+It is written for Supabase. Every table sits in its own schema, `arch`, so it cannot clash with anything else.
 
 ## The tables
-| Table | What it holds |
+| Table | Holds |
 |---|---|
-| practice, practice_member | The firm, and who belongs to it (owner, member or viewer) |
-| project | One job, with its site and its model details |
-| stage | The seven stages and where each one is up to |
-| task, document, rfi | Day-to-day work and paperwork |
-| observation, variation, defect | Site visits, changes and faults |
-| approval | Who signed off which stage. Never changed after |
-| activity | A log of what happened. Never changed after |
+| practice, practice_member | The firm, and who belongs (owner, member, viewer) |
+| project | One job, with site and model details |
+| stage | The seven stages and their status |
+| task, document, rfi | Day-to-day work |
+| observation, variation, defect | Site visits, changes, faults |
+| approval, activity | Sign-offs and a log. Never changed after |
 
 ## Who can see what
 - Signed-in people see only their own practice's rows.
-- Owners and members can add and change project records. Viewers can only read.
-- Only owners manage who is in the practice.
-- Visitors who are not signed in (`anon`) get nothing at all.
-- Approvals and activity can be added and read. They cannot be edited or deleted by anyone except `service_role`, the server-side key.
-- An approval stores the signed-in person's account id as well as the name typed in.
-- A stage cannot be marked done unless an approval exists for that project and stage. The database enforces this with a trigger, so the app cannot skip it. It applies to everyone, including `service_role`.
-- Site latitude and longitude are private project data. The column comments say so.
+- Owners and members can add and change records. Viewers only read.
+- Only owners manage membership.
+- `anon` (not signed in) gets nothing.
+- Approvals and activity can be added and read. Only `service_role`, the server-side key, can change or delete them.
+- An approval keeps the signed-in account id as well as the typed name.
+- A stage cannot be marked done unless an approval exists for that project and stage. A database trigger enforces this, for everyone including `service_role`.
+- Site latitude and longitude are private project data, as the column comments say.
 
 ## What was proven, and how
-I ran the migrations on a throwaway in-memory database (PGlite) on this machine. The Supabase parts were replaced by minimal stand-ins: the `auth` schema, `auth.uid()` and the three roles. This was not Supabase. Nothing was connected, applied or deployed anywhere.
+I ran the migrations on a throwaway in-memory database (PGlite) on this machine, with small stand-ins for the Supabase parts: the `auth` schema, `auth.uid()` and the three roles. This was not Supabase. Nothing was applied or deployed anywhere.
 
-The run applied the migrations twice, with no errors and no change the second time. Thirteen checks passed. They covered a member creating and reading a project, another firm's member seeing nothing, a viewer failing to write, `anon` being refused, approvals resisting change, and a stage refusing `done` until an approval exists. I also broke two rules on purpose and the checks failed, as they should.
+The migrations ran twice with no error and no change. Thirteen checks passed: a member creating and reading a project, another firm seeing nothing, a viewer unable to write, `anon` refused, approvals unchangeable, and a stage refusing `done` until approved. I also broke two rules on purpose and the checks failed, as they should.
 
-Run them with `node --test tests/architecture-db/*.test.mjs` after `npm install` inside `tests/architecture-db`.
+Run them with `node --test tests/architecture-db/*.test.mjs` (after `npm install` in that folder).
 
-## What still has to happen
-1. Choose an existing Supabase project, or create a new one.
-2. Apply the three migrations in `supabase/migrations/` there.
-3. Add `arch` to the exposed schemas in the project's API settings.
-4. Turn on sign-in (email or a social login).
-5. Connect the app, and map its names to the columns. Site and model fields are flat, for example `site_lat` and `model_fingerprint`.
-6. Re-run the checks against that real project.
+## Still to do before it is real
+1. Choose a Supabase project, or create a new one.
+2. Apply the three migrations in `supabase/migrations/`.
+3. Add `arch` to the exposed schemas in the API settings.
+4. Turn on sign-in.
+5. Connect the app. Site and model fields are flat, for example `site_lat`, `model_fingerprint`.
+6. Re-run the checks against that project.
 
 ## Risks
-- Real Supabase behaves differently from the stand-ins in small ways. Treat it as unproven there until step 6.
-- Ids are generated by the database as uuids. If the app makes its own ids, tell me.
-- Adding a colleague needs their account id. An invite flow still has to be built, and it needs a server-side key.
-- Nothing stops the last owner leaving a practice.
+- Real Supabase differs from the stand-ins in small ways. It is unproven there until step 6.
+- Ids are database-made uuids. Tell me if the app makes its own.
+- Adding a colleague needs their account id. An invite flow is still to build.
+- Nothing stops the last owner leaving.
 - A project with approvals or activity cannot be deleted by users. That is deliberate.
-- Changing a policy later needs a new migration. These ones are never rewritten.
 - AI wrote this. A person should read the rules before real client data goes in.
