@@ -138,7 +138,8 @@ async function ask(env, model, messages, state) {
 }
 
 // ---------------------------------------------------------------------------------------------- other providers
-// If Claude can't answer (no credit, key trouble, overloaded), the guide tries OpenAI (OPENAI_API_KEY) and then
+// OpenAI answers first when OPENAI_API_KEY is set (ARCHIPRO_OPENAI_MODEL, default gpt-6.2-astra). If it can't, the guide
+// tries Claude, and if Claude can't answer either (no credit, key trouble, overloaded) it tries
 // Cloudflare Workers AI (a binding named AI, which has a free daily allowance). Both speak the OpenAI chat format,
 // so the conversation is translated there and the reply is translated back; the page never sees the difference
 // except for the model name on its status line.
@@ -167,8 +168,9 @@ function fromChat(text, calls) {
   }
   return { content, stop_reason: content.some((b) => b.type === "tool_use") ? "tool_use" : "end_turn" };
 }
+const OPENAI_MODEL = "gpt-6.2-astra";   // https://developers.openai.com/api/docs/models
 async function askOpenAI(env, messages, state) {
-  const models = [env.ARCHIPRO_OPENAI_MODEL, "gpt-5-mini", "gpt-4.1-mini", "gpt-4o-mini"].filter(Boolean);
+  const models = [env.ARCHIPRO_OPENAI_MODEL || OPENAI_MODEL, "gpt-5-mini", "gpt-4.1-mini", "gpt-4o-mini"];
   for (const model of models) {
     const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${env.OPENAI_API_KEY}` },
       body: JSON.stringify({ model, messages: toChat(messages, state), tools: oaTools(), max_completion_tokens: 3000 }) });
@@ -184,8 +186,8 @@ async function askWorkersAI(env, messages, state) {
   const r = fromChat(j?.response ?? j?.choices?.[0]?.message?.content, j?.tool_calls ?? j?.choices?.[0]?.message?.tool_calls);
   return r.content.length ? { ...r, model, label: "Llama 3.3 on Cloudflare" } : null;
 }
-async function others(env, messages, state) {
-  if (env.OPENAI_API_KEY) { try { const a = await askOpenAI(env, messages, state); if (a) return { ...a, provider: "openai" }; } catch (e) { console.warn("archipro-agent: openai failed", e?.message); } }
+async function others(env, messages, state, skipOpenAI = false) {
+  if (env.OPENAI_API_KEY && !skipOpenAI) { try { const a = await askOpenAI(env, messages, state); if (a) return { ...a, provider: "openai" }; } catch (e) { console.warn("archipro-agent: openai failed", e?.message); } }
   if (env.AI?.run) { try { const a = await askWorkersAI(env, messages, state); if (a) return { ...a, provider: "cloudflare" }; } catch (e) { console.warn("archipro-agent: workers ai failed", e?.message); } }
   return null;
 }
@@ -194,7 +196,7 @@ let claudeDownUntil = 0;   // skip Claude for ten minutes after it refuses for c
 export async function onRequest({ request, env }) {
   const MODEL = env.ARCHIPRO_AGENT_MODEL || "claude-fable-5-2", FALLBACK = env.ARCHIPRO_AGENT_FALLBACK || "claude-opus-5-5";
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
-  if (request.method === "GET") return json(200, { type: "assembl.archipro.agent.status", configured: !!(env.ANTHROPIC_API_KEY || env.OPENAI_API_KEY || env.AI?.run), model: MODEL, fallback: FALLBACK, others: { openai: !!env.OPENAI_API_KEY, cloudflare: !!env.AI?.run } });
+  if (request.method === "GET") return json(200, { type: "assembl.archipro.agent.status", configured: !!(env.ANTHROPIC_API_KEY || env.OPENAI_API_KEY || env.AI?.run), model: env.OPENAI_API_KEY ? (env.ARCHIPRO_OPENAI_MODEL || OPENAI_MODEL) : MODEL, fallback: env.OPENAI_API_KEY ? MODEL : FALLBACK, first: env.OPENAI_API_KEY ? "openai" : "anthropic", others: { openai: !!env.OPENAI_API_KEY, cloudflare: !!env.AI?.run } });
   if (request.method !== "POST") return json(405, { error: "method" });
   const origin = request.headers.get("origin");
   if (origin && new URL(origin).host !== new URL(request.url).host) return json(403, { error: "origin" });
@@ -206,7 +208,13 @@ export async function onRequest({ request, env }) {
   const messages = clean(body?.messages); if (!messages) return json(400, { error: "bad_messages" });
   let state = ""; try { state = JSON.stringify(body?.state ?? {}).slice(0, 6000); } catch { state = "{}"; }
   used++;
-  const alt = async (extra) => { const a = await others(env, messages, state); return a ? json(200, { type: "assembl.archipro.agent", model: a.model, label: a.label, provider: a.provider, route: "other", stop_reason: a.stop_reason, content: a.content }) : json(503, { error: "model_error", ...extra }); };
+  let triedOpenAI = false;
+  if (env.OPENAI_API_KEY) {
+    triedOpenAI = true;
+    try { const a = await askOpenAI(env, messages, state); if (a) return json(200, { type: "assembl.archipro.agent", model: a.model, label: a.label, provider: "openai", route: "other", stop_reason: a.stop_reason, content: a.content }); }
+    catch (e) { console.warn("archipro-agent: openai failed", e?.message); }
+  }
+  const alt = async (extra) => { const a = await others(env, messages, state, triedOpenAI); return a ? json(200, { type: "assembl.archipro.agent", model: a.model, label: a.label, provider: a.provider, route: "other", stop_reason: a.stop_reason, content: a.content }) : json(503, { error: "model_error", ...extra }); };
   if (!env.ANTHROPIC_API_KEY || Date.now() < claudeDownUntil) return alt({ why: "credit" });
   try {
     let model = body?.route === "fallback" ? FALLBACK : MODEL, r = await ask(env, model, messages, state);
@@ -215,7 +223,7 @@ export async function onRequest({ request, env }) {
       if (/model/i.test(t) && /not.?found|not available|does not exist|invalid/i.test(t)) { console.warn("archipro-agent: primary model unavailable, falling back"); model = FALLBACK; r = await ask(env, model, messages, state); }
       else { console.warn("archipro-agent: request refused", r.status, t.slice(0, 300)); const w = why(r.status, t); if (w === "credit" || w === "key") claudeDownUntil = Date.now() + 6e5; return alt({ upstream: r.status, why: w }); }
     }
-    if (!r.ok) { const t = await r.text(); console.warn("archipro-agent: model error", r.status, t.slice(0, 300)); const w = why(r.status, t); if (w === "credit" || w === "key") claudeDownUntil = Date.now() + 6e5; const o = await others(env, messages, state); if (o) return json(200, { type: "assembl.archipro.agent", model: o.model, label: o.label, provider: o.provider, route: "other", stop_reason: o.stop_reason, content: o.content }); return json(r.status === 429 ? 429 : 503, { error: r.status === 429 ? "busy" : "model_error", upstream: r.status, why: w }); }
+    if (!r.ok) { const t = await r.text(); console.warn("archipro-agent: model error", r.status, t.slice(0, 300)); const w = why(r.status, t); if (w === "credit" || w === "key") claudeDownUntil = Date.now() + 6e5; const o = await others(env, messages, state, triedOpenAI); if (o) return json(200, { type: "assembl.archipro.agent", model: o.model, label: o.label, provider: o.provider, route: "other", stop_reason: o.stop_reason, content: o.content }); return json(r.status === 429 ? 429 : 503, { error: r.status === 429 ? "busy" : "model_error", upstream: r.status, why: w }); }
     const j = await r.json();
     return json(200, { type: "assembl.archipro.agent", model: j.model || model, route: model === MODEL ? "primary" : "fallback", stop_reason: j.stop_reason, content: j.content || [] });
   } catch (e) { console.warn("archipro-agent: failed", e?.message); return json(503, { error: "upstream" }); }
