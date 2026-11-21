@@ -21,6 +21,7 @@ export function initArrange(appIn: App) {
     if (mode === 'move') app.log('Move furniture: drag a piece across the floor. It snaps to 100 mm.');
     if (mode === 'pin') app.log('Add a pin: tap any surface.');
   };
+  drawWalk(appIn);
   moveBtn.addEventListener('click', () => setMode('move'));
   pinBtn.addEventListener('click', () => setMode('pin'));
 
@@ -130,4 +131,59 @@ export function initArrange(appIn: App) {
   render(); requestAnimationFrame(tick);
   // for automated checks: where a piece of furniture is on screen
   (window as unknown as { __arrange?: unknown }).__arrange = { pieces: () => { const out: { name: string; x: number; y: number }[] = []; const r = app.canvas.getBoundingClientRect(); app.modelRoot.traverse((o) => { if (o.userData?.kind === 'furniture' && o.parent?.userData?.kind !== 'furniture') { const c = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(app.camera); out.push({ name: String(o.userData.name), x: r.left + ((c.x + 1) / 2) * r.width, y: r.top + ((1 - c.y) / 2) * r.height }); } }); return out; } };
+}
+
+
+// Draw one line on the plan and walk it: the view turns to a plan (roof cut away), you draw a path with a finger or
+// the mouse, and the camera walks that line at eye height. The line is the whole brief.
+function drawWalk(appIn: App) {
+  const app = appIn as unknown as { camera: THREE.PerspectiveCamera; controls: { enabled: boolean; target: THREE.Vector3; update(): void }; canvas: HTMLCanvasElement; modelRoot: THREE.Object3D; scene: THREE.Scene; log(s: string): void; built: { focus: THREE.Vector3; radius: number } };
+  const btn = document.getElementById('drawWalk'); if (!btn) return;
+  const section = document.getElementById('sectionOn') as HTMLInputElement | null;
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), tmp = new THREE.Vector3();
+  let on = false, drawing = false, pts: THREE.Vector3[] = [], line: THREE.Line | null = null, raf = 0, hadSection = false, floorY = 0;
+  const saved = { p: new THREE.Vector3(), t: new THREE.Vector3() };
+  const clear = () => { if (line) { app.scene.remove(line); line.geometry.dispose(); line = null; } };
+  const stop = (msg?: string) => {
+    on = false; drawing = false; cancelAnimationFrame(raf); btn.classList.remove('solid'); btn.setAttribute('aria-pressed', 'false'); app.canvas.style.cursor = ''; app.controls.enabled = true;
+    if (section && section.checked !== hadSection) section.click();
+    if (msg) app.log(msg);
+  };
+  const at = (ev: PointerEvent) => {
+    const r = app.canvas.getBoundingClientRect(); ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, app.camera); return ray.ray.intersectPlane(plane, tmp) ? tmp.clone() : null;
+  };
+  const redraw = () => {
+    clear(); if (pts.length < 2) return;
+    line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map((p) => p.clone().setY(floorY + 1.15))), new THREE.LineBasicMaterial({ color: 0x654a4e, depthTest: false, transparent: true }));
+    line.renderOrder = 999; line.name = 'walk_line'; app.scene.add(line);
+  };
+  btn.addEventListener('click', () => {
+    if (on) { clear(); app.camera.position.copy(saved.p); app.controls.target.copy(saved.t); stop('Ready. Drag to orbit, click a part to inspect it.'); return; }
+    on = true; pts = []; btn.classList.add('solid'); btn.setAttribute('aria-pressed', 'true'); app.canvas.style.cursor = 'crosshair';
+    saved.p.copy(app.camera.position); saved.t.copy(app.controls.target); hadSection = !!section?.checked; if (section && !section.checked) section.click();
+    const f = app.built.focus; ray.set(new THREE.Vector3(f.x, f.y + 0.4, f.z), new THREE.Vector3(0, -1, 0));
+    const h = ray.intersectObject(app.modelRoot, true).find((x) => x.face && x.face.normal.y > 0.5); floorY = h ? h.point.y : f.y - 1.2; plane.constant = -floorY;
+    app.controls.enabled = false; app.controls.target.set(f.x, floorY, f.z); app.camera.position.set(f.x, floorY + Math.max(16, app.built.radius * 1.5), f.z + 0.01); app.camera.lookAt(app.controls.target);
+    app.log('Draw one line across the plan. That line is your camera.');
+  });
+  app.canvas.addEventListener('pointerdown', (ev) => { if (!on || raf) return; const p = at(ev); if (!p) return; drawing = true; pts = [p]; ev.stopImmediatePropagation(); ev.preventDefault(); try { app.canvas.setPointerCapture(ev.pointerId); } catch { /* fine */ } }, true);
+  app.canvas.addEventListener('pointermove', (ev) => { if (!on || !drawing) return; const p = at(ev); if (p && p.distanceTo(pts[pts.length - 1]) > 0.25) { pts.push(p); redraw(); } ev.stopImmediatePropagation(); }, true);
+  app.canvas.addEventListener('pointerup', (ev) => {
+    if (!on || !drawing) return; drawing = false; ev.stopImmediatePropagation();
+    if (pts.length < 3) { app.log('That line was too short. Draw a longer one across the rooms.'); return; }
+    const curve = new THREE.CatmullRomCurve3(pts.map((p) => p.clone().setY(floorY + 1.6)), false, 'centripetal', 0.5), L = curve.getLength(), dur = Math.max(4, L / 1.1) * 1000;
+    if (section && section.checked !== hadSection) section.click();
+    app.canvas.style.cursor = ''; app.log(`Walking your line: ${L.toFixed(1)} m at eye height. Tap “Draw a walk” to stop.`);
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches, t0 = performance.now();
+    const look = new THREE.Vector3();
+    const frame = (now: number) => {
+      const u = still ? 1 : Math.min(1, (now - t0) / dur), e = u * u * (3 - 2 * u), p = curve.getPointAt(Math.min(0.999, e)), tg = curve.getTangentAt(Math.min(0.999, e)).setY(0).normalize(), a = p.clone().addScaledVector(tg, 2);
+      look.lerp(a, look.lengthSq() ? 0.12 : 1); app.camera.position.copy(p); app.camera.lookAt(look.x, p.y - 0.06, look.z); app.controls.target.set(look.x, p.y - 0.06, look.z);
+      if (u < 1 && on) raf = requestAnimationFrame(frame); else { raf = 0; clear(); stop(`Walked ${L.toFixed(1)} m. Drag to look around from here, or draw another line.`); }
+    };
+    raf = requestAnimationFrame(frame);
+  }, true);
+  app.canvas.addEventListener('click', (ev) => { if (on) { ev.stopImmediatePropagation(); ev.preventDefault(); } }, true);
+  (window as unknown as { __walk?: unknown }).__walk = { state: () => ({ on, n: pts.length, walking: !!raf, floorY }) };
 }

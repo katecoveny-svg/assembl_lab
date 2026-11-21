@@ -12,6 +12,16 @@ import { fillSlots } from './library';
 import { planting, type Species, type Placement as PlantPlacement } from './plants';
 import { bedPlanting, mulchBed, pathRibbon } from './landscape';
 import { twinMats } from './mats';
+import { scanSet, scanTex, scannedFinishes } from './scanned';
+import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
+import { scandi } from './fitout';
+import { nativeBush } from './nativeTrees';
+import { claddingRibs, type RibWall } from './fittings';
+import { buildCar } from './car';
+import { scandiMats, suite } from './editorial';
+import { buildScandiDiningSuite } from './scandiInteriors';
+import { createArchedBladeGeometry } from './nzNativeFlora';
+import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -26,9 +36,12 @@ interface PlanModel {
   schema?: string;
   job?: { title?: string; nickname?: string; what?: string };
   north?: { deg?: number };
-  site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number }; features?: SiteFeature[]; terrain?: Terrain };
+  site?: { fall?: { at: [number, number]; y: number; slopeX: number; slopeZ: number; source?: string }; north?: [number, number]; sunHour?: number; features?: SiteFeature[]; terrain?: Terrain };
   buildings: (BuildingSpec & { origin: [number, number]; floorLevel?: number })[];
   planting?: Record<string, unknown>;
+  views?: Terrain['views'];
+  /** a finished model of the building (GLB, Y up, metres) shown instead of generating it from the walls: its floor level, and the colour for its metal cladding */
+  asBuilt?: { glb: string; ffl: number; cladding?: string; note?: string };
 }
 
 /** Real ground for the site, in the plan model's frame: a square grid of levels (rows along z, columns along x, relative to
@@ -61,7 +74,7 @@ function sheet(c: [number, number], size: number, seg: number, y: (x: number, z:
   return g;
 }
 /** bush from the canopy survey: one crown per tree top, its height and spread from the survey, its colour from the photo */
-function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: number) => number, centre: [number, number]) {
+async function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: number) => number, centre: [number, number]) {
   const rnd = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
   // a crown: lumpy lobes, smooth, darker underneath and in the folds, so a lit canopy reads with depth
   const crownGeo = (detail: number, lobesN: number) => {
@@ -81,20 +94,37 @@ function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: num
     return mergeGeometries(lobes)!;
   };
   const leaf = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 });
-  const bark = new THREE.MeshStandardMaterial({ color: 0x2e2620, roughness: 0.95 });
+  const [bc, bn, br] = await scanSet('bark', 1, 1);
+  for (const t of [bc, bn, br]) t.repeat.set(2, 5);
+  const bark = new THREE.MeshStandardMaterial({ color: 0x9a8f84, roughness: 1, map: bc, normalMap: bn, roughnessMap: br });
+  // leaves: cards of scanned leaves standing off the crown, so the edge of a tree is leaves and sky, not a smooth lump
+  const leafTex = await scanTex('leaves', true); leafTex.wrapS = leafTex.wrapT = THREE.ClampToEdgeWrapping;
+  const cardM = new THREE.MeshStandardMaterial({ map: leafTex, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.62, metalness: 0 });
+  const cardSpec: { x: number; y: number; z: number; s: number; nx: number; ny: number; nz: number; c: THREE.Color }[] = [];
   const g = new THREE.Group(); g.name = 'bush_from_survey';
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
   const nearT = trees.filter(([x, z]) => Math.hypot(x - centre[0], z - centre[1]) < 48), farT = trees.filter(([x, z]) => Math.hypot(x - centre[0], z - centre[1]) >= 48);
-  for (const [list, geo, shadow] of [[nearT, crownGeo(3, 4), true], [farT, crownGeo(1, 2), false]] as [typeof trees, THREE.BufferGeometry, boolean][]) {
+  const lite = matchMedia('(max-width: 760px)').matches;   // phones get the same trees with fewer leaf cards
+  const nearGeo = crownGeo(3, 4);
+  for (const [list, geo, shadow] of [[nearT, nearGeo, true], [farT, crownGeo(1, 2), false]] as [typeof trees, THREE.BufferGeometry, boolean][]) {
     if (!list.length) continue;
     const crowns = new THREE.InstancedMesh(geo, leaf, list.length), trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.5, 0.7, 1, 7), bark, list.length);
     list.forEach(([x, z, h, r, hex], i) => {
       const gy = groundAt(x, z), rv = Math.max(r * 0.8, h * 0.3), cy = gy + h - rv * 0.8, s = i + x * 7.3;
       q.setFromAxisAngle(up, rnd(s) * 6.283);
-      m.compose(new THREE.Vector3(x, cy, z), q, new THREE.Vector3(r * (0.9 + rnd(s + 9) * 0.25), rv, r * (0.9 + rnd(s + 5) * 0.25))); crowns.setMatrixAt(i, m);
+      m.compose(new THREE.Vector3(x, cy, z), q, new THREE.Vector3(r * 0.86 * (0.9 + rnd(s + 9) * 0.25), rv * 0.86, r * 0.86 * (0.9 + rnd(s + 5) * 0.25))); crowns.setMatrixAt(i, m);
       // the photo sees the canopy from above in its own shade: lift it, keep its hue, vary tree to tree
       c.set(`#${hex}`); const lift = 1.55 + rnd(s + 3) * 0.6, warm = 0.95 + rnd(s + 1) * 0.22;
-      c.setRGB(Math.min(0.9, c.r * lift * warm), Math.min(0.9, c.g * lift * 1.06), Math.min(0.9, c.b * lift * 0.62)); crowns.setColorAt(i, c);
+      c.setRGB(Math.min(0.9, c.r * lift * warm), Math.min(0.9, c.g * lift * 1.06), Math.min(0.9, c.b * lift * 0.62)); crowns.setColorAt(i, c.clone().multiplyScalar(0.55));
+      const nearTree = geo === nearGeo, nc = lite ? (nearTree ? 36 : 6) : nearTree ? 110 : 14, rx = r * 1.02, c2 = c.clone();
+      for (let k = 0; k < nc; k++) {
+        const u = rnd(s + k * 3.1) * 2 - 1, ph = rnd(s + k * 7.7) * 6.283, sr = Math.sqrt(1 - u * u), dx = sr * Math.cos(ph), dz = sr * Math.sin(ph), dy = Math.max(-0.35, u);
+        const tangent = rnd(s + k * 1.3) < 0.6, j = (a: number) => rnd(s + k * a) * 2 - 1;
+        const n = tangent ? new THREE.Vector3(dx, dy * 0.8, dz) : new THREE.Vector3(j(2.3), j(4.1) * 0.6, j(5.9)); n.normalize();
+        const shade = 0.72 + 0.5 * Math.max(0, dy) + 0.2 * rnd(s + k * 9.1);
+        const bloom = r >= 4.2 && dy > 0.15 && rnd(s + k * 11.3) < 0.16;
+        cardSpec.push({ x: x + dx * rx * 0.96, y: cy + dy * rv * 0.96, z: z + dz * rx * 0.96, s: r * (nearTree ? 0.36 + rnd(s + k) * 0.3 : 0.62 + rnd(s + k) * 0.5) * (bloom ? 0.55 : 1), nx: n.x, ny: n.y, nz: n.z, c: bloom ? new THREE.Color(0.34, 0.035, 0.05) : c2.clone().multiplyScalar(shade) });
+      }
       const th = Math.max(0.6, cy - gy), tr = Math.max(0.06, Math.min(0.2, h * 0.013)) * (0.8 + rnd(s + 4) * 0.5);
       m.compose(new THREE.Vector3(x, gy + th / 2 - 0.1, z), q, new THREE.Vector3(tr, th, tr)); trunks.setMatrixAt(i, m);
     });
@@ -102,9 +132,65 @@ function bush(trees: NonNullable<Terrain['trees']>, groundAt: (x: number, z: num
     crowns.castShadow = shadow; crowns.receiveShadow = true; trunks.castShadow = shadow; crowns.frustumCulled = trunks.frustumCulled = false;
     g.add(crowns, trunks);
   }
-  g.userData = { kind: 'planting', name: 'Bush', source: 'survey', note: 'One crown per tree top in the LiDAR canopy; height and spread from the survey, colour from the aerial photo. Species not identified.' };
+  const cards = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), cardM, cardSpec.length), zAxis = new THREE.Vector3(0, 0, 1), v = new THREE.Vector3();
+  cardSpec.forEach((k, i) => { q.setFromUnitVectors(zAxis, v.set(k.nx, k.ny, k.nz)); m.compose(new THREE.Vector3(k.x, k.y, k.z), q, new THREE.Vector3(k.s * 2, k.s * 2, 1)); cards.setMatrixAt(i, m); cards.setColorAt(i, k.c.multiplyScalar(2.4)); });
+  cards.instanceMatrix.needsUpdate = true; if (cards.instanceColor) cards.instanceColor.needsUpdate = true; cards.frustumCulled = false; cards.receiveShadow = true; cards.name = 'leaves';
+  g.add(cards);
+  // ponga (tree ferns) under the canopy near the building, as in regenerating coastal bush: one beside most trees, clear of the open ground
+  {
+    const parts: THREE.BufferGeometry[] = [];
+    const frond = createArchedBladeGeometry(0.95, 2.2, 0.95, false, 8), e = new THREE.Euler(), mm = new THREE.Matrix4(), one = new THREE.Vector3(1, 1, 1);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + (i % 2) * 0.22, tier = i % 2, f = frond.clone();
+      f.applyMatrix4(mm.compose(new THREE.Vector3(0, 1, 0), new THREE.Quaternion().setFromEuler(e.set(0.58 + tier * 0.34, a, 0, 'YXZ')), one.clone().multiplyScalar(tier === 0 ? 1.05 : 0.82)));
+      parts.push(f);
+    }
+    const crownG = mergeGeometries(parts)!;
+    const fm = new THREE.MeshStandardMaterial({ map: createPongaFrondTexture(), alphaTest: 0.35, roughness: 0.68, side: THREE.DoubleSide, color: 0xd8e8c4 });
+    const tm = new THREE.MeshStandardMaterial({ color: 0x3a2e26, roughness: 0.96 });
+    const spots: [number, number, number, number][] = [];
+    const open = (x: number, z: number) => nearT.every(([tx, tz, , tr]) => Math.hypot(tx - x, tz - z) > tr * 0.35) && Math.min(...nearT.map(([tx, tz]) => Math.hypot(tx - x, tz - z))) < 4.5;
+    nearT.forEach(([x, z, h], i) => {
+      if (h < 5 || rnd(i * 3.7) < 0.3) return;
+      const a = rnd(i * 5.1) * 6.283, d = 1.6 + rnd(i * 2.3) * 1.6, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
+      if (open(px, pz)) spots.push([px, pz, 1.6 + rnd(i * 9.9) * 2.6, 0.95 + rnd(i * 4.4) * 0.5]);
+    });
+    if (spots.length) {
+      const heads = new THREE.InstancedMesh(crownG, fm, spots.length), stems = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.09, 0.14, 1, 8).translate(0, 0.5, 0), tm, spots.length);
+      spots.forEach(([x, z, th, sc], i) => {
+        const gy = groundAt(x, z) - 0.2; q.setFromAxisAngle(up, rnd(i * 6.1) * 6.283);
+        m.compose(new THREE.Vector3(x, gy + th - sc, z), q, new THREE.Vector3(sc, sc, sc)); heads.setMatrixAt(i, m);
+        m.compose(new THREE.Vector3(x, gy, z), q, new THREE.Vector3(1, th, 1)); stems.setMatrixAt(i, m);
+      });
+      heads.castShadow = stems.castShadow = true; heads.receiveShadow = true; heads.frustumCulled = stems.frustumCulled = false; heads.name = 'ponga_fronds'; stems.name = 'ponga_trunks';
+      g.add(heads, stems);
+    }
+  }
+  g.userData = { kind: 'planting', name: 'Bush', source: 'survey', note: 'One crown per tree top in the LiDAR canopy; height and spread from the survey, colour from the aerial photo. Species are not identified by the survey: the forms shown (kānuka and broadleaf crowns, pōhutukawa in flower on the broadest, ponga beneath) are typical of regenerating coastal bush here and are proposed.' };
   return g;
 }
+/** a finished building model, set on the plan model's frame: the model's front runs along +Z, so it is turned to put the downhill wall at x = 0 */
+async function asBuiltModel(a: NonNullable<PlanModel['asBuilt']>) {
+  const gltf = await new GLTFLoader().loadAsync(a.glb), inner = gltf.scene, root = new THREE.Group();
+  root.name = 'as_built'; inner.rotation.y = -Math.PI / 2; inner.position.y = -a.ffl; root.add(inner);
+  const seen = new Set<THREE.Material>();
+  inner.traverse((o) => {
+    const m = o as THREE.Mesh; if (!m.isMesh) return;
+    m.castShadow = m.receiveShadow = true;
+    const nm = o.name.replace(/_/g, ' ').replace(/\s*\d{3}$/, '').trim(), [head, tail] = nm.split('|').map((x) => x.trim());
+    const mat = m.material as THREE.MeshPhysicalMaterial;
+    o.userData = { ...o.userData, kind: 'element', name: head || nm, material: (mat?.name ?? '').replace(/\s*\|\s*/, ', '), source: 'model', note: tail ? `${tail}; from the developed Blender model` : 'from the developed Blender model' };
+    if (!mat || seen.has(mat)) return; seen.add(mat);
+    if (/glass/i.test(mat.name)) { mat.transmission = 0; mat.transparent = true; mat.opacity = 0.2; mat.color.set(0xa9bcc0); mat.roughness = 0.02; mat.metalness = 0; mat.envMapIntensity = 2.2; mat.depthWrite = false; mat.side = THREE.DoubleSide; m.castShadow = false; }
+    else if (/cladding/i.test(mat.name)) { mat.color.set(a.cladding ?? '#4a4d4f'); mat.metalness = 0.4; mat.roughness = 0.46; mat.clearcoat = 0.25; mat.clearcoatRoughness = 0.4; }
+    else if (/concrete/i.test(mat.name)) { mat.color.set(0x8d8b85); mat.roughness = 0.92; mat.metalness = 0; }
+    else if (/joinery/i.test(mat.name)) { mat.color.set(0x111213); mat.metalness = 0.35; mat.roughness = 0.36; }
+    mat.needsUpdate = true;
+  });
+  inner.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && /glass/i.test((m.material as THREE.Material)?.name ?? '')) m.castShadow = false; });
+  return root;
+}
+
 /** timber stairs down a line, from one level to another */
 function flight(pts: [number, number][], levels: [number, number], w: number, groundAt: (x: number, z: number) => number, mat: THREE.Material) {
   const segs = pts.slice(1).map((b, i) => ({ a: pts[i], b, L: Math.hypot(b[0] - pts[i][0], b[1] - pts[i][1]) })), L = segs.reduce((t, s) => t + s.L, 0);
@@ -114,6 +200,7 @@ function flight(pts: [number, number][], levels: [number, number], w: number, gr
     const p = at((k + 0.5) * going), y = levels[0] + (k + 1) * rise;
     const t = new THREE.BoxGeometry(going + 0.02, 0.045, w); t.rotateY(-p.ang); t.translate(p.x, y - 0.0225, p.z); parts.push(t);
     for (const side of [-1, 1]) { const sx = p.x - Math.sin(p.ang) * side * (w / 2 - 0.03) * -1, sz = p.z + Math.cos(p.ang) * side * (w / 2 - 0.03) * -1; const st = new THREE.BoxGeometry(going + 0.02, 0.24, 0.045); st.rotateY(-p.ang); st.translate(sx, y - 0.17, sz); parts.push(st); }
+    for (const side of [-1, 1]) { const bx = p.x + Math.sin(p.ang) * side * (w / 2 - 0.02), bz = p.z - Math.cos(p.ang) * side * (w / 2 - 0.02); parts.push(new THREE.BoxGeometry(0.03, 0.95, 0.03).translate(bx, y + 0.475, bz)); const hr = new THREE.BoxGeometry(going + 0.04, 0.04, 0.06); hr.rotateY(-p.ang); hr.translate(bx, y + 0.97, bz); parts.push(hr); }
     if (k % 4 === 3) { const gy = groundAt(p.x, p.z), h = y - 0.3 - gy; if (h > 0.15) for (const side of [-1, 1]) { const po = new THREE.BoxGeometry(0.1, h, 0.1); po.translate(p.x + Math.sin(p.ang) * side * (w / 2 - 0.05), gy + h / 2, p.z - Math.cos(p.ang) * side * (w / 2 - 0.05)); parts.push(po); } }
   }
   const m = new THREE.Mesh(mergeGeometries(parts)!, mat); m.castShadow = m.receiveShadow = true; m.name = 'stairs';
@@ -122,7 +209,7 @@ function flight(pts: [number, number][], levels: [number, number], w: number, gr
 }
 
 /** something drawn on the site plan, in the plan model's frame (x, z) */
-export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string }
+export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean }
 
 /** the site plan's paths, pads, walls, beds and trees on the ground */
 function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
@@ -144,22 +231,40 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
       line.name = 'boundary'; line.userData = { kind: 'boundary', name: 'Boundary', source: f.source ?? 'ai', note: 'legal boundary, drawn on the ground' }; land.add(line);
     } else if ((f.kind === 'path' || f.kind === 'driveway' || f.kind === 'steps') && pts.length >= 2) {
       land.add(pathRibbon(`${f.kind}_${i + 1}`, pts, f.width ?? (f.kind === 'driveway' ? 3 : 1.2), groundAt, q, `${f.kind} from the site plan`));
+    } else if (f.kind === 'landing' && f.levels && f.pts.length >= 3) {
+      // a timber landing between flights: boards on bearers, a post under each corner
+      const y = f.levels[0], sh = new THREE.Shape(f.pts.map((q) => new THREE.Vector2(q[0], -q[1])));
+      const top = new THREE.ExtrudeGeometry(sh, { depth: 0.045, bevelEnabled: false }); top.rotateX(-Math.PI / 2); top.translate(0, y - 0.045, 0);
+      const parts: THREE.BufferGeometry[] = [top];
+      const cx = f.pts.reduce((t, q) => t + q[0], 0) / f.pts.length, cz = f.pts.reduce((t, q) => t + q[1], 0) / f.pts.length;
+      for (const q of f.pts) { const px = q[0] + Math.sign(cx - q[0]) * 0.07, pz = q[1] + Math.sign(cz - q[1]) * 0.07, gy = groundAt(px, -pz), h = y - 0.045 - gy; if (h > 0.1) parts.push(new THREE.BoxGeometry(0.1, h, 0.1).translate(px, gy + h / 2, pz)); }
+      f.pts.forEach((a, k) => { const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]); const br = new THREE.BoxGeometry(L, 0.19, 0.045); br.rotateY(-Math.atan2(b2[1] - a[1], b2[0] - a[0])); br.translate((a[0] + b2[0]) / 2, y - 0.14, (a[1] + b2[1]) / 2); parts.push(br); });
+      const m = new THREE.Mesh(mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!, timber); m.castShadow = m.receiveShadow = true; m.name = `landing_${i + 1}`;
+      m.userData = { kind: 'steps', name: 'Stair landing', ifcClass: 'IfcSlab', source: f.source ?? 'scaled', note: 'landing level is assumed where the drawings do not write it' };
+      land.add(m);
     } else if ((f.kind === 'parking' || f.kind === 'patio' || f.kind === 'pad') && f.levels && f.pts.length >= 3) {
-      // a level slab at a stated height, with an upstand where the ground stands above it
-      const xs = f.pts.map((q) => q[0]), zs = f.pts.map((q) => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs), y = f.levels[0];
-      const parts: THREE.BufferGeometry[] = [new THREE.BoxGeometry(x1 - x0, 0.2, z1 - z0).translate((x0 + x1) / 2, y - 0.1, (z0 + z1) / 2)];
-      for (const [ax, az, bx, bz] of [[x0, z0, x1, z0], [x1, z0, x1, z1], [x1, z1, x0, z1], [x0, z1, x0, z0]]) {
-        const L = Math.hypot(bx - ax, bz - az), n = Math.ceil(L / 0.8);
-        for (let k = 0; k < n; k++) {
-          const mx = ax + ((bx - ax) * (k + 0.5)) / n, mz = az + ((bz - az) * (k + 0.5)) / n, out = 0.9, ox = mx + Math.sign(mx - (x0 + x1) / 2) * (ax === bx ? out : 0), oz = mz + Math.sign(mz - (z0 + z1) / 2) * (az === bz ? out : 0);
-          const top = groundAt(ox, -oz), h = top - y;
-          if (h > 0.15) parts.push(new THREE.BoxGeometry(ax === bx ? 0.2 : L / n + 0.02, h + 0.25, az === bz ? 0.2 : L / n + 0.02).translate(mx, y + h / 2 - 0.1, mz));
-          else if (h < -0.15) parts.push(new THREE.BoxGeometry(ax === bx ? 0.2 : L / n + 0.02, -h + 0.2, az === bz ? 0.2 : L / n + 0.02).translate(mx, y + h / 2 - 0.1, mz));
+      // a level slab at a stated height, cut to its drawn outline, with a low wall where the ground stands above or below it
+      const y = f.levels[0], sh = new THREE.Shape(f.pts.map((q) => new THREE.Vector2(q[0], -q[1])));
+      const slab = new THREE.ExtrudeGeometry(sh, { depth: 0.2, bevelEnabled: false }); slab.rotateX(-Math.PI / 2); slab.translate(0, y - 0.2, 0);
+      const parts: THREE.BufferGeometry[] = [slab];
+      const cx = f.pts.reduce((t, q) => t + q[0], 0) / f.pts.length, cz = f.pts.reduce((t, q) => t + q[1], 0) / f.pts.length;
+      f.pts.forEach((a, k) => {
+        const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.8)), ang = Math.atan2(b2[1] - a[1], b2[0] - a[0]);
+        let nx = -(b2[1] - a[1]) / L, nz = (b2[0] - a[0]) / L; if (nx * ((a[0] + b2[0]) / 2 - cx) + nz * ((a[1] + b2[1]) / 2 - cz) < 0) { nx = -nx; nz = -nz; }
+        for (let t = 0; t < n; t++) {
+          const mx = a[0] + ((b2[0] - a[0]) * (t + 0.5)) / n, mz = a[1] + ((b2[1] - a[1]) * (t + 0.5)) / n, top = groundAt(mx + nx * 0.9, -(mz + nz * 0.9)), h = top - y;
+          if (Math.abs(h) < 0.15) continue;
+          const w = new THREE.BoxGeometry(L / n + 0.02, Math.abs(h) + 0.25, 0.2); w.rotateY(-ang); w.translate(mx, y + h / 2 - 0.1, mz); parts.push(w);
         }
-      }
-      const m = new THREE.Mesh(mergeGeometries(parts)!, concrete); m.castShadow = m.receiveShadow = true; m.name = `${f.kind}_${i + 1}`;
+      });
+      const m = new THREE.Mesh(mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!, concrete); m.castShadow = m.receiveShadow = true; m.name = `${f.kind}_${i + 1}`;
       m.userData = { kind: f.kind, name: f.kind === 'parking' ? 'Car bay' : 'Slab', ifcClass: 'IfcSlab', source: f.source ?? 'scaled', note: 'level slab at the stated height; walls where the ground stands above or below it are indicative' };
       land.add(m);
+      if (f.kind === 'parking' && f.car) {
+        // a car on the bay, along its longer side, for scale
+        let best = 0, ang = 0; f.pts.forEach((a, k) => { const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]); if (L > best) { best = L; ang = Math.atan2(b2[1] - a[1], b2[0] - a[0]); } });
+        const car = buildCar(); car.position.set(cx, y, cz); car.rotation.y = -ang; car.traverse((o) => { o.castShadow = true; o.receiveShadow = true; }); land.add(car);
+      }
     } else if ((f.kind === 'parking' || f.kind === 'patio' || f.kind === 'pad') && pts.length >= 3) {
       // laid on the ground like a bed, in concrete
       const m = mulchBed(`${f.kind}_${i + 1}`, pts, (e, n) => groundAt(e, n) + 0.04, q);
@@ -208,6 +313,29 @@ async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } 
 }
 
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
+  // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
+  const qs = new URLSearchParams(location.search);
+  // the page opens on a finished example, with the drop a tap away, rather than on a card of text
+  const example = !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop');
+  const pu = qs.get('plan') ?? (example ? 'hero.plan.json' : null);
+  if (pu && /^[\w./-]+\.json$/.test(pu) && !pu.includes('//')) {
+    try {
+      app.log('Opening the model…');
+      const base = new URL(pu, location.href), plan = (await (await fetch(base.href)).json()) as PlanModel;
+      if (plan.asBuilt?.glb) plan.asBuilt.glb = new URL(plan.asBuilt.glb, base).href;
+      if (plan.buildings) {
+        if (example) {
+          const a = document.createElement('a');
+          a.className = 'pill solid';
+          a.href = '?drop=1';
+          a.textContent = 'Drop your own plan';
+          a.style.cssText = 'position:absolute;left:12px;top:12px;z-index:6;text-decoration:none;box-shadow:0 6px 24px rgba(51,33,47,.18)';
+          app.canvas.parentElement!.append(a);
+        }
+        return { input: { kind: 'plan', plan, name: plan.job?.title ?? 'Plan model' }, palette: 'cedar-charcoal' };
+      }
+    } catch (e) { console.warn('plan model could not be opened', e); app.log('That model could not be opened; drop a file instead.'); }
+  }
   // a shared link: rebuild the plan that was shared
   const sid = new URLSearchParams(location.search).get('share');
   if (sid) {
@@ -229,14 +357,17 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     const stage = app.canvas.parentElement!;
     const o = document.createElement('div');
     o.className = 'dropzone';
-    o.innerHTML = `<div class="card drop-card">
-      <h2>Drop a plan, get a twin</h2>
-      <p>Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p>
+    // the finished example sits behind the card, so the page is a picture first and words second
+    o.style.cssText = "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
+    o.innerHTML = `<div class="card drop-card" style="max-width:440px;background:rgba(249,246,242,.94);backdrop-filter:blur(10px)">
+      <h2>Drop your plan</h2>
+      <p>A PDF, a picture of a plan, an IFC or a plan model. It comes back as a measured 3D home you can walk through, furnished and lit.</p>
+      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
       <label class="slider">Finishes <select id="dropPalette">${Object.entries(PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name}</option>`)
         .join('')}</select></label>
-      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
-      <p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p>
+      <details class="small" style="margin-top:10px"><summary>How it reads a plan, and what leaves your browser</summary><p class="small">Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p><p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p></details>
+      <p class="small" style="margin:10px 0 0"><a href="./">Back to the example</a> · The picture behind is the example: a rendering of a plan model, not a photograph.</p>
     </div>`;
     stage.append(o);
     const pal = () => (o.querySelector('#dropPalette') as HTMLSelectElement).value;
@@ -319,6 +450,9 @@ export const projectPlan: Project = {
     const fitouts: THREE.Object3D[] = [];
     let plantObj: THREE.Object3D | null = null;
     let landObj: THREE.Object3D | null = null;
+    let lightObj: THREE.Object3D | null = null;
+    let sunFace: THREE.Vector3 | undefined;
+    let siteNorth: [number, number] | undefined;
     let terrain: Terrain | null = null;
     let bushObj: THREE.Object3D | null = null;
     const keys: Key[] = [];
@@ -348,8 +482,11 @@ export const projectPlan: Project = {
         for (const p of pads) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) y = Math.min(y, p.y);
         return y;
       };
+      scandi.on = true;
+      siteNorth = T?.north ?? P.site?.north;
       const box = new THREE.Box3();
-      for (const b of P.buildings) {
+      if (P.asBuilt) { app.log('Loading the building model…'); const h = await asBuiltModel(P.asBuilt); model.add(h); h.updateMatrixWorld(true); box.expandByObject(h); }
+      else for (const b of P.buildings) {
         const pl: Placement = { origin: [b.origin[0], -b.origin[1]], u: [1, 0], v: [0, -1], ffl: b.floorLevel ?? 0, bearing: 90 };
         app.log(`Generating ${b.name ?? b.id}…`);
         const h = buildHome({ key: b.id, spec: b, placement: pl, limits: [], ground: groundAt, quality: q, finishes: fin });
@@ -357,12 +494,67 @@ export const projectPlan: Project = {
         h.updateMatrixWorld(true);
         box.expandByObject(h);
       }
+      { app.log('Loading scanned materials…'); try { const fin0 = (P.buildings[0] as unknown as { finish?: { claddingProfile?: string; claddingColour?: string } }).finish; await scannedFinishes(model, M.sets, fin0?.claddingProfile === 'metal' ? { cladding: 'metal', claddingColour: fin0.claddingColour ? new THREE.Color(fin0.claddingColour).getHex() : undefined } : {}); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
       app.log('Placing library pieces…');
-      await fillSlots(model);
+      // a dropped plan is furnished entirely in code; only a finished building model still draws on the objects library
+      if (P.asBuilt) await fillSlots(model);
       model.traverse((o) => {
         if (o.name === 'fit_out') fitouts.push(o);
       });
-      app.onSun.push((night) => setInteriorLights(fitouts, night));
+      // clear glass, a timber soffit, and the rooms lit by day as well so the interior reads from outside
+      const ed = !P.asBuilt; // the editorial look, on a flat pad or on surveyed ground; a finished building model keeps its own
+      if (ed) applyEditorial(model);
+      const moodOf = (alt: number): Mood => (alt < 2 ? 'dusk' : alt < 26 ? 'golden' : 'day');
+      app.onSun.push((night, alt) => setInteriorLights(fitouts, !ed ? Math.max(night, 0.42) : Math.max(night, LOOK[moodOf(alt)].rooms)));
+      if (ed) {
+        const runs: EaveRun[] = [];
+        for (const b of P.buildings) {
+          const y0 = b.floorLevel ?? 0;
+          for (const w of b.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; out: number; openings: { a: number; b: number; kind: string }[] }[]) {
+            for (const o of w.openings ?? []) {
+              if (o.b - o.a < 1.1) continue;
+              const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(b.origin[0] + t, y0, b.origin[1] + w.at) : new THREE.Vector3(b.origin[0] + w.at, y0, b.origin[1] + t));
+              runs.push({ a: pt(o.a + 0.1), b: pt(o.b - 0.1), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0) });
+            }
+          }
+        }
+        // profiled steel cladding as real ribs, in place of a picture of ribs
+        {
+          let clad: THREE.MeshPhysicalMaterial | null = null;
+          model.traverse((o) => { const mm = (o as THREE.Mesh).material as THREE.MeshPhysicalMaterial | undefined; if (!clad && mm && !Array.isArray(mm) && /profiled steel sheet, ribs/.test(String(mm.userData?.scanned ?? ''))) clad = mm; });
+          if (clad) {
+            const cm = clad as THREE.MeshPhysicalMaterial;
+            cm.map = null; cm.normalMap = null; cm.roughnessMap = null; cm.roughness = 0.5; cm.metalness = 0.45; cm.clearcoat = 0.2; cm.needsUpdate = true;
+            const rw: RibWall[] = [];
+            for (const b of P.buildings) {
+              const y0 = b.floorLevel ?? 0;
+              for (const w of b.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number; sill: number; head: number }[] }[]) {
+                const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(b.origin[0] + t, y0, b.origin[1] + w.at) : new THREE.Vector3(b.origin[0] + w.at, y0, b.origin[1] + t));
+                rw.push({ a: pt(w.from), b: pt(w.to), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0), openings: (w.openings ?? []).map((o) => ({ a: o.a - w.from, b: o.b - w.from, sill: o.sill, head: o.head })) });
+              }
+            }
+            model.updateMatrixWorld(true);
+            const ribs = claddingRibs(model, rw, cm);
+            if (ribs) model.add(ribs);
+          }
+        }
+        // a table and chairs on the largest deck: something of known size to read the building against
+        for (const b of P.buildings) {
+          const ds = ((b.levels[0] as unknown as { decks?: { u0: number; u1: number; v0: number; v1: number; drop?: number }[] }).decks ?? []).filter((d) => Math.min(d.u1 - d.u0, d.v1 - d.v0) >= 3.2).sort((p1, p2) => (p2.u1 - p2.u0) * (p2.v1 - p2.v0) - (p1.u1 - p1.u0) * (p1.v1 - p1.v0))[0];
+          if (!ds) continue;
+          const alongU = ds.u1 - ds.u0 >= ds.v1 - ds.v0, long = Math.max(ds.u1 - ds.u0, ds.v1 - ds.v0);
+          const t = suite(buildScandiDiningSuite(scandiMats(), long >= 5.5 ? 3 : 2, 0), 'Outdoor table and chairs', 'oak and linen; shown for scale');
+          // towards the house end of the deck's long side, clear of the edge
+          const cu = alongU ? ds.u0 + (ds.u1 - ds.u0) * 0.62 : (ds.u0 + ds.u1) / 2, cv = alongU ? (ds.v0 + ds.v1) / 2 : ds.v0 + (ds.v1 - ds.v0) * 0.62;
+          t.position.set(b.origin[0] + cu, (b.floorLevel ?? 0) - (ds.drop ?? 0.05) + 0.005, b.origin[1] + cv);
+          t.rotation.y = alongU ? 0 : Math.PI / 2;
+          model.add(t);
+        }
+        model.updateMatrixWorld(true);
+        lightObj = eaveLights(model, runs);
+        const lo = lightObj;
+        app.onSun.push((night, alt) => setEaveLights(lo, night, moodOf(alt)));
+      }
       centre = box.getCenter(new THREE.Vector3());
       radius = Math.max(14, box.getSize(new THREE.Vector3()).length() * 0.9);
       // planting from the plan model, in its own frame
@@ -380,6 +572,9 @@ export const projectPlan: Project = {
         plantObj = planting(list, 'Planting from the plan model (proposed).');
       }
       if (P.site?.features?.length) landObj = siteLayer(P.site.features, groundAt, q);
+      if (T && landObj) {
+        try { const [dc, dn, dr] = await scanSet('deck', 1.8, 1.8); const stairM = new THREE.MeshStandardMaterial({ color: 0xd9d2c6, map: dc, normalMap: dn, roughnessMap: dr, roughness: 1 }); landObj.traverse((o) => { if (o.name === 'stairs') (o as THREE.Mesh).material = stairM; }); } catch { /* keep the plain timber */ }
+      }
       // keys: aerial, then each building's front and living space
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.8, radius * 0.9)), look: centre.clone() });
       if (T) {
@@ -391,10 +586,34 @@ export const projectPlan: Project = {
         keys.push({ label: 'From below', eye: stand(centre.clone().addScaledVector(dn, 24).addScaledVector(side, 13).setY(centre.y + 3), 6), look: centre.clone() });
         keys.push({ label: 'Aerial', eye: centre.clone().addScaledVector(dn, 34).addScaledVector(side, -20).setY(centre.y + 30), look: centre.clone() });
         keys.push({ label: 'Deck side', eye: stand(centre.clone().addScaledVector(side, 17).addScaledVector(dn, 9).setY(centre.y + 1), 2.5), look: centre.clone() });
-        if (T.views?.length) { keys.length = 0; for (const v of T.views) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
-        if (T.trees?.length) bushObj = bush(T.trees, plane, [centre.x, centre.z]);
+        if (T.trees?.length) bushObj = P.asBuilt ? await bush(T.trees, plane, [centre.x, centre.z]) : nativeBush(T.trees as [number, number, number, number, string][], plane, [centre.x, centre.z]);
       }
-      for (const b of P.buildings) {
+      { const V = T?.views ?? P.views;
+        if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
+      }
+      let heroFront: { nrm: THREE.Vector3; along: THREE.Vector3 } | null = null;
+      if (ed && P.buildings[0]) {
+        // the opening view: eye height, square-on to the most glazed wall, a little off-centre
+        const b0 = P.buildings[0], ws = b0.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
+        const best = [...ws].sort((p1, p2) => p2.openings.reduce((t, o) => t + o.b - o.a, 0) - p1.openings.reduce((t, o) => t + o.b - o.a, 0))[0];
+        if (best) {
+          const mid = (best.from + best.to) / 2, len = best.to - best.from, dist = Math.max(10, len * 1.35), ox = b0.origin[0], oz = b0.origin[1], y0 = b0.floorLevel ?? 0;
+          const wm = best.axis === 'x' ? new THREE.Vector3(ox + mid, y0, oz + best.at) : new THREE.Vector3(ox + best.at, y0, oz + mid);
+          const nrm = best.axis === 'x' ? new THREE.Vector3(0, 0, best.out) : new THREE.Vector3(best.out, 0, 0), along = new THREE.Vector3(-nrm.z, 0, nrm.x);
+          if (!(T?.views ?? P.views)?.length && !T) keys.unshift({ label: 'Hero', eye: wm.clone().addScaledVector(nrm, dist).addScaledVector(along, dist * 0.32).setY(y0 + 1.45), look: wm.clone().setY(y0 + 1.25) });
+          heroFront = { nrm, along };
+          sunFace = nrm;
+        }
+      }
+      if (!T && !P.planting && heroFront) {
+        const hf = heroFront, sz = box.getSize(new THREE.Vector3()), bx = box.clone().expandByScalar(1.3);
+        const halfAlong = (Math.abs(hf.along.x) * sz.x + Math.abs(hf.along.z) * sz.z) / 2, halfDepth = (Math.abs(hf.nrm.x) * sz.x + Math.abs(hf.nrm.z) * sz.z) / 2;
+        const np = nativePlanting({ centre, front: hf.nrm, along: hf.along, halfAlong, halfDepth, groundAt: (x, z) => groundAt(x, -z), keepOut: (x, z) => x > bx.min.x && x < bx.max.x && z > bx.min.z && z < bx.max.z });
+        plantObj = np.group;
+        let tt = 0;
+        app.onFrame.push((dt) => { tt += dt; for (const n of np.sway) { n.node.rotation.z = Math.sin(tt * 0.9 + n.phase) * n.amp; n.node.rotation.x = Math.cos(tt * 0.7 + n.phase * 1.3) * n.amp * 0.6; } });
+      }
+      if (!(T?.views ?? P.views)?.length) for (const b of P.buildings) {
         const ffl = b.floorLevel ?? 0;
         const o = new THREE.Vector3(b.origin[0], ffl, b.origin[1]);
         keys.push({ label: `${b.name ?? b.id} outside`, eye: o.clone().add(new THREE.Vector3(-3, 1.6, 14)), look: o.clone().add(new THREE.Vector3(5.4, 1.2, 3)) });
@@ -428,7 +647,16 @@ export const projectPlan: Project = {
     if (terrain) {
       const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
       const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: T.photo ? await photoTex(T.photo) : null });
-      const near = new THREE.Mesh(sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01), nearM);
+      // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
+      if (input.kind === 'plan' && !input.plan.asBuilt) nearM.color.setRGB(1.3, 1.16, 0.82);
+      const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
+      try {
+        // forest-floor relief at its real size, on a second set of coordinates measured in metres
+        const p = ng.getAttribute('position'), uv1 = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv1[i * 2] = p.getX(i) / 2.3; uv1[i * 2 + 1] = p.getZ(i) / 2.3; }
+        ng.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
+        const [, fn, fr] = await scanSet('floor', 2.3, 2.3); fn.channel = fr.channel = 1; nearM.normalMap = fn; nearM.roughnessMap = fr; nearM.normalScale.set(1.4, 1.4); nearM.roughness = 1;
+      } catch (e) { console.warn('forest floor relief unavailable', e); }
+      const near = new THREE.Mesh(ng, nearM);
       near.receiveShadow = true; near.name = 'ground_survey'; realGround.add(near);
       if (T.far) {
         const F = T.far, farM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, map: F.photo ? await photoTex(F.photo) : null });
@@ -436,7 +664,7 @@ export const projectPlan: Project = {
         far.receiveShadow = true; far.name = 'ground_far'; realGround.add(far);
       }
       if (T.sea !== undefined) {
-        const sea = new THREE.Mesh(new THREE.CircleGeometry(9000, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x4a6a78, roughness: 0.18, metalness: 0 }));
+        const sea = new THREE.Mesh(new THREE.CircleGeometry(9000, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: input.kind === 'plan' && !input.plan.asBuilt ? 0x2c86a0 : 0x4a6a78, roughness: 0.14, metalness: 0 }));
         sea.position.set(T.centre[0], T.sea + 0.35, T.centre[1]); sea.name = 'sea'; realGround.add(sea);
       }
       realGround.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? 'Ground from a survey grid.' };
@@ -452,7 +680,7 @@ export const projectPlan: Project = {
     g.computeVertexNormals();
     const uv = g.getAttribute('uv');
     for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / M.sets.lawn.tile, -p.getZ(i) / M.sets.lawn.tile);
-    const ground = new THREE.Mesh(g, M.lawn);
+    const ground = new THREE.Mesh(g, input.kind === 'plan' && !terrain ? hillsideMat(M.sets.lawn.tile) : M.lawn);
     ground.name = 'ground';
     ground.receiveShadow = true;
     ground.userData = { kind: 'terrain', name: 'Ground', source: 'assumed', note: 'From the plan model’s fall plane, or flat; not a survey.' };
@@ -461,8 +689,9 @@ export const projectPlan: Project = {
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: 'LiDAR ground and aerial photo; cut to a platform under the house', visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
-    if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: 'tree tops from the LiDAR canopy; species not identified', visible: true, object: bushObj });
-    if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: 'from the plan model', visible: true, object: plantObj });
+    if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
+    if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: plantObj.name === 'native_planting' ? 'proposed, to frame the building; not from the plan' : 'from the plan model', visible: true, object: plantObj });
+    if (lightObj) layers.push({ id: 'lights', label: 'Soffit lights', note: 'proposed downlights over the glazed walls', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
 
     const exports: Built['exports'] = [
@@ -488,8 +717,10 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(terrain ? { fog: [220, 2600] as [number, number], maxDistance: 600, shadowRadius: 42, sunHour: terrain.sunHour ?? 10 } : {}),
-      north: terrain?.north ? new THREE.Vector2(terrain.north[0], terrain.north[1]) : undefined,
+      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 1.22 : 1 } : {}),
+      ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: 'Site: LINZ LiDAR and aerial photo', title: terrain.source ?? '' } } : {}),
+      ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
+      north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
       radius,
       view: { eye: keys[0].eye, look: keys[0].look },
       path: keys,

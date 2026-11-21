@@ -14,6 +14,7 @@ async function boot() {
   try {
     const project = await loaders[key]();
     const app = new App(project, document.getElementById('c') as HTMLCanvasElement);
+    (window as unknown as { __twin?: App }).__twin = app;
     await app.start();
   } catch (err) {
     console.error(err);

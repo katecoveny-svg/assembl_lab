@@ -1,3 +1,6 @@
+import { espresso, knifeBlock, mixerTap, showerSet, tableLamp, toaster, towelRail } from './fittings';
+import { scandiIsland, scandiMats, suite } from './editorial';
+import { buildMasterBedroomSuite, buildScandiDiningSuite, buildSculptedBoucleSofa } from './scandiInteriors';
 import * as THREE from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boxUV, type Quality } from '../objects/util';
@@ -29,6 +32,9 @@ interface SideInfo {
 }
 
 /** what the viewer needs to light a room from its windows: home-local metres (x = u, z = v) */
+/** the code-built Scandinavian suites in place of the library pieces (set by a project before it builds) */
+export const scandi = { on: false };
+
 export interface InteriorRoom {
   name: string;
   u0: number;
@@ -216,6 +222,7 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
 
     // sheer curtains, stacked either side of every floor-length opening in living rooms and bedrooms
     const curtains = (s: SideInfo) => {
+      if (scandi.on) return;
       for (const [a, b, k, sill] of s.openings) {
         if (k === 'opening' || (k === 'door' && !s.exterior)) continue;
         if (sill > 0.2 && !/bed/.test(n)) continue;
@@ -248,6 +255,13 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
       const hi = ws.side === 'N' || ws.side === 'W' ? across[1] - robeD - 0.05 : across[1] - 0.3;
       const mid = (lo + hi) / 2;
       const bw = Math.min(1.53, hi - lo - 0.9 > 1.53 ? 1.53 : Math.max(1.37, hi - lo - 0.9));
+      if (scandi.on) {
+        const fit = Math.min(1, Math.max(0.68, (hi - lo - 0.1) / 3.34));
+        const sb = suite(buildMasterBedroomSuite(scandiMats()), 'Oak platform bed, linen and bedside tables', 'European oak, linen, wool, turned ceramic lamps');
+        sb.scale.setScalar(fit);
+        const [xu, xv] = at(hs.side, mid, 1.16 * fit + 0.02);
+        g.add(place(sb, xu, xv, faceAwayFrom[hs.side]));
+      } else {
       // the library bed is a king; at queen width it is narrowed to suit these rooms
       const [bu, bv] = at(hs.side, mid, 2.03 / 2 + 0.03);
       g.add(place(slot('bed', bed(M, bw), { fitW: bw + 0.2 }), bu, bv, faceAwayFrom[hs.side]));
@@ -260,6 +274,7 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
         g.add(place(slot('bedside', bedside(M)), tu, tv, faceAwayFrom[hs.side]));
         const [lu, lv] = at(hs.side, off + s * 0.08, 0.2);
         g.add(place(slot('table_lamp'), lu, lv, faceAwayFrom[hs.side], 0.54));
+      }
       }
       if (robeD) {
         // wardrobe along the side opposite the window, clear of any door on the adjacent sides
@@ -300,6 +315,32 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
       const depth = ws.side === 'N' || ws.side === 'S' ? r.d : r.w;
       const span = ws.side === 'N' || ws.side === 'S' ? r.w : r.d;
       const centre = ws.side === 'N' || ws.side === 'S' ? cu : cv;
+      if (scandi.on && span >= 3.3 && depth >= 3.4) {
+        // the bouclé sofa suite, facing the view: three seats where the room is wide enough, clear of any bench that reaches in behind it
+        const seats = span >= 4.75 ? 3 : 2;
+        const sw2 = seats * 1.07;
+        let inset2 = hasWall(r, back).length ? 0.62 : 0.95;
+        for (const f of L.fitout ?? []) {
+          if (f.y0 > 0.3) continue;
+          const [into, a0, a1] = back === 'N' ? [f.v1 - v0, f.u0, f.u1] : back === 'S' ? [v1 - f.v0, f.u0, f.u1] : back === 'W' ? [f.u1 - u0, f.v0, f.v1] : [u1 - f.u0, f.v0, f.v1];
+          const far = back === 'N' ? f.v0 - v0 : back === 'S' ? v1 - f.v1 : back === 'W' ? f.u0 - u0 : u1 - f.u1;
+          if (into > -0.7 && far < 1.2 && a1 > centre - sw2 / 2 - 0.9 && a0 < centre + sw2 / 2 + 0.9) inset2 = Math.max(inset2, into + 0.95 + 0.52);
+        }
+        inset2 = Math.min(inset2, depth - 2.75);
+        const rugBack = Math.min(1.02, inset2 - 0.06);
+        const rugDepth = Math.min(3.2, depth - inset2 - 0.25 + rugBack);
+        const sofaSuite = suite(buildSculptedBoucleSofa(scandiMats(), seats, rugDepth, rugBack), 'Bouclé sofa, travertine table, wool rug and arc lamp', 'bouclé wool, oiled oak, veincut travertine, bronze');
+        // the lamp stands off one end: centre the whole group in the room
+        const wrap = new THREE.Group();
+        sofaSuite.position.x = span - sw2 > 1.9 ? 0.3 : 0.12;
+        wrap.add(sofaSuite);
+        wrap.userData = sofaSuite.userData;
+        const [xu, xv] = at(back, centre, inset2);
+        g.add(place(wrap, xu, xv, faceAwayFrom[back]));
+        const plA = (ws.side === 'N' || ws.side === 'S' ? u0 : v0) + 0.36;
+        const [qu, qv] = at(ws.side, plA, 0.36);
+        g.add(place(pottedPlant(M, 'harakeke', 0.75, 3), qu, qv));
+      } else {
       const sw = Math.min(2.3, span - 0.8);
       const inset = Math.min(depth - 1.6, 0.55);
       const [su, sv] = at(back, centre, inset);
@@ -333,8 +374,20 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
         g.add(place(cush, xu, xv, faceAwayFrom[back] + s * 0.25 - Math.PI / 2 * 0, 0.48));
       }
       curtains(ws);
+      }
     } else if (/dining/.test(n)) {
       const longU = r.w >= r.d;
+      if (scandi.on && Math.max(r.w, r.d) >= 3.1 && Math.min(r.w, r.d) >= 2.6) {
+        const ds = suite(buildScandiDiningSuite(scandiMats(), Math.max(r.w, r.d) >= 3.9 ? 3 : 2, ceiling(cu, cv)), 'Oak dining table, six chairs and lantern', 'European oak, linen, alabaster and bronze lantern');
+        g.add(place(ds, cu, cv, longU ? 0 : Math.PI / 2));
+        const lamp2 = new THREE.PointLight(0xffd9a8, 0, 6, 2);
+        lamp2.position.set(cu, 1.6, cv);
+        lamp2.visible = false;
+        lights.push(lamp2);
+        g.add(lamp2);
+        root.add(g);
+        continue;
+      }
       const l = Math.min(1.8, (longU ? r.w : r.d) - 1.4);
       const tb = diningTable(M, Math.max(1.2, l), 0.9);
       g.add(place(tb, cu, cv, longU ? 0 : Math.PI / 2));
@@ -378,18 +431,31 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
         windowFrom: win ? Math.min(local(win[0]), local(win[1])) : undefined,
         windowTo: win ? Math.max(local(win[0]), local(win[1])) : undefined,
       });
+      if (scandi.on) { const ts = run.getObjectByName('slot_tap'); if (ts) { ts.clear(); ts.add(mixerTap()); } }
       const [ku, kv] = at(runSide.side, mid, 0.3);
       g.add(place(run, ku, kv, faceAwayFrom[runSide.side]));
+      if (scandi.on) {
+        for (const f of L.fitout ?? []) {
+          if (!/island/i.test(f.name) || f.y0 > 0.2 || !(f.u1 > u0 - 0.5 && f.u0 < u1 + 0.5 && f.v1 > v0 - 0.5 && f.v0 < v1 + 0.9)) continue;
+          const lu = f.u1 - f.u0, lv = f.v1 - f.v0, alongU = lu >= lv;
+          // stools on the long side away from the run
+          const runNear = runSide.side === 'N' ? f.v0 - v0 : runSide.side === 'S' ? v1 - f.v1 : runSide.side === 'W' ? f.u0 - u0 : u1 - f.u1;
+          void runNear;
+          const flip = alongU ? runSide.side === 'S' : runSide.side === 'E';
+          const isl = suite(scandiIsland(alongU ? lu : lv, alongU ? lv : lu, 3), 'Island: fluted oak, travertine top, bar stools', 'European oak, veincut travertine, bouclé and steel stools');
+          g.add(place(isl, (f.u0 + f.u1) / 2, (f.v0 + f.v1) / 2, alongU ? (flip ? Math.PI : 0) : flip ? -Math.PI / 2 : Math.PI / 2));
+        }
+      }
       // bench-top things along the run, away from the sink: kettle, toaster, coffee, knives
       const benchY = 0.91;
       const along = (x: number, inset: number) => at(runSide.side, x, inset);
       const sinkAt = win ? (win[0] + win[1]) / 2 : hi - 0.6;
-      const spots = [start + 0.3, start + 0.62, start + 0.95, start + 1.25].filter((x) => Math.abs(x - sinkAt) > 0.45);
+      const spots = (scandi.on ? [start + 0.3, start + 0.7, start + 1.12, start + 1.5] : [start + 0.3, start + 0.62, start + 0.95, start + 1.25]).filter((x) => Math.abs(x - sinkAt) > 0.45);
       const items: [string, () => THREE.Object3D | null, number][] = [
         ['kettle', () => lib('kettle', () => buildKettle(q)), 0.22],
-        ['toaster', () => null, 0.18],
-        ['espresso', () => null, 0.18],
-        ['knife_block', () => null, 0.42],
+        ['toaster', () => (scandi.on ? toaster() : null), 0.18],
+        ['espresso', () => (scandi.on ? espresso() : null), 0.18],
+        ['knife_block', () => (scandi.on ? knifeBlock() : null), 0.42],
       ];
       items.forEach(([role, fb, inset], i) => {
         if (i >= spots.length) return;
@@ -414,6 +480,7 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
       const sh = shower(M, sw, sd);
       // the shower's back wall is at its −z: turn it so the tiles sit against the corner walls
       sh.rotation.y = s1 === 'N' ? (s2 === 'W' ? 0 : -Math.PI / 2) : s2 === 'W' ? Math.PI / 2 : Math.PI;
+      if (scandi.on) { sh.getObjectByName('shower_rose')?.removeFromParent(); const set = showerSet(); set.position.set(0, 0, -sd / 2 + 0.012); sh.add(set); }
       sh.position.set(su, 0, sv);
       g.add(sh);
       // vanity along the other long side with the arched mirror over it, toilet beside it
@@ -424,6 +491,7 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
       const [vu, vv] = at(vs, alongLo + 0.42, 0.24);
       const van = vanity(M, vw);
       van.getObjectByName('mirror')?.removeFromParent();
+      if (scandi.on) { van.getObjectByName('basin_mixer')?.removeFromParent(); const mt = mixerTap(0.22, 0.13); mt.position.set(0, 0.905, -0.17); van.add(mt); }
       g.add(place(van, vu, vv, faceAwayFrom[vs]));
       const [mu, mv] = at(vs, alongLo + 0.42, 0.0);
       const fbMirror = new THREE.Mesh(new THREE.BoxGeometry(vw - 0.05, 0.75, 0.01).translate(0, 0.375, 0.005), M.chrome);
@@ -439,7 +507,7 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
       const trAlong = (trSide === 'E' || trSide === 'W' ? (s1 === 'N' ? v1 - 0.45 : v0 + 0.45) : cu);
       if (!by[trSide].openings.some(([a, b]) => trAlong > a - 0.35 && trAlong < b + 0.35)) {
         const [ou, ov] = at(trSide, trAlong, 0.0);
-        g.add(place(slot('towel_rail'), ou, ov, faceAwayFrom[trSide], 0.55));
+        g.add(place(slot('towel_rail', scandi.on ? towelRail() : null), ou, ov, faceAwayFrom[trSide], 0.55));
       }
     } else if (/l'?dry|laundry/.test(n)) {
       const s = by[opposite[ws.side]];
@@ -462,7 +530,7 @@ export function fitOut(spec: BuildingSpec, q: Quality, fin: Finishes, ceiling: (
       const [cu3, cv3] = at(s.side, s.side === 'N' || s.side === 'S' ? cu : cv, 0.95);
       g.add(place(diningChair(M), cu3, cv3, faceAwayFrom[s.side] + Math.PI));
       const [lu, lv] = at(s.side, (s.side === 'N' || s.side === 'S' ? cu : cv) + 0.5, 0.25);
-      g.add(place(slot('table_lamp'), lu, lv, faceAwayFrom[s.side], 0.75));
+      g.add(place(slot('table_lamp', scandi.on ? tableLamp() : null), lu, lv, faceAwayFrom[s.side], 0.75));
       curtains(s);
     } else if (/w\/r|robe|walk/.test(n)) {
       const s = ss.filter((x) => !doorsOn(x).length).sort((a, b) => b.len - a.len)[0] ?? by.N;
