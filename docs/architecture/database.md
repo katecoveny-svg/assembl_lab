@@ -43,7 +43,6 @@ Run them with `node --test tests/architecture-db/*.test.mjs` (after `npm install
 ## Risks
 - Real Supabase differs from the stand-ins in small ways. It is unproven there until step 6.
 - Ids are database-made uuids. Tell me if the app makes its own.
-- Adding a colleague needs their account id. An invite flow is still to build.
-- Nothing stops the last owner leaving.
+- Adding a colleague needs their account id; an invite flow is still to build. Nothing stops the last owner leaving.
 - A project with approvals or activity cannot be deleted by users. That is deliberate.
 - AI wrote this. A person should read the rules before real client data goes in.
