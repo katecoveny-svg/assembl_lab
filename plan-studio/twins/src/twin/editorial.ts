@@ -11,7 +11,7 @@ import {
   createVeincutTravertineTextures,
   createZelligeTileTextures,
 } from './pbrTextures';
-import { addContactShadow, buildBarStool, createLatheVesselGeo, createRoundedBoxGeo, type InteriorMaterials } from './scandiInteriors';
+import { addContactShadow, boxCushionGeo, buildBarStool, craftMats, createRoundedBoxGeo, jug, lemonBowl, type InteriorMaterials } from './scandiInteriors';
 import { buildNzNativeLandscape, type SwayNode } from './nzNativeFlora';
 
 export type Mood = 'day' | 'golden' | 'dusk';
@@ -229,7 +229,7 @@ export function eaveLights(model: THREE.Object3D, runs: EaveRun[]) {
   g.userData.lens = lens;
   return g;
 }
-/** brighter as the day fades */
+/** brighter as the day fades; the deck uplights, when the group carries them, follow the same logic */
 export function setEaveLights(g: THREE.Object3D, night: number, mood: Mood) {
   const k = mood === 'dusk' ? 1 : mood === 'golden' ? 0.75 : 0.28;
   const [glow, wash] = (g.userData.mats ?? []) as THREE.MeshBasicMaterial[];
@@ -237,6 +237,99 @@ export function setEaveLights(g: THREE.Object3D, night: number, mood: Mood) {
   if (wash) wash.opacity = 0.2 * Math.max(k, night);
   const lens = g.userData.lens as THREE.MeshStandardMaterial | undefined;
   if (lens) lens.emissiveIntensity = 2 + 5 * Math.max(k, night);
+  const d = g.userData.deck as { pool: THREE.MeshBasicMaterial; up: THREE.MeshBasicMaterial; wash: THREE.MeshBasicMaterial; lens: THREE.MeshStandardMaterial } | undefined;
+  if (d) {
+    // by day a lit lens and the faintest glow; at golden hour and dusk the pools and the wash up the cladding come up
+    const e = mood === 'day' ? Math.max(0.16, night) : Math.max(k, night);
+    d.pool.opacity = 0.75 * e; d.up.opacity = 0.42 * e; d.wash.opacity = 0.42 * e; d.lens.emissiveIntensity = (mood === 'day' ? 0.5 : 1.2) + 6 * e;
+  }
+}
+
+// --- uplights on the decks ---------------------------------------------------------------------------
+let upTex: THREE.CanvasTexture | null = null;
+/** light thrown up a surface from a small source at its foot: bright at the bottom centre, fading up and to the sides */
+function upwash() {
+  if (upTex) return upTex;
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 256;
+  const g = c.getContext('2d')!;
+  g.save();
+  g.translate(64, 256); g.scale(0.25, 1);
+  const r = g.createRadialGradient(0, 0, 2, 0, 0, 250);
+  r.addColorStop(0, 'rgba(255,238,206,1)');
+  r.addColorStop(0.1, 'rgba(255,220,170,0.7)');
+  r.addColorStop(0.42, 'rgba(255,204,146,0.22)');
+  r.addColorStop(1, 'rgba(255,200,140,0)');
+  g.fillStyle = r;
+  g.fillRect(-256, -256, 512, 256);
+  g.restore();
+  upTex = new THREE.CanvasTexture(c);
+  upTex.colorSpace = THREE.SRGBColorSpace;
+  return upTex;
+}
+export interface DeckRect { x0: number; x1: number; z0: number; z1: number; y: number }
+export interface DeckWall { a: THREE.Vector3; b: THREE.Vector3; out: THREE.Vector3; openings: { a: number; b: number }[] }
+/**
+ * Proposed deck lighting, added to the soffit lights' group so one layer and one day-to-dusk rule carry both:
+ * small uplights set flush in the boards along each open deck edge, under the line of the balustrade, and others close
+ * to the cladding that wash light up the wall between the openings. A lit lens in a dark bezel, a pool on the boards
+ * and a soft glow rising from it, done as the soffit lights are. `decks` are deck outlines at board level, `house`
+ * the footprints, `walls` the outside wall lines with their openings measured from `a`.
+ */
+export function deckUplights(g: THREE.Object3D, decks: DeckRect[], house: { x0: number; x1: number; z0: number; z1: number }[], walls: DeckWall[]) {
+  const d = new THREE.Group();
+  d.name = 'deck_uplights';
+  d.userData = { kind: 'lighting', name: 'Deck uplights', source: 'proposed', note: 'Proposed: small LED uplights set flush in the deck boards at about 1.4 m centres along the open edges, under the balustrade line, and close to the cladding to wash the wall between openings. Number and positions are indicative; not from the plan.' };
+  const lens = new THREE.MeshStandardMaterial({ name: 'uplight_lens', color: 0xcfc6b6, roughness: 0.25, emissive: 0xffd9a0, emissiveIntensity: 3 });
+  const bezel = new THREE.MeshStandardMaterial({ name: 'uplight_bezel', color: 0x1b1c1e, roughness: 0.35, metalness: 0.8 });
+  const pool0 = new THREE.MeshBasicMaterial({ name: 'uplight_pool', map: pool(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5, side: THREE.DoubleSide, fog: false });
+  const up = new THREE.MeshBasicMaterial({ name: 'uplight_glow', map: upwash(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.4, side: THREE.DoubleSide, fog: false });
+  const wash = up.clone(); wash.name = 'uplight_wall_wash';
+  const inRect = (r: { x0: number; x1: number; z0: number; z1: number }, x: number, z: number, m = 0) => x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m;
+  const spots: { p: THREE.Vector3; out: THREE.Vector3; wall: boolean; edge?: THREE.Vector3 }[] = [];
+  // along each open edge of each deck: not where it meets the house or another deck
+  for (const k of decks) {
+    const edges: [number, number, number, number, number, number][] = [[k.x0, k.z0, k.x1, k.z0, 0, -1], [k.x1, k.z0, k.x1, k.z1, 1, 0], [k.x1, k.z1, k.x0, k.z1, 0, 1], [k.x0, k.z1, k.x0, k.z0, -1, 0]];
+    for (const [ax, az, bx, bz, nx, nz] of edges) {
+      const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.4));
+      for (let i = 0; i < n; i++) {
+        const t = (i + 0.5) / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, qx = x + nx * 0.3, qz = z + nz * 0.3;
+        if (house.some((h) => inRect(h, qx, qz, 0.05)) || decks.some((o) => o !== k && inRect(o, qx, qz, 0.02))) continue;
+        spots.push({ p: new THREE.Vector3(x - nx * 0.2, k.y, z - nz * 0.2), out: new THREE.Vector3(nx, 0, nz), wall: false, edge: new THREE.Vector3(x - nx * 0.06, k.y, z - nz * 0.06) });
+      }
+    }
+  }
+  // close to the cladding, on the solid lengths of wall that stand over a deck
+  for (const w of walls) {
+    const len = w.a.distanceTo(w.b), dir = w.b.clone().sub(w.a).normalize(), ops = [...w.openings].sort((p, q) => p.a - q.a);
+    let from = 0;
+    for (const o of [...ops, { a: len, b: len }]) {
+      const to = o.a - 0.12, f0 = from + 0.12;
+      if (to - f0 >= 0.55) {
+        const n = Math.max(1, Math.round((to - f0) / 1.9));
+        for (let i = 0; i < n; i++) {
+          const at = w.a.clone().addScaledVector(dir, f0 + ((to - f0) * (i + 0.5)) / n), p = at.clone().addScaledVector(w.out, 0.22), k = decks.find((r) => inRect(r, p.x, p.z));
+          if (k) spots.push({ p: p.setY(k.y), out: w.out.clone(), wall: true, edge: at.clone().addScaledVector(w.out, 0.058).setY(k.y) });
+        }
+      }
+      from = Math.max(from, o.b);
+    }
+  }
+  if (!spots.length) return d;
+  const lenses = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.008, 18), lens, spots.length), bezels = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.046, 0.046, 0.006, 20), bezel, spots.length);
+  const m = new THREE.Matrix4(), zAxis = new THREE.Vector3(0, 0, 1), poolGeo = new THREE.PlaneGeometry(0.8, 0.8).rotateX(-Math.PI / 2), glowGeo = new THREE.PlaneGeometry(0.75, 0.95).translate(0, 0.475, 0), washGeo = new THREE.PlaneGeometry(1.7, 2.3).translate(0, 1.15, 0);
+  spots.forEach((s, i) => {
+    lenses.setMatrixAt(i, m.makeTranslation(s.p.x, s.p.y + 0.004, s.p.z)); bezels.setMatrixAt(i, m.makeTranslation(s.p.x, s.p.y + 0.002, s.p.z));
+    const pl = new THREE.Mesh(poolGeo, pool0); pl.position.set(s.p.x, s.p.y + 0.012, s.p.z); pl.renderOrder = 3; d.add(pl);
+    // the glow rising from it: up the glass and posts at a deck edge, up the cladding at a wall
+    const gl = new THREE.Mesh(s.wall ? washGeo : glowGeo, s.wall ? wash : up);
+    gl.position.copy(s.edge!); gl.position.y += 0.01; gl.quaternion.setFromUnitVectors(zAxis, s.out); gl.renderOrder = 3; d.add(gl);
+  });
+  lenses.instanceMatrix.needsUpdate = bezels.instanceMatrix.needsUpdate = true; lenses.name = 'uplight_lenses'; bezels.name = 'uplight_bezels';
+  d.add(bezels, lenses);
+  g.add(d);
+  g.userData.deck = { pool: pool0, up, wash, lens };
+  return d;
 }
 
 // --- planting ------------------------------------------------------------------------------------------
@@ -295,22 +388,21 @@ export function scandiIsland(len: number, dep: number, stools: number): THREE.Gr
     wf.castShadow = true;
     g.add(wf);
   }
-  // a footed bowl of lemons and a turned jug
-  const bowl = new THREE.Mesh(createLatheVesselGeo([[0, 0], [0.07, 0], [0.05, 0.03], [0.16, 0.085], [0.17, 0.1], [0.15, 0.1], [0.04, 0.045], [0, 0.045]]), M.travertineMat);
+  // styling on the stone (it stands 0.94 above the floor): a footed stoneware bowl of lemons, and a thrown jug
+  // with a pulled lip and a strap handle beside a folded linen cloth
+  const C = craftMats();
+  const bowl = lemonBowl();
   bowl.position.set(len * 0.22, 0.94, -0.05);
-  bowl.castShadow = true;
   g.add(bowl);
-  const lemon = new THREE.MeshStandardMaterial({ name: 'lemon', color: 0xe9c53c, roughness: 0.55 });
-  for (const [x, y, z] of [[0, 0.085, 0], [0.07, 0.08, 0.03], [-0.06, 0.08, 0.04], [0.01, 0.08, -0.07], [0.02, 0.13, 0.01]]) {
-    const l = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 10), lemon);
-    l.scale.set(1.25, 1, 1);
-    l.position.set(len * 0.22 + x, 0.94 + y, -0.05 + z);
-    g.add(l);
-  }
-  const jug = new THREE.Mesh(createLatheVesselGeo([[0, 0], [0.06, 0], [0.085, 0.08], [0.075, 0.2], [0.045, 0.27], [0.055, 0.31], [0.045, 0.31]]), M.terracottaMat);
-  jug.position.set(-len * 0.26, 0.94, 0.08);
-  jug.castShadow = true;
-  g.add(jug);
+  const pitcher = jug(C.glazeRust);
+  pitcher.position.set(-len * 0.26, 0.94, 0.08);
+  pitcher.rotation.y = 2.5;
+  g.add(pitcher);
+  const cloth = new THREE.Mesh(boxCushionGeo(0.2, 0.3, 0.014, { crown: 0.002, r: 0.012, edge: 0.005, bulge: 0, lump: 0.0015, tile: 0.24 }), C.linen);
+  cloth.position.set(-len * 0.26 + 0.2, 0.948, 0.1);
+  cloth.rotation.y = 0.2;
+  cloth.castShadow = true;
+  g.add(cloth);
   const k = Math.max(0, Math.min(stools, Math.floor((len - 0.2) / 0.6)));
   for (let i = 0; i < k; i++) {
     const st = buildBarStool(M);

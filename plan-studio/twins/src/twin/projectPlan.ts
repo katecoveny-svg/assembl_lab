@@ -13,13 +13,13 @@ import { planting, type Species, type Placement as PlantPlacement } from './plan
 import { bedPlanting, mulchBed, pathRibbon } from './landscape';
 import { twinMats } from './mats';
 import { scanSet, scanTex, scannedFinishes } from './scanned';
-import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
+import { applyEditorial, deckUplights, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type DeckRect, type DeckWall, type EaveRun, type Mood } from './editorial';
 import { scandi } from './fitout';
 import { nativeBush } from './nativeTrees';
 import { claddingRibs, type RibWall } from './fittings';
 import { buildCar } from './car';
 import { scandiMats, suite } from './editorial';
-import { buildScandiDiningSuite } from './scandiInteriors';
+import { furnishDecks, type DeckRect as DeckPlan } from './outdoor'; // deck furniture: the one import the deck block below needs
 import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
@@ -538,20 +538,33 @@ export const projectPlan: Project = {
             if (ribs) model.add(ribs);
           }
         }
-        // a table and chairs on the largest deck: something of known size to read the building against
+        // a table and chairs on the largest deck: something of known size to read the building against,
+        // with a lounge setting and planters where the deck is big enough (rules in outdoor.ts; all proposed)
         for (const b of P.buildings) {
-          const ds = ((b.levels[0] as unknown as { decks?: { u0: number; u1: number; v0: number; v1: number; drop?: number }[] }).decks ?? []).filter((d) => Math.min(d.u1 - d.u0, d.v1 - d.v0) >= 3.2).sort((p1, p2) => (p2.u1 - p2.u0) * (p2.v1 - p2.v0) - (p1.u1 - p1.u0) * (p1.v1 - p1.v0))[0];
-          if (!ds) continue;
-          const alongU = ds.u1 - ds.u0 >= ds.v1 - ds.v0, long = Math.max(ds.u1 - ds.u0, ds.v1 - ds.v0);
-          const t = suite(buildScandiDiningSuite(scandiMats(), long >= 5.5 ? 3 : 2, 0), 'Outdoor table and chairs', 'oak and linen; shown for scale');
-          // towards the house end of the deck's long side, clear of the edge
-          const cu = alongU ? ds.u0 + (ds.u1 - ds.u0) * 0.62 : (ds.u0 + ds.u1) / 2, cv = alongU ? (ds.v0 + ds.v1) / 2 : ds.v0 + (ds.v1 - ds.v0) * 0.62;
-          t.position.set(b.origin[0] + cu, (b.floorLevel ?? 0) - (ds.drop ?? 0.05) + 0.005, b.origin[1] + cv);
-          t.rotation.y = alongU ? 0 : Math.PI / 2;
-          model.add(t);
+          const L0 = b.levels[0] as unknown as { decks?: DeckPlan[]; walls: { axis: 'x' | 'z'; at: number }[] };
+          if (!L0.decks?.length) continue;
+          const hw = Math.max(...L0.walls.filter((w) => w.axis === 'z').map((w) => w.at)), hd = Math.max(...L0.walls.filter((w) => w.axis === 'x').map((w) => w.at));
+          const df = furnishDecks(scandiMats(), L0.decks, hw, hd, b.floorLevel ?? 0);
+          df.position.set(b.origin[0], 0, b.origin[1]);
+          model.add(df);
         }
         model.updateMatrixWorld(true);
         lightObj = eaveLights(model, runs);
+        // proposed deck uplights: along the open deck edges, and up the cladding between the openings where a wall stands over a deck
+        {
+          const dk: DeckRect[] = [], hs: { x0: number; x1: number; z0: number; z1: number }[] = [], dw: DeckWall[] = [];
+          for (const b of P.buildings) {
+            const y0 = b.floorLevel ?? 0, ox = b.origin[0], oz = b.origin[1], L0 = b.levels[0];
+            const ws = L0.walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
+            hs.push({ x0: ox, x1: ox + Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), z0: oz, z1: oz + Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at)) });
+            for (const d of (L0 as unknown as { decks?: { u0: number; u1: number; v0: number; v1: number; drop?: number }[] }).decks ?? []) dk.push({ x0: ox + d.u0, x1: ox + d.u1, z0: oz + d.v0, z1: oz + d.v1, y: y0 - (d.drop ?? 0.05) });
+            for (const w of ws) {
+              const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(ox + t, y0, oz + w.at) : new THREE.Vector3(ox + w.at, y0, oz + t));
+              dw.push({ a: pt(w.from), b: pt(w.to), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0), openings: (w.openings ?? []).map((o) => ({ a: o.a - w.from, b: o.b - w.from })) });
+            }
+          }
+          deckUplights(lightObj, dk, hs, dw);
+        }
         const lo = lightObj;
         app.onSun.push((night, alt) => setEaveLights(lo, night, moodOf(alt)));
       }
@@ -586,7 +599,8 @@ export const projectPlan: Project = {
         keys.push({ label: 'From below', eye: stand(centre.clone().addScaledVector(dn, 24).addScaledVector(side, 13).setY(centre.y + 3), 6), look: centre.clone() });
         keys.push({ label: 'Aerial', eye: centre.clone().addScaledVector(dn, 34).addScaledVector(side, -20).setY(centre.y + 30), look: centre.clone() });
         keys.push({ label: 'Deck side', eye: stand(centre.clone().addScaledVector(side, 17).addScaledVector(dn, 9).setY(centre.y + 1), 2.5), look: centre.clone() });
-        if (T.trees?.length) bushObj = P.asBuilt ? await bush(T.trees, plane, [centre.x, centre.z]) : nativeBush(T.trees as [number, number, number, number, string][], plane, [centre.x, centre.z]);
+        // the bush, thinned by the plan model's proposed clearing (site.terrain.clearing) and kept off the house and decks
+        if (T.trees?.length) bushObj = P.asBuilt ? await bush(T.trees, plane, [centre.x, centre.z]) : await nativeBush(T.trees as [number, number, number, number, string][], plane, [centre.x, centre.z], { clearing: (T as unknown as NonNullable<Parameters<typeof nativeBush>[3]>).clearing, keepOut: pads });
       }
       { const V = T?.views ?? P.views;
         if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
@@ -689,9 +703,10 @@ export const projectPlan: Project = {
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: 'LiDAR ground and aerial photo; cut to a platform under the house', visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
-    if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
+    if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: bushObj.userData.clearing ? 'tree tops from the LiDAR canopy; the clearing round the house, the kept specimens and the species are proposed, not surveyed' : 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
     if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: plantObj.name === 'native_planting' ? 'proposed, to frame the building; not from the plan' : 'from the plan model', visible: true, object: plantObj });
-    if (lightObj) layers.push({ id: 'lights', label: 'Soffit lights', note: 'proposed downlights over the glazed walls', visible: true, object: lightObj });
+    // landscape: the layer now carries the proposed deck uplights as well as the soffit downlights
+    if (lightObj) layers.push({ id: 'lights', label: 'Lights', note: 'proposed: soffit downlights over the glazed walls, deck uplights along the deck edges and up the cladding', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
 
     const exports: Built['exports'] = [
@@ -717,7 +732,7 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 1.22 : 1 } : {}),
+      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: 'Site: LINZ LiDAR and aerial photo', title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
