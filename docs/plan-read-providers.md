@@ -31,3 +31,10 @@ To change the order, add a plain variable `PLANREAD_PROVIDERS`, for example `gem
 4. Drop a real plan scan into Plan Studio. The result says which provider answered. That real read is the only proof the live connection works.
 
 Plan images are passed to the provider and are not stored by assembl.
+
+## The two guides use the same key
+
+The studio guide and the assembl.co.nz home guide also answer on OpenAI first once `OPENAI_API_KEY` is set
+(default model `gpt-6.2-astra`; override with `ARCHIPRO_OPENAI_MODEL` or `HOME_OPENAI_MODEL`). Claude stays as the
+fallback if OpenAI can't answer. With no OpenAI key, nothing changes. Status: connected-unverified, as above: tested
+offline only, no real OpenAI call has been made.
