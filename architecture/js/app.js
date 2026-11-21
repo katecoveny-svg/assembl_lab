@@ -370,7 +370,7 @@ async function render(fromLink = false) {
   const y = window.scrollY;
   $app.innerHTML = html;
   $truth.innerHTML = store.persistent
-    ? '<span>■ Saved in this browser only.</span> <span>Shared team records need sign-in and a database: Not built yet.</span>'
+    ? '<span>■ Saved in this browser only.</span> <span>Shared team records: the database is ready, sign-in is not built yet.</span>'
     : '<span>□ This browser is not letting the page save.</span> <span>Work will be lost when the tab closes: export the project to keep it.</span>';
   document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
   const target = (moved || fromLink) && r.section ? document.getElementById(`sec-${r.section}`) : null;
