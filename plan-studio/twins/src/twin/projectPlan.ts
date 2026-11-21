@@ -249,6 +249,24 @@ function addBarrier(g: THREE.Object3D, panes: THREE.BufferGeometry[], trim: THRE
   g.add(gl, tr);
 }
 
+/** A deck as plain rectangles. An L-shaped or stepped deck (drawn as `poly`) is cut into slabs, so furniture and lights
+ *  are placed on the boards that exist and never in the empty corner of its bounding box. */
+function deckSlabs(d: { u0: number; u1: number; v0: number; v1: number; drop?: number; poly?: [number, number][] }) {
+  if (!d.poly || d.poly.length < 4) return [{ u0: d.u0, u1: d.u1, v0: d.v0, v1: d.v1, drop: d.drop }];
+  const us = [...new Set(d.poly.map((p) => Math.round(p[0] * 1000) / 1000))].sort((a, b) => a - b), out: { u0: number; u1: number; v0: number; v1: number; drop?: number }[] = [];
+  for (let i = 0; i < us.length - 1; i++) {
+    const mid = (us[i] + us[i + 1]) / 2, vs: number[] = [];
+    d.poly.forEach((a, k) => { const b = d.poly![(k + 1) % d.poly!.length]; if ((a[0] < mid) !== (b[0] < mid)) vs.push(a[1] + ((b[1] - a[1]) * (mid - a[0])) / (b[0] - a[0])); });
+    vs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < vs.length; k += 2) {
+      const last = out[out.length - 1];
+      if (last && Math.abs(last.u1 - us[i]) < 1e-6 && Math.abs(last.v0 - vs[k]) < 1e-3 && Math.abs(last.v1 - vs[k + 1]) < 1e-3) last.u1 = us[i + 1];
+      else out.push({ u0: us[i], u1: us[i + 1], v0: vs[k], v1: vs[k + 1], drop: d.drop });
+    }
+  }
+  return out.length ? out : [{ u0: d.u0, u1: d.u1, v0: d.v0, v1: d.v1, drop: d.drop }];
+}
+
 /** something drawn on the site plan, in the plan model's frame (x, z) */
 export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean; staging?: string; barrier?: 'glass' | 'balusters' }
 
@@ -604,7 +622,7 @@ export const projectPlan: Project = {
           const L0 = b.levels[0] as unknown as { decks?: DeckPlan[]; walls: { axis: 'x' | 'z'; at: number }[] };
           if (!L0.decks?.length) continue;
           const hw = Math.max(...L0.walls.filter((w) => w.axis === 'z').map((w) => w.at)), hd = Math.max(...L0.walls.filter((w) => w.axis === 'x').map((w) => w.at));
-          const df = furnishDecks(scandiMats(), L0.decks, hw, hd, b.floorLevel ?? 0);
+          const df = furnishDecks(scandiMats(), L0.decks.flatMap((d) => deckSlabs(d as never)), hw, hd, b.floorLevel ?? 0);
           df.position.set(b.origin[0], 0, b.origin[1]);
           model.add(df);
         }
@@ -617,7 +635,7 @@ export const projectPlan: Project = {
             const y0 = b.floorLevel ?? 0, ox = b.origin[0], oz = b.origin[1], L0 = b.levels[0];
             const ws = L0.walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
             hs.push({ x0: ox, x1: ox + Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), z0: oz, z1: oz + Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at)) });
-            for (const d of (L0 as unknown as { decks?: { u0: number; u1: number; v0: number; v1: number; drop?: number }[] }).decks ?? []) dk.push({ x0: ox + d.u0, x1: ox + d.u1, z0: oz + d.v0, z1: oz + d.v1, y: y0 - (d.drop ?? 0.05) });
+            for (const d of ((L0 as unknown as { decks?: { u0: number; u1: number; v0: number; v1: number; drop?: number; poly?: [number, number][] }[] }).decks ?? []).flatMap(deckSlabs)) dk.push({ x0: ox + d.u0, x1: ox + d.u1, z0: oz + d.v0, z1: oz + d.v1, y: y0 - (d.drop ?? 0.05) });
             for (const w of ws) {
               const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(ox + t, y0, oz + w.at) : new THREE.Vector3(ox + w.at, y0, oz + t));
               dw.push({ a: pt(w.from), b: pt(w.to), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0), openings: (w.openings ?? []).map((o) => ({ a: o.a - w.from, b: o.b - w.from })) });

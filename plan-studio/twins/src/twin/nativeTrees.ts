@@ -624,7 +624,9 @@ export async function nativeBush(trees: Tree[], groundAt: (x: number, z: number)
   const fall = V(groundAt(centre[0] - 8, centre[1]) - groundAt(centre[0] + 8, centre[1]), 0, groundAt(centre[0], centre[1] - 8) - groundAt(centre[0], centre[1] + 8)).multiplyScalar(-1);
   if (fall.lengthSq() > 1e-6) fall.normalize();
   const grade = (x: number, z: number) => { const dx = x - centre[0], dz = z - centre[1], l = Math.hypot(dx, dz) || 1; return distHouse(x, z) * (1 - 0.4 * Math.max(0, (dx * fall.x + dz * fall.z) / l)); };
-  const A = lite ? 0 : 22, Bd = lite ? 26 : 46;
+  // phones keep the same leaf sizes as desktops near the house: the far-off grade, with its broad blades, is only ever
+  // used well beyond walking range, or it reads as giant paper triangles when the camera comes close
+  const A = lite ? 12 : 22, Bd = lite ? 60 : 46;
   const heroes: { t: Tree; kind: Kind; name?: string }[] = [], groups = new Map<string, { kind: Kind; band: number; v: number; list: Tree[] }>();
   let removed = 0;
   trees.forEach((t, i) => {
