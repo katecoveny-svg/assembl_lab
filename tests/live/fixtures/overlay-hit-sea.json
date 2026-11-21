@@ -1,0 +1,57 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [
+  {
+   "name": "TYPE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Marine 1",
+      "code": 2
+     }
+    ]
+   }
+  },
+  {
+   "name": "VALIDATIONSTATE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Valid and Public",
+      "code": 3
+     }
+    ]
+   }
+  },
+  {
+   "name": "VERSIONSTATUS",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Operative",
+      "code": 4
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "TYPE": 2,
+    "SUBTYPE": null,
+    "SCHEDULE": "SEA-M1-43c",
+    "NAME": null,
+    "VALIDATIONSTATE": 3,
+    "VERSIONSTATUS": 4,
+    "Shape__Area": 307257.322265625,
+    "Shape__Length": 3642.163990975261
+   }
+  }
+ ]
+}

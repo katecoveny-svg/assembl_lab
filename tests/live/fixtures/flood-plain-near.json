@@ -1,0 +1,45 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [
+  {
+   "name": "VALIDATIONSTATE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Valid and Public",
+      "code": 3
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "Hazard": "Flood Plain",
+    "YEAR_PRODUCED": "2025",
+    "Model_Type": "2D",
+    "RAINFALL_EVENT": 100,
+    "CLIMATE_CHANGE_ADJUSTED": "Yes - MfE 2018 3.8 degrees",
+    "DEVELOPMENT_SCENARIO": "Higher of existing imperviousness or 10%",
+    "DOCUMENT_NAME": "Regionwide Rural Rapid Flood Model Build Report May 2023",
+    "Company": "Ewaters New Zealand",
+    "SOFTWARE_USED": "TUFLOW",
+    "SOFTWARE_VERSION": "v2020-10-AD",
+    "OTHER_COMMENTS": "Modelled using 2016 LIDAR. A tidal boundary of 2.46-2.6mRL (vertical datum AUK1946) was used.",
+    "ID": 159,
+    "VALIDATIONSTATE": 3,
+    "PDF_Link": "https://new.aucklandcouncil.govt.nz/content/dam/ac/docs/floodplains/id159-regionwideruralrapidfloodmodelbuildreportmay2023.pdf",
+    "Published_Date": 1765929600000,
+    "Superseded_Date": null,
+    "Model_ID": 1392,
+    "RainfallStandard": "TP108 (1999)",
+    "Shape__Area": 594967.3509904146,
+    "Shape__Length": 36976.45797691187
+   }
+  }
+ ]
+}

@@ -1,6 +1,8 @@
 // assembl lab · shared helpers for live feed fetchers.
 // Every upstream call has an 8 s timeout and identifies itself honestly. Nothing here needs an API key.
-export const UA = "assembl-lab/1.0 (+https://assembl-lab.vercel.app)";
+// Runs unchanged on Cloudflare Pages Functions (Workers runtime) and on Node 20+: Web APIs only (fetch, TextDecoder,
+// Uint8Array, DecompressionStream), no node: imports, no Buffer, no file system.
+export const UA = "assembl-lab/1.0 (+https://lab.assembl.co.nz)";
 export const TIMEOUT_MS = 8000;
 
 // timeout covers the whole transfer: the body is read before the timer is cleared
@@ -18,7 +20,7 @@ export async function getBuffer(url, opts = {}) {
   try {
     const r = await fetch(url, { signal: c.signal, redirect: "follow", headers: { "user-agent": UA, ...(opts.headers || {}) } });
     if (!r.ok && r.status !== 206) throw new Error(`HTTP ${r.status} from ${new URL(url).host}`);
-    return Buffer.from(await r.arrayBuffer());
+    return new Uint8Array(await r.arrayBuffer());
   } finally { clearTimeout(t); }
 }
 // Stream a text body line by line; onLine returns false to stop early (the connection is then aborted).
@@ -29,7 +31,10 @@ export async function streamLines(url, onLine, opts = {}) {
     const r = await fetch(url, { signal: c.signal, redirect: "follow", headers: { "user-agent": UA, ...(opts.headers || {}) } });
     if (!r.ok && r.status !== 206) throw new Error(`HTTP ${r.status} from ${new URL(url).host}`);
     const dec = new TextDecoder(); let buf = ""; let bytes = 0;
-    for await (const chunk of r.body) {
+    const reader = r.body.getReader(); // a reader loop works on every runtime (async iteration of a stream does not)
+    for (;;) {
+      const { done, value: chunk } = await reader.read();
+      if (done) break;
       bytes += chunk.length; buf += dec.decode(chunk, { stream: true });
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
@@ -43,22 +48,25 @@ export async function streamLines(url, onLine, opts = {}) {
   } finally { clearTimeout(t); if (stopped) c.abort(); }
 }
 
-// Small in-memory cache per warm function instance, on top of the edge cache. The ladder for each key is
+// Small in-memory cache per warm instance, on top of the edge cache. The ladder for each key is
 // fresh memo → live fetch → stale memo (the last good answer, marked stale) → the caller's own snapshot, if it has one.
+// Only finished answers are kept (never a promise still in flight): on Workers a promise started by one request must not be
+// awaited by another, and a finished value is safe to share.
 const MEMO = new Map(), LAST = new Map();
 export const clearMemo = () => { MEMO.clear(); LAST.clear(); };
 export function memo(key, ttlMs, fn) {
   const hit = MEMO.get(key);
-  if (hit && Date.now() - hit.at < ttlMs) return hit.p;
-  const p = fn().then((v) => { LAST.set(key, v); return v; }).catch((e) => {
-    MEMO.delete(key);
+  if (hit && Date.now() - hit.at < ttlMs) return Promise.resolve(hit.v);
+  return Promise.resolve().then(fn).then((v) => { MEMO.set(key, { at: Date.now(), v }); LAST.set(key, v); return v; }).catch((e) => {
     const last = LAST.get(key);
     if (last === undefined) throw e;
     return last && typeof last === "object" && !Array.isArray(last) ? { ...last, stale: true, staleError: String(e?.message || e).slice(0, 160) } : last;
   });
-  MEMO.set(key, { at: Date.now(), p });
-  return p;
 }
+
+// Optional settings (keyed upgrades) read from the caller's env if it passes one, else from Node's process.env when that exists.
+// On Cloudflare nothing is passed and `process` is absent, so this answers undefined and every feed stays key-less.
+export const envVar = (name, env) => env?.[name] ?? (typeof process !== "undefined" ? process.env?.[name] : undefined);
 
 // Which rung of the ladder an envelope came from: "live" (fetched in this answer), "cached" (a warm instance's earlier
 // answer, or the last good one after an upstream failure) or "snapshot" (built in, nothing fetched). The edge cache in

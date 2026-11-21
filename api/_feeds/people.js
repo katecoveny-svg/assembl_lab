@@ -8,8 +8,8 @@ import { xlsx } from "./zip.js";
 const FIGURE_NZ = "https://figure.nz/table/XBOXi5MKS9Sbkocv/download-source-dataset";
 const REGION_OF = { auckland: "Auckland Region", hamilton: "Waikato Region", wellington: "Wellington Region", christchurch: "Canterbury Region" };
 
-export function parseAttendance(buf, place) {
-  const wb = xlsx(buf);
+export async function parseAttendance(buf, place) {
+  const wb = await xlsx(buf);
   const rows = wb.rows("National"); if (!rows) throw new Error("attendance: no National sheet");
   const clean = (s) => String(s).replace(/\s+/g, " ").trim();
   const hi = rows.findIndex((r) => clean(r[0]) === "Year" && clean(r[1]) === "Term");

@@ -2,7 +2,7 @@
 // We never download all of it: fpi streams from the start and stops after the food subgroups (~2.3 MB);
 // foodprices asks for a byte range starting ~3 MB in and stops after the last item it needs (~2.5 MB).
 // Both are cached at the edge for a day (monthly data).
-import { getText, getBuffer, streamLines, envelope, memo, round, nzToday, MONTHS, splitCSV } from "./util.js";
+import { getText, getBuffer, streamLines, envVar, envelope, memo, round, nzToday, MONTHS, splitCSV } from "./util.js";
 import { unzip } from "./zip.js";
 
 const BASE = "https://www.stats.govt.nz";
@@ -10,7 +10,7 @@ const BASE = "https://www.stats.govt.nz";
 // reads. It belongs only on api.stats.govt.nz (Aotearoa Data Explorer, SDMX), never on the www downloads, and that route
 // does not replace the CSV and zip downloads until the RTS and SPI dataflow ids are confirmed: today the key only sets
 // values.keyed so a page can say it is configured.
-export const statsKey = () => process.env.STATS_NZ_API_KEY || null;
+export const statsKey = (env) => envVar("STATS_NZ_API_KEY", env) || null;
 const csvUrl = (m, y) => `${BASE}/assets/Uploads/Selected-price-indexes/Selected-price-indexes-${MONTHS[m - 1]}-${y}/Download-data/selected-price-indexes-${MONTHS[m - 1].toLowerCase()}-${y}.csv`;
 const SOURCE = (period, url) => ({ name: `Stats NZ, Selected price indexes: ${period}`, url });
 
@@ -185,7 +185,7 @@ export function parseRts(csv, src) {
 export function fetchRts() {
   return memo("rts", 6 * 3600e3, async () => {
     const src = await latestRtsZip();
-    const z = unzip(await getBuffer(src.url, { ms: 12000 }));
+    const z = await unzip(await getBuffer(src.url, { ms: 12000 }));
     const name = z.names.find((n) => /\.csv$/i.test(n)); if (!name) throw new Error("rts: no csv in zip");
     const e = parseRts(z.read(name), src); e.values.keyed = !!statsKey(); e.values.route = "zipped CSV (CC BY 4.0), key-less"; return e;
   });

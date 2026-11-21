@@ -1,0 +1,49 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [
+  {
+   "name": "VALIDATIONSTATE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Valid and Public",
+      "code": 3
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "Hazard": "Coastal Inundation",
+    "ARI_years": 100,
+    "AEP_percent": "1.0 %",
+    "WaveSetUp": 1,
+    "WaveRunUp": 0,
+    "SeaLevelRiseScenario": "N/A",
+    "DataSource": 1,
+    "DocLink": null,
+    "ModelType": "Static",
+    "Status": "Current",
+    "Software": "NIWA",
+    "SoftwareVersion": "Refer to NIWA Report",
+    "SupersededBy": null,
+    "Legacy": 0,
+    "ModelSchema": "1D",
+    "DataSourceOther": null,
+    "SoftwareOther": "Refer to NIWA report for software",
+    "SupersededByOther": null,
+    "Author": "NIWA",
+    "Comments": null,
+    "DataMaintenanceNotes": null,
+    "VALIDATIONSTATE": 3,
+    "Shape__Area": 6491059002.040039,
+    "Shape__Length": 1298387.9494216132
+   }
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [],
+ "features": [
+  {
+   "attributes": {
+    "ZONETYPE": "Yellow",
+    "COMMENTS": "Modelling by ECoast 2023. Converted to evacuation by GNS Science",
+    "VALIDATIONSTATE": null,
+    "created_user": null,
+    "last_edited_user": null,
+    "last_edited_date": null,
+    "created_date": 1699401600000,
+    "ORIG_FID": 2,
+    "VxCount": 29,
+    "Shape__Area": 2622.7197265625,
+    "Shape__Length": 269.9261122911188
+   }
+  }
+ ]
+}
