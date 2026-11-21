@@ -72,7 +72,40 @@ Two things to know:
 - The page pre-selects sheet 6 (site layout) and sheet 4 (elevations) as well. Left alone, the code sends them with the floor plan (`traceUI.ts` line 219; not run). Three sheets would go out, not one.
 - The page's message says the reader is "Claude, by Anthropic". The live endpoint's default is OpenAI.
 
-Still not measured for the AI reader: wall, partition, opening and room errors, and read time. Once the send is allowed: `python3 run_page_ai.py`, then `python3 compare.py out/ai.traced.plan.json`. The script sends sheet 7 only and stops at 3 calls.
+Measured the next day (see the section below). The method: `python3 run_page_ai.py`, then `python3 compare.py out/ai.traced.plan.json`. The script sends sheet 7 only and stops at 3 calls.
+
+## AI reader, measured 22 November
+
+Kate approved sending the 17 November sheets. One read was run through the real drop page. Only sheet 7 (the floor plan, as one picture of 1,241 × 1,568 pixels, no title block) was sent; sheets 4 and 6 were set to "Skip" first. Reader: OpenAI `gpt-6.2-astra`. Read time: 21 seconds. Endpoint calls used: 2 of the 3 allowed (one status check, one read).
+
+Scored against the same answer key (`hero.plan.json`, sizes scaled by hand from the 17 November sheets, not confirmed by the architect):
+
+| Item | Key | Found | Right | Worst error |
+|---|---|---|---|---|
+| Footprint | 11.42 × 7.70 m | 11.38 × 7.68 m | yes | 40 mm on the long side |
+| Outside walls | 4 | 4 | 4 | 40 mm |
+| Inside walls | 10 | 9 | 9, none invented | 26 mm (mean 17 mm) |
+| Outside doors and windows | 13 | 13 | 12 | 19 mm centre, 16 mm width |
+| Inside doors and openings | 8 | 9 | 6, plus 3 extra | 20 mm centre, 63 mm width |
+| Rooms | 10 | 6 | 6 | areas within 2% for four rooms |
+
+What it got wrong:
+
+- **The living room bi-fold doors** on the deck side were not matched; one opening on that wall is in the wrong place or of the wrong width.
+- **Both wardrobes and the hall** were not read as rooms, and both wardrobe doors were missed. The two bedrooms came out about 2 m² (20%) too large because they swallowed their wardrobes. One inside wall (P7) was missed.
+- **Three inside openings that are not in the key** were added.
+- **Names.** Bedrooms came back as "Bedroom" with no number, the ensuite as "Bathroom", the study with no name, and kitchen, living and dining as one open room.
+- **One kind wrong.** The study's glazed door was read as a window.
+- **Scale** was taken from the title block (1:50) with nothing on the sheet to check it against. The page says so and offers a box for the long side.
+
+What this does and does not show:
+
+- One read, of one sheet, of one house. AI reads vary from run to run; consistency has not been measured.
+- The site plan and elevation reads have not been measured.
+- Heights, sills, roof form and floor level are assumed by the page, not read (it says so in its report).
+- Result: connected and measured once. Not yet verified across drawings.
+
+Run again with `python3 run_page_ai.py`, then `python3 compare.py out/ai.traced.plan.json` (scripts kept outside the repository).
 
 ## Not measured
 
