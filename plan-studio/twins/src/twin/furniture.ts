@@ -214,7 +214,7 @@ export function interiorMats(q: Quality, f: Finishes): InteriorMats {
     fabric: linen(d.texS, { colour: f.fabric, threads: 90, tile: 0.1, name: 'upholstery_linen' }),
     linenWhite: linen(d.texS, { colour: 0xeeeae2, threads: 110, tile: 0.08, name: 'bed_linen' }),
     wool: woolPile(d.texS, { a: 0xd9d0c0, b: 0x9a8b78, tile: 0.4, name: 'wool' }),
-    oak: wood(d.texS, { light: 0xcaa97c, dark: 0x9d7a52, rings: 18, gloss: 0.35, tile: 0.9, seed: 141, name: 'oak' }),
+    oak: wood(d.texS, { light: 0xd4b78e, dark: 0xb39468, rings: 10, gloss: 0.3, tile: 0.9, seed: 141, straight: 0.9, figure: 0.03, relief: 0.6, name: 'oak' }),
     walnut: wood(d.texS, { light: 0x7a553a, dark: 0x4a3122, rings: 14, gloss: 0.4, tile: 0.9, seed: 142, name: 'walnut' }),
     floor:
       f.floor === 'oak'
@@ -245,7 +245,7 @@ export function interiorMats(q: Quality, f: Finishes): InteriorMats {
     cabinet: pbr(sets.cabinet, 'cabinet_lacquer'),
     tile: f.splash === 'match' ? pbr(sets.bench, 'splashback_slab', { clearcoat: 0.4, clearcoatRoughness: 0.15 }) : pbr(sets.tile, 'splashback_tile'),
     wallTile: pbr(sets.wallTile, 'bathroom_tile'),
-    steel: pbr(sets.steel, 'brushed_steel'),
+    steel: pbr(sets.steel, 'brushed_steel', { metalness: 0.62 }),
     chrome: ph({ name: 'chrome', color: 0xdddddd, metalness: 1, roughness: 0.08 }),
     brass: ph({ name: 'brushed_brass', color: f.metalTrim, metalness: 1, roughness: 0.3 }),
     ceramic: ph({ name: 'vitreous_china', color: 0xf7f7f4, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 }),
@@ -403,43 +403,99 @@ export function desk(M: InteriorMats, l = 1.4) {
   return tagged(g, 'desk', 'furniture', 'oak, brass lamp');
 }
 
-/** a straight kitchen run: base cabinets with drawers, benchtop, splashback, uppers, oven, cooktop, rangehood, sink */
+let displayMat: THREE.MeshStandardMaterial | null = null, markMat: THREE.MeshStandardMaterial | null = null, applianceGlass: THREE.MeshPhysicalMaterial | null = null;
+/** a slim bar pull on two posts: `len` long, lying along x (or standing, when `upright`), its back at z */
+function barPull(x: number, y: number, z: number, len: number, upright = false) {
+  const out: THREE.BufferGeometry[] = [];
+  out.push(upright ? box(0.009, len, 0.009, x, y, z + 0.026, 0.3, 'y') : box(len, 0.009, 0.009, x, y, z + 0.026, 0.3, 'x'));
+  for (const s of [-1, 1]) out.push(upright ? box(0.007, 0.007, 0.024, x, y + s * (len / 2 - 0.014), z + 0.012, 0.3, 'z') : box(0.007, 0.007, 0.024, x + s * (len / 2 - 0.014), y, z + 0.012, 0.3, 'z'));
+  return out;
+}
+
+/**
+ * A straight kitchen run, every piece standing on the floor or fixed to the wall: base cabinets with drawer
+ * fronts and shadow gaps, a stone bench with an undermounted steel sink, an oven with a glass door, handle and
+ * control strip under an induction cooktop, a fridge-freezer in a tall housing, and wall cabinets only where
+ * they join the tall housing or carry the rangehood. With a metre of solid wall the cooktop goes there and the
+ * hood is built into the wall cabinets over it; under a window it has a downdraught extractor in the bench.
+ */
 export function kitchenRun(M: InteriorMats, len: number, opts: { sinkAt?: number; windowFrom?: number; windowTo?: number; fridge?: boolean } = {}) {
   const g = grp('kitchen_joinery');
-  const D = 0.6;
-  const H = 0.87;
+  const D = 0.6, H = 0.87, benchY = H + 0.04, zf = D / 2, zb = -D / 2;
   const fridgeW = opts.fridge ? 0.7 : 0;
-  const runL = len - fridgeW;
-  const x0 = -len / 2;
-  g.add(mesh('kick', box(runL, 0.1, D - 0.06, x0 + runL / 2, 0.05, -0.03, 0.8), M.appliance));
-  g.add(mesh('base_carcass', box(runL, H - 0.1, D - 0.02, x0 + runL / 2, 0.1 + (H - 0.1) / 2, -0.01, 0.8), M.cabinet));
-  const fronts: THREE.BufferGeometry[] = [];
-  const pulls: THREE.BufferGeometry[] = [];
-  const n = Math.max(2, Math.round(runL / 0.6));
-  const fw = runL / n;
-  const cookI = Math.max(0, Math.min(n - 1, Math.round(n * 0.3)));
-  for (let i = 0; i < n; i++) {
-    const x = x0 + fw * (i + 0.5);
-    if (i === cookI) continue;
-    for (const [y, h] of [
-      [0.12, 0.22],
-      [0.36, 0.22],
-      [0.6, 0.24],
-    ]) {
-      fronts.push(box(fw - 0.004, h - 0.004, 0.019, x, y + h / 2, D / 2 - 0.0095, 0.8));
-      pulls.push(box(fw * 0.5, 0.012, 0.018, x, y + h - 0.04, D / 2 + 0.008, 0.3));
-    }
+  const runL = len - fridgeW, x0 = -len / 2, x1 = x0 + runL;
+  const hasWin = opts.windowFrom != null && opts.windowTo != null;
+  const wf = hasWin ? Math.max(x0, (opts.windowFrom as number) - 0.05) : x1, wt = hasWin ? Math.min(x1, (opts.windowTo as number) + 0.05) : x1;
+  const solid: [number, number][] = hasWin ? ([[x0, wf], [wt, x1]] as [number, number][]).filter(([a, b]) => b - a > 0.05) : [[x0, x1]];
+  const sinkW = 0.8;
+  const sx = Math.min(x1 - sinkW / 2 - 0.02, Math.max(x0 + sinkW / 2 + 0.02, opts.sinkAt ?? x1 - 0.7));
+  // where the cooktop goes
+  let cx: number | null = null, hood = false;
+  for (const [a, b] of [...solid].sort((p, q) => q[1] - q[0] - (p[1] - p[0]))) {
+    if (b - a < 0.9) continue;
+    const lo = a + 0.45, hi = b - 0.45, mid = (a + b) / 2;
+    const ok = (c: number) => c >= lo - 1e-6 && c <= hi + 1e-6 && Math.abs(c - sx) >= 1.0;
+    const c = [mid, sx - 1.0, sx + 1.0].filter(ok).sort((p, q) => Math.abs(p - mid) - Math.abs(q - mid))[0];
+    if (c != null) { cx = c; hood = true; break; }
   }
-  g.add(mesh('drawer_fronts', mergeGeometries(fronts), M.cabinet), mesh('drawer_pulls', mergeGeometries(pulls), M.brass));
-  // oven under the cooktop
-  const ox = x0 + fw * (cookI + 0.5);
-  g.add(mesh('oven', box(fw - 0.01, 0.6, 0.02, ox, 0.14 + 0.3, D / 2 - 0.01, 0.4), M.blackGlass));
-  g.add(mesh('oven_handle', box(fw * 0.7, 0.018, 0.03, ox, 0.69, D / 2 + 0.02, 0.3), M.steel));
-  // benchtop with a sink cut-out approximated by an inset bowl
-  g.add(mesh('benchtop', box(runL + 0.02, 0.04, D + 0.02, x0 + runL / 2, H + 0.02, 0, 0.8), M.bench));
-  g.add(mesh('cooktop', box(0.58, 0.006, 0.5, ox, H + 0.043, 0, 0.4), M.blackGlass));
-  const sx = opts.sinkAt != null ? Math.min(x0 + runL - 0.45, Math.max(x0 + 0.45, opts.sinkAt)) : x0 + runL - 0.6;
-  g.add(mesh('sink', box(0.55, 0.012, 0.42, sx, H + 0.042, 0.02, 0.4), M.appliance));
+  if (cx == null) cx = sx - 0.95 - 0.3 >= x0 ? sx - 0.95 : sx + 0.95 + 0.3 <= x1 ? sx + 0.95 : null;
+  const zc = hood ? 0 : 0.03;
+
+  // black appliance glass that stays black in a bright room (the shared black glass mirrors the sky)
+  const glassM = (applianceGlass ??= new THREE.MeshPhysicalMaterial({ name: 'appliance_black_ceramic', color: 0x09090a, roughness: 0.16, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.1, envMapIntensity: 0.3 }));
+  // carcass: kick, boxes (left open where the sink bowl hangs), end panels, and a dark backing so the gaps between fronts read as shadow
+  g.add(mesh('kick', box(runL - 0.04, 0.1, D - 0.08, x0 + runL / 2, 0.05, -0.03, 0.8), M.appliance));
+  const car: THREE.BufferGeometry[] = [];
+  const carBox = (a: number, b: number, y1: number, z0: number, z1: number) => { if (b - a > 0.01) car.push(box(b - a, y1 - 0.1, z1 - z0, (a + b) / 2, 0.1 + (y1 - 0.1) / 2, (z0 + z1) / 2, 0.8)); };
+  carBox(x0, sx - 0.26, H, zb, 0.26); carBox(sx + 0.26, x1, H, zb, 0.26); carBox(sx - 0.26, sx + 0.26, 0.72, zb, 0.26); carBox(sx - 0.26, sx + 0.26, H, 0.215, 0.26); carBox(sx - 0.26, sx + 0.26, H, zb, -0.175);
+  for (const x of [x0 + 0.009, x1 - 0.009]) car.push(box(0.018, H - 0.1, 0.022, x, 0.1 + (H - 0.1) / 2, 0.271, 0.8));
+  g.add(mesh('base_carcass', mergeGeometries(car), M.cabinet));
+  g.add(mesh('shadow_gaps', box(runL - 0.04, H - 0.115, 0.02, x0 + runL / 2, 0.1 + (H - 0.1) / 2, 0.2695, 0.8), M.appliance));
+
+  // modules along the run: the oven, the sink cupboard, and drawers in between
+  const fronts: THREE.BufferGeometry[] = [], pulls: THREE.BufferGeometry[] = [];
+  const front = (a: number, b: number, y0: number, y1: number) => fronts.push(rbox(b - a - 0.004, y1 - y0, 0.019, 0.002, (a + b) / 2, (y0 + y1) / 2, zf - 0.0095, 0.8));
+  const drawers = (a: number, b: number) => { for (const [y0, y1] of [[0.112, 0.42], [0.424, 0.7], [0.704, 0.866]]) { front(a, b, y0, y1); pulls.push(...barPull((a + b) / 2, y1 - 0.05, zf, Math.min(0.2, (b - a) * 0.45))); } };
+  const fixed: [number, number, string][] = [[sx - sinkW / 2, sx + sinkW / 2, 'sink']];
+  if (cx != null) fixed.push([cx - 0.3, cx + 0.3, 'oven']);
+  fixed.sort((p, q) => p[0] - q[0]);
+  let at = x0;
+  for (const [a, b, kind] of [...fixed, [x1, x1, 'end'] as [number, number, string]]) {
+    const gap = a - at;
+    if (gap > 0.05) {
+      const n = Math.max(1, Math.round(gap / 0.6)), w = gap / n;
+      for (let i = 0; i < n; i++) {
+        const p = at + i * w, q = p + w;
+        if (w >= 0.34) drawers(p, q);
+        else { front(p, q, 0.112, 0.866); pulls.push(...barPull((p + q) / 2, 0.76, zf, 0.16, true)); }
+      }
+    }
+    if (kind === 'sink') {
+      front(a, sx, 0.112, 0.866); front(sx, b, 0.112, 0.866);
+      for (const s of [-1, 1]) pulls.push(...barPull(sx + s * 0.045, 0.75, zf, 0.16, true));
+    } else if (kind === 'oven') {
+      front(a, b, 0.112, 0.246); pulls.push(...barPull(cx as number, 0.2, zf, 0.2));
+    }
+    at = Math.max(at, b);
+  }
+  g.add(mesh('cabinet_fronts', mergeGeometries(fronts), M.cabinet), mesh('cabinet_pulls', mergeGeometries(pulls), M.brass));
+
+  // bench: stone round the sink opening, with an upstand at the wall
+  const benchTo = x1 + (opts.fridge ? 0 : 0.01);
+  g.add(mesh('benchtop', mergeGeometries([
+    box(sx - 0.25 - (x0 - 0.01), 0.04, D + 0.02, (sx - 0.25 + x0 - 0.01) / 2, H + 0.02, 0.01, 0.8),
+    box(benchTo - (sx + 0.25), 0.04, D + 0.02, (benchTo + sx + 0.25) / 2, H + 0.02, 0.01, 0.8),
+    box(0.5, 0.04, 0.11, sx, H + 0.02, 0.265, 0.8),
+    box(0.5, 0.04, 0.13, sx, H + 0.02, -0.235, 0.8),
+    box(runL, 0.09, 0.012, x0 + runL / 2, benchY + 0.045, zb + 0.006, 0.8),
+  ]), M.bench));
+  // undermounted sink: a steel bowl hanging in the opening, with its waste
+  const by = benchY - 0.18;
+  g.add(mesh('sink', mergeGeometries([
+    box(0.5, 0.004, 0.38, sx, by, 0.02, 0.25), box(0.004, 0.14, 0.38, sx - 0.248, by + 0.07, 0.02, 0.25, 'z'), box(0.004, 0.14, 0.38, sx + 0.248, by + 0.07, 0.02, 0.25, 'z'),
+    box(0.5, 0.14, 0.004, sx, by + 0.07, 0.208, 0.25), box(0.5, 0.14, 0.004, sx, by + 0.07, -0.168, 0.25),
+  ]), M.steel));
+  g.add(mesh('sink_waste', cyl(0.042, 0.042, 0.004, sx, by + 0.004, 0.02, 28), M.chrome));
   const tap = grp('tap');
   const neck = new THREE.TorusGeometry(0.11, 0.012, 10, 24, Math.PI);
   neck.rotateY(Math.PI / 2);
@@ -447,62 +503,174 @@ export function kitchenRun(M: InteriorMats, len: number, opts: { sinkAt?: number
   tap.add(mesh('tap_body', cyl(0.018, 0.022, 0.3, 0, 0.15, 0, 16), M.chrome), mesh('tap_spout', neck, M.chrome));
   tap.userData.fallback = true;
   const tapSlot = grp('slot_tap');
-  tapSlot.position.set(sx, H + 0.04, -0.25);
+  tapSlot.position.set(sx, benchY, -0.235);
   tapSlot.add(tap);
   g.add(tapSlot);
-  // splashback and uppers (not across a window)
-  const sb: THREE.BufferGeometry[] = [];
-  const up: THREE.BufferGeometry[] = [];
-  const step = 0.3;
-  for (let x = x0; x < x0 + runL - 1e-3; x += step) {
-    const xm = x + step / 2;
-    const inWin = opts.windowFrom != null && opts.windowTo != null && xm > opts.windowFrom - 0.05 && xm < opts.windowTo + 0.05;
-    if (!inWin) {
-      sb.push(box(step, 0.6, 0.012, xm, H + 0.04 + 0.3, -D / 2 + 0.006, 0.6, 'x'));
-      up.push(box(step, 0.72, 0.35, xm, 1.5 + 0.36, -D / 2 + 0.175, 0.8));
-    } else sb.push(box(step, 0.12, 0.012, xm, H + 0.04 + 0.06, -D / 2 + 0.006, 0.6, 'x'));
+
+  if (cx != null) {
+    // oven: brushed fascia, glass control strip with two knobs and a clock, glass door, bar handle on two posts
+    g.add(mesh('oven_fascia', box(0.596, 0.612, 0.02, cx, 0.558, zf - 0.01, 0.25), M.steel));
+    g.add(mesh('oven_glass', mergeGeometries([box(0.572, 0.084, 0.005, cx, 0.812, zf + 0.0025, 0.4), box(0.572, 0.49, 0.006, cx, 0.51, zf + 0.003, 0.4)]), glassM));
+    g.add(mesh('oven_door_window', box(0.44, 0.3, 0.002, cx, 0.49, zf + 0.0065, 0.4), new THREE.MeshPhysicalMaterial({ name: 'oven_window', color: 0x030304, roughness: 0.08, clearcoat: 0.6, envMapIntensity: 0.25 })));
+    const hw: THREE.BufferGeometry[] = [];
+    const bar = new THREE.CylinderGeometry(0.009, 0.009, 0.5, 14).rotateZ(Math.PI / 2).translate(cx, 0.722, zf + 0.046);
+    hw.push(boxUV(bar, 0.25, 'x'));
+    for (const s of [-1, 1]) { hw.push(boxUV(new THREE.CylinderGeometry(0.006, 0.006, 0.042, 10).rotateX(Math.PI / 2).translate(cx + s * 0.22, 0.722, zf + 0.025), 0.25, 'z')); hw.push(boxUV(new THREE.CylinderGeometry(0.017, 0.017, 0.02, 24).rotateX(Math.PI / 2).translate(cx + s * 0.2, 0.812, zf + 0.014), 0.25, 'x')); }
+    g.add(mesh('oven_handle_and_knobs', mergeGeometries(hw), M.steel));
+    displayMat ??= new THREE.MeshStandardMaterial({ name: 'appliance_display', color: 0x0c1216, emissive: 0x7cc3d2, emissiveIntensity: 0.5, roughness: 0.3 });
+    g.add(mesh('oven_clock', box(0.07, 0.02, 0.001, cx, 0.812, zf + 0.0056, 0.4), displayMat));
+    // induction cooktop: a glass plate set on the bench, four printed zones, touch controls at the front
+    g.add(mesh('cooktop', rbox(0.59, 0.006, 0.52, 0.003, cx, benchY + 0.003, zc, 0.4), glassM));
+    markMat ??= new THREE.MeshStandardMaterial({ name: 'cooktop_markings', color: 0x7d8185, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const marks: THREE.BufferGeometry[] = [];
+    for (const [dx, dz, r] of [[-0.145, -0.115, 0.092], [0.145, -0.115, 0.072], [-0.145, 0.085, 0.072], [0.145, 0.085, 0.092]]) marks.push(new THREE.RingGeometry(r - 0.003, r, 48).rotateX(-Math.PI / 2).translate(cx + dx, benchY + 0.0064, zc + dz));
+    for (let i = -2; i <= 2; i++) marks.push(new THREE.PlaneGeometry(0.012, 0.012).rotateX(-Math.PI / 2).translate(cx + i * 0.034, benchY + 0.0064, zc + 0.225));
+    g.add(mesh('cooktop_markings', mergeGeometries(marks), markMat));
+    if (hood) {
+      // rangehood built into the wall cabinets over the cooktop: a steel underside with filters and two lamps
+      g.add(mesh('rangehood', box(0.598, 0.04, 0.33, cx, 1.43, zb + 0.175, 0.25), M.steel));
+      g.add(mesh('rangehood_filters', mergeGeometries([box(0.25, 0.003, 0.22, cx - 0.14, 1.4085, zb + 0.16, 0.4), box(0.25, 0.003, 0.22, cx + 0.14, 1.4085, zb + 0.16, 0.4)]), M.appliance));
+    } else {
+      // no wall behind for a hood: a downdraught extractor, shut, set into the bench behind the cooktop
+      g.add(mesh('downdraught_extractor', box(0.52, 0.004, 0.045, cx, benchY + 0.002, zc - 0.29, 0.25), M.steel));
+      g.add(mesh('downdraught_slot', box(0.47, 0.0045, 0.014, cx, benchY + 0.002, zc - 0.29, 0.4), M.appliance));
+    }
   }
-  if (sb.length) g.add(mesh('splashback', mergeGeometries(sb), M.tile));
-  if (up.length) g.add(mesh('upper_cabinets', mergeGeometries(up), M.cabinet));
-  g.add(mesh('rangehood', box(0.6, 0.06, 0.38, ox, 1.45, -D / 2 + 0.19, 0.4), M.steel));
+
+  // wall cabinets: over the hood, beside the tall housing, or along a good length of solid wall; tiled beneath
+  const ups: THREE.BufferGeometry[] = [], upFronts: THREE.BufferGeometry[] = [], upPulls: THREE.BufferGeometry[] = [], tile: THREE.BufferGeometry[] = [], upGaps: THREE.BufferGeometry[] = [];
+  const UY0 = 1.45, UY1 = 2.2, UD = 0.35;
+  for (const [a, b] of solid) {
+    const carriesHood = hood && cx != null && cx > a && cx < b, joinsTall = !!opts.fridge && b >= x1 - 0.01 && b - a >= 0.3;
+    if (!carriesHood && !joinsTall && b - a < 0.9) continue;
+    ups.push(box(b - a, UY1 - UY0, UD - 0.02, (a + b) / 2, (UY0 + UY1) / 2, zb + (UD - 0.02) / 2, 0.8));
+    upGaps.push(box(b - a - 0.03, UY1 - UY0 - 0.02, 0.004, (a + b) / 2, (UY0 + UY1) / 2, zb + UD - 0.018, 0.8));
+    const n = Math.max(1, Math.round((b - a) / 0.5)), w = (b - a) / n;
+    for (let i = 0; i < n; i++) {
+      const p = a + i * w;
+      upFronts.push(rbox(w - 0.004, UY1 - UY0 - 0.004, 0.019, 0.002, p + w / 2, (UY0 + UY1) / 2, zb + UD - 0.0095, 0.8));
+      upPulls.push(...barPull(p + (i % 2 ? 0.045 : w - 0.045), UY0 + 0.11, zb + UD, 0.14, true));
+    }
+    tile.push(box(b - a, UY0 - benchY - 0.09, 0.01, (a + b) / 2, (UY0 + benchY + 0.09) / 2, zb + 0.005, 0.6, 'x'));
+  }
+  if (ups.length) {
+    g.add(mesh('upper_cabinets', mergeGeometries(ups), M.cabinet), mesh('upper_shadow_gaps', mergeGeometries(upGaps), M.appliance), mesh('upper_fronts', mergeGeometries(upFronts), M.cabinet), mesh('upper_pulls', mergeGeometries(upPulls), M.brass));
+    g.add(mesh('splashback', mergeGeometries(tile), M.tile));
+  }
+
   if (opts.fridge) {
-    const fx = x0 + runL + fridgeW / 2;
-    g.add(mesh('fridge', rbox(fridgeW - 0.02, 1.8, 0.66, 0.02, fx, 0.9, 0.02), M.steel));
-    g.add(mesh('fridge_handles', mergeGeometries([box(0.02, 0.5, 0.03, fx - fridgeW / 2 + 0.08, 1.2, 0.37, 0.3, 'y'), box(0.02, 0.5, 0.03, fx - fridgeW / 2 + 0.08, 0.55, 0.37, 0.3, 'y')]), M.chrome));
+    // a tall housing at the end of the bench: side panels, a cupboard over, and a fridge-freezer standing in it
+    const fa = x1, fb = x1 + fridgeW, fx = (fa + fb) / 2, bw = fridgeW - 0.06;
+    g.add(mesh('tall_housing', mergeGeometries([box(0.018, UY1, D + 0.02, fa + 0.009, UY1 / 2, 0.01, 0.8, 'y'), box(0.018, UY1, D + 0.02, fb - 0.009, UY1 / 2, 0.01, 0.8, 'y'), box(fridgeW - 0.036, 0.33, D - 0.04, fx, 2.035, -0.02, 0.8)]), M.cabinet));
+    g.add(mesh('tall_housing_fronts', mergeGeometries([-1, 1].map((s) => rbox((fridgeW - 0.036) / 2 - 0.004, 0.326, 0.019, 0.002, fx + (s * (fridgeW - 0.036)) / 4, 2.035, zf - 0.0095, 0.8))), M.cabinet));
+    g.add(mesh('tall_housing_pulls', mergeGeometries([-1, 1].flatMap((s) => barPull(fx + s * 0.04, 1.95, zf, 0.12, true))), M.brass));
+    g.add(mesh('fridge_body', mergeGeometries([box(bw, 1.78, D - 0.04, fx, 0.06 + 0.89, -0.02, 0.4), box(bw - 0.02, 0.06, D - 0.1, fx, 0.03, -0.04, 0.4)]), M.appliance));
+    g.add(mesh('fridge_doors', mergeGeometries([boxUV(new RoundedBoxGeometry(bw, 1.1, 0.04, 3, 0.008).translate(fx, 1.29, zf), 0.25, 'y'), boxUV(new RoundedBoxGeometry(bw, 0.648, 0.04, 3, 0.008).translate(fx, 0.404, zf), 0.25, 'y')]), M.steel));
+    const fh: THREE.BufferGeometry[] = [];
+    for (const [y, l] of [[1.2, 0.56], [0.52, 0.3]]) {
+      fh.push(boxUV(new THREE.CylinderGeometry(0.01, 0.01, l, 14).translate(fa + 0.09, y, zf + 0.062), 0.25, 'y'));
+      for (const s of [-1, 1]) fh.push(boxUV(new THREE.CylinderGeometry(0.007, 0.007, 0.044, 10).rotateX(Math.PI / 2).translate(fa + 0.09, y + s * (l / 2 - 0.03), zf + 0.041), 0.25, 'z'));
+    }
+    g.add(mesh('fridge_handles', mergeGeometries(fh), M.chrome));
   }
-  return tagged(g, 'kitchen_joinery', 'fitout', 'lacquered cabinetry, stone benchtop, tiled splashback, induction cooktop, oven, rangehood', { length: `${Math.round(len * 1000)} mm` });
+  const out = tagged(g, 'kitchen_joinery', 'fitout', 'lacquered cabinetry, stone benchtop, undermounted steel sink, induction cooktop, oven, fridge-freezer in a tall housing', { length: `${Math.round(len * 1000)} mm` });
+  // for whoever dresses the bench: where the cooktop and sink are, and the stretches of clear bench (local x)
+  const busy: [number, number][] = [[sx - 0.52, sx + 0.52]];
+  if (cx != null) busy.push([cx - 0.36, cx + 0.36]);
+  busy.sort((p, q) => p[0] - q[0]);
+  const free: [number, number][] = [];
+  let f = x0 + 0.04;
+  for (const [a, b] of busy) { if (a - f > 0.12) free.push([f, a]); f = Math.max(f, b); }
+  if (x1 - 0.04 - f > 0.12) free.push([f, x1 - 0.04]);
+  (out.userData as Record<string, unknown>).bench = { free, cooktopAt: cx, sinkAt: sx, hood, y: benchY };
+  return out;
 }
 
-export function vanity(M: InteriorMats, w = 0.75) {
+/** the outline of a pan or seat seen from above: straight at the wall end, a full round at the front */
+function panShape(w: number, z0: number, z1: number) {
+  const s = new THREE.Shape(), r = w / 2;
+  // drawn with depth as −y, so that standing it up (a quarter turn about x) puts the front at +z
+  s.moveTo(-r, -z0); s.lineTo(r, -z0); s.lineTo(r, -(z1 - r)); s.absarc(0, -(z1 - r), r, 0, -Math.PI, true); s.lineTo(-r, -z0);
+  return s;
+}
+/** stand an extruded plan shape up: the extrusion becomes height, rising from y0 */
+const standUp = (s: THREE.Shape, h: number, y0: number, bevel = 0.008) => new THREE.ExtrudeGeometry(s, { depth: h - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 20 }).rotateX(-Math.PI / 2).translate(0, y0 + bevel, 0);
+
+/**
+ * A furniture-style vanity standing on four oak legs, its back to the wall at −d / 2: a drawer box with two
+ * fronts, a stone top, a thrown vessel basin with its waste, and a slatted shelf below for towels.
+ */
+export function vanity(M: InteriorMats, w = 0.75, d = 0.46) {
   const g = grp('vanity');
-  g.add(mesh('vanity_cabinet', box(w, 0.45, 0.45, 0, 0.62, 0, 0.8), M.walnut));
-  g.add(mesh('vanity_top', box(w + 0.01, 0.02, 0.46, 0, 0.855, 0, 0.6), M.bench));
-  const basin = new THREE.CylinderGeometry(0.2, 0.17, 0.12, 40);
-  basin.translate(0, 0.925, 0.02);
-  g.add(mesh('basin', basin, M.ceramic), mesh('basin_mixer', cyl(0.015, 0.018, 0.2, 0, 0.97, -0.16, 12), M.chrome));
-  g.add(mesh('mirror', box(w - 0.05, 0.75, 0.01, 0, 1.55, -0.22, 0.4, 'y'), M.chrome));
-  return tagged(g, 'vanity', 'fitout', 'wall-hung timber vanity, ceramic basin, mirror');
+  const topY = 0.85, zb = -d / 2, zf = d / 2;
+  const legs: THREE.BufferGeometry[] = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) legs.push(box(0.036, topY - 0.02, 0.036, sx * (w / 2 - 0.018), (topY - 0.02) / 2, sz * (d / 2 - 0.018), 0.9, 'y'));
+  // the towel shelf: two rails and slats
+  for (const sz of [-1, 1]) legs.push(box(w - 0.072, 0.03, 0.02, 0, 0.2, sz * (d / 2 - 0.018), 0.9, 'x'));
+  const ns = Math.max(3, Math.round((w - 0.08) / 0.075));
+  for (let i = 0; i < ns; i++) legs.push(box(0.05, 0.012, d - 0.04, -(w - 0.08) / 2 + ((i + 0.5) / ns) * (w - 0.08), 0.221, 0, 0.9, 'z'));
+  g.add(mesh('vanity_frame', mergeGeometries(legs), M.oak));
+  g.add(mesh('vanity_cabinet', box(w - 0.04, 0.27, d - 0.03, 0, 0.695, -0.005, 0.9), M.oak));
+  g.add(mesh('vanity_shadow_gaps', box(w - 0.08, 0.25, 0.004, 0, 0.695, zf - 0.0215, 0.9), M.appliance));
+  const half = (w - 0.076) / 2;
+  g.add(mesh('vanity_drawers', mergeGeometries([-1, 1].map((s) => rbox(half - 0.004, 0.262, 0.018, 0.002, (s * half) / 2, 0.695, zf - 0.0105, 0.9))), M.oak));
+  g.add(mesh('vanity_pulls', mergeGeometries([-1, 1].flatMap((s) => barPull((s * half) / 2, 0.775, zf - 0.0015, Math.min(0.14, half * 0.5)))), M.brass));
+  g.add(mesh('vanity_top', rbox(w + 0.01, 0.025, d + 0.01, 0.004, 0, topY - 0.0125, 0, 0.6), M.bench));
+  // vessel basin: thrown, with a thick wall, standing on the stone
+  const br = Math.min(0.18, d / 2 - 0.06), bz = zf - br - 0.02;
+  const prof = [[0.0001, 0.004], [br * 0.42, 0.004], [br * 0.47, 0], [br * 0.5, 0.0], [br * 0.56, 0.012], [br * 0.9, 0.07], [br, 0.112], [br, 0.118], [br - 0.006, 0.122], [br - 0.012, 0.118], [br - 0.014, 0.11], [br * 0.82, 0.066], [br * 0.42, 0.032], [0.0001, 0.03]].map(([r, y]) => new THREE.Vector2(r, y));
+  g.add(mesh('basin', new THREE.LatheGeometry(prof, 48).translate(0, topY, bz), M.ceramic));
+  g.add(mesh('basin_waste', cyl(0.022, 0.022, 0.004, 0, topY + 0.032, bz, 20), M.chrome));
+  // the default mixer stands on the stone behind the basin (a project may swap it for its own)
+  const mixer = mesh('basin_mixer', mergeGeometries([cyl(0.016, 0.02, 0.2, 0, topY + 0.1, zb + 0.045, 16), box(0.016, 0.016, 0.12, 0, topY + 0.19, zb + 0.095, 0.3, 'z')]), M.chrome);
+  g.add(mixer);
+  g.add(mesh('mirror', box(w - 0.05, 0.75, 0.01, 0, 1.55, zb + 0.005, 0.4, 'y'), M.chrome));
+  const out = tagged(g, 'vanity', 'fitout', 'oak vanity on legs, stone top, ceramic vessel basin, towel shelf');
+  (out.userData as Record<string, unknown>).fix = { topY, mixerZ: zb + 0.045, shelfY: 0.227, basinZ: bz };
+  return out;
 }
 
+/** a back-to-wall toilet suite: the pan runs back to the wall, the cistern sits on it against the wall. Back at z = 0. */
 export function toilet(M: InteriorMats) {
   const g = grp('toilet');
-  const pan = new THREE.CylinderGeometry(0.18, 0.15, 0.4, 32);
-  pan.scale(1, 1, 1.3);
-  pan.translate(0, 0.2, 0.06);
-  g.add(mesh('pan', pan, M.ceramic), mesh('cistern', rbox(0.38, 0.38, 0.16, 0.03, 0, 0.6, -0.2), M.ceramic), mesh('seat', rbox(0.36, 0.025, 0.44, 0.012, 0, 0.415, 0.07), M.ceramic));
-  return tagged(g, 'toilet', 'fitout', 'vitreous china');
+  const parts: THREE.BufferGeometry[] = [];
+  parts.push(standUp(panShape(0.36, 0, 0.64), 0.4, 0, 0.012));
+  parts.push(new RoundedBoxGeometry(0.39, 0.34, 0.15, 3, 0.014).translate(0, 0.57, 0.077));
+  parts.push(new RoundedBoxGeometry(0.4, 0.03, 0.16, 3, 0.01).translate(0, 0.753, 0.08));
+  g.add(mesh('pan_and_cistern', mergeGeometries(parts.map((p) => boxUV(p.index ? p.toNonIndexed() : p, 0.5, 'x'))), M.ceramic));
+  // seat and lid: two thin leaves on the pan, hinged at the cistern
+  g.add(mesh('seat_and_lid', mergeGeometries([standUp(panShape(0.37, 0.17, 0.645), 0.018, 0.401, 0.005), standUp(panShape(0.365, 0.17, 0.64), 0.022, 0.42, 0.007)].map((p) => boxUV(p.index ? p.toNonIndexed() : p, 0.5, 'x'))), M.ceramic));
+  g.add(mesh('hinges_and_buttons', mergeGeometries([-1, 1].map((s) => cyl(0.009, 0.009, 0.03, s * 0.11, 0.425, 0.165, 12)).concat([cyl(0.022, 0.022, 0.004, -0.024, 0.77, 0.08, 20), cyl(0.014, 0.014, 0.004, 0.022, 0.77, 0.08, 20)])), M.chrome));
+  return tagged(g, 'toilet', 'fitout', 'vitreous china, back to wall');
 }
 
-export function shower(M: InteriorMats, w = 0.9, d = 0.9) {
+/**
+ * A tiled shower in a corner: tray with a waste, tiles on the back (−z) and left (−x) walls, frameless glass on
+ * the front and right held in slim channels at the floor and walls. `alcove` tiles the right wall too and
+ * leaves glass only across the front, with a pull on it.
+ */
+export function shower(M: InteriorMats, w = 0.9, d = 0.9, alcove = false) {
   const g = grp('shower');
   g.add(mesh('shower_tray', box(w, 0.04, d, 0, 0.02, 0, 0.6), M.wallTile));
-  g.add(mesh('shower_wall_tiles', mergeGeometries([box(w, 2.1, 0.012, 0, 1.05, -d / 2 + 0.006, 1.2, 'x'), box(0.012, 2.1, d, -w / 2 + 0.006, 1.05, 0, 1.2, 'z')]), M.wallTile));
+  g.add(mesh('shower_waste', box(0.1, 0.003, 0.1, 0, 0.0415, 0, 0.25), M.chrome));
+  const tiles = [box(w, 2.1, 0.012, 0, 1.05, -d / 2 + 0.006, 1.2, 'x'), box(0.012, 2.1, d, -w / 2 + 0.006, 1.05, 0, 1.2, 'z')];
+  if (alcove) tiles.push(box(0.012, 2.1, d, w / 2 - 0.006, 1.05, 0, 1.2, 'z'));
+  g.add(mesh('shower_wall_tiles', mergeGeometries(tiles), M.wallTile));
   const glass = new THREE.PlaneGeometry(w - 0.02, 2.0);
   glass.translate(0, 1.04, d / 2);
-  const glass2 = new THREE.PlaneGeometry(d - 0.02, 2.0);
-  glass2.rotateY(Math.PI / 2);
-  glass2.translate(w / 2, 1.04, 0);
-  g.add(mesh('glass_screen', mergeGeometries([glass, glass2]), M.glass));
+  const panes = [glass];
+  const trim = [box(w - 0.01, 0.014, 0.014, 0, 0.047, d / 2, 0.3), box(0.014, 2.0, 0.014, -w / 2 + 0.019, 1.04, d / 2, 0.3, 'y')];
+  if (!alcove) {
+    const glass2 = new THREE.PlaneGeometry(d - 0.02, 2.0);
+    glass2.rotateY(Math.PI / 2);
+    glass2.translate(w / 2, 1.04, 0);
+    panes.push(glass2);
+    trim.push(box(0.014, 0.014, d - 0.01, w / 2, 0.047, 0, 0.3, 'z'), box(0.014, 2.0, 0.014, w / 2, 1.04, -d / 2 + 0.019, 0.3, 'y'));
+  } else {
+    trim.push(box(0.014, 2.0, 0.014, w / 2 - 0.019, 1.04, d / 2, 0.3, 'y'), ...barPull(w * 0.18, 1.05, d / 2, 0.3, true));
+  }
+  g.add(mesh('glass_screen', mergeGeometries(panes), M.glass));
+  g.add(mesh('glass_channels', mergeGeometries(trim), M.chrome));
   g.add(mesh('shower_rose', mergeGeometries([cyl(0.12, 0.12, 0.01, 0, 2.05, -d / 2 + 0.25, 32), box(0.015, 0.015, 0.25, 0, 2.06, -d / 2 + 0.12, 0.3, 'z')]), M.chrome));
   return tagged(g, 'shower', 'fitout', 'tiled walls, frameless glass, rainfall rose');
 }

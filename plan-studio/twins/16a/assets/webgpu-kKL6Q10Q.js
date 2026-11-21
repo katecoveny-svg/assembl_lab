@@ -1,10 +1,10 @@
-import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,D as ma,aA as mr,R as ga,bq as ar,bB as O,bC as wi,bD as M,bE as vs,bF as bs,bG as pt,bH as Qo,bI as jo,u as vt,Y as Le,bJ as Go,M as li,G as Ko,s as E,g as N,bh as Xo,B as xa,F as Xs,bK as Si,bL as Re,bM as qe,bN as Ti,bO as Gt,q as B,bP as Yo,bQ as di,v as ya,aE as Ce,bR as fe,bS as Zo,bT as va,bU as ba,bV as bt,bp as Jo,bW as el,bX as ge,aJ as xi,bY as tl,bZ as rs,b_ as gr,b$ as de,c0 as ae,c1 as Be,aM as se,ac as tt,ax as or,aC as il,p as wa,c2 as Ve,c3 as Sa,c4 as Ta,a7 as rl,c5 as xr,a8 as Ia,Q as sl,c6 as lr,c7 as nl,c8 as _a,c9 as al,ca as ol,cb as Ra,cc as ll,cd as Ys,bd as cl,aO as ul,ce as dl,cf as fl,aD as ss,cg as hl,ch as Ca,ci as pl,aI as ml,bg as Da,cj as ws,ck as gl,N as xl,h as yl,a3 as Zs,x as vl,a2 as Js,cl as bl,cm as wl,cn as Sl,co as Tl}from"./twin-BDjt4Y6L.js";const $a=0,Il=1,Ot=2,fi=0,en=1,tn=2,Ma=3,Pr=1.25,rn=1,ne=32,H=ne/4,Ss=65535,sr=Math.pow(2,-24),yi=Symbol("SKIP_GENERATION"),Pa={strategy:$a,maxDepth:40,targetLeafSize:10,useSharedArrayBuffer:!1,setBoundingBox:!0,onProgress:null,indirect:!1,verbose:!0,range:null,[yi]:!1};function j(a,e,t){return t.min.x=e[a],t.min.y=e[a+1],t.min.z=e[a+2],t.max.x=e[a+3],t.max.y=e[a+4],t.max.z=e[a+5],t}function ns(a){let e=-1,t=-1/0;for(let i=0;i<3;i++){const r=a[i+3]-a[i];r>t&&(t=r,e=i)}return e}function sn(a,e,t){for(let i=0;i<3;i++){const r=e[a+2*i],n=e[a+2*i+1],s=r-n,o=r+n;s<t[i]&&(t[i]=s),o>t[i+3]&&(t[i+3]=o)}}function Br(a){const e=a[3]-a[0],t=a[4]-a[1],i=a[5]-a[2];return 2*(e*t+t*i+i*e)}function Q(a,e){return e[a+15]===Ss}function J(a,e){return e[a+6]}function re(a,e){return e[a+14]}function X(a){return a+H}function Y(a,e){const t=e[a+6];return a+t*H}function Ts(a,e){return e[a+7]}function Ar(a,e,t,i,r){let n=1/0,s=1/0,o=1/0,l=-1/0,d=-1/0,c=-1/0,u=1/0,f=1/0,p=1/0,h=-1/0,y=-1/0,x=-1/0;const b=a.offset||0;for(let m=(e-b)*6,v=(e+t-b)*6;m<v;m+=6){const g=a[m+0],w=a[m+1],R=g-w,S=g+w;R<n&&(n=R),S>l&&(l=S),g<u&&(u=g),g>h&&(h=g);const C=a[m+2],D=a[m+3],T=C-D,$=C+D;T<s&&(s=T),$>d&&(d=$),C<f&&(f=C),C>y&&(y=C);const _=a[m+4],P=a[m+5],F=_-P,L=_+P;F<o&&(o=F),L>c&&(c=L),_<p&&(p=_),_>x&&(x=_)}i[0]=n,i[1]=s,i[2]=o,i[3]=l,i[4]=d,i[5]=c,r[0]=u,r[1]=f,r[2]=p,r[3]=h,r[4]=y,r[5]=x}const Pe=8,Is=8,Fr=new Int32Array(Pe),De=new Float32Array(Pe*6),Ct=new Float32Array(Pe*6),be=new Float32Array(6),Ci=new Float32Array(6),Ge=new Int32Array(Is),nn=new Float32Array(Is*6);function _l(a,e,t,i){for(let r=0;r<3;r++){const n=e[a+2*r],s=e[a+2*r+1],o=n-s,l=n+s;o<t[i+r]&&(t[i+r]=o),l>t[i+r+3]&&(t[i+r+3]=l)}}function an(a,e){const t=a[e+3]-a[e],i=a[e+4]-a[e+1],r=a[e+5]-a[e+2];return 2*(t*i+i*r+r*t)}function Rl(a,e,t,i,r,n){let s=-1,o=0;if(n===$a)s=ns(e),s!==-1&&(o=(e[s]+e[s+3])/2);else if(n===Il)s=ns(a),s!==-1&&(o=Cl(t,i,r,s));else if(n===Ot){const l=Br(a);let d=Pr*r;const c=t.offset||0,u=(i-c)*6,f=(i+r-c)*6;for(let p=0;p<3;p++){const h=e[p],b=(e[p+3]-h)/Pe;if(r<Is){for(let m=0;m<r;m++){const v=u+m*6,g=t[v+2*p];let w=m;for(;w>0&&t[Ge[w-1]+2*p]>g;)Ge[w]=Ge[w-1],w--;Ge[w]=v}for(let m=0;m<3;m++)be[m]=1/0,be[m+3]=-1/0,Ci[m]=1/0,Ci[m+3]=-1/0;for(let m=r-1;m>=0;m--)sn(Ge[m],t,Ci),nn.set(Ci,m*6);for(let m=0;m<r-1;m++){sn(Ge[m],t,be);const v=t[Ge[m+1]+2*p];if(t[Ge[m]+2*p]===v)continue;const g=m+1,w=r-g,R=Br(be)/l,S=an(nn,g*6)/l,C=rn+Pr*(R*g+S*w);C<d&&(s=p,d=C,o=v)}}else{for(let g=0;g<Pe;g++){Fr[g]=0;for(let w=0;w<3;w++)De[g*6+w]=1/0,De[g*6+w+3]=-1/0}for(let g=u;g<f;g+=6){let S=~~((t[g+2*p]-h)/b);S>=Pe&&(S=Pe-1),Fr[S]++,_l(g,t,De,S*6)}const m=(Pe-1)*6;for(let g=0;g<6;g++)Ct[m+g]=De[m+g];for(let g=Pe-2;g>=0;g--){const w=g*6,R=w+6;for(let S=0;S<3;S++)Ct[w+S]=Math.min(De[w+S],Ct[R+S]),Ct[w+S+3]=Math.max(De[w+S+3],Ct[R+S+3])}let v=0;for(let g=0;g<Pe-1;g++){const w=g*6,R=Fr[g];if(R!==0)for(let $=0;$<3;$++)v===0?(be[$]=De[w+$],be[$+3]=De[w+$+3]):(be[$]=Math.min(be[$],De[w+$]),be[$+3]=Math.max(be[$+3],De[w+$+3]));v+=R;let S=0,C=0;v!==0&&(S=Br(be)/l);const D=r-v;D!==0&&(C=an(Ct,w+6)/l);const T=rn+Pr*(S*v+C*D);T<d&&(s=p,d=T,o=h+b+g*b)}}}}else console.warn(`BVH: Invalid build strategy value ${n} used.`);return{axis:s,pos:o}}function Cl(a,e,t,i){let r=0;const n=a.offset;for(let s=e,o=e+t;s<o;s++)r+=a[(s-n)*6+i*2];return r/t}function Dl(a,e,t,i,r,n){let s=i,o=i+r-1;const l=n.pos,d=n.axis*2,c=t.offset||0;for(;;){for(;s<=o&&t[(s-c)*6+d]<l;)s++;for(;s<=o&&t[(o-c)*6+d]>=l;)o--;if(s<o){for(let u=0;u<e;u++){let f=a[s*e+u];a[s*e+u]=a[o*e+u],a[o*e+u]=f}for(let u=0;u<6;u++){const f=s-c,p=o-c,h=t[f*6+u];t[f*6+u]=t[p*6+u],t[p*6+u]=h}s++,o--}else return s}}const $l=Math.pow(2,32),Dt=new Float32Array(6),Di=new Float32Array(6);function Ml(a,e,t,i,r,n){const{maxDepth:s,verbose:o,targetLeafSize:l,_strictLeafSize:d=1/0,strategy:c,onProgress:u,useSharedArrayBuffer:f=!1}=r,p=a.primitiveBuffer,h=a.primitiveBufferStride,y=f?SharedArrayBuffer:ArrayBuffer,x=new y(ne*Math.max(1,2*Math.ceil(i)-1)),b=new Float32Array(x),m=new Uint32Array(x),v=new Uint16Array(x);let g=0,w=!1;return Ar(e,t,i,Dt,Di),C(t,i,0),x.slice(0,g*ne);function R(D){u&&u((D-n.offset)/n.count)}function S(D,T,$){const _=D*2;m[D+6]=T,v[_+14]=$,v[_+15]=Ss,R(T+$)}function C(D,T,$){const _=g++,P=_*H;b.set(Dt,P),!w&&$>=s&&(w=!0,o&&console.warn(`BVH: Max depth of ${s} reached when generating BVH. Consider increasing maxDepth.`));const F=T>d;if(T<=l&&!F||$>=s){S(P,D,T);return}const L=Rl(Dt,Di,e,D,T,c);let U=L.axis===-1?-1:Dl(p,h,e,D,T,L);if(L.axis===-1||U===D||U===D+T){if(!F){S(P,D,T);return}L.axis=Math.max(0,ns(Dt)),U=D+Math.max(1,Math.floor(T/2))}m[P+7]=L.axis;const z=U-D;Ar(e,D,z,Dt,Di),C(D,z,$+1);const Ee=g-_;if(Ee>$l)throw new Error("MeshBVH: Cannot store relative child node offset greater than 32 bits.");m[P+6]=Ee;const ke=T-z;Ar(e,U,ke,Dt,Di),C(U,ke,$+1)}}function Pl(a,e){const t=a.getRootRanges(e.range),i=t[0],r=t[t.length-1],n={offset:i.offset,count:r.offset+r.count-i.offset},s=new Float32Array(6*n.count);s.offset=n.offset,a.computePrimitiveBounds(n.offset,n.count,s),a._roots=t.map(o=>Ml(a,s,o.offset,o.count,e,n))}class _s{constructor(e){this._getNewPrimitive=e,this._primitives=[]}getPrimitive(){const e=this._primitives;return e.length===0?this._getNewPrimitive():e.pop()}releasePrimitive(e){this._primitives.push(e)}}class Bl{constructor(){this.float32Array=null,this.uint16Array=null,this.uint32Array=null;const e=[];let t=null;this.setBuffer=i=>{t&&e.push(t),t=i,this.float32Array=new Float32Array(i),this.uint16Array=new Uint16Array(i),this.uint32Array=new Uint32Array(i)},this.clearBuffer=()=>{t=null,this.float32Array=null,this.uint16Array=null,this.uint32Array=null,e.length!==0&&this.setBuffer(e.pop())}}}const V=new Bl;let Je,Ht;const $t=[],$i=new _s(()=>new ve);function Al(a,e,t,i,r,n){Je=$i.getPrimitive(),Ht=$i.getPrimitive(),$t.push(Je,Ht),V.setBuffer(a._roots[e]);const s=as(0,a.geometry,t,i,r,n);V.clearBuffer(),$i.releasePrimitive(Je),$i.releasePrimitive(Ht),$t.pop(),$t.pop();const o=$t.length;return o>0&&(Ht=$t[o-1],Je=$t[o-2]),s}function as(a,e,t,i,r=null,n=0,s=0){const{float32Array:o,uint16Array:l,uint32Array:d}=V;let c=a*2;if(Q(c,l)){const f=J(a,d),p=re(c,l);return j(a,o,Je),i(f,p,!1,s,n+a/H,Je)}else{let T=function(_){const{uint16Array:P,uint32Array:F}=V;let L=_*2;for(;!Q(L,P);)_=X(_),L=_*2;return J(_,F)},$=function(_){const{uint16Array:P,uint32Array:F}=V;let L=_*2;for(;!Q(L,P);)_=Y(_,F),L=_*2;return J(_,F)+re(L,P)};const f=X(a),p=Y(a,d);let h=f,y=p,x,b,m,v;if(r&&(m=Je,v=Ht,j(h,o,m),j(y,o,v),x=r(m),b=r(v),b<x)){h=p,y=f;const _=x;x=b,b=_,m=v}m||(m=Je,j(h,o,m));const g=Q(h*2,l),w=t(m,g,x,s+1,n+h/H);let R;if(w===tn){const _=T(h),F=$(h)-_;R=i(_,F,!0,s+1,n+h/H,m)}else R=w&&as(h,e,t,i,r,n,s+1);if(R)return!0;v=Ht,j(y,o,v);const S=Q(y*2,l),C=t(v,S,b,s+1,n+y/H);let D;if(C===tn){const _=T(y),F=$(y)-_;D=i(_,F,!0,s+1,n+y/H,v)}else D=C&&as(y,e,t,i,r,n,s+1);return!!D}}const hi=new V.constructor,cr=new V.constructor,Ye=new _s(()=>new ve),Mt=new ve,Pt=new ve,Nr=new ve,Lr=new ve;let zr=!1;function Fl(a,e,t,i){if(zr)throw new Error("MeshBVH: Recursive calls to bvhcast not supported.");zr=!0;const r=a._roots,n=e._roots;let s,o=0,l=0;const d=new W().copy(t).invert();for(let c=0,u=r.length;c<u;c++){hi.setBuffer(r[c]),l=0;const f=Ye.getPrimitive();j(0,hi.float32Array,f),f.applyMatrix4(d);for(let p=0,h=n.length;p<h&&(cr.setBuffer(n[p]),s=Se(0,0,t,d,i,o,l,0,0,f),cr.clearBuffer(),l+=n[p].byteLength/ne,!s);p++);if(Ye.releasePrimitive(f),hi.clearBuffer(),o+=r[c].byteLength/ne,s)break}return zr=!1,s}function Se(a,e,t,i,r,n=0,s=0,o=0,l=0,d=null,c=!1){let u,f;c?(u=cr,f=hi):(u=hi,f=cr);const p=u.float32Array,h=u.uint32Array,y=u.uint16Array,x=f.float32Array,b=f.uint32Array,m=f.uint16Array,v=a*2,g=e*2,w=Q(v,y),R=Q(g,m);let S=!1;if(R&&w)c?S=r(J(e,b),re(e*2,m),J(a,h),re(a*2,y),l,s+e/H,o,n+a/H):S=r(J(a,h),re(a*2,y),J(e,b),re(e*2,m),o,n+a/H,l,s+e/H);else if(R){const C=Ye.getPrimitive();j(e,x,C),C.applyMatrix4(t);const D=X(a),T=Y(a,h);j(D,p,Mt),j(T,p,Pt);const $=C.intersectsBox(Mt),_=C.intersectsBox(Pt);S=$&&Se(e,D,i,t,r,s,n,l,o+1,C,!c)||_&&Se(e,T,i,t,r,s,n,l,o+1,C,!c),Ye.releasePrimitive(C)}else{const C=X(e),D=Y(e,b);j(C,x,Nr),j(D,x,Lr);const T=d.intersectsBox(Nr),$=d.intersectsBox(Lr);if(T&&$)S=Se(a,C,t,i,r,n,s,o,l+1,d,c)||Se(a,D,t,i,r,n,s,o,l+1,d,c);else if(T)if(w)S=Se(a,C,t,i,r,n,s,o,l+1,d,c);else{const _=Ye.getPrimitive();_.copy(Nr).applyMatrix4(t);const P=X(a),F=Y(a,h);j(P,p,Mt),j(F,p,Pt);const L=_.intersectsBox(Mt),U=_.intersectsBox(Pt);S=L&&Se(C,P,i,t,r,s,n,l,o+1,_,!c)||U&&Se(C,F,i,t,r,s,n,l,o+1,_,!c),Ye.releasePrimitive(_)}else if($)if(w)S=Se(a,D,t,i,r,n,s,o,l+1,d,c);else{const _=Ye.getPrimitive();_.copy(Lr).applyMatrix4(t);const P=X(a),F=Y(a,h);j(P,p,Mt),j(F,p,Pt);const L=_.intersectsBox(Mt),U=_.intersectsBox(Pt);S=L&&Se(D,P,i,t,r,s,n,l,o+1,_,!c)||U&&Se(D,F,i,t,r,s,n,l,o+1,_,!c),Ye.releasePrimitive(_)}}return S}const Ze=new class{constructor(){let a=null,e=null,t=null,i=!1;this.root=null,this.buffer=null,this.uint32Array=null,this.uint16Array=null,this.setBVH=(n,s)=>{if(i)throw new Error("BVHTraversalHelper: cannot call setBVH during an active traversal.");this.root=s,this.buffer=a=n._roots[s],this.uint16Array=t=new Uint16Array(a),this.uint32Array=e=new Uint32Array(a)},this.reset=()=>{this.root=null,this.buffer=a=null,this.uint16Array=t=null,this.uint32Array=e=null},this.getRangeStart=n=>{let s=n*2;for(;!Q(s,t);)n=X(n),s=n*2;return J(n,e)},this.getRangeEnd=n=>{let s=n*2;for(;!Q(s,t);)n=Y(n,e),s=n*2;return J(n,e)+re(s,t)};const r=(n,s,o)=>{const l=s*2,d=Q(l,t);if(!n(o,d,s)&&!d){const u=X(s),f=Y(s,e);r(n,u,o+1),r(n,f,o+1)}};this.traverseBuffer=n=>{if(i)throw new Error("BVHTraversalHelper: cannot start a traversal during an active traversal.");i=!0;try{r(n,0,0)}finally{i=!1}},this.traverse=n=>{this.traverseBuffer((s,o,l)=>{if(o){const d=l*2,c=e[l+6],u=t[d+14];return n(s,o,new Float32Array(a,l*4,6),c,u)}else{const d=Ts(l,e);return n(s,o,new Float32Array(a,l*4,6),d)}})}}},on=new ve,Bt=new Float32Array(6);class Ba{constructor(){this._roots=null,this.primitiveBuffer=null,this.primitiveBufferStride=null}init(e){e={...Pa,...e},"maxLeafSize"in e&&(console.warn('BVH: "maxLeafSize" option has been deprecated. Use "targetLeafSize", instead.'),e={...e,targetLeafSize:e.maxLeafSize}),Pl(this,e)}getRootRanges(){throw new Error("BVH: getRootRanges() not implemented")}writePrimitiveBounds(){throw new Error("BVH: writePrimitiveBounds() not implemented")}writePrimitiveRangeBounds(e,t,i,r){let n=1/0,s=1/0,o=1/0,l=-1/0,d=-1/0,c=-1/0;for(let u=e,f=e+t;u<f;u++){this.writePrimitiveBounds(u,Bt,0);const[p,h,y,x,b,m]=Bt;p<n&&(n=p),x>l&&(l=x),h<s&&(s=h),b>d&&(d=b),y<o&&(o=y),m>c&&(c=m)}return i[r+0]=n,i[r+1]=s,i[r+2]=o,i[r+3]=l,i[r+4]=d,i[r+5]=c,i}computePrimitiveBounds(e,t,i){const r=i.offset||0;for(let n=e,s=e+t;n<s;n++){this.writePrimitiveBounds(n,Bt,0);const[o,l,d,c,u,f]=Bt,p=(o+c)/2,h=(l+u)/2,y=(d+f)/2,x=(c-o)/2,b=(u-l)/2,m=(f-d)/2,v=(n-r)*6;i[v+0]=p,i[v+1]=x+(Math.abs(p)+x)*sr,i[v+2]=h,i[v+3]=b+(Math.abs(h)+b)*sr,i[v+4]=y,i[v+5]=m+(Math.abs(y)+m)*sr}return i}shiftPrimitiveOffsets(e){const t=this._indirectBuffer;if(t)for(let i=0,r=t.length;i<r;i++)t[i]+=e;else{const i=this._roots;for(let r=0;r<i.length;r++){const n=i[r],s=new Uint32Array(n),o=new Uint16Array(n),l=n.byteLength/ne;for(let d=0;d<l;d++){const c=H*d,u=2*c;Q(u,o)&&(s[c+6]+=e)}}}}traverse(e,t=0){Ze.setBVH(this,t),Ze.traverse(e),Ze.reset()}refit(){const e=this._roots;for(let t=0,i=e.length;t<i;t++){const r=e[t],n=new Uint32Array(r),s=new Uint16Array(r),o=new Float32Array(r),l=r.byteLength/ne;for(let d=l-1;d>=0;d--){const c=d*H,u=c*2;if(Q(u,s)){const p=J(c,n),h=re(u,s);this.writePrimitiveRangeBounds(p,h,Bt,0),o.set(Bt,c)}else{const p=X(c),h=Y(c,n);for(let y=0;y<3;y++){const x=o[p+y],b=o[p+y+3],m=o[h+y],v=o[h+y+3];o[c+y]=x<m?x:m,o[c+y+3]=b>v?b:v}}}}}getBoundingBox(e){return e.makeEmpty(),this._roots.forEach(i=>{j(0,new Float32Array(i),on),e.union(on)}),e}shapecast(e){let{boundsTraverseOrder:t,intersectsBounds:i,intersectsRange:r,intersectsPrimitive:n,scratchPrimitive:s,iterate:o}=e;if(r&&n){const u=r;r=(f,p,h,y,x)=>u(f,p,h,y,x)?!0:o(f,p,this,n,h,y,s)}else r||(n?r=(u,f,p,h)=>o(u,f,this,n,p,h,s):r=(u,f,p)=>p);let l=!1,d=0;const c=this._roots;for(let u=0,f=c.length;u<f;u++){const p=c[u];if(l=Al(this,u,i,r,t,d),l)break;d+=p.byteLength/ne}return l}bvhcast(e,t,i){let{intersectsRanges:r}=i;return Fl(this,e,t,r)}}function Nl(){return typeof SharedArrayBuffer<"u"}function Rs(a){return a.index?a.index.count:a.attributes.position.count}function yr(a){return Rs(a)/3}function Ll(a,e=ArrayBuffer){return a>65535?new Uint32Array(new e(4*a)):new Uint16Array(new e(2*a))}function zl(a,e){if(!a.index){const t=a.attributes.position.count,i=e.useSharedArrayBuffer?SharedArrayBuffer:ArrayBuffer,r=Ll(t,i);a.setIndex(new ut(r,1));for(let n=0;n<t;n++)r[n]=n}}function El(a,e,t){const i=Rs(a)/t,r=e||a.drawRange,n=r.start/t,s=(r.start+r.count)/t,o=Math.max(0,n),l=Math.min(i,s)-o;return{offset:Math.floor(o),count:Math.floor(l)}}function kl(a,e){return a.groups.map(t=>({offset:t.start/e,count:t.count/e}))}function ln(a,e,t){const i=El(a,e,t),r=kl(a,t);if(!r.length)return[i];const n=[],s=i.offset,o=i.offset+i.count,l=Rs(a)/t,d=[];for(const f of r){const{offset:p,count:h}=f,y=p,x=isFinite(h)?h:l-p,b=p+x;y<o&&b>s&&(d.push({pos:Math.max(s,y),isStart:!0}),d.push({pos:Math.min(o,b),isStart:!1}))}d.sort((f,p)=>f.pos!==p.pos?f.pos-p.pos:f.type==="end"?-1:1);let c=0,u=null;for(const f of d){const p=f.pos;c!==0&&p!==u&&n.push({offset:u,count:p-u}),c+=f.isStart?1:-1,u=p}return n}function Hl(a,e){const t=a[a.length-1],i=t.offset+t.count>2**16,r=a.reduce((d,c)=>d+c.count,0),n=i?4:2,s=e?new SharedArrayBuffer(r*n):new ArrayBuffer(r*n),o=i?new Uint32Array(s):new Uint16Array(s);let l=0;for(let d=0;d<a.length;d++){const{offset:c,count:u}=a[d];for(let f=0;f<u;f++)o[l+f]=c+f;l+=u}return o}class ur extends Ba{get indirect(){return!!this._indirectBuffer}get primitiveStride(){return null}get primitiveBufferStride(){return this.indirect?1:this.primitiveStride}set primitiveBufferStride(e){}get primitiveBuffer(){return this.indirect?this._indirectBuffer:this.geometry.index.array}set primitiveBuffer(e){}constructor(e,t={}){if(e.isBufferGeometry){if(e.index&&e.index.isInterleavedBufferAttribute)throw new Error("BVH: InterleavedBufferAttribute is not supported for the index attribute.")}else throw new Error("BVH: Only BufferGeometries are supported.");if(t.useSharedArrayBuffer&&!Nl())throw new Error("BVH: SharedArrayBuffer is not available.");super(),this.geometry=e,this.resolvePrimitiveIndex=t.indirect?i=>this._indirectBuffer[i]:i=>i,this.primitiveBuffer=null,this.primitiveBufferStride=null,this._indirectBuffer=null,t={...Pa,...t},t[yi]||this.init(t)}init(e){const{geometry:t,primitiveStride:i}=this;if(e.indirect){const r=ln(t,e.range,i),n=Hl(r,e.useSharedArrayBuffer);this._indirectBuffer=n}else zl(t,e);super.init(e),!t.boundingBox&&e.setBoundingBox&&(t.boundingBox=this.getBoundingBox(new ve))}getRootRanges(e){return this.indirect?[{offset:0,count:this._indirectBuffer.length}]:ln(this.geometry,e,this.primitiveStride)}raycastObject3D(){throw new Error("BVH: raycastObject3D() not implemented")}}class Qe{constructor(){this.min=1/0,this.max=-1/0}setFromPointsField(e,t){let i=1/0,r=-1/0;for(let n=0,s=e.length;n<s;n++){const l=e[n][t];i=l<i?l:i,r=l>r?l:r}this.min=i,this.max=r}setFromPoints(e,t){let i=1/0,r=-1/0;for(let n=0,s=t.length;n<s;n++){const o=t[n],l=e.dot(o);i=l<i?l:i,r=l>r?l:r}this.min=i,this.max=r}isSeparated(e){return this.min>e.max||e.min>this.max}}Qe.prototype.setFromBox=(function(){const a=new A;return function(t,i){const r=i.min,n=i.max;let s=1/0,o=-1/0;for(let l=0;l<=1;l++)for(let d=0;d<=1;d++)for(let c=0;c<=1;c++){a.x=r.x*l+n.x*(1-l),a.y=r.y*d+n.y*(1-d),a.z=r.z*c+n.z*(1-c);const u=t.dot(a);s=Math.min(u,s),o=Math.max(u,o)}this.min=s,this.max=o}})();const Ul=(function(){const a=new A,e=new A,t=new A;return function(r,n,s){const o=r.start,l=a,d=n.start,c=e;t.subVectors(o,d),a.subVectors(r.end,r.start),e.subVectors(n.end,n.start);const u=t.dot(c),f=c.dot(l),p=c.dot(c),h=t.dot(l),x=l.dot(l)*p-f*f;let b,m;x!==0?b=(u*f-h*p)/x:b=0,m=(u+b*f)/p,s.x=b,s.y=m}})(),Cs=(function(){const a=new G,e=new A,t=new A;return function(r,n,s,o){Ul(r,n,a);let l=a.x,d=a.y;if(l>=0&&l<=1&&d>=0&&d<=1){r.at(l,s),n.at(d,o);return}else if(l>=0&&l<=1){d<0?n.at(0,o):n.at(1,o),r.closestPointToPoint(o,!0,s);return}else if(d>=0&&d<=1){l<0?r.at(0,s):r.at(1,s),n.closestPointToPoint(s,!0,o);return}else{let c;l<0?c=r.start:c=r.end;let u;d<0?u=n.start:u=n.end;const f=e,p=t;if(r.closestPointToPoint(u,!0,e),n.closestPointToPoint(c,!0,t),f.distanceToSquared(u)<=p.distanceToSquared(c)){s.copy(f),o.copy(u);return}else{s.copy(c),o.copy(p);return}}}})(),Vl=(function(){const a=new A,e=new A,t=new pa,i=new We;return function(n,s){const{radius:o,center:l}=n,{a:d,b:c,c:u}=s;if(i.start=d,i.end=c,i.closestPointToPoint(l,!0,a).distanceTo(l)<=o||(i.start=d,i.end=u,i.closestPointToPoint(l,!0,a).distanceTo(l)<=o)||(i.start=c,i.end=u,i.closestPointToPoint(l,!0,a).distanceTo(l)<=o))return!0;const y=s.getPlane(t);if(Math.abs(y.distanceToPoint(l))<=o){const b=y.projectPoint(l,e);if(s.containsPoint(b))return!0}return!1}})(),Ol=["x","y","z"],Ue=1e-15,cn=Ue*Ue;function pe(a){return Math.abs(a)<Ue}class xe extends Te{constructor(...e){super(...e),this.isExtendedTriangle=!0,this.satAxes=new Array(4).fill().map(()=>new A),this.satBounds=new Array(4).fill().map(()=>new Qe),this.points=[this.a,this.b,this.c],this.plane=new pa,this.isDegenerateIntoSegment=!1,this.isDegenerateIntoPoint=!1,this.degenerateSegment=new We,this.needsUpdate=!0}intersectsSphere(e){return Vl(e,this)}update(){const e=this.a,t=this.b,i=this.c,r=this.points,n=this.satAxes,s=this.satBounds,o=n[0],l=s[0];this.getNormal(o),l.setFromPoints(o,r);const d=n[1],c=s[1];d.subVectors(e,t),c.setFromPoints(d,r);const u=n[2],f=s[2];u.subVectors(t,i),f.setFromPoints(u,r);const p=n[3],h=s[3];p.subVectors(i,e),h.setFromPoints(p,r);const y=d.length(),x=u.length(),b=p.length();this.isDegenerateIntoPoint=!1,this.isDegenerateIntoSegment=!1,y<Ue?x<Ue||b<Ue?this.isDegenerateIntoPoint=!0:(this.isDegenerateIntoSegment=!0,this.degenerateSegment.start.copy(e),this.degenerateSegment.end.copy(i)):x<Ue?b<Ue?this.isDegenerateIntoPoint=!0:(this.isDegenerateIntoSegment=!0,this.degenerateSegment.start.copy(t),this.degenerateSegment.end.copy(e)):b<Ue&&(this.isDegenerateIntoSegment=!0,this.degenerateSegment.start.copy(i),this.degenerateSegment.end.copy(t)),this.plane.setFromNormalAndCoplanarPoint(o,e),this.needsUpdate=!1}}xe.prototype.closestPointToSegment=(function(){const a=new A,e=new A,t=new We;return function(r,n=null,s=null){this.needsUpdate&&this.update();const{start:o,end:l}=r,d=this.points;let c,u=1/0;const f=this.plane.distanceToPoint(o),p=this.plane.distanceToPoint(l);if(f*p<0&&this.plane.intersectLine(r,a)!==null&&this.containsPoint(a))return n&&n.copy(a),s&&s.copy(a),0;for(let h=0;h<3;h++){const y=(h+1)%3;t.start.copy(d[h]),t.end.copy(d[y]),Cs(t,r,a,e),c=a.distanceToSquared(e),c<u&&(u=c,n&&n.copy(a),s&&s.copy(e))}return this.closestPointToPoint(o,a),c=o.distanceToSquared(a),c<u&&(u=c,n&&n.copy(a),s&&s.copy(o)),this.closestPointToPoint(l,a),c=l.distanceToSquared(a),c<u&&(u=c,n&&n.copy(a),s&&s.copy(l)),Math.sqrt(u)}})();xe.prototype.intersectsTriangle=(function(){const a=new xe,e=new Qe,t=new Qe,i=new A,r=new A,n=new A,s=new A,o=new We,l=new We,d=new A,c=new G,u=new G;function f(v,g,w,R){const S=i;!v.isDegenerateIntoPoint&&!v.isDegenerateIntoSegment?S.copy(v.plane.normal):S.copy(g.plane.normal);const C=v.satBounds,D=v.satAxes;for(let _=1;_<4;_++){const P=C[_],F=D[_];if(e.setFromPoints(F,g.points),P.isSeparated(e)||(s.copy(S).cross(F),e.setFromPoints(s,v.points),t.setFromPoints(s,g.points),e.isSeparated(t)))return!1}const T=g.satBounds,$=g.satAxes;for(let _=1;_<4;_++){const P=T[_],F=$[_];if(e.setFromPoints(F,v.points),P.isSeparated(e)||(s.crossVectors(S,F),e.setFromPoints(s,v.points),t.setFromPoints(s,g.points),e.isSeparated(t)))return!1}return w&&(R||console.warn("ExtendedTriangle.intersectsTriangle: Triangles are coplanar which does not support an output edge. Setting edge to 0, 0, 0."),w.start.set(0,0,0),w.end.set(0,0,0)),!0}function p(v,g,w,R,S,C,D,T,$,_,P){let F=D/(D-T);_.x=R+(S-R)*F,P.start.subVectors(g,v).multiplyScalar(F).add(v),F=D/(D-$),_.y=R+(C-R)*F,P.end.subVectors(w,v).multiplyScalar(F).add(v)}function h(v,g,w,R,S,C,D,T,$,_,P){if(S>0)p(v.c,v.a,v.b,R,g,w,$,D,T,_,P);else if(C>0)p(v.b,v.a,v.c,w,g,R,T,D,$,_,P);else if(T*$>0||D!=0)p(v.a,v.b,v.c,g,w,R,D,T,$,_,P);else if(T!=0)p(v.b,v.a,v.c,w,g,R,T,D,$,_,P);else if($!=0)p(v.c,v.a,v.b,R,g,w,$,D,T,_,P);else return!0;return!1}function y(v,g,w,R){const S=g.degenerateSegment,C=v.plane.distanceToPoint(S.start),D=v.plane.distanceToPoint(S.end);return pe(C)?pe(D)?f(v,g,w,R):(w&&(w.start.copy(S.start),w.end.copy(S.start)),v.containsPoint(S.start)):pe(D)?(w&&(w.start.copy(S.end),w.end.copy(S.end)),v.containsPoint(S.end)):v.plane.intersectLine(S,i)!=null?(w&&(w.start.copy(i),w.end.copy(i)),v.containsPoint(i)):!1}function x(v,g,w){const R=g.a;return pe(v.plane.distanceToPoint(R))&&v.containsPoint(R)?(w&&(w.start.copy(R),w.end.copy(R)),!0):!1}function b(v,g,w){const R=v.degenerateSegment,S=g.a;return R.closestPointToPoint(S,!0,i),S.distanceToSquared(i)<cn?(w&&(w.start.copy(S),w.end.copy(S)),!0):!1}function m(v,g,w,R){if(v.isDegenerateIntoSegment)if(g.isDegenerateIntoSegment){const S=v.degenerateSegment,C=g.degenerateSegment,D=r,T=n;S.delta(D),C.delta(T);const $=i.subVectors(C.start,S.start),_=D.x*T.y-D.y*T.x;if(pe(_))return!1;const P=($.x*T.y-$.y*T.x)/_,F=-(D.x*$.y-D.y*$.x)/_;if(P<0||P>1||F<0||F>1)return!1;const L=S.start.z+D.z*P,U=C.start.z+T.z*F;return pe(L-U)?(w&&(w.start.copy(S.start).addScaledVector(D,P),w.end.copy(S.start).addScaledVector(D,P)),!0):!1}else return g.isDegenerateIntoPoint?b(v,g,w):y(g,v,w,R);else{if(v.isDegenerateIntoPoint)return g.isDegenerateIntoPoint?g.a.distanceToSquared(v.a)<cn?(w&&(w.start.copy(v.a),w.end.copy(v.a)),!0):!1:g.isDegenerateIntoSegment?b(g,v,w):x(g,v,w);if(g.isDegenerateIntoPoint)return x(v,g,w);if(g.isDegenerateIntoSegment)return y(v,g,w,R)}}return function(g,w=null,R=!1){this.needsUpdate&&this.update(),g.isExtendedTriangle?g.needsUpdate&&g.update():(a.copy(g),a.update(),g=a);const S=m(this,g,w,R);if(S!==void 0)return S;const C=this.plane,D=g.plane;let T=D.distanceToPoint(this.a),$=D.distanceToPoint(this.b),_=D.distanceToPoint(this.c);pe(T)&&(T=0),pe($)&&($=0),pe(_)&&(_=0);const P=T*$,F=T*_;if(P>0&&F>0)return!1;let L=C.distanceToPoint(g.a),U=C.distanceToPoint(g.b),z=C.distanceToPoint(g.c);pe(L)&&(L=0),pe(U)&&(U=0),pe(z)&&(z=0);const Ee=L*U,ke=L*z;if(Ee>0&&ke>0)return!1;r.copy(C.normal),n.copy(D.normal);const Tt=r.cross(n);let Kt=0,Xt=Math.abs(Tt.x);const Yt=Math.abs(Tt.y);Yt>Xt&&(Xt=Yt,Kt=1),Math.abs(Tt.z)>Xt&&(Kt=2);const le=Ol[Kt],rt=this.a[le],_t=this.b[le],Ri=this.c[le],st=g.a[le],Rt=g.b[le],qo=g.c[le];if(h(this,rt,_t,Ri,P,F,T,$,_,c,o))return f(this,g,w,R);if(h(g,st,Rt,qo,Ee,ke,L,U,z,u,l))return f(this,g,w,R);if(c.y<c.x){const Mr=c.y;c.y=c.x,c.x=Mr,d.copy(o.start),o.start.copy(o.end),o.end.copy(d)}if(u.y<u.x){const Mr=u.y;u.y=u.x,u.x=Mr,d.copy(l.start),l.start.copy(l.end),l.end.copy(d)}return c.y<u.x||u.y<c.x?!1:(w&&(u.x>c.x?w.start.copy(l.start):w.start.copy(o.start),u.y<c.y?w.end.copy(l.end):w.end.copy(o.end)),!0)}})();xe.prototype.distanceToPoint=(function(){const a=new A;return function(t){return this.closestPointToPoint(t,a),t.distanceTo(a)}})();xe.prototype.distanceToTriangle=(function(){const a=new A,e=new A,t=["a","b","c"],i=new We,r=new We;return function(s,o=null,l=null){const d=o||l?i:null;if(this.intersectsTriangle(s,d,!0))return(o||l)&&(o&&d.getCenter(o),l&&d.getCenter(l)),0;let c=1/0;for(let u=0;u<3;u++){let f;const p=t[u],h=s[p];this.closestPointToPoint(h,a),f=h.distanceToSquared(a),f<c&&(c=f,o&&o.copy(a),l&&l.copy(h));const y=this[p];s.closestPointToPoint(y,a),f=y.distanceToSquared(a),f<c&&(c=f,o&&o.copy(y),l&&l.copy(a))}for(let u=0;u<3;u++){const f=t[u],p=t[(u+1)%3];i.set(this[f],this[p]);for(let h=0;h<3;h++){const y=t[h],x=t[(h+1)%3];r.set(s[y],s[x]),Cs(i,r,a,e);const b=a.distanceToSquared(e);b<c&&(c=b,o&&o.copy(a),l&&l.copy(e))}}return Math.sqrt(c)}})();class oe{constructor(e,t,i){this.isOrientedBox=!0,this.min=new A,this.max=new A,this.matrix=new W,this.invMatrix=new W,this.points=new Array(8).fill().map(()=>new A),this.satAxes=new Array(3).fill().map(()=>new A),this.satBounds=new Array(3).fill().map(()=>new Qe),this.alignedSatBounds=new Array(3).fill().map(()=>new Qe),this.needsUpdate=!1,e&&this.min.copy(e),t&&this.max.copy(t),i&&this.matrix.copy(i)}set(e,t,i){this.min.copy(e),this.max.copy(t),this.matrix.copy(i),this.needsUpdate=!0}copy(e){this.min.copy(e.min),this.max.copy(e.max),this.matrix.copy(e.matrix),this.needsUpdate=!0}}oe.prototype.update=(function(){return function(){const e=this.matrix,t=this.min,i=this.max,r=this.points;for(let d=0;d<=1;d++)for(let c=0;c<=1;c++)for(let u=0;u<=1;u++){const f=1*d|2*c|4*u,p=r[f];p.x=d?i.x:t.x,p.y=c?i.y:t.y,p.z=u?i.z:t.z,p.applyMatrix4(e)}const n=this.satBounds,s=this.satAxes,o=r[0];for(let d=0;d<3;d++){const c=s[d],u=n[d],f=1<<d,p=r[f];c.subVectors(o,p),u.setFromPoints(c,r)}const l=this.alignedSatBounds;l[0].setFromPointsField(r,"x"),l[1].setFromPointsField(r,"y"),l[2].setFromPointsField(r,"z"),this.invMatrix.copy(this.matrix).invert(),this.needsUpdate=!1}})();oe.prototype.intersectsBox=(function(){const a=new Qe;return function(t){this.needsUpdate&&this.update();const i=t.min,r=t.max,n=this.satBounds,s=this.satAxes,o=this.alignedSatBounds;if(a.min=i.x,a.max=r.x,o[0].isSeparated(a)||(a.min=i.y,a.max=r.y,o[1].isSeparated(a))||(a.min=i.z,a.max=r.z,o[2].isSeparated(a)))return!1;for(let l=0;l<3;l++){const d=s[l],c=n[l];if(a.setFromBox(d,t),c.isSeparated(a))return!1}return!0}})();oe.prototype.intersectsTriangle=(function(){const a=new xe,e=new Array(3),t=new Qe,i=new Qe,r=new A;return function(s){this.needsUpdate&&this.update(),s.isExtendedTriangle?s.needsUpdate&&s.update():(a.copy(s),a.update(),s=a);const o=this.satBounds,l=this.satAxes;e[0]=s.a,e[1]=s.b,e[2]=s.c;for(let f=0;f<3;f++){const p=o[f],h=l[f];if(t.setFromPoints(h,e),p.isSeparated(t))return!1}const d=s.satBounds,c=s.satAxes,u=this.points;for(let f=0;f<3;f++){const p=d[f],h=c[f];if(t.setFromPoints(h,u),p.isSeparated(t))return!1}for(let f=0;f<3;f++){const p=l[f];for(let h=0;h<4;h++){const y=c[h];if(r.crossVectors(p,y),t.setFromPoints(r,e),i.setFromPoints(r,u),t.isSeparated(i))return!1}}return!0}})();oe.prototype.closestPointToPoint=(function(){return function(e,t){return this.needsUpdate&&this.update(),t.copy(e).applyMatrix4(this.invMatrix).clamp(this.min,this.max).applyMatrix4(this.matrix),t}})();oe.prototype.distanceToPoint=(function(){const a=new A;return function(t){return this.closestPointToPoint(t,a),t.distanceTo(a)}})();oe.prototype.distanceToBox=(function(){const a=["x","y","z"],e=new Array(12).fill().map(()=>new We),t=new Array(12).fill().map(()=>new We),i=new A,r=new A;return function(s,o=0,l=null,d=null){if(this.needsUpdate&&this.update(),this.intersectsBox(s))return(l||d)&&(s.getCenter(r),this.closestPointToPoint(r,i),s.closestPointToPoint(i,r),l&&l.copy(i),d&&d.copy(r)),0;const c=o*o,u=s.min,f=s.max,p=this.points;let h=1/0;for(let x=0;x<8;x++){const b=p[x];r.copy(b).clamp(u,f);const m=b.distanceToSquared(r);if(m<h&&(h=m,l&&l.copy(b),d&&d.copy(r),m<c))return Math.sqrt(m)}let y=0;for(let x=0;x<3;x++)for(let b=0;b<=1;b++)for(let m=0;m<=1;m++){const v=(x+1)%3,g=(x+2)%3,w=b<<v|m<<g,R=1<<x|b<<v|m<<g,S=p[w],C=p[R];e[y].set(S,C);const T=a[x],$=a[v],_=a[g],P=t[y],F=P.start,L=P.end;F[T]=u[T],F[$]=b?u[$]:f[$],F[_]=m?u[_]:f[_],L[T]=f[T],L[$]=b?u[$]:f[$],L[_]=m?u[_]:f[_],y++}for(let x=0;x<=1;x++)for(let b=0;b<=1;b++)for(let m=0;m<=1;m++){r.x=x?f.x:u.x,r.y=b?f.y:u.y,r.z=m?f.z:u.z,this.closestPointToPoint(r,i);const v=r.distanceToSquared(i);if(v<h&&(h=v,l&&l.copy(i),d&&d.copy(r),v<c))return Math.sqrt(v)}for(let x=0;x<12;x++){const b=e[x];for(let m=0;m<12;m++){const v=t[m];Cs(b,v,i,r);const g=i.distanceToSquared(r);if(g<h&&(h=g,l&&l.copy(i),d&&d.copy(r),g<c))return Math.sqrt(g)}}return Math.sqrt(h)}})();class Wl extends _s{constructor(){super(()=>new xe)}}const me=new Wl,Zt=new A,Er=new A;function ql(a,e,t={},i=0,r=1/0){const n=i*i,s=r*r;let o=1/0,l=null;if(a.shapecast({boundsTraverseOrder:c=>(Zt.copy(e).clamp(c.min,c.max),Zt.distanceToSquared(e)),intersectsBounds:(c,u,f)=>f<o&&f<s,intersectsTriangle:(c,u)=>{c.closestPointToPoint(e,Zt);const f=e.distanceToSquared(Zt);return f<o&&(Er.copy(Zt),o=f,l=u),f<n}}),o===1/0)return null;const d=Math.sqrt(o);return t.point?t.point.copy(Er):t.point=Er.clone(),t.distance=d,t.faceIndex=l,t}const Mi=parseInt(mr)>=169,Ql=parseInt(mr)<=161,nt=new A,at=new A,ot=new A,Pi=new G,Bi=new G,Ai=new G,un=new A,dn=new A,fn=new A,Jt=new A;function jl(a,e,t,i,r,n,s,o){let l;if(n===ys?l=a.intersectTriangle(i,t,e,!0,r):l=a.intersectTriangle(e,t,i,n!==ma,r),l===null)return null;const d=a.origin.distanceTo(r);return d<s||d>o?null:{distance:d,point:r.clone()}}function hn(a,e,t,i,r,n,s,o,l,d,c){nt.fromBufferAttribute(e,n),at.fromBufferAttribute(e,s),ot.fromBufferAttribute(e,o);const u=jl(a,nt,at,ot,Jt,l,d,c);if(u){if(i){Pi.fromBufferAttribute(i,n),Bi.fromBufferAttribute(i,s),Ai.fromBufferAttribute(i,o),u.uv=new G;const p=Te.getInterpolation(Jt,nt,at,ot,Pi,Bi,Ai,u.uv);Mi||(u.uv=p)}if(r){Pi.fromBufferAttribute(r,n),Bi.fromBufferAttribute(r,s),Ai.fromBufferAttribute(r,o),u.uv1=new G;const p=Te.getInterpolation(Jt,nt,at,ot,Pi,Bi,Ai,u.uv1);Mi||(u.uv1=p),Ql&&(u.uv2=u.uv1)}if(t){un.fromBufferAttribute(t,n),dn.fromBufferAttribute(t,s),fn.fromBufferAttribute(t,o),u.normal=new A;const p=Te.getInterpolation(Jt,nt,at,ot,un,dn,fn,u.normal);u.normal.dot(a.direction)>0&&u.normal.multiplyScalar(-1),Mi||(u.normal=p)}const f={a:n,b:s,c:o,normal:new A,materialIndex:0};if(Te.getNormal(nt,at,ot,f.normal),u.face=f,u.faceIndex=n,Mi){const p=new A;Te.getBarycoord(Jt,nt,at,ot,p),u.barycoord=p}}return u}function pn(a){return a&&a.isMaterial?a.side:a}function vr(a,e,t,i,r,n,s){const o=i*3;let l=o+0,d=o+1,c=o+2;const{index:u,groups:f}=a;a.index&&(l=u.getX(l),d=u.getX(d),c=u.getX(c));const{position:p,normal:h,uv:y,uv1:x}=a.attributes;if(Array.isArray(e)){const b=i*3;for(let m=0,v=f.length;m<v;m++){const{start:g,count:w,materialIndex:R}=f[m];if(b>=g&&b<g+w){const S=pn(e[R]),C=hn(t,p,h,y,x,l,d,c,S,n,s);if(C)if(C.faceIndex=i,C.face.materialIndex=R,r)r.push(C);else return C}}}else{const b=pn(e),m=hn(t,p,h,y,x,l,d,c,b,n,s);if(m)if(m.faceIndex=i,m.face.materialIndex=0,r)r.push(m);else return m}return null}function Z(a,e,t,i){const r=a.a,n=a.b,s=a.c;let o=e,l=e+1,d=e+2;t&&(o=t.getX(o),l=t.getX(l),d=t.getX(d)),r.x=i.getX(o),r.y=i.getY(o),r.z=i.getZ(o),n.x=i.getX(l),n.y=i.getY(l),n.z=i.getZ(l),s.x=i.getX(d),s.y=i.getY(d),s.z=i.getZ(d)}function Gl(a,e,t,i,r,n,s,o){const{geometry:l,_indirectBuffer:d}=a;for(let c=i,u=i+r;c<u;c++)vr(l,e,t,c,n,s,o)}function Kl(a,e,t,i,r,n,s){const{geometry:o,_indirectBuffer:l}=a;let d=1/0,c=null;for(let u=i,f=i+r;u<f;u++){let p;p=vr(o,e,t,u,null,n,s),p&&p.distance<d&&(c=p,d=p.distance)}return c}function Xl(a,e,t,i,r,n,s){const{geometry:o}=t,{index:l}=o,d=o.attributes.position;for(let c=a,u=e+a;c<u;c++){let f;if(f=c,Z(s,f*3,l,d),s.needsUpdate=!0,i(s,f,r,n))return!0}return!1}function Yl(a,e=null){e&&Array.isArray(e)&&(e=new Set(e));const t=a.geometry,i=t.index?t.index.array:null,r=t.attributes.position;let n,s,o,l,d=0;const c=a._roots;for(let f=0,p=c.length;f<p;f++)n=c[f],s=new Uint32Array(n),o=new Uint16Array(n),l=new Float32Array(n),u(0,d),d+=n.byteLength;function u(f,p,h=!1){const y=f*2;if(Q(y,o)){const x=J(f,s),b=re(y,o);let m=1/0,v=1/0,g=1/0,w=-1/0,R=-1/0,S=-1/0;for(let C=3*x,D=3*(x+b);C<D;C++){let T=i[C];const $=r.getX(T),_=r.getY(T),P=r.getZ(T);$<m&&(m=$),$>w&&(w=$),_<v&&(v=_),_>R&&(R=_),P<g&&(g=P),P>S&&(S=P)}return l[f+0]!==m||l[f+1]!==v||l[f+2]!==g||l[f+3]!==w||l[f+4]!==R||l[f+5]!==S?(l[f+0]=m,l[f+1]=v,l[f+2]=g,l[f+3]=w,l[f+4]=R,l[f+5]=S,!0):!1}else{const x=X(f),b=Y(f,s);let m=h,v=!1,g=!1;if(e){if(!m){const T=x/H+p/ne,$=b/H+p/ne;v=e.has(T),g=e.has($),m=!v&&!g}}else v=!0,g=!0;const w=m||v,R=m||g;let S=!1;w&&(S=u(x,p,m));let C=!1;R&&(C=u(b,p,m));const D=S||C;if(D)for(let T=0;T<3;T++){const $=x+T,_=b+T,P=l[$],F=l[$+3],L=l[_],U=l[_+3];l[f+T]=P<L?P:L,l[f+T+3]=F>U?F:U}return D}}}function ye(a,e,t,i,r){let n,s,o,l,d,c;const u=1/t.direction.x,f=1/t.direction.y,p=1/t.direction.z,h=t.origin.x,y=t.origin.y,x=t.origin.z;let b=e[a],m=e[a+3],v=e[a+1],g=e[a+3+1],w=e[a+2],R=e[a+3+2];return u>=0?(n=(b-h)*u,s=(m-h)*u):(n=(m-h)*u,s=(b-h)*u),f>=0?(o=(v-y)*f,l=(g-y)*f):(o=(g-y)*f,l=(v-y)*f),n>l||o>s||((o>n||isNaN(n))&&(n=o),(l<s||isNaN(s))&&(s=l),p>=0?(d=(w-x)*p,c=(R-x)*p):(d=(R-x)*p,c=(w-x)*p),n>c||d>s)?!1:((d>n||n!==n)&&(n=d),(c<s||s!==s)&&(s=c),n<=r&&s>=i)}function Zl(a,e,t,i,r,n,s,o){const{geometry:l,_indirectBuffer:d}=a;for(let c=i,u=i+r;c<u;c++){let f=d?d[c]:c;vr(l,e,t,f,n,s,o)}}function Jl(a,e,t,i,r,n,s){const{geometry:o,_indirectBuffer:l}=a;let d=1/0,c=null;for(let u=i,f=i+r;u<f;u++){let p;p=vr(o,e,t,l?l[u]:u,null,n,s),p&&p.distance<d&&(c=p,d=p.distance)}return c}function ec(a,e,t,i,r,n,s){const{geometry:o}=t,{index:l}=o,d=o.attributes.position;for(let c=a,u=e+a;c<u;c++){let f;if(f=t.resolveTriangleIndex(c),Z(s,f*3,l,d),s.needsUpdate=!0,i(s,f,r,n))return!0}return!1}function tc(a,e,t,i,r,n,s){V.setBuffer(a._roots[e]),ye(0,V.float32Array,i,n,s)&&os(0,a,t,i,r,n,s),V.clearBuffer()}function os(a,e,t,i,r,n,s){const{float32Array:o,uint16Array:l,uint32Array:d}=V,c=a*2;if(Q(c,l)){const f=J(a,d),p=re(c,l);Gl(e,t,i,f,p,r,n,s)}else{const f=X(a);ye(f,o,i,n,s)&&os(f,e,t,i,r,n,s);const p=Y(a,d);ye(p,o,i,n,s)&&os(p,e,t,i,r,n,s)}}const ic=["x","y","z"];function rc(a,e,t,i,r,n){V.setBuffer(a._roots[e]);let s=null;return ye(0,V.float32Array,i,r,n)&&(s=ls(0,a,t,i,r,n)),V.clearBuffer(),s}function ls(a,e,t,i,r,n){const{float32Array:s,uint16Array:o,uint32Array:l}=V;let d=a*2;if(Q(d,o)){const u=J(a,l),f=re(d,o);return Kl(e,t,i,u,f,r,n)}else{const u=Ts(a,l),f=ic[u],h=i.direction[f]>=0;let y,x;h?(y=X(a),x=Y(a,l)):(y=Y(a,l),x=X(a));const m=ye(y,s,i,r,n)?ls(y,e,t,i,r,n):null;if(m){const w=m.point[f];if(h?w<=s[x+u]:w>=s[x+u+3])return m}const g=ye(x,s,i,r,n)?ls(x,e,t,i,r,n):null;return m&&g?m.distance<=g.distance?m:g:m||g||null}}const Fi=new ve,At=new xe,Ft=new xe,ei=new W,mn=new oe,Ni=new oe;function sc(a,e,t,i){V.setBuffer(a._roots[e]);const r=cs(0,a,t,i);return V.clearBuffer(),r}function cs(a,e,t,i,r=null){const{float32Array:n,uint16Array:s,uint32Array:o}=V;let l=a*2;if(r===null&&(t.boundingBox||t.computeBoundingBox(),mn.set(t.boundingBox.min,t.boundingBox.max,i),r=mn),Q(l,s)){const c=e.geometry,u=c.index,f=c.attributes.position,p=t.index,h=t.attributes.position,y=J(a,o),x=re(l,s);if(ei.copy(i).invert(),t.boundsTree)return j(a,n,Ni),Ni.matrix.copy(ei),Ni.needsUpdate=!0,t.boundsTree.shapecast({intersectsBounds:m=>Ni.intersectsBox(m),intersectsTriangle:m=>{m.a.applyMatrix4(i),m.b.applyMatrix4(i),m.c.applyMatrix4(i),m.needsUpdate=!0;for(let v=y*3,g=(x+y)*3;v<g;v+=3)if(Z(Ft,v,u,f),Ft.needsUpdate=!0,m.intersectsTriangle(Ft))return!0;return!1}});{const b=yr(t);for(let m=y*3,v=(x+y)*3;m<v;m+=3){Z(At,m,u,f),At.a.applyMatrix4(ei),At.b.applyMatrix4(ei),At.c.applyMatrix4(ei),At.needsUpdate=!0;for(let g=0,w=b*3;g<w;g+=3)if(Z(Ft,g,p,h),Ft.needsUpdate=!0,At.intersectsTriangle(Ft))return!0}}}else{const c=X(a),u=Y(a,o);return j(c,n,Fi),!!(r.intersectsBox(Fi)&&cs(c,e,t,i,r)||(j(u,n,Fi),r.intersectsBox(Fi)&&cs(u,e,t,i,r)))}}const Li=new W,kr=new oe,ti=new oe,nc=new A,ac=new A,oc=new A,lc=new A;function cc(a,e,t,i={},r={},n=0,s=1/0){e.boundingBox||e.computeBoundingBox(),kr.set(e.boundingBox.min,e.boundingBox.max,t),kr.needsUpdate=!0;const o=a.geometry,l=o.attributes.position,d=o.index,c=e.attributes.position,u=e.index,f=me.getPrimitive(),p=me.getPrimitive();let h=nc,y=ac,x=null,b=null;r&&(x=oc,b=lc);let m=1/0,v=null,g=null;return Li.copy(t).invert(),ti.matrix.copy(Li),a.shapecast({boundsTraverseOrder:w=>kr.distanceToBox(w),intersectsBounds:(w,R,S)=>S<m&&S<s?(R&&(ti.min.copy(w.min),ti.max.copy(w.max),ti.needsUpdate=!0),!0):!1,intersectsRange:(w,R)=>{if(e.boundsTree)return e.boundsTree.shapecast({boundsTraverseOrder:C=>ti.distanceToBox(C),intersectsBounds:(C,D,T)=>T<m&&T<s,intersectsRange:(C,D)=>{for(let T=C,$=C+D;T<$;T++){Z(p,3*T,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let _=w,P=w+R;_<P;_++){Z(f,3*_,d,l),f.needsUpdate=!0;const F=f.distanceToTriangle(p,h,x);if(F<m&&(y.copy(h),b&&b.copy(x),m=F,v=_,g=T),F<n)return!0}}}});{const S=yr(e);for(let C=0,D=S;C<D;C++){Z(p,3*C,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let T=w,$=w+R;T<$;T++){Z(f,3*T,d,l),f.needsUpdate=!0;const _=f.distanceToTriangle(p,h,x);if(_<m&&(y.copy(h),b&&b.copy(x),m=_,v=T,g=C),_<n)return!0}}}}}),me.releasePrimitive(f),me.releasePrimitive(p),m===1/0?null:(i.point?i.point.copy(y):i.point=y.clone(),i.distance=m,i.faceIndex=v,r&&(r.point?r.point.copy(b):r.point=b.clone(),r.point.applyMatrix4(Li),y.applyMatrix4(Li),r.distance=y.sub(r.point).length(),r.faceIndex=g),i)}function uc(a,e=null){e&&Array.isArray(e)&&(e=new Set(e));const t=a.geometry,i=t.index?t.index.array:null,r=t.attributes.position;let n,s,o,l,d=0;const c=a._roots;for(let f=0,p=c.length;f<p;f++)n=c[f],s=new Uint32Array(n),o=new Uint16Array(n),l=new Float32Array(n),u(0,d),d+=n.byteLength;function u(f,p,h=!1){const y=f*2;if(Q(y,o)){const x=J(f,s),b=re(y,o);let m=1/0,v=1/0,g=1/0,w=-1/0,R=-1/0,S=-1/0;for(let C=x,D=x+b;C<D;C++){const T=3*a.resolveTriangleIndex(C);for(let $=0;$<3;$++){let _=T+$;_=i?i[_]:_;const P=r.getX(_),F=r.getY(_),L=r.getZ(_);P<m&&(m=P),P>w&&(w=P),F<v&&(v=F),F>R&&(R=F),L<g&&(g=L),L>S&&(S=L)}}return l[f+0]!==m||l[f+1]!==v||l[f+2]!==g||l[f+3]!==w||l[f+4]!==R||l[f+5]!==S?(l[f+0]=m,l[f+1]=v,l[f+2]=g,l[f+3]=w,l[f+4]=R,l[f+5]=S,!0):!1}else{const x=X(f),b=Y(f,s);let m=h,v=!1,g=!1;if(e){if(!m){const T=x/H+p/ne,$=b/H+p/ne;v=e.has(T),g=e.has($),m=!v&&!g}}else v=!0,g=!0;const w=m||v,R=m||g;let S=!1;w&&(S=u(x,p,m));let C=!1;R&&(C=u(b,p,m));const D=S||C;if(D)for(let T=0;T<3;T++){const $=x+T,_=b+T,P=l[$],F=l[$+3],L=l[_],U=l[_+3];l[f+T]=P<L?P:L,l[f+T+3]=F>U?F:U}return D}}}function dc(a,e,t,i,r,n,s){V.setBuffer(a._roots[e]),ye(0,V.float32Array,i,n,s)&&us(0,a,t,i,r,n,s),V.clearBuffer()}function us(a,e,t,i,r,n,s){const{float32Array:o,uint16Array:l,uint32Array:d}=V,c=a*2;if(Q(c,l)){const f=J(a,d),p=re(c,l);Zl(e,t,i,f,p,r,n,s)}else{const f=X(a);ye(f,o,i,n,s)&&us(f,e,t,i,r,n,s);const p=Y(a,d);ye(p,o,i,n,s)&&us(p,e,t,i,r,n,s)}}const fc=["x","y","z"];function hc(a,e,t,i,r,n){V.setBuffer(a._roots[e]);let s=null;return ye(0,V.float32Array,i,r,n)&&(s=ds(0,a,t,i,r,n)),V.clearBuffer(),s}function ds(a,e,t,i,r,n){const{float32Array:s,uint16Array:o,uint32Array:l}=V;let d=a*2;if(Q(d,o)){const u=J(a,l),f=re(d,o);return Jl(e,t,i,u,f,r,n)}else{const u=Ts(a,l),f=fc[u],h=i.direction[f]>=0;let y,x;h?(y=X(a),x=Y(a,l)):(y=Y(a,l),x=X(a));const m=ye(y,s,i,r,n)?ds(y,e,t,i,r,n):null;if(m){const w=m.point[f];if(h?w<=s[x+u]:w>=s[x+u+3])return m}const g=ye(x,s,i,r,n)?ds(x,e,t,i,r,n):null;return m&&g?m.distance<=g.distance?m:g:m||g||null}}const zi=new ve,Nt=new xe,Lt=new xe,ii=new W,gn=new oe,Ei=new oe;function pc(a,e,t,i){V.setBuffer(a._roots[e]);const r=fs(0,a,t,i);return V.clearBuffer(),r}function fs(a,e,t,i,r=null){const{float32Array:n,uint16Array:s,uint32Array:o}=V;let l=a*2;if(r===null&&(t.boundingBox||t.computeBoundingBox(),gn.set(t.boundingBox.min,t.boundingBox.max,i),r=gn),Q(l,s)){const c=e.geometry,u=c.index,f=c.attributes.position,p=t.index,h=t.attributes.position,y=J(a,o),x=re(l,s);if(ii.copy(i).invert(),t.boundsTree)return j(a,n,Ei),Ei.matrix.copy(ii),Ei.needsUpdate=!0,t.boundsTree.shapecast({intersectsBounds:m=>Ei.intersectsBox(m),intersectsTriangle:m=>{m.a.applyMatrix4(i),m.b.applyMatrix4(i),m.c.applyMatrix4(i),m.needsUpdate=!0;for(let v=y,g=x+y;v<g;v++)if(Z(Lt,3*e.resolveTriangleIndex(v),u,f),Lt.needsUpdate=!0,m.intersectsTriangle(Lt))return!0;return!1}});{const b=yr(t);for(let m=y,v=x+y;m<v;m++){const g=e.resolveTriangleIndex(m);Z(Nt,3*g,u,f),Nt.a.applyMatrix4(ii),Nt.b.applyMatrix4(ii),Nt.c.applyMatrix4(ii),Nt.needsUpdate=!0;for(let w=0,R=b*3;w<R;w+=3)if(Z(Lt,w,p,h),Lt.needsUpdate=!0,Nt.intersectsTriangle(Lt))return!0}}}else{const c=X(a),u=Y(a,o);return j(c,n,zi),!!(r.intersectsBox(zi)&&fs(c,e,t,i,r)||(j(u,n,zi),r.intersectsBox(zi)&&fs(u,e,t,i,r)))}}const ki=new W,Hr=new oe,ri=new oe,mc=new A,gc=new A,xc=new A,yc=new A;function vc(a,e,t,i={},r={},n=0,s=1/0){e.boundingBox||e.computeBoundingBox(),Hr.set(e.boundingBox.min,e.boundingBox.max,t),Hr.needsUpdate=!0;const o=a.geometry,l=o.attributes.position,d=o.index,c=e.attributes.position,u=e.index,f=me.getPrimitive(),p=me.getPrimitive();let h=mc,y=gc,x=null,b=null;r&&(x=xc,b=yc);let m=1/0,v=null,g=null;return ki.copy(t).invert(),ri.matrix.copy(ki),a.shapecast({boundsTraverseOrder:w=>Hr.distanceToBox(w),intersectsBounds:(w,R,S)=>S<m&&S<s?(R&&(ri.min.copy(w.min),ri.max.copy(w.max),ri.needsUpdate=!0),!0):!1,intersectsRange:(w,R)=>{if(e.boundsTree){const S=e.boundsTree;return S.shapecast({boundsTraverseOrder:C=>ri.distanceToBox(C),intersectsBounds:(C,D,T)=>T<m&&T<s,intersectsRange:(C,D)=>{for(let T=C,$=C+D;T<$;T++){const _=S.resolveTriangleIndex(T);Z(p,3*_,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let P=w,F=w+R;P<F;P++){const L=a.resolveTriangleIndex(P);Z(f,3*L,d,l),f.needsUpdate=!0;const U=f.distanceToTriangle(p,h,x);if(U<m&&(y.copy(h),b&&b.copy(x),m=U,v=P,g=T),U<n)return!0}}}})}else{const S=yr(e);for(let C=0,D=S;C<D;C++){Z(p,3*C,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let T=w,$=w+R;T<$;T++){const _=a.resolveTriangleIndex(T);Z(f,3*_,d,l),f.needsUpdate=!0;const P=f.distanceToTriangle(p,h,x);if(P<m&&(y.copy(h),b&&b.copy(x),m=P,v=T,g=C),P<n)return!0}}}}}),me.releasePrimitive(f),me.releasePrimitive(p),m===1/0?null:(i.point?i.point.copy(y):i.point=y.clone(),i.distance=m,i.faceIndex=v,r&&(r.point?r.point.copy(b):r.point=b.clone(),r.point.applyMatrix4(ki),y.applyMatrix4(ki),r.distance=y.sub(r.point).length(),r.faceIndex=g),i)}function xn(a,e,t){return a===null?null:(a.point.applyMatrix4(e.matrixWorld),a.distance=a.point.distanceTo(t.ray.origin),a.object=e,a)}const Hi=new oe,Ui=new ga,yn=new A,vn=new W,bn=new A,Ur=["getX","getY","getZ"];class gt extends ur{static serialize(e,t={}){t={cloneBuffers:!0,...t};const i=e.geometry,r=e._roots,n=e._indirectBuffer,s=i.getIndex(),o={version:1,roots:null,index:null,indirectBuffer:null};return t.cloneBuffers?(o.roots=r.map(l=>l.slice()),o.index=s?s.array.slice():null,o.indirectBuffer=n?n.slice():null):(o.roots=r,o.index=s?s.array:null,o.indirectBuffer=n),o}static deserialize(e,t,i={}){i={setIndex:!0,indirect:!!e.indirectBuffer,...i};const{index:r,roots:n,indirectBuffer:s}=e;e.version||(console.warn("MeshBVH.deserialize: Serialization format has been changed and will be fixed up. It is recommended to regenerate any stored serialized data."),l(n));const o=new gt(t,{...i,[yi]:!0});if(o._roots=n,o._indirectBuffer=s||null,i.setIndex){const d=t.getIndex();if(d===null){const c=new ut(e.index,1,!1);t.setIndex(c)}else d.array!==r&&(d.array.set(r),d.needsUpdate=!0)}return o;function l(d){for(let c=0;c<d.length;c++){const u=d[c],f=new Uint32Array(u),p=new Uint16Array(u);for(let h=0,y=u.byteLength/ne;h<y;h++){const x=H*h,b=2*x;Q(b,p)||(f[x+6]=f[x+6]/H-h)}}}}get primitiveStride(){return 3}get resolveTriangleIndex(){return this.resolvePrimitiveIndex}constructor(e,t={}){t.maxLeafTris&&(console.warn('MeshBVH: "maxLeafTris" option has been deprecated. Use "targetLeafSize", instead.'),t={...t,targetLeafSize:t.maxLeafTris}),super(e,t)}shiftTriangleOffsets(e){return super.shiftPrimitiveOffsets(e)}writePrimitiveBounds(e,t,i){const r=this.geometry,n=this._indirectBuffer,s=r.attributes.position,o=r.index?r.index.array:null,d=(n?n[e]:e)*3;let c=d+0,u=d+1,f=d+2;o&&(c=o[c],u=o[u],f=o[f]);for(let p=0;p<3;p++){const h=s[Ur[p]](c),y=s[Ur[p]](u),x=s[Ur[p]](f);let b=h;y<b&&(b=y),x<b&&(b=x);let m=h;y>m&&(m=y),x>m&&(m=x),t[i+p]=b,t[i+p+3]=m}return t}computePrimitiveBounds(e,t,i){const r=this.geometry,n=this._indirectBuffer,s=r.attributes.position,o=r.index?r.index.array:null,l=s.normalized;if(e<0||t+e-i.offset>i.length/6)throw new Error("MeshBVH: compute triangle bounds range is invalid.");const d=s.array,c=s.offset||0;let u=3;s.isInterleavedBufferAttribute&&(u=s.data.stride);const f=["getX","getY","getZ"],p=i.offset;for(let h=e,y=e+t;h<y;h++){const b=(n?n[h]:h)*3,m=(h-p)*6;let v=b+0,g=b+1,w=b+2;o&&(v=o[v],g=o[g],w=o[w]),l||(v=v*u+c,g=g*u+c,w=w*u+c);for(let R=0;R<3;R++){let S,C,D;l?(S=s[f[R]](v),C=s[f[R]](g),D=s[f[R]](w)):(S=d[v+R],C=d[g+R],D=d[w+R]);let T=S;C<T&&(T=C),D<T&&(T=D);let $=S;C>$&&($=C),D>$&&($=D);const _=($-T)/2,P=R*2;i[m+P+0]=T+_,i[m+P+1]=_+(Math.abs(T)+_)*sr}}return i}raycastObject3D(e,t,i=[]){const{material:r}=e;if(r===void 0)return;vn.copy(e.matrixWorld).invert(),Ui.copy(t.ray).applyMatrix4(vn),bn.setFromMatrixScale(e.matrixWorld),yn.copy(Ui.direction).multiply(bn);const n=yn.length(),s=t.near/n,o=t.far/n;if(t.firstHitOnly===!0){let l=this.raycastFirst(Ui,r,s,o);l=xn(l,e,t),l&&i.push(l)}else{const l=this.raycast(Ui,r,s,o);for(let d=0,c=l.length;d<c;d++){const u=xn(l[d],e,t);u&&i.push(u)}}return i}refit(e=null){return(this.indirect?uc:Yl)(this,e)}raycast(e,t=ar,i=0,r=1/0){const n=this._roots,s=[],o=this.indirect?dc:tc;for(let l=0,d=n.length;l<d;l++)o(this,l,t,e,s,i,r);return s}raycastFirst(e,t=ar,i=0,r=1/0){const n=this._roots;let s=null;const o=this.indirect?hc:rc;for(let l=0,d=n.length;l<d;l++){const c=o(this,l,t,e,i,r);c!=null&&(s==null||c.distance<s.distance)&&(s=c)}return s}intersectsGeometry(e,t){let i=!1;const r=this._roots,n=this.indirect?pc:sc;for(let s=0,o=r.length;s<o&&(i=n(this,s,e,t),!i);s++);return i}shapecast(e){const t=me.getPrimitive(),i=super.shapecast({...e,intersectsPrimitive:e.intersectsTriangle,scratchPrimitive:t,iterate:this.indirect?ec:Xl});return me.releasePrimitive(t),i}bvhcast(e,t,i){let{intersectsRanges:r,intersectsTriangles:n}=i;const s=me.getPrimitive(),o=this.geometry.index,l=this.geometry.attributes.position,d=this.indirect?h=>{const y=this.resolveTriangleIndex(h);Z(s,y*3,o,l)}:h=>{Z(s,h*3,o,l)},c=me.getPrimitive(),u=e.geometry.index,f=e.geometry.attributes.position,p=e.indirect?h=>{const y=e.resolveTriangleIndex(h);Z(c,y*3,u,f)}:h=>{Z(c,h*3,u,f)};if(n){if(!(e instanceof gt))throw new Error('MeshBVH: "intersectsTriangles" callback can only be used with another MeshBVH.');const h=(y,x,b,m,v,g,w,R)=>{for(let S=b,C=b+m;S<C;S++){p(S),c.a.applyMatrix4(t),c.b.applyMatrix4(t),c.c.applyMatrix4(t),c.needsUpdate=!0;for(let D=y,T=y+x;D<T;D++)if(d(D),s.needsUpdate=!0,n(s,c,D,S,v,g,w,R))return!0}return!1};if(r){const y=r;r=function(x,b,m,v,g,w,R,S){return y(x,b,m,v,g,w,R,S)?!0:h(x,b,m,v,g,w,R,S)}}else r=h}return super.bvhcast(e,t,{intersectsRanges:r})}intersectsBox(e,t){return Hi.set(e.min,e.max,t),Hi.needsUpdate=!0,this.shapecast({intersectsBounds:i=>Hi.intersectsBox(i),intersectsTriangle:i=>Hi.intersectsTriangle(i)})}intersectsSphere(e){return this.shapecast({intersectsBounds:t=>e.intersectsBox(t),intersectsTriangle:t=>t.intersectsSphere(e)})}closestPointToGeometry(e,t,i={},r={},n=0,s=1/0){return(this.indirect?vc:cc)(this,e,t,i,r,n,s)}closestPointToPoint(e,t={},i=0,r=1/0){return ql(this,e,t,i,r)}}const wn=new A,Sn=new A,Tn=new A,He=new ga,In=new W,lt=new A,Vr=new A,bc=["x","y","z"],Vi=parseInt(mr)>=169,wc=parseInt(mr)<=161,Oi=new G,Wi=new G,qi=new G,_n=new A,Rn=new A,Cn=new A;class pi extends ur{get primitiveStride(){return 3}constructor(e,t={}){if(!e.isMesh)throw new Error("SkinnedMeshBVH: First argument must be a Mesh.");super(e.geometry,{...t,[yi]:!0}),this.mesh=e,t[yi]||this.init(t)}writePrimitiveBounds(e,t,i){const{mesh:r,geometry:n}=this,s=this._indirectBuffer,o=n.index?n.index.array:null,d=(s?s[e]:e)*3;let c=d+0,u=d+1,f=d+2;o&&(c=o[c],u=o[u],f=o[f]),r.getVertexPosition(c,wn),r.getVertexPosition(u,Sn),r.getVertexPosition(f,Tn);for(let p=0;p<3;p++){const h=bc[p],y=wn[h],x=Sn[h],b=Tn[h];let m=y;x<m&&(m=x),b<m&&(m=b);let v=y;x>v&&(v=x),b>v&&(v=b),t[i+p]=m,t[i+p+3]=v}return t}shapecast(e){const t=new xe;return super.shapecast({...e,intersectsPrimitive:e.intersectsTriangle,scratchPrimitive:t,iterate:Sc})}raycastObject3D(e,t,i=[]){const{material:r}=e;if(r===void 0)return;const{matrixWorld:n}=e,{firstHitOnly:s}=t;In.copy(n).invert(),He.copy(t.ray).applyMatrix4(In);let o=null,l=1/0;return this.shapecast({boundsTraverseOrder:d=>d.distanceToPoint(He.origin),intersectsBounds:d=>{if(s){if(!He.intersectBox(d,Vr))return fi;let c;return d.containsPoint(He.origin)?c=0:(Vr.applyMatrix4(n),c=t.ray.origin.distanceTo(Vr)),c<l?en:fi}else return He.intersectsBox(d)?en:fi},intersectsTriangle:(d,c)=>{let u=null;if(r.side===ar?u=He.intersectTriangle(d.a,d.b,d.c,!0,lt):r.side===ys?u=He.intersectTriangle(d.c,d.b,d.a,!0,lt):u=He.intersectTriangle(d.a,d.b,d.c,!1,lt),!u)return;u=u.clone().applyMatrix4(n);const f=t.ray.origin.distanceTo(u);if(f>=t.near&&f<=t.far){if(s&&f>=l)return;const{geometry:p}=this,{index:h}=p,y=this.resolvePrimitiveIndex(c),x=y*3;let b=x+0,m=x+1,v=x+2;h&&(b=h.array[b],m=h.array[m],v=h.array[v]);const g={distance:f,point:u.clone(),object:e,uv:null,uv1:null,normal:null,face:{a:b,b:m,c:v,normal:Te.getNormal(d.a,d.b,d.c,new A),materialIndex:0},faceIndex:y};if(Vi){const C=new A;Te.getBarycoord(lt,d.a,d.b,d.c,C),g.barycoord=C}const w=p.attributes.uv,R=p.attributes.uv1,S=p.attributes.normal;if(w){Oi.fromBufferAttribute(w,b),Wi.fromBufferAttribute(w,m),qi.fromBufferAttribute(w,v),g.uv=new G;const C=Te.getInterpolation(lt,d.a,d.b,d.c,Oi,Wi,qi,g.uv);Vi||(g.uv=C)}if(R){Oi.fromBufferAttribute(R,b),Wi.fromBufferAttribute(R,m),qi.fromBufferAttribute(R,v),g.uv1=new G;const C=Te.getInterpolation(lt,d.a,d.b,d.c,Oi,Wi,qi,g.uv1);Vi||(g.uv1=C),wc&&(g.uv2=g.uv1)}if(S){_n.fromBufferAttribute(S,b),Rn.fromBufferAttribute(S,m),Cn.fromBufferAttribute(S,v),g.normal=new A;const C=Te.getInterpolation(lt,d.a,d.b,d.c,_n,Rn,Cn,g.normal);g.normal.dot(He.direction)>0&&g.normal.multiplyScalar(-1),Vi||(g.normal=C)}l=g.distance,o=g,s||i.push(g)}}}),s&&o&&i.push(o),i}}function Sc(a,e,t,i,r,n,s){const{mesh:o,geometry:l}=t,d=l.index?l.index.array:null;for(let c=a,u=e+a;c<u;c++){const f=t.resolvePrimitiveIndex(c);let p=3*f+0,h=3*f+1,y=3*f+2;if(d&&(p=d[p],h=d[h],y=d[y]),o.getVertexPosition(p,s.a),o.getVertexPosition(h,s.b),o.getVertexPosition(y,s.c),s.needsUpdate=!0,i(s,c,r,n))return!0}return!1}const je=new O({min:"array<f32, 3>",max:"array<f32, 3>"},"BVHBoundingBox");je.getLength=()=>6;const wt=new O({leftBounds:"BVHBoundingBox",rightBounds:"BVHBoundingBox",rightChildOrTriangleOffset:"uint",splitAxisOrTriangleCount:"uint",_alignment0:"uint",_alignment1:"uint"},"BVHNode");wt.getLength=()=>2*je.getLength()+4;const Tc=new O({matrixWorld:"mat4x4f",inverseMatrixWorld:"mat4x4f",visible:"uint",_alignment0:"uint",_alignment1:"uint",_alignment2:"uint"},"TransformStruct"),k=new O({origin:"vec3f",direction:"vec3f",maxDist:"float"},"Ray"),Ut=new O({indices:"vec4u",normal:"vec3f",didHit:"bool",barycoord:"vec3f",objectIndex:"uint",side:"float",dist:"float"},"IntersectionResult"),Qi=new O({faceIndices:"vec4u",closestPoint:"vec3f",found:"bool",barycoord:"vec3f",objectIndex:"uint",faceNormal:"vec3f",side:"float",distanceSq:"float"},"PointQueryResult"),Ds=wi(`
+import{w as ve,p as W,e as ut,d as A,c2 as We,c3 as pa,V as G,c4 as Te,br as ys,D as ma,aJ as mi,R as ga,bT as ai,c5 as O,c6 as wr,c7 as M,c8 as vs,c9 as bs,ca as pt,cb as Qo,cc as jo,u as vt,Z as Le,cd as Go,M as lr,G as Ko,s as E,h as N,bK as Xo,B as xa,F as Xs,ce as Sr,cf as Re,cg as qe,ch as Tr,ci as Gt,r as B,cj as Yo,ck as dr,v as ya,aN as Ce,cl as fe,cm as Zo,cn as va,co as ba,cp as bt,bS as Jo,cq as el,cr as ge,aS as xr,cs as tl,ct as is,cu as gi,cv as de,cw as ae,cx as Be,aV as se,ae as tt,aE as oi,aL as rl,q as wa,cy as Ve,cz as Sa,cA as Ta,a9 as il,cB as xi,aa as Ia,Q as sl,cC as li,cD as nl,cE as _a,cF as al,cG as ol,cH as Ra,cI as ll,cJ as Ys,bG as cl,aX as ul,cK as dl,cL as fl,aM as ss,cM as hl,cN as Ca,cO as pl,aR as ml,bJ as Da,cP as ws,cQ as gl,N as xl,i as yl,a4 as Zs,y as vl,a3 as Js,cR as bl,cS as wl,cT as Sl,cU as Tl}from"./twin-CnUP2fdI.js";const $a=0,Il=1,Ot=2,fr=0,en=1,tn=2,Ma=3,Pi=1.25,rn=1,ne=32,H=ne/4,Ss=65535,si=Math.pow(2,-24),yr=Symbol("SKIP_GENERATION"),Pa={strategy:$a,maxDepth:40,targetLeafSize:10,useSharedArrayBuffer:!1,setBoundingBox:!0,onProgress:null,indirect:!1,verbose:!0,range:null,[yr]:!1};function j(a,e,t){return t.min.x=e[a],t.min.y=e[a+1],t.min.z=e[a+2],t.max.x=e[a+3],t.max.y=e[a+4],t.max.z=e[a+5],t}function ns(a){let e=-1,t=-1/0;for(let r=0;r<3;r++){const i=a[r+3]-a[r];i>t&&(t=i,e=r)}return e}function sn(a,e,t){for(let r=0;r<3;r++){const i=e[a+2*r],n=e[a+2*r+1],s=i-n,o=i+n;s<t[r]&&(t[r]=s),o>t[r+3]&&(t[r+3]=o)}}function Bi(a){const e=a[3]-a[0],t=a[4]-a[1],r=a[5]-a[2];return 2*(e*t+t*r+r*e)}function Q(a,e){return e[a+15]===Ss}function J(a,e){return e[a+6]}function ie(a,e){return e[a+14]}function X(a){return a+H}function Y(a,e){const t=e[a+6];return a+t*H}function Ts(a,e){return e[a+7]}function Ai(a,e,t,r,i){let n=1/0,s=1/0,o=1/0,l=-1/0,d=-1/0,c=-1/0,u=1/0,f=1/0,p=1/0,h=-1/0,y=-1/0,x=-1/0;const b=a.offset||0;for(let m=(e-b)*6,v=(e+t-b)*6;m<v;m+=6){const g=a[m+0],w=a[m+1],R=g-w,S=g+w;R<n&&(n=R),S>l&&(l=S),g<u&&(u=g),g>h&&(h=g);const C=a[m+2],D=a[m+3],T=C-D,$=C+D;T<s&&(s=T),$>d&&(d=$),C<f&&(f=C),C>y&&(y=C);const _=a[m+4],P=a[m+5],F=_-P,L=_+P;F<o&&(o=F),L>c&&(c=L),_<p&&(p=_),_>x&&(x=_)}r[0]=n,r[1]=s,r[2]=o,r[3]=l,r[4]=d,r[5]=c,i[0]=u,i[1]=f,i[2]=p,i[3]=h,i[4]=y,i[5]=x}const Pe=8,Is=8,Fi=new Int32Array(Pe),De=new Float32Array(Pe*6),Ct=new Float32Array(Pe*6),be=new Float32Array(6),Cr=new Float32Array(6),Ge=new Int32Array(Is),nn=new Float32Array(Is*6);function _l(a,e,t,r){for(let i=0;i<3;i++){const n=e[a+2*i],s=e[a+2*i+1],o=n-s,l=n+s;o<t[r+i]&&(t[r+i]=o),l>t[r+i+3]&&(t[r+i+3]=l)}}function an(a,e){const t=a[e+3]-a[e],r=a[e+4]-a[e+1],i=a[e+5]-a[e+2];return 2*(t*r+r*i+i*t)}function Rl(a,e,t,r,i,n){let s=-1,o=0;if(n===$a)s=ns(e),s!==-1&&(o=(e[s]+e[s+3])/2);else if(n===Il)s=ns(a),s!==-1&&(o=Cl(t,r,i,s));else if(n===Ot){const l=Bi(a);let d=Pi*i;const c=t.offset||0,u=(r-c)*6,f=(r+i-c)*6;for(let p=0;p<3;p++){const h=e[p],b=(e[p+3]-h)/Pe;if(i<Is){for(let m=0;m<i;m++){const v=u+m*6,g=t[v+2*p];let w=m;for(;w>0&&t[Ge[w-1]+2*p]>g;)Ge[w]=Ge[w-1],w--;Ge[w]=v}for(let m=0;m<3;m++)be[m]=1/0,be[m+3]=-1/0,Cr[m]=1/0,Cr[m+3]=-1/0;for(let m=i-1;m>=0;m--)sn(Ge[m],t,Cr),nn.set(Cr,m*6);for(let m=0;m<i-1;m++){sn(Ge[m],t,be);const v=t[Ge[m+1]+2*p];if(t[Ge[m]+2*p]===v)continue;const g=m+1,w=i-g,R=Bi(be)/l,S=an(nn,g*6)/l,C=rn+Pi*(R*g+S*w);C<d&&(s=p,d=C,o=v)}}else{for(let g=0;g<Pe;g++){Fi[g]=0;for(let w=0;w<3;w++)De[g*6+w]=1/0,De[g*6+w+3]=-1/0}for(let g=u;g<f;g+=6){let S=~~((t[g+2*p]-h)/b);S>=Pe&&(S=Pe-1),Fi[S]++,_l(g,t,De,S*6)}const m=(Pe-1)*6;for(let g=0;g<6;g++)Ct[m+g]=De[m+g];for(let g=Pe-2;g>=0;g--){const w=g*6,R=w+6;for(let S=0;S<3;S++)Ct[w+S]=Math.min(De[w+S],Ct[R+S]),Ct[w+S+3]=Math.max(De[w+S+3],Ct[R+S+3])}let v=0;for(let g=0;g<Pe-1;g++){const w=g*6,R=Fi[g];if(R!==0)for(let $=0;$<3;$++)v===0?(be[$]=De[w+$],be[$+3]=De[w+$+3]):(be[$]=Math.min(be[$],De[w+$]),be[$+3]=Math.max(be[$+3],De[w+$+3]));v+=R;let S=0,C=0;v!==0&&(S=Bi(be)/l);const D=i-v;D!==0&&(C=an(Ct,w+6)/l);const T=rn+Pi*(S*v+C*D);T<d&&(s=p,d=T,o=h+b+g*b)}}}}else console.warn(`BVH: Invalid build strategy value ${n} used.`);return{axis:s,pos:o}}function Cl(a,e,t,r){let i=0;const n=a.offset;for(let s=e,o=e+t;s<o;s++)i+=a[(s-n)*6+r*2];return i/t}function Dl(a,e,t,r,i,n){let s=r,o=r+i-1;const l=n.pos,d=n.axis*2,c=t.offset||0;for(;;){for(;s<=o&&t[(s-c)*6+d]<l;)s++;for(;s<=o&&t[(o-c)*6+d]>=l;)o--;if(s<o){for(let u=0;u<e;u++){let f=a[s*e+u];a[s*e+u]=a[o*e+u],a[o*e+u]=f}for(let u=0;u<6;u++){const f=s-c,p=o-c,h=t[f*6+u];t[f*6+u]=t[p*6+u],t[p*6+u]=h}s++,o--}else return s}}const $l=Math.pow(2,32),Dt=new Float32Array(6),Dr=new Float32Array(6);function Ml(a,e,t,r,i,n){const{maxDepth:s,verbose:o,targetLeafSize:l,_strictLeafSize:d=1/0,strategy:c,onProgress:u,useSharedArrayBuffer:f=!1}=i,p=a.primitiveBuffer,h=a.primitiveBufferStride,y=f?SharedArrayBuffer:ArrayBuffer,x=new y(ne*Math.max(1,2*Math.ceil(r)-1)),b=new Float32Array(x),m=new Uint32Array(x),v=new Uint16Array(x);let g=0,w=!1;return Ai(e,t,r,Dt,Dr),C(t,r,0),x.slice(0,g*ne);function R(D){u&&u((D-n.offset)/n.count)}function S(D,T,$){const _=D*2;m[D+6]=T,v[_+14]=$,v[_+15]=Ss,R(T+$)}function C(D,T,$){const _=g++,P=_*H;b.set(Dt,P),!w&&$>=s&&(w=!0,o&&console.warn(`BVH: Max depth of ${s} reached when generating BVH. Consider increasing maxDepth.`));const F=T>d;if(T<=l&&!F||$>=s){S(P,D,T);return}const L=Rl(Dt,Dr,e,D,T,c);let U=L.axis===-1?-1:Dl(p,h,e,D,T,L);if(L.axis===-1||U===D||U===D+T){if(!F){S(P,D,T);return}L.axis=Math.max(0,ns(Dt)),U=D+Math.max(1,Math.floor(T/2))}m[P+7]=L.axis;const z=U-D;Ai(e,D,z,Dt,Dr),C(D,z,$+1);const Ee=g-_;if(Ee>$l)throw new Error("MeshBVH: Cannot store relative child node offset greater than 32 bits.");m[P+6]=Ee;const ke=T-z;Ai(e,U,ke,Dt,Dr),C(U,ke,$+1)}}function Pl(a,e){const t=a.getRootRanges(e.range),r=t[0],i=t[t.length-1],n={offset:r.offset,count:i.offset+i.count-r.offset},s=new Float32Array(6*n.count);s.offset=n.offset,a.computePrimitiveBounds(n.offset,n.count,s),a._roots=t.map(o=>Ml(a,s,o.offset,o.count,e,n))}class _s{constructor(e){this._getNewPrimitive=e,this._primitives=[]}getPrimitive(){const e=this._primitives;return e.length===0?this._getNewPrimitive():e.pop()}releasePrimitive(e){this._primitives.push(e)}}class Bl{constructor(){this.float32Array=null,this.uint16Array=null,this.uint32Array=null;const e=[];let t=null;this.setBuffer=r=>{t&&e.push(t),t=r,this.float32Array=new Float32Array(r),this.uint16Array=new Uint16Array(r),this.uint32Array=new Uint32Array(r)},this.clearBuffer=()=>{t=null,this.float32Array=null,this.uint16Array=null,this.uint32Array=null,e.length!==0&&this.setBuffer(e.pop())}}}const V=new Bl;let Je,Ht;const $t=[],$r=new _s(()=>new ve);function Al(a,e,t,r,i,n){Je=$r.getPrimitive(),Ht=$r.getPrimitive(),$t.push(Je,Ht),V.setBuffer(a._roots[e]);const s=as(0,a.geometry,t,r,i,n);V.clearBuffer(),$r.releasePrimitive(Je),$r.releasePrimitive(Ht),$t.pop(),$t.pop();const o=$t.length;return o>0&&(Ht=$t[o-1],Je=$t[o-2]),s}function as(a,e,t,r,i=null,n=0,s=0){const{float32Array:o,uint16Array:l,uint32Array:d}=V;let c=a*2;if(Q(c,l)){const f=J(a,d),p=ie(c,l);return j(a,o,Je),r(f,p,!1,s,n+a/H,Je)}else{let T=function(_){const{uint16Array:P,uint32Array:F}=V;let L=_*2;for(;!Q(L,P);)_=X(_),L=_*2;return J(_,F)},$=function(_){const{uint16Array:P,uint32Array:F}=V;let L=_*2;for(;!Q(L,P);)_=Y(_,F),L=_*2;return J(_,F)+ie(L,P)};const f=X(a),p=Y(a,d);let h=f,y=p,x,b,m,v;if(i&&(m=Je,v=Ht,j(h,o,m),j(y,o,v),x=i(m),b=i(v),b<x)){h=p,y=f;const _=x;x=b,b=_,m=v}m||(m=Je,j(h,o,m));const g=Q(h*2,l),w=t(m,g,x,s+1,n+h/H);let R;if(w===tn){const _=T(h),F=$(h)-_;R=r(_,F,!0,s+1,n+h/H,m)}else R=w&&as(h,e,t,r,i,n,s+1);if(R)return!0;v=Ht,j(y,o,v);const S=Q(y*2,l),C=t(v,S,b,s+1,n+y/H);let D;if(C===tn){const _=T(y),F=$(y)-_;D=r(_,F,!0,s+1,n+y/H,v)}else D=C&&as(y,e,t,r,i,n,s+1);return!!D}}const hr=new V.constructor,ci=new V.constructor,Ye=new _s(()=>new ve),Mt=new ve,Pt=new ve,Ni=new ve,Li=new ve;let zi=!1;function Fl(a,e,t,r){if(zi)throw new Error("MeshBVH: Recursive calls to bvhcast not supported.");zi=!0;const i=a._roots,n=e._roots;let s,o=0,l=0;const d=new W().copy(t).invert();for(let c=0,u=i.length;c<u;c++){hr.setBuffer(i[c]),l=0;const f=Ye.getPrimitive();j(0,hr.float32Array,f),f.applyMatrix4(d);for(let p=0,h=n.length;p<h&&(ci.setBuffer(n[p]),s=Se(0,0,t,d,r,o,l,0,0,f),ci.clearBuffer(),l+=n[p].byteLength/ne,!s);p++);if(Ye.releasePrimitive(f),hr.clearBuffer(),o+=i[c].byteLength/ne,s)break}return zi=!1,s}function Se(a,e,t,r,i,n=0,s=0,o=0,l=0,d=null,c=!1){let u,f;c?(u=ci,f=hr):(u=hr,f=ci);const p=u.float32Array,h=u.uint32Array,y=u.uint16Array,x=f.float32Array,b=f.uint32Array,m=f.uint16Array,v=a*2,g=e*2,w=Q(v,y),R=Q(g,m);let S=!1;if(R&&w)c?S=i(J(e,b),ie(e*2,m),J(a,h),ie(a*2,y),l,s+e/H,o,n+a/H):S=i(J(a,h),ie(a*2,y),J(e,b),ie(e*2,m),o,n+a/H,l,s+e/H);else if(R){const C=Ye.getPrimitive();j(e,x,C),C.applyMatrix4(t);const D=X(a),T=Y(a,h);j(D,p,Mt),j(T,p,Pt);const $=C.intersectsBox(Mt),_=C.intersectsBox(Pt);S=$&&Se(e,D,r,t,i,s,n,l,o+1,C,!c)||_&&Se(e,T,r,t,i,s,n,l,o+1,C,!c),Ye.releasePrimitive(C)}else{const C=X(e),D=Y(e,b);j(C,x,Ni),j(D,x,Li);const T=d.intersectsBox(Ni),$=d.intersectsBox(Li);if(T&&$)S=Se(a,C,t,r,i,n,s,o,l+1,d,c)||Se(a,D,t,r,i,n,s,o,l+1,d,c);else if(T)if(w)S=Se(a,C,t,r,i,n,s,o,l+1,d,c);else{const _=Ye.getPrimitive();_.copy(Ni).applyMatrix4(t);const P=X(a),F=Y(a,h);j(P,p,Mt),j(F,p,Pt);const L=_.intersectsBox(Mt),U=_.intersectsBox(Pt);S=L&&Se(C,P,r,t,i,s,n,l,o+1,_,!c)||U&&Se(C,F,r,t,i,s,n,l,o+1,_,!c),Ye.releasePrimitive(_)}else if($)if(w)S=Se(a,D,t,r,i,n,s,o,l+1,d,c);else{const _=Ye.getPrimitive();_.copy(Li).applyMatrix4(t);const P=X(a),F=Y(a,h);j(P,p,Mt),j(F,p,Pt);const L=_.intersectsBox(Mt),U=_.intersectsBox(Pt);S=L&&Se(D,P,r,t,i,s,n,l,o+1,_,!c)||U&&Se(D,F,r,t,i,s,n,l,o+1,_,!c),Ye.releasePrimitive(_)}}return S}const Ze=new class{constructor(){let a=null,e=null,t=null,r=!1;this.root=null,this.buffer=null,this.uint32Array=null,this.uint16Array=null,this.setBVH=(n,s)=>{if(r)throw new Error("BVHTraversalHelper: cannot call setBVH during an active traversal.");this.root=s,this.buffer=a=n._roots[s],this.uint16Array=t=new Uint16Array(a),this.uint32Array=e=new Uint32Array(a)},this.reset=()=>{this.root=null,this.buffer=a=null,this.uint16Array=t=null,this.uint32Array=e=null},this.getRangeStart=n=>{let s=n*2;for(;!Q(s,t);)n=X(n),s=n*2;return J(n,e)},this.getRangeEnd=n=>{let s=n*2;for(;!Q(s,t);)n=Y(n,e),s=n*2;return J(n,e)+ie(s,t)};const i=(n,s,o)=>{const l=s*2,d=Q(l,t);if(!n(o,d,s)&&!d){const u=X(s),f=Y(s,e);i(n,u,o+1),i(n,f,o+1)}};this.traverseBuffer=n=>{if(r)throw new Error("BVHTraversalHelper: cannot start a traversal during an active traversal.");r=!0;try{i(n,0,0)}finally{r=!1}},this.traverse=n=>{this.traverseBuffer((s,o,l)=>{if(o){const d=l*2,c=e[l+6],u=t[d+14];return n(s,o,new Float32Array(a,l*4,6),c,u)}else{const d=Ts(l,e);return n(s,o,new Float32Array(a,l*4,6),d)}})}}},on=new ve,Bt=new Float32Array(6);class Ba{constructor(){this._roots=null,this.primitiveBuffer=null,this.primitiveBufferStride=null}init(e){e={...Pa,...e},"maxLeafSize"in e&&(console.warn('BVH: "maxLeafSize" option has been deprecated. Use "targetLeafSize", instead.'),e={...e,targetLeafSize:e.maxLeafSize}),Pl(this,e)}getRootRanges(){throw new Error("BVH: getRootRanges() not implemented")}writePrimitiveBounds(){throw new Error("BVH: writePrimitiveBounds() not implemented")}writePrimitiveRangeBounds(e,t,r,i){let n=1/0,s=1/0,o=1/0,l=-1/0,d=-1/0,c=-1/0;for(let u=e,f=e+t;u<f;u++){this.writePrimitiveBounds(u,Bt,0);const[p,h,y,x,b,m]=Bt;p<n&&(n=p),x>l&&(l=x),h<s&&(s=h),b>d&&(d=b),y<o&&(o=y),m>c&&(c=m)}return r[i+0]=n,r[i+1]=s,r[i+2]=o,r[i+3]=l,r[i+4]=d,r[i+5]=c,r}computePrimitiveBounds(e,t,r){const i=r.offset||0;for(let n=e,s=e+t;n<s;n++){this.writePrimitiveBounds(n,Bt,0);const[o,l,d,c,u,f]=Bt,p=(o+c)/2,h=(l+u)/2,y=(d+f)/2,x=(c-o)/2,b=(u-l)/2,m=(f-d)/2,v=(n-i)*6;r[v+0]=p,r[v+1]=x+(Math.abs(p)+x)*si,r[v+2]=h,r[v+3]=b+(Math.abs(h)+b)*si,r[v+4]=y,r[v+5]=m+(Math.abs(y)+m)*si}return r}shiftPrimitiveOffsets(e){const t=this._indirectBuffer;if(t)for(let r=0,i=t.length;r<i;r++)t[r]+=e;else{const r=this._roots;for(let i=0;i<r.length;i++){const n=r[i],s=new Uint32Array(n),o=new Uint16Array(n),l=n.byteLength/ne;for(let d=0;d<l;d++){const c=H*d,u=2*c;Q(u,o)&&(s[c+6]+=e)}}}}traverse(e,t=0){Ze.setBVH(this,t),Ze.traverse(e),Ze.reset()}refit(){const e=this._roots;for(let t=0,r=e.length;t<r;t++){const i=e[t],n=new Uint32Array(i),s=new Uint16Array(i),o=new Float32Array(i),l=i.byteLength/ne;for(let d=l-1;d>=0;d--){const c=d*H,u=c*2;if(Q(u,s)){const p=J(c,n),h=ie(u,s);this.writePrimitiveRangeBounds(p,h,Bt,0),o.set(Bt,c)}else{const p=X(c),h=Y(c,n);for(let y=0;y<3;y++){const x=o[p+y],b=o[p+y+3],m=o[h+y],v=o[h+y+3];o[c+y]=x<m?x:m,o[c+y+3]=b>v?b:v}}}}}getBoundingBox(e){return e.makeEmpty(),this._roots.forEach(r=>{j(0,new Float32Array(r),on),e.union(on)}),e}shapecast(e){let{boundsTraverseOrder:t,intersectsBounds:r,intersectsRange:i,intersectsPrimitive:n,scratchPrimitive:s,iterate:o}=e;if(i&&n){const u=i;i=(f,p,h,y,x)=>u(f,p,h,y,x)?!0:o(f,p,this,n,h,y,s)}else i||(n?i=(u,f,p,h)=>o(u,f,this,n,p,h,s):i=(u,f,p)=>p);let l=!1,d=0;const c=this._roots;for(let u=0,f=c.length;u<f;u++){const p=c[u];if(l=Al(this,u,r,i,t,d),l)break;d+=p.byteLength/ne}return l}bvhcast(e,t,r){let{intersectsRanges:i}=r;return Fl(this,e,t,i)}}function Nl(){return typeof SharedArrayBuffer<"u"}function Rs(a){return a.index?a.index.count:a.attributes.position.count}function yi(a){return Rs(a)/3}function Ll(a,e=ArrayBuffer){return a>65535?new Uint32Array(new e(4*a)):new Uint16Array(new e(2*a))}function zl(a,e){if(!a.index){const t=a.attributes.position.count,r=e.useSharedArrayBuffer?SharedArrayBuffer:ArrayBuffer,i=Ll(t,r);a.setIndex(new ut(i,1));for(let n=0;n<t;n++)i[n]=n}}function El(a,e,t){const r=Rs(a)/t,i=e||a.drawRange,n=i.start/t,s=(i.start+i.count)/t,o=Math.max(0,n),l=Math.min(r,s)-o;return{offset:Math.floor(o),count:Math.floor(l)}}function kl(a,e){return a.groups.map(t=>({offset:t.start/e,count:t.count/e}))}function ln(a,e,t){const r=El(a,e,t),i=kl(a,t);if(!i.length)return[r];const n=[],s=r.offset,o=r.offset+r.count,l=Rs(a)/t,d=[];for(const f of i){const{offset:p,count:h}=f,y=p,x=isFinite(h)?h:l-p,b=p+x;y<o&&b>s&&(d.push({pos:Math.max(s,y),isStart:!0}),d.push({pos:Math.min(o,b),isStart:!1}))}d.sort((f,p)=>f.pos!==p.pos?f.pos-p.pos:f.type==="end"?-1:1);let c=0,u=null;for(const f of d){const p=f.pos;c!==0&&p!==u&&n.push({offset:u,count:p-u}),c+=f.isStart?1:-1,u=p}return n}function Hl(a,e){const t=a[a.length-1],r=t.offset+t.count>2**16,i=a.reduce((d,c)=>d+c.count,0),n=r?4:2,s=e?new SharedArrayBuffer(i*n):new ArrayBuffer(i*n),o=r?new Uint32Array(s):new Uint16Array(s);let l=0;for(let d=0;d<a.length;d++){const{offset:c,count:u}=a[d];for(let f=0;f<u;f++)o[l+f]=c+f;l+=u}return o}class ui extends Ba{get indirect(){return!!this._indirectBuffer}get primitiveStride(){return null}get primitiveBufferStride(){return this.indirect?1:this.primitiveStride}set primitiveBufferStride(e){}get primitiveBuffer(){return this.indirect?this._indirectBuffer:this.geometry.index.array}set primitiveBuffer(e){}constructor(e,t={}){if(e.isBufferGeometry){if(e.index&&e.index.isInterleavedBufferAttribute)throw new Error("BVH: InterleavedBufferAttribute is not supported for the index attribute.")}else throw new Error("BVH: Only BufferGeometries are supported.");if(t.useSharedArrayBuffer&&!Nl())throw new Error("BVH: SharedArrayBuffer is not available.");super(),this.geometry=e,this.resolvePrimitiveIndex=t.indirect?r=>this._indirectBuffer[r]:r=>r,this.primitiveBuffer=null,this.primitiveBufferStride=null,this._indirectBuffer=null,t={...Pa,...t},t[yr]||this.init(t)}init(e){const{geometry:t,primitiveStride:r}=this;if(e.indirect){const i=ln(t,e.range,r),n=Hl(i,e.useSharedArrayBuffer);this._indirectBuffer=n}else zl(t,e);super.init(e),!t.boundingBox&&e.setBoundingBox&&(t.boundingBox=this.getBoundingBox(new ve))}getRootRanges(e){return this.indirect?[{offset:0,count:this._indirectBuffer.length}]:ln(this.geometry,e,this.primitiveStride)}raycastObject3D(){throw new Error("BVH: raycastObject3D() not implemented")}}class Qe{constructor(){this.min=1/0,this.max=-1/0}setFromPointsField(e,t){let r=1/0,i=-1/0;for(let n=0,s=e.length;n<s;n++){const l=e[n][t];r=l<r?l:r,i=l>i?l:i}this.min=r,this.max=i}setFromPoints(e,t){let r=1/0,i=-1/0;for(let n=0,s=t.length;n<s;n++){const o=t[n],l=e.dot(o);r=l<r?l:r,i=l>i?l:i}this.min=r,this.max=i}isSeparated(e){return this.min>e.max||e.min>this.max}}Qe.prototype.setFromBox=(function(){const a=new A;return function(t,r){const i=r.min,n=r.max;let s=1/0,o=-1/0;for(let l=0;l<=1;l++)for(let d=0;d<=1;d++)for(let c=0;c<=1;c++){a.x=i.x*l+n.x*(1-l),a.y=i.y*d+n.y*(1-d),a.z=i.z*c+n.z*(1-c);const u=t.dot(a);s=Math.min(u,s),o=Math.max(u,o)}this.min=s,this.max=o}})();const Ul=(function(){const a=new A,e=new A,t=new A;return function(i,n,s){const o=i.start,l=a,d=n.start,c=e;t.subVectors(o,d),a.subVectors(i.end,i.start),e.subVectors(n.end,n.start);const u=t.dot(c),f=c.dot(l),p=c.dot(c),h=t.dot(l),x=l.dot(l)*p-f*f;let b,m;x!==0?b=(u*f-h*p)/x:b=0,m=(u+b*f)/p,s.x=b,s.y=m}})(),Cs=(function(){const a=new G,e=new A,t=new A;return function(i,n,s,o){Ul(i,n,a);let l=a.x,d=a.y;if(l>=0&&l<=1&&d>=0&&d<=1){i.at(l,s),n.at(d,o);return}else if(l>=0&&l<=1){d<0?n.at(0,o):n.at(1,o),i.closestPointToPoint(o,!0,s);return}else if(d>=0&&d<=1){l<0?i.at(0,s):i.at(1,s),n.closestPointToPoint(s,!0,o);return}else{let c;l<0?c=i.start:c=i.end;let u;d<0?u=n.start:u=n.end;const f=e,p=t;if(i.closestPointToPoint(u,!0,e),n.closestPointToPoint(c,!0,t),f.distanceToSquared(u)<=p.distanceToSquared(c)){s.copy(f),o.copy(u);return}else{s.copy(c),o.copy(p);return}}}})(),Vl=(function(){const a=new A,e=new A,t=new pa,r=new We;return function(n,s){const{radius:o,center:l}=n,{a:d,b:c,c:u}=s;if(r.start=d,r.end=c,r.closestPointToPoint(l,!0,a).distanceTo(l)<=o||(r.start=d,r.end=u,r.closestPointToPoint(l,!0,a).distanceTo(l)<=o)||(r.start=c,r.end=u,r.closestPointToPoint(l,!0,a).distanceTo(l)<=o))return!0;const y=s.getPlane(t);if(Math.abs(y.distanceToPoint(l))<=o){const b=y.projectPoint(l,e);if(s.containsPoint(b))return!0}return!1}})(),Ol=["x","y","z"],Ue=1e-15,cn=Ue*Ue;function pe(a){return Math.abs(a)<Ue}class xe extends Te{constructor(...e){super(...e),this.isExtendedTriangle=!0,this.satAxes=new Array(4).fill().map(()=>new A),this.satBounds=new Array(4).fill().map(()=>new Qe),this.points=[this.a,this.b,this.c],this.plane=new pa,this.isDegenerateIntoSegment=!1,this.isDegenerateIntoPoint=!1,this.degenerateSegment=new We,this.needsUpdate=!0}intersectsSphere(e){return Vl(e,this)}update(){const e=this.a,t=this.b,r=this.c,i=this.points,n=this.satAxes,s=this.satBounds,o=n[0],l=s[0];this.getNormal(o),l.setFromPoints(o,i);const d=n[1],c=s[1];d.subVectors(e,t),c.setFromPoints(d,i);const u=n[2],f=s[2];u.subVectors(t,r),f.setFromPoints(u,i);const p=n[3],h=s[3];p.subVectors(r,e),h.setFromPoints(p,i);const y=d.length(),x=u.length(),b=p.length();this.isDegenerateIntoPoint=!1,this.isDegenerateIntoSegment=!1,y<Ue?x<Ue||b<Ue?this.isDegenerateIntoPoint=!0:(this.isDegenerateIntoSegment=!0,this.degenerateSegment.start.copy(e),this.degenerateSegment.end.copy(r)):x<Ue?b<Ue?this.isDegenerateIntoPoint=!0:(this.isDegenerateIntoSegment=!0,this.degenerateSegment.start.copy(t),this.degenerateSegment.end.copy(e)):b<Ue&&(this.isDegenerateIntoSegment=!0,this.degenerateSegment.start.copy(r),this.degenerateSegment.end.copy(t)),this.plane.setFromNormalAndCoplanarPoint(o,e),this.needsUpdate=!1}}xe.prototype.closestPointToSegment=(function(){const a=new A,e=new A,t=new We;return function(i,n=null,s=null){this.needsUpdate&&this.update();const{start:o,end:l}=i,d=this.points;let c,u=1/0;const f=this.plane.distanceToPoint(o),p=this.plane.distanceToPoint(l);if(f*p<0&&this.plane.intersectLine(i,a)!==null&&this.containsPoint(a))return n&&n.copy(a),s&&s.copy(a),0;for(let h=0;h<3;h++){const y=(h+1)%3;t.start.copy(d[h]),t.end.copy(d[y]),Cs(t,i,a,e),c=a.distanceToSquared(e),c<u&&(u=c,n&&n.copy(a),s&&s.copy(e))}return this.closestPointToPoint(o,a),c=o.distanceToSquared(a),c<u&&(u=c,n&&n.copy(a),s&&s.copy(o)),this.closestPointToPoint(l,a),c=l.distanceToSquared(a),c<u&&(u=c,n&&n.copy(a),s&&s.copy(l)),Math.sqrt(u)}})();xe.prototype.intersectsTriangle=(function(){const a=new xe,e=new Qe,t=new Qe,r=new A,i=new A,n=new A,s=new A,o=new We,l=new We,d=new A,c=new G,u=new G;function f(v,g,w,R){const S=r;!v.isDegenerateIntoPoint&&!v.isDegenerateIntoSegment?S.copy(v.plane.normal):S.copy(g.plane.normal);const C=v.satBounds,D=v.satAxes;for(let _=1;_<4;_++){const P=C[_],F=D[_];if(e.setFromPoints(F,g.points),P.isSeparated(e)||(s.copy(S).cross(F),e.setFromPoints(s,v.points),t.setFromPoints(s,g.points),e.isSeparated(t)))return!1}const T=g.satBounds,$=g.satAxes;for(let _=1;_<4;_++){const P=T[_],F=$[_];if(e.setFromPoints(F,v.points),P.isSeparated(e)||(s.crossVectors(S,F),e.setFromPoints(s,v.points),t.setFromPoints(s,g.points),e.isSeparated(t)))return!1}return w&&(R||console.warn("ExtendedTriangle.intersectsTriangle: Triangles are coplanar which does not support an output edge. Setting edge to 0, 0, 0."),w.start.set(0,0,0),w.end.set(0,0,0)),!0}function p(v,g,w,R,S,C,D,T,$,_,P){let F=D/(D-T);_.x=R+(S-R)*F,P.start.subVectors(g,v).multiplyScalar(F).add(v),F=D/(D-$),_.y=R+(C-R)*F,P.end.subVectors(w,v).multiplyScalar(F).add(v)}function h(v,g,w,R,S,C,D,T,$,_,P){if(S>0)p(v.c,v.a,v.b,R,g,w,$,D,T,_,P);else if(C>0)p(v.b,v.a,v.c,w,g,R,T,D,$,_,P);else if(T*$>0||D!=0)p(v.a,v.b,v.c,g,w,R,D,T,$,_,P);else if(T!=0)p(v.b,v.a,v.c,w,g,R,T,D,$,_,P);else if($!=0)p(v.c,v.a,v.b,R,g,w,$,D,T,_,P);else return!0;return!1}function y(v,g,w,R){const S=g.degenerateSegment,C=v.plane.distanceToPoint(S.start),D=v.plane.distanceToPoint(S.end);return pe(C)?pe(D)?f(v,g,w,R):(w&&(w.start.copy(S.start),w.end.copy(S.start)),v.containsPoint(S.start)):pe(D)?(w&&(w.start.copy(S.end),w.end.copy(S.end)),v.containsPoint(S.end)):v.plane.intersectLine(S,r)!=null?(w&&(w.start.copy(r),w.end.copy(r)),v.containsPoint(r)):!1}function x(v,g,w){const R=g.a;return pe(v.plane.distanceToPoint(R))&&v.containsPoint(R)?(w&&(w.start.copy(R),w.end.copy(R)),!0):!1}function b(v,g,w){const R=v.degenerateSegment,S=g.a;return R.closestPointToPoint(S,!0,r),S.distanceToSquared(r)<cn?(w&&(w.start.copy(S),w.end.copy(S)),!0):!1}function m(v,g,w,R){if(v.isDegenerateIntoSegment)if(g.isDegenerateIntoSegment){const S=v.degenerateSegment,C=g.degenerateSegment,D=i,T=n;S.delta(D),C.delta(T);const $=r.subVectors(C.start,S.start),_=D.x*T.y-D.y*T.x;if(pe(_))return!1;const P=($.x*T.y-$.y*T.x)/_,F=-(D.x*$.y-D.y*$.x)/_;if(P<0||P>1||F<0||F>1)return!1;const L=S.start.z+D.z*P,U=C.start.z+T.z*F;return pe(L-U)?(w&&(w.start.copy(S.start).addScaledVector(D,P),w.end.copy(S.start).addScaledVector(D,P)),!0):!1}else return g.isDegenerateIntoPoint?b(v,g,w):y(g,v,w,R);else{if(v.isDegenerateIntoPoint)return g.isDegenerateIntoPoint?g.a.distanceToSquared(v.a)<cn?(w&&(w.start.copy(v.a),w.end.copy(v.a)),!0):!1:g.isDegenerateIntoSegment?b(g,v,w):x(g,v,w);if(g.isDegenerateIntoPoint)return x(v,g,w);if(g.isDegenerateIntoSegment)return y(v,g,w,R)}}return function(g,w=null,R=!1){this.needsUpdate&&this.update(),g.isExtendedTriangle?g.needsUpdate&&g.update():(a.copy(g),a.update(),g=a);const S=m(this,g,w,R);if(S!==void 0)return S;const C=this.plane,D=g.plane;let T=D.distanceToPoint(this.a),$=D.distanceToPoint(this.b),_=D.distanceToPoint(this.c);pe(T)&&(T=0),pe($)&&($=0),pe(_)&&(_=0);const P=T*$,F=T*_;if(P>0&&F>0)return!1;let L=C.distanceToPoint(g.a),U=C.distanceToPoint(g.b),z=C.distanceToPoint(g.c);pe(L)&&(L=0),pe(U)&&(U=0),pe(z)&&(z=0);const Ee=L*U,ke=L*z;if(Ee>0&&ke>0)return!1;i.copy(C.normal),n.copy(D.normal);const Tt=i.cross(n);let Kt=0,Xt=Math.abs(Tt.x);const Yt=Math.abs(Tt.y);Yt>Xt&&(Xt=Yt,Kt=1),Math.abs(Tt.z)>Xt&&(Kt=2);const le=Ol[Kt],it=this.a[le],_t=this.b[le],Rr=this.c[le],st=g.a[le],Rt=g.b[le],qo=g.c[le];if(h(this,it,_t,Rr,P,F,T,$,_,c,o))return f(this,g,w,R);if(h(g,st,Rt,qo,Ee,ke,L,U,z,u,l))return f(this,g,w,R);if(c.y<c.x){const Mi=c.y;c.y=c.x,c.x=Mi,d.copy(o.start),o.start.copy(o.end),o.end.copy(d)}if(u.y<u.x){const Mi=u.y;u.y=u.x,u.x=Mi,d.copy(l.start),l.start.copy(l.end),l.end.copy(d)}return c.y<u.x||u.y<c.x?!1:(w&&(u.x>c.x?w.start.copy(l.start):w.start.copy(o.start),u.y<c.y?w.end.copy(l.end):w.end.copy(o.end)),!0)}})();xe.prototype.distanceToPoint=(function(){const a=new A;return function(t){return this.closestPointToPoint(t,a),t.distanceTo(a)}})();xe.prototype.distanceToTriangle=(function(){const a=new A,e=new A,t=["a","b","c"],r=new We,i=new We;return function(s,o=null,l=null){const d=o||l?r:null;if(this.intersectsTriangle(s,d,!0))return(o||l)&&(o&&d.getCenter(o),l&&d.getCenter(l)),0;let c=1/0;for(let u=0;u<3;u++){let f;const p=t[u],h=s[p];this.closestPointToPoint(h,a),f=h.distanceToSquared(a),f<c&&(c=f,o&&o.copy(a),l&&l.copy(h));const y=this[p];s.closestPointToPoint(y,a),f=y.distanceToSquared(a),f<c&&(c=f,o&&o.copy(y),l&&l.copy(a))}for(let u=0;u<3;u++){const f=t[u],p=t[(u+1)%3];r.set(this[f],this[p]);for(let h=0;h<3;h++){const y=t[h],x=t[(h+1)%3];i.set(s[y],s[x]),Cs(r,i,a,e);const b=a.distanceToSquared(e);b<c&&(c=b,o&&o.copy(a),l&&l.copy(e))}}return Math.sqrt(c)}})();class oe{constructor(e,t,r){this.isOrientedBox=!0,this.min=new A,this.max=new A,this.matrix=new W,this.invMatrix=new W,this.points=new Array(8).fill().map(()=>new A),this.satAxes=new Array(3).fill().map(()=>new A),this.satBounds=new Array(3).fill().map(()=>new Qe),this.alignedSatBounds=new Array(3).fill().map(()=>new Qe),this.needsUpdate=!1,e&&this.min.copy(e),t&&this.max.copy(t),r&&this.matrix.copy(r)}set(e,t,r){this.min.copy(e),this.max.copy(t),this.matrix.copy(r),this.needsUpdate=!0}copy(e){this.min.copy(e.min),this.max.copy(e.max),this.matrix.copy(e.matrix),this.needsUpdate=!0}}oe.prototype.update=(function(){return function(){const e=this.matrix,t=this.min,r=this.max,i=this.points;for(let d=0;d<=1;d++)for(let c=0;c<=1;c++)for(let u=0;u<=1;u++){const f=1*d|2*c|4*u,p=i[f];p.x=d?r.x:t.x,p.y=c?r.y:t.y,p.z=u?r.z:t.z,p.applyMatrix4(e)}const n=this.satBounds,s=this.satAxes,o=i[0];for(let d=0;d<3;d++){const c=s[d],u=n[d],f=1<<d,p=i[f];c.subVectors(o,p),u.setFromPoints(c,i)}const l=this.alignedSatBounds;l[0].setFromPointsField(i,"x"),l[1].setFromPointsField(i,"y"),l[2].setFromPointsField(i,"z"),this.invMatrix.copy(this.matrix).invert(),this.needsUpdate=!1}})();oe.prototype.intersectsBox=(function(){const a=new Qe;return function(t){this.needsUpdate&&this.update();const r=t.min,i=t.max,n=this.satBounds,s=this.satAxes,o=this.alignedSatBounds;if(a.min=r.x,a.max=i.x,o[0].isSeparated(a)||(a.min=r.y,a.max=i.y,o[1].isSeparated(a))||(a.min=r.z,a.max=i.z,o[2].isSeparated(a)))return!1;for(let l=0;l<3;l++){const d=s[l],c=n[l];if(a.setFromBox(d,t),c.isSeparated(a))return!1}return!0}})();oe.prototype.intersectsTriangle=(function(){const a=new xe,e=new Array(3),t=new Qe,r=new Qe,i=new A;return function(s){this.needsUpdate&&this.update(),s.isExtendedTriangle?s.needsUpdate&&s.update():(a.copy(s),a.update(),s=a);const o=this.satBounds,l=this.satAxes;e[0]=s.a,e[1]=s.b,e[2]=s.c;for(let f=0;f<3;f++){const p=o[f],h=l[f];if(t.setFromPoints(h,e),p.isSeparated(t))return!1}const d=s.satBounds,c=s.satAxes,u=this.points;for(let f=0;f<3;f++){const p=d[f],h=c[f];if(t.setFromPoints(h,u),p.isSeparated(t))return!1}for(let f=0;f<3;f++){const p=l[f];for(let h=0;h<4;h++){const y=c[h];if(i.crossVectors(p,y),t.setFromPoints(i,e),r.setFromPoints(i,u),t.isSeparated(r))return!1}}return!0}})();oe.prototype.closestPointToPoint=(function(){return function(e,t){return this.needsUpdate&&this.update(),t.copy(e).applyMatrix4(this.invMatrix).clamp(this.min,this.max).applyMatrix4(this.matrix),t}})();oe.prototype.distanceToPoint=(function(){const a=new A;return function(t){return this.closestPointToPoint(t,a),t.distanceTo(a)}})();oe.prototype.distanceToBox=(function(){const a=["x","y","z"],e=new Array(12).fill().map(()=>new We),t=new Array(12).fill().map(()=>new We),r=new A,i=new A;return function(s,o=0,l=null,d=null){if(this.needsUpdate&&this.update(),this.intersectsBox(s))return(l||d)&&(s.getCenter(i),this.closestPointToPoint(i,r),s.closestPointToPoint(r,i),l&&l.copy(r),d&&d.copy(i)),0;const c=o*o,u=s.min,f=s.max,p=this.points;let h=1/0;for(let x=0;x<8;x++){const b=p[x];i.copy(b).clamp(u,f);const m=b.distanceToSquared(i);if(m<h&&(h=m,l&&l.copy(b),d&&d.copy(i),m<c))return Math.sqrt(m)}let y=0;for(let x=0;x<3;x++)for(let b=0;b<=1;b++)for(let m=0;m<=1;m++){const v=(x+1)%3,g=(x+2)%3,w=b<<v|m<<g,R=1<<x|b<<v|m<<g,S=p[w],C=p[R];e[y].set(S,C);const T=a[x],$=a[v],_=a[g],P=t[y],F=P.start,L=P.end;F[T]=u[T],F[$]=b?u[$]:f[$],F[_]=m?u[_]:f[_],L[T]=f[T],L[$]=b?u[$]:f[$],L[_]=m?u[_]:f[_],y++}for(let x=0;x<=1;x++)for(let b=0;b<=1;b++)for(let m=0;m<=1;m++){i.x=x?f.x:u.x,i.y=b?f.y:u.y,i.z=m?f.z:u.z,this.closestPointToPoint(i,r);const v=i.distanceToSquared(r);if(v<h&&(h=v,l&&l.copy(r),d&&d.copy(i),v<c))return Math.sqrt(v)}for(let x=0;x<12;x++){const b=e[x];for(let m=0;m<12;m++){const v=t[m];Cs(b,v,r,i);const g=r.distanceToSquared(i);if(g<h&&(h=g,l&&l.copy(r),d&&d.copy(i),g<c))return Math.sqrt(g)}}return Math.sqrt(h)}})();class Wl extends _s{constructor(){super(()=>new xe)}}const me=new Wl,Zt=new A,Ei=new A;function ql(a,e,t={},r=0,i=1/0){const n=r*r,s=i*i;let o=1/0,l=null;if(a.shapecast({boundsTraverseOrder:c=>(Zt.copy(e).clamp(c.min,c.max),Zt.distanceToSquared(e)),intersectsBounds:(c,u,f)=>f<o&&f<s,intersectsTriangle:(c,u)=>{c.closestPointToPoint(e,Zt);const f=e.distanceToSquared(Zt);return f<o&&(Ei.copy(Zt),o=f,l=u),f<n}}),o===1/0)return null;const d=Math.sqrt(o);return t.point?t.point.copy(Ei):t.point=Ei.clone(),t.distance=d,t.faceIndex=l,t}const Mr=parseInt(mi)>=169,Ql=parseInt(mi)<=161,nt=new A,at=new A,ot=new A,Pr=new G,Br=new G,Ar=new G,un=new A,dn=new A,fn=new A,Jt=new A;function jl(a,e,t,r,i,n,s,o){let l;if(n===ys?l=a.intersectTriangle(r,t,e,!0,i):l=a.intersectTriangle(e,t,r,n!==ma,i),l===null)return null;const d=a.origin.distanceTo(i);return d<s||d>o?null:{distance:d,point:i.clone()}}function hn(a,e,t,r,i,n,s,o,l,d,c){nt.fromBufferAttribute(e,n),at.fromBufferAttribute(e,s),ot.fromBufferAttribute(e,o);const u=jl(a,nt,at,ot,Jt,l,d,c);if(u){if(r){Pr.fromBufferAttribute(r,n),Br.fromBufferAttribute(r,s),Ar.fromBufferAttribute(r,o),u.uv=new G;const p=Te.getInterpolation(Jt,nt,at,ot,Pr,Br,Ar,u.uv);Mr||(u.uv=p)}if(i){Pr.fromBufferAttribute(i,n),Br.fromBufferAttribute(i,s),Ar.fromBufferAttribute(i,o),u.uv1=new G;const p=Te.getInterpolation(Jt,nt,at,ot,Pr,Br,Ar,u.uv1);Mr||(u.uv1=p),Ql&&(u.uv2=u.uv1)}if(t){un.fromBufferAttribute(t,n),dn.fromBufferAttribute(t,s),fn.fromBufferAttribute(t,o),u.normal=new A;const p=Te.getInterpolation(Jt,nt,at,ot,un,dn,fn,u.normal);u.normal.dot(a.direction)>0&&u.normal.multiplyScalar(-1),Mr||(u.normal=p)}const f={a:n,b:s,c:o,normal:new A,materialIndex:0};if(Te.getNormal(nt,at,ot,f.normal),u.face=f,u.faceIndex=n,Mr){const p=new A;Te.getBarycoord(Jt,nt,at,ot,p),u.barycoord=p}}return u}function pn(a){return a&&a.isMaterial?a.side:a}function vi(a,e,t,r,i,n,s){const o=r*3;let l=o+0,d=o+1,c=o+2;const{index:u,groups:f}=a;a.index&&(l=u.getX(l),d=u.getX(d),c=u.getX(c));const{position:p,normal:h,uv:y,uv1:x}=a.attributes;if(Array.isArray(e)){const b=r*3;for(let m=0,v=f.length;m<v;m++){const{start:g,count:w,materialIndex:R}=f[m];if(b>=g&&b<g+w){const S=pn(e[R]),C=hn(t,p,h,y,x,l,d,c,S,n,s);if(C)if(C.faceIndex=r,C.face.materialIndex=R,i)i.push(C);else return C}}}else{const b=pn(e),m=hn(t,p,h,y,x,l,d,c,b,n,s);if(m)if(m.faceIndex=r,m.face.materialIndex=0,i)i.push(m);else return m}return null}function Z(a,e,t,r){const i=a.a,n=a.b,s=a.c;let o=e,l=e+1,d=e+2;t&&(o=t.getX(o),l=t.getX(l),d=t.getX(d)),i.x=r.getX(o),i.y=r.getY(o),i.z=r.getZ(o),n.x=r.getX(l),n.y=r.getY(l),n.z=r.getZ(l),s.x=r.getX(d),s.y=r.getY(d),s.z=r.getZ(d)}function Gl(a,e,t,r,i,n,s,o){const{geometry:l,_indirectBuffer:d}=a;for(let c=r,u=r+i;c<u;c++)vi(l,e,t,c,n,s,o)}function Kl(a,e,t,r,i,n,s){const{geometry:o,_indirectBuffer:l}=a;let d=1/0,c=null;for(let u=r,f=r+i;u<f;u++){let p;p=vi(o,e,t,u,null,n,s),p&&p.distance<d&&(c=p,d=p.distance)}return c}function Xl(a,e,t,r,i,n,s){const{geometry:o}=t,{index:l}=o,d=o.attributes.position;for(let c=a,u=e+a;c<u;c++){let f;if(f=c,Z(s,f*3,l,d),s.needsUpdate=!0,r(s,f,i,n))return!0}return!1}function Yl(a,e=null){e&&Array.isArray(e)&&(e=new Set(e));const t=a.geometry,r=t.index?t.index.array:null,i=t.attributes.position;let n,s,o,l,d=0;const c=a._roots;for(let f=0,p=c.length;f<p;f++)n=c[f],s=new Uint32Array(n),o=new Uint16Array(n),l=new Float32Array(n),u(0,d),d+=n.byteLength;function u(f,p,h=!1){const y=f*2;if(Q(y,o)){const x=J(f,s),b=ie(y,o);let m=1/0,v=1/0,g=1/0,w=-1/0,R=-1/0,S=-1/0;for(let C=3*x,D=3*(x+b);C<D;C++){let T=r[C];const $=i.getX(T),_=i.getY(T),P=i.getZ(T);$<m&&(m=$),$>w&&(w=$),_<v&&(v=_),_>R&&(R=_),P<g&&(g=P),P>S&&(S=P)}return l[f+0]!==m||l[f+1]!==v||l[f+2]!==g||l[f+3]!==w||l[f+4]!==R||l[f+5]!==S?(l[f+0]=m,l[f+1]=v,l[f+2]=g,l[f+3]=w,l[f+4]=R,l[f+5]=S,!0):!1}else{const x=X(f),b=Y(f,s);let m=h,v=!1,g=!1;if(e){if(!m){const T=x/H+p/ne,$=b/H+p/ne;v=e.has(T),g=e.has($),m=!v&&!g}}else v=!0,g=!0;const w=m||v,R=m||g;let S=!1;w&&(S=u(x,p,m));let C=!1;R&&(C=u(b,p,m));const D=S||C;if(D)for(let T=0;T<3;T++){const $=x+T,_=b+T,P=l[$],F=l[$+3],L=l[_],U=l[_+3];l[f+T]=P<L?P:L,l[f+T+3]=F>U?F:U}return D}}}function ye(a,e,t,r,i){let n,s,o,l,d,c;const u=1/t.direction.x,f=1/t.direction.y,p=1/t.direction.z,h=t.origin.x,y=t.origin.y,x=t.origin.z;let b=e[a],m=e[a+3],v=e[a+1],g=e[a+3+1],w=e[a+2],R=e[a+3+2];return u>=0?(n=(b-h)*u,s=(m-h)*u):(n=(m-h)*u,s=(b-h)*u),f>=0?(o=(v-y)*f,l=(g-y)*f):(o=(g-y)*f,l=(v-y)*f),n>l||o>s||((o>n||isNaN(n))&&(n=o),(l<s||isNaN(s))&&(s=l),p>=0?(d=(w-x)*p,c=(R-x)*p):(d=(R-x)*p,c=(w-x)*p),n>c||d>s)?!1:((d>n||n!==n)&&(n=d),(c<s||s!==s)&&(s=c),n<=i&&s>=r)}function Zl(a,e,t,r,i,n,s,o){const{geometry:l,_indirectBuffer:d}=a;for(let c=r,u=r+i;c<u;c++){let f=d?d[c]:c;vi(l,e,t,f,n,s,o)}}function Jl(a,e,t,r,i,n,s){const{geometry:o,_indirectBuffer:l}=a;let d=1/0,c=null;for(let u=r,f=r+i;u<f;u++){let p;p=vi(o,e,t,l?l[u]:u,null,n,s),p&&p.distance<d&&(c=p,d=p.distance)}return c}function ec(a,e,t,r,i,n,s){const{geometry:o}=t,{index:l}=o,d=o.attributes.position;for(let c=a,u=e+a;c<u;c++){let f;if(f=t.resolveTriangleIndex(c),Z(s,f*3,l,d),s.needsUpdate=!0,r(s,f,i,n))return!0}return!1}function tc(a,e,t,r,i,n,s){V.setBuffer(a._roots[e]),ye(0,V.float32Array,r,n,s)&&os(0,a,t,r,i,n,s),V.clearBuffer()}function os(a,e,t,r,i,n,s){const{float32Array:o,uint16Array:l,uint32Array:d}=V,c=a*2;if(Q(c,l)){const f=J(a,d),p=ie(c,l);Gl(e,t,r,f,p,i,n,s)}else{const f=X(a);ye(f,o,r,n,s)&&os(f,e,t,r,i,n,s);const p=Y(a,d);ye(p,o,r,n,s)&&os(p,e,t,r,i,n,s)}}const rc=["x","y","z"];function ic(a,e,t,r,i,n){V.setBuffer(a._roots[e]);let s=null;return ye(0,V.float32Array,r,i,n)&&(s=ls(0,a,t,r,i,n)),V.clearBuffer(),s}function ls(a,e,t,r,i,n){const{float32Array:s,uint16Array:o,uint32Array:l}=V;let d=a*2;if(Q(d,o)){const u=J(a,l),f=ie(d,o);return Kl(e,t,r,u,f,i,n)}else{const u=Ts(a,l),f=rc[u],h=r.direction[f]>=0;let y,x;h?(y=X(a),x=Y(a,l)):(y=Y(a,l),x=X(a));const m=ye(y,s,r,i,n)?ls(y,e,t,r,i,n):null;if(m){const w=m.point[f];if(h?w<=s[x+u]:w>=s[x+u+3])return m}const g=ye(x,s,r,i,n)?ls(x,e,t,r,i,n):null;return m&&g?m.distance<=g.distance?m:g:m||g||null}}const Fr=new ve,At=new xe,Ft=new xe,er=new W,mn=new oe,Nr=new oe;function sc(a,e,t,r){V.setBuffer(a._roots[e]);const i=cs(0,a,t,r);return V.clearBuffer(),i}function cs(a,e,t,r,i=null){const{float32Array:n,uint16Array:s,uint32Array:o}=V;let l=a*2;if(i===null&&(t.boundingBox||t.computeBoundingBox(),mn.set(t.boundingBox.min,t.boundingBox.max,r),i=mn),Q(l,s)){const c=e.geometry,u=c.index,f=c.attributes.position,p=t.index,h=t.attributes.position,y=J(a,o),x=ie(l,s);if(er.copy(r).invert(),t.boundsTree)return j(a,n,Nr),Nr.matrix.copy(er),Nr.needsUpdate=!0,t.boundsTree.shapecast({intersectsBounds:m=>Nr.intersectsBox(m),intersectsTriangle:m=>{m.a.applyMatrix4(r),m.b.applyMatrix4(r),m.c.applyMatrix4(r),m.needsUpdate=!0;for(let v=y*3,g=(x+y)*3;v<g;v+=3)if(Z(Ft,v,u,f),Ft.needsUpdate=!0,m.intersectsTriangle(Ft))return!0;return!1}});{const b=yi(t);for(let m=y*3,v=(x+y)*3;m<v;m+=3){Z(At,m,u,f),At.a.applyMatrix4(er),At.b.applyMatrix4(er),At.c.applyMatrix4(er),At.needsUpdate=!0;for(let g=0,w=b*3;g<w;g+=3)if(Z(Ft,g,p,h),Ft.needsUpdate=!0,At.intersectsTriangle(Ft))return!0}}}else{const c=X(a),u=Y(a,o);return j(c,n,Fr),!!(i.intersectsBox(Fr)&&cs(c,e,t,r,i)||(j(u,n,Fr),i.intersectsBox(Fr)&&cs(u,e,t,r,i)))}}const Lr=new W,ki=new oe,tr=new oe,nc=new A,ac=new A,oc=new A,lc=new A;function cc(a,e,t,r={},i={},n=0,s=1/0){e.boundingBox||e.computeBoundingBox(),ki.set(e.boundingBox.min,e.boundingBox.max,t),ki.needsUpdate=!0;const o=a.geometry,l=o.attributes.position,d=o.index,c=e.attributes.position,u=e.index,f=me.getPrimitive(),p=me.getPrimitive();let h=nc,y=ac,x=null,b=null;i&&(x=oc,b=lc);let m=1/0,v=null,g=null;return Lr.copy(t).invert(),tr.matrix.copy(Lr),a.shapecast({boundsTraverseOrder:w=>ki.distanceToBox(w),intersectsBounds:(w,R,S)=>S<m&&S<s?(R&&(tr.min.copy(w.min),tr.max.copy(w.max),tr.needsUpdate=!0),!0):!1,intersectsRange:(w,R)=>{if(e.boundsTree)return e.boundsTree.shapecast({boundsTraverseOrder:C=>tr.distanceToBox(C),intersectsBounds:(C,D,T)=>T<m&&T<s,intersectsRange:(C,D)=>{for(let T=C,$=C+D;T<$;T++){Z(p,3*T,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let _=w,P=w+R;_<P;_++){Z(f,3*_,d,l),f.needsUpdate=!0;const F=f.distanceToTriangle(p,h,x);if(F<m&&(y.copy(h),b&&b.copy(x),m=F,v=_,g=T),F<n)return!0}}}});{const S=yi(e);for(let C=0,D=S;C<D;C++){Z(p,3*C,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let T=w,$=w+R;T<$;T++){Z(f,3*T,d,l),f.needsUpdate=!0;const _=f.distanceToTriangle(p,h,x);if(_<m&&(y.copy(h),b&&b.copy(x),m=_,v=T,g=C),_<n)return!0}}}}}),me.releasePrimitive(f),me.releasePrimitive(p),m===1/0?null:(r.point?r.point.copy(y):r.point=y.clone(),r.distance=m,r.faceIndex=v,i&&(i.point?i.point.copy(b):i.point=b.clone(),i.point.applyMatrix4(Lr),y.applyMatrix4(Lr),i.distance=y.sub(i.point).length(),i.faceIndex=g),r)}function uc(a,e=null){e&&Array.isArray(e)&&(e=new Set(e));const t=a.geometry,r=t.index?t.index.array:null,i=t.attributes.position;let n,s,o,l,d=0;const c=a._roots;for(let f=0,p=c.length;f<p;f++)n=c[f],s=new Uint32Array(n),o=new Uint16Array(n),l=new Float32Array(n),u(0,d),d+=n.byteLength;function u(f,p,h=!1){const y=f*2;if(Q(y,o)){const x=J(f,s),b=ie(y,o);let m=1/0,v=1/0,g=1/0,w=-1/0,R=-1/0,S=-1/0;for(let C=x,D=x+b;C<D;C++){const T=3*a.resolveTriangleIndex(C);for(let $=0;$<3;$++){let _=T+$;_=r?r[_]:_;const P=i.getX(_),F=i.getY(_),L=i.getZ(_);P<m&&(m=P),P>w&&(w=P),F<v&&(v=F),F>R&&(R=F),L<g&&(g=L),L>S&&(S=L)}}return l[f+0]!==m||l[f+1]!==v||l[f+2]!==g||l[f+3]!==w||l[f+4]!==R||l[f+5]!==S?(l[f+0]=m,l[f+1]=v,l[f+2]=g,l[f+3]=w,l[f+4]=R,l[f+5]=S,!0):!1}else{const x=X(f),b=Y(f,s);let m=h,v=!1,g=!1;if(e){if(!m){const T=x/H+p/ne,$=b/H+p/ne;v=e.has(T),g=e.has($),m=!v&&!g}}else v=!0,g=!0;const w=m||v,R=m||g;let S=!1;w&&(S=u(x,p,m));let C=!1;R&&(C=u(b,p,m));const D=S||C;if(D)for(let T=0;T<3;T++){const $=x+T,_=b+T,P=l[$],F=l[$+3],L=l[_],U=l[_+3];l[f+T]=P<L?P:L,l[f+T+3]=F>U?F:U}return D}}}function dc(a,e,t,r,i,n,s){V.setBuffer(a._roots[e]),ye(0,V.float32Array,r,n,s)&&us(0,a,t,r,i,n,s),V.clearBuffer()}function us(a,e,t,r,i,n,s){const{float32Array:o,uint16Array:l,uint32Array:d}=V,c=a*2;if(Q(c,l)){const f=J(a,d),p=ie(c,l);Zl(e,t,r,f,p,i,n,s)}else{const f=X(a);ye(f,o,r,n,s)&&us(f,e,t,r,i,n,s);const p=Y(a,d);ye(p,o,r,n,s)&&us(p,e,t,r,i,n,s)}}const fc=["x","y","z"];function hc(a,e,t,r,i,n){V.setBuffer(a._roots[e]);let s=null;return ye(0,V.float32Array,r,i,n)&&(s=ds(0,a,t,r,i,n)),V.clearBuffer(),s}function ds(a,e,t,r,i,n){const{float32Array:s,uint16Array:o,uint32Array:l}=V;let d=a*2;if(Q(d,o)){const u=J(a,l),f=ie(d,o);return Jl(e,t,r,u,f,i,n)}else{const u=Ts(a,l),f=fc[u],h=r.direction[f]>=0;let y,x;h?(y=X(a),x=Y(a,l)):(y=Y(a,l),x=X(a));const m=ye(y,s,r,i,n)?ds(y,e,t,r,i,n):null;if(m){const w=m.point[f];if(h?w<=s[x+u]:w>=s[x+u+3])return m}const g=ye(x,s,r,i,n)?ds(x,e,t,r,i,n):null;return m&&g?m.distance<=g.distance?m:g:m||g||null}}const zr=new ve,Nt=new xe,Lt=new xe,rr=new W,gn=new oe,Er=new oe;function pc(a,e,t,r){V.setBuffer(a._roots[e]);const i=fs(0,a,t,r);return V.clearBuffer(),i}function fs(a,e,t,r,i=null){const{float32Array:n,uint16Array:s,uint32Array:o}=V;let l=a*2;if(i===null&&(t.boundingBox||t.computeBoundingBox(),gn.set(t.boundingBox.min,t.boundingBox.max,r),i=gn),Q(l,s)){const c=e.geometry,u=c.index,f=c.attributes.position,p=t.index,h=t.attributes.position,y=J(a,o),x=ie(l,s);if(rr.copy(r).invert(),t.boundsTree)return j(a,n,Er),Er.matrix.copy(rr),Er.needsUpdate=!0,t.boundsTree.shapecast({intersectsBounds:m=>Er.intersectsBox(m),intersectsTriangle:m=>{m.a.applyMatrix4(r),m.b.applyMatrix4(r),m.c.applyMatrix4(r),m.needsUpdate=!0;for(let v=y,g=x+y;v<g;v++)if(Z(Lt,3*e.resolveTriangleIndex(v),u,f),Lt.needsUpdate=!0,m.intersectsTriangle(Lt))return!0;return!1}});{const b=yi(t);for(let m=y,v=x+y;m<v;m++){const g=e.resolveTriangleIndex(m);Z(Nt,3*g,u,f),Nt.a.applyMatrix4(rr),Nt.b.applyMatrix4(rr),Nt.c.applyMatrix4(rr),Nt.needsUpdate=!0;for(let w=0,R=b*3;w<R;w+=3)if(Z(Lt,w,p,h),Lt.needsUpdate=!0,Nt.intersectsTriangle(Lt))return!0}}}else{const c=X(a),u=Y(a,o);return j(c,n,zr),!!(i.intersectsBox(zr)&&fs(c,e,t,r,i)||(j(u,n,zr),i.intersectsBox(zr)&&fs(u,e,t,r,i)))}}const kr=new W,Hi=new oe,ir=new oe,mc=new A,gc=new A,xc=new A,yc=new A;function vc(a,e,t,r={},i={},n=0,s=1/0){e.boundingBox||e.computeBoundingBox(),Hi.set(e.boundingBox.min,e.boundingBox.max,t),Hi.needsUpdate=!0;const o=a.geometry,l=o.attributes.position,d=o.index,c=e.attributes.position,u=e.index,f=me.getPrimitive(),p=me.getPrimitive();let h=mc,y=gc,x=null,b=null;i&&(x=xc,b=yc);let m=1/0,v=null,g=null;return kr.copy(t).invert(),ir.matrix.copy(kr),a.shapecast({boundsTraverseOrder:w=>Hi.distanceToBox(w),intersectsBounds:(w,R,S)=>S<m&&S<s?(R&&(ir.min.copy(w.min),ir.max.copy(w.max),ir.needsUpdate=!0),!0):!1,intersectsRange:(w,R)=>{if(e.boundsTree){const S=e.boundsTree;return S.shapecast({boundsTraverseOrder:C=>ir.distanceToBox(C),intersectsBounds:(C,D,T)=>T<m&&T<s,intersectsRange:(C,D)=>{for(let T=C,$=C+D;T<$;T++){const _=S.resolveTriangleIndex(T);Z(p,3*_,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let P=w,F=w+R;P<F;P++){const L=a.resolveTriangleIndex(P);Z(f,3*L,d,l),f.needsUpdate=!0;const U=f.distanceToTriangle(p,h,x);if(U<m&&(y.copy(h),b&&b.copy(x),m=U,v=P,g=T),U<n)return!0}}}})}else{const S=yi(e);for(let C=0,D=S;C<D;C++){Z(p,3*C,u,c),p.a.applyMatrix4(t),p.b.applyMatrix4(t),p.c.applyMatrix4(t),p.needsUpdate=!0;for(let T=w,$=w+R;T<$;T++){const _=a.resolveTriangleIndex(T);Z(f,3*_,d,l),f.needsUpdate=!0;const P=f.distanceToTriangle(p,h,x);if(P<m&&(y.copy(h),b&&b.copy(x),m=P,v=T,g=C),P<n)return!0}}}}}),me.releasePrimitive(f),me.releasePrimitive(p),m===1/0?null:(r.point?r.point.copy(y):r.point=y.clone(),r.distance=m,r.faceIndex=v,i&&(i.point?i.point.copy(b):i.point=b.clone(),i.point.applyMatrix4(kr),y.applyMatrix4(kr),i.distance=y.sub(i.point).length(),i.faceIndex=g),r)}function xn(a,e,t){return a===null?null:(a.point.applyMatrix4(e.matrixWorld),a.distance=a.point.distanceTo(t.ray.origin),a.object=e,a)}const Hr=new oe,Ur=new ga,yn=new A,vn=new W,bn=new A,Ui=["getX","getY","getZ"];class gt extends ui{static serialize(e,t={}){t={cloneBuffers:!0,...t};const r=e.geometry,i=e._roots,n=e._indirectBuffer,s=r.getIndex(),o={version:1,roots:null,index:null,indirectBuffer:null};return t.cloneBuffers?(o.roots=i.map(l=>l.slice()),o.index=s?s.array.slice():null,o.indirectBuffer=n?n.slice():null):(o.roots=i,o.index=s?s.array:null,o.indirectBuffer=n),o}static deserialize(e,t,r={}){r={setIndex:!0,indirect:!!e.indirectBuffer,...r};const{index:i,roots:n,indirectBuffer:s}=e;e.version||(console.warn("MeshBVH.deserialize: Serialization format has been changed and will be fixed up. It is recommended to regenerate any stored serialized data."),l(n));const o=new gt(t,{...r,[yr]:!0});if(o._roots=n,o._indirectBuffer=s||null,r.setIndex){const d=t.getIndex();if(d===null){const c=new ut(e.index,1,!1);t.setIndex(c)}else d.array!==i&&(d.array.set(i),d.needsUpdate=!0)}return o;function l(d){for(let c=0;c<d.length;c++){const u=d[c],f=new Uint32Array(u),p=new Uint16Array(u);for(let h=0,y=u.byteLength/ne;h<y;h++){const x=H*h,b=2*x;Q(b,p)||(f[x+6]=f[x+6]/H-h)}}}}get primitiveStride(){return 3}get resolveTriangleIndex(){return this.resolvePrimitiveIndex}constructor(e,t={}){t.maxLeafTris&&(console.warn('MeshBVH: "maxLeafTris" option has been deprecated. Use "targetLeafSize", instead.'),t={...t,targetLeafSize:t.maxLeafTris}),super(e,t)}shiftTriangleOffsets(e){return super.shiftPrimitiveOffsets(e)}writePrimitiveBounds(e,t,r){const i=this.geometry,n=this._indirectBuffer,s=i.attributes.position,o=i.index?i.index.array:null,d=(n?n[e]:e)*3;let c=d+0,u=d+1,f=d+2;o&&(c=o[c],u=o[u],f=o[f]);for(let p=0;p<3;p++){const h=s[Ui[p]](c),y=s[Ui[p]](u),x=s[Ui[p]](f);let b=h;y<b&&(b=y),x<b&&(b=x);let m=h;y>m&&(m=y),x>m&&(m=x),t[r+p]=b,t[r+p+3]=m}return t}computePrimitiveBounds(e,t,r){const i=this.geometry,n=this._indirectBuffer,s=i.attributes.position,o=i.index?i.index.array:null,l=s.normalized;if(e<0||t+e-r.offset>r.length/6)throw new Error("MeshBVH: compute triangle bounds range is invalid.");const d=s.array,c=s.offset||0;let u=3;s.isInterleavedBufferAttribute&&(u=s.data.stride);const f=["getX","getY","getZ"],p=r.offset;for(let h=e,y=e+t;h<y;h++){const b=(n?n[h]:h)*3,m=(h-p)*6;let v=b+0,g=b+1,w=b+2;o&&(v=o[v],g=o[g],w=o[w]),l||(v=v*u+c,g=g*u+c,w=w*u+c);for(let R=0;R<3;R++){let S,C,D;l?(S=s[f[R]](v),C=s[f[R]](g),D=s[f[R]](w)):(S=d[v+R],C=d[g+R],D=d[w+R]);let T=S;C<T&&(T=C),D<T&&(T=D);let $=S;C>$&&($=C),D>$&&($=D);const _=($-T)/2,P=R*2;r[m+P+0]=T+_,r[m+P+1]=_+(Math.abs(T)+_)*si}}return r}raycastObject3D(e,t,r=[]){const{material:i}=e;if(i===void 0)return;vn.copy(e.matrixWorld).invert(),Ur.copy(t.ray).applyMatrix4(vn),bn.setFromMatrixScale(e.matrixWorld),yn.copy(Ur.direction).multiply(bn);const n=yn.length(),s=t.near/n,o=t.far/n;if(t.firstHitOnly===!0){let l=this.raycastFirst(Ur,i,s,o);l=xn(l,e,t),l&&r.push(l)}else{const l=this.raycast(Ur,i,s,o);for(let d=0,c=l.length;d<c;d++){const u=xn(l[d],e,t);u&&r.push(u)}}return r}refit(e=null){return(this.indirect?uc:Yl)(this,e)}raycast(e,t=ai,r=0,i=1/0){const n=this._roots,s=[],o=this.indirect?dc:tc;for(let l=0,d=n.length;l<d;l++)o(this,l,t,e,s,r,i);return s}raycastFirst(e,t=ai,r=0,i=1/0){const n=this._roots;let s=null;const o=this.indirect?hc:ic;for(let l=0,d=n.length;l<d;l++){const c=o(this,l,t,e,r,i);c!=null&&(s==null||c.distance<s.distance)&&(s=c)}return s}intersectsGeometry(e,t){let r=!1;const i=this._roots,n=this.indirect?pc:sc;for(let s=0,o=i.length;s<o&&(r=n(this,s,e,t),!r);s++);return r}shapecast(e){const t=me.getPrimitive(),r=super.shapecast({...e,intersectsPrimitive:e.intersectsTriangle,scratchPrimitive:t,iterate:this.indirect?ec:Xl});return me.releasePrimitive(t),r}bvhcast(e,t,r){let{intersectsRanges:i,intersectsTriangles:n}=r;const s=me.getPrimitive(),o=this.geometry.index,l=this.geometry.attributes.position,d=this.indirect?h=>{const y=this.resolveTriangleIndex(h);Z(s,y*3,o,l)}:h=>{Z(s,h*3,o,l)},c=me.getPrimitive(),u=e.geometry.index,f=e.geometry.attributes.position,p=e.indirect?h=>{const y=e.resolveTriangleIndex(h);Z(c,y*3,u,f)}:h=>{Z(c,h*3,u,f)};if(n){if(!(e instanceof gt))throw new Error('MeshBVH: "intersectsTriangles" callback can only be used with another MeshBVH.');const h=(y,x,b,m,v,g,w,R)=>{for(let S=b,C=b+m;S<C;S++){p(S),c.a.applyMatrix4(t),c.b.applyMatrix4(t),c.c.applyMatrix4(t),c.needsUpdate=!0;for(let D=y,T=y+x;D<T;D++)if(d(D),s.needsUpdate=!0,n(s,c,D,S,v,g,w,R))return!0}return!1};if(i){const y=i;i=function(x,b,m,v,g,w,R,S){return y(x,b,m,v,g,w,R,S)?!0:h(x,b,m,v,g,w,R,S)}}else i=h}return super.bvhcast(e,t,{intersectsRanges:i})}intersectsBox(e,t){return Hr.set(e.min,e.max,t),Hr.needsUpdate=!0,this.shapecast({intersectsBounds:r=>Hr.intersectsBox(r),intersectsTriangle:r=>Hr.intersectsTriangle(r)})}intersectsSphere(e){return this.shapecast({intersectsBounds:t=>e.intersectsBox(t),intersectsTriangle:t=>t.intersectsSphere(e)})}closestPointToGeometry(e,t,r={},i={},n=0,s=1/0){return(this.indirect?vc:cc)(this,e,t,r,i,n,s)}closestPointToPoint(e,t={},r=0,i=1/0){return ql(this,e,t,r,i)}}const wn=new A,Sn=new A,Tn=new A,He=new ga,In=new W,lt=new A,Vi=new A,bc=["x","y","z"],Vr=parseInt(mi)>=169,wc=parseInt(mi)<=161,Or=new G,Wr=new G,qr=new G,_n=new A,Rn=new A,Cn=new A;class pr extends ui{get primitiveStride(){return 3}constructor(e,t={}){if(!e.isMesh)throw new Error("SkinnedMeshBVH: First argument must be a Mesh.");super(e.geometry,{...t,[yr]:!0}),this.mesh=e,t[yr]||this.init(t)}writePrimitiveBounds(e,t,r){const{mesh:i,geometry:n}=this,s=this._indirectBuffer,o=n.index?n.index.array:null,d=(s?s[e]:e)*3;let c=d+0,u=d+1,f=d+2;o&&(c=o[c],u=o[u],f=o[f]),i.getVertexPosition(c,wn),i.getVertexPosition(u,Sn),i.getVertexPosition(f,Tn);for(let p=0;p<3;p++){const h=bc[p],y=wn[h],x=Sn[h],b=Tn[h];let m=y;x<m&&(m=x),b<m&&(m=b);let v=y;x>v&&(v=x),b>v&&(v=b),t[r+p]=m,t[r+p+3]=v}return t}shapecast(e){const t=new xe;return super.shapecast({...e,intersectsPrimitive:e.intersectsTriangle,scratchPrimitive:t,iterate:Sc})}raycastObject3D(e,t,r=[]){const{material:i}=e;if(i===void 0)return;const{matrixWorld:n}=e,{firstHitOnly:s}=t;In.copy(n).invert(),He.copy(t.ray).applyMatrix4(In);let o=null,l=1/0;return this.shapecast({boundsTraverseOrder:d=>d.distanceToPoint(He.origin),intersectsBounds:d=>{if(s){if(!He.intersectBox(d,Vi))return fr;let c;return d.containsPoint(He.origin)?c=0:(Vi.applyMatrix4(n),c=t.ray.origin.distanceTo(Vi)),c<l?en:fr}else return He.intersectsBox(d)?en:fr},intersectsTriangle:(d,c)=>{let u=null;if(i.side===ai?u=He.intersectTriangle(d.a,d.b,d.c,!0,lt):i.side===ys?u=He.intersectTriangle(d.c,d.b,d.a,!0,lt):u=He.intersectTriangle(d.a,d.b,d.c,!1,lt),!u)return;u=u.clone().applyMatrix4(n);const f=t.ray.origin.distanceTo(u);if(f>=t.near&&f<=t.far){if(s&&f>=l)return;const{geometry:p}=this,{index:h}=p,y=this.resolvePrimitiveIndex(c),x=y*3;let b=x+0,m=x+1,v=x+2;h&&(b=h.array[b],m=h.array[m],v=h.array[v]);const g={distance:f,point:u.clone(),object:e,uv:null,uv1:null,normal:null,face:{a:b,b:m,c:v,normal:Te.getNormal(d.a,d.b,d.c,new A),materialIndex:0},faceIndex:y};if(Vr){const C=new A;Te.getBarycoord(lt,d.a,d.b,d.c,C),g.barycoord=C}const w=p.attributes.uv,R=p.attributes.uv1,S=p.attributes.normal;if(w){Or.fromBufferAttribute(w,b),Wr.fromBufferAttribute(w,m),qr.fromBufferAttribute(w,v),g.uv=new G;const C=Te.getInterpolation(lt,d.a,d.b,d.c,Or,Wr,qr,g.uv);Vr||(g.uv=C)}if(R){Or.fromBufferAttribute(R,b),Wr.fromBufferAttribute(R,m),qr.fromBufferAttribute(R,v),g.uv1=new G;const C=Te.getInterpolation(lt,d.a,d.b,d.c,Or,Wr,qr,g.uv1);Vr||(g.uv1=C),wc&&(g.uv2=g.uv1)}if(S){_n.fromBufferAttribute(S,b),Rn.fromBufferAttribute(S,m),Cn.fromBufferAttribute(S,v),g.normal=new A;const C=Te.getInterpolation(lt,d.a,d.b,d.c,_n,Rn,Cn,g.normal);g.normal.dot(He.direction)>0&&g.normal.multiplyScalar(-1),Vr||(g.normal=C)}l=g.distance,o=g,s||r.push(g)}}}),s&&o&&r.push(o),r}}function Sc(a,e,t,r,i,n,s){const{mesh:o,geometry:l}=t,d=l.index?l.index.array:null;for(let c=a,u=e+a;c<u;c++){const f=t.resolvePrimitiveIndex(c);let p=3*f+0,h=3*f+1,y=3*f+2;if(d&&(p=d[p],h=d[h],y=d[y]),o.getVertexPosition(p,s.a),o.getVertexPosition(h,s.b),o.getVertexPosition(y,s.c),s.needsUpdate=!0,r(s,c,i,n))return!0}return!1}const je=new O({min:"array<f32, 3>",max:"array<f32, 3>"},"BVHBoundingBox");je.getLength=()=>6;const wt=new O({leftBounds:"BVHBoundingBox",rightBounds:"BVHBoundingBox",rightChildOrTriangleOffset:"uint",splitAxisOrTriangleCount:"uint",_alignment0:"uint",_alignment1:"uint"},"BVHNode");wt.getLength=()=>2*je.getLength()+4;const Tc=new O({matrixWorld:"mat4x4f",inverseMatrixWorld:"mat4x4f",visible:"uint",_alignment0:"uint",_alignment1:"uint",_alignment2:"uint"},"TransformStruct"),k=new O({origin:"vec3f",direction:"vec3f",maxDist:"float"},"Ray"),Ut=new O({indices:"vec4u",normal:"vec3f",didHit:"bool",barycoord:"vec3f",objectIndex:"uint",side:"float",dist:"float"},"IntersectionResult"),Qr=new O({faceIndices:"vec4u",closestPoint:"vec3f",found:"bool",barycoord:"vec3f",objectIndex:"uint",faceNormal:"vec3f",side:"float",distanceSq:"float"},"PointQueryResult"),Ds=wr(`
 
 	const BVH_STACK_DEPTH = 60u;
 	const INFINITY = 1e20;
 	const TRI_INTERSECT_EPSILON = 1e-5;
 
-`),$s=wi(`
+`),$s=wr(`
 	struct IntersectionResult {
 		indices: vec4u,
 		normal: vec3f,
@@ -231,15 +231,15 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[_c,Ic,k,wt,$s,Ds]);class Fa extends bs{static get type(){return"ProxyCallNode"}constructor(e,t){super(),this.proxyNode=e,this.params=t}setup(){return this.proxyNode.proxyNode.call(...this.params)}}class Ms{get isNode(){return!0}get proxyNode(){const{proxyObject:e,proxyProperty:t}=this,i=t.split(".");let r=e;for(let n=0,s=i.length;n<s;n++)r=r?.[i[n]];return r&&"functionNode"in r?r.functionNode:r??null}constructor(e,t=null){return this.proxyObject=t,this.proxyProperty=e,new Proxy(this,{get(i,r){if(r in i)return Reflect.get(i,r);{const n=i.proxyNode;if(!n)return;const s=Reflect.get(n,r);return typeof s=="function"?s.bind(n):s}},set(i,r,n){if(r in i)return Reflect.set(i,r,n);throw new Error("NodeProxy: Cannot set members of proxied nodes.")}})}}const ee=(...a)=>new Ms(...a),K=(...a)=>{const e=new Ms(...a),t=(...i)=>new Fa(e,i);return vs.nodeProxyConstructor(t,e)};class Na extends Ms{get proxyNode(){return super.proxyNode||this.fallbackNode}constructor(e,t){super(e,null),Object.defineProperty(this,"fallbackNode",{value:t})}setup(e){return this.proxyObject=e.getContext(),this.proxyNode.setup(e)}}const _e=(...a)=>new Na(...a),ue=(...a)=>{const e=new Na(...a),t=(...i)=>new Fa(e,i);return vs.nodeProxyConstructor(t,e)},hs=64,La=hs/4,Ke=new pt,$e=new pt;function Dn(a,e,t,i){const r=e*H;for(let n=0;n<3;n++){const s=a[r+n],o=a[r+n+3];s>o?(t[i+n]=1,t[i+n+3]=-1):(t[i+n]=s,t[i+n+3]=o)}}function za(a,e,t,i,r){const n=t*H;Dn(a,t+1,i,r),Dn(a,t+e[n+6],i,r+6)}function Rc(a,e){const t=a?a.array:null,i=new Uint32Array(e.length*3);for(let r=0,n=e.length;r<n;r++){const s=3*r,o=3*e[r];for(let l=0;l<3;l++)i[s+l]=t?t[o+l]:o+l}return i}function $n(a,e,t,i){const r=new Uint32Array(i),n=new Float32Array(i);a._roots.forEach(s=>{const o=new Uint16Array(s),l=new Uint32Array(s),d=new Float32Array(s);for(let c=0,u=s.byteLength/ne;c<u;c++){const f=c*H,p=f*2,h=t*La,y=Q(p,o);if(y||za(d,l,c,n,h),e===null){t++;continue}if(y){const x=l[f+6],b=o[p+14],{transformSlot:m,nodeOffset:v}=b===0?{transformSlot:0,nodeOffset:0}:e[x];if(m>16777215)throw new Error(`packBVHBufferUtils: transform slot ${m} exceeds the 24-bit TLAS leaf limit.`);r[h+12]=v,r[h+13]=4278190080|m&16777215}else r[h+12]=l[f+6],r[h+13]=l[f+7];t++}})}function Cc(a,e){return Ea(new Uint16Array(a),new Uint32Array(a),e)}function Ea(a,e,t){if(Q(t*H*2,a))return 1;const r=e[t*H+6];return r+Ea(a,e,t+r)}function Mn(a,e=0){const t=new Uint16Array(a),i=new Uint32Array(a);let r=0;return n(e*H,1),r;function n(s,o){const l=s,d=s*2;if(Q(d,t))r=Math.max(o,r);else{const u=Y(l,i),f=X(l);n(f,o+1),n(u,o+1)}}}function Dc(a,e,t,i,r,n){const s=new Uint16Array(n),o=new Uint32Array(n),l=new Float32Array(n),d=new Uint16Array(a),c=new Uint32Array(a),u=new Float32Array(a);for(let f=0;f<t;f++){const p=e+f,h=p*H,y=h*2,x=r*La,b=x*2;Q(y,d)?(o[x+12]=c[h+6]+i,s[b+26]=d[y+14],s[b+27]=Ss):(za(u,c,p,l,x),o[x+12]=c[h+6],o[x+13]=c[h+7]),r++}}function $c(a,e,t,i,r){const{geometry:n}=a,{start:s,count:o,vertexStart:l}=e;if(a.indirect){const d=Rc(n.index,a._indirectBuffer);for(let c=0;c<d.length;c++)r[c+i]=d[c]-l+t}else if(n.index)for(let d=0;d<o;d++)r[d+i]=n.index.getX(d+s)-l+t;else for(let d=0;d<o;d++)r[d+i]=d+s+t}function Mc(a,e,t,i,r,n){const{geometry:s,mesh:o=null}=a,{vertexStart:l,vertexCount:d}=e,c=new Float32Array(i),u=r.getLength();r.membersLayout.forEach(({name:f},p)=>{const h=s.attributes[f];n.getDefaultAttributeValue(f,Ke);for(let y=0;y<d;y++){if(h){switch($e.fromBufferAttribute(h,y+l),h.itemSize){case 1:$e.y=Ke.y,$e.z=Ke.z,$e.w=Ke.w;break;case 2:$e.z=Ke.z,$e.w=Ke.w;break;case 3:$e.w=Ke.w;break}o&&(f==="position"||f==="normal"||f==="tangent")&&o.applyBoneTransform(y+l,$e)}else $e.copy(Ke);$e.toArray(c,(t+y)*u+p*4)}})}class Pc extends bs{constructor(e){super(),this.literal=e}build(){return this.literal}}class ps extends bs{constructor(e,t="property"){super(),this.node=e,this.output=t}build(e){return this.node.build(e,this.output)}}function Bc(a){return a.isNode?new ps(a):null}function ka(a){const e=[];for(const t of a)if(Array.isArray(t))for(const i of t){const r=Bc(i);r&&e.push(r)}return e}function Ha(a,e){return a.map(t=>(t&&!t.isNode&&t instanceof Function&&(t=t(e)),t&&t.isNode?(t.setup(e),t.isWGSLTagCodeNode?new ps(t,"inline"):new ps(t)):t))}function ms(a,e,t){let i="";for(let r=0,n=a.length;r<n;r++)if(i+=a[r],r<e.length){const s=e[r];Array.isArray(s)||(typeof s=="string"||typeof s=="number"?i+=String(s):i+=s.build(t))}return i}class Ac extends Qo{static get type(){return"WGSLTagFnNode"}constructor(e,t,i="wgsl"){super("",ka(t),i),this.isWGSLTagFnNode=!0,this.tokens=e,this.args=t}setup(e){super.setup(e),this._normalizedArgs=Ha(this.args,e)}getNodeFunction(e){const{tokens:t,_normalizedArgs:i}=this,r=e.getDataFromNode(this);let n=r.nodeFunction;if(n===void 0){let s="";for(let o=0,l=t.length;o<l;o++)if(s+=t[o],o<i.length){const d=i[o];Array.isArray(d)||(typeof d=="string"||typeof d=="number"?s+=String(d):d.isStructLayoutNode?s+=d.getNodeType(e):d.isStruct?s+=d.layout.getNodeType(e):s+="_arg"+o)}s=s.replace(/\/\/.*[\n\r]/g,""),n=e.parser.parseFunction(s),r.nodeFunction=n}return n}generate(e,t){const i=super.generate(e,t),{_normalizedArgs:r}=this,n=ms(this.tokens,r,e),{type:s}=this.getNodeFunction(e),o=e.getCodeFromNode(this,s);return o.code=n.replace(/\/\/.+[\n\r]/g,"").replace(/->\s*void/,"").trim(),i}}class Fc extends jo{static get type(){return"WGSLTagCodeNode"}constructor(e,t,i="wgsl"){super("",ka(t),i),this.isWGSLTagCodeNode=!0,this.tokens=e,this.args=t}setup(e){super.setup(e),this._normalizedArgs=Ha(this.args,e)}build(e,t){return t==="inline"?ms(this.tokens,this._normalizedArgs,e):super.build(e,t)}generate(e){super.generate(e);const t=e.getCodeFromNode(this,this.getNodeType(e));return t.code=ms(this.tokens,this._normalizedArgs,e),t.code}}const Nc=a=>{const e=(...t)=>{if(t.length===1&&t[0]&&typeof t[0]=="object"&&!t[0].isNode){const i=t[0];for(const r in i)typeof i[r]=="string"&&(i[r]=new Pc(i[r]))}return a.call(...t)};return vs.nodeProxyConstructor(e,a)},I=(a,...e)=>Nc(new Ac(a,e)),zt=(a,...e)=>new Fc(a,e),gs=vt(60);function Lc(a,e){const{name:t=`bvh_shapecast_fn_${Math.random().toString(36).substring(2,7)}`,shapeStruct:i,resultStruct:r=null,prefixFn:n=null,boundsOrderFn:s=null,intersectsBoundsFn:o,intersectRangeFn:l,transformShapeFn:d=null,transformResultFn:c=null,resetShapeFn:u=null}=e,{nodes:f,transforms:p}=a.storage;let h="";n&&(h=zt`${n}();`);let y="";c&&(y=zt`${c}( result, objectIndex );`);let x="";d&&(x=zt`${d}( &localShape, objectIndex );`);let b="";u&&(b=zt`${u}( objectIndex );`);let m="";s&&(m=zt`
+`,[_c,Ic,k,wt,$s,Ds]);class Fa extends bs{static get type(){return"ProxyCallNode"}constructor(e,t){super(),this.proxyNode=e,this.params=t}setup(){return this.proxyNode.proxyNode.call(...this.params)}}class Ms{get isNode(){return!0}get proxyNode(){const{proxyObject:e,proxyProperty:t}=this,r=t.split(".");let i=e;for(let n=0,s=r.length;n<s;n++)i=i?.[r[n]];return i&&"functionNode"in i?i.functionNode:i??null}constructor(e,t=null){return this.proxyObject=t,this.proxyProperty=e,new Proxy(this,{get(r,i){if(i in r)return Reflect.get(r,i);{const n=r.proxyNode;if(!n)return;const s=Reflect.get(n,i);return typeof s=="function"?s.bind(n):s}},set(r,i,n){if(i in r)return Reflect.set(r,i,n);throw new Error("NodeProxy: Cannot set members of proxied nodes.")}})}}const ee=(...a)=>new Ms(...a),K=(...a)=>{const e=new Ms(...a),t=(...r)=>new Fa(e,r);return vs.nodeProxyConstructor(t,e)};class Na extends Ms{get proxyNode(){return super.proxyNode||this.fallbackNode}constructor(e,t){super(e,null),Object.defineProperty(this,"fallbackNode",{value:t})}setup(e){return this.proxyObject=e.getContext(),this.proxyNode.setup(e)}}const _e=(...a)=>new Na(...a),ue=(...a)=>{const e=new Na(...a),t=(...r)=>new Fa(e,r);return vs.nodeProxyConstructor(t,e)},hs=64,La=hs/4,Ke=new pt,$e=new pt;function Dn(a,e,t,r){const i=e*H;for(let n=0;n<3;n++){const s=a[i+n],o=a[i+n+3];s>o?(t[r+n]=1,t[r+n+3]=-1):(t[r+n]=s,t[r+n+3]=o)}}function za(a,e,t,r,i){const n=t*H;Dn(a,t+1,r,i),Dn(a,t+e[n+6],r,i+6)}function Rc(a,e){const t=a?a.array:null,r=new Uint32Array(e.length*3);for(let i=0,n=e.length;i<n;i++){const s=3*i,o=3*e[i];for(let l=0;l<3;l++)r[s+l]=t?t[o+l]:o+l}return r}function $n(a,e,t,r){const i=new Uint32Array(r),n=new Float32Array(r);a._roots.forEach(s=>{const o=new Uint16Array(s),l=new Uint32Array(s),d=new Float32Array(s);for(let c=0,u=s.byteLength/ne;c<u;c++){const f=c*H,p=f*2,h=t*La,y=Q(p,o);if(y||za(d,l,c,n,h),e===null){t++;continue}if(y){const x=l[f+6],b=o[p+14],{transformSlot:m,nodeOffset:v}=b===0?{transformSlot:0,nodeOffset:0}:e[x];if(m>16777215)throw new Error(`packBVHBufferUtils: transform slot ${m} exceeds the 24-bit TLAS leaf limit.`);i[h+12]=v,i[h+13]=4278190080|m&16777215}else i[h+12]=l[f+6],i[h+13]=l[f+7];t++}})}function Cc(a,e){return Ea(new Uint16Array(a),new Uint32Array(a),e)}function Ea(a,e,t){if(Q(t*H*2,a))return 1;const i=e[t*H+6];return i+Ea(a,e,t+i)}function Mn(a,e=0){const t=new Uint16Array(a),r=new Uint32Array(a);let i=0;return n(e*H,1),i;function n(s,o){const l=s,d=s*2;if(Q(d,t))i=Math.max(o,i);else{const u=Y(l,r),f=X(l);n(f,o+1),n(u,o+1)}}}function Dc(a,e,t,r,i,n){const s=new Uint16Array(n),o=new Uint32Array(n),l=new Float32Array(n),d=new Uint16Array(a),c=new Uint32Array(a),u=new Float32Array(a);for(let f=0;f<t;f++){const p=e+f,h=p*H,y=h*2,x=i*La,b=x*2;Q(y,d)?(o[x+12]=c[h+6]+r,s[b+26]=d[y+14],s[b+27]=Ss):(za(u,c,p,l,x),o[x+12]=c[h+6],o[x+13]=c[h+7]),i++}}function $c(a,e,t,r,i){const{geometry:n}=a,{start:s,count:o,vertexStart:l}=e;if(a.indirect){const d=Rc(n.index,a._indirectBuffer);for(let c=0;c<d.length;c++)i[c+r]=d[c]-l+t}else if(n.index)for(let d=0;d<o;d++)i[d+r]=n.index.getX(d+s)-l+t;else for(let d=0;d<o;d++)i[d+r]=d+s+t}function Mc(a,e,t,r,i,n){const{geometry:s,mesh:o=null}=a,{vertexStart:l,vertexCount:d}=e,c=new Float32Array(r),u=i.getLength();i.membersLayout.forEach(({name:f},p)=>{const h=s.attributes[f];n.getDefaultAttributeValue(f,Ke);for(let y=0;y<d;y++){if(h){switch($e.fromBufferAttribute(h,y+l),h.itemSize){case 1:$e.y=Ke.y,$e.z=Ke.z,$e.w=Ke.w;break;case 2:$e.z=Ke.z,$e.w=Ke.w;break;case 3:$e.w=Ke.w;break}o&&(f==="position"||f==="normal"||f==="tangent")&&o.applyBoneTransform(y+l,$e)}else $e.copy(Ke);$e.toArray(c,(t+y)*u+p*4)}})}class Pc extends bs{constructor(e){super(),this.literal=e}build(){return this.literal}}class ps extends bs{constructor(e,t="property"){super(),this.node=e,this.output=t}build(e){return this.node.build(e,this.output)}}function Bc(a){return a.isNode?new ps(a):null}function ka(a){const e=[];for(const t of a)if(Array.isArray(t))for(const r of t){const i=Bc(r);i&&e.push(i)}return e}function Ha(a,e){return a.map(t=>(t&&!t.isNode&&t instanceof Function&&(t=t(e)),t&&t.isNode?(t.setup(e),t.isWGSLTagCodeNode?new ps(t,"inline"):new ps(t)):t))}function ms(a,e,t){let r="";for(let i=0,n=a.length;i<n;i++)if(r+=a[i],i<e.length){const s=e[i];Array.isArray(s)||(typeof s=="string"||typeof s=="number"?r+=String(s):r+=s.build(t))}return r}class Ac extends Qo{static get type(){return"WGSLTagFnNode"}constructor(e,t,r="wgsl"){super("",ka(t),r),this.isWGSLTagFnNode=!0,this.tokens=e,this.args=t}setup(e){super.setup(e),this._normalizedArgs=Ha(this.args,e)}getNodeFunction(e){const{tokens:t,_normalizedArgs:r}=this,i=e.getDataFromNode(this);let n=i.nodeFunction;if(n===void 0){let s="";for(let o=0,l=t.length;o<l;o++)if(s+=t[o],o<r.length){const d=r[o];Array.isArray(d)||(typeof d=="string"||typeof d=="number"?s+=String(d):d.isStructLayoutNode?s+=d.getNodeType(e):d.isStruct?s+=d.layout.getNodeType(e):s+="_arg"+o)}s=s.replace(/\/\/.*[\n\r]/g,""),n=e.parser.parseFunction(s),i.nodeFunction=n}return n}generate(e,t){const r=super.generate(e,t),{_normalizedArgs:i}=this,n=ms(this.tokens,i,e),{type:s}=this.getNodeFunction(e),o=e.getCodeFromNode(this,s);return o.code=n.replace(/\/\/.+[\n\r]/g,"").replace(/->\s*void/,"").trim(),r}}class Fc extends jo{static get type(){return"WGSLTagCodeNode"}constructor(e,t,r="wgsl"){super("",ka(t),r),this.isWGSLTagCodeNode=!0,this.tokens=e,this.args=t}setup(e){super.setup(e),this._normalizedArgs=Ha(this.args,e)}build(e,t){return t==="inline"?ms(this.tokens,this._normalizedArgs,e):super.build(e,t)}generate(e){super.generate(e);const t=e.getCodeFromNode(this,this.getNodeType(e));return t.code=ms(this.tokens,this._normalizedArgs,e),t.code}}const Nc=a=>{const e=(...t)=>{if(t.length===1&&t[0]&&typeof t[0]=="object"&&!t[0].isNode){const r=t[0];for(const i in r)typeof r[i]=="string"&&(r[i]=new Pc(r[i]))}return a.call(...t)};return vs.nodeProxyConstructor(e,a)},I=(a,...e)=>Nc(new Ac(a,e)),zt=(a,...e)=>new Fc(a,e),gs=vt(60);function Lc(a,e){const{name:t=`bvh_shapecast_fn_${Math.random().toString(36).substring(2,7)}`,shapeStruct:r,resultStruct:i=null,prefixFn:n=null,boundsOrderFn:s=null,intersectsBoundsFn:o,intersectRangeFn:l,transformShapeFn:d=null,transformResultFn:c=null,resetShapeFn:u=null}=e,{nodes:f,transforms:p}=a.storage;let h="";n&&(h=zt`${n}();`);let y="";c&&(y=zt`${c}( result, objectIndex );`);let x="";d&&(x=zt`${d}( &localShape, objectIndex );`);let b="";u&&(b=zt`${u}( objectIndex );`);let m="";s&&(m=zt`
 			let leftToRight = ${s}( localShape, splitAxis, node );
 			c1 = select( rightIndex, leftIndex, leftToRight );
 			c2 = select( leftIndex, rightIndex, leftToRight );
 			hit1 = select( hitRight, hitLeft, leftToRight );
 			hit2 = select( hitLeft, hitRight, leftToRight );
-		`);const v=r?zt`result: ptr<function, ${r}>`:"",g=r?"result":"",w=I`
+		`);const v=i?zt`result: ptr<function, ${i}>`:"",g=i?"result":"",w=I`
 		// fn
-		fn ${t}( shape: ${i}, ${v} ) -> bool {
+		fn ${t}( shape: ${r}, ${v} ) -> bool {
 
 			${h}
 
@@ -252,7 +252,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 			var blasDidHit: bool = false;
 			var objectIndex: u32 = 0;
-			var localShape: ${i} = shape;
+			var localShape: ${r} = shape;
 
 			// the stack depth the current cluster's BLAS drains back down to once it is complete
 			var tlasReset: i32 = 0;
@@ -326,7 +326,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 						let offset = infoY;
 						// Cast bool callbacks to u32 to preserve their existing hit / miss behavior.
 						let rangeResult = u32( ${l}( localShape, offset, count, ${g} ) );
-						blasDidHit = rangeResult != ${fi}u || blasDidHit;
+						blasDidHit = rangeResult != ${fr}u || blasDidHit;
 						if ( rangeResult == ${Ma}u ) {
 
 							${y}
@@ -373,7 +373,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			return didHit;
 
 		}
-	`;return w.outputType=r,w.functionName=t,w}const zc=I`
+	`;return w.outputType=i,w.functionName=t,w}const zc=I`
 	// fn
 	fn closestPointToTriangle(
 		p: vec3f,
@@ -475,7 +475,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return result;
 
 	}
-`,br=I`
+`,bi=I`
 	// fn
 	fn ndcToCameraRay( ndc: vec2f, inverseModelViewProjection: mat4x4f ) -> ${k} {
 
@@ -523,10 +523,10 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return select( dist, - 1.0, t1 < dist );
 
 	}
-`;function Ec(a){const{index:e,attributes:t,transforms:i}=a.storage,r=Le(1).toVar("bvh_rayScalarAnyHit");return a.getShapecastFn({name:"bvh_RaycastAnyHit",shapeStruct:k,intersectsBoundsFn:I`
+`;function Ec(a){const{index:e,attributes:t,transforms:r}=a.storage,i=Le(1).toVar("bvh_rayScalarAnyHit");return a.getShapecastFn({name:"bvh_RaycastAnyHit",shapeStruct:k,intersectsBoundsFn:I`
 			fn rayIntersectsBoundsAnyHit( ray: ${k}, bounds: ${je} ) -> u32 {
 
-				let dist = ${Ua}( ray, bounds ) * ${r};
+				let dist = ${Ua}( ray, bounds ) * ${i};
 				return u32( dist >= 0.0 && ( ray.maxDist <= 0.0 || dist < ray.maxDist ) );
 
 			}
@@ -540,7 +540,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					let c = ${t}[ ${e}[ ti * 3u + 2u ] ].position.xyz;
 
 					let triResult = ${Ps}( ray, a, b, c, 0.0 );
-					if ( triResult.didHit && ( ray.maxDist <= 0.0 || triResult.dist * ${r} < ray.maxDist ) ) {
+					if ( triResult.didHit && ( ray.maxDist <= 0.0 || triResult.dist * ${i} < ray.maxDist ) ) {
 
 						return ${Ma}u;
 
@@ -548,28 +548,28 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 
-				return ${fi}u;
+				return ${fr}u;
 
 			}
 		`,transformShapeFn:I`
 			fn transformRayAnyHit( ray: ptr<function, ${k}>, objectIndex: u32 ) -> void {
 
-				let toLocal = ${i}[ objectIndex ].inverseMatrixWorld;
+				let toLocal = ${r}[ objectIndex ].inverseMatrixWorld;
 				ray.origin = ( toLocal * vec4f( ray.origin, 1.0 ) ).xyz;
 				ray.direction = ( toLocal * vec4f( ray.direction, 0.0 ) ).xyz;
 
 				let len = length( ray.direction );
 				ray.direction /= len;
-				${r} = 1.0 / len;
+				${i} = 1.0 / len;
 
 			}
 		`,resetShapeFn:I`
 			fn resetRayScalarAnyHit( objectIndex: u32 ) -> void {
 
-				${r} = 1.0;
+				${i} = 1.0;
 
 			}
-		`})}function kc(a){const{index:e,attributes:t,transforms:i}=a.storage,r=Le(1).toVar("bvh_rayScalar");return a.getShapecastFn({name:"bvh_RaycastFirstHit",shapeStruct:k,resultStruct:Ut,boundsOrderFn:I`
+		`})}function kc(a){const{index:e,attributes:t,transforms:r}=a.storage,i=Le(1).toVar("bvh_rayScalar");return a.getShapecastFn({name:"bvh_RaycastFirstHit",shapeStruct:k,resultStruct:Ut,boundsOrderFn:I`
 			fn getBoundsOrder( ray: ${k}, splitAxis: u32, node: ${wt} ) -> bool {
 
 				return ray.direction[ splitAxis ] >= 0.0;
@@ -578,7 +578,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		`,intersectsBoundsFn:I`
 			fn rayIntersectsBounds( ray: ${k}, bounds: ${je}, result: ptr<function, ${Ut}> ) -> u32 {
 
-				let dist = ${Ua}( ray, bounds ) * ${r};
+				let dist = ${Ua}( ray, bounds ) * ${i};
 				if ( dist < 0.0 ) {
 
 					return 0u;
@@ -614,7 +614,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					let c = ${t}[ i2 ].position.xyz;
 
 					var triResult = ${Ps}( ray, a, b, c, 0.0 );
-					triResult.dist *= ${r};
+					triResult.dist *= ${i};
 					if ( triResult.didHit && ( ray.maxDist <= 0.0 || triResult.dist < ray.maxDist ) && ( ! result.didHit || triResult.dist < result.dist ) ) {
 
 						result.didHit = true;
@@ -636,19 +636,19 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		`,transformShapeFn:I`
 			fn transformRay( ray: ptr<function, ${k}>, objectIndex: u32 ) -> void {
 
-				let toLocal = ${i}[ objectIndex ].inverseMatrixWorld;
+				let toLocal = ${r}[ objectIndex ].inverseMatrixWorld;
 				ray.origin = ( toLocal * vec4f( ray.origin, 1.0 ) ).xyz;
 				ray.direction = ( toLocal * vec4f( ray.direction, 0.0 ) ).xyz;
 
 				let len = length( ray.direction );
 				ray.direction /= len;
-				${r} = 1.0 / len;
+				${i} = 1.0 / len;
 
 			}
 		`,transformResultFn:I`
 			fn transformResult( hit: ptr<function, ${Ut}>, objectIndex: u32 ) -> void {
 
-				let toLocal = ${i}[ objectIndex ].inverseMatrixWorld;
+				let toLocal = ${r}[ objectIndex ].inverseMatrixWorld;
 				hit.normal = normalize( ( transpose( toLocal ) * vec4f( hit.normal, 0.0 ) ).xyz );
 				hit.objectIndex = objectIndex;
 
@@ -656,10 +656,10 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		`,resetShapeFn:I`
 			fn resetRayScalar( objectIndex: u32 ) -> void {
 
-				${r} = 1.0;
+				${i} = 1.0;
 
 			}
-		`})}function Hc(a){const{storage:e,structs:t}=a,i=t.attributes.membersLayout.map(({name:r})=>`result.${r} = a0.${r} * barycoord.x + a1.${r} * barycoord.y + a2.${r} * barycoord.z;`).join(`
+		`})}function Hc(a){const{storage:e,structs:t}=a,r=t.attributes.membersLayout.map(({name:i})=>`result.${i} = a0.${i} * barycoord.x + a1.${i} * barycoord.y + a2.${i} * barycoord.z;`).join(`
 `);return I`
 		// fn
 		fn bvh_sampleTrianglePoint( barycoord: vec3f, indices: vec3u ) -> ${t.attributes} {
@@ -668,14 +668,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			var a0 = ${e.attributes}[ indices.x ];
 			var a1 = ${e.attributes}[ indices.y ];
 			var a2 = ${e.attributes}[ indices.z ];
-			${i}
+			${r}
 			return result;
 
 		}
-	`}function Uc(a){const{index:e,attributes:t,transforms:i}=a.storage,r=Go().toVar("bvh_toWorldMat");return a.getShapecastFn({name:"bvh_ClosestPointToPoint",shapeStruct:"vec3f",resultStruct:Qi,boundsOrderFn:I`
+	`}function Uc(a){const{index:e,attributes:t,transforms:r}=a.storage,i=Go().toVar("bvh_toWorldMat");return a.getShapecastFn({name:"bvh_ClosestPointToPoint",shapeStruct:"vec3f",resultStruct:Qr,boundsOrderFn:I`
 			fn cppBoundsOrder( shape: vec3f, splitAxis: u32, node: ${wt} ) -> bool {
 
-				let toWorld = ${r};
+				let toWorld = ${i};
 				let absX = abs( toWorld[ 0 ].xyz );
 				let absY = abs( toWorld[ 1 ].xyz );
 				let absZ = abs( toWorld[ 2 ].xyz );
@@ -700,7 +700,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 			}
 		`,intersectsBoundsFn:I`
-			fn cppIntersectsBounds( shape: vec3f, bounds: ${je}, result: ptr<function, ${Qi}> ) -> u32 {
+			fn cppIntersectsBounds( shape: vec3f, bounds: ${je}, result: ptr<function, ${Qr}> ) -> u32 {
 
 				// return 1u;
 				// we need to check this no matter what if the result has not been found yet
@@ -710,7 +710,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 
-				let toWorld = ${r};
+				let toWorld = ${i};
 
 				// transform to world space
 				let bMin = vec3f( bounds.min[ 0 ], bounds.min[ 1 ], bounds.min[ 2 ] );
@@ -731,10 +731,10 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 			}
 		`,intersectRangeFn:I`
-			fn cppIntersectsRange( shape: vec3f, offset: u32, count: u32, result: ptr<function, ${Qi}> ) -> bool {
+			fn cppIntersectsRange( shape: vec3f, offset: u32, count: u32, result: ptr<function, ${Qr}> ) -> bool {
 
 				var didHit = false;
-				let toWorld = ${r};
+				let toWorld = ${i};
 
 				for ( var i = offset; i < offset + count; i ++ ) {
 
@@ -778,7 +778,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					// node bounds are transformed by "toWorld" during the bounds tests. Only the
 					// object-local BLAS bounds need the object's world matrix - the top-level bounds
 					// are already in world space - so restore identity before top-level traversal resumes.
-					${r} = mat4x4f(
+					${i} = mat4x4f(
 						1.0, 0.0, 0.0, 0.0,
 						0.0, 1.0, 0.0, 0.0,
 						0.0, 0.0, 1.0, 0.0,
@@ -789,16 +789,16 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			`,transformShapeFn:I`
 			fn cppTransformShape( shape: ptr<function, vec3f>, objectIndex: u32 ) -> void {
 
-				${r} = ${i}[ objectIndex ].matrixWorld;
+				${i} = ${r}[ objectIndex ].matrixWorld;
 
 			}
 		`,transformResultFn:I`
-			fn cppTransformResult( result: ptr<function, ${Qi}>, objectIndex: u32 ) -> void {
+			fn cppTransformResult( result: ptr<function, ${Qr}>, objectIndex: u32 ) -> void {
 
 				result.objectIndex = objectIndex;
 
 			}
-		`})}const mi=24,Or=(1<<mi)-1,Va=31-mi,Vc=(1<<Va)-1,Wr=new W,qr=new ve,si=new W;class Oc extends Ba{constructor(e,t){super(),t={getBVH:(s,o)=>{throw new Error("ClusteredBVH: getBVH callback must be provided ")},shouldCluster:s=>s.isSkinnedMesh||s.isInstancedMesh||s.isBatchedMesh,primitiveLimit:64,matrixWorld:Array.isArray(e)?new W:e.matrixWorld,includeInstances:!0,_strictLeafSize:1,...t};const i=Array.from(Oa(e)),r=Math.ceil(Math.log2(i.length)),n=(1<<r)-1;this.objects=i,this.getBVH=t.getBVH,this.shouldCluster=t.shouldCluster,this.includeInstances=t.includeInstances,this.primitiveLimit=t.primitiveLimit,this.matrixWorld=t.matrixWorld,this.bvhMap=new WeakMap,this.idBits=r,this.idMask=n,this.primitiveBufferStride=2,this.init(t)}init(e){let t=0;const{objects:i,bvhMap:r,matrixWorld:n}=this;Wr.copy(n).invert(),i.forEach(s=>{const o=[];for(let l=0,d=this._getInstanceCount(s);l<d;l++){const c=this.getBVH(s,l);o.push(c),c&&(t+=this.shouldCluster(s)?c._roots.length:this._countRelevantLeafNodes(c))}r.set(s,o)}),this.primitiveBuffer=new Uint32Array(t*2),this._fillPrimitiveBuffer(this.primitiveBuffer),super.init(e)}getRootRanges(){return[{offset:0,count:this.primitiveBuffer.length/this.primitiveBufferStride}]}refit(...e){Wr.copy(this.matrixWorld).invert(),super.refit(...e)}writePrimitiveBounds(e,t,i){const{primitiveBuffer:r,bvhMap:n,objects:s}=this,o=r[2*e+0],l=r[2*e+1],d=s[this.getObjectId(o)],c=this.getInstanceId(o),u=n.get(d)[c],f=this.getBVHRootIndex(l),p=this.getBVHNodeIndex(l);d.isInstancedMesh||d.isBatchedMesh?(d.getMatrixAt(c,si),si.premultiply(d.matrixWorld)):si.copy(d.matrixWorld),si.premultiply(Wr),j(p,new Float32Array(u._roots[f]),qr),qr.applyMatrix4(si);const{min:h,max:y}=qr;t[i+0]=h.x,t[i+1]=h.y,t[i+2]=h.z,t[i+3]=y.x,t[i+4]=y.y,t[i+5]=y.z}getInstanceId(e){const{idMask:t,idBits:i}=this;return(e&~t)>>>i}getObjectId(e){const{idMask:t}=this;return e&t}getBVHRootIndex(e){return e>>>mi}getBVHNodeIndex(e){return(e&Or)*H}_getInstanceCount(e){const{includeInstances:t}=this;return e.isInstancedMesh&&t?e.count:e.isBatchedMesh&&t?e.instanceCount:1}_fillPrimitiveBuffer(e){const{objects:t,bvhMap:i,idBits:r,primitiveLimit:n}=this;let s=0;const o=(l,d,c,u)=>{if(u>Or)throw new Error(`ClusteredBVH: cluster node index ${u} exceeds the ${mi}-bit packing limit and cannot be represented.`);if(c>Vc)throw new Error(`ClusteredBVH: bvh root index ${c} exceeds the ${Va}-bit packing limit and cannot be represented.`);e[2*s+0]=l<<r|d,e[2*s+1]=c<<mi|u&Or,s++};t.forEach((l,d)=>{i.get(l).forEach((c,u)=>{if(c)if(this.shouldCluster(l))for(let f=0,p=c._roots.length;f<p;f++)o(u,d,f,0);else Pn(c,n,(f,p)=>{o(u,d,f,p/H)})})})}_countRelevantLeafNodes(e){const{primitiveLimit:t}=this;let i=0;return Pn(e,t,(r,n,s,o)=>{i++,o&&s>=t&&console.warn(`ClusteredBVH: a leaf node with ${s} primitives exceeds the cluster primitive limit of ${t} and cannot be subdivided further.`)}),i}}function Pn(a,e,t){const i=a._roots.length;for(let r=0;r<i;r++)Ze.setBVH(a,r),Ze.traverseBuffer((n,s,o)=>{const l=Ze.getRangeStart(o),c=Ze.getRangeEnd(o)-l;return c<e||s?(t(r,o,c,s),!0):!1});Ze.reset()}function Oa(a,e=new Set){return Array.isArray(a)?a.forEach(t=>Oa(t,e)):a.traverse(t=>{t.isMesh&&e.add(t)}),e}const ct=new W,ji=new W,Bn={start:0,count:0,vertexStart:0,vertexCount:0};function Wc(a){let e=a;for(;e;){if(e.visible===!1)return!1;e=e.parent}return!0}function An(a){return a._roots.reduce((e,t)=>e+t.byteLength/ne,0)}function Fn(a,e){return`${a}_${e}`}class qc{constructor(e,t={}){const{attributes:i={position:"vec4f"},autogenerateBvh:r=!0}=t;Array.isArray(e)||(e=[e]),e=e.map(n=>{if(n.isObject3D)return n;if(n.isBufferGeometry)return new li(n);if(n instanceof ur){const s=new li;return s.geometry.boundsTree=n,s}}),this._bvhCache=new Map,this.autogenerateBvh=r,this.attributes=i,this.objects=e,this.bvh=null,this.storage=new Qr,this.structs=new Qr({transform:Tc}),this.fns=new Qr({raycastFirstHit:kc(this),raycastAnyHit:Ec(this),closestPointToPoint:Uc(this),sampleTrianglePoint:null},K)}getRootObject(){let{objects:e}=this;if(e.isObject3D)return e;Array.isArray(e)||(e=[e]),e=e.map(i=>{if(i.isObject3D)return i;if(i.isBufferGeometry)return new li(i);if(i instanceof ur){const r=new li;return r.geometry.boundsTree=i,r}});const t=new Ko;return t.children=e,t}getShapecastFn(e){return Lc(this,e)}update(){const e=this.getRootObject();let t=0;e.traverse(z=>{z.isMesh&&t++}),this.bvh=new Oc(e,{strategy:Ot,getBVH:(z,Ee)=>this._getBVHSync(z,Ee,Bn),primitiveLimit:t<3?1/0:64}),this.dispose();const{attributes:i,structs:r,bvh:n}=this,s=[],o=[],l=new Map;let d=An(n)*hs,c=0,u=0;const f=[];let p=0;const h=this._getTransformMap(n),{primitiveBuffer:y,primitiveBufferStride:x}=n;for(let z=0,Ee=y.length;z<Ee;z+=x){const ke=y[z],Tt=y[z+1],Kt=n.objects[n.getObjectId(ke)],Xt=n.getInstanceId(ke),Yt={start:0,count:0,vertexStart:0,vertexCount:0},It=this._getBVHSync(Kt,Xt,Yt);if(!It)throw new Error("BVHComputeData: BVH not found.");let le=s.find(Rt=>Rt.bvh===It);le||(le={index:s.length,bvh:It,range:Yt,geometryOffset:0},c+=le.range.count,u+=le.range.vertexCount,s.push(le));const rt=n.getBVHRootIndex(Tt),_t=n.getBVHNodeIndex(Tt)/H,Ri=`${le.index}_${rt}_${_t}`;let st=l.get(Ri);if(st===void 0){const Rt=Cc(It._roots[rt],_t);st={data:le,root:rt,node:_t,size:Rt,base:0},l.set(Ri,st),o.push(st),d+=Rt*hs,p=Math.max(p,Mn(It._roots[rt],_t))}f.push({transformSlot:h.get(Fn(ke,rt)).slot,subtree:st})}if(Mn(n._roots[0])+p-1>gs.value)throw new Error("BVHComputeData: BVH depth overruns the compute stack depth.");const v=Math.max(h.size,2);c=Math.max(c,2),u=Math.max(u,2);const g=new O(i,"bvh_GeometryStruct");let w=0,R=0;const S=new Uint32Array(c),C=new ArrayBuffer(u*g.getLength()*4),D=new ArrayBuffer(d);s.forEach(z=>{z.geometryOffset=R/3,z.bvh.indirect||(z.geometryOffset-=z.range.start/3),$c(z.bvh,z.range,w,R,S),Mc(z.bvh,z.range,w,C,g,this),R+=z.range.count,w+=z.range.vertexCount});let T=An(n);o.forEach(z=>{z.base=T,Dc(z.data.bvh._roots[z.root],z.node,z.size,z.data.geometryOffset,T,D),T+=z.size}),f.forEach(z=>z.nodeOffset=z.subtree.base),$n(n,f,0,D);const $=new ArrayBuffer(r.transform.getLength()*v*4),_=E(new N(new Uint32Array(D),1),wt).toReadOnly().setName("bvh_nodes"),P=new N(new Uint32Array($),1),F=E(P,r.transform).toReadOnly().setName("bvh_transforms"),L=E(new N(S,1),"uint").toReadOnly().setName("bvh_index"),U=E(new N(new Uint32Array(C),g.getLength()),g).toReadOnly().setName("bvh_attributes");this.storage.transforms=F,this.storage.nodes=_,this.storage.index=L,this.storage.attributes=U,this.structs.attributes=g,ji.copy(n.matrixWorld).invert(),h.forEach(z=>{this.writeTransformData(z,ji,z.slot,$)}),this.fns.sampleTrianglePoint=Hc(this),this._bvhCache.clear()}async updateAsync(){const e=[];this.getRootObject().traverse(t=>{if(!t.isMesh)return;let i=1;t.isInstancedMesh?i=t.count:t.isBatchedMesh&&(i=t.instanceCount);for(let r=0;r<i;r++)e.push(this.getBVH(t,r,Bn))}),await Promise.all(e),this.update()}updateTransforms(){const{bvh:e,storage:t}=this;e.refit();const i=t.nodes.proxyNode.value;$n(e,null,0,i.array.buffer),i.needsUpdate=!0;const r=t.transforms.proxyNode.value,n=r.array.buffer;ji.copy(e.matrixWorld).invert(),this._getTransformMap(e).forEach(s=>{this.writeTransformData(s,ji,s.slot,n)}),r.needsUpdate=!0}writeTransformData(e,t,i,r){const{structs:n}=this,s=new Float32Array(r),o=new Uint32Array(r),{object:l,instanceId:d}=e;l.isInstancedMesh||l.isBatchedMesh?(l.getMatrixAt(d,ct),ct.premultiply(l.matrixWorld)):ct.copy(l.matrixWorld),ct.premultiply(t),ct.toArray(s,i*n.transform.getLength()),ct.invert(),ct.toArray(s,i*n.transform.getLength()+16);let c=Wc(l);l.isBatchedMesh&&(c=c&&l.getVisibleAt(d)),o[i*n.transform.getLength()+32]=c?1:0}getBVH(e,t,i){const{autogenerateBvh:r,_bvhCache:n}=this;let s=null;if(e.boundsTree||e.isSkinnedMesh){const o=e.geometry;if(i.count=o.index?o.index.count:o.attributes.position.count,i.vertexCount=o.attributes.position.count,s=e.boundsTree||null,s===null&&r){const l=e.uuid;s=n.get(l)||new pi(e),n.set(l,s)}}else if(e.isBatchedMesh){const o=e.getGeometryIdAt(t),l=e.getGeometryRangeAt(o);if(Object.assign(i,l),s=e.boundsTrees[o]||null,s===null&&r){const d=`batched_${e.geometry.uuid}_${l.start}_${l.count}`;s=n.get(d)||new gt(e.geometry,{range:{...i}}),n.set(d,s)}}else{const o=e.geometry;if(i.count=o.index?o.index.count:o.attributes.position.count,i.vertexCount=o.attributes.position.count,s=e.geometry.boundsTree||null,s===null&&r){const l=o.uuid;s=n.get(l)||new gt(o),n.set(l,s)}}return s}getDefaultAttributeValue(e,t){switch(e){case"position":case"color":t.set(1,1,1,1);break;default:t.set(0,0,0,0)}return t}dispose(){const{storage:e}=this;for(const t in e)e[t].value?.dispose()}_getBVHSync(e,t,i){const r=this.getBVH(e,t,i);if(r instanceof Promise)throw new Error('BVHComputeData: "getBVH" returned a promise. Use "updateAsync" instead.');return r}_getTransformMap(e){const{primitiveBuffer:t,primitiveBufferStride:i}=e,r=new Map;for(let n=0,s=t.length;n<s;n+=i){const o=t[n],l=e.getBVHRootIndex(t[n+1]),d=Fn(o,l);if(r.has(d))continue;const c=r.size,u=e.objects[e.getObjectId(o)],f=e.getInstanceId(o);r.set(d,{object:u,instanceId:f,compositeId:o,root:l,slot:c})}return r}}class Qr{constructor(e={},t=ee){const i={};return new Proxy({...e},{get(r,n){return i[n]||(i[n]=t(n,r)),i[n]},set(r,n,s){return r[n]=s,!0}})}}const Qc=new Xo(-1,1,1,-1,0,1);class jc extends xa{constructor(){super(),this.setAttribute("position",new Xs([-1,3,0,-1,-1,0,3,-1,0],3)),this.setAttribute("uv",new Xs([0,2,0,0,2,0],2))}}const Gc=new jc;class kt{constructor(e){this._mesh=new li(Gc,e)}dispose(){this._mesh.geometry.dispose()}render(e){e.render(this._mesh,Qc)}get material(){return this._mesh.material}set material(e){this._mesh.material=e}}const Gi=M(`
+		`})}const mr=24,Oi=(1<<mr)-1,Va=31-mr,Vc=(1<<Va)-1,Wi=new W,qi=new ve,sr=new W;class Oc extends Ba{constructor(e,t){super(),t={getBVH:(s,o)=>{throw new Error("ClusteredBVH: getBVH callback must be provided ")},shouldCluster:s=>s.isSkinnedMesh||s.isInstancedMesh||s.isBatchedMesh,primitiveLimit:64,matrixWorld:Array.isArray(e)?new W:e.matrixWorld,includeInstances:!0,_strictLeafSize:1,...t};const r=Array.from(Oa(e)),i=Math.ceil(Math.log2(r.length)),n=(1<<i)-1;this.objects=r,this.getBVH=t.getBVH,this.shouldCluster=t.shouldCluster,this.includeInstances=t.includeInstances,this.primitiveLimit=t.primitiveLimit,this.matrixWorld=t.matrixWorld,this.bvhMap=new WeakMap,this.idBits=i,this.idMask=n,this.primitiveBufferStride=2,this.init(t)}init(e){let t=0;const{objects:r,bvhMap:i,matrixWorld:n}=this;Wi.copy(n).invert(),r.forEach(s=>{const o=[];for(let l=0,d=this._getInstanceCount(s);l<d;l++){const c=this.getBVH(s,l);o.push(c),c&&(t+=this.shouldCluster(s)?c._roots.length:this._countRelevantLeafNodes(c))}i.set(s,o)}),this.primitiveBuffer=new Uint32Array(t*2),this._fillPrimitiveBuffer(this.primitiveBuffer),super.init(e)}getRootRanges(){return[{offset:0,count:this.primitiveBuffer.length/this.primitiveBufferStride}]}refit(...e){Wi.copy(this.matrixWorld).invert(),super.refit(...e)}writePrimitiveBounds(e,t,r){const{primitiveBuffer:i,bvhMap:n,objects:s}=this,o=i[2*e+0],l=i[2*e+1],d=s[this.getObjectId(o)],c=this.getInstanceId(o),u=n.get(d)[c],f=this.getBVHRootIndex(l),p=this.getBVHNodeIndex(l);d.isInstancedMesh||d.isBatchedMesh?(d.getMatrixAt(c,sr),sr.premultiply(d.matrixWorld)):sr.copy(d.matrixWorld),sr.premultiply(Wi),j(p,new Float32Array(u._roots[f]),qi),qi.applyMatrix4(sr);const{min:h,max:y}=qi;t[r+0]=h.x,t[r+1]=h.y,t[r+2]=h.z,t[r+3]=y.x,t[r+4]=y.y,t[r+5]=y.z}getInstanceId(e){const{idMask:t,idBits:r}=this;return(e&~t)>>>r}getObjectId(e){const{idMask:t}=this;return e&t}getBVHRootIndex(e){return e>>>mr}getBVHNodeIndex(e){return(e&Oi)*H}_getInstanceCount(e){const{includeInstances:t}=this;return e.isInstancedMesh&&t?e.count:e.isBatchedMesh&&t?e.instanceCount:1}_fillPrimitiveBuffer(e){const{objects:t,bvhMap:r,idBits:i,primitiveLimit:n}=this;let s=0;const o=(l,d,c,u)=>{if(u>Oi)throw new Error(`ClusteredBVH: cluster node index ${u} exceeds the ${mr}-bit packing limit and cannot be represented.`);if(c>Vc)throw new Error(`ClusteredBVH: bvh root index ${c} exceeds the ${Va}-bit packing limit and cannot be represented.`);e[2*s+0]=l<<i|d,e[2*s+1]=c<<mr|u&Oi,s++};t.forEach((l,d)=>{r.get(l).forEach((c,u)=>{if(c)if(this.shouldCluster(l))for(let f=0,p=c._roots.length;f<p;f++)o(u,d,f,0);else Pn(c,n,(f,p)=>{o(u,d,f,p/H)})})})}_countRelevantLeafNodes(e){const{primitiveLimit:t}=this;let r=0;return Pn(e,t,(i,n,s,o)=>{r++,o&&s>=t&&console.warn(`ClusteredBVH: a leaf node with ${s} primitives exceeds the cluster primitive limit of ${t} and cannot be subdivided further.`)}),r}}function Pn(a,e,t){const r=a._roots.length;for(let i=0;i<r;i++)Ze.setBVH(a,i),Ze.traverseBuffer((n,s,o)=>{const l=Ze.getRangeStart(o),c=Ze.getRangeEnd(o)-l;return c<e||s?(t(i,o,c,s),!0):!1});Ze.reset()}function Oa(a,e=new Set){return Array.isArray(a)?a.forEach(t=>Oa(t,e)):a.traverse(t=>{t.isMesh&&e.add(t)}),e}const ct=new W,jr=new W,Bn={start:0,count:0,vertexStart:0,vertexCount:0};function Wc(a){let e=a;for(;e;){if(e.visible===!1)return!1;e=e.parent}return!0}function An(a){return a._roots.reduce((e,t)=>e+t.byteLength/ne,0)}function Fn(a,e){return`${a}_${e}`}class qc{constructor(e,t={}){const{attributes:r={position:"vec4f"},autogenerateBvh:i=!0}=t;Array.isArray(e)||(e=[e]),e=e.map(n=>{if(n.isObject3D)return n;if(n.isBufferGeometry)return new lr(n);if(n instanceof ui){const s=new lr;return s.geometry.boundsTree=n,s}}),this._bvhCache=new Map,this.autogenerateBvh=i,this.attributes=r,this.objects=e,this.bvh=null,this.storage=new Qi,this.structs=new Qi({transform:Tc}),this.fns=new Qi({raycastFirstHit:kc(this),raycastAnyHit:Ec(this),closestPointToPoint:Uc(this),sampleTrianglePoint:null},K)}getRootObject(){let{objects:e}=this;if(e.isObject3D)return e;Array.isArray(e)||(e=[e]),e=e.map(r=>{if(r.isObject3D)return r;if(r.isBufferGeometry)return new lr(r);if(r instanceof ui){const i=new lr;return i.geometry.boundsTree=r,i}});const t=new Ko;return t.children=e,t}getShapecastFn(e){return Lc(this,e)}update(){const e=this.getRootObject();let t=0;e.traverse(z=>{z.isMesh&&t++}),this.bvh=new Oc(e,{strategy:Ot,getBVH:(z,Ee)=>this._getBVHSync(z,Ee,Bn),primitiveLimit:t<3?1/0:64}),this.dispose();const{attributes:r,structs:i,bvh:n}=this,s=[],o=[],l=new Map;let d=An(n)*hs,c=0,u=0;const f=[];let p=0;const h=this._getTransformMap(n),{primitiveBuffer:y,primitiveBufferStride:x}=n;for(let z=0,Ee=y.length;z<Ee;z+=x){const ke=y[z],Tt=y[z+1],Kt=n.objects[n.getObjectId(ke)],Xt=n.getInstanceId(ke),Yt={start:0,count:0,vertexStart:0,vertexCount:0},It=this._getBVHSync(Kt,Xt,Yt);if(!It)throw new Error("BVHComputeData: BVH not found.");let le=s.find(Rt=>Rt.bvh===It);le||(le={index:s.length,bvh:It,range:Yt,geometryOffset:0},c+=le.range.count,u+=le.range.vertexCount,s.push(le));const it=n.getBVHRootIndex(Tt),_t=n.getBVHNodeIndex(Tt)/H,Rr=`${le.index}_${it}_${_t}`;let st=l.get(Rr);if(st===void 0){const Rt=Cc(It._roots[it],_t);st={data:le,root:it,node:_t,size:Rt,base:0},l.set(Rr,st),o.push(st),d+=Rt*hs,p=Math.max(p,Mn(It._roots[it],_t))}f.push({transformSlot:h.get(Fn(ke,it)).slot,subtree:st})}if(Mn(n._roots[0])+p-1>gs.value)throw new Error("BVHComputeData: BVH depth overruns the compute stack depth.");const v=Math.max(h.size,2);c=Math.max(c,2),u=Math.max(u,2);const g=new O(r,"bvh_GeometryStruct");let w=0,R=0;const S=new Uint32Array(c),C=new ArrayBuffer(u*g.getLength()*4),D=new ArrayBuffer(d);s.forEach(z=>{z.geometryOffset=R/3,z.bvh.indirect||(z.geometryOffset-=z.range.start/3),$c(z.bvh,z.range,w,R,S),Mc(z.bvh,z.range,w,C,g,this),R+=z.range.count,w+=z.range.vertexCount});let T=An(n);o.forEach(z=>{z.base=T,Dc(z.data.bvh._roots[z.root],z.node,z.size,z.data.geometryOffset,T,D),T+=z.size}),f.forEach(z=>z.nodeOffset=z.subtree.base),$n(n,f,0,D);const $=new ArrayBuffer(i.transform.getLength()*v*4),_=E(new N(new Uint32Array(D),1),wt).toReadOnly().setName("bvh_nodes"),P=new N(new Uint32Array($),1),F=E(P,i.transform).toReadOnly().setName("bvh_transforms"),L=E(new N(S,1),"uint").toReadOnly().setName("bvh_index"),U=E(new N(new Uint32Array(C),g.getLength()),g).toReadOnly().setName("bvh_attributes");this.storage.transforms=F,this.storage.nodes=_,this.storage.index=L,this.storage.attributes=U,this.structs.attributes=g,jr.copy(n.matrixWorld).invert(),h.forEach(z=>{this.writeTransformData(z,jr,z.slot,$)}),this.fns.sampleTrianglePoint=Hc(this),this._bvhCache.clear()}async updateAsync(){const e=[];this.getRootObject().traverse(t=>{if(!t.isMesh)return;let r=1;t.isInstancedMesh?r=t.count:t.isBatchedMesh&&(r=t.instanceCount);for(let i=0;i<r;i++)e.push(this.getBVH(t,i,Bn))}),await Promise.all(e),this.update()}updateTransforms(){const{bvh:e,storage:t}=this;e.refit();const r=t.nodes.proxyNode.value;$n(e,null,0,r.array.buffer),r.needsUpdate=!0;const i=t.transforms.proxyNode.value,n=i.array.buffer;jr.copy(e.matrixWorld).invert(),this._getTransformMap(e).forEach(s=>{this.writeTransformData(s,jr,s.slot,n)}),i.needsUpdate=!0}writeTransformData(e,t,r,i){const{structs:n}=this,s=new Float32Array(i),o=new Uint32Array(i),{object:l,instanceId:d}=e;l.isInstancedMesh||l.isBatchedMesh?(l.getMatrixAt(d,ct),ct.premultiply(l.matrixWorld)):ct.copy(l.matrixWorld),ct.premultiply(t),ct.toArray(s,r*n.transform.getLength()),ct.invert(),ct.toArray(s,r*n.transform.getLength()+16);let c=Wc(l);l.isBatchedMesh&&(c=c&&l.getVisibleAt(d)),o[r*n.transform.getLength()+32]=c?1:0}getBVH(e,t,r){const{autogenerateBvh:i,_bvhCache:n}=this;let s=null;if(e.boundsTree||e.isSkinnedMesh){const o=e.geometry;if(r.count=o.index?o.index.count:o.attributes.position.count,r.vertexCount=o.attributes.position.count,s=e.boundsTree||null,s===null&&i){const l=e.uuid;s=n.get(l)||new pr(e),n.set(l,s)}}else if(e.isBatchedMesh){const o=e.getGeometryIdAt(t),l=e.getGeometryRangeAt(o);if(Object.assign(r,l),s=e.boundsTrees[o]||null,s===null&&i){const d=`batched_${e.geometry.uuid}_${l.start}_${l.count}`;s=n.get(d)||new gt(e.geometry,{range:{...r}}),n.set(d,s)}}else{const o=e.geometry;if(r.count=o.index?o.index.count:o.attributes.position.count,r.vertexCount=o.attributes.position.count,s=e.geometry.boundsTree||null,s===null&&i){const l=o.uuid;s=n.get(l)||new gt(o),n.set(l,s)}}return s}getDefaultAttributeValue(e,t){switch(e){case"position":case"color":t.set(1,1,1,1);break;default:t.set(0,0,0,0)}return t}dispose(){const{storage:e}=this;for(const t in e)e[t].value?.dispose()}_getBVHSync(e,t,r){const i=this.getBVH(e,t,r);if(i instanceof Promise)throw new Error('BVHComputeData: "getBVH" returned a promise. Use "updateAsync" instead.');return i}_getTransformMap(e){const{primitiveBuffer:t,primitiveBufferStride:r}=e,i=new Map;for(let n=0,s=t.length;n<s;n+=r){const o=t[n],l=e.getBVHRootIndex(t[n+1]),d=Fn(o,l);if(i.has(d))continue;const c=i.size,u=e.objects[e.getObjectId(o)],f=e.getInstanceId(o);i.set(d,{object:u,instanceId:f,compositeId:o,root:l,slot:c})}return i}}class Qi{constructor(e={},t=ee){const r={};return new Proxy({...e},{get(i,n){return r[n]||(r[n]=t(n,i)),r[n]},set(i,n,s){return i[n]=s,!0}})}}const Qc=new Xo(-1,1,1,-1,0,1);class jc extends xa{constructor(){super(),this.setAttribute("position",new Xs([-1,3,0,-1,-1,0,3,-1,0],3)),this.setAttribute("uv",new Xs([0,2,0,0,2,0],2))}}const Gc=new jc;class kt{constructor(e){this._mesh=new lr(Gc,e)}dispose(){this._mesh.geometry.dispose()}render(e){e.render(this._mesh,Qc)}get material(){return this._mesh.material}set material(e){this._mesh.material=e}}const Gr=M(`
 	fn sampleTexel( tex: texture_2d<f32>, coord: vec2f ) -> vec4f {
 
 		// Manual bilinear filtering using textureLoad to support filterable float32 textures
@@ -824,27 +824,27 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return mix( y0, y1, fr.y );
 
 	}
-`);class Kc extends Si{get texture(){return this._texNode.value}set texture(e){this._texNode.value=e}get fromTexture(){return this._fromTexNode.value}set fromTexture(e){this._fromTexNode.value=e}get toneMapping(){return this._toneMapping.toneMapping}set toneMapping(e){this._toneMapping.setToneMapping(e)}get transition(){return this._transitionUniform.value}set transition(e){this._transitionUniform.value=e}get exposure(){return this._toneMapping.exposureNode.value}set exposure(e){this._toneMapping.exposureNode.value=e}constructor(e){super();const t=Re(new qe);this._texNode=t;const i=Re(new qe);this._fromTexNode=i;const r=Ti(Gt()),n=B(1);this._transitionUniform=n;const s=I`
+`);class Kc extends Sr{get texture(){return this._texNode.value}set texture(e){this._texNode.value=e}get fromTexture(){return this._fromTexNode.value}set fromTexture(e){this._fromTexNode.value=e}get toneMapping(){return this._toneMapping.toneMapping}set toneMapping(e){this._toneMapping.setToneMapping(e)}get transition(){return this._transitionUniform.value}set transition(e){this._transitionUniform.value=e}get exposure(){return this._toneMapping.exposureNode.value}set exposure(e){this._toneMapping.exposureNode.value=e}constructor(e){super();const t=Re(new qe);this._texNode=t;const r=Re(new qe);this._fromTexNode=r;const i=Tr(Gt()),n=B(1);this._transitionUniform=n;const s=I`
 			fn fade( uv: vec2f ) -> vec4f {
 
 				if ( ${n} <= 0.0 ) {
 
-					return ${Gi}( ${i}, uv );
+					return ${Gr}( ${r}, uv );
 
 				} else if ( ${n} >= 1.0 ) {
 
-					return ${Gi}( ${t}, uv );
+					return ${Gr}( ${t}, uv );
 
 				} else {
 
-					let col0 = ${Gi}( ${i}, uv );
-					let col1 = ${Gi}( ${t}, uv );
+					let col0 = ${Gr}( ${r}, uv );
+					let col1 = ${Gr}( ${t}, uv );
 					return mix( col0, col1, ${n} );
 
 				}
 
 			}
-		`,o=Yo(di,1,s(r));this._toneMapping=o,this.transparent=!0,this.colorNode=ya(o.rgb,o.a),this.setValues(e)}}const Wa=I`
+		`,o=Yo(dr,1,s(i));this._toneMapping=o,this.transparent=!0,this.colorNode=ya(o.rgb,o.a),this.setValues(e)}}const Wa=I`
 	fn debugHeatColor( t: f32 ) -> vec3f {
 
 		let r = clamp( 1.5 - abs( 4.0 * t - 3.0 ), 0.0, 1.0 );
@@ -853,14 +853,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return vec3f( r, g, b );
 
 	}
-`,Ki=new O({tlasCount:"uint",blasCount:"uint",didHit:"bool",dist:"float"},"DebugBoundsResult");function Xc(a){const{transforms:e,index:t,attributes:i,materials:r}=a.storage,n=B(new W),s=B(new W),o=B(1),l=B(1),d=B(0),c=B(64),u=vt(0).toVar("bvh_debugBoundsLevel"),f=Le(1).toVar("bvh_debugRayScalar"),p=Le(0).toVar("bvh_debugMaterialSide"),h=I`
+`,Kr=new O({tlasCount:"uint",blasCount:"uint",didHit:"bool",dist:"float"},"DebugBoundsResult");function Xc(a){const{transforms:e,index:t,attributes:r,materials:i}=a.storage,n=B(new W),s=B(new W),o=B(1),l=B(1),d=B(0),c=B(64),u=vt(0).toVar("bvh_debugBoundsLevel"),f=Le(1).toVar("bvh_debugRayScalar"),p=Le(0).toVar("bvh_debugMaterialSide"),h=I`
 		fn debugGetBoundsOrder( ray: ${k}, splitAxis: u32, node: ${wt} ) -> bool {
 
 			return ray.direction[ splitAxis ] >= 0.0;
 
 		}
 	`,y=I`
-		fn debugIntersectsBounds( ray: ${k}, bounds: ${je}, result: ptr<function, ${Ki}> ) -> u32 {
+		fn debugIntersectsBounds( ray: ${k}, bounds: ${je}, result: ptr<function, ${Kr}> ) -> u32 {
 
 			let boundsMin = vec3( bounds.min[ 0 ], bounds.min[ 1 ], bounds.min[ 2 ] );
 			let boundsMax = vec3( bounds.max[ 0 ], bounds.max[ 1 ], bounds.max[ 2 ] );
@@ -900,7 +900,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 		}
 	`,x=I`
-		fn debugIntersectRange( ray: ${k}, offset: u32, count: u32, result: ptr<function, ${Ki}> ) -> bool {
+		fn debugIntersectRange( ray: ${k}, offset: u32, count: u32, result: ptr<function, ${Kr}> ) -> bool {
 
 			var didHit = false;
 			if ( ${d} > 0.5 ) {
@@ -911,9 +911,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					let i1 = ${t}[ ti * 3u + 1u ];
 					let i2 = ${t}[ ti * 3u + 2u ];
 
-					let a = ${i}[ i0 ].position.xyz;
-					let b = ${i}[ i1 ].position.xyz;
-					let c = ${i}[ i2 ].position.xyz;
+					let a = ${r}[ i0 ].position.xyz;
+					let b = ${r}[ i1 ].position.xyz;
+					let c = ${r}[ i2 ].position.xyz;
 
 					var triResult = ${Aa}( ray, a, b, c );
 					triResult.dist *= ${f};
@@ -951,7 +951,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			ray.direction = ray.direction / len;
 			${f} = 1.0 / len;
 
-			${p} = ${r}[ object.materialIndex ].side;
+			${p} = ${i}[ object.materialIndex ].side;
 			${u} = 1u;
 
 		}
@@ -962,15 +962,15 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			${u} = 0u;
 
 		}
-	`,v=a.getShapecastFn({name:"debugBoundsCount",shapeStruct:k,resultStruct:Ki,boundsOrderFn:h,intersectsBoundsFn:y,intersectRangeFn:x,transformShapeFn:b,resetShapeFn:m}),g=I`
+	`,v=a.getShapecastFn({name:"debugBoundsCount",shapeStruct:k,resultStruct:Kr,boundsOrderFn:h,intersectsBoundsFn:y,intersectRangeFn:x,transformShapeFn:b,resetShapeFn:m}),g=I`
 		fn debugBounds( vUv: vec2f ) -> vec4f {
 
 			let ndc = vUv * 2.0 - vec2f( 1.0 );
-			var ray = ${br}( ndc, ${n} * ${s} );
+			var ray = ${bi}( ndc, ${n} * ${s} );
 			ray.direction = normalize( ray.direction );
 
 			// count the boxes the ray crosses, pruning those behind the nearest hit surface
-			var result: ${Ki};
+			var result: ${Kr};
 			${v}( ray, &result );
 
 			let tlas = select( 0u, result.tlasCount, ${o} > 0.5 );
@@ -982,7 +982,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			return vec4f( ${Wa}( t ), 1.0 );
 
 		}
-	`;return g.uniforms={cameraToModelMatrix:n,inverseProjectionMatrix:s,displayTLAS:o,displayBLAS:l,stopAtSurface:d,saturationCount:c},g}class te{get computeNode(){return this.kernel.computeNode}get workgroupSize(){return this.kernel.workgroupSize}set needsUpdate(e){this.setWorkgroupSize(...this.workgroupSize)}constructor(e,t={}){const{workgroupSize:i=[64],context:r={}}=t;this._fn=e,this.kernel=null,this.context=r,this.setWorkgroupSize(...i)}defineUniformAccessors(e){for(const t in e){if(t in this)throw new Error(`ComputeNode: Uniform name ${t} is already defined.`);const i=e[t];i.isStorageBufferNode&&!i.name&&i.setName(`kernel_${t}`),"value"in i&&Object.defineProperty(this,t,{get(){return e[t].value},set(r){e[t].value=r}})}}setWorkgroupSize(e=64,t=1,i=1){const r=this._fn.context(this.context);return r.parameters=this._fn.parameters,this.kernel?.dispose(),this.kernel=r.computeKernel([e,t,i]),this}dispose(){this.kernel?.dispose(),this.kernel=null}getDispatchSize(e=1,t=1,i=1,r=[]){const[n,s,o]=this.workgroupSize;return r.length=3,r[0]=Math.ceil(e/n),r[1]=Math.ceil(t/s),r[2]=Math.ceil(i/o),r}}const q=wi(`
+	`;return g.uniforms={cameraToModelMatrix:n,inverseProjectionMatrix:s,displayTLAS:o,displayBLAS:l,stopAtSurface:d,saturationCount:c},g}class te{get computeNode(){return this.kernel.computeNode}get workgroupSize(){return this.kernel.workgroupSize}set needsUpdate(e){this.setWorkgroupSize(...this.workgroupSize)}constructor(e,t={}){const{workgroupSize:r=[64],context:i={}}=t;this._fn=e,this.kernel=null,this.context=i,this.setWorkgroupSize(...r)}defineUniformAccessors(e){for(const t in e){if(t in this)throw new Error(`ComputeNode: Uniform name ${t} is already defined.`);const r=e[t];r.isStorageBufferNode&&!r.name&&r.setName(`kernel_${t}`),"value"in r&&Object.defineProperty(this,t,{get(){return e[t].value},set(i){e[t].value=i}})}}setWorkgroupSize(e=64,t=1,r=1){const i=this._fn.context(this.context);return i.parameters=this._fn.parameters,this.kernel?.dispose(),this.kernel=i.computeKernel([e,t,r]),this}dispose(){this.kernel?.dispose(),this.kernel=null}getDispatchSize(e=1,t=1,r=1,i=[]){const[n,s,o]=this.workgroupSize;return i.length=3,i[0]=Math.ceil(e/n),i[1]=Math.ceil(t/s),i[2]=Math.ceil(r/o),i}}const q=wr(`
 
 	const PI: f32 = 3.141592653589793;
 	const EPSILON: f32 = 1e-5;
@@ -1028,7 +1028,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`;function Wt(a=""){const e=new qe(1,1);return e.format=Ce,e.type=bt,e.colorSpace=Jo.workingColorSpace,e.name=a,e.generateMipmaps=!1,e}function wr(a=""){const e=new qe(1,1);return e.format=va,e.type=ba,e.name=a,e.generateMipmaps=!1,e}function qt(a=""){const e=new Zo(1,1,Fe);return e.format=va,e.type=ba,e.name=a,e.generateMipmaps=!1,e}function dr(a=""){const e=new qe(1,1);return e.format=Ce,e.type=fe,e.name=a,e.generateMipmaps=!1,e}const En=vt(256*256),Ga=Le(1/16777216),eu=wi(`
+`;function Wt(a=""){const e=new qe(1,1);return e.format=Ce,e.type=bt,e.colorSpace=Jo.workingColorSpace,e.name=a,e.generateMipmaps=!1,e}function wi(a=""){const e=new qe(1,1);return e.format=va,e.type=ba,e.name=a,e.generateMipmaps=!1,e}function qt(a=""){const e=new Zo(1,1,Fe);return e.format=va,e.type=ba,e.name=a,e.generateMipmaps=!1,e}function di(a=""){const e=new qe(1,1);return e.format=Ce,e.type=fe,e.name=a,e.generateMipmaps=!1,e}const En=vt(256*256),Ga=Le(1/16777216),eu=wr(`
 
 	const SOBOL_DIRECTIONS_1 = array<u32, 32>(
 		0x80000000u, 0xc0000000u, 0xa0000000u, 0xf0000000u,
@@ -1074,7 +1074,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		0x800228f8u, 0x400b3cdcu, 0x200fb67au, 0xb00ddb9du
 	);
 
-`),Ka=vt(0).toVar("sobolPixelIndex"),Xa=vt(0).toVar("sobolPathIndex"),Fs=vt(0).toVar("sobolBounceIndex"),Xi=M(`
+`),Ka=vt(0).toVar("sobolPixelIndex"),Xa=vt(0).toVar("sobolPathIndex"),Fs=vt(0).toVar("sobolBounceIndex"),Xr=M(`
 	fn getMaskedSobol( index: u32, directions: array<u32, 32> ) -> u32 {
 
 		var X = 0u;
@@ -1098,13 +1098,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			return ( ( x >> ${e}( 16 ) ) | ( x << ${e}( 16 ) ) );
 
 		}
-	`),i=M(`
+	`),r=M(`
 		fn sobolHashCombine_${e}( seed: u32, v: ${e} ) -> ${e} {
 
 			return ${e}( seed ) ^ ( v + ${e}( ( seed << 6 ) + ( seed >> 2 ) ) );
 
 		}
-	`),r=M(`
+	`),i=M(`
 		fn sobolLaineKarrasPermutation_${e}( in: ${e}, seed: ${e} ) -> ${e} {
 
 			var x = in;
@@ -1119,12 +1119,12 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 	`),n=I`
 		fn nestedUniformScrambleBase2_${e}( x: ${e}, seed: ${e} ) -> ${e} {
 
-			var res = ${r}( x, seed );
+			var res = ${i}( x, seed );
 			res = ${t}( res );
 			return res;
 
 		}
-	`;return{reverseBits:t,hashCombine:i,lkPermutation:r,scramble:n}},Ie=Array.from({length:5},(a,e)=>tu(e)),iu=I`
+	`;return{reverseBits:t,hashCombine:r,lkPermutation:i,scramble:n}},Ie=Array.from({length:5},(a,e)=>tu(e)),ru=I`
   	${[eu]}
 	fn generateSobolPoint( id: u32 ) -> vec4f {
 
@@ -1138,10 +1138,10 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 		// NOTE: this sobol "direction" is also available but we can't write out 5 components
 		// uint x = index & 0x00ffffffu;
-		let x = ${Ie[1].reverseBits}( ${Xi}( index, SOBOL_DIRECTIONS_1 ) ) & 0x00ffffffu;
-		let y = ${Ie[1].reverseBits}( ${Xi}( index, SOBOL_DIRECTIONS_2 ) ) & 0x00ffffffu;
-		let z = ${Ie[1].reverseBits}( ${Xi}( index, SOBOL_DIRECTIONS_3 ) ) & 0x00ffffffu;
-		let w = ${Ie[1].reverseBits}( ${Xi}( index, SOBOL_DIRECTIONS_4 ) ) & 0x00ffffffu;
+		let x = ${Ie[1].reverseBits}( ${Xr}( index, SOBOL_DIRECTIONS_1 ) ) & 0x00ffffffu;
+		let y = ${Ie[1].reverseBits}( ${Xr}( index, SOBOL_DIRECTIONS_2 ) ) & 0x00ffffffu;
+		let z = ${Ie[1].reverseBits}( ${Xr}( index, SOBOL_DIRECTIONS_3 ) ) & 0x00ffffffu;
+		let w = ${Ie[1].reverseBits}( ${Xr}( index, SOBOL_DIRECTIONS_4 ) ) & 0x00ffffffu;
 
 		return vec4( f32( x ), f32( y ), f32( z ), f32( w ) ) * ${Ga};
 
@@ -1159,7 +1159,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return x;
 
 	}
-`),ru=I`
+`),iu=I`
 	fn sobolGetSeed( effect: u32 ) -> u32 {
 
 		return ${kn}(
@@ -1173,24 +1173,24 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		);
 
 	}
-`,Sr=(a=1,e=iu)=>{if(a<=0)return;const t=a>1?`vec${a}u`:"u32",i=a>1?`vec${a}f`:"f32";let r=".r",n="1u";return a===2?(r=".rg",n="vec2( 1u, 2u )"):a===3?(r=".rgb",n="vec3( 1u, 2u, 3u )"):a===4&&(r="",n="vec4( 1u, 2u, 3u, 4u )"),I`
-		fn sobol${a}( effect: u32 ) -> ${i} {
+`,Si=(a=1,e=ru)=>{if(a<=0)return;const t=a>1?`vec${a}u`:"u32",r=a>1?`vec${a}f`:"f32";let i=".r",n="1u";return a===2?(i=".rg",n="vec2( 1u, 2u )"):a===3?(i=".rgb",n="vec3( 1u, 2u, 3u )"):a===4&&(i="",n="vec4( 1u, 2u, 3u, 4u )"),I`
+		fn sobol${a}( effect: u32 ) -> ${r} {
 
-			let seed = ${ru}( effect );
+			let seed = ${iu}( effect );
 			let index = ${Xa};
 
 			let shuffle_seed = ${Ie[1].hashCombine}( seed, 0u );
 			let shuffled_index = ${Ie[1].scramble}( ${Ie[1].reverseBits}( index ), shuffle_seed );
-			let sobol_pt = ${e}( shuffled_index )${r};
+			let sobol_pt = ${e}( shuffled_index )${i};
 			var result = ${t}( sobol_pt * 16777216.0 );
 
 			let seed2 = ${Ie[a].hashCombine}( seed, ${n} );
 			result = ${Ie[a].scramble}( result, seed2 );
 
-			return ${Ga} * ${i}( result >> ${t}( 8 ) );
+			return ${Ga} * ${r}( result >> ${t}( 8 ) );
 
 		}
-	`},Ya=Sr(1),Za=Sr(2),Ja=Sr(3),Ns=Sr(4),Ls=I`
+	`},Ya=Si(1),Za=Si(2),Ja=Si(3),Ns=Si(4),Ls=I`
 	fn sobolInit( pixel: vec2u, pathIndex: u32, bounceIndex: u32 ) -> void {
 
 		${Ka} = ( pixel.x << 16 ) | pixel.y;
@@ -1204,7 +1204,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		${Fs}++;
 
 	}
-`,su=Object.freeze(Object.defineProperty({__proto__:null,rand1:Ya,rand2:Za,rand3:Ja,rand4:Ns,rngInit:Ls,rngNextBounce:zs},Symbol.toStringTag,{value:"Module"})),eo=0,to=1,nu=2,io=3,au=4,ro=5,so=6,no=7,ao=8,oo=9,lo=50,xt=ue("random.rngInit",Ls),nr=ue("random.rngNextBounce",zs),mt=ue("random.rand1",Ya),Ae=ue("random.rand2",Za),Es=ue("random.rand3",Ja);ue("random.rand4",Ns);const ou=M(`
+`,su=Object.freeze(Object.defineProperty({__proto__:null,rand1:Ya,rand2:Za,rand3:Ja,rand4:Ns,rngInit:Ls,rngNextBounce:zs},Symbol.toStringTag,{value:"Module"})),eo=0,to=1,nu=2,ro=3,au=4,io=5,so=6,no=7,ao=8,oo=9,lo=50,xt=ue("random.rngInit",Ls),ni=ue("random.rngNextBounce",zs),mt=ue("random.rand1",Ya),Ae=ue("random.rand2",Za),Es=ue("random.rand3",Ja);ue("random.rand4",Ns);const ou=M(`
 
 	fn inverse(m: mat3x3f) -> mat3x3f {
 		var adj: mat3x3f;
@@ -1286,7 +1286,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`),Tr=M(`
+`),Ti=M(`
 
 	fn schlickFresnelVec( cosine: f32, f0: vec3f, f90: vec3f ) -> vec3f {
 
@@ -1325,7 +1325,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return f0 + ( f90 - f0 ) * pow( 1.0 - cosine, 5.0 );
 	}
 
-`,[ks]);const Ii=M(`
+`,[ks]);const Ir=M(`
 
 	fn dielectricFresnel( cosThetaI: f32, eta: f32 ) -> f32 {
 
@@ -1369,7 +1369,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[ks,Ii,St]),Hs=M(`
+`,[ks,Ir,St]),Hs=M(`
 
 	fn isTerminatingScatter( scatterRec: ScatterRecord ) -> bool {
 
@@ -1377,7 +1377,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[dt]),ie=M(`
+`,[dt]),re=M(`
 
 	fn clampPathContribution( contribution: vec3f, pathDepth: u32, clampDirect: f32, clampIndirect: f32 ) -> vec3f {
 
@@ -1441,7 +1441,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`),Yi=M(`
+`),Yr=M(`
 
 	fn wrapTexelIndex( i: i32, size: i32, wrapMode: i32 ) -> i32 {
 
@@ -1495,10 +1495,10 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			let f = texelPos - basePos;
 
 			let intSize = vec2i( size );
-			let x0 = ${Yi}( base.x,     intSize.x, wrapS );
-			let x1 = ${Yi}( base.x + 1, intSize.x, wrapS );
-			let y0 = ${Yi}( base.y,     intSize.y, wrapT );
-			let y1 = ${Yi}( base.y + 1, intSize.y, wrapT );
+			let x0 = ${Yr}( base.x,     intSize.x, wrapS );
+			let x1 = ${Yr}( base.x + 1, intSize.x, wrapS );
+			let y0 = ${Yr}( base.y,     intSize.y, wrapT );
+			let y1 = ${Yr}( base.y + 1, intSize.y, wrapT );
 
 			let tile = vec2i( offset );
 			let c00 = textureLoad( ${e}, tile + vec2i( x0, y0 ), page, 0 );
@@ -1566,7 +1566,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[hu,St,Ne,Yc,q]),fr=M(`
+`,[hu,St,Ne,Yc,q]),fi=M(`
 
 	fn equirectDirectionToUv(direction: vec3f) -> vec2f {
 
@@ -1685,7 +1685,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[q,fr]);const fo=M(`
+`,[q,fi]);const fo=M(`
 
 	fn weightedAlphaBlend( prevColor: vec4f, newColor: vec4f, weight: f32 ) -> vec4f {
 
@@ -1887,9 +1887,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[ft,q]),_u=1e-6,mo=1e-6,Qn=.999,it=new O({inside:"bool",object:"uint",extinction:"vec3f",albedo:"vec3f",anisotropy:"float"},"Medium"),Qt=new O({extinction:"vec3f",object:"uint",albedo:"vec3f",anisotropy:"float",inside:"uint"},"MediumState"),Ru=I`
+`,[ft,q]),_u=1e-6,mo=1e-6,Qn=.999,rt=new O({inside:"bool",object:"uint",extinction:"vec3f",albedo:"vec3f",anisotropy:"float"},"Medium"),Qt=new O({extinction:"vec3f",object:"uint",albedo:"vec3f",anisotropy:"float",inside:"uint"},"MediumState"),Ru=I`
 
-	fn storeMedium( medium: ${it} ) -> ${Qt} {
+	fn storeMedium( medium: ${rt} ) -> ${Qt} {
 
 		var state: ${Qt};
 		state.extinction = medium.extinction;
@@ -1903,9 +1903,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 `,go=I`
 
-	fn loadMedium( state: ${Qt} ) -> ${it} {
+	fn loadMedium( state: ${Qt} ) -> ${rt} {
 
-		var medium: ${it};
+		var medium: ${rt};
 		medium.inside = state.inside != 0u;
 		medium.object = state.object;
 		medium.extinction = state.extinction;
@@ -1928,11 +1928,11 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 `,xo=I`
 
-	fn enterMedium( material: ${qa}, object: u32 ) -> ${it} {
+	fn enterMedium( material: ${qa}, object: u32 ) -> ${rt} {
 
 		let anisotropy = clamp( material.scatterAnisotropy, - ${Qn}, ${Qn} );
 
-		var medium: ${it};
+		var medium: ${rt};
 		medium.extinction = - log( max( material.attenuationColor, vec3f( ${_u} ) ) ) / material.attenuationDistance;
 		medium.albedo = ${Cu}( material.multiscatterColor * material.scatterStrength, anisotropy );
 		medium.inside = any( medium.albedo > vec3f( 0.0 ) ) && any( medium.extinction > vec3f( 0.0 ) );
@@ -1960,7 +1960,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 `,vo=I`
 
-	fn sampleMediumDistance( medium: ${it}, channelPdf: vec3f, u: vec2f ) -> f32 {
+	fn sampleMediumDistance( medium: ${rt}, channelPdf: vec3f, u: vec2f ) -> f32 {
 
 		var channel = 2u;
 		if ( u.x < channelPdf.r ) {
@@ -1987,14 +1987,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 `,bo=I`
 
-	fn mediumDistancePdf( medium: ${it}, dist: f32, scattered: bool ) -> vec3f {
+	fn mediumDistancePdf( medium: ${rt}, dist: f32, scattered: bool ) -> vec3f {
 
 		let transmittance = exp( - medium.extinction * dist );
 		return select( transmittance, medium.extinction * transmittance, scattered );
 
 	}
 
-`,ci=M(`
+`,cr=M(`
 
 	fn ggxDirection( incidentDir: vec3f, alpha: vec2f, uv: vec2f ) -> vec3f {
 
@@ -2096,7 +2096,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[q]),Ir=M(`
+`,[q]),Ii=M(`
 
 	fn ggxDistribution( H: vec3f, alpha: vec2f ) -> f32 {
 
@@ -2116,7 +2116,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[q]),ui=M(`
+`,[q]),ur=M(`
 
 	fn ggxReflectionAdjustedPDF( V: vec3f, H: vec3f, alpha: vec2f ) -> f32 {
 
@@ -2127,7 +2127,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return D * G1 / ( 4 * NdotV );
 
 	}
-`,[Ir,Ws]),wo=M(`
+`,[Ii,Ws]),wo=M(`
 
 	fn ggxRefractionAdjustedPDF( V: vec3f, L: vec3f, H: vec3f, alpha: vec2f, eta: f32 ) -> f32 {
 
@@ -2141,7 +2141,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return D * G1 * abs( HdotV ) * abs( HdotL ) / ( NdotV * denom * denom );
 
 	}
-`,[Ir,Ws]),Mu=I`
+`,[Ii,Ws]),Mu=I`
 
 	fn ensureValidReflectionNormal( n: vec3f, ng: vec3f, i: vec3f ) -> vec3f {
 
@@ -2593,7 +2593,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[$u,Ir]),gi=M(`
+`,[$u,Ii]),gr=M(`
 
 	fn isMatchedIor( eta: f32 ) -> bool {
 
@@ -2633,7 +2633,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[Ws,Ir,Ii]),jr=M(`
+`,[Ws,Ii,Ir]),ji=M(`
 
 	fn thinWallTransmissionRoughness( alpha: f32, eta: f32 ) -> f32 {
 
@@ -2650,13 +2650,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`),_r=360,Rr=830,Au=M(`
+`),_i=360,Ri=830,Au=M(`
 
 	fn dispersionIor( ior: f32, dispersion: f32, wavelength: f32 ) -> f32 {
 
 		let nd = max( ior, 1.0 );
 		let scale = ( nd - 1.0 ) * max( dispersion, 0.0 ) / 20.0;
-		let lambda = clamp( wavelength, ${_r}.0, ${Rr}.0 );
+		let lambda = clamp( wavelength, ${_i}.0, ${Ri}.0 );
 		return max( nd + scale * ( 523655.0 / ( lambda * lambda ) - 1.5168 ), 1.0 );
 
 	}
@@ -2675,7 +2675,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	fn dispersionColorWeight( wavelength: f32 ) -> vec3f {
 
-		let lambda = clamp( wavelength, ${_r}.0, ${Rr}.0 );
+		let lambda = clamp( wavelength, ${_i}.0, ${Ri}.0 );
 
 		let x1 = ( lambda - 442.0 ) * select( 0.0374, 0.0624, lambda < 442.0 );
 		let x2 = ( lambda - 599.8 ) * select( 0.0323, 0.0264, lambda < 599.8 );
@@ -2721,7 +2721,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[Tr,Ne,ks]),Nu=el(3.2404542,-.969266,.0556434,-1.5371385,1.8760108,-.2040259,-.4985314,.041556,1.0572252),Lu=I`
+`,[Ti,Ne,ks]),Nu=el(3.2404542,-.969266,.0556434,-1.5371385,1.8760108,-.2040259,-.4985314,.041556,1.0572252),Lu=I`
 
 	fn evalSensitivity( OPD: f32, shift: vec3f ) -> vec3f {
 
@@ -2810,9 +2810,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 		var result: ${Nn};
 		let cosine = saturate( abs( cosTheta ) );
-		let matchedIor = ${gi}( surf.eta );
+		let matchedIor = ${gr}( surf.eta );
 		let airIncident = surf.thinWall || surf.frontFace;
-		let dielectricFresnel = ${Ii}( cosine, surf.eta );
+		let dielectricFresnel = ${Ir}( cosine, surf.eta );
 
 		// Keep matched media transparent unless a real thin-film layer is present. This avoids
 		// introducing the non-physical Schlick F90 reflection produced by KHR_materials_specular
@@ -2823,7 +2823,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			let specularF0 = min( surf.f0 * surf.specularColor, vec3f( 1.0 ) );
 			let dielectricReflectance = select(
 				vec3f( dielectricFresnel ),
-				${Tr}( cosine, specularF0, vec3f( 1.0 ) ),
+				${Ti}( cosine, specularF0, vec3f( 1.0 ) ),
 				airIncident,
 			);
 			reflectance = surf.specularIntensity * dielectricReflectance;
@@ -2875,7 +2875,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,[Tr]),ku=M(`
+`,[Ti]),ku=M(`
 
 	fn fresnelCoat( VdotNc: f32, ior: f32, base: vec3f, layer: vec3f, weight: f32 ) -> vec3f {
 
@@ -2898,7 +2898,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 		// The matched-IOR limit is a unit-energy delta transmission event, so it cannot
 		// be integrated with the rough BTDF below.
-		if ( includeRefraction && ${gi}( eta ) ) {
+		if ( includeRefraction && ${gr}( eta ) ) {
 
 			textureStore( ${a}, vec3( globalId.xy, layer ), vec4( 1.0 ) );
 			return;
@@ -2930,14 +2930,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				// calculate the half vector to sample
 				let gridPoint = vec2f( vec2u( x, y ) ) + vec2f( 0.5 );
 				let sampleUv = gridPoint / f32( GRID_SIZE );
-				let wh = ${ci}( wo, vec2( alpha ), sampleUv );
+				let wh = ${cr}( wo, vec2( alpha ), sampleUv );
 
 				var f = 1.0;
 				if ( includeFresnel ) {
 
 					// use the exact dielectric fresnel so the table agrees with the fresnel used
 					// for lobe sampling
-					f = ${Ii}( dot( wo, wh ), eta );
+					f = ${Ir}( dot( wo, wh ), eta );
 
 				}
 
@@ -2952,7 +2952,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				// reflection lobe - samples landing below the surface are lost
 				let wi = - reflect( wo, wh );
-				let reflectionPdf = ${ui}( wo, wh, vec2f( alpha ) );
+				let reflectionPdf = ${ur}( wo, wh, vec2f( alpha ) );
 				if ( wi.z > 0.0 && reflectionPdf != 0.0 ) {
 
 					let specular = ${To}( wo, wi, wh, vec2f( alpha ) );
@@ -2989,7 +2989,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,_i=wi(`
+`,_r=wr(`
 
 	struct PcgState {
 		s0: vec4u,
@@ -3007,7 +3007,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		g_state.s1 = vec4u( pathIndex, pathIndex * 15843, pathIndex * 31 + 4566, pathIndex * 2345 + 58585 );
 
 	}
-`,[_i]),Cr=M(`
+`,[_r]),Ci=M(`
 	fn pcg4d( v: ptr<private, vec4u> ) -> void {
 
 		*v = *v * 1664525u + 1013904223u;
@@ -3022,28 +3022,28 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return abs( f32( g_state.s0.x ) / f32( 0xffffffffu ) );
 
 	}
-`,[Cr,_i]),Ou=M(`
+`,[Ci,_r]),Ou=M(`
 	fn pcgRand2( _id: u32 ) -> vec2f {
 
 		pcg4d( &g_state.s0 );
 		return abs( vec2f( g_state.s0.xy ) / f32( 0xffffffffu ) );
 
 	}
-`,[Cr,_i]),Wu=M(`
+`,[Ci,_r]),Wu=M(`
 	fn pcgRand3( _id: u32 ) -> vec3f {
 
 		pcg4d( &g_state.s0 );
 		return abs( vec3f( g_state.s0.xyz ) / f32( 0xffffffffu ) );
 
 	}
-`,[Cr,_i]),qu=M(`
+`,[Ci,_r]),qu=M(`
 	fn pcgRand4( _id: u32 ) -> vec4f {
 
 		pcg4d( &g_state.s0 );
 		return abs( vec4f( g_state.s0 ) / f32( 0xffffffffu ) );
 
 	}
-`,[Cr,_i]),Qu=M("fn noop() -> void {}"),ju=Object.freeze(Object.defineProperty({__proto__:null,rand1:Vu,rand2:Ou,rand3:Wu,rand4:qu,rngInit:Uu,rngNextBounce:Qu},Symbol.toStringTag,{value:"Module"}));function Gu(a,e=Math.random){for(let t=a.length-1;t>0;t--){const i=~~((e()-1e-6)*t),r=a[t];a[t]=a[i],a[i]=r}}function Ku(a,e){a.fill(0);for(let t=0;t<e;t++)a[t]=1}class jn{constructor(e){this.count=0,this.size=-1,this.sigma=-1,this.radius=-1,this.lookupTable=null,this.score=null,this.binaryPattern=null,this.resize(e),this.setSigma(1.5)}findVoid(){const{score:e,binaryPattern:t}=this;let i=1/0,r=-1;for(let n=0,s=t.length;n<s;n++){if(t[n]!==0)continue;const o=e[n];o<i&&(i=o,r=n)}return r}findCluster(){const{score:e,binaryPattern:t}=this;let i=-1/0,r=-1;for(let n=0,s=t.length;n<s;n++){if(t[n]!==1)continue;const o=e[n];o>i&&(i=o,r=n)}return r}setSigma(e){if(e===this.sigma)return;const t=~~(Math.sqrt(20*e**2)+1),i=2*t+1,r=new Float32Array(i*i),n=e*e;for(let s=-t;s<=t;s++)for(let o=-t;o<=t;o++){const l=(t+o)*i+s+t,d=s*s+o*o;r[l]=Math.E**(-d/(2*n))}this.lookupTable=r,this.sigma=e,this.radius=t}resize(e){this.size!==e&&(this.size=e,this.score=new Float32Array(e*e),this.binaryPattern=new Uint8Array(e*e))}invert(){const{binaryPattern:e,score:t,size:i}=this;t.fill(0);for(let r=0,n=e.length;r<n;r++)if(e[r]===0){const s=~~(r/i),o=r-s*i;this.updateScore(o,s,1),e[r]=1}else e[r]=0}updateScore(e,t,i){const{size:r,score:n,lookupTable:s}=this,o=this.radius,l=2*o+1;for(let d=-o;d<=o;d++)for(let c=-o;c<=o;c++){const u=(o+c)*l+d+o,f=s[u];let p=e+d;p=p<0?r+p:p%r;let h=t+c;h=h<0?r+h:h%r;const y=h*r+p;n[y]+=i*f}}addPointIndex(e){this.binaryPattern[e]=1;const t=this.size,i=~~(e/t),r=e-i*t;this.updateScore(r,i,1),this.count++}removePointIndex(e){this.binaryPattern[e]=0;const t=this.size,i=~~(e/t),r=e-i*t;this.updateScore(r,i,-1),this.count--}copy(e){this.resize(e.size),this.score.set(e.score),this.binaryPattern.set(e.binaryPattern),this.setSigma(e.sigma),this.count=e.count}}class Xu{constructor(){this.random=Math.random,this.sigma=1.5,this.size=64,this.majorityPointsRatio=.1,this.samples=new jn(1),this.savedSamples=new jn(1)}generate(){const{samples:e,savedSamples:t,sigma:i,majorityPointsRatio:r,size:n}=this;e.resize(n),e.setSigma(i);const s=Math.floor(n*n*r),o=e.binaryPattern;Ku(o,s),Gu(o,this.random);for(let u=0,f=o.length;u<f;u++)o[u]===1&&e.addPointIndex(u);for(;;){const u=e.findCluster();e.removePointIndex(u);const f=e.findVoid();if(u===f){e.addPointIndex(u);break}e.addPointIndex(f)}const l=new Uint32Array(n*n);t.copy(e);let d;for(d=e.count-1;d>=0;){const u=e.findCluster();e.removePointIndex(u),l[u]=d,d--}const c=n*n;for(d=t.count;d<c/2;){const u=t.findVoid();t.addPointIndex(u),l[u]=d,d++}for(t.invert();d<c;){const u=t.findCluster();t.removePointIndex(u),l[u]=d,d++}return{data:l,maxValue:c}}}function Yu(a){return a>=3?4:a}function Zu(a){switch(a){case 1:return rs;case 2:return tl;default:return Ce}}class Ju extends ge{constructor(e=64,t=1){super(new Float32Array(4),1,1,Ce,bt),this.minFilter=xi,this.magFilter=xi,this.size=e,this.channels=t,this.update()}update(){const e=this.channels,t=this.size,i=new Xu;i.channels=e,i.size=t;const r=Yu(e),n=Zu(r);(this.image.width!==t||n!==this.format)&&(this.image.width=t,this.image.height=t,this.image.data=new Float32Array(t**2*r),this.format=n,this.dispose());const s=this.image.data;for(let o=0,l=e;o<l;o++){const d=i.generate(),c=d.data,u=d.maxValue;for(let f=0,p=c.length;f<p;f++){const h=c[f]/u;s[f*r+o]=h}}this.needsUpdate=!0}}const $o=64,ed=new Ju($o,1),td=Re(ed),Mo=ya(0).toVar("blueDitherSeed"),id=I`
+`,[Ci,_r]),Qu=M("fn noop() -> void {}"),ju=Object.freeze(Object.defineProperty({__proto__:null,rand1:Vu,rand2:Ou,rand3:Wu,rand4:qu,rngInit:Uu,rngNextBounce:Qu},Symbol.toStringTag,{value:"Module"}));function Gu(a,e=Math.random){for(let t=a.length-1;t>0;t--){const r=~~((e()-1e-6)*t),i=a[t];a[t]=a[r],a[r]=i}}function Ku(a,e){a.fill(0);for(let t=0;t<e;t++)a[t]=1}class jn{constructor(e){this.count=0,this.size=-1,this.sigma=-1,this.radius=-1,this.lookupTable=null,this.score=null,this.binaryPattern=null,this.resize(e),this.setSigma(1.5)}findVoid(){const{score:e,binaryPattern:t}=this;let r=1/0,i=-1;for(let n=0,s=t.length;n<s;n++){if(t[n]!==0)continue;const o=e[n];o<r&&(r=o,i=n)}return i}findCluster(){const{score:e,binaryPattern:t}=this;let r=-1/0,i=-1;for(let n=0,s=t.length;n<s;n++){if(t[n]!==1)continue;const o=e[n];o>r&&(r=o,i=n)}return i}setSigma(e){if(e===this.sigma)return;const t=~~(Math.sqrt(20*e**2)+1),r=2*t+1,i=new Float32Array(r*r),n=e*e;for(let s=-t;s<=t;s++)for(let o=-t;o<=t;o++){const l=(t+o)*r+s+t,d=s*s+o*o;i[l]=Math.E**(-d/(2*n))}this.lookupTable=i,this.sigma=e,this.radius=t}resize(e){this.size!==e&&(this.size=e,this.score=new Float32Array(e*e),this.binaryPattern=new Uint8Array(e*e))}invert(){const{binaryPattern:e,score:t,size:r}=this;t.fill(0);for(let i=0,n=e.length;i<n;i++)if(e[i]===0){const s=~~(i/r),o=i-s*r;this.updateScore(o,s,1),e[i]=1}else e[i]=0}updateScore(e,t,r){const{size:i,score:n,lookupTable:s}=this,o=this.radius,l=2*o+1;for(let d=-o;d<=o;d++)for(let c=-o;c<=o;c++){const u=(o+c)*l+d+o,f=s[u];let p=e+d;p=p<0?i+p:p%i;let h=t+c;h=h<0?i+h:h%i;const y=h*i+p;n[y]+=r*f}}addPointIndex(e){this.binaryPattern[e]=1;const t=this.size,r=~~(e/t),i=e-r*t;this.updateScore(i,r,1),this.count++}removePointIndex(e){this.binaryPattern[e]=0;const t=this.size,r=~~(e/t),i=e-r*t;this.updateScore(i,r,-1),this.count--}copy(e){this.resize(e.size),this.score.set(e.score),this.binaryPattern.set(e.binaryPattern),this.setSigma(e.sigma),this.count=e.count}}class Xu{constructor(){this.random=Math.random,this.sigma=1.5,this.size=64,this.majorityPointsRatio=.1,this.samples=new jn(1),this.savedSamples=new jn(1)}generate(){const{samples:e,savedSamples:t,sigma:r,majorityPointsRatio:i,size:n}=this;e.resize(n),e.setSigma(r);const s=Math.floor(n*n*i),o=e.binaryPattern;Ku(o,s),Gu(o,this.random);for(let u=0,f=o.length;u<f;u++)o[u]===1&&e.addPointIndex(u);for(;;){const u=e.findCluster();e.removePointIndex(u);const f=e.findVoid();if(u===f){e.addPointIndex(u);break}e.addPointIndex(f)}const l=new Uint32Array(n*n);t.copy(e);let d;for(d=e.count-1;d>=0;){const u=e.findCluster();e.removePointIndex(u),l[u]=d,d--}const c=n*n;for(d=t.count;d<c/2;){const u=t.findVoid();t.addPointIndex(u),l[u]=d,d++}for(t.invert();d<c;){const u=t.findCluster();t.removePointIndex(u),l[u]=d,d++}return{data:l,maxValue:c}}}function Yu(a){return a>=3?4:a}function Zu(a){switch(a){case 1:return is;case 2:return tl;default:return Ce}}class Ju extends ge{constructor(e=64,t=1){super(new Float32Array(4),1,1,Ce,bt),this.minFilter=xr,this.magFilter=xr,this.size=e,this.channels=t,this.update()}update(){const e=this.channels,t=this.size,r=new Xu;r.channels=e,r.size=t;const i=Yu(e),n=Zu(i);(this.image.width!==t||n!==this.format)&&(this.image.width=t,this.image.height=t,this.image.data=new Float32Array(t**2*i),this.format=n,this.dispose());const s=this.image.data;for(let o=0,l=e;o<l;o++){const d=r.generate(),c=d.data,u=d.maxValue;for(let f=0,p=c.length;f<p;f++){const h=c[f]/u;s[f*i+o]=h}}this.needsUpdate=!0}}const $o=64,ed=new Ju($o,1),td=Re(ed),Mo=ya(0).toVar("blueDitherSeed"),rd=I`
 	fn blueDitherInitialize( pixel: vec2u, pathIndex: u32, bounceIndex: u32 ) -> void {
 
 		let coord = vec2i( pixel % vec2u( ${$o}u ) );
@@ -3051,13 +3051,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		${Ls}( vec2u( 0 ), pathIndex, bounceIndex );
 
 	}
-`,rd=I`
+`,id=I`
 	fn blueDitherNextBounce() -> void {
 
 		${zs}();
 
 	}
-`,Dr=I`
+`,Di=I`
 	fn blueDitherRand4( effect: u32 ) -> vec4f {
 
 		// Get the scrambled sobol stratified sample
@@ -3070,22 +3070,22 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 `,sd=I`
 	fn blueDitherRand3( effect: u32 ) -> vec3f {
 
-		return ${Dr}( effect ).xyz;
+		return ${Di}( effect ).xyz;
 
 	}
 `,nd=I`
 	fn blueDitherRand2( effect: u32 ) -> vec2f {
 
-		return ${Dr}( effect ).xy;
+		return ${Di}( effect ).xy;
 
 	}
 `,ad=I`
 	fn blueDitherRand1( effect: u32 ) -> f32 {
 
-		return ${Dr}( effect ).x;
+		return ${Di}( effect ).x;
 
 	}
-`,od=Object.freeze(Object.defineProperty({__proto__:null,rand1:ad,rand2:nd,rand3:sd,rand4:Dr,rngInit:id,rngNextBounce:rd},Symbol.toStringTag,{value:"Module"})),Lf=ju,ld=su,zf=od,Po=0,qs=1,Bo=2,cd=2147483648,Qs=1073741824,vi=1073741823;class ud extends te{constructor(){const e={material:{value:null},envInfo:{value:null},lightsInfo:{value:null},prevOutputTarget:de(Wt()).toReadOnly(),outputTarget:de(Wt()).toWriteOnly(),sampleCountTarget:de(wr()).toReadWrite(),offset:B(new G),tileSize:B(new G),seed:B(0),maxBounces:B(5),maxTransparentBounces:B(5,"uint"),maxSubsurfaceBounces:B(256,"uint"),misEnabled:B(1,"uint"),maxSamples:B(0,"uint"),filterGlossy:B(1),clampDirect:B(0),clampIndirect:B(10),backgroundInfo:{value:null},transmissiveBackground:B(qs),accumulateAux:B(0,"uint"),auxTarget:de(qt()).toReadWrite(),textures:Re(new ge),textureSampler:gr(new ge),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),i=ue("bvhData.fns.raycastFirstHit"),r=ue("bvhData.fns.raycastShadow"),n=ue("bvhData.fns.sampleTrianglePoint"),s=ue("bvhData.fns.getSurfaceRecord"),o=ue("bvhData.fns.getCameraRay"),l=K("material.value.bsdfSample",e),d=K("material.value.bsdfEvalPdf",e),c=_e("bvhData.storage.materials"),u=_e("bvhData.storage.transforms"),f=ee("envInfo.value.totalSumNode",e),p=ee("envInfo.value.intensityNode",e),h=ee("envInfo.value.sampleColor",e),y=ee("envInfo.value.sampleDir",e),x=ee("envInfo.value.getDirPdf",e),b=ee("envInfo.value.getWeight",e),m=ee("backgroundInfo.value.sampleColor",e),v=ee("lightsInfo.value.countNode",e),g=K("lightsInfo.value.randomLightSample",e),w=K("lightsInfo.value.intersectLightAtIndex",e),R=K("lightsInfo.value.getLightWeight",e),S=K("lightsInfo.value.getLightsWeight",e),C=K("lightsInfo.value.selectLight",e),D=K("lightsInfo.value.isLightVisibleToCamera",e),T=I`
+`,od=Object.freeze(Object.defineProperty({__proto__:null,rand1:ad,rand2:nd,rand3:sd,rand4:Di,rngInit:rd,rngNextBounce:id},Symbol.toStringTag,{value:"Module"})),Lf=ju,ld=su,zf=od,Po=0,qs=1,Bo=2,cd=2147483648,Qs=1073741824,vr=1073741823;class ud extends te{constructor(){const e={material:{value:null},envInfo:{value:null},lightsInfo:{value:null},prevOutputTarget:de(Wt()).toReadOnly(),outputTarget:de(Wt()).toWriteOnly(),sampleCountTarget:de(wi()).toReadWrite(),offset:B(new G),tileSize:B(new G),seed:B(0),maxBounces:B(5),maxTransparentBounces:B(5,"uint"),maxSubsurfaceBounces:B(256,"uint"),misEnabled:B(1,"uint"),maxSamples:B(0,"uint"),filterGlossy:B(1),clampDirect:B(0),clampIndirect:B(10),backgroundInfo:{value:null},transmissiveBackground:B(qs),accumulateAux:B(0,"uint"),auxTarget:de(qt()).toReadWrite(),textures:Re(new ge),textureSampler:gi(new ge),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),r=ue("bvhData.fns.raycastFirstHit"),i=ue("bvhData.fns.raycastShadow"),n=ue("bvhData.fns.sampleTrianglePoint"),s=ue("bvhData.fns.getSurfaceRecord"),o=ue("bvhData.fns.getCameraRay"),l=K("material.value.bsdfSample",e),d=K("material.value.bsdfEvalPdf",e),c=_e("bvhData.storage.materials"),u=_e("bvhData.storage.transforms"),f=ee("envInfo.value.totalSumNode",e),p=ee("envInfo.value.intensityNode",e),h=ee("envInfo.value.sampleColor",e),y=ee("envInfo.value.sampleDir",e),x=ee("envInfo.value.getDirPdf",e),b=ee("envInfo.value.getWeight",e),m=ee("backgroundInfo.value.sampleColor",e),v=ee("lightsInfo.value.countNode",e),g=K("lightsInfo.value.randomLightSample",e),w=K("lightsInfo.value.intersectLightAtIndex",e),R=K("lightsInfo.value.getLightWeight",e),S=K("lightsInfo.value.getLightsWeight",e),C=K("lightsInfo.value.selectLight",e),D=K("lightsInfo.value.isLightVisibleToCamera",e),T=I`
 
 			fn compute(
 
@@ -3170,14 +3170,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				var transparentBounce = 0u;
 
 				// the scattering volume the path is in. Media don't nest
-				var medium: ${it};
+				var medium: ${rt};
 				var subsurfaceBounces = 0u;
 
 				// no light is sampled at a scatter event, so whatever the next segment reaches takes full weight
 				var mediumScattered = false;
 
 				// A negative value marks a sampled wavelength whose RGB reconstruction weight has not been applied yet.
-				var dispersionWavelength = - mix( ${_r}.0, ${Rr}.0, ${mt}( ${no} ) );
+				var dispersionWavelength = - mix( ${_i}.0, ${Ri}.0, ${mt}( ${no} ) );
 
 				// one-sample NEE chooses between the analytic lights and the environment
 				let envActive = ${f} > 0.0 && ${p} > 0.0;
@@ -3216,7 +3216,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					}
 
 					var hitResult: ${t};
-					let didHit = ${i}( traceRay, &hitResult );
+					let didHit = ${r}( traceRay, &hitResult );
 					let surfaceDist = select( ${yt}, hitResult.dist, didHit );
 
 					let segmentInMedium = medium.inside;
@@ -3257,7 +3257,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							}
 
-							${nr}();
+							${ni}();
 							bounce --;
 							continue;
 
@@ -3296,7 +3296,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							}
 
-							lightHits += ${ie}( lightRec.emission * throughputColor * misWeight, bounce, clampDirect, clampIndirect );
+							lightHits += ${re}( lightRec.emission * throughputColor * misWeight, bounce, clampDirect, clampIndirect );
 							cameraHitLight = cameraHitLight || bounce == 0u;
 
 						}
@@ -3347,7 +3347,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							traceOrigin = ${ht}( vertexData.position.xyz, ray.direction, hitResult.normal );
 							rayStart += hitResult.dist;
-							${nr}();
+							${ni}();
 							transparentBounce ++;
 							bounce --;
 							continue;
@@ -3377,14 +3377,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 						}
 
 						// emission, clamped at the depth of the segment that found it, as in Cycles
-						let emission = ${ie}( throughputColor * surface.emission, bounce, clampDirect, clampIndirect );
+						let emission = ${re}( throughputColor * surface.emission, bounce, clampDirect, clampIndirect );
 						resultColor += vec4f( emission, 0.0 );
 
 						// next event estimation: choose one light or the environment by its estimated
 						// contribution
 						if ( misEnabled != 0u ) {
 
-							let ruv = ${Es}( ${ro} );
+							let ruv = ${Es}( ${io} );
 							var selectionPdf = 0.0;
 							let lightIndex = ${C}( vertexData.position.xyz, envWeight, ruv.x, &selectionPdf );
 							if ( selectionPdf > 0.0 ) {
@@ -3419,7 +3419,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 										// opaque occlusion up to the light distance, attenuated by the partially
 										// transparent surfaces passed
 										var shadowHit: ${t};
-										let occluded = ${r}( shadowRay, &shadowHit );
+										let occluded = ${i}( shadowRay, &shadowHit );
 										if ( ! occluded ) {
 
 											let lightPdf = lightRec.pdf * selectionPdf;
@@ -3430,7 +3430,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 											let isMISWeighted = ${po}( lightRec.lightType ) && bounce + 1u < maxBounces;
 											let misWeight = select( 1.0, mix( ${et}( lightPdf, evalRec.pdf ), 1.0, shadowHit.skippedOcclusion ), isMISWeighted );
 											let directLight = throughputColor * lightRec.emission * evalRec.color * misWeight * ( 1.0 - shadowHit.occlusion ) / lightPdf;
-											let contribution = ${ie}( directLight, bounce + 1u, clampDirect, clampIndirect );
+											let contribution = ${re}( directLight, bounce + 1u, clampDirect, clampIndirect );
 											resultColor += vec4f( contribution, 0.0 );
 
 										}
@@ -3533,7 +3533,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 							}
 
 							let environment = ${h}( ray.direction ).rgb * throughputColor * misWeight;
-							let contribution = ${ie}( environment, bounce, clampDirect, clampIndirect );
+							let contribution = ${re}( environment, bounce, clampDirect, clampIndirect );
 							resultColor += vec4f( contribution, 0.0 );
 
 						} else {
@@ -3545,7 +3545,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 							if ( bounce == 0u ) {
 
 								// sample the background directly if this is the primary ray
-								let background = ${ie}( bg.a * bg.rgb, bounce, clampDirect, clampIndirect );
+								let background = ${re}( bg.a * bg.rgb, bounce, clampDirect, clampIndirect );
 								resultColor = vec4f( background, bg.a );
 
 							} else {
@@ -3565,7 +3565,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								if ( transmissiveBackground == ${Po}u ) {
 
 									// display the env map through transmissive surfaces
-									let background = ${ie}( env.rgb * throughputColor * envMisWeight, bounce, clampDirect, clampIndirect );
+									let background = ${re}( env.rgb * throughputColor * envMisWeight, bounce, clampDirect, clampIndirect );
 									resultColor = vec4f(
 										resultColor.rgb + background,
 										1.0,
@@ -3574,7 +3574,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								} else if ( transmissiveBackground == ${Bo}u ) {
 
 									// fade the background by the throughput color average
-									let background = ${ie}( bg.a * bg.rgb * throughputColor * envMisWeight, bounce, clampDirect, clampIndirect );
+									let background = ${re}( bg.a * bg.rgb * throughputColor * envMisWeight, bounce, clampDirect, clampIndirect );
 									resultColor = vec4f(
 										resultColor.rgb + background,
 										1.0 - transparency,
@@ -3584,7 +3584,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 									// fade the background by the throughput color average, mixing in env lighting
 									var light = mix( env.rgb, bg.rgb, bg.a ) * envMisWeight;
-									let background = ${ie}( light * throughputColor, bounce, clampDirect, clampIndirect );
+									let background = ${re}( light * throughputColor, bounce, clampDirect, clampIndirect );
 									resultColor = vec4f(
 										resultColor.rgb + background,
 										1.0 - transparency,
@@ -3600,7 +3600,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 					}
 
-					${nr}();
+					${ni}();
 
 				}
 
@@ -3640,7 +3640,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 
-			}`;super(T(e)),this.defineUniformAccessors(e)}}function Gr(a){const e=new Uint16Array(a.length);for(let t=0,i=a.length;t<i;++t)e[t]=Be.toHalfFloat(a[t]);return e}function Gn(a,e,t=0,i=a.length){let r=t,n=t+i-1;for(;r<n;){const s=r+n>>1;a[s]<e?r=s+1:n=s}return r-t}function dd(a,e,t){return .2126*a+.7152*e+.0722*t}function fd(a,e=fe){const t=a.clone();t.source=new il({...t.image});const{width:i,height:r,data:n}=t.image;let s=n;if(t.type!==e){e===fe?s=new Uint16Array(n.length):s=new Float32Array(n.length);let o;n instanceof Int8Array||n instanceof Int16Array||n instanceof Int32Array?o=2**(8*n.BYTES_PER_ELEMENT-1)-1:o=2**(8*n.BYTES_PER_ELEMENT)-1;for(let l=0,d=n.length;l<d;l++){let c=n[l];t.type===fe&&(c=Be.fromHalfFloat(n[l])),t.type!==bt&&t.type!==fe&&(c/=o),e===fe&&(s[l]=Be.toHalfFloat(c))}t.image.data=s,t.type=e}if(t.flipY){const o=s;s=s.slice();for(let l=0;l<r;l++)for(let d=0;d<i;d++){const c=r-l-1,u=4*(l*i+d),f=4*(c*i+d);s[f+0]=o[u+0],s[f+1]=o[u+1],s[f+2]=o[u+2],s[f+3]=o[u+3]}t.flipY=!1,t.image.data=s}return t}class hd{constructor(){const e=new ge(Gr(new Float32Array([0,0,0,0])),1,1);e.type=fe,e.format=Ce,e.minFilter=se,e.magFilter=se,e.wrapS=tt,e.wrapT=tt,e.generateMipmaps=!1,e.needsUpdate=!0;const t=new ge(Gr(new Float32Array([0,1])),1,2);t.type=fe,t.format=rs,t.minFilter=se,t.magFilter=se,t.generateMipmaps=!1,t.needsUpdate=!0;const i=new ge(Gr(new Float32Array([0,0,1,1])),2,2);i.type=fe,i.format=rs,i.minFilter=se,i.magFilter=se,i.generateMipmaps=!1,i.needsUpdate=!0,this.map=e,this.marginalWeights=t,this.conditionalWeights=i,this.totalSum=0}getPixelWeight(e,t,i){return dd(e,t,i)}dispose(){this.marginalWeights.dispose(),this.conditionalWeights.dispose(),this.map.dispose()}updateFrom(e){const t=fd(e);t.wrapS=tt,t.wrapT=or;const{width:i,height:r,data:n}=t.image,s=new Float32Array(i*r),o=new Float32Array(i*r),l=new Float32Array(r),d=new Float32Array(r);let c=0,u=0;for(let x=0;x<r;x++){let b=0;for(let m=0;m<i;m++){const v=x*i+m,g=Be.fromHalfFloat(n[4*v+0]),w=Be.fromHalfFloat(n[4*v+1]),R=Be.fromHalfFloat(n[4*v+2]),S=this.getPixelWeight(g,w,R,x,r);b+=S,c+=S,s[v]=S,o[v]=b}if(b!==0)for(let m=x*i,v=x*i+i;m<v;m++)s[m]/=b,o[m]/=b;u+=b,l[x]=b,d[x]=u}if(u!==0)for(let x=0,b=l.length;x<b;x++)l[x]/=u,d[x]/=u;const f=new Uint16Array(r),p=new Uint16Array(i*r);for(let x=0;x<r;x++){const b=(x+1)/r,m=Gn(d,b);f[x]=Be.toHalfFloat((m+.5)/r)}for(let x=0;x<r;x++)for(let b=0;b<i;b++){const m=x*i+b,v=(b+1)/i,g=Gn(o,v,x*i,i);p[m]=Be.toHalfFloat((g+.5)/i)}this.dispose();const{marginalWeights:h,conditionalWeights:y}=this;h.image={width:r,height:1,data:f},h.needsUpdate=!0,y.image={width:i,height:r,data:p},y.needsUpdate=!0,this.totalSum=c,this.map=t,this.cdfMarginal=d,this.cdfConditional=o}}class Ao extends hd{constructor(){super(),this.mapNode=Re(this.map),this.mapSampler=gr(this.mapNode),this.cdfNode=E(new N(new Float32Array([0,1,0,1]),1),"float").toReadOnly(),this.rotationNode=B(new wa),this.intensityNode=B(1),this.totalSumNode=B(this.totalSum),this._initFns()}getPixelWeight(e,t,i,r,n){const s=Math.PI*(r+.5)/n;return super.getPixelWeight(e,t,i)*Math.sin(s)}updateFrom(e){super.updateFrom(e);const{mapNode:t,cdfNode:i,totalSumNode:r}=this;t.value=this.map,r.value=this.totalSum;const{width:n,height:s}=this.map.image,{cdfMarginal:o,cdfConditional:l}=this,d=new Float32Array(s+1+s*(n+1));d.set(o,1);for(let c=0;c<s;c++)d.set(l.subarray(c*n,c*n+n),s+1+c*(n+1)+1);i.value=new N(d,1)}dispose(){super.dispose(),this.cdfNode.value.dispose()}_initFns(){const{mapNode:e,mapSampler:t,cdfNode:i,totalSumNode:r,rotationNode:n,intensityNode:s}=this,o=I`
+			}`;super(T(e)),this.defineUniformAccessors(e)}}function Gi(a){const e=new Uint16Array(a.length);for(let t=0,r=a.length;t<r;++t)e[t]=Be.toHalfFloat(a[t]);return e}function Gn(a,e,t=0,r=a.length){let i=t,n=t+r-1;for(;i<n;){const s=i+n>>1;a[s]<e?i=s+1:n=s}return i-t}function dd(a,e,t){return .2126*a+.7152*e+.0722*t}function fd(a,e=fe){const t=a.clone();t.source=new rl({...t.image});const{width:r,height:i,data:n}=t.image;let s=n;if(t.type!==e){e===fe?s=new Uint16Array(n.length):s=new Float32Array(n.length);let o;n instanceof Int8Array||n instanceof Int16Array||n instanceof Int32Array?o=2**(8*n.BYTES_PER_ELEMENT-1)-1:o=2**(8*n.BYTES_PER_ELEMENT)-1;for(let l=0,d=n.length;l<d;l++){let c=n[l];t.type===fe&&(c=Be.fromHalfFloat(n[l])),t.type!==bt&&t.type!==fe&&(c/=o),e===fe&&(s[l]=Be.toHalfFloat(c))}t.image.data=s,t.type=e}if(t.flipY){const o=s;s=s.slice();for(let l=0;l<i;l++)for(let d=0;d<r;d++){const c=i-l-1,u=4*(l*r+d),f=4*(c*r+d);s[f+0]=o[u+0],s[f+1]=o[u+1],s[f+2]=o[u+2],s[f+3]=o[u+3]}t.flipY=!1,t.image.data=s}return t}class hd{constructor(){const e=new ge(Gi(new Float32Array([0,0,0,0])),1,1);e.type=fe,e.format=Ce,e.minFilter=se,e.magFilter=se,e.wrapS=tt,e.wrapT=tt,e.generateMipmaps=!1,e.needsUpdate=!0;const t=new ge(Gi(new Float32Array([0,1])),1,2);t.type=fe,t.format=is,t.minFilter=se,t.magFilter=se,t.generateMipmaps=!1,t.needsUpdate=!0;const r=new ge(Gi(new Float32Array([0,0,1,1])),2,2);r.type=fe,r.format=is,r.minFilter=se,r.magFilter=se,r.generateMipmaps=!1,r.needsUpdate=!0,this.map=e,this.marginalWeights=t,this.conditionalWeights=r,this.totalSum=0}getPixelWeight(e,t,r){return dd(e,t,r)}dispose(){this.marginalWeights.dispose(),this.conditionalWeights.dispose(),this.map.dispose()}updateFrom(e){const t=fd(e);t.wrapS=tt,t.wrapT=oi;const{width:r,height:i,data:n}=t.image,s=new Float32Array(r*i),o=new Float32Array(r*i),l=new Float32Array(i),d=new Float32Array(i);let c=0,u=0;for(let x=0;x<i;x++){let b=0;for(let m=0;m<r;m++){const v=x*r+m,g=Be.fromHalfFloat(n[4*v+0]),w=Be.fromHalfFloat(n[4*v+1]),R=Be.fromHalfFloat(n[4*v+2]),S=this.getPixelWeight(g,w,R,x,i);b+=S,c+=S,s[v]=S,o[v]=b}if(b!==0)for(let m=x*r,v=x*r+r;m<v;m++)s[m]/=b,o[m]/=b;u+=b,l[x]=b,d[x]=u}if(u!==0)for(let x=0,b=l.length;x<b;x++)l[x]/=u,d[x]/=u;const f=new Uint16Array(i),p=new Uint16Array(r*i);for(let x=0;x<i;x++){const b=(x+1)/i,m=Gn(d,b);f[x]=Be.toHalfFloat((m+.5)/i)}for(let x=0;x<i;x++)for(let b=0;b<r;b++){const m=x*r+b,v=(b+1)/r,g=Gn(o,v,x*r,r);p[m]=Be.toHalfFloat((g+.5)/r)}this.dispose();const{marginalWeights:h,conditionalWeights:y}=this;h.image={width:i,height:1,data:f},h.needsUpdate=!0,y.image={width:r,height:i,data:p},y.needsUpdate=!0,this.totalSum=c,this.map=t,this.cdfMarginal=d,this.cdfConditional=o}}class Ao extends hd{constructor(){super(),this.mapNode=Re(this.map),this.mapSampler=gi(this.mapNode),this.cdfNode=E(new N(new Float32Array([0,1,0,1]),1),"float").toReadOnly(),this.rotationNode=B(new wa),this.intensityNode=B(1),this.totalSumNode=B(this.totalSum),this._initFns()}getPixelWeight(e,t,r,i,n){const s=Math.PI*(i+.5)/n;return super.getPixelWeight(e,t,r)*Math.sin(s)}updateFrom(e){super.updateFrom(e);const{mapNode:t,cdfNode:r,totalSumNode:i}=this;t.value=this.map,i.value=this.totalSum;const{width:n,height:s}=this.map.image,{cdfMarginal:o,cdfConditional:l}=this,d=new Float32Array(s+1+s*(n+1));d.set(o,1);for(let c=0;c<s;c++)d.set(l.subarray(c*n,c*n+n),s+1+c*(n+1)+1);r.value=new N(d,1)}dispose(){super.dispose(),this.cdfNode.value.dispose()}_initFns(){const{mapNode:e,mapSampler:t,cdfNode:r,totalSumNode:i,rotationNode:n,intensityNode:s}=this,o=I`
 			fn searchEnvCdf( r: f32, offset: u32, count: u32, fraction: ptr<function, f32> ) -> u32 {
 
 				var lower = 0u;
@@ -3648,7 +3648,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				while ( lower < upper ) {
 
 					let mid = ( lower + upper ) >> 1u;
-					if ( ${i}[ offset + mid + 1u ] <= r ) {
+					if ( ${r}[ offset + mid + 1u ] <= r ) {
 
 						lower = mid + 1u;
 
@@ -3660,8 +3660,8 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 
-				let start = ${i}[ offset + lower ];
-				let end = ${i}[ offset + lower + 1u ];
+				let start = ${r}[ offset + lower ];
+				let end = ${r}[ offset + lower + 1u ];
 				*fraction = select( 0.5, saturate( ( r - start ) / ( end - start ) ), end > start );
 				return lower;
 
@@ -3671,8 +3671,8 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				let resolution = textureDimensions( ${e} );
 				let rowOffset = resolution.y + 1u + texel.y * ( resolution.x + 1u );
-				let rowPdf = ${i}[ texel.y + 1u ] - ${i}[ texel.y ];
-				let pixelPdf = ${i}[ rowOffset + texel.x + 1u ] - ${i}[ rowOffset + texel.x ];
+				let rowPdf = ${r}[ texel.y + 1u ] - ${r}[ texel.y ];
+				let pixelPdf = ${r}[ rowOffset + texel.x + 1u ] - ${r}[ rowOffset + texel.x ];
 
 				// the equirect projection stretches each pixel by 1 / sin( theta ) over the sphere
 				let sinTheta = sin( ${Ve} * v );
@@ -3683,7 +3683,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			fn sampleEnv( direction: vec3f ) -> vec4f {
 
 				let sampleDir = ${n} * direction;
-				let mapUv = ${fr}( sampleDir );
+				let mapUv = ${fi}( sampleDir );
 				let col = textureSampleLevel( ${e}, ${t}, mapUv, 0 );
 
 				return vec4f( ${s} * col.rgb, col.a );
@@ -3718,40 +3718,40 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			fn getEnvWeight() -> f32 {
 
 				let resolution = textureDimensions( ${e} );
-				return ${s} * ${Ve} * ${Ve} * ${r} / ( 2.0 * f32( resolution.x * resolution.y ) );
+				return ${s} * ${Ve} * ${Ve} * ${i} / ( 2.0 * f32( resolution.x * resolution.y ) );
 
 			}
 		`,this.getDirPdf=I`
 			fn getEnvDirPdf( direction: vec3f ) -> f32 {
 
-				if ( ${r} == 0.0 ) {
+				if ( ${i} == 0.0 ) {
 
 					return 0.0;
 
 				}
 
 				let rotatedDir = ${n} * direction;
-				let mapUv = ${fr}( rotatedDir );
+				let mapUv = ${fi}( rotatedDir );
 				let resolution = textureDimensions( ${e} );
 				let texel = min( vec2u( mapUv * vec2f( resolution ) ), resolution - 1u );
 
 				return ${l}( texel, mapUv.y );
 
 			}
-		`}}class Fo{get map(){return this.mapNode.value}set map(e){this.mapNode.value=e}get blur(){return this.blurNode.value}set blur(e){this.blurNode.value=e}get rotation(){return this.rotationNode.value}get intensity(){return this.intensityNode.value}set intensity(e){this.intensityNode.value=e}constructor(){const e=new ge(new Uint8Array([0,0,0,255]),1,1,Ce);e.minFilter=se,e.magFilter=se,e.wrapS=tt,e.wrapT=tt,e.generateMipmaps=!1,e.needsUpdate=!0,this.mapNode=Re(e),this.mapSampler=gr(this.mapNode),this.blurNode=B(0),this.rotationNode=B(new W),this.intensityNode=B(1),this._initFns()}dispose(){this.map.dispose()}_initFns(){const{mapNode:e,mapSampler:t,blurNode:i,rotationNode:r,intensityNode:n}=this;this.sampleColor=I`
+		`}}class Fo{get map(){return this.mapNode.value}set map(e){this.mapNode.value=e}get blur(){return this.blurNode.value}set blur(e){this.blurNode.value=e}get rotation(){return this.rotationNode.value}get intensity(){return this.intensityNode.value}set intensity(e){this.intensityNode.value=e}constructor(){const e=new ge(new Uint8Array([0,0,0,255]),1,1,Ce);e.minFilter=se,e.magFilter=se,e.wrapS=tt,e.wrapT=tt,e.generateMipmaps=!1,e.needsUpdate=!0,this.mapNode=Re(e),this.mapSampler=gi(this.mapNode),this.blurNode=B(0),this.rotationNode=B(new W),this.intensityNode=B(1),this._initFns()}dispose(){this.map.dispose()}_initFns(){const{mapNode:e,mapSampler:t,blurNode:r,rotationNode:i,intensityNode:n}=this;this.sampleColor=I`
 			fn sampleBackground( direction: vec3f, uv: vec2f ) -> vec4f {
 
-				let rotatedDir = ( ${r} * vec4f( direction, 0.0 ) ).xyz;
-				let offsetDir = ${gu}( rotatedDir, uv ) * 0.5 * ${i};
+				let rotatedDir = ( ${i} * vec4f( direction, 0.0 ) ).xyz;
+				let offsetDir = ${gu}( rotatedDir, uv ) * 0.5 * ${r};
 				let sampleDir = normalize( rotatedDir + offsetDir );
 
-				let mapUv = ${fr}( sampleDir );
+				let mapUv = ${fi}( sampleDir );
 				let col = textureSampleLevel( ${e}, ${t}, mapUv, 0 );
 
 				return vec4f( ${n} * col.rgb, col.a );
 
 			}
-		`}}const Kn=new Ia,Xn=new wa;function Yn(a){return`${a.source.uuid}:${a.source.version}`}function pd(a,e,t,i){if(a[e].x+t>i)return-1;let n=t,s=0,o=e;for(;n>0;){if(o>=a.length)return-1;s=Math.max(s,a[o].y),n-=a[o].width,o++}return s}function md(a,e,t,i){const r=e+i,n=[];let s=!1;for(let o=0;o<a.length;o++){const l=a[o],d=l.x+l.width;d<=e?n.push(l):l.x>=r?(s||(n.push({x:e,y:t,width:i}),s=!0),n.push(l)):(s||(n.push({x:e,y:t,width:i}),s=!0),d>r&&n.push({x:r,y:l.y,width:d-r}))}s||n.push({x:e,y:t,width:i}),a.length=0;for(let o=0;o<n.length;o++){const l=n[o],d=a[a.length-1];d&&d.y===l.y&&d.x+d.width===l.x?d.width+=l.width:a.push(l)}}function Zn(a,e,t,i,r){let n=1/0,s=0,o=-1;for(let l=0;l<a.length;l++){const d=pd(a,l,e,i);d>=0&&d+t<=r&&d<n&&(n=d,s=a[l].x,o=l)}return o===-1?null:(md(a,s,n+t,e),{x:s,y:n})}class No{get width(){return this.renderTarget.width}get height(){return this.renderTarget.height}get pageCount(){return this.renderTarget.depth}get texture(){return this.renderTarget.texture}constructor(e={}){this.renderTarget=new Sa(1,1,{depthBuffer:!1,depth:1,...e}),this.texture.isArrayTexture=!0,this.textureInfo=[new pt],this.hashes=[],this.placements=[],this.quadMesh=new Ta(new rl),this.quadMesh.material.blending=xr}setTextures(e,t){const i=t.map((u,f)=>f);if(i.sort((u,f)=>t[u].source.uuid<t[f].source.uuid?-1:1),t=i.map(u=>t[u]),this._hashesMatch(t)){this._buildCallerTextureInfo(i);return}let r=t.reduce((u,f)=>Math.max(u,f.width,f.height),1);r=Math.min(e.backend.device.limits.maxTextureDimension2D,r);const n=r,s=r,{renderTarget:o}=this,{placements:l,pageCount:d}=this._packTextures(t,n,s);o.setSize(n,s,d),this.texture.isArrayTexture=!0,this._renderTextures(e,t,l),this.placements=l;const c=new Array(t.length);for(let u=0,f=t.length;u<f;u++){const p=Yn(t[u]);c[u]=p}this.hashes=c,this._buildCallerTextureInfo(i)}_buildCallerTextureInfo(e){const t=new Array(e.length);for(let i=0,r=e.length;i<r;i++)t[e[i]]=this.placements[i];this._buildTextureInfo(t)}dispose(){this.renderTarget.dispose(),this.quadMesh.material.dispose()}_hashesMatch(e){const t=this.hashes;if(t.length!==e.length)return!1;for(let i=0,r=e.length;i<r;i++)if(t[i]!==Yn(e[i]))return!1;return!0}_packTextures(e,t,i){const r=[];for(let l=0,d=e.length;l<d;l++){const c=e[l];r.push({index:l,w:Math.min(c.width,t),h:Math.min(c.height,i)})}const n=r.sort((l,d)=>d.h-l.h),s=new Array(e.length),o=[];for(let l=0,d=n.length;l<d;l++){const c=n[l];let u=null,f=-1;for(let p=0;p<o.length;p++)if(u=Zn(o[p],c.w,c.h,t,i),u){f=p;break}if(!u){const p=[{x:0,y:0,width:t}];u=Zn(p,c.w,c.h,t,i),o.push(p),f=o.length-1}s[c.index]={x:u.x,y:u.y,w:c.w,h:c.h,page:f}}return{placements:s,pageCount:Math.max(o.length,1)}}_buildTextureInfo(e){const t=this.textureInfo;t.length=0;for(let i=0,r=e.length;i<r;i++){const{x:n,y:s,w:o,h:l,page:d}=e[i],c=new pt;c.x=n&65535|(s&65535)<<16,c.y=o&65535|(l&65535)<<16,c.z=d&65535,c.w=0,t.push(c)}t.length===0&&t.push(new pt(0,0,0,0))}_renderTextures(e,t,i){const{quadMesh:r,renderTarget:n,width:s,height:o}=this,l=e.getRenderTarget(),d=e.toneMapping,c=e.autoClear,u=e.getScissorTest(),f=e.getClearAlpha();e.getClearColor(Kn),e.toneMapping=di,e.autoClear=!1,e.setScissorTest(!0),e.setClearColor(0,0);for(let p=0,h=n.depth;p<h;p++)n.viewport.set(0,0,s,o),n.scissor.set(0,0,s,o),e.setRenderTarget(n,p),e.clear();for(let p=0,h=t.length;p<h;p++){const{x:y,y:x,w:b,h:m,page:v}=i[p],g=t[p];if(n.viewport.set(y,x,b,m),n.scissor.set(y,x,b,m),e.setRenderTarget(n,v),g.isRenderTargetTexture){const w=g.matrixAutoUpdate;Xn.copy(g.matrix),g.matrix.identity(),g.matrixAutoUpdate=!1,r.material.map=g,r.render(e),g.matrixAutoUpdate=w,g.matrix.copy(Xn)}else{const w=g.clone();w.matrixAutoUpdate=!1,w.matrix.identity(),r.material.map=w,r.render(e),w.dispose()}}n.viewport.set(0,0,s,o),n.scissor.set(0,0,s,o),r.material.map=null,e.setClearColor(Kn,f),e.setScissorTest(u),e.autoClear=c,e.setRenderTarget(l),e.toneMapping=d}}function gd(a){let e=0;if(a.byteLength!==0){const t=new Uint8Array(a);for(let i=0;i<a.byteLength;i++){const r=t[i];e=(e<<5)-e+r,e|=0}}return e}const Kr=6,xd=11,yd=0,vd=1,bd=2,wd=3,Sd=4,we=new A,ce=new A,Jn=new W,Et=new sl,ea=new A,Me=new A,Td=new A(0,1,0);class Id{constructor(){const e=new ge(new Float32Array(4),1,1);e.format=Ce,e.type=bt,e.wrapS=or,e.wrapT=or,e.generateMipmaps=!1,e.minFilter=xi,e.magFilter=xi,this.tex=e,this.count=0}updateFrom(e,t=[]){const i=this.tex,r=Math.max(e.length*Kr,1),n=Math.ceil(Math.sqrt(r));i.image.width!==n&&(i.dispose(),i.image.data=new Float32Array(n*n*4),i.image.width=n,i.image.height=n);const s=i.image.data;for(let l=0,d=e.length;l<d;l++){const c=e[l],u=l*Kr*4;let f=0;for(let h=0;h<Kr*4;h++)s[u+h]=0;c.getWorldPosition(ce),s[u+f++]=ce.x,s[u+f++]=ce.y,s[u+f++]=ce.z;let p=yd;if(c.isRectAreaLight&&c.isCircular?p=vd:c.isSpotLight?p=bd:c.isDirectionalLight||c.isSunLight?p=wd:c.isPointLight&&(p=Sd),s[u+f++]=p,s[u+f++]=c.color.r,s[u+f++]=c.color.g,s[u+f++]=c.color.b,s[u+f++]=c.intensity,c.getWorldQuaternion(Et),c.isRectAreaLight)we.set(c.width,0,0).applyQuaternion(Et),s[u+f++]=we.x,s[u+f++]=we.y,s[u+f++]=we.z,f++,ce.set(0,c.height,0).applyQuaternion(Et),s[u+f++]=ce.x,s[u+f++]=ce.y,s[u+f++]=ce.z,s[u+f++]=we.cross(ce).length()*(c.isCircular?Math.PI/4:1);else if(c.isSpotLight){const h=c.radius||0;ea.setFromMatrixPosition(c.matrixWorld),Me.setFromMatrixPosition(c.target.matrixWorld),Jn.lookAt(ea,Me,Td),Et.setFromRotationMatrix(Jn),we.set(1,0,0).applyQuaternion(Et),s[u+f++]=we.x,s[u+f++]=we.y,s[u+f++]=we.z,f++,ce.set(0,1,0).applyQuaternion(Et),s[u+f++]=ce.x,s[u+f++]=ce.y,s[u+f++]=ce.z,s[u+f++]=Math.PI*h*h,s[u+f++]=h,s[u+f++]=c.decay,s[u+f++]=c.distance,s[u+f++]=Math.cos(c.angle),s[u+f++]=Math.cos(c.angle*(1-c.penumbra)),s[u+f++]=c.iesMap?t.indexOf(c.iesMap):-1}else if(c.isPointLight){const h=we.setFromMatrixPosition(c.matrixWorld);s[u+f++]=h.x,s[u+f++]=h.y,s[u+f++]=h.z,f++,f+=4,f+=1,s[u+f++]=c.decay,s[u+f++]=c.distance}else if(c.isDirectionalLight){const h=we.setFromMatrixPosition(c.matrixWorld),y=ce.setFromMatrixPosition(c.target.matrixWorld);Me.subVectors(h,y).normalize(),s[u+f++]=Me.x,s[u+f++]=Me.y,s[u+f++]=Me.z}else c.isSunLight&&(Me.setFromMatrixPosition(c.matrixWorld).normalize(),s[u+f++]=Me.x,s[u+f++]=Me.y,s[u+f++]=Me.z);s[u+xd]=c.visibleToCameraRays?1:0}this.count=e.length;const o=gd(s.buffer);return this.hash!==o?(this.hash=o,i.needsUpdate=!0,!0):!1}}class Lo extends Id{constructor(){super(),this.countNode=B(this.count,"uint"),this.buffer=new N(new Float32Array(2*ft.getLength()),ft.getLength()),this.bufferNode=E(this.buffer,ft).toReadOnly().setName("lights"),this.iesAtlas=new No({type:fe}),this.iesProfilesNode=Re(this.iesAtlas.texture),this.iesInfoNode=lr(this.iesAtlas.textureInfo,"uvec4").setName("iesInfo"),this._initFns()}updateFrom(e,t){const i=Array.from(new Set(t.map(c=>c.iesMap).filter(c=>c))),r=super.updateFrom(t,i);this.iesAtlas.setTextures(e,i),this.iesProfilesNode.value=this.iesAtlas.texture;const n=ft.getLength(),s=this.count,o=Math.max(s,2);this.buffer.array.length!==o*n&&(this.buffer.dispose(),this.buffer=new N(new Float32Array(o*n),n),this.bufferNode.value=this.buffer);const l=this.tex.image.data;this.buffer.array.set(l.subarray(0,s*n));const d=new Int32Array(this.buffer.array.buffer);for(let c=0;c<s;c++){const u=c*n;d[u+3]=Math.round(l[u+3]),d[u+11]=Math.round(l[u+11]),d[u+21]=Math.round(l[u+21])}return this.buffer.needsUpdate=!0,this.countNode.value=this.count,r}_initFns(){const{bufferNode:e,countNode:t,iesProfilesNode:i,iesInfoNode:r}=this,n=co(r,i,"sampleIesTexel");this.isLightVisibleToCamera=I`
+		`}}const Kn=new Ia,Xn=new wa;function Yn(a){return`${a.source.uuid}:${a.source.version}`}function pd(a,e,t,r){if(a[e].x+t>r)return-1;let n=t,s=0,o=e;for(;n>0;){if(o>=a.length)return-1;s=Math.max(s,a[o].y),n-=a[o].width,o++}return s}function md(a,e,t,r){const i=e+r,n=[];let s=!1;for(let o=0;o<a.length;o++){const l=a[o],d=l.x+l.width;d<=e?n.push(l):l.x>=i?(s||(n.push({x:e,y:t,width:r}),s=!0),n.push(l)):(s||(n.push({x:e,y:t,width:r}),s=!0),d>i&&n.push({x:i,y:l.y,width:d-i}))}s||n.push({x:e,y:t,width:r}),a.length=0;for(let o=0;o<n.length;o++){const l=n[o],d=a[a.length-1];d&&d.y===l.y&&d.x+d.width===l.x?d.width+=l.width:a.push(l)}}function Zn(a,e,t,r,i){let n=1/0,s=0,o=-1;for(let l=0;l<a.length;l++){const d=pd(a,l,e,r);d>=0&&d+t<=i&&d<n&&(n=d,s=a[l].x,o=l)}return o===-1?null:(md(a,s,n+t,e),{x:s,y:n})}class No{get width(){return this.renderTarget.width}get height(){return this.renderTarget.height}get pageCount(){return this.renderTarget.depth}get texture(){return this.renderTarget.texture}constructor(e={}){this.renderTarget=new Sa(1,1,{depthBuffer:!1,depth:1,...e}),this.texture.isArrayTexture=!0,this.textureInfo=[new pt],this.hashes=[],this.placements=[],this.quadMesh=new Ta(new il),this.quadMesh.material.blending=xi}setTextures(e,t){const r=t.map((u,f)=>f);if(r.sort((u,f)=>t[u].source.uuid<t[f].source.uuid?-1:1),t=r.map(u=>t[u]),this._hashesMatch(t)){this._buildCallerTextureInfo(r);return}let i=t.reduce((u,f)=>Math.max(u,f.width,f.height),1);i=Math.min(e.backend.device.limits.maxTextureDimension2D,i);const n=i,s=i,{renderTarget:o}=this,{placements:l,pageCount:d}=this._packTextures(t,n,s);o.setSize(n,s,d),this.texture.isArrayTexture=!0,this._renderTextures(e,t,l),this.placements=l;const c=new Array(t.length);for(let u=0,f=t.length;u<f;u++){const p=Yn(t[u]);c[u]=p}this.hashes=c,this._buildCallerTextureInfo(r)}_buildCallerTextureInfo(e){const t=new Array(e.length);for(let r=0,i=e.length;r<i;r++)t[e[r]]=this.placements[r];this._buildTextureInfo(t)}dispose(){this.renderTarget.dispose(),this.quadMesh.material.dispose()}_hashesMatch(e){const t=this.hashes;if(t.length!==e.length)return!1;for(let r=0,i=e.length;r<i;r++)if(t[r]!==Yn(e[r]))return!1;return!0}_packTextures(e,t,r){const i=[];for(let l=0,d=e.length;l<d;l++){const c=e[l];i.push({index:l,w:Math.min(c.width,t),h:Math.min(c.height,r)})}const n=i.sort((l,d)=>d.h-l.h),s=new Array(e.length),o=[];for(let l=0,d=n.length;l<d;l++){const c=n[l];let u=null,f=-1;for(let p=0;p<o.length;p++)if(u=Zn(o[p],c.w,c.h,t,r),u){f=p;break}if(!u){const p=[{x:0,y:0,width:t}];u=Zn(p,c.w,c.h,t,r),o.push(p),f=o.length-1}s[c.index]={x:u.x,y:u.y,w:c.w,h:c.h,page:f}}return{placements:s,pageCount:Math.max(o.length,1)}}_buildTextureInfo(e){const t=this.textureInfo;t.length=0;for(let r=0,i=e.length;r<i;r++){const{x:n,y:s,w:o,h:l,page:d}=e[r],c=new pt;c.x=n&65535|(s&65535)<<16,c.y=o&65535|(l&65535)<<16,c.z=d&65535,c.w=0,t.push(c)}t.length===0&&t.push(new pt(0,0,0,0))}_renderTextures(e,t,r){const{quadMesh:i,renderTarget:n,width:s,height:o}=this,l=e.getRenderTarget(),d=e.toneMapping,c=e.autoClear,u=e.getScissorTest(),f=e.getClearAlpha();e.getClearColor(Kn),e.toneMapping=dr,e.autoClear=!1,e.setScissorTest(!0),e.setClearColor(0,0);for(let p=0,h=n.depth;p<h;p++)n.viewport.set(0,0,s,o),n.scissor.set(0,0,s,o),e.setRenderTarget(n,p),e.clear();for(let p=0,h=t.length;p<h;p++){const{x:y,y:x,w:b,h:m,page:v}=r[p],g=t[p];if(n.viewport.set(y,x,b,m),n.scissor.set(y,x,b,m),e.setRenderTarget(n,v),g.isRenderTargetTexture){const w=g.matrixAutoUpdate;Xn.copy(g.matrix),g.matrix.identity(),g.matrixAutoUpdate=!1,i.material.map=g,i.render(e),g.matrixAutoUpdate=w,g.matrix.copy(Xn)}else{const w=g.clone();w.matrixAutoUpdate=!1,w.matrix.identity(),i.material.map=w,i.render(e),w.dispose()}}n.viewport.set(0,0,s,o),n.scissor.set(0,0,s,o),i.material.map=null,e.setClearColor(Kn,f),e.setScissorTest(u),e.autoClear=c,e.setRenderTarget(l),e.toneMapping=d}}function gd(a){let e=0;if(a.byteLength!==0){const t=new Uint8Array(a);for(let r=0;r<a.byteLength;r++){const i=t[r];e=(e<<5)-e+i,e|=0}}return e}const Ki=6,xd=11,yd=0,vd=1,bd=2,wd=3,Sd=4,we=new A,ce=new A,Jn=new W,Et=new sl,ea=new A,Me=new A,Td=new A(0,1,0);class Id{constructor(){const e=new ge(new Float32Array(4),1,1);e.format=Ce,e.type=bt,e.wrapS=oi,e.wrapT=oi,e.generateMipmaps=!1,e.minFilter=xr,e.magFilter=xr,this.tex=e,this.count=0}updateFrom(e,t=[]){const r=this.tex,i=Math.max(e.length*Ki,1),n=Math.ceil(Math.sqrt(i));r.image.width!==n&&(r.dispose(),r.image.data=new Float32Array(n*n*4),r.image.width=n,r.image.height=n);const s=r.image.data;for(let l=0,d=e.length;l<d;l++){const c=e[l],u=l*Ki*4;let f=0;for(let h=0;h<Ki*4;h++)s[u+h]=0;c.getWorldPosition(ce),s[u+f++]=ce.x,s[u+f++]=ce.y,s[u+f++]=ce.z;let p=yd;if(c.isRectAreaLight&&c.isCircular?p=vd:c.isSpotLight?p=bd:c.isDirectionalLight||c.isSunLight?p=wd:c.isPointLight&&(p=Sd),s[u+f++]=p,s[u+f++]=c.color.r,s[u+f++]=c.color.g,s[u+f++]=c.color.b,s[u+f++]=c.intensity,c.getWorldQuaternion(Et),c.isRectAreaLight)we.set(c.width,0,0).applyQuaternion(Et),s[u+f++]=we.x,s[u+f++]=we.y,s[u+f++]=we.z,f++,ce.set(0,c.height,0).applyQuaternion(Et),s[u+f++]=ce.x,s[u+f++]=ce.y,s[u+f++]=ce.z,s[u+f++]=we.cross(ce).length()*(c.isCircular?Math.PI/4:1);else if(c.isSpotLight){const h=c.radius||0;ea.setFromMatrixPosition(c.matrixWorld),Me.setFromMatrixPosition(c.target.matrixWorld),Jn.lookAt(ea,Me,Td),Et.setFromRotationMatrix(Jn),we.set(1,0,0).applyQuaternion(Et),s[u+f++]=we.x,s[u+f++]=we.y,s[u+f++]=we.z,f++,ce.set(0,1,0).applyQuaternion(Et),s[u+f++]=ce.x,s[u+f++]=ce.y,s[u+f++]=ce.z,s[u+f++]=Math.PI*h*h,s[u+f++]=h,s[u+f++]=c.decay,s[u+f++]=c.distance,s[u+f++]=Math.cos(c.angle),s[u+f++]=Math.cos(c.angle*(1-c.penumbra)),s[u+f++]=c.iesMap?t.indexOf(c.iesMap):-1}else if(c.isPointLight){const h=we.setFromMatrixPosition(c.matrixWorld);s[u+f++]=h.x,s[u+f++]=h.y,s[u+f++]=h.z,f++,f+=4,f+=1,s[u+f++]=c.decay,s[u+f++]=c.distance}else if(c.isDirectionalLight){const h=we.setFromMatrixPosition(c.matrixWorld),y=ce.setFromMatrixPosition(c.target.matrixWorld);Me.subVectors(h,y).normalize(),s[u+f++]=Me.x,s[u+f++]=Me.y,s[u+f++]=Me.z}else c.isSunLight&&(Me.setFromMatrixPosition(c.matrixWorld).normalize(),s[u+f++]=Me.x,s[u+f++]=Me.y,s[u+f++]=Me.z);s[u+xd]=c.visibleToCameraRays?1:0}this.count=e.length;const o=gd(s.buffer);return this.hash!==o?(this.hash=o,r.needsUpdate=!0,!0):!1}}class Lo extends Id{constructor(){super(),this.countNode=B(this.count,"uint"),this.buffer=new N(new Float32Array(2*ft.getLength()),ft.getLength()),this.bufferNode=E(this.buffer,ft).toReadOnly().setName("lights"),this.iesAtlas=new No({type:fe}),this.iesProfilesNode=Re(this.iesAtlas.texture),this.iesInfoNode=li(this.iesAtlas.textureInfo,"uvec4").setName("iesInfo"),this._initFns()}updateFrom(e,t){const r=Array.from(new Set(t.map(c=>c.iesMap).filter(c=>c))),i=super.updateFrom(t,r);this.iesAtlas.setTextures(e,r),this.iesProfilesNode.value=this.iesAtlas.texture;const n=ft.getLength(),s=this.count,o=Math.max(s,2);this.buffer.array.length!==o*n&&(this.buffer.dispose(),this.buffer=new N(new Float32Array(o*n),n),this.bufferNode.value=this.buffer);const l=this.tex.image.data;this.buffer.array.set(l.subarray(0,s*n));const d=new Int32Array(this.buffer.array.buffer);for(let c=0;c<s;c++){const u=c*n;d[u+3]=Math.round(l[u+3]),d[u+11]=Math.round(l[u+11]),d[u+21]=Math.round(l[u+21])}return this.buffer.needsUpdate=!0,this.countNode.value=this.count,i}_initFns(){const{bufferNode:e,countNode:t,iesProfilesNode:r,iesInfoNode:i}=this,n=co(i,r,"sampleIesTexel");this.isLightVisibleToCamera=I`
 			fn isLightVisibleToCamera( index: u32 ) -> bool {
 
 				return ${e}[ index ].visibleToCameraRays != 0;
@@ -3887,7 +3887,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					if ( light.iesProfile >= 0 ) {
 
 						// half a texel of the profile's tile in the atlas
-						let profileInfo = ${r}[ u32( light.iesProfile ) ];
+						let profileInfo = ${i}[ u32( light.iesProfile ) ];
 						let texelInset = 0.5 / vec2f( vec2u( profileInfo.y & 0xFFFFu, profileInfo.y >> 16u ) );
 
 						// tilt spans [ 0, 180 ]deg inset to the texel centers, twist covers [ 0, 359 ]deg and wraps
@@ -3985,13 +3985,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				return false;
 
 			}
-		`}dispose(){this.tex.dispose(),this.buffer.dispose(),this.iesAtlas.dispose()}}class Xr extends te{constructor(){const e={globalId:ae,outputTarget:de(new qe(1,1)).toWriteOnly()},t=()=>e.outputTarget.value.isArrayTexture?"globalId.xy, globalId.z":"globalId.xy",i=I`
+		`}dispose(){this.tex.dispose(),this.buffer.dispose(),this.iesAtlas.dispose()}}class Xi extends te{constructor(){const e={globalId:ae,outputTarget:de(new qe(1,1)).toWriteOnly()},t=()=>e.outputTarget.value.isArrayTexture?"globalId.xy, globalId.z":"globalId.xy",r=I`
 			fn compute( globalId: vec3u ) -> void {
 
 				textureStore( ${e.outputTarget}, ${t}, vec4( 0, 0, 0, 1 ) );
 
 			}
-		`;super(i(e)),this.defineUniformAccessors({target:e.outputTarget})}}const _d=0,ta=1;class zo{constructor(e){this.renderer=e,this.maxBounces=15,this.frameBudget=25e4,this.maxTransparentBounces=15,this.maxSubsurfaceBounces=256,this.lowResMode=!1,this.maxSamples=0,this.asyncCompile=!1,this.compiling=!1,this.timing={count:0,frameTime:0,frameBudget:0},this._renderTask=null,this._compileState=new WeakMap,this._timestampUIDs=null,this._timingFrame=!1,this.outputTarget=Wt("Output #0"),this.prevOutputTarget=Wt("Output #1"),this.sampleCountTarget=wr("Sample Count"),this.sampleCountClearKernel=new Xr().setWorkgroupSize(8,8,1),this.outputTargetClearKernel=new Xr().setWorkgroupSize(8,8,1),this.auxTargetClearKernel=new Xr().setWorkgroupSize(8,8,1),this.auxTarget=null,this._auxPlaceholder=qt()}setAccumulateAux(e){if(!!this.auxTarget!==e){if(this.auxTarget?.dispose(),this.auxTarget=null,e){const{width:t,height:i}=this.outputTarget;this.auxTarget=qt("Auxiliary Images"),this.auxTarget.setSize(t,i,Fe)}this.reset()}}setRandom(e){}setBVHData(e){}setTextures(e){}setMaterial(e){}setFilterGlossy(e){}setClamping(e,t){}setEnvironment(e,t,i){}setLights(e){}setBackground(e,t,i,r){}*compileKernels(e){const{renderer:t,_compileState:i}=this;if(!this.asyncCompile||!t.compileComputeAsync)return;const r=e.map(s=>s.kernel),n=r.filter(s=>!i.has(s));for(n.length>0&&(this.compiling=!0,yield,n.forEach(s=>i.set(s,_d)),t.compileComputeAsync(n).catch(()=>{}).finally(()=>{n.forEach(s=>i.set(s,ta))}));r.some(s=>i.get(s)!==ta);)this.compiling=!0,yield;this.compiling=!1}rebuild(){this._renderTask=null}setSize(e,t){e=Math.ceil(e),t=Math.ceil(t);const{width:i,height:r}=this.outputTarget;return i===e&&r===t?!1:(this.outputTarget.dispose(),this.prevOutputTarget.dispose(),this.sampleCountTarget.dispose(),this.outputTarget=this.outputTarget.clone(),this.prevOutputTarget=this.outputTarget.clone(),this.sampleCountTarget=this.sampleCountTarget.clone(),this.outputTarget.setSize(e,t),this.prevOutputTarget.setSize(e,t),this.sampleCountTarget.setSize(e,t),this.auxTarget?.setSize(e,t,Fe),this.reset(),!0)}getSize(e){const{width:t,height:i}=this.outputTarget;return e.x=t,e.y=i,e}getPreviewPixelBudget(){return this.frameBudget}update(){const{renderer:e}=this;if(!e.initialized)return;this._renderTask||(this._renderTask=this.createRenderTask());const t=e.backend.trackTimestamp&&!this._timingFrame;this._timestampUIDs=t?[]:null,this._renderTask.next(),t&&this._timestampUIDs.length>0&&this._measureFrameTime(this._timestampUIDs),this._timestampUIDs=null}dispatch(e,t){const{renderer:i}=this;i.compute(e.kernel,t),this._timestampUIDs?.push(i.backend.getTimestampUID(e.kernel))}async _measureFrameTime(e){const{renderer:t,timing:i,frameBudget:r}=this,{backend:n}=t;this._timingFrame=!0,await t.resolveTimestampsAsync(nl.COMPUTE),this._timingFrame=!1,e.every(s=>n.hasTimestampQuery(s))&&(i.frameTime=e.reduce((s,o)=>s+n.getTimestamp(o),0),i.frameBudget=r,i.count++)}*createRenderTask(){}async getSampleCountsAsync(){return{min:0,max:0,avg:0}}resetSeed(){}reset(){const{renderer:e,outputTargetClearKernel:t,sampleCountClearKernel:i,outputTarget:r,prevOutputTarget:n,sampleCountTarget:s}=this;if(!e.initialized)return;const{width:o,height:l}=r,d=t.getDispatchSize(o,l);if(t.target=r,e.compute(t.kernel,d),t.target=n,e.compute(t.kernel,d),i.target=s,e.compute(i.kernel,d),this.auxTarget){const{auxTargetClearKernel:c}=this;c.target=this.auxTarget,e.compute(c.kernel,c.getDispatchSize(o,l,Fe))}this._renderTask=null}dispose(){this.outputTarget.dispose(),this.prevOutputTarget.dispose(),this.sampleCountTarget.dispose(),this.sampleCountClearKernel.dispose(),this.outputTargetClearKernel.dispose(),this.auxTargetClearKernel.dispose(),this.auxTarget?.dispose(),this._auxPlaceholder.dispose(),this._renderTask=null}}const Yr=new G;class Rd extends zo{constructor(e){super(e),this.envInfo=new Ao,this._completedSamples=0,this._tileProgress=0,this.kernel=new ud().setWorkgroupSize(8,8,1),this.kernel.envInfo=this.envInfo,this.backgroundInfo=new Fo,this.kernel.backgroundInfo=this.backgroundInfo,this.lightsInfo=new Lo,this.kernel.lightsInfo=this.lightsInfo}resetSeed(){this.kernel.seed=0}reset(){super.reset(),this._completedSamples=0,this._tileProgress=0}async getSampleCountsAsync(){if(this.lowResMode)return{min:0,max:0,avg:0};const e=this._completedSamples,t=this._tileProgress;return{min:t===1?e+1:e,max:e+1,avg:e+t}}setBVHData(e){this.kernel.context.bvhData=e,this.rebuild()}rebuild(){super.rebuild(),this.kernel.needsUpdate=!0,this.reset()}setRandom(e){this.kernel.context.random=e,this.kernel.needsUpdate=!0,this.reset()}setMaterial(e){this.kernel.material=e.getData(),this.kernel.needsUpdate=!0,this.reset()}setFilterGlossy(e){this.kernel.filterGlossy=e===0?So:1/e,this.reset()}setClamping(e,t){this.kernel.clampDirect=e,this.kernel.clampIndirect=t,this.reset()}setEnvironment(e){this.envInfo.updateFrom(e)}setLights(e){this.lightsInfo.updateFrom(this.renderer,e),this.reset()}setMultipleImportanceSampling(e){this.kernel.misEnabled=e?1:0,this.reset()}setEnvironmentParams(e,t){const{envInfo:i}=this,r=new W().makeRotationFromEuler(t).invert();i.rotationNode.value.setFromMatrix4(r),i.intensityNode.value=e}setBackground(e){const{backgroundInfo:t}=this;t.dispose(),t.map=e}setBackgroundParams(e,t,i){const{backgroundInfo:r}=this,n=new W().makeRotationFromEuler(t).invert();r.rotationNode.value.copy(n),r.intensity=e,r.blur=i}setTransmissiveBackground(e){this.kernel.transmissiveBackground=e,this.reset()}*createRenderTask(){const{renderer:e,kernel:t,maxBounces:i,maxTransparentBounces:r,maxSubsurfaceBounces:n,outputTarget:s,sampleCountTarget:o,lowResMode:l}=this,d=new G;t.outputTarget=s,t.sampleCountTarget=o,t.maxBounces=i,t.maxTransparentBounces=r,t.maxSubsurfaceBounces=n,yield*this.compileKernels([t]);let c=0;for(;;){if(t.maxSamples=this.maxSamples,t.auxTarget=this.auxTarget??this._auxPlaceholder,t.accumulateAux=this.auxTarget?1:0,this.maxSamples!==0&&c>=this.maxSamples){yield;continue}this.getSize(Yr);const u=l?1:Math.max(1,Math.ceil(Yr.x*Yr.y/this.frameBudget));d.x=Math.ceil(Math.sqrt(u)),d.y=Math.ceil(u/d.x);const f=this.lowResMode?1:d.x*d.y;let p=0;const h=t.tileSize;l?this.getSize(h):this.getSize(h).divide(d).ceil();const y=t.getDispatchSize(h.x,h.y);t.seed+=1,e.copyTextureToTexture(this.outputTarget,this.prevOutputTarget),[this.outputTarget,this.prevOutputTarget]=[this.prevOutputTarget,this.outputTarget],t.prevOutputTarget=this.prevOutputTarget,t.outputTarget=this.outputTarget;for(let x=0;x<d.x;x++)for(let b=0;b<d.y;b++)t.offset.set(x,b).multiply(h),this.dispatch(t,y),p=Math.min(p+1,f),this._completedSamples=c,this._tileProgress=p/f,yield;c++}}dispose(){super.dispose(),this.envInfo.dispose(),this.lightsInfo.dispose(),this.kernel.dispose()}}class Cd extends O{constructor(e,t,i=[]){super(e,t),this.dependencies=i}setup(e){for(const t of this.dependencies)t.build(e);super.setup(e)}}const Eo={throughputColor:"vec3f",currentBounce:"uint",resultColor:"vec4f",emission:"vec3f",scatterPdf:"float",scatterColor:"vec3f",minPdf:"float",origin:"vec3f",isFullyTransmissive:"uint",direction:"vec3f",side:"float",normal:"vec3f",objectIndex:"int",barycoord:"vec3f",pixelIndex:"uint",indices:"vec3u",seed:"uint",lightDirection:"vec3f",lightPdf:"float",lightEmission:"vec3f",lightDist:"float",lightBsdf:"vec3f",lightBsdfPdf:"float",rayIntersectionIndex:"int",shadowRayIntersectionIndex:"int",lightType:"int",dist:"float",alphaDepth:"uint",rayStart:"float",maxDist:"float",dispersionWavelength:"float",auxAlbedo:"uint",auxNormal:"uint",subsurfaceBounces:"uint",walkPending:"uint",mediumScattered:"uint"},ze=new Cd({...Eo,medium:Qt.name},"RayData",[Qt]),Dd=new O(Eo).getLength();ze.getLength=()=>Dd+Qt.getLength();const jt=new O({origin:"vec3f",pixelIndex:"uint",direction:"vec3f",rngIndex:"uint",seed:"uint",maxDist:"float",_alignment0:"uint",_alignment1:"uint"},"TraceQueuedRay"),$r=new O({barycoord:"vec3f",objectIndex:"int",position:"vec3f",dist:"float",normal:"vec3f",side:"float",indices:"vec3u"},"TraceResult"),js=new O({objectIndex:"int",skippedOcclusion:"float",occlusion:"float"},"ShadowTraceResult"),Vt=0,Gs=1,Zr=2,Ks=0,hr=1,ko=0,pr=1,bi=2;class $d extends te{constructor(){const e={rayDataStorage:E(new N(1,1),ze),pixelQueue:E(new N(1,1),"uint"),targetDimensions:B(new G),frameBudget:B(0,"uint"),globalId:ae},t=I`
+		`;super(r(e)),this.defineUniformAccessors({target:e.outputTarget})}}const _d=0,ta=1;class zo{constructor(e){this.renderer=e,this.maxBounces=15,this.frameBudget=25e4,this.maxTransparentBounces=15,this.maxSubsurfaceBounces=256,this.lowResMode=!1,this.maxSamples=0,this.asyncCompile=!1,this.compiling=!1,this.timing={count:0,frameTime:0,frameBudget:0},this._renderTask=null,this._compileState=new WeakMap,this._timestampUIDs=null,this._timingFrame=!1,this.outputTarget=Wt("Output #0"),this.prevOutputTarget=Wt("Output #1"),this.sampleCountTarget=wi("Sample Count"),this.sampleCountClearKernel=new Xi().setWorkgroupSize(8,8,1),this.outputTargetClearKernel=new Xi().setWorkgroupSize(8,8,1),this.auxTargetClearKernel=new Xi().setWorkgroupSize(8,8,1),this.auxTarget=null,this._auxPlaceholder=qt()}setAccumulateAux(e){if(!!this.auxTarget!==e){if(this.auxTarget?.dispose(),this.auxTarget=null,e){const{width:t,height:r}=this.outputTarget;this.auxTarget=qt("Auxiliary Images"),this.auxTarget.setSize(t,r,Fe)}this.reset()}}setRandom(e){}setBVHData(e){}setTextures(e){}setMaterial(e){}setFilterGlossy(e){}setClamping(e,t){}setEnvironment(e,t,r){}setLights(e){}setBackground(e,t,r,i){}*compileKernels(e){const{renderer:t,_compileState:r}=this;if(!this.asyncCompile||!t.compileComputeAsync)return;const i=e.map(s=>s.kernel),n=i.filter(s=>!r.has(s));for(n.length>0&&(this.compiling=!0,yield,n.forEach(s=>r.set(s,_d)),t.compileComputeAsync(n).catch(()=>{}).finally(()=>{n.forEach(s=>r.set(s,ta))}));i.some(s=>r.get(s)!==ta);)this.compiling=!0,yield;this.compiling=!1}rebuild(){this._renderTask=null}setSize(e,t){e=Math.ceil(e),t=Math.ceil(t);const{width:r,height:i}=this.outputTarget;return r===e&&i===t?!1:(this.outputTarget.dispose(),this.prevOutputTarget.dispose(),this.sampleCountTarget.dispose(),this.outputTarget=this.outputTarget.clone(),this.prevOutputTarget=this.outputTarget.clone(),this.sampleCountTarget=this.sampleCountTarget.clone(),this.outputTarget.setSize(e,t),this.prevOutputTarget.setSize(e,t),this.sampleCountTarget.setSize(e,t),this.auxTarget?.setSize(e,t,Fe),this.reset(),!0)}getSize(e){const{width:t,height:r}=this.outputTarget;return e.x=t,e.y=r,e}getPreviewPixelBudget(){return this.frameBudget}update(){const{renderer:e}=this;if(!e.initialized)return;this._renderTask||(this._renderTask=this.createRenderTask());const t=e.backend.trackTimestamp&&!this._timingFrame;this._timestampUIDs=t?[]:null,this._renderTask.next(),t&&this._timestampUIDs.length>0&&this._measureFrameTime(this._timestampUIDs),this._timestampUIDs=null}dispatch(e,t){const{renderer:r}=this;r.compute(e.kernel,t),this._timestampUIDs?.push(r.backend.getTimestampUID(e.kernel))}async _measureFrameTime(e){const{renderer:t,timing:r,frameBudget:i}=this,{backend:n}=t;this._timingFrame=!0,await t.resolveTimestampsAsync(nl.COMPUTE),this._timingFrame=!1,e.every(s=>n.hasTimestampQuery(s))&&(r.frameTime=e.reduce((s,o)=>s+n.getTimestamp(o),0),r.frameBudget=i,r.count++)}*createRenderTask(){}async getSampleCountsAsync(){return{min:0,max:0,avg:0}}resetSeed(){}reset(){const{renderer:e,outputTargetClearKernel:t,sampleCountClearKernel:r,outputTarget:i,prevOutputTarget:n,sampleCountTarget:s}=this;if(!e.initialized)return;const{width:o,height:l}=i,d=t.getDispatchSize(o,l);if(t.target=i,e.compute(t.kernel,d),t.target=n,e.compute(t.kernel,d),r.target=s,e.compute(r.kernel,d),this.auxTarget){const{auxTargetClearKernel:c}=this;c.target=this.auxTarget,e.compute(c.kernel,c.getDispatchSize(o,l,Fe))}this._renderTask=null}dispose(){this.outputTarget.dispose(),this.prevOutputTarget.dispose(),this.sampleCountTarget.dispose(),this.sampleCountClearKernel.dispose(),this.outputTargetClearKernel.dispose(),this.auxTargetClearKernel.dispose(),this.auxTarget?.dispose(),this._auxPlaceholder.dispose(),this._renderTask=null}}const Yi=new G;class Rd extends zo{constructor(e){super(e),this.envInfo=new Ao,this._completedSamples=0,this._tileProgress=0,this.kernel=new ud().setWorkgroupSize(8,8,1),this.kernel.envInfo=this.envInfo,this.backgroundInfo=new Fo,this.kernel.backgroundInfo=this.backgroundInfo,this.lightsInfo=new Lo,this.kernel.lightsInfo=this.lightsInfo}resetSeed(){this.kernel.seed=0}reset(){super.reset(),this._completedSamples=0,this._tileProgress=0}async getSampleCountsAsync(){if(this.lowResMode)return{min:0,max:0,avg:0};const e=this._completedSamples,t=this._tileProgress;return{min:t===1?e+1:e,max:e+1,avg:e+t}}setBVHData(e){this.kernel.context.bvhData=e,this.rebuild()}rebuild(){super.rebuild(),this.kernel.needsUpdate=!0,this.reset()}setRandom(e){this.kernel.context.random=e,this.kernel.needsUpdate=!0,this.reset()}setMaterial(e){this.kernel.material=e.getData(),this.kernel.needsUpdate=!0,this.reset()}setFilterGlossy(e){this.kernel.filterGlossy=e===0?So:1/e,this.reset()}setClamping(e,t){this.kernel.clampDirect=e,this.kernel.clampIndirect=t,this.reset()}setEnvironment(e){this.envInfo.updateFrom(e)}setLights(e){this.lightsInfo.updateFrom(this.renderer,e),this.reset()}setMultipleImportanceSampling(e){this.kernel.misEnabled=e?1:0,this.reset()}setEnvironmentParams(e,t){const{envInfo:r}=this,i=new W().makeRotationFromEuler(t).invert();r.rotationNode.value.setFromMatrix4(i),r.intensityNode.value=e}setBackground(e){const{backgroundInfo:t}=this;t.dispose(),t.map=e}setBackgroundParams(e,t,r){const{backgroundInfo:i}=this,n=new W().makeRotationFromEuler(t).invert();i.rotationNode.value.copy(n),i.intensity=e,i.blur=r}setTransmissiveBackground(e){this.kernel.transmissiveBackground=e,this.reset()}*createRenderTask(){const{renderer:e,kernel:t,maxBounces:r,maxTransparentBounces:i,maxSubsurfaceBounces:n,outputTarget:s,sampleCountTarget:o,lowResMode:l}=this,d=new G;t.outputTarget=s,t.sampleCountTarget=o,t.maxBounces=r,t.maxTransparentBounces=i,t.maxSubsurfaceBounces=n,yield*this.compileKernels([t]);let c=0;for(;;){if(t.maxSamples=this.maxSamples,t.auxTarget=this.auxTarget??this._auxPlaceholder,t.accumulateAux=this.auxTarget?1:0,this.maxSamples!==0&&c>=this.maxSamples){yield;continue}this.getSize(Yi);const u=l?1:Math.max(1,Math.ceil(Yi.x*Yi.y/this.frameBudget));d.x=Math.ceil(Math.sqrt(u)),d.y=Math.ceil(u/d.x);const f=this.lowResMode?1:d.x*d.y;let p=0;const h=t.tileSize;l?this.getSize(h):this.getSize(h).divide(d).ceil();const y=t.getDispatchSize(h.x,h.y);t.seed+=1,e.copyTextureToTexture(this.outputTarget,this.prevOutputTarget),[this.outputTarget,this.prevOutputTarget]=[this.prevOutputTarget,this.outputTarget],t.prevOutputTarget=this.prevOutputTarget,t.outputTarget=this.outputTarget;for(let x=0;x<d.x;x++)for(let b=0;b<d.y;b++)t.offset.set(x,b).multiply(h),this.dispatch(t,y),p=Math.min(p+1,f),this._completedSamples=c,this._tileProgress=p/f,yield;c++}}dispose(){super.dispose(),this.envInfo.dispose(),this.lightsInfo.dispose(),this.kernel.dispose()}}class Cd extends O{constructor(e,t,r=[]){super(e,t),this.dependencies=r}setup(e){for(const t of this.dependencies)t.build(e);super.setup(e)}}const Eo={throughputColor:"vec3f",currentBounce:"uint",resultColor:"vec4f",emission:"vec3f",scatterPdf:"float",scatterColor:"vec3f",minPdf:"float",origin:"vec3f",isFullyTransmissive:"uint",direction:"vec3f",side:"float",normal:"vec3f",objectIndex:"int",barycoord:"vec3f",pixelIndex:"uint",indices:"vec3u",seed:"uint",lightDirection:"vec3f",lightPdf:"float",lightEmission:"vec3f",lightDist:"float",lightBsdf:"vec3f",lightBsdfPdf:"float",rayIntersectionIndex:"int",shadowRayIntersectionIndex:"int",lightType:"int",dist:"float",alphaDepth:"uint",rayStart:"float",maxDist:"float",dispersionWavelength:"float",auxAlbedo:"uint",auxNormal:"uint",subsurfaceBounces:"uint",walkPending:"uint",mediumScattered:"uint"},ze=new Cd({...Eo,medium:Qt.name},"RayData",[Qt]),Dd=new O(Eo).getLength();ze.getLength=()=>Dd+Qt.getLength();const jt=new O({origin:"vec3f",pixelIndex:"uint",direction:"vec3f",rngIndex:"uint",seed:"uint",maxDist:"float",_alignment0:"uint",_alignment1:"uint"},"TraceQueuedRay"),$i=new O({barycoord:"vec3f",objectIndex:"int",position:"vec3f",dist:"float",normal:"vec3f",side:"float",indices:"vec3u"},"TraceResult"),js=new O({objectIndex:"int",skippedOcclusion:"float",occlusion:"float"},"ShadowTraceResult"),Vt=0,Gs=1,Zi=2,Ks=0,hi=1,ko=0,pi=1,br=2;class $d extends te{constructor(){const e={rayDataStorage:E(new N(1,1),ze),pixelQueue:E(new N(1,1),"uint"),targetDimensions:B(new G),frameBudget:B(0,"uint"),globalId:ae},t=I`
 			fn compute( targetDimensions: vec2u, frameBudget: u32, globalId: vec3u ) -> void {
 
 				let rayDataStorage = &${e.rayDataStorage};
@@ -4008,7 +4008,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				if ( globalId.x == 0u && globalId.y == 0u ) {
 
 					pixelQueue[ ${ko}u ] = 0u;
-					pixelQueue[ ${pr}u ] = select( 0u, pixelCount - rayCount, pixelCount >= rayCount );
+					pixelQueue[ ${pi}u ] = select( 0u, pixelCount - rayCount, pixelCount >= rayCount );
 
 				}
 
@@ -4026,12 +4026,12 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				} else {
 
-					pixelQueue[ ${bi}u + pixelIndex - rayCount ] = pixelHash;
+					pixelQueue[ ${br}u + pixelIndex - rayCount ] = pixelHash;
 
 				}
 
 			}
-		`;super(t(e)),this.defineUniformAccessors(e)}}class Md extends te{constructor(){const e={envInfo:{value:null},backgroundInfo:{value:null},lightsInfo:{value:null},prevOutputTarget:de(Wt()).toReadOnly(),outputTarget:de(Wt()).toWriteOnly(),sampleCountTarget:de(wr()).toReadWrite(),auxTarget:de(qt()).toReadWrite(),misEnabled:B(1,"uint"),rayCount:B(0,"uint"),maxBounces:B(5,"uint"),clampDirect:B(0),clampIndirect:B(10),transmissiveBackground:B(qs),accumulateAux:B(0,"uint"),rayDataStorage:E(new N(1,1),ze),rayIntersectionsStorage:E(new N(1,1),$r),shadowRayIntersectionsStorage:E(new N(1,1),js),globalId:ae},t=ee("envInfo.value.totalSumNode",e),i=ee("envInfo.value.intensityNode",e),r=ee("envInfo.value.sampleColor",e),n=ee("envInfo.value.sampleDir",e),s=ee("envInfo.value.getDirPdf",e),o=ee("envInfo.value.getWeight",e),l=ee("backgroundInfo.value.sampleColor",e),d=ee("lightsInfo.value.countNode",e),c=K("lightsInfo.value.randomLightSample",e),u=K("lightsInfo.value.intersectLightAtIndex",e),f=K("lightsInfo.value.getLightWeight",e),p=K("lightsInfo.value.getLightsWeight",e),h=K("lightsInfo.value.selectLight",e),y=K("lightsInfo.value.isLightVisibleToCamera",e),x=I`
+		`;super(t(e)),this.defineUniformAccessors(e)}}class Md extends te{constructor(){const e={envInfo:{value:null},backgroundInfo:{value:null},lightsInfo:{value:null},prevOutputTarget:de(Wt()).toReadOnly(),outputTarget:de(Wt()).toWriteOnly(),sampleCountTarget:de(wi()).toReadWrite(),auxTarget:de(qt()).toReadWrite(),misEnabled:B(1,"uint"),rayCount:B(0,"uint"),maxBounces:B(5,"uint"),clampDirect:B(0),clampIndirect:B(10),transmissiveBackground:B(qs),accumulateAux:B(0,"uint"),rayDataStorage:E(new N(1,1),ze),rayIntersectionsStorage:E(new N(1,1),$i),shadowRayIntersectionsStorage:E(new N(1,1),js),globalId:ae},t=ee("envInfo.value.totalSumNode",e),r=ee("envInfo.value.intensityNode",e),i=ee("envInfo.value.sampleColor",e),n=ee("envInfo.value.sampleDir",e),s=ee("envInfo.value.getDirPdf",e),o=ee("envInfo.value.getWeight",e),l=ee("backgroundInfo.value.sampleColor",e),d=ee("lightsInfo.value.countNode",e),c=K("lightsInfo.value.randomLightSample",e),u=K("lightsInfo.value.intersectLightAtIndex",e),f=K("lightsInfo.value.getLightWeight",e),p=K("lightsInfo.value.getLightsWeight",e),h=K("lightsInfo.value.selectLight",e),y=K("lightsInfo.value.isLightVisibleToCamera",e),x=I`
 
 			fn compute(
 				// settings
@@ -4072,7 +4072,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				// one-sample NEE chooses between the analytic lights and the environment, matched with
 				// the megakernel
-				let envActive = ${t} > 0.0 && ${i} > 0.0;
+				let envActive = ${t} > 0.0 && ${r} > 0.0;
 				let lightsCount = ${d};
 				var envWeight = 0.0;
 				if ( envActive ) {
@@ -4102,7 +4102,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 						let isMISWeighted = ${po}( input.lightType ) && input.currentBounce < maxBounces;
 						let misWeight = select( 1.0, mix( ${et}( input.lightPdf, input.lightBsdfPdf ), 1.0, shadowHit.skippedOcclusion ), isMISWeighted );
 						let directLight = throughputColor * input.lightEmission * input.lightBsdf * misWeight * ( 1.0 - shadowHit.occlusion ) / input.lightPdf;
-						let contribution = ${ie}( directLight, input.currentBounce, clampDirect, clampIndirect );
+						let contribution = ${re}( directLight, input.currentBounce, clampDirect, clampIndirect );
 						resultColor += vec4f( contribution, 0.0 );
 
 					}
@@ -4111,7 +4111,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				// emission gathered at the previous surface (pre-scatter throughput). Found light clamps
 				// at the depth of the segment that found it, as in Cycles, so one less than the current
-				let emission = ${ie}( throughputColor * input.emission, max( input.currentBounce, 1u ) - 1u, clampDirect, clampIndirect );
+				let emission = ${re}( throughputColor * input.emission, max( input.currentBounce, 1u ) - 1u, clampDirect, clampIndirect );
 				resultColor += vec4f( emission, 0.0 );
 
 				// reconstruct the scatter record staged by MaterialKernel
@@ -4178,7 +4178,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							}
 
-							lightHits += ${ie}( lightRec.emission * throughputColor * misWeight, input.currentBounce, clampDirect, clampIndirect );
+							lightHits += ${re}( lightRec.emission * throughputColor * misWeight, input.currentBounce, clampDirect, clampIndirect );
 							cameraHitLight = cameraHitLight || input.currentBounce == 0u;
 
 						}
@@ -4200,7 +4200,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 						var lightPdf = 0.0;
 						if ( misEnabled != 0u ) {
 
-							let ruv = ${Es}( ${ro} );
+							let ruv = ${Es}( ${io} );
 							var selectionPdf = 0.0;
 							let lightIndex = ${h}( hitResult.position, envWeight, ruv.x, &selectionPdf );
 							if ( selectionPdf > 0.0 ) {
@@ -4249,8 +4249,8 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							}
 
-							let environment = ${r}( input.direction ).rgb * throughputColor * misWeight;
-							let contribution = ${ie}( environment, input.currentBounce, clampDirect, clampIndirect );
+							let environment = ${i}( input.direction ).rgb * throughputColor * misWeight;
+							let contribution = ${re}( environment, input.currentBounce, clampDirect, clampIndirect );
 							resultColor += vec4f( contribution, 0.0 );
 
 						} else {
@@ -4262,13 +4262,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 							if ( input.currentBounce == 0u ) {
 
 								// sample the background directly if this is the primary ray
-								let background = ${ie}( bg.a * bg.rgb, input.currentBounce, clampDirect, clampIndirect );
+								let background = ${re}( bg.a * bg.rgb, input.currentBounce, clampDirect, clampIndirect );
 								resultColor = vec4f( background, bg.a );
 
 							} else {
 
 								// transmissive ray handling
-								let env = ${r}( input.direction );
+								let env = ${i}( input.direction );
 								let avg = saturate( dot( throughputColor, vec3f( 1.0 / 3.0 ) ) );
 								let transparency = ( 1.0 - bg.a ) * avg;
 
@@ -4283,7 +4283,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								if ( transmissiveBackground == ${Po}u ) {
 
 									// display the env map through transmissive surfaces
-									let background = ${ie}( env.rgb * throughputColor * misWeight, input.currentBounce, clampDirect, clampIndirect );
+									let background = ${re}( env.rgb * throughputColor * misWeight, input.currentBounce, clampDirect, clampIndirect );
 									resultColor = vec4f(
 										resultColor.rgb + background,
 										1.0,
@@ -4292,7 +4292,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								} else if ( transmissiveBackground == ${Bo}u ) {
 
 									// fade the background by the throughput color average
-									let background = ${ie}( bg.a * bg.rgb * throughputColor * misWeight, input.currentBounce, clampDirect, clampIndirect );
+									let background = ${re}( bg.a * bg.rgb * throughputColor * misWeight, input.currentBounce, clampDirect, clampIndirect );
 									resultColor = vec4f(
 										resultColor.rgb + background,
 										1.0 - transparency,
@@ -4302,7 +4302,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 									// fade the background by the throughput color average, mixing in env lighting
 									var light = mix( env.rgb, bg.rgb, bg.a ) * misWeight;
-									let background = ${ie}( light * throughputColor, input.currentBounce, clampDirect, clampIndirect );
+									let background = ${re}( light * throughputColor, input.currentBounce, clampDirect, clampIndirect );
 									resultColor = vec4f(
 										resultColor.rgb + background,
 										1.0 - transparency,
@@ -4330,7 +4330,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				// the color rows are stored top down to match a rasterized render target
 				let colorIndex = vec2u( indexUV.x, textureDimensions( ${e.outputTarget} ).y - 1u - indexUV.y );
-				let storedSamples = textureLoad( ${e.sampleCountTarget}, indexUV ).r & ${vi}u;
+				let storedSamples = textureLoad( ${e.sampleCountTarget}, indexUV ).r & ${vr}u;
 
 				if ( isTerminated ) {
 
@@ -4379,7 +4379,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			}
-		`;super(x(e)),this.defineUniformAccessors(e)}}class Pd extends te{constructor(){const e={material:{value:null},seed:B(0,"uint"),targetDimensions:B(new G),maxSamples:B(0,"uint"),rayCount:B(0,"uint"),filterGlossy:B(1),maxTransparentBounces:B(5,"uint"),maxBounces:B(5,"uint"),sampleCountTarget:de(wr()).toReadWrite(),rayDataStorage:E(new N(1,1),ze),rayQueue:E(new N(1,1),jt),shadowRayQueue:E(new N(1,1),jt),queueCounters:E(new N(1,1),"uint").toAtomic(),pixelQueue:E(new N(1,1),"uint").toAtomic(),globalId:ae},t=ue("bvhData.fns.getCameraRay"),i=ue("bvhData.fns.sampleTrianglePoint"),r=ue("bvhData.fns.getSurfaceRecord"),n=K("material.value.bsdfSample",e),s=K("material.value.bsdfEvalPdf",e),o=_e("bvhData.storage.materials"),l=_e("bvhData.storage.transforms"),d=I`
+		`;super(x(e)),this.defineUniformAccessors(e)}}class Pd extends te{constructor(){const e={material:{value:null},seed:B(0,"uint"),targetDimensions:B(new G),maxSamples:B(0,"uint"),rayCount:B(0,"uint"),filterGlossy:B(1),maxTransparentBounces:B(5,"uint"),maxBounces:B(5,"uint"),sampleCountTarget:de(wi()).toReadWrite(),rayDataStorage:E(new N(1,1),ze),rayQueue:E(new N(1,1),jt),shadowRayQueue:E(new N(1,1),jt),queueCounters:E(new N(1,1),"uint").toAtomic(),pixelQueue:E(new N(1,1),"uint").toAtomic(),globalId:ae},t=ue("bvhData.fns.getCameraRay"),r=ue("bvhData.fns.sampleTrianglePoint"),i=ue("bvhData.fns.getSurfaceRecord"),n=K("material.value.bsdfSample",e),s=K("material.value.bsdfEvalPdf",e),o=_e("bvhData.storage.materials"),l=_e("bvhData.storage.transforms"),d=I`
 
 			fn compute(
 				seed: u32,
@@ -4415,14 +4415,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					// the slot's path has terminated: recycle the pixel through the overflow queue and
 					// generate a fresh camera ray
 					var pixelIndex = input.pixelIndex;
-					let elementCount = atomicLoad( &pixelQueue[ ${pr}u ] );
+					let elementCount = atomicLoad( &pixelQueue[ ${pi}u ] );
 					if ( elementCount > 0u ) {
 
 						// TODO: If we've pulled off a pixel that's already finished we currently just
 						// write a no-op ray, wasting a frame. It may be better to iterate over a few
 						// points in the queue to see if we can find one we can use.
 						let queueIndex = atomicAdd( &pixelQueue[ ${ko}u ], 1u ) % elementCount;
-						pixelIndex = atomicExchange( &pixelQueue[ ${bi}u + queueIndex ], pixelIndex );
+						pixelIndex = atomicExchange( &pixelQueue[ ${br}u + queueIndex ], pixelIndex );
 
 					}
 
@@ -4430,7 +4430,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 					// skip the pixel if it has hit the sample limit
 					let combinedField = textureLoad( ${e.sampleCountTarget}, indexUV ).r;
-					let samples = ( ${vi}u & combinedField );
+					let samples = ( ${vr}u & combinedField );
 					let isComplete = maxSamples != 0u && samples >= maxSamples;
 
 					if ( isComplete ) {
@@ -4455,7 +4455,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 						// a frame. Is it possible to quickly skip rays outside the mask or are finished?
 						if ( maxSamples != 0u ) {
 
-							textureStore( ${e.sampleCountTarget}, indexUV, vec4( ( combinedField & ~${vi}u ) | maxSamples ) );
+							textureStore( ${e.sampleCountTarget}, indexUV, vec4( ( combinedField & ~${vr}u ) | maxSamples ) );
 
 						}
 
@@ -4494,7 +4494,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					rayDataStorage[ index ].maxDist = ray.maxDist;
 					rayDataStorage[ index ].rayIntersectionIndex = i32( rayIndex );
 					rayDataStorage[ index ].shadowRayIntersectionIndex = - 1;
-					rayDataStorage[ index ].dispersionWavelength = - mix( ${_r}.0, ${Rr}.0, ${mt}( ${no} ) );
+					rayDataStorage[ index ].dispersionWavelength = - mix( ${_i}.0, ${Ri}.0, ${mt}( ${no} ) );
 					rayDataStorage[ index ].auxAlbedo = 0u;
 					rayDataStorage[ index ].auxNormal = 0u;
 					rayDataStorage[ index ].subsurfaceBounces = 0u;
@@ -4535,7 +4535,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					materialInfo.color *= objectInfo.color.rgb;
 					materialInfo.opacity *= objectInfo.color.a;
 
-					var vertexData = ${i}( input.barycoord, input.indices );
+					var vertexData = ${r}( input.barycoord, input.indices );
 					vertexData.normal = normalize( transpose( objectInfo.inverseMatrixWorld ) * vertexData.normal );
 					vertexData.tangent = vec4f( ( objectInfo.matrixWorld * vec4f( vertexData.tangent.xyz, 0.0 ) ).xyz, vertexData.tangent.w );
 					vertexData.position = objectInfo.matrixWorld * vertexData.position;
@@ -4546,7 +4546,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					// from the Cycles "filter glossy" approach in integrator/surface_shader.h
 					let blurRoughness = sqrt( clamp( 1.0 - filterGlossy * input.minPdf, 0.0, 1.0 ) ) * 0.5;
 
-					var surface = ${r}( materialInfo, vertexData, input.side, input.normal, view, blurRoughness );
+					var surface = ${i}( materialInfo, vertexData, input.side, input.normal, view, blurRoughness );
 
 					// Stochastically pass through partially transparent surfaces by re-enqueueing
 					// the ray at the hit point, advancing the alpha depth but not the bounce count.
@@ -4773,7 +4773,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			}
-		`;super(d(e)),this.defineUniformAccessors(e)}}class Bd extends te{constructor(){const e={rayQueue:E(new N(1,1),jt),queueCounters:E(new N(1,1),"uint"),rayIntersectionsStorage:E(new N(1,1),$r),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),i=_e("bvhData.fns.raycastFirstHit"),r=I`
+		`;super(d(e)),this.defineUniformAccessors(e)}}class Bd extends te{constructor(){const e={rayQueue:E(new N(1,1),jt),queueCounters:E(new N(1,1),"uint"),rayIntersectionsStorage:E(new N(1,1),$i),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),r=_e("bvhData.fns.raycastFirstHit"),i=I`
 
 			fn compute( globalId: vec3u ) -> void {
 
@@ -4795,7 +4795,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				let ray = Ray( queuedRay.origin, queuedRay.direction, queuedRay.maxDist );
 				var hitResult: ${t};
-				if ( ${i}( ray, &hitResult ) ) {
+				if ( ${r}( ray, &hitResult ) ) {
 
 					rayIntersectionsStorage[ index ].barycoord = hitResult.barycoord;
 					rayIntersectionsStorage[ index ].objectIndex = i32( hitResult.objectIndex );
@@ -4812,7 +4812,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			}
-		`;super(r(e)),this.defineUniformAccessors(e)}}class Ad extends te{constructor(){const e={shadowRayQueue:E(new N(1,1),jt),queueCounters:E(new N(1,1),"uint"),shadowRayIntersectionsStorage:E(new N(1,1),js),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),i=_e("bvhData.fns.raycastShadow"),r=I`
+		`;super(i(e)),this.defineUniformAccessors(e)}}class Ad extends te{constructor(){const e={shadowRayQueue:E(new N(1,1),jt),queueCounters:E(new N(1,1),"uint"),shadowRayIntersectionsStorage:E(new N(1,1),js),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),r=_e("bvhData.fns.raycastShadow"),i=I`
 
 			fn compute( globalId: vec3u ) -> void {
 
@@ -4834,13 +4834,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				let ray = Ray( queuedRay.origin, queuedRay.direction, queuedRay.maxDist );
 				var hitResult: ${t};
-				let occluded = ${i}( ray, &hitResult );
+				let occluded = ${r}( ray, &hitResult );
 				shadowRayIntersectionsStorage[ index ].objectIndex = select( - 1, i32( hitResult.objectIndex ), occluded );
 				shadowRayIntersectionsStorage[ index ].skippedOcclusion = hitResult.skippedOcclusion;
 				shadowRayIntersectionsStorage[ index ].occlusion = hitResult.occlusion;
 
 			}
-		`;super(r(e)),this.defineUniformAccessors(e)}}class Fd extends te{constructor(){const e={maxSubsurfaceBounces:B(256,"uint"),stepsPerPass:B(16,"uint"),rayCount:B(0,"uint"),rayDataStorage:E(new N(1,1),ze),mediumQueue:E(new N(1,1),"uint"),rayIntersectionsStorage:E(new N(1,1),$r),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),i=_e("bvhData.fns.raycastFirstHit"),r=I`
+		`;super(i(e)),this.defineUniformAccessors(e)}}class Fd extends te{constructor(){const e={maxSubsurfaceBounces:B(256,"uint"),stepsPerPass:B(16,"uint"),rayCount:B(0,"uint"),rayDataStorage:E(new N(1,1),ze),mediumQueue:E(new N(1,1),"uint"),rayIntersectionsStorage:E(new N(1,1),$i),globalId:ae},t=_e("bvhData.fns.raycastFirstHit.outputType"),r=_e("bvhData.fns.raycastFirstHit"),i=I`
 
 			fn compute( maxSubsurfaceBounces: u32, stepsPerPass: u32, rayCount: u32, globalId: vec3u ) -> void {
 
@@ -4854,7 +4854,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 
-				let index = mediumQueue[ ${hr}u + globalId.x ];
+				let index = mediumQueue[ ${hi}u + globalId.x ];
 				// whole structs are read from the buffer, not the pointer alias, which Safari fails to compile
 				let input = ${e.rayDataStorage}[ index ];
 				let medium = ${go}( input.medium );
@@ -4877,7 +4877,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					ray.maxDist = scatterDist;
 
 					var hitResult: ${t};
-					let didHit = ${i}( ray, &hitResult );
+					let didHit = ${r}( ray, &hitResult );
 					let surfaceDist = select( ${yt}, hitResult.dist, didHit );
 
 					let scattered = scatterDist < surfaceDist;
@@ -4930,7 +4930,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 					}
 
-					${nr}();
+					${ni}();
 
 				}
 
@@ -4949,7 +4949,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			}
-		`;super(r(e)),this.defineUniformAccessors(e)}}class Nd extends te{constructor(){const e={rayCount:B(0,"uint"),rayDataStorage:E(new N(1,1),ze).toReadOnly(),mediumQueue:E(new N(1,1),"uint").toAtomic(),globalId:ae},t=I`
+		`;super(i(e)),this.defineUniformAccessors(e)}}class Nd extends te{constructor(){const e={rayCount:B(0,"uint"),rayDataStorage:E(new N(1,1),ze).toReadOnly(),mediumQueue:E(new N(1,1),"uint").toAtomic(),globalId:ae},t=I`
 
 			fn compute( rayCount: u32, globalId: vec3u ) -> void {
 
@@ -4966,16 +4966,16 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				if ( rayDataStorage[ index ].walkPending != 0u && rayDataStorage[ index ].objectIndex >= 0 ) {
 
 					let queueIndex = atomicAdd( &mediumQueue[ ${Ks}u ], 1u );
-					atomicStore( &mediumQueue[ ${hr}u + queueIndex ], index );
+					atomicStore( &mediumQueue[ ${hi}u + queueIndex ], index );
 
 				}
 
 			}
-		`;super(t(e)),this.defineUniformAccessors(e)}}class Jr extends te{constructor(e=Vt,t=64){const i={queueCounters:E(new N(1,1),"uint").toAtomic(),outputDispatch:E(new _a(3,1),"u32").setName("outputDispatch")},r=I`
+		`;super(t(e)),this.defineUniformAccessors(e)}}class Ji extends te{constructor(e=Vt,t=64){const r={queueCounters:E(new N(1,1),"uint").toAtomic(),outputDispatch:E(new _a(3,1),"u32").setName("outputDispatch")},i=I`
 			fn compute() -> void {
 
-				let queueCounters = &${i.queueCounters};
-				let outputDispatch = &${i.outputDispatch};
+				let queueCounters = &${r.queueCounters};
+				let outputDispatch = &${r.outputDispatch};
 
 				let queueLength = atomicLoad( &queueCounters[ ${e}u ] );
 				outputDispatch[ 0 ] = ( queueLength + ${t-1}u ) / ${t}u;
@@ -4983,7 +4983,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				outputDispatch[ 2 ] = 1u;
 
 			}
-		`;super(r(i)),this.defineUniformAccessors(i)}}class Ld extends te{constructor(){const e={rayDataStorage:E(new N(1,1),ze),pixelQueue:E(new N(1,1),"uint").toAtomic(),start:B(0,"uint"),end:B(0,"uint"),addingSlots:B(0,"uint"),globalId:ae},t=I`
+		`;super(i(r)),this.defineUniformAccessors(r)}}class Ld extends te{constructor(){const e={rayDataStorage:E(new N(1,1),ze),pixelQueue:E(new N(1,1),"uint").toAtomic(),start:B(0,"uint"),end:B(0,"uint"),addingSlots:B(0,"uint"),globalId:ae},t=I`
 			fn compute( start: u32, end: u32, addingSlots: u32, globalId: vec3u ) -> void {
 
 				let rayDataStorage = &${e.rayDataStorage};
@@ -4999,14 +4999,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				if ( addingSlots == 0u ) {
 
 					// slots being removed hand their pixel back before the pool is discarded
-					let queueIndex = atomicAdd( &pixelQueue[ ${pr}u ], 1u );
-					atomicStore( &pixelQueue[ ${bi}u + queueIndex ], rayDataStorage[ index ].pixelIndex );
+					let queueIndex = atomicAdd( &pixelQueue[ ${pi}u ], 1u );
+					atomicStore( &pixelQueue[ ${br}u + queueIndex ], rayDataStorage[ index ].pixelIndex );
 
 				} else {
 
 					// the pool never exceeds the pixel count, so the queue holds enough for every new slot
-					let previousCount = atomicSub( &pixelQueue[ ${pr}u ], 1u );
-					rayDataStorage[ index ].pixelIndex = atomicLoad( &pixelQueue[ ${bi}u + previousCount - 1u ] );
+					let previousCount = atomicSub( &pixelQueue[ ${pi}u ], 1u );
+					rayDataStorage[ index ].pixelIndex = atomicLoad( &pixelQueue[ ${br}u + previousCount - 1u ] );
 					rayDataStorage[ index ].resultColor = vec4f( 0.0 );
 					rayDataStorage[ index ].throughputColor = vec3f( 0.0 );
 					rayDataStorage[ index ].objectIndex = - 1;
@@ -5017,13 +5017,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			}
-		`;super(t(e)),this.defineUniformAccessors(e)}}class zd extends te{constructor(e={}){const{type:t="u32"}=e,i={globalId:ae,outputTarget:E(new _a(1,1),t)},r=I`
+		`;super(t(e)),this.defineUniformAccessors(e)}}class zd extends te{constructor(e={}){const{type:t="u32"}=e,r={globalId:ae,outputTarget:E(new _a(1,1),t)},i=I`
 			fn compute( globalId: vec3u ) -> void {
 
-				${i.outputTarget}[ globalId.x ] = 0;
+				${r.outputTarget}[ globalId.x ] = 0;
 
 			}
-		`;super(r(i)),this.defineUniformAccessors({target:i.outputTarget})}}class Ed extends te{constructor(e){const t={source:E(new N(1,1),e).toReadOnly(),target:E(new N(1,1),e),count:B(0,"uint"),globalId:ae},i=I`
+		`;super(i(r)),this.defineUniformAccessors({target:r.outputTarget})}}class Ed extends te{constructor(e){const t={source:E(new N(1,1),e).toReadOnly(),target:E(new N(1,1),e),count:B(0,"uint"),globalId:ae},r=I`
 			fn compute( count: u32, globalId: vec3u ) -> void {
 
 				let index = globalId.x;
@@ -5036,7 +5036,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				${t.target}[ index ] = ${t.source}[ index ];
 
 			}
-		`;super(i(t)),this.defineUniformAccessors(t)}}const kd=0,Hd=1,Ud=2,Vd=3,Od=4,ia=5,Wd=4294967296,Ho=new O({minSamples:{type:"uint",atomic:!0},maxSamples:{type:"uint",atomic:!0},totalLo:{type:"uint",atomic:!0},totalHi:{type:"uint",atomic:!0},pixelCount:{type:"uint",atomic:!0}},"SampleCounters");class qd extends te{constructor(){const e={counters:E(new N(1,1),Ho)},t=I`
+		`;super(r(t)),this.defineUniformAccessors(t)}}const kd=0,Hd=1,Ud=2,Vd=3,Od=4,ra=5,Wd=4294967296,Ho=new O({minSamples:{type:"uint",atomic:!0},maxSamples:{type:"uint",atomic:!0},totalLo:{type:"uint",atomic:!0},totalHi:{type:"uint",atomic:!0},pixelCount:{type:"uint",atomic:!0}},"SampleCounters");class qd extends te{constructor(){const e={counters:E(new N(1,1),Ho)},t=I`
 			fn compute() -> void {
 
 				atomicStore( &${e.counters}[ 0 ].minSamples, 0xFFFFFFFFu );
@@ -5064,7 +5064,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 
-				let samples = combinedField & ${vi}u;
+				let samples = combinedField & ${vr}u;
 
 				atomicMin( &${e.counters}[ 0 ].minSamples, samples );
 				atomicMax( &${e.counters}[ 0 ].maxSamples, samples );
@@ -5080,7 +5080,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			}
-		`;super(t(e)),this.defineUniformAccessors(e)}}const jd=134217728,ra=Math.floor(jd/(ze.getLength()*4)),Gd=5;class sa extends zo{constructor(e){super(e),this.seed=0,this.mediumStepsPerPass=16,this.envInfo=new Ao,this.backgroundInfo=new Fo,this.lightsInfo=new Lo,this.rayCount=0,this.rayDataStorage=null,this.rayQueue=null,this.shadowRayQueue=null,this.queueCounters=new N(new Uint32Array(Zr),1),this.queueCounters.name="Queue Counters",this.rayIntersectionsStorage=null,this.shadowRayIntersectionsStorage=null,this.mediumQueue=null,this.pixelQueue=null,this.sampleCountersStorage=new N(new Uint32Array(ia),ia),this.sampleCountersStorage.name="Sample Counters",this._samplesPromise=null,this.populatePixelIndicesKernel=new $d().setWorkgroupSize(8,8,1),this.logicKernel=new Md().setWorkgroupSize(64,1,1),this.materialKernel=new Pd().setWorkgroupSize(64,1,1),this.traceRayKernel=new Bd().setWorkgroupSize(64,1,1),this.traceShadowRayKernel=new Ad().setWorkgroupSize(64,1,1),this.mediumKernel=new Fd().setWorkgroupSize(64,1,1),this.queueMediumWalksKernel=new Nd().setWorkgroupSize(64,1,1),this.rayDispatchConverter=new Jr(Vt).setWorkgroupSize(1,1,1),this.shadowDispatchConverter=new Jr(Gs).setWorkgroupSize(1,1,1),this.mediumDispatchConverter=new Jr(Ks).setWorkgroupSize(1,1,1),this.primeSampleCountersKernel=new qd().setWorkgroupSize(1,1,1),this.tallySampleCountsKernel=new Qd().setWorkgroupSize(8,8,1),this.resetSlotsKernel=new Ld().setWorkgroupSize(64,1,1),this.copyRayDataKernel=new Ed(ze).setWorkgroupSize(64,1,1),this.logicKernel.envInfo=this.envInfo,this.logicKernel.backgroundInfo=this.backgroundInfo,this.logicKernel.lightsInfo=this.lightsInfo,this.zeroDispatchKernel=new zd().setWorkgroupSize(1,1,1)}resetSeed(){this.seed=0}reset(){super.reset(),this._samplesPromise=null}setBVHData(e){this.materialKernel.context.bvhData=e,this.materialKernel.needsUpdate=!0,this.traceRayKernel.context.bvhData=e,this.traceRayKernel.needsUpdate=!0,this.traceShadowRayKernel.context.bvhData=e,this.traceShadowRayKernel.needsUpdate=!0,this.mediumKernel.context.bvhData=e,this.mediumKernel.needsUpdate=!0,this.reset()}rebuild(){super.rebuild(),this.materialKernel.needsUpdate=!0,this.reset()}setRandom(e){this.logicKernel.context.random=e,this.logicKernel.needsUpdate=!0,this.materialKernel.context.random=e,this.materialKernel.needsUpdate=!0,this.traceRayKernel.context.random=e,this.traceRayKernel.needsUpdate=!0,this.traceShadowRayKernel.context.random=e,this.traceShadowRayKernel.needsUpdate=!0,this.mediumKernel.context.random=e,this.mediumKernel.needsUpdate=!0,this.reset()}setMaterial(e){this.materialKernel.material=e.getData(),this.materialKernel.needsUpdate=!0,this.reset()}setFilterGlossy(e){this.materialKernel.filterGlossy=e===0?So:1/e,this.reset()}setClamping(e,t){this.logicKernel.clampDirect=e,this.logicKernel.clampIndirect=t,this.reset()}setTransmissiveBackground(e){this.logicKernel.transmissiveBackground=e,this.reset()}setEnvironment(e){this.envInfo.updateFrom(e)}setLights(e){this.lightsInfo.updateFrom(this.renderer,e),this.reset()}setEnvironmentParams(e,t){const{envInfo:i}=this,r=new W().makeRotationFromEuler(t).invert();i.rotationNode.value.setFromMatrix4(r),i.intensityNode.value=e}setMultipleImportanceSampling(e){this.logicKernel.misEnabled=e?1:0,this.reset()}setBackground(e){const{backgroundInfo:t}=this;t.dispose(),t.map=e}setBackgroundParams(e,t,i){const{backgroundInfo:r}=this,n=new W().makeRotationFromEuler(t).invert();r.rotationNode.value.copy(n),r.intensity=e,r.blur=i}dispose(){super.dispose(),this.envInfo.dispose(),this.lightsInfo.dispose(),this.rayDataStorage?.dispose(),this.rayQueue?.dispose(),this.shadowRayQueue?.dispose(),this.queueCounters.dispose(),this.rayIntersectionsStorage?.dispose(),this.shadowRayIntersectionsStorage?.dispose(),this.mediumQueue?.dispose(),this.sampleCountersStorage.dispose(),this.pixelQueue?.dispose(),this.rayDispatchConverter.outputDispatch.dispose(),this.shadowDispatchConverter.outputDispatch.dispose(),this.mediumDispatchConverter.outputDispatch.dispose(),this.populatePixelIndicesKernel.dispose(),this.logicKernel.dispose(),this.materialKernel.dispose(),this.traceRayKernel.dispose(),this.traceShadowRayKernel.dispose(),this.mediumKernel.dispose(),this.queueMediumWalksKernel.dispose(),this.rayDispatchConverter.dispose(),this.shadowDispatchConverter.dispose(),this.mediumDispatchConverter.dispose(),this.primeSampleCountersKernel.dispose(),this.tallySampleCountsKernel.dispose(),this.resetSlotsKernel.dispose(),this.copyRayDataKernel.dispose(),this.zeroDispatchKernel.dispose()}_updatePixelQueue(e,t){const i=bi+Math.max(e*t,1);(!this.pixelQueue||this.pixelQueue.array.length<i)&&(this.pixelQueue?.dispose(),this.pixelQueue=new N(new Float32Array(i),i),this.pixelQueue.name="Pixel Queue",this.materialKernel.pixelQueue=this.pixelQueue,this.populatePixelIndicesKernel.pixelQueue=this.pixelQueue,this.resetSlotsKernel.pixelQueue=this.pixelQueue)}_resizePool(e,t){const{resetSlotsKernel:i,copyRayDataKernel:r}=this,n=this.rayCount,s=Math.min(n,t),o=Math.min(e,t);i.pixelQueue=this.pixelQueue,o<s&&(i.rayDataStorage=this.rayDataStorage,i.start=o,i.end=s,i.addingSlots=!1,this.dispatch(i,i.getDispatchSize(s-o,1,1)));const l=new N(e,ze.getLength());l.name="Ray Data";const d=new N(e,jt.getLength());d.name="Ray Queue";const c=new N(e,jt.getLength());c.name="Shadow Ray Queue";const u=new N(e,$r.getLength());u.name="Ray Intersections";const f=new N(e,js.getLength());f.name="Shadow Ray Intersections";const p=hr+e,h=new N(new Uint32Array(p),p);h.name="Medium Queue";const y=Math.min(e,n);y>0&&(r.source=this.rayDataStorage,r.target=l,r.count=y,this.dispatch(r,r.getDispatchSize(y,1,1))),this.rayDataStorage?.dispose(),this.rayQueue?.dispose(),this.shadowRayQueue?.dispose(),this.rayIntersectionsStorage?.dispose(),this.shadowRayIntersectionsStorage?.dispose(),this.mediumQueue?.dispose(),this.rayDataStorage=l,this.rayQueue=d,this.shadowRayQueue=c,this.rayIntersectionsStorage=u,this.shadowRayIntersectionsStorage=f,this.mediumQueue=h,this.rayCount=e,o>s&&(i.rayDataStorage=l,i.start=s,i.end=o,i.addingSlots=!0,this.dispatch(i,i.getDispatchSize(o-s,1,1)))}_getRequestedSlotCount(){return Math.min(ra,Math.max(1,Math.floor(this.frameBudget)))}_getPreviewIterations(){return Math.max(1,Math.min(this.maxBounces,Gd))}getPreviewPixelBudget(){return Math.min(this.frameBudget/this._getPreviewIterations(),ra)}_applyBudget(e){const t=this._getRequestedSlotCount();t!==this.rayCount&&this._resizePool(t,e)}*createRenderTask(){const{renderer:e,maxTransparentBounces:t,logicKernel:i,materialKernel:r,traceRayKernel:n,traceShadowRayKernel:s,mediumKernel:o,queueMediumWalksKernel:l,rayDispatchConverter:d,shadowDispatchConverter:c,mediumDispatchConverter:u,zeroDispatchKernel:f,populatePixelIndicesKernel:p}=this,h=new G;this.getSize(h),this._updatePixelQueue(h.x,h.y);const y=h.x*h.y;for(this._applyBudget(y),yield*this.compileKernels([i,r,n,s,o,l,d,c,u,f,p]),f.target=this.queueCounters,this.dispatch(f,[Zr]),p.rayDataStorage=this.rayDataStorage,p.pixelQueue=this.pixelQueue,p.frameBudget=Math.min(this.rayCount,y),p.targetDimensions.copy(h),this.dispatch(p,p.getDispatchSize(h.x,h.y,1)),this.seed++;;){const x=Math.min(this._getRequestedSlotCount(),y),b=this.lowResMode?this._getPreviewIterations():1,m=Math.max(b,Math.round(this.frameBudget/x));for(let v=0;v<m;v++){e.copyTextureToTexture(this.outputTarget,this.prevOutputTarget),[this.outputTarget,this.prevOutputTarget]=[this.prevOutputTarget,this.outputTarget],i.prevOutputTarget=this.prevOutputTarget,i.outputTarget=this.outputTarget,i.sampleCountTarget=this.sampleCountTarget,i.auxTarget=this.auxTarget??this._auxPlaceholder,i.accumulateAux=this.auxTarget?1:0,i.rayDataStorage=this.rayDataStorage,i.rayIntersectionsStorage=this.rayIntersectionsStorage,i.shadowRayIntersectionsStorage=this.shadowRayIntersectionsStorage,i.maxBounces=this.maxBounces,i.rayCount=Math.min(this.rayCount,y),this.dispatch(i,i.getDispatchSize(i.rayCount,1,1)),this._applyBudget(y);const{rayDataStorage:g,rayQueue:w,shadowRayQueue:R,queueCounters:S,rayIntersectionsStorage:C,shadowRayIntersectionsStorage:D,mediumQueue:T}=this,$=Math.min(this.rayCount,y);f.target=S,this.dispatch(f,[Zr]),f.target=T,this.dispatch(f,[hr]),r.rayDataStorage=g,r.rayQueue=w,r.shadowRayQueue=R,r.queueCounters=S,r.pixelQueue=this.pixelQueue,r.sampleCountTarget=this.sampleCountTarget,r.seed=this.seed,r.maxSamples=this.maxSamples,r.rayCount=$,r.maxTransparentBounces=t,r.maxBounces=this.maxBounces,r.targetDimensions.copy(h),this.dispatch(r,r.getDispatchSize($,1,1)),d.queueCounters=S,this.dispatch(d,[1,1,1]),n.rayQueue=w,n.queueCounters=S,n.rayIntersectionsStorage=C,this.dispatch(n,d.outputDispatch),c.queueCounters=S,this.dispatch(c,[1,1,1]),s.shadowRayQueue=R,s.queueCounters=S,s.shadowRayIntersectionsStorage=D,this.dispatch(s,c.outputDispatch),l.rayDataStorage=g,l.mediumQueue=T,l.rayCount=$,this.dispatch(l,l.getDispatchSize($,1,1)),u.queueCounters=T,this.dispatch(u,[1,1,1]),o.rayDataStorage=g,o.mediumQueue=T,o.rayIntersectionsStorage=C,o.rayCount=$,o.maxSubsurfaceBounces=this.maxSubsurfaceBounces,o.stepsPerPass=this.mediumStepsPerPass,this.dispatch(o,u.outputDispatch)}yield}}getSampleCountsAsync(){if(this._samplesPromise===null){const e=this._measureSampleCounts().finally(()=>{this._samplesPromise===e&&(this._samplesPromise=null)});this._samplesPromise=e}return this._samplesPromise}async _measureSampleCounts(){const{renderer:e,sampleCountTarget:t,sampleCountersStorage:i,primeSampleCountersKernel:r,tallySampleCountsKernel:n}=this;if(!e.initialized||this.lowResMode)return{min:0,max:0,avg:0};r.counters=i,e.compute(r.kernel,[1,1,1]),n.counters=i,n.sampleCountTarget=t,e.compute(n.kernel,n.getDispatchSize(t.width,t.height));const s=await e.getArrayBufferAsync(i),o=new Uint32Array(s),l=o[Od];if(l===0)return{min:0,max:0,avg:0};const d=o[Vd]*Wd+o[Ud];return{min:o[kd],max:o[Hd],avg:d/l}}}const Kd=`
+		`;super(t(e)),this.defineUniformAccessors(e)}}const jd=134217728,ia=Math.floor(jd/(ze.getLength()*4)),Gd=5;class sa extends zo{constructor(e){super(e),this.seed=0,this.mediumStepsPerPass=16,this.envInfo=new Ao,this.backgroundInfo=new Fo,this.lightsInfo=new Lo,this.rayCount=0,this.rayDataStorage=null,this.rayQueue=null,this.shadowRayQueue=null,this.queueCounters=new N(new Uint32Array(Zi),1),this.queueCounters.name="Queue Counters",this.rayIntersectionsStorage=null,this.shadowRayIntersectionsStorage=null,this.mediumQueue=null,this.pixelQueue=null,this.sampleCountersStorage=new N(new Uint32Array(ra),ra),this.sampleCountersStorage.name="Sample Counters",this._samplesPromise=null,this.populatePixelIndicesKernel=new $d().setWorkgroupSize(8,8,1),this.logicKernel=new Md().setWorkgroupSize(64,1,1),this.materialKernel=new Pd().setWorkgroupSize(64,1,1),this.traceRayKernel=new Bd().setWorkgroupSize(64,1,1),this.traceShadowRayKernel=new Ad().setWorkgroupSize(64,1,1),this.mediumKernel=new Fd().setWorkgroupSize(64,1,1),this.queueMediumWalksKernel=new Nd().setWorkgroupSize(64,1,1),this.rayDispatchConverter=new Ji(Vt).setWorkgroupSize(1,1,1),this.shadowDispatchConverter=new Ji(Gs).setWorkgroupSize(1,1,1),this.mediumDispatchConverter=new Ji(Ks).setWorkgroupSize(1,1,1),this.primeSampleCountersKernel=new qd().setWorkgroupSize(1,1,1),this.tallySampleCountsKernel=new Qd().setWorkgroupSize(8,8,1),this.resetSlotsKernel=new Ld().setWorkgroupSize(64,1,1),this.copyRayDataKernel=new Ed(ze).setWorkgroupSize(64,1,1),this.logicKernel.envInfo=this.envInfo,this.logicKernel.backgroundInfo=this.backgroundInfo,this.logicKernel.lightsInfo=this.lightsInfo,this.zeroDispatchKernel=new zd().setWorkgroupSize(1,1,1)}resetSeed(){this.seed=0}reset(){super.reset(),this._samplesPromise=null}setBVHData(e){this.materialKernel.context.bvhData=e,this.materialKernel.needsUpdate=!0,this.traceRayKernel.context.bvhData=e,this.traceRayKernel.needsUpdate=!0,this.traceShadowRayKernel.context.bvhData=e,this.traceShadowRayKernel.needsUpdate=!0,this.mediumKernel.context.bvhData=e,this.mediumKernel.needsUpdate=!0,this.reset()}rebuild(){super.rebuild(),this.materialKernel.needsUpdate=!0,this.reset()}setRandom(e){this.logicKernel.context.random=e,this.logicKernel.needsUpdate=!0,this.materialKernel.context.random=e,this.materialKernel.needsUpdate=!0,this.traceRayKernel.context.random=e,this.traceRayKernel.needsUpdate=!0,this.traceShadowRayKernel.context.random=e,this.traceShadowRayKernel.needsUpdate=!0,this.mediumKernel.context.random=e,this.mediumKernel.needsUpdate=!0,this.reset()}setMaterial(e){this.materialKernel.material=e.getData(),this.materialKernel.needsUpdate=!0,this.reset()}setFilterGlossy(e){this.materialKernel.filterGlossy=e===0?So:1/e,this.reset()}setClamping(e,t){this.logicKernel.clampDirect=e,this.logicKernel.clampIndirect=t,this.reset()}setTransmissiveBackground(e){this.logicKernel.transmissiveBackground=e,this.reset()}setEnvironment(e){this.envInfo.updateFrom(e)}setLights(e){this.lightsInfo.updateFrom(this.renderer,e),this.reset()}setEnvironmentParams(e,t){const{envInfo:r}=this,i=new W().makeRotationFromEuler(t).invert();r.rotationNode.value.setFromMatrix4(i),r.intensityNode.value=e}setMultipleImportanceSampling(e){this.logicKernel.misEnabled=e?1:0,this.reset()}setBackground(e){const{backgroundInfo:t}=this;t.dispose(),t.map=e}setBackgroundParams(e,t,r){const{backgroundInfo:i}=this,n=new W().makeRotationFromEuler(t).invert();i.rotationNode.value.copy(n),i.intensity=e,i.blur=r}dispose(){super.dispose(),this.envInfo.dispose(),this.lightsInfo.dispose(),this.rayDataStorage?.dispose(),this.rayQueue?.dispose(),this.shadowRayQueue?.dispose(),this.queueCounters.dispose(),this.rayIntersectionsStorage?.dispose(),this.shadowRayIntersectionsStorage?.dispose(),this.mediumQueue?.dispose(),this.sampleCountersStorage.dispose(),this.pixelQueue?.dispose(),this.rayDispatchConverter.outputDispatch.dispose(),this.shadowDispatchConverter.outputDispatch.dispose(),this.mediumDispatchConverter.outputDispatch.dispose(),this.populatePixelIndicesKernel.dispose(),this.logicKernel.dispose(),this.materialKernel.dispose(),this.traceRayKernel.dispose(),this.traceShadowRayKernel.dispose(),this.mediumKernel.dispose(),this.queueMediumWalksKernel.dispose(),this.rayDispatchConverter.dispose(),this.shadowDispatchConverter.dispose(),this.mediumDispatchConverter.dispose(),this.primeSampleCountersKernel.dispose(),this.tallySampleCountsKernel.dispose(),this.resetSlotsKernel.dispose(),this.copyRayDataKernel.dispose(),this.zeroDispatchKernel.dispose()}_updatePixelQueue(e,t){const r=br+Math.max(e*t,1);(!this.pixelQueue||this.pixelQueue.array.length<r)&&(this.pixelQueue?.dispose(),this.pixelQueue=new N(new Float32Array(r),r),this.pixelQueue.name="Pixel Queue",this.materialKernel.pixelQueue=this.pixelQueue,this.populatePixelIndicesKernel.pixelQueue=this.pixelQueue,this.resetSlotsKernel.pixelQueue=this.pixelQueue)}_resizePool(e,t){const{resetSlotsKernel:r,copyRayDataKernel:i}=this,n=this.rayCount,s=Math.min(n,t),o=Math.min(e,t);r.pixelQueue=this.pixelQueue,o<s&&(r.rayDataStorage=this.rayDataStorage,r.start=o,r.end=s,r.addingSlots=!1,this.dispatch(r,r.getDispatchSize(s-o,1,1)));const l=new N(e,ze.getLength());l.name="Ray Data";const d=new N(e,jt.getLength());d.name="Ray Queue";const c=new N(e,jt.getLength());c.name="Shadow Ray Queue";const u=new N(e,$i.getLength());u.name="Ray Intersections";const f=new N(e,js.getLength());f.name="Shadow Ray Intersections";const p=hi+e,h=new N(new Uint32Array(p),p);h.name="Medium Queue";const y=Math.min(e,n);y>0&&(i.source=this.rayDataStorage,i.target=l,i.count=y,this.dispatch(i,i.getDispatchSize(y,1,1))),this.rayDataStorage?.dispose(),this.rayQueue?.dispose(),this.shadowRayQueue?.dispose(),this.rayIntersectionsStorage?.dispose(),this.shadowRayIntersectionsStorage?.dispose(),this.mediumQueue?.dispose(),this.rayDataStorage=l,this.rayQueue=d,this.shadowRayQueue=c,this.rayIntersectionsStorage=u,this.shadowRayIntersectionsStorage=f,this.mediumQueue=h,this.rayCount=e,o>s&&(r.rayDataStorage=l,r.start=s,r.end=o,r.addingSlots=!0,this.dispatch(r,r.getDispatchSize(o-s,1,1)))}_getRequestedSlotCount(){return Math.min(ia,Math.max(1,Math.floor(this.frameBudget)))}_getPreviewIterations(){return Math.max(1,Math.min(this.maxBounces,Gd))}getPreviewPixelBudget(){return Math.min(this.frameBudget/this._getPreviewIterations(),ia)}_applyBudget(e){const t=this._getRequestedSlotCount();t!==this.rayCount&&this._resizePool(t,e)}*createRenderTask(){const{renderer:e,maxTransparentBounces:t,logicKernel:r,materialKernel:i,traceRayKernel:n,traceShadowRayKernel:s,mediumKernel:o,queueMediumWalksKernel:l,rayDispatchConverter:d,shadowDispatchConverter:c,mediumDispatchConverter:u,zeroDispatchKernel:f,populatePixelIndicesKernel:p}=this,h=new G;this.getSize(h),this._updatePixelQueue(h.x,h.y);const y=h.x*h.y;for(this._applyBudget(y),yield*this.compileKernels([r,i,n,s,o,l,d,c,u,f,p]),f.target=this.queueCounters,this.dispatch(f,[Zi]),p.rayDataStorage=this.rayDataStorage,p.pixelQueue=this.pixelQueue,p.frameBudget=Math.min(this.rayCount,y),p.targetDimensions.copy(h),this.dispatch(p,p.getDispatchSize(h.x,h.y,1)),this.seed++;;){const x=Math.min(this._getRequestedSlotCount(),y),b=this.lowResMode?this._getPreviewIterations():1,m=Math.max(b,Math.round(this.frameBudget/x));for(let v=0;v<m;v++){e.copyTextureToTexture(this.outputTarget,this.prevOutputTarget),[this.outputTarget,this.prevOutputTarget]=[this.prevOutputTarget,this.outputTarget],r.prevOutputTarget=this.prevOutputTarget,r.outputTarget=this.outputTarget,r.sampleCountTarget=this.sampleCountTarget,r.auxTarget=this.auxTarget??this._auxPlaceholder,r.accumulateAux=this.auxTarget?1:0,r.rayDataStorage=this.rayDataStorage,r.rayIntersectionsStorage=this.rayIntersectionsStorage,r.shadowRayIntersectionsStorage=this.shadowRayIntersectionsStorage,r.maxBounces=this.maxBounces,r.rayCount=Math.min(this.rayCount,y),this.dispatch(r,r.getDispatchSize(r.rayCount,1,1)),this._applyBudget(y);const{rayDataStorage:g,rayQueue:w,shadowRayQueue:R,queueCounters:S,rayIntersectionsStorage:C,shadowRayIntersectionsStorage:D,mediumQueue:T}=this,$=Math.min(this.rayCount,y);f.target=S,this.dispatch(f,[Zi]),f.target=T,this.dispatch(f,[hi]),i.rayDataStorage=g,i.rayQueue=w,i.shadowRayQueue=R,i.queueCounters=S,i.pixelQueue=this.pixelQueue,i.sampleCountTarget=this.sampleCountTarget,i.seed=this.seed,i.maxSamples=this.maxSamples,i.rayCount=$,i.maxTransparentBounces=t,i.maxBounces=this.maxBounces,i.targetDimensions.copy(h),this.dispatch(i,i.getDispatchSize($,1,1)),d.queueCounters=S,this.dispatch(d,[1,1,1]),n.rayQueue=w,n.queueCounters=S,n.rayIntersectionsStorage=C,this.dispatch(n,d.outputDispatch),c.queueCounters=S,this.dispatch(c,[1,1,1]),s.shadowRayQueue=R,s.queueCounters=S,s.shadowRayIntersectionsStorage=D,this.dispatch(s,c.outputDispatch),l.rayDataStorage=g,l.mediumQueue=T,l.rayCount=$,this.dispatch(l,l.getDispatchSize($,1,1)),u.queueCounters=T,this.dispatch(u,[1,1,1]),o.rayDataStorage=g,o.mediumQueue=T,o.rayIntersectionsStorage=C,o.rayCount=$,o.maxSubsurfaceBounces=this.maxSubsurfaceBounces,o.stepsPerPass=this.mediumStepsPerPass,this.dispatch(o,u.outputDispatch)}yield}}getSampleCountsAsync(){if(this._samplesPromise===null){const e=this._measureSampleCounts().finally(()=>{this._samplesPromise===e&&(this._samplesPromise=null)});this._samplesPromise=e}return this._samplesPromise}async _measureSampleCounts(){const{renderer:e,sampleCountTarget:t,sampleCountersStorage:r,primeSampleCountersKernel:i,tallySampleCountsKernel:n}=this;if(!e.initialized||this.lowResMode)return{min:0,max:0,avg:0};i.counters=r,e.compute(i.kernel,[1,1,1]),n.counters=r,n.sampleCountTarget=t,e.compute(n.kernel,n.getDispatchSize(t.width,t.height));const s=await e.getArrayBufferAsync(r),o=new Uint32Array(s),l=o[Od];if(l===0)return{min:0,max:0,avg:0};const d=o[Vd]*Wd+o[Ud];return{min:o[kd],max:o[Hd],avg:d/l}}}const Kd=`
 
 	// TODO: possibly this should be renamed something related to material or path tracing logic
 
@@ -5220,31 +5220,31 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					rayDirection.x *= flipEnvMap;
 					gl_FragColor = textureCube( envMap, rayDirection );
 
-				}`}),this.depthWrite=!1,this.depthTest=!1}}class Yd{constructor(e){this._renderer=e,this._quad=new kt(new Xd)}generate(e,t=null,i=null){if(!e.isCubeTexture)throw new Error("CubeToEquirectMaterial: Source can only be cube textures.");const r=e.images[0],n=this._renderer,s=this._quad;t===null&&(t=4*r.height),i===null&&(i=2*r.height);const o=new al(t,i,{type:bt,colorSpace:r.colorSpace}),l=r.height,d=Math.log2(l)-2,c=1/l,u=1/(3*Math.max(Math.pow(2,d),112));s.material.defines.CUBEUV_MAX_MIP=`${d}.0`,s.material.defines.CUBEUV_TEXEL_WIDTH=u,s.material.defines.CUBEUV_TEXEL_HEIGHT=c,s.material.uniforms.envMap.value=e,s.material.uniforms.flipEnvMap.value=e.isRenderTargetTexture?1:-1,s.material.needsUpdate=!0;const f=n.getRenderTarget(),p=n.autoClear;n.autoClear=!0,n.setRenderTarget(o),s.render(n),n.setRenderTarget(f),n.autoClear=p;const h=new Uint16Array(t*i*4),y=new Float32Array(t*i*4);n.readRenderTargetPixels(o,0,0,t,i,y),o.dispose();for(let b=0,m=y.length;b<m;b++)h[b]=Be.toHalfFloat(y[b]);const x=new ge(h,t,i,Ce,fe);return x.minFilter=ol,x.magFilter=se,x.wrapS=tt,x.wrapT=tt,x.mapping=Ra,x.needsUpdate=!0,x}dispose(){this._quad.dispose()}}function Zd(a,e){return a.uuid<e.uuid?1:a.uuid>e.uuid?-1:0}function Jd(a){return`${a.source.uuid}:${a.colorSpace}`}function ef(a){const e=[];return a.traverseVisible(t=>{(t.isRectAreaLight||t.isSpotLight||t.isPointLight||t.isDirectionalLight||t.isSunLight)&&e.push(t)}),e.sort(Zd)}const ni=new pt,Zi=new O({matrixWorld:"mat4x4f",inverseMatrixWorld:"mat4x4f",visible:"uint",materialIndex:"uint",visibleToShadowRays:"uint",_alignment0:"uint",color:"vec4f"},"TransformStruct"),Ji=new O({indices:"vec4u",normal:"vec3f",didHit:"bool",barycoord:"vec3f",objectIndex:"uint",side:"float",dist:"float",skippedOcclusion:"float",occlusion:"float"},"PathTracerIntersectionResult");class tf extends qc{constructor(e,t={}){super(e,{attributes:{position:"vec4f",normal:"vec4f",tangent:"vec4f",color:"vec4f",uv:"vec4f"},...t}),this.structs.transform=Zi,this.structs.material=qa,this.storage.materials=null,this.materialsMap=new Map,this.materials=[],this.bvhMap=new Map,this.textureAtlas=new No}updateUvAttributesFromScene(){const{attributes:e}=this,t=new Set(["color"]);for(let i=0;i<8;i++){const r=i===0?"uv":"uv"+i;delete e[r],t.add(r)}this.getRootObject().traverse(i=>{if(i.geometry)for(const r in i.geometry.attributes)t.has(r)&&(e[r]="vec4f")})}updateUvSampleFunction(){const{structs:e,fns:t}=this,i=[];let r=null;e.attributes.membersLayout.forEach(({name:n})=>{if(/^uv/.test(n)){const s=n==="uv"?0:Number(n.replace(/^uv/,""));i.push(`
+				}`}),this.depthWrite=!1,this.depthTest=!1}}class Yd{constructor(e){this._renderer=e,this._quad=new kt(new Xd)}generate(e,t=null,r=null){if(!e.isCubeTexture)throw new Error("CubeToEquirectMaterial: Source can only be cube textures.");const i=e.images[0],n=this._renderer,s=this._quad;t===null&&(t=4*i.height),r===null&&(r=2*i.height);const o=new al(t,r,{type:bt,colorSpace:i.colorSpace}),l=i.height,d=Math.log2(l)-2,c=1/l,u=1/(3*Math.max(Math.pow(2,d),112));s.material.defines.CUBEUV_MAX_MIP=`${d}.0`,s.material.defines.CUBEUV_TEXEL_WIDTH=u,s.material.defines.CUBEUV_TEXEL_HEIGHT=c,s.material.uniforms.envMap.value=e,s.material.uniforms.flipEnvMap.value=e.isRenderTargetTexture?1:-1,s.material.needsUpdate=!0;const f=n.getRenderTarget(),p=n.autoClear;n.autoClear=!0,n.setRenderTarget(o),s.render(n),n.setRenderTarget(f),n.autoClear=p;const h=new Uint16Array(t*r*4),y=new Float32Array(t*r*4);n.readRenderTargetPixels(o,0,0,t,r,y),o.dispose();for(let b=0,m=y.length;b<m;b++)h[b]=Be.toHalfFloat(y[b]);const x=new ge(h,t,r,Ce,fe);return x.minFilter=ol,x.magFilter=se,x.wrapS=tt,x.wrapT=tt,x.mapping=Ra,x.needsUpdate=!0,x}dispose(){this._quad.dispose()}}function Zd(a,e){return a.uuid<e.uuid?1:a.uuid>e.uuid?-1:0}function Jd(a){return`${a.source.uuid}:${a.colorSpace}`}function ef(a){const e=[];return a.traverseVisible(t=>{(t.isRectAreaLight||t.isSpotLight||t.isPointLight||t.isDirectionalLight||t.isSunLight)&&e.push(t)}),e.sort(Zd)}const nr=new pt,Zr=new O({matrixWorld:"mat4x4f",inverseMatrixWorld:"mat4x4f",visible:"uint",materialIndex:"uint",visibleToShadowRays:"uint",_alignment0:"uint",color:"vec4f"},"TransformStruct"),Jr=new O({indices:"vec4u",normal:"vec3f",didHit:"bool",barycoord:"vec3f",objectIndex:"uint",side:"float",dist:"float",skippedOcclusion:"float",occlusion:"float"},"PathTracerIntersectionResult");class tf extends qc{constructor(e,t={}){super(e,{attributes:{position:"vec4f",normal:"vec4f",tangent:"vec4f",color:"vec4f",uv:"vec4f"},...t}),this.structs.transform=Zr,this.structs.material=qa,this.storage.materials=null,this.materialsMap=new Map,this.materials=[],this.bvhMap=new Map,this.textureAtlas=new No}updateUvAttributesFromScene(){const{attributes:e}=this,t=new Set(["color"]);for(let r=0;r<8;r++){const i=r===0?"uv":"uv"+r;delete e[i],t.add(i)}this.getRootObject().traverse(r=>{if(r.geometry)for(const i in r.geometry.attributes)t.has(i)&&(e[i]="vec4f")})}updateUvSampleFunction(){const{structs:e,fns:t}=this,r=[];let i=null;e.attributes.membersLayout.forEach(({name:n})=>{if(/^uv/.test(n)){const s=n==="uv"?0:Number(n.replace(/^uv/,""));r.push(`
 					case ${s}u: {
 
 						return vertexData.${n}.xy;
 
 					}
-				`),r===null&&(r=`vertexData.${n}.xy`)}}),t.getUvFromChannel=I`
+				`),i===null&&(i=`vertexData.${n}.xy`)}}),t.getUvFromChannel=I`
 			fn getUvFromChannel( vertexData: ${e.attributes}, packed: i32 ) -> vec2f {
 
 				// the uv channel is packed into bits 23-25 of the "*Map" descriptor
 				let channel = u32( ( packed >> 23 ) & 0x7 );
 				switch ( channel ) {
 
-					${i.join(`
+					${r.join(`
 `)}
 					default: {
 
-						return ${r??"vec2f( 0.0 )"};
+						return ${i??"vec2f( 0.0 )"};
 
 					}
 
 				}
 
 			}
-		`}updateColorSampleFn(){const{structs:e,fns:t}=this;!!e.attributes.membersLayout.find(({name:r})=>r==="color")?t.getColor=I`
+		`}updateColorSampleFn(){const{structs:e,fns:t}=this;!!e.attributes.membersLayout.find(({name:i})=>i==="color")?t.getColor=I`
 				fn getColor( vertexData: ${e.attributes} ) -> vec4f {
 
 					return vertexData.color;
@@ -5256,14 +5256,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					return vec4f( 1.0 );
 
 				}
-			`}useTransparencyRaycastFn(){const{textureAtlas:e,storage:t,fns:i}=this,r=e.texture,n=lr(e.textureInfo,"uvec4").setName("bvh_textureInfo"),s=co(n,Re(r));i.getSurfaceRecord=Bu(s,i.getUvFromChannel,i.getColor);const o=vt().toVar("bvh_materialIndex"),l=Le(1).toVar("bvh_rayScalar"),d=Le(1).toVar("bvh_baseOpacity"),c=Ys(!1).toVar("bvh_isShadowRay"),u=Ys(!1).toVar("bvh_skipShadowObject"),f={shapeStruct:k,resultStruct:Ji,boundsOrderFn:I`
+			`}useTransparencyRaycastFn(){const{textureAtlas:e,storage:t,fns:r}=this,i=e.texture,n=li(e.textureInfo,"uvec4").setName("bvh_textureInfo"),s=co(n,Re(i));r.getSurfaceRecord=Bu(s,r.getUvFromChannel,r.getColor);const o=vt().toVar("bvh_materialIndex"),l=Le(1).toVar("bvh_rayScalar"),d=Le(1).toVar("bvh_baseOpacity"),c=Ys(!1).toVar("bvh_isShadowRay"),u=Ys(!1).toVar("bvh_skipShadowObject"),f={shapeStruct:k,resultStruct:Jr,boundsOrderFn:I`
 				fn getBoundsOrder( ray: ${k}, splitAxis: u32, node: ${wt} ) -> bool {
 
 					return ray.direction[ splitAxis ] >= 0.0;
 
 				}
 			`,intersectsBoundsFn:I`
-				fn rayIntersectsBounds( ray: ${k}, bounds: ${je}, result: ptr<function, ${Ji}> ) -> u32 {
+				fn rayIntersectsBounds( ray: ${k}, bounds: ${je}, result: ptr<function, ${Jr}> ) -> u32 {
 
 					// early-out if our object is completely transparent, or a shadow ray is already occluded
 					if ( ${d} == 0.0 || ( ${c} && result.didHit ) ) {
@@ -5307,7 +5307,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				}
 
 			`,intersectRangeFn:I`
-				fn intersectRange( ray: ${k}, offset: u32, count: u32, result: ptr<function, ${Ji}> ) -> bool {
+				fn intersectRange( ray: ${k}, offset: u32, count: u32, result: ptr<function, ${Jr}> ) -> bool {
 
 					var didHit = false;
 					for ( var ti = offset; ti < offset + count; ti = ti + 1u ) {
@@ -5341,9 +5341,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								if ( material.vertexColors == 1 ) {
 
 									let barycoord = triResult.barycoord;
-									let a = ${i.getColor}( ${t.attributes}[ i0 ] );
-									let b = ${i.getColor}( ${t.attributes}[ i1 ] );
-									let c = ${i.getColor}( ${t.attributes}[ i2 ] );
+									let a = ${r.getColor}( ${t.attributes}[ i0 ] );
+									let b = ${r.getColor}( ${t.attributes}[ i1 ] );
+									let c = ${r.getColor}( ${t.attributes}[ i2 ] );
 									let col = barycoord.x * a + barycoord.y * b + barycoord.z * c;
 
 									opacity *= col.a;
@@ -5354,9 +5354,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								if ( material.map != - 1 ) {
 
 									let barycoord = triResult.barycoord;
-									let a = ${i.getUvFromChannel}( ${t.attributes}[ i0 ], material.map );
-									let b = ${i.getUvFromChannel}( ${t.attributes}[ i1 ], material.map );
-									let c = ${i.getUvFromChannel}( ${t.attributes}[ i2 ], material.map );
+									let a = ${r.getUvFromChannel}( ${t.attributes}[ i0 ], material.map );
+									let b = ${r.getUvFromChannel}( ${t.attributes}[ i1 ], material.map );
+									let c = ${r.getUvFromChannel}( ${t.attributes}[ i2 ], material.map );
 									let uv = barycoord.x * a + barycoord.y * b + barycoord.z * c;
 									let uvPrime = material.mapTransform * vec3f( uv, 1 );
 
@@ -5368,9 +5368,9 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 								if ( material.alphaMap != - 1 ) {
 
 									let barycoord = triResult.barycoord;
-									let a = ${i.getUvFromChannel}( ${t.attributes}[ i0 ], material.alphaMap );
-									let b = ${i.getUvFromChannel}( ${t.attributes}[ i1 ], material.alphaMap );
-									let c = ${i.getUvFromChannel}( ${t.attributes}[ i2 ], material.alphaMap );
+									let a = ${r.getUvFromChannel}( ${t.attributes}[ i0 ], material.alphaMap );
+									let b = ${r.getUvFromChannel}( ${t.attributes}[ i1 ], material.alphaMap );
+									let c = ${r.getUvFromChannel}( ${t.attributes}[ i2 ], material.alphaMap );
 									let uv = barycoord.x * a + barycoord.y * b + barycoord.z * c;
 									let uvPrime = material.alphaMapTransform * vec3f( uv, 1 );
 
@@ -5461,7 +5461,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				}
 			`,transformResultFn:I`
-				fn transformResult( hit: ptr<function, ${Ji}>, objectIndex: u32 ) -> void {
+				fn transformResult( hit: ptr<function, ${Jr}>, objectIndex: u32 ) -> void {
 
 					let toLocal = ${t.transforms}[ objectIndex ].inverseMatrixWorld;
 					hit.normal = normalize( ( transpose( toLocal ) * vec4f( hit.normal, 0.0 ) ).xyz );
@@ -5475,19 +5475,19 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					${d} = 1.0;
 
 				}
-			`};i.raycastFirstHit=this.getShapecastFn({...f,name:"raycastFirstHit",prefixFn:I`
+			`};r.raycastFirstHit=this.getShapecastFn({...f,name:"raycastFirstHit",prefixFn:I`
 				fn initFirstHitCull() -> void {
 
 					${c} = false;
 
 				}
-			`}),i.raycastShadow=this.getShapecastFn({...f,name:"raycastShadow",prefixFn:I`
+			`}),r.raycastShadow=this.getShapecastFn({...f,name:"raycastShadow",prefixFn:I`
 				fn initShadowCull() -> void {
 
 					${c} = true;
 
 				}
-			`})}update(){const{structs:e}=this,t=new N(new Uint8Array,e.material.getLength());this.storage.materials=E(t,e.material).toReadOnly().setName("bvh_materials"),this.updateUvAttributesFromScene(),this.updateMaterialsMap(),super.update(),this.updateUvSampleFunction(),this.updateColorSampleFn(),this.updateMaterials(),this.bvhMap.clear(),this.useTransparencyRaycastFn()}updateMaterialsMap(){const{materials:e,materialsMap:t}=this;t.clear(),e.length=0,this.getRootObject().traverse(r=>{r.material&&(Array.isArray(r.material)?r.material.forEach(n=>n&&i(n)):i(r.material))}),e.sort((r,n)=>r.uuid<n.uuid?1:-1).forEach((r,n)=>{t.set(r,n)});function i(r){t.has(r)||(e.push(r),t.set(r,-1))}}updateMaterials(){this.updateMaterialsMap();const{materials:e,storage:t,structs:i,bvh:r}=this,{materialData:n,textures:s}=this.writeMaterialsBuffer(e),o=t.materials.proxyNode,l=t.transforms.proxyNode,d=n.length/i.material.getLength();o.value.count<d&&(o.value.dispose(),o.value=new N(n,i.material.getLength())),o.value.array.set(n),o.value.needsUpdate=!0,this._getTransformMap(r).forEach(c=>{this.writeMaterialData(c,c.slot,l.value.array.buffer)}),l.value.needsUpdate=!0,this.textures=s}writeMaterialsBuffer(e){function t(f){switch(f){case tt:return 0;case or:return 1;case ul:return 2;default:return 0}}function i(f,p){if(p in f&&f[p]){const h=f[p],y=Jd(h);o.has(y)||(o.set(y,o.size),l.push(h));const x=o.get(y),b=h.channel&7,m=t(h.wrapS),v=t(h.wrapT);return(h.magFilter===xi?1:0)<<30|v<<28|m<<26|b<<23|x&8388607}else return-1}function r(f,p,h){return p in f?f[p]:h}function n(f,p,h,y){const x=f[p]&&f[p].isTexture?f[p]:null;if(x){x.matrixAutoUpdate&&x.updateMatrix();const b=x.matrix.elements;for(let m=0;m<3;m++)h[y+4*m+0]=b[3*m+0],h[y+4*m+1]=b[3*m+1],h[y+4*m+2]=b[3*m+2],h[y+4*m+3]=0}return 12}let s=0;const o=new Map,l=[],d=Math.max(e.length,2),c=new Float32Array(d*this.structs.material.getLength()),u=new Int32Array(c.buffer);for(let f=0,p=e.length;f<p;f++){const h=e[f];c[s++]=h.color.r,c[s++]=h.color.g,c[s++]=h.color.b,u[s++]=i(h,"map"),c[s++]=r(h,"metalness",0),u[s++]=i(h,"metalnessMap"),c[s++]=r(h,"roughness",0),u[s++]=i(h,"roughnessMap"),c[s++]=r(h,"ior",1.5),c[s++]=r(h,"transmission",0),u[s++]=i(h,"transmissionMap"),c[s++]=r(h,"emissiveIntensity",0),"emissive"in h?(c[s++]=h.emissive.r,c[s++]=h.emissive.g,c[s++]=h.emissive.b):(c[s++]=0,c[s++]=0,c[s++]=0),u[s++]=i(h,"emissiveMap"),u[s++]=i(h,"normalMap"),s++,"normalScale"in h?(c[s++]=h.normalScale.x,c[s++]=h.normalScale.y):(c[s++]=1,c[s++]=1),c[s++]=r(h,"clearcoat",0),u[s++]=i(h,"clearcoatMap"),u[s++]=i(h,"clearcoatNormalMap"),s++,"clearcoatNormalScale"in h?(c[s++]=h.clearcoatNormalScale.x,c[s++]=h.clearcoatNormalScale.y):(c[s++]=1,c[s++]=1),c[s++]=r(h,"clearcoatRoughness",0),u[s++]=i(h,"clearcoatRoughnessMap"),u[s++]=i(h,"iridescenceMap"),u[s++]=i(h,"iridescenceThicknessMap"),c[s++]=r(h,"iridescence",0),c[s++]=r(h,"iridescenceIOR",1.3),c[s++]=r(h,"iridescenceThicknessMinimum",100),c[s++]=r(h,"iridescenceThicknessMaximum",400),c[s++]=r(h,"diffuseRoughness",0),c[s++]=r(h,"dispersion",0),"specularColor"in h?(c[s++]=h.specularColor.r,c[s++]=h.specularColor.g,c[s++]=h.specularColor.b):(c[s++]=1,c[s++]=1,c[s++]=1),u[s++]=i(h,"specularColorMap"),c[s++]=r(h,"specularIntensity",1),u[s++]=i(h,"specularIntensityMap");const y=r(h,"thickness",0)===0&&r(h,"attenuationDistance",1/0)===1/0;if(u[s++]=Number(y),s++,"attenuationColor"in h?(c[s++]=h.attenuationColor.r,c[s++]=h.attenuationColor.g,c[s++]=h.attenuationColor.b):(c[s++]=1,c[s++]=1,c[s++]=1),c[s++]=r(h,"attenuationDistance",1/0),u[s++]=i(h,"alphaMap"),u[s++]=Number(r(h,"castShadow",!0)),c[s++]=h.opacity,c[s++]=h.alphaTest,!y&&h.transmission>0)c[s++]=0;else switch(h.side){case ar:c[s++]=1;break;case ys:c[s++]=-1;break;case ma:c[s++]=0;break}u[s++]=Number(r(h,"matte",!1)),c[s++]=r(h,"sheen",0),s++,"sheenColor"in h?(c[s++]=h.sheenColor.r,c[s++]=h.sheenColor.g,c[s++]=h.sheenColor.b):(c[s++]=0,c[s++]=0,c[s++]=0),u[s++]=i(h,"sheenColorMap"),c[s++]=r(h,"sheenRoughness",0),u[s++]=i(h,"sheenRoughnessMap"),u[s++]=Number(h.vertexColors),u[s++]=Number(h.flatShading),u[s++]=Number(h.transparent),u[s++]=0,c[s++]=r(h,"anisotropy",0),c[s++]=r(h,"anisotropyRotation",0),u[s++]=i(h,"anisotropyMap"),s++,s++,s++,s+=n(h,"map",c,s),s+=n(h,"metalnessMap",c,s),s+=n(h,"roughnessMap",c,s),s+=n(h,"transmissionMap",c,s),s+=n(h,"emissiveMap",c,s),s+=n(h,"normalMap",c,s),s+=n(h,"clearcoatMap",c,s),s+=n(h,"clearcoatNormalMap",c,s),s+=n(h,"clearcoatRoughnessMap",c,s),s+=n(h,"sheenColorMap",c,s),s+=n(h,"sheenRoughnessMap",c,s),s+=n(h,"iridescenceMap",c,s),s+=n(h,"iridescenceThicknessMap",c,s),s+=n(h,"specularColorMap",c,s),s+=n(h,"specularIntensityMap",c,s),s+=n(h,"alphaMap",c,s),s+=n(h,"anisotropyMap",c,s);const x=r(h,"multiscatterColor",null);c[s++]=x?x.r:1,c[s++]=x?x.g:1,c[s++]=x?x.b:1,c[s++]=r(h,"scatterStrength",0),c[s++]=r(h,"scatterAnisotropy",0),s+=3}return{materialData:u,textures:l}}writeMaterialData(e,t,i){const{materialsMap:r}=this,{object:n,instanceId:s,root:o}=e;let l=n.material;if(Array.isArray(l)){const{materialIndex:f}=n.geometry.groups[o];l=l[f]}const d=new Uint32Array(i),c=r.has(l)?r.get(l):-1;c===-1&&(d[t*Zi.getLength()+32]=0),d[t*Zi.getLength()+33]=c,n.isInstancedMesh&&n.instanceColor?(n.getColorAt(s,ni),ni.w=1):n.isBatchedMesh&&n._colorsTexture?n.getColorAt(s,ni):ni.setScalar(1);const u=new Float32Array(i);ni.toArray(u,t*Zi.getLength()+36)}writeTransformData(e,t,i,r){super.writeTransformData(e,t,i,r),this.writeMaterialData(e,i,r);const n=new Uint32Array(r);n[i*this.structs.transform.getLength()+34]=e.object.visibleToShadowRays===!1?0:1}getBVH(e,t,i){const{bvhMap:r}=this,n=super.getBVH(e,t,i);if(r.has(n)){const s=r.get(n);if(Object.assign(i,s.range),n!==s.bvh&&n instanceof pi){const o=n.mesh,l=s.bvh.mesh;l.matrixWorld.copy(o.matrixWorld).decompose(l.position,l.quaternion,l.scale),n.refit(),n.getBoundingBox(l.boundingBox),n.geometry.computeBoundingBox()}return s.bvh}else if(n.indirect){const s=new xa;s.attributes=n.geometry.attributes;let o;if(n.geometry.index)o=n.geometry.index.array.slice(i.start,i.count+i.start);else{const{start:d,count:c}=i;o=new Uint32Array(c);for(let u=0,f=i.count;u<f;u++)o[u]=d+u}s.index=new ut(o,1),i.start=0;let l;if(n instanceof pi){const d=n.mesh,c=new cl(s);c.copy(d),c.matrixWorld.copy(d.matrixWorld).decompose(c.position,c.quaternion,c.scale),l=new pi(c,{strategy:Ot,targetLeafSize:5})}else l=new gt(s,{strategy:Ot,targetLeafSize:5});return r.set(n,{bvh:l,range:{...i}}),l}else return n}dispose(){const{storage:e}=this;for(const t in e)e[t].value?.dispose()}}class rf extends Si{set texture(e){this._texNode.value=e}set layer(e){this._layerUniform.value=e}constructor(){super(),this.blending=xr,this._texNode=Re(new ge),this._layerUniform=B(0),this.colorNode=M(`
+			`})}update(){const{structs:e}=this,t=new N(new Uint8Array,e.material.getLength());this.storage.materials=E(t,e.material).toReadOnly().setName("bvh_materials"),this.updateUvAttributesFromScene(),this.updateMaterialsMap(),super.update(),this.updateUvSampleFunction(),this.updateColorSampleFn(),this.updateMaterials(),this.bvhMap.clear(),this.useTransparencyRaycastFn()}updateMaterialsMap(){const{materials:e,materialsMap:t}=this;t.clear(),e.length=0,this.getRootObject().traverse(i=>{i.material&&(Array.isArray(i.material)?i.material.forEach(n=>n&&r(n)):r(i.material))}),e.sort((i,n)=>i.uuid<n.uuid?1:-1).forEach((i,n)=>{t.set(i,n)});function r(i){t.has(i)||(e.push(i),t.set(i,-1))}}updateMaterials(){this.updateMaterialsMap();const{materials:e,storage:t,structs:r,bvh:i}=this,{materialData:n,textures:s}=this.writeMaterialsBuffer(e),o=t.materials.proxyNode,l=t.transforms.proxyNode,d=n.length/r.material.getLength();o.value.count<d&&(o.value.dispose(),o.value=new N(n,r.material.getLength())),o.value.array.set(n),o.value.needsUpdate=!0,this._getTransformMap(i).forEach(c=>{this.writeMaterialData(c,c.slot,l.value.array.buffer)}),l.value.needsUpdate=!0,this.textures=s}writeMaterialsBuffer(e){function t(f){switch(f){case tt:return 0;case oi:return 1;case ul:return 2;default:return 0}}function r(f,p){if(p in f&&f[p]){const h=f[p],y=Jd(h);o.has(y)||(o.set(y,o.size),l.push(h));const x=o.get(y),b=h.channel&7,m=t(h.wrapS),v=t(h.wrapT);return(h.magFilter===xr?1:0)<<30|v<<28|m<<26|b<<23|x&8388607}else return-1}function i(f,p,h){return p in f?f[p]:h}function n(f,p,h,y){const x=f[p]&&f[p].isTexture?f[p]:null;if(x){x.matrixAutoUpdate&&x.updateMatrix();const b=x.matrix.elements;for(let m=0;m<3;m++)h[y+4*m+0]=b[3*m+0],h[y+4*m+1]=b[3*m+1],h[y+4*m+2]=b[3*m+2],h[y+4*m+3]=0}return 12}let s=0;const o=new Map,l=[],d=Math.max(e.length,2),c=new Float32Array(d*this.structs.material.getLength()),u=new Int32Array(c.buffer);for(let f=0,p=e.length;f<p;f++){const h=e[f];c[s++]=h.color.r,c[s++]=h.color.g,c[s++]=h.color.b,u[s++]=r(h,"map"),c[s++]=i(h,"metalness",0),u[s++]=r(h,"metalnessMap"),c[s++]=i(h,"roughness",0),u[s++]=r(h,"roughnessMap"),c[s++]=i(h,"ior",1.5),c[s++]=i(h,"transmission",0),u[s++]=r(h,"transmissionMap"),c[s++]=i(h,"emissiveIntensity",0),"emissive"in h?(c[s++]=h.emissive.r,c[s++]=h.emissive.g,c[s++]=h.emissive.b):(c[s++]=0,c[s++]=0,c[s++]=0),u[s++]=r(h,"emissiveMap"),u[s++]=r(h,"normalMap"),s++,"normalScale"in h?(c[s++]=h.normalScale.x,c[s++]=h.normalScale.y):(c[s++]=1,c[s++]=1),c[s++]=i(h,"clearcoat",0),u[s++]=r(h,"clearcoatMap"),u[s++]=r(h,"clearcoatNormalMap"),s++,"clearcoatNormalScale"in h?(c[s++]=h.clearcoatNormalScale.x,c[s++]=h.clearcoatNormalScale.y):(c[s++]=1,c[s++]=1),c[s++]=i(h,"clearcoatRoughness",0),u[s++]=r(h,"clearcoatRoughnessMap"),u[s++]=r(h,"iridescenceMap"),u[s++]=r(h,"iridescenceThicknessMap"),c[s++]=i(h,"iridescence",0),c[s++]=i(h,"iridescenceIOR",1.3),c[s++]=i(h,"iridescenceThicknessMinimum",100),c[s++]=i(h,"iridescenceThicknessMaximum",400),c[s++]=i(h,"diffuseRoughness",0),c[s++]=i(h,"dispersion",0),"specularColor"in h?(c[s++]=h.specularColor.r,c[s++]=h.specularColor.g,c[s++]=h.specularColor.b):(c[s++]=1,c[s++]=1,c[s++]=1),u[s++]=r(h,"specularColorMap"),c[s++]=i(h,"specularIntensity",1),u[s++]=r(h,"specularIntensityMap");const y=i(h,"thickness",0)===0&&i(h,"attenuationDistance",1/0)===1/0;if(u[s++]=Number(y),s++,"attenuationColor"in h?(c[s++]=h.attenuationColor.r,c[s++]=h.attenuationColor.g,c[s++]=h.attenuationColor.b):(c[s++]=1,c[s++]=1,c[s++]=1),c[s++]=i(h,"attenuationDistance",1/0),u[s++]=r(h,"alphaMap"),u[s++]=Number(i(h,"castShadow",!0)),c[s++]=h.opacity,c[s++]=h.alphaTest,!y&&h.transmission>0)c[s++]=0;else switch(h.side){case ai:c[s++]=1;break;case ys:c[s++]=-1;break;case ma:c[s++]=0;break}u[s++]=Number(i(h,"matte",!1)),c[s++]=i(h,"sheen",0),s++,"sheenColor"in h?(c[s++]=h.sheenColor.r,c[s++]=h.sheenColor.g,c[s++]=h.sheenColor.b):(c[s++]=0,c[s++]=0,c[s++]=0),u[s++]=r(h,"sheenColorMap"),c[s++]=i(h,"sheenRoughness",0),u[s++]=r(h,"sheenRoughnessMap"),u[s++]=Number(h.vertexColors),u[s++]=Number(h.flatShading),u[s++]=Number(h.transparent),u[s++]=0,c[s++]=i(h,"anisotropy",0),c[s++]=i(h,"anisotropyRotation",0),u[s++]=r(h,"anisotropyMap"),s++,s++,s++,s+=n(h,"map",c,s),s+=n(h,"metalnessMap",c,s),s+=n(h,"roughnessMap",c,s),s+=n(h,"transmissionMap",c,s),s+=n(h,"emissiveMap",c,s),s+=n(h,"normalMap",c,s),s+=n(h,"clearcoatMap",c,s),s+=n(h,"clearcoatNormalMap",c,s),s+=n(h,"clearcoatRoughnessMap",c,s),s+=n(h,"sheenColorMap",c,s),s+=n(h,"sheenRoughnessMap",c,s),s+=n(h,"iridescenceMap",c,s),s+=n(h,"iridescenceThicknessMap",c,s),s+=n(h,"specularColorMap",c,s),s+=n(h,"specularIntensityMap",c,s),s+=n(h,"alphaMap",c,s),s+=n(h,"anisotropyMap",c,s);const x=i(h,"multiscatterColor",null);c[s++]=x?x.r:1,c[s++]=x?x.g:1,c[s++]=x?x.b:1,c[s++]=i(h,"scatterStrength",0),c[s++]=i(h,"scatterAnisotropy",0),s+=3}return{materialData:u,textures:l}}writeMaterialData(e,t,r){const{materialsMap:i}=this,{object:n,instanceId:s,root:o}=e;let l=n.material;if(Array.isArray(l)){const{materialIndex:f}=n.geometry.groups[o];l=l[f]}const d=new Uint32Array(r),c=i.has(l)?i.get(l):-1;c===-1&&(d[t*Zr.getLength()+32]=0),d[t*Zr.getLength()+33]=c,n.isInstancedMesh&&n.instanceColor?(n.getColorAt(s,nr),nr.w=1):n.isBatchedMesh&&n._colorsTexture?n.getColorAt(s,nr):nr.setScalar(1);const u=new Float32Array(r);nr.toArray(u,t*Zr.getLength()+36)}writeTransformData(e,t,r,i){super.writeTransformData(e,t,r,i),this.writeMaterialData(e,r,i);const n=new Uint32Array(i);n[r*this.structs.transform.getLength()+34]=e.object.visibleToShadowRays===!1?0:1}getBVH(e,t,r){const{bvhMap:i}=this,n=super.getBVH(e,t,r);if(i.has(n)){const s=i.get(n);if(Object.assign(r,s.range),n!==s.bvh&&n instanceof pr){const o=n.mesh,l=s.bvh.mesh;l.matrixWorld.copy(o.matrixWorld).decompose(l.position,l.quaternion,l.scale),n.refit(),n.getBoundingBox(l.boundingBox),n.geometry.computeBoundingBox()}return s.bvh}else if(n.indirect){const s=new xa;s.attributes=n.geometry.attributes;let o;if(n.geometry.index)o=n.geometry.index.array.slice(r.start,r.count+r.start);else{const{start:d,count:c}=r;o=new Uint32Array(c);for(let u=0,f=r.count;u<f;u++)o[u]=d+u}s.index=new ut(o,1),r.start=0;let l;if(n instanceof pr){const d=n.mesh,c=new cl(s);c.copy(d),c.matrixWorld.copy(d.matrixWorld).decompose(c.position,c.quaternion,c.scale),l=new pr(c,{strategy:Ot,targetLeafSize:5})}else l=new gt(s,{strategy:Ot,targetLeafSize:5});return i.set(n,{bvh:l,range:{...r}}),l}else return n}dispose(){const{storage:e}=this;for(const t in e)e[t].value?.dispose()}}class rf extends Sr{set texture(e){this._texNode.value=e}set layer(e){this._layerUniform.value=e}constructor(){super(),this.blending=xi,this._texNode=Re(new ge),this._layerUniform=B(0),this.colorNode=M(`
 			fn atlasDebug( tex: texture_2d_array<f32>, coord: vec2f, layer: f32 ) -> vec4f {
 
 				// flip y so texel origin shows at the top-left
@@ -5496,14 +5496,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				return textureLoad( tex, texel, i32( layer ), 0 );
 
 			}
-		`)(this._texNode,Ti(Gt()),this._layerUniform)}}class sf extends Si{set texture(e){this._texNode.value=e}set minCount(e){this._minUniform.value=e}set maxCount(e){this._maxUniform.value=e}constructor(){super(),this.blending=xr,this._texNode=Re(new qe(1,1)),this._minUniform=B(0),this._maxUniform=B(1);const e=I`
+		`)(this._texNode,Tr(Gt()),this._layerUniform)}}class sf extends Sr{set texture(e){this._texNode.value=e}set minCount(e){this._minUniform.value=e}set maxCount(e){this._maxUniform.value=e}constructor(){super(),this.blending=xi,this._texNode=Re(new qe(1,1)),this._minUniform=B(0),this._maxUniform=B(1);const e=I`
 			fn sampleDensity( tex: texture_2d<u32>, coord: vec2f, minCount: f32, maxCount: f32 ) -> vec4f {
 
 				let dims = vec2f( textureDimensions( tex, 0 ) );
 				let texel = vec2i( coord * dims );
 
 				// the high bits hold the ray state flags rather than part of the count
-				let samples = textureLoad( tex, texel, 0 ).r & ${vi}u;
+				let samples = textureLoad( tex, texel, 0 ).r & ${vr}u;
 
 				// stretched across the recorded range rather than from zero, otherwise a converged
 				// image with counts bunched near the max reads as uniformly hot
@@ -5513,7 +5513,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				return vec4f( ${Wa}( t ), 1.0 );
 
 			}
-		`;this.colorNode=e(this._texNode,Ti(Gt()),this._minUniform,this._maxUniform)}}class nf extends Si{set texture(e){this._texNode.value=e}set showNormal(e){this._showNormalUniform.value=e?1:0}constructor(){super(),this.blending=xr,this._texNode=Re(qt()),this._showNormalUniform=B(0,"uint");const e=I`
+		`;this.colorNode=e(this._texNode,Tr(Gt()),this._minUniform,this._maxUniform)}}class nf extends Sr{set texture(e){this._texNode.value=e}set showNormal(e){this._showNormalUniform.value=e?1:0}constructor(){super(),this.blending=xi,this._texNode=Re(qt()),this._showNormalUniform=B(0,"uint");const e=I`
 			fn auxDebug( tex: texture_2d_array<u32>, coord: vec2f, showNormal: u32 ) -> vec4f {
 
 				// the rows are stored top down, so the quad's bottom up uv is flipped
@@ -5530,14 +5530,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				return vec4f( select( albedo, normal, showNormal == 1u ), 1.0 );
 
 			}
-		`;this.colorNode=e(this._texNode,Ti(Gt()),this._showNormalUniform)}}function af(a,e){if(!a.index){const t=a.attributes.position.count,i=new Array(t);for(let r=0;r<t;r++)i[r]=r;a.setIndex(i)}if(!a.attributes.normal&&e&&e.includes("normal")&&a.computeVertexNormals(),!a.attributes.uv&&e&&e.includes("uv")){const t=a.attributes.position.count;a.setAttribute("uv",new ut(new Float32Array(t*2),2,!1))}if(!a.attributes.uv2&&e&&e.includes("uv2")){const t=a.attributes.position.count;a.setAttribute("uv2",new ut(new Float32Array(t*2),2,!1))}if(!a.attributes.tangent&&e&&e.includes("tangent"))if(a.attributes.uv&&a.attributes.normal)a.computeTangents();else{const t=a.attributes.position.count;a.setAttribute("tangent",new ut(new Float32Array(t*4),4,!1))}if(!a.attributes.color&&e&&e.includes("color")){const t=a.attributes.position.count,i=new Float32Array(t*4);i.fill(1),a.setAttribute("color",new ut(i,4))}}class of{init(){}getBsdfNode(){return I`
+		`;this.colorNode=e(this._texNode,Tr(Gt()),this._showNormalUniform)}}function af(a,e){if(!a.index){const t=a.attributes.position.count,r=new Array(t);for(let i=0;i<t;i++)r[i]=i;a.setIndex(r)}if(!a.attributes.normal&&e&&e.includes("normal")&&a.computeVertexNormals(),!a.attributes.uv&&e&&e.includes("uv")){const t=a.attributes.position.count;a.setAttribute("uv",new ut(new Float32Array(t*2),2,!1))}if(!a.attributes.uv2&&e&&e.includes("uv2")){const t=a.attributes.position.count;a.setAttribute("uv2",new ut(new Float32Array(t*2),2,!1))}if(!a.attributes.tangent&&e&&e.includes("tangent"))if(a.attributes.uv&&a.attributes.normal)a.computeTangents();else{const t=a.attributes.position.count;a.setAttribute("tangent",new ut(new Float32Array(t*4),4,!1))}if(!a.attributes.color&&e&&e.includes("color")){const t=a.attributes.position.count,r=new Float32Array(t*4);r.fill(1),a.setAttribute("color",new ut(r,4))}}class of{init(){}getBsdfNode(){return I`
 
 			fn bsdfSample( worldWo: vec3f, surf: SurfaceRecord ) -> ScatterRecord {
 
 				var record: ScatterRecord;
 
 				let wo = normalize( surf.normalInvBasis * worldWo );
-				let wi = ${mu}( wo, ${Ae}( ${io} ) );
+				let wi = ${mu}( wo, ${Ae}( ${ro} ) );
 				record.color = surf.color * max( wi.z, 0.0 );
 				record.pdf = max( wi.z, 0.0 ) / PI;
 				record.direction = normalize( surf.normalBasis * wi );
@@ -5804,7 +5804,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,ai=I`
+`,ar=I`
 
 	fn velvetParamsInterpolate( i: i32, oneMinusAlphaSquared: f32 ) -> f32 {
 
@@ -5822,11 +5822,11 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		let oneMinusAlpha = 1.0 - alpha;
 		let oneMinusAlphaSquared = oneMinusAlpha * oneMinusAlpha;
 
-		let a = ${ai}( 0, oneMinusAlphaSquared );
-		let b = ${ai}( 1, oneMinusAlphaSquared );
-		let c = ${ai}( 2, oneMinusAlphaSquared );
-		let d = ${ai}( 3, oneMinusAlphaSquared );
-		let e = ${ai}( 4, oneMinusAlphaSquared );
+		let a = ${ar}( 0, oneMinusAlphaSquared );
+		let b = ${ar}( 1, oneMinusAlphaSquared );
+		let c = ${ar}( 2, oneMinusAlphaSquared );
+		let d = ${ar}( 3, oneMinusAlphaSquared );
+		let e = ${ar}( 4, oneMinusAlphaSquared );
 
 		return a / ( 1.0 + b * pow( abs( x ), c ) ) + d * x + e;
 
@@ -5906,14 +5906,14 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 	}
 
-`,er=32,tr=16;class vf extends dl{constructor(){super(er,er,31),this.type=fe,this.format=Ce,this.minFilter=se,this.magFilter=se,this.dielectricLayerCount=10,this.transmissiveLayerCount=10,this.minIoR=1,this.maxIoR=2.5,this.sampleConductorFn=K("_sampleConductorFn",this),this.sampleDielectricFn=K("_sampleDielectricFn",this),this.sampleTransmissiveFn=K("_sampleTransmissiveFn",this)}generate(e){const{dielectricLayerCount:t,transmissiveLayerCount:i,minIoR:r,maxIoR:n}=this,s={outputTarget:fl(this).toWriteOnly(),globalId:ae,eta:B(1),layer:B(0,"uint"),includeFresnel:B(0),includeRefraction:B(0)},o=[er/tr,er/tr,1],l=new te(Hu(s.outputTarget)(s),{workgroupSize:[tr,tr,1]});s.layer.value=0,s.eta.value=1,s.includeFresnel.value=0,s.includeRefraction.value=0,e.compute(l.kernel,o);for(let y=0;y<t;y++)s.layer.value++,s.eta.value=1/ss.mapLinear(y,0,t-1,r,n),s.includeFresnel.value=1,e.compute(l.kernel,o);s.includeFresnel.value=1,s.includeRefraction.value=1;for(let y=0;y<i;y++){const x=ss.mapLinear(y,0,i-1,r,n);s.layer.value=1+t+y,s.eta.value=1/x,e.compute(l.kernel,o),s.layer.value=1+t+i+y,s.eta.value=x,e.compute(l.kernel,o)}l.dispose();const d=I`
+`,ei=32,ti=16;class vf extends dl{constructor(){super(ei,ei,31),this.type=fe,this.format=Ce,this.minFilter=se,this.magFilter=se,this.dielectricLayerCount=10,this.transmissiveLayerCount=10,this.minIoR=1,this.maxIoR=2.5,this.sampleConductorFn=K("_sampleConductorFn",this),this.sampleDielectricFn=K("_sampleDielectricFn",this),this.sampleTransmissiveFn=K("_sampleTransmissiveFn",this)}generate(e){const{dielectricLayerCount:t,transmissiveLayerCount:r,minIoR:i,maxIoR:n}=this,s={outputTarget:fl(this).toWriteOnly(),globalId:ae,eta:B(1),layer:B(0,"uint"),includeFresnel:B(0),includeRefraction:B(0)},o=[ei/ti,ei/ti,1],l=new te(Hu(s.outputTarget)(s),{workgroupSize:[ti,ti,1]});s.layer.value=0,s.eta.value=1,s.includeFresnel.value=0,s.includeRefraction.value=0,e.compute(l.kernel,o);for(let y=0;y<t;y++)s.layer.value++,s.eta.value=1/ss.mapLinear(y,0,t-1,i,n),s.includeFresnel.value=1,e.compute(l.kernel,o);s.includeFresnel.value=1,s.includeRefraction.value=1;for(let y=0;y<r;y++){const x=ss.mapLinear(y,0,r-1,i,n);s.layer.value=1+t+y,s.eta.value=1/x,e.compute(l.kernel,o),s.layer.value=1+t+r+y,s.eta.value=x,e.compute(l.kernel,o)}l.dispose();const d=I`
 			fn mapLinearClamped( v: f32, a0: f32, a1: f32, b0: f32, b1: f32 ) -> f32 {
 
 				let mapped = saturate( ( v - a0 ) / ( a1 - a0 ) );
 				return mix( b0, b1, mapped );
 
 			}
-		`,c=hl(this).setName("turquinTexture"),u=gr(this).setName("turquinSampler"),f=1/(1+t+2*i);this._sampleConductorFn=I`
+		`,c=hl(this).setName("turquinTexture"),u=gi(this).setName("turquinSampler"),f=1/(1+t+2*r);this._sampleConductorFn=I`
 			fn sampleConductor( cosTheta0: f32, roughness: f32 ) -> f32 {
 
 				let layer = 0.5;
@@ -5927,7 +5927,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				let blockStart = 1.0;
 				let layer = ${d}(
 					ior,
-					f32( ${r} ), f32( ${n} ),
+					f32( ${i} ), f32( ${n} ),
 					0.5, f32( ${t} ) - 0.5,
 				) + blockStart;
 
@@ -5935,7 +5935,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				return textureSampleLevel( ${c}, ${u}, uvw, 0 ).r;
 
 			}
-		`;const p=1+t,h=1+t+i;this._sampleTransmissiveFn=I`
+		`;const p=1+t,h=1+t+r;this._sampleTransmissiveFn=I`
 			fn sampleTransmissive( cosTheta0: f32, roughness: f32, ior: f32, entering: bool ) -> f32 {
 
 				let blockStart = select(
@@ -5945,15 +5945,15 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				);
 				let layer = ${d}(
 					ior,
-					f32( ${r} ), f32( ${n} ),
-					0.5, f32( ${i} ) - 0.5,
+					f32( ${i} ), f32( ${n} ),
+					0.5, f32( ${r} ) - 0.5,
 				) + blockStart;
 
 				let uvw = vec3f( cosTheta0, roughness, layer * ${f} );
 				return textureSampleLevel( ${c}, ${u}, uvw, 0 ).r;
 
 			}
-		`}}const oa=Le(1.5),la=Le(1e6);class bf extends of{constructor(e={}){super();const{specularBrdf:t=To,specularBtdf:i=Io,diffuseBrdf:r=cf,fresnelMix:n=Fu,conductorFresnel:s=Eu,fresnelCoat:o=ku,iridescentFresnel:l=Do}=e;this.turquinTexture=new vf,this.specularBrdf=t,this.specularBtdf=i,this.diffuseBrdf=r,this.fresnelMix=n,this.conductorFresnel=s,this.fresnelCoat=o,this.iridescentFresnel=l,this.transmissionFresnel=zu(l)}init(e){this.turquinTexture.generate(e)}getBsdfNode(){this._bsdfEvalFunc=I`
+		`}}const oa=Le(1.5),la=Le(1e6);class bf extends of{constructor(e={}){super();const{specularBrdf:t=To,specularBtdf:r=Io,diffuseBrdf:i=cf,fresnelMix:n=Fu,conductorFresnel:s=Eu,fresnelCoat:o=ku,iridescentFresnel:l=Do}=e;this.turquinTexture=new vf,this.specularBrdf=t,this.specularBtdf=r,this.diffuseBrdf=i,this.fresnelMix=n,this.conductorFresnel=s,this.fresnelCoat=o,this.iridescentFresnel=l,this.transmissionFresnel=zu(l)}init(e){this.turquinTexture.generate(e)}getBsdfNode(){this._bsdfEvalFunc=I`
 
 			// The material is organized as one scoped block per lobe in cascade order - clearcoat,
 			// sheen, transmission, specular, diffuse - each accumulating into a shared result and
@@ -6010,7 +6010,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				// handles specular reflection and transmission
 				if ( surf.transmission > 0.0 ) {
 
-					let matchedIor = ${gi}( surf.eta );
+					let matchedIor = ${gr}( surf.eta );
 
 					// anisotropic roughness along tangent, bitangent
 					let alphaB = surf.roughness * surf.roughness;
@@ -6045,7 +6045,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							// evaluate the flipped reflection, compensated at the remapped roughness
 							let wiMirror = vec3f( ctx.L.xy, - ctx.L.z );
-							let thinWallAlpha = vec2f( ${jr}( alphaB, surf.ior ) );
+							let thinWallAlpha = vec2f( ${ji}( alphaB, surf.ior ) );
 							let thinWallEnergySS = max( ${this.turquinTexture.sampleConductorFn}( NdotV, sqrt( thinWallAlpha.x ) ), 1e-5 );
 							refraction = fresnel.transmittance * ${this.specularBrdf}( ctx.V, wiMirror, ctx.H, thinWallAlpha ) / thinWallEnergySS;
 
@@ -6053,7 +6053,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 							// The default BTDF contains the plain dielectric Fresnel complement. Replace it
 							// with the colored thin-film-aware coefficient shared by sampling and the PDF.
-							let dielectricTransmittance = 1.0 - ${Ii}( abs( ctx.VdotH ), surf.eta );
+							let dielectricTransmittance = 1.0 - ${Ir}( abs( ctx.VdotH ), surf.eta );
 							if ( dielectricTransmittance > EPSILON ) {
 
 								refraction = ${this.specularBtdf}( ctx.V, ctx.L, ctx.H, alpha, surf.eta ) *
@@ -6109,7 +6109,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					// Schlick is used on both hit sides, matching Cycles - the opaque specular carries no
 					// TIR so the energy removed from the base always matches the energy paid back
 					let dielectricF0 = min( surf.f0 * surf.specularColor, vec3f( 1.0 ) );
-					let dielectricFr = ${Tr}( ctx.VdotH, dielectricF0, vec3f( 1.0 ) );
+					let dielectricFr = ${Ti}( ctx.VdotH, dielectricF0, vec3f( 1.0 ) );
 					var dielectricReflectance = surf.specularIntensity * dielectricFr;
 
 					// iridescence
@@ -6187,7 +6187,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 				// random samples for lobes
 				let lobeSample = ${mt}( ${nu} ) * cdfTotal;
-				let directionUV = ${Ae}( ${io} );
+				let directionUV = ${Ae}( ${ro} );
 
 				// output
 				var wi: vec3f;
@@ -6204,7 +6204,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 					// clearcoat
 					let clearcoatAlpha = surf.clearcoatRoughness * surf.clearcoatRoughness;
-					let whCoat = ${ci}( woClearcoat, vec2( clearcoatAlpha ), directionUV );
+					let whCoat = ${cr}( woClearcoat, vec2( clearcoatAlpha ), directionUV );
 					let wiCoat = - normalize( reflect( woClearcoat, whCoat ) );
 
 					wi = normalize( surf.normalInvBasis * surf.clearcoatBasis * wiCoat );
@@ -6229,7 +6229,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					let alphaT = mix( alphaB, 1.0, surf.anisotropy * surf.anisotropy );
 					let alpha = vec2( alphaT, alphaB );
 
-					wh = ${ci}( wo, alpha, directionUV );
+					wh = ${cr}( wo, alpha, directionUV );
 					wi = - normalize( reflect( wo, wh ) );
 
 					// reflected rays must leave above the geometry surface - flip rays that land
@@ -6256,7 +6256,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					// sample the half vector first and select reflection or refraction by the
 					// facet fresnel, matching Cycles - total internal reflection drives the
 					// fresnel to 1 so TIR facets always reflect with a matching pdf
-					wh = ${ci}( wo, alpha, directionUV );
+					wh = ${cr}( wo, alpha, directionUV );
 
 					let fresnelCosine = select( dot( wo, wh ), wo.z, surf.thinWall );
 					let fresnel = ${this.transmissionFresnel}( fresnelCosine, surf );
@@ -6267,7 +6267,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 						wi = - normalize( reflect( wo, wh ) );
 
-					} else if ( ${gi}( surf.eta ) ) {
+					} else if ( ${gr}( surf.eta ) ) {
 
 						// With no IOR boundary, rough transmission collapses to straight-through
 						// delta transmission independent of the sampled microfacet.
@@ -6281,8 +6281,8 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 						// model the double refraction as a single reflection flipped through the
 						// surface at the remapped thin wall roughness
-						let thinWallAlpha = vec2f( ${jr}( alphaB, surf.ior ) );
-						wh = ${ci}( wo, thinWallAlpha, directionUV );
+						let thinWallAlpha = vec2f( ${ji}( alphaB, surf.ior ) );
+						wh = ${cr}( wo, thinWallAlpha, directionUV );
 						wi = - normalize( reflect( wo, wh ) );
 						wi = vec3f( wi.xy, - wi.z );
 
@@ -6368,7 +6368,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				let woClearcoat = normalize( surf.clearcoatInvBasis * worldWo );
 
 				let isTransmission = wi.z < 0.0;
-				if ( isTransmission && ${gi}( surf.eta ) ) {
+				if ( isTransmission && ${gr}( surf.eta ) ) {
 
 					// Delta transmission has no finite solid-angle BSDF or PDF. It is handled
 					// explicitly by bsdfSample, matching PBRT-v4's eta == 1 path.
@@ -6413,7 +6413,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 						let whClearcoat = normalize( toClearcoatMat * wh );
 						let clearcoatAlpha = surf.clearcoatRoughness * surf.clearcoatRoughness;
-						result.pdf += weights.clearcoat * ${ui}( woClearcoat, whClearcoat, vec2( clearcoatAlpha ) );
+						result.pdf += weights.clearcoat * ${ur}( woClearcoat, whClearcoat, vec2( clearcoatAlpha ) );
 
 					}
 
@@ -6427,7 +6427,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 					let alphaT = mix( alphaB, 1.0, surf.anisotropy * surf.anisotropy );
 					let alpha = vec2( alphaT, alphaB );
 
-					result.pdf += weights.specular * ${ui}( wo, wh, alpha );
+					result.pdf += weights.specular * ${ur}( wo, wh, alpha );
 
 				}
 
@@ -6446,13 +6446,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 					if ( wi.z > 0.0 ) {
 
-						result.pdf += weights.transmission * fresnel.reflectProbability * ${ui}( wo, wh, alpha );
+						result.pdf += weights.transmission * fresnel.reflectProbability * ${ur}( wo, wh, alpha );
 
 					} else if ( surf.thinWall ) {
 
 						// the flipped reflection shares the reflection pdf at the remapped roughness
-						let thinWallAlpha = vec2f( ${jr}( alphaB, surf.ior ) );
-						result.pdf += weights.transmission * ( 1.0 - fresnel.reflectProbability ) * ${ui}( wo, wh, thinWallAlpha );
+						let thinWallAlpha = vec2f( ${ji}( alphaB, surf.ior ) );
+						result.pdf += weights.transmission * ( 1.0 - fresnel.reflectProbability ) * ${ur}( wo, wh, thinWallAlpha );
 
 					} else {
 
@@ -6488,15 +6488,15 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 
 			}
 
-		`,this._bsdfEvalPdfNode}}const Xe=new G,ir=new Ia,wf=250,Sf=16,ca=1.15,ua=2,Tf=4096,da={strategy:Ot,targetLeafSize:5},If=4,ts=0,is=1,rr=2;async function _f(a,e,t){const i=d=>typeof SharedArrayBuffer<"u"&&d.buffer instanceof SharedArrayBuffer?d:d.slice(),{position:r}=e.attributes,{index:n}=e,s=r.array,o=n?n.array:null;r.array=i(s),n&&(n.array=i(o));const l=await a.generate(e,t);return r.array=s,n&&(o.set(n.array),n.array=o,n.needsUpdate=!0),l}class fa{constructor(e,t){this.key=t,this.renderer=e,this.texture=null,this.hash=null;const i=new ge(new Uint8Array([255,255,255,255]),1,1);i.minFilter=se,i.magFilter=se,this.colorTex=i}dispose(){this.colorTex.dispose(),this.texture?.dispose()}setFromScene(e){const{renderer:t,key:i,colorTex:r}=this;let n=e[i],s="";if(n)n.isColor?(r.image.data[0]=n.r*255,r.image.data[1]=n.g*255,r.image.data[2]=n.b*255,r.image.data[3]=255,n=r,s=r.image.data.join(),r.needsUpdate=s!==this.hash):n.isCubeTexture?(s=null,n=new Yd(t).generate(n)):(s=n.uuid+"_"+n.version,s!==this.hash&&(n=n.clone(),n.minFilter=se,n.magFilter=se));else{const o=t.getClearAlpha();t.getClearColor(ir),r.image.data[0]=ir.r*255,r.image.data[1]=ir.g*255,r.image.data[2]=ir.b*255,r.image.data[3]=o*255,n=r,s=r.image.data.join(),r.needsUpdate=s!==this.hash}if(s===null)return this.texture?.dispose(),this.texture=n,this.hash=null,!0;{const o=s!==this.hash;return o&&(this.texture?.dispose(),this.texture=n,this.hash=s),o}}}class Ef extends Ca{get maxBounces(){return this._pathTracer.maxBounces}set maxBounces(e){this._pathTracer.maxBounces=e,this.reset()}get frameBudget(){return this._pathTracer.frameBudget}set frameBudget(e){this._pathTracer.frameBudget=e}get frameTime(){return this._pathTracer.timing.frameTime}get maxTransparentBounces(){return this._pathTracer.maxTransparentBounces}set maxTransparentBounces(e){this._pathTracer.maxTransparentBounces=e,this.reset()}get maxSubsurfaceBounces(){return this._pathTracer.maxSubsurfaceBounces}set maxSubsurfaceBounces(e){this._pathTracer.maxSubsurfaceBounces=e,this.reset()}get maxSamples(){return this._pathTracer.maxSamples}set maxSamples(e){this._pathTracer.maxSamples=e,this._denoiser?.reset()}get complete(){const e=this.maxSamples,t=this._denoiser;return e>0&&this._lastSampleCounts.min>=e&&(!t||t.complete)}async getSampleCountsAsync(){const e=this._pathTracer,t=this._lastSampleCounts,i=await e.getSampleCountsAsync();t.min=i.min,t.max=i.max,t.avg=i.avg;const r=this.getRenderTime()/1e3;return t.samplesPerSecond=r>0?t.avg/r:0,{...t}}get transmissiveBackground(){return this._transmissiveBackground}set transmissiveBackground(e){this._transmissiveBackground!==e&&(this._transmissiveBackground=e,this._pathTracer.setTransmissiveBackground(e))}get filterGlossyFactor(){return this._filterGlossyFactor}set filterGlossyFactor(e){this._filterGlossyFactor!==e&&(this._filterGlossyFactor=e,this._pathTracer.setFilterGlossy(e))}get multipleImportanceSampling(){return this._multipleImportanceSampling}set multipleImportanceSampling(e){this._multipleImportanceSampling!==e&&this.setMultipleImportanceSampling(e)}get clampDirect(){return this._clampDirect}set clampDirect(e){e=Math.max(0,e),this._clampDirect!==e&&(this._clampDirect=e,this._pathTracer.setClamping(e,this._clampIndirect))}get clampIndirect(){return this._clampIndirect}set clampIndirect(e){e=Math.max(0,e),this._clampIndirect!==e&&(this._clampIndirect=e,this._pathTracer.setClamping(this._clampDirect,e))}get target(){return this._pathTracer.outputTarget??null}get fadeState(){return this._fadeState}get lowResTarget(){return this._lowResTarget}get lowResMode(){return this._pathTracer.lowResMode}get compiling(){return this._pathTracer.compiling}get textureAtlas(){return this._bvhData.textureAtlas}useMegakernel(e){const t=this._pathTracer.maxSamples;this._pathTracer.dispose(),this._pathTracer=e?new Rd(this._renderer):new sa(this._renderer),this._pathTracer.maxSamples=t,this._timingCount=0,this._pathTracer.setBVHData(this._bvhData),this._pathTracer.setMaterial(this.material),this._pathTracer.setRandom(this.random),this._pathTracer.setMultipleImportanceSampling(this.multipleImportanceSampling),this._pathTracer.setTransmissiveBackground(this._transmissiveBackground),this._pathTracer.setFilterGlossy(this._filterGlossyFactor),this._pathTracer.setClamping(this._clampDirect,this._clampIndirect),this._pathTracer.setAccumulateAux(!!(this._denoiser&&this._denoiser.useAuxiliaryBuffers)),this.setCamera(this.camera),this._pathTracer.setEnvironment(this._environmentCache.texture),this._pathTracer.setBackground(this._backgroundCache.texture),this.updateEnvironment(),this.updateLights()}constructor(e){super(),this._renderer=e,this._timer=new pl,this._environmentCache=new fa(e,"environment"),this._backgroundCache=new fa(e,"background"),this._resetTime=-1,this._fadeState=0,this._lastSampleCounts={min:0,max:0,avg:0,samplesPerSecond:0},this._size=new G,this._blitQuad=new kt(new Kc),this._timingCount=0,this._frameTimeTotal=0,this._frameTimeCount=0,this._warnedTimestamps=!1,this._fullFrameBudget=null,this._lowResTarget=new qe(1,1),this._lowResTarget.type=bt,this._lowResTarget.generateMipmaps=!1,this._pathTracer=new sa(e),this._denoiser=null,this._upscaler=null,this._onDenoiserProgress=t=>this.dispatchEvent({type:"progress",stage:"denoising",progress:t.progress}),this._stage=rr,this._sceneRequest=0,this._pendingBVHs=new WeakMap,this.minSamples=1,this.renderDelay=16,this.fadeDuration=250,this.dynamicLowRes=!0,this.lowResScale=.1,this.adaptiveDynamicRes=!0,this.adaptiveFrameBudget=!0,this.targetFrameTime=16,this.renderScale=1,this.synchronizeRenderSize=!0,this.renderToCanvas=!0,this.asyncCompile=!1,this.generateMissingAttributes=!0,this.commonAttributes=["normal","tangent"],this.stableNoise=!0,this.pause=!1,this.filterGlossyFactor=1,this._clampDirect=0,this._clampIndirect=10,this.multipleImportanceSampling=!0,this.transmissiveBackground=qs,this.random=ld,this.material=new bf,this._invViewProjectionMatrix=B(new W),this._cameraRayFnHandle=null,this._BVHWorker=null,this._lastCompleteCheck=0,this._wasComplete=!1,this.setMaterial(this.material),this.setRandom(this.random),this.setScene(new ml,new Da)}setMultipleImportanceSampling(e){this._multipleImportanceSampling=e,this._pathTracer.setMultipleImportanceSampling(e),this.reset()}setDenoiser(e){this._denoiser?.reset(),this._denoiser?.removeEventListener("progress",this._onDenoiserProgress),this._denoiser=e,e&&(e.init(this._renderer),e.addEventListener("progress",this._onDenoiserProgress)),this._pathTracer.setAccumulateAux(!!(e&&e.useAuxiliaryBuffers)),this.reset()}setUpscaler(e){this._upscaler=e,e&&e.init(this._renderer)}setScene(e,t){e.updateMatrixWorld(!0),t.updateMatrixWorld(),e.traverse(r=>{this.generateMissingAttributes&&r.geometry?.isBufferGeometry&&af(r.geometry,this.commonAttributes),r.isSkinnedMesh?(r.boundsTree?r.boundsTree.refit():r.boundsTree=new pi(r,{strategy:Ot,targetLeafSize:5,indirect:!0}),r.boundingBox===null&&(r.boundingBox=new ve),r.boundsTree.getBoundingBox(r.boundingBox)):r.isMesh&&(r.geometry.boundsTree||(r.geometry.boundsTree=new gt(r.geometry,da)))});const i=new tf(e);i.update(),i.textureAtlas.setTextures(this._renderer,i.textures),this._bvhData&&(this._bvhData.dispose(),this._bvhData.textureAtlas.dispose()),this.scene=e,this._bvhData=i,this._pathTracer.setBVHData(i),this.setCamera(t),this.updateEnvironment(),this.updateLights()}setBVHWorker(e){this._BVHWorker=e}async setSceneAsync(e,t){const i=this._BVHWorker;if(!i)throw new Error('WebGPUPathTracer: "setBVHWorker" must be called before "setSceneAsync" can be called.');this._sceneRequest++;const r=this._sceneRequest,n=this._pendingBVHs,s=new Set,o=new Set;e.traverse(p=>{if(p.isMesh&&!p.isSkinnedMesh&&!p.geometry.boundsTree){const{geometry:h}=p;if(h.attributes.position.isInterleavedBufferAttribute||h.index&&h.index.isInterleavedBufferAttribute)return;n.has(h)?o.add(n.get(h)):s.add(h)}});const l=Array.from(s),d=p=>(p.index?p.index.count:p.attributes.position.count)/3,c=l.reduce((p,h)=>p+d(h),0);let u=0;const f=[];for(let p=0,h=Math.min(If,l.length);p<h;p++)f.push(new i);this._setStage(ts),this._denoiser?.reset();try{await Promise.all([...o,...f.map(async p=>{for(;l.length>0;){const h=l.shift(),y=d(h);let x=0;const b=v=>{u+=(v-x)*y,x=v,r===this._sceneRequest&&this.dispatchEvent({type:"progress",stage:"building",progress:u/c})},m=_f(p,h,{...da,onProgress:b});n.set(h,m);try{h.boundsTree=await m,b(1)}finally{n.delete(h)}}})])}finally{f.forEach(p=>p.dispose()),r===this._sceneRequest&&this._setStage(is)}r===this._sceneRequest&&this.setScene(e,t)}getMaterial(){return this.material}setMaterial(e){this.material=e,this._pathTracer.setMaterial(e),this.reset()}setRandom(e){this.random=e,this._pathTracer.setRandom(e),this.reset()}setCamera(e){if(this.camera=e,e.getCameraRayFn)this._cameraRayFnHandle=e.getCameraRayFn();else{const t=this._invViewProjectionMatrix;this._cameraRayFnHandle={update:()=>(e.coordinateSystem=ws,e.updateMatrixWorld(),(e.isOrthographicCamera||e.isPerspectiveCamera)&&e.updateProjectionMatrix(),t.value.multiplyMatrices(e.matrixWorld,e.projectionMatrixInverse),!1),fn:I`
+		`,this._bsdfEvalPdfNode}}const Xe=new G,ri=new Ia,wf=250,Sf=16,ca=1.15,ua=2,Tf=4096,da={strategy:Ot,targetLeafSize:5},If=4,ts=0,rs=1,ii=2;async function _f(a,e,t){const r=d=>typeof SharedArrayBuffer<"u"&&d.buffer instanceof SharedArrayBuffer?d:d.slice(),{position:i}=e.attributes,{index:n}=e,s=i.array,o=n?n.array:null;i.array=r(s),n&&(n.array=r(o));const l=await a.generate(e,t);return i.array=s,n&&(o.set(n.array),n.array=o,n.needsUpdate=!0),l}class fa{constructor(e,t){this.key=t,this.renderer=e,this.texture=null,this.hash=null;const r=new ge(new Uint8Array([255,255,255,255]),1,1);r.minFilter=se,r.magFilter=se,this.colorTex=r}dispose(){this.colorTex.dispose(),this.texture?.dispose()}setFromScene(e){const{renderer:t,key:r,colorTex:i}=this;let n=e[r],s="";if(n)n.isColor?(i.image.data[0]=n.r*255,i.image.data[1]=n.g*255,i.image.data[2]=n.b*255,i.image.data[3]=255,n=i,s=i.image.data.join(),i.needsUpdate=s!==this.hash):n.isCubeTexture?(s=null,n=new Yd(t).generate(n)):(s=n.uuid+"_"+n.version,s!==this.hash&&(n=n.clone(),n.minFilter=se,n.magFilter=se));else{const o=t.getClearAlpha();t.getClearColor(ri),i.image.data[0]=ri.r*255,i.image.data[1]=ri.g*255,i.image.data[2]=ri.b*255,i.image.data[3]=o*255,n=i,s=i.image.data.join(),i.needsUpdate=s!==this.hash}if(s===null)return this.texture?.dispose(),this.texture=n,this.hash=null,!0;{const o=s!==this.hash;return o&&(this.texture?.dispose(),this.texture=n,this.hash=s),o}}}class Ef extends Ca{get maxBounces(){return this._pathTracer.maxBounces}set maxBounces(e){this._pathTracer.maxBounces=e,this.reset()}get frameBudget(){return this._pathTracer.frameBudget}set frameBudget(e){this._pathTracer.frameBudget=e}get frameTime(){return this._pathTracer.timing.frameTime}get maxTransparentBounces(){return this._pathTracer.maxTransparentBounces}set maxTransparentBounces(e){this._pathTracer.maxTransparentBounces=e,this.reset()}get maxSubsurfaceBounces(){return this._pathTracer.maxSubsurfaceBounces}set maxSubsurfaceBounces(e){this._pathTracer.maxSubsurfaceBounces=e,this.reset()}get maxSamples(){return this._pathTracer.maxSamples}set maxSamples(e){this._pathTracer.maxSamples=e,this._denoiser?.reset()}get complete(){const e=this.maxSamples,t=this._denoiser;return e>0&&this._lastSampleCounts.min>=e&&(!t||t.complete)}async getSampleCountsAsync(){const e=this._pathTracer,t=this._lastSampleCounts,r=await e.getSampleCountsAsync();t.min=r.min,t.max=r.max,t.avg=r.avg;const i=this.getRenderTime()/1e3;return t.samplesPerSecond=i>0?t.avg/i:0,{...t}}get transmissiveBackground(){return this._transmissiveBackground}set transmissiveBackground(e){this._transmissiveBackground!==e&&(this._transmissiveBackground=e,this._pathTracer.setTransmissiveBackground(e))}get filterGlossyFactor(){return this._filterGlossyFactor}set filterGlossyFactor(e){this._filterGlossyFactor!==e&&(this._filterGlossyFactor=e,this._pathTracer.setFilterGlossy(e))}get multipleImportanceSampling(){return this._multipleImportanceSampling}set multipleImportanceSampling(e){this._multipleImportanceSampling!==e&&this.setMultipleImportanceSampling(e)}get clampDirect(){return this._clampDirect}set clampDirect(e){e=Math.max(0,e),this._clampDirect!==e&&(this._clampDirect=e,this._pathTracer.setClamping(e,this._clampIndirect))}get clampIndirect(){return this._clampIndirect}set clampIndirect(e){e=Math.max(0,e),this._clampIndirect!==e&&(this._clampIndirect=e,this._pathTracer.setClamping(this._clampDirect,e))}get target(){return this._pathTracer.outputTarget??null}get fadeState(){return this._fadeState}get lowResTarget(){return this._lowResTarget}get lowResMode(){return this._pathTracer.lowResMode}get compiling(){return this._pathTracer.compiling}get textureAtlas(){return this._bvhData.textureAtlas}useMegakernel(e){const t=this._pathTracer.maxSamples;this._pathTracer.dispose(),this._pathTracer=e?new Rd(this._renderer):new sa(this._renderer),this._pathTracer.maxSamples=t,this._timingCount=0,this._pathTracer.setBVHData(this._bvhData),this._pathTracer.setMaterial(this.material),this._pathTracer.setRandom(this.random),this._pathTracer.setMultipleImportanceSampling(this.multipleImportanceSampling),this._pathTracer.setTransmissiveBackground(this._transmissiveBackground),this._pathTracer.setFilterGlossy(this._filterGlossyFactor),this._pathTracer.setClamping(this._clampDirect,this._clampIndirect),this._pathTracer.setAccumulateAux(!!(this._denoiser&&this._denoiser.useAuxiliaryBuffers)),this.setCamera(this.camera),this._pathTracer.setEnvironment(this._environmentCache.texture),this._pathTracer.setBackground(this._backgroundCache.texture),this.updateEnvironment(),this.updateLights()}constructor(e){super(),this._renderer=e,this._timer=new pl,this._environmentCache=new fa(e,"environment"),this._backgroundCache=new fa(e,"background"),this._resetTime=-1,this._fadeState=0,this._lastSampleCounts={min:0,max:0,avg:0,samplesPerSecond:0},this._size=new G,this._blitQuad=new kt(new Kc),this._timingCount=0,this._frameTimeTotal=0,this._frameTimeCount=0,this._warnedTimestamps=!1,this._fullFrameBudget=null,this._lowResTarget=new qe(1,1),this._lowResTarget.type=bt,this._lowResTarget.generateMipmaps=!1,this._pathTracer=new sa(e),this._denoiser=null,this._upscaler=null,this._onDenoiserProgress=t=>this.dispatchEvent({type:"progress",stage:"denoising",progress:t.progress}),this._stage=ii,this._sceneRequest=0,this._pendingBVHs=new WeakMap,this.minSamples=1,this.renderDelay=16,this.fadeDuration=250,this.dynamicLowRes=!0,this.lowResScale=.1,this.adaptiveDynamicRes=!0,this.adaptiveFrameBudget=!0,this.targetFrameTime=16,this.renderScale=1,this.synchronizeRenderSize=!0,this.renderToCanvas=!0,this.asyncCompile=!1,this.generateMissingAttributes=!0,this.commonAttributes=["normal","tangent"],this.stableNoise=!0,this.pause=!1,this.filterGlossyFactor=1,this._clampDirect=0,this._clampIndirect=10,this.multipleImportanceSampling=!0,this.transmissiveBackground=qs,this.random=ld,this.material=new bf,this._invViewProjectionMatrix=B(new W),this._cameraRayFnHandle=null,this._BVHWorker=null,this._lastCompleteCheck=0,this._wasComplete=!1,this.setMaterial(this.material),this.setRandom(this.random),this.setScene(new ml,new Da)}setMultipleImportanceSampling(e){this._multipleImportanceSampling=e,this._pathTracer.setMultipleImportanceSampling(e),this.reset()}setDenoiser(e){this._denoiser?.reset(),this._denoiser?.removeEventListener("progress",this._onDenoiserProgress),this._denoiser=e,e&&(e.init(this._renderer),e.addEventListener("progress",this._onDenoiserProgress)),this._pathTracer.setAccumulateAux(!!(e&&e.useAuxiliaryBuffers)),this.reset()}setUpscaler(e){this._upscaler=e,e&&e.init(this._renderer)}setScene(e,t){e.updateMatrixWorld(!0),t.updateMatrixWorld(),e.traverse(i=>{this.generateMissingAttributes&&i.geometry?.isBufferGeometry&&af(i.geometry,this.commonAttributes),i.isSkinnedMesh?(i.boundsTree?i.boundsTree.refit():i.boundsTree=new pr(i,{strategy:Ot,targetLeafSize:5,indirect:!0}),i.boundingBox===null&&(i.boundingBox=new ve),i.boundsTree.getBoundingBox(i.boundingBox)):i.isMesh&&(i.geometry.boundsTree||(i.geometry.boundsTree=new gt(i.geometry,da)))});const r=new tf(e);r.update(),r.textureAtlas.setTextures(this._renderer,r.textures),this._bvhData&&(this._bvhData.dispose(),this._bvhData.textureAtlas.dispose()),this.scene=e,this._bvhData=r,this._pathTracer.setBVHData(r),this.setCamera(t),this.updateEnvironment(),this.updateLights()}setBVHWorker(e){this._BVHWorker=e}async setSceneAsync(e,t){const r=this._BVHWorker;if(!r)throw new Error('WebGPUPathTracer: "setBVHWorker" must be called before "setSceneAsync" can be called.');this._sceneRequest++;const i=this._sceneRequest,n=this._pendingBVHs,s=new Set,o=new Set;e.traverse(p=>{if(p.isMesh&&!p.isSkinnedMesh&&!p.geometry.boundsTree){const{geometry:h}=p;if(h.attributes.position.isInterleavedBufferAttribute||h.index&&h.index.isInterleavedBufferAttribute)return;n.has(h)?o.add(n.get(h)):s.add(h)}});const l=Array.from(s),d=p=>(p.index?p.index.count:p.attributes.position.count)/3,c=l.reduce((p,h)=>p+d(h),0);let u=0;const f=[];for(let p=0,h=Math.min(If,l.length);p<h;p++)f.push(new r);this._setStage(ts),this._denoiser?.reset();try{await Promise.all([...o,...f.map(async p=>{for(;l.length>0;){const h=l.shift(),y=d(h);let x=0;const b=v=>{u+=(v-x)*y,x=v,i===this._sceneRequest&&this.dispatchEvent({type:"progress",stage:"building",progress:u/c})},m=_f(p,h,{...da,onProgress:b});n.set(h,m);try{h.boundsTree=await m,b(1)}finally{n.delete(h)}}})])}finally{f.forEach(p=>p.dispose()),i===this._sceneRequest&&this._setStage(rs)}i===this._sceneRequest&&this.setScene(e,t)}getMaterial(){return this.material}setMaterial(e){this.material=e,this._pathTracer.setMaterial(e),this.reset()}setRandom(e){this.random=e,this._pathTracer.setRandom(e),this.reset()}setCamera(e){if(this.camera=e,e.getCameraRayFn)this._cameraRayFnHandle=e.getCameraRayFn();else{const t=this._invViewProjectionMatrix;this._cameraRayFnHandle={update:()=>(e.coordinateSystem=ws,e.updateMatrixWorld(),(e.isOrthographicCamera||e.isPerspectiveCamera)&&e.updateProjectionMatrix(),t.value.multiplyMatrices(e.matrixWorld,e.projectionMatrixInverse),!1),fn:I`
 					fn getCameraRay( uv: vec2f, resolution: vec2f, ray: ptr<function, ${k}> ) -> bool {
 
 						let ndc = uv * 2.0 - vec2f( 1.0 );
-						*ray = ${br}( ndc, ${t} );
+						*ray = ${bi}( ndc, ${t} );
 						return true;
 
 					}
-				`}}this._bvhData.fns.getCameraRay=this._cameraRayFnHandle.fn,this._cameraRayFnHandle.update(),this._pathTracer.rebuild(),this.reset()}updateMaterials(){const{_bvhData:e,_renderer:t}=this;e.updateMaterials(),e.textureAtlas.setTextures(t,e.textures),this.reset()}updateTransforms(){this.scene.updateMatrixWorld(!0),this._bvhData.updateTransforms(),this.reset()}updateCamera(){const{_cameraRayFnHandle:e,_pathTracer:t}=this;e.update()&&t.rebuild(),this.reset()}updateEnvironment(){const{_pathTracer:e,scene:t,_environmentCache:i,_backgroundCache:r}=this;i.setFromScene(t)&&e.setEnvironment(i.texture),r.setFromScene(t)&&e.setBackground(r.texture),e.setEnvironmentParams(t.environmentIntensity,t.environmentRotation),e.setBackgroundParams(t.backgroundIntensity,t.backgroundRotation,t.backgroundBlurriness),this.reset()}updateLights(){const{_pathTracer:e,scene:t}=this,i=ef(t);e.setLights(i),this.reset()}setSize(e,t){(this._size.x!==e||this._size.y!==t)&&(this._size.set(e,t),this.reset())}reset(){this._pathTracer.reset(),this._denoiser?.reset(),this._resetTime=-1,this._fadeState=0,this._timer.update(),this._lastSampleCounts={min:0,max:0,avg:0,samplesPerSecond:0},this._lastCompleteCheck=0,this._wasComplete=!1,this.stableNoise&&this._pathTracer.resetSeed(),this._fullFrameBudget!==null&&(this.frameBudget=this._fullFrameBudget,this._fullFrameBudget=null)}_setStage(e){this._stage!==e&&(this._stage=e,e===ts?this.dispatchEvent({type:"progress",stage:"building",progress:0}):e===is?this.dispatchEvent({type:"progress",stage:"compiling",progress:null}):this._dispatchRenderProgress({min:0,max:0,avg:0,samplesPerSecond:0}))}_measureSamples(){const e=this._lastSampleCounts;this.getSampleCountsAsync().then(t=>{if(e===this._lastSampleCounts&&this._stage===rr){const{maxSamples:i}=this;this._fullFrameBudget===null&&i>0&&t.max>=i&&(this._fullFrameBudget=this.frameBudget),this._dispatchRenderProgress(t)}})}_dispatchRenderProgress(e){const{maxSamples:t}=this,i=t>0?Math.min(e.avg/t,1):null;this.dispatchEvent({type:"progress",stage:"rendering",progress:i,samples:e})}_readTiming(){const{timing:e}=this._pathTracer,{trackTimestamp:t}=this._renderer.backend;if(this.adaptiveFrameBudget&&!t&&!this._warnedTimestamps&&(console.warn('WebGPUPathTracer: "adaptiveFrameBudget" needs timestamp queries. Create the renderer with "trackTimestamp: true" on a device that supports them.'),this._warnedTimestamps=!0),e.count===this._timingCount)return;this._timingCount=e.count;const{frameBudget:i}=e;if(!this.adaptiveFrameBudget||i!==this.frameBudget){this._frameTimeTotal=0,this._frameTimeCount=0;return}if(this._frameTimeTotal+=e.frameTime,this._frameTimeCount++,this._frameTimeCount<Sf)return;const{targetFrameTime:r}=this,n=this._frameTimeTotal/this._frameTimeCount;this._frameTimeTotal=0,this._frameTimeCount=0;const s=n/r;if(s<ca&&s>1/ca)return;const o=i*r/n,l=ss.clamp(o,i/ua,i*ua);this.frameBudget=Math.max(Math.round(l),Tf)}renderSample(){const e=this._renderer,t=this._size,i=this._blitQuad,r=this._pathTracer,n=this._lowResTarget,s=this._timer,{renderDelay:o,dynamicLowRes:l,synchronizeRenderSize:d,renderScale:c,adaptiveDynamicRes:u,minSamples:f,maxSamples:p}=this;if(s.update(),!this._renderer._initialized)return;this.material.initialized||(this.material.init(e),this.material.initialized=!0);let h=1e3*s.getDelta();const y=this._resetTime===-1;y&&(this._resetTime=0,h=0),this._resetTime+=h;const x=e.getRenderTarget(),b=e.autoClear;if(d){e.getDrawingBufferSize(Xe);const _=Math.floor(c*Xe.x),P=Math.floor(c*Xe.y);this.setSize(_,P)}let{width:m,height:v}=t;const g=this._resetTime<o||y&&l&&f!==0;if(g){const _=Math.min(Math.sqrt(r.getPreviewPixelBudget()/(m*v)),1);u&&(this.lowResScale=_);const P=Math.min(this.lowResScale,_);m=Math.max(1,Math.floor(P*m)),v=Math.max(1,Math.floor(P*v))}r.getSize(Xe),!g&&r.lowResMode&&l&&(n.setSize(Xe.x,Xe.y),e.copyTextureToTexture(r.outputTarget,n)),(Xe.x!==m||Xe.y!==v)&&r.setSize(m,v);const w=p>0&&this._lastSampleCounts.min>=p;if(!this.pause&&!w&&this._stage>ts&&(!g||g&&l)&&(r.lowResMode=g,r.asyncCompile=this.asyncCompile,r.update(),this._readTiming(),this._setStage(r.compiling?is:rr)),this._stage<rr){this._resetTime=-1;return}const R=this._denoiser,S=this._upscaler,C=!!R&&!R.complete&&!R.running&&p>0;g||(!w&&this._fadeState<1&&f>0?this._measureSamples():!w&&this._resetTime-this._lastCompleteCheck>=wf&&(this._lastCompleteCheck=this._resetTime,this._measureSamples()),this._lastSampleCounts.avg>=f&&(this._fadeState+=h/this.fadeDuration,this._fadeState=Math.min(1,this._fadeState)||1));const D=g&&l?1:this._fadeState;let T=r.outputTarget;R&&!g&&(C&&this._lastSampleCounts.min>=p&&R.update(r.outputTarget,r.auxTarget),T=R.texture??T),this.renderToCanvas&&(S&&!g&&(T=S.upscale(T,this.camera),e.setRenderTarget(x)),e.autoClear=l?!0:D===1,i.material.transition=l?D:1,i.material.opacity=l?1:D,i.material.fromTexture=n,i.material.texture=T,i.render(e)),e.autoClear=b,e.setRenderTarget(x);const $=this.complete;$&&!this._wasComplete&&this.dispatchEvent({type:"complete"}),this._wasComplete=$}renderDebugBounds(e={}){const{displayTLAS:t=!0,displayBLAS:i=!0,stopAtSurface:r=!1,saturationCount:n=64}=e,s=this._renderer,o=this.camera;if(!s._initialized)return;o.updateMatrixWorld(),(this._debugBoundsQuad===void 0||this._debugBoundsData!==this._bvhData)&&this._buildDebugBoundsQuad();const l=this._debugBoundsUniforms;l.cameraToModelMatrix.value.copy(o.matrixWorld),l.inverseProjectionMatrix.value.copy(o.projectionMatrixInverse),l.displayTLAS.value=t?1:0,l.displayBLAS.value=i?1:0,l.stopAtSurface.value=r?1:0,l.saturationCount.value=n;const d=s.getRenderTarget(),c=s.autoClear,u=s.toneMapping;s.setRenderTarget(null),s.autoClear=!0,s.toneMapping=di,this._debugBoundsQuad.render(s),s.setRenderTarget(d),s.autoClear=c,s.toneMapping=u}_buildDebugBoundsQuad(){const e=this._bvhData,t=Xc(e),i=new Si;i.colorNode=t(Ti(Gt())),this._debugBoundsQuad===void 0?this._debugBoundsQuad=new kt(i):(this._debugBoundsQuad.material.dispose(),this._debugBoundsQuad.material=i),this._debugBoundsUniforms=t.uniforms,this._debugBoundsData=e}renderTextureAtlas(e=0){const t=this._renderer;this._atlasDebugQuad||(this._atlasDebugQuad=new kt(new rf));const i=this._atlasDebugQuad;i.material.texture=this.textureAtlas.texture,i.material.layer=e,t.setRenderTarget(null),i.render(t)}renderSampleDensity(){const e=this._renderer;if(!e._initialized)return;this.getSampleCountsAsync(),this._sampleDensityQuad||(this._sampleDensityQuad=new kt(new sf));const t=e.toneMapping;e.toneMapping=di;const i=this._sampleDensityQuad;i.material.texture=this._pathTracer.sampleCountTarget,i.material.minCount=this._lastSampleCounts.min,i.material.maxCount=this._lastSampleCounts.max,e.setRenderTarget(null),i.render(e),e.toneMapping=t}renderAuxBuffer(e="albedo"){const t=this._renderer,i=this._pathTracer;if(!t._initialized||!i.auxTarget)return;this._auxDebugQuad||(this._auxDebugQuad=new kt(new nf));const r=t.toneMapping;t.toneMapping=di;const n=this._auxDebugQuad;n.material.texture=i.auxTarget,n.material.showNormal=e==="normal",t.setRenderTarget(null),n.render(t),t.toneMapping=r}dispose(){this._pathTracer.dispose(),this._denoiser?.dispose(),this._upscaler?.dispose(),this._bvhData.dispose(),this._bvhData.textureAtlas.dispose(),this._environmentCache.dispose(),this._backgroundCache.dispose(),this._lowResTarget.dispose(),this._blitQuad.dispose(),this._blitQuad.material.dispose(),this._atlasDebugQuad?.dispose(),this._atlasDebugQuad?.material.dispose(),this._sampleDensityQuad?.dispose(),this._sampleDensityQuad?.material.dispose(),this._auxDebugQuad?.dispose(),this._auxDebugQuad?.material.dispose(),this._debugBoundsQuad!==void 0&&(this._debugBoundsQuad.dispose(),this._debugBoundsQuad.material.dispose())}getRenderTime(){return this._resetTime}}const ha=Math.PI,Rf=yl(([a])=>{const e=a.x.sub(.5),t=Le(1).sub(a.y),i=e.mul(2*ha),r=t.mul(ha),n=Zs(r);return vl(n.mul(Js(i)),Js(r),n.mul(Zs(i)))});class kf{constructor(e){this.renderer=e,this._blur=B(0),this._pmremNode=gl(null,Rf(Gt()),this._blur);const t=new xl;t.colorNode=this._pmremNode,t.toneMapped=!1,this.quad=new Ta(t),this.renderTarget=new Sa(1,1,{type:bt,format:Ce,depthBuffer:!1})}dispose(){this._pmremNode.value=null,this._pmremNode.dispose(),this.quad.material.dispose(),this.renderTarget.dispose()}async generate(e,t=0,i=null,r=null){const{renderTarget:n,quad:s,renderer:o}=this,l=e.clone();i=i??l.image.width,r=r??l.image.height,n.setSize(i,r),n.texture.colorSpace=l.colorSpace,this._pmremNode.value=l,this._blur.value=t;const d=o.getRenderTarget();o.setRenderTarget(n),s.render(o),o.setRenderTarget(d);const c=await o.readRenderTargetPixelsAsync(n,0,0,i,r),u=new Uint16Array(i*r*4);for(let p=0,h=u.length;p<h;p++)u[p]=Be.toHalfFloat(c[p]);const f=new ge(u,i,r,Ce,fe);return f.minFilter=l.minFilter,f.magFilter=l.magFilter,f.wrapS=l.wrapS,f.wrapT=l.wrapT,f.mapping=Ra,f.colorSpace=l.colorSpace,f.needsUpdate=!0,this._pmremNode.value=null,l.dispose(),f}}class Cf extends te{constructor(){const e={auxTarget:de(qt()).toReadOnly(),albedoTarget:de(dr()).toWriteOnly(),normalTarget:de(dr()).toWriteOnly(),globalId:ae},t=I`
+				`}}this._bvhData.fns.getCameraRay=this._cameraRayFnHandle.fn,this._cameraRayFnHandle.update(),this._pathTracer.rebuild(),this.reset()}updateMaterials(){const{_bvhData:e,_renderer:t}=this;e.updateMaterials(),e.textureAtlas.setTextures(t,e.textures),this.reset()}updateTransforms(){this.scene.updateMatrixWorld(!0),this._bvhData.updateTransforms(),this.reset()}updateCamera(){const{_cameraRayFnHandle:e,_pathTracer:t}=this;e.update()&&t.rebuild(),this.reset()}updateEnvironment(){const{_pathTracer:e,scene:t,_environmentCache:r,_backgroundCache:i}=this;r.setFromScene(t)&&e.setEnvironment(r.texture),i.setFromScene(t)&&e.setBackground(i.texture),e.setEnvironmentParams(t.environmentIntensity,t.environmentRotation),e.setBackgroundParams(t.backgroundIntensity,t.backgroundRotation,t.backgroundBlurriness),this.reset()}updateLights(){const{_pathTracer:e,scene:t}=this,r=ef(t);e.setLights(r),this.reset()}setSize(e,t){(this._size.x!==e||this._size.y!==t)&&(this._size.set(e,t),this.reset())}reset(){this._pathTracer.reset(),this._denoiser?.reset(),this._resetTime=-1,this._fadeState=0,this._timer.update(),this._lastSampleCounts={min:0,max:0,avg:0,samplesPerSecond:0},this._lastCompleteCheck=0,this._wasComplete=!1,this.stableNoise&&this._pathTracer.resetSeed(),this._fullFrameBudget!==null&&(this.frameBudget=this._fullFrameBudget,this._fullFrameBudget=null)}_setStage(e){this._stage!==e&&(this._stage=e,e===ts?this.dispatchEvent({type:"progress",stage:"building",progress:0}):e===rs?this.dispatchEvent({type:"progress",stage:"compiling",progress:null}):this._dispatchRenderProgress({min:0,max:0,avg:0,samplesPerSecond:0}))}_measureSamples(){const e=this._lastSampleCounts;this.getSampleCountsAsync().then(t=>{if(e===this._lastSampleCounts&&this._stage===ii){const{maxSamples:r}=this;this._fullFrameBudget===null&&r>0&&t.max>=r&&(this._fullFrameBudget=this.frameBudget),this._dispatchRenderProgress(t)}})}_dispatchRenderProgress(e){const{maxSamples:t}=this,r=t>0?Math.min(e.avg/t,1):null;this.dispatchEvent({type:"progress",stage:"rendering",progress:r,samples:e})}_readTiming(){const{timing:e}=this._pathTracer,{trackTimestamp:t}=this._renderer.backend;if(this.adaptiveFrameBudget&&!t&&!this._warnedTimestamps&&(console.warn('WebGPUPathTracer: "adaptiveFrameBudget" needs timestamp queries. Create the renderer with "trackTimestamp: true" on a device that supports them.'),this._warnedTimestamps=!0),e.count===this._timingCount)return;this._timingCount=e.count;const{frameBudget:r}=e;if(!this.adaptiveFrameBudget||r!==this.frameBudget){this._frameTimeTotal=0,this._frameTimeCount=0;return}if(this._frameTimeTotal+=e.frameTime,this._frameTimeCount++,this._frameTimeCount<Sf)return;const{targetFrameTime:i}=this,n=this._frameTimeTotal/this._frameTimeCount;this._frameTimeTotal=0,this._frameTimeCount=0;const s=n/i;if(s<ca&&s>1/ca)return;const o=r*i/n,l=ss.clamp(o,r/ua,r*ua);this.frameBudget=Math.max(Math.round(l),Tf)}renderSample(){const e=this._renderer,t=this._size,r=this._blitQuad,i=this._pathTracer,n=this._lowResTarget,s=this._timer,{renderDelay:o,dynamicLowRes:l,synchronizeRenderSize:d,renderScale:c,adaptiveDynamicRes:u,minSamples:f,maxSamples:p}=this;if(s.update(),!this._renderer._initialized)return;this.material.initialized||(this.material.init(e),this.material.initialized=!0);let h=1e3*s.getDelta();const y=this._resetTime===-1;y&&(this._resetTime=0,h=0),this._resetTime+=h;const x=e.getRenderTarget(),b=e.autoClear;if(d){e.getDrawingBufferSize(Xe);const _=Math.floor(c*Xe.x),P=Math.floor(c*Xe.y);this.setSize(_,P)}let{width:m,height:v}=t;const g=this._resetTime<o||y&&l&&f!==0;if(g){const _=Math.min(Math.sqrt(i.getPreviewPixelBudget()/(m*v)),1);u&&(this.lowResScale=_);const P=Math.min(this.lowResScale,_);m=Math.max(1,Math.floor(P*m)),v=Math.max(1,Math.floor(P*v))}i.getSize(Xe),!g&&i.lowResMode&&l&&(n.setSize(Xe.x,Xe.y),e.copyTextureToTexture(i.outputTarget,n)),(Xe.x!==m||Xe.y!==v)&&i.setSize(m,v);const w=p>0&&this._lastSampleCounts.min>=p;if(!this.pause&&!w&&this._stage>ts&&(!g||g&&l)&&(i.lowResMode=g,i.asyncCompile=this.asyncCompile,i.update(),this._readTiming(),this._setStage(i.compiling?rs:ii)),this._stage<ii){this._resetTime=-1;return}const R=this._denoiser,S=this._upscaler,C=!!R&&!R.complete&&!R.running&&p>0;g||(!w&&this._fadeState<1&&f>0?this._measureSamples():!w&&this._resetTime-this._lastCompleteCheck>=wf&&(this._lastCompleteCheck=this._resetTime,this._measureSamples()),this._lastSampleCounts.avg>=f&&(this._fadeState+=h/this.fadeDuration,this._fadeState=Math.min(1,this._fadeState)||1));const D=g&&l?1:this._fadeState;let T=i.outputTarget;R&&!g&&(C&&this._lastSampleCounts.min>=p&&R.update(i.outputTarget,i.auxTarget),T=R.texture??T),this.renderToCanvas&&(S&&!g&&(T=S.upscale(T,this.camera),e.setRenderTarget(x)),e.autoClear=l?!0:D===1,r.material.transition=l?D:1,r.material.opacity=l?1:D,r.material.fromTexture=n,r.material.texture=T,r.render(e)),e.autoClear=b,e.setRenderTarget(x);const $=this.complete;$&&!this._wasComplete&&this.dispatchEvent({type:"complete"}),this._wasComplete=$}renderDebugBounds(e={}){const{displayTLAS:t=!0,displayBLAS:r=!0,stopAtSurface:i=!1,saturationCount:n=64}=e,s=this._renderer,o=this.camera;if(!s._initialized)return;o.updateMatrixWorld(),(this._debugBoundsQuad===void 0||this._debugBoundsData!==this._bvhData)&&this._buildDebugBoundsQuad();const l=this._debugBoundsUniforms;l.cameraToModelMatrix.value.copy(o.matrixWorld),l.inverseProjectionMatrix.value.copy(o.projectionMatrixInverse),l.displayTLAS.value=t?1:0,l.displayBLAS.value=r?1:0,l.stopAtSurface.value=i?1:0,l.saturationCount.value=n;const d=s.getRenderTarget(),c=s.autoClear,u=s.toneMapping;s.setRenderTarget(null),s.autoClear=!0,s.toneMapping=dr,this._debugBoundsQuad.render(s),s.setRenderTarget(d),s.autoClear=c,s.toneMapping=u}_buildDebugBoundsQuad(){const e=this._bvhData,t=Xc(e),r=new Sr;r.colorNode=t(Tr(Gt())),this._debugBoundsQuad===void 0?this._debugBoundsQuad=new kt(r):(this._debugBoundsQuad.material.dispose(),this._debugBoundsQuad.material=r),this._debugBoundsUniforms=t.uniforms,this._debugBoundsData=e}renderTextureAtlas(e=0){const t=this._renderer;this._atlasDebugQuad||(this._atlasDebugQuad=new kt(new rf));const r=this._atlasDebugQuad;r.material.texture=this.textureAtlas.texture,r.material.layer=e,t.setRenderTarget(null),r.render(t)}renderSampleDensity(){const e=this._renderer;if(!e._initialized)return;this.getSampleCountsAsync(),this._sampleDensityQuad||(this._sampleDensityQuad=new kt(new sf));const t=e.toneMapping;e.toneMapping=dr;const r=this._sampleDensityQuad;r.material.texture=this._pathTracer.sampleCountTarget,r.material.minCount=this._lastSampleCounts.min,r.material.maxCount=this._lastSampleCounts.max,e.setRenderTarget(null),r.render(e),e.toneMapping=t}renderAuxBuffer(e="albedo"){const t=this._renderer,r=this._pathTracer;if(!t._initialized||!r.auxTarget)return;this._auxDebugQuad||(this._auxDebugQuad=new kt(new nf));const i=t.toneMapping;t.toneMapping=dr;const n=this._auxDebugQuad;n.material.texture=r.auxTarget,n.material.showNormal=e==="normal",t.setRenderTarget(null),n.render(t),t.toneMapping=i}dispose(){this._pathTracer.dispose(),this._denoiser?.dispose(),this._upscaler?.dispose(),this._bvhData.dispose(),this._bvhData.textureAtlas.dispose(),this._environmentCache.dispose(),this._backgroundCache.dispose(),this._lowResTarget.dispose(),this._blitQuad.dispose(),this._blitQuad.material.dispose(),this._atlasDebugQuad?.dispose(),this._atlasDebugQuad?.material.dispose(),this._sampleDensityQuad?.dispose(),this._sampleDensityQuad?.material.dispose(),this._auxDebugQuad?.dispose(),this._auxDebugQuad?.material.dispose(),this._debugBoundsQuad!==void 0&&(this._debugBoundsQuad.dispose(),this._debugBoundsQuad.material.dispose())}getRenderTime(){return this._resetTime}}const ha=Math.PI,Rf=yl(([a])=>{const e=a.x.sub(.5),t=Le(1).sub(a.y),r=e.mul(2*ha),i=t.mul(ha),n=Zs(i);return vl(n.mul(Js(r)),Js(i),n.mul(Zs(r)))});class kf{constructor(e){this.renderer=e,this._blur=B(0),this._pmremNode=gl(null,Rf(Gt()),this._blur);const t=new xl;t.colorNode=this._pmremNode,t.toneMapped=!1,this.quad=new Ta(t),this.renderTarget=new Sa(1,1,{type:bt,format:Ce,depthBuffer:!1})}dispose(){this._pmremNode.value=null,this._pmremNode.dispose(),this.quad.material.dispose(),this.renderTarget.dispose()}async generate(e,t=0,r=null,i=null){const{renderTarget:n,quad:s,renderer:o}=this,l=e.clone();r=r??l.image.width,i=i??l.image.height,n.setSize(r,i),n.texture.colorSpace=l.colorSpace,this._pmremNode.value=l,this._blur.value=t;const d=o.getRenderTarget();o.setRenderTarget(n),s.render(o),o.setRenderTarget(d);const c=await o.readRenderTargetPixelsAsync(n,0,0,r,i),u=new Uint16Array(r*i*4);for(let p=0,h=u.length;p<h;p++)u[p]=Be.toHalfFloat(c[p]);const f=new ge(u,r,i,Ce,fe);return f.minFilter=l.minFilter,f.magFilter=l.magFilter,f.wrapS=l.wrapS,f.wrapT=l.wrapT,f.mapping=Ra,f.colorSpace=l.colorSpace,f.needsUpdate=!0,this._pmremNode.value=null,l.dispose(),f}}class Cf extends te{constructor(){const e={auxTarget:de(qt()).toReadOnly(),albedoTarget:de(di()).toWriteOnly(),normalTarget:de(di()).toWriteOnly(),globalId:ae},t=I`
 			fn compute( globalId: vec3u ) -> void {
 
 				let dims = textureDimensions( ${e.auxTarget} );
@@ -6517,7 +6517,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 				textureStore( ${e.normalTarget}, globalId.xy, vec4f( ${As}( packed ), 1.0 ) );
 
 			}
-		`;super(t(e)),this.defineUniformAccessors(e)}}class Hf extends Ca{get texture(){return this._texture}get complete(){return this._complete}get running(){return this._running}constructor(e={}){super();const{initUNetFromURL:t,auxWeightsUrl:i,colorWeightsUrl:r,useAuxiliaryBuffers:n=!0,maxTileSize:s=null,dynamicTile:o=null}=e;if(!t)throw new Error('OIDNDenoiser: "initUNetFromURL" from "oidn-webgpu" must be provided.');this.initUNetFromURL=t,this.auxWeightsUrl=i,this.colorWeightsUrl=r,this.useAuxiliaryBuffers=n,this.maxTileSize=s,this.dynamicTile=o,this.renderer=null,this._texture=null,this._running=!1,this._complete=!1,this._abort=null,this._requestId=0,this._failed=!1,this._unets={aux:null,color:null},this._resultPipeline=null,this._rawTexture=null,this._unpackAuxKernel=new Cf().setWorkgroupSize(8,8,1),this._albedoTarget=dr("Denoiser Albedo"),this._normalTarget=dr("Denoiser Normal")}init(e){this.renderer=e}update(e,t=null){if(this._complete||this._running||this._failed)return this._texture;let i=null,r=null;return this.useAuxiliaryBuffers&&t&&(this._unpackAux(t),i=this._albedoTarget,r=this._normalTarget),this.denoise(e,i,r).catch(n=>{this._failed=!0,this.dispatchEvent({type:"error",error:n})}),this._texture}async denoise(e,t=null,i=null){if(this._complete||this._running)return;this._running=!0;const r=!!(t&&i),n=++this._requestId;let s;try{s=await this._initUNet(r)}catch(f){throw this._running=!1,f}if(n!==this._requestId||!this._running)return;const{renderer:o}=this,l=o.backend;o.initTexture(e);const{width:d,height:c}=e,u={color:{data:l.get(e).texture,width:d,height:c},scheduling:"animation-frame",progress:(f,p,h,y,x)=>{this._copyOutputToTexture(f,d,c),this.dispatchEvent({type:"progress",progress:(y+1)/x})},done:f=>{this._running=!1,this._complete=!0,this._abort=null,this._disposeAuxImages()}};r&&(o.initTexture(t),o.initTexture(i),u.albedo={data:l.get(t).texture,width:d,height:c},u.normal={data:l.get(i).texture,width:d,height:c}),this._abort=s.tileExecute(u)}reset(){this._abort?.(),this._abort=null,this._texture?.dispose(),this._texture=null,this._rawTexture?.destroy(),this._rawTexture=null,this._disposeAuxImages(),this._running=!1,this._complete=!1,this._failed=!1}dispose(){this.reset(),this._unpackAuxKernel.dispose();for(const e in this._unets)this._unets[e]?.then(t=>t.dispose()),this._unets[e]=null}_unpackAux(e){const{renderer:t,_unpackAuxKernel:i,_albedoTarget:r,_normalTarget:n}=this,{width:s,height:o}=e.image;r.setSize(s,o),n.setSize(s,o),i.auxTarget=e,i.albedoTarget=r,i.normalTarget=n,t.compute(i.kernel,i.getDispatchSize(s,o))}_disposeAuxImages(){this._albedoTarget.dispose(),this._normalTarget.dispose()}_initUNet(e){const t=e?"aux":"color";return this._unets[t]||(this._unets[t]=(async()=>{const i=this.renderer.backend.device,r=e?this.auxWeightsUrl:this.colorWeightsUrl;if(!r)throw new Error(`OIDNDenoiser: no ${e?"auxWeightsUrl":"colorWeightsUrl"} was provided.`);const n={aux:e,hdr:!0};return this.maxTileSize!==null&&(n.maxTileSize=this.maxTileSize),this.dynamicTile!==null&&(n.dynamicTile=this.dynamicTile),this.initUNetFromURL(r,{device:i},n)})()),this._unets[t]}_copyOutputToTexture(e,t,i){const r=this.renderer.backend.device;if(!this._resultPipeline){const l=r.createShaderModule({code:`
+		`;super(t(e)),this.defineUniformAccessors(e)}}class Hf extends Ca{get texture(){return this._texture}get complete(){return this._complete}get running(){return this._running}constructor(e={}){super();const{initUNetFromURL:t,auxWeightsUrl:r,colorWeightsUrl:i,useAuxiliaryBuffers:n=!0,maxTileSize:s=null,dynamicTile:o=null}=e;if(!t)throw new Error('OIDNDenoiser: "initUNetFromURL" from "oidn-webgpu" must be provided.');this.initUNetFromURL=t,this.auxWeightsUrl=r,this.colorWeightsUrl=i,this.useAuxiliaryBuffers=n,this.maxTileSize=s,this.dynamicTile=o,this.renderer=null,this._texture=null,this._running=!1,this._complete=!1,this._abort=null,this._requestId=0,this._failed=!1,this._unets={aux:null,color:null},this._resultPipeline=null,this._rawTexture=null,this._unpackAuxKernel=new Cf().setWorkgroupSize(8,8,1),this._albedoTarget=di("Denoiser Albedo"),this._normalTarget=di("Denoiser Normal")}init(e){this.renderer=e}update(e,t=null){if(this._complete||this._running||this._failed)return this._texture;let r=null,i=null;return this.useAuxiliaryBuffers&&t&&(this._unpackAux(t),r=this._albedoTarget,i=this._normalTarget),this.denoise(e,r,i).catch(n=>{this._failed=!0,this.dispatchEvent({type:"error",error:n})}),this._texture}async denoise(e,t=null,r=null){if(this._complete||this._running)return;this._running=!0;const i=!!(t&&r),n=++this._requestId;let s;try{s=await this._initUNet(i)}catch(f){throw this._running=!1,f}if(n!==this._requestId||!this._running)return;const{renderer:o}=this,l=o.backend;o.initTexture(e);const{width:d,height:c}=e,u={color:{data:l.get(e).texture,width:d,height:c},scheduling:"animation-frame",progress:(f,p,h,y,x)=>{this._copyOutputToTexture(f,d,c),this.dispatchEvent({type:"progress",progress:(y+1)/x})},done:f=>{this._running=!1,this._complete=!0,this._abort=null,this._disposeAuxImages()}};i&&(o.initTexture(t),o.initTexture(r),u.albedo={data:l.get(t).texture,width:d,height:c},u.normal={data:l.get(r).texture,width:d,height:c}),this._abort=s.tileExecute(u)}reset(){this._abort?.(),this._abort=null,this._texture?.dispose(),this._texture=null,this._rawTexture?.destroy(),this._rawTexture=null,this._disposeAuxImages(),this._running=!1,this._complete=!1,this._failed=!1}dispose(){this.reset(),this._unpackAuxKernel.dispose();for(const e in this._unets)this._unets[e]?.then(t=>t.dispose()),this._unets[e]=null}_unpackAux(e){const{renderer:t,_unpackAuxKernel:r,_albedoTarget:i,_normalTarget:n}=this,{width:s,height:o}=e.image;i.setSize(s,o),n.setSize(s,o),r.auxTarget=e,r.albedoTarget=i,r.normalTarget=n,t.compute(r.kernel,r.getDispatchSize(s,o))}_disposeAuxImages(){this._albedoTarget.dispose(),this._normalTarget.dispose()}_initUNet(e){const t=e?"aux":"color";return this._unets[t]||(this._unets[t]=(async()=>{const r=this.renderer.backend.device,i=e?this.auxWeightsUrl:this.colorWeightsUrl;if(!i)throw new Error(`OIDNDenoiser: no ${e?"auxWeightsUrl":"colorWeightsUrl"} was provided.`);const n={aux:e,hdr:!0};return this.maxTileSize!==null&&(n.maxTileSize=this.maxTileSize),this.dynamicTile!==null&&(n.dynamicTile=this.dynamicTile),this.initUNetFromURL(i,{device:r},n)})()),this._unets[t]}_copyOutputToTexture(e,t,r){const i=this.renderer.backend.device;if(!this._resultPipeline){const l=i.createShaderModule({code:`
 					@group( 0 ) @binding( 0 ) var<storage, read> src : array<vec4f>;
 					@group( 0 ) @binding( 1 ) var dst : texture_storage_2d<rgba16float, write>;
 
@@ -6534,7 +6534,7 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 						textureStore( dst, gid.xy, src[ gid.y * dims.x + gid.x ] );
 
 					}
-				`});this._resultPipeline=r.createComputePipeline({layout:"auto",compute:{module:l,entryPoint:"main"}})}(!this._rawTexture||this._rawTexture.width!==t||this._rawTexture.height!==i)&&(this._rawTexture?.destroy(),this._rawTexture=r.createTexture({size:[t,i],format:"rgba16float",usage:GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.TEXTURE_BINDING}),this._texture?.dispose(),this._texture=new bl(this._rawTexture),this._texture.image={width:t,height:i});const n=r.createBindGroup({layout:this._resultPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:e.data}},{binding:1,resource:this._rawTexture.createView()}]}),s=r.createCommandEncoder(),o=s.beginComputePass();o.setPipeline(this._resultPipeline),o.setBindGroup(0,n),o.dispatchWorkgroups(Math.ceil(t/8),Math.ceil(i/8)),o.end(),r.queue.submit([s.finish()])}}const oi=new G;class Uf{constructor(e={}){const{Upscaler:t,sharpness:i=1}=e;if(!t)throw new Error('FSRUpscaler: the "Upscaler" class from "@pmndrs/upscaler" must be provided.');this.Upscaler=t,this.sharpness=i,this.renderer=null,this._upscaler=null}init(e){this.renderer=e,this._upscaler?.dispose(),this._upscaler=new this.Upscaler({renderer:e}),this._upscaler.init()}upscale(e,t){const{renderer:i,_upscaler:r}=this;return i.initTexture(e),i.getDrawingBufferSize(oi),(r.displayWidth!==oi.x||r.displayHeight!==oi.y||r.renderWidth!==e.width||r.renderHeight!==e.height)&&r.configure({displayWidth:oi.x,displayHeight:oi.y,renderWidth:e.width,renderHeight:e.height,path:"spatial"}),r.settings.sharpness=this.sharpness,r.dispatch({color:e},t),r.outputTexture}dispose(){this._upscaler?.dispose(),this._upscaler=null}}class Df extends wl{constructor(){super(),this.isEquirectCamera=!0}}Df.prototype.getCameraRayFn=function(){const e=B(new W);return{fn:I`
+				`});this._resultPipeline=i.createComputePipeline({layout:"auto",compute:{module:l,entryPoint:"main"}})}(!this._rawTexture||this._rawTexture.width!==t||this._rawTexture.height!==r)&&(this._rawTexture?.destroy(),this._rawTexture=i.createTexture({size:[t,r],format:"rgba16float",usage:GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.TEXTURE_BINDING}),this._texture?.dispose(),this._texture=new bl(this._rawTexture),this._texture.image={width:t,height:r});const n=i.createBindGroup({layout:this._resultPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:e.data}},{binding:1,resource:this._rawTexture.createView()}]}),s=i.createCommandEncoder(),o=s.beginComputePass();o.setPipeline(this._resultPipeline),o.setBindGroup(0,n),o.dispatchWorkgroups(Math.ceil(t/8),Math.ceil(r/8)),o.end(),i.queue.submit([s.finish()])}}const or=new G;class Uf{constructor(e={}){const{Upscaler:t,sharpness:r=1}=e;if(!t)throw new Error('FSRUpscaler: the "Upscaler" class from "@pmndrs/upscaler" must be provided.');this.Upscaler=t,this.sharpness=r,this.renderer=null,this._upscaler=null}init(e){this.renderer=e,this._upscaler?.dispose(),this._upscaler=new this.Upscaler({renderer:e}),this._upscaler.init()}upscale(e,t){const{renderer:r,_upscaler:i}=this;return r.initTexture(e),r.getDrawingBufferSize(or),(i.displayWidth!==or.x||i.displayHeight!==or.y||i.renderWidth!==e.width||i.renderHeight!==e.height)&&i.configure({displayWidth:or.x,displayHeight:or.y,renderWidth:e.width,renderHeight:e.height,path:"spatial"}),i.settings.sharpness=this.sharpness,i.dispatch({color:e},t),i.outputTexture}dispose(){this._upscaler?.dispose(),this._upscaler=null}}class Df extends wl{constructor(){super(),this.isEquirectCamera=!0}}Df.prototype.getCameraRayFn=function(){const e=B(new W);return{fn:I`
 		fn getCameraRay( uv: vec2f, resolution: vec2f, ray: ptr<function, ${k}> ) -> bool {
 
 			// screen uv to spherical direction, matching three.js' equirect orientation
@@ -6613,12 +6613,12 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 		return vec2f( v.x * vc - v.y * vs, v.x * vs + v.y * vc );
 
 	}
-`;$f.prototype.getCameraRayFn=function(){const e=B(new W),t=B(new W),i=B(0),r=B(0),n=B(0,"int"),s=B(0),o=B(1);return{fn:I`
+`;$f.prototype.getCameraRayFn=function(){const e=B(new W),t=B(new W),r=B(0),i=B(0),n=B(0,"int"),s=B(0),o=B(1);return{fn:I`
 		fn getCameraRay( uv: vec2f, resolution: vec2f, ray: ptr<function, ${k}> ) -> bool {
 
 			// base ray
 			let ndc = uv * 2.0 - vec2f( 1.0 );
-			*ray = ${br}( ndc, ${e} );
+			*ray = ${bi}( ndc, ${e} );
 
 			// camera state
 			let forward = normalize( ( ${t} * vec4f( 0.0, 0.0, - 1.0, 0.0 ) ).xyz );
@@ -6627,13 +6627,13 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			// depth of field
 			// measure focus distance from the camera origin along the optical axis so the focal
 			// surface is a flat plane perpendicular to the camera forward vector rather than a sphere
-			let focalPoint = cameraOrigin + ray.direction * ( ${i} / dot( ray.direction, forward ) );
+			let focalPoint = cameraOrigin + ray.direction * ( ${r} / dot( ray.direction, forward ) );
 			let nearDistance = dot( ray.origin - cameraOrigin, forward );
 
 			// sample the aperture shape
 			let shapeUVW = ${Es}( ${au} );
 			var apertureSample = ${Af}( ${n}, shapeUVW );
-			apertureSample *= ${r} * 0.5 * 1e-3;
+			apertureSample *= ${i} * 0.5 * 1e-3;
 
 			// rotate + squash the sample for anamorphic apertures
 			apertureSample =
@@ -6648,20 +6648,20 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			return true;
 
 		}
-	`,update:()=>(this.coordinateSystem=ws,this.updateMatrixWorld(),this.updateProjectionMatrix(),e.value.multiplyMatrices(this.matrixWorld,this.projectionMatrixInverse),t.value.copy(this.matrixWorld),i.value=this.focusDistance,r.value=this.bokehSize,n.value=this.apertureBlades,s.value=this.apertureRotation,o.value=this.anamorphicRatio,!1)}};Sl.prototype.getCameraRayFn=function(){const e={fn:null,update:null},t=Tl(0),i=lr([],"mat4"),r=lr([],"vec4");return e.fn=I`
+	`,update:()=>(this.coordinateSystem=ws,this.updateMatrixWorld(),this.updateProjectionMatrix(),e.value.multiplyMatrices(this.matrixWorld,this.projectionMatrixInverse),t.value.copy(this.matrixWorld),r.value=this.focusDistance,i.value=this.bokehSize,n.value=this.apertureBlades,s.value=this.apertureRotation,o.value=this.anamorphicRatio,!1)}};Sl.prototype.getCameraRayFn=function(){const e={fn:null,update:null},t=Tl(0),r=li([],"mat4"),i=li([],"vec4");return e.fn=I`
 		fn getCameraRay( uv: vec2f, resolution: vec2f, ray: ptr<function, ${k}> ) -> bool {
 
 			let pixel = uv * resolution;
 
 			for ( var i = 0u; i < ${t}u; i ++ ) {
 
-				let viewport = ${r}[ i ];
+				let viewport = ${i}[ i ];
 				let viewportMax = viewport.xy + viewport.zw;
 				if ( all( pixel >= viewport.xy ) && all( pixel < viewportMax ) ) {
 
 					let cameraUv = ( pixel - viewport.xy ) / viewport.zw;
 					let ndc = cameraUv * 2.0 - vec2f( 1.0 );
-					*ray = ${br}( ndc, ${i}[ i ] );
+					*ray = ${bi}( ndc, ${r}[ i ] );
 					return true;
 
 				}
@@ -6671,4 +6671,4 @@ import{t as ve,o as W,d as ut,c as A,by as We,bz as pa,V as G,bA as Te,a_ as ys,
 			return false;
 
 		}
-	`,e.update=()=>{const{cameras:n}=this,s=t.node.value!==n.length;for(t.node.value=n.length;r.array.length<n.length;)r.array.push(new pt),i.array.push(new W);i.array.length=n.length,r.array.length=n.length;for(let o=0;o<n.length;o++){const l=n[o],d=l.viewport;l.coordinateSystem=ws,l.updateMatrixWorld(),l.updateProjectionMatrix(),i.array[o].multiplyMatrices(l.matrixWorld,l.projectionMatrixInverse),r.array[o].copy(d)}return s},e};export{kf as BlurredEnvMapGenerator,Uf as FSRUpscaler,Hf as OIDNDenoiser,zf as RANDOM_BLUE_DITHER,Lf as RANDOM_PCG,ld as RANDOM_SOBOL,Kc as RenderToScreenNodeMaterial,cd as SAMPLE_ACTIVE_FLAG,vi as SAMPLE_COUNT_MASK,Qs as SAMPLE_DISPATCHED_FLAG,Po as TRANSMISSIVE_BACKGROUND_ENVIRONMENT,qs as TRANSMISSIVE_BACKGROUND_OVERLAY,Bo as TRANSMISSIVE_BACKGROUND_TRANSPARENT,Ef as WebGPUPathTracer};
+	`,e.update=()=>{const{cameras:n}=this,s=t.node.value!==n.length;for(t.node.value=n.length;i.array.length<n.length;)i.array.push(new pt),r.array.push(new W);r.array.length=n.length,i.array.length=n.length;for(let o=0;o<n.length;o++){const l=n[o],d=l.viewport;l.coordinateSystem=ws,l.updateMatrixWorld(),l.updateProjectionMatrix(),r.array[o].multiplyMatrices(l.matrixWorld,l.projectionMatrixInverse),i.array[o].copy(d)}return s},e};export{kf as BlurredEnvMapGenerator,Uf as FSRUpscaler,Hf as OIDNDenoiser,zf as RANDOM_BLUE_DITHER,Lf as RANDOM_PCG,ld as RANDOM_SOBOL,Kc as RenderToScreenNodeMaterial,cd as SAMPLE_ACTIVE_FLAG,vr as SAMPLE_COUNT_MASK,Qs as SAMPLE_DISPATCHED_FLAG,Po as TRANSMISSIVE_BACKGROUND_ENVIRONMENT,qs as TRANSMISSIVE_BACKGROUND_OVERLAY,Bo as TRANSMISSIVE_BACKGROUND_TRANSPARENT,Ef as WebGPUPathTracer};

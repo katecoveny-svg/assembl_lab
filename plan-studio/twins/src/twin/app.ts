@@ -3,6 +3,8 @@ import { editorialSky, LOOK, type Mood } from './editorial';
 import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTexturesLib.js';
 import { initArrange } from './arrange';
 import { applyCameraFromURL, cameraQuery, shareSheet, viewLink } from './share';
+import { photoRenderPrompt } from './renderBrief';
+import { siteFactsPanel } from './siteFacts';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
@@ -566,6 +568,7 @@ export class App {
       layers.append(row);
     }
     for (const el of this.built.panels ?? []) document.getElementById('extra')!.append(el);
+    document.getElementById('extra')!.append(siteFactsPanel((m) => this.log(m)));   // live public maps for a point the person types in
     // x-ray
     const xr = document.getElementById('xray') as HTMLInputElement;
     xr.addEventListener('input', () => this.setXray(Number(xr.value)));
@@ -597,6 +600,18 @@ export class App {
     document.getElementById('play')!.addEventListener('click', () => this.play(false));
     document.getElementById('record')!.addEventListener('click', () => this.play(true));
     document.getElementById('walk')!.addEventListener('click', () => this.toggleWalk());
+    {
+      // the photo-render prompt: text to take, with the recorded fly-through, to a model that re-renders it as photographs
+      const row = document.getElementById('walk')!.parentElement!, pb = document.createElement('button');
+      pb.className = 'pill'; pb.id = 'renderPrompt'; pb.textContent = 'Photo-render prompt'; pb.title = 'Copy the prompt that goes with the fly-through for photo rendering (an artist\u2019s impression; nothing is rendered here)';
+      pb.addEventListener('click', async () => {
+        const text = photoRenderPrompt(this.scene, this.project.title, this.when ?? null, document.getElementById('sunread')?.textContent ?? '');
+        await navigator.clipboard?.writeText(text).catch(() => void 0);
+        await this.save?.(`${this.project.key}-photo-render-prompt.txt`, new Blob([text], { type: 'text/plain' }))?.catch(() => void 0);
+        this.log('Photo-render prompt copied and offered for download. Use it with the recorded fly-through.');
+      });
+      row.append(pb);
+    }
     document.getElementById('shot')!.addEventListener('click', () => void this.rasterStill());
     const pt = document.getElementById('trace') as HTMLButtonElement;
     if (!this.webgpu) {
