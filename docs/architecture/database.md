@@ -32,16 +32,19 @@ The migrations ran twice with no error and no change. Thirteen checks passed: a 
 
 Run them with `node --test tests/architecture-db/*.test.mjs` (after `npm install` in that folder).
 
+## Where it is now (22 November 2026)
+The three migrations are applied to the `assembl-prod` Supabase project, in the separate `arch` schema, on Kate's instruction. Nothing outside `arch` was touched. A catalogue check on production matched the dry run exactly: 12 tables, all with row level security on, 86 columns, 43 policies, 6 triggers, 10 functions, 22 indexes, and no access for `anon`. The tables are empty.
+
+Status: connected, not yet verified in use. No app reads or writes it yet.
+
 ## Still to do before it is real
-1. Choose a Supabase project, or create a new one.
-2. Apply the three migrations in `supabase/migrations/`.
-3. Add `arch` to the exposed schemas in the API settings.
-4. Turn on sign-in.
-5. Connect the app. Site and model fields are flat, for example `site_lat`, `model_fingerprint`.
-6. Re-run the checks against that project.
+1. Add `arch` to the exposed schemas in the API settings. Until then nothing outside the database can reach it.
+2. Decide how people sign in and how colleagues are invited.
+3. Connect the app in place of browser storage. Site and model fields are flat, for example `site_lat`, `model_fingerprint`.
+4. Re-run the thirteen checks against production with test accounts.
 
 ## Risks
-- Real Supabase differs from the stand-ins in small ways. It is unproven there until step 6.
+- The access rules were proven on stand-ins, not yet with real accounts on production. See step 4.
 - Ids are database-made uuids. Tell me if the app makes its own.
 - Adding a colleague needs their account id; an invite flow is still to build. Nothing stops the last owner leaving.
 - A project with approvals or activity cannot be deleted by users. That is deliberate.
