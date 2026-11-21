@@ -16,6 +16,7 @@ import { scanSet, scanTex, scannedFinishes } from './scanned';
 import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
 import { scandi } from './fitout';
 import { nativeBush } from './nativeTrees';
+import { claddingRibs, type RibWall } from './fittings';
 import { scandiMats, suite } from './editorial';
 import { buildScandiDiningSuite } from './scandiInteriors';
 import { createArchedBladeGeometry } from './nzNativeFlora';
@@ -476,7 +477,8 @@ export const projectPlan: Project = {
       }
       { app.log('Loading scanned materials…'); try { const fin0 = (P.buildings[0] as unknown as { finish?: { claddingProfile?: string; claddingColour?: string } }).finish; await scannedFinishes(model, M.sets, fin0?.claddingProfile === 'metal' ? { cladding: 'metal', claddingColour: fin0.claddingColour ? new THREE.Color(fin0.claddingColour).getHex() : undefined } : {}); } catch (e) { console.warn('scanned materials unavailable; keeping the drawn ones', e); } }
       app.log('Placing library pieces…');
-      await fillSlots(model);
+      // a dropped plan is furnished entirely in code; only a finished building model still draws on the objects library
+      if (P.asBuilt) await fillSlots(model);
       model.traverse((o) => {
         if (o.name === 'fit_out') fitouts.push(o);
       });
@@ -495,6 +497,26 @@ export const projectPlan: Project = {
               const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(b.origin[0] + t, y0, b.origin[1] + w.at) : new THREE.Vector3(b.origin[0] + w.at, y0, b.origin[1] + t));
               runs.push({ a: pt(o.a + 0.1), b: pt(o.b - 0.1), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0) });
             }
+          }
+        }
+        // profiled steel cladding as real ribs, in place of a picture of ribs
+        {
+          let clad: THREE.MeshPhysicalMaterial | null = null;
+          model.traverse((o) => { const mm = (o as THREE.Mesh).material as THREE.MeshPhysicalMaterial | undefined; if (!clad && mm && !Array.isArray(mm) && /profiled steel sheet, ribs/.test(String(mm.userData?.scanned ?? ''))) clad = mm; });
+          if (clad) {
+            const cm = clad as THREE.MeshPhysicalMaterial;
+            cm.map = null; cm.normalMap = null; cm.roughnessMap = null; cm.roughness = 0.5; cm.metalness = 0.45; cm.clearcoat = 0.2; cm.needsUpdate = true;
+            const rw: RibWall[] = [];
+            for (const b of P.buildings) {
+              const y0 = b.floorLevel ?? 0;
+              for (const w of b.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number; sill: number; head: number }[] }[]) {
+                const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(b.origin[0] + t, y0, b.origin[1] + w.at) : new THREE.Vector3(b.origin[0] + w.at, y0, b.origin[1] + t));
+                rw.push({ a: pt(w.from), b: pt(w.to), out: w.axis === 'x' ? new THREE.Vector3(0, 0, w.out) : new THREE.Vector3(w.out, 0, 0), openings: (w.openings ?? []).map((o) => ({ a: o.a - w.from, b: o.b - w.from, sill: o.sill, head: o.head })) });
+              }
+            }
+            model.updateMatrixWorld(true);
+            const ribs = claddingRibs(model, rw, cm);
+            if (ribs) model.add(ribs);
           }
         }
         // a table and chairs on the largest deck: something of known size to read the building against
@@ -676,7 +698,7 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 1.45 : 1 } : {}),
+      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 1.22 : 1 } : {}),
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: 'Site: LINZ LiDAR and aerial photo', title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,

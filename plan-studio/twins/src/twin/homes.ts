@@ -851,12 +851,22 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
       const L = s1 - s0;
       if (L < 0.2) continue;
       if (rails.includes('glass')) {
-        // glass barrier: slim black posts, a slim top rail, clear panels between
-        const ng = Math.max(1, Math.ceil(L / 1.4));
-        for (let k = 0; k <= ng; k++) { const p = at(s0 + (k * L) / ng); gPosts.push(new THREE.BoxGeometry(0.05, 1.04, 0.05).translate(p[0], top + 0.52, p[1])); }
+        // frameless glass barrier: 12 mm toughened panels about 1.2 m wide with 20 mm gaps, each held in two
+        // round spigots core-fixed to the deck, under a slim continuous cap rail
+        const ng = Math.max(1, Math.round(L / 1.2)), pw = L / ng;
         const c0 = at((s0 + s1) / 2);
-        gPosts.push(new THREE.BoxGeometry(L, 0.035, 0.06).rotateY(-ang).translate(c0[0], top + 1.04, c0[1]));
-        for (let k = 0; k < ng; k++) { const c = at(s0 + ((k + 0.5) * L) / ng); gPanes.push(new THREE.BoxGeometry(L / ng - 0.09, 0.9, 0.012).rotateY(-ang).translate(c[0], top + 0.55, c[1])); }
+        gPosts.push(new THREE.BoxGeometry(L + 0.02, 0.022, 0.042).rotateY(-ang).translate(c0[0], top + 1.031, c0[1]));
+        for (let k = 0; k < ng; k++) {
+          const c = at(s0 + (k + 0.5) * pw);
+          gPanes.push(new THREE.BoxGeometry(pw - 0.02, 0.95, 0.012).rotateY(-ang).translate(c[0], top + 0.545, c[1]));
+          for (const f of [0.22, 0.78]) {
+            const q = at(s0 + (k + f) * pw);
+            // spigot: base plate, round body, the clamp that grips the glass
+            gPosts.push(new THREE.CylinderGeometry(0.05, 0.05, 0.008, 20).translate(q[0], top + 0.004, q[1]));
+            gPosts.push(new THREE.CylinderGeometry(0.024, 0.024, 0.07, 16).translate(q[0], top + 0.04, q[1]));
+            gPosts.push(new THREE.BoxGeometry(0.05, 0.11, 0.05).rotateY(-ang).translate(q[0], top + 0.125, q[1]));
+          }
+        }
         continue;
       }
       const np = Math.max(1, Math.ceil(L / 1.5));
@@ -883,7 +893,7 @@ function deck(asset: string, name: string, poly: Pt[], M: TwinMats, gy: (u: numb
   if (gPosts.length) {
     const bal = grp(`${name}_balustrade`);
     bal.add(mesh('posts_and_rail', mergeGeometries(gPosts), M.joinery), mesh('glass_panels', mergeGeometries(gPanes), M.glass));
-    tag(bal, asset, 'IfcRailing', { predefinedType: 'BALUSTRADE', material: 'toughened glass panels, black aluminium posts and top rail', source: 'scaled', rule: 'glass barrier as the 3D sketch shows; barrier where the fall is 1 m or more' });
+    tag(bal, asset, 'IfcRailing', { predefinedType: 'BALUSTRADE', material: '12 mm toughened glass panels on round black spigots, slim black cap rail', source: 'scaled', rule: 'glass barrier as the 3D sketch shows; barrier where the fall is 1 m or more' });
     g.add(bal);
   }
   if (posts.length) {
