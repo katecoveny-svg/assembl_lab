@@ -85,11 +85,13 @@ function spray(kind: Kind, rnd: () => number, big: number, blades: number, flowe
 }
 
 /** one whole tree: wood and foliage as two geometries, base at the origin */
-function kit(kind: Kind, seed: number, light: boolean): Kit {
+function kit(kind: Kind, seed: number, level: 0 | 1 | 2): Kit {
+  // 0: near, full detail; 1: near on a phone; 2: distant
+  const light = level === 2;
   const rnd = rng32(seed * 7919 + (kind === 'kanuka' ? 11 : 97));
   const wood: THREE.BufferGeometry[] = [], leaves: THREE.BufferGeometry[] = [], flowers: THREE.BufferGeometry[] = [];
   const bark = kind === 'kanuka' ? C(0.27, 0.22, 0.18) : C(0.17, 0.15, 0.13);
-  const depthMax = light ? 2 : 3, big = light ? 3.9 : 1.2, blades = light ? 3 : kind === 'kanuka' ? 10 : 8, S = light ? 1 : 2;
+  const depthMax = light ? 2 : 3, big = light ? 3.9 : level === 1 ? 1.9 : 1.2, blades = light ? 3 : level === 1 ? 5 : kind === 'kanuka' ? 10 : 8, S = level === 0 ? 2 : 1;
   const tips: THREE.Vector3[] = [];
   const perp = (d: THREE.Vector3) => { const a = Math.abs(d.y) < 0.9 ? UP : new THREE.Vector3(1, 0, 0), x = new THREE.Vector3().crossVectors(d, a).normalize(), y = new THREE.Vector3().crossVectors(d, x), t = rnd() * 6.283; return x.multiplyScalar(Math.cos(t)).addScaledVector(y, Math.sin(t)); };
   const grow = (from: THREE.Vector3, dir: THREE.Vector3, len: number, r: number, depth: number) => {
@@ -100,7 +102,7 @@ function kit(kind: Kind, seed: number, light: boolean): Kit {
     if (depth === 0) {
       tips.push(to);
       // foliage along the outer part of the twig and at its end
-      const n = light ? 2 : 5;
+      const n = light ? 2 : level === 1 ? 3 : 5;
       for (let i = 0; i < n; i++) {
         const u = Math.min(1, 0.25 + (0.75 * (i + 1)) / n), p = curve.getPointAt(u), d = i === n - 1 ? end.clone() : end.clone().addScaledVector(perp(end), 0.8).normalize();
         if (kind === 'pohutukawa') d.lerp(UP, 0.35).normalize();
@@ -116,7 +118,7 @@ function kit(kind: Kind, seed: number, light: boolean): Kit {
       const d = end.clone().addScaledVector(perp(end), spread).lerp(UP, lift).normalize();
       grow(to, d, len * (0.66 + rnd() * 0.16), r1 * (0.8 + rnd() * 0.1), depth - 1);
       // leafy side shoots along the upper limbs, so the crown is a mass of leaf with wood glimpsed through it
-      if (depth === 1 && !light) { const p = curve.getPointAt(0.55 + rnd() * 0.35), sd = end.clone().addScaledVector(perp(end), 1.1).lerp(UP, 0.3).normalize(), sp = spray(kind, rnd, big * 1.15, blades, false, S), roll = rnd() * 6.283; for (const lg of sp.leaves) leaves.push(put(lg, p, sd, roll)); }
+      if (depth === 1 && level === 0) { const p = curve.getPointAt(0.55 + rnd() * 0.35), sd = end.clone().addScaledVector(perp(end), 1.1).lerp(UP, 0.3).normalize(), sp = spray(kind, rnd, big * 1.15, blades, false, S), roll = rnd() * 6.283; for (const lg of sp.leaves) leaves.push(put(lg, p, sd, roll)); }
     }
   };
   if (kind === 'kanuka') {
@@ -146,7 +148,7 @@ export function nativeBush(trees: Tree[], groundAt: (x: number, z: number) => nu
   const groups = new Map<string, { k: Kit; list: Tree[]; near: boolean }>();
   trees.forEach((t, i) => {
     const near = Math.hypot(t[0] - centre[0], t[1] - centre[1]) < NEAR, kind = kindOf(t), v = Math.floor(rnd(i + 0.5) * 3), key = `${kind}/${v}/${near ? 'n' : 'f'}`;
-    let e = groups.get(key); if (!e) groups.set(key, (e = { k: kit(kind, v + 1, !near || lite), list: [], near }));
+    let e = groups.get(key); if (!e) groups.set(key, (e = { k: kit(kind, v + 1, !near ? 2 : lite ? 1 : 0), list: [], near }));
     e.list.push(t);
   });
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color();
