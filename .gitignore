@@ -15,3 +15,6 @@ assets/models/cafe/source/__pycache__/
 assets/models/cafe/source/cafe-review.blend
 dist/
 tools/archipro/_16a.glb
+
+# architecture-db tests: PGlite dependency
+tests/architecture-db/node_modules/
