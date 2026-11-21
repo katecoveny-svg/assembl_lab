@@ -4,6 +4,7 @@ import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTextu
 import { initArrange } from './arrange';
 import { applyCameraFromURL, cameraQuery, shareSheet, viewLink } from './share';
 import { photoRenderPrompt } from './renderBrief';
+import { siteFactsPanel } from './siteFacts';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
@@ -567,6 +568,7 @@ export class App {
       layers.append(row);
     }
     for (const el of this.built.panels ?? []) document.getElementById('extra')!.append(el);
+    document.getElementById('extra')!.append(siteFactsPanel((m) => this.log(m)));   // live public maps for a point the person types in
     // x-ray
     const xr = document.getElementById('xray') as HTMLInputElement;
     xr.addEventListener('input', () => this.setXray(Number(xr.value)));

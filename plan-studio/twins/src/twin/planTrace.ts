@@ -353,7 +353,11 @@ export async function readSheet(doc: PDFDocumentProxy, pageNo: number, progress:
     const xs = m.walls.flatMap((w: { a: Pt; b: Pt }) => [w.a[0], w.b[0]]), ys = m.walls.flatMap((w: { a: Pt; b: Pt }) => [w.a[1], w.b[1]]);
     const W = Math.max(...xs) - Math.min(...xs), D = Math.max(...ys) - Math.min(...ys);
     const good = m.walls.filter((w: { ev: { conf: number } }) => w.ev.conf >= 0.8).length;
-    if (m.walls.length >= 4 && W > 3000 && W < 80000 && D > 3000 && D < 80000 && good >= 2) {
+    // the outside walls on their own must also enclose a real footprint: a site plan's stray lines can spread 3 m
+    // while its "outside walls" make a sliver, which must not be offered as a measured building
+    const ex = m.walls.filter((w: { kind: string }) => w.kind === 'ext'), exs = ex.flatMap((w: { a: Pt; b: Pt }) => [w.a[0], w.b[0]]), eys = ex.flatMap((w: { a: Pt; b: Pt }) => [w.a[1], w.b[1]]);
+    const We = ex.length ? Math.max(...exs) - Math.min(...exs) : 0, De = ex.length ? Math.max(...eys) - Math.min(...eys) : 0;
+    if (m.walls.length >= 4 && W > 3000 && W < 80000 && D > 3000 && D < 80000 && good >= 2 && ex.length >= 3 && We > 3000 && De > 3000) {
       // walls in real mm, pdf y up, origin moved to the building's corner: back to sheet points for a preview crop
       const [ox, oy] = m.origin as Pt;
       const toVp = (p: Pt): Pt => [(p[0] + ox) / (PT_MM * scale), vp1.height - (p[1] + oy) / (PT_MM * scale)];
