@@ -6,7 +6,7 @@
 import { getText, getBuffer, envelope, memo, round, nzToday, splitCSV } from "./util.js";
 import { docxParagraphs } from "./zip.js";
 import { DISTRICTS, REGIONS, districtKey } from "./places.js";
-import ED_HISTORY from "./snapshots/edhistory.json" with { type: "json" };
+import ED_HISTORY from "./snapshots/edhistory.js";
 
 const HNZ = "https://www.healthnz.govt.nz";
 const fyOf = (t) => (t.month >= 7 ? t.year : t.year - 1); // 2025 → "2025-26"

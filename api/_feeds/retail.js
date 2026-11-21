@@ -12,7 +12,7 @@
 // Neither source carries any retailer's actual plan prices: no public dataset does (Powerswitch holds them under supply
 // agreements; Ahiko sells an API). A retailer's own tariff is "Your data" and only appears when the retailer supplies it.
 import { getText, envelope, memo, round, splitCSV } from "./util.js";
-import QSDEP from "./snapshots/qsdep.json" with { type: "json" };
+import QSDEP from "./snapshots/qsdep.js";
 
 const LIST = "https://www.emi.ea.govt.nz/Retail/Datasets/MarketStructure";
 const BLOB = "https://emidatasets.blob.core.windows.net/publicdata/Datasets/Retail/MarketStructure";

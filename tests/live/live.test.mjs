@@ -196,7 +196,7 @@ function reachable(entry, seen = new Set()) { // the entry and every relative mo
 test('static scan: code under functions/ and everything it imports has no process, Buffer, require, fs, path or node: modules at load', () => {
   const files = new Set(); for (const e of ['functions/api/live.js', 'functions/api/trades-feeds.js']) reachable(path.join(ROOT, e), files);
   const list = [...files].map((f) => path.relative(ROOT, f));
-  for (const must of ['api/_feeds/index.js', 'api/_feeds/site.js', 'api/_feeds/zip.js', 'api/_feeds/handle.js', 'api/_feeds/snapshots/qsdep.json']) assert.ok(list.includes(must), 'scan should reach ' + must);
+  for (const must of ['api/_feeds/index.js', 'api/_feeds/site.js', 'api/_feeds/zip.js', 'api/_feeds/handle.js', 'api/_feeds/snapshots/qsdep.js']) assert.ok(list.includes(must), 'scan should reach ' + must);
   const bad = [];
   for (const f of files) {
     if (!f.endsWith('.js')) continue;
@@ -229,4 +229,15 @@ test('run with process and require removed (as on Workers; Buffer is covered by 
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', child], { encoding: 'utf8', timeout: 30000 });
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').at(-1)), ['gone,undefined,undefined', 200, 'Live', 'snapshot', 'footprint-error']);
+});
+
+test('snapshots: each .js copy matches its .json, and nothing the functions import uses a JSON import', async () => {
+  for (const n of ['edhistory', 'grocery', 'qsdep']) {
+    const json = JSON.parse(fs.readFileSync(path.join(ROOT, `api/_feeds/snapshots/${n}.json`), 'utf8'));
+    const mod = (await import(path.join(ROOT, `api/_feeds/snapshots/${n}.js`))).default;
+    assert.deepEqual(mod, json, `${n}.js differs from ${n}.json: run node tests/live/sync-snapshots.mjs`);
+  }
+  const files = new Set(); for (const e of ['functions/api/live.js', 'functions/api/trades-feeds.js']) reachable(path.join(ROOT, e), files);
+  // Cloudflare Pages builds functions with an older bundler that stops on `import x from "./x.json" with { type: "json" }`.
+  for (const f of files) if (f.endsWith('.js')) assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /from\s*["'][^"']+\.json["']/, path.relative(ROOT, f) + ' imports a .json file');
 });

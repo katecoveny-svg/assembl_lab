@@ -3,7 +3,7 @@
 // copied, and the envelope is labelled "Latest published · annual". Nothing is fetched. Update the JSON after the next
 // report (expected mid-2027) and the chip follows.
 import { envelope } from "./util.js";
-import SNAP from "./snapshots/grocery.json" with { type: "json" };
+import SNAP from "./snapshots/grocery.js";
 
 export function buildGrocery(snap = SNAP) {
   const f = snap.figures;
