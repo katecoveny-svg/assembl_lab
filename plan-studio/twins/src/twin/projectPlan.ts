@@ -19,6 +19,7 @@ import { nativeBush } from './nativeTrees';
 import { claddingRibs, type RibWall } from './fittings';
 import { buildCar } from './car';
 import { approvalPanel } from './approvals';
+import { codeChecksPanel } from './codeChecksUI'; // code pre-check card (agent/code-1122): this import and one entry in `panels` below
 import { scandiMats, suite } from './editorial';
 import { furnishDecks, type DeckRect as DeckPlan } from './outdoor'; // deck furniture: the one import the deck block below needs
 import { createArchedBladeGeometry } from './nzNativeFlora';
@@ -808,7 +809,7 @@ export const projectPlan: Project = {
     ];
     return {
       sharePlan: input.kind === 'plan' ? () => input.plan : undefined,
-      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan)] : [],
+      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan), codeChecksPanel(app, input.plan)] : [],
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
