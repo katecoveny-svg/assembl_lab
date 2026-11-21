@@ -4,6 +4,18 @@ import type { App } from './app';
 import { openPdf, planModel, readImage, readSheet, sheetThumb, surveySheets, toBuilding, type Built, type BuildOpts, type SheetInfo, type TraceRead } from './planTrace';
 import { defaultRoles, fallPlane, guessHigh, interpretElevations, readElevSheet, readSiteSheet, registerSite, type ElevRead, type ElevResult, type Role, type SiteRead, type SiteResult } from './planSet';
 
+// Who the AI plan reader really is today: the lab's endpoint says which provider answers first.
+let readerNameP: Promise<string> | null = null;
+function readerName(): Promise<string> {
+  readerNameP ??= fetch('/api/plan-read', { headers: { accept: 'application/json' } }).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    const first = (j?.providers as { name: string; configured: boolean; model?: string }[] | undefined)?.find((p) => p.configured);
+    const names: Record<string, string> = { openai: 'OpenAI', gemini: 'Google (Gemini)', anthropic: 'Anthropic (Claude)' };
+    return first ? `${names[first.name] ?? first.name}${first.model ? `, model ${first.model}` : ''}, through the lab` : 'an outside AI model through the lab';
+  }).catch(() => 'an outside AI model through the lab');
+  return readerNameP;
+}
+
+
 const COL = { ext: '#21121F', part: '#756771', door: '#B4466F', window: '#B4466F', slider: '#B4466F', opening: '#D4B6C7', deck: '#8A7B5C' } as const;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
@@ -210,7 +222,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         if (my !== token) return;
         if (!got) {
           status(isPdf ? `Sheet ${page} has no linework to measure: its plan is a picture inside the PDF.` : 'A picture of a plan has no linework to measure.');
-          $('trAskText').textContent = 'The AI plan reader can read it: a crop of each plan on the sheet goes to the lab’s reader (Claude, by Anthropic) for this read and is not stored. Plan models, IFC and GLB files never leave your browser.';
+          { const n = 1 + extrasWanted().length; $('trAskText').textContent = `The AI plan reader can read it. ${n === 1 ? 'A crop of this sheet goes' : `Crops of ${n} sheets (this one and the ${n - 1} you picked as site plan or elevations) go`} to ${await readerName()} for this read. The lab does not store them. Plan models, IFC and GLB files never leave your browser.`; }
           $('trAsk').hidden = false;
           return;
         }
@@ -221,7 +233,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         status(got.length > 1 ? `${got.length} plans read from sheet ${page}. Untick any you don’t want, check them, then build.` : elevReads.length || siteRead ? 'Set read. Check it against your drawings, then build.' : 'Plan read. Check it against your drawing, then build.');
         render();
         if (!useAi && doc && extrasWanted().length) {
-          $('trAskText').textContent = 'The floor plan was measured from its linework. The AI plan reader can also read the site plan and elevations you picked above: a crop of each sheet goes to the lab’s reader (Claude, by Anthropic) for this read and is not stored.';
+          { const n = extrasWanted().length; $('trAskText').textContent = `The floor plan was measured from its linework. The AI plan reader can also read the site plan and elevations you picked above: ${n === 1 ? 'a crop of 1 sheet goes' : `crops of ${n} sheets go`} to ${await readerName()} for this read. The lab does not store them.`; }
           ($('trAi') as HTMLButtonElement).textContent = 'Read the rest of the set with the AI plan reader';
           $('trAsk').hidden = false;
         }

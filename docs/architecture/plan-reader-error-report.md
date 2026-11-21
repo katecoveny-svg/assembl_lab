@@ -53,6 +53,27 @@ The in-browser part reads none of these. It fills in defaults (confirmed in the 
 | Stair | none | none (drawn on the site layout sheet) |
 | North | up the sheet | 26.4° |
 
+## AI reader, measured 21 November
+
+**Not measured: 0 of 45 elements scored.** The session's permission check stopped the live read before the sheet was sent (reason given: sensitive information leaving the machine). No drawing left the machine and no money was spent. Endpoint calls: 1 of the 3 allowed, the free status check.
+
+Measured without sending the drawing (a dry run of the real page, with a made-up reply in place of the AI):
+
+| Item | Result |
+|---|---|
+| Endpoint status (1.7 s) | set up; default model OpenAI `gpt-6.2-astra` |
+| Picture the page sends for sheet 7 | one, 1,241 × 1,568 pixels: the plan only, no title block |
+| Scale the page would use | 1:50 from the title block, unchecked |
+| Hand steps to a built twin | 5: choose the file, set sheets 4 and 6 to "Skip", press the AI button, press "Build the twin" |
+| Confirmations asked for | 0. A box for the long side is offered, not required |
+
+Two things to know:
+
+- The page pre-selects sheet 6 (site layout) and sheet 4 (elevations) as well. Left alone, the code sends them with the floor plan (`traceUI.ts` line 219; not run). Three sheets would go out, not one.
+- The page's message says the reader is "Claude, by Anthropic". The live endpoint's default is OpenAI.
+
+Still not measured for the AI reader: wall, partition, opening and room errors, and read time. Once the send is allowed: `python3 run_page_ai.py`, then `python3 compare.py out/ai.traced.plan.json`. The script sends sheet 7 only and stops at 3 calls.
+
 ## Not measured
 
 Accuracy of traced walls, openings and rooms. That needs a floor plan with real linework and an answer key, or the AI plan reader (costs money, sends the drawing out, needs Kate's say-so).
@@ -65,4 +86,4 @@ Run again from `/home/claude/prove`: `python3 run_page.py`, `node build.mjs && p
 
 ## Since this report
 
-The false building from the site plan sheet (finding 3) is fixed on this branch: the reader now also checks that the outside walls on their own enclose a real footprint. Re-run on 21 November: sheet 2 is no longer offered as a traced building. Not yet re-checked on a vector floor plan with an answer key.
+The false building from the site plan sheet is fixed (merged 21 November): the reader also checks that the outside walls on their own enclose a real footprint. The consent wording before an AI read now names the provider the lab is actually set to and says how many sheets will be sent.
