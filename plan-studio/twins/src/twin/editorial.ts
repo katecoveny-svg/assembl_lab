@@ -18,7 +18,7 @@ export type Mood = 'day' | 'golden' | 'dusk';
 
 /** light, haze and exposure for each mood */
 export const LOOK: Record<Mood, { sun: number; sunI: number; hemi: number; fill: number; fog: number; fogDensity: number; env: number; exposure: number; rooms: number }> = {
-  day: { sun: 0xfff8ee, sunI: 3.4, hemi: 0.7, fill: 0.45, fog: 0xdfe6ec, fogDensity: 0.008, env: 0.62, exposure: 0.9, rooms: 0.16 },
+  day: { sun: 0xfff3dc, sunI: 4.4, hemi: 0.7, fill: 0.45, fog: 0xd6e6f2, fogDensity: 0.008, env: 0.62, exposure: 0.9, rooms: 0.16 },
   golden: { sun: 0xffd2a0, sunI: 3.6, hemi: 0.55, fill: 0.45, fog: 0xe2d3c6, fogDensity: 0.011, env: 0.6, exposure: 0.96, rooms: 0.26 },
   dusk: { sun: 0xff9b66, sunI: 0.9, hemi: 0.36, fill: 0.18, fog: 0x3a3144, fogDensity: 0.009, env: 0.5, exposure: 1.1, rooms: 0.8 },
 };
@@ -35,7 +35,7 @@ export function editorialSky(mood: Mood): THREE.CanvasTexture {
       ? [[0, '#1f1d30'], [0.28, '#473d5a'], [0.45, '#b98679'], [0.5, '#f1bd90'], [0.53, '#6d6470'], [0.62, '#3d3a40'], [1, '#1c1d20']]
       : mood === 'golden'
         ? [[0, '#55729a'], [0.3, '#a9b9cb'], [0.44, '#ecd5c2'], [0.5, '#fbe7d2'], [0.525, '#b8aa9a'], [0.62, '#77745f'], [1, '#3a4032']]
-        : [[0, '#4d7db6'], [0.34, '#9fc2e3'], [0.5, '#e8f0f6'], [0.53, '#aab0a4'], [0.62, '#70755f'], [1, '#3a4433']];
+        : [[0, '#2f74c4'], [0.3, '#7db4e6'], [0.47, '#d9ebf7'], [0.5, '#eef6fb'], [0.53, '#aab4a0'], [0.62, '#727a5c'], [1, '#3c4a33']];
   for (const [t, col] of stops) grad.addColorStop(t, col);
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);

@@ -15,6 +15,7 @@ import { twinMats } from './mats';
 import { scanSet, scanTex, scannedFinishes } from './scanned';
 import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights, LOOK, type EaveRun, type Mood } from './editorial';
 import { scandi } from './fitout';
+import { nativeBush } from './nativeTrees';
 import { scandiMats, suite } from './editorial';
 import { buildScandiDiningSuite } from './scandiInteriors';
 import { createArchedBladeGeometry } from './nzNativeFlora';
@@ -544,7 +545,7 @@ export const projectPlan: Project = {
         keys.push({ label: 'From below', eye: stand(centre.clone().addScaledVector(dn, 24).addScaledVector(side, 13).setY(centre.y + 3), 6), look: centre.clone() });
         keys.push({ label: 'Aerial', eye: centre.clone().addScaledVector(dn, 34).addScaledVector(side, -20).setY(centre.y + 30), look: centre.clone() });
         keys.push({ label: 'Deck side', eye: stand(centre.clone().addScaledVector(side, 17).addScaledVector(dn, 9).setY(centre.y + 1), 2.5), look: centre.clone() });
-        if (T.trees?.length) bushObj = await bush(T.trees, plane, [centre.x, centre.z]);
+        if (T.trees?.length) bushObj = P.asBuilt ? await bush(T.trees, plane, [centre.x, centre.z]) : nativeBush(T.trees as [number, number, number, number, string][], plane, [centre.x, centre.z]);
       }
       { const V = T?.views ?? P.views;
         if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
@@ -606,7 +607,7 @@ export const projectPlan: Project = {
       const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
       const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: T.photo ? await photoTex(T.photo) : null });
       // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
-      if (input.kind === 'plan' && !input.plan.asBuilt) nearM.color.setRGB(1.12, 1.04, 0.84);
+      if (input.kind === 'plan' && !input.plan.asBuilt) nearM.color.setRGB(1.3, 1.16, 0.82);
       const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
       try {
         // forest-floor relief at its real size, on a second set of coordinates measured in metres
@@ -622,7 +623,7 @@ export const projectPlan: Project = {
         far.receiveShadow = true; far.name = 'ground_far'; realGround.add(far);
       }
       if (T.sea !== undefined) {
-        const sea = new THREE.Mesh(new THREE.CircleGeometry(9000, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x4a6a78, roughness: 0.18, metalness: 0 }));
+        const sea = new THREE.Mesh(new THREE.CircleGeometry(9000, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: input.kind === 'plan' && !input.plan.asBuilt ? 0x2c86a0 : 0x4a6a78, roughness: 0.14, metalness: 0 }));
         sea.position.set(T.centre[0], T.sea + 0.35, T.centre[1]); sea.name = 'sea'; realGround.add(sea);
       }
       realGround.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? 'Ground from a survey grid.' };
@@ -675,7 +676,7 @@ export const projectPlan: Project = {
       panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name)] : [],
       layers,
       focus: centre,
-      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 2.1 : 1 } : {}),
+      ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? 1.45 : 1 } : {}),
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: 'Site: LINZ LiDAR and aerial photo', title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
