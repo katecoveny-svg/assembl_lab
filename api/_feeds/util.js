@@ -72,7 +72,7 @@ export const envVar = (name, env) => env?.[name] ?? (typeof process !== "undefin
 // answer, or the last good one after an upstream failure) or "snapshot" (built in, nothing fetched). The edge cache in
 // front of the function is invisible here; /feeds.js compares fetchedAt with the clock as well.
 export function withStatus(e, now = Date.now()) {
-  if (!e || e.error) return e;
+  if (!e || e.error || e.status === "unavailable" || e.status === "not-wired") return e; // an honest "no data" keeps its own status
   const snapshot = e.values && e.values.snapshot === true;
   const age = now - Date.parse(e.fetchedAt);
   const status = snapshot ? "snapshot" : e.stale || age > 90e3 ? "cached" : "live";

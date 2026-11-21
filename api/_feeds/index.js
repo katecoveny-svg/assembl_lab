@@ -11,6 +11,7 @@ import { fetchFootprint } from "./linz.js";
 import { fetchGrocery } from "./grocery.js";
 import { fetchSite } from "./site.js";
 import { fetchRetailers, fetchTariffs } from "./retail.js";
+import { fetchGround, fetchSurface } from "./ground.js";
 import { CADENCE_TTL, withStatus } from "./util.js";
 
 export const FEEDS = {
@@ -31,6 +32,8 @@ export const FEEDS = {
   vehicles: { fetch: fetchVehicles, cadence: "monthly" },
   footprint: { fetch: fetchFootprint, cadence: "daily" }, // LINZ building outlines near lat/lon (or the place)
   site: { fetch: fetchSite, cadence: "hourly" }, // facts about one point of land (?lat=&lon=): parcel, zone, overlays, hazards, weather; one envelope per fact in .facts
+  ground: { fetch: fetchGround, cadence: "weekly" }, // LINZ 1 m LiDAR bare-ground heights in a square round lat/lon (?radius= half-width in metres)
+  surface: { fetch: fetchSurface, cadence: "weekly" }, // the same square from LINZ's surface model: tree tops and roofs
   grocery: { fetch: fetchGrocery, cadence: "annual" }, // Commerce Commission Annual Grocery Report: snapshot, not fetched
   rts: { fetch: fetchRts, cadence: "quarterly" }, // Stats NZ Retail Trade Survey, supermarket and hardware
   edhistory: { fetch: fetchEdHistory, cadence: "quarterly" },
