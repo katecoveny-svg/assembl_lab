@@ -1,0 +1,56 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPoint",
+ "fields": [
+  {
+   "name": "TYPE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Verified position of tree",
+      "code": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "VALIDATIONSTATE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Valid and Public",
+      "code": 3
+     }
+    ]
+   }
+  },
+  {
+   "name": "VERSIONSTATUS",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Operative",
+      "code": 4
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "TYPE": "1",
+    "SUBTYPE": null,
+    "SCHEDULE": "1772",
+    "NAME": "English Oak",
+    "VALIDATIONSTATE": 3,
+    "VERSIONSTATUS": 4,
+    "DocumentURL": "https://www.aucklandcouncil.govt.nz/plans-projects-policies-reports-bylaws/our-plans-strategies/unitary-plan/auckland-unitary-plan-modifications/Pages/details.aspx?UnitaryPlanId=30"
+   }
+  }
+ ]
+}

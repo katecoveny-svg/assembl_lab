@@ -1,0 +1,54 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPolyline",
+ "fields": [
+  {
+   "name": "CatchmentAreaGroup",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "2000m2 to 4000m2",
+      "code": 1
+     },
+     {
+      "name": "1ha to 3ha",
+      "code": 3
+     },
+     {
+      "name": "3ha to 100ha",
+      "code": 4
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "CatchmentAreaGroup": 4
+   }
+  },
+  {
+   "attributes": {
+    "CatchmentAreaGroup": 3
+   }
+  },
+  {
+   "attributes": {
+    "CatchmentAreaGroup": 1
+   }
+  },
+  {
+   "attributes": {
+    "CatchmentAreaGroup": 1
+   }
+  },
+  {
+   "attributes": {
+    "CatchmentAreaGroup": 1
+   }
+  }
+ ]
+}

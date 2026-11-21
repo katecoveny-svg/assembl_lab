@@ -12,7 +12,7 @@
 // labelled with their date. Nothing is invented: if a figure is not on the source page, it is not in the answer.
 import { FEEDS_FALLBACK } from "../trades/js/feeds-fallback.js";
 
-const UA = "assembl-lab/1.0 (+https://assembl-lab.vercel.app/trades/; public data chips)";
+const UA = "assembl-lab/1.0 (+https://lab.assembl.co.nz/trades/; public data chips)";
 const CODEHUB = "https://codehub.building.govt.nz/resources/";
 const STATS = "https://www.stats.govt.nz/information-releases/";
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];

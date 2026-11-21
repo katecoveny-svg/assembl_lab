@@ -1,0 +1,18 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [],
+ "features": [
+  {
+   "attributes": {
+    "SusceptibilityValue": "Very High",
+    "SusceptibilityCode": 5,
+    "Confidence": "Fairly Confident",
+    "TotalScore": 78.255,
+    "Zone": "Waipapa/ Hunua",
+    "Shape__Area": 339461.2958984375
+   }
+  }
+ ]
+}

@@ -2,9 +2,8 @@
 // data feed, so this is a snapshot: ./snapshots/grocery.json holds each figure with its source URL and the date it was
 // copied, and the envelope is labelled "Latest published · annual". Nothing is fetched. Update the JSON after the next
 // report (expected mid-2027) and the chip follows.
-import { createRequire } from "node:module";
 import { envelope } from "./util.js";
-const SNAP = createRequire(import.meta.url)("./snapshots/grocery.json");
+import SNAP from "./snapshots/grocery.json" with { type: "json" };
 
 export function buildGrocery(snap = SNAP) {
   const f = snap.figures;

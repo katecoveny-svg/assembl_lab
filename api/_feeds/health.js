@@ -3,11 +3,10 @@
 //     quarterly district factsheets (~120 KB) and national factsheet (~70 KB), found via the publications pages. CC BY 4.0.
 // urgentcare: Pegasus 24 Hour Surgery (Christchurch) public wait-time page, live. Urgent care, not a hospital ED.
 // wastewater: PHF Science COVID-19 in wastewater (GitHub, weekly, CC BY 4.0). A respiratory signal, not hospitalisations.
-import { createRequire } from "node:module";
 import { getText, getBuffer, envelope, memo, round, nzToday, splitCSV } from "./util.js";
 import { docxParagraphs } from "./zip.js";
 import { DISTRICTS, REGIONS, districtKey } from "./places.js";
-const ED_HISTORY = createRequire(import.meta.url)("./snapshots/edhistory.json");
+import ED_HISTORY from "./snapshots/edhistory.json" with { type: "json" };
 
 const HNZ = "https://www.healthnz.govt.nz";
 const fyOf = (t) => (t.month >= 7 ? t.year : t.year - 1); // 2025 → "2025-26"
@@ -85,9 +84,9 @@ async function edData() {
       } catch (e) { natLinks = []; }
     }
     const [cur, prev, nat] = await Promise.all([
-      getBuffer(distLinks[0]).then((b) => parseDistrictFactsheet(docxParagraphs(b))),
-      distLinks[1] ? getBuffer(distLinks[1]).then((b) => parseDistrictFactsheet(docxParagraphs(b))).catch(() => null) : null,
-      natLinks[0] ? getBuffer(natLinks[0]).then((b) => parseNationalFactsheet(docxParagraphs(b))).catch(() => null) : null,
+      getBuffer(distLinks[0]).then(async (b) => parseDistrictFactsheet(await docxParagraphs(b))),
+      distLinks[1] ? getBuffer(distLinks[1]).then(async (b) => parseDistrictFactsheet(await docxParagraphs(b))).catch(() => null) : null,
+      natLinks[0] ? getBuffer(natLinks[0]).then(async (b) => parseNationalFactsheet(await docxParagraphs(b))).catch(() => null) : null,
     ]);
     return { cur, prev, nat, urls: { page, district: distLinks[0], national: natLinks[0] || null } };
   });
@@ -157,7 +156,7 @@ export async function fetchEdHistory() {
       for (const y of [fy, fy - 1]) {
         const perf = await getText(`${HNZ}/publications/health-targets-performance-resources-${fyLabel(y)}`).catch(() => "");
         const links = docLinks(perf, /5-and-10-years-of-results-accessible[^/]*\.docx$/i).sort().reverse();
-        if (links.length) { urls.tenYear = links[0]; tenYear = parseTenYear(docxParagraphs(await getBuffer(links[0]))); break; }
+        if (links.length) { urls.tenYear = links[0]; tenYear = parseTenYear(await docxParagraphs(await getBuffer(links[0]))); break; }
       }
     } catch (e) { /* long-run series optional */ }
     return buildEdHistory(ED_HISTORY, nat, tenYear, urls);

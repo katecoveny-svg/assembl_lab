@@ -1,0 +1,55 @@
+{
+ "latitude": -36.801407,
+ "longitude": 175.15112,
+ "generationtime_ms": 0.12171268463134766,
+ "utc_offset_seconds": 46800,
+ "timezone": "Pacific/Auckland",
+ "timezone_abbreviation": "GMT+13",
+ "elevation": 52,
+ "current_units": {
+  "time": "iso8601",
+  "interval": "seconds",
+  "temperature_2m": "°C",
+  "apparent_temperature": "°C",
+  "relative_humidity_2m": "%",
+  "wind_speed_10m": "km/h",
+  "wind_gusts_10m": "km/h",
+  "wind_direction_10m": "°",
+  "cloud_cover": "%",
+  "precipitation": "mm",
+  "is_day": ""
+ },
+ "current": {
+  "time": "2026-11-21T16:00",
+  "interval": 900,
+  "temperature_2m": 18.2,
+  "apparent_temperature": 15.4,
+  "relative_humidity_2m": 55,
+  "wind_speed_10m": 17.7,
+  "wind_gusts_10m": 37.8,
+  "wind_direction_10m": 220,
+  "cloud_cover": 100,
+  "precipitation": 0,
+  "is_day": 1
+ },
+ "daily_units": {
+  "time": "iso8601",
+  "sunrise": "iso8601",
+  "sunset": "iso8601",
+  "daylight_duration": "s"
+ },
+ "daily": {
+  "time": [
+   "2026-11-21"
+  ],
+  "sunrise": [
+   "2026-11-21T05:58"
+  ],
+  "sunset": [
+   "2026-11-21T20:12"
+  ],
+  "daylight_duration": [
+   51270.75
+  ]
+ }
+}

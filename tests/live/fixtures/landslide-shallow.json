@@ -1,0 +1,17 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [],
+ "features": [
+  {
+   "attributes": {
+    "SusceptibilityValue": "Low",
+    "SusceptibilityCode": 2,
+    "Slope": 20,
+    "SubRegion": "Waipapa/Hunua",
+    "MeanPredSource": "Derived from grouped LASSO penalized logistic regression and standard logistic regression modelling"
+   }
+  }
+ ]
+}

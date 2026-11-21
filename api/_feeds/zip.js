@@ -1,37 +1,41 @@
-// Minimal ZIP reader for .docx and .xlsx files (stored or deflated entries only). No dependencies.
-import { inflateRawSync } from "node:zlib";
+// Minimal ZIP reader for .docx and .xlsx files (stored or deflated entries only). No dependencies, no node: modules:
+// it reads a Uint8Array with a DataView and inflates with the Web DecompressionStream, which Cloudflare Workers and Node 20+ both have.
+// unzip() is async because inflating is; every entry is inflated up front so read(name) can stay synchronous for the callers.
+const td = new TextDecoder("utf-8");
 
-export function unzip(buf) {
+async function inflateRaw(u8) {
+  const out = new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+
+export async function unzip(buf) {
+  const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
   let eocd = -1;
-  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
   if (eocd < 0) throw new Error("not a zip file");
-  const count = buf.readUInt16LE(eocd + 10); let p = buf.readUInt32LE(eocd + 16);
-  const files = {};
+  const count = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+  const text = {};
   for (let n = 0; n < count; n++) {
-    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error("bad zip directory");
-    const method = buf.readUInt16LE(p + 10), csize = buf.readUInt32LE(p + 20), nameLen = buf.readUInt16LE(p + 28),
-      extraLen = buf.readUInt16LE(p + 30), commentLen = buf.readUInt16LE(p + 32), local = buf.readUInt32LE(p + 42);
-    const name = buf.slice(p + 46, p + 46 + nameLen).toString("utf8");
-    files[name] = { method, csize, local };
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("bad zip directory");
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nameLen = dv.getUint16(p + 28, true),
+      extraLen = dv.getUint16(p + 30, true), commentLen = dv.getUint16(p + 32, true), lh = dv.getUint32(p + 42, true);
+    const name = td.decode(u8.subarray(p + 46, p + 46 + nameLen));
+    const start = lh + 30 + dv.getUint16(lh + 26, true) + dv.getUint16(lh + 28, true);
+    const raw = u8.subarray(start, start + csize);
+    if (method !== 0 && method !== 8) throw new Error(`zip: unsupported compression method ${method}`);
+    text[name] = td.decode(method === 0 ? raw : await inflateRaw(raw));
     p += 46 + nameLen + extraLen + commentLen;
   }
-  return {
-    names: Object.keys(files),
-    read(name) {
-      const f = files[name]; if (!f) return null;
-      const lh = f.local, start = lh + 30 + buf.readUInt16LE(lh + 26) + buf.readUInt16LE(lh + 28);
-      const raw = buf.slice(start, start + f.csize);
-      return (f.method === 0 ? raw : inflateRawSync(raw)).toString("utf8");
-    },
-  };
+  return { names: Object.keys(text), read: (name) => (name in text ? text[name] : null) };
 }
 
 const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
 export const unxml = (s) => s.replace(/&(#x?[0-9a-f]+|\w+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(parseInt(e.slice(e[1] === "x" ? 2 : 1), e[1] === "x" ? 16 : 10)) : (ENT[e] ?? m));
 
 // .docx → array of non-empty paragraph strings (table cells are paragraphs too)
-export function docxParagraphs(buf) {
-  const xml = unzip(buf).read("word/document.xml") || "";
+export async function docxParagraphs(buf) {
+  const xml = (await unzip(buf)).read("word/document.xml") || "";
   const out = [];
   for (const p of xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || []) {
     const t = (p.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []).map((x) => unxml(x.replace(/<[^>]+>/g, ""))).join("").trim();
@@ -41,8 +45,8 @@ export function docxParagraphs(buf) {
 }
 
 // .xlsx → { sheetNames, rows(name) → array of arrays of cell strings }
-export function xlsx(buf) {
-  const z = unzip(buf);
+export async function xlsx(buf) {
+  const z = await unzip(buf);
   const wb = z.read("xl/workbook.xml") || "", rels = z.read("xl/_rels/workbook.xml.rels") || "";
   const ss = ((z.read("xl/sharedStrings.xml") || "").match(/<si>[\s\S]*?<\/si>/g) || []).map((si) => unxml((si.match(/<t[^>]*>[^<]*<\/t>/g) || []).map((x) => x.replace(/<[^>]+>/g, "")).join("")));
   const relMap = Object.fromEntries([...rels.matchAll(/<Relationship [^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)].map((m) => [m[1], m[2]]));

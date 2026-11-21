@@ -1,0 +1,82 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [
+  {
+   "name": "CanFill",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Yes",
+      "code": "Yes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "VALIDATIONSTATE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Valid and Public",
+      "code": 3
+     }
+    ]
+   }
+  },
+  {
+   "name": "SW_DATUM_CONFIDENCE_NZVD2016",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "NZVD2016 Calculated",
+      "code": "VD2016CAL"
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "CatchmentArea": 201619,
+    "FPA_ID": 27049571,
+    "Depth100y": 0.71,
+    "MaxDepth": 0.71,
+    "MinimumLevel": 40.98,
+    "RainfallExisting": 237,
+    "RainfallFuture": 277,
+    "RainfallRequired": 15,
+    "SpillElevation": 41.69,
+    "Vol100yrm3": 322,
+    "VolumeM3": 322,
+    "Dam": " ",
+    "DamClass": null,
+    "Level100y": 41.69,
+    "CanFill": "Yes",
+    "RecordStatus": null,
+    "MaintenanceNotes": null,
+    "created_user": null,
+    "created_date": null,
+    "last_edited_user": "MASTER",
+    "last_edited_date": 1720783017000,
+    "VALIDATIONSTATE": 3,
+    "Level100y_text": "Spills – specific calculation is required",
+    "Depth100y_text": "Spills – specific calculation is required",
+    "Vol100yrm3_text": "Spills – specific calculation is required",
+    "MinimumLevel_NZVD2016": 40.7,
+    "SpillLevel_NZVD2016": 41.41,
+    "Level100y_NZVD2016": 41.41,
+    "Level100y_text_NZVD2016": "Spills – specific calculation is required",
+    "SW_DATUM_CONFIDENCE_NZVD2016": "VD2016CAL",
+    "SW_DATUM_CONFIDENCE_AUK1946": null,
+    "Shape__Area": 988.5322265625,
+    "Shape__Length": 149.44475967748104
+   }
+  }
+ ]
+}

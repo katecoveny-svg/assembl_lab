@@ -1,0 +1,16 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [],
+ "features": [
+  {
+   "attributes": {
+    "Vulnerability": "Very Low",
+    "VulnerabilityDescription": "Very Low Liquefaction Vulnerability",
+    "LiquefactionAssessmentLevel": "A",
+    "RecordStatus": "Current"
+   }
+  }
+ ]
+}

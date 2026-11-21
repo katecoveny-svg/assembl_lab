@@ -3,7 +3,7 @@
 // Key-less: the service is "Query,Extract" with maxRecordCount 2000 and no token. We cap a request at 500 m and 60
 // buildings so one call stays ~25–60 KB. The layer is republished when LINZ processes new aerial imagery (the
 // mirror's last data edit is read from the layer metadata), not on a fixed schedule; we re-check daily.
-import { getText, getJSON, envelope, memo, round } from "./util.js";
+import { getText, getJSON, envVar, envelope, memo, round } from "./util.js";
 import { placeOf } from "./places.js";
 
 // With a free LDS API key in LINZ_API_KEY (data.linz.govt.nz/my/api/; the same env name the OKComputer reference app reads)
@@ -11,7 +11,7 @@ import { placeOf } from "./places.js";
 // fallback and the key-less default.
 export const LINZ_FS = "https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services/LINZ_NZ_Building_Outlines/FeatureServer/0";
 const LDS = "https://data.linz.govt.nz/layer/101290-nz-building-outlines/";
-export const linzKey = () => process.env.LINZ_API_KEY || null;
+export const linzKey = (env) => envVar("LINZ_API_KEY", env) || null;
 const FIELDS = "building_id,name,use_,suburb_locality,town_city,territorial_authority,capture_method,capture_source_name,capture_source_from,capture_source_to,last_modified,Shape__Area";
 const MAX_RADIUS = 500, MAX_N = 60;
 
@@ -92,8 +92,8 @@ export function fetchFootprint(params) {
   const key = `footprint:${q.kind}:${q.lat},${q.lon},${q.radiusM}${q.bbox ? ":" + q.bbox.join(",") : ""}`;
   return memo(key, 6 * 3600e3, async () => {
     const meta = memo("footprint:meta", 24 * 3600e3, () => getJSON(`${LINZ_FS}?f=json`, { ms: 5000 })).catch(() => null);
-    if (linzKey()) { // LDS first, mirror if it fails
-      try { const geo = await getJSON(ldsUrl(q, linzKey()), { ms: 8000 }); if ((geo.features || []).length || geo.type === "FeatureCollection") return parseFootprint(geo, q, null, "lds-wfs"); } catch (e) { /* fall back to the mirror */ }
+    if (linzKey(params.env)) { // LDS first, mirror if it fails
+      try { const geo = await getJSON(ldsUrl(q, linzKey(params.env)), { ms: 8000 }); if ((geo.features || []).length || geo.type === "FeatureCollection") return parseFootprint(geo, q, null, "lds-wfs"); } catch (e) { /* fall back to the mirror */ }
     }
     return parseFootprint(await getJSON(footprintUrl(q), { ms: 8000 }), q, await meta, "arcgis-mirror");
   });

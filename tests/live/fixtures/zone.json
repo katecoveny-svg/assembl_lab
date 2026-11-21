@@ -1,0 +1,52 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "globalIdFieldName": "GlobalID",
+ "geometryType": "esriGeometryPolygon",
+ "fields": [
+  {
+   "name": "ZONE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Hauraki Gulf Islands",
+      "code": 43
+     }
+    ]
+   }
+  },
+  {
+   "name": "GROUPZONE",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "General",
+      "code": 7
+     }
+    ]
+   }
+  },
+  {
+   "name": "VERSIONSTATUS",
+   "domain": {
+    "type": "codedValue",
+    "codedValues": [
+     {
+      "name": "Operative",
+      "code": 4
+     }
+    ]
+   }
+  }
+ ],
+ "features": [
+  {
+   "attributes": {
+    "ZONE": 43,
+    "GROUPZONE": 7,
+    "VERSIONSTATUS": 4
+   }
+  }
+ ]
+}
