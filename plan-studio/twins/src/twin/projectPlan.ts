@@ -17,6 +17,7 @@ import { applyEditorial, eaveLights, hillsideMat, nativePlanting, setEaveLights,
 import { scandi } from './fitout';
 import { nativeBush } from './nativeTrees';
 import { claddingRibs, type RibWall } from './fittings';
+import { buildCar } from './car';
 import { scandiMats, suite } from './editorial';
 import { buildScandiDiningSuite } from './scandiInteriors';
 import { createArchedBladeGeometry } from './nzNativeFlora';
@@ -208,7 +209,7 @@ function flight(pts: [number, number][], levels: [number, number], w: number, gr
 }
 
 /** something drawn on the site plan, in the plan model's frame (x, z) */
-export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string }
+export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean }
 
 /** the site plan's paths, pads, walls, beds and trees on the ground */
 function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
@@ -230,22 +231,40 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
       line.name = 'boundary'; line.userData = { kind: 'boundary', name: 'Boundary', source: f.source ?? 'ai', note: 'legal boundary, drawn on the ground' }; land.add(line);
     } else if ((f.kind === 'path' || f.kind === 'driveway' || f.kind === 'steps') && pts.length >= 2) {
       land.add(pathRibbon(`${f.kind}_${i + 1}`, pts, f.width ?? (f.kind === 'driveway' ? 3 : 1.2), groundAt, q, `${f.kind} from the site plan`));
+    } else if (f.kind === 'landing' && f.levels && f.pts.length >= 3) {
+      // a timber landing between flights: boards on bearers, a post under each corner
+      const y = f.levels[0], sh = new THREE.Shape(f.pts.map((q) => new THREE.Vector2(q[0], -q[1])));
+      const top = new THREE.ExtrudeGeometry(sh, { depth: 0.045, bevelEnabled: false }); top.rotateX(-Math.PI / 2); top.translate(0, y - 0.045, 0);
+      const parts: THREE.BufferGeometry[] = [top];
+      const cx = f.pts.reduce((t, q) => t + q[0], 0) / f.pts.length, cz = f.pts.reduce((t, q) => t + q[1], 0) / f.pts.length;
+      for (const q of f.pts) { const px = q[0] + Math.sign(cx - q[0]) * 0.07, pz = q[1] + Math.sign(cz - q[1]) * 0.07, gy = groundAt(px, -pz), h = y - 0.045 - gy; if (h > 0.1) parts.push(new THREE.BoxGeometry(0.1, h, 0.1).translate(px, gy + h / 2, pz)); }
+      f.pts.forEach((a, k) => { const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]); const br = new THREE.BoxGeometry(L, 0.19, 0.045); br.rotateY(-Math.atan2(b2[1] - a[1], b2[0] - a[0])); br.translate((a[0] + b2[0]) / 2, y - 0.14, (a[1] + b2[1]) / 2); parts.push(br); });
+      const m = new THREE.Mesh(mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!, timber); m.castShadow = m.receiveShadow = true; m.name = `landing_${i + 1}`;
+      m.userData = { kind: 'steps', name: 'Stair landing', ifcClass: 'IfcSlab', source: f.source ?? 'scaled', note: 'landing level is assumed where the drawings do not write it' };
+      land.add(m);
     } else if ((f.kind === 'parking' || f.kind === 'patio' || f.kind === 'pad') && f.levels && f.pts.length >= 3) {
-      // a level slab at a stated height, with an upstand where the ground stands above it
-      const xs = f.pts.map((q) => q[0]), zs = f.pts.map((q) => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs), y = f.levels[0];
-      const parts: THREE.BufferGeometry[] = [new THREE.BoxGeometry(x1 - x0, 0.2, z1 - z0).translate((x0 + x1) / 2, y - 0.1, (z0 + z1) / 2)];
-      for (const [ax, az, bx, bz] of [[x0, z0, x1, z0], [x1, z0, x1, z1], [x1, z1, x0, z1], [x0, z1, x0, z0]]) {
-        const L = Math.hypot(bx - ax, bz - az), n = Math.ceil(L / 0.8);
-        for (let k = 0; k < n; k++) {
-          const mx = ax + ((bx - ax) * (k + 0.5)) / n, mz = az + ((bz - az) * (k + 0.5)) / n, out = 0.9, ox = mx + Math.sign(mx - (x0 + x1) / 2) * (ax === bx ? out : 0), oz = mz + Math.sign(mz - (z0 + z1) / 2) * (az === bz ? out : 0);
-          const top = groundAt(ox, -oz), h = top - y;
-          if (h > 0.15) parts.push(new THREE.BoxGeometry(ax === bx ? 0.2 : L / n + 0.02, h + 0.25, az === bz ? 0.2 : L / n + 0.02).translate(mx, y + h / 2 - 0.1, mz));
-          else if (h < -0.15) parts.push(new THREE.BoxGeometry(ax === bx ? 0.2 : L / n + 0.02, -h + 0.2, az === bz ? 0.2 : L / n + 0.02).translate(mx, y + h / 2 - 0.1, mz));
+      // a level slab at a stated height, cut to its drawn outline, with a low wall where the ground stands above or below it
+      const y = f.levels[0], sh = new THREE.Shape(f.pts.map((q) => new THREE.Vector2(q[0], -q[1])));
+      const slab = new THREE.ExtrudeGeometry(sh, { depth: 0.2, bevelEnabled: false }); slab.rotateX(-Math.PI / 2); slab.translate(0, y - 0.2, 0);
+      const parts: THREE.BufferGeometry[] = [slab];
+      const cx = f.pts.reduce((t, q) => t + q[0], 0) / f.pts.length, cz = f.pts.reduce((t, q) => t + q[1], 0) / f.pts.length;
+      f.pts.forEach((a, k) => {
+        const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.8)), ang = Math.atan2(b2[1] - a[1], b2[0] - a[0]);
+        let nx = -(b2[1] - a[1]) / L, nz = (b2[0] - a[0]) / L; if (nx * ((a[0] + b2[0]) / 2 - cx) + nz * ((a[1] + b2[1]) / 2 - cz) < 0) { nx = -nx; nz = -nz; }
+        for (let t = 0; t < n; t++) {
+          const mx = a[0] + ((b2[0] - a[0]) * (t + 0.5)) / n, mz = a[1] + ((b2[1] - a[1]) * (t + 0.5)) / n, top = groundAt(mx + nx * 0.9, -(mz + nz * 0.9)), h = top - y;
+          if (Math.abs(h) < 0.15) continue;
+          const w = new THREE.BoxGeometry(L / n + 0.02, Math.abs(h) + 0.25, 0.2); w.rotateY(-ang); w.translate(mx, y + h / 2 - 0.1, mz); parts.push(w);
         }
-      }
-      const m = new THREE.Mesh(mergeGeometries(parts)!, concrete); m.castShadow = m.receiveShadow = true; m.name = `${f.kind}_${i + 1}`;
+      });
+      const m = new THREE.Mesh(mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!, concrete); m.castShadow = m.receiveShadow = true; m.name = `${f.kind}_${i + 1}`;
       m.userData = { kind: f.kind, name: f.kind === 'parking' ? 'Car bay' : 'Slab', ifcClass: 'IfcSlab', source: f.source ?? 'scaled', note: 'level slab at the stated height; walls where the ground stands above or below it are indicative' };
       land.add(m);
+      if (f.kind === 'parking' && f.car) {
+        // a car on the bay, along its longer side, for scale
+        let best = 0, ang = 0; f.pts.forEach((a, k) => { const b2 = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]); if (L > best) { best = L; ang = Math.atan2(b2[1] - a[1], b2[0] - a[0]); } });
+        const car = buildCar(); car.position.set(cx, y, cz); car.rotation.y = -ang; car.traverse((o) => { o.castShadow = true; o.receiveShadow = true; }); land.add(car);
+      }
     } else if ((f.kind === 'parking' || f.kind === 'patio' || f.kind === 'pad') && pts.length >= 3) {
       // laid on the ground like a bed, in concrete
       const m = mulchBed(`${f.kind}_${i + 1}`, pts, (e, n) => groundAt(e, n) + 0.04, q);
