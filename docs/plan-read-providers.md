@@ -31,3 +31,15 @@ To change the order, add a plain variable `PLANREAD_PROVIDERS`, for example `gem
 4. Drop a real plan scan into Plan Studio. The result says which provider answered. That real read is the only proof the live connection works.
 
 Plan images are passed to the provider and are not stored by assembl.
+
+## The two guides use the same key
+
+The studio guide and the assembl.co.nz home guide also answer on OpenAI first once `OPENAI_API_KEY` is set
+(default model `gpt-6.2-astra`; override with `ARCHIPRO_OPENAI_MODEL` or `HOME_OPENAI_MODEL`). Claude stays as the
+fallback if OpenAI can't answer. With no OpenAI key, nothing changes.
+
+The guides move the page with tools, and GPT-6 Astra only takes tools on OpenAI's Responses API, so the guides call
+that (the plan reader has no tools and stays on Chat Completions). Nothing is stored at OpenAI (`store: false`).
+
+Checked live on 21 November 2026: the plan reader read a test sheet on `gpt-6.2-astra`. The guides' first live
+attempt failed on the older Chat Completions call; the Responses version is tested offline only until it is deployed.
