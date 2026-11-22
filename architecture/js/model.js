@@ -451,7 +451,7 @@ export function readBundle(input) {
 export function writeBundle(b, now, files, keptIn = 'the browser they were kept in') {
   const withFiles = Array.isArray(files);
   const out = { type: BUNDLE_TYPE, exported_at: nowIso(now),
-    note: `A project exported from assembl. architecture operations. It includes the site point if one was saved. ${withFiles ? `Files are included: ${files.length}.` : `Files are not included: only the records. The files stay in ${keptIn}.`} Approvals are a record of what named people said: not signatures and not a professional sign-off.`,
+    note: `A project exported from assembl. architecture operations. It includes the site point and address if they were saved. ${withFiles ? `Files are included: ${files.length}.` : `Files are not included: only the records. The files stay in ${keptIn}.`} Approvals are a record of what named people said: not signatures and not a professional sign-off.`,
     files_included: withFiles, project: b.project };
   for (const k of LISTS) out[k] = b[k];
   if (withFiles) out.files = files;
