@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written for the tests in the shape of a beehive.govt.nz portfolio feed. Made-up items; no person or real iwi is named. -->
+<rss version="2.0" xml:base="https://www.beehive.govt.nz/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Treaty of Waitangi Negotiations</title>
+    <link>https://www.beehive.govt.nz/</link>
+    <description/>
+    <item>
+      <title>Deed of Settlement signed with an iwi of the Bay of Plenty</title>
+      <link>https://www.beehive.govt.nz/release/deed-settlement-signed-example-iwi</link>
+      <description>The deed includes cultural redress and the return of Crown properties in Whakatāne.</description>
+      <pubDate>Mon, 17 Aug 2026 12:00:00 +1200</pubDate>
+      <guid isPermaLink="false">930001</guid>
+    </item>
+  </channel>
+</rss>

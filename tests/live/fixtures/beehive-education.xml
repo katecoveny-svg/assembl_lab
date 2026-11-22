@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written for the tests in the shape of a beehive.govt.nz portfolio feed (RSS 2.0, read 22 Nov 2026). The items are made up; no person is named. -->
+<rss version="2.0" xml:base="https://www.beehive.govt.nz/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Education</title>
+    <link>https://www.beehive.govt.nz/</link>
+    <description/>
+    <language>en</language>
+    <item>
+      <title>Drury gets land for a new primary school</title>
+      <link>https://www.beehive.govt.nz/release/drury-gets-land-new-primary-school</link>
+      <description>Land has been secured in Drury for a future primary school to serve the growing area, the Education Minister announced today.</description>
+      <pubDate>Tue, 10 Nov 2026 09:27:45 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900001</guid>
+    </item>
+    <item>
+      <title>Four more school redevelopments get the green light</title>
+      <link>https://www.beehive.govt.nz/release/four-more-school-redevelopments-get-green-light</link>
+      <description>The Government is investing a further $37 million to redevelop four schools.</description>
+      <pubDate>Thu, 12 Nov 2026 18:13:02 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900002</guid>
+    </item>
+    <item>
+      <title>Govt funds new classrooms at Wakatipu High School</title>
+      <link>https://www.beehive.govt.nz/release/govt-funds-new-classrooms-wakatipu-high-school</link>
+      <description>The Government is investing in new classrooms at Wakatipu High School to meet growing demand in Queenstown.</description>
+      <pubDate>Tue, 06 Oct 2026 13:55:02 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900003</guid>
+    </item>
+    <item>
+      <title>Funding approved for Kumeū secondary school</title>
+      <link>https://www.beehive.govt.nz/release/funding-approved-kumeu-secondary-school</link>
+      <description>&lt;p&gt;The Government has approved funding for the new Kumeū Secondary School, with design work to begin next year.&lt;/p&gt;</description>
+      <pubDate>Fri, 13 Nov 2026 10:00:00 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900004</guid>
+    </item>
+    <item>
+      <title>Sod turned on new kura in Hamilton</title>
+      <link>https://www.beehive.govt.nz/release/sod-turned-new-kura-hamilton</link>
+      <description>Construction has started on new buildings for a kura in Hamilton.</description>
+      <pubDate>Mon, 16 Nov 2026 11:00:00 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900005</guid>
+    </item>
+    <item>
+      <title>NCEA students offered a re-sit</title>
+      <link>https://www.beehive.govt.nz/release/ncea-students-offered-re-sit</link>
+      <description>Students who sat a disrupted exam will be offered a re-sit.</description>
+      <pubDate>Thu, 19 Nov 2026 15:27:27 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900006</guid>
+    </item>
+    <item>
+      <title>New school property agency begins operations</title>
+      <link>https://www.beehive.govt.nz/release/new-school-property-agency-begins-operations</link>
+      <description>The New Zealand School Property Agency will build, manage, and maintain school property.</description>
+      <pubDate>Thu, 01 Oct 2026 08:33:24 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900007</guid>
+    </item>
+    <item>
+      <title>Address to a principals' conference</title>
+      <link>https://www.beehive.govt.nz/speech/address-principals-conference</link>
+      <description>A speech about new schools and classrooms.</description>
+      <pubDate>Thu, 24 Sep 2026 16:55:18 +1200</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900008</guid>
+    </item>
+    <item>
+      <title>New classrooms funded for a Christchurch school</title>
+      <link>https://www.beehive.govt.nz/release/old-classrooms-christchurch</link>
+      <description>The Government is funding new classrooms at a school in Christchurch.</description>
+      <pubDate>Mon, 02 Dec 2024 10:00:00 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900009</guid>
+    </item>
+    <item>
+      <title>Hall &amp;amp; library upgrade funded &lt;b&gt;in Rotorua&lt;/b&gt;</title>
+      <link>https://www.beehive.govt.nz/release/hall-library-upgrade-rotorua</link>
+      <description>&lt;script&gt;alert(1)&lt;/script&gt;An upgrade of a school hall and library in Rotorua has been funded.&amp;nbsp;</description>
+      <pubDate>Wed, 18 Nov 2026 09:00:00 +1300</pubDate>
+      <dc:creator>beehive.govt.nz</dc:creator>
+      <guid isPermaLink="false">900010</guid>
+    </item>
+    <item>
+      <title>A release with a link off the site</title>
+      <link>https://example.com/release/not-beehive</link>
+      <description>New school buildings.</description>
+      <pubDate>Wed, 18 Nov 2026 09:00:00 +1300</pubDate>
+      <guid isPermaLink="false">900011</guid>
+    </item>
+  </channel>
+</rss>
