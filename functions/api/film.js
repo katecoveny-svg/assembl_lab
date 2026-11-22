@@ -264,7 +264,9 @@ export function geminiFilmRequest(env, { video, still, guide, prompt, seconds, a
     headers: headersOf(env),
     body: {
       model, input,
-      response_format: { type: "video", aspect_ratio: aspect, resolution, duration: `${seconds}s`, delivery: "inline" },
+      // Google refuses a duration on an edit task (400 "Duration cannot be set in response format for edit task", 23 Nov 2026):
+      // the edit keeps the clip's own length, so the duration is sent only for other tasks
+      response_format: { type: "video", aspect_ratio: aspect, resolution, ...(task === "edit" ? {} : { duration: `${seconds}s` }), delivery: "inline" },
       ...(task ? { generation_config: { video_config: { task } } } : {}),
       // background needs store: true (Google keeps it until deleted; this endpoint deletes it once fetched); wait keeps nothing
       ...(mode === "background" ? { background: true, store: true } : { background: false, store: false }),
