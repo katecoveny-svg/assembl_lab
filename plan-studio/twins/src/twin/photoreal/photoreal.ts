@@ -33,7 +33,7 @@ type Saved = { mats: Map<THREE.Mesh, THREE.Material | THREE.Material[]>; hemi: n
 export const look = {
   /** exposure outdoors and fully inside (the camera opens up indoors, as a photographer would) */
   exposureOut: 0.95,
-  exposureIn: 2.6,
+  exposureIn: 7.0,
   ao: 0.75,
   bloom: 0.06,
   bloomThreshold: 1.4,
@@ -57,6 +57,7 @@ export class Photoreal {
   lastBake: ArrayBuffer | null = null;
   stats: Record<string, unknown> = {};
   private saved: Saved | null = null;
+  private hiddenLines: THREE.Object3D[] = [];
   private envTex: THREE.DataTexture | null = null;
   pipe: THREE.RenderPipeline | null = null;
   private uExp = uniform(1);
@@ -146,13 +147,43 @@ export class Photoreal {
     }
   }
 
+  /** the colour of the baked light on the interior walls and ceilings (painted white), for the interior white balance */
+  private interiorTint(): [number, number, number] | null {
+    const P = this.P!;
+    let R = 0, G = 0, B = 0, n = 0;
+    for (const r of P.receivers) {
+      const m = r.mesh.material as THREE.Material;
+      if (!/wall_paint|ceiling|lining/.test(`${m.name} ${r.mesh.name}`)) continue;
+      const gi = r.mesh.geometry.attributes.gi as THREE.BufferAttribute | undefined;
+      if (!gi) continue;
+      for (let i = 0; i < gi.count; i++) {
+        const x = gi.getX(i), y = gi.getY(i), z = gi.getZ(i);
+        if (x + y + z < 1e-4) continue;
+        R += x; G += y; B += z; n++;
+      }
+    }
+    if (n < 100) return null;
+    return [R / n, G / n, B / n];
+  }
+
   private applyLook() {
     const a = this.app, P = this.P!, sc = a.scene as THREE.Scene;
+    const tint = this.interiorTint();
+    if (tint) {
+      // a camera's auto white balance: take most of the interior light's colour cast out (85%), keep a little warmth
+      const L = 0.2126 * tint[0] + 0.7152 * tint[1] + 0.0722 * tint[2];
+      const wb = tint.map((c) => Math.pow(L / Math.max(1e-4, c), 0.85)) as [number, number, number];
+      const g = wb[1]; look.wbIn = wb.map((x) => x / g) as [number, number, number];
+      this.stats.interiorLight = tint.map((x) => +x.toFixed(3));
+      this.stats.whiteBalanceIn = look.wbIn.map((x) => +x.toFixed(3));
+    }
     const fill = (a as unknown as { fill: THREE.DirectionalLight | null }).fill;
     this.saved = {
       mats: new Map(), hemi: a.hemi.intensity, fill: fill?.intensity ?? 0, env: sc.environment, envI: sc.environmentIntensity, envRot: sc.environmentRotation.clone(),
       tone: a.renderer.toneMapping, exp: a.renderer.toneMappingExposure, pipeline: a.pipeline, update: a.updateInterior, shadowRadius: a.sun.shadow.radius,
     };
+    // drawn lines (boundary, contours, set-out) are diagram marks, not part of a picture
+    a.scene.traverse((o) => { if ((o as THREE.Line).isLine && o.visible) { o.visible = false; this.hiddenLines.push(o); } });
     for (const r of P.receivers) {
       this.saved.mats.set(r.mesh, r.mesh.material);
       const src = r.mesh.material as THREE.Material;
@@ -239,6 +270,7 @@ export class Photoreal {
       if (sv.pipeline && !look.debug.noPipe) { a.pipeline = null; a.setupPipeline(); } else a.pipeline = sv.pipeline;
       this.saved = null;
     }
+    for (const o of this.hiddenLines.splice(0)) o.visible = true;
     if (this.P) { restoreGeometry(this.P); this.P = null; }
     removeDetail(a.scene);
     removeProps(a);

@@ -65,34 +65,43 @@ export function registerPhotoreal(app: App) {
       return btoa(s);
     },
     /** a still of the current view as a PNG data URL: `samples` jittered sub-frames averaged */
-    still: async (o: { w?: number; h?: number; samples?: number; caption?: boolean; ap?: number } = {}) => {
+    still: async (o: { w?: number; h?: number; samples?: number; caption?: boolean; ap?: number; cull?: boolean } = {}) => {
       app.paused = true;
       try {
         const st = auto(); st.ap = o.ap ?? 0;
+        if (o.cull) cap.cullBegin();
         cap.shoot({ w: o.w ?? 1600, h: o.h ?? 900, samples: o.samples ?? 8, caption: o.caption ?? true, photoreal: pr.on ? pr : null }, () => st);
         const b = await cap.png();
         return await blobToDataURL(b);
-      } finally { cap.restore(); app.paused = false; }
+      } finally { cap.cullEnd(); cap.restore(); app.paused = false; }
     },
     /** film frames [from, to): each a PNG POSTed to `url?f=<frame>` (the headless tool writes them to disk) */
-    film: async (o: { from?: number; to?: number; w?: number; h?: number; samples?: number; url?: string; shutter?: number } = {}) => {
+    film: async (o: { from?: number; to?: number; w?: number; h?: number; samples?: number; url?: string; shutter?: number; cull?: boolean } = {}) => {
       app.paused = true;
       const fps = path.spec.fps, N = path.frames();
       const from = o.from ?? 0, to = Math.min(N, o.to ?? N), n = o.samples ?? 4, shutter = o.shutter ?? 0.5;
-      // the sun does not move during the film: its shadow map is drawn once
+      // the sun does not move during the film: its shadow map is drawn once, with every tree, before the bush is
+      // culled to each frame's view
       app.sun.shadow.autoUpdate = false; app.sun.shadow.needsUpdate = true;
+      cap.shoot({ w: 64, h: 36, samples: 1, photoreal: pr.on ? pr : null }, () => path.at(0));
+      if (o.cull !== false) {
+        const pts: [number, number, number][] = [];
+        for (let k = 0; k <= 400; k++) pts.push(path.at((k / 400) * path.spec.duration).eye);
+        cap.cullBegin(pts);
+        console.log(`[film] ${cap.cleared} trees by the camera path left out`);
+      }
       const t0 = performance.now(), per: number[] = [];
       try {
         for (let f = from; f < to; f++) {
           const tf = performance.now();
           const times = Array.from({ length: n }, (_, k) => (f + shutter * ((k + 0.5) / n - 0.5)) / fps);
           cap.shoot({ w: o.w ?? 1920, h: o.h ?? 1080, samples: n, caption: true, photoreal: pr.on ? pr : null }, (k) => path.at(Math.max(0, times[k])), (k) => Math.max(0, times[k]));
-          const png = await cap.png();
-          if (o.url) await fetch(`${o.url}?f=${f}`, { method: 'POST', body: png });
+          const rgb = cap.rgb();
+          if (o.url) await fetch(`${o.url}?f=${f}&w=${o.w ?? 1920}&h=${o.h ?? 1080}`, { method: 'POST', body: rgb });
           per.push(performance.now() - tf);
-          console.log(`[film] frame ${f + 1}/${to} ${(per[per.length - 1] / 1000).toFixed(1)} s, ${(png.size / 1e6).toFixed(2)} MB`);
+          console.log(`[film] frame ${f + 1}/${to} ${(per[per.length - 1] / 1000).toFixed(1)} s`);
         }
-      } finally { app.sun.shadow.autoUpdate = true; cap.restore(); app.paused = false; }
+      } finally { cap.cullEnd(); app.sun.shadow.autoUpdate = true; cap.restore(); app.paused = false; }
       return { frames: to - from, seconds: (performance.now() - t0) / 1000, perFrame: per.map((x) => +(x / 1000).toFixed(2)), timing: cap.timing };
     },
   };

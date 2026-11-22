@@ -20,10 +20,11 @@ import { Worker } from 'node:worker_threads';
 import { execFileSync } from 'node:child_process';
 import { bakeWithPool, unpackScene } from '../../plan-studio/twins/src/twin/photoreal/bakeRun.ts';
 import { packBake } from '../../plan-studio/twins/src/twin/photoreal/bakeCore.ts';
+import { encodePNG } from './png.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const argv = process.argv.slice(2), cmd = argv[0];
-const o = { spp: 64, workers: Math.max(1, Math.min(8, os.cpus().length - 0)), w: 1920, h: 1080, samples: 8, views: 'Approach,On the deck,Living room,Kitchen,Bedroom', out: '', from: 0, to: -1, crf: 18, preset: 'veryfast', plan: 'hero.plan.json', soft: false, photoreal: false, keep: false, chrome: '', cams: '', look: '' };
+const o = { spp: 64, workers: Math.max(1, Math.min(8, os.cpus().length - 0)), w: 1920, h: 1080, samples: 8, views: 'Approach,On the deck,Living room,Kitchen,Bedroom', out: '', from: 0, to: -1, crf: 18, preset: 'veryfast', plan: 'hero.plan.json', soft: false, photoreal: false, keep: false, chrome: '', cams: '', look: '', ap: -1 };
 for (let i = 1; i < argv.length; i++) {
   const k = argv[i].replace(/^--/, '');
   if (['soft', 'photoreal', 'keep'].includes(k)) { o[k] = true; continue; }
@@ -118,12 +119,14 @@ async function stills() {
   if (o.photoreal) log('photoreal:', JSON.stringify(await page.evaluate(() => window.__photoreal.enable({}))).slice(0, 400));
   if (o.look) await page.evaluate((l) => { Object.assign(window.__photoreal.look, l); window.__photoreal.pr.syncLook(); }, JSON.parse(o.look));
   const items = [...o.views.split(',').filter(Boolean).map((v) => ['v', v]), ...o.cams.split(';').filter(Boolean).map((c) => ['c', c])];
-  for (const [kind, v] of items) {
+  for (const [n, [kind, v]] of items.entries()) {
     const t = Date.now();
     if (kind === 'v') await page.evaluate((v) => { const a = window.__twin, i = a.built.path.findIndex((k) => k.label === v); if (i < 0) throw new Error('no view ' + v); a.goTo(i); }, v);
     else await page.evaluate((c) => { const a = window.__twin, q = c.split(',').map(Number); a.camera.position.set(q[0], q[1], q[2]); a.controls.target.set(q[3], q[4], q[5]); a.controls.update(); }, v);
-    const url = await page.evaluate((s) => window.__photoreal.still(s), { w: o.w, h: o.h, samples: o.samples, caption: true });
-    const f = path.join(o.out, `${o.photoreal ? 'photoreal' : 'current'}-${(kind === 'v' ? v : 'cam').replace(/\W+/g, '_')}.png`);
+    // close-ups (--cams) get a little depth of field by default (aperture radius in mm, focus on the look point)
+    const ap = o.ap >= 0 ? o.ap : kind === 'c' ? 3 : 0;
+    const url = await page.evaluate((s) => window.__photoreal.still(s), { w: o.w, h: o.h, samples: o.photoreal ? o.samples : 1, caption: !!o.photoreal, ap });
+    const f = path.join(o.out, `${o.photoreal ? 'photoreal' : 'current'}-${(kind === 'v' ? v : 'cam' + n).replace(/\W+/g, '_')}.png`);
     fs.writeFileSync(f, Buffer.from(url.split(',')[1], 'base64'));
     log(`wrote ${f} in ${((Date.now() - t) / 1000).toFixed(0)} s`);
   }
@@ -134,7 +137,9 @@ async function film() {
   if (!o.out) throw new Error('--out FILE.mp4');
   const frames = o.out.replace(/\.mp4$/, '') + '-frames';
   fs.mkdirSync(frames, { recursive: true });
-  const { browser, page } = await openPage('&photoreal=hold', { '/__film/frame': (b, url) => fs.writeFileSync(path.join(frames, `f_${String(url.searchParams.get('f')).padStart(5, '0')}.png`), b) });
+  const { browser, page } = await openPage('&photoreal=hold', {
+    '/__film/frame': (b, url) => fs.writeFileSync(path.join(frames, `f_${String(url.searchParams.get('f')).padStart(5, '0')}.png`), encodePNG(b, Number(url.searchParams.get('w')), Number(url.searchParams.get('h')))),
+  });
   log('photoreal:', JSON.stringify(await page.evaluate(() => window.__photoreal.enable({}))).slice(0, 300));
   const spec = await page.evaluate(() => ({ fps: window.__photoreal.spec.fps, frames: window.__photoreal.path.frames() }));
   const to = o.to < 0 ? spec.frames : Math.min(spec.frames, o.to);

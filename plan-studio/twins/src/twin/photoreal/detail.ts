@@ -121,7 +121,7 @@ function forestFloor(seed: number) {
   const leaves: [number, number, number, number, number][] = Array.from({ length: 900 }, () => [r(), r(), 0.004 + r() * 0.01, r() * Math.PI, r()]);
   const grid = new Map<number, number[]>();
   leaves.forEach((l, i) => { const k = Math.floor(l[0] * 16) + Math.floor(l[1] * 16) * 16; (grid.get(k) ?? grid.set(k, []).get(k)!).push(i); });
-  const soil = hex(0x4a3a2a), moss = hex(0x56683a), litter = hex(0x7a5a3a), dry = hex(0x9a8060);
+  const soil = hex(0x33281e), moss = hex(0x45552a), litter = hex(0x5a4430), dry = hex(0x7a6650);
   return field((u, v) => {
     const m = a(u, v), d = b(u, v), e = c(u, v);
     let leaf = 0, ltone = 0;
@@ -135,7 +135,7 @@ function forestFloor(seed: number) {
         const q = px * px + py * py; if (q < 1) { leaf = Math.max(leaf, 1 - q); ltone = t; }
       }
     }
-    const mossK = Math.max(0, Math.min(1, (m - 0.52) * 5));
+    const mossK = Math.max(0, Math.min(1, (m - 0.46) * 4));
     const base = [0, 1, 2].map((k) => soil[k] * (1 - mossK) + moss[k] * mossK);
     const lc = [0, 1, 2].map((k) => litter[k] * (1 - ltone) + dry[k] * ltone);
     const L = leaf > 0 ? 1 : 0;
@@ -189,6 +189,7 @@ function copyXf(dst: THREE.Texture, src: THREE.Texture | null | undefined) {
 function microFor(name: string): { tex: Tex; scale: number; tile: number } {
   const s = name.toLowerCase();
   const pick = (k: keyof typeof micro, seed: number) => once('micro_' + k, () => toTextures(micro[k](seed), k === 'weave' ? 2.5 : k === 'brushed' ? 1.2 : 1.5));
+  if (/cladding|black_stain|shiplap_black|rib/.test(s)) return { tex: pick('peel', 71), scale: 0.18, tile: 0.35 };
   if (/linen|wool|boucle|fabric|canvas|cloth|rug|towel|cushion|throw|duvet|curtain|shade/.test(s)) return { tex: pick('weave', 61), scale: 0.6, tile: 0.25 };
   if (/steel|chrome|brass|bronze|stainless|alumin|metal|copper|nickel/.test(s)) return { tex: pick('brushed', 67), scale: 0.25, tile: 0.4 };
   if (/enamel|lacquer|ceramic|china|glaze|appliance|stoneware|porcelain|planter|lemon/.test(s)) return { tex: pick('peel', 71), scale: 0.12, tile: 0.3 };
@@ -219,8 +220,7 @@ export function detailFor(m: THREE.Material, meshName = ''): (Detail & { replace
     };
   }
   if (o.map || o.normalMap || o.roughnessMap || (o as unknown as { bumpMap?: THREE.Texture }).bumpMap) {
-    if ((o as unknown as { bumpMap?: THREE.Texture }).bumpMap && !o.normalMap) { const md = microFor(`${m.name} ${meshName}`); return { replace: false, boxUV: false, normal: md.tex.normal, normalScale: md.scale * 0.8 }; }
-    return null;
+    return null; // its own drawn maps stay (a bump map is not carried over: those surfaces read flat in this look)
   }
   const md = microFor(`${m.name} ${meshName}`);
   const rep = (t: THREE.Texture) => { const c = t.clone(); c.repeat.set(1 / md.tile, 1 / md.tile); c.needsUpdate = true; return c; };

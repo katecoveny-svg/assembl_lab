@@ -29,6 +29,7 @@ export class Capture {
   constructor(app: App) {
     this.app = app;
     this.out = document.createElement('canvas');
+    this.out.getContext('2d', { willReadFrequently: true }); // a CPU canvas: frames are read back as raw pixels
     this.grab = document.createElement('canvas');
     this.g = this.grab.getContext('2d', { willReadFrequently: true })!;
   }
@@ -87,6 +88,8 @@ export class Capture {
         if (o.photoreal) o.photoreal.exposure = Number.isFinite(st.exp) ? look.exposureOut * st.exp : null;
       }
       cam.setViewOffset(w, h, jx, jy, w, h);
+      cam.updateMatrixWorld(true);
+      this.cullFrame();
       const t0 = performance.now();
       a.updateInterior(1);
       this.renderOnce(timeAt(k));
@@ -109,6 +112,65 @@ export class Capture {
     og.putImageData(img, 0, 0);
     if (o.caption) drawCaption(og, w, h);
     this.timing.frames++;
+  }
+
+  /** the finished frame as raw RGB bytes (3 per pixel), for the film tool to write as PNG */
+  rgb(): Uint8Array {
+    const t0 = performance.now(), w = this.out.width, h = this.out.height;
+    const d = this.out.getContext('2d')!.getImageData(0, 0, w, h).data, o = new Uint8Array(w * h * 3);
+    for (let i = 0, j = 0; i < d.length; i += 4, j += 3) { o[j] = d[i]; o[j + 1] = d[i + 1]; o[j + 2] = d[i + 2]; }
+    this.timing.encode += performance.now() - t0;
+    return o;
+  }
+
+  // ---- instanced bush culled to the view for offline frames (the instanced meshes are drawn whole otherwise) ----
+  cleared = 0;
+  private packs: { m: THREE.InstancedMesh; mats: Float32Array; cols: Float32Array | null; count: number; c: Float32Array; r: Float32Array }[] | null = null;
+  /** `clear`: points along the camera's path; trees standing within `clearR` metres of it are left out (a camera cannot fly through a trunk) */
+  cullBegin(clear: [number, number, number][] = [], clearR = 1.8) {
+    this.packs = [];
+    this.cleared = 0;
+    const M = new THREE.Matrix4(), V = new THREE.Vector3(), S = new THREE.Vector3(), Q = new THREE.Quaternion();
+    this.app.scene.traverse((o) => {
+      const m = o as THREE.InstancedMesh;
+      if (!m.isInstancedMesh || m.count < 8) return;
+      m.updateMatrixWorld();
+      if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
+      const bs = m.geometry.boundingSphere!, n = m.count, c = new Float32Array(n * 3), r = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        m.getMatrixAt(i, M); M.premultiply(m.matrixWorld); M.decompose(V, Q, S);
+        const bx = V.x, by = V.y, bz = V.z;
+        V.copy(bs.center).applyMatrix4(M); c[i * 3] = V.x; c[i * 3 + 1] = V.y; c[i * 3 + 2] = V.z; r[i] = bs.radius * Math.max(S.x, S.y, S.z);
+        // trees by the camera's path: radius −1 marks them out
+        if (clear.length && clear.some((p) => Math.hypot(p[0] - bx, p[2] - bz) < clearR && p[1] > by - 1 && p[1] < V.y + r[i])) { r[i] = -1; this.cleared++; }
+      }
+      this.packs!.push({ m, mats: (m.instanceMatrix.array as Float32Array).slice(), cols: m.instanceColor ? (m.instanceColor.array as Float32Array).slice() : null, count: n, c, r });
+    });
+  }
+  cullFrame() {
+    if (!this.packs) return;
+    const cam = this.app.camera, F = new THREE.Frustum(), PM = new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    F.setFromProjectionMatrix(PM);
+    const sph = new THREE.Sphere();
+    for (const p of this.packs) {
+      const A = p.m.instanceMatrix.array as Float32Array, C = p.m.instanceColor?.array as Float32Array | undefined;
+      let k = 0;
+      for (let i = 0; i < p.count; i++) {
+        if (p.r[i] < 0) continue;
+        sph.center.set(p.c[i * 3], p.c[i * 3 + 1], p.c[i * 3 + 2]); sph.radius = p.r[i] * 1.15 + 0.5;
+        if (!F.intersectsSphere(sph)) continue;
+        if (k !== i) { A.set(p.mats.subarray(i * 16, i * 16 + 16), k * 16); if (C && p.cols) C.set(p.cols.subarray(i * 3, i * 3 + 3), k * 3); }
+        k++;
+      }
+      p.m.count = k; p.m.instanceMatrix.needsUpdate = true; if (p.m.instanceColor) p.m.instanceColor.needsUpdate = true;
+    }
+  }
+  cullEnd() {
+    for (const p of this.packs ?? []) {
+      (p.m.instanceMatrix.array as Float32Array).set(p.mats); if (p.cols && p.m.instanceColor) (p.m.instanceColor.array as Float32Array).set(p.cols);
+      p.m.count = p.count; p.m.instanceMatrix.needsUpdate = true; if (p.m.instanceColor) p.m.instanceColor.needsUpdate = true;
+    }
+    this.packs = null;
   }
 
   async png(): Promise<Blob> {
