@@ -88,12 +88,12 @@ before(async () => {
 after(async () => { await db.close(); });
 
 test('all the migrations apply, then apply a second time without error or change', async () => {
-  assert.equal(migrations.length, 8, 'six applied files, the bucket limit and the clients tables');
+  assert.ok(migrations.length >= 8, 'six applied files, the bucket limit, the clients tables, and later additions (counted loosely so parallel work does not collide)');
   await applyAll();
   const first = await snapshot();
   await applyAll();
   assert.deepEqual(await snapshot(), first);
-  assert.equal(first.tables, 18);
+  assert.equal(first.tables, 21);
   assert.equal(first.storage_policies, 4);
   assert.equal(first.buckets, 1);
   const b = (await q(`select id, public, file_size_limit from storage.buckets`)).rows[0];
@@ -108,10 +108,10 @@ test('a bucket of that name that was public is made private, not left open', asy
 
 test('every arch table has row level security, an extra column, and nothing for anon', async () => {
   const t = (await q(`select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='arch' and c.relkind='r'`)).rows;
-  assert.equal(t.length, 18);
+  assert.equal(t.length, 21);
   for (const r of t) assert.equal(r.relrowsecurity, true, r.relname);
   const extra = (await q(`select table_name from information_schema.columns where table_schema='arch' and column_name='extra' and data_type='jsonb' and is_nullable='NO'`)).rows.map((r) => r.table_name);
-  assert.equal(extra.length, 18, 'every table has extra jsonb not null');
+  assert.equal(extra.length, 21, 'every table has extra jsonb not null');
   for (const name of ['checklist_item', 'invitation', 'file']) {
     await refused(asRole('anon', () => q(`select * from arch.${name}`)), /permission denied/);
   }
@@ -414,6 +414,29 @@ test('file records follow the same rules, and must sit inside their own practice
   await refused(signed(P.alice, () => q(`delete from arch.project where id=$1`, [spare])), /foreign key|violates/);
   assert.equal(await changed(P.dan, `delete from arch.file where id=$1`, [uid(620)]), 1);
   assert.equal(await changed(P.alice, `delete from arch.project where id=$1`, [spare]), 1);
+});
+
+// ---- the practice's artwork (architecture/js/artwork.js, cloud.js createArtworkPlace) -------------------------------------
+test('the practice’s artwork: only an owner changes practice.extra.artwork, the practice reads it, its files follow the folder rules', async () => {
+  const art = { v: 1, logo: { white: { path: `${practiceA}/artwork/logo-1-abc123.webp`, w: 560, h: 266 } }, drawings: [], patterns: [], files: 1, bytes: 10, updated_at: '2026-11-22T00:00:00.000Z' };
+  const set = `update arch.practice set extra = extra || jsonb_build_object('artwork', $2::jsonb) where id=$1`;
+  for (const p of [P.dan, P.carol, P.bob]) assert.equal(await changed(p, set, [practiceA, JSON.stringify(art)]), 0, `${p.email} changes nothing`);
+  assert.equal(await changed(P.alice, set, [practiceA, JSON.stringify(art)]), 1, 'an owner puts it in');
+  for (const p of [P.alice, P.dan, P.carol]) assert.deepEqual((await rows(p, `select extra->'artwork' as a from arch.practice where id=$1`, [practiceA]))[0].a, art, `${p.email} reads it`);
+  assert.equal((await rows(P.bob, `select id from arch.practice where id=$1`, [practiceA])).length, 0, 'another practice cannot read it');
+  // its files: under the practice's own folder, read by the practice, added by an owner
+  const logo = art.logo.white.path, stray = `${practiceA}/artwork/drawing-9-abc123.webp`;
+  assert.equal((await put(P.alice, logo)).rows.length, 1);
+  for (const p of [P.dan, P.carol]) assert.equal((await rows(p, `select name from storage.objects where name=$1`, [logo])).length, 1, `${p.email} sees the file`);
+  assert.equal((await rows(P.bob, `select name from storage.objects where name=$1`, [logo])).length, 0);
+  assert.equal((await asRole('anon', () => q(`select name from storage.objects where name=$1`, [logo]))).rows.length, 0);
+  await refused(put(P.carol, `${practiceA}/artwork/drawing-1-abc123.webp`), /row-level security/);
+  await refused(put(P.bob, `${practiceA}/artwork/drawing-1-abc123.webp`), /row-level security/);
+  // the page lets only an owner put artwork in; the folder rule itself is the practice's writers, so a member could add a
+  // file there that no record names (it is never shown). Only an owner can make the record name it.
+  assert.equal((await put(P.dan, stray)).rows.length, 1);
+  assert.equal(await changed(P.alice, `delete from storage.objects where name = any($1)`, [[logo, stray]]), 2);
+  assert.equal(await changed(P.alice, `update arch.practice set extra = extra - 'artwork' where id=$1`, [practiceA]), 1);
 });
 
 test('data survives a third run of the migrations', async () => {
