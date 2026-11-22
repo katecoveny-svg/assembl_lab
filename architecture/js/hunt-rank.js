@@ -23,17 +23,19 @@ export const SECTORS = {
 // ("Te Atatu marae" and "Te Atatū marae" are the same text). Whole words only: bare "te", "whare" and "trust" never match, and a place name
 // that merely contains a Māori word ("Te Atatu", "Pouakai", "Whare Ra") does not match unless one of these words stands beside it.
 // Spellings were taken from the te reo skill, Te Aka Māori Dictionary and the publishers' own names. Review them with a reo speaker (docs/architecture/pipeline-hunt-cultural-sources.md).
-export const CULTURAL_PLACES = ["marae", "wharenui", "wharekai", "whare kai", "whare tūpuna", "whare karakia", "whare taonga", "wharekura", "kura kaupapa", "kōhanga reo", "wānanga", "papakāinga", "kaumātua housing", "urupā", "ātea", "pā site", "Māori housing", "Māori health", "hauora Māori", "taha Māori", "Pasifika", "Pacific church", "fale", "cultural centre", "Indigenous"];
+export const CULTURAL_PLACES = ["marae", "wharenui", "wharekai", "whare kai", "whare tūpuna", "whare karakia", "whare taonga", "wharekura", "kura kaupapa", "kura", "kaupapa Māori", "Māori medium", "Māori-medium", "whānau room", "kōhanga reo", "wānanga", "papakāinga", "kaumātua housing", "urupā", "ātea", "pā site", "Māori housing", "Māori health", "hauora Māori", "taha Māori", "Pasifika", "Pacific church", "fale", "cultural centre", "Indigenous"];
 export const CULTURAL_DESIGN = ["Te Aranga", "mana whenua", "tangata whenua", "cultural narrative", "cultural design", "cultural landscape", "iwi engagement", "mātauranga Māori", "kaitiakitanga", "whakairo", "tukutuku", "pou", "carving", "taonga", "Te Tiriti"];
 /** buyers and funders: matched in the buyer field and in the text */
-export const CULTURAL_BUYERS = ["iwi", "hapū", "rūnanga", "trust board", "Māori land trust", "ahu whenua trust", "Māori incorporation", "Te Puni Kōkiri", "Te Tumu Paeroa", "Te Arawhiti", "Te Mātāwai", "Whai Kāinga Whai Oranga", "Waikato-Tainui", "Te Uru Taumatua", "Ngāti Whātua Ōrākei"];
+export const CULTURAL_BUYERS = ["iwi", "hapū", "rūnanga", "Māori trust board", "Māori land trust", "ahu whenua trust", "Māori incorporation", "Te Puni Kōkiri", "Te Tumu Paeroa", "Te Arawhiti", "Te Mātāwai", "Whai Kāinga Whai Oranga", "Waikato-Tainui", "Te Uru Taumatua", "Ngāti Whātua Ōrākei"];
 /** a buyer whose name starts with one of these (a whole word) is an iwi or hapū entity: "Ngāti Porou Whanau Ora", "Ngāi Tahu Property", "Ngā Hapū o ..." */
 export const CULTURAL_BUYER_PREFIXES = ["Ngāti", "Ngāi", "Ngā"];
-// "Indigenous planting" and "indigenous vegetation" are landscape words, not a people: they do not count
-const INDIGENOUS_PLANTS = /(?:^|[^a-z0-9])indigenous(?=$|[^a-z0-9])(?!\s+(?:planting|plantings|plants|vegetation|species|flora|fauna|biodiversity|bush|forest|forests|trees|revegetation|habitat|habitats|ecosystem|ecosystems|landscaping|wildlife|birds|restoration|bird))/;
+// "Indigenous planting" and "indigenous vegetation" are landscape words, not a people, and "Indigenous businesses" is a supplier rule: they do not count
+const INDIGENOUS_PLANTS = /(?:^|[^a-z0-9])indigenous(?=$|[^a-z0-9])(?!\s+(?:planting|plantings|plants|vegetation|species|flora|fauna|biodiversity|bush|forest|forests|trees|revegetation|habitat|habitats|ecosystem|ecosystems|landscaping|wildlife|birds|restoration|bird|business|businesses|suppliers?|enterprises?|firms?|compan(?:y|ies)|providers?|workers?|employment|apprentices?|owned)|-owned)/;
+// Procurement "broader outcomes" text often says "Māori and Pasifika businesses are encouraged": suppliers and jobs, not a Pasifika building.
+const PASIFIKA_PLACE = /(?:^|[^a-z0-9])pasifika(?=$|[^a-z0-9])(?!\s+(?:business|businesses|suppliers?|enterprises?|firms?|compan(?:y|ies)|providers?|workers?|employment|apprentices?|owned)|-owned)/;
 SECTORS.kaupapa.words = [...CULTURAL_PLACES, ...CULTURAL_DESIGN];
 // Buildings of this kind are buildings even when the title has no other building word ("Wharekura upgrade").
-const CULTURAL_BUILT = ["wharenui", "wharekai", "whare kai", "whare tūpuna", "whare karakia", "whare taonga", "wharekura", "kura kaupapa", "kōhanga reo", "papakāinga", "kaumātua housing", "Māori housing", "fale", "taha Māori"];
+const CULTURAL_BUILT = ["wharenui", "wharekai", "whare kai", "whare tūpuna", "whare karakia", "whare taonga", "wharekura", "kura kaupapa", "kura", "kaupapa Māori", "Māori medium", "Māori-medium", "whānau room", "kōhanga reo", "papakāinga", "kaumātua housing", "Māori housing", "fale", "taha Māori"];
 
 
 // Words that say a notice is asking for design or advice (architects), and words that say it is building work or supply.
@@ -67,7 +69,8 @@ export function culturalMatch(t = {}) {
   const why = [], seen = new Set();
   const add = (label) => { const k = fold(label); if (!seen.has(k)) { seen.add(k); why.push(label); } };
   for (const term of [...CULTURAL_PLACES, ...CULTURAL_DESIGN, ...CULTURAL_BUYERS]) {
-    if (fold(term) === "indigenous" ? INDIGENOUS_PLANTS.test(text) : hit(text, term)) add(term);
+    const k = fold(term);
+    if (k === "indigenous" ? INDIGENOUS_PLANTS.test(text) : k === "pasifika" ? PASIFIKA_PLACE.test(text) : hit(text, term)) add(term);
   }
   const first = clean(t.buyer).split(/\s+/)[0] ?? "";
   if (first && CULTURAL_BUYER_PREFIXES.some((p) => fold(p) === fold(first).replace(/[^a-z0-9]/g, ""))) add(first.replace(/[^\p{L}\p{N}-]/gu, ""));

@@ -64,7 +64,16 @@ test('buyers: named entities and funders are matched in the buyer field and in t
   assert.equal(on('Hall design', 'Ngaruawahia Community Board').on, false, 'a place that starts with Nga is not a name that starts with Ngā');
   assert.equal(on('Hall design', 'Hamilton City Council', 'Funded by Te Puni Kōkiri through Whai Kāinga Whai Oranga.').on, true);
   assert.equal(on('Hall design', 'Hamilton City Council', 'Engage with iwi and hapū early.').on, true);
-  assert.equal(on('Clinic design', 'Hospital Trust Board').on, true, 'trust board is a listed buyer word: kept, and flagged for review in the sources doc');
+  assert.equal(on('Clinic design', 'Hospital Trust Board').on, false, 'a trust board on its own is not an iwi entity: only a Māori trust board, or a Ngāti/Ngāi/Ngā buyer, counts');
+  assert.equal(on('Office fit-out design', 'Tūwharetoa Māori Trust Board').on, true, 'a Māori trust board is an iwi entity');
+  assert.equal(on('Kaupapa Māori early learning centre, concept design', '').on, true, 'kaupapa Māori');
+  assert.equal(on('Te Kura o Hirangi: new teaching block, architect', 'Ministry of Education').on, true, 'kura on its own is a Māori-medium school');
+  assert.equal(on('Māori-medium unit refurbishment', 'Ministry of Education').on, true, 'Māori-medium with a hyphen');
+  assert.equal(on('Ward refurbishment with a whānau room', 'Health New Zealand').on, true, 'whānau room');
+  assert.equal(on('Library refurbishment, design services. Broader outcomes: Māori and Pasifika businesses are encouraged to respond.', 'Council').on, false, 'Pasifika businesses is a supplier rule, not a Pasifika building');
+  assert.equal(on('Library refurbishment', 'Council', 'Indigenous-owned and Pasifika-owned suppliers are welcome.').on, false, 'owned suppliers are not a building');
+  assert.equal(on('Pasifika community centre, concept design', 'Council').on, true, 'a Pasifika community centre counts');
+  assert.equal(on('Library refurbishment, design services. Broader outcomes: Māori businesses are encouraged to respond.', 'Council').on, false, 'a bare Māori in procurement boilerplate does not count');
 });
 
 test('a finding carries cultural: { on, why }, and a non-match carries on: false', () => {
