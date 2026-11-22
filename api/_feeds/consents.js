@@ -31,7 +31,8 @@ async function getCapped(url, key, { accept = "application/json", max = LIMITS.m
   if (!String(url).startsWith(ADE_BASE)) throw new Error("Refusing to call a host that is not Stats NZ.");
   const c = new AbortController(), t = setTimeout(() => c.abort(), LIMITS.ms);
   try {
-    const r = await fetch(url, { signal: c.signal, redirect: "error", headers: { "user-agent": UA, accept, [KEY_HEADER]: key, "accept-encoding": "gzip" } });
+    // "manual", not "error": Cloudflare Workers refuse redirect "error". A redirect then arrives as a 3xx, which is not ok and is refused below, so the key is never sent on to another host.
+    const r = await fetch(url, { signal: c.signal, redirect: "manual", headers: { "user-agent": UA, accept, [KEY_HEADER]: key, "accept-encoding": "gzip" } });
     if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status} from ${new URL(url).host}`), { status: r.status });
     const reader = r.body.getReader(), dec = new TextDecoder(); let text = "";
     for (;;) {

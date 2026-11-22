@@ -227,3 +227,11 @@ test('discover and the regions travel through /api/live/ (handleLive), and the f
     assert.match(n.headers['Cache-Control'], /s-maxage=43200/);
   });
 });
+
+test('the Stats NZ fetch uses a redirect setting Cloudflare Workers accept, and a redirect is refused', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../../api/_feeds/consents.js', import.meta.url), 'utf8');
+  assert.ok(!/redirect:\s*"error"/.test(src), 'Workers refuse redirect "error"');
+  assert.match(src, /redirect:\s*"manual"/);
+  assert.match(src, /if \(!r\.ok\) throw/, 'a 3xx is not ok, so it is refused and the key goes nowhere else');
+});
