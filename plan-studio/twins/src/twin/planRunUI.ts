@@ -79,6 +79,7 @@ export function planRunPanel(app: Host, o: { plan: Plan; shown: Plan; onGround: 
       #planRun .pr-list li.check details ul{list-style:none;padding-left:0}
       #planRun .pr-list li.check details li::before{content:'□ ';font-family:'IBM Plex Mono',monospace;color:#654A4E}
       #planRun .pr-after{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+      #planRun .pr-after[hidden]{display:none}
       #planRun .pr-agents{font-size:12px;color:#756771;margin:10px 0 0;padding-top:8px;border-top:1px solid #E3D0D2}
       #planRun .pr-agents b{color:#654A4E;font-weight:600}
     </style>`;
