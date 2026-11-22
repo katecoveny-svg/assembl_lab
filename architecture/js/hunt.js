@@ -75,7 +75,19 @@ export function fitHtml(fit) {
  * js/signals-rank.js). Until that feed exists this returns nothing, so the lane shows leads only. Each item must be shaped
  * { id, kind:'signal', title, source, sourceUrl, day, region, why, horizon, evidence:[{ label, url }], cultural }; cleanEarlySignal bounds it.
  */
-export async function readEarlySignals(/* query */) { return []; }
+export async function readEarlySignals(query, fetchImpl = (...a) => globalThis.fetch(...a)) {
+  // the same lens as the tenders, asked of the signals feed; its own sources (Beehive, the Gazette) are chosen by the feed, not by GETS's switches
+  const p = new URLSearchParams(String(query ?? ''));
+  p.set('feeds', 'signals'); p.delete('sources'); p.delete('min'); p.delete('max'); p.delete('radar'); p.delete('lens');
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null, timer = ctl ? setTimeout(() => ctl.abort(), 30000) : null;
+  try {
+    const res = await fetchImpl(`${FEED}?${p}`, { headers: { accept: 'application/json' }, signal: ctl?.signal });
+    if (!res.ok) return [];
+    const j = await res.json(), v = j?.feeds?.signals?.values;
+    return Array.isArray(v?.signals) ? v.signals.slice(0, 40) : []; // early signals are extra: a feed that fails leaves the tenders and leads as they are
+  } catch { return []; }
+  finally { if (timer) clearTimeout(timer); }
+}
 
 const SECTOR_NAME = Object.fromEntries(SECTORS);
 /** the start of the reason hunt-rank.js writes for a cultural match; the card shows the words in their own line instead */

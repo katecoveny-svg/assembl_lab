@@ -93,10 +93,21 @@ test('an early signal from the signal feeds is accepted, bounded and given a saf
   assert.ok(cleanEarlySignal({ ...SIGNAL, title: 't'.repeat(900) }).title.length <= 300);
   for (const bad of [null, 'x', {}, { ...SIGNAL, kind: 'tender' }, { ...SIGNAL, sourceUrl: 'http://a.example' }, { ...SIGNAL, sourceUrl: '' }, { ...SIGNAL, title: '' }, { ...SIGNAL, id: '' }]) assert.equal(cleanEarlySignal(bad), null);
   assert.equal(cleanEarlySignal({ ...SIGNAL, day: 'last week' }).published, '');
-  assert.equal(readEarlySignals.length, 0); 
 });
 
-test('the hook for early signals returns nothing until the feed exists', async () => { assert.deepEqual(await readEarlySignals('feeds=hunt'), []); });
+test('early signals: asked of the signals feed with the same lens; a failing feed gives nothing and never throws', async () => {
+  let asked = '';
+  const ok = async (url) => { asked = url; return { ok: true, json: async () => ({ feeds: { signals: { values: { signals: [{ id: 'beehive:1', kind: 'signal', title: 'A marae', sourceUrl: 'https://www.beehive.govt.nz/release/a' }] } } } }) }; };
+  const got = await readEarlySignals('feeds=hunt&keywords=marae&regions=Auckland&sectors=kaupapa&cultural=1&min=5&sources=gets&radar=1&lens=3', ok);
+  assert.equal(got.length, 1);
+  const q = new URLSearchParams(asked.split('?')[1]);
+  assert.equal(asked.split('?')[0], '/api/live/');
+  assert.equal(q.get('feeds'), 'signals'); assert.equal(q.get('keywords'), 'marae'); assert.equal(q.get('regions'), 'Auckland'); assert.equal(q.get('sectors'), 'kaupapa'); assert.equal(q.get('cultural'), '1');
+  for (const k of ['sources', 'min', 'radar', 'lens']) assert.equal(q.has(k), false, `${k} is not sent to the signals feed`);
+  assert.deepEqual(await readEarlySignals('feeds=hunt', async () => ({ ok: false, status: 503, json: async () => ({}) })), []);
+  assert.deepEqual(await readEarlySignals('feeds=hunt', async () => { throw new Error('offline'); }), []);
+  assert.deepEqual(await readEarlySignals('feeds=hunt', async () => ({ ok: true, json: async () => ({ feeds: {} }) })), []);
+});
 
 test('a lead and a signal become enquiries marked as such, with a next step that is to check; nothing is a tender', () => {
   const [l] = kept('Marae wharenui badly damaged by fire in Northland');
