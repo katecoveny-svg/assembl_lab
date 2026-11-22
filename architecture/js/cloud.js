@@ -276,6 +276,8 @@ export function createGateway(client, { schema = 'arch', bucket = 'arch-files', 
   }
   return {
     from: (table) => db().from(table),
+    /** a table in the public schema (Radar's profile and run tables, radar-client.js); row level security there is by the signed-in person */
+    pub: (table) => client.schema('public').from(table),
     ask,
     /** every row a query matches, a page at a time. build() must return a fresh query; order is the column(s) to page by. */
     async all(build, order = ['id']) {

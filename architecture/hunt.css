@@ -213,3 +213,59 @@
 .hunt-card.is-lead > *, .hunt-card.is-signal > * { margin-block: 0; }
 .hunt-card.is-lead, .hunt-card.is-signal { gap: 10px; }
 .hunt-steps a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- Look ahead with Radar (js/radar.js): the panel under the alert emails, and its findings in the lane --------------------------------- */
+.hunt-f textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--h-ink); background: var(--h-field); color: var(--h-ink); font: 400 16px/1.45 var(--h-sans); resize: vertical; text-transform: none; letter-spacing: 0; }
+.hunt-radar > summary { cursor: pointer; }
+.hunt-radar-in { gap: 16px; }
+.hunt-radar-h { display: flex; align-items: center; gap: 10px; margin: 6px 0 -4px; font: 500 16px/1.2 var(--h-sans); letter-spacing: -.01em; }
+.hunt-radar-h > span { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--h-ink); font: 500 13px var(--h-mono); }
+.hunt-radar-state { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.45; }
+.hunt-radar-state .hunt-i { margin-top: 2px; }
+.hunt-radar-state.is-bad { color: var(--h-needs); }
+.hunt-ev { border: 1px dashed var(--h-line); padding: 12px; gap: 10px; }
+.hunt-ev > legend { padding: 0 6px; }
+.hunt-ev .hunt-opt.wide { flex: 1 1 240px; }
+.hunt-confirm { display: grid; gap: 10px; padding: 16px; border: 2px solid var(--h-ink); background: var(--h-panel); }
+.hunt-confirm p { font-size: 14.5px; line-height: 1.5; max-width: 70ch; }
+.hunt-confirm-h { display: flex; align-items: center; gap: 10px; margin: 0; font: 500 18px/1.2 var(--h-sans); }
+.hunt-running { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--h-ink); background: var(--h-panel); }
+.hunt-running-t { display: flex; gap: 10px; align-items: center; font-size: 15px; line-height: 1.4; }
+.hunt-running-t b { font-family: var(--h-mono); font-weight: 500; }
+.hunt-bar-run { height: 8px; border: 1px solid var(--h-ink); overflow: hidden; }
+.hunt-bar-run i { display: block; width: 30%; height: 100%; background: var(--h-ink); animation: hunt-slide 1.8s ease-in-out infinite alternate; }
+@keyframes hunt-slide { from { transform: translateX(0); } to { transform: translateX(233%); } }
+.hunt-spin { animation: hunt-turn 1.4s linear infinite; }
+@keyframes hunt-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .hunt-bar-run i { animation: none; width: 100%; opacity: .5; } .hunt-spin { animation: none; } }
+.hunt-runs { display: grid; gap: 0; }
+.hunt-run { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--h-hair); }
+.hunt-run > div { flex: 1 1 240px; min-width: 0; }
+.hunt-run.is-shown { border-left: 3px solid var(--h-go); padding-left: 10px; }
+.hunt-run-m { font-size: 13.5px; line-height: 1.4; color: var(--h-mute); overflow-wrap: anywhere; }
+.hunt-lane-sub { min-width: 0; overflow-wrap: anywhere; display: flex; gap: 8px; align-items: flex-start; font: 500 12.5px/1.45 var(--h-mono); color: var(--h-mute); }
+.hunt-lane-sub .hunt-i { margin-top: 2px; }
+.hunt-radar-lane { display: grid; gap: 8px; }
+.hunt-card.is-radar { flex-basis: min(90%, 340px); }
+@media (min-width: 900px) { .hunt-lane .hunt-card.is-radar { flex-basis: 340px; } }
+.hunt-card.is-hold { opacity: .62; border-style: dotted; }
+.hunt-card.is-hold:hover, .hunt-card.is-hold:focus-within { opacity: .9; }
+.hunt-hold { padding: 8px 10px; border: 1px solid var(--h-needs); color: var(--h-needs); font-size: 13.5px; line-height: 1.4; background: var(--h-ground); }
+.hunt-draft { font: 500 12px/1.4 var(--h-mono); color: var(--h-mute); }
+.hunt-lbl { margin-top: 2px; font: 500 11.5px/1.3 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-mute); }
+.hunt-p { font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.hunt-ev-list { display: grid; gap: 6px; }
+.hunt-ev-list li { display: grid; gap: 2px; justify-items: start; }
+.hunt-ev-list .hunt-link { padding: 0; min-height: 32px; overflow-wrap: anywhere; text-align: left; }
+.hunt-ck { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 1px 8px; border: 1px dashed var(--h-line); font: 500 12px/1.2 var(--h-mono); color: var(--h-mute); }
+.hunt-ck.is-yes { border: 1px solid var(--h-go); color: var(--h-go); }
+.hunt-cav { font-size: 12.5px; line-height: 1.4; color: var(--h-mute); }
+.hunt .hunt-unk { display: grid; gap: 4px; padding-left: 18px; font-size: 14px; line-height: 1.4; }
+.hunt-unk li { list-style: disc; }
+.hunt-card.is-radar .hunt-fit { margin: 0; }
+.hunt-card.is-radar .hunt-why .hunt-lbl { margin-top: 10px; }
+.hunt-card.is-radar .hunt-why .hunt-p { margin-top: 2px; }
+.hunt-radar .hunt-opt.wide input:checked + span::before { content: "\2713"; font-weight: 700; margin-right: 8px; }
+.hunt-radar .hunt-opt.wide input:checked + span { border-width: 2px; }
+.hunt-radar-run { display: grid; gap: 10px; justify-items: start; }
+.hunt-radar-run > .hunt-flash, .hunt-radar-run > .hunt-confirm, .hunt-radar-run > .hunt-running { justify-self: stretch; }

@@ -258,7 +258,7 @@ test('files dropped on the control are read as text; an .eml is decoded; a file 
 
 test('the control and the lane are drawn with the page\'s own styles: no colour of its own, and the stylesheet version moved on', () => {
   const css = readFileSync(new URL('../../architecture/hunt.css', import.meta.url), 'utf8'), js = readFileSync(new URL('../../architecture/js/hunt.js', import.meta.url), 'utf8');
-  assert.match(js, /CSS_VERSION = '4'/);
+  assert.match(js, /CSS_VERSION = '5'/);
   for (const c of ['.hunt-lane', '.hunt-kind', '.hunt-alerts', '.hunt-drop']) assert.ok(css.includes(c), c);
   assert.doesNotMatch(css.replace(/var\([^)]*\)/g, ''), /#[0-9a-fA-F]{3,8}\b|rgba?\(/);
 });

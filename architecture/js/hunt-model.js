@@ -8,6 +8,7 @@
 // cultural: "always show kaupapa Māori and Indigenous work, whatever the other words" (a match is kept even when it misses the words and sectors).
 // No client details belong in them.
 import { newEnquiry, newActivity, dayKey, shortDay } from './crm-model.js';
+import { radarForEnquiry } from './radar-model.js';
 
 export const REGIONS = ['Northland', 'Auckland', 'Waikato', 'Bay of Plenty', 'Gisborne', "Hawke's Bay", 'Taranaki', 'Manawatu-Wanganui', 'Wellington', 'Tasman', 'Nelson', 'Marlborough', 'West Coast', 'Canterbury', 'Otago', 'Southland', 'Chatham Islands'];
 /** the sectors the feed knows (api/_feeds/hunt.js SECTORS): tests keep the two lists the same */
@@ -191,10 +192,13 @@ export function enquiryFromItem(s, { now = new Date(), who = '' } = {}) {
   if (!it) throw new Error('That finding cannot be added: it has no link.');
   const lead = it.kind === 'lead';
   const enquiry = newEnquiry({ title: it.title, source: sourceLine(it), next_action: lead ? 'Check the story before acting' : 'Check the signal before acting', next_action_due: '', owner: '', value_nzd: null, now });
-  const lines = [lead ? `A lead from the news (${it.sourceName}), not a tender and not an opportunity yet.` : `An early signal (${it.sourceName}), not a tender and not an opportunity yet${it.horizon ? `; it may mean work in ${it.horizon}` : ''}.`];
-  if (it.reason) lines.push(`Why it was flagged: ${it.reason}`);
+  const radar = it.kind === 'signal' ? radarForEnquiry(s) : null; // a Radar finding keeps its opportunity, bounded, for the Pursuit studio (extra.radar in the shared records)
+  const lines = [lead ? `A lead from the news (${it.sourceName}), not a tender and not an opportunity yet.` : radar ? 'An early signal from Radar, a draft for review: not a tender and not an opportunity yet. Its sources are marked checked or not independently checked, and its score is a sorting aid, not a chance of winning.' : `An early signal (${it.sourceName}), not a tender and not an opportunity yet${it.horizon ? `; it may mean work in ${it.horizon}` : ''}.`];
+  if (radar) { const o = radar.opportunity; if (o.nextAction) lines.push(`Radar’s suggested next step: ${o.nextAction}`); if (o.reviewAt) lines.push(`Review by: ${o.reviewAt}.`); if (o.stage === 'hold') lines.push('Radar put this on hold.'); }
+  if (it.reason && !radar) lines.push(`Why it was flagged: ${it.reason}`);
   lines.push(`${lead ? 'Story' : 'Source'}: ${it.url}`, 'Nothing has been sent, registered or submitted.');
   const activity = newActivity({ enquiry_id: enquiry.id, kind: 'note', body: lines.join(' '), who, now, at: now instanceof Date ? now.toISOString() : new Date(now).toISOString() });
+  if (radar) enquiry.radar = radar;
   return { enquiry, activity };
 }
 
