@@ -217,6 +217,7 @@ export const project16a: Project = {
     ];
 
     // 7. panels
+    void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
     const checks = document.createElement('section');
     checks.className = 'card';
     const margin = check.margin;

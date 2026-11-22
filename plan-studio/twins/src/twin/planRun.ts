@@ -23,7 +23,7 @@ export const STEPS: { id: StepId; title: string }[] = [
   { id: 'check', title: 'What a person must check' },
 ];
 export const STANDING = 'A pre-check prepared by software for a person to review. It is not a compliance decision or a professional sign-off.';
-export const AGENTS = 'AI in this tool: only the plan reader on the lab’s server, and only when you say yes to a read. Everything else here is fixed code, in your browser and in the lab’s site-facts feed. No agent drafts replies, lodges anything or approves anything.';
+export const AGENTS = 'Models in this tool: the plan reader on the lab’s server, only when you say yes to a read, and Google Gemini for Make it a photo, only when you press it. Everything else here is fixed code, in your browser and in the lab’s site-facts feed. No agent drafts replies, lodges anything or approves anything.';
 export const PRIVACY = 'The site point is not in this report, the model or a share link.';
 export const REPORT_TYPE = 'assembl.plan-run.v1';
 
