@@ -182,7 +182,7 @@ export async function mountView(host, { meshes, spin = true } = {}) {
   const renderer = new T.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
   const cam = new T.PerspectiveCamera(32, 1, radius / 100, radius * 40);
-  let az = Math.PI * 0.28, el = 0.42, dist = radius / Math.sin((32 * Math.PI) / 360) * 0.86, frame = 0, dragging = null, alive = true;
+  let az = Math.PI * 0.28, el = 0.42, dist = radius / Math.sin((32 * Math.PI) / 360) * 0.96, frame = 0, dragging = null, alive = true;
   const place = () => { cam.position.set(centre.x + dist * Math.cos(el) * Math.sin(az), centre.y + dist * Math.sin(el), centre.z + dist * Math.cos(el) * Math.cos(az)); cam.lookAt(centre); };
   const draw = () => { if (!alive) return; place(); renderer.render(s, cam); };
   const size = () => { const w = host.clientWidth || 320, h = host.clientHeight || 200; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); };
