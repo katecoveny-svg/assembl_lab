@@ -17,7 +17,8 @@ export const HOT = 0xc23b32;
 export const LEVEL = { ceilElec: 2.42, ceilRefrig: 2.52, ceilDuct: 2.64, underWater: -0.32, underDrain: -0.52 };
 // the first pass routes everything in the ceiling at one height and under the floor at another, as a quick sketch would
 export const FIRST = { ceil: 2.45, under: -0.42 };
-const FALL = 1 / 50;
+const FALL = 1 / 50;            // the DN100 drain and WC branches
+const BRANCH_FALL = 1 / 40;     // DN50 and smaller waste branches: G13/AS1 (2nd ed, Amdt 10) 4.4.1 and Table 4 ask for 1 in 40 at these sizes
 const PRI = { elec: 0, water: 1, hvac: 2, drain: 3 };   // who moves first when two runs clash
 
 // ---------------------------------------------------------------------------------------------------- reading rooms
@@ -359,7 +360,7 @@ export function buildServices(model, buildingId) {
       const a = A(f), y1 = yAt(a) + 0.05, top = f.kind === "wc" ? 0.05 : 0.35;
       add({ sys: "drain", kind: "trap", u: mw.axis === "x" ? a : tp, v: mw.axis === "x" ? tp : a, label: `Trap, ${lc(f.label)}` });
       runs.push({ sys: "drain", kind: "branch", r: f.kind === "wc" ? 0.05 : 0.025, trapped: true, room: f.room, label: `Waste from the ${lc(f.label)}${f.room ? ` (${lc(f.room)})` : ""}`,
-        pts: dedupe([P(a, top, tp), P(a, y1, tp), P(a, y1 - Math.abs(line - tp) * FALL, line)]), first: FIRST.under });
+        pts: dedupe([P(a, top, tp), P(a, y1, tp), P(a, y1 - Math.abs(line - tp) * (f.kind === "wc" ? FALL : BRANCH_FALL), line)]), fall: f.kind === "wc" ? FALL : BRANCH_FALL, first: FIRST.under });
       branches.push(f.kind);
     }
   }
@@ -513,7 +514,7 @@ export function buildServices(model, buildingId) {
   if (cyl) checks.push({ id: "hotwater", clause: "G12/AS1", title: "Hot water stored at 60 °C, 50 °C at showers and basins", value: `Cylinder set to 60 °C · ${hygieneRuns.filter((r) => r.tempered).length} of ${hygieneRuns.length} hot runs to them pass the tempering valve`, pass: hygieneRuns.every((r) => r.tempered) });
   if (wasteFx.length) {
     checks.push({ id: "traps", clause: "G13", title: "Every fixture trapped, drain vented", value: `${branches.length} traps, vent through the roof`, pass: branches.length === wasteFx.length });
-    checks.push({ id: "fall", clause: "G13", title: "Drain falls all the way to the gully", value: `1 in ${Math.round(1 / FALL)} modelled`, pass: FALL >= 1 / 60 });
+    checks.push({ id: "fall", clause: "G13", title: "Drain falls all the way to the gully", value: `drain 1 in ${Math.round(1 / FALL)}, waste branches 1 in ${Math.round(1 / BRANCH_FALL)} modelled`, pass: FALL >= 1 / 60 && BRANCH_FALL >= 1 / 40 });
   }
   checks.push({ id: "rcd", clause: "AS/NZS 3000", title: "RCD protection on every circuit", value: `${circuits.length} of ${circuits.length} circuits`, pass: circuits.every((c) => c.rcd) });
   if (showers.length) {
