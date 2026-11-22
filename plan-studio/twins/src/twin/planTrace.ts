@@ -177,7 +177,8 @@ async function inkBox(page: PDFPageProxy, items: TextItem[]): Promise<[number, n
       if (y < H - 1 && J[k + W] && !seen[k + W]) { seen[k + W] = 1; stack.push(k + W); }
     }
     if (hv < 50 || x1 < 0) continue;
-    if (x1 - x0 > W * 0.85 || y1 - y0 > H * 0.85) continue; // the sheet frame
+    // the sheet's border spans the sheet both ways; a plan picture can be nearly as tall as the sheet without being one
+    if (x1 - x0 > W * 0.85 && y1 - y0 > H * 0.85) continue;
     if (hv / ((x1 - x0 + 1) * (y1 - y0 + 1)) > 0.45) continue; // a filled block: a logo or a solid band
     comps.push({ b: [x0, y0, x1, y1], heavy: hv });
   }

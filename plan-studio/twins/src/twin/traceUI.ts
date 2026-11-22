@@ -239,6 +239,9 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       $('trPlans').innerHTML = '';
       $('trOpts').hidden = true;
       ($('trBuild') as HTMLButtonElement).disabled = true;
+      // a new read starts clean: a plan measured from another sheet must not stand in for this one (the AI button would
+      // otherwise take that old linework read as this sheet's plan and only read the rest of the set)
+      reads = []; built = []; include = [];
       const t0 = performance.now();
       readT0 = t0;
       let msg = '';
