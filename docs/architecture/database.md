@@ -61,3 +61,6 @@ Locally, with stand-ins:
 - Shared files can be up to 50 MB; a browser keeps up to 25 MB. A larger shared file exported with the files is counted as not kept when that project file is imported into a browser.
 - A practice's only owner cannot delete their account until another owner is named.
 - AI wrote this. A person should read the rules before client data goes in.
+
+## Clients (contacts, enquiries, history): written and tested, not applied
+`20261122121000_arch_crm.sql` adds `contact`, `enquiry` and `crm_activity`. Members read, owners and members write, viewers read only, outsiders and `anon` get nothing. Contacts and enquiries are archived, never deleted. History (`crm_activity`) is added to and never changed or removed. Run it after the other six. Checked on PGlite (`tests/architecture-db/crm.test.mjs`), not on the real database.
