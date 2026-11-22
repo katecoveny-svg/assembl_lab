@@ -94,9 +94,8 @@ const masks = () => (maskOk ??= !!(globalThis.CSS?.supports?.('mask-mode', 'lumi
 function drawingHtml(d, { cls = '', lazy = true } = {}) {
   const src = url(d?.path);
   if (!src) return '';
-  const ratio = d.w && d.h ? `aspect-ratio:${d.w}/${d.h};` : '';
   if (d.mode === 'image') return `<img class="art-img ${cls}" src="${esc(src)}" alt="" ${lazy ? 'loading="lazy" ' : ''}decoding="async"${d.w ? ` width="${d.w}" height="${d.h}"` : ''} />`;
-  const look = `--art-ink:${esc(d.colour)};${ratio}`;
+  const look = `--art-ink:${esc(d.colour)};`;
   return lazy
     ? `<span class="art-ink ${cls}" style="${look}" data-art-src="${esc(src)}"></span>`
     : `<span class="art-ink on ${cls}" style="${look}--art-src:url(&quot;${esc(src)}&quot;)"></span>`;
@@ -187,6 +186,13 @@ function lazy(root) {
   for (const el of els) if (io) io.observe(el); else show(el);
 }
 
+/** how far down the band the heading reaches: the scrim is solid to there, so the heading is always on the page's ground */
+function measure() {
+  const hero = ctx?.doc?.querySelector?.('.art-hero'), band = hero?.querySelector('.art-band'), h1 = hero?.querySelector('h1');
+  if (!band || !h1) return;
+  const at = Math.round(h1.getBoundingClientRect().bottom - band.getBoundingClientRect().top + 12);
+  if (at > 0) band.style.setProperty('--art-head', `${at}px`);
+}
 /** the band drifts a little slower than the page as it scrolls; not at all when reduced motion is asked for */
 function parallax() {
   const band = ctx?.doc?.querySelector('.art-band-in');
@@ -209,7 +215,11 @@ async function sourcesOf(input) {
   const out = [];
   for (const f of list) {
     const name = f.webkitRelativePath || f.name || '';
-    if (isZipName(name) || (!name && await looksLikeZip(f)) || (!/\.(png|jpe?g|webp)$/i.test(name) && await looksLikeZip(f))) {
+    let zipped = isZipName(name);
+    if (!zipped && !/\.(png|jpe?g|webp)$/i.test(name)) {
+      try { zipped = await looksLikeZip(f); } catch { throw new KitError(`“${name || 'That'}” could not be read. A folder cannot be dropped here: zip it, or choose the images inside it.`); }
+    }
+    if (zipped) {
       const zip = await readZip(f);
       const man = zip.entries.find((e) => e.path === 'manifest.json' || e.path.endsWith('/manifest.json'));
       if (man) {
@@ -415,15 +425,20 @@ const previewUrl = (it) => { if (!shown.has(it)) shown.set(it, URL.createObjectU
 const dropPreview = () => { for (const u of shown.values()) { try { URL.revokeObjectURL(u); } catch { /* gone */ } } shown = new Map(); };
 
 function tile(kind, label, inner, cls = '') { return `<li class="art-tile is-${kind}${cls}"><span class="art-tile-pic">${inner}</span><span class="art-tile-l">${esc(label)}</span></li>`; }
-function recordGrid(r) {
-  const t = theme(), out = [], logo = logoFor(r, t);
+function recordGrid(r, most = Infinity) {
+  const t = theme(), out = [], logo = logoFor(r, t), ground = t === 'sketch' ? 'dark' : 'light', tone = t === 'sketch' ? ['colour', 'mono'] : ['mono', 'colour'];
   if (logo && url(logo.path)) out.push(tile('logo', 'Logo', `<img src="${esc(url(logo.path))}" alt="" loading="lazy" />`));
   for (const d of r.drawings) { const x = inked(d, t); if (canDraw(x)) out.push(tile('drawing', d.name, drawingHtml(x))); }
   const seen = new Set();
-  for (const p of r.patterns) { if (seen.has(p.name) || !url(p.path)) continue; const fit = r.patterns.find((q) => q.name === p.name && q.ground === (t === 'sketch' ? 'dark' : 'light')) ?? p; seen.add(p.name); out.push(tile('pattern', `${p.name} · pattern`, `<img src="${esc(url(fit.path))}" alt="" loading="lazy" />`)); }
-  return out.length ? `<ul class="art-grid" aria-label="The artwork in use">${out.join('')}</ul>` : '';
+  for (const p of r.patterns) {
+    if (seen.has(p.name) || !url(p.path)) continue;
+    seen.add(p.name);
+    const fit = r.patterns.filter((q) => q.name === p.name && q.ground === ground).sort((a, b) => tone.indexOf(a.tone) - tone.indexOf(b.tone))[0] ?? p; // the colourway on the look's own ground
+    out.push(tile('pattern', `${p.name} · pattern`, `<img src="${esc(url(fit.path))}" alt="" loading="lazy" />`));
+  }
+  return out.length ? `<ul class="art-grid" aria-label="The artwork in use">${out.slice(0, most).join('')}</ul>` : '';
 }
-function preparedGrid(items) {
+function preparedGrid(items, most = Infinity) {
   const t = theme(), out = [], ink = INK_ORDER[t].line;
   const logos = items.filter((x) => x.kind === 'logo'), logo = INK_ORDER[t].logo.map((k) => logos.find((x) => x.ink === k)).find(Boolean) ?? logos[0];
   if (logo) out.push(tile('logo', `Logo · ${plural(logos.length, 'ink')}`, `<img src="${esc(previewUrl(logo))}" alt="" />`));
@@ -433,10 +448,11 @@ function preparedGrid(items) {
     out.push(tile('drawing', `${d.name} · ${kb(d.blob.size)}`, pic, d.over ? ' is-heavy' : ''));
   }
   for (const p of items.filter((x) => x.kind === 'pattern')) out.push(tile('pattern', `${p.name} ${p.colourway} · ${kb(p.blob.size)}`, `<img src="${esc(previewUrl(p))}" alt="" />`, p.over ? ' is-heavy' : ''));
-  return out.length ? `<ul class="art-grid" aria-label="The kit, converted">${out.join('')}</ul>` : '';
+  return out.length ? `<ul class="art-grid" aria-label="The kit, converted">${out.slice(0, most).join('')}</ul>` : '';
 }
 
 function sectionBody(where) {
+  const most = where === 'panel' ? 4 : Infinity; // the practice panel shows a few; Settings shows all of it
   const s = scope(), r = st.record, canChange = st.key === s.key ? !!st.place?.canChange : s.key === 'browser';
   const name = s.practice?.name ?? '', busy = !!st.busy || !!st.progress;
   const whose = s.practice ? (canChange ? `■ For everyone in ${esc(name)}. Kept in its private records: nothing has a public address.` : `□ Chosen by an owner of ${esc(name)}.`) : '■ For this browser only. Kept in this browser.';
@@ -446,18 +462,19 @@ function sectionBody(where) {
   if (p) {
     const label = p.stage === 'saving' ? `Keeping the artwork: ${p.done} of ${p.total} files` : p.stage === 'reading' ? 'Reading the kit…' : `Converting: ${p.done} of ${p.total}${p.label ? ` · ${esc(p.label)}` : ''}`;
     parts.push(`<div class="art-progress" role="status" aria-live="polite"><progress max="${Math.max(1, p.total)}" value="${p.done}"></progress><span class="st">${label}</span></div>`);
-    if (p.items?.length) parts.push(preparedGrid(p.items));
+    if (p.items?.length) parts.push(preparedGrid(p.items, most));
   } else if (prep) {
-    parts.push(`<div class="art-ready"><p><b>Ready:</b> ${esc(partsText(prep.parts))} · ${plural(prep.files, 'file')}, ${kb(prep.bytes)} in all, each converted to ${prep.items.every((x) => x.type === 'image/webp') ? 'WebP' : 'a smaller image'} in this browser.</p>
+    parts.push(`<div class="art-ready"><p><b>Ready:</b> ${esc(partsText(prep.parts))} · ${plural(prep.files, 'file')}, ${kb(prep.bytes)} in all, ${prep.from === 'set' ? 'converted already (a set made from the kit earlier)' : `each converted to ${prep.items.every((x) => x.type === 'image/webp') ? 'WebP' : 'a smaller image'} in this browser`}.</p>
       ${prep.ignored ? `<p class="small">${plural(prep.ignored, 'other file')} in the kit ${prep.ignored === 1 ? 'is' : 'are'} not used (social posts, slides and the like).</p>` : ''}
       ${prep.over ? `<p class="small">□ ${plural(prep.over, 'file')} left out: more than the workspace keeps, or too large.</p>` : ''}
       ${prep.heavy ? `<p class="small">□ ${plural(prep.heavy, 'file')} could not be brought under ${kb(LIMITS.drawing.bytes)} and ${prep.heavy === 1 ? 'is' : 'are'} kept as small as it would go.</p>` : ''}
       ${prep.problems?.length ? `<p class="small">□ Not converted: ${esc(prep.problems.join('; '))}</p>` : ''}
       <p class="small">Drawings are kept as line work and drawn in the ink that suits the look. Nothing is kept until you choose.</p></div>`);
-    parts.push(preparedGrid(prep.items));
+    parts.push(preparedGrid(prep.items, most));
     if (canChange) parts.push(`<div class="acts"><button type="button" class="btn solid" data-art="use"${busy ? ' disabled' : ''}>${r ? 'Use this artwork instead' : 'Use this artwork'}</button><button type="button" class="link" data-art="cancel"${busy ? ' disabled' : ''}>Cancel</button></div>
       ${r ? `<p class="small">The new artwork goes in first; the artwork in use now is removed once it has.</p>` : ''}`);
-  } else if (r) parts.push(recordGrid(r));
+  } else if (r) parts.push(recordGrid(r, most));
+  if (where === 'panel' && (r || prep)) parts.push('<p class="small"><a href="#/settings">See all of it in Settings</a></p>');
   if (canChange && !p && !prep) {
     parts.push(`<label class="art-drop${st.over ? ' over' : ''}" data-art-drop><input class="vh" type="file" data-art-file multiple accept=".zip,application/zip,image/png,image/jpeg,image/webp" />
       <span class="art-drop-t">${r ? 'Drop a new kit here to replace it' : 'Drop the practice’s artwork kit here'}</span>
@@ -542,8 +559,10 @@ export function mountArtwork({ account, store, redraw, doc = globalThis.document
   watch(doc.getElementById('app')); watch(doc.getElementById('account-panel'));
   let ticking = false;
   win?.addEventListener?.('scroll', () => { if (ticking) return; ticking = true; win.requestAnimationFrame(() => { ticking = false; parallax(); }); }, { passive: true });
+  win?.addEventListener?.('resize', () => win.requestAnimationFrame(measure));
+  doc.fonts?.ready?.then(() => measure()); // the heading's height changes once its typeface arrives
   return { sync: syncArtwork };
 }
 
 /** after the page draws: the header (the look may have changed), the empty screens, the band's place */
-export function artAfterRender(root) { header(); dress(root); parallax(); }
+export function artAfterRender(root) { header(); dress(root); measure(); parallax(); }
