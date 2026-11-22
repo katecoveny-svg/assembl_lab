@@ -34,6 +34,8 @@ export interface TraceRead {
   image: HTMLCanvasElement;
   /** the AI reader's prompt revision, when its reply says (replies before 2026-11-22b do not) */
   rev?: string;
+  /** the model that answered, when the AI reader read it */
+  model?: string;
 }
 
 // ------------------------------------------------------------------------------------------------ pdf.js
@@ -422,7 +424,7 @@ export async function readSheet(doc: PDFDocumentProxy, pageNo: number, progress:
         k = null;
         note = 'No scale on the sheet and no dimension strings: give one length.';
       }
-      return { ...r, mmPerPx: k, offsetMm: [k ? c.box[0] * s * k : 0, k ? c.box[1] * s * k : 0] as Pt, scaleNote: note, notes: `Read by ${model}. ${r.notes}` } as TraceRead;
+      return { ...r, mmPerPx: k, offsetMm: [k ? c.box[0] * s * k : 0, k ? c.box[1] * s * k : 0] as Pt, scaleNote: note, notes: `Read by ${model}. ${r.notes}`, model } as TraceRead;
     }),
   );
   return reads;
@@ -445,7 +447,7 @@ export async function readImage(file: File, progress: Progress): Promise<TraceRe
   const { plan, model, rev } = await aiRead(canvas);
   const r = fromAi(plan, canvas, 'Traced plan', rev);
   const kd = dimsScale(r.dims);
-  return [{ ...r, mmPerPx: kd?.k ?? null, offsetMm: [0, 0], scaleNote: kd ? `From ${kd.n} dimension strings on the picture.` : 'No dimension strings found: give one length.', notes: `Read by ${model}. ${r.notes}` }];
+  return [{ ...r, mmPerPx: kd?.k ?? null, offsetMm: [0, 0], scaleNote: kd ? `From ${kd.n} dimension strings on the picture.` : 'No dimension strings found: give one length.', notes: `Read by ${model}. ${r.notes}`, model }];
 }
 
 // ------------------------------------------------------------------------------------------------ into a twin building

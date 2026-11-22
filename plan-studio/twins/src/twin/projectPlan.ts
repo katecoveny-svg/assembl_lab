@@ -18,7 +18,8 @@ import { scandi } from './fitout';
 import { nativeBush } from './nativeTrees';
 import { claddingRibs, type RibWall } from './fittings';
 import { buildCar } from './car';
-import { approvalPanel } from './approvals';
+import { approvalPanel, modelFingerprint } from './approvals';
+import { planRunPanel } from './planRunUI'; // the one-press full check (agent/pipeline-1122): this import and `topPanels` below
 import { codeChecksPanel } from './codeChecksUI'; // code pre-check card (agent/code-1122): this import and one entry in `panels` below
 import { scandiMats, suite } from './editorial';
 import { furnishDecks, type DeckRect as DeckPlan } from './outdoor'; // deck furniture: the one import the deck block below needs
@@ -854,7 +855,10 @@ export const projectPlan: Project = {
     ];
     return {
       sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
-      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan), codeChecksPanel(app, input.plan), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
+      // the approval record and the pre-check name the version of the plan as dropped, the same code the run report and the
+      // ops page use; the pre-check still measures falls on whatever ground is showing
+      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
+      topPanels: input.kind === 'plan' ? [planRunPanel(app, { plan: asDropped ?? input.plan, shown: input.plan, onGround, pause: groundPause })] : [],
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
