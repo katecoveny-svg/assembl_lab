@@ -14,8 +14,11 @@ The shared memory for an architecture practice: projects, stages, tasks, documen
 | `20261122100000_arch_extra_checklist.sql` | An `extra` column on every table, so fields the database does not know yet survive. Checklists. Row order. A database-stamped time on approvals and activity. |
 | `20261122100100_arch_invitations_owner_guard.sql` | Invitations, the people list, leaving a practice, and the last-owner rule. |
 | `20261122100200_arch_files_storage.sql` | File records (one per kept file: its project, whether it is for a document or the plan model, and which), a private bucket `arch-files` (50 MB a file), and its access rules. |
+| `20261122120000_arch_files_bucket_limit.sql` | Room for big models: the `arch-files` bucket takes files up to 1 GB. It stays private. Nothing else changes. |
 
-Only the third file changes anything outside `arch`: one bucket row and four rules on Supabase's storage tables, limited to that bucket. The second reads Supabase's sign-in tables and changes nothing.
+Only the third and fourth files change anything outside `arch`: one bucket row and four rules on Supabase's storage tables, limited to that bucket. The second reads Supabase's sign-in tables and changes nothing.
+
+**Big models also need one setting.** Supabase has an upload limit for the whole project, and a bucket cannot take more than it. Go to Project Settings, then Storage, and set "Upload file size limit" to at least 1 GB. Until both are done the shared records refuse a model over 50 MB, and the page says so.
 
 ## The two switches (owner, in the Supabase dashboard)
 Do these after the migrations are applied. Menu names may differ.
