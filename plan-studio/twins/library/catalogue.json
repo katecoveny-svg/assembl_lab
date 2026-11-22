@@ -1,0 +1,2244 @@
+{
+ "schema": "assembl.library.v1",
+ "built": "2026-11-22T07:19:28Z",
+ "note": "Written by tools/library-shots.py from plan-studio/twins/src/twin/library/catalogue.ts. Pictures: studio renders of the models themselves, not photographs. Dimensions: the model bounds, checked against the built model (measured).",
+ "base": "/plan-studio/twins/library/",
+ "categories": [
+  {
+   "id": "seating",
+   "title": "Seating"
+  },
+  {
+   "id": "tables",
+   "title": "Tables"
+  },
+  {
+   "id": "beds",
+   "title": "Beds"
+  },
+  {
+   "id": "storage",
+   "title": "Storage"
+  },
+  {
+   "id": "lighting",
+   "title": "Lighting"
+  },
+  {
+   "id": "rugs-textiles",
+   "title": "Rugs and textiles"
+  },
+  {
+   "id": "decor",
+   "title": "Decor and sculpture"
+  },
+  {
+   "id": "kitchen-bath",
+   "title": "Kitchen and bath fittings"
+  },
+  {
+   "id": "planting",
+   "title": "Native planting"
+  },
+  {
+   "id": "outdoor",
+   "title": "Outdoor"
+  }
+ ],
+ "rooms": [
+  "Living",
+  "Dining",
+  "Kitchen",
+  "Bedroom",
+  "Bathroom",
+  "Study",
+  "Outdoor"
+ ],
+ "items": [
+  {
+   "id": "LIB-SEAT-01",
+   "category": "seating",
+   "title": "Three-seat sofa, wool bouclé",
+   "role": "sofa",
+   "dims": {
+    "w": 2445,
+    "d": 975,
+    "h": 850
+   },
+   "material": "wool bouclé, oiled oak plinth",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Living"
+   ],
+   "pic": "pics/LIB-SEAT-01.webp",
+   "finishes": [
+    {
+     "id": "ivory",
+     "label": "Ivory bouclé",
+     "swatch": "#e6dfd2"
+    },
+    {
+     "id": "oat",
+     "label": "Oat bouclé",
+     "swatch": "#cdbb9f"
+    },
+    {
+     "id": "charcoal",
+     "label": "Charcoal bouclé",
+     "swatch": "#4a4642"
+    }
+   ],
+   "view": {
+    "az": 24,
+    "el": 14
+   },
+   "measured": {
+    "w": 2444,
+    "d": 972,
+    "h": 847
+   },
+   "tris": 137022,
+   "picBytes": 15644,
+   "picQuality": 88,
+   "renderMs": 35138
+  },
+  {
+   "id": "LIB-SEAT-02",
+   "category": "seating",
+   "title": "Lounge armchair, knitted wool",
+   "role": "armchair",
+   "dims": {
+    "w": 715,
+    "d": 820,
+    "h": 885
+   },
+   "material": "knitted wool, oiled oak frame",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Living",
+    "Bedroom",
+    "Study"
+   ],
+   "pic": "pics/LIB-SEAT-02.webp",
+   "finishes": [
+    {
+     "id": "oat",
+     "label": "Oat knit",
+     "swatch": "#d6c8b0"
+    },
+    {
+     "id": "sage",
+     "label": "Sage knit",
+     "swatch": "#9aa08a"
+    },
+    {
+     "id": "rust",
+     "label": "Rust knit",
+     "swatch": "#a8654a"
+    }
+   ],
+   "view": {
+    "az": 32,
+    "el": 14
+   },
+   "measured": {
+    "w": 715,
+    "d": 822,
+    "h": 885
+   },
+   "tris": 37804,
+   "picBytes": 21888,
+   "picQuality": 88,
+   "renderMs": 25977
+  },
+  {
+   "id": "LIB-SEAT-03",
+   "category": "seating",
+   "title": "Dining chair, woven cord seat",
+   "role": "dining_chair",
+   "dims": {
+    "w": 450,
+    "d": 520,
+    "h": 800
+   },
+   "material": "oiled ash, woven paper cord",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Dining",
+    "Kitchen"
+   ],
+   "pic": "pics/LIB-SEAT-03.webp",
+   "finishes": [
+    {
+     "id": "oak",
+     "label": "Oiled oak",
+     "swatch": "#c9a87c"
+    },
+    {
+     "id": "ash",
+     "label": "Oiled ash",
+     "swatch": "#dcc7a6"
+    },
+    {
+     "id": "walnut",
+     "label": "Oiled walnut",
+     "swatch": "#6f4f38"
+    }
+   ],
+   "view": {
+    "az": 34,
+    "el": 16
+   },
+   "measured": {
+    "w": 452,
+    "d": 520,
+    "h": 801
+   },
+   "tris": 24908,
+   "picBytes": 20548,
+   "picQuality": 88,
+   "renderMs": 15917
+  },
+  {
+   "id": "LIB-TAB-01",
+   "category": "tables",
+   "title": "Dining table, solid oak",
+   "role": "dining_table",
+   "dims": {
+    "w": 2000,
+    "d": 950,
+    "h": 750
+   },
+   "material": "oiled solid oak, three boards",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Dining"
+   ],
+   "pic": "pics/LIB-TAB-01.webp",
+   "finishes": [
+    {
+     "id": "oak",
+     "label": "Oiled oak",
+     "swatch": "#c9a87c"
+    },
+    {
+     "id": "ash",
+     "label": "Oiled ash",
+     "swatch": "#dcc7a6"
+    },
+    {
+     "id": "walnut",
+     "label": "Oiled walnut",
+     "swatch": "#6f4f38"
+    }
+   ],
+   "view": {
+    "az": 26,
+    "el": 20
+   },
+   "measured": {
+    "w": 2000,
+    "d": 950,
+    "h": 750
+   },
+   "tris": 28884,
+   "picBytes": 11812,
+   "picQuality": 88,
+   "renderMs": 15745
+  },
+  {
+   "id": "LIB-TAB-02",
+   "category": "tables",
+   "title": "Coffee table, travertine and oak",
+   "role": "coffee_table",
+   "dims": {
+    "w": 1200,
+    "d": 650,
+    "h": 385
+   },
+   "material": "honed travertine, oiled oak",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Living"
+   ],
+   "pic": "pics/LIB-TAB-02.webp",
+   "view": {
+    "az": 28,
+    "el": 24
+   },
+   "measured": {
+    "w": 1200,
+    "d": 650,
+    "h": 383
+   },
+   "tris": 10084,
+   "picBytes": 9926,
+   "picQuality": 88,
+   "renderMs": 16275
+  },
+  {
+   "id": "LIB-BED-01",
+   "category": "beds",
+   "title": "Queen bed with washed linen",
+   "role": "bed",
+   "dims": {
+    "w": 1825,
+    "d": 2230,
+    "h": 1095
+   },
+   "material": "oiled oak, washed linen, knitted throw",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "wall",
+   "rooms": [
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-BED-01.webp",
+   "finishes": [
+    {
+     "id": "oat",
+     "label": "Oat linen",
+     "swatch": "#e3dccf"
+    },
+    {
+     "id": "white",
+     "label": "White linen",
+     "swatch": "#f1ede5"
+    },
+    {
+     "id": "clay",
+     "label": "Clay linen",
+     "swatch": "#b98b6e"
+    }
+   ],
+   "view": {
+    "az": 32,
+    "el": 22
+   },
+   "measured": {
+    "w": 1823,
+    "d": 2228,
+    "h": 1094
+   },
+   "tris": 120172,
+   "picBytes": 14466,
+   "picQuality": 88,
+   "renderMs": 32545
+  },
+  {
+   "id": "LIB-STO-01",
+   "category": "storage",
+   "title": "Sideboard, fluted oak doors",
+   "role": "sideboard",
+   "dims": {
+    "w": 1800,
+    "d": 470,
+    "h": 720
+   },
+   "material": "oiled oak, brushed brass pulls",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "wall",
+   "rooms": [
+    "Living",
+    "Dining"
+   ],
+   "pic": "pics/LIB-STO-01.webp",
+   "view": {
+    "az": 22,
+    "el": 12
+   },
+   "measured": {
+    "w": 1800,
+    "d": 469,
+    "h": 720
+   },
+   "tris": 34000,
+   "picBytes": 17526,
+   "picQuality": 88,
+   "renderMs": 15997
+  },
+  {
+   "id": "LIB-LGT-01",
+   "category": "lighting",
+   "title": "Pleated linen pendant",
+   "role": "pendant",
+   "dims": {
+    "w": 570,
+    "d": 570,
+    "h": 1240
+   },
+   "material": "washed linen, brushed brass, cloth cord",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "hang",
+   "rooms": [
+    "Dining",
+    "Living",
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-LGT-01.webp",
+   "view": {
+    "az": 20,
+    "el": -4,
+    "aim": 0.25
+   },
+   "measured": {
+    "w": 568,
+    "d": 568,
+    "h": 1242
+   },
+   "tris": 20776,
+   "picBytes": 6484,
+   "picQuality": 88,
+   "renderMs": 20104
+  },
+  {
+   "id": "LIB-LGT-02",
+   "category": "lighting",
+   "title": "Tripod floor lamp, turned oak",
+   "role": "floor_lamp",
+   "dims": {
+    "w": 730,
+    "d": 515,
+    "h": 1600
+   },
+   "material": "oiled oak, brushed brass, linen drum",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Living",
+    "Bedroom",
+    "Study"
+   ],
+   "pic": "pics/LIB-LGT-02.webp",
+   "view": {
+    "az": 26,
+    "el": 10
+   },
+   "measured": {
+    "w": 732,
+    "d": 514,
+    "h": 1598
+   },
+   "tris": 5352,
+   "picBytes": 10612,
+   "picQuality": 88,
+   "renderMs": 18097
+  },
+  {
+   "id": "LIB-RUG-01",
+   "category": "rugs-textiles",
+   "title": "Hand-knotted wool rug, lattice",
+   "role": "rug",
+   "dims": {
+    "w": 2570,
+    "d": 1715,
+    "h": 17
+   },
+   "material": "hand-knotted wool, cotton fringe",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Living",
+    "Bedroom",
+    "Dining"
+   ],
+   "pic": "pics/LIB-RUG-01.webp",
+   "view": {
+    "az": 22,
+    "el": 38
+   },
+   "measured": {
+    "w": 2569,
+    "d": 1715,
+    "h": 17
+   },
+   "tris": 18932,
+   "picBytes": 17034,
+   "picQuality": 88,
+   "renderMs": 16912
+  },
+  {
+   "id": "LIB-TEX-01",
+   "category": "rugs-textiles",
+   "title": "Folded throw, chunky knit",
+   "role": "throw",
+   "dims": {
+    "w": 630,
+    "d": 480,
+    "h": 55
+   },
+   "material": "chunky-knit merino",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "surface",
+   "rooms": [
+    "Living",
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-TEX-01.webp",
+   "finishes": [
+    {
+     "id": "rust",
+     "label": "Rust",
+     "swatch": "#a86b4f"
+    },
+    {
+     "id": "oat",
+     "label": "Oat",
+     "swatch": "#cfc2aa"
+    },
+    {
+     "id": "moss",
+     "label": "Moss",
+     "swatch": "#6f7652"
+    }
+   ],
+   "view": {
+    "az": 24,
+    "el": 30
+   },
+   "measured": {
+    "w": 629,
+    "d": 482,
+    "h": 55
+   },
+   "tris": 27980,
+   "picBytes": 37728,
+   "picQuality": 88,
+   "renderMs": 17600
+  },
+  {
+   "id": "LIB-DEC-01",
+   "category": "decor",
+   "title": "Pierced stone form",
+   "role": "sculpture",
+   "dims": {
+    "w": 300,
+    "d": 205,
+    "h": 600
+   },
+   "material": "chiselled limestone on a basalt block",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "surface",
+   "rooms": [
+    "Living",
+    "Study",
+    "Dining"
+   ],
+   "pic": "pics/LIB-DEC-01.webp",
+   "view": {
+    "az": 18,
+    "el": 10
+   },
+   "measured": {
+    "w": 300,
+    "d": 205,
+    "h": 600
+   },
+   "tris": 54586,
+   "picBytes": 10688,
+   "picQuality": 88,
+   "renderMs": 20034
+  },
+  {
+   "id": "LIB-DEC-02",
+   "category": "decor",
+   "title": "Twisted ring, cast bronze",
+   "role": "sculpture",
+   "dims": {
+    "w": 390,
+    "d": 180,
+    "h": 455
+   },
+   "material": "cast bronze on a travertine foot",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "surface",
+   "rooms": [
+    "Living",
+    "Study"
+   ],
+   "pic": "pics/LIB-DEC-02.webp",
+   "view": {
+    "az": 24,
+    "el": 8
+   },
+   "measured": {
+    "w": 391,
+    "d": 180,
+    "h": 453
+   },
+   "tris": 57336,
+   "picBytes": 15172,
+   "picQuality": 88,
+   "renderMs": 26032
+  },
+  {
+   "id": "LIB-DEC-03",
+   "category": "decor",
+   "title": "Thrown stoneware vase",
+   "role": "vase",
+   "dims": {
+    "w": 310,
+    "d": 275,
+    "h": 960
+   },
+   "material": "stoneware, crackled ash glaze, dried stems",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "surface",
+   "rooms": [
+    "Living",
+    "Dining",
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-DEC-03.webp",
+   "finishes": [
+    {
+     "id": "ash",
+     "label": "Ash glaze",
+     "swatch": "#b7b39c"
+    },
+    {
+     "id": "iron",
+     "label": "Iron glaze",
+     "swatch": "#6b4a38"
+    },
+    {
+     "id": "milk",
+     "label": "Milk glaze",
+     "swatch": "#ece6da"
+    }
+   ],
+   "view": {
+    "az": 20,
+    "el": 10
+   },
+   "measured": {
+    "w": 310,
+    "d": 275,
+    "h": 959
+   },
+   "tris": 16270,
+   "picBytes": 9052,
+   "picQuality": 88,
+   "renderMs": 16560
+  },
+  {
+   "id": "LIB-NAT-01",
+   "category": "planting",
+   "title": "Harakeke (New Zealand flax)",
+   "role": "harakeke",
+   "dims": {
+    "w": 1855,
+    "d": 1590,
+    "h": 2265
+   },
+   "material": "living plant, Phormium tenax",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/LIB-NAT-01.webp",
+   "view": {
+    "az": 20,
+    "el": 12,
+    "zoom": 1.05
+   },
+   "measured": {
+    "w": 1853,
+    "d": 1591,
+    "h": 2263
+   },
+   "tris": 12036,
+   "picBytes": 24156,
+   "picQuality": 88,
+   "renderMs": 20554
+  },
+  {
+   "id": "LIB-NAT-02",
+   "category": "planting",
+   "title": "Tī kōuka (cabbage tree)",
+   "role": "tikouka",
+   "dims": {
+    "w": 2215,
+    "d": 2430,
+    "h": 3420
+   },
+   "material": "living plant, Cordyline australis",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/LIB-NAT-02.webp",
+   "view": {
+    "az": 20,
+    "el": 8
+   },
+   "measured": {
+    "w": 2217,
+    "d": 2430,
+    "h": 3418
+   },
+   "tris": 12932,
+   "picBytes": 23960,
+   "picQuality": 88,
+   "renderMs": 18449
+  },
+  {
+   "id": "LIB-NAT-03",
+   "category": "planting",
+   "title": "Ground fern with koru",
+   "role": "fern",
+   "dims": {
+    "w": 1295,
+    "d": 1345,
+    "h": 530
+   },
+   "material": "living plant, native ground fern",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/LIB-NAT-03.webp",
+   "view": {
+    "az": 20,
+    "el": 26
+   },
+   "measured": {
+    "w": 1297,
+    "d": 1347,
+    "h": 531
+   },
+   "tris": 14400,
+   "picBytes": 27618,
+   "picQuality": 88,
+   "renderMs": 20475
+  },
+  {
+   "id": "LIB-SEAT-04",
+   "category": "seating",
+   "title": "Counter stool, oak and bouclé",
+   "role": "stool",
+   "dims": {
+    "w": 400,
+    "d": 400,
+    "h": 735
+   },
+   "material": "oiled oak, brushed brass, wool bouclé",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/LIB-SEAT-04.webp",
+   "view": {
+    "az": 28,
+    "el": 14
+   },
+   "measured": {
+    "w": 400,
+    "d": 400,
+    "h": 735
+   },
+   "tris": 4896,
+   "picBytes": 16720,
+   "picQuality": 88,
+   "renderMs": 9900
+  },
+  {
+   "id": "LIB-TAB-03",
+   "category": "tables",
+   "title": "Bedside table, oak with two drawers",
+   "role": "bedside",
+   "dims": {
+    "w": 520,
+    "d": 440,
+    "h": 540
+   },
+   "material": "oiled oak, brushed brass",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "wall",
+   "rooms": [
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-TAB-03.webp",
+   "finishes": [
+    {
+     "id": "oak",
+     "label": "Oiled oak",
+     "swatch": "#c9a87c"
+    },
+    {
+     "id": "ash",
+     "label": "Oiled ash",
+     "swatch": "#dcc7a6"
+    },
+    {
+     "id": "walnut",
+     "label": "Oiled walnut",
+     "swatch": "#6f4f38"
+    }
+   ],
+   "view": {
+    "az": 30,
+    "el": 16
+   },
+   "measured": {
+    "w": 520,
+    "d": 438,
+    "h": 542
+   },
+   "tris": 17036,
+   "picBytes": 19236,
+   "picQuality": 88,
+   "renderMs": 11346
+  },
+  {
+   "id": "LIB-STO-02",
+   "category": "storage",
+   "title": "Double wardrobe, fluted ash",
+   "role": "wardrobe",
+   "dims": {
+    "w": 1200,
+    "d": 620,
+    "h": 2200
+   },
+   "material": "oiled ash, brushed brass",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "wall",
+   "rooms": [
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-STO-02.webp",
+   "view": {
+    "az": 24,
+    "el": 8
+   },
+   "measured": {
+    "w": 1200,
+    "d": 622,
+    "h": 2200
+   },
+   "tris": 48420,
+   "picBytes": 18558,
+   "picQuality": 88,
+   "renderMs": 18684
+  },
+  {
+   "id": "LIB-LGT-03",
+   "category": "lighting",
+   "title": "Table lamp, turned ash and linen",
+   "role": "table_lamp",
+   "dims": {
+    "w": 305,
+    "d": 305,
+    "h": 500
+   },
+   "material": "oiled ash, brushed brass, washed linen",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "surface",
+   "rooms": [
+    "Bedroom",
+    "Living",
+    "Study"
+   ],
+   "pic": "pics/LIB-LGT-03.webp",
+   "view": {
+    "az": 24,
+    "el": 10
+   },
+   "measured": {
+    "w": 304,
+    "d": 304,
+    "h": 502
+   },
+   "tris": 3660,
+   "picBytes": 9088,
+   "picQuality": 88,
+   "renderMs": 9321
+  },
+  {
+   "id": "LIB-TEX-02",
+   "category": "rugs-textiles",
+   "title": "S-fold linen curtain on a ceiling track",
+   "role": "curtain",
+   "dims": {
+    "w": 1860,
+    "d": 75,
+    "h": 2380
+   },
+   "material": "washed linen, powder-coated track",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "wall",
+   "rooms": [
+    "Living",
+    "Bedroom"
+   ],
+   "pic": "pics/LIB-TEX-02.webp",
+   "view": {
+    "az": 22,
+    "el": 6
+   },
+   "measured": {
+    "w": 1860,
+    "d": 77,
+    "h": 2380
+   },
+   "tris": 29268,
+   "picBytes": 10746,
+   "picQuality": 88,
+   "renderMs": 20533
+  },
+  {
+   "id": "LIB-DEC-04",
+   "category": "decor",
+   "title": "Arched mirror, brass frame",
+   "role": "mirror",
+   "dims": {
+    "w": 530,
+    "d": 25,
+    "h": 885
+   },
+   "material": "mirror glass, brushed brass",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "wall",
+   "rooms": [
+    "Bathroom",
+    "Bedroom",
+    "Living"
+   ],
+   "pic": "pics/LIB-DEC-04.webp",
+   "view": {
+    "az": 16,
+    "el": 4
+   },
+   "measured": {
+    "w": 530,
+    "d": 24,
+    "h": 884
+   },
+   "tris": 3489,
+   "picBytes": 9616,
+   "picQuality": 88,
+   "renderMs": 16464
+  },
+  {
+   "id": "LIB-NAT-04",
+   "category": "planting",
+   "title": "Ponga (silver tree fern)",
+   "role": "silver_fern",
+   "dims": {
+    "w": 2900,
+    "d": 2900,
+    "h": 3055
+   },
+   "material": "living plant, Cyathea dealbata",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/LIB-NAT-04.webp",
+   "view": {
+    "az": 20,
+    "el": 10
+   },
+   "measured": {
+    "w": 2899,
+    "d": 2900,
+    "h": 3055
+   },
+   "tris": 28716,
+   "picBytes": 20482,
+   "picQuality": 88,
+   "renderMs": 20080
+  },
+  {
+   "id": "HERO-LIV-01",
+   "category": "seating",
+   "title": "Three-seater sofa, wool bouclé on a beech plinth",
+   "role": "sofa",
+   "dims": {
+    "w": 2550,
+    "d": 960,
+    "h": 850
+   },
+   "material": "wool bouclé, beech",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-LIV-01",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Living"
+   ],
+   "pic": "pics/HERO-LIV-01.webp",
+   "replacedBy": "LIB-SEAT-01",
+   "measured": {
+    "w": 2549,
+    "d": 960,
+    "h": 848
+   },
+   "tris": 31984,
+   "picBytes": 10638,
+   "picQuality": 88,
+   "renderMs": 31901
+  },
+  {
+   "id": "HERO-LIV-02",
+   "category": "seating",
+   "title": "Beech armchair with linen cushions",
+   "role": "armchair",
+   "dims": {
+    "w": 730,
+    "d": 740,
+    "h": 775
+   },
+   "material": "beech, linen",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-LIV-02",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Living",
+    "Bedroom"
+   ],
+   "pic": "pics/HERO-LIV-02.webp",
+   "replacedBy": "LIB-SEAT-02",
+   "measured": {
+    "w": 728,
+    "d": 739,
+    "h": 777
+   },
+   "tris": 20216,
+   "picBytes": 16600,
+   "picQuality": 88,
+   "renderMs": 16252
+  },
+  {
+   "id": "LIVING-34",
+   "category": "seating",
+   "title": "Oak lounge chair, oatmeal upholstery",
+   "role": "lounge_chair",
+   "dims": {
+    "w": 680,
+    "d": 680,
+    "h": 785
+   },
+   "material": "oak, woven upholstery",
+   "licence": "assembl curated library (owner supplied, cleared for use by Kate Hudson; not independently verified)",
+   "credit": "assembl curated library",
+   "source": "glb",
+   "glb": "LIVING-34",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Living",
+    "Study"
+   ],
+   "pic": "pics/LIVING-34.webp",
+   "replacedBy": "LIB-SEAT-02",
+   "measured": {
+    "w": 680,
+    "d": 680,
+    "h": 784
+   },
+   "tris": 5720,
+   "picBytes": 13524,
+   "picQuality": 88,
+   "renderMs": 13078
+  },
+  {
+   "id": "HERO-DIN-02",
+   "category": "seating",
+   "title": "Steam-bent beech dining chair, bouclé seat",
+   "role": "dining_chair",
+   "dims": {
+    "w": 520,
+    "d": 485,
+    "h": 780
+   },
+   "material": "beech, wool bouclé",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-DIN-02",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Dining",
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-DIN-02.webp",
+   "replacedBy": "LIB-SEAT-03",
+   "measured": {
+    "w": 521,
+    "d": 484,
+    "h": 782
+   },
+   "tris": 4496,
+   "picBytes": 13048,
+   "picQuality": 88,
+   "renderMs": 15006
+  },
+  {
+   "id": "HERO-KIT-09",
+   "category": "seating",
+   "title": "Beech and leather counter stool",
+   "role": "stool",
+   "dims": {
+    "w": 415,
+    "d": 415,
+    "h": 785
+   },
+   "material": "beech, leather",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-09",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-09.webp",
+   "replacedBy": "LIB-SEAT-04",
+   "measured": {
+    "w": 415,
+    "d": 415,
+    "h": 787
+   },
+   "tris": 5872,
+   "picBytes": 19646,
+   "picQuality": 88,
+   "renderMs": 17737
+  },
+  {
+   "id": "HERO-LIV-03",
+   "category": "tables",
+   "title": "Oak coffee table with travertine side table",
+   "role": "coffee_table",
+   "dims": {
+    "w": 1365,
+    "d": 805,
+    "h": 450
+   },
+   "material": "oak, travertine",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-LIV-03",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Living"
+   ],
+   "pic": "pics/HERO-LIV-03.webp",
+   "replacedBy": "LIB-TAB-02",
+   "measured": {
+    "w": 1364,
+    "d": 804,
+    "h": 448
+   },
+   "tris": 3664,
+   "picBytes": 12510,
+   "picQuality": 88,
+   "renderMs": 20880
+  },
+  {
+   "id": "HERO-DIN-01",
+   "category": "tables",
+   "title": "Whitewashed ash dining table",
+   "role": "dining_table",
+   "dims": {
+    "w": 2400,
+    "d": 1040,
+    "h": 750
+   },
+   "material": "whitewashed ash",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-DIN-01",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Dining"
+   ],
+   "pic": "pics/HERO-DIN-01.webp",
+   "replacedBy": "LIB-TAB-01",
+   "measured": {
+    "w": 2400,
+    "d": 1040,
+    "h": 750
+   },
+   "tris": 3312,
+   "picBytes": 11028,
+   "picQuality": 88,
+   "renderMs": 20528
+  },
+  {
+   "id": "HERO-BED-02",
+   "category": "tables",
+   "title": "Two-drawer ash bedside table",
+   "role": "bedside",
+   "dims": {
+    "w": 520,
+    "d": 425,
+    "h": 540
+   },
+   "material": "ash",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BED-02",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bedroom"
+   ],
+   "pic": "pics/HERO-BED-02.webp",
+   "replacedBy": "LIB-TAB-03",
+   "measured": {
+    "w": 520,
+    "d": 426,
+    "h": 540
+   },
+   "tris": 2752,
+   "picBytes": 15816,
+   "picQuality": 88,
+   "renderMs": 14765
+  },
+  {
+   "id": "HERO-BED-01",
+   "category": "beds",
+   "title": "Ash bed with layered flax linen",
+   "role": "bed",
+   "dims": {
+    "w": 2080,
+    "d": 2150,
+    "h": 1010
+   },
+   "material": "ash, flax linen",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BED-01",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bedroom"
+   ],
+   "pic": "pics/HERO-BED-01.webp",
+   "replacedBy": "LIB-BED-01",
+   "measured": {
+    "w": 2080,
+    "d": 2148,
+    "h": 1010
+   },
+   "tris": 23788,
+   "picBytes": 13902,
+   "picQuality": 88,
+   "renderMs": 16715
+  },
+  {
+   "id": "HERO-BED-03",
+   "category": "storage",
+   "title": "Fluted ash double wardrobe",
+   "role": "wardrobe",
+   "dims": {
+    "w": 1240,
+    "d": 920,
+    "h": 2200
+   },
+   "material": "fluted ash",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BED-03",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bedroom"
+   ],
+   "pic": "pics/HERO-BED-03.webp",
+   "replacedBy": "LIB-STO-02",
+   "measured": {
+    "w": 1240,
+    "d": 921,
+    "h": 2200
+   },
+   "tris": 6268,
+   "picBytes": 20616,
+   "picQuality": 88,
+   "renderMs": 12833
+  },
+  {
+   "id": "HERO-LIV-05",
+   "category": "lighting",
+   "title": "Arc floor lamp, brushed brass, flax shade",
+   "role": "floor_lamp",
+   "dims": {
+    "w": 440,
+    "d": 1025,
+    "h": 1675
+   },
+   "material": "brushed brass, travertine, flax",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-LIV-05",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Living"
+   ],
+   "pic": "pics/HERO-LIV-05.webp",
+   "replacedBy": "LIB-LGT-02",
+   "measured": {
+    "w": 440,
+    "d": 1025,
+    "h": 1674
+   },
+   "tris": 3200,
+   "picBytes": 6970,
+   "picQuality": 88,
+   "renderMs": 14165
+  },
+  {
+   "id": "HERO-LIV-06",
+   "category": "lighting",
+   "title": "Turned ash table lamp, opal glass",
+   "role": "table_lamp",
+   "dims": {
+    "w": 170,
+    "d": 195,
+    "h": 495
+   },
+   "material": "ash, brushed brass, opal glass",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-LIV-06",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Bedroom",
+    "Living"
+   ],
+   "pic": "pics/HERO-LIV-06.webp",
+   "replacedBy": "LIB-LGT-03",
+   "measured": {
+    "w": 172,
+    "d": 196,
+    "h": 493
+   },
+   "tris": 2888,
+   "picBytes": 7732,
+   "picQuality": 88,
+   "renderMs": 10641
+  },
+  {
+   "id": "HERO-DIN-03",
+   "category": "lighting",
+   "title": "Hoop-pine polyhedron pendant",
+   "role": "pendant",
+   "dims": {
+    "w": 700,
+    "d": 695,
+    "h": 970
+   },
+   "material": "hoop pine",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-DIN-03",
+   "status": "legacy",
+   "fit": "hang",
+   "rooms": [
+    "Dining"
+   ],
+   "pic": "pics/HERO-DIN-03.webp",
+   "replacedBy": "LIB-LGT-01",
+   "view": {
+    "el": -4,
+    "aim": 0.3
+   },
+   "measured": {
+    "w": 699,
+    "d": 695,
+    "h": 969
+   },
+   "tris": 3040,
+   "picBytes": 23014,
+   "picQuality": 88,
+   "renderMs": 14785
+  },
+  {
+   "id": "HERO-DIN-04",
+   "category": "lighting",
+   "title": "Linear pendant, brushed brass and alabaster",
+   "role": "pendant_linear",
+   "dims": {
+    "w": 1560,
+    "d": 65,
+    "h": 565
+   },
+   "material": "brushed brass, alabaster",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-DIN-04",
+   "status": "legacy",
+   "fit": "hang",
+   "rooms": [
+    "Dining",
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-DIN-04.webp",
+   "view": {
+    "el": -2,
+    "aim": 0.3
+   },
+   "measured": {
+    "w": 1560,
+    "d": 64,
+    "h": 563
+   },
+   "tris": 2604,
+   "picBytes": 5652,
+   "picQuality": 88,
+   "renderMs": 20906
+  },
+  {
+   "id": "HERO-LIV-04",
+   "category": "rugs-textiles",
+   "title": "Hand-knotted wool and jute rug",
+   "role": "rug",
+   "dims": {
+    "w": 2475,
+    "d": 1580,
+    "h": 30
+   },
+   "material": "wool, jute",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-LIV-04",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Living",
+    "Bedroom"
+   ],
+   "pic": "pics/HERO-LIV-04.webp",
+   "replacedBy": "LIB-RUG-01",
+   "view": {
+    "el": 38
+   },
+   "measured": {
+    "w": 2476,
+    "d": 1580,
+    "h": 32
+   },
+   "tris": 7744,
+   "picBytes": 4514,
+   "picQuality": 88,
+   "renderMs": 22598
+  },
+  {
+   "id": "WINDOW-37",
+   "category": "rugs-textiles",
+   "title": "S-fold sheer curtain on a ceiling track",
+   "role": "curtain",
+   "dims": {
+    "w": 1820,
+    "d": 90,
+    "h": 2390
+   },
+   "material": "sheer linen, track",
+   "licence": "assembl curated library (owner supplied, cleared for use by Kate Hudson; not independently verified)",
+   "credit": "assembl curated library",
+   "source": "glb",
+   "glb": "WINDOW-37",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Living",
+    "Bedroom"
+   ],
+   "pic": "pics/WINDOW-37.webp",
+   "replacedBy": "LIB-TEX-02",
+   "view": {
+    "az": 18,
+    "el": 6
+   },
+   "measured": {
+    "w": 1820,
+    "d": 88,
+    "h": 2390
+   },
+   "tris": 3084,
+   "picBytes": 8502,
+   "picQuality": 88,
+   "renderMs": 22048
+  },
+  {
+   "id": "ABI-MIR-08",
+   "category": "decor",
+   "title": "Arched mirror, satin brass frame",
+   "role": "mirror",
+   "dims": {
+    "w": 450,
+    "d": 30,
+    "h": 790
+   },
+   "material": "mirror glass, satin brass",
+   "licence": "assembl curated library (owner supplied, cleared for use by Kate Hudson; not independently verified)",
+   "credit": "assembl curated library",
+   "source": "glb",
+   "glb": "ABI-MIR-08",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bathroom",
+    "Bedroom"
+   ],
+   "pic": "pics/ABI-MIR-08.webp",
+   "replacedBy": "LIB-DEC-04",
+   "view": {
+    "az": 14,
+    "el": 4
+   },
+   "measured": {
+    "w": 448,
+    "d": 31,
+    "h": 788
+   },
+   "tris": 424,
+   "picBytes": 6436,
+   "picQuality": 88,
+   "renderMs": 14034
+  },
+  {
+   "id": "HERO-SPK-02",
+   "category": "decor",
+   "title": "Pale ash bookshelf speaker",
+   "role": "speaker",
+   "dims": {
+    "w": 240,
+    "d": 350,
+    "h": 420
+   },
+   "material": "pale ash, cloth grille",
+   "licence": "assembl curated library (owner supplied, cleared for use by Kate Hudson; not independently verified)",
+   "credit": "assembl curated library",
+   "source": "glb",
+   "glb": "HERO-SPK-02",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Living"
+   ],
+   "pic": "pics/HERO-SPK-02.webp",
+   "measured": {
+    "w": 240,
+    "d": 349,
+    "h": 420
+   },
+   "tris": 9944,
+   "picBytes": 12836,
+   "picQuality": 88,
+   "renderMs": 10303
+  },
+  {
+   "id": "HERO-GTR-01",
+   "category": "decor",
+   "title": "Solid-body electric guitar, black",
+   "role": "guitar",
+   "dims": {
+    "w": 335,
+    "d": 80,
+    "h": 985
+   },
+   "material": "lacquered body, maple neck",
+   "licence": "assembl curated library (owner supplied, cleared for use by Kate Hudson; not independently verified)",
+   "credit": "assembl curated library",
+   "source": "glb",
+   "glb": "HERO-GTR-01",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Living",
+    "Study"
+   ],
+   "pic": "pics/HERO-GTR-01.webp",
+   "view": {
+    "az": 14,
+    "el": 4
+   },
+   "measured": {
+    "w": 334,
+    "d": 79,
+    "h": 986
+   },
+   "tris": 17184,
+   "picBytes": 13638,
+   "picQuality": 88,
+   "renderMs": 9754
+  },
+  {
+   "id": "HERO-KIT-01",
+   "category": "kitchen-bath",
+   "title": "600 mm wall oven",
+   "role": "oven",
+   "dims": {
+    "w": 595,
+    "d": 570,
+    "h": 590
+   },
+   "material": "black glass, steel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-01",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-01.webp",
+   "measured": {
+    "w": 596,
+    "d": 572,
+    "h": 588
+   },
+   "tris": 3528,
+   "picBytes": 9716,
+   "picQuality": 88,
+   "renderMs": 11902
+  },
+  {
+   "id": "HERO-KIT-02",
+   "category": "kitchen-bath",
+   "title": "900 mm induction cooktop",
+   "role": "cooktop",
+   "dims": {
+    "w": 900,
+    "d": 520,
+    "h": 55
+   },
+   "material": "black glass",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-02",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-02.webp",
+   "view": {
+    "el": 36
+   },
+   "measured": {
+    "w": 900,
+    "d": 520,
+    "h": 57
+   },
+   "tris": 3732,
+   "picBytes": 10012,
+   "picQuality": 88,
+   "renderMs": 8518
+  },
+  {
+   "id": "HERO-KIT-03",
+   "category": "kitchen-bath",
+   "title": "900 mm canopy rangehood",
+   "role": "rangehood",
+   "dims": {
+    "w": 900,
+    "d": 500,
+    "h": 820
+   },
+   "material": "brushed steel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-03",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-03.webp",
+   "measured": {
+    "w": 900,
+    "d": 500,
+    "h": 822
+   },
+   "tris": 4140,
+   "picBytes": 10216,
+   "picQuality": 88,
+   "renderMs": 15485
+  },
+  {
+   "id": "HERO-KIT-04",
+   "category": "kitchen-bath",
+   "title": "900 mm integrated fridge",
+   "role": "fridge",
+   "dims": {
+    "w": 900,
+    "d": 625,
+    "h": 2030
+   },
+   "material": "panel-ready doors",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-04",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-04.webp",
+   "measured": {
+    "w": 900,
+    "d": 625,
+    "h": 2030
+   },
+   "tris": 3516,
+   "picBytes": 16470,
+   "picQuality": 88,
+   "renderMs": 15783
+  },
+  {
+   "id": "HERO-KIT-05",
+   "category": "kitchen-bath",
+   "title": "Espresso machine, brushed steel and ash",
+   "role": "espresso",
+   "dims": {
+    "w": 290,
+    "d": 505,
+    "h": 340
+   },
+   "material": "brushed steel, ash",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-05",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-05.webp",
+   "measured": {
+    "w": 290,
+    "d": 504,
+    "h": 339
+   },
+   "tris": 3728,
+   "picBytes": 13004,
+   "picQuality": 88,
+   "renderMs": 9722
+  },
+  {
+   "id": "HERO-KIT-06",
+   "category": "kitchen-bath",
+   "title": "Pour-over kettle, brushed brass and ash",
+   "role": "kettle",
+   "dims": {
+    "w": 260,
+    "d": 175,
+    "h": 200
+   },
+   "material": "brushed brass, ash",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-06",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-06.webp",
+   "measured": {
+    "w": 260,
+    "d": 176,
+    "h": 202
+   },
+   "tris": 2072,
+   "picBytes": 11662,
+   "picQuality": 88,
+   "renderMs": 10208
+  },
+  {
+   "id": "HERO-KIT-07",
+   "category": "kitchen-bath",
+   "title": "Two-slice toaster, stainless and ash",
+   "role": "toaster",
+   "dims": {
+    "w": 315,
+    "d": 185,
+    "h": 190
+   },
+   "material": "stainless steel, ash",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-07",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-07.webp",
+   "measured": {
+    "w": 316,
+    "d": 185,
+    "h": 188
+   },
+   "tris": 3424,
+   "picBytes": 14258,
+   "picQuality": 88,
+   "renderMs": 18240
+  },
+  {
+   "id": "HERO-KIT-08",
+   "category": "kitchen-bath",
+   "title": "Gooseneck pull-out kitchen mixer",
+   "role": "tap",
+   "dims": {
+    "w": 70,
+    "d": 250,
+    "h": 500
+   },
+   "material": "brushed steel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-KIT-08",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/HERO-KIT-08.webp",
+   "measured": {
+    "w": 69,
+    "d": 250,
+    "h": 502
+   },
+   "tris": 4056,
+   "picBytes": 8474,
+   "picQuality": 88,
+   "renderMs": 15543
+  },
+  {
+   "id": "APPLIANCES-10",
+   "category": "kitchen-bath",
+   "title": "Knife block with four knives, weathered timber",
+   "role": "knife_block",
+   "dims": {
+    "w": 240,
+    "d": 135,
+    "h": 320
+   },
+   "material": "weathered timber, steel",
+   "licence": "assembl curated library (owner supplied, cleared for use by Kate Hudson; not independently verified)",
+   "credit": "assembl curated library",
+   "source": "glb",
+   "glb": "APPLIANCES-10",
+   "status": "legacy",
+   "fit": "surface",
+   "rooms": [
+    "Kitchen"
+   ],
+   "pic": "pics/APPLIANCES-10.webp",
+   "measured": {
+    "w": 240,
+    "d": 136,
+    "h": 322
+   },
+   "tris": 5048,
+   "picBytes": 14894,
+   "picQuality": 88,
+   "renderMs": 15539
+  },
+  {
+   "id": "HERO-BTH-01",
+   "category": "kitchen-bath",
+   "title": "1200 mm fluted ash vanity, marble top",
+   "role": "vanity_wide",
+   "dims": {
+    "w": 1220,
+    "d": 480,
+    "h": 765
+   },
+   "material": "fluted ash, marble",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BTH-01",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bathroom"
+   ],
+   "pic": "pics/HERO-BTH-01.webp",
+   "measured": {
+    "w": 1220,
+    "d": 480,
+    "h": 764
+   },
+   "tris": 3776,
+   "picBytes": 19768,
+   "picQuality": 88,
+   "renderMs": 16494
+  },
+  {
+   "id": "HERO-BTH-02",
+   "category": "kitchen-bath",
+   "title": "Back-to-wall toilet with flush plate",
+   "role": "toilet",
+   "dims": {
+    "w": 365,
+    "d": 560,
+    "h": 950
+   },
+   "material": "vitreous china",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BTH-02",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bathroom"
+   ],
+   "pic": "pics/HERO-BTH-02.webp",
+   "measured": {
+    "w": 364,
+    "d": 561,
+    "h": 950
+   },
+   "tris": 3012,
+   "picBytes": 9062,
+   "picQuality": 88,
+   "renderMs": 9610
+  },
+  {
+   "id": "HERO-BTH-03",
+   "category": "kitchen-bath",
+   "title": "Frameless walk-in shower screen and rail",
+   "role": "shower_screen",
+   "dims": {
+    "w": 1000,
+    "d": 490,
+    "h": 2040
+   },
+   "material": "toughened glass, brushed steel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BTH-03",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Bathroom"
+   ],
+   "pic": "pics/HERO-BTH-03.webp",
+   "measured": {
+    "w": 1000,
+    "d": 491,
+    "h": 2040
+   },
+   "tris": 1952,
+   "picBytes": 8210,
+   "picQuality": 88,
+   "renderMs": 9526
+  },
+  {
+   "id": "HERO-BTH-04",
+   "category": "kitchen-bath",
+   "title": "Heated ladder towel rail with flax towel",
+   "role": "towel_rail",
+   "dims": {
+    "w": 560,
+    "d": 110,
+    "h": 900
+   },
+   "material": "brushed steel, flax towel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-BTH-04",
+   "status": "legacy",
+   "fit": "wall",
+   "rooms": [
+    "Bathroom"
+   ],
+   "pic": "pics/HERO-BTH-04.webp",
+   "view": {
+    "az": 14,
+    "el": 6
+   },
+   "measured": {
+    "w": 558,
+    "d": 110,
+    "h": 900
+   },
+   "tris": 5760,
+   "picBytes": 27990,
+   "picQuality": 88,
+   "renderMs": 16965
+  },
+  {
+   "id": "HERO-NAT-01",
+   "category": "planting",
+   "title": "Nīkau palm",
+   "role": "nikau",
+   "dims": {
+    "w": 2290,
+    "d": 2235,
+    "h": 2565
+   },
+   "material": "living plant, Rhopalostylis sapida",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-NAT-01",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/HERO-NAT-01.webp",
+   "measured": {
+    "w": 2291,
+    "d": 2235,
+    "h": 2563
+   },
+   "tris": 27852,
+   "picBytes": 27952,
+   "picQuality": 88,
+   "renderMs": 18741
+  },
+  {
+   "id": "HERO-NAT-02",
+   "category": "planting",
+   "title": "Pōhutukawa, multi-stemmed",
+   "role": "pohutukawa",
+   "dims": {
+    "w": 2145,
+    "d": 2200,
+    "h": 1510
+   },
+   "material": "living plant, Metrosideros excelsa",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-NAT-02",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/HERO-NAT-02.webp",
+   "measured": {
+    "w": 2143,
+    "d": 2202,
+    "h": 1510
+   },
+   "tris": 66112,
+   "picBytes": 27676,
+   "picQuality": 88,
+   "renderMs": 23714
+  },
+  {
+   "id": "HERO-NAT-03",
+   "category": "planting",
+   "title": "Ponga (silver fern)",
+   "role": "silver_fern",
+   "dims": {
+    "w": 605,
+    "d": 890,
+    "h": 1340
+   },
+   "material": "living plant, Cyathea dealbata",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-NAT-03",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/HERO-NAT-03.webp",
+   "replacedBy": "LIB-NAT-04",
+   "measured": {
+    "w": 604,
+    "d": 890,
+    "h": 1339
+   },
+   "tris": 928,
+   "picBytes": 10580,
+   "picQuality": 88,
+   "renderMs": 15630
+  },
+  {
+   "id": "HERO-OUT-01",
+   "category": "outdoor",
+   "title": "Slatted outdoor sofa and low table",
+   "role": "deck_lounge",
+   "dims": {
+    "w": 2420,
+    "d": 1560,
+    "h": 755
+   },
+   "material": "slatted hardwood, outdoor canvas",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-OUT-01",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/HERO-OUT-01.webp",
+   "measured": {
+    "w": 2421,
+    "d": 1560,
+    "h": 754
+   },
+   "tris": 38268,
+   "picBytes": 13230,
+   "picQuality": 88,
+   "renderMs": 27693
+  },
+  {
+   "id": "HERO-OUT-02",
+   "category": "outdoor",
+   "title": "Concrete and steel planter trio",
+   "role": "planters",
+   "dims": {
+    "w": 1190,
+    "d": 590,
+    "h": 680
+   },
+   "material": "concrete, weathering steel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-OUT-02",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/HERO-OUT-02.webp",
+   "measured": {
+    "w": 1190,
+    "d": 590,
+    "h": 680
+   },
+   "tris": 1368,
+   "picBytes": 16370,
+   "picQuality": 88,
+   "renderMs": 21292
+  },
+  {
+   "id": "HERO-OUT-03",
+   "category": "outdoor",
+   "title": "Four-burner hooded barbecue",
+   "role": "bbq",
+   "dims": {
+    "w": 1460,
+    "d": 605,
+    "h": 1190
+   },
+   "material": "stainless steel",
+   "licence": "CC BY 4.0 procedural mesh and PBR maps, Kōwhai Studio 3D generator (Kate Hudson, assembl)",
+   "credit": "Kōwhai Studio 3D generator (Kate Hudson, assembl), CC BY 4.0",
+   "source": "glb",
+   "glb": "HERO-OUT-03",
+   "status": "legacy",
+   "fit": "floor",
+   "rooms": [
+    "Outdoor"
+   ],
+   "pic": "pics/HERO-OUT-03.webp",
+   "measured": {
+    "w": 1460,
+    "d": 604,
+    "h": 1190
+   },
+   "tris": 5640,
+   "picBytes": 11084,
+   "picQuality": 88,
+   "renderMs": 18802
+  }
+ ]
+}
