@@ -387,6 +387,20 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       return p.theme;
     },
 
+    /** what the practice in use looks for in public tender notices (practice.extra.hunt), or null when none is set or it cannot be read */
+    async hunt() {
+      const p = st.practice;
+      if (!p || !team) return null;
+      try { return await team.hunt(p.id); } catch { return null; }
+    },
+    /** Save what the practice looks for (owners only; the database refuses anyone else). */
+    async setHunt(hunt) {
+      const p = st.practice;
+      if (!p || !team) throw new Error('No practice is in use, so this is kept in this browser only.');
+      if (p.role !== 'owner') throw new Error(`Only an owner of ${p.name} can change what it looks for.`);
+      return team.setHunt(p.id, hunt);
+    },
+
     /** the banner under the header: where records are being saved, right now */
     truthHtml(persistent) {
       if (st.practice && store.shared) {

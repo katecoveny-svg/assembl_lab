@@ -783,6 +783,22 @@ export function createTeam(g) {
       if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can change the practice’s look. Nothing was changed.', 'refused');
       return rows[0].extra?.theme ?? theme;
     },
+    /** what the practice looks for in public tender notices (practice.extra.hunt): keywords, regions, sectors, value range, sources. Every member can read it. null when none is set. */
+    async hunt(practiceId) {
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      const h = row?.extra && typeof row.extra === 'object' ? row.extra.hunt : null;
+      return isObj(h) ? h : null;
+    },
+    /** Save what the practice looks for. Like the look, the database lets only an owner change the practice row; anyone else changes nothing. */
+    async setHunt(practiceId, hunt) {
+      if (!isObj(hunt)) throw new Error('Say what to look for.');
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      if (!row) throw new CloudError('That practice is not in the shared records.', 'missing');
+      const extra = { ...(isObj(row.extra) ? row.extra : {}), hunt: copy(hunt) };
+      const rows = await g.ask(() => g.from('practice').update({ extra }).eq('id', practiceId).select('id, extra'));
+      if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can change what the practice looks for. Nothing was changed.', 'refused');
+      return rows[0].extra?.hunt ?? hunt;
+    },
     /** the database refuses this for anyone but an owner, and refuses to leave a practice with no owner */
     async setRole(practiceId, userId, role) {
       if (!ROLES.includes(role)) throw new Error('Choose a role: owner, member or viewer.');
