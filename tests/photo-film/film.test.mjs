@@ -153,7 +153,7 @@ test('confirm: true or 402 with the estimate, nothing sent, nothing counted', as
 test('caps: per minute, per IP a day and in all; counted when sent, success or not', async () => {
   const env = { ...ENV, FILM_IP_PER_MINUTE: '2', FILM_IP_PER_DAY: '3', FILM_DAILY_CAP: '4' };
   assert.equal((await call({ env })).status, 202);
-  assert.equal((await call({ env, handler: () => reply({ error: { code: 'internal' } }, 500) })).status, 502, 'a failed call still counts');
+  assert.equal((await call({ env, handler: () => reply({ error: { code: 'internal' } }, 500) })).status, 424, 'a failed call still counts');
   const third = await call({ env }); assert.equal(third.status, 429); assert.equal(third.json.error, 'slow_down'); assert.equal(third.calls.length, 0);
   _resetCounters();
   const e2 = { ...env, FILM_IP_PER_MINUTE: '9' };
@@ -203,7 +203,7 @@ test('polling: running until Google says completed with a video; then the film, 
   assert.ok(r2.calls.some((c) => c.method === 'DELETE' && c.url.endsWith('/interactions/v1_job42')), 'deleted at Google');
   // completed without a video is not a film
   const r3 = await call({ method: 'GET', query: `?handle=${h}`, handler: (c) => (c.method === 'DELETE' ? reply({}) : reply({ id: 'v1_job42', status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text: 'sorry' }] }] })) });
-  assert.equal(r3.status, 502); assert.equal(r3.json.error, 'no_video'); assert.ok(!('video' in r3.json));
+  assert.equal(r3.status, 424); assert.equal(r3.json.error, 'no_video'); assert.ok(!('video' in r3.json));
   const r4 = await call({ method: 'GET', query: `?handle=${h}`, handler: (c) => (c.method === 'DELETE' ? reply({}) : reply({ id: 'v1_job42', status: 'failed', error: { code: 'video_safety' } })) });
   assert.equal(r4.json.error, 'declined');
   const gone = await call({ method: 'GET', query: `?handle=${h}`, handler: () => reply({ error: { code: 'not_found' } }, 404) });
@@ -239,16 +239,16 @@ test('polls are capped per minute', async () => {
 
 test('Google\'s errors in plain words, with a code; nothing shown rather than a guess', async () => {
   for (const [handler, status, err] of [
-    [() => reply({ error: { code: 'invalid_argument', message: 'background not supported' } }, 400), 502, 'refused'],
-    [() => reply({ error: { code: 'rate_limit_exceeded' } }, 429), 503, 'busy'],
-    [() => reply({ error: { code: 'deadline_exceeded' } }, 504), 504, 'timeout'],
+    [() => reply({ error: { code: 'invalid_argument', message: 'background not supported' } }, 400), 424, 'refused'],
+    [() => reply({ error: { code: 'rate_limit_exceeded' } }, 429), 429, 'busy'],
+    [() => reply({ error: { code: 'deadline_exceeded' } }, 504), 424, 'timeout'],
     [() => reply({ error: { code: 'video_safety', message: 'blocked' } }, 400), 422, 'declined'],
-    [() => reply({ error: { code: 'internal' } }, 500), 502, 'model_error'],
-    [() => reply({ id: 'v1_x', status: 'completed', steps: [] }), 502, 'no_video'],
-    [() => reply({ id: 'v1_x', status: 'failed' }), 502, 'model_error'],
-    [() => reply({ status: 'in_progress' }), 502, 'model_error'],
-    [() => { throw new Error('socket hang up'); }, 502, 'model_error'],
-    [() => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }, 504, 'timeout'],
+    [() => reply({ error: { code: 'internal' } }, 500), 424, 'model_error'],
+    [() => reply({ id: 'v1_x', status: 'completed', steps: [] }), 424, 'no_video'],
+    [() => reply({ id: 'v1_x', status: 'failed' }), 424, 'model_error'],
+    [() => reply({ status: 'in_progress' }), 424, 'model_error'],
+    [() => { throw new Error('socket hang up'); }, 424, 'model_error'],
+    [() => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }, 424, 'timeout'],
   ]) {
     _resetCounters();
     const r = await call({ body: { video: CLIP, mode: 'wait' }, handler });
