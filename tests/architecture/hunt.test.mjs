@@ -28,7 +28,8 @@ const json = (b, status = 200) => ({ ok: status < 400, status, json: async () =>
 /** a stand-in feed that records what it was asked */
 function feed(answer = ANSWER()) {
   const calls = [];
-  const f = async (url) => { calls.push(String(url)); if (typeof answer === 'function') return answer(url); return json(answer); };
+  // the rules lane (hunt-rules.js) asks the same address for feeds=rules; it is not a tender question, so it is answered and not counted here
+  const f = async (url) => { if (String(url).includes('feeds=rules')) return json({ feeds: { rules: { fetchedAt: '2026-11-22T00:00:00Z', values: { rules: [], sources: [] } } } }); calls.push(String(url)); if (typeof answer === 'function') return answer(url); return json(answer); };
   f.calls = calls;
   return f;
 }
@@ -360,7 +361,9 @@ test('with no owner to set it, a member of a practice with no settings sees that
 test('the page code has no way to contact anyone: no mail, no form post, no submit to GETS', () => {
   const src = readFileSync(new URL('../../architecture/js/hunt.js', import.meta.url), 'utf8') + readFileSync(new URL('../../architecture/js/hunt-model.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /mailto:|method:\s*['"]POST|sendBeacon|XMLHttpRequest|WebSocket/);
-  assert.equal((src.match(/fetchImpl\(/g) ?? []).length, 1, 'one request in all, to the lab\'s own feed');
+  const calls = src.match(/fetchImpl\([^,)]*/g) ?? [];
+  assert.equal(calls.length, 2, 'two requests in all: the tenders and the early signals');
+  for (const c of calls) assert.match(c, /^fetchImpl\(`\$\{FEED\}\?/, 'each one to the lab\'s own feed');
   const css = readFileSync(new URL('../../architecture/hunt.css', import.meta.url), 'utf8');
   assert.doesNotMatch(css.replace(/var\([^)]*\)/g, ''), /#[0-9a-fA-F]{3,8}\b|rgba?\(/, 'colours only as fallbacks inside var()');
 });

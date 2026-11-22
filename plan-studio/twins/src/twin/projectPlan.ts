@@ -29,6 +29,9 @@ import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
+import { buildFreeform, isFreeform } from './freeform'; // free-form buildings (agent/freeform-walk-1122): tapered and curved plans, mezzanines, gable roofs over any footprint
+import { bbox as fpBox, inside as inPoly } from './freeformGeom';
+import { navFromPlan } from './walkNav';
 
 // The tool's front door: drop a plan model (assembl.plan-model.v1, as Plan to 4D saves it) and
 // get a furnished, finished twin to render. An IFC or GLB (from Revit, ArchiCAD or Blender) is
@@ -46,6 +49,8 @@ interface PlanModel {
   views?: Terrain['views'];
   /** a finished model of the building (GLB, Y up, metres) shown instead of generating it from the walls: its floor level, and the colour for its metal cladding */
   asBuilt?: { glb: string; ffl: number; cladding?: string; note?: string };
+  /** where walk mode starts and which way it looks (world x, z) */
+  walk?: { start: [number, number]; look: [number, number] };
 }
 
 /** Real ground for the site, in the plan model's frame: a square grid of levels (rows along z, columns along x, relative to
@@ -559,6 +564,7 @@ export const projectPlan: Project = {
     let terrain: Terrain | null = null;
     let bushObj: THREE.Object3D | null = null;
     const keys: Key[] = [];
+    const layoutGroups: { building: string; name: string; group: THREE.Object3D; seats: number }[] = [];
 
     if (input.kind === 'plan') {
       const P = input.plan;
@@ -567,8 +573,10 @@ export const projectPlan: Project = {
       terrain = T ?? null;
       const plane = (x: number, z: number) => (T ? (inside(T, T.centre, x, z) || !T.far ? gridAt(T, T.centre, x, z) : gridAt(T.far, T.centre, x, z)) : fall ? fall.y + fall.slopeX * (x - fall.at[0]) + fall.slopeZ * (z - fall.at[1]) : 0);
       // pads under each footprint and its decks
-      const pads: { x0: number; x1: number; z0: number; z1: number; y: number }[] = [];
+      const pads: { x0: number; x1: number; z0: number; z1: number; y: number; poly?: [number, number][] }[] = [];
       for (const b of P.buildings) {
+        // a free-form building: the ground is cut to just under its floor inside its own outline (not a box round it)
+        if (isFreeform(b)) { const bb = fpBox(b.footprint); pads.push({ x0: b.origin[0] + bb.u0, x1: b.origin[0] + bb.u1, z0: b.origin[1] + bb.v0, z1: b.origin[1] + bb.v1, y: (b.floorLevel ?? 0) - 0.05, poly: b.footprint.map(([u, v]) => [b.origin[0] + u, b.origin[1] + v] as [number, number]) }); continue; }
         const L = b.levels[0];
         const W = Math.max(...L.walls.filter((w) => w.axis === 'z').map((w) => w.at));
         const D = Math.max(...L.walls.filter((w) => w.axis === 'x').map((w) => w.at));
@@ -582,7 +590,7 @@ export const projectPlan: Project = {
         const x = e;
         const z = -n;
         let y = plane(x, z);
-        for (const p of pads) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) y = Math.min(y, p.y);
+        for (const p of pads) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && (!p.poly || inPoly([x, z], p.poly))) y = Math.min(y, p.y);
         return y;
       };
       scandi.on = true;
@@ -590,6 +598,15 @@ export const projectPlan: Project = {
       const box = new THREE.Box3();
       if (P.asBuilt) { app.log('Loading the building model…'); const h = await asBuiltModel(P.asBuilt); model.add(h); h.updateMatrixWorld(true); box.expandByObject(h); }
       else for (const b of P.buildings) {
+        if (isFreeform(b)) {
+          app.log(`Generating ${b.name ?? b.id}…`);
+          // the ground under it, so its base reaches down to the ground where the site falls away
+          const fb = buildFreeform(b, q, (u, v) => plane(b.origin[0] + u, b.origin[1] + v) - (b.floorLevel ?? 0));
+          fb.group.position.set(b.origin[0], b.floorLevel ?? 0, b.origin[1]);
+          model.add(fb.group); fb.group.updateMatrixWorld(true); box.expandByObject(fb.group);
+          for (const [name, g] of Object.entries(fb.layouts)) layoutGroups.push({ building: b.name ?? b.id, name, group: g, seats: fb.seats[name] });
+          continue;
+        }
         const pl: Placement = { origin: [b.origin[0], -b.origin[1]], u: [1, 0], v: [0, -1], ffl: b.floorLevel ?? 0, bearing: 90 };
         app.log(`Generating ${b.name ?? b.id}…`);
         const h = buildHome({ key: b.id, spec: b, placement: pl, limits: [], ground: groundAt, quality: q, finishes: fin });
@@ -616,6 +633,7 @@ export const projectPlan: Project = {
       if (ed) {
         const runs: EaveRun[] = [];
         for (const b of P.buildings) {
+          if (isFreeform(b)) continue;
           const y0 = b.floorLevel ?? 0;
           for (const w of b.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; out: number; openings: { a: number; b: number; kind: string }[] }[]) {
             for (const o of w.openings ?? []) {
@@ -634,6 +652,7 @@ export const projectPlan: Project = {
             cm.map = null; cm.normalMap = null; cm.roughnessMap = null; cm.roughness = 0.5; cm.metalness = 0.45; cm.clearcoat = 0.2; cm.needsUpdate = true;
             const rw: RibWall[] = [];
             for (const b of P.buildings) {
+              if (isFreeform(b)) continue;
               const y0 = b.floorLevel ?? 0;
               for (const w of b.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number; sill: number; head: number }[] }[]) {
                 const pt = (t: number) => (w.axis === 'x' ? new THREE.Vector3(b.origin[0] + t, y0, b.origin[1] + w.at) : new THREE.Vector3(b.origin[0] + w.at, y0, b.origin[1] + t));
@@ -661,6 +680,7 @@ export const projectPlan: Project = {
         {
           const dk: DeckRect[] = [], hs: { x0: number; x1: number; z0: number; z1: number }[] = [], dw: DeckWall[] = [];
           for (const b of P.buildings) {
+            if (isFreeform(b)) continue;
             const y0 = b.floorLevel ?? 0, ox = b.origin[0], oz = b.origin[1], L0 = b.levels[0];
             const ws = L0.walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
             hs.push({ x0: ox, x1: ox + Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), z0: oz, z1: oz + Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at)) });
@@ -713,7 +733,7 @@ export const projectPlan: Project = {
         if (V?.length) { keys.length = 0; for (const v of V) keys.push({ label: v.label, eye: new THREE.Vector3(...v.eye), look: new THREE.Vector3(...v.look) }); }
       }
       let heroFront: { nrm: THREE.Vector3; along: THREE.Vector3 } | null = null;
-      if (ed && P.buildings[0]) {
+      if (ed && P.buildings[0] && !isFreeform(P.buildings[0])) {
         // the opening view: eye height, square-on to the most glazed wall, a little off-centre
         const b0 = P.buildings[0], ws = b0.levels[0].walls as unknown as { axis: 'x' | 'z'; at: number; from: number; to: number; out: number; openings: { a: number; b: number }[] }[];
         const best = [...ws].sort((p1, p2) => p2.openings.reduce((t, o) => t + o.b - o.a, 0) - p1.openings.reduce((t, o) => t + o.b - o.a, 0))[0];
@@ -796,7 +816,7 @@ export const projectPlan: Project = {
     let topsObj: THREE.Object3D | null = null;
     if (terrain?.tops && input.kind === 'plan') {
       const T = terrain, K = T.tops!, step = K.size / (K.n - 1), cells: [number, number, number][] = [];
-      const padsNow = input.plan.buildings.map((b) => { const ws = b.levels[0].walls, W = Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), D = Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at)); return { x0: b.origin[0] - 4, x1: b.origin[0] + W + 4, z0: b.origin[1] - 4, z1: b.origin[1] + D + 4 }; });
+      const padsNow = input.plan.buildings.map((b) => { if (isFreeform(b)) { const bb = fpBox(b.footprint); return { x0: b.origin[0] + bb.u0 - 4, x1: b.origin[0] + bb.u1 + 4, z0: b.origin[1] + bb.v0 - 4, z1: b.origin[1] + bb.v1 + 4 }; } const ws = b.levels[0].walls, W = Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), D = Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at)); return { x0: b.origin[0] - 4, x1: b.origin[0] + W + 4, z0: b.origin[1] - 4, z1: b.origin[1] + D + 4 }; });
       for (let j = 0; j < K.n; j++) for (let i = 0; i < K.n; i++) {
         const h = K.heights[j * K.n + i], x = T.centre[0] + i * step - K.size / 2, z = T.centre[1] + j * step - K.size / 2;
         if (h > 0 && !padsNow.some((q) => x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1)) cells.push([x, z, h]);
@@ -839,6 +859,8 @@ export const projectPlan: Project = {
     // landscape: the layer now carries the proposed deck uplights as well as the soffit downlights
     if (lightObj) layers.push({ id: 'lights', label: 'Lights', note: 'proposed: soffit downlights over the glazed walls, deck uplights along the deck edges and up the cladding', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
+    // a free-form building's furniture layouts (e.g. banquet and auditorium seating), one shown at a time
+    for (const lg of layoutGroups) layers.push({ id: `layout-${lg.name}`, label: `Seating: ${lg.name} (${lg.seats})`, note: `${lg.building}: positions from the plan, furniture proposed`, visible: lg.group.visible, object: lg.group });
 
     const exports: Built['exports'] = [
       {
@@ -875,6 +897,8 @@ export const projectPlan: Project = {
       path: keys,
       section: [centre.y - 3, centre.y + 6],
       support: (pt) => groundAt(pt.x, -pt.z),
+      // walk mode stops at the plan's walls and climbs its stairs (walkNav.ts)
+      walkNav: input.kind === 'plan' ? (() => { const nv = navFromPlan(input.plan as never); const ws = (input.plan as PlanModel).walk; if (ws) nv.start = { at: ws.start, y: groundAt(ws.start[0], -ws.start[1]), look: ws.look }; return nv; })() : undefined,
       exports,
       sources: [
         `Input: ${input.name}.`,

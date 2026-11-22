@@ -160,7 +160,7 @@ export const CAUTION = { ratioShare: 0.1, angleDeg: 1, stepMm: 5, lengthM: 0.03,
 // ------------------------------------------------------------------------------------------------ the model, loosely typed
 type Pt = [number, number];
 interface Opening { kind?: string; type?: string; name?: string; a?: number; b?: number; sill?: number; head?: number; source?: string; material?: string; glazed?: boolean; openableArea?: number; openableAreaSource?: string }
-interface Wall { id?: string; name?: string; axis?: 'x' | 'z'; at?: number; from?: number; to?: number; thickness?: number; openings?: Opening[] }
+interface Wall { id?: string; name?: string; axis?: 'x' | 'z'; at?: number; from?: number; to?: number; thickness?: number; openings?: Opening[]; line?: [number, number][] }
 interface Room { id?: string; name?: string; u?: number; v?: number; w?: number; d?: number; source?: string }
 interface Deck { id?: string; name?: string; u0?: number; u1?: number; v0?: number; v1?: number; drop?: number; poly?: Pt[]; rail?: string[]; railSource?: string; source?: string; gaps?: [Pt, Pt][]; barrierHeight?: number; barrierHeightSource?: string }
 interface Level { id?: string; name?: string; floor?: number; plate?: number; walls?: Wall[]; rooms?: Room[]; decks?: Deck[]; stairs?: { id?: string; source?: string }[] }
@@ -289,6 +289,9 @@ function ceilingTop(b: Building, level: Level, room: Room): number | null {
   return level.plate + Math.max(0, hs - nearestRidge) * tanP;
 }
 const isDoor = (o: Opening) => (o.kind ?? '').startsWith('door');
+/** a level with walls drawn as lines at any angle (a free-form building): openings on them are not measured against rooms here */
+const freeWalls = (level: Level) => (level.walls ?? []).some((w) => Array.isArray(w.line));
+const FREE_NEEDS = 'openings measured against this room: its walls are drawn at any angle (a free-form building), and this check reads openings only on straight walls along the plan’s axes';
 const isWindow = (o: Opening) => o.kind === 'window' || o.kind === 'glazing';
 const whereRoom = (b: Building, l: Level, r: Room) => [b.name ?? b.id ?? 'Building', l.name ?? l.id ?? 'Level', `room ${r.id ?? '(no id)'}`].join(' · ');
 
@@ -298,6 +301,7 @@ function naturalLight(b: Building, level: Level, room: Room): Check {
   if (use === 'specialised') return notApplicable(id, subject, where, `"${subject}" is read as a space of a specialised nature, from its name; a person confirms`);
   if (use === 'unknown') return cannot(id, subject, where, `to know whether "${subject}" is a habitable space; the model has only its name`);
   if (!num(room.w) || !num(room.d) || !num(room.u) || !num(room.v) || room.w <= 0 || room.d <= 0) return cannot(id, subject, where, 'the room\'s position and size (u, v, w, d)');
+  if (freeWalls(level)) return cannot(id, subject, where, FREE_NEEDS);
   const floor = room.w * room.d, shares = openingsOf(room, level), missing = unsized(room, level);
   const solid = (o: Opening) => o.glazed === false || (o.glazed !== true && isDoor(o) && !!o.material);
   const sure = shares.filter((s) => isWindow(s.opening) && s.opening.glazed !== false || s.opening.glazed === true);
@@ -326,6 +330,7 @@ function ventilation(b: Building, level: Level, room: Room, wallsWithOpeners: nu
   if (use === 'unknown') return cannot(id, subject, where, `to know what "${subject}" is used for; the model has only its name`);
   if (wallsWithOpeners <= 1) return notApplicable(id, subject, where, 'the model shows opening windows or doors on no more than one outside wall, so G4/AS1 2.2.2 applies in place of 2.2.1.2, and 2.2.2 is not checked');
   if (!num(room.w) || !num(room.d) || !num(room.u) || !num(room.v) || room.w <= 0 || room.d <= 0) return cannot(id, subject, where, 'the room\'s position and size (u, v, w, d)');
+  if (freeWalls(level)) return cannot(id, subject, where, FREE_NEEDS);
   const floor = room.w * room.d, need = 0.05 * floor, shares = openingsOf(room, level).filter((s) => s.opening.type !== 'fixed'), band = 0.05 * CAUTION.ratioShare;
   const whole = shares.reduce((t, s) => t + s.area, 0), stated = shares.filter((s) => num(s.opening.openableArea));
   const known = stated.reduce((t, s) => t + (s.opening.openableArea as number) * s.share, 0), unstated = shares.filter((s) => !stated.includes(s));

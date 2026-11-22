@@ -5,6 +5,8 @@ import { initArrange } from './arrange';
 import { applyCameraFromURL, cameraQuery, shareSheet, viewLink } from './share';
 import { photoRenderPrompt } from './renderBrief';
 import { siteFactsPanel } from './siteFacts';
+import { step as walkStep, EYE, type Nav } from './walkNav'; // walk mode that stops at walls and climbs stairs (agent/freeform-walk-1122): this import, `walkNav` in Built, and the walk-mode lines marked below
+import { walkJoystick, touchScreen, type Stick } from './walkTouch';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
@@ -71,6 +73,8 @@ export interface Built {
   probe?: (p: THREE.Vector3) => [string, string][];
   /** ground (or floor) height for walk mode */
   support?: (p: THREE.Vector3) => number | null;
+  /** walls, doorways, floors and stairs for walk mode (walkNav.ts): with it, walking stops at walls and climbs stairs */
+  walkNav?: Nav;
   panels?: HTMLElement[];
   /** cards that open the panel, above the layers */
   topPanels?: HTMLElement[];
@@ -123,7 +127,7 @@ export class App {
   pipeline: THREE.RenderPipeline | null = null;
   night = 0;
   private when = new Date();
-  private walk = { on: false, yaw: 0, pitch: 0, keys: new Set<string>() };
+  private walk = { on: false, yaw: 0, pitch: 0, keys: new Set<string>(), stick: { x: 0, y: 0, on: false } as Stick, pad: null as { remove: () => void } | null };
   private playing: { t0: number; dur: number; rec?: MediaRecorder; chunks?: Blob[] } | null = null;
   private highlight = new THREE.Box3Helper(new THREE.Box3(), 0xd9bacb);
   private labelsEl: HTMLElement;
@@ -806,14 +810,21 @@ export class App {
       this.walk.yaw = Math.atan2(-d.x, -d.z);
       this.walk.pitch = 0;
       const s = this.built.support?.(this.camera.position);
-      if (s != null && this.camera.position.y - s > 3) {
+      const nv = this.built.walkNav;
+      if (nv?.start && (s == null || this.camera.position.y - s > 3)) {
+        // walk mode: start where the model says a visitor arrives, at eye height
+        this.camera.position.set(nv.start.at[0], nv.start.y + EYE, nv.start.at[1]);
+        this.walk.yaw = Math.atan2(-(nv.start.look[0] - nv.start.at[0]), -(nv.start.look[1] - nv.start.at[1]));
+      } else if (s != null && this.camera.position.y - s > 3) {
         // drop to eye height at the orbit target
         const t = this.controls.target.clone();
         const st = this.built.support?.(t) ?? t.y;
         this.camera.position.set(t.x, st + 1.6, t.z);
       }
-      this.log('Walk: W A S D or arrow keys to move, drag to look, Esc to leave. Walk mode does not stop at walls.');
+      if (touchScreen()) this.walk.pad = walkJoystick(this.canvas.parentElement!, this.walk.stick);
+      this.log(nv ? `Walk: ${touchScreen() ? 'the thumb pad to move, drag to look' : 'W A S D or arrow keys to move (Shift to hurry), drag to look, Esc to leave'}. Walls stop you; doorways and stairs take you through and up.` : 'Walk: W A S D or arrow keys to move, drag to look, Esc to leave. Walk mode does not stop at walls.');
     } else {
+      this.walk.pad?.remove(); this.walk.pad = null;
       const d = new THREE.Vector3();
       this.camera.getWorldDirection(d);
       this.controls.target.copy(this.camera.position).addScaledVector(d, 6);
@@ -823,16 +834,25 @@ export class App {
 
   private stepWalk(dt: number) {
     const k = this.walk.keys;
-    const f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
-    const s = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
-    const speed = (k.has('shift') ? 3.2 : 1.4) * dt;
+    const st = this.walk.stick;
+    const f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0) + (st.on ? st.y : 0);
+    const s = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0) + (st.on ? st.x : 0);
+    const speed = (k.has('shift') ? 3.2 : 1.4) * Math.min(dt, 0.1);
     const yaw = this.walk.yaw;
     const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
     const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
     const p = this.camera.position;
-    p.addScaledVector(fwd, f * speed).addScaledVector(right, s * speed);
-    const g = this.built.support?.(p);
-    if (g != null) p.y += (g + 1.6 - p.y) * Math.min(1, dt * 10);
+    const nav = this.built.walkNav;
+    if (nav) {
+      // walls stop you, doorways let you through, floors and stairs carry you (walkNav.ts); the floor is eased, not snapped
+      const mv = fwd.clone().multiplyScalar(f * speed).addScaledVector(right, s * speed);
+      const r = walkStep(nav, { x: p.x, y: p.y, z: p.z }, mv.x, mv.z, (x, z) => this.built.support?.(new THREE.Vector3(x, 0, z)) ?? null);
+      p.x = r.x; p.z = r.z; p.y += (r.y - p.y) * Math.min(1, dt * 10);
+    } else {
+      p.addScaledVector(fwd, f * speed).addScaledVector(right, s * speed);
+      const g = this.built.support?.(p);
+      if (g != null) p.y += (g + 1.6 - p.y) * Math.min(1, dt * 10);
+    }
     this.camera.rotation.set(this.walk.pitch, yaw, 0, 'YXZ');
   }
 

@@ -8,6 +8,8 @@
 //   → { type:"assembl.feeds", version:2, fetchedAt, place, district, feeds:{ <id>: envelope | {id,error} } }
 //   envelope = { id, label, value, values, unit, asOf, period, fetchedAt, cadence, source:{name,url}, truth:"Live"|"Latest published", truthLabel, status, statusLabel, note? }
 //   feeds=hunt&keywords=&regions=&sectors=&min=&max=&sources= returns found work from public tender notices, ranked for a practice (api/_feeds/hunt.js).
+//   feeds=signals&keywords=&regions=&sectors=&cultural=&sources= returns early signals (Beehive releases, Gazette notices) ranked with the same lens (api/_feeds/signals.js).
+//   feeds=rules[&regions=] returns NZ legislation that may change how buildings are designed, consented, funded or protected (api/_feeds/rules.js; needs LEGISLATION_API_KEY).
 //   feeds=site&lat=&lon= returns feeds.site.facts: one envelope per fact about that point of land (see api/_feeds/site.js).
 //
 // GET /api/live/?place=auckland (no feeds) keeps the original v1 answer used by /live.js:
@@ -21,7 +23,8 @@ const num = (s) => { const v = parseFloat(s); return isFinite(v) ? v : undefined
 
 export const CORS = { "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff" };
 
-export async function handleLive(q /* URLSearchParams */) {
+// env: settings from the runtime (Cloudflare passes only the ones named in functions/api/live.js). Never echoed in an answer.
+export async function handleLive(q /* URLSearchParams */, env) {
   const place = clean(q.get("place"), PLACES) || "auckland";
   const district = clean(q.get("district"), DISTRICTS) || PLACES[place].district || "auckland-district";
   const headers = { ...CORS, "Content-Type": "application/json; charset=utf-8" };
@@ -45,7 +48,7 @@ export async function handleLive(q /* URLSearchParams */) {
     retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined, // steers the retailers feed only
     hunt: { keywords: (q.get("keywords") || "").slice(0, 900), regions: (q.get("regions") || "").slice(0, 300), sectors: (q.get("sectors") || "").slice(0, 200),
       min: (q.get("min") || "").slice(0, 14), max: (q.get("max") || "").slice(0, 14), sources: (q.get("sources") || "").slice(0, 100), cultural: (q.get("cultural") || "").slice(0, 5) } }; // the hunt feed only: what a practice asked to look for (see hunt.js)
-  const { feeds, cache, unknown } = await runFeeds(ids, { place, district, ...geo });
+  const { feeds, cache, unknown } = await runFeeds(ids, { place, district, ...geo, ...(env ? { env } : {}) });
   headers["Cache-Control"] = cache ? `public, s-maxage=${cache.sMaxAge}, stale-while-revalidate=${cache.swr}` : "no-store";
   return { status: 200, headers, body: { type: "assembl.feeds", version: 2, fetchedAt: new Date().toISOString(), place, district, feeds,
     ...(unknown.length ? { unknown, available: Object.keys(FEEDS) } : {}) } };

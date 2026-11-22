@@ -276,6 +276,8 @@ export function createGateway(client, { schema = 'arch', bucket = 'arch-files', 
   }
   return {
     from: (table) => db().from(table),
+    /** a table in the public schema (Radar's profile and run tables, radar-client.js); row level security there is by the signed-in person */
+    pub: (table) => client.schema('public').from(table),
     ask,
     /** every row a query matches, a page at a time. build() must return a fresh query; order is the column(s) to page by. */
     async all(build, order = ['id']) {
@@ -903,6 +905,42 @@ export function createTeam(g) {
       const rows = await g.rpc('hunt_signals', { p_practice: practiceId, p_since: since });
       return Array.isArray(rows) ? rows : [];
     },
+    /** The news stories the radar has collected lately (arch.hunt_leads: headline, link, day, source and a short snippet for ranking only; members only). */
+    async huntLeads(practiceId, since = null) {
+      const rows = await g.rpc('hunt_leads', { p_practice: practiceId, p_since: since });
+      return Array.isArray(rows) ? rows : [];
+    },
+    /** The Parliament bills the radar has collected lately that name the built environment (arch.hunt_rules: title, bill page link, day, status and a short snippet for ranking only; members only). */
+    async huntRules(practiceId, since = null) {
+      const rows = await g.rpc('hunt_rules', { p_practice: practiceId, p_since: since });
+      return Array.isArray(rows) ? rows : [];
+    },
+    /** The tenders read from alert emails that this practice added (arch.hunt_inbox). Every member can read them. */
+    async huntInbox(practiceId) {
+      const rows = await g.all(() => g.from('hunt_inbox').select('rfx_id, ref, organisation, name, closes_at, url, kind, added_at, extra').eq('practice_id', practiceId), ['added_at']);
+      return Array.isArray(rows) ? rows : [];
+    },
+    /** Save items read from alert emails: one row per RFx ID, a repeat changes the row it matches. The database refuses a viewer. */
+    async addHuntInbox(practiceId, items) {
+      const rows = (Array.isArray(items) ? items : []).slice(0, 500).map((i) => ({ practice_id: practiceId, rfx_id: i.rfxId, ref: i.ref || null, organisation: i.organisation || null, name: i.name, closes_at: i.closes || null, url: i.url, kind: i.kind === 'future' ? 'future' : 'current', extra: i.extra && typeof i.extra === 'object' ? i.extra : {} }));
+      if (!rows.length) return 0;
+      for (const part of chunks(rows, 100)) await g.ask(() => g.from('hunt_inbox').upsert(part, { onConflict: 'practice_id,rfx_id' }));
+      return rows.length;
+    },
+    /** Is a Gmail reader on for this practice, and when did it last file? Any member can ask (arch.hunt_inbox_reader_status). */
+    async huntReader(practiceId) {
+      const rows = await g.rpc('hunt_inbox_reader_status', { p_practice: practiceId });
+      const r = Array.isArray(rows) ? rows[0] : rows;
+      return { on: !!r?.reader_on, since: r?.since ?? null, lastUsed: r?.last_used_at ?? null, lastCount: Number(r?.last_count) || 0 };
+    },
+    /** Make a reader token (owners only; it ends the old one). The database returns the token once and keeps only its hash. */
+    async makeHuntReader(practiceId) {
+      const t = await g.rpc('hunt_inbox_new_token', { p_practice: practiceId });
+      if (typeof t !== 'string' || !/^[0-9a-f]{64}$/.test(t)) throw new Error('The shared records did not give a reader token. Nothing was changed.');
+      return t;
+    },
+    /** End the reader's token (owners only). */
+    async stopHuntReader(practiceId) { await g.rpc('hunt_inbox_stop_reader', { p_practice: practiceId }); },
     /** Save what the practice looks for. Like the look, the database lets only an owner change the practice row; anyone else changes nothing. */
     async setHunt(practiceId, hunt) {
       if (!isObj(hunt)) throw new Error('Say what to look for.');

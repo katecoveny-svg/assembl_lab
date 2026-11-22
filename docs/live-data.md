@@ -44,6 +44,8 @@ Nothing was pushed, merged or deployed in making this.
 | trades-feeds | Building determinations, consents | MBIE CodeHub, Stats NZ | Verified |
 | site | Facts about a piece of land (new) | LINZ, Auckland Council, Open-Meteo | See below |
 | address | Find a street address and its point (`?feeds=address&q=`) | LINZ NZ Addresses (CC BY 4.0) | Verified: see `docs/architecture/site-address.md` |
+| signals | Early signals for Found work (`?feeds=signals&sectors=&cultural=1`): records that may come before a design team is hired | Beehive portfolio RSS; NZ Gazette through DigitalNZ | Beehive: connected, unreliable (bot checks from Cloudflare). Gazette: off until a DigitalNZ key is added. See `docs/architecture/pipeline-signals.md` |
+| rules | Rule changes coming for Found work (`?feeds=rules`): NZ acts, bills, amendment papers, regulations and orders that may change how buildings are designed, consented, funded or protected | NZ Legislation API (Parliamentary Counsel Office), version 0 beta, at `api.legislation.govt.nz/v0/` | Connected, **unverified, off until the key is added**: needs the Pages secret `LEGISLATION_API_KEY`, sent only as the `X-Api-Key` header. Terms (read 22 Nov 2026, legislation.govt.nz/learn-more/legislation-data/api-terms-of-use/): free to use and reuse, no copyright in NZ legislation, 10,000 requests per key per day and 2,000 per IP per five minutes, keep the key confidential, a beta whose secondary legislation records may be incomplete. Credit: "NZ legislation from the New Zealand Legislation website, Parliamentary Counsel Office." At most 27 upstream calls per answer, cached six hours at the edge. See `docs/architecture/pipeline-hunt.md` |
 
 Nothing here is "unavailable" or "connected-unverified" at the feed level. Each answer says whether it is "Live" (fetched from the publisher just now) or "Latest published" (the publisher's newest release), and when it was fetched.
 
@@ -94,6 +96,9 @@ The owner note for the page is `docs/architecture/site-ground.md`. The tests are
 3. **Waiheke's own zones.** The Unitary Plan layer only says "Hauraki Gulf Islands" for Waiheke. The island's real zones and rules are in the Hauraki Gulf Islands section of the District Plan, which Council does not publish as an open map that I could find. Ask Council whether one exists. Until then the page should say so, and it does.
 4. **BRANZ Maps.** No open service and no terms that allow automated use. A written yes from BRANZ, or an architect reading the zones off BRANZ Maps by hand, are the two routes.
 5. **LINZ parcels.** CC BY 4.0, which is fine. Plan Studio must show "Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0" and Auckland Council's credit wherever the facts appear. Each fact carries its own credit line to copy.
+
+6. **DigitalNZ key (signals).** DigitalNZ lets anyone read its API without a key for non-commercial use only. The Gazette signals need a free key under its commercial terms, added to the Pages project as the secret `DIGITALNZ_API_KEY`. Nothing has been signed up for.
+7. **Beehive (signals).** Crown copyright with free reproduction and acknowledgement, not a named Creative Commons licence. The lab keeps only titles, dates and links. Its bot protection challenges Cloudflare's servers some of the time; this is not worked around.
 
 ## Things to know
 
