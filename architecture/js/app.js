@@ -400,7 +400,8 @@ function siteTab(b) {
   const s = b.project.site ?? {};
   return `${tabHead('site', 'Site', hasSiteFacts(b) ? `■ ${plural(answered(s.facts).length, 'fact')} · ${esc(dayTime(s.fetched_at))}` : '□ Not looked up')}
     ${siteTool(b)}
-    <p class="small">The real ground under the house (LINZ LiDAR and the legal boundary) is on the 3D page, in its Real ground card. <a href="/plan-studio/twins/drop/?drop=1" target="_blank" rel="noopener">Open the 3D page ↗</a></p>`;
+    <p class="small">The real ground under the house (LINZ LiDAR and the legal boundary) is on the 3D page, in its Real ground card. <a href="/plan-studio/twins/drop/?drop=1" target="_blank" rel="noopener">Open the 3D page ↗</a></p>
+    <div class="mod-host" data-mod-panels="site"></div>`;
 }
 
 /** Model: the kept plan model, then the add-on sections (Revit and IFC models) */
