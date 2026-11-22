@@ -29,6 +29,7 @@
 //                        extra (a plain object) is kept in the record's extra column; a note carries it only when it is not empty
 //   filePlace, fileToken, fileKept   a big file sent in parts (upload.js): see the files part of createCloudStore
 //   getFile(id)          -> the note plus { data: Uint8Array }, or null when there is no such file or its contents are not there
+//   fileBlob(id, { onProgress })  -> the same with { blob } in place of { data }: a big file read with its progress (Open in 3D)
 //   removeFile(id)       -> true if it was there
 //   listFiles(where?)    -> notes only, e.g. listFiles({ project_id })
 // The contents go to the practice's private bucket, at <practice id>/<project id>/<file id> (ids only: a file's own name
@@ -670,6 +671,31 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       if (!got) return null; // no contents came back: the file is not there
       const data = got instanceof Uint8Array ? got : got instanceof ArrayBuffer ? new Uint8Array(got) : new Uint8Array(await got.arrayBuffer());
       return { ...fileDown(rows[0]), data };
+    },
+    // [models] A big file for the 3D page (models.js, Open in 3D): read through a link that lasts ten minutes, with its
+    // progress, and kept as a Blob rather than one big copy in memory. Same answer as getFile, with { blob } for { data }.
+    async fileBlob(id, { onProgress } = {}) {
+      if (!id) return null;
+      const here = await localNote(id);
+      if (here && await localProject(here.project_id)) { const f = await local.getFile(id); return f?.data ? { ...f, blob: new Blob([f.data], { type: f.type || '' }) } : null; }
+      const rows = await g.ask(() => g.from('file').select('*').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1));
+      if (!rows?.[0]) return null;
+      let link;
+      try { link = await g.file((s) => s.createSignedUrl(rows[0].storage_path, 600)); } catch (e) { if (e.code === 'missing') return null; throw e; }
+      if (typeof link?.signedUrl !== 'string') return null;
+      let res;
+      try { res = await fetch(link.signedUrl); } catch { throw new Error('The connection dropped before the file came through. Try again.'); }
+      if (res.status === 400 || res.status === 404) return null;
+      if (!res.ok) throw new Error(`The shared records did not send the file (${res.status}). Try again.`);
+      const total = Number(res.headers.get('content-length')) || Number(rows[0].size) || 0, type = rows[0].mime || '';
+      const rd = res.body?.getReader?.();
+      if (!rd) { const blob = await res.blob(); onProgress?.(blob.size, blob.size); return { ...fileDown(rows[0]), blob }; }
+      const parts = [];
+      let got = 0;
+      try {
+        for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.byteLength; onProgress?.(got, total); }
+      } catch { throw new Error('The connection dropped before the file came through. Try again.'); }
+      return { ...fileDown(rows[0]), blob: new Blob(parts, { type }) };
     },
     async removeFile(id) {
       if (!id) return false;

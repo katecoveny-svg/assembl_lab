@@ -26,6 +26,7 @@ import { furnishDecks, type DeckRect as DeckPlan } from './outdoor'; // deck fur
 import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
+import { HANDOFF_PARAM, takeHandoff } from './handoff';
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -407,6 +408,11 @@ async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } 
   }
 }
 
+// The biggest IFC or GLB this page reads in a browser. The same figure as BROWSER_3D_LIMIT in architecture/js/models-rules.js:
+// cautious, not measured at its edge. In testing, an IFC of nearly 400 MB froze a browser while this page read it.
+const BROWSER_3D_LIMIT = 100 * 1024 * 1024;
+const mb = (n: number) => `${Math.round(n / (1024 * 1024))} MB`;
+
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
   // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
   const qs = new URLSearchParams(location.search);
@@ -453,7 +459,11 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     const o = document.createElement('div');
     o.className = 'dropzone';
     // the finished example sits behind the card, so the page is a picture first and words second
-    o.style.cssText = "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
+    // a model handed across from the workspace (?handoff=<id>): no example picture behind, so it is not taken for the model
+    const hid = qs.get(HANDOFF_PARAM);
+    o.style.cssText = hid
+      ? 'background:#21121f;place-items:end start;padding:clamp(12px,3vw,28px)'
+      : "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
     o.innerHTML = `<div class="card drop-card" style="max-width:440px;background:rgba(249,246,242,.94);backdrop-filter:blur(10px)">
       <h2>Drop your plan</h2>
       <p>A PDF, a picture of a plan, an IFC or a plan model. It comes back as a measured 3D home you can walk through, furnished and lit.</p>
@@ -487,7 +497,16 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
         } catch (e) {
           app.log(`That JSON isn't a plan model: ${(e as Error).message}`);
         }
-      } else if (ext === 'ifc' || ext === 'glb') done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
+      } else if (ext === 'ifc' || ext === 'glb') {
+        if (f.size > BROWSER_3D_LIMIT) {
+          const card = o.querySelector('.drop-card') as HTMLElement;
+          card.querySelector('h2')!.textContent = 'Too big to open in a browser';
+          card.querySelector('p')!.textContent = `${f.name} is ${mb(f.size)}. This page opens IFC and GLB files up to ${mb(BROWSER_3D_LIMIT)}: bigger ones can freeze the browser. An IFC exported without furniture, or a lighter copy, can open.`;
+          app.log('Waiting for a smaller file.');
+          return;
+        }
+        done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
+      }
       else if (ext === 'pdf' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp') {
         if (tracing) return;
         tracing = true;
@@ -515,6 +534,27 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
       const f = (e as DragEvent).dataTransfer?.files?.[0];
       if (f) void read(f);
     });
+    if (hid) {
+      const card = o.querySelector('.drop-card') as HTMLElement, h = card.querySelector('h2')!, say = card.querySelector('p')!;
+      const caption = card.lastElementChild as HTMLElement; // "The picture behind is the example": there is no picture behind here
+      const missing = (why: string) => {
+        h.textContent = 'The model did not come across';
+        say.textContent = `${why} Go back to the workspace and press Open in 3D again, or choose the file here.`;
+        app.log('Waiting for a plan.');
+      };
+      h.textContent = 'Bringing your model across';
+      say.textContent = 'From your workspace, inside this browser. It does not leave this device.';
+      caption.hidden = true;
+      app.log('Bringing the model across from your workspace…');
+      takeHandoff(hid)
+        .then((got) => {
+          if (!got) return missing('It was opened here once already, or it was handed across more than an hour ago.');
+          app.log(`Opening ${got.name}…`);
+          return read(new File([got.blob], got.name, { type: got.type || 'application/octet-stream' }));
+        })
+        .catch((e: unknown) => missing(`This browser could not pass it across (${(e as Error)?.message ?? 'no reason given'}).`));
+      return;
+    }
     app.log('Waiting for a plan.');
   });
 }
