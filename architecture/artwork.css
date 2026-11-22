@@ -1,0 +1,85 @@
+/* assembl. architecture operations: the practice's own artwork (js/artwork.js)
+   Only drawn when a practice has put its artwork in; otherwise nothing here applies. Uses the page's tokens (ops.css).
+   A drawing is kept as line work (a grey mask) and drawn in an ink that suits the look: --art-ink, set per drawing. */
+
+/* ---- a drawing: the mask, filled with the ink. Nothing shows until the mask is there (never a block of ink) ---------- */
+.art-ink { display: block; width: 100%; height: 100%; background-color: transparent;
+  -webkit-mask-image: var(--art-src, none); mask-image: var(--art-src, none);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-source-type: luminance; mask-mode: luminance; }
+.art-ink.on { background-color: var(--art-ink, currentColor); }
+@media (prefers-reduced-motion: no-preference) { .art-ink.on { animation: art-in .5s ease-out both; } }
+@keyframes art-in { from { opacity: 0; } to { opacity: 1; } }
+.art-img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+/* ---- the header: the practice's logo beside a small "with assembl." -------------------------------------------------- */
+.word.art-word { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 0; }
+.art-logo { display: block; height: 36px; width: auto; }
+.art-with { font: 500 10px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); white-space: nowrap; padding-left: 12px; border-left: 1px solid var(--line); }
+@media (min-width: 761px) { .art-logo { height: 42px; } }
+
+/* ---- project covers with no model: the practice's drawing on the field, the note says there is no model --------------- */
+.cover.art-cover { color: inherit; }
+.cover.art-cover .art-ink, .cover.art-cover .art-img { position: absolute; inset: 7% 6% 15%; width: auto; height: auto; }
+.cover.art-cover.big .art-ink, .cover.art-cover.big .art-img { inset: 6% 5% 12%; }
+.cover.art-cover.thumb .art-ink, .cover.art-cover.thumb .art-img { inset: 8%; }
+html[data-theme="sketch"] .cover.art-cover { background: #000; }
+
+/* ---- the projects screen: one wide picture behind the heading and the numbers -------------------------------------------- */
+main#app { overflow-x: clip; }
+.hero.art-hero { position: relative; isolation: isolate; padding-top: 36px; padding-bottom: 0; min-height: 440px; align-content: space-between; }
+.art-band { position: absolute; z-index: -1; top: 0; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%); overflow: hidden; pointer-events: none; background: var(--paper); }
+.art-band-in { position: absolute; inset: -40px 0 -120px; will-change: transform; }
+.art-band-img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; }
+.art-band-ink { position: absolute; inset: 16% 0 0; }
+/* the scrim: solid ground under the heading, the drawing clear in the middle, dark again under the numbers (WCAG AA) */
+.art-band::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--paper) 0, var(--paper) 30%, color-mix(in srgb, var(--paper) 55%, transparent) 46%, transparent 60%, transparent 68%, color-mix(in srgb, var(--paper) 70%, transparent) 84%, var(--paper) 100%); }
+.art-hero > .label, .art-hero > h1 { position: relative; max-width: 30ch; }
+.art-hero .bignums { position: relative; margin-top: 0; background: color-mix(in srgb, var(--paper) 88%, transparent); border-top-color: var(--line); }
+html[data-theme="sketch"] .art-band-img { mix-blend-mode: screen; }
+html:not([data-theme="sketch"]) .art-band-img { mix-blend-mode: multiply; }
+@media (min-width: 761px) {
+  .hero.art-hero { min-height: clamp(520px, 50vw, 680px); padding-top: 56px; }
+  .art-hero .bignums { margin-bottom: 0; }
+}
+@media (max-width: 760px) {
+  .art-band-img { object-position: 30% 62%; }
+  .art-band::after { background: linear-gradient(180deg, var(--paper) 0, var(--paper) 34%, color-mix(in srgb, var(--paper) 50%, transparent) 48%, transparent 58%, transparent 62%, color-mix(in srgb, var(--paper) 80%, transparent) 72%, var(--paper) 86%); }
+}
+
+/* ---- empty screens (no projects, no models, no clients) and the sign-in panel: a drawing over the page's own words ------ */
+.art-dressed > .ic.big, .art-dressed > .mdl-drop-ic, .crm-empty.art-dressed > .crm-people { display: none; }
+.art-empty { display: block; width: min(100%, 420px); aspect-ratio: 3 / 2; margin: 2px 0 4px; }
+.empty.vis.art-dressed .art-empty { margin-inline: auto; }
+.art-acct { display: block; width: min(100%, 360px); aspect-ratio: 3 / 1.6; margin: 0 0 12px; }
+
+/* ---- Settings and the practice panel: the artwork in use, the kit being read, the place to drop it ----------------------- */
+.art-sec { display: grid; gap: 12px; }
+.art-sec [data-art-body] { display: grid; gap: 12px; }
+.art-state { white-space: normal; }
+.art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.acct-sec .art-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.art-tile { display: grid; gap: 6px; min-width: 0; }
+.art-tile-pic { position: relative; display: block; aspect-ratio: 3 / 2; background: var(--field); border: 1px solid var(--frame); overflow: hidden; }
+html[data-theme="sketch"] .art-tile-pic { background: #000; border-color: var(--hair); }
+.art-tile-pic > .art-ink, .art-tile-pic > img { position: absolute; inset: 8%; width: auto; height: auto; max-width: none; object-fit: contain; }
+.art-tile.is-pattern .art-tile-pic > img { inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.art-tile.is-logo .art-tile-pic > img { inset: 22% 14%; }
+.art-tile-l { font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); overflow-wrap: anywhere; }
+.art-tile.is-heavy .art-tile-l::after { content: " · large"; }
+.art-drop { display: grid; place-items: center; align-content: center; gap: 8px; min-height: 168px; padding: 28px 18px; border: 1px dashed var(--edge); background: var(--field); text-align: center; cursor: pointer; }
+.art-drop:hover, .art-drop.over { border-style: solid; border-color: var(--blue-strong); box-shadow: inset 0 0 0 1px var(--blue-strong); }
+.art-drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.art-drop-t { font-size: 19px; line-height: 1.25; color: var(--ink); }
+html[data-theme="sketch"] .art-drop-t { font-weight: 300; }
+.art-drop .small { max-width: 52ch; color: var(--mute); }
+.art-progress { display: grid; gap: 8px; }
+.art-progress progress { width: 100%; height: 4px; appearance: none; -webkit-appearance: none; border: 0; background: var(--hair); }
+.art-progress progress::-webkit-progress-bar { background: var(--hair); }
+.art-progress progress::-webkit-progress-value { background: var(--blue-strong); transition: width .2s; }
+.art-progress progress::-moz-progress-bar { background: var(--blue-strong); }
+.art-ready { display: grid; gap: 6px; }
+.art-note { margin: 0; }
+
+@media print { .art-band, .art-empty, .art-acct, .art-drop { display: none !important; } .cover.art-cover .art-ink.on { background-color: #000; } }

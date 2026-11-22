@@ -18,8 +18,9 @@ import { planOutline, coverSvg, sketchSvg, outlineFor } from './cover.js';
 import { THEMES, pickTheme, applyTheme, lookChoiceHtml, isTheme, LOOK_SETTING } from './theme.js';
 import { icon, STAGE_ICON, NAV_ICON } from './icons.js';
 import { glance } from './glance.js';
+import { mountArtwork, syncArtwork, artCover, artHero, artSectionHtml, artAfterRender, FIRST_WAIT } from './artwork.js'; // the practice's own artwork
 const store = createSwitch(createStore(browserBackend()));
-const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me') });
+const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me'), panelExtra: () => artSectionHtml('panel') });
 const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
 const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, wallAt: 0, learn: [] };
@@ -171,6 +172,8 @@ function listHtml(b, kind, rows, ctx, { addLabel, emptyText, extra = '', head } 
 function coverHtml(p, cls = '') {
   const o = outlineFor(p.model, outlines);
   if (o) return `<div class="cover plan${cls ? ` ${cls}` : ''}">${coverSvg(o, { label: `${o.level || 'Ground floor'} plan of ${p.name}, drawn from its plan model${p.model.revision ? `, revision ${p.model.revision}` : ''}` })}</div>`;
+  const art = artCover(p, cls); // the practice's own drawing, as decoration, when it has artwork
+  if (art) return art;
   return `<div class="cover deco${cls ? ` ${cls}` : ''}">${sketchSvg()}<span class="cover-note">${p.model?.fingerprint ? 'Model attached' : 'No model yet'}</span></div>`;
 }
 const coverCaption = (p) => { const o = outlineFor(p.model, outlines); return o ? `${o.level || 'Ground floor'} · from the model${p.model.revision ? `, revision ${p.model.revision}` : ''}` : ''; };
@@ -216,12 +219,13 @@ async function projectsView() {
   const now = performance.now();
   if (!ui.wallAt) ui.wallAt = now;
   const anim = now - ui.wallAt < 900 ? ' rise' : '';
+  const band = artHero();
   return `<div class="wrap">
-    <section class="hero"><p class="label">Projects</p><h1><span class="accent">From the first site visit</span> to completion.</h1>
+    <section class="hero${band ? ' art-hero' : ''}">${band}<p class="label">Projects</p><h1><span class="accent">From the first site visit</span> to completion.</h1>
       <dl class="bignums"><div><dt>Projects</dt><dd>${projects.length}</dd></div><div><dt><span class="dot go" aria-hidden="true"></span>Under way</dt><dd>${count('go')}</dd></div>
         <div><dt><span class="dot needs" aria-hidden="true"></span>Need something</dt><dd>${count('needs')}</dd></div><div><dt><span class="dot waiting" aria-hidden="true"></span>Waiting on a person</dt><dd>${count('waiting')}</dd></div></dl></section>
     ${flashHtml()}${incomingHtml(projects)}
-    ${projects.length ? '' : `<div class="empty"><h3>No projects ${esc(W().here)} yet.</h3><p>Create one, import a project file, or add the sample to look around.</p></div>`}
+    ${projects.length ? '' : `<div class="empty" data-art-empty><h3>No projects ${esc(W().here)} yet.</h3><p>Create one, import a project file, or add the sample to look around.</p></div>`}
     <ul class="pwall${anim}" aria-label="Projects">${tiles}
       <li class="ptile new" style="--i:${Math.min(seen.length, 8)}"><h2 class="new-h" id="newp">${icon('plus')}<span>New project</span></h2>
         <form class="f newp" data-form="new-project" aria-labelledby="newp"><label>Project name<input name="name" required maxlength="120" placeholder="e.g. House on the ridge" /></label>
@@ -471,6 +475,7 @@ function settingsView() {
       <p class="small">${scope === 'practice'
     ? (owner ? `Everyone in ${esc(practice.name)} sees the look chosen here.` : `An owner of ${esc(practice.name)} chooses its look.`)
     : 'Signed out, or with nothing shared, each browser keeps its own look. Signed in with a practice, the practice’s look is used.'} Printing always uses white paper.</p></section>
+    ${artSectionHtml('settings')}
   </div>`;
 }
 
@@ -562,7 +567,7 @@ function modelTool(b, def) {
   const p = b.project, m = p.model ?? {}, link = twinLink(m);
   const input = '<input type="file" id="model-file" data-file="model" accept=".json,application/json" hidden />';
   const err = ui.modelError ? `<p class="flash" role="alert">${esc(ui.modelError)}</p>` : '';
-  if (!link) return `<div class="empty"><h3>No plan model attached.</h3><p class="small">Attach the plan model file (.json) for this design. The project keeps its name, drawings note, revision and a fingerprint of what it says, and keeps the file itself ${esc(W(p).keptOnly) /* [cloud] */} (up to ${esc(sizeText(store.fileLimit))}), so it can open in 3D from here.${W(p).shared ? '' : ' Nothing is uploaded.'}</p>
+  if (!link) return `<div class="empty" data-art-empty><h3>No plan model attached.</h3><p class="small">Attach the plan model file (.json) for this design. The project keeps its name, drawings note, revision and a fingerprint of what it says, and keeps the file itself ${esc(W(p).keptOnly) /* [cloud] */} (up to ${esc(sizeText(store.fileLimit))}), so it can open in 3D from here.${W(p).shared ? '' : ' Nothing is uploaded.'}</p>
     <button class="btn solid" data-act="pick" data-target="model-file">Attach a plan model</button>${input}</div>${err}
     <p class="starter">Reading a plan model out of a PDF happens on the 3D page, not here. <a href="/plan-studio/twins/drop/?drop=1" target="_blank" rel="noopener">Open the 3D page ↗</a></p>`;
   const { stale } = closingApprovals(b, def.key), here = kept.get(m.file?.id), stuck = handoff.fp === m.fingerprint && !!handoff.why;
@@ -647,6 +652,9 @@ async function render(fromLink = false) {
   const moved = key !== lastRoute;
   if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
   showLook();
+  // the practice's artwork: read once it is known whose records are in use; a slow answer does not hold the screen back
+  const art = syncArtwork();
+  if (await Promise.race([art.then(() => false, () => false), new Promise((r) => setTimeout(r, FIRST_WAIT, true))])) art.then((got) => { if (got) render(false); }, () => {});
   let html, onScreen = null;
   try { // [cloud] the shared records can fail to answer; this browser's own store never does
     if (r.view === 'projects') { shown = null; html = await projectsView(); }
@@ -664,6 +672,7 @@ async function render(fromLink = false) {
   $app.innerHTML = html;
   account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
   await drawAddons(r, onScreen);
+  artAfterRender(document);
   $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
   document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : r.view === 'settings' ? 'Settings · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
   markBar(r);
@@ -1077,6 +1086,7 @@ async function start() {
   $app.addEventListener('click', onClick);
   $app.addEventListener('change', onChange);
   $app.addEventListener('keydown', onTabKey);
+  mountArtwork({ account, store, redraw: () => render(false) });
   document.addEventListener('click', onLook); // the look chooser: on the settings screen and in the practice panel
   window.addEventListener('hashchange', () => render(true));
   // [cloud] wait a moment to learn whether someone is signed in, so the first screen shows the right records.

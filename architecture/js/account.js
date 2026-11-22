@@ -6,7 +6,7 @@
 // a courtesy. The database refuses the change regardless.
 
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SCHEMA, BUCKET, CLIENT_MODULE, AUTH_STORAGE_KEY } from './config.js';
-import { createGateway, createCloudStore, createTeam, moveProjects, probeShared, NOT_ON } from './cloud.js';
+import { createGateway, createCloudStore, createTeam, createArtworkPlace, moveProjects, probeShared, NOT_ON } from './cloud.js';
 import { SAMPLE_ID } from './model.js';
 import { lookChoiceHtml, isTheme, DEFAULT_THEME } from './theme.js';
 
@@ -47,8 +47,9 @@ export const pageAddress = (href) => { const u = new URL('./', href); u.search =
  *   slot    the element in the header for the sign-in controls
  *   panel   the element under the banner for the practice panel
  *   nameLabel  the "Working as" label with the typed name, hidden while signed in
+ *   panelExtra optional: (practice) => html for one more section of the practice panel (the practice's artwork: artwork.js)
  */
-export function mountAccount({ store, local, slot, panel, nameLabel, win = globalThis, loadClient = null }) {
+export function mountAccount({ store, local, slot, panel, nameLabel, win = globalThis, loadClient = null, panelExtra = null }) {
   const st = {
     phase: 'starting',          // 'starting' | 'out' | 'in'
     shared: 'unknown',          // 'unknown' | 'ready' | 'not_switched_on' | 'out_of_date' | 'unreachable'
@@ -338,6 +339,7 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       <div class="acct-grid">${invites}
         <section class="acct-sec"><p class="label">Look</p>${lookChoiceHtml({ theme: isTheme(p.theme) ? p.theme : DEFAULT_THEME, scope: 'practice', canChange: owner, practice: p.name })}
           <p class="small">${owner ? 'Everyone in the practice sees the look chosen here.' : 'Only an owner can change it.'}</p></section>
+        ${panelExtra ? panelExtra(p) : ''}
         <section class="acct-sec"><p class="label">People</p>${people}
           <p class="small">Owners invite people and set roles. Members add and change records. Viewers read everything and change nothing. A practice always keeps at least one owner.</p>
           <div class="acts"><button class="link" data-acct="leave"${off}>${st.confirm === 'leave' ? 'Leave for good' : 'Leave this practice'}</button></div></section>
@@ -376,6 +378,11 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     /** the signed-in person's name, or null when nobody is signed in */
     who: () => (st.phase === 'in' ? st.user.name : null),
     get state() { return { phase: st.phase, shared: st.shared, practice: st.practice, user: st.user, practices: st.practices }; },
+
+    /** the practice's own artwork place (cloud.js), or null when no practice is in use: artwork.js keeps the practice's artwork through it */
+    artworkPlace: () => (st.practice && gateway && store.shared ? createArtworkPlace(gateway, st.practice) : null),
+    /** draw the header and the practice panel again (artwork.js, after its section changes) */
+    redraw: () => draw(),
 
     /** Choose the look of the practice in use (owners only; the database refuses anyone else). */
     async setLook(theme) {
