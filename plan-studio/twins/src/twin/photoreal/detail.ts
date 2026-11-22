@@ -2,11 +2,15 @@
 // photograph. Two jobs:
 //  1. Replace the scanned photographs the normal view uses (deck boards, roof steel, weathered framing, bark, forest
 //     floor) and the LINZ aerial photo on the ground with drawn equivalents at the same real size.
-//  2. Give every surface that had no texture a fine micro-structure (weave, grain, roller stipple, brushing, orange
-//     peel, aggregate) in its normal and roughness maps: that is what catches light and stops surfaces reading as plastic.
+//  2. Give every surface that had no texture a fine micro-structure (weave, grain, trowelled plaster, brushing, glaze,
+//     stone) in its normal and roughness maps: that is what catches light and stops surfaces reading as plastic.
+// The micro-structures and the bark are the asset library's own (library/ptex.ts through library/mats.ts), so the
+// photoreal look and the library pieces share one set of textures. Only what the library has no generator for is drawn
+// here: deck boards, weathered framing boards, coil-coated roof steel and the forest floor.
 // Kate's rule (22 Nov 2026): "procedural is key".
 import * as THREE from 'three/webgpu';
 import type { Detail } from './giMaterial.ts';
+import { barkMat, cloth, glazeMat, metalMat, plasterMat, stoneMat, timber as timberMat } from '../library/mats.ts';
 
 // ---- seeded noise ----
 function rng(seed: number) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -106,15 +110,6 @@ function steel(seed: number, base: number, ribs: number) {
     return [0.35 * p + 0.2 * s + dot * 0.5, 0.42 + 0.18 * s + 0.1 * p, c0[0] * k, c0[1] * k, c0[2] * k];
   });
 }
-/** tree bark: vertical fissures (along v) and plates */
-function bark(seed: number) {
-  const f = fbm(seed, 3, 5, 0.25), g = fbm(seed + 1, 12, 4), c0 = hex(0x8a7d70);
-  return field((u, v) => {
-    const fis = Math.pow(Math.abs(Math.sin((u * 7 + f(u, v) * 2.2) * Math.PI)), 0.35);
-    const k = 0.45 + 0.6 * fis * (0.7 + 0.5 * g(u, v));
-    return [fis * 0.8 + 0.25 * g(u, v), 0.85 + 0.1 * g(u, v), c0[0] * k, c0[1] * k * 0.97, c0[2] * k * 0.92];
-  });
-}
 /** forest floor: leaf litter, moss, soil and twigs */
 function forestFloor(seed: number) {
   const a = fbm(seed, 4, 5), b = fbm(seed + 2, 24, 4), c = fbm(seed + 4, 64, 3), r = rng(seed);
@@ -143,22 +138,6 @@ function forestFloor(seed: number) {
     return [0.5 * d + 0.25 * e + 0.5 * leaf + mossK * 0.2, 0.8 + 0.15 * e - 0.1 * leaf, col[0], col[1], col[2]];
   });
 }
-// micro-structures for surfaces that had no texture (height + roughness only; colour stays the material's)
-const micro = {
-  /** plain weave: warp and weft over and under, slubby yarn */
-  weave: (seed: number) => { const s = fbm(seed, 16, 3); return field((u, v) => { const n = 96; const a = Math.sin(u * n * Math.PI * 2), b = Math.sin(v * n * Math.PI * 2); const over = ((Math.floor(u * n * 2) + Math.floor(v * n * 2)) & 1) ? a : b; return [0.5 + 0.35 * over + 0.25 * s(u, v), 0.85 + 0.1 * s(u, v)]; }); },
-  /** wood grain along u */
-  grain: (seed: number) => { const g = fbm(seed, 2, 5, 24), f = fbm(seed + 1, 10, 3, 8); return field((u, v) => { const r = 0.5 + 0.5 * Math.sin((g(u, v) * 10 + f(u, v)) * Math.PI * 2); return [0.4 * r + 0.3 * f(u, v), 0.5 + 0.25 * r]; }); },
-  /** roller-applied paint on plaster: soft stipple */
-  stipple: (seed: number) => { const a = fbm(seed, 40, 3), b = fbm(seed + 2, 5, 3); return field((u, v) => [0.6 * a(u, v) + 0.3 * b(u, v), 0.82 + 0.1 * a(u, v)]); },
-  /** brushed metal along u */
-  brushed: (seed: number) => { const a = fbm(seed, 6, 5, 40); return field((u, v) => [a(u, v), 0.3 + 0.25 * a(u, v)]); },
-  /** orange peel on enamel, lacquer and glaze */
-  peel: (seed: number) => { const a = fbm(seed, 24, 3); return field((u, v) => [a(u, v), 0.25 + 0.15 * a(u, v)]); },
-  /** concrete and stone: aggregate and pores */
-  aggregate: (seed: number) => { const a = fbm(seed, 20, 4), b = fbm(seed + 3, 80, 2); return field((u, v) => [0.6 * a(u, v) + 0.4 * (b(u, v) > 0.72 ? 0 : 1), 0.75 + 0.2 * a(u, v)]); },
-};
-
 type Tex = { map: THREE.Texture | null; normal: THREE.Texture; rough: THREE.Texture };
 const made = new Map<string, Tex>();
 function once(key: string, mk: () => Tex): Tex { let t = made.get(key); if (!t) { t = mk(); made.set(key, t); } return t; }
@@ -168,7 +147,7 @@ function forScan(file: string): Tex | null {
   if (/deck_/.test(file)) return once('deck', () => toTextures(timber(11, 0xa0714a, 14, 0.15), 3.2));
   if (/post_/.test(file)) return once('post', () => toTextures(timber(23, 0x8a7a66, 10, 0.75), 3.6));
   if (/roof_/.test(file)) return once('roof', () => toTextures(steel(31, 0xc8c8c8, 6), 1.6));
-  if (/bark_/.test(file)) return once('bark', () => toTextures(bark(41), 4));
+  if (/bark_/.test(file)) return once('bark', () => { const m = barkMat(0x8a7d70, 0x4f463d) as THREE.MeshStandardMaterial; return { map: m.map, normal: m.normalMap!, rough: m.roughnessMap! }; });
   if (/floor_/.test(file)) return once('floor', () => toTextures(forestFloor(53), 3));
   return null;
 }
@@ -185,17 +164,19 @@ function copyXf(dst: THREE.Texture, src: THREE.Texture | null | undefined) {
   return t;
 }
 
-/** micro detail by what the surface is, from its material and mesh names */
-function microFor(name: string): { tex: Tex; scale: number; tile: number } {
+/** micro detail by what the surface is, from its material and mesh names: the library's textures (their UV repeat is
+ *  set for UVs in metres, which the bake's geometry step gives every plain receiver) */
+function microFor(name: string): { tex: Tex; scale: number } {
   const s = name.toLowerCase();
-  const pick = (k: keyof typeof micro, seed: number) => once('micro_' + k, () => toTextures(micro[k](seed), k === 'weave' ? 2.5 : k === 'brushed' ? 1.2 : 1.5));
-  if (/cladding|black_stain|shiplap_black|rib/.test(s)) return { tex: pick('peel', 71), scale: 0.18, tile: 0.35 };
-  if (/linen|wool|boucle|fabric|canvas|cloth|rug|towel|cushion|throw|duvet|curtain|shade/.test(s)) return { tex: pick('weave', 61), scale: 0.6, tile: 0.25 };
-  if (/steel|chrome|brass|bronze|stainless|alumin|metal|copper|nickel/.test(s)) return { tex: pick('brushed', 67), scale: 0.25, tile: 0.4 };
-  if (/enamel|lacquer|ceramic|china|glaze|appliance|stoneware|porcelain|planter|lemon/.test(s)) return { tex: pick('peel', 71), scale: 0.12, tile: 0.3 };
-  if (/oak|teak|timber|wood|hardwood|stair|pine|cedar|branch/.test(s)) return { tex: pick('grain', 73), scale: 0.5, tile: 0.8 };
-  if (/concrete|parking|path|pad|stone|travertine|paving|retaining|gravel/.test(s)) return { tex: pick('aggregate', 79), scale: 0.6, tile: 0.6 };
-  return { tex: pick('stipple', 83), scale: 0.3, tile: 0.5 };
+  const from = (key: string, m: THREE.Material, scale: number) => ({ tex: once('lib_' + key, () => { const x = m as THREE.MeshStandardMaterial; return { map: null, normal: x.normalMap!, rough: x.roughnessMap! }; }), scale });
+  if (/cladding|black_stain|shiplap_black|rib/.test(s)) return from('steel', metalMat(0xffffff, 0.4), 0.35);
+  if (/boucle|towel|throw|knit/.test(s)) return from('boucle', cloth('boucle', 0xffffff), 0.8);
+  if (/linen|wool|fabric|canvas|cloth|rug|cushion|duvet|curtain|shade/.test(s)) return from('linen', cloth('linen', 0xffffff), 0.8);
+  if (/steel|chrome|brass|bronze|stainless|alumin|metal|copper|nickel/.test(s)) return from('metal', metalMat(0xffffff), 0.5);
+  if (/enamel|lacquer|ceramic|china|glaze|appliance|stoneware|porcelain|planter|lemon/.test(s)) return from('glaze', glazeMat(0xffffff, { crackle: 0.2 }), 0.35);
+  if (/oak|teak|timber|wood|hardwood|stair|pine|cedar|branch/.test(s)) return from('oak', timberMat('oak'), 0.6);
+  if (/concrete|parking|path|pad|stone|travertine|paving|retaining|gravel/.test(s)) return from('stone', stoneMat('limestone', 0xffffff, 0xdddddd, 0.5), 0.8);
+  return from('plaster', plasterMat(0xffffff), 0.5);
 }
 
 /**
@@ -203,7 +184,7 @@ function microFor(name: string): { tex: Tex; scale: number; tile: number } {
  * maps at the same placement; `plain`: a material with no maps gets a micro-structure (its mesh carries box UVs in
  * metres, made by the bake's geometry step, so `tile` is in metres). Returns null to keep the material's own maps.
  */
-export function detailFor(m: THREE.Material, meshName = ''): (Detail & { replace: boolean; boxUV: boolean; tile?: number }) | null {
+export function detailFor(m: THREE.Material, meshName = ''): (Detail & { replace: boolean; boxUV: boolean }) | null {
   const o = m as THREE.MeshStandardMaterial;
   if (isScan(o.map) || isScan(o.normalMap) || isPhoto(o.map)) {
     const file = fileOf(o.normalMap) || fileOf(o.map);
@@ -223,8 +204,8 @@ export function detailFor(m: THREE.Material, meshName = ''): (Detail & { replace
     return null; // its own drawn maps stay (a bump map is not carried over: those surfaces read flat in this look)
   }
   const md = microFor(`${m.name} ${meshName}`);
-  const rep = (t: THREE.Texture) => { const c = t.clone(); c.repeat.set(1 / md.tile, 1 / md.tile); c.needsUpdate = true; return c; };
-  return { replace: false, boxUV: true, tile: md.tile, normal: rep(md.tex.normal), rough: rep(md.tex.rough), normalScale: md.scale, roughness: Math.max(0.05, (o.roughness ?? 0.6) * 1.15) };
+  // the library's roughness maps are centred on its own finishes: the material keeps its roughness as the scale
+  return { replace: false, boxUV: true, normal: md.tex.normal, rough: md.tex.rough, normalScale: md.scale, roughness: Math.max(0.05, (o.roughness ?? 0.6) * 1.15) };
 }
 
 /** swap scanned maps on materials that do not receive the bake (bush bark, far ground); returns how to put them back */

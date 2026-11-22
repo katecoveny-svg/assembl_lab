@@ -11,7 +11,8 @@ import { MS, packBake, unpackBake, packRGB9E5, unpackRGB9E5, packOct, unpackOct 
 import { bakeWithPool, inlinePool, tracerFrom, packScene, unpackScene } from '../../plan-studio/twins/src/twin/photoreal/bakeRun.ts';
 import { buildSky, SKY_RATIO } from '../../plan-studio/twins/src/twin/photoreal/sky.ts';
 import { tessellate } from '../../plan-studio/twins/src/twin/photoreal/tessellate.ts';
-import { surfaceNets, vesselSDF } from '../../plan-studio/twins/src/twin/photoreal/sdf.ts';
+import { mesh as sdfMesh, openEdges } from '../../plan-studio/twins/src/twin/library/sdf.ts';
+import { vesselSDF, VESSEL_BOX } from '../../plan-studio/twins/src/twin/photoreal/vessel.ts';
 
 const root = new URL('../../', import.meta.url);
 const spec = JSON.parse(readFileSync(new URL('plan-studio/twins/src/twin/photoreal/flythrough.json', root), 'utf8'));
@@ -178,19 +179,14 @@ test('tessellation splits long edges without T-junctions and keeps the area', ()
   assert.ok([...edges.values()].every((c) => c <= 2));
 });
 
-test('the sculpted vessel is a closed, outward-facing surface of about the right size', () => {
-  const m = surfaceNets(vesselSDF(0.28), [-0.13, -0.02, -0.13], [0.13, 0.3, 0.13], 52);
+test('the sculpted vessel, meshed by the library\'s marching cubes, is closed and about the right size', () => {
+  const m = sdfMesh(vesselSDF(0.28), VESSEL_BOX.min, VESSEL_BOX.max, 0.005);
   assert.ok(m.indices.length / 3 > 5000, `${m.indices.length / 3} triangles`);
   let ymin = 1, ymax = -1, rmax = 0;
   for (let i = 0; i < m.positions.length; i += 3) { ymin = Math.min(ymin, m.positions[i + 1]); ymax = Math.max(ymax, m.positions[i + 1]); rmax = Math.max(rmax, Math.hypot(m.positions[i], m.positions[i + 2])); }
   assert.ok(ymin < 0.01 && ymax > 0.25 && ymax < 0.29, `height ${ymin.toFixed(3)}–${ymax.toFixed(3)}`);
   assert.ok(rmax > 0.06 && rmax < 0.12, `widest radius ${rmax.toFixed(3)}`);
-  // closed: no edge belongs to an odd number of triangles (a hole); where the wall is thinner than a grid cell an edge
-  // can be shared by four, which is not a hole
-  const edges = new Map();
-  for (let i = 0; i < m.indices.length; i += 3) for (let e = 0; e < 3; e++) { const a = m.indices[i + e], b = m.indices[i + (e + 1) % 3], k = a < b ? `${a},${b}` : `${b},${a}`; edges.set(k, (edges.get(k) ?? 0) + 1); }
-  const open = [...edges.values()].filter((c) => c % 2 === 1).length;
-  assert.equal(open, 0, `${open} of ${edges.size} edges open`);
+  assert.equal(openEdges(m), 0, 'every edge is shared by two triangles');
 });
 
 test('the BVH finds the nearest hit, and any hit for shadows', () => {
