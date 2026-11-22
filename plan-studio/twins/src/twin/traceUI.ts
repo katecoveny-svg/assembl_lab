@@ -3,6 +3,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { App } from './app';
 import { openPdf, planModel, readImage, readSheet, sheetThumb, surveySheets, toBuilding, type Built, type BuildOpts, type SheetInfo, type TraceRead } from './planTrace';
 import { defaultRoles, fallPlane, guessHigh, interpretElevations, readElevSheet, readSiteSheet, registerSite, type ElevRead, type ElevResult, type Role, type SiteRead, type SiteResult } from './planSet';
+import { applyNameEdits } from './roomNames';
+import type { RoomSpec } from './homes';
 
 // Who the AI plan reader really is today: the lab's endpoint says which provider answers first.
 let readerNameP: Promise<string> | null = null;
@@ -18,6 +20,9 @@ function readerName(): Promise<string> {
 
 const COL = { ext: '#21121F', part: '#756771', door: '#B4466F', window: '#B4466F', slider: '#B4466F', opening: '#D4B6C7', deck: '#8A7B5C' } as const;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+// where a room's name came from, as the review list shows it
+const NAME_CHIP = { printed: 'printed', drawn: 'from what is drawn: check', person: 'named by a person' } as const;
+const chipTitle = (r: RoomSpec) => (r.nameSrc === 'drawn' ? `The drawing prints "${r.printed ?? '?'}" here. This name was suggested from what is drawn in the room: check it.` : r.nameSrc === 'person' ? `You named this room. The drawing prints "${r.printed ?? '?'}".` : 'The name printed on the drawing.');
 
 function drawPlan(cv: HTMLCanvasElement, ir: TraceRead, b: Built | null) {
   const img = ir.image;
@@ -101,6 +106,9 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
     let roles = new Map<number, Role>();
     let siteRead: SiteRead | null = null, elevReads: ElevRead[] = [], elev: ElevResult | null = null, site: SiteResult | null = null;
     let roofSrc: 'assumed' | 'ai' = 'assumed';
+    // a person's room names, kept across re-reads of the same plan ("read index:room id" → name)
+    const nameEdits = new Map<string, string>();
+    const editsFor = (i: number, rooms: RoomSpec[]) => Object.fromEntries(rooms.map((r) => [r.id, nameEdits.get(`${i}:${r.id}`) ?? '']));
     const finish = (v: { plan: Record<string, unknown>; name: string } | null) => {
       token++;
       card.remove();
@@ -119,16 +127,19 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       list.innerHTML = others.map((x) => `<label class="tr-setrow"><span>${x.page}: ${esc(x.title.slice(0, 40))}</span><select data-page="${x.page}"><option value="skip">Skip</option><option value="site" ${roles.get(x.page) === 'site' ? 'selected' : ''}>Site plan</option><option value="elevation" ${roles.get(x.page) === 'elevation' ? 'selected' : ''}>Elevations</option></select></label>`).join('');
       list.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => { roles.set(+el.dataset.page!, el.value as Role); }));
     };
-    // the site plan and the elevations, read after the floor plan
+    // the site plan and the elevations: one read per sheet, all at the same time (none depends on another)
     const readExtras = async (progress: (m: string) => void) => {
       siteRead = null; elevReads = []; elev = null; site = null;
       const notes: string[] = [];
-      for (const [p, r] of extrasWanted()) {
+      const wanted = extrasWanted(), firstSite = wanted.find(([, r]) => r === 'site')?.[0];
+      const jobs = wanted.filter(([p, r]) => r === 'elevation' || p === firstSite).map(async ([p, r]) => {
         const info = sheets.find((x) => x.page === p)!;
-        try {
-          if (r === 'site' && !siteRead) siteRead = await readSiteSheet(doc!, info, progress);
-          if (r === 'elevation') elevReads.push(await readElevSheet(doc!, info, progress));
-        } catch (e) { notes.push(`Sheet ${p}: ${(e as Error).message}.`); }
+        try { return r === 'site' ? { p, site: await readSiteSheet(doc!, info, progress) } : { p, elev: await readElevSheet(doc!, info, progress) }; }
+        catch (e) { notes.push(`Sheet ${p}: ${(e as Error).message}.`); return { p }; }
+      });
+      for (const j of await Promise.all(jobs)) {
+        if (j.site) siteRead = j.site;
+        if (j.elev) elevReads.push(j.elev);
       }
       if (elevReads.length) {
         elev = interpretElevations(elevReads);
@@ -164,6 +175,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       });
       if (built[0] && highFromPlan && val('trRoof') === 'skillion') setVal('trHigh', guessHigh(built[0]));
       if (built[0] && val('trRoof') === 'skillion' && built[0].building.roof.high !== val('trHigh')) built[0] = toBuilding(reads[0], 'traced-1', opts());
+      built.forEach((b, i) => { if (!b) return; const rs = b.building.levels[0].rooms; applyNameEdits(rs, editsFor(i, rs)); b.labels.forEach((t, j) => { if (rs[j]) t.text = rs[j].name; }); });
       site = siteRead && built[0] ? registerSite(siteRead, built[0]) : null;
       if (site?.ok && built[0]) {
         const L = built[0].building.levels[0] as unknown as { decks: unknown[]; stairs?: unknown[] };
@@ -178,9 +190,21 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         el.innerHTML = `<div class="tr-plan-head">${reads.length > 1 ? `<label><input type="checkbox" ${include[i] && b ? 'checked' : ''} ${b ? '' : 'disabled'}> build</label>` : ''}<input class="tr-name" value="${esc(ir.label)}" aria-label="Name"><span class="chip ${ir.src === 'drawing' ? 'ok' : 'warn'}">${ir.src === 'drawing' ? 'measured from linework' : 'read by AI · check'}</span></div>
           <canvas></canvas>
           ${b ? `<p class="tr-size">${b.W.toFixed(2)} × ${b.D.toFixed(2)} m</p>` : ''}
+          ${b && b.building.levels[0].rooms.length ? `<div class="tr-rooms"><p class="small"><b>Rooms.</b> Check each name before you build; type to change one.</p><ul>${b.building.levels[0].rooms.map((r) => `<li><input class="tr-rn" data-id="${r.id}" value="${esc(r.name)}" aria-label="Room name (${(r.w).toFixed(1)} × ${(r.d).toFixed(1)} m)"><span class="tr-rsrc ${r.nameSrc ?? 'printed'}" title="${esc(chipTitle(r))}">${NAME_CHIP[r.nameSrc ?? 'printed']}</span><span class="tr-rdim">${r.w.toFixed(2)} × ${r.d.toFixed(2)} m</span></li>`).join('')}</ul></div>` : ''}
           ${!ir.mmPerPx ? `<p class="tr-len">${esc(ir.scaleNote)} The outside length of the long side is <input type="number" step="0.01" min="1" class="tr-lenv"> m <button class="pill tr-leng">Use it</button></p>` : /no dimension strings to check/.test(ir.scaleNote) ? `<p class="tr-len small">Nothing on this sheet confirms the scale. If the size above is wrong, the outside length of the long side is <input type="number" step="0.01" min="1" class="tr-lenv"> m <button class="pill tr-leng">Use it</button></p>` : ''}
           <ul class="small tr-report">${[`Scale: ${ir.scaleNote}`, ...(b ? b.report : ir.mmPerPx ? ['Too few walls were found to make a building from this crop.'] : [])].map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`;
         drawPlan(el.querySelector('canvas')!, ir, b);
+        el.querySelectorAll<HTMLInputElement>('.tr-rn').forEach((inp) => inp.addEventListener('input', () => {
+          if (!b) return;
+          const rs = b.building.levels[0].rooms, j = rs.findIndex((r) => r.id === inp.dataset.id), r = rs[j];
+          if (!r) return;
+          nameEdits.set(`${i}:${r.id}`, inp.value);
+          applyNameEdits([r], { [r.id]: inp.value });
+          if (b.labels[j]) b.labels[j].text = r.name;
+          const chip = inp.nextElementSibling as HTMLElement;
+          chip.className = `tr-rsrc ${r.nameSrc}`; chip.textContent = NAME_CHIP[r.nameSrc ?? 'printed']; chip.title = chipTitle(r);
+          drawPlan(el.querySelector('canvas')!, ir, b);
+        }));
         el.querySelector<HTMLInputElement>('input[type=checkbox]')?.addEventListener('change', (e) => { include[i] = (e.target as HTMLInputElement).checked; update(); });
         el.querySelector<HTMLInputElement>('.tr-name')!.addEventListener('input', (e) => { ir.label = (e.target as HTMLInputElement).value || ir.label; if (built[i]) built[i]!.building.name = ir.label; });
         el.querySelector('.tr-leng')?.addEventListener('click', () => {
@@ -217,7 +241,10 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       const progress = (m: string) => { msg = m; if (my === token) status(m); };
       try {
         let got: TraceRead[] | null;
-        if (doc) got = await readSheet(doc, page, progress, useAi);
+        // with the AI reader asked for, the site plan and elevations go at the same time as the floor plan, not after it:
+        // the same reads, one per sheet, in about the time of the slowest one
+        const extrasP = useAi && doc && extrasWanted().length ? readExtras(() => {}).catch((e) => [`The other sheets: ${(e as Error).message}.`]) : null;
+        if (doc) got = await readSheet(doc, page, (m) => progress(extrasP && /AI plan reader/.test(m) ? m.replace('the AI plan reader', `the AI plan reader, with the other ${extrasWanted().length} sheet${extrasWanted().length > 1 ? 's' : ''}`) : m), useAi);
         else got = useAi ? await readImage(file, progress) : null;
         if (my !== token) return;
         if (!got) {
@@ -228,7 +255,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         }
         reads = got;
         include = got.map(() => true);
-        if (useAi && doc && extrasWanted().length) extraNotes = await readExtras(progress);
+        if (extrasP) { progress('Reading the other sheets…'); extraNotes = await extrasP; }
         if (my !== token) return;
         status(got.length > 1 ? `${got.length} plans read from sheet ${page}. Untick any you don’t want, check them, then build.` : elevReads.length || siteRead ? 'Set read. Check it against your drawings, then build.' : 'Plan read. Check it against your drawing, then build.');
         render();

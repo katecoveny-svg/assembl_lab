@@ -1,51 +1,63 @@
 # Practice database: owner note
 
 ## What it is for
-The shared memory for an architecture practice. Projects, the seven stages, tasks, documents, approvals, RFIs, site visits, variations, defects and an activity log. Everyone in the firm sees the same work. Nobody outside can.
-
-It is written for Supabase. Every table sits in its own schema, `arch`, so it cannot clash with anything else.
-
-## The tables
-| Table | Holds |
-|---|---|
-| practice, practice_member | The firm, and who belongs (owner, member, viewer) |
-| project | One job, with site and model details |
-| stage | The seven stages and their status |
-| task, document, rfi | Day-to-day work |
-| observation, variation, defect | Site visits, changes, faults |
-| approval, activity | Sign-offs and a log. Never changed after |
-
-## Who can see what
-- Signed-in people see only their own practice's rows.
-- Owners and members can add and change records. Viewers only read.
-- Only owners manage membership.
-- `anon` (not signed in) gets nothing.
-- Approvals and activity can be added and read. Only `service_role`, the server-side key, can change or delete them.
-- An approval keeps the signed-in account id as well as the typed name.
-- A stage cannot be marked done unless an approval exists for that project and stage. A database trigger enforces this, for everyone including `service_role`.
-- Site latitude and longitude are private project data, as the column comments say.
-
-## What was proven, and how
-I ran the migrations on a throwaway in-memory database (PGlite) on this machine, with small stand-ins for the Supabase parts: the `auth` schema, `auth.uid()` and the three roles. This was not Supabase. Nothing was applied or deployed anywhere.
-
-The migrations ran twice with no error and no change. Thirteen checks passed: a member creating and reading a project, another firm seeing nothing, a viewer unable to write, `anon` refused, approvals unchangeable, and a stage refusing `done` until approved. I also broke two rules on purpose and the checks failed, as they should.
-
-Run them with `node --test tests/architecture-db/*.test.mjs` (after `npm install` in that folder).
+The shared memory for an architecture practice: projects, stages, tasks, documents, approvals, checklists, files and an activity log. Everyone in the practice sees the same work. Nobody outside can. It is on Supabase, in its own schema, `arch`.
 
 ## Where it is now (22 November 2026)
-The three migrations are applied to the `assembl-prod` Supabase project, in the separate `arch` schema, on Kate's instruction. Nothing outside `arch` was touched. A catalogue check on production matched the dry run exactly: 12 tables, all with row level security on, 86 columns, 43 policies, 6 triggers, 10 functions, 22 indexes, and no access for `anon`. The tables are empty.
+- Applied to production: the first three migrations (twelve tables, empty).
+- Written and tested, **not applied**: three more migrations, Google sign-in, the page's shared store.
+- The page saves in one browser until the steps below are done. Its banner says so.
 
-Status: connected, not yet verified in use. No app reads or writes it yet.
+## What is added
+| File (apply in this order) | Adds |
+|---|---|
+| `20261122100000_arch_extra_checklist.sql` | An `extra` column on every table, so fields the database does not know yet survive. Checklists. Row order. A database-stamped time on approvals and activity. |
+| `20261122100100_arch_invitations_owner_guard.sql` | Invitations, the people list, leaving a practice, and the last-owner rule. |
+| `20261122100200_arch_files_storage.sql` | File records (one per kept file: its project, whether it is for a document or the plan model, and which), a private bucket `arch-files` (50 MB a file), and its access rules. |
 
-## Still to do before it is real
-1. Add `arch` to the exposed schemas in the API settings. Until then nothing outside the database can reach it.
-2. Decide how people sign in and how colleagues are invited.
-3. Connect the app in place of browser storage. Site and model fields are flat, for example `site_lat`, `model_fingerprint`.
-4. Re-run the thirteen checks against production with test accounts.
+Only the third file changes anything outside `arch`: one bucket row and four rules on Supabase's storage tables, limited to that bucket. The second reads Supabase's sign-in tables and changes nothing.
+
+## The two switches (owner, in the Supabase dashboard)
+Do these after the migrations are applied. Menu names may differ.
+
+**1. Let the page reach `arch`.**
+1. Open the project. Go to Project Settings, then Data API.
+2. Find "Exposed schemas". Add `arch`. Save.
+
+**2. Let sign-in come back to the page.**
+1. Go to Authentication, then URL Configuration.
+2. Under "Redirect URLs", add `https://lab.assembl.co.nz/architecture/`. Save.
+
+Then open the page, sign in with Google and start the practice. Until switch 1 is on, the page says "Shared records are not switched on yet".
+
+## Who can see what
+- Not signed in, or not in the practice: nothing, rows or files.
+- Viewer: reads everything, changes nothing.
+- Member: adds and changes records and files.
+- Owner: also invites people, sets roles and removes people.
+- An invitation names an email address. Nothing is emailed. The person is added only when Google has verified that address for their sign-in.
+- The last owner cannot leave, be removed or be demoted.
+- Approvals and activity are added, never changed. A project that has them cannot be deleted.
+- The Sample stays in the browser. Projects move up only when someone ticks them.
+- The site point is private to the practice. Requests to the shared records carry it in their body, not in their address. To look up the public maps, the page sends it to the lab's live feed in that feed's address (the feed takes query parameters only). The feed does not store it, apart from a short-lived cache of its answer. The point is not put in a share link or printed.
+- Sign-in: Supabase's client keeps the sign-in (its access and refresh tokens) in this browser's local storage, under `assembl.architecture.auth`, as it normally does. Signing out removes it.
+- Files: the contents go in the private bucket under `<practice>/<project>/<file id>` (ids only, never the file's name); the record of each goes in `arch.file`. A shared file is never written over: keeping a new version keeps a new file.
+
+## What is proven
+Locally, with stand-ins:
+- Database rules: 34 checks on an in-memory Postgres (PGlite), all six migrations run twice (and a third time with data in). Run `node --test tests/architecture-db/*.test.mjs`.
+- Page code: 110 checks against a fake of Supabase's client, no network, including files in the browser store's own shapes, moving a project with files up, export and import with files, and the 3D hand-over from the shared records. Run `node --test tests/architecture/*.test.mjs`.
+- Screens: a test-browser click-through at 1400x900 and 390x844 with the real Supabase client talking to a stand-in for Supabase's addresses: files kept, downloaded byte for byte, a model opened in 3D from each store, a browser project with files moved up, a viewer's export. Stills: `int-*` (kept outside the repo).
+
+## What is not proven
+- No real Google sign-in has been made.
+- The page has not used the real database.
+- Supabase Storage was not exercised: the bucket's access rules were tested on a stand-in table, and the page's uploads, downloads and removals only against stand-ins.
 
 ## Risks
-- The access rules were proven on stand-ins, not yet with real accounts on production. See step 4.
-- Ids are database-made uuids. Tell me if the app makes its own.
-- Adding a colleague needs their account id; an invite flow is still to build. Nothing stops the last owner leaving.
-- A project with approvals or activity cannot be deleted by users. That is deliberate.
-- AI wrote this. A person should read the rules before real client data goes in.
+- Check on production that the database owner can read `auth.identities` and `auth.users`. If not, invitations fail safely: nobody is added.
+- A whole-project save is several requests; if one fails part-way, the page says so. If two people edit one record at once, the last save wins.
+- A file is kept before the record that points at it is saved, so `arch.file` has no foreign key to the document. If the save then fails, the file stays without a record pointing at it; the page removes a document's file when it removes the document.
+- Shared files can be up to 50 MB; a browser keeps up to 25 MB. A larger shared file exported with the files is counted as not kept when that project file is imported into a browser.
+- A practice's only owner cannot delete their account until another owner is named.
+- AI wrote this. A person should read the rules before client data goes in.

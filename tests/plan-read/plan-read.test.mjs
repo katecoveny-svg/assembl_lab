@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequest, SCHEMA, SITE_SCHEMA, ELEV_SCHEMA, SYSTEM, validate, toGeminiSchema } from '../../functions/api/plan-read.js';
+import { onRequest, SCHEMA, SITE_SCHEMA, ELEV_SCHEMA, SYSTEM, SITE_SYSTEM, PROMPTS, validate, toGeminiSchema } from '../../functions/api/plan-read.js';
 
 // Offline: fetch is stubbed, keys are fake, nothing leaves this process.
 const K = { ANTHROPIC_API_KEY: 'fake-anth-KEY-111', OPENAI_API_KEY: 'fake-oai-KEY-222', GEMINI_API_KEY: 'fake-gem-KEY-333' };
@@ -158,4 +158,68 @@ test('daily cap counts requests, not attempts, and still returns 429', async () 
 test('bad image is rejected before any provider call', async () => {
   const r = await run({ env: K, image: 'nope', handlers: {} });
   assert.equal(r.status, 400); assert.equal(r.calls.length, 0);
+});
+
+// ---------------------------------------------------------------- 22 Nov: rooms keep printed names, small rooms, door kinds
+const ROOM = { name: '?', x: 10, y: 10, w: 60, h: 200, fixtures: '', confidence: 0.8 };
+
+test('a room needs name, box, fixtures and confidence; fixtures is an observation string', () => {
+  assert.equal(validate({ ...GOOD, rooms: [ROOM] }, SCHEMA), null);
+  assert.equal(validate({ ...GOOD, rooms: [{ ...ROOM, name: 'Bedroom 2', fixtures: 'bed' }] }, SCHEMA), null);
+  const { fixtures, ...noFixtures } = ROOM;
+  assert.match(validate({ ...GOOD, rooms: [noFixtures] }, SCHEMA), /fixtures: missing/);
+  assert.match(validate({ ...GOOD, rooms: [{ ...ROOM, fixtures: null }] }, SCHEMA), /wrong type/);
+  assert.deepEqual(SCHEMA.properties.rooms.items.required, ['name', 'x', 'y', 'w', 'h', 'fixtures', 'confidence']);
+  // every field the page already reads is still there, with the same type
+  for (const k of ['name', 'x', 'y', 'w', 'h', 'confidence']) assert.ok(SCHEMA.properties.rooms.items.properties[k], k);
+  assert.deepEqual(SCHEMA.properties.openings.items.properties.kind.enum, ['door', 'door-double', 'window', 'glazing', 'opening']);
+});
+
+test('a reply from a provider that leaves out fixtures fails validation and falls through to the next provider', async () => {
+  const { fixtures, ...old } = ROOM;
+  const r = await run({ env: K, handlers: { openai: () => openaiOk({ ...GOOD, rooms: [old] }), gemini: () => geminiOk({ ...GOOD, rooms: [ROOM] }) } });
+  assert.equal(r.status, 200); assert.equal(r.json.provider, 'gemini'); assert.deepEqual(r.json.plan.rooms, [ROOM]);
+});
+
+test('the Gemini schema carries the new room field and the kind descriptions', () => {
+  const g = toGeminiSchema(SCHEMA).properties;
+  assert.equal(g.rooms.items.properties.fixtures.type, 'STRING');
+  assert.ok(g.rooms.items.required.includes('fixtures'));
+  assert.match(g.openings.items.properties.kind.description, /door-double/);
+});
+
+test('the floor plan prompt: printed names only, "?" kept, small rooms, full-width multi-leaf doors, glazed doors', () => {
+  assert.match(SYSTEM, /exactly as printed/);
+  assert.match(SYSTEM, /"Bedroom 2"/);
+  assert.match(SYSTEM, /the name is "\?"/);
+  assert.match(SYSTEM, /Never name a room from its furniture/);
+  assert.doesNotMatch(SYSTEM, /name the room from what is drawn/i);   // the old instruction to infer names is gone
+  assert.match(SYSTEM, /halls, corridors/); assert.match(SYSTEM, /wardrobes/); assert.match(SYSTEM, /pantries/); assert.match(SYSTEM, /WCs/);
+  assert.match(SYSTEM, /full width of the set/);
+  assert.match(SYSTEM, /A glazed door is a door/);
+  assert.match(SYSTEM, /Boxes do not overlap/);
+  assert.match(SYSTEM, /return two walls, not one/);
+});
+
+test('the prompts describe drawings in general, not one house', () => {
+  for (const p of [SYSTEM, SITE_SYSTEM]) {
+    assert.doesNotMatch(p, /\b[A-Z]{1,3}-\d{2,4}\b/);                        // no sheet numbers
+    assert.doesNotMatch(p, /\b\d{4,5}\b/);                               // no dimensions or levels from a real sheet
+    assert.doesNotMatch(p, /\b\d+\.\d+\s*m\b/);
+  }
+});
+
+test('the site prompt asks for parking drawn as a labelled outline', () => {
+  assert.match(SITE_SYSTEM, /parking bays/); assert.match(SITE_SYSTEM, /carpark/);
+});
+
+test('GET status names the prompt revision, so a preview can be checked without a paid read', async () => {
+  const r = await run({ method: 'GET', env: K });
+  assert.equal(r.json.prompts, PROMPTS); assert.match(PROMPTS, /^\d{4}-\d{2}-\d{2}/);
+  assert.equal(r.calls.length, 0);
+});
+
+test('every read carries the prompt revision, so the page knows what each opening kind means', async () => {
+  const r = await run({ env: { OPENAI_API_KEY: K.OPENAI_API_KEY }, handlers: { openai: () => openaiOk(GOOD) } });
+  assert.equal(r.status, 200); assert.equal(r.json.prompts, PROMPTS); assert.deepEqual(r.json.plan, GOOD);
 });
