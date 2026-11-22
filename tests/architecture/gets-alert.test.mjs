@@ -130,3 +130,29 @@ test('kept items are ranked like GETS findings; an advance notice is marked; a r
   assert.deepEqual(rankInbox(kept, { ...lens, keywords: [], sectors: [] }, NOW), [], 'a practice that looks for nothing finds nothing');
   assert.ok(!JSON.stringify(r).includes('example.org'));
 });
+
+test('an addendum email (the real one-sentence wording) updates its notice; the unsubscribe link is never taken as the tender', async () => {
+  const { parseGetsEmail, parseAddendum } = await import('../../architecture/js/gets-alert.js');
+  const text = [
+    'Dear Supplier,',
+    '',
+    'An addendum has been issued for GETS RFx Id: 31234567, 100-26-001-XY - 100-26-001-XY Library Concept Design Services (Closing on 07/10/2026 10:00AM).',
+    '',
+    'Please see attached Notice to Participants 03',
+    '',
+    'To access the addendum and download any attached files please select the following link:',
+    'https://www.gets.govt.nz/XYZ/ExternalTenderDetails.htm?id=31234567',
+    '',
+    'If you do not want to receive notification emails for this project, and have not committed a response,',
+    'you can unsubscribe here:',
+    'https://www.gets.govt.nz/XYZ/UpdateRegisterInterest.htm?projectID=31234567&registerInterestsID=99999999',
+  ].join('\n');
+  const r = parseGetsEmail(text);
+  assert.equal(r.type, 'additional');
+  assert.equal(r.items.length, 1);
+  assert.deepEqual(r.items[0], { rfxId: '31234567', ref: '100-26-001-XY', organisation: '', name: '100-26-001-XY Library Concept Design Services', closes: '2026-10-06T21:00:00.000Z', url: 'https://www.gets.govt.nz/XYZ/ExternalTenderDetails.htm?id=31234567', kind: 'update' });
+  // the number in the sentence and the link must agree
+  assert.equal(parseAddendum(text.replace('id=31234567\n', 'id=31234568\n')), null);
+  // a link to another host is never read
+  assert.equal(parseAddendum(text.replaceAll('https://www.gets.govt.nz/XYZ/ExternalTenderDetails.htm?id=31234567', 'https://gets.govt.nz.example.com/XYZ/ExternalTenderDetails.htm?id=31234567')), null);
+});

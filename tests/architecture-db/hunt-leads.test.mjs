@@ -34,8 +34,9 @@ before(async () => {
   await doc(stuff, 'Marae damaged by fire', 'short summary', 10);
   await doc(blog, 'Housing policy rant', 'x', 25);
   await doc(room, 'Hall to be rebuilt', 'y', 40, false);
-  await doc(rnz, 'Too old', 'z', 59);
-  await doc(rnz, 'Far too old', 'z', 90);
+  await doc(rnz, 'Old school hall reopens', 'z', 59);
+  await doc(rnz, 'Far too old library story', 'z', 90);
+  await doc(rnz, 'All Blacks lose in Dublin', 'z', 2); // no building or place in the headline: never returned
   await doc(herald, 'Not one of the four sources', 'x', 1);
   await doc(gets, 'A tender', 'x', 1);
   await doc(off, 'From a paused source', 'x', 1);
@@ -82,10 +83,10 @@ test('someone outside the practice, a member of another, and anon are refused', 
   await assert.rejects(as('authenticated', null, () => q(`select * from arch.hunt_leads($1, null)`, [practiceA])), /Only members/);
 });
 
-test('at most 300 rows, security definer with an empty search path, authenticated only, and it writes nothing', async () => {
+test('at most 500 rows, security definer with an empty search path, authenticated only, and it writes nothing', async () => {
   const s = (await q(`select id from public.kb_sources where name = 'Stuff — Top stories'`)).rows[0].id;
-  await q(`insert into public.kb_documents (source_id, title, url, content, inserted_at, published_at) select $1, 'Story ' || g, 'https://www.stuff.co.nz/' || g, 'x', now(), now() - (g || ' minutes')::interval from generate_series(1, 400) g`, [s]);
-  assert.equal((await user(ALICE, () => q(`select count(*)::int n from arch.hunt_leads($1, null)`, [practiceA]))).rows[0].n, 300);
+  await q(`insert into public.kb_documents (source_id, title, url, content, inserted_at, published_at) select $1, 'New school building ' || g, 'https://www.stuff.co.nz/' || g, 'x', now(), now() - (g || ' minutes')::interval from generate_series(1, 600) g`, [s]);
+  assert.equal((await user(ALICE, () => q(`select count(*)::int n from arch.hunt_leads($1, null)`, [practiceA]))).rows[0].n, 500);
   const f = (await q(`select prosecdef, provolatile, proconfig, has_function_privilege('anon','arch.hunt_leads(uuid,timestamptz)','execute') anon, has_function_privilege('authenticated','arch.hunt_leads(uuid,timestamptz)','execute') auth, has_function_privilege('public','arch.hunt_leads(uuid,timestamptz)','execute') pub from pg_proc where proname='hunt_leads'`)).rows[0];
   assert.equal(f.prosecdef, true); assert.equal(f.provolatile, 's'); assert.deepEqual(f.proconfig, ['search_path=""']); assert.equal(f.anon, false); assert.equal(f.pub, false); assert.equal(f.auth, true);
 });

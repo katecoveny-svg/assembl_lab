@@ -130,11 +130,27 @@ function parseGetsAlert(text, { update = null } = {}) {
   return out;
 }
 
+// An addendum email names its notice in one sentence: "An addendum has been issued for GETS RFx Id: 34761285, <ref> - <name>
+// (Closing on 07/10/2026 10:00AM)." The organisation is not stated (only the link's agency code), so it is left empty.
+const ADDENDUM = /(?:an\s+)?(?:addendum|additional information)\s+has\s+been\s+issued\s+for\s+gets\s+rfx\s+id\s*:\s*(\d{6,10})\s*,\s*(.{1,400}?)\s*\(\s*closing\s+on\s+([^)]{6,40})\)/i;
+/** the notice an addendum email is about, or null */
+function parseAddendum(text) {
+  const t = String(text ?? '').slice(0, MAX_CHARS).replace(/\r/g, '');
+  const m = ADDENDUM.exec(t.replace(/\s+/g, ' '));
+  if (!m) return null;
+  const link = (t.match(URL_IN) || []).slice(0, 20).map(getsLink).find((l) => l && l.id === m[1]);
+  if (!link) return null; // no tender link on gets.govt.nz for the same number: not read
+  const words = clean(m[2]), cut = words.indexOf(' - ');
+  const ref = cut > 0 && cut <= 80 ? words.slice(0, cut) : '', name = (cut > 0 && cut <= 80 ? words.slice(cut + 3) : words).slice(0, 300);
+  return { rfxId: link.id, ref: clean(ref).slice(0, 80), organisation: '', name: clean(name), closes: parseAlertDate(m[3]), url: link.url, kind: 'update' };
+}
+
 /** what kind of email this is, and its items */
 function parseGetsEmail(text) {
   const t = String(text ?? '').slice(0, MAX_CHARS), head = t.slice(0, 4000);
-  const additional = /additional information for gets notice/i.test(head);
-  const items = parseGetsAlert(t, { update: additional });
+  const additional = /additional information for gets notice|addendum\s+has\s+been\s+issued/i.test(head);
+  let items = parseGetsAlert(t, { update: additional });
+  if (additional && !items.some((x) => x.name)) { const a = parseAddendum(t); if (a) items = [a]; }
   const subscription = /gets:\s*tender subscription/i.test(head) || /current tenders|future procurement opportunities/i.test(t);
   return { type: additional ? 'additional' : subscription || items.length ? 'subscription' : 'unknown', items };
 }
