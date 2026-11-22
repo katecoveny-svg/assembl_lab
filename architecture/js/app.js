@@ -2,16 +2,18 @@
 import {
   STAGES, STAGE_KEYS, STATUS, ROLES, DOC_KINDS, stageDef, stageNumber, closingStatement, statusMark, statusWord, newProject, sampleProject, SAMPLE_ID,
   gate, closingApprovals, askForApproval, backToWork, recordApproval, markDone, nextAction, currentStage, allDone, openRfis, hasSiteFacts, hasModel,
-  activity, newId, twinLink,
+  activity, newId, twinLink, twinHandoff, isEdited, sourceLabel, missingSourced, consentRow, taskRow, AUCKLAND, READ_ON,
 } from './model.js';
-import { createStore, browserBackend } from './store.js';
+import { createStore, browserBackend, FILE_LIMIT, sizeText, sessionHandoff } from './store.js';
 import { describeModel } from './fingerprint.js';
 import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue } from './facts.js';
 
 const store = createStore(browserBackend());
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
-const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null };
+const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null };
 let me = '';
+let kept = new Map(); // the files kept in this browser for the project on screen, by file id
+const handoff = { fp: '', pid: '', ok: false, why: '', told: false }; // whether the model on screen is ready to pass to the 3D page
 const HERO = '/plan-studio/twins/drop/hero.webp';
 
 // ---- small helpers ----------------------------------------------------------------------------------------------------
@@ -82,10 +84,42 @@ function fieldHtml(f, value, b) {
   return `<label${cls}>${esc(f.label)}${control}</label>`;
 }
 
+/** where a task or checklist item came from, shown under it: a link to the source, or a plain word that it has none */
+function sourceHtml(kind, r) {
+  if (kind !== 'task' && kind !== 'checklist_item') return '';
+  const s = r.source_ref;
+  if (s?.url) {
+    const a = `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(sourceLabel(s))}</a>`;
+    return `<div class="srcl">${s.council ? `<span class="tag">${esc(s.council)}</span> ` : ''}${isEdited(r) ? `<span class="tag">Edited</span> Edited by the practice. Started from ${a}` : `From ${a}`}, read ${esc(day(s.read))}.</div>`;
+  }
+  return `<div class="srcl">${r.origin === 'starter' ? 'assembl starter, not sourced.' : r.origin === 'practice' ? 'Added by the practice, not sourced.' : 'Not sourced.'}</div>`;
+}
+
+/** the sources a list draws on, written out once: name, what the source said about its own date, the date read, the address */
+function sourcesHtml(rows, cls = '') {
+  const seen = new Map();
+  for (const r of rows) if (r.source_ref?.url && !seen.has(r.source_ref.url)) seen.set(r.source_ref.url, r.source_ref);
+  if (!seen.size) return '';
+  return `<div class="sources${cls ? ` ${cls}` : ''}"><p class="lab">Sources, read ${esc(day(READ_ON))}</p><ul>${[...seen.values()].map((x) => `<li><span>${x.council ? `${esc(x.council)}, ` : ''}${esc(x.name)}${x.version ? ` · ${esc(x.version)}` : ''} · read ${esc(day(x.read))}</span><a class="url" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></li>`).join('')}</ul></div>`;
+}
+
+/** the file kept with a document: its name and size, and the buttons to download, replace or remove it */
+function fileBar(d) {
+  const f = d.file, sure = ui.confirm === `file:${d.id}`, name = `<span class="vh"> for ${esc(d.title)}</span>`;
+  if (!f?.id) return `<div class="filebar"><span class="st">□ No file kept</span><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Attach a file${name}</button></div>`;
+  if (!kept.has(f.id)) return `<div class="filebar"><span class="st">□ File not in this browser</span><span class="fname">${esc(f.name)} · ${esc(sizeText(f.size))}</span><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Attach it again${name}</button></div>`;
+  return `<div class="filebar"><span class="st">■ File kept in this browser</span><span class="fname">${esc(f.name)} · ${esc(sizeText(f.size))}</span>
+    <button class="link" data-act="file-get" data-id="${esc(f.id)}">Download${name}</button><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Replace${name}</button><button class="link" data-act="file-remove" data-id="${esc(d.id)}">${sure ? 'Remove for good' : 'Remove file'}${name}</button></div>`;
+}
+
 /** one list with its rows, the form to edit a row, and the form to add one */
-function listHtml(b, kind, rows, ctx, { addLabel, emptyText } = {}) {
+function listHtml(b, kind, rows, ctx, { addLabel, emptyText, extra = '', head } = {}) {
   const K = KIND[kind], addKey = `${kind}:${ctx.key}`;
-  const row = (r) => {
+  let lastHead = null;
+  // an optional heading row wherever the group changes (the consent list: every council, then Auckland Council)
+  const headed = (r, html) => { const h = head ? head(r) : null; if (!h || h === lastHead) return html; lastHead = h; return `<li class="grp">${esc(h)}</li>${html}`; };
+  const row = (r) => headed(r, rowHtml(r));
+  const rowHtml = (r) => {
     if (ui.editing === r.id) {
       const sure = ui.confirm === r.id;
       return `<li class="rowi editing"><form class="f" data-form="edit" data-kind="${kind}" data-id="${esc(r.id)}">${K.fields.map((f) => fieldHtml(f, r[f.name], b)).join('')}
@@ -94,10 +128,10 @@ function listHtml(b, kind, rows, ctx, { addLabel, emptyText } = {}) {
     }
     const meta = K.meta(r, b).filter(Boolean).map(esc).join(' · '), sub = K.sub(r);
     const st = K.status
-      ? `<select class="st" data-status="${kind}" data-id="${esc(r.id)}" aria-label="Status of ${esc(K.main(r))}">${STATUS[K.status].map(([v]) => `<option value="${v}"${v === r.status ? ' selected' : ''}>${esc(statusMark(K.status, v))}</option>`).join('')}</select>`
+      ? `<select class="st" data-status="${kind}" data-id="${esc(r.id)}" aria-label="Status of ${esc(K.main(r))}">${STATUS[K.status].map(([v]) => `<option value="${v}"${v === r.status ? ' selected' : ''}>${esc(statusMark(K.status, v))}</option>`).join('')}</select><span class="st paper" aria-hidden="true">${esc(statusMark(K.status, r.status))}</span>`
       : '<span class="st-none"></span>';
-    return `<li class="rowi${K.status ? '' : ' plain'}"><div class="main"><span class="t">${esc(K.main(r))}</span>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div><div class="meta">${meta}</div>${st}
-      <button class="link" data-act="edit" data-id="${esc(r.id)}" aria-label="Edit ${esc(K.main(r))}">Edit</button></li>`;
+    return `<li class="rowi${K.status ? '' : ' plain'}"><div class="main"><span class="t">${esc(K.main(r))}</span>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>${sourceHtml(kind, r)}<div class="meta">${meta}</div>${st}
+      <button class="link" data-act="edit" data-id="${esc(r.id)}" aria-label="Edit ${esc(K.main(r))}">Edit</button>${kind === 'document' ? fileBar(r) : ''}</li>`;
   };
   const adding = ui.adding === addKey;
   // only what is true by default: a request or a visit logged now is dated today; a document's own date is never guessed
@@ -106,7 +140,7 @@ function listHtml(b, kind, rows, ctx, { addLabel, emptyText } = {}) {
     ${adding
       ? `<div class="addbox"><form class="f" data-form="add" data-kind="${kind}" data-ctx="${esc(ctx.key)}">${K.fields.map((f) => fieldHtml(f, blank[f.name] ?? '', b)).join('')}
           <div class="f-act"><button class="btn solid">${esc(addLabel ?? `Add ${K.noun}`)}</button><button type="button" class="btn" data-act="cancel">Cancel</button></div></form></div>`
-      : `<div class="acts"><button class="btn" data-act="add" data-key="${esc(addKey)}">+ ${esc(addLabel ?? `Add ${K.noun}`)}</button></div>`}`;
+      : `<div class="acts"><button class="btn" data-act="add" data-key="${esc(addKey)}">+ ${esc(addLabel ?? `Add ${K.noun}`)}</button>${extra}</div>`}`;
 }
 
 // ---- projects screen ----------------------------------------------------------------------------------------------------
@@ -144,7 +178,7 @@ async function projectsView() {
         <div class="f-act"><button class="btn solid">Create project</button></div></form>
       <div class="acts"><button class="btn" data-act="pick" data-target="import-file">Import a project file</button>${hasSample ? '' : '<button class="btn" data-act="sample">Add the sample project</button>'}
         <input type="file" id="import-file" data-file="import" accept=".json,application/json" hidden /></div>
-      <p class="small">A new project starts in Predesign with a starter list of tasks for each stage. Starter list: edit it to suit your practice, and check it against your council’s own checklist.</p>
+      <p class="small">A new project starts in Predesign with a list of tasks for each stage and a consent list. Each item shows its source, or says it is an assembl starter with none. Edit the lists to suit your practice, and check your council’s current checklist.</p>
     </section></div>`;
 }
 
@@ -163,10 +197,31 @@ function frame(b, r, inner) {
     <nav class="crumb" aria-label="Back"><a href="#/">← All projects</a></nav>
     <header class="phead"><div class="who"><p class="label">${p.sample ? '<span class="tag">Sample</span>' : 'Project'}</p><h1>${esc(p.name)}</h1>
       <p class="small">${p.sample ? 'The lab’s example plan model. No client is named.' : p.client ? `Client: ${esc(p.client)}` : 'No client named'}</p></div>
-      <nav class="pnav" aria-label="Project"><a class="btn" href="${href(p.id)}"${r.view === 'dash' ? ' aria-current="page"' : ''}>Overview</a><a class="btn" href="${href(p.id, 'pack')}">Client pack</a><button class="btn" data-act="export">Export</button></nav></header>
+      <nav class="pnav" aria-label="Project"><a class="btn" href="${href(p.id)}"${r.view === 'dash' ? ' aria-current="page"' : ''}>Overview</a><a class="btn" href="${href(p.id, 'pack')}">Client pack</a><button class="btn" data-act="export"${ui.exporting ? ' aria-expanded="true"' : ''}>Export</button></nav></header>
+    ${ui.exporting ? exportHtml(p) : ''}
     <nav class="rail" aria-label="The seven stages">${rail}</nav>
     <p class="rail-now">${esc(now)}</p>
     ${flashHtml()}${inner}</div>`;
+}
+
+/** Export asks one thing first: with the kept files, or without. Either way it says which. */
+function exportHtml(p) {
+  const files = [...kept.values()], bytes = files.reduce((n, f) => n + f.size, 0);
+  return `<section class="panel exportbox" aria-labelledby="exh"><h3 id="exh">Export “${esc(p.name)}”</h3>
+    ${files.length
+    ? `<p>This project has ${plural(files.length, 'file')} kept in this browser (${esc(sizeText(bytes))}). Choose whether they go in the project file.</p>
+      <div class="acts"><button class="btn solid" data-act="export-go" data-files="1">Export with the files</button><button class="btn" data-act="export-go" data-files="0">Export the records only</button><button class="link" data-act="export-cancel">Cancel</button></div>
+      <p class="small">With the files: one larger file that holds everything, so another browser can open the documents. Records only: the files stay in this browser, and each document still names the file it had.</p>`
+    : `<p>This project has no files kept in this browser, so there are none to include. The project file holds the records.</p>
+      <div class="acts"><button class="btn solid" data-act="export-go" data-files="0">Export the project</button><button class="link" data-act="export-cancel">Cancel</button></div>`}
+    <p class="small">The file includes the site point if one is saved.</p></section>`;
+}
+
+/** the Open in 3D button: a link straight to a hosted model, a hand-over of a kept file, or the 3D page's own chooser */
+function open3dHtml(p, link, label = 'Open in 3D ↗') {
+  const stuck = handoff.fp === p.model.fingerprint && !!handoff.why;
+  if (link.handoff && !stuck) return `<a class="btn solid" href="${esc(link.href)}" target="_blank" rel="opener" data-act="open-3d">${label}</a>`;
+  return `<a class="btn solid" href="${esc(link.handoff ? '/plan-studio/twins/drop/?drop=1' : link.href)}" target="_blank" rel="noopener">${label}</a>`;
 }
 
 // ---- dashboard --------------------------------------------------------------------------------------------------------------
@@ -197,7 +252,7 @@ function dashView(b, r) {
         <a class="more" href="${href(p.id, 's', 'predesign', 'tool')}">${hasSiteFacts(b) ? 'Read the snapshot' : 'Look up site facts'}</a></section>
       <section class="tile${hasModel(b) && p.sample ? ' pic' : ''}"><p class="label">3D model</p>
         ${hasModel(b) ? `${p.sample ? `<figure><img src="${HERO}" alt="A rendering of the sample plan model, not a photograph." loading="lazy" /></figure>` : ''}<div class="txt"><h3>${esc(p.model.file_name)}</h3><p class="st" style="white-space:normal">■ Revision ${esc(p.model.revision)} · version ${esc(p.model.fingerprint)}</p>
-          <div class="acts"><a class="btn solid" href="${esc(link.href)}" target="_blank" rel="noopener">Open in 3D ↗</a><a class="more" href="${href(p.id, 's', 'concept', 'tool')}">Model details</a></div>${p.sample ? '<p class="caption">A rendering of the sample plan model. Not a photograph.</p>' : ''}</div>`
+          <div class="acts">${open3dHtml(p, link)}<a class="more" href="${href(p.id, 's', 'concept', 'tool')}">Model details</a></div>${p.sample ? '<p class="caption">A rendering of the sample plan model. Not a photograph.</p>' : ''}</div>`
           : `<h3>No model attached</h3><p class="st">□ Not attached</p><a class="more" href="${href(p.id, 's', 'concept', 'tool')}">Attach a plan model</a>`}</section>
     </div>
     <section class="log" aria-labelledby="lg"><p class="label" id="lg">Activity</p>
@@ -213,17 +268,23 @@ function stageView(b, r) {
   const p = b.project, def = stageDef(r.stage), st = b.stages.find((s) => s.key === r.stage), i = STAGE_KEYS.indexOf(r.stage);
   const tasks = b.tasks.filter((t) => t.stage === r.stage), docs = b.documents.filter((d) => d.stage === r.stage);
   const open = tasks.filter((t) => t.status !== 'done').length;
+  const missingTasks = missingSourced(b, 'tasks', r.stage), docFiles = docs.map((d) => kept.get(d.file?.id)).filter(Boolean);
   const sec = (n, id, label, extra, body) => `<section class="sec" id="sec-${id}" aria-labelledby="lab-${id}"><p class="lab" id="lab-${id}"><span>${n} ${esc(label)}</span>${extra ? `<span class="n">${esc(extra)}</span>` : ''}</p><div class="body">${body}</div></section>`;
   return frame(b, r, `<article class="sheet">
-    <header class="shead"><p class="label">Stage ${i + 1} of 7 · ${esc(statusMark('stage', st.status))}${st.done_at ? ` · ${esc(day(st.done_at))}` : ''}</p><h2>${esc(def.label)}</h2></header>
+    <header class="shead"><p class="label">Stage ${i + 1} of 7 · ${esc(statusMark('stage', st.status))}${st.done_at ? ` · ${esc(day(st.done_at))}` : ''}</p><h2>${esc(def.label)}</h2>
+      <div class="acts"><button class="link" data-act="print">Print this stage or save it as PDF</button></div></header>
     ${st.status === 'not_started' ? `<p class="notyet">□ To come. ${esc(def.label)} starts when ${esc(STAGES[i - 1].label)} is done. You can plan its tasks and documents now.</p>` : ''}
     ${sec('01', 'produces', 'Produces', '', `<p class="produces">${esc(def.produces)}</p>`)}
     ${sec('02', 'tasks', 'Tasks', tasks.length ? `${open} open of ${tasks.length}` : '', `${listHtml(b, 'task', tasks, { key: r.stage }, { emptyText: 'No tasks in this stage. Add the first one.' })}
-      <p class="starter">Starter list: edit it to suit your practice, and check it against your council’s own checklist.</p>`)}
-    ${sec('03', 'documents', 'Documents', docs.length ? plural(docs.length, 'document') : '', `${listHtml(b, 'document', docs, { key: r.stage }, { emptyText: 'No documents recorded for this stage. Add the first one.' })}
-      <p class="starter">A record of each document and where it is kept. Storing the files themselves: Not built yet.</p>`)}
+      ${tasks.some((t) => t.source_ref) || !missingTasks.length ? '' : `<div class="acts"><button class="btn" data-act="sourced-tasks">Add the ${plural(missingTasks.length, 'sourced task')} for this stage</button><span class="small">This project was made before the lists had sources. Nothing already here is changed.</span></div>`}
+      ${sourcesHtml(tasks, 'paper')}
+      <p class="starter">Tasks that show a source are assembl’s short wording of what the NZ Institute of Architects publishes about this stage: follow the link for the Institute’s own words. The others are an assembl starter with no source. This is not a full list of an architect’s services: your agreement with the client sets those. Edit the list to suit your practice.</p>`)}
+    ${sec('03', 'documents', 'Documents', docs.length ? `${plural(docs.length, 'document')} · ${plural(docFiles.length, 'file')} kept` : '', `${listHtml(b, 'document', docs, { key: r.stage }, { emptyText: 'No documents recorded for this stage. Add the first one.', extra: '<button class="btn" data-act="pick" data-target="doc-new">+ Add a file</button>' })}
+      <input type="file" id="doc-file" data-file="doc" hidden /><input type="file" id="doc-new" data-file="doc-new" hidden />
+      <p class="starter">${store.filesPersistent ? '■ Files are kept in this browser only' : '□ This browser is not keeping files past this tab'}, up to ${esc(sizeText(FILE_LIMIT))} a file${docFiles.length ? `: ${plural(docFiles.length, 'file')}, ${esc(sizeText(docFiles.reduce((n, f) => n + f.size, 0)))} in this stage` : ''}. Clearing this browser’s data removes them, so export with the files to keep a copy. Shared file storage for a team: Not built yet. It comes with sign-in.</p>`)}
     ${sec('04', 'tool', TOOL_NAME[def.tool], '', toolHtml(b, def))}
     ${sec('05', 'approval', 'Approval', '', approvalHtml(b, def, st))}
+    <p class="paper printed">Printed ${esc(day(new Date().toISOString()))}${me ? ` by ${esc(me)}` : ''} from assembl. architecture operations. A record kept in one browser. It does not check a design against any rule, and an approval here is not a signature, a professional sign-off or a council decision.</p>
   </article>`);
 }
 
@@ -232,10 +293,19 @@ function toolHtml(b, def) {
   if (def.tool === 'model') return modelTool(b, def);
   const sub = (title, note) => `<div class="sub-h"><h3>${esc(title)}</h3>${note ? `<span class="starter">${esc(note)}</span>` : ''}</div>`;
   if (def.tool === 'consent') {
-    const items = b.checklist.filter((c) => c.list === 'consent'), got = items.filter((c) => c.status !== 'needed').length;
+    // every council's items first, then Auckland Council's, then the practice's own
+    const group = (c) => (!c.source_ref ? 2 : c.source_ref.council ? 1 : 0);
+    const items = b.checklist.filter((c) => c.list === 'consent').map((c, i) => [c, i]).sort((x, y) => group(x[0]) - group(y[0]) || x[1] - y[1]).map((x) => x[0]);
+    const got = items.filter((c) => c.status !== 'needed').length, akl = items.filter((c) => c.source_ref?.council === AUCKLAND), missing = missingSourced(b, 'consent');
+    const heads = ['Every council · the Building Act 2004 and the prescribed form', 'Auckland Council only · its residential lodgement checklist. Other councils differ', 'Added by the practice, or not sourced'];
     return `${sub('Consent bundle', `${got} of ${items.length} done or not needed`)}
-      ${listHtml(b, 'checklist_item', items, { key: 'consent' }, { addLabel: 'Add item', emptyText: 'The checklist is empty. Add the documents your council asks for.' })}
-      <p class="starter">Starter list: check against your council’s own checklist. This page does not know what your council requires, and it does not lodge anything.</p>
+      ${listHtml(b, 'checklist_item', items, { key: 'consent' }, { addLabel: 'Add item', emptyText: 'The checklist is empty. Add the documents your council asks for.', head: (c) => heads[group(c)] })}
+      <div class="acts">${items.some((c) => c.source_ref) || !missing.length ? '' : `<button class="btn" data-act="sourced-consent">Add the ${plural(missing.length, 'sourced item')}</button><span class="small">This project was made before the list had sources. Nothing already here is changed.</span>`}
+        ${akl.length ? `<button class="link" data-act="auckland-remove">${ui.confirm === 'auckland' ? `Remove all ${akl.length} for good` : `Not in Auckland? Remove the ${plural(akl.length, 'Auckland Council item')}`}</button>` : ''}</div>
+      ${sourcesHtml(items)}
+      <p class="starter">${items.some((c) => c.source_ref)
+    ? `Items that show a source are from the Building Act 2004, the prescribed application form, the Ministry of Business, Innovation and Employment’s Building Performance guidance, and Auckland Council’s residential lodgement checklist, read ${esc(day(READ_ON))}. The wording is assembl’s: follow each link for the source’s own. Each source says more than is listed here.`
+    : 'No item here shows a source.'} Check your council’s current checklist. Other councils differ. This page does not know what your council requires for this job, and it does not lodge anything.</p>
       ${sub('Requests for information', `${openRfis(b).length} open`)}
       ${listHtml(b, 'rfi', [...b.rfis].sort((x, y) => String(y.received_at).localeCompare(String(x.received_at))), { key: 'rfi' }, { addLabel: 'Log a request', emptyText: 'No requests logged. When one arrives, log who asked, what they asked and when.' })}
       <p class="starter">Replies are written by a person here. A reply drafted for you by an agent: Not built yet. Nothing is sent from this page.</p>`;
@@ -252,7 +322,7 @@ function toolHtml(b, def) {
     ${listHtml(b, 'defect', b.defects, { key: 'defect' }, { emptyText: 'No defects listed. Add each one found at the final walk through.' })}
     ${sub('Completion checklist', `${items.filter((c) => c.status !== 'needed').length} of ${items.length} done or not needed`)}
     ${listHtml(b, 'checklist_item', items, { key: 'completion' }, { addLabel: 'Add item', emptyText: 'The checklist is empty. Add what your contract and council ask for at completion.' })}
-    <p class="starter">Starter list: check against your contract and your council’s own checklist.</p>`;
+    <p class="starter">assembl starter, not sourced: no official source has been read for this list. Check it against your contract and your council’s current checklist.</p>`;
 }
 
 function siteTool(b) {
@@ -279,17 +349,19 @@ function modelTool(b, def) {
   const p = b.project, m = p.model ?? {}, link = twinLink(m);
   const input = '<input type="file" id="model-file" data-file="model" accept=".json,application/json" hidden />';
   const err = ui.modelError ? `<p class="flash" role="alert">${esc(ui.modelError)}</p>` : '';
-  if (!link) return `<div class="empty"><h3>No plan model attached.</h3><p class="small">Attach the plan model file (.json) for this design. The file stays on your device: the project keeps its name, drawings note, revision and a fingerprint of what it says.</p>
+  if (!link) return `<div class="empty"><h3>No plan model attached.</h3><p class="small">Attach the plan model file (.json) for this design. The project keeps its name, drawings note, revision and a fingerprint of what it says, and keeps the file itself in this browser only (up to ${esc(sizeText(FILE_LIMIT))}), so it can open in 3D from here. Nothing is uploaded.</p>
     <button class="btn solid" data-act="pick" data-target="model-file">Attach a plan model</button>${input}</div>${err}
     <p class="starter">Reading a plan model out of a PDF happens on the 3D page, not here. <a href="/plan-studio/twins/drop/?drop=1" target="_blank" rel="noopener">Open the 3D page ↗</a></p>`;
-  const { stale } = closingApprovals(b, def.key);
+  const { stale } = closingApprovals(b, def.key), here = kept.get(m.file?.id), stuck = handoff.fp === m.fingerprint && !!handoff.why;
   const pic = p.sample ? `<figure><img src="${HERO}" alt="A dark-clad house on timber piles among trees." loading="lazy" /><figcaption class="caption">A rendering of the sample plan model. Not a photograph.</figcaption></figure>` : '';
   return `<div class="model${pic ? ' pic' : ''}">${pic}<div style="display:grid;gap:14px;min-width:0">
-      <dl class="kv"><dt>File</dt><dd>${esc(m.file_name)}</dd><dt>Drawings</dt><dd>${esc(m.drawings)}</dd><dt>Revision</dt><dd>${esc(m.revision)}</dd><dt>Fingerprint</dt><dd class="fp">${esc(m.fingerprint)}</dd></dl>
-      <div class="acts"><a class="btn solid" href="${esc(link.href)}" target="_blank" rel="noopener">Open in 3D ↗</a><button class="btn" data-act="pick" data-target="model-file">Replace the file</button>
+      <dl class="kv"><dt>File</dt><dd>${esc(m.file_name)}</dd><dt>Drawings</dt><dd>${esc(m.drawings)}</dd><dt>Revision</dt><dd>${esc(m.revision)}</dd><dt>Fingerprint</dt><dd class="fp">${esc(m.fingerprint)}</dd>
+        <dt>Kept</dt><dd>${link.direct ? 'The lab hosts this example file, so it is not kept here.' : here ? `<span class="st" style="white-space:normal">■ File kept in this browser only · ${esc(sizeText(here.size))}</span> <button class="link" data-act="file-get" data-id="${esc(here.id)}">Download</button>` : '<span class="st" style="white-space:normal">□ The file itself is not kept in this browser</span>'}</dd></dl>
+      <div class="acts">${open3dHtml(p, link)}<button class="btn" data-act="pick" data-target="model-file">Replace the file</button>
         <button class="link" data-act="model-remove">${ui.confirm === 'model' ? 'Remove for good' : 'Remove'}</button>${input}</div>
       ${link.direct ? '<p class="small">Opens this model on the 3D page: walk through it, change the sun, take stills.</p>'
-        : `<p class="small">The 3D page opens a model from a file you choose there, so choose <b style="font-weight:500">${esc(m.file_name)}</b> again when it asks. Handing the file straight across from here: Not built yet.</p>`}
+        : link.handoff && !stuck ? '<p class="small">Opens this model on the 3D page in a new tab, with no second choosing. The kept file is passed across inside this browser. Nothing is uploaded.</p>'
+        : `<p class="small">□ ${stuck ? esc(handoff.why) : here ? '' : 'The file is not kept here, so it cannot be passed across.'} The 3D page will ask for a file: choose <b style="font-weight:500">${esc(m.file_name)}</b> again there.${here ? '' : ' Replace the file here to keep it and open it straight from this page.'}</p>`}
       ${err}${stale.length ? `<p class="flash">□ An approval for this stage was recorded on an earlier version (${esc(stale[stale.length - 1].fingerprint || 'no model')}). It does not carry over to this one.</p>` : ''}
       <p class="starter">The fingerprint is a short code for what the model says. If the model changes, the code changes, so an approval always names the version it was made on. Concept design and Developed design share this one model.</p>
     </div></div>`;
@@ -359,11 +431,13 @@ let lastRoute = '';
 async function render(fromLink = false) {
   const r = route(), key = JSON.stringify([r.view, r.pid, r.stage]);
   const moved = key !== lastRoute;
-  if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; }
-  let html;
+  if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
+  let html, onScreen = null;
   if (r.view === 'projects') html = await projectsView();
   else {
     const b = await store.loadProject(r.pid);
+    kept = new Map((b ? await store.listFiles({ project_id: r.pid }) : []).map((f) => [f.id, f]));
+    onScreen = b?.project ?? null;
     if (!b) html = `<div class="wrap"><div class="empty" style="margin-top:32px"><h3>That project is not in this browser.</h3><p>Projects are saved in the browser they were made in. If it was made on another device, export it there and import the file here.</p><a class="btn solid" href="#/">All projects</a></div></div>`;
     else html = r.view === 'pack' ? packView(b) : r.view === 'stage' ? stageView(b, r) : dashView(b, r);
   }
@@ -380,11 +454,29 @@ async function render(fromLink = false) {
   if (moved) lastRoute = key;
   if (ui.focus) { const el = $app.querySelector(ui.focus); ui.focus = null; if (el) el.focus({ preventScroll: false }); }
   if (moved) ui.flash = ''; // a message is shown once, on the screen it belongs to
+  // get the kept model ready for the 3D page now, so pressing Open in 3D is an ordinary link
+  if (onScreen) ready3d(onScreen).then((ok) => { if (!ok && handoff.why && !handoff.told) { handoff.told = true; render(false); } });
+}
+
+/** Put the kept plan model where the 3D page looks for a dropped plan. True when it is ready to open there. */
+async function ready3d(p, again = false) {
+  const m = p?.model;
+  if (!m?.file?.id || !twinLink(m)?.handoff) return false;
+  if (handoff.fp === m.fingerprint && handoff.pid === p.id && (handoff.ok || (handoff.why && !again))) return handoff.ok;
+  handoff.fp = m.fingerprint; handoff.pid = p.id; handoff.ok = false; handoff.why = ''; handoff.told = false;
+  try {
+    const f = await store.getFile(m.file.id);
+    if (!f) throw new Error('The model file is not in this browser.');
+    const h = twinHandoff(new TextDecoder().decode(f.data), m.file_name);
+    sessionHandoff(h.key, h.value);
+    handoff.ok = true;
+  } catch (err) { handoff.why = err.message; }
+  return handoff.ok;
 }
 const redraw = (flash) => { if (flash !== undefined) ui.flash = flash; return render(false); };
 
-function download(name, text) {
-  const a = document.createElement('a'), url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+function download(name, data, type = 'application/json') {
+  const a = document.createElement('a'), url = URL.createObjectURL(new Blob([data], { type: type || 'application/octet-stream' }));
   a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
@@ -413,6 +505,7 @@ async function onSubmit(e) {
       if (missing) return redraw(`Fill in “${missing.label}” first.`);
       for (const f of K.fields) row[f.name] = d[f.name] ?? '';
       if (!old) {
+        if (kind === 'task' || kind === 'checklist_item') row.origin = 'practice';
         if (K.status) row.status = K.first;
         if (kind === 'task' || kind === 'document') row.stage = r.stage;
         if (kind === 'checklist_item') { row.list = form.dataset.ctx; row.stage = row.list === 'consent' ? 'detailed' : 'completion'; }
@@ -469,6 +562,7 @@ async function onClick(e) {
       if (!twice(el.dataset.id)) return;
       const kind = el.dataset.kind, row = await store.get(kind, el.dataset.id);
       await store.remove(kind, el.dataset.id);
+      if (kind === 'document' && row?.file?.id) await store.removeFile(row.file.id);
       if (kind === 'document') for (const c of await store.list('checklist_item', { project_id: r.pid })) if (c.document_id === el.dataset.id) await store.save('checklist_item', { ...c, document_id: '' });
       await log(r.pid, `Removed ${KIND[kind].noun}`, row ? KIND[kind].main(row) : '');
       ui.editing = null;
@@ -481,11 +575,53 @@ async function onClick(e) {
       return redraw(`Removed “${p?.name ?? 'project'}” from this browser.`);
     }
     if (act === 'sample') { await store.saveProject(sampleProject()); return redraw('The sample project is back.'); }
-    if (act === 'export') {
-      const f = await store.exportProject(r.pid);
+    if (act === 'export') { ui.exporting = !ui.exporting; ui.focus = ui.exporting ? '.exportbox .btn' : null; return redraw(''); }
+    if (act === 'export-cancel') { ui.exporting = false; ui.focus = '[data-act="export"]'; return redraw(''); }
+    if (act === 'export-go') {
+      const withFiles = el.dataset.files === '1', here = kept.size;
+      const f = await store.exportProject(r.pid, undefined, { files: withFiles });
       download(f.file_name, f.text);
-      await log(r.pid, 'Project exported', f.file_name);
-      return redraw(`Exported ${f.file_name}. The file holds the whole project, including the site point if one is saved.`);
+      const said = f.files_included ? `Files are included: ${plural(f.file_count, 'file')}, ${sizeText(f.file_bytes)}.` : here ? `Files are not included: the ${plural(here, 'file')} stay in this browser only.` : 'There were no files to include.';
+      await log(r.pid, 'Project exported', `${f.file_name}. ${said}`);
+      ui.exporting = false;
+      return redraw(`Exported ${f.file_name}. It holds the project’s records, including the site point if one is saved. ${said}`);
+    }
+    // ---- files ----
+    if (act === 'file-pick') { ui.fileFor = el.dataset.id; return document.getElementById('doc-file')?.click(); }
+    if (act === 'file-get') {
+      const f = await store.getFile(el.dataset.id);
+      if (!f) return redraw('That file is not in this browser.');
+      return download(f.name, f.data, f.type);
+    }
+    if (act === 'file-remove') {
+      if (!twice(`file:${el.dataset.id}`)) return;
+      const d = await store.get('document', el.dataset.id);
+      if (d?.file?.id) await store.removeFile(d.file.id);
+      if (d) { const name = d.file?.name ?? ''; d.file = null; await store.save('document', d); await log(r.pid, 'File removed', `${name} from ${d.title}`); }
+      return redraw('');
+    }
+    // ---- sourced lists, for a project made before the lists had sources ----
+    if (act === 'sourced-consent' || act === 'sourced-tasks') {
+      const b = await store.loadProject(r.pid), consent = act === 'sourced-consent';
+      const add = missingSourced(b, consent ? 'consent' : 'tasks', r.stage);
+      for (const x of add) await store.save(consent ? 'checklist_item' : 'task', consent ? consentRow(r.pid, x) : taskRow(r.pid, r.stage, x));
+      await log(r.pid, consent ? 'Sourced consent items added' : 'Sourced tasks added', consent ? plural(add.length, 'item') : `${plural(add.length, 'task')}, ${stageDef(r.stage).label}`);
+      return redraw(`Added ${plural(add.length, consent ? 'sourced item' : 'sourced task')}. Nothing that was already here was changed.`);
+    }
+    if (act === 'auckland-remove') {
+      if (!twice('auckland')) return;
+      const rows = (await store.list('checklist_item', { project_id: r.pid })).filter((c) => c.list === 'consent' && c.source_ref?.council === AUCKLAND);
+      for (const c of rows) await store.remove('checklist_item', c.id);
+      await log(r.pid, 'Auckland Council items removed', plural(rows.length, 'item'));
+      return redraw(`Removed ${plural(rows.length, 'Auckland Council item')}. Add what your own council’s checklist asks for.`);
+    }
+    // ---- Open in 3D for a kept model: an ordinary link once the model is ready; otherwise make it ready, then go ----
+    if (act === 'open-3d') {
+      if (handoff.ok && handoff.pid === r.pid) return; // ready: the link opens a new tab, which starts with this tab's copy of the model
+      e.preventDefault(); // not ready yet (or it failed before): make it ready, then open the 3D page in this tab
+      const go = el.getAttribute('href');
+      if (await ready3d(await store.get('project', r.pid), true)) { location.assign(go); return; }
+      return redraw(`${handoff.why} The 3D page will ask for a file: choose it again there.`);
     }
     if (act === 'print') return window.print();
     if (act === 'activity-more') { ui.allActivity = !ui.allActivity; return redraw(); }
@@ -510,7 +646,8 @@ async function onClick(e) {
     if (act === 'model-remove') {
       if (!twice('model')) return;
       const p = await store.get('project', r.pid);
-      p.model = { fingerprint: '', drawings: '', revision: '', file_name: '' };
+      if (p.model?.file?.id) await store.removeFile(p.model.file.id);
+      p.model = { fingerprint: '', drawings: '', revision: '', file_name: '', file: null };
       await store.save('project', p); await log(r.pid, 'Model removed', '');
       return redraw('');
     }
@@ -533,24 +670,50 @@ async function onChange(e) {
       return redraw('');
     }
     if (el.matches('input[data-file]')) {
-      const file = el.files?.[0];
+      const file = el.files?.[0], what = el.dataset.file;
       if (!file) return;
+      // a file for a document: kept in this browser, with the record saying which file it is
+      if (what === 'doc' || what === 'doc-new') {
+        el.value = '';
+        let d = what === 'doc' ? await store.get('document', ui.fileFor) : null;
+        ui.fileFor = null;
+        if (what === 'doc' && !d) return redraw('That document is no longer here.');
+        if (file.size > FILE_LIMIT) return redraw(`“${file.name}” is ${sizeText(file.size)}. The limit is ${sizeText(FILE_LIMIT)} a file, because files are kept in this browser. Keep the file where it is and record where.`);
+        const fresh = !d;
+        if (fresh) d = { id: newId('d'), project_id: r.pid, stage: r.stage, title: file.name.replace(/\.[^.]+$/, '') || file.name, kind: '', version: '', date: '', source: '', note: '' };
+        const before = d.file?.id ?? '';
+        // keep the new file first: if the browser refuses, the document and any file it had are left as they were
+        const meta = await store.putFile({ project_id: r.pid, owner_kind: 'document', owner_id: d.id, name: file.name, type: file.type, data: await file.arrayBuffer() });
+        d.file = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at };
+        await store.save('document', d);
+        if (before) await store.removeFile(before);
+        await log(r.pid, fresh ? 'Added document' : before ? 'File replaced' : 'File attached', `${meta.name}, ${sizeText(meta.size)}${fresh ? '' : `: ${d.title}`}`);
+        return redraw(`${before ? 'Replaced with' : 'Kept'} “${meta.name}”, ${sizeText(meta.size)}, in this browser only.${store.filesPersistent ? '' : ' This browser is not keeping files past this tab: export with the files to keep it.'}`);
+      }
       const text = await file.text();
       el.value = '';
-      if (el.dataset.file === 'import') {
+      if (what === 'import') {
         const got = await store.importProject(text);
         const p = await store.get('project', got.project_id);
-        await log(got.project_id, 'Project imported', `${file.name}${got.copied ? ' (as a copy: the project already here was left as it was)' : ''}`);
-        return redraw(got.copied ? `Imported as “${p.name}”. The project already in this browser was left as it was.` : `Imported “${p.name}”.`);
+        const docs = await store.list('document', { project_id: got.project_id }), named = docs.filter((d) => d.file?.id).length + (p.model?.file?.id ? 1 : 0);
+        const said = 'files' in got ? ` ${plural(got.files, 'file')} came with it.${got.files_failed ? ` ${plural(got.files_failed, 'file')} could not be kept by this browser.` : ''}` : named ? ` The project file did not include its ${plural(named, 'file')}: they are still in the browser it came from.` : '';
+        await log(got.project_id, 'Project imported', `${file.name}${got.copied ? ' (as a copy: the project already here was left as it was)' : ''}.${said}`);
+        return redraw(`${got.copied ? `Imported as “${p.name}”. The project already in this browser was left as it was.` : `Imported “${p.name}”.`}${said}`);
       }
       ui.modelError = '';
       let m;
       try { m = describeModel(text, file.name); } catch (err) { ui.modelError = err.message; return redraw(); }
-      const p = await store.get('project', r.pid), before = p.model?.fingerprint ?? '';
-      p.model = { fingerprint: m.fingerprint, drawings: m.drawings, revision: m.revision, file_name: m.file_name };
+      const p = await store.get('project', r.pid), before = p.model?.fingerprint ?? '', oldFile = p.model?.file?.id ?? '';
+      // keep the file itself, so it can open in 3D from here. If the browser will not keep it, the model is still attached.
+      let keptFile = null, notKept = '';
+      if (!twinLink({ fingerprint: m.fingerprint })?.direct) {
+        try { const meta = await store.putFile({ project_id: r.pid, owner_kind: 'model', owner_id: r.pid, name: m.file_name, type: 'application/json', data: text }); keptFile = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at }; } catch (err) { notKept = err.message; }
+      }
+      p.model = { fingerprint: m.fingerprint, drawings: m.drawings, revision: m.revision, file_name: m.file_name, file: keptFile };
       await store.save('project', p);
-      await log(r.pid, before ? 'Model replaced' : 'Model attached', `${m.file_name}, revision ${m.revision}, version ${m.fingerprint}`);
-      return redraw(`${before && before !== m.fingerprint ? 'Model replaced' : 'Model attached'}: ${m.file_name}, version ${m.fingerprint}.${m.schemaOk ? '' : ' This file does not name the plan model format the 3D page expects, so it may not open there.'}`);
+      if (oldFile) await store.removeFile(oldFile);
+      await log(r.pid, before ? 'Model replaced' : 'Model attached', `${m.file_name}, revision ${m.revision}, version ${m.fingerprint}${keptFile ? `, file kept (${sizeText(keptFile.size)})` : ''}`);
+      return redraw(`${before && before !== m.fingerprint ? 'Model replaced' : 'Model attached'}: ${m.file_name}, version ${m.fingerprint}.${keptFile ? ` The file is kept in this browser only (${sizeText(keptFile.size)}).` : notKept ? ` The file was not kept: ${notKept}` : ''}${m.schemaOk ? '' : ' This file does not name the plan model format the 3D page expects, so it may not open there.'}`);
     }
   } catch (err) {
     return redraw(err.message);
