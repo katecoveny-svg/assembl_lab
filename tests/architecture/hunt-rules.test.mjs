@@ -20,7 +20,8 @@ const BILL_ROWS = [
   { title: 'Building (Energy Efficient Office Buildings) Amendment Bill', url: 'https://bills.parliament.nz/v/6/6ad74b9d-5a90-435a-4146-08dee85e8f6d', published_at: '2026-07-23 00:00:00+00', current_stage: 'First Reading', bill_status: 'Active', source: 'NZ Parliament — Bills API', snippet: '{ "title": "SECRET SNIPPET' },
   { title: 'Gambling Amendment Bill', url: 'https://bills.parliament.nz/v/6/6ad74b9d-5a90-435a-4146-08dee85e8f60', published_at: '2026-07-23 00:00:00+00', current_stage: 'First Reading' },
 ];
-const stubFetch = (answer = FEED()) => { const calls = []; const f = async (u) => { calls.push(String(u)); return typeof answer === 'function' ? answer(u) : json(answer); }; f.calls = calls; return f; };
+// the building consents panel (hunt-consents.js) asks the same address for feeds=consents: answered with nothing to show, and not counted here
+const stubFetch = (answer = FEED()) => { const calls = []; const f = async (u) => { if (String(u).includes('feeds=consents')) return json({ feeds: { consents: { values: { regions: [], national: null } } } }); calls.push(String(u)); return typeof answer === 'function' ? answer(u) : json(answer); }; f.calls = calls; return f; };
 const mk = async ({ signedIn = false, answer, rows = BILL_ROWS, readOnly = false, regions = [] } = {}) => {
   const store = createStore(memoryBackend(), { files: memoryFiles() });
   await store.save('setting', { id: SETTING.hunt, value: { keywords: ['library'], regions, sectors: [], min: null, max: null, sources: { radar: false, gets: false }, cultural: false } });

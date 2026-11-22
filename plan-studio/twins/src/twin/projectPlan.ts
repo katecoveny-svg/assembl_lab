@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { strToU8, zipSync } from 'fflate';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildHome, type BuildingSpec, type Placement } from './homes';
@@ -445,6 +446,11 @@ async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } 
   }
 }
 
+// The biggest IFC or GLB this page reads in a browser. The same figure as BROWSER_3D_LIMIT in architecture/js/models-rules.js:
+// cautious, not measured at its edge. In testing, an IFC of nearly 400 MB froze a browser while this page read it.
+const BROWSER_3D_LIMIT = 100 * 1024 * 1024;
+const mb = (n: number) => `${Math.round(n / (1024 * 1024))} MB`;
+
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
   // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
   const qs = new URLSearchParams(location.search);
@@ -529,7 +535,16 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
         } catch (e) {
           app.log(`That JSON isn't a plan model: ${(e as Error).message}`);
         }
-      } else if (ext === 'ifc' || ext === 'glb') done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
+      } else if (ext === 'ifc' || ext === 'glb') {
+        if (f.size > BROWSER_3D_LIMIT) {
+          const card = o.querySelector('.drop-card') as HTMLElement;
+          card.querySelector('h2')!.textContent = 'Too big to open in a browser';
+          card.querySelector('p')!.textContent = `${f.name} is ${mb(f.size)}. This page opens IFC and GLB files up to ${mb(BROWSER_3D_LIMIT)}: bigger ones can freeze the browser. An IFC exported without furniture, or a lighter copy, can open.`;
+          app.log('Waiting for a smaller file.');
+          return;
+        }
+        done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
+      }
       else if (ext === 'pdf' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp') {
         if (tracing) return;
         tracing = true;
@@ -838,7 +853,9 @@ export const projectPlan: Project = {
         try { ifcInfo = readIfcSite(new TextDecoder().decode(new Uint8Array(input.bytes))); } catch (e) { console.warn('the IFC’s site could not be read', e); }
         shift.set(res.coordination[12] ?? 0, res.coordination[13] ?? 0, res.coordination[14] ?? 0);
       } else {
-        obj = (await new GLTFLoader().parseAsync(input.bytes, '')).scene;
+        // a browser copy of a big model is meshopt-compressed (docs/architecture/browser-copy.md)
+        const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder);
+        obj = (await gl.parseAsync(input.bytes, '')).scene;
       }
       obj.traverse((m) => {
         if ((m as THREE.Mesh).isMesh) m.castShadow = m.receiveShadow = true;

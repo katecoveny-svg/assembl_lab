@@ -269,8 +269,9 @@ export function cameraPathPanel(app: App, ctx: PathCtx) {
   // ---- what the workspace handed across: its sketch, and a path it already has -------------------------------------------
   const given = ctx.site;
   const givenId = (given?.camera_path?.sketch_file_id as string | undefined) ?? (() => { const s = (given?.sources as { id?: string; file_id?: string; kind?: string }[] | undefined)?.find((x) => /camera/i.test(String(x?.kind ?? ''))); return s?.file_id ?? s?.id ?? null; })();
-  if (given?.files?.camera_sketch) void loadSketch(given.files.camera_sketch, (given.files.camera_sketch as File).name ?? 'camera sketch', givenId ?? 'from the workspace');
-  const gp = given?.camera_path as Partial<CameraPath> | null | undefined;
+  const sk = given?.files?.camera_sketch;
+  if (sk) void loadSketch(sk, (sk as File).name ?? 'camera sketch', givenId ?? 'from the workspace');
+  const gp = given?.camera_path as unknown as Partial<CameraPath> | null | undefined;   // from the workspace: pts, sketch_file_id, traced_by, confirmed_by (null: a proposal)
   if (gp?.pts?.length && gp.pts.length > 1) {
     nodes = gp.pts.map(([u, v]) => [u + ctx.shift.x, v + ctx.shift.z] as P2);
     h = gp.height?.value ?? gp.pts[0][2] ?? DEFAULT_EYE; hTag = gp.height?.source === 'set by hand' ? 'set by hand' : 'assumed'; ($<HTMLInputElement>('#cpH')).value = String(h);

@@ -10,6 +10,7 @@
 //   feeds=hunt&keywords=&regions=&sectors=&min=&max=&sources= returns found work from public tender notices, ranked for a practice (api/_feeds/hunt.js).
 //   feeds=signals&keywords=&regions=&sectors=&cultural=&sources= returns early signals (Beehive releases, Gazette notices) ranked with the same lens (api/_feeds/signals.js).
 //   feeds=rules[&regions=] returns NZ legislation that may change how buildings are designed, consented, funded or protected (api/_feeds/rules.js; needs LEGISLATION_API_KEY).
+//   feeds=consents[&regions=] returns Stats NZ building consents by region and type with the change on a year earlier; &discover=1 lists the Stats NZ tables named like building consents (api/_feeds/consents.js; needs STATSNZ_API_KEY).
 //   feeds=site&lat=&lon= returns feeds.site.facts: one envelope per fact about that point of land (see api/_feeds/site.js).
 //
 // GET /api/live/?place=auckland (no feeds) keeps the original v1 answer used by /live.js:
@@ -44,6 +45,7 @@ export async function handleLive(q /* URLSearchParams */, env) {
   const ids = feedsParam.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   const bbox = q.get("bbox"), retailer = q.get("retailer");
   const geo = { lat: num(q.get("lat")), lon: num(q.get("lon") ?? q.get("lng")), radius: num(q.get("radius")), bbox: typeof bbox === "string" && /^[-\d.,]{7,80}$/.test(bbox) ? bbox : undefined,
+    discover: q.get("discover") === "1", // the consents feed only: list the Stats NZ tables instead of reading them
     q: (q.get("q") || "").slice(0, 300), // the address feed only; never logged or stored
     retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined, // steers the retailers feed only
     hunt: { keywords: (q.get("keywords") || "").slice(0, 900), regions: (q.get("regions") || "").slice(0, 300), sectors: (q.get("sectors") || "").slice(0, 200),

@@ -6,14 +6,14 @@ export const HANDOFF_STORE = 'files';
 export const HANDOFF_PARAM = 'handoff';
 export const HANDOFF_MAX_AGE = 60 * 60 * 1000;
 
-/** What the workspace knows about the project's site, handed across with the model (optional: older hand-overs have none). */
-export interface HandoffSite {
+/** what the ops page hands across about the site (architecture/js/site-sources-rules.js siteHandoff, plus the Blobs under files) */
+export type HandoffSite = {
   point: { lat: number; lng: number; source: string } | null;
-  camera_path: Record<string, unknown> | null;
-  sources: unknown[];
-  files: { drawing_set?: Blob; site_plan?: Blob; camera_sketch?: Blob };
-}
-type Kept = { id: string; name: string; type: string; blob: Blob; at: number; site?: HandoffSite | null };
+  camera_path: { pts: number[][]; sketch_file_id: string | null; traced_by: 'tool' | 'person'; confirmed_by: string | null; confirmed_at: string | null } | null;
+  sources: { kind: string; name: string; file_id: string }[];
+  files?: Record<string, Blob>;
+};
+type Kept = { id: string; name: string; type: string; blob: Blob; at: number; site?: HandoffSite };
 
 const req = <T>(r: IDBRequest<T>) => new Promise<T>((resolve, reject) => { r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
 

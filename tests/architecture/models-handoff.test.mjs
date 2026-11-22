@@ -100,3 +100,65 @@ test('Open in 3D keeps the model first and opens the 3D page with its id, and ne
   assert.match(body, /HANDOFF_PARAM\}=\$\{encodeURIComponent\(hid\)\}/);
   assert.ok(!/\.document|DataTransfer|dispatchEvent/.test(body), 'nothing reaches into the 3D page');
 });
+
+test('a model over the browser 3D limit is not drawn or opened in 3D here, and both pages hold the same limit', async () => {
+  const { BROWSER_3D_LIMIT, tooBigFor3d } = await import('../../architecture/js/models-rules.js');
+  assert.equal(BROWSER_3D_LIMIT, 100 * 1024 * 1024);
+  assert.equal(tooBigFor3d(400 * 1024 * 1024), true, 'a model of the size that froze a browser in testing');
+  assert.equal(tooBigFor3d(30 * 1024), false);
+  assert.equal(tooBigFor3d(BROWSER_3D_LIMIT), false, 'up to and including the limit');
+  const plan = readFileSync(new URL('../../plan-studio/twins/src/twin/projectPlan.ts', import.meta.url), 'utf8');
+  assert.match(plan, /const BROWSER_3D_LIMIT = 100 \* 1024 \* 1024;/);
+  assert.match(plan, /if \(f\.size > BROWSER_3D_LIMIT\)/, 'the 3D page checks the size before it reads the file');
+  const src = readFileSync(new URL('../../architecture/js/models.js', import.meta.url), 'utf8');
+  assert.match(src, /const drawn = tooBigFor3d\(f\.size\) \? copy : f;/, 'no Turn it on a card for a too-big model itself: only through its browser copy (models-browser-copy.test.mjs)');
+  assert.match(src, /const to3d = big \? ''/, 'no Open in 3D either');
+  assert.match(src, /if \(!pic \|\| tooBigFor3d\(note\.size\)\) return;/);
+  for (const page of ['drop', '16a']) {
+    const dir = new URL(`../../plan-studio/twins/${page}/assets/`, import.meta.url);
+    const built = readdirSync(dir).filter((f) => f.endsWith('.js')).map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n');
+    assert.ok(built.includes('Too big to open in a browser'), `${page}: the built page refuses a too-big file`);
+  }
+});
+
+test('curtain walls show on the windows tile, so glazing exported as curtain walls is not missed', async () => {
+  const { factsOf } = await import('../../architecture/js/models-rules.js');
+  const w = factsOf({ counts: { windows: 1, curtain_walls: 4 } }).find((x) => x.key === 'windows');
+  assert.equal(w.text, '1'); assert.equal(w.also, '+ 4 curtain walls'); assert.equal(w.n, 5, 'the tile is not greyed out');
+  assert.equal(factsOf({ counts: { windows: 8 } }).find((x) => x.key === 'windows').also, '');
+});
+
+// ---- the site that goes across with the model (Site and sources) ----------------------------------------------------------
+test('a site handed across with the model comes back with it, Blobs and all, once', async () => {
+  const idb = fakeIdb();
+  const site = {
+    point: { lat: -36.8, lng: 175.1, source: 'a point typed on the Site tab' },
+    camera_path: { pts: [[0, 0, 1.6], [4, 3, 1.6]], sketch_file_id: 'f_sketch', traced_by: 'person', confirmed_by: 'Aroha', confirmed_at: '2026-11-23T01:00:00.000Z' },
+    sources: [{ kind: 'drawing_set', name: 'set.pdf', file_id: 'f_set' }],
+    files: { drawing_set: blob('%PDF-1.4 tiny', 'application/pdf'), camera_sketch: blob('png', 'image/png') },
+  };
+  const id = await putHandoff(blob('ISO-10303-21;'), 'sample.ifc', { idb, site });
+  const got = await takeHandoff(id, { idb });
+  assert.equal(got.name, 'sample.ifc');
+  assert.equal(await got.blob.text(), 'ISO-10303-21;');
+  assert.deepEqual(got.site.point, site.point);
+  assert.deepEqual(got.site.camera_path, site.camera_path);
+  assert.deepEqual(got.site.sources, site.sources);
+  assert.equal(await got.site.files.drawing_set.text(), '%PDF-1.4 tiny');
+  assert.equal(got.site.files.camera_sketch.type, 'image/png');
+  assert.equal(await takeHandoff(id, { idb }), null, 'taking it deletes it, site and all');
+  assert.equal(idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE).size, 0);
+});
+
+test('without a site the record is as it was, and site comes back null', async () => {
+  const idb = fakeIdb();
+  const id = await putHandoff(blob('a'), 'a.ifc', { idb });
+  assert.deepEqual([...idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE).get(id) && Object.keys(idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE).get(id))].sort(), ['at', 'blob', 'id', 'name', 'type']);
+  assert.equal((await takeHandoff(id, { idb })).site, null);
+});
+
+test('the 3D page’s takeHandoff returns the site too', () => {
+  const ts = readFileSync(new URL('../../plan-studio/twins/src/twin/handoff.ts', import.meta.url), 'utf8');
+  assert.match(ts, /return \{ name: got\.name, type: got\.type, blob: got\.blob, site: got\.site \?\? null \}/);
+  assert.match(ts, /site: HandoffSite \| null/);
+});
