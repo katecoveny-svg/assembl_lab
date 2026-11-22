@@ -76,7 +76,7 @@ boards, roof steel, framing, bark and forest floor; the photoreal look replaces 
 | What | Measured |
 |---|---|
 | Bake: light points / occluder triangles | 883,159 / 1,849,452 (726 receiving meshes; tables tessellated to 40 mm, rugs 80 mm, floors 100 mm) |
-| Bake: time | page export 33 s; BVH 7 s; first pass 120 s; final gather 177 s; **304 s in all on 2 threads** (64 samples a point; 340–460 s when the box was busy) |
+| Bake: time | page export 25–33 s; BVH 4–7 s; first pass 93–120 s; final gather 141–177 s; **238–304 s in all on 2 threads** (64 samples a point; up to 460 s when the box was busy) |
 | Bake: memory | node main process 0.92 GB peak; the page exports the scene in 8 MB parts (169 MB in all) so it never holds two copies |
 | Bake file | 5.3 MB (6 bytes a light point: RGB9E5 light + octahedral direction). Over the 2 MB limit, so not committed: made by `film.mjs bake` (or traced on the page) |
 | Loading a bake on the page | 2–5 s after the model is ready |

@@ -31,7 +31,7 @@ export function registerPhotoreal(app: App) {
       else {
         const s = await pr.enable({ workers: Math.max(1, (navigator.hardwareConcurrency || 2) - 1) });
         btn.setAttribute('aria-pressed', 'true'); btn.textContent = 'Photoreal on';
-        note.textContent = `Light ${s.source} (${s.samples} light points, ${(s.timing as { total?: number })?.total ?? 0} s). ${CAPTION}`;
+        note.textContent = `Light ${s.source} (${Number(s.samples).toLocaleString('en-NZ')} light points; ready in ${s.seconds} s). ${CAPTION}`;
       }
     } catch {
       btn.setAttribute('aria-pressed', 'false'); btn.textContent = 'Photoreal';
