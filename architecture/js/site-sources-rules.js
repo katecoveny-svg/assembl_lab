@@ -154,7 +154,7 @@ export const GROUND = { word: 'LINZ 1 m LiDAR, existing ground', says: 'Read on 
 
 // ---- what goes to the 3D page ------------------------------------------------------------------------------------------------
 /** is this model too big to draw in a browser? main's tooBigFor3d when it is there; otherwise the page's own preview limit */
-export const tooBig = (f) => (typeof MR.tooBigFor3d === 'function' ? !!MR.tooBigFor3d(f) : Number(f?.size) > AUTO_PREVIEW_LIMIT);
+export const tooBig = (f) => (typeof MR.tooBigFor3d === 'function' ? !!MR.tooBigFor3d(f?.size) : Number(f?.size) > AUTO_PREVIEW_LIMIT);
 
 /**
  * The model to hand across: the project's latest model of a kind the 3D page opens (IFC, zipped IFC, GLB). A browser copy of it
