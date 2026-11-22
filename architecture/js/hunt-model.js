@@ -17,8 +17,12 @@ export const SECTORS = [
 export const SECTOR_KEYS = SECTORS.map(([k]) => k);
 export const sectorLabel = (key) => SECTORS.find(([k]) => k === key)?.[1] ?? String(key ?? '');
 /** the sources a practice can switch on or off. Only sources whose terms allow automated reading are here (docs/architecture/pipeline-hunt.md). */
-export const SOURCES = [{ id: 'gets', name: 'GETS', long: 'NZ Government Electronic Tenders Service', url: 'https://www.gets.govt.nz/ExternalIndex.htm', says: 'Open tenders from councils, the Ministry of Education, Health NZ, universities and other public buyers.' }];
+export const SOURCES = [
+  { id: 'radar', name: 'Radar', long: 'Notices the assembl radar has already collected', url: 'https://www.gets.govt.nz/ExternalIndex.htm', says: 'Public tender notices the assembl radar collects daily (needs the shared records).' },
+  { id: 'gets', name: 'GETS', long: 'NZ Government Electronic Tenders Service', url: 'https://www.gets.govt.nz/ExternalIndex.htm', says: 'Open tenders from councils, the Ministry of Education, Health NZ, universities and other public buyers, read straight from the published list.' }];
 export const SOURCE_IDS = SOURCES.map((s) => s.id);
+/** the sources the live feed reads itself; "radar" is read from the shared records and scored in the browser */
+export const FEED_SOURCE_IDS = ['gets'];
 
 export const HUNT_ENQUIRY_ACTION = 'Read the tender documents';
 export const SHOWN_MAX = 12;
@@ -62,8 +66,8 @@ export function huntQuery(h) {
   if (h.sectors?.length) p.set('sectors', h.sectors.join(','));
   if (h.min != null) p.set('min', String(h.min));
   if (h.max != null) p.set('max', String(h.max));
-  const on = SOURCE_IDS.filter((id) => h.sources?.[id] !== false);
-  if (on.length && on.length < SOURCE_IDS.length) p.set('sources', on.join(','));
+  const on = FEED_SOURCE_IDS.filter((id) => h.sources?.[id] !== false);
+  if (on.length && on.length < FEED_SOURCE_IDS.length) p.set('sources', on.join(','));
   return p.toString();
 }
 export const sourcesOn = (h) => SOURCE_IDS.filter((id) => h?.sources?.[id] !== false);

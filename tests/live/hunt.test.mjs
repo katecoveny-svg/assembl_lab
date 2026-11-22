@@ -204,3 +204,20 @@ test('the source list names GETS with its feed, terms and cadence', () => {
   assert.deepEqual(Object.keys(SOURCES), ['gets']);
   assert.equal(SOURCES.gets.feed, 'https://www.gets.govt.nz/ExternalRSSFeed.htm'); assert.match(SOURCES.gets.licence.url, /GetsTermsAndConditions/); assert.equal(SOURCES.gets.cadence, 'hourly');
 });
+
+// ---- notices read from the radar's tables (arch.hunt_signals rows) go through the same scorer ---------------------------------------------
+import { tenderFromKb, rankKbRows as rankKb } from "../../architecture/js/hunt-rank.js";
+const KB = { id: "kb-1", title: "Library Design Services", url: "https://www.gets.govt.nz//EN/ExternalTenderDetails.htm?id=99000001", published_at: "2026-11-20T01:00:00Z", inserted_at: "2026-11-20T02:00:00Z",
+  snippet: "Concept to developed design for a new library.", buyer: "Hamilton City Council", closes_text: "Monday, 7 December 2026 5:00 PM +13:00", region: "Waikato", categories: "81101500 - Civil engineering 95121700 - Public buildings" };
+test("a radar row becomes a tender: id from the link, closing date read, regions matched by name, only GETS links", () => {
+  const t = tenderFromKb(KB);
+  assert.equal(t.id, "99000001"); assert.equal(t.closes, "2026-12-07T04:00:00.000Z"); assert.deepEqual(t.regions, ["Waikato"]); assert.deepEqual(t.categories, ["81101500", "95121700"]);
+  assert.equal(tenderFromKb({ ...KB, url: "https://example.com/x?id=1" }), null); assert.equal(tenderFromKb({ ...KB, title: "" }), null); assert.equal(tenderFromKb(null), null);
+  assert.deepEqual(tenderFromKb({ ...KB, region: "Bay of Plenty Hawke's Bay" }).regions, ["Bay of Plenty", "Hawke's Bay"]);
+});
+test("radar rows are ranked like feed tenders and marked as from the radar; closed, wrong-region and off-topic rows drop out", () => {
+  const lens = parseLens({ keywords: "library", regions: "Waikato" }), now = new Date("2026-11-22T00:00:00Z");
+  const r = rankKb([KB, { ...KB, id: "2", url: KB.url.replace("99000001", "99000002"), closes_text: "Monday, 1 June 2026 5:00 PM +12:00" }, { ...KB, id: "3", url: KB.url.replace("99000001", "99000003"), region: "Otago" }, { ...KB, id: "4", url: KB.url.replace("99000001", "99000004"), title: "Supply of road salt", snippet: "", categories: "" }], lens, now);
+  assert.equal(r.length, 1); assert.equal(r[0].id, "gets:99000001"); assert.equal(r[0].source, "radar"); assert.ok(r[0].fit >= 45 && r[0].reasons.length);
+  assert.deepEqual(rankKb(null, lens, now), []);
+});

@@ -41,7 +41,7 @@ function screen(ctx, { feedImpl = feed(), readOnly = false } = {}) {
   return { h, log, state, reload, feed: feedImpl };
 }
 const click = (h, act, id = '') => h.click({ target: { closest: () => ({ dataset: { hunt: act, id } }) } });
-const SET = { keywords: ['library', 'design'], regions: ['Waikato'], sectors: ['civic'], min: null, max: null, sources: { gets: true } };
+const SET = { keywords: ['library', 'design'], regions: ['Waikato'], sectors: ['civic'], min: null, max: null, sources: { radar: true, gets: true } };
 const browserCtx = async ({ settings = SET, me = 'Mere' } = {}) => {
   const store = createStore(memoryBackend(), { files: memoryFiles() });
   if (settings) await store.save('setting', { id: SETTING.hunt, value: settings });
@@ -53,7 +53,7 @@ test('the settings keep only known regions and sectors, bounded words, and a ran
   const h = cleanHunt({ keywords: ' Library, school,LIBRARY,, ' + 'x'.repeat(60), regions: ['Auckland', 'Narnia', 'Waikato'], sectors: ['education', 'spaceport'], min: '2,000,000', max: '$50000', sources: { gets: false } });
   assert.deepEqual(h.keywords, ['Library', 'school', 'x'.repeat(40)], 'duplicates ignoring case are dropped, long words are cut');
   assert.deepEqual(h.regions, ['Auckland', 'Waikato']); assert.deepEqual(h.sectors, ['education']);
-  assert.equal(h.min, 50000); assert.equal(h.max, 2000000); assert.deepEqual(h.sources, { gets: false });
+  assert.equal(h.min, 50000); assert.equal(h.max, 2000000); assert.deepEqual(h.sources, { radar: true, gets: false });
   assert.throws(() => cleanHunt({ min: 'lots' }), /dollars/);
   assert.equal(cleanHunt({ keywords: Array.from({ length: 40 }, (_, i) => `w${i}`) }).keywords.length, 20);
   assert.deepEqual(cleanHunt(null), emptyHunt());
@@ -63,7 +63,7 @@ test('the empty settings find nothing: no words and no sector means nothing is l
   assert.ok(huntIsEmpty(emptyHunt())); assert.ok(huntIsEmpty(null));
   assert.ok(huntIsEmpty(cleanHunt({ regions: ['Auckland'], min: 1000 })), 'regions and a range alone are not something to look for');
   assert.ok(!huntIsEmpty(cleanHunt({ keywords: ['library'] }))); assert.ok(!huntIsEmpty(cleanHunt({ sectors: ['health'] })));
-  assert.deepEqual(emptyHunt().sources, { gets: true });
+  assert.deepEqual(emptyHunt().sources, { radar: true, gets: true });
 });
 
 test('the feed question is built from the settings and is the same for the same settings', () => {
@@ -77,7 +77,7 @@ test('the page\'s lists are the feed\'s lists', async () => {
   assert.deepEqual(REGIONS, feedSide.REGIONS);
   assert.deepEqual(SECTOR_KEYS, Object.keys(feedSide.SECTORS));
   assert.deepEqual(SECTORS.map(([, l]) => l), Object.values(feedSide.SECTORS).map((s) => s.label));
-  assert.deepEqual(SOURCE_IDS, Object.keys(feedSide.SOURCES), 'every source the page can switch on is one the feed has');
+  assert.deepEqual(SOURCE_IDS.filter((id) => id !== 'radar'), Object.keys(feedSide.SOURCES), 'every source the page can switch on is one the feed has, bar the radar, which is read from the shared records');
   assert.ok(UI_SOURCES.every((s) => /^https:\/\//.test(s.url)));
 });
 
@@ -283,13 +283,13 @@ const form = (o) => {
 test('in a browser, saving "what to look for" keeps it as a setting here and looks again', async () => {
   const ctx = await browserCtx({ settings: null }), s = screen(ctx); await s.h.start();
   assert.equal(s.feed.calls.length, 0);
-  await s.h.submit(form({ keywords: 'school, library', sectors: ['education'], regions: ['Auckland', 'Waikato'], min: '50000', max: '2,000,000', sources: ['gets'] }));
-  assert.deepEqual((await ctx.store.get('setting', SETTING.hunt)).value, { keywords: ['school', 'library'], regions: ['Auckland', 'Waikato'], sectors: ['education'], min: 50000, max: 2000000, sources: { gets: true } });
+  await s.h.submit(form({ keywords: 'school, library', sectors: ['education'], regions: ['Auckland', 'Waikato'], min: '50000', max: '2,000,000', sources: ['radar', 'gets'] }));
+  assert.deepEqual((await ctx.store.get('setting', SETTING.hunt)).value, { keywords: ['school', 'library'], regions: ['Auckland', 'Waikato'], sectors: ['education'], min: 50000, max: 2000000, sources: { radar: true, gets: true } });
   assert.equal(s.feed.calls.length, 1); assert.match(s.feed.calls[0], /keywords=school%2Clibrary&regions=Auckland%2CWaikato&sectors=education&min=50000&max=2000000/);
   assert.deepEqual(await ctx.store.list('enquiry'), []);
-  await s.h.submit(form({ keywords: '', sectors: [], regions: ['Auckland'], min: 'lots', max: '', sources: ['gets'] }));
+  await s.h.submit(form({ keywords: '', sectors: [], regions: ['Auckland'], min: 'lots', max: '', sources: ['radar', 'gets'] }));
   assert.match(s.h.html(), /Type the value as dollars/); assert.equal(s.feed.calls.length, 1, 'a refused change looks at nothing');
-  await s.h.submit(form({ keywords: '', sectors: [], regions: [], min: '', max: '', sources: ['gets'] }));
+  await s.h.submit(form({ keywords: '', sectors: [], regions: [], min: '', max: '', sources: ['radar', 'gets'] }));
   assert.match(s.h.html(), /Set what to look for/);
 });
 
@@ -306,8 +306,8 @@ test('the practice\'s settings: anyone in it reads them, an owner changes them, 
   await assert.rejects(team.setHunt(PRACTICE, 'x'), /Say what to look for/);
 });
 
-async function signedIn({ role = 'owner', hunt } = {}) {
-  const fake = fakeSupabase({ userId: ME, rpc: { my_invitations: () => [], practice_people: () => [] } });
+async function signedIn({ role = 'owner', hunt, radar } = {}) {
+  const fake = fakeSupabase({ userId: ME, rpc: { my_invitations: () => [], practice_people: () => [], ...(radar ? { hunt_signals: radar } : {}) } });
   fake.db.practice = [{ id: PRACTICE, name: 'Tui Architects', created_by: ME, extra: hunt ? { hunt } : {} }];
   fake.db.practice_member = [{ practice_id: PRACTICE, user_id: ME, role }];
   const session = { access_token: 'x.y.z', user: { id: ME, email: 'mere@example.org', user_metadata: { full_name: 'Mere Ngata' } } };
@@ -332,8 +332,8 @@ test('signed in as an owner: the practice\'s settings are read from the shared r
   assert.equal(s.feed.calls.length, 1);
   assert.match(s.h.html(), /Add to pipeline/); assert.match(s.h.html(), /data-hunt="open-settings"/);
   await click(s.h, 'open-settings'); assert.match(s.h.html(), /Saved for everyone in Tui Architects/); assert.match(s.h.html(), /type="submit"/);
-  await s.h.submit(form({ keywords: 'marae', sectors: [], regions: ['Auckland'], min: '', max: '', sources: ['gets'] }));
-  assert.deepEqual(p.fake.db.practice[0].extra.hunt, { keywords: ['marae'], regions: ['Auckland'], sectors: [], min: null, max: null, sources: { gets: true } });
+  await s.h.submit(form({ keywords: 'marae', sectors: [], regions: ['Auckland'], min: '', max: '', sources: ['radar', 'gets'] }));
+  assert.deepEqual(p.fake.db.practice[0].extra.hunt, { keywords: ['marae'], regions: ['Auckland'], sectors: [], min: null, max: null, sources: { radar: true, gets: true } });
   assert.deepEqual(await p.store.list('enquiry'), [], 'saving what to look for adds nothing to the pipeline');
 });
 
@@ -346,7 +346,7 @@ test('signed in as a member: the settings are shown and cannot be changed, and n
   await click(s.h, 'open-settings');
   const html = s.h.html();
   assert.match(html, /Set by an owner of Tui Architects/); assert.match(html, /Only an owner can change this/); assert.doesNotMatch(html, /type="submit"/); assert.match(html, /disabled/);
-  await s.h.submit(form({ keywords: 'x', sectors: [], regions: [], min: '', max: '', sources: ['gets'] }));
+  await s.h.submit(form({ keywords: 'x', sectors: [], regions: [], min: '', max: '', sources: ['radar', 'gets'] }));
   assert.equal(p.fake.writes().length, before, 'a member\'s submit is ignored');
 });
 
@@ -363,4 +363,33 @@ test('the page code has no way to contact anyone: no mail, no form post, no subm
   assert.equal((src.match(/fetchImpl\(/g) ?? []).length, 1, 'one request in all, to the lab\'s own feed');
   const css = readFileSync(new URL('../../architecture/hunt.css', import.meta.url), 'utf8');
   assert.doesNotMatch(css.replace(/var\([^)]*\)/g, ''), /#[0-9a-fA-F]{3,8}\b|rgba?\(/, 'colours only as fallbacks inside var()');
+});
+
+// ---- the radar's notices, read through arch.hunt_signals and scored here ----------------------------------------------------------------
+const kbRow = (o = {}) => ({ id: 'kb-1', source: 'GETS — Government tenders', category: 'tenders', title: 'Library Design Services', url: 'https://www.gets.govt.nz//EN/ExternalTenderDetails.htm?id=99000001',
+  published_at: '2026-11-20T01:00:00Z', inserted_at: '2026-11-20T01:00:00Z', snippet: 'Concept to developed design for a new library.', buyer: 'Hamilton City Council', closes_text: 'Monday, 7 December 2026 5:00 PM +13:00', region: 'Waikato', categories: '95121700 - Public buildings', ...o });
+
+test('the radar\'s notices are scored in the browser against the practice\'s words and shown as cards', async () => {
+  let asked = null;
+  const p = await signedIn({ hunt: cleanHunt({ ...SET, sources: { radar: true, gets: false } }), radar: (a) => { asked = a; return [kbRow(), kbRow({ id: 'kb-2', title: 'Supply of road salt', url: 'https://www.gets.govt.nz//EN/ExternalTenderDetails.htm?id=99000002', region: 'Otago', categories: '' })]; } });
+  const ctx = { store: p.store, me: 'Mere', practice: p.account.state.practice, account: p.account };
+  const s = screen(ctx); await s.h.start();
+  assert.equal(s.feed.calls.length, 0, 'the live feed is not asked when only the radar is on');
+  assert.equal(asked.p_practice, PRACTICE);
+  const out = s.h.html();
+  assert.match(out, /Library Design Services/); assert.match(out, /Hamilton City Council/); assert.doesNotMatch(out, /road salt/, 'the one that is not a fit is left out');
+  await click(s.h, 'add', 'gets:99000001');
+  const [enq] = await ctx.store.list('enquiry');
+  assert.equal(enq.title, 'Library Design Services'); assert.equal(enq.stage, 'new'); assert.equal(enq.next_action, 'Read the tender documents'); assert.equal(enq.next_action_due, '2026-12-07'); assert.ok(!enq.owner);
+});
+
+test('a notice found by both the radar and the live feed shows once; the radar failing leaves the feed\'s findings in, and says so', async () => {
+  const both = await signedIn({ hunt: cleanHunt(SET), radar: () => [kbRow({ title: 'Library Design Services', url: 'https://www.gets.govt.nz//EN/ExternalTenderDetails.htm?id=35471034' })] });
+  const ctx = { store: both.store, me: 'Mere', practice: both.account.state.practice, account: both.account };
+  const s = screen(ctx); await s.h.start();
+  const ids = (s.h.state.answer?.signals ?? []).map((x) => x.id);
+  assert.equal(new Set(ids).size, ids.length, 'no notice twice');
+  const down = await signedIn({ hunt: cleanHunt(SET), radar: () => { throw new Error('boom'); } });
+  const s2 = screen({ store: down.store, me: 'Mere', practice: down.account.state.practice, account: down.account }); await s2.h.start();
+  assert.equal(s2.feed.calls.length, 1); assert.match(s2.h.html(), /radar.s notices could not be read/i); assert.match(s2.h.html(), /Add to pipeline/);
 });

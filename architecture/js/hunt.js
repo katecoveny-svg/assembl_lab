@@ -4,9 +4,10 @@
 //
 // crm.js draws this inside its board: it asks createHunt(...) for html(), passes it clicks and submits, and redraws when asked.
 // The rules are in hunt-model.js; the feed is /api/live/?feeds=hunt (api/_feeds/hunt.js).
+import { parseLens, rankKbRows } from './hunt-rank.js';
 import { clock, dayName, shortDay } from './crm-model.js';
 import {
-  REGIONS, SECTORS, SOURCES, SHOWN_MAX, SETTING, emptyHunt, cleanHunt, huntIsEmpty, huntQuery, sourcesOn, readAnswer, fitWord, fitSteps, daysLeft, buyerInitials,
+  REGIONS, SECTORS, SOURCES, SHOWN_MAX, SETTING, emptyHunt, cleanHunt, huntIsEmpty, huntQuery, sourcesOn, readAnswer, cleanSignal, fitWord, fitSteps, daysLeft, buyerInitials,
   addedAs, enquiryFromSignal, cleanDismissed, dismiss, restore, scopeOf, cacheFresh,
 } from './hunt-model.js';
 
@@ -94,23 +95,48 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
   const writeKept = async (id, value) => { try { await ctx.store.save('setting', { id, value }); } catch { /* the page works without its memory: the next visit looks again */ } };
 
   // ---- looking ----------------------------------------------------------------------------------------------------------------------------
+  /** the live feed: one call, to the lab's own address */
+  async function readFeed(query) {
+    const ctl = typeof AbortController === 'function' ? new AbortController() : null, timer = ctl ? setTimeout(() => ctl.abort(), 40000) : null;
+    let res;
+    try { res = await fetchImpl(`${FEED}?${query}`, { headers: { accept: 'application/json' }, signal: ctl?.signal }); }
+    catch (e) { throw new Error(e?.name === 'AbortError' ? 'The tender notices took too long to answer. Try again in a minute.' : 'The tender notices could not be reached. Check the connection and try again.'); }
+    finally { if (timer) clearTimeout(timer); }
+    if (!res.ok) throw new Error(`The tender notices are not answering just now (${res.status}). Try again in a few minutes.`);
+    return readAnswer(await res.json());
+  }
+  /** the notices the radar already collected (members only, public fields), scored here against this practice's words */
+  async function readRadar() {
+    const rows = await ctx.account.huntSignals();
+    const lens = parseLens({ keywords: S.settings.keywords.join(','), regions: S.settings.regions.join(','), sectors: S.settings.sectors.join(','), min: S.settings.min, max: S.settings.max });
+    const signals = rankKbRows(rows, lens, now()).map(cleanSignal).filter(Boolean);
+    return { signals, considered: Array.isArray(rows) ? rows.length : 0, fetchedAt: now().toISOString() };
+  }
+  /** both sources in one answer: the same notice from both shows once (the feed's copy, which is read live); one source failing leaves the other's findings in */
+  function mergeAnswers(radar, feed, radarOn, getsOn) {
+    const sources = [], byId = new Map(); let considered = 0, fetchedAt = now().toISOString();
+    if (feed.status === 'fulfilled' && feed.value) { feed.value.signals.forEach((s) => byId.set(s.id, s)); sources.push(...feed.value.sources.filter((x) => x.id !== 'radar')); considered += feed.value.considered; fetchedAt = feed.value.fetchedAt; }
+    else if (getsOn) sources.push({ id: 'gets', name: 'GETS', ok: false, error: String(feed.reason?.message ?? 'GETS did not answer just now.') });
+    if (radar.status === 'fulfilled' && radar.value) { radar.value.signals.forEach((s) => { if (!byId.has(s.id)) byId.set(s.id, s); }); sources.push({ id: 'radar', name: 'Radar', ok: true, error: '' }); considered += radar.value.considered; }
+    else if (radarOn) sources.push({ id: 'radar', name: 'Radar', ok: false, error: 'The radar’s notices could not be read just now. Try again in a few minutes.' });
+    if (!sources.some((x) => x.ok)) throw new Error(sources.map((x) => x.error).join(' ') || 'Nothing could be looked at. Try again in a few minutes.');
+    const signals = [...byId.values()].sort((a, b) => b.fit - a.fit || (a.closesDay || '9').localeCompare(b.closesDay || '9')).slice(0, 40);
+    return { signals, sources, needsLens: false, considered, fetchedAt };
+  }
   /** Look at the notices: the day's kept answer when there is one for these settings, otherwise the live feed. force = the person pressed "Look again". */
   async function look({ force = false } = {}) {
     const mine = ++run;
     if (huntIsEmpty(S.settings) || !sourcesOn(S.settings).length) { S.phase = 'ready'; S.answer = null; S.error = ''; return draw(); }
-    const query = huntQuery(S.settings), kept = await readKept(SETTING.cache(scope));
+    const on = sourcesOn(S.settings), radarOn = on.includes('radar') && !!ctx.practice && typeof ctx.account?.huntSignals === 'function', getsOn = on.includes('gets');
+    if (!radarOn && !getsOn) { S.phase = 'ready'; S.answer = null; S.error = ''; return draw(); }
+    const query = huntQuery(S.settings) + (radarOn ? '&radar=1' : ''), kept = await readKept(SETTING.cache(scope));
     if (!force && cacheFresh(kept, query, now())) { S.answer = kept.answer; S.older = null; S.phase = 'ready'; S.error = ''; return draw(); }
     S.older = kept && kept.query === query && kept.answer ? { answer: kept.answer, day: kept.day } : null;
     S.phase = 'loading'; S.error = ''; draw();
     try {
-      const ctl = typeof AbortController === 'function' ? new AbortController() : null, timer = ctl ? setTimeout(() => ctl.abort(), 40000) : null;
-      let res;
-      try { res = await fetchImpl(`${FEED}?${query}`, { headers: { accept: 'application/json' }, signal: ctl?.signal }); }
-      catch (e) { throw new Error(e?.name === 'AbortError' ? 'The tender notices took too long to answer. Try again in a minute.' : 'The tender notices could not be reached. Check the connection and try again.'); }
-      finally { if (timer) clearTimeout(timer); }
-      if (!res.ok) throw new Error(`The tender notices are not answering just now (${res.status}). Try again in a few minutes.`);
-      const answer = readAnswer(await res.json());
+      const [fromRadar, fromFeed] = await Promise.allSettled([radarOn ? readRadar() : Promise.resolve(null), getsOn ? readFeed(huntQuery(S.settings)) : Promise.resolve(null)]);
       if (mine !== run) return;
+      const answer = mergeAnswers(fromRadar, fromFeed, radarOn, getsOn);
       S.answer = answer; S.older = null; S.phase = 'ready';
       await writeKept(SETTING.cache(scope), { query, day: dayOf(now()), answer });
       S.announce = answer.signals.length ? `${plural(answer.signals.length, 'finding')} found.` : 'Nothing found that fits.';

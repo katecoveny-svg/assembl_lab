@@ -789,6 +789,11 @@ export function createTeam(g) {
       const h = row?.extra && typeof row.extra === 'object' ? row.extra.hunt : null;
       return isObj(h) ? h : null;
     },
+    /** The public tender notices the assembl radar has collected lately (arch.hunt_signals: public fields only, members only, reads nothing else). */
+    async huntSignals(practiceId, since = null) {
+      const rows = await g.rpc('hunt_signals', { p_practice: practiceId, p_since: since });
+      return Array.isArray(rows) ? rows : [];
+    },
     /** Save what the practice looks for. Like the look, the database lets only an owner change the practice row; anyone else changes nothing. */
     async setHunt(practiceId, hunt) {
       if (!isObj(hunt)) throw new Error('Say what to look for.');

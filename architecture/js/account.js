@@ -393,6 +393,12 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       if (!p || !team) return null;
       try { return await team.hunt(p.id); } catch { return null; }
     },
+    /** Public tender notices the radar has collected (any member). [] when no practice is in use; throws when the shared records cannot be read. */
+    async huntSignals(since = null) {
+      const p = st.practice;
+      if (!p || !team) return [];
+      return team.huntSignals(p.id, since);
+    },
     /** Save what the practice looks for (owners only; the database refuses anyone else). */
     async setHunt(hunt) {
       const p = st.practice;
