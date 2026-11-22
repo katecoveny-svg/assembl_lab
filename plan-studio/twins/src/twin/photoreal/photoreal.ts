@@ -182,9 +182,9 @@ export class Photoreal {
     const a = this.app, P = this.P!, sc = a.scene as THREE.Scene;
     const tint = this.interiorTint();
     if (tint) {
-      // a camera's auto white balance: take most of the interior light's colour cast out (85%), keep a little warmth
+      // a camera's auto white balance: take the measured colour cast of the light on the white walls out (the pull to neutral above leaves a little warmth)
       const L = 0.2126 * tint[0] + 0.7152 * tint[1] + 0.0722 * tint[2];
-      const wb = tint.map((c) => Math.pow(L / Math.max(1e-4, c), 0.85)) as [number, number, number];
+      const wb = tint.map((c) => Math.pow(L / Math.max(1e-4, c), 1.0)) as [number, number, number];
       const g = wb[1]; look.wbIn = wb.map((x) => x / g) as [number, number, number];
       this.stats.interiorLight = tint.map((x) => +x.toFixed(3));
       this.stats.whiteBalanceIn = look.wbIn.map((x) => +x.toFixed(3));

@@ -36,9 +36,10 @@ export function addProps(app: App) {
   if (sofa) {
     const S = sofa as THREE.Box3;
     const t = throwBlanket({ colour: 0x9c5a40 });
-    // on the right-hand seat cushion, by the arm, turned a little
-    t.position.set(S.max.x - 0.5, S.min.y + 0.385, S.min.z + 0.62);
-    t.rotation.y = Math.PI / 2 + 0.18;
+    // on the right-hand seat cushion, by the arm, square to it and well back from the front edge; set a few millimetres
+    // into the crowned cushion, so it rests on it rather than hovering at the edges
+    t.position.set(S.max.x - 0.5, S.min.y + 0.36, S.min.z + 0.56);
+    t.rotation.y = Math.PI / 2 + 0.06;
     t.traverse((o) => { o.castShadow = o.receiveShadow = true; });
     t.userData = { ...t.userData, source: 'proposed', note: 'folded throw from the asset library, built in code' };
     group.add(t); n++;

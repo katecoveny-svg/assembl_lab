@@ -72,9 +72,12 @@ function maxEdgeFor(o: THREE.Mesh, m: THREE.Material, layer: string): number {
   if (layer === 'ground' || /survey|terrain|ground/.test(s)) return 1e9;
   if (/joist|bearer|pile|framing|treated_pine|core/.test(s)) return 0.8;
   if (/roof/.test(s)) return 1.2;
-  if (/rug|throw|cushion|linen|wool|boucle|fabric/.test(s)) return 0.5;
-  if (/deck|board/.test(s)) return 0.3;
-  if (/floor|tile|porcelain|travertine/.test(s)) return 0.12;
+  // surfaces things stand on carry their contact shadows, so they are the densest (room-at-dawn uses 15–20 mm)
+  if (/travertine|benchtop|marble|table|desk|shelf|tray/.test(s)) return 0.04;
+  if (/rug/.test(s)) return 0.08;
+  if (/throw|cushion|linen|wool|boucle|fabric/.test(s)) return 0.5;
+  if (/deck|board/.test(s)) return 0.2;
+  if (/floor|tile|porcelain/.test(s)) return 0.1;
   if (/lining|partition|ceiling|wall_paint|interior|skirting|soffit/.test(s)) return 0.25;
   if (/cladding|fascia|flashing|retaining|path|pad|parking|paving|mulch|bed/.test(s)) return 0.4;
   return 0.3;

@@ -17,9 +17,9 @@ export const giUniforms = {
   k: uniform(1.6),
   /** how far the bounce light's colour is pulled towards neutral (0 = as traced): timber floors and warm walls tint
    *  every bounce, and a photograph's white balance takes most of that out */
-  desat: uniform(0.35),
+  desat: uniform(0.5),
 };
-export const GI_DESAT = 0.35;
+export const GI_DESAT = 0.5;
 
 type Builder = { context: Record<string, unknown> };
 
