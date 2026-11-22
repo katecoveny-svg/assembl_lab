@@ -30,10 +30,7 @@
 .crm-i { flex: none; display: block; }
 .crm-i-s { width: 16px; height: 16px; }
 
-/* the board and the strip may use more of a wide screen than the page's text column */
-@media (min-width: 1240px) {
-  .crm[data-view="board"] { margin-inline: min(0px, calc((100% - min(1360px, 100vw - 48px)) / 2)); }
-}
+/* the board stays inside the page's column, lined up with the header */
 
 /* ---- the top of each screen ------------------------------------------------------------------------------------------- */
 .crm-head { display: grid; gap: 14px; grid-template-columns: 1fr; align-items: end; }
