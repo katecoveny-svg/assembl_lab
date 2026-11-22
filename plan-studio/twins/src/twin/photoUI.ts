@@ -93,10 +93,19 @@ export function captureView(app: Host) {
       if (first < 0) first = v; else if (Math.abs(v - first) > 0) varied = true;
     }
     if (!lit || !varied) throw new Error('blank');
-    return { url: out.toDataURL('image/jpeg', 0.9), ratio: c.ratio, trimmed: c.trimmed, w: c.dw, h: c.dh };
+    return { url: out.toDataURL('image/jpeg', 0.9), ratio: c.ratio, trimmed: c.trimmed, w: c.dw, h: c.dh, crop: { w: src.width, h: src.height, sx: c.sx, sy: c.sy, sw: c.sw, sh: c.sh, dw: c.dw, dh: c.dh }, line: null as string | null };
   } finally {
     if (hl) hl.visible = was;
   }
+}
+
+/** the line drawing of the same view, cropped the same way, from the model's own geometry (photoreal/lines.ts via the
+ *  Photoreal module's lineView); null if the module is not loaded or the browser cannot draw it (the photo is then asked for
+ *  without it, as before) */
+async function lineFor(shot: ReturnType<typeof captureView>): Promise<string | null> {
+  const pr = (window as unknown as { __photoreal?: { lineView?: (c: ReturnType<typeof captureView>['crop']) => Promise<string> } }).__photoreal;
+  if (!pr?.lineView) return null;
+  try { const u = await pr.lineView(shot.crop); return /^data:image\/png;base64,/.test(u) ? u : null; } catch (e) { console.warn('photo: no line drawing', (e as Error)?.message ?? e); return null; }
 }
 
 /** the image with the label burned into a band along its foot, as a JPEG */
@@ -273,9 +282,9 @@ export function mountPhoto(app: Host): HTMLElement | null {
   };
 
   // --- make one ---------------------------------------------------------------------------------------------------------------
-  let lastShot: ReturnType<typeof captureView> | null = null;
+  let lastShot: ReturnType<typeof captureView> | null = null, drawing = false;
   const make = async (from: HTMLElement, again = false) => {
-    if (busy) return;
+    if (busy || drawing) return;
     let shot = again ? lastShot : null;
     if (!shot) {
       try { shot = captureView(app); } catch (e) {
@@ -285,6 +294,7 @@ export function mountPhoto(app: Host): HTMLElement | null {
         return;
       }
     }
+    if (!again || !shot.line) { drawing = true; try { shot.line = await lineFor(shot); } finally { drawing = false; } }
     lastShot = shot;
     const t = time.value as Time, s = season.value as Season, set = setting.value;
     opener = from;
@@ -299,7 +309,7 @@ export function mountPhoto(app: Host): HTMLElement | null {
     app.log('Google Gemini is making a photo of this view…');
     let status = 0, body: unknown = null;
     try {
-      const res = await fetch('/api/render', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody(shot.url, quality, t, s, set)), signal: ac.signal });
+      const res = await fetch('/api/render', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody(shot.url, quality, t, s, set, shot.line)), signal: ac.signal });
       status = res.status;
       body = await res.json().catch(() => null);
       const b = body as { image?: string; model?: string; took_ms?: number; prompt_revision?: string } | null;
