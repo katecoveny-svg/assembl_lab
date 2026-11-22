@@ -6,11 +6,18 @@ export const HANDOFF_STORE = 'files';
 export const HANDOFF_PARAM = 'handoff';
 export const HANDOFF_MAX_AGE = 60 * 60 * 1000;
 
-type Kept = { id: string; name: string; type: string; blob: Blob; at: number };
+/** what the ops page hands across about the site (architecture/js/site-sources-rules.js siteHandoff, plus the Blobs under files) */
+export type HandoffSite = {
+  point: { lat: number; lng: number; source: string } | null;
+  camera_path: { pts: number[][]; sketch_file_id: string | null; traced_by: 'tool' | 'person'; confirmed_by: string | null; confirmed_at: string | null } | null;
+  sources: { kind: string; name: string; file_id: string }[];
+  files?: Record<string, Blob>;
+};
+type Kept = { id: string; name: string; type: string; blob: Blob; at: number; site?: HandoffSite };
 
 const req = <T>(r: IDBRequest<T>) => new Promise<T>((resolve, reject) => { r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
 
-export async function takeHandoff(id: string, idb: IDBFactory | undefined = globalThis.indexedDB): Promise<{ name: string; type: string; blob: Blob } | null> {
+export async function takeHandoff(id: string, idb: IDBFactory | undefined = globalThis.indexedDB): Promise<{ name: string; type: string; blob: Blob; site: HandoffSite | null } | null> {
   if (!id || !idb) return null;
   const open = idb.open(HANDOFF_DB, 1);
   open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains(HANDOFF_STORE)) open.result.createObjectStore(HANDOFF_STORE, { keyPath: 'id' }); };
@@ -21,6 +28,6 @@ export async function takeHandoff(id: string, idb: IDBFactory | undefined = glob
     if (got) st.delete(got.id);
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); });
     if (!got || !(Date.now() - (got.at ?? 0) < HANDOFF_MAX_AGE)) return null;
-    return { name: got.name, type: got.type, blob: got.blob };
+    return { name: got.name, type: got.type, blob: got.blob, site: got.site ?? null };
   } finally { db.close(); }
 }

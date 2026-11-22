@@ -1,0 +1,84 @@
+/* assembl. architecture operations · Site and sources (loaded by js/site-sources.js)
+   Only the page's own custom properties, so it follows whichever look the workspace is in (assembl or sketch):
+   --plum ink, --paper ground, --rose soft fill, --line and --hair rules, --grid, --sans, --mono; --panel, --field, --mute, --go, --needs with fallbacks.
+   Square corners. Phone first; wider from 761px. Patterns follow models.css. */
+.ssx { display: grid; gap: 16px; margin-top: 22px; }
+.ssx-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; }
+.ssx-count { font: 500 11.5px/1.4 var(--mono); letter-spacing: .06em; color: var(--mute, var(--plum)); }
+.ssx-ic { width: 22px; height: 22px; flex: none; display: block; stroke-linecap: square; stroke-linejoin: miter; }
+.ssx .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* the site: three labelled facts */
+.ssx-facts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.ssx-fact { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 14px; border: 1px solid var(--line); background: var(--panel, var(--paper)); }
+.ssx-fact .ssx-ic { width: 26px; height: 26px; margin-top: 2px; }
+.ssx-fl { font: 500 10.5px/1.3 var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--mute, var(--plum)); margin: 0 0 4px; }
+.ssx-fm { font: 500 16px/1.25 var(--sans); letter-spacing: -.01em; margin: 0; }
+.ssx-st { font: 500 11px var(--mono); letter-spacing: .06em; }
+.ssx-fs { font: 400 11.5px/1.5 var(--mono); color: var(--mute, var(--plum)); margin: 4px 0 0; overflow-wrap: anywhere; }
+
+/* the five slots */
+.ssx-slots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; align-items: start; }
+.ssx-slot { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.ssx-drop {
+  position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-areas: "ic t" "ic k" "ic c"; gap: 2px 12px; align-items: center;
+  padding: 14px; min-height: 108px; cursor: pointer; text-transform: none; letter-spacing: 0; font: inherit;
+  border: 1.5px dashed var(--plum); color: var(--plum); background-color: var(--field, var(--paper));
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 16px 16px;
+}
+.ssx-drop.is-filled { min-height: 0; border-width: 1px; padding: 10px 14px; }
+.ssx-drop:hover { background-color: var(--panel, var(--paper)); }
+.ssx-drop.is-over { background-color: var(--rose); border-style: solid; box-shadow: inset 0 0 0 3px var(--paper); }
+.ssx-drop:focus-within { outline: 2px solid var(--plum); outline-offset: 3px; }
+.ssx-drop-ic { grid-area: ic; width: 40px; height: 40px; stroke-width: 1.2; }
+.ssx-t { grid-area: t; font: 500 19px/1.15 var(--sans); letter-spacing: -.02em; }
+.ssx-k { grid-area: k; font: 500 10.5px/1.3 var(--mono); letter-spacing: .08em; color: var(--mute, var(--plum)); }
+.ssx-cta { grid-area: c; font: 500 11.5px/1.3 var(--mono); letter-spacing: .04em; text-decoration: underline; text-underline-offset: 3px; }
+.ssx-drop.is-over .ssx-cta::after { content: " here"; }
+.ssx-note-in { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); background: var(--field, var(--paper)); color: var(--plum); font: 400 12px/1.4 var(--sans); }
+.ssx-note-in:focus { outline: 2px solid var(--plum); outline-offset: 2px; }
+.ssx-hint, .ssx-empty { font: 400 11.5px/1.5 var(--mono); color: var(--mute, var(--plum)); margin: 0; }
+
+/* a kept file */
+.ssx-file, .ssx-job { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--plum); background: var(--panel, var(--paper)); min-width: 0; }
+.ssx-top { display: flex; gap: 6px; align-items: center; margin: 0; }
+.ssx-tag { font: 500 11px var(--mono); letter-spacing: .08em; background: var(--plum); color: var(--paper); padding: 3px 7px; }
+.ssx-v { font: 500 11px var(--mono); border: 1px solid var(--line); padding: 2px 6px; }
+.ssx-name { font: 500 15px/1.3 var(--sans); margin: 0; overflow-wrap: anywhere; }
+.ssx-meta { font: 400 11.5px/1.5 var(--mono); color: var(--mute, var(--plum)); margin: 0; overflow-wrap: anywhere; }
+.ssx-says { font: 400 13px/1.45 var(--sans); margin: 0; padding-left: 8px; border-left: 2px solid var(--rose); }
+.ssx-file .acts, .ssx-job .acts, .ssx-walk .acts, .ssx-path .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ssx-older { border-top: 1px solid var(--hair); padding-top: 6px; }
+.ssx-older summary { cursor: pointer; font: 500 11.5px var(--mono); letter-spacing: .04em; min-height: 32px; display: flex; align-items: center; }
+.ssx-older ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ssx-older li { display: grid; gap: 2px 8px; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+.ssx-oa { grid-column: 1 / -1; display: flex; gap: 14px; }
+.ssx-bar { height: 8px; border: 1px solid var(--plum); background: var(--paper); overflow: hidden; }
+.ssx-bar i { display: block; height: 100%; background: var(--plum); }
+.ssx-bar.is-busy i { background: linear-gradient(90deg, transparent, var(--plum), transparent); }
+.ssx-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ssx-note-card { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; align-items: center; border: 1px solid var(--needs, var(--plum)); padding: 10px 14px; background: var(--panel, var(--paper)); }
+.ssx-note-card p { margin: 0; font: 400 13px/1.45 var(--sans); }
+
+/* the camera path */
+.ssx-path { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px; border: 1px solid var(--plum); background: var(--panel, var(--paper)); }
+.ssx-path > .ssx-path-ic { width: 44px; height: 44px; stroke-width: 1.1; margin: 8px 38px; }
+.ssx-path.is-prop { border-style: dashed; }
+.ssx-plan { width: 120px; height: 120px; border: 1px solid var(--line); background-color: var(--paper); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 12px 12px; }
+.ssx-axis { stroke: var(--line); stroke-width: .5; fill: none; }
+.ssx-line { fill: none; stroke: var(--plum); stroke-width: 1.6; stroke-linejoin: round; }
+.ssx-line.is-prop { stroke-dasharray: 3 2.5; }
+.ssx-a { fill: var(--go, var(--plum)); } .ssx-b { fill: var(--needs, var(--plum)); } .ssx-m { fill: var(--plum); }
+
+/* Open the walkthrough */
+.ssx-walk { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--plum); background-color: var(--rose); }
+.ssx-chips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.ssx-chips li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 8px; align-items: center; padding: 8px 10px; background: var(--paper); border: 1px solid var(--line); opacity: .62; font: 500 11px/1.3 var(--mono); }
+.ssx-chips li.is-on { opacity: 1; border-color: var(--plum); }
+.ssx-chips .ssx-ic { width: 20px; height: 20px; grid-row: span 2; }
+.ssx-chips b { font: 500 11px/1.3 var(--mono); overflow-wrap: anywhere; grid-column: 2; }
+.ssx-chips li:not(:has(b)) span { grid-row: span 2; align-self: center; }
+.ssx-walk-a .btn { min-height: 48px; }
+
+@media (min-width: 761px) { .ssx-path { grid-template-columns: 140px minmax(0, 1fr); } .ssx-plan { width: 140px; height: 140px; } }
+@media (max-width: 420px) { .ssx-path { grid-template-columns: 1fr; } .ssx-plan { width: 100%; height: auto; aspect-ratio: 1; max-width: 200px; } .ssx-path > .ssx-path-ic { margin: 0; } }

@@ -39,7 +39,7 @@
 
 import { imageSize, allowedOrigin, LABEL, TIMES, SEASONS } from "./render.js";
 
-export const FILM_PROMPTS = "2026-11-23a";
+export const FILM_PROMPTS = "2026-11-23b";
 export const DEFAULT_MODEL = "gemini-omni-1.2-flash";
 export const MAX_BODY = 24_000_000;
 export const MAX_VIDEO = 16_000_000;
@@ -111,16 +111,16 @@ const LIGHT = {
 const SEASON = { summer: "Summer: full, fresh foliage and dry, warm ground.", winter: "Winter: a lower, cooler sun, damp ground and a crisper sky." };
 export function buildFilmPrompt(look = {}, o = {}) {
   return [
-    "Edit this video: make it look like real camera footage of the same house, filmed along exactly the same camera path.",
-    "Keep the camera motion exactly as it is: the same path, speed, lens, framing and horizon in every frame. One continuous shot, no cuts.",
-    "Keep the building's geometry exactly: every window and door opening, the stair's run, its turns, its landings and every step, every balustrade post and glass panel, the deck edges, the roof line and fascia, and every pole and pile stay exactly where they are in every frame, at the same size and in the same number. Doors that open in the video open the same way.",
-    "Do not add, remove, move, resize, widen or straighten any building element.",
+    "Edit this video: make it look like real camera footage of the same building, as built, filmed along exactly the same camera path.",
+    "Keep the camera motion exactly as it is: the same path, speed, lens, framing and horizon in every frame. A slow, steady camera: no shake, no zoom, no speed changes. One continuous shot, no cuts.",
+    "Keep the building's geometry exactly: every wall, every window and door opening, every glazing panel and mullion, every stair, step, balustrade, deck edge, roof line and fascia, and every pole and pile stay exactly where they are in every frame, at the same size and in the same number. Doors that open in the video open the same way.",
+    "Do not add, remove, move, resize, widen or straighten any building element. Add no buildings, structures, roofs or signs that the video does not show; keep every neighbouring building as it is.",
     "Only the materials, light, sky and planting may change: make the surfaces read as real materials, and the light and sky as real.",
     o.still ? "The reference image shows the look to match (materials, light and planting); the building's geometry comes from the video, not from the image." : "",
     o.guide ? "The guide image is the last frame of the previous part of this film: make this part continue from it seamlessly, in the same look and light." : "",
     look.time ? `Light: ${LIGHT[look.time]}.` : "",
     look.season ? SEASON[look.season] : "",
-    "Plant New Zealand native species only, and only on ground the video shows; keep the planting low so it hides no part of the building.",
+    "Plant New Zealand native species only, and only on ground the video shows; keep the planting low so it hides no part of the building. Planting and trees move slightly in a light wind; nothing else moves.",
     "No people, no text, no captions, no watermark, no logos.",
     "Sound: quiet natural ambience only (light wind and native birdsong); no music, no voices.",
     "Keep everything else the same.",

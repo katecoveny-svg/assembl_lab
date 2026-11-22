@@ -269,7 +269,8 @@ test('reading Google\'s answer: the last video of the model output; thoughts and
 test('the prompt: keeps the camera path and every building element; only materials, light, sky and planting change; no people or text', () => {
   const p = buildFilmPrompt({ time: 'overcast' }, { still: true, guide: true });
   for (const s of ['same camera path', 'same path, speed, lens, framing and horizon in every frame', 'One continuous shot, no cuts',
-    "the stair's run, its turns, its landings and every step", 'every balustrade post and glass panel', 'the deck edges, the roof line and fascia, and every pole and pile',
+    'every glazing panel and mullion', 'every stair, step, balustrade, deck edge, roof line and fascia, and every pole and pile',
+    'A slow, steady camera', 'Add no buildings, structures, roofs or signs', 'keep every neighbouring building as it is', 'move slightly in a light wind',
     'Do not add, remove, move, resize, widen or straighten any building element', 'Only the materials, light, sky and planting may change',
     'reference image shows the look to match', 'geometry comes from the video', 'last frame of the previous part', 'overcast New Zealand sky',
     'New Zealand native species only', 'No people, no text, no captions, no watermark, no logos.', 'no music, no voices', 'Keep everything else the same.'])
