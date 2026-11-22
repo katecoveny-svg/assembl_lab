@@ -160,3 +160,16 @@
   .hunt-panel { grid-template-columns: 1fr 1fr; }
   .hunt-f.wide, .hunt-panel .hunt-note, .hunt-panel .hunt-acts { grid-column: 1 / -1; }
 }
+
+/* ---- the kaupapa Māori and Indigenous lens: a plain text badge and one filter chip, no cultural imagery ------------------------------ */
+.hunt-kp { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 2px 8px; border: 1px solid var(--h-ink); background: var(--h-soft); color: var(--h-ink); font: 600 12px/1.2 var(--h-sans); letter-spacing: 0; }
+.hunt-kp .hunt-i { width: 15px; height: 15px; }
+.hunt-kp-words { list-style: none !important; margin-left: -16px; }
+.hunt-kp-words b { font-weight: 600; }
+.hunt-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.hunt-filters small { flex: 1 1 260px; font-size: 13px; line-height: 1.4; color: var(--h-mute); max-width: 62ch; }
+.hunt-filter { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; min-width: 44px; padding: 0 14px; border: 1px solid var(--h-line); background: var(--h-ground); color: var(--h-ink); font: 500 14px/1.2 var(--h-sans); cursor: pointer; }
+.hunt-filter:hover { background: var(--h-soft); }
+.hunt-filter[aria-pressed="true"] { background: var(--h-ink); border-color: var(--h-ink); color: var(--h-ground); }
+.hunt-filter[aria-pressed="true"] .hunt-count { background: var(--h-ground); color: var(--h-ink); }
+.hunt-opt.wide .hunt-opt-t { display: block; margin: 0 0 3px; }

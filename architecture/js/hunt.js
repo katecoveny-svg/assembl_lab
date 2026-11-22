@@ -6,6 +6,7 @@
 // The rules are in hunt-model.js; the feed is /api/live/?feeds=hunt (api/_feeds/hunt.js).
 import { parseLens, rankKbRows } from './hunt-rank.js';
 import { clock, dayName, shortDay } from './crm-model.js';
+import { icon as pageIcon } from './icons.js';
 import {
   REGIONS, SECTORS, SOURCES, SHOWN_MAX, SETTING, emptyHunt, cleanHunt, huntIsEmpty, huntQuery, sourcesOn, readAnswer, cleanSignal, fitWord, fitSteps, daysLeft, buyerInitials,
   addedAs, enquiryFromSignal, cleanDismissed, dismiss, restore, scopeOf, cacheFresh,
@@ -16,7 +17,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 // ---- the stylesheet (loaded with the page's own custom properties; nothing here sets a colour of its own) -----------------------------
-export const CSS_VERSION = '1';
+export const CSS_VERSION = '2';
 let cssReady = null;
 export function ensureHuntCss() {
   if (typeof document === 'undefined') return Promise.resolve();
@@ -66,6 +67,8 @@ export function fitHtml(fit) {
 }
 
 const SECTOR_NAME = Object.fromEntries(SECTORS);
+/** the start of the reason hunt-rank.js writes for a cultural match; the card shows the words in their own line instead */
+const CULTURAL_REASON = 'kaupapa Māori or Indigenous words';
 
 /**
  * The hunt for one Clients screen.
@@ -75,7 +78,7 @@ const SECTOR_NAME = Object.fromEntries(SECTORS);
 export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw = () => {}, added = async () => {}, fetch: fetchImpl = (...a) => globalThis.fetch(...a), now = () => new Date() } = {}) {
   const scope = scopeOf(ctx.practice);
   const canEdit = !readOnly && (!ctx.practice || ctx.practice.role === 'owner');
-  const S = { phase: 'idle', settings: emptyHunt(), answer: null, older: null, error: '', dismissed: {}, showHidden: false, panel: false, flash: null, busy: new Set(), announce: '' };
+  const S = { phase: 'idle', settings: emptyHunt(), answer: null, older: null, error: '', dismissed: {}, showHidden: false, onlyCultural: false, panel: false, flash: null, busy: new Set(), announce: '' };
   let gone = false, run = 0;
   const draw = () => { if (!gone) redraw(); };
 
@@ -108,7 +111,7 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
   /** the notices the radar already collected (members only, public fields), scored here against this practice's words */
   async function readRadar() {
     const rows = await ctx.account.huntSignals();
-    const lens = parseLens({ keywords: S.settings.keywords.join(','), regions: S.settings.regions.join(','), sectors: S.settings.sectors.join(','), min: S.settings.min, max: S.settings.max });
+    const lens = parseLens({ keywords: S.settings.keywords.join(','), regions: S.settings.regions.join(','), sectors: S.settings.sectors.join(','), min: S.settings.min, max: S.settings.max, cultural: S.settings.cultural });
     const signals = rankKbRows(rows, lens, now()).map(cleanSignal).filter(Boolean);
     return { signals, considered: Array.isArray(rows) ? rows.length : 0, fetchedAt: now().toISOString() };
   }
@@ -129,7 +132,8 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
     if (huntIsEmpty(S.settings) || !sourcesOn(S.settings).length) { S.phase = 'ready'; S.answer = null; S.error = ''; return draw(); }
     const on = sourcesOn(S.settings), radarOn = on.includes('radar') && !!ctx.practice && typeof ctx.account?.huntSignals === 'function', getsOn = on.includes('gets');
     if (!radarOn && !getsOn) { S.phase = 'ready'; S.answer = null; S.error = ''; return draw(); }
-    const query = huntQuery(S.settings) + (radarOn ? '&radar=1' : ''), kept = await readKept(SETTING.cache(scope));
+    // lens=2: answers kept before the cultural flag existed are not reused
+    const query = huntQuery(S.settings) + (radarOn ? '&radar=1' : '') + '&lens=2', kept = await readKept(SETTING.cache(scope));
     if (!force && cacheFresh(kept, query, now())) { S.answer = kept.answer; S.older = null; S.phase = 'ready'; S.error = ''; return draw(); }
     S.older = kept && kept.query === query && kept.answer ? { answer: kept.answer, day: kept.day } : null;
     S.phase = 'loading'; S.error = ''; draw();
@@ -194,14 +198,18 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
 
   function cardHtml(s) {
     const days = daysLeft(s, now()), made = addedAs(s, enquiries()), busy = S.busy.has(s.id);
-    const why = s.reasons.length ? `<details class="hunt-why"><summary>Why this</summary><ul>${s.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></details>` : '';
+    const kp = s.cultural?.on ? s.cultural : null;
+    const reasons = s.reasons.filter((r) => !(kp && r.startsWith(CULTURAL_REASON)));
+    const words = kp ? `<li class="hunt-kp-words">Kaupapa Māori and Indigenous words found in the notice: ${kp.why.map((w) => `<b>${esc(w)}</b>`).join(', ')}. This reads the words only; it is not a view on cultural fit.</li>` : '';
+    const why = reasons.length || kp ? `<details class="hunt-why"><summary>Why this</summary><ul>${words}${reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></details>` : '';
+    const badge = kp ? `<span class="hunt-kp">${pageIcon('people', 'hunt-i hunt-i-s')}<span>Kaupapa Māori</span></span>` : '';
     const acts = readOnly ? '' : made
       ? `<div class="hunt-acts"><span class="hunt-added">${icon('check')}<span>Added to the pipeline</span></span><a class="hunt-link" href="#/crm/e/${encodeURIComponent(made.id)}">Open the enquiry</a></div>`
       : `<div class="hunt-acts"><button type="button" class="hunt-btn solid" data-hunt="add" data-id="${esc(s.id)}" aria-label="Add ${esc(s.title)} to the pipeline"${busy ? ' disabled' : ''}>${icon('plus')}<span>${busy ? 'Adding…' : 'Add to pipeline'}</span></button><button type="button" class="hunt-link" data-hunt="no" data-id="${esc(s.id)}" aria-label="Not for us: hide ${esc(s.title)}">Not for us</button></div>`;
     return `<li class="hunt-card${made ? ' is-added' : ''}" data-id="${esc(s.id)}">
       <div class="hunt-top"><span class="hunt-av" aria-hidden="true">${esc(buyerInitials(s.buyer))}</span><span class="hunt-buyer">${esc(s.buyer || 'Buyer not stated')}</span>${ringHtml(days)}</div>
       <a class="hunt-title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"><span>${esc(s.title)}</span>${icon('out', 'hunt-i-s')}<span class="vh"> (opens the notice on ${esc(s.sourceName)})</span></a>
-      <div class="hunt-meta">${s.region ? `<span class="hunt-chip">${icon('pin', 'hunt-i-s')}<span>${esc(s.region)}</span></span>` : ''}<span class="hunt-chip is-src"><span>${esc(s.sourceName)}</span></span>${s.closesDay ? `<span class="hunt-chip">${icon('clock', 'hunt-i-s')}<span>${esc(shortDay(s.closesDay, now()))}</span></span>` : ''}</div>
+      <div class="hunt-meta">${badge}${s.region ? `<span class="hunt-chip">${icon('pin', 'hunt-i-s')}<span>${esc(s.region)}</span></span>` : ''}<span class="hunt-chip is-src"><span>${esc(s.sourceName)}</span></span>${s.closesDay ? `<span class="hunt-chip">${icon('clock', 'hunt-i-s')}<span>${esc(shortDay(s.closesDay, now()))}</span></span>` : ''}</div>
       ${fitHtml(s.fit)}
       ${why}
       ${acts}
@@ -223,10 +231,11 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
     return `<form class="hunt-panel" data-hunt-form="settings" aria-label="What to look for" novalidate>
       <label class="hunt-f wide"><span>Words to look for</span><input name="keywords" type="text" value="${esc(h.keywords.join(', '))}" placeholder="library, school, marae, refurbishment" autocomplete="off"${off}><small>Separate them with commas. A notice must be about buildings and mention one of these, or be in a sector below.</small></label>
       <fieldset class="hunt-f wide"><legend>Sectors</legend><div class="hunt-opts">${SECTORS.map(([k, l]) => chip('sectors', k, l, h.sectors.includes(k))).join('')}</div></fieldset>
+      <div class="hunt-f wide"><label class="hunt-opt wide"><input type="checkbox" name="cultural" value="1"${h.cultural ? ' checked' : ''}${off}><span><strong class="hunt-opt-t">Always show kaupapa Māori and Indigenous work, whatever the other words</strong>A notice with words such as marae, papakāinga or an iwi as the buyer is kept even when it misses the words and sectors above. It must still be about buildings and in your regions.</span></label><small>This is a finding aid. It reads the words in public notices. It does not judge cultural fit, and nobody is contacted.</small></div>
       <fieldset class="hunt-f wide"><legend>Regions <small>(none ticked means anywhere)</small></legend><div class="hunt-opts">${REGIONS.map((r) => chip('regions', r, r, h.regions.includes(r))).join('')}</div></fieldset>
       <div class="hunt-f"><span class="hunt-lab">Usual value, NZD</span><div class="hunt-range"><label><span class="vh">From</span><input name="min" inputmode="numeric" placeholder="from 50000" value="${h.min ?? ''}" autocomplete="off"${off}></label><span aria-hidden="true">to</span><label><span class="vh">To</span><input name="max" inputmode="numeric" placeholder="to 2000000" value="${h.max ?? ''}" autocomplete="off"${off}></label></div><small>Used only when a notice states its own value, which most do not.</small></div>
       <fieldset class="hunt-f"><legend>Where to look</legend>${SOURCES.map((s) => `<label class="hunt-opt wide"><input type="checkbox" name="sources" value="${esc(s.id)}"${h.sources[s.id] !== false ? ' checked' : ''}${off}><span><strong>${esc(s.name)}</strong> ${esc(s.says)}</span></label>`).join('')}</fieldset>
-      <p class="hunt-note">${icon('send')}<span>${canEdit ? 'Nothing is looked up until you have set a word or a sector.' : 'Only an owner can change this.'} ${who}</span></p>
+      <p class="hunt-note">${icon('send')}<span>${canEdit ? 'Nothing is looked up until you have set a word, a sector or the kaupapa Māori setting.' : 'Only an owner can change this.'} ${who}</span></p>
       <div class="hunt-acts">${canEdit ? `<button type="submit" class="hunt-btn solid">${icon('check')}<span>Save and look</span></button>` : ''}<button type="button" class="hunt-btn" data-hunt="close-settings">${canEdit ? 'Cancel' : 'Close'}</button></div>
     </form>`;
   }
@@ -248,17 +257,18 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
       const cards = S.older ? `<p class="hunt-flash">${icon('clock')}<span>${esc(lookedAt())}. It may be out of date.</span></p><ul class="hunt-cards" role="list">${visible().slice(0, SHOWN_MAX).map(cardHtml).join('')}</ul>` : '';
       return `<p class="hunt-flash is-error" role="alert">${icon('alert')}<span>${esc(S.error)}</span></p><div class="hunt-acts"><button type="button" class="hunt-btn" data-hunt="look" data-force="1">${icon('refresh')}<span>Try again</span></button></div>${cards}`;
     }
-    const shown = visible(), hid = hidden();
+    const all = visible(), culturalCount = all.filter((s) => s.cultural?.on).length, shown = S.onlyCultural ? all.filter((s) => s.cultural?.on) : all, hid = hidden();
+    const filters = all.length || hid.length ? `<div class="hunt-filters"><button type="button" class="hunt-filter" data-hunt="only-cultural" aria-pressed="${S.onlyCultural}"><span>Cultural work</span><span class="hunt-count">${culturalCount}<span class="vh"> findings</span></span></button><small>Found by reading the words in public notices. It does not judge cultural fit, and nobody is contacted.</small></div>` : '';
     const sorted = [...shown.filter((s) => !addedAs(s, enquiries())), ...shown.filter((s) => addedAs(s, enquiries()))].slice(0, SHOWN_MAX);
-    const none = !shown.length ? `<p class="hunt-empty"><span>${icon('search')}<span>${hid.length ? 'Everything found is hidden.' : `Nothing fits right now. ${S.answer?.considered ? `${plural(S.answer.considered, 'open tender')} looked at. ` : ''}New notices are looked at again tomorrow.`}</span></span></p>` : '';
+    const none = !shown.length ? `<p class="hunt-empty"><span>${icon('search')}<span>${S.onlyCultural && all.length ? 'None of today’s findings carry kaupapa Māori or Indigenous words. Press “Cultural work” again to see them all.' : hid.length ? 'Everything found is hidden.' : `Nothing fits right now. ${S.answer?.considered ? `${plural(S.answer.considered, 'open tender')} looked at. ` : ''}New notices are looked at again tomorrow.`}</span></span></p>` : '';
     const more = shown.length > SHOWN_MAX ? `<p class="hunt-dim">${shown.length - SHOWN_MAX} more fit but are not shown. Tighten the words or regions to see the best ones.</p>` : '';
     const hiddenList = hid.length ? `<div class="hunt-hidden"><button type="button" class="hunt-link" data-hunt="toggle-hidden" aria-expanded="${S.showHidden}">${icon('eye')}<span>${S.showHidden ? 'Hide the hidden' : `${hid.length} hidden as not for us`}</span></button>${S.showHidden ? `<ul>${hid.map((s) => `<li><span>${esc(s.title)}</span><button type="button" class="hunt-link" data-hunt="back" data-id="${esc(s.id)}">Bring back</button></li>`).join('')}</ul>` : ''}</div>` : '';
-    return `${sourcesNote}${shown.length ? `<ul class="hunt-cards" role="list">${sorted.map(cardHtml).join('')}</ul>` : none}${more}${hiddenList}`;
+    return `${sourcesNote}${filters}${shown.length ? `<ul class="hunt-cards" role="list">${sorted.map(cardHtml).join('')}</ul>` : none}${more}${hiddenList}`;
   }
 
   function html() {
     const empty = huntIsEmpty(S.settings) && S.phase !== 'idle';
-    const kw = S.settings.keywords.length + S.settings.sectors.length + S.settings.regions.length;
+    const kw = S.settings.keywords.length + S.settings.sectors.length + S.settings.regions.length + (S.settings.cultural ? 1 : 0);
     const flash = S.flash ? `<p class="hunt-flash${S.flash.error ? ' is-error' : ''}" role="${S.flash.error ? 'alert' : 'status'}">${icon(S.flash.error ? 'alert' : 'check')}<span>${esc(S.flash.text)}</span></p>` : '';
     return `<section class="hunt" aria-labelledby="hunt-h" data-state="${S.phase}${empty ? '-empty' : ''}">
       <header class="hunt-head">
@@ -283,6 +293,7 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
     if (act === 'add') { await add(t.dataset.id); return true; }
     if (act === 'no') { await notForUs(t.dataset.id); return true; }
     if (act === 'back') { await bringBack(t.dataset.id); return true; }
+    if (act === 'only-cultural') { S.onlyCultural = !S.onlyCultural; S.announce = S.onlyCultural ? 'Showing cultural work only.' : 'Showing all findings.'; draw(); return true; }
     if (act === 'toggle-hidden') { S.showHidden = !S.showHidden; draw(); return true; }
     if (act === 'look') { S.flash = null; await look({ force: true }); return true; }
     if (act === 'open-settings') { S.panel = !S.panel; S.flash = null; draw(); return true; }
@@ -296,7 +307,7 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
     if (!canEdit) return true;
     const fd = new FormData(form), sources = fd.getAll('sources');
     try {
-      await saveSettings({ keywords: String(fd.get('keywords') ?? ''), sectors: fd.getAll('sectors'), regions: fd.getAll('regions'), min: String(fd.get('min') ?? '').trim(), max: String(fd.get('max') ?? '').trim(), sources: Object.fromEntries(SOURCES.map((s) => [s.id, sources.includes(s.id)])) });
+      await saveSettings({ keywords: String(fd.get('keywords') ?? ''), sectors: fd.getAll('sectors'), regions: fd.getAll('regions'), min: String(fd.get('min') ?? '').trim(), max: String(fd.get('max') ?? '').trim(), sources: Object.fromEntries(SOURCES.map((s) => [s.id, sources.includes(s.id)])), cultural: fd.get('cultural') === '1' });
       S.panel = false; S.flash = { text: 'Saved. Looking at the notices again.' };
       await look({ force: true });
     } catch (err) { S.flash = { error: true, text: String(err?.message ?? err) }; draw(); }

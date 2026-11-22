@@ -44,7 +44,7 @@ export async function handleLive(q /* URLSearchParams */) {
     q: (q.get("q") || "").slice(0, 300), // the address feed only; never logged or stored
     retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined, // steers the retailers feed only
     hunt: { keywords: (q.get("keywords") || "").slice(0, 900), regions: (q.get("regions") || "").slice(0, 300), sectors: (q.get("sectors") || "").slice(0, 200),
-      min: (q.get("min") || "").slice(0, 14), max: (q.get("max") || "").slice(0, 14), sources: (q.get("sources") || "").slice(0, 100) } }; // the hunt feed only: what a practice asked to look for (see hunt.js)
+      min: (q.get("min") || "").slice(0, 14), max: (q.get("max") || "").slice(0, 14), sources: (q.get("sources") || "").slice(0, 100), cultural: (q.get("cultural") || "").slice(0, 5) } }; // the hunt feed only: what a practice asked to look for (see hunt.js)
   const { feeds, cache, unknown } = await runFeeds(ids, { place, district, ...geo });
   headers["Cache-Control"] = cache ? `public, s-maxage=${cache.sMaxAge}, stale-while-revalidate=${cache.swr}` : "no-store";
   return { status: 200, headers, body: { type: "assembl.feeds", version: 2, fetchedAt: new Date().toISOString(), place, district, feeds,

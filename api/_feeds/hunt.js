@@ -5,6 +5,7 @@
 //   keywords  up to 20 words or short phrases (40 characters each)     regions  NZ regions as GETS writes them (Auckland, Waikato, ...)
 //   sectors   education | health | housing | civic | commercial | heritage | justice | sport     min, max  typical value in NZD (optional)
 //   sources   which sources to read (default: all of them that are on). Only "gets" today.
+//   cultural  1 = always keep kaupapa Māori and Indigenous work (words in the notice), even when it misses the keywords and sectors; sector "kaupapa" finds it by its words. Each signal carries cultural: { on, why:[words] }.
 //   → feeds.hunt = { id:"hunt", value:<number of signals>, values:{ signals:[...], sources:[{ id, name, ok, read, error? }], needsLens, considered, lens }, source, licence, note, ... }
 //   signal = { id, title, buyer, region, regions, closes (ISO), closesDay (NZ date), daysLeft, value (NZD or null), valueText, url, source, sourceName, published (day), fit (0-100), reasons:[text], matched:{ keywords, sectors } }
 //   With no keywords and no sectors it finds nothing and does not read any source ("set what to look for").

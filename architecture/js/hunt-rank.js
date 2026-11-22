@@ -14,7 +14,27 @@ export const SECTORS = {
   heritage: { label: "Heritage and conservation", words: ["heritage", "restoration", "conservation", "historic", "strengthening", "seismic upgrade", "earthquake-prone", "earthquake prone"] },
   justice: { label: "Justice and safety", words: ["police", "court", "courthouse", "corrections", "prison", "fire station", "fenz", "emergency services", "defence"] },
   sport: { label: "Sport and recreation", words: ["stadium", "sports", "sport", "arena", "events centre", "gym", "changing rooms", "clubrooms", "pavilion", "grandstand", "recreation"] },
+  kaupapa: { label: "Kaupapa Māori and Indigenous", words: [] }, // filled in below from CULTURAL_PLACES and CULTURAL_DESIGN; scored by culturalMatch()
 };
+
+// ---- the kaupapa Māori and Indigenous lens ---------------------------------------------------------------------------------------------
+// A finding aid: it reads the words in a public notice and says which of these words it found. It does not judge cultural fit, it does not
+// know whose rohe a place is in, and it contacts nobody. Every word is written with its macrons; fold() makes the match macron-insensitive
+// ("Te Atatu marae" and "Te Atatū marae" are the same text). Whole words only: bare "te", "whare" and "trust" never match, and a place name
+// that merely contains a Māori word ("Te Atatu", "Pouakai", "Whare Ra") does not match unless one of these words stands beside it.
+// Spellings were taken from the te reo skill, Te Aka Māori Dictionary and the publishers' own names. Review them with a reo speaker (docs/architecture/pipeline-hunt-cultural-sources.md).
+export const CULTURAL_PLACES = ["marae", "wharenui", "wharekai", "whare kai", "whare tūpuna", "whare karakia", "whare taonga", "wharekura", "kura kaupapa", "kōhanga reo", "wānanga", "papakāinga", "kaumātua housing", "urupā", "ātea", "pā site", "Māori housing", "Māori health", "hauora Māori", "taha Māori", "Pasifika", "Pacific church", "fale", "cultural centre", "Indigenous"];
+export const CULTURAL_DESIGN = ["Te Aranga", "mana whenua", "tangata whenua", "cultural narrative", "cultural design", "cultural landscape", "iwi engagement", "mātauranga Māori", "kaitiakitanga", "whakairo", "tukutuku", "pou", "carving", "taonga", "Te Tiriti"];
+/** buyers and funders: matched in the buyer field and in the text */
+export const CULTURAL_BUYERS = ["iwi", "hapū", "rūnanga", "trust board", "Māori land trust", "ahu whenua trust", "Māori incorporation", "Te Puni Kōkiri", "Te Tumu Paeroa", "Te Arawhiti", "Te Mātāwai", "Whai Kāinga Whai Oranga", "Waikato-Tainui", "Te Uru Taumatua", "Ngāti Whātua Ōrākei"];
+/** a buyer whose name starts with one of these (a whole word) is an iwi or hapū entity: "Ngāti Porou Whanau Ora", "Ngāi Tahu Property", "Ngā Hapū o ..." */
+export const CULTURAL_BUYER_PREFIXES = ["Ngāti", "Ngāi", "Ngā"];
+// "Indigenous planting" and "indigenous vegetation" are landscape words, not a people: they do not count
+const INDIGENOUS_PLANTS = /(?:^|[^a-z0-9])indigenous(?=$|[^a-z0-9])(?!\s+(?:planting|plantings|plants|vegetation|species|flora|fauna|biodiversity|bush|forest|forests|trees|revegetation|habitat|habitats|ecosystem|ecosystems|landscaping|wildlife|birds|restoration|bird))/;
+SECTORS.kaupapa.words = [...CULTURAL_PLACES, ...CULTURAL_DESIGN];
+// Buildings of this kind are buildings even when the title has no other building word ("Wharekura upgrade").
+const CULTURAL_BUILT = ["wharenui", "wharekai", "whare kai", "whare tūpuna", "whare karakia", "whare taonga", "wharekura", "kura kaupapa", "kōhanga reo", "papakāinga", "kaumātua housing", "Māori housing", "fale", "taha Māori"];
+
 
 // Words that say a notice is asking for design or advice (architects), and words that say it is building work or supply.
 const DESIGN_WORDS = ["architect", "architects", "architectural", "architecture", "design services", "lead design", "lead designer", "concept design", "detailed design", "developed design", "design team", "design and consenting", "design and consent", "master plan", "masterplan", "masterplanning", "feasibility", "spatial framework", "options assessment", "business case", "consultancy", "consultant", "consultants", "professional services", "design review", "briefing", "heritage assessment", "building condition"];
@@ -25,6 +45,7 @@ const STRONG_DESIGN = ["architects", "architectural services", "architectural de
 const BUILT_FAMILIES = ["72", "95", "30", "8110", "8112"], IT_FAMILIES = ["43", "8111", "8115", "8116"];
 const BUILT_WORDS = ["building", "buildings", "facility", "facilities", "refurbishment", "redevelopment", "renovation", "construction", "fit-out", "fitout", "masterplan", "master plan", "architect", "architects", "architectural", "design services", "concept design", "detailed design", "feasibility", "library", "pavilion", "classroom", "classrooms", "toilet block", "marae", "stadium", "hospital", "town hall", "community hall", "pool", "streetscape", "housing", "apartment", "apartments", "dwelling", "dwellings", "campus"];
 // Roads, pipes, electrical gear and collections: not an architecture practice's work.
+const BUILT_WORDS_ALL = BUILT_WORDS.concat(CULTURAL_BUILT);
 const INFRA_WORDS = ["roundabout", "cycle path", "cycleway", "culvert", "stormwater", "sewer", "wastewater", "watermain", "reservoir", "bridge", "intersection", "carriageway", "pavement", "state highway", "transmission line", "substation", "network design", "electricity", "electrical", "disconnector", "earth switch", "telemetry", "high voltage", "groyne", "pa system", "collections"];
 const WORKS_WORDS = ["supply", "drain laying", "plumbing", "main contractor", "main contractors", "maintenance", "repair", "repairs", "supply of", "supply and install", "replacement", "fire alarm", "painting", "cleaning", "resurfacing", "reseal", "mowing", "contractors", "contractor", "design and build", "design & build", "design build", "construction contract", "civil works", "earthworks", "demolition", "roofing", "reroof", "re-roof", "flooring supply"];
 
@@ -36,11 +57,28 @@ const RE = new Map(); // compiled once per term: a notice list is scored against
 const wordRe = (term) => { let r = RE.get(term); if (!r) { r = new RegExp(`(?:^|[^a-z0-9])${escRe(fold(term).trim())}s?(?=$|[^a-z0-9])`); if (RE.size > 2000) RE.clear(); RE.set(term, r); } return r; };
 const hit = (text, term) => wordRe(term).test(text);
 
+/**
+ * Does this notice carry kaupapa Māori or Indigenous words? { on, why } where why is the words found, as written in the lists above
+ * (at most 8, places first, then design language, then buyers). t = { title, buyer, overview }. It reads words; it says nothing about
+ * whether a practice is the right one for the work or what the community wants.
+ */
+export function culturalMatch(t = {}) {
+  const title = fold(t.title), buyer = fold(t.buyer), rest = fold(t.overview), text = `${title} ${buyer} ${rest}`;
+  const why = [], seen = new Set();
+  const add = (label) => { const k = fold(label); if (!seen.has(k)) { seen.add(k); why.push(label); } };
+  for (const term of [...CULTURAL_PLACES, ...CULTURAL_DESIGN, ...CULTURAL_BUYERS]) {
+    if (fold(term) === "indigenous" ? INDIGENOUS_PLANTS.test(text) : hit(text, term)) add(term);
+  }
+  const first = clean(t.buyer).split(/\s+/)[0] ?? "";
+  if (first && CULTURAL_BUYER_PREFIXES.some((p) => fold(p) === fold(first).replace(/[^a-z0-9]/g, ""))) add(first.replace(/[^\p{L}\p{N}-]/gu, ""));
+  return { on: why.length > 0, why: why.slice(0, 8) };
+}
+
 // ---- the practice's lens, from the query ---------------------------------------------------------------------------------------------
 const list = (v, max, len) => [...new Set(String(v ?? "").split(",").map((s) => s.replace(/\s+/g, " ").trim().slice(0, len)).filter(Boolean))].slice(0, max);
 const money = (v) => { const d = String(v ?? "").replace(/[^\d.]/g, ""), n = Number(d); return /\d/.test(d) && Number.isFinite(n) && n >= 0 ? Math.min(n, 1e11) : null; };
 
-/** The lens a practice asked for, cleaned: only known regions and sectors, bounded lists, numbers or null. */
+/** The lens a practice asked for, cleaned: only known regions and sectors, bounded lists, numbers or null, and the "always show cultural work" switch. */
 export function parseLens(p = {}) {
   const regionKey = new Map(REGIONS.map((r) => [fold(r), r]));
   const regions = list(p.regions, 17, 40).map((r) => regionKey.get(fold(r))).filter(Boolean);
@@ -49,9 +87,10 @@ export function parseLens(p = {}) {
   let min = money(p.min), max = money(p.max);
   if (min != null && max != null && min > max) [min, max] = [max, min];
   const sources = list(p.sources, 8, 20).map((s) => fold(s));
-  return { keywords, regions: [...new Set(regions)], sectors: [...new Set(sectors)], min, max, sources };
+  const cultural = p.cultural === true || /^(1|true|on)$/i.test(String(p.cultural ?? ""));
+  return { keywords, regions: [...new Set(regions)], sectors: [...new Set(sectors)], min, max, sources, cultural };
 }
-export const lensIsEmpty = (l) => !l.keywords.length && !l.sectors.length;
+export const lensIsEmpty = (l) => !l.keywords.length && !l.sectors.length && !l.cultural;
 
 // ---- reading the GETS feed ----------------------------------------------------------------------------------------------------------
 const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
@@ -159,7 +198,7 @@ export function scoreTender(t, lens, now = new Date()) {
   const reasons = [], matched = { keywords: [], sectors: [] };
   const cats = t.categories ?? [], builtCat = cats.some((c) => BUILT_FAMILIES.some((f) => c.startsWith(f)));
   if (!builtCat && cats.some((c) => IT_FAMILIES.some((f) => c.startsWith(f)))) return null; // software and equipment
-  if (!builtCat && !BUILT_WORDS.some((w) => hit(title, w)) && !STRONG_DESIGN.concat(["refurbishment", "redevelopment", "renovation", "new building"]).some((w) => hit(rest, w))) return null; // not about buildings or places
+  if (!builtCat && !BUILT_WORDS_ALL.some((w) => hit(title, w)) && !STRONG_DESIGN.concat(["refurbishment", "redevelopment", "renovation", "new building"]).some((w) => hit(rest, w))) return null; // not about buildings or places
   let score = 18; // a tender notice is real, dated work: the radar's base weight for one
 
   let kw = 0;
@@ -167,12 +206,15 @@ export function scoreTender(t, lens, now = new Date()) {
     if (hit(title, k)) { kw += 12; matched.keywords.push(k); } else if (hit(rest, k)) { kw += 6; matched.keywords.push(k); }
   }
   score += Math.min(kw, 36);
+  const cultural = culturalMatch(t);
   let sec = 0;
-  for (const key of lens.sectors) if (SECTORS[key].words.some((w) => hit(all, w))) { sec += 12; matched.sectors.push(key); }
+  for (const key of lens.sectors) if (key === "kaupapa" ? cultural.on : SECTORS[key].words.some((w) => hit(all, w))) { sec += 12; matched.sectors.push(key); }
   score += Math.min(sec, 24);
-  if (!matched.keywords.length && !matched.sectors.length) return null;
+  const keptCultural = lens.cultural && cultural.on; // "always show": kept even when it misses the practice's own words and sectors
+  if (!matched.keywords.length && !matched.sectors.length && !keptCultural) return null;
   if (matched.keywords.length) reasons.push(`matches ${matched.keywords.slice(0, 3).map((k) => `“${k}”`).join(" and ")}`);
-  if (matched.sectors.length) reasons.push(`${matched.sectors.slice(0, 2).map((k) => SECTORS[k].label.toLowerCase()).join(" and ")} work`);
+  if (matched.sectors.length) reasons.push(`${matched.sectors.slice(0, 2).map((k) => (k === "kaupapa" ? SECTORS[k].label : SECTORS[k].label.toLowerCase())).join(" and ")} work`);
+  if (lens.cultural && cultural.on) { score += 8; reasons.push(`kaupapa Māori or Indigenous words in the notice: ${cultural.why.slice(0, 4).map((w) => `“${w}”`).join(", ")}`); }
 
   // where
   const regions = t.regions ?? [], all17 = regions.filter((r) => r !== NATIONWIDE && r !== "International");
@@ -212,7 +254,7 @@ export function scoreTender(t, lens, now = new Date()) {
   return {
     id: `gets:${t.id}`, title: t.title, buyer: t.buyer, region: regionLabel, regions, closes: t.closes, closesDay, daysLeft,
     value: t.value, valueText: t.valueText, url: t.url, source: "gets", sourceName: "GETS", published: t.opened ? nzDay(t.opened) : "",
-    fit, reasons, matched,
+    fit, reasons, matched, cultural,
   };
 }
 
