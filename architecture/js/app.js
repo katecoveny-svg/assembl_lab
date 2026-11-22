@@ -12,6 +12,7 @@ import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, 
 // practice's shared records when a person is signed in with a practice, and back again when they sign out.
 import { createSwitch } from './cloud.js';
 import { mountAccount } from './account.js';
+import { getRoute, projectPanels, navItems, loadAddons } from './modules.js'; // add-ons (models, clients) draw themselves into the page
 const store = createSwitch(createStore(browserBackend()));
 const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me') });
 const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
@@ -22,6 +23,8 @@ let kept = new Map(); // the files kept for the project on screen (in this brows
 let shown = null; // [cloud] the project on screen, for wording that depends on where it is kept
 const handoff = { fp: '', pid: '', ok: false, why: '', told: false }; // whether the model on screen is ready to pass to the 3D page
 const HERO = '/plan-studio/twins/drop/hero.webp';
+let cleanups = []; // what the add-ons on screen asked to be run before the page is drawn again
+const $mods = document.getElementById('mods');
 
 // ---- small helpers ----------------------------------------------------------------------------------------------------
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -45,6 +48,7 @@ const href = (pid, ...rest) => `#/p/${encodeURIComponent(pid)}${rest.length ? '/
 
 function route() {
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  if (parts[0] && parts[0] !== 'p' && getRoute(parts[0])) return { view: 'module', name: parts[0], rest: parts.slice(1) };
   if (parts[0] !== 'p' || !parts[1]) return { view: 'projects' };
   if (parts[2] === 'pack') return { view: 'pack', pid: parts[1] };
   if (parts[2] === 's' && STAGE_KEYS.includes(parts[3])) return { view: 'stage', pid: parts[1], stage: parts[3], section: parts[4] ?? null };
@@ -436,12 +440,14 @@ function packView(b) {
 // ---- drawing the page ----------------------------------------------------------------------------------------------------------
 let lastRoute = '';
 async function render(fromLink = false) {
-  const r = route(), key = JSON.stringify([r.view, r.pid, r.stage]);
+  const r = route(), key = JSON.stringify([r.view, r.pid, r.stage, r.name, r.rest]);
+  for (const stop of cleanups.splice(0)) { try { stop(); } catch { /* an add-on that fails to tidy up does not stop the page */ } }
   const moved = key !== lastRoute;
   if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
   let html, onScreen = null;
   try { // [cloud] the shared records can fail to answer; this browser's own store never does
     if (r.view === 'projects') { shown = null; html = await projectsView(); }
+    else if (r.view === 'module') { shown = null; html = `<div class="wrap mod-screen" data-mod-screen="${esc(r.name)}"></div>`; }
     else {
       const b = await store.loadProject(r.pid);
       kept = new Map((b ? await store.listFiles({ project_id: r.pid }) : []).map((f) => [f.id, f]));
@@ -453,6 +459,7 @@ async function render(fromLink = false) {
   const y = window.scrollY;
   $app.innerHTML = html;
   account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
+  await drawAddons(r, onScreen);
   $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
   document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
   const target = (moved || fromLink) && r.section ? document.getElementById(`sec-${r.section}`) : null;
@@ -464,6 +471,35 @@ async function render(fromLink = false) {
   if (moved) ui.flash = ''; // a message is shown once, on the screen it belongs to
   // get the kept model ready for the 3D page now, so pressing Open in 3D is an ordinary link
   if (onScreen) ready3d(onScreen).then((ok) => { if (!ok && handoff.why && !handoff.told) { handoff.told = true; render(false); } });
+}
+
+/** the add-ons: the top-bar links, an add-on screen, and the add-on sections on a project page */
+async function drawAddons(r, project) {
+  if ($mods) {
+    const items = navItems();
+    $mods.hidden = !items.length;
+    $mods.innerHTML = items.map((n) => `<a href="${esc(n.hash)}" data-nav="${esc(n.id)}"${location.hash.startsWith(n.hash) ? ' aria-current="page"' : ''}>${n.icon ? `<span class="nav-ic" aria-hidden="true">${n.icon}</span>` : ''}<span>${esc(n.label)}</span></a>`).join('');
+  }
+  const ctx = { store, account, me, project: project ?? null, practice: account.state?.practice ?? null, navigate: (h) => { location.hash = h; }, redraw, esc };
+  const mount = async (el, fn, ...args) => {
+    try { const stop = await fn(el, ctx, ...args); if (typeof stop === 'function') cleanups.push(stop); }
+    catch (err) { el.innerHTML = `<p class="small">□ This part could not open: ${esc(err.message)}</p>`; }
+  };
+  if (r.view === 'module') {
+    const mod = getRoute(r.name), el = $app.querySelector('[data-mod-screen]');
+    if (mod && el) { document.title = `${mod.title} · assembl.`; await mount(el, mod.render, r.rest); }
+    return;
+  }
+  if (r.view !== 'dash' || !project) return;
+  const panels = projectPanels();
+  if (!panels.length) return;
+  const host = $app.querySelector('[data-mod-panels]') ?? $app.querySelector('article') ?? $app.querySelector('.wrap') ?? $app;
+  for (const pn of panels) {
+    const sec = document.createElement('section');
+    sec.className = 'mod-panel'; sec.dataset.panel = pn.id; sec.setAttribute('aria-label', pn.title);
+    host.append(sec);
+    await mount(sec, pn.render);
+  }
 }
 
 /** Put the kept plan model where the 3D page looks for a dropped plan. True when it is ready to open there. */
@@ -751,6 +787,7 @@ async function start() {
   account.onChange(() => { me = account.who() ?? $me.value.trim(); return render(true); });
   await account.ready;
   me = account.who() ?? me;
+  await loadAddons(); // the add-ons that are there; a missing one is left out
   await render(true);
 }
 start().catch((err) => { $app.innerHTML = `<p class="opening">The page could not start: ${esc(err.message)}</p>`; });
