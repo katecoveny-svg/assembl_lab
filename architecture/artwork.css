@@ -1,0 +1,95 @@
+/* assembl. architecture operations: the practice's own artwork (js/artwork.js)
+   Only drawn when a practice has put its artwork in; otherwise nothing here applies. Uses the page's tokens (ops.css).
+   A drawing is kept as line work (a grey mask) and drawn in an ink that suits the look: --art-ink, set per drawing. */
+
+/* ---- a drawing: the mask, filled with the ink. Nothing shows until the mask is there (never a block of ink) ---------- */
+.art-ink { display: block; width: 100%; height: 100%; background-color: transparent;
+  -webkit-mask-image: var(--art-src, none); mask-image: var(--art-src, none);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-source-type: luminance; mask-mode: luminance; }
+.art-ink.on { background-color: var(--art-ink, currentColor); }
+@media (prefers-reduced-motion: no-preference) { .art-ink.on { animation: art-in .5s ease-out both; } }
+@keyframes art-in { from { opacity: 0; } to { opacity: 1; } }
+.art-img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+/* ---- the header: the practice's logo beside a small "with assembl." -------------------------------------------------- */
+.word.art-word { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 0; }
+.art-logo { display: block; height: 36px; width: auto; }
+.word.art-word + .kick { display: none; } /* the logo says what the practice does; "with assembl." says whose workspace */
+.art-with { font: 500 10px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); white-space: nowrap; padding-left: 12px; border-left: 1px solid var(--line); }
+@media (min-width: 761px) { .art-logo { height: 42px; } }
+
+/* ---- project covers with no model: the practice's drawing on the field, the note says there is no model --------------- */
+.cover.art-cover { color: inherit; }
+.cover.art-cover .art-ink, .cover.art-cover .art-img { position: absolute; inset: 7% 6% 15%; width: auto; height: auto; }
+.cover.art-cover .art-img { width: 88%; height: 78%; } /* an image does not stretch to its insets as a box does */
+.cover.art-cover.big .art-ink, .cover.art-cover.big .art-img { inset: 6% 5% 12%; }
+.cover.art-cover.thumb .art-ink, .cover.art-cover.thumb .art-img { inset: 8%; }
+html[data-theme="sketch"] .cover.art-cover { background: #000; }
+
+/* ---- the projects screen: one wide picture behind the heading and the numbers -------------------------------------------- */
+/* The heading sits on the page's own ground (the band's scrim is solid down to the heading's foot, measured by artwork.js
+   as --art-head), the picture is clear between the heading and the numbers, and the numbers sit on a plate (WCAG AA). */
+main#app { overflow-x: clip; }
+.hero.art-hero { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto var(--art-gap, 200px) auto; gap: 14px; padding-bottom: 0; margin-bottom: 28px; }
+.art-hero > * { grid-column: 1; } /* one column: the band and the words share it, the band behind */
+.art-hero > .label { grid-row: 1; }
+.art-hero > h1 { grid-row: 2; max-width: 22ch; }
+.art-hero > .bignums { grid-row: 4; position: relative; margin-top: 0; background: color-mix(in srgb, var(--paper) 86%, transparent); }
+.art-band { grid-row: 1 / 5; grid-column: 1; position: relative; z-index: -1; margin: -28px calc(50% - 50vw) 0; overflow: hidden; pointer-events: none; background: var(--paper); }
+.art-band-in { position: absolute; inset: -30px 0 -110px; will-change: transform; }
+.art-band-img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 64%; }
+.art-band-ink { position: absolute; inset: 22% 0 0; }
+.art-band::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--paper) 0, var(--paper) var(--art-head, 34%), color-mix(in srgb, var(--paper) 40%, transparent) calc(var(--art-head, 34%) + 64px), transparent calc(var(--art-head, 34%) + 150px), transparent 72%, color-mix(in srgb, var(--paper) 60%, transparent) 88%, var(--paper) 100%); }
+html[data-theme="sketch"] .art-band-img { mix-blend-mode: screen; }
+html:not([data-theme="sketch"]) .art-band-img { mix-blend-mode: multiply; opacity: .4; } /* the default look: the practice's drawing as a quiet print on warm paper */
+@media (min-width: 761px) {
+  .hero.art-hero { --art-gap: clamp(220px, 23vw, 330px); gap: 18px; }
+  .art-band { margin-top: -48px; }
+}
+@media (max-width: 760px) {
+  .hero.art-hero { --art-gap: 190px; }
+  .art-band-img { object-position: 28% 64%; }
+}
+
+/* ---- empty screens (no projects, no models, no clients) and the sign-in panel: a drawing over the page's own words ------ */
+.art-dressed > .ic.big, .art-dressed > .mdl-drop-ic, .crm-empty.art-dressed > .crm-people { display: none; }
+.art-empty { display: block; width: min(100%, 420px); aspect-ratio: 3 / 2; margin: 2px 0 4px; }
+.empty.vis.art-dressed .art-empty { margin-inline: auto; }
+.art-acct { display: block; width: min(100%, 360px); aspect-ratio: 3 / 1.6; margin: 0 0 12px; }
+
+/* ---- Settings and the practice panel: the artwork in use, the kit being read, the place to drop it ----------------------- */
+.art-sec { display: grid; gap: 12px; }
+.art-sec [data-art-body] { display: grid; gap: 12px; }
+.art-state { white-space: normal; }
+.art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.acct-sec .art-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.art-tile { display: grid; gap: 6px; min-width: 0; }
+.art-tile-pic { position: relative; display: block; aspect-ratio: 3 / 2; padding: 8%; background: var(--field); border: 1px solid var(--frame); overflow: hidden; }
+html[data-theme="sketch"] .art-tile-pic { background: #000; border-color: var(--hair); }
+.art-tile-pic > .art-ink, .art-tile-pic > img { display: block; width: 100%; height: 100%; max-width: none; object-fit: contain; }
+.art-tile.is-pattern .art-tile-pic { padding: 0; }
+.art-tile.is-pattern .art-tile-pic > img { object-fit: cover; }
+.art-tile.is-logo .art-tile-pic { padding: 20% 16%; }
+.art-tile-l { font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); overflow-wrap: anywhere; }
+.art-tile.is-heavy .art-tile-l::after { content: " · large"; }
+.art-drop { display: grid; place-items: center; align-content: center; gap: 8px; min-height: 168px; padding: 28px 18px; border: 1px dashed var(--edge); background: var(--field); text-align: center; cursor: pointer;
+  font: 400 15px/1.45 var(--sans); letter-spacing: normal; text-transform: none; color: var(--body); }
+.art-drop * { letter-spacing: normal; text-transform: none; }
+.acct-sec .art-drop { min-height: 0; padding: 18px 14px; }
+.acct-sec .art-drop-t { font-size: 16px; }
+.art-drop:hover, .art-drop.over { border-style: solid; border-color: var(--blue-strong); box-shadow: inset 0 0 0 1px var(--blue-strong); }
+.art-drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.art-drop-t { font-size: 19px; line-height: 1.25; color: var(--ink); }
+html[data-theme="sketch"] .art-drop-t { font-weight: 300; }
+.art-drop .small { max-width: 52ch; color: var(--mute); }
+.art-progress { display: grid; gap: 8px; }
+.art-progress progress { width: 100%; height: 4px; appearance: none; -webkit-appearance: none; border: 0; background: var(--hair); }
+.art-progress progress::-webkit-progress-bar { background: var(--hair); }
+.art-progress progress::-webkit-progress-value { background: var(--blue-strong); transition: width .2s; }
+.art-progress progress::-moz-progress-bar { background: var(--blue-strong); }
+.art-ready { display: grid; gap: 6px; }
+.art-note { margin: 0; }
+
+@media print { .art-band, .art-empty, .art-acct, .art-drop { display: none !important; } .cover.art-cover .art-ink.on { background-color: #000; } }

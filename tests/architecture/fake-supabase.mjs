@@ -136,6 +136,10 @@ export function fakeSupabase({ userId = '00000000-0000-4000-8000-00000000a11c', 
         return { data: { path }, error: null };
       }),
       download: (path) => done({ table: `storage/${bucket}`, action: 'download', path }, () => (files.has(key(path)) ? { data: files.get(key(path)), error: null } : { data: null, error: { message: 'Object not found', statusCode: '404' } })),
+      /** links that last a while, for files that are there (the page's practice artwork) */
+      createSignedUrls: (paths, expiresIn) => done({ table: `storage/${bucket}`, action: 'sign', paths, expiresIn }, () => ({
+        data: paths.map((p) => (files.has(key(p)) ? { path: p, signedUrl: `https://storage.example.test/sign/${bucket}/${p}?token=t${expiresIn}`, error: null } : { path: p, signedUrl: null, error: 'Object not found' })), error: null,
+      })),
       remove: (paths) => done({ table: `storage/${bucket}`, action: 'remove', paths }, () => {
         if (fake.viewer) return { data: [], error: null };
         const gone = paths.filter((p) => files.delete(key(p)));
