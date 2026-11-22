@@ -7,7 +7,8 @@ import {
 } from './model.js';
 import { createStore, browserBackend, sizeText, sessionHandoff } from './store.js';
 import { describeModel, modelFingerprint } from './fingerprint.js';
-import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue } from './facts.js';
+import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue, keptAddress, placeLine, packPlace, ADDRESS_CREDIT } from './facts.js';
+import { addressBoxHtml, mountAddressBox } from './address.js';
 
 // [cloud] One store for the whole page. It starts as this browser's store, exactly as before. account.js points it at the
 // practice's shared records when a person is signed in with a practice, and back again when they sign out.
@@ -23,7 +24,7 @@ const store = createSwitch(createStore(browserBackend()));
 const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me'), panelExtra: () => artSectionHtml('panel') });
 const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
-const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, wallAt: 0, learn: [] };
+const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, wallAt: 0, learn: [], addr: { chosen: null, change: false } };
 let me = '';
 let kept = new Map(); // the files kept for the project on screen (in this browser, or in the shared records), by file id
 let shown = null; // [cloud] the project on screen, for wording that depends on where it is kept
@@ -326,7 +327,7 @@ function exportHtml(p) {
       <p class="small">With the files: one larger file that holds everything, so another browser can open the documents. Records only: the files stay ${esc(W(p).here) /* [cloud] */}, and each document still names the file it had.</p>`
     : `<p>This project has no files kept ${esc(W(p).here) /* [cloud] */}, so there are none to include. The project file holds the records.</p>
       <div class="acts"><button class="btn solid" data-act="export-go" data-files="0">Export the project</button><button class="link" data-act="export-cancel">Cancel</button></div>`}
-    <p class="small">The file includes the site point if one is saved.</p></section>`;
+    <p class="small">The file includes the site point and address if they are saved.</p></section>`;
 }
 
 /** the Open in 3D button: a link straight to a hosted model, a hand-over of a kept file, or the 3D page's own chooser */
@@ -551,16 +552,27 @@ function siteTool(b) {
     <p class="src">${esc(f.source?.name ?? '')}</p>${f.note ? `<details><summary>Note</summary><p>${esc(f.note)}</p></details>` : ''}</li>`;
   const none = (f, word) => `<li class="fact off"><p class="st" style="white-space:normal">□ ${word}</p><p class="l">${esc(f.label)}</p><p class="src">${esc(f.source?.name ?? '')}</p>
     ${f.reason || f.note || f.needs ? `<details><summary>Why</summary><p>${esc(f.reason || f.note)}${f.needs ? ` Needs: ${esc(f.needs)}` : ''}</p></details>` : ''}</li>`;
-  return `<form class="where-f" data-form="facts"><label>Latitude, longitude<input class="mono" name="where" value="${esc(where)}" placeholder="-36.80, 175.08" autocomplete="off" inputmode="text" required /></label>
-      <button class="btn solid"${ui.busy ? ' disabled' : ''}>${ui.busy ? 'Asking the publishers…' : has ? 'Look up again' : 'Look up'}</button></form>
-    <details class="more-note"><summary>Where the point goes</summary><p class="small">Type a point in New Zealand, latitude first. To look it up, the point is sent to the lab’s live feed, which asks the public map services about it. The feed does not store it, apart from a short-lived cache of the answer. The point is ${esc(W(b.project).pointSaved) /* [cloud] */}, and it is not put in a share link or printed in the client pack.</p></details>
+  const a = s.address, mine = ui.addr.chosen, changing = ui.addr.change || (!a && !mine);
+  const chosenPanel = (m, saved) => `<div class="addr-chosen"><p class="st" style="white-space:normal">${saved ? '■ Site address, saved on this project' : '■ Chosen address'}</p>
+      <p class="addr-big">${esc(m.address)}</p><p class="addr-where">${esc(placeLine(m))}${m.council && ![m.suburb, m.town].includes(m.council) ? ` · ${esc(m.council)}` : ''}</p><p class="credit">${esc(ADDRESS_CREDIT)}</p>
+      <div class="acts">${saved ? `<button class="btn"${ui.busy ? ' disabled' : ''} data-act="addr-again">${ui.busy ? 'Asking the publishers…' : 'Look up the facts again'}</button><button class="link" data-act="addr-change">Change the address</button>`
+        : `<button class="btn solid"${ui.busy ? ' disabled' : ''} data-act="addr-use">${ui.busy ? 'Asking the publishers…' : 'Use this site'}</button><button class="link" data-act="addr-cancel">Choose another</button>`}</div></div>`;
+  const printed = a ? `<label class="chk"><input type="checkbox" data-addr-print${s.print_address ? ' checked' : ''} /><span>Print the street address in the client pack. Off: the pack says only “${esc(placeLine(a) || 'the suburb and town')}”.</span></label>` : '';
+  const coords = `<details class="more-note"${!a && !mine && s.lat != null ? ' open' : ''}><summary>Or enter coordinates</summary>
+      <form class="where-f" data-form="facts"><label>Latitude, longitude<input class="mono" name="where" value="${a ? '' : esc(where)}" placeholder="-36.80, 175.08" autocomplete="off" inputmode="text" required /></label>
+      <button class="btn"${ui.busy ? ' disabled' : ''}>${ui.busy ? 'Asking the publishers…' : 'Look up'}</button></form>
+      <p class="small">A point in New Zealand, latitude first. Entering a point replaces the address.</p></details>`;
+  return `${mine ? chosenPanel(mine, false) : a && !changing ? chosenPanel(a, true) : addressBoxHtml({ busy: ui.busy }) + (a ? '<div class="acts"><button class="link" data-act="addr-cancel">Keep the saved address</button></div>' : '')}
+    ${printed}
+    ${coords}
+    <details class="more-note"><summary>Where the address goes</summary><p class="small">What you type is sent to the lab’s address feed, which asks LINZ’s public address list. The point goes to the lab’s site feed, which asks the public maps. Neither feed logs or stores it, apart from a short-lived cache of its answer. The address and point are ${esc(W(b.project).pointSaved) /* [cloud] */}. They are not put in a share link, and the client pack prints only the suburb and town unless you turn the street address on.</p></details>
     ${ui.factsError ? `<p class="flash" role="alert">${esc(ui.factsError)}</p>` : ''}
     ${has ? `<div class="snap-h"><h3>Snapshot of ${esc(dayTime(s.fetched_at))}</h3><span class="st" style="white-space:normal">■ ${plural(live.length, 'fact')} answered${off.length ? ` · □ ${off.length} not connected` : ''}${down.length ? ` · □ ${down.length} no answer` : ''}</span></div>
       <ul class="facts">${live.map(fact).join('')}${down.map((f) => none(f, 'No answer just now')).join('')}${off.map((f) => none(f, 'Not connected')).join('')}</ul>
       <p class="small">What each published map shows at the point, on the date shown. It is not a planning, hazard or Building Code assessment. A point outside a mapped hazard is not proof the site cannot be affected. Most layers cover Auckland only.</p>
       ${cr.length ? `<p class="credit">${cr.map(esc).join(' ')}</p>` : ''}
-      <div class="acts"><button class="link" data-act="facts-remove">${ui.confirm === 'facts' ? 'Remove for good' : 'Remove this snapshot and the point'}</button></div>`
-      : '<div class="empty"><h3>No site facts saved yet.</h3><p class="small">Look up a point to save a dated snapshot: land parcel, planning zone and overlays, flood, coast, landslide and liquefaction maps, each with its source and credit.</p></div>'}`;
+      <div class="acts"><button class="link" data-act="facts-remove">${ui.confirm === 'facts' ? 'Remove for good' : 'Remove this snapshot, the point and the address'}</button></div>`
+      : '<div class="empty"><h3>No site facts saved yet.</h3><p class="small">Choose a site address to save a dated snapshot: land parcel, planning zone and overlays, flood, coast, landslide and liquefaction maps, each with its source and credit.</p></div>'}`;
 }
 
 function modelTool(b, def) {
@@ -628,11 +640,11 @@ function packView(b) {
         <p>${p.sample ? 'A sample project. No client is named.' : p.client ? `Prepared for ${esc(p.client)}` : 'No client named'}</p>
         <div style="display:grid;gap:8px">${miniRail(b.stages)}<p class="st" style="white-space:normal">${esc(whereLine(b.stages))}</p></div>
         <p class="when">Prepared ${esc(day(new Date().toISOString()))}${me ? ` by ${esc(me)}` : ''}</p></header>
-      ${sec('Site facts', live.length ? `<h3>What the published maps show, as fetched ${esc(dayTime(s.fetched_at))}</h3>
+      ${sec('Site facts', live.length ? `${packPlace(s) ? `<p class="site-place">Site: ${esc(packPlace(s))}</p>` : ''}<h3>What the published maps show, as fetched ${esc(dayTime(s.fetched_at))}</h3>
         <ul class="pack-facts">${live.map((f) => `<li><div><p>${esc(f.label)}</p><p class="src">${esc(f.source?.name ?? '')}${f.asOf ? ` · as of ${esc(day(String(f.asOf).slice(0, 10)))}` : ''}</p></div><p class="v">${esc(showValue(f))}</p></li>`).join('')}</ul>
         ${off.length ? `<p class="small">□ Not connected or no answer: ${off.map((f) => esc(f.label)).join('; ')}.</p>` : ''}
-        <p class="small">These are facts to read, not a planning, hazard or Building Code assessment. A point outside a mapped hazard is not proof the site cannot be affected. The point looked up is not printed here.</p>
-        ${cr.length ? `<p class="credit">${cr.map(esc).join(' ')}</p>` : ''}` : '<p>□ No site facts have been saved for this project yet.</p>')}
+        <p class="small">These are facts to read, not a planning, hazard or Building Code assessment. A point outside a mapped hazard is not proof the site cannot be affected. The point looked up is not printed here${s.address ? (s.print_address ? ', and the street address is printed because this project’s setting says so' : ', and the street address is not printed: only the suburb and town') : ''}.</p>
+        ${[...cr, ...(s.address ? [ADDRESS_CREDIT] : [])].length ? `<p class="credit">${[...cr, ...(s.address ? [ADDRESS_CREDIT] : [])].map(esc).join(' ')}</p>` : ''}` : '<p>□ No site facts have been saved for this project yet.</p>')}
       ${sec('3D model', link ? `${p.sample ? `<figure><img src="${HERO}" alt="A dark-clad house on timber piles among trees." style="border:1px solid var(--line);width:100%;max-width:520px;aspect-ratio:16/10;object-fit:cover" /><figcaption class="caption" style="margin-top:6px">A rendering of the sample plan model. Not a photograph.</figcaption></figure>` : ''}
         <dl class="kv"><dt>Drawings</dt><dd>${esc(p.model.drawings)}</dd><dt>Revision</dt><dd>${esc(p.model.revision)}</dd><dt>Version</dt><dd class="fp">${esc(p.model.fingerprint)}</dd></dl>
         ${link.direct ? `<div class="acts"><a class="btn solid" href="${esc(link.href)}" target="_blank" rel="noopener">Open the 3D model ↗</a></div><p class="url">${esc(url)}</p>`
@@ -650,7 +662,7 @@ async function render(fromLink = false) {
   const r = route(), key = JSON.stringify([r.view, r.pid, r.stage, r.name, r.rest]), mine = ++drawing; // a later call draws over this one, never the other way round
   for (const stop of cleanups.splice(0)) { try { stop(); } catch { /* an add-on that fails to tidy up does not stop the page */ } }
   const moved = key !== lastRoute;
-  if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
+  if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.addr = { chosen: null, change: false }; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
   showLook();
   // the practice's artwork: read once it is known whose records are in use; a slow answer does not hold the screen back
   const art = syncArtwork();
@@ -674,6 +686,7 @@ async function render(fromLink = false) {
   account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
   await drawAddons(r, onScreen);
   artAfterRender(document);
+  if ($app.querySelector('[data-addr]')) cleanups.push(mountAddressBox($app, { onPick: (m) => { ui.addr.chosen = m; ui.factsError = ''; ui.focus = '[data-act="addr-use"]'; redraw(''); } })); // the Site tab's address box
   $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
   document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : r.view === 'settings' ? 'Settings · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
   markBar(r);
@@ -847,7 +860,7 @@ async function onSubmit(e) {
       try {
         const got = await fetchSiteFacts(where);
         const p = await store.get('project', r.pid);
-        p.site = { lat: where.lat, lon: where.lon, facts: got.facts, fetched_at: got.fetched_at };
+        p.site = { lat: where.lat, lon: where.lon, facts: got.facts, fetched_at: got.fetched_at }; // a typed point replaces any address: it would no longer match
         await store.save('project', p);
         await log(r.pid, 'Site facts saved', `${plural(answered(got.facts).length, 'fact')} answered, snapshot of ${dayTime(got.fetched_at)}`);
         ui.busy = false;
@@ -903,7 +916,7 @@ async function onClick(e) {
       // [cloud] the file is downloaded either way; the log entry can still be refused (a viewer cannot add to the activity log)
       const unlogged = await log(r.pid, 'Project exported', `${f.file_name}. ${said}`).then(() => '', (err) => (err?.code === 'read_only' ? ' This export is not in the activity log: viewers cannot add to it.' : ' This export is not in the activity log: the entry could not be saved.'));
       ui.exporting = false;
-      return redraw(`Exported ${f.file_name}. It holds the project’s records, including the site point if one is saved. ${said}${unlogged}`);
+      return redraw(`Exported ${f.file_name}. It holds the project’s records, including the site point and address if they are saved. ${said}${unlogged}`);
     }
     // ---- files ----
     if (act === 'file-pick') { ui.fileFor = el.dataset.id; return document.getElementById('doc-file')?.click(); }
@@ -958,6 +971,28 @@ async function onClick(e) {
       location.hash = href(r.pid);
       return;
     }
+    if (act === 'addr-use' || act === 'addr-again') {
+      if (ui.busy) return;
+      const p0 = await store.get('project', r.pid), m = act === 'addr-use' ? ui.addr.chosen : p0?.site?.address && p0.site.lat != null ? { ...p0.site.address, lat: p0.site.lat, lon: p0.site.lon } : null;
+      if (!m) return redraw('');
+      const where = parseWhere(`${m.lat}, ${m.lon}`);
+      if (!where) { ui.factsError = 'That address has no point in New Zealand, so nothing was saved. Choose another, or enter coordinates.'; return redraw(); }
+      ui.busy = true; ui.factsError = ''; await redraw();
+      try {
+        const got = await fetchSiteFacts(where);
+        const p = await store.get('project', r.pid);
+        p.site = { lat: where.lat, lon: where.lon, facts: got.facts, fetched_at: got.fetched_at, address: keptAddress(m), ...(p.site?.print_address ? { print_address: true } : {}) };
+        await store.save('project', p);
+        await log(r.pid, 'Site set from a street address', `${plural(answered(got.facts).length, 'fact')} answered, snapshot of ${dayTime(got.fetched_at)}`);
+        ui.busy = false; ui.addr = { chosen: null, change: false };
+        return redraw(`Saved to this project: the site address and ${plural(answered(got.facts).length, 'fact')} answered, as a snapshot of ${dayTime(got.fetched_at)}.`);
+      } catch (err) {
+        ui.busy = false; ui.factsError = `Site facts could not be fetched (${err.message}). Nothing was saved and nothing is shown rather than a guess.`;
+        return redraw();
+      }
+    }
+    if (act === 'addr-change') { ui.addr = { chosen: null, change: true }; ui.focus = '#addr-in'; return redraw(''); }
+    if (act === 'addr-cancel') { ui.addr = { chosen: null, change: false }; ui.focus = '#addr-in'; return redraw(''); }
     if (act === 'facts-remove') {
       if (!twice('facts')) return;
       const p = await store.get('project', r.pid);
@@ -990,6 +1025,15 @@ async function onChange(e) {
       await log(r.pid, `${KIND[kind].noun[0].toUpperCase()}${KIND[kind].noun.slice(1)} ${statusWord(KIND[kind].status, row.status).toLowerCase()}`, KIND[kind].main(row));
       ui.focus = `select[data-id="${CSS.escape(row.id)}"]`;
       return redraw('');
+    }
+    if (el.matches('input[data-addr-print]')) {
+      const p = await store.get('project', r.pid);
+      if (!p?.site?.address) return;
+      p.site = { ...p.site, print_address: el.checked };
+      await store.save('project', p);
+      await log(r.pid, el.checked ? 'Street address set to print in the client pack' : 'Street address set not to print in the client pack', '');
+      ui.focus = 'input[data-addr-print]';
+      return redraw(el.checked ? 'The client pack will print the street address.' : 'The client pack will print only the suburb and town.');
     }
     if (el.matches('input[data-file]')) {
       const file = el.files?.[0], what = el.dataset.file;
