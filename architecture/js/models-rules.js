@@ -18,6 +18,11 @@ export const SHARED_MODEL_LIMIT = 1024 * 1024 * 1024;
 export const PART_SIZE = 6 * 1024 * 1024;
 /** an IFC bigger than this is not drawn in the page by itself: it is drawn when someone asks */
 export const AUTO_PREVIEW_LIMIT = 60 * 1024 * 1024;
+/** the biggest IFC or GLB this browser is asked to draw in 3D: the small view on a model's card and the 3D page. A cautious
+ * figure, not measured at its edge: in testing, an IFC of nearly 400 MB froze a browser while the 3D page read it. A bigger model stays kept, counted and downloadable; it is not drawn here.
+ * The 3D page holds the same figure (plan-studio/twins/src/twin/projectPlan.ts, BROWSER_3D_LIMIT). */
+export const BROWSER_3D_LIMIT = 100 * 1024 * 1024;
+export const tooBigFor3d = (size) => Number(size) > BROWSER_3D_LIMIT;
 
 // ---- kinds ---------------------------------------------------------------------------------------------------------
 const OLE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
@@ -113,7 +118,9 @@ const nz = (v, d = 0) => Number(v).toLocaleString('en-NZ', { maximumFractionDigi
 export const FACTS = [['walls', 'Walls'], ['doors', 'Doors'], ['windows', 'Windows'], ['slabs', 'Slabs'], ['roofs', 'Roofs'], ['spaces', 'Spaces']];
 export function factsOf(summary) {
   const c = summary?.counts ?? {};
-  return FACTS.map(([key, label]) => ({ key, label, n: Number(c[key] ?? 0), text: nz(c[key] ?? 0) }));
+  const cw = Number(c.curtain_walls ?? 0);
+  // Revit exports curtain-wall glazing as curtain walls, not windows: show them on the windows tile so glazing is not missed
+  return FACTS.map(([key, label]) => ({ key, label, n: Number(c[key] ?? 0) + (key === 'windows' ? cw : 0), text: nz(c[key] ?? 0), also: key === 'windows' && cw ? `+ ${nz(cw)} curtain wall${cw === 1 ? '' : 's'}` : '' }));
 }
 /** the floor area line, only when the file's spaces carry one: { value, label, from }; else null */
 export function areaOf(summary) {

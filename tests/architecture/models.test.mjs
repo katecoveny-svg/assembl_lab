@@ -111,7 +111,7 @@ test('the 3D page still has the chooser this hands a model to: ?drop=1, the file
   assert.match(src, /!qs\.has\('drop'\)/, '?drop=1 stops the example opening, so the chooser shows');
   assert.ok(src.includes(`id="${TWIN_FILE_INPUT}" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf"`), 'the chooser’s file input takes .ifc and .glb');
   assert.match(src, new RegExp(`querySelector\\('#${TWIN_FILE_INPUT}'\\) as HTMLInputElement\\)\\.addEventListener\\('change'`), 'a change on that input reads the file');
-  assert.match(src, /else if \(ext === 'ifc' \|\| ext === 'glb'\) done\(\{ kind: ext, bytes: await f\.arrayBuffer\(\), name: f\.name \}\)/, 'an .ifc or .glb is opened as it is');
+  assert.match(src, /else if \(ext === 'ifc' \|\| ext === 'glb'\) \{\s*if \(f\.size > BROWSER_3D_LIMIT\) \{[\s\S]*?return;\s*\}\s*done\(\{ kind: ext, bytes: await f\.arrayBuffer\(\), name: f\.name \}\);/, 'an .ifc or .glb is opened as it is, unless it is over the browser 3D limit');
   const built = readFileSync(new URL('../../plan-studio/twins/drop/index.html', import.meta.url), 'utf8');
   assert.match(built, /assets\/twin-[\w-]+\.js/, 'the drop page is the built 3D page');
 });
