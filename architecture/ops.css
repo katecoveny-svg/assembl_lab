@@ -401,6 +401,7 @@ details.more > :not(summary) + * { margin-top: 10px; }
 .chk { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; min-height: 44px; padding: 10px 0; font: 400 13.5px/1.45 var(--sans); letter-spacing: 0; text-transform: none; cursor: pointer; }
 .chk input { width: 22px; min-height: 22px; height: 22px; padding: 0; appearance: auto; -webkit-appearance: checkbox; accent-color: var(--accent); }
 .site-place { margin: 0 0 6px; font-weight: 500; }
+html[data-theme="sketch"] label.chk { letter-spacing: 0; color: var(--body); }
 .snap-h { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--plum); padding-top: 12px; }
 .facts { display: grid; grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); overflow: hidden; }
 .fact { padding: 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; display: grid; gap: 4px; align-content: start; min-width: 0; }

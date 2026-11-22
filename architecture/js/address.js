@@ -18,7 +18,8 @@ const say = {
  * The rules of the box. view = { options(list), active(i), message(text), open(bool) }; ask(words, { signal }) -> { matches, more }.
  * Nothing is asked for fewer than 4 characters. A later key press cancels the wait and any question still on its way.
  */
-export function createSearch({ ask = askAddress, view, onPick, delay = DELAY_MS, timers = { set: setTimeout, clear: clearTimeout }, controller = () => new AbortController() }) {
+const defaultAsk = (words, o) => askAddress(words, undefined, o); // askAddress(words, fetch, { signal })
+export function createSearch({ ask = defaultAsk, view, onPick, delay = DELAY_MS, timers = { set: (fn, ms) => setTimeout(fn, ms), clear: (t) => clearTimeout(t) }, controller = () => new AbortController() }) {
   let timer = null, run = 0, ctl = null, list = [], at = -1, open = false;
   const show = (matches, more) => { list = matches; at = -1; open = matches.length > 0; view.options(list); view.active(at); view.open(open); view.message(matches.length ? (more ? `${say.found(matches.length)} ${say.more}` : say.found(matches.length)) : say.none); };
   const close = () => { if (!open) return; open = false; at = -1; view.active(-1); view.open(false); };
@@ -77,7 +78,7 @@ export function addressBoxHtml({ busy = false } = {}) {
 }
 
 /** Wire a box drawn by addressBoxHtml. Returns a function that undoes it. */
-export function mountAddressBox(root, { onPick, ask = askAddress, delay = DELAY_MS } = {}) {
+export function mountAddressBox(root, { onPick, ask = defaultAsk, delay = DELAY_MS } = {}) {
   const box = root.querySelector('[data-addr]');
   if (!box) return () => {};
   const input = box.querySelector('input'), listEl = box.querySelector('[role="listbox"]'), msg = box.querySelector('.addr-msg');

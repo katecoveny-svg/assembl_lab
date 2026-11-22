@@ -549,7 +549,7 @@ function siteTool(b) {
     ${f.reason || f.note || f.needs ? `<details><summary>Why</summary><p>${esc(f.reason || f.note)}${f.needs ? ` Needs: ${esc(f.needs)}` : ''}</p></details>` : ''}</li>`;
   const a = s.address, mine = ui.addr.chosen, changing = ui.addr.change || (!a && !mine);
   const chosenPanel = (m, saved) => `<div class="addr-chosen"><p class="st" style="white-space:normal">${saved ? '■ Site address, saved on this project' : '■ Chosen address'}</p>
-      <p class="addr-big">${esc(m.address)}</p><p class="addr-where">${esc(placeLine(m))}${m.council ? ` · ${esc(m.council)}` : ''}</p><p class="credit">${esc(ADDRESS_CREDIT)}</p>
+      <p class="addr-big">${esc(m.address)}</p><p class="addr-where">${esc(placeLine(m))}${m.council && ![m.suburb, m.town].includes(m.council) ? ` · ${esc(m.council)}` : ''}</p><p class="credit">${esc(ADDRESS_CREDIT)}</p>
       <div class="acts">${saved ? `<button class="btn"${ui.busy ? ' disabled' : ''} data-act="addr-again">${ui.busy ? 'Asking the publishers…' : 'Look up the facts again'}</button><button class="link" data-act="addr-change">Change the address</button>`
         : `<button class="btn solid"${ui.busy ? ' disabled' : ''} data-act="addr-use">${ui.busy ? 'Asking the publishers…' : 'Use this site'}</button><button class="link" data-act="addr-cancel">Choose another</button>`}</div></div>`;
   const printed = a ? `<label class="chk"><input type="checkbox" data-addr-print${s.print_address ? ' checked' : ''} /><span>Print the street address in the client pack. Off: the pack says only “${esc(placeLine(a) || 'the suburb and town')}”.</span></label>` : '';
@@ -557,7 +557,7 @@ function siteTool(b) {
       <form class="where-f" data-form="facts"><label>Latitude, longitude<input class="mono" name="where" value="${a ? '' : esc(where)}" placeholder="-36.80, 175.08" autocomplete="off" inputmode="text" required /></label>
       <button class="btn"${ui.busy ? ' disabled' : ''}>${ui.busy ? 'Asking the publishers…' : 'Look up'}</button></form>
       <p class="small">A point in New Zealand, latitude first. Entering a point replaces the address.</p></details>`;
-  return `${mine ? chosenPanel(mine, false) : a && !changing ? chosenPanel(a, true) : addressBoxHtml({ busy: ui.busy })}
+  return `${mine ? chosenPanel(mine, false) : a && !changing ? chosenPanel(a, true) : addressBoxHtml({ busy: ui.busy }) + (a ? '<div class="acts"><button class="link" data-act="addr-cancel">Keep the saved address</button></div>' : '')}
     ${printed}
     ${coords}
     <details class="more-note"><summary>Where the address goes</summary><p class="small">What you type is sent to the lab’s address feed, which asks LINZ’s public address list. The point goes to the lab’s site feed, which asks the public maps. Neither feed logs or stores it, apart from a short-lived cache of its answer. The address and point are ${esc(W(b.project).pointSaved) /* [cloud] */}. They are not put in a share link, and the client pack prints only the suburb and town unless you turn the street address on.</p></details>
