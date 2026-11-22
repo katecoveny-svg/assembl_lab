@@ -43,6 +43,7 @@ Nothing was pushed, merged or deployed in making this.
 | grocery | Grocery report figures | Commerce Commission, copied in (a snapshot) | Verified (built in, not fetched) |
 | trades-feeds | Building determinations, consents | MBIE CodeHub, Stats NZ | Verified |
 | site | Facts about a piece of land (new) | LINZ, Auckland Council, Open-Meteo | See below |
+| ground, surface | Real ground heights, and tree and building tops, round a point (added 22 November 2026) | LINZ 1 m LiDAR, open data | Verified from this machine; not yet run on Cloudflare. See below |
 
 Nothing here is "unavailable" or "connected-unverified" at the feed level. Each answer says whether it is "Live" (fetched from the publisher just now) or "Latest published" (the publisher's newest release), and when it was fetched.
 
@@ -71,6 +72,21 @@ Checked on the test point (a rural section on Waiheke; no address, owner or lega
 | coastalErosion | Auckland Council ASCIE layer | Not wired | The open layer is lines, not areas; a point answer would be guesswork |
 
 "Not inside a mapped area" is not the same as "safe". Each hazard fact says so.
+
+## The `ground` and `surface` feeds (added 22 November 2026, branch `agent/ground-1122`)
+
+Ask with `/api/live/?feeds=ground&lat=-36.856&lon=174.761` (add `&radius=110` for the half-width in metres, 20 to 160). `ground` is LINZ's bare-ground model; `surface` is the tops of trees and buildings. Each answers one square of LINZ's own 1 m survey cells, north-up, with the survey's name, flight dates, the vertical datum (NZVD2016) and the credit line. Where LINZ has no 1 m cover the answer is `unavailable` with the reason. Nothing is estimated.
+
+| Check | Result |
+|---|---|
+| Source | LINZ New Zealand Elevation open data on AWS (`nz-elevation`), the national 1 m DEM and DSM. No key. |
+| Licence | CC BY 4.0. LINZ asks for "Sourced from ... and licensed by (the licensor)". The licensor is read from each survey's own record and put in the credit line. |
+| Status | Verified from this machine on 22 November 2026: every cell matched GDAL to the centimetre on the test sites. Connected-unverified on Cloudflare: it has not run there yet. |
+| Test points | A public park in central Auckland (live, Auckland Part 1 LiDAR 2024). The shore at Castlepoint (live, Wellington LiDAR 2013-2014). Open water in the Hauraki Gulf, inland Fiordland and inland Rakiura (unavailable, with the reason). |
+| Calls to LINZ | 6 for a point with one survey, up to 18 where three surveys overlap. Cloudflare's free plan allows 50. |
+| Open question | Cloudflare's free plan allows 10 ms of computing per request and reading a square took more than that on a cold start here. See `docs/architecture/site-ground.md`. Check `feeds=ground` on the branch preview before merging. |
+
+The owner note for the page that uses these is `docs/architecture/site-ground.md`. The tests are `node --test tests/ground/*.test.mjs` (offline).
 
 ## Questions about terms (please decide or ask)
 

@@ -25,6 +25,7 @@ import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
 import { traceDrawing } from './traceUI';
+import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
 
 // The tool's front door: drop a plan model (assembl.plan-model.v1, as Plan to 4D saves it) and
@@ -51,6 +52,14 @@ export interface Terrain {
   centre: [number, number]; size: number; n: number; heights: number[]; photo?: string;
   far?: { size: number; n: number; heights: number[]; photo?: string };
   sea?: number; sunHour?: number; north?: [number, number]; views?: { label: string; eye: [number, number, number]; look: [number, number, number] }[]; trees?: [number, number, number, number, string][]; source?: string;
+  /** what the picture on the ground is, when it is not an aerial photo */
+  photoKind?: 'contours';
+  /** model level 0 as a height in NZVD2016, when the ground came from the national LiDAR */
+  datum?: number;
+  /** the wording for the site chip and the ground layer, saying exactly what was loaded */
+  chip?: string; layerNote?: string;
+  /** height of whatever stands above the ground (surface model less ground model), on a coarser square grid over the same square */
+  tops?: { n: number; size: number; heights: number[]; note: string };
 }
 const gridAt = (t: { size: number; n: number; heights: number[] }, c: [number, number], x: number, z: number) => {
   const fx = Math.min(t.n - 1.001, Math.max(0, ((x - c[0]) / t.size + 0.5) * (t.n - 1))), fz = Math.min(t.n - 1.001, Math.max(0, ((z - c[1]) / t.size + 0.5) * (t.n - 1)));
@@ -269,7 +278,7 @@ function deckSlabs(d: { u0: number; u1: number; v0: number; v1: number; drop?: n
 }
 
 /** something drawn on the site plan, in the plan model's frame (x, z) */
-export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean; staging?: string; barrier?: 'glass' | 'balusters' }
+export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean; staging?: string; barrier?: 'glass' | 'balusters'; /** a boundary run that is not a closed loop (a parcel edge clipped to the ground shown) */ open?: boolean }
 
 /** the site plan's paths, pads, walls, beds and trees on the ground */
 function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
@@ -286,12 +295,12 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
     const pts = f.pts.map(en);
     if (f.kind === 'steps' && f.levels && f.pts.length >= 2) {
       land.add(flight(f.pts, f.levels, f.width ?? 1, (x, z) => groundAt(x, -z), stairMats, f.barrier ?? 'glass'));
-    } else if (f.kind === 'boundary' && f.pts.length >= 3) {
+    } else if (f.kind === 'boundary' && f.pts.length >= (f.open ? 2 : 3)) {
       const v: THREE.Vector3[] = [];
-      f.pts.forEach((a, k) => { const b = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 1.5)); for (let t = 0; t < n; t++) { const x = a[0] + ((b[0] - a[0]) * t) / n, z = a[1] + ((b[1] - a[1]) * t) / n; v.push(new THREE.Vector3(x, groundAt(x, -z) + 0.25, z)); } });
-      v.push(v[0].clone());
+      f.pts.forEach((a, k) => { if (f.open && k === f.pts.length - 1) { v.push(new THREE.Vector3(a[0], groundAt(a[0], -a[1]) + 0.25, a[1])); return; } const b = f.pts[(k + 1) % f.pts.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 1.5)); for (let t = 0; t < n; t++) { const x = a[0] + ((b[0] - a[0]) * t) / n, z = a[1] + ((b[1] - a[1]) * t) / n; v.push(new THREE.Vector3(x, groundAt(x, -z) + 0.25, z)); } });
+      if (!f.open) v.push(v[0].clone());
       const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(v), new THREE.LineBasicMaterial({ color: 0xfffdfb }));
-      line.name = 'boundary'; line.userData = { kind: 'boundary', name: 'Boundary', source: f.source ?? 'ai', note: 'legal boundary, drawn on the ground' }; land.add(line);
+      line.name = 'boundary'; line.userData = { kind: 'boundary', name: 'Boundary', source: f.source ?? 'ai', note: f.open ? 'legal parcel boundary from LINZ’s parcel map, drawn on the ground; a map of boundaries, not a survey' : 'legal boundary, drawn on the ground' }; land.add(line);
     } else if ((f.kind === 'path' || f.kind === 'driveway' || f.kind === 'steps') && pts.length >= 2) {
       land.add(pathRibbon(`${f.kind}_${i + 1}`, pts, f.width ?? (f.kind === 'driveway' ? 3 : 1.2), groundAt, q, `${f.kind} from the site plan`));
     } else if (f.kind === 'landing' && f.levels && f.pts.length >= 3) {
@@ -395,7 +404,7 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
   // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
   const qs = new URLSearchParams(location.search);
   // the page opens on a finished example, with the drop a tap away, rather than on a card of text
-  const example = !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop');
+  const example = !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop') && !qs.has('ground');
   const pu = qs.get('plan') ?? (example ? 'hero.plan.json' : null);
   if (pu && /^[\w./-]+\.json$/.test(pu) && !pu.includes('//')) {
     try {
@@ -423,8 +432,8 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     if (got) return { input: { kind: 'plan', plan: got.plan, name: got.name }, palette: 'cedar-charcoal' };
     app.log('That shared plan could not be loaded; drop a file instead.');
   }
-  // applying a finishes schedule reloads the page: reuse the plan model dropped before it
-  if (new URLSearchParams(location.search).has('fin')) {
+  // applying a finishes schedule, or putting the house on real ground, reloads the page: reuse the plan model dropped before it
+  if (new URLSearchParams(location.search).has('fin') || new URLSearchParams(location.search).has('ground')) {
     try {
       const kept = JSON.parse(sessionStorage.getItem(KEEP) ?? 'null') as { plan: PlanModel; name: string } | null;
       if (kept?.plan?.buildings) return Promise.resolve({ input: { kind: 'plan', plan: kept.plan, name: kept.name }, palette: 'cedar-charcoal' });
@@ -515,6 +524,19 @@ export const projectPlan: Project = {
   ],
   async build(app: App): Promise<Built> {
     const { input, palette } = await chooser(app);
+    // real ground fetched for this plan in this browser tab (siteGround.ts): built into a copy, so the dropped plan, the kept
+    // copy and a share link never carry the site's position
+    const asDropped = input.kind === 'plan' ? input.plan : null;
+    let onGround: { store: GroundStore; applied: Applied } | null = null, groundFailed: string | undefined;
+    if (input.kind === 'plan' && !input.plan.site?.terrain) {
+      const st = loadGround(input.plan);
+      if (st) try {
+        const ap = applyGround(input.plan, st);
+        input.plan = { ...input.plan, site: { ...(input.plan.site ?? {}), terrain: ap.terrain as unknown as Terrain, features: [...(input.plan.site?.features ?? []), ...ap.features] } };
+        onGround = { store: st, applied: ap };
+        (window as unknown as { __ground?: unknown }).__ground = onGround;   // for checks from the console: what was loaded and how it was placed (this tab only)
+      } catch (e) { groundFailed = `The ground kept for this plan could not be used (${(e as Error).message}). The model is on its assumed ground.`; }
+    }
     const fromQ = new URLSearchParams(location.search).has('fin') ? fromURL() : null;
     const sched = fromQ ?? { s: complete(PRESETS[palette]?.s ?? PRESETS['cedar-charcoal'].s), name: PRESETS[palette]?.name ?? 'Cedar and charcoal' };
     const fin = toFinishes(sched.s, sched.name);
@@ -739,9 +761,11 @@ export const projectPlan: Project = {
     let realGround: THREE.Group | null = null;
     if (terrain) {
       const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
-      const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: T.photo ? await photoTex(T.photo) : null });
+      // no photo with the ground: colour it with contour lines drawn from its own heights rather than leave it blank
+      const drawn = !T.photo || T.photoKind === 'contours';
+      const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: await photoTex(T.photo ?? contourPhoto(T.heights, T.n, T.datum ?? 0)) });
       // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
-      if (input.kind === 'plan' && !input.plan.asBuilt) nearM.color.setRGB(1.3, 1.16, 0.82);
+      if (input.kind === 'plan' && !input.plan.asBuilt && !drawn) nearM.color.setRGB(1.3, 1.16, 0.82);
       const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
       try {
         // forest-floor relief at its real size, on a second set of coordinates measured in metres
@@ -762,6 +786,23 @@ export const projectPlan: Project = {
       }
       realGround.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? 'Ground from a survey grid.' };
     }
+    // whatever stands above the ground in the surface model, as plain blocks: trees and buildings are not told apart
+    let topsObj: THREE.Object3D | null = null;
+    if (terrain?.tops && input.kind === 'plan') {
+      const T = terrain, K = T.tops!, step = K.size / (K.n - 1), cells: [number, number, number][] = [];
+      const padsNow = input.plan.buildings.map((b) => { const ws = b.levels[0].walls, W = Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), D = Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at)); return { x0: b.origin[0] - 4, x1: b.origin[0] + W + 4, z0: b.origin[1] - 4, z1: b.origin[1] + D + 4 }; });
+      for (let j = 0; j < K.n; j++) for (let i = 0; i < K.n; i++) {
+        const h = K.heights[j * K.n + i], x = T.centre[0] + i * step - K.size / 2, z = T.centre[1] + j * step - K.size / 2;
+        if (h > 0 && !padsNow.some((q) => x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1)) cells.push([x, z, h]);
+      }
+      if (cells.length) {
+        const im = new THREE.InstancedMesh(new THREE.BoxGeometry(step, 1, step).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0x7d8672, roughness: 1, metalness: 0 }), cells.length), m4 = new THREE.Matrix4();
+        cells.forEach(([x, z, h], k) => { const gy = groundAt(x, -z); im.setMatrixAt(k, m4.makeScale(1, h, 1).setPosition(x, gy, z)); });
+        im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.castShadow = false; im.receiveShadow = false; im.name = 'tops_from_surface_model';
+        im.userData = { kind: 'context', name: 'Tree and building tops', source: 'survey', note: K.note + ' Hidden within 4 m of the house.' };
+        topsObj = im;
+      }
+    }
     // ground: a lawn following the model's fall, cut to pads, fading to context
     const R = Math.max(40, radius * 2.2);
     const N = 160;
@@ -780,8 +821,9 @@ export const projectPlan: Project = {
 
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
-      realGround ? { id: 'ground', label: 'Ground', note: 'LiDAR ground and aerial photo; cut to a platform under the house', visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
+      realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
+    if (topsObj) layers.push({ id: 'tops', label: 'Tree and building tops', note: 'from LINZ’s surface model less its ground model, as plain blocks; trees and buildings are not told apart. Off to start with, so they do not hide the house', visible: false, object: topsObj });
     if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: bushObj.userData.clearing ? 'tree tops from the LiDAR canopy; the clearing round the house, the kept specimens and the species are proposed, not surveyed' : 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
     if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: plantObj.name === 'native_planting' ? 'proposed, to frame the building; not from the plan' : 'from the plan model', visible: true, object: plantObj });
     // landscape: the layer now carries the proposed deck uplights as well as the soffit downlights
@@ -807,12 +849,12 @@ export const projectPlan: Project = {
       },
     ];
     return {
-      sharePlan: input.kind === 'plan' ? () => input.plan : undefined,
-      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan)] : [],
+      sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
+      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed)] : [],
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
-      ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: 'Site: LINZ LiDAR and aerial photo', title: terrain.source ?? '' } } : {}),
+      ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: terrain.chip ?? (terrain.photo && terrain.photoKind !== 'contours' ? 'Site: LINZ LiDAR and aerial photo' : 'Site: surveyed ground, no aerial photo'), title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
       radius,
