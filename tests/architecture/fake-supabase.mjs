@@ -6,7 +6,7 @@
 // It is not the database. The real rules are tested in tests/architecture-db on Postgres.
 
 const STAGES = ['predesign', 'concept', 'developed', 'detailed', 'contract_admin', 'observation', 'completion'];
-const APPEND_ONLY = ['approval', 'activity'];
+const APPEND_ONLY = ['approval', 'activity', 'crm_activity'];
 const copy = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 const err = (code, message, status = 400) => ({ code, message, details: null, hint: null, status });
 

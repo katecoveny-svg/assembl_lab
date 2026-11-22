@@ -88,12 +88,12 @@ before(async () => {
 after(async () => { await db.close(); });
 
 test('all the migrations apply, then apply a second time without error or change', async () => {
-  assert.equal(migrations.length, 7, 'three applied files and four new ones');
+  assert.equal(migrations.length, 8, 'six applied files, the bucket limit and the clients tables');
   await applyAll();
   const first = await snapshot();
   await applyAll();
   assert.deepEqual(await snapshot(), first);
-  assert.equal(first.tables, 15);
+  assert.equal(first.tables, 18);
   assert.equal(first.storage_policies, 4);
   assert.equal(first.buckets, 1);
   const b = (await q(`select id, public, file_size_limit from storage.buckets`)).rows[0];
@@ -108,10 +108,10 @@ test('a bucket of that name that was public is made private, not left open', asy
 
 test('every arch table has row level security, an extra column, and nothing for anon', async () => {
   const t = (await q(`select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='arch' and c.relkind='r'`)).rows;
-  assert.equal(t.length, 15);
+  assert.equal(t.length, 18);
   for (const r of t) assert.equal(r.relrowsecurity, true, r.relname);
   const extra = (await q(`select table_name from information_schema.columns where table_schema='arch' and column_name='extra' and data_type='jsonb' and is_nullable='NO'`)).rows.map((r) => r.table_name);
-  assert.equal(extra.length, 15, 'every table has extra jsonb not null');
+  assert.equal(extra.length, 18, 'every table has extra jsonb not null');
   for (const name of ['checklist_item', 'invitation', 'file']) {
     await refused(asRole('anon', () => q(`select * from arch.${name}`)), /permission denied/);
   }
