@@ -23,9 +23,11 @@ export async function onRequest(context) {
   // Optional keys, each passed only if set, and no other setting reaches the feeds:
   //   DIGITALNZ_API_KEY    switches on the Gazette signals (api/_feeds/signals-gazette.js)
   //   LEGISLATION_API_KEY  switches on "Rule changes coming" (api/_feeds/rules-legislation.js); sent only in a request header, never returned
+  //   STATSNZ_API_KEY      switches on "Building consents" (api/_feeds/consents.js); sent only in the Ocp-Apim-Subscription-Key header, never returned or logged
   const e = {};
   if (context.env?.DIGITALNZ_API_KEY) e.DIGITALNZ_API_KEY = context.env.DIGITALNZ_API_KEY;
   if (context.env?.LEGISLATION_API_KEY) e.LEGISLATION_API_KEY = context.env.LEGISLATION_API_KEY;
+  if (context.env?.STATSNZ_API_KEY) e.STATSNZ_API_KEY = context.env.STATSNZ_API_KEY;
   const env = Object.keys(e).length ? e : undefined;
   try { out = await handleLive(url.searchParams, env); }
   catch (e) { out = { status: 500, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }, body: { error: "live_failed", message: String(e?.message || e).slice(0, 200) } }; }

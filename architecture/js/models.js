@@ -15,7 +15,7 @@
 // Loaded with the page: this file, models-rules.js and models.css. Loaded only when needed: ifc-summary.js (an IFC is
 // dropped), upload.js (a big file goes to the shared records), model-view.js with three.js and web-ifc (a model is drawn).
 import { registerProjectPanel, registerRoute, registerNav } from './modules.js';
-import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP } from './models-rules.js';
+import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP, BROWSER_3D_LIMIT, tooBigFor3d, browserCopyFor, handoverFor, copyProblem } from './models-rules.js';
 import { activity, SAMPLE_ID } from './model.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 
@@ -35,7 +35,7 @@ const nb = (t) => String(t ?? '').replace(/(\d) (bytes|KB|MB|GB|m²|m\b)/g, '$1\
 function ensureCss() {
   if (document.querySelector('link[data-models-css]')) return;
   const l = document.createElement('link');
-  l.rel = 'stylesheet'; l.href = new URL('../models.css?v=1', import.meta.url).href; l.dataset.modelsCss = '';
+  l.rel = 'stylesheet'; l.href = new URL('../models.css?v=2', import.meta.url).href; l.dataset.modelsCss = '';
   document.head.append(l);
 }
 
@@ -75,7 +75,7 @@ const S = {
   preps: new Map(),   // project id -> { id, file, name, kind, got, total, state, href } a model being passed to the 3D page
 };
 let jobSeq = 0;
-const say = (pid, tone, name, text, meter = null) => { const list = S.notes.get(pid) ?? []; list.unshift({ id: `n${++jobSeq}`, tone, name, text, meter }); S.notes.set(pid, list.slice(0, 4)); };
+const say = (pid, tone, name, text, meter = null, label = '') => { const list = S.notes.get(pid) ?? []; list.unshift({ id: `n${++jobSeq}`, tone, name, text, meter, label }); S.notes.set(pid, list.slice(0, 4)); };
 const remember = (id, bytes) => { S.bytes.clear(); if (bytes && bytes.byteLength <= AUTO_PREVIEW_LIMIT) S.bytes.set(id, bytes); };
 
 /** keep the page from closing quietly while a model is still going up */
@@ -110,7 +110,8 @@ async function renderPanel(el, ctx) {
 function panelHtml(ctx, p, models, place) {
   const esc = ctx.esc, st = stacks(models), jobs = [...S.jobs.values()].filter((j) => j.pid === p.id), notes = S.notes.get(p.id) ?? [];
   const left = unfinished(p.id);
-  const count = st.length ? `${plural(st.length, 'model')}${models.length > st.length ? ` · ${plural(models.length, 'version')}` : ''}` : '';
+  const versions = st.reduce((n, x) => n + 1 + x.older.length, 0); // browser copies are not versions (models-rules.js)
+  const count = st.length ? `${plural(st.length, 'model')}${versions > st.length ? ` · ${plural(versions, 'version')}` : ''}` : '';
   const drop = place.viewer
     ? `<p class="mdl-viewer">□ You are a viewer in ${esc(ctx.practice?.name ?? 'this practice')}: you can open the models, not add them.</p>`
     : `<label class="mdl-drop" data-mdrop>
@@ -126,7 +127,7 @@ function panelHtml(ctx, p, models, place) {
     ...(S.preps.has(p.id) ? [prepCard(esc, S.preps.get(p.id))] : []),
     ...jobs.map((j) => jobCard(esc, j)),
     ...left.filter((u) => !jobs.some((j) => j.key === u.key)).map((u) => leftCard(esc, u)),
-    ...st.map((s) => modelCard(ctx, p, s, place)),
+    ...st.map((s) => modelCard(ctx, p, s, place, models)),
   ];
   return `<div class="mdl" data-mdl="${esc(p.id)}">
     <div class="mdl-head"><p class="label">Models</p>${count ? `<p class="mdl-count">${esc(count)}</p>` : ''}</div>
@@ -147,7 +148,7 @@ function meterHtml(esc, m) {
 
 function noteCard(esc, n) {
   return `<li class="mdl-card is-note${n.tone === 'error' ? ' is-error' : ''}" ${n.tone === 'error' ? 'role="alert"' : 'role="status"'}><div class="mdl-in">
-    <div class="mdl-body"><p class="mdl-top">${n.name && kindOf(n.name) ? tagHtml(esc, kindOf(n.name)) : ''}<span class="mdl-state">${n.tone === 'error' ? '□ Not kept' : '■ Stopped'}</span></p>
+    <div class="mdl-body"><p class="mdl-top">${n.name && kindOf(n.name) ? tagHtml(esc, kindOf(n.name)) : ''}<span class="mdl-state">${esc(n.label || (n.tone === 'error' ? '□ Not kept' : '■ Stopped'))}</span></p>
       ${n.name ? `<h3 class="mdl-name">${esc(n.name)}</h3>` : ''}${n.meter ? meterHtml(esc, n.meter) : ''}<p class="mdl-say">${esc(nb(n.text))}</p>
       <div class="acts"><button class="link" data-m="dismiss" data-id="${esc(n.id)}">Dismiss</button></div></div></div></li>`;
 }
@@ -190,20 +191,27 @@ function leftCard(esc, u) {
       <div class="acts"><button class="link" data-m="forget" data-key="${esc(u.key)}">Forget it</button></div></div></div></li>`;
 }
 
-function picHtml(esc, f, kind) {
+/** copy: the model's browser copy, if it has one. A model too big to draw here is turned through its copy. */
+function picHtml(esc, f, kind, copy = null) {
   if (KINDS[kind]?.family === 'revit' || KINDS[kind]?.family === 'navis') return `<div class="mdl-pic is-guide"><span class="mdl-pic-cap">To see it in 3D</span>${guideHtml(kind)}</div>`;
-  const thumb = f.extra?.model?.thumb;
-  const turn = KINDS[kind]?.read && canDraw() ? `<button class="mdl-turn" data-m="turn" data-id="${esc(f.id)}">${svg(IC.turn)}<span>Turn it</span></button>` : '';
+  const drawn = tooBigFor3d(f.size) ? copy : f;
+  const thumb = f.extra?.model?.thumb ?? (drawn === copy ? copy?.extra?.model?.thumb : undefined);
+  const turn = drawn && KINDS[kindOf(drawn.name)]?.read && canDraw() ? `<button class="mdl-turn" data-m="turn" data-id="${esc(drawn.id)}">${svg(IC.turn)}<span>Turn it${drawn === f ? '' : '<span class="vh">, its browser copy</span>'}</span></button>` : '';
   if (thumb && /^data:image\/(webp|jpeg|png);base64,/.test(thumb)) return `<div class="mdl-pic" data-pic="${esc(f.id)}"><img src="${thumb}" alt="${esc(`${f.name} in 3D, drawn in this browser from the file`)}" loading="lazy" />${turn}</div>`;
   return `<div class="mdl-pic is-icon" data-pic="${esc(f.id)}">${svg(KINDS[kind]?.look === 'sheet' ? IC.sheet : IC.model, 'mdl-big')}<span class="mdl-pic-tag">${esc(KINDS[kind]?.tag ?? '')}</span>${turn}</div>`;
 }
 
-function modelCard(ctx, p, s, place) {
-  const esc = ctx.esc, f = s.latest, kind = kindOf(f.name), k = KINDS[kind], sum = modelSummary(f);
+function modelCard(ctx, p, s, place, models = []) {
+  const esc = ctx.esc, f = s.latest, kind = kindOf(f.name), k = KINDS[kind], sum = modelSummary(f), copy = k.to3d === 'model' ? browserCopyFor(f, models) : null;
   const by = f.extra?.model?.by, sure = S.confirm === f.id, canChange = !place.viewer;
   const meta = nb([sizeText(f.size), by, when(f.kept_at)].filter(Boolean).join(' · '));
-  const to3d = k.to3d === 'model' ? `<button class="btn solid" data-m="open3d" data-id="${esc(f.id)}">Open in 3D ↗</button>`
+  const big = k.to3d === 'model' && tooBigFor3d(f.size) && !copy;
+  const to3d = big ? ''
+    : k.to3d === 'model' ? `<button class="btn solid" data-m="open3d" data-id="${esc(f.id)}">Open in 3D ↗</button>`
     : k.to3d === 'plan' ? `<button class="btn" data-m="open3d" data-id="${esc(f.id)}">Read the plan in 3D ↗</button>` : '';
+  const bigNote = big ? `<p class="mdl-say">□ Too big to open in 3D in a browser: ${esc(nb(sizeText(f.size)))}, and the most here is ${esc(nb(sizeText(BROWSER_3D_LIMIT)))}. It stays kept, counted and downloadable. An IFC exported without furniture, or a lighter copy, can open.</p>
+    ${canChange ? `<div class="mdl-addcopy"><label class="btn"><input type="file" class="vh" data-mcopy data-for="${esc(f.id)}" accept=".glb" />${svg(IC.cube)}Add a browser copy<span class="vh"> of ${esc(f.name)}</span></label><span class="mdl-meta">A lighter .glb made from this model. It opens in 3D in its place.</span></div>` : ''}` : '';
+  const copyLine = copy ? copyHtml(esc, f, copy, canChange) : '';
   const acts = `<div class="acts">${to3d}<button class="btn" data-m="get" data-id="${esc(f.id)}">Download<span class="vh"> ${esc(f.name)}</span></button>
     ${canChange ? `<button class="link" data-m="remove" data-id="${esc(f.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(f.name)} v${f.version}</span></button>` : ''}</div>`;
   let body = '';
@@ -214,20 +222,29 @@ function modelCard(ctx, p, s, place) {
   else if (kind === 'glb') body = '<p class="mdl-say">A 3D model, kept with the project.</p>';
   const older = s.older.length ? `<details class="mdl-older" data-older="${esc(f.id)}"${S.open.has(f.id) ? ' open' : ''}><summary>${plural(s.older.length, 'earlier version')}</summary><ul>${s.older.map((o) => `<li><span class="mdl-v">v${o.version}</span><span class="mdl-meta">${esc(nb([sizeText(o.size), o.extra?.model?.by, when(o.kept_at)].filter(Boolean).join(' · ')))}</span>
       <span class="mdl-older-acts"><button class="link" data-m="get" data-id="${esc(o.id)}">Download<span class="vh"> v${o.version}</span></button>${canChange ? `<button class="link" data-m="remove" data-id="${esc(o.id)}">${S.confirm === o.id ? 'Remove for good' : 'Remove'}<span class="vh"> v${o.version}</span></button>` : ''}</span></li>`).join('')}</ul></details>` : '';
-  return `<li class="mdl-card" data-card="${esc(f.id)}" data-kind="${esc(kind)}"><div class="mdl-in">${picHtml(esc, f, kind)}
+  return `<li class="mdl-card" data-card="${esc(f.id)}" data-kind="${esc(kind)}"><div class="mdl-in">${picHtml(esc, f, kind, copy)}
     <div class="mdl-body"><p class="mdl-top">${tagHtml(esc, kind, f.version)}<span class="mdl-state">■ ${esc(k.word)}</span></p>
       <h3 class="mdl-name">${esc(f.name)}</h3><p class="mdl-meta">${esc(meta)}</p>
-      ${body}${acts}${older}</div></div></li>`;
+      ${body}${copyLine}${bigNote}${acts}${older}</div></div></li>`;
+}
+
+/** the browser copy under its model: its size, where it came from, and that Open in 3D opens it */
+function copyHtml(esc, f, copy, canChange) {
+  const meta = nb([copy.name, copy.extra?.model?.by, when(copy.kept_at)].filter(Boolean).join(' · '));
+  return `<div class="mdl-copy" data-copy="${esc(copy.id)}"><p class="mdl-copy-t">■ Browser copy · ${esc(nb(sizeText(copy.size)))}</p>
+    <p class="mdl-meta">${esc(meta)}</p>
+    <p class="mdl-copy-say">Open in 3D opens this lighter copy.${f.extra?.ifc ? ' The counts are from the IFC.' : ''}</p>
+    <span class="mdl-older-acts"><button class="link" data-m="get" data-id="${esc(copy.id)}">Download<span class="vh"> the browser copy</span></button>${canChange ? `<button class="link" data-m="remove" data-id="${esc(copy.id)}">${S.confirm === copy.id ? 'Remove for good' : 'Remove'}<span class="vh"> the browser copy</span></button>` : ''}</span></div>`;
 }
 
 function ifcBlock(esc, f, sum) {
   const facts = factsOf(sum), area = areaOf(sum), storeys = storeysOf(sum);
   const more = storeys.length > 6 ? storeys.length - 6 : 0;
-  return `<ul class="mdl-facts" aria-label="Counted in the file">${facts.map((x) => `<li class="${x.n ? '' : 'is-zero'}">${svg(IC[x.key])}<b>${esc(x.text)}</b><span>${esc(x.label)}</span></li>`).join('')}</ul>
+  return `<ul class="mdl-facts" aria-label="Counted in the file">${facts.map((x) => `<li class="${x.n ? '' : 'is-zero'}">${svg(IC[x.key])}<b>${esc(x.text)}</b><span>${esc(x.label)}</span>${x.also ? `<small>${esc(x.also)}</small>` : ''}</li>`).join('')}</ul>
     ${storeys.length ? `<div class="mdl-storeys" aria-label="Storeys, lowest first">${svg(IC.storeys)}<ol>${storeys.slice(0, 6).reverse().map((s) => `<li><span>${esc(s.name)}</span><span class="mono">${esc(s.level)}</span></li>`).join('')}</ol>${more ? `<span class="mdl-meta">and ${more} more</span>` : ''}</div>` : '<p class="mdl-meta">No storeys in the file.</p>'}
     ${area ? `<p class="mdl-area"><b>${esc(nb(area.value))}</b><span>${esc(area.label)}</span></p>` : `<p class="mdl-meta">No floor area: ${esc(sum.spaces?.count ? 'the spaces carry none' : 'the file has no spaces')}.</p>`}
     <details class="mdl-from"><summary>Where these numbers come from</summary>
-      <p>${esc(sum.from?.counts ?? '')}</p><p>${esc(sum.from?.storeys ?? '')}</p><p>${esc(area?.from ? `${area.from}. Nothing is measured from the shapes.` : sum.from?.area ?? '')}</p>
+      <p>${esc(sum.from?.counts ?? '')}</p>${sum.counts?.curtain_walls ? `<p>Curtain walls are counted from IfcCurtainWall. Revit exports curtain-wall glazing as curtain walls, so their glass is not in the window count.</p>` : ''}<p>${esc(sum.from?.storeys ?? '')}</p><p>${esc(area?.from ? `${area.from}. Nothing is measured from the shapes.` : sum.from?.area ?? '')}</p>
       <p class="mdl-meta">${esc([sum.schema, sum.app && `from ${sum.app}`, sum.units?.length && `lengths in ${sum.units.length}`, `read in this browser in ${sum.ms} ms`].filter(Boolean).join(' · '))}. Nothing was sent anywhere to read it.</p></details>`;
 }
 
@@ -254,6 +271,8 @@ function wirePanel(el, ctx, p, place, models) {
   el.addEventListener('change', (e) => {
     const input = e.target.closest('[data-mpick]');
     if (input?.files?.length) { const list = [...input.files]; input.value = ''; keepAll(list, ctx, p); }
+    const copyPick = e.target.closest('[data-mcopy]');
+    if (copyPick?.files?.length) { const file = copyPick.files[0]; copyPick.value = ''; keepOne(file, ctx, p, { copyOf: copyPick.dataset.for }); }
   });
   el.addEventListener('toggle', (e) => { const d = e.target.closest?.('[data-older]'); if (d) { if (d.open) S.open.add(d.dataset.older); else S.open.delete(d.dataset.older); } }, true);
   el.addEventListener('click', (e) => onClick(e, ctx, p, models));
@@ -299,7 +318,7 @@ async function onClick(e, ctx, p, models) {
       await log(ctx, p.id, 'Model removed', `${note.name} v${versionLabel(note, models)}`);
       return ctx.redraw();
     }
-    if (what === 'open3d') return open3d(ctx, p, note);
+    if (what === 'open3d') return open3d(ctx, p, note, models);
     if (what === 'turn') return turn(ctx, note, b.closest('[data-pic]'));
   } catch (err) {
     say(p.id, 'error', note?.name ?? '', err?.message ?? 'That did not work.');
@@ -335,7 +354,8 @@ async function keepAll(list, ctx, p) {
   for (const file of list) await keepOne(file, ctx, p); // one after another: a big model is not read twice at once
 }
 
-async function keepOne(file, ctx, p) {
+/** opts.copyOf: the id of the kept model this file is a browser copy of (it is kept with extra.browser_copy_of) */
+async function keepOne(file, ctx, p, opts = {}) {
   const place = placeHere(ctx, p), kind = kindOf(file.name);
   const job = { id: `j${++jobSeq}`, pid: p.id, name: file.name, size: file.size, kind, stage: 'checking', sent: 0, total: file.size, samples: [] };
   S.jobs.set(job.id, job);
@@ -345,11 +365,14 @@ async function keepOne(file, ctx, p) {
     const head = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
     const wrongKind = checkKind(file.name, head);
     if (wrongKind) throw new Error(wrongKind);
+    const all0 = opts.copyOf ? (await ctx.store.listFiles({ project_id: p.id })).filter((f) => isModel(f, p)) : [];
+    const notCopy = opts.copyOf ? copyProblem(file, all0.find((f) => f.id === opts.copyOf)) : '';
+    if (notCopy) throw new Error(notCopy);
     const tooBig = sizeProblem(file, place);
     if (tooBig) throw Object.assign(new Error(tooBig), { meter: file.size ? { size: file.size, limit: place.limit } : null });
     const all = (await ctx.store.listFiles({ project_id: p.id })).filter((f) => isModel(f, p));
     job.version = nextVersion(all, file.name);
-    const base = { model: { kind, version: job.version, by: ctx.me || '' } };
+    const base = { model: { kind, version: job.version, by: ctx.me || '' }, ...(opts.copyOf ? { browser_copy_of: opts.copyOf } : {}) };
     const reading = KINDS[kind].read ? readModel(file, kind, job) : Promise.resolve({});
     let note;
     if (place.where === 'shared' && file.size > PART_SIZE) note = await sendInParts(job, file, ctx, p, base, reading);
@@ -361,7 +384,8 @@ async function keepOne(file, ctx, p) {
       note = await ctx.store.putFile({ project_id: p.id, owner_kind: 'model', owner_id: p.id, name: file.name, type: file.type, data, extra: { ...base, model: { ...base.model, ...got.model }, ...(got.ifc ? { ifc: got.ifc } : {}), ...(got.ifc_error ? { ifc_error: got.ifc_error } : {}) } });
     }
     remember(note.id, job.bytes);
-    await log(ctx, p.id, job.version > 1 ? 'Model version kept' : 'Model kept', `${file.name} v${job.version}, ${sizeText(file.size)}`);
+    if (opts.copyOf) await log(ctx, p.id, 'Browser copy kept', `${file.name}, ${sizeText(file.size)}`);
+    else await log(ctx, p.id, job.version > 1 ? 'Model version kept' : 'Model kept', `${file.name} v${job.version}, ${sizeText(file.size)}`);
   } catch (err) {
     if (err?.code !== 'stopped') say(p.id, 'error', file.name, err?.message ?? 'It could not be kept.', err?.meter ?? null);
     else say(p.id, 'info', file.name, 'Stopped. Nothing was kept.');
@@ -458,7 +482,7 @@ function canDraw() {
 function stopLive() { try { S.live?.stop(); } catch { /* already gone */ } S.live = null; }
 
 async function turn(ctx, note, pic) {
-  if (!pic) return;
+  if (!pic || tooBigFor3d(note.size)) return;
   stopLive();
   const kind = kindOf(note.name);
   pic.classList.add('is-live', 'is-busy');
@@ -485,7 +509,9 @@ async function turn(ctx, note, pic) {
 /** Open in 3D. The model goes into this browser's own storage first (handoff.js), then the 3D page opens with its id and
  * takes it from there. Nothing needs the two pages to talk, so it works whether the browser opens a new tab, replaces this
  * page with the 3D one (the Claude app's browser pane does), or blocks the tab: then a link opens it with a fresh press. */
-function open3d(ctx, p, note) {
+function open3d(ctx, p, source, models = []) {
+  const note = handoverFor(source, models) ?? source; // a browser copy goes in the model's place (models-rules.js)
+  if (tooBigFor3d(note.size) && KINDS[kindOf(note.name)]?.to3d === 'model') { say(p.id, 'error', note.name, `Too big to open in 3D in a browser (${sizeText(note.size)}; the most here is ${sizeText(BROWSER_3D_LIMIT)}).`, null, '□ Not opened'); return ctx.redraw(); }
   if (S.preps.get(p.id)?.state === 'fetching' || S.preps.get(p.id)?.state === 'keeping') return undefined; // one at a time
   const r = { id: `o${++jobSeq}`, pid: p.id, file: note.id, name: note.name, kind: kindOf(note.name), got: 0, total: Number(note.size) || 0, state: 'fetching', href: '' };
   S.preps.set(p.id, r); ctx.redraw();
@@ -500,7 +526,7 @@ function open3d(ctx, p, note) {
     r.state = 'ready'; ctx.redraw();
     const w = window.open(r.href, '_blank'); // may replace this page (then the 3D page takes it from storage all the same)
     if (w) { r.state = 'opened'; ctx.redraw(); }
-  })().catch((err) => { S.preps.delete(p.id); say(p.id, 'error', note.name, `${err?.message ?? 'It could not be passed across.'} You can download it and choose it on the 3D page instead.`); ctx.redraw(); });
+  })().catch((err) => { S.preps.delete(p.id); say(p.id, 'error', note.name, `${err?.message ?? 'It could not be passed across.'} You can download it and choose it on the 3D page instead.`, null, '□ Not opened'); ctx.redraw(); });
   return undefined;
 }
 
