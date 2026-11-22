@@ -34,12 +34,12 @@ export function renderChecks(checks: Check[]): string {
 interface Host { project: { key: string; title: string }; log(msg: string): void; save: ((filename: string, data: Blob) => Promise<void>) | null }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function codeChecksPanel(app: Host, plan: any): HTMLElement {
+export function codeChecksPanel(app: Host, plan: any, version?: string): HTMLElement {
   const el = document.createElement('section');
   el.className = 'card'; el.id = 'codeChecks';
   let checks: Check[] = [], failed = '';
   try { checks = runCodeChecks(plan); } catch (e) { failed = (e as Error).message; }
-  const fp = modelFingerprint(plan), read = [...new Set(RULES.map((r) => r.cite.readOn))].sort().pop() ?? '';
+  const fp = version ?? modelFingerprint(plan), read = [...new Set(RULES.map((r) => r.cite.readOn))].sort().pop() ?? '';
   el.innerHTML = `<h3>Code pre-check</h3>
     <p class="small"><b>${esc(STANDING)}</b></p>
     <p class="mono small" id="ccTally"></p>

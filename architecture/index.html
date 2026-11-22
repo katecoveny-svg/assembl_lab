@@ -5,20 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Architecture operations · assembl.</title>
     <meta name="description" content="One flow for an architecture practice, from the first site visit to completion: seven stages, each with its tasks, documents, tool and the approval that closes it." />
+    <!-- the look shown last time (js/theme.js), set before the page draws so it does not flash the other look -->
+    <script>try{if(localStorage.getItem('assembl.architecture.look')==='sketch'){document.documentElement.dataset.theme='sketch';var l=document.createElement('link');l.id='look-fonts';l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200..500&family=Spectral:ital,wght@1,300&display=swap';document.head.appendChild(l);}}catch(e){}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ops.css?v=2" />
+    <link rel="stylesheet" href="./ops.css?v=3" />
   </head>
   <body>
     <a class="skip" href="#app">Skip to the work</a>
     <header class="top">
       <div class="top-in">
         <a class="word" href="#/" aria-label="assembl. architecture operations: all projects">assembl.</a>
-        <span class="kick">architecture · operations</span>
+        <span class="kick">architecture</span>
+        <nav class="bar" aria-label="Workspace">
+          <a href="#/" data-core="projects"><span class="nav-ic" data-icon="projects" aria-hidden="true"></span><span>Projects</span></a>
+          <!-- add-on links (js/modules.js): drawn by app.js drawAddons -->
+          <span class="mods" id="mods" hidden></span>
+          <a href="#/settings" data-core="settings"><span class="nav-ic" data-icon="settings" aria-hidden="true"></span><span>Settings</span></a>
+        </nav>
         <label class="me"><span>Working as</span><input id="me" autocomplete="name" placeholder="your name" maxlength="60" /></label>
         <!-- [cloud] sign in with Google, sign out: drawn by js/account.js -->
-        <nav class="mods" id="mods" aria-label="Workspace" hidden></nav>
         <div class="acct" id="acct" aria-live="polite"></div>
       </div>
     </header>
@@ -34,6 +41,6 @@
       </div>
     </footer>
     <noscript><p class="opening">This page needs JavaScript to open your projects. Nothing is saved or sent without it.</p></noscript>
-    <script type="module" src="./js/app.js?v=2"></script>
+    <script type="module" src="./js/app.js?v=3"></script>
   </body>
 </html>

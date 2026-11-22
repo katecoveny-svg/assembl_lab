@@ -3,9 +3,10 @@ import {
   STAGES, STAGE_KEYS, STATUS, ROLES, DOC_KINDS, stageDef, stageNumber, closingStatement, statusMark, statusWord, newProject, sampleProject, SAMPLE_ID,
   gate, closingApprovals, askForApproval, backToWork, recordApproval, markDone, nextAction, currentStage, allDone, openRfis, hasSiteFacts, hasModel,
   activity, newId, twinLink, twinHandoff, isEdited, sourceLabel, missingSourced, consentRow, taskRow, AUCKLAND, READ_ON,
+  PLAN_RUN_KEY, readPlanRun, runReportDocument, runReportStage, runReportFileName,
 } from './model.js';
 import { createStore, browserBackend, sizeText, sessionHandoff } from './store.js';
-import { describeModel } from './fingerprint.js';
+import { describeModel, modelFingerprint } from './fingerprint.js';
 import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue } from './facts.js';
 
 // [cloud] One store for the whole page. It starts as this browser's store, exactly as before. account.js points it at the
@@ -13,11 +14,15 @@ import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, 
 import { createSwitch } from './cloud.js';
 import { mountAccount } from './account.js';
 import { getRoute, projectPanels, navItems, loadAddons } from './modules.js'; // add-ons (models, clients) draw themselves into the page
+import { planOutline, coverSvg, sketchSvg, outlineFor } from './cover.js';
+import { THEMES, pickTheme, applyTheme, lookChoiceHtml, isTheme, LOOK_SETTING } from './theme.js';
+import { icon, STAGE_ICON, NAV_ICON } from './icons.js';
+import { glance } from './glance.js';
 const store = createSwitch(createStore(browserBackend()));
 const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me') });
 const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
-const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null };
+const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, wallAt: 0, learn: [] };
 let me = '';
 let kept = new Map(); // the files kept for the project on screen (in this browser, or in the shared records), by file id
 let shown = null; // [cloud] the project on screen, for wording that depends on where it is kept
@@ -25,6 +30,12 @@ const handoff = { fp: '', pid: '', ok: false, why: '', told: false }; // whether
 const HERO = '/plan-studio/twins/drop/hero.webp';
 let cleanups = []; // what the add-ons on screen asked to be run before the page is drawn again
 const $mods = document.getElementById('mods');
+let browserLook = ''; // this browser's own choice of look (theme.js): used when no practice is in use
+let outlines = {}; // plan outlines this browser worked out from kept model files, by model fingerprint (a cache, kept as a setting)
+let storage = null; try { storage = window.localStorage; } catch { /* blocked: the look is not remembered between visits */ }
+/** the project page's tabs: [key, label, icon] */
+const TABS = [['site', 'Site', 'site'], ['model', 'Model', 'cube'], ['drawings', 'Drawings', 'drawings'], ['presentation', 'Presentation', 'presentation'], ['takeoff', 'Takeoff', 'takeoff'], ['deliverables', 'Deliverables', 'deliverables']];
+const TAB_KEYS = TABS.map((t) => t[0]);
 
 // ---- small helpers ----------------------------------------------------------------------------------------------------
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -48,11 +59,12 @@ const href = (pid, ...rest) => `#/p/${encodeURIComponent(pid)}${rest.length ? '/
 
 function route() {
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === 'settings') return { view: 'settings' };
   if (parts[0] && parts[0] !== 'p' && getRoute(parts[0])) return { view: 'module', name: parts[0], rest: parts.slice(1) };
   if (parts[0] !== 'p' || !parts[1]) return { view: 'projects' };
   if (parts[2] === 'pack') return { view: 'pack', pid: parts[1] };
   if (parts[2] === 's' && STAGE_KEYS.includes(parts[3])) return { view: 'stage', pid: parts[1], stage: parts[3], section: parts[4] ?? null };
-  return { view: 'dash', pid: parts[1] };
+  return { view: 'dash', pid: parts[1], tab: parts[2] === 't' && TAB_KEYS.includes(parts[3]) ? parts[3] : null };
 }
 
 async function log(pid, action, detail) {
@@ -154,7 +166,20 @@ function listHtml(b, kind, rows, ctx, { addLabel, emptyText, extra = '', head } 
       : `<div class="acts"><button class="btn" data-act="add" data-key="${esc(addKey)}">+ ${esc(addLabel ?? `Add ${K.noun}`)}</button>${extra}</div>`}`;
 }
 
-// ---- projects screen ----------------------------------------------------------------------------------------------------
+// ---- covers, stage bars and status: the visual parts every project shows ---------------------------------------------------
+/** the project's cover: its model's plan when there is one, otherwise a plain decorative sketch that says there is no model */
+function coverHtml(p, cls = '') {
+  const o = outlineFor(p.model, outlines);
+  if (o) return `<div class="cover plan${cls ? ` ${cls}` : ''}">${coverSvg(o, { label: `${o.level || 'Ground floor'} plan of ${p.name}, drawn from its plan model${p.model.revision ? `, revision ${p.model.revision}` : ''}` })}</div>`;
+  return `<div class="cover deco${cls ? ` ${cls}` : ''}">${sketchSvg()}<span class="cover-note">${p.model?.fingerprint ? 'Model attached' : 'No model yet'}</span></div>`;
+}
+const coverCaption = (p) => { const o = outlineFor(p.model, outlines); return o ? `${o.level || 'Ground floor'} · from the model${p.model.revision ? `, revision ${p.model.revision}` : ''}` : ''; };
+/** seven segments, one a stage */
+const segsHtml = (g) => `<span class="segs" role="img" aria-label="${esc(`${g.done} of 7 stages done${g.stage ? `. Now stage ${g.stage.n}, ${g.stage.label}` : ''}`)}">${g.segs.map((x) => `<i class="${x}"></i>`).join('')}</span>`;
+/** a status dot with its word: the colour only repeats what the word says */
+const stateHtml = (g) => `<span class="state ${g.status}"><span class="dot" aria-hidden="true"></span><span>${esc(g.word)}</span></span>`;
+const stageLine = (g) => (g.stage ? `${g.stage.n}/7 · ${g.stage.label}` : g.done === 7 ? '7/7 · Done' : '');
+// the client pack's own small rail and line (it prints, so it keeps the squares)
 const miniRail = (stages) => `<span class="mini" aria-hidden="true">${STAGE_KEYS.map((k) => { const s = stages.find((x) => x.key === k); return `<i class="${s?.status === 'done' ? 'done' : s && s.status !== 'not_started' ? 'now' : ''}"></i>`; }).join('')}</span>`;
 function whereLine(stages) {
   if (stages.length && stages.every((s) => s.status === 'done')) return '■ All seven stages done';
@@ -162,56 +187,128 @@ function whereLine(stages) {
   return s ? `Stage ${stageNumber(s.key)} of 7 · ${stageDef(s.key).label} · ${statusMark('stage', s.status)}` : '';
 }
 
+// ---- projects screen ----------------------------------------------------------------------------------------------------
 async function projectsView() {
   const projects = (await store.list('project')).sort((a, b) => (a.sample ? 1 : 0) - (b.sample ? 1 : 0) || String(b.updated_at).localeCompare(String(a.updated_at)));
-  const stages = await store.list('stage');
+  const [stages, tasks, rfis, approvals] = await Promise.all(['stage', 'task', 'rfi', 'approval'].map((k) => store.list(k)));
   const hasSample = projects.some((p) => p.sample);
-  const rows = projects.map((p) => {
-    const st = stages.filter((s) => s.project_id === p.id), sure = ui.confirm === p.id;
-    const thumb = p.sample
-      ? `<div class="thumb"><img src="${HERO}" alt="A dark-clad house on timber piles among trees: a rendering of the sample plan model, not a photograph." loading="lazy" /></div>`
-      : `<div class="thumb blank"><span>${p.model?.fingerprint ? 'Model attached' : 'No model yet'}</span></div>`;
-    return `<li class="prow">${thumb}
-      <div class="body"><div class="who" style="display:grid;gap:6px;min-width:0"><p class="label">${p.sample ? '<span class="tag">Sample</span>' : 'Project'}</p><h2>${esc(p.name)}</h2>
-        <p class="small">${p.sample ? 'The lab’s example plan model. No client, no site point and no approvals come with it.' : p.client ? `Client: ${esc(p.client)}` : 'No client named'}</p></div>
-        <div class="where">${miniRail(st)}<p class="st" style="white-space:normal">${esc(whereLine(st))}</p><p class="when">Changed ${esc(day(p.updated_at))}</p></div></div>
-      <div class="go"><a class="btn solid" href="${href(p.id)}">Open<span class="vh"> ${esc(p.name)}</span></a>
-        <button class="link" data-act="project-remove" data-id="${esc(p.id)}">${sure ? 'Remove for good' : 'Remove'}</button></div></li>`;
+  const seen = projects.map((p) => {
+    const mine = (list) => list.filter((x) => x.project_id === p.id);
+    return { p, g: glance({ project: p, stages: mine(stages), tasks: mine(tasks), rfis: mine(rfis), approvals: mine(approvals) }) };
+  });
+  const count = (st) => seen.filter((x) => x.g.status === st).length;
+  const tiles = seen.map(({ p, g }, i) => {
+    const sure = ui.confirm === p.id;
+    return `<li class="prow ptile" style="--i:${Math.min(i, 8)}">
+      ${coverHtml(p)}
+      <div class="ptile-body">
+        <p class="ptile-kick">${p.sample ? '<span class="tag">Sample</span>' : p.client ? esc(p.client) : 'No client named'}</p>
+        <h2><a class="ptile-a" href="${href(p.id)}">${esc(p.name)}</a></h2>
+        <div class="ptile-where">${segsHtml(g)}<span class="st">${esc(stageLine(g))}</span></div>
+        <p class="ptile-state">${stateHtml(g)}</p>
+        <p class="ptile-next">${esc(g.next)}</p>
+      </div>
+      <div class="ptile-foot"><span class="when">Changed ${esc(day(p.updated_at))}</span>
+        <button class="link" data-act="project-remove" data-id="${esc(p.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(p.name)}</span></button></div></li>`;
   }).join('');
+  ui.learn = projects.filter((p) => p.model?.file?.id && !outlineFor(p.model, outlines)).slice(0, 6); // covers still to work out
+  // tiles fade and rise in once, when the wall is first shown (the page may draw twice as sign-in answers: both count as first)
+  const now = performance.now();
+  if (!ui.wallAt) ui.wallAt = now;
+  const anim = now - ui.wallAt < 900 ? ' rise' : '';
   return `<div class="wrap">
-    <section class="hero"><p class="label">Projects</p><h1>From the first site visit to completion.</h1>
-      <p class="lede">One project, seven stages. Each stage shows its tasks, its documents, its tool, and the approval that closes it.</p></section>
-    ${flashHtml()}
-    ${projects.length ? `<ul class="plist">${rows}</ul>` : `<div class="empty"><h3>No projects ${esc(W().here)} yet.</h3><p>Create one below, import a project file, or add the sample to look around.</p></div>`}
-    <section class="panel" aria-labelledby="newp"><h3 id="newp">New project</h3>
-      <form class="f newp" data-form="new-project"><label>Project name<input name="name" required maxlength="120" placeholder="e.g. House on the ridge" /></label>
-        <label>Client<input name="client" maxlength="120" placeholder="optional" /></label>
-        <div class="f-act"><button class="btn solid">Create project</button></div></form>
-      <div class="acts"><button class="btn" data-act="pick" data-target="import-file">Import a project file</button>${hasSample ? '' : '<button class="btn" data-act="sample">Add the sample project</button>'}
-        <input type="file" id="import-file" data-file="import" accept=".json,application/json" hidden /></div>
-      <p class="small">A new project starts in Predesign with a list of tasks for each stage and a consent list. Each item shows its source, or says it is an assembl starter with none. Edit the lists to suit your practice, and check your council’s current checklist.</p>
-    </section></div>`;
+    <section class="hero"><p class="label">Projects</p><h1><span class="accent">From the first site visit</span> to completion.</h1>
+      <dl class="bignums"><div><dt>Projects</dt><dd>${projects.length}</dd></div><div><dt><span class="dot go" aria-hidden="true"></span>Under way</dt><dd>${count('go')}</dd></div>
+        <div><dt><span class="dot needs" aria-hidden="true"></span>Need something</dt><dd>${count('needs')}</dd></div><div><dt><span class="dot waiting" aria-hidden="true"></span>Waiting on a person</dt><dd>${count('waiting')}</dd></div></dl></section>
+    ${flashHtml()}${incomingHtml(projects)}
+    ${projects.length ? '' : `<div class="empty"><h3>No projects ${esc(W().here)} yet.</h3><p>Create one, import a project file, or add the sample to look around.</p></div>`}
+    <ul class="pwall${anim}" aria-label="Projects">${tiles}
+      <li class="ptile new" style="--i:${Math.min(seen.length, 8)}"><h2 class="new-h" id="newp">${icon('plus')}<span>New project</span></h2>
+        <form class="f newp" data-form="new-project" aria-labelledby="newp"><label>Project name<input name="name" required maxlength="120" placeholder="e.g. House on the ridge" /></label>
+          <label>Client<input name="client" maxlength="120" placeholder="optional" /></label>
+          <div class="f-act"><button class="btn solid">Create project</button></div></form>
+        <div class="acts"><button class="btn" data-act="pick" data-target="import-file">${icon('import')}<span>Import a project file</span></button>${hasSample ? '' : '<button class="link" data-act="sample">Add the sample project</button>'}
+          <input type="file" id="import-file" data-file="import" accept=".json,application/json" hidden /></div>
+        <details class="more-note"><summary>What a new project starts with</summary><p class="small">Predesign, with a list of tasks for each stage and a consent list. Each item shows its source, or says it is an assembl starter with none. Edit the lists to suit your practice, and check your council’s current checklist.</p></details></li>
+    </ul></div>`;
 }
 
 const flashHtml = () => (ui.flash ? `<p class="flash" role="status">${esc(ui.flash)}</p>` : '');
 
-// ---- the project frame: header and stage rail --------------------------------------------------------------------------
+// ---- a run report passed across from the 3D page (model.js, readPlanRun): nothing is saved until a person chooses ----------
+function incoming() {
+  let text = null;
+  try { text = globalThis.sessionStorage?.getItem(PLAN_RUN_KEY) ?? null; } catch { return null; }
+  if (!text) return null;
+  try { return readPlanRun(text, modelFingerprint); } catch (err) { return { error: err.message }; }
+}
+function incomingHtml(projects) {
+  const h = incoming();
+  if (!h) return '';
+  if (h.error) return `<section class="panel incoming" aria-labelledby="inh"><h3 id="inh">From the 3D page</h3><p>□ ${esc(h.error)}</p><div class="acts"><button class="link" data-act="run-dismiss">Clear it</button></div></section>`;
+  const opts = projects.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}${p.model?.fingerprint ? ` (model ${esc(p.model.fingerprint)})` : ' (no model yet)'}</option>`).join('');
+  return `<section class="panel incoming" aria-labelledby="inh"><h3 id="inh">From the 3D page: a run report</h3>
+    <p><b>${esc(h.title)}</b> · model version <span class="mono">${esc(h.fingerprint)}</span> · run ${esc(dayTime(h.ranAt))}</p>
+    <p class="small"><b>A pre-check prepared by software for a person to review. It is not a compliance decision or a professional sign-off.</b></p>
+    <p class="small">${esc(h.summary)} ${esc(plural(h.mustCheck, 'thing'))} for a person to check.</p>
+    ${projects.length ? `<form class="f" data-form="run-add"><label class="wide">Add it to<select name="pid">${opts}</select></label><div class="f-act"><button class="btn solid">Add the report</button></div></form>` : ''}
+    <form class="f" data-form="run-new"><label class="wide">Or start a project<input name="name" required maxlength="120" value="${esc(h.title)}" /></label><div class="f-act"><button class="btn">Create a project with it</button><button type="button" class="link" data-act="run-dismiss">Not now</button></div></form>
+    <p class="small">Nothing is saved until you choose. The report becomes a document on the project, with its text file kept ${esc(W().keptOnly) /* [cloud] */}. ${h.plan ? 'The model is attached only if the project has none.' : 'The model was too big to pass across, so only the report came.'} The site point is not in either.</p></section>`;
+}
+/** add the passed-across report to a project: a document with its file, and the model when the project has none */
+async function addRun(pid, h) {
+  const b = await store.loadProject(pid);
+  if (!b) throw new Error('That project is no longer here, so nothing was added.');
+  const p = b.project, stage = runReportStage(b);
+  let said = '';
+  if (h.plan && !p.model?.fingerprint) {
+    const m = describeModel(h.planText, h.name);
+    let keptFile = null;
+    if (!twinLink({ fingerprint: m.fingerprint })?.direct) {
+      try { const meta = await store.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: m.file_name, type: 'application/json', data: h.planText }); keptFile = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at }; } catch (err) { said = ` The model file was not kept: ${err.message}`; }
+    }
+    p.model = { fingerprint: m.fingerprint, drawings: m.drawings, revision: m.revision, file_name: m.file_name, file: keptFile };
+    await store.save('project', p);
+    await log(pid, 'Model attached', `${m.file_name}, revision ${m.revision}, version ${m.fingerprint}, from the 3D page`);
+    said = ` The model is attached (version ${m.fingerprint}).${said}`;
+  } else if (p.model?.fingerprint === h.fingerprint) said = ' The project already has this model version.';
+  else if (p.model?.fingerprint) said = ` The project’s model is version ${p.model.fingerprint}; the report is on version ${h.fingerprint}, so the model was left as it is.`;
+  else said = ' The model did not come with it: attach it from the model page.';
+  const d = runReportDocument(pid, stage, h);
+  try {
+    const meta = await store.putFile({ project_id: pid, owner_kind: 'document', owner_id: d.id, name: runReportFileName(h), type: 'text/plain', data: h.text });
+    d.file = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at };
+  } catch (err) { said += ` The report’s file was not kept (${err.message}); the document records it.`; }
+  await store.save('document', d);
+  await log(pid, 'Run report added', `${h.title}, model version ${h.fingerprint}`);
+  try { globalThis.sessionStorage?.removeItem(PLAN_RUN_KEY); } catch { /* it goes when the tab closes */ }
+  return { stage, flash: `Added the run report to ${stageDef(stage).label} as a document.${said}` };
+}
+
+
+// ---- the project frame: the seven stages as a strip of icons ---------------------------------------------------------------
+function stripHtml(b, r) {
+  const p = b.project;
+  return `<nav class="strip" aria-label="The seven stages"><ol>${STAGES.map((s, i) => {
+    const st = b.stages.find((x) => x.key === s.key), cls = st.status === 'done' ? 'done' : st.status === 'awaiting_approval' ? 'wait' : st.status === 'in_progress' ? 'now' : '';
+    return `<li><a class="${cls}" href="${href(p.id, 's', s.key)}"${r.view === 'stage' && r.stage === s.key ? ' aria-current="page"' : ''}>
+      <span class="sic">${icon(STAGE_ICON[s.key])}</span><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="name">${esc(s.label)}</span><span class="st">${esc(statusMark('stage', st.status))}</span></a></li>`;
+  }).join('')}</ol></nav>`;
+}
+const railNow = (b) => { const cur = currentStage(b); return allDone(b) ? '■ All seven stages done' : cur ? `Stage ${stageNumber(cur.key)} of 7 · ${stageDef(cur.key).label} · ${statusMark('stage', cur.status)}` : ''; };
+const projectNav = (p, r) => `<nav class="pnav" aria-label="Project">${r.view === 'dash' ? '' : `<a class="btn" href="${href(p.id)}">${icon('projects')}<span>Overview</span></a>`}<a class="btn" href="${href(p.id, 'pack')}">${icon('pack')}<span>Client pack</span></a><button class="btn" data-act="export"${ui.exporting ? ' aria-expanded="true"' : ''}>${icon('export')}<span>Export</span></button></nav>`;
+const who = (p) => `<p class="label">${p.sample ? '<span class="tag">Sample</span>' : 'Project'}</p>`;
+const clientLine = (p) => (p.sample ? 'The lab’s example plan model. No client is named.' : p.client ? `Client: ${esc(p.client)}` : 'No client named');
+
+/** a stage page's frame: a small header with the cover, then the strip */
 function frame(b, r, inner) {
-  const p = b.project, cur = currentStage(b);
-  const rail = STAGES.map((s, i) => {
-    const st = b.stages.find((x) => x.key === s.key), cls = st.status === 'done' ? 'done' : st.status === 'not_started' ? '' : 'now';
-    return `<a class="${cls}" href="${href(p.id, 's', s.key)}"${r.view === 'stage' && r.stage === s.key ? ' aria-current="page"' : ''}>
-      <span class="n">${String(i + 1).padStart(2, '0')}</span><span class="name">${esc(s.label)}</span><span class="st">${esc(statusMark('stage', st.status))}</span></a>`;
-  }).join('');
-  const now = allDone(b) ? '■ All seven stages done' : cur ? `Stage ${stageNumber(cur.key)} of 7 · ${stageDef(cur.key).label} · ${statusMark('stage', cur.status)}` : '';
+  const p = b.project;
   return `<div class="wrap">
-    <nav class="crumb" aria-label="Back"><a href="#/">← All projects</a></nav>
-    <header class="phead"><div class="who"><p class="label">${p.sample ? '<span class="tag">Sample</span>' : 'Project'}</p><h1>${esc(p.name)}</h1>
-      <p class="small">${p.sample ? 'The lab’s example plan model. No client is named.' : p.client ? `Client: ${esc(p.client)}` : 'No client named'}</p></div>
-      <nav class="pnav" aria-label="Project"><a class="btn" href="${href(p.id)}"${r.view === 'dash' ? ' aria-current="page"' : ''}>Overview</a><a class="btn" href="${href(p.id, 'pack')}">Client pack</a><button class="btn" data-act="export"${ui.exporting ? ' aria-expanded="true"' : ''}>Export</button></nav></header>
+    <nav class="crumb" aria-label="Back"><a href="${href(p.id)}">${icon('back')}<span>${esc(p.name)}</span></a></nav>
+    <header class="phead pmini">${coverHtml(p, 'thumb')}<div class="who">${who(p)}<h1>${esc(p.name)}</h1><p class="small">${clientLine(p)}</p></div>${projectNav(p, r)}</header>
     ${ui.exporting ? exportHtml(p) : ''}
-    <nav class="rail" aria-label="The seven stages">${rail}</nav>
-    <p class="rail-now">${esc(now)}</p>
+    ${stripHtml(b, r)}
+    <p class="rail-now">${esc(railNow(b))}</p>
     ${flashHtml()}${inner}</div>`;
 }
 
@@ -235,41 +332,146 @@ function open3dHtml(p, link, label = 'Open in 3D ↗') {
   return `<a class="btn solid" href="${esc(link.handoff ? '/plan-studio/twins/drop/?drop=1' : link.href)}" target="_blank" rel="noopener">${label}</a>`;
 }
 
-// ---- dashboard --------------------------------------------------------------------------------------------------------------
+// ---- the project page: the drawing, the seven stages, a few numbers, then the work in tabs --------------------------------------
 function dashView(b, r) {
-  const p = b.project, cur = currentStage(b), n = nextAction(b);
+  const p = b.project, cur = currentStage(b), n = nextAction(b), g = glance(b);
   const nextHref = !n ? '#/' : n.kind === 'pack' ? href(p.id, 'pack') : href(p.id, 's', n.stage, { tool: 'tool', tasks: 'tasks', ask: 'approval', approve: 'approval', done: 'approval' }[n.kind]);
   const tasks = cur ? b.tasks.filter((t) => t.stage === cur.key && t.status !== 'done') : [];
-  const waiting = b.stages.filter((s) => s.status === 'awaiting_approval').map((s) => { const g = gate(b, s.key); return { s, g }; });
-  const rfis = openRfis(b);
-  const link = twinLink(p.model);
+  const waiting = b.stages.filter((s) => s.status === 'awaiting_approval');
+  const rfis = openRfis(b), openDefects = b.defects.filter((d) => d.status !== 'closed').length;
+  const tab = r.tab ?? ui.tabs[p.id] ?? 'model';
+  const cap = coverCaption(p);
+  const num = (value, caption, to) => `<a class="num" href="${to}"><span class="big">${value}</span><span class="cap">${esc(caption)}</span></a>`;
+  const panel = (key, body) => `<section class="tp" role="tabpanel" id="tp-${key}" aria-labelledby="tab-${key}" tabindex="0"${key === tab ? '' : ' hidden'}>${body}</section>`;
   const acts = ui.allActivity ? b.activity : b.activity.slice(0, 8);
-  return frame(b, r, `
-    ${n ? `<section class="next" aria-labelledby="nx"><p class="label" id="nx">What to do next</p><p class="say">${esc(n.text)}</p><a class="btn solid" href="${nextHref}">${esc(n.button)}</a></section>` : ''}
-    <div class="tiles">
-      <section class="tile"><p class="label">Open tasks${cur ? ` · ${esc(stageDef(cur.key).label)}` : ''}</p><p class="count">${tasks.length}</p>
-        ${tasks.length ? `<ul>${tasks.slice(0, 5).map((t) => `<li>${esc(t.title)}<span class="st">${esc(statusMark('task', t.status))}${t.owner ? ` · ${esc(t.owner)}` : ''}${t.due ? ` · due ${esc(day(t.due))}` : ''}</span></li>`).join('')}</ul>` : `<p class="small">${cur ? 'No open tasks in this stage.' : 'Every stage is done.'}</p>`}
-        ${cur ? `<a class="more" href="${href(p.id, 's', cur.key, 'tasks')}">${tasks.length > 5 ? `All ${tasks.length} open tasks` : 'Open the task list'}</a>` : ''}</section>
-      <section class="tile"><p class="label">Approvals waiting</p><p class="count">${waiting.length}</p>
-        ${waiting.length ? `<ul>${waiting.map(({ s, g }) => `<li>${esc(stageDef(s.key).label)}<span class="st">${g.ok ? `■ Approved by ${esc(g.approval.who)}: mark the stage done` : '□ Waiting for a named person'}</span></li>`).join('')}</ul>
-          <a class="more" href="${href(p.id, 's', waiting[0].s.key, 'approval')}">Go to the approval</a>` : '<p class="small">Nothing is waiting for a person’s approval.</p>'}</section>
-      <section class="tile"><p class="label">Open requests for information</p><p class="count">${rfis.length}</p>
-        ${rfis.length ? `<ul>${rfis.slice(0, 4).map((q) => `<li>${esc(q.question)}<span class="st">${esc(statusMark('rfi', q.status))} · ${esc(q.from)}</span></li>`).join('')}</ul>` : '<p class="small">No requests are open.</p>'}
-        <a class="more" href="${href(p.id, 's', 'detailed', 'tool')}">Open the request log</a></section>
+  return `<div class="wrap">
+    <nav class="crumb" aria-label="Back"><a href="#/">${icon('back')}<span>All projects</span></a></nav>
+    <header class="phead pvis">
+      <figure class="pfig">${coverHtml(p, 'big')}${cap ? `<figcaption class="caption">${esc(cap)}</figcaption>` : ''}</figure>
+      <div class="who">${who(p)}<h1>${esc(p.name)}</h1><p class="small">${clientLine(p)}</p>
+        <div class="pstate">${stateHtml(g)}${segsHtml(g)}<span class="st">${esc(stageLine(g))}</span></div>
+        ${n ? `<section class="next" aria-labelledby="nx"><p class="label" id="nx">Next</p><p class="say">${esc(g.next)}</p><a class="btn solid" href="${nextHref}">${esc(n.button)}</a></section>` : ''}
+        ${projectNav(p, r)}</div>
+    </header>
+    ${ui.exporting ? exportHtml(p) : ''}
+    ${stripHtml(b, r)}
+    <p class="rail-now">${esc(railNow(b))}</p>
+    ${flashHtml()}
+    <div class="nums">
+      ${num(tasks.length, `open task${tasks.length === 1 ? '' : 's'}${cur ? ` · ${stageDef(cur.key).label}` : ''}`, cur ? href(p.id, 's', cur.key, 'tasks') : href(p.id, 's', 'completion', 'tasks'))}
+      ${num(waiting.length, `waiting for approval`, waiting.length ? href(p.id, 's', waiting[0].key, 'approval') : cur ? href(p.id, 's', cur.key, 'approval') : href(p.id, 't', 'deliverables'))}
+      ${num(rfis.length, `open request${rfis.length === 1 ? '' : 's'}`, href(p.id, 's', 'detailed', 'tool'))}
+      ${num(openDefects, `open defect${openDefects === 1 ? '' : 's'}`, href(p.id, 's', 'completion', 'tool'))}
     </div>
-    <div class="tiles two">
-      <section class="tile"><p class="label">Site facts</p>
-        ${hasSiteFacts(b) ? `<h3>${plural(answered(p.site.facts).length, 'fact')} answered</h3><p class="st">■ Snapshot · ${esc(dayTime(p.site.fetched_at))}</p>` : '<h3>No snapshot yet</h3><p class="st">□ Not looked up</p>'}
-        <a class="more" href="${href(p.id, 's', 'predesign', 'tool')}">${hasSiteFacts(b) ? 'Read the snapshot' : 'Look up site facts'}</a></section>
-      <section class="tile${hasModel(b) && p.sample ? ' pic' : ''}"><p class="label">3D model</p>
-        ${hasModel(b) ? `${p.sample ? `<figure><img src="${HERO}" alt="A rendering of the sample plan model, not a photograph." loading="lazy" /></figure>` : ''}<div class="txt"><h3>${esc(p.model.file_name)}</h3><p class="st" style="white-space:normal">■ Revision ${esc(p.model.revision)} · version ${esc(p.model.fingerprint)}</p>
-          <div class="acts">${open3dHtml(p, link)}<a class="more" href="${href(p.id, 's', 'concept', 'tool')}">Model details</a></div>${p.sample ? '<p class="caption">A rendering of the sample plan model. Not a photograph.</p>' : ''}</div>`
-          : `<h3>No model attached</h3><p class="st">□ Not attached</p><a class="more" href="${href(p.id, 's', 'concept', 'tool')}">Attach a plan model</a>`}</section>
-    </div>
-    <section class="log" aria-labelledby="lg"><p class="label" id="lg">Activity</p>
+    <div class="tabs" role="tablist" aria-label="Project work">${TABS.map(([k, label, ic]) => `<button type="button" role="tab" id="tab-${k}" aria-controls="tp-${k}" aria-selected="${k === tab}" tabindex="${k === tab ? 0 : -1}" data-tab="${k}">${icon(ic)}<span>${label}</span></button>`).join('')}</div>
+    ${panel('site', siteTab(b))}
+    ${panel('model', modelTab(b))}
+    ${panel('drawings', drawingsTab(b))}
+    ${panel('presentation', presentationTab(b))}
+    ${panel('takeoff', takeoffTab(b))}
+    ${panel('deliverables', deliverablesTab(b))}
+    <details class="more log"${ui.allActivity ? ' open' : ''}><summary><span class="label">Activity</span><span class="st">${plural(b.activity.length, 'entry', 'entries')}</span></summary>
       ${b.activity.length ? `<ol>${acts.map((a) => `<li><span class="when">${esc(dayTime(a.at))} · ${esc(a.who)}</span><span><b style="font-weight:500">${esc(a.action)}</b>${a.detail ? `: ${esc(a.detail)}` : ''}</span></li>`).join('')}</ol>
         ${b.activity.length > 8 ? `<div><button class="link" data-act="activity-more">${ui.allActivity ? 'Show the latest only' : `Show all ${b.activity.length}`}</button></div>` : ''}` : '<p class="small">Nothing has been done on this project yet. Each change is logged here with who made it and when.</p>'}
-      <p class="small">${esc(W(p).whoNote) /* [cloud] */}</p></section>`);
+      <p class="small">${esc(W(p).whoNote) /* [cloud] */}</p></details>
+  </div>`;
+}
+
+// the tab names the panel (aria-labelledby), so a panel starts with its one status line, not its name again
+const tabHead = (_ic, _title, line = '') => (line ? `<div class="tphead"><p class="st">${line}</p></div>` : '');
+const emptyState = (ic, title, line) => `<div class="empty vis">${icon(ic, 'big')}<h3>${esc(title)}</h3>${line ? `<p class="small">${line}</p>` : ''}</div>`;
+
+/** Site: the site facts and the way to the real ground */
+function siteTab(b) {
+  const s = b.project.site ?? {};
+  return `${tabHead('site', 'Site', hasSiteFacts(b) ? `■ ${plural(answered(s.facts).length, 'fact')} · ${esc(dayTime(s.fetched_at))}` : '□ Not looked up')}
+    ${siteTool(b)}
+    <p class="small">The real ground under the house (LINZ LiDAR and the legal boundary) is on the 3D page, in its Real ground card. <a href="/plan-studio/twins/drop/?drop=1" target="_blank" rel="noopener">Open the 3D page ↗</a></p>`;
+}
+
+/** Model: the kept plan model, then the add-on sections (Revit and IFC models) */
+function modelTab(b) {
+  const p = b.project;
+  return `${tabHead('cube', 'Model', hasModel(b) ? `■ Revision ${esc(p.model.revision)} · version ${esc(p.model.fingerprint)}` : '□ Not attached')}
+    ${modelTool(b, stageDef('concept'))}
+    <div class="mod-host" data-mod-panels></div>`;
+}
+
+/** Drawings: every document, each with its file */
+function drawingsTab(b) {
+  const p = b.project, cur = currentStage(b), order = (d) => STAGE_KEYS.indexOf(d.stage);
+  const docs = [...b.documents].sort((x, y) => order(x) - order(y)), files = docs.filter((d) => d.file?.id && kept.has(d.file.id)).length;
+  const tile = (d) => `<li class="doc">${icon(d.kind === 'Photo' ? 'photo' : 'drawings', 'doc-ic')}<div class="doc-main"><p class="doc-t">${esc(d.title)}</p>
+      <p class="doc-m">${esc([d.kind, d.version && `version ${d.version}`, d.date && day(d.date)].filter(Boolean).join(' · ') || 'No kind or date')}</p>
+      <p class="doc-m"><a href="${href(p.id, 's', d.stage, 'documents')}">${esc(stageDef(d.stage)?.label ?? 'Stage')}<span class="vh">: edit ${esc(d.title)}</span></a></p></div>${fileBar(d)}</li>`;
+  return `${tabHead('drawings', 'Drawings', `${plural(docs.length, 'document')} · ${plural(files, 'file')} kept`)}
+    ${docs.length ? `<ul class="docs">${docs.map(tile).join('')}</ul>` : emptyState('drawings', 'No documents yet.', 'Drawings, reports and consent documents you add appear here, each with its file.')}
+    <div class="acts"><button class="btn" data-act="pick" data-target="doc-new">${icon('plus')}<span>Add a file</span></button><span class="small">It goes in ${esc(stageDef(cur?.key ?? 'completion').label)}. To change a document’s details, open its stage.</span></div>
+    <input type="file" id="doc-file" data-file="doc" hidden /><input type="file" id="doc-new" data-file="doc-new" data-stage="${esc(cur?.key ?? 'completion')}" hidden />`;
+}
+
+/** Presentation: the model in 3D, the sample's rendering, and photos */
+function presentationTab(b) {
+  const p = b.project, link = twinLink(p.model), photos = b.documents.filter((d) => d.kind === 'Photo');
+  const three = link ? `<div class="pres-3d">${icon('cube', 'big')}<div><h3>${esc(p.model.file_name)}</h3><p class="st">■ Revision ${esc(p.model.revision)}</p>
+      <div class="acts">${open3dHtml(p, link)}</div>${link.direct ? `<p class="url">${esc(new URL(link.href, location.origin).href)}</p>` : '<p class="small">Opens in this browser. A link a client can open for a practice’s own model: Not built yet.</p>'}</div></div>`
+    : emptyState('cube', 'No model to show in 3D yet.', 'Attach the plan model in the Model tab.');
+  const pic = p.sample ? `<figure class="pres-pic"><img src="${HERO}" alt="A dark-clad house on timber piles among trees." loading="lazy" /><figcaption class="caption">A rendering of the sample plan model. Not a photograph.</figcaption></figure>` : '';
+  return `${tabHead('presentation', 'Presentation')}
+    ${three}${pic}
+    <div class="sub-h"><h3>Photos</h3><span class="st">${plural(photos.length, 'photo')}</span></div>
+    ${photos.length ? `<ul class="docs">${photos.map((d) => `<li class="doc">${icon('photo', 'doc-ic')}<div class="doc-main"><p class="doc-t">${esc(d.title)}</p><p class="doc-m">${esc(d.date ? day(d.date) : 'No date')}</p></div>${fileBar(d)}</li>`).join('')}</ul>`
+      : emptyState('photo', 'Photos will appear here.', 'Add a document of kind Photo, with its file, in the Drawings tab or on a stage. Stills taken on the 3D page: Not built yet.')}`;
+}
+
+/** Takeoff: nothing is measured here yet */
+function takeoffTab() {
+  return `${tabHead('takeoff', 'Takeoff')}${emptyState('takeoff', 'Quantities from the model, coming.', 'Not built yet. Nothing is measured on this page.')}`;
+}
+
+/** Deliverables: the consent bundle, the approvals and the stage gate, the client pack and export */
+function deliverablesTab(b) {
+  const p = b.project, cur = currentStage(b), consent = b.checklist.filter((c) => c.list === 'consent'), got = consent.filter((c) => c.status !== 'needed').length;
+  const approvals = [...b.approvals].sort((x, y) => String(y.at).localeCompare(String(x.at)));
+  const g = cur ? gate(b, cur.key) : null, at = !cur ? 3 : g?.ok ? 2 : cur.status === 'awaiting_approval' ? 1 : 0;
+  const step = (i, text) => `<li class="${at === i ? 'on' : ''}">${at > i ? '■' : '□'} ${i + 1}. ${text}</li>`;
+  const comp = b.checklist.filter((c) => c.list === 'completion');
+  return `${tabHead('deliverables', 'Deliverables')}
+    <div class="dl-grid">
+      <a class="num dl" href="${href(p.id, 's', 'detailed', 'tool')}"><span class="big">${got}<small>/${consent.length}</small></span><span class="cap">Consent bundle · done or not needed</span></a>
+      <a class="num dl" href="${cur ? href(p.id, 's', cur.key, 'approval') : href(p.id, 'pack')}"><span class="big">${approvals.length}</span><span class="cap">${approvals.length === 1 ? 'approval' : 'approvals'} on record</span></a>
+      <div class="dl dl-acts"><a class="btn solid" href="${href(p.id, 'pack')}">${icon('pack')}<span>Client pack</span></a><button class="btn" data-act="export">${icon('export')}<span>Export</span></button></div>
+    </div>
+    ${cur ? `<div class="sub-h"><h3>${esc(stageDef(cur.key).label)}: the stage gate</h3><a class="link" href="${href(p.id, 's', cur.key, 'approval')}">Open the approval</a></div>
+      <ol class="steps">${step(0, 'The work is ready')}${step(1, 'A named person approves')}${step(2, 'The stage is marked done')}</ol>` : '<p class="st">■ All seven stages done</p>'}
+    ${approvals.length ? `<div class="sub-h"><h3>Approvals so far</h3></div>${approvals.slice(0, 3).map((a) => `<div class="record"><p class="st" style="white-space:normal">${esc(stageDef(a.stage)?.label ?? a.stage)}</p><p class="by">${esc(a.who)}, ${esc(a.role)}</p><p class="when">${esc(dayTime(a.at))}${a.fingerprint ? ` · model version ${esc(a.fingerprint)}` : ''}</p></div>`).join('')}
+      ${approvals.length > 3 ? `<p class="small">All ${approvals.length} are in the client pack.</p>` : ''}` : ''}
+    <p class="starter">Agents prepare, people approve. An approval here is a record of what a named person said. It is not a signature, not a professional sign-off and not a council decision.</p>
+    <div class="sub-h"><h3>More records</h3></div>
+    <ul class="morelinks">
+      <li><a href="${href(p.id, 's', 'detailed', 'tool')}">${icon('drawings')}<span>Requests for information</span><span class="st">${openRfis(b).length} open</span></a></li>
+      <li><a href="${href(p.id, 's', 'contract', 'tool')}">${icon('contract')}<span>Variations register</span><span class="st">${b.variations.length}</span></a></li>
+      <li><a href="${href(p.id, 's', 'observation', 'tool')}">${icon('observation')}<span>Site observations</span><span class="st">${b.observations.length}</span></a></li>
+      <li><a href="${href(p.id, 's', 'completion', 'tool')}">${icon('completion')}<span>Defects and completion checklist</span><span class="st">${comp.filter((c) => c.status !== 'needed').length}/${comp.length}</span></a></li>
+    </ul>`;
+}
+
+// ---- settings: the look of the workspace -----------------------------------------------------------------------------------------
+function lookState() {
+  const practice = store.shared ? account.state.practice : null;
+  return { practice, ...pickTheme({ practice, browser: browserLook }) };
+}
+function settingsView() {
+  const { practice, theme, scope } = lookState(), owner = practice?.role === 'owner';
+  return `<div class="wrap">
+    <section class="hero"><p class="label">Settings</p><h1>How the workspace <span class="accent">looks</span>.</h1></section>
+    ${flashHtml()}
+    <section class="panel" aria-labelledby="lookh"><h2 id="lookh">Look</h2>
+      ${lookChoiceHtml({ theme, scope, canChange: scope === 'browser' || owner, practice: practice?.name ?? '' })}
+      <p class="small">${scope === 'practice'
+    ? (owner ? `Everyone in ${esc(practice.name)} sees the look chosen here.` : `An owner of ${esc(practice.name)} chooses its look.`)
+    : 'Signed out, or with nothing shared, each browser keeps its own look. Signed in with a practice, the practice’s look is used.'} Printing always uses white paper.</p></section>
+  </div>`;
 }
 
 // ---- the stage screen: produces, tasks, documents, tool, approval --------------------------------------------------------
@@ -346,7 +548,7 @@ function siteTool(b) {
     ${f.reason || f.note || f.needs ? `<details><summary>Why</summary><p>${esc(f.reason || f.note)}${f.needs ? ` Needs: ${esc(f.needs)}` : ''}</p></details>` : ''}</li>`;
   return `<form class="where-f" data-form="facts"><label>Latitude, longitude<input class="mono" name="where" value="${esc(where)}" placeholder="-36.80, 175.08" autocomplete="off" inputmode="text" required /></label>
       <button class="btn solid"${ui.busy ? ' disabled' : ''}>${ui.busy ? 'Asking the publishers…' : has ? 'Look up again' : 'Look up'}</button></form>
-    <p class="small">Type a point in New Zealand, latitude first. To look it up, the point is sent to the lab’s live feed, which asks the public map services about it. The feed does not store it, apart from a short-lived cache of the answer. The point is ${esc(W(b.project).pointSaved) /* [cloud] */}, and it is not put in a share link or printed in the client pack.</p>
+    <details class="more-note"><summary>Where the point goes</summary><p class="small">Type a point in New Zealand, latitude first. To look it up, the point is sent to the lab’s live feed, which asks the public map services about it. The feed does not store it, apart from a short-lived cache of the answer. The point is ${esc(W(b.project).pointSaved) /* [cloud] */}, and it is not put in a share link or printed in the client pack.</p></details>
     ${ui.factsError ? `<p class="flash" role="alert">${esc(ui.factsError)}</p>` : ''}
     ${has ? `<div class="snap-h"><h3>Snapshot of ${esc(dayTime(s.fetched_at))}</h3><span class="st" style="white-space:normal">■ ${plural(live.length, 'fact')} answered${off.length ? ` · □ ${off.length} not connected` : ''}${down.length ? ` · □ ${down.length} no answer` : ''}</span></div>
       <ul class="facts">${live.map(fact).join('')}${down.map((f) => none(f, 'No answer just now')).join('')}${off.map((f) => none(f, 'Not connected')).join('')}</ul>
@@ -444,9 +646,11 @@ async function render(fromLink = false) {
   for (const stop of cleanups.splice(0)) { try { stop(); } catch { /* an add-on that fails to tidy up does not stop the page */ } }
   const moved = key !== lastRoute;
   if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
+  showLook();
   let html, onScreen = null;
   try { // [cloud] the shared records can fail to answer; this browser's own store never does
     if (r.view === 'projects') { shown = null; html = await projectsView(); }
+    else if (r.view === 'settings') { shown = null; html = settingsView(); }
     else if (r.view === 'module') { shown = null; html = `<div class="wrap mod-screen" data-mod-screen="${esc(r.name)}"></div>`; }
     else {
       const b = await store.loadProject(r.pid);
@@ -461,7 +665,8 @@ async function render(fromLink = false) {
   account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
   await drawAddons(r, onScreen);
   $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
-  document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
+  document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : r.view === 'settings' ? 'Settings · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
+  markBar(r);
   const target = (moved || fromLink) && r.section ? document.getElementById(`sec-${r.section}`) : null;
   if (target) target.scrollIntoView({ block: 'start' });
   else if (moved) window.scrollTo(0, 0);
@@ -471,6 +676,48 @@ async function render(fromLink = false) {
   if (moved) ui.flash = ''; // a message is shown once, on the screen it belongs to
   // get the kept model ready for the 3D page now, so pressing Open in 3D is an ordinary link
   if (onScreen) ready3d(onScreen).then((ok) => { if (!ok && handoff.why && !handoff.told) { handoff.told = true; render(false); } });
+  // a kept model attached before covers were drawn: work out its plan once, in this browser, and draw it
+  if (onScreen) learnOutline(onScreen).then((got) => { if (got) render(false); });
+  if (r.view === 'projects' && ui.learn?.length) {
+    const list = ui.learn.splice(0);
+    (async () => { let got = false; for (const p of list) got = (await learnOutline(p)) || got; if (got && route().view === 'projects') render(false); })();
+  }
+}
+
+/** Show the look in use: the practice's when a practice is in use, otherwise this browser's (theme.js). */
+function showLook() { return applyTheme(document, lookState().theme, storage); }
+
+/** the top bar: which link is the screen on show, and an icon for any add-on link that brings none */
+function markBar(r) {
+  const on = { projects: ['projects', 'dash', 'stage', 'pack'].includes(r.view), settings: r.view === 'settings' };
+  for (const a of document.querySelectorAll('.bar [data-core]')) { if (on[a.dataset.core]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
+  for (const a of $mods?.querySelectorAll('a[data-nav]') ?? []) if (!a.querySelector('.nav-ic')) a.insertAdjacentHTML('afterbegin', `<span class="nav-ic" aria-hidden="true">${icon(NAV_ICON[a.dataset.nav] ?? 'addon')}</span>`);
+}
+
+/** Read a kept model file once to draw its plan, when the project has no outline yet. Kept as a setting in this browser. */
+async function learnOutline(p) {
+  const m = p?.model;
+  if (!m?.fingerprint || !m.file?.id || outlineFor(m, outlines)) return false;
+  try {
+    const f = await store.getFile(m.file.id);
+    const o = f ? planOutline(JSON.parse(new TextDecoder().decode(f.data))) : null;
+    if (!o) return false;
+    const keys = Object.keys(outlines).filter((k) => k !== m.fingerprint).slice(-39); // keep the last forty
+    outlines = { ...Object.fromEntries(keys.map((k) => [k, outlines[k]])), [m.fingerprint]: o };
+    await store.save('setting', { id: 'outlines', value: outlines });
+    return true;
+  } catch { return false; } // no drawing: the cover says a model is attached
+}
+
+/** the project page's tabs: show one, keep it in the address without drawing the page again */
+function selectTab(key, focus = false) {
+  const list = $app.querySelector('[role="tablist"]');
+  if (!list || !TAB_KEYS.includes(key)) return;
+  for (const t of list.querySelectorAll('[role="tab"]')) { const on = t.dataset.tab === key; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); }
+  for (const pn of $app.querySelectorAll('[role="tabpanel"]')) pn.hidden = pn.id !== `tp-${key}`;
+  const r = route();
+  if (r.pid) { ui.tabs[r.pid] = key; try { history.replaceState(history.state, '', href(r.pid, 't', key)); } catch { /* the address keeps the old tab */ } }
+  window.dispatchEvent(new Event('resize')); // an add-on's view that was in a hidden tab can measure itself again
 }
 
 /** the add-ons: the top-bar links, an add-on screen, and the add-on sections on a project page */
@@ -534,6 +781,20 @@ async function onSubmit(e) {
   e.preventDefault();
   const r = route(), d = formData(form), what = form.dataset.form;
   try {
+    if (what === 'run-add' || what === 'run-new') {
+      const h = incoming();
+      if (!h || h.error) return redraw(h?.error ?? 'The report from the 3D page is no longer here: send it again from there.');
+      let pid = d.pid;
+      if (what === 'run-new') {
+        const b = newProject({ name: d.name });
+        b.activity.push(activity(b.project.id, me, 'Project created', b.project.name));
+        pid = (await store.saveProject(b)) || b.project.id; // [cloud] the id the store keeps it under
+      }
+      const got = await addRun(pid, h);
+      ui.flash = got.flash;
+      location.hash = href(pid, 's', got.stage, 'documents');
+      return;
+    }
     if (what === 'new-project') {
       const b = newProject({ name: d.name, client: d.client });
       b.activity.push(activity(b.project.id, me, 'Project created', b.project.name));
@@ -592,6 +853,8 @@ async function onSubmit(e) {
 }
 
 async function onClick(e) {
+  const tab = e.target.closest('[role="tab"][data-tab]');
+  if (tab) return selectTab(tab.dataset.tab);
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const act = el.dataset.act, r = route();
@@ -618,6 +881,7 @@ async function onClick(e) {
       await store.removeProject(el.dataset.id);
       return redraw(`Removed “${p?.name ?? 'project'}” ${W(p).from /* [cloud] */}.`);
     }
+    if (act === 'run-dismiss') { try { globalThis.sessionStorage?.removeItem(PLAN_RUN_KEY); } catch { /* fine */ } return redraw('The report from the 3D page was not added. Send it again from there when you want it.'); }
     if (act === 'sample') { await store.saveProject(sampleProject()); return redraw('The sample project is back.'); }
     if (act === 'export') { ui.exporting = !ui.exporting; ui.focus = ui.exporting ? '.exportbox .btn' : null; return redraw(''); }
     if (act === 'export-cancel') { ui.exporting = false; ui.focus = '[data-act="export"]'; return redraw(''); }
@@ -728,7 +992,7 @@ async function onChange(e) {
         if (what === 'doc' && !d) return redraw('That document is no longer here.');
         if (file.size > store.fileLimit) return redraw(`“${file.name}” is ${sizeText(file.size)}. The limit is ${sizeText(store.fileLimit)} a file${W(shown).limitWhy /* [cloud] */}. Keep the file where it is and record where.`);
         const fresh = !d;
-        if (fresh) d = { id: newId('d'), project_id: r.pid, stage: r.stage, title: file.name.replace(/\.[^.]+$/, '') || file.name, kind: '', version: '', date: '', source: '', note: '' };
+        if (fresh) d = { id: newId('d'), project_id: r.pid, stage: r.stage ?? (STAGE_KEYS.includes(el.dataset.stage) ? el.dataset.stage : 'predesign'), title: file.name.replace(/\.[^.]+$/, '') || file.name, kind: '', version: '', date: '', source: '', note: '' };
         const before = d.file?.id ?? '';
         // keep the new file first: if the browser refuses, the document and any file it had are left as they were
         const meta = await store.putFile({ project_id: r.pid, owner_kind: 'document', owner_id: d.id, name: file.name, type: file.type, data: await file.arrayBuffer() });
@@ -757,7 +1021,10 @@ async function onChange(e) {
       if (!twinLink({ fingerprint: m.fingerprint })?.direct) {
         try { const meta = await store.putFile({ project_id: r.pid, owner_kind: 'model', owner_id: r.pid, name: m.file_name, type: 'application/json', data: text }); keptFile = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at }; } catch (err) { notKept = err.message; }
       }
-      p.model = { fingerprint: m.fingerprint, drawings: m.drawings, revision: m.revision, file_name: m.file_name, file: keptFile };
+      // the plan the project's cover draws: worked out once from the file and kept on the project (cover.js)
+      let outline = null;
+      try { outline = planOutline(JSON.parse(text)); } catch { outline = null; }
+      p.model = { fingerprint: m.fingerprint, drawings: m.drawings, revision: m.revision, file_name: m.file_name, file: keptFile, ...(outline ? { outline } : {}) };
       await store.save('project', p);
       if (oldFile) await store.removeFile(oldFile);
       await log(r.pid, before ? 'Model replaced' : 'Model attached', `${m.file_name}, revision ${m.revision}, version ${m.fingerprint}${keptFile ? `, file kept (${sizeText(keptFile.size)})` : ''}`);
@@ -768,8 +1035,36 @@ async function onChange(e) {
   }
 }
 
+/** arrow keys, Home and End move along the tabs */
+function onTabKey(e) {
+  const t = e.target.closest?.('[role="tab"][data-tab]');
+  if (!t) return;
+  const i = TAB_KEYS.indexOf(t.dataset.tab), to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TAB_KEYS.length - 1 }[e.key];
+  if (to === undefined) return;
+  e.preventDefault();
+  selectTab(TAB_KEYS[(to + TAB_KEYS.length) % TAB_KEYS.length], true);
+}
+
+/** a look chosen: for the practice (an owner; saved in the shared records) or for this browser */
+async function onLook(e) {
+  const el = e.target.closest('[data-look]');
+  if (!el || el.disabled || !isTheme(el.dataset.look)) return;
+  const t = el.dataset.look, { practice, scope } = lookState();
+  try {
+    if (scope === 'practice') { await account.setLook(t); ui.flash = `The ${THEMES[t].label} look is saved for everyone in ${practice.name}.`; }
+    else { browserLook = t; await store.save('setting', { id: LOOK_SETTING, value: t }); ui.flash = `The ${THEMES[t].label} look is saved in this browser.`; }
+  } catch (err) { ui.flash = err.message; }
+  await render(false);
+  document.querySelector(`[data-look="${t}"]`)?.focus();
+}
+
 // ---- start ------------------------------------------------------------------------------------------------------------------------
 async function start() {
+  for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = icon(el.dataset.icon);
+  browserLook = (await store.get('setting', LOOK_SETTING))?.value ?? '';
+  const saved = (await store.get('setting', 'outlines'))?.value;
+  outlines = saved && typeof saved === 'object' ? saved : {};
+  showLook();
   me = (await store.get('setting', 'me'))?.value ?? '';
   $me.value = me;
   $me.addEventListener('change', async () => { me = $me.value.trim(); await store.save('setting', { id: 'me', value: me }); });
@@ -781,6 +1076,8 @@ async function start() {
   $app.addEventListener('submit', onSubmit);
   $app.addEventListener('click', onClick);
   $app.addEventListener('change', onChange);
+  $app.addEventListener('keydown', onTabKey);
+  document.addEventListener('click', onLook); // the look chooser: on the settings screen and in the practice panel
   window.addEventListener('hashchange', () => render(true));
   // [cloud] wait a moment to learn whether someone is signed in, so the first screen shows the right records.
   // While signed in, "who" is the name on the account; otherwise it is the name typed in "Working as".

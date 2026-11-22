@@ -72,6 +72,8 @@ export interface Built {
   /** ground (or floor) height for walk mode */
   support?: (p: THREE.Vector3) => number | null;
   panels?: HTMLElement[];
+  /** cards that open the panel, above the layers */
+  topPanels?: HTMLElement[];
   exports: { label: string; note?: string; run: () => Promise<{ name: string; blob: Blob }> }[];
   sources: string[];
   /** the north direction in world xz (default −z) */
@@ -568,6 +570,7 @@ export class App {
       layers.append(row);
     }
     for (const el of this.built.panels ?? []) document.getElementById('extra')!.append(el);
+    for (const el of [...(this.built.topPanels ?? [])].reverse()) document.getElementById('panel')!.prepend(el);
     document.getElementById('extra')!.append(siteFactsPanel((m) => this.log(m)));   // live public maps for a point the person types in
     // x-ray
     const xr = document.getElementById('xray') as HTMLInputElement;

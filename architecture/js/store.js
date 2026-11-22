@@ -15,8 +15,10 @@
 // Files (added; the calls above are unchanged). A file belongs to one record: a document, or a project's plan model.
 // The record keeps a small note of it (document.file / project.model.file = { id, name, type, size, kept_at });
 // the contents are kept apart, so lists of records stay small.
-//   store.putFile({ project_id, owner_kind, owner_id, name, type, data, id? })
+//   store.putFile({ project_id, owner_kind, owner_id, name, type, data, id?, extra? })
 //                                   keep a file; data is text, an ArrayBuffer or a Uint8Array. Returns the note.
+//                                   extra (optional, a plain object) rides on the note: the Models section keeps a model's
+//                                   version and summary there. A note without it has no extra field at all.
 //                                   Throws a plain-worded Error when the file is over FILE_LIMIT or the browser refuses.
 //   store.getFile(id)               the note plus { data: Uint8Array }, or null when the contents are not here
 //   store.removeFile(id)            delete one file; returns true if it was there
@@ -31,7 +33,9 @@
 
 import { emptyBundle, readBundle, writeBundle, copyBundle, fileSlug, newId } from './model.js';
 
-export const KINDS = ['project', 'stage', 'task', 'document', 'approval', 'rfi', 'observation', 'variation', 'defect', 'checklist_item', 'activity', 'setting'];
+export const KINDS = ['project', 'stage', 'task', 'document', 'approval', 'rfi', 'observation', 'variation', 'defect', 'checklist_item', 'activity', 'setting',
+  // the Clients add-on (crm.js): practice-wide, not under a project. See crm-model.js for their shapes.
+  'contact', 'enquiry', 'crm_activity'];
 // where each kind of child row sits in a project bundle
 const BUNDLE_LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
 
@@ -209,12 +213,13 @@ export function createStore(backend, { prefix = 'assembl.architecture.v1.', file
     // ---- files ----
     get filesPersistent() { return filesKept; },
 
-    async putFile({ id, project_id, owner_kind, owner_id, name, type = '', data } = {}) {
+    async putFile({ id, project_id, owner_kind, owner_id, name, type = '', data, extra } = {}) {
       const bytes = toBytes(data), label = String(name || 'file');
       if (!bytes) throw new Error('There is nothing in that file to keep.');
       if (!project_id || !owner_id || !OWNER_KINDS.includes(owner_kind)) throw new Error('A file needs the record it belongs to before it can be kept.');
       if (bytes.byteLength > FILE_LIMIT) throw new Error(`“${label}” is ${sizeText(bytes.byteLength)}. The limit is ${sizeText(FILE_LIMIT)} a file, because files are kept in this browser. Keep the file where it is and record where.`);
       const meta = { id: id || newId('file'), project_id, owner_kind, owner_id, name: label, type: String(type || ''), size: bytes.byteLength, kept_at: new Date().toISOString() };
+      if (extra && typeof extra === 'object' && !Array.isArray(extra)) meta.extra = JSON.parse(JSON.stringify(extra)); // [models] what the page knows about the file (a model's version, its summary)
       try { await fileStore.put(meta, bytes); } catch (err) { throw refusal(err, label); }
       return { ...meta };
     },
@@ -257,7 +262,7 @@ export function createStore(backend, { prefix = 'assembl.architecture.v1.', file
         const f = await store.getFile(m.id);
         if (!f) continue;
         bytes += f.size;
-        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, data_base64: bytesToBase64(f.data) });
+        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, ...(f.extra ? { extra: f.extra } : {}), data_base64: bytesToBase64(f.data) });
       }
       return { file_name: `${base}-with-files.json`, text: JSON.stringify(writeBundle(b, now, out), null, 2), files_included: true, file_count: out.length, file_bytes: bytes };
     },
@@ -269,7 +274,7 @@ export function createStore(backend, { prefix = 'assembl.architecture.v1.', file
       // files the project file carries are kept here too; one the browser refuses is counted, not hidden
       let kept = 0, refused = 0;
       for (const f of b.files ?? []) {
-        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
+        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, extra: f.extra, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
       }
       // a project file with no files in it answers exactly as before; one that carries files also says how many were kept
       return Array.isArray(b.files) ? { project_id: b.project.id, copied, files: kept, files_failed: refused } : { project_id: b.project.id, copied };

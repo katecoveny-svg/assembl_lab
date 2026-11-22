@@ -1,0 +1,172 @@
+/* assembl. architecture operations · Models (loaded by js/models.js)
+   Only the page's own custom properties, so it follows whichever theme the page has: --plum ink, --paper ground,
+   --rose soft fill, --line and --hair rules, --grid, --sans, --mono, --pad; and, with fallbacks until they land,
+   --go, --needs, --blue, --panel, --field, --mute. Square corners. Phone first; wider from 761px. */
+.mdl { display: grid; gap: 14px; }
+.mdl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; }
+.mdl-head h2 { font-size: 22px; }
+.mdl-head h2 a { text-decoration: none; }
+.mdl-count { font: 500 11.5px/1.4 var(--mono); letter-spacing: .06em; color: var(--mute, var(--plum)); }
+.mdl-ic { width: 22px; height: 22px; flex: none; display: block; stroke-linecap: square; stroke-linejoin: miter; }
+.mdl-ic .mdl-hi { fill: var(--rose); }
+.mdl-none, .mdl-viewer { font: 500 12px/1.5 var(--mono); color: var(--mute, var(--plum)); }
+.mdl-viewer { border: 1px dashed var(--line); padding: 12px 14px; background: var(--panel, var(--paper)); }
+
+/* ---- the drop target ---------------------------------------------------------------------------------------------- */
+.mdl-drop {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 10px; text-align: center;
+  min-height: 210px; padding: 26px 18px; cursor: pointer; text-transform: none; letter-spacing: 0; font: inherit;
+  border: 1.5px dashed var(--plum); color: var(--plum);
+  background-color: var(--field, var(--paper));
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.mdl-drop:hover { background-color: var(--panel, var(--paper)); }
+.mdl-drop.is-over { background-color: var(--rose); border-style: solid; box-shadow: inset 0 0 0 3px var(--paper); }
+.mdl-drop:focus-within { outline: 2px solid var(--plum); outline-offset: 3px; }
+.mdl-drop-ic { width: 54px; height: 54px; stroke-width: 1.3; }
+.mdl-drop-t { font: 500 26px/1.1 var(--sans); letter-spacing: -.025em; }
+.mdl-drop-k { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 420px; }
+.mdl-drop-k span { font: 500 10.5px/1 var(--mono); letter-spacing: .08em; border: 1px solid var(--line); background: var(--paper); padding: 4px 6px; }
+.mdl-drop-b { pointer-events: none; margin-top: 4px; }
+.mdl-drop-w { font: 400 11.5px/1.5 var(--mono); color: var(--mute, var(--plum)); max-width: 72ch; }
+.mdl-drop.is-over .mdl-drop-t::after { content: " here"; }
+
+/* ---- cards ------------------------------------------------------------------------------------------------------------- */
+.mdl-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 14px; align-items: start; }
+.mdl-card { position: relative; min-width: 0; border: 1px solid var(--plum); background: var(--panel, var(--paper)); container-type: inline-size; }
+.mdl-in { display: grid; min-width: 0; }
+/* a card with the row to itself lays its picture beside its words */
+@container (min-width: 640px) {
+  .mdl-in { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+  .mdl-in > .mdl-pic { aspect-ratio: auto; min-height: 340px; border-bottom: 0; border-right: 1px solid var(--line); }
+  .mdl-in > .mdl-body { padding: 20px 22px 22px; }
+}
+.mdl-pic {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-bottom: 1px solid var(--line);
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.mdl-pic img { width: 100%; height: 100%; object-fit: contain; }
+.mdl-pic.is-icon { display: grid; place-items: center; align-content: center; gap: 6px; }
+.mdl-pic.is-guide { display: grid; align-content: center; padding: 34px 14px 16px; aspect-ratio: auto; min-height: 200px; }
+.mdl-pic-cap { position: absolute; left: 14px; top: 12px; font: 500 10.5px var(--mono); letter-spacing: .09em; text-transform: uppercase; }
+.mdl-pic.is-guide > .mdl-pic-tag { position: absolute; left: 12px; top: 12px; background: var(--plum); color: var(--paper); padding: 3px 8px; font-size: 11px; }
+.mdl-big { width: 74px; height: 74px; stroke-width: 1.1; }
+.mdl-pic-tag { font: 500 12px var(--mono); letter-spacing: .12em; }
+.mdl-pic.is-live { cursor: grab; }
+.mdl-pic.is-busy::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--rose), transparent); opacity: .5; }
+.mv-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.mdl-turn {
+  position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 12px;
+  border: 1px solid var(--plum); background: var(--paper); color: var(--plum); font: 500 11px var(--mono); letter-spacing: .09em; text-transform: uppercase; cursor: pointer;
+}
+.mdl-turn:hover { background: var(--rose); }
+.mdl-turn .mdl-ic { width: 18px; height: 18px; }
+.mdl-pic-note { position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px); background: var(--paper); border: 1px solid var(--line); padding: 4px 8px; font: 500 11px/1.4 var(--mono); }
+.mdl-body { display: grid; gap: 10px; align-content: start; padding: 14px 16px 16px; min-width: 0; }
+.mdl-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.mdl-tag { font: 500 11px var(--mono); letter-spacing: .09em; background: var(--plum); color: var(--paper); padding: 3px 8px; }
+.mdl-v { font: 500 11px var(--mono); border: 1px solid var(--plum); padding: 2px 7px; }
+.mdl-state { margin-left: auto; font: 500 11.5px/1.4 var(--mono); text-align: right; }
+.mdl-name { font-size: 18px; line-height: 1.25; overflow-wrap: anywhere; }
+.mdl-meta { font: 400 12px/1.45 var(--mono); color: var(--mute, var(--plum)); overflow-wrap: anywhere; }
+.mdl-say { font-size: 14.5px; line-height: 1.45; }
+.mdl-card .acts { gap: 8px 10px; }
+.mdl-card .acts .btn { padding: 10px 14px; }
+.mdl-card .acts .btn .mdl-ic { width: 18px; height: 18px; }
+
+/* an IFC's numbers: six big counts with their icons */
+.mdl-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--hair); border-left: 1px solid var(--hair); }
+.mdl-facts li { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: center; gap: 0 8px; padding: 9px 10px; border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); min-width: 0; }
+.mdl-facts .mdl-ic { grid-row: 1 / span 2; width: 24px; height: 24px; }
+.mdl-facts b { font: 500 24px/1 var(--sans); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.mdl-facts span { font: 500 10px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.mdl-facts li.is-zero { color: var(--mute, var(--plum)); }
+.mdl-facts li.is-zero b, .mdl-facts li.is-zero .mdl-ic { opacity: .45; }
+.mdl-facts.is-small b { font-size: 19px; }
+.mdl-storeys { display: grid; grid-template-columns: 24px 1fr; gap: 4px 10px; align-items: start; }
+.mdl-storeys .mdl-ic { width: 24px; height: 24px; }
+.mdl-storeys ol { display: grid; border-top: 1px solid var(--hair); min-width: 0; }
+.mdl-storeys li { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--hair); font-size: 14px; line-height: 1.3; }
+.mdl-storeys li span:first-child { overflow-wrap: anywhere; min-width: 0; }
+.mdl-storeys li .mono { font-size: 12px; white-space: nowrap; }
+.mdl-storeys > .mdl-meta { grid-column: 2; }
+.mdl-area { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; border: 1px solid var(--plum); padding: 8px 12px; background: var(--paper); }
+.mdl-area b { font: 500 24px/1.1 var(--sans); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.mdl-area span { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.mdl-from summary, .mdl-older summary { cursor: pointer; width: max-content; max-width: 100%; padding: 8px 0; font: 500 11px var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+.mdl-from p { font-size: 13px; line-height: 1.5; margin-top: 6px; }
+
+/* a Revit file: three steps to 3D, drawn */
+.mdl-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--plum); background: var(--paper); counter-reset: step; }
+.mdl-guide li { position: relative; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 6px 14px; text-align: center; counter-increment: step; }
+.mdl-guide li + li { border-left: 1px solid var(--line); }
+.mdl-guide li::before { content: counter(step); position: absolute; left: 0; top: 0; min-width: 20px; padding: 3px 0; background: var(--plum); color: var(--paper); font: 500 10px/1 var(--mono); text-align: center; }
+.mdl-guide li + li::after { content: ""; position: absolute; left: -7px; top: 44px; width: 12px; height: 12px; border-top: 1px solid var(--plum); border-right: 1px solid var(--plum); background: var(--paper); transform: rotate(45deg); }
+.mdl-guide .mdl-ic { width: 46px; height: 46px; stroke-width: 1.25; }
+.mdl-guide span { font: 500 11px/1.35 var(--mono); max-width: 14ch; }
+
+/* a size against its limit */
+.mdl-meter { position: relative; height: 14px; border: 1px solid var(--plum); background: var(--paper); margin-top: 10px; }
+.mdl-meter i { position: absolute; left: 0; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, var(--plum) 0 6px, var(--needs, var(--plum)) 6px 7px); }
+.mdl-meter b { position: absolute; top: -8px; bottom: -8px; width: 0; border-left: 2px solid var(--plum); }
+.mdl-meter b::after { content: ""; position: absolute; left: -6px; top: -3px; width: 10px; height: 4px; background: var(--plum); }
+.mdl-meter-k { position: relative; height: 18px; font: 500 11.5px/18px var(--mono); }
+.mdl-meter-k span { position: absolute; top: 0; white-space: nowrap; }
+
+/* progress */
+.mdl-bar { height: 12px; border: 1px solid var(--plum); background: var(--paper); overflow: hidden; }
+.mdl-bar i { display: block; height: 100%; background: var(--plum); }
+.mdl-bar.is-busy i { background: repeating-linear-gradient(135deg, var(--plum) 0 8px, var(--rose) 8px 16px); background-size: 200% 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .mdl-bar i { transition: width .35s; }
+  .mdl-bar.is-busy i { animation: mdl-busy 1.2s linear infinite; }
+  .mdl-pic.is-busy::before { animation: mdl-sweep 1.4s linear infinite; }
+}
+@keyframes mdl-busy { to { background-position: -45px 0; } }
+@keyframes mdl-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.mdl-card.is-job .mdl-state { color: var(--blue, var(--plum)); }
+.mdl-card.is-left { border-style: dashed; }
+.mdl-card.is-note { background: var(--rose); }
+.mdl-card.is-error { border-color: var(--needs, var(--plum)); box-shadow: inset 4px 0 0 var(--needs, var(--plum)); }
+.mdl-card.is-note .mdl-body { padding-top: 14px; }
+
+/* a file on its way, or one left part-way: a small picture, a big bar */
+.mdl-card.is-job .mdl-in, .mdl-card.is-left .mdl-in { grid-template-columns: 88px minmax(0, 1fr); }
+.mdl-card.is-job .mdl-in > .mdl-pic, .mdl-card.is-left .mdl-in > .mdl-pic { aspect-ratio: auto; min-height: 0; border-bottom: 0; border-right: 1px solid var(--line); }
+.mdl-card.is-job .mdl-big, .mdl-card.is-left .mdl-big { width: 40px; height: 40px; }
+.mdl-card.is-job .mdl-bar { height: 18px; }
+.mdl-pct { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font: 400 12px/1.45 var(--mono); }
+.mdl-pct b { font: 500 26px/1 var(--sans); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+
+/* earlier versions */
+.mdl-older ul { border-top: 1px solid var(--hair); }
+.mdl-older li { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--hair); }
+.mdl-older .mdl-older-acts { grid-column: 1 / -1; display: flex; gap: 14px; }
+.mdl-older .link { font-size: 13.5px; min-height: 40px; padding: 6px 0; }
+
+/* every project's models */
+.mdl-group { margin-top: 26px; display: grid; gap: 12px; }
+.mdl-card.is-small .mdl-name { font-size: 16px; }
+.mdl-cover { position: absolute; inset: 0; z-index: 1; }
+.mdl-cover:focus-visible { outline-offset: -4px; }
+.mdl-card.is-small:hover, .mdl-card.is-small:focus-within { box-shadow: inset 0 0 0 1px var(--plum); }
+.mdl-mini { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.mdl-mini li { display: inline-flex; align-items: center; gap: 4px; }
+.mdl-mini .mdl-ic { width: 18px; height: 18px; }
+.mdl-mini b { font: 500 15px/1 var(--sans); font-variant-numeric: tabular-nums; }
+.mdl-empty { margin-top: 8px; padding: 26px 18px; border: 1px dashed var(--line); display: grid; justify-items: start; gap: 10px; background: var(--panel, var(--paper)); }
+
+@media (min-width: 761px) {
+  .mdl-drop { min-height: 240px; padding: 32px 24px; }
+  .mdl-drop-t { font-size: 32px; }
+  .mdl-cards { gap: 16px; }
+  .mdl-cards.is-small { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .mdl-body { padding: 16px 20px 20px; }
+}
+@media print {
+  .mdl-drop, .mdl-turn, .mdl-card .acts, .mdl-older-acts, .mdl-card.is-job, .mdl-card.is-note, .mdl-card.is-left { display: none !important; }
+  .mdl-card { break-inside: avoid; }
+}

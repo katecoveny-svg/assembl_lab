@@ -6,7 +6,7 @@
 //                                                   putFile, getFile, removeFile, listFiles    (files, see below)
 //   createSwitch(local)                             one store object for the page, which hands each call to the browser
 //                                                   store or the shared store. The page does not know which.
-//   createTeam(gateway)                             practices, people, invitations
+//   createTeam(gateway)                             practices, people, invitations, the practice's look (extra.theme)
 //   moveProjects({ local, cloud, ids })             copy chosen browser projects up; the browser copy is left alone
 //
 // What stays in the browser, always: the Sample project and everything under it (never uploaded), and settings.
@@ -24,7 +24,9 @@
 // Nothing here writes to the console. Database error text is never shown or kept: it can quote a row's values.
 //
 // Files: the same four calls and shapes as the browser store (store.js):
-//   putFile({ id?, project_id, owner_kind, owner_id, name, type, data })  -> note { id, project_id, owner_kind, owner_id, name, type, size, kept_at }
+//   putFile({ id?, project_id, owner_kind, owner_id, name, type, data, extra? })  -> note { id, project_id, owner_kind, owner_id, name, type, size, kept_at, extra? }
+//                        extra (a plain object) is kept in the record's extra column; a note carries it only when it is not empty
+//   filePlace, fileToken, fileKept   a big file sent in parts (upload.js): see the files part of createCloudStore
 //   getFile(id)          -> the note plus { data: Uint8Array }, or null when there is no such file or its contents are not there
 //   removeFile(id)       -> true if it was there
 //   listFiles(where?)    -> notes only, e.g. listFiles({ project_id })
@@ -83,11 +85,19 @@ const FIELDS = {
   defect: [['title', 'title', 'must', ''], ['status', 'status', 'text', ''], ['note', 'note', 'text', '']],
   checklist_item: [['stage', 'stage', 'stage', ''], ['list', 'list', 'must', ''], ['title', 'title', 'must', ''], ['status', 'status', 'must', 'needed'], ['document_id', 'document_id', 'ref', ''], ['note', 'note', 'text', ''], ['source_ref', 'source', 'json']],
   activity: [['at', 'at', 'now', ''], ['who', 'who', 'text', ''], ['action', 'action', 'must', ''], ['detail', 'detail', 'text', '']],
+  // the Clients add-on (crm.js): these belong to the practice, not to a project. A stage is a plain word here ('stage' above is the seven design stages).
+  //   num  a number (the value a person typed; never worked out here)
+  contact: [['name', 'name', 'must', ''], ['email', 'email', 'text', ''], ['phone', 'phone', 'text', ''], ['organisation', 'organisation', 'text', ''], ['role', 'role', 'text', ''], ['notes', 'notes', 'text', ''], ['archived', 'archived', 'flag', false], ['created_at', 'created_at', 'now', '']],
+  enquiry: [['title', 'title', 'must', ''], ['contact_id', 'contact_id', 'ref', ''], ['stage', 'stage', 'must', 'new'], ['value_nzd', 'value_nzd', 'num', null], ['source', 'source', 'text', ''], ['next_action', 'next_action', 'text', ''], ['next_action_due', 'next_action_due', 'date', ''], ['owner', 'owner', 'text', ''], ['project_id', 'project_id', 'ref', ''], ['archived', 'archived', 'flag', false], ['created_at', 'created_at', 'now', '']],
+  crm_activity: [['enquiry_id', 'enquiry_id', 'ref', ''], ['contact_id', 'contact_id', 'ref', ''], ['kind', 'kind', 'must', 'note'], ['body', 'body', 'must', ''], ['at', 'at', 'now', ''], ['who', 'who', 'text', ''], ['created_at', 'created_at', 'now', '']],
 };
 /** the kinds of record under a project, and where each sits in a project bundle */
 const LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
 export const SHARED_KINDS = ['project', ...Object.keys(LISTS)];
-const APPEND_ONLY = new Set(['approval', 'activity']);
+/** the Clients add-on's records: one practice's, not under a project. Contacts and enquiries are archived, never removed. */
+export const CRM_KINDS = ['contact', 'enquiry', 'crm_activity'];
+const PRACTICE_KINDS = new Set(CRM_KINDS);
+const APPEND_ONLY = new Set(['approval', 'activity', 'crm_activity']);
 const SOURCED = new Set(['task', 'checklist_item']); // rows that can carry a source_ref
 // columns the database fills in itself: never sent, and never mistaken for an unknown field
 const DATABASE_OWN = new Set(['user_id', 'recorded_at', 'seq', 'created_by', 'practice_id', 'extra']);
@@ -110,6 +120,7 @@ function up(type, v, fallback) {
     case 'now': { const t = typeof v === 'string' && v ? iso(v) : null; return t ? [t, true] : [new Date().toISOString(), none]; }
     case 'stage': return none ? [null, true] : [stageUp(String(v)), true];
     case 'ref': return none ? [null, true] : [dbId(v), true];
+    case 'num': return none ? [null, true] : typeof v === 'number' && Number.isFinite(v) ? [v, true] : [null, false];
     default: return [v === undefined ? null : v, true]; // json
   }
 }
@@ -121,6 +132,7 @@ function down(type, v, empty) {
     case 'time': case 'now': return iso(v) ?? empty;
     case 'stage': return stageDown(v);
     case 'flag': return v === true;
+    case 'num': return Number.isFinite(Number(v)) ? Number(v) : empty;
     default: return v;
   }
 }
@@ -160,7 +172,7 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
   const fields = FIELDS[kind];
   if (!fields) throw new Error(`Unknown kind of record: ${kind}`);
   const names = new Set(fields.map((f) => f[0])), extra = {};
-  const rec = kind === 'stage' ? { project_id: dbId(row.project_id), key: stageUp(row.key) } : { id: dbId(row.id), project_id: dbId(row.project_id) };
+  const rec = kind === 'stage' ? { project_id: dbId(row.project_id), key: stageUp(row.key) } : PRACTICE_KINDS.has(kind) ? { id: dbId(row.id), practice_id } : { id: dbId(row.id), project_id: dbId(row.project_id) };
   for (const [name, column, type, empty] of fields) {
     const [value, fits] = up(type, row[name], empty);
     rec[column] = value;
@@ -176,7 +188,7 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
 export function fromRecord(kind, r) {
   if (kind === 'project') return projectDown(r);
   const fields = FIELDS[kind], extra = obj(r.extra);
-  const row = kind === 'stage' ? { ...extra, id: `${r.project_id}:${stageDown(r.key)}`, project_id: r.project_id, key: stageDown(r.key) } : { ...extra, id: r.id, project_id: r.project_id };
+  const row = kind === 'stage' ? { ...extra, id: `${r.project_id}:${stageDown(r.key)}`, project_id: r.project_id, key: stageDown(r.key) } : PRACTICE_KINDS.has(kind) ? { ...extra, id: r.id } : { ...extra, id: r.id, project_id: r.project_id };
   for (const [name, column, type, empty] of fields) {
     if (name in extra && (r[column] === null || r[column] === undefined || (type === 'flag' && r[column] === false))) continue; // it did not fit the column: the original is in extra
     const v = down(type, r[column], empty);
@@ -262,6 +274,8 @@ export function createGateway(client, { schema = 'arch', bucket = 'arch-files', 
       }
     },
     rpc: (name, args) => ask(() => db().rpc(name, args)),
+    /** [models] the signed-in person's access token, for a big file sent in parts straight to storage (upload.js); null when there is none */
+    async token() { try { return (await client.auth?.getSession?.())?.data?.session?.access_token ?? null; } catch { return null; } },
     async file(run) {
       let r = await attempt(() => run(client.storage.from(bucket)));
       if (r?.error && explainStorage(r.error).code === 'signed_out' && refresh) {
@@ -303,7 +317,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
   const who = practice.name ? `in ${practice.name}` : 'in this practice';
   const snaps = new Map(); // project id -> what each of its rows looked like when last read, so a save writes only what changed
 
-  const check = (kind) => { if (!SHARED_KINDS.includes(kind) && kind !== 'setting') throw new Error(`Unknown kind of record: ${kind}`); };
+  const check = (kind) => { if (!SHARED_KINDS.includes(kind) && !PRACTICE_KINDS.has(kind) && kind !== 'setting') throw new Error(`Unknown kind of record: ${kind}`); };
   const mustWrite = (kind) => {
     if (role() !== 'viewer') return;
     if (kind === 'activity') throw new CloudError('You are a viewer, and viewers cannot add to the activity log, so this was not logged.', 'read_only');
@@ -338,6 +352,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     async list(kind, where) {
       check(kind);
       if (kind === 'setting') return local.list(kind, where);
+      if (PRACTICE_KINDS.has(kind)) return (await g.all(() => g.from(kind).select('*').eq('practice_id', practice.id), ['seq'])).map((r) => fromRecord(kind, r)).filter((r) => matches(r, where)).map(copy);
       const samples = await sampleIds();
       if (kind === 'project') {
         const mine = (await g.all(() => g.from('project').select('*').eq('practice_id', practice.id))).map(projectDown);
@@ -361,6 +376,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     async get(kind, id) {
       check(kind);
       if (kind === 'setting') return local.get(kind, id);
+      if (PRACTICE_KINDS.has(kind)) { const rows = await g.ask(() => g.from(kind).select('*').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1)); return rows?.[0] ? fromRecord(kind, rows[0]) : null; }
       const here = await local.get(kind, id);
       if (here && (kind === 'project' ? isSample(here) : await localProject(here.project_id))) return here;
       if (id === SAMPLE_ID) return null;
@@ -379,7 +395,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       check(kind);
       if (kind === 'setting') return local.save(kind, row);
       if (!row || typeof row.id !== 'string' || !row.id) throw new Error('A record needs an id before it can be saved.');
-      if (kind === 'project' ? isSample(row) : await localProject(row.project_id)) return local.save(kind, row);
+      if (!PRACTICE_KINDS.has(kind) && (kind === 'project' ? isSample(row) : await localProject(row.project_id))) return local.save(kind, row);
       mustWrite(kind);
       const rec = toRecord(kind, row, ctx);
       try {
@@ -397,6 +413,10 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       check(kind);
       if (kind === 'setting') return local.remove(kind, id);
       if (kind === 'project') return store.removeProject(id);
+      if (PRACTICE_KINDS.has(kind)) {
+        mustWrite(kind);
+        throw new CloudError(kind === 'crm_activity' ? 'Client history is a permanent record once it is shared. It cannot be removed.' : 'Clients and enquiries are archived, not removed.', kind === 'crm_activity' ? 'append_only' : 'kept');
+      }
       const here = await local.get(kind, id);
       if (here && await localProject(here.project_id)) return local.remove(kind, id);
       mustWrite(kind);
@@ -504,7 +524,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
         const f = await store.getFile(m.id); // a failure to read stops the export: nothing half-made is handed over
         if (!f) { missing++; continue; } // the record is there but its contents are not: counted, not hidden
         bytes += f.size;
-        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, data_base64: bytesToBase64(f.data) });
+        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, ...(f.extra ? { extra: f.extra } : {}), data_base64: bytesToBase64(f.data) });
       }
       return { file_name: `${base}-with-files.json`, text: JSON.stringify(writeBundle(b, now, out, keptIn), null, 2), files_included: true, file_count: out.length, file_bytes: bytes, ...(missing ? { files_missing: missing } : {}) };
     },
@@ -525,7 +545,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       // files the project file carries go to the shared records too; one that is refused is counted, not hidden
       let kept = 0, refused = 0;
       for (const f of b.files ?? []) {
-        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
+        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, extra: f.extra, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
       }
       const pid = dbId(b.project.id);
       return Array.isArray(b.files) ? { project_id: pid, copied, files: kept, files_failed: refused } : { project_id: pid, copied };
@@ -533,7 +553,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
 
     // ---- files: the contents go to the practice's private bucket, the note of each goes in the "file" table ----
     async putFile(input = {}) {
-      const { id, project_id, owner_kind, owner_id, name, type = '', data } = isObj(input) ? input : {};
+      const { id, project_id, owner_kind, owner_id, name, type = '', data, extra } = isObj(input) ? input : {};
       if (project_id && await localProject(project_id)) return local.putFile(input); // the Sample's files stay in the browser
       mustWrite('file');
       const bytes = toBytes(data), label = String(name || '').trim() ? String(name) : 'file';
@@ -547,7 +567,32 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
         await g.file((s) => s.upload(path, blob, { contentType: mime || 'application/octet-stream', upsert: false }));
       } catch (e) { throw nothing(e, ' The file was not kept.'); }
       try {
-        const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: bytes.byteLength, storage_path: path, extra: {} };
+        const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: bytes.byteLength, storage_path: path, extra: isObj(extra) ? copy(extra) : {} };
+        const got = await g.ask(() => g.from('file').insert(rec).select());
+        return fileDown(got?.[0] ?? { ...rec, created_at: new Date().toISOString() });
+      } catch (e) {
+        try { await g.file((s) => s.remove([path])); } catch { /* the record was refused; the contents may be left behind for an owner to clear */ }
+        throw nothing(e, ' The file was not kept.');
+      }
+    },
+    // [models] A big file goes up in 6 MB parts straight to the bucket (upload.js), between these calls: filePlace says where
+    // it goes (nothing is written), fileToken gives the sign-in for each part, and fileKept writes its record once the last
+    // part is in. If the record is refused, the contents are removed, as putFile does. The Sample has no shared files.
+    async filePlace({ id, project_id } = {}) {
+      if (!project_id || await localProject(project_id)) throw new Error('The Sample’s files stay in this browser.');
+      mustWrite('file');
+      const fid = id ? dbId(id) : newUuid(), pid = dbId(project_id);
+      return { id: fid, path: `${practice.id}/${pid}/${fid}` };
+    },
+    fileToken: () => g.token?.() ?? Promise.resolve(null),
+    async fileKept({ id, path, project_id, owner_kind, owner_id, name, type = '', size, extra } = {}) {
+      mustWrite('file');
+      const fid = dbId(id), pid = dbId(project_id), label = String(name || '').trim() ? String(name) : 'file';
+      if (path !== `${practice.id}/${pid}/${fid}`) throw new Error('That file is not in this practice’s place for that project.');
+      if (!owner_id || !OWNER_KINDS.includes(owner_kind)) throw new Error('A file needs the record it belongs to before it can be kept.');
+      const mime = String(type || '');
+      const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: Number(size) || 0, storage_path: path, extra: isObj(extra) ? copy(extra) : {} };
+      try {
         const got = await g.ask(() => g.from('file').insert(rec).select());
         return fileDown(got?.[0] ?? { ...rec, created_at: new Date().toISOString() });
       } catch (e) {
@@ -603,7 +648,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
 }
 
 /** a row of the "file" table -> the note the page holds, the same shape as the browser store's */
-const fileDown = (r) => ({ id: r.id, project_id: r.project_id ?? '', owner_kind: r.owner_kind ?? '', owner_id: r.owner_id ?? '', name: r.name ?? '', type: r.mime ?? '', size: Number(r.size ?? 0), kept_at: iso(r.created_at) ?? '' });
+const fileDown = (r) => ({ id: r.id, project_id: r.project_id ?? '', owner_kind: r.owner_kind ?? '', owner_id: r.owner_id ?? '', name: r.name ?? '', type: r.mime ?? '', size: Number(r.size ?? 0), kept_at: iso(r.created_at) ?? '', ...(isObj(r.extra) && Object.keys(r.extra).length ? { extra: r.extra } : {}) });
 
 /**
  * Approvals and activity that come up from a browser or a file were not recorded under a sign-in.
@@ -663,7 +708,7 @@ export async function moveProjects({ local, cloud, ids, now }) {
         if (!already.has(dbId(f.id))) {
           const full = await local.getFile(f.id);
           if (!full?.data) continue; // its note is here but its contents are not: nothing to send
-          await cloud.putFile({ id: f.id, project_id: id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: full.data });
+          await cloud.putFile({ id: f.id, project_id: id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, extra: f.extra, data: full.data });
         }
         sent.add(dbId(f.id));
       }
@@ -722,6 +767,22 @@ export function createTeam(g) {
       return row;
     },
     cancelInvitation: async (id) => ((await g.ask(() => g.from('invitation').delete().eq('id', id).select('id')))?.length ?? 0) > 0,
+    /** the practice's chosen look (practice.extra.theme), or '' when none is chosen. Every member can read it. */
+    async look(practiceId) {
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      const t = row?.extra && typeof row.extra === 'object' ? row.extra.theme : '';
+      return typeof t === 'string' ? t : '';
+    },
+    /** Choose the practice's look. The database lets only an owner change the practice row; anyone else changes nothing. */
+    async setLook(practiceId, theme) {
+      if (!/^[a-z]{1,20}$/.test(String(theme ?? ''))) throw new Error('Choose a look.');
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      if (!row) throw new CloudError('That practice is not in the shared records.', 'missing');
+      const extra = { ...(isObj(row.extra) ? row.extra : {}), theme };
+      const rows = await g.ask(() => g.from('practice').update({ extra }).eq('id', practiceId).select('id, extra'));
+      if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can change the practice’s look. Nothing was changed.', 'refused');
+      return rows[0].extra?.theme ?? theme;
+    },
     /** the database refuses this for anyone but an owner, and refuses to leave a practice with no owner */
     async setRole(practiceId, userId, role) {
       if (!ROLES.includes(role)) throw new Error('Choose a role: owner, member or viewer.');

@@ -154,10 +154,42 @@ export function loadGround(plan: Plan): GroundStore | null {
 }
 const keep = (s: GroundStore | null) => { if (s) sessionStorage.setItem(STORE, JSON.stringify(s)); else sessionStorage.removeItem(STORE); };
 const rebuild = () => { const q = new URLSearchParams(location.search); q.set('ground', '1'); location.search = q.toString(); };
+/** keep a read for this tab (the model is rebuilt on it next time the page opens with ?ground), and reload onto it */
+export const keepGround = (s: GroundStore) => { try { keep(s); } catch { s.surface = null; s.surfaceWhy = 'left out: this browser tab had no room to keep it'; keep(s); } };
+export const rebuildOnGround = () => rebuild();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const layerOf = (f: any): Layer => ({ heights: f.values.heights, title: f.values.survey?.title ?? null, captured: f.values.survey?.captured ?? null, identified: f.values.survey?.identified, credit: f.licence?.attribution ?? '', file: f.values.nationalModel?.file,
   asOf: f.asOf ?? null, fetchedAt: f.fetchedAt, heightAtPoint: f.values.heightAtPoint?.value ?? null, datum: f.values.verticalDatum?.name ?? 'NZVD2016' });
+
+export type GroundRead = { status: 'read'; store: GroundStore; applied: Applied } | { status: 'unavailable'; reason: string };
+/** Read LINZ's ground and tree tops round a point, and the parcel, straight from LINZ in this browser, and check the house
+ *  can sit on it. Nothing is kept and nothing is drawn: the caller decides. A failure throws; it is never an answer.
+ *  `parcel` is a boundary already in hand for this point (from Site facts); left out, LINZ's parcel map is asked. */
+export async function readGround(plan: Plan, p: { lat: number; lon: number }, o: { signal: AbortSignal; onProgress?: (requests: number, bytes: number) => void; onPhase?: (phase: string) => void; parcel?: GroundStore['parcel'] }): Promise<GroundRead> {
+  const t0 = performance.now(), seen: Record<string, { requests: number; bytes: number }> = {}, north = planNorth(plan);
+  const total = () => Object.values(seen).reduce((a, v) => ({ requests: a.requests + v.requests, bytes: a.bytes + v.bytes }), { requests: 0, bytes: 0 });
+  const opts = (k: string) => ({ lat: p.lat, lon: p.lon, radius: RADIUS, signal: o.signal, onProgress: (st: { requests: number; bytes: number }) => { seen[k] = { requests: st.requests, bytes: st.bytes }; const t = total(); o.onProgress?.(t.requests, t.bytes); } });
+  // the ground decides everything; if it fails, the tops of trees and buildings are not waited for
+  const ac2 = new AbortController(); o.signal.addEventListener('abort', () => ac2.abort(o.signal.reason), { once: true });
+  const gP = (readLayer('ground', { ...opts('ground'), signal: ac2.signal }) as Promise<any>).catch((e: unknown) => { ac2.abort(e); throw e; }); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [g, s] = await Promise.allSettled([gP, readLayer('surface', { ...opts('surface'), signal: ac2.signal }) as Promise<any>]); // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (g.status === 'rejected') throw g.reason;
+  const gf = g.value;
+  if (gf.status === 'unavailable') return { status: 'unavailable', reason: String(gf.reason ?? 'LINZ has no 1 m ground at this point.') };
+  const theirs = gf.values.point;
+  let parcel: GroundStore['parcel'] = o.parcel ?? null, parcelWhy: string | undefined;
+  if (o.parcel === undefined) { // the boundary, straight from LINZ's parcel map
+    o.onPhase?.('Ground read. Asking LINZ’s parcel map for the boundary');
+    try { const pc = await parcelAt(p.lat, p.lon, { signal: o.signal }); parcel = pc.rings.length ? { rings: pc.rings, asOf: pc.asOf, credit: pc.credit } : null; if (pc.none) parcelWhy = 'LINZ’s parcel map has no primary parcel at this point.'; }
+    catch (e) { if (o.signal.aborted) throw e; parcel = null; parcelWhy = `LINZ’s parcel map did not answer (${(e as Error).message}), so no boundary is drawn.`; }
+  }
+  const sf = s.status === 'fulfilled' && s.value.status !== 'unavailable' ? s.value : null, t = total(), secs = Math.round((performance.now() - t0) / 100) / 10;
+  const store: GroundStore = { v: 1, plan: modelFingerprint(plan), point: { lat: p.lat, lon: p.lon, e: theirs.e, n: theirs.n }, ground: layerOf(gf), surface: sf ? layerOf(sf) : null,
+    surfaceWhy: sf ? undefined : s.status === 'rejected' ? String((s.reason as Error)?.message ?? s.reason) : s.value.reason, parcel, parcelWhy,
+    placement: { turnDeg: r2(north.deg), turnTag: north.tag, east: 0, north: 0, moveTag: 'assumed', floor: null, floorTag: 'assumed' }, read: { seconds: secs, requests: t.requests, bytes: t.bytes } };
+  return { status: 'read', store, applied: applyGround(plan, store) }; // applyGround throws if the survey has nothing under the house
+}
 
 /** the card: fetch the ground for the site point, then say what was loaded and let the person place the house */
 /** pause(true) stops the 3D view drawing while LINZ's files are read, so a slow graphics chip cannot hold the read up; pause(false) starts it again */
@@ -193,40 +225,24 @@ export function groundPanel(log: (m: string) => void, plan: Plan, loaded: { stor
     const p = parseWhere(where.value);
     if (!p) { note.textContent = 'That is not a point in New Zealand. Use decimal degrees, latitude first: -36.80, 175.08'; return; }
     try { localStorage.setItem(WHERE, where.value.trim()); } catch { /* fine */ }
-    const ac = new AbortController(), t0 = performance.now(), seen: Record<string, { requests: number; bytes: number }> = {};
+    const ac = new AbortController(), t0 = performance.now(), seen = { requests: 0, bytes: 0 };
     busy = ac; stoppedByHand = false; go.disabled = true; busyRow.style.display = ''; pause(true);
     let phase = 'Reading LINZ’s ground files from this browser (the 3D view rests meanwhile)';
-    const total = () => Object.values(seen).reduce((a, v) => ({ requests: a.requests + v.requests, bytes: a.bytes + v.bytes }), { requests: 0, bytes: 0 });
-    const show = () => { const t = total(); note.textContent = progressText(phase, t.requests, t.bytes, (performance.now() - t0) / 1000); };
+    const show = () => { note.textContent = progressText(phase, seen.requests, seen.bytes, (performance.now() - t0) / 1000); };
     const tick = setInterval(show, 500), cap = setTimeout(() => ac.abort(new Error(`it took longer than ${LIMIT_S} s`)), LIMIT_S * 1000);
     show();
-    const opts = (k: string) => ({ lat: p.lat, lon: p.lon, radius: RADIUS, signal: ac.signal, onProgress: (st: { requests: number; bytes: number }) => { seen[k] = { requests: st.requests, bytes: st.bytes }; } });
     try {
-      // the ground decides everything; if it fails, the tops of trees and buildings are not waited for
-      const gP = (readLayer('ground', opts('ground')) as Promise<any>).catch((e: unknown) => { ac.abort(e); throw e; }); // eslint-disable-line @typescript-eslint/no-explicit-any
-      const [g, s] = await Promise.allSettled([gP, readLayer('surface', opts('surface')) as Promise<any>]); // eslint-disable-line @typescript-eslint/no-explicit-any
-      if (g.status === 'rejected') throw g.reason;
-      const gf = g.value;
-      if (gf.status === 'unavailable') { // say so, and go back to the labelled assumed ground if real ground was showing
-        const msg = `No real ground here: ${gf.reason} The model ${loaded ? 'goes back to' : 'keeps'} its assumed ground, labelled as assumed.`;
+      const res = await readGround(plan, p, { signal: ac.signal, onProgress: (r, b) => { seen.requests = r; seen.bytes = b; }, onPhase: (t) => { phase = t; show(); }, parcel: parcelFor === `${p.lat},${p.lon}` ? parcel : undefined });
+      if (res.status === 'unavailable') { // say so, and go back to the labelled assumed ground if real ground was showing
+        const msg = `No real ground here: ${res.reason} The model ${loaded ? 'goes back to' : 'keeps'} its assumed ground, labelled as assumed.`;
         keep(null); note.textContent = msg; log('No LINZ ground for that point; the assumed ground stays.');
         if (loaded) { try { sessionStorage.setItem(STORE + '-note', msg); } catch { /* fine */ } rebuilding = true; rebuild(); }
         return;
       }
-      const theirs = gf.values.point;
-      let parcelWhy: string | undefined;
-      if (parcelFor !== `${p.lat},${p.lon}`) { // the boundary, straight from LINZ's parcel map, unless Site facts has just brought it
-        phase = 'Ground read. Asking LINZ’s parcel map for the boundary'; show();
-        try { const pc = await parcelAt(p.lat, p.lon, { signal: ac.signal }); parcel = pc.rings.length ? { rings: pc.rings, asOf: pc.asOf, credit: pc.credit } : null; parcelFor = `${p.lat},${p.lon}`; if (pc.none) parcelWhy = 'LINZ’s parcel map has no primary parcel at this point.'; }
-        catch (e) { if (ac.signal.aborted) throw e; parcel = null; parcelWhy = `LINZ’s parcel map did not answer (${(e as Error).message}), so no boundary is drawn.`; }
-      }
-      const sf = s.status === 'fulfilled' && s.value.status !== 'unavailable' ? s.value : null, t = total(), secs = Math.round((performance.now() - t0) / 100) / 10;
-      const st: GroundStore = { v: 1, plan: modelFingerprint(plan), point: { lat: p.lat, lon: p.lon, e: theirs.e, n: theirs.n }, ground: layerOf(gf), surface: sf ? layerOf(sf) : null,
-        surfaceWhy: sf ? undefined : s.status === 'rejected' ? String((s.reason as Error)?.message ?? s.reason) : s.value.reason, parcel, parcelWhy,
-        placement: { turnDeg: r2(north.deg), turnTag: north.tag, east: 0, north: 0, moveTag: 'assumed', floor: null, floorTag: 'assumed' }, read: { seconds: secs, requests: t.requests, bytes: t.bytes } };
-      applyGround(plan, st); // throws if the survey has nothing under the house
-      try { keep(st); } catch { st.surface = null; st.surfaceWhy = 'left out: this browser tab had no room to keep it'; keep(st); }
-      log(`LINZ ground read by this browser in ${secs} s (${t.requests} answers, ${(t.bytes / 1e6).toFixed(1)} MB): ${st.ground.title ?? 'survey not identified'}.`);
+      const st = res.store, secs = st.read?.seconds ?? 0;
+      parcel = st.parcel; parcelFor = `${p.lat},${p.lon}`;
+      keepGround(st);
+      log(`LINZ ground read by this browser in ${secs} s (${st.read?.requests ?? 0} answers, ${((st.read?.bytes ?? 0) / 1e6).toFixed(1)} MB): ${st.ground.title ?? 'survey not identified'}.`);
       clearInterval(tick); note.textContent = `Ground read in ${secs} s. Rebuilding the model on it…`; rebuilding = true; rebuild();
     } catch (e) {
       const why = stoppedByHand ? 'you stopped it' : (e as Error)?.message ?? String(e);
