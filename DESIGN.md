@@ -1,5 +1,25 @@
 # assembl lab: DESIGN.md
 
+## The front page since 23 Nov 2026 (this wins over the sections below for `/`)
+
+Kate: "the birds on the lab page aren't great … putting some useful sims etc on here". `index.html` is hand-written
+(it has not been the output of `scripts/build-lab-home.cjs` since #176); its style and scripts are `lab/v4/`.
+
+- **Order:** the architecture platform first (hero, then the workspace, the 16A walk and services), then the working
+  business simulators, then "More from the lab" as small tiles (Manu is one of them). Only pages that load without
+  errors go on it; the inventory behind the choice is in the commit and report of 23 Nov.
+- **Look:** warm white `#FFFDFB` page, deep plum `#240B21` heads, muted plum `#654A4E` body, dusty rose `#916A70`
+  for state and the second line of a head, chalk `#F5F1F2` for the close; Instrument Sans 400/500; IBM Plex Mono only
+  for eyebrows, truth chips and captions. Rounded tiles (18px), pill buttons, lift and glow on hover.
+- **Hero:** a rendering of the 16A homes shows first, labelled "Rendering · not a photograph". After first paint, if
+  motion is allowed and Save-Data is off, `lab/v4/hero.js` lazy-loads three.js and `lab/v4/house.js` builds the two
+  homes from their plan model (`/plan-studio/twins/services/plan16a.json`): floors, walls rising, roofs landing, then a
+  slow orbit, labelled "Live 3D from the plan · not a scan", with a Pause button. It stops drawing off screen and in a
+  hidden tab. Reduced motion, no WebGL or a failed load keep the rendering.
+- **Tiles:** a still captured from the working page (`lab/v4/img/`), a 3 to 6 word name, one line, a truth chip.
+  Recapture a still when its page changes. No client work on this page.
+- **Check:** `node --test tests/lab-home/*.test.mjs` (every link resolves to a file in the repo, no client names).
+
 The design system for the Lab home (`/`, built by `scripts/build-lab-home.cjs`), the shared Lab chrome on every
 experiment page (`lab/navigation.js`), and anything new on this site.
 

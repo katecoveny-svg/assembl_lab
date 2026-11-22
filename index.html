@@ -3,71 +3,111 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>assembl lab · small worlds, assembled</title>
-<meta name="description" content="Two working three.js worlds by assembl: Plan to 4D, which turns a 2D plan into a house you can walk around, and Manu, the birds of Aotearoa up close.">
+<title>assembl lab · plans to walkable twins, and businesses running live</title>
+<meta name="description" content="The assembl lab: plans and models turned into 3D twins you can walk in the browser, a workspace for architects, and simulators of New Zealand businesses running live. Built in Tāmaki Makaurau Auckland.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="assembl lab">
-<meta property="og:title" content="assembl lab · small worlds, assembled">
-<meta property="og:description" content="A 2D plan turned into a house you can walk around, and the birds of Aotearoa up close. Built in three.js by assembl in Tāmaki Makaurau Auckland.">
-<meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/model16a.webp">
+<meta property="og:title" content="assembl lab · plans in, a house you can walk">
+<meta property="og:description" content="Plans and models turned into 3D twins you can walk, a workspace for architects, and New Zealand businesses running live. Built by assembl in Tāmaki Makaurau Auckland.">
+<meta property="og:image" content="https://lab.assembl.co.nz/lab/v4/img/hero-16a-1600.webp">
 <meta property="og:url" content="https://lab.assembl.co.nz/">
 <meta name="theme-color" content="#FFFDFB">
 <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
 <link rel="canonical" href="https://lab.assembl.co.nz/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/lab/v3/lab.css?v=20261118b">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/lab/v4/home.css?v=20261123a">
+<link rel="preload" as="image" href="/lab/v4/img/hero-16a-1600.webp" imagesrcset="/lab/v4/img/hero-16a-800.webp 800w, /lab/v4/img/hero-16a-1600.webp 1600w" imagesizes="(max-width: 860px) 100vw, 62vw">
 <script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js" } }</script>
 </head>
 <body>
-<canvas id="field" aria-hidden="true"></canvas>
-<a class="skip" href="#house">Skip to the worlds</a>
+<a class="skip" href="#architecture">Skip to the lab</a>
 
 <header class="top">
-  <a class="mark" href="#top" aria-label="assembl lab, back to the top">assembl<span>.</span><em class="lab">lab</em></a>
-  <nav class="nav" aria-label="Main"><a href="#house">Plan to 4D</a><a href="#manu">Manu</a><a href="https://www.assembl.co.nz/">assembl.co.nz&nbsp;↗</a></nav>
+  <a class="mark" href="#top" aria-label="assembl lab, back to the top">assembl<span>.</span><em>lab</em></a>
+  <nav class="nav" aria-label="Main"><a class="nav-arch" href="#architecture">Architecture</a><a href="#simulators">Simulators</a><a class="nav-more" href="#more">More</a><a class="out" href="https://www.assembl.co.nz/">assembl.co.nz&nbsp;↗</a></nav>
 </header>
 
 <main>
 
-<section class="window hero" id="top" data-scene="house" aria-labelledby="hero-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <h1 id="hero-h">Small worlds, assembled.</h1>
-    <p class="sub">Two working worlds in three.js, built by assembl in Tāmaki Makaurau Auckland.</p>
-    <a class="cta" href="#house">See the worlds</a>
+<section class="hero" id="top" aria-labelledby="hero-h">
+  <div class="hero-words">
+    <p class="eyebrow mono">Plan to twin</p>
+    <h1 id="hero-h">Plans in.<br><span>A house you can walk.</span></h1>
+    <p class="lede">Drawings or a model become a measured 3D twin, in the browser.</p>
+    <div class="acts"><a class="btn solid" href="/plan-studio/twins/16a/">Walk it&nbsp;↗</a><a class="btn" href="/plan-studio/twins/drop/">Drop your plan&nbsp;↗</a></div>
   </div>
-  <p class="word" aria-hidden="true"><span class="ws"><span style="--k:0"><i>a</i></span><span style="--k:1"><i>s</i></span><span style="--k:2"><i>s</i></span><span style="--k:3"><i>e</i></span><span style="--k:4"><i>m</i></span><span style="--k:5"><i>b</i></span><span style="--k:6"><i>l</i></span><span class="dot" style="--k:7"><i>.</i></span></span></p>
+  <figure class="stage" id="stage">
+    <img class="poster" src="/lab/v4/img/hero-16a-1600.webp" srcset="/lab/v4/img/hero-16a-800.webp 800w, /lab/v4/img/hero-16a-1600.webp 1600w" sizes="(max-width: 860px) 100vw, 62vw" width="1600" height="900" alt="A rendering of two timber homes at dusk, made from their plan model." fetchpriority="high">
+    <canvas id="house3d" aria-hidden="true"></canvas>
+    <p class="chip mono" id="stage-chip">Rendering · not a photograph</p>
+    <button class="pause mono" id="stage-pause" type="button" aria-pressed="false" hidden>Pause</button>
+    <figcaption class="cap mono">Two timber homes, from their plans</figcaption>
+  </figure>
 </section>
 
-<section class="window work house" id="house" data-scene="plan16a" aria-labelledby="house-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <p class="k mono">01 / Plan to 4D <span class="truth">Live</span></p>
-    <h2 id="house-h">From a 2D plan to a house you can walk around.</h2>
-    <p class="say">Two timber homes, built in three.js from their own consent drawings: real walls, doors and rooms, in the real sun. Then every pipe, duct and cable, placed and pre-checked. A model, not a scan.</p>
-    <button class="turn" type="button" aria-pressed="false" data-on="Back to the plan" data-off="See the model">See the model</button>
-    <div class="acts"><a class="open solid" href="/plan-studio/twins/16a/">Walk the 16A model&nbsp;↗</a><a class="open" href="/plan-studio/twins/services/">See its services&nbsp;↗</a><a class="open" href="/plan-studio/twins/drop/">Drop in your own plan&nbsp;↗</a><a class="open" href="/architecture/">Run a project&nbsp;↗</a></div>
+<section class="band" id="architecture" aria-labelledby="arch-h">
+  <div class="head">
+    <p class="eyebrow mono">For architects</p>
+    <h2 id="arch-h">One workspace, plan to walkthrough.</h2>
+  </div>
+  <div class="grid arch">
+    <a class="tile wide" href="/architecture/">
+      <span class="pic"><img src="/lab/v4/img/arch-workspace.webp" width="880" height="550" loading="lazy" alt="The practice workspace: projects by stage and practice money."></span>
+      <span class="t-name">The practice workspace</span>
+      <span class="t-line">Projects, models, site and sources, found work.</span>
+      <span class="chip mono">Live · sample project</span>
+    </a>
+    <a class="tile" href="/plan-studio/twins/16a/">
+      <span class="pic"><img src="/lab/v4/img/arch-walk.webp" width="880" height="550" loading="lazy" alt="The two timber homes in three.js, on their lawn."></span>
+      <span class="t-name">Walk two timber homes</span>
+      <span class="t-line">Built from consent plans, in the real sun.</span>
+      <span class="chip mono">A model, not a scan</span>
+    </a>
+    <a class="tile" href="/plan-studio/twins/services/">
+      <span class="pic"><img src="/lab/v4/img/arch-services.webp" width="880" height="550" loading="lazy" alt="Pipes and ducts under the floor, with the clashes found on a first pass."></span>
+      <span class="t-name">Services from the plan</span>
+      <span class="t-line">Every pipe, duct and cable, clash-checked.</span>
+      <span class="chip mono">Advisory, not a compliance check</span>
+    </a>
   </div>
 </section>
 
-<section class="window work2 manu" id="manu" data-scene="tui" aria-labelledby="manu-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <p class="k mono">02 / Manu <span class="truth">Live</span></p>
-    <h2 id="manu-h">Birds of Aotearoa, up close.</h2>
-    <p class="say">Eight native birds in three.js, feather by feather. Turn each one, see how it lives, then test yourself. Stylised models, not scans.</p>
-    <a class="open solid" href="/manu/">Meet the birds&nbsp;↗</a>
+<section class="band" id="simulators" aria-labelledby="sim-h">
+  <div class="head">
+    <p class="eyebrow mono">Simulators</p>
+    <h2 id="sim-h">Businesses, running live.</h2>
+  </div>
+  <div class="grid sims">
+    <a class="tile" href="/energy/"><span class="pic"><img src="/lab/v4/img/sim-energy.webp" width="880" height="550" loading="lazy" alt="A street of homes and a power company's contact centre and billing engine."></span><span class="t-name">Power company journeys</span><span class="t-line">Switching, moving, bill shock and EVs.</span><span class="chip mono">Simulated</span></a>
+    <a class="tile" href="/cafe/"><span class="pic"><img src="/lab/v4/img/sim-cafe.webp" width="880" height="550" loading="lazy" alt="A café floor from above, with tables, the counter and the queue."></span><span class="t-name">A café, tomorrow</span><span class="t-line">Try a roster before the real day.</span><span class="chip mono">Simulated</span></a>
+    <a class="tile" href="/cars/"><span class="pic"><img src="/lab/v4/img/sim-cars.webp" width="880" height="550" loading="lazy" alt="A red hatchback, the way an agent reads a car listing."></span><span class="t-name">Agent-ready car dealer</span><span class="t-line">How an agent reads a car.</span><span class="chip mono">Simulated dealer</span></a>
+    <a class="tile" href="/household/"><span class="pic"><img src="/lab/v4/img/sim-household.webp" width="880" height="550" loading="lazy" alt="An illustrated fridge and kitchen shelf."></span><span class="t-name">Household costs, edited</span><span class="t-line">See what home costs. Try a change.</span><span class="chip mono">Illustrative</span></a>
+    <a class="tile" href="/home/"><span class="pic"><img src="/lab/v4/img/sim-home.webp" width="880" height="550" loading="lazy" alt="A weatherboard house cut open, each room with its temperature."></span><span class="t-name">A Kiwi home, live</span><span class="t-line">Rooms, heat and the power bill.</span><span class="chip mono">Simulated</span></a>
+    <a class="tile" href="/store/"><span class="pic"><img src="/lab/v4/img/sim-store.webp" width="880" height="550" loading="lazy" alt="A supermarket from above: aisles, chillers and checkouts."></span><span class="t-name">A supermarket, running</span><span class="t-line">Queues, chillers and short-dated food.</span><span class="chip mono">Simulated</span></a>
+    <a class="tile" href="/retail/"><span class="pic"><img src="/lab/v4/img/sim-retail.webp" width="880" height="550" loading="lazy" alt="A hardware store with its timber yard and trade desk."></span><span class="t-name">A hardware store's year</span><span class="t-line">Six o'clock utes to the Saturday queue.</span><span class="chip mono">Simulated</span></a>
+    <a class="tile" href="/stay/"><span class="pic"><img src="/lab/v4/img/sim-stay.webp" width="880" height="550" loading="lazy" alt="A twelve-room lodge around a courtyard."></span><span class="t-name">A twelve-room lodge</span><span class="t-line">Bookings and cleaning, all year.</span><span class="chip mono">Simulated</span></a>
+    <a class="tile" href="/dairy/"><span class="pic"><img src="/lab/v4/img/sim-dairy.webp" width="880" height="550" loading="lazy" alt="A milk powder plant with silos, evaporator and spray dryer."></span><span class="t-name">A milk powder plant</span><span class="t-line">Tanker to dryer, through the season.</span><span class="chip mono">Simulated</span></a>
   </div>
 </section>
 
-<section class="window start" id="start" data-scene="sketches" aria-labelledby="start-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <h2 id="start-h">Want a world of your own?</h2>
-    <a class="btn" href="https://www.assembl.co.nz/#start">Talk to assembl</a>
-    <p class="foot mono">assembl. lab · Tāmaki Makaurau Auckland</p>
+<section class="band more" id="more" aria-labelledby="more-h">
+  <div class="head">
+    <h2 id="more-h">More from the lab</h2>
   </div>
+  <div class="grid small">
+    <a class="tile" href="/manu/"><span class="pic"><img src="/lab/v4/img/more-manu.webp" width="880" height="550" loading="lazy" alt="A tūī on a kōwhai branch, modelled in code."></span><span class="t-name">Manu, eight birds</span><span class="chip mono">Stylised, not a scan</span></a>
+    <a class="tile" href="/auckland/"><span class="pic"><img src="/lab/v4/img/more-auckland.webp" width="880" height="550" loading="lazy" alt="A map of the Waitematā Harbour from open data."></span><span class="t-name">Auckland, understood</span><span class="chip mono">Open data</span></a>
+    <a class="tile" href="/music/"><span class="pic"><img src="/lab/v4/img/more-music.webp" width="880" height="550" loading="lazy" alt="An acoustic guitar built in code."></span><span class="t-name">Instrument studies</span><span class="chip mono">Modelled in code</span></a>
+    <a class="tile" href="/viaduct/"><span class="pic"><img src="/lab/v4/img/more-viaduct.webp" width="880" height="550" loading="lazy" alt="The Auckland waterfront at night as points of light."></span><span class="t-name">Friday on the Viaduct</span><span class="chip mono">Simulated night</span></a>
+    <a class="tile" href="/moving/"><span class="pic"><img src="/lab/v4/img/more-moving.webp" width="880" height="550" loading="lazy" alt="Auckland streets as points of light, one move highlighted."></span><span class="t-name">Moving house</span><span class="chip mono">Fictional tenant</span></a>
+    <a class="tile" href="/study/"><span class="pic"><img src="/lab/v4/img/more-study.webp" width="880" height="550" loading="lazy" alt="Small study machines on a bench."></span><span class="t-name">Study machines</span><span class="chip mono">Years 9 to 13</span></a>
+  </div>
+</section>
+
+<section class="close" aria-labelledby="close-h">
+  <h2 id="close-h">Want one for your business?</h2>
+  <a class="btn solid" href="https://www.assembl.co.nz/#start">Talk to assembl</a>
 </section>
 
 </main>
@@ -75,17 +115,16 @@
 <footer class="site-foot">
   <div class="sf-in">
     <p class="sf-mark"><a href="https://www.assembl.co.nz/" aria-label="assembl home">assembl<span>.</span></a></p>
-    <p class="sf-line">Small worlds from assembl: strategy, creative and digital for the agentic era. Tāmaki Makaurau Auckland, Aotearoa New Zealand.</p>
+    <p class="sf-line">The lab from assembl: strategy, creative and digital for the agentic era. Tāmaki Makaurau Auckland, Aotearoa New Zealand.</p>
     <nav class="sf-nav" aria-label="Footer">
-      <div><p class="mono">The lab</p><a href="/plan-studio/twins/16a/">Plan to 4D</a><a href="/manu/">Manu</a></div>
+      <div><p class="mono">The lab</p><a href="/architecture/">Architecture</a><a href="/plan-studio/twins/16a/">Plan to twin</a><a href="#simulators">Simulators</a><a href="/manu/">Manu</a></div>
       <div><p class="mono">assembl</p><a href="https://www.assembl.co.nz/">assembl.co.nz</a><a href="https://www.assembl.co.nz/#faq">FAQ</a><a href="https://www.assembl.co.nz/#start">Start a conversation</a></div>
       <div><p class="mono">Legal</p><a href="https://www.assembl.co.nz/privacy/">Privacy policy</a><a href="https://www.assembl.co.nz/terms/">Terms and conditions</a></div>
     </nav>
-    <p class="sf-fine mono">© 2026 assembl. Models and renders in the lab are visualisations, not photographs or scans.</p>
+    <p class="sf-fine mono">© 2026 assembl. Models, renders and simulators in the lab are visualisations, not photographs, scans or real business data.</p>
   </div>
 </footer>
 
-<script type="module" src="/lab/v3/field.js?v=20261122a"></script>
-<script type="module" src="/lab/v3/motion.js?v=20261122a"></script>
+<script type="module" src="/lab/v4/hero.js?v=20261123a"></script>
 </body>
 </html>
