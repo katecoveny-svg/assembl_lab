@@ -141,10 +141,16 @@ const licence = (licensors) => ({ name: "CC BY 4.0 (Creative Commons Attribution
   ...(licensors?.length ? {} : { caveat: "The survey's licensor could not be read, so the credit names LINZ only. LINZ asks that the licensor be named too." }) });
 const unavailable = (kind, reason, extra = {}) => ({ id: kind, label: KINDS[kind].label, truth: "Unavailable", truthLabel: "Unavailable", status: "unavailable", fetchedAt: new Date().toISOString(), reason, value: null, values: null, source: src(kind), licence: licence(null), ...extra });
 
-async function build(kind, { lat, lon, radius, fetch: f } = {}) {
+async function build(kind, p = {}) {
+  if (!p.trace) return build1(kind, p, null);
+  // ?trace=1: say what each request to LINZ did, whether the answer worked or not (for finding faults on the host)
+  const log = [], t0 = Date.now();
+  try { const out = await build1(kind, p, { log, t0 }); return { ...out, trace: log }; } catch (e) { return { id: kind, error: String(e?.message || e).slice(0, 200), totalMs: Date.now() - t0, trace: log }; }
+}
+async function build1(kind, { lat, lon, radius, fetch: f } = {}, tr) {
   if (lat == null || lon == null) throw new Error(`${kind} needs lat and lon`);
   if (!inNZ(lat, lon)) return unavailable(kind, "The point is outside New Zealand's main islands. Nothing is estimated.");
-  const half = Math.max(20, Math.min(160, Math.round(radius || 100))), t0 = now(), stats = { requests: 0, bytes: 0, decodeMs: 0 }, o = { stats, fetch: f || fetch };
+  const half = Math.max(20, Math.min(160, Math.round(radius || 100))), t0 = now(), stats = { requests: 0, bytes: 0, decodeMs: 0, ...(tr || {}) }, o = { stats, fetch: f || fetch };
   const { e, n } = toNZTM(lat, lon), point = { lat, lon, e: round(e, 2), n: round(n, 2), crs: "EPSG:2193 (NZGD2000 / NZTM2000); the latitude and longitude are taken as NZGD2000, which is within about a metre of WGS84" };
   // the heights, and the map sheet's own record of which surveys it was made from, are asked for together
   const sheetName = tileAt(e, n, 50000)?.name ?? null;

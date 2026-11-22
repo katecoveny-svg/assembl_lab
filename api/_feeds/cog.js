@@ -19,17 +19,24 @@ export class NotFound extends Error { constructor(m) { super(m); this.name = "No
 // One range request. 404 or 403 from the bucket means "no such file": the caller decides what that means.
 // With { suffix: n } the last n bytes of the file are asked for instead (start and end are ignored).
 export async function fetchRange(url, start, end, { fetch: f = fetch, stats, ms = TIMEOUT_MS, suffix } = {}) {
-  const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
+  const c = new AbortController(), t = setTimeout(() => c.abort(), ms), want = suffix || end - start + 1;
+  const t0 = Date.now(), row = stats?.log ? { file: String(url).replace(/^https:\/\/[^/]+\//, ""), range: suffix ? `-${suffix}` : `${start}-${end}`, startedMs: t0 - (stats.t0 || t0) } : null;
+  if (row) stats.log.push(row);
   try {
     const r = await f(url, { signal: c.signal, headers: { "user-agent": UA, range: suffix ? `bytes=-${suffix}` : `bytes=${start}-${end}` } });
+    if (row) { row.status = r.status; row.headersMs = Date.now() - t0; row.contentLength = r.headers.get("content-length"); row.contentRange = r.headers.get("content-range"); row.encoding = r.headers.get("content-encoding"); }
     if (r.status === 404 || r.status === 403) throw new NotFound(`HTTP ${r.status} for ${url}`);
     if (r.status !== 206 && r.status !== 200) throw new Error(`HTTP ${r.status} from ${new URL(url).host}`);
+    // a 200 means the range was not honoured and the whole file is on offer: never read a body far bigger than was asked for
+    const len = Number(r.headers.get("content-length"));
+    if (r.status === 200 && isFinite(len) && len > want + 65536) { try { await r.body?.cancel(); } catch (e) { /* nothing to cancel */ } throw new Error(`range not honoured: ${len} bytes offered for a ${want}-byte range of ${String(url).split("/").pop()}`); }
     let b = new Uint8Array(await r.arrayBuffer());
-    if (r.status === 200 && !suffix && b.length > end - start + 1) b = b.subarray(start, end + 1); // a server that ignored the range
+    if (r.status === 200 && !suffix && b.length > end - start + 1) b = b.subarray(start, end + 1); // a small file sent whole
     if (r.status === 200 && suffix && b.length > suffix) b = b.subarray(b.length - suffix);
     if (stats) { stats.requests++; stats.bytes += b.length; }
+    if (row) { row.bytes = b.length; row.totalMs = Date.now() - t0; }
     return b;
-  } finally { clearTimeout(t); }
+  } catch (e) { if (row) { row.error = String(e?.message || e).slice(0, 120); row.totalMs = Date.now() - t0; } throw e; } finally { clearTimeout(t); }
 }
 
 export async function openCog(url, opts = {}) {

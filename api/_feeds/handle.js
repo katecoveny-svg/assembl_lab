@@ -40,7 +40,7 @@ export async function handleLive(q /* URLSearchParams */) {
   const ids = feedsParam.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   const bbox = q.get("bbox"), retailer = q.get("retailer");
   const geo = { lat: num(q.get("lat")), lon: num(q.get("lon") ?? q.get("lng")), radius: num(q.get("radius")), bbox: typeof bbox === "string" && /^[-\d.,]{7,80}$/.test(bbox) ? bbox : undefined,
-    retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined }; // steers the retailers feed only
+    retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined , trace: q.get("trace") === "1" }; // steers the retailers feed only
   const { feeds, cache, unknown } = await runFeeds(ids, { place, district, ...geo });
   headers["Cache-Control"] = `public, s-maxage=${cache.sMaxAge}, stale-while-revalidate=${cache.swr}`;
   return { status: 200, headers, body: { type: "assembl.feeds", version: 2, fetchedAt: new Date().toISOString(), place, district, feeds,
