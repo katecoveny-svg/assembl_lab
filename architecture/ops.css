@@ -30,6 +30,14 @@
      --on-accent    text on a solid button                                    = --paper         sketch #000000
      --go           status only: under way                                    #2F6B4F           sketch #3DD68C
      --needs        status only: needs something                              #A4541A           sketch #FF9A3C
+   The dials (js/dial.js, js/money.js, money.css): the practice's four project states, and a month below break-even.
+     --h-allgo      All go: on budget and on time (turquoise)                 #0B7F86           sketch #2ED3D0
+     --h-go         Go: on target (green)                                     #3C7A1E           sketch #7CD65A
+     --h-hold       On hold: permission or dig off (amber)                    #A66A00           sketch #F5B83D
+     --h-pay        On hold: client payment pending (purple)                  #7B3FA6           sketch #C08CFF
+     --h-short      a month or a reading below break-even                     #B04A3C           sketch #FF7A6B
+     --h-face --h-face-edge --h-shadow   the dial's face, its rim and the needle's shadow
+   Each is 4.4:1 or more on --paper in its look. A state always has its word and its own icon beside it.
    Status colours mean status and nothing else. A status always has its word beside it, never the colour alone.
    Classes add-ons can reuse: .btn, .btn.solid, .link, .panel, .label, .small, .st, .tag, .flash, .empty, .acts, .f. */
 :root {
@@ -56,6 +64,14 @@
   --on-accent: var(--paper);
   --go: #2F6B4F;
   --needs: #A4541A;
+  --h-allgo: #0B7F86;
+  --h-go: #3C7A1E;
+  --h-hold: #A66A00;
+  --h-pay: #7B3FA6;
+  --h-short: #B04A3C;
+  --h-face: #FFFFFF;
+  --h-face-edge: #F3ECED;
+  --h-shadow: #240B21;
 }
 html[data-theme="sketch"] {
   color-scheme: dark;
@@ -82,6 +98,14 @@ html[data-theme="sketch"] {
   --on-accent: #000000;
   --go: #3DD68C;
   --needs: #FF9A3C;
+  --h-allgo: #2ED3D0;
+  --h-go: #7CD65A;
+  --h-hold: #F5B83D;
+  --h-pay: #C08CFF;
+  --h-short: #FF7A6B;
+  --h-face: #0D1122;
+  --h-face-edge: #04060D;
+  --h-shadow: #000000;
 }
 *, *::before, *::after { box-sizing: border-box; border-radius: 0; }
 html { -webkit-text-size-adjust: 100%; }
@@ -278,6 +302,9 @@ label input, label select, label textarea { font: 400 16px var(--sans); letter-s
 .tabs [role="tab"][aria-selected="true"] { color: var(--ink); background: var(--rose); box-shadow: inset 0 -3px 0 var(--blue-strong); font-weight: 500; }
 .tabs [role="tab"]:hover { color: var(--ink); }
 .tabs [role="tab"]:focus-visible { outline-offset: -3px; }
+.tabs.many { grid-template-columns: repeat(4, minmax(0, 1fr)); } /* more than six tabs (an add-on's, such as Money): four a row on a phone */
+.tabs.many [role="tab"]:nth-child(3n) { border-right: 1px solid var(--hair); }
+.tabs.many [role="tab"]:nth-child(4n), .tabs.many [role="tab"]:last-child { border-right: 0; }
 .tp { border: 1px solid var(--frame); background: var(--panel); padding: 18px 16px 22px; display: grid; gap: 16px; min-width: 0; }
 .tphead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px; }
 .tphead h2 { display: flex; align-items: center; gap: 10px; font-size: 24px; }
@@ -508,6 +535,9 @@ html[data-theme="sketch"] label.chk { letter-spacing: 0; color: var(--body); }
   .tabs [role="tab"] { gap: 6px; min-height: 64px; font-size: 14px; border-bottom: 0; }
   .tabs [role="tab"]:nth-child(3n) { border-right: 1px solid var(--hair); }
   .tabs [role="tab"]:last-child { border-right: 0; }
+  .tabs.many { grid-template-columns: repeat(var(--tabs, 7), minmax(0, 1fr)); }
+  .tabs.many [role="tab"]:nth-child(4n) { border-right: 1px solid var(--hair); }
+  .tabs.many [role="tab"]:last-child { border-right: 0; }
   .tp { padding: 26px 28px 30px; gap: 20px; }
   .tphead h2 { font-size: 28px; }
   .docs { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
@@ -572,6 +602,7 @@ html[data-theme="sketch"] label.chk { letter-spacing: 0; color: var(--body); }
     --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
     --ink: #654A4E; --body: #654A4E; --mute: #654A4E; --panel: #FFFDFB; --field: #FFFDFB; --frame: #654A4E; --edge: #654A4E;
     --blue: #654A4E; --blue-strong: #654A4E; --focus: #654A4E; --accent: #654A4E; --on-accent: #FFFDFB; --go: #2F6B4F; --needs: #A4541A;
+    --h-allgo: #0B7F86; --h-go: #3C7A1E; --h-hold: #A66A00; --h-pay: #7B3FA6; --h-short: #B04A3C; --h-face: #FFFFFF; --h-face-edge: #F3ECED; --h-shadow: #240B21;
   }
   html, body { background: none !important; }
   body { display: block; min-height: 0; }

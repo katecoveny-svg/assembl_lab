@@ -32,7 +32,7 @@ test('rows handed out are copies: changing one does not change what is saved', a
 
 test('unknown kinds and rows without an id are refused', async () => {
   const s = mem();
-  await assert.rejects(s.list('invoice'), /Unknown kind/);
+  await assert.rejects(s.list('payroll'), /Unknown kind/);
   await assert.rejects(s.save('task', { title: 'no id' }), /needs an id/);
   assert.ok(KINDS.includes('project') && KINDS.includes('approval') && KINDS.includes('activity'));
 });

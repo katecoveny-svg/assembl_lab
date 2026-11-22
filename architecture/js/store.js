@@ -35,7 +35,12 @@ import { emptyBundle, readBundle, writeBundle, copyBundle, fileSlug, newId } fro
 
 export const KINDS = ['project', 'stage', 'task', 'document', 'approval', 'rfi', 'observation', 'variation', 'defect', 'checklist_item', 'activity', 'setting',
   // the Clients add-on (crm.js): practice-wide, not under a project. See crm-model.js for their shapes.
-  'contact', 'enquiry', 'crm_activity'];
+  'contact', 'enquiry', 'crm_activity',
+  // the Money add-on (money.js): time logged, invoices and who is working on what. Each names its project (an allocation
+  // may name an enquiry instead). See money-model.js for their shapes.
+  'time_entry', 'invoice', 'allocation'];
+/** the Money add-on's rows that belong to a project, removed with it in this browser */
+const MONEY_LISTS = ['time_entry', 'invoice', 'allocation'];
 // where each kind of child row sits in a project bundle
 const BUNDLE_LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
 
@@ -241,7 +246,7 @@ export function createStore(backend, { prefix = 'assembl.architecture.v1.', file
 
     async removeProject(id) {
       for (const f of await store.listFiles({ project_id: id })) await store.removeFile(f.id);
-      for (const kind of Object.keys(BUNDLE_LISTS)) {
+      for (const kind of [...Object.keys(BUNDLE_LISTS), ...MONEY_LISTS]) {
         const rows = read(kind);
         for (const k of Object.keys(rows)) if (rows[k]?.project_id === id) delete rows[k];
         write(kind, rows);

@@ -14,7 +14,7 @@ import { addressBoxHtml, mountAddressBox } from './address.js';
 // practice's shared records when a person is signed in with a practice, and back again when they sign out.
 import { createSwitch } from './cloud.js';
 import { mountAccount } from './account.js';
-import { getRoute, projectPanels, navItems, loadAddons } from './modules.js'; // add-ons (models, clients) draw themselves into the page
+import { getRoute, projectPanels, navItems, loadAddons, projectTabs, projectHeads, wallParts, settingsParts } from './modules.js'; // add-ons (models, clients, money) draw themselves into the page
 import { planOutline, coverSvg, sketchSvg, outlineFor } from './cover.js';
 import { THEMES, pickTheme, applyTheme, lookChoiceHtml, isTheme, LOOK_SETTING } from './theme.js';
 import { icon, STAGE_ICON, NAV_ICON } from './icons.js';
@@ -37,7 +37,10 @@ let outlines = {}; // plan outlines this browser worked out from kept model file
 let storage = null; try { storage = window.localStorage; } catch { /* blocked: the look is not remembered between visits */ }
 /** the project page's tabs: [key, label, icon] */
 const TABS = [['site', 'Site', 'site'], ['model', 'Model', 'cube'], ['drawings', 'Drawings', 'drawings'], ['presentation', 'Presentation', 'presentation'], ['takeoff', 'Takeoff', 'takeoff'], ['deliverables', 'Deliverables', 'deliverables']];
-const TAB_KEYS = TABS.map((t) => t[0]);
+/** the page's six tabs, then any an add-on brings (modules.js registerProjectTab): [key, label, icon name or <svg>] */
+const allTabs = () => [...TABS, ...projectTabs().filter((t) => !TABS.some((c) => c[0] === t.id)).map((t) => [t.id, t.label, t.icon, true])];
+const tabKeys = () => allTabs().map((t) => t[0]);
+let wallData = { projects: [], stages: [], tasks: [] }; // what the wall was drawn from, for the add-ons' parts of each tile
 
 // ---- small helpers ----------------------------------------------------------------------------------------------------
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -66,7 +69,7 @@ function route() {
   if (parts[0] !== 'p' || !parts[1]) return { view: 'projects' };
   if (parts[2] === 'pack') return { view: 'pack', pid: parts[1] };
   if (parts[2] === 's' && STAGE_KEYS.includes(parts[3])) return { view: 'stage', pid: parts[1], stage: parts[3], section: parts[4] ?? null };
-  return { view: 'dash', pid: parts[1], tab: parts[2] === 't' && TAB_KEYS.includes(parts[3]) ? parts[3] : null };
+  return { view: 'dash', pid: parts[1], tab: parts[2] === 't' && tabKeys().includes(parts[3]) ? parts[3] : null };
 }
 
 async function log(pid, action, detail) {
@@ -195,6 +198,7 @@ function whereLine(stages) {
 async function projectsView() {
   const projects = (await store.list('project')).sort((a, b) => (a.sample ? 1 : 0) - (b.sample ? 1 : 0) || String(b.updated_at).localeCompare(String(a.updated_at)));
   const [stages, tasks, rfis, approvals] = await Promise.all(['stage', 'task', 'rfi', 'approval'].map((k) => store.list(k)));
+  wallData = { projects, stages, tasks };
   const hasSample = projects.some((p) => p.sample);
   const seen = projects.map((p) => {
     const mine = (list) => list.filter((x) => x.project_id === p.id);
@@ -211,6 +215,7 @@ async function projectsView() {
         <div class="ptile-where">${segsHtml(g)}<span class="st">${esc(stageLine(g))}</span></div>
         <p class="ptile-state">${stateHtml(g)}</p>
         <p class="ptile-next">${esc(g.next)}</p>
+        <div class="ptile-mod" data-mod-tile="${esc(p.id)}"></div>
       </div>
       <div class="ptile-foot"><span class="when">Changed ${esc(day(p.updated_at))}</span>
         <button class="link" data-act="project-remove" data-id="${esc(p.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(p.name)}</span></button></div></li>`;
@@ -226,6 +231,7 @@ async function projectsView() {
       <dl class="bignums"><div><dt>Projects</dt><dd>${projects.length}</dd></div><div><dt><span class="dot go" aria-hidden="true"></span>Under way</dt><dd>${count('go')}</dd></div>
         <div><dt><span class="dot needs" aria-hidden="true"></span>Need something</dt><dd>${count('needs')}</dd></div><div><dt><span class="dot waiting" aria-hidden="true"></span>Waiting on a person</dt><dd>${count('waiting')}</dd></div></dl></section>
     ${flashHtml()}${incomingHtml(projects)}
+    <div class="mod-wall" data-mod-wall></div>
     ${projects.length ? '' : `<div class="empty" data-art-empty><h3>No projects ${esc(W().here)} yet.</h3><p>Create one, import a project file, or add the sample to look around.</p></div>`}
     <ul class="pwall${anim}" aria-label="Projects">${tiles}
       <li class="ptile new" style="--i:${Math.min(seen.length, 8)}"><h2 class="new-h" id="newp">${icon('plus')}<span>New project</span></h2>
@@ -344,7 +350,8 @@ function dashView(b, r) {
   const tasks = cur ? b.tasks.filter((t) => t.stage === cur.key && t.status !== 'done') : [];
   const waiting = b.stages.filter((s) => s.status === 'awaiting_approval');
   const rfis = openRfis(b), openDefects = b.defects.filter((d) => d.status !== 'closed').length;
-  const tab = r.tab ?? ui.tabs[p.id] ?? 'model';
+  const tabs = allTabs(), keys = tabs.map((t) => t[0]);
+  const tab = [r.tab, ui.tabs[p.id]].find((k) => keys.includes(k)) ?? 'model';
   const cap = coverCaption(p);
   const num = (value, caption, to) => `<a class="num" href="${to}"><span class="big">${value}</span><span class="cap">${esc(caption)}</span></a>`;
   const panel = (key, body) => `<section class="tp" role="tabpanel" id="tp-${key}" aria-labelledby="tab-${key}" tabindex="0"${key === tab ? '' : ' hidden'}>${body}</section>`;
@@ -355,6 +362,7 @@ function dashView(b, r) {
       <figure class="pfig">${coverHtml(p, 'big')}${cap ? `<figcaption class="caption">${esc(cap)}</figcaption>` : ''}</figure>
       <div class="who">${who(p)}<h1>${esc(p.name)}</h1><p class="small">${clientLine(p)}</p>
         <div class="pstate">${stateHtml(g)}${segsHtml(g)}<span class="st">${esc(stageLine(g))}</span></div>
+        <div class="mod-head" data-mod-heads></div>
         ${n ? `<section class="next" aria-labelledby="nx"><p class="label" id="nx">Next</p><p class="say">${esc(g.next)}</p><a class="btn solid" href="${nextHref}">${esc(n.button)}</a></section>` : ''}
         ${projectNav(p, r)}</div>
     </header>
@@ -368,13 +376,14 @@ function dashView(b, r) {
       ${num(rfis.length, `open request${rfis.length === 1 ? '' : 's'}`, href(p.id, 's', 'detailed', 'tool'))}
       ${num(openDefects, `open defect${openDefects === 1 ? '' : 's'}`, href(p.id, 's', 'completion', 'tool'))}
     </div>
-    <div class="tabs" role="tablist" aria-label="Project work">${TABS.map(([k, label, ic]) => `<button type="button" role="tab" id="tab-${k}" aria-controls="tp-${k}" aria-selected="${k === tab}" tabindex="${k === tab ? 0 : -1}" data-tab="${k}">${icon(ic)}<span>${label}</span></button>`).join('')}</div>
+    <div class="tabs${tabs.length > 6 ? ' many' : ''}" role="tablist" aria-label="Project work" style="--tabs:${tabs.length}">${tabs.map(([k, label, ic]) => `<button type="button" role="tab" id="tab-${k}" aria-controls="tp-${k}" aria-selected="${k === tab}" tabindex="${k === tab ? 0 : -1}" data-tab="${k}">${String(ic).startsWith('<') ? ic : icon(ic)}<span>${esc(label)}</span></button>`).join('')}</div>
     ${panel('site', siteTab(b))}
     ${panel('model', modelTab(b))}
     ${panel('drawings', drawingsTab(b))}
     ${panel('presentation', presentationTab(b))}
     ${panel('takeoff', takeoffTab(b))}
     ${panel('deliverables', deliverablesTab(b))}
+    ${tabs.filter((t) => t[3]).map(([k]) => panel(k, `<div class="mod-tab" data-mod-tab="${esc(k)}"></div>`)).join('')}
     <details class="more log"${ui.allActivity ? ' open' : ''}><summary><span class="label">Activity</span><span class="st">${plural(b.activity.length, 'entry', 'entries')}</span></summary>
       ${b.activity.length ? `<ol>${acts.map((a) => `<li><span class="when">${esc(dayTime(a.at))} · ${esc(a.who)}</span><span><b style="font-weight:500">${esc(a.action)}</b>${a.detail ? `: ${esc(a.detail)}` : ''}</span></li>`).join('')}</ol>
         ${b.activity.length > 8 ? `<div><button class="link" data-act="activity-more">${ui.allActivity ? 'Show the latest only' : `Show all ${b.activity.length}`}</button></div>` : ''}` : '<p class="small">Nothing has been done on this project yet. Each change is logged here with who made it and when.</p>'}
@@ -476,6 +485,7 @@ function settingsView() {
       <p class="small">${scope === 'practice'
     ? (owner ? `Everyone in ${esc(practice.name)} sees the look chosen here.` : `An owner of ${esc(practice.name)} chooses its look.`)
     : 'Signed out, or with nothing shared, each browser keeps its own look. Signed in with a practice, the practice’s look is used.'} Printing always uses white paper.</p></section>
+    <div class="mod-settings" data-mod-settings></div>
     ${artSectionHtml('settings')}
   </div>`;
 }
@@ -735,7 +745,7 @@ async function learnOutline(p) {
 /** the project page's tabs: show one, keep it in the address without drawing the page again */
 function selectTab(key, focus = false) {
   const list = $app.querySelector('[role="tablist"]');
-  if (!list || !TAB_KEYS.includes(key)) return;
+  if (!list || !tabKeys().includes(key)) return;
   for (const t of list.querySelectorAll('[role="tab"]')) { const on = t.dataset.tab === key; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); }
   for (const pn of $app.querySelectorAll('[role="tabpanel"]')) pn.hidden = pn.id !== `tp-${key}`;
   const r = route();
@@ -760,7 +770,20 @@ async function drawAddons(r, project) {
     if (mod && el) { document.title = `${mod.title} · assembl.`; await mount(el, mod.render, r.rest); }
     return;
   }
+  const part = async (host, id, fn, ...args) => { const el = document.createElement('div'); el.dataset.part = id; host.append(el); await mount(el, fn, ...args); };
+  if (r.view === 'settings') { const host = $app.querySelector('[data-mod-settings]'); if (host) for (const s of settingsParts()) await part(host, s.id, s.render); return; }
+  if (r.view === 'projects') {
+    const top = $app.querySelector('[data-mod-wall]'), els = Object.fromEntries([...$app.querySelectorAll('[data-mod-tile]')].map((el) => [el.dataset.modTile, el]));
+    for (const w of wallParts()) {
+      if (w.top && top) await part(top, w.id, w.top);
+      if (w.tiles) { try { const stop = await w.tiles(els, ctx, wallData); if (typeof stop === 'function') cleanups.push(stop); } catch { /* the tiles show without this add-on's part */ } }
+    }
+    return;
+  }
   if (r.view !== 'dash' || !project) return;
+  const heads = $app.querySelector('[data-mod-heads]');
+  if (heads) for (const h of projectHeads()) await part(heads, h.id, h.render);
+  for (const t of projectTabs()) { const el = $app.querySelector(`[data-mod-tab="${CSS.escape(t.id)}"]`); if (el) await mount(el, t.render); }
   const panels = projectPanels();
   if (!panels.length) return;
   const host = $app.querySelector('[data-mod-panels]') ?? $app.querySelector('article') ?? $app.querySelector('.wrap') ?? $app;
@@ -1093,10 +1116,10 @@ async function onChange(e) {
 function onTabKey(e) {
   const t = e.target.closest?.('[role="tab"][data-tab]');
   if (!t) return;
-  const i = TAB_KEYS.indexOf(t.dataset.tab), to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TAB_KEYS.length - 1 }[e.key];
+  const keys = tabKeys(), i = keys.indexOf(t.dataset.tab), to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: keys.length - 1 }[e.key];
   if (to === undefined) return;
   e.preventDefault();
-  selectTab(TAB_KEYS[(to + TAB_KEYS.length) % TAB_KEYS.length], true);
+  selectTab(keys[(to + keys.length) % keys.length], true);
 }
 
 /** a look chosen: for the practice (an owner; saved in the shared records) or for this browser */

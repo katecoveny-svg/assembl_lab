@@ -5,17 +5,25 @@
 //   registerRoute('crm', { title: 'Clients', render(el, ctx, rest) { ... } })   → a screen at #/crm, #/crm/<rest...>
 //   registerProjectPanel({ id: 'models', title: 'Models', order: 10, render(el, ctx) { ... } })   → a section on each project
 //   registerNav({ id: 'crm', label: 'Clients', hash: '#/crm', order: 20 })   → a link in the top bar
+//   registerProjectTab({ id: 'money', label: 'Money', icon: '<svg…>', order: 10, render(el, ctx) { ... } })
+//                                                → a tab of its own on each project page, after the page's own six
+//   registerProjectHead({ id: 'health', order: 10, render(el, ctx) { ... } })   → a part of each project's header
+//   registerWall({ id: 'health', order: 10, top(el, ctx) { ... }, tiles(els, ctx, wall) { ... } })
+//                                                → a part above the projects wall, and a part of each project's tile:
+//                                                  els is { <project id>: element }, wall is { projects, stages, tasks }
+//   registerSettings({ id: 'money', title: 'Money', order: 10, render(el, ctx) { ... } })   → a section of Settings
 //
 // ctx, given to every render: { store, account, me, project (on a project page, else null), practice (the practice in use
 // when signed in, else null), navigate(hash), redraw(flash?), esc(text) }. A render may be async and may return a function
 // that app.js calls before the screen is drawn again (to stop timers, release a 3D view and so on).
 
 /** the add-ons app.js tries to load, relative to this file */
-export const ADDONS = ['./models.js', './crm.js'];
+export const ADDONS = ['./models.js', './crm.js', './money.js'];
 
 const routes = new Map();
 const panels = [];
 const nav = [];
+const tabs = [], heads = [], walls = [], settings = [];
 
 const ID = /^[a-z][a-z0-9-]{0,30}$/;
 
@@ -40,6 +48,35 @@ export function registerNav(item) {
   if (at >= 0) nav[at] = entry; else nav.push(entry);
 }
 
+/** put an entry in a list by its id: registering the same id again replaces it */
+function keep(list, entry) { const at = list.findIndex((x) => x.id === entry.id); if (at >= 0) list[at] = entry; else list.push(entry); }
+const needs = (part, what, ...fns) => {
+  if (!ID.test(part?.id ?? '')) throw new Error(`An add-on ${what} needs a short lowercase id.`);
+  if (!fns.some((fn) => typeof part[fn] === 'function')) throw new Error(`The add-on ${what} "${part.id}" has nothing to draw.`);
+};
+
+export function registerProjectTab(tab) {
+  needs(tab, 'tab', 'render');
+  keep(tabs, { id: tab.id, label: String(tab.label ?? tab.id), icon: String(tab.icon ?? ''), order: Number(tab.order ?? 50), render: tab.render });
+}
+export function registerProjectHead(part) {
+  needs(part, 'header part', 'render');
+  keep(heads, { id: part.id, order: Number(part.order ?? 50), render: part.render });
+}
+export function registerWall(part) {
+  needs(part, 'wall part', 'top', 'tiles');
+  keep(walls, { id: part.id, order: Number(part.order ?? 50), top: typeof part.top === 'function' ? part.top : null, tiles: typeof part.tiles === 'function' ? part.tiles : null });
+}
+export function registerSettings(part) {
+  needs(part, 'settings section', 'render');
+  keep(settings, { id: part.id, title: String(part.title ?? part.id), order: Number(part.order ?? 50), render: part.render });
+}
+const sorted = (list) => [...list].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+export const projectTabs = () => sorted(tabs);
+export const projectHeads = () => sorted(heads);
+export const wallParts = () => sorted(walls);
+export const settingsParts = () => sorted(settings);
+
 export const getRoute = (name) => routes.get(name) ?? null;
 export const projectPanels = () => [...panels].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 export const navItems = () => [...nav].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
@@ -51,4 +88,4 @@ export async function loadAddons(importer = (p) => import(p)) {
 }
 
 /** for tests: forget everything registered */
-export function _reset() { routes.clear(); panels.length = 0; nav.length = 0; }
+export function _reset() { routes.clear(); for (const l of [panels, nav, tabs, heads, walls, settings]) l.length = 0; }
