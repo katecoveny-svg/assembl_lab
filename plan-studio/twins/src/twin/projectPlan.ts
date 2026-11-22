@@ -828,6 +828,7 @@ export const projectPlan: Project = {
     // the Real ground card rests the 3D view while LINZ's files arrive, and gives it back as it found it
     let pausedBefore = false;
     const groundPause = (on: boolean) => { if (on) { pausedBefore = app.paused; app.paused = true; } else app.paused = pausedBefore; };
+    if (input.kind === 'plan') void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },

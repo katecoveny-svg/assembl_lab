@@ -5,6 +5,9 @@
 // The point is typed in by the person using the tool. Looking it up sends it to the lab's feed, which asks each publisher
 // (the card says so). It is kept in this browser only: it is not written into the plan model or into a share link, so a
 // private site's location never leaves with the model. (The Real ground card reads LINZ directly and does not send it.)
+// The point can also be found from a street address (siteAddress.ts): what is typed goes to the lab's address feed, which asks
+// LINZ's public address list. The chosen address is kept in this browser beside the point, on the same terms.
+import { addressSearch, type AddressMatch } from './siteAddress';
 
 interface Fact {
   id: string; label: string; status: string; truthLabel?: string; value?: unknown; unit?: string; asOf?: string | null;
@@ -12,7 +15,7 @@ interface Fact {
   source?: { name?: string; url?: string }; licence?: { name?: string; attribution?: string; caveat?: string };
 }
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const KEY = 'assembl.siteFacts.where', LAST = 'assembl.siteFacts.last';
+const KEY = 'assembl.siteFacts.where', LAST = 'assembl.siteFacts.last', ADDR = 'assembl.siteFacts.address';
 
 /** "lat, lon" in decimal degrees, inside New Zealand's main islands */
 export function parseWhere(text: string): { lat: number; lon: number } | null {
@@ -43,12 +46,24 @@ export function siteFactsPanel(log: (msg: string) => void): HTMLElement {
   el.className = 'card'; el.id = 'siteFacts';
   el.innerHTML = `<h3>Site facts</h3>
     <p class="small">Live public maps for one point in New Zealand: parcel, zone, overlays, flood, coast, landslide, weather. It shows what each map says at the point. It is not a compliance check.</p>
-    <div class="row wrap"><input id="sfWhere" class="mono" placeholder="-36.80, 175.08" aria-label="Latitude, longitude" style="flex:1;min-width:150px" /><button class="pill solid" id="sfGo">Look up</button></div>
-    <p class="small" id="sfNote">Type a latitude and longitude. Looking up sends the point to the lab’s feed, which asks each publisher. It is kept in this browser only: not in the model, not in a share link.</p>
+    <div id="sfAddr"></div>
+    <details id="sfCoords"><summary class="small">Or type coordinates</summary>
+    <div class="row wrap"><input id="sfWhere" class="mono" placeholder="-36.80, 175.08" aria-label="Latitude, longitude" style="flex:1;min-width:150px" /><button class="pill solid" id="sfGo">Look up</button></div></details>
+    <p class="small" id="sfNote">Choose a street address, or type a latitude and longitude. Looking up sends the point to the lab’s feed, which asks each publisher. The point and address are kept in this browser only: not in the model, not in a share link.</p>
     <div id="sfOut"></div>
     <style>.sf-list{list-style:none;margin:8px 0 0;padding:0}.sf-list li{padding:8px 0;border-top:1px solid rgba(51,33,47,.12)}.sf-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.sf-val{margin:2px 0}.sf-src{opacity:.7}.sf-credit{margin-top:8px}</style>`;
   const where = el.querySelector('#sfWhere') as HTMLInputElement, out = el.querySelector('#sfOut') as HTMLElement, note = el.querySelector('#sfNote') as HTMLElement, go = el.querySelector('#sfGo') as HTMLButtonElement;
   try { where.value = localStorage.getItem(KEY) ?? ''; } catch { /* storage can be closed */ }
+  const search = addressSearch((m: AddressMatch) => {
+    where.value = `${m.lat}, ${m.lon}`;
+    try { localStorage.setItem(ADDR, JSON.stringify(m)); } catch { /* fine */ }
+    void run();
+  });
+  el.querySelector('#sfAddr')!.append(search.el);
+  try { // the address chosen for this point, shown again when the point is the same
+    const kept = JSON.parse(localStorage.getItem(ADDR) ?? 'null') as AddressMatch | null;
+    if (kept?.address && `${kept.lat}, ${kept.lon}` === where.value.trim()) search.show(kept);
+  } catch { /* nothing kept */ }
   try { // the last answer in this tab, shown again after the model is rebuilt (the facts are as fetched then, and say when)
     const last = JSON.parse(sessionStorage.getItem(LAST) ?? 'null') as { where: string; site: { facts: Record<string, Fact>; fetchedAt?: string } } | null;
     if (last?.site?.facts && last.where === where.value.trim()) {
@@ -60,6 +75,7 @@ export function siteFactsPanel(log: (msg: string) => void): HTMLElement {
     const p = parseWhere(where.value);
     if (!p) { note.textContent = 'That is not a point in New Zealand. Use decimal degrees, latitude first: -36.80, 175.08'; return; }
     try { localStorage.setItem(KEY, where.value.trim()); } catch { /* fine */ }
+    try { const kept = JSON.parse(localStorage.getItem(ADDR) ?? 'null') as AddressMatch | null; if (!kept || `${kept.lat}, ${kept.lon}` !== where.value.trim()) { localStorage.removeItem(ADDR); search.show(null); } } catch { /* fine */ }
     go.disabled = true; note.textContent = 'Asking the publishers…'; out.innerHTML = '';
     try {
       const r = await fetch(`/api/live/?feeds=site&lat=${p.lat}&lon=${p.lon}`, { headers: { accept: 'application/json' } });

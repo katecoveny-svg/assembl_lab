@@ -94,12 +94,13 @@ export function armchair(o: { colour?: number; timber?: Timber } = {}) {
   for (const s of [-1, 1]) {
     // front and back legs, the back ones raking back; an arm rail; a low side stretcher
     add(P, post(0.045, 0.045, 0.6, 0.004, 0.25, 4 + s), wood, 'front_leg', s * (W / 2 - 0.04), 0, D / 2 - 0.06);
-    add(P, post(0.045, 0.045, 0.58, 0.004, 0.25, 6 + s), wood, 'back_leg', s * (W / 2 - 0.04), 0, -D / 2 + 0.08, 0, -0.12);
+    // the back legs run on up past the arm as the back stiles, so the top rail behind the cushion is held at both ends
+    add(P, post(0.045, 0.045, 0.8, 0.004, 0.2, 6 + s), wood, 'back_leg', s * (W / 2 - 0.04), 0, -D / 2 + 0.08, 0, -0.12);
     add(P, member(tk, 0.055, 0.03, D - 0.02, 0.006, { seed: 8 + s }), [wood, wEnd], 'arm_rail', s * (W / 2 - 0.04), 0.615, 0.02);
     add(P, member(tk, 0.03, 0.05, D - 0.16, 0.004, { seed: 10 + s }), [wood, wEnd], 'side_rail', s * (W / 2 - 0.04), sy - 0.06, 0);
   }
   for (const z of [D / 2 - 0.06, -D / 2 + 0.1]) add(P, member(tk, W - 0.1, 0.06, 0.03, 0.004, { seed: 12 }), [wood, wEnd], 'cross_rail', 0, sy - 0.06, z);
-  // back frame: two raked stiles and a top rail behind the back cushion
+  // back frame: the top rail behind the back cushion, set into the two back stiles
   add(P, member(tk, W - 0.1, 0.05, 0.028, 0.004, { seed: 14 }), [wood, wEnd], 'back_rail', 0, 0.74, -D / 2 + 0.01, 0, -0.32);
   const seat = cushion(W - 0.12, 0.13, D - 0.16, { r: 0.04, crown: 0.022, front: 0.012, bulge: 0.008, piping: 0.004, wrinkle: 1.1, seed: 41, step: 0.016, open: true });
   add(P, seat.geo, C, 'seat_cushion', 0, sy + 0.065, 0.03); if (seat.piping) add(P, seat.piping, C, 'seat_welt', 0, sy + 0.065, 0.03);

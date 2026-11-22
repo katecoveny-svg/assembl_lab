@@ -43,6 +43,7 @@ Nothing was pushed, merged or deployed in making this.
 | grocery | Grocery report figures | Commerce Commission, copied in (a snapshot) | Verified (built in, not fetched) |
 | trades-feeds | Building determinations, consents | MBIE CodeHub, Stats NZ | Verified |
 | site | Facts about a piece of land (new) | LINZ, Auckland Council, Open-Meteo | See below |
+| address | Find a street address and its point (`?feeds=address&q=`) | LINZ NZ Addresses (CC BY 4.0) | Verified: see `docs/architecture/site-address.md` |
 
 Nothing here is "unavailable" or "connected-unverified" at the feed level. Each answer says whether it is "Live" (fetched from the publisher just now) or "Latest published" (the publisher's newest release), and when it was fetched.
 

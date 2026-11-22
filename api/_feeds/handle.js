@@ -7,6 +7,7 @@
 //   retailer=<slug or EMI code> adds that retailer's regional footprint to the retailers feed.
 //   → { type:"assembl.feeds", version:2, fetchedAt, place, district, feeds:{ <id>: envelope | {id,error} } }
 //   envelope = { id, label, value, values, unit, asOf, period, fetchedAt, cadence, source:{name,url}, truth:"Live"|"Latest published", truthLabel, status, statusLabel, note? }
+//   feeds=hunt&keywords=&regions=&sectors=&min=&max=&sources= returns found work from public tender notices, ranked for a practice (api/_feeds/hunt.js).
 //   feeds=site&lat=&lon= returns feeds.site.facts: one envelope per fact about that point of land (see api/_feeds/site.js).
 //
 // GET /api/live/?place=auckland (no feeds) keeps the original v1 answer used by /live.js:
@@ -40,7 +41,10 @@ export async function handleLive(q /* URLSearchParams */) {
   const ids = feedsParam.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   const bbox = q.get("bbox"), retailer = q.get("retailer");
   const geo = { lat: num(q.get("lat")), lon: num(q.get("lon") ?? q.get("lng")), radius: num(q.get("radius")), bbox: typeof bbox === "string" && /^[-\d.,]{7,80}$/.test(bbox) ? bbox : undefined,
-    retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined }; // steers the retailers feed only
+    q: (q.get("q") || "").slice(0, 300), // the address feed only; never logged or stored
+    retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined, // steers the retailers feed only
+    hunt: { keywords: (q.get("keywords") || "").slice(0, 900), regions: (q.get("regions") || "").slice(0, 300), sectors: (q.get("sectors") || "").slice(0, 200),
+      min: (q.get("min") || "").slice(0, 14), max: (q.get("max") || "").slice(0, 14), sources: (q.get("sources") || "").slice(0, 100) } }; // the hunt feed only: what a practice asked to look for (see hunt.js)
   const { feeds, cache, unknown } = await runFeeds(ids, { place, district, ...geo });
   headers["Cache-Control"] = cache ? `public, s-maxage=${cache.sMaxAge}, stale-while-revalidate=${cache.swr}` : "no-store";
   return { status: 200, headers, body: { type: "assembl.feeds", version: 2, fetchedAt: new Date().toISOString(), place, district, feeds,

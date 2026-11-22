@@ -107,7 +107,7 @@ test('every kind of row survives the trip to the table and back', () => {
   const s = toRecord('stage', { id: `${pid}:contract`, project_id: pid, key: 'contract', status: 'in_progress', started_at: T0, done_at: null });
   assert.deepEqual(s, { project_id: P, key: 'contract_admin', status: 'in_progress', started_at: T0, done_at: null, extra: {} });
   assert.deepEqual(fromRecord('stage', s), { id: `${P}:contract`, project_id: P, key: 'contract', status: 'in_progress', started_at: T0, done_at: null });
-  assert.throws(() => toRecord('invoice', { id: 'x' }), /Unknown kind/);
+  assert.throws(() => toRecord('payroll', { id: 'x' }), /Unknown kind/);
 });
 
 test('a value that does not fit its column is kept in extra and comes back as it was; the database’s own columns are never sent', () => {
@@ -163,7 +163,7 @@ test('save, get, list and remove one row in the shared store', async () => {
   assert.equal(fake.db.task.filter((t) => t.id === saved.id).length, 1);
   assert.equal(await cloud.remove('task', row.id), true);
   assert.equal(await cloud.remove('task', row.id), false);
-  await assert.rejects(cloud.list('invoice'), /Unknown kind/);
+  await assert.rejects(cloud.list('payroll'), /Unknown kind/);
   await assert.rejects(cloud.save('task', { title: 'no id' }), /needs an id/);
   assert.equal(cloud.persistent, true);
 });

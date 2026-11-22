@@ -1,6 +1,6 @@
 {
  "schema": "assembl.library.v1",
- "built": "2026-11-22T07:19:28Z",
+ "built": "2026-11-22T08:08:40Z",
  "note": "Written by tools/library-shots.py from plan-studio/twins/src/twin/library/catalogue.ts. Pictures: studio renders of the models themselves, not photographs. Dimensions: the model bounds, checked against the built model (measured).",
  "base": "/plan-studio/twins/library/",
  "categories": [
@@ -112,7 +112,7 @@
    "role": "armchair",
    "dims": {
     "w": 715,
-    "d": 820,
+    "d": 850,
     "h": 885
    },
    "material": "knitted wool, oiled oak frame",
@@ -149,13 +149,13 @@
    },
    "measured": {
     "w": 715,
-    "d": 822,
+    "d": 848,
     "h": 885
    },
-   "tris": 37804,
-   "picBytes": 21888,
+   "tris": 38252,
+   "picBytes": 21896,
    "picQuality": 88,
-   "renderMs": 25977
+   "renderMs": 12587
   },
   {
    "id": "LIB-SEAT-03",
