@@ -11,13 +11,15 @@ const cap = fig && fig.querySelector("figcaption");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const qs = new URLSearchParams(location.search);
 const FREEZE = qs.has("t") ? parseFloat(qs.get("t")) || 0 : null;   // ?t=12 holds one moment of the build, for stills
+const CAP0 = cap && cap.textContent;                                  // the page's own caption: true of the prepared picture
 
 function still() {                                   // the prepared picture of the finished house
   if (!fig || fig.querySelector("img")) return;
   const im = new Image(); im.width = 1400; im.height = 1400; im.decoding = "async";
   im.alt = "A small dark timber house on piles, with a deck, steps and a mono-pitch roof";
-  im.src = "./img/house-assembled.webp?v=20261122b";
+  im.src = "./img/house-assembled.webp?v=20261122c";
   fig.querySelector("canvas")?.remove(); fig.prepend(im);
+  if (cap) { cap.textContent = CAP0; cap.style.visibility = ""; }
 }
 function hasGL() {
   try {
@@ -27,7 +29,8 @@ function hasGL() {
   } catch { return false; }
 }
 if (fig) {
-  if (hasGL()) import("three").then(start).catch((e) => { console.warn("hero: showing the still picture.", e); still(); });
+  // while three.js loads there is no picture yet, so no caption either; the scene or the picture brings its own
+  if (hasGL()) { if (cap) cap.style.visibility = "hidden"; import("three").then(start).catch((e) => { console.warn("hero: showing the still picture.", e); still(); }); }
   else still();
 }
 
@@ -61,12 +64,22 @@ function start(THREE) {
     parts.push(pc); return pc;
   }
   function bit(pc, kind, x, y, z, sx, sy, sz, tint) {
-    const b = { pc, m: new Matrix4().compose(v(x, y, z), Q0, v(sx, sy, sz)), ax: sx >= sy && sx >= sz ? 0 : sy >= sz ? 1 : 2, tint };
+    const b = { pc, kind, m: new Matrix4().compose(v(x, y, z), Q0, v(sx, sy, sz)), ax: sx >= sy && sx >= sz ? 0 : sy >= sz ? 1 : 2, tint };
     (kinds[kind] ||= []).push(b); pc.bits.push(b);
     pc.lo.min(v(x - sx / 2, y - sy / 2, z - sz / 2)); pc.hi.max(v(x + sx / 2, y + sy / 2, z + sz / 2));
   }
   // one straight member: L along xd, its thin side T along yd, W across
   function member(step, kind, L, T, W, p, xd, yd, o) { const pc = piece(step, p, frame(xd, yd), o); bit(pc, kind, 0, 0, 0, L, T, W); return pc; }
+  // a stair stringer: a board with plumb cuts at both ends. Its top edge runs from a to b; it is dv deep measured
+  // plumb, T thick across `lat`. (A box sheared so its end cuts stand upright, as a builder cuts them.)
+  function stringer(step, a, b, dv, T, lat, o) {
+    const ax = b.clone().sub(a), q = frame(ax, lat), iq = q.clone().invert();
+    const pc = piece(step, a.clone().add(b).multiplyScalar(0.5).add(v(0, -dv / 2, 0)), q, o);
+    const m = new Matrix4().makeBasis(ax.clone().applyQuaternion(iq), v(0, T, 0), v(0, -dv, 0).applyQuaternion(iq));
+    const bb = { pc, kind: "deck", m, ax: 0 }; (kinds.deck ||= []).push(bb); pc.bits.push(bb);
+    for (const sx of [-0.5, 0.5]) for (const sy of [-0.5, 0.5]) for (const sz of [-0.5, 0.5]) { const c = v(sx, sy, sz).applyMatrix4(m); pc.lo.min(c); pc.hi.max(c); }
+    return pc;
+  }
 
   // ---------- subfloor ----------
   const PX = [-3.4, -2.04, -0.68, 0.68, 2.04, 3.4];
@@ -96,7 +109,7 @@ function start(THREE) {
   const WALLS = [
     { o: v(-3.6, 0, 2.1), d: X, n: Z, L: 7.2, h: () => 3.3, e: 0, cb: -0.04, ops: [{ u0: 0.75, u1: 5.55, y0: 0, y1: 2.2, t: "slider" }, { u0: 0.75, u1: 5.55, y0: 2.4, y1: 3.05, t: "win", panes: 4 }] },
     { o: v(3.6, 0, 2.1), d: v(0, 0, -1), n: X, L: 4.2, h: (u) => roofU(2.1 - u), e: 0.09, cb: -0.21, ct: 0.19 * K, ops: [{ u0: 1.05, u1: 2.55, y0: 0.9, y1: 2.1, t: "win", panes: 1 }] },
-    { o: v(3.6, 0, -2.1), d: v(-1, 0, 0), n: v(0, 0, -1), L: 7.2, h: () => 2.4, e: 0, cb: -0.21, ops: [{ u0: 1.05, u1: 1.95, y0: 0, y1: 2.05, t: "door" }, { u0: 3.6, u1: 6, y0: 1.5, y1: 2.1, t: "win", panes: 2 }] },
+    { o: v(3.6, 0, -2.1), d: v(-1, 0, 0), n: v(0, 0, -1), L: 7.2, h: () => 2.4, e: 0, cb: -0.21, ct: -0.006, ops: [{ u0: 1.05, u1: 1.95, y0: 0, y1: 2.05, t: "door" }, { u0: 3.6, u1: 6, y0: 1.5, y1: 2.1, t: "win", panes: 2 }] },
     { o: v(-3.6, 0, -2.1), d: Z, n: v(-1, 0, 0), L: 4.2, h: (u) => roofU(-2.1 + u), e: 0.09, cb: -0.21, ct: 0.19 * K, ops: [{ u0: 1.5, u1: 2.7, y0: 0.9, y1: 2.1, t: "win", panes: 1 }] },
   ];
   WALLS.forEach((w, wi) => {
@@ -132,7 +145,7 @@ function start(THREE) {
       for (const y of top(um) > 3 ? [1.2, 2.45] : [1.2]) member("nogs", "pine", b - a - 0.045, 0.045, 0.09, at(um, y + (i % 2 ? 0.05 : -0.05), -0.045), d, Y, { ord: ord(um) });
     });
     // top plate (raked on the end walls)
-    member("tops", "pine", (L - 2 * e) * kw, 0.045, 0.09, at(L / 2, h(L / 2) - 0.0225 * kw, -0.045), d.clone().addScaledVector(Y, slope), Y, { ord: wi });
+    member("tops", "pine", (L - 2 * e) * kw - (slope ? 0.012 : 0), 0.045, 0.09, at(L / 2, h(L / 2) - 0.0225 * kw, -0.045), d.clone().addScaledVector(Y, slope), Y, { ord: wi });
     // boards and sheets: columns across the wall, cut round the openings
     const sheath = (step, kind, pitch, t, off, a, b, bot, topOf, gap, nd) => {
       const lines = []; for (let u = a + pitch; u < b - 0.05; u += pitch) lines.push(u);
@@ -172,9 +185,9 @@ function start(THREE) {
         bit(pc, "door", -F / 2, -0.03, 0, H - F - 0.008, 0.04, W - 2 * F - 0.006);
         bit(pc, "alu", -0.03, 0.0, W / 2 - F - 0.09, 0.15, 0.05, 0.022);
       } else {                                                  // four sliding leaves on two tracks
-        const lw = (W - 2 * F) / 4 + 0.03, lh = H - 2 * F, st = 0.06;
+        const lw = (W - 2 * F + 0.09) / 4, lh = H - 2 * F, st = 0.06;     // leaves lap each other by 30, not the jambs
         for (let i = 0; i < 4; i++) {
-          const lu = o.u0 + F + (W - 2 * F) * (i + 0.5) / 4, off = -0.035 + (i % 2 ? 0.02 : -0.02);
+          const lu = o.u0 + F + i * (lw - 0.03) + lw / 2, off = -0.035 + (i % 2 ? 0.02 : -0.02);
           const lf = piece("joinery", at(lu, ym, off), q, { n, ord: ord(lu) + 0.3 });
           bit(lf, "alu", 0, 0, -(lw / 2 - st / 2), lh, 0.036, st); bit(lf, "alu", 0, 0, lw / 2 - st / 2, lh, 0.036, st);
           bit(lf, "alu", lh / 2 - st / 2, 0, 0, st, 0.036, lw - 2 * st); bit(lf, "alu", -(lh / 2 - st / 2), 0, 0, st, 0.036, lw - 2 * st);
@@ -189,7 +202,10 @@ function start(THREE) {
   for (let i = 0; i < 13; i++) member("rafters", "pine", 5.4 * K, 0.045, 0.19, U(RX(i), 0.3, 0.095), E, X, { n: N, ord: i });
   for (const sx of [-1, 1]) member("rafters", "trim", 5.4 * K, 0.045, 0.19, U(sx * 3.9225, 0.3, 0.095), E, X, { n: N, ord: 13 });
   for (const z of [2.055, -2.055]) for (let i = 0; i < 12; i++) member("blocking", "trim", 0.55125, 0.045, 0.19, U((RX(i) + RX(i + 1)) / 2, z, 0.095), X, E, { n: N, ord: i });
-  for (const sx of [-1, 1]) for (const z of [-1.4, 0.4, 2.2]) member("blocking", "pine", 0.3, 0.045, 0.19, U(sx * 3.75, z, 0.095), X, E, { n: N, ord: 12 });   // outriggers carry the verge
+  for (const sx of [-1, 1]) for (const z of [-1.4, 0.4, 2.2]) {                  // outriggers carry the verge (outside the end-wall boards)
+    const x0 = Math.abs(z) < 2.1 ? 3.62 : 3.6;
+    member("blocking", "pine", 3.9 - x0, 0.045, 0.19, U((sx * (x0 + 3.9)) / 2, z, 0.095), X, E, { n: N, ord: 12 });
+  }
   [-2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 2.9].forEach((z, i) => member("purlins", "pine", 7.89, 0.045, 0.07, U(0, z, 0.2125), X, N, { n: N, ord: i }));
   for (let i = 0; i < 20; i++) {
     const w = 0.3945, pc = piece("trays", U(-3.945 + (i + 0.5) * w, 0.3, 0.239), frame(E, N), { n: N, ord: i });
@@ -198,7 +214,10 @@ function start(THREE) {
   }
   member("fascia", "trim", 7.89, 0.02, 0.235, U(0, 3, 0.1175, 0.01), X, E, { n: Z });
   member("fascia", "trim", 7.89, 0.02, 0.235, U(0, -2.4, 0.1175, -0.01), X, E, { n: v(0, 0, -1) });
-  member("fascia", "steel", 7.89, 0.09, 0.12, v(0, roofU(-2.4) + 0.15, -2.49), X, Y, { n: v(0, 0, -1) });
+  {                                                                              // the gutter hangs on the back fascia's face
+    const f0 = U(0, -2.4, 0, -0.02), gy = roofU(-2.4) + 0.15, gz = f0.z - (gy + 0.045 - f0.y) * S - 0.06;
+    member("fascia", "steel", 7.89, 0.09, 0.12, v(0, gy, gz), X, Y, { n: v(0, 0, -1) });
+  }
   for (const sx of [-1, 1]) member("fascia", "trim", 5.44 * K, 0.02, 0.255, U(sx * 3.957, 0.3, 0.1275), E, X, { n: v(sx, 0, 0), lay: "rafters" });   // barge boards
 
   // ---------- deck, balustrade and steps ----------
@@ -222,27 +241,32 @@ function start(THREE) {
   member("drails", "deck", 7.2, 0.045, 0.14, v(0, 0.9725, 4.455), X, Y, { ord: 20 });         // cap rails
   member("drails", "deck", 2.24, 0.045, 0.14, v(-3.555, 0.9725, 3.265), Z, Y, { ord: 21 });
   member("drails", "deck", 1.085, 0.045, 0.14, v(3.555, 0.9725, 3.8425), Z, Y, { ord: 22 });
-  // steps off the east end of the deck: 8 risers of 184.5 on a 280 going, down to a paver on the ground
-  const RISE = (-0.05 - G(2.75)) / 8, GO = 0.28, SD = v(GO, -RISE, 0).normalize();
-  for (const z of [2.2225, 3.2775]) member("stairs", "deck", 2.75, 0.045, 0.24, v(3.6 + 3.7 * GO, -0.05 - 4 * RISE - 0.0625 - 0.2 * RISE, z), SD, Z, { ord: 0 });
-  for (let k = 1; k <= 7; k++) member("stairs", "deck", 0.99, 0.045, 0.3, v(3.6 + (k - 0.5) * GO, -0.05 - k * RISE - 0.0225, 2.75), Z, Y, { ord: k });
-  for (const z of [2.19, 3.345]) {
-    const bx = 3.6 + 6.5 * GO, by = -0.05 - 7 * RISE;
-    post(bx, z, G(2.75) - 0.03, by + 0.95, "stairs", { ord: 8 });
-    const a = v(3.6, 0.9725, z), b = v(bx + 0.045, by + 0.9725, z);
+  // steps off the east end of the deck, down to a level concrete pad: 8 equal risers on a 280 going. The stringers
+  // hang off the deck's end joist with plumb cuts, flush with the deck, and stand on the pad; the treads run between them.
+  // The pad is level, so it is set into the slope uphill and shows its edge downhill.
+  const PAD = { y: G(2.12) + 0.02, z0: 2.12, z1: 3.45 }, RISE = (-0.05 - PAD.y) / 8, GO = 0.28, SL = RISE / GO;
+  const DV = 0.19 * Math.hypot(1, SL), TOE = (-0.05 - DV - PAD.y) / SL, SZ = [2.235, 3.29];   // plumb depth; where the stringer meets the pad
+  const padT = PAD.y - (G(PAD.z1) - 0.03);
+  member("stairs", "stone", PAD.z1 - PAD.z0, padT, 0.9, v(3.6 + TOE + 0.3, PAD.y - padT / 2, (PAD.z0 + PAD.z1) / 2), Z, Y, { ord: -1 });
+  for (const z of SZ) stringer("stairs", v(3.6, -0.05, z), v(3.6 + TOE, -0.05 - TOE * SL, z), DV, 0.045, Z, { ord: 0 });
+  for (let k = 1; k <= 7; k++) member("stairs", "deck", SZ[1] - SZ[0] - 0.045, 0.045, 0.3, v(3.6 + (k - 0.5) * GO, -0.05 - k * RISE - 0.0225, (SZ[0] + SZ[1]) / 2), Z, Y, { ord: k });
+  const bx = 3.6 + 6.5 * GO, by = -0.05 - 7 * RISE;
+  for (const [z, x0] of [[SZ[0] - 0.0675, 3.6], [SZ[1] + 0.0675, 3.638]]) {      // newel posts on the pad; rails from the deck
+    post(bx, z, PAD.y, by + 0.95, "stairs", { ord: 8 });
+    const a = v(x0, 0.9725, z), b = v(bx + 0.045, by + 0.9725, z);
     member("stairs", "deck", a.distanceTo(b), 0.045, 0.09, a.clone().add(b).multiplyScalar(0.5), b.clone().sub(a), Y, { ord: 9 });
   }
-  member("stairs", "stone", 1.3, 0.05, 0.7, v(3.6 + 7 * GO + 0.4, G(2.75) + 0.02, 2.75), Z, Y, { ord: 10 });
-  // three steps at the back door
-  for (let k = 1; k <= 3; k++) member("stairs", "deck", 1.0, 0.045, 0.29, v(2.1, -0.16 * k - 0.0225, -2.14 - (k - 0.5) * 0.28), X, Y, { ord: 11 + k, lay: "bsteps" });
-  for (const x of [1.6225, 2.5775]) member("stairs", "deck", 1.05, 0.045, 0.2, v(x, -0.4, -2.6), v(0, -0.16, -0.28), X, { ord: 11, lay: "bsteps" });
+  // three steps at the back door, hung off the house and landing on the ground, which rises behind it
+  const BR = 0.16, BG = 0.28, BSL = BR / BG, BDV = 0.19 * Math.hypot(1, BSL), BZ = -2.12, BTOE = (-BDV - G(BZ)) / (BSL + 0.16);
+  for (const x of [1.6225, 2.5775]) stringer("stairs", v(x, 0, BZ), v(x, -BTOE * BSL, BZ - BTOE), BDV, 0.045, X, { ord: 11, lay: "bsteps" });
+  for (let k = 1; k <= 3; k++) member("stairs", "deck", 0.91, 0.045, 0.29, v(2.1, -BR * k - 0.0225, BZ - (k - 1) * BG - 0.145), X, Y, { ord: 11 + k, lay: "bsteps" });
 
   // ---------- planting: harakeke, tussock and one tī kōuka, each leaf a blade ----------
   const qa = new Quaternion(), qb = new Quaternion(), mt = new Matrix4();
   function blade(pc, x, y, z, az, tilt, len, wid, col, bend = 1, dir) {
     qa.setFromAxisAngle(Y, az); qb.setFromAxisAngle(X, tilt); qa.multiply(qb);
     if (dir) qa.premultiply(dir);
-    const b = { pc, m: new Matrix4().compose(v(x, y, z), qa, v(wid, len, len * bend)).multiply(mt.makeTranslation(0, 0.5, 0)), ax: 1, col };
+    const b = { pc, kind: "blade", m: new Matrix4().compose(v(x, y, z), qa, v(wid, len, len * bend)).multiply(mt.makeTranslation(0, 0.5, 0)), ax: 1, col };
     (kinds.blade ||= []).push(b); pc.bits.push(b);
   }
   const GREEN = ["#6f7d58", "#7b8961", "#66744f", "#87926b"], STRAW = ["#b6aa80", "#a79c72", "#c2b68e", "#9a9468"];
@@ -261,7 +285,7 @@ function start(THREE) {
       pc.r = 0.7 * s; pc.h = 1.9 * s; pc.rr = 1.45 * s;
     }
     if (type === "ti") {
-      const h = 3.1 * s, add = (m, col) => { const b = { pc, m, ax: 1, col }; (kinds.trunk ||= []).push(b); pc.bits.push(b); };
+      const h = 3.1 * s, add = (m, col) => { const b = { pc, kind: "trunk", m, ax: 1, col }; (kinds.trunk ||= []).push(b); pc.bits.push(b); };
       add(new Matrix4().compose(v(0, h / 2, 0), Q0, v(0.26, h, 0.26)), "#8d7f6d");
       for (let k = 0; k < 3; k++) {
         const dq = new Quaternion().setFromAxisAngle(Y, k * 2.094 + 0.4).multiply(new Quaternion().setFromAxisAngle(X, k ? 0.62 : 0.3));
@@ -273,8 +297,8 @@ function start(THREE) {
     }
     return pc;
   }
-  plant("ti", -4.7, -2.9);
-  [[-4.6, 2.9, 1], [-4.9, 0.4, 0.85], [5.6, -1.6, 1], [2.2, 5.7, 0.9], [-1.8, 5.9, 1.05]].forEach(([x, z, s]) => plant("flax", x, z, s));
+  plant("ti", 5.8, -3.2);                     // behind the east end, so it stands clear of the roof from the front
+  [[-5.0, 3.1, 1], [-5.2, 0.4, 0.85], [5.6, -1.6, 1], [2.2, 5.7, 0.9], [-1.8, 5.9, 1.05]].forEach(([x, z, s]) => plant("flax", x, z, s));
   [[-4.3, 4.7], [-3.1, 5.6], [0.2, 5.4], [4.3, 5.1], [6.2, 4.3], [6.3, 0.6], [4.6, -3.1], [-0.8, -3.3], [-5.2, -1.3]].forEach(([x, z]) => plant("tussock", x, z, R(0.85, 1.15)));
 
   // ---------- timing: the building order ----------
@@ -288,7 +312,7 @@ function start(THREE) {
     plants: [17.7, 0.9],
   };
   const LOW = new Set(["dboards", "dposts", "drails", "dbal", "stairs"]);       // these come in low, under the eaves
-  const TB = 20, HOLD = 5.5, RESET = 4.2, REST = 0.5, LOOP = TB + HOLD + RESET + REST;
+  const TB = 22, HOLD = 5.5, RESET = 4.2, REST = 0.5, LOOP = TB + HOLD + RESET + REST;
   for (const name in STEPS) {
     const list = parts.filter((p) => p.step === name).sort((a, b) => a.ord - b.ord);
     list.forEach((p, i) => { p.t0 = STEPS[name][0] + (list.length > 1 ? i / (list.length - 1) : 0) * STEPS[name][1]; p.dur = 1.15 * R(0.9, 1.15); });
@@ -301,13 +325,19 @@ function start(THREE) {
   }
 
   // ---------- the flat lay: every part set out in rows around the site, sheets in fanned stacks ----------
-  const layPts = [];
+  // Parts lie on the slope (tilted with it), plants stand upright. p.lc: the corners that must stay in view while it waits.
   const QY = (a) => new Quaternion().setFromAxisAngle(Y, a), LQ = { x: [QY(0), QY(Math.PI / 2)], z: [QY(-Math.PI / 2), QY(0)] };
+  const TILT = new Quaternion().setFromAxisAngle(X, Math.atan(0.16)), GN = Y.clone().applyQuaternion(TILT);
   const put = (p, cx, cz, dir, up = 0) => {
-    p.lq = p.stand ? Q0 : LQ[dir][p.turn ? 1 : 0];
-    p.lp = v(cx, G(cz) + p.T / 2 + 0.012 + up, cz).sub(p.c.clone().applyQuaternion(p.lq));
+    p.lq = p.stand ? Q0 : TILT.clone().multiply(LQ[dir][p.turn ? 1 : 0]);
+    p.lp = v(cx, G(cz), cz).addScaledVector(p.stand ? Y : GN, p.T / 2 + 0.012 + up).sub(p.c.clone().applyQuaternion(p.lq));
     const hx = (dir === "x" ? p.L : p.W) / 2, hz = (dir === "x" ? p.W : p.L) / 2;
-    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) layPts.push(v(cx + sx * hx, G(cz + sz * hz) + (p.h || 0), cz + sz * hz));
+    p.lc = [];
+    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const q = v(cx + sx * hx, G(cz + sz * hz), cz + sz * hz);
+      p.lc.push(q.clone().setY(q.y + (p.stand ? p.h : p.T + up + 0.02)));
+      if (p.stand) p.lc.push(q);
+    }
   };
   const pickLay = (names) => parts.filter((p) => names.includes(p.lay));
   // rows: long sides along dir (growing sd), one beside the next (growing sa); a new block once a row is `across` wide
@@ -330,31 +360,32 @@ function start(THREE) {
       put(p, x0 + j * pitch + p.L / 2 + i * fx, z0 + Math.sign(fz || 1) * p.W / 2 + i * fz, "x", i * (p.T + 0.004));
     });
   }
-  // west of the site: the frames
-  lay(["studs"], -5.4, -3.4, "x", -1, 1, 8.9, 0.075);
-  lay(["tops", "plates"], -9.1, -3.4, "z", 1, -1, 2.4, 0.08);
-  lay(["nogs", "blocking"], -11.6, -3.4, "x", -1, 1, 8.9, 0.075, 0.2);
-  // behind it: the subfloor and the roof
-  lay(["joists"], -12.9, -4.0, "z", -1, 1, 4.8, 0.09);
-  lay(["bearers"], -7.4, -4.0, "x", 1, -1, 3.0, 0.09);
-  lay(["piles"], -7.4, -7.4, "z", -1, 1, 3.4, 0.11);
-  stack(["floor"], -3.6, -7.4, 0.09, -0.09, 99, 0);
-  lay(["rafters"], 0.2, -4.0, "z", -1, 1, 5.0, 0.09);
-  lay(["purlins", "fascia"], 5.6, -4.0, "x", 1, -1, 2.4, 0.1);
-  stack(["trays"], 5.6, -6.6, 0, -0.21, 99, 0);
-  lay(["bsteps"], 11.8, -6.6, "x", 1, -1, 2.2, 0.1, 0.25);
-  // east: the joinery, made up and lying on its back
-  lay(["joinery"], 7.6, -3.4, "z", 1, 1, 5.9, 0.2, 0.25);
-  // in front: lining, then the deck, balustrade and steps (they come in low, under the eaves), the cladding in one
-  // long row, and the plants lined up like nursery stock
-  stack(["lining"], -13.0, 6.1, 0, 0.12, 10, 3.7);
-  lay(["dboards"], -5.2, 6.1, "x", 1, 1, 3.1, 0.05, 0.2);
-  lay(["dbal", "dposts"], 2.8, 6.1, "z", 1, 1, 7.8, 0.05, 0.2);
-  lay(["drails"], 2.8, 7.6, "x", 1, 1, 1.3, 0.07, 0.2);
-  lay(["stairs"], 11.2, 6.1, "z", 1, 1, 3.0, 0.1, 0.25);
-  lay(["clad"], -13.0, 10.4, "z", 1, 1, 27.2, 0.02, 0.25);
-  lay(["cladh", "liningh"], 9.0, 10.4, "x", 1, 1, 3.2, 0.1, 0.2);
-  lay(["plants"], -12.4, 15.9, "x", 1, 1, 0.5, 0.2, 0.2);
+  // Set out in rings by time, so the kit shrinks toward the house as it is used: what goes in last waits nearest.
+  // Behind the house: the plants (nursery stock, upright) and the back steps, then the roof (it flies over the walls).
+  lay(["plants"], 3.4, -4.7, "x", -1, -1, 3.3, 0.25, 0.25);
+  lay(["bsteps"], 3.8, -4.7, "x", 1, -1, 2.2, 0.1, 0.25);
+  lay(["rafters"], -9.8, -8.4, "x", 1, -1, 5.0, 0.09);
+  stack(["trays"], -3.8, -8.4, 0, -0.16, 99, 0);                  // fanned so each tray is carried by the one below
+  lay(["purlins", "fascia"], -9.8, -13.6, "x", 1, -1, 2.4, 0.1);
+  lay(["blocking"], -1.5, -13.6, "x", 1, -1, 2.0, 0.075, 0.2);
+  // in front and to the east: the deck, balustrade and stair, which come in low under the eaves; the joinery, made up
+  // and lying on its back
+  lay(["dbal", "dposts"], 0.4, 7.8, "z", 1, 1, 7.8, 0.05, 0.2);
+  lay(["drails"], 1.4, 10.3, "x", 1, 1, 1.3, 0.07, 0.2);
+  lay(["dboards"], -9.6, 8.2, "x", 1, 1, 3.1, 0.05, 0.2);
+  lay(["stairs"], 8.6, 5.2, "z", 1, 1, 3.0, 0.1, 0.25);
+  lay(["joinery"], 7.4, 4.6, "z", -1, 1, 6.0, 0.2, 0.25);
+  // the outer ring, used first: the subfloor behind to the east, the frames to the west, lining and cladding in front
+  lay(["joists"], 5.0, -4.8, "z", -1, 1, 4.8, 0.09);
+  lay(["bearers"], 10.4, -4.8, "z", -1, 1, 3.0, 0.09);
+  lay(["piles"], 5.0, -12.0, "z", -1, 1, 3.4, 0.11);
+  stack(["floor"], 9.0, -12.4, 0.09, -0.09, 99, 0);
+  lay(["studs"], -6.9, -3.6, "x", -1, 1, 8.9, 0.075);
+  lay(["tops", "plates"], -10.6, -3.6, "z", 1, -1, 3.4, 0.08);
+  lay(["nogs"], -14.6, -3.6, "x", -1, 1, 8.9, 0.075, 0.2);
+  stack(["lining"], -14.0, 5.4, 0, 0.12, 10, 3.7);
+  lay(["clad"], -14.0, 12.0, "z", 1, 1, 27.2, 0.02, 0.25);
+  lay(["cladh", "liningh"], 8.2, 12.0, "x", 1, 1, 3.2, 0.1, 0.2);
 
   // ---------- renderer, light, materials ----------
   const PAPER = "#FFFDFB", PLUM = "#654A4E";
@@ -506,58 +537,138 @@ function start(THREE) {
     }
     for (const m of meshes) if (m.dirty) { m.instanceMatrix.needsUpdate = true; m.fx.needsUpdate = true; m.dirty = false; }
   }
-  for (const p of parts) {                                    // how high each part is carried
-    const top = Math.max(p.lp.y, p.hov.y);
-    p.arc = p.low ? 1.25 + rnd() * 0.5 : Math.max(1.6, 5.6 + rnd() * 1.4 - top);
+  // a plant whose way in does not cross the house (or the stair) is carried low, beside it; any other lifts over the roof
+  const crosses = (a, b, m) => [[-4.1, -2.7, 4.1, 4.6], [3.6, 2.1, 6.3, 3.5]].some(([x0, z0, x1, z1]) => {
+    let t0 = 0, t1 = 1; const dx = b.x - a.x, dz = b.z - a.z;
+    for (const [p, q] of [[-dx, a.x - (x0 - m)], [dx, x1 + m - a.x], [-dz, a.z - (z0 - m)], [dz, z1 + m - a.z]]) {
+      if (Math.abs(p) < 1e-9) { if (q < 0) return false; continue; }
+      const r = q / p; if (p < 0) t0 = Math.max(t0, r); else t1 = Math.min(t1, r);
+    }
+    return t0 <= t1;
+  });
+  for (const p of parts) {                                    // how high each part is carried, and the top of its flight
+    const mid = (p.lp.y + p.hov.y) / 2, low = p.low || (p.stand && !crosses(p.lp, p.p, p.rr * 0.8));
+    p.arc = low ? 1.25 + rnd() * 0.5 : Math.max(1.6, 6.0 + rnd() * 1.4 - mid);   // high flights top out 6 to 7.4 m up
+    const pk = p.lp.clone().add(p.hov).multiplyScalar(0.5); pk.y += p.arc;   // the top of its flight, and its own height there
+    p.peak = [pk, pk.clone().setY(pk.y + (p.stand ? p.h : Math.min(1.5, p.L / 2)))];
   }
 
   // ---------- camera: starts high over the flat lay, comes down and round to the finished house ----------
-  // Both ends are fitted to the frame, whatever its shape, so nothing is cut off on a phone or a wide screen.
+  // Its angle follows the clock of the build. Its aim and distance are planned (every half second of the build, each
+  // time the frame changes size) so that every part still to come stays inside the frame where it lies, as does any part
+  // in the air, and the finished house fills it. Turned by hand, it steps back if that angle needs more room.
   const homePts = [];
-  for (const x of [-4.0, 6.35]) for (const z of [-2.6, 4.6]) homePts.push(v(x, G(z), z), v(x, 3.7, z));
-  for (const p of parts) if (p.stand) for (const [sx, sz] of [[-1, 0], [1, 0], [0, 1], [0, -1]]) homePts.push(v(p.p.x + sx * p.rr, p.p.y + 0.3, p.p.z + sz * p.rr), v(p.p.x + sx * p.rr * 0.7, p.p.y + p.h, p.p.z + sz * p.rr * 0.7));
-  const EL0 = 1.02, EL1 = 0.33, AZ0 = 0.1, AZ1 = 0.6, tgt = v(), fq = v(), F0 = { c: v(), d: 60 }, F1 = { c: v(), d: 30 };
-  function fit(F, pts, el, az, mx, my, ox) {
-    const f = v(-Math.cos(el) * Math.sin(az), -Math.sin(el), -Math.cos(el) * Math.cos(az)), r = v().crossVectors(f, Y).normalize(), u = v().crossVectors(r, f);
-    const th = Math.tan((camera.fov * Math.PI) / 360), tw = th * camera.aspect;
+  {
+    const lo = v(1e9, 1e9, 1e9), hi = v(-1e9, -1e9, -1e9), c = v();
+    for (const p of parts) if (!p.stand) for (const b of p.bits) {
+      tm.multiplyMatrices(pm4.compose(p.p, p.q, ONE), b.m);
+      for (const sx of [-0.5, 0.5]) for (const sy of [-0.5, 0.5]) for (const sz of [-0.5, 0.5]) { c.set(sx, sy, sz).applyMatrix4(tm); lo.min(c); hi.max(c); }
+    }
+    for (const x of [lo.x, hi.x]) for (const z of [lo.z, hi.z]) homePts.push(v(x, G(z), z), v(x, hi.y, z));
+  }
+  for (const p of parts) if (p.stand) {                       // each plant's outermost leaf tips (and highest), allowing for sway
+    const tips = p.bits.map((b) => v(0, 0.5, b.kind === "trunk" ? 0 : 0.34).applyMatrix4(b.m)), out = new Set();
+    for (let k = 0; k < 8; k++) { const dx = Math.cos(k * 0.785), dz = Math.sin(k * 0.785); out.add(tips.reduce((m, q) => (q.x * dx + q.z * dz > m.x * dx + m.z * dz ? q : m))); }
+    out.add(tips.reduce((m, q) => (q.y > m.y ? q : m)));
+    for (const q of out) { const r = Math.hypot(q.x, q.z) || 1; homePts.push(q.clone().add(v((q.x / r) * 0.12, 0.05, (q.z / r) * 0.12)).add(p.p)); }
+  }
+  const homeShade = [];                                        // the shadows of the house and the plants on the ground: they
+  {                                                            // may come nearer the edge than the things that throw them
+    const L = sun.target.position.clone().sub(sun.position), src = homePts.slice(8);          // the leaves and trunks, and
+    for (const x of [-3.97, 3.97]) for (const z of [-2.45, 3.0]) src.push(v(x, roofU(z) + 0.25, z));   // the roof's corners
+    for (const q of src) { const hh = q.y - G(q.z); if (hh < 0.5) continue; const z = q.z + (L.z / -L.y) * hh; homeShade.push(v(q.x + (L.x / -L.y) * hh, G(z), z)); }
+  }
+  const EL0 = 1.02, EL1 = 0.33, AZ0 = 0.1, AZ1 = 0.6, tgt = v(), fq = v(), cf = v(), cr = v(), cu = v();
+  const camK = (tau) => smooth(clamp((tau - 1.0) / (TB - 2.5)));   // high over the kit at first, down and round by the end
+  const elAt = (tau) => lerp(EL0, EL1, camK(tau)), azAt = (tau) => lerp(AZ0, AZ1, camK(tau)) + 0.05 * clamp((tau - TB * 0.8) / (TB * 0.2));
+  const swing = (tau) => 0.085 * (0.35 + 0.65 * camK(tau));          // how far the idle drift swings it round
+  let MX = 0.9, MY = 0.86, OX = 0;                                     // the frame's usable half-width, half-height, centre
+  function axes(el, az) { cf.set(-Math.cos(el) * Math.sin(az), -Math.sin(el), -Math.cos(el) * Math.cos(az)); cr.crossVectors(cf, Y).normalize(); cu.crossVectors(cr, cf); }
+  function fit(F, pts, el, az) {
+    axes(el, az); const th = Math.tan((camera.fov * Math.PI) / 360), tw = th * camera.aspect;
     F.c.set(0, 0, 1);
-    for (let k = 0; k < 8; k++) {
+    for (let k = 0; k < 6; k++) {
       let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-      for (const p of pts) { fq.copy(p).sub(F.c); const dz = F.d + fq.dot(f), sx = fq.dot(r) / (dz * tw), sy = fq.dot(u) / (dz * th); x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
-      F.c.addScaledVector(r, ((x0 + x1) / 2 - ox) * F.d * tw).addScaledVector(u, ((y0 + y1) / 2) * F.d * th);
-      F.d *= Math.max((x1 - x0) / 2 / mx, (y1 - y0) / 2 / my);
+      for (const p of pts) { fq.copy(p).sub(F.c); const dz = F.d + fq.dot(cf), sx = fq.dot(cr) / (dz * tw), sy = fq.dot(cu) / (dz * th); x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
+      F.c.addScaledVector(cr, ((x0 + x1) / 2 - OX) * F.d * tw).addScaledVector(cu, ((y0 + y1) / 2) * F.d * th);
+      F.d *= Math.max((x1 - x0) / 2 / MX, (y1 - y0) / 2 / MY);
     }
   }
-  function look(tau, drift, yaw) {
-    const c = smooth(smooth(clamp((tau - 0.2) / (TB * 0.8)))), hold = clamp((tau - TB * 0.8) / (TB * 0.2));
-    const el = lerp(EL0, EL1, c) + 0.012 * Math.sin(drift * 0.23), az = lerp(AZ0, AZ1, c) + 0.085 * Math.sin(drift * 0.16) * (0.35 + 0.65 * c) + 0.05 * hold + yaw;
-    const d = F0.d * Math.pow(F1.d / F0.d, c);
-    tgt.lerpVectors(F0.c, F1.c, c);
+  function need(c, pts, el, az, loose = 0) {     // the nearest the camera may come, aimed at c, with every point in the frame
+    axes(el, az); const th = Math.tan((camera.fov * Math.PI) / 360), tw = th * camera.aspect, R = Math.min(0.98, OX + MX + loose), Lf = MX - OX, T = Math.min(0.98, MY + loose); let d = 0;
+    for (const p of pts) { fq.copy(p).sub(c); const a = fq.dot(cr); d = Math.max(d, Math.max(a / (R * tw), -a / (Lf * tw), Math.abs(fq.dot(cu)) / (T * th)) - fq.dot(cf)); }
+    return d;
+  }
+  const needAll = (c, tau, el, az) => Math.max(need(c, kitAt(tau), el, az), need(c, homeShade, el, az, 0.2));
+  const PDT = 0.5, NP = Math.round(TB / PDT) + 1, path = Array.from({ length: NP }, () => ({ c: v(), d: 0 })), kit = [];
+  function kitAt(tau) {                           // what must be in view now: parts still to come, parts in the air, the house
+    kit.length = 0;
+    for (const p of parts) if (p.t0 + p.dur > tau) { for (const q of p.lc) kit.push(q); if (p.t0 < tau + PDT) kit.push(...p.peak); }
+    for (const q of homePts) kit.push(q);
+    return kit;
+  }
+  function plan() {
+    const F = { c: v(), d: 30 }, dn = [];
+    for (let k = 0; k < NP; k += 2) { const tau = k * PDT; fit(F, kitAt(tau), elAt(tau), azAt(tau)); path[k].c.copy(F.c); }   // aim: each second,
+    for (let k = 1; k < NP; k += 2) path[k].c.lerpVectors(path[k - 1].c, path[Math.min(NP - 1, k + 1)].c, k + 1 < NP ? 0.5 : 0);   // halves between
+    const cs = path.map((s) => s.c.clone());                          // aim: smoothed over about a second
+    for (let k = 0; k < NP; k++) { const c = path[k].c.set(0, 0, 0); let ws = 0; for (let j = -4; j <= 4; j++) { const w = Math.exp((-j * j) / 8); c.addScaledVector(cs[clamp(k + j, 0, NP - 1)], w); ws += w; } c.multiplyScalar(1 / ws); }
+    for (let k = 0; k < NP; k++) { const tau = k * PDT; dn.push(needAll(path[k].c, tau, elAt(tau), azAt(tau))); }   // distance
+    const Wn = 3, dil = dn.map((_, k) => Math.max(...dn.slice(Math.max(0, k - Wn), k + Wn + 1)));   // widen, then average:
+    for (let k = 0; k < NP; k++) { let s = 0; for (let j = -Wn; j <= Wn; j++) s += dil[clamp(k + j, 0, NP - 1)]; path[k].d = s / (2 * Wn + 1); }   // never nearer than needed
+  }
+  function pathAt(tau) {                          // a smooth (Catmull-Rom) reading of the path; sets tgt, returns the distance
+    const x = clamp(tau / PDT, 0, NP - 1), i = Math.min(NP - 2, Math.floor(x)), f = x - i, P = (j) => path[clamp(j, 0, NP - 1)];
+    const w0 = (((-f + 2) * f - 1) * f) / 2, w1 = ((3 * f - 5) * f * f + 2) / 2, w2 = (((-3 * f + 4) * f + 1) * f) / 2, w3 = ((f - 1) * f * f) / 2;
+    tgt.set(0, 0, 0).addScaledVector(P(i - 1).c, w0).addScaledVector(P(i).c, w1).addScaledVector(P(i + 1).c, w2).addScaledVector(P(i + 2).c, w3);
+    return P(i - 1).d * w0 + P(i).d * w1 + P(i + 1).d * w2 + P(i + 2).d * w3;
+  }
+  // The path is planned for the view without the idle drift; drifted or turned by hand, the camera steps back as far as
+  // that angle needs right now (quickly), and comes back in (slowly) once it no longer does.
+  let dNow = 0;
+  function look(tau, drift, yaw, dt) {
+    const el = elAt(tau) + 0.012 * Math.sin(drift * 0.23), az = azAt(tau) + swing(tau) * Math.sin(drift * 0.16) + yaw;
+    const dp = pathAt(tau), want = needAll(tgt, tau, el, az);
+    dNow = dt ? lerp(dNow, want, 1 - Math.exp(-dt * (want > dNow ? 12 : 2))) : want;
+    const d = Math.max(dp, dNow);
     camera.position.set(tgt.x + d * Math.cos(el) * Math.sin(az), tgt.y + d * Math.sin(el), tgt.z + d * Math.cos(el) * Math.cos(az));
     camera.lookAt(tgt);
   }
 
   // ---------- size, clock, touch ----------
-  let W = 0, H = 0;
+  let W = 0, H = 0, planned = "";
+  const words = document.querySelector(".hero-text");
+  function wordsEnd() {                           // the right-hand end of the headline, sub-line, words and buttons, on screen
+    let r = -1e9; const rg = document.createRange();
+    for (const el of words.querySelectorAll("h1, p")) { rg.selectNodeContents(el); for (const q of rg.getClientRects()) if (q.width) r = Math.max(r, q.right); }
+    return r;
+  }
   function size() {
     const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return false;
     W = w; H = h; renderer.setPixelRatio(dpr); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = dpr * (w < 520 ? 0.7 : 1);
-    // full width (phone, tablet): centred. Beside the headline: kept clear of the soft left edge.
-    const bleed = w >= innerWidth - 2, mx = bleed ? 0.93 : 0.84, ox = bleed ? 0 : 0.08;
-    fit(F0, layPts, EL0, AZ0, mx, 0.9, ox); fit(F1, homePts, EL1, AZ1 + 0.03, mx, 0.9, ox); return true;
+    // Words above the scene (phone, tablet): centred, clear of the soft top and bottom edges. Words beside it (desktop):
+    // the scene keeps to the right of the last letter, and of the soft left edge, with room to spare.
+    const cb = cv.getBoundingClientRect(), wb = words && words.getBoundingClientRect(), beside = wb && wb.bottom > cb.top + 0.25 * h;
+    MY = 0.86;
+    if (!beside) { MX = 0.88; OX = 0; }
+    else { const L = Math.max(-0.72, ((wordsEnd() - cb.left + 32) / w) * 2 - 1), R = 0.86; MX = (R - L) / 2; OX = (R + L) / 2; }
+    const key = [w, h, MX, MY, OX].map((q) => q.toFixed(3)).join();
+    if (key !== planned) { const t0 = performance.now(); plan(); planned = key; stats.plan = +(performance.now() - t0).toFixed(1); stats.plans = (stats.plans || 0) + 1; }
+    return true;
   }
-  const stats = { n: 0, anim: 0, animMax: 0, all: 0, parts: parts.length, boxes: meshes.reduce((a, m) => a + m.count, 0) };   // ms: anim is this file's own work per frame, all includes the draw call
+  const stats = { n: 0, anim: 0, animMax: 0, all: 0, ring: new Float32Array(512), parts: parts.length, boxes: meshes.reduce((a, m) => a + m.count, 0) };   // ms: anim is this file's own work per frame, all includes the draw call
   let t = 0, tau = 0, drift = 0, yaw = 0, yawV = 0, heldUntil = 0, dragging = null, lastTouch = -1e9, shown = false;
   const scrub = { on: false, y0: 0, t0: 0, last: scrollY, at: 0, target: 0 };
   const tauOf = (t) => (t < TB ? t : t < TB + HOLD ? TB : t < TB + HOLD + RESET ? TB * (1 - smooth(smooth((t - TB - HOLD) / RESET))) : 0);
-  function draw() {
+  function draw(dt) {
     const a = performance.now();
-    pose(tau); look(tau, drift, yaw);
+    pose(tau); look(tau, drift, yaw, dt);
     uni.uTime.value = drift;
     if (moved) { renderer.shadowMap.needsUpdate = true; moved = false; }
     const b = performance.now();
     renderer.render(scene, camera);
     stats.n++; stats.anim += b - a; stats.all += performance.now() - a; if (stats.n > 3 && b - a > stats.animMax) stats.animMax = b - a;
+    stats.ring[stats.n % 512] = b - a;
     if (!shown) { shown = true; cv.classList.add("on"); }
   }
   let raf = 0, prev = 0, slow = 0;
@@ -571,14 +682,14 @@ function start(THREE) {
       if (sec - scrub.at > 2.5) { scrub.on = false; t = Math.min(tau, TB); }
     } else { t = (t + dt) % LOOP; tau = tauOf(t); }
     if (!dragging) { yaw += yawV * dt; yawV *= Math.exp(-dt * 4.5); if (sec - lastTouch > 4) yaw *= Math.exp(-dt * 0.9); }
-    draw();
+    draw(dt);
     // a slow device gets fewer pixels rather than a slow picture
     if (raw > 0.03 && raw < 0.2) { if (++slow > 45 && dpr > 1) { dpr = Math.max(1, dpr - 0.5); slow = 0; size(); } } else if (slow > 0) slow--;
   }
   const still1 = reduce || FREEZE !== null;                    // one frame, no loop
-  let onScreen = true;
+  let onScreen = true, lost = false;
   function run() {
-    const go = !still1 && !document.hidden && onScreen;
+    const go = !still1 && !lost && !document.hidden && onScreen;
     if (go && !raf) { prev = performance.now(); raf = requestAnimationFrame(tick); }
     if (!go && raf) { cancelAnimationFrame(raf); raf = 0; }
   }
@@ -586,9 +697,10 @@ function start(THREE) {
   fig.prepend(cv);
   size();
   new ResizeObserver(() => { if (size() && (still1 || !raf)) draw(); }).observe(cv);
+  document.fonts?.ready.then(() => { if (size() && (still1 || !raf)) draw(); });     // the words' width changes when the font arrives
   if ("IntersectionObserver" in window) new IntersectionObserver((es) => { onScreen = es[es.length - 1].isIntersecting; run(); }).observe(fig);
   document.addEventListener("visibilitychange", run);
-  cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); if (raf) cancelAnimationFrame(raf); raf = -1; still(); });
+  cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); lost = true; run(); still(); });
 
   if (still1) { tau = FREEZE === null ? TB : FREEZE; drift = qs.has("d") ? parseFloat(qs.get("d")) : 0; yaw = qs.has("yaw") ? parseFloat(qs.get("yaw")) : 0; draw(); }
   else {
@@ -615,15 +727,18 @@ function start(THREE) {
     }, { passive: true });
     run();
   }
+  // the count is the house's own parts (the planting is counted apart), from the same list that moves the model
+  const houseParts = parts.filter((p) => !p.stand).length; stats.houseParts = houseParts;
   if (cap) cap.textContent = reduce
-    ? `A house of ${parts.length} parts, modelled in code and drawn in your browser. Not a photograph.`
-    : `A house of ${parts.length} parts, modelled in code and assembled in your browser. Not a photograph.`;
+    ? `A house of ${houseParts} parts, modelled in code and drawn in your browser. Not a photograph.`
+    : `A house of ${houseParts} parts, modelled in code and assembled in your browser. Not a photograph.`;
+  if (cap) cap.style.visibility = "";
   // for checking and for making the still picture: hold a moment, jump the clock, look from anywhere, save a frame
   window.__assemblHero = {
-    stats, parts, TB, LOOP, get tau() { return tau; }, get yaw() { return yaw; }, get running() { return raf > 0; }, get dpr() { return dpr; },
+    stats, parts, TB, LOOP, camera, get tau() { return tau; }, get yaw() { return yaw; }, get running() { return raf > 0; }, get dpr() { return dpr; },
     seek: (x) => { tau = x; draw(); },
     at: (x) => { t = x; tau = tauOf(t); draw(); },
     view: (el, az, r, tx, ty, tz) => { pose(tau); const d = r / Math.tan((camera.fov * Math.PI) / 360); camera.position.set(tx + d * Math.cos(el) * Math.sin(az), ty + d * Math.sin(el), tz + d * Math.cos(el) * Math.cos(az)); camera.lookAt(tx, ty, tz); renderer.shadowMap.needsUpdate = true; renderer.render(scene, camera); },
-    shot: (w, h) => { const d0 = dpr; dpr = 1; renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = 2; fit(F1, homePts, EL1, AZ1 + 0.03, 0.93, 0.93, 0); tau = TB; drift = 0; yaw = 0; draw(); const u = cv.toDataURL("image/png"); dpr = d0; size(); draw(); return u; },
+    shot: (w, h) => { const d0 = dpr; dpr = 1; renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = 2; MX = MY = 0.9; OX = 0; plan(); tau = TB; drift = 0; yaw = 0; draw(); const u = cv.toDataURL("image/png"); dpr = d0; planned = ""; size(); draw(); return u; },
   };
 }
