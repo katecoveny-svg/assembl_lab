@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { onRequest } from '../../functions/api/live.js';
 import { clearMemo, UA } from '../../api/_feeds/util.js';
 import { fetchSignals, SIGNAL_SOURCES, NOT_WIRED } from '../../api/_feeds/signals.js';
-import { BEEHIVE_FEEDS, feedsFor, isChallenge, SIGNAL_LIMITS } from '../../api/_feeds/signals-beehive.js';
+import { BEEHIVE_FEEDS, feedsFor, isChallenge, SIGNAL_LIMITS, resetBeehiveBackoff, backingOff } from '../../api/_feeds/signals-beehive.js';
 import { GAZETTE_QUERIES, gazetteUrl } from '../../api/_feeds/signals-gazette.js';
 import {
   parseBeehiveRss, parseDigitalNzGazette, classify, classifyGazette, toSignal, scoreSignal, rankSignals, linkSignals, whereIs, placesIn, statedAmount, parseLens,
@@ -36,7 +36,7 @@ const routes = (over = {}) => [
   }],
   [(u) => u.host === 'api.digitalnz.org', (u, init) => (over.dnz ? over.dnz(u, init) : json(u.searchParams.getAll('and[subject][]').includes('Establishment of a school') ? DNZ.schools : u.searchParams.get('page') === '1' ? DNZ.land : { search: { results: [] } }))],
 ];
-test.beforeEach(() => { clearMemo(); SIGNAL_LIMITS.ms = 8000; });
+test.beforeEach(() => { clearMemo(); resetBeehiveBackoff(); SIGNAL_LIMITS.ms = 8000; });
 
 // ---- reading Beehive ---------------------------------------------------------------------------------------------------------------
 test('a Beehive portfolio feed is read into releases: title, link, NZ day, summary; speeches and off-site links are left out', () => {
@@ -46,6 +46,8 @@ test('a Beehive portfolio feed is read into releases: title, link, NZ day, summa
   assert.equal(d.title, 'Drury gets land for a new primary school'); assert.equal(d.url, 'https://www.beehive.govt.nz/release/drury-gets-land-new-primary-school');
   assert.equal(d.day, '2026-11-10'); assert.equal(d.portfolio, 'Education'); assert.equal(d.source, 'beehive'); assert.match(d.summary, /future primary school/);
   assert.ok(!r.some((x) => /speech|example\.com/.test(x.url)));
+  const m = parseBeehiveRss(XML.maori).find((x) => x.id === '920005');
+  assert.ok(m, 'a slug with a macron (percent-encoded, as Beehive writes it) is kept');
 });
 
 test('feed text is data: entity declarations give nothing, markup and scripts are stripped, entities decoded, sizes bounded', () => {
@@ -274,9 +276,21 @@ test('a bot-protection page from Beehive is reported as blocked, not worked arou
   const wall = '<html><head><META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW"></head><body><iframe src="/_Incapsula_Resource?SWUDNSAI=31">Request unsuccessful. Incapsula incident ID: 1</iframe></body></html>';
   await withFetch(routes({ beehive: () => text(wall) }), async (calls) => {
     await assert.rejects(fetchSignals({ hunt: { sectors: 'education' } }), /bot-protection page/);
-    assert.ok(calls.every((c) => c.init.headers['user-agent'] === UA), 'asked once each, as itself, with no retry under another name');
+    assert.ok(calls.length <= 2, `stops after the first challenge (two lanes): ${calls.length} calls`);
+    assert.ok(calls.every((c) => c.init.headers['user-agent'] === UA), 'asked as itself, with no retry under another name');
+    assert.ok(backingOff(), 'then waits before asking again');
+    await assert.rejects(fetchSignals({ hunt: { sectors: 'education' } }), /bot-protection page/);
+    assert.ok(calls.length <= 2, 'nothing more is asked while it waits');
   });
-  clearMemo();
+  clearMemo(); resetBeehiveBackoff();
+  await withFetch(routes(), async () => { await fetchSignals({ hunt: { sectors: 'education' } }); });
+  await withFetch(routes({ beehive: () => text(wall) }), async () => {
+    SIGNAL_LIMITS.ms = 8000;
+    const out = await fetchSignals({ hunt: { keywords: 'school' } }); // keywords read every portfolio: the ones read before come from the warm copy
+    const bee = out.values.sources.find((s) => s.id === 'beehive');
+    assert.equal(bee.ok, true); assert.equal(bee.partial, true); assert.ok(out.value >= 3, 'the copies already held are still used');
+  });
+  clearMemo(); resetBeehiveBackoff();
   await withFetch(routes({ beehive: () => text(wall) }), async () => {
     const out = await fetchSignals({ hunt: { sectors: 'education' }, env: { DIGITALNZ_API_KEY: 'k' } });
     const bee = out.values.sources.find((s) => s.id === 'beehive');

@@ -382,7 +382,8 @@ export function rankSignals(records, lens, now = new Date(), limit = 40) {
 const MAX_XML = 2_000_000, MAX_ITEMS = 60;
 const tag = (block, name) => { const m = block.match(new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)<\\/${name}>`, "i")); return m ? m[1].replace(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/, "$1") : ""; };
 const text1 = (s, max) => markupToText(decodeEntities(String(s))).replace(/\s+/g, " ").trim().slice(0, max);
-export const isBeehiveRelease = (url) => { try { const u = new URL(url); return u.protocol === "https:" && u.hostname === "www.beehive.govt.nz" && !u.port && !u.username && /^\/release\/[a-z0-9-]{3,200}$/.test(u.pathname); } catch { return false; } };
+// release slugs keep their macrons percent-encoded ("/release/10m-investment-new-ringat%C5%AB-marae-complex")
+export const isBeehiveRelease = (url) => { try { const u = new URL(url); return u.protocol === "https:" && u.hostname === "www.beehive.govt.nz" && !u.port && !u.username && /^\/release\/(?:[a-z0-9-]|%[0-9a-f]{2}){3,300}$/i.test(u.pathname); } catch { return false; } };
 
 /** Beehive RSS (one portfolio) to records. Only ministerial releases (/release/...), never speeches. Feed text is data: never run. */
 export function parseBeehiveRss(xml, feed = {}) {

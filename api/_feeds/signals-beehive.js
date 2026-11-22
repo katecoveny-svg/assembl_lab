@@ -7,8 +7,9 @@
 // permission, not a named Creative Commons licence (flagged for Kate in docs/architecture/pipeline-signals-sources.md). The lab keeps only
 // the title, date and link of a release and writes its own reason; the summary is read to classify the release and is never shown.
 //
-// Bot protection: from the sandbox the site answered with an Incapsula challenge page. That is never worked around: an answer that is a
-// challenge page is reported as "blocked by the publisher's bot protection" and the source is left out of that answer.
+// Bot protection: from the sandbox the site answered with an Incapsula challenge page. From Cloudflare (branch preview, 22 Nov 2026) one
+// call read 6 of 8 feeds and the next, half a minute later, got challenge pages for all 4 it asked. That is never worked around: a challenge
+// page is reported as "blocked by the publisher's bot protection", the instance backs off (below), and last good copies are used if it has any.
 import { getText, memo } from "./util.js";
 import { parseBeehiveRss } from "../../architecture/js/signals-rank.js";
 
@@ -38,7 +39,9 @@ export const feedUrl = (f) => `${BEEHIVE}/taxonomy/term/${f.term}/feed`;
 
 /** an answer that is a bot-check page rather than the feed */
 export const isChallenge = (text) => /_Incapsula_Resource|Incapsula incident|Pardon Our Interruption|cf-chl|Just a moment\.\.\./i.test(String(text).slice(0, 4000));
-export class BlockedError extends Error { constructor(host) { super(`${host} answered with a bot-protection page; not worked around`); this.blocked = true; } }
+export class BlockedError extends Error {
+  constructor(host, waiting = false) { super(waiting ? `not asked: ${host} showed a bot-protection page a few minutes ago, so the lab is waiting` : `${host} answered with a bot-protection page; not worked around`); this.blocked = true; }
+}
 
 /** The feeds a lens needs: those serving one of its sectors, or all of them for keywords or the cultural switch. */
 export function feedsFor(lens = {}) {
@@ -48,11 +51,20 @@ export function feedsFor(lens = {}) {
   return BEEHIVE_FEEDS.filter((f) => f.sectors.some((s) => want.has(s)));
 }
 
-/** Read one portfolio feed: at most once an hour per warm instance, 8 s timeout, the last good copy if the site does not answer. */
+// Being a light reader. A portfolio feed changes a few times a week, so a good copy is kept for three hours. Feeds are read two at a time.
+// After a bot-check page the instance asks Beehive nothing more for 20 minutes and uses the copies it already has. This lowers the load;
+// it does not get past the check (same honest user agent, no retry under another name, nothing done to the page).
+export const BACKOFF_MS = 20 * 60e3, FRESH_MS = 3 * 60 * 60e3, LANES = 2;
+let backoffUntil = 0;
+export const resetBeehiveBackoff = () => { backoffUntil = 0; };
+export const backingOff = (now = Date.now()) => now < backoffUntil;
+
+/** Read one portfolio feed: a three-hour copy per warm instance, 8 s timeout, the last good copy if the site does not answer or is backing off. */
 export async function readBeehiveFeed(f) {
-  return memo(`signals:beehive:${f.term}`, 60 * 60e3, async () => {
+  return memo(`signals:beehive:${f.term}`, FRESH_MS, async () => {
+    if (backingOff()) throw new BlockedError("www.beehive.govt.nz", true);
     const xml = await getText(feedUrl(f), { ms: SIGNAL_LIMITS.ms, headers: { accept: "application/rss+xml, application/xml, text/xml" } });
-    if (isChallenge(xml)) throw new BlockedError("www.beehive.govt.nz");
+    if (isChallenge(xml)) { backoffUntil = Date.now() + BACKOFF_MS; throw new BlockedError("www.beehive.govt.nz"); }
     if (!/<rss\b/i.test(xml)) throw new Error("the Beehive feed did not answer with RSS");
     return { records: parseBeehiveRss(xml, f), fetchedAt: new Date().toISOString() };
   });
@@ -63,7 +75,10 @@ export async function readBeehiveFeed(f) {
  * Returns { records, fetchedAt, read, failed:[{ feed, error }], blocked, stale }.
  */
 export async function readBeehive(lens = {}, feeds = feedsFor(lens)) {
-  const settled = await Promise.allSettled(feeds.map((f) => readBeehiveFeed(f)));
+  const settled = new Array(feeds.length);
+  let next = 0;
+  const lane = async () => { while (next < feeds.length) { const i = next++; try { settled[i] = { status: "fulfilled", value: await readBeehiveFeed(feeds[i]) }; } catch (e) { settled[i] = { status: "rejected", reason: e }; } } };
+  await Promise.all(Array.from({ length: Math.min(LANES, feeds.length) }, lane));
   const records = [], failed = []; let blocked = false, stale = false, fetchedAt = null;
   settled.forEach((s, i) => {
     if (s.status === "fulfilled") { records.push(...s.value.records); stale ||= !!s.value.stale; fetchedAt = fetchedAt && fetchedAt > s.value.fetchedAt ? fetchedAt : s.value.fetchedAt; }
