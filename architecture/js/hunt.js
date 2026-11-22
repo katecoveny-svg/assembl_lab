@@ -10,6 +10,7 @@ import { readerScript } from './gmail-reader-script.js';
 import { INBOX_SETTING, cleanInboxItem, mergeInbox, tidyInbox, rankInbox } from './hunt-inbox.js';
 import { clock, dayName, shortDay } from './crm-model.js';
 import { icon as pageIcon } from './icons.js';
+import { createRulesLane } from './hunt-rules.js'; // "Rule changes coming": its own module and stylesheet (hunt-rules.js, hunt-rules.css)
 import {
   REGIONS, SECTORS, SOURCES, SHOWN_MAX, SETTING, emptyHunt, cleanHunt, huntIsEmpty, huntQuery, sourcesOn, readAnswer, cleanSignal, fitWord, fitSteps, daysLeft, buyerInitials,
   addedAs, enquiryFromSignal, cleanDismissed, dismiss, restore, scopeOf, cacheFresh, cleanLead, cleanEarlySignal, KIND_LABEL, KIND_NOTE,
@@ -120,6 +121,9 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
   }
   const readKept = async (id) => { try { return (await ctx.store.get('setting', id))?.value ?? null; } catch { return null; } };
   const writeKept = async (id, value) => { try { await ctx.store.save('setting', { id, value }); } catch { /* the page works without its memory: the next visit looks again */ } };
+
+  // ---- rules lane: "Rule changes coming", under the leads (all of it is in hunt-rules.js) ------------------------------------------------------
+  const rules = createRulesLane(ctx, { regions: () => S.settings.regions, readOnly, redraw: draw, fetch: fetchImpl, now, readKept, writeKept, scope });
 
   // ---- looking ----------------------------------------------------------------------------------------------------------------------------
   /** the live feed: one call, to the lab's own address */
@@ -287,6 +291,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     loadReader().catch(() => {});
     S.dismissed = cleanDismissed(await readKept(SETTING.dismissed(scope)), now());
     await look();
+    rules.start().catch(() => {}); // the rules lane looks on its own and never holds up the tenders
   }
 
   // ---- the three things a person can do: add, "Not for us", change what to look for -----------------------------------------------------------
@@ -430,10 +435,10 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     if (huntIsEmpty(S.settings)) {
       return `<div class="hunt-setup"><ul class="hunt-cards is-ghosts" aria-hidden="true">${ghost()}${ghost()}${ghost()}</ul>
         <div class="hunt-setup-t"><p class="hunt-empty-h">${icon('search')}<span>Set what to look for</span></p><p>Say which words, sectors and regions suit the practice, and the workspace will find public tender notices that fit, every day. Nothing is looked up until then.</p>
-        ${canEdit ? `<button type="button" class="hunt-btn solid" data-hunt="open-settings">${icon('sliders')}<span>Set what to look for</span></button>` : '<p class="hunt-dim">An owner of the practice sets this.</p>'}</div></div>`;
+        ${canEdit ? `<button type="button" class="hunt-btn solid" data-hunt="open-settings">${icon('sliders')}<span>Set what to look for</span></button>` : '<p class="hunt-dim">An owner of the practice sets this.</p>'}</div></div>${rules.html()}`;
     }
     if (!sourcesOn(S.settings).length && !S.alertFinds.length) {
-      return `<p class="hunt-empty"><span>${icon('alert')}<span>No source is switched on. Switch one on in “What to look for”.</span></span></p>${laneHtml()}`;
+      return `<p class="hunt-empty"><span>${icon('alert')}<span>No source is switched on. Switch one on in “What to look for”.</span></span></p>${laneHtml()}${rules.html()}`;
     }
     if (S.phase === 'error') {
       const cards = S.older ? `<p class="hunt-flash">${icon('clock')}<span>${esc(lookedAt())}. It may be out of date.</span></p><ul class="hunt-cards" role="list">${visible().slice(0, SHOWN_MAX).map(cardHtml).join('')}</ul>` : '';
@@ -445,7 +450,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     const none = !shown.length ? `<p class="hunt-empty"><span>${icon('search')}<span>${S.onlyCultural && all.length ? 'None of today’s findings carry kaupapa Māori or Indigenous words. Press “Cultural work” again to see them all.' : hid.length ? 'Everything found is hidden.' : `Nothing fits right now. ${S.answer?.considered ? `${plural(S.answer.considered, 'open tender')} looked at. ` : ''}New notices are looked at again tomorrow.`}</span></span></p>` : '';
     const more = shown.length > SHOWN_MAX ? `<p class="hunt-dim">${shown.length - SHOWN_MAX} more fit but are not shown. Tighten the words or regions to see the best ones.</p>` : '';
     const hiddenList = hid.length ? `<div class="hunt-hidden"><button type="button" class="hunt-link" data-hunt="toggle-hidden" aria-expanded="${S.showHidden}">${icon('eye')}<span>${S.showHidden ? 'Hide the hidden' : `${hid.length} hidden as not for us`}</span></button>${S.showHidden ? `<ul>${hid.map((s) => `<li><span>${esc(s.title)}</span><button type="button" class="hunt-link" data-hunt="back" data-id="${esc(s.id)}">Bring back</button></li>`).join('')}</ul>` : ''}</div>` : '';
-    return `${sourcesNote}${filters}${shown.length ? `<ul class="hunt-cards" role="list">${sorted.map(cardHtml).join('')}</ul>` : none}${more}${laneHtml()}${hiddenList}`;
+    return `${sourcesNote}${filters}${shown.length ? `<ul class="hunt-cards" role="list">${sorted.map(cardHtml).join('')}</ul>` : none}${more}${laneHtml()}${rules.html()}${hiddenList}`;
   }
 
   function html() {
@@ -470,6 +475,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
 
   // ---- events (crm.js hands these on; they only act on elements that carry data-hunt) ---------------------------------------------------------
   async function click(ev) {
+    if (await rules.click(ev)) return true; // the rules lane's own buttons carry data-rules
     const t = ev.target?.closest?.('[data-hunt]');
     if (!t) return false;
     const act = t.dataset.hunt;
@@ -504,7 +510,8 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
 
   return {
     html, start, click, submit, look, add, addAlerts, addFiles, loadInbox, notForUs, bringBack, saveSettings, loadSettings,
-    stop() { gone = true; run++; listen(false); },
+    stop() { gone = true; run++; listen(false); rules.stop(); },
+    rules,
     get state() { return S; },
   };
 }

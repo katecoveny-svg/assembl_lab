@@ -9,6 +9,7 @@
 //   envelope = { id, label, value, values, unit, asOf, period, fetchedAt, cadence, source:{name,url}, truth:"Live"|"Latest published", truthLabel, status, statusLabel, note? }
 //   feeds=hunt&keywords=&regions=&sectors=&min=&max=&sources= returns found work from public tender notices, ranked for a practice (api/_feeds/hunt.js).
 //   feeds=signals&keywords=&regions=&sectors=&cultural=&sources= returns early signals (Beehive releases, Gazette notices) ranked with the same lens (api/_feeds/signals.js).
+//   feeds=rules[&regions=] returns NZ legislation that may change how buildings are designed, consented, funded or protected (api/_feeds/rules.js; needs LEGISLATION_API_KEY).
 //   feeds=site&lat=&lon= returns feeds.site.facts: one envelope per fact about that point of land (see api/_feeds/site.js).
 //
 // GET /api/live/?place=auckland (no feeds) keeps the original v1 answer used by /live.js:

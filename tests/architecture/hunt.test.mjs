@@ -28,7 +28,8 @@ const json = (b, status = 200) => ({ ok: status < 400, status, json: async () =>
 /** a stand-in feed that records what it was asked */
 function feed(answer = ANSWER()) {
   const calls = [];
-  const f = async (url) => { calls.push(String(url)); if (typeof answer === 'function') return answer(url); return json(answer); };
+  // the rules lane (hunt-rules.js) asks the same address for feeds=rules; it is not a tender question, so it is answered and not counted here
+  const f = async (url) => { if (String(url).includes('feeds=rules')) return json({ feeds: { rules: { fetchedAt: '2026-11-22T00:00:00Z', values: { rules: [], sources: [] } } } }); calls.push(String(url)); if (typeof answer === 'function') return answer(url); return json(answer); };
   f.calls = calls;
   return f;
 }
