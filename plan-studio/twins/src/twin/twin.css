@@ -115,7 +115,17 @@ ul.small li { margin: 4px 0; }
 .tr-len input, .tr-opts input { width: 5.5em; font: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; background: var(--ivory); }
 .tr-opts { display: flex; gap: 16px; flex-wrap: wrap; margin: 6px 0 10px; font-size: 13px; }
 .tr-truth { margin-top: 8px; }
-@media (max-width: 640px) { .tr-plans { grid-template-columns: 1fr; } .tr-thumb { width: 120px; } }
+/* the read's rooms, each with its name and where the name came from */
+.tr-rooms { margin: 6px 0 4px; }
+.tr-rooms p { margin: 0 0 4px; }
+.tr-rooms ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tr-rooms li { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.tr-rn { flex: 1 1 150px; max-width: 340px; min-width: 0; min-height: 34px; font: inherit; font-size: 14px; color: var(--ink); border: 1px solid var(--line2); border-radius: 8px; padding: 4px 8px; background: #fff; }
+.tr-rsrc { font: 11px 'IBM Plex Mono', monospace; border: 1px solid var(--line2); border-radius: 999px; padding: 2px 8px; white-space: nowrap; color: var(--mauve); }
+.tr-rsrc.drawn { background: #F1EAE9; border-color: var(--rose); color: var(--plum); }
+.tr-rsrc.person { background: rgba(217, 186, 203, 0.18); border-color: var(--plum); color: var(--ink); }
+.tr-rdim { font-size: 12px; color: var(--muted, #756771); white-space: nowrap; }
+@media (max-width: 640px) { .tr-plans { grid-template-columns: 1fr; } .tr-thumb { width: 120px; } .tr-rn { flex-basis: 100%; max-width: none; font-size: 16px; } }
 
 /* finishes schedule */
 .finGroup { border: 0; border-top: 1px solid rgba(51, 33, 47, 0.12); margin: 10px 0 0; padding: 8px 0 0; }
