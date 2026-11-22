@@ -252,7 +252,11 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     if (nameLabel) nameLabel.hidden = st.phase === 'in';
     if (st.phase === 'starting') slot.innerHTML = '<span class="acct-state">Checking sign-in…</span>';
     else if (st.phase === 'out') {
-      slot.innerHTML = `<span class="acct-state">Not signed in</span><button class="btn acct-btn" data-acct="signin"${off}>${st.busy === 'signin' ? 'Opening Google…' : 'Sign in with Google'}</button>`;
+      // [owner switch] Sign-in is offered only once the shared records answer: until the owner has exposed the arch schema
+      // and allowed this page's address for sign-in, Google could send a person back to another of the project's sites.
+      slot.innerHTML = st.shared === 'ready'
+        ? `<span class="acct-state">Not signed in</span><button class="btn acct-btn" data-acct="signin"${off}>${st.busy === 'signin' ? 'Opening Google…' : 'Sign in with Google'}</button>`
+        : '<span class="acct-state">Sign-in: not switched on yet</span>';
     } else {
       const where = st.practice ? `${esc(st.practice.name)} · ${ROLE_SAYS[st.practice.role].toLowerCase()}` : st.shared === 'ready' ? 'no practice yet' : 'not shared';
       slot.innerHTML = `<span class="acct-who"><span class="acct-lab">Working as</span><span class="acct-name">${esc(st.user.name)}</span><span class="acct-state">${where}</span></span>
