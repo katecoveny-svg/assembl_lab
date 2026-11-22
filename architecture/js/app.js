@@ -21,7 +21,7 @@ const store = createSwitch(createStore(browserBackend()));
 const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me') });
 const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
-const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, animated: false, learn: [] };
+const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, wallAt: 0, learn: [] };
 let me = '';
 let kept = new Map(); // the files kept for the project on screen (in this browser, or in the shared records), by file id
 let shown = null; // [cloud] the project on screen, for wording that depends on where it is kept
@@ -211,8 +211,10 @@ async function projectsView() {
         <button class="link" data-act="project-remove" data-id="${esc(p.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(p.name)}</span></button></div></li>`;
   }).join('');
   ui.learn = projects.filter((p) => p.model?.file?.id && !outlineFor(p.model, outlines)).slice(0, 6); // covers still to work out
-  const anim = ui.animated ? '' : ' rise'; // tiles fade and rise in once, the first time the wall is shown
-  ui.animated = true;
+  // tiles fade and rise in once, when the wall is first shown (the page may draw twice as sign-in answers: both count as first)
+  const now = performance.now();
+  if (!ui.wallAt) ui.wallAt = now;
+  const anim = now - ui.wallAt < 900 ? ' rise' : '';
   return `<div class="wrap">
     <section class="hero"><p class="label">Projects</p><h1><span class="accent">From the first site visit</span> to completion.</h1>
       <dl class="bignums"><div><dt>Projects</dt><dd>${projects.length}</dd></div><div><dt><span class="dot go" aria-hidden="true"></span>Under way</dt><dd>${count('go')}</dd></div>
