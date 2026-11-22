@@ -32,7 +32,7 @@ import { artHero } from './artwork.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const attr = esc;
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-export const CSS_VERSION = '6dcc5790ee'; // the first ten of pursuit.css's sha-256: tests/architecture/pursuit.test.mjs fails when it is out of step
+export const CSS_VERSION = '7ac66dc281'; // the first ten of pursuit.css's sha-256: tests/architecture/pursuit.test.mjs fails when it is out of step
 export const API = '/api/pursuit';
 
 // ---- the stylesheet ---------------------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ const icon = (name, cls = '') => `<svg class="ps-i ${cls}" viewBox="0 0 24 24" w
 
 export const STEPS = [
   { key: 'notice', label: 'Notice', icon: 'notice' }, { key: 'ideas', label: 'Ideas', icon: 'ideas' }, { key: 'draft', label: 'Draft', icon: 'draft' },
-  { key: 'requirements', label: 'Requirements', icon: 'rules' }, { key: 'esg', label: 'ESG', icon: 'esg' }, { key: 'visuals', label: 'Visuals', icon: 'visuals' }, { key: 'pack', label: 'Pack', icon: 'pack' },
+  { key: 'requirements', label: 'Require\u00adments', icon: 'rules' }, { key: 'esg', label: 'ESG', icon: 'esg' }, { key: 'visuals', label: 'Visuals', icon: 'visuals' }, { key: 'pack', label: 'Pack', icon: 'pack' },
 ];
 const EFFORT_WORD = { small: 'Small effort', medium: 'Medium effort', large: 'Large effort' };
 const RISK_WORD = { low: 'Low risk', medium: 'Medium risk', high: 'High risk' };
@@ -273,7 +273,7 @@ async function renderScreen(el, ctx, rest = []) {
         ${readOnly ? '' : `<div class="ps-acts"><button class="ps-btn solid" type="submit">${icon('check')}<span>Save the notice</span></button><a class="ps-btn" href="#/pursuit/${encodeURIComponent(st.e.id)}/ideas">${icon('ideas')}<span>Next: ideas</span></a></div>`}
       </form>
       <aside class="ps-side">
-        ${n.why ? `<section class="ps-card"><h2 class="ps-h">${icon('flag')}<span>Why Found work picked it</span></h2><p>${esc(n.why)}.</p></section>` : ''}
+        ${n.why ? `<section class="ps-card"><h2 class="ps-h">${icon('flag')}<span>Why Found work picked it</span></h2><p>${esc(n.why.charAt(0).toUpperCase() + n.why.slice(1))}.</p></section>` : ''}
         <section class="ps-card"><h2 class="ps-h">${icon('clock')}<span>History</span></h2>${p.history.length ? `<ol class="ps-hist">${p.history.slice().reverse().slice(0, 8).map((h) => `<li><strong>${esc(h.what)}</strong><span>${esc(ago(h.at))}${h.who ? ` · ${esc(h.who)}` : ''}</span></li>`).join('')}</ol>` : '<p class="ps-dim">Nothing yet. Each save, ask and edit is listed here.</p>'}</section>
       </aside>
     </div>`;
@@ -338,7 +338,7 @@ async function renderScreen(el, ctx, rest = []) {
         ${reqs.length ? `<p class="ps-chips">${reqs.map((r) => `<a class="ps-chip${(x?.cites ?? []).includes(r.id) ? ' is-cited' : ''}" href="${attr(r.url)}" target="_blank" rel="noopener noreferrer" title="${attr(`${r.publisher}, read ${longDay(r.read_on)}`)}">${icon('rules', 'ps-i-s')}<span>${esc(r.title)}</span></a>`).join('')}</p>` : ''}
         ${extra(s.key)}
         ${s.key === 'fees' ? `<p class="ps-fees">${icon('alert')}<span>${esc(FEES_TEXT)} Write the fee proposal yourself, in the pack or in the buyer’s own form.</span></p>`
-          : d ? `<label class="ps-f wide"><span class="vh">${esc(s.title)}: the text</span><textarea data-ps-sec="${s.key}" rows="${Math.min(22, Math.max(5, Math.ceil(body.length / 85) + body.split('\n').length))}" ${readOnly ? 'readonly' : ''}>${esc(body)}</textarea></label>
+          : d ? `<label class="ps-f wide"><span class="vh">${esc(s.title)}: the text</span><textarea data-ps-sec="${s.key}" rows="${Math.min(24, Math.max(4, body.split(/\n/).reduce((a, l) => a + Math.max(1, Math.ceil(l.length / 105)), 0) + 1))}" ${readOnly ? 'readonly' : ''}>${esc(body)}</textarea></label>
           <p class="ps-sec-f" data-sec-f="${s.key}">${gaps ? pill(`${plural(gaps, 'gap')} to fill`, 'is-need', 'alert') : x ? pill('No gaps marked', 'is-flat', 'check') : ''}${figs.length ? pill(`Check ${figs.length === 1 ? 'this figure' : 'these figures'}: ${figs.slice(0, 5).join(', ')}`, 'is-need', 'alert') : ''}${(x?.needs ?? []).length ? `<span class="ps-dim">To add: ${esc(x.needs.join('; '))}</span>` : ''}</p>` : ''}
       </section>`;
     };
@@ -467,7 +467,7 @@ async function renderScreen(el, ctx, rest = []) {
     // measure every block at the page's own width, then pack them into pages
     const meter = document.createElement('div');
     meter.className = 'ps-sheet ps-measure'; meter.setAttribute('aria-hidden', 'true');
-    meter.innerHTML = `<div class="pk-body">${blocks.map((b) => `<div class="pk-b pk-${b.kind}">${b.html}</div>`).join('')}</div>`;
+    meter.innerHTML = `<div class="pk-body">${blocks.map((b) => `<div class="pk-b pk-k-${b.kind}">${b.html}</div>`).join('')}</div>`;
     (el.querySelector('.ps') ?? el).append(meter); // inside the studio, so the same rules lay it out
     await Promise.all([...meter.querySelectorAll('img')].map((i) => i.decode?.().catch(() => {})));
     try { await document.fonts?.ready; } catch { /* fine */ }
@@ -476,9 +476,9 @@ async function renderScreen(el, ctx, rest = []) {
     meter.remove();
     const pages = paginate(blocks, heights, pageH), foot = packFooter(practiceName());
     const art = artHero();
-    out.innerHTML = pages.map((ids, i) => `<section class="ps-sheet${ids.some((k) => blocks[k].kind === 'cover') ? ' is-cover' : ''}" aria-label="Page ${i + 1} of ${pages.length}">
+    out.innerHTML = pages.map((ids, i) => `<section class="ps-sheet${ids.some((k) => blocks[k].kind === 'cover') ? ` is-cover${art ? ' has-art' : ''}` : ''}" aria-label="Page ${i + 1} of ${pages.length}">
         ${i === 0 && art ? `<div class="pk-art">${art}</div>` : ''}
-        <div class="pk-body">${ids.map((k) => `<div class="pk-b pk-${blocks[k].kind}">${blocks[k].html}</div>`).join('')}</div>
+        <div class="pk-body">${ids.map((k) => `<div class="pk-b pk-k-${blocks[k].kind}">${blocks[k].html}</div>`).join('')}</div>
         <footer class="pk-foot"><span>${esc(foot)}</span><span>Page ${i + 1} of ${pages.length}</span></footer></section>`).join('');
     if (msg) msg.textContent = `${plural(pages.length, 'page')}, laid out for A4.`;
     fitSheets();

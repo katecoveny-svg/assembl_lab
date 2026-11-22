@@ -56,8 +56,9 @@ export function sceneData(answer, point) {
     buildings.push({ ring, area: Math.round(area(ring)), onSite: !!parcel && inside(centroid(ring), parcel) });
   }
   const far = [...buildings.flatMap((b) => b.ring), ...(parcel ?? [])].reduce((m, [x, y]) => Math.max(m, Math.hypot(x, y)), 0);
+  const focus = parcel ? parcel.reduce((m, [x, y]) => Math.max(m, Math.hypot(x, y)), 0) : 25;
   return {
-    buildings, parcel, radius: Math.max(40, Math.min(RADIUS + 20, far || 60)),
+    buildings, parcel, radius: Math.max(40, Math.min(RADIUS + 20, far || 60)), focus: Math.max(15, Math.min(RADIUS, focus)),
     parcelArea: parcelFact?.values?.calcAreaM2 ?? null, asOf: fp?.asOf ?? null, count: buildings.length,
     problems: [!fp ? 'The building outlines did not come back.' : '', !parcel ? 'No parcel boundary came back for this point.' : ''].filter(Boolean),
   };
@@ -108,6 +109,8 @@ const niceBar = (r) => (r > 90 ? 50 : r > 45 ? 20 : 10);
  */
 export async function mountScene(host, { data, massing, look = 'assembl', label = 'Massing study, not a design', spin = false } = {}) {
   const T = await loadThree(), L = LOOKS[look] ?? LOOKS.assembl, owned = [], R = data.radius;
+  // the part to frame: the parcel and the block, with a margin of street around them
+  const F = Math.max(22, Math.min(R, Math.max((data.focus ?? 25) * 1.3, (Math.hypot(massing.w, massing.d) / 2 + Math.hypot(massing.x, massing.z)) * 1.35)));
   const s = new T.Scene(); s.background = new T.Color(L.ground);
   const keep = (...o) => { owned.push(...o); return o[0]; };
   // ground, grid every 10 m
@@ -144,7 +147,7 @@ export async function mountScene(host, { data, massing, look = 'assembl', label 
   const massMat = keep(new T.MeshLambertMaterial({ color: L.mass, transparent: L.massA < 1, opacity: L.massA })), massEdge = keep(new T.LineBasicMaterial({ color: L.massEdge }));
   const mass = new T.Group(); s.add(mass);
   let massGeoms = [];
-  const tag = textSprite(T, label, { colour: L.ink, size: 64, weight: 500, width: Math.max(16, R * 0.3), back: look === 'sketch' ? 'rgba(0,0,0,0.72)' : 'rgba(255,253,251,0.86)' });
+  const tag = textSprite(T, label, { colour: L.ink, size: 64, weight: 500, width: Math.max(14, F * 0.62), back: look === 'sketch' ? 'rgba(0,0,0,0.72)' : 'rgba(255,253,251,0.86)' });
   owned.push({ dispose: tag.dispose }); s.add(tag.sprite);
   let M = { ...massing };
   const buildMass = (m) => {
@@ -153,26 +156,28 @@ export async function mountScene(host, { data, massing, look = 'assembl', label 
     const mesh = new T.Mesh(g, massMat); mesh.castShadow = true;
     mass.add(mesh, new T.LineSegments(e, massEdge));
     mass.position.set(m.x, m.h / 2, -m.z); mass.rotation.y = (-m.turn * Math.PI) / 180;
-    tag.sprite.position.set(m.x, m.h + Math.max(4, R * 0.06), -m.z);
+    tag.sprite.position.set(m.x, m.h + Math.max(3, F * 0.12), -m.z);
   };
   // north and a scale bar, on the ground near the south-east and south-west corners
   const dirs = [];
   const north = new T.Group();
   const arrow = new T.Shape([new T.Vector2(0, 5.5), new T.Vector2(2.2, -2.5), new T.Vector2(0, -1.2), new T.Vector2(-2.2, -2.5)]);
-  const ar = new T.Mesh(keep(new T.ShapeGeometry(arrow).rotateX(-Math.PI / 2)), keep(new T.MeshBasicMaterial({ color: L.ink })));
+  // north and the scale bar are map marks: drawn over everything, so a building never hides them
+  const mark = (o) => { o.renderOrder = 9; if (o.material) { o.material.depthTest = false; o.material.transparent = true; } return o; };
+  const ar = mark(new T.Mesh(keep(new T.ShapeGeometry(arrow).rotateX(-Math.PI / 2)), keep(new T.MeshBasicMaterial({ color: L.ink }))));
   ar.position.y = 0.08; north.add(ar);
-  const nLab = textSprite(T, 'N', { colour: L.ink, size: 96, weight: 500, width: 5 }); owned.push({ dispose: nLab.dispose }); nLab.sprite.position.set(0, 1.2, -9.5); north.add(nLab.sprite);
-  const k = R * 0.012 + 0.55; north.scale.set(k, k, k); north.position.set(R * 0.62, 0, R * 0.55); s.add(north); dirs.push(north);
-  const barLen = niceBar(R), bar = new T.Group();
-  const bw = Math.max(0.5, R * 0.012);
+  const nLab = textSprite(T, 'N', { colour: L.ink, size: 96, weight: 500, width: 5 }); owned.push({ dispose: nLab.dispose }); nLab.sprite.position.set(0, 0.8, -8.6); north.add(nLab.sprite);
+  const k = F * 0.026 + 0.25; north.scale.set(k, k, k); north.position.set(F * 1.05, 0, F * 0.3); s.add(north); dirs.push(north);
+  const barLen = niceBar(F * 1.1), bar = new T.Group();
+  const bw = Math.max(0.6, F * 0.03);
   for (let i = 0; i < 2; i++) {
-    const seg = new T.Mesh(keep(new T.PlaneGeometry(barLen / 2, bw).rotateX(-Math.PI / 2)), keep(new T.MeshBasicMaterial({ color: i ? L.ground : L.ink })));
+    const seg = mark(new T.Mesh(keep(new T.PlaneGeometry(barLen / 2, bw).rotateX(-Math.PI / 2)), keep(new T.MeshBasicMaterial({ color: i ? L.ground : L.ink }))));
     seg.position.set(barLen / 4 + (i * barLen) / 2, 0.08, 0); bar.add(seg);
   }
-  const outline = new T.LineLoop(keep(new T.BufferGeometry().setFromPoints([new T.Vector3(0, 0.09, -bw / 2), new T.Vector3(barLen, 0.09, -bw / 2), new T.Vector3(barLen, 0.09, bw / 2), new T.Vector3(0, 0.09, bw / 2)])), keep(new T.LineBasicMaterial({ color: L.ink })));
+  const outline = mark(new T.LineLoop(keep(new T.BufferGeometry().setFromPoints([new T.Vector3(0, 0.09, -bw / 2), new T.Vector3(barLen, 0.09, -bw / 2), new T.Vector3(barLen, 0.09, bw / 2), new T.Vector3(0, 0.09, bw / 2)])), keep(new T.LineBasicMaterial({ color: L.ink }))));
   bar.add(outline);
-  const bLab = textSprite(T, `${barLen} m`, { colour: L.ink, size: 72, width: Math.max(6, R * 0.09) }); owned.push({ dispose: bLab.dispose }); bLab.sprite.position.set(barLen / 2, 1.5, -bw * 2.6); bar.add(bLab.sprite);
-  bar.position.set(-R * 0.78, 0, R * 0.62); s.add(bar);
+  const bLab = textSprite(T, `${barLen} m`, { colour: L.ink, size: 72, width: Math.max(5, F * 0.2) }); owned.push({ dispose: bLab.dispose }); bLab.sprite.position.set(barLen / 2, 1.5, -bw * 2.6); bar.add(bLab.sprite);
+  bar.position.set(-F * 0.62, 0, F * 0.98); s.add(bar);
   // light: sky, and the sun from the north, as in New Zealand
   s.add(new T.HemisphereLight(...L.hemi));
   const sun = new T.DirectionalLight(0xffffff, L.sun); sun.position.set(-R * 0.35, R * 1.25, -R * 0.9); sun.castShadow = true;
@@ -190,9 +195,9 @@ export async function mountScene(host, { data, massing, look = 'assembl', label 
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.outputColorSpace = T.SRGBColorSpace;
   const cam = new T.PerspectiveCamera(34, 1, 0.5, R * 12);
-  const V = { angle: { az: 0.72, el: 0.62, dist: 1.85 }, top: { az: 0.0001, el: 1.55, dist: 2.25 }, street: { az: 0.35, el: 0.16, dist: 1.05 } };
-  let az = V.angle.az, el = V.angle.el, dist = R * V.angle.dist, alive = true, frame = 0, drag = null;
-  const target = () => new T.Vector3(M.x * 0.6, Math.min(M.h, 12) * 0.3, -M.z * 0.6);
+  const V = { angle: { az: 0.72, el: 0.6, dist: 3.1 }, top: { az: 0.0001, el: 1.55, dist: 3.6 }, street: { az: 0.35, el: 0.14, dist: 1.9 } };
+  let az = V.angle.az, el = V.angle.el, dist = F * V.angle.dist, alive = true, frame = 0, drag = null;
+  const target = () => new T.Vector3(M.x * 0.5, Math.min(M.h, 12) * 0.25, -M.z * 0.5);
   const place = () => { const t = target(); cam.position.set(t.x + dist * Math.cos(el) * Math.sin(az), t.y + dist * Math.sin(el), t.z + dist * Math.cos(el) * Math.cos(az)); cam.lookAt(t); };
   const draw = () => { if (!alive) return; place(); renderer.render(s, cam); };
   const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(draw); };
@@ -202,13 +207,13 @@ export async function mountScene(host, { data, massing, look = 'assembl', label 
   const down = (e) => { drag = { x: e.clientX, y: e.clientY, az, el }; canvas.setPointerCapture?.(e.pointerId); };
   const move = (e) => { if (!drag) return; az = drag.az - (e.clientX - drag.x) * 0.008; el = Math.min(1.55, Math.max(0.08, drag.el + (e.clientY - drag.y) * 0.006)); later(); };
   const up = () => { drag = null; };
-  const wheel = (e) => { e.preventDefault(); dist = Math.min(R * 5, Math.max(R * 0.35, dist * (e.deltaY > 0 ? 1.1 : 0.9))); later(); };
+  const wheel = (e) => { e.preventDefault(); dist = Math.min(R * 5, Math.max(F * 0.8, dist * (e.deltaY > 0 ? 1.1 : 0.9))); later(); };
   canvas.addEventListener('pointerdown', down); canvas.addEventListener('pointermove', move); canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
   canvas.addEventListener('wheel', wheel, { passive: false });
   return {
     setMassing(m) { const around = m.around !== M.around; M = { ...M, ...m }; buildMass(M); if (around) buildHood(M.around); later(); },
-    view(name) { const v = V[name] ?? V.angle; az = v.az; el = v.el; dist = R * v.dist; draw(); },
-    zoom(f) { dist = Math.min(R * 5, Math.max(R * 0.35, dist * f)); draw(); },
+    view(name) { const v = V[name] ?? V.angle; az = v.az; el = v.el; dist = F * v.dist; draw(); },
+    zoom(f) { dist = Math.min(R * 5, Math.max(F * 0.8, dist * f)); draw(); },
     still(w = 1600, h = 1000) { renderer.setPixelRatio(1); renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); const url = canvas.toDataURL('image/png'); renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2)); size(); return url; },
     stop() {
       if (!alive) return;
