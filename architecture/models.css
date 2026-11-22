@@ -77,6 +77,17 @@
 .mdl-card .acts .btn { padding: 10px 14px; }
 .mdl-card .acts .btn .mdl-ic { width: 18px; height: 18px; }
 
+/* a browser copy under its model, and the chooser to add one */
+.mdl-copy { display: grid; gap: 4px; border: 1px solid var(--plum); border-left-width: 4px; background: var(--paper); padding: 10px 12px; }
+.mdl-copy-t { font: 500 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.mdl-copy-say { font-size: 14px; line-height: 1.45; }
+.mdl-copy .mdl-older-acts { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.mdl-addcopy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.mdl-addcopy .btn { cursor: pointer; padding: 10px 14px; min-height: 44px; }
+.mdl-addcopy .btn .mdl-ic { width: 18px; height: 18px; }
+.mdl-addcopy .btn:focus-within { outline: 2px solid var(--plum); outline-offset: 2px; }
+.mdl-addcopy .mdl-meta { flex: 1 1 18ch; }
+
 /* an IFC's numbers: six big counts with their icons */
 .mdl-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--hair); border-left: 1px solid var(--hair); }
 .mdl-facts li { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: center; gap: 0 8px; padding: 9px 10px; border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); min-width: 0; }
@@ -168,6 +179,6 @@
   .mdl-body { padding: 16px 20px 20px; }
 }
 @media print {
-  .mdl-drop, .mdl-turn, .mdl-card .acts, .mdl-older-acts, .mdl-card.is-job, .mdl-card.is-note, .mdl-card.is-left { display: none !important; }
+  .mdl-drop, .mdl-turn, .mdl-addcopy, .mdl-copy .mdl-older-acts, .mdl-card .acts, .mdl-older-acts, .mdl-card.is-job, .mdl-card.is-note, .mdl-card.is-left { display: none !important; }
   .mdl-card { break-inside: avoid; }
 }
