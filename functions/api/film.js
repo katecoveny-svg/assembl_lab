@@ -284,14 +284,26 @@ export function readFilm(j) {
   if (j?.status === "completed") return { error: "no_video" };
   return { error: "no_video" };
 }
+/** Google answers an error as { error: {...} } or, for a bad request, as an array [{ error: {...} }]; either way, the error */
+export function errorOf(j) {
+  const e = Array.isArray(j) ? j[0]?.error : j?.error;
+  return e && typeof e === "object" ? e : null;
+}
 function upstreamError(status, j) {
-  const code = j?.error?.code ?? j?.error?.status ?? "";
-  if (BLOCKED.has(code)) return "declined";
-  if (status === 429 || status === 503 || code === "rate_limit_exceeded" || code === "quota_exceeded" || code === "RESOURCE_EXHAUSTED" || code === "UNAVAILABLE") return "busy";
-  if (status === 504 || code === "deadline_exceeded") return "timeout";
-  if (status === 400 || code === "invalid_argument" || code === "INVALID_ARGUMENT") return "refused";
+  const e = errorOf(j), codes = [e?.code, e?.status].filter((c) => typeof c === "string" && c);
+  const is = (...names) => codes.some((c) => names.includes(c));
+  if (codes.some((c) => BLOCKED.has(c))) return "declined";
+  if (status === 429 || status === 503 || is("rate_limit_exceeded", "quota_exceeded", "RESOURCE_EXHAUSTED", "UNAVAILABLE")) return "busy";
+  if (status === 504 || is("deadline_exceeded", "DEADLINE_EXCEEDED")) return "timeout";
+  if (status === 400 || is("invalid_argument", "INVALID_ARGUMENT")) return "refused";
   if (status === 404) return "gone";
   return "model_error";
+}
+/** what Google said, for the caller (never the request, never a key): its status, its code and the start of its message */
+export function upstreamOf(status, j) {
+  const e = errorOf(j);
+  const clip = (v, n) => (typeof v === "string" || typeof v === "number" ? String(v).replace(/AIza[\w-]{10,}/g, "[key]").slice(0, n) : undefined);
+  return { http: status, code: clip(e?.code, 60), status: clip(e?.status, 60), message: clip(e?.message, 300) };
 }
 
 // --- answers -------------------------------------------------------------------------------------------------------------
@@ -327,7 +339,9 @@ export const MESSAGES = {
   gone: "Google no longer has this film (fetched already, or older than its keeping time).",
   model_error: "Google Gemini could not make the film. Nothing is shown rather than a guess.",
 };
-const STATUS = { confirm_spend: 402, not_configured: 503, origin: 403, method: 405, too_large: 413, video_too_large: 413, still_too_large: 413, slow_down: 429, ip_daily: 429, daily_cap: 429, poll_slow_down: 429, bad_handle: 404, declined: 422, no_video: 502, busy: 503, timeout: 504, refused: 502, gone: 410, model_error: 502 };
+// Never 502 or 504 for Google's failures: on the lab's own domain Cloudflare swaps any 502 or 504 answer for its own plain-text
+// "error code: 502" page, which hid every reason (23 Nov 2026). The reason is in the JSON: error, message and upstream.
+const STATUS = { confirm_spend: 402, not_configured: 503, origin: 403, method: 405, too_large: 413, video_too_large: 413, still_too_large: 413, slow_down: 429, ip_daily: 429, daily_cap: 429, poll_slow_down: 429, bad_handle: 404, declined: 422, no_video: 424, busy: 429, timeout: 424, refused: 424, gone: 410, model_error: 424 };
 
 function stillOf(v) {
   if (v == null || v === "") return { value: null };
@@ -415,7 +429,7 @@ export async function onRequest({ request, env }) {
     if (hit) return fail(hit, { retry_after: 10 });
     try {
       const { r, j } = await google(`https://generativelanguage.googleapis.com/v1beta/interactions/${encodeURIComponent(job.id)}`, { method: "GET", headers: headersOf(env) }, TIMEOUT_MS.poll);
-      if (!r.ok) { console.warn("film: poll error", r.status, String(j?.error?.code ?? "").slice(0, 60)); return fail(upstreamError(r.status, j)); }
+      if (!r.ok) { console.warn("film: poll error", r.status, JSON.stringify(upstreamOf(r.status, j))); return fail(upstreamError(r.status, j), { upstream: upstreamOf(r.status, j) }); }
       const a = readFilm(j);
       if (a.running) return json(200, { type: "assembl.planstudio.film.job", status: "running", waited_s: Math.round((Date.now() - job.t) / 1000), part: job.p ?? null, label: LABEL, prompt_revision: FILM_PROMPTS });
       await forget(env, job.id);
@@ -470,8 +484,8 @@ export async function onRequest({ request, env }) {
     const { r, j } = await google(req.url, { method: "POST", headers: req.headers, body: JSON.stringify(req.body) }, TIMEOUT_MS[input.mode]);
     if (!r.ok) {
       const code = upstreamError(r.status, j);
-      console.warn("film: model error", r.status, String(j?.error?.code ?? "").slice(0, 60), String(j?.error?.message ?? "").slice(0, 200));
-      return fail(code, { mode: input.mode });
+      console.warn("film: model error", r.status, JSON.stringify(upstreamOf(r.status, j)));
+      return fail(code, { mode: input.mode, upstream: upstreamOf(r.status, j) });
     }
     const a = readFilm(j);
     if (a.running) {
