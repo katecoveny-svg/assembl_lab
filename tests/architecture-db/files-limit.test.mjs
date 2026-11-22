@@ -49,10 +49,10 @@ test('after part 6 the bucket takes 50 MB; part 7 raises it to 1 GB, keeps it pr
   assert.deepEqual(await shape(), before, 'no table, column, rule or function is added or removed');
 });
 
-test('run twice, and with every migration again: the same', async () => {
+test('run twice, and with every migration up to it again: the same', async () => {
   const first = { b: await bucket(), s: await shape() };
   await run([LIMIT]);
-  await run(all);
+  await run(all.filter((f) => f <= LIMIT)); // later parts (the clients tables) add their own tables, so they are left out here
   assert.deepEqual({ b: await bucket(), s: await shape() }, first);
 });
 
