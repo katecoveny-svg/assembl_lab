@@ -153,7 +153,7 @@ export function progress(b, split = null) {
       if (tasks.length) value += w[i] * (tasks.filter((t) => t.status === 'done').length / tasks.length);
     }
   });
-  return { value: Math.min(1, value), how: typed && total > 0 ? 'the fee split typed for this project' : 'the seven stages counted equally, the stage in hand by its tasks done' };
+  return { value: Math.min(1, Math.round(value * 1e9) / 1e9), how: typed && total > 0 ? 'the fee split typed for this project' : 'the seven stages counted equally, the stage in hand by its tasks done' };
 }
 
 const sum = (list, f) => list.reduce((a, x) => a + (num(f(x)) ?? 0), 0);
