@@ -44,6 +44,18 @@ test('the whole move stays clear of walls, and enters the house only through a d
   assert.ok(end.eye[0] > 0.14 && end.eye[0] < 5.05 && end.eye[2] > 2.6 && end.eye[2] < 7.56, 'it ends inside the living and dining room');
 });
 
+test('the bi-fold doors are folded open before the camera passes through them, and it passes mid-opening', () => {
+  const p = new FilmPath(spec), d = spec.doors;
+  assert.ok(d && d.to > d.from, 'the film opens the living room doors');
+  let cross = -1;
+  for (let f = 1; f <= p.frames(); f++) if (p.at((f - 1) / spec.fps).eye[2] >= d.v && p.at(f / spec.fps).eye[2] < d.v) { cross = f; break; }
+  assert.ok(cross > d.to + 6, `doors fully open at frame ${d.to}, camera crosses at ${cross}`);
+  const x = p.at(cross / spec.fps).eye[0];
+  assert.ok(x > d.u0 + 0.6 && x < d.u1 - 0.6, `crossing at u = ${x.toFixed(2)}, clear of the folded stacks`);
+  const wall = walls.find((w) => w.id === 'S'), bf = wall.open.find((o) => o.kind === 'door' && o.s1 - o.s0 > 3);
+  assert.equal(bf.s0, d.u0); assert.equal(bf.s1, d.u1); assert.equal(bf.head, d.head);
+});
+
 test('speed is smooth: no jumps between frames, and the film is the length it says', () => {
   const p = new FilmPath(spec), n = p.frames();
   assert.equal(n, Math.round(spec.duration * spec.fps));

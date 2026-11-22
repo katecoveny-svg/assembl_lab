@@ -50,6 +50,14 @@ it is. Raster PDFs are calibrated and traced in Plan to 4D first. Nothing droppe
 - `src/twin/plants.ts`: native planting as geometry (harakeke, nīkau, tree ferns, ground ferns, tussock, tī kōuka,
   shrubs), so it casts real shadows and path-traces.
 
+## Photoreal (baked light) and the fly-through film
+
+`src/twin/photoreal/`, registered by one line in `main.ts`. A **Photoreal** switch on the twin pages traces sky and sun
+light through the model's own geometry (per-vertex light, after room-at-dawn by Leon Lin, MIT) and a film renderer
+averages jittered sub-frames. Every pixel is rendered from the model; textures are drawn in code (the asset library's
+where it has them). Tools: `tools/film/film.mjs` (bake, stills, film). Details, what is assumed and measurements:
+`docs/digital-twins/PHOTOREAL-FILM.md`.
+
 ## Rebuild
 
 The source builds with Vite inside a project that has `three@0.187`, `three-gpu-pathtracer@0.0.28`, `web-ifc@0.0.79`,

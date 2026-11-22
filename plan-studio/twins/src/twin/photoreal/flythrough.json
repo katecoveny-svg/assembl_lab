@@ -17,5 +17,14 @@
     },
     { "label": "In the living room", "eye": [   3.5,   1.45,   5.7 ], "look": [   0.6,   1.05,   3.2 ], "speed": 0.45, "fov": 58, "ap": 3, "exp": 7.4
     }
-  ]
+  ],
+  "doors": {
+    "from": 223,
+    "to": 282,
+    "u0": 0.87,
+    "u1": 4.47,
+    "v": 7.7,
+    "head": 2.08,
+    "about": "the living bi-fold doors (plan: east wall, u 0.87-4.47, head 2.08) fold open over these frames; drawn closed in the model"
+  }
 }

@@ -49,6 +49,7 @@ node tools/film/film.mjs bake && node tools/film/film.mjs film --out films/flyth
 | Surface detail | `photoreal/detail.ts` | Surfaces with no texture get a micro-structure in normal and roughness from the asset library (`library/ptex.ts` via `library/mats.ts`: linen weave, bouclé loops, oak grain, trowelled plaster, brushed metal, glaze, stone). Bark comes from the library too. Drawn here, because the library has no generator for them: deck boards, weathered framing boards, coil-coated roof steel and the forest floor, which replace the scanned photographs and the aerial photo the normal view uses. |
 | Props | `photoreal/props.ts`, `vessel.ts` | The library's folded throw (`throwBlanket`: three layers with height-field wrinkles, chunky knit) on the sofa's end seat in place of the fit-out's plainer throw, and a sculpted stoneware vessel on the coffee table (a signed-distance shape meshed by the library's marching cubes, in its crackled glaze). Both proposed. |
 | Picture | `photoreal/photoreal.ts` | Contact AO from the scene pass's depth and normals (faded where sunlit), gentle bloom, a light grade (white balance, saturation, contrast, vignette), AgX tone mapping. Indoors the camera opens up and white-balances from the light measured on the painted walls. Diagram lines (boundary, contours) are hidden. |
+| Doors | `photoreal/doors.ts` | The living room's bi-fold doors are drawn closed in the model; the film folds them open to the jambs as the camera comes along the deck (frames 223–282), so it passes through an open doorway, not through glass. Their baked light travels with them. |
 | Frames | `photoreal/capture.ts`, `path.ts`, `flythrough.json` | Each frame averages sub-frames with sub-pixel jitter, a thin-lens aperture (focus on the look point) and times across a 180° shutter. The bush is culled to each frame's view, and trees within 1.8 m of the camera path are left out so the camera never flies through a trunk. Caption on every frame. |
 
 ## What is from the drawings and what is assumed
@@ -64,24 +65,76 @@ node tools/film/film.mjs bake && node tools/film/film.mjs film --out films/flyth
 | Planting and bush species (kānuka, pōhutukawa, ponga, harakeke, ferns) | proposed native planting; species not surveyed |
 | Forest-floor surface | drawn in code (the normal view uses the LINZ aerial photo) |
 | The car | proposed |
+| The living room's bi-fold doors folding open in the film | assumed (the plan draws them, closed) |
 
 No loaded GLB is in this scene: the furniture library (`library.ts`) only fills slots for as-built models; the sample
 plan is furnished entirely in code. The normal view uses scanned photographs (Poly Haven / ambientCG, CC0) for deck
 boards, roof steel, framing, bark and forest floor; the photoreal look replaces every one of them with drawn textures.
 
-## Measured (assembl build box: 2 CPU cores, no GPU, SwiftShader, 6 GB memory shared with other jobs)
+## Measured (assembl build box: 2 CPU cores, no GPU, SwiftShader software rendering, 6 GB memory shared with other jobs)
 
-See the report of 22 November 2026 in the pull request for the full table. In short: the bake traces 775,016 light
-points against 1,578,128 triangles in 371 s on 2 threads (BVH 4.6 s, first pass 130 s, gather 236 s; 64 samples), after
-29 s of page export. The bake file is 4.65 MB (light RGB9E5 + direction, 6 bytes a point): **too big to commit**, so it
-is made by the build step above (`.gitignore` keeps it out); without it the page traces in the browser.
+| What | Measured |
+|---|---|
+| Bake: light points / occluder triangles | 883,159 / 1,849,452 (726 receiving meshes; tables tessellated to 40 mm, rugs 80 mm, floors 100 mm) |
+| Bake: time | page export 33 s; BVH 7 s; first pass 120 s; final gather 177 s; **304 s in all on 2 threads** (64 samples a point; 340–460 s when the box was busy) |
+| Bake: memory | node main process 0.92 GB peak; the page exports the scene in 8 MB parts (169 MB in all) so it never holds two copies |
+| Bake file | 5.3 MB (6 bytes a light point: RGB9E5 light + octahedral direction). Over the 2 MB limit, so not committed: made by `film.mjs bake` (or traced on the page) |
+| Loading a bake on the page | 2–5 s after the model is ready |
+| Film frame, 640 × 360, 2 sub-frames | 13–15 s |
+| One sub-frame, 768 × 432 | 7–9 s (the first 14 s while the pipeline warms up); redrawing the sun's 4096² shadow map is about 1.5 s of it, so the film draws it once |
+| Stills, 1600 × 900, 4 sub-frames | 90–115 s each |
+| Close-ups, 1280 × 720, 8 sub-frames with depth of field | 90–125 s each |
+
+The page's renderer process was killed twice by the memory limit when other jobs shared the box; the tools now wait for
+memory and resume where they stopped.
+
+**Estimates for a Mac with a GPU (not measured):** the live view draws this scene at 1080p in tens of milliseconds, so
+with 8 sub-frames and the PNG a 1080p frame should take about 0.5–1 s, and the 16 s film (384 frames) about 4–7
+minutes. The 4K master (16 sub-frames) is about 8 times the pixels and sub-frames: roughly 20–40 minutes. The bake on 8
+fast cores: about 1 minute.
+
+## Against Kate's four rules (22 November 2026)
+
+1. **Fine texture on every surface, made in code.** Surfaces with no texture get the asset library's weave, bouclé,
+   grain, plaster, brushed metal, glaze or stone in normal and roughness; the scanned photographs are replaced by drawn
+   boards, steel, bark and forest floor. Close-up: `shots-film/final/close/photoreal-cam0.png` (bouclé and linen at
+   about 1 m). Gap: bump maps on benchtop stone, soffit and oak are not carried into the baked material yet.
+2. **Folds and sculpted shapes built in code.** The library's folded throw (height-field wrinkles over three layers)
+   and a signed-distance vessel meshed by marching cubes: `close/photoreal-cam1.png`, `close/photoreal-cam2.png`. Gap:
+   the sofa cushions, bedding and curtains are the fit-out's own shapes (no wrinkle height maps yet).
+3. **Contact shadows, soft shadows, AgX, a light grade.** Baked bounce light gives soft contact shadows where things
+   stand (tables and rugs carry light points every 40–80 mm); screen-space AO adds the finest contact; the sun's shadow
+   map is softened; AgX tone mapping; white balance, saturation, contrast and vignette.
+4. **Many jittered frames averaged.** Stills: 4 sub-frames (views) and 8 (close-ups, with a thin-lens aperture). Film
+   proof: 2 sub-frames a frame (sub-pixel jitter, aperture and a 180° shutter). The documented 1080p command uses 8,
+   the 4K master 16.
+
+## Against the bar: room-at-dawn
+
+Side by side (`shots-film/rad-vs-ours.png`), this first version falls short in these ways, plainly:
+
+- **Light and colour.** room-at-dawn's light is cool, soft and low-contrast with deep, clean shadow falloff; ours is
+  warmer and flatter, white walls read beige, and the view out of the windows is washed out. Its grade keeps the outside
+  separate from the room (an HDR merge); ours does not yet.
+- **Shape.** Its duvet, curtains and plants are sculpted in detail (wrinkles, catenary vines, leaf cards); our sofa
+  cushions, bedding and curtains are the fit-out's simpler shapes, and the room is sparsely dressed.
+- **Lens.** Its close-ups have strong, smooth depth of field from 48–96 sub-frames; ours use 8 and read only slightly
+  soft.
+- **The bush.** Our trees are the page's instanced bush, lit live; their bark and leaves are generic next to its trees.
+- **Film.** It is rendered in 4K on a GPU; ours is a 640 × 360 proof rendered in software here.
+
+Where it holds up: daylight and bounce come from the real geometry of a real plan (walls darken away from the glazing,
+the deck shades the ground, soft contact shadows under furniture), the materials have real micro-texture, and every
+frame is labelled as a visualisation.
 
 ## Not yet (in order)
 
-1. The full 1080p film and the 4K master on a machine with a GPU (the commands above). Here only a proof was rendered.
-2. A second light bounce cache for the ceilings: interiors read darker and warmer than a photograph; the white balance
-   and exposure take most of that out.
-3. Leaves and bark of the bush with drawn textures in their own materials (the normal view's bush shading is used).
-4. Per-vertex light on the planting near the house (it is lit live, with the sky's reflections).
+1. The full 1080p film and the 4K master on a machine with a GPU (the commands above). Here only a 640 × 360 proof
+   was rendered (software rendering, about 14 s a frame).
+2. An exterior/interior split in the grade (as room-at-dawn does), so window views are not washed out and interiors
+   seen from the deck are not dim and orange.
+3. Wrinkle height maps on the fit-out's cushions, bedding and curtains; more dressing in the living space.
+4. The sculpted vessel's foot is narrow, so from low angles it can look as if it floats; widen it.
 5. Bump maps (benchtop stone, soffit, oak) carried into the baked material.
-6. Wind in the planting sampled across the shutter.
+6. Baked light on the planting near the house, and drawn bark and leaves for the bush in its own materials.
+7. Wind in the planting sampled across the shutter.

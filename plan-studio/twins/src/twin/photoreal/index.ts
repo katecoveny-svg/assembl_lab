@@ -5,6 +5,7 @@ import type { App } from '../app';
 import { CAPTION, Photoreal, look, type PhotorealOpts } from './photoreal.ts';
 import { Capture } from './capture.ts';
 import { giMode } from './giMaterial.ts';
+import { Bifold } from './doors.ts';
 import { prepare, restoreGeometry } from './bake.ts';
 import { FilmPath, type CamState, type FilmSpec } from './path.ts';
 import spec from './flythrough.json';
@@ -80,6 +81,12 @@ export function registerPhotoreal(app: App) {
       app.paused = true;
       const fps = path.spec.fps, N = path.frames();
       const from = o.from ?? 0, to = Math.min(N, o.to ?? N), n = o.samples ?? 4, shutter = o.shutter ?? 0.5;
+      // the living room's bi-fold doors fold open as the camera comes along the deck (frames doorsFrom → doorsTo)
+      const model = app.built.layers.find((l) => l.id === 'model')?.object;
+      const fs = (path.spec as unknown as { doors?: { from: number; to: number; u0: number; u1: number; v: number; head: number } }).doors;
+      const bif = model && fs ? new Bifold(model, fs) : null;
+      if (bif) console.log(`[film] bi-fold doors: ${bif.parts.length} parts fold open from frame ${fs!.from} to ${fs!.to}`);
+      const doorsAt = (f: number) => { if (!bif) return; const t = Math.min(1, Math.max(0, (f - fs!.from) / (fs!.to - fs!.from))); bif.set(t * t * (3 - 2 * t)); };
       // the sun does not move during the film: its shadow map is drawn once, with every tree, before the bush is
       // culled to each frame's view
       app.sun.shadow.autoUpdate = false; app.sun.shadow.needsUpdate = true;
@@ -95,13 +102,15 @@ export function registerPhotoreal(app: App) {
         for (let f = from; f < to; f++) {
           const tf = performance.now();
           const times = Array.from({ length: n }, (_, k) => (f + shutter * ((k + 0.5) / n - 0.5)) / fps);
+          doorsAt(f);
+          if (bif && f >= fs!.from && f <= fs!.to + 1) app.sun.shadow.needsUpdate = true; // the folding leaves' shadows
           cap.shoot({ w: o.w ?? 1920, h: o.h ?? 1080, samples: n, caption: true, photoreal: pr.on ? pr : null }, (k) => path.at(Math.max(0, times[k])), (k) => Math.max(0, times[k]));
           const rgb = cap.rgb();
           if (o.url) await fetch(`${o.url}?f=${f}&w=${o.w ?? 1920}&h=${o.h ?? 1080}`, { method: 'POST', body: rgb });
           per.push(performance.now() - tf);
           console.log(`[film] frame ${f + 1}/${to} ${(per[per.length - 1] / 1000).toFixed(1)} s`);
         }
-      } finally { cap.cullEnd(); app.sun.shadow.autoUpdate = true; cap.restore(); app.paused = false; }
+      } finally { doorsAt(-1); cap.cullEnd(); app.sun.shadow.autoUpdate = true; cap.restore(); app.paused = false; }
       return { frames: to - from, seconds: (performance.now() - t0) / 1000, perFrame: per.map((x) => +(x / 1000).toFixed(2)), timing: cap.timing };
     },
   };
