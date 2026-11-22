@@ -394,7 +394,7 @@ function modelTab(b) {
   const p = b.project;
   return `${tabHead('cube', 'Model', hasModel(b) ? `■ Revision ${esc(p.model.revision)} · version ${esc(p.model.fingerprint)}` : '□ Not attached')}
     ${modelTool(b, stageDef('concept'))}
-    <div class="mod-host" data-mod-panels></div>`;
+    <div class="mod-host" data-mod-panels="model"></div>`;
 }
 
 /** Drawings: every document, each with its file */
@@ -419,6 +419,7 @@ function presentationTab(b) {
   const pic = p.sample ? `<figure class="pres-pic"><img src="${HERO}" alt="A dark-clad house on timber piles among trees." loading="lazy" /><figcaption class="caption">A rendering of the sample plan model. Not a photograph.</figcaption></figure>` : '';
   return `${tabHead('presentation', 'Presentation')}
     ${three}${pic}
+    <div class="mod-host" data-mod-panels="presentation"></div>
     <div class="sub-h"><h3>Photos</h3><span class="st">${plural(photos.length, 'photo')}</span></div>
     ${photos.length ? `<ul class="docs">${photos.map((d) => `<li class="doc">${icon('photo', 'doc-ic')}<div class="doc-main"><p class="doc-t">${esc(d.title)}</p><p class="doc-m">${esc(d.date ? day(d.date) : 'No date')}</p></div>${fileBar(d)}</li>`).join('')}</ul>`
       : emptyState('photo', 'Photos will appear here.', 'Add a document of kind Photo, with its file, in the Drawings tab or on a stage. Stills taken on the 3D page: Not built yet.')}`;
@@ -740,8 +741,10 @@ async function drawAddons(r, project) {
   if (r.view !== 'dash' || !project) return;
   const panels = projectPanels();
   if (!panels.length) return;
-  const host = $app.querySelector('[data-mod-panels]') ?? $app.querySelector('article') ?? $app.querySelector('.wrap') ?? $app;
+  const fallback = $app.querySelector('[data-mod-panels="model"]') ?? $app.querySelector('article') ?? $app.querySelector('.wrap') ?? $app;
   for (const pn of panels) {
+    // each section sits in the tab it asked for (modules.js, tab), the Model tab when it asked for none
+    const host = $app.querySelector(`[data-mod-panels="${pn.tab ?? 'model'}"]`) ?? fallback;
     const sec = document.createElement('section');
     sec.className = 'mod-panel'; sec.dataset.panel = pn.id; sec.setAttribute('aria-label', pn.title);
     host.append(sec);

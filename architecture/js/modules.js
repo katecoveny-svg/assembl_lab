@@ -4,6 +4,7 @@
 //
 //   registerRoute('crm', { title: 'Clients', render(el, ctx, rest) { ... } })   → a screen at #/crm, #/crm/<rest...>
 //   registerProjectPanel({ id: 'models', title: 'Models', order: 10, render(el, ctx) { ... } })   → a section on each project
+//       tab: which of the project's tabs it sits in (site, model, drawings, presentation, takeoff, deliverables); 'model' when not given
 //   registerNav({ id: 'crm', label: 'Clients', hash: '#/crm', order: 20 })   → a link in the top bar
 //
 // ctx, given to every render: { store, account, me, project (on a project page, else null), practice (the practice in use
@@ -11,7 +12,9 @@
 // that app.js calls before the screen is drawn again (to stop timers, release a 3D view and so on).
 
 /** the add-ons app.js tries to load, relative to this file */
-export const ADDONS = ['./models.js', './crm.js'];
+export const ADDONS = ['./models.js', './crm.js', './library.js'];
+/** the project tabs a section can sit in (app.js TABS) */
+export const PANEL_TABS = ['site', 'model', 'drawings', 'presentation', 'takeoff', 'deliverables'];
 
 const routes = new Map();
 const panels = [];
@@ -29,7 +32,9 @@ export function registerProjectPanel(panel) {
   if (!ID.test(panel?.id ?? '')) throw new Error('An add-on section needs a short lowercase id.');
   if (typeof panel.render !== 'function') throw new Error(`The add-on section "${panel.id}" has nothing to draw.`);
   const at = panels.findIndex((x) => x.id === panel.id);
-  const entry = { id: panel.id, title: String(panel.title ?? panel.id), order: Number(panel.order ?? 50), render: panel.render };
+  const tab = panel.tab ?? 'model';
+  if (!PANEL_TABS.includes(tab)) throw new Error(`The add-on section "${panel.id}" names a tab the project page does not have: "${tab}".`);
+  const entry = { id: panel.id, title: String(panel.title ?? panel.id), order: Number(panel.order ?? 50), tab, render: panel.render };
   if (at >= 0) panels[at] = entry; else panels.push(entry);
 }
 

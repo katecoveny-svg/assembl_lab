@@ -1,0 +1,87 @@
+/* The Library section (js/library.js, js/library-view.js): loaded with the section, only when a project's Presentation
+   tab is first shown. Every colour and typeface comes from the tokens at the top of ops.css, so it works in the assembl
+   look and the sketch look. Pictures are studio renders on a pale ground in both looks: they read as windows. */
+
+.lib { display: grid; gap: 14px; min-width: 0; }
+.lib-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.lib-head h3 { margin: 0; font: 500 clamp(22px, 2.6vw, 28px)/1.1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
+.lib-wait { margin: 4px 0; }
+
+/* the selection board: a strip of what has been picked */
+.lib-board { border: 1px solid var(--frame); background: var(--panel); padding: 12px 14px 14px; display: grid; gap: 10px; min-width: 0; }
+.lib-board-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.lib-board-h h4, .lib-cat-h h4 { margin: 0; font: 500 17px/1.2 var(--sans); color: var(--ink); }
+.lib-board-h .btn { margin-left: auto; }
+.lib-strip { list-style: none; margin: 0; padding: 0 0 4px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 270px); gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.lib-pick { scroll-snap-align: start; display: grid; grid-template-columns: 72px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; border: 1px solid var(--hair); padding: 6px; background: var(--field); }
+.lib-pick img, .lib-gone { grid-row: 1 / span 2; width: 72px; height: 72px; object-fit: cover; display: grid; place-items: center; color: var(--mute); }
+.lib-pick .link { justify-self: start; font-size: 13px; }
+.lib-pick-t { min-width: 0; }
+.lib-pick-t p { margin: 0; }
+.lib-viewer { margin: 0; }
+.lib-note { margin: 0; }
+
+/* rows or grid, and the category chips */
+.lib-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.lib-seg { display: inline-flex; border: 1px solid var(--edge); }
+.lib-seg button, .lib-chips button { font: 500 13px/1 var(--sans); color: var(--ink); background: transparent; border: 0; padding: 0 12px; min-height: 36px; cursor: pointer; }
+.lib-seg button + button { border-left: 1px solid var(--edge); }
+.lib-seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.lib-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; max-width: 100%; padding: 2px 0; }
+.lib-chips::-webkit-scrollbar { display: none; }
+.lib-chips button { border: 1px solid var(--hair); white-space: nowrap; border-radius: 999px; }
+.lib-chips button[aria-pressed="true"] { border-color: var(--blue-strong); box-shadow: inset 0 0 0 1px var(--blue-strong); }
+.lib-seg button:focus-visible, .lib-chips button:focus-visible, .lib-card:focus-visible, .lib-arrow:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.lib-rows { display: grid; gap: 18px; min-width: 0; }
+.lib-cat { display: grid; gap: 8px; min-width: 0; }
+.lib-cat-h { display: flex; align-items: baseline; gap: 10px; }
+.lib-arrows { margin-left: auto; display: none; gap: 6px; }
+.lib-arrow { width: 36px; height: 36px; border: 1px solid var(--edge); background: transparent; color: var(--ink); font: 400 20px/1 var(--sans); cursor: pointer; }
+.lib-row { list-style: none; margin: 0; padding: 0 0 6px; display: grid; grid-auto-flow: column; grid-auto-columns: clamp(168px, 44vw, 210px); gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-padding-inline: 2px; }
+.lib-row > li { scroll-snap-align: start; }
+.lib-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 12px; }
+
+/* a piece: a big picture, its name and its size, nothing else */
+.lib-card { display: grid; gap: 6px; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.lib-pic { display: block; aspect-ratio: 1; overflow: hidden; background: var(--hair); outline: 1px solid var(--hair); outline-offset: -1px; }
+.lib-pic img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+.lib-card:hover .lib-pic img { transform: scale(1.03); }
+.lib-t { font: 500 14px/1.25 var(--sans); color: var(--ink); }
+.lib-m { font: 400 12px/1.3 var(--mono); color: var(--mute); letter-spacing: .01em; }
+
+/* the detail card: a sheet on a phone, a card over the page on a wide screen */
+.lib-scrim { position: fixed; inset: 0; background: color-mix(in srgb, var(--ink) 34%, transparent); z-index: 40; }
+.lib-detail { position: fixed; z-index: 41; inset: auto 0 0 0; max-height: 92vh; overflow-y: auto; background: var(--panel); color: var(--body); border-top: 1px solid var(--frame); display: grid; grid-template-columns: 1fr; box-shadow: 0 -12px 40px color-mix(in srgb, var(--ink) 18%, transparent); }
+.lib-d-pic { margin: 0; background: var(--hair); }
+.lib-d-pic img { display: block; width: 100%; height: auto; aspect-ratio: 1; max-height: 52vh; object-fit: contain; }
+.lib-d-body { padding: 14px 16px 18px; display: grid; gap: 12px; align-content: start; }
+.lib-d-body h3 { margin: 0 36px 0 0; font: 500 22px/1.15 var(--sans); letter-spacing: -.015em; color: var(--ink); }
+.lib-x { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border: 1px solid var(--edge); background: var(--panel); color: var(--ink); font: 400 24px/1 var(--sans); cursor: pointer; z-index: 1; }
+.lib-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+.lib-dl dt { font: 500 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--mute); }
+.lib-dl dd { margin: 0; color: var(--body); }
+.lib-dl .mono { font-family: var(--mono); font-size: 13px; }
+.lib-fins { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.lib-fins legend { font: 500 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--mute); padding: 0; margin-bottom: 4px; }
+.lib-fin { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.lib-sw { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--line); }
+.lib-add { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.lib-add label { display: grid; gap: 4px; font: 500 11px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--mute); }
+.lib-add select { min-height: 40px; font: 400 15px var(--sans); color: var(--ink); background: var(--field); border: 1px solid var(--edge); padding: 0 8px; }
+.lib-qty { display: inline-flex; border: 1px solid var(--edge); }
+.lib-qty button { width: 36px; min-height: 40px; border: 0; background: transparent; color: var(--ink); font: 400 18px/1 var(--sans); cursor: pointer; }
+.lib-qty input { width: 46px; border: 0; border-left: 1px solid var(--edge); border-right: 1px solid var(--edge); text-align: center; font: 400 15px var(--sans); color: var(--ink); background: var(--field); -moz-appearance: textfield; }
+.lib-qty input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.lib-credit { margin: 0; }
+
+@media (min-width: 761px) {
+  .lib-row { grid-auto-columns: clamp(200px, 21vw, 270px); gap: 16px; }
+  .lib-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px 16px; }
+  .lib-arrows { display: inline-flex; }
+  .lib-detail { inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 48px); grid-template-columns: minmax(0, 1.1fr) minmax(300px, 1fr); border: 1px solid var(--frame); box-shadow: 0 24px 80px color-mix(in srgb, var(--ink) 26%, transparent); }
+  .lib-d-pic img { max-height: none; height: 100%; }
+  .lib-d-body { padding: 22px 22px 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .lib-row { scroll-behavior: auto; } .lib-pic img { transition: none; } }
+@media print { .lib-bar, .lib-rows, .lib-grid, .lib-detail, .lib-scrim { display: none; } }
