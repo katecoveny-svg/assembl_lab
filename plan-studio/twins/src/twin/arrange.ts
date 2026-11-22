@@ -67,6 +67,9 @@ export function initArrange(appIn: App) {
   const end = (ev: PointerEvent) => {
     if (!drag || ev.pointerId !== drag.id) return;
     ev.stopImmediatePropagation();
+    // never left standing through a wall (library/picks.ts measures the walls when picks are placed)
+    const ok = (window as unknown as { __picksCheck?: (o: THREE.Object3D) => boolean }).__picksCheck;
+    if (ok && !ok(drag.obj)) { const back = drag.start.clone(); drag.obj.parent!.worldToLocal(back); drag.obj.position.copy(back); app.log('Not there: it would go through a wall. Moved back.'); }
     const now = drag.obj.getWorldPosition(new THREE.Vector3()), d = now.clone().sub(drag.start);
     if (d.length() > 0.01) { drag.obj.userData.note = 'Moved by hand in this view. Still proposed.'; const mm = (v: number, pos: string, neg: string) => (Math.abs(v) < 0.005 ? '' : `${Math.round(Math.abs(v) * 1000)} mm ${v > 0 ? pos : neg}`); app.log(`${drag.obj.userData.name ?? 'Piece'} moved ${[mm(d.x, 'east', 'west'), mm(d.z, 'south', 'north')].filter(Boolean).join(', ')} (model axes).`); }
     drag = null; app.controls.enabled = true; app.canvas.style.cursor = mode === 'move' ? 'grab' : '';
