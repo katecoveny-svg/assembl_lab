@@ -32,7 +32,7 @@ import { artHero } from './artwork.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const attr = esc;
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-export const CSS_VERSION = '7ac66dc281'; // the first ten of pursuit.css's sha-256: tests/architecture/pursuit.test.mjs fails when it is out of step
+export const CSS_VERSION = '33ad31a899'; // the first ten of pursuit.css's sha-256: tests/architecture/pursuit.test.mjs fails when it is out of step
 export const API = '/api/pursuit';
 
 // ---- the stylesheet ---------------------------------------------------------------------------------------------------
