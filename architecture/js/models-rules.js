@@ -102,10 +102,38 @@ export function versionOf(note, all) {
 export function nextVersion(all, name) {
   return all.filter((f) => sameName(f.name, name)).reduce((m, f) => Math.max(m, versionOf(f, all)), 0) + 1;
 }
-/** files of the same name together, newest version first; the stacks with the newest file first */
+// ---- browser copies ---------------------------------------------------------------------------------------------------------
+// A browser copy is a light GLB made from a model too big for a browser (docs/architecture/browser-copy.md). It is kept
+// like any model, with extra.browser_copy_of = the id of the kept file it was made from. It is shown under that model,
+// not as a model of its own, and Open in 3D hands it over instead. The model's own counts still come from the model.
+/** the id of the kept model this file is a browser copy of, or '' */
+export const copyOf = (note) => (kindOf(note?.name) === 'glb' && typeof note?.extra?.browser_copy_of === 'string' ? note.extra.browser_copy_of : '');
+/** the newest browser copy of this kept model that a browser can open, or null */
+export function browserCopyFor(note, models) {
+  if (!note?.id) return null;
+  return models.filter((f) => copyOf(f) === note.id && !tooBigFor3d(f.size)).sort((a, b) => byKept(b, a))[0] ?? null;
+}
+/** what Open in 3D hands to the 3D page: the browser copy when there is one, else the model itself when a browser can
+ *  open it, else null (too big, and no copy) */
+export function handoverFor(note, models) {
+  const copy = browserCopyFor(note, models);
+  if (copy) return copy;
+  return KINDS[kindOf(note?.name)]?.to3d === 'model' && tooBigFor3d(note?.size) ? null : note;
+}
+/** '' when this file can be kept as a browser copy of that model; otherwise what to say */
+export function copyProblem({ name, size }, source) {
+  if (kindOf(name) !== 'glb') return `A browser copy is a .glb file. “${name}” is not one.`;
+  if (!source?.id) return 'The model it is a copy of is not kept here any more.';
+  if (tooBigFor3d(size)) return `“${name}” is ${sizeText(size)}, too big to open in 3D in a browser as well: the most is ${sizeText(BROWSER_3D_LIMIT)}. It needs to be lighter.`;
+  return '';
+}
+
+/** files of the same name together, newest version first; the stacks with the newest file first. A browser copy goes with
+ *  the model it was made from (browserCopyFor), not in a stack of its own, unless that model is no longer kept. */
 export function stacks(models) {
-  const groups = new Map();
-  for (const f of models) { const k = norm(f.name); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(f); }
+  const groups = new Map(), ids = new Set(models.map((f) => f.id));
+  for (const f of models) {
+    if (ids.has(copyOf(f))) continue; const k = norm(f.name); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(f); }
   return [...groups.values()].map((list) => {
     const versions = list.map((f) => ({ ...f, version: versionOf(f, models) })).sort((a, b) => b.version - a.version || byKept(b, a));
     return { name: versions[0].name, latest: versions[0], older: versions.slice(1) };

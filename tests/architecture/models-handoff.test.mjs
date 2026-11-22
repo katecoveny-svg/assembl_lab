@@ -111,7 +111,7 @@ test('a model over the browser 3D limit is not drawn or opened in 3D here, and b
   assert.match(plan, /const BROWSER_3D_LIMIT = 100 \* 1024 \* 1024;/);
   assert.match(plan, /if \(f\.size > BROWSER_3D_LIMIT\)/, 'the 3D page checks the size before it reads the file');
   const src = readFileSync(new URL('../../architecture/js/models.js', import.meta.url), 'utf8');
-  assert.match(src, /canDraw\(\) && !tooBigFor3d\(f\.size\)/, 'no Turn it on a card for a too-big model');
+  assert.match(src, /const drawn = tooBigFor3d\(f\.size\) \? copy : f;/, 'no Turn it on a card for a too-big model itself: only through its browser copy (models-browser-copy.test.mjs)');
   assert.match(src, /const to3d = big \? ''/, 'no Open in 3D either');
   assert.match(src, /if \(!pic \|\| tooBigFor3d\(note\.size\)\) return;/);
   for (const page of ['drop', '16a']) {

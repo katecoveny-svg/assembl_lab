@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { strToU8, zipSync } from 'fflate';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildHome, type BuildingSpec, type Placement } from './homes';
@@ -808,7 +809,9 @@ export const projectPlan: Project = {
         obj = res.root;
         app.log(`IFC read: ${res.elements} elements, ${res.schema}.`);
       } else {
-        obj = (await new GLTFLoader().parseAsync(input.bytes, '')).scene;
+        // a browser copy of a big model is meshopt-compressed (docs/architecture/browser-copy.md)
+        const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder);
+        obj = (await gl.parseAsync(input.bytes, '')).scene;
       }
       obj.traverse((m) => {
         if ((m as THREE.Mesh).isMesh) m.castShadow = m.receiveShadow = true;

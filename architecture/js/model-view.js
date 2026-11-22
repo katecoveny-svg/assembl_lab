@@ -1,5 +1,6 @@
 // A small 3D view of a kept model, inside its card. Loaded only when a model is drawn, never with the page.
-//   IFC: read by web-ifc 0.0.79 (architecture/vendor/web-ifc/), in this browser. GLB: read here (plain glTF 2.0 binary).
+//   IFC: read by web-ifc 0.0.79 (architecture/vendor/web-ifc/), in this browser. GLB: read here (glTF 2.0 binary, plain,
+//   quantized or meshopt-compressed; the meshopt decoder is the one with the lab's three.js).
 //   Drawn with the lab's own copy of three.js r170 (/assets/vendor/three/), WebGL.
 //
 //   webglOk()                         false when this browser cannot draw 3D (the card then shows its numbers only)
@@ -88,8 +89,10 @@ async function ifcMeshes(bytes, max) {
   return c.done();
 }
 
-/** a plain glTF 2.0 binary: its meshes, placed by the node tree. Compressed meshes (Draco, meshopt) are not read. */
-export function glbMeshes(bytes, max = MAX_TRIANGLES) {
+/** a glTF 2.0 binary: its meshes, placed by the node tree. Quantized (KHR_mesh_quantization) and meshopt-compressed
+ * (EXT_meshopt_compression, as a browser copy is: docs/architecture/browser-copy.md) meshes are read when `decoder` (the
+ * meshopt decoder, loaded by meshesOf) is given; Draco is not read. */
+export function glbMeshes(bytes, max = MAX_TRIANGLES, decoder = null) {
   const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
   if (dv.getUint32(0, true) !== 0x46546c67) throw new Error('That is not a GLB file.');
   let at = 12, json = null, bin = null;
@@ -99,16 +102,32 @@ export function glbMeshes(bytes, max = MAX_TRIANGLES) {
     at += 8 + len;
   }
   if (!json) throw new Error('That GLB has no description inside it.');
-  if ((json.extensionsUsed ?? []).some((e) => /draco|meshopt/i.test(e))) throw new Error('That GLB is compressed, so it is not drawn here. The 3D page opens it.');
+  const used = json.extensionsUsed ?? [];
+  if (used.some((e) => /draco/i.test(e))) throw new Error('That GLB is compressed, so it is not drawn here. The 3D page opens it.');
+  if (used.includes('EXT_meshopt_compression') && !decoder) throw Object.assign(new Error('That GLB is compressed, so it is not drawn here. The 3D page opens it.'), { code: 'meshopt' });
   const c = collector(max);
-  const view = (accIndex) => {
-    const acc = json.accessors[accIndex], bv = json.bufferViews[acc.bufferView], comps = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 }[acc.type];
-    const size = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }[acc.componentType], stride = bv.byteStride || comps * size;
-    const base = (bv.byteOffset ?? 0) + (acc.byteOffset ?? 0), out = new (acc.componentType === 5126 ? Float32Array : Uint32Array)(acc.count * comps);
-    const d = new DataView(bin.buffer, bin.byteOffset, bin.byteLength);
+  const decoded = new Map(); // bufferView index -> its bytes, decompressed
+  const viewBytes = (i) => {
+    const bv = json.bufferViews[i], mo = bv.extensions?.EXT_meshopt_compression;
+    if (!mo) return { data: bin, at: bv.byteOffset ?? 0, stride: bv.byteStride };
+    if (!decoded.has(i)) {
+      if (mo.buffer !== 0) throw new Error('That GLB keeps its compressed data outside the file, so it is not drawn here.');
+      const out = new Uint8Array(mo.count * mo.byteStride);
+      decoder.decodeGltfBuffer(out, mo.count, mo.byteStride, bin.subarray(mo.byteOffset ?? 0, (mo.byteOffset ?? 0) + mo.byteLength), mo.mode, mo.filter ?? 'NONE');
+      decoded.set(i, out);
+    }
+    return { data: decoded.get(i), at: 0, stride: mo.byteStride };
+  };
+  const NORM = { 5120: 127, 5121: 255, 5122: 32767, 5123: 65535 };
+  const view = (accIndex, asFloat = false) => {
+    const acc = json.accessors[accIndex], comps = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 }[acc.type], ct = acc.componentType;
+    const size = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }[ct], src = viewBytes(acc.bufferView), stride = src.stride || comps * size;
+    const base = src.at + (acc.byteOffset ?? 0), out = new (asFloat || ct === 5126 ? Float32Array : Uint32Array)(acc.count * comps);
+    const d = new DataView(src.data.buffer, src.data.byteOffset, src.data.byteLength), norm = acc.normalized ? NORM[ct] : 0;
     for (let i = 0; i < acc.count; i++) for (let k = 0; k < comps; k++) {
       const o = base + i * stride + k * size;
-      out[i * comps + k] = acc.componentType === 5126 ? d.getFloat32(o, true) : size === 1 ? d.getUint8(o) : size === 2 ? d.getUint16(o, true) : d.getUint32(o, true);
+      const v = ct === 5126 ? d.getFloat32(o, true) : ct === 5120 ? d.getInt8(o) : ct === 5121 ? d.getUint8(o) : ct === 5122 ? d.getInt16(o, true) : ct === 5123 ? d.getUint16(o, true) : d.getUint32(o, true);
+      out[i * comps + k] = norm ? Math.max(v / norm, -1) : v;
     }
     return out;
   };
@@ -122,7 +141,7 @@ export function glbMeshes(bytes, max = MAX_TRIANGLES) {
     const n = json.nodes[i], m = mul(parent, trs(n));
     if (n.mesh != null) for (const p of json.meshes[n.mesh].primitives) {
       if ((p.mode ?? 4) !== 4 || p.attributes?.POSITION == null) continue;
-      const raw = view(p.attributes.POSITION), pos = new Float32Array(raw.length);
+      const raw = view(p.attributes.POSITION, true), pos = new Float32Array(raw.length);
       for (let k = 0; k < raw.length; k += 3) { const x = raw[k], y = raw[k + 1], z = raw[k + 2]; pos[k] = m[0] * x + m[4] * y + m[8] * z + m[12]; pos[k + 1] = m[1] * x + m[5] * y + m[9] * z + m[13]; pos[k + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; }
       const idx = p.indices != null ? Uint32Array.from(view(p.indices)) : Uint32Array.from({ length: pos.length / 3 }, (_, k) => k);
       const f = json.materials?.[p.material]?.pbrMetallicRoughness?.baseColorFactor ?? [0.8, 0.8, 0.8, 1];
@@ -135,8 +154,18 @@ export function glbMeshes(bytes, max = MAX_TRIANGLES) {
   return c.done();
 }
 
+const MESHOPT_URL = new URL('../../assets/vendor/three/addons/libs/meshopt_decoder.module.js', import.meta.url).href;
+let meshopt = null;
+/** the meshopt decoder that ships with the lab's three.js, loaded the first time a compressed GLB is drawn */
+export async function meshoptDecoder() {
+  if (!meshopt) { const { MeshoptDecoder } = await import(MESHOPT_URL); await MeshoptDecoder.ready; meshopt = MeshoptDecoder; }
+  return meshopt;
+}
 export async function meshesOf(kind, bytes, { max = MAX_TRIANGLES } = {}) {
-  if (kind === 'glb') return glbMeshes(bytes, max);
+  if (kind === 'glb') {
+    try { return glbMeshes(bytes, max); } catch (e) { if (e?.code !== 'meshopt') throw e; }
+    return glbMeshes(bytes, max, await meshoptDecoder());
+  }
   return ifcMeshes(bytes, max);
 }
 
