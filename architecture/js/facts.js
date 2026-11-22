@@ -26,6 +26,52 @@ export function parseWhere(text) {
 
 const text = (v) => (v == null ? '' : String(v));
 
+// ---- the street address -------------------------------------------------------------------------------------------------------------
+// The site can be set from a New Zealand street address instead of coordinates. The words typed are sent to the lab's address feed
+// (/api/live/?feeds=address&q=..), which asks LINZ's public NZ Addresses service and gives back up to eight matches, each with a point.
+// The feed does not log or store the words, apart from the short-lived cache of its answer under that address (five minutes).
+// The project keeps the one address that was chosen (its text, suburb, town, council and LINZ's id) beside the point; the street
+// address is not put in a share link, and it is printed in the client pack only if that project's setting says so.
+export const ADDRESS_MIN = 4, ADDRESS_MAX = 120;
+export const ADDRESS_CREDIT = 'Sourced from the LINZ Data Service and licensed for reuse under the CC BY 4.0 licence.';
+
+/** one match as the project keeps it: what is shown to confirm the site, and nothing else (the point is kept as site.lat and site.lon) */
+export function keptAddress(m) {
+  return { id: m?.id == null ? null : m.id, address: text(m?.address), suburb: text(m?.suburb), town: text(m?.town), council: text(m?.council) };
+}
+/** "Ponsonby, Auckland": where the site is, without the street. The town is left out when it repeats the suburb. */
+export function placeLine(a) {
+  const parts = [a?.suburb, a?.town].map(text).filter(Boolean);
+  return parts.filter((p, i) => parts.indexOf(p) === i).join(', ');
+}
+/** what the client pack says about the site's place: the suburb and town, or the full address when the project's setting allows it */
+export function packPlace(site) {
+  const a = site?.address;
+  if (!a || !a.address) return '';
+  return site.print_address ? a.address : placeLine(a);
+}
+/** the street and the rest of an address, for the two lines of a suggestion: "14 Ponsonby Road" and "Ponsonby, Auckland" */
+export function splitAddress(full) {
+  const i = text(full).indexOf(',');
+  return i < 0 ? { street: text(full), rest: '' } : { street: text(full).slice(0, i).trim(), rest: text(full).slice(i + 1).trim() };
+}
+
+/** Ask the address feed. Returns { matches, more }. Throws with the feed's own plain words, or a plain reason; nothing is guessed. */
+export async function askAddress(words, fetchImpl = globalThis.fetch, { signal } = {}) {
+  const q = String(words ?? '').trim();
+  if (q.length < ADDRESS_MIN) return { matches: [], more: false };
+  if (q.length > ADDRESS_MAX) throw new Error(`That is too long for an address: ${ADDRESS_MAX} characters at most.`);
+  let r;
+  try { r = await fetchImpl(`${FEED}?feeds=address&q=${encodeURIComponent(q)}`, { headers: { accept: 'application/json' }, signal }); }
+  catch (e) { if (e?.name === 'AbortError') throw e; throw new Error('The address search could not be reached. Check the connection, or enter the site as coordinates instead.'); }
+  if (!r.ok) throw new Error(`The address search is not answering just now (${r.status}). Try again in a minute, or enter the site as coordinates instead.`);
+  const a = (await r.json())?.feeds?.address;
+  if (!a || a.error) throw new Error(a?.error ? String(a.error) : 'The address search gave no answer. Try again in a minute, or enter the site as coordinates instead.');
+  const num = (v) => typeof v === 'number' && Number.isFinite(v);
+  const matches = (a.values?.matches ?? []).filter((m) => m && text(m.address) && num(m.lat) && num(m.lon) && parseWhere(`${m.lat}, ${m.lon}`)).slice(0, 8).map((m) => ({ ...keptAddress(m), lat: m.lat, lon: m.lon, unit: m.unit ?? null }));
+  return { matches, more: !!a.values?.more };
+}
+
 /** One fact as the project keeps it */
 export function trimFact(f) {
   return {
