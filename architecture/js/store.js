@@ -64,7 +64,7 @@ export function memoryBackend() {
 // ---- files ------------------------------------------------------------------------------------------------------------
 /** the most one kept file can be. Browser storage is shared with everything else this site keeps, so the limit is modest. */
 export const FILE_LIMIT = 25 * 1024 * 1024;
-export const OWNER_KINDS = ['document', 'model'];
+export const OWNER_KINDS = ['document', 'model', 'source']; // 'source': a site source (Site and sources); owner_id is the project's id, as for a model
 /** "840 KB", "2.3 MB" */
 export function sizeText(bytes) {
   const n = Number(bytes) || 0;

@@ -27,15 +27,19 @@ function openDb(idb) {
 
 const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
 
-/** keep a file for the 3D page; returns the id to put in its address. Clears hand-overs older than an hour first. */
-export async function putHandoff(blob, name, { idb = globalThis.indexedDB, now = Date.now() } = {}) {
+/**
+ * keep a file for the 3D page; returns the id to put in its address. Clears hand-overs older than an hour first.
+ * site (optional, from Site and sources): { point, camera_path, sources: [{ kind, name, file_id }], files: { <kind>: Blob } }, kept in the
+ * same record, so the model and what the walkthrough needs about the site arrive together.
+ */
+export async function putHandoff(blob, name, { idb = globalThis.indexedDB, now = Date.now(), site = null } = {}) {
   const db = await openDb(idb);
   try {
     const id = newId();
     const tx = db.transaction(HANDOFF_STORE, 'readwrite'), st = tx.objectStore(HANDOFF_STORE);
     const all = await req(st.getAll());
     for (const x of all ?? []) if (!(now - (x?.at ?? 0) < HANDOFF_MAX_AGE)) st.delete(x.id);
-    st.put({ id, name: String(name ?? 'model'), type: blob?.type ?? '', blob, at: now });
+    st.put({ id, name: String(name ?? 'model'), type: blob?.type ?? '', blob, at: now, ...(site ? { site } : {}) });
     await done(tx);
     return id;
   } catch (e) {
@@ -43,7 +47,7 @@ export async function putHandoff(blob, name, { idb = globalThis.indexedDB, now =
   } finally { db.close(); }
 }
 
-/** take a handed-over file out (it is deleted as it is taken): { name, type, blob }, or null when there is none */
+/** take a handed-over file out (it is deleted as it is taken): { name, type, blob, site }, or null when there is none. site is null when none was handed across. */
 export async function takeHandoff(id, { idb = globalThis.indexedDB, now = Date.now() } = {}) {
   if (!id) return null;
   const db = await openDb(idb);
@@ -53,6 +57,6 @@ export async function takeHandoff(id, { idb = globalThis.indexedDB, now = Date.n
     if (got) st.delete(got.id);
     await done(tx);
     if (!got || !(now - (got.at ?? 0) < HANDOFF_MAX_AGE)) return null;
-    return { name: got.name, type: got.type, blob: got.blob };
+    return { name: got.name, type: got.type, blob: got.blob, site: got.site ?? null };
   } finally { db.close(); }
 }

@@ -100,3 +100,38 @@ test('Open in 3D keeps the model first and opens the 3D page with its id, and ne
   assert.match(body, /HANDOFF_PARAM\}=\$\{encodeURIComponent\(hid\)\}/);
   assert.ok(!/\.document|DataTransfer|dispatchEvent/.test(body), 'nothing reaches into the 3D page');
 });
+
+// ---- the site that goes across with the model (Site and sources) ----------------------------------------------------------
+test('a site handed across with the model comes back with it, Blobs and all, once', async () => {
+  const idb = fakeIdb();
+  const site = {
+    point: { lat: -36.8, lng: 175.1, source: 'a point typed on the Site tab' },
+    camera_path: { pts: [[0, 0, 1.6], [4, 3, 1.6]], sketch_file_id: 'f_sketch', traced_by: 'person', confirmed_by: 'Aroha', confirmed_at: '2026-11-23T01:00:00.000Z' },
+    sources: [{ kind: 'drawing_set', name: 'set.pdf', file_id: 'f_set' }],
+    files: { drawing_set: blob('%PDF-1.4 tiny', 'application/pdf'), camera_sketch: blob('png', 'image/png') },
+  };
+  const id = await putHandoff(blob('ISO-10303-21;'), 'sample.ifc', { idb, site });
+  const got = await takeHandoff(id, { idb });
+  assert.equal(got.name, 'sample.ifc');
+  assert.equal(await got.blob.text(), 'ISO-10303-21;');
+  assert.deepEqual(got.site.point, site.point);
+  assert.deepEqual(got.site.camera_path, site.camera_path);
+  assert.deepEqual(got.site.sources, site.sources);
+  assert.equal(await got.site.files.drawing_set.text(), '%PDF-1.4 tiny');
+  assert.equal(got.site.files.camera_sketch.type, 'image/png');
+  assert.equal(await takeHandoff(id, { idb }), null, 'taking it deletes it, site and all');
+  assert.equal(idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE).size, 0);
+});
+
+test('without a site the record is as it was, and site comes back null', async () => {
+  const idb = fakeIdb();
+  const id = await putHandoff(blob('a'), 'a.ifc', { idb });
+  assert.deepEqual([...idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE).get(id) && Object.keys(idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE).get(id))].sort(), ['at', 'blob', 'id', 'name', 'type']);
+  assert.equal((await takeHandoff(id, { idb })).site, null);
+});
+
+test('the 3D page’s takeHandoff returns the site too', () => {
+  const ts = readFileSync(new URL('../../plan-studio/twins/src/twin/handoff.ts', import.meta.url), 'utf8');
+  assert.match(ts, /return \{ name: got\.name, type: got\.type, blob: got\.blob, site: got\.site \?\? null \}/);
+  assert.match(ts, /site: HandoffSite \| null/);
+});
