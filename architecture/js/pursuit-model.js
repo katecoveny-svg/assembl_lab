@@ -145,13 +145,14 @@ export function readPursuit(e) {
 }
 
 /**
- * The enquiry with its pursuit record changed: patch is merged over the record (one level deep for context, notice, checks,
- * weeks and massing; draft.sections merged by section). One history line is added when `what` is given. Saves nothing.
+ * The enquiry with its pursuit record changed: patch is merged over the record (one level deep for context, notice and
+ * massing; draft.sections merged by section unless draft.replace). One history line is added when `what` is given. Saves nothing.
  */
 export function withPursuit(e, patch = {}, { who = '', now = new Date(), what = '' } = {}) {
   const cur = readPursuit(e), at = (now instanceof Date ? now : new Date(now)).toISOString();
   const next = { ...cur, ...patch };
-  for (const k of ['context', 'notice', 'checks', 'weeks', 'massing']) if (isObj(patch[k])) next[k] = { ...cur[k], ...patch[k] };
+  // context, notice and massing are merged; checks and weeks are always given whole, so a key can be taken away
+  for (const k of ['context', 'notice', 'massing']) if (isObj(patch[k])) next[k] = { ...cur[k], ...patch[k] };
   if (isObj(patch.draft) && isObj(cur.draft) && !patch.draft.replace) next.draft = { ...cur.draft, ...patch.draft, sections: { ...cur.draft.sections, ...(patch.draft.sections ?? {}) } };
   if (next.draft) { next.draft = { ...next.draft }; delete next.draft.replace; }
   next.requirements_version = REQUIREMENTS.version;

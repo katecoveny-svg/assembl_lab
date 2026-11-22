@@ -25,7 +25,7 @@ const attr = esc;
 let cssReady = null;
 function ensureCss() {
   if (cssReady) return cssReady;
-  const href = new URL('../crm.css?v=1', import.meta.url).href;
+  const href = new URL('../crm.css?v=2', import.meta.url).href;
   const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find((l) => l.dataset.crm === '1');
   const link = existing ?? Object.assign(document.createElement('link'), { rel: 'stylesheet', href });
   link.dataset.crm = '1';
@@ -68,6 +68,7 @@ const P = {
   xcircle: '<circle cx="12" cy="12" r="8.500"/><path d="m9 9 6 6m0-6-6 6"/>',
   circlecheck: '<circle cx="12" cy="12" r="8.500"/><path d="m8.500 12.500 2.500 2.500 4.500-5"/>',
   send: '<path d="M4 12 20 4l-4 16-4.500-6.500z"/>',
+  pursue: '<path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/><path d="M9 18h6M10 21h4"/>',
 };
 const icon = (name, cls = '') => `<svg class="crm-i ${cls}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${P[name] ?? ''}</svg>`;
 const STAGE_ICON = { new: 'inbox', meeting: 'meeting', proposal: 'note', won: 'circlecheck', lost: 'xcircle', paused: 'pause' };
@@ -204,6 +205,7 @@ async function renderScreen(el, ctx, rest = []) {
       </div>
       <a class="crm-card-title" href="#/crm/e/${encodeURIComponent(e.id)}">${esc(e.title)}</a>
       ${flags.length ? `<div class="crm-card-meta">${flags.join('')}</div>` : ''}
+      ${isOpen(e) ? `<a class="crm-pursue" href="#/pursuit/${encodeURIComponent(e.id)}">${icon('pursue', 'crm-i-s')}<span>Pursue<span class="vh"> ${esc(e.title)}</span></span></a>` : ''}
     </li>`;
   }
 
@@ -349,8 +351,8 @@ async function renderScreen(el, ctx, rest = []) {
             ${f.value ? `<span>${icon('dollar', 'crm-i-s')}<span>${esc(f.value)}</span></span>` : ''}${e.source ? sourceFact(e.source) : ''}
             ${f.quiet ? `<span class="is-quiet">${icon('clock', 'crm-i-s')}<span>Nothing logged for ${f.days} days</span></span>` : ''}</p>
         </div>
-        ${readOnly ? '' : `<div class="crm-ehead-a"><button type="button" class="crm-btn" data-crm="edit" data-id="${attr(e.id)}" aria-expanded="${ui.edit === e.id}">${icon('edit')}<span>Edit</span></button>
-          <button type="button" class="crm-btn" data-crm="archive" data-id="${attr(e.id)}">${icon('archive')}<span>${e.archived ? 'Restore' : 'Archive'}</span></button></div>`}
+        <div class="crm-ehead-a">${isOpen(e) || e.pursuit ? `<a class="crm-btn solid" href="#/pursuit/${encodeURIComponent(e.id)}">${icon('pursue')}<span>Pursue</span></a>` : ''}${readOnly ? '' : `<button type="button" class="crm-btn" data-crm="edit" data-id="${attr(e.id)}" aria-expanded="${ui.edit === e.id}">${icon('edit')}<span>Edit</span></button>
+          <button type="button" class="crm-btn" data-crm="archive" data-id="${attr(e.id)}">${icon('archive')}<span>${e.archived ? 'Restore' : 'Archive'}</span></button>`}</div>
       </header>
       ${e.archived ? `<p class="crm-flash">${icon('archive')}<span>Archived. It stays on record and is off the board.</span></p>` : ''}
       ${flashHtml()}${detailForm}
