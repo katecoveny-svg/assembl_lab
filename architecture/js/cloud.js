@@ -15,22 +15,30 @@
 // model_fingerprint). The page calls stage five "contract"; the tables call it "contract_admin". The page writes empty
 // text as ''; the tables keep null. Ids here are database uuids: a page id such as "t_<uuid>" becomes "<uuid>".
 // Anything on a row that the tables have no column for goes into the row's "extra" column and comes back unchanged.
+// A task's or checklist item's source (the page's "source_ref") is kept in the "source" column; "edited" in the table is
+// worked out from it (the page rewords a sourced item: isEdited in model.js) and is never read back, because the page
+// works it out itself. The note of a kept file on a document or a project's model (file.id) carries the file's database id.
 //
-// Private data. The site point (latitude and longitude) travels only inside request bodies, never in an address, and
-// nothing here writes to the console. Database error text is never shown or kept: it can quote a row's values.
+// Private data. Requests to the shared records carry the site point (latitude and longitude) in their bodies, not in
+// their addresses. (To look up the public maps, the page also sends the point to the lab's live feed: see facts.js.)
+// Nothing here writes to the console. Database error text is never shown or kept: it can quote a row's values.
 //
-// Files (the four names are agreed with the browser store; the shapes below are this file's):
-//   putFile({ project_id, document_id?, name, type?, blob })  -> { id, project_id, document_id, name, type, size, created_at }
-//   getFile(id)                                               -> the same, with blob; or null
-//   removeFile(id)                                            -> true if it was there
-//   listFiles({ project_id?, document_id? })                  -> records, without the bytes
-// putFile also accepts (blob, { ... }) and a File in place of blob.
+// Files: the same four calls and shapes as the browser store (store.js):
+//   putFile({ id?, project_id, owner_kind, owner_id, name, type, data })  -> note { id, project_id, owner_kind, owner_id, name, type, size, kept_at }
+//   getFile(id)          -> the note plus { data: Uint8Array }, or null when there is no such file or its contents are not there
+//   removeFile(id)       -> true if it was there
+//   listFiles(where?)    -> notes only, e.g. listFiles({ project_id })
+// The contents go to the practice's private bucket, at <practice id>/<project id>/<file id> (ids only: a file's own name
+// can say where a site is), and the note goes in the "file" table. Unlike the browser store, a shared file is never
+// replaced in place: putFile with the id of a file already kept is refused, so a colleague's file is never written over.
+// kept_at is when the shared records took the file. fileLimit is the most one file can be (the bucket's own limit).
 
-import { emptyBundle, readBundle, writeBundle, copyBundle, fileSlug, SAMPLE_ID, STAGE_KEYS } from './model.js';
+import { emptyBundle, readBundle, writeBundle, copyBundle, fileSlug, isEdited, SAMPLE_ID, STAGE_KEYS } from './model.js';
+import { FILE_LIMIT as BROWSER_FILE_LIMIT, OWNER_KINDS, sizeText, bytesToBase64, base64ToBytes } from './store.js';
 
 // ---- ids ---------------------------------------------------------------------------------------------------------------
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PREFIXED = /^[a-z]{1,3}_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+const PREFIXED = /^[a-z]{1,8}_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i; // t_, d_, file_ ...
 
 /** a spread-out 128-bit number for an id that is not a uuid, written as a uuid. The same id always gives the same one. */
 function hashedUuid(text) {
@@ -66,20 +74,21 @@ const stageUp = (k) => STAGE_UP[k] ?? k, stageDown = (k) => STAGE_DOWN[k] ?? k;
 //   stage a stage key                       ref   the id of another row                    json  anything; left off the row when null
 const FIELDS = {
   stage: [['status', 'status', 'must', 'not_started'], ['started_at', 'started_at', 'time', null], ['done_at', 'done_at', 'time', null]],
-  task: [['stage', 'stage', 'stage', ''], ['title', 'title', 'must', ''], ['owner', 'owner', 'text', ''], ['status', 'status', 'must', 'todo'], ['due', 'due', 'date', ''], ['note', 'note', 'text', ''], ['source', 'source', 'json'], ['edited', 'edited', 'flag']],
+  task: [['stage', 'stage', 'stage', ''], ['title', 'title', 'must', ''], ['owner', 'owner', 'text', ''], ['status', 'status', 'must', 'todo'], ['due', 'due', 'date', ''], ['note', 'note', 'text', ''], ['source_ref', 'source', 'json']],
   document: [['stage', 'stage', 'stage', ''], ['title', 'title', 'must', ''], ['kind', 'kind', 'text', ''], ['version', 'version', 'text', ''], ['date', 'date', 'date', ''], ['source', 'source', 'text', ''], ['note', 'note', 'text', '']],
   approval: [['stage', 'stage', 'stage', ''], ['who', 'who', 'must', ''], ['role', 'role', 'text', ''], ['what', 'what', 'must', ''], ['note', 'note', 'text', ''], ['at', 'at', 'now', ''], ['fingerprint', 'fingerprint', 'text', '']],
   rfi: [['received_at', 'received_at', 'day', ''], ['from', 'from_party', 'text', ''], ['question', 'question', 'must', ''], ['response', 'response', 'text', ''], ['status', 'status', 'must', 'open'], ['sent_at', 'sent_at', 'day', '']],
   observation: [['date', 'date', 'date', ''], ['by', 'by', 'text', ''], ['note', 'note', 'text', '']],
   variation: [['title', 'title', 'must', ''], ['status', 'status', 'text', ''], ['note', 'note', 'text', '']],
   defect: [['title', 'title', 'must', ''], ['status', 'status', 'text', ''], ['note', 'note', 'text', '']],
-  checklist_item: [['stage', 'stage', 'stage', ''], ['list', 'list', 'must', ''], ['title', 'title', 'must', ''], ['status', 'status', 'must', 'needed'], ['document_id', 'document_id', 'ref', ''], ['note', 'note', 'text', ''], ['source', 'source', 'json'], ['edited', 'edited', 'flag']],
+  checklist_item: [['stage', 'stage', 'stage', ''], ['list', 'list', 'must', ''], ['title', 'title', 'must', ''], ['status', 'status', 'must', 'needed'], ['document_id', 'document_id', 'ref', ''], ['note', 'note', 'text', ''], ['source_ref', 'source', 'json']],
   activity: [['at', 'at', 'now', ''], ['who', 'who', 'text', ''], ['action', 'action', 'must', ''], ['detail', 'detail', 'text', '']],
 };
 /** the kinds of record under a project, and where each sits in a project bundle */
 const LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
 export const SHARED_KINDS = ['project', ...Object.keys(LISTS)];
 const APPEND_ONLY = new Set(['approval', 'activity']);
+const SOURCED = new Set(['task', 'checklist_item']); // rows that can carry a source_ref
 // columns the database fills in itself: never sent, and never mistaken for an unknown field
 const DATABASE_OWN = new Set(['user_id', 'recorded_at', 'seq', 'created_by', 'practice_id', 'extra']);
 
@@ -116,10 +125,14 @@ function down(type, v, empty) {
   }
 }
 
+/** a kept file's note ({ id, name, type, size, kept_at }) with the file's database id, so it finds the file in the shared records */
+const fileNoteUp = (f) => (isObj(f) && typeof f.id === 'string' && f.id ? { ...f, id: dbId(f.id) } : f);
+
 function projectUp(p, practiceId) {
   const site = obj(p.site), model = obj(p.model), extra = {};
   const { lat, lon, facts, fetched_at, ...siteRest } = site, { fingerprint, drawings, revision, file_name, ...modelRest } = model;
   for (const [k, v] of Object.entries(p)) if (!['id', 'name', 'client', 'stage', 'created_at', 'updated_at', 'site', 'model', 'sample'].includes(k) && !DATABASE_OWN.has(k) && v !== undefined) extra[k] = v;
+  if ('file' in modelRest) modelRest.file = fileNoteUp(modelRest.file);
   if (Object.keys(siteRest).length) extra.site = siteRest;
   if (Object.keys(modelRest).length) extra.model = modelRest;
   const num = (v, lim) => (typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= lim ? v : null), text = (v) => up('text', v)[0];
@@ -137,7 +150,7 @@ function projectDown(r) {
   return {
     ...rest, id: r.id, name: r.name ?? '', client: r.client ?? '', stage: stageDown(r.stage), created_at: iso(r.created_at) ?? '', updated_at: iso(r.updated_at) ?? '',
     site: { ...obj(site), lat: r.site_lat ?? null, lon: r.site_lon ?? null, facts: Array.isArray(r.site_facts) ? r.site_facts : [], fetched_at: r.site_fetched_at ? iso(r.site_fetched_at) : null },
-    model: { ...obj(model), fingerprint: r.model_fingerprint ?? '', drawings: typeof drawings === 'string' ? drawings : drawings == null ? '' : JSON.stringify(drawings), revision: r.model_revision ?? '', file_name: r.model_file_name ?? '' },
+    model: { file: null, ...obj(model), fingerprint: r.model_fingerprint ?? '', drawings: typeof drawings === 'string' ? drawings : drawings == null ? '' : JSON.stringify(drawings), revision: r.model_revision ?? '', file_name: r.model_file_name ?? '' },
   };
 }
 
@@ -154,6 +167,8 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
     if (!fits) extra[name] = row[name];
   }
   for (const [k, v] of Object.entries(row)) if (!names.has(k) && !['id', 'project_id', 'key'].includes(k) && !DATABASE_OWN.has(k) && v !== undefined) extra[k] = v;
+  if (kind === 'document' && 'file' in extra) extra.file = fileNoteUp(extra.file);
+  if (SOURCED.has(kind)) rec.edited = isEdited(row); // for the database's own use; the page works it out again from the title and the source
   rec.extra = extra;
   return rec;
 }
@@ -172,7 +187,7 @@ export function fromRecord(kind, r) {
 }
 
 // ---- plain words for what went wrong -----------------------------------------------------------------------------------
-/** code is one of: not_switched_on, out_of_date, signed_out, refused, read_only, append_only, kept, offline, failed */
+/** code is one of: not_switched_on, out_of_date, signed_out, refused, read_only, append_only, kept, offline, missing, failed */
 export class CloudError extends Error {
   constructor(message, code = 'failed') { super(message); this.name = 'CloudError'; this.code = code; }
 }
@@ -206,7 +221,7 @@ function explainStorage(err) {
   if (/jwt/i.test(msg) && /expired|invalid/i.test(msg)) return new CloudError('Your sign-in has expired. Sign in again.', 'signed_out');
   if (/bucket not found/i.test(msg)) return new CloudError('Keeping files in the shared records is not switched on yet.', 'not_switched_on');
   if (status === 403 || status === 401 || /row-level security|unauthori[sz]ed|not allowed/i.test(msg)) return new CloudError('The shared records refused that file: your role in the practice does not allow it.', 'refused');
-  if (status === 404 || /not found/i.test(msg)) return new CloudError('That file is not in the shared records.', 'failed');
+  if (status === 404 || /not found/i.test(msg)) return new CloudError('That file is not in the shared records.', 'missing');
   if (status === 409 || /already exists/i.test(msg)) return new CloudError('A file is already kept under that id.', 'failed');
   if (status === 413 || /too large|maximum allowed size/i.test(msg)) return new CloudError('That file is larger than the shared records accept.', 'failed');
   if (!status || /fetch|network/i.test(msg)) return new CloudError('The shared records could not be reached just now.', 'offline');
@@ -268,7 +283,9 @@ export async function probeShared(gateway) {
 
 // ---- the shared store ------------------------------------------------------------------------------------------------------
 const ORDER = { project: ['id'], stage: ['project_id', 'key'] }; // every other kind is read in the order it was added
-const FILE_LIMIT = 50 * 1024 * 1024;
+/** the most one shared file can be: the bucket's own limit (supabase/migrations/20261122100200_arch_files_storage.sql) */
+export const SHARED_FILE_LIMIT = 50 * 1024 * 1024;
+const toBytes = (data) => (typeof data === 'string' ? new TextEncoder().encode(data) : data instanceof Uint8Array ? data : data instanceof ArrayBuffer ? new Uint8Array(data) : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null);
 const isSample = (p) => !!p && (p.sample === true || p.id === SAMPLE_ID);
 const matches = (row, where) => !where || Object.entries(where).every(([k, v]) => row?.[k] === v);
 const copy = (v) => (v == null ? null : JSON.parse(JSON.stringify(v)));
@@ -307,8 +324,14 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     }
   };
 
+  const keptIn = `the shared records of ${practice.name || 'the practice'}`;
+  // the note of a file kept in this browser, without reading its contents (only the Sample's files stay in the browser)
+  const localNote = async (id) => { try { return (await local.listFiles()).find((f) => f.id === id) ?? null; } catch { return null; } };
+
   const store = {
     persistent: true,
+    filesPersistent: true,
+    fileLimit: SHARED_FILE_LIMIT,
     shared: true,
     practice,
 
@@ -467,11 +490,23 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       } catch (e) { throw nothing(e, ' Nothing more was removed.'); }
     },
 
-    async exportProject(id, now) {
+    /** The same project file as the browser store writes. With { files: true } the shared files are read and put inside it. */
+    async exportProject(id, now, { files = false } = {}) {
+      if (await localProject(id)) return local.exportProject(id, now, { files });
       const b = await store.loadProject(id);
       if (!b) throw new Error('That project is not in the shared records.');
       const d = new Date(now ?? Date.now()), day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      return { file_name: `${fileSlug(b.project.name)}-project-${day}.json`, text: JSON.stringify(writeBundle(b, now), null, 2) };
+      const base = `${fileSlug(b.project.name)}-project-${day}`;
+      if (!files) return { file_name: `${base}.json`, text: JSON.stringify(writeBundle(b, now, undefined, keptIn), null, 2), files_included: false, file_count: 0, file_bytes: 0 };
+      const out = [];
+      let bytes = 0, missing = 0;
+      for (const m of await store.listFiles({ project_id: b.project.id })) {
+        const f = await store.getFile(m.id); // a failure to read stops the export: nothing half-made is handed over
+        if (!f) { missing++; continue; } // the record is there but its contents are not: counted, not hidden
+        bytes += f.size;
+        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, data_base64: bytesToBase64(f.data) });
+      }
+      return { file_name: `${base}-with-files.json`, text: JSON.stringify(writeBundle(b, now, out, keptIn), null, 2), files_included: true, file_count: out.length, file_bytes: bytes, ...(missing ? { files_missing: missing } : {}) };
     },
 
     async importProject(text, now) {
@@ -487,72 +522,88 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
         b = copyBundle(b, now); copied = true;
         await store.saveProject(b);
       }
-      return { project_id: dbId(b.project.id), copied };
+      // files the project file carries go to the shared records too; one that is refused is counted, not hidden
+      let kept = 0, refused = 0;
+      for (const f of b.files ?? []) {
+        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
+      }
+      const pid = dbId(b.project.id);
+      return Array.isArray(b.files) ? { project_id: pid, copied, files: kept, files_failed: refused } : { project_id: pid, copied };
     },
 
-    // ---- files: the bytes go to the practice's private bucket, a record of each goes in the "file" table ----
-    async putFile(input, more) {
-      const meta = isObj(more) ? { ...more } : isObj(input) && !isBlob(input) ? { ...input } : {};
-      const blob = isBlob(input) ? input : meta.blob ?? meta.file ?? meta.data ?? (isBlob(more) ? more : null);
-      if (meta.project_id && await localProject(meta.project_id)) {
-        if (typeof local.putFile !== 'function') throw new Error('Keeping files for the Sample project is not built yet.');
-        return local.putFile(input, more);
-      }
+    // ---- files: the contents go to the practice's private bucket, the note of each goes in the "file" table ----
+    async putFile(input = {}) {
+      const { id, project_id, owner_kind, owner_id, name, type = '', data } = isObj(input) ? input : {};
+      if (project_id && await localProject(project_id)) return local.putFile(input); // the Sample's files stay in the browser
       mustWrite('file');
-      if (!isBlob(blob)) throw new Error('Choose a file to keep.');
-      if (blob.size > FILE_LIMIT) throw new CloudError('That file is over 50 MB, which is more than the shared records accept. It was not kept.', 'failed');
-      const name = String(meta.name ?? blob.name ?? '').trim();
-      if (!name) throw new Error('A file needs a name before it can be kept.');
-      const id = meta.id ? dbId(meta.id) : newUuid(), project = meta.project_id ? dbId(meta.project_id) : null;
-      const path = `${practice.id}/${project ?? 'practice'}/${id}`; // ids only: a file's own name can say where a site is
-      const type = String(meta.type ?? meta.mime ?? blob.type ?? '') || 'application/octet-stream';
-      const { blob: _b, file: _f, data: _d, id: _i, project_id: _p, document_id: _doc, name: _n, type: _t, mime: _m, size: _s, created_at: _c, ...extra } = meta;
+      const bytes = toBytes(data), label = String(name || '').trim() ? String(name) : 'file';
+      if (!bytes) throw new Error('There is nothing in that file to keep.');
+      if (!project_id || !owner_id || !OWNER_KINDS.includes(owner_kind)) throw new Error('A file needs the record it belongs to before it can be kept.');
+      if (bytes.byteLength > SHARED_FILE_LIMIT) throw new CloudError(`“${label}” is ${sizeText(bytes.byteLength)}. The limit is ${sizeText(SHARED_FILE_LIMIT)} a file in the shared records, so it was not kept. Keep the file where it is and record where.`, 'failed');
+      const fid = id ? dbId(id) : newUuid(), pid = dbId(project_id), mime = String(type || '');
+      const path = `${practice.id}/${pid}/${fid}`; // ids only: a file's own name can say where a site is
+      const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
       try {
-        await g.file((s) => s.upload(path, blob, { contentType: type, upsert: false }));
+        await g.file((s) => s.upload(path, blob, { contentType: mime || 'application/octet-stream', upsert: false }));
       } catch (e) { throw nothing(e, ' The file was not kept.'); }
       try {
-        const rec = { id, practice_id: practice.id, project_id: project, document_id: meta.document_id ? dbId(meta.document_id) : null, name, mime: type, size: blob.size, storage_path: path, extra };
+        const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: bytes.byteLength, storage_path: path, extra: {} };
         const got = await g.ask(() => g.from('file').insert(rec).select());
-        return fileDown(got?.[0] ?? rec);
+        return fileDown(got?.[0] ?? { ...rec, created_at: new Date().toISOString() });
       } catch (e) {
-        try { await g.file((s) => s.remove([path])); } catch { /* the record was refused; the bytes may be left behind for an owner to clear */ }
+        try { await g.file((s) => s.remove([path])); } catch { /* the record was refused; the contents may be left behind for an owner to clear */ }
         throw nothing(e, ' The file was not kept.');
       }
     },
     async getFile(id) {
-      if (typeof local.getFile === 'function') { const here = await local.getFile(id).catch(() => null); if (here && await localProject(here.project_id)) return here; }
+      if (!id) return null;
+      const here = await localNote(id);
+      if (here && await localProject(here.project_id)) return local.getFile(id);
       const rows = await g.ask(() => g.from('file').select('*').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1));
       if (!rows?.[0]) return null;
-      const blob = await g.file((s) => s.download(rows[0].storage_path));
-      return { ...fileDown(rows[0]), blob };
+      let got;
+      try { got = await g.file((s) => s.download(rows[0].storage_path)); } catch (e) { if (e.code === 'missing') return null; throw e; }
+      if (!got) return null; // no contents came back: the file is not there
+      const data = got instanceof Uint8Array ? got : got instanceof ArrayBuffer ? new Uint8Array(got) : new Uint8Array(await got.arrayBuffer());
+      return { ...fileDown(rows[0]), data };
     },
     async removeFile(id) {
-      if (typeof local.getFile === 'function') { const here = await local.getFile(id).catch(() => null); if (here && await localProject(here.project_id)) return local.removeFile(id); }
+      if (!id) return false;
+      const here = await localNote(id);
+      if (here && await localProject(here.project_id)) return local.removeFile(id);
       mustWrite('file');
       try {
         const rows = await g.ask(() => g.from('file').select('id, storage_path').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1));
         if (!rows?.[0]) return false;
+        // the contents first: if that fails, nothing has changed. If the record then fails, getFile finds no contents and
+        // says the file is not there, and removing it again finishes the job.
         await g.file((s) => s.remove([rows[0].storage_path]));
         return ((await g.ask(() => g.from('file').delete().eq('id', rows[0].id).select('id')))?.length ?? 0) > 0;
       } catch (e) { throw nothing(e, ' The file was not removed.'); }
     },
-    async listFiles(where = {}) {
-      const pid = where?.project_id;
-      if (pid && await localProject(pid)) return typeof local.listFiles === 'function' ? local.listFiles(where) : [];
+    async listFiles(where) {
+      const w = isObj(where) ? where : {};
+      if (w.project_id && await localProject(w.project_id)) return local.listFiles(w);
       const recs = await g.all(() => {
         let q = g.from('file').select('*').eq('practice_id', practice.id);
-        if (pid) q = q.eq('project_id', dbId(pid));
-        if (where?.document_id) q = q.eq('document_id', dbId(where.document_id));
+        if (w.project_id) q = q.eq('project_id', dbId(w.project_id));
+        if (w.owner_kind) q = q.eq('owner_kind', w.owner_kind);
+        if (w.owner_id) q = q.eq('owner_id', dbId(w.owner_id));
         return q;
       }, ['seq']);
-      return recs.map(fileDown);
+      const rest = Object.fromEntries(Object.entries(w).filter(([k]) => !['project_id', 'owner_kind', 'owner_id'].includes(k)));
+      const shared = recs.map(fileDown).filter((f) => matches(f, rest));
+      if (w.project_id) return shared;
+      // no project named: the Sample's files in this browser are listed too, as list() does for rows
+      const samples = await sampleIds();
+      return [...shared, ...(await local.listFiles(w)).filter((f) => samples.includes(f.project_id))];
     },
   };
   return store;
 }
 
-const isBlob = (v) => typeof Blob !== 'undefined' && v instanceof Blob;
-const fileDown = (r) => ({ ...obj(r.extra), id: r.id, project_id: r.project_id ?? '', document_id: r.document_id ?? '', name: r.name ?? '', type: r.mime ?? '', size: Number(r.size ?? 0), created_at: iso(r.created_at ?? Date.now()) ?? '' });
+/** a row of the "file" table -> the note the page holds, the same shape as the browser store's */
+const fileDown = (r) => ({ id: r.id, project_id: r.project_id ?? '', owner_kind: r.owner_kind ?? '', owner_id: r.owner_id ?? '', name: r.name ?? '', type: r.mime ?? '', size: Number(r.size ?? 0), kept_at: iso(r.created_at) ?? '' });
 
 /**
  * Approvals and activity that come up from a browser or a file were not recorded under a sign-in.
@@ -574,10 +625,12 @@ export function createSwitch(local) {
     get current() { return current; },
     get shared() { return current !== local; },
     get persistent() { return current.persistent; },
+    get filesPersistent() { return !!current.filesPersistent; },
+    /** the most one file can be where files are kept now */
+    get fileLimit() { return current.fileLimit ?? BROWSER_FILE_LIMIT; },
   };
-  for (const name of ['list', 'get', 'save', 'remove', 'loadProject', 'saveProject', 'removeProject', 'exportProject', 'importProject']) s[name] = (...args) => current[name](...args);
-  for (const name of ['putFile', 'getFile', 'removeFile', 'listFiles']) {
-    s[name] = (...args) => (typeof current[name] === 'function' ? current[name](...args) : Promise.reject(new Error('Keeping files in this browser is not built yet.')));
+  for (const name of ['list', 'get', 'save', 'remove', 'loadProject', 'saveProject', 'removeProject', 'exportProject', 'importProject', 'putFile', 'getFile', 'removeFile', 'listFiles']) {
+    s[name] = (...args) => current[name](...args);
   }
   return s;
 }
@@ -602,23 +655,26 @@ export async function moveProjects({ local, cloud, ids, now }) {
       if (there && !retry) { out.push({ id, name, outcome: 'already', reason: 'It is already in the shared records, so it was not copied again.' }); continue; }
       await note(id, 'failed'); // until the whole copy has been read back
       await cloud.saveProject(markBroughtIn(copy(b), 'browser', now));
-      let files = 0;
-      if (typeof local.listFiles === 'function' && typeof local.getFile === 'function') {
-        const kept = new Set((await cloud.listFiles({ project_id: id })).map((f) => f.id));
-        for (const f of await local.listFiles({ project_id: id })) {
-          if (kept.has(dbId(f.id))) { files++; continue; }
+      // the files kept in this browser for the project go up after its records (a file's note names its document).
+      // One already in the shared records (an earlier try that stopped part-way) is not sent again.
+      const already = new Set((await cloud.listFiles({ project_id: id })).map((f) => f.id));
+      const sent = new Set();
+      for (const f of await local.listFiles({ project_id: id })) {
+        if (!already.has(dbId(f.id))) {
           const full = await local.getFile(f.id);
-          if (!full?.blob) continue;
-          await cloud.putFile({ ...f, blob: full.blob, project_id: id });
-          files++;
+          if (!full?.data) continue; // its note is here but its contents are not: nothing to send
+          await cloud.putFile({ id: f.id, project_id: id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: full.data });
         }
+        sent.add(dbId(f.id));
       }
       const back = await cloud.loadProject(id);
       if (!back) throw new CloudError('The copy could not be read back from the shared records.', 'failed');
       const counts = Object.fromEntries(Object.values(LISTS).map((list) => [list, back[list].length]));
       const short = Object.values(LISTS).filter((list) => list !== 'activity' && back[list].length < b[list].length);
       if (short.length) throw new CloudError('The copy read back from the shared records is missing some rows.', 'failed');
-      counts.files = files;
+      const upFiles = new Set((await cloud.listFiles({ project_id: id })).map((f) => f.id));
+      if ([...sent].some((f) => !upFiles.has(f))) throw new CloudError('The copy read back from the shared records is missing some files.', 'failed');
+      counts.files = sent.size;
       await note(id, 'copied');
       out.push({ id, name, outcome: 'copied', reason: '', counts });
     } catch (e) {

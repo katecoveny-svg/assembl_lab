@@ -6,13 +6,18 @@
 --   b. four access rules (policies) on storage.objects, each limited to that one bucket.
 -- Everything else is in arch.
 
--- 1. A record for each file: which practice and project it belongs to, its name, and where the bytes are kept.
---    The path is <practice id>/<project id or "practice">/<file id>. The file's own name is never part of the path.
+-- 1. A record for each file: which practice and project it belongs to, the record it is kept for, its name, and where
+--    the bytes are kept. The same shape as the page's file note (architecture/js/store.js):
+--      owner_kind 'document' (owner_id is the document's id) or 'model' (the project's plan model: owner_id is the project's id).
+--    owner_id has no foreign key on purpose: the page keeps a file first and then saves the record that points at it, so
+--    a document can still be on its way when its file arrives. created_at is the page's "kept_at".
+--    The path is <practice id>/<project id>/<file id>. The file's own name is never part of the path.
 create table if not exists arch.file (
   id           uuid primary key default gen_random_uuid(),
   practice_id  uuid not null references arch.practice(id) on delete restrict,
-  project_id   uuid references arch.project(id) on delete restrict,
-  document_id  uuid references arch.document(id) on delete set null,
+  project_id   uuid not null references arch.project(id) on delete restrict,
+  owner_kind   text not null check (owner_kind in ('document', 'model')),
+  owner_id     uuid not null,
   name         text not null check (length(btrim(name)) > 0),
   mime         text,
   size         bigint check (size is null or size >= 0),
@@ -21,10 +26,13 @@ create table if not exists arch.file (
   created_at   timestamptz not null default now(),
   extra        jsonb not null default '{}'::jsonb check (jsonb_typeof(extra) = 'object'),
   seq          bigint generated always as identity,
-  constraint file_path_in_practice check (storage_path like practice_id::text || '/%')
+  constraint file_path_in_practice check (storage_path like practice_id::text || '/%'),
+  constraint file_path_is_ids check (storage_path = practice_id::text || '/' || project_id::text || '/' || id::text),
+  constraint file_model_is_project check (owner_kind <> 'model' or owner_id = project_id)
 );
 create index if not exists file_practice_idx on arch.file (practice_id);
 create index if not exists file_project_idx on arch.file (project_id);
+create index if not exists file_owner_idx on arch.file (owner_kind, owner_id);
 
 alter table arch.file enable row level security;
 revoke all on arch.file from public, anon;
@@ -55,13 +63,13 @@ begin
   if not exists (select 1 from pg_policies where schemaname = 'arch' and tablename = 'file' and policyname = 'file_insert') then
     create policy file_insert on arch.file for insert to authenticated
       with check (arch.can_write(practice_id) and created_by = auth.uid()
-                  and (project_id is null or arch.project_practice(project_id) = practice_id));
+                  and arch.project_practice(project_id) = practice_id);
   end if;
   if not exists (select 1 from pg_policies where schemaname = 'arch' and tablename = 'file' and policyname = 'file_update') then
     create policy file_update on arch.file for update to authenticated
       using (arch.can_write(practice_id))
       with check (arch.can_write(practice_id)
-                  and (project_id is null or arch.project_practice(project_id) = practice_id));
+                  and arch.project_practice(project_id) = practice_id);
   end if;
   if not exists (select 1 from pg_policies where schemaname = 'arch' and tablename = 'file' and policyname = 'file_delete') then
     create policy file_delete on arch.file for delete to authenticated

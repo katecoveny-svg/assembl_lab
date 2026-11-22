@@ -404,11 +404,12 @@ export function readBundle(input) {
  * The file contents for a project: everything about it, and nothing about any other project.
  * "files" is the list of kept files with their contents (see store.exportProject). Leave it out and the export holds
  * the records only: each document still says which file it had, and the export says plainly the files are not in it.
+ * "keptIn" says where the files stay when they are not included (the shared store passes the practice's shared records).
  */
-export function writeBundle(b, now, files) {
+export function writeBundle(b, now, files, keptIn = 'the browser they were kept in') {
   const withFiles = Array.isArray(files);
   const out = { type: BUNDLE_TYPE, exported_at: nowIso(now),
-    note: `A project exported from assembl. architecture operations. It includes the site point if one was saved. ${withFiles ? `Files are included: ${files.length}.` : 'Files are not included: only the records. The files stay in the browser they were kept in.'} Approvals are a record of what named people said: not signatures and not a professional sign-off.`,
+    note: `A project exported from assembl. architecture operations. It includes the site point if one was saved. ${withFiles ? `Files are included: ${files.length}.` : `Files are not included: only the records. The files stay in ${keptIn}.`} Approvals are a record of what named people said: not signatures and not a professional sign-off.`,
     files_included: withFiles, project: b.project };
   for (const k of LISTS) out[k] = b[k];
   if (withFiles) out.files = files;

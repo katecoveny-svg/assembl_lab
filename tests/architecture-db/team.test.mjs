@@ -276,15 +276,18 @@ test('an administrator can still delete a whole practice that has no projects', 
   assert.equal(await roleOf(P.mal, tmp), null);
 });
 
+// the page's source_ref for a sourced item (architecture/js/model.js sourceRef), kept in the source column
+const REF = { id: 'ac1011.title', key: 'ac1011', name: 'AC1011 (v23) Lodgement Checklist: Residential', clause: '“General items”', url: 'https://example.org/ac1011.pdf', version: 'December 2025', read: '2026-11-22', council: 'Auckland Council', title: 'Record of title no older than 90 days' };
+
 // ---- checklists, extra, recorded_at -----------------------------------------------------------------------------------
 test('checklist items: members write, viewers read only, another practice sees nothing', async () => {
   const id = (await rows(P.dan, `insert into arch.checklist_item (project_id,stage,list,title,document_id,source,edited) values ($1,'detailed','consent','Drawings',$2,$3,true) returning id`,
-    [projectA, docA, JSON.stringify({ name: 'Council checklist', clause: '4.2', url: 'https://example.org/c', read_on: '2026-11-20' })]))[0].id;
+    [projectA, docA, JSON.stringify(REF)]))[0].id;
   const seen = await rows(P.carol, `select * from arch.checklist_item where id=$1`, [id]);
   assert.equal(seen.length, 1);
   assert.equal(seen[0].status, 'needed');
   assert.equal(seen[0].edited, true);
-  assert.deepEqual(seen[0].source, { name: 'Council checklist', clause: '4.2', url: 'https://example.org/c', read_on: '2026-11-20' });
+  assert.deepEqual(seen[0].source, REF, 'the page’s source_ref comes back as it was sent');
   await refused(signed(P.carol, () => q(`insert into arch.checklist_item (project_id,list,title) values ($1,'consent','x')`, [projectA])), /row-level security/);
   assert.equal(await changed(P.carol, `update arch.checklist_item set status='gathered' where id=$1`, [id]), 0);
   assert.equal(await changed(P.carol, `delete from arch.checklist_item where id=$1`, [id]), 0);
@@ -380,19 +383,37 @@ test('a path that does not begin with a practice id gives nobody access, and nev
 });
 
 test('file records follow the same rules, and must sit inside their own practice', async () => {
-  const key = `${practiceA}/${projectA}/${uid(600)}`;
-  const id = (await rows(P.dan, `insert into arch.file (practice_id,project_id,name,mime,size,storage_path,extra) values ($1,$2,'Plans.pdf','application/pdf',1234,$3,'{"kept":"yes"}') returning id`, [practiceA, projectA, key]))[0].id;
-  const seen = (await rows(P.carol, `select name, size, created_by, extra from arch.file where id=$1`, [id]))[0];
-  assert.deepEqual(seen, { name: 'Plans.pdf', size: 1234, created_by: P.dan.id, extra: { kept: 'yes' } });
+  // the shape the page sends (architecture/js/cloud.js putFile): the note's owner_kind and owner_id, the path made of ids only
+  const add = `insert into arch.file (id,practice_id,project_id,owner_kind,owner_id,name,mime,size,storage_path) values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`;
+  const path = (pr, pj, f) => `${pr}/${pj}/${f}`, doc = uid(700);
+  const id = (await rows(P.dan, add, [uid(600), practiceA, projectA, 'document', doc, 'Plans.pdf', 'application/pdf', 1234, path(practiceA, projectA, uid(600))]))[0].id;
+  const seen = (await rows(P.carol, `select name, size, owner_kind, owner_id, created_by, extra from arch.file where id=$1`, [id]))[0];
+  assert.deepEqual(seen, { name: 'Plans.pdf', size: 1234, owner_kind: 'document', owner_id: doc, created_by: P.dan.id, extra: {} });
+  // a project's plan model: its owner is the project itself
+  assert.equal((await rows(P.dan, add, [uid(610), practiceA, projectA, 'model', projectA, 'house.plan.json', 'application/json', 16, path(practiceA, projectA, uid(610))])).length, 1);
+  await refused(signed(P.dan, () => q(add, [uid(611), practiceA, projectA, 'model', doc, 'x.json', null, 1, path(practiceA, projectA, uid(611))])), /file_model_is_project|check constraint/);
+  await refused(signed(P.dan, () => q(add, [uid(612), practiceA, projectA, 'invoice', doc, 'x', null, 1, path(practiceA, projectA, uid(612))])), /check constraint/);
+  await refused(signed(P.dan, () => q(add, [uid(613), practiceA, null, 'document', doc, 'x', null, 1, `${practiceA}/practice/${uid(613)}`])), /row-level security|null value/);
+  await refused(q(add, [uid(613), practiceA, null, 'document', doc, 'x', null, 1, `${practiceA}/practice/${uid(613)}`]), /null value/); // every file belongs to a project, even when written by the database owner
+  // the path is exactly <practice>/<project>/<file id>: no file name, no other folder
+  await refused(signed(P.dan, () => q(add, [uid(614), practiceA, projectA, 'document', doc, 'x', null, 1, `${practiceA}/${projectA}/Plans.pdf`])), /file_path_is_ids|check constraint/);
+  await refused(signed(P.dan, () => q(add, [uid(615), practiceA, projectA, 'document', doc, 'x', null, 1, path(practiceA, projectA, uid(699))])), /file_path_is_ids|check constraint/);
   assert.equal((await rows(P.bob, `select * from arch.file`)).length, 0);
-  await refused(signed(P.carol, () => q(`insert into arch.file (practice_id,name,storage_path) values ($1,'x',$2)`, [practiceA, `${practiceA}/practice/${uid(601)}`])), /row-level security/);
+  await refused(signed(P.carol, () => q(add, [uid(601), practiceA, projectA, 'document', doc, 'x', null, 1, path(practiceA, projectA, uid(601))])), /row-level security/);
   assert.equal(await changed(P.carol, `delete from arch.file where id=$1`, [id]), 0);
-  await refused(signed(P.bob, () => q(`insert into arch.file (practice_id,name,storage_path) values ($1,'x',$2)`, [practiceA, `${practiceA}/practice/${uid(602)}`])), /row-level security/);
+  await refused(signed(P.bob, () => q(add, [uid(602), practiceA, projectA, 'document', doc, 'x', null, 1, path(practiceA, projectA, uid(602))])), /row-level security/);
   // the path must begin with the record's own practice; the project must belong to it; the uploader is the signed-in person
-  await refused(signed(P.dan, () => q(`insert into arch.file (practice_id,name,storage_path) values ($1,'x',$2)`, [practiceA, `${practiceB}/practice/${uid(603)}`])), /file_path_in_practice|check constraint/);
-  await refused(signed(P.bob, () => q(`insert into arch.file (practice_id,project_id,name,storage_path) values ($1,$2,'x',$3)`, [practiceB, projectA, `${practiceB}/x/${uid(604)}`])), /row-level security/);
-  await refused(signed(P.dan, () => q(`insert into arch.file (practice_id,name,storage_path,created_by) values ($1,'x',$2,$3)`, [practiceA, `${practiceA}/practice/${uid(605)}`, P.alice.id])), /row-level security/);
+  await refused(signed(P.dan, () => q(add, [uid(603), practiceA, projectA, 'document', doc, 'x', null, 1, path(practiceB, projectA, uid(603))])), /file_path_in_practice|check constraint/);
+  await refused(signed(P.bob, () => q(add, [uid(604), practiceB, projectA, 'document', doc, 'x', null, 1, path(practiceB, projectA, uid(604))])), /row-level security/);
+  await refused(signed(P.dan, () => q(`insert into arch.file (id,practice_id,project_id,owner_kind,owner_id,name,storage_path,created_by) values ($1,$2,$3,'document',$4,'x',$5,$6)`, [uid(605), practiceA, projectA, doc, path(practiceA, projectA, uid(605)), P.alice.id])), /row-level security/);
   assert.equal(await changed(P.dan, `delete from arch.file where id=$1`, [id]), 1);
+  assert.equal(await changed(P.dan, `delete from arch.file where id=$1`, [uid(610)]), 1);
+  // a project with files cannot be deleted until its files are removed (the page removes them first)
+  const spare = (await rows(P.dan, `insert into arch.project (practice_id,name) values ($1,'Spare') returning id`, [practiceA]))[0].id;
+  await rows(P.dan, add, [uid(620), practiceA, spare, 'model', spare, 'm.json', null, 1, path(practiceA, spare, uid(620))]);
+  await refused(signed(P.alice, () => q(`delete from arch.project where id=$1`, [spare])), /foreign key|violates/);
+  assert.equal(await changed(P.dan, `delete from arch.file where id=$1`, [uid(620)]), 1);
+  assert.equal(await changed(P.alice, `delete from arch.project where id=$1`, [spare]), 1);
 });
 
 test('data survives a third run of the migrations', async () => {

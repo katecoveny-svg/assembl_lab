@@ -19,7 +19,9 @@ alter table arch.defect          add column if not exists extra jsonb not null d
 alter table arch.activity        add column if not exists extra jsonb not null default '{}'::jsonb check (jsonb_typeof(extra) = 'object');
 
 -- 2. Tasks can name where their wording came from, and whether a person has edited it since.
---    source is { name, clause, url, read_on }.
+--    source is the page's source_ref: { id, key, name, clause, url, version, read, council, title } (architecture/js/model.js).
+--    edited is written by the page: true when the title no longer matches the source's title. The page works it out
+--    again itself and never reads this column back.
 alter table arch.task add column if not exists source jsonb;
 alter table arch.task add column if not exists edited boolean not null default false;
 

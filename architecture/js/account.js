@@ -371,7 +371,13 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       return shared ? {
         shared: true,
         here: `in the shared records of ${name}`,
+        keptOnly: `in the shared records of ${name}`,
         from: `from the shared records of ${name}`,
+        fileState: ['■ File in the shared records', '□ File not in the shared records'],
+        limitWhy: 'in the shared records',
+        filesLine: (n, _persistent, here = '') => `■ Files are kept in the shared records of ${name}, up to ${n} a file${here}. Everyone in the practice can open them. Export with the files to keep a copy of your own.`,
+        passAcross: `The file is read from the shared records of ${name} and passed across inside this browser.`,
+        record: `A record kept in the shared records of ${name}.`,
         pointSaved: `saved to the shared records of ${name}, where the people in your practice can read it`,
         whoNote: '“Who” is the name on the Google account that was signed in, or the name typed before the project was shared. The shared record also keeps which account added each entry.',
         approvalsNote: 'kept in the practice’s shared records with the account that recorded each one',
@@ -380,7 +386,13 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       } : {
         shared: false,
         here: 'in this browser',
+        keptOnly: 'in this browser only',
         from: 'from this browser',
+        fileState: ['■ File kept in this browser', '□ File not in this browser'],
+        limitWhy: ', because files are kept in this browser',
+        filesLine: (n, persistent, here = '') => `${persistent ? '■ Files are kept in this browser only' : '□ This browser is not keeping files past this tab'}, up to ${n} a file${here}. Clearing this browser’s data removes them, so export with the files to keep a copy. To share files with your practice, sign in and copy the project to the practice.`,
+        passAcross: 'The kept file is passed across inside this browser. Nothing is uploaded.',
+        record: 'A record kept in one browser.',
         pointSaved: 'saved in this browser only',
         whoNote: `“Who” is the name typed in “Working as”. ${st.phase === 'in' ? 'This project is saved in this browser, not under your sign-in' : 'Nobody is signed in'}, so it is not proof of who it was.`,
         approvalsNote: 'typed into the practice’s own browser',
@@ -405,7 +417,7 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       const onSample = !!root.querySelector('.phead .tag, .pack-head .tag');
       for (const b of root.querySelectorAll('[data-act="project-remove"]')) if (!b.closest('.prow')?.querySelector('.tag')) b.hidden = true;
       if (st.practice.role !== 'viewer' || onSample) return;
-      for (const el of root.querySelectorAll('[data-act="add"], [data-act="edit"], [data-act="remove"], [data-act="ask"], [data-act="back"], [data-act="done"], [data-act="facts-remove"], [data-act="model-remove"], [data-act="pick"], form[data-form]')) {
+      for (const el of root.querySelectorAll('[data-act="add"], [data-act="edit"], [data-act="remove"], [data-act="ask"], [data-act="back"], [data-act="done"], [data-act="facts-remove"], [data-act="model-remove"], [data-act="pick"], [data-act="file-pick"], [data-act="file-remove"], [data-act="sourced-consent"], [data-act="sourced-tasks"], [data-act="auckland-remove"], form[data-form]')) {
         if (el.matches('[data-act="pick"]') && el.closest('.prow')) continue;
         el.hidden = true;
       }

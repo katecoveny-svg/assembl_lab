@@ -1,8 +1,8 @@
 // The shared store, against a small fake of Supabase's client. No network, no database.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createStore, memoryBackend } from '../../architecture/js/store.js';
-import { newProject, sampleProject, SAMPLE_ID, recordApproval, askForApproval, markDone, activity, readBundle } from '../../architecture/js/model.js';
+import { createStore, memoryBackend, memoryFiles } from '../../architecture/js/store.js';
+import { newProject, sampleProject, SAMPLE_ID, recordApproval, askForApproval, markDone, activity, readBundle, sourceRef, isEdited, missingSourced, consentRow, CONSENT_SOURCED, twinHandoff, twinLink } from '../../architecture/js/model.js';
 import { createCloudStore, createGateway, createSwitch, createTeam, moveProjects, probeShared, toRecord, fromRecord, dbId, explain, CloudError, NOT_ON } from '../../architecture/js/cloud.js';
 import { fakeSupabase, PGRST106, JWT_EXPIRED } from './fake-supabase.mjs';
 
@@ -34,7 +34,7 @@ test('ids: a page id becomes a database uuid, the same one every time', () => {
 test('a project maps to flat columns and back: site, model, stage name, and fields the database does not know', () => {
   const b = newProject({ name: 'House on the ridge', client: 'M. Ngata', now: T0 });
   const p = { ...b.project, stage: 'contract', site: { lat: LAT, lon: LON, facts: [{ id: 'site.zone', label: 'Zone', value: 'Rural' }], fetched_at: T0, basis: 'typed' },
-    model: { fingerprint: '99eea08ce8e9', drawings: 'Draft set', revision: 'A', file_name: 'house.plan.json', handover: { to: '3d' } }, colour: 'plum', sample: false };
+    model: { fingerprint: '99eea08ce8e9', drawings: 'Draft set', revision: 'A', file_name: 'house.plan.json', file: { id: 'file_aaaaaaaa-bbbb-4ccc-8ddd-000000000001', name: 'house.plan.json', type: 'application/json', size: 16, kept_at: T0 }, handover: { to: '3d' } }, colour: 'plum', sample: false };
   const rec = toRecord('project', p, { practice_id: PRACTICE.id });
   assert.match(rec.id, UUID);
   assert.equal(rec.practice_id, PRACTICE.id);
@@ -42,31 +42,35 @@ test('a project maps to flat columns and back: site, model, stage name, and fiel
   assert.deepEqual([rec.site_lat, rec.site_lon, rec.site_fetched_at], [LAT, LON, T0]);
   assert.deepEqual(rec.site_facts, p.site.facts);
   assert.deepEqual([rec.model_fingerprint, rec.model_drawings, rec.model_revision, rec.model_file_name], ['99eea08ce8e9', 'Draft set', 'A', 'house.plan.json']);
-  assert.deepEqual(rec.extra, { colour: 'plum', site: { basis: 'typed' }, model: { handover: { to: '3d' } } }, 'unknown fields ride in extra; "sample" is never sent');
+  const note = { ...p.model.file, id: 'aaaaaaaa-bbbb-4ccc-8ddd-000000000001' };
+  assert.deepEqual(rec.extra, { colour: 'plum', site: { basis: 'typed' }, model: { file: note, handover: { to: '3d' } } }, 'unknown fields ride in extra; "sample" is never sent; the kept model file’s note carries the file’s database id');
   assert.ok(!('site' in rec) && !('model' in rec) && !('sample' in rec));
   const back = fromRecord('project', JSON.parse(JSON.stringify(rec)));
   const { sample, ...want } = p;
-  assert.deepEqual(back, { ...want, id: rec.id });
+  assert.deepEqual(back, { ...want, id: rec.id, model: { ...p.model, file: note } });
   // nothing known yet: empty text is null in the table and '' again on the page
   const blank = toRecord('project', b.project, { practice_id: PRACTICE.id });
   assert.deepEqual([blank.site_lat, blank.site_lon, blank.site_fetched_at, blank.model_fingerprint, blank.model_drawings], [null, null, null, null, null]);
   assert.deepEqual(blank.site_facts, []);
-  assert.deepEqual(fromRecord('project', blank).model, { fingerprint: '', drawings: '', revision: '', file_name: '' });
+  assert.deepEqual(fromRecord('project', blank).model, { fingerprint: '', drawings: '', revision: '', file_name: '', file: null }, 'the same model shape as newProject gives (file: null when no file is kept)');
+  assert.deepEqual(fromRecord('project', { ...blank, extra: {} }).model.file, null, 'a row with no model note still reads with file: null');
   assert.deepEqual(fromRecord('project', { ...blank, site_facts: {} }).site.facts, [], 'the table’s own default, {}, reads as no facts');
 });
 
 test('every kind of row survives the trip to the table and back', () => {
   const pid = 'p_3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b', P = dbId(pid), id = (x) => `${x}_aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeee${x.length}`;
-  const source = { name: 'Auckland Council checklist', clause: '4.2', url: 'https://example.org/c', read_on: '2026-11-20' };
+  // B's shapes (model.js): a sourced row carries source_ref and origin; "edited" is not stored on the row, it is worked out
+  const source_ref = sourceRef('ac1011', 'title', '“General items”', 'Record of title no older than 90 days, with all consent notices and encumbrances');
+  const taskRef = sourceRef('nzia', 'contract.2', '5. Contract administration', 'Manage the contractual and financial transactions during construction');
   const rows = {
-    task: { id: id('t'), project_id: pid, stage: 'contract', title: 'Set up the register', owner: '', status: 'doing', due: '2026-12-01', note: '', source, edited: true, colour: 'x' },
-    document: { id: id('d'), project_id: pid, stage: 'detailed', title: 'Drawings', kind: 'Drawing', version: 'B', date: '', source: 'Shared drive', note: '', file_id: 'f1' },
+    task: { id: id('t'), project_id: pid, stage: 'contract', title: 'Manage the money during construction', owner: '', status: 'doing', due: '2026-12-01', note: '', origin: 'source', source_ref: taskRef, colour: 'x' },
+    document: { id: id('d'), project_id: pid, stage: 'detailed', title: 'Drawings', kind: 'Drawing', version: 'B', date: '', source: 'Shared drive', note: '', file: { id: 'f1', name: 'drawings.pdf', type: 'application/pdf', size: 3, kept_at: T0 } },
     approval: { id: id('a'), project_id: pid, stage: 'concept', who: 'Mere Ngata', role: 'Owner or client', what: 'Closes Concept design. The concept shown is accepted to develop.', note: '', at: '2026-11-22T03:04:05.678Z', fingerprint: '99eea08ce8e9' },
     rfi: { id: id('r'), project_id: pid, received_at: '2026-11-20', from: 'Council', question: 'What is the cladding?', response: '', status: 'open', sent_at: '' },
     observation: { id: id('o'), project_id: pid, date: '2026-11-21', by: 'Kate', note: 'Piles in.' },
     variation: { id: id('x'), project_id: pid, title: 'Deck wider', status: 'raised', note: '' },
     defect: { id: id('f'), project_id: pid, title: 'Door sticks', status: 'open', note: 'Bedroom 2' },
-    checklist_item: { id: id('c'), project_id: pid, stage: 'detailed', list: 'consent', title: 'Record of title', status: 'gathered', document_id: id('d'), note: '', source, edited: false },
+    checklist_item: { id: id('c'), project_id: pid, stage: 'detailed', list: 'consent', title: source_ref.title, status: 'gathered', document_id: id('d'), note: '', origin: 'source', source_ref },
     activity: { id: id('v'), project_id: pid, at: '2026-11-22T03:04:05.678Z', who: 'Kate', action: 'Added task', detail: '' },
   };
   for (const [kind, row] of Object.entries(rows)) {
@@ -75,19 +79,29 @@ test('every kind of row survives the trip to the table and back', () => {
     assert.equal(rec.project_id, P, kind);
     const want = { ...row, id: dbId(row.id), project_id: P };
     if (kind === 'checklist_item') want.document_id = dbId(row.document_id);
-    if (kind === 'task' || kind === 'checklist_item') want.edited ??= false;
+    if (kind === 'document') want.file = { ...row.file, id: dbId('f1') };
     assert.deepEqual(fromRecord(kind, rec), want, kind);
+    assert.ok(!('edited' in fromRecord(kind, rec)), `${kind}: no stored "edited" is added to the page’s row`);
   }
   // the flat column names and types the tables expect
   const t = toRecord('task', rows.task);
-  assert.deepEqual([t.stage, t.owner, t.note, t.due, t.edited], ['contract_admin', null, null, '2026-12-01', true]);
-  assert.deepEqual(t.source, source);
-  assert.deepEqual(t.extra, { colour: 'x' });
+  assert.deepEqual([t.stage, t.owner, t.note, t.due], ['contract_admin', null, null, '2026-12-01']);
+  assert.deepEqual(t.source, taskRef, 'source_ref is kept in the source column');
+  assert.equal(t.edited, true, 'the practice reworded the sourced task, so the table says edited');
+  assert.equal(isEdited(rows.task), true);
+  assert.deepEqual(t.extra, { origin: 'source', colour: 'x' });
+  const c = toRecord('checklist_item', rows.checklist_item);
+  assert.deepEqual([c.source, c.edited], [source_ref, false], 'an item still in the source’s own wording is not edited');
+  assert.equal(toRecord('checklist_item', { ...rows.checklist_item, title: 'Our own wording' }).edited, true);
+  const own = toRecord('task', { id: id('t'), project_id: pid, stage: 'concept', title: 'Our own task', owner: '', status: 'todo', due: '', note: '', origin: 'practice' });
+  assert.deepEqual([own.source, own.edited], [null, false], 'an item with no source is not edited and has no source');
+  assert.ok(!('source_ref' in fromRecord('task', own)), 'and it comes back without one');
   const r = toRecord('rfi', rows.rfi);
   assert.deepEqual([r.from_party, r.received_at, r.sent_at, r.response], ['Council', '2026-11-20T00:00:00Z', null, null]);
   assert.ok(!('from' in r));
   assert.equal(fromRecord('rfi', { ...r, received_at: '2026-11-20T00:00:00+00:00' }).received_at, '2026-11-20', 'a date reads back as the date, however the database writes midnight');
-  assert.deepEqual(toRecord('document', rows.document).extra, { file_id: 'f1' });
+  assert.deepEqual(toRecord('document', rows.document).extra, { file: { ...rows.document.file, id: dbId('f1') } }, 'the kept file’s note rides in extra, with the file’s database id');
+  assert.deepEqual(toRecord('document', { ...rows.document, file: null }).extra, { file: null }, 'a removed file stays removed');
   assert.equal(toRecord('checklist_item', { ...rows.checklist_item, document_id: '' }).document_id, null);
   // a stage has no id of its own in the table: project and key
   const s = toRecord('stage', { id: `${pid}:contract`, project_id: pid, key: 'contract', status: 'in_progress', started_at: T0, done_at: null });
@@ -387,8 +401,8 @@ test('lists longer than the API’s 1000-row limit are read in full', async () =
   assert.equal(back.activity[0].detail, 'n2299', 'newest first, as the browser store gives it');
 });
 
-// ---- the real client, with the network replaced: what actually goes in an address -----------------------------------------
-test('with Supabase’s own client: the site point never appears in an address, and the real “not switched on” answer is understood', async () => {
+// ---- the real client, with the network replaced: what actually goes in a shared-records address ------------------------------
+test('with Supabase’s own client: the site point never appears in the address of a request to the shared records, and the real “not switched on” answer is understood', async () => {
   const { createClient } = await import('../../architecture/vendor/supabase-js.mjs');
   const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SCHEMA } = await import('../../architecture/js/config.js');
   const seen = []; let mode = 'ok';
@@ -473,47 +487,309 @@ test('move: a copy that fails says why, claims nothing, and can be tried again',
   assert.match((await moveProjects({ local, cloud: viewer, ids: [c.project.id] }))[0].reason, /viewer/);
 });
 
-// ---- files ---------------------------------------------------------------------------------------------------------------
-test('files: kept in the practice’s private folder, found again, listed and removed', async () => {
+// ---- files: the browser store's own shapes (store.js), against the fake client --------------------------------------------
+const NOTE_KEYS = ['id', 'project_id', 'owner_kind', 'owner_id', 'name', 'type', 'size', 'kept_at'].sort();
+const PLAN = JSON.stringify({ schema: 'assembl.plan.v1', buildings: [{ id: 'b1', storeys: [{ rooms: [] }] }] });
+const pdf = (n = 3000) => new Uint8Array(n).map((_, i) => (i * 7 + 3) % 256);
+
+test('files: the same four calls and shapes as the browser store, kept in the practice’s private folder', async () => {
   const { cloud, fake } = setup();
   const b = newProject({ name: 'House', now: T0 });
+  b.documents.push({ id: 'd_aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', project_id: b.project.id, stage: 'detailed', title: 'Consent plans', kind: 'Drawing', version: '', date: '', source: '', note: '' });
   await cloud.saveProject(b);
-  const pid = dbId(b.project.id), blob = new Blob(['%PDF-1.7 plans'], { type: 'application/pdf' });
-  const f = await cloud.putFile({ project_id: b.project.id, name: 'Ridge house consent plans.pdf', blob, checksum: 'abc' });
-  assert.match(f.id, UUID);
-  assert.deepEqual({ ...f, id: '', created_at: '' }, { checksum: 'abc', id: '', project_id: pid, document_id: '', name: 'Ridge house consent plans.pdf', type: 'application/pdf', size: blob.size, created_at: '' });
+  const pid = dbId(b.project.id), did = dbId(b.documents.at(-1).id), bytes = pdf();
+  const note = await cloud.putFile({ project_id: b.project.id, owner_kind: 'document', owner_id: b.documents.at(-1).id, name: 'Ridge house consent plans.pdf', type: 'application/pdf', data: bytes });
+  assert.deepEqual(Object.keys(note).sort(), NOTE_KEYS, 'exactly the note the browser store hands back');
+  assert.match(note.id, UUID);
+  assert.deepEqual({ ...note, id: '', kept_at: '' }, { id: '', project_id: pid, owner_kind: 'document', owner_id: did, name: 'Ridge house consent plans.pdf', type: 'application/pdf', size: 3000, kept_at: '' });
+  assert.ok(!Number.isNaN(Date.parse(note.kept_at)), 'kept_at is a time');
   const [path] = [...fake.files.keys()];
-  assert.equal(path, `arch-files/${PRACTICE.id}/${pid}/${f.id}`, 'the path begins with the practice id and is made of ids only');
+  assert.equal(path, `arch-files/${PRACTICE.id}/${pid}/${note.id}`, 'the path begins with the practice id and is made of ids only');
   assert.ok(!/Ridge|consent|plans|pdf/i.test(path), 'the file’s own name is not in the path');
-  assert.equal(fake.db.file[0].storage_path, `${PRACTICE.id}/${pid}/${f.id}`);
-  const got = await cloud.getFile(f.id);
-  assert.equal(await got.blob.text(), '%PDF-1.7 plans');
-  assert.equal(got.name, 'Ridge house consent plans.pdf');
-  const g2 = await cloud.putFile(new Blob(['note']), { name: 'note.txt', type: 'text/plain' }); // the other order, and no project
-  assert.equal(fake.db.file[1].storage_path, `${PRACTICE.id}/practice/${g2.id}`);
-  assert.deepEqual((await cloud.listFiles({ project_id: b.project.id })).map((x) => x.name), ['Ridge house consent plans.pdf']);
-  assert.equal((await cloud.listFiles()).length, 2);
-  assert.equal(await cloud.getFile('f_00000000-0000-4000-8000-000000000000'), null);
-  assert.equal(await cloud.removeFile(f.id), true);
-  assert.equal(await cloud.removeFile(f.id), false);
-  assert.equal(fake.files.size, 1);
-  await assert.rejects(cloud.putFile({ name: 'none.pdf' }), /Choose a file/);
-  await assert.rejects(cloud.putFile({ name: 'big.bin', blob: { size: 1 } }), /Choose a file/);
-  const big = new Blob(['x']); Object.defineProperty(big, 'size', { value: 60 * 1024 * 1024 });
-  await assert.rejects(cloud.putFile({ name: 'big.bin', blob: big }), says(/over 50 MB.*not kept/));
+  assert.deepEqual(fake.db.file[0], { id: note.id, practice_id: PRACTICE.id, project_id: pid, owner_kind: 'document', owner_id: did, name: 'Ridge house consent plans.pdf', mime: 'application/pdf', size: 3000, storage_path: `${PRACTICE.id}/${pid}/${note.id}`, extra: {}, seq: fake.db.file[0].seq, created_at: fake.db.file[0].created_at });
+  // getFile: the note plus the contents as a Uint8Array, byte for byte
+  const got = await cloud.getFile(note.id);
+  assert.ok(got.data instanceof Uint8Array);
+  assert.deepEqual([...got.data], [...bytes]);
+  assert.deepEqual(Object.keys(got).sort(), [...NOTE_KEYS, 'data'].sort());
+  // text, an ArrayBuffer and a typed array are kept as the same bytes, as in the browser
+  const m = await cloud.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'house.plan.json', type: 'application/json', data: PLAN });
+  const ab = await cloud.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'a.json', data: new TextEncoder().encode(PLAN).buffer });
+  for (const x of [m, ab]) assert.equal(new TextDecoder().decode((await cloud.getFile(x.id)).data), PLAN);
+  assert.equal(ab.type, '', 'no type given: none is made up');
+  // listFiles: notes only, by project, by owner
+  const all = await cloud.listFiles({ project_id: b.project.id });
+  assert.deepEqual(all.map((f) => f.name), ['Ridge house consent plans.pdf', 'house.plan.json', 'a.json'], 'in the order they were kept');
+  for (const f of all) { assert.deepEqual(Object.keys(f).sort(), NOTE_KEYS); assert.ok(!('data' in f)); }
+  assert.deepEqual((await cloud.listFiles({ project_id: pid, owner_kind: 'model' })).map((f) => f.name), ['house.plan.json', 'a.json']);
+  assert.deepEqual((await cloud.listFiles({ owner_id: b.documents.at(-1).id })).map((f) => f.id), [note.id], 'the page’s own id finds the owner');
+  assert.deepEqual(await cloud.listFiles({ project_id: 'p_00000000-0000-4000-8000-000000000000' }), []);
+  // the page's own id for a file ("file_<uuid>") finds the same file
+  const named = await cloud.putFile({ id: 'file_aaaaaaaa-bbbb-4ccc-8ddd-000000000009', project_id: pid, owner_kind: 'document', owner_id: did, name: 'b.pdf', data: 'x' });
+  assert.equal(named.id, 'aaaaaaaa-bbbb-4ccc-8ddd-000000000009');
+  assert.equal((await cloud.getFile('file_aaaaaaaa-bbbb-4ccc-8ddd-000000000009')).name, 'b.pdf');
+  // a shared file is never written over: the same id again is refused, and the first is untouched
+  await assert.rejects(cloud.putFile({ id: named.id, project_id: pid, owner_kind: 'document', owner_id: did, name: 'other.pdf', data: 'yy' }), says(/already kept under that id\. The file was not kept\./));
+  assert.equal(new TextDecoder().decode((await cloud.getFile(named.id)).data), 'x');
+  // removeFile
+  assert.equal(await cloud.getFile('file_00000000-0000-4000-8000-000000000000'), null);
+  assert.equal(await cloud.getFile(''), null);
+  assert.equal(await cloud.removeFile(note.id), true);
+  assert.equal(await cloud.removeFile(note.id), false);
+  assert.equal(await cloud.getFile(note.id), null);
+  assert.equal(fake.files.size, 3);
+  // the browser store's own refusals, in its own words
+  await assert.rejects(cloud.putFile({ project_id: pid, owner_kind: 'document', owner_id: did, name: 'none.pdf' }), /There is nothing in that file to keep/);
+  await assert.rejects(cloud.putFile({ project_id: pid, owner_kind: 'invoice', owner_id: did, name: 'a', data: 'x' }), /needs the record it belongs to/);
+  await assert.rejects(cloud.putFile({ name: 'loose.pdf', owner_kind: 'document', owner_id: did, data: 'x' }), /needs the record it belongs to/);
+  const big = new Uint8Array(1); Object.defineProperty(big, 'byteLength', { value: 60 * 1024 * 1024 });
+  await assert.rejects(cloud.putFile({ project_id: pid, owner_kind: 'document', owner_id: did, name: 'big.bin', data: big }), says(/“big\.bin” is 60 MB\. The limit is 50 MB a file in the shared records, so it was not kept/));
+  assert.equal(cloud.fileLimit, 50 * 1024 * 1024);
+  assert.equal(cloud.filesPersistent, true);
 });
 
-test('files: a refusal is said plainly, and bytes are not left behind when the record is refused', async () => {
+test('files: the same calls give the same shapes from the browser store and the shared store', async () => {
+  const { cloud, local } = setup();
+  const b = newProject({ name: 'House', now: T0 });
+  await local.saveProject(b); await cloud.saveProject(b);
+  const put = (s) => s.putFile({ project_id: b.project.id, owner_kind: 'model', owner_id: b.project.id, name: 'house.plan.json', type: 'application/json', data: PLAN });
+  const here = await put(local), there = await put(cloud);
+  assert.deepEqual(Object.keys(here).sort(), Object.keys(there).sort());
+  const [h, t] = [await local.getFile(here.id), await cloud.getFile(there.id)];
+  assert.deepEqual(Object.keys(h).sort(), Object.keys(t).sort());
+  assert.deepEqual([...h.data], [...t.data]);
+  for (const k of ['owner_kind', 'name', 'type', 'size']) assert.equal(h[k], t[k], k);
+  assert.deepEqual(Object.keys((await local.listFiles())[0]).sort(), Object.keys((await cloud.listFiles())[0]).sort());
+});
+
+test('files: a refusal is said plainly, and the contents are not left behind when the record is refused', async () => {
   const { cloud, fake } = setup();
+  const b = newProject({ name: 'House', now: T0 }); await cloud.saveProject(b);
+  const one = { project_id: b.project.id, owner_kind: 'document', owner_id: 'd_aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', name: 'a.pdf', type: 'application/pdf', data: 'x' };
   fake.viewer = true; // the database's view, whatever the page believes
-  await assert.rejects(cloud.putFile({ name: 'a.pdf', blob: new Blob(['x']) }), says(/refused that file: your role in the practice does not allow it\. The file was not kept\./, 'refused'));
+  await assert.rejects(cloud.putFile(one), says(/refused that file: your role in the practice does not allow it\. The file was not kept\./, 'refused'));
   assert.equal(fake.files.size, 0);
   fake.viewer = false;
   fake.fail = (op) => (op.table === 'file' && op.action === 'insert' ? { code: '42501', message: 'new row violates row-level security policy for table "file"' } : null);
-  await assert.rejects(cloud.putFile({ name: 'a.pdf', blob: new Blob(['x']) }), says(/The file was not kept/, 'refused'));
-  assert.equal(fake.files.size, 0, 'the uploaded bytes were removed again');
+  await assert.rejects(cloud.putFile(one), says(/The file was not kept/, 'refused'));
+  assert.equal(fake.files.size, 0, 'the uploaded contents were removed again');
   fake.fail = (op) => (op.action === 'upload' ? { message: 'Bucket not found', statusCode: '404' } : null);
-  await assert.rejects(cloud.putFile({ name: 'a.pdf', blob: new Blob(['x']) }), says(/Keeping files in the shared records is not switched on yet/));
+  await assert.rejects(cloud.putFile(one), says(/Keeping files in the shared records is not switched on yet/));
+  fake.fail = (op) => (op.action === 'upload' ? { message: 'TypeError: Failed to fetch' } : null);
+  await assert.rejects(cloud.putFile(one), says(/could not be reached just now\. The file was not kept\./, 'offline'));
+  fake.fail = null;
+  // a record whose contents have gone is "not there", not an error; removing it again finishes the job
+  const kept = await cloud.putFile(one);
+  fake.files.clear();
+  assert.equal(await cloud.getFile(kept.id), null);
+  assert.equal(await cloud.removeFile(kept.id), true);
+  assert.equal(fake.db.file.length, 0);
+  // offline while reading is an error, never a quiet "no file"
+  await cloud.putFile(one);
+  fake.fail = (op) => (op.action === 'download' ? { message: 'TypeError: Failed to fetch' } : null);
+  await assert.rejects(cloud.getFile(fake.db.file[0].id), says(/could not be reached/, 'offline'));
+});
+
+test('files: a viewer reads and downloads, and cannot keep or remove a file', async () => {
+  const m = setup();
+  const b = newProject({ name: 'House', now: T0 }); await m.cloud.saveProject(b);
+  const kept = await m.cloud.putFile({ project_id: b.project.id, owner_kind: 'model', owner_id: b.project.id, name: 'house.plan.json', type: 'application/json', data: PLAN });
+  const v = createCloudStore({ client: m.fake, practice: { ...PRACTICE, role: 'viewer' }, local: m.local });
+  m.fake.log.length = 0;
+  await assert.rejects(v.putFile({ project_id: b.project.id, owner_kind: 'model', owner_id: b.project.id, name: 'x.json', data: 'x' }), says(/You are a viewer in Tui Architects: you can read everything and change nothing\. Nothing was changed\./, 'read_only'));
+  await assert.rejects(v.removeFile(kept.id), says(/viewer/, 'read_only'));
+  assert.equal(m.fake.writes().filter((w) => w.action !== 'download').length, 0, 'nothing was sent');
+  assert.equal((await v.listFiles({ project_id: b.project.id })).length, 1);
+  assert.equal(new TextDecoder().decode((await v.getFile(kept.id)).data), PLAN);
+  const x = await v.exportProject(b.project.id, T0, { files: true });
+  assert.equal(x.file_count, 1, 'a viewer can export with the files');
+});
+
+test('files: the Sample’s files stay in the browser, also while signed in', async () => {
+  const { cloud, local, fake } = setup();
+  await local.saveProject(sampleProject(T0));
+  fake.log.length = 0;
+  const f = await cloud.putFile({ project_id: SAMPLE_ID, owner_kind: 'document', owner_id: 'd1', name: 'notes.txt', type: 'text/plain', data: 'hello' });
+  assert.match(f.id, /^file_/, 'the browser store’s own id');
+  assert.equal(new TextDecoder().decode((await cloud.getFile(f.id)).data), 'hello');
+  assert.deepEqual((await cloud.listFiles({ project_id: SAMPLE_ID })).map((x) => x.name), ['notes.txt']);
+  assert.deepEqual((await cloud.listFiles()).map((x) => x.name), ['notes.txt'], 'listed with the shared files when no project is named');
+  assert.equal(fake.files.size, 0);
+  assert.equal(fake.writes().filter((w) => w.table === 'file' || w.table.startsWith('storage/')).length, 0, 'not one file request was made for the Sample');
+  assert.equal(await cloud.removeFile(f.id), true);
+  assert.equal((await local.listFiles()).length, 0);
+});
+
+test('files: export with the files from the shared records, and import them into a browser and back, byte for byte', async () => {
+  const { cloud, local, fake } = setup();
+  const b = newProject({ name: 'House A', now: T0 });
+  b.documents.push({ id: 'd_aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', project_id: b.project.id, stage: 'predesign', title: 'Brief', kind: 'Brief', version: '1', date: '', source: '', note: '' });
+  await cloud.saveProject(b);
+  const pid = dbId(b.project.id), bytes = pdf(4096);
+  const f = await cloud.putFile({ project_id: pid, owner_kind: 'document', owner_id: b.documents.at(-1).id, name: 'brief.pdf', type: 'application/pdf', data: bytes });
+  const d = await cloud.get('document', b.documents.at(-1).id);
+  await cloud.save('document', { ...d, file: { id: f.id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at } });
+  const m = await cloud.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'house.plan.json', type: 'application/json', data: PLAN });
+  const p = await cloud.get('project', pid);
+  await cloud.save('project', { ...p, model: { fingerprint: 'abc123abc123', drawings: 'A', revision: 'A', file_name: 'house.plan.json', file: { id: m.id, name: m.name, type: m.type, size: m.size, kept_at: m.kept_at } } });
+  // records only: the file says so, and says where the files stay
+  const plain = await cloud.exportProject(pid, T0);
+  assert.deepEqual([plain.files_included, plain.file_count], [false, 0]);
+  assert.match(JSON.parse(plain.text).note, /Files are not included: only the records\. The files stay in the shared records of Tui Architects\./);
+  // with the files
+  const x = await cloud.exportProject(pid, T0, { files: true });
+  assert.deepEqual([x.files_included, x.file_count, x.file_bytes], [true, 2, 4096 + new TextEncoder().encode(PLAN).length]);
+  assert.match(x.file_name, /^house-a-project-\d{4}-\d{2}-\d{2}-with-files\.json$/);
+  // into another browser: the same files, byte for byte, and the records point at them
+  const other = createStore(memoryBackend(), { files: memoryFiles() });
+  const r = await other.importProject(x.text, T0);
+  assert.deepEqual(r, { project_id: pid, copied: false, files: 2, files_failed: 0 });
+  assert.deepEqual([...(await other.getFile(f.id)).data], [...bytes]);
+  const doc = (await other.list('document', { project_id: pid }))[0];
+  assert.equal((await other.getFile(doc.file.id)).name, 'brief.pdf');
+  assert.equal(new TextDecoder().decode((await other.getFile((await other.get('project', pid)).model.file.id)).data), PLAN);
+  // and back up into the shared records: the project is already there, so it comes in beside it as a copy, with files
+  fake.log.length = 0;
+  const back = await cloud.importProject(x.text, T0);
+  assert.equal(back.copied, true); assert.equal(back.files, 2); assert.equal(back.files_failed, 0);
+  const copy = await cloud.loadProject(back.project_id), copyFiles = await cloud.listFiles({ project_id: back.project_id });
+  assert.equal(copyFiles.length, 2);
+  assert.ok(copyFiles.every((c) => c.id !== f.id && c.id !== m.id), 'the copy’s files have ids of their own');
+  assert.equal(new TextDecoder().decode((await cloud.getFile(copy.project.model.file.id)).data), PLAN, 'the copy’s model note finds its own file');
+  assert.deepEqual([...(await cloud.getFile(copy.documents[0].file.id)).data], [...bytes]);
+  assert.equal(copyFiles.find((c) => c.owner_kind === 'document').owner_id, copy.documents[0].id);
+  assert.equal((await cloud.listFiles({ project_id: pid })).length, 2, 'the project already there keeps its own files');
+  // a file whose contents have gone is counted, not hidden
+  fake.files.delete(`arch-files/${PRACTICE.id}/${pid}/${f.id}`);
+  const short = await cloud.exportProject(pid, T0, { files: true });
+  assert.deepEqual([short.file_count, short.files_missing], [1, 1]);
+  // a file the shared records refuse on import is counted too
+  fake.fail = (op) => (op.action === 'upload' ? { message: 'The object exceeded the maximum allowed size', statusCode: '413' } : null);
+  const refused = await cloud.importProject(x.text, T0);
+  assert.deepEqual([refused.files, refused.files_failed], [0, 2]);
+});
+
+test('files: the 3D hand-over reads the model file from the shared records', async () => {
+  const { cloud, local } = setup();
+  const s = createSwitch(local).use(cloud);
+  const b = newProject({ name: 'House', now: T0 });
+  await s.saveProject(b);
+  const pid = dbId(b.project.id);
+  // as the page attaches a model (app.js): keep the file, then save the project with the note
+  const meta = await s.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'ridge.plan.json', type: 'application/json', data: PLAN });
+  const p = await s.get('project', pid);
+  p.model = { fingerprint: 'abc123abc123', drawings: 'A', revision: 'A', file_name: 'ridge.plan.json', file: { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at } };
+  await s.save('project', p);
+  // as the page reads it back (app.js ready3d)
+  const again = await s.get('project', pid);
+  assert.equal(twinLink(again.model).handoff, true, 'a kept file: handed across, not chosen again');
+  const f = await s.getFile(again.model.file.id);
+  const h = twinHandoff(new TextDecoder().decode(f.data), again.model.file_name);
+  assert.deepEqual(JSON.parse(h.value), { plan: JSON.parse(PLAN), name: 'ridge.plan.json' });
+  assert.equal(await local.getFile(meta.id), null, 'it came from the shared records: this browser never had it');
+});
+
+// ---- moving a browser project with files up ---------------------------------------------------------------------------------
+test('move: a browser project with a document file and a model file goes up with both, and each note finds its file', async () => {
+  const { cloud, local, fake } = setup();
+  const b = newProject({ name: 'House A', now: T0 }), pid = b.project.id;
+  b.documents.push({ id: 'd_aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', project_id: pid, stage: 'predesign', title: 'Brief', kind: 'Brief', version: '1', date: '', source: '', note: '' });
+  b.checklist[0].document_id = b.documents.at(-1).id;
+  await local.saveProject(b);
+  const bytes = pdf(5000);
+  const df = await local.putFile({ project_id: pid, owner_kind: 'document', owner_id: b.documents.at(-1).id, name: 'brief.pdf', type: 'application/pdf', data: bytes });
+  await local.save('document', { ...(await local.get('document', b.documents.at(-1).id)), file: { id: df.id, name: df.name, type: df.type, size: df.size, kept_at: df.kept_at } });
+  const mf = await local.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'house.plan.json', type: 'application/json', data: PLAN });
+  const lp = await local.get('project', pid);
+  lp.model = { fingerprint: 'abc123abc123', drawings: 'A', revision: 'A', file_name: 'house.plan.json', file: { id: mf.id, name: mf.name, type: mf.type, size: mf.size, kept_at: mf.kept_at } };
+  await local.save('project', lp);
+  const before = JSON.stringify(await local.loadProject(pid)), filesBefore = JSON.stringify(await local.listFiles());
+
+  const [r] = await moveProjects({ local, cloud, ids: [pid], now: T0 });
+  assert.equal(r.outcome, 'copied', r.reason);
+  assert.equal(r.counts.files, 2);
+  assert.equal(fake.files.size, 2);
+  const up = await cloud.loadProject(pid), upFiles = await cloud.listFiles({ project_id: pid });
+  assert.equal(upFiles.length, 2);
+  // the notes on the records point at the shared files: download each by the note the page holds
+  const doc = up.documents.find((d) => d.title === 'Brief');
+  assert.equal(doc.file.id, dbId(df.id));
+  assert.deepEqual([...(await cloud.getFile(doc.file.id)).data], [...bytes], 'the document’s file, byte for byte');
+  assert.equal(new TextDecoder().decode((await cloud.getFile(up.project.model.file.id)).data), PLAN, 'the model’s file');
+  assert.deepEqual(upFiles.map((f) => [f.owner_kind, f.owner_id]).sort(), [['document', doc.id], ['model', up.project.id]].sort());
+  assert.equal(up.checklist[0].document_id, doc.id, 'the checklist still points at the document');
+  // the page's view of the moved project (app.js render): every kept file is found by the note on its record
+  const kept = new Map(upFiles.map((f) => [f.id, f]));
+  assert.ok(kept.has(doc.file.id) && kept.has(up.project.model.file.id));
+  // the browser copy is exactly as it was, files and all
+  assert.equal(JSON.stringify(await local.loadProject(pid)), before);
+  assert.equal(JSON.stringify(await local.listFiles()), filesBefore);
+  // asking again copies nothing again
+  const again = await moveProjects({ local, cloud, ids: [pid], now: T0 });
+  assert.equal(again[0].outcome, 'already');
+  assert.equal(fake.files.size, 2);
+});
+
+test('move: a copy whose file fails says so, claims nothing, and a second try sends only what is missing', async () => {
+  const { cloud, local, fake } = setup();
+  const b = newProject({ name: 'House A', now: T0 }), pid = b.project.id;
+  await local.saveProject(b);
+  const one = await local.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'a.json', data: PLAN });
+  const two = await local.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: 'b.json', data: '{"buildings":[]}' });
+  let uploads = 0;
+  fake.fail = (op) => (op.action === 'upload' && ++uploads === 2 ? { message: 'TypeError: Failed to fetch' } : null);
+  const [r] = await moveProjects({ local, cloud, ids: [pid], now: T0 });
+  assert.equal(r.outcome, 'failed');
+  assert.match(r.reason, /could not be reached just now\. The file was not kept\./);
+  assert.equal((await local.get('setting', 'moved')).value[pid].state, 'failed');
+  fake.fail = null; fake.log.length = 0;
+  const [again] = await moveProjects({ local, cloud, ids: [pid], now: T0 });
+  assert.equal(again.outcome, 'copied', again.reason);
+  assert.equal(again.counts.files, 2);
+  assert.deepEqual(fake.log.filter((o) => o.action === 'upload').map((o) => o.path.split('/').pop()), [dbId(two.id)], 'only the file that did not arrive is sent');
+  assert.deepEqual((await cloud.listFiles({ project_id: pid })).map((f) => f.id).sort(), [dbId(one.id), dbId(two.id)].sort());
+  // a file the shared records say they kept but cannot list back is not counted as copied
+  const c = newProject({ name: 'House C', now: T0 }); await local.saveProject(c);
+  await local.putFile({ project_id: c.project.id, owner_kind: 'model', owner_id: c.project.id, name: 'c.json', data: PLAN });
+  let reads = 0;
+  const realFrom = fake.from; // the second read of the file list (the read-back after the copy) comes back empty
+  fake.from = (t) => { const q = realFrom(t); if (t !== 'file') return q; const run = q.run.bind(q); q.run = () => { const out = run(); return q.action === 'select' && ++reads === 2 ? { data: [], error: null } : out; }; return q; };
+  const [lost] = await moveProjects({ local, cloud, ids: [c.project.id], now: T0 });
+  fake.from = realFrom;
+  assert.equal(reads, 2);
+  assert.equal(lost.outcome, 'failed');
+  assert.match(lost.reason, /missing some files/);
+});
+
+// ---- sourced lists in the shared records -----------------------------------------------------------------------------------
+test('sourced items keep their source in the shared records, and “Add the sourced items” adds them in one write', async () => {
+  const { cloud, fake } = setup();
+  const b = newProject({ name: 'House', now: T0 });
+  b.checklist[0].title = 'Form 2, signed by the owner'; // the practice rewords a sourced item
+  await cloud.saveProject(b);
+  const back = await cloud.loadProject(b.project.id);
+  const first = back.checklist.find((c) => c.source_ref?.id === CONSENT_SOURCED[0].source_ref.id);
+  assert.deepEqual(first.source_ref, CONSENT_SOURCED[0].source_ref, 'the source comes back as it went');
+  assert.equal(first.origin, 'source');
+  assert.equal(isEdited(first), true, 'the page still sees the item as edited');
+  assert.equal(fake.db.checklist_item.find((c) => c.id === first.id).edited, true, 'and the table says so too');
+  assert.equal(back.tasks.filter((t) => t.source_ref).length, b.tasks.filter((t) => t.source_ref).length);
+  assert.equal(back.checklist.find((c) => c.list === 'completion').origin, 'starter');
+  assert.deepEqual(missingSourced(back, 'consent'), [], 'nothing is missing on a project made with sources');
+  // an older project, made before the lists had sources: the page's button adds the 35 items (app.js sourced-consent)
+  const old = newProject({ name: 'Older', now: T0 });
+  old.checklist = old.checklist.filter((c) => !c.source_ref).concat([{ id: 'c_aaaaaaaa-bbbb-4ccc-8ddd-000000000777', project_id: old.project.id, stage: 'detailed', list: 'consent', title: 'Our own item', status: 'needed', document_id: '', note: '' }]);
+  await cloud.saveProject(old);
+  const o = await cloud.loadProject(old.project.id), add = missingSourced(o, 'consent');
+  assert.equal(add.length, 35);
+  o.checklist.push(...add.map((x) => consentRow(o.project.id, x)));
+  fake.log.length = 0;
+  await cloud.saveProject(o);
+  assert.deepEqual(fake.writes().map((w) => `${w.action} ${w.table} ${w.rows.length}`), ['upsert checklist_item 35'], 'one write: all 35 go in together, nothing else is touched');
+  const after = await cloud.loadProject(old.project.id);
+  assert.equal(missingSourced(after, 'consent').length, 0);
+  assert.equal(after.checklist.filter((c) => c.source_ref?.council === 'Auckland Council').length, CONSENT_SOURCED.filter((c) => c.source_ref.council).length);
+  assert.ok(after.checklist.some((c) => c.title === 'Our own item'), 'what was already there is unchanged');
 });
 
 // ---- people ----------------------------------------------------------------------------------------------------------------
@@ -560,21 +836,30 @@ test('the page’s one store: the browser by default, the shared store when told
   await s.saveProject(a);
   assert.equal(fake.log.length, 0);
   assert.equal((await s.list('project')).length, 1);
-  await assert.rejects(s.putFile({ name: 'a.pdf', blob: new Blob(['x']) }), /Keeping files in this browser is not built yet/);
+  // the browser store keeps files itself (store.js): signed out, a file goes to this browser
+  const here = await s.putFile({ project_id: a.project.id, owner_kind: 'document', owner_id: 'd1', name: 'a.pdf', type: 'application/pdf', data: 'x' });
+  assert.match(here.id, /^file_/);
+  assert.equal(fake.log.length, 0, 'nothing was sent');
+  assert.equal(s.filesPersistent, local.filesPersistent);
+  assert.equal(s.fileLimit, 25 * 1024 * 1024, 'the browser’s limit');
   s.use(cloud);
   assert.equal(s.shared, true);
+  assert.equal(s.filesPersistent, true);
+  assert.equal(s.fileLimit, 50 * 1024 * 1024, 'the shared records’ limit');
   assert.deepEqual(await s.list('project'), [], 'a browser project is not shown as shared, and is not uploaded by signing in');
+  assert.deepEqual(await s.listFiles(), [], 'and nor are its files');
   const b = newProject({ name: 'Shared', now: T0 });
   await s.saveProject(b);
   assert.equal(fake.db.project.length, 1);
-  assert.equal((await s.putFile({ name: 'a.pdf', blob: new Blob(['x']) })).name, 'a.pdf');
+  const there = await s.putFile({ project_id: dbId(b.project.id), owner_kind: 'document', owner_id: 'd1', name: 'a.pdf', type: 'application/pdf', data: 'x' });
+  assert.equal(there.name, 'a.pdf');
+  assert.equal(fake.files.size, 1);
   s.use(null);
   assert.equal(s.shared, false);
   assert.deepEqual((await s.list('project')).map((p) => p.name), ['In the browser'], 'signed out: the browser store, exactly as before');
+  assert.deepEqual((await s.listFiles()).map((f) => f.id), [here.id], 'and its own files');
+  assert.equal(await s.getFile(there.id), null, 'a shared file is not in this browser');
   assert.equal(s.persistent, true);
-  // when the other storage functions arrive in the browser store, the same object passes them through
-  local.listFiles = async () => [{ id: 'f1', name: 'kept in the browser.pdf' }];
-  assert.equal((await s.listFiles())[0].name, 'kept in the browser.pdf');
 });
 
 test('export and import in the shared store: the file is the same format, and an import never writes over a project', async () => {
