@@ -244,7 +244,8 @@ export function health({ b, invoices = [], time = [], settings = {}, today = day
   // what is off goes in "watch"; the came-from line keeps what is fine, so nothing is said twice
   const watch = [t.state === 'late' ? t.why : '', bud.state === 'over' ? budLine : ''].filter(Boolean);
   const fine = [t.state === 'ok' ? t.why : '', bud.state === 'ok' ? budLine : ''].filter(Boolean);
-  const from = [t.state ? 'the stage targets' : '', bud.state ? (bud.basis === 'fee' ? 'the fee and the time logged' : 'the budget hours and the time logged') : ''].filter(Boolean).join(' and ');
+  const budWords = bud.basis === 'fee' ? 'the fee and the time logged' : 'the budget hours and the time logged';
+  const from = t.state && bud.state ? `the stage targets, ${budWords}` : t.state ? 'the stage targets' : budWords;
   const unknown = [t.state == null ? 'no target date for the stage in hand' : '', bud.state == null ? 'no fee and rate, or budget hours' : ''].filter(Boolean);
   return say('go', 'worked', fine.length ? `Worked out: ${fine.join(', ')}` : `Worked out from ${from}`, { watch, unknown, meaning: watch.length ? '' : HEALTH.go.meaning });
 }

@@ -202,7 +202,7 @@ function practicePanel(d, ctx, { full = false } = {}) {
 }
 
 function forecastChart(fc, mo, d, { full = false } = {}) {
-  const n = narrow(), rows = fc.rows, be = mo.breakEven, W = n ? 360 : 600, H = 230, top = 18, base = 186, left = 4, right = n ? 66 : 78; // the labels sit in the right margin
+  const n = narrow(), vw = globalThis.innerWidth ?? 1200, rows = fc.rows, be = mo.breakEven, W = n ? 360 : vw < 1100 ? 440 : 600, H = 230, top = 18, base = 186, left = 4, right = n ? 66 : 78; // the labels sit in the right margin
   const max = Math.max(1, ...rows.map((r) => r.total), be ?? 0, mo.high ?? 0, mo.low ?? 0) * 1.12;
   const y = (v) => base - (v / max) * (base - top), slot = (W - left - right) / rows.length, bw = Math.min(64, slot * 0.56);
   const shortSet = new Set(M.shortMonths(rows, be).map((s) => s.ym));
@@ -280,7 +280,7 @@ async function renderTab(el, ctx) {
   const bh = m.hours, logged = bud.hours, hoursW = bh ? Math.min(1, logged / bh) : 0;
   const hoursCard = `<details class="m-tap mc"><summary><p class="lab">Hours</p>
       ${bh ? `<div class="m-bars" role="img" aria-label="${esc(`${hrs(logged)} logged of ${hrs(bh)} budgeted`)}"><div class="m-row"><span>Logged</span><span class="m-track"><i class="m-fill${logged > bh ? ' is-over' : ''}" style="--w:${(hoursW * 100).toFixed(1)}%"></i></span></div></div>
-        <p class="hd-word">${logged > bh ? `${stateIcon('warn')}<span>Past the budget hours</span>` : `${stateIcon('dot')}<span>${M.pct(hoursW)} of the budget hours</span>`}</p>`
+        <p class="hd-word">${logged > bh ? `${stateIcon('warn')}<span>Past the budget hours</span>` : `${stateIcon('dot')}<span>${hoursW < 0.5 ? 'Well within' : hoursW < 0.9 ? 'Over half of' : 'Near'} the budget hours</span>`}</p>`
       : `<p class="m-empty">${icon('dash')}<span>${logged ? `${plural(time.length, 'entry', 'entries')} logged. Type budget hours to see them against it.` : 'No time logged yet.'}</span></p>`}
       <span class="m-more">Figures</span></summary><dl class="m-kv"><dt>Logged</dt><dd>${hrs(logged)} in ${plural(time.length, 'entry', 'entries')}</dd><dt>Budget</dt><dd>${bh ? hrs(bh) : 'Not typed'}</dd>
       ${Object.entries(time.reduce((a, x) => ({ ...a, [x.person]: (a[x.person] ?? 0) + Number(x.hours) }), {})).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${hrs(v)}</dd>`).join('')}</dl></details>`;
@@ -374,6 +374,13 @@ function programme(b, m, t) {
   const lo = Math.min(dayN(startDay), dayN(t), ...dated.map((x) => dayN(x.d))), hi = Math.max(dayN(t), ...dated.map((x) => dayN(x.d)));
   const span = Math.max(14, hi - lo), W = narrow() ? 380 : 960, L = 20, R = 24, x = (s) => L + ((dayN(s) - lo) / span) * (W - L - R);
   let prev = startDay;
+  const gapMin = narrow() ? 46 : 56, lastX = [-1e9, -1e9]; // where the last date label on each row ended
+  const dateLabel = (x1, d) => {
+    const row = x1 - lastX[0] >= gapMin ? 0 : x1 - lastX[1] >= gapMin ? 1 : -1;
+    if (row < 0) return ''; // no room on either row: the date is in the description and the stage's title
+    lastX[row] = x1;
+    return `<text class="pg-d" x="${x1.toFixed(1)}" y="${row ? 84 : 68}" text-anchor="middle">${esc(M.dayShort(d))}</text>`;
+  };
   const segs = targets.map((tg) => {
     if (!tg.d) return '';
     const x0 = x(prev < tg.d ? prev : tg.d), x1 = x(tg.d), late = tg.st !== 'done' && tg.d < t;
@@ -381,13 +388,13 @@ function programme(b, m, t) {
     const cls = tg.st === 'done' ? 'is-done' : tg.st === 'in_progress' || tg.st === 'awaiting_approval' ? 'is-now' : 'is-todo';
     return `<g class="pg-s ${cls}${late ? ' is-late' : ''}"><title>${esc(`Stage ${stageNumber(tg.k)}, ${M.stageLabel(tg.k)}: target ${M.dayShort(tg.d)}${tg.st === 'done' ? ', done' : late ? ', past its target and not done' : ''}`)}</title>
       <line x1="${x0.toFixed(1)}" x2="${x1.toFixed(1)}" y1="40" y2="40"/><circle cx="${x1.toFixed(1)}" cy="40" r="10"/><text x="${x1.toFixed(1)}" y="44" text-anchor="middle">${stageNumber(tg.k)}</text>
-      ${late ? `<path class="pg-warn" d="M${(x1 - 6).toFixed(1)} 22h12l-6-10z"/>` : ''}<text class="pg-d" x="${x1.toFixed(1)}" y="68" text-anchor="middle">${esc(M.dayShort(tg.d))}</text></g>`;
+      ${late ? `<path class="pg-warn" d="M${(x1 - 6).toFixed(1)} 22h12l-6-10z"/>` : ''}${dateLabel(x1, tg.d)}</g>`;
   }).join('');
   const tx = x(t), lateN = targets.filter((tg) => tg.d && tg.st !== 'done' && tg.d < t).length, none = targets.filter((tg) => !tg.d).map((tg) => stageNumber(tg.k));
   const label = `Programme: today, ${M.dayShort(t)}, against the stage targets. ${lateN ? `${plural(lateN, 'stage')} past ${lateN === 1 ? 'its' : 'their'} target and not done.` : 'No stage past its target.'}`;
   return `<section class="ms"><h3 class="m-h">${icon('cal')}<span>Programme</span></h3>
-    <svg class="pg" viewBox="0 0 ${W} 84" role="img" aria-label="${esc(label)}"><line class="pg-base" x1="${L}" x2="${W - R}" y1="40" y2="40"/>${segs}
-      <g class="pg-today"><line x1="${tx.toFixed(1)}" x2="${tx.toFixed(1)}" y1="8" y2="56"/><text x="${tx.toFixed(1)}" y="82" text-anchor="middle">Today</text></g></svg>
+    <svg class="pg" viewBox="0 -4 ${W} 96" role="img" aria-label="${esc(label)}"><line class="pg-base" x1="${L}" x2="${W - R}" y1="40" y2="40"/>${segs}
+      <g class="pg-today"><line x1="${tx.toFixed(1)}" x2="${tx.toFixed(1)}" y1="14" y2="54"/><text x="${tx.toFixed(1)}" y="8" text-anchor="${tx < 40 ? 'start' : tx > W - 40 ? 'end' : 'middle'}">Today</text></g></svg>
     <ul class="fc-key"><li><i class="k-done"></i>Done</li><li><i class="k-now"></i>In hand</li><li><i class="k-todo"></i>To come</li>${lateN ? `<li>${stateIcon('warn', 'k-ic')}Past its target</li>` : ''}</ul>
     ${none.length ? `<p class="small">No target date yet for stage${none.length === 1 ? '' : 's'} ${none.join(', ')}.</p>` : ''}</section>`;
 }
