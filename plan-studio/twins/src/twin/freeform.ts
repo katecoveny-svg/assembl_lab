@@ -51,9 +51,9 @@ function brickMats() {
 function patternedMat() {
   const map = canvasTex(256, 512, (c) => {
     c.fillStyle = 'rgba(220,232,236,0.0)'; c.clearRect(0, 0, 256, 512);
-    c.strokeStyle = 'rgba(245,248,250,0.85)'; c.lineWidth = 2;
+    c.strokeStyle = 'rgba(245,248,250,0.45)'; c.lineWidth = 1.2;
     for (let y = -256; y < 512; y += 22) { c.beginPath(); c.moveTo(0, y); c.lineTo(256, y + 128); c.stroke(); c.beginPath(); c.moveTo(256, y); c.lineTo(0, y + 128); c.stroke(); }
-    c.lineWidth = 7; c.beginPath(); for (let t = 0; t <= 1; t += 0.01) { const a = t * Math.PI * 3.2, r = 30 + 70 * (1 - t); const x = 128 + Math.cos(a) * r, y = 300 + Math.sin(a) * r - t * 160; if (t === 0) c.moveTo(x, y); else c.lineTo(x, y); } c.stroke();
+    c.strokeStyle = 'rgba(245,248,250,0.7)'; c.lineWidth = 5; c.beginPath(); for (let t = 0; t <= 1; t += 0.01) { const a = t * Math.PI * 3.2, r = 30 + 70 * (1 - t); const x = 128 + Math.cos(a) * r, y = 300 + Math.sin(a) * r - t * 160; if (t === 0) c.moveTo(x, y); else c.lineTo(x, y); } c.stroke();
   }, 1.5, 3.0);
   return new THREE.MeshPhysicalMaterial({ name: 'printed_panel_pattern', map, transparent: true, alphaTest: 0.05, color: 0xffffff, roughness: 0.35, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
 }

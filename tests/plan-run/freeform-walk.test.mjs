@@ -116,3 +116,14 @@ test('walk mode works for the classic axis-wall house too', () => {
   for (let i = 0; i < 15; i++) g = step(nav, g, 0, 0.2, () => 0.6);
   assert.ok(g.z < 0, 'the wall beside the door stops you');
 });
+
+test('the code pre-check says "cannot tell" for openings on free-form walls, rather than a false "does not meet"', async () => {
+  const { runCodeChecks } = await import('../../plan-studio/twins/src/twin/codeChecks.ts');
+  const plan = hall(); const L0 = plan.buildings[0].levels[0];
+  L0.rooms = [{ id: 'R2', name: 'Office', poly: [[1, 1], [6, 1], [6, 5], [1, 5]], u: 1, v: 1, w: 5, d: 4 }];
+  const res = runCodeChecks(plan), list = Array.isArray(res) ? res : res.checks;
+  const office = list.filter((c) => c.subject === 'Office' && /natural-light|ventilation/.test(c.rule));
+  assert.ok(office.length >= 1);
+  for (const c of office) { assert.equal(c.status, 'cannot tell from this model'); assert.match(c.needs, /free-form/); }
+  assert.ok(!list.some((c) => c.status === 'does not meet the cited figure' && c.subject === 'Office'));
+});

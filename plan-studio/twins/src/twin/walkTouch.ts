@@ -7,7 +7,7 @@ export function walkJoystick(stage: HTMLElement, stick: Stick) {
   const pad = document.createElement('div'), knob = document.createElement('div');
   pad.className = 'walk-stick';
   pad.setAttribute('aria-label', 'Walk: drag the knob to move');
-  pad.style.cssText = 'position:absolute;left:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:116px;height:116px;border-radius:50%;background:rgba(36,11,33,.28);border:1.5px solid rgba(245,241,242,.7);z-index:7;touch-action:none;backdrop-filter:blur(4px)';
+  pad.style.cssText = 'position:absolute;left:18px;bottom:calc(96px + env(safe-area-inset-bottom));width:116px;height:116px;border-radius:50%;background:rgba(36,11,33,.28);border:1.5px solid rgba(245,241,242,.7);z-index:7;touch-action:none;backdrop-filter:blur(4px)';
   knob.style.cssText = 'position:absolute;left:38px;top:38px;width:40px;height:40px;border-radius:50%;background:rgba(245,241,242,.92);box-shadow:0 2px 10px rgba(0,0,0,.25);pointer-events:none';
   pad.append(knob);
   let id: number | null = null;
