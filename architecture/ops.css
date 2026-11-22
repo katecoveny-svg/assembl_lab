@@ -158,6 +158,24 @@ label input, label select, label textarea { font: 400 16px var(--sans); letter-s
 .rowi.plain .main { grid-column: 1; }
 .rowi.plain .link { grid-column: 2; grid-row: 1; align-self: start; padding-top: 0; min-height: 36px; }
 .rowi.editing { display: block; background: var(--paper); padding: 14px 0; }
+/* where an item came from: a link to its source, or a plain word that it has none */
+.rowi .srcl { grid-column: 1 / -1; margin-top: -4px; font: 400 11.5px/1.5 var(--mono); overflow-wrap: anywhere; min-width: 0; }
+.srcl a { text-underline-offset: 3px; }
+.srcl .tag { font-size: 10px; padding: 1px 6px; margin-right: 2px; }
+.rows .grp { padding: 16px 0 7px; border-bottom: 1px solid var(--plum); font: 500 11px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+.rows .grp:first-child { padding-top: 10px; }
+/* the file kept with a document */
+.filebar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; padding: 2px 10px; background: var(--paper); border: 1px solid var(--hair); min-width: 0; }
+.filebar .st { white-space: normal; }
+.filebar .fname { font: 400 12px/1.4 var(--mono); overflow-wrap: anywhere; min-width: 0; }
+.filebar .link { font-size: 13.5px; }
+.exportbox { margin: 0 0 18px; }
+/* the sources behind a list, written out once */
+.sources { border: 1px solid var(--hair); padding: 10px 12px; display: grid; gap: 6px; background: var(--paper); }
+.sources ul { display: grid; gap: 6px; }
+.sources li { display: grid; gap: 1px; font-size: 13px; line-height: 1.4; }
+.sources .url { text-underline-offset: 3px; }
+.paper { display: none; } /* shown on paper only */
 .addbox { border: 1px solid var(--plum); padding: 14px; background: var(--paper); }
 .none { padding: 12px 0; border-bottom: 1px solid var(--hair); font-size: 14.5px; }
 
@@ -263,7 +281,9 @@ label input, label select, label textarea { font: 400 16px var(--sans); letter-s
   .sec { grid-template-columns: 190px minmax(0, 1fr); gap: 28px; padding: 28px; }
   .sec > .lab { display: grid; gap: 6px; align-content: start; justify-content: start; }
   .produces { font-size: 26px; }
-  .rowi { grid-template-columns: minmax(0, 1fr) minmax(0, 290px) 168px 44px; gap: 16px; padding: 10px 0; }
+  .rowi { grid-template-columns: minmax(0, 1fr) minmax(0, 220px) 168px 44px; gap: 4px 16px; padding: 10px 0; }
+  .rowi .srcl { order: 1; margin-top: 0; } /* the source line runs under the whole row */
+  .rowi .filebar { order: 2; margin-top: 4px; }
   .rowi .main, .rowi .meta, .rowi.plain .main { grid-column: auto; }
   .rowi.plain .link { grid-column: auto; grid-row: auto; align-self: center; padding-top: 10px; min-height: 44px; }
   .rowi .meta { text-align: right; }
@@ -286,14 +306,64 @@ label input, label select, label textarea { font: 400 16px var(--sans); letter-s
   .pack-facts li { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
 }
 
-/* ---- print: the client pack on paper ----------------------------------------------------------------------------------- */
+/* ---- print: the client pack and a stage page on A4 ---------------------------------------------------------------------
+   Paper has its own layout, set here rather than left to the screen widths: one column, the status as a word, nothing
+   to press, no tinted fills (most printers leave backgrounds out, and they cost ink), and no card or row cut by a page. */
+@page { size: A4; margin: 14mm 13mm 15mm; }
 @media print {
-  body { background: none; display: block; }
-  .top, .truth, .foot, .pack-bar, .crumb, .skip, .flash { display: none !important; }
+  html, body { background: none !important; }
+  body { display: block; min-height: 0; }
+  main { zoom: .86; }
+  .top, .truth, .foot, .pack-bar, .crumb, .skip, .flash, .pnav, .rail, .exportbox, .btn, .link, .acts, form, .addbox, .filebar .link,
+  input, select, textarea, .where-f + .small, details:not([open]), .st-none, .danger { display: none !important; }
+  .paper { display: block; }
   .wrap { max-width: none; padding: 0; }
-  .pack { border: 0; }
-  .pack-sec { break-inside: avoid; }
   a { text-decoration: none; }
+  .rail-now { display: block; margin: 0 0 10px; }
+  .phead { display: block; padding: 0 0 8px; }
+  /* no fills: a border or the ■ and □ marks carry the meaning */
+  .next, .notyet, .steps li.on, .tag, .tile, .record, .panel, .log, .sheet, .pack, .empty, .sources, .filebar, .plist { background: none !important; }
+  .tag { border: 1px solid var(--plum); }
+  .notyet { border: 1px solid var(--line); }
+  .steps li.on { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+  .mini i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .mini i.now { background: none; border-width: 6px; }
+  .sheet, .pack { border: 0; margin-top: 0; }
+  .shead, .pack-head { padding: 0 0 12px; break-inside: avoid; break-after: avoid; }
+  .pack-head { border-bottom: 1px solid var(--plum); }
+  /* sections: the label sits above its body, and a section may run on to the next page */
+  .sec, .pack-sec { display: block; padding: 14px 0; break-inside: auto; }
+  .sec > .lab, .pack-sec > .lab { display: block; margin-bottom: 8px; break-after: avoid; }
+  .sec > .lab .n { margin-left: 12px; }
+  .sec > .body, .pack-sec > .body { display: block; }
+  .sec > .body > * + *, .pack-sec > .body > * + * { margin-top: 10px; }
+  h1, h2, h3, .lab, .label, .sub-h, .snap-h, .rows .grp, .produces { break-after: avoid; }
+  .sub-h { padding-top: 12px; }
+  /* rows: the title and the status on one line, the source and the detail under them, never split across pages */
+  .rowi, .rowi.plain { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 7px 0; align-items: start; break-inside: avoid; }
+  .rowi .main, .rowi.plain .main { grid-column: 1; }
+  .rowi .st.paper { grid-column: 2; grid-row: 1; white-space: nowrap; }
+  .rowi .srcl, .rowi .meta, .rowi .filebar { grid-column: 1 / -1; order: 0; margin-top: 0; text-align: left; }
+  .rowi .meta:empty { display: none; }
+  .rowi .main .t { font-size: 15px; }
+  .filebar { border: 0; padding: 0; }
+  .none, .record, .fact, .pack-facts li, .tile, .steps, .say-what, .sources li, .log li, figure, .prow, .next { break-inside: avoid; }
+  .tiles, .tiles.two { display: block; }
+  .tile, .log, .next { margin-top: 10px; }
+  /* a wrapping row of cards rather than a grid: a grid moves to the next page whole, a wrapped row breaks between rows */
+  .facts { display: flex; flex-wrap: wrap; overflow: visible; border: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .fact { margin: 0; padding: 8px; flex: 0 0 33.333%; max-width: 33.333%; }
+  .kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 16px; }
+  .kv dt { padding-top: 3px; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .steps li { border-bottom: 0; border-right: 1px solid var(--line); }
+  .pack-facts li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 6px 0; }
+  .pack-sec .record + .record { margin-top: -1px; }
+  .model, .model.pic { display: block; }
+  .model figure img, .pack figure img { max-width: 420px; }
+  .printed { margin: 14px 0 0; padding-top: 8px; border-top: 1px solid var(--plum); font: 400 11px/1.5 var(--mono); break-inside: avoid; }
+  .url { overflow-wrap: anywhere; }
+  .pack p.url::before { content: "Open the 3D model at: "; }
 }
 @media (prefers-reduced-motion: no-preference) { .btn, .rail a { transition: background-color .12s, box-shadow .12s; } }
 

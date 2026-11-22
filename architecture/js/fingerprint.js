@@ -38,8 +38,8 @@ export function modelFingerprint(plan) {
 export const PLAN_SCHEMA = 'assembl.plan-model.v1';
 
 /**
- * Read the text of a plan model file and return what the project keeps about it.
- * The file itself is not kept: only its name, drawings note, revision and fingerprint.
+ * Read the text of a plan model file and return what the project keeps about it: its name, drawings note, revision
+ * and fingerprint. (The page keeps the file itself apart, through the storage module, so it can open in 3D.)
  * Throws an Error with a plain message when the text is not a plan model.
  */
 export function describeModel(text, fileName) {
