@@ -24,7 +24,9 @@
 // Nothing here writes to the console. Database error text is never shown or kept: it can quote a row's values.
 //
 // Files: the same four calls and shapes as the browser store (store.js):
-//   putFile({ id?, project_id, owner_kind, owner_id, name, type, data })  -> note { id, project_id, owner_kind, owner_id, name, type, size, kept_at }
+//   putFile({ id?, project_id, owner_kind, owner_id, name, type, data, extra? })  -> note { id, project_id, owner_kind, owner_id, name, type, size, kept_at, extra? }
+//                        extra (a plain object) is kept in the record's extra column; a note carries it only when it is not empty
+//   filePlace, fileToken, fileKept   a big file sent in parts (upload.js): see the files part of createCloudStore
 //   getFile(id)          -> the note plus { data: Uint8Array }, or null when there is no such file or its contents are not there
 //   removeFile(id)       -> true if it was there
 //   listFiles(where?)    -> notes only, e.g. listFiles({ project_id })
@@ -262,6 +264,8 @@ export function createGateway(client, { schema = 'arch', bucket = 'arch-files', 
       }
     },
     rpc: (name, args) => ask(() => db().rpc(name, args)),
+    /** [models] the signed-in person's access token, for a big file sent in parts straight to storage (upload.js); null when there is none */
+    async token() { try { return (await client.auth?.getSession?.())?.data?.session?.access_token ?? null; } catch { return null; } },
     async file(run) {
       let r = await attempt(() => run(client.storage.from(bucket)));
       if (r?.error && explainStorage(r.error).code === 'signed_out' && refresh) {
@@ -504,7 +508,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
         const f = await store.getFile(m.id); // a failure to read stops the export: nothing half-made is handed over
         if (!f) { missing++; continue; } // the record is there but its contents are not: counted, not hidden
         bytes += f.size;
-        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, data_base64: bytesToBase64(f.data) });
+        out.push({ id: f.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, size: f.size, kept_at: f.kept_at, ...(f.extra ? { extra: f.extra } : {}), data_base64: bytesToBase64(f.data) });
       }
       return { file_name: `${base}-with-files.json`, text: JSON.stringify(writeBundle(b, now, out, keptIn), null, 2), files_included: true, file_count: out.length, file_bytes: bytes, ...(missing ? { files_missing: missing } : {}) };
     },
@@ -525,7 +529,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       // files the project file carries go to the shared records too; one that is refused is counted, not hidden
       let kept = 0, refused = 0;
       for (const f of b.files ?? []) {
-        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
+        try { await store.putFile({ id: f.id, project_id: b.project.id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, extra: f.extra, data: base64ToBytes(f.data_base64) }); kept++; } catch { refused++; }
       }
       const pid = dbId(b.project.id);
       return Array.isArray(b.files) ? { project_id: pid, copied, files: kept, files_failed: refused } : { project_id: pid, copied };
@@ -533,7 +537,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
 
     // ---- files: the contents go to the practice's private bucket, the note of each goes in the "file" table ----
     async putFile(input = {}) {
-      const { id, project_id, owner_kind, owner_id, name, type = '', data } = isObj(input) ? input : {};
+      const { id, project_id, owner_kind, owner_id, name, type = '', data, extra } = isObj(input) ? input : {};
       if (project_id && await localProject(project_id)) return local.putFile(input); // the Sample's files stay in the browser
       mustWrite('file');
       const bytes = toBytes(data), label = String(name || '').trim() ? String(name) : 'file';
@@ -547,7 +551,32 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
         await g.file((s) => s.upload(path, blob, { contentType: mime || 'application/octet-stream', upsert: false }));
       } catch (e) { throw nothing(e, ' The file was not kept.'); }
       try {
-        const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: bytes.byteLength, storage_path: path, extra: {} };
+        const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: bytes.byteLength, storage_path: path, extra: isObj(extra) ? copy(extra) : {} };
+        const got = await g.ask(() => g.from('file').insert(rec).select());
+        return fileDown(got?.[0] ?? { ...rec, created_at: new Date().toISOString() });
+      } catch (e) {
+        try { await g.file((s) => s.remove([path])); } catch { /* the record was refused; the contents may be left behind for an owner to clear */ }
+        throw nothing(e, ' The file was not kept.');
+      }
+    },
+    // [models] A big file goes up in 6 MB parts straight to the bucket (upload.js), between these calls: filePlace says where
+    // it goes (nothing is written), fileToken gives the sign-in for each part, and fileKept writes its record once the last
+    // part is in. If the record is refused, the contents are removed, as putFile does. The Sample has no shared files.
+    async filePlace({ id, project_id } = {}) {
+      if (!project_id || await localProject(project_id)) throw new Error('The Sample’s files stay in this browser.');
+      mustWrite('file');
+      const fid = id ? dbId(id) : newUuid(), pid = dbId(project_id);
+      return { id: fid, path: `${practice.id}/${pid}/${fid}` };
+    },
+    fileToken: () => g.token?.() ?? Promise.resolve(null),
+    async fileKept({ id, path, project_id, owner_kind, owner_id, name, type = '', size, extra } = {}) {
+      mustWrite('file');
+      const fid = dbId(id), pid = dbId(project_id), label = String(name || '').trim() ? String(name) : 'file';
+      if (path !== `${practice.id}/${pid}/${fid}`) throw new Error('That file is not in this practice’s place for that project.');
+      if (!owner_id || !OWNER_KINDS.includes(owner_kind)) throw new Error('A file needs the record it belongs to before it can be kept.');
+      const mime = String(type || '');
+      const rec = { id: fid, practice_id: practice.id, project_id: pid, owner_kind, owner_id: dbId(owner_id), name: label, mime: mime || null, size: Number(size) || 0, storage_path: path, extra: isObj(extra) ? copy(extra) : {} };
+      try {
         const got = await g.ask(() => g.from('file').insert(rec).select());
         return fileDown(got?.[0] ?? { ...rec, created_at: new Date().toISOString() });
       } catch (e) {
@@ -603,7 +632,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
 }
 
 /** a row of the "file" table -> the note the page holds, the same shape as the browser store's */
-const fileDown = (r) => ({ id: r.id, project_id: r.project_id ?? '', owner_kind: r.owner_kind ?? '', owner_id: r.owner_id ?? '', name: r.name ?? '', type: r.mime ?? '', size: Number(r.size ?? 0), kept_at: iso(r.created_at) ?? '' });
+const fileDown = (r) => ({ id: r.id, project_id: r.project_id ?? '', owner_kind: r.owner_kind ?? '', owner_id: r.owner_id ?? '', name: r.name ?? '', type: r.mime ?? '', size: Number(r.size ?? 0), kept_at: iso(r.created_at) ?? '', ...(isObj(r.extra) && Object.keys(r.extra).length ? { extra: r.extra } : {}) });
 
 /**
  * Approvals and activity that come up from a browser or a file were not recorded under a sign-in.
@@ -663,7 +692,7 @@ export async function moveProjects({ local, cloud, ids, now }) {
         if (!already.has(dbId(f.id))) {
           const full = await local.getFile(f.id);
           if (!full?.data) continue; // its note is here but its contents are not: nothing to send
-          await cloud.putFile({ id: f.id, project_id: id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, data: full.data });
+          await cloud.putFile({ id: f.id, project_id: id, owner_kind: f.owner_kind, owner_id: f.owner_id, name: f.name, type: f.type, extra: f.extra, data: full.data });
         }
         sent.add(dbId(f.id));
       }

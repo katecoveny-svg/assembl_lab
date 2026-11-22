@@ -87,8 +87,8 @@ before(async () => {
 });
 after(async () => { await db.close(); });
 
-test('all six migrations apply, then apply a second time without error or change', async () => {
-  assert.equal(migrations.length, 6, 'three applied files and three new ones');
+test('all the migrations apply, then apply a second time without error or change', async () => {
+  assert.equal(migrations.length, 7, 'three applied files and four new ones');
   await applyAll();
   const first = await snapshot();
   await applyAll();
@@ -97,7 +97,7 @@ test('all six migrations apply, then apply a second time without error or change
   assert.equal(first.storage_policies, 4);
   assert.equal(first.buckets, 1);
   const b = (await q(`select id, public, file_size_limit from storage.buckets`)).rows[0];
-  assert.deepEqual(b, { id: 'arch-files', public: false, file_size_limit: 52428800 });
+  assert.deepEqual(b, { id: 'arch-files', public: false, file_size_limit: 1073741824 }); // part 6 made it 50 MB; part 7 raises it to 1 GB (files-limit.test.mjs)
 });
 
 test('a bucket of that name that was public is made private, not left open', async () => {
