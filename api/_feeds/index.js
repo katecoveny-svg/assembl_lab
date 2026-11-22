@@ -14,6 +14,7 @@ import { fetchAddress } from "./address.js";
 import { fetchHunt } from "./hunt.js";
 import { fetchSignals } from "./signals.js";
 import { fetchRules } from "./rules.js";
+import { fetchConsents } from "./consents.js";
 import { fetchRetailers, fetchTariffs } from "./retail.js";
 import { CADENCE_TTL, withStatus } from "./util.js";
 
@@ -39,6 +40,7 @@ export const FEEDS = {
   hunt: { fetch: fetchHunt, cadence: "hourly" }, // found work for a practice from public tender notices (GETS), ranked against its lens (?keywords=&regions=&sectors=&min=&max=&sources=); read-only, nothing is contacted
   signals: { fetch: fetchSignals, cadence: "hourly" }, // early signals for found work: Beehive releases and Gazette notices that may come before a design team is hired, ranked against the same lens as hunt; read-only
   rules: { fetch: fetchRules, cadence: "6-hourly" }, // rule changes coming: NZ legislation (Parliamentary Counsel Office API, needs LEGISLATION_API_KEY) that may change how buildings are designed, consented, funded or protected; read-only
+  consents: { fetch: fetchConsents, cadence: "monthly" }, // building consents: Stats NZ monthly consents by region and building type (needs STATSNZ_API_KEY), with ?discover=1 to list the tables; read-only
   // ground and surface (LINZ 1 m LiDAR) are not served here: the plan drop page reads them in the browser, straight from LINZ
   // (plan-studio/twins/src/twin/linz/). On Cloudflare the server-side reader failed: see docs/architecture/site-ground.md.
   grocery: { fetch: fetchGrocery, cadence: "annual" }, // Commerce Commission Annual Grocery Report: snapshot, not fetched

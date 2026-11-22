@@ -1,0 +1,29 @@
+/* "Building consents" (js/hunt-consents.js): the panel under "Rule changes coming" in Found work. It reuses hunt.css (lane heading, note, credit, buttons)
+   and adds only what a consents card needs. Same custom properties, with the same fallbacks, so the default and the sketch look both work.
+   Colour never carries a meaning alone: every change is in words ("up 20% on September 2025") and the arrow is a second signal. */
+.hunt-consents .hunt-lane-h { flex-wrap: wrap; }
+.hunt-consents > * { min-width: 0; }
+.hc-again { margin-left: auto; }
+.hc-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.hc-card { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 14px; border: 1px dashed var(--h-line, var(--h-hair)); background: var(--h-ground); color: var(--h-ink); }
+.hc-card.is-national { border-style: solid; border-color: var(--h-ink); background: var(--h-soft); }
+.hc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.hc-name { margin: 0; font: 600 17px/1.25 var(--h-sans); letter-spacing: -.01em; overflow-wrap: anywhere; }
+.hc-month { font: 500 12px/1.3 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--h-mute); }
+.hc-row { display: grid; gap: 3px; padding-top: 10px; border-top: 1px solid var(--h-hair); }
+.hc-row > * { margin: 0; }
+.hc-lab { font: 500 12px/1.3 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--h-mute); }
+.hc-big { font: 600 24px/1.15 var(--h-sans); letter-spacing: -.015em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hc-sub, .hc-none { font-size: 13.5px; line-height: 1.4; color: var(--h-mute); }
+.hc-chg { display: inline-flex; align-items: center; gap: 5px; font: 500 13.5px/1.35 var(--h-sans); color: var(--h-ink); }
+.hc-chg > span { min-width: 0; overflow-wrap: anywhere; }
+.hc-arrow { flex: none; }
+.hc-chg.is-none, .hc-chg.is-same { color: var(--h-mute); }
+.hc-types { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.hc-types li { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; row-gap: 1px; align-items: baseline; }
+.hc-tn { font-size: 14.5px; line-height: 1.3; min-width: 0; overflow-wrap: anywhere; }
+.hc-tv { font: 600 14.5px/1.3 var(--h-sans); font-variant-numeric: tabular-nums; text-align: right; }
+.hc-types .hc-chg { grid-column: 1 / -1; font-size: 12.5px; color: var(--h-mute); }
+.hc-toggle { justify-self: start; min-height: 44px; }
+@media (max-width: 899px) { .hc-cards { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: no-preference) { .hc-card { transition: border-color .15s ease; } }
