@@ -84,6 +84,7 @@ export function withStatus(e, now = Date.now()) {
 export const CADENCE_TTL = { // seconds the edge may serve a cached copy, then revalidate in the background
   "5-min": { sMaxAge: 300, swr: 900 },
   hourly: { sMaxAge: 900, swr: 3600 },
+  "6-hourly": { sMaxAge: 21600, swr: 86400 },
   daily: { sMaxAge: 3600, swr: 86400 },
   weekly: { sMaxAge: 21600, swr: 604800 },
   fortnightly: { sMaxAge: 21600, swr: 604800 },

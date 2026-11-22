@@ -416,6 +416,12 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       if (!p || !team) return [];
       return team.huntLeads(p.id, since);
     },
+    /** Parliament bills that name the built environment (any member). [] when no practice is in use; throws when the shared records cannot be read. */
+    async huntRules(since = null) {
+      const p = st.practice;
+      if (!p || !team) return [];
+      return team.huntRules(p.id, since);
+    },
     /** Tenders read from alert emails and added by this practice (any member can read). [] when no practice is in use. */
     async huntInbox() {
       const p = st.practice;

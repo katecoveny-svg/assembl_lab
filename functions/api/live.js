@@ -20,8 +20,13 @@ export async function onRequest(context) {
   if (cache) { try { const hit = await cache.match(key); if (hit) return method === "HEAD" ? new Response(null, hit) : hit; } catch (e) { /* no cache: go to the sources */ } }
 
   let out;
-  // DIGITALNZ_API_KEY (optional): switches on the Gazette signals (api/_feeds/signals-gazette.js). No other setting is passed to the feeds.
-  const env = context.env?.DIGITALNZ_API_KEY ? { DIGITALNZ_API_KEY: context.env.DIGITALNZ_API_KEY } : undefined;
+  // Optional keys, each passed only if set, and no other setting reaches the feeds:
+  //   DIGITALNZ_API_KEY    switches on the Gazette signals (api/_feeds/signals-gazette.js)
+  //   LEGISLATION_API_KEY  switches on "Rule changes coming" (api/_feeds/rules-legislation.js); sent only in a request header, never returned
+  const e = {};
+  if (context.env?.DIGITALNZ_API_KEY) e.DIGITALNZ_API_KEY = context.env.DIGITALNZ_API_KEY;
+  if (context.env?.LEGISLATION_API_KEY) e.LEGISLATION_API_KEY = context.env.LEGISLATION_API_KEY;
+  const env = Object.keys(e).length ? e : undefined;
   try { out = await handleLive(url.searchParams, env); }
   catch (e) { out = { status: 500, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }, body: { error: "live_failed", message: String(e?.message || e).slice(0, 200) } }; }
   const res = new Response(method === "HEAD" ? null : JSON.stringify(out.body), { status: out.status, headers: out.headers });

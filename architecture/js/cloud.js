@@ -910,6 +910,11 @@ export function createTeam(g) {
       const rows = await g.rpc('hunt_leads', { p_practice: practiceId, p_since: since });
       return Array.isArray(rows) ? rows : [];
     },
+    /** The Parliament bills the radar has collected lately that name the built environment (arch.hunt_rules: title, bill page link, day, status and a short snippet for ranking only; members only). */
+    async huntRules(practiceId, since = null) {
+      const rows = await g.rpc('hunt_rules', { p_practice: practiceId, p_since: since });
+      return Array.isArray(rows) ? rows : [];
+    },
     /** The tenders read from alert emails that this practice added (arch.hunt_inbox). Every member can read them. */
     async huntInbox(practiceId) {
       const rows = await g.all(() => g.from('hunt_inbox').select('rfx_id, ref, organisation, name, closes_at, url, kind, added_at, extra').eq('practice_id', practiceId), ['added_at']);
