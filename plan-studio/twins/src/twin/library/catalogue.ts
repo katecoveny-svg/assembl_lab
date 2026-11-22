@@ -42,6 +42,10 @@ export interface CatItem {
   rooms: string[];
   /** the picture, relative to the manifest */
   pic: string;
+  /** legacy: a GLB kept working and credited until it is rebuilt in code (Kate, 22 Nov 2026: "procedural is key") */
+  status?: 'legacy';
+  /** the piece built in code that stands in for this legacy GLB, where there is one */
+  replacedBy?: string;
   /** studio camera for its picture */
   view?: { az?: number; el?: number; fov?: number; zoom?: number; aim?: number; exposure?: number };
 }
@@ -56,7 +60,7 @@ const CUR_CREDIT = 'assembl curated library';
 const own = (id: string, category: CatId, title: string, role: string, dims: CatItem['dims'], material: string, fit: CatItem['fit'], rooms: string[], extra: Partial<CatItem> = {}): CatItem =>
   ({ id, category, title, role, dims, material, licence: OWN, credit: OWN_CREDIT, source: 'procedural', fit, rooms, pic: `pics/${id}.webp`, ...extra });
 const glb = (id: string, category: CatId, title: string, role: string, dims: CatItem['dims'], material: string, fit: CatItem['fit'], rooms: string[], curated = false, extra: Partial<CatItem> = {}): CatItem =>
-  ({ id, category, title, role, dims, material, licence: curated ? CUR : KS, credit: curated ? CUR_CREDIT : KS_CREDIT, source: 'glb', glb: id, fit, rooms, pic: `pics/${id}.webp`, ...extra });
+  ({ id, category, title, role, dims, material, licence: curated ? CUR : KS, credit: curated ? CUR_CREDIT : KS_CREDIT, source: 'glb', glb: id, status: 'legacy', fit, rooms, pic: `pics/${id}.webp`, ...extra });
 
 const TIMBERS: Finish[] = [{ id: 'oak', label: 'Oiled oak', swatch: '#c9a87c' }, { id: 'ash', label: 'Oiled ash', swatch: '#dcc7a6' }, { id: 'walnut', label: 'Oiled walnut', swatch: '#6f4f38' }];
 
@@ -79,24 +83,31 @@ export const CATALOGUE: CatItem[] = [
   own('LIB-NAT-01', 'planting', 'Harakeke (New Zealand flax)', 'harakeke', { w: 1855, d: 1590, h: 2265 }, 'living plant, Phormium tenax', 'floor', ['Outdoor'], { view: { az: 20, el: 12, zoom: 1.05 } }),
   own('LIB-NAT-02', 'planting', 'Tī kōuka (cabbage tree)', 'tikouka', { w: 2215, d: 2430, h: 3420 }, 'living plant, Cordyline australis', 'floor', ['Outdoor'], { view: { az: 20, el: 8 } }),
   own('LIB-NAT-03', 'planting', 'Ground fern with koru', 'fern', { w: 1295, d: 1345, h: 530 }, 'living plant, native ground fern', 'floor', ['Outdoor'], { view: { az: 20, el: 26 } }),
-  // Kate's GLB library (library.ts), each with its licence note
-  glb('HERO-LIV-01', 'seating', 'Three-seater sofa, wool bouclé on a beech plinth', 'sofa', { w: 2550, d: 960, h: 850 }, 'wool bouclé, beech', 'floor', ['Living']),
-  glb('HERO-LIV-02', 'seating', 'Beech armchair with linen cushions', 'armchair', { w: 730, d: 740, h: 775 }, 'beech, linen', 'floor', ['Living', 'Bedroom']),
-  glb('LIVING-34', 'seating', 'Oak lounge chair, oatmeal upholstery', 'lounge_chair', { w: 680, d: 680, h: 785 }, 'oak, woven upholstery', 'floor', ['Living', 'Study'], true),
-  glb('HERO-DIN-02', 'seating', 'Steam-bent beech dining chair, bouclé seat', 'dining_chair', { w: 520, d: 485, h: 780 }, 'beech, wool bouclé', 'floor', ['Dining', 'Kitchen']),
-  glb('HERO-KIT-09', 'seating', 'Beech and leather counter stool', 'stool', { w: 415, d: 415, h: 785 }, 'beech, leather', 'floor', ['Kitchen']),
-  glb('HERO-LIV-03', 'tables', 'Oak coffee table with travertine side table', 'coffee_table', { w: 1365, d: 805, h: 450 }, 'oak, travertine', 'floor', ['Living']),
-  glb('HERO-DIN-01', 'tables', 'Whitewashed ash dining table', 'dining_table', { w: 2400, d: 1040, h: 750 }, 'whitewashed ash', 'floor', ['Dining']),
-  glb('HERO-BED-02', 'tables', 'Two-drawer ash bedside table', 'bedside', { w: 520, d: 425, h: 540 }, 'ash', 'wall', ['Bedroom']),
-  glb('HERO-BED-01', 'beds', 'Ash bed with layered flax linen', 'bed', { w: 2080, d: 2150, h: 1010 }, 'ash, flax linen', 'wall', ['Bedroom']),
-  glb('HERO-BED-03', 'storage', 'Fluted ash double wardrobe', 'wardrobe', { w: 1240, d: 920, h: 2200 }, 'fluted ash', 'wall', ['Bedroom']),
-  glb('HERO-LIV-05', 'lighting', 'Arc floor lamp, brushed brass, flax shade', 'floor_lamp', { w: 440, d: 1025, h: 1675 }, 'brushed brass, travertine, flax', 'floor', ['Living']),
-  glb('HERO-LIV-06', 'lighting', 'Turned ash table lamp, opal glass', 'table_lamp', { w: 170, d: 195, h: 495 }, 'ash, brushed brass, opal glass', 'surface', ['Bedroom', 'Living']),
-  glb('HERO-DIN-03', 'lighting', 'Hoop-pine polyhedron pendant', 'pendant', { w: 700, d: 695, h: 970 }, 'hoop pine', 'hang', ['Dining'], false, { view: { el: -4, aim: 0.3 } }),
+  own('LIB-SEAT-04', 'seating', 'Counter stool, oak and bouclé', 'stool', { w: 400, d: 400, h: 735 }, 'oiled oak, brushed brass, wool bouclé', 'floor', ['Kitchen'], { view: { az: 28, el: 14 } }),
+  own('LIB-TAB-03', 'tables', 'Bedside table, oak with two drawers', 'bedside', { w: 520, d: 440, h: 540 }, 'oiled oak, brushed brass', 'wall', ['Bedroom'], { finishes: TIMBERS, view: { az: 30, el: 16 } }),
+  own('LIB-STO-02', 'storage', 'Double wardrobe, fluted ash', 'wardrobe', { w: 1200, d: 620, h: 2200 }, 'oiled ash, brushed brass', 'wall', ['Bedroom'], { view: { az: 24, el: 8 } }),
+  own('LIB-LGT-03', 'lighting', 'Table lamp, turned ash and linen', 'table_lamp', { w: 305, d: 305, h: 500 }, 'oiled ash, brushed brass, washed linen', 'surface', ['Bedroom', 'Living', 'Study'], { view: { az: 24, el: 10 } }),
+  own('LIB-TEX-02', 'rugs-textiles', 'S-fold linen curtain on a ceiling track', 'curtain', { w: 1860, d: 75, h: 2380 }, 'washed linen, powder-coated track', 'wall', ['Living', 'Bedroom'], { view: { az: 22, el: 6 } }),
+  own('LIB-DEC-04', 'decor', 'Arched mirror, brass frame', 'mirror', { w: 530, d: 25, h: 885 }, 'mirror glass, brushed brass', 'wall', ['Bathroom', 'Bedroom', 'Living'], { view: { az: 16, el: 4 } }),
+  own('LIB-NAT-04', 'planting', 'Ponga (silver tree fern)', 'silver_fern', { w: 2900, d: 2900, h: 3055 }, 'living plant, Cyathea dealbata', 'floor', ['Outdoor'], { view: { az: 20, el: 10 } }),
+  // Kate's GLB library (library.ts): legacy, kept working and credited until each is rebuilt in code
+  glb('HERO-LIV-01', 'seating', 'Three-seater sofa, wool bouclé on a beech plinth', 'sofa', { w: 2550, d: 960, h: 850 }, 'wool bouclé, beech', 'floor', ['Living'], false, { replacedBy: 'LIB-SEAT-01' }),
+  glb('HERO-LIV-02', 'seating', 'Beech armchair with linen cushions', 'armchair', { w: 730, d: 740, h: 775 }, 'beech, linen', 'floor', ['Living', 'Bedroom'], false, { replacedBy: 'LIB-SEAT-02' }),
+  glb('LIVING-34', 'seating', 'Oak lounge chair, oatmeal upholstery', 'lounge_chair', { w: 680, d: 680, h: 785 }, 'oak, woven upholstery', 'floor', ['Living', 'Study'], true, { replacedBy: 'LIB-SEAT-02' }),
+  glb('HERO-DIN-02', 'seating', 'Steam-bent beech dining chair, bouclé seat', 'dining_chair', { w: 520, d: 485, h: 780 }, 'beech, wool bouclé', 'floor', ['Dining', 'Kitchen'], false, { replacedBy: 'LIB-SEAT-03' }),
+  glb('HERO-KIT-09', 'seating', 'Beech and leather counter stool', 'stool', { w: 415, d: 415, h: 785 }, 'beech, leather', 'floor', ['Kitchen'], false, { replacedBy: 'LIB-SEAT-04' }),
+  glb('HERO-LIV-03', 'tables', 'Oak coffee table with travertine side table', 'coffee_table', { w: 1365, d: 805, h: 450 }, 'oak, travertine', 'floor', ['Living'], false, { replacedBy: 'LIB-TAB-02' }),
+  glb('HERO-DIN-01', 'tables', 'Whitewashed ash dining table', 'dining_table', { w: 2400, d: 1040, h: 750 }, 'whitewashed ash', 'floor', ['Dining'], false, { replacedBy: 'LIB-TAB-01' }),
+  glb('HERO-BED-02', 'tables', 'Two-drawer ash bedside table', 'bedside', { w: 520, d: 425, h: 540 }, 'ash', 'wall', ['Bedroom'], false, { replacedBy: 'LIB-TAB-03' }),
+  glb('HERO-BED-01', 'beds', 'Ash bed with layered flax linen', 'bed', { w: 2080, d: 2150, h: 1010 }, 'ash, flax linen', 'wall', ['Bedroom'], false, { replacedBy: 'LIB-BED-01' }),
+  glb('HERO-BED-03', 'storage', 'Fluted ash double wardrobe', 'wardrobe', { w: 1240, d: 920, h: 2200 }, 'fluted ash', 'wall', ['Bedroom'], false, { replacedBy: 'LIB-STO-02' }),
+  glb('HERO-LIV-05', 'lighting', 'Arc floor lamp, brushed brass, flax shade', 'floor_lamp', { w: 440, d: 1025, h: 1675 }, 'brushed brass, travertine, flax', 'floor', ['Living'], false, { replacedBy: 'LIB-LGT-02' }),
+  glb('HERO-LIV-06', 'lighting', 'Turned ash table lamp, opal glass', 'table_lamp', { w: 170, d: 195, h: 495 }, 'ash, brushed brass, opal glass', 'surface', ['Bedroom', 'Living'], false, { replacedBy: 'LIB-LGT-03' }),
+  glb('HERO-DIN-03', 'lighting', 'Hoop-pine polyhedron pendant', 'pendant', { w: 700, d: 695, h: 970 }, 'hoop pine', 'hang', ['Dining'], false, { replacedBy: 'LIB-LGT-01', view: { el: -4, aim: 0.3 } }),
   glb('HERO-DIN-04', 'lighting', 'Linear pendant, brushed brass and alabaster', 'pendant_linear', { w: 1560, d: 65, h: 565 }, 'brushed brass, alabaster', 'hang', ['Dining', 'Kitchen'], false, { view: { el: -2, aim: 0.3 } }),
-  glb('HERO-LIV-04', 'rugs-textiles', 'Hand-knotted wool and jute rug', 'rug', { w: 2475, d: 1580, h: 30 }, 'wool, jute', 'floor', ['Living', 'Bedroom'], false, { view: { el: 38 } }),
-  glb('WINDOW-37', 'rugs-textiles', 'S-fold sheer curtain on a ceiling track', 'curtain', { w: 1820, d: 90, h: 2390 }, 'sheer linen, track', 'wall', ['Living', 'Bedroom'], true, { view: { az: 18, el: 6 } }),
-  glb('ABI-MIR-08', 'decor', 'Arched mirror, satin brass frame', 'mirror', { w: 450, d: 30, h: 790 }, 'mirror glass, satin brass', 'wall', ['Bathroom', 'Bedroom'], true, { view: { az: 14, el: 4 } }),
+  glb('HERO-LIV-04', 'rugs-textiles', 'Hand-knotted wool and jute rug', 'rug', { w: 2475, d: 1580, h: 30 }, 'wool, jute', 'floor', ['Living', 'Bedroom'], false, { replacedBy: 'LIB-RUG-01', view: { el: 38 } }),
+  glb('WINDOW-37', 'rugs-textiles', 'S-fold sheer curtain on a ceiling track', 'curtain', { w: 1820, d: 90, h: 2390 }, 'sheer linen, track', 'wall', ['Living', 'Bedroom'], true, { replacedBy: 'LIB-TEX-02', view: { az: 18, el: 6 } }),
+  glb('ABI-MIR-08', 'decor', 'Arched mirror, satin brass frame', 'mirror', { w: 450, d: 30, h: 790 }, 'mirror glass, satin brass', 'wall', ['Bathroom', 'Bedroom'], true, { replacedBy: 'LIB-DEC-04', view: { az: 14, el: 4 } }),
   glb('HERO-SPK-02', 'decor', 'Pale ash bookshelf speaker', 'speaker', { w: 240, d: 350, h: 420 }, 'pale ash, cloth grille', 'surface', ['Living'], true),
   glb('HERO-GTR-01', 'decor', 'Solid-body electric guitar, black', 'guitar', { w: 335, d: 80, h: 985 }, 'lacquered body, maple neck', 'wall', ['Living', 'Study'], true, { view: { az: 14, el: 4 } }),
   glb('HERO-KIT-01', 'kitchen-bath', '600 mm wall oven', 'oven', { w: 595, d: 570, h: 590 }, 'black glass, steel', 'wall', ['Kitchen']),
@@ -114,7 +125,7 @@ export const CATALOGUE: CatItem[] = [
   glb('HERO-BTH-04', 'kitchen-bath', 'Heated ladder towel rail with flax towel', 'towel_rail', { w: 560, d: 110, h: 900 }, 'brushed steel, flax towel', 'wall', ['Bathroom'], false, { view: { az: 14, el: 6 } }),
   glb('HERO-NAT-01', 'planting', 'Nīkau palm', 'nikau', { w: 2290, d: 2235, h: 2565 }, 'living plant, Rhopalostylis sapida', 'floor', ['Outdoor']),
   glb('HERO-NAT-02', 'planting', 'Pōhutukawa, multi-stemmed', 'pohutukawa', { w: 2145, d: 2200, h: 1510 }, 'living plant, Metrosideros excelsa', 'floor', ['Outdoor']),
-  glb('HERO-NAT-03', 'planting', 'Ponga (silver fern)', 'silver_fern', { w: 605, d: 890, h: 1340 }, 'living plant, Cyathea dealbata', 'floor', ['Outdoor']),
+  glb('HERO-NAT-03', 'planting', 'Ponga (silver fern)', 'silver_fern', { w: 605, d: 890, h: 1340 }, 'living plant, Cyathea dealbata', 'floor', ['Outdoor'], false, { replacedBy: 'LIB-NAT-04' }),
   glb('HERO-OUT-01', 'outdoor', 'Slatted outdoor sofa and low table', 'deck_lounge', { w: 2420, d: 1560, h: 755 }, 'slatted hardwood, outdoor canvas', 'floor', ['Outdoor']),
   glb('HERO-OUT-02', 'outdoor', 'Concrete and steel planter trio', 'planters', { w: 1190, d: 590, h: 680 }, 'concrete, weathering steel', 'floor', ['Outdoor']),
   glb('HERO-OUT-03', 'outdoor', 'Four-burner hooded barbecue', 'bbq', { w: 1460, d: 605, h: 1190 }, 'stainless steel', 'floor', ['Outdoor']),

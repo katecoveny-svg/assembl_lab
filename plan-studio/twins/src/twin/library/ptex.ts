@@ -385,7 +385,7 @@ export function leafRibs(o: { seed?: number; mm?: number; n?: number; veins?: nu
   const n = o.n ?? 256, seed = o.seed ?? 12, mm = o.mm ?? 40, V = o.veins ?? 24;
   const f = blank(n, mm, 0.5);
   each(n, (u, v, i) => {
-    const s = Math.abs(Math.sin(u * V * Math.PI)), vein = Math.pow(1 - s, 6);
+    const s = Math.abs(Math.cos(u * V * Math.PI)), vein = Math.pow(1 - s, 6);
     const mott = pfbm(u * 8, v * 32, 3, 8, 32, seed) - 0.5;
     f.h[i] = vein * 0.05 + mott * 0.01;
     f.a[i] = 1 - vein * 0.08 + mott * 0.14;

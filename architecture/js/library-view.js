@@ -127,6 +127,7 @@ function detailHtml(ctx, it, place, m) {
         <label>Quantity<span class="lib-qty"><button type="button" data-lib="qty" data-d="-1" aria-label="One fewer">−</button><input type="number" id="lib-qty" min="1" max="99" value="${S.qty}" inputmode="numeric" /><button type="button" data-lib="qty" data-d="1" aria-label="One more">+</button></span></label>
         <label>Room<select id="lib-room"><option value="">Any room</option>${ROOM_CHOICES.map((r) => `<option${r === room ? ' selected' : ''}>${r}</option>`).join('')}</select></label>
         <button type="button" class="btn solid" data-lib="add" data-id="${esc(it.id)}">Add to this project</button></div>` : '<p class="small">Viewers can look, not add.</p>'}
+      ${it.status === 'legacy' ? `<p class="small lib-legacy">□ Legacy model (GLB): kept working and credited until it is rebuilt in code.${it.replacedBy && m.items.some((x) => x.id === it.replacedBy) ? ` Built in code: <button type="button" class="link" data-lib="open" data-id="${esc(it.replacedBy)}">${esc(m.items.find((x) => x.id === it.replacedBy).title)}</button>.` : ''}</p>` : '<p class="small lib-legacy">■ Built in code: geometry, textures and folds.</p>'}
       <p class="small lib-credit">${esc(it.credit)}. ${esc(it.licence)}.</p>
     </div>
   </div>`;
