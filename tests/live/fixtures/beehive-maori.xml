@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written for the tests in the shape of a beehive.govt.nz portfolio feed. Made-up items; no person is named. -->
+<rss version="2.0" xml:base="https://www.beehive.govt.nz/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Māori Development</title>
+    <link>https://www.beehive.govt.nz/</link>
+    <description/>
+    <item>
+      <title>$8.6m brings marae into heart of New Plymouth</title>
+      <link>https://www.beehive.govt.nz/release/86m-brings-marae-heart-new-plymouth</link>
+      <description>A new central marae will place culture, resilience and community at the heart of the city.</description>
+      <pubDate>Fri, 06 Nov 2026 15:04:27 +1300</pubDate>
+      <guid isPermaLink="false">920001</guid>
+    </item>
+    <item>
+      <title>Investment strengthens resilience for two Tākitimu marae</title>
+      <link>https://www.beehive.govt.nz/release/investment-strengthens-resilience-two-takitimu-marae</link>
+      <description>Two Hawke’s Bay marae damaged in a cyclone will be rebuilt in safer locations with $27.6 million in Government funding.</description>
+      <pubDate>Thu, 16 Apr 2026 09:00:00 +1200</pubDate>
+      <guid isPermaLink="false">920002</guid>
+    </item>
+    <item>
+      <title>Energy resilience for Far North marae</title>
+      <link>https://www.beehive.govt.nz/release/energy-resilience-far-north-marae</link>
+      <description>A grant will fund solar panels and batteries for five marae.</description>
+      <pubDate>Sun, 01 Nov 2026 14:23:26 +1300</pubDate>
+      <guid isPermaLink="false">920003</guid>
+    </item>
+    <item>
+      <title>Unlocking papakāinga across New Zealand</title>
+      <link>https://www.beehive.govt.nz/release/unlocking-papakainga-across-new-zealand</link>
+      <description>New national environmental standards make it easier for Māori landowners to build homes.</description>
+      <pubDate>Thu, 04 Jun 2026 10:07:35 +1200</pubDate>
+      <guid isPermaLink="false">920004</guid>
+    </item>
+  </channel>
+</rss>

@@ -9,7 +9,7 @@
 import { handleLive, CORS } from "../../api/_feeds/handle.js";
 
 export async function onRequest(context) {
-  const { request } = context; // Pages passes { request, env, waitUntil, ... }; env is not needed: every feed is key-less
+  const { request } = context; // Pages passes { request, env, waitUntil, ... }; every feed works key-less. Only the one optional key below is handed on.
   const method = request.method.toUpperCase();
   if (method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS", "Access-Control-Allow-Headers": "content-type, accept", "Access-Control-Max-Age": "86400" } });
   if (method !== "GET" && method !== "HEAD") return new Response(JSON.stringify({ error: "method_not_allowed" }), { status: 405, headers: { ...CORS, Allow: "GET, HEAD, OPTIONS", "Content-Type": "application/json; charset=utf-8" } });
@@ -20,7 +20,9 @@ export async function onRequest(context) {
   if (cache) { try { const hit = await cache.match(key); if (hit) return method === "HEAD" ? new Response(null, hit) : hit; } catch (e) { /* no cache: go to the sources */ } }
 
   let out;
-  try { out = await handleLive(url.searchParams); }
+  // DIGITALNZ_API_KEY (optional): switches on the Gazette signals (api/_feeds/signals-gazette.js). No other setting is passed to the feeds.
+  const env = context.env?.DIGITALNZ_API_KEY ? { DIGITALNZ_API_KEY: context.env.DIGITALNZ_API_KEY } : undefined;
+  try { out = await handleLive(url.searchParams, env); }
   catch (e) { out = { status: 500, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }, body: { error: "live_failed", message: String(e?.message || e).slice(0, 200) } }; }
   const res = new Response(method === "HEAD" ? null : JSON.stringify(out.body), { status: out.status, headers: out.headers });
   const storable = out.status === 200 && !/no-store/i.test(out.headers?.["Cache-Control"] ?? "");
