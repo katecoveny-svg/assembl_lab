@@ -44,6 +44,7 @@ Nothing was pushed, merged or deployed in making this.
 | trades-feeds | Building determinations, consents | MBIE CodeHub, Stats NZ | Verified |
 | site | Facts about a piece of land (new) | LINZ, Auckland Council, Open-Meteo | See below |
 | address | Find a street address and its point (`?feeds=address&q=`) | LINZ NZ Addresses (CC BY 4.0) | Verified: see `docs/architecture/site-address.md` |
+| signals | Early signals for Found work (`?feeds=signals&sectors=&cultural=1`): records that may come before a design team is hired | Beehive portfolio RSS; NZ Gazette through DigitalNZ | Beehive: connected, unreliable (bot checks from Cloudflare). Gazette: off until a DigitalNZ key is added. See `docs/architecture/pipeline-signals.md` |
 
 Nothing here is "unavailable" or "connected-unverified" at the feed level. Each answer says whether it is "Live" (fetched from the publisher just now) or "Latest published" (the publisher's newest release), and when it was fetched.
 
@@ -94,6 +95,9 @@ The owner note for the page is `docs/architecture/site-ground.md`. The tests are
 3. **Waiheke's own zones.** The Unitary Plan layer only says "Hauraki Gulf Islands" for Waiheke. The island's real zones and rules are in the Hauraki Gulf Islands section of the District Plan, which Council does not publish as an open map that I could find. Ask Council whether one exists. Until then the page should say so, and it does.
 4. **BRANZ Maps.** No open service and no terms that allow automated use. A written yes from BRANZ, or an architect reading the zones off BRANZ Maps by hand, are the two routes.
 5. **LINZ parcels.** CC BY 4.0, which is fine. Plan Studio must show "Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0" and Auckland Council's credit wherever the facts appear. Each fact carries its own credit line to copy.
+
+6. **DigitalNZ key (signals).** DigitalNZ lets anyone read its API without a key for non-commercial use only. The Gazette signals need a free key under its commercial terms, added to the Pages project as the secret `DIGITALNZ_API_KEY`. Nothing has been signed up for.
+7. **Beehive (signals).** Crown copyright with free reproduction and acknowledgement, not a named Creative Commons licence. The lab keeps only titles, dates and links. Its bot protection challenges Cloudflare's servers some of the time; this is not worked around.
 
 ## Things to know
 

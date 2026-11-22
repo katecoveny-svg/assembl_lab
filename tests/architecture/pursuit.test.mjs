@@ -325,3 +325,16 @@ test('the studio is an add-on, its stylesheet is versioned, and its words follow
   for (const m of copy.matchAll(/\bcompl(?:y|ies|iant|iance)\b/gi)) assert.fail(`"${m[0]}" in the studio's words`);
   assert.match(js, /Nothing here is submitted, sent or published/);
 });
+
+test('a finding added to the pipeline keeps a small copy on the enquiry, and the studio reads the buyer, region and closing day from it', async () => {
+  const { enquiryFromSignal } = await import('../../architecture/js/hunt-model.js');
+  const { noticeOf } = await import('../../architecture/js/pursuit-model.js');
+  const sig = { id: 'gets:31234567', kind: 'tender', title: 'Library concept design services', buyer: 'Example District Council', region: 'Waikato', closesDay: '2026-12-18', url: 'https://www.gets.govt.nz/XYZ/ExternalTenderDetails.htm?id=31234567', sourceName: 'GETS', ref: '31234567', fit: 70, reasons: ['Matches "library"', 'Asks for design or advice'], cultural: { on: true, why: ['marae'] } };
+  const { enquiry } = enquiryFromSignal(sig, { now: new Date('2026-11-22T00:00:00Z') });
+  assert.equal(enquiry.finding.buyer, 'Example District Council');
+  assert.equal(enquiry.finding.closesDay, '2026-12-18');
+  assert.deepEqual(enquiry.finding.cultural, { on: true, why: ['marae'] });
+  const n = noticeOf(enquiry, []);
+  assert.equal(n.buyer, 'Example District Council'); assert.equal(n.buyer_from, 'finding');
+  assert.equal(n.region, 'Waikato'); assert.equal(n.closes, '2026-12-18');
+});

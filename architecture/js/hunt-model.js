@@ -90,10 +90,45 @@ export function cleanSignal(s) {
     closes: s.closes && !Number.isNaN(Date.parse(s.closes)) ? String(s.closes) : null, closesDay: /^\d{4}-\d{2}-\d{2}$/.test(s.closesDay ?? '') ? s.closesDay : '',
     value: num(s.value), url: String(s.url).slice(0, 500), source: clean(s.source).slice(0, 20) || 'gets', sourceName: clean(s.sourceName).slice(0, 40) || 'GETS',
     published: /^\d{4}-\d{2}-\d{2}$/.test(s.published ?? '') ? s.published : '', fit: Math.max(0, Math.min(100, Math.round(num(s.fit) ?? 0))),
-    cultural: cleanCultural(s.cultural),
+    cultural: cleanCultural(s.cultural), kind: 'tender', advance: s.advance === true, alsoAlert: s.alsoAlert === true,
     reasons: (Array.isArray(s.reasons) ? s.reasons : []).map((x) => clean(x).slice(0, 160)).filter(Boolean).slice(0, 10),
   };
 }
+
+const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v ?? '')) ? String(v) : '');
+const https = (v) => { const u = String(v ?? '').trim(); return /^https:\/\/[^\s<>"]{3,480}$/.test(u) ? u : ''; };
+/** A news lead as the page keeps it: headline, source, day, link, our own reason. Never any text of the story: a stray snippet or body in the input is not copied. */
+export function cleanLead(s) {
+  if (!s || typeof s !== 'object' || !clean(s.id) || !clean(s.title) || !https(s.url)) return null;
+  const reason = clean(s.reason).slice(0, 220);
+  return {
+    id: clean(s.id).slice(0, 80), kind: 'lead', title: clean(s.title).slice(0, 200), url: https(s.url), source: 'news', sourceName: clean(s.sourceName).slice(0, 40) || 'News', published: day(s.published),
+    reason, reasons: (Array.isArray(s.reasons) ? s.reasons : []).map((x) => clean(x).slice(0, 220)).filter(Boolean).slice(0, 6), region: clean(s.region).slice(0, 80),
+    fit: Math.max(0, Math.min(100, Math.round(typeof s.fit === 'number' && Number.isFinite(s.fit) ? s.fit : 0))), cultural: cleanCultural(s.cultural), closesDay: '', buyer: '',
+  };
+}
+/**
+ * An early signal, handed over by the signal feeds (api/_feeds/signals*.js, ranked in architecture/js/signals-rank.js):
+ *   { id, kind:'signal', title, source, sourceUrl, day, region, why (our own words), horizon: 'months 6–24', evidence:[{ label, url }], cultural }
+ * Kept bounded like a finding: text is cut, links must be https, at most 5 evidence links. Anything that is not a signal, or has no link, is dropped.
+ */
+export function cleanEarlySignal(s) {
+  if (!s || typeof s !== 'object' || s.kind !== 'signal') return null;
+  // the feed's names, or the page's own (so a cleaned signal cleans to itself)
+  s = { ...s, sourceUrl: s.sourceUrl ?? s.url, source: s.source !== 'signal' && s.source != null ? s.source : s.sourceName, day: s.day ?? s.published, why: s.why ?? s.reason };
+  if (!clean(s.id) || !clean(s.title) || !https(s.sourceUrl)) return null;
+  const why = clean(s.why).slice(0, 300);
+  return {
+    id: /^[a-z]+:\S{1,60}$/.test(clean(s.id)) ? clean(s.id).slice(0, 80) : `signal:${clean(s.id).replace(/\s+/g, '-').slice(0, 60)}`, kind: 'signal', title: clean(s.title).slice(0, 300), url: https(s.sourceUrl), source: 'signal', sourceName: clean(s.source).slice(0, 60) || 'Early signal', published: day(s.day),
+    region: clean(s.region).slice(0, 80), reason: why, reasons: why ? [why] : [], horizon: clean(s.horizon).slice(0, 60),
+    evidence: (Array.isArray(s.evidence) ? s.evidence : []).map((e) => ({ label: clean(e?.label).slice(0, 80), url: https(e?.url) })).filter((e) => e.label && e.url).slice(0, 5),
+    fit: Math.max(0, Math.min(100, Math.round(typeof s.fit === 'number' && Number.isFinite(s.fit) ? s.fit : 0))), cultural: cleanCultural(s.cultural), closesDay: '', buyer: '',
+  };
+}
+/** a lead or a signal, by its kind; null for anything else */
+export const cleanItem = (x) => (x?.kind === 'signal' ? cleanEarlySignal(x) : x?.kind === 'lead' ? cleanLead(x) : null);
+export const KIND_LABEL = { tender: 'Tender', lead: 'News, not a tender', signal: 'Early signal: work that may come' };
+export const KIND_NOTE = { lead: 'A story worth a look, not an opportunity. Check before acting.', signal: 'A sign that work may come in months or years, not an opportunity yet. Check before acting.' };
 
 /** The feed's answer (feeds.hunt) as the page uses it: { signals, sources, needsLens, considered, fetchedAt }. Throws the feed's own plain sentence when it has an error. */
 export function readAnswer(body) {
@@ -123,7 +158,8 @@ export function buyerInitials(buyer) {
 /** the tender's number in GETS, from its id ("gets:35471034" gives "35471034") */
 const refOf = (s) => String(s.id).replace(/^[a-z]+:/, '');
 /** the line kept as the enquiry's source: where it came from, who is buying, and the link to the notice */
-export const sourceLine = (s) => `${s.sourceName} tender ${refOf(s)} · ${s.buyer || 'buyer not stated'} · ${s.url}`;
+export const sourceLine = (s) => (s.kind === 'lead' ? `${s.sourceName} news lead, not a tender · ${s.url}` : s.kind === 'signal' ? `${s.sourceName} early signal, not a tender · ${s.url}`
+  : `${s.sourceName} ${s.advance ? 'advance notice' : 'tender'} ${refOf(s)} · ${s.buyer || 'buyer not stated'} · ${s.url}`);
 /** the link inside a source line, or '' */
 export const sourceLink = (text) => { const m = /(https:\/\/\S+)/.exec(String(text ?? '')); return m ? m[1] : ''; };
 /** the enquiry (archived or not) already made from this signal, or null: matched on the notice's link, never on the title */
@@ -137,13 +173,40 @@ export const addedAs = (s, enquiries = []) => enquiries.find((e) => sourceLink(e
  *   no person is made: a buyer is an organisation, and a contact is a person someone has actually spoken to
  */
 export function enquiryFromSignal(s, { now = new Date(), who = '' } = {}) {
+  if (s?.kind === 'lead' || s?.kind === 'signal') return enquiryFromItem(s, { now, who });
   const sig = cleanSignal(s);
   if (!sig) throw new Error('That finding cannot be added: it has no link to the notice.');
   const enquiry = newEnquiry({ title: sig.title, source: sourceLine(sig), next_action: HUNT_ENQUIRY_ACTION, next_action_due: sig.closesDay, owner: '', value_nzd: null, now });
+  enquiry.finding = keptFinding({ kind: 'tender', title: sig.title, buyer: sig.buyer, region: sig.region, closesDay: sig.closesDay, url: sig.url, summary: sig.reasons.join('; '), sourceName: sig.sourceName, cultural: sig.cultural });
   const lines = [`Found by the hunt in ${sig.sourceName} public tender notices${sig.buyer ? `, buyer ${sig.buyer}` : ''}${sig.closesDay ? `, closing ${shortDay(sig.closesDay, now)}` : ''}.`];
   if (sig.reasons.length) lines.push(`Why it looked like a fit: ${sig.reasons.join('; ')}.`);
   if (sig.value != null) lines.push(`The notice states a value of $${sig.value.toLocaleString('en-NZ')}. That is not the enquiry's value: a person sets that.`);
   lines.push(`Notice: ${sig.url}`, 'Nothing has been sent, registered or submitted.');
+  const activity = newActivity({ enquiry_id: enquiry.id, kind: 'note', body: lines.join(' '), who, now, at: now instanceof Date ? now.toISOString() : new Date(now).toISOString() });
+  return { enquiry, activity };
+}
+
+/** The finding kept on the enquiry (enquiry.finding; in the shared records it rides in extra), so the Pursuit studio can read it later.
+ *  Small and bounded: our own words and public fields only, never a story's text. */
+const keptFinding = (f) => {
+  const t = (v, n) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
+  const out = { kind: t(f.kind, 10), title: t(f.title, 300), buyer: t(f.buyer, 200), region: t(f.region, 60), url: /^https:\/\//.test(f.url ?? '') ? t(f.url, 500) : '', summary: t(f.summary, 600), sourceName: t(f.sourceName, 120) };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f.closesDay ?? '')) out.closesDay = f.closesDay;
+  if (f.horizon) out.horizon = t(f.horizon, 60);
+  if (f.cultural?.on) out.cultural = { on: true, why: (Array.isArray(f.cultural.why) ? f.cultural.why : []).slice(0, 8).map((w) => t(w, 60)) };
+  return out;
+};
+
+/** What "Add to pipeline" makes from a news lead or an early signal: marked as such, with a next step that is to check it. Saves nothing. */
+export function enquiryFromItem(s, { now = new Date(), who = '' } = {}) {
+  const it = cleanItem(s);
+  if (!it) throw new Error('That finding cannot be added: it has no link.');
+  const lead = it.kind === 'lead';
+  const enquiry = newEnquiry({ title: it.title, source: sourceLine(it), next_action: lead ? 'Check the story before acting' : 'Check the signal before acting', next_action_due: '', owner: '', value_nzd: null, now });
+  enquiry.finding = keptFinding({ kind: it.kind, title: it.title, buyer: it.buyer, region: it.region, url: it.url, summary: it.reason, sourceName: it.sourceName, horizon: it.horizon, cultural: it.cultural });
+  const lines = [lead ? `A lead from the news (${it.sourceName}), not a tender and not an opportunity yet.` : `An early signal (${it.sourceName}), not a tender and not an opportunity yet${it.horizon ? `; it may mean work in ${it.horizon}` : ''}.`];
+  if (it.reason) lines.push(`Why it was flagged: ${it.reason}`);
+  lines.push(`${lead ? 'Story' : 'Source'}: ${it.url}`, 'Nothing has been sent, registered or submitted.');
   const activity = newActivity({ enquiry_id: enquiry.id, kind: 'note', body: lines.join(' '), who, now, at: now instanceof Date ? now.toISOString() : new Date(now).toISOString() });
   return { enquiry, activity };
 }

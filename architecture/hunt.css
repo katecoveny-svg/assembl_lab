@@ -173,3 +173,43 @@
 .hunt-filter[aria-pressed="true"] { background: var(--h-ink); border-color: var(--h-ink); color: var(--h-ground); }
 .hunt-filter[aria-pressed="true"] .hunt-count { background: var(--h-ground); color: var(--h-ink); }
 .hunt-opt.wide .hunt-opt-t { display: block; margin: 0 0 3px; }
+
+/* ---- leads, early signals and alert emails (v3) ---------------------------------------------------------------------------------------- */
+.hunt-lane { display: grid; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--h-line); }
+.hunt-lane-h { display: flex; align-items: center; gap: 10px; font: 500 18px/1.2 var(--h-sans); letter-spacing: -.01em; }
+.hunt-lane-note { font-size: 14px; line-height: 1.45; color: var(--h-mute); max-width: 70ch; }
+.hunt-card.is-lead, .hunt-card.is-signal { border-style: dashed; background: var(--h-ground); }
+.hunt-card.is-lead.is-added, .hunt-card.is-signal.is-added { border-style: solid; }
+.hunt-kind { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 3px 8px; border: 1px solid var(--h-ink); font: 500 12px/1.2 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; }
+.hunt-reason { font-size: 14.5px; line-height: 1.45; }
+.hunt-notopp { font: 500 12px/1.45 var(--h-mono); color: var(--h-mute); }
+.hunt-evidence { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.hunt-chip.is-adv { border-color: var(--h-ink); background: var(--h-soft); }
+.hunt-alerts { border: 1px solid var(--h-line); background: var(--h-panel); }
+.hunt-alerts > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 0 14px; cursor: pointer; font: 500 14.5px/1 var(--h-sans); list-style: none; }
+.hunt-alerts > summary::-webkit-details-marker { display: none; }
+.hunt-alerts > summary > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+.hunt-alerts-in { display: grid; gap: 12px; padding: 4px 14px 14px; }
+.hunt-drop { display: grid; gap: 10px; padding: 12px; border: 1px dashed var(--h-line); }
+.hunt-drop.is-drag { border-color: var(--h-ink); background: var(--h-soft); }
+.hunt-drop textarea { width: 100%; min-height: 110px; padding: 10px 12px; border: 1px solid var(--h-ink); background: var(--h-field); color: var(--h-ink); font: 400 14px/1.4 var(--h-mono); resize: vertical; }
+.hunt-drop-t { display: flex; align-items: center; gap: 8px; font: 500 12px/1.3 var(--h-mono); color: var(--h-mute); }
+.hunt-file { position: relative; overflow: hidden; }
+.hunt-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.hunt-file:focus-within { outline: 2px solid var(--h-ink); outline-offset: 2px; }
+@media (min-width: 900px) { .hunt-lane .hunt-card { flex-basis: 300px; } }
+
+/* ---- the Gmail reader section in the settings ---------------------------------------------------------------------------------------- */
+.hunt-reader { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--h-line); background: var(--h-panel); }
+.hunt-reader-state { font-size: 15px; line-height: 1.45; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.hunt-reader-state span { font: 500 13px/1.45 var(--h-mono); color: var(--h-mute); }
+.hunt-script { display: grid; gap: 12px; }
+.hunt-steps { counter-reset: s; display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.hunt-steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 10px; font-size: 14.5px; line-height: 1.45; align-items: start; }
+.hunt-steps li::before { content: counter(s); display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--h-ink); font: 500 13px var(--h-mono); }
+.hunt-code { width: 100%; min-height: 150px; padding: 10px 12px; border: 1px solid var(--h-ink); background: var(--h-field); color: var(--h-ink); font: 400 12px/1.4 var(--h-mono); resize: vertical; }
+.hunt-card.is-lead, .hunt-card.is-signal { display: flex; flex-direction: column; align-items: stretch; }
+.hunt-card.is-lead .hunt-acts, .hunt-card.is-signal .hunt-acts { margin-top: auto; }
+.hunt-card.is-lead > *, .hunt-card.is-signal > * { margin-block: 0; }
+.hunt-card.is-lead, .hunt-card.is-signal { gap: 10px; }
+.hunt-steps a { text-decoration: underline; text-underline-offset: 3px; }

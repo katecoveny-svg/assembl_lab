@@ -96,3 +96,21 @@ Ported from the radar's `radar-rank` (terms, freshness, base weight) and `whaiao
 - GETS shows a value rarely, so the value range seldom counts.
 - Many councils also use other portals. They are not read.
 - The radar function is not applied to any database yet. Apply it to staging first, then production on the owner's word.
+
+## Leads and early signals (22 Nov 2026)
+
+Found work now has three kinds of item, each marked on its card: a **tender** (a public notice), a **lead** ("News, not a tender") and an **early signal** ("Early signal: work that may come"). Leads and signals sit in their own lane, "Leads and early signals", under the tenders, and never mix with them.
+
+**News leads.** `arch.hunt_leads` (migration `20261122140000_arch_hunt_leads.sql`, not applied) gives members the headline, link, published time, source name and a snippet of at most 200 characters from four news sources: Stuff, RNZ, Newsroom and The Daily Blog (confirmed by reading `public.kb_sources`, read only). The window is 30 days by default, 60 at most, 300 rows at most. The page ranks them in `hunt-rank.js` (`rankLeads`) and **never shows or keeps the snippet**: a card shows the headline, source, day, a link and one reason in assembl's words. News is copyright.
+
+A lead counts only when the headline names a place or building a practice could design or improve (school, marae, library, hall, pool, fire station, housing and so on) and says what is happening to it close by (new, upgrade, rebuild, fire-damaged, funding for, takes over). Kept: "Marae wharenui badly damaged by fire", "New Hamilton library to be built", "Cyclone-hit community gets revamped fire station". Dropped: politics, sport results, crime and opinion unless the headline is plainly a building project; hospital patients ("airlifted to hospital"); school gossip ("school wag", "school fees"); "building" as a verb ("building his dream catamaran"); stories from world, sport, crime, opinion and entertainment pages; stories about somewhere outside the practice's regions; foreign stories. The practice's words, sectors and the kaupapa Māori lens raise a lead's score; they do not decide whether it is one. Signed out there are no leads, and the page says so.
+
+"Add to pipeline" makes an enquiry marked "news lead, not a tender" whose next step is "Check the story before acting". "Not for us" works as for tenders.
+
+**Early signals.** The signal feeds (`api/_feeds/signals*.js`, owned by another helper) hand over items shaped `{ id, kind:'signal', title, source, sourceUrl, day, region, why, horizon, evidence:[{label,url}], cultural }`. `cleanEarlySignal` bounds them. The page's call to the feed is `readEarlySignals()` in `hunt.js`; it returns nothing until the feed exists.
+
+## Alert emails
+
+GETS sends a daily "GETS: Tender Subscription" email, with advance notices (which the RSS does not carry) under "Future Procurement Opportunities". "Add alert emails" on the strip takes pasted text or dropped `.eml` and `.txt` files. `gets-alert.js` reads them (strict, at most 500 items, only `https://www.gets.govt.nz/.../ExternalTenderDetails.htm?id=` links count, closing times read as New Zealand time). Items are kept (one row per RFx ID in `arch.hunt_inbox`, or in this browser when signed out), ranked exactly as GETS findings are, and shown from "GETS alert email". A tender also in the RSS shows once. Advance notices carry an "Advance notice" badge. An alert has no region, so a regional lens does not rule it out. The email itself is never kept. How alerts arrive without pasting is in `pipeline-hunt-email.md`.
+
+Migrations, none applied: `20261122141000_arch_hunt_inbox.sql` (the table), `20261122142000_arch_hunt_inbox_reader.sql` (the Gmail reader's token and ingest).

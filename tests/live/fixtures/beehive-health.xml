@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written for the tests in the shape of a beehive.govt.nz portfolio feed. Made-up items; no person is named. -->
+<rss version="2.0" xml:base="https://www.beehive.govt.nz/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Health</title>
+    <link>https://www.beehive.govt.nz/</link>
+    <description/>
+    <item>
+      <title>Land secured for South Auckland hospital</title>
+      <link>https://www.beehive.govt.nz/release/land-secured-south-auckland-hospital</link>
+      <description>Land on Karaka Road in Drury has been secured for a future hospital serving South Auckland.</description>
+      <pubDate>Sat, 03 Oct 2026 09:07:49 +1300</pubDate>
+      <guid isPermaLink="false">910001</guid>
+    </item>
+    <item>
+      <title>Sod turned on Whangārei Hospital redevelopment</title>
+      <link>https://www.beehive.govt.nz/release/sod-turned-whangarei-hospital-redevelopment</link>
+      <description>Construction has started on a new acute services building.</description>
+      <pubDate>Fri, 11 Sep 2026 14:50:26 +1200</pubDate>
+      <guid isPermaLink="false">910002</guid>
+    </item>
+    <item>
+      <title>Government support for aged care facility</title>
+      <link>https://www.beehive.govt.nz/release/government-support-aged-care-facility</link>
+      <description>A $2.5m loan will help build a new 24-bed wing at an aged care home in Westport.</description>
+      <pubDate>Tue, 03 Nov 2026 09:30:00 +1300</pubDate>
+      <guid isPermaLink="false">910003</guid>
+    </item>
+    <item>
+      <title>Pharmacies to provide more funded medicines</title>
+      <link>https://www.beehive.govt.nz/release/pharmacies-provide-more-funded-medicines</link>
+      <description>Community pharmacies can now supply a wider range of funded medicines.</description>
+      <pubDate>Fri, 02 Oct 2026 14:58:20 +1300</pubDate>
+      <guid isPermaLink="false">910004</guid>
+    </item>
+  </channel>
+</rss>
