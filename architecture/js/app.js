@@ -645,9 +645,9 @@ function packView(b) {
 }
 
 // ---- drawing the page ----------------------------------------------------------------------------------------------------------
-let lastRoute = '';
+let lastRoute = '', drawing = 0;
 async function render(fromLink = false) {
-  const r = route(), key = JSON.stringify([r.view, r.pid, r.stage, r.name, r.rest]);
+  const r = route(), key = JSON.stringify([r.view, r.pid, r.stage, r.name, r.rest]), mine = ++drawing; // a later call draws over this one, never the other way round
   for (const stop of cleanups.splice(0)) { try { stop(); } catch { /* an add-on that fails to tidy up does not stop the page */ } }
   const moved = key !== lastRoute;
   if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
@@ -668,6 +668,7 @@ async function render(fromLink = false) {
       else html = r.view === 'pack' ? packView(b) : r.view === 'stage' ? stageView(b, r) : dashView(b, r);
     }
   } catch (err) { html = account.troubleHtml(err); }
+  if (mine !== drawing) return; // the page was asked to draw again while this was being read: the newer one draws
   const y = window.scrollY;
   $app.innerHTML = html;
   account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
