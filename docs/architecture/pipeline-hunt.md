@@ -16,7 +16,7 @@ A fit is a reading of the notice, not a promise. Read the tender documents befor
 - "Looked at <time>" says when the list was fetched. If a source is down the page says so in plain words and keeps showing the last good list, marked as possibly out of date.
 
 ## What to look for
-Set in "What to look for" on the strip. Keywords, regions, sectors, a usual value range, and which sources are on. Empty by default, and nothing is looked up until at least one keyword or sector is set (regions and a range alone find nothing).
+Set in "What to look for" on the strip. Keywords, regions, sectors, a usual value range, which sources are on, and the "Always show kaupapa Māori and Indigenous work" switch. Empty by default, and nothing is looked up until at least one keyword or sector is set (regions and a range alone find nothing).
 
 - Signed in with a practice in use: kept in `practice.extra.hunt`, every member reads it, only an owner changes it (the database refuses anyone else).
 - Signed out: kept as a setting in this browser.
@@ -46,6 +46,21 @@ Only public sources, read as published, with their terms respected. Nothing behi
 - Councils, the Ministry of Education, Health NZ and universities: they post on GETS, so they are covered by it. No separate page is read.
 - Any page needing a login: never.
 
+## The kaupapa Māori and Indigenous lens
+Added 22 November 2026. A sector ("Kaupapa Māori and Indigenous"), a flag on every finding, a filter chip and one setting.
+
+- What it is: a finding aid. It reads the words in a public notice (title, buyer and overview) and says which listed words it found. It does not judge cultural fit, it does not know whose rohe a place is in, and nobody is contacted. Cultural fit, tikanga and engagement with mana whenua are for people, not for this lens.
+- The words: `CULTURAL_PLACES`, `CULTURAL_DESIGN`, `CULTURAL_BUYERS` and `CULTURAL_BUYER_PREFIXES` in `architecture/js/hunt-rank.js`, written with macrons. Matching is whole-word and macron-insensitive (`fold()`), so GETS notices that drop macrons still match. Bare "te", "whare" and "trust" never match, and a place name that only contains a Māori word ("Te Atatu", "Pouakai", "Whare Ra") does not. "Indigenous" does not count when it is followed by a planting word ("Indigenous planting"). A buyer whose name starts with Ngāti, Ngāi or Ngā counts.
+- On every finding: `cultural: { on, why: [words] }`. The strip shows a small "Kaupapa Māori" badge (text and a line icon, no cultural imagery) on matched cards, and the matched words in "Why this".
+- The chip: "Cultural work" with a count, at the top of the strip. It filters what is shown; it is not remembered and changes nothing that was found or hidden.
+- The setting: the sector chip, and a checkbox "Always show kaupapa Māori and Indigenous work, whatever the other words", kept in `practice.extra.hunt` as `cultural: true`. When it is on, a cultural match is kept even if it misses the practice's words and sectors, and it gets a modest boost (+8). It must still be about buildings (the built, infrastructure and works rules apply) and must still be in the practice's regions. Cultural building words ("wharekura", "papakāinga", "fale" and so on) count as building words.
+- Sector scoring: choosing the sector adds the same +12 as any other sector, found by the cultural words.
+- The feed takes `cultural=1` and answers `values.signals[].cultural`. The radar path scores rows in the browser with the same rules.
+- The day's kept answer is keyed with `lens=2`, so answers kept before the flag existed are not reused.
+- Tests: `tests/live/hunt-cultural.test.mjs` (words, negatives, buyers, the setting, the boost) and the last block of `tests/architecture/hunt.test.mjs` (badge, chip, form, saving).
+- Review: the lists should be read by a reo speaker before the lens is sold to anyone. The most ambiguous entries are "cultural centre", "cultural landscape", "carving", "pou", "taonga", "trust board" and "Indigenous".
+- Where else this work is published: `docs/architecture/pipeline-hunt-cultural-sources.md`.
+
 ## How a fit is worked out
 The same every time for the same notice, words and day.
 
@@ -56,6 +71,7 @@ The same every time for the same notice, words and day.
 - Minus 20 for infrastructure or equipment wording, and minus 20 for building works or supply with no design sought.
 - A value the notice itself states, against the usual range: plus 8 inside, minus 15 outside. Most notices state none.
 - Closing within 2 days minus 12, no closing date minus 8. Newer notices score a little higher (the radar's 14-day freshness).
+- Plus 8 for a notice with kaupapa Māori or Indigenous words, only when the practice turned on "Always show" (see the lens above).
 - Left out altogether: closed notices, other regions, software and equipment categories, and notices not about buildings or places.
 - Only 45 and above is shown. At most 12 cards show; the rest say how many more fit.
 

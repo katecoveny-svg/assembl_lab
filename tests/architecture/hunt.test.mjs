@@ -284,7 +284,7 @@ test('in a browser, saving "what to look for" keeps it as a setting here and loo
   const ctx = await browserCtx({ settings: null }), s = screen(ctx); await s.h.start();
   assert.equal(s.feed.calls.length, 0);
   await s.h.submit(form({ keywords: 'school, library', sectors: ['education'], regions: ['Auckland', 'Waikato'], min: '50000', max: '2,000,000', sources: ['radar', 'gets'] }));
-  assert.deepEqual((await ctx.store.get('setting', SETTING.hunt)).value, { keywords: ['school', 'library'], regions: ['Auckland', 'Waikato'], sectors: ['education'], min: 50000, max: 2000000, sources: { radar: true, gets: true } });
+  assert.deepEqual((await ctx.store.get('setting', SETTING.hunt)).value, { keywords: ['school', 'library'], regions: ['Auckland', 'Waikato'], sectors: ['education'], min: 50000, max: 2000000, sources: { radar: true, gets: true }, cultural: false });
   assert.equal(s.feed.calls.length, 1); assert.match(s.feed.calls[0], /keywords=school%2Clibrary&regions=Auckland%2CWaikato&sectors=education&min=50000&max=2000000/);
   assert.deepEqual(await ctx.store.list('enquiry'), []);
   await s.h.submit(form({ keywords: '', sectors: [], regions: ['Auckland'], min: 'lots', max: '', sources: ['radar', 'gets'] }));
@@ -333,7 +333,7 @@ test('signed in as an owner: the practice\'s settings are read from the shared r
   assert.match(s.h.html(), /Add to pipeline/); assert.match(s.h.html(), /data-hunt="open-settings"/);
   await click(s.h, 'open-settings'); assert.match(s.h.html(), /Saved for everyone in Tui Architects/); assert.match(s.h.html(), /type="submit"/);
   await s.h.submit(form({ keywords: 'marae', sectors: [], regions: ['Auckland'], min: '', max: '', sources: ['radar', 'gets'] }));
-  assert.deepEqual(p.fake.db.practice[0].extra.hunt, { keywords: ['marae'], regions: ['Auckland'], sectors: [], min: null, max: null, sources: { radar: true, gets: true } });
+  assert.deepEqual(p.fake.db.practice[0].extra.hunt, { keywords: ['marae'], regions: ['Auckland'], sectors: [], min: null, max: null, sources: { radar: true, gets: true }, cultural: false });
   assert.deepEqual(await p.store.list('enquiry'), [], 'saving what to look for adds nothing to the pipeline');
 });
 
@@ -392,4 +392,107 @@ test('a notice found by both the radar and the live feed shows once; the radar f
   const down = await signedIn({ hunt: cleanHunt(SET), radar: () => { throw new Error('boom'); } });
   const s2 = screen({ store: down.store, me: 'Mere', practice: down.account.state.practice, account: down.account }); await s2.h.start();
   assert.equal(s2.feed.calls.length, 1); assert.match(s2.h.html(), /radar.s notices could not be read/i); assert.match(s2.h.html(), /Add to pipeline/);
+});
+
+// ---- the kaupapa Māori and Indigenous lens: settings, badge, filter ------------------------------------------------------------------------
+const KP = SIG({ id: 'gets:40000001', title: 'Te Atatū marae wharekai upgrade design services', buyer: 'Te Rūnanga o Ngāti Whātua', region: 'Auckland', regions: ['Auckland'], fit: 71,
+  reasons: ['kaupapa Māori or Indigenous words in the notice: “marae”, “wharekai”', 'closes in 15 days'], cultural: { on: true, why: ['marae', 'wharekai'] }, url: 'https://www.gets.govt.nz//X/ExternalTenderDetails.htm?id=40000001' });
+
+test('the settings keep the sector and the "always show" switch; nothing else is stored for it', () => {
+  assert.ok(SECTOR_KEYS.includes('kaupapa')); assert.equal(SECTORS.find(([k]) => k === 'kaupapa')[1], 'Kaupapa Māori and Indigenous');
+  assert.equal(cleanHunt({ sectors: ['kaupapa', 'spaceport'] }).sectors.join(), 'kaupapa');
+  assert.equal(emptyHunt().cultural, false); assert.equal(cleanHunt({}).cultural, false);
+  assert.equal(cleanHunt({ cultural: true }).cultural, true); assert.equal(cleanHunt({ cultural: 'true' }).cultural, false, 'only a real true counts');
+  assert.ok(!huntIsEmpty(cleanHunt({ cultural: true })), 'the switch alone is something to look for'); assert.ok(huntIsEmpty(cleanHunt({ regions: ['Auckland'] })));
+  assert.equal(huntQuery(cleanHunt({ cultural: true, regions: ['Auckland'] })), 'feeds=hunt&regions=Auckland&cultural=1');
+  assert.equal(huntQuery(cleanHunt(SET)), 'feeds=hunt&keywords=library%2Cdesign&regions=Waikato&sectors=civic', 'off: the question is unchanged');
+});
+
+test('a finding keeps its cultural flag, bounded; a finding from before the flag existed is simply not flagged', () => {
+  assert.deepEqual(cleanSignal(KP).cultural, { on: true, why: ['marae', 'wharekai'] });
+  assert.deepEqual(cleanSignal(SIG()).cultural, { on: false, why: [] });
+  assert.deepEqual(cleanSignal({ ...SIG(), cultural: { on: true, why: [] } }).cultural, { on: false, why: [] }, 'on with no words is off');
+  assert.deepEqual(cleanSignal({ ...SIG(), cultural: { on: false, why: ['marae'] } }).cultural, { on: false, why: [] });
+  assert.equal(cleanSignal({ ...SIG(), cultural: { on: true, why: Array.from({ length: 30 }, (_, i) => `w${i}`) } }).cultural.why.length, 8);
+  const a = readAnswer(ANSWER([KP, SIG()])); assert.deepEqual(a.signals.map((s) => s.cultural.on), [true, false]);
+});
+
+test('a matched card shows a "Kaupapa Māori" badge in plain text and the words found; an unmatched card shows neither', async () => {
+  const s = screen(await browserCtx({ settings: { ...SET, cultural: true } }), { feedImpl: feed(ANSWER([KP, SIG()])) }); await s.h.start();
+  const out = s.h.html(), cards = out.split('<li class="hunt-card').slice(1), a = cards.find((c) => c.includes('gets:40000001')), b = cards.find((c) => c.includes('gets:35471034'));
+  assert.match(a, /class="hunt-kp"><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><span>Kaupapa Māori<\/span>/);
+  assert.match(a, /Kaupapa Māori and Indigenous words found in the notice: <b>marae<\/b>, <b>wharekai<\/b>/); assert.match(a, /not a view on cultural fit/);
+  assert.doesNotMatch(a, /kaupapa Māori or Indigenous words in the notice: “marae”/, 'the words are not listed twice');
+  assert.match(a, /closes in 15 days/); assert.doesNotMatch(b, /hunt-kp/); assert.doesNotMatch(b, /Kaupapa/);
+  assert.doesNotMatch(out, /koru|tiki|carv(ed|ing)? (image|icon)/i, 'no cultural imagery as decoration');
+});
+
+test('the "Cultural work" chip shows how many, filters to matches only, and says so when there are none', async () => {
+  const s = screen(await browserCtx(), { feedImpl: feed(ANSWER([SIG(), KP, SIG2])) }); await s.h.start();
+  assert.match(s.h.html(), /data-hunt="only-cultural" aria-pressed="false"><span>Cultural work<\/span><span class="hunt-count">1<span class="vh"> findings<\/span>/);
+  assert.equal((s.h.html().match(/<li class="hunt-card/g) ?? []).length, 3);
+  await click(s.h, 'only-cultural');
+  assert.match(s.h.html(), /aria-pressed="true"/); assert.equal((s.h.html().match(/<li class="hunt-card/g) ?? []).length, 1); assert.match(s.h.html(), /marae wharekai upgrade/);
+  assert.doesNotMatch(s.h.html(), /Hillcrest Library Design/); assert.match(s.h.state.announce, /cultural work only/i);
+  await click(s.h, 'only-cultural'); assert.equal((s.h.html().match(/<li class="hunt-card/g) ?? []).length, 3);
+  const none = screen(await browserCtx(), { feedImpl: feed(ANSWER([SIG(), SIG2])) }); await none.h.start(); await click(none.h, 'only-cultural');
+  assert.match(none.h.html(), /None of today’s findings carry kaupapa Māori or Indigenous words/); assert.match(none.h.html(), /<span class="hunt-count">0</);
+  assert.match(none.h.html(), /does not judge cultural fit, and nobody is contacted/, 'the finding-aid line is on the strip');
+});
+
+test('the filter does not change what was found or kept: a hidden finding stays hidden and the filter is not remembered', async () => {
+  const ctx = await browserCtx(); const s = screen(ctx, { feedImpl: feed(ANSWER([KP, SIG()])) }); await s.h.start();
+  await click(s.h, 'only-cultural'); await click(s.h, 'no', KP.id);
+  assert.match(s.h.html(), /None of today’s findings carry/); assert.equal(s.h.state.answer.signals.length, 2);
+  const again = screen(ctx, { feedImpl: feed(ANSWER([KP, SIG()])) }); await again.h.start();
+  assert.match(again.h.html(), /aria-pressed="false"/, 'a new visit starts unfiltered');
+});
+
+test('the settings form has the sector chip and the always-show checkbox, with the finding-aid words', async () => {
+  const ctx = await browserCtx({ settings: { ...SET, sectors: ['civic', 'kaupapa'], cultural: true } }); const s = screen(ctx); await s.h.start(); await click(s.h, 'open-settings');
+  const out = s.h.html();
+  assert.match(out, /<input type="checkbox" name="sectors" value="kaupapa" checked[^>]*><span>Kaupapa Māori and Indigenous<\/span>/);
+  assert.match(out, /<input type="checkbox" name="cultural" value="1" checked[^>]*>[\s\S]*?Always show kaupapa Māori and Indigenous work, whatever the other words/);
+  assert.match(out, /It must still be about buildings and in your regions/); assert.match(out, /This is a finding aid\. It reads the words in public notices\. It does not judge cultural fit, and nobody is contacted\./);
+  const off = screen(await browserCtx({ settings: SET })); await off.h.start(); await click(off.h, 'open-settings');
+  assert.doesNotMatch(off.h.html(), /name="cultural" value="1" checked/);
+});
+
+test('saving the switch and the sector in a browser keeps them, asks the feed for them, and a cleared box is stored as false', async () => {
+  const ctx = await browserCtx({ settings: null }), s = screen(ctx); await s.h.start();
+  await s.h.submit(form({ keywords: '', sectors: ['kaupapa'], regions: ['Auckland'], min: '', max: '', cultural: '1', sources: ['radar', 'gets'] }));
+  assert.deepEqual((await ctx.store.get('setting', SETTING.hunt)).value, { keywords: [], regions: ['Auckland'], sectors: ['kaupapa'], min: null, max: null, sources: { radar: true, gets: true }, cultural: true });
+  assert.equal(s.feed.calls.length, 1); assert.equal(s.feed.calls[0], '/api/live/?feeds=hunt&regions=Auckland&sectors=kaupapa&cultural=1');
+  await s.h.submit(form({ keywords: '', sectors: [], regions: [], min: '', max: '', cultural: '1', sources: ['radar', 'gets'] }));
+  assert.equal(s.feed.calls.at(-1), '/api/live/?feeds=hunt&cultural=1', 'the switch alone is enough to look');
+  await s.h.submit(form({ keywords: 'library', sectors: [], regions: [], min: '', max: '', sources: ['radar', 'gets'] }));
+  assert.equal((await ctx.store.get('setting', SETTING.hunt)).value.cultural, false);
+  const reread = screen(ctx); await reread.h.loadSettings(); assert.equal(reread.h.state.settings.cultural, false);
+});
+
+test('signed in as an owner: the switch is saved in the practice\'s own settings (practice.extra.hunt) and read back', async () => {
+  const p = await signedIn({ hunt: cleanHunt(SET) });
+  const ctx = { store: p.store, me: 'Mere', practice: p.account.state.practice, account: p.account };
+  const s = screen(ctx); await s.h.start(); await click(s.h, 'open-settings');
+  await s.h.submit(form({ keywords: 'library', sectors: ['civic', 'kaupapa'], regions: ['Auckland'], min: '', max: '', cultural: '1', sources: ['radar', 'gets'] }));
+  assert.deepEqual(p.fake.db.practice[0].extra.hunt, { keywords: ['library'], regions: ['Auckland'], sectors: ['civic', 'kaupapa'], min: null, max: null, sources: { radar: true, gets: true }, cultural: true });
+  assert.equal((await p.account.hunt()).cultural, true);
+  const fresh = screen(ctx); await fresh.h.loadSettings(); assert.equal(fresh.h.state.settings.cultural, true);
+  assert.deepEqual(await p.store.list('enquiry'), [], 'nothing is added to the pipeline by saving');
+});
+
+test('a day\'s answer kept before the flag existed is not reused, so old cards do not hide their badge', async () => {
+  const ctx = await browserCtx({ settings: { ...SET, cultural: true } });
+  const q = huntQuery(cleanHunt({ ...SET, cultural: true }));
+  await ctx.store.save('setting', { id: SETTING.cache('browser'), value: { query: q, day: '2026-11-22', answer: { signals: [SIG()], sources: [], needsLens: false, considered: 1, fetchedAt: NOW.toISOString() } } });
+  const s = screen(ctx, { feedImpl: feed(ANSWER([KP])) }); await s.h.start();
+  assert.equal(s.feed.calls.length, 1, 'it looked again'); assert.match(s.h.html(), /hunt-kp/);
+});
+
+test('the radar\'s notices are scored with the same switch: a marae notice is kept although it misses the words', async () => {
+  const p = await signedIn({ hunt: cleanHunt({ keywords: ['library'], regions: ['Waikato'], sectors: [], cultural: true, sources: { radar: true, gets: false } }),
+    radar: () => [kbRow({ id: 'kb-m', title: 'Marae wharekai design services', url: 'https://www.gets.govt.nz//EN/ExternalTenderDetails.htm?id=99000009', buyer: 'Te Rūnanga o Ngāti Haua', region: 'Waikato', snippet: 'Design services for the building.' }), kbRow({ id: 'kb-n', title: 'Pool plant design services', url: 'https://www.gets.govt.nz//EN/ExternalTenderDetails.htm?id=99000010', region: 'Waikato', snippet: 'Design services for the pool plant.' })] });
+  const s = screen({ store: p.store, me: 'Mere', practice: p.account.state.practice, account: p.account }); await s.h.start();
+  const out = s.h.html();
+  assert.match(out, /Marae wharekai design services/); assert.match(out, /Kaupapa Māori<\/span>/); assert.doesNotMatch(out, /Pool plant design/);
 });

@@ -4,7 +4,8 @@
 // and only when a person presses a button.
 //
 // The practice's settings (practice.extra.hunt when signed in, a browser setting otherwise) hold only what the practice typed:
-//   { keywords:[text], regions:[NZ region], sectors:[sector key], min: NZD|null, max: NZD|null, sources:{ gets: true } }
+//   { keywords:[text], regions:[NZ region], sectors:[sector key], min: NZD|null, max: NZD|null, sources:{ gets: true }, cultural: true|false }
+// cultural: "always show kaupapa Māori and Indigenous work, whatever the other words" (a match is kept even when it misses the words and sectors).
 // No client details belong in them.
 import { newEnquiry, newActivity, dayKey, shortDay } from './crm-model.js';
 
@@ -12,7 +13,7 @@ export const REGIONS = ['Northland', 'Auckland', 'Waikato', 'Bay of Plenty', 'Gi
 /** the sectors the feed knows (api/_feeds/hunt.js SECTORS): tests keep the two lists the same */
 export const SECTORS = [
   ['education', 'Education'], ['health', 'Health'], ['housing', 'Housing'], ['civic', 'Civic and community'],
-  ['commercial', 'Commercial and workplace'], ['heritage', 'Heritage and conservation'], ['justice', 'Justice and safety'], ['sport', 'Sport and recreation'],
+  ['commercial', 'Commercial and workplace'], ['heritage', 'Heritage and conservation'], ['justice', 'Justice and safety'], ['sport', 'Sport and recreation'], ['kaupapa', 'Kaupapa Māori and Indigenous'],
 ];
 export const SECTOR_KEYS = SECTORS.map(([k]) => k);
 export const sectorLabel = (key) => SECTORS.find(([k]) => k === key)?.[1] ?? String(key ?? '');
@@ -33,7 +34,7 @@ const dayDiff = (a, b) => { const x = DAY.exec(a), y = DAY.exec(b); return x && 
 const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
 /** nothing to look for: it finds nothing until the practice sets something */
-export const emptyHunt = () => ({ keywords: [], regions: [], sectors: [], min: null, max: null, sources: Object.fromEntries(SOURCE_IDS.map((id) => [id, true])) });
+export const emptyHunt = () => ({ keywords: [], regions: [], sectors: [], min: null, max: null, sources: Object.fromEntries(SOURCE_IDS.map((id) => [id, true])), cultural: false });
 
 const money = (v) => {
   if (v === '' || v == null) return null;
@@ -53,10 +54,10 @@ export function cleanHunt(raw) {
   if (min != null && max != null && min > max) [min, max] = [max, min];
   const src = r.sources && typeof r.sources === 'object' ? r.sources : {};
   const sources = Object.fromEntries(SOURCE_IDS.map((id) => [id, src[id] !== false]));
-  return { keywords, regions, sectors, min, max, sources };
+  return { keywords, regions, sectors, min, max, sources, cultural: r.cultural === true };
 }
-/** looks for nothing at all (no keywords and no sector): regions and a range alone are not something to look for */
-export const huntIsEmpty = (h) => !h || (!h.keywords?.length && !h.sectors?.length);
+/** looks for nothing at all (no keywords, no sector and the cultural switch off): regions and a range alone are not something to look for */
+export const huntIsEmpty = (h) => !h || (!h.keywords?.length && !h.sectors?.length && !h.cultural);
 
 /** the query string the live feed is asked with: /api/live/?feeds=hunt&... Same settings give the same string (it keys the day's cache). */
 export function huntQuery(h) {
@@ -66,6 +67,7 @@ export function huntQuery(h) {
   if (h.sectors?.length) p.set('sectors', h.sectors.join(','));
   if (h.min != null) p.set('min', String(h.min));
   if (h.max != null) p.set('max', String(h.max));
+  if (h.cultural) p.set('cultural', '1');
   const on = FEED_SOURCE_IDS.filter((id) => h.sources?.[id] !== false);
   if (on.length && on.length < FEED_SOURCE_IDS.length) p.set('sources', on.join(','));
   return p.toString();
@@ -73,6 +75,11 @@ export function huntQuery(h) {
 export const sourcesOn = (h) => SOURCE_IDS.filter((id) => h?.sources?.[id] !== false);
 
 // ---- what the feed gave back ------------------------------------------------------------------------------------------------------------
+/** the cultural flag on a finding: { on, why:[words] }. Missing or malformed means off. */
+export function cleanCultural(c) {
+  const why = (Array.isArray(c?.why) ? c.why : []).map((w) => clean(w).slice(0, 40)).filter(Boolean).slice(0, 8);
+  return { on: c?.on === true && why.length > 0, why: c?.on === true ? why : [] };
+}
 /** one signal as the page keeps it: only the fields the cards use, bounded. A link must be https. */
 export function cleanSignal(s) {
   if (!s || typeof s !== 'object' || !clean(s.id) || !clean(s.title)) return null;
@@ -83,6 +90,7 @@ export function cleanSignal(s) {
     closes: s.closes && !Number.isNaN(Date.parse(s.closes)) ? String(s.closes) : null, closesDay: /^\d{4}-\d{2}-\d{2}$/.test(s.closesDay ?? '') ? s.closesDay : '',
     value: num(s.value), url: String(s.url).slice(0, 500), source: clean(s.source).slice(0, 20) || 'gets', sourceName: clean(s.sourceName).slice(0, 40) || 'GETS',
     published: /^\d{4}-\d{2}-\d{2}$/.test(s.published ?? '') ? s.published : '', fit: Math.max(0, Math.min(100, Math.round(num(s.fit) ?? 0))),
+    cultural: cleanCultural(s.cultural),
     reasons: (Array.isArray(s.reasons) ? s.reasons : []).map((x) => clean(x).slice(0, 160)).filter(Boolean).slice(0, 10),
   };
 }
