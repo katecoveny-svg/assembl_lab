@@ -67,7 +67,7 @@ h3 { font-size: clamp(1.45rem, 2vw, 1.8rem); line-height: 1.1; letter-spacing: -
 .hero-pic canvas, .hero-pic img { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% - 44px); mix-blend-mode: darken; }
 .hero-pic canvas, .hero-pic img { -webkit-mask-image: linear-gradient(to right, transparent, #000 14%), linear-gradient(to top, transparent, #000 6%); mask-image: linear-gradient(to right, transparent, #000 14%), linear-gradient(to top, transparent, #000 6%); -webkit-mask-composite: source-in; mask-composite: intersect; }
 .hero-pic img { object-fit: contain; }
-.hero-pic canvas { opacity: 0; transition: opacity 1s var(--ease); touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.hero-pic canvas { opacity: 0; transition: opacity .6s var(--ease); touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 .hero-pic canvas.on { opacity: 1; }
 .hero-pic canvas.held { cursor: grabbing; }
 .hero-pic figcaption { position: absolute; right: var(--gutter); bottom: 14px; left: 0; text-align: right; }

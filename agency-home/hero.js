@@ -1,9 +1,12 @@
 // assembl.co.nz home: the hero. A small New Zealand bach that assembles itself.
 // Every part is modelled here in code at real size (metres): piles, bearers, joists, floor, wall framing, cladding
 // boards, lining, joinery with glass, roof framing, long-run roofing, deck, balustrade, steps and planting.
-// The parts start as a flat lay around the site, drawn in plum line on the page. They lift and fly into place in true
-// building order, and each one turns from line to material as it lands: line means proposed, material means done.
-// It plays itself. Drag to turn it, scroll to run the build forward; after a rest it goes back to playing.
+// The parts start as a flat lay around the site, drawn in plum line on the page. From the first frame the setting out
+// runs round the site and the parts lift and fly into place in true building order, each landing on a soft contact
+// shadow and turning from line to material as it lands: line means proposed, material means done. The camera pushes in
+// as the house forms; the sun goes round to late afternoon and the lamps come on inside; then the house goes back to
+// line work from the roof down and its parts fly home to the kit, and it begins again.
+// It plays itself. Drag to turn it (it follows with weight), scroll to run the build forward; after a rest it plays on.
 // Reduced motion: one still frame of the finished house. No WebGL, or anything fails: a prepared picture.
 // Frame: x along the front of the house, y up, z toward the viewer (downhill). Floor level is y = 0.
 const fig = document.getElementById("hero-pic");
@@ -17,7 +20,7 @@ function still() {                                   // the prepared picture of 
   if (!fig || fig.querySelector("img")) return;
   const im = new Image(); im.width = 1400; im.height = 1400; im.decoding = "async";
   im.alt = "A small dark timber house on piles, with a deck, steps and a mono-pitch roof";
-  im.src = "./img/house-assembled.webp?v=20261122c";
+  im.src = "./img/house-assembled.webp?v=20261122d";
   fig.querySelector("canvas")?.remove(); fig.prepend(im);
   if (cap) { cap.textContent = CAP0; cap.style.visibility = ""; }
 }
@@ -302,17 +305,20 @@ function start(THREE) {
   [[-4.3, 4.7], [-3.1, 5.6], [0.2, 5.4], [4.3, 5.1], [6.2, 4.3], [6.3, 0.6], [4.6, -3.1], [-0.8, -3.3], [-5.2, -1.3]].forEach(([x, z]) => plant("tussock", x, z, R(0.85, 1.15)));
 
   // ---------- timing: the building order ----------
-  // step: [starts at, spread over] in seconds. Each part flies for about 1.15 s.
+  // step: [starts at, spread over] in seconds. Each part flies for about 1.15 s. The setting out runs from the first
+  // frame and the first piles leave the kit at 0.12 s, so nothing ever sits still.
   const STEPS = {
-    piles: [0.35, 0.9], bearers: [1.3, 0.5], joists: [1.8, 1.1], floor: [3.0, 0.8],
-    plates: [3.9, 0.4], studs: [4.2, 1.7], nogs: [5.7, 1.0], tops: [6.6, 0.3],
-    clad: [7.1, 2.4], lining: [8.9, 1.1], joinery: [10.3, 1.0],
-    rafters: [11.5, 0.9], blocking: [12.2, 0.5], purlins: [12.7, 0.5], trays: [13.2, 1.1], fascia: [14.2, 0.3],
-    dboards: [14.6, 0.9], dposts: [15.4, 0.4], drails: [15.8, 0.5], dbal: [16.1, 1.0], stairs: [16.6, 0.9],
-    plants: [17.7, 0.9],
+    piles: [0.12, 0.75], bearers: [0.75, 0.45], joists: [1.15, 1.0], floor: [2.15, 0.8],
+    plates: [3.05, 0.4], studs: [3.35, 1.6], nogs: [4.8, 1.0], tops: [5.6, 0.3],
+    clad: [6.1, 2.3], lining: [7.8, 1.1], joinery: [9.1, 1.0],
+    rafters: [10.3, 0.9], blocking: [11.0, 0.5], purlins: [11.5, 0.5], trays: [12.0, 1.1], fascia: [13.0, 0.3],
+    dboards: [13.4, 0.9], dposts: [14.2, 0.4], drails: [14.6, 0.5], dbal: [14.9, 1.0], stairs: [15.4, 0.9],
+    plants: [16.5, 0.9],
   };
   const LOW = new Set(["dboards", "dposts", "drails", "dbal", "stairs"]);       // these come in low, under the eaves
-  const TB = 22, HOLD = 5.5, RESET = 4.2, REST = 0.5, LOOP = TB + HOLD + RESET + REST;
+  // The loop: build (TB), hold while the light goes to late afternoon and the windows come on, then the house goes
+  // back to line work from the roof down, stands a moment as a drawing, and its parts fly back to the kit (RESET).
+  const TB = 19, HOLD = 6, RESET = 6.6, REST = 0.4, LOOP = TB + HOLD + RESET + REST, RS = TB + HOLD;
   for (const name in STEPS) {
     const list = parts.filter((p) => p.step === name).sort((a, b) => a.ord - b.ord);
     list.forEach((p, i) => { p.t0 = STEPS[name][0] + (list.length > 1 ? i / (list.length - 1) : 0) * STEPS[name][1]; p.dur = 1.15 * R(0.9, 1.15); });
@@ -409,11 +415,20 @@ function start(THREE) {
     const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(es, 0.035).texture; pm.dispose();
     scene.environmentIntensity = 0.78;
   }
+  // The sun keeps time with the loop: mid-morning from the north-east while the kit is set out, round to late
+  // afternoon in the north-west by the end of the hold (lower, warmer, longer shadows), and back while the house is
+  // line work again. Frame: +z is north (the deck faces the sun), +x west.
   const sun = new THREE.DirectionalLight("#fff3e6", 2.5);
-  sun.position.set(-7, 19, 9.5); sun.target.position.set(1, 0, 1); sun.castShadow = true;
-  const sc = sun.shadow.camera; sc.left = -11; sc.right = 11; sc.top = 11; sc.bottom = -11; sc.near = 2; sc.far = 46;
+  sun.target.position.set(1, 0, 1); sun.castShadow = true;
+  const sc = sun.shadow.camera; sc.left = -12; sc.right = 12; sc.top = 12; sc.bottom = -12; sc.near = 2; sc.far = 50;
   sun.shadow.mapSize.setScalar(small ? 1024 : 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.025;
   scene.add(sun, sun.target);
+  const SUN0 = new Color("#fff3e6"), SUN1 = new Color("#ffd6aa"), sunDir = (k, o = v()) => {
+    const az = lerp(-0.64, 0.86, k), el = lerp(1.0, 0.7, k);
+    return o.set(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az));
+  };
+  // the payoff: lamps inside come on at the end of the build (warm windows, light spilling on the deck)
+  const lamp = new THREE.PointLight("#ffb46a", 0, 7.5, 2); lamp.position.set(0.3, 1.75, 0.1); scene.add(lamp);
 
   // One shader idea for every part. Until a part lands it is drawn as paper with a plum outline;
   // as it lands the material sweeps along its length. aFx = (sweep axis, how far the material has got).
@@ -431,13 +446,28 @@ function start(THREE) {
       gl_FragColor.rgb = mix(drawn, gl_FragColor.rgb, on);
       gl_FragColor.a = mix(1.0, gl_FragColor.a, on); }
   `;
-  function fx(m, plant) {
+  // Timber grain, made in the shader: fine streaks along each board's length and a slower figure, different on every
+  // piece (seeded by its instance), measured in metres so a joist and a deck board carry the same grain.
+  const GRAIN_V = "\nvLp = position * vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz)); vAx = aFx.xyz; vSeed = mod(float(gl_InstanceID), 89.0) * 3.71;\n";
+  const GRAIN_F = `
+    float gh(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+    float gn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + 1.0), f.x), f.y); }
+  `;
+  const GRAIN_C = `
+    { float a = dot(vLp, vAx); vec3 r = vLp - a * vAx; float w = r.x + r.y + r.z;
+      float g = 0.62 * gn(vec2(a * 1.6 + vSeed, w * 34.0 + vSeed)) + 0.38 * gn(vec2(a * 0.21 + vSeed * 0.7, w * 6.0));
+      diffuseColor.rgb *= 1.0 + GRAIN * (g - 0.5); }
+  `;
+  function fx(m, plant, grain = 0) {
+    const gv = grain ? "varying vec3 vLp;\nvarying vec3 vAx;\nvarying float vSeed;\n" : "";
     m.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, uni);
-      sh.vertexShader = VERT_PARS + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>" + VERT + (plant ? SWAY : ""));
-      sh.fragmentShader = FRAG_PARS + sh.fragmentShader.replace("#include <colorspace_fragment>", "#include <colorspace_fragment>" + FRAG);
+      sh.vertexShader = VERT_PARS + gv + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>" + VERT + (plant ? SWAY : "") + (grain ? GRAIN_V : ""));
+      let f = sh.fragmentShader.replace("#include <colorspace_fragment>", "#include <colorspace_fragment>" + FRAG);
+      if (grain) f = "#define GRAIN " + grain.toFixed(3) + "\n" + gv + GRAIN_F + f.replace("#include <color_fragment>", "#include <color_fragment>" + GRAIN_C);
+      sh.fragmentShader = FRAG_PARS + f;
     };
-    m.customProgramCacheKey = () => "fx" + (plant ? 1 : 0);
+    m.customProgramCacheKey = () => "fx" + (plant ? 1 : 0) + "g" + grain;
     return m;
   }
   const depth = (plant) => {            // shadows: a part casts none until its material arrives
@@ -450,13 +480,14 @@ function start(THREE) {
     m.customProgramCacheKey = () => "fxd" + (plant ? 1 : 0);
     return m;
   };
-  // colour, roughness, metalness, how much each piece varies
+  // colour, roughness, metalness, how much each piece varies, grain
   const MATS = {
-    pile: ["#a59a83", 0.9, 0, 0.06], pine: ["#dcc7a3", 0.78, 0, 0.07], ply: ["#cdb48f", 0.72, 0, 0.05], lining: ["#e0ccab", 0.75, 0, 0.03],
-    clad: ["#3d3634", 0.52, 0, 0.2], trim: ["#262324", 0.6, 0, 0.05], steel: ["#4b4f54", 0.4, 0.7, 0.03], alu: ["#1f1e20", 0.45, 0.55, 0],
-    door: ["#ae9575", 0.7, 0, 0], deck: ["#ae9575", 0.8, 0, 0.11], stone: ["#cbc6be", 0.95, 0, 0], trunk: ["#ffffff", 0.95, 0, 0], blade: ["#ffffff", 0.72, 0, 0],
-    glass: ["#d3e0e3", 0.05, 0.9, 0],
+    pile: ["#a59a83", 0.9, 0, 0.06, 0.2], pine: ["#dcc7a3", 0.78, 0, 0.07, 0.24], ply: ["#cdb48f", 0.72, 0, 0.05, 0.22], lining: ["#e0ccab", 0.75, 0, 0.03, 0.16],
+    clad: ["#3d3634", 0.52, 0, 0.2, 0.42], trim: ["#262324", 0.6, 0, 0.05, 0.2], steel: ["#4b4f54", 0.36, 0.72, 0.03, 0], alu: ["#1f1e20", 0.42, 0.6, 0, 0],
+    door: ["#ae9575", 0.7, 0, 0, 0.26], deck: ["#ae9575", 0.8, 0, 0.11, 0.34], stone: ["#cbc6be", 0.95, 0, 0, 0], trunk: ["#ffffff", 0.95, 0, 0, 0], blade: ["#ffffff", 0.72, 0, 0, 0],
+    glass: ["#d3e0e3", 0.05, 0.9, 0, 0],
   };
+  let glassMat = null;
   // geometry: a unit box; a blade (a folded, arching leaf); a tapered eight-sided trunk
   const box = new THREE.BoxGeometry(1, 1, 1);
   const bladeG = (() => {
@@ -479,11 +510,12 @@ function start(THREE) {
   })();
   const AX = [[1, 0, 0], [0, 1, 0], [0, 0, 1]], col = new Color(), meshes = [];
   for (const kind in kinds) {
-    const list = kinds[kind], [c, rough, metal, vary] = MATS[kind], plant = kind === "blade" || kind === "trunk", glass = kind === "glass";
+    const list = kinds[kind], [c, rough, metal, vary, grain] = MATS[kind], plant = kind === "blade" || kind === "trunk", glass = kind === "glass";
     const geo = (kind === "blade" ? bladeG : kind === "trunk" ? trunkG : box).clone();
     const fxa = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 4), 4);
     geo.setAttribute("aFx", fxa);
-    const mat = fx(new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal, side: kind === "blade" ? THREE.DoubleSide : THREE.FrontSide, transparent: glass, opacity: glass ? 0.3 : 1 }), plant);
+    const mat = fx(new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal, side: kind === "blade" ? THREE.DoubleSide : THREE.FrontSide, transparent: glass, opacity: glass ? 0.3 : 1 }), plant, grain);
+    if (glass) { glassMat = mat; mat.emissive.set("#ffa458"); mat.emissiveIntensity = 0; }
     const mesh = new THREE.InstancedMesh(geo, mat, list.length);
     mesh.frustumCulled = false; mesh.castShadow = !glass; mesh.receiveShadow = !glass; mesh.customDepthMaterial = depth(plant);
     if (glass) mesh.renderOrder = 2;
@@ -498,44 +530,110 @@ function start(THREE) {
   // the ground: nothing but the shadow it catches, the plan drawn on it, and a few contour lines
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), new THREE.ShadowMaterial({ color: "#3a272c", opacity: 0.17 }));
   ground.rotation.x = -Math.PI / 2 + Math.atan(0.16); ground.position.set(0, G(0), 0); ground.receiveShadow = true; ground.renderOrder = 1; scene.add(ground);
+  // The setting out is drawn as the build begins: string lines run round the house and the deck, and each pile's
+  // square is marked just before its pile comes down. Each segment grows from its first end between its two times.
+  const uDraw = { value: 0 };
   {
-    const P = [], C = [], paper = new Color(PAPER), plum = new Color(PLUM), c = new Color();
-    const seg = (x0, z0, x1, z1, k) => { c.copy(paper).lerp(plum, k); P.push(x0, G(z0) + 0.006, z0, x1, G(z1) + 0.006, z1); C.push(c.r, c.g, c.b, c.r, c.g, c.b); };
-    const rect = (x0, z0, x1, z1, k) => { seg(x0, z0, x1, z0, k); seg(x1, z0, x1, z1, k); seg(x1, z1, x0, z1, k); seg(x0, z1, x0, z0, k); };
-    rect(-3.6, -2.1, 3.6, 2.1, 0.85); rect(-3.6, 2.1, 3.6, 4.5, 0.6); rect(3.6, 2.2, 5.56, 3.3, 0.6);
-    for (const p of parts) if (p.step === "piles") rect(p.p.x - 0.14, p.p.z - 0.14, p.p.x + 0.14, p.p.z + 0.14, 0.7);
+    const paper = new Color(PAPER), plum = new Color(PLUM), c = new Color();
+    const mk = (draw) => {
+      const P = [], C = [], O = [], T = [];
+      const seg = (x0, z0, x1, z1, k, a = 0, b = 0) => {
+        c.copy(paper).lerp(plum, k); const y0 = G(z0) + 0.006, y1 = G(z1) + 0.006;
+        P.push(x0, y0, z0, x1, y1, z1); C.push(c.r, c.g, c.b, c.r, c.g, c.b); O.push(x0, y0, z0, x0, y0, z0); T.push(a, b, 0, a, b, 1);
+      };
+      return { seg, rect: (x0, z0, x1, z1, k, a, d) => { const L = 2 * (x1 - x0 + z1 - z0), s = (q) => a + (d * q) / L; let u = 0;
+        seg(x0, z0, x1, z0, k, s(u), s(u += x1 - x0)); seg(x1, z0, x1, z1, k, s(u), s(u += z1 - z0)); seg(x1, z1, x0, z1, k, s(u), s(u += x1 - x0)); seg(x0, z1, x0, z0, k, s(u), s(u += z1 - z0)); },
+        add: () => {
+          const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(C, 3));
+          const m = new THREE.LineBasicMaterial({ vertexColors: true, toneMapped: false });
+          if (draw) {
+            g.setAttribute("aO", new THREE.Float32BufferAttribute(O, 3)); g.setAttribute("aT", new THREE.Float32BufferAttribute(T, 3));
+            m.onBeforeCompile = (sh) => { sh.uniforms.uDraw = uDraw; sh.vertexShader = "attribute vec3 aO;\nattribute vec3 aT;\nuniform float uDraw;\n" + sh.vertexShader.replace("#include <begin_vertex>",
+              "vec3 transformed = aT.z > 0.5 ? mix(aO, position, clamp((uDraw - aT.x) / max(1e-3, aT.y - aT.x), 0.0, 1.0)) : position;"); };
+          }
+          const l = new THREE.LineSegments(g, m); l.frustumCulled = false; scene.add(l);
+        } };
+    };
+    const plan = mk(true), site = mk(false);
+    plan.rect(-3.6, -2.1, 3.6, 2.1, 0.85, 0.0, 0.75); plan.rect(-3.6, 2.1, 3.6, 4.5, 0.6, 0.3, 0.6);
+    plan.rect(3.6, 2.2, 5.56, 3.3, 0.6, STEPS.stairs[0] - 0.4, 0.4);
+    for (const p of parts) if (p.step === "piles") plan.rect(p.p.x - 0.14, p.p.z - 0.14, p.p.x + 0.14, p.p.z + 0.14, 0.7, Math.max(0.02, p.t0 - 0.05), 0.35);
     for (let k = -4; k <= 4; k++) for (let i = 0; i < 64; i++) {      // contours every half metre of fall, fading at the ends
       const f = (j) => { const x = -19 + (38 * j) / 64; return [x, k * 3.125 + 1 + 0.34 * Math.sin(0.31 * x + k * 1.7) + 0.14 * Math.sin(0.83 * x + k)]; };
-      const [x0, z0] = f(i), [x1, z1] = f(i + 1); seg(x0, z0, x1, z1, 0.3 * clamp(1.25 - Math.abs(x0 + x1) / 30));
+      const [x0, z0] = f(i), [x1, z1] = f(i + 1); site.seg(x0, z0, x1, z1, 0.3 * clamp(1.25 - Math.abs(x0 + x1) / 30));
     }
-    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(C, 3));
-    const lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, toneMapped: false })); lines.frustumCulled = false; scene.add(lines);
+    plan.add(); site.add();
   }
 
-  // ---------- pose every part for a moment of the build ----------
-  const pm4 = new Matrix4(), tm = new Matrix4(), pos = v(), quat = new Quaternion();
-  let moved = true;
-  function pose(tau) {
-    for (const p of parts) {
-      const s = clamp((tau - p.t0) / p.dur);
-      if (s === p.s) continue;
-      p.s = s; moved = true;
-      let on = 0;
-      if (s <= 0) { pos.copy(p.lp); quat.copy(p.lq); }
-      else if (s >= 1) { pos.copy(p.p); quat.copy(p.q); on = 1; }
-      else if (s < 0.8) {                                     // lift, carry, lower to just off its place
-        const a = s / 0.8, e = a < 0.5 ? 4 * a * a * a : 1 - Math.pow(-2 * a + 2, 3) / 2;
-        pos.lerpVectors(p.lp, p.hov, e); pos.y += p.arc * Math.pow(Math.sin(Math.PI * a), 0.85);
-        quat.slerpQuaternions(p.lq, p.q, smooth(clamp((s - 0.05) / 0.55)));
-      } else {                                                // drop the last hand's width, land, settle
-        const b = (s - 0.8) / 0.2, d = b < 0.55 ? 1 - Math.pow(b / 0.55, 2) : 0.07 * Math.sin(Math.PI * (b - 0.55) / 0.45) * (1 - (b - 0.55) / 0.45);
-        pos.lerpVectors(p.p, p.hov, d); quat.copy(p.q);
-        on = clamp((b - 0.5) / 0.5);
-      }
-      pm4.compose(pos, quat, ONE);
-      for (const b of p.bits) { tm.multiplyMatrices(pm4, b.m).toArray(b.mesh.instanceMatrix.array, b.i * 16); b.mesh.fx.array[b.i * 4 + 3] = on; b.mesh.dirty = true; }
+  // Soft contact shadows. Each part gets one, on the surface it will land on: it gathers and darkens as the part comes
+  // down, and hands over to the real shadow once the part has turned to material. One more lies under the whole
+  // house and deepens as the house fills in.
+  const blobs = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    uniforms: { uCol: { value: new Color("#3a272c") } },
+    vertexShader: "attribute float aOp;\nvarying float vOp;\nvarying vec2 vQ;\nvoid main() { vQ = uv * 2.0 - 1.0; vOp = aOp; gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0); }",
+    fragmentShader: "uniform vec3 uCol;\nvarying float vOp;\nvarying vec2 vQ;\nvoid main() { float a = vOp * pow(1.0 - smoothstep(0.0, 1.0, length(vQ)), 1.7); if (a < 0.002) discard; gl_FragColor = vec4(uCol, a);\n#include <colorspace_fragment>\n}",
+  }), parts.length + 1);
+  const bop = new THREE.InstancedBufferAttribute(new Float32Array(parts.length + 1), 1);
+  blobs.geometry.setAttribute("aOp", bop); blobs.frustumCulled = false; blobs.renderOrder = 1.5; scene.add(blobs);
+
+  // ---------- pose every part for a moment of the loop ----------
+  const pm4 = new Matrix4(), tm = new Matrix4(), pos = v(), quat = new Quaternion(), tq = new Quaternion(), ta = v(), bs = v();
+  let moved = true, sunMoved = false, lastKS = -1;
+  // One flight, s from 0 (in the kit) to 1 (home): it lifts off, is carried on an arc (leading end up as it rises and
+  // down as it comes in, like a load on a line), stops a hand's width off its place, drops, touches and settles.
+  function place(p, s) {
+    if (s <= 0) { pos.copy(p.lp); quat.copy(p.lq); return; }
+    if (s >= 1) { pos.copy(p.p); quat.copy(p.q); return; }
+    if (s < 0.8) {
+      const a = s / 0.8, e = a < 0.5 ? 4 * a * a * a : 1 - Math.pow(-2 * a + 2, 3) / 2;
+      pos.lerpVectors(p.lp, p.hov, e); pos.y += p.arc * Math.pow(Math.sin(Math.PI * a), 0.85);
+      quat.slerpQuaternions(p.lq, p.q, smooth(clamp((s - 0.05) / 0.55)));
+      if (p.tax) quat.premultiply(tq.setFromAxisAngle(p.tax, -p.tilt * Math.sin(2 * Math.PI * a)));
+    } else {
+      const b = (s - 0.8) / 0.2, d = b < 0.55 ? 1 - Math.pow(b / 0.55, 2) : 0.12 * Math.sin(Math.PI * (b - 0.55) / 0.45) * (1 - (b - 0.55) / 0.45);
+      pos.lerpVectors(p.p, p.hov, d); quat.copy(p.q);
     }
-    for (const m of meshes) if (m.dirty) { m.instanceMatrix.needsUpdate = true; m.fx.needsUpdate = true; m.dirty = false; }
+  }
+  const NH = parts.filter((p) => !p.stand).length;
+  let glow = 0;
+  function pose(t) {
+    let done = 0, bd = false;
+    for (const p of parts) {
+      let s, on, bo = 0, k = 1;
+      if (t < RS) {                                              // the build: fly in, land, turn to material
+        const u = (t - p.t0) / p.dur; s = clamp(u); on = clamp((s - 0.9) / 0.1);
+        if (u > 0.5 && u < 1.45) { const r = smooth(clamp((u - 0.5) / 0.45)); bo = (p.stand ? 0.24 : 0.36) * r * (1 - smooth(clamp((u - 1) / 0.45))); k = 1.8 - 0.8 * r; }
+      } else {                                                   // the return: back to line work, then back to the kit
+        const f = clamp((t - p.f0) / p.fr); s = 1 - f; on = f > 0 ? 0 : 1 - smooth(clamp((t - p.d0) / 0.5));
+      }
+      if (!p.stand) done += on;
+      if (s !== p.s) {
+        p.s = s; p.on = on; moved = true; place(p, s); pm4.compose(pos, quat, ONE);
+        for (const b of p.bits) { tm.multiplyMatrices(pm4, b.m).toArray(b.mesh.instanceMatrix.array, b.i * 16); b.mesh.fx.array[b.i * 4 + 3] = on; b.mesh.dirty = true; }
+      } else if (on !== p.on) {                                  // standing still, only turning to material or back to line
+        p.on = on; moved = true;
+        for (const b of p.bits) { b.mesh.fx.array[b.i * 4 + 3] = on; b.mesh.fdirty = true; }
+      }
+      if (bo !== p.bo) {
+        p.bo = bo; bop.array[p.k] = bo; bd = true;
+        if (bo > 0) pm4.compose(p.bc, p.bq, bs.set(p.bw * k, p.bh * k, 1)).toArray(blobs.instanceMatrix.array, p.k * 16);
+      }
+    }
+    for (const m of meshes) { if (m.dirty) m.instanceMatrix.needsUpdate = true; if (m.dirty || m.fdirty) m.fx.needsUpdate = true; m.dirty = m.fdirty = false; }
+    const ao = 0.24 * Math.pow(done / NH, 0.8);
+    if (ao !== bop.array[parts.length]) { bop.array[parts.length] = ao; bd = true; }
+    if (bd) { bop.needsUpdate = true; blobs.instanceMatrix.needsUpdate = true; }
+    // the light: the sun goes round to late afternoon through the build and the hold, and back once the house is lines
+    const kS = t < RS + 1.6 ? smooth(clamp(t / (RS + 1.6))) : 1 - smooth(clamp((t - RS - 1.6) / 4.0));
+    if (kS !== lastKS) {
+      lastKS = kS; sunMoved = true;
+      sun.position.copy(sun.target.position).addScaledVector(sunDir(kS, ta), 24);
+      sun.color.copy(SUN0).lerp(SUN1, kS); sun.intensity = lerp(2.5, 2.05, kS); scene.environmentIntensity = lerp(0.78, 0.52, kS);
+    }
+    glow = t < RS ? smooth(clamp((t - TB - 0.6) / 1.8)) : 1 - smooth(clamp((t - RS) / 0.7));
+    lamp.intensity = 14 * glow; glassMat.emissiveIntensity = 0.85 * glow;
+    uDraw.value = t < RS ? t : 20 * (1 - smooth(clamp((t - RS - 5.5) / 0.8)));
   }
   // a plant whose way in does not cross the house (or the stair) is carried low, beside it; any other lifts over the roof
   const crosses = (a, b, m) => [[-4.1, -2.7, 4.1, 4.6], [3.6, 2.1, 6.3, 3.5]].some(([x0, z0, x1, z1]) => {
@@ -546,17 +644,36 @@ function start(THREE) {
     }
     return t0 <= t1;
   });
-  for (const p of parts) {                                    // how high each part is carried, and the top of its flight
+  const TBX = Math.max(...parts.map((p) => p.t0 + p.dur)), GQ = new Quaternion().setFromUnitVectors(Z, GN);
+  parts.forEach((p, i) => {                                   // how high each part is carried, and the top of its flight
     const mid = (p.lp.y + p.hov.y) / 2, low = p.low || (p.stand && !crosses(p.lp, p.p, p.rr * 0.8));
-    p.arc = low ? 1.25 + rnd() * 0.5 : Math.max(1.6, 6.0 + rnd() * 1.4 - mid);   // high flights top out 6 to 7.4 m up
+    p.arc = low ? 1.25 + rnd() * 0.5 : Math.max(1.6, (p.stand ? 5.0 : 6.0) + rnd() * 1.4 - mid);   // high flights top out 6 to 7.4 m up (plants 5 to 6.4)
     const pk = p.lp.clone().add(p.hov).multiplyScalar(0.5); pk.y += p.arc;   // the top of its flight, and its own height there
     p.peak = [pk, pk.clone().setY(pk.y + (p.stand ? p.h : Math.min(1.5, p.L / 2)))];
-  }
+    const dx = p.hov.x - p.lp.x, dz = p.hov.z - p.lp.z, h = Math.hypot(dx, dz);
+    if (h > 1) { p.tax = v(dz / h, 0, -dx / h); p.tilt = p.stand ? 0.05 : 0.085; }
+    // the way back: last in, first out. Material goes back to line from the roof down, then the parts leave.
+    p.k = i; p.s = p.on = p.bo = -1;
+    p.d0 = RS + 0.1 + clamp(1 - p.t0 / 17.5); p.f0 = RS + 2 + 3.4 * (1 - (p.t0 + p.dur) / TBX); p.fr = 0.62 * p.dur;
+    // its contact shadow: on the face it lands against, as wide as the part and a little more
+    if (p.stand) { p.bc = p.p.clone().addScaledVector(GN, 0.006); p.bq = GQ; p.bw = p.bh = p.r * 2; return; }
+    const nl = p.n.clone().applyQuaternion(p.q.clone().invert()), an = [Math.abs(nl.x), Math.abs(nl.y), Math.abs(nl.z)];
+    const a = an.indexOf(Math.max(...an)), j = (a + 1) % 3, k = (a + 2) % 3, c = p.lo.clone().add(p.hi).multiplyScalar(0.5);
+    c.setComponent(a, nl.getComponent(a) > 0 ? p.lo.getComponent(a) : p.hi.getComponent(a));
+    p.bc = c.applyQuaternion(p.q).add(p.p).addScaledVector(p.n, 0.006);
+    if (Math.abs(p.n.y) > 0.9) p.bc.y = Math.max(p.bc.y, G(p.bc.z) + 0.006);
+    const xa = v().setComponent(j, 1).applyQuaternion(p.q), za = p.n.clone().normalize(), ya = v().crossVectors(za, xa).normalize(); xa.crossVectors(ya, za);
+    p.bq = new Quaternion().setFromRotationMatrix(mb.makeBasis(xa, ya, za));
+    p.bw = Math.max(0.35, (p.hi.getComponent(j) - p.lo.getComponent(j)) * 1.2 + 0.25); p.bh = Math.max(0.35, (p.hi.getComponent(k) - p.lo.getComponent(k)) * 1.2 + 0.25);
+  });
+  pm4.compose(v(0.1, G(0.9) + 0.008, 0.9), GQ, v(11.5, 9, 1)).toArray(blobs.instanceMatrix.array, parts.length * 16);   // under the house
 
-  // ---------- camera: starts high over the flat lay, comes down and round to the finished house ----------
-  // Its angle follows the clock of the build. Its aim and distance are planned (every half second of the build, each
-  // time the frame changes size) so that every part still to come stays inside the frame where it lies, as does any part
-  // in the air, and the finished house fills it. Turned by hand, it steps back if that angle needs more room.
+  // ---------- camera ----------
+  // One planned move over the whole loop, joined end to start: a slow push in and a swing round to the front as the
+  // house forms, a gentle orbit through the hold, then a calm crane up and back while the drawing returns to the kit.
+  // Its angles come from keyframes (a periodic Hermite curve, so it never stops or jerks). Its aim and distance are
+  // planned every half second, each time the frame changes size, so that every part still to come, any part in the air
+  // and the house itself stay inside the frame, clear of the words. Turned by hand, it steps back if it needs room.
   const homePts = [];
   {
     const lo = v(1e9, 1e9, 1e9), hi = v(-1e9, -1e9, -1e9), c = v();
@@ -572,16 +689,28 @@ function start(THREE) {
     out.add(tips.reduce((m, q) => (q.y > m.y ? q : m)));
     for (const q of out) { const r = Math.hypot(q.x, q.z) || 1; homePts.push(q.clone().add(v((q.x / r) * 0.12, 0.05, (q.z / r) * 0.12)).add(p.p)); }
   }
-  const homeShade = [];                                        // the shadows of the house and the plants on the ground: they
-  {                                                            // may come nearer the edge than the things that throw them
-    const L = sun.target.position.clone().sub(sun.position), src = homePts.slice(8);          // the leaves and trunks, and
-    for (const x of [-3.97, 3.97]) for (const z of [-2.45, 3.0]) src.push(v(x, roofU(z) + 0.25, z));   // the roof's corners
-    for (const q of src) { const hh = q.y - G(q.z); if (hh < 0.5) continue; const z = q.z + (L.z / -L.y) * hh; homeShade.push(v(q.x + (L.x / -L.y) * hh, G(z), z)); }
+  const homeShade = [];                                        // the shadows of the house and the plants on the ground, morning
+  {                                                            // to late afternoon: they may come nearer the edge than their casters
+    const src = homePts.slice(8);
+    for (const x of [-3.97, 3.97]) for (const z of [-2.45, 3.0]) src.push(v(x, roofU(z) + 0.25, z));
+    for (const k of [0, 0.5, 0.97]) {
+      const s = sunDir(k, v());
+      for (const q of src) { const hh = q.y - G(q.z); if (hh < 0.5) continue; const z = q.z - (s.z / s.y) * hh; homeShade.push(v(q.x - (s.x / s.y) * hh, G(z), z)); }
+    }
   }
-  const EL0 = 1.02, EL1 = 0.33, AZ0 = 0.1, AZ1 = 0.6, tgt = v(), fq = v(), cf = v(), cr = v(), cu = v();
-  const camK = (tau) => smooth(clamp((tau - 1.0) / (TB - 2.5)));   // high over the kit at first, down and round by the end
-  const elAt = (tau) => lerp(EL0, EL1, camK(tau)), azAt = (tau) => lerp(AZ0, AZ1, camK(tau)) + 0.05 * clamp((tau - TB * 0.8) / (TB * 0.2));
-  const swing = (tau) => 0.085 * (0.35 + 0.65 * camK(tau));          // how far the idle drift swings it round
+  const CK = [[0, 0.8, 0.2], [4, 0.68, 0.3], [10, 0.53, 0.45], [16, 0.42, 0.555], [19.8, 0.37, 0.58], [23.8, 0.34, 0.45], [27.6, 0.48, 0.27], [30.8, 0.86, 0.12]];
+  // and a dolly on top of the plan: out a little further while the kit gathers again, so the loop opens on a push in
+  const dolly = (t) => { const u = wrap(t - 27.3); return 1 + 0.08 * (u < 3.5 ? Math.sin((Math.PI * u) / 7) ** 2 : u < 10.2 ? Math.cos((Math.PI * (u - 3.5)) / 13.4) ** 2 : 0); };
+  const ce = [0, 0], wrap = (t) => ((t % LOOP) + LOOP) % LOOP;
+  function camAt(t) {                                          // [elevation, azimuth] at loop time t
+    t = wrap(t); const n = CK.length; let i = n - 1; while (i > 0 && CK[i][0] > t) i--;
+    const a = CK[(i + n - 1) % n], b = CK[i], c = CK[(i + 1) % n], d = CK[(i + 2) % n];
+    const tb = b[0], ta = i ? a[0] : a[0] - LOOP, tc = i + 1 < n ? c[0] : c[0] + LOOP, td = i + 2 < n ? d[0] : d[0] + LOOP;
+    const h = tc - tb, f = (t - tb) / h, f2 = f * f, f3 = f2 * f;
+    for (let k = 1; k < 3; k++) ce[k - 1] = (2 * f3 - 3 * f2 + 1) * b[k] + (f3 - 2 * f2 + f) * h * (c[k] - a[k]) / (tc - ta) + (3 * f2 - 2 * f3) * c[k] + (f3 - f2) * h * (d[k] - b[k]) / (td - tb);
+    return ce;
+  }
+  const tgt = v(), fq = v(), cf = v(), cr = v(), cu = v();
   let MX = 0.9, MY = 0.86, OX = 0;                                     // the frame's usable half-width, half-height, centre
   function axes(el, az) { cf.set(-Math.cos(el) * Math.sin(az), -Math.sin(el), -Math.cos(el) * Math.cos(az)); cr.crossVectors(cf, Y).normalize(); cu.crossVectors(cr, cf); }
   function fit(F, pts, el, az) {
@@ -599,53 +728,57 @@ function start(THREE) {
     for (const p of pts) { fq.copy(p).sub(c); const a = fq.dot(cr); d = Math.max(d, Math.max(a / (R * tw), -a / (Lf * tw), Math.abs(fq.dot(cu)) / (T * th)) - fq.dot(cf)); }
     return d;
   }
-  const needAll = (c, tau, el, az) => Math.max(need(c, kitAt(tau), el, az), need(c, homeShade, el, az, 0.2));
-  const PDT = 0.5, NP = Math.round(TB / PDT) + 1, path = Array.from({ length: NP }, () => ({ c: v(), d: 0 })), kit = [];
-  function kitAt(tau) {                           // what must be in view now: parts still to come, parts in the air, the house
+  const PDT = 0.5, NP = Math.round(LOOP / PDT), path = Array.from({ length: NP }, () => ({ c: v(), d: 0 })), kit = [];
+  const W = (k) => ((k % NP) + NP) % NP;
+  function kitAt(t) {                             // what must be in view: parts still to come or on their way back, parts in the air, the house
     kit.length = 0;
-    for (const p of parts) if (p.t0 + p.dur > tau) { for (const q of p.lc) kit.push(q); if (p.t0 < tau + PDT) kit.push(...p.peak); }
+    if (t < TB + 0.5) { for (const p of parts) if (p.t0 + p.dur > t) { for (const q of p.lc) kit.push(q); if (p.t0 < t + PDT) kit.push(...p.peak); } }
+    else if (t >= RS + 1.6) { for (const p of parts) if (t > p.f0 + 0.6 * p.fr) { for (const q of p.lc) kit.push(q); if (t < p.f0 + p.fr) kit.push(...p.peak); } }
     for (const q of homePts) kit.push(q);
     return kit;
   }
+  const needAll = (c, t, el, az) => Math.max(need(c, kitAt(t), el, az), need(c, homeShade, el, az, 0.2));
   function plan() {
     const F = { c: v(), d: 30 }, dn = [];
-    for (let k = 0; k < NP; k += 2) { const tau = k * PDT; fit(F, kitAt(tau), elAt(tau), azAt(tau)); path[k].c.copy(F.c); }   // aim: each second,
-    for (let k = 1; k < NP; k += 2) path[k].c.lerpVectors(path[k - 1].c, path[Math.min(NP - 1, k + 1)].c, k + 1 < NP ? 0.5 : 0);   // halves between
-    const cs = path.map((s) => s.c.clone());                          // aim: smoothed over about a second
-    for (let k = 0; k < NP; k++) { const c = path[k].c.set(0, 0, 0); let ws = 0; for (let j = -4; j <= 4; j++) { const w = Math.exp((-j * j) / 8); c.addScaledVector(cs[clamp(k + j, 0, NP - 1)], w); ws += w; } c.multiplyScalar(1 / ws); }
-    for (let k = 0; k < NP; k++) { const tau = k * PDT; dn.push(needAll(path[k].c, tau, elAt(tau), azAt(tau))); }   // distance
-    const Wn = 3, dil = dn.map((_, k) => Math.max(...dn.slice(Math.max(0, k - Wn), k + Wn + 1)));   // widen, then average:
-    for (let k = 0; k < NP; k++) { let s = 0; for (let j = -Wn; j <= Wn; j++) s += dil[clamp(k + j, 0, NP - 1)]; path[k].d = s / (2 * Wn + 1); }   // never nearer than needed
+    for (let k = 0; k < NP; k += 2) { const t = k * PDT, [el, az] = camAt(t); fit(F, kitAt(t), el, az); path[k].c.copy(F.c); }   // aim: each second,
+    for (let k = 1; k < NP; k += 2) path[k].c.lerpVectors(path[k - 1].c, path[W(k + 1)].c, 0.5);                                  // halves between
+    const cs = path.map((s) => s.c.clone());                                                                                      // smoothed over about a second
+    for (let k = 0; k < NP; k++) { const c = path[k].c.set(0, 0, 0); let ws = 0; for (let j = -4; j <= 4; j++) { const w = Math.exp((-j * j) / 8); c.addScaledVector(cs[W(k + j)], w); ws += w; } c.multiplyScalar(1 / ws); }
+    for (let k = 0; k < NP; k++) { const t = k * PDT, [el, az] = camAt(t); dn.push(needAll(path[k].c, t, el, az)); }              // distance: only ever
+    const kb = Math.round(TB / PDT), kr = Math.round((RS + 1) / PDT);                                                              // in while it builds,
+    for (let k = kb - 1; k >= 0; k--) dn[k] = Math.max(dn[k], dn[k + 1]);                                                         // only out on the way
+    for (let k = kr + 1; k < NP; k++) dn[k] = Math.max(dn[k], dn[k - 1], k >= NP - 4 ? dn[0] : 0);                                // back; then widen,
+    const wn = (k) => (k < kb + 3 || k > NP - 3 ? 4 : 2), dil = dn.map((_, k) => { let m = 0; for (let j = -wn(k); j <= wn(k); j++) m = Math.max(m, dn[W(k + j)]); return m; });
+    for (let k = 0; k < NP; k++) { let s = 0; for (let j = -wn(k); j <= wn(k); j++) s += dil[W(k + j)]; path[k].d = s / (2 * wn(k) + 1); }   // then average
   }
-  function pathAt(tau) {                          // a smooth (Catmull-Rom) reading of the path; sets tgt, returns the distance
-    const x = clamp(tau / PDT, 0, NP - 1), i = Math.min(NP - 2, Math.floor(x)), f = x - i, P = (j) => path[clamp(j, 0, NP - 1)];
+  function pathAt(t) {                          // a smooth (Catmull-Rom) reading of the planned path; sets tgt, returns the distance
+    const x = wrap(t) / PDT, i = Math.floor(x), f = x - i, p0 = path[W(i - 1)], p1 = path[W(i)], p2 = path[W(i + 1)], p3 = path[W(i + 2)];
     const w0 = (((-f + 2) * f - 1) * f) / 2, w1 = ((3 * f - 5) * f * f + 2) / 2, w2 = (((-3 * f + 4) * f + 1) * f) / 2, w3 = ((f - 1) * f * f) / 2;
-    tgt.set(0, 0, 0).addScaledVector(P(i - 1).c, w0).addScaledVector(P(i).c, w1).addScaledVector(P(i + 1).c, w2).addScaledVector(P(i + 2).c, w3);
-    return P(i - 1).d * w0 + P(i).d * w1 + P(i + 1).d * w2 + P(i + 2).d * w3;
+    tgt.set(0, 0, 0).addScaledVector(p0.c, w0).addScaledVector(p1.c, w1).addScaledVector(p2.c, w2).addScaledVector(p3.c, w3);
+    return p0.d * w0 + p1.d * w1 + p2.d * w2 + p3.d * w3;
   }
-  // The path is planned for the view without the idle drift; drifted or turned by hand, the camera steps back as far as
-  // that angle needs right now (quickly), and comes back in (slowly) once it no longer does.
+  // Turned by hand, the camera steps back as far as that angle needs right now (quickly), and comes back in (slowly).
   let dNow = 0;
-  function look(tau, drift, yaw, dt) {
-    const el = elAt(tau) + 0.012 * Math.sin(drift * 0.23), az = azAt(tau) + swing(tau) * Math.sin(drift * 0.16) + yaw;
-    const dp = pathAt(tau), want = needAll(tgt, tau, el, az);
+  function look(t, yaw, dt) {
+    const el = camAt(t)[0], az = ce[1] + yaw, dp = pathAt(t), want = Math.abs(yaw) > 0.002 ? needAll(tgt, t, el, az) : 0;
     dNow = dt ? lerp(dNow, want, 1 - Math.exp(-dt * (want > dNow ? 12 : 2))) : want;
-    const d = Math.max(dp, dNow);
+    const d = Math.max(dp * dolly(t), dNow);
     camera.position.set(tgt.x + d * Math.cos(el) * Math.sin(az), tgt.y + d * Math.sin(el), tgt.z + d * Math.cos(el) * Math.cos(az));
     camera.lookAt(tgt);
   }
 
   // ---------- size, clock, touch ----------
-  let W = 0, H = 0, planned = "";
+  let VW = 0, VH = 0, planned = "";
   const words = document.querySelector(".hero-text");
   function wordsEnd() {                           // the right-hand end of the headline, sub-line, words and buttons, on screen
     let r = -1e9; const rg = document.createRange();
     for (const el of words.querySelectorAll("h1, p")) { rg.selectNodeContents(el); for (const q of rg.getClientRects()) if (q.width) r = Math.max(r, q.right); }
     return r;
   }
+  const stats = { n: 0, anim: 0, animMax: 0, all: 0, ring: new Float32Array(512), parts: parts.length, boxes: meshes.reduce((a, m) => a + m.count, 0) };   // ms: anim is this file's own work per frame, all includes the draw call
   function size() {
     const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return false;
-    W = w; H = h; renderer.setPixelRatio(dpr); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = dpr * (w < 520 ? 0.7 : 1);
+    VW = w; VH = h; renderer.setPixelRatio(dpr); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = dpr * (w < 520 ? 0.7 : 1);
     // Words above the scene (phone, tablet): centred, clear of the soft top and bottom edges. Words beside it (desktop):
     // the scene keeps to the right of the last letter, and of the soft left edge, with room to spare.
     const cb = cv.getBoundingClientRect(), wb = words && words.getBoundingClientRect(), beside = wb && wb.bottom > cb.top + 0.25 * h;
@@ -656,15 +789,14 @@ function start(THREE) {
     if (key !== planned) { const t0 = performance.now(); plan(); planned = key; stats.plan = +(performance.now() - t0).toFixed(1); stats.plans = (stats.plans || 0) + 1; }
     return true;
   }
-  const stats = { n: 0, anim: 0, animMax: 0, all: 0, ring: new Float32Array(512), parts: parts.length, boxes: meshes.reduce((a, m) => a + m.count, 0) };   // ms: anim is this file's own work per frame, all includes the draw call
-  let t = 0, tau = 0, drift = 0, yaw = 0, yawV = 0, heldUntil = 0, dragging = null, lastTouch = -1e9, shown = false;
+  const T_STILL = TB + 5;                                       // the still: finished, late light, the windows on
+  let t = 0, drift = 0, yaw = 0, yawT = 0, fling = 0, heldUntil = 0, dragging = null, lastTouch = -1e9, shown = false;
   const scrub = { on: false, y0: 0, t0: 0, last: scrollY, at: 0, target: 0 };
-  const tauOf = (t) => (t < TB ? t : t < TB + HOLD ? TB : t < TB + HOLD + RESET ? TB * (1 - smooth(smooth((t - TB - HOLD) / RESET))) : 0);
   function draw(dt) {
     const a = performance.now();
-    pose(tau); look(tau, drift, yaw, dt);
+    pose(t); look(t, yaw, dt);
     uni.uTime.value = drift;
-    if (moved) { renderer.shadowMap.needsUpdate = true; moved = false; }
+    if (moved || (sunMoved && (stats.n % 3 === 0 || !dt))) { renderer.shadowMap.needsUpdate = true; moved = sunMoved = false; }   // the sun alone: every third frame
     const b = performance.now();
     renderer.render(scene, camera);
     stats.n++; stats.anim += b - a; stats.all += performance.now() - a; if (stats.n > 3 && b - a > stats.animMax) stats.animMax = b - a;
@@ -678,10 +810,12 @@ function start(THREE) {
     drift += dt;
     if (dragging || sec < heldUntil) { /* touched: the build waits */ }
     else if (scrub.on) {
-      tau += (scrub.target - tau) * (1 - Math.exp(-dt * 7));
-      if (sec - scrub.at > 2.5) { scrub.on = false; t = Math.min(tau, TB); }
-    } else { t = (t + dt) % LOOP; tau = tauOf(t); }
-    if (!dragging) { yaw += yawV * dt; yawV *= Math.exp(-dt * 4.5); if (sec - lastTouch > 4) yaw *= Math.exp(-dt * 0.9); }
+      t += (scrub.target - t) * (1 - Math.exp(-dt * 7));
+      if (sec - scrub.at > 2.5) scrub.on = false;
+    } else t = (t + dt) % LOOP;
+    // the hand turns it with weight: the view follows the finger a moment behind, and coasts on after a flick
+    if (!dragging) { yawT += fling * dt; fling *= Math.exp(-dt * 3); if (sec - lastTouch > 4) yawT *= Math.exp(-dt * 0.8); }
+    yaw += (yawT - yaw) * (1 - Math.exp(-dt * 7));
     draw(dt);
     // a slow device gets fewer pixels rather than a slow picture
     if (raw > 0.03 && raw < 0.2) { if (++slow > 45 && dpr > 1) { dpr = Math.max(1, dpr - 0.5); slow = 0; size(); } } else if (slow > 0) slow--;
@@ -689,56 +823,60 @@ function start(THREE) {
   const still1 = reduce || FREEZE !== null;                    // one frame, no loop
   let onScreen = true, lost = false;
   function run() {
-    const go = !still1 && !lost && !document.hidden && onScreen;
+    const go = !still1 && !lost && !document.hidden && onScreen && shown;
     if (go && !raf) { prev = performance.now(); raf = requestAnimationFrame(tick); }
     if (!go && raf) { cancelAnimationFrame(raf); raf = 0; }
   }
 
   fig.prepend(cv);
   size();
-  new ResizeObserver(() => { if (size() && (still1 || !raf)) draw(); }).observe(cv);
-  document.fonts?.ready.then(() => { if (size() && (still1 || !raf)) draw(); });     // the words' width changes when the font arrives
+  new ResizeObserver(() => { if (size() && shown && (still1 || !raf)) draw(); }).observe(cv);
+  document.fonts?.ready.then(() => { if (size() && shown && (still1 || !raf)) draw(); });     // the words' width changes when the font arrives
   if ("IntersectionObserver" in window) new IntersectionObserver((es) => { onScreen = es[es.length - 1].isIntersecting; run(); }).observe(fig);
   document.addEventListener("visibilitychange", run);
   cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); lost = true; run(); still(); });
-
-  if (still1) { tau = FREEZE === null ? TB : FREEZE; drift = qs.has("d") ? parseFloat(qs.get("d")) : 0; yaw = qs.has("yaw") ? parseFloat(qs.get("yaw")) : 0; draw(); }
+  if (still1) { t = FREEZE === null ? T_STILL : FREEZE; drift = qs.has("d") ? parseFloat(qs.get("d")) : 0; yaw = yawT = qs.has("yaw") ? parseFloat(qs.get("yaw")) : 0; }
   else {
     // drag sideways to turn it. Up and down stays with the page (touch-action: pan-y), so a thumb can always scroll past.
-    cv.addEventListener("pointerdown", (e) => { if (e.button) return; dragging = { x: e.clientX, id: e.pointerId, at: e.timeStamp }; yawV = 0; try { cv.setPointerCapture(e.pointerId); } catch {} cv.classList.add("held"); });
+    cv.addEventListener("pointerdown", (e) => { if (e.button) return; dragging = { x: e.clientX, id: e.pointerId, at: e.timeStamp }; fling = 0; try { cv.setPointerCapture(e.pointerId); } catch {} cv.classList.add("held"); });
     cv.addEventListener("pointermove", (e) => {
       if (!dragging || e.pointerId !== dragging.id) return;
       const dx = e.clientX - dragging.x, dt = Math.max(8, e.timeStamp - dragging.at) / 1000; dragging.x = e.clientX; dragging.at = e.timeStamp;
-      yaw -= dx * 0.006; yawV = clamp((-dx * 0.006) / dt, -2, 2); lastTouch = performance.now() / 1000;
+      yawT -= dx * 0.006; fling = clamp((-dx * 0.006) / dt, -2, 2); lastTouch = performance.now() / 1000;
     });
     const drop = (e) => {
       if (!dragging || e.pointerId !== dragging.id) return;
-      if (e.timeStamp - dragging.at > 90) yawV = 0;             // it was held still before letting go: no coasting
+      if (e.timeStamp - dragging.at > 90) fling = 0;             // it was held still before letting go: no coasting
       dragging = null; cv.classList.remove("held"); heldUntil = performance.now() / 1000 + 1.6; lastTouch = performance.now() / 1000;
     };
     cv.addEventListener("pointerup", drop); cv.addEventListener("pointercancel", drop);
-    // scrolling the page runs the build forward (and back up, backward) until the hero has gone by
+    // scrolling the page during the build runs it forward (and back up, backward) until the hero has gone by
     addEventListener("scroll", () => {
       const y = scrollY, sec = performance.now() / 1000;
-      if (!scrub.on) { scrub.on = true; scrub.y0 = scrub.last; scrub.t0 = Math.min(tau, TB); }
+      if (!scrub.on) { if (t >= TB) { scrub.last = y; return; } scrub.on = true; scrub.y0 = scrub.last; scrub.t0 = t; }
       scrub.last = y; scrub.at = sec;
       const r = fig.getBoundingClientRect(), range = Math.max(120, r.top + y - 68 + r.height * 0.45);
       scrub.target = y >= scrub.y0 ? scrub.t0 + (TB - scrub.t0) * clamp((y - scrub.y0) / Math.max(60, range - scrub.y0)) : scrub.t0 * clamp(y / Math.max(1, scrub.y0));
     }, { passive: true });
-    run();
   }
+  // shaders are compiled before the first frame is shown, so the loop starts at its first moment and does not stutter
+  const first = () => { if (shown) return; size(); draw(); run(); };
+  if (renderer.extensions.has("KHR_parallel_shader_compile")) Promise.race([renderer.compileAsync(scene, camera).catch(() => {}), new Promise((r) => setTimeout(r, 1500))]).then(first);
+  else { renderer.compile(scene, camera); requestAnimationFrame(first); }
   // the count is the house's own parts (the planting is counted apart), from the same list that moves the model
-  const houseParts = parts.filter((p) => !p.stand).length; stats.houseParts = houseParts;
+  const houseParts = NH; stats.houseParts = houseParts;
   if (cap) cap.textContent = reduce
     ? `A house of ${houseParts} parts, modelled in code and drawn in your browser. Not a photograph.`
     : `A house of ${houseParts} parts, modelled in code and assembled in your browser. Not a photograph.`;
   if (cap) cap.style.visibility = "";
   // for checking and for making the still picture: hold a moment, jump the clock, look from anywhere, save a frame
   window.__assemblHero = {
-    stats, parts, TB, LOOP, camera, get tau() { return tau; }, get yaw() { return yaw; }, get running() { return raf > 0; }, get dpr() { return dpr; },
-    seek: (x) => { tau = x; draw(); },
-    at: (x) => { t = x; tau = tauOf(t); draw(); },
-    view: (el, az, r, tx, ty, tz) => { pose(tau); const d = r / Math.tan((camera.fov * Math.PI) / 360); camera.position.set(tx + d * Math.cos(el) * Math.sin(az), ty + d * Math.sin(el), tz + d * Math.cos(el) * Math.cos(az)); camera.lookAt(tx, ty, tz); renderer.shadowMap.needsUpdate = true; renderer.render(scene, camera); },
-    shot: (w, h) => { const d0 = dpr; dpr = 1; renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = 2; MX = MY = 0.9; OX = 0; plan(); tau = TB; drift = 0; yaw = 0; draw(); const u = cv.toDataURL("image/png"); dpr = d0; planned = ""; size(); draw(); return u; },
+    stats, parts, TB, HOLD, RS, LOOP, T_STILL, camera, get tau() { return t; }, get t() { return t; }, get yaw() { return yaw; }, get running() { return raf > 0; }, get dpr() { return dpr; }, get glow() { return glow; },
+    seek: (x) => { t = x; draw(); },
+    at: (x) => { t = wrap(x); draw(); },
+    turn: (y) => { yaw = yawT = y; draw(); },
+    bench: (fps = 60) => { const r = []; for (let i = 0; i < LOOP * fps; i++) { const a = performance.now(); pose(i / fps); look(i / fps, 0, 1 / fps); r.push(performance.now() - a); } return r; },   // this file's own work per frame, one loop
+    view: (el, az, r, tx, ty, tz) => { pose(t); const d = r / Math.tan((camera.fov * Math.PI) / 360); camera.position.set(tx + d * Math.cos(el) * Math.sin(az), ty + d * Math.sin(el), tz + d * Math.cos(el) * Math.cos(az)); camera.lookAt(tx, ty, tz); renderer.shadowMap.needsUpdate = true; renderer.render(scene, camera); },
+    shot: (w, h) => { const d0 = dpr; dpr = 1; renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); uni.uPx.value = 2; MX = MY = 0.9; OX = 0; plan(); t = T_STILL; drift = 0; yaw = yawT = 0; draw(); const u = cv.toDataURL("image/png"); dpr = d0; planned = ""; size(); draw(); return u; },
   };
 }
