@@ -26,6 +26,7 @@ import { furnishDecks, type DeckRect as DeckPlan } from './outdoor'; // deck fur
 import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
+import { HANDOFF_PARAM, takeHandoff } from './handoff';
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -453,7 +454,11 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     const o = document.createElement('div');
     o.className = 'dropzone';
     // the finished example sits behind the card, so the page is a picture first and words second
-    o.style.cssText = "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
+    // a model handed across from the workspace (?handoff=<id>): no example picture behind, so it is not taken for the model
+    const hid = qs.get(HANDOFF_PARAM);
+    o.style.cssText = hid
+      ? 'background:#21121f;place-items:end start;padding:clamp(12px,3vw,28px)'
+      : "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
     o.innerHTML = `<div class="card drop-card" style="max-width:440px;background:rgba(249,246,242,.94);backdrop-filter:blur(10px)">
       <h2>Drop your plan</h2>
       <p>A PDF, a picture of a plan, an IFC or a plan model. It comes back as a measured 3D home you can walk through, furnished and lit.</p>
@@ -515,6 +520,27 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
       const f = (e as DragEvent).dataTransfer?.files?.[0];
       if (f) void read(f);
     });
+    if (hid) {
+      const card = o.querySelector('.drop-card') as HTMLElement, h = card.querySelector('h2')!, say = card.querySelector('p')!;
+      const caption = card.lastElementChild as HTMLElement; // "The picture behind is the example": there is no picture behind here
+      const missing = (why: string) => {
+        h.textContent = 'The model did not come across';
+        say.textContent = `${why} Go back to the workspace and press Open in 3D again, or choose the file here.`;
+        app.log('Waiting for a plan.');
+      };
+      h.textContent = 'Bringing your model across';
+      say.textContent = 'From your workspace, inside this browser. It does not leave this device.';
+      caption.hidden = true;
+      app.log('Bringing the model across from your workspace…');
+      takeHandoff(hid)
+        .then((got) => {
+          if (!got) return missing('It was opened here once already, or it was handed across more than an hour ago.');
+          app.log(`Opening ${got.name}…`);
+          return read(new File([got.blob], got.name, { type: got.type || 'application/octet-stream' }));
+        })
+        .catch((e: unknown) => missing(`This browser could not pass it across (${(e as Error)?.message ?? 'no reason given'}).`));
+      return;
+    }
     app.log('Waiting for a plan.');
   });
 }

@@ -1,6 +1,7 @@
 // Models: an add-on for the ops page (see modules.js). On each project, one big place to drop a Revit model, IFC, drawing
 // set or GLB; a card for each kept model with its version, who kept it and when; an IFC's counts, storeys and floor area
-// read in this browser; a small 3D view; and Open in 3D, which hands the model to the 3D page in this browser.
+// read in this browser; a small 3D view; and Open in 3D, which passes the model to the 3D page inside this browser
+// (handoff.js: through the browser's own storage, so it works in a new tab, in the same tab, or after a blocked pop-up).
 // Also a screen of every project's models (#/models) and a top-bar link to it.
 //
 // Where files go: the project's own store (ctx.store). In the browser, up to 25 MB a file. In a practice's shared
@@ -14,7 +15,7 @@
 // Loaded with the page: this file, models-rules.js and models.css. Loaded only when needed: ifc-summary.js (an IFC is
 // dropped), upload.js (a big file goes to the shared records), model-view.js with three.js and web-ifc (a model is drawn).
 import { registerProjectPanel, registerRoute, registerNav } from './modules.js';
-import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP, TWIN_FILE_INPUT } from './models-rules.js';
+import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP } from './models-rules.js';
 import { activity, SAMPLE_ID } from './model.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 
@@ -71,6 +72,7 @@ const S = {
   bytes: new Map(),   // file id -> bytes read this visit (one model at a time, so a big one is not held twice)
   ctx: null,
   open: new Set(),    // file ids whose earlier versions are shown
+  preps: new Map(),   // project id -> { id, file, name, kind, got, total, state, href } a model being passed to the 3D page
 };
 let jobSeq = 0;
 const say = (pid, tone, name, text, meter = null) => { const list = S.notes.get(pid) ?? []; list.unshift({ id: `n${++jobSeq}`, tone, name, text, meter }); S.notes.set(pid, list.slice(0, 4)); };
@@ -121,6 +123,7 @@ function panelHtml(ctx, p, models, place) {
       </label>`;
   const cards = [
     ...notes.map((n) => noteCard(esc, n)),
+    ...(S.preps.has(p.id) ? [prepCard(esc, S.preps.get(p.id))] : []),
     ...jobs.map((j) => jobCard(esc, j)),
     ...left.filter((u) => !jobs.some((j) => j.key === u.key)).map((u) => leftCard(esc, u)),
     ...st.map((s) => modelCard(ctx, p, s, place)),
@@ -285,6 +288,8 @@ async function onClick(e, ctx, p, models) {
       return paintSoon(j);
     }
     if (what === 'forget') { (await savedStore()).remove(b.dataset.key); return ctx.redraw(); }
+    if (what === 'prep-done') { S.preps.delete(p.id); return ctx.redraw(); }
+    if (what === 'prep-open') { const r = S.preps.get(p.id); if (r) { r.state = 'opened'; setTimeout(() => ctx.redraw(), 0); } return undefined; } // the link opens the page itself
     if (!note) return undefined;
     if (what === 'get') return download(ctx, note);
     if (what === 'remove') {
@@ -294,7 +299,7 @@ async function onClick(e, ctx, p, models) {
       await log(ctx, p.id, 'Model removed', `${note.name} v${versionLabel(note, models)}`);
       return ctx.redraw();
     }
-    if (what === 'open3d') return open3d(ctx, p, note); // opens the tab first, while the press still counts as the person's
+    if (what === 'open3d') return open3d(ctx, p, note);
     if (what === 'turn') return turn(ctx, note, b.closest('[data-pic]'));
   } catch (err) {
     say(p.id, 'error', note?.name ?? '', err?.message ?? 'That did not work.');
@@ -477,35 +482,72 @@ async function turn(ctx, note, pic) {
   }
 }
 
-/** Open in 3D: the 3D page opens in a new tab, and the model is handed to its own file chooser, inside this browser */
+/** Open in 3D. The model goes into this browser's own storage first (handoff.js), then the 3D page opens with its id and
+ * takes it from there. Nothing needs the two pages to talk, so it works whether the browser opens a new tab, replaces this
+ * page with the 3D one (the Claude app's browser pane does), or blocks the tab: then a link opens it with a fresh press. */
 function open3d(ctx, p, note) {
-  const w = window.open(`${TWIN_DROP}&from=ops`, '_blank');
-  if (!w) { say(p.id, 'error', note.name, 'Your browser stopped the 3D page opening. Allow pop-ups for this site, or open the 3D page and choose the file there.'); return ctx.redraw(); }
+  if (S.preps.get(p.id)?.state === 'fetching' || S.preps.get(p.id)?.state === 'keeping') return undefined; // one at a time
+  const r = { id: `o${++jobSeq}`, pid: p.id, file: note.id, name: note.name, kind: kindOf(note.name), got: 0, total: Number(note.size) || 0, state: 'fetching', href: '' };
+  S.preps.set(p.id, r); ctx.redraw();
   (async () => {
-    let bytes = await bytesOf(ctx, note), name = note.name;
-    if (kindOf(name) === 'ifczip') { const z = await (await import('./ifc-summary.js')).unzipIfc(bytes); bytes = z.bytes; name = z.name; }
-    await handToTwin(w, bytes, name);
-  })().catch((err) => { say(p.id, 'error', note.name, `${err?.message ?? 'It could not be passed across.'} The 3D page is open: choose the file there.`); ctx.redraw(); });
+    let blob = await blobOf(ctx, note, (got, total) => { r.got = got; if (total) r.total = total; paintPrep(r); });
+    let name = note.name;
+    if (kindOf(name) === 'ifczip') { const z = await (await import('./ifc-summary.js')).unzipIfc(new Uint8Array(await blob.arrayBuffer())); blob = new Blob([z.bytes]); name = z.name; }
+    r.state = 'keeping'; paintPrep(r);
+    const { putHandoff, HANDOFF_PARAM } = await import('./handoff.js');
+    const hid = await putHandoff(blob, name);
+    r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
+    r.state = 'ready'; ctx.redraw();
+    const w = window.open(r.href, '_blank'); // may replace this page (then the 3D page takes it from storage all the same)
+    if (w) { r.state = 'opened'; ctx.redraw(); }
+  })().catch((err) => { S.preps.delete(p.id); say(p.id, 'error', note.name, `${err?.message ?? 'It could not be passed across.'} You can download it and choose it on the 3D page instead.`); ctx.redraw(); });
   return undefined;
 }
 
-/** wait for the 3D page's chooser, then give its file input this model, as if it had been chosen there */
-export async function handToTwin(w, bytes, name, { timeout = 90000, every = 150 } = {}) {
-  const t0 = Date.now();
-  for (;;) {
-    if (w.closed) throw new Error('The 3D page was closed before the model reached it.');
-    let input = null;
-    try { input = w.document?.getElementById(TWIN_FILE_INPUT); } catch { throw new Error('The 3D page opened somewhere this page cannot reach.'); }
-    if (input) {
-      const dt = new w.DataTransfer();
-      dt.items.add(new w.File([bytes], name, { type: 'application/octet-stream' }));
-      input.files = dt.files;
-      input.dispatchEvent(new w.Event('change', { bubbles: true }));
-      return true;
-    }
-    if (Date.now() - t0 > timeout) throw new Error('The 3D page did not get ready in time.');
-    await later(every);
+/** the model's contents as a Blob, fetched with its progress when it is in the shared records */
+async function blobOf(ctx, note, onProgress) {
+  if (S.bytes.has(note.id)) return new Blob([S.bytes.get(note.id)]);
+  const here = ctx.store.current ?? ctx.store;
+  if (typeof here.fileBlob === 'function') {
+    const f = await here.fileBlob(note.id, { onProgress });
+    if (!f?.blob) throw new Error(`“${note.name}” is not in the shared records any more.`);
+    return f.blob;
   }
+  const f = await ctx.store.getFile(note.id);
+  if (!f?.data) throw new Error(`“${note.name}” is not ${ctx.store.shared ? 'in the shared records' : 'in this browser'} any more.`);
+  onProgress?.(f.data.byteLength, f.data.byteLength);
+  return new Blob([f.data]);
+}
+
+const PREP_STATE = { fetching: 'Getting it for the 3D page', keeping: 'Passing it across', ready: '■ Ready for the 3D page', opened: '■ Sent to the 3D page' };
+function prepLine(r) {
+  if (r.state === 'fetching') return r.total ? `${sizeText(r.got)} of ${sizeText(r.total)}, from the shared records to this browser` : `${sizeText(r.got)} so far`;
+  if (r.state === 'keeping') return 'Into this browser’s own storage, for the 3D page. It does not leave this device.';
+  if (r.state === 'ready') return 'Your browser did not open the 3D page by itself. Open it here.';
+  return 'The 3D page has it. To open it again, press Open in 3D.';
+}
+function prepCard(esc, r) {
+  const busy = r.state === 'fetching' || r.state === 'keeping', pct = r.state === 'fetching' && r.total ? Math.min(100, Math.floor((r.got / r.total) * 100)) : busy ? 0 : 100;
+  const acts = r.state === 'ready' ? `<div class="acts"><a class="btn solid" href="${esc(r.href)}" target="_blank" data-m="prep-open">Open the 3D page ↗</a><button class="link" data-m="prep-done">Dismiss</button></div>`
+    : r.state === 'opened' ? '<div class="acts"><button class="link" data-m="prep-done">Dismiss</button></div>' : '';
+  return `<li class="mdl-card is-job" data-prepcard="${esc(r.id)}" role="status"><div class="mdl-in">${kindPic(r.kind)}
+    <div class="mdl-body"><p class="mdl-top">${tagHtml(esc, r.kind)}<span class="mdl-state">${esc(PREP_STATE[r.state] ?? '')}</span></p>
+      <h3 class="mdl-name">${esc(r.name)}</h3>
+      ${busy ? `<div class="mdl-bar${r.state === 'keeping' || !r.total ? ' is-busy' : ''}" role="progressbar" aria-label="Fetched so far" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${r.state === 'keeping' || !r.total ? 100 : pct}%"></i></div>` : ''}
+      <p class="mdl-pct">${r.state === 'fetching' && r.total ? `<b>${pct}%</b>` : ''}<span>${esc(nb(prepLine(r)))}</span></p>
+      ${acts}</div></div></li>`;
+}
+let prepFrame = 0;
+function paintPrep(r) {
+  if (prepFrame) return;
+  prepFrame = requestAnimationFrame(() => {
+    prepFrame = 0;
+    const card = document.querySelector(`[data-prepcard="${CSS.escape(r.id)}"]`);
+    if (!card) return;
+    const fresh = document.createElement('ul');
+    fresh.innerHTML = prepCard(S.ctx?.esc ?? ((x) => String(x)), r);
+    card.replaceWith(fresh.firstElementChild);
+  });
 }
 
 // ---- the screen of every project's models -----------------------------------------------------------------------------------
