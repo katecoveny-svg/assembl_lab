@@ -77,7 +77,7 @@ export async function fetchConsents(params = {}) {
     } catch (e) { throw new Error(`The Stats NZ table list could not be read: ${redact(e?.message || e, key)}`); }
     const hit = consentFlows(parseDataflows(text));
     return { ...envelope({ ...base, id: "consents", label: "Building consents: tables found", value: hit.flows.length, unit: hit.flows.length === 1 ? "table" : "tables",
-      values: { discover: true, dataflows: hit.flows, matched: hit.matched, scanned: hit.scanned, capped: hit.capped, configured: { nonres: `${fl.nonres.agency},${fl.nonres.id},${fl.nonres.version}`, dwellings: `${fl.dwellings.agency},${fl.dwellings.id},${fl.dwellings.version}` } },
+      values: { discover: true, dataflows: hit.flows, matched: hit.matched, scanned: hit.scanned, capped: hit.capped, sample: hit.flows.length ? [] : hit.sample, configured: { nonres: `${fl.nonres.agency},${fl.nonres.id},${fl.nonres.version}`, dwellings: `${fl.dwellings.agency},${fl.dwellings.id},${fl.dwellings.version}` } },
       asOf, live: true, note: "Tables in Aotearoa Data Explorer whose names are about building consents. Correct api/_feeds/consents-config.js with the ids you want. Nothing else was read." }), licence: L_CONSENTS };
   }
 
