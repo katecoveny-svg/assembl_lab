@@ -239,6 +239,38 @@ From `/home/claude/prove` (scripts kept outside the repository):
 - `REPLAY=out/runs/b1 TAG=r_b1 MODES=plan,site,elevation python3 run_page_ai.py` feeds saved replies through the page, with no network and no cost.
 - `python3 compare.py out/runs/<tag>.traced.plan.json --site out/runs/<tag>_site.json --elev out/runs/<tag>_elevation.json --out out/runs/<tag>_score.json`, then `python3 summarise.py b0,b1,b2 r_b0,r_b1,r_b2` for the table.
 
+## Live, new prompts (22 November, evening)
+
+Measured on the live lab after the merge (bundle `twin-CbJNWISH.js`, prompt revision `2026-11-22b` in every reply, OpenAI `gpt-6.2-astra`), through the real drop page. Two full sets (floor plan, site plan and elevations sent together, as the page now does) and one more floor plan read. Same answer key and scoring. "Old prompts" are the three recorded replies from before, fed through the same fixed page.
+
+| Item (key) | Old prompts, fixed page (3 replies) | New prompts, live (3 reads) |
+|---|---|---|
+| Elements right (of 45) | 43, 43, 43 | **44, 44, 44** |
+| Rooms as drawn (9) | 8 (the hall missing) | **9** (the hall found every time) |
+| Inside walls (10) | 10; 18 mm mean, 31 mm worst | 10; 18 mm mean, 31 mm worst |
+| Outside doors and windows (13) | 13, kinds right 12 | 13, kinds right 12 (the study's glazed door still reads as a window) |
+| Outside positions, worst | centre 24 mm, width 24 mm | centre 28 mm, width 32 mm (worse, see below) |
+| Inside doors and openings (8) | 8, none extra; worst 29 mm centre, 81 mm width | 8, none extra; worst 29 mm centre, 72 mm width |
+| Room area error, mean (as drawn) | 2.0% | 1.9% |
+| Rooms returned with a made-up name (the sheet prints only "?") | 7 to 8 per read | **0 of 9**; all returned as "?", with fixtures for the 6 rooms that have any drawn |
+| Names right after suggestion (key names) | 1 of 8 as recorded | **7 of 9 in all three** (7 of the key's 10) |
+| Floor plan read | 21.3 to 22.8 s | 22.1 to 23.6 s |
+| Whole set on the page | 60.4 s (old page, one sheet after another) | **24.7 s and 24.2 s** (sent together) |
+
+Names right: both bedrooms, both wardrobes, the hall, the bathroom and the kitchen. Wrong: the narrow wet room came out "WC" (the reader saw a toilet and basin, and its door opens to the hall; the key calls it Ensuite, and earlier sheets of the same design tag it WC), and the study came out "Room" (a chair outline is all that is drawn).
+
+Site plan (2 reads, against 1 old read): the house drawn on the site sheet came out 63 and 66 mm, then 63 and 39 mm, short (old: 10 and 40 mm). That is 1 to 2 pixels of the site crop (27 mm a pixel). Decks: 60.5 and 60.6 m² on the key's decks (old 60.3). Stair overlap: 94% and 95% (old 97%). Retaining: the whole key line within 0.3 m both times. **The car parking bay was still missed both times**: the new parking line in the prompt did not help.
+
+Elevations (2 reads, prompt unchanged): the same as before within 30 mm. All four views, roof form, slope or band and high side right; pitch 8.0° and 8.1°; the west eave is still 90 mm low.
+
+Where the new prompts score worse:
+
+- **Outside opening positions**: worst width error 32 mm against 24 mm, worst centre 28 mm against 24 mm. Both are the two bedroom sliders, by about one pixel of the plan image (8 mm). I believe the cause is the new opening rule: the sliders are now read as `door-double`, "from the outer end of the first leaf to the outer end of the last", where the old prompt called them `glazing`. Within the ± 150 mm the page states.
+- **Site sheet outline**: up to 66 mm short against 40 mm. I believe this is run-to-run noise at the pixel limit: the outline instruction did not change, and there is only one old read to compare with.
+- **Stair overlap**: 2 to 3 points lower, also within a pixel or two.
+
+Calls this pass: 7 paid reads (sheet 7 three times, sheets 6 and 4 twice each). Running total: 14 of the 16 the script allows.
+
 ## Not measured
 
 Accuracy of traced walls, openings and rooms. That needs a floor plan with real linework and an answer key, or the AI plan reader (costs money, sends the drawing out, needs Kate's say-so).
