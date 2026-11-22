@@ -447,6 +447,17 @@ export async function onRequest({ request, env }) {
   const input = checkFilmInput(body, env);
   if (input.error) return fail(input.error, input.max ? { part_max_s: input.max } : {});
   const estimate = estimateOf(env, input.seconds, input.resolution);
+  // dry run (free): every step up to the call to Google, nothing counted or sent; says how far it got, to find a failing step
+  if (body.dry === true) {
+    const steps = ["input"];
+    try {
+      const prompt = buildFilmPrompt(input.look, { still: !!input.still, guide: !!input.guide }); steps.push("prompt");
+      const req = geminiFilmRequest(env, { ...input, prompt }); steps.push("request");
+      const size = JSON.stringify(req.body).length; steps.push("body");
+      const handle = await makeHandle(env, { id: "dry", m: req.model, s: input.seconds, p: null, t: Date.now() }); steps.push("handle");
+      return json(200, { type: "assembl.planstudio.film.dry", ok: true, steps, model: req.model, body_chars: size, handle_chars: handle.length, mode: input.mode });
+    } catch (e) { return json(200, { type: "assembl.planstudio.film.dry", ok: false, steps, failed_after: steps[steps.length - 1], error: String(e?.message || e).slice(0, 200) }); }
+  }
   if (body.confirm !== true) return fail("confirm_spend", { estimate });
 
   const hit = await takeSlot(env, request.url, ip, sendSlots);
