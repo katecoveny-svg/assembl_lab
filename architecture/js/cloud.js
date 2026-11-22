@@ -6,7 +6,7 @@
 //                                                   putFile, getFile, removeFile, listFiles    (files, see below)
 //   createSwitch(local)                             one store object for the page, which hands each call to the browser
 //                                                   store or the shared store. The page does not know which.
-//   createTeam(gateway)                             practices, people, invitations
+//   createTeam(gateway)                             practices, people, invitations, the practice's look (extra.theme)
 //   moveProjects({ local, cloud, ids })             copy chosen browser projects up; the browser copy is left alone
 //
 // What stays in the browser, always: the Sample project and everything under it (never uploaded), and settings.
@@ -722,6 +722,22 @@ export function createTeam(g) {
       return row;
     },
     cancelInvitation: async (id) => ((await g.ask(() => g.from('invitation').delete().eq('id', id).select('id')))?.length ?? 0) > 0,
+    /** the practice's chosen look (practice.extra.theme), or '' when none is chosen. Every member can read it. */
+    async look(practiceId) {
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      const t = row?.extra && typeof row.extra === 'object' ? row.extra.theme : '';
+      return typeof t === 'string' ? t : '';
+    },
+    /** Choose the practice's look. The database lets only an owner change the practice row; anyone else changes nothing. */
+    async setLook(practiceId, theme) {
+      if (!/^[a-z]{1,20}$/.test(String(theme ?? ''))) throw new Error('Choose a look.');
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      if (!row) throw new CloudError('That practice is not in the shared records.', 'missing');
+      const extra = { ...(isObj(row.extra) ? row.extra : {}), theme };
+      const rows = await g.ask(() => g.from('practice').update({ extra }).eq('id', practiceId).select('id, extra'));
+      if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can change the practice’s look. Nothing was changed.', 'refused');
+      return rows[0].extra?.theme ?? theme;
+    },
     /** the database refuses this for anyone but an owner, and refuses to leave a practice with no owner */
     async setRole(practiceId, userId, role) {
       if (!ROLES.includes(role)) throw new Error('Choose a role: owner, member or viewer.');

@@ -8,6 +8,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SCHEMA, BUCKET, CLIENT_MODULE, AUTH_STORAGE_KEY } from './config.js';
 import { createGateway, createCloudStore, createTeam, moveProjects, probeShared, NOT_ON } from './cloud.js';
 import { SAMPLE_ID } from './model.js';
+import { lookChoiceHtml, isTheme, DEFAULT_THEME } from './theme.js';
 
 const MARK = 'assembl.architecture.signin_started'; // set when a person leaves for Google, so a return that never arrives can be explained
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -80,6 +81,13 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     if (code === 'not_switched_on' && st.shared !== 'not_switched_on') { st.shared = 'not_switched_on'; usePractice(null); }
   }
 
+  /** read the practice's chosen look before it is shown, so the page opens in it. A look that cannot be read is the default. */
+  async function loadLook(p) {
+    if (!p) return p;
+    try { p.theme = await team.look(p.id); } catch { p.theme = ''; }
+    return p;
+  }
+
   async function loadPractices() {
     try {
       st.practices = await team.myPractices(st.user.id);
@@ -96,8 +104,9 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     try { want = win.localStorage?.getItem('assembl.architecture.practice') ?? ''; } catch { /* no memory of a choice */ }
     const chosen = st.practices.find((p) => p.id === (st.practice?.id ?? want)) ?? (st.practices.length === 1 ? st.practices[0] : null);
     if (!chosen) st.open = true; // nothing is shared until a practice is made, joined or chosen
+    if (chosen) await loadLook(chosen);
     if (chosen?.id !== st.practice?.id || chosen?.role !== st.practice?.role) usePractice(chosen, { home: started && !!st.practice });
-    else changed();
+    else { if (chosen && st.practice) st.practice.theme = chosen.theme; changed(); }
   }
   async function enter(session) {
     const u = session.user ?? {}, meta = u.user_metadata ?? {};
@@ -187,12 +196,12 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     if (act === 'close') { st.open = false; st.notice = ''; st.confirm = ''; return draw(); }
     if (act === 'dismiss') { st.notice = ''; if (st.phase !== 'in') st.open = false; return draw(); }
     if (act === 'again') return busy('again', async () => { if (st.phase === 'in') await loadPractices(); else st.shared = await probeShared(gateway); changed(); });
-    if (act === 'choose') { const p = st.practices.find((x) => x.id === id); if (p) { st.report = null; usePractice(p, { home: true }); await loadPanel(); draw(); } return; }
+    if (act === 'choose') { const p = st.practices.find((x) => x.id === id); if (p) { st.report = null; await loadLook(p); usePractice(p, { home: true }); await loadPanel(); draw(); } return; }
     if (act === 'accept') return busy(`accept:${id}`, async () => {
       const practiceId = await team.acceptInvitation(id);
       await loadPractices();
       const p = st.practices.find((x) => x.id === practiceId);
-      if (p) usePractice(p, { home: true });
+      if (p) { await loadLook(p); usePractice(p, { home: true }); }
       await loadPanel();
     });
     if (act === 'cancel-invite') return busy(`cancel:${id}`, async () => { await team.cancelInvitation(id); await loadPanel(); });
@@ -218,7 +227,7 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     e.preventDefault();
     const d = Object.fromEntries([...new FormData(form).entries()].map(([k, v]) => [k, String(v).trim()])), what = form.dataset.acctForm;
     if (what === 'practice') return busy('practice', async () => {
-      const p = await team.createPractice(d.name);
+      const p = { ...(await team.createPractice(d.name)), theme: '' }; // a new practice has not chosen a look
       st.practices = [...st.practices, p];
       usePractice(p, { home: true });
       await loadPanel();
@@ -237,6 +246,14 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     });
   }
   async function onChange(e) {
+    const sw = e.target.closest('select[data-acct-switch]');
+    if (sw) { // the practice switcher in the header: the same as choosing a practice in the panel
+      const p = st.practices.find((x) => x.id === sw.value);
+      if (!p || p.id === st.practice?.id) return;
+      st.report = null; await loadLook(p); usePractice(p, { home: true });
+      if (st.open) await loadPanel();
+      return draw();
+    }
     const el = e.target.closest('select[data-acct-role]');
     if (!el) return;
     const userId = el.dataset.acctRole, role = el.value;
@@ -259,7 +276,9 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
         : '<span class="acct-state">Sign-in: not switched on yet</span>';
     } else {
       const where = st.practice ? `${esc(st.practice.name)} · ${ROLE_SAYS[st.practice.role].toLowerCase()}` : st.shared === 'ready' ? 'no practice yet' : 'not shared';
-      slot.innerHTML = `<span class="acct-who"><span class="acct-lab">Working as</span><span class="acct-name">${esc(st.user.name)}</span><span class="acct-state">${where}</span></span>
+      // more than one practice: a switcher in the header, so changing practice is one step
+      const switcher = st.practices.length > 1 ? `<label class="acct-switch"><span class="vh">Practice in use</span><select data-acct-switch${off}>${st.practice ? '' : '<option value="" selected>Choose a practice</option>'}${st.practices.map((x) => `<option value="${esc(x.id)}"${x.id === st.practice?.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : '';
+      slot.innerHTML = `<span class="acct-who"><span class="acct-lab">Working as</span><span class="acct-name">${esc(st.user.name)}</span><span class="acct-state">${where}</span></span>${switcher}
         <span class="acct-btns"><button class="btn acct-btn" data-acct="toggle" aria-expanded="${st.open}" aria-controls="account-panel"${off}>Practice</button><button class="btn acct-btn" data-acct="signout"${off}>${st.busy === 'signout' ? 'Signing out…' : 'Sign out'}</button></span>`;
     }
     const show = st.open || !!st.notice;
@@ -317,6 +336,8 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     return `<section class="acct-box">${head('Practice', p.name, `■ Shared · you are ${owner ? 'an owner' : `a ${p.role}`}${viewer ? ': you can read everything and change nothing' : ''}`)}
       ${st.practices.length > 1 ? `<p class="small">Also yours: ${st.practices.filter((x) => x.id !== p.id).map((x) => `<button class="link" data-acct="choose" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join(' ')}</p>` : ''}
       <div class="acct-grid">${invites}
+        <section class="acct-sec"><p class="label">Look</p>${lookChoiceHtml({ theme: isTheme(p.theme) ? p.theme : DEFAULT_THEME, scope: 'practice', canChange: owner, practice: p.name })}
+          <p class="small">${owner ? 'Everyone in the practice sees the look chosen here.' : 'Only an owner can change it.'}</p></section>
         <section class="acct-sec"><p class="label">People</p>${people}
           <p class="small">Owners invite people and set roles. Members add and change records. Viewers read everything and change nothing. A practice always keeps at least one owner.</p>
           <div class="acts"><button class="link" data-acct="leave"${off}>${st.confirm === 'leave' ? 'Leave for good' : 'Leave this practice'}</button></div></section>
@@ -336,6 +357,7 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
   }
 
   slot?.addEventListener('click', onClick);
+  slot?.addEventListener('change', onChange);
   panel?.addEventListener('click', onClick);
   panel?.addEventListener('submit', onSubmit);
   panel?.addEventListener('change', onChange);
@@ -353,7 +375,17 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     onChange(fn) { listeners.add(fn); },
     /** the signed-in person's name, or null when nobody is signed in */
     who: () => (st.phase === 'in' ? st.user.name : null),
-    get state() { return { phase: st.phase, shared: st.shared, practice: st.practice, user: st.user }; },
+    get state() { return { phase: st.phase, shared: st.shared, practice: st.practice, user: st.user, practices: st.practices }; },
+
+    /** Choose the look of the practice in use (owners only; the database refuses anyone else). */
+    async setLook(theme) {
+      const p = st.practice;
+      if (!p || !team) throw new Error('No practice is in use, so this look is for this browser only.');
+      if (p.role !== 'owner') throw new Error(`Only an owner of ${p.name} can change its look.`);
+      p.theme = await team.setLook(p.id, theme);
+      changed();
+      return p.theme;
+    },
 
     /** the banner under the header: where records are being saved, right now */
     truthHtml(persistent) {
