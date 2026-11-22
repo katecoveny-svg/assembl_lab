@@ -15,7 +15,7 @@
 // Loaded with the page: this file, models-rules.js and models.css. Loaded only when needed: ifc-summary.js (an IFC is
 // dropped), upload.js (a big file goes to the shared records), model-view.js with three.js and web-ifc (a model is drawn).
 import { registerProjectPanel, registerRoute, registerNav } from './modules.js';
-import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP } from './models-rules.js';
+import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP, BROWSER_3D_LIMIT, tooBigFor3d } from './models-rules.js';
 import { activity, SAMPLE_ID } from './model.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 
@@ -75,7 +75,7 @@ const S = {
   preps: new Map(),   // project id -> { id, file, name, kind, got, total, state, href } a model being passed to the 3D page
 };
 let jobSeq = 0;
-const say = (pid, tone, name, text, meter = null) => { const list = S.notes.get(pid) ?? []; list.unshift({ id: `n${++jobSeq}`, tone, name, text, meter }); S.notes.set(pid, list.slice(0, 4)); };
+const say = (pid, tone, name, text, meter = null, label = '') => { const list = S.notes.get(pid) ?? []; list.unshift({ id: `n${++jobSeq}`, tone, name, text, meter, label }); S.notes.set(pid, list.slice(0, 4)); };
 const remember = (id, bytes) => { S.bytes.clear(); if (bytes && bytes.byteLength <= AUTO_PREVIEW_LIMIT) S.bytes.set(id, bytes); };
 
 /** keep the page from closing quietly while a model is still going up */
@@ -147,7 +147,7 @@ function meterHtml(esc, m) {
 
 function noteCard(esc, n) {
   return `<li class="mdl-card is-note${n.tone === 'error' ? ' is-error' : ''}" ${n.tone === 'error' ? 'role="alert"' : 'role="status"'}><div class="mdl-in">
-    <div class="mdl-body"><p class="mdl-top">${n.name && kindOf(n.name) ? tagHtml(esc, kindOf(n.name)) : ''}<span class="mdl-state">${n.tone === 'error' ? '□ Not kept' : '■ Stopped'}</span></p>
+    <div class="mdl-body"><p class="mdl-top">${n.name && kindOf(n.name) ? tagHtml(esc, kindOf(n.name)) : ''}<span class="mdl-state">${esc(n.label || (n.tone === 'error' ? '□ Not kept' : '■ Stopped'))}</span></p>
       ${n.name ? `<h3 class="mdl-name">${esc(n.name)}</h3>` : ''}${n.meter ? meterHtml(esc, n.meter) : ''}<p class="mdl-say">${esc(nb(n.text))}</p>
       <div class="acts"><button class="link" data-m="dismiss" data-id="${esc(n.id)}">Dismiss</button></div></div></div></li>`;
 }
@@ -193,7 +193,7 @@ function leftCard(esc, u) {
 function picHtml(esc, f, kind) {
   if (KINDS[kind]?.family === 'revit' || KINDS[kind]?.family === 'navis') return `<div class="mdl-pic is-guide"><span class="mdl-pic-cap">To see it in 3D</span>${guideHtml(kind)}</div>`;
   const thumb = f.extra?.model?.thumb;
-  const turn = KINDS[kind]?.read && canDraw() ? `<button class="mdl-turn" data-m="turn" data-id="${esc(f.id)}">${svg(IC.turn)}<span>Turn it</span></button>` : '';
+  const turn = KINDS[kind]?.read && canDraw() && !tooBigFor3d(f.size) ? `<button class="mdl-turn" data-m="turn" data-id="${esc(f.id)}">${svg(IC.turn)}<span>Turn it</span></button>` : '';
   if (thumb && /^data:image\/(webp|jpeg|png);base64,/.test(thumb)) return `<div class="mdl-pic" data-pic="${esc(f.id)}"><img src="${thumb}" alt="${esc(`${f.name} in 3D, drawn in this browser from the file`)}" loading="lazy" />${turn}</div>`;
   return `<div class="mdl-pic is-icon" data-pic="${esc(f.id)}">${svg(KINDS[kind]?.look === 'sheet' ? IC.sheet : IC.model, 'mdl-big')}<span class="mdl-pic-tag">${esc(KINDS[kind]?.tag ?? '')}</span>${turn}</div>`;
 }
@@ -202,8 +202,11 @@ function modelCard(ctx, p, s, place) {
   const esc = ctx.esc, f = s.latest, kind = kindOf(f.name), k = KINDS[kind], sum = modelSummary(f);
   const by = f.extra?.model?.by, sure = S.confirm === f.id, canChange = !place.viewer;
   const meta = nb([sizeText(f.size), by, when(f.kept_at)].filter(Boolean).join(' · '));
-  const to3d = k.to3d === 'model' ? `<button class="btn solid" data-m="open3d" data-id="${esc(f.id)}">Open in 3D ↗</button>`
+  const big = k.to3d === 'model' && tooBigFor3d(f.size);
+  const to3d = big ? ''
+    : k.to3d === 'model' ? `<button class="btn solid" data-m="open3d" data-id="${esc(f.id)}">Open in 3D ↗</button>`
     : k.to3d === 'plan' ? `<button class="btn" data-m="open3d" data-id="${esc(f.id)}">Read the plan in 3D ↗</button>` : '';
+  const bigNote = big ? `<p class="mdl-say">□ Too big to open in 3D in a browser: ${esc(nb(sizeText(f.size)))}, and the most here is ${esc(nb(sizeText(BROWSER_3D_LIMIT)))}. It stays kept, counted and downloadable. An IFC exported without furniture, or a lighter copy, can open.</p>` : '';
   const acts = `<div class="acts">${to3d}<button class="btn" data-m="get" data-id="${esc(f.id)}">Download<span class="vh"> ${esc(f.name)}</span></button>
     ${canChange ? `<button class="link" data-m="remove" data-id="${esc(f.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(f.name)} v${f.version}</span></button>` : ''}</div>`;
   let body = '';
@@ -217,17 +220,17 @@ function modelCard(ctx, p, s, place) {
   return `<li class="mdl-card" data-card="${esc(f.id)}" data-kind="${esc(kind)}"><div class="mdl-in">${picHtml(esc, f, kind)}
     <div class="mdl-body"><p class="mdl-top">${tagHtml(esc, kind, f.version)}<span class="mdl-state">■ ${esc(k.word)}</span></p>
       <h3 class="mdl-name">${esc(f.name)}</h3><p class="mdl-meta">${esc(meta)}</p>
-      ${body}${acts}${older}</div></div></li>`;
+      ${body}${bigNote}${acts}${older}</div></div></li>`;
 }
 
 function ifcBlock(esc, f, sum) {
   const facts = factsOf(sum), area = areaOf(sum), storeys = storeysOf(sum);
   const more = storeys.length > 6 ? storeys.length - 6 : 0;
-  return `<ul class="mdl-facts" aria-label="Counted in the file">${facts.map((x) => `<li class="${x.n ? '' : 'is-zero'}">${svg(IC[x.key])}<b>${esc(x.text)}</b><span>${esc(x.label)}</span></li>`).join('')}</ul>
+  return `<ul class="mdl-facts" aria-label="Counted in the file">${facts.map((x) => `<li class="${x.n ? '' : 'is-zero'}">${svg(IC[x.key])}<b>${esc(x.text)}</b><span>${esc(x.label)}</span>${x.also ? `<small>${esc(x.also)}</small>` : ''}</li>`).join('')}</ul>
     ${storeys.length ? `<div class="mdl-storeys" aria-label="Storeys, lowest first">${svg(IC.storeys)}<ol>${storeys.slice(0, 6).reverse().map((s) => `<li><span>${esc(s.name)}</span><span class="mono">${esc(s.level)}</span></li>`).join('')}</ol>${more ? `<span class="mdl-meta">and ${more} more</span>` : ''}</div>` : '<p class="mdl-meta">No storeys in the file.</p>'}
     ${area ? `<p class="mdl-area"><b>${esc(nb(area.value))}</b><span>${esc(area.label)}</span></p>` : `<p class="mdl-meta">No floor area: ${esc(sum.spaces?.count ? 'the spaces carry none' : 'the file has no spaces')}.</p>`}
     <details class="mdl-from"><summary>Where these numbers come from</summary>
-      <p>${esc(sum.from?.counts ?? '')}</p><p>${esc(sum.from?.storeys ?? '')}</p><p>${esc(area?.from ? `${area.from}. Nothing is measured from the shapes.` : sum.from?.area ?? '')}</p>
+      <p>${esc(sum.from?.counts ?? '')}</p>${sum.counts?.curtain_walls ? `<p>Curtain walls are counted from IfcCurtainWall. Revit exports curtain-wall glazing as curtain walls, so their glass is not in the window count.</p>` : ''}<p>${esc(sum.from?.storeys ?? '')}</p><p>${esc(area?.from ? `${area.from}. Nothing is measured from the shapes.` : sum.from?.area ?? '')}</p>
       <p class="mdl-meta">${esc([sum.schema, sum.app && `from ${sum.app}`, sum.units?.length && `lengths in ${sum.units.length}`, `read in this browser in ${sum.ms} ms`].filter(Boolean).join(' · '))}. Nothing was sent anywhere to read it.</p></details>`;
 }
 
@@ -458,7 +461,7 @@ function canDraw() {
 function stopLive() { try { S.live?.stop(); } catch { /* already gone */ } S.live = null; }
 
 async function turn(ctx, note, pic) {
-  if (!pic) return;
+  if (!pic || tooBigFor3d(note.size)) return;
   stopLive();
   const kind = kindOf(note.name);
   pic.classList.add('is-live', 'is-busy');
@@ -486,6 +489,7 @@ async function turn(ctx, note, pic) {
  * takes it from there. Nothing needs the two pages to talk, so it works whether the browser opens a new tab, replaces this
  * page with the 3D one (the Claude app's browser pane does), or blocks the tab: then a link opens it with a fresh press. */
 function open3d(ctx, p, note) {
+  if (tooBigFor3d(note.size) && KINDS[kindOf(note.name)]?.to3d === 'model') { say(p.id, 'error', note.name, `Too big to open in 3D in a browser (${sizeText(note.size)}; the most here is ${sizeText(BROWSER_3D_LIMIT)}).`, null, '□ Not opened'); return ctx.redraw(); }
   if (S.preps.get(p.id)?.state === 'fetching' || S.preps.get(p.id)?.state === 'keeping') return undefined; // one at a time
   const r = { id: `o${++jobSeq}`, pid: p.id, file: note.id, name: note.name, kind: kindOf(note.name), got: 0, total: Number(note.size) || 0, state: 'fetching', href: '' };
   S.preps.set(p.id, r); ctx.redraw();
@@ -500,7 +504,7 @@ function open3d(ctx, p, note) {
     r.state = 'ready'; ctx.redraw();
     const w = window.open(r.href, '_blank'); // may replace this page (then the 3D page takes it from storage all the same)
     if (w) { r.state = 'opened'; ctx.redraw(); }
-  })().catch((err) => { S.preps.delete(p.id); say(p.id, 'error', note.name, `${err?.message ?? 'It could not be passed across.'} You can download it and choose it on the 3D page instead.`); ctx.redraw(); });
+  })().catch((err) => { S.preps.delete(p.id); say(p.id, 'error', note.name, `${err?.message ?? 'It could not be passed across.'} You can download it and choose it on the 3D page instead.`, null, '□ Not opened'); ctx.redraw(); });
   return undefined;
 }
 

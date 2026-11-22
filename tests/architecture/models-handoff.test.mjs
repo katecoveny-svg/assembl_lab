@@ -100,3 +100,30 @@ test('Open in 3D keeps the model first and opens the 3D page with its id, and ne
   assert.match(body, /HANDOFF_PARAM\}=\$\{encodeURIComponent\(hid\)\}/);
   assert.ok(!/\.document|DataTransfer|dispatchEvent/.test(body), 'nothing reaches into the 3D page');
 });
+
+test('a model over the browser 3D limit is not drawn or opened in 3D here, and both pages hold the same limit', async () => {
+  const { BROWSER_3D_LIMIT, tooBigFor3d } = await import('../../architecture/js/models-rules.js');
+  assert.equal(BROWSER_3D_LIMIT, 100 * 1024 * 1024);
+  assert.equal(tooBigFor3d(400 * 1024 * 1024), true, 'a model of the size that froze a browser in testing');
+  assert.equal(tooBigFor3d(30 * 1024), false);
+  assert.equal(tooBigFor3d(BROWSER_3D_LIMIT), false, 'up to and including the limit');
+  const plan = readFileSync(new URL('../../plan-studio/twins/src/twin/projectPlan.ts', import.meta.url), 'utf8');
+  assert.match(plan, /const BROWSER_3D_LIMIT = 100 \* 1024 \* 1024;/);
+  assert.match(plan, /if \(f\.size > BROWSER_3D_LIMIT\)/, 'the 3D page checks the size before it reads the file');
+  const src = readFileSync(new URL('../../architecture/js/models.js', import.meta.url), 'utf8');
+  assert.match(src, /canDraw\(\) && !tooBigFor3d\(f\.size\)/, 'no Turn it on a card for a too-big model');
+  assert.match(src, /const to3d = big \? ''/, 'no Open in 3D either');
+  assert.match(src, /if \(!pic \|\| tooBigFor3d\(note\.size\)\) return;/);
+  for (const page of ['drop', '16a']) {
+    const dir = new URL(`../../plan-studio/twins/${page}/assets/`, import.meta.url);
+    const built = readdirSync(dir).filter((f) => f.endsWith('.js')).map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n');
+    assert.ok(built.includes('Too big to open in a browser'), `${page}: the built page refuses a too-big file`);
+  }
+});
+
+test('curtain walls show on the windows tile, so glazing exported as curtain walls is not missed', async () => {
+  const { factsOf } = await import('../../architecture/js/models-rules.js');
+  const w = factsOf({ counts: { windows: 1, curtain_walls: 4 } }).find((x) => x.key === 'windows');
+  assert.equal(w.text, '1'); assert.equal(w.also, '+ 4 curtain walls'); assert.equal(w.n, 5, 'the tile is not greyed out');
+  assert.equal(factsOf({ counts: { windows: 8 } }).find((x) => x.key === 'windows').also, '');
+});
