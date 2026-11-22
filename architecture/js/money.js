@@ -15,7 +15,7 @@ import { healthDial, practiceDial, feeGauge, stateIcon, animateDials, STATE_ICON
 import { activity, STAGE_KEYS, stageNumber, currentStage, SAMPLE_ID } from './model.js';
 import { dayKey, sameId, initials, stageLabel as enquiryStage } from './crm-model.js';
 
-const CSS_VERSION = 'e5b3ac7222'; // the first ten of money.css's sha-256: tests/architecture/money.test.mjs fails when it is out of step
+const CSS_VERSION = '0f5d7af2df'; // the first ten of money.css's sha-256: tests/architecture/money.test.mjs fails when it is out of step
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const today = () => dayKey(new Date());
 const nzd = (n) => (n == null || !Number.isFinite(Number(n)) ? '' : `${n < 0 ? '−' : ''}$${Math.round(Math.abs(n)).toLocaleString('en-NZ')}`);

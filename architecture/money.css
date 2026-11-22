@@ -88,6 +88,8 @@ html[data-theme="sketch"] .hdial.is-none .bd { opacity: .24; }
 details.m-fig { border-top: 1px solid var(--hair); padding-top: 8px; }
 details.m-fig > summary, details.m-add > summary, details.m-set > summary { cursor: pointer; font: 500 12px/1.6 var(--mono); letter-spacing: .06em; color: var(--ink); min-height: 44px; display: flex; align-items: center; gap: 8px; }
 details.m-fig > summary { text-transform: uppercase; color: var(--mute); }
+details.m-fig > summary::before { content: "+"; display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--line); font: 500 12px/1 var(--mono); color: var(--ink); }
+details.m-fig[open] > summary::before { content: "\2212"; }
 .m-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13.5px; }
 .m-table th, .m-table td { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--hair); font-weight: 400; }
 .m-table thead th { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
