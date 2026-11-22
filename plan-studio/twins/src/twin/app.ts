@@ -143,6 +143,10 @@ export class App {
   private windowLights: THREE.RectAreaLight[] = [];
   lastStill: Blob | null = null;
   lastVideo: Blob | null = null;
+  /** a flight that Play and Record follow in place of the preset views (a confirmed camera path: cameraPathUI.ts); t runs 0 to 1 */
+  flight: { dur: number; at: (t: number) => { eye: THREE.Vector3; look: THREE.Vector3 } } | null = null;
+  /** a click on the 3D view that a card wants for itself (picking points on the ground): return true to keep it from the inspector */
+  pickHook: ((ev: PointerEvent) => boolean) | null = null;
 
   constructor(project: Project, canvas: HTMLCanvasElement) {
     this.project = project;
@@ -735,6 +739,7 @@ export class App {
     this.canvas.addEventListener('pointerdown', (ev) => (down = [ev.clientX, ev.clientY]));
     this.canvas.addEventListener('pointerup', (ev) => {
       if (!down || Math.hypot(ev.clientX - down[0], ev.clientY - down[1]) > 4 || this.walk.on) return;
+      if (this.pickHook?.(ev)) { card.hidden = true; this.highlight.visible = false; return; }
       const h = pick(ev);
       if (!h) {
         card.hidden = true;
@@ -877,7 +882,7 @@ export class App {
       this.log('Reduced motion is on, so the path jumps to its last view instead of playing.');
       return;
     }
-    const dur = Math.max(8, this.built.path.length * 5) * 1000;
+    const dur = this.flight ? this.flight.dur : Math.max(8, this.built.path.length * 5) * 1000;
     this.playing = { t0: performance.now(), dur };
     this.controls.enabled = false;
     if (record) {
@@ -919,6 +924,15 @@ export class App {
   private stepPlay() {
     const p = this.playing!;
     const t = Math.min(1, (performance.now() - p.t0) / p.dur);
+    if (this.flight) {
+      // a confirmed camera path: even speed along it, eased in and out over its first and last few percent
+      const a = 0.05, v = 1 / (1 - a), e = t < a ? (v * t * t) / (2 * a) : t > 1 - a ? 1 - (v * (1 - t) * (1 - t)) / (2 * a) : v * (t - a / 2);
+      const at = this.flight.at(Math.min(1, Math.max(0, e)));
+      this.camera.position.copy(at.eye);
+      this.camera.lookAt(at.look);
+      if (t >= 1) this.stopPlay();
+      return;
+    }
     const keys = this.built.path;
     const eyes = new THREE.CatmullRomCurve3(keys.map((k) => k.eye), false, 'centripetal');
     const looks = new THREE.CatmullRomCurve3(keys.map((k) => k.look), false, 'centripetal');
