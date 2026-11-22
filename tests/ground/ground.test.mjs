@@ -3,17 +3,22 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { onRequest } from "../../functions/api/live.js";
-import { decodeLerc2, lercHeader, lercChecksum } from "../../api/_feeds/lerc.js";
-import { openCog } from "../../api/_feeds/cog.js";
-import { toNZTM, fromNZTM, sheetAt, tileAt, gridConvergence } from "../../api/_feeds/nztm.js";
-import { fetchGround, readHeights, heightAt, packHeights, unpackHeights, VERTICAL, ELEVATION } from "../../api/_feeds/ground.js";
-import { clearMemo, withStatus } from "../../api/_feeds/util.js";
+import { decodeLerc2, lercHeader, lercChecksum } from "../../plan-studio/twins/src/twin/linz/lerc.js";
+import { openCog, fetchRange } from "../../plan-studio/twins/src/twin/linz/cog.js";
+import { toNZTM, fromNZTM, sheetAt, tileAt, gridConvergence } from "../../plan-studio/twins/src/twin/linz/nztm.js";
+import { fetchGround, readLayer, heightAt, packHeights, unpackHeights, clearKept, sameSurveys, VERTICAL, ELEVATION } from "../../plan-studio/twins/src/twin/linz/ground.js";
+import { parcelAt, parcelQueryUrl, PARCEL_FIELDS as PAGE_PARCEL_FIELDS, PARCEL_CREDIT } from "../../plan-studio/twins/src/twin/linz/parcel.js";
+import { arcQueryUrl, PARCEL_FIELDS } from "../../api/_feeds/site.js";
+import { withStatus } from "../../api/_feeds/util.js";
+import { groundTint, progressText, GENTLE, STEEP } from "../../plan-studio/twins/src/twin/groundLook.ts";
 import { fx, replay, tileOf, withGlobalFetch } from "./helpers.mjs";
 
 // Offline. The recordings are LINZ's real answers for two public points (see fixtures/README.md); the expected heights were read
-// from the same LINZ file by GDAL, a different program from the decoder under test.
+// from the same LINZ file by GDAL, a different program from the decoder under test. The reader runs in the person's browser
+// (the plan drop page); here it runs in Node with the recorded answers standing in for LINZ's bucket.
 const CP = fx("castlepoint.ground.cassette"), EXPECT = fx("castlepoint.ground.expected"), SEA = fx("open-water.ground.cassette");
-test.beforeEach(() => clearMemo());
+const LIVE_FX = (name) => JSON.parse(fs.readFileSync(new URL(`../live/fixtures/${name}.json`, import.meta.url), "utf8"));
+test.beforeEach(() => clearKept());
 
 // ---- where a point is ------------------------------------------------------------------------------------------------------------------
 test("NZTM2000: matches PROJ to the centimetre across the country, and comes back again", () => {
@@ -146,6 +151,14 @@ test("ground: the survey is still named honestly when its record cannot be read"
   assert.equal(f.truthLabel, "Latest published · New Zealand LiDAR 1m DEM"); assert.match(f.licence.caveat, /licensor could not be read/);
 });
 
+test("overlapping surveys: named by the height at the point, and where two agree there, by the square round it", () => {
+  const one = sameSurveys([{ at: 9.388, worst: 0.03, used: 81 }, { at: 9.379, worst: 0.012, used: 81 }, { at: 9.378, worst: 0.001, used: 81 }], 9.378);
+  assert.deepEqual(one, { picked: [2], by: "square", cells: 81 }, "measured at Tauranga: the 2024 and 2025 surveys both match the point; only 2025 matches the square");
+  assert.deepEqual(sameSurveys([{ at: 5.0, worst: 0, used: 81 }, { at: 9.0, worst: 0, used: 81 }], 5.001), { picked: [0], by: "point" });
+  assert.deepEqual(sameSurveys([{ at: 5.0, worst: 0.001, used: 81 }, { at: 5.0, worst: 0.002, used: 81 }], 5.0).picked, [0, 1], "two that agree everywhere are not told apart, and the card says so");
+  assert.deepEqual(sameSurveys([null, { at: NaN, worst: 0, used: 0 }], 5).picked, [], "unreadable files name nothing");
+});
+
 test("heights pack to centimetres and back, with empty cells kept empty", () => {
   const g = { n: 3, cell: 1, originE: 10.5, originN: 20.5, data: Float32Array.from([1.004, 2.006, NaN, 3, 4, 5, 6, 7, 600.2]) }, p = packHeights(g), u = unpackHeights(p);
   assert.equal(p.base, 1); assert.equal(p.scale, 0.01); assert.equal(p.stats.cellsWithoutHeight, 1); assert.deepEqual([p.stats.min, p.stats.max], [1, 600.2]);
@@ -154,21 +167,113 @@ test("heights pack to centimetres and back, with empty cells kept empty", () => 
   assert.equal(+heightAt(u, 11, 20.5).toFixed(3), 1.505, "halfway between the first two cell centres"); assert.equal(+heightAt(u, 11, 20).toFixed(4), 2.5025, "the middle of four cells"); assert.ok(Number.isNaN(heightAt(u, 12, 20.5)), "beside an empty cell there is no height"); assert.ok(Number.isNaN(heightAt(u, 99, 20)));
 });
 
-test("through the lab's own address: /api/live/?feeds=ground, cached for hours, and briefly when a publisher fails", async () => {
-  const url = `https://lab.assembl.co.nz/api/live/?feeds=ground&lat=${CP.point.lat}&lon=${CP.point.lon}&radius=${CP.point.radius}`;
-  const ok = await withGlobalFetch(replay(CP).fetch, async () => { const res = await onRequest({ request: new Request(url), env: {} }); return { res, body: await res.json() }; });
-  assert.equal(ok.res.status, 200); assert.equal(ok.body.feeds.ground.status, "live"); assert.equal(ok.body.feeds.ground.values.heights.n, 41);
-  assert.match(ok.res.headers.get("cache-control"), /s-maxage=21600/);
-  clearMemo();
-  const down = await withGlobalFetch(async () => new Response("", { status: 503 }), async () => { const res = await onRequest({ request: new Request(url), env: {} }); return { res, body: await res.json() }; });
-  assert.equal(down.res.status, 200); assert.match(down.body.feeds.ground.error, /HTTP 503/); assert.match(down.res.headers.get("cache-control"), /s-maxage=300/);
-  const sea = await withGlobalFetch(replay(SEA).fetch, async () => (await (await onRequest({ request: new Request(`https://lab.assembl.co.nz/api/live/?feeds=ground&lat=${SEA.point.lat}&lon=${SEA.point.lon}&radius=20`), env: {} })).json()).feeds.ground);
-  assert.equal(sea.status, "unavailable"); assert.equal(sea.statusLabel, undefined);
+// ---- reliability: what failed on Cloudflare, and what a failure must never become ------------------------------------------------------
+test("a whole file offered for a range is refused without reading it (Cloudflare sent 1,243,832,160 bytes for 64 KB)", async () => {
+  let cancelled = false, pulled = 0;
+  const body = new ReadableStream({ pull(c) { pulled++; c.enqueue(new Uint8Array(65536)); }, cancel() { cancelled = true; } });
+  const f = async () => new Response(body, { status: 200, headers: { "content-length": "1243832160" } });
+  await assert.rejects(fetchRange(`${ELEVATION}/new-zealand/new-zealand/dem_1m/2193/BD33.tiff`, 0, 65535, { fetch: f }), /range not honoured: 1243832160 bytes offered for a 65536-byte range of BD33\.tiff/);
+  assert.ok(cancelled, "the body is cancelled"); assert.ok(pulled <= 1, "and not read");
+  // a small file sent whole is fine: the asked-for bytes are cut from it
+  const small = await fetchRange("https://x.test/a.json", 2, 4, { fetch: async () => new Response(new Uint8Array([0, 1, 2, 3, 4, 5]), { status: 200 }) });
+  assert.deepEqual(Array.from(small), [2, 3, 4]);
 });
 
-test("the feed's code can run on Cloudflare: Web APIs only, no JSON imports", () => {
-  for (const f of ["lerc.js", "cog.js", "nztm.js", "ground.js"]) {
-    const s = fs.readFileSync(new URL(`../../api/_feeds/${f}`, import.meta.url), "utf8").replace(/\/\/.*$/gm, "");
-    assert.doesNotMatch(s, /\bBuffer\b|\bprocess\.|\brequire\(|from "node:|import\.meta\.url|with\s*\{\s*type:/, f);
+test("only a Range header goes to LINZ (a plain range needs no CORS preflight), and nothing but LINZ's bucket is asked", async () => {
+  const seen = []; const r = replay(CP);
+  await readLayer("ground", { ...CP.point, fetch: async (url, init) => { seen.push(Object.keys(init.headers || {})); return r.fetch(url, init); } });
+  assert.ok(seen.length > 0 && seen.every((k) => k.length === 1 && k[0] === "range"), JSON.stringify(seen.slice(0, 3)));
+  for (const a of r.asked) assert.ok(a.url.startsWith(ELEVATION + "/"), a.url);
+});
+
+test("a slow request stops at its own limit and says so; Stop stops the whole read; neither leaves an answer", async () => {
+  const never = (url, init) => new Promise((_, no) => init.signal.addEventListener("abort", () => no(new Error("aborted"))));
+  await assert.rejects(fetchRange("https://x.test/a.tiff", 0, 9, { fetch: never, ms: 30 }), /did not answer within 0 s/);
+  const ac = new AbortController(); setTimeout(() => ac.abort(new Error("stopped by hand")), 20);
+  await assert.rejects(readLayer("ground", { ...CP.point, fetch: never, signal: ac.signal }), /stopped by hand/);
+  const done = new AbortController(); done.abort(new Error("stopped by hand"));
+  await assert.rejects(readLayer("ground", { ...CP.point, fetch: replay(CP).fetch, signal: done.signal }), /stopped by hand/);
+});
+
+test("progress is reported as each answer arrives, and adds up to what was read", async () => {
+  const ticks = []; const f = await readLayer("ground", { ...CP.point, fetch: replay(CP).fetch, onProgress: (s) => ticks.push([s.requests, s.bytes]) });
+  assert.equal(ticks.length, f.values.work.requests); assert.deepEqual(ticks.at(-1), [f.values.work.requests, f.values.work.bytesDownloaded]);
+  for (let i = 1; i < ticks.length; i++) assert.ok(ticks[i][0] === ticks[i - 1][0] + 1 && ticks[i][1] > ticks[i - 1][1]);
+});
+
+test("a failure is never kept: the next read asks LINZ again and gets the real answer", async () => {
+  // the survey's collection record fails once; the heights still come, the survey is honestly unnamed
+  let fail = true; const r = replay(CP, (url) => (fail && url.endsWith("/collection.json") ? new Response("", { status: 503 }) : null));
+  const first = await readLayer("ground", { ...CP.point, fetch: r.fetch });
+  assert.equal(first.status, "live"); assert.equal(first.values.survey.title, null);
+  fail = false; const again = replay(CP), second = await readLayer("ground", { ...CP.point, fetch: again.fetch });
+  assert.equal(second.values.survey.title, "Wellington LiDAR 1m DEM (2013-2014)");
+  assert.ok(again.asked.some((a) => a.url.endsWith("/collection.json")), "the failed record was asked for again, not remembered");
+  // and a good record is kept for the page's life: a third read does not ask for it
+  const third = replay(CP); await readLayer("ground", { ...CP.point, fetch: third.fetch });
+  assert.ok(!third.asked.some((a) => a.url.endsWith("/collection.json")));
+});
+
+test("the lab's server no longer offers ground or surface, and an answer with a failed feed is never cached", async () => {
+  const puts = [], store = new Map();
+  const cache = { match: async (k) => store.get(k.url), put: async (k, v) => { puts.push(k.url); store.set(k.url, v); } };
+  const realCaches = globalThis.caches; globalThis.caches = { default: cache };
+  try {
+    const gone = await (await onRequest({ request: new Request(`https://lab.assembl.co.nz/api/live/?feeds=ground,surface&lat=${CP.point.lat}&lon=${CP.point.lon}`), env: {} })).json();
+    assert.deepEqual(gone.unknown, ["ground", "surface"]); assert.ok(!gone.available.includes("ground"));
+    // a feed that fails: no-store, and nothing written to the cache, so a second ask goes to the publisher again
+    let asks = 0; const down = async () => { asks++; return new Response("", { status: 503 }); };
+    const url = "https://lab.assembl.co.nz/api/live/?feeds=fx";
+    const one = await withGlobalFetch(down, () => onRequest({ request: new Request(url), env: {} }));
+    assert.equal(one.headers.get("cache-control"), "no-store"); assert.match((await one.json()).feeds.fx.error, /503/);
+    const before = asks; await withGlobalFetch(down, () => onRequest({ request: new Request(url), env: {} }));
+    assert.ok(asks > before, "the second ask went to the publisher"); assert.equal(puts.filter((u) => u === url).length, 0, "the failure was never stored");
+  } finally { globalThis.caches = realCaches; }
+});
+
+// ---- the boundary: straight from LINZ's parcel map, with the same short field list as the site feed --------------------------------
+test("parcel: the browser asks exactly what the site feed asks (no legal description, titles or surveys), and reads the outline", async () => {
+  assert.equal(PAGE_PARCEL_FIELDS, PARCEL_FIELDS);
+  assert.equal(parcelQueryUrl(-36.85, 174.76), arcQueryUrl("https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services", "LINZ_NZ_Primary_Parcels", { lat: -36.85, lon: 174.76, geometry: true, outFields: PARCEL_FIELDS }));
+  assert.doesNotMatch(parcelQueryUrl(-36.85, 174.76), /appellation|titles|affected/);
+  const asked = []; const f = async (url) => { asked.push(String(url)); return new Response(JSON.stringify(String(url).includes("/query?") ? LIVE_FX("parcel") : LIVE_FX("layer-meta")), { status: 200 }); };
+  const p = await parcelAt(-36.85, 174.76, { fetch: f });
+  assert.equal(p.rings.length, 1); assert.ok(p.rings[0].length > 3 && p.rings[0].every((c) => c.length === 2)); assert.equal(p.calcAreaM2, 99289);
+  assert.equal(p.asOf, new Date(1795180749232).toISOString().slice(0, 10)); assert.equal(p.credit, PARCEL_CREDIT);
+  assert.equal(JSON.stringify(p).includes("redacted"), false, "nothing but the outline, area and date is kept");
+  for (const u of asked) assert.ok(u.startsWith("https://services.arcgis.com/xdsHIIxuCWByZiCB/"), u);
+  const none = await parcelAt(-36.6, 175.0, { fetch: async (url) => new Response(JSON.stringify(String(url).includes("/query?") ? { type: "FeatureCollection", features: [] } : {}), { status: 200 }) });
+  assert.equal(none.none, true); assert.deepEqual(none.rings, []);
+  await assert.rejects(parcelAt(-36.85, 174.76, { fetch: async () => new Response("", { status: 500 }) }), /HTTP 500/, "a failure is an error, never an empty boundary");
+});
+
+// ---- how it looks and what it says -------------------------------------------------------------------------------------------------
+test("ground drawn from survey heights reads as land: green where gentle, brown where steep, darker on the metre lines", () => {
+  const flat = groundTint(0, 0.5, 0), steep = groundTint(1, 0.5, 0), mid = groundTint(0.36, 0.5, 0);
+  assert.ok(flat[1] > flat[0] && flat[1] > flat[2], `gentle ground is green: ${flat}`);
+  assert.ok(steep[0] > steep[1] && steep[1] > steep[2], `steep ground is brown: ${steep}`);
+  assert.ok(mid[0] > flat[0] && mid[0] < steep[0], "in between, in between");
+  const sum = (c) => c[0] + c[1] + c[2]; assert.ok(sum(groundTint(0, 0.5, 1)) < sum(flat) && sum(groundTint(0, 0.5, 5)) < sum(groundTint(0, 0.5, 1)), "metre lines darker, 5 m lines darker still");
+  for (const c of [flat, steep]) assert.ok(Math.max(...c) - Math.min(...c) < 50 && Math.max(...c) < 150, `muted, not bright: ${c}`);
+  assert.deepEqual([GENTLE.length, STEEP.length], [3, 3]);
+  // the old default was sand: warm, light and grey-yellow (red at least as high as green). The new gentle ground is not
+  const sand = [151, 151, 121]; assert.ok(sand[0] >= sand[1] && flat[0] < flat[1]);
+});
+
+test("while LINZ's files arrive the card says how far it has got, and says plainly when it is slow", () => {
+  assert.equal(progressText("Reading", 3, 1.5e6, 2.4), "Reading: 3 answers from LINZ, 1.5 MB, 2 s.");
+  assert.equal(progressText("Reading", 1, 0, 0), "Reading: 1 answer from LINZ, 0.0 MB, 0 s.");
+  assert.match(progressText("Reading", 9, 2e6, 8.2), /Slower than usual\. .*stops by itself at 60 s, and nothing is drawn until every part has arrived\./);
+});
+
+test("the reader runs in a browser: Web APIs only, no Node modules, no JSON imports, no lab address", () => {
+  for (const f of ["lerc.js", "cog.js", "nztm.js", "ground.js", "parcel.js"]) {
+    const s = fs.readFileSync(new URL(`../../plan-studio/twins/src/twin/linz/${f}`, import.meta.url), "utf8").replace(/\/\/.*$/gm, "");
+    assert.doesNotMatch(s, /\bBuffer\b|\bprocess\.|\brequire\(|from "node:|import\.meta\.url|with\s*\{\s*type:|\/api\/live/, f);
+    assert.doesNotMatch(s, /user-agent/i, f);
   }
+  // and the page's card never sends the point to the lab's feed: no /api/live in it, and its words say so
+  const card = fs.readFileSync(new URL("../../plan-studio/twins/src/twin/siteGround.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(card, /\/api\/live|lab’s feed|lab's feed/);
+  assert.match(card, /the lab’s server is not asked and never receives the point/);
 });

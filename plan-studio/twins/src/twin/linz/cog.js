@@ -1,15 +1,20 @@
 // assembl lab · read part of a Cloud-Optimised GeoTIFF over HTTP range requests, without downloading the file.
-// Written for LINZ's open elevation and imagery TIFFs (classic TIFF, little-endian, 512-pixel tiles, every directory at the
-// front of the file). Web APIs only, so it runs unchanged on Cloudflare and in Node. No key is needed for the LINZ buckets.
+// Written for LINZ's open elevation TIFFs (classic TIFF, little-endian, 512-pixel tiles, every directory at the front of the
+// file). Web APIs only. It runs in the browser (the Real ground card on the plan drop page) and in Node for the tests.
+// No key is needed: LINZ's bucket answers byte ranges to any web page (CORS allows GET with a Range header from any origin).
 //
-//   const cog = await openCog(url, { fetch, stats })      one request for the front of the file
+//   const cog = await openCog(url, { fetch, stats, signal })   one request for the front of the file
 //   cog.levels[0] = { width, height, tileWidth, tileHeight, compression, ... }   full size first, then the smaller overviews
 //   cog.origin, cog.pixel                                  where the top-left corner is, and the size of a pixel, in map units
 //   await cog.tileRanges(level, [[tx, ty], ...])           where each tile's bytes are (null for a tile LINZ left empty)
 //   await cog.tileBytes(range)                             those bytes
 // What a tile holds (LERC heights, a WebP picture) is for the caller to decode; this file only finds the bytes.
-import { UA, TIMEOUT_MS } from "./util.js";
-
+//
+// Only a Range header is sent. A plain "bytes=a-b" range needs no permission check (CORS preflight) from the browser; any
+// other header would add one round trip to every request. (The suffix ranges, "bytes=-n", do get one; the bucket allows it.)
+// A server-side copy of this reader ran on Cloudflare until 22 Nov 2026 and failed there: Cloudflare
+// treats .tiff as cacheable, drops the Range on a cache miss and fetches the whole file (see docs/architecture/site-ground.md).
+export const TIMEOUT_MS = 20000; // per request; a slow connection gets a clear failure, never a half-read answer
 const HEAD_BYTES = 65536; // LINZ's largest sheets keep their directories and tile index within the first 40 KB or so
 const TYPE_SIZE = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8 };
 export const COMPRESSION = { 1: "none", 5: "lzw", 7: "jpeg", 8: "deflate", 32946: "deflate", 34887: "lerc", 50000: "zstd", 50001: "webp" };
@@ -18,25 +23,31 @@ export class NotFound extends Error { constructor(m) { super(m); this.name = "No
 
 // One range request. 404 or 403 from the bucket means "no such file": the caller decides what that means.
 // With { suffix: n } the last n bytes of the file are asked for instead (start and end are ignored).
-export async function fetchRange(url, start, end, { fetch: f = fetch, stats, ms = TIMEOUT_MS, suffix } = {}) {
-  const c = new AbortController(), t = setTimeout(() => c.abort(), ms), want = suffix || end - start + 1;
-  const t0 = Date.now(), row = stats?.log ? { file: String(url).replace(/^https:\/\/[^/]+\//, ""), range: suffix ? `-${suffix}` : `${start}-${end}`, startedMs: t0 - (stats.t0 || t0) } : null;
-  if (row) stats.log.push(row);
+// { signal } stops it from outside (the person pressed Stop, or the whole read ran out of time); { ms } is this request's own limit.
+// stats, when given, counts requests and bytes as each one finishes and calls stats.onProgress(stats).
+export async function fetchRange(url, start, end, { fetch: f = fetch, stats, ms = TIMEOUT_MS, suffix, signal } = {}) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(new Error(`LINZ did not answer within ${Math.round(ms / 1000)} s`)), ms), want = suffix || end - start + 1;
+  const stop = () => c.abort(signal.reason ?? new Error("stopped"));
+  if (signal) { if (signal.aborted) stop(); else signal.addEventListener("abort", stop, { once: true }); }
+  const halt = () => { if (c.signal.aborted) throw c.signal.reason instanceof Error ? c.signal.reason : new Error("stopped"); };
   try {
-    const r = await f(url, { signal: c.signal, headers: { "user-agent": UA, range: suffix ? `bytes=-${suffix}` : `bytes=${start}-${end}` } });
-    if (row) { row.status = r.status; row.headersMs = Date.now() - t0; row.contentLength = r.headers.get("content-length"); row.contentRange = r.headers.get("content-range"); row.encoding = r.headers.get("content-encoding"); }
+    halt(); // stopped before it started: nothing is asked
+    const r = await f(url, { signal: c.signal, headers: { range: suffix ? `bytes=-${suffix}` : `bytes=${start}-${end}` } });
     if (r.status === 404 || r.status === 403) throw new NotFound(`HTTP ${r.status} for ${url}`);
     if (r.status !== 206 && r.status !== 200) throw new Error(`HTTP ${r.status} from ${new URL(url).host}`);
     // a 200 means the range was not honoured and the whole file is on offer: never read a body far bigger than was asked for
-    const len = Number(r.headers.get("content-length"));
+    const len = Number(r.headers.get("content-length") ?? NaN);
     if (r.status === 200 && isFinite(len) && len > want + 65536) { try { await r.body?.cancel(); } catch (e) { /* nothing to cancel */ } throw new Error(`range not honoured: ${len} bytes offered for a ${want}-byte range of ${String(url).split("/").pop()}`); }
     let b = new Uint8Array(await r.arrayBuffer());
     if (r.status === 200 && !suffix && b.length > end - start + 1) b = b.subarray(start, end + 1); // a small file sent whole
     if (r.status === 200 && suffix && b.length > suffix) b = b.subarray(b.length - suffix);
-    if (stats) { stats.requests++; stats.bytes += b.length; }
-    if (row) { row.bytes = b.length; row.totalMs = Date.now() - t0; }
+    halt(); // stopped while the bytes came in: they are not used
+    if (stats) { stats.requests++; stats.bytes += b.length; stats.onProgress?.(stats); }
     return b;
-  } catch (e) { if (row) { row.error = String(e?.message || e).slice(0, 120); row.totalMs = Date.now() - t0; } throw e; } finally { clearTimeout(t); }
+  } catch (e) {
+    if (c.signal.aborted && c.signal.reason instanceof Error) throw c.signal.reason; // say why it stopped, not just "aborted"
+    throw e;
+  } finally { clearTimeout(t); signal?.removeEventListener?.("abort", stop); }
 }
 
 export async function openCog(url, opts = {}) {

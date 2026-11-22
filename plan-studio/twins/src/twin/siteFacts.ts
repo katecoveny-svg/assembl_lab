@@ -2,8 +2,9 @@
 // The lab's own feed (/api/live/?feeds=site) answers; each fact comes back with its source, licence, date and note,
 // and this card shows them as they are. It describes what each published map shows at the point. It is not a
 // compliance check, and a point outside a mapped hazard is not proof the site cannot be affected.
-// The point is typed in by the person using the tool and kept in this browser only: it is not written into the plan
-// model or into a share link, so a private site's location never leaves with the model.
+// The point is typed in by the person using the tool. Looking it up sends it to the lab's feed, which asks each publisher
+// (the card says so). It is kept in this browser only: it is not written into the plan model or into a share link, so a
+// private site's location never leaves with the model. (The Real ground card reads LINZ directly and does not send it.)
 
 interface Fact {
   id: string; label: string; status: string; truthLabel?: string; value?: unknown; unit?: string; asOf?: string | null;
@@ -43,7 +44,7 @@ export function siteFactsPanel(log: (msg: string) => void): HTMLElement {
   el.innerHTML = `<h3>Site facts</h3>
     <p class="small">Live public maps for one point in New Zealand: parcel, zone, overlays, flood, coast, landslide, weather. It shows what each map says at the point. It is not a compliance check.</p>
     <div class="row wrap"><input id="sfWhere" class="mono" placeholder="-36.80, 175.08" aria-label="Latitude, longitude" style="flex:1;min-width:150px" /><button class="pill solid" id="sfGo">Look up</button></div>
-    <p class="small" id="sfNote">Type a latitude and longitude. The point stays in this browser; it is not saved into the model or a share link.</p>
+    <p class="small" id="sfNote">Type a latitude and longitude. Looking up sends the point to the lab’s feed, which asks each publisher. It is kept in this browser only: not in the model, not in a share link.</p>
     <div id="sfOut"></div>
     <style>.sf-list{list-style:none;margin:8px 0 0;padding:0}.sf-list li{padding:8px 0;border-top:1px solid rgba(51,33,47,.12)}.sf-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.sf-val{margin:2px 0}.sf-src{opacity:.7}.sf-credit{margin-top:8px}</style>`;
   const where = el.querySelector('#sfWhere') as HTMLInputElement, out = el.querySelector('#sfOut') as HTMLElement, note = el.querySelector('#sfNote') as HTMLElement, go = el.querySelector('#sfGo') as HTMLButtonElement;

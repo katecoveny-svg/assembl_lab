@@ -1,15 +1,22 @@
 // Real ground under a dropped plan, from LINZ's open 1 m LiDAR.
-// The lab's own feed (/api/live/?feeds=ground and ?feeds=surface) answers with LINZ's survey cells round a point, north-up,
-// with the survey's name, dates, datum and credit. This file turns that square into the plan model's own frame, sets the
-// floor level by a stated rule, and offers the person the three things only they can know: which way the house faces,
-// exactly where it sits, and its floor level. Each of those is tagged from the plan, assumed, or set by hand.
+// The person's browser reads LINZ's survey cells round a point straight from LINZ's open elevation bucket (linz/ground.js),
+// with the survey's name, dates, datum and credit, and the parcel outline straight from LINZ's parcel map (linz/parcel.js).
+// The lab's server is not asked, so the site point never reaches it. This file turns that square into the plan model's own
+// frame, sets the floor level by a stated rule, and offers the person the three things only they can know: which way the
+// house faces, exactly where it sits, and its floor level. Each of those is tagged from the plan, assumed, or set by hand.
 // The point, the ground and the placement are kept in this browser tab only (sessionStorage). They are not written into
 // the dropped plan, the kept copy, or a share link; "Save the plan with its ground" is the one way they leave, and it says so.
+// A read that fails is never kept and never drawn: the model stays as it was, and the card says which ground is showing.
 import { modelFingerprint } from './approvals';
 import { parseWhere } from './siteFacts';
+import { readLayer } from './linz/ground.js';
+import { parcelAt } from './linz/parcel.js';
+import { toNZTM as nztm, gridConvergence } from './linz/nztm.js';
+import { groundTint, progressText, LIMIT_S } from './groundLook';
 
 const STORE = 'assembl-twin-site-ground', WHERE = 'assembl.siteFacts.where';
 const RADIUS = 110, SIZE = 140, NUDGE_MAX = 10, PAD = 0.45;
+export const PRIVACY = 'The same point as Site facts. This browser reads LINZ’s open data for it directly (the elevation files and the parcel map); the lab’s server is not asked and never receives the point. It is kept in this browser tab only: not in the model, not in a share link.';
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -18,21 +25,16 @@ interface Grid { n: number; originE: number; originN: number; data: Float32Array
 interface Layer { heights: Packed; title: string | null; captured: { from: string | null; to: string | null } | null; identified?: string; credit: string; file?: string; asOf: string | null; fetchedAt: string; heightAtPoint: number | null; datum: string }
 export type Tag = 'from the plan' | 'assumed' | 'set by hand';
 export interface Placement { turnDeg: number; turnTag: Tag; east: number; north: number; moveTag: Tag; floor: number | null; floorTag: Tag }
-export interface GroundStore { v: 1; plan: string; point: { lat: number; lon: number; e: number; n: number }; ground: Layer; surface: Layer | null; surfaceWhy?: string; parcel: { rings: [number, number][][]; asOf: string | null; credit: string } | null; placement: Placement }
+export interface GroundStore { v: 1; plan: string; point: { lat: number; lon: number; e: number; n: number }; ground: Layer; surface: Layer | null; surfaceWhy?: string; parcel: { rings: [number, number][][]; asOf: string | null; credit: string } | null; parcelWhy?: string; placement: Placement;
+  /** how the read went in this browser: seconds from asking to having both layers and the boundary, answers from LINZ, bytes */
+  read?: { seconds: number; requests: number; bytes: number } }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Plan = any;
 
-// ---- NZTM2000 (EPSG:2193): the same series as the lab's feed uses; checked against the feed's own answer before use ----
-const A = 6378137, F = 1 / 298.257222101, K0 = 0.9996, LON0 = (173 * Math.PI) / 180, E2 = 2 * F - F * F, EP2 = E2 / (1 - E2);
-export function toNZTM(latDeg: number, lonDeg: number) {
-  const lat = (latDeg * Math.PI) / 180, w = (lonDeg * Math.PI) / 180 - LON0, s = Math.sin(lat), c = Math.cos(lat), t = Math.tan(lat), e4 = E2 * E2, e6 = e4 * E2;
-  const m = A * ((1 - E2 / 4 - (3 * e4) / 64 - (5 * e6) / 256) * lat - ((3 * E2) / 8 + (3 * e4) / 32 + (45 * e6) / 1024) * Math.sin(2 * lat) + ((15 * e4) / 256 + (45 * e6) / 1024) * Math.sin(4 * lat) - ((35 * e6) / 3072) * Math.sin(6 * lat));
-  const nu = A / Math.sqrt(1 - E2 * s * s), T = t * t, C = EP2 * c * c, a = w * c, a2 = a * a;
-  return { e: 1600000 + K0 * nu * (a + ((1 - T + C) * a2 * a) / 6 + ((5 - 18 * T + T * T + 72 * C - 58 * EP2) * a2 * a2 * a) / 120),
-    n: 10000000 + K0 * (m + nu * t * (a2 / 2 + ((5 - T + 9 * C + 4 * C * C) * a2 * a2) / 24 + ((61 - 58 * T + T * T + 600 * C - 330 * EP2) * a2 * a2 * a2) / 720)) };
-}
+// ---- NZTM2000 (EPSG:2193): the same arithmetic the reader uses to find LINZ's cells (linz/nztm.js, checked against PROJ) ----
+export const toNZTM = (latDeg: number, lonDeg: number) => nztm(latDeg, lonDeg) as { e: number; n: number };
 /** how far grid north (up the map) is turned from true north at a point, degrees clockwise */
-export const convergence = (latDeg: number, lonDeg: number) => (Math.atan(Math.tan((lonDeg * Math.PI) / 180 - LON0) * Math.sin((latDeg * Math.PI) / 180)) * 180) / Math.PI;
+export const convergence = (latDeg: number, lonDeg: number) => gridConvergence(latDeg, lonDeg) as number;
 
 function unpack(h: Packed): Grid {
   const s = atob(h.data), out = new Float32Array(h.n * h.n);
@@ -109,27 +111,38 @@ export function applyGround(plan: Plan, st: GroundStore): Applied {
     flush();
   }
   const yr = (st.ground.captured?.to ?? st.ground.asOf ?? '').slice(0, 4);
-  const source = `Ground: LINZ 1 m LiDAR ground model, ${st.ground.title ?? 'survey not identified'}${st.ground.captured ? `, flown ${st.ground.captured.from} to ${st.ground.captured.to}` : ''}; heights in NZVD2016, read live through the lab's feed on ${st.ground.fetchedAt.slice(0, 10)}. ${st.ground.credit} ` +
-    `The ground's colour is 1 m contour lines drawn from those heights, not a photograph. House position: the point given (${P.moveTag === 'set by hand' ? `then moved ${P.east} m east and ${P.north} m north by hand` : 'taken as the middle of the house, assumed'}); north ${P.turnTag === 'set by hand' ? 'set by hand' : P.turnTag}; ${floorRule}` + (empty ? ` ${empty} cells of the square have no survey height and are drawn at the lowest surveyed level (assumed).` : '');
+  const source = `Ground: LINZ 1 m LiDAR ground model, ${st.ground.title ?? 'survey not identified'}${st.ground.captured ? `, flown ${st.ground.captured.from} to ${st.ground.captured.to}` : ''}; heights in NZVD2016, read by this browser straight from LINZ's open data on ${st.ground.fetchedAt.slice(0, 10)}. ${st.ground.credit} ` +
+    `The ground's colour is drawn from those heights (greener where the ground is gentle, browner where it is steep) with a line each metre; it is not a photograph. House position: the point given (${P.moveTag === 'set by hand' ? `then moved ${P.east} m east and ${P.north} m north by hand` : 'taken as the middle of the house, assumed'}); north ${P.turnTag === 'set by hand' ? 'set by hand' : P.turnTag}; ${floorRule}` + (empty ? ` ${empty} cells of the square have no survey height and are drawn at the lowest surveyed level (assumed).` : '');
   return {
     terrain: { centre: [fp.cx, fp.cz], size: SIZE, n, heights, photoKind: 'contours', datum: r2(datum0), north: nv, source, tops,
-      chip: 'Site: LINZ LiDAR ground', /* short enough to read in the bar; the survey, its year and "no aerial photo" are in the card, the layer note and the chip's tooltip */ layerNote: `LINZ 1 m LiDAR ground${yr ? ', ' + yr : ''}; 1 m contour lines drawn from it, not a photo; cut to a platform only where it stands above the floor pad` },
+      chip: 'Site: LINZ LiDAR ground', /* short enough to read in the bar; the survey, its year and "no aerial photo" are in the card, the layer note and the chip's tooltip */ layerNote: `LINZ 1 m LiDAR ground${yr ? ', ' + yr : ''}; coloured by its own slope with a line each metre, not a photo; cut to a platform only where it stands above the floor pad` },
     features, floor, floorRule, datum0, emptyCells: empty, groundUnder: { min: r2(lo), max: r2(hi), mean: r2(sum / cnt) },
   };
 }
 
-/** a picture of the ground made from its own heights: a soft tint by level with a line each metre, heavier each 5 m (NZVD2016) */
-export function contourPhoto(h: number[], n: number, datum0: number): string {
+/** a picture of the ground made from its own heights (not a photograph): tinted by slope, with a line each metre, heavier
+ *  each 5 m (NZVD2016). h is n × n levels relative to the model's datum, `cell` metres apart. */
+export function contourPhoto(h: number[], n: number, datum0: number, cell = 1): string {
   const px = 1024, c = document.createElement('canvas'); c.width = c.height = px;
   const ctx = c.getContext('2d')!, img = ctx.createImageData(px, px), d = img.data;
   let lo = Infinity, hi = -Infinity; for (const v of h) { if (v < lo) lo = v; if (v > hi) hi = v; }
-  const z = new Float32Array(px * px), s = (n - 1) / (px - 1);
-  for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) { const fx = Math.min(n - 1.001, x * s), fy = Math.min(n - 1.001, y * s), i = Math.floor(fx), j = Math.floor(fy), a = fx - i, b = fy - j; z[y * px + x] = (h[j * n + i] * (1 - a) + h[j * n + i + 1] * a) * (1 - b) + (h[(j + 1) * n + i] * (1 - a) + h[(j + 1) * n + i + 1] * a) * b + datum0; }
+  // slope of each survey cell from its neighbours (one-sided at the edge of the square)
+  const sl = new Float32Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1), j0 = Math.max(0, j - 1), j1 = Math.min(n - 1, j + 1);
+    sl[j * n + i] = Math.hypot((h[j * n + i1] - h[j * n + i0]) / ((i1 - i0) * cell), (h[j1 * n + i] - h[j0 * n + i]) / ((j1 - j0) * cell));
+  }
+  const z = new Float32Array(px * px), g = new Float32Array(px * px), s = (n - 1) / (px - 1);
   for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) {
-    const k = y * px + x, v = z[k], t = hi > lo ? (v - datum0 - lo) / (hi - lo) : 0.5, vr = z[k + (x < px - 1 ? 1 : 0)], vd = z[k + (y < px - 1 ? px : 0)];
+    const fx = Math.min(n - 1.001, x * s), fy = Math.min(n - 1.001, y * s), i = Math.floor(fx), j = Math.floor(fy), a = fx - i, b = fy - j, k = j * n + i;
+    z[y * px + x] = (h[k] * (1 - a) + h[k + 1] * a) * (1 - b) + (h[k + n] * (1 - a) + h[k + n + 1] * a) * b + datum0;
+    g[y * px + x] = (sl[k] * (1 - a) + sl[k + 1] * a) * (1 - b) + (sl[k + n] * (1 - a) + sl[k + n + 1] * a) * b;
+  }
+  for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) {
+    const k = y * px + x, v = z[k], vr = z[k + (x < px - 1 ? 1 : 0)], vd = z[k + (y < px - 1 ? px : 0)];
     const m1 = Math.floor(v) !== Math.floor(vr) || Math.floor(v) !== Math.floor(vd), m5 = Math.floor(v / 5) !== Math.floor(vr / 5) || Math.floor(v / 5) !== Math.floor(vd / 5);
-    const k0 = m5 ? 0.42 : m1 ? 0.72 : 1;
-    d[k * 4] = (128 + 46 * t) * k0; d[k * 4 + 1] = (134 + 34 * t) * k0; d[k * 4 + 2] = (106 + 30 * t) * k0; d[k * 4 + 3] = 255;
+    const [r, gg, bb] = groundTint(g[k], hi > lo ? (v - datum0 - lo) / (hi - lo) : 0.5, m5 ? 5 : m1 ? 1 : 0);
+    d[k * 4] = r; d[k * 4 + 1] = gg; d[k * 4 + 2] = bb; d[k * 4 + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
   return c.toDataURL('image/jpeg', 0.9);
@@ -143,31 +156,25 @@ const keep = (s: GroundStore | null) => { if (s) sessionStorage.setItem(STORE, J
 const rebuild = () => { const q = new URLSearchParams(location.search); q.set('ground', '1'); location.search = q.toString(); };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function feed(id: 'ground' | 'surface', p: { lat: number; lon: number }): Promise<any> {
-  const r = await fetch(`/api/live/?feeds=${id}&lat=${p.lat}&lon=${p.lon}&radius=${RADIUS}`, { headers: { accept: 'application/json' } });
-  if (!r.ok) throw new Error(`the lab's feed answered ${r.status}`);
-  const f = (await r.json())?.feeds?.[id];
-  if (!f) throw new Error('the feed sent nothing back');
-  if (f.error) throw new Error(f.error);
-  return f;
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const layerOf = (f: any): Layer => ({ heights: f.values.heights, title: f.values.survey?.title ?? null, captured: f.values.survey?.captured ?? null, identified: f.values.survey?.identified, credit: f.licence?.attribution ?? '', file: f.values.nationalModel?.file,
   asOf: f.asOf ?? null, fetchedAt: f.fetchedAt, heightAtPoint: f.values.heightAtPoint?.value ?? null, datum: f.values.verticalDatum?.name ?? 'NZVD2016' });
 
 /** the card: fetch the ground for the site point, then say what was loaded and let the person place the house */
-export function groundPanel(log: (m: string) => void, plan: Plan, loaded: { store: GroundStore; applied: Applied } | null, failed?: string): HTMLElement {
+/** pause(true) stops the 3D view drawing while LINZ's files are read, so a slow graphics chip cannot hold the read up; pause(false) starts it again */
+export function groundPanel(log: (m: string) => void, plan: Plan, loaded: { store: GroundStore; applied: Applied } | null, failed?: string, pause: (on: boolean) => void = () => {}): HTMLElement {
   const el = document.createElement('section');
   el.className = 'card'; el.id = 'siteGround';
   const own = !!plan.site?.terrain && !loaded, north = planNorth(plan);
   el.innerHTML = `<h3>Real ground</h3>
-    <p class="small">${own ? 'This model carries its own surveyed ground, so nothing is fetched here.' : 'Puts the house on LINZ’s 1 m LiDAR ground for a point in New Zealand. The heights are a survey from the air, not a site survey.'}</p>
+    <p class="small">${own ? 'This model carries its own surveyed ground, so nothing is read here.' : 'Puts the house on LINZ’s 1 m LiDAR ground for a point in New Zealand. The heights are a survey from the air, not a site survey.'}</p>
     <div ${own ? 'hidden' : ''}>
-    <div class="row wrap"><input id="sgWhere" class="mono" placeholder="-36.80, 175.08" aria-label="Latitude, longitude of the site" style="flex:1;min-width:150px" /><button class="pill solid" id="sgGo">${loaded ? 'Fetch again' : 'Fetch the ground'}</button></div>
-    <p class="small" id="sgNote">${failed ? esc(failed) : 'The same point as Site facts. It is sent to the lab’s feed, which asks LINZ’s open data. It is kept in this browser tab only: not in the model, not in a share link.'}</p>
+    <div class="row wrap"><input id="sgWhere" class="mono" placeholder="-36.80, 175.08" aria-label="Latitude, longitude of the site" style="flex:1;min-width:150px" /><button class="pill solid" id="sgGo">${loaded ? 'Read again' : 'Read the ground'}</button></div>
+    <div class="row wrap" id="sgBusy" style="display:none"><button class="pill" id="sgStop">Stop</button></div>
+    <p class="small" id="sgNote" role="status" aria-live="polite">${failed ? esc(failed) : PRIVACY}</p>
     <div id="sgOut"></div></div>
     <style>#siteGround .sg-list{list-style:none;margin:8px 0;padding:0}#siteGround .sg-list li{padding:7px 0;border-top:1px solid rgba(51,33,47,.12)}#siteGround .sg-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}#siteGround label.sg-f{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:6px 0}#siteGround label.sg-f input{width:92px}</style>`;
   const where = el.querySelector('#sgWhere') as HTMLInputElement, note = el.querySelector('#sgNote') as HTMLElement, out = el.querySelector('#sgOut') as HTMLElement, go = el.querySelector('#sgGo') as HTMLButtonElement;
+  const busyRow = el.querySelector('#sgBusy') as HTMLElement, stopBtn = el.querySelector('#sgStop') as HTMLButtonElement;
   try { where.value = loaded ? `${loaded.store.point.lat}, ${loaded.store.point.lon}` : localStorage.getItem(WHERE) ?? ''; } catch { /* storage can be closed */ }
   try { const said = sessionStorage.getItem(STORE + '-note'); if (said && !loaded) note.textContent = said; sessionStorage.removeItem(STORE + '-note'); } catch { /* nothing kept */ }
   // the parcel outline comes from the Site facts answer when that card has looked the point up
@@ -179,38 +186,55 @@ export function groundPanel(log: (m: string) => void, plan: Plan, loaded: { stor
     const polys = (o.type === 'Polygon' ? [o.coordinates] : o.type === 'MultiPolygon' ? o.coordinates : []) as [number, number][][][];
     parcel = { rings: polys.flat(), asOf: f?.asOf ? String(f.asOf).slice(0, 10) : null, credit: f?.licence?.attribution ?? '' }; parcelFor = `${lat},${lon}`;
   };
+  let busy: AbortController | null = null, stoppedByHand = false, rebuilding = false;
+  stopBtn.addEventListener('click', () => { stoppedByHand = true; busy?.abort(new Error('stopped by hand')); });
   const run = async () => {
+    if (busy) return;
     const p = parseWhere(where.value);
     if (!p) { note.textContent = 'That is not a point in New Zealand. Use decimal degrees, latitude first: -36.80, 175.08'; return; }
     try { localStorage.setItem(WHERE, where.value.trim()); } catch { /* fine */ }
-    go.disabled = true; note.textContent = 'Asking LINZ for the ground…';
+    const ac = new AbortController(), t0 = performance.now(), seen: Record<string, { requests: number; bytes: number }> = {};
+    busy = ac; stoppedByHand = false; go.disabled = true; busyRow.style.display = ''; pause(true);
+    let phase = 'Reading LINZ’s ground files from this browser (the 3D view rests meanwhile)';
+    const total = () => Object.values(seen).reduce((a, v) => ({ requests: a.requests + v.requests, bytes: a.bytes + v.bytes }), { requests: 0, bytes: 0 });
+    const show = () => { const t = total(); note.textContent = progressText(phase, t.requests, t.bytes, (performance.now() - t0) / 1000); };
+    const tick = setInterval(show, 500), cap = setTimeout(() => ac.abort(new Error(`it took longer than ${LIMIT_S} s`)), LIMIT_S * 1000);
+    show();
+    const opts = (k: string) => ({ lat: p.lat, lon: p.lon, radius: RADIUS, signal: ac.signal, onProgress: (st: { requests: number; bytes: number }) => { seen[k] = { requests: st.requests, bytes: st.bytes }; } });
     try {
-      const [g, s] = await Promise.allSettled([feed('ground', p), feed('surface', p)]);
+      // the ground decides everything; if it fails, the tops of trees and buildings are not waited for
+      const gP = (readLayer('ground', opts('ground')) as Promise<any>).catch((e: unknown) => { ac.abort(e); throw e; }); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const [g, s] = await Promise.allSettled([gP, readLayer('surface', opts('surface')) as Promise<any>]); // eslint-disable-line @typescript-eslint/no-explicit-any
       if (g.status === 'rejected') throw g.reason;
       const gf = g.value;
       if (gf.status === 'unavailable') { // say so, and go back to the labelled assumed ground if real ground was showing
-        const msg = `No real ground here: ${gf.reason} The model keeps its assumed ground.`;
+        const msg = `No real ground here: ${gf.reason} The model ${loaded ? 'goes back to' : 'keeps'} its assumed ground, labelled as assumed.`;
         keep(null); note.textContent = msg; log('No LINZ ground for that point; the assumed ground stays.');
-        if (loaded) { try { sessionStorage.setItem(STORE + '-note', msg); } catch { /* fine */ } rebuild(); }
+        if (loaded) { try { sessionStorage.setItem(STORE + '-note', msg); } catch { /* fine */ } rebuilding = true; rebuild(); }
         return;
       }
-      const mine = toNZTM(p.lat, p.lon), theirs = gf.values.point;
-      if (Math.hypot(mine.e - theirs.e, mine.n - theirs.n) > 0.05) throw new Error('the page and the feed disagree about where the point is; nothing was placed');
-      if (parcelFor !== `${p.lat},${p.lon}`) { // ask the site feed for the parcel outline if Site facts has not already
-        note.textContent = 'Ground received. Asking LINZ for the parcel boundary…';
-        try { const r = await fetch(`/api/live/?feeds=site&lat=${p.lat}&lon=${p.lon}`, { headers: { accept: 'application/json' } }); if (r.ok) takeParcel(p.lat, p.lon, (await r.json())?.feeds?.site?.facts); } catch { /* the boundary is left off, and the card says so */ }
-        if (parcelFor !== `${p.lat},${p.lon}`) parcel = null;
+      const theirs = gf.values.point;
+      let parcelWhy: string | undefined;
+      if (parcelFor !== `${p.lat},${p.lon}`) { // the boundary, straight from LINZ's parcel map, unless Site facts has just brought it
+        phase = 'Ground read. Asking LINZ’s parcel map for the boundary'; show();
+        try { const pc = await parcelAt(p.lat, p.lon, { signal: ac.signal }); parcel = pc.rings.length ? { rings: pc.rings, asOf: pc.asOf, credit: pc.credit } : null; parcelFor = `${p.lat},${p.lon}`; if (pc.none) parcelWhy = 'LINZ’s parcel map has no primary parcel at this point.'; }
+        catch (e) { if (ac.signal.aborted) throw e; parcel = null; parcelWhy = `LINZ’s parcel map did not answer (${(e as Error).message}), so no boundary is drawn.`; }
       }
-      const sf = s.status === 'fulfilled' && s.value.status !== 'unavailable' ? s.value : null;
+      const sf = s.status === 'fulfilled' && s.value.status !== 'unavailable' ? s.value : null, t = total(), secs = Math.round((performance.now() - t0) / 100) / 10;
       const st: GroundStore = { v: 1, plan: modelFingerprint(plan), point: { lat: p.lat, lon: p.lon, e: theirs.e, n: theirs.n }, ground: layerOf(gf), surface: sf ? layerOf(sf) : null,
-        surfaceWhy: sf ? undefined : s.status === 'rejected' ? String((s.reason as Error)?.message ?? s.reason) : s.value.reason, parcel,
-        placement: { turnDeg: r2(north.deg), turnTag: north.tag, east: 0, north: 0, moveTag: 'assumed', floor: null, floorTag: 'assumed' } };
+        surfaceWhy: sf ? undefined : s.status === 'rejected' ? String((s.reason as Error)?.message ?? s.reason) : s.value.reason, parcel, parcelWhy,
+        placement: { turnDeg: r2(north.deg), turnTag: north.tag, east: 0, north: 0, moveTag: 'assumed', floor: null, floorTag: 'assumed' }, read: { seconds: secs, requests: t.requests, bytes: t.bytes } };
       applyGround(plan, st); // throws if the survey has nothing under the house
       try { keep(st); } catch { st.surface = null; st.surfaceWhy = 'left out: this browser tab had no room to keep it'; keep(st); }
-      note.textContent = 'Ground received. Rebuilding the model on it…'; rebuild();
+      log(`LINZ ground read by this browser in ${secs} s (${t.requests} answers, ${(t.bytes / 1e6).toFixed(1)} MB): ${st.ground.title ?? 'survey not identified'}.`);
+      clearInterval(tick); note.textContent = `Ground read in ${secs} s. Rebuilding the model on it…`; rebuilding = true; rebuild();
     } catch (e) {
-      note.textContent = `The ground could not be fetched (${(e as Error).message}). The model keeps its assumed ground; nothing is guessed.`;
-    } finally { go.disabled = false; }
+      const why = stoppedByHand ? 'you stopped it' : (e as Error)?.message ?? String(e);
+      note.textContent = loaded
+        ? `The ground for ${p.lat}, ${p.lon} could not be read (${why}). The model still shows the ground read earlier for ${loaded.store.point.lat}, ${loaded.store.point.lon}; nothing new was placed, and nothing is guessed.`
+        : `The ground could not be read (${why}). The model stays on its assumed ground, labelled as assumed; nothing is guessed. Try again in a moment.`;
+      log('LINZ ground not read: ' + why + '. Nothing was kept.');
+    } finally { clearInterval(tick); clearTimeout(cap); busy = null; go.disabled = false; busyRow.style.display = 'none'; if (!rebuilding) pause(false); }
   };
   go.addEventListener('click', () => void run());
   where.addEventListener('keydown', (e) => { if (e.key === 'Enter') void run(); });
@@ -221,12 +245,12 @@ export function groundPanel(log: (m: string) => void, plan: Plan, loaded: { stor
     const { store: st, applied: ap } = loaded, P = st.placement, G = st.ground, tag = (t: Tag) => `<span class="mono small">${t === 'assumed' ? '□' : '■'} ${t}</span>`;
     const row = (label: string, value: string, src: string, small = '') => `<li><div class="sg-top"><b>${esc(label)}</b><span class="mono small">${esc(src)}</span></div><div>${esc(value)}</div>${small ? `<div class="small">${esc(small)}</div>` : ''}</li>`;
     out.innerHTML = `<ul class="sg-list">
-      ${row('Ground', G.title ?? 'LINZ 1 m LiDAR (survey not identified)', '■ from the survey', `1 m cells${G.captured ? `, flown ${G.captured.from} to ${G.captured.to}` : ''}. ${G.identified ?? ''}`)}
+      ${row('Ground', G.title ?? 'LINZ 1 m LiDAR (survey not identified)', '■ from the survey', `1 m cells${G.captured ? `, flown ${G.captured.from} to ${G.captured.to}` : ''}. ${G.identified ? G.identified + '. ' : ''}Read by this browser straight from LINZ on ${G.fetchedAt.slice(0, 10)}${st.read ? ` in ${st.read.seconds} s (${st.read.requests} answers, ${(st.read.bytes / 1e6).toFixed(1)} MB)` : ''}.`)}
       ${row('Level at the point', G.heightAtPoint == null ? 'no height' : `${G.heightAtPoint.toFixed(2)} m`, '■ from the survey', `${G.datum}. LINZ describes this LiDAR as generally about 0.2 m accurate in height.`)}
       ${row('Ground under the house', `${ap.groundUnder.min.toFixed(2)} to ${ap.groundUnder.max.toFixed(2)} m`, '■ from the survey', ap.emptyCells ? `${ap.emptyCells} cells of the square have no survey height and are drawn at the lowest surveyed level (assumed).` : '')}
       ${row('Tree and building tops', st.surface ? st.surface.title ?? 'LINZ 1 m LiDAR surface model' : 'not loaded', st.surface ? '■ from the survey' : '□ not loaded', st.surface ? 'Turn on the “Tree and building tops” layer to see them: plain blocks where something stands more than 2 m above the ground. Trees and buildings are not told apart.' : st.surfaceWhy ?? '')}
-      ${row('Legal boundary', st.parcel ? (ap.features.length ? 'drawn on the ground' : 'outside the square of ground shown') : 'not drawn', st.parcel ? '■ LINZ parcels, live' : '□ not loaded', st.parcel ? 'LINZ’s digital parcel map: a map of boundaries, not a survey. Its place against the house depends on the point and the turn below.' : 'The parcel outline did not come back from the site feed, so no boundary is drawn.')}
-      ${row('Aerial photo', 'not loaded', '□ not connected', 'The ground is coloured with 1 m contour lines drawn from the survey heights. It is not a photograph.')}
+      ${row('Legal boundary', st.parcel ? (ap.features.length ? 'drawn on the ground' : 'outside the square of ground shown') : 'not drawn', st.parcel ? '■ LINZ parcels, live' : '□ not loaded', st.parcel ? `LINZ’s digital parcel map${st.parcel.asOf ? ' (layer edited ' + st.parcel.asOf + ')' : ''}: a map of boundaries, not a survey. Its place against the house depends on the point and the turn below.` : st.parcelWhy ?? 'No parcel outline came back, so no boundary is drawn.')}
+      ${row('Ground colour', 'drawn from the survey heights', '□ not a photograph', 'Greener where the ground is gentle, browner where it is steep, with a line each metre and a darker one each 5 m. No aerial photo is connected, so it does not show grass, paths or buildings.')}
     </ul>
     <p class="small"><b>Placing the house.</b> The point is taken as the middle of the house. The plan’s north is taken as true north (the survey grid is turned ${Math.abs(convergence(st.point.lat, st.point.lon)).toFixed(2)}° from it here, and that is allowed for).</p>
     <label class="sg-f"><span>North, degrees clockwise from up the sheet ${tag(P.turnTag)}</span><input id="sgTurn" type="number" step="1" value="${P.turnDeg}"></label>

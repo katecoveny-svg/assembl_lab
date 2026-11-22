@@ -43,7 +43,6 @@ Nothing was pushed, merged or deployed in making this.
 | grocery | Grocery report figures | Commerce Commission, copied in (a snapshot) | Verified (built in, not fetched) |
 | trades-feeds | Building determinations, consents | MBIE CodeHub, Stats NZ | Verified |
 | site | Facts about a piece of land (new) | LINZ, Auckland Council, Open-Meteo | See below |
-| ground, surface | Real ground heights, and tree and building tops, round a point (added 22 November 2026) | LINZ 1 m LiDAR, open data | Verified from this machine; not yet run on Cloudflare. See below |
 
 Nothing here is "unavailable" or "connected-unverified" at the feed level. Each answer says whether it is "Live" (fetched from the publisher just now) or "Latest published" (the publisher's newest release), and when it was fetched.
 
@@ -73,20 +72,19 @@ Checked on the test point (a rural section on Waiheke; no address, owner or lega
 
 "Not inside a mapped area" is not the same as "safe". Each hazard fact says so.
 
-## The `ground` and `surface` feeds (added 22 November 2026, branch `agent/ground-1122`)
+## Real ground (LINZ 1 m LiDAR): read in the browser, not served here
 
-Ask with `/api/live/?feeds=ground&lat=-36.856&lon=174.761` (add `&radius=110` for the half-width in metres, 20 to 160). `ground` is LINZ's bare-ground model; `surface` is the tops of trees and buildings. Each answers one square of LINZ's own 1 m survey cells, north-up, with the survey's name, flight dates, the vertical datum (NZVD2016) and the credit line. Where LINZ has no 1 m cover the answer is `unavailable` with the reason. Nothing is estimated.
+Until 22 November 2026 the branch `agent/ground-1122` had `/api/live/?feeds=ground` and `feeds=surface`. They are removed. The plan drop page now reads LINZ's elevation files and parcel map straight from the person's browser (`plan-studio/twins/src/twin/linz/`), so the site point never reaches the lab's server. Asking the feed for `ground` or `surface` now lists them under `unknown`.
 
 | Check | Result |
 |---|---|
-| Source | LINZ New Zealand Elevation open data on AWS (`nz-elevation`), the national 1 m DEM and DSM. No key. |
-| Licence | CC BY 4.0. LINZ asks for "Sourced from ... and licensed by (the licensor)". The licensor is read from each survey's own record and put in the credit line. |
-| Status | Verified from this machine on 22 November 2026: every cell matched GDAL to the centimetre on the test sites. Connected-unverified on Cloudflare: it has not run there yet. |
-| Test points | A public park in central Auckland (live, Auckland Part 1 LiDAR 2024). The shore at Castlepoint (live, Wellington LiDAR 2013-2014). Open water in the Hauraki Gulf, inland Fiordland and inland Rakiura (unavailable, with the reason). |
-| Calls to LINZ | 6 for a point with one survey, up to 18 where three surveys overlap. Cloudflare's free plan allows 50. |
-| Open question | Cloudflare's free plan allows 10 ms of computing per request and reading a square took more than that on a cold start here. See `docs/architecture/site-ground.md`. Check `feeds=ground` on the branch preview before merging. |
+| Source | LINZ New Zealand Elevation open data on AWS (`nz-elevation`, Sydney), the national 1 m DEM and DSM; LINZ NZ Primary Parcels for the boundary. No key. |
+| Browser access | LINZ's bucket allows byte-range reads from any web page (CORS checked with a real preflight on 22 November 2026: `Access-Control-Allow-Origin: *`, `range` allowed). LINZ's parcel service also allows any origin. |
+| Licence | CC BY 4.0. The survey's licensor is read from its own record and put in the credit line the page shows. |
+| Status | Verified in Chrome on 22 November 2026: 12 public points across the country, each read twice in a fresh browser, 22 of 22 answered in 2.2 to 5.0 s, and one point in Fiordland answered "unavailable" with the reason. Accuracy as before: every cell within 0.005 m of GDAL. |
+| Why it left the server | On Cloudflare the reads failed at some points. Cloudflare treats `.tiff` as cacheable and, on a cold file, drops the byte range: it handed the function a whole 1.2 GB file for a 64 KB request, or made it wait while the whole file streamed in, past the feed’s own 8 s limit per request. Details in `docs/architecture/site-ground.md`. |
 
-The owner note for the page that uses these is `docs/architecture/site-ground.md`. The tests are `node --test tests/ground/*.test.mjs` (offline).
+The owner note for the page is `docs/architecture/site-ground.md`. The tests are `node --test tests/ground/*.test.mjs` (offline, with LINZ's recorded answers).
 
 ## Questions about terms (please decide or ask)
 
@@ -102,4 +100,5 @@ The owner note for the page that uses these is `docs/architecture/site-ground.md
 - `api/mcp.js` (the car app server) was left alone. It is still written for Vercel and is not served by this change.
 - The `site` feed makes 28 calls to publishers for each new point (38 the very first time, while it also looks up each layer's update date). Cloudflare's free plan allows 50 calls per request, so that fits, but a paid plan has more room if more facts are added.
 - Answers are cached for the time suited to each feed (15 minutes for weather, a day or more for quarterly figures), so the publishers are not asked again and again. A page that asks for `site` next to `weather` gets the shorter time.
+- An answer in which any feed failed outright is sent with `Cache-Control: no-store` and is not kept in the edge cache, so the next ask tries the publisher again. (Before 22 November 2026 such an answer was cached for five minutes; on the preview the same failure came back as a cache hit.) An answer that is only partial or stale says so and may still be cached briefly.
 - The tests run offline: `node --test tests/live/live.test.mjs tests/live/site.test.mjs`. The live check is `node tests/live/smoke.mjs`; it uses the real internet and is not part of the tests.

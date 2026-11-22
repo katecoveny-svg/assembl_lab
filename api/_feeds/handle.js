@@ -32,7 +32,7 @@ export async function handleLive(q /* URLSearchParams */) {
     const v1w = w.error ? null : { ...w.values, hourly: w.values.hourly, source: w.source };
     const v1p = p.error ? null : { node: p.values.node, date: p.values.date, interim: p.values.interim, avgCentsPerKWh: p.values.avgCentsPerKWh, minCents: p.values.minCents,
       maxCents: p.values.maxCents, periods: p.values.periods, note: p.note, source: p.source };
-    headers["Cache-Control"] = "public, s-maxage=900, stale-while-revalidate=3600";
+    headers["Cache-Control"] = w.error || p.error ? "no-store" : "public, s-maxage=900, stale-while-revalidate=3600"; // a failure is never cached
     return { status: 200, headers, body: { type: "assembl.live", version: 1, fetchedAt: new Date().toISOString(), weather: v1w, power: v1p,
       errors: [w, p].filter((x) => x.error).map((x) => x.error) } };
   }
@@ -40,9 +40,9 @@ export async function handleLive(q /* URLSearchParams */) {
   const ids = feedsParam.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   const bbox = q.get("bbox"), retailer = q.get("retailer");
   const geo = { lat: num(q.get("lat")), lon: num(q.get("lon") ?? q.get("lng")), radius: num(q.get("radius")), bbox: typeof bbox === "string" && /^[-\d.,]{7,80}$/.test(bbox) ? bbox : undefined,
-    retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined , trace: q.get("trace") === "1" }; // steers the retailers feed only
+    retailer: typeof retailer === "string" && /^[a-z0-9-]{2,60}$/i.test(retailer) ? retailer.toLowerCase() : undefined }; // steers the retailers feed only
   const { feeds, cache, unknown } = await runFeeds(ids, { place, district, ...geo });
-  headers["Cache-Control"] = `public, s-maxage=${cache.sMaxAge}, stale-while-revalidate=${cache.swr}`;
+  headers["Cache-Control"] = cache ? `public, s-maxage=${cache.sMaxAge}, stale-while-revalidate=${cache.swr}` : "no-store";
   return { status: 200, headers, body: { type: "assembl.feeds", version: 2, fetchedAt: new Date().toISOString(), place, district, feeds,
     ...(unknown.length ? { unknown, available: Object.keys(FEEDS) } : {}) } };
 }

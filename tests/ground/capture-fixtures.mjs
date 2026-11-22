@@ -1,11 +1,10 @@
 // Records what LINZ's bucket really answers, so the tests in this folder run with no network.
 //   node tests/ground/capture-fixtures.mjs            (uses the real internet; not part of the tests)
-// Each "cassette" is every request the ground feed made for one public point (URL, byte range, status, bytes as base64),
+// Each "cassette" is every request the ground reader (plan-studio/twins/src/twin/linz/ground.js) made for one public point (URL, byte range, status, bytes as base64),
 // with the feed's own answer beside it. The points are public: the shore at Castlepoint, and open water in the Hauraki Gulf for "no cover".
 // Expected heights for the headland come from GDAL, an independent reader: see expected-from-gdal.py and fixtures/README.md.
 import fs from "node:fs";
-import { fetchGround, fetchSurface, unpackHeights } from "../../api/_feeds/ground.js";
-import { clearMemo } from "../../api/_feeds/util.js";
+import { fetchGround, fetchSurface, unpackHeights, clearKept as clearMemo } from "../../plan-studio/twins/src/twin/linz/ground.js";
 
 const dir = new URL("./fixtures/", import.meta.url);
 const b64 = (u8) => Buffer.from(u8).toString("base64");

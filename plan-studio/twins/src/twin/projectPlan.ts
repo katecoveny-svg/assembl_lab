@@ -762,9 +762,9 @@ export const projectPlan: Project = {
     let realGround: THREE.Group | null = null;
     if (terrain) {
       const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
-      // no photo with the ground: colour it with contour lines drawn from its own heights rather than leave it blank
+      // no photo with the ground: colour it from its own heights (slope tint and a line each metre) rather than leave it blank
       const drawn = !T.photo || T.photoKind === 'contours';
-      const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: await photoTex(T.photo ?? contourPhoto(T.heights, T.n, T.datum ?? 0)) });
+      const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: await photoTex(T.photo ?? contourPhoto(T.heights, T.n, T.datum ?? 0, T.size / (T.n - 1))) });
       // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
       if (input.kind === 'plan' && !input.plan.asBuilt && !drawn) nearM.color.setRGB(1.3, 1.16, 0.82);
       const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
@@ -820,6 +820,9 @@ export const projectPlan: Project = {
     ground.receiveShadow = true;
     ground.userData = { kind: 'terrain', name: 'Ground', source: 'assumed', note: 'From the plan model’s fall plane, or flat; not a survey.' };
 
+    // the Real ground card rests the 3D view while LINZ's files arrive, and gives it back as it found it
+    let pausedBefore = false;
+    const groundPause = (on: boolean) => { if (on) { pausedBefore = app.paused; app.paused = true; } else app.paused = pausedBefore; };
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
@@ -851,7 +854,7 @@ export const projectPlan: Project = {
     ];
     return {
       sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
-      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan), codeChecksPanel(app, input.plan), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed)] : [],
+      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, input.plan), codeChecksPanel(app, input.plan), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),

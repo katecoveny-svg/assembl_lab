@@ -1,12 +1,17 @@
-// ground, surface: real heights around one point of land, read from LINZ's open 1 m LiDAR. Key-less.
+// Real heights around one point of land, read by the browser from LINZ's open 1 m LiDAR. Key-less, no server of ours.
 //
-// GET /api/live/?feeds=ground&lat=<deg>&lon=<deg>[&radius=<m, 20 to 160, default 100>]     bare ground (LINZ "DEM")
-// GET /api/live/?feeds=surface&lat=&lon=[&radius=]                                         tops of trees and buildings (LINZ "DSM")
+//   await readLayer("ground", { lat, lon, radius, signal, onProgress })    bare ground (LINZ "DEM")
+//   await readLayer("surface", { lat, lon, radius, signal, onProgress })   tops of trees and buildings (LINZ "DSM")
 //   → one envelope: { id, label, truth, truthLabel, status, fetchedAt, asOf, cadence, value, unit, values, source, licence, note, limits }
 //   values.heights is a square grid of survey cells, north-up, one cell per metre, exactly as LINZ published them (no resampling):
 //     { n, cell, originE, originN (the centre of the north-west cell, NZTM2000), base, scale, nodata, encoding, data }
 //     height of cell (row, col) in metres = base + scale × uint16 at index row × n + col; rows run north to south, columns west to east.
 //   Where LINZ has no 1 m cover: { id, label, truth:"Unavailable", status:"unavailable", reason, source, licence }. Nothing is estimated.
+//   A failure (LINZ not answering, a file that is not what LINZ's specification says) throws: it is never an answer.
+//
+// The page calls this from the person's browser, straight to LINZ's bucket on Amazon S3, so the site point never reaches the
+// lab's server. Until 22 Nov 2026 the same code ran as the lab's /api/live/?feeds=ground on Cloudflare, where Cloudflare's cache
+// dropped the byte ranges on a cold file and the answers failed (docs/architecture/site-ground.md says how that was measured).
 //
 // How the right file is found, with no list to keep up to date: LINZ joins every 1 m survey into one national model, one file
 // per Topo50 map sheet (new-zealand/new-zealand/dem_1m/2193/<sheet>.tiff). The sheet over a point is arithmetic (nztm.js).
@@ -20,8 +25,12 @@
 import { toNZTM, tileAt } from "./nztm.js";
 import { openCog, fetchRange } from "./cog.js";
 import { decodeLerc2 } from "./lerc.js";
-import { memo, round } from "./util.js";
 
+export const round = (x, d = 1) => (x == null || !isFinite(x) ? null : +(+x).toFixed(d));
+// survey records change rarely: a finished answer is kept for this page's life. A failure is never kept.
+const KEPT = new Map();
+export const clearKept = () => KEPT.clear();
+const memo = (key, fn) => { if (KEPT.has(key)) return Promise.resolve(KEPT.get(key)); return Promise.resolve().then(fn).then((v) => { KEPT.set(key, v); return v; }); };
 export const ELEVATION = "https://nz-elevation.s3.ap-southeast-2.amazonaws.com";
 const NATIONAL = "new-zealand/new-zealand";
 const KINDS = {
@@ -86,8 +95,8 @@ export function heightAt(g, e, n) {
 }
 
 // ---- which survey: the sheet's record lists the survey tiles it was made from; the one at the point is confirmed by its own height
-const head = (url, o) => memo("ground:head:" + url, 6 * 3600e3, () => text(url, 0, 699, o));
-const tail = (url, o) => memo("ground:tail:" + url, 6 * 3600e3, async () => { const b = await fetchRange(url, 0, 0, { ...o, suffix: 9000 }); return new TextDecoder().decode(b); });
+const head = (url, o) => memo("head:" + url, () => text(url, 0, 699, o));
+const tail = (url, o) => memo("tail:" + url, async () => { const b = await fetchRange(url, 0, 0, { ...o, suffix: 9000 }); return new TextDecoder().decode(b); });
 const pick = (s, key) => { const m = s.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)); return m ? JSON.parse(`"${m[1]}"`) : null; };
 export async function surveysAt(kind, sheet, e, n, o = {}) {
   const dir = KINDS[kind].dir, itemUrl = `${ELEVATION}/${NATIONAL}/${dir}/2193/${sheet}.json`;
@@ -107,14 +116,35 @@ export async function surveysAt(kind, sheet, e, n, o = {}) {
   }));
   return { sheetRecord: itemUrl, sheetUpdated: nzDay(item.properties?.updated), sheetSpan: { from: nzDay(item.properties?.start_datetime), to: nzDay(item.properties?.end_datetime) }, tile: tile.name, surveys: out };
 }
-// read one cell of a survey's own tile, to compare with the national model
-async function surveyCell(s, e, n, o) {
+// read a survey's own cells round the point, to compare with the national model: { at: its height at the point, worst, used },
+// worst being the largest difference from the national model over the cells within R m of the point that both have.
+// The tile is the one already needed for the point, so the square costs no extra request.
+async function surveyCells(s, e, n, g, o, R = 4) {
   const cog = await openCog(s.file, { ...o, headBytes: 16384 }), L = cog.levels[0];
-  if (cog.epsg !== 2193 || !cog.pixel || cog.pixel[0] !== 1 || L.compression !== "lerc") return NaN;
+  if (cog.epsg !== 2193 || !cog.pixel || cog.pixel[0] !== 1 || L.compression !== "lerc") return null;
   const c = Math.floor(e - cog.origin[0]), r = Math.floor(cog.origin[1] - n), tx = Math.floor(c / L.tileWidth), ty = Math.floor(r / L.tileHeight);
-  const [rg] = await cog.tileRanges(0, [[tx, ty]]); if (!rg) return NaN;
-  const d = decodeLerc2(await cog.tileBytes(rg), { window: [c - tx * L.tileWidth, r - ty * L.tileHeight, c - tx * L.tileWidth + 1, r - ty * L.tileHeight + 1] });
-  return d.data[0] === cog.nodata ? NaN : d.data[0];
+  const [rg] = await cog.tileRanges(0, [[tx, ty]]); if (!rg) return null;
+  const lc = c - tx * L.tileWidth, lr = r - ty * L.tileHeight, w = [Math.max(0, lc - R), Math.max(0, lr - R), Math.min(L.tileWidth, lc + R + 1), Math.min(L.tileHeight, lr + R + 1)];
+  const d = decodeLerc2(await cog.tileBytes(rg), { window: w });
+  let at = NaN, worst = 0, used = 0;
+  for (let rr = 0; rr < d.outHeight; rr++) for (let cc = 0; cc < d.outWidth; cc++) {
+    const v = d.data[rr * d.outWidth + cc]; if (!(v === v) || v === cog.nodata) continue;
+    const col = tx * L.tileWidth + w[0] + cc, row = ty * L.tileHeight + w[1] + rr; // in the survey file
+    if (col === c && row === r) at = v;
+    const gi = cog.origin[0] + col + 0.5 - g.originE, gj = g.originN - (cog.origin[1] - row - 0.5); // the same cell in the national square
+    if (gi < 0 || gj < 0 || gi >= g.n || gj >= g.n) continue;
+    const gv = g.data[gj * g.n + gi]; if (!(gv === gv)) continue;
+    worst = Math.max(worst, Math.abs(v - gv)); used++;
+  }
+  return { at, worst, used };
+}
+/** which surveys made the national model at the point: those whose own height there is the same (LINZ stores each to within
+ *  1 mm, so 2.5 mm allows for both); where more than one is, those that also agree over the square round the point */
+export function sameSurveys(found, cell, tol = 0.0025) {
+  const atPoint = found.map((f, i) => (f && Math.abs(f.at - cell) <= tol ? i : -1)).filter((i) => i >= 0);
+  if (atPoint.length <= 1) return { picked: atPoint, by: "point" };
+  const square = atPoint.filter((i) => found[i].used > 1 && found[i].worst <= tol);
+  return { picked: square, by: "square", cells: square.length === 1 ? found[square[0]].used : null };
 }
 
 // ---- the envelope ------------------------------------------------------------------------------------------------------------------
@@ -141,16 +171,11 @@ const licence = (licensors) => ({ name: "CC BY 4.0 (Creative Commons Attribution
   ...(licensors?.length ? {} : { caveat: "The survey's licensor could not be read, so the credit names LINZ only. LINZ asks that the licensor be named too." }) });
 const unavailable = (kind, reason, extra = {}) => ({ id: kind, label: KINDS[kind].label, truth: "Unavailable", truthLabel: "Unavailable", status: "unavailable", fetchedAt: new Date().toISOString(), reason, value: null, values: null, source: src(kind), licence: licence(null), ...extra });
 
-async function build(kind, p = {}) {
-  if (!p.trace) return build1(kind, p, null);
-  // ?trace=1: say what each request to LINZ did, whether the answer worked or not (for finding faults on the host)
-  const log = [], t0 = Date.now();
-  try { const out = await build1(kind, p, { log, t0 }); return { ...out, trace: log }; } catch (e) { return { id: kind, error: String(e?.message || e).slice(0, 200), totalMs: Date.now() - t0, trace: log }; }
-}
-async function build1(kind, { lat, lon, radius, fetch: f } = {}, tr) {
+export async function readLayer(kind, { lat, lon, radius, fetch: f, signal, onProgress, ms } = {}) {
+  if (!Object.prototype.hasOwnProperty.call(KINDS, kind)) throw new Error(`unknown layer ${kind}`);
   if (lat == null || lon == null) throw new Error(`${kind} needs lat and lon`);
   if (!inNZ(lat, lon)) return unavailable(kind, "The point is outside New Zealand's main islands. Nothing is estimated.");
-  const half = Math.max(20, Math.min(160, Math.round(radius || 100))), t0 = now(), stats = { requests: 0, bytes: 0, decodeMs: 0, ...(tr || {}) }, o = { stats, fetch: f || fetch };
+  const half = Math.max(20, Math.min(160, Math.round(radius || 100))), t0 = now(), stats = { requests: 0, bytes: 0, decodeMs: 0, onProgress }, o = { stats, fetch: f || ((...a) => fetch(...a)), signal, ...(ms ? { ms } : {}) };
   const { e, n } = toNZTM(lat, lon), point = { lat, lon, e: round(e, 2), n: round(n, 2), crs: "EPSG:2193 (NZGD2000 / NZTM2000); the latitude and longitude are taken as NZGD2000, which is within about a metre of WGS84" };
   // the heights, and the map sheet's own record of which surveys it was made from, are asked for together
   const sheetName = tileAt(e, n, 50000)?.name ?? null;
@@ -168,9 +193,10 @@ async function build1(kind, { lat, lon, radius, fetch: f } = {}, tr) {
     sv = got.v;
     if (sv.surveys.length === 1) { survey = sv.surveys[0]; how = "the only survey LINZ lists for this map tile"; }
     else if (sv.surveys.length > 1) {
-      const cells = await Promise.all(sv.surveys.map((s) => surveyCell(s, e, n, o).catch(() => NaN)));
-      const same = sv.surveys.filter((s, i) => Math.abs(cells[i] - cell) <= 0.0025);
-      if (same.length === 1) { survey = same[0]; how = `${sv.surveys.length} surveys overlap this map tile; this one's own file has the same height at the point`; } else how = `${sv.surveys.length} surveys overlap this map tile and the one used at the point could not be told apart`;
+      const found = await Promise.all(sv.surveys.map((s) => surveyCells(s, e, n, g, o).catch(() => null)));
+      const m = sameSurveys(found, cell), k = sv.surveys.length;
+      if (m.picked.length === 1) { survey = sv.surveys[m.picked[0]]; how = m.by === "point" ? `${k} surveys overlap this map tile; this one's own file has the same height at the point` : `${k} surveys overlap this map tile; more than one has the same height at the point, and only this one also matches all ${m.cells} cells round it`; }
+      else how = `${k} surveys overlap this map tile and the one used at the point could not be told apart`;
     } else how = "the map sheet's record lists no survey for this map tile";
   }
   const brief = (s) => ({ title: s.title ?? null, path: s.path, captured: s.captured ?? null, licensors: s.licensors ?? [], file: s.file, record: s.record });
@@ -192,5 +218,5 @@ async function build1(kind, { lat, lon, radius, fetch: f } = {}, tr) {
     limits: "One square of up to 321 m by 321 m per request. Only the national 1 m LiDAR model is read; land LINZ has not flown at 1 m answers unavailable.",
   };
 }
-export const fetchGround = (p) => build("ground", p);
-export const fetchSurface = (p) => build("surface", p);
+export const fetchGround = (p) => readLayer("ground", p);
+export const fetchSurface = (p) => readLayer("surface", p);

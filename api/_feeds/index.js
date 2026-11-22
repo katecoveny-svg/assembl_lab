@@ -11,7 +11,6 @@ import { fetchFootprint } from "./linz.js";
 import { fetchGrocery } from "./grocery.js";
 import { fetchSite } from "./site.js";
 import { fetchRetailers, fetchTariffs } from "./retail.js";
-import { fetchGround, fetchSurface } from "./ground.js";
 import { CADENCE_TTL, withStatus } from "./util.js";
 
 export const FEEDS = {
@@ -32,8 +31,8 @@ export const FEEDS = {
   vehicles: { fetch: fetchVehicles, cadence: "monthly" },
   footprint: { fetch: fetchFootprint, cadence: "daily" }, // LINZ building outlines near lat/lon (or the place)
   site: { fetch: fetchSite, cadence: "hourly" }, // facts about one point of land (?lat=&lon=): parcel, zone, overlays, hazards, weather; one envelope per fact in .facts
-  ground: { fetch: fetchGround, cadence: "weekly" }, // LINZ 1 m LiDAR bare-ground heights in a square round lat/lon (?radius= half-width in metres)
-  surface: { fetch: fetchSurface, cadence: "weekly" }, // the same square from LINZ's surface model: tree tops and roofs
+  // ground and surface (LINZ 1 m LiDAR) are not served here: the plan drop page reads them in the browser, straight from LINZ
+  // (plan-studio/twins/src/twin/linz/). On Cloudflare the server-side reader failed: see docs/architecture/site-ground.md.
   grocery: { fetch: fetchGrocery, cadence: "annual" }, // Commerce Commission Annual Grocery Report: snapshot, not fetched
   rts: { fetch: fetchRts, cadence: "quarterly" }, // Stats NZ Retail Trade Survey, supermarket and hardware
   edhistory: { fetch: fetchEdHistory, cadence: "quarterly" },
@@ -52,6 +51,9 @@ export async function runFeeds(ids, params) {
   const ok = want.filter((id) => !feeds[id].error && !feeds[id].stale && feeds[id].truth !== "Partial"); // a Partial answer (the site feed with a fact down) is retried soon too
   const ttl = (ok.length ? ok : want).map((id) => CADENCE_TTL[FEEDS[id].cadence]).reduce((a, b) => (a.sMaxAge <= b.sMaxAge ? a : b), CADENCE_TTL.quarterly);
   // if anything failed, cache briefly so a transient upstream error is retried soon
-  const failed = want.length - ok.length;
-  return { feeds, cache: failed ? { sMaxAge: Math.min(ttl.sMaxAge, 300), swr: 600 } : ttl, unknown: ids.filter((id) => !known(id)) };
+  // an answer with a feed that failed outright ({id, error}) is never cached anywhere, so the next ask tries the publisher again
+  // (on 22 Nov 2026 the preview served a failure from the edge cache for five minutes). Stale or Partial answers say what they
+  // are, so they may still be cached briefly.
+  const failed = want.length - ok.length, errored = want.some((id) => feeds[id].error);
+  return { feeds, cache: errored ? null : failed ? { sMaxAge: Math.min(ttl.sMaxAge, 300), swr: 600 } : ttl, unknown: ids.filter((id) => !known(id)) };
 }

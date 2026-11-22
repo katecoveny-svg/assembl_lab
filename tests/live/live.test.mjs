@@ -66,14 +66,13 @@ test('an unknown feed is named in unknown, with the list of real ones; known fee
   });
 });
 
-test('one feed failing gives {id, error} for it and a short cache; the others succeed', async () => {
+test('one feed failing gives {id, error} for it and is never cached; the others succeed', async () => {
   await withFetch(routes({ fx: () => text('down', 503) }), async () => {
     const { res, body } = await get(BASE + '?feeds=fx,weather');
     assert.equal(res.status, 200);
     assert.deepEqual(Object.keys(body.feeds.fx).sort(), ['error', 'id']); assert.equal(body.feeds.fx.id, 'fx'); assert.match(body.feeds.fx.error, /503/);
     assert.equal(body.feeds.weather.truth, 'Live');
-    const sm = +/s-maxage=(\d+)/.exec(res.headers.get('cache-control'))[1];
-    assert.ok(sm <= 300, 'a failure must not be cached for long, got ' + sm);
+    assert.equal(res.headers.get('cache-control'), 'no-store', 'an answer carrying a failure is not cached at all (it was served again from the edge for five minutes)');
   });
 });
 

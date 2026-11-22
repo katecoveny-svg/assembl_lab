@@ -1,43 +1,40 @@
 # Real ground under a dropped plan
 
-22 November 2026. Not deployed.
+22 November 2026, branch `agent/ground-1122`. Not merged or deployed.
 
 ## What it does
 
-Drop a plan. Type the site's latitude and longitude in the **Real ground** card. The house is rebuilt on LINZ's surveyed ground, with the legal boundary. It works anywhere LINZ has flown at 1 m.
+Type the site's latitude and longitude in the **Real ground** card: the house is rebuilt on LINZ's 1 m LiDAR ground, with the legal boundary. Turn, move and floor level are tagged "from the plan", "assumed" or "set by hand".
 
-You can turn the house, move it up to 10 m, and set the floor level. Each is tagged "from the plan", "assumed" or "set by hand".
+## Where it runs
 
-## Where the data comes from
+In the browser, straight from LINZ's open elevation files (Amazon S3, Sydney) and LINZ's parcel map. The lab's server never receives the point; LINZ sees which half-kilometre tiles are read. Code: `plan-studio/twins/src/twin/linz/`.
 
-- **Ground and tree tops:** LINZ's national 1 m LiDAR, through the lab's feed (`/api/live/?feeds=ground`, `feeds=surface`). No key.
-- **Licence:** CC BY 4.0. Each answer names the survey, its flight dates and the credit LINZ asks for.
-- **Levels:** NZVD2016, as LINZ's file specification states. The files do not record it.
-- **Boundary:** LINZ's parcel map. Not a survey.
+## Why not on the server
 
-## How accurate it measured
+It ran as `/api/live/?feeds=ground` on Cloudflare. Measured on the preview (`?trace=1`):
 
-- Against GDAL on the example site: 90,601 cells, worst difference 0.005 m.
-- Against the example's hand-built grid: mean 0.016 m, 95% within 0.048 m, worst 1.08 m, 5 m in front of the house. Not explained.
-- Against published summits: Mount Eden 196 m, read 195.74. Mount Richmond 48 m, read 48.20. Hamlin Hill 65 m, read 59.03. Not explained.
-- The page's placing of the house, checked at 285 points: worst 0.005 m.
-- LINZ says this LiDAR is good to about 0.2 m.
-- Time from this machine: 1 to 4 seconds; 1.5 to 1.8 MB read, 134 KB sent.
+- Cloudflare caches `.tiff` files and, on a cold file, drops the byte range. Over 512 MB it returned the whole file (1,243,832,160 bytes for 64 KB), past the 128 MB memory limit ("Memory limit would be exceeded before EOF").
+- Under 512 MB the bytes came only as the whole file streamed in. Queenstown: no body by 8 s, so our timer stopped it ("The operation was aborted").
+- A failure was cached: the repeat was a cache HIT in 0.07 s. The live feed now never caches a failed feed's answer.
 
-## What is assumed
+The `ground` and `surface` server feeds are removed; nothing else used them.
 
-- The point is the middle of the house.
-- North is as the plan says. With no north point, north is up the sheet.
-- The floor is 0.45 m above the highest ground under the house, until you set it.
-- The point is treated as NZGD2000. A phone's point can be a metre off.
+## Reliability now
 
-## What it cannot do
+Chrome, 12 public points, each twice, fresh browser each time: 22 of 22 reads answered in 2.2 to 5.0 s; Fiordland said "unavailable". In the full page, software graphics held the read past 60 s, so the 3D view now rests meanwhile (3.5 to 4.8 s).
 
-- No aerial photo yet. The ground shows 1 m contour lines drawn from the survey. LINZ's 900 photo surveys need an index first.
-- Trees and buildings are not told apart. They are plain blocks, in a layer that starts off.
-- Anything built or cleared since the flight is missing. It is not a site survey.
-- No 1 m cover: the page says so and keeps the assumed ground.
-- Not yet run on Cloudflare. Its free plan allows 10 ms a request; this took 3 to 4 ms warm, 16 to 42 ms cold. Check on a preview.
-- Not tried on a real graphics card, a phone, or a dropped PDF.
+The card shows progress, says "slower than usual" after 8 s, offers Stop, and gives up at 60 s. A failure is never kept or drawn; if real ground was showing, the card says that earlier ground stays.
 
-The point and the ground stay in the browser tab, not in a share link.
+## Accuracy and labels
+
+- Every cell within 0.005 m of GDAL; LINZ says about 0.2 m. Hamlin Hill read 59.03 m against a published 65 m: not explained.
+- From LINZ: survey, flight dates, NZVD2016, credit. Overlapping surveys: the one matching the national model is named, or the card says it could not tell.
+- Assumed until set: point = middle of the house; north from the plan, else up the sheet; floor 0.45 m above the highest ground under it.
+- Ground colour is drawn from the heights (green gentle, olive-brown steep, a line each metre). Not a photograph.
+
+## Not done
+
+- No aerial photo; trees and buildings not told apart.
+- On steep ground the second home's pad cuts sheer walls into the slope.
+- Untried on a real graphics card, a phone, or Safari.
