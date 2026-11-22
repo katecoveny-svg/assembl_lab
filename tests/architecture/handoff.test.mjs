@@ -20,11 +20,12 @@ test('the hand-over uses the 3D page’s own key, shape and address', () => {
   assert.match(src, /JSON\.parse\(sessionStorage\.getItem\(KEEP\) \?\? 'null'\) as \{ plan: PlanModel; name: string \} \| null/, 'the 3D page reads { plan, name }');
   assert.match(src, /if \(kept\?\.plan\?\.buildings\) return/, 'it opens the kept plan when it has buildings');
   // which address makes it look: only one with ?fin
-  assert.match(src, /if \(new URLSearchParams\(location\.search\)\.has\('fin'\)\) \{\s*try \{\s*const kept = JSON\.parse\(sessionStorage\.getItem\(KEEP\)/, 'the kept plan is read only when the address has ?fin');
+  // (?ground, from the real ground card, also reopens the kept plan; ?fin must still do so)
+  assert.match(src, /if \(new URLSearchParams\(location\.search\)\.has\('fin'\)( \|\| new URLSearchParams\(location\.search\)\.has\('ground'\))?\) \{\s*try \{\s*const kept = JSON\.parse\(sessionStorage\.getItem\(KEEP\)/, 'the kept plan is read when the address has ?fin');
   assert.equal(TWIN_HANDOFF_HREF, `${TWIN_PAGE}?fin=`);
   assert.equal(new URLSearchParams(new URL(TWIN_HANDOFF_HREF, 'https://lab.assembl.co.nz').search).has('fin'), true);
   // ?fin (and no ?plan, ?share or ?drop) also stops the page opening its example instead
-  assert.match(src, /const example = !qs\.has\('plan'\) && !qs\.has\('share'\) && !qs\.has\('fin'\) && !qs\.has\('drop'\)/);
+  assert.match(src, /const example = !qs\.has\('plan'\) && !qs\.has\('share'\) && !qs\.has\('fin'\) && !qs\.has\('drop'\)( && !qs\.has\('ground'\))?;/);
   // an empty ?fin= is read as "no finishes chosen", so the default finishes are used
   assert.match(file('plan-studio/twins/src/twin/finishes.ts'), /export function decode\(txt: string \| null\): Schedule \| null \{\s*if \(!txt\) return null;/);
 });

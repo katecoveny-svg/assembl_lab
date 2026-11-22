@@ -72,6 +72,20 @@ Checked on the test point (a rural section on Waiheke; no address, owner or lega
 
 "Not inside a mapped area" is not the same as "safe". Each hazard fact says so.
 
+## Real ground (LINZ 1 m LiDAR): read in the browser, not served here
+
+Until 22 November 2026 the branch `agent/ground-1122` had `/api/live/?feeds=ground` and `feeds=surface`. They are removed. The plan drop page now reads LINZ's elevation files and parcel map straight from the person's browser (`plan-studio/twins/src/twin/linz/`), so the site point never reaches the lab's server. Asking the feed for `ground` or `surface` now lists them under `unknown`.
+
+| Check | Result |
+|---|---|
+| Source | LINZ New Zealand Elevation open data on AWS (`nz-elevation`, Sydney), the national 1 m DEM and DSM; LINZ NZ Primary Parcels for the boundary. No key. |
+| Browser access | LINZ's bucket allows byte-range reads from any web page (CORS checked with a real preflight on 22 November 2026: `Access-Control-Allow-Origin: *`, `range` allowed). LINZ's parcel service also allows any origin. |
+| Licence | CC BY 4.0. The survey's licensor is read from its own record and put in the credit line the page shows. |
+| Status | Verified in Chrome on 22 November 2026: 12 public points across the country, each read twice in a fresh browser, 22 of 22 answered in 2.2 to 5.0 s, and one point in Fiordland answered "unavailable" with the reason. Accuracy as before: every cell within 0.005 m of GDAL. |
+| Why it left the server | On Cloudflare the reads failed at some points. Cloudflare treats `.tiff` as cacheable and, on a cold file, drops the byte range: it handed the function a whole 1.2 GB file for a 64 KB request, or made it wait while the whole file streamed in, past the feed’s own 8 s limit per request. Details in `docs/architecture/site-ground.md`. |
+
+The owner note for the page is `docs/architecture/site-ground.md`. The tests are `node --test tests/ground/*.test.mjs` (offline, with LINZ's recorded answers).
+
 ## Questions about terms (please decide or ask)
 
 1. **Open-Meteo (weather, air, and the site weather).** The free service is for non-commercial use only. The lab's strips and the Plan Studio weather are fine while the lab is a free demonstration. Before this sits in something people pay for, assembl needs a paid Open-Meteo plan or another weather source.
@@ -86,4 +100,5 @@ Checked on the test point (a rural section on Waiheke; no address, owner or lega
 - `api/mcp.js` (the car app server) was left alone. It is still written for Vercel and is not served by this change.
 - The `site` feed makes 28 calls to publishers for each new point (38 the very first time, while it also looks up each layer's update date). Cloudflare's free plan allows 50 calls per request, so that fits, but a paid plan has more room if more facts are added.
 - Answers are cached for the time suited to each feed (15 minutes for weather, a day or more for quarterly figures), so the publishers are not asked again and again. A page that asks for `site` next to `weather` gets the shorter time.
+- An answer in which any feed failed outright is sent with `Cache-Control: no-store` and is not kept in the edge cache, so the next ask tries the publisher again. (Before 22 November 2026 such an answer was cached for five minutes; on the preview the same failure came back as a cache hit.) An answer that is only partial or stale says so and may still be cached briefly.
 - The tests run offline: `node --test tests/live/live.test.mjs tests/live/site.test.mjs`. The live check is `node tests/live/smoke.mjs`; it uses the real internet and is not part of the tests.
