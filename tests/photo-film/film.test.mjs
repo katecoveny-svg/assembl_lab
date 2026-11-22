@@ -173,7 +173,7 @@ test('background (default): Google gets the clip, stills and prompt, edit task, 
   assert.equal(c.url, 'https://generativelanguage.googleapis.com/v1beta/interactions'); assert.equal(c.method, 'POST');
   assert.equal(c.headers['x-goog-api-key'], KEY); assert.equal(c.headers['api-revision'], '2026-05-20');
   assert.equal(c.body.model, DEFAULT_MODEL); assert.equal(c.body.background, true); assert.equal(c.body.store, true);
-  assert.deepEqual(c.body.response_format, { type: 'video', aspect_ratio: '16:9', resolution: '720p', delivery: 'inline' });
+  assert.deepEqual(c.body.response_format, { type: 'video', resolution: '720p', delivery: 'inline' });
   assert.deepEqual(c.body.generation_config, { video_config: { task: 'edit' } });
   assert.deepEqual(c.body.input.map((x) => x.type), ['video', 'image', 'image', 'text']);
   assert.equal(c.body.input[0].mime_type, 'video/mp4'); assert.equal(c.body.input[0].data, CLIP.split(',')[1]);
@@ -278,7 +278,7 @@ test('the prompt: keeps the camera path and every building element; only materia
   const plain = buildFilmPrompt();
   assert.ok(!/reference image|guide image|Light:/.test(plain)); assert.ok(!/\bAI\b/.test(p + plain));
   const g = geminiFilmRequest(ENV, { video: 'AA==', prompt: 'x', seconds: 5, aspect: '9:16', resolution: '1080p', mode: 'wait' });
-  assert.deepEqual(g.body.response_format, { type: 'video', aspect_ratio: '9:16', resolution: '1080p', delivery: 'inline' });
+  assert.deepEqual(g.body.response_format, { type: 'video', resolution: '1080p', delivery: 'inline' });
 });
 
 test('OPTIONS answers CORS for the lab only', async () => {

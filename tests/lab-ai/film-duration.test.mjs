@@ -8,6 +8,7 @@ test('an edit task sends no duration (Google refuses it)', () => {
   const r = geminiFilmRequest({ GEMINI_API_KEY: 'x' }, args);
   assert.equal(r.body.generation_config?.video_config?.task, 'edit');
   assert.equal('duration' in r.body.response_format, false);
+  assert.equal('aspect_ratio' in r.body.response_format, false);
 });
 
 test('another task still sends the duration', () => {
