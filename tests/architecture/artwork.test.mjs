@@ -93,8 +93,8 @@ test('the kit’s parts are picked by folder and name: logos, transparent drawin
 test('sizes: drawings 1600, patterns 2400 and logos 600 pixels on the long side, never made bigger, about 250 KB each', async () => {
   assert.deepEqual([K.LIMITS.drawing.side, K.LIMITS.pattern.side, K.LIMITS.logo.side], [1600, 2400, 600]);
   assert.equal(K.LIMITS.drawing.bytes, 250 * 1024); assert.equal(K.LIMITS.pattern.bytes, 250 * 1024);
-  assert.deepEqual(K.fitSize(2292, 910, 1600), { w: 1600, h: 635 });
-  assert.deepEqual(K.fitSize(1536, 1024, 1600), { w: 1536, h: 1024 }, 'a smaller image is not enlarged');
+  assert.deepEqual(K.fitSize(2400, 900, 1600), { w: 1600, h: 600 });
+  assert.deepEqual(K.fitSize(1500, 1000, 1600), { w: 1500, h: 1000 }, 'a smaller image is not enlarged');
   assert.deepEqual(K.fitSize(900, 3000, 600), { w: 180, h: 600 });
   // a stand-in encoder: bytes grow with the area and the quality
   const calls = [];
@@ -133,15 +133,15 @@ test('what the pixels say: a drawing that fills its frame, a one-ink drawing, a 
 const blob = (n) => new Blob([new Uint8Array(n)], { type: 'image/webp' });
 const INKS = { blue: '#5076ff', white: '#ffffff', black: '#000000' };
 const items = () => [
-  { kind: 'logo', ink: 'white', blob: blob(10), type: 'image/webp', w: 560, h: 266 },
-  { kind: 'logo', ink: 'black', blob: blob(10), type: 'image/webp', w: 560, h: 266 },
-  ...['house', 'bridge', 'campus', 'street'].map((name) => ({ kind: 'drawing', name, mode: 'mask', inks: INKS, bleed: false, blob: blob(100), type: 'image/webp', w: 1536, h: 1024 })),
+  { kind: 'logo', ink: 'white', blob: blob(10), type: 'image/webp', w: 500, h: 250 },
+  { kind: 'logo', ink: 'black', blob: blob(10), type: 'image/webp', w: 500, h: 250 },
+  ...['house', 'bridge', 'tower', 'garden'].map((name) => ({ kind: 'drawing', name, mode: 'mask', inks: INKS, bleed: false, blob: blob(100), type: 'image/webp', w: 1500, h: 1000 })),
   { kind: 'drawing', name: 'panorama', mode: 'mask', inks: INKS, bleed: true, blob: blob(100), type: 'image/webp', w: 1600, h: 900 },
-  { kind: 'drawing', name: 'toile', mode: 'mask', inks: INKS, bleed: true, blob: blob(100), type: 'image/webp', w: 1344, h: 756 },
-  { kind: 'pattern', name: 'toile', colourway: 'night', ground: 'dark', tone: 'colour', blob: blob(50), type: 'image/webp', w: 2090, h: 1176 },
-  { kind: 'pattern', name: 'panorama', colourway: 'night', ground: 'dark', tone: 'colour', blob: blob(50), type: 'image/webp', w: 2090, h: 1176 },
-  { kind: 'pattern', name: 'panorama', colourway: 'print', ground: 'light', tone: 'mono', blob: blob(50), type: 'image/webp', w: 2090, h: 1176 },
-  { kind: 'pattern', name: 'panorama', colourway: 'blue', ground: 'colour', tone: 'mono', blob: blob(50), type: 'image/webp', w: 2090, h: 1176 },
+  { kind: 'drawing', name: 'toile', mode: 'mask', inks: INKS, bleed: true, blob: blob(100), type: 'image/webp', w: 1400, h: 800 },
+  { kind: 'pattern', name: 'toile', colourway: 'night', ground: 'dark', tone: 'colour', blob: blob(50), type: 'image/webp', w: 2000, h: 1100 },
+  { kind: 'pattern', name: 'panorama', colourway: 'night', ground: 'dark', tone: 'colour', blob: blob(50), type: 'image/webp', w: 2000, h: 1100 },
+  { kind: 'pattern', name: 'panorama', colourway: 'print', ground: 'light', tone: 'mono', blob: blob(50), type: 'image/webp', w: 2000, h: 1100 },
+  { kind: 'pattern', name: 'panorama', colourway: 'blue', ground: 'colour', tone: 'mono', blob: blob(50), type: 'image/webp', w: 2000, h: 1100 },
 ];
 
 test('the record: where each file is kept, what it is, and anything not as written left out when read back', () => {
@@ -174,7 +174,7 @@ test('a project keeps the same drawing; the ink suits the look; panoramas and pa
     assert.equal(c.colour, '#000000', 'black on the default look’s warm white');
     names.add(a.name);
   }
-  assert.deepEqual([...names].sort(), ['bridge', 'campus', 'house', 'street'], 'spread over the standalone drawings; never the panorama or the toile');
+  assert.deepEqual([...names].sort(), ['bridge', 'garden', 'house', 'tower'], 'spread over the standalone drawings; never the panorama or the toile');
   assert.equal(K.drawingFor({ drawings: [] }, ids[0]), null);
   assert.equal(K.logoFor(record, 'sketch').ink, 'white');
   assert.equal(K.logoFor(record, 'assembl').ink, 'black');
