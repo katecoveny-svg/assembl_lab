@@ -115,6 +115,44 @@ GETS sends a daily "GETS: Tender Subscription" email, with advance notices (whic
 
 Migrations, none applied: `20261122141000_arch_hunt_inbox.sql` (the table), `20261122142000_arch_hunt_inbox_reader.sql` (the Gmail reader's token and ingest).
 
+## Look ahead with Radar (22 Nov 2026)
+
+A paid, owner-confirmed research run inside Found work. Its findings join "Leads and early signals" as early signals from "Radar". Not to be confused with the older "Radar" source in "What to look for", which is the notices the assembl radar collects daily.
+
+**What Radar is.** The assembl Pursuit research pipeline, deployed as the edge function `radar-pursuit-v2` on the same Supabase project the lab uses. Scouts search the web (five reports), a second pass checks what the scouts found (five more, with fresh searches), five producers draft ideas (no web search), and a director returns at most three opportunities as strict JSON. Each opportunity has a headline, account, signal type, stage (signal, qualified, pursuit or hold), four sub-scores and a total, evidence links each marked `verified` or not, unknowns, a next action and a review date. The code is in the main repo: `supabase/functions/radar-pursuit-v2/index.ts`, `_shared/radarRunner.ts`, `radarWorkspace.ts`, `studioContract.ts`, `radarScope.ts`. This page changes none of it.
+
+**Where it is in the page.** "Look ahead with Radar", a closed panel under "Add alert emails". Owners and members only: a viewer is told to ask an owner or member, and signed out it explains that it needs the practice's sign-in. Four steps in the panel: the company profile, the mission, the run, past runs.
+
+**The company profile.** A row in `public.pursuit_seller_profiles`, written from the form, valid under the function's `sellerProfileSchema` (mirrored by hand in `architecture/js/radar-model.js` `buildProfile`; `tests/architecture/radar.test.mjs` pins the limits). It starts from what the practice already has here: its name and the words, sectors, regions and kaupapa Māori setting under "What to look for". Nothing else is filled in: no experience, awards, people or credentials. Evidence items are the practice's own words, each ticked by a person; Radar treats ticked items as the only proof of past work. An owner ticks "I've checked this description" to set `approved`; Radar will not run on a profile that is not approved, and editing a checked description clears the tick.
+- `focus` is `other`. In `radarScope.ts`, `technology` holds back physical building work as not for the seller, `construction` steers the research to contractor evidence, and `agency` reads the same as `other` unless the name is "assembl". An architecture practice sells design and advice, so `other` is the value that steers least in the wrong direction. It is one constant, `RADAR_FOCUS`.
+
+**The mission.** At most 4,000 characters, at least 10 (the function trims then counts). Three templates (early signs of work, kaupapa Māori and Indigenous work, planned public procurement) fill in the practice's regions and are edited before running.
+
+**Running it, in order.**
+1. "Run Radar…" first asks the function for `{ action: "status" }`, which answers `{ ready, missing }` with no model call, and shows ready or what is missing.
+2. If ready, a confirm panel says: "This sends about 16 research calls with web search to the model provider. It is a paid run." Nothing is sent until "Yes, run Radar (paid)". There is no way to start a run without that step (`radar.js` `run` refuses unless the confirm panel is open and the flag is set; the tests cover it).
+3. While it runs the page shows the time passed and "Stop waiting". It does not show stages: the function does not report them. Stopping only stops waiting; the run may still finish and be saved.
+4. A timeout (150 seconds in the page; the function gives up at 125) or a lost connection reloads past runs once: if the run was saved, it is shown; otherwise the page says so in plain words and adds nothing.
+
+**Cost.** About 16 model calls per run, 10 of them with web search. The page shows no figure: the model ids and the provider are secrets of the function (`RADAR_PROVIDER`, `RADAR_SCOUT_MODEL`, `RADAR_VERIFY_MODEL`, `RADAR_DIRECTOR_MODEL`), not in the repo, and the status answer does not say which. So the confirm panel says the cost is not known in advance and points to the provider's usage page. A run that is repeated with the same run id returns the saved result and is not charged again; a new confirm makes a new run id and is a new charge.
+
+**Data flow.**
+- The page sends the signed-in person's own access token to the function (`radar-client.js`; the token is read for that one call and not kept) with `{ mission, sellerProfileId, runId }`.
+- The function reads the profile with the caller's token, runs the agents, and saves the result to `public.pursuit_radar_runs` as the caller. The page never writes a run.
+- The page writes only the profile row, as the signed-in person, and reads their own runs.
+
+**Who can see what (row level security).** Both tables are owned by a person, not a practice. `pursuit_seller_profiles`: a person reads, adds, changes and deletes only rows whose `user_id` is their own. `pursuit_radar_runs`: a person reads and adds only their own rows, with no update or delete; rows with no user (public, signed-out runs) are invisible to everyone signed in. So the profile and the runs belong to the person who made them, and another member of the practice does not see them. What the practice shares is the enquiry made by "Add to pipeline". Practical consequence: because only an owner can tick the approval, in practice an owner runs Radar and a member's draft profile cannot be run.
+
+**Results in the lane.** Each opportunity is a card marked "Early signal from Radar" and "Draft, for review". It shows the headline, account, signal type, stage, a sorting score (the function's `score.total`, labelled "a sorting aid, not a chance of winning"), what changed, why it may matter, its sources, what is not known, the next step with its review date, and the ideas (what the practice could offer, a way to show it, who may decide). A source shows "Checked" only where the function marked it `verified`; every other source says "Not independently checked". A card on hold is dimmed and says why. The function returns no outreach drafts (the outreach producer's text is only read by the director), so none is shown. Nothing is sent.
+
+**Add to pipeline.** Makes an enquiry exactly as for other early signals (New column, next step "Check the signal before acting", one history line, no value, no owner). The opportunity is kept, bounded (at most 8 sources, 24,000 bytes, the profile and its words are not copied), on the enquiry row as `radar`; in the shared records that is `arch.enquiry.extra.radar`. The Pursuit studio can read it from there later.
+
+**What it is not.** Not a source of tenders: a signal is not a notice and not an opportunity until a person checks it. Not a prediction of who will win. Not checked by a person unless the source says "Checked", and even then only as far as the function's own second check goes. Not an outreach tool: nothing is drafted for sending and nothing is sent, published or submitted.
+
+**Files.** `architecture/js/radar-model.js` (rules), `radar-client.js` (the calls), `radar.js` (state and markup), `hunt.js` and `hunt-model.js` (the lane and the hand-off), `cloud.js` (`pub`) and `account.js` (`radar`), `architecture/hunt.css`. Tests: `tests/architecture/radar.test.mjs` (mocked function and the fake Supabase; no real run).
+
+**Not yet checked against production.** The function's status call needs a signed-in person's token, so it has not been called from here. The first live check is for an owner: open the panel and press "Check Radar is ready" (free).
+
 ## Rule changes coming (22 Nov 2026)
 
 A fourth lane in Found work, under "Leads and early signals": NZ legislation and bills that **may** change how buildings are designed, consented, funded or protected. It is not work, so there is no "Add to pipeline". It is here so a practice sees a change before a client asks about it. It is not legal advice, and every card says so.

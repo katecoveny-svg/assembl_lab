@@ -10,6 +10,7 @@ import { readerScript } from './gmail-reader-script.js';
 import { INBOX_SETTING, cleanInboxItem, mergeInbox, tidyInbox, rankInbox } from './hunt-inbox.js';
 import { clock, dayName, shortDay } from './crm-model.js';
 import { icon as pageIcon } from './icons.js';
+import { createRadar } from './radar.js';
 import { createRulesLane } from './hunt-rules.js'; // "Rule changes coming": its own module and stylesheet (hunt-rules.js, hunt-rules.css)
 import {
   REGIONS, SECTORS, SOURCES, SHOWN_MAX, SETTING, emptyHunt, cleanHunt, huntIsEmpty, huntQuery, sourcesOn, readAnswer, cleanSignal, fitWord, fitSteps, daysLeft, buyerInitials,
@@ -22,7 +23,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 // ---- the stylesheet (loaded with the page's own custom properties; nothing here sets a colour of its own) -----------------------------
-export const CSS_VERSION = '4';
+export const CSS_VERSION = '5';
 let cssReady = null;
 export function ensureHuntCss() {
   if (typeof document === 'undefined') return Promise.resolve();
@@ -99,13 +100,15 @@ const CULTURAL_REASON = 'kaupapa Māori or Indigenous words';
  *   ctx      the page's ctx: { store, account, practice, me, navigate }
  *   opts     { enquiries(): the current enquiries, readOnly, redraw(): draw the screen again, added(text): an enquiry was made, fetch, now }
  */
-export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () => [], readOnly = false, redraw = () => {}, added = async () => {}, fetch: fetchImpl = (...a) => globalThis.fetch(...a), now = () => new Date() } = {}) {
+export function createHunt(ctx, { radarClient = null, signalFeed = readEarlySignals, enquiries = () => [], readOnly = false, redraw = () => {}, added = async () => {}, fetch: fetchImpl = (...a) => globalThis.fetch(...a), now = () => new Date() } = {}) {
   const scope = scopeOf(ctx.practice);
   const canEdit = !readOnly && (!ctx.practice || ctx.practice.role === 'owner');
   const S = { phase: 'idle', settings: emptyHunt(), answer: null, older: null, error: '', dismissed: {}, showHidden: false, onlyCultural: false, inbox: [], alertFinds: [], reader: { status: null, token: '', busy: false, msg: '', error: false }, alerts: { open: false, text: '', busy: false, msg: '', error: false, drag: false }, panel: false, flash: null, busy: new Set(), announce: '' };
   const isOwner = !readOnly && !!ctx.practice && ctx.practice.role === 'owner';
   let gone = false, run = 0;
   const draw = () => { if (!gone) redraw(); };
+  // "Look ahead with Radar" (radar.js): the paid research run. Its findings join the lane below as early signals.
+  const radar = createRadar(ctx, { icon, hunt: () => S.settings, redraw: draw, client: radarClient, sectors: SECTORS, now });
 
   // ---- kept things: settings, the day's answer, "Not for us" -----------------------------------------------------------------------------
   async function loadSettings() {
@@ -275,8 +278,8 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
   }
 
   const onDoc = {
-    input: (ev) => { const t = ev.target; if (t?.matches?.('textarea[data-hunt-text]')) S.alerts.text = String(t.value ?? '').slice(0, 400000); },
-    change: (ev) => { const t = ev.target; if (t?.matches?.('input[data-hunt-files]') && t.files?.length) addFiles(t.files); },
+    input: (ev) => { const t = ev.target; if (t?.matches?.('textarea[data-hunt-text]')) S.alerts.text = String(t.value ?? '').slice(0, 400000); else radar.input(ev); },
+    change: (ev) => { const t = ev.target; if (t?.matches?.('input[data-hunt-files]') && t.files?.length) addFiles(t.files); else radar.input(ev); },
     dragover: (ev) => { if (ev.target?.closest?.('[data-hunt-drop]')) { ev.preventDefault(); if (!S.alerts.drag) { S.alerts.drag = true; ev.target.closest('[data-hunt-drop]').classList.add('is-drag'); } } },
     dragleave: (ev) => { const z = ev.target?.closest?.('[data-hunt-drop]'); if (z && !z.contains(ev.relatedTarget)) { S.alerts.drag = false; z.classList.remove('is-drag'); } },
     drop: (ev) => { const z = ev.target?.closest?.('[data-hunt-drop]'); if (!z) return; ev.preventDefault(); S.alerts.drag = false; z.classList.remove('is-drag'); if (ev.dataTransfer?.files?.length) addFiles(ev.dataTransfer.files); },
@@ -290,8 +293,10 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     await loadInbox();
     loadReader().catch(() => {});
     S.dismissed = cleanDismissed(await readKept(SETTING.dismissed(scope)), now());
+    const radarReady = radar.start().catch(() => {}); // the person's own saved profile and past runs: free reads, so the latest run can show in the lane
     await look();
     rules.start().catch(() => {}); // the rules lane looks on its own and never holds up the tenders
+    await radarReady;
   }
 
   // ---- the three things a person can do: add, "Not for us", change what to look for -----------------------------------------------------------
@@ -303,7 +308,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     return [...byId.values()].sort((a, b) => b.fit - a.fit || (a.closesDay || '9').localeCompare(b.closesDay || '9'));
   };
   /** leads and early signals: always kept apart from the tenders */
-  const lane = () => S.answer?.leads ?? S.older?.answer?.leads ?? [];
+  const lane = () => [...radar.cards(), ...(S.answer?.leads ?? S.older?.answer?.leads ?? [])];
   const findAny = (id) => signals().find((x) => x.id === id) ?? lane().find((x) => x.id === id);
   async function add(id) {
     const s = findAny(id);
@@ -362,6 +367,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
   /** a news lead or an early signal: always marked for what it is, with our own reason and never any text from the story */
   function leadCardHtml(s) {
     const made = addedAs(s, enquiries()), busy = S.busy.has(s.id), kp = s.cultural?.on ? s.cultural : null, signal = s.kind === 'signal';
+    if (s.radar) return radar.cardHtml(s, { made, busy, readOnly });
     const more = (s.reasons ?? []).slice(1);
     const why = more.length ? `<details class="hunt-why"><summary>Why this</summary><ul>${more.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></details>` : '';
     const badge = kp ? `<span class="hunt-kp">${pageIcon('people', 'hunt-i hunt-i-s')}<span>Kaupapa Māori</span></span>` : '';
@@ -380,15 +386,16 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
   }
   /** the lane under the tenders */
   function laneHtml() {
-    const all = visibleLane(), shown = (S.onlyCultural ? all.filter((s) => s.cultural?.on) : all).slice(0, LEADS_MAX);
+    const everything = visibleLane(), rc = everything.filter((s) => s.radar), all = everything.filter((s) => !s.radar), shown = (S.onlyCultural ? all.filter((s) => s.cultural?.on) : all).slice(0, LEADS_MAX);
     const off = !sourcesOn(S.settings).includes('radar');
     const body = !ctx.practice ? `<p class="hunt-empty"><span>${icon('alert')}<span>Leads need the practice’s records, so there are none while you are signed out. Sign in to a practice to see stories about buildings that may need design work.</span></span></p>`
       : S.answer?.leadsNote ? `<p class="hunt-flash is-error" role="alert">${icon('alert')}<span>${esc(S.answer.leadsNote)}</span></p>`
       : off ? `<p class="hunt-empty"><span>${icon('alert')}<span>Radar is switched off, and leads come from it. Switch it on in “What to look for”.</span></span></p>`
       : shown.length ? `<ul class="hunt-cards" role="list">${shown.map(leadCardHtml).join('')}</ul>${all.length > shown.length && !S.onlyCultural ? `<p class="hunt-dim">${all.length - shown.length} more are not shown.</p>` : ''}`
       : `<p class="hunt-empty"><span>${icon('search')}<span>${S.onlyCultural && all.length ? 'None of the leads carry kaupapa Māori or Indigenous words.' : 'No stories fit right now. Stories about a building or place that may need design work are looked at again tomorrow.'}</span></span></p>`;
-    return `<section class="hunt-lane" aria-labelledby="hunt-leads-h"><h3 id="hunt-leads-h" class="hunt-lane-h">${icon('eye')}<span>Leads and early signals</span>${all.length ? `<span class="hunt-count">${all.length}<span class="vh"> items</span></span>` : ''}</h3>
-      <p class="hunt-lane-note">Stories and signs that work may come. They are not tenders. Only the headline, source, date and a link are shown; the stories belong to their publishers.</p>${body}</section>`;
+    const fromRadar = rc.length ? `<div class="hunt-radar-lane"><p class="hunt-lane-sub">${icon('eye', 'hunt-i-s')}<span>From Radar: ${plural(rc.length, 'finding')}, drafts for review. Nothing has been sent.</span></p><ul class="hunt-cards" role="list">${rc.map(leadCardHtml).join('')}</ul></div>` : '';
+    return `<section class="hunt-lane" aria-labelledby="hunt-leads-h"><h3 id="hunt-leads-h" class="hunt-lane-h">${icon('eye')}<span>Leads and early signals</span>${everything.length ? `<span class="hunt-count">${everything.length}<span class="vh"> items</span></span>` : ''}</h3>
+      <p class="hunt-lane-note">Stories and signs that work may come. They are not tenders. Only the headline, source, date and a link are shown; the stories belong to their publishers.</p>${fromRadar}${body}</section>`;
   }
   /** the paste and drop control for GETS alert emails */
   function alertsHtml() {
@@ -435,7 +442,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     if (huntIsEmpty(S.settings)) {
       return `<div class="hunt-setup"><ul class="hunt-cards is-ghosts" aria-hidden="true">${ghost()}${ghost()}${ghost()}</ul>
         <div class="hunt-setup-t"><p class="hunt-empty-h">${icon('search')}<span>Set what to look for</span></p><p>Say which words, sectors and regions suit the practice, and the workspace will find public tender notices that fit, every day. Nothing is looked up until then.</p>
-        ${canEdit ? `<button type="button" class="hunt-btn solid" data-hunt="open-settings">${icon('sliders')}<span>Set what to look for</span></button>` : '<p class="hunt-dim">An owner of the practice sets this.</p>'}</div></div>${rules.html()}`;
+        ${canEdit ? `<button type="button" class="hunt-btn solid" data-hunt="open-settings">${icon('sliders')}<span>Set what to look for</span></button>` : '<p class="hunt-dim">An owner of the practice sets this.</p>'}</div></div>${radar.cards().length ? laneHtml() : ''}${rules.html()}`;
     }
     if (!sourcesOn(S.settings).length && !S.alertFinds.length) {
       return `<p class="hunt-empty"><span>${icon('alert')}<span>No source is switched on. Switch one on in “What to look for”.</span></span></p>${laneHtml()}${rules.html()}`;
@@ -467,6 +474,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
       </header>
       ${flash}${S.panel ? settingsHtml() + readerHtml() : ''}
       ${S.phase === 'idle' ? '' : alertsHtml()}
+      ${S.phase === 'idle' ? '' : radar.html()}
       ${bodyHtml()}
       ${empty ? '' : `<p class="hunt-credit">Tender notices from ${S.settings.sources.gets !== false ? '<a href="https://www.gets.govt.nz/ExternalIndex.htm" target="_blank" rel="noopener noreferrer">GETS</a>, MBIE (Crown copyright, reused under NZGOAL)' : 'the sources switched on'}. A fit is a reading of the notice: read the tender documents before deciding.</p>`}
       <p class="vh" role="status" aria-live="polite">${esc(S.announce)}</p>
@@ -475,6 +483,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
 
   // ---- events (crm.js hands these on; they only act on elements that carry data-hunt) ---------------------------------------------------------
   async function click(ev) {
+    if (await radar.click(ev)) return true;
     if (await rules.click(ev)) return true; // the rules lane's own buttons carry data-rules
     const t = ev.target?.closest?.('[data-hunt]');
     if (!t) return false;
@@ -495,6 +504,7 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
     return false;
   }
   async function submit(ev) {
+    if (await radar.submit(ev)) return true;
     const form = ev.target?.closest?.('form[data-hunt-form]');
     if (!form) return false;
     ev.preventDefault();
@@ -510,7 +520,8 @@ export function createHunt(ctx, { signalFeed = readEarlySignals, enquiries = () 
 
   return {
     html, start, click, submit, look, add, addAlerts, addFiles, loadInbox, notForUs, bringBack, saveSettings, loadSettings,
-    stop() { gone = true; run++; listen(false); rules.stop(); },
+    stop() { gone = true; run++; listen(false); radar.stop(); rules.stop(); },
+    radar,
     rules,
     get state() { return S; },
   };

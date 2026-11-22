@@ -7,6 +7,7 @@
 
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SCHEMA, BUCKET, CLIENT_MODULE, AUTH_STORAGE_KEY } from './config.js';
 import { createGateway, createCloudStore, createTeam, createArtworkPlace, moveProjects, probeShared, NOT_ON } from './cloud.js';
+import { createRadarClient } from './radar-client.js';
 import { SAMPLE_ID } from './model.js';
 import { lookChoiceHtml, isTheme, DEFAULT_THEME } from './theme.js';
 
@@ -378,6 +379,9 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     /** the signed-in person's name, or null when nobody is signed in */
     who: () => (st.phase === 'in' ? st.user.name : null),
     get state() { return { phase: st.phase, shared: st.shared, practice: st.practice, user: st.user, practices: st.practices }; },
+
+    /** the Radar client (radar-client.js) for the signed-in person, or null when signed out or the shared records are off */
+    radar: () => (st.phase === 'in' && gateway && st.user?.id ? createRadarClient({ gateway, userId: st.user.id }) : null),
 
     /** the practice's own artwork place (cloud.js), or null when no practice is in use: artwork.js keeps the practice's artwork through it */
     artworkPlace: () => (st.practice && gateway && store.shared ? createArtworkPlace(gateway, st.practice) : null),
