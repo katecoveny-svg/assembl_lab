@@ -3,9 +3,10 @@ import {
   STAGES, STAGE_KEYS, STATUS, ROLES, DOC_KINDS, stageDef, stageNumber, closingStatement, statusMark, statusWord, newProject, sampleProject, SAMPLE_ID,
   gate, closingApprovals, askForApproval, backToWork, recordApproval, markDone, nextAction, currentStage, allDone, openRfis, hasSiteFacts, hasModel,
   activity, newId, twinLink, twinHandoff, isEdited, sourceLabel, missingSourced, consentRow, taskRow, AUCKLAND, READ_ON,
+  PLAN_RUN_KEY, readPlanRun, runReportDocument, runReportStage, runReportFileName,
 } from './model.js';
 import { createStore, browserBackend, sizeText, sessionHandoff } from './store.js';
-import { describeModel } from './fingerprint.js';
+import { describeModel, modelFingerprint } from './fingerprint.js';
 import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue } from './facts.js';
 
 // [cloud] One store for the whole page. It starts as this browser's store, exactly as before. account.js points it at the
@@ -177,7 +178,7 @@ async function projectsView() {
   return `<div class="wrap">
     <section class="hero"><p class="label">Projects</p><h1>From the first site visit to completion.</h1>
       <p class="lede">One project, seven stages. Each stage shows its tasks, its documents, its tool, and the approval that closes it.</p></section>
-    ${flashHtml()}
+    ${flashHtml()}${incomingHtml(projects)}
     ${projects.length ? `<ul class="plist">${rows}</ul>` : `<div class="empty"><h3>No projects ${esc(W().here)} yet.</h3><p>Create one below, import a project file, or add the sample to look around.</p></div>`}
     <section class="panel" aria-labelledby="newp"><h3 id="newp">New project</h3>
       <form class="f newp" data-form="new-project"><label>Project name<input name="name" required maxlength="120" placeholder="e.g. House on the ridge" /></label>
@@ -190,6 +191,56 @@ async function projectsView() {
 }
 
 const flashHtml = () => (ui.flash ? `<p class="flash" role="status">${esc(ui.flash)}</p>` : '');
+
+// ---- a run report passed across from the 3D page (model.js, readPlanRun): nothing is saved until a person chooses ----------
+function incoming() {
+  let text = null;
+  try { text = globalThis.sessionStorage?.getItem(PLAN_RUN_KEY) ?? null; } catch { return null; }
+  if (!text) return null;
+  try { return readPlanRun(text, modelFingerprint); } catch (err) { return { error: err.message }; }
+}
+function incomingHtml(projects) {
+  const h = incoming();
+  if (!h) return '';
+  if (h.error) return `<section class="panel incoming" aria-labelledby="inh"><h3 id="inh">From the 3D page</h3><p>□ ${esc(h.error)}</p><div class="acts"><button class="link" data-act="run-dismiss">Clear it</button></div></section>`;
+  const opts = projects.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}${p.model?.fingerprint ? ` (model ${esc(p.model.fingerprint)})` : ' (no model yet)'}</option>`).join('');
+  return `<section class="panel incoming" aria-labelledby="inh"><h3 id="inh">From the 3D page: a run report</h3>
+    <p><b>${esc(h.title)}</b> · model version <span class="mono">${esc(h.fingerprint)}</span> · run ${esc(dayTime(h.ranAt))}</p>
+    <p class="small"><b>A pre-check prepared by software for a person to review. It is not a compliance decision or a professional sign-off.</b></p>
+    <p class="small">${esc(h.summary)} ${esc(plural(h.mustCheck, 'thing'))} for a person to check.</p>
+    ${projects.length ? `<form class="f" data-form="run-add"><label class="wide">Add it to<select name="pid">${opts}</select></label><div class="f-act"><button class="btn solid">Add the report</button></div></form>` : ''}
+    <form class="f" data-form="run-new"><label class="wide">Or start a project<input name="name" required maxlength="120" value="${esc(h.title)}" /></label><div class="f-act"><button class="btn">Create a project with it</button><button type="button" class="link" data-act="run-dismiss">Not now</button></div></form>
+    <p class="small">Nothing is saved until you choose. The report becomes a document on the project, with its text file kept ${esc(W().keptOnly) /* [cloud] */}. ${h.plan ? 'The model is attached only if the project has none.' : 'The model was too big to pass across, so only the report came.'} The site point is not in either.</p></section>`;
+}
+/** add the passed-across report to a project: a document with its file, and the model when the project has none */
+async function addRun(pid, h) {
+  const b = await store.loadProject(pid);
+  if (!b) throw new Error('That project is no longer here, so nothing was added.');
+  const p = b.project, stage = runReportStage(b);
+  let said = '';
+  if (h.plan && !p.model?.fingerprint) {
+    const m = describeModel(h.planText, h.name);
+    let keptFile = null;
+    if (!twinLink({ fingerprint: m.fingerprint })?.direct) {
+      try { const meta = await store.putFile({ project_id: pid, owner_kind: 'model', owner_id: pid, name: m.file_name, type: 'application/json', data: h.planText }); keptFile = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at }; } catch (err) { said = ` The model file was not kept: ${err.message}`; }
+    }
+    p.model = { fingerprint: m.fingerprint, drawings: m.drawings, revision: m.revision, file_name: m.file_name, file: keptFile };
+    await store.save('project', p);
+    await log(pid, 'Model attached', `${m.file_name}, revision ${m.revision}, version ${m.fingerprint}, from the 3D page`);
+    said = ` The model is attached (version ${m.fingerprint}).${said}`;
+  } else if (p.model?.fingerprint === h.fingerprint) said = ' The project already has this model version.';
+  else if (p.model?.fingerprint) said = ` The project’s model is version ${p.model.fingerprint}; the report is on version ${h.fingerprint}, so the model was left as it is.`;
+  else said = ' The model did not come with it: attach it from the model page.';
+  const d = runReportDocument(pid, stage, h);
+  try {
+    const meta = await store.putFile({ project_id: pid, owner_kind: 'document', owner_id: d.id, name: runReportFileName(h), type: 'text/plain', data: h.text });
+    d.file = { id: meta.id, name: meta.name, type: meta.type, size: meta.size, kept_at: meta.kept_at };
+  } catch (err) { said += ` The report’s file was not kept (${err.message}); the document records it.`; }
+  await store.save('document', d);
+  await log(pid, 'Run report added', `${h.title}, model version ${h.fingerprint}`);
+  try { globalThis.sessionStorage?.removeItem(PLAN_RUN_KEY); } catch { /* it goes when the tab closes */ }
+  return { stage, flash: `Added the run report to ${stageDef(stage).label} as a document.${said}` };
+}
 
 // ---- the project frame: header and stage rail --------------------------------------------------------------------------
 function frame(b, r, inner) {
@@ -498,6 +549,20 @@ async function onSubmit(e) {
   e.preventDefault();
   const r = route(), d = formData(form), what = form.dataset.form;
   try {
+    if (what === 'run-add' || what === 'run-new') {
+      const h = incoming();
+      if (!h || h.error) return redraw(h?.error ?? 'The report from the 3D page is no longer here: send it again from there.');
+      let pid = d.pid;
+      if (what === 'run-new') {
+        const b = newProject({ name: d.name });
+        b.activity.push(activity(b.project.id, me, 'Project created', b.project.name));
+        pid = (await store.saveProject(b)) || b.project.id; // [cloud] the id the store keeps it under
+      }
+      const got = await addRun(pid, h);
+      ui.flash = got.flash;
+      location.hash = href(pid, 's', got.stage, 'documents');
+      return;
+    }
     if (what === 'new-project') {
       const b = newProject({ name: d.name, client: d.client });
       b.activity.push(activity(b.project.id, me, 'Project created', b.project.name));
@@ -582,6 +647,7 @@ async function onClick(e) {
       await store.removeProject(el.dataset.id);
       return redraw(`Removed “${p?.name ?? 'project'}” ${W(p).from /* [cloud] */}.`);
     }
+    if (act === 'run-dismiss') { try { globalThis.sessionStorage?.removeItem(PLAN_RUN_KEY); } catch { /* fine */ } return redraw('The report from the 3D page was not added. Send it again from there when you want it.'); }
     if (act === 'sample') { await store.saveProject(sampleProject()); return redraw('The sample project is back.'); }
     if (act === 'export') { ui.exporting = !ui.exporting; ui.focus = ui.exporting ? '.exportbox .btn' : null; return redraw(''); }
     if (act === 'export-cancel') { ui.exporting = false; ui.focus = '[data-act="export"]'; return redraw(''); }

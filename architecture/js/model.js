@@ -243,6 +243,48 @@ export function twinHandoff(planText, name) {
   return { key: TWIN_KEEP_KEY, value: JSON.stringify({ plan, name: String(name || 'Plan model') }), href: TWIN_HANDOFF_HREF };
 }
 
+// ---- a run report handed over from the 3D page ----------------------------------------------------------------------------
+// The 3D page's "Send to a project" (plan-studio/twins/src/twin/planRunUI.ts, sendToProject) writes one entry in its tab's
+// session storage under PLAN_RUN_KEY and opens this page in a new tab, which starts with a copy of that storage. Nothing
+// is saved here until a person chooses the project. The report is added as a document with its text file kept; the model
+// is attached only when the project has none, so a model already on the project is never replaced by a hand-over.
+// tests/plan-run/handoff.test.mjs checks the key and the shape against the 3D page's source.
+export const PLAN_RUN_KEY = 'assembl-plan-run-handoff';
+export const PLAN_RUN_TYPE = 'assembl.plan-run-handoff.v1';
+export const RUN_REPORT_TYPE = 'assembl.plan-run.v1';
+export const RUN_STANDING = 'A pre-check prepared by software for a person to review. It is not a compliance decision or a professional sign-off.';
+/** Read the hand-over entry. Throws a plain-worded Error when it is not one, or when the model and the report differ. */
+export function readPlanRun(text, fingerprintOf) {
+  let h;
+  try { h = typeof text === 'string' ? JSON.parse(text) : text; } catch { throw new Error('What the 3D page passed across is not readable, so nothing was added.'); }
+  if (!h || h.type !== PLAN_RUN_TYPE || !h.report || h.report.type !== RUN_REPORT_TYPE) throw new Error('What the 3D page passed across is not a run report, so nothing was added.');
+  const fp = String(h.report.model?.fingerprint ?? '');
+  if (!fp || fp !== String(h.fingerprint ?? '')) throw new Error('The run report does not say which model version it is for, so nothing was added.');
+  const plan = h.plan && typeof h.plan === 'object' && Array.isArray(h.plan.buildings) ? h.plan : null;
+  if (plan && fingerprintOf && fingerprintOf(plan) !== fp) throw new Error(`The model passed across is not the version the report was run on (${fp}), so nothing was added.`);
+  const steps = Array.isArray(h.report.steps) ? h.report.steps : [];
+  const count = (s) => steps.filter((x) => x.status === s).length;
+  const code = steps.find((x) => x.id === 'code');
+  return {
+    fingerprint: fp, name: clean(h.name) || 'plan-model.json', title: clean(h.report.model?.title) || 'Plan model', revision: clean(h.report.model?.revision) || 'not stated',
+    drawings: clean(h.report.model?.drawings) || 'not stated', ranAt: String(h.report.ranAt ?? ''), plan, planText: plan ? JSON.stringify(plan) : null, text: String(h.text ?? ''), report: h.report,
+    summary: `${steps.length} steps: ${count('done')} done, ${count('needs a person')} need a person, ${count('not run')} not run, ${count('failed')} failed.${code ? ` Pre-check: ${clean(code.summary)}` : ''}`,
+    mustCheck: Array.isArray(h.report.personMustCheck) ? h.report.personMustCheck.length : 0,
+  };
+}
+/** the stage a run report sits in: the design stage the project is in, or Concept design */
+export function runReportStage(b) {
+  const cur = (b?.stages ?? []).find((s) => s.status === 'in_progress' || s.status === 'awaiting_approval');
+  return cur && (cur.key === 'concept' || cur.key === 'developed') ? cur.key : 'concept';
+}
+/** the document row for a run report (its file is kept apart, through the storage module) */
+export function runReportDocument(pid, stage, h, now) {
+  const at = nowIso(now);
+  return { id: newId('d'), project_id: pid, stage, title: `Plan set check: ${h.title}`, kind: 'Report', version: h.fingerprint, date: (h.ranAt || at).slice(0, 10),
+    source: `assembl plan drop tool, run report (${RUN_REPORT_TYPE}), model version ${h.fingerprint}`, note: `${RUN_STANDING} ${h.summary}`.slice(0, 400) };
+}
+export const runReportFileName = (h) => `plan-run-${h.fingerprint}-${(h.ranAt || '').slice(0, 10) || 'undated'}.txt`;
+
 // ---- ids and small helpers --------------------------------------------------------------------------------------------
 export function newId(prefix = '') {
   const u = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;

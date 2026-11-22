@@ -5,6 +5,9 @@ import { openPdf, planModel, readImage, readSheet, sheetThumb, surveySheets, toB
 import { defaultRoles, fallPlane, guessHigh, interpretElevations, readElevSheet, readSiteSheet, registerSite, type ElevRead, type ElevResult, type Role, type SiteRead, type SiteResult } from './planSet';
 import { applyNameEdits } from './roomNames';
 import type { RoomSpec } from './homes';
+import { modelFingerprint } from './approvals';
+import { READ_KEY, AUTO_KEY } from './planRunUI';
+import type { ReadRecord } from './planRun';
 
 // Who the AI plan reader really is today: the lab's endpoint says which provider answers first.
 let readerNameP: Promise<string> | null = null;
@@ -90,7 +93,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         <label id="trDropL" hidden>Ground falls <input id="trDrop" type="number" value="0" step="0.1" min="0" max="12"> m under the high side</label>
       </div>
       <div class="row wrap"><button class="pill solid" id="trBuild" disabled>Build the twin</button></div>
-      <p class="small tr-truth">Sizes come from the written dimensions where they agree with the drawing. Positions read by AI are ± about 150 mm. Heights, roof, finishes and furniture are assumed or proposed until you change them.</p>`;
+      <p class="small tr-truth">Building it runs the full check straight after: drawings, room names, ground, site facts and the code pre-check, each with what a person must check. Sizes come from the written dimensions where they agree with the drawing. Positions read by AI are ± about 150 mm. Heights, roof, finishes and furniture are assumed or proposed until you change them.</p>`;
     const prev = [...host.children] as HTMLElement[];
     prev.forEach((c) => (c.hidden = true));
     host.append(card);
@@ -161,6 +164,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       $('trExtra').innerHTML = lines.length ? `<p class="small"><b>From the other sheets</b></p><ul class="small">${lines.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
     };
     let highFromPlan = true;
+    let readT0 = 0, readSecs: number | null = null;
 
     const render = () => {
       const box = $('trPlans');
@@ -236,6 +240,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       $('trOpts').hidden = true;
       ($('trBuild') as HTMLButtonElement).disabled = true;
       const t0 = performance.now();
+      readT0 = t0;
       let msg = '';
       const tick = setInterval(() => my === token && status(`${msg} ${Math.round((performance.now() - t0) / 1000)} s`), 1000);
       const progress = (m: string) => { msg = m; if (my === token) status(m); };
@@ -257,6 +262,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         include = got.map(() => true);
         if (extrasP) { progress('Reading the other sheets…'); extraNotes = await extrasP; }
         if (my !== token) return;
+        readSecs = Math.round((performance.now() - readT0) / 100) / 10;
         status(got.length > 1 ? `${got.length} plans read from sheet ${page}. Untick any you don’t want, check them, then build.` : elevReads.length || siteRead ? 'Set read. Check it against your drawings, then build.' : 'Plan read. Check it against your drawing, then build.');
         render();
         if (!useAi && doc && extrasWanted().length) {
@@ -274,7 +280,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       if (reads.length && reads[0].src === 'drawing') {
         // the floor plan is already measured: read only the rest of the set
         const my = ++token; $('trAsk').hidden = true;
-        void (async () => { try { extraNotes = await readExtras((m) => my === token && status(m)); if (my === token) { status('Set read. Check it against your drawings, then build.'); render(); } } catch (e) { status(`Couldn’t read it: ${(e as Error).message}`); } })();
+        void (async () => { const t1 = performance.now(); try { extraNotes = await readExtras((m) => my === token && status(m)); readSecs = Math.round(((readSecs ?? 0) * 1000 + performance.now() - t1) / 100) / 10; if (my === token) { status('Set read. Check it against your drawings, then build.'); render(); } } catch (e) { status(`Couldn’t read it: ${(e as Error).message}`); } })();
       } else void run(true);
     });
     $('trBuild').addEventListener('click', () => {
@@ -293,6 +299,26 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       if (site?.ok && site.features.length) site2.features = site.features;
       if (Object.keys(site2).length) pm.site = site2;
       const sheetsUsed = [page, ...extrasWanted().map(([p]) => p)].sort((a, b) => a - b);
+      // what was read, how and how sure, for the full check that runs once the model is built (this tab only: sheet titles
+      // and the reader's words stay out of the plan model and any share link)
+      try {
+        const r0 = reads[0], from = (v: number, read: number | null | undefined, dflt: number) => (read != null && Math.abs(v - read) < 0.006 ? 'elevations' as const : Math.abs(v - dflt) < 0.006 ? 'assumed' as const : 'set by a person' as const);
+        const rec: ReadRecord = {
+          v: 1, fingerprint: modelFingerprint(pm), at: new Date().toISOString(), file: { kind: isPdf ? 'pdf' : 'image', pages: doc?.numPages ?? 1 }, seconds: readSecs,
+          plan: { page: doc ? page : null, title: sheets.find((x) => x.page === page)?.title ?? '', reader: r0.src === 'drawing' ? 'linework' : 'ai', ...(r0.model ? { model: r0.model } : {}), ...(r0.rev ? { rev: r0.rev } : {}), scale: r0.scaleNote, plans: chosen.length },
+          sheets: extrasWanted().map(([p, role]) => {
+            const got = role === 'site' ? (siteRead && (siteRead as { page: number }).page === p ? siteRead : null) : elevReads.find((e) => e.page === p) ?? null;
+            const why = extraNotes.find((n) => n.startsWith(`Sheet ${p}:`));
+            return { page: p, title: sheets.find((x) => x.page === p)?.title ?? '', role: role as 'site' | 'elevation', ...(got ? { model: (got as { model: string }).model } : {}), ok: !!got, ...(got ? {} : { note: why ?? 'the AI plan reader was not asked to read it' }) };
+          }),
+          skipped: doc ? Math.max(0, sheets.length - 1 - extrasWanted().length) : 0,
+          heights: { plate: { value: o.plate, from: from(o.plate, elev?.plate, 2.4) }, floor: { value: o.floor, from: from(o.floor, elev?.hUp, 0.6) }, roof: { type: o.roof ?? 'gable', pitch: o.pitch, from: roofSrc === 'ai' && elev?.roof === o.roof ? 'elevations' : o.roof === 'gable' && Math.abs(o.pitch - 15) < 0.01 ? 'assumed' : 'set by a person' } },
+          site: { read: !!site?.ok, kinds: (site?.ok ? site.features : []).map((f) => String((f as { kind: string }).kind)) },
+          notes: [...(site?.report ?? []), ...(elev?.report ?? [])].slice(0, 6),
+        };
+        sessionStorage.setItem(READ_KEY, JSON.stringify(rec));
+        sessionStorage.setItem(AUTO_KEY, rec.fingerprint);
+      } catch { /* no room: the full check still runs from the panel, without the read details */ }
       finish({ plan: pm, name: `${title} (traced${sheetsUsed.length > 1 ? ` from sheets ${sheetsUsed.join(', ')}` : ''})` });
     });
 
