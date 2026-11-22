@@ -97,8 +97,9 @@ The owner note for the page is `docs/architecture/site-ground.md`. The tests are
 4. **BRANZ Maps.** No open service and no terms that allow automated use. A written yes from BRANZ, or an architect reading the zones off BRANZ Maps by hand, are the two routes.
 5. **LINZ parcels.** CC BY 4.0, which is fine. Plan Studio must show "Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0" and Auckland Council's credit wherever the facts appear. Each fact carries its own credit line to copy.
 
-6. **DigitalNZ key (signals).** DigitalNZ lets anyone read its API without a key for non-commercial use only. The Gazette signals need a free key under its commercial terms, added to the Pages project as the secret `DIGITALNZ_API_KEY`. Nothing has been signed up for.
+6. **DigitalNZ key (signals).** DigitalNZ lets anyone read its API without a key for non-commercial use only. The Gazette signals need a free key under its commercial terms, added to the Pages project as the secret `DIGITALNZ_API_KEY`. Kate added the key on 23 Nov 2026; the signals feed read Gazette notices through it the same day.
 7. **Beehive (signals).** Crown copyright with free reproduction and acknowledgement, not a named Creative Commons licence. The lab keeps only titles, dates and links. Its bot protection challenges Cloudflare's servers some of the time; this is not worked around.
+8. **Legislation key (rules).** The NZ Legislation API (Parliamentary Counsel Office, v0 beta) needs a key, sent only as the `X-Api-Key` header from the secret `LEGISLATION_API_KEY` (Production and Preview). Kate added it on 23 Nov 2026. Limits: 10,000 requests a key a day and 2,000 an IP address in five minutes.
 
 ## Things to know
 
