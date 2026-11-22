@@ -604,6 +604,10 @@ export const projectPlan: Project = {
       model.traverse((o) => {
         if (o.name === 'fit_out') fitouts.push(o);
       });
+      // picks from the ops page's Library (?picks=<project id>): placed where they fit, the rest on a strip to drag in
+      if (new URLSearchParams(location.search).has('picks')) {
+        try { const { applyPicks } = await import('./library/picks'); await applyPicks(app as never, model, undefined, P); } catch (e) { console.warn('the picks could not be placed', e); }
+      }
       // clear glass, a timber soffit, and the rooms lit by day as well so the interior reads from outside
       const ed = !P.asBuilt; // the editorial look, on a flat pad or on surveyed ground; a finished building model keeps its own
       if (ed) applyEditorial(model);
@@ -824,6 +828,7 @@ export const projectPlan: Project = {
     // the Real ground card rests the 3D view while LINZ's files arrive, and gives it back as it found it
     let pausedBefore = false;
     const groundPause = (on: boolean) => { if (on) { pausedBefore = app.paused; app.paused = true; } else app.paused = pausedBefore; };
+    if (input.kind === 'plan') void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },

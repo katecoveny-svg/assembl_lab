@@ -1,0 +1,175 @@
+/* Found work (js/hunt.js), the strip of cards above the pipeline board on the Clients screen. Styled only with the page's own
+   custom properties, each with a fallback (--plum ink, --paper ground, --rose soft fill, --line, --hair, --go, --needs, --blue,
+   --panel, --field, --mute, --sans, --mono), so the default look and the sketch look both work with no rule of their own.
+   Colour never carries a meaning alone: a ring that is nearly out also says the days, a fit meter also says the word.
+   Phone first: the cards are one swipeable row, 84% wide at 390px; from 900px they sit in a row that scrolls sideways.
+   Targets are 44px or more. */
+
+.hunt {
+  --h-ink: var(--plum, #654A4E);
+  --h-ground: var(--paper, #FFFDFB);
+  --h-soft: var(--rose, #E3D0D2);
+  --h-line: var(--line, rgba(101, 74, 78, .28));
+  --h-hair: var(--hair, rgba(101, 74, 78, .14));
+  --h-go: var(--go, #2F6B4F);
+  --h-needs: var(--needs, #A4541A);
+  --h-accent: var(--blue, #654A4E);
+  --h-panel: var(--panel, #FFFFFF);
+  --h-field: var(--field, #FFFFFF);
+  --h-mute: var(--mute, #765F63);
+  --h-sans: var(--sans, system-ui, sans-serif);
+  --h-mono: var(--mono, ui-monospace, monospace);
+  display: grid; gap: 14px; min-width: 0; padding: 16px 0 6px; border-top: 1px solid var(--h-line);
+  color: var(--h-ink); font-family: var(--h-sans);
+}
+.hunt *, .hunt *::before, .hunt *::after { box-sizing: border-box; }
+.hunt :focus-visible { outline: 2px solid var(--h-ink); outline-offset: 2px; }
+.hunt .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hunt h2, .hunt p, .hunt ul, .hunt ol { margin: 0; padding: 0; }
+.hunt ul, .hunt ol { list-style: none; }
+.hunt a { color: inherit; }
+.hunt-i { flex: none; display: block; }
+.hunt-i-s { width: 15px; height: 15px; }
+
+/* ---- the header ----------------------------------------------------------------------------------------------------------- */
+.hunt-head { display: grid; gap: 10px; }
+.hunt-h { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 500; letter-spacing: -.02em; line-height: 1.2; color: var(--h-ink); }
+.hunt-sub { margin-top: 4px; font-size: 14.5px; line-height: 1.45; max-width: 62ch; }
+.hunt-head-a { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.hunt-looked { display: inline-flex; align-items: center; gap: 6px; font: 500 12.5px/1.3 var(--h-mono); color: var(--h-mute); margin-right: 4px; }
+.hunt-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border: 1px solid var(--h-line); background: var(--h-ground); font: 500 12px/1 var(--h-mono); color: var(--h-ink); }
+@media (min-width: 900px) {
+  .hunt-head { grid-template-columns: 1fr auto; align-items: end; gap: 10px 24px; }
+  .hunt-head-a { justify-content: flex-end; }
+}
+
+.hunt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 44px; padding: 0 14px; border: 1px solid var(--h-ink); background: var(--h-ground); color: var(--h-ink); font: 500 14.5px/1 var(--h-sans); cursor: pointer; text-decoration: none; }
+.hunt-btn:hover { background: var(--h-soft); }
+.hunt-btn.solid { background: var(--h-ink); color: var(--h-ground); }
+.hunt-btn.solid:hover { box-shadow: inset 0 0 0 2px var(--h-soft); background: var(--h-ink); }
+.hunt-btn[disabled] { opacity: .55; cursor: default; }
+.hunt-link { min-height: 44px; padding: 0 8px; background: none; border: 0; color: var(--h-ink); font: 500 14px var(--h-sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.hunt-acts { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+
+.hunt-flash { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border: 1px solid var(--h-ink); background: var(--h-soft); font: 500 13px/1.5 var(--h-mono); }
+.hunt-flash.is-error { border-color: var(--h-needs); color: var(--h-needs); background: var(--h-ground); }
+.hunt-flash .hunt-i { margin-top: 1px; }
+.hunt-dim { font-size: 14px; line-height: 1.45; color: var(--h-mute); }
+.hunt-credit { font: 500 12px/1.5 var(--h-mono); color: var(--h-mute); }
+.hunt-note { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; }
+.hunt-note .hunt-i { margin-top: 2px; }
+
+/* ---- the cards: one row that scrolls sideways, each card snaps ---------------------------------------------------------------- */
+.hunt-cards { display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 2px 2px 12px; margin: 0 -2px; scrollbar-width: thin; scrollbar-color: var(--h-line) transparent; }
+.hunt-card { flex: 0 0 min(84%, 300px); scroll-snap-align: start; display: grid; align-content: start; gap: 10px; padding: 12px 12px 10px; border: 1px solid var(--h-line); background: var(--h-panel); min-width: 0; position: relative; }
+.hunt-card.is-added { border-color: var(--h-go); }
+@media (min-width: 900px) { .hunt-card { flex-basis: 292px; } }
+
+.hunt-top { display: flex; align-items: center; gap: 10px; min-height: 48px; }
+.hunt-av { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: var(--h-soft); border: 1px solid var(--h-line); color: var(--h-ink); font: 500 13px/1 var(--h-sans); letter-spacing: .02em; }
+.hunt-buyer { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.25; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hunt-title { display: inline-flex; align-items: flex-start; gap: 6px; font-weight: 500; font-size: 16.5px; line-height: 1.22; letter-spacing: -.01em; text-decoration: none; overflow-wrap: anywhere; min-height: 44px; padding: 2px 0; }
+.hunt-title > span:first-child { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hunt-title .hunt-i { margin-top: 3px; opacity: .7; }
+.hunt-title:hover > span:first-child { text-decoration: underline; text-underline-offset: 3px; }
+
+.hunt-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.hunt-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 2px 8px; border: 1px solid var(--h-line); background: var(--h-ground); font: 500 12px/1.2 var(--h-mono); max-width: 100%; }
+.hunt-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hunt-chip.is-src { border-color: var(--h-hair); background: transparent; color: var(--h-mute); }
+
+/* the countdown ring: full at 30 days or more, draining to nothing on the day */
+.hunt-ring { position: relative; flex: none; width: 48px; height: 48px; display: grid; place-items: center; color: var(--h-ink); }
+.hunt-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hunt-ring circle { fill: none; stroke-width: 3.2; }
+.hunt-ring .track { stroke: var(--h-hair); }
+.hunt-ring .track.dashed { stroke: var(--h-line); stroke-dasharray: 3 4; }
+.hunt-ring .arc { stroke: var(--h-ink); stroke-linecap: butt; }
+.hunt-ring.is-near .arc { stroke: var(--h-needs); }
+.hunt-ring.is-soon .arc { stroke: var(--h-needs); }
+.hunt-ring.is-soon .track { stroke: var(--h-needs); opacity: .3; }
+.hunt-ring-n { position: relative; font: 500 15px/1 var(--h-sans); letter-spacing: -.02em; margin-top: -5px; }
+.hunt-ring-u { position: absolute; left: 0; right: 0; bottom: 9px; text-align: center; font: 500 8.5px/1 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--h-mute); }
+.hunt-ring.is-none .hunt-ring-n { margin-top: 0; color: var(--h-mute); }
+
+/* the fit meter: five notches, and the word beside it */
+.hunt-fit { display: inline-flex; align-items: center; gap: 10px; }
+.hunt-meter { display: inline-flex; gap: 3px; }
+.hunt-meter i { display: block; width: 18px; height: 8px; border: 1px solid var(--h-ink); background: transparent; }
+.hunt-meter i.on { background: var(--h-ink); }
+.hunt-fit-w { font: 500 12.5px/1.2 var(--h-mono); }
+
+.hunt-why summary { min-height: 32px; display: flex; align-items: center; cursor: pointer; font: 500 13px var(--h-sans); text-decoration: underline; text-underline-offset: 3px; }
+.hunt-why ul { display: grid; gap: 4px; padding: 4px 0 4px 16px; font-size: 13.5px; line-height: 1.4; }
+.hunt-why li { list-style: disc; }
+.hunt-why li::first-letter { text-transform: uppercase; }
+
+.hunt-card .hunt-acts { padding-top: 6px; border-top: 1px solid var(--h-hair); margin-top: 2px; }
+.hunt-added { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 500; font-size: 14.5px; color: var(--h-go); }
+
+/* ---- nothing yet: ghost cards, and what to do ---------------------------------------------------------------------------------- */
+.hunt-card.is-ghost { border-style: dashed; background: transparent; gap: 12px; pointer-events: none; }
+.hunt-bar { display: block; height: 11px; background: var(--h-hair); }
+.hunt-bar.w60 { width: 60%; } .hunt-bar.w70 { width: 70%; } .hunt-bar.w90 { width: 90%; }
+.hunt-pillbar { display: inline-block; width: 64px; height: 22px; border: 1px solid var(--h-hair); }
+.hunt-card.is-ghost .hunt-av { background: transparent; border-style: dashed; }
+.hunt-card.is-ghost .hunt-meter i { border-color: var(--h-line); }
+.hunt-cards.is-loading .hunt-card { animation: hunt-pulse 1.6s ease-in-out infinite; }
+@keyframes hunt-pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .hunt-cards.is-loading .hunt-card { animation: none; } }
+.hunt-setup { position: relative; display: grid; }
+.hunt-setup .hunt-cards { opacity: .55; overflow: hidden; pointer-events: none; }
+.hunt-setup-t { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); margin: 0 auto; width: min(100% - 24px, 480px); display: grid; gap: 10px; justify-items: start; padding: 16px 18px; border: 1px solid var(--h-ink); background: var(--h-ground); }
+.hunt-setup-t p { font-size: 14.5px; line-height: 1.45; }
+.hunt-empty-h { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 500; letter-spacing: -.01em; }
+.hunt-empty { padding: 14px 16px; border: 1px dashed var(--h-line); font-size: 15px; line-height: 1.4; }
+.hunt-empty > span { display: flex; gap: 10px; align-items: center; }
+@media (max-width: 899px) {
+  .hunt-setup { display: grid; gap: 12px; }
+  .hunt-setup .hunt-cards { display: none; }
+  .hunt-setup-t { position: static; transform: none; width: auto; }
+}
+
+.hunt-hidden { display: grid; gap: 4px; justify-items: start; }
+.hunt-hidden ul { display: grid; gap: 2px; width: 100%; }
+.hunt-hidden li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 0; border-bottom: 1px solid var(--h-hair); font-size: 14px; }
+.hunt-hidden li > span { min-width: 0; overflow-wrap: anywhere; }
+
+/* ---- what to look for ------------------------------------------------------------------------------------------------------------- */
+.hunt-panel { display: grid; gap: 14px; padding: 16px; border: 1px solid var(--h-ink); background: var(--h-panel); grid-template-columns: 1fr; }
+.hunt-f { display: grid; gap: 6px; min-width: 0; border: 0; padding: 0; margin: 0; }
+.hunt-f > span, .hunt-f > legend, .hunt-lab { font: 500 12px/1.3 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; padding: 0; }
+.hunt-f small { font-size: 13px; line-height: 1.4; color: var(--h-mute); text-transform: none; letter-spacing: 0; font-family: var(--h-sans); font-weight: 400; }
+.hunt-f input[type="text"], .hunt-f input:not([type]), .hunt-range input { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--h-ink); background: var(--h-field); color: var(--h-ink); font: 400 16px var(--h-sans); }
+.hunt-range { display: flex; align-items: center; gap: 10px; }
+.hunt-range label { flex: 1; min-width: 0; }
+.hunt-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.hunt-opt { position: relative; display: inline-flex; }
+.hunt-opt input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.hunt-opt > span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--h-line); background: var(--h-ground); font: 500 14px/1.2 var(--h-sans); }
+.hunt-opt input:checked + span { background: var(--h-ink); color: var(--h-ground); border-color: var(--h-ink); }
+.hunt-opt input:focus-visible + span { outline: 2px solid var(--h-ink); outline-offset: 2px; }
+.hunt-opt input:disabled + span { opacity: .6; }
+.hunt-opt.wide { display: flex; }
+.hunt-opt.wide > span { display: block; padding: 10px 14px; font: 400 14px/1.45 var(--h-sans); letter-spacing: 0; text-transform: none; width: 100%; }
+.hunt-opt.wide strong { font-weight: 600; margin-right: 4px; }
+.hunt-f { align-content: start; }
+.hunt-opt.wide input:checked + span { background: var(--h-soft); color: var(--h-ink); border-color: var(--h-ink); }
+.hunt-opt.wide a { white-space: nowrap; }
+@media (min-width: 900px) {
+  .hunt-panel { grid-template-columns: 1fr 1fr; }
+  .hunt-f.wide, .hunt-panel .hunt-note, .hunt-panel .hunt-acts { grid-column: 1 / -1; }
+}
+
+/* ---- the kaupapa Māori and Indigenous lens: a plain text badge and one filter chip, no cultural imagery ------------------------------ */
+.hunt-kp { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 2px 8px; border: 1px solid var(--h-ink); background: var(--h-soft); color: var(--h-ink); font: 600 12px/1.2 var(--h-sans); letter-spacing: 0; }
+.hunt-kp .hunt-i { width: 15px; height: 15px; }
+.hunt-kp-words { list-style: none !important; margin-left: -16px; }
+.hunt-kp-words b { font-weight: 600; }
+.hunt-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.hunt-filters small { flex: 1 1 260px; font-size: 13px; line-height: 1.4; color: var(--h-mute); max-width: 62ch; }
+.hunt-filter { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; min-width: 44px; padding: 0 14px; border: 1px solid var(--h-line); background: var(--h-ground); color: var(--h-ink); font: 500 14px/1.2 var(--h-sans); cursor: pointer; }
+.hunt-filter:hover { background: var(--h-soft); }
+.hunt-filter[aria-pressed="true"] { background: var(--h-ink); border-color: var(--h-ink); color: var(--h-ground); }
+.hunt-filter[aria-pressed="true"] .hunt-count { background: var(--h-ground); color: var(--h-ink); }
+.hunt-opt.wide .hunt-opt-t { display: block; margin: 0 0 3px; }
