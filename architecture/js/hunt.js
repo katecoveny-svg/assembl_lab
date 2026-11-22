@@ -225,7 +225,7 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
       <fieldset class="hunt-f wide"><legend>Sectors</legend><div class="hunt-opts">${SECTORS.map(([k, l]) => chip('sectors', k, l, h.sectors.includes(k))).join('')}</div></fieldset>
       <fieldset class="hunt-f wide"><legend>Regions <small>(none ticked means anywhere)</small></legend><div class="hunt-opts">${REGIONS.map((r) => chip('regions', r, r, h.regions.includes(r))).join('')}</div></fieldset>
       <div class="hunt-f"><span class="hunt-lab">Usual value, NZD</span><div class="hunt-range"><label><span class="vh">From</span><input name="min" inputmode="numeric" placeholder="from 50000" value="${h.min ?? ''}" autocomplete="off"${off}></label><span aria-hidden="true">to</span><label><span class="vh">To</span><input name="max" inputmode="numeric" placeholder="to 2000000" value="${h.max ?? ''}" autocomplete="off"${off}></label></div><small>Used only when a notice states its own value, which most do not.</small></div>
-      <fieldset class="hunt-f"><legend>Where to look</legend>${SOURCES.map((s) => `<label class="hunt-opt wide"><input type="checkbox" name="sources" value="${esc(s.id)}"${h.sources[s.id] !== false ? ' checked' : ''}${off}><span><strong>${esc(s.name)}</strong> ${esc(s.says)} <a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.long)}</a></span></label>`).join('')}</fieldset>
+      <fieldset class="hunt-f"><legend>Where to look</legend>${SOURCES.map((s) => `<label class="hunt-opt wide"><input type="checkbox" name="sources" value="${esc(s.id)}"${h.sources[s.id] !== false ? ' checked' : ''}${off}><span><strong>${esc(s.name)}</strong> ${esc(s.says)}</span></label>`).join('')}</fieldset>
       <p class="hunt-note">${icon('send')}<span>${canEdit ? 'Nothing is looked up until you have set a word or a sector.' : 'Only an owner can change this.'} ${who}</span></p>
       <div class="hunt-acts">${canEdit ? `<button type="submit" class="hunt-btn solid">${icon('check')}<span>Save and look</span></button>` : ''}<button type="button" class="hunt-btn" data-hunt="close-settings">${canEdit ? 'Cancel' : 'Close'}</button></div>
     </form>`;
@@ -265,8 +265,8 @@ export function createHunt(ctx, { enquiries = () => [], readOnly = false, redraw
         <div class="hunt-head-t"><h2 id="hunt-h" class="hunt-h">${icon('search')}<span>Found work</span>${signals().length && !empty ? `<span class="hunt-count">${visible().length}<span class="vh"> findings</span></span>` : ''}</h2>
           <p class="hunt-sub">Public tender notices that look like work for the practice. Add the good ones to the pipeline. Nothing is contacted or sent.</p></div>
         <div class="hunt-head-a">${lookedAt() ? `<p class="hunt-looked">${icon('clock', 'hunt-i-s')}<span>${esc(lookedAt())}</span></p>` : ''}
-          ${empty ? '' : `<button type="button" class="hunt-btn" data-hunt="look" data-force="1"${S.phase === 'loading' ? ' disabled' : ''}>${icon('refresh')}<span>Look again</span></button>`}
-          <button type="button" class="hunt-btn" data-hunt="open-settings" aria-expanded="${S.panel}">${icon('sliders')}<span>What to look for</span>${kw ? `<span class="hunt-count">${kw}</span>` : ''}</button></div>
+          ${empty || S.phase === 'error' ? '' : `<button type="button" class="hunt-btn" data-hunt="look" data-force="1"${S.phase === 'loading' ? ' disabled' : ''}>${icon('refresh')}<span>Look again</span></button>`}
+          ${empty && canEdit && !S.panel ? '' : `<button type="button" class="hunt-btn" data-hunt="open-settings" aria-expanded="${S.panel}">${icon('sliders')}<span>What to look for</span>${kw ? `<span class="hunt-count">${kw}</span>` : ''}</button>`}</div>
       </header>
       ${flash}${S.panel ? settingsHtml() : ''}
       ${bodyHtml()}

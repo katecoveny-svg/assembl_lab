@@ -151,7 +151,9 @@
 .hunt-opt input:focus-visible + span { outline: 2px solid var(--h-ink); outline-offset: 2px; }
 .hunt-opt input:disabled + span { opacity: .6; }
 .hunt-opt.wide { display: flex; }
-.hunt-opt.wide > span { display: block; padding: 10px 14px; font-weight: 400; line-height: 1.45; width: 100%; }
+.hunt-opt.wide > span { display: block; padding: 10px 14px; font: 400 14px/1.45 var(--h-sans); letter-spacing: 0; text-transform: none; width: 100%; }
+.hunt-opt.wide strong { font-weight: 600; margin-right: 4px; }
+.hunt-f { align-content: start; }
 .hunt-opt.wide input:checked + span { background: var(--h-soft); color: var(--h-ink); border-color: var(--h-ink); }
 .hunt-opt.wide a { white-space: nowrap; }
 @media (min-width: 900px) {
