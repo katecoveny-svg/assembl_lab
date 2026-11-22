@@ -55,14 +55,14 @@ test('migrations apply, then apply a second time without error or change', async
   await applyAll();
   const second = await snapshot();
   assert.deepEqual(second, first);
-  assert.equal(first.tables, 12);
+  assert.equal(first.tables, 15); // 12 at first; checklist_item, invitation and file were added later
   assert.ok(first.policies >= 40);
 });
 
 test('row level security is switched on for every table in arch', async () => {
   const r = await db.query(`select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace
                             where n.nspname='arch' and c.relkind='r'`);
-  assert.equal(r.rows.length, 12);
+  assert.equal(r.rows.length, 15);
   for (const row of r.rows) assert.equal(row.relrowsecurity, true, row.relname);
 });
 

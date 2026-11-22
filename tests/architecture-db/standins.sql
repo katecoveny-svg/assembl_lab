@@ -16,3 +16,43 @@ end $$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
 grant select on auth.users to service_role;
+
+-- ---- added with the team, invitation and file migrations ----------------------------------------------------------
+-- The whole sign-in token, as Supabase hands it to the database.
+create or replace function auth.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+$$;
+grant execute on function auth.jwt() to anon, authenticated, service_role;
+
+-- The columns of Supabase's own tables that the arch functions read. Not the full tables.
+alter table auth.users add column if not exists raw_user_meta_data jsonb;
+create table if not exists auth.identities (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  provider      text not null,
+  identity_data jsonb not null default '{}'::jsonb
+);
+
+-- The minimum of Supabase Storage that the access rules need: buckets and objects, with row level security on
+-- and table grants to the API roles, as Supabase ships them. The Storage server itself is not here.
+create schema if not exists storage;
+create table if not exists storage.buckets (
+  id              text primary key,
+  name            text not null,
+  public          boolean default false,
+  file_size_limit bigint,
+  created_at      timestamptz default now()
+);
+create table if not exists storage.objects (
+  id         uuid primary key default gen_random_uuid(),
+  bucket_id  text references storage.buckets(id),
+  name       text,
+  owner_id   text,
+  metadata   jsonb,
+  created_at timestamptz default now(),
+  unique (bucket_id, name)
+);
+alter table storage.buckets enable row level security;
+alter table storage.objects enable row level security;
+grant usage on schema storage to anon, authenticated, service_role;
+grant all on storage.buckets, storage.objects to anon, authenticated, service_role;

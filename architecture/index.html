@@ -17,9 +17,13 @@
         <a class="word" href="#/" aria-label="assembl. architecture operations: all projects">assembl.</a>
         <span class="kick">architecture · operations</span>
         <label class="me"><span>Working as</span><input id="me" autocomplete="name" placeholder="your name" maxlength="60" /></label>
+        <!-- [cloud] sign in with Google, sign out: drawn by js/account.js -->
+        <div class="acct" id="acct" aria-live="polite"></div>
       </div>
     </header>
-    <p class="truth" id="truth"><span>■ Saved in this browser only.</span> <span>Shared team records: the database is ready, sign-in is not built yet.</span></p>
+    <p class="truth" id="truth"><span>■ Saved in this browser only.</span></p>
+    <!-- [cloud] the practice panel: people, invitations, moving projects up. Drawn by js/account.js -->
+    <section class="acct-panel" id="account-panel" aria-label="Sign-in and practice" hidden></section>
     <main id="app" tabindex="-1"><p class="opening">Opening…</p></main>
     <footer class="foot">
       <div class="foot-in">

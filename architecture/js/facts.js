@@ -2,6 +2,11 @@
 // The feed describes what each published map shows at the point. It is not a planning, hazard or Building Code
 // assessment, and a point outside a mapped hazard is not proof the site cannot be affected.
 //
+// Where the point goes. The feed takes query parameters only, so the point is sent in the feed's address
+// (?feeds=site&lat=..&lon=..). The feed asks the public map services about it and does not store it, apart from a
+// short-lived cache of its answer under that address (functions/api/live.js; for the site feed the answer says
+// Cache-Control: s-maxage=900, stale-while-revalidate=3600). The page does not put the point in a share link or print it.
+//
 // What is kept: each fact's label, value, unit, status, date, note, source name and credit line.
 // What is left out on purpose: the feed's "values" (they include the parcel outline, which is the location drawn
 // out), and the weather fact (it is this hour's weather, not a fact about the site, and its free terms are for
