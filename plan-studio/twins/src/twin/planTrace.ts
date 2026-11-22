@@ -15,7 +15,7 @@ const PT_MM = 25.4 / 72;
 // Coordinates are pixels of the image the reader looked at (x right, y down). mmPerPx turns them into real millimetres.
 export interface TraceWall { a: Pt; b: Pt; t: number; ext: boolean; conf: number }
 export interface TraceOpening { kind: string; a: Pt; b: Pt; conf: number }
-export interface TraceRoom { name: string; x: number; y: number; w: number; h: number; area?: number; conf: number }
+export interface TraceRoom { name: string; x: number; y: number; w: number; h: number; area?: number; conf: number; fixtures?: string }
 export interface TraceDim { value: number; a: Pt; b: Pt }
 export interface TraceRead {
   label: string;
@@ -272,7 +272,7 @@ interface AiPlan {
   north_deg: number | null;
   walls: { x1: number; y1: number; x2: number; y2: number; thickness_px: number; external: boolean; confidence: number }[];
   openings: { kind: string; x1: number; y1: number; x2: number; y2: number; confidence: number }[];
-  rooms: { name: string; x: number; y: number; w: number; h: number; confidence: number }[];
+  rooms: { name: string; x: number; y: number; w: number; h: number; confidence: number; fixtures?: string }[];
   dimensions: { text: string; x1: number; y1: number; x2: number; y2: number }[];
   notes: string;
 }
@@ -316,7 +316,7 @@ export function fromAi(plan: AiPlan, image: HTMLCanvasElement, label: string): O
     src: 'ai',
     walls: (plan.walls ?? []).map((w) => ({ a: [w.x1, w.y1], b: [w.x2, w.y2], t: w.thickness_px, ext: !!w.external, conf: w.confidence })),
     openings: (plan.openings ?? []).map((o) => ({ kind: o.kind, a: [o.x1, o.y1], b: [o.x2, o.y2], conf: o.confidence })),
-    rooms: (plan.rooms ?? []).map((r) => ({ name: r.name, x: r.x, y: r.y, w: r.w, h: r.h, conf: r.confidence })),
+    rooms: (plan.rooms ?? []).map((r) => ({ name: r.name?.trim() || '?', x: r.x, y: r.y, w: r.w, h: r.h, conf: r.confidence, ...(r.fixtures ? { fixtures: r.fixtures } : {}) })),
     dims,
     north: plan.north_deg ?? null,
     notes: plan.notes ?? '',
@@ -595,11 +595,24 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
   // drop anything outside the footprint, clip to the inside faces
   parts = parts.filter((p) => p.at > te * 0.6 && p.at < (p.axis === 'x' ? D : W) - te * 0.6);
   for (const p of parts) { const lim = p.axis === 'x' ? W : D; p.from = Math.max(te, p.from); p.to = Math.min(lim - te, p.to); }
+  // the reader's openings in home metres: a gap between two wall pieces in line is a doorway only if the reader put an
+  // opening in it; otherwise it is a hall or open floor running past two separate walls, and the walls stay apart
+  const opLines = ir.openings.map((op) => {
+    const a = T([op.a[0] * k, op.a[1] * k]), b = T([op.b[0] * k, op.b[1] * k]), h = Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]);
+    return h ? { axis: 'x', at: ((a[1] + b[1]) / 2 - y0) / 1000, s0: (Math.min(a[0], b[0]) - x0) / 1000, s1: (Math.max(a[0], b[0]) - x0) / 1000 }
+      : { axis: 'z', at: ((a[0] + b[0]) / 2 - x0) / 1000, s0: (Math.min(a[1], b[1]) - y0) / 1000, s1: (Math.max(a[1], b[1]) - y0) / 1000 };
+  });
+  const gapOf = (q: P, p: P): [number, number] | null => (p.from > q.to + 0.15 ? [q.to, p.from] : q.from > p.to + 0.15 ? [p.to, q.from] : null);
+  const doorIn = (axis: string, at: number, g: [number, number]) => opLines.some((o) => o.axis === axis && Math.abs(o.at - at) < 0.3 && o.s0 < g[1] - 0.05 && o.s1 > g[0] + 0.05);
   // merge collinear pieces; the gaps between them are openings
   parts.sort((a, b) => (a.axis < b.axis ? -1 : a.axis > b.axis ? 1 : a.at - b.at || a.from - b.from));
   const merged: P[] = [];
   for (const p of parts) {
-    const m = merged.find((q) => q.axis === p.axis && Math.abs(q.at - p.at) < 0.15 && p.from <= q.to + 1.6 && p.to >= q.from - 1.6);
+    const m = merged.find((q) => {
+      if (q.axis !== p.axis || Math.abs(q.at - p.at) >= 0.15 || p.from > q.to + 1.6 || p.to < q.from - 1.6) return false;
+      const g = gapOf(q, p);
+      return !g || doorIn(p.axis, (p.at + q.at) / 2, g);
+    });
     if (m) {
       if (p.from > m.to + 0.05) m.gaps.push([m.to, p.from]);
       else if (m.from > p.to + 0.05) m.gaps.push([p.to, m.from]);
@@ -629,6 +642,7 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
   const vFaces = [te, D - te, ...partsOk.filter((p) => p.axis === 'x').flatMap((p) => [p.at - p.t / 2, p.at + p.t / 2])];
   const snapTo = (v: number, fs: number[], tol = 0.35) => { let b = v, bd = tol; for (const f of fs) { const d = Math.abs(f - v); if (d < bd) { bd = d; b = f; } } return b; };
   let ri = 1, di = 1;
+  const fixturesOf = new Map<string, string>();
   for (const r of ir.rooms) {
     const a = T([r.x * k, r.y * k]), b = T([(r.x + r.w) * k, (r.y + r.h) * k]);
     let u0 = (Math.min(a[0], b[0]) - x0) / 1000, u1 = (Math.max(a[0], b[0]) - x0) / 1000, v0 = (Math.min(a[1], b[1]) - y0) / 1000, v1 = (Math.max(a[1], b[1]) - y0) / 1000;
@@ -644,11 +658,32 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     }
     const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2;
     if (cu < 0 || cu > W || cv < 0 || cv > D) continue;
-    u0 = snapTo(u0, uFaces); u1 = snapTo(u1, uFaces); v0 = snapTo(v0, vFaces); v1 = snapTo(v1, vFaces);
+    // snap to wall faces, never further than 40% of the room's own size (so a 0.6 m wardrobe keeps both sides)
+    const tu = Math.min(0.35, 0.4 * (u1 - u0)), tv = Math.min(0.35, 0.4 * (v1 - v0));
+    u0 = snapTo(u0, uFaces, tu); u1 = snapTo(u1, uFaces, tu); v0 = snapTo(v0, vFaces, tv); v1 = snapTo(v1, vFaces, tv);
     u0 = Math.max(te, u0); v0 = Math.max(te, v0); u1 = Math.min(W - te, u1); v1 = Math.min(D - te, v1);
-    if (u1 - u0 < 0.8 || v1 - v0 < 0.8) continue;
-    rooms.push({ id: `R-${String(ri++).padStart(2, '0')}`, name, u: r3(u0), v: r3(v0), w: r3(u1 - u0), d: r3(v1 - v0), ...(r.area ? { labelledArea: r.area } : {}), source: tr });
+    if (u1 - u0 < 0.45 || v1 - v0 < 0.45) continue;   // wardrobes, linen cupboards and WCs are rooms too (0.45 m and up)
+    const id = `R-${String(ri++).padStart(2, '0')}`;
+    if (r.fixtures) fixturesOf.set(id, r.fixtures);
+    rooms.push({ id, name: name || '?', u: r3(u0), v: r3(v0), w: r3(u1 - u0), d: r3(v1 - v0), ...(r.area ? { labelledArea: r.area } : {}), source: tr });
   }
+  // a small room (a wardrobe, a cupboard) inside a bigger room's box and along one of its sides, covering at least half of
+  // that side: the bigger room stops at the small room's far wall face (room boxes are rectangles and must not overlap)
+  let nCut = 0;
+  const nextFace = (fs: number[], from: number, dir: 1 | -1) => fs.filter((f) => (f - from) * dir > 0.01 && Math.abs(f - from) < 0.3).sort((p, q) => (p - q) * dir)[0] ?? from;
+  for (const big of rooms) for (const sm of rooms) {
+    if (sm === big || sm.w * sm.d > 0.5 * big.w * big.d) continue;
+    const e = 0.06;
+    if (sm.u < big.u - e || sm.u + sm.w > big.u + big.w + e || sm.v < big.v - e || sm.v + sm.d > big.v + big.d + e) continue;
+    const cuts: { area: number; apply: () => void }[] = [];
+    if (Math.abs(sm.u - big.u) < 0.15 && sm.d >= 0.5 * big.d) { const f = nextFace(uFaces, sm.u + sm.w, 1); cuts.push({ area: (f - big.u) * big.d, apply: () => { big.w = r3(big.u + big.w - f); big.u = r3(f); } }); }
+    if (Math.abs(sm.u + sm.w - big.u - big.w) < 0.15 && sm.d >= 0.5 * big.d) { const f = nextFace(uFaces, sm.u, -1); cuts.push({ area: (big.u + big.w - f) * big.d, apply: () => { big.w = r3(f - big.u); } }); }
+    if (Math.abs(sm.v - big.v) < 0.15 && sm.w >= 0.5 * big.w) { const f = nextFace(vFaces, sm.v + sm.d, 1); cuts.push({ area: (f - big.v) * big.w, apply: () => { big.d = r3(big.v + big.d - f); big.v = r3(f); } }); }
+    if (Math.abs(sm.v + sm.d - big.v - big.d) < 0.15 && sm.w >= 0.5 * big.w) { const f = nextFace(vFaces, sm.v, -1); cuts.push({ area: (big.v + big.d - f) * big.w, apply: () => { big.d = r3(f - big.v); } }); }
+    const best = cuts.sort((p, q) => p.area - q.area)[0];
+    if (best && best.area > 0 && best.area < 0.5 * big.w * big.d) { best.apply(); nCut++; }
+  }
+  const unnamed = rooms.filter((r) => r.name === '?');
   const deckOn = (side: 'N' | 'S' | 'W' | 'E', a: number, b: number) => decks.some((d) => (side === 'N' ? d.v1 <= 0.05 && d.u1 > a && d.u0 < b : side === 'S' ? d.v0 >= D - 0.05 && d.u1 > a && d.u0 < b : side === 'W' ? d.u1 <= 0.05 && d.v1 > a && d.v0 < b : d.u0 >= W - 0.05 && d.v1 > a && d.v0 < b));
   let nExt = 0, nInt = 0;
   for (const op of ir.openings) {
@@ -661,11 +696,17 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     const A = Math.max(0.12, (s0 - base) / 1000), B = Math.min(lim - 0.12, (s1 - base) / 1000);
     if (B - A < 0.35) continue;
     if (side) {
-      const wide = B - A >= 1.6;
+      const wide = B - A >= 1.6, mid = (A + B) / 2;
       let o2: Opening;
-      if (op.kind === 'glazing' || ((op.kind === 'window' || op.kind === 'door-double') && wide && deckOn(side, A, B))) o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'slider', name: 'Sliding door', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
-      else if (op.kind.startsWith('door')) o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'hinged', name: 'Door', a: r3(A), b: r3(Math.min(B, A + 1.2)), sill: 0, head: 2.1, source: tr };
+      // a door of two or more leaves (sliders, stackers, bi-folds, a hinged pair) keeps its full width; a single leaf is at most
+      // 1.2 m, centred where the reader put it; a wide window onto a deck is taken as a sliding door. "glazing" from the AI
+      // reader is fixed full-height glass (its prompt says so); from the linework reader it stays a sliding door, as before
+      const fixedGlass = op.kind === 'glazing' && ir.src === 'ai';
+      if ((op.kind === 'glazing' && !fixedGlass) || (op.kind === 'door-double' && wide) || (op.kind === 'window' && wide && deckOn(side, A, B))) o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'slider', name: op.kind === 'door-double' ? 'Sliding or folding doors' : 'Sliding door', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
+      else if (op.kind === 'door-double') o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'hinged', name: 'Double doors', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
+      else if (op.kind.startsWith('door')) { const hw = Math.min(B - A, 1.2) / 2; o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'hinged', name: 'Door', a: r3(mid - hw), b: r3(mid + hw), sill: 0, head: 2.1, source: tr }; }
       else if (op.kind === 'opening') o2 = { id: `O-${side}${extOps[side].length + 1}`, kind: 'opening', name: 'Opening', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
+      else if (fixedGlass) o2 = { id: `N-${side}${extOps[side].length + 1}`, kind: 'window', type: 'fixed', name: 'Fixed glazing', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
       else o2 = { id: `N-${side}${extOps[side].length + 1}`, kind: 'window', name: 'Window', a: r3(A), b: r3(B), sill: B - A > 2.2 ? 0.5 : 0.9, head: 2.1, source: tr };
       if (!extOps[side].some((x) => x.a < o2.b && x.b > o2.a)) { extOps[side].push(o2); nExt++; }
       continue;
@@ -678,8 +719,14 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     const gap = p.gaps.find((g) => g[0] < B && g[1] > A);
     if (gap) { gap.push(1 as never); continue; }   // the gap it sits in becomes a door below
     const lst = partOps.get(p)!;
-    const a2 = Math.max(p.from + 0.05, A), b2 = Math.min(p.to - 0.05, Math.min(B, A + 1.0));
-    if (b2 - a2 > 0.5 && !lst.some((x) => x.a < b2 && x.b > a2)) { lst.push({ id: `D-I${++nInt}`, kind: 'door', type: 'hinged', name: 'Door', a: r3(a2), b: r3(b2), sill: 0, head: 2.04, source: tr }); }
+    // a single leaf: at most 1.0 m, centred where the reader put it. Two or more leaves (wardrobe sliders, bi-folds, a pair):
+    // the full width; wider than 1.25 m it is drawn as an opening, as the twin has no inside sliding leaf
+    const single = op.kind === 'door', mid = (A + B) / 2, hw = single ? Math.min(B - A, 1.0) / 2 : (B - A) / 2;
+    const a2 = Math.max(p.from + 0.05, mid - hw), b2 = Math.min(p.to - 0.05, mid + hw);
+    if (b2 - a2 > 0.5 && !lst.some((x) => x.a < b2 && x.b > a2)) {
+      if (single || (op.kind === 'door-double' && b2 - a2 <= 1.25)) lst.push({ id: `D-I${++nInt}`, kind: 'door', type: 'hinged', name: single ? 'Door' : 'Double doors', a: r3(a2), b: r3(b2), sill: 0, head: 2.04, source: tr });
+      else lst.push({ id: `O-I${++nInt}`, kind: 'opening', name: op.kind === 'opening' ? 'Opening' : 'Sliding or folding doors', a: r3(a2), b: r3(b2), sill: 0, head: 2.04, source: tr });
+    }
   }
   for (const p of partsOk) {
     for (const g of p.gaps as (number[])[]) {
@@ -690,6 +737,11 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     }
   }
   rep.push(`${partsOk.length} inside walls${snapped ? ` (${snapped} placed on written dimensions)` : ''}, ${rooms.length} rooms, ${nExt} openings in the outside walls, ${nInt} inside doors and openings. Opening positions ${ir.src === 'ai' ? 'read by AI, ± about 150 mm' : 'measured'}; heights and sills assumed.`);
+  if (nCut) rep.push(`${nCut} room${nCut > 1 ? 's' : ''} cut back where a smaller room (a wardrobe or cupboard) sat inside ${nCut > 1 ? 'their boxes' : 'its box'}.`);
+  if (unnamed.length) {
+    const fx = [...new Set(unnamed.map((r) => fixturesOf.get(r.id)).filter(Boolean))].slice(0, 6);
+    rep.push(`${unnamed.length} room${unnamed.length > 1 ? 's have' : ' has'} no name on the drawing, shown as "?"${fx.length ? ` (drawn in them: ${fx.join('; ')})` : ''}. Name ${unnamed.length > 1 ? 'them' : 'it'} before you rely on the fit-out.`);
+  }
   if (decks.length) rep.push(`${decks.length} deck${decks.length > 1 ? 's' : ''} as drawn${ir.src === 'ai' ? ' (AI extents, check)' : ''}.`);
   const rf = o.roof ?? 'gable';
   rep.push(`Roof ${o.roofSrc && o.roofSrc !== 'assumed' ? 'from the elevations' : 'assumed'}: ${rf === 'skillion' ? `skillion, ${o.pitch}°, high over the ${o.high === 'v0' ? 'north' : 'south'} wall` : rf === 'flat' ? 'flat' : `gable, ${o.pitch}°, ridge along the long side`}; floor ${o.floor.toFixed(2)} m above the ground; ceiling plate ${o.plate.toFixed(2)} m.`);

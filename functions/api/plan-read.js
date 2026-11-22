@@ -7,9 +7,11 @@
 // Models: PLANREAD_OPENAI_MODEL, PLANREAD_GEMINI_MODEL, PLANREAD_MODEL (Anthropic, default claude-opus-5-5).
 // PLANREAD_DAILY_CAP (per running instance, default 300 reads/day; counts requests, not provider attempts).
 // Images are not stored: they pass through to the model and are dropped.
-// Status: connected-unverified. Request formats follow the providers' docs and pass offline tests; no live call has been made.
+// Status: connected and measured (22 Nov 2026, one drawing set): see docs/architecture/plan-reader-error-report.md.
+// PROMPTS names the prompt and schema revision; GET reports it, so a preview can be checked without a paid read.
 
 const MAX_BYTES = 4_500_000;
+export const PROMPTS = "2026-11-22b";
 let day = "", used = 0;
 
 const num = { type: "number" }, str = { type: "string" };
@@ -18,19 +20,20 @@ export const SCHEMA = obj({
   scale_text: { type: ["string", "null"], description: "A drawing scale printed on the sheet, e.g. '1:100', or null" },
   north_deg: { type: ["number", "null"], description: "Rotation of the north point from straight up, degrees clockwise, or null" },
   walls: { type: "array", items: obj({ x1: num, y1: num, x2: num, y2: num, thickness_px: num, external: { type: "boolean" }, confidence: num }) },
-  openings: { type: "array", items: obj({ kind: { type: "string", enum: ["door", "door-double", "window", "glazing", "opening"] }, x1: num, y1: num, x2: num, y2: num, confidence: num }) },
-  rooms: { type: "array", items: obj({ name: str, x: num, y: num, w: num, h: num, confidence: num }) },
+  openings: { type: "array", items: obj({ kind: { type: "string", enum: ["door", "door-double", "window", "glazing", "opening"], description: "door: one leaf; door-double: two or more leaves or panels (pairs, sliders, stackers, bi-folds), one entry for the whole set; window: glazing with no swing or sliding track; glazing: fixed full-height glass or a glazed wall; opening: a doorway with no door" }, x1: num, y1: num, x2: num, y2: num, confidence: num }) },
+  rooms: { type: "array", items: obj({ name: { ...str, description: "The name exactly as printed in the room's tag, or \"?\" when the tag is blank, unreadable, shows only \"?\", or there is no tag" }, x: num, y: num, w: num, h: num, fixtures: { ...str, description: "What is drawn inside the room (e.g. 'bed', 'toilet, basin, shower', 'bench, hob'), or '' if nothing. An observation, not a name" }, confidence: num }) },
   dimensions: { type: "array", items: obj({ text: str, x1: num, y1: num, x2: num, y2: num }) },
   notes: str,
 });
 
 export const SYSTEM = `You read architectural floor plans for assembl Plan Studio, a New Zealand tool.
 Return only what you can see on the drawing, in image pixel coordinates (origin top-left, x right, y down).
-- Walls: centrelines from end to end, merged across door and window openings; thickness_px across the wall; external true for the building envelope.
-- Openings: the two ends of each door, window, glazed wall or doorless opening along its wall.
-- Rooms: the room name as written and the room's bounding box. Where a room's tag is blank or shows only "?" (an unplaced tag in the drawing software), name the room from what is drawn in it (bed: Bedroom; toilet, basin, shower: Bathroom; bench and hob: Kitchen; sofa: Living; table: Dining), give it a confidence of 0.5 or less, and say in notes that the names were inferred.
+- Walls: centrelines from end to end, merged across door and window openings; thickness_px across the wall; external true for the building envelope. Include the short walls that close small rooms (wardrobes, cupboards, WCs, pantries) and their end returns. Where two walls line up but a hall, corridor or open floor runs between them, return two walls, not one.
+- Openings: the two ends of each opening along its wall, one entry per opening. door: a single leaf, hinged (a swing arc) or one sliding or pocket leaf. door-double: two or more leaves or panels in one opening (a hinged pair, sliding doors, stacking or bi-fold doors, wardrobe sliders), as one entry from the outer end of the first leaf to the outer end of the last, the full width of the set. window: glazing in a wall with no swing arc and no sliding track or arrow. glazing: a fixed full-height glazed panel or glazed wall. opening: a doorway with no door. A glazed door is a door: it has a swing arc, a leaf, or a sliding track or arrow; glazing with none of these is a window or glazing. Include the doors into small rooms (wardrobes, cupboards, WCs).
+- Rooms: every enclosed space is a room of its own, however small: halls, corridors, entries, wardrobes and walk-in robes, pantries, linen and storage cupboards, WCs, laundries, including spaces with no tag. Give each room's box inside its walls. Boxes do not overlap: a wardrobe or cupboard against a bedroom wall is its own room and the bedroom's box stops at the wardrobe's wall; for an L-shaped room give its main rectangle and mention the recess in notes.
+- Room names: copy the tag exactly as printed, numbers and abbreviations kept ("Bedroom 2", "Bed 1", "WC", "W/R", "L'dry"), without the area. Where the tag is blank, unreadable or shows only "?", or there is no tag, the name is "?". Never name a room from its furniture or fixtures: put what is drawn in it in fixtures instead. One room per tag: an open-plan space with one tag is one room.
 - Dimensions: every dimension string you can read with its two witness points.
-Give each element a confidence from 0 to 1 that reflects how clearly it is drawn. Do not invent elements you cannot see; leave them out and say so in notes.`;
+Give each element a confidence from 0 to 1 that reflects how clearly it is drawn. Do not invent elements you cannot see; leave them out and say so in notes. In notes, say how many room tags were blank or "?".`;
 
 
 // The same reader for the rest of a drawing set: a site or area plan (decks, stairs, paths, landscape) and elevations
@@ -57,7 +60,7 @@ Return only what you can see on the drawing, in image pixel coordinates (origin 
 - building: the outline of the house walls (its footprint) as drawn, so the site can be lined up with the floor plan.
 - decks: each deck, terrace or balcony outline (timber decks are usually drawn with board lines).
 - stairs: each outside stair's outline. paths: centrelines of paths, driveways and outdoor steps with their width.
-- hard: parking bays, patios and concrete pads. retaining: retaining walls as lines, with any height written.
+- hard: parking bays and car pads (including one drawn only as an outline with a label such as "carpark", "car parking bay" or "parking"), patios and concrete pads. retaining: retaining walls as lines (a row of circles is often a pole retaining wall), with any height written.
 - planting: garden beds, lawn and planting areas. trees: drawn trees with their canopy radius. boundary: the property boundary.
 Leave out contours, hatching, dimensions and notes. Give each element a confidence from 0 to 1; do not invent anything you cannot see.`;
 export const ELEV_SCHEMA = obj({
@@ -186,7 +189,7 @@ const json = (status, body) => new Response(JSON.stringify(body), { status, head
 export async function onRequest({ request, env }) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   const providers = chain(env), active = providers.filter((p) => p.configured);
-  if (request.method === "GET") return json(200, { type: "assembl.planstudio.read.status", configured: active.length > 0, model: (active[0] || providers[0]).model, host: "cloudflare", providers });
+  if (request.method === "GET") return json(200, { type: "assembl.planstudio.read.status", configured: active.length > 0, model: (active[0] || providers[0]).model, host: "cloudflare", prompts: PROMPTS, providers });
   if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
   if (!active.length) return json(503, { error: "not_configured" });
   const today = new Date().toISOString().slice(0, 10); if (today !== day) { day = today; used = 0; }
