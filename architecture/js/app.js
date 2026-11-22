@@ -4,15 +4,22 @@ import {
   gate, closingApprovals, askForApproval, backToWork, recordApproval, markDone, nextAction, currentStage, allDone, openRfis, hasSiteFacts, hasModel,
   activity, newId, twinLink, twinHandoff, isEdited, sourceLabel, missingSourced, consentRow, taskRow, AUCKLAND, READ_ON,
 } from './model.js';
-import { createStore, browserBackend, FILE_LIMIT, sizeText, sessionHandoff } from './store.js';
+import { createStore, browserBackend, sizeText, sessionHandoff } from './store.js';
 import { describeModel } from './fingerprint.js';
 import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue } from './facts.js';
 
-const store = createStore(browserBackend());
+// [cloud] One store for the whole page. It starts as this browser's store, exactly as before. account.js points it at the
+// practice's shared records when a person is signed in with a practice, and back again when they sign out.
+import { createSwitch } from './cloud.js';
+import { mountAccount } from './account.js';
+const store = createSwitch(createStore(browserBackend()));
+const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me') });
+const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
 const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null };
 let me = '';
-let kept = new Map(); // the files kept in this browser for the project on screen, by file id
+let kept = new Map(); // the files kept for the project on screen (in this browser, or in the shared records), by file id
+let shown = null; // [cloud] the project on screen, for wording that depends on where it is kept
 const handoff = { fp: '', pid: '', ok: false, why: '', told: false }; // whether the model on screen is ready to pass to the 3D page
 const HERO = '/plan-studio/twins/drop/hero.webp';
 
@@ -107,8 +114,8 @@ function sourcesHtml(rows, cls = '') {
 function fileBar(d) {
   const f = d.file, sure = ui.confirm === `file:${d.id}`, name = `<span class="vh"> for ${esc(d.title)}</span>`;
   if (!f?.id) return `<div class="filebar"><span class="st">□ No file kept</span><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Attach a file${name}</button></div>`;
-  if (!kept.has(f.id)) return `<div class="filebar"><span class="st">□ File not in this browser</span><span class="fname">${esc(f.name)} · ${esc(sizeText(f.size))}</span><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Attach it again${name}</button></div>`;
-  return `<div class="filebar"><span class="st">■ File kept in this browser</span><span class="fname">${esc(f.name)} · ${esc(sizeText(f.size))}</span>
+  if (!kept.has(f.id)) return `<div class="filebar"><span class="st">${esc(W(shown).fileState[1]) /* [cloud] */}</span><span class="fname">${esc(f.name)} · ${esc(sizeText(f.size))}</span><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Attach it again${name}</button></div>`;
+  return `<div class="filebar"><span class="st">${esc(W(shown).fileState[0]) /* [cloud] */}</span><span class="fname">${esc(f.name)} · ${esc(sizeText(f.size))}</span>
     <button class="link" data-act="file-get" data-id="${esc(f.id)}">Download${name}</button><button class="link" data-act="file-pick" data-id="${esc(d.id)}">Replace${name}</button><button class="link" data-act="file-remove" data-id="${esc(d.id)}">${sure ? 'Remove for good' : 'Remove file'}${name}</button></div>`;
 }
 
@@ -171,7 +178,7 @@ async function projectsView() {
     <section class="hero"><p class="label">Projects</p><h1>From the first site visit to completion.</h1>
       <p class="lede">One project, seven stages. Each stage shows its tasks, its documents, its tool, and the approval that closes it.</p></section>
     ${flashHtml()}
-    ${projects.length ? `<ul class="plist">${rows}</ul>` : `<div class="empty"><h3>No projects in this browser yet.</h3><p>Create one below, import a project file, or add the sample to look around.</p></div>`}
+    ${projects.length ? `<ul class="plist">${rows}</ul>` : `<div class="empty"><h3>No projects ${esc(W().here)} yet.</h3><p>Create one below, import a project file, or add the sample to look around.</p></div>`}
     <section class="panel" aria-labelledby="newp"><h3 id="newp">New project</h3>
       <form class="f newp" data-form="new-project"><label>Project name<input name="name" required maxlength="120" placeholder="e.g. House on the ridge" /></label>
         <label>Client<input name="client" maxlength="120" placeholder="optional" /></label>
@@ -209,10 +216,10 @@ function exportHtml(p) {
   const files = [...kept.values()], bytes = files.reduce((n, f) => n + f.size, 0);
   return `<section class="panel exportbox" aria-labelledby="exh"><h3 id="exh">Export “${esc(p.name)}”</h3>
     ${files.length
-    ? `<p>This project has ${plural(files.length, 'file')} kept in this browser (${esc(sizeText(bytes))}). Choose whether they go in the project file.</p>
+    ? `<p>This project has ${plural(files.length, 'file')} kept ${esc(W(p).here) /* [cloud] */} (${esc(sizeText(bytes))}). Choose whether they go in the project file.</p>
       <div class="acts"><button class="btn solid" data-act="export-go" data-files="1">Export with the files</button><button class="btn" data-act="export-go" data-files="0">Export the records only</button><button class="link" data-act="export-cancel">Cancel</button></div>
-      <p class="small">With the files: one larger file that holds everything, so another browser can open the documents. Records only: the files stay in this browser, and each document still names the file it had.</p>`
-    : `<p>This project has no files kept in this browser, so there are none to include. The project file holds the records.</p>
+      <p class="small">With the files: one larger file that holds everything, so another browser can open the documents. Records only: the files stay ${esc(W(p).here) /* [cloud] */}, and each document still names the file it had.</p>`
+    : `<p>This project has no files kept ${esc(W(p).here) /* [cloud] */}, so there are none to include. The project file holds the records.</p>
       <div class="acts"><button class="btn solid" data-act="export-go" data-files="0">Export the project</button><button class="link" data-act="export-cancel">Cancel</button></div>`}
     <p class="small">The file includes the site point if one is saved.</p></section>`;
 }
@@ -258,7 +265,7 @@ function dashView(b, r) {
     <section class="log" aria-labelledby="lg"><p class="label" id="lg">Activity</p>
       ${b.activity.length ? `<ol>${acts.map((a) => `<li><span class="when">${esc(dayTime(a.at))} · ${esc(a.who)}</span><span><b style="font-weight:500">${esc(a.action)}</b>${a.detail ? `: ${esc(a.detail)}` : ''}</span></li>`).join('')}</ol>
         ${b.activity.length > 8 ? `<div><button class="link" data-act="activity-more">${ui.allActivity ? 'Show the latest only' : `Show all ${b.activity.length}`}</button></div>` : ''}` : '<p class="small">Nothing has been done on this project yet. Each change is logged here with who made it and when.</p>'}
-      <p class="small">“Who” is the name typed in “Working as”. There is no sign-in yet, so it is not proof of who it was.</p></section>`);
+      <p class="small">${esc(W(p).whoNote) /* [cloud] */}</p></section>`);
 }
 
 // ---- the stage screen: produces, tasks, documents, tool, approval --------------------------------------------------------
@@ -281,10 +288,10 @@ function stageView(b, r) {
       <p class="starter">Tasks that show a source are assembl’s short wording of what the NZ Institute of Architects publishes about this stage: follow the link for the Institute’s own words. The others are an assembl starter with no source. This is not a full list of an architect’s services: your agreement with the client sets those. Edit the list to suit your practice.</p>`)}
     ${sec('03', 'documents', 'Documents', docs.length ? `${plural(docs.length, 'document')} · ${plural(docFiles.length, 'file')} kept` : '', `${listHtml(b, 'document', docs, { key: r.stage }, { emptyText: 'No documents recorded for this stage. Add the first one.', extra: '<button class="btn" data-act="pick" data-target="doc-new">+ Add a file</button>' })}
       <input type="file" id="doc-file" data-file="doc" hidden /><input type="file" id="doc-new" data-file="doc-new" hidden />
-      <p class="starter">${store.filesPersistent ? '■ Files are kept in this browser only' : '□ This browser is not keeping files past this tab'}, up to ${esc(sizeText(FILE_LIMIT))} a file${docFiles.length ? `: ${plural(docFiles.length, 'file')}, ${esc(sizeText(docFiles.reduce((n, f) => n + f.size, 0)))} in this stage` : ''}. Clearing this browser’s data removes them, so export with the files to keep a copy. Shared file storage for a team: Not built yet. It comes with sign-in.</p>`)}
+      <p class="starter">${esc(W(p).filesLine(sizeText(store.fileLimit), store.filesPersistent, docFiles.length ? `: ${plural(docFiles.length, 'file')}, ${sizeText(docFiles.reduce((n, f) => n + f.size, 0))} in this stage` : '')) /* [cloud] */}</p>`)}
     ${sec('04', 'tool', TOOL_NAME[def.tool], '', toolHtml(b, def))}
     ${sec('05', 'approval', 'Approval', '', approvalHtml(b, def, st))}
-    <p class="paper printed">Printed ${esc(day(new Date().toISOString()))}${me ? ` by ${esc(me)}` : ''} from assembl. architecture operations. A record kept in one browser. It does not check a design against any rule, and an approval here is not a signature, a professional sign-off or a council decision.</p>
+    <p class="paper printed">Printed ${esc(day(new Date().toISOString()))}${me ? ` by ${esc(me)}` : ''} from assembl. architecture operations. ${esc(W(p).record) /* [cloud] */} It does not check a design against any rule, and an approval here is not a signature, a professional sign-off or a council decision.</p>
   </article>`);
 }
 
@@ -335,7 +342,7 @@ function siteTool(b) {
     ${f.reason || f.note || f.needs ? `<details><summary>Why</summary><p>${esc(f.reason || f.note)}${f.needs ? ` Needs: ${esc(f.needs)}` : ''}</p></details>` : ''}</li>`;
   return `<form class="where-f" data-form="facts"><label>Latitude, longitude<input class="mono" name="where" value="${esc(where)}" placeholder="-36.80, 175.08" autocomplete="off" inputmode="text" required /></label>
       <button class="btn solid"${ui.busy ? ' disabled' : ''}>${ui.busy ? 'Asking the publishers…' : has ? 'Look up again' : 'Look up'}</button></form>
-    <p class="small">Type a point in New Zealand, latitude first. It is sent to the lab’s live feed to ask the public maps, and saved in this browser only. It is never put in a link or printed in the client pack.</p>
+    <p class="small">Type a point in New Zealand, latitude first. To look it up, the point is sent to the lab’s live feed, which asks the public map services about it. The feed does not store it, apart from a short-lived cache of the answer. The point is ${esc(W(b.project).pointSaved) /* [cloud] */}, and it is not put in a share link or printed in the client pack.</p>
     ${ui.factsError ? `<p class="flash" role="alert">${esc(ui.factsError)}</p>` : ''}
     ${has ? `<div class="snap-h"><h3>Snapshot of ${esc(dayTime(s.fetched_at))}</h3><span class="st" style="white-space:normal">■ ${plural(live.length, 'fact')} answered${off.length ? ` · □ ${off.length} not connected` : ''}${down.length ? ` · □ ${down.length} no answer` : ''}</span></div>
       <ul class="facts">${live.map(fact).join('')}${down.map((f) => none(f, 'No answer just now')).join('')}${off.map((f) => none(f, 'Not connected')).join('')}</ul>
@@ -349,18 +356,18 @@ function modelTool(b, def) {
   const p = b.project, m = p.model ?? {}, link = twinLink(m);
   const input = '<input type="file" id="model-file" data-file="model" accept=".json,application/json" hidden />';
   const err = ui.modelError ? `<p class="flash" role="alert">${esc(ui.modelError)}</p>` : '';
-  if (!link) return `<div class="empty"><h3>No plan model attached.</h3><p class="small">Attach the plan model file (.json) for this design. The project keeps its name, drawings note, revision and a fingerprint of what it says, and keeps the file itself in this browser only (up to ${esc(sizeText(FILE_LIMIT))}), so it can open in 3D from here. Nothing is uploaded.</p>
+  if (!link) return `<div class="empty"><h3>No plan model attached.</h3><p class="small">Attach the plan model file (.json) for this design. The project keeps its name, drawings note, revision and a fingerprint of what it says, and keeps the file itself ${esc(W(p).keptOnly) /* [cloud] */} (up to ${esc(sizeText(store.fileLimit))}), so it can open in 3D from here.${W(p).shared ? '' : ' Nothing is uploaded.'}</p>
     <button class="btn solid" data-act="pick" data-target="model-file">Attach a plan model</button>${input}</div>${err}
     <p class="starter">Reading a plan model out of a PDF happens on the 3D page, not here. <a href="/plan-studio/twins/drop/?drop=1" target="_blank" rel="noopener">Open the 3D page ↗</a></p>`;
   const { stale } = closingApprovals(b, def.key), here = kept.get(m.file?.id), stuck = handoff.fp === m.fingerprint && !!handoff.why;
   const pic = p.sample ? `<figure><img src="${HERO}" alt="A dark-clad house on timber piles among trees." loading="lazy" /><figcaption class="caption">A rendering of the sample plan model. Not a photograph.</figcaption></figure>` : '';
   return `<div class="model${pic ? ' pic' : ''}">${pic}<div style="display:grid;gap:14px;min-width:0">
       <dl class="kv"><dt>File</dt><dd>${esc(m.file_name)}</dd><dt>Drawings</dt><dd>${esc(m.drawings)}</dd><dt>Revision</dt><dd>${esc(m.revision)}</dd><dt>Fingerprint</dt><dd class="fp">${esc(m.fingerprint)}</dd>
-        <dt>Kept</dt><dd>${link.direct ? 'The lab hosts this example file, so it is not kept here.' : here ? `<span class="st" style="white-space:normal">■ File kept in this browser only · ${esc(sizeText(here.size))}</span> <button class="link" data-act="file-get" data-id="${esc(here.id)}">Download</button>` : '<span class="st" style="white-space:normal">□ The file itself is not kept in this browser</span>'}</dd></dl>
+        <dt>Kept</dt><dd>${link.direct ? 'The lab hosts this example file, so it is not kept here.' : here ? `<span class="st" style="white-space:normal">■ File kept ${esc(W(p).keptOnly) /* [cloud] */} · ${esc(sizeText(here.size))}</span> <button class="link" data-act="file-get" data-id="${esc(here.id)}">Download</button>` : `<span class="st" style="white-space:normal">□ The file itself is not kept ${esc(W(p).here) /* [cloud] */}</span>`}</dd></dl>
       <div class="acts">${open3dHtml(p, link)}<button class="btn" data-act="pick" data-target="model-file">Replace the file</button>
         <button class="link" data-act="model-remove">${ui.confirm === 'model' ? 'Remove for good' : 'Remove'}</button>${input}</div>
       ${link.direct ? '<p class="small">Opens this model on the 3D page: walk through it, change the sun, take stills.</p>'
-        : link.handoff && !stuck ? '<p class="small">Opens this model on the 3D page in a new tab, with no second choosing. The kept file is passed across inside this browser. Nothing is uploaded.</p>'
+        : link.handoff && !stuck ? `<p class="small">Opens this model on the 3D page in a new tab, with no second choosing. ${esc(W(p).passAcross) /* [cloud] */}</p>`
         : `<p class="small">□ ${stuck ? esc(handoff.why) : here ? '' : 'The file is not kept here, so it cannot be passed across.'} The 3D page will ask for a file: choose <b style="font-weight:500">${esc(m.file_name)}</b> again there.${here ? '' : ' Replace the file here to keep it and open it straight from this page.'}</p>`}
       ${err}${stale.length ? `<p class="flash">□ An approval for this stage was recorded on an earlier version (${esc(stale[stale.length - 1].fingerprint || 'no model')}). It does not carry over to this one.</p>` : ''}
       <p class="starter">The fingerprint is a short code for what the model says. If the model changes, the code changes, so an approval always names the version it was made on. Concept design and Developed design share this one model.</p>
@@ -422,7 +429,7 @@ function packView(b) {
         <p class="small">The 3D model shows the design in the drawings named above. It is not a survey.</p>` : '<p>□ No plan model has been attached yet.</p>')}
       ${sec('Approvals so far', `${approvals.length ? approvals.map((a) => `<div class="record"><p class="st" style="white-space:normal">${esc(stageDef(a.stage)?.label ?? a.stage)}</p><p class="by">${esc(a.who)}, ${esc(a.role)}</p><p class="q">“${esc(a.what)}”</p>${a.note ? `<p class="small">Note: ${esc(a.note)}</p>` : ''}
           <p class="when">${esc(dayTime(a.at))}${a.fingerprint ? ` · model version ${esc(a.fingerprint)}` : ''}</p></div>`).join('') : '<p>□ No approvals have been recorded yet.</p>'}
-        <p class="small">A record of what named people said, typed into the practice’s own browser. It is not a signature, not a professional sign-off and not a council decision.</p>`)}
+        <p class="small">A record of what named people said, ${esc(W(p).approvalsNote) /* [cloud] */}. It is not a signature, not a professional sign-off and not a council decision.</p>`)}
     </article></div>`;
 }
 
@@ -433,19 +440,20 @@ async function render(fromLink = false) {
   const moved = key !== lastRoute;
   if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; ui.exporting = false; }
   let html, onScreen = null;
-  if (r.view === 'projects') html = await projectsView();
-  else {
-    const b = await store.loadProject(r.pid);
-    kept = new Map((b ? await store.listFiles({ project_id: r.pid }) : []).map((f) => [f.id, f]));
-    onScreen = b?.project ?? null;
-    if (!b) html = `<div class="wrap"><div class="empty" style="margin-top:32px"><h3>That project is not in this browser.</h3><p>Projects are saved in the browser they were made in. If it was made on another device, export it there and import the file here.</p><a class="btn solid" href="#/">All projects</a></div></div>`;
-    else html = r.view === 'pack' ? packView(b) : r.view === 'stage' ? stageView(b, r) : dashView(b, r);
-  }
+  try { // [cloud] the shared records can fail to answer; this browser's own store never does
+    if (r.view === 'projects') { shown = null; html = await projectsView(); }
+    else {
+      const b = await store.loadProject(r.pid);
+      kept = new Map((b ? await store.listFiles({ project_id: r.pid }) : []).map((f) => [f.id, f]));
+      onScreen = shown = b?.project ?? null;
+      if (!b) html = `<div class="wrap"><div class="empty" style="margin-top:32px"><h3>${esc(W().missingTitle)}</h3><p>${esc(W().missingText)}</p><a class="btn solid" href="#/">All projects</a></div></div>`;
+      else html = r.view === 'pack' ? packView(b) : r.view === 'stage' ? stageView(b, r) : dashView(b, r);
+    }
+  } catch (err) { html = account.troubleHtml(err); }
   const y = window.scrollY;
   $app.innerHTML = html;
-  $truth.innerHTML = store.persistent
-    ? '<span>■ Saved in this browser only.</span> <span>Shared team records: the database is ready, sign-in is not built yet.</span>'
-    : '<span>□ This browser is not letting the page save.</span> <span>Work will be lost when the tab closes: export the project to keep it.</span>';
+  account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
+  $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
   document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
   const target = (moved || fromLink) && r.section ? document.getElementById(`sec-${r.section}`) : null;
   if (target) target.scrollIntoView({ block: 'start' });
@@ -466,7 +474,7 @@ async function ready3d(p, again = false) {
   handoff.fp = m.fingerprint; handoff.pid = p.id; handoff.ok = false; handoff.why = ''; handoff.told = false;
   try {
     const f = await store.getFile(m.file.id);
-    if (!f) throw new Error('The model file is not in this browser.');
+    if (!f) throw new Error(`The model file is not ${W(p).here}.`); // [cloud] in the shared store, it is read from the shared records
     const h = twinHandoff(new TextDecoder().decode(f.data), m.file_name);
     sessionHandoff(h.key, h.value);
     handoff.ok = true;
@@ -493,8 +501,8 @@ async function onSubmit(e) {
     if (what === 'new-project') {
       const b = newProject({ name: d.name, client: d.client });
       b.activity.push(activity(b.project.id, me, 'Project created', b.project.name));
-      await store.saveProject(b);
-      location.hash = href(b.project.id);
+      const id = await store.saveProject(b);
+      location.hash = href(id || b.project.id); // [cloud] the id the store keeps it under (the shared records use database ids)
       return;
     }
     if (what === 'add' || what === 'edit') {
@@ -572,7 +580,7 @@ async function onClick(e) {
       if (!twice(el.dataset.id)) return;
       const p = await store.get('project', el.dataset.id);
       await store.removeProject(el.dataset.id);
-      return redraw(`Removed “${p?.name ?? 'project'}” from this browser.`);
+      return redraw(`Removed “${p?.name ?? 'project'}” ${W(p).from /* [cloud] */}.`);
     }
     if (act === 'sample') { await store.saveProject(sampleProject()); return redraw('The sample project is back.'); }
     if (act === 'export') { ui.exporting = !ui.exporting; ui.focus = ui.exporting ? '.exportbox .btn' : null; return redraw(''); }
@@ -581,16 +589,17 @@ async function onClick(e) {
       const withFiles = el.dataset.files === '1', here = kept.size;
       const f = await store.exportProject(r.pid, undefined, { files: withFiles });
       download(f.file_name, f.text);
-      const said = f.files_included ? `Files are included: ${plural(f.file_count, 'file')}, ${sizeText(f.file_bytes)}.` : here ? `Files are not included: the ${plural(here, 'file')} stay in this browser only.` : 'There were no files to include.';
-      await log(r.pid, 'Project exported', `${f.file_name}. ${said}`);
+      const said = f.files_included ? `Files are included: ${plural(f.file_count, 'file')}, ${sizeText(f.file_bytes)}.${f.files_missing ? ` ${plural(f.files_missing, 'file')} could not be found ${W(shown).here} and ${f.files_missing === 1 ? 'is' : 'are'} not in it.` : ''}` : here ? `Files are not included: the ${plural(here, 'file')} stay ${W(shown).keptOnly}.` : 'There were no files to include.';
+      // [cloud] the file is downloaded either way; the log entry can still be refused (a viewer cannot add to the activity log)
+      const unlogged = await log(r.pid, 'Project exported', `${f.file_name}. ${said}`).then(() => '', (err) => (err?.code === 'read_only' ? ' This export is not in the activity log: viewers cannot add to it.' : ' This export is not in the activity log: the entry could not be saved.'));
       ui.exporting = false;
-      return redraw(`Exported ${f.file_name}. It holds the project’s records, including the site point if one is saved. ${said}`);
+      return redraw(`Exported ${f.file_name}. It holds the project’s records, including the site point if one is saved. ${said}${unlogged}`);
     }
     // ---- files ----
     if (act === 'file-pick') { ui.fileFor = el.dataset.id; return document.getElementById('doc-file')?.click(); }
     if (act === 'file-get') {
       const f = await store.getFile(el.dataset.id);
-      if (!f) return redraw('That file is not in this browser.');
+      if (!f) return redraw(`That file is not ${W(shown).here}.`); // [cloud]
       return download(f.name, f.data, f.type);
     }
     if (act === 'file-remove') {
@@ -604,20 +613,23 @@ async function onClick(e) {
     if (act === 'sourced-consent' || act === 'sourced-tasks') {
       const b = await store.loadProject(r.pid), consent = act === 'sourced-consent';
       const add = missingSourced(b, consent ? 'consent' : 'tasks', r.stage);
-      for (const x of add) await store.save(consent ? 'checklist_item' : 'task', consent ? consentRow(r.pid, x) : taskRow(r.pid, r.stage, x));
+      // [cloud] one save for all of them: in the shared records that is one write, so they arrive together or not at all
+      if (consent) b.checklist.push(...add.map((x) => consentRow(r.pid, x))); else b.tasks.push(...add.map((x) => taskRow(r.pid, r.stage, x)));
+      await store.saveProject(b);
       await log(r.pid, consent ? 'Sourced consent items added' : 'Sourced tasks added', consent ? plural(add.length, 'item') : `${plural(add.length, 'task')}, ${stageDef(r.stage).label}`);
       return redraw(`Added ${plural(add.length, consent ? 'sourced item' : 'sourced task')}. Nothing that was already here was changed.`);
     }
     if (act === 'auckland-remove') {
       if (!twice('auckland')) return;
-      const rows = (await store.list('checklist_item', { project_id: r.pid })).filter((c) => c.list === 'consent' && c.source_ref?.council === AUCKLAND);
-      for (const c of rows) await store.remove('checklist_item', c.id);
+      const b = await store.loadProject(r.pid), rows = b.checklist.filter((c) => c.list === 'consent' && c.source_ref?.council === AUCKLAND);
+      b.checklist = b.checklist.filter((c) => !rows.includes(c)); // [cloud] one save: in the shared records that is one write
+      await store.saveProject(b);
       await log(r.pid, 'Auckland Council items removed', plural(rows.length, 'item'));
       return redraw(`Removed ${plural(rows.length, 'Auckland Council item')}. Add what your own council’s checklist asks for.`);
     }
     // ---- Open in 3D for a kept model: an ordinary link once the model is ready; otherwise make it ready, then go ----
     if (act === 'open-3d') {
-      if (handoff.ok && handoff.pid === r.pid) return; // ready: the link opens a new tab, which starts with this tab's copy of the model
+      if (handoff.ok && handoff.pid === (shown?.id ?? r.pid)) return; // ready: the link opens a new tab, which starts with this tab's copy of the model ([cloud] the project's own id: the address can carry the page's id for it)
       e.preventDefault(); // not ready yet (or it failed before): make it ready, then open the 3D page in this tab
       const go = el.getAttribute('href');
       if (await ready3d(await store.get('project', r.pid), true)) { location.assign(go); return; }
@@ -672,13 +684,13 @@ async function onChange(e) {
     if (el.matches('input[data-file]')) {
       const file = el.files?.[0], what = el.dataset.file;
       if (!file) return;
-      // a file for a document: kept in this browser, with the record saying which file it is
+      // a file for a document: kept where the project is kept (this browser, or the shared records), with the record saying which file it is
       if (what === 'doc' || what === 'doc-new') {
         el.value = '';
         let d = what === 'doc' ? await store.get('document', ui.fileFor) : null;
         ui.fileFor = null;
         if (what === 'doc' && !d) return redraw('That document is no longer here.');
-        if (file.size > FILE_LIMIT) return redraw(`“${file.name}” is ${sizeText(file.size)}. The limit is ${sizeText(FILE_LIMIT)} a file, because files are kept in this browser. Keep the file where it is and record where.`);
+        if (file.size > store.fileLimit) return redraw(`“${file.name}” is ${sizeText(file.size)}. The limit is ${sizeText(store.fileLimit)} a file${W(shown).limitWhy /* [cloud] */}. Keep the file where it is and record where.`);
         const fresh = !d;
         if (fresh) d = { id: newId('d'), project_id: r.pid, stage: r.stage, title: file.name.replace(/\.[^.]+$/, '') || file.name, kind: '', version: '', date: '', source: '', note: '' };
         const before = d.file?.id ?? '';
@@ -688,7 +700,7 @@ async function onChange(e) {
         await store.save('document', d);
         if (before) await store.removeFile(before);
         await log(r.pid, fresh ? 'Added document' : before ? 'File replaced' : 'File attached', `${meta.name}, ${sizeText(meta.size)}${fresh ? '' : `: ${d.title}`}`);
-        return redraw(`${before ? 'Replaced with' : 'Kept'} “${meta.name}”, ${sizeText(meta.size)}, in this browser only.${store.filesPersistent ? '' : ' This browser is not keeping files past this tab: export with the files to keep it.'}`);
+        return redraw(`${before ? 'Replaced with' : 'Kept'} “${meta.name}”, ${sizeText(meta.size)}, ${W(shown).keptOnly /* [cloud] */}.${store.filesPersistent ? '' : ' This browser is not keeping files past this tab: export with the files to keep it.'}`);
       }
       const text = await file.text();
       el.value = '';
@@ -696,9 +708,9 @@ async function onChange(e) {
         const got = await store.importProject(text);
         const p = await store.get('project', got.project_id);
         const docs = await store.list('document', { project_id: got.project_id }), named = docs.filter((d) => d.file?.id).length + (p.model?.file?.id ? 1 : 0);
-        const said = 'files' in got ? ` ${plural(got.files, 'file')} came with it.${got.files_failed ? ` ${plural(got.files_failed, 'file')} could not be kept by this browser.` : ''}` : named ? ` The project file did not include its ${plural(named, 'file')}: they are still in the browser it came from.` : '';
+        const said = 'files' in got ? ` ${plural(got.files, 'file')} came with it.${got.files_failed ? ` ${plural(got.files_failed, 'file')} could not be kept ${W(p).here /* [cloud] */}.` : ''}` : named ? ` The project file did not include its ${plural(named, 'file')}: they are still where the project was exported from.` : '';
         await log(got.project_id, 'Project imported', `${file.name}${got.copied ? ' (as a copy: the project already here was left as it was)' : ''}.${said}`);
-        return redraw(`${got.copied ? `Imported as “${p.name}”. The project already in this browser was left as it was.` : `Imported “${p.name}”.`}${said}`);
+        return redraw(`${got.copied ? `Imported as “${p.name}”. The project already ${W(p).here /* [cloud] */} was left as it was.` : `Imported “${p.name}”.`}${said}`);
       }
       ui.modelError = '';
       let m;
@@ -713,7 +725,7 @@ async function onChange(e) {
       await store.save('project', p);
       if (oldFile) await store.removeFile(oldFile);
       await log(r.pid, before ? 'Model replaced' : 'Model attached', `${m.file_name}, revision ${m.revision}, version ${m.fingerprint}${keptFile ? `, file kept (${sizeText(keptFile.size)})` : ''}`);
-      return redraw(`${before && before !== m.fingerprint ? 'Model replaced' : 'Model attached'}: ${m.file_name}, version ${m.fingerprint}.${keptFile ? ` The file is kept in this browser only (${sizeText(keptFile.size)}).` : notKept ? ` The file was not kept: ${notKept}` : ''}${m.schemaOk ? '' : ' This file does not name the plan model format the 3D page expects, so it may not open there.'}`);
+      return redraw(`${before && before !== m.fingerprint ? 'Model replaced' : 'Model attached'}: ${m.file_name}, version ${m.fingerprint}.${keptFile ? ` The file is kept ${W(p).keptOnly /* [cloud] */} (${sizeText(keptFile.size)}).` : notKept ? ` The file was not kept: ${notKept}` : ''}${m.schemaOk ? '' : ' This file does not name the plan model format the 3D page expects, so it may not open there.'}`);
     }
   } catch (err) {
     return redraw(err.message);
@@ -734,6 +746,11 @@ async function start() {
   $app.addEventListener('click', onClick);
   $app.addEventListener('change', onChange);
   window.addEventListener('hashchange', () => render(true));
+  // [cloud] wait a moment to learn whether someone is signed in, so the first screen shows the right records.
+  // While signed in, "who" is the name on the account; otherwise it is the name typed in "Working as".
+  account.onChange(() => { me = account.who() ?? $me.value.trim(); return render(true); });
+  await account.ready;
+  me = account.who() ?? me;
   await render(true);
 }
 start().catch((err) => { $app.innerHTML = `<p class="opening">The page could not start: ${esc(err.message)}</p>`; });

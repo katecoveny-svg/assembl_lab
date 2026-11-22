@@ -366,3 +366,54 @@ label input, label select, label textarea { font: 400 16px var(--sans); letter-s
   .pack p.url::before { content: "Open the 3D model at: "; }
 }
 @media (prefers-reduced-motion: no-preference) { .btn, .rail a { transition: background-color .12s, box-shadow .12s; } }
+
+/* ==== [cloud] Sign-in and the practice panel (js/account.js) ===============================================================
+   Added at the END on purpose: nothing above this line is changed, and the print styles above are left as they were.
+   Same three colours, same two typefaces, square corners. Phone first; the wide layout is added from 761px up. */
+[hidden] { display: none !important; }
+.acct { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); min-height: 53px; }
+.acct-state, .acct-lab { font: 500 10.5px/1.4 var(--mono); letter-spacing: .09em; text-transform: uppercase; }
+.acct-who { display: grid; gap: 1px; min-width: 0; flex: 1 1 140px; }
+.acct-name { font-weight: 500; font-size: 15px; line-height: 1.25; overflow-wrap: anywhere; }
+.acct-btns { display: flex; gap: 8px; }
+.acct-btn { min-height: 44px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+.acct-btn[aria-expanded="true"] { background: var(--rose); }
+select[data-status]:disabled { opacity: .6; cursor: default; }
+.acct-panel { background: var(--paper); border-bottom: 1px solid var(--plum); }
+.acct-in { max-width: 1180px; margin: 0 auto; padding: 14px var(--pad) 18px; display: grid; gap: 14px; }
+.acct-note { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; justify-content: space-between; border: 1px solid var(--plum); background: var(--rose); padding: 6px 14px; font: 500 12.5px/1.5 var(--mono); }
+.acct-note span { flex: 1 1 240px; padding: 5px 0; }
+.acct-note .link { font: 500 12px var(--mono); }
+.acct-box { border: 1px solid var(--plum); background: var(--paper); padding: 16px; display: grid; gap: 14px; }
+.acct-box > p { max-width: 74ch; }
+.acct-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.acct-head > div { display: grid; gap: 6px; min-width: 0; }
+.acct-head .link { margin-top: -10px; flex: none; }
+.acct-line { white-space: normal; }
+.acct-grid { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); }
+.acct-sec { display: grid; gap: 12px; align-content: start; padding: 16px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.acct-sec:last-child { border-bottom: 0; padding-bottom: 0; }
+.acct-list { border-top: 1px solid var(--hair); }
+.acct-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--hair); min-height: 60px; }
+.acct-list li > .btn { grid-column: 2 / -1; min-height: 44px; padding: 8px 14px; font-size: 14px; }
+.acct-main { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.acct-main b { font-weight: 500; font-size: 15px; }
+.acct-role { width: auto; min-width: 112px; min-height: 44px; padding-top: 6px; padding-bottom: 6px; font: 500 12px var(--mono); }
+.acct-sec .f { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.acct-sec .f > * { grid-column: 1 / -1; }
+.acct-pick { grid-column: 1 / -1; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 44px; cursor: pointer; font: 400 16px/1.5 var(--sans); letter-spacing: 0; text-transform: none; }
+.acct-pick input { width: 24px; height: 24px; min-height: 0; padding: 0; cursor: pointer; }
+.acct-pick input:checked { background: var(--plum); box-shadow: inset 0 0 0 5px var(--paper); }
+.acct-report { display: grid; gap: 6px; border: 1px solid var(--plum); background: var(--rose); padding: 10px 14px; font: 500 12.5px/1.5 var(--mono); }
+.flash.acct-viewer { margin: 0 0 16px; }
+.rail-now + .flash.acct-viewer { margin-top: 16px; }
+@media (min-width: 761px) {
+  .top-in { grid-template-columns: auto 1fr auto auto; }
+  .acct { grid-column: 4; grid-row: 1; flex-wrap: nowrap; margin: 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px solid var(--line); min-height: 44px; gap: 14px; }
+  .acct-who { flex: 0 1 auto; max-width: 300px; }
+  .acct-in { padding: 18px var(--pad) 22px; }
+  .acct-box { padding: 22px 24px; gap: 16px; }
+  .acct-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); column-gap: 32px; }
+  .acct-sec { border-bottom: 0; padding: 18px 0 0; }
+}
+@media print { .acct-panel, .flash.acct-viewer { display: none !important; } }
