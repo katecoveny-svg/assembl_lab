@@ -85,8 +85,10 @@ export async function readBeehive(lens = {}, feeds = feedsFor(lens)) {
     else { blocked ||= !!s.reason?.blocked; failed.push({ feed: feeds[i].label, error: String(s.reason?.message || s.reason).slice(0, 160) }); }
   });
   if (!records.length && failed.length === feeds.length) {
-    const e = new Error(blocked ? "beehive.govt.nz answered with a bot-protection page, so it was not read (not worked around)." : "beehive.govt.nz did not answer just now.");
-    e.blocked = blocked; throw e;
+    const waiting = failed.every((f) => f.error.startsWith("not asked"));
+    const e = new Error(waiting ? "beehive.govt.nz showed a bot-protection page in the last 20 minutes, so the lab is waiting before it asks again (not worked around)."
+      : blocked ? "beehive.govt.nz answered with a bot-protection page, so it was not read (not worked around)." : "beehive.govt.nz did not answer just now.");
+    e.blocked = blocked; e.waiting = waiting; throw e;
   }
   return { records, fetchedAt: fetchedAt ?? new Date().toISOString(), read: feeds.length - failed.length, failed, blocked, stale };
 }

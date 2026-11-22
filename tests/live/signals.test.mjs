@@ -279,7 +279,7 @@ test('a bot-protection page from Beehive is reported as blocked, not worked arou
     assert.ok(calls.length <= 2, `stops after the first challenge (two lanes): ${calls.length} calls`);
     assert.ok(calls.every((c) => c.init.headers['user-agent'] === UA), 'asked as itself, with no retry under another name');
     assert.ok(backingOff(), 'then waits before asking again');
-    await assert.rejects(fetchSignals({ hunt: { sectors: 'education' } }), /bot-protection page/);
+    await assert.rejects(fetchSignals({ hunt: { sectors: 'education' } }), /waiting before it asks again/);
     assert.ok(calls.length <= 2, 'nothing more is asked while it waits');
   });
   clearMemo(); resetBeehiveBackoff();
