@@ -1,5 +1,5 @@
-// The Models add-on's parts that run without a page: it registers itself, hands a model to the 3D page's chooser,
-// and reads a plain GLB into triangles. (The section itself is checked in a test browser: see the report's stills.)
+// The Models add-on's parts that run without a page: it registers itself, and reads a plain GLB into triangles.
+// (Handing a model to the 3D page: tests/architecture/models-handoff.test.mjs.) (The section itself is checked in a test browser: see the report's stills.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -13,7 +13,7 @@ test('it registers a project section (order 10), the #/models screen and a top-b
   assert.equal(getRoute('models').title, 'Models');
   assert.deepEqual(navItems().map((n) => [n.id, n.label, n.hash, n.order]), [['models', 'Models', '#/models', 10]]);
   assert.match(navItems()[0].icon, /^<svg /);
-  assert.equal(typeof m.handToTwin, 'function');
+  assert.ok(!('handToTwin' in m), 'the old hand-over by scripting a second window is gone');
   assert.equal(m.modelSummary({ extra: { ifc: { counts: { walls: 2 } } } }).counts.walls, 2);
   assert.equal(m.modelSummary({}), null);
   const src = readFileSync(new URL('../../architecture/js/models.js', import.meta.url), 'utf8');
@@ -21,35 +21,6 @@ test('it registers a project section (order 10), the #/models screen and a top-b
   assert.deepEqual(eager.sort(), ['./config.js', './model.js', './models-rules.js', './modules.js'], 'the reader, the 3D view and the uploader load only when needed');
   assert.match(src, /import\('\.\/model-view\.js'\)/); assert.match(src, /import\('\.\/upload\.js'\)/);
   assert.ok(!/web-ifc/.test(readFileSync(new URL('../../architecture/js/models-rules.js', import.meta.url), 'utf8')));
-});
-
-/** a stand-in for the 3D page's window: its chooser appears after a few looks */
-function fakeTwin({ readyAfter = 3, closed = false } = {}) {
-  let looks = 0;
-  const events = [], input = { files: null, dispatchEvent: (e) => { events.push(e.type); return true; } };
-  class DataTransfer { constructor() { const list = []; this.items = { add: (f) => list.push(f) }; this.files = list; } }
-  class File { constructor(parts, name, o) { this.parts = parts; this.name = name; this.type = o?.type; } }
-  class Event { constructor(type, o) { this.type = type; this.bubbles = o?.bubbles; } }
-  return { w: { closed, DataTransfer, File, Event, document: { getElementById: (id) => (id === TWIN_FILE_INPUT && ++looks > readyAfter ? input : null) } }, input, events, looks: () => looks };
-}
-
-test('Open in 3D: it waits for the 3D page’s chooser, then gives its file input the model, named as kept', async () => {
-  const { handToTwin } = await import('../../architecture/js/models.js');
-  const t = fakeTwin({ readyAfter: 3 }), bytes = new Uint8Array([1, 2, 3]);
-  assert.equal(await handToTwin(t.w, bytes, 'garden-studio.ifc', { every: 1 }), true);
-  assert.equal(t.looks(), 4, 'it looked until the chooser was there');
-  assert.equal(t.input.files.length, 1);
-  assert.equal(t.input.files[0].name, 'garden-studio.ifc');
-  assert.equal(t.input.files[0].parts[0], bytes, 'the bytes as kept, not a copy made elsewhere');
-  assert.deepEqual(t.events, ['change'], 'the chooser is told, as when a person picks the file there');
-});
-
-test('Open in 3D: a 3D page closed early, or never ready, is said plainly', async () => {
-  const { handToTwin } = await import('../../architecture/js/models.js');
-  await assert.rejects(handToTwin(fakeTwin({ closed: true }).w, new Uint8Array(1), 'a.ifc', { every: 1 }), /closed before the model reached it/);
-  await assert.rejects(handToTwin(fakeTwin({ readyAfter: 1e9 }).w, new Uint8Array(1), 'a.ifc', { every: 1, timeout: 20 }), /did not get ready in time/);
-  const unreachable = { closed: false, get document() { throw new Error('cross-origin'); } };
-  await assert.rejects(handToTwin(unreachable, new Uint8Array(1), 'a.ifc', { every: 1 }), /somewhere this page cannot reach/);
 });
 
 test('the built 3D page that is live still has that chooser input and reads an .ifc from it', () => {
