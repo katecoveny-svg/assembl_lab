@@ -1,4 +1,5 @@
--- arch schema, part 4: room for fields the database does not know yet, the checklists, and a server-stamped time.
+-- arch schema, part 4: room for fields the database does not know yet, the checklists, the order rows were added,
+-- and a server-stamped time.
 -- Additive only. Safe to run twice: every statement is "if not exists" or "create or replace". Nothing is dropped.
 -- Touches nothing outside the arch schema.
 
@@ -38,6 +39,18 @@ create table if not exists arch.checklist_item (
   extra       jsonb not null default '{}'::jsonb check (jsonb_typeof(extra) = 'object')
 );
 create index if not exists checklist_item_project_idx on arch.checklist_item (project_id);
+
+-- 3b. "seq": the order rows were first added, so a list reads back in the order it was written
+--     (ids are random, and several rows can arrive in the same instant). Set by the database; the page never sends it.
+alter table arch.task           add column if not exists seq bigint generated always as identity;
+alter table arch.document       add column if not exists seq bigint generated always as identity;
+alter table arch.rfi            add column if not exists seq bigint generated always as identity;
+alter table arch.observation    add column if not exists seq bigint generated always as identity;
+alter table arch.variation      add column if not exists seq bigint generated always as identity;
+alter table arch.defect         add column if not exists seq bigint generated always as identity;
+alter table arch.checklist_item add column if not exists seq bigint generated always as identity;
+alter table arch.approval       add column if not exists seq bigint generated always as identity;
+alter table arch.activity       add column if not exists seq bigint generated always as identity;
 
 alter table arch.checklist_item enable row level security;
 revoke all on arch.checklist_item from public, anon;

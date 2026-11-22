@@ -8,7 +8,13 @@ import { createStore, browserBackend } from './store.js';
 import { describeModel } from './fingerprint.js';
 import { parseWhere, fetchSiteFacts, answered, notConnected, noAnswer, credits, showValue } from './facts.js';
 
-const store = createStore(browserBackend());
+// [cloud] One store for the whole page. It starts as this browser's store, exactly as before. account.js points it at the
+// practice's shared records when a person is signed in with a practice, and back again when they sign out.
+import { createSwitch } from './cloud.js';
+import { mountAccount } from './account.js';
+const store = createSwitch(createStore(browserBackend()));
+const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me') });
+const W = (project) => account.words(project); // [cloud] wording that depends on where a project is kept
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
 const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null };
 let me = '';
@@ -137,7 +143,7 @@ async function projectsView() {
     <section class="hero"><p class="label">Projects</p><h1>From the first site visit to completion.</h1>
       <p class="lede">One project, seven stages. Each stage shows its tasks, its documents, its tool, and the approval that closes it.</p></section>
     ${flashHtml()}
-    ${projects.length ? `<ul class="plist">${rows}</ul>` : `<div class="empty"><h3>No projects in this browser yet.</h3><p>Create one below, import a project file, or add the sample to look around.</p></div>`}
+    ${projects.length ? `<ul class="plist">${rows}</ul>` : `<div class="empty"><h3>No projects ${esc(W().here)} yet.</h3><p>Create one below, import a project file, or add the sample to look around.</p></div>`}
     <section class="panel" aria-labelledby="newp"><h3 id="newp">New project</h3>
       <form class="f newp" data-form="new-project"><label>Project name<input name="name" required maxlength="120" placeholder="e.g. House on the ridge" /></label>
         <label>Client<input name="client" maxlength="120" placeholder="optional" /></label>
@@ -203,7 +209,7 @@ function dashView(b, r) {
     <section class="log" aria-labelledby="lg"><p class="label" id="lg">Activity</p>
       ${b.activity.length ? `<ol>${acts.map((a) => `<li><span class="when">${esc(dayTime(a.at))} · ${esc(a.who)}</span><span><b style="font-weight:500">${esc(a.action)}</b>${a.detail ? `: ${esc(a.detail)}` : ''}</span></li>`).join('')}</ol>
         ${b.activity.length > 8 ? `<div><button class="link" data-act="activity-more">${ui.allActivity ? 'Show the latest only' : `Show all ${b.activity.length}`}</button></div>` : ''}` : '<p class="small">Nothing has been done on this project yet. Each change is logged here with who made it and when.</p>'}
-      <p class="small">“Who” is the name typed in “Working as”. There is no sign-in yet, so it is not proof of who it was.</p></section>`);
+      <p class="small">${esc(W(p).whoNote) /* [cloud] */}</p></section>`);
 }
 
 // ---- the stage screen: produces, tasks, documents, tool, approval --------------------------------------------------------
@@ -265,7 +271,7 @@ function siteTool(b) {
     ${f.reason || f.note || f.needs ? `<details><summary>Why</summary><p>${esc(f.reason || f.note)}${f.needs ? ` Needs: ${esc(f.needs)}` : ''}</p></details>` : ''}</li>`;
   return `<form class="where-f" data-form="facts"><label>Latitude, longitude<input class="mono" name="where" value="${esc(where)}" placeholder="-36.80, 175.08" autocomplete="off" inputmode="text" required /></label>
       <button class="btn solid"${ui.busy ? ' disabled' : ''}>${ui.busy ? 'Asking the publishers…' : has ? 'Look up again' : 'Look up'}</button></form>
-    <p class="small">Type a point in New Zealand, latitude first. It is sent to the lab’s live feed to ask the public maps, and saved in this browser only. It is never put in a link or printed in the client pack.</p>
+    <p class="small">Type a point in New Zealand, latitude first. It is sent to the lab’s live feed to ask the public maps, and ${esc(W(b.project).pointSaved) /* [cloud] */}. It is never put in a link or printed in the client pack.</p>
     ${ui.factsError ? `<p class="flash" role="alert">${esc(ui.factsError)}</p>` : ''}
     ${has ? `<div class="snap-h"><h3>Snapshot of ${esc(dayTime(s.fetched_at))}</h3><span class="st" style="white-space:normal">■ ${plural(live.length, 'fact')} answered${off.length ? ` · □ ${off.length} not connected` : ''}${down.length ? ` · □ ${down.length} no answer` : ''}</span></div>
       <ul class="facts">${live.map(fact).join('')}${down.map((f) => none(f, 'No answer just now')).join('')}${off.map((f) => none(f, 'Not connected')).join('')}</ul>
@@ -350,7 +356,7 @@ function packView(b) {
         <p class="small">The 3D model shows the design in the drawings named above. It is not a survey.</p>` : '<p>□ No plan model has been attached yet.</p>')}
       ${sec('Approvals so far', `${approvals.length ? approvals.map((a) => `<div class="record"><p class="st" style="white-space:normal">${esc(stageDef(a.stage)?.label ?? a.stage)}</p><p class="by">${esc(a.who)}, ${esc(a.role)}</p><p class="q">“${esc(a.what)}”</p>${a.note ? `<p class="small">Note: ${esc(a.note)}</p>` : ''}
           <p class="when">${esc(dayTime(a.at))}${a.fingerprint ? ` · model version ${esc(a.fingerprint)}` : ''}</p></div>`).join('') : '<p>□ No approvals have been recorded yet.</p>'}
-        <p class="small">A record of what named people said, typed into the practice’s own browser. It is not a signature, not a professional sign-off and not a council decision.</p>`)}
+        <p class="small">A record of what named people said, ${esc(W(p).approvalsNote) /* [cloud] */}. It is not a signature, not a professional sign-off and not a council decision.</p>`)}
     </article></div>`;
 }
 
@@ -361,17 +367,18 @@ async function render(fromLink = false) {
   const moved = key !== lastRoute;
   if (moved) { ui.adding = ui.editing = ui.confirm = null; ui.factsError = ui.modelError = ''; ui.allActivity = false; }
   let html;
-  if (r.view === 'projects') html = await projectsView();
-  else {
-    const b = await store.loadProject(r.pid);
-    if (!b) html = `<div class="wrap"><div class="empty" style="margin-top:32px"><h3>That project is not in this browser.</h3><p>Projects are saved in the browser they were made in. If it was made on another device, export it there and import the file here.</p><a class="btn solid" href="#/">All projects</a></div></div>`;
-    else html = r.view === 'pack' ? packView(b) : r.view === 'stage' ? stageView(b, r) : dashView(b, r);
-  }
+  try { // [cloud] the shared records can fail to answer; this browser's own store never does
+    if (r.view === 'projects') html = await projectsView();
+    else {
+      const b = await store.loadProject(r.pid);
+      if (!b) html = `<div class="wrap"><div class="empty" style="margin-top:32px"><h3>${esc(W().missingTitle)}</h3><p>${esc(W().missingText)}</p><a class="btn solid" href="#/">All projects</a></div></div>`;
+      else html = r.view === 'pack' ? packView(b) : r.view === 'stage' ? stageView(b, r) : dashView(b, r);
+    }
+  } catch (err) { html = account.troubleHtml(err); }
   const y = window.scrollY;
   $app.innerHTML = html;
-  $truth.innerHTML = store.persistent
-    ? '<span>■ Saved in this browser only.</span> <span>Shared team records: the database is ready, sign-in is not built yet.</span>'
-    : '<span>□ This browser is not letting the page save.</span> <span>Work will be lost when the tab closes: export the project to keep it.</span>';
+  account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
+  $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
   document.title = r.view === 'projects' ? 'Architecture operations · assembl.' : `${$app.querySelector('h1')?.textContent ?? 'Project'} · assembl.`;
   const target = (moved || fromLink) && r.section ? document.getElementById(`sec-${r.section}`) : null;
   if (target) target.scrollIntoView({ block: 'start' });
@@ -478,7 +485,7 @@ async function onClick(e) {
       if (!twice(el.dataset.id)) return;
       const p = await store.get('project', el.dataset.id);
       await store.removeProject(el.dataset.id);
-      return redraw(`Removed “${p?.name ?? 'project'}” from this browser.`);
+      return redraw(`Removed “${p?.name ?? 'project'}” ${W(p).from /* [cloud] */}.`);
     }
     if (act === 'sample') { await store.saveProject(sampleProject()); return redraw('The sample project is back.'); }
     if (act === 'export') {
@@ -541,7 +548,7 @@ async function onChange(e) {
         const got = await store.importProject(text);
         const p = await store.get('project', got.project_id);
         await log(got.project_id, 'Project imported', `${file.name}${got.copied ? ' (as a copy: the project already here was left as it was)' : ''}`);
-        return redraw(got.copied ? `Imported as “${p.name}”. The project already in this browser was left as it was.` : `Imported “${p.name}”.`);
+        return redraw(got.copied ? `Imported as “${p.name}”. The project already ${W(p).here /* [cloud] */} was left as it was.` : `Imported “${p.name}”.`);
       }
       ui.modelError = '';
       let m;
@@ -571,6 +578,11 @@ async function start() {
   $app.addEventListener('click', onClick);
   $app.addEventListener('change', onChange);
   window.addEventListener('hashchange', () => render(true));
+  // [cloud] wait a moment to learn whether someone is signed in, so the first screen shows the right records.
+  // While signed in, "who" is the name on the account; otherwise it is the name typed in "Working as".
+  account.onChange(() => { me = account.who() ?? $me.value.trim(); return render(true); });
+  await account.ready;
+  me = account.who() ?? me;
   await render(true);
 }
 start().catch((err) => { $app.innerHTML = `<p class="opening">The page could not start: ${esc(err.message)}</p>`; });

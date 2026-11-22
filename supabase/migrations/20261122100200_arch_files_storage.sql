@@ -20,6 +20,7 @@ create table if not exists arch.file (
   created_by   uuid not null default auth.uid(),
   created_at   timestamptz not null default now(),
   extra        jsonb not null default '{}'::jsonb check (jsonb_typeof(extra) = 'object'),
+  seq          bigint generated always as identity,
   constraint file_path_in_practice check (storage_path like practice_id::text || '/%')
 );
 create index if not exists file_practice_idx on arch.file (practice_id);

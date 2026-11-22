@@ -402,3 +402,16 @@ test('data survives a third run of the migrations', async () => {
   assert.deepEqual(after, before);
   assert.ok(before.m >= 4 && before.c >= 2);
 });
+
+test('rows read back in the order they were added, also when many arrive in one request', async () => {
+  // the API adds many rows with one statement that reads them from a JSON list: do the same here
+  const titles = Array.from({ length: 40 }, (_, i) => `Step ${String(i).padStart(2, '0')}`);
+  const body = JSON.stringify(titles.map((title) => ({ project_id: projectA, stage: 'concept', title })));
+  await signed(P.dan, () => q(`insert into arch.task (project_id, stage, title) select project_id, stage, title from json_populate_recordset(null::arch.task, $1::json)`, [body]));
+  const back = (await rows(P.carol, `select title from arch.task where project_id=$1 and title like 'Step %' order by seq`, [projectA])).map((r) => r.title);
+  assert.deepEqual(back, titles);
+  // changing a row does not move it, and the sender cannot choose the number
+  await signed(P.dan, () => q(`update arch.task set status='done' where title='Step 03'`));
+  assert.deepEqual((await rows(P.carol, `select title from arch.task where project_id=$1 and title like 'Step %' order by seq`, [projectA])).map((r) => r.title), titles);
+  await refused(signed(P.dan, () => q(`insert into arch.task (project_id, title, seq) values ($1, 'first in line', 0)`, [projectA])), /generated always|cannot insert/);
+});
