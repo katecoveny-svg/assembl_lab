@@ -47,6 +47,10 @@ test('the request the page sends passes the server\'s checks, carries confirm: t
   const ok = S.checkInput(body);
   assert.equal(ok.error, undefined); assert.equal(ok.quality, 'best'); assert.deepEqual(ok.dims, { w: 1600, h: 1200 });
   assert.deepEqual(F.requestBody('x', 'fast', 'golden', '', '   ').look, { time: 'golden' });
+  // the line drawing of the same view rides along when the page could draw it, and passes the server's checks
+  const withLine = F.requestBody('data:image/png;base64,' + png.toString('base64'), 'fast', 'golden', '', '', 'data:image/png;base64,' + png.toString('base64'));
+  assert.equal(S.checkInput(withLine).line.type, 'image/png');
+  assert.ok(!('line' in F.requestBody('x', 'fast', 'golden', '', '', null)));
   assert.equal(F.requestBody('x', 'fast', 'golden', '', 'y'.repeat(300)).look.setting.length, F.SETTING_MAX);
 });
 

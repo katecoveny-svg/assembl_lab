@@ -64,8 +64,8 @@ test('GET answers status with no paid call: not configured', async () => {
   assert.equal(r.json.type, 'assembl.planstudio.render.status');
   assert.equal(r.json.configured, false);
   assert.deepEqual(r.json.models, { fast: 'gemini-nano-banana-2.1', best: 'gemini-3-pro-image' });
-  assert.equal(r.json.prompt_revision, RENDER_PROMPTS); assert.equal(RENDER_PROMPTS, '2026-11-22a');
-  assert.deepEqual({ ...r.json.limits }, { per_minute: 6, per_ip_day: 40, daily_cap: 100, max_body_bytes: 5_000_000, max_image_bytes: 4_000_000, setting_chars: 120, counted_in: 'isolate' });
+  assert.equal(r.json.prompt_revision, RENDER_PROMPTS); assert.equal(RENDER_PROMPTS, '2026-11-23a');
+  assert.deepEqual({ ...r.json.limits }, { per_minute: 6, per_ip_day: 40, daily_cap: 100, max_body_bytes: 5_000_000, max_image_bytes: 4_000_000, max_line_bytes: 1_500_000, setting_chars: 120, counted_in: 'isolate' });
   assert.equal(r.json.stores_images, false); assert.equal(r.json.label, LABEL); assert.equal(r.json.api, 'interactions');
   assert.ok(!JSON.stringify(r.json).includes(KEY));
 });
@@ -223,11 +223,14 @@ test('GET carries the estimate for each quality; an overridden model is sent to 
 test('prompt: keeps the view and every building element, NZ light and native planting, no people, text, watermark or logos', () => {
   const p = buildPrompt({ time: 'golden', season: 'winter', setting: 'Bush ridge' }, '3:2');
   for (const s of ['architectural photograph', 'exact 3D model view', 'same position, lens, framing and horizon', 'wall, opening, window, door, roof line, deck', 'proportion exactly as drawn',
-    'Do not add, remove, move or resize any building element', 'New Zealand native species only', 'only on ground that can be seen', 'hides no part of the building',
+    'Do not add, remove, move, resize, widen or straighten any building element', "the stair's run, its turns, its landings and every step", 'every balustrade post and glass panel',
+    'the deck edges, the roof line and fascia, and every pole and pile', 'Only the materials, light, sky and planting may change',
+    'New Zealand native species only', 'only on ground that can be seen', 'hides no part of the building',
     'No people, no text, no watermark, no logos.', "one image at the input's aspect ratio (3:2)", 'golden-hour New Zealand sun', 'Winter:', '"Bush ridge"', 'never changes the building'])
     assert.ok(p.includes(s), s);
   const plain = buildPrompt({ time: 'overcast' }, '16:9');
   assert.ok(plain.includes('overcast New Zealand sky')); assert.ok(!plain.includes('Setting')); assert.ok(!/Summer:|Winter:/.test(plain));
+  assert.ok(!/line drawing|black line/.test(p), 'no drawing, no words about one');
   assert.ok(buildPrompt({ time: 'morning', season: 'summer' }, '1:1').includes('Summer:'));
   assert.ok(buildPrompt({ time: 'midday' }, '1:1').includes('midday New Zealand sun'));
 });
@@ -409,4 +412,49 @@ test('a broken shared counter falls back to the in-isolate one', async () => {
   const env = { ...ENV, RENDER_KV, RENDER_IP_PER_MINUTE: '1' };
   assert.equal((await call({ env })).status, 200);
   assert.equal((await call({ env })).json.error, 'slow_down');
+});
+
+// --- the line drawing of the same view (agent/photo-film-1123) -----------------------------------------------------------------
+const LINE = url('image/png', png(1500, 1000));
+test('line drawing: the prompt names it, asks every building edge to lie on its black lines, and never to draw them', () => {
+  const p = buildPrompt({ time: 'golden' }, '3:2', true);
+  for (const s of ['The second image is a line drawing of exactly the same view', 'every black line is an edge of the building', 'grey lines are furniture, planting and ground',
+    'every edge of the building in the photograph must lie on a black line of the drawing', 'every black line must still be an edge', 'Do not draw the lines',
+    "the stair's run, its turns, its landings and every step", 'Only the materials, light, sky and planting may change', 'No people, no text, no watermark, no logos.'])
+    assert.ok(p.includes(s), s);
+  assert.ok(!/\bAI\b/.test(p));
+});
+
+test('line drawing: checked before anything is counted: readable, the view\'s shape, not too large', () => {
+  const base = { image: PNG, quality: 'fast', look: { time: 'golden' } };
+  assert.equal(checkInput({ ...base, line: LINE }).line.type, 'image/png');
+  assert.equal(checkInput({ ...base, line: '' }).line, null);
+  assert.equal(checkInput(base).line, null);
+  assert.equal(checkInput({ ...base, line: 'nonsense' }).error, 'line_unreadable');
+  assert.equal(checkInput({ ...base, line: 42 }).error, 'line_unreadable');
+  assert.equal(checkInput({ ...base, line: url('image/png', Buffer.from('not a png at all, really not')) }).error, 'line_unreadable');
+  assert.equal(checkInput({ ...base, line: url('image/png', png(1000, 1000)) }).error, 'line_shape');
+  assert.equal(checkInput({ ...base, line: url('image/png', png(150, 100)) }).error, 'line_shape');
+  assert.equal(checkInput({ ...base, line: url('image/jpeg', jpeg(1512, 1000)) }).line.type, 'image/jpeg'); // within 1.5% of 3:2
+  assert.equal(checkInput({ ...base, line: url('image/png', png(1500, 1000, 1_600_000)) }).error, 'line_too_large');
+});
+
+test('line drawing: sent to Google as the second image (both APIs), the reply says it was used, refusals cost nothing', async () => {
+  const r = await call({ body: { image: PNG, line: LINE, quality: 'fast', look: { time: 'golden' } } });
+  assert.equal(r.status, 200); assert.equal(r.json.line_used, true); assert.equal(r.json.label, LABEL);
+  const inp = r.calls[0].body.input;
+  assert.equal(inp.length, 3); assert.equal(inp[1].data, PNG.split(',')[1]); assert.equal(inp[2].type, 'image'); assert.equal(inp[2].data, LINE.split(',')[1]);
+  assert.equal(inp[0].text, buildPrompt({ time: 'golden' }, '3:2', true));
+  const g = geminiRequest({ ...ENV, RENDER_GEMINI_API: 'generate_content' }, 'best', 'p', { type: 'image/png', data: 'AA==' }, '3:2', { type: 'image/png', data: 'BB==' });
+  assert.deepEqual(g.body.contents[0].parts.map((x) => x.inline_data?.data ?? x.text), ['p', 'AA==', 'BB==']);
+  const plain = await call({ body: { image: PNG, quality: 'fast', look: { time: 'golden' } } });
+  assert.equal(plain.json.line_used, false); assert.equal(plain.calls[0].body.input.length, 2);
+  _resetCounters();
+  const bad = await call({ body: { image: PNG, line: url('image/png', png(900, 900)), quality: 'fast', look: { time: 'golden' } } });
+  assert.equal(bad.status, 400); assert.equal(bad.json.error, 'line_shape'); assert.equal(bad.calls.length, 0);
+  const big = await call({ body: { image: PNG, line: url('image/png', png(1500, 1000, 1_600_000)), quality: 'fast', look: { time: 'golden' } } });
+  assert.equal(big.status, 413); assert.equal(big.calls.length, 0);
+  const st = await call({ method: 'GET' });
+  assert.equal(st.json.accepts_line, true); assert.ok(st.json.limits.max_line_bytes > 0);
+  for (const x of [r, plain, bad, big, st]) assert.ok(!JSON.stringify(x.json).includes(KEY), 'key in an answer');
 });
