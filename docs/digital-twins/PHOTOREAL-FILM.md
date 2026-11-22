@@ -80,7 +80,8 @@ boards, roof steel, framing, bark and forest floor; the photoreal look replaces 
 | Bake: memory | node main process 0.92 GB peak; the page exports the scene in 8 MB parts (169 MB in all) so it never holds two copies |
 | Bake file | 5.3 MB (6 bytes a light point: RGB9E5 light + octahedral direction). Over the 2 MB limit, so not committed: made by `film.mjs bake` (or traced on the page) |
 | Loading a bake on the page | 2–5 s after the model is ready |
-| Film frame, 640 × 360, 2 sub-frames | 13–15 s |
+| Film frame, 640 × 360, 2 sub-frames | 13–15 s (almost all of it the software renderer finishing the frame) |
+| Film proof, 384 frames, 16 s at 24 fps | about 91 minutes of rendering (resumed once after a server restart); encode 7 s; 6.8 MB H.264 (CRF 18, veryfast) |
 | One sub-frame, 768 × 432 | 7–9 s (the first 14 s while the pipeline warms up); redrawing the sun's 4096² shadow map is about 1.5 s of it, so the film draws it once |
 | Stills, 1600 × 900, 4 sub-frames | 90–115 s each |
 | Close-ups, 1280 × 720, 8 sub-frames with depth of field | 90–125 s each |
@@ -133,8 +134,12 @@ frame is labelled as a visualisation.
    was rendered (software rendering, about 14 s a frame).
 2. An exterior/interior split in the grade (as room-at-dawn does), so window views are not washed out and interiors
    seen from the deck are not dim and orange.
-3. Wrinkle height maps on the fit-out's cushions, bedding and curtains; more dressing in the living space.
-4. The sculpted vessel's foot is narrow, so from low angles it can look as if it floats; widen it.
-5. Bump maps (benchtop stone, soffit, oak) carried into the baked material.
-6. Baked light on the planting near the house, and drawn bark and leaves for the bush in its own materials.
-7. Wind in the planting sampled across the shutter.
+3. The sheer curtains are alpha-hashed: with 2–4 sub-frames they show as a white stipple by the living room doors
+   (film 8–9 s, the deck still). More sub-frames average it out; better, give the sheers a smooth transmission.
+4. The ceiling downlight's glow blooms into a soft white blob on the raking ceiling by day; tone it down in daylight.
+5. Camera path: a kānuka trunk fills the left of the opening frame, and the dried stems in the coffee-table vase pass
+   close to the lens in the last two seconds. Both are geometry, not errors, but the keys should move.
+6. Wrinkle height maps on the fit-out's cushions, bedding and curtains; more dressing in the living space.
+7. Bump maps (benchtop stone, soffit, oak) carried into the baked material.
+8. Baked light on the planting near the house, and drawn bark and leaves for the bush in its own materials.
+9. Wind in the planting sampled across the shutter.

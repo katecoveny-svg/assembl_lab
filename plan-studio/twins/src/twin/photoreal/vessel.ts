@@ -16,7 +16,9 @@ export function vesselSDF(H = 0.28): SDF {
   return (x, y, z) => {
     const t = y / H, th = Math.atan2(z, x);
     const lobes = 1 + 0.07 * Math.sin(5 * th + 2.6 * t) * Math.sin(Math.PI * Math.min(1, Math.max(0, t)));
-    const r = prof(Math.min(1, Math.max(0, t))) * lobes, q = Math.hypot(x, z);
+    // a turned foot, 55 mm in radius at the base, swelling into the belly, so it sits squarely on a table
+    const tf = Math.min(1, Math.max(0, (t - 0.04) / 0.16)), foot = 0.055 * (1 - tf * tf * (3 - 2 * tf));
+    const r = Math.max(prof(Math.min(1, Math.max(0, t))) * lobes, foot), q = Math.hypot(x, z);
     const body = smax((q - r) * 0.8, smax(-y, y - H, 0.006), 0.01);
     // hollow from the lip down to a 25 mm base, wall 8 mm; the smooth blend rolls the lip
     const inner = smax((q - (r - 0.008)) * 0.8, 0.025 - y, 0.006);
