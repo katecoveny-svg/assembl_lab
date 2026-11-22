@@ -21,7 +21,7 @@ type Pt = [number, number];
 export interface Opening { id: string; kind: string; type?: string; name: string; a: number; b: number; sill: number; head: number; source?: Src; open?: boolean }
 export interface WallSpec { id: string; name: string; axis: 'x' | 'z'; at: number; from: number; to: number; out: number; thickness: number; cladding: string; source?: Src; openings?: Opening[] }
 export interface PartitionSpec { id: string; axis: 'x' | 'z'; at: number; from: number; to: number; thickness: number; source?: Src; openings?: Opening[] }
-export interface RoomSpec { id: string; name: string; u: number; v: number; w: number; d: number; labelledArea?: number; source?: Src }
+export interface RoomSpec { id: string; name: string; u: number; v: number; w: number; d: number; labelledArea?: number; source?: Src; /** where the name came from (plan reader): printed, drawn (suggested from what is drawn: check) or person */ nameSrc?: 'printed' | 'drawn' | 'person'; printed?: string; suggested?: string }
 export interface BuildingSpec {
   id: string;
   name: string;
@@ -355,7 +355,7 @@ export function buildHome(o: HomeOptions) {
     const sp = new THREE.Object3D();
     sp.name = `space_${r.id}_${r.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
     sp.position.set(r.u + r.w / 2, 1.2, r.v + r.d / 2);
-    sp.userData = { kind: 'space', name: r.name, area: r.labelledArea ?? +(r.w * r.d).toFixed(2), labelled: r.labelledArea != null, source: r.source ?? 'written' };
+    sp.userData = { kind: 'space', name: r.name, area: r.labelledArea ?? +(r.w * r.d).toFixed(2), labelled: r.labelledArea != null, source: r.source ?? 'written', ...(r.nameSrc ? { nameSrc: r.nameSrc, note: r.nameSrc === 'drawn' ? `Name: named from what is drawn: check (the drawing prints "${r.printed ?? '?'}")` : r.nameSrc === 'person' ? 'Name: named by a person' : 'Name: as printed on the drawing' } : {}) };
     roomsG.add(sp);
   }
   for (const f of o.finishes ? [] : L.fitout ?? []) {

@@ -51,11 +51,32 @@ test('a wardrobe 0.6 m deep is kept as a room, and the bedroom box that swallowe
   assert.ok(b.report.some((t) => /1 room cut back where a smaller room/.test(t)));
 });
 
-test('a room whose tag shows "?" keeps "?" as its name, and the report says what is drawn in it', () => {
+test('rooms whose tag prints "?" keep "?" as the printed name, get a suggested name marked as such, and the report says so', () => {
   const { b, L } = build(plan({ rooms: [R('?', 500, 100, 200, 300, 'desk, chair'), R('', 720, 100, 170, 300)] }));
-  assert.deepEqual(L.rooms.map((r) => r.name), ['?', '?']);
-  const line = b.report.find((t) => /no name on the drawing/.test(t));
-  assert.match(line, /^2 rooms have no name on the drawing, shown as "\?" \(drawn in them: desk, chair\)\. Name them/);
+  assert.deepEqual(L.rooms.map((r) => [r.name, r.nameSrc, r.printed]), [['Room 1', 'drawn', '?'], ['Room 2', 'drawn', '?']]);
+  assert.deepEqual(b.labels.map((t) => t.text), ['Room 1', 'Room 2']);
+  assert.ok(b.report.includes('2 room tags print "?" on the drawing, or there is no tag. Names suggested from what is drawn in each room: check them above.'));
+});
+
+test('suggested names on a read: bed drawn gives Bedroom, the small room off it through its sliders gives Wardrobe; printed names stay', () => {
+  const p = plan({ rooms: [R('?', 100, 100, 400, 300, 'double bed'), R('?', 100, 100, 70, 200), R('Study', 720, 450, 170, 240)], openings: [O('door-double', 170, 120, 170, 280)] });
+  const { b, L } = build(p);
+  const by = Object.fromEntries(L.rooms.map((r) => [r.name, r]));
+  assert.equal(by.Bedroom.nameSrc, 'drawn'); assert.equal(by.Wardrobe.nameSrc, 'drawn'); assert.equal(by.Study.nameSrc, 'printed');
+  assert.ok(b.report.some((t) => t.startsWith('2 room tags print "?"')));
+});
+
+test("a person's name wins, and still wins when the same read is built again (an option changed)", async () => {
+  const { applyNameEdits } = await import('../../plan-studio/twins/src/twin/roomNames.ts');
+  const p = plan({ rooms: [R('?', 100, 100, 400, 300, 'double bed')] });
+  const edits = {};
+  const first = build(p).L.rooms; edits[first[0].id] = 'Main bedroom';
+  applyNameEdits(first, edits);
+  assert.deepEqual([first[0].name, first[0].nameSrc, first[0].printed], ['Main bedroom', 'person', '?']);
+  const again = toBuilding(p, 't', { ...opts, roof: 'skillion', pitch: 8 }).building.levels[0].rooms;
+  assert.equal(again[0].name, 'Bedroom');                     // a fresh build suggests again
+  applyNameEdits(again, edits);
+  assert.deepEqual([again[0].name, again[0].nameSrc], ['Main bedroom', 'person']);
 });
 
 test('two wall pieces in line with no opening between them stay two walls (a hall runs past), with no invented opening', () => {

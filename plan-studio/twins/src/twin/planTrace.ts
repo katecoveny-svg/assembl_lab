@@ -7,6 +7,7 @@
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import type { BuildingSpec, Opening, PartitionSpec, RoomSpec, Src, WallSpec } from './homes';
 import { modelFromDrawing, readPdfPage, toReal } from './planread';
+import { readingOrder, suggestNames, unprinted, type Link } from './roomNames';
 
 type Pt = [number, number];
 const PT_MM = 25.4 / 72;
@@ -645,7 +646,7 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
   const vFaces = [te, D - te, ...partsOk.filter((p) => p.axis === 'x').flatMap((p) => [p.at - p.t / 2, p.at + p.t / 2])];
   const snapTo = (v: number, fs: number[], tol = 0.35) => { let b = v, bd = tol; for (const f of fs) { const d = Math.abs(f - v); if (d < bd) { bd = d; b = f; } } return b; };
   let ri = 1, di = 1;
-  const fixturesOf = new Map<string, string>();
+  const fixturesOf = new Map<string, string>(), sheetAt = new Map<string, Pt>();
   for (const r of ir.rooms) {
     const a = T([r.x * k, r.y * k]), b = T([(r.x + r.w) * k, (r.y + r.h) * k]);
     let u0 = (Math.min(a[0], b[0]) - x0) / 1000, u1 = (Math.max(a[0], b[0]) - x0) / 1000, v0 = (Math.min(a[1], b[1]) - y0) / 1000, v1 = (Math.max(a[1], b[1]) - y0) / 1000;
@@ -668,7 +669,8 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     if (u1 - u0 < 0.45 || v1 - v0 < 0.45) continue;   // wardrobes, linen cupboards and WCs are rooms too (0.45 m and up)
     const id = `R-${String(ri++).padStart(2, '0')}`;
     if (r.fixtures) fixturesOf.set(id, r.fixtures);
-    rooms.push({ id, name: name || '?', u: r3(u0), v: r3(v0), w: r3(u1 - u0), d: r3(v1 - v0), ...(r.area ? { labelledArea: r.area } : {}), source: tr });
+    sheetAt.set(id, [r.x + r.w / 2, r.y + r.h / 2]);
+    rooms.push({ id, name: unprinted(name) ? '?' : name, u: r3(u0), v: r3(v0), w: r3(u1 - u0), d: r3(v1 - v0), ...(r.area ? { labelledArea: r.area } : {}), source: tr });
   }
   // a small room (a wardrobe, a cupboard) inside a bigger room's box and along one of its sides, covering at least half of
   // that side: the bigger room stops at the small room's far wall face (room boxes are rectangles and must not overlap)
@@ -686,7 +688,6 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
     const best = cuts.sort((p, q) => p.area - q.area)[0];
     if (best && best.area > 0 && best.area < 0.5 * big.w * big.d) { best.apply(); nCut++; }
   }
-  const unnamed = rooms.filter((r) => r.name === '?');
   const deckOn = (side: 'N' | 'S' | 'W' | 'E', a: number, b: number) => decks.some((d) => (side === 'N' ? d.v1 <= 0.05 && d.u1 > a && d.u0 < b : side === 'S' ? d.v0 >= D - 0.05 && d.u1 > a && d.u0 < b : side === 'W' ? d.u1 <= 0.05 && d.v1 > a && d.v0 < b : d.u0 >= W - 0.05 && d.v1 > a && d.v0 < b));
   let nExt = 0, nInt = 0;
   for (const op of ir.openings) {
@@ -740,12 +741,30 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
       else partOps.get(p)!.push({ id: `O-I${++nInt}`, kind: 'opening', name: 'Opening', a: r3(a), b: r3(b), sill: 0, head: 2.04, source: tr });
     }
   }
+  // names: as printed; where a tag prints "?" (or there is none), suggested from what is drawn in the room, its shape and the
+  // doors off it (roomNames.ts), marked "named from what is drawn: check". First, which rooms each door or opening joins.
+  const links: Link[] = [];
+  const along = (r: RoomSpec, axis: 'x' | 'z', mid: number) => (axis === 'x' ? r.u <= mid && mid <= r.u + r.w : r.v <= mid && mid <= r.v + r.d);
+  const lo = (r: RoomSpec, axis: 'x' | 'z') => (axis === 'x' ? r.v : r.u), hi = (r: RoomSpec, axis: 'x' | 'z') => (axis === 'x' ? r.v + r.d : r.u + r.w);
+  for (const p of partsOk) for (const op of partOps.get(p)!) {
+    const mid = (op.a + op.b) / 2;
+    const before = rooms.find((r) => along(r, p.axis, mid) && Math.abs(hi(r, p.axis) - (p.at - p.t / 2)) < 0.25);
+    const after = rooms.find((r) => along(r, p.axis, mid) && Math.abs(lo(r, p.axis) - (p.at + p.t / 2)) < 0.25);
+    if (before || after) links.push({ a: before?.id ?? null, b: after?.id ?? null });
+  }
+  for (const wid of ['N', 'S', 'W', 'E'] as const) for (const op of extOps[wid]) {
+    if (op.kind === 'window') continue;
+    const axis = wid === 'N' || wid === 'S' ? 'x' : 'z', mid = (op.a + op.b) / 2, far = (axis === 'x' ? D : W) - te;
+    const r = rooms.find((rm) => along(rm, axis, mid) && (wid === 'N' || wid === 'W' ? Math.abs(lo(rm, axis) - te) < 0.3 : Math.abs(hi(rm, axis) - far) < 0.3));
+    if (r) links.push({ a: r.id, b: null });
+  }
+  const order = readingOrder([...sheetAt].map(([id, c]) => ({ id, x: c[0], y: c[1] })), 1000 / k);
+  const named = suggestNames(rooms.map((r) => ({ id: r.id, name: r.name, u: r.u, v: r.v, w: r.w, d: r.d, fixtures: fixturesOf.get(r.id), order: order.get(r.id) })), links);
+  for (const r of rooms) { const n = named.get(r.id)!; r.name = n.name; r.nameSrc = n.src; r.printed = n.printed; if (n.src === 'drawn') r.suggested = n.name; }
+  const suggested = rooms.filter((r) => r.nameSrc === 'drawn').length;
   rep.push(`${partsOk.length} inside walls${snapped ? ` (${snapped} placed on written dimensions)` : ''}, ${rooms.length} rooms, ${nExt} openings in the outside walls, ${nInt} inside doors and openings. Opening positions ${ir.src === 'ai' ? 'read by AI, ± about 150 mm' : 'measured'}; heights and sills assumed.`);
   if (nCut) rep.push(`${nCut} room${nCut > 1 ? 's' : ''} cut back where a smaller room (a wardrobe or cupboard) sat inside ${nCut > 1 ? 'their boxes' : 'its box'}.`);
-  if (unnamed.length) {
-    const fx = [...new Set(unnamed.map((r) => fixturesOf.get(r.id)).filter(Boolean))].slice(0, 6);
-    rep.push(`${unnamed.length} room${unnamed.length > 1 ? 's have' : ' has'} no name on the drawing, shown as "?"${fx.length ? ` (drawn in them: ${fx.join('; ')})` : ''}. Name ${unnamed.length > 1 ? 'them' : 'it'} before you rely on the fit-out.`);
-  }
+  if (suggested) rep.push(`${suggested} room tag${suggested > 1 ? 's print' : ' prints'} "?" on the drawing, or there is no tag. Names suggested from what is drawn in each room: check them above.`);
   if (decks.length) rep.push(`${decks.length} deck${decks.length > 1 ? 's' : ''} as drawn${ir.src === 'ai' ? ' (AI extents, check)' : ''}.`);
   const rf = o.roof ?? 'gable';
   rep.push(`Roof ${o.roofSrc && o.roofSrc !== 'assumed' ? 'from the elevations' : 'assumed'}: ${rf === 'skillion' ? `skillion, ${o.pitch}°, high over the ${o.high === 'v0' ? 'north' : 'south'} wall` : rf === 'flat' ? 'flat' : `gable, ${o.pitch}°, ridge along the long side`}; floor ${o.floor.toFixed(2)} m above the ground; ceiling plate ${o.plate.toFixed(2)} m.`);

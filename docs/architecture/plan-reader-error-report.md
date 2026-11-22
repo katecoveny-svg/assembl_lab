@@ -138,7 +138,12 @@ Before: three live reads (the 22 November morning read and two more), through th
 | Rooms as drawn (9: the open-plan kitchen, dining and living has one tag) | 6 (6) | **8 (8)**; only the hall missing | not measured |
 | Room area error, rooms matched as drawn | 7.7% mean; bedrooms +21% | **2.0% mean; bedrooms 2.2% worst** | not measured |
 | Room names (the sheet prints none: every tag is "?") | 5 to 6 rooms given made-up names; one read called the study "Living" | unchanged (names come from the prompt) | not measured |
+| Names right after suggestion, against the key's names | 1 of 6 matched rooms (only "Bathroom") | as recorded: 1 of 8 (the old prompt's names, unnumbered). With every name set to "?" and the fixtures stood in (see below): **5 of 8 in all three runs** (5 of the key's 10) | not measured |
 | Floor plan read time | 22.1 s mean (21.3, 22.2, 22.8) | page work under 1 s | not measured |
+
+**Room names, since the coordinator's review.** The page keeps the printed name exactly ("?" stays the printed name), suggests a name from what is drawn in the room, and uses the suggestion for the fit-out and the 3D room tags, marked "named from what is drawn: check" (never as printed). Before "Build the twin" every room is listed with a name box, prefilled with the printed name or the suggestion and a tag saying which; a person's edit wins and is recorded as "named by a person". The rules (`roomNames.ts`): a bed gives Bedroom (numbered in sheet reading order when there are several); a toilet with no shower or bath gives WC; a toilet, shower, bath or basin gives Bathroom, or Ensuite when every door of the room opens off a bedroom; a hob, or a bench with a sink, gives Kitchen; washing machine or tub gives Laundry; a hanging rail, or a small room off a bedroom with nothing drawn, gives Wardrobe; a corridor shape with two or more doors off it gives Hall; anything else is Room. WC and Laundry go beyond the brief: a WC named Bathroom would get a shower in the fit-out.
+
+How "5 of 8" was measured: the three recorded replies come from the old prompt, which made names up and has no `fixtures` field. For this count every room name was set to "?" (all this sheet prints) and its fixtures were stood in from that reply's own name (bed for a bedroom, toilet, basin and shower for a bathroom, bench, hob and sink for the kitchen, nothing for the rest). Right: both bedrooms, both wardrobes, the kitchen. Wrong: the narrow wet room became "Bathroom 1" (its door opens to the hall, so the rule does not call it an ensuite, and the stand-in cannot tell a WC from a bathroom), the bathroom "Bathroom 2", the study "Room". The hall is not in these replies. The real count needs a read with the new prompt, which returns fixtures.
 
 ### Site layout (sheet 6, mode `site`, one read)
 
@@ -188,19 +193,19 @@ The page (`planTrace.ts`, `traceUI.ts`, bundles rebuilt):
 - Two wall pieces in line stay apart unless the reader put an opening in the gap.
 - Doors of two or more leaves keep their full width: outside, 1.6 m and wider is a sliding or folding door; inside, wider than 1.25 m is an opening. A single leaf is capped about its centre, not from one end.
 - "Glazing" from a stamped reply is a fixed window to the floor. Older replies and linework reads keep the old meaning (a sliding door).
-- The report says how many rooms have no name on the drawing and what is drawn in them.
+- Rooms whose tag prints "?" get a suggested name, marked "named from what is drawn: check", and a name box each before building (see Room names above). The report says how many tags print "?".
 - The site plan and elevation reads now go at the same time as the floor plan read, not after it: the same three calls. Measured with simulated 8-second replies: 29.2 s down to 12.5 s for the set. With the real read times above that should be about 26 s instead of 60 s. Not measured live.
 
 A second, focused look at the busiest part of the plan was considered and not added. The numbers do not call for it: the small rooms and doors were already in the AI's replies, and positions were within 31 mm. It would double the cost and add about 20 seconds.
 
-Tests: 83 pass (`node --test tests/plan-read/*.test.mjs tests/live/*.test.mjs tests/code-checks/*.test.mjs`), including new tests of the schema, the prompts, the revision stamp and the page's handling on a made-up 8 × 6 m box. The functions still bundle (`wrangler pages functions build`).
+Tests: 94 pass (`node --test tests/plan-read/*.test.mjs tests/live/*.test.mjs tests/code-checks/*.test.mjs`), including new tests of the schema, the prompts, the revision stamp, the naming rules, a person's edit winning, and the page's handling on a made-up 8 × 6 m box. The functions still bundle (`wrangler pages functions build`).
 
 ### Still weak
 
 Measured:
 
 - **The hall** (no tag) was not returned as a room in any of the three reads. The new prompt asks for it; not measured.
-- **Names.** The old prompt made names up when the tag showed "?". The new prompt keeps "?"; not measured.
+- **Names.** The old prompt made names up when the tag showed "?". The new prompt keeps "?" and reports what is drawn; the page then suggests a name, marked for checking. Measured on stand-in fixtures only: 5 of 8 right. The study and the narrow wet room are not named right by the rules.
 - **The study's glazed door** read as a window in all three reads. On the floor plan it is drawn without a swing; only the elevation shows it reaches the floor. A plan-only reader cannot tell.
 - **The car parking bay** was missed on the site sheet (one read). The new site prompt asks for it; not measured.
 - **The west elevation's eave** came out 90 mm low (one read).
@@ -214,7 +219,7 @@ Not yet known:
 ### What a person must still check by eye
 
 - The overall size against a written dimension. This sheet has none, so the scale comes from the title block alone.
-- Every room name. On this sheet every tag prints "?", and the twin shows "?" until someone names the room.
+- Every room name. On this sheet every tag prints "?". The page suggests names from what is drawn and tags them "named from what is drawn: check"; correct them in the list before building.
 - Doors against windows wherever the plan shows no swing or track.
 - Heights, sills and door heads: assumed by the page, not read.
 - The roof's high side: the page guesses it from the glazing on the plan.
