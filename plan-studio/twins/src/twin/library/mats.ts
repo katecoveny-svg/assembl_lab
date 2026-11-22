@@ -11,8 +11,20 @@ const texs = new Map<string, THREE.DataTexture>();
 const mats = new Map<string, THREE.Material>();
 let aniso = 8;
 export const setAnisotropy = (n: number) => { aniso = n; };
+/** 1: maps at full size (the studio's pictures); 0.5: half size each way (the 3D page, where many pieces share the GPU) */
+let detail = 1;
+export const setTexDetail = (k: 1 | 0.5) => { detail = k; };
+/** a field at half size (box filter), same tile in millimetres */
+function half(f: Field): Field {
+  const n = f.n >> 1, o: Field = { n, mm: f.mm, h: new Float32Array(n * n), a: new Float32Array(n * n), r: new Float32Array(n * n) };
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const i = y * n + x, j = 2 * y * f.n + 2 * x, k = [j, j + 1, j + f.n, j + f.n + 1];
+    for (const [src, dst] of [[f.h, o.h], [f.a, o.a], [f.r, o.r]] as const) dst[i] = (src[k[0]] + src[k[1]] + src[k[2]] + src[k[3]]) / 4;
+  }
+  return o;
+}
 
-const field = (key: string, make: () => Field) => { let f = fields.get(key); if (!f) { f = make(); fields.set(key, f); } return f; };
+const field = (key: string, make: () => Field) => { const k = detail < 1 ? `${key}@half` : key; let f = fields.get(k); if (!f) { f = detail < 1 ? half(make()) : make(); fields.set(k, f); } return f; };
 function dataTex(key: string, make: () => Uint8Array, n: number, mm: number, srgb: boolean) {
   let t = texs.get(key);
   if (!t) {

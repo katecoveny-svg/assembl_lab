@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { byId, type CatItem } from './catalogue';
 import { BUILDERS } from './pieces';
+import { setTexDetail } from './mats';
 import { libraryItem, LIBRARY } from '../library';
 import { addContactShadow } from '../scandiInteriors';
 import { plan, dropAt, footprint, type Box2, type Room, type Slot, type Want } from './fit';
@@ -34,14 +35,27 @@ type AppLike = { log(m: string): void; canvas: HTMLCanvasElement; camera: THREE.
 const box2 = (b: THREE.Box3): Box2 => ({ x0: b.min.x, x1: b.max.x, z0: b.min.z, z1: b.max.z });
 const yaw = (o: THREE.Object3D) => { const q = o.getWorldQuaternion(new THREE.Quaternion()), f = new THREE.Vector3(0, 0, 1).applyQuaternion(q); return Math.atan2(f.x, f.z); };
 
-/** the walls, rooms and fit-out places of a built model, in world plan boxes */
-export function measure(model: THREE.Object3D) {
+/** the plan model's rooms (assembl.plan-model.v1), for the room rectangles the 3D model does not draw */
+export interface PlanRooms { buildings: { levels: { rooms: { name: string; u: number; v: number; w: number; d: number }[] }[] }[] }
+
+/** the walls, rooms and fit-out places of a built model, in world plan boxes; rooms come from the plan model, carried into the world by each house's own frame */
+export function measure(model: THREE.Object3D, plan?: PlanRooms) {
   model.updateMatrixWorld(true);
   const walls: Box2[] = [], rooms: Room[] = [], slots: (Slot & { obj: THREE.Object3D; virtual: boolean })[] = [];
   const roomOf = (o: THREE.Object3D) => { for (let t: THREE.Object3D | null = o; t; t = t.parent) { const m = /^fitout_[^_]+_(.+)$/.exec(t.name); if (m) return m[1].replace(/_/g, ' '); } return ''; };
   model.traverse((o) => {
     if (o.userData?.ifcClass === 'IfcWall') walls.push(box2(new THREE.Box3().setFromObject(o)));
-    if (o.userData?.kind === 'space' && (o as THREE.Mesh).isMesh) { const b = new THREE.Box3().setFromObject(o); rooms.push({ ...box2(b), name: String(o.userData.name ?? ''), y: b.min.y }); }
+  });
+  const houses = model.children.filter((c) => c.userData?.ifcClass === 'IfcBuilding');
+  plan?.buildings.forEach((b, i) => {
+    const h = houses[i];
+    if (!h) return;
+    const y = h.getWorldPosition(new THREE.Vector3()).y;
+    for (const r of b.levels[0]?.rooms ?? []) {
+      const bb = new THREE.Box3();
+      for (const [u, v] of [[r.u, r.v], [r.u + r.w, r.v], [r.u, r.v + r.d], [r.u + r.w, r.v + r.d]]) bb.expandByPoint(new THREE.Vector3(u, 0, v).applyMatrix4(h.matrixWorld));
+      rooms.push({ ...box2(bb), name: r.name, y });
+    }
   });
   model.traverse((o) => {
     const p = o.getWorldPosition(new THREE.Vector3());
@@ -82,9 +96,10 @@ function clearUnder(suite: THREE.Object3D, b: Box2) {
 }
 
 /** place the handed-over picks in the model; the rest go on the strip */
-export async function applyPicks(app: AppLike, model: THREE.Object3D, picks = readPicks()) {
+export async function applyPicks(app: AppLike, model: THREE.Object3D, picks = readPicks(), planModel?: PlanRooms) {
   if (!picks?.items.length) return null;
-  const { walls, rooms, slots } = measure(model);
+  setTexDetail(0.5); // many pieces share the GPU here: half-size maps
+  const { walls, rooms, slots } = measure(model, planModel);
   const wants: (Want & { finish: string })[] = [];
   for (const p of picks.items) {
     const it = byId(p.id)!;

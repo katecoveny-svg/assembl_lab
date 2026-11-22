@@ -606,7 +606,7 @@ export const projectPlan: Project = {
       });
       // picks from the ops page's Library (?picks=<project id>): placed where they fit, the rest on a strip to drag in
       if (new URLSearchParams(location.search).has('picks')) {
-        try { const { applyPicks } = await import('./library/picks'); await applyPicks(app as never, model); } catch (e) { console.warn('the picks could not be placed', e); }
+        try { const { applyPicks } = await import('./library/picks'); await applyPicks(app as never, model, undefined, P); } catch (e) { console.warn('the picks could not be placed', e); }
       }
       // clear glass, a timber soffit, and the rooms lit by day as well so the interior reads from outside
       const ed = !P.asBuilt; // the editorial look, on a flat pad or on surveyed ground; a finished building model keeps its own
