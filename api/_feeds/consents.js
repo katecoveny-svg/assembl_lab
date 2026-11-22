@@ -31,7 +31,8 @@ async function getCapped(url, key, { accept = "application/json", max = LIMITS.m
   if (!String(url).startsWith(ADE_BASE)) throw new Error("Refusing to call a host that is not Stats NZ.");
   const c = new AbortController(), t = setTimeout(() => c.abort(), LIMITS.ms);
   try {
-    const r = await fetch(url, { signal: c.signal, redirect: "error", headers: { "user-agent": UA, accept, [KEY_HEADER]: key, "accept-encoding": "gzip" } });
+    // "manual", not "error": Cloudflare Workers refuse redirect "error". A redirect then arrives as a 3xx, which is not ok and is refused below, so the key is never sent on to another host.
+    const r = await fetch(url, { signal: c.signal, redirect: "manual", headers: { "user-agent": UA, accept, [KEY_HEADER]: key, "accept-encoding": "gzip" } });
     if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status} from ${new URL(url).host}`), { status: r.status });
     const reader = r.body.getReader(), dec = new TextDecoder(); let text = "";
     for (;;) {
@@ -76,7 +77,7 @@ export async function fetchConsents(params = {}) {
     } catch (e) { throw new Error(`The Stats NZ table list could not be read: ${redact(e?.message || e, key)}`); }
     const hit = consentFlows(parseDataflows(text));
     return { ...envelope({ ...base, id: "consents", label: "Building consents: tables found", value: hit.flows.length, unit: hit.flows.length === 1 ? "table" : "tables",
-      values: { discover: true, dataflows: hit.flows, matched: hit.matched, scanned: hit.scanned, capped: hit.capped, configured: { nonres: `${fl.nonres.agency},${fl.nonres.id},${fl.nonres.version}`, dwellings: `${fl.dwellings.agency},${fl.dwellings.id},${fl.dwellings.version}` } },
+      values: { discover: true, dataflows: hit.flows, matched: hit.matched, scanned: hit.scanned, capped: hit.capped, sample: hit.flows.length ? [] : hit.sample, configured: { nonres: `${fl.nonres.agency},${fl.nonres.id},${fl.nonres.version}`, dwellings: `${fl.dwellings.agency},${fl.dwellings.id},${fl.dwellings.version}` } },
       asOf, live: true, note: "Tables in Aotearoa Data Explorer whose names are about building consents. Correct api/_feeds/consents-config.js with the ids you want. Nothing else was read." }), licence: L_CONSENTS };
   }
 

@@ -227,3 +227,19 @@ test('discover and the regions travel through /api/live/ (handleLive), and the f
     assert.match(n.headers['Cache-Control'], /s-maxage=43200/);
   });
 });
+
+test('the Stats NZ fetch uses a redirect setting Cloudflare Workers accept, and a redirect is refused', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../../api/_feeds/consents.js', import.meta.url), 'utf8');
+  assert.ok(!/redirect:\s*"error"/.test(src), 'Workers refuse redirect "error"');
+  assert.match(src, /redirect:\s*"manual"/);
+  assert.match(src, /if \(!r\.ok\) throw/, 'a 3xx is not ok, so it is refused and the key goes nowhere else');
+});
+
+test('discover also finds building tables by their BLD id, and shows sample names when nothing matches', async () => {
+  const { consentFlows } = await import('../../api/_feeds/consents-parse.js');
+  const got = consentFlows([{ id: 'BLD_BLD_009', name: '' }, { id: 'POP_X', name: 'Population' }]);
+  assert.equal(got.matched, 1); assert.equal(got.flows[0].id, 'BLD_BLD_009');
+  const none = consentFlows([{ id: 'POP_X', name: 'Population' }]);
+  assert.deepEqual(none.sample, ['POP_X: Population']);
+});
