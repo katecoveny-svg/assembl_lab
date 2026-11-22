@@ -31,7 +31,9 @@
 
 import { emptyBundle, readBundle, writeBundle, copyBundle, fileSlug, newId } from './model.js';
 
-export const KINDS = ['project', 'stage', 'task', 'document', 'approval', 'rfi', 'observation', 'variation', 'defect', 'checklist_item', 'activity', 'setting'];
+export const KINDS = ['project', 'stage', 'task', 'document', 'approval', 'rfi', 'observation', 'variation', 'defect', 'checklist_item', 'activity', 'setting',
+  // the Clients add-on (crm.js): practice-wide, not under a project. See crm-model.js for their shapes.
+  'contact', 'enquiry', 'crm_activity'];
 // where each kind of child row sits in a project bundle
 const BUNDLE_LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
 

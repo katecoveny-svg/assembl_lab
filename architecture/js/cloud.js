@@ -83,11 +83,19 @@ const FIELDS = {
   defect: [['title', 'title', 'must', ''], ['status', 'status', 'text', ''], ['note', 'note', 'text', '']],
   checklist_item: [['stage', 'stage', 'stage', ''], ['list', 'list', 'must', ''], ['title', 'title', 'must', ''], ['status', 'status', 'must', 'needed'], ['document_id', 'document_id', 'ref', ''], ['note', 'note', 'text', ''], ['source_ref', 'source', 'json']],
   activity: [['at', 'at', 'now', ''], ['who', 'who', 'text', ''], ['action', 'action', 'must', ''], ['detail', 'detail', 'text', '']],
+  // the Clients add-on (crm.js): these belong to the practice, not to a project. A stage is a plain word here ('stage' above is the seven design stages).
+  //   num  a number (the value a person typed; never worked out here)
+  contact: [['name', 'name', 'must', ''], ['email', 'email', 'text', ''], ['phone', 'phone', 'text', ''], ['organisation', 'organisation', 'text', ''], ['role', 'role', 'text', ''], ['notes', 'notes', 'text', ''], ['archived', 'archived', 'flag', false], ['created_at', 'created_at', 'now', '']],
+  enquiry: [['title', 'title', 'must', ''], ['contact_id', 'contact_id', 'ref', ''], ['stage', 'stage', 'must', 'new'], ['value_nzd', 'value_nzd', 'num', null], ['source', 'source', 'text', ''], ['next_action', 'next_action', 'text', ''], ['next_action_due', 'next_action_due', 'date', ''], ['owner', 'owner', 'text', ''], ['project_id', 'project_id', 'ref', ''], ['archived', 'archived', 'flag', false], ['created_at', 'created_at', 'now', '']],
+  crm_activity: [['enquiry_id', 'enquiry_id', 'ref', ''], ['contact_id', 'contact_id', 'ref', ''], ['kind', 'kind', 'must', 'note'], ['body', 'body', 'must', ''], ['at', 'at', 'now', ''], ['who', 'who', 'text', ''], ['created_at', 'created_at', 'now', '']],
 };
 /** the kinds of record under a project, and where each sits in a project bundle */
 const LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
 export const SHARED_KINDS = ['project', ...Object.keys(LISTS)];
-const APPEND_ONLY = new Set(['approval', 'activity']);
+/** the Clients add-on's records: one practice's, not under a project. Contacts and enquiries are archived, never removed. */
+export const CRM_KINDS = ['contact', 'enquiry', 'crm_activity'];
+const PRACTICE_KINDS = new Set(CRM_KINDS);
+const APPEND_ONLY = new Set(['approval', 'activity', 'crm_activity']);
 const SOURCED = new Set(['task', 'checklist_item']); // rows that can carry a source_ref
 // columns the database fills in itself: never sent, and never mistaken for an unknown field
 const DATABASE_OWN = new Set(['user_id', 'recorded_at', 'seq', 'created_by', 'practice_id', 'extra']);
@@ -110,6 +118,7 @@ function up(type, v, fallback) {
     case 'now': { const t = typeof v === 'string' && v ? iso(v) : null; return t ? [t, true] : [new Date().toISOString(), none]; }
     case 'stage': return none ? [null, true] : [stageUp(String(v)), true];
     case 'ref': return none ? [null, true] : [dbId(v), true];
+    case 'num': return none ? [null, true] : typeof v === 'number' && Number.isFinite(v) ? [v, true] : [null, false];
     default: return [v === undefined ? null : v, true]; // json
   }
 }
@@ -121,6 +130,7 @@ function down(type, v, empty) {
     case 'time': case 'now': return iso(v) ?? empty;
     case 'stage': return stageDown(v);
     case 'flag': return v === true;
+    case 'num': return Number.isFinite(Number(v)) ? Number(v) : empty;
     default: return v;
   }
 }
@@ -160,7 +170,7 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
   const fields = FIELDS[kind];
   if (!fields) throw new Error(`Unknown kind of record: ${kind}`);
   const names = new Set(fields.map((f) => f[0])), extra = {};
-  const rec = kind === 'stage' ? { project_id: dbId(row.project_id), key: stageUp(row.key) } : { id: dbId(row.id), project_id: dbId(row.project_id) };
+  const rec = kind === 'stage' ? { project_id: dbId(row.project_id), key: stageUp(row.key) } : PRACTICE_KINDS.has(kind) ? { id: dbId(row.id), practice_id } : { id: dbId(row.id), project_id: dbId(row.project_id) };
   for (const [name, column, type, empty] of fields) {
     const [value, fits] = up(type, row[name], empty);
     rec[column] = value;
@@ -176,7 +186,7 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
 export function fromRecord(kind, r) {
   if (kind === 'project') return projectDown(r);
   const fields = FIELDS[kind], extra = obj(r.extra);
-  const row = kind === 'stage' ? { ...extra, id: `${r.project_id}:${stageDown(r.key)}`, project_id: r.project_id, key: stageDown(r.key) } : { ...extra, id: r.id, project_id: r.project_id };
+  const row = kind === 'stage' ? { ...extra, id: `${r.project_id}:${stageDown(r.key)}`, project_id: r.project_id, key: stageDown(r.key) } : PRACTICE_KINDS.has(kind) ? { ...extra, id: r.id } : { ...extra, id: r.id, project_id: r.project_id };
   for (const [name, column, type, empty] of fields) {
     if (name in extra && (r[column] === null || r[column] === undefined || (type === 'flag' && r[column] === false))) continue; // it did not fit the column: the original is in extra
     const v = down(type, r[column], empty);
@@ -303,7 +313,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
   const who = practice.name ? `in ${practice.name}` : 'in this practice';
   const snaps = new Map(); // project id -> what each of its rows looked like when last read, so a save writes only what changed
 
-  const check = (kind) => { if (!SHARED_KINDS.includes(kind) && kind !== 'setting') throw new Error(`Unknown kind of record: ${kind}`); };
+  const check = (kind) => { if (!SHARED_KINDS.includes(kind) && !PRACTICE_KINDS.has(kind) && kind !== 'setting') throw new Error(`Unknown kind of record: ${kind}`); };
   const mustWrite = (kind) => {
     if (role() !== 'viewer') return;
     if (kind === 'activity') throw new CloudError('You are a viewer, and viewers cannot add to the activity log, so this was not logged.', 'read_only');
@@ -338,6 +348,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     async list(kind, where) {
       check(kind);
       if (kind === 'setting') return local.list(kind, where);
+      if (PRACTICE_KINDS.has(kind)) return (await g.all(() => g.from(kind).select('*').eq('practice_id', practice.id), ['seq'])).map((r) => fromRecord(kind, r)).filter((r) => matches(r, where)).map(copy);
       const samples = await sampleIds();
       if (kind === 'project') {
         const mine = (await g.all(() => g.from('project').select('*').eq('practice_id', practice.id))).map(projectDown);
@@ -361,6 +372,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     async get(kind, id) {
       check(kind);
       if (kind === 'setting') return local.get(kind, id);
+      if (PRACTICE_KINDS.has(kind)) { const rows = await g.ask(() => g.from(kind).select('*').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1)); return rows?.[0] ? fromRecord(kind, rows[0]) : null; }
       const here = await local.get(kind, id);
       if (here && (kind === 'project' ? isSample(here) : await localProject(here.project_id))) return here;
       if (id === SAMPLE_ID) return null;
@@ -379,7 +391,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       check(kind);
       if (kind === 'setting') return local.save(kind, row);
       if (!row || typeof row.id !== 'string' || !row.id) throw new Error('A record needs an id before it can be saved.');
-      if (kind === 'project' ? isSample(row) : await localProject(row.project_id)) return local.save(kind, row);
+      if (!PRACTICE_KINDS.has(kind) && (kind === 'project' ? isSample(row) : await localProject(row.project_id))) return local.save(kind, row);
       mustWrite(kind);
       const rec = toRecord(kind, row, ctx);
       try {
@@ -397,6 +409,10 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       check(kind);
       if (kind === 'setting') return local.remove(kind, id);
       if (kind === 'project') return store.removeProject(id);
+      if (PRACTICE_KINDS.has(kind)) {
+        mustWrite(kind);
+        throw new CloudError(kind === 'crm_activity' ? 'Client history is a permanent record once it is shared. It cannot be removed.' : 'Clients and enquiries are archived, not removed.', kind === 'crm_activity' ? 'append_only' : 'kept');
+      }
       const here = await local.get(kind, id);
       if (here && await localProject(here.project_id)) return local.remove(kind, id);
       mustWrite(kind);
