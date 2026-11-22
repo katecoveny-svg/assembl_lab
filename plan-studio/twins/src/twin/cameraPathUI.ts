@@ -59,7 +59,7 @@ export function cameraPathPanel(app: App, ctx: PathCtx) {
   // on the 3D view, a line saying what the path is: proposed or confirmed, and by whom
   const chip = document.createElement('div');
   chip.className = 'chip'; chip.id = 'cpChip'; chip.hidden = true;
-  chip.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:5;background:rgba(249,246,242,.92);color:#33212f;max-width:calc(100% - 24px);white-space:normal';
+  chip.style.cssText = 'position:absolute;left:12px;bottom:52px;z-index:5;background:rgba(249,246,242,.92);color:#33212f;max-width:calc(100% - 24px);white-space:normal';
   app.canvas.parentElement!.append(chip);
 
   let sketch: HTMLCanvasElement | null = null, sketchName = '', sketchId: string | null = null, al: Align | null = null;
@@ -79,6 +79,9 @@ export function cameraPathPanel(app: App, ctx: PathCtx) {
   };
   const overlay = new THREE.Group(); overlay.name = 'camera_sketch'; const pathG = new THREE.Group(); pathG.name = 'camera_path';
   ctx.root.add(overlay, pathG);
+  // the sketch and the path's markers stay out of a played or recorded fly-through, and come back after it
+  let shownBefore = true;
+  app.onPlay.push((on) => { if (on) { shownBefore = ctx.root.visible; ctx.root.visible = false; } else ctx.root.visible = shownBefore; });
 
   // ---- the sketch, with what has been picked and traced on it --------------------------------------------------------------
   const drawSketch = () => {
@@ -186,7 +189,7 @@ export function cameraPathPanel(app: App, ctx: PathCtx) {
     if (mode === 'groundA') { ga = p; mode = 'groundB'; say('Now click the ground where point 2 of the sketch is.'); return true; }
     if (mode === 'groundB') {
       try { al = align2(a1!, a2!, ga!, p); } catch (e) { note.textContent = `${(e as Error).message}: pick two points apart.`; mode = 'groundA'; return true; }
-      b1 = ga; mode = 'idle'; drapeSketch(); ($<HTMLButtonElement>('#cpTrace')).disabled = false;
+      b1 = ga; mode = 'idle'; drawChip(); drapeSketch(); ($<HTMLButtonElement>('#cpTrace')).disabled = false;
       note.textContent = `Sketch laid on the ground: ${(al.scale * 100).toFixed(2)} cm a pixel, turned ${al.turnDeg.toFixed(1)}°, set by your two points. Check it sits on the parcel, then Trace the drawn line.`;
       alignRec = { sketch: [a1!, a2!], ground: [[ga![0] - ctx.shift.x, ga![1] - ctx.shift.z], [p[0] - ctx.shift.x, p[1] - ctx.shift.z]], metres_per_pixel: Math.round(al.scale * 1e5) / 1e5, turn_deg: Math.round(al.turnDeg * 10) / 10 };
       return true;

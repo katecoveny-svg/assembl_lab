@@ -30,6 +30,7 @@ html[data-look="sketch"] .chip.ok { color: #FFFFFF; border-color: #8BA2FF; backg
 html[data-look="sketch"] .small { color: #9AA1B8; }
 html[data-look="sketch"] a { color: #8BA2FF; }
 html[data-look="sketch"] .dropzone .card, html[data-look="sketch"] .drop-card { background: rgba(10,12,20,.94) !important; color: #D6D9E4; }
+html[data-look="sketch"] #status, html[data-look="sketch"] #cpChip { background: rgba(10,12,20,.92) !important; color: #D6D9E4 !important; border-color: #1E2334; }
 html[data-look="sketch"] :focus-visible { outline-color: #8BA2FF; }
 `;
 const FONTS = 'https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200..500&display=swap';

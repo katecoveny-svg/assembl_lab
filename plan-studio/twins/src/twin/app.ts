@@ -147,6 +147,8 @@ export class App {
   flight: { dur: number; at: (t: number) => { eye: THREE.Vector3; look: THREE.Vector3 } } | null = null;
   /** a click on the 3D view that a card wants for itself (picking points on the ground): return true to keep it from the inspector */
   pickHook: ((ev: PointerEvent) => boolean) | null = null;
+  /** told when Play or Record starts (true) and stops (false): e.g. to keep path markers out of the film */
+  onPlay: ((on: boolean) => void)[] = [];
 
   constructor(project: Project, canvas: HTMLCanvasElement) {
     this.project = project;
@@ -884,6 +886,7 @@ export class App {
     }
     const dur = this.flight ? this.flight.dur : Math.max(8, this.built.path.length * 5) * 1000;
     this.playing = { t0: performance.now(), dur };
+    for (const cb of this.onPlay) cb(true);
     this.controls.enabled = false;
     if (record) {
       const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
@@ -914,6 +917,7 @@ export class App {
     if (!this.playing) return;
     this.playing.rec?.stop();
     this.playing = null;
+    for (const cb of this.onPlay) cb(false);
     this.controls.enabled = true;
     const d = new THREE.Vector3();
     this.camera.getWorldDirection(d);
