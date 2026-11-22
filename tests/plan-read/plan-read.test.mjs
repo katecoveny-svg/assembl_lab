@@ -218,3 +218,8 @@ test('GET status names the prompt revision, so a preview can be checked without 
   assert.equal(r.json.prompts, PROMPTS); assert.match(PROMPTS, /^\d{4}-\d{2}-\d{2}/);
   assert.equal(r.calls.length, 0);
 });
+
+test('every read carries the prompt revision, so the page knows what each opening kind means', async () => {
+  const r = await run({ env: { OPENAI_API_KEY: K.OPENAI_API_KEY }, handlers: { openai: () => openaiOk(GOOD) } });
+  assert.equal(r.status, 200); assert.equal(r.json.prompts, PROMPTS); assert.deepEqual(r.json.plan, GOOD);
+});

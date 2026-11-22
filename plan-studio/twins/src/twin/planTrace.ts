@@ -31,6 +31,8 @@ export interface TraceRead {
   scaleNote: string;
   notes: string;
   image: HTMLCanvasElement;
+  /** the AI reader's prompt revision, when its reply says (replies before 2026-11-22b do not) */
+  rev?: string;
 }
 
 // ------------------------------------------------------------------------------------------------ pdf.js
@@ -276,7 +278,7 @@ interface AiPlan {
   dimensions: { text: string; x1: number; y1: number; x2: number; y2: number }[];
   notes: string;
 }
-export async function aiRead<T = AiPlan>(canvas: HTMLCanvasElement, mode: 'plan' | 'site' | 'elevation' = 'plan'): Promise<{ plan: T; model: string }> {
+export async function aiRead<T = AiPlan>(canvas: HTMLCanvasElement, mode: 'plan' | 'site' | 'elevation' = 'plan'): Promise<{ plan: T; model: string; rev?: string }> {
   let url = canvas.toDataURL('image/png');
   if (url.length > 4_200_000) url = canvas.toDataURL('image/jpeg', 0.88);
   const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: url, mode }) });
@@ -291,7 +293,7 @@ export async function aiRead<T = AiPlan>(canvas: HTMLCanvasElement, mode: 'plan'
     };
     throw new Error(why[j.error] ?? `the AI plan reader answered ${r.status}${j.error ? ` (${j.error})` : ''}`);
   }
-  return { plan: j.plan as T, model: j.model ?? 'AI' };
+  return { plan: j.plan as T, model: j.model ?? 'AI', ...(typeof j.prompts === 'string' ? { rev: j.prompts } : {}) };
 }
 
 /** mm per image pixel from the dimension strings the reader found: the median of the long ones */
@@ -305,7 +307,7 @@ export function dimsScale(dims: TraceDim[]) {
   return { k: r[Math.floor(r.length / 2)], n: r.length };
 }
 
-export function fromAi(plan: AiPlan, image: HTMLCanvasElement, label: string): Omit<TraceRead, 'mmPerPx' | 'offsetMm' | 'scaleNote'> {
+export function fromAi(plan: AiPlan, image: HTMLCanvasElement, label: string, rev?: string): Omit<TraceRead, 'mmPerPx' | 'offsetMm' | 'scaleNote'> {
   const dims: TraceDim[] = [];
   for (const d of plan.dimensions ?? []) {
     const v = +String(d.text).replace(/[^\d.]/g, '');
@@ -321,6 +323,7 @@ export function fromAi(plan: AiPlan, image: HTMLCanvasElement, label: string): O
     north: plan.north_deg ?? null,
     notes: plan.notes ?? '',
     image,
+    ...(rev ? { rev } : {}),
   };
 }
 
@@ -397,8 +400,8 @@ export async function readSheet(doc: PDFDocumentProxy, pageNo: number, progress:
   const reads = await Promise.all(
     clusters.map(async (c) => {
       const { canvas, s } = await renderRegion(page, c.box);
-      const { plan, model } = await aiRead(canvas);
-      const r = fromAi(plan, canvas, c.label);
+      const { plan, model, rev } = await aiRead(canvas);
+      const r = fromAi(plan, canvas, c.label, rev);
       const toPx = (x: number, y: number): Pt => [(x - c.box[0]) * s, (y - c.box[1]) * s];
       areasFromText(r.rooms, items, toPx);
       // scale: the title block, checked against the dimension strings
@@ -438,8 +441,8 @@ export async function readImage(file: File, progress: Progress): Promise<TraceRe
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
   progress('Reading the plan with the AI plan reader (about half a minute)…');
-  const { plan, model } = await aiRead(canvas);
-  const r = fromAi(plan, canvas, 'Traced plan');
+  const { plan, model, rev } = await aiRead(canvas);
+  const r = fromAi(plan, canvas, 'Traced plan', rev);
   const kd = dimsScale(r.dims);
   return [{ ...r, mmPerPx: kd?.k ?? null, offsetMm: [0, 0], scaleNote: kd ? `From ${kd.n} dimension strings on the picture.` : 'No dimension strings found: give one length.', notes: `Read by ${model}. ${r.notes}` }];
 }
@@ -700,8 +703,9 @@ export function toBuilding(ir: TraceRead, id: string, o: BuildOpts, mmPerPx = ir
       let o2: Opening;
       // a door of two or more leaves (sliders, stackers, bi-folds, a hinged pair) keeps its full width; a single leaf is at most
       // 1.2 m, centred where the reader put it; a wide window onto a deck is taken as a sliding door. "glazing" from the AI
-      // reader is fixed full-height glass (its prompt says so); from the linework reader it stays a sliding door, as before
-      const fixedGlass = op.kind === 'glazing' && ir.src === 'ai';
+      // reader (prompt revision 2026-11-22b on, which stamps its replies) is fixed full-height glass; from older AI replies and
+      // from the linework reader it stays a sliding door, as before
+      const fixedGlass = op.kind === 'glazing' && ir.src === 'ai' && !!ir.rev;
       if ((op.kind === 'glazing' && !fixedGlass) || (op.kind === 'door-double' && wide) || (op.kind === 'window' && wide && deckOn(side, A, B))) o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'slider', name: op.kind === 'door-double' ? 'Sliding or folding doors' : 'Sliding door', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
       else if (op.kind === 'door-double') o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'hinged', name: 'Double doors', a: r3(A), b: r3(B), sill: 0, head: 2.1, source: tr };
       else if (op.kind.startsWith('door')) { const hw = Math.min(B - A, 1.2) / 2; o2 = { id: `D-${side}${extOps[side].length + 1}`, kind: 'door', type: 'hinged', name: 'Door', a: r3(mid - hw), b: r3(mid + hw), sill: 0, head: 2.1, source: tr }; }

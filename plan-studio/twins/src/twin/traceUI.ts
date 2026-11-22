@@ -119,16 +119,19 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       list.innerHTML = others.map((x) => `<label class="tr-setrow"><span>${x.page}: ${esc(x.title.slice(0, 40))}</span><select data-page="${x.page}"><option value="skip">Skip</option><option value="site" ${roles.get(x.page) === 'site' ? 'selected' : ''}>Site plan</option><option value="elevation" ${roles.get(x.page) === 'elevation' ? 'selected' : ''}>Elevations</option></select></label>`).join('');
       list.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => { roles.set(+el.dataset.page!, el.value as Role); }));
     };
-    // the site plan and the elevations, read after the floor plan
+    // the site plan and the elevations: one read per sheet, all at the same time (none depends on another)
     const readExtras = async (progress: (m: string) => void) => {
       siteRead = null; elevReads = []; elev = null; site = null;
       const notes: string[] = [];
-      for (const [p, r] of extrasWanted()) {
+      const wanted = extrasWanted(), firstSite = wanted.find(([, r]) => r === 'site')?.[0];
+      const jobs = wanted.filter(([p, r]) => r === 'elevation' || p === firstSite).map(async ([p, r]) => {
         const info = sheets.find((x) => x.page === p)!;
-        try {
-          if (r === 'site' && !siteRead) siteRead = await readSiteSheet(doc!, info, progress);
-          if (r === 'elevation') elevReads.push(await readElevSheet(doc!, info, progress));
-        } catch (e) { notes.push(`Sheet ${p}: ${(e as Error).message}.`); }
+        try { return r === 'site' ? { p, site: await readSiteSheet(doc!, info, progress) } : { p, elev: await readElevSheet(doc!, info, progress) }; }
+        catch (e) { notes.push(`Sheet ${p}: ${(e as Error).message}.`); return { p }; }
+      });
+      for (const j of await Promise.all(jobs)) {
+        if (j.site) siteRead = j.site;
+        if (j.elev) elevReads.push(j.elev);
       }
       if (elevReads.length) {
         elev = interpretElevations(elevReads);
@@ -217,7 +220,10 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       const progress = (m: string) => { msg = m; if (my === token) status(m); };
       try {
         let got: TraceRead[] | null;
-        if (doc) got = await readSheet(doc, page, progress, useAi);
+        // with the AI reader asked for, the site plan and elevations go at the same time as the floor plan, not after it:
+        // the same reads, one per sheet, in about the time of the slowest one
+        const extrasP = useAi && doc && extrasWanted().length ? readExtras(() => {}).catch((e) => [`The other sheets: ${(e as Error).message}.`]) : null;
+        if (doc) got = await readSheet(doc, page, (m) => progress(extrasP && /AI plan reader/.test(m) ? m.replace('the AI plan reader', `the AI plan reader, with the other ${extrasWanted().length} sheet${extrasWanted().length > 1 ? 's' : ''}`) : m), useAi);
         else got = useAi ? await readImage(file, progress) : null;
         if (my !== token) return;
         if (!got) {
@@ -228,7 +234,7 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         }
         reads = got;
         include = got.map(() => true);
-        if (useAi && doc && extrasWanted().length) extraNotes = await readExtras(progress);
+        if (extrasP) { progress('Reading the other sheets…'); extraNotes = await extrasP; }
         if (my !== token) return;
         status(got.length > 1 ? `${got.length} plans read from sheet ${page}. Untick any you don’t want, check them, then build.` : elevReads.length || siteRead ? 'Set read. Check it against your drawings, then build.' : 'Plan read. Check it against your drawing, then build.');
         render();

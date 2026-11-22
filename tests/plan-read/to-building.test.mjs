@@ -89,7 +89,7 @@ test('outside: a pair of doors under 1.6 m stays hinged at full width; a single 
 });
 
 test('outside: fixed glazing is a window to the floor, not a sliding door; a glazed door is a door', () => {
-  const { L } = build(plan({ openings: [O('glazing', 600, 100, 800, 100), O('door', 200, 700, 290, 700)] }));
+  const { L } = build({ ...plan({ openings: [O('glazing', 600, 100, 800, 100), O('door', 200, 700, 290, 700)] }), rev: '2026-11-22b' });
   const N = L.walls.find((w) => w.id === 'N').openings, S = L.walls.find((w) => w.id === 'S').openings;
   assert.equal(N[0].kind, 'window'); assert.equal(N[0].type, 'fixed'); assert.equal(N[0].sill, 0);
   assert.equal(S[0].kind, 'door');
@@ -107,5 +107,10 @@ test('inside: wardrobe sliders read as door-double keep their full width; a sing
 test('from the linework reader (a vector PDF), "glazing" stays a sliding door, as before', () => {
   const p = plan({ openings: [O('glazing', 600, 100, 800, 100)] }); p.src = 'drawing';
   const N = toBuilding(p, 't', opts).building.levels[0].walls.find((w) => w.id === 'N').openings;
+  assert.equal(N[0].kind, 'door'); assert.equal(N[0].type, 'slider');
+});
+
+test('an AI reply from before the 2026-11-22b prompts (no revision stamp) keeps the old meaning: "glazing" is a sliding door', () => {
+  const N = build(plan({ openings: [O('glazing', 600, 100, 800, 100)] })).L.walls.find((w) => w.id === 'N').openings;
   assert.equal(N[0].kind, 'door'); assert.equal(N[0].type, 'slider');
 });

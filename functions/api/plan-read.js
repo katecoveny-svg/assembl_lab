@@ -8,7 +8,8 @@
 // PLANREAD_DAILY_CAP (per running instance, default 300 reads/day; counts requests, not provider attempts).
 // Images are not stored: they pass through to the model and are dropped.
 // Status: connected and measured (22 Nov 2026, one drawing set): see docs/architecture/plan-reader-error-report.md.
-// PROMPTS names the prompt and schema revision; GET reports it, so a preview can be checked without a paid read.
+// PROMPTS names the prompt and schema revision. GET reports it, so a preview can be checked without a paid read, and every
+// read carries it, so the page knows the meaning of each field (since 2026-11-22b "glazing" means fixed glass, not a slider).
 
 const MAX_BYTES = 4_500_000;
 export const PROMPTS = "2026-11-22b";
@@ -207,7 +208,7 @@ export async function onRequest({ request, env }) {
       let plan; try { plan = JSON.parse(r.text); } catch { console.warn(`plan-read: ${p.name} output not JSON`); continue; }
       const bad = validate(plan, mode.schema);
       if (bad) { console.warn(`plan-read: ${p.name} output failed validation`, bad.slice(0, 300)); continue; }
-      return json(200, { type: "assembl.planstudio.read", mode: body?.mode || "plan", model: r.model, provider: p.name, src: "ai", plan });
+      return json(200, { type: "assembl.planstudio.read", mode: body?.mode || "plan", model: r.model, provider: p.name, src: "ai", prompts: PROMPTS, plan });
     }
     if (r.reason === "too_much") tooMuch = true; else if (r.reason === "declined") declined = true;
   }
