@@ -8,9 +8,9 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { colorToDirection, directionToColor, float, luminance, mix, mrt, normalView, output, emissive, pass, sample, screenUV, smoothstep, uniform, vec2, vec3, vec4 } from 'three/tsl';
 import type { App } from '../app';
-import { applyLight, bakeInput, loadBake, prepare, restoreGeometry, runBake, saveBake, type Prepared } from './bake.ts';
-import { packScene } from './bakeRun.ts';
-import { bakedMaterial, clearBakedMaterials, giUniforms } from './giMaterial.ts';
+import { applyLight, bakeInput, isGlowDecal, loadBake, prepare, restoreGeometry, runBake, saveBake, type Prepared } from './bake.ts';
+import { sceneMeta, sceneParts } from './bakeRun.ts';
+import { bakedMaterial, clearBakedMaterials, giUniforms, GI_DESAT } from './giMaterial.ts';
 import { buildSky, SKY_RATIO, type SkyBuild } from './sky.ts';
 import { addDetail, detailFor, removeDetail } from './detail.ts';
 import { addProps, removeProps } from './props.ts';
@@ -102,9 +102,19 @@ export class Photoreal {
       this.P = P;
       const sunSpec = { dir: sun.dir, E: sun.E, radius: 0.0093 * 1.5 };
       if (o.exportUrl) {
-        const buf = packScene(bakeInput(P, { w: this.sky.w, h: this.sky.h, data: this.sky.data }, sunSpec));
-        await fetch(o.exportUrl, { method: 'POST', body: buf });
-        const st = { ...P.stats, exported: buf.byteLength, hash: P.hash };
+        // in parts of at most 8 MB, so the page never holds a second copy of the scene (memory is tight headless)
+        const I = bakeInput(P, { w: this.sky.w, h: this.sky.h, data: this.sky.data }, sunSpec);
+        const parts = sceneParts(I);
+        await fetch(`${o.exportUrl}?part=meta`, { method: 'POST', body: JSON.stringify(sceneMeta(I, parts)) });
+        let bytes = 0;
+        for (const [name, v] of parts) {
+          const u8 = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+          for (let off = 0; off < u8.length; off += 8 << 20) {
+            await fetch(`${o.exportUrl}?part=${name}&off=${off}`, { method: 'POST', body: u8.subarray(off, Math.min(u8.length, off + (8 << 20))) });
+          }
+          bytes += u8.length;
+        }
+        const st = { ...P.stats, exported: bytes, hash: P.hash };
         this.restoreAll();
         return st;
       }
@@ -163,7 +173,9 @@ export class Photoreal {
       }
     }
     if (n < 100) return null;
-    return [R / n, G / n, B / n];
+    // as the materials show it: pulled towards neutral by the same amount
+    const c = [R / n, G / n, B / n], L = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    return c.map((x) => L + (x - L) * (1 - GI_DESAT)) as [number, number, number];
   }
 
   private applyLook() {
@@ -182,8 +194,13 @@ export class Photoreal {
       mats: new Map(), hemi: a.hemi.intensity, fill: fill?.intensity ?? 0, env: sc.environment, envI: sc.environmentIntensity, envRot: sc.environmentRotation.clone(),
       tone: a.renderer.toneMapping, exp: a.renderer.toneMappingExposure, pipeline: a.pipeline, update: a.updateInterior, shadowRadius: a.sun.shadow.radius,
     };
-    // drawn lines (boundary, contours, set-out) are diagram marks, not part of a picture
-    a.scene.traverse((o) => { if ((o as THREE.Line).isLine && o.visible) { o.visible = false; this.hiddenLines.push(o); } });
+    // drawn lines (boundary, contours, set-out) are diagram marks, not part of a picture; the night lights' glow decals
+    // (pools of light, wall washes) are painted light, and this is a daylight picture
+    a.scene.traverse((o) => {
+      const mm = (o as THREE.Mesh).material as THREE.Material | undefined;
+      const glow = (o as THREE.Mesh).isMesh && !!mm && !Array.isArray(mm) && isGlowDecal(mm);
+      if (((o as THREE.Line).isLine || glow) && o.visible) { o.visible = false; this.hiddenLines.push(o); }
+    });
     for (const r of P.receivers) {
       this.saved.mats.set(r.mesh, r.mesh.material);
       const src = r.mesh.material as THREE.Material;

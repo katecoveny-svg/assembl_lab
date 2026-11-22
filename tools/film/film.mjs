@@ -5,7 +5,8 @@
 //
 //   node tools/film/film.mjs bake  [--spp 64] [--workers 6]            trace the light → plan-studio/twins/drop/twin/bake/hero.gi.bin
 //   node tools/film/film.mjs stills --out DIR [--views 'On the deck,Living room'] [--photoreal] [--w 1600 --h 900 --samples 8]
-//   node tools/film/film.mjs film  --out FILE.mp4 [--w 1920 --h 1080 --samples 8] [--from 0 --to N] [--keep]
+//   node tools/film/film.mjs film  --out FILE.mp4 [--w 1920 --h 1080 --samples 8] [--from 0 --to N] [--keep] [--encode]
+//        (frames already rendered are kept: run it again after a stop and it carries on; --encode only encodes)
 //   node tools/film/film.mjs film  --out films/flythrough-4k.mp4 --w 3840 --h 2160 --samples 16 --crf 16   (the 4K master)
 //
 // --soft  software rendering (SwiftShader) for machines without a GPU, as on assembl's build box. Without it Chrome
@@ -18,16 +19,16 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { Worker } from 'node:worker_threads';
 import { execFileSync } from 'node:child_process';
-import { bakeWithPool, unpackScene } from '../../plan-studio/twins/src/twin/photoreal/bakeRun.ts';
+import { bakeWithPool, sceneFrom } from '../../plan-studio/twins/src/twin/photoreal/bakeRun.ts';
 import { packBake } from '../../plan-studio/twins/src/twin/photoreal/bakeCore.ts';
 import { encodePNG } from './png.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const argv = process.argv.slice(2), cmd = argv[0];
-const o = { spp: 64, workers: Math.max(1, Math.min(8, os.cpus().length - 0)), w: 1920, h: 1080, samples: 8, views: 'Approach,On the deck,Living room,Kitchen,Bedroom', out: '', from: 0, to: -1, crf: 18, preset: 'veryfast', plan: 'hero.plan.json', soft: false, photoreal: false, keep: false, chrome: '', cams: '', look: '', ap: -1 };
+const o = { spp: 64, workers: Math.max(1, Math.min(8, os.cpus().length - 0)), w: 1920, h: 1080, samples: 8, views: 'Approach,On the deck,Living room,Kitchen,Bedroom', out: '', from: 0, to: -1, crf: 18, preset: 'veryfast', plan: 'hero.plan.json', soft: false, photoreal: false, keep: false, chrome: '', cams: '', look: '', ap: -1, encode: false };
 for (let i = 1; i < argv.length; i++) {
   const k = argv[i].replace(/^--/, '');
-  if (['soft', 'photoreal', 'keep'].includes(k)) { o[k] = true; continue; }
+  if (['soft', 'photoreal', 'keep', 'encode'].includes(k)) { o[k] = true; continue; }
   const v = argv[++i]; o[k] = typeof o[k] === 'number' ? Number(v) : v;
 }
 const stamp = () => new Date().toISOString().slice(11, 19);
@@ -80,8 +81,9 @@ function nodePool(n) {
   const ws = [];
   const call = (w, msg, want, transfer = []) => new Promise((res, rej) => {
     const wk = ws[w];
-    const on = (d) => { if (d.type === want) { wk.off('message', on); res(d); } };
-    wk.on('message', on); wk.once('error', rej);
+    const fail = (e) => { wk.off('message', on); rej(e); };
+    const on = (d) => { if (d.type === want) { wk.off('message', on); wk.off('error', fail); res(d); } };
+    wk.on('message', on); wk.once('error', fail);
     wk.postMessage(msg, transfer);
   });
   return {
@@ -97,14 +99,20 @@ const bakeFile = () => path.join(ROOT, 'plan-studio/twins/drop/twin/bake', o.pla
 
 async function bake() {
   const t0 = Date.now();
-  const tmp = path.join(os.tmpdir(), `photoreal-scene-${process.pid}.bin`);
-  const { browser, page } = await openPage('&photoreal=hold', { '/__film/scene': (b) => fs.writeFileSync(tmp, b) });
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'photoreal-scene-'));
+  let meta = null;
+  const sink = (b, url) => {
+    const part = url.searchParams.get('part');
+    if (part === 'meta') { meta = JSON.parse(b.toString('utf8')); return; }
+    fs.appendFileSync(path.join(tmp, part), b); // parts arrive in order, 8 MB at a time
+  };
+  const { browser, page } = await openPage('&photoreal=hold', { '/__film/scene': sink });
   const st = await page.evaluate(() => window.__photoreal.enable({ exportUrl: '/__film/scene' }));
   await browser.close();
   const tExport = Date.now();
-  log(`scene exported: ${(fs.statSync(tmp).size / 1e6).toFixed(1)} MB, ${st.samples} light points, ${st.occluderTris} occluder triangles (${((tExport - t0) / 1000).toFixed(0)} s with the page)`);
-  const buf = fs.readFileSync(tmp); fs.unlinkSync(tmp);
-  const I = unpackScene(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+  log(`scene exported: ${(st.exported / 1e6).toFixed(1)} MB, ${st.samples} light points, ${st.occluderTris} occluder triangles (${((tExport - t0) / 1000).toFixed(0)} s with the page)`);
+  const I = sceneFrom(meta, (k) => { const b = fs.readFileSync(path.join(tmp, k)); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); });
+  fs.rmSync(tmp, { recursive: true, force: true });
   const r = await bakeWithPool(I, nodePool(o.workers), { spp: o.spp, log: (m) => log(m) });
   const out = packBake(r.E, r.D, { hash: I.hash, spp: o.spp, seconds: r.timing.total, workers: o.workers, timing: r.timing, made: new Date().toISOString().slice(0, 10), by: 'tools/film/film.mjs bake', sun: I.sun });
   fs.mkdirSync(path.dirname(bakeFile()), { recursive: true });
@@ -137,23 +145,35 @@ async function film() {
   if (!o.out) throw new Error('--out FILE.mp4');
   const frames = o.out.replace(/\.mp4$/, '') + '-frames';
   fs.mkdirSync(frames, { recursive: true });
-  const { browser, page } = await openPage('&photoreal=hold', {
-    '/__film/frame': (b, url) => fs.writeFileSync(path.join(frames, `f_${String(url.searchParams.get('f')).padStart(5, '0')}.png`), encodePNG(b, Number(url.searchParams.get('w')), Number(url.searchParams.get('h')))),
-  });
-  log('photoreal:', JSON.stringify(await page.evaluate(() => window.__photoreal.enable({}))).slice(0, 300));
-  const spec = await page.evaluate(() => ({ fps: window.__photoreal.spec.fps, frames: window.__photoreal.path.frames() }));
-  const to = o.to < 0 ? spec.frames : Math.min(spec.frames, o.to);
-  const t0 = Date.now();
-  // in runs of 24 frames so a long film reports as it goes
-  for (let a = o.from; a < to; a += 24) {
-    const r = await page.evaluate((x) => window.__photoreal.film(x), { from: a, to: Math.min(to, a + 24), w: o.w, h: o.h, samples: o.samples, url: '/__film/frame' });
-    const done = Math.min(to, a + 24) - o.from, el = (Date.now() - t0) / 1000;
-    log(`frames ${a}–${Math.min(to, a + 24) - 1}: ${(r.seconds / r.frames).toFixed(1)} s a frame; ${done}/${to - o.from} done, about ${((el / done) * (to - o.from - done) / 60).toFixed(0)} min to go`);
+  const name = (f) => path.join(frames, `f_${String(f).padStart(5, '0')}.png`);
+  const specFile = JSON.parse(fs.readFileSync(path.join(ROOT, 'plan-studio/twins/src/twin/photoreal/flythrough.json'), 'utf8'));
+  const total = Math.round(specFile.duration * specFile.fps), to = o.to < 0 ? total : Math.min(total, o.to);
+  const missing = () => { const m = []; for (let f = o.from; f < to; f++) if (!fs.existsSync(name(f))) m.push(f); return m; };
+  // frames already on disk are kept, so a render that stops (a crash, a restart) carries on where it was
+  if (!o.encode && missing().length) {
+    const { browser, page } = await openPage('&photoreal=hold', {
+      '/__film/frame': (b, url) => { const f = name(url.searchParams.get('f')); fs.writeFileSync(f + '.tmp', encodePNG(b, Number(url.searchParams.get('w')), Number(url.searchParams.get('h')))); fs.renameSync(f + '.tmp', f); },
+    });
+    log('photoreal:', JSON.stringify(await page.evaluate(() => window.__photoreal.enable({}))).slice(0, 300));
+    const t0 = Date.now(), todo = missing();
+    let done = 0;
+    // contiguous runs of up to 24 missing frames, so a long film reports as it goes
+    for (let i = 0; i < todo.length;) {
+      let j = i; while (j + 1 < todo.length && todo[j + 1] === todo[j] + 1 && j - i < 23) j++;
+      const r = await page.evaluate((x) => window.__photoreal.film(x), { from: todo[i], to: todo[j] + 1, w: o.w, h: o.h, samples: o.samples, url: '/__film/frame' });
+      done += j - i + 1;
+      const el = (Date.now() - t0) / 1000;
+      log(`frames ${todo[i]}–${todo[j]}: ${(r.seconds / r.frames).toFixed(1)} s a frame (render ${(r.timing.render / Math.max(1, r.timing.frames) / 1000).toFixed(1)} s, read-back ${(r.timing.read / Math.max(1, r.timing.frames) / 1000).toFixed(1)} s); ${done}/${todo.length}, about ${((el / done) * (todo.length - done) / 60).toFixed(0)} min to go`);
+      i = j + 1;
+    }
+    await browser.close();
   }
-  await browser.close();
-  const args = ['-y', '-v', 'error', '-framerate', String(spec.fps), '-start_number', String(o.from), '-i', path.join(frames, 'f_%05d.png'), '-c:v', 'libx264', '-preset', o.preset, '-crf', String(o.crf), '-pix_fmt', 'yuv420p', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-movflags', '+faststart', o.out];
+  const left = missing();
+  if (left.length) throw new Error(`${left.length} frames still missing (first ${left[0]}): run again to carry on`);
+  const args = ['-y', '-v', 'error', '-framerate', String(specFile.fps), '-start_number', String(o.from), '-i', path.join(frames, 'f_%05d.png'), '-frames:v', String(to - o.from), '-c:v', 'libx264', '-preset', o.preset, '-crf', String(o.crf), '-pix_fmt', 'yuv420p', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-movflags', '+faststart', o.out];
+  const te = Date.now();
   execFileSync('ffmpeg', args, { stdio: 'inherit' });
-  log(`wrote ${o.out} ${(fs.statSync(o.out).size / 1e6).toFixed(1)} MB (${to - o.from} frames at ${spec.fps} fps, ${o.w}×${o.h}, ${o.samples} sub-frames each)`);
+  log(`wrote ${o.out} ${(fs.statSync(o.out).size / 1e6).toFixed(1)} MB (${to - o.from} frames at ${specFile.fps} fps, ${o.w}×${o.h}, ${o.samples} sub-frames each); encode ${((Date.now() - te) / 1000).toFixed(0)} s`);
   if (!o.keep) fs.rmSync(frames, { recursive: true, force: true });
 }
 

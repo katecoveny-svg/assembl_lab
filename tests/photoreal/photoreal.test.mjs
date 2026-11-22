@@ -126,6 +126,14 @@ test('the bake is deterministic: same scene, same light, however the work is spl
   assert.deepEqual(Array.from(f1), Array.from(f2));
 });
 
+test('a light point with no usable normal comes out finite, and is filled from its neighbours', async () => {
+  const I = room();
+  I.samples[3] = 0; I.samples[4] = 0; I.samples[5] = 0; // degenerate normal on the first light point
+  const r = await bakeWithPool(I, inlinePool(), { spp: 8, chunk: 16 });
+  for (const v of r.E) assert.ok(Number.isFinite(v));
+  assert.ok(r.E[0] + r.E[1] + r.E[2] > 0, 'it takes its light from the next point along the floor');
+});
+
 test('the bake sees geometry: floor under the roof is darker than floor under the opening', async () => {
   const r = await bakeWithPool(room(), inlinePool(), { spp: 32, chunk: 64 });
   const I = room(), lum = (i) => 0.2126 * r.E[i * 3] + 0.7152 * r.E[i * 3 + 1] + 0.0722 * r.E[i * 3 + 2];

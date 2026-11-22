@@ -110,30 +110,43 @@ export async function bakeWithPool(I: BakeInput, pool: Pool, o: RunOpts): Promis
   return { E, D, timing };
 }
 
-// ---- scene file: the page writes it, node bakes it (tools/film/bake.mjs) ----
+// ---- scene file: the page writes it, node bakes it (tools/film/film.mjs bake) ----
 const SCENE_MAGIC = 0x31535241; // 'ARS1'
+type Part = [string, Float32Array | Uint32Array | Uint16Array | Int32Array];
+export function sceneParts(I: BakeInput): Part[] {
+  return [['samples', I.samples], ['ea', I.ea], ['eb', I.eb], ['tri', I.tri], ['mat', I.mat], ['triSample', I.triSample], ['triSampleB', I.triSampleB], ['mats', I.mats], ['sky', I.sky.data]];
+}
+export function sceneMeta(I: BakeInput, parts = sceneParts(I)) {
+  return { sky: { w: I.sky.w, h: I.sky.h }, sun: I.sun, focus: I.focus, hash: I.hash, parts: parts.map(([k, v]) => [k, v.constructor.name, v.byteLength] as [string, string, number]) };
+}
+const KINDS: Record<string, new (b: ArrayBuffer) => Float32Array | Uint32Array | Uint16Array | Int32Array> = { Float32Array, Uint32Array, Uint16Array, Int32Array };
+/** a scene from its meta and parts (each part as an ArrayBuffer of exactly its bytes) */
+export function sceneFrom(meta: ReturnType<typeof sceneMeta>, get: (name: string) => ArrayBuffer): BakeInput {
+  const P: Record<string, Float32Array | Uint32Array | Uint16Array | Int32Array> = {};
+  for (const [k, kind, bytes] of meta.parts) { const b = get(k); if (b.byteLength !== bytes) throw new Error(`scene part ${k}: ${b.byteLength} bytes, expected ${bytes}`); P[k] = new KINDS[kind](b); }
+  return {
+    samples: P.samples as Float32Array, ea: P.ea as Uint32Array, eb: P.eb as Uint32Array, tri: P.tri as Float32Array, mat: P.mat as Uint16Array,
+    triSample: P.triSample as Int32Array, triSampleB: P.triSampleB as Int32Array, mats: P.mats as Float32Array,
+    sky: { w: meta.sky.w, h: meta.sky.h, data: P.sky as Float32Array }, sun: meta.sun, focus: meta.focus, hash: meta.hash,
+  };
+}
+/** one-file form (tests and archives) */
 export function packScene(I: BakeInput): ArrayBuffer {
-  const parts: [string, ArrayBufferView][] = [['samples', I.samples], ['ea', I.ea], ['eb', I.eb], ['tri', I.tri], ['mat', I.mat], ['triSample', I.triSample], ['triSampleB', I.triSampleB], ['mats', I.mats], ['sky', I.sky.data]];
-  const meta = { sky: { w: I.sky.w, h: I.sky.h }, sun: I.sun, focus: I.focus, hash: I.hash, parts: [] as [string, number, number][] };
-  let off = 0;
-  for (const [k, v] of parts) { meta.parts.push([k, off, v.byteLength]); off += Math.ceil(v.byteLength / 8) * 8; }
-  const json = new TextEncoder().encode(JSON.stringify(meta));
+  const parts = sceneParts(I), meta = sceneMeta(I, parts), json = new TextEncoder().encode(JSON.stringify(meta));
   const head = Math.ceil((8 + json.length) / 8) * 8;
-  const buf = new ArrayBuffer(head + off), dv = new DataView(buf);
+  let off = head; const offs: number[] = [];
+  for (const [, v] of parts) { offs.push(off); off += Math.ceil(v.byteLength / 8) * 8; }
+  const buf = new ArrayBuffer(off), dv = new DataView(buf);
   dv.setUint32(0, SCENE_MAGIC, true); dv.setUint32(4, json.length, true);
   new Uint8Array(buf, 8, json.length).set(json);
-  for (let i = 0; i < parts.length; i++) new Uint8Array(buf, head + meta.parts[i][1], parts[i][1].byteLength).set(new Uint8Array(parts[i][1].buffer, parts[i][1].byteOffset, parts[i][1].byteLength));
+  parts.forEach(([, v], i) => new Uint8Array(buf, offs[i], v.byteLength).set(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)));
   return buf;
 }
 export function unpackScene(buf: ArrayBuffer): BakeInput {
   const dv = new DataView(buf);
   if (dv.getUint32(0, true) !== SCENE_MAGIC) throw new Error('not a bake scene file');
-  const jl = dv.getUint32(4, true), meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, jl)));
-  const head = Math.ceil((8 + jl) / 8) * 8;
-  const get = (k: string) => { const p = (meta.parts as [string, number, number][]).find((x) => x[0] === k)!; return buf.slice(head + p[1], head + p[1] + p[2]); };
-  return {
-    samples: new Float32Array(get('samples')), ea: new Uint32Array(get('ea')), eb: new Uint32Array(get('eb')), tri: new Float32Array(get('tri')), mat: new Uint16Array(get('mat')),
-    triSample: new Int32Array(get('triSample')), triSampleB: new Int32Array(get('triSampleB')), mats: new Float32Array(get('mats')),
-    sky: { w: meta.sky.w, h: meta.sky.h, data: new Float32Array(get('sky')) }, sun: meta.sun, focus: meta.focus, hash: meta.hash,
-  };
+  const jl = dv.getUint32(4, true), meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, jl))) as ReturnType<typeof sceneMeta>;
+  let off = Math.ceil((8 + jl) / 8) * 8; const at = new Map<string, [number, number]>();
+  for (const [k, , bytes] of meta.parts) { at.set(k, [off, bytes]); off += Math.ceil(bytes / 8) * 8; }
+  return sceneFrom(meta, (k) => { const [o, b] = at.get(k)!; return buf.slice(o, o + b); });
 }

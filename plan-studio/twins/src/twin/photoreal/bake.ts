@@ -40,6 +40,8 @@ const V = new THREE.Vector3(), N3 = new THREE.Matrix3(), M4 = new THREE.Matrix4(
 
 function shown(o: THREE.Object3D | null): boolean { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; }
 function mat0(o: THREE.Mesh) { return (Array.isArray(o.material) ? o.material[0] : o.material) as THREE.MeshStandardMaterial; }
+/** the page's painted night light: additive glow decals (pools of light under downlights, uplight glows, wall washes) */
+export const isGlowDecal = (m: THREE.Material) => m.blending === THREE.AdditiveBlending || /^(downlight_pool|uplight_pool|uplight_glow|uplight_wall_wash)$/.test(m.name);
 const isGlass = (m: THREE.MeshPhysicalMaterial) => (m.transmission ?? 0) > 0 || /glass|window|lens/i.test(m.name ?? '') || (m.transparent && m.opacity < 0.5);
 const isFoliage = (o: THREE.Object3D, m: THREE.Material) => /foliage|leaf|leaves|frond|harakeke|fern|grass|tussock|canopy|crown|shrub|flax/i.test(`${o.name} ${m.name}`) || (m.alphaTest ?? 0) > 0;
 
@@ -156,6 +158,8 @@ export function prepare(roots: Record<string, THREE.Object3D | undefined>, focus
       if (!mesh.isMesh || !shown(mesh) || (o as unknown as { isPoints?: boolean }).isPoints || o.name === 'sea' || o.userData.bakeOccluder === false) return;
       const m = mat0(mesh);
       if (!m) return;
+      // painted light (additive glow decals, pools and washes) casts no shadow
+      if (isGlowDecal(m)) return;
       if (mesh.isInstancedMesh) {
         const im = mesh as THREE.InstancedMesh, keep: number[] = [];
         for (let k = 0; k < im.count; k++) { im.getMatrixAt(k, IM); V.setFromMatrixPosition(IM).applyMatrix4(im.matrixWorld); if (V.distanceTo(focus) < occludeR) keep.push(k); }
@@ -346,6 +350,7 @@ export async function runBake(P: Prepared, sky: SkyMap, sun: Sun, o: BakeOpts = 
 
 /** write the light into each receiver as vertex attributes */
 export function applyLight(P: Prepared, E: Float32Array, D: Float32Array) {
+  for (let i = 0; i < E.length; i++) { if (!Number.isFinite(E[i])) E[i] = 0; if (!Number.isFinite(D[i])) D[i] = 0; }
   for (const r of P.receivers) {
     const n = r.ids.length, gi = new Float32Array(n * 3), gd = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { const s = r.ids[i]; for (let c = 0; c < 3; c++) { gi[i * 3 + c] = E[s * 3 + c]; gd[i * 3 + c] = D[s * 3 + c]; } }

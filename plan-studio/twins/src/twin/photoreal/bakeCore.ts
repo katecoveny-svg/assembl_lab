@@ -197,6 +197,8 @@ export class Tracer {
       seedRng(first + i, mode, S.seed);
       const px = samples[i * 6], py = samples[i * 6 + 1], pz = samples[i * 6 + 2];
       const nx = samples[i * 6 + 3], ny = samples[i * 6 + 4], nz = samples[i * 6 + 5];
+      // a vertex with no usable normal (degenerate geometry) is marked invalid and filled from its neighbours
+      if (!(nx * nx + ny * ny + nz * nz > 0.25)) { out[i * OUT + 6] = 0; continue; }
       const ox = px + nx * EPS * 1.5, oy = py + ny * EPS * 1.5, oz = pz + nz * EPS * 1.5;
       let er = 0, eg = 0, eb = 0, ddx = 0, ddy = 0, ddz = 0, wl = 0, backs = 0, sunV = 0;
       const j1 = rnd(), j2 = rnd();
@@ -263,6 +265,7 @@ export class Tracer {
  */
 export function smooth(E: Float32Array, D: Float32Array, ok: Uint8Array, N: Float32Array, ea: Uint32Array, eb: Uint32Array, iters: number) {
   const nS = ok.length, nE = ea.length;
+  for (let i = 0; i < nS; i++) if (!(Number.isFinite(E[i * 3]) && Number.isFinite(E[i * 3 + 1]) && Number.isFinite(E[i * 3 + 2]))) { ok[i] = 0; E[i * 3] = E[i * 3 + 1] = E[i * 3 + 2] = 0; D[i * 3] = D[i * 3 + 1] = D[i * 3 + 2] = 0; }
   const acc = new Float32Array(nS * 6), wsum = new Float32Array(nS);
   for (let it = 0; it < 6; it++) {
     acc.fill(0); wsum.fill(0); let bad = 0;

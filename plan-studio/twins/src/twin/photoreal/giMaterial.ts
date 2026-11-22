@@ -15,7 +15,11 @@ export const giUniforms = {
   scale: uniform(1),
   /** how strongly normal maps steer the baked light (room-at-dawn's giK) */
   k: uniform(1.6),
+  /** how far the bounce light's colour is pulled towards neutral (0 = as traced): timber floors and warm walls tint
+   *  every bounce, and a photograph's white balance takes most of that out */
+  desat: uniform(0.35),
 };
+export const GI_DESAT = 0.35;
 
 type Builder = { context: Record<string, unknown> };
 
@@ -88,7 +92,8 @@ export function bakedMaterial(_renderer: THREE.WebGPURenderer, src: THREE.Materi
   const ratio = normalWorld.dot(gd).mul(giUniforms.k).add(1).div(normalWorldGeometry.dot(gd).mul(giUniforms.k).add(1).max(0.3)).clamp(0, 2.5);
   let baked = giMode.dir ? gi.mul(ratio) : gi;
   if (back && giMode.back) baked = frontFacing.select(baked, attribute('giB', 'vec3')) as typeof baked;
-  baked = baked.mul(giUniforms.scale);
+  const lum = baked.dot(vec3(0.2126, 0.7152, 0.0722));
+  baked = vec3(lum).mix(baked, giUniforms.desat.oneMinus()).mul(giUniforms.scale);
   const proto = Object.getPrototypeOf(nm) as { setupEnvironment: (b: THREE.NodeBuilder) => THREE.EnvironmentNode | null };
   (nm as unknown as { setupEnvironment: (b: THREE.NodeBuilder) => THREE.Node }).setupEnvironment = function (this: unknown, builder: THREE.NodeBuilder) {
     const env = proto.setupEnvironment.call(this, builder);
