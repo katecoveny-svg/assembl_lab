@@ -7,6 +7,7 @@
 //   createSwitch(local)                             one store object for the page, which hands each call to the browser
 //                                                   store or the shared store. The page does not know which.
 //   createTeam(gateway)                             practices, people, invitations, the practice's look (extra.theme)
+//   createArtworkPlace(gateway, practice)           the practice's own artwork (extra.artwork and <practice>/artwork/ files)
 //   moveProjects({ local, cloud, ids })             copy chosen browser projects up; the browser copy is left alone
 //
 // What stays in the browser, always: the Sample project and everything under it (never uploaded), and settings.
@@ -786,6 +787,58 @@ export async function moveProjects({ local, cloud, ids, now }) {
   return out;
 }
 
+// ---- the practice's artwork (artwork.js): kept in practice.extra.artwork and the private bucket -------------------------
+/** how long a link to one of the practice's artwork files lasts. The links are made for one visit and kept only in memory. */
+export const ARTWORK_LINK_SECONDS = 3600;
+/**
+ * The practice's own artwork: its record is practice.extra.artwork (read by everyone in the practice, changed by an owner
+ * only, as the look is), and its files are in the practice's private bucket under <practice id>/artwork/. Members see
+ * the files through links that last an hour; nothing has a public address. The same calls as this browser's own artwork
+ * place (artwork-kit.js createBrowserArtworkPlace):
+ *   read() -> record | null    write(record | null)    upload(path, blob, type)    urls(paths) -> { urls, until }    remove(paths)
+ * write, upload and remove are refused before anything is sent unless the person is an owner.
+ */
+export function createArtworkPlace(g, practice) {
+  if (!practice?.id || !UUID.test(practice.id)) throw new Error('The practice’s artwork needs a practice.');
+  const prefix = `${practice.id}/artwork/`, who = practice.name || 'the practice';
+  const mine = (p) => typeof p === 'string' && p.startsWith(prefix) && !p.includes('..') && /^[\w./-]+$/.test(p);
+  const mustOwn = () => { if (practice.role !== 'owner') throw new CloudError(`Only an owner of ${who} can change its artwork. Nothing was changed.`, 'read_only'); };
+  const row = async () => (await g.ask(() => g.from('practice').select('id, extra').eq('id', practice.id).limit(1)))?.[0] ?? null;
+  return {
+    shared: true, prefix, practice,
+    get canChange() { return practice.role === 'owner'; },
+    async read() { const a = (await row())?.extra?.artwork; return isObj(a) ? copy(a) : null; },
+    /** the record, or null to take the artwork away. The rest of extra (the look) is kept. */
+    async write(record) {
+      mustOwn();
+      const r = await row();
+      if (!r) throw new CloudError('That practice is not in the shared records.', 'missing');
+      const extra = { ...(isObj(r.extra) ? r.extra : {}) };
+      if (record) extra.artwork = copy(record); else delete extra.artwork;
+      const rows = await g.ask(() => g.from('practice').update({ extra }).eq('id', practice.id).select('id'));
+      if (!rows?.length) throw new CloudError(`The shared records refused that: only an owner can change the practice’s artwork. Nothing was changed.`, 'refused');
+      return true;
+    },
+    async upload(path, blob, type = 'image/webp') {
+      mustOwn();
+      if (!mine(path)) throw new Error('Artwork is kept under the practice’s own artwork folder.');
+      await g.file((s) => s.upload(path, blob, { contentType: type, upsert: false, cacheControl: '3600' }));
+    },
+    async urls(paths) {
+      const want = [...new Set((paths ?? []).filter(mine))], urls = new Map(), until = Date.now() + ARTWORK_LINK_SECONDS * 1000;
+      for (const part of chunks(want, 100)) {
+        const got = await g.file((s) => s.createSignedUrls(part, ARTWORK_LINK_SECONDS));
+        for (const x of got ?? []) if (x?.path && !x.error && typeof x.signedUrl === 'string') urls.set(x.path, x.signedUrl);
+      }
+      return { urls, until };
+    },
+    async remove(paths) {
+      mustOwn();
+      for (const part of chunks([...new Set((paths ?? []).filter(mine))], 100)) await g.file((s) => s.remove(part));
+    },
+  };
+}
+
 // ---- practices, people and invitations ----------------------------------------------------------------------------------
 const ROLES = ['owner', 'member', 'viewer'];
 const cleanEmail = (v) => String(v ?? '').trim().toLowerCase();
@@ -838,6 +891,27 @@ export function createTeam(g) {
       const rows = await g.ask(() => g.from('practice').update({ extra }).eq('id', practiceId).select('id, extra'));
       if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can change the practice’s look. Nothing was changed.', 'refused');
       return rows[0].extra?.theme ?? theme;
+    },
+    /** what the practice looks for in public tender notices (practice.extra.hunt): keywords, regions, sectors, value range, sources. Every member can read it. null when none is set. */
+    async hunt(practiceId) {
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      const h = row?.extra && typeof row.extra === 'object' ? row.extra.hunt : null;
+      return isObj(h) ? h : null;
+    },
+    /** The public tender notices the assembl radar has collected lately (arch.hunt_signals: public fields only, members only, reads nothing else). */
+    async huntSignals(practiceId, since = null) {
+      const rows = await g.rpc('hunt_signals', { p_practice: practiceId, p_since: since });
+      return Array.isArray(rows) ? rows : [];
+    },
+    /** Save what the practice looks for. Like the look, the database lets only an owner change the practice row; anyone else changes nothing. */
+    async setHunt(practiceId, hunt) {
+      if (!isObj(hunt)) throw new Error('Say what to look for.');
+      const row = one(await g.ask(() => g.from('practice').select('id, extra').eq('id', practiceId).limit(1)));
+      if (!row) throw new CloudError('That practice is not in the shared records.', 'missing');
+      const extra = { ...(isObj(row.extra) ? row.extra : {}), hunt: copy(hunt) };
+      const rows = await g.ask(() => g.from('practice').update({ extra }).eq('id', practiceId).select('id, extra'));
+      if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can change what the practice looks for. Nothing was changed.', 'refused');
+      return rows[0].extra?.hunt ?? hunt;
     },
     /** the database refuses this for anyone but an owner, and refuses to leave a practice with no owner */
     async setRole(practiceId, userId, role) {

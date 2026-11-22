@@ -427,7 +427,7 @@ export function fromEnquiry(e) {
  * In one browser, the person at it can change everything. In the shared records: a viewer changes nothing; a member logs
  * time, invoices and allocations, sets holds and the dial, and types the fee, budget hours and target dates; only an
  * owner changes the practice's money settings (targets, labels, chances, the team, the default rate) and a project's own
- * hourly rate. The database enforces the same (supabase/migrations/20261122130000_arch_money.sql).
+ * hourly rate. The database enforces the same (supabase/migrations/20261122131000_arch_money.sql).
  */
 export const OWNER_ONLY = ['practice', 'rate'];
 export const MEMBER_CAN = ['fee', 'hours', 'targets', 'split', 'time', 'invoice', 'allocation', 'hold', 'set', 'enquiry'];

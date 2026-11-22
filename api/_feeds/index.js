@@ -11,6 +11,7 @@ import { fetchFootprint } from "./linz.js";
 import { fetchGrocery } from "./grocery.js";
 import { fetchSite } from "./site.js";
 import { fetchAddress } from "./address.js";
+import { fetchHunt } from "./hunt.js";
 import { fetchRetailers, fetchTariffs } from "./retail.js";
 import { CADENCE_TTL, withStatus } from "./util.js";
 
@@ -33,6 +34,7 @@ export const FEEDS = {
   footprint: { fetch: fetchFootprint, cadence: "daily" }, // LINZ building outlines near lat/lon (or the place)
   site: { fetch: fetchSite, cadence: "hourly" }, // facts about one point of land (?lat=&lon=): parcel, zone, overlays, hazards, weather; one envelope per fact in .facts
   address: { fetch: fetchAddress, cadence: "5-min" }, // find a street address (?q=): LINZ NZ Addresses, up to 8 matches with a point each; the text is not stored
+  hunt: { fetch: fetchHunt, cadence: "hourly" }, // found work for a practice from public tender notices (GETS), ranked against its lens (?keywords=&regions=&sectors=&min=&max=&sources=); read-only, nothing is contacted
   // ground and surface (LINZ 1 m LiDAR) are not served here: the plan drop page reads them in the browser, straight from LINZ
   // (plan-studio/twins/src/twin/linz/). On Cloudflare the server-side reader failed: see docs/architecture/site-ground.md.
   grocery: { fetch: fetchGrocery, cadence: "annual" }, // Commerce Commission Annual Grocery Report: snapshot, not fetched

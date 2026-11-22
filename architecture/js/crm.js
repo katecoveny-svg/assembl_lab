@@ -15,6 +15,8 @@ import {
   STAGES, STAGE_KEYS, TYPED_KINDS, KIND_LABEL, QUIET_DAYS, stageLabel, newContact, newEnquiry, newActivity, initials, parseValue, money, isOpen, isQuiet, isOverdue,
   quietDays, missingStep, nextSteps, moveEnquiry, followUpDraft, timeline, sameId, dayName, shortDay, clock, localInput, fromLocalInput, cardFacts, daysBetween,
 } from './crm-model.js';
+import { createHunt, ensureHuntCss } from './hunt.js';
+import { sourceLink } from './hunt-model.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const attr = esc;
@@ -83,13 +85,18 @@ function ago(iso, now) {
   return d === 0 ? 'today' : d === 1 ? 'yesterday' : d < 60 ? `${d} days ago` : shortDay(iso, now);
 }
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+/** where an enquiry came from; a notice link (from Found work) is a real link that opens the notice */
+function sourceFact(text) {
+  const url = sourceLink(text);
+  return url ? `<a href="${attr(url)}" target="_blank" rel="noopener noreferrer">${icon('arrow', 'crm-i-s')}<span>${esc(text.replace(url, '').replace(/[\s·]+$/, ''))}<span class="vh"> (opens the notice)</span></span></a>` : `<span>${icon('arrow', 'crm-i-s')}<span>${esc(text)}</span></span>`;
+}
 
 // ---- state kept between draws (one screen at a time) ----------------------------------------------------------------------
 const ui = { stage: null, allSteps: false, adding: null, offer: null, projectForm: null, flash: null, draft: null, logKind: 'note', edit: null, focus: null, announce: '' };
 
 // ---- the screen ------------------------------------------------------------------------------------------------------------
 async function renderScreen(el, ctx, rest = []) {
-  await ensureCss();
+  await Promise.all([ensureCss(), ensureHuntCss()]);
   const [view, id] = rest;
   // a message belongs to the screen it was made on; opening another screen puts it away (unless the screen was opened by that very action)
   const key = rest.join('/');
@@ -97,6 +104,8 @@ async function renderScreen(el, ctx, rest = []) {
   ui.key = key; ui.carry = false;
   const st = { contacts: [], enquiries: [], acts: [] };
   const readOnly = ctx.practice?.role === 'viewer';
+  // "Found work" above the board (hunt.js): drawn from its own state, so a redraw here never looks anything up again
+  const hunt = view ? null : createHunt(ctx, { enquiries: () => st.enquiries, readOnly, redraw: () => draw(), added: async (text) => { ok(text); await refresh(); } });
   const now = () => new Date();
   let gone = false;
 
@@ -262,7 +271,7 @@ async function renderScreen(el, ctx, rest = []) {
     const switcher = `<div class="crm-switch" role="group" aria-label="Show a stage">${STAGES.map((s) => `
       <button type="button" data-crm="stage" data-stage="${s.key}" aria-pressed="${ui.stage === s.key}">${icon(STAGE_ICON[s.key])}<span>${esc(s.label)}</span><span class="crm-count">${by[s.key].length}</span></button>`).join('')}</div>`;
     const filtered = only ? `<p class="crm-flash" role="status">${icon('stage')}<span>${live.length ? `Showing ${live.length === 1 ? 'the enquiry' : `the ${live.length} enquiries`} from a month of the money forecast.` : 'No open enquiry could start by that month.'} <a href="#/crm">Show all</a></span></p>` : '';
-    return `${only ? '' : stepsStrip()}${offerHtml()}${filtered}
+    return `${only ? '' : stepsStrip()}${offerHtml()}${!only && hunt ? hunt.html() : ''}${filtered}
       <section class="crm-board" data-show="${attr(ui.stage)}" aria-label="Pipeline">${switcher}<div class="crm-cols">${cols}</div></section>
       ${archived.length ? `<details class="crm-arch"><summary>${icon('archive')}<span>Archived (${archived.length})</span></summary><ul>${archived.map((e) => `<li><a href="#/crm/e/${encodeURIComponent(e.id)}">${esc(e.title)}</a>${stageChip(e.stage)}</li>`).join('')}</ul></details>` : ''}`;
   }
@@ -337,7 +346,7 @@ async function renderScreen(el, ctx, rest = []) {
         ${avatar(c?.name || e.title, 'lg')}
         <div class="crm-ehead-t"><h1>${esc(e.title)}</h1>
           <p class="crm-facts">${c ? `<a href="#/crm/c/${encodeURIComponent(c.id)}">${icon('user', 'crm-i-s')}<span>${esc(c.name)}${c.organisation ? `, ${esc(c.organisation)}` : ''}</span></a>` : `<span>${icon('user', 'crm-i-s')}<span>No person yet</span></span>`}
-            ${f.value ? `<span>${icon('dollar', 'crm-i-s')}<span>${esc(f.value)}</span></span>` : ''}${e.source ? `<span>${icon('arrow', 'crm-i-s')}<span>${esc(e.source)}</span></span>` : ''}
+            ${f.value ? `<span>${icon('dollar', 'crm-i-s')}<span>${esc(f.value)}</span></span>` : ''}${e.source ? sourceFact(e.source) : ''}
             ${f.quiet ? `<span class="is-quiet">${icon('clock', 'crm-i-s')}<span>Nothing logged for ${f.days} days</span></span>` : ''}</p>
         </div>
         ${readOnly ? '' : `<div class="crm-ehead-a"><button type="button" class="crm-btn" data-crm="edit" data-id="${attr(e.id)}" aria-expanded="${ui.edit === e.id}">${icon('edit')}<span>Edit</span></button>
@@ -617,13 +626,15 @@ async function renderScreen(el, ctx, rest = []) {
   });
   el.addEventListener('click', onClick);
   el.addEventListener('submit', onSubmit);
+  if (hunt) { el.addEventListener('click', hunt.click); el.addEventListener('submit', hunt.submit); }
   el.addEventListener('keydown', onKey);
   document.addEventListener('click', outside);
   function outside(ev) { if (!el.isConnected) return document.removeEventListener('click', outside); if (!el.contains(ev.target)) closeMenus(); }
 
   try { await load(); } catch (err) { el.innerHTML = `<div class="crm"><p class="crm-flash is-error" role="alert">${icon('alert')}<span>${esc(err?.message ?? 'The clients could not be read.')}</span></p></div>`; return; }
   await draw({ keepScroll: false });
-  return () => { gone = true; document.removeEventListener('click', outside); };
+  hunt?.start();
+  return () => { gone = true; hunt?.stop(); document.removeEventListener('click', outside); };
 }
 
 // ---- the "Client" section on a project page --------------------------------------------------------------------------------
