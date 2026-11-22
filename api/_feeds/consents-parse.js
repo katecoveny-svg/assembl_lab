@@ -45,8 +45,11 @@ export function parseDataflows(text, max = 2000) {
 const decodeXml = (s) => String(s).replace(/&(amp|lt|gt|quot|apos|#39);/g, (_, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'" })[e]);
 /** Only the tables whose names are about building consents. */
 export function consentFlows(all, max = LIMITS.discoverMax) {
-  const hit = all.filter((f) => /consent/i.test(f.name) && /build|dwelling|residential|construction/i.test(f.name));
-  return { flows: hit.slice(0, max), matched: hit.length, scanned: all.length, capped: hit.length > max };
+  // by name, or by Stats NZ's building table ids (BLD_…), in case a name came through empty
+  const hit = all.filter((f) => (/consent/i.test(f.name) && /build|dwelling|residential|construction/i.test(f.name)) || /^BLD/i.test(f.id));
+  // a few names from the whole list, so a filter that misses can be seen at once (names only: no data, no key)
+  const sample = all.slice(0, 6).map((f) => `${f.id}: ${f.name || '(no name)'}`);
+  return { flows: hit.slice(0, max), matched: hit.length, scanned: all.length, capped: hit.length > max, sample };
 }
 
 // ---- data ------------------------------------------------------------------------------------------------------------------------------------
