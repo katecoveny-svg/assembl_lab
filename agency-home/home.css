@@ -61,11 +61,16 @@ h3 { font-size: clamp(1.45rem, 2vw, 1.8rem); line-height: 1.1; letter-spacing: -
 .hero .sub { margin-top: clamp(20px, 2.4vw, 34px); font-size: clamp(1.3rem, 2.1vw, 1.9rem); line-height: 1.15; letter-spacing: -.03em; font-weight: 500; }
 .hero .plain { margin-top: 12px; max-width: min(27em, 42vw); }
 .hero .acts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: clamp(22px, 2.4vw, 34px); }
-.hero-pic { grid-column: 7 / -1; grid-row: 1; align-self: end; margin-right: calc(-1 * var(--gutter)); margin-bottom: calc(-1 * clamp(28px, 4vw, 56px)); }
-.hero-pic img { width: 100%; mix-blend-mode: darken; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%); mask-image: linear-gradient(to right, transparent, #000 14%); }
-.hero-pic { position: relative; }
-.hero-pic figcaption { position: absolute; right: var(--gutter); bottom: 14px; text-align: right; white-space: nowrap; }
-.hero-pic figcaption a { text-underline-offset: 3px; }
+/* the house: a live three.js scene (hero.js) on the page itself, no box. The canvas is the page's own white, set to
+   darken, so the grid shows through it. Without WebGL or scripts the same place holds a still of the finished house. */
+.hero-pic { grid-column: 6 / -1; grid-row: 1; align-self: stretch; position: relative; min-height: min(64svh, 660px); margin: calc(-1 * clamp(28px, 4vw, 56px)) calc(-1 * var(--gutter)) calc(-1 * clamp(28px, 4vw, 56px)) 0; }
+.hero-pic canvas, .hero-pic img { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% - 44px); mix-blend-mode: darken; }
+.hero-pic canvas, .hero-pic img { -webkit-mask-image: linear-gradient(to right, transparent, #000 14%), linear-gradient(to top, transparent, #000 6%); mask-image: linear-gradient(to right, transparent, #000 14%), linear-gradient(to top, transparent, #000 6%); -webkit-mask-composite: source-in; mask-composite: intersect; }
+.hero-pic img { object-fit: contain; }
+.hero-pic canvas { opacity: 0; transition: opacity 1s var(--ease); touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.hero-pic canvas.on { opacity: 1; }
+.hero-pic canvas.held { cursor: grabbing; }
+.hero-pic figcaption { position: absolute; right: var(--gutter); bottom: 14px; left: 0; text-align: right; }
 .strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-inline: var(--gutter); border-top: 1px solid var(--line-strong); position: relative; z-index: 1; }
 .strip a { display: block; padding: 22px 16px 26px 0; font-size: clamp(1.05rem, 1.6vw, 1.4rem); font-weight: 500; letter-spacing: -.025em; text-decoration: none; }
 .strip a span { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .25s var(--ease); }
@@ -219,14 +224,15 @@ h3 { font-size: clamp(1.45rem, 2vw, 1.8rem); line-height: 1.1; letter-spacing: -
   .who .who-text { grid-column: 1 / span 5; } .nz { grid-column: 6 / -1; }
 }
 
-/* tablet upright: words first, then the picture to the right beneath them, so nothing sits over the bird */
+/* tablet upright: words first, then the house beneath them at full width, so nothing sits over it */
 @media (max-width: 900px) {
   .hero { min-height: 0; }
   .hero .wrap { align-items: start; padding-bottom: 0; }
   .hero-text, .hero-pic { grid-column: 1 / -1; }
   .hero-text { grid-row: 1; }
   .hero .plain { max-width: 27em; }
-  .hero-pic { grid-row: 2; margin: -24px calc(-1 * var(--gutter)) 0 30%; padding-bottom: 44px; }
+  .hero-pic { grid-row: 2; margin: 8px calc(-1 * var(--gutter)) 0; min-height: 0; height: min(86vw, 640px); }
+  .hero-pic canvas, .hero-pic img { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent); }
 }
 
 /* phone: designed at 390. Words first, then the picture; one column on a four-column grid */
@@ -236,8 +242,9 @@ h3 { font-size: clamp(1.45rem, 2vw, 1.8rem); line-height: 1.1; letter-spacing: -
   .mark { font-size: 21px; }
   .nav { gap: 16px; } .nav a { font-size: 14.5px; } .nav .wide { display: none; }
   .hero .wrap { padding-block: 34px 0; }
-  .hero-pic { margin: 6px calc(-1 * var(--gutter)) 0 36px; padding-bottom: 46px; }
-  .hero-pic figcaption { bottom: 12px; left: -36px; right: var(--gutter); text-align: left; white-space: normal; }
+  .hero-pic { margin-top: 4px; height: calc(90vw + 52px); }
+  .hero-pic canvas, .hero-pic img { height: calc(100% - 52px); }
+  .hero-pic figcaption { bottom: 12px; left: var(--gutter); right: var(--gutter); text-align: left; }
   h1 { font-size: clamp(3rem, 15.2vw, 4.4rem); }
   .hero .acts .btn { flex: 1 1 auto; padding: 0 14px; }
   .strip { grid-template-columns: 1fr; }
