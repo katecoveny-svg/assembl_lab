@@ -29,7 +29,8 @@ const json = (b, status = 200) => ({ ok: status < 400, status, json: async () =>
 function feed(answer = ANSWER()) {
   const calls = [];
   // the rules lane (hunt-rules.js) asks the same address for feeds=rules; it is not a tender question, so it is answered and not counted here
-  const f = async (url) => { if (String(url).includes('feeds=rules')) return json({ feeds: { rules: { fetchedAt: '2026-11-22T00:00:00Z', values: { rules: [], sources: [] } } } }); calls.push(String(url)); if (typeof answer === 'function') return answer(url); return json(answer); };
+  // so does the building consents panel (hunt-consents.js, feeds=consents): answered with nothing to show, and not counted
+  const f = async (url) => { if (String(url).includes('feeds=rules')) return json({ feeds: { rules: { fetchedAt: '2026-11-22T00:00:00Z', values: { rules: [], sources: [] } } } }); if (String(url).includes('feeds=consents')) return json({ feeds: { consents: { fetchedAt: '2026-11-23T00:00:00Z', values: { regions: [], national: null } } } }); calls.push(String(url)); if (typeof answer === 'function') return answer(url); return json(answer); };
   f.calls = calls;
   return f;
 }
