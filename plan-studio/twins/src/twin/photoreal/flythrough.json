@@ -1,0 +1,30 @@
+{
+  "about": "Camera keys for the photoreal fly-through of the drop page's sample house (hero.plan.json). Model frame: x = u, z = v, y up, floor level 0. eye/look in metres; speed in metres a second (relative, scaled to fit duration); ap = lens aperture radius in mm (focus on the look point); exp = exposure multiplier. The path is checked against the plan's walls by tests/photoreal.",
+  "fps": 24,
+  "duration": 16,
+  "keys": [
+    { "label": "In the bush", "eye": [   -17.5,   0.6,   21.5 ], "look": [   2.0,   0.4,   7.0 ], "speed": 4.2, "fov": 40, "ap": 0, "exp": 1.0
+    },
+    { "label": "Coming in", "eye": [   -8.0,   1.1,   15.2 ], "look": [   3.0,   0.9,   7.6 ], "speed": 3.4, "fov": 42, "ap": 0, "exp": 1.0
+    },
+    { "label": "Over the deck rail", "eye": [   -2.0,   1.62,   11.2 ], "look": [   4.2,   1.2,   8.2 ], "speed": 1.7, "fov": 46, "ap": 4, "exp": 1.0
+    },
+    { "label": "Along the deck", "eye": [   1.0,   1.6,   9.9 ], "look": [   4.6,   1.2,   7.2 ], "speed": 1.15, "fov": 48, "ap": 5, "exp": 1.1
+    },
+    { "label": "At the doors", "eye": [   2.65,   1.55,   8.75 ], "look": [   2.3,   1.2,   5.0 ], "speed": 0.9, "fov": 52, "ap": 5, "exp": 3.0
+    },
+    { "label": "Through the doors", "eye": [   2.7,   1.5,   7.15 ], "look": [   1.6,   1.15,   4.2 ], "speed": 0.8, "fov": 56, "ap": 4, "exp": 6.0
+    },
+    { "label": "In the living room", "eye": [   3.5,   1.45,   5.7 ], "look": [   0.6,   1.05,   3.2 ], "speed": 0.45, "fov": 58, "ap": 3, "exp": 7.4
+    }
+  ],
+  "doors": {
+    "from": 223,
+    "to": 282,
+    "u0": 0.87,
+    "u1": 4.47,
+    "v": 7.7,
+    "head": 2.08,
+    "about": "the living bi-fold doors (plan: east wall, u 0.87-4.47, head 2.08) fold open over these frames; drawn closed in the model"
+  }
+}
