@@ -90,6 +90,11 @@ const FIELDS = {
   contact: [['name', 'name', 'must', ''], ['email', 'email', 'text', ''], ['phone', 'phone', 'text', ''], ['organisation', 'organisation', 'text', ''], ['role', 'role', 'text', ''], ['notes', 'notes', 'text', ''], ['archived', 'archived', 'flag', false], ['created_at', 'created_at', 'now', '']],
   enquiry: [['title', 'title', 'must', ''], ['contact_id', 'contact_id', 'ref', ''], ['stage', 'stage', 'must', 'new'], ['value_nzd', 'value_nzd', 'num', null], ['source', 'source', 'text', ''], ['next_action', 'next_action', 'text', ''], ['next_action_due', 'next_action_due', 'date', ''], ['owner', 'owner', 'text', ''], ['project_id', 'project_id', 'ref', ''], ['archived', 'archived', 'flag', false], ['created_at', 'created_at', 'now', '']],
   crm_activity: [['enquiry_id', 'enquiry_id', 'ref', ''], ['contact_id', 'contact_id', 'ref', ''], ['kind', 'kind', 'must', 'note'], ['body', 'body', 'must', ''], ['at', 'at', 'now', ''], ['who', 'who', 'text', ''], ['created_at', 'created_at', 'now', '']],
+  // the Money add-on (money.js): practice rows that each name a project (an allocation may name an enquiry instead).
+  // Amounts and hours are only ever what a person typed. An invoice is voided, never removed.
+  time_entry: [['project_id', 'project_id', 'ref', ''], ['person', 'person', 'must', ''], ['date', 'on_date', 'date', ''], ['hours', 'hours', 'num', null], ['stage', 'stage', 'stage', ''], ['note', 'note', 'text', ''], ['created_at', 'created_at', 'now', '']],
+  invoice: [['project_id', 'project_id', 'ref', ''], ['number', 'number', 'must', ''], ['amount_nzd', 'amount_nzd', 'num', null], ['issued', 'issued_on', 'date', ''], ['due', 'due_on', 'date', ''], ['paid', 'paid_on', 'date', ''], ['void', 'void', 'flag', false], ['void_reason', 'void_reason', 'text', ''], ['note', 'note', 'text', ''], ['created_at', 'created_at', 'now', '']],
+  allocation: [['person', 'person', 'must', ''], ['project_id', 'project_id', 'ref', ''], ['enquiry_id', 'enquiry_id', 'ref', ''], ['hours_week', 'hours_week', 'num', null], ['from', 'from_on', 'date', ''], ['to', 'to_on', 'date', ''], ['note', 'note', 'text', ''], ['created_at', 'created_at', 'now', '']],
 };
 /** the kinds of record under a project, and where each sits in a project bundle */
 const LISTS = { stage: 'stages', task: 'tasks', document: 'documents', approval: 'approvals', rfi: 'rfis', observation: 'observations', variation: 'variations', defect: 'defects', checklist_item: 'checklist', activity: 'activity' };
@@ -97,7 +102,13 @@ export const SHARED_KINDS = ['project', ...Object.keys(LISTS)];
 /** the Clients add-on's records: one practice's, not under a project. Contacts and enquiries are archived, never removed. */
 export const CRM_KINDS = ['contact', 'enquiry', 'crm_activity'];
 const PRACTICE_KINDS = new Set(CRM_KINDS);
+/** the Money add-on's records: one practice's, each naming a project. The Sample's stay in this browser, as its project does. */
+export const MONEY_KINDS = ['time_entry', 'invoice', 'allocation'];
+const MONEY = new Set(MONEY_KINDS);
+const PRACTICE_ROWS = new Set([...CRM_KINDS, ...MONEY_KINDS]); // rows shaped { id, practice_id, ... }
 const APPEND_ONLY = new Set(['approval', 'activity', 'crm_activity']);
+/** the keys of practice.extra the page may change through the shared store (the look has its own call in createTeam) */
+const PRACTICE_EXTRA = ['money'];
 const SOURCED = new Set(['task', 'checklist_item']); // rows that can carry a source_ref
 // columns the database fills in itself: never sent, and never mistaken for an unknown field
 const DATABASE_OWN = new Set(['user_id', 'recorded_at', 'seq', 'created_by', 'practice_id', 'extra']);
@@ -172,13 +183,14 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
   const fields = FIELDS[kind];
   if (!fields) throw new Error(`Unknown kind of record: ${kind}`);
   const names = new Set(fields.map((f) => f[0])), extra = {};
-  const rec = kind === 'stage' ? { project_id: dbId(row.project_id), key: stageUp(row.key) } : PRACTICE_KINDS.has(kind) ? { id: dbId(row.id), practice_id } : { id: dbId(row.id), project_id: dbId(row.project_id) };
+  const rec = kind === 'stage' ? { project_id: dbId(row.project_id), key: stageUp(row.key) } : PRACTICE_ROWS.has(kind) ? { id: dbId(row.id), practice_id } : { id: dbId(row.id), project_id: dbId(row.project_id) };
   for (const [name, column, type, empty] of fields) {
     const [value, fits] = up(type, row[name], empty);
     rec[column] = value;
     if (!fits) extra[name] = row[name];
   }
   for (const [k, v] of Object.entries(row)) if (!names.has(k) && !['id', 'project_id', 'key'].includes(k) && !DATABASE_OWN.has(k) && v !== undefined) extra[k] = v;
+  if (kind === 'allocation' && !rec.project_id && !rec.enquiry_id) rec.project_id = null; // the table refuses a row with neither
   if (kind === 'document' && 'file' in extra) extra.file = fileNoteUp(extra.file);
   if (SOURCED.has(kind)) rec.edited = isEdited(row); // for the database's own use; the page works it out again from the title and the source
   rec.extra = extra;
@@ -188,7 +200,7 @@ export function toRecord(kind, row, { practice_id = null } = {}) {
 export function fromRecord(kind, r) {
   if (kind === 'project') return projectDown(r);
   const fields = FIELDS[kind], extra = obj(r.extra);
-  const row = kind === 'stage' ? { ...extra, id: `${r.project_id}:${stageDown(r.key)}`, project_id: r.project_id, key: stageDown(r.key) } : PRACTICE_KINDS.has(kind) ? { ...extra, id: r.id } : { ...extra, id: r.id, project_id: r.project_id };
+  const row = kind === 'stage' ? { ...extra, id: `${r.project_id}:${stageDown(r.key)}`, project_id: r.project_id, key: stageDown(r.key) } : PRACTICE_ROWS.has(kind) ? { ...extra, id: r.id } : { ...extra, id: r.id, project_id: r.project_id };
   for (const [name, column, type, empty] of fields) {
     if (name in extra && (r[column] === null || r[column] === undefined || (type === 'flag' && r[column] === false))) continue; // it did not fit the column: the original is in extra
     const v = down(type, r[column], empty);
@@ -317,7 +329,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
   const who = practice.name ? `in ${practice.name}` : 'in this practice';
   const snaps = new Map(); // project id -> what each of its rows looked like when last read, so a save writes only what changed
 
-  const check = (kind) => { if (!SHARED_KINDS.includes(kind) && !PRACTICE_KINDS.has(kind) && kind !== 'setting') throw new Error(`Unknown kind of record: ${kind}`); };
+  const check = (kind) => { if (!SHARED_KINDS.includes(kind) && !PRACTICE_KINDS.has(kind) && !MONEY.has(kind) && kind !== 'setting') throw new Error(`Unknown kind of record: ${kind}`); };
   const mustWrite = (kind) => {
     if (role() !== 'viewer') return;
     if (kind === 'activity') throw new CloudError('You are a viewer, and viewers cannot add to the activity log, so this was not logged.', 'read_only');
@@ -352,6 +364,15 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     async list(kind, where) {
       check(kind);
       if (kind === 'setting') return local.list(kind, where);
+      if (MONEY.has(kind)) {
+        const pid = where?.project_id;
+        if (pid && await localProject(pid)) return local.list(kind, where);
+        const rest = where ? Object.fromEntries(Object.entries(where).filter(([k]) => k !== 'project_id')) : null;
+        const shared = (await g.all(() => { const q = g.from(kind).select('*').eq('practice_id', practice.id); return pid ? q.eq('project_id', dbId(pid)) : q; }, ['seq'])).map((r) => fromRecord(kind, r)).filter((r) => matches(r, rest)).map(copy);
+        if (pid) return shared;
+        const samples = await sampleIds();
+        return [...shared, ...(await local.list(kind, where)).filter((r) => samples.includes(r.project_id))];
+      }
       if (PRACTICE_KINDS.has(kind)) return (await g.all(() => g.from(kind).select('*').eq('practice_id', practice.id), ['seq'])).map((r) => fromRecord(kind, r)).filter((r) => matches(r, where)).map(copy);
       const samples = await sampleIds();
       if (kind === 'project') {
@@ -376,6 +397,12 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
     async get(kind, id) {
       check(kind);
       if (kind === 'setting') return local.get(kind, id);
+      if (MONEY.has(kind)) {
+        const here = await local.get(kind, id);
+        if (here && await localProject(here.project_id)) return here;
+        const rows = await g.ask(() => g.from(kind).select('*').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1));
+        return rows?.[0] ? fromRecord(kind, rows[0]) : null;
+      }
       if (PRACTICE_KINDS.has(kind)) { const rows = await g.ask(() => g.from(kind).select('*').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1)); return rows?.[0] ? fromRecord(kind, rows[0]) : null; }
       const here = await local.get(kind, id);
       if (here && (kind === 'project' ? isSample(here) : await localProject(here.project_id))) return here;
@@ -395,7 +422,7 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       check(kind);
       if (kind === 'setting') return local.save(kind, row);
       if (!row || typeof row.id !== 'string' || !row.id) throw new Error('A record needs an id before it can be saved.');
-      if (!PRACTICE_KINDS.has(kind) && (kind === 'project' ? isSample(row) : await localProject(row.project_id))) return local.save(kind, row);
+      if (!PRACTICE_KINDS.has(kind) && (kind === 'project' ? isSample(row) : await localProject(row.project_id))) return local.save(kind, row); // [money] the Sample's money rows too
       mustWrite(kind);
       const rec = toRecord(kind, row, ctx);
       try {
@@ -413,6 +440,13 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       check(kind);
       if (kind === 'setting') return local.remove(kind, id);
       if (kind === 'project') return store.removeProject(id);
+      if (MONEY.has(kind)) {
+        const here = await local.get(kind, id);
+        if (here && await localProject(here.project_id)) { if (kind === 'invoice') throw new CloudError('Invoices are voided, not removed.', 'kept'); return local.remove(kind, id); }
+        mustWrite(kind);
+        if (kind === 'invoice') throw new CloudError('Invoices are voided, not removed. Nothing was removed.', 'kept');
+        try { return ((await g.ask(() => g.from(kind).delete().eq('id', dbId(id)).eq('practice_id', practice.id).select('id')))?.length ?? 0) > 0; } catch (e) { throw nothing(e, ' Nothing was removed.'); }
+      }
       if (PRACTICE_KINDS.has(kind)) {
         mustWrite(kind);
         throw new CloudError(kind === 'crm_activity' ? 'Client history is a permanent record once it is shared. It cannot be removed.' : 'Clients and enquiries are archived, not removed.', kind === 'crm_activity' ? 'append_only' : 'kept');
@@ -550,6 +584,28 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       const pid = dbId(b.project.id);
       return Array.isArray(b.files) ? { project_id: pid, copied, files: kept, files_failed: refused } : { project_id: pid, copied };
     },
+
+    // ---- [money] the practice's own settings, kept on the practice row (practice.extra). Every member reads them;
+    // the database lets only an owner change the practice row, so anyone else changes nothing.
+    async practiceExtra(key) {
+      if (!PRACTICE_EXTRA.includes(key)) throw new Error('That is not one of the practice’s settings.');
+      const rows = await g.ask(() => g.from('practice').select('id, extra').eq('id', practice.id).limit(1));
+      const v = rows?.[0]?.extra?.[key];
+      return isObj(v) ? copy(v) : null;
+    },
+    async setPracticeExtra(key, value) {
+      if (!PRACTICE_EXTRA.includes(key)) throw new Error('That is not one of the practice’s settings.');
+      if (role() !== 'owner') throw new CloudError(`Only an owner ${who} changes these. Nothing was changed.`, 'read_only');
+      if (!isObj(value)) throw new Error('Those settings are not in a shape the practice keeps.');
+      const rows = await g.ask(() => g.from('practice').select('id, extra').eq('id', practice.id).limit(1));
+      if (!rows?.[0]) throw new CloudError('That practice is not in the shared records.', 'missing');
+      const extra = { ...(isObj(rows[0].extra) ? rows[0].extra : {}), [key]: copy(value) };
+      const got = await g.ask(() => g.from('practice').update({ extra }).eq('id', practice.id).select('id, extra'));
+      if (!got?.length) throw new CloudError('The shared records refused that: only an owner can change the practice’s settings. Nothing was changed.', 'refused');
+      return copy(got[0].extra?.[key] ?? value);
+    },
+    /** the people in the practice, as the database lists them for a member: [{ user_id, email, name, role }] */
+    practicePeople: async () => (await g.rpc('practice_people', { p_practice: practice.id })) ?? [],
 
     // ---- files: the contents go to the practice's private bucket, the note of each goes in the "file" table ----
     async putFile(input = {}) {

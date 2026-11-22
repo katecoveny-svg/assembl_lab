@@ -245,7 +245,9 @@ async function renderScreen(el, ctx, rest = []) {
   }
 
   function board() {
-    const live = st.enquiries.filter((e) => !e.archived), archived = st.enquiries.filter((e) => e.archived);
+    // [money] #/crm/only/<id,id,...>: just the enquiries a month of the Money forecast points at
+    const only = view === 'only' ? String(id ?? '').split(',').filter(Boolean) : null;
+    const live = st.enquiries.filter((e) => !e.archived && (!only || only.some((x) => sameId(x, e.id)))), archived = only ? [] : st.enquiries.filter((e) => e.archived);
     const by = Object.fromEntries(STAGE_KEYS.map((k) => [k, live.filter((e) => e.stage === k).sort(byUrgency)]));
     if (!ui.stage) ui.stage = STAGE_KEYS.find((k) => by[k].length) ?? 'new';
     const none = !live.length;
@@ -259,7 +261,8 @@ async function renderScreen(el, ctx, rest = []) {
       </section>`).join('');
     const switcher = `<div class="crm-switch" role="group" aria-label="Show a stage">${STAGES.map((s) => `
       <button type="button" data-crm="stage" data-stage="${s.key}" aria-pressed="${ui.stage === s.key}">${icon(STAGE_ICON[s.key])}<span>${esc(s.label)}</span><span class="crm-count">${by[s.key].length}</span></button>`).join('')}</div>`;
-    return `${stepsStrip()}${offerHtml()}
+    const filtered = only ? `<p class="crm-flash" role="status">${icon('stage')}<span>${live.length ? `Showing ${live.length === 1 ? 'the enquiry' : `the ${live.length} enquiries`} from a month of the money forecast.` : 'No open enquiry could start by that month.'} <a href="#/crm">Show all</a></span></p>` : '';
+    return `${only ? '' : stepsStrip()}${offerHtml()}${filtered}
       <section class="crm-board" data-show="${attr(ui.stage)}" aria-label="Pipeline">${switcher}<div class="crm-cols">${cols}</div></section>
       ${archived.length ? `<details class="crm-arch"><summary>${icon('archive')}<span>Archived (${archived.length})</span></summary><ul>${archived.map((e) => `<li><a href="#/crm/e/${encodeURIComponent(e.id)}">${esc(e.title)}</a>${stageChip(e.stage)}</li>`).join('')}</ul></details>` : ''}`;
   }
