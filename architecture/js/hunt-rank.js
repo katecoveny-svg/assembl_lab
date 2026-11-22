@@ -227,6 +227,7 @@ export function scoreTender(t, lens, now = new Date()) {
     const inside = named.filter((r) => lens.regions.includes(r));
     if (inside.length) { score += 10; reasons.push(`in ${inside.join(" and ")}`); }
     else if (!named.length && (regions.includes(NATIONWIDE) || all17.length)) { score += 3; reasons.push("nationwide, so it includes your regions"); }
+    else if (t.regionUnknown) reasons.push("the alert email does not state a region"); // an alert email has no region: kept, and said so
     else return null; // somewhere else
   }
 
@@ -291,4 +292,151 @@ export function tenderFromKb(row) {
 export function rankKbRows(rows, lens, now = new Date(), limit = 40) {
   const tenders = (Array.isArray(rows) ? rows : []).map(tenderFromKb).filter(Boolean);
   return rankTenders(tenders, lens, now, limit).map((s) => ({ ...s, source: "radar", sourceName: "Radar" }));
+}
+
+// ---- "Leads to look into": news stories, read only for a building or a place a practice could design or improve --------------------------
+// A lead is a story, not a tender and not an opportunity. This reads a headline and a short summary that the radar collected, decides whether the story is about a
+// place or building that someone may need to design, repair or rebuild, and writes one short reason in assembl's own words. It never quotes the story, and the
+// page never shows the summary: only the headline, the source, the day and a link. Deterministic: the same story, lens and day give the same answer.
+export const LEAD_MIN = 50;
+export const NEWS_HOSTS = ["stuff.co.nz", "www.stuff.co.nz", "rnz.co.nz", "www.rnz.co.nz", "newsroom.co.nz", "www.newsroom.co.nz", "thedailyblog.co.nz", "www.thedailyblog.co.nz"];
+const NEWS_NAME = { stuff: "Stuff", rnz: "RNZ", newsroom: "Newsroom", "the daily blog": "The Daily Blog" };
+
+// a place or a building: [word, how it reads in a reason]
+const LEAD_PLACES = [["school", "school"], ["kura", "kura"], ["wharekura", "wharekura"], ["kindergarten", "kindergarten"], ["early learning centre", "early learning centre"], ["university", "university building"], ["campus", "campus"], ["classroom", "classroom block"],
+  ["marae", "marae building"], ["wharenui", "wharenui"], ["wharekai", "wharekai"], ["hospital", "hospital"], ["clinic", "clinic"], ["health centre", "health centre"], ["medical centre", "medical centre"], ["rest home", "rest home"], ["aged care", "aged care facility"], ["care home", "care home"],
+  ["library", "library"], ["community centre", "community centre"], ["community hall", "community hall"], ["hall", "hall"], ["pool", "pool"], ["aquatic centre", "aquatic centre"], ["town hall", "town hall"], ["civic centre", "civic centre"], ["museum", "museum"], ["gallery", "gallery"], ["theatre", "theatre"],
+  ["stadium", "stadium"], ["pavilion", "pavilion"], ["clubrooms", "clubrooms"], ["grandstand", "grandstand"], ["sports centre", "sports centre"], ["recreation centre", "recreation centre"], ["leisure centre", "leisure centre"], ["events centre", "events centre"],
+  ["church", "church"], ["courthouse", "courthouse"], ["police station", "police station"], ["fire station", "fire station"], ["prison", "prison"], ["housing", "housing"], ["apartments", "apartment building"], ["retirement village", "retirement village"],
+  ["hotel", "hotel"], ["office block", "office building"], ["cemetery", "cemetery"], ["public toilets", "public toilets"], ["cultural centre", "cultural centre"], ["homestead", "homestead"], ["woolshed", "woolshed"], ["villa", "villa"], ["whare", "whare"],
+  ["building", "building"], ["buildings", "buildings"]];
+const BUILDING_NOT_NEXT = new Set(["a", "an", "the", "his", "her", "their", "its", "our", "my", "your", "up", "trust", "credibility", "work", "works", "project", "consent", "consents", "confidence", "support", "momentum", "bridges", "on", "from", "out", "back", "blocks", "society", "site", "sites", "industry", "code", "warrant", "inspector", "inspectors", "materials", "costs"]);
+const BUILDING_NOT_PREV = new Set(["spent", "been", "are", "is", "was", "were", "keep", "keeps", "for", "by", "about", "tough", "of", "started", "start", "begin", "begins", "stop", "from"]);
+const NOT_A_PLACE_NEXT = new Set(["principal", "principals", "teacher", "teachers", "student", "students", "pupil", "pupils", "kids", "fees", "fee", "wag", "zone", "uniform", "uniforms", "holidays", "leavers", "board", "roll", "bus", "lunch", "lunches", "trustees", "champion", "champions", "team", "teams", "game", "games", "final", "ball", "camp", "year", "results", "exam", "exams", "strike", "strikes", "party", "table", "of", "tour", "gate", "fence", "year", "term", "children", "child", "staff", "visit", "cocktails", "consent", "consents", "work", "up", "trust", "credibility", "society", "inspector", "owner", "owners", "manager", "managers", "company", "contractor", "contractors", "site"]);
+const HOSPITAL_PATIENT = /\b(?:to|in|into|from|at|of)\s+(?:the\s+)?(?:\w+\s+)?hospital\b|\bairlifted\b|\bhospital(?:ised|ized)\b/;
+// what is happening to it: weak cues alone do not pass a story that is politics, sport or crime
+const STRONG_CUES = ["upgrade", "upgraded", "upgrades", "rebuild", "rebuilt", "rebuilding", "redevelop", "redevelopment", "redeveloped", "refurbish", "refurbished", "refurbishment", "renovate", "renovated", "renovation", "restore", "restored", "restoration", "extension", "revamp", "revamped", "replace", "replaced", "replacement", "fire-damaged", "fire damaged", "damaged by fire", "destroyed", "gutted", "demolish", "demolished", "demolition", "earthquake-prone", "earthquake prone", "strengthening", "to be built", "funding for", "funding to", "takes over", "taken over", "converted", "repurpose", "repurposed", "condemned", "unsafe", "leaky", "mothballed", "red-stickered", "red stickered", "fire-ravaged", "burnt down", "burned down"];
+const WEAK_CUES = ["new", "approved", "proposed", "plans", "plan for", "consent", "bought", "purchased", "sold", "expand", "expansion", "expanded", "funding", "funded", "million for", "build", "built", "overcrowded", "run-down", "closed", "closure"];
+const DAMAGE_CUES = ["fire-damaged", "fire damaged", "damaged by fire", "destroyed", "gutted", "condemned", "unsafe", "fire-ravaged", "burnt down", "burned down", "red-stickered", "red stickered", "leaky", "earthquake-prone", "earthquake prone"];
+const CRIME = /\b(?:jailed|sentenced|murder|arrested|charged|guilty|convicted|trial|stabbing|homicide|burglary|ram.?raid|offender|court hears|pleaded|manslaughter|sex offender)\b/;
+const SPORT = /\b(?:all blacks|warriors|black caps|silver ferns|phoenix|rugby|netball|cricket|nrl|fifa|semi-final|quarter-final|cup final|test match|beat|beats|thrash|thrashed|rout|defeat|hat-trick)\b/;
+const POLITICS = /\b(?:mp|mps|minister|ministers|prime minister|labour|nz first|opposition|poll|polls|election|coalition|parliament|caucus|luxon|hipkins|policy|policies|manifesto)\b/;
+const OPINION = /^(?:opinion|editorial|comment|column|analysis|letters?|my view|cartoon)\s*[:|-]|\|\s*opinion\b/;
+const FOREIGN = /\b(?:indonesia|indonesian|australia|australian|sydney|melbourne|brisbane|perth|united states|u\.s\.|london|britain|british|england|china|chinese|gaza|israel|ukraine|russia|india|japan|italy|italian|los angeles|california|texas|new york|canada|europe|france|paris|germany|ireland|south africa|thailand|philippines|korea|fiji|samoa|tonga|vanuatu|hong kong)\b/;
+const NZ_WORDS = /\b(?:nz|new zealand|aotearoa|kiwi|kiwis)\b/;
+const SECTION_OUT = /\/(?:world-news|world|sport|sports|entertainment|opinion|crime|crime-and-justice|travel|lifestyle|life-style|quizzes|podcasts?|pacific|political|politics|business-news|motoring|weather)\//;
+// towns and cities to their regions: only so a story can be checked against the practice's regions. Not exhaustive: a story that names no place here is kept.
+const TOWNS = { auckland: "Auckland", waiheke: "Auckland", manukau: "Auckland", papakura: "Auckland", "north shore": "Auckland", henderson: "Auckland", whangarei: "Northland", kaitaia: "Northland", kerikeri: "Northland", dargaville: "Northland", hamilton: "Waikato", cambridge: "Waikato", taupo: "Waikato", thames: "Waikato", coromandel: "Waikato", tauranga: "Bay of Plenty", rotorua: "Bay of Plenty", whakatane: "Bay of Plenty", opotiki: "Bay of Plenty", mount: "", gisborne: "Gisborne", tairawhiti: "Gisborne", napier: "Hawke's Bay", hastings: "Hawke's Bay", wairoa: "Hawke's Bay", "new plymouth": "Taranaki", hawera: "Taranaki", whanganui: "Manawatu-Wanganui", wanganui: "Manawatu-Wanganui", "palmerston north": "Manawatu-Wanganui", levin: "Manawatu-Wanganui", feilding: "Manawatu-Wanganui", ohakune: "Manawatu-Wanganui", "lower hutt": "Wellington", "upper hutt": "Wellington", porirua: "Wellington", masterton: "Wellington", kapiti: "Wellington", wairarapa: "Wellington", richmond: "Tasman", motueka: "Tasman", takaka: "Tasman", blenheim: "Marlborough", picton: "Marlborough", greymouth: "West Coast", westport: "West Coast", hokitika: "West Coast", christchurch: "Canterbury", timaru: "Canterbury", ashburton: "Canterbury", kaikoura: "Canterbury", rolleston: "Canterbury", dunedin: "Otago", queenstown: "Otago", wanaka: "Otago", oamaru: "Otago", alexandra: "Otago", invercargill: "Southland", gore: "Southland", te: "" };
+delete TOWNS.mount; delete TOWNS.te;
+/** the regions a story names, by region or by town (whole words, macron-insensitive) */
+export function regionsNamed(text) {
+  const t = fold(text), out = new Set();
+  for (const r of REGIONS) if (hit(t, r)) out.add(r);
+  for (const [town, region] of Object.entries(TOWNS)) if (hit(t, town)) out.add(region);
+  if (hit(t, "hawkes bay")) out.add("Hawke's Bay");
+  return [...out];
+}
+
+const tokens = (s) => fold(s).split(/[^a-z0-9$-]+/).filter(Boolean);
+const phraseAt = (toks, phrase) => { const p = fold(phrase).split(/[^a-z0-9$-]+/).filter(Boolean), at = []; for (let i = 0; i + p.length <= toks.length; i++) if (p.every((w, k) => toks[i + k] === w || toks[i + k] === `${w}s`)) at.push(i); return at; };
+
+/** the places in a text, with where they stand: [{ at, word, noun }] */
+function placesIn(text) {
+  const toks = tokens(text), found = [];
+  for (const [word, noun] of LEAD_PLACES) for (const at of phraseAt(toks, word)) {
+    const next = toks[at + word.split(" ").length], prev = toks[at - 1];
+    if (next && NOT_A_PLACE_NEXT.has(next)) continue;
+    if (word === "building" && ((next && BUILDING_NOT_NEXT.has(next)) || (prev && BUILDING_NOT_PREV.has(prev)))) continue; // "building credibility", "spent 15 years building"
+    if (word === "buildings" && prev && BUILDING_NOT_PREV.has(prev)) continue;
+    if (word === "hospital" && HOSPITAL_PATIENT.test(fold(text))) continue;
+    if (word === "hall" && prev === "mcdonald") continue;
+    found.push({ at, word, noun });
+  }
+  return { toks, found };
+}
+const cuesIn = (toks, list) => list.flatMap((c) => phraseAt(toks, c).map((at) => ({ at, cue: c })));
+
+/**
+ * Is this story about a place or building that a practice could design or improve? Returns a lead or null.
+ *   story  { id, title, snippet, url, source, published }  (the snippet is read for ranking and then dropped)
+ * The headline must name a place or building and say what is happening to it (new, upgrade, rebuild, fire-damaged, funding for ...), close together.
+ * Politics, sport results, crime and opinion are left out unless the headline is plainly about a building project.
+ */
+export function scoreLead(story, lens, now = new Date()) {
+  const title = clean(story.title), snippet = clean(story.snippet), url = clean(story.url);
+  if (!title || /^https:\/\//.test(url) === false) return null;
+  const host = (() => { try { return new URL(url).hostname.toLowerCase(); } catch { return ""; } })();
+  if (!NEWS_HOSTS.includes(host)) return null;
+  if (SECTION_OUT.test(new URL(url).pathname)) return null;
+  const ft = fold(title), all = `${ft} ${fold(snippet)}`;
+  if (OPINION.test(ft)) return null;
+  const { toks, found } = placesIn(title);
+  if (!found.length) return null; // the headline itself must name the place
+  const cues = [...cuesIn(toks, STRONG_CUES).map((c) => ({ ...c, strong: true })), ...cuesIn(toks, WEAK_CUES).map((c) => ({ ...c, strong: false }))];
+  let pair = null;
+  for (const p of found) for (const c of cues) {
+    const gap = (c.at < p.at ? p.at - c.at : c.at - p.at) + (p.word.startsWith("building") ? 2 : 0), near = c.cue === "new" ? c.at < p.at && gap <= 4 : gap <= 7;
+    if (near && (!pair || (c.strong && !pair.strong) || (c.strong === pair.strong && gap < pair.gap))) pair = { place: p, cue: c.cue, strong: c.strong, gap };
+  }
+  if (!pair) { // the cue may sit in the summary when it is a plain building project
+    const st = tokens(snippet), sc = cuesIn(st, STRONG_CUES);
+    if (sc.length) pair = { place: found[0], cue: sc[0].cue, strong: true, gap: 99 };
+  }
+  if (!pair) return null;
+  const crime = CRIME.test(ft), sport = SPORT.test(ft), politics = POLITICS.test(ft);
+  if ((crime || sport || politics) && !pair.strong) return null;
+  if (crime && !DAMAGE_CUES.includes(pair.cue)) return null;
+  const named = regionsNamed(`${title} ${snippet}`);
+  if (FOREIGN.test(ft) && !named.length && !NZ_WORDS.test(all)) return null;
+  const reasons = [], matched = { keywords: [], sectors: [] };
+  let score = LEAD_MIN + (pair.strong ? 6 : 0);
+  for (const k of lens.keywords ?? []) { if (hit(ft, k)) { score += 12; matched.keywords.push(k); } else if (hit(fold(snippet), k)) { score += 6; matched.keywords.push(k); } }
+  const cultural = culturalMatch({ title, overview: snippet });
+  let sec = 0;
+  for (const key of lens.sectors ?? []) if (key === "kaupapa" ? cultural.on : SECTORS[key].words.some((w) => hit(all, w))) { sec += 10; matched.sectors.push(key); }
+  score += Math.min(sec, 20) + Math.min(matched.keywords.length * 6, 12);
+  if (lens.cultural && cultural.on) score += 10;
+  if (lens.regions?.length && named.length) {
+    const inside = named.filter((r) => lens.regions.includes(r));
+    if (!inside.length) return null; // the story names somewhere else
+    score += 10; reasons.push(`In ${inside.join(" and ")}.`);
+  }
+  const age = story.published ? Math.max(0, daysBetween(nzDay(story.published), nzDay(now))) : null;
+  if (age != null) score += age <= 3 ? 6 : age <= 7 ? 3 : age > 21 ? -5 : 0;
+  const noun = pair.place.noun, art = /^[aeiou]/.test(noun) ? "An" : "A", fire = /\bfire\b/.test(ft);
+  const c = pair.cue;
+  const burnt = fire && (DAMAGE_CUES.includes(c) || /^(?:rebuil|restor|replace|repair|redevelop)/.test(c));
+  const main = DAMAGE_CUES.includes(c) || burnt ? `${art} ${noun} was ${fire ? "damaged by fire" : /unsafe|condemned|leaky|earthquake|red/.test(c) ? "found to be unsafe or in poor condition" : "badly damaged"}: repair or rebuild may follow.`
+    : /^(?:demolish|demolition|strengthening)/.test(c) ? `${art} ${noun} may be demolished or strengthened: replacement or design work may follow.`
+    : /^(?:takes over|taken over|converted|repurpose|bought|purchased|sold)/.test(c) ? `${art} ${noun} is changing hands or changing use: a fit-out or conversion may follow.`
+    : /^(?:funding|funded|million for)/.test(c) ? `Funding is named for a ${noun}: a project may follow.`
+    : c === "new" || /^(?:to be built|build|built|plan|plans|proposed|approved|consent)/.test(c) ? `A new ${noun} is announced or proposed: design or briefing work may follow.`
+    : `${art} ${noun} is to be upgraded, extended or replaced: design work may follow.`;
+  reasons.unshift(main);
+  if (matched.keywords.length) reasons.push(`Mentions ${matched.keywords.slice(0, 3).map((k) => `“${k}”`).join(" and ")}, from your words.`);
+  if (matched.sectors.length) reasons.push(`Fits your ${matched.sectors.slice(0, 2).map((k) => (k === "kaupapa" ? SECTORS[k].label : SECTORS[k].label.toLowerCase())).join(" and ")} work.`);
+  if (cultural.on) reasons.push(`Carries kaupapa Māori or Indigenous words: ${cultural.why.slice(0, 4).map((w) => `“${w}”`).join(", ")}.`);
+  const regionLabel = named.length ? (named.length > 2 ? `${named.slice(0, 2).join(", ")} and ${named.length - 2} more` : named.join(" and ")) : "";
+  return {
+    id: story.id, kind: "lead", title, url, source: "news", sourceName: story.sourceName, published: story.published ? nzDay(story.published) : "",
+    reason: main, reasons, fit: Math.max(0, Math.min(100, Math.round(score))), region: regionLabel, matched, cultural,
+  };
+}
+
+/** One row of arch.hunt_leads to a story the scorer reads. The snippet is carried only to this scorer. */
+export function storyFromKb(row) {
+  row = row && typeof row === "object" ? row : {};
+  const id = clean(row.id).slice(0, 60), title = clean(row.title).replace(/\s+/g, " ").slice(0, 200), url = clean(row.url).slice(0, 500);
+  if (!id || !title) return null;
+  const name = clean(row.source).replace(/\s+[—–-]\s+top stories$/i, "").toLowerCase();
+  const published = row.published_at && !Number.isNaN(Date.parse(row.published_at)) ? new Date(row.published_at).toISOString() : "";
+  return { id: `lead:${id}`, title, url, snippet: clean(row.snippet).slice(0, 200), sourceName: NEWS_NAME[name] ?? clean(row.source).slice(0, 40), published };
+}
+
+/** Score and order the stories: best fit first, then the newest. The same story told by two sources shows once. Returns leads without any summary text. */
+export function rankLeads(rows, lens, now = new Date(), limit = 12) {
+  const seen = new Set();
+  return (Array.isArray(rows) ? rows : []).map(storyFromKb).filter(Boolean).map((s) => scoreLead(s, lens, now)).filter((l) => l && l.fit >= LEAD_MIN)
+    .sort((a, b) => b.fit - a.fit || b.published.localeCompare(a.published) || a.title.localeCompare(b.title))
+    .filter((l) => { const k = fold(l.title).replace(/[^a-z0-9]+/g, " ").trim().slice(0, 50); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, limit);
 }

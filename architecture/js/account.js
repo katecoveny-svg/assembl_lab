@@ -406,6 +406,44 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
       if (!p || !team) return [];
       return team.huntSignals(p.id, since);
     },
+    /** News stories the radar has collected (any member). [] when no practice is in use; throws when the shared records cannot be read. */
+    async huntLeads(since = null) {
+      const p = st.practice;
+      if (!p || !team) return [];
+      return team.huntLeads(p.id, since);
+    },
+    /** Tenders read from alert emails and added by this practice (any member can read). [] when no practice is in use. */
+    async huntInbox() {
+      const p = st.practice;
+      if (!p || !team) return [];
+      return team.huntInbox(p.id);
+    },
+    /** Save tenders read from alert emails (an owner or member; the database refuses a viewer). */
+    async addHuntInbox(items) {
+      const p = st.practice;
+      if (!p || !team) throw new Error('No practice is in use, so these are kept in this browser only.');
+      if (p.role === 'viewer') throw new Error(`You are a viewer of ${p.name}: you can read the alert emails already added but not add more.`);
+      return team.addHuntInbox(p.id, items);
+    },
+    /** Is a Gmail reader on for the practice in use? { on, since, lastUsed, lastCount }, or null when it cannot be read. */
+    async huntReader() {
+      const p = st.practice;
+      if (!p || !team) return null;
+      try { return await team.huntReader(p.id); } catch { return null; }
+    },
+    /** Make a reader token (owners only). Returns it once; the shared records keep only its hash. */
+    async makeHuntReader() {
+      const p = st.practice;
+      if (!p || !team) throw new Error('No practice is in use: a reader needs the shared records.');
+      if (p.role !== 'owner') throw new Error(`Only an owner of ${p.name} can make a reader.`);
+      return team.makeHuntReader(p.id);
+    },
+    async stopHuntReader() {
+      const p = st.practice;
+      if (!p || !team) throw new Error('No practice is in use.');
+      if (p.role !== 'owner') throw new Error(`Only an owner of ${p.name} can stop a reader.`);
+      return team.stopHuntReader(p.id);
+    },
     /** Save what the practice looks for (owners only; the database refuses anyone else). */
     async setHunt(hunt) {
       const p = st.practice;
