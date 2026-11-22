@@ -4,7 +4,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   onRequest, checkInput, buildPrompt, geminiRequest, readAnswer, imageSize, nearestRatio, allowedOrigin, cleanSetting, limitsOf,
-  _resetCounters, RENDER_PROMPTS, DEFAULT_MODELS, MESSAGES, LABEL, RATIOS, MAX_BODY, MAX_IMAGE, SETTING_MAX,
+  _resetCounters, estimateOf, ESTIMATES, RENDER_PROMPTS, DEFAULT_MODELS, MESSAGES, LABEL, RATIOS, MAX_BODY, MAX_IMAGE, SETTING_MAX,
 } from '../../functions/api/render.js';
 
 const KEY = 'fake-gemini-KEY-9f3a';
@@ -45,7 +45,9 @@ async function call({ method = 'POST', env = ENV, body, raw, origin = LAB, ip = 
     if (origin) h.origin = origin;
     if (ip) h['cf-connecting-ip'] = ip;
     const init = { method, headers: h };
-    if (method === 'POST') init.body = raw ?? JSON.stringify(body ?? { image: PNG, quality: 'fast', look: { time: 'golden' } });
+    // every paid request carries confirm: true unless a test says otherwise
+    const b = body ?? { image: PNG, quality: 'fast', look: { time: 'golden' } };
+    if (method === 'POST') init.body = raw ?? JSON.stringify('confirm' in b ? b : { ...b, confirm: true });
     const res = await onRequest({ request: new Request('https://lab.assembl.co.nz/api/render', init), env });
     const text = await res.text();
     let json = null; try { json = JSON.parse(text); } catch { /* 204 */ }
@@ -131,8 +133,8 @@ test('bodies over 5 MB are refused, by length header or by counting a streamed b
 });
 
 test('a body of exactly 5 MB is read (the limit is "over 5 MB")', async () => {
-  const pad = ' '.repeat(MAX_BODY - JSON.stringify({ image: PNG, look: { time: 'midday' } }).length);
-  const raw = JSON.stringify({ image: PNG, look: { time: 'midday' } }) + pad;
+  const obj = { image: PNG, look: { time: 'midday' }, confirm: true };
+  const raw = JSON.stringify(obj) + ' '.repeat(MAX_BODY - JSON.stringify(obj).length);
   assert.equal(Buffer.byteLength(raw), MAX_BODY);
   const r = await call({ raw });
   assert.equal(r.status, 200); assert.equal(r.calls.length, 1);
@@ -194,6 +196,27 @@ test('refused input is never counted and never sent', async () => {
   for (let i = 0; i < 5; i++) assert.equal((await call({ env, body: { image: PNG, look: { time: 'nope' } } })).json.error, 'bad_time');
   const r = await call({ env });
   assert.equal(r.status, 200); assert.equal(r.calls.length, 1);
+});
+
+test('spending is explicit: no confirm: true, no call and no count, and the answer carries the estimate', async () => {
+  const env = { ...ENV, RENDER_IP_PER_MINUTE: '1' };
+  for (const confirm of [undefined, false, 'yes', 1]) {
+    const body = { image: PNG, quality: 'best', look: { time: 'golden' }, confirm };
+    const r = await call({ env, body });
+    assert.equal(r.status, 402); assert.equal(r.json.error, 'confirm_spend'); assert.equal(r.calls.length, 0);
+    assert.equal(r.json.estimate.usd, 0.15); assert.equal(r.json.estimate.model, 'gemini-3-pro-image'); assert.match(r.json.estimate.text, /US\$0\.134/);
+  }
+  assert.equal((await call({ env })).status, 200); // nothing above was counted against the one a minute
+});
+
+test('GET carries the estimate for each quality; an overridden model is sent to Google\'s price page, not guessed', async () => {
+  const r = await call({ method: 'GET' });
+  assert.equal(r.json.needs_confirm, true);
+  assert.deepEqual(r.json.estimate.fast, { model: 'gemini-nano-banana-2.1', ...ESTIMATES.fast });
+  assert.deepEqual(r.json.estimate.best, { model: 'gemini-3-pro-image', ...ESTIMATES.best });
+  assert.match(ESTIMATES.fast.text, /US\$0\.0336/);
+  const o = estimateOf({ RENDER_GEMINI_FAST_MODEL: 'gemini-3.1-flash-lite-image' }, 'fast');
+  assert.equal(o.usd, null); assert.match(o.text, /gemini-3\.1-flash-lite-image.*Google's pricing page/);
 });
 
 // --- prompt -----------------------------------------------------------------------------------------------------------------

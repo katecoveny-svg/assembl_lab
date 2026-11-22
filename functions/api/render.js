@@ -26,6 +26,8 @@
 // over. IPs are hashed (SHA-256 with the day) before they are used as keys and are never logged.
 // Images are never stored: not here (nothing is written but counters), and not by Google (store: false).
 // RENDER_PROMPTS names the prompt revision. GET reports it, so a preview can be checked without a paid call.
+// Spending is explicit (the pattern of api/plan-render.js): GET and every refusal carry the estimate for each quality, the page
+// shows it beside the button, and a paid request must carry confirm: true or it is refused (402) before anything is counted.
 
 export const RENDER_PROMPTS = "2026-11-22a";
 export const MAX_BODY = 5_000_000;
@@ -38,6 +40,17 @@ export const DEFAULT_MODELS = { fast: "gemini-nano-banana-2.1", best: "gemini-3-
 const SIZES = { fast: "1K", best: "2K" };
 const TIMEOUT_MS = { fast: 90_000, best: 150_000 };
 const API_REVISION = "2026-05-20";
+// estimates from Google's pricing page (aistudio.google.com/docs/pricing, read 22 Nov 2026), for the default models only:
+// Nano Banana 2.1 output images US$30 per 1M tokens, a 1K image is 1120 tokens = US$0.0336, input US$1.50 per 1M, thinking US$7.50 per 1M;
+// Nano Banana Pro output images US$120 per 1M tokens, a 1K or 2K image is 1120 tokens = US$0.134, input image US$0.0011, thinking US$12 per 1M.
+export const ESTIMATES = {
+  fast: { usd: 0.04, text: "about US$0.04 a photo: US$0.0336 for the image plus input and a little thinking (Google's price, 22 Nov 2026)" },
+  best: { usd: 0.15, text: "about US$0.15 a photo: US$0.134 for the image plus input and thinking (Google's price, 22 Nov 2026)" },
+};
+export function estimateOf(env, quality) {
+  const model = modelOf(env, quality);
+  return model === DEFAULT_MODELS[quality] ? { model, ...ESTIMATES[quality] } : { model, usd: null, text: `price of ${model}: see Google's pricing page` };
+}
 export const LABEL = "Generated from the model view by Google Gemini. Not a photograph, and not a checked drawing.";
 // the shapes both image models make (Google's aspect-ratio tables for Nano Banana 2.1 and 3 Pro Image)
 export const RATIOS = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"];
@@ -251,6 +264,7 @@ export const MESSAGES = {
   image_too_large: "That view is over 4 MB. Make the window smaller and try again.",
   image_size: "The view must be between 256 and 4096 pixels on each side.",
   bad_quality: "Choose Fast or Best.",
+  confirm_spend: "Each photo is paid for. Check the price shown beside the button, then press it again.",
   bad_time: "Choose a time of day: morning, midday, golden hour or overcast.",
   bad_season: "Choose summer or winter, or leave the season out.",
   setting_too_long: `Keep the setting to ${SETTING_MAX} characters or fewer.`,
@@ -263,7 +277,7 @@ export const MESSAGES = {
   timeout: "Google Gemini took too long. Try again, or try Fast.",
   model_error: "Google Gemini could not make the photo. Nothing is shown rather than a guess.",
 };
-const STATUS = { not_configured: 503, origin: 403, method: 405, too_large: 413, image_too_large: 413, slow_down: 429, ip_daily: 429, daily_cap: 429, declined: 422, no_image: 502, busy: 503, timeout: 504, model_error: 502 };
+const STATUS = { confirm_spend: 402, not_configured: 503, origin: 403, method: 405, too_large: 413, image_too_large: 413, slow_down: 429, ip_daily: 429, daily_cap: 429, declined: 422, no_image: 502, busy: 503, timeout: 504, model_error: 502 };
 
 /** everything about the request that can be checked before anything is counted or sent: { error } or the parts */
 export function checkInput(body) {
@@ -313,6 +327,7 @@ export async function onRequest({ request, env }) {
       type: "assembl.planstudio.render.status", configured: !!keyOf(env), host: "cloudflare", provider: "google-gemini", api: apiOf(env),
       models: { fast: modelOf(env, "fast"), best: modelOf(env, "best") }, sizes: SIZES, prompt_revision: RENDER_PROMPTS,
       limits: { ...limitsOf(env), max_body_bytes: MAX_BODY, max_image_bytes: MAX_IMAGE, setting_chars: SETTING_MAX, counted_in: counterKind(env) },
+      estimate: { fast: estimateOf(env, "fast"), best: estimateOf(env, "best") }, needs_confirm: true,
       times: TIMES, seasons: SEASONS, aspect_ratios: RATIOS, stores_images: false, label: LABEL,
     });
   }
@@ -326,6 +341,7 @@ export async function onRequest({ request, env }) {
   const input = checkInput(body);
   if (input.error) return fail(input.error);
   const { img, dims, quality, look } = input;
+  if (body.confirm !== true) return fail("confirm_spend", { estimate: estimateOf(env, quality) });
 
   const hit = await takeSlot(env, request.url, request.headers.get("cf-connecting-ip") || "");
   if (hit) return fail(hit, hit === "slow_down" ? { retry_after: 60 } : {});
