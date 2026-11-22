@@ -18,7 +18,7 @@
 //
 // Prior art, ported to plain JS: the RSS reader from lib/os/data/gets.ts and the scoring idea from lib/workforce/jobs/radar-rank.ts
 // (the assemblnz repo): lens terms found, freshness (radar-rank: 14 days, 1.5 points a day), a base weight for a tender, and the
-// whaiao-hunt rule "main-contractor works, maintenance and supply are not a fit unless design services are sought separately".
+// the practice-hunt rule (assemblnz lib/workforce/jobs) "main-contractor works, maintenance and supply are not a fit unless design services are sought separately".
 import { getText, memo, nzToday, envelope } from "./util.js";
 
 export const GETS_FEED = "https://www.gets.govt.nz/ExternalRSSFeed.htm";
