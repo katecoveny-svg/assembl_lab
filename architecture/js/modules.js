@@ -19,7 +19,7 @@
 // that app.js calls before the screen is drawn again (to stop timers, release a 3D view and so on).
 
 /** the add-ons app.js tries to load, relative to this file */
-export const ADDONS = ['./models.js', './crm.js', './money.js', './library.js'];
+export const ADDONS = ['./models.js', './crm.js', './money.js', './library.js', './pursuit.js'];
 /** the project tabs a section can sit in (app.js TABS) */
 export const PANEL_TABS = ['site', 'model', 'drawings', 'presentation', 'takeoff', 'deliverables'];
 

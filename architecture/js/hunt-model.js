@@ -178,6 +178,7 @@ export function enquiryFromSignal(s, { now = new Date(), who = '' } = {}) {
   const sig = cleanSignal(s);
   if (!sig) throw new Error('That finding cannot be added: it has no link to the notice.');
   const enquiry = newEnquiry({ title: sig.title, source: sourceLine(sig), next_action: HUNT_ENQUIRY_ACTION, next_action_due: sig.closesDay, owner: '', value_nzd: null, now });
+  enquiry.finding = keptFinding({ kind: 'tender', title: sig.title, buyer: sig.buyer, region: sig.region, closesDay: sig.closesDay, url: sig.url, summary: sig.reasons.join('; '), sourceName: sig.sourceName, cultural: sig.cultural });
   const lines = [`Found by the hunt in ${sig.sourceName} public tender notices${sig.buyer ? `, buyer ${sig.buyer}` : ''}${sig.closesDay ? `, closing ${shortDay(sig.closesDay, now)}` : ''}.`];
   if (sig.reasons.length) lines.push(`Why it looked like a fit: ${sig.reasons.join('; ')}.`);
   if (sig.value != null) lines.push(`The notice states a value of $${sig.value.toLocaleString('en-NZ')}. That is not the enquiry's value: a person sets that.`);
@@ -186,6 +187,17 @@ export function enquiryFromSignal(s, { now = new Date(), who = '' } = {}) {
   return { enquiry, activity };
 }
 
+/** The finding kept on the enquiry (enquiry.finding; in the shared records it rides in extra), so the Pursuit studio can read it later.
+ *  Small and bounded: our own words and public fields only, never a story's text. */
+const keptFinding = (f) => {
+  const t = (v, n) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
+  const out = { kind: t(f.kind, 10), title: t(f.title, 300), buyer: t(f.buyer, 200), region: t(f.region, 60), url: /^https:\/\//.test(f.url ?? '') ? t(f.url, 500) : '', summary: t(f.summary, 600), sourceName: t(f.sourceName, 120) };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f.closesDay ?? '')) out.closesDay = f.closesDay;
+  if (f.horizon) out.horizon = t(f.horizon, 60);
+  if (f.cultural?.on) out.cultural = { on: true, why: (Array.isArray(f.cultural.why) ? f.cultural.why : []).slice(0, 8).map((w) => t(w, 60)) };
+  return out;
+};
+
 /** What "Add to pipeline" makes from a news lead or an early signal: marked as such, with a next step that is to check it. Saves nothing. */
 export function enquiryFromItem(s, { now = new Date(), who = '' } = {}) {
   const it = cleanItem(s);
@@ -193,6 +205,7 @@ export function enquiryFromItem(s, { now = new Date(), who = '' } = {}) {
   const lead = it.kind === 'lead';
   const enquiry = newEnquiry({ title: it.title, source: sourceLine(it), next_action: lead ? 'Check the story before acting' : 'Check the signal before acting', next_action_due: '', owner: '', value_nzd: null, now });
   const radar = it.kind === 'signal' ? radarForEnquiry(s) : null; // a Radar finding keeps its opportunity, bounded, for the Pursuit studio (extra.radar in the shared records)
+  enquiry.finding = keptFinding({ kind: it.kind, title: it.title, buyer: it.buyer, region: it.region, url: it.url, summary: it.reason, sourceName: it.sourceName, horizon: it.horizon, cultural: it.cultural });
   const lines = [lead ? `A lead from the news (${it.sourceName}), not a tender and not an opportunity yet.` : radar ? 'An early signal from Radar, a draft for review: not a tender and not an opportunity yet. Its sources are marked checked or not independently checked, and its score is a sorting aid, not a chance of winning.' : `An early signal (${it.sourceName}), not a tender and not an opportunity yet${it.horizon ? `; it may mean work in ${it.horizon}` : ''}.`];
   if (radar) { const o = radar.opportunity; if (o.nextAction) lines.push(`Radar’s suggested next step: ${o.nextAction}`); if (o.reviewAt) lines.push(`Review by: ${o.reviewAt}.`); if (o.stage === 'hold') lines.push('Radar put this on hold.'); }
   if (it.reason && !radar) lines.push(`Why it was flagged: ${it.reason}`);

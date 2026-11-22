@@ -79,6 +79,8 @@
 .crm-pill.is-overdue { border-color: var(--c-needs); color: var(--c-needs); }
 .crm-pill.is-need { border-style: dashed; border-color: var(--c-needs); color: var(--c-needs); white-space: normal; }
 .crm-pill.is-quiet { color: var(--c-mute); border-color: var(--c-mute); }
+/* [pursuit] the way into the Pursuit studio (js/pursuit.js) from an open enquiry's card */
+.crm-pursue { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; justify-self: start; font: 500 13px var(--c-sans); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---- next steps ---------------------------------------------------------------------------------------------------------- */
 .crm-next { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--c-ink); background: var(--c-ground); }

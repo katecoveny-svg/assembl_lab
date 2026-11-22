@@ -349,6 +349,7 @@ test('"Add to pipeline" on a Radar finding makes one enquiry as other findings d
   assert.match(s.h.html(), /Added to the pipeline/); assert.equal(s.log.added.length, 1);
   const row = p.fake.db.enquiry?.find((r) => r.id === e.id); assert.ok(row, 'the enquiry is in the shared records'); assert.equal(row.extra.radar.opportunity.headline, card.title, 'the opportunity is in the row\'s extra.radar'); assert.equal(row.extra.radar.v, 1);
   assert.ok(new TextEncoder().encode(JSON.stringify(row.extra.radar)).length <= MAX_KEPT);
+  assert.equal(row.extra.finding?.kind, 'signal', 'the Pursuit studio copy (extra.finding) is kept too'); assert.equal(row.extra.finding.title, card.title);
   const again = await s.ctx.store.list('enquiry'); assert.equal(again[0].radar.opportunity.id, 'opp-1', 'it reads back with the enquiry');
   const { enquiry } = enquiryFromSignal(cleanEarlySignal({ id: 'signal:other-1', kind: 'signal', title: 'x', sourceUrl: 'https://example.org/a' }), { now: NOW }); assert.equal('radar' in enquiry, false, 'other early signals carry nothing of Radar');
 });
