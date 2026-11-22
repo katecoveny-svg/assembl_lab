@@ -48,8 +48,8 @@ const STRONG_DESIGN = ["architects", "architectural services", "architectural de
 // land and buildings 95, professional engineering 8110) or by words in the title and overview. A hunt for an architecture practice leaves the rest out.
 const BUILT_FAMILIES = ["72", "95", "30", "8110", "8112"], IT_FAMILIES = ["43", "8111", "8115", "8116"];
 const BUILT_WORDS = ["building", "buildings", "facility", "facilities", "refurbishment", "redevelopment", "renovation", "construction", "fit-out", "fitout", "masterplan", "master plan", "architect", "architects", "architectural", "design services", "concept design", "detailed design", "feasibility", "library", "pavilion", "classroom", "classrooms", "toilet block", "marae", "stadium", "hospital", "town hall", "community hall", "pool", "streetscape", "housing", "apartment", "apartments", "dwelling", "dwellings", "campus"];
-// Roads, pipes and the like: design work, but engineers' work, not an architecture practice's.
-const INFRA_WORDS = ["roundabout", "cycle path", "cycleway", "culvert", "stormwater", "sewer", "wastewater", "watermain", "reservoir", "bridge", "intersection", "carriageway", "pavement", "state highway", "transmission line", "substation", "network design", "electricity", "high voltage", "groyne"];
+// Roads, pipes, electrical gear and collections: not an architecture practice's work.
+const INFRA_WORDS = ["roundabout", "cycle path", "cycleway", "culvert", "stormwater", "sewer", "wastewater", "watermain", "reservoir", "bridge", "intersection", "carriageway", "pavement", "state highway", "transmission line", "substation", "network design", "electricity", "electrical", "disconnector", "earth switch", "telemetry", "high voltage", "groyne", "pa system", "collections"];
 const WORKS_WORDS = ["supply", "drain laying", "plumbing", "main contractor", "main contractors", "maintenance", "repair", "repairs", "supply of", "supply and install", "replacement", "fire alarm", "painting", "cleaning", "resurfacing", "reseal", "mowing", "contractors", "contractor", "design and build", "design & build", "design build", "construction contract", "civil works", "earthworks", "demolition", "roofing", "reroof", "re-roof", "flooring supply"];
 
 const clean = (s) => String(s ?? "").trim();
@@ -212,7 +212,7 @@ export function scoreTender(t, lens, now = new Date()) {
   const designed = DESIGN_WORDS.some((w) => hit(title, w)) || STRONG_DESIGN.some((w) => hit(rest, w));
   const works = WORKS_WORDS.some((w) => hit(title, w));
   if (designed) { score += 24; reasons.push("asks for design or advice"); }
-  if (INFRA_WORDS.some((w) => hit(title, w))) { score -= 20; reasons.push("looks like roads or pipes rather than buildings"); }
+  if (INFRA_WORDS.some((w) => hit(title, w))) { score -= 20; reasons.push("looks like infrastructure, equipment or supply rather than buildings"); }
   if (!designed && works) { score -= 20; reasons.push("looks like building work or supply rather than design"); }
 
   // value, when the notice states one

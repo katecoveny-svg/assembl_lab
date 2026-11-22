@@ -103,9 +103,9 @@ async function renderScreen(el, ctx, rest = []) {
   if (ui.key !== key) { if (!ui.carry) ui.flash = null; ui.edit = null; ui.draft = null; ui.projectForm = ui.projectForm && view === 'c' ? null : ui.projectForm; }
   ui.key = key; ui.carry = false;
   const st = { contacts: [], enquiries: [], acts: [] };
+  const readOnly = ctx.practice?.role === 'viewer';
   // "Found work" above the board (hunt.js): drawn from its own state, so a redraw here never looks anything up again
   const hunt = view ? null : createHunt(ctx, { enquiries: () => st.enquiries, readOnly, redraw: () => draw(), added: async (text) => { ok(text); await refresh(); } });
-  const readOnly = ctx.practice?.role === 'viewer';
   const now = () => new Date();
   let gone = false;
 
