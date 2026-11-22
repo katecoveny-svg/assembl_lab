@@ -431,3 +431,12 @@ test('add-ons can bring a project tab, a header part, wall parts and a settings 
   assert.ok(ADDONS.includes('./money.js'));
   _reset();
 });
+
+test('money.css is versioned by its content, so a returning browser never keeps an old copy', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { createHash } = await import('node:crypto');
+  const css = readFileSync(new URL('../../architecture/money.css', import.meta.url));
+  const js = readFileSync(new URL('../../architecture/js/money.js', import.meta.url), 'utf8');
+  const want = createHash('sha256').update(css).digest('hex').slice(0, 10);
+  assert.equal(js.match(/const CSS_VERSION = '([0-9a-f]+)'/)?.[1], want, `set CSS_VERSION in architecture/js/money.js to '${want}', then run node tools/arch-importmap.mjs`);
+});

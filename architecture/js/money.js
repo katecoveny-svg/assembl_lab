@@ -15,7 +15,7 @@ import { healthDial, practiceDial, feeGauge, stateIcon, animateDials, STATE_ICON
 import { activity, STAGE_KEYS, stageNumber, currentStage, SAMPLE_ID } from './model.js';
 import { dayKey, sameId, initials, stageLabel as enquiryStage } from './crm-model.js';
 
-const CSS_VERSION = '1'; // bump with any change to ../money.css
+const CSS_VERSION = 'e5b3ac7222'; // the first ten of money.css's sha-256: tests/architecture/money.test.mjs fails when it is out of step
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const today = () => dayKey(new Date());
 const nzd = (n) => (n == null || !Number.isFinite(Number(n)) ? '' : `${n < 0 ? '−' : ''}$${Math.round(Math.abs(n)).toLocaleString('en-NZ')}`);
@@ -266,7 +266,7 @@ async function renderTab(el, ctx) {
         <div class="m-row"><span>Used</span><span class="m-track"><i class="m-fill${over > 0 ? ' is-over' : ''}" style="--w:${(Math.min(usedW, doneW) * 100).toFixed(1)}%"></i>${over > 0 ? `<i class="m-overrun" style="--l:${(doneW * 100).toFixed(1)}%;--w:${(over * 100).toFixed(1)}%"></i>` : ''}</span></div>
         <div class="m-row"><span>Done</span><span class="m-track"><i class="m-fill is-done" style="--w:${(doneW * 100).toFixed(1)}%"></i></span></div>
       </div><p class="hd-word">${bud.state === 'over' ? `${stateIcon('warn')}<span>Ahead of the work</span>` : `${stateIcon('tick')}<span>Within the work done</span>`}</p>`
-      : `<p class="m-empty">${icon('dash')}<span>Type a fee and an hourly rate, or budget hours, to see this.</span></p>`}
+      : `<p class="m-empty">${icon('dash')}<span>${any('fee') ? 'Type a fee and an hourly rate, or budget hours, to see this.' : 'No fee and rate, or budget hours, typed yet.'}</span></p>`}
       <span class="m-more">Figures</span></summary>
       <dl class="m-kv">${bud.basis === 'fee' ? `<dt>Fee</dt><dd>${nzd(bud.fee)}, typed</dd><dt>Rate</dt><dd>${nzd(bud.rate)} an hour, ${bud.rateFrom === 'project' ? 'this project’s own' : 'the practice’s default'}</dd><dt>Time</dt><dd>${hrs(bud.hours)} logged = ${nzd(bud.cost)}</dd><dt>Fee used</dt><dd>${M.pct(bud.used)}</dd>`
         : bud.basis === 'hours' ? `<dt>Budget</dt><dd>${hrs(bud.budgetHours)}, typed</dd><dt>Logged</dt><dd>${hrs(bud.hours)}</dd><dt>Used</dt><dd>${M.pct(bud.used)}</dd>` : '<dt>Fee</dt><dd>Not typed</dd>'}
@@ -276,7 +276,7 @@ async function renderTab(el, ctx) {
       ${feeGauge(pr, { key: `fee:${p.id}:${pr ? Math.round(pr.share * 100) : 'none'}`, label: pr ? `${M.pct(Math.max(0, pr.share))} of the fee left after the time so far${pr.left < 0 ? ': the time so far is more than the fee' : ''}` : 'Not enough to tell: needs a fee and an hourly rate' })}
       <p class="hd-word">${pr ? (pr.left < 0 ? `${stateIcon('below')}<span>Past the fee</span>` : pr.share >= 0.5 ? `${stateIcon('tick')}<span>Most of the fee left</span>` : `${stateIcon('dot')}<span>${pr.share >= 0.25 ? 'Some' : 'Little'} of the fee left</span>`) : `${stateIcon('none')}<span>Needs a fee and a rate</span>`}</p>
       <span class="m-more">Figures</span></summary>
-      ${pr ? `<dl class="m-kv"><dt>Fee</dt><dd>${nzd(pr.fee)}</dd><dt>Time × rate</dt><dd>${nzd(pr.cost)}</dd><dt>Left</dt><dd>${nzd(pr.left)}</dd></dl><p class="small">The fee less the time logged at the hourly rate. It is not a profit forecast.</p>` : '<p class="small">Type a fee, and an hourly rate here or in Settings.</p>'}</details>`;
+      ${pr ? `<dl class="m-kv"><dt>Fee</dt><dd>${nzd(pr.fee)}</dd><dt>Time × rate</dt><dd>${nzd(pr.cost)}</dd><dt>Left</dt><dd>${nzd(pr.left)}</dd></dl><p class="small">The fee less the time logged at the hourly rate. It is not a profit forecast.</p>` : `<p class="small">${any('fee') ? 'Type a fee, and an hourly rate here or in Settings.' : 'No fee and hourly rate typed yet.'}</p>`}</details>`;
   const bh = m.hours, logged = bud.hours, hoursW = bh ? Math.min(1, logged / bh) : 0;
   const hoursCard = `<details class="m-tap mc"><summary><p class="lab">Hours</p>
       ${bh ? `<div class="m-bars" role="img" aria-label="${esc(`${hrs(logged)} logged of ${hrs(bh)} budgeted`)}"><div class="m-row"><span>Logged</span><span class="m-track"><i class="m-fill${logged > bh ? ' is-over' : ''}" style="--w:${(hoursW * 100).toFixed(1)}%"></i></span></div></div>
@@ -308,7 +308,7 @@ async function renderTab(el, ctx) {
   const timeSec = `<section class="ms" aria-labelledby="mt-h-${esc(p.id)}"><h3 class="m-h" id="mt-h-${esc(p.id)}">${icon('clock')}<span>Time</span></h3>
     ${any('time') ? `<form class="f m-form m-quick" data-m="time"><label>Who<input name="person" list="m-team-${esc(p.id)}" required maxlength="80" value="${esc(who(ctx))}" autocomplete="off"></label>
       <label>Day<input type="date" name="date" value="${t}" required></label><label>Hours<input name="hours" required inputmode="decimal" placeholder="7.5" autocomplete="off"></label>
-      <label>Stage<select name="stage">${stageOpts(cur?.key ?? '')}</select></label><div class="f-act"><button class="btn solid">${icon('plus')}<span>Log time</span></button></div></form>${teamList}` : ''}
+      <label>Stage<select name="stage">${stageOpts(cur?.key ?? '')}</select></label><div class="f-act"><button class="btn solid">${icon('plus')}<span>Log time</span></button></div></form>${teamList}` : time.length ? '' : `<p class="m-empty">${icon('dash')}<span>No time logged yet.</span></p>`}
     ${time.length ? `<details class="m-fig"><summary>${plural(time.length, 'entry', 'entries')}, ${hrs(logged)} logged</summary><ul class="m-list">${time.slice(0, 60).map((x) => `<li>${avatar(x.person)}<span><b>${esc(x.person)}</b> · ${esc(M.dayShort(x.date))}${x.stage ? ` · ${stageNumber(x.stage)}. ${esc(M.stageLabel(x.stage))}` : ''}</span><span class="m-num">${hrs(Number(x.hours))}</span>
       ${any('time') ? `<button type="button" class="link" data-m="time-remove" data-id="${esc(x.id)}">${ui.confirm === `time:${x.id}` ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(x.person)}, ${esc(x.date)}</span></button>` : ''}</li>`).join('')}</ul></details>` : ''}</section>`;
 
