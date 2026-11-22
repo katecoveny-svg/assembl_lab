@@ -51,6 +51,12 @@ function at(g: Grid, e: number, n: number) {
 
 /** the first building's outline box in the model, from its outside walls (the same rule the ground pads use) */
 function footprint(plan: Plan) {
+  const fb = plan.buildings[0] as unknown as { form?: string; footprint?: [number, number][]; origin: [number, number]; floorLevel?: number };
+  if (fb.form === 'freeform' && fb.footprint?.length) {
+    // a free-form building: the box round its outline
+    const us = fb.footprint.map((p) => p[0]), vs = fb.footprint.map((p) => p[1]), u0 = Math.min(...us), v0 = Math.min(...vs), W = Math.max(...us) - u0, D = Math.max(...vs) - v0;
+    return { x0: fb.origin[0] + u0, z0: fb.origin[1] + v0, W, D, cx: fb.origin[0] + u0 + W / 2, cz: fb.origin[1] + v0 + D / 2, floor: (fb.floorLevel ?? 0) as number };
+  }
   const b = plan.buildings[0], ws = b.levels[0].walls as { axis: 'x' | 'z'; at: number }[];
   const W = Math.max(...ws.filter((w) => w.axis === 'z').map((w) => w.at)), D = Math.max(...ws.filter((w) => w.axis === 'x').map((w) => w.at));
   return { x0: b.origin[0], z0: b.origin[1], W, D, cx: b.origin[0] + W / 2, cz: b.origin[1] + D / 2, floor: (b.floorLevel ?? 0) as number };
