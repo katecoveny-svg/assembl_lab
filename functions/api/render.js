@@ -36,7 +36,7 @@
 // models. Without the drawing the request is as before. The photo is then checked offline against the same drawing
 // (tools/film/geocheck.mjs): this endpoint makes no claim that the photo matches.
 
-export const RENDER_PROMPTS = "2026-11-23a";
+export const RENDER_PROMPTS = "2026-11-23b";
 export const MAX_BODY = 5_000_000;
 export const MAX_IMAGE = 4_000_000;
 /** the line drawing is a small PNG (black lines on white): 1.5 MB decoded at most */
@@ -44,10 +44,14 @@ export const MAX_LINE = 1_500_000;
 export const SETTING_MAX = 120;
 export const TIMES = ["morning", "midday", "golden", "overcast"];
 export const SEASONS = ["summer", "winter"];
-export const QUALITIES = ["fast", "best"];
-export const DEFAULT_MODELS = { fast: "gemini-nano-banana-2.1", best: "gemini-3-pro-image" };
-const SIZES = { fast: "1K", best: "2K" };
-const TIMEOUT_MS = { fast: 90_000, best: 150_000 };
+// 'finest' (feat/photoreal-render-button): the "Make photoreal still + film" button's quality mode. Google's image docs
+// (aistudio.google.com/docs/image-generation.md, read 23 Nov 2026) list Nano Banana Pro (gemini-3-pro-image) as "the premium
+// choice for complex visual tasks", with thinking always on, at 1K, 2K or 4K; 4K is the largest size it makes. So 'finest' is
+// that model at 4K. Override with RENDER_GEMINI_FINEST_MODEL.
+export const QUALITIES = ["fast", "best", "finest"];
+export const DEFAULT_MODELS = { fast: "gemini-nano-banana-2.1", best: "gemini-3-pro-image", finest: "gemini-3-pro-image" };
+const SIZES = { fast: "1K", best: "2K", finest: "4K" };
+const TIMEOUT_MS = { fast: 90_000, best: 150_000, finest: 200_000 };
 const API_REVISION = "2026-05-20";
 // estimates from Google's pricing page (aistudio.google.com/docs/pricing, read 22 Nov 2026), for the default models only:
 // Nano Banana 2.1 output images US$30 per 1M tokens, a 1K image is 1120 tokens = US$0.0336, input US$1.50 per 1M, thinking US$7.50 per 1M;
@@ -55,6 +59,10 @@ const API_REVISION = "2026-05-20";
 export const ESTIMATES = {
   fast: { usd: 0.04, text: "about US$0.04 a photo: US$0.0336 for the image plus input and a little thinking (Google's price, 22 Nov 2026)" },
   best: { usd: 0.15, text: "about US$0.15 a photo: US$0.134 for the image plus input and thinking (Google's price, 22 Nov 2026)" },
+  // aistudio.google.com/docs/pricing.md#gemini-3-pro-image, read 23 Nov 2026: "Output images up to 4096x4096px (4K) consume 2000
+  // tokens and are equivalent to $0.24 per image"; input images 560 tokens = US$0.0011 each (two are sent: view and line drawing);
+  // text and thinking US$12 per 1M (about 1,500 thinking tokens assumed, about US$0.02)
+  finest: { usd: 0.26, text: "about US$0.26 a photo: US$0.24 for the 4K image plus two input images and thinking (Google's price, 23 Nov 2026)" },
 };
 export function estimateOf(env, quality) {
   const model = modelOf(env, quality);
@@ -76,7 +84,7 @@ function cors(request) {
   return allowedOrigin(o) ? { "access-control-allow-origin": o, "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type", "access-control-max-age": "86400", vary: "origin" } : { vary: "origin" };
 }
 
-export const modelOf = (env, quality) => (quality === "best" ? env.RENDER_GEMINI_BEST_MODEL : env.RENDER_GEMINI_FAST_MODEL) || DEFAULT_MODELS[quality];
+export const modelOf = (env, quality) => (quality === "finest" ? env.RENDER_GEMINI_FINEST_MODEL : quality === "best" ? env.RENDER_GEMINI_BEST_MODEL : env.RENDER_GEMINI_FAST_MODEL) || DEFAULT_MODELS[quality];
 const keyOf = (env) => env.GEMINI_API_KEY || env.GOOGLE_API_KEY || "";
 const apiOf = (env) => (String(env.RENDER_GEMINI_API || "").toLowerCase().replace(/-/g, "_") === "generate_content" ? "generate_content" : "interactions");
 const int = (v, d) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n >= 0 ? n : d; };
@@ -99,10 +107,11 @@ const SEASON = {
 export function cleanSetting(s) {
   return String(s ?? "").replace(/[\u0000-\u001f\u007f<>{}\[\]`\\]/g, " ").replace(/\s+/g, " ").trim();
 }
-export function buildPrompt(look, ratio, withLine = false) {
+export function buildPrompt(look, ratio, withLine = false, o = {}) {
   const setting = cleanSetting(look?.setting);
   return [
     "Make this exact 3D model view look like a real architectural photograph of the same building, taken from the same spot.",
+    o.finish ? "Restyle it to photographic only: this is a finish of a browser render, not a design change. Keep every building edge, every opening and the camera position exactly as they are." : "",
     withLine
       ? "The first image is the model view. The second image is a line drawing of exactly the same view, drawn from the model's geometry: every black line is an edge of the building (walls, window and door openings, roof, deck, balustrades, stair, poles); grey lines are furniture, planting and ground."
       : "",
@@ -280,7 +289,7 @@ export const MESSAGES = {
   image_unreadable: "The view could not be read as a PNG, JPEG or WebP image.",
   image_too_large: "That view is over 4 MB. Make the window smaller and try again.",
   image_size: "The view must be between 256 and 4096 pixels on each side.",
-  bad_quality: "Choose Fast or Best.",
+  bad_quality: "Choose Fast, Best or Finest.",
   line_unreadable: "The line drawing of the view could not be read as a PNG, JPEG or WebP image. Reload the page and try again.",
   line_too_large: "The line drawing of the view is over 1.5 MB. Make the window smaller and try again.",
   line_shape: "The line drawing is not the same shape as the view. Reload the page and try again.",
@@ -356,10 +365,10 @@ export async function onRequest({ request, env }) {
   if (request.method === "GET") {
     return json(200, {
       type: "assembl.planstudio.render.status", configured: !!keyOf(env), host: "cloudflare", provider: "google-gemini", api: apiOf(env),
-      models: { fast: modelOf(env, "fast"), best: modelOf(env, "best") }, sizes: SIZES, prompt_revision: RENDER_PROMPTS,
+      models: { fast: modelOf(env, "fast"), best: modelOf(env, "best"), finest: modelOf(env, "finest") }, sizes: SIZES, prompt_revision: RENDER_PROMPTS,
       limits: { ...limitsOf(env), max_body_bytes: MAX_BODY, max_image_bytes: MAX_IMAGE, max_line_bytes: MAX_LINE, setting_chars: SETTING_MAX, counted_in: counterKind(env) },
       accepts_line: true,
-      estimate: { fast: estimateOf(env, "fast"), best: estimateOf(env, "best") }, needs_confirm: true,
+      estimate: { fast: estimateOf(env, "fast"), best: estimateOf(env, "best"), finest: estimateOf(env, "finest") }, needs_confirm: true,
       times: TIMES, seasons: SEASONS, aspect_ratios: RATIOS, stores_images: false, label: LABEL,
     });
   }
@@ -379,7 +388,7 @@ export async function onRequest({ request, env }) {
   if (hit) return fail(hit, hit === "slow_down" ? { retry_after: 60 } : {});
 
   const ratio = nearestRatio(dims.w, dims.h);
-  const prompt = buildPrompt(look, ratio, !!line);
+  const prompt = buildPrompt(look, ratio, !!line, { finish: quality === "finest" });
   const req = geminiRequest(env, quality, prompt, img, ratio, line);
   const t0 = Date.now(), ac = new AbortController(), timer = setTimeout(() => ac.abort(), TIMEOUT_MS[quality]);
   try {

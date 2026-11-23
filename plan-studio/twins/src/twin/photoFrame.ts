@@ -16,9 +16,11 @@ export const MAX_EDGE = 1600;
 export const MIN_EDGE = 256;
 export const KEEP = 4;
 /** the price shown before anything is spent (Google's price, 22 Nov 2026, for the default models); the server's GET answer replaces it */
-export const ESTIMATES: Record<Quality, { usd: number | null; text: string }> = {
+export const ESTIMATES: Record<Quality | 'finest', { usd: number | null; text: string }> = {
   fast: { usd: 0.04, text: "about US$0.04 a photo: US$0.0336 for the image plus input and a little thinking (Google's price, 22 Nov 2026)" },
   best: { usd: 0.15, text: "about US$0.15 a photo: US$0.134 for the image plus input and thinking (Google's price, 22 Nov 2026)" },
+  /** the photoreal still + film button's still (photoFinish.ts): Nano Banana Pro at 4K (Google's price, 23 Nov 2026) */
+  finest: { usd: 0.26, text: "about US$0.26 a photo: US$0.24 for the 4K image plus two input images and thinking (Google's price, 23 Nov 2026)" },
 };
 export const priceShort = (e: { usd: number | null }) => (e.usd == null ? 'see price' : `≈US$${e.usd.toFixed(2)}`);
 
