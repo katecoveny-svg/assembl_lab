@@ -522,7 +522,13 @@ function open3d(ctx, p, source, models = []) {
     r.state = 'keeping'; paintPrep(r);
     const { putHandoff, HANDOFF_PARAM, keepBrand } = await import('./handoff.js');
     await keepBrand(ctx.practice?.name).catch(() => void 0);   // the 3D page wears the practice's name and logo (practiceLook.ts)
-    const hid = await putHandoff(blob, name);
+    const { readSiteHandoff } = await import('./site-sources-rules.js');
+    const { rememberHandoff } = await import('./site-sources.js');
+    const project = (await ctx.store.get('project', p.id)) ?? p;
+    const sources = await ctx.store.listFiles({ project_id: p.id });
+    const site = await readSiteHandoff(project, sources, (f) => blobOf(ctx, f));
+    const hid = await putHandoff(blob, name, { site });
+    rememberHandoff(p.id, hid);
     r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
     r.state = 'ready'; ctx.redraw();
     const w = window.open(r.href, '_blank'); // may replace this page (then the 3D page takes it from storage all the same)

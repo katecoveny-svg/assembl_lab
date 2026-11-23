@@ -1,3 +1,4 @@
+import { GLASS, unalteredGlass, type GlassMode } from './modelReviewRules';
 import * as THREE from 'three/webgpu';
 import { luminance, materialColor, mix, mx_noise_float, normalWorld, positionWorld, smoothstep, vec3, vec4 } from 'three/tsl';
 import { pbr, type PBRSet } from '../objects/tex';
@@ -41,6 +42,8 @@ export interface DressOpts {
 export interface Dressed {
   layers: Layer[];
   mode: DressMode;
+  glassCount: number;
+  setGlass(mode: GlassMode): void;
   set(mode: DressMode): void;
   /** put the planting on new ground (the site's LiDAR, when it is read): ground level at a scene point */
   replant(yAt: ((x: number, z: number) => number) | null): Promise<void>;
@@ -267,7 +270,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     const B = o.bounds && !o.bounds.isEmpty() ? o.bounds : new THREE.Box3().setFromObject(obj);
     const span = Math.max(B.max.x - B.min.x, B.max.z - B.min.z, 1), H = Math.max(1, B.max.y - B.min.y);
     const pb = new THREE.Box3(), nm = new THREE.Matrix3(), nv = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-    const shapeOf = new Map<THREE.Mesh, { across: number; span: number; slope: number; up: number; high: number }>();
+    const shapeOf = new Map<THREE.Mesh, { across: number; span: number; slope: number; up: number; high: number; fill?: number }>();
     for (const p of parts) {
       if (normClass(p.info.cls) && p.info.cls !== 'IfcBuildingElementProxy') continue;
       let sh = shapeOf.get(p.mesh);
@@ -318,18 +321,23 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   const origShadow = new Map<THREE.Mesh, boolean>();
   for (const p of parts) origShadow.set(p.mesh, p.mesh.castShadow);
 
+  let glassMode: GlassMode = 'studio';
+  const glassEligible = (p: Part) => p.c.finish === 'glass' && !p.keep && !unalteredGlass(p.info.material ?? '', p.info.name ?? '');
   const matFor = (p: Part, mode: DressMode): THREE.Material => {
     if (mode === 'asis' || p.keep) return p.orig;
+    if (p.c.finish === 'glass') {
+      const tint = glassMode === 'studio' ? glassTint(p.info).rgb : GLASS.find(k => k.id === glassMode)?.tint;
+      return glassEligible(p) && tint ? glassMat(tint, heavy) : p.orig;
+    }
     const f = p.c.finish, model = p.info.rgb ? new THREE.Color(p.info.rgb[0], p.info.rgb[1], p.info.rgb[2]) : null;   // as the model draws it
-    if (f === 'glass') return glassMat(glassTint(p.info).rgb, heavy);
     if (mode === 'model') return finishMat(f, q, model);
     return finishMat(f, q, KEEP_HUE.has(f) && meaningfulColour(p.info) ? model : null);
   };
   const say = (p: Part, mode: DressMode) => {
     if (p.keep) return `kept as the file has it (${p.keep})`;
     const f = p.c.finish;
-    const lab = f === 'glass' ? `${FINISHES.glass.label}, ${glassTint(p.info).from === 'model' ? 'tint from the model’s own colour' : 'neutral bronze-grey tint'}${heavy ? ', drawn see-through without refraction to keep a model this size smooth' : ''}`
-      : mode === 'model' ? `${FINISHES[f].label} surface in the model’s own colour` : `${FINISHES[f].label}${KEEP_HUE.has(f) && meaningfulColour(p.info) ? ' in the model’s own colour' : ''}`;
+    if (f === 'glass') return glassEligible(p) && glassMode !== 'authored' ? 'glass appearance preview; not a specification' : 'glass as supplied in the model';
+    const lab = mode === 'model' ? `${FINISHES[f].label} surface in the model’s own colour` : `${FINISHES[f].label}${KEEP_HUE.has(f) && meaningfulColour(p.info) ? ' in the model’s own colour' : ''}`;
     return `${lab}: ${p.c.why}`;
   };
 
@@ -526,12 +534,14 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   // --- modes -----------------------------------------------------------------------------------------------------------
   const D: Dressed = {
     layers, mode: 'finished', card: document.createElement('section'),
+    glassCount: parts.filter(glassEligible).length,
+    setGlass(mode) { glassMode = mode; D.set(D.mode === 'asis' && mode !== 'authored' ? 'model' : D.mode); },
     set(mode) {
       D.mode = mode;
       for (const p of parts) {
         const m = matFor(p, mode);
         if (p.slot < 0) p.mesh.material = m; else (p.mesh.material as THREE.Material[])[p.slot] = m;
-        p.mesh.castShadow = mode !== 'asis' && p.c.finish === 'glass' && !p.keep ? false : origShadow.get(p.mesh)!;
+        p.mesh.castShadow = mode !== 'asis' && glassMode !== 'authored' && glassEligible(p) ? false : origShadow.get(p.mesh)!;
       }
       for (const [el, ps] of elements) {
         const was = origNote.get(el)!;

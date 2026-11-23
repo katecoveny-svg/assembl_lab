@@ -848,6 +848,7 @@ export class App {
       if (touchScreen()) this.walk.pad = walkJoystick(this.canvas.parentElement!, this.walk.stick);
       this.log(nv ? `Walk: ${touchScreen() ? 'the thumb pad to move, drag to look' : 'W A S D or arrow keys to move (Shift to hurry), drag to look, Esc to leave'}. Walls stop you; doorways and stairs take you through and up.` : 'Walk: W A S D or arrow keys to move, drag to look, Esc to leave. Walk mode does not stop at walls.');
     } else {
+      this.walk.keys.clear();
       this.walk.pad?.remove(); this.walk.pad = null;
       const d = new THREE.Vector3();
       this.camera.getWorldDirection(d);
@@ -878,6 +879,21 @@ export class App {
       if (g != null) p.y += (g + 1.6 - p.y) * Math.min(1, dt * 10);
     }
     this.camera.rotation.set(this.walk.pitch, yaw, 0, 'YXZ');
+  }
+
+  get isWalking() { return this.walk.on; }
+
+  focusReviewPoint(eye: THREE.Vector3, look: THREE.Vector3) {
+    if (this.playing) this.stopPlay();
+    this.camera.position.copy(eye);
+    this.camera.lookAt(look);
+    this.controls.target.copy(look);
+    if (this.walk.on) {
+      const d = look.clone().sub(eye).normalize();
+      this.walk.yaw = Math.atan2(-d.x, -d.z);
+      this.walk.pitch = Math.max(-1.2, Math.min(1.2, Math.asin(d.y)));
+      this.walk.keys.clear();
+    } else this.controls.update();
   }
 
   // --- camera path -------------------------------------------------------------------------------

@@ -720,7 +720,8 @@ export const projectPlan: Project = {
     let plantObj: THREE.Object3D | null = null;
     let landObj: THREE.Object3D | null = null;
     let lightObj: THREE.Object3D | null = null;
-    let dressed: Dressed | null = null;   // model-dress
+    let dressed: Dressed | null = null;
+    let openedModel: THREE.Object3D | null = null;   // model-dress
     const b2Size = new THREE.Vector3();   // the building's own size (an opened model), for the camera path's surface sampler
     let sunFace: THREE.Vector3 | undefined;
     let siteNorth: [number, number] | undefined;
@@ -955,6 +956,7 @@ export const projectPlan: Project = {
       obj.position.x -= bcx; obj.position.z -= bcz; obj.position.y -= bb.box[1];
       shift.x -= bcx; shift.z -= bcz; shift.y += -bb.box[1];
       model.add(obj);
+      openedModel = obj;
       const b2 = new THREE.Box3(new THREE.Vector3(bb.box[0] - bcx, 0, bb.box[2] - bcz), new THREE.Vector3(bb.box[3] - bcx, bb.box[4] - bb.box[1], bb.box[5] - bcz));
       ownBox = b2.clone();
       centre = b2.getCenter(new THREE.Vector3());
@@ -1107,9 +1109,10 @@ export const projectPlan: Project = {
         root: pathRoot, pickables: () => [lidarHolder.children.length ? lidarHolder : ground],
       });
       refreshPath = cp.refresh;
+      const reviewGround = (x: number, z: number) => (onModelGround ? onModelGround.yAt : (modelSurface ??= ((window as unknown as { __surface?: unknown }).__surface = surfaceSampler(model, new THREE.Box3().setFromCenterAndSize(centre.clone(), b2Size.clone()))) as (x: number, z: number) => number))(x,z);
       const fl = flightPanel(app, {
         name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the scene: the model as opened, moved to stand at the origin (scene = file + shift)',
-        yAt: () => (onModelGround ? onModelGround.yAt : (modelSurface ??= ((window as unknown as { __surface?: unknown }).__surface = surfaceSampler(model, new THREE.Box3().setFromCenterAndSize(centre.clone(), b2Size.clone()))) as (x: number, z: number) => number)), pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
+        yAt: () => reviewGround, pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
         root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
       });
       if (site?.flight) { try { fl.path = readFlight(site.flight); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
@@ -1123,6 +1126,11 @@ export const projectPlan: Project = {
         outlines: async () => { if (!onModelGround) throw new Error('no ground yet'); return (await outlinesFor(onModelGround)).list; },
       });
       modelCards = [mg.el, pb.el, cp.el, fl.el]; startSite = mg.start;
+      if(openedModel && dressed) {
+        const { reviewPanel } = await import('./modelReviewUI');
+        modelCards.unshift(await reviewPanel(app, {model:openedModel, bytes:input.bytes, site, dress:dressed,bounds:box,
+          fallback:()=>fl.path,ground:reviewGround}));
+      }
       (window as unknown as { __site?: unknown }).__site = { ground: () => onModelGround, path: cp.state, info: ifcInfo, shift };   // for checks from the console (this tab only)
     }
 
