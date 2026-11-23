@@ -38,6 +38,7 @@ for (const id of ["day", "min"]) $("#" + id).addEventListener("input", sunChange
 for (const b of document.querySelectorAll("[data-doy]")) b.addEventListener("click", () => { $("#day").value = b.dataset.doy; $("#min").value = 12 * 60 + 40 + (+b.dataset.doy > 300 || +b.dataset.doy < 40 ? 60 : 0); sunChanged(); });
 $("#heat").addEventListener("change", (e) => { S.sc?.setHeat(e.target.checked); $("#legend").hidden = !e.target.checked || !S.plan?.panels.length; });
 $("#paths").addEventListener("change", (e) => S.sc?.setPaths(e.target.checked));
+$("#clay").addEventListener("change", (e) => S.sc?.setClay(e.target.checked));
 $("#play").addEventListener("click", () => {
   S.playing = !S.playing; $("#play").textContent = S.playing ? "Pause" : "Play the day"; if (!S.playing) return cancelAnimationFrame(S.raf);
   let last = performance.now(); const step = (t) => { const dt = t - last; last = t; let m = +$("#min").value + dt * 0.09; if (m > 1439) m = 0; $("#min").value = m; sunChanged(); S.raf = requestAnimationFrame(step); }; S.raf = requestAnimationFrame(step);
@@ -59,7 +60,7 @@ async function work(site, building, run) {
   site.chosen = building; const plan = await analyse({ dsm: site.dsm, point: site.point, climate: site.climate, rings: building.rings }, { onProgress: (t) => run === S.run && badge(t, true) }); if (run !== S.run) return;
   S.plan = plan;
   if (!S.sc) { S.sc = new RoofScene($("#gl"), { tier: matchMedia("(max-width:700px)").matches ? "low" : "high" }); S.sc.canvas.addEventListener("pointerdown", pd); S.sc.canvas.addEventListener("pointerup", pu); }
-  S.sc.setSite(site, plan); S.sc.setHeat($("#heat").checked); S.sc.setPaths($("#paths").checked); $("#legend").hidden = !$("#heat").checked || !plan.panels.length;
+  S.sc.setSite(site, plan); S.sc.setHeat($("#heat").checked); S.sc.setPaths($("#paths").checked); S.sc.setClay($("#clay").checked); $("#legend").hidden = !$("#heat").checked || !plan.panels.length;
   badge(site.label || "Chosen roof"); sunChanged(); render(site, plan); $("#roofs").hidden = false; S.ready = true; document.documentElement.dataset.ready = "1";
 }
 // click a building in the 3D view to work on that one
@@ -108,6 +109,7 @@ function method(site, plan) {
       <li>A plane is used if it gets at least ${(ASSUME.usableShare * 100).toFixed(0)} % of the yearly power of the best possible roof here (north-facing, ${plan.best.tilt}° tilt, no shade) and is under 70° steep. Panels sit in rows, ${0.25} m clear of the plane's edge, on cells that belong to the plane.</li>
       <li>Flat roofs get panels lying flat on the roof, not tilted on frames.</li>
       <li>The month's sunlight is spread over a typical day by a clear-sky shape (Meinel and Meinel) and scaled to NASA's monthly total. That puts average sunlight where a clear day would put it; it carries no real hour-by-hour cloud.</li></ul>
+    <h3>How the 3D view is drawn</h3><ul><li>Buildings are LINZ outlines raised from the LiDAR ground model to the roof read from the surface: fitted planes where the roof is planar, the surface itself where it is not. Trees are grown from the canopy height (surface minus ground): each top is the measured top and each crown is as wide as the canopy stays above half that height; where the crown starts is assumed. Roof finishes, cladding, grass and paving are drawn for looks: LINZ's heights carry no materials. The sums do not use the drawing; they walk the measured surface. Tick "Measured LiDAR surface" to see it.</li></ul>
     <h3>What it cannot see</h3><ul><li>Anything LINZ's survey does not hold: trees grown or felled since it was flown, new buildings, roof fittings under about 1 m, glass, or dirt. Hills beyond ${ASSUME.reach} m, or beyond the square read (${site.dsm.n} m wide), are ignored. Roof materials, structure, wiring, consents and the meter are not checked.</li></ul></div></div>`;
 }
 function sources(site) {

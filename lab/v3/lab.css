@@ -217,3 +217,22 @@ main { position: relative; z-index: 1; }
 }
 .hero, .manu { --ln: var(--line); }
 @media (max-width: 760px) { .hero h1 { background: var(--white); padding: 4px 10px 8px; margin-left: calc(var(--gutter) - 10px); margin-right: auto; width: fit-content; } }
+
+/* ---------------------------------------------------------------------------------------------- 23 Nov 2026: more from the lab */
+/* every world as a tile on the grid: a real still from its page, its name, one line and its truth label */
+.more-band { position: relative; z-index: 1; background: var(--white); border-top: 1px solid var(--line); padding: clamp(56px, 9vh, 104px) var(--gutter) clamp(56px, 9vh, 96px); scroll-snap-align: start; }
+.mb-in { max-width: 1480px; margin: 0 auto; }
+.mb-k { letter-spacing: .06em; text-transform: uppercase; margin: 0 0 14px; }
+.more-band h2 { font: 500 clamp(30px, 3.2vw, 54px)/1.02 var(--sans); letter-spacing: -.045em; margin: 0 0 clamp(24px, 4vh, 40px); max-width: 16em; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.tile { display: grid; grid-template-rows: auto auto 1fr auto; gap: 6px; padding: 14px 14px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--white); color: var(--plum); text-decoration: none; transition: background .25s var(--ease); }
+.tile[hidden] { display: none; }
+.tile .pic { display: block; aspect-ratio: 8 / 5; overflow: hidden; background: var(--rose); margin-bottom: 8px; }
+.tile .pic img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+.tile:hover { background: #f8f2f2; }
+.tile:hover .pic img { transform: scale(1.03); }
+.tile .t-name { font: 500 clamp(19px, 1.5vw, 23px)/1.15 var(--sans); letter-spacing: -.025em; }
+.tile .t-line { font-size: 15px; line-height: 1.45; }
+.tile .chip { justify-self: start; margin-top: 6px; padding: 3px 7px; background: var(--plum); color: var(--white); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; }
+@media (max-width: 1000px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .tiles { grid-template-columns: minmax(0, 1fr); } .tile .t-line { font-size: 14.5px; } }
