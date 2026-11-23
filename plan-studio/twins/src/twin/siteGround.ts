@@ -18,12 +18,12 @@ const STORE = 'assembl-twin-site-ground', WHERE = 'assembl.siteFacts.where';
 const RADIUS = 110, SIZE = 140, NUDGE_MAX = 10, PAD = 0.45;
 export const PRIVACY = 'The same point as Site facts. This browser reads LINZ’s open data for it directly (the elevation files and the parcel map); the lab’s server is not asked and never receives the point. It is kept in this browser tab only: not in the model, not in a share link.';
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const r2 = (v: number) => Math.round(v * 100) / 100;
+export const r2 = (v: number) => Math.round(v * 100) / 100;
 
 interface Packed { n: number; cell: number; originE: number; originN: number; base: number; scale: number; nodata: number; data: string; stats?: { cellsWithoutHeight?: number } }
 interface Grid { n: number; originE: number; originN: number; data: Float32Array }
 interface Layer { heights: Packed; title: string | null; captured: { from: string | null; to: string | null } | null; identified?: string; credit: string; file?: string; asOf: string | null; fetchedAt: string; heightAtPoint: number | null; datum: string }
-export type Tag = 'from the plan' | 'assumed' | 'set by hand';
+export type Tag = 'from the plan' | 'assumed' | 'set by hand' | 'from the IFC' | 'proposed' | 'confirmed here';
 export interface Placement { turnDeg: number; turnTag: Tag; east: number; north: number; moveTag: Tag; floor: number | null; floorTag: Tag }
 export interface GroundStore { v: 1; plan: string; point: { lat: number; lon: number; e: number; n: number }; ground: Layer; surface: Layer | null; surfaceWhy?: string; parcel: { rings: [number, number][][]; asOf: string | null; credit: string } | null; parcelWhy?: string; placement: Placement;
   /** how the read went in this browser: seconds from asking to having both layers and the boundary, answers from LINZ, bytes */
@@ -75,21 +75,36 @@ export interface Applied {
   features: { kind: 'boundary'; pts: [number, number][]; source: string; open: boolean }[];
   floor: number; floorRule: string; datum0: number; emptyCells: number; groundUnder: { min: number; max: number; mean: number };
 }
-/** Put the stored survey square into the plan model's frame. Pure arithmetic: every height is a LINZ cell, bilinearly read. */
-export function applyGround(plan: Plan, st: GroundStore): Applied {
-  const fp = footprint(plan), P = st.placement, g = unpack(st.ground.heights), th = (P.turnDeg * Math.PI) / 180;
+/** The placement as arithmetic: `world` takes a model point (x, z) to NZTM2000 (e, n); `model` goes back. The model's north is
+ *  taken as true north; the survey grid's north is turned from it by the convergence at the point. */
+export function frameOf(fp: Footprint, st: GroundStore) {
+  const P = st.placement, th = (P.turnDeg * Math.PI) / 180;
   const nv: [number, number] = [Math.sin(th), -Math.cos(th)], ev: [number, number] = [Math.cos(th), Math.sin(th)];   // north and east in the model's (x, z)
-  // the plan's north is taken as true north; the survey grid's north is turned from it by the convergence
   const gam = (convergence(st.point.lat, st.point.lon) * Math.PI) / 180, tE: [number, number] = [Math.cos(gam), Math.sin(gam)], tN: [number, number] = [-Math.sin(gam), Math.cos(gam)];
   const A0 = { e: st.point.e + P.east, n: st.point.n + P.north };
   const world = (x: number, z: number): [number, number] => { const dx = x - fp.cx, dz = z - fp.cz, de = dx * ev[0] + dz * ev[1], dn = dx * nv[0] + dz * nv[1]; return [A0.e + de * tE[0] + dn * tN[0], A0.n + de * tE[1] + dn * tN[1]]; };
   const model = (e: number, n: number): [number, number] => { const re = e - A0.e, rn = n - A0.n, de = re * tE[0] + rn * tE[1], dn = re * tN[0] + rn * tN[1]; return [fp.cx + de * ev[0] + dn * nv[0], fp.cz + de * ev[1] + dn * nv[1]]; };
+  /** metres true north and true east of the site point */
+  const fromPoint = (x: number, z: number): [number, number] => { const [e, n] = world(x, z), re = e - st.point.e, rn = n - st.point.n; return [re * tN[0] + rn * tN[1], re * tE[0] + rn * tE[1]]; };
+  return { world, model, fromPoint, nv, ev, tE, tN };
+}
+/** Put the stored survey square into the plan model's frame. Pure arithmetic: every height is a LINZ cell, bilinearly read. */
+export function applyGround(plan: Plan, st: GroundStore): Applied { return applyGroundAt(footprint(plan), st); }
+/** the footprint box a survey square is centred on, in the model's frame (x, z), and its floor level in the model */
+export interface Footprint { x0: number; z0: number; W: number; D: number; cx: number; cz: number; floor: number }
+/** how the floor level is chosen from the ground under the footprint: the floor (NZVD2016), the words for it, and the level
+ *  below which ground inside the footprint is cut (left out: the plan rule, floor less PAD) */
+export type FloorRule = (under: { min: number; max: number; mean: number }) => { floor: number; text: string };
+/** The same, for any footprint (an opened IFC or GLB as well as a plan): the survey square centred on it, the floor by `rule`. */
+export function applyGroundAt(fp: Footprint, st: GroundStore, rule?: FloorRule): Applied {
+  const P = st.placement, g = unpack(st.ground.heights), { world, model, nv } = frameOf(fp, st);
   // ground under the footprint, on a half-metre lattice
   let lo = Infinity, hi = -Infinity, sum = 0, cnt = 0;
   for (let x = fp.x0; x <= fp.x0 + fp.W + 1e-6; x += 0.5) for (let z = fp.z0; z <= fp.z0 + fp.D + 1e-6; z += 0.5) { const h = at(g, ...world(x, z)); if (h === h) { lo = Math.min(lo, h); hi = Math.max(hi, h); sum += h; cnt++; } }
   if (!cnt) throw new Error('the survey has no heights under the house at this spot');
-  const ruleFloor = hi + PAD, floor = P.floor ?? ruleFloor, datum0 = floor - fp.floor;
-  const floorRule = P.floor == null
+  const custom = rule ? rule({ min: r2(lo), max: r2(hi), mean: r2(sum / cnt) }) : null;
+  const ruleFloor = custom ? custom.floor : hi + PAD, floor = custom ? custom.floor : P.floor ?? ruleFloor, datum0 = floor - fp.floor;
+  const floorRule = custom ? custom.text : P.floor == null
     ? `Floor level ${r2(ruleFloor).toFixed(2)} m (NZVD2016): ${PAD} m above the highest surveyed ground under the house (${r2(hi).toFixed(2)} m), so no ground is cut. Assumed until you set it.`
     : `Floor level ${r2(floor).toFixed(2)} m (NZVD2016), set by hand. Ground under the house runs from ${r2(lo).toFixed(2)} to ${r2(hi).toFixed(2)} m.`;
   const n = SIZE + 1, heights: number[] = new Array(n * n), minValid = st.ground.heights.base;
@@ -172,8 +187,14 @@ export type GroundRead = { status: 'read'; store: GroundStore; applied: Applied 
 /** Read LINZ's ground and tree tops round a point, and the parcel, straight from LINZ in this browser, and check the house
  *  can sit on it. Nothing is kept and nothing is drawn: the caller decides. A failure throws; it is never an answer.
  *  `parcel` is a boundary already in hand for this point (from Site facts); left out, LINZ's parcel map is asked. */
-export async function readGround(plan: Plan, p: { lat: number; lon: number }, o: { signal: AbortSignal; onProgress?: (requests: number, bytes: number) => void; onPhase?: (phase: string) => void; parcel?: GroundStore['parcel'] }): Promise<GroundRead> {
-  const t0 = performance.now(), seen: Record<string, { requests: number; bytes: number }> = {}, north = planNorth(plan);
+export async function readGround(plan: Plan, p: { lat: number; lon: number }, o: ReadOpts): Promise<GroundRead> {
+  const north = planNorth(plan);
+  return readGroundFor({ key: modelFingerprint(plan), north: { deg: north.deg, tag: north.tag }, apply: (st) => applyGround(plan, st) }, p, o);
+}
+type ReadOpts = Parameters<typeof readGroundFor>[2];
+/** The same read for any model: `key` names it (kept with the read), `north` starts the placement, `apply` checks the model can sit there. */
+export async function readGroundFor(target: { key: string; north: { deg: number; tag: Tag }; apply: (st: GroundStore) => Applied }, p: { lat: number; lon: number }, o: { signal: AbortSignal; onProgress?: (requests: number, bytes: number) => void; onPhase?: (phase: string) => void; parcel?: GroundStore['parcel'] }): Promise<GroundRead> {
+  const t0 = performance.now(), seen: Record<string, { requests: number; bytes: number }> = {}, north = target.north;
   const total = () => Object.values(seen).reduce((a, v) => ({ requests: a.requests + v.requests, bytes: a.bytes + v.bytes }), { requests: 0, bytes: 0 });
   const opts = (k: string) => ({ lat: p.lat, lon: p.lon, radius: RADIUS, signal: o.signal, onProgress: (st: { requests: number; bytes: number }) => { seen[k] = { requests: st.requests, bytes: st.bytes }; const t = total(); o.onProgress?.(t.requests, t.bytes); } });
   // the ground decides everything; if it fails, the tops of trees and buildings are not waited for
@@ -191,10 +212,10 @@ export async function readGround(plan: Plan, p: { lat: number; lon: number }, o:
     catch (e) { if (o.signal.aborted) throw e; parcel = null; parcelWhy = `LINZ’s parcel map did not answer (${(e as Error).message}), so no boundary is drawn.`; }
   }
   const sf = s.status === 'fulfilled' && s.value.status !== 'unavailable' ? s.value : null, t = total(), secs = Math.round((performance.now() - t0) / 100) / 10;
-  const store: GroundStore = { v: 1, plan: modelFingerprint(plan), point: { lat: p.lat, lon: p.lon, e: theirs.e, n: theirs.n }, ground: layerOf(gf), surface: sf ? layerOf(sf) : null,
+  const store: GroundStore = { v: 1, plan: target.key, point: { lat: p.lat, lon: p.lon, e: theirs.e, n: theirs.n }, ground: layerOf(gf), surface: sf ? layerOf(sf) : null,
     surfaceWhy: sf ? undefined : s.status === 'rejected' ? String((s.reason as Error)?.message ?? s.reason) : s.value.reason, parcel, parcelWhy,
     placement: { turnDeg: r2(north.deg), turnTag: north.tag, east: 0, north: 0, moveTag: 'assumed', floor: null, floorTag: 'assumed' }, read: { seconds: secs, requests: t.requests, bytes: t.bytes } };
-  return { status: 'read', store, applied: applyGround(plan, store) }; // applyGround throws if the survey has nothing under the house
+  return { status: 'read', store, applied: target.apply(store) }; // applyGround throws if the survey has nothing under the house
 }
 
 /** the card: fetch the ground for the site point, then say what was loaded and let the person place the house */

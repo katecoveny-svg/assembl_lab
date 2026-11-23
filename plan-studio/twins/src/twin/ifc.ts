@@ -251,6 +251,9 @@ export interface LoadedIfc {
   root: THREE.Group;
   elements: number;
   schema: string;
+  /** the move web-ifc made to bring a far-off model to the origin (COORDINATE_TO_ORIGIN), as a column-major 4×4 in the
+   *  model's Y-up frame: drawn = file × this. Identity when nothing was moved. */
+  coordination: number[];
 }
 
 export async function loadIFC(data: Uint8Array, wasmUrl: string, onProgress?: (done: number, total: number) => void, toOrigin = true): Promise<LoadedIfc> {
@@ -320,6 +323,8 @@ export async function loadIFC(data: Uint8Array, wasmUrl: string, onProgress?: (d
     onProgress?.(index + 1, total);
   });
   const schema = ifc.GetModelSchema(model) ?? 'IFC';
+  let coordination: number[] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+  try { coordination = Array.from(ifc.GetCoordinationMatrix(model)); } catch { /* older web-ifc: nothing known moved */ }
   ifc.CloseModel(model);
-  return { root, elements, schema };
+  return { root, elements, schema, coordination };
 }

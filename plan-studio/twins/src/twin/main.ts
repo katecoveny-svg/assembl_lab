@@ -1,4 +1,5 @@
 import { App, type Project } from './app';
+import { applyPageLook } from './practiceLook';
 
 // Which twin this page shows comes from <body data-project>; each project module is loaded on demand.
 const loaders: Record<string, () => Promise<Project>> = {
@@ -8,6 +9,7 @@ const loaders: Record<string, () => Promise<Project>> = {
 };
 
 async function boot() {
+  try { applyPageLook(); } catch { /* the default look */ }   // opened from a practice's workspace: its look on the page's chrome
   const key = new URLSearchParams(location.search).get('project') ?? document.body.dataset.project ?? '16a';
   const status = document.getElementById('status')!;
   if (!('gpu' in navigator)) status.textContent = 'No WebGPU in this browser: starting the WebGL 2 fallback…';
