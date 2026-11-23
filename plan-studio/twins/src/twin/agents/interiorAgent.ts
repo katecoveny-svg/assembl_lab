@@ -17,7 +17,7 @@ import { setTexDetail } from '../library/mats';
 //        ones rise; ms is the whole switch, 1600 by default). room: one room's name; every hall when left out.
 //   blendLayouts(from, to, t, room?)      → the same switch at t from 0 to 1, drawn at once: a film renders it frame by frame
 //   currentLayout(room?)                  → the mode showing
-// The same is on window.__interior for a page without imports. A mode a hall cannot take is refused (the promise rejects).
+// The same is on window.__interior for a page without imports; a finished switch fires 'interior-layout' on window ({ room, mode }). A mode a hall cannot take is refused (the promise rejects).
 // "banquet": round tables of ten; "conference": rows facing the stage end (assumed: the short wall furthest from the doors);
 // "exhibition" and "lounge" as well. Cross-fading is not built: the library's materials are shared between pieces.
 
@@ -197,7 +197,7 @@ export function blendLayouts(from: string | null, to: string, t: number, room?: 
     if (a && a !== b) { const k = Math.min(1, tt * 2); a.group.visible = k < 1; a.parts.forEach((p, i) => p.set(1 - grown(i, a.parts.length, k))); }
     const k2 = a && a !== b ? Math.max(0, tt * 2 - 1) : tt;
     b.group.visible = true; b.parts.forEach((p, i) => p.set(grown(i, b.parts.length, k2)));
-    if (tt >= 1) { const r = (STATE!.proposal.rooms as { name: string; layout: string; layout_by?: string }[]).find((x) => x.name === name); if (r) { r.layout = to; r.layout_by = 'set by a person'; } }
+    if (tt >= 1) { const r = (STATE!.proposal.rooms as { name: string; layout: string; layout_by?: string }[]).find((x) => x.name === name); if (r && r.layout !== to) { r.layout = to; r.layout_by = 'set by a person'; window.dispatchEvent(new CustomEvent('interior-layout', { detail: { room: name, mode: to } })); } }
   }
 }
 

@@ -77,9 +77,11 @@ export function mountAgents(app: Host, model: THREE.Object3D, plan?: PlanRooms) 
   };
   const onMode = (e: Event) => {
     const b = (e.target as HTMLElement).closest('button[data-mode]') as HTMLButtonElement | null; if (!b || !agent) return;
-    void agent.setLayout(b.dataset.mode!, { transition: 'grow' }).then((m) => { drawModes(); drawRooms(); app.log(`Hall layout: ${m}. Proposed.`); last.proposal = agent!.proposalNow(); handBack(); }).catch((err) => app.log(String(err.message)));
+    void agent.setLayout(b.dataset.mode!, { transition: 'grow' }).then((m) => app.log(`Hall layout: ${m}. Proposed.`)).catch((err) => app.log(String(err.message)));
   };
   $('agModes').addEventListener('click', onMode); badge.addEventListener('click', onMode);
+  // a switch made by the camera path or film tools (setLayout) shows here too
+  window.addEventListener('interior-layout', () => { drawModes(); drawRooms(); if (agent) { last.proposal = agent.proposalNow(); handBack(); } });
   const drawRooms = () => {
     const p = agent?.proposalNow() as { rooms: { name: string; layout: string; layouts: Record<string, { placements: unknown[]; unplaced: { why: string }[] }> }[] } | null;
     if (!p) return;
@@ -98,7 +100,7 @@ export function mountAgents(app: Host, model: THREE.Object3D, plan?: PlanRooms) 
       geo = { walls: got.walls as never[], doors: got.doors as never[] };
       await a.placeProposal(app, model, got.proposal, geo);
       last.proposal = got.proposal; drawRooms(); drawModes(); handBack();
-      $('agClear').hidden = false; ($('agJudge') as HTMLButtonElement).disabled = false;
+      $('agClear').hidden = false; ($('agJudge') as HTMLButtonElement).disabled = false; $('agPropose').textContent = 'Propose again';
       app.log(`Interior agent: ${a.totals(got.proposal).placed} pieces proposed. All proposed: a person approves.`);
     } catch (err) { $('agIntSay').innerHTML = `<span class="bad">□ ${esc((err as Error).message)}</span>`; }
     finally { $('agPropose').removeAttribute('disabled'); }

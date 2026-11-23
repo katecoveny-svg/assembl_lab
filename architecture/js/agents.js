@@ -151,7 +151,7 @@ async function renderPanel(el, ctx) {
   const pr = (await ctx.store.get('project', p.id)) ?? p, kept = pr.agents ?? {}, back = readHandback(p.id), live = S.jobs.get(p.id);
   const R = await rules(), esc = ctx.esc;
   const prop = kept.interior ?? null, t = prop ? R.totals(prop) : null;
-  const steps = live ? `<ul class="agt-steps">${live.job.steps.map((s) => `<li class="${s.status === STATUS.person ? 'is-person' : ''}" title="${esc(s.reason || s.note)}">${MARK[s.status]} ${esc(s.label)}${s.note && s.note !== 'not needed' ? ` · ${esc(s.note)}` : ''}</li>`).join('')}</ul>` : '';
+  const steps = live ? `<ul class="agt-steps">${live.job.steps.map((s) => `<li class="${s.status === STATUS.person ? 'is-person' : ''}" title="${esc(s.reason || s.note)}">${s.note === 'not needed' ? '·' : MARK[s.status]} ${esc(s.label)}${s.note === 'not needed' ? ' · not asked' : s.note ? ` · ${esc(s.note)}` : ''}</li>`).join('')}</ul>` : '';
   const failed = live?.job.steps.find((s) => s.status === STATUS.failed);
   const waiting = live?.job.steps.find((s) => s.status === STATUS.person && s.id === 'approve');
   const rooms = prop ? prop.rooms.filter((r) => r.layouts[r.layout]?.items.length || r.function === 'event-hall') : [];
@@ -162,7 +162,7 @@ async function renderPanel(el, ctx) {
       <div class="agt-head"><h4>Interior fit-out</h4><span class="agt-fine mono">${prop ? `${esc(prop.status)}${prop.approval ? ` · ${esc(prop.approval.by)}` : ''} · ${esc(prop.versions.rules)}` : 'not proposed yet'}</span></div>
       ${steps}
       ${prop ? `<p class="agt-fine"><b>${t.placed}</b> pieces placed by rules${t.left ? `, <b>${t.left}</b> to place in 3D` : ''}${prop.style ? ` · “${esc(prop.style.brief)}”` : ''}</p>
-        <ul class="agt-rooms">${rooms.map((r) => { const L = r.layouts[r.layout]; const n = L.items.reduce((s, i) => s + i.qty, 0); return `<li><b>${esc(r.name)}</b><span>${esc(r.function)}${r.layout !== 'none' ? ` · ${esc(r.layout)}` : ''}${r.area_m2 ? ` · ${esc(r.area_m2)} m² ${esc(r.area_src ?? '')}` : ''}</span><span class="n">${n}</span><span>${L.placements.length ? `${L.placements.length} placed` : 'counts only'}${r.layouts_available.length > 1 ? ` · ${esc(r.layouts_available.join(' / '))}` : ''}</span></li>`; }).join('')}</ul>` : ''}
+        <ul class="agt-rooms">${rooms.map((r) => { const L = r.layouts[r.layout]; const n = L.items.reduce((s, i) => s + i.qty, 0); return `<li><b>${esc(r.name)}</b><span>${esc(r.function)}${r.layout !== 'none' ? ` · ${esc(r.layout)}` : ''}${r.area_m2 ? ` · ${esc(Number(r.area_m2).toFixed(1))} m² ${esc(r.area_src ?? '')}` : ''}</span><span class="n">${n}</span><span>${L.placements.length ? `${L.placements.length} placed` : 'counts only'}${r.layouts_available.length > 1 ? ` · ${esc(r.layouts_available.join(' / '))}` : ''}</span></li>`; }).join('')}</ul>` : ''}
       ${failed ? `<p class="agt-bad">× ${esc(failed.label)}: ${esc(failed.reason)}</p>` : ''}
       <div class="agt-acts">
         <button class="btn${prop ? '' : ' solid'}" data-agt="propose"${live?.busy ? ' disabled' : ''}>${prop ? 'Propose again' : 'Propose a fit-out'}</button>

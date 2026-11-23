@@ -167,3 +167,14 @@ test('the round banquet table is in the library, built in code, with its finishe
   assert.ok(t && t.source === 'procedural' && t.dims.w === 1800 && t.dims.d === 1800);
   assert.ok(R.pieceFor(CATALOGUE, 'banquet_table').finishes.includes('white'));
 });
+
+test('a room stands or falls by its main piece: no bedsides without a bed, no coffee table without a sofa', () => {
+  const room = box(0, 0, 3.1, 3.0), t = 0.07;
+  const doors = [{ x0: 1.05, x1: 2.05, z0: -t, z1: t }, { x0: 1.05, x1: 2.05, z0: 3 - t, z1: 3 + t }, { x0: -t, x1: t, z0: 1.0, z1: 2.0 }, { x0: 3.1 - t, x1: 3.1 + t, z0: 1.0, z1: 2.0 }];
+  const L = R.propose([{ name: 'Bedroom', box: room }], CATALOGUE, { doors }).rooms[0].layouts.bed;
+  assert.equal(L.placements.length, 0, 'nothing placed when the bed cannot be');
+  assert.ok(L.unplaced.some((u) => u.role === 'bed' && /door/.test(u.why)));
+  assert.ok(L.unplaced.filter((u) => u.role === 'bedside').every((u) => /the bed it goes with/.test(u.why)));
+  const lounge = R.propose([{ name: 'Lounge', box: room }], CATALOGUE, { doors }).rooms[0];
+  assert.ok(!lounge.layouts[lounge.layout].placements.some((p) => p.role === 'coffee_table') || lounge.layouts[lounge.layout].placements.some((p) => p.role === 'sofa'));
+});

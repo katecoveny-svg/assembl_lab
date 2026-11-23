@@ -294,6 +294,8 @@ function splitBoxes(b) {
 
 // ---- the checks every placement must pass -----------------------------------------------------------------------------------------
 const LOW = new Set(['rug']);
+/** layouts whose first piece is the room's main piece */
+const MAIN_FIRST = new Set(['conversation', 'compact', 'table', 'bed', 'reading']);
 /** may this placement stand here: in the room, clear of the walls, the doors' clear zones and what is already placed */
 export function checkPlace(pl, piece, room, walls = [], doors = [], taken = []) {
   const bx = boxOf(pl.x, pl.z, piece.w, piece.d, pl.rot);
@@ -353,9 +355,11 @@ export function layOut(room, layout, K, walls = [], doors = [], opts = {}) {
     // an item shown on a piece that did not make it goes too
     const hosts = new Set(placed.filter((p) => !p.on).map((p) => p.role));
     const keep = placed.filter((p) => !p.on || hosts.has(p.on)), lost = placed.filter((p) => p.on && !hosts.has(p.on)).map((p) => ({ ...p, why: 'what it stands on could not be placed' }));
-    const score = keep.length - left.length * 2;
-    if (!best || score > best.score) best = { score, placed: keep, left: [...left, ...lost] };
-    if (!left.length && !lost.length) break;
+    // a room's own layout stands or falls by its main piece (the bed, the sofa, the table, the chair): no bedsides without a bed
+    const mainLost = MAIN_FIRST.has(layout) && t.length && !keep.some((p) => p === placed[0] && p.role === t[0].role && p.x === t[0].x && p.z === t[0].z);
+    const score = mainLost ? -1e6 + keep.length : keep.length - left.length * 2;
+    if (!best || score > best.score) best = { score, placed: mainLost ? [] : keep, left: mainLost ? t.map((p) => ({ ...p, why: p === t[0] ? (left.find((q) => q.role === t[0].role && q.x === t[0].x)?.why ?? 'its main piece could not be placed') : `the ${t[0].role.replace(/_/g, ' ')} it goes with could not be placed` })) : [...left, ...lost] };
+    if (!mainLost && !left.length && !lost.length) break;
   }
   if (!best) return { placements: [], unplaced: [], note: why || 'Nothing could be laid out here.' };
   const conv = (p) => {
@@ -401,7 +405,12 @@ export function propose(rooms, catalogue, opts = {}) {
       const list = (AREA_ONLY[fn] ?? []).filter(([role]) => K[role]).flatMap(([role, n]) => Array.from({ length: n }, () => ({ id: K[role].id, role, why: 'no room shape yet: placed when the model opens in 3D' })));
       layouts[chosen] = { items: itemsOf([], list), qty_src: list.length ? 'assumed' : null, placements: [], unplaced: list, note: list.length ? 'Counts are what this use of room usually takes (assumed), not measured: the file gives the room’s name and area, not its shape.' : 'No loose furniture proposed.' };
     } else {
-      for (const l of fn === 'event-hall' ? allowed : [chosen]) {
+      // the rules' own choice falls back to the room's next layout when its main piece will not fit (a compact sofa group)
+      if (fn !== 'event-hall' && base.layout_by === 'rules') {
+        for (const l of allowed) { const g = layOut({ ...r, box }, l, K, opts.walls ?? [], opts.doors ?? []); if (g.placements.length) { base.layout = l; break; } }
+      }
+      const chosenNow = base.layout;
+      for (const l of fn === 'event-hall' ? allowed : [chosenNow]) {
         const g = layOut({ ...r, box }, l, K, opts.walls ?? [], opts.doors ?? [], { stage: opts.stages?.[r.name] });
         layouts[l] = { items: itemsOf(g.placements, g.unplaced), qty_src: 'proposed', placements: g.placements, unplaced: g.unplaced, note: g.note, ...(g.stage ? { stage: g.stage } : {}) };
       }
