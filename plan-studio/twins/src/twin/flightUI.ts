@@ -33,18 +33,27 @@ export interface FlightCtx {
   setMode?: (name: string | null) => Promise<string> | string;
 }
 
-// The interior layouts are another agent's work (the interior design agent, library/ and its layout switch). Until it registers
-// window.__assemblInterior = { setMode(name), setLayout(name, amount) }, modes and layout changes are named in the film's caption
-// as placeholders, and nothing in the model changes.
-type Interior = { setMode?: (name: string | null) => Promise<string | void> | string | void; setLayout?: (name: string | null, amount: number) => void };
-const interior = () => (window as unknown as { __assemblInterior?: Interior }).__assemblInterior;
+// The interior layouts are the interior design agent's (agents/interiorAgent.ts, also window.__interior): layoutModes(),
+// currentLayout(), setLayout(mode, { transition }), and blendLayouts(from, to, t), deterministic so a film can draw a layout change
+// frame by frame. Where it is not on the page, or a hall cannot take a mode, modes and layout changes are named in the film's
+// caption as placeholders and nothing in the model changes.
+type Interior = { layoutModes?: (room?: string) => string[]; currentLayout?: (room?: string) => string | null; setLayout?: (mode: string, o?: { transition?: 'cut' | 'grow'; ms?: number }) => Promise<string>; blendLayouts?: (from: string | null, to: string, t: number) => unknown };
+const interior = () => (window as unknown as { __interior?: Interior }).__interior;
+let baseLayout: string | null = null, lastBlend = '';
 async function defaultMode(name: string | null) {
-  if (!name) { await interior()?.setMode?.(null); return ''; }
-  const it = interior();
-  if (it?.setMode) { const said = await it.setMode(name); return typeof said === 'string' && said ? said : name; }
-  return `${name} (layout placeholder until the interior layouts land)`;
+  const it = interior(), modes = it?.layoutModes?.() ?? [];
+  if (!name) { if (baseLayout && it?.setLayout) await it.setLayout(baseLayout, { transition: 'cut' }).catch(() => void 0); lastBlend = ''; return ''; }
+  if (it?.setLayout && modes.includes(name)) { baseLayout ??= it.currentLayout?.() ?? null; await it.setLayout(name, { transition: 'cut' }); lastBlend = ''; return `${name} layout`; }
+  return `${name} (layout placeholder: the interior layouts are not on this model)`;
 }
-const defaultLayout = (name: string | null, amount: number) => interior()?.setLayout?.(name, amount);
+/** a held shot's layout change, drawn at `amount` (0 to 1) from the mode in force: the fade variant cuts at the dark */
+const defaultLayout = (name: string | null, amount: number) => {
+  const it = interior(); if (!it?.blendLayouts) return;
+  const from = it.currentLayout?.() ?? null, key = `${name}|${amount.toFixed(3)}|${from}`;
+  if (key === lastBlend) return; lastBlend = key;
+  if (name && (it.layoutModes?.() ?? []).includes(name)) it.blendLayouts(from, name, amount);
+  else if (!name && from) it.blendLayouts(null, from, 1);
+};
 
 function markerTexture(label: string, colour: string) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -129,6 +138,7 @@ export function flightPanel(app: App, ctx: FlightCtx) {
     ($('#flEnd') as HTMLSelectElement).value = fp.finish.kind ?? (fp.finish.aerial ? 'aerial' : 'none');
     ($('#flRise') as HTMLInputElement).value = String(fp.finish.rise); ($('#flSecs') as HTMLInputElement).value = String(fp.finish.secs);
     ($('#flModes') as HTMLInputElement).value = (fp.modes ?? []).join(', ');
+    { const im = interior()?.layoutModes?.() ?? []; if (im.length) ($('#flModes') as HTMLInputElement).placeholder = `e.g. ${im.slice(0, 2).join(', ')}`; }
     ($('#flVia') as HTMLInputElement).value = fp.finish.via.join(', ');
   };
   const change = (next: FlightPath, why = '') => { fp = edited(next); list(); draw(); if (why) says(why); };
@@ -301,6 +311,8 @@ export function flightPanel(app: App, ctx: FlightCtx) {
     set path(v: FlightPath) { fp = v; list(); draw(); },
     get timeline() { return tl; },
     redraw: draw,
+    /** the same as Import a shot list, for a page that has the list already (or a check) */
+    importList(json: unknown) { fp = (json as { schema?: string })?.schema === 'assembl.flight-path.v1' ? readFlight(json) : importShotList(json, { frame: ctx.frame, name: `${ctx.name}: fly-through` }); list(); draw(); return fp; },
     seek,
   };
   (window as unknown as { __flight?: unknown }).__flight = api;   // for checks from the console (this tab only)

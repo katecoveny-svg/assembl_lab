@@ -366,6 +366,7 @@ function walk(ctx, p) {
     // the latest saved fly-through goes across too, so the 3D page opens with it to carry on editing
     const fl = slots.find((s) => s.slot.id === 'flythrough')?.stacks[0]?.latest;
     if (fl) { try { site.flight = JSON.parse(await (await blobOf(ctx, fl)).text()); } catch { /* opens without it */ } }
+    try { localStorage.setItem('assembl.architecture.practice', ctx.practice?.name ?? ''); } catch { /* the 3D page shows no practice name */ }   // the 3D page wears the practice's name (practiceLook.ts)
     const hid = await putHandoff(blob, name, { site });
     rememberHandoff(p.id, hid);
     r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;

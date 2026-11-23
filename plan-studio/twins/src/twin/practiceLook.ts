@@ -4,6 +4,8 @@
 // origin, so this page reads the same key. Only the looks the workspace offers are honoured; anything else is the default.
 export const LOOK_CACHE = 'assembl.architecture.look';
 export const LOOKS = ['assembl', 'sketch'] as const;
+/** the practice's name, kept by the workspace in this browser when it opens the 3D page (models.js, site-sources.js) */
+export const PRACTICE_CACHE = 'assembl.architecture.practice';
 export type Look = (typeof LOOKS)[number];
 
 /** which look the page should wear: the workspace's, only when opened from it */
@@ -38,6 +40,19 @@ const FONTS = 'https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200.
 /** wear the look: marks <html data-look>, adds the look's few rules and, for sketch, its typeface */
 export function applyPageLook(doc: Document = document, look: Look = pageLook(location.search, (k) => localStorage.getItem(k))): Look {
   const root = doc.documentElement;
+  // opened from a practice's workspace: the practice's name in the header in place of assembl's, and no lab navigation bar
+  if (new URLSearchParams(location.search).get('from') === 'ops') {
+    let name = ''; try { name = (localStorage.getItem(PRACTICE_CACHE) ?? '').trim().slice(0, 60); } catch { /* none */ }
+    root.dataset.from = 'ops';
+    const brand = () => {
+      const w = doc.querySelector('.brand .word'), k = doc.getElementById('kicker');
+      if (w && name) { w.textContent = name; (w as HTMLElement).title = 'Opened from the practice’s workspace'; }
+      if (k) k.textContent = 'walkthrough';
+      doc.getElementById('al-nav')?.remove();
+    };
+    brand(); doc.addEventListener('DOMContentLoaded', brand); setTimeout(brand, 400); setTimeout(brand, 2000);
+    if (!doc.getElementById('practice-chrome')) { const st = doc.createElement('style'); st.id = 'practice-chrome'; st.textContent = 'html[data-from="ops"] #al-nav{display:none!important} html[data-from="ops"] .brand .word{letter-spacing:.02em}'; doc.head.append(st); }
+  }
   if (look === 'assembl') { delete root.dataset.look; return look; }
   root.dataset.look = look;
   if (!doc.getElementById('practice-look')) {

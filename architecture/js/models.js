@@ -521,6 +521,7 @@ function open3d(ctx, p, source, models = []) {
     if (kindOf(name) === 'ifczip') { const z = await (await import('./ifc-summary.js')).unzipIfc(new Uint8Array(await blob.arrayBuffer())); blob = new Blob([z.bytes]); name = z.name; }
     r.state = 'keeping'; paintPrep(r);
     const { putHandoff, HANDOFF_PARAM } = await import('./handoff.js');
+    try { localStorage.setItem('assembl.architecture.practice', ctx.practice?.name ?? ''); } catch { /* the 3D page shows no practice name */ }   // the 3D page wears the practice's name (practiceLook.ts)
     const hid = await putHandoff(blob, name);
     r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
     r.state = 'ready'; ctx.redraw();

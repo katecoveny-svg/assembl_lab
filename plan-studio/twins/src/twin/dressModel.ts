@@ -9,6 +9,7 @@ import {
   classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, makeGrid, markDoor, markRect, markTriEdges,
   meaningfulColour, needsFrame, normClass, planPlanting, refineByShape, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
 } from './dressRules';
+import { scanSet } from './scanned';
 import { anodised, brick, herringbone, mulch, powderCoat, render, satinSteel, standingSeam, stoneFlags, upholstery } from './dressTex';
 
 // The finished look for an opened IFC or GLB (agent/model-dress-1123).
@@ -82,8 +83,8 @@ function meanOf(s: PBRSet) {
   let c = means.get(s);
   if (c) return c;
   c = new THREE.Color(0.8, 0.8, 0.8);
-  const img = s.map.image as HTMLCanvasElement | undefined;
-  if (img && 'getContext' in img) {
+  const img = s.map.image as CanvasImageSource | undefined;
+  if (img && ((img as HTMLCanvasElement).width ?? 0) > 0) {
     const k = document.createElement('canvas'); k.width = k.height = 16;
     const g = k.getContext('2d')!; g.drawImage(img, 0, 0, 16, 16);
     const d = g.getImageData(0, 0, 16, 16).data, lin = (v: number) => new THREE.Color().setRGB(v, v, v, THREE.SRGBColorSpace).r;
@@ -111,7 +112,7 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
     ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
     // daylit glass seen from outside: dark, with the sky in it and a bright fresnel edge (clearcoat), the rooms faint behind it.
     // No transmission pass: it costs a second render of the scene, too much on a phone
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.16), metalness: 0, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, ior: 1.52, specularIntensity: 1, envMapIntensity: 2.6, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false });
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.5), metalness: 0, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, ior: 1.52, specularIntensity: 1, envMapIntensity: 3.2, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false });   // see into the lit rooms; the sky in it, strongest at a glancing angle (fresnel, clearcoat)
   mats.set(key, m);
   return m;
 }
@@ -135,6 +136,34 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
   pm.userData.dress = f;
   mats.set(key, pm);
   return pm;
+}
+
+// --- photographed surfaces (Poly Haven, CC0; plan-studio/twins/tex): laid at their real size over the drawn ones, once loaded ----
+// brick (red_brick_03, 1 m), pale concrete pavers (concrete_pavers, 1.92 m), concrete (concrete_floor_02, 2 m), the box-profile
+// steel roof scan and the timber board scan already used by the example homes. The drawn texture shows until the photo arrives.
+const SCANS: Partial<Record<Finish, { set: string; size: number }>> = {
+  brick: { set: 'brick', size: 1.0 }, paving: { set: 'pavers', size: 1.92 }, concrete: { set: 'concrete', size: 2.0 }, slab: { set: 'concrete', size: 2.0 },
+  asphalt: { set: 'concrete', size: 2.0 }, roof: { set: 'roof', size: 2.0 }, timberCladding: { set: 'clad', size: 1.0 },
+};
+export const SCAN_CREDIT = 'Photographed surfaces: Poly Haven (CC0): red_brick_03, concrete_pavers, concrete_floor_02, and the roof and timber scans of the example homes.';
+const scanned = new WeakSet<THREE.Material>();
+async function photoSurfaces(q: 'web' | 'hq') {
+  for (const [key, m] of mats) {
+    const f = (m.userData?.dress as Finish | undefined), sc = f && SCANS[f];
+    if (!sc || scanned.has(m)) continue;
+    scanned.add(m);
+    try {
+      const tile = setFor(f!, q)?.tile ?? 1;
+      const [col, nor, rgh] = await scanSet(sc.set, sc.size, tile, f === 'roof' || f === 'timberCladding');
+      const pm = m as THREE.MeshPhysicalMaterial, want = new THREE.Color(pm.color).multiply(meanOf(setFor(f!, q)!));   // the colour the drawn set landed on
+      pm.map = col; pm.normalMap = nor; pm.roughnessMap = rgh; pm.metalnessMap = null; pm.roughness = 1; pm.metalness = f === 'roof' ? 0.35 : 0;
+      // the photo's own average, so its detail stays and its average lands where the finish asked (brick keeps its own colour)
+      const mean = meanOf({ map: col } as unknown as PBRSet);
+      if (f === 'brick') pm.color.setRGB(1, 1, 1);
+      else pm.color.setRGB(Math.min(3, want.r / Math.max(0.02, mean.r)), Math.min(3, want.g / Math.max(0.02, mean.g)), Math.min(3, want.b / Math.max(0.02, mean.b)));
+      pm.needsUpdate = true;
+    } catch (e) { console.warn(`the photographed surface for ${key} did not load; the drawn one stays`, e); }
+  }
 }
 
 // --- coordinates for the textures: box-projected in metres, roofs down the slope ---------------------------------------
@@ -453,8 +482,22 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     return plane;
   })();
 
+  // --- the rooms lit behind the glass, as the architect's renders show them: a few warm lights inside the building ---------
+  // Proposed (the model has no lighting design in it), off on phones to keep them smooth.
+  const roomLights = new THREE.Group(); roomLights.name = 'dress_room_lights';
+  roomLights.userData = { kind: 'context', name: 'Rooms lit (proposed)', source: 'proposed', note: 'Warm light inside the building so the rooms read through the glass, as in the architect’s renders. Not a lighting design.' };
+  if (parts.some((p) => p.c.finish === 'glass') && !(app as unknown as { phone?: boolean }).phone) {
+    const B = bbox, W = B.max.x - B.min.x, D = B.max.z - B.min.z, H = Math.max(2.4, B.max.y - B.min.y);
+    const nx = Math.max(1, Math.min(3, Math.round(W / 18))), nz = Math.max(1, Math.min(2, Math.round(D / 18)));
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+      const l = new THREE.PointLight(0xffc98a, 45, Math.max(14, Math.min(W, D) * 0.8), 2);
+      l.position.set(B.min.x + ((i + 0.5) / nx) * W, B.min.y + Math.min(3, H * 0.45), B.min.z + ((j + 0.5) / nz) * D); l.castShadow = false;
+      roomLights.add(l);
+    }
+  }
   const layers: Layer[] = [
     { id: 'dress-planting', label: 'Planting (proposed)', note: `native planting ${plan.said}; proposed by rule, not from the model`, visible: true, object: plantRoot },
+    { id: 'dress-rooms', label: 'Rooms lit (proposed)', note: 'warm light inside so the rooms read through the glass, as in the architect’s renders; not a lighting design', visible: true, object: roomLights },
     { id: 'dress-frames', label: 'Frames (drawn)', note: 'round glass and door leaves the model gives no frame; inferred from the opening', visible: true, object: frameRoot },
     { id: 'dress-shade', label: 'Contact shade', note: 'soft shade where the building meets the ground, from its footprint', visible: true, object: shade, traced: false },
   ];
@@ -526,7 +569,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     </div>
     <p class="small">Finishes: interpreted from the model’s classes and material names. Click a part to see its finish and why. Planting is proposed ${esc(plan.said)}.</p>
     <details class="small"><summary>What each finish was read from</summary><table class="small"><tbody>${[...counts].sort((a, b) => b[1].n - a[1].n).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="mono">${v.n}</td><td>${esc(v.why)}</td></tr>`).join('')}</tbody></table>
-    <p class="small">Nothing is moved or added to the building. The table of rules is in the page’s code (dressRules.ts).</p></details>
+    <p class="small">Nothing is moved or added to the building. The table of rules is in the page’s code (dressRules.ts).</p><p class="small">${esc(SCAN_CREDIT)}</p></details>
     <div class="row wrap"><button type="button" class="pill" id="dressStill">Finished still</button></div>
     <p class="small mono" id="dressMsg">${frameNote}</p>`;
   for (const b of card.querySelectorAll<HTMLButtonElement>('[data-dress]')) b.addEventListener('click', () => D.set(b.dataset.dress as DressMode));
@@ -543,6 +586,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
 
   const want = new URLSearchParams(location.search).get('dress');
   D.set(want === 'asis' || want === 'model' ? want : 'finished');
+  void photoSurfaces(q);
   // the first frame after the page's post-processing exists: the grade goes on then
   const late = () => { if (app.pipeline) { grade(D.mode !== 'asis'); app.onFrame.splice(app.onFrame.indexOf(late), 1); } };
   app.onFrame.push(late);
