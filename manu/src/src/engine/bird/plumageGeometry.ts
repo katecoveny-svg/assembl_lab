@@ -352,6 +352,7 @@ function addContour(b: Builder, rig: Rig, rng: Rng) {
     // toward the bill the skin narrows to nothing: the feathers there (lores, chin, forehead)
     // get smaller with it instead of standing round the bill like petals
     width *= lerp(1, species.faceTaper ?? 1, smoothstep(loft.sMax - 1.8, loft.sMax - 0.15, s));
+    width *= species.plumage?.density ?? 1;
     return { look, width };
   };
 
@@ -481,7 +482,8 @@ function addContour(b: Builder, rig: Rig, rng: Rng) {
       width: width * size,
       length: len,
       cols: look.fine ? 5 : 3,
-      rows: 4,
+      // (small soft feathers need little curve: three rows, which keeps the fine coat affordable)
+      rows: look.fine ? 4 : 3,
       curl: lerp(0.1, 0.02 + rng() * 0.22, loose),
       asym: 0,
       bones: skinIdx(rig, sk.bones),
@@ -837,11 +839,13 @@ function addRestWing(b: Builder, rig: Rig, side: Side, rng: Rng) {
   };
 
   // --- coverts: lesser at the shoulder, growing toward the greater coverts
-  const rows = 7;
+  // (finer tiers: smaller coverts in more rows, though they stay bigger than the body's feathers)
+  const dn = Math.pow(species.plumage?.density ?? 1, 0.9);
+  const rows = Math.round(7 / dn);
   for (let r = 0; r < rows; r++) {
     const f = r / (rows - 1);
     const u = lerp(0.03, 0.3, f * f * 0.4 + f * 0.6);
-    const w = lerp(0.024, 0.05, f);
+    const w = lerp(0.024, 0.05, f) * dn;
     const len = w * lerp(2.2, 3.4, f);
     const half = lerp(W.rest.width[0], W.rest.width[1], smoothstep(0, 0.35, u));
     const n = Math.max(3, Math.round((2 * half) / (w * 0.62)));
@@ -880,9 +884,9 @@ function addRestWing(b: Builder, rig: Rig, side: Side, rng: Rng) {
 
   // --- a few plain dark feathers along the lower strip, under the blades, so no skin shows
   // beside them near the rump
-  for (let u = 0.42; u < 0.98; u += 0.04) {
+  for (let u = 0.42; u < 0.98; u += 0.04 * dn) {
     for (const v0 of [-0.82, -0.3, 0.3, 0.82]) {
-      const size = 0.85 + rng() * 0.3;
+      const size = (0.85 + rng() * 0.3) * dn;
       const skin = lay(u + (rng() - 0.5) * 0.02, v0 + (rng() - 0.5) * 0.2, 0.085 * size, -v0 * 0.1, 0.002, 4);
       b.add({
         ...specFromLook(covert, rng, 0.7 + 0.3 * rng()),
@@ -1164,7 +1168,7 @@ export function buildPlumageGeometry(rig: Rig): PlumageGeometry {
     addRestWing(flight, rig, side, rng);
   }
   addTail(flight, rig, rng);
-  const fuzz = buildFuzz(rig);
+  const fuzz = buildFuzz(rig, rig.species.plumage?.fuzzLayers ?? 3);
   return {
     contour: contour.build(),
     flight: flight.build(),

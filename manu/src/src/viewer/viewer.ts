@@ -135,8 +135,11 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
   scene.add(perch);
 
   // --- the bird -----------------------------------------------------------------------
-  const species = NZ_SPECIES[opts.bird];
-  if (!species) throw new Error(`no species ${opts.bird}`);
+  const base = NZ_SPECIES[opts.bird];
+  if (!base) throw new Error(`no species ${opts.bird}`);
+  // coat detail by device: phones get fewer, larger feathers and two fuzz shells; desktops the
+  // fine coat (about 2.5x the feathers) with four
+  const species = { ...base, plumage: phone ? { density: 0.85, fuzzLayers: 2 } : { density: 0.62, fuzzLayers: 4 } };
   const bird: BirdHandle = createBird({ species });
   bird.root.position.x = GRIP_X;
   bird.layer<HopLayer>('hop').home = GRIP_X;

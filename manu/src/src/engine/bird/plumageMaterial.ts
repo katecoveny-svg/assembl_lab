@@ -268,14 +268,14 @@ float fFuzz;`,
   // (a lifted feather shows more of itself)
   float cover = vIri2.a * (1.0 - clamp(vFData.z * 1.6, 0.0, 0.8));
   float bare = smoothstep(cover - 0.3, cover + 0.12, v + 0.1 * (1.0 - au));
-  float occ = flight ? mix(0.5, 1.0, smoothstep(0.0, 0.25, v)) : mix(scale ? 0.42 : mix(0.74, 0.96, plush), 1.0, bare);
+  float occ = flight ? mix(0.5, 1.0, smoothstep(0.0, 0.25, v)) : mix(scale ? 0.42 : mix(0.86, 0.97, plush), 1.0, bare);
   float edge = scallop ? (v > 0.5 ? length(vec2(u, (v - 0.5) * 2.0)) : au * 0.85) : max(au, (v - 0.55) / 0.45);
   // scales carry a paler fringe on the free edge; soft feathers just vary barb by barb
   float rim = scale ? -smoothstep(0.8, 1.0, edge) * 0.45 : 0.0;
   pig *= occ * (1.0 + (flight ? 0.26 : scale ? 0.35 : 0.0) * fBarb) * (1.0 + rim);
   // soft feathers: the strands carry the colour, between them it is nearly dark
   // (plush feathers: hardly darker between the strands, so no row of them casts a line)
-  if (!flight && !scale) pig *= mix(mix(mix(0.3, 0.74, plush), mix(1.3, 1.08, plush), strand), 0.86, lod) * (0.88 + 0.24 * mix(h, 0.5, lod));
+  if (!flight && !scale) pig *= mix(mix(mix(0.5, 0.8, plush), mix(1.2, 1.06, plush), strand), 0.9, lod) * (0.92 + 0.16 * mix(h, 0.5, lod));
   fBarbHue = flight || scale ? 0.5 : mix(0.55 * fract(rnd * 5.31) + 0.45 * fract(h2 * 3.7 + h), 0.5, lod * 0.6);
   if (!flight && !scale) {
     // per feather, subtle: a touch warmer or cooler, lighter or darker,
@@ -283,7 +283,7 @@ float fFuzz;`,
     float r1 = fract(rnd * 17.13);
     float r2 = fract(rnd * 41.71);
     pig *= mix(vec3(1.05, 0.98, 0.93), vec3(0.95, 0.98, 1.06), r1);
-    pig *= mix(0.87 + 0.26 * r2, 0.76 + 0.08 * r2, plush);
+    pig *= mix(0.94 + 0.12 * r2, 0.86 + 0.06 * r2, plush);
     pig *= 1.0 + 0.2 * step(0.95, fract(rnd * 7.73)) * smoothstep(0.6, 1.0, v);
   }
   if (flight) {
@@ -420,10 +420,36 @@ roughnessFactor = clamp((vFData.y > 3.5 ? 0.95 : vFData.y > 2.5 ? 0.8 : vFData.y
   // even the show scales only flash through their structural colour, not as mirrors
   reflectedLight.directSpecular *= blade ? 0.18 : fSoft > 0.5 ? 0.06 : 0.22;
   reflectedLight.indirectSpecular *= blade ? 0.12 : fSoft > 0.5 ? 0.06 : 0.3;
+  // anisotropic sheen (Kajiya-Kay): barbs and barbules are fine parallel fibres, so a light
+  // draws a soft streak across the feather, along its length, instead of a round spot. On the
+  // iridescent tracts the streak takes the structural colour (tūī, kererū); elsewhere it is a
+  // faint warm-white silk. Not on the fuzz shells.
+  #if NUM_DIR_LIGHTS > 0
+  if (fFuzz < 0.5) {
+    vec3 dpx = dFdx(-vViewPosition), dpy = dFdy(-vViewPosition);
+    vec2 dux = vec2(dFdx(vFUv.x), dFdy(vFUv.x));
+    vec3 T = dpy * dux.x - dpx * dux.y;
+    float tl = length(T);
+    if (tl > 1e-9) {
+      T /= tl;
+      float irid = clamp(vBase.a * 4.0, 0.0, 1.5);
+      for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
+        vec3 L = directionalLights[i].direction;
+        vec3 H = normalize(L + V);
+        float th = dot(T, H);
+        float sinTH = sqrt(max(1.0 - th * th, 0.0));
+        float nl = max(dot(normal, L), 0.0);
+        float streak = pow(sinTH, mix(48.0, 120.0, fSoft)) * nl;
+        vec3 sc = mix(mix(diffuseColor.rgb, vec3(1.0, 0.97, 0.94), 0.5) * 0.05, mix(vIri2.rgb, vIri.rgb, 0.6) * 0.35, min(irid, 1.0));
+        reflectedLight.directSpecular += sc * streak * directionalLights[i].color * (0.6 + 0.4 * fIriMask);
+      }
+    }
+  }
+  #endif
 }`,
       );
   };
-  material.customProgramCacheKey = () => 'plumage-v47';
+  material.customProgramCacheKey = () => 'plumage-v48';
   return { material, uniforms };
 }
 

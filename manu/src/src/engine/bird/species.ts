@@ -165,6 +165,11 @@ export interface Species {
   behaviour: BehaviourDef;
   /** how ragged and standing the crown and nape feathers are (the hummingbird's haircut = 1, default) */
   scruff?: number;
+  /**
+   * Detail tier for the coat, set by the viewer per device: contour feather size as a share
+   * of each tract's own (smaller = more, finer feathers) and how many fuzz shells lie under them.
+   */
+  plumage?: { density?: number; fuzzLayers?: number };
   /** feather size at the bill base as a share of the tract's size (default 1: no taper) */
   faceTaper?: number;
 }
