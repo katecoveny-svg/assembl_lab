@@ -697,6 +697,17 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       } catch { throw new Error('The connection dropped before the file came through. Try again.'); }
       return { ...fileDown(rows[0]), blob: new Blob(parts, { type }) };
     },
+    // [workspace redesign] a short-lived link to a kept file, for a thumbnail drawn from part of it (a PDF's first sheet is read
+    // by range, a film's first frame streams) instead of downloading all of it. null for the Sample's files and when it is gone.
+    async fileUrl(id, seconds = 600) {
+      if (!id) return null;
+      const here = await localNote(id);
+      if (here && await localProject(here.project_id)) return null;
+      const rows = await g.ask(() => g.from('file').select('storage_path').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1));
+      if (!rows?.[0]?.storage_path) return null;
+      try { const link = await g.file((s) => s.createSignedUrl(rows[0].storage_path, seconds)); return typeof link?.signedUrl === 'string' ? link.signedUrl : null; }
+      catch (e) { if (e.code === 'missing') return null; throw e; }
+    },
     async removeFile(id) {
       if (!id) return false;
       const here = await localNote(id);
@@ -989,6 +1000,27 @@ export function createTeam(g) {
       const rows = await g.ask(() => g.from('practice_member').delete().eq('practice_id', practiceId).eq('user_id', userId).select('user_id'));
       if (!rows?.length) throw new CloudError('The shared records refused that: only an owner can remove someone else. Nothing was changed.', 'refused');
       return true;
+    },
+  };
+}
+
+// ---- [workspace redesign] the client link (supabase/migrations/*_arch_project_share.sql, share-rules.js) ----------------------
+/**
+ * Whether a project of this practice is shared with its client, and turning it on or off. The table is read by members; only
+ * arch.set_project_share writes it, and it refuses anyone but an owner. Off is the default: no row means not shared.
+ *   get(pid) -> { on, token }      set(pid, on) -> { on, token }
+ */
+export function createSharePlace(gateway, practice) {
+  const g = gateway, pick = (r) => (r && r.shared === true && typeof r.token === 'string' ? { on: true, token: r.token } : { on: false, token: '' });
+  return {
+    practice: practice?.id ?? null,
+    async get(pid) {
+      try { return pick((await g.ask(() => g.from('project_share').select('shared,token').eq('project_id', dbId(pid)).limit(1)))?.[0]); }
+      catch (e) { throw explain(e); }
+    },
+    async set(pid, on) {
+      try { const rows = await g.rpc('set_project_share', { p_project: dbId(pid), p_on: !!on }); return pick(Array.isArray(rows) ? rows[0] : rows); }
+      catch (e) { throw explain(e); }
     },
   };
 }

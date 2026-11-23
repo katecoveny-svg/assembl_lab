@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Render review · assembl.</title><link rel="stylesheet" href="./review.css"><script type="module" src="./review.mjs"></script></head>
+<body><main>
+<a href="/architecture/" class="small">Architecture workspace</a>
+<h1>Photographic frame review<span>.</span></h1>
+<p>Compare one model-rendered frame with an optional Gemini look study. The frame stays on this device until you confirm a render. This page does not upload a model, store your files or ask for a key.</p>
+<p id="service" role="status">Checking the render service…</p>
+<section class="choices" aria-label="Render controls">
+<label>Original model frame <input type="file" id="frame" accept="image/png,image/jpeg,image/webp"></label>
+<label>Matching geometry guide (optional) <input type="file" id="guide" accept="image/png,image/jpeg,image/webp"></label>
+<label>Light <select id="time"><option value="golden">Golden hour</option><option value="morning">Morning</option><option value="midday">Midday</option><option value="overcast">Overcast</option></select></label>
+<label class="setting">Finish notes <input type="text" id="setting" maxlength="120" placeholder="E.g. dark metal roof, warm timber, clear glazing, existing brick unchanged" autocomplete="off"><small>Optional. Describe the finishes, not a change to the design.</small></label>
+</section>
+<p id="quote"></p>
+<label class="consent"><input id="consent" type="checkbox"> I approve sending the selected frame and guide to Google Gemini and paying the quoted estimate for one render.</label>
+<p><button id="run" disabled>Render one frame with Gemini</button></p>
+<p id="status" role="status" aria-live="polite"></p>
+<div class="comparison">
+<figure><figcaption>Model-rendered original</figcaption><img id="original" alt="Local model-rendered frame" hidden></figure>
+<figure><figcaption>AI-enhanced look study</figcaption><img id="result" alt="Gemini-enhanced frame" hidden><a id="save" hidden>Download labelled still · original proportions</a></figure>
+</div>
+<p class="small">Check the roofline, openings, textures and site context before use. This is not an exact render, photograph or design revision.</p>
+</main></body></html>

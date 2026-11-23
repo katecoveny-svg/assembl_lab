@@ -118,10 +118,12 @@ const canDraw = (d) => !!d && !!url(d.path) && (d.mode === 'image' || masks());
  * A project's cover while it has no plan from a model: one of the practice's drawings, chosen from the project's id,
  * marked as decoration and never as the project's design. '' when the practice has no artwork (the page's own sketch shows).
  */
-export function artCover(p, cls = '') {
+export function artCover(p, cls = '', note = null) {
   const d = st.record ? drawingFor(st.record, p?.id, theme()) : null;
   if (!canDraw(d)) return '';
-  const note = p.model?.fingerprint ? 'Model attached' : 'No model yet';
+  // [workspace redesign] the page passes the note worked out from the project's files (an uploaded IFC or GLB counts);
+  // the plan model alone is only the fallback when no note is passed
+  note ??= p.model?.fingerprint ? 'Model attached' : 'No model yet';
   return `<div class="cover deco art-cover${cls ? ` ${cls}` : ''}">${drawingHtml(d, { lazy: !/\bbig\b/.test(cls) })}<span class="cover-note">${note}<span class="vh">. The drawing is from the practice’s artwork, shown as decoration. It is not this project’s design.</span></span></div>`;
 }
 

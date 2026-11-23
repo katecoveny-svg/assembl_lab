@@ -9,11 +9,15 @@
 //   { point: { lat, lng, source } | null,
 //     camera_path: { pts: [[u, v, h], ...], sketch_file_id, traced_by: 'tool' | 'person', confirmed_by, confirmed_at } | null }
 //   pts are metres in the model frame: u = x, south to north; v = z, west to east; h = y, up.
+//   placement (optional, from the 3D page's Place the building card; plan-studio/twins/src/twin/placeFit.ts has the same shape):
+//     { east, north, turn_deg, status: 'assumed' | 'set by a person', method: 'matched' | 'by hand' | 'site point', residual_m,
+//       matched_to, site_point: { lat, lng }, model, confirmed_by, confirmed_at }   east / north: metres on the NZTM grid from the
+//     site point to the building's middle. Only "set by a person" with a name and a time counts as confirmed.
 import * as MR from './models-rules.js';
 import { AUTO_PREVIEW_LIMIT, isModel, kindOf, stacks as modelStacks } from './models-rules.js';
 
 /** the contract's object, and what it is saved as on the project */
-export const EMPTY = Object.freeze({ point: null, camera_path: null });
+export const EMPTY = Object.freeze({ point: null, camera_path: null, placement: null });
 
 const IMG = ['png', 'jpg', 'jpeg', 'webp'];
 /**
@@ -64,8 +68,12 @@ export function checkSource(slotId, name, head) {
 // ---- which kept files are sources, and their versions ---------------------------------------------------------------------
 /** a kept file that "Site and sources" shows */
 export const isSource = (note) => note?.owner_kind === 'source' && SLOT_IDS.includes(note?.extra?.source?.slot);
-/** the fixed slots stack by slot (a new drawing set keeps the old one); "other" stacks by file name */
-export const stackKey = (note) => { const s = note.extra?.source?.slot; return s === 'other' ? `other:${norm(note.name)}` : s; };
+/** the fixed slots stack by slot (a new drawing set keeps the old one); "other" stacks by file name; every film and still is its own item */
+export const stackKey = (note) => { const s = note.extra?.source?.slot; return s === 'other' ? `other:${norm(note.name)}` : s === 'films' ? `films:${note.id}` : s; };
+/** slots shown as a gallery of their files, each its own item, newest first */
+export const GALLERY = new Set(['films']);
+/** how a gallery item is shown: an image inline, a film with its first frame and a play control, else a plain card */
+export const mediaOf = (note) => { const e = ext(note?.name), t = String(note?.type ?? ''); return /^image\//.test(t) || IMG.includes(e) ? 'image' : /^video\//.test(t) || ['mp4', 'webm', 'mov'].includes(e) ? 'video' : 'file'; };
 const byKept = (a, b) => String(a.kept_at).localeCompare(String(b.kept_at)) || String(a.id).localeCompare(String(b.id));
 export function versionOf(note, all) {
   const v = Number(note?.extra?.source?.version);
@@ -74,6 +82,7 @@ export function versionOf(note, all) {
 }
 /** the version a new file in this slot becomes: one more than the highest kept, so removing v1 does not renumber v2 */
 export function nextVersion(all, slotId, name) {
+  if (GALLERY.has(slotId)) return 1;   // each film and still is its own item, not a version of the last
   const key = slotId === 'other' ? `other:${norm(name)}` : slotId;
   return all.filter((f) => isSource(f) && stackKey(f) === key).reduce((m, f) => Math.max(m, versionOf(f, all)), 0) + 1;
 }
@@ -116,7 +125,16 @@ export function normalSiteSources(v) {
       };
     }
   }
-  return { point, camera_path };
+  return { point, camera_path, placement: normalPlacement(o.placement) };
+}
+/** the placement as the contract says, or null (keep in step with placeFit.ts normalPlacement) */
+export function normalPlacement(v) {
+  const o = v && typeof v === 'object' ? v : null;
+  if (!o || !num(o.east) || !num(o.north) || !num(o.turn_deg) || !o.site_point || !num(o.site_point.lat) || !num(o.site_point.lng) || Math.hypot(o.east, o.north) > 2000) return null;
+  const by = o.confirmed_by ? String(o.confirmed_by) : null, at = o.confirmed_at ? String(o.confirmed_at) : null;
+  return { east: o.east, north: o.north, turn_deg: o.turn_deg, status: by && at && o.status === 'set by a person' ? 'set by a person' : 'assumed',
+    method: o.method === 'matched' ? 'matched' : o.method === 'by hand' ? 'by hand' : 'site point', residual_m: num(o.residual_m) ? o.residual_m : null,
+    matched_to: o.matched_to ? String(o.matched_to).slice(0, 120) : null, site_point: { lat: o.site_point.lat, lng: o.site_point.lng }, model: String(o.model ?? '').slice(0, 200), confirmed_by: by, confirmed_at: at };
 }
 /** a path counts as confirmed only when a person is named and a time is kept; until then it is a proposal */
 export const isConfirmed = (c) => !!c && !!c.confirmed_by && !!c.confirmed_at;
@@ -198,7 +216,7 @@ export const blobSlots = () => SLOTS.filter((s) => s.to3d).map((s) => s.id);
 export function siteHandoff(project, files) {
   const ss = normalSiteSources(project?.site_sources);
   const point = ss.point ?? pointFromSite(project?.site);
-  return { point, camera_path: ss.camera_path, sources: sourceList(files) };
+  return { point, camera_path: ss.camera_path, placement: ss.placement, sources: sourceList(files) };
 }
 
 // ---- saving ---------------------------------------------------------------------------------------------------------------------
@@ -222,11 +240,13 @@ export const confirmPath = (c, who, now = new Date().toISOString()) => (c ? { ..
 // ---- what the 3D page passes back (plan-studio/twins/src/twin/handoff.ts putBackRecord, putPathBack) ----------------------------
 /**
  * Where a record passed back from the 3D page goes in the project: { slot, name, note, path } for a file kept in Site and sources,
- * or { path } for a camera path (it becomes the project's camera_path, proposed until confirmed). null for anything unknown.
+ * or { path } for a camera path (it becomes the project's camera_path, proposed until confirmed), or { placement } for where the
+ * building stands (it becomes site_sources.placement). null for anything unknown.
  */
 export function backToSource(rec) {
   if (!rec || typeof rec !== 'object') return null;
   if (rec.kind === 'camera_path' && rec.path) return { path: rec.path };
+  if (rec.kind === 'placement') { const pl = normalPlacement(rec.meta?.placement); return pl ? { placement: pl } : null; }
   const m = rec.meta ?? {}, name = String(rec.name ?? 'from the 3D page').slice(0, 160);
   const status = m.status === 'confirmed' ? `confirmed by ${String(m.confirmed_by ?? 'a person')}` : 'proposed';
   if (rec.kind === 'flight') return { slot: 'flythrough', name, note: `From the 3D page: v${Number(m.version) || 1}, ${status}${m.shots ? `, ${m.shots} shots` : ''}` };

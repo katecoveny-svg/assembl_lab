@@ -156,9 +156,9 @@ test('hand-over: both sides use the same key, entry type and address; the 3D pag
   assert.equal(picksHref(null, 'p_1'), null);
 });
 
-test('the library loads lazily: registered with the page, its screen, styles, catalogue and pictures only with the Presentation tab', () => {
+test('the library loads lazily: registered with the page, its screen, styles, catalogue and pictures only with the Model tab (the workspace redesign moved it there from Presentation)', () => {
   const reg = readFileSync(new URL('architecture/js/library.js', root), 'utf8');
-  assert.match(reg, /tab: 'presentation'/);
+  assert.match(reg, /tab: 'model'/);
   assert.match(reg, /import\('\.\/library-view\.js'\)/, 'the screen is imported on demand');
   assert.match(reg, /MutationObserver/);
   assert.doesNotMatch(reg, /^import .*library-view/m, 'and never at the top');

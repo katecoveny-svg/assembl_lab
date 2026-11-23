@@ -16,7 +16,7 @@ import { placeLine } from './facts.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 import {
   SLOTS, slotOf, acceptFor, checkSource, bySlot, nextVersion, sourceExtra, isSource, normalSiteSources, isConfirmed, pathPoints,
-  pointFromSite, pointDiffers, parcelStatus, GROUND, pickModel, hasModel, siteHandoff, blobSlots, withSiteSources, confirmPath, ext, backToSource,
+  pointFromSite, pointDiffers, parcelStatus, GROUND, pickModel, hasModel, siteHandoff, blobSlots, withSiteSources, confirmPath, ext, backToSource, GALLERY, mediaOf,
 } from './site-sources-rules.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -28,7 +28,7 @@ const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 function ensureCss() {
   if (document.querySelector('link[data-site-sources-css]')) return;
   const l = document.createElement('link');
-  l.rel = 'stylesheet'; l.href = new URL('../site-sources.css?v=1', import.meta.url).href; l.dataset.siteSourcesCss = '';
+  l.rel = 'stylesheet'; l.href = new URL('../site-sources.css?v=2', import.meta.url).href; l.dataset.siteSourcesCss = '';
   document.head.append(l);
 }
 
@@ -54,6 +54,7 @@ const S = {
   words: new Map(),  // project id + slot -> the one-line note typed for the next file
   confirm: '',       // the file id whose Remove was pressed once
   open: new Set(),   // slot stack keys whose earlier versions are shown
+  media: new Map(),  // file id -> object URL of a film or still, for the gallery
   walk: new Map(),   // project id -> { state, text, href }
 };
 let seq = 0;
@@ -85,6 +86,7 @@ async function renderPanel(el, ctx) {
   if (S.confirm && !files.some((f) => f.id === S.confirm)) S.confirm = '';
   el.innerHTML = html(ctx, p, files, place, picked, !picked && hasModel(all, p));
   wire(el, ctx, p, place, files);
+  void loadThumbs(el, ctx, files);
   return () => el.__ssxOff?.();
 }
 
@@ -111,18 +113,25 @@ function siteHtml(esc, p, ss) {
     ${pt ? tile('pin', 'Site', '■ Set', place, `${pt.source}. ${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}`) : tile('pin', 'Site', '□ Not set', 'No address or point yet', 'Choose the address in the site tools above. It is used here as it is.')}
     ${tile('parcel', 'Parcel boundary (LINZ)', par.state === 'live' ? '■ Read' : '□', par.word, [par.says, par.from && par.state === 'live' ? `from ${par.from}` : '', par.asOf ? `as of ${String(par.asOf).slice(0, 10)}` : ''].filter(Boolean).join(' · '))}
     ${tile('ground', 'Ground', pt ? '■ Source' : '□', GROUND.word, pt ? GROUND.says : 'Needs the site point first. Read on the 3D page, not here.')}
+    ${placementTile(esc, ss.placement, tile)}
   </ul>`;
+}
+/** where the building stands on the site: set on the 3D page (Place the building), confirmed there by a person */
+function placementTile(esc, pl, tile) {
+  if (!pl) return tile('cube', 'Building placement', '□ Assumed', 'Middle at the site point', 'An address point is the road address, not the building. Place it on the 3D page and confirm it there.');
+  const how = pl.method === 'matched' ? `Matched to ${pl.matched_to ?? 'a LINZ outline'}${pl.residual_m != null ? `, residual ${pl.residual_m} m` : ''}` : pl.method === 'by hand' ? 'Placed by hand' : 'At the site point';
+  return tile('cube', 'Building placement', pl.status === 'set by a person' ? '■ Set by a person' : '□ Assumed', how, `${Math.round(Math.hypot(pl.east, pl.north))} m from the site point, turned ${pl.turn_deg}°${pl.status === 'set by a person' ? ` · ${pl.confirmed_by}, ${when(pl.confirmed_at)}` : ' · not confirmed'}`);
 }
 
 // ---- the five slots --------------------------------------------------------------------------------------------------------
 function slotHtml(ctx, p, { slot, stacks }, place) {
   const esc = ctx.esc, id = esc(slot.id);
   const drop = place.viewer ? '' : `<label class="ssx-drop${stacks.length ? ' is-filled' : ''}" data-sdrop="${id}">
-      <input type="file" class="vh" data-spick="${id}" ${acceptFor(slot) ? `accept="${esc(acceptFor(slot))}"` : ''}${slot.id === 'other' ? ' multiple' : ''} />
+      <input type="file" class="vh" data-spick="${id}" ${acceptFor(slot) ? `accept="${esc(acceptFor(slot))}"` : ''}${slot.id === 'other' || GALLERY.has(slot.id) ? ' multiple' : ''} />
       ${svg(IC[slot.icon], 'ssx-drop-ic')}
       <span class="ssx-t">${esc(slot.word)}</span>
       <span class="ssx-k">${esc(slot.tag)}</span>
-      <span class="ssx-cta">${stacks.length && slot.id !== 'other' ? 'Drop a new version' : 'Drop or choose'}</span>
+      <span class="ssx-cta">${GALLERY.has(slot.id) ? (stacks.length ? 'Drop or choose more' : 'Drop or choose') : stacks.length && slot.id !== 'other' ? 'Drop a new version' : 'Drop or choose'}</span>
     </label>
     <input class="ssx-note-in" data-snote="${id}" maxlength="140" value="${esc(S.words.get(p.id + slot.id) ?? '')}" placeholder="One-line note for the next file" aria-label="${esc(`Note for the next ${slot.word.toLowerCase()} file`)}" />`;
   const jobs = [...S.jobs.values()].filter((j) => j.pid === p.id && j.slot === slot.id).map((j) => jobHtml(esc, j)).join('');
@@ -130,7 +139,7 @@ function slotHtml(ctx, p, { slot, stacks }, place) {
     ${drop}
     ${slot.hint && !stacks.length ? `<p class="ssx-hint">${esc(slot.hint)}</p>` : ''}
     ${jobs}
-    ${stacks.map((s) => cardHtml(ctx, s, place)).join('')}
+    ${GALLERY.has(slot.id) ? (stacks.length ? `<ul class="ssx-gallery" aria-label="${esc(`${slot.word}: ${plural(stacks.length, 'item')}, newest first`)}">${stacks.map((s) => galleryItem(ctx, s, place)).join('')}</ul>` : '') : stacks.map((s) => cardHtml(ctx, s, place)).join('')}
     ${!stacks.length && !jobs && place.viewer ? '<p class="ssx-empty">Nothing here yet.</p>' : ''}
   </li>`;
 }
@@ -156,6 +165,36 @@ function cardHtml(ctx, s, place) {
     ${src.note ? `<p class="ssx-says">${esc(src.note)}</p>` : ''}
     <div class="acts"><button class="btn" data-s="get" data-id="${esc(f.id)}">Download<span class="vh"> ${esc(f.name)}</span></button>${canChange ? `<button class="link" data-s="remove" data-id="${esc(f.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(f.name)} v${f.version}</span></button>` : ''}</div>
     ${older}</div>`;
+}
+
+// ---- Films and stills: a gallery, each film and still its own item -------------------------------------------------------------
+// The pictures are this project's own kept files: each is read once into a local object URL (S.media) and shown inline.
+function galleryItem(ctx, s, place) {
+  const esc = ctx.esc, f = s.latest, src = f.extra.source, kind = mediaOf(f), url = S.media.get(f.id), sure = S.confirm === f.id;
+  const meta = nb([sizeText(f.size), when(f.kept_at)].filter(Boolean).join(' · '));
+  const view = kind === 'image' ? (url ? `<img src="${esc(url)}" alt="${esc(f.name)}" loading="lazy" />` : '<span class="ssx-thumb-wait" aria-hidden="true"></span>')
+    : kind === 'video' ? (url ? `<video src="${esc(url)}#t=0.1" preload="metadata" controls playsinline muted aria-label="${esc(f.name)}"></video>` : '<span class="ssx-thumb-wait" aria-hidden="true"></span>')
+    : `<span class="ssx-thumb-file">${esc((ext(f.name) || 'file').toUpperCase())}</span>`;
+  return `<li class="ssx-tile" data-file="${esc(f.id)}" ${kind !== 'file' && !url ? `data-thumb="${esc(f.id)}"` : ''}>
+    <div class="ssx-thumb is-${kind}">${view}</div>
+    <p class="ssx-name" title="${esc(f.name)}">${esc(f.name)}</p><p class="ssx-meta">${esc(meta)}</p>
+    ${src.note ? `<p class="ssx-says">${esc(src.note)}</p>` : ''}
+    <div class="acts"><button class="link" data-s="get" data-id="${esc(f.id)}">Download<span class="vh"> ${esc(f.name)}</span></button>${place.viewer ? '' : `<button class="link" data-s="remove" data-id="${esc(f.id)}">${sure ? 'Remove for good' : 'Remove'}<span class="vh"> ${esc(f.name)}</span></button>`}</div></li>`;
+}
+let thumbing = false;
+async function loadThumbs(el, ctx, files) {
+  if (thumbing) return;
+  const want = [...el.querySelectorAll('[data-thumb]')].map((n) => files.find((f) => f.id === n.dataset.thumb)).filter(Boolean);
+  if (!want.length) return;
+  thumbing = true;
+  let got = 0;
+  try {
+    for (const f of want) {
+      if (S.media.has(f.id)) continue;
+      try { S.media.set(f.id, URL.createObjectURL(await blobOf(ctx, f))); got++; } catch { S.media.set(f.id, ''); }
+    }
+  } finally { thumbing = false; }
+  if (got) ctx.redraw();
 }
 
 // ---- the camera path ---------------------------------------------------------------------------------------------------------
@@ -356,6 +395,7 @@ function walk(ctx, p) {
     let name = main.name;
     if (kindOf(name) === 'ifczip' && KINDS.ifczip) { const z = await (await import('./ifc-summary.js')).unzipIfc(new Uint8Array(await blob.arrayBuffer())); blob = new Blob([z.bytes]); name = z.name; }
     const site = siteHandoff(pr, mine);
+    try { const sb = (await import('./agents/site-brief-rules.js')).briefForHandoff(pr.site_brief?.brief); if (sb) site.brief = sb; } catch { /* opens without it */ }   // site agent (feat/site-agent): site.brief, additive; this line only
     site.files = {};
     for (const id of blobSlots()) {
       const f = slots.find((s) => s.slot.id === id)?.stacks[0]?.latest;
@@ -397,6 +437,7 @@ async function collectBacks(ctx, p) {
       for (const rec of await takeBacks(hid)) {
         const to = backToSource(rec);
         if (!to) continue;
+        if (to.placement) { await withSiteSources(ctx.store, p.id, (ss) => ({ ...ss, placement: to.placement })); await log(ctx, p.id, 'Building placement from the 3D page', to.placement.status === 'set by a person' ? `set by ${to.placement.confirmed_by}` : 'assumed'); n++; continue; }
         if (to.path) { await withSiteSources(ctx.store, p.id, (ss) => ({ ...ss, camera_path: to.path })); await log(ctx, p.id, 'Camera path from the 3D page', to.path.confirmed_by ? `confirmed by ${to.path.confirmed_by}` : 'proposed'); n++; continue; }
         const mine = (await ctx.store.listFiles({ project_id: p.id })).filter(isSource);
         const version = nextVersion(mine, to.slot, to.name);

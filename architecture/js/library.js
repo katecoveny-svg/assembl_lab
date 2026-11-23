@@ -14,8 +14,8 @@ const loadView = () => (view ??= import('./library-view.js'));
 registerProjectPanel({
   id: 'library',
   title: 'Library',
-  order: 20,
-  tab: 'presentation',
+  order: 40,
+  tab: 'model', // [workspace redesign] the furniture library sits with the model; Presentation is the client hand-off
   render(el, ctx) {
     if (!ctx.project) return undefined;
     const pane = el.closest('[role="tabpanel"]');

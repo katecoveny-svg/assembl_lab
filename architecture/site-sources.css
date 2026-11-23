@@ -82,3 +82,15 @@
 
 @media (min-width: 761px) { .ssx-path { grid-template-columns: 140px minmax(0, 1fr); } .ssx-plan { width: 140px; height: 140px; } }
 @media (max-width: 420px) { .ssx-path { grid-template-columns: 1fr; } .ssx-plan { width: 100%; height: auto; aspect-ratio: 1; max-width: 200px; } .ssx-path > .ssx-path-ic { margin: 0; } }
+
+/* Films and stills: a gallery, each film and still its own item, newest first (the slot takes the whole row) */
+.ssx-slot[data-slot="films"] { grid-column: 1 / -1; }
+.ssx-gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 12px; }
+@media (min-width: 761px) { .ssx-gallery { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+.ssx-tile { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 8px; border: 1px solid var(--line); background: var(--panel, var(--paper)); }
+.ssx-thumb { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--rose); border: 1px solid var(--hair, var(--line)); }
+.ssx-thumb img, .ssx-thumb video { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--plum); }
+.ssx-thumb-wait { position: absolute; inset: 0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 12px 12px; }
+.ssx-thumb-file { position: absolute; inset: 0; display: grid; place-items: center; font: 500 12px var(--mono); letter-spacing: .08em; color: var(--plum); }
+.ssx-tile .ssx-name { margin: 2px 0 0; font: 500 13px/1.3 var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ssx-tile .ssx-meta, .ssx-tile .ssx-says { margin: 0; }

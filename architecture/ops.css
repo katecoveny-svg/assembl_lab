@@ -164,6 +164,7 @@ h3 { font-weight: 500; font-size: 17px; line-height: 1.3; }
 .foot-in p { max-width: 78ch; }
 .foot-links { display: flex; gap: 20px; font: 500 11px var(--mono); letter-spacing: .09em; text-transform: uppercase; }
 .foot-links a { display: inline-flex; align-items: center; min-height: 44px; }
+.foot-more summary { font: 500 11px var(--mono); letter-spacing: .09em; text-transform: uppercase; cursor: pointer; min-height: 44px; display: flex; align-items: center; } /* [workspace redesign] */
 
 /* ---- controls ------------------------------------------------------------------------------------------------------- */
 input, select, textarea, button { font: inherit; color: inherit; }
@@ -770,4 +771,42 @@ select[data-status]:disabled { opacity: .6; cursor: default; }
   html[data-theme="sketch"] .look-opt[aria-pressed="true"] { outline-color: var(--blue); }
   html[data-theme="sketch"] .mini i { border-color: var(--blue); }
   html[data-theme="sketch"] .mini i.done { background: var(--blue); }
+}
+
+/* [workspace redesign p1b] the compact project header: cover, name and state, the money dial small, the next step and the
+   project's buttons in one row; the seven stages and the open counts in one slim row under it */
+.pcomp { display: grid; grid-template-columns: 132px minmax(0, 1fr) auto auto; gap: 18px; align-items: center; padding: 6px 0 14px; border-bottom: 1px solid var(--line); }
+.pcomp-fig { margin: 0; }
+.pcomp-fig .cover { width: 132px; height: 92px; aspect-ratio: auto; min-height: 0; }
+.pcomp-fig .cover.thumb .cover-note { display: block; left: 6px; bottom: 5px; font-size: 9px; padding: 2px 4px; }
+.pcomp-fig .cover.thumb { border: 1px solid var(--frame); }
+.pcomp-who { min-width: 0; display: grid; gap: 4px; }
+.pcomp-who .label { margin: 0; }
+.pcomp-who h1 { margin: 0; font-size: clamp(24px, 2.6vw, 34px); line-height: 1.05; overflow-wrap: anywhere; }
+.pcomp-who .pstate { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 0; }
+.pcomp-mod { max-width: 190px; }
+.pcomp-mod .mh { display: flex; gap: 10px; align-items: center; }
+.pcomp-mod .mh > :not(:first-child), .pcomp-mod figcaption > :not(.hd-word) { display: none; }
+.pcomp-mod .hd { display: flex; gap: 8px; align-items: center; margin: 0; }
+.pcomp-mod .hd svg { width: 56px !important; height: 56px !important; flex: none; }
+.pcomp-mod .hd-word { margin: 0; font-size: 13px; line-height: 1.2; }
+.pcomp-act { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.pcomp-act .pnav { display: contents; }
+.pslim { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; align-items: center; padding: 10px 0 14px; }
+.pslim-st { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; flex-wrap: wrap; }
+.pslim-st a { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 10px; border: 1px solid var(--line); color: var(--body); text-decoration: none; font: 12px var(--mono); }
+.pslim-st a .n { font-weight: 500; }
+.pslim-st a.done { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.pslim-st a.now { background: var(--rose); border-color: var(--frame); color: var(--ink); }
+.pslim-st a.wait { border-color: var(--needs); }
+.pslim-st a:not(.now) .name { display: none; }
+.pslim-n { list-style: none; margin: 0; padding: 0; display: flex; gap: 18px; font: 12px var(--mono); }
+.pslim-n a { color: var(--body); text-decoration: none; min-height: 36px; display: inline-flex; align-items: center; gap: 5px; }
+.pslim-n b { font: 500 18px var(--sans); color: var(--ink); }
+@media (max-width: 900px) {
+  .pcomp { grid-template-columns: 96px minmax(0, 1fr); }
+  .pcomp-fig .cover { width: 96px; height: 72px; }
+  .pcomp-mod, .pcomp-act { grid-column: 1 / -1; }
+  .pcomp-act { justify-content: flex-start; }
+  .pslim-n { gap: 14px; }
 }
