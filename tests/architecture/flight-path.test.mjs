@@ -152,3 +152,36 @@ test('what the 3D page passes back lands in the project: fly-through path, films
   assert.equal(backToSource({ kind: 'mystery' }), null);
   assert.equal(backToSource(null), null);
 });
+
+test('a layout change at a held shot: B pans as the layout comes in, A fades to black, changes at the dark, and fades back', () => {
+  const fp = placed();
+  fp.shots = fp.shots.map((s) => (s.id === '05' ? { ...s, layout: 'lounge', dwell: 6 } : s));
+  const B = timeline(fp, flat, [20, 3, 10]), m = B.marks.find((k) => k.id === '05');
+  const early = B.at(m.arrive + 0.1), late = B.at(m.leave - 0.1);
+  assert.equal(early.layout.name, 'lounge'); assert.ok(early.layout.amount < 0.1); assert.ok(late.layout.amount > 0.95); assert.ok(!early.fade);
+  const A = timeline(fp, flat, [20, 3, 10], { variants: { '05': 'fade' } });
+  const mid = A.at((m.arrive + m.leave) / 2), before = A.at(m.arrive + 0.5), after = A.at(m.leave - 0.05);
+  assert.equal(mid.fade, 1); assert.ok(before.fade < 1 && before.fade > 0); assert.ok(after.fade < 0.1);
+  assert.equal(before.layout.amount, 0); assert.equal(after.layout.amount, 1, 'changed while dark');
+  // the new layout stays after the shot
+  assert.equal(B.at(B.duration).layout?.name, 'lounge');
+  // the words of a shot list ask for both
+  assert.equal(readMove('pan round; try a fade out').variant, 'fade');
+  assert.ok(readMove('pan round and change mode').layout);
+});
+
+test('ending by rising where it ends (up a void): straight up, looking up and level again; the path can carry on later', () => {
+  const fp = { ...placed(), finish: { via: [], aerial: false, kind: 'rise', rise: 4, pull: 0, secs: 6 } };
+  const tl = timeline(fp, flat), end = tl.at(tl.duration), mid = tl.at(tl.duration - 3);
+  assert.deepEqual([Math.round(end.eye[0]), Math.round(end.eye[2])], [20, 18], 'it rises where the last shot is');
+  assert.ok(Math.abs(end.eye[1] - 5.6) < 1e-6, 'up by 4 m from eye height');
+  assert.ok(mid.look[1] > mid.eye[1], 'looking up on the way');
+  assert.equal(readFlight({ ...fp, schema: FLIGHT_SCHEMA }).finish.kind, 'rise');
+  assert.equal(readFlight({ ...placed(), finish: { via: [], aerial: true } }).finish.kind, 'aerial', 'an older record with aerial reads as aerial');
+});
+
+test('modes come in from a shot list and are kept, at most six', () => {
+  const fp = importShotList({ ...LIST, modes: ['banquet', 'conference'] }, { frame: 'f' });
+  assert.deepEqual(fp.modes, ['banquet', 'conference']);
+  assert.deepEqual(readFlight({ ...fp, modes: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] }).modes.length, 6);
+});

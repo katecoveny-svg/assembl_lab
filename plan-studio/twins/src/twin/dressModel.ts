@@ -7,7 +7,7 @@ import { planting as tuftPlanting, type Placement as TuftPlacement } from './pla
 import { nativeBush } from './nativeTrees';
 import {
   classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, makeGrid, markDoor, markRect, markTriEdges,
-  meaningfulColour, needsFrame, normClass, planPlanting, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
+  meaningfulColour, needsFrame, normClass, planPlanting, refineByShape, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
 } from './dressRules';
 import { anodised, brick, herringbone, mulch, powderCoat, render, satinSteel, standingSeam, stoneFlags, upholstery } from './dressTex';
 
@@ -34,6 +34,8 @@ export interface DressOpts {
   quality: 'web' | 'hq';
   /** the opening eye-level view: no trees in front of it */
   view?: { eye: THREE.Vector3; look: THREE.Vector3 };
+  /** the building's own bounds (modelBounds.ts), in the scene: planting and the shade go round this, not round far-off strays */
+  bounds?: THREE.Box3;
 }
 export interface Dressed {
   layers: Layer[];
@@ -70,7 +72,7 @@ function setFor(f: Finish, q: 'web' | 'hq'): PBRSet | null {
   const s: PBRSet | null =
     f === 'roof' ? standingSeam(big) : f === 'brick' ? brick(big) : f === 'paving' ? herringbone(big) : f === 'render' || f === 'neutral' ? render(big)
     : f === 'bed' ? mulch(big) : f === 'stone' ? stoneFlags(big) : f === 'fabric' ? upholstery(big) : f === 'mullion' ? anodised(big / 2) : f === 'metal' ? satinSteel(big / 2)
-    : f === 'timberCladding' ? M.sets.cedar : f === 'concrete' || f === 'slab' ? M.sets.concrete : f === 'plaster' ? M.sets.lining : f === 'decking' || f === 'frameTimber' ? M.sets.decking
+    : f === 'timberCladding' ? M.sets.cedar : f === 'concrete' || f === 'slab' || f === 'asphalt' ? M.sets.concrete : f === 'plaster' ? M.sets.lining : f === 'decking' || f === 'frameTimber' ? M.sets.decking
     : f === 'frameMetal' ? powderCoat(big / 2) : f === 'timber' || f === 'door' ? M.sets.oak : f === 'tile' ? M.sets.tile : f === 'lawn' ? M.sets.lawn : null;
   sets.set(k, s!);
   return s;
@@ -93,7 +95,7 @@ function meanOf(s: PBRSet) {
   return c;
 }
 /** finishes whose texture carries its own colours (brick, timber, pavers, lawn): in the finished look their colour is white */
-const COLOURED = new Set<Finish>(['brick', 'timberCladding', 'paving', 'decking', 'frameTimber', 'timber', 'lawn', 'bed', 'stone', 'tile']);
+const COLOURED = new Set<Finish>(['brick', 'timberCladding', 'decking', 'frameTimber', 'timber', 'lawn', 'bed', 'stone', 'tile']);
 /** finishes that keep a model colour that means something (a coloured frame, a coloured panel) in the finished look */
 const KEEP_HUE = new Set<Finish>(['frameMetal', 'neutral', 'fabric', 'metal']);
 
@@ -225,6 +227,35 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     });
   });
   const heavy = drawn > 4e6;
+  // a part read by its shape when the model gives it no class (dressRules.ts refineByShape): site ground, roof
+  {
+    const B = o.bounds && !o.bounds.isEmpty() ? o.bounds : new THREE.Box3().setFromObject(obj);
+    const span = Math.max(B.max.x - B.min.x, B.max.z - B.min.z, 1), H = Math.max(1, B.max.y - B.min.y);
+    const pb = new THREE.Box3(), nm = new THREE.Matrix3(), nv = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    const shapeOf = new Map<THREE.Mesh, { across: number; span: number; slope: number; up: number; high: number }>();
+    for (const p of parts) {
+      if (normClass(p.info.cls) && p.info.cls !== 'IfcBuildingElementProxy') continue;
+      let sh = shapeOf.get(p.mesh);
+      if (!sh) {
+        const g = p.mesh.geometry, pos = g.getAttribute('position');
+        if (!g.boundingBox) g.computeBoundingBox();
+        pb.copy(g.boundingBox!).applyMatrix4(p.mesh.matrixWorld);
+        nm.getNormalMatrix(p.mesh.matrixWorld);
+        // area-weighted: how much of it slopes (0.25 < |ny| < 0.97) and how much faces up
+        let A = 0, slope = 0, up = 0;
+        const idx = g.index, nt = (idx ? idx.count : pos.count) / 3, step = Math.max(1, Math.floor(nt / 400));
+        for (let t = 0; t < nt; t += step) {
+          const i0 = idx ? idx.getX(t * 3) : t * 3, i1 = idx ? idx.getX(t * 3 + 1) : t * 3 + 1, i2 = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
+          a.fromBufferAttribute(pos, i0).applyMatrix4(p.mesh.matrixWorld); b.fromBufferAttribute(pos, i1).applyMatrix4(p.mesh.matrixWorld); c.fromBufferAttribute(pos, i2).applyMatrix4(p.mesh.matrixWorld);
+          nv.subVectors(b, a).cross(c.sub(a)); const ar = nv.length(); if (ar < 1e-9) continue; nv.divideScalar(ar);
+          const ny = Math.abs(nv.y); A += ar; if (ny > 0.25 && ny < 0.97) slope += ar; if (ny >= 0.6) up += ar;
+        }
+        sh = { across: Math.max(pb.max.x - pb.min.x, pb.max.z - pb.min.z), span, slope: A ? slope / A : 0, up: A ? up / A : 0, high: ((pb.min.y + pb.max.y) / 2 - B.min.y) / H };
+        shapeOf.set(p.mesh, sh);
+      }
+      p.c = refineByShape(p.c, p.info.cls, sh);
+    }
+  }
   // an element read whole: a door with no glass is its leaf (dressRules.ts refineElement)
   for (const [, ps] of elements) { const r = refineElement(ps[0]?.info.cls ?? '', ps.map((p) => p.c)); ps.forEach((p, i) => (p.c = r[i])); }
   const mark = (what: string) => console.info(`dress: ${what} ${Math.round(performance.now() - t0)} ms`);
@@ -276,6 +307,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     (SITE_FINISH.has(p.c.finish) ? site : bbox).union(b);
   }
   if (bbox.isEmpty()) bbox.setFromObject(obj);
+  if (o.bounds && !o.bounds.isEmpty()) bbox.copy(o.bounds);
   const baseY = bbox.min.y;
   const grid: Grid = makeGrid([bbox.min.x, bbox.min.z], [bbox.max.x, bbox.max.z], 26);
   {

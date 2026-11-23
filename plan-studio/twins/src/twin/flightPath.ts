@@ -35,8 +35,10 @@ export interface Shot {
   speed: number;
   /** degrees turned (left is negative) while held at the shot, and degrees tilted up then back down */
   pan: number; tilt: number;
-  /** a layout change faded in while held here (the hook: the page decides what the layout is); null for none */
+  /** a layout change while held here (the hook: the page decides what the layout is); null for none */
   layout: string | null;
+  /** how a layout change is shown: 'layout' pans while the room changes, 'fade' fades to black, changes, and fades back */
+  variant: 'layout' | 'fade' | null;
   source: Source;
 }
 export interface FlightPath {
@@ -44,8 +46,12 @@ export interface FlightPath {
   name: string;
   version: number;
   shots: Shot[];
-  /** after the last shot: back through these shot ids in order (e.g. to the entry and out), then rise and pull back */
-  finish: { via: string[]; aerial: boolean; rise: number; pull: number; secs: number };
+  /** after the last shot: back through these shot ids in order (e.g. to the entry and out), then the ending: 'aerial' rises and
+   *  pulls back to look at the building; 'rise' goes straight up where it stands (up a void toward an upper floor), looking up
+   *  then level, so the path can be carried on from there later; 'none' stops */
+  finish: { via: string[]; aerial: boolean; kind?: 'none' | 'aerial' | 'rise'; rise: number; pull: number; secs: number };
+  /** the film's modes (e.g. two fit-outs of the same rooms): the film is made once for each; the page sets each mode */
+  modes?: string[];
   status: 'proposed' | 'confirmed';
   confirmed_by: string | null; confirmed_at: string | null;
   from: { schema: string; source: string; open_questions: string[]; defaults_chosen: Record<string, string> | null; notes?: string[] } | null;
@@ -61,7 +67,7 @@ export function newShot(id: string, o: Partial<Shot> = {}): Shot {
   return {
     id: str(id, 24) || '?', label: str(o.label ?? `Shot ${id}`, 80), where: str(o.where), move: str(o.move), note: str(o.note),
     x: o.x ?? null, z: o.z ?? null, h: num(o.h, EYE, 0.3, 120), dwell: num(o.dwell, 0, 0, 30), speed: num(o.speed, WALK, 0.2, 30),
-    pan: num(o.pan, 0, -360, 360), tilt: num(o.tilt, 0, -80, 80), layout: o.layout ?? null, source: o.source ?? (o.x == null ? 'not placed' : 'placed by a person'),
+    pan: num(o.pan, 0, -360, 360), tilt: num(o.tilt, 0, -80, 80), layout: o.layout ?? null, variant: o.variant === 'fade' || o.variant === 'layout' ? o.variant : null, source: o.source ?? (o.x == null ? 'not placed' : 'placed by a person'),
   };
 }
 
@@ -75,12 +81,14 @@ export function readMove(text: string): Partial<Shot> {
   if (/pan\s+(?:round|around)|look\s+(?:round|around)|\b360\b/.test(t)) { o.pan = 120; o.dwell = Math.max(o.dwell ?? 0, 5); }
   else if (/\bpan\b/.test(t) && !upDown) { o.pan = 60; o.dwell = Math.max(o.dwell ?? 0, 3); }
   if (/up\s*(?:and|\/|&)\s*down|\bup the void|\bvoid\b/.test(t)) { o.tilt = 35; o.dwell = Math.max(o.dwell ?? 0, 4); }
+  if (/fade/.test(t)) { o.variant = 'fade'; o.dwell = Math.max(o.dwell ?? 0, 4); }
+  if (/(?:change|switch)\s+(?:mode|layout)|\blayout\b|\bmode\b/.test(t)) { o.layout = o.layout ?? 'second layout'; o.dwell = Math.max(o.dwell ?? 0, 5); }
   return o;
 }
 
 /** a shot list (assembl.shot-list.v1) into a flight path with unplaced shots. Throws with a reason on anything else. */
 export function importShotList(json: unknown, o: { frame: string; name?: string } = { frame: '' }): FlightPath {
-  const d = json as { schema?: string; shots?: unknown[]; open_questions?: unknown[]; defaults_chosen?: Record<string, unknown>; source?: unknown; name?: unknown };
+  const d = json as { schema?: string; shots?: unknown[]; open_questions?: unknown[]; defaults_chosen?: Record<string, unknown>; source?: unknown; name?: unknown; modes?: unknown[] };
   if (!d || typeof d !== 'object') throw new Error('This is not a shot list.');
   if (d.schema !== SHOT_LIST_SCHEMA) throw new Error(`A shot list says schema "${SHOT_LIST_SCHEMA}"; this one says "${String(d.schema ?? 'nothing')}".`);
   if (!Array.isArray(d.shots) || !d.shots.length) throw new Error('The shot list has no shots.');
@@ -100,7 +108,8 @@ export function importShotList(json: unknown, o: { frame: string; name?: string 
   const dc = d.defaults_chosen && typeof d.defaults_chosen === 'object' ? Object.fromEntries(Object.entries(d.defaults_chosen).map(([k, v]) => [k, str(v, 600)])) : null;
   return {
     schema: FLIGHT_SCHEMA, name: str(o.name ?? d.name ?? 'Fly-through', 120), version: 0, shots,
-    finish: { via: [], aerial: false, rise: 30, pull: 40, secs: 8 },
+    finish: { via: [], aerial: false, kind: 'none', rise: 30, pull: 40, secs: 8 },
+    modes: Array.isArray((d as { modes?: unknown[] }).modes) ? ((d as { modes: unknown[] }).modes).map((m) => str(m, 40)).filter(Boolean).slice(0, 6) : [],
     status: 'proposed', confirmed_by: null, confirmed_at: null,
     from: { schema: SHOT_LIST_SCHEMA, source: str(d.source, 300), open_questions: Array.isArray(d.open_questions) ? d.open_questions.map((q) => str(q, 300)) : [], defaults_chosen: dc, notes },
     frame: o.frame, updated_at: null,
@@ -109,7 +118,7 @@ export function importShotList(json: unknown, o: { frame: string; name?: string 
 
 /** an empty flight path, to place shots on by hand */
 export function emptyFlight(frame: string, name = 'Fly-through'): FlightPath {
-  return { schema: FLIGHT_SCHEMA, name, version: 0, shots: [], finish: { via: [], aerial: false, rise: 30, pull: 40, secs: 8 }, status: 'proposed', confirmed_by: null, confirmed_at: null, from: null, frame, updated_at: null };
+  return { schema: FLIGHT_SCHEMA, name, version: 0, shots: [], modes: [], finish: { via: [], aerial: false, kind: 'none', rise: 30, pull: 40, secs: 8 }, status: 'proposed', confirmed_by: null, confirmed_at: null, from: null, frame, updated_at: null };
 }
 
 /** a flight path read back (from the project or a file): checked field by field; throws with a reason */
@@ -120,7 +129,8 @@ export function readFlight(json: unknown): FlightPath {
   const f = (d.finish ?? {}) as Partial<FlightPath['finish']>;
   return {
     schema: FLIGHT_SCHEMA, name: str(d.name ?? 'Fly-through', 120), version: num(d.version, 0, 0, 1e6), shots,
-    finish: { via: Array.isArray(f.via) ? f.via.map((v) => str(v, 24)) : [], aerial: !!f.aerial, rise: num(f.rise, 30, 0, 500), pull: num(f.pull, 40, 0, 1000), secs: num(f.secs, 8, 1, 60) },
+    modes: Array.isArray(d.modes) ? d.modes.map((m) => str(m, 40)).filter(Boolean).slice(0, 6) : [],
+    finish: { via: Array.isArray(f.via) ? f.via.map((v) => str(v, 24)) : [], aerial: !!f.aerial, kind: f.kind === 'rise' || f.kind === 'aerial' || f.kind === 'none' ? f.kind : f.aerial ? 'aerial' : 'none', rise: num(f.rise, 30, 0, 500), pull: num(f.pull, 40, 0, 1000), secs: num(f.secs, 8, 1, 60) },
     status: d.status === 'confirmed' && d.confirmed_by ? 'confirmed' : 'proposed', confirmed_by: d.status === 'confirmed' ? d.confirmed_by ?? null : null, confirmed_at: d.status === 'confirmed' ? d.confirmed_at ?? null : null,
     from: d.from ?? null, frame: str(d.frame), updated_at: d.updated_at ?? null,
   };
@@ -160,7 +170,13 @@ function cr(p0: V2, p1: V2, p2: V2, p3: V2, t: number): V2 {
 }
 const smooth = (u: number) => u * u * (3 - 2 * u);
 
-export interface Cam { eye: [number, number, number]; look: [number, number, number]; shot: string; phase: 'travel' | 'dwell' | 'finish' }
+export interface Cam {
+  eye: [number, number, number]; look: [number, number, number]; shot: string; phase: 'travel' | 'dwell' | 'finish';
+  /** 0 to 1: how far faded to black (a held shot shown with the fade variant) */
+  fade?: number;
+  /** a held shot's layout change: its name and how far it has come in (0 to 1) */
+  layout?: { name: string; amount: number } | null;
+}
 export interface Timeline {
   duration: number;
   /** when each shot is reached and left, seconds */
@@ -174,7 +190,8 @@ export interface Timeline {
  * aerial pull-back looks at (the building's centre). Between shots it travels at the leaving shot's speed, looking ahead along
  * the curve; it eases into and out of a shot it holds at. At a held shot it turns by `pan` and tilts by `tilt` and back.
  */
-export function timeline(fp: FlightPath, ground: (x: number, z: number) => number, focus: [number, number, number] = [0, 0, 0]): Timeline {
+export function timeline(fp: FlightPath, ground: (x: number, z: number) => number, focus: [number, number, number] = [0, 0, 0], o: { variants?: Record<string, 'layout' | 'fade'> } = {}): Timeline {
+  const finishKind = fp.finish.kind ?? (fp.finish.aerial ? 'aerial' : 'none');
   let placed = fp.shots.filter((s) => s.x != null && s.z != null);
   // the way back (finish.via): those shots again, in order, after the last
   for (const id of fp.finish.via) { const s = fp.shots.find((q) => q.id === id && q.x != null); if (s) placed = [...placed, { ...s, dwell: 0, pan: 0, tilt: 0, layout: null }]; }
@@ -208,7 +225,7 @@ export function timeline(fp: FlightPath, ground: (x: number, z: number) => numbe
     marks.push({ id: placed[i].id, arrive, leave: t });
     if (i < segs.length) { pieces.push({ kind: 'travel', s: i, t0: t, T: segs[i].T }); t += segs[i].T; }
   }
-  if (fp.finish.aerial && n) { pieces.push({ kind: 'finish', t0: t, T: fp.finish.secs }); t += fp.finish.secs; }
+  if (finishKind !== 'none' && n) { pieces.push({ kind: 'finish', t0: t, T: fp.finish.secs }); t += fp.finish.secs; }
   const duration = t;
   const heading = (i: number): V2 => {
     // the direction the camera faces arriving at shot i (or leaving it, for the first)
@@ -221,7 +238,9 @@ export function timeline(fp: FlightPath, ground: (x: number, z: number) => numbe
     return { eye: [x, y, z], look: [x + dir[0] * ahead * c, y + Math.sin(pitch) * ahead - 0.25, z + dir[1] * ahead * c], shot, phase };
   };
   const rot = (d: V2, deg: number): V2 => { const a = (deg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a); return [d[0] * c - d[1] * s, d[0] * s + d[1] * c]; };
-  const at = (tt: number): Cam => {
+  const layoutAfter = (tt: number) => { let cur: Cam['layout'] = null; for (const m of marks) { const s = placed.find((q) => q.id === m.id); if (s?.layout && tt > m.leave) cur = { name: s.layout, amount: 1 }; } return cur; };
+  const at = (tt: number): Cam => { const c = at0(tt); if (c.layout === undefined) c.layout = layoutAfter(tt); return c; };
+  const at0 = (tt: number): Cam => {
     if (!n) return { eye: [focus[0] + 20, focus[1] + 10, focus[2] + 20], look: focus, shot: '', phase: 'travel' };
     const x = Math.max(0, Math.min(duration, tt));
     let pc = pieces[pieces.length - 1];
@@ -231,7 +250,13 @@ export function timeline(fp: FlightPath, ground: (x: number, z: number) => numbe
     if (pc.kind === 'dwell') {
       const s = placed[pc.i], e = smooth(u);
       // pan round and back is not wanted: it turns by `pan` and stays; tilt goes up and comes back down
-      return camAt(s.x!, s.z!, s.h, rot(heading(pc.i), s.pan * e), ((s.tilt * Math.PI) / 180) * Math.sin(Math.PI * u), s.id, 'dwell');
+      const c = camAt(s.x!, s.z!, s.h, rot(heading(pc.i), s.pan * e), ((s.tilt * Math.PI) / 180) * Math.sin(Math.PI * u), s.id, 'dwell');
+      if (s.layout) {
+        const v = o.variants?.[s.id] ?? s.variant ?? 'layout';
+        if (v === 'fade') { c.fade = u < 0.4 ? smooth(u / 0.4) : u > 0.6 ? smooth((1 - u) / 0.4) : 1; c.layout = { name: s.layout, amount: u >= 0.5 ? 1 : 0 }; }
+        else c.layout = { name: s.layout, amount: smooth(Math.min(1, Math.max(0, (u - 0.2) / 0.5))) };
+      }
+      return c;
     }
     if (pc.kind === 'travel') {
       const sg = segs[pc.s], a = placed[sg.from], b = placed[sg.from + 1];
@@ -244,8 +269,14 @@ export function timeline(fp: FlightPath, ground: (x: number, z: number) => numbe
       const h = a.h + (b.h - a.h) * e;
       return camAt(p[0], p[1], h, dir, 0, e < 0.5 ? a.id : b.id, 'travel');
     }
-    // the finish: rise and pull back from the last shot, turning to look at the building
     const last = placed[n - 1], e = smooth(u), y0 = ground(last.x!, last.z!) + last.h;
+    if (finishKind === 'rise') {
+      // straight up where it stands, looking up as it goes and level again at the top
+      const fwd = heading(n - 1), pitch = ((40 * Math.PI) / 180) * Math.sin(Math.PI * Math.min(1, u * 1.15));
+      const c = camAt(last.x!, last.z!, last.h + fp.finish.rise * e, fwd, pitch, last.id, 'finish');
+      return c;
+    }
+    // the finish: rise and pull back from the last shot, turning to look at the building
     const away = sub([last.x!, last.z!], [focus[0], focus[2]]), al = len(away) || 1, dir: V2 = [away[0] / al, away[1] / al];
     const ex = last.x! + dir[0] * fp.finish.pull * e, ez = last.z! + dir[1] * fp.finish.pull * e, ey = y0 + fp.finish.rise * e;
     const fwd = heading(n - 1), lx = last.x! + fwd[0] * 6, lz = last.z! + fwd[1] * 6;

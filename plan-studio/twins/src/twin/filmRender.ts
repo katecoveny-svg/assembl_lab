@@ -16,6 +16,8 @@ export interface FilmOpts {
   /** before each frame (the layout fade hook, the sun): t in seconds */
   beforeFrame?: (t: number, cam: Cam) => void;
   onProgress?: (done: number, total: number) => void;
+  /** a line written small in the lower left of every frame (e.g. "proposed path, draft · banquet"); '' for none */
+  caption?: string;
   stop?: () => boolean;
 }
 export interface Film { blob: Blob; type: 'mp4' | 'webm'; frames: number; secs: number; ms: number }
@@ -31,11 +33,21 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
   r.setPixelRatio(1); r.setSize(o.width, o.height, false);
   cam.aspect = o.width / o.height; cam.updateProjectionMatrix();
   if (o.quality === 'draft') app.pipeline = null;
+  // each frame is drawn, then laid on a 2D canvas with the fade and the caption: that canvas is what is encoded
+  const comp = document.createElement('canvas'); comp.width = o.width; comp.height = o.height;
+  const g2 = comp.getContext('2d')!;
   const draw = (t: number) => {
     const c = o.at(t);
     o.beforeFrame?.(t, c);
     cam.position.set(...c.eye); cam.lookAt(c.look[0], c.look[1], c.look[2]); cam.updateMatrixWorld();
     if (app.pipeline) app.pipeline.render(); else r.render(app.scene, cam);
+    g2.drawImage(app.canvas, 0, 0, o.width, o.height);
+    if (c.fade) { g2.fillStyle = `rgba(0,0,0,${Math.min(1, c.fade)})`; g2.fillRect(0, 0, o.width, o.height); }
+    if (o.caption) {
+      const fs = Math.round(o.height / 46); g2.font = `500 ${fs}px "IBM Plex Mono", ui-monospace, monospace`; g2.textBaseline = 'bottom';
+      const w = g2.measureText(o.caption).width; g2.fillStyle = 'rgba(20,14,18,0.55)'; g2.fillRect(fs * 0.8, o.height - fs * 2.6, w + fs * 1.2, fs * 1.8);
+      g2.fillStyle = '#f5f1f2'; g2.fillText(o.caption, fs * 1.4, o.height - fs * 1.2);
+    }
   };
   try {
     let config: VideoEncoderConfig | null = null;
@@ -61,7 +73,7 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
         if (o.stop?.()) throw new Error('stopped');
         if (failed) throw failed;
         draw(i / o.fps);
-        const frame = new VideoFrame(app.canvas, { timestamp: Math.round((i * 1e6) / o.fps), duration: Math.round(1e6 / o.fps) });
+        const frame = new VideoFrame(comp, { timestamp: Math.round((i * 1e6) / o.fps), duration: Math.round(1e6 / o.fps) });
         enc.encode(frame, { keyFrame: i % (o.fps * 2) === 0 });
         frame.close();
         while (enc.encodeQueueSize > 4) await new Promise((res) => setTimeout(res, 5));
@@ -77,7 +89,7 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
     // the fallback: MediaRecorder, one frame pushed at a time (its timing follows the clock, so frames are paced at fps)
     const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
     if (!mime) throw new Error('This browser can neither encode H.264 nor record WebM.');
-    const stream = app.canvas.captureStream(0), track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    const stream = comp.captureStream(0), track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
     const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: Math.round(o.width * o.height * o.fps * 0.15) });
     const chunks: Blob[] = []; rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     const done = new Promise<void>((res) => (rec.onstop = () => res()));

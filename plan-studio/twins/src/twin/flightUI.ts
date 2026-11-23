@@ -10,6 +10,8 @@ import { renderFilm } from './filmRender';
 import { putBackRecord } from './handoff';
 
 const PROPOSED = '#f2a516', CONFIRMED = '#ffffff';
+// for checks on a slow machine: ?filmsecs=N makes only the first N seconds, ?filmfps=N at N frames a second (default 30)
+const QS = new URLSearchParams(location.search), CAP = Number(QS.get('filmsecs')) || Infinity, FPS = Math.max(6, Math.min(60, Number(QS.get('filmfps')) || 30));
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 export interface FlightCtx {
@@ -25,9 +27,24 @@ export interface FlightCtx {
   focus: THREE.Vector3;
   /** objects to hide while a film is made (path markers, sketch) */
   hideForFilm?: () => THREE.Object3D[];
-  /** the layout-change hook: a shot with a layout fades to it while held (the page decides what a layout is) */
+  /** the layout-change hook: a shot with a layout changes to it while held (the page decides what a layout is) */
   layout?: (name: string | null, amount: number) => void;
+  /** the mode hook: the whole film in one mode (e.g. a fit-out); returns the words for the film's caption */
+  setMode?: (name: string | null) => Promise<string> | string;
 }
+
+// The interior layouts are another agent's work (the interior design agent, library/ and its layout switch). Until it registers
+// window.__assemblInterior = { setMode(name), setLayout(name, amount) }, modes and layout changes are named in the film's caption
+// as placeholders, and nothing in the model changes.
+type Interior = { setMode?: (name: string | null) => Promise<string | void> | string | void; setLayout?: (name: string | null, amount: number) => void };
+const interior = () => (window as unknown as { __assemblInterior?: Interior }).__assemblInterior;
+async function defaultMode(name: string | null) {
+  if (!name) { await interior()?.setMode?.(null); return ''; }
+  const it = interior();
+  if (it?.setMode) { const said = await it.setMode(name); return typeof said === 'string' && said ? said : name; }
+  return `${name} (layout placeholder until the interior layouts land)`;
+}
+const defaultLayout = (name: string | null, amount: number) => interior()?.setLayout?.(name, amount);
 
 function markerTexture(label: string, colour: string) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -41,14 +58,17 @@ function markerTexture(label: string, colour: string) {
 export function flightPanel(app: App, ctx: FlightCtx) {
   let fp: FlightPath = emptyFlight(ctx.frame, `${ctx.name}: fly-through`);
   let tl: Timeline | null = null, placing: string | null = null, sel: string | null = null, dragging: string | null = null;
-  let preview: { t0: number; from: number } | null = null, scrubT = 0, film: Blob | null = null, filmName = '', busy = false, stopFilm = false;
+  let preview: { t0: number; from: number } | null = null, scrubT = 0, busy = false, stopFilm = false;
+  const films: { name: string; blob: Blob }[] = [];
   const el = document.createElement('section');
   el.className = 'card'; el.id = 'flight';
   el.innerHTML = `<h3>Fly-through</h3>
     <p class="small">Shots on the model: place, drag, add, delete and reorder them. Preview, confirm, then make the film.</p>
     <div class="row wrap"><label class="pill" tabindex="0">Import a shot list<input type="file" id="flFile" accept=".json,application/json" hidden></label><button class="pill" id="flAdd">Add a shot</button></div>
     <ol id="flList" class="small" style="padding-left:0;list-style:none;margin:6px 0;display:grid;gap:6px"></ol>
-    <label class="small"><input type="checkbox" id="flAerial"> End with a rise to an aerial pull-back</label>
+    <div class="row wrap small" style="align-items:center;gap:6px"><label>Ending <select id="flEnd" aria-label="How the film ends"><option value="none">stop at the last shot</option><option value="rise">rise where it ends (up a void)</option><option value="aerial">rise to an aerial pull-back</option></select></label>
+      <label>up <input id="flRise" type="number" step="1" style="width:56px" aria-label="How far up, metres"> m</label><label>over <input id="flSecs" type="number" step="1" style="width:50px" aria-label="Over how many seconds"> s</label></div>
+    <label class="small">Modes: <input id="flModes" placeholder="e.g. banquet, conference" style="width:190px" aria-label="The film's modes, separated by commas"></label>
     <label class="small">Back through, after the last shot: <input id="flVia" placeholder="e.g. 04, 03" style="width:110px" aria-label="Shot numbers to go back through after the last shot"></label>
     <div class="row wrap" style="align-items:center"><button class="pill" id="flPlay">Preview</button><input type="range" id="flScrub" min="0" max="1000" value="0" style="flex:1;min-width:120px" aria-label="Scrub the fly-through"><span class="mono small" id="flTime">0:00</span></div>
     <p class="small mono" id="flSays" role="status" aria-live="polite"></p>
@@ -56,8 +76,10 @@ export function flightPanel(app: App, ctx: FlightCtx) {
     <div class="row wrap"><button class="pill" id="flSave"${ctx.handoffId ? '' : ' hidden'}>Save to the project</button><button class="pill" id="flJson">Download the path</button></div>
     <div class="row wrap" style="align-items:center"><select id="flSize" aria-label="Film size"><option value="1280x720">720p</option><option value="1920x1080">1080p</option><option value="720x1280">720p upright</option></select>
       <select id="flQ" aria-label="Film quality"><option value="full">Full</option><option value="draft">Draft (quicker)</option></select>
-      <button class="pill solid" id="flFilm">Render film</button><button class="pill" id="flDown" disabled>Download</button></div>
-    <p class="small" id="flFilmSays" role="status" aria-live="polite"></p>`;
+      <select id="flMake" aria-label="Which films"><option value="one">This version</option><option value="all">Every mode and variant</option></select>
+      <button class="pill solid" id="flFilm">Render film</button></div>
+    <p class="small" id="flFilmSays" role="status" aria-live="polite"></p>
+    <div class="row wrap" id="flFilms"></div>`;
   const $ = <T extends HTMLElement>(s: string) => el.querySelector(s) as T;
   const says = (t: string) => ($('#flSays').textContent = t);
 
@@ -101,19 +123,27 @@ export function flightPanel(app: App, ctx: FlightCtx) {
         <span class="mono">${s.x == null ? '□ not placed' : s.source === 'placed by a person' ? '■ placed' : '□ proposed'}</span></div>
       ${s.where || s.move ? `<div class="small" style="opacity:.8">${esc([s.where, s.move].filter(Boolean).join(' · '))}</div>` : ''}
       <div class="row wrap small" style="gap:6px">${num(s.id, 'dwell', s.dwell, 0.5, 'hold', 's')}${num(s.id, 'speed', Math.round(s.speed * 100) / 100, 0.1, 'speed', 'm/s')}${num(s.id, 'pan', s.pan, 15, 'pan', '°')}${num(s.id, 'tilt', s.tilt, 5, 'tilt', '°')}${num(s.id, 'h', s.h, 0.1, 'eye', 'm')}</div>
+      <div class="row wrap small" style="gap:6px"><label>layout change <input data-t="layout" data-id="${esc(s.id)}" value="${esc(s.layout ?? '')}" placeholder="none" style="width:110px" aria-label="${esc(`Layout change at shot ${s.id}`)}"></label>${s.layout ? `<label>shown as <select data-t="variant" data-id="${esc(s.id)}" aria-label="${esc(`How the layout change at shot ${s.id} is shown`)}"><option value="layout"${s.variant !== 'fade' ? ' selected' : ''}>B: pan as it changes</option><option value="fade"${s.variant === 'fade' ? ' selected' : ''}>A: fade out and back</option></select></label>` : ''}</div>
       <div class="row wrap" style="gap:4px"><button class="pill" data-act="place" data-id="${esc(s.id)}" aria-pressed="${placing === s.id}">${s.x == null ? 'Place' : 'Move'}</button><button class="pill" data-act="go" data-id="${esc(s.id)}"${s.x == null ? ' disabled' : ''}>View</button>
         <button class="pill" data-act="up" data-id="${esc(s.id)}"${i ? '' : ' disabled'} aria-label="Move shot ${esc(s.id)} up">↑</button><button class="pill" data-act="down" data-id="${esc(s.id)}"${i < fp.shots.length - 1 ? '' : ' disabled'} aria-label="Move shot ${esc(s.id)} down">↓</button><button class="pill" data-act="del" data-id="${esc(s.id)}" aria-label="Delete shot ${esc(s.id)}">✕</button></div></li>`).join('');
-    ($('#flAerial') as HTMLInputElement).checked = fp.finish.aerial;
+    ($('#flEnd') as HTMLSelectElement).value = fp.finish.kind ?? (fp.finish.aerial ? 'aerial' : 'none');
+    ($('#flRise') as HTMLInputElement).value = String(fp.finish.rise); ($('#flSecs') as HTMLInputElement).value = String(fp.finish.secs);
+    ($('#flModes') as HTMLInputElement).value = (fp.modes ?? []).join(', ');
     ($('#flVia') as HTMLInputElement).value = fp.finish.via.join(', ');
   };
-  const change = (next: FlightPath, why = '') => { fp = edited(next); film = null; ($('#flDown') as HTMLButtonElement).disabled = true; list(); draw(); if (why) says(why); };
+  const change = (next: FlightPath, why = '') => { fp = edited(next); list(); draw(); if (why) says(why); };
   const shot = (id: string) => fp.shots.find((s) => s.id === id)!;
   const setShot = (id: string, patch: Partial<Shot>) => change({ ...fp, shots: fp.shots.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
 
   el.addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
     if (t.dataset.k && t.dataset.id) { const v = Number(t.value); if (Number.isFinite(v)) setShot(t.dataset.id, { [t.dataset.k]: t.dataset.k === 'speed' ? Math.max(0.2, v) : t.dataset.k === 'h' ? Math.max(0.3, v) : t.dataset.k === 'dwell' ? Math.max(0, v) : v } as Partial<Shot>); }
-    if (t.id === 'flAerial') change({ ...fp, finish: { ...fp.finish, aerial: t.checked } });
+    if (t.dataset.t === 'layout' && t.dataset.id) setShot(t.dataset.id, { layout: t.value.trim().slice(0, 60) || null });
+    if (t.dataset.t === 'variant' && t.dataset.id) setShot(t.dataset.id, { variant: t.value === 'fade' ? 'fade' : 'layout' });
+    if (t.id === 'flEnd') change({ ...fp, finish: { ...fp.finish, kind: t.value as 'none' | 'rise' | 'aerial', aerial: t.value === 'aerial' } });
+    if (t.id === 'flRise') change({ ...fp, finish: { ...fp.finish, rise: Math.max(0, Math.min(300, Number(t.value) || 0)) } });
+    if (t.id === 'flSecs') change({ ...fp, finish: { ...fp.finish, secs: Math.max(1, Math.min(60, Number(t.value) || 8)) } });
+    if (t.id === 'flModes') change({ ...fp, modes: t.value.split(',').map((m) => m.trim()).filter(Boolean).slice(0, 6) });
     if (t.id === 'flVia') change({ ...fp, finish: { ...fp.finish, via: t.value.split(/[\s,]+/).filter((v) => fp.shots.some((s) => s.id === v)) } });
   });
   el.addEventListener('click', (e) => {
@@ -184,9 +214,9 @@ export function flightPanel(app: App, ctx: FlightCtx) {
     layoutAt(scrubT);
   };
   const layoutAt = (t: number) => {
-    if (!ctx.layout || !tl) return;
-    const m = tl.marks.find((k) => t >= k.arrive && t <= k.leave && shot(k.id)?.layout);
-    ctx.layout(m ? shot(m.id).layout : null, m ? Math.min(1, (t - m.arrive) / Math.max(0.5, (m.leave - m.arrive) * 0.4)) : 0);
+    if (!tl) return;
+    const c = tl.at(t), fn = ctx.layout ?? defaultLayout;
+    fn(c.layout?.name ?? null, c.layout?.amount ?? 0);
   };
   $('#flScrub').addEventListener('input', (e) => { if (tl) { preview = null; seek((Number((e.target as HTMLInputElement).value) / 1000) * tl.duration); } });
   $('#flPlay').addEventListener('click', () => {
@@ -219,25 +249,50 @@ export function flightPanel(app: App, ctx: FlightCtx) {
 
   // ---- the film -----------------------------------------------------------------------------------------------------------
   const fsays = (t: string) => ($('#flFilmSays').textContent = t);
+  
+  const slug = (v: string) => v.replace(/\.[^.]+$/, '').replace(/[^\w-]+/g, '-').replace(/-+/g, '-').toLowerCase();
+  const showFilms = () => {
+    $('#flFilms').innerHTML = films.map((f, i) => `<button class="pill" data-film="${i}">Download ${esc(f.name.replace(/^.*-flythrough-/, ''))}</button>`).join('');
+  };
+  $('#flFilms').addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('[data-film]') as HTMLElement | null; if (b) { const f = films[Number(b.dataset.film)]; if (f) void app.save?.(f.name, f.blob); } });
   $('#flFilm').addEventListener('click', async () => {
     if (busy) { stopFilm = true; return; }
     if (!tl?.duration) return fsays('Place two shots first.');
     const [w, h] = ($('#flSize') as HTMLSelectElement).value.split('x').map(Number), q = ($('#flQ') as HTMLSelectElement).value as 'full' | 'draft';
+    const all = ($('#flMake') as HTMLSelectElement).value === 'all';
+    // what to make: each mode (or none), and for every shot with a layout change, each way of showing it (or as set)
+    const modes: (string | null)[] = all && fp.modes?.length ? fp.modes : [fp.modes?.[0] ?? null];
+    const layoutShots = fp.shots.filter((s) => s.layout && s.x != null);
+    const variantSets: { tag: string; v: Record<string, 'layout' | 'fade'> }[] = all && layoutShots.length
+      ? (['fade', 'layout'] as const).map((v) => ({ tag: v === 'fade' ? 'A-fade' : 'B-pan', v: Object.fromEntries(layoutShots.map((s) => [s.id, v])) }))
+      : [{ tag: '', v: {} }];
     busy = true; stopFilm = false; $('#flFilm').textContent = 'Stop'; preview = null;
     const hide = [group, ...(ctx.hideForFilm?.() ?? [])].filter((o) => o.visible); for (const o of hide) o.visible = false;
+    const setMode = ctx.setMode ?? defaultMode;
     try {
-      const out = await renderFilm(app, { width: w, height: h, fps: 30, quality: q, duration: tl.duration, at: tl.at, beforeFrame: (t) => layoutAt(t), stop: () => stopFilm, onProgress: (d, n) => { if (d % 15 === 0 || d === n) fsays(`Frame ${d} of ${n}…`); } });
-      film = out.blob; filmName = `${ctx.name.replace(/\.[^.]+$/, '').replace(/[^\w-]+/g, '-').toLowerCase()}-flythrough-v${fp.version}${fp.status === 'confirmed' ? '' : '-proposed'}.${out.type}`;
-      app.lastVideo = film; ($('#flDown') as HTMLButtonElement).disabled = false;
-      fsays(`Film made: ${Math.round(out.secs)} s, ${w}×${h}, ${out.type.toUpperCase()}, ${(film.size / 1e6).toFixed(1)} MB, in ${Math.round(out.ms / 1000)} s.${fp.status === 'confirmed' ? '' : ' The path is still a proposal: this is a draft.'}`);
-      if (ctx.handoffId) {
-        await putBackRecord(ctx.handoffId, 'film', { name: filmName, data: film, meta: { status: fp.status, version: fp.version, secs: Math.round(out.secs), size: `${w}x${h}`, quality: q } })
-          .then(() => fsays(`${$('#flFilmSays').textContent} A copy goes to the project.`)).catch((e) => fsays(`${$('#flFilmSays').textContent} The copy for the project did not go: ${(e as Error).message}`));
+      let k = 0;
+      for (const mode of modes) for (const vs of variantSets) {
+        if (stopFilm) throw new Error('stopped');
+        k++;
+        const modeSays = await setMode(mode);
+        const T = timeline(fp, ctx.yAt(), [ctx.focus.x, ctx.focus.y, ctx.focus.z], { variants: vs.v });
+        const caption = [fp.status === 'confirmed' ? '' : 'proposed path, draft', modeSays, vs.tag ? `shot ${layoutShots.map((s) => s.id).join(', ')}: ${vs.tag === 'A-fade' ? 'A, fade' : 'B, pan as the layout changes'}` : ''].filter(Boolean).join(' · ');
+        const lead = modes.length * variantSets.length > 1 ? `Film ${k} of ${modes.length * variantSets.length}: ` : '';
+        const out = await renderFilm(app, { width: w, height: h, fps: FPS, quality: q, duration: Math.min(T.duration, CAP), at: T.at, caption,
+          beforeFrame: (_t, c) => (ctx.layout ?? defaultLayout)(c.layout?.name ?? null, c.layout?.amount ?? 0), stop: () => stopFilm,
+          onProgress: (d, n) => { if (d % 15 === 0 || d === n) fsays(`${lead}frame ${d} of ${n}…`); } });
+        const name = `${slug(ctx.name)}-flythrough-v${fp.version}${mode ? `-${slug(mode)}` : ''}${vs.tag ? `-${vs.tag.toLowerCase()}` : ''}${fp.status === 'confirmed' ? '' : '-proposed'}.${out.type}`;
+        films.push({ name, blob: out.blob }); app.lastVideo = out.blob; showFilms();
+        fsays(`${lead}made: ${Math.round(out.secs)} s, ${w}×${h}, ${out.type.toUpperCase()}, ${(out.blob.size / 1e6).toFixed(1)} MB, in ${Math.round(out.ms / 1000)} s.${fp.status === 'confirmed' ? '' : ' The path is still a proposal: this is a draft.'}`);
+        if (ctx.handoffId) {
+          await putBackRecord(ctx.handoffId, 'film', { name, part: slug(name), data: out.blob, meta: { status: fp.status, version: fp.version, secs: Math.round(out.secs), size: `${w}x${h}`, quality: q, mode, variant: vs.tag || null } })
+            .then(() => fsays(`${$('#flFilmSays').textContent} A copy goes to the project.`)).catch((e) => fsays(`${$('#flFilmSays').textContent} The copy for the project did not go: ${(e as Error).message}`));
+        }
       }
+      await setMode(null);
     } catch (err) { fsays((err as Error).message === 'stopped' ? 'Stopped.' : `The film could not be made: ${(err as Error).message}`); }
-    finally { for (const o of hide) o.visible = true; busy = false; $('#flFilm').textContent = 'Render film'; }
+    finally { for (const o of hide) o.visible = true; busy = false; $('#flFilm').textContent = 'Render film'; (ctx.layout ?? defaultLayout)(null, 0); }
   });
-  $('#flDown').addEventListener('click', () => { if (film) void app.save?.(filmName, film); });
 
   list(); draw();
   const api = {
