@@ -27,7 +27,7 @@ export async function reviewPanel(app:App, o:{
   let review:ReturnType<typeof readReview>|null=null;
   if(files?.walk_review){
     try{
-      if(files.walk_review.size>64*1024) throw Error('Walkthrough setup must be smaller than 64 KB.');
+      if(files.walk_review.size>128*1024) throw Error('Walkthrough setup must be smaller than 128 KB.');
       review=readReview(JSON.parse(await files.walk_review.text()),await sha256(o.bytes));
       selection.value='authored'; o.dress.setGlass('authored');
     }catch(e){info.textContent=(e as Error).message;}

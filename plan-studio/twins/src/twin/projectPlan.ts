@@ -969,7 +969,17 @@ export const projectPlan: Project = {
       keys.push(three);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
       keys.push({ label: 'Eye level', eye: centre.clone().add(new THREE.Vector3(0, 1.6 - centre.y, radius * 0.8)), look: centre.clone() });
-      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three, bounds: b2 });   // model-dress: finishes, planting, light
+      const fromParam = new URLSearchParams(location.search).get(HANDOFF_PARAM);
+      const handoffSite = handed && handed.id === fromParam ? handed.site : null;
+      let preReview: { materialSpans?: Record<string, import('./modelReviewRules').MaterialSpanSpec>; sunHour?: number } | null = null;
+      if (handoffSite?.files?.walk_review && handoffSite.files.walk_review.size <= 128 * 1024) {
+        try {
+          const { readReview, sha256 } = await import('./modelReviewRules');
+          preReview = readReview(JSON.parse(await handoffSite.files.walk_review.text()), await sha256(input.bytes));
+          if (preReview.sunHour !== undefined) sunHour = preReview.sunHour;
+        } catch (e) { console.warn('private review material profile skipped:', (e as Error).message); }
+      }
+      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three, bounds: b2, materialSpans: preReview?.materialSpans });   // model-dress: finishes, planting, light
       // the chips say what this is: an opened model, not one generated from a plan
       const kindWord = input.kind.toUpperCase();
       const relabel = () => { const gen = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent === 'Generated from your plan model') as HTMLElement | undefined; if (gen) { gen.textContent = `Opened from your model (${kindWord})`; gen.title = 'The model as the architect drew it; finishes interpreted from its classes and material names'; } return !!gen; };

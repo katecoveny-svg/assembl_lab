@@ -1,4 +1,4 @@
-import { GLASS, unalteredGlass, type GlassMode } from './modelReviewRules';
+import { GLASS, unalteredGlass, type GlassMode, type MaterialSpanSpec } from './modelReviewRules';
 import * as THREE from 'three/webgpu';
 import { luminance, materialColor, mix, mx_noise_float, normalWorld, positionWorld, smoothstep, vec3, vec4 } from 'three/tsl';
 import { pbr, type PBRSet } from '../objects/tex';
@@ -39,6 +39,8 @@ export interface DressOpts {
   view?: { eye: THREE.Vector3; look: THREE.Vector3 };
   /** the building's own bounds (modelBounds.ts), in the scene: planting and the shade go round this, not round far-off strays */
   bounds?: THREE.Box3;
+  /** optional private material-span mapping for class-batched GLBs (from fingerprinted walk_review JSON) */
+  materialSpans?: Record<string, MaterialSpanSpec>;
 }
 export interface Dressed {
   layers: Layer[];
@@ -113,10 +115,10 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
   const tint = new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
   m = heavy
     // see-through without refraction: a model this size stays smooth; still reflects the sky and carries the tint
-    ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
-    // daylit glass seen from outside: dark, with the sky in it and a bright fresnel edge (clearcoat), the rooms faint behind it.
-    // No transmission pass: it costs a second render of the scene, too much on a phone
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.42), metalness: 0, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, ior: 1.52, specularIntensity: 1, envMapIntensity: 3.2, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });   // warm bronze-tinted glass: the lit rooms behind it, the sky in it at a glancing angle (fresnel, clearcoat)
+    ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.48), metalness: 0, roughness: 0.035, transparent: true, opacity: 0.34, specularIntensity: 1, envMapIntensity: 1.6, side: THREE.DoubleSide, depthWrite: false })
+    // architectural bronze/clear glazing: transparent enough for warm timber interiors and signage to read through,
+    // with crisp Fresnel sky reflection (clearcoat, IOR 1.52) at glancing angles. No transmission pass so phones stay smooth.
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.55), metalness: 0, roughness: 0.025, clearcoat: 1, clearcoatRoughness: 0.015, ior: 1.52, reflectivity: 0.95, specularIntensity: 1, envMapIntensity: 2.3, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false });
   mats.set(key, m);
   return m;
 }
@@ -237,8 +239,121 @@ function colourOf(m: THREE.Material): [number, number, number] | null {
   return c ? [c.r, c.g, c.b] : null;
 }
 
+const SPAN_FINISH_MAP: Record<string, { finish: Finish; tint?: [number, number, number] }> = {
+  brick: { finish: 'brick' },
+  pavers: { finish: 'paving' },
+  paving: { finish: 'paving' },
+  road: { finish: 'asphalt' },
+  asphalt: { finish: 'asphalt' },
+  terrain: { finish: 'lawn' },
+  lawn: { finish: 'lawn' },
+  seamRoof: { finish: 'roof' },
+  chapelRoof: { finish: 'roof' },
+  roof: { finish: 'roof' },
+  timber: { finish: 'timberCladding' },
+  timberCladding: { finish: 'timberCladding' },
+  darkTimber: { finish: 'door' },
+  door: { finish: 'door' },
+  concrete: { finish: 'concrete' },
+  plaster: { finish: 'plaster' },
+  render: { finish: 'render' },
+  metal: { finish: 'mullion' },
+  mullion: { finish: 'mullion' },
+  campusA: { finish: 'brick' },
+  campusB: { finish: 'render' },
+  campusC: { finish: 'plaster' },
+  copper: { finish: 'glass', tint: [0.76, 0.50, 0.36] },
+  clear: { finish: 'glass', tint: [0.88, 0.93, 0.95] },
+  plum: { finish: 'glass', tint: [0.56, 0.44, 0.52] },
+  rose: { finish: 'glass', tint: [0.78, 0.58, 0.54] },
+  blue: { finish: 'glass', tint: [0.62, 0.72, 0.78] },
+  glass: { finish: 'glass' },
+};
+
+/** Split class-batched meshes into exact non-overlapping triangle slices when a fingerprinted review provides materialSpans. */
+function applyMaterialSpans(obj: THREE.Object3D, specs: Record<string, MaterialSpanSpec>) {
+  const targets: { mesh: THREE.Mesh; spec: MaterialSpanSpec }[] = [];
+  obj.traverse((n) => {
+    const m = n as THREE.Mesh;
+    if (!m.isMesh || !m.geometry) return;
+    const spec = specs[m.name] ?? specs[m.parent?.name ?? ''];
+    if (!spec) return;
+    const g = m.geometry;
+    const vertCount = g.index ? g.index.count : (g.getAttribute('position')?.count ?? 0);
+    if (vertCount !== spec.count) return;
+    targets.push({ mesh: m, spec });
+  });
+  for (const { mesh, spec } of targets) {
+    const parent = mesh.parent;
+    if (!parent) continue;
+    const g = mesh.geometry;
+    const totalTris = Math.floor((g.index ? g.index.count : g.getAttribute('position').count) / 3);
+    const covered = new Uint8Array(totalTris);
+    const holder = new THREE.Group();
+    holder.name = `${mesh.name}_spans`;
+    holder.position.copy(mesh.position);
+    holder.quaternion.copy(mesh.quaternion);
+    holder.scale.copy(mesh.scale);
+    holder.userData = { ...mesh.userData };
+
+    const sliceGeo = (triIndices: number[]) => {
+      const out = new THREE.BufferGeometry();
+      const idx = g.index;
+      const nVerts = triIndices.length * 3;
+      for (const attrName of Object.keys(g.attributes)) {
+        const src = g.getAttribute(attrName);
+        if (!src || !('array' in src)) continue;
+        const itemSize = src.itemSize;
+        const arr = new Float32Array(nVerts * itemSize);
+        let p = 0;
+        for (const t of triIndices) {
+          for (let k = 0; k < 3; k++) {
+            const vi = idx ? idx.getX(t * 3 + k) : t * 3 + k;
+            for (let c = 0; c < itemSize; c++) arr[p++] = src.array[vi * itemSize + c];
+          }
+        }
+        out.setAttribute(attrName, new THREE.BufferAttribute(arr, itemSize));
+      }
+      out.computeBoundingBox();
+      out.computeBoundingSphere();
+      return out;
+    };
+
+    const grouped = new Map<string, number[]>();
+    for (const [s, e, fin] of spec.spans) {
+      const a = Math.max(0, Math.min(totalTris, s)), b = Math.max(a, Math.min(totalTris, e));
+      let list = grouped.get(fin);
+      if (!list) { list = []; grouped.set(fin, list); }
+      for (let t = a; t < b; t++) {
+        if (!covered[t]) { covered[t] = 1; list.push(t); }
+      }
+    }
+    const rem: number[] = [];
+    for (let t = 0; t < totalTris; t++) if (!covered[t]) rem.push(t);
+    if (rem.length) grouped.set('__default__', rem);
+
+    for (const [fin, tris] of grouped) {
+      if (!tris.length) continue;
+      const sub = new THREE.Mesh(sliceGeo(tris), mesh.material);
+      sub.name = fin === '__default__' ? mesh.name : `${mesh.name}:${fin}`;
+      sub.castShadow = mesh.castShadow;
+      sub.receiveShadow = mesh.receiveShadow;
+      const mapped = SPAN_FINISH_MAP[fin];
+      sub.userData = {
+        ...mesh.userData,
+        ifcClass: normClass(mesh.userData?.ifcClass || inferIfcClassFromName(mesh.name)),
+        ...(mapped ? { spanFinish: mapped.finish, ...(mapped.tint ? { spanTint: mapped.tint } : {}) } : {}),
+      };
+      holder.add(sub);
+    }
+    parent.add(holder);
+    parent.remove(mesh);
+  }
+}
+
 export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): Promise<Dressed> {
   const t0 = performance.now();
+  if (o.materialSpans) applyMaterialSpans(obj, o.materialSpans);
   obj.updateMatrixWorld(true);
   const q = o.quality;
   // the IFC's own material and surface style names
@@ -278,8 +393,13 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
       if (partCls === 'IfcWindow' && opacity >= 0.95 && !namedMaterial(material, partCls) && rgb && rgb[2] > rgb[1] && rgb[1] > rgb[0] && rgb[2] - rgb[0] > 0.08) {
         opacity = 0.45;
       }
-      const info: PartInfo = { cls: partCls, name: String(u.name ?? el.name ?? ''), material, rgb, opacity };
-      const p: Part = { mesh, slot: Array.isArray(mesh.material) ? slot : -1, orig: m, info, c: classify(info), el };
+      const spanFinish = mesh.userData?.spanFinish as Finish | undefined;
+      const spanTint = mesh.userData?.spanTint as [number, number, number] | undefined;
+      const info: PartInfo = { cls: partCls, name: String(u.name ?? el.name ?? ''), material, rgb: spanTint ?? rgb, opacity: spanFinish === 'glass' ? 0.38 : opacity };
+      const classified = spanFinish
+        ? { finish: spanFinish, rule: 'review-span', why: `private revision material profile (“${mesh.name}”)` }
+        : classify(info);
+      const p: Part = { mesh, slot: Array.isArray(mesh.material) ? slot : -1, orig: m, info, c: classified, el };
       if ((m as THREE.MeshStandardMaterial).map && g.getAttribute('uv')) p.keep = 'its own texture, from the file';
       parts.push(p);
       if (!elements.has(el)) elements.set(el, []);

@@ -49,3 +49,19 @@ test('plain Model open adds only named project sources, avoids reading unapprove
   assert.equal(kindOf(files[1]),'site');
   assert.equal(primaryModel({id:'project'},files),null,'overlay GLBs must never become primary model or enter the client share as such');
 });
+
+test('readReview validates optional materialSpans and sunHour cleanly', () => {
+  const withSpans = {
+    ...manifest,
+    sunHour: 16.8,
+    materialSpans: {
+      IfcWall: { count: 1806, spans: [[0, 458, 'brick'], [458, 602, 'plaster']] },
+      IfcPlate: { count: 4416, spans: [[0, 708, 'copper'], [708, 1040, 'clear']] },
+    },
+  };
+  const r = readReview(withSpans, hashA);
+  assert.equal(r.sunHour, 16.8);
+  assert.equal(r.materialSpans.IfcWall.spans.length, 2);
+  assert.throws(() => readReview({ ...manifest, materialSpans: { IfcWall: { count: 10, spans: [[5, 2, 'brick']] } } }, hashA), /Invalid material span/);
+  assert.throws(() => readReview({ ...manifest, materialSpans: { IfcWall: { count: 10, spans: [[0, 2, 'bogusFinish']] } } }, hashA), /Invalid material span/);
+});
