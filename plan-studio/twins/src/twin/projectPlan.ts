@@ -28,12 +28,14 @@ import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
 import { HANDOFF_PARAM, takeHandoff, type HandoffSite } from './handoff';
-import { readIfcSite, type IfcSiteInfo } from './modelSite';
+import { northFrom, readIfcSite, type IfcSiteInfo } from './modelSite';
 import { modelGroundPanel, type ModelGround } from './modelGround';
 import { cameraPathPanel } from './cameraPathUI';
 import { flightPanel } from './flightUI';
 import { buildingBounds, type Box6 } from './modelBounds';
-import { contextGroup, outlinesUrl, parseOutlines, toSceneRings, OUTLINE_CREDIT } from './contextBuildings';
+import { contextGroup, toSceneRings, OUTLINE_CREDIT } from './contextBuildings';
+import { ASSUMED_HEIGHT, gridWindow, heightFromGrids, heightFromTops, outlineRadius, readOutlines, type NzGrid, type Outline } from './contextRules';
+import { placePanel } from './placeUI';
 import { readFlight } from './flightPath';   // the fly-through editor and film (agent/model-dress-1123)
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
@@ -712,6 +714,7 @@ export const projectPlan: Project = {
     model.name = 'model';
     let centre = new THREE.Vector3();
     let radius = 20;
+    let ownBox: THREE.Box3 | null = null;   // an opened model's own building box (buildingBounds): strays and site surfaces left out
     let groundAt = (_e: number, _n: number) => 0;
     const fitouts: THREE.Object3D[] = [];
     let plantObj: THREE.Object3D | null = null;
@@ -953,6 +956,7 @@ export const projectPlan: Project = {
       shift.x -= bcx; shift.z -= bcz; shift.y += -bb.box[1];
       model.add(obj);
       const b2 = new THREE.Box3(new THREE.Vector3(bb.box[0] - bcx, 0, bb.box[2] - bcz), new THREE.Vector3(bb.box[3] - bcx, bb.box[4] - bb.box[1], bb.box[5] - bcz));
+      ownBox = b2.clone();
       centre = b2.getCenter(new THREE.Vector3());
       radius = Math.max(10, b2.getSize(new THREE.Vector3()).length() * 0.9);
       // model-dress: it opens as a person would see it, from a few paces off at a three-quarter angle with the sky behind
@@ -1015,8 +1019,68 @@ export const projectPlan: Project = {
     let modelCards: HTMLElement[] = [], startSite: (() => void) | null = null;
     if (input.kind !== 'plan') {
       modelGround.add(ground, lidarHolder);
-      const box = new THREE.Box3().setFromObject(model), from = new URLSearchParams(location.search).get(HANDOFF_PARAM), site = handed && handed.id === from ? handed.site : null;
+      // the building's own box, not the box round everything in the file: a topography mesh or a stray part far off would
+      // otherwise centre the ground on nothing, flatten the whole square into the platform and hide every existing building
+      const box = ownBox ? ownBox.clone() : new THREE.Box3().setFromObject(model), from = new URLSearchParams(location.search).get(HANDOFF_PARAM), site = handed && handed.id === from ? handed.site : null;
       let refreshPath = () => {};
+      // LINZ outlines round the site point, read once a point (a page at a time), and LiDAR heights for those past the 140 m square
+      const outlineReads = new Map<string, Promise<{ list: Outline[]; radius: number; complete: boolean; dsm: NzGrid | null; dem: NzGrid | null; why: string }>>();
+      const outlinesFor = (gr: NonNullable<typeof onModelGround>) => {
+        const reach = Math.hypot(gr.offset.east, gr.offset.north), radiusM = outlineRadius(Math.hypot(box.max.x - box.min.x, box.max.z - box.min.z) + 2 * reach), key = `${gr.point.lat},${gr.point.lng},${radiusM}`;
+        if (!outlineReads.has(key)) outlineReads.set(key, (async () => {
+          const r = await readOutlines(gr.point.lat, gr.point.lng, radiusM);
+          // the surface and ground models over all of them, straight from LINZ, for heights past the square under the model
+          let dsm: NzGrid | null = null, dem: NzGrid | null = null, why = '';
+          const w = gridWindow(r.list);
+          if (w) {
+            try { const { readHeights } = await import('./linz/ground.js'); [dsm, dem] = (await Promise.all([readHeights('surface', w.e, w.n, w.half), readHeights('ground', w.e, w.n, w.half)])) as [NzGrid | null, NzGrid | null]; if (!dsm || !dem) why = 'LINZ has no 1 m surface model here'; }
+            catch (e) { why = `LINZ’s surface model could not be read (${(e as Error).message})`; }
+          }
+          return { ...r, dsm, dem, why };
+        })().catch((e) => { outlineReads.delete(key); throw e; }));
+        return outlineReads.get(key)!;
+      };
+      const drawContext = async (gr: NonNullable<typeof onModelGround>, bx: THREE.Box3) => {
+        const R = await outlinesFor(gr);
+        if (onModelGround !== gr) return;   // the ground moved on while LINZ answered
+        const items = toSceneRings(R.list, gr.toScene, { x0: bx.min.x - 2, x1: bx.max.x + 2, z0: bx.min.z - 2, z1: bx.max.z + 2 });
+        const T = gr.applied.terrain.tops ? { centre: gr.applied.terrain.centre, size: gr.applied.terrain.tops.size, n: gr.applied.terrain.tops.n, heights: gr.applied.terrain.tops.heights } : null;
+        let wide = 0;
+        // ground level past the square drawn under the model: LINZ's ground model read for the outlines, on the model's datum
+        const sq = gr.square, halfSq = sq.size / 2 - 1, datum0 = gr.applied.datum0;
+        const demAt = (x: number, z: number) => { if (!R.dem) return NaN; const [e, n] = gr.world(x, z), c = Math.round(e - R.dem.originE), r = Math.round(R.dem.originN - n); return c < 0 || r < 0 || c >= R.dem.n || r >= R.dem.n ? NaN : R.dem.data[r * R.dem.n + c] - datum0; };
+        const inSq = (x: number, z: number) => Math.abs(x - sq.cx) < halfSq && Math.abs(z - sq.cz) < halfSq;
+        const yWide = (x: number, z: number) => { if (inSq(x, z)) return gr.yAt(x, z); const v = demAt(x, z); return v === v ? v : gr.yAt(x, z); };
+        const cg = contextGroup(items, (it) => {
+          const a = heightFromGrids(it.o.rings[0], R.dsm, R.dem); if (a != null) { wide++; return { h: a, how: 'LINZ 1 m LiDAR surface less ground inside the outline' }; }
+          const b = heightFromTops(it.ring, T); return b != null ? { h: b, how: 'LINZ 1 m LiDAR tops under the model' } : { h: null, how: `assumed ${ASSUMED_HEIGHT} m` };
+        }, yWide);
+        for (const c of [...contextRoot.children]) { contextRoot.remove(c); c.traverse((o) => (o as THREE.Mesh).geometry?.dispose?.()); }
+        contextRoot.add(cg.group);
+        // the ground past the square, coarser (3 m), from the same LINZ ground model, so the buildings out there stand on something
+        if (R.dem) {
+          let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+          for (const it of items) for (const [x, z] of it.ring) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+          if (isFinite(x0)) {
+            const step = 3, pad = 30, nx = Math.ceil((x1 - x0 + 2 * pad) / step), nz = Math.ceil((z1 - z0 + 2 * pad) / step), pos: number[] = [], uv: number[] = [], idx: number[] = [], ok: boolean[] = [];
+            const tile = M.sets.lawn.tile;
+            for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const x = x0 - pad + i * step, z = z0 - pad + j * step, y = demAt(x, z); ok.push(y === y); pos.push(x, (y === y ? y : 0) - 0.06, z); uv.push(x / tile, -z / tile); }
+            for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+              const k = j * (nx + 1) + i, xm = x0 - pad + (i + 0.5) * step, zm = z0 - pad + (j + 0.5) * step;
+              if (!ok[k] || !ok[k + 1] || !ok[k + nx + 1] || !ok[k + nx + 2] || (Math.abs(xm - sq.cx) < halfSq - step && Math.abs(zm - sq.cz) < halfSq - step)) continue;
+              idx.push(k, k + nx + 1, k + 1, k + 1, k + nx + 1, k + nx + 2);
+            }
+            if (idx.length) {
+              const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+              const far = new THREE.Mesh(g, ground.material as THREE.Material); far.name = 'context_far_ground'; far.receiveShadow = true;
+              far.userData = { kind: 'terrain', name: 'Ground past the square', source: 'from the survey', note: 'LINZ 1 m LiDAR ground model, sampled every 3 m, round the existing buildings past the square drawn under the model; grass drawn over it, not a photograph.' };
+              contextRoot.add(far);
+            }
+          }
+        }
+        (window as unknown as { __context?: unknown }).__context = { read: R.list.length, radius: R.radius, complete: R.complete, shown: cg.total, under: items.left ?? 0, measured: cg.measured, why: R.why, centres: items.map((it) => { let x = 0, z = 0; for (const q of it.ring) { x += q[0]; z += q[1]; } return [Math.round(x / it.ring.length), Math.round(z / it.ring.length)]; }) };   // for checks from the console (this tab only)
+        app.log(`Existing buildings: ${cg.total} from LINZ outlines within ${R.radius} m${R.complete ? '' : ' (more than LINZ sent)'}${items.left ? `, ${items.left} under the model left out` : ''}; ${cg.measured} with LiDAR heights${R.why ? ` (${R.why})` : ''}, the rest assumed at ${ASSUMED_HEIGHT} m. Finishes proposed by rule, not surveyed. ${OUTLINE_CREDIT}`);
+      };
       const mg = modelGroundPanel({
         name: input.name, kind: input.kind, info: ifcInfo, site, shift, box, holder: lidarHolder, flat: ground,
         build: (T, yAt) => realGroundOf(T as unknown as Terrain, yAt, false),
@@ -1029,16 +1093,7 @@ export const projectPlan: Project = {
           refreshPath();
           // the site as it is now: the existing buildings round it from LINZ outlines and LiDAR heights (contextBuildings.ts)
           for (const c of [...contextRoot.children]) contextRoot.remove(c);
-          if (gr) {
-            const bx = new THREE.Box3().setFromObject(model);
-            fetch(outlinesUrl(gr.point.lat, gr.point.lng)).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((j) => {
-              const T = gr.applied.terrain.tops ? { centre: gr.applied.terrain.centre, size: gr.applied.terrain.tops.size, n: gr.applied.terrain.tops.n, heights: gr.applied.terrain.tops.heights } : null;
-              const items = toSceneRings(parseOutlines(j), gr.toScene, { x0: bx.min.x - 2, x1: bx.max.x + 2, z0: bx.min.z - 2, z1: bx.max.z + 2 });
-              const cg = contextGroup(items, T, gr.yAt);
-              contextRoot.add(cg.group);
-              app.log(`Existing buildings: ${cg.total} from LINZ outlines, ${cg.measured} with LiDAR heights. ${OUTLINE_CREDIT}`);
-            }).catch((e) => app.log(`The existing buildings could not be read from LINZ (${(e as Error).message}); the model stands on its ground without them.`));
-          }
+          if (gr) void drawContext(gr, box).catch((e) => app.log(`The existing buildings could not be read from LINZ (${(e as Error).message}); the model stands on its ground without them.`));
           // model-dress: the proposed planting follows the real ground (and the flat contact shade steps aside for it)
           if (dressed) void dressed.replant(gr ? gr.yAt : null).catch((e) => console.warn('planting could not follow the ground', e));
         },
@@ -1058,7 +1113,16 @@ export const projectPlan: Project = {
         root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
       });
       if (site?.flight) { try { fl.path = readFlight(site.flight); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
-      modelCards = [mg.el, cp.el, fl.el]; startSite = mg.start;
+      // Place the building (placeUI.ts): match to an existing building, or move and turn by hand; confirmed by a person
+      const north = ifcInfo ? northFrom(ifcInfo) : null;
+      const pb = placePanel(app, {
+        name: input.name, handoffId: from && handed?.id === from ? from : null, site, model, box,
+        movers: () => { const inModel = (o: THREE.Object3D) => { for (let q: THREE.Object3D | null = o; q; q = q.parent) if (q === model) return true; return false; }; return [pathRoot, ...(dressed ? dressed.layers.map((l) => l.object).filter((o): o is THREE.Object3D => !!o && !inModel(o)) : [])]; },
+        ifcNorth: north && north.tag === 'from the IFC' ? north.deg : null,
+        ground: () => onModelGround, setPlacement: mg.setPlacement, busy: mg.busy, kept: mg.kept,
+        outlines: async () => { if (!onModelGround) throw new Error('no ground yet'); return (await outlinesFor(onModelGround)).list; },
+      });
+      modelCards = [mg.el, pb.el, cp.el, fl.el]; startSite = mg.start;
       (window as unknown as { __site?: unknown }).__site = { ground: () => onModelGround, path: cp.state, info: ifcInfo, shift };   // for checks from the console (this tab only)
     }
 
@@ -1086,7 +1150,7 @@ export const projectPlan: Project = {
       planFlight = pf.el;
       layers.push({ id: 'camera-path', label: 'Fly-through', note: 'the shots and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
     }
-    if (input.kind !== 'plan') layers.push({ id: 'context', label: 'Existing buildings', note: 'the site as it is now: LINZ building outlines, heights from LiDAR (or assumed where it does not reach); plain blocks', visible: true, object: contextRoot });
+    if (input.kind !== 'plan') layers.push({ id: 'context', label: 'Existing buildings', note: 'the site as it is now: LINZ building outlines, heights from LiDAR (or assumed where it does not reach); weatherboard or brick, roofs and windows proposed by rule, not surveyed', visible: true, object: contextRoot });
     if (input.kind !== 'plan') layers.push({ id: 'camera-path', label: 'Camera path', note: 'the sketch laid on the ground, and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
     if (topsObj) layers.push({ id: 'tops', label: 'Tree and building tops', note: 'from LINZ’s surface model less its ground model, as plain blocks; trees and buildings are not told apart. Off to start with, so they do not hide the house', visible: false, object: topsObj });
     if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: bushObj.userData.clearing ? 'tree tops from the LiDAR canopy; the clearing round the house, the kept specimens and the species are proposed, not surveyed' : 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
