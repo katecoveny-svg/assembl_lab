@@ -90,6 +90,37 @@ export function basisQuat(dir: THREE.Vector3, up: THREE.Vector3, out = new THREE
 
 const mirror = (v: THREE.Vector3, sign: number) => new THREE.Vector3(v.x * sign, v.y, v.z);
 
+/**
+ * How far down the tail the folded wingtips meet, as a fraction of the outer tail feather
+ * (species.wing.rest.cross[0]), or, when the species gives a wing chord, the fraction that puts
+ * the tips one chord from the wrist: the primary projection then follows from the measurement.
+ */
+export function wingCross(loft: Loft, species: Species) {
+  const W = species.wing;
+  if (!W.chord) return W.rest.cross[0];
+  const sfc: SurfacePoint = { p: new THREE.Vector3(), n: new THREE.Vector3(), t: new THREE.Vector3() };
+  const q = loft.wingAt(0.2, -0.35, 1);
+  loft.surface(q.s, q.ang, sfc);
+  const wrist = sfc.p;
+  const ta = species.tail.droop * DEG;
+  const dir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
+  const up = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
+  const root = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(up, 0.03);
+  const L = species.tail.length[1];
+  const p = new THREE.Vector3();
+  // the distance from the wrist grows along the tail: bisect for one chord
+  let lo = 0;
+  let hi = 1.2;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    p.copy(root).addScaledVector(dir, L * m);
+    p.x = W.rest.cross[1];
+    if (p.distanceTo(wrist) < W.chord) lo = m;
+    else hi = m;
+  }
+  return Math.max(0.04, (lo + hi) / 2);
+}
+
 export function buildRig(species: Species): Rig {
   const loft = new Loft(species);
   const bones: Record<string, THREE.Bone> = {};
@@ -193,7 +224,7 @@ export function buildRig(species: Species): Rig {
     const ta = species.tail.droop * DEG;
     const tailDir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
     const tailUp = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
-    const meet = c(sp.tail).addScaledVector(tailDir, species.tail.length[1] * W.rest.cross[0]).addScaledVector(tailUp, 0.03);
+    const meet = c(sp.tail).addScaledVector(tailDir, species.tail.length[1] * wingCross(loft, species)).addScaledVector(tailUp, 0.03);
     meet.x = W.rest.cross[1];
     const E = under(0.03, 0.4, 0.02);
     const wrist = under(0.2, -0.35, 0.014);
@@ -266,8 +297,11 @@ export function buildRig(species: Species): Rig {
         // bone +X is the bird's right, so left feathers sit at negative k
         const k = (i + 0.5) * (side === 'L' ? -1 : 1);
         // closed, the rectrices lie stacked almost on top of each other, the central pair uppermost
-        const pos = base.clone().addScaledVector(right, k * 0.006).addScaledVector(up, -i * 0.004 - (side === 'L' ? 0.002 : 0)).addScaledVector(dir, 0.02);
-        const qk = q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), k * T.restFan * DEG));
+        // (a real folded tail is a shallow roof, not a sheet: each pair sits a little lower than
+        // the one inside it and tips its outer edge down, so the closed tail has some thickness)
+        const step = Math.max(0.004, 0.035 * T.width);
+        const pos = base.clone().addScaledVector(right, k * 0.006).addScaledVector(up, -i * step - (side === 'L' ? 0.002 : 0)).addScaledVector(dir, 0.02);
+        const qk = q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), k * T.restFan * DEG)).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.sign(k) * Math.min(i, 3) * 7 * DEG));
         rectrices.push({ bone: add(`rectrix.${side}.${i + 1}`, 'tail', pos, qk), k });
       }
     }

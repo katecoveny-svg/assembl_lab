@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { FeatherLook, Region, Species } from './species';
 import type { Rig, Side } from './rig';
-import { SIDES, sideSign } from './rig';
+import { SIDES, sideSign, wingCross } from './rig';
 import type { SurfacePoint } from './loft';
 import { clamp, DEG, lerp, mulberry32, noise1, type Rng, smoothstep } from './util';
 
@@ -932,7 +932,7 @@ function addRestWing(b: Builder, rig: Rig, side: Side, rng: Rng) {
   const ta = T.droop * DEG;
   const tailDir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
   const tailUp = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
-  const meet = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(tailDir, T.length[1] * W.rest.cross[0]).addScaledVector(tailUp, 0.035);
+  const meet = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(tailDir, T.length[1] * wingCross(loft, species)).addScaledVector(tailUp, 0.035);
   // (the two wingtips cross over the tail: the left one lies on top)
   meet.x = W.rest.cross[1] * sg;
   if (sg > 0) meet.addScaledVector(tailUp, 0.014);
