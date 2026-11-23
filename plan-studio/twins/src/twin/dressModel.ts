@@ -12,6 +12,7 @@ import {
 } from './dressRules';
 import { scanSet } from './scanned';
 import { anodised, brick, herringbone, mulch, powderCoat, render, satinSteel, standingSeam, stoneFlags, upholstery } from './dressTex';
+import { buildPresentationDetail } from './presentationDetail';
 
 // The finished look for an opened IFC or GLB (agent/model-dress-1123).
 //
@@ -141,6 +142,16 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
     // fragment by which way the surface faces, so no face of the model is split or moved
     const under = smoothstep(-0.25, -0.6, normalWorld.y);
     pm.colorNode = mix(materialColor.rgb, vec3(0.5, 0.33, 0.19).mul(luminance(materialColor.rgb).mul(1.6).add(0.55)), under);
+  } else if (f === 'timber' || f === 'timberCladding' || f === 'decking' || f === 'brick' || f === 'paving' || f === 'concrete') {
+    // subtle world-space colour micro-variation so large timber/brick/paving planes avoid uniform CG flatness
+    const macro = mx_noise_float(positionWorld.mul(0.28)).mul(0.06).add(1.0);
+    pm.colorNode = materialColor.rgb.mul(macro);
+  }
+  if (f === 'mullion' || f === 'darkMetal' || f === 'frameMetal') {
+    // lift pure-black joinery slightly so frames catch sky specular and edge depth reads instead of crushing to black
+    pm.color.r = Math.max(pm.color.r, 0.032);
+    pm.color.g = Math.max(pm.color.g, 0.034);
+    pm.color.b = Math.max(pm.color.b, 0.038);
   }
   pm.userData.dress = f;
   mats.set(key, pm);
@@ -509,10 +520,22 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
       roomLights.add(l);
     }
   }
+  const presentationDetail = buildPresentationDetail(
+    obj,
+    [...elements.entries()].map(([el, ps]) => ({
+      el,
+      cls: ps[0]?.info.cls ?? '',
+      meshes: ps.map((p) => ({ mesh: p.mesh, finish: p.c.finish })),
+    })),
+    { phone: !!(app as unknown as { phone?: boolean }).phone, lowTier: !!(app as unknown as { lowTier?: boolean }).lowTier },
+  );
+  if (presentationDetail.group.children.length) obj.add(presentationDetail.group);
+
   const layers: Layer[] = [
     { id: 'dress-planting', label: 'Planting (proposed)', note: `native planting ${plan.said}; proposed by rule, not from the model`, visible: true, object: plantRoot },
     { id: 'dress-rooms', label: 'Rooms lit (proposed)', note: 'warm light inside so the rooms read through the glass, as in the architect’s renders; not a lighting design', visible: true, object: roomLights },
     { id: 'dress-frames', label: 'Frames (drawn)', note: 'round glass and door leaves the model gives no frame; inferred from the opening', visible: true, object: frameRoot },
+    { id: 'dress-presentation-detail', label: 'Edge depth, reveals & cladding (presentation)', note: 'reversible 115 mm reveals and cladding depth ribs kept out of geometry, measurement and clash checks', visible: true, object: presentationDetail.group },
     { id: 'dress-shade', label: 'Contact shade', note: 'soft shade where the building meets the ground, from its footprint', visible: true, object: shade, traced: false },
   ];
 

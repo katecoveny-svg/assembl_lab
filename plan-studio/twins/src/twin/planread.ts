@@ -230,23 +230,41 @@ export function wallLinework(real) {
 }
 
 export function modelFromDrawing(real, meta = {}) {
+  const sheetRef = meta.sheet_ref || meta.sheet || meta.number || "sheet-1";
   const lw = wallLinework(real), strokesAll = real.segs.filter((s) => s.kind === "stroke" || s.kind === "poche").map((s) => s.p), arcsAll = real.arcs.filter((a) => a.kind !== "tone").map((a) => a.p);
-  const walls = joinWalls(mainCluster(detectWalls(lw.segs))).map((w, i) => ({ ...w, h: w.t >= 150 ? 3000 : 2700, kind: w.t >= 150 ? "ext" : "int", mat: w.t >= 150 ? "cladding-vertical" : "lining-plasterboard" }));
-  const openings = detectOpenings(walls, arcsAll, strokesAll);
-  const rooms = roomsFromLabels(real.items, walls);
+  const walls = joinWalls(mainCluster(detectWalls(lw.segs))).map((w) => ({
+    ...w, h: w.t >= 150 ? 3000 : 2700, kind: w.t >= 150 ? "ext" : "int", mat: w.t >= 150 ? "cladding-vertical" : "lining-plasterboard",
+    state: w.ev?.src === "drawing" ? "measured" : "traced", height_state: "assumed", sheet_ref: sheetRef,
+  }));
+  const openings = detectOpenings(walls, arcsAll, strokesAll).map((o) => ({
+    ...o, state: o.ev?.src === "drawing" ? "measured" : "traced", height_state: "assumed", sheet_ref: sheetRef,
+  }));
+  const rooms = roomsFromLabels(real.items, walls).map((r) => ({ ...r, state: "traced", sheet_ref: sheetRef }));
   // move the origin to the building's south-west corner
   const xs = walls.flatMap((w) => [w.a[0], w.b[0]]), ys = walls.flatMap((w) => [w.a[1], w.b[1]]), ox = Math.min(...xs), oy = Math.min(...ys);
   const sh = (p) => [Math.round(p[0] - ox), Math.round(p[1] - oy)];
   for (const w of walls) { w.a = sh(w.a); w.b = sh(w.b); delete w.gaps; }
   for (const r of rooms) r.poly = r.poly.map(sh);
+  const conflicts = [];
+  const tolMm = meta.tolerance_mm ?? 50;
+  for (const d of meta.printed_dimensions || []) {
+    if (!d || !(d.printed_mm > 0)) continue;
+    const w = walls.find((x) => x.id === d.element_id), o = openings.find((x) => x.id === d.element_id);
+    const measured = d.measured_mm ?? (w ? Math.round(Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1])) : o ? Math.round(o.w) : null);
+    if (measured != null && Math.abs(measured - d.printed_mm) > tolMm) {
+      conflicts.push({ id: `conflict_${conflicts.length + 1}`, element_id: d.element_id ?? null, sheet_ref: d.sheet_ref || sheetRef, printed_mm: Math.round(d.printed_mm), measured_mm: Math.round(measured), delta_mm: Math.round(measured - d.printed_mm), action: "Confirm which dimension governs; geometry was not silently altered." });
+    }
+  }
+  const scaleInfo = meta.scale_check || findScale(real.items || []);
   const height = 3000;
   return {
     schema: "assembl.planstudio.v1",
-    meta: { name: meta.name || "Imported plan", address: meta.address || "", owner: meta.owner || "", designer: meta.designer || "", number: meta.number || "PS-IMPORT", status: "Imported · check every element", use: meta.use || "CS", storeys: 1, units: "mm", truth: "Measured from the drawing; heights assumed" },
-    levels: [{ id: "L0", name: "Ground floor", z: 0 }], walls, openings, rooms,
-    slab: { t: 150, mat: "slab-concrete", ev: { src: "user", conf: 0.5, note: "Assumed 150 mm" } },
-    roof: { type: "gable", ridge: (Math.max(...xs) - ox) > (Math.max(...ys) - oy) ? "x" : "y", eaves: height, ridgeH: height + 2500, overhang: 450, mat: "roof-standing-seam", ev: { src: "user", conf: 0.3, note: "Roof assumed: read it from the elevations or set it" } },
+    meta: { name: meta.name || "Imported plan", address: meta.address || "", owner: meta.owner || "", designer: meta.designer || "", number: meta.number || "PS-IMPORT", status: conflicts.length ? "Imported · dimension conflicts flagged" : "Imported · check every element", use: meta.use || "CS", storeys: 1, units: "mm", truth: "Measured from the drawing; heights assumed", sheet_ref: sheetRef },
+    levels: [{ id: "L0", name: "Ground floor", z: 0, state: "assumed", sheet_ref: sheetRef }], walls, openings, rooms,
+    slab: { t: 150, mat: "slab-concrete", state: "assumed", ev: { src: "user", conf: 0.5, note: "Assumed 150 mm" } },
+    roof: { type: "gable", ridge: (Math.max(...xs) - ox) > (Math.max(...ys) - oy) ? "x" : "y", eaves: height, ridgeH: height + 2500, overhang: 450, mat: "roof-standing-seam", state: "assumed", ev: { src: "user", conf: 0.3, note: "Roof assumed: read it from the elevations or set it" } },
     site: { north: 0 }, revisions: [], inputs: {}, origin: [ox, oy],
+    provenance: { sheet_ref: sheetRef, scale_check: scaleInfo ? { status: scaleInfo.status || "unverified", printed_scale: scaleInfo.printed_scale ?? scaleInfo.scale ?? null, note: scaleInfo.note || "" } : { status: "uncalibrated", printed_scale: null, note: "No scale on sheet; calibrate two known points." }, conflicts },
     stats: { segments: real.segs.length, arcs: real.arcs.length, texts: real.items.length, walls: lw.how },
   };
 }
