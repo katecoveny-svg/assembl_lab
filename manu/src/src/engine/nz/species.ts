@@ -219,6 +219,9 @@ function measured(key: string, def: ShellDef, s: MeasuredSpec): Species {
     tail: { ...out.tail, ...(s.tail ?? {}), length: sh.tail.length, width: sh.tail.width, droop: sh.tail.droop },
     legs: { ...out.legs, ...(s.legs ?? {}), hip: sh.heelPoint, spread: sh.legs.spread, toe: sh.legs.toe, thick: sh.legs.thick, perchRadius: out.legs.perchRadius },
     behaviour: { ...out.behaviour, ...(s.behaviour ?? {}) },
+    // songbird and pigeon heads are sleek: no hummingbird haircut, small feathers at the bill
+    scruff: s.scruff ?? 0.15,
+    faceTaper: s.faceTaper ?? 0.45,
   };
 }
 
@@ -289,7 +292,7 @@ export const TUI: Species = measured('tui', SHELL.tui, {
     head: look({ width: 0.018, aspect: 1.8, rowStep: 0.34, lift: 0.45, loose: 0.27, fuzz: 0.2, base: 0x08090d, tip: 0x13161c, iri: 0x2a8a9a, iriGraze: 0x6a3aa0, iriStrength: 0.25, iriPower: 7, sparkle: 0.4 }),
     face: look({ width: 0.014, aspect: 1.6, rowStep: 0.3, tilt: 7, lift: 0.2, loose: 0.43, fuzz: 0.5, base: 0x060607, tip: 0x0e0f12, iri: 0x2a5a8a, iriGraze: 0x3a2a6a, iriStrength: 0.1 }),
     // the lacy collar: fine filaments, dark with pale grey-white shafts showing through
-    lace: look({ width: 0.007, aspect: 6, rowStep: 0.2, tilt: 12, lift: 0.8, cup: 0.05, round: 0.15, loose: 1, fuzz: 0.6, base: 0x0b0c0f, tip: 0x8a8c8a, jitter: 1 }),
+    lace: look({ width: 0.0045, aspect: 8, rowStep: 0.2, tilt: 10, lift: 0.7, cup: 0.05, round: 0.15, loose: 1, fuzz: 0.6, base: 0x0b0c0f, tip: 0x6e706e, jitter: 1 }),
     // poi: two round, curled white tufts at the throat
     poi: look({ width: 0.02, aspect: 2.6, rowStep: 0.1, tilt: 72, lift: 2, cup: 1, round: 0.4, loose: 1, fuzz: 1, base: 0xc8c7c0, tip: 0xfdfcf7, jitter: 1.1 }),
     covert: look({ width: 0.0386, aspect: 2.6, rowStep: 0.33, tilt: 9, lift: 0.7, loose: 0.29, base: 0x130f0b, tip: 0x2a2014, iri: 0x3a7a4a, iriGraze: 0x6a5a2a, iriStrength: 0.14, iriPower: 6 }),
