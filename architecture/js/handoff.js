@@ -76,3 +76,27 @@ export async function takeBacks(handoffId, { idb = globalThis.indexedDB } = {}) 
     return mine.map((x) => (x.kind ? x : { ...x, kind: String(x.id).endsWith(':path') ? 'camera_path' : '' }));
   } finally { db.close(); }
 }
+
+// ---- the practice's brand, for the 3D page opened from its workspace ---------------------------------------------------------
+// The 3D page (same origin, plan-studio/twins/src/twin/practiceLook.ts) shows the practice's display name and logo in its header in
+// place of assembl's. Kept in this browser under BRAND_KEY as { name, logo, at }: logo is the header's own logo image as a data URL
+// (small: a blob: address would not open in another tab), or ''. Never an id: a name that looks like one is left out.
+export const BRAND_KEY = 'assembl.architecture.practice-brand';
+const looksLikeId = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s ?? '').trim());
+export function brandRecord(name, logo = '') {
+  const n = String(name ?? '').trim().slice(0, 60);
+  return { name: n && !looksLikeId(n) ? n : '', logo: /^data:image\/(png|svg\+xml|webp|jpeg);base64,/.test(logo) && logo.length < 400_000 ? logo : '', at: Date.now() };
+}
+export async function keepBrand(name, { doc = globalThis.document, storage = globalThis.localStorage, fetcher = globalThis.fetch } = {}) {
+  let logo = '';
+  try {
+    const src = doc?.querySelector?.('img.art-logo')?.src ?? '';
+    if (src && fetcher) {
+      const b = await (await fetcher(src)).blob();
+      if (b.size < 300_000) logo = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => res(''); r.readAsDataURL(b); });
+    }
+  } catch { /* the name alone */ }
+  const rec = brandRecord(name, logo);
+  try { storage?.setItem(BRAND_KEY, JSON.stringify(rec)); } catch { /* the 3D page shows assembl's word mark */ }
+  return rec;
+}

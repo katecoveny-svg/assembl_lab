@@ -4,8 +4,13 @@
 // origin, so this page reads the same key. Only the looks the workspace offers are honoured; anything else is the default.
 export const LOOK_CACHE = 'assembl.architecture.look';
 export const LOOKS = ['assembl', 'sketch'] as const;
-/** the practice's name, kept by the workspace in this browser when it opens the 3D page (models.js, site-sources.js) */
-export const PRACTICE_CACHE = 'assembl.architecture.practice';
+/** the practice's display name and logo, kept by the workspace in this browser when it opens the 3D page (architecture/js/handoff.js keepBrand) */
+export const BRAND_KEY = 'assembl.architecture.practice-brand';
+const looksLikeId = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.trim());
+/** the brand to show: a display name (never an id) and a logo data URL, or nothing */
+export function readBrand(raw: string | null): { name: string; logo: string } {
+  try { const r = JSON.parse(raw ?? 'null') as { name?: unknown; logo?: unknown } | null; const name = String(r?.name ?? '').trim().slice(0, 60), logo = String(r?.logo ?? ''); return { name: name && !looksLikeId(name) ? name : '', logo: /^data:image\//.test(logo) ? logo : '' }; } catch { return { name: '', logo: '' }; }
+}
 export type Look = (typeof LOOKS)[number];
 
 /** which look the page should wear: the workspace's, only when opened from it */
@@ -42,11 +47,15 @@ export function applyPageLook(doc: Document = document, look: Look = pageLook(lo
   const root = doc.documentElement;
   // opened from a practice's workspace: the practice's name in the header in place of assembl's, and no lab navigation bar
   if (new URLSearchParams(location.search).get('from') === 'ops') {
-    let name = ''; try { name = (localStorage.getItem(PRACTICE_CACHE) ?? '').trim().slice(0, 60); } catch { /* none */ }
+    let b = { name: '', logo: '' }; try { b = readBrand(localStorage.getItem(BRAND_KEY)); } catch { /* none */ }
     root.dataset.from = 'ops';
     const brand = () => {
-      const w = doc.querySelector('.brand .word'), k = doc.getElementById('kicker');
-      if (w && name) { w.textContent = name; (w as HTMLElement).title = 'Opened from the practice’s workspace'; }
+      const w = doc.querySelector('.brand .word') as HTMLElement | null, k = doc.getElementById('kicker');
+      if (w && (b.logo || b.name) && !w.dataset.practice) {
+        w.dataset.practice = '1'; w.title = 'Opened from the practice’s workspace';
+        if (b.logo) { w.textContent = ''; const img = doc.createElement('img'); img.src = b.logo; img.alt = b.name || 'Practice logo'; img.style.cssText = 'height:26px;width:auto;vertical-align:middle;display:inline-block'; w.append(img); }
+        else w.textContent = b.name;
+      }
       if (k) k.textContent = 'walkthrough';
       doc.getElementById('al-nav')?.remove();
     };
