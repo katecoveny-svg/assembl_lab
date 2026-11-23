@@ -66,7 +66,7 @@ export function clientView({ project, files = [], documents = [], token = '', pr
 
 /** the parts of the client page, when the caller has already checked that sharing is on (the server does, in SQL) */
 export function clientParts({ project, files = [], documents = [], practice = null }) {
-  const items = libraryOf({ project, files, documents });
+  const items = libraryOf({ project, files: files.filter((f) => f?.extra?.source?.slot !== 'camera_proofs'), documents });
   const pm = primaryModel(project, files);
   return {
     name: String(project?.name ?? ''),

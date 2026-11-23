@@ -15,7 +15,7 @@
 // Loaded with the page: this file, models-rules.js and models.css. Loaded only when needed: ifc-summary.js (an IFC is
 // dropped), upload.js (a big file goes to the shared records), model-view.js with three.js and web-ifc (a model is drawn).
 import { registerProjectPanel, registerRoute, registerNav } from './modules.js';
-import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP, BROWSER_3D_LIMIT, tooBigFor3d, browserCopyFor, handoverFor, copyProblem } from './models-rules.js';
+import { KINDS, ACCEPT, kindOf, checkKind, placeFor, sizeProblem, sizeText, isModel, nextVersion, stacks, factsOf, areaOf, storeysOf, PART_SIZE, AUTO_PREVIEW_LIMIT, TWIN_DROP, cameraProofFlag, BROWSER_3D_LIMIT, tooBigFor3d, browserCopyFor, handoverFor, copyProblem } from './models-rules.js';
 import { activity, SAMPLE_ID } from './model.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 
@@ -523,7 +523,7 @@ function open3d(ctx, p, source, models = []) {
     const { putHandoff, HANDOFF_PARAM, keepBrand } = await import('./handoff.js');
     await keepBrand(ctx.practice?.name).catch(() => void 0);   // the 3D page wears the practice's name and logo (practiceLook.ts)
     const hid = await putHandoff(blob, name);
-    r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
+    r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}${cameraProofFlag(location.search)}`;
     r.state = 'ready'; ctx.redraw();
     const w = window.open(r.href, '_blank'); // may replace this page (then the 3D page takes it from storage all the same)
     if (w) { r.state = 'opened'; ctx.redraw(); }

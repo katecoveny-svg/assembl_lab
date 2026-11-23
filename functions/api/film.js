@@ -421,6 +421,29 @@ export async function onRequest({ request, env }) {
   const url = new URL(request.url), origin = request.headers.get("origin");
   const ip = request.headers.get("cf-connecting-ip") || "";
 
+  // The camera-proof preview cannot reach the paid path, even with a misconfigured client.
+  // Inspect one small clip in memory; no Google call, signing key, quota counter or storage.
+  if (url.searchParams.get("camera-proof") === "1") {
+    if (env.CAMERA_PROOF_PREVIEW !== "1" || !/^[a-z0-9-]+\.assembl-lab\.pages\.dev$/.test(url.hostname)) return json(404, { error: "not_found" });
+    if (request.method !== "POST") return fail("method");
+    if (origin !== url.origin || !allowedOrigin(origin)) return fail("origin");
+    const raw = await readCapped(request, 4_000_100);
+    if (raw.tooLarge) return fail("too_large");
+    let body;
+    try { body = JSON.parse(raw.text); } catch { return fail("bad_json"); }
+    if (!body || body.dry !== true || Object.keys(body).some((k) => k !== "dry" && k !== "video")) return fail("bad_json");
+    const input = checkFilmInput(body, env);
+    if (input.error) return fail(input.error, input.max ? { part_max_s: input.max } : {});
+    if (input.info.w !== 1280 || input.info.h !== 720 || input.info.seconds > 5.05) return fail("video_shape");
+    const req = geminiFilmRequest(env, { ...input, prompt: buildFilmPrompt(input.look) });
+    const digest = await crypto.subtle.digest("SHA-256", b64bytes(input.video));
+    const sha256 = Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, "0")).join("");
+    return json(200, { type: "assembl.planstudio.film.camera-proof.v1", status: "validated", provider: "google-gemini",
+      model: req.model, seconds: input.info.seconds, sha256, charged: false, provider_called: false, stored_by_server: false,
+      configured: !!keyOf(env) });
+  }
+
+
   if (request.method === "GET" && url.searchParams.has("handle")) {
     // poll a background film: same-origin pages send no Origin on GET; any other Origin is refused
     if (origin && !allowedOrigin(origin)) return fail("origin");

@@ -8,6 +8,7 @@ import type { App } from './app';
 import { bump, confirm, edited, emptyFlight, importShotList, newShot, readFlight, reorder, timeline, type FlightPath, type Shot, type Timeline } from './flightPath';
 import { renderFilm } from './filmRender';
 import { putBackRecord } from './handoff';
+import { dispatchProof, proofDigest, proofWindow, PROOF_WIDTH, PROOF_HEIGHT, PROOF_FPS } from './cameraProof';
 
 const PROPOSED = '#f2a516', CONFIRMED = '#ffffff';
 // for checks on a slow machine: ?filmsecs=N makes only the first N seconds, ?filmfps=N at N frames a second (default 30)
@@ -303,6 +304,75 @@ export function flightPanel(app: App, ctx: FlightCtx) {
     } catch (err) { fsays((err as Error).message === 'stopped' ? 'Stopped.' : `The film could not be made: ${(err as Error).message}`); }
     finally { for (const o of hide) o.visible = true; busy = false; $('#flFilm').textContent = 'Render film'; (ctx.layout ?? defaultLayout)(null, 0); }
   });
+
+  // Opt-in test preview. Nothing is uploaded or put back into the workspace merely by capturing a clip.
+  if (QS.get('camera-proof') === '1' && /^(localhost|127\.0\.0\.1|[a-z0-9-]+\.assembl-lab\.pages\.dev)$/.test(location.hostname)) {
+    const panel = document.createElement('details');
+    panel.open = true;
+    panel.innerHTML = `<summary>Exact-model camera proof · preview</summary>
+      <p class="small">Scrub to a move and capture up to five seconds. Capture stays in this tab. Cloudflare preflight sends the clip only to this site to check the request, without calling a model.</p>
+      <div class="row wrap"><button class="pill" data-capture>Capture proof</button><button class="pill" data-download disabled>Download clip</button><button class="pill" data-check disabled>Check in Cloudflare (free)</button><button class="pill" data-save disabled${ctx.handoffId ? '' : ' hidden'}>Save privately to project</button></div>
+      <p class="small" role="status" aria-live="polite" data-proof-status></p>`;
+    el.append(panel);
+    const capture = panel.querySelector<HTMLButtonElement>('[data-capture]')!;
+    const download = panel.querySelector<HTMLButtonElement>('[data-download]')!;
+    const check = panel.querySelector<HTMLButtonElement>('[data-check]')!;
+    const save = panel.querySelector<HTMLButtonElement>('[data-save]')!;
+    const explain = (v: string) => { panel.querySelector('[data-proof-status]')!.textContent = v; };
+    type Proof = { blob: Blob; type: 'mp4' | 'webm'; sha256: string; start: number; secs: number; version: number; model?: string; saved: boolean };
+    let proof: Proof | null = null;
+    const enable = () => {
+      capture.disabled = false; download.disabled = !proof;
+      check.disabled = !proof || proof.type !== 'mp4' || !!proof.model || proof.saved;
+      save.disabled = !proof || proof.saved;
+    };
+    const nameOf = (p: Proof) => `${slug(ctx.name)}-camera-proof-path-v${p.version}-${p.sha256.slice(0, 12)}.${p.type}`;
+    const disable = () => { capture.disabled = download.disabled = check.disabled = save.disabled = true; };
+    capture.addEventListener('click', async () => {
+      if (busy || !tl) return explain('Finish the current render and place the camera shots first.');
+      const T = tl, version = fp.version;
+      let range; try { range = proofWindow(T, scrubT); } catch (e) { return explain((e as Error).message); }
+      disable(); busy = true; stopFilm = false; preview = null;
+      $('#flFilm').textContent = 'Stop';
+      const hidden = [group, ...(ctx.hideForFilm?.() ?? [])].filter((o) => o.visible);
+      for (const o of hidden) o.visible = false;
+      try {
+        const out = await renderFilm(app, { width: PROOF_WIDTH, height: PROOF_HEIGHT, fps: PROOF_FPS, quality: 'full',
+          duration: range.duration, at: (t) => T.at(range.start + t),
+          beforeFrame: (_t, c) => (ctx.layout ?? defaultLayout)(c.layout?.name ?? null, c.layout?.amount ?? 0), caption: 'Exact model · camera proof',
+          stop: () => stopFilm, onProgress: (n, total) => { if (n % 12 === 0 || n === total) explain(`Capturing ${n} of ${total} frames…`); } });
+        if (stopFilm) throw new Error('Stopped. No partial proof kept.');
+        if (!out.blob.size) throw new Error('The browser returned an empty clip.');
+        proof = { blob: out.blob, type: out.type, sha256: await proofDigest(out.blob), secs: out.secs, start: range.start, version, saved: false };
+        explain(`Captured ${out.secs.toFixed(1)} s locally at 720p.${out.type === 'webm' ? ' Download the WebM, or use Chrome with MP4 encoding for Cloudflare preflight.' : ' No upload yet.'}`);
+      } catch (e) { explain((e as Error).message); }
+      finally { for (const o of hidden) o.visible = true; busy = false; $('#flFilm').textContent = 'Render film'; (ctx.layout ?? defaultLayout)(null, 0); enable(); }
+    });
+    download.addEventListener('click', () => { if (proof) void app.save?.(nameOf(proof), proof.blob); });
+    check.addEventListener('click', async () => {
+      const p = proof;
+      if (!p) return;
+      disable(); explain('Checking this clip in Cloudflare. No model call…');
+      try {
+        const r = await dispatchProof(p.blob, p.sha256, p.secs);
+        p.model = r.model;
+        explain(`Cloudflare validated this clip. No provider called and no charge.${r.configured ? '' : ' No provider key is configured for live jobs in this environment.'}`);
+      } catch (e) { explain(`Preflight unavailable: ${(e as Error).message} The clip is still available.`); }
+      finally { enable(); }
+    });
+    save.addEventListener('click', async () => {
+      const p = proof;
+      if (!p || !ctx.handoffId) return;
+      disable();
+      try {
+        await putBackRecord(ctx.handoffId, 'film_proof', { name: nameOf(p), part: p.sha256, data: p.blob, meta: {
+          status: p.model ? 'validated' : 'capture-only', sha256: p.sha256, start: p.start, secs: p.secs, version: p.version, model: p.model } });
+        p.saved = true;
+        explain('Passed back to this project. Open Site and sources → Private camera proofs to confirm it was saved. It is not on the client link.');
+      } catch (e) { explain(`The clip was not passed back: ${(e as Error).message}`); }
+      finally { enable(); }
+    });
+  }
 
   list(); draw();
   const api = {

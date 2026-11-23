@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { putHandoff, takeHandoff, HANDOFF_DB, HANDOFF_STORE, HANDOFF_PARAM, HANDOFF_MAX_AGE } from '../../architecture/js/handoff.js';
+import { putHandoff, takeHandoff, takeBacks, acknowledgeCameraProof, HANDOFF_DB, HANDOFF_STORE, HANDOFF_PARAM, HANDOFF_MAX_AGE } from '../../architecture/js/handoff.js';
 
 /** just enough of IndexedDB: one database, object stores keyed by id, transactions that finish once their requests have */
 function fakeIdb() {
@@ -161,4 +161,18 @@ test('the 3D page’s takeHandoff returns the site too', () => {
   const ts = readFileSync(new URL('../../plan-studio/twins/src/twin/handoff.ts', import.meta.url), 'utf8');
   assert.match(ts, /return \{ name: got\.name, type: got\.type, blob: got\.blob, site: got\.site \?\? null \}/);
   assert.match(ts, /site: HandoffSite \| null/);
+});
+
+
+test('a camera proof survives a failed keep and is removed only after the right workspace acknowledges', async () => {
+  const idb = fakeIdb();
+  const h = await putHandoff(blob('fixture'), 'synthetic.glb', { idb });
+  const id = `${h}:film_proof:${'0'.repeat(64)}`;
+  const rows = idb.dbs.get(HANDOFF_DB).get(HANDOFF_STORE);
+  rows.set(id, { id, kind: 'film_proof', handoff: h, data: blob('test clip', 'video/mp4') });
+  assert.equal((await takeBacks(h, { idb }))[0].id, id);
+  assert.equal((await takeBacks(h, { idb }))[0].id, id, 'still available after a failed project save');
+  assert.equal(await acknowledgeCameraProof('wrong-project', id, { idb }), false);
+  assert.equal(await acknowledgeCameraProof(h, id, { idb }), true);
+  assert.deepEqual(await takeBacks(h, { idb }), []);
 });

@@ -32,6 +32,7 @@ export const SLOTS = [
   { id: 'survey', word: 'Survey', tag: 'PDF · DWG · CSV · LandXML', ext: ['pdf', 'dwg', 'csv', 'xml', 'landxml'], to3d: false, icon: 'survey' },
   { id: 'flythrough', word: 'Fly-through path', tag: 'JSON', ext: ['json'], to3d: false, icon: 'path', hint: 'Saved from the 3D page: the shots, versioned; proposed until a person confirms it.' },
   { id: 'films', word: 'Films and stills', tag: 'MP4 · WebM · PNG · JPEG', ext: ['mp4', 'webm', 'png', 'jpg', 'jpeg'], to3d: false, icon: 'file', hint: 'Made on the 3D page and saved back here: fly-through films, comparison shots, the approved look.' },
+  { id: 'camera_proofs', word: 'Private camera proofs', tag: 'MP4 · WebM', ext: ['mp4', 'webm'], to3d: false, icon: 'file', hint: 'Internal exact-model motion tests. Never included on the client link.' },
   { id: 'other', word: 'Other', tag: 'any file', ext: null, to3d: false, icon: 'file' },
 ];
 export const slotOf = (id) => SLOTS.find((s) => s.id === id) ?? null;
@@ -69,9 +70,9 @@ export function checkSource(slotId, name, head) {
 /** a kept file that "Site and sources" shows */
 export const isSource = (note) => note?.owner_kind === 'source' && SLOT_IDS.includes(note?.extra?.source?.slot);
 /** the fixed slots stack by slot (a new drawing set keeps the old one); "other" stacks by file name; every film and still is its own item */
-export const stackKey = (note) => { const s = note.extra?.source?.slot; return s === 'other' ? `other:${norm(note.name)}` : s === 'films' ? `films:${note.id}` : s; };
+export const stackKey = (note) => { const s = note.extra?.source?.slot; return s === 'other' ? `other:${norm(note.name)}` : GALLERY.has(s) ? `${s}:${note.id}` : s; };
 /** slots shown as a gallery of their files, each its own item, newest first */
-export const GALLERY = new Set(['films']);
+export const GALLERY = new Set(['films', 'camera_proofs']);
 /** how a gallery item is shown: an image inline, a film with its first frame and a play control, else a plain card */
 export const mediaOf = (note) => { const e = ext(note?.name), t = String(note?.type ?? ''); return /^image\//.test(t) || IMG.includes(e) ? 'image' : /^video\//.test(t) || ['mp4', 'webm', 'mov'].includes(e) ? 'video' : 'file'; };
 const byKept = (a, b) => String(a.kept_at).localeCompare(String(b.kept_at)) || String(a.id).localeCompare(String(b.id));
@@ -100,7 +101,7 @@ export function bySlot(files) {
   });
 }
 /** the note a new source is kept with */
-export const sourceExtra = ({ slot, version, by = '', note = '' }) => ({ source: { slot, version, by: String(by ?? ''), note: String(note ?? '').trim().slice(0, 140) } });
+export const sourceExtra = ({ slot, version, by = '', note = '', proof = null }) => ({ source: { slot, version, by: String(by ?? ''), note: String(note ?? '').trim().slice(0, 140), ...(slot === 'camera_proofs' && proof ? { proof } : {}) } });
 
 // ---- the project's site_sources record ---------------------------------------------------------------------------------------
 const num = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -250,6 +251,15 @@ export function backToSource(rec) {
   const m = rec.meta ?? {}, name = String(rec.name ?? 'from the 3D page').slice(0, 160);
   const status = m.status === 'confirmed' ? `confirmed by ${String(m.confirmed_by ?? 'a person')}` : 'proposed';
   if (rec.kind === 'flight') return { slot: 'flythrough', name, note: `From the 3D page: v${Number(m.version) || 1}, ${status}${m.shots ? `, ${m.shots} shots` : ''}` };
+  if (rec.kind === 'film_proof') {
+    const sha256 = m.sha256, checked = m.status === 'validated';
+    if (!/^[a-f0-9]{64}$/.test(sha256) || !Number.isFinite(m.secs) || m.secs < 3 || m.secs > 5
+      || !Number.isFinite(m.start) || m.start < 0 || !Number.isInteger(m.version) || m.version < 0
+      || !/\.(mp4|webm)$/i.test(name)) return null;
+    return { slot: 'camera_proofs', name, note: checked ? 'Exact model. Cloudflare preflight passed; no provider call.' : 'Exact model. No Cloudflare preflight receipt.',
+      proof: { sha256, status: checked ? 'validated' : 'capture-only', secs: m.secs, start: m.start, path_version: m.version,
+        ...(checked && typeof m.model === 'string' ? { model: m.model.slice(0, 80) } : {}) } };
+  }
   if (rec.kind === 'film') return { slot: 'films', name, note: `Film from the 3D page: ${m.secs ? `${m.secs} s, ` : ''}${m.size ?? ''}${m.quality === 'draft' ? ', draft' : ''}, path ${status}` };
   if (rec.kind === 'shot') return { slot: 'films', name, note: `Comparison shot ${String(m.shot ?? '')} from the 3D page`.trim() };
   if (rec.kind === 'look') return { slot: 'films', name, note: `Look from the 3D page: ${m.approved_by ? `approved by ${m.approved_by}` : 'proposed, waiting for a person'}` };

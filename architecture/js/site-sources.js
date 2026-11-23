@@ -10,7 +10,7 @@
 // here the path is stored and shown, and a person confirms it. Until then it is a proposal.
 // What it never does: read a drawing, work out a position or a size, or fetch anything new about the site.
 import { registerProjectPanel } from './modules.js';
-import { placeFor, sizeProblem, sizeText, KINDS, kindOf, TWIN_DROP } from './models-rules.js';
+import { placeFor, sizeProblem, sizeText, KINDS, kindOf, TWIN_DROP, cameraProofFlag } from './models-rules.js';
 import { activity, SAMPLE_ID } from './model.js';
 import { placeLine } from './facts.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
@@ -409,7 +409,7 @@ function walk(ctx, p) {
     await keepBrand(ctx.practice?.name).catch(() => void 0);   // the 3D page wears the practice's name and logo (practiceLook.ts)
     const hid = await putHandoff(blob, name, { site });
     rememberHandoff(p.id, hid);
-    r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
+    r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}${cameraProofFlag(location.search)}`;
     r.state = 'ready'; ctx.redraw();
     const w = window.open(r.href, '_blank'); // may replace this page: the 3D page takes it from storage all the same
     if (w) { r.state = 'opened'; ctx.redraw(); }
@@ -432,17 +432,31 @@ async function collectBacks(ctx, p) {
   collecting = true;
   let n = 0;
   try {
-    const { takeBacks } = await import('./handoff.js');
+    const { takeBacks, acknowledgeCameraProof } = await import('./handoff.js');
     for (const hid of handedFor(p.id)) {
       for (const rec of await takeBacks(hid)) {
         const to = backToSource(rec);
-        if (!to) continue;
+        if (!to) {
+          if (rec.kind === 'film_proof') await acknowledgeCameraProof(hid, rec.id);
+          continue;
+        }
         if (to.placement) { await withSiteSources(ctx.store, p.id, (ss) => ({ ...ss, placement: to.placement })); await log(ctx, p.id, 'Building placement from the 3D page', to.placement.status === 'set by a person' ? `set by ${to.placement.confirmed_by}` : 'assumed'); n++; continue; }
         if (to.path) { await withSiteSources(ctx.store, p.id, (ss) => ({ ...ss, camera_path: to.path })); await log(ctx, p.id, 'Camera path from the 3D page', to.path.confirmed_by ? `confirmed by ${to.path.confirmed_by}` : 'proposed'); n++; continue; }
         const mine = (await ctx.store.listFiles({ project_id: p.id })).filter(isSource);
         const version = nextVersion(mine, to.slot, to.name);
         const data = rec.data instanceof Blob ? await rec.data.arrayBuffer() : new TextEncoder().encode(JSON.stringify(rec.data ?? null)).buffer;
-        await ctx.store.putFile({ project_id: p.id, owner_kind: 'source', owner_id: p.id, name: to.name, type: rec.type || (rec.data?.type ?? ''), data, extra: sourceExtra({ slot: to.slot, version, by: ctx.me || '', note: to.note }) });
+        if (to.proof) {
+          const digest = await crypto.subtle.digest('SHA-256', data);
+          const sha256 = Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, '0')).join('');
+          if (sha256 !== to.proof.sha256) { await acknowledgeCameraProof(hid, rec.id); continue; }
+          if (mine.some((f) => f.name === to.name && f.extra.source?.slot === 'camera_proofs'
+              && f.extra.source.proof?.sha256 === sha256 && f.extra.source.proof.status === to.proof.status)) {
+            await acknowledgeCameraProof(hid, rec.id);
+            continue;
+          }
+        }
+        await ctx.store.putFile({ project_id: p.id, owner_kind: 'source', owner_id: p.id, name: to.name, type: rec.type || (rec.data?.type ?? ''), data, extra: sourceExtra({ slot: to.slot, version, by: ctx.me || '', note: to.note, proof: to.proof }) });
+        if (to.proof) await acknowledgeCameraProof(hid, rec.id);
         await log(ctx, p.id, `${slotOf(to.slot).word}: saved from the 3D page`, `${to.name} v${version}`);
         n++;
       }

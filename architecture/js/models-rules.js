@@ -166,4 +166,6 @@ export function storeysOf(summary) {
 // ---- the 3D page --------------------------------------------------------------------------------------------------------------
 /** the 3D page's own chooser, and the id of its file input (plan-studio/twins/src/twin/projectPlan.ts) */
 export const TWIN_DROP = '/plan-studio/twins/drop/?drop=1';
+/** Keep the explicit preview opt-in on the original one-use model hand-off. */
+export function cameraProofFlag(search) { return new URLSearchParams(search).get('camera-proof') === '1' ? '&camera-proof=1' : ''; }
 export const TWIN_FILE_INPUT = 'dropFile';

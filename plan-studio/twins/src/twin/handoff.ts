@@ -64,7 +64,7 @@ export async function putPathBack(handoffId: string, name: string, path: unknown
 // shots of a comparison), as { id, kind, handoff, name, type, data: Blob, meta, at }. A confirmed placement ('placement') carries
 // its record in meta.placement as well as in data (JSON). The workspace takes them into the
 // project's records when it next looks (architecture/js/handoff.js takeBacks), so nothing has to be downloaded and uploaded.
-export type BackKind = 'flight' | 'film' | 'shot' | 'look' | 'placement';
+export type BackKind = 'flight' | 'film_proof' | 'film' | 'shot' | 'look' | 'placement';
 export const backKey = (handoffId: string, kind: BackKind, part = '') => `${handoffId}:${kind}${part ? `:${part}` : ''}`;
 export async function putBackRecord(handoffId: string, kind: BackKind, rec: { name: string; data: Blob; meta?: Record<string, unknown>; part?: string }, idb: IDBFactory | undefined = globalThis.indexedDB): Promise<string> {
   if (!handoffId) throw new Error('this page was not opened from a project, so there is nowhere to save it back to');
