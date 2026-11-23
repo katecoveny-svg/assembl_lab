@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { luminance, mix, vec3, vec4 } from 'three/tsl';
+import { luminance, materialColor, mix, mx_noise_float, positionWorld, smoothstep, vec3, vec4 } from 'three/tsl';
 import { pbr, type PBRSet } from '../objects/tex';
 import type { App, Layer } from './app';
 import { twinMats } from './mats';
@@ -7,7 +7,7 @@ import { planting as tuftPlanting, type Placement as TuftPlacement } from './pla
 import { nativeBush } from './nativeTrees';
 import {
   classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, makeGrid, markDoor, markRect, markTriEdges,
-  meaningfulColour, normClass, planPlanting, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
+  meaningfulColour, needsFrame, normClass, planPlanting, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
 } from './dressRules';
 import { anodised, brick, herringbone, mulch, powderCoat, render, satinSteel, standingSeam, stoneFlags, upholstery } from './dressTex';
 
@@ -71,7 +71,7 @@ function setFor(f: Finish, q: 'web' | 'hq'): PBRSet | null {
     f === 'roof' ? standingSeam(big) : f === 'brick' ? brick(big) : f === 'paving' ? herringbone(big) : f === 'render' || f === 'neutral' ? render(big)
     : f === 'bed' ? mulch(big) : f === 'stone' ? stoneFlags(big) : f === 'fabric' ? upholstery(big) : f === 'mullion' ? anodised(big / 2) : f === 'metal' ? satinSteel(big / 2)
     : f === 'timberCladding' ? M.sets.cedar : f === 'concrete' || f === 'slab' ? M.sets.concrete : f === 'plaster' ? M.sets.lining : f === 'decking' || f === 'frameTimber' ? M.sets.decking
-    : f === 'frameMetal' ? powderCoat(big / 2) : f === 'timber' ? M.sets.oak : f === 'tile' ? M.sets.tile : f === 'lawn' ? M.sets.lawn : null;
+    : f === 'frameMetal' ? powderCoat(big / 2) : f === 'timber' || f === 'door' ? M.sets.oak : f === 'tile' ? M.sets.tile : f === 'lawn' ? M.sets.lawn : null;
   sets.set(k, s!);
   return s;
 }
@@ -98,7 +98,7 @@ const COLOURED = new Set<Finish>(['brick', 'timberCladding', 'paving', 'decking'
 const KEEP_HUE = new Set<Finish>(['frameMetal', 'neutral', 'fabric', 'metal']);
 
 const mats = new Map<string, THREE.Material>();
-const LAWN_TONE = new THREE.Color(0.86, 0.8, 0.62);
+const LAWN_TONE = new THREE.Color(0.9, 0.82, 0.58);   // a drier NZ summer green
 function glassMat(rgb: [number, number, number], heavy: boolean) {
   const key = `glass/${hexOf(rgb)}/${heavy}`;
   let m = mats.get(key) as THREE.MeshPhysicalMaterial | undefined;
@@ -107,7 +107,9 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
   m = heavy
     // see-through without refraction: a model this size stays smooth; still reflects the sky and carries the tint
     ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.55), metalness: 0, roughness: 0.02, transmission: 1, thickness: 0.012, ior: 1.52, attenuationColor: tint, attenuationDistance: 0.25, specularIntensity: 1, envMapIntensity: 2.2, transparent: true, side: THREE.DoubleSide });   // as the example house's glass: see-through to the rooms, darker from outside as daylit glass reads, the tint carried by attenuation
+    // daylit glass seen from outside: dark, with the sky in it and a bright fresnel edge (clearcoat), the rooms faint behind it.
+    // No transmission pass: it costs a second render of the scene, too much on a phone
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.16), metalness: 0, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, ior: 1.52, specularIntensity: 1, envMapIntensity: 2.6, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false });
   mats.set(key, m);
   return m;
 }
@@ -120,6 +122,7 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
     f === 'roof' ? { clearcoat: 0.15, clearcoatRoughness: 0.4, side: THREE.DoubleSide }
     : f === 'fabric' ? { sheen: 1, sheenRoughness: 0.6, sheenColor: new THREE.Color(0.6, 0.6, 0.6), specularIntensity: 0.25 }
     : f === 'frameMetal' || f === 'mullion' ? { clearcoat: 0.1 }
+    : f === 'door' ? { clearcoat: 0.3, clearcoatRoughness: 0.35 }
     : f === 'tile' ? { clearcoat: 0.25, clearcoatRoughness: 0.2 }
     : {};
   const pm = pbr(s, `dress_${f}`, { side: THREE.DoubleSide, ...extra });
@@ -135,8 +138,8 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
 // --- coordinates for the textures: box-projected in metres, roofs down the slope ---------------------------------------
 const uvDone = new WeakMap<THREE.BufferGeometry, string>();
 const _s = new THREE.Vector3(), _q = new THREE.Quaternion(), _p = new THREE.Vector3();
-function ensureUV(mesh: THREE.Mesh, slope: boolean, tile: number) {
-  const g = mesh.geometry, tag = `${slope}/${tile}`;
+function ensureUV(mesh: THREE.Mesh, slope: boolean, tile: number, upright = false) {
+  const g = mesh.geometry, tag = `${slope}/${tile}/${upright}`;
   if (uvDone.get(g) === tag) return;
   const pos = g.getAttribute('position');
   if (!pos) return;
@@ -160,6 +163,7 @@ function ensureUV(mesh: THREE.Mesh, slope: boolean, tile: number) {
     } else if (ay >= ax && ay >= az) { u = p.x; v = p.z; }
     else if (ax >= az) { u = p.z; v = p.y; }
     else { u = p.x; v = p.y; }
+    if (upright) { const t2 = u; u = v; v = t2; }   // a door: the grain runs up the leaf
     uv[i * 2] = u / tile; uv[i * 2 + 1] = v / tile;
   }
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
@@ -221,6 +225,8 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     });
   });
   const heavy = drawn > 4e6;
+  // an element read whole: a door with no glass is its leaf (dressRules.ts refineElement)
+  for (const [, ps] of elements) { const r = refineElement(ps[0]?.info.cls ?? '', ps.map((p) => p.c)); ps.forEach((p, i) => (p.c = r[i])); }
   const mark = (what: string) => console.info(`dress: ${what} ${Math.round(performance.now() - t0)} ms`);
   mark('read');
 
@@ -228,7 +234,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   for (const p of parts) {
     if (p.keep || p.c.finish === 'glass') continue;
     const s = setFor(p.c.finish, q);
-    if (s) ensureUV(p.mesh, p.c.finish === 'roof', s.tile);
+    if (s) ensureUV(p.mesh, p.c.finish === 'roof', s.tile, p.c.finish === 'door');
   }
 
   mark('textures and coordinates');
@@ -236,7 +242,13 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   const origNote = new Map<THREE.Object3D, { note: unknown; material: unknown }>();
   for (const el of elements.keys()) origNote.set(el, { note: el.userData.note, material: el.userData.material });
   // the page's lawn, a little less green and warmer, as grass reads in a photograph (given back in "As it is")
-  const lawnM = twinMats(q).lawn, lawnWas = lawnM.color.clone();
+  const lawnM = twinMats(q).lawn, lawnWas = lawnM.color.clone(), lawnNodeWas = (lawnM as unknown as { colorNode: unknown }).colorNode ?? null;
+  // a summer lawn is never one green: drier patches metres across and a finer mottle, worked on the lawn's own texture
+  const lawnNode = (() => {
+    const p = positionWorld.xz, big = smoothstep(-0.35, 0.55, mx_noise_float(p.mul(0.07))), fine = mx_noise_float(p.mul(0.55)).mul(0.5).add(0.5);
+    const dry = vec3(1.18, 1.06, 0.66), lush = vec3(0.86, 0.98, 0.78);
+    return materialColor.rgb.mul(mix(lush, dry, big)).mul(fine.mul(0.16).add(0.92));
+  })();
   const origShadow = new Map<THREE.Mesh, boolean>();
   for (const p of parts) origShadow.set(p.mesh, p.mesh.castShadow);
 
@@ -341,6 +353,54 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   await build();
   mark('planting built');
 
+  // --- frames: drawn round the glass of a window, or a door's leaf, where the model carries no frame part of its own ------
+  // Attached to the model (so they move with it), measured from the glass or leaf they surround; marked as drawn, not modelled.
+  const frameRoot = new THREE.Group(); frameRoot.name = 'dress_frames';
+  frameRoot.userData = { kind: 'context', name: 'Frames (drawn)', source: 'proposed', note: 'Dark aluminium frames drawn round glass and door leaves that the model carries without a frame: 60 mm face, set to the glass. Inferred from the opening, not from the model or a schedule.' };
+  {
+    const inv = new THREE.Matrix4().copy(obj.matrixWorld).invert(), v = new THREE.Vector3();
+    const barGeo = new THREE.BoxGeometry(1, 1, 1);
+    for (const [el, ps] of elements) {
+      const cls = ps[0]?.info.cls ?? '';
+      if (!needsFrame(cls, ps.map((p) => p.c.finish))) continue;
+      const pts: number[][] = [];
+      for (const p of ps) {
+        if (p.c.finish !== 'glass' && p.c.finish !== 'door') continue;
+        const pos = p.mesh.geometry.getAttribute('position'); if (!pos) continue;
+        const step = Math.max(1, Math.floor(pos.count / 400));
+        for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(p.mesh.matrixWorld); pts.push([v.x, v.y, v.z]); }
+      }
+      if (pts.length < 4) continue;
+      // the opening's own axes on the ground: the long way across it (PCA of x, z), the thin way through it
+      let cx = 0, cz = 0, y0 = Infinity, y1 = -Infinity;
+      for (const q of pts) { cx += q[0]; cz += q[2]; y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
+      cx /= pts.length; cz /= pts.length;
+      let sxx = 0, szz = 0, sxz = 0;
+      for (const q of pts) { const dx = q[0] - cx, dz = q[2] - cz; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; }
+      const ang = 0.5 * Math.atan2(2 * sxz, sxx - szz), ux = Math.cos(ang), uz = Math.sin(ang);
+      let a0 = Infinity, a1 = -Infinity, t0 = Infinity, t1 = -Infinity;
+      for (const q of pts) { const dx = q[0] - cx, dz = q[2] - cz, a = dx * ux + dz * uz, t = -dx * uz + dz * ux; a0 = Math.min(a0, a); a1 = Math.max(a1, a); t0 = Math.min(t0, t); t1 = Math.max(t1, t); }
+      const W = a1 - a0, H = y1 - y0;
+      if (W < 0.25 || H < 0.25 || W > 8 || H > 6) continue;   // not an opening a frame belongs to
+      const face = 0.06, depth = Math.max(0.09, t1 - t0 + 0.05), door = cls === 'IfcDoor';
+      const mid = (a0 + a1) / 2, tm = (t0 + t1) / 2;
+      const centre = new THREE.Vector3(cx + ux * mid - uz * tm, 0, cz + uz * mid + ux * tm);
+      const g = new THREE.Group();
+      const bar = (w: number, h: number, along: number, up: number) => { const m = new THREE.Mesh(barGeo, finishMat('mullion', q, null)); m.scale.set(w, h, depth); m.position.set(along, up, 0); m.castShadow = true; m.receiveShadow = true; g.add(m); };
+      bar(W + face * 2, face, 0, y1 + face / 2);                       // head
+      if (!door) bar(W + face * 2, face * 1.4, 0, y0 - face * 0.7);    // sill
+      bar(face, H + (door ? face : face * 2.4), -W / 2 - face / 2, (y0 + y1) / 2 + (door ? face / 2 : -face * 0.2));   // jambs
+      bar(face, H + (door ? face : face * 2.4), W / 2 + face / 2, (y0 + y1) / 2 + (door ? face / 2 : -face * 0.2));
+      // world placement, then into the model's own frame so it moves with the model
+      const world = new THREE.Matrix4().compose(centre, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -ang), new THREE.Vector3(1, 1, 1));
+      g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, world));
+      g.userData = { kind: 'context', name: `Frame (drawn) for ${String(el.userData?.name ?? cls)}`, source: 'proposed', note: frameRoot.userData.note };
+      frameRoot.add(g);
+    }
+    obj.add(frameRoot);
+  }
+  mark('frames drawn');
+
   // --- the contact shade: soft darkening where the building meets the ground --------------------------------------------
   const shade = (() => {
     const W = grid.nx, H = grid.nz, c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -349,10 +409,10 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     // two passes of a box blur, about 1.5 m: a soft skirt
     const blur = (r: number) => { const b = new Float32Array(a.length); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { let s = 0, n = 0; for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) { const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= W || jj >= H) continue; s += a[jj * W + ii]; n++; } b[j * W + i] = s / n; } a.set(b); };
     blur(2); blur(2);
-    for (let k = 0; k < a.length; k++) { img.data[k * 4 + 3] = Math.round(Math.min(1, a[k] * 1.6) * 255 * (grid.occ[k] ? 1 : 0.42)); }
+    for (let k = 0; k < a.length; k++) { img.data[k * 4 + 3] = Math.round(Math.min(1, a[k] * 1.6) * 255 * (grid.occ[k] ? 1 : 0.55)); }
     g.putImageData(img, 0, 0);
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.NoColorSpace;
-    const m = new THREE.MeshBasicMaterial({ color: 0x1a1612, alphaMap: tex, transparent: true, depthWrite: false, opacity: 0.55, name: 'dress_contact_shade' });
+    const m = new THREE.MeshBasicMaterial({ color: 0x1a1612, alphaMap: tex, transparent: true, depthWrite: false, opacity: 0.68, name: 'dress_contact_shade' });
     // canvas row 0 is the grid's lowest z: with the texture's usual flip it lands at the plane's −z edge, where it belongs
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(W * grid.cell, H * grid.cell).rotateX(-Math.PI / 2), m);
     plane.position.set(grid.x0 + (W * grid.cell) / 2, baseY + 0.006, grid.z0 + (H * grid.cell) / 2);
@@ -363,6 +423,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
 
   const layers: Layer[] = [
     { id: 'dress-planting', label: 'Planting (proposed)', note: `native planting ${plan.said}; proposed by rule, not from the model`, visible: true, object: plantRoot },
+    { id: 'dress-frames', label: 'Frames (drawn)', note: 'round glass and door leaves the model gives no frame; inferred from the opening', visible: true, object: frameRoot },
     { id: 'dress-shade', label: 'Contact shade', note: 'soft shade where the building meets the ground, from its footprint', visible: true, object: shade, traced: false },
   ];
 
@@ -400,7 +461,9 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
         el.userData.note = `${was.note ? `${was.note} ` : ''}Finish, interpreted from the model’s class and material name (proposed, not a specification): ${lines.join('; ')}.`;
       }
       for (const l of layers) if (l.object) l.object.visible = mode !== 'asis' && l.visible;
-      if (mode === 'asis') lawnM.color.copy(lawnWas); else lawnM.color.copy(lawnWas).multiply(LAWN_TONE);
+      if (mode === 'asis') { lawnM.color.copy(lawnWas); (lawnM as unknown as { colorNode: unknown }).colorNode = lawnNodeWas; }
+      else { lawnM.color.copy(lawnWas).multiply(LAWN_TONE); (lawnM as unknown as { colorNode: unknown }).colorNode = lawnNode; }
+      lawnM.needsUpdate = true;
       grade(mode !== 'asis');
       for (const b of D.card.querySelectorAll<HTMLButtonElement>('[data-dress]')) { const on = b.dataset.dress === mode; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('solid', on); }
     },
@@ -451,6 +514,12 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   // the first frame after the page's post-processing exists: the grade goes on then
   const late = () => { if (app.pipeline) { grade(D.mode !== 'asis'); app.onFrame.splice(app.onFrame.indexOf(late), 1); } };
   app.onFrame.push(late);
+  // the glass carries the sky as its own reflection map (stronger than the scene's light), kept up as the sun moves
+  app.onFrame.push(() => {
+    const env = app.scene.environment;
+    if (!env) return;
+    for (const m of mats.values()) if (m.name === 'dress_glass_tinted' && (m as THREE.MeshPhysicalMaterial).envMap !== env) { (m as THREE.MeshPhysicalMaterial).envMap = env; m.needsUpdate = true; }
+  });
   (window as unknown as { __dress?: Dressed }).__dress = D;   // for checks from the console (this tab only)
   app.log(`Finishes interpreted for ${elements.size} elements; planting proposed.`);
   return D;

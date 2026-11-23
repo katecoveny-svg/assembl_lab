@@ -6,7 +6,7 @@
 
 export type Finish =
   | 'glass' | 'mullion' | 'roof' | 'brick' | 'timberCladding' | 'concrete' | 'render' | 'plaster' | 'slab' | 'paving'
-  | 'decking' | 'frameMetal' | 'frameTimber' | 'timber' | 'fabric' | 'metal' | 'stone' | 'tile' | 'lawn' | 'bed' | 'neutral';
+  | 'decking' | 'frameMetal' | 'frameTimber' | 'door' | 'timber' | 'fabric' | 'metal' | 'stone' | 'tile' | 'lawn' | 'bed' | 'neutral';
 
 /** what a finish is called on the page, and its colour in the finished look (sRGB hex) */
 export const FINISHES: Record<Finish, { label: string; colour: number }> = {
@@ -23,6 +23,7 @@ export const FINISHES: Record<Finish, { label: string; colour: number }> = {
   decking: { label: 'hardwood decking', colour: 0x8c6447 },
   frameMetal: { label: 'powder-coated aluminium frame', colour: 0x2e2f31 },
   frameTimber: { label: 'stained timber frame', colour: 0x7a5a40 },
+  door: { label: 'stained timber door', colour: 0x6b4a33 },
   timber: { label: 'oiled oak', colour: 0xb08d64 },
   fabric: { label: 'woven upholstery', colour: 0x8f8a80 },
   metal: { label: 'satin steel', colour: 0x8e9093 },
@@ -186,6 +187,25 @@ export function classify(p: PartInfo, rules: Rule[] = RULES): Classified {
   return { finish: 'neutral', rule: 'default', why: 'nothing matched' };
 }
 
+/**
+ * A door whose parts are all solid is its leaf, not a frame: it takes a timber door finish (the frame is drawn round it, see
+ * frameFor). Anything else keeps its own finish. Works on the parts of one element, in order.
+ */
+export function refineElement(cls: string, parts: Classified[]): Classified[] {
+  const c = normClass(cls);
+  if (c === 'IfcDoor' && parts.length && parts.every((p) => p.finish === 'frameMetal' || p.finish === 'frameTimber' || p.finish === 'neutral'))
+    return parts.map((p) => ({ finish: 'door', rule: 'door-leaf', why: 'a door with no glass: its leaf, taken as stained timber' + (/\(“/.test(p.why) ? p.why.slice(p.why.indexOf(' (“')) : '') }));
+  return parts;
+}
+/** whether an element of this class, drawn with these finishes, needs a frame drawn round its glass or leaf: windows and
+ *  doors whose model carries glass or a leaf but no frame part of its own */
+export function needsFrame(cls: string, finishes: Finish[]) {
+  const c = normClass(cls);
+  if (c !== 'IfcWindow' && c !== 'IfcDoor') return false;
+  const hasFrame = finishes.some((f) => f === 'frameMetal' || f === 'frameTimber');
+  return !hasFrame && finishes.some((f) => f === 'glass' || f === 'door');
+}
+
 // --- colour ------------------------------------------------------------------------------------------------------------
 const chroma = (c: [number, number, number]) => Math.max(...c) - Math.min(...c);
 /** a colour worth keeping: the part has a named material and a colour that is not a grey or a plain default */
@@ -339,10 +359,10 @@ export function distanceToFootprint(g: Grid) {
   return D;
 }
 /** a keep-clear strip through a door: its width plus 0.6 m, `reach` metres out each side along its thin axis */
-export function markDoor(g: Grid, box: { min: [number, number]; max: [number, number] }, reach = 3) {
+export function markDoor(g: Grid, box: { min: [number, number]; max: [number, number] }, reach = 4) {
   const w = box.max[0] - box.min[0], d = box.max[1] - box.min[1], cx = (box.min[0] + box.max[0]) / 2, cz = (box.min[1] + box.max[1]) / 2;
-  if (w >= d) markRect(g, g.clear, cx - w / 2 - 0.3, cz - reach, cx + w / 2 + 0.3, cz + reach);
-  else markRect(g, g.clear, cx - reach, cz - d / 2 - 0.3, cx + reach, cz + d / 2 + 0.3);
+  if (w >= d) markRect(g, g.clear, cx - w / 2 - 1, cz - reach, cx + w / 2 + 1, cz + reach);
+  else markRect(g, g.clear, cx - reach, cz - d / 2 - 1, cx + reach, cz + d / 2 + 1);
 }
 
 export type Shrub = 'harakeke' | 'tussock' | 'carex' | 'ponga' | 'tikouka';
@@ -414,20 +434,20 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
     if (shrubs.length >= maxS) break;
     const d = D[k];
     const inBed = g.soft[k] === 2, inLawn = g.soft[k] === 1;
-    if (where === 'model') { if (!(inBed || (!beds && inLawn && d > 0.8 && d < 3.2))) continue; }
-    else if (!(d > 0.9 && d < 4.8)) continue;
+    if (where === 'model') { if (!(inBed || (!beds && inLawn && d > 1.8 && d < 4.5))) continue; }
+    else if (!(d > 1.8 && d < 6.5)) continue;   // a clear band of 1.8 m round the footprint
     const [x, z] = centre(k);
     if (!allowed(g, x, z, 0.35)) continue;
     // drifts: planting comes and goes in blobs a few metres across, with open ground between
     const b = blob(x, z, 4.5);
-    if (!inBed && b < 0.42) continue;
+    if (!inBed && b < 0.58) continue;   // fewer, in groups
     const pick = blob(x + 50, z - 30, 3.2);
     // ponga and tī kōuka are the accents: a few, for height, never a hedge of them
     const tall = shrubs.filter((s) => s.sp === 'ponga' || s.sp === 'tikouka').length < Math.max(2, Math.round(maxS / 60));
     const sp: Shrub = tall && d > 3.4 && R() < 0.03 ? 'tikouka' : tall && d > 2.4 && R() < 0.03 ? 'ponga' : pick < 0.38 ? 'harakeke' : pick < 0.72 ? 'tussock' : 'carex';
     if (sp === 'ponga' || sp === 'tikouka') { if (!allowed(g, x, z, 1.2) || inView(x, z)) continue; }
     if (near(x, z, SPACE[sp], shrubs.filter((s) => s.sp === sp)) || near(x, z, 0.55, shrubs)) continue;
-    shrubs.push({ x, z, y: yAt(k), sp, s: sp === 'harakeke' ? 0.85 + R() * 0.4 : sp === 'ponga' ? 2.4 + R() * 1.4 : sp === 'tikouka' ? 4 + R() * 1.5 : 0.85 + R() * 0.35 });
+    shrubs.push({ x, z, y: yAt(k), sp, s: sp === 'harakeke' ? 1.1 + R() * 0.5 : sp === 'ponga' ? 2.4 + R() * 1.4 : sp === 'tikouka' ? 4 + R() * 1.5 : 1.0 + R() * 0.4 });
   }
   // trees, standing back: 6 to 22 m out on open ground (or on the model's lawn and ground)
   for (const k of order) {

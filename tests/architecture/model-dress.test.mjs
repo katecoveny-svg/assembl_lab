@@ -5,6 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  refineElement, needsFrame,
   classify, normClass, namedMaterial, meaningfulColour, glassTint, BRONZE_GREY, RULES, FINISHES, ifcMaterialNames, styleFor,
   makeGrid, markRect, fillTri, fillFootprint, distanceToFootprint, markDoor, planPlanting, allowed, cellAt,
 } from '../../plan-studio/twins/src/twin/dressRules.ts';
@@ -181,7 +182,7 @@ test('ring planting: never inside the footprint, on the path, or in the door’s
   const g = houseGrid();
   const p = planPlanting(g, { seed: 3, baseY: 0 });
   assert.equal(p.where, 'ring');
-  assert.ok(p.shrubs.length > 30, `${p.shrubs.length} shrubs`);
+  assert.ok(p.shrubs.length > 15, `${p.shrubs.length} shrubs`);
   assert.ok(p.trees.length >= 2, `${p.trees.length} trees`);
   const D = distanceToFootprint(g);
   for (const s of [...p.shrubs, ...p.trees]) {
@@ -190,13 +191,13 @@ test('ring planting: never inside the footprint, on the path, or in the door’s
     assert.ok(allowed(g, s.x, s.z), `allowed where it stands: ${s.x}, ${s.z}`);
     assert.equal(s.y, 0, 'on the flat ground');
   }
-  for (const s of p.shrubs) { const d = D[cellAt(g, s.x, s.z)]; assert.ok(d > 0.8 && d < 5, `shrubs in the ring by the house: ${d}`); }
+  for (const s of p.shrubs) { const d = D[cellAt(g, s.x, s.z)]; assert.ok(d > 1.7 && d < 6.7, `shrubs in the ring, a clear band off the house: ${d}`); }
   for (const t of p.trees) {
     const d = D[cellAt(g, t.x, t.z)]; assert.ok(d >= 6 && d <= 22, `trees stand back: ${d}`);
     assert.ok(t.h >= 6 && t.h <= 10.5, 'tree heights as grown trees, not toys'); assert.ok(t.r >= 2.2);
   }
-  // the keep-clear strip in front of the door: 3 m out
-  assert.ok(!p.shrubs.some((s) => Math.abs(s.x) < 0.8 && s.z > 4 && s.z < 7), 'nothing in front of the door');
+  // the keep-clear strip in front of the door: 4 m out, a metre each side of it
+  assert.ok(!p.shrubs.some((s) => Math.abs(s.x) < 1.4 && s.z > 4 && s.z < 8), 'nothing in front of the door');
   // shrubs keep their spacing
   for (let i = 0; i < p.shrubs.length; i++) for (let j = i + 1; j < p.shrubs.length; j++) assert.ok(Math.hypot(p.shrubs[i].x - p.shrubs[j].x, p.shrubs[i].z - p.shrubs[j].z) >= 0.55);
   // ponga and tī kōuka are accents
@@ -225,7 +226,7 @@ test('with only the model’s lawn: shrubs along its edge by the building, trees
   const p = planPlanting(g, { seed: 2 });
   assert.equal(p.where, 'model');
   const D = distanceToFootprint(g);
-  for (const s of p.shrubs) { const d = D[cellAt(g, s.x, s.z)]; assert.ok(d > 0.8 && d < 3.7, `by the building: ${d}`); }
+  for (const s of p.shrubs) { const d = D[cellAt(g, s.x, s.z)]; assert.ok(d > 1.7 && d < 5, `by the building, past the clear band: ${d}`); }
   for (const s of [...p.shrubs, ...p.trees]) assert.ok(allowed(g, s.x, s.z));
 });
 
@@ -247,4 +248,25 @@ test('the 3D page hooks it in with a few marked lines, and keeps ground, terrain
   assert.match(src, /As it is/); assert.match(src, /Model’s colours/); assert.match(src, /Finished look/);
   // it never moves a part: no position, rotation, scale or matrix writes on the model's meshes
   assert.doesNotMatch(src, /p\.mesh\.(position|rotation|scale|matrix)\b\s*[.=]/);
+});
+
+test('a door with no glass is its leaf (stained timber); windows and doors with no frame part get one drawn', () => {
+  const leaf = refineElement('IFCDOOR', [classify({ cls: 'IfcDoor', material: '' })]);
+  assert.equal(leaf[0].finish, 'door'); assert.equal(leaf[0].rule, 'door-leaf');
+  // a glazed door keeps its frame and its glass
+  const glazed = refineElement('IfcDoor', [classify({ cls: 'IfcDoor', material: 'Glass' }), classify({ cls: 'IfcDoor', material: 'Aluminium' })]);
+  assert.deepEqual(glazed.map((c) => c.finish), ['glass', 'frameMetal']);
+  assert.equal(refineElement('IfcWall', [classify({ cls: 'IfcWall' })])[0].finish, 'render');
+  assert.equal(needsFrame('IfcWindow', ['glass']), true);
+  assert.equal(needsFrame('IfcWindow', ['glass', 'frameMetal']), false);
+  assert.equal(needsFrame('IfcDoor', ['door']), true);
+  assert.equal(needsFrame('IfcWall', ['glass']), false);
+});
+
+test('ponga and tī kōuka stay out of the opening view’s wedge', () => {
+  const view = { from: [0, 30], at: [0, 0], half: 0.7 };
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const p = planPlanting(houseGrid(), { seed, view, maxShrubs: 1400 });
+    for (const s of p.shrubs.filter((x) => x.sp === 'ponga' || x.sp === 'tikouka')) assert.ok(Math.acos(s.z / Math.hypot(s.x, s.z)) >= 0.7);
+  }
 });

@@ -455,10 +455,10 @@ export class App {
     this.scene.background = this.edSky; this.scene.environment = this.edEnv ?? this.edSky;
     this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
     const L = LOOK[mood], sh = this.built.shade ?? 1;
-    this.envBase = L.env * sh; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1;
+    this.envBase = L.env * sh * (this.built.agx ? 0.62 : 1); this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1;
     this.scene.fog = new THREE.FogExp2(L.fog, L.fogDensity * (this.built.fogScale ?? 1));
-    this.sun.color.setHex(L.sun); this.sun.intensity = alt > -2 ? L.sunI : 0;
-    this.hemiBase = L.hemi * sh; this.hemi.intensity = this.hemiBase;
+    this.sun.color.setHex(L.sun); this.sun.intensity = alt > -2 ? L.sunI * (this.built.agx ? 1.5 : 1) : 0;   // an opened model: more sun against sky light, so faces and cast shadows read
+    this.hemiBase = L.hemi * sh * (this.built.agx ? 0.7 : 1); this.hemi.intensity = this.hemiBase;
     if (sh > 1) { this.hemi.color.set(0xe6ebee); this.hemi.groundColor.set(0x5a5f48); }
     const f = this.built.focus, R = this.built.radius * 3;
     if (this.fill) { this.fill.position.copy(f).add(new THREE.Vector3(-dir.x, 0.7, -dir.z).multiplyScalar(R)); this.fill.target.position.copy(f); this.fill.intensity = L.fill; }
@@ -531,9 +531,12 @@ export class App {
     if (this.built.sunHour === undefined && this.built.look === 'editorial' && face) {
       // open at the golden hour that lights the face being looked at
       let best = -2;
-      for (const h of [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5]) {
+      // an opened model (agx): a daytime sun raking across the face, high enough for a clear cast shadow on the ground
+      const hours = this.built.agx ? [9, 9.5, 10, 10.5, 11, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5] : [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5];
+      const [lo, hi] = this.built.agx ? [22, 48] : [9, 27];
+      for (const h of hours) {
         const sd = this.sunDir(App.nzToUTC(y, 12, 21, h));
-        if (sd.alt < 9 || sd.alt > 27) continue;
+        if (sd.alt < lo || sd.alt > hi) continue;
         const d = sd.v.x * face.x + sd.v.z * face.z;
         if (d > best) { best = d; h0 = h; }
       }

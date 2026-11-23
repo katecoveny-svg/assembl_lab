@@ -1002,7 +1002,7 @@ export const projectPlan: Project = {
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
-      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600, look: 'editorial' as const, agx: true, sunHour: 15.5, fogScale: 0.35 } : {}),   // model-dress: sky, sun and haze as the example house has them, AgX kept   // room for the LiDAR square round an IFC or GLB
+      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600, look: 'editorial' as const, agx: true, sunFace: new THREE.Vector3(0.8, 0, -0.6), fogScale: 0.35 } : {}),   // model-dress: sky, sun and haze as the example house has them, AgX kept; the sun comes from behind the left of the opening view, so the cast shadow falls forward into it   // room for the LiDAR square round an IFC or GLB
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: terrain.chip ?? (terrain.photo && terrain.photoKind !== 'contours' ? 'Site: LINZ LiDAR and aerial photo' : 'Site: surveyed ground, no aerial photo'), title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
