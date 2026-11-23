@@ -12,7 +12,19 @@ export type GlassMode = typeof GLASS[number]['id'];
 export type V3 = [number,number,number];
 export type Point = { id:string; label:string; eye:V3; look:V3; note:string };
 type Layer = { sha256:string; credit:string; approvedBy:string };
-export type Review = { modelSha256:string; points:Point[]; layers:Partial<Record<'interior'|'exterior', Layer>> };
+export type MaterialSpanSpec = { count:number; spans:[number,number,string][] };
+export type Review = {
+  modelSha256:string;
+  points:Point[];
+  layers:Partial<Record<'interior'|'exterior', Layer>>;
+  materialSpans?:Record<string, MaterialSpanSpec>;
+  sunHour?:number;
+};
+const ALLOWED_SPAN_FINISH = new Set([
+  'glass','mullion','roof','brick','timberCladding','concrete','render','plaster','slab','paving',
+  'decking','frameMetal','frameTimber','door','asphalt','darkMetal','timber','fabric','metal','stone','tile','lawn','bed','neutral',
+  'copper','clear','plum','rose','blue','seamRoof','chapelRoof','pavers','road','terrain','campusA','campusB','campusC','darkTimber',
+]);
 const fingerprint = /^[a-f\d]{64}$/;
 const vector = (v: unknown): v is V3 => Array.isArray(v) && v.length===3 && v.every(n=>typeof n==='number' && Number.isFinite(n) && Math.abs(n)<1e9);
 const plain = (x:unknown): x is Record<string,unknown> => !!x && typeof x==='object' && !Array.isArray(x);
@@ -40,7 +52,25 @@ export function readReview(a:unknown, modelSha256:string): Review {
       throw Error('Each layer needs its exact file hash, source and named approval.');
     layers[k]={sha256:d.sha256,credit:word(d.credit,180),approvedBy:word(d.approvedBy,100)};
   }
-  return { modelSha256:a.modelSha256, points, layers };
+  let materialSpans:Record<string, MaterialSpanSpec>|undefined;
+  if (a.materialSpans!==undefined) {
+    if (!plain(a.materialSpans)) throw Error('Invalid material-span profile.');
+    materialSpans = {};
+    for (const [meshName, raw] of Object.entries(a.materialSpans)) {
+      if (!/^[A-Za-z0-9_.:-]{1,80}$/.test(meshName) || !plain(raw)) throw Error('Invalid material-span mesh entry.');
+      const count = Number(raw.count);
+      if (!Number.isInteger(count) || count <= 0 || !Array.isArray(raw.spans) || raw.spans.length > 256) throw Error('Invalid material-span count or list.');
+      const spans: [number,number,string][] = raw.spans.map((sp:unknown) => {
+        if (!Array.isArray(sp) || sp.length !== 3) throw Error('Invalid material span tuple.');
+        const s = Number(sp[0]), e = Number(sp[1]), fin = String(sp[2]);
+        if (!Number.isInteger(s) || !Number.isInteger(e) || s < 0 || e <= s || !ALLOWED_SPAN_FINISH.has(fin)) throw Error('Invalid material span range or finish.');
+        return [s, e, fin];
+      });
+      materialSpans[meshName] = { count, spans };
+    }
+  }
+  const sunHour = typeof a.sunHour === 'number' && Number.isFinite(a.sunHour) && a.sunHour >= 5 && a.sunHour <= 21 ? a.sunHour : undefined;
+  return { modelSha256:a.modelSha256, points, layers, ...(materialSpans ? { materialSpans } : {}), ...(sunHour !== undefined ? { sunHour } : {}) };
 }
 
 export async function sha256(bytes:ArrayBuffer):Promise<string>{
