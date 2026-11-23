@@ -111,6 +111,17 @@ export function packageEntries(view) {
   return { entries, readme };
 }
 
+/**
+ * [p1b] One plain line about whether a client can open the link, or ''.
+ *   place 'browser' | 'shared'; table: the practice's share records answered; configured: the server key is set (null: unknown)
+ */
+export function linkNote({ place = 'browser', on = false, table = true, configured = null } = {}) {
+  if (place === 'browser') return '';
+  if (!table) return 'Client links need one database update for this practice. Nothing is shared until it is made.';
+  if (on && configured === false) return 'The link is on, but clients can’t open it yet: assembl’s server key for client links still has to be added in Cloudflare.';
+  return '';
+}
+
 /** the total size of a package's files, in bytes */
 export const packageBytes = (entries) => entries.reduce((n, e) => n + (Number(e.note?.size) || 0), 0);
 /** the most a package built in a browser holds before it asks the person to download files one by one */

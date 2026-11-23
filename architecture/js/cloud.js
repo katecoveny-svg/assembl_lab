@@ -697,6 +697,17 @@ export function createCloudStore({ client = null, gateway = null, practice, loca
       } catch { throw new Error('The connection dropped before the file came through. Try again.'); }
       return { ...fileDown(rows[0]), blob: new Blob(parts, { type }) };
     },
+    // [workspace redesign] a short-lived link to a kept file, for a thumbnail drawn from part of it (a PDF's first sheet is read
+    // by range, a film's first frame streams) instead of downloading all of it. null for the Sample's files and when it is gone.
+    async fileUrl(id, seconds = 600) {
+      if (!id) return null;
+      const here = await localNote(id);
+      if (here && await localProject(here.project_id)) return null;
+      const rows = await g.ask(() => g.from('file').select('storage_path').eq('id', dbId(id)).eq('practice_id', practice.id).limit(1));
+      if (!rows?.[0]?.storage_path) return null;
+      try { const link = await g.file((s) => s.createSignedUrl(rows[0].storage_path, seconds)); return typeof link?.signedUrl === 'string' ? link.signedUrl : null; }
+      catch (e) { if (e.code === 'missing') return null; throw e; }
+    },
     async removeFile(id) {
       if (!id) return false;
       const here = await localNote(id);

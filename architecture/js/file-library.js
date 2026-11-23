@@ -9,8 +9,8 @@
 // new files, as sources (owner_kind 'source'), the way Site and sources keeps them. It never changes or removes a file.
 import { registerProjectPanel } from './modules.js';
 import { icon } from './icons.js';
-import { kindOf, libraryOf, docsWithoutFiles, counts, ofKind, primaryModel, KINDS, mediaOf, ext, nextVersionFor, uploadExtra, shortDay, IMAGE } from './file-library-rules.js';
-import { shareOf, withShare, mayShare, shareUrl, clientParts, packageEntries, packageBytes, PACKAGE_LIMIT } from './share-rules.js';
+import { thumbPlan, thumbKey, kindOf, libraryOf, docsWithoutFiles, counts, ofKind, primaryModel, KINDS, mediaOf, ext, nextVersionFor, uploadExtra, shortDay, IMAGE } from './file-library-rules.js';
+import { linkNote, shareOf, withShare, mayShare, shareUrl, clientParts, packageEntries, packageBytes, PACKAGE_LIMIT } from './share-rules.js';
 import { twinLink, activity } from './model.js';
 import { sizeText } from './store.js';
 
@@ -64,25 +64,52 @@ function download(blob, name) {
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-// ---- thumbnails: drawn once per file, in this browser, and kept for the visit ----------------------------------------------
-let queue = Promise.resolve();
+// ---- thumbnails: drawn when a tile comes into view, kept in this browser so the next visit shows them at once ---------------------
+// [workspace redesign p1b] For a practice's files the thumbnail is drawn from a short-lived link: a PDF's first sheet is read by
+// range and a film streams, so a big site plan or render no longer stays an icon. Models and small files are read whole.
+let thumbKv;
+const kv = () => (thumbKv ??= (async () => { try { const { idbKv } = await import('./artwork-kit.js'); return idbKv('assembl.architecture.thumbs.v1'); } catch { return null; } })());
+const lanes = { light: Promise.resolve(), heavy: Promise.resolve() };
+const fails = new Map();
 function wantThumb(ctx, note) {
-  const media = mediaOf(note.name);
-  if (S.thumbs.has(note.id) || !THUMB_LIMIT[media] || Number(note.size) > THUMB_LIMIT[media]) return;
-  if (media === 'model' && !['glb', 'ifc'].includes(ext(note.name))) return;
+  if (!note?.id || S.thumbs.has(note.id) || (fails.get(note.id) ?? 0) >= 2) return;
+  const remote = !!ctx.store.shared && !ctx.project?.sample && typeof ctx.store.current?.fileUrl === 'function';
+  const plan = thumbPlan(note, { remote });
+  if (plan.how === 'skip') { S.thumbs.set(note.id, 'none'); return; }
   S.thumbs.set(note.id, '');
-  queue = queue.then(async () => {
+  const lane = plan.media === 'model' ? 'heavy' : 'light';
+  lanes[lane] = lanes[lane].then(async () => {
+    let url = '';
     try {
-      const blob = await blobOf(ctx, note);
-      let url = '';
-      if (media === 'image') url = await imageThumb(blob);
-      else if (media === 'pdf') url = await pdfThumb(new Uint8Array(await blob.arrayBuffer()));
-      else if (media === 'video') url = await videoThumb(blob);
-      else if (media === 'model') { const mv = await import('./model-view.js'); if (mv.webglOk()) url = (await mv.thumbnail(ext(note.name), new Uint8Array(await blob.arrayBuffer()), { width: 480, height: 360 })) ?? ''; }
-      S.thumbs.set(note.id, url || 'none');
-      for (const img of document.querySelectorAll(`[data-thumb="${CSS.escape(note.id)}"]`)) paintThumb(img, url);
-    } catch { S.thumbs.set(note.id, 'none'); }
+      const store = await kv(), key = thumbKey(note);
+      url = (await store?.get(key).catch(() => null)) ?? '';
+      if (!url) {
+        if (plan.how === 'url') {
+          const link = await ctx.store.current.fileUrl(note.id);
+          if (!link) throw new Error('gone');
+          url = plan.media === 'image' ? await imageThumb(link) : plan.media === 'pdf' ? await pdfThumb({ url: link }) : await videoThumb(link);
+        } else {
+          const blob = await blobOf(ctx, note);
+          if (plan.media === 'image') url = await imageThumb(URL.createObjectURL(blob), true);
+          else if (plan.media === 'pdf') url = await pdfThumb({ data: new Uint8Array(await blob.arrayBuffer()) });
+          else if (plan.media === 'video') url = await videoThumb(URL.createObjectURL(blob), true);
+          else { const mv = await import('./model-view.js'); if (mv.webglOk()) url = (await mv.thumbnail(ext(note.name), new Uint8Array(await blob.arrayBuffer()), { width: 560, height: 400, frame: 'building', look: 'warm' })) ?? ''; }
+        }
+        if (url.startsWith('data:')) store?.set(key, url).catch(() => undefined);
+      }
+    } catch { fails.set(note.id, (fails.get(note.id) ?? 0) + 1); }
+    if (url) { S.thumbs.set(note.id, url); for (const el of document.querySelectorAll(`[data-thumb="${CSS.escape(note.id)}"]`)) paintThumb(el, url); }
+    else if ((fails.get(note.id) ?? 0) >= 2) S.thumbs.set(note.id, 'none');
+    else S.thumbs.delete(note.id); // drawn again the next time the tile is in view
   });
+}
+/** watch the tiles in root and draw each one's thumbnail as it scrolls into view (and a screen's worth ahead) */
+function watchThumbs(root, ctx, notes) {
+  const byId = new Map(notes.map((n) => [n.id, n]));
+  if (typeof IntersectionObserver !== 'function') { for (const n of notes) wantThumb(ctx, n); return () => {}; }
+  const io = new IntersectionObserver((seen) => { for (const e of seen) if (e.isIntersecting) { io.unobserve(e.target); const n = byId.get(e.target.dataset.thumb); if (n) wantThumb(ctx, n); } }, { rootMargin: '600px 0px' });
+  for (const el of root.querySelectorAll('[data-thumb]')) if (!el.classList.contains('has-pic')) io.observe(el);
+  return () => io.disconnect();
 }
 function paintThumb(el, url) {
   if (!url || url === 'none') return;
@@ -90,20 +117,24 @@ function paintThumb(el, url) {
   el.classList.add('has-pic');
 }
 /** a picture made small for its tile (a full-size render in every tile is slow to draw and heavy to keep) */
-async function imageThumb(blob) {
-  try {
-    const bmp = await createImageBitmap(blob), s = Math.min(1, 560 / Math.max(bmp.width, bmp.height));
-    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
-    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); bmp.close?.();
-    return c.toDataURL('image/jpeg', 0.84);
-  } catch { return URL.createObjectURL(blob); }
+function imageThumb(src, own = false) {
+  return new Promise((resolve) => {
+    const img = new Image(), done = (u) => { if (own) URL.revokeObjectURL(src); resolve(u); };
+    img.crossOrigin = 'anonymous'; img.decoding = 'async';
+    img.onload = () => {
+      try { const s = Math.min(1, 560 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); done(c.toDataURL('image/jpeg', 0.84)); }
+      catch { done(own ? '' : src); } // a picture the browser will not let be redrawn: shown from its link for this visit
+    };
+    img.onerror = () => done('');
+    img.src = src;
+  });
 }
 /** a frame from early in a film, as a still for its tile */
-function videoThumb(blob) {
+function videoThumb(src, own = false) {
   return new Promise((resolve) => {
-    const v = document.createElement('video'), src = URL.createObjectURL(blob), done = (u) => { URL.revokeObjectURL(src); resolve(u); };
-    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = src;
-    const t = setTimeout(() => done(''), 8000);
+    const v = document.createElement('video'), done = (u) => { if (own) URL.revokeObjectURL(src); v.removeAttribute('src'); v.load(); resolve(u); };
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous'; v.src = src;
+    const t = setTimeout(() => done(''), 15000);
     v.addEventListener('loadeddata', () => { v.currentTime = Math.min(1, (v.duration || 2) / 3); }, { once: true });
     v.addEventListener('seeked', () => {
       try { const c = document.createElement('canvas'), s = Math.min(1, 640 / (v.videoWidth || 640)); c.width = Math.round((v.videoWidth || 640) * s); c.height = Math.round((v.videoHeight || 360) * s); c.getContext('2d').drawImage(v, 0, 0, c.width, c.height); clearTimeout(t); done(c.toDataURL('image/jpeg', 0.8)); }
@@ -112,10 +143,11 @@ function videoThumb(blob) {
     v.addEventListener('error', () => { clearTimeout(t); done(''); }, { once: true });
   });
 }
-async function pdfThumb(bytes) {
+/** a PDF's first sheet; from a link it is read by range, so a big set downloads only what the first sheet needs */
+async function pdfThumb(source) {
   const { loadPdfjs } = await import('./intake-pdf.js');
   const lib = await loadPdfjs();
-  const doc = await lib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+  const doc = await lib.getDocument({ ...source, isEvalSupported: false, disableAutoFetch: true, disableStream: !!source.url, rangeChunkSize: 262144 }).promise;
   try {
     const page = await doc.getPage(1), v0 = page.getViewport({ scale: 1 }), scale = Math.min(2, 520 / Math.max(v0.width, v0.height));
     const vp = page.getViewport({ scale }), c = document.createElement('canvas');
@@ -154,7 +186,6 @@ async function renderFiles(el, ctx) {
       : `<div class="fl-empty">${icon('import', 'big')}<p class="fl-empty-h">${d.items.length ? 'None of these yet.' : 'Drop drawings, models, photos and films here.'}</p><p class="small">PDF · IFC · GLB · Revit · images · MP4</p></div>`}
     ${d.bare.length ? `<details class="fl-bare"><summary>${d.bare.length} record${d.bare.length === 1 ? '' : 's'} without a file</summary><ul>${d.bare.map((x) => `<li><span>${esc(x.title)}</span><a class="link" href="#/p/${encodeURIComponent(p.id)}/s/${esc(x.stage)}/documents">Attach</a></li>`).join('')}</ul></details>` : ''}
     <dialog class="fl-view" data-fl-view aria-label="File"></dialog></div>`;
-  for (const it of shown.slice(0, 60)) wantThumb(ctx, it.latest);
   const root = el.querySelector('.fl');
   const onClick = async (e) => {
     const b = e.target.closest('[data-fl]');
@@ -173,7 +204,8 @@ async function renderFiles(el, ctx) {
   const drop = (e) => { if (viewer) return; e.preventDefault(); root.classList.remove('is-over'); const fs = [...(e.dataTransfer?.files ?? [])]; if (fs.length) keep(ctx, d, fs); };
   el.addEventListener('click', onClick); el.addEventListener('change', onPick);
   root.addEventListener('dragover', over); root.addEventListener('dragleave', leave); root.addEventListener('drop', drop);
-  return () => { el.removeEventListener('click', onClick); el.removeEventListener('change', onPick); };
+  const unwatch = watchThumbs(el, ctx, shown.map((it) => it.latest));
+  return () => { unwatch(); el.removeEventListener('click', onClick); el.removeEventListener('change', onPick); };
 }
 
 /** the viewer: the file large, its versions, download, and Open in 3D for a model */
@@ -197,7 +229,7 @@ function openView(el, ctx, d, key) {
     if (!host) return;
     if (it.media === 'image') host.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="${esc(it.title)}">`;
     else if (it.media === 'video') host.innerHTML = `<video src="${URL.createObjectURL(blob)}" controls playsinline preload="metadata"></video>`;
-    else if (it.media === 'pdf') { const url = await pdfThumb(new Uint8Array(await blob.arrayBuffer())); host.innerHTML = `<img src="${url}" alt="First sheet of ${esc(it.title)}">`; }
+    else if (it.media === 'pdf') { const url = await pdfThumb({ data: new Uint8Array(await blob.arrayBuffer()) }); host.innerHTML = `<img src="${url}" alt="First sheet of ${esc(it.title)}">`; }
     else host.innerHTML = `<span class="fl-ph big">${kindIcon(it.kind)}<b>${esc(ext(n.name).toUpperCase() || 'FILE')}</b></span>`;
   }).catch(() => { const host = dlg.querySelector('[data-v-pic]'); if (host) host.innerHTML = `<span class="fl-ph big">${kindIcon(it.kind)}</span>`; });
 }
@@ -273,9 +305,18 @@ async function shareState(ctx, p) {
   if (where.place === 'browser') return { ...shareOf(p), ...where, ready: true };
   const sp = ctx.account?.sharePlace?.();
   if (!sp) return { on: false, token: '', ...where, ready: false, why: 'Sharing from the practice’s records is not switched on yet.' };
-  try { const s = await sp.get(p.id); return { on: !!s?.on, token: s?.token ?? '', ...where, ready: true }; }
-  catch (err) { return { on: false, token: '', ...where, ready: false, why: err?.message ?? 'Sharing could not be read just now.' }; }
+  let s;
+  try { s = await sp.get(p.id); }
+  catch (err) { // the share table is missing only when the database update is not made; any other trouble says what it is
+    const table = err?.code !== 'out_of_date';
+    return { on: false, token: '', ...where, ready: false, table, why: table ? (err?.message ?? 'Sharing could not be read just now.') : linkNote({ place: 'shared', table: false }) };
+  }
+  const on = !!s?.on;
+  return { on, token: s?.token ?? '', ...where, ready: true, table: true, configured: on ? await serverReady() : null };
 }
+/** whether the lab's server can open client links (the Cloudflare key is set): asked once a visit */
+let serverAsk = null;
+const serverReady = () => (serverAsk ??= fetch('/api/arch-share?status=1', { headers: { accept: 'application/json' } }).then((r) => (r.ok ? r.json() : null)).then((d) => (typeof d?.configured === 'boolean' ? d.configured : null)).catch(() => null));
 
 async function renderHandoff(el, ctx) {
   const p0 = ctx.project;
@@ -300,7 +341,7 @@ async function renderHandoff(el, ctx) {
         ${may.ok && sh.ready ? `<button class="ho-switch" role="switch" aria-checked="${sh.on}" data-ho="share" aria-label="Share with the client"><span></span></button>` : ''}</div>
       ${link ? `<div class="ho-link"><input readonly value="${esc(link)}" aria-label="Client link"><button class="btn" data-ho="copy">${IC.link}<span>${S.copied === link ? 'Copied' : 'Copy'}</span></button><a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Open</a></div>
         <p class="small">Stills, films${pm?.kind === 'uploaded' ? ', the model' : ''} and drawings. Never money, tasks, people or the address.${sh.place === 'browser' ? ' Opens in this browser only until the project is in a practice’s records.' : ''}</p>` : ''}
-      ${!may.ok ? `<p class="small">${esc(may.why)}</p>` : !sh.ready ? `<p class="small">${esc(sh.why ?? '')}</p>` : ''}</section>`;
+      ${!may.ok ? `<p class="small">${esc(may.why)}</p>` : !sh.ready ? `<p class="small">${esc(sh.why ?? '')}</p>` : linkNote(sh) ? `<p class="small ho-warn">${esc(linkNote(sh))}</p>` : ''}</section>`;
   const z = S.zip.get(p.id);
   const packCard = `<section class="ho-pack"><span class="ho-ic">${IC.down}</span><div><h3>Hand-off package</h3>
       <p class="mono small">${pack.entries.length ? `${pack.entries.length} file${pack.entries.length === 1 ? '' : 's'} · ${esc(sizeText(bytes))} · .zip` : 'Nothing to package yet'}</p>
@@ -312,8 +353,6 @@ async function renderHandoff(el, ctx) {
     ${gallery}
     ${view.drawings.length ? `<div class="ho-gal-h"><h3>Drawings for the client</h3><span class="mono small">${view.drawings.length} · for information</span></div><ul class="fl-grid is-small">${view.drawings.map((it) => tileHtml(esc, it)).join('')}</ul>` : ''}
     <dialog class="fl-view" data-fl-view aria-label="File"></dialog></div>`;
-  for (const it of [...films, ...stills, ...view.drawings]) wantThumb(ctx, it.latest);
-  if (pm?.kind === 'uploaded') wantThumb(ctx, pm.note);
   const onClick = async (e) => {
     const b = e.target.closest('[data-ho], [data-fl]');
     if (!b) return undefined;
@@ -328,12 +367,15 @@ async function renderHandoff(el, ctx) {
     return undefined;
   };
   el.addEventListener('click', onClick);
-  return () => el.removeEventListener('click', onClick);
+  const unwatch = watchThumbs(el, ctx, [...films, ...stills, ...view.drawings].map((it) => it.latest).concat(pm?.kind === 'uploaded' ? [pm.note] : []));
+  return () => { unwatch(); el.removeEventListener('click', onClick); };
 }
 
 async function toggleShare(ctx, p, sh, btn) {
   btn.disabled = true;
   const on = !sh.on;
+  // the client page wears the practice's name and logo: kept in this browser for a browser preview (handoff.js keepBrand)
+  if (on && (ctx.practice?.name || document.querySelector('img.art-logo'))) { try { const { keepBrand } = await import('./handoff.js'); await keepBrand(ctx.practice?.name); } catch { /* the page shows the name only */ } } // never written over with nothing
   try {
     if (sh.place === 'browser') {
       const cur = await ctx.store.get('project', p.id);
