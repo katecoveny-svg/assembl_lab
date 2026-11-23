@@ -29,8 +29,8 @@ import {
 } from './brandFilm';
 
 const QS = new URLSearchParams(location.search);
-/** ?filmsecs=N: only the first N seconds (for checks); ?judge=0: no look critique (the geometry check still runs) */
-const CAP = Number(QS.get('filmsecs')) || Infinity, JUDGE = QS.get('judge') !== '0';
+/** ?filmsecs=N: only the first N seconds (for checks); ?judge=0: no look critique; ?ai=0: disable AI generation while keeping Track A */
+const CAP = Number(QS.get('filmsecs')) || Infinity, JUDGE = QS.get('judge') !== '0', AI_DISABLED = QS.get('ai') === '0';
 const FPS = 24, CLIP_W = 1280, CLIP_H = 720, GATE_W = 1040, GATE_H = 585;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -47,24 +47,26 @@ export interface FinishHost {
 }
 
 const CSS = `
-#pfBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+#pfBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;container-type:inline-size}
 #pfBox h4{margin:0 0 4px;font-size:14px;font-weight:500}
 #pfBox .pf-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
 #pfOut{display:grid;gap:8px;margin-top:6px}
 #pfOut:empty{display:none}
 .pf-item{border:1px solid var(--line2);border-radius:10px;padding:6px;display:grid;gap:6px}
-.pf-item img,.pf-item video{width:100%;border-radius:6px;display:block;background:#000}
+.pf-item img,.pf-item video{width:100%;aspect-ratio:16/9;object-fit:contain;border-radius:6px;display:block;background:#000}
 .pf-tag{font:11px 'IBM Plex Mono',monospace;border-radius:999px;padding:2px 8px;justify-self:start}
 .pf-tag.holds{background:#e6efe6;color:#24452a}.pf-tag.drifts{background:#f6e3e6;color:#7a2333}.pf-tag.not{background:var(--pale);color:var(--ink)}
 .pf-label{font:11px/1.35 'IBM Plex Mono',monospace;color:var(--mauve)}
-.pf-dialog{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(20,8,18,.48);padding:14px}
-.pf-dialog[hidden]{display:none}
-.pf-dialog .pf-card{background:var(--paper,#FFFDFB);color:var(--ink,#240B21);border-radius:14px;max-width:520px;width:100%;padding:16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:14px;max-height:calc(100vh - 28px);overflow:auto}
-.pf-dialog h4{margin:0 0 8px;font-size:17px;font-weight:500}
-.pf-dialog ul{margin:6px 0 10px;padding-left:18px;display:grid;gap:4px;font-size:13px}
-.pf-dialog .pf-total{font:500 15px 'IBM Plex Mono',monospace;margin:6px 0}
-.pf-dialog .pf-fine{font-size:12px;color:var(--mauve,#654A4E);margin:6px 0 12px}
-.pf-dialog .pf-row{display:flex;gap:8px;flex-wrap:wrap}
+dialog.pf-dialog{border:0;border-radius:14px;padding:0;max-width:min(520px,calc(100dvw - 28px));width:100%;max-height:calc(100dvh - 28px);background:var(--paper,#FFFDFB);color:var(--ink,#240B21);box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:14px;overflow:auto}
+dialog.pf-dialog:modal{overscroll-behavior:contain}
+dialog.pf-dialog::backdrop{background:rgba(20,8,18,.48);overflow:hidden;overscroll-behavior:contain}
+dialog.pf-dialog .pf-card{padding:16px 18px}
+dialog.pf-dialog h1{margin:0 0 8px;font-size:clamp(1.05rem,0.95rem + 0.5vw,1.25rem);font-weight:500}
+dialog.pf-dialog ul{margin:6px 0 10px;padding-left:18px;display:grid;gap:4px;font-size:13px}
+dialog.pf-dialog .pf-total{font:500 15px 'IBM Plex Mono',monospace;margin:6px 0}
+dialog.pf-dialog .pf-fine{font-size:12px;color:var(--mauve,#654A4E);margin:6px 0 12px}
+dialog.pf-dialog .pf-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@container (max-width: 320px){#pfBox .pf-row{flex-direction:column;align-items:stretch}}
 `;
 
 // ---- small helpers -------------------------------------------------------------------------------------------------------
@@ -296,13 +298,14 @@ async function encode(W: number, H: number, total: number, draw: (i: number, g: 
 export function mountFinish(app: App, host: FinishHost) {
   if (!document.getElementById('pfStyle')) { const st = document.createElement('style'); st.id = 'pfStyle'; st.textContent = CSS; document.head.append(st); }
   const box = document.createElement('div'); box.id = 'pfBox';
-  box.innerHTML = `<h4>Photoreal still + film</h4>
-    <p class="small">Google finishes the browser render of the confirmed path: a still from one shot and the film, clip by clip. Look only: every edge, opening and camera position is kept, and each result is checked against the model. Your practice’s brand is added after, here in the browser.</p>
-    <div class="pf-row small"><label>Still from shot <select id="pfShot" aria-label="Which shot the still is from"></select></label>
+  box.innerHTML = `<h4>Track B · Optional photoreal AI look study</h4>
+    <p class="small">Starts from your Track A motion clip and reference stills — never a text prompt alone. Compares first, middle and last frames against Track A for drift in rooflines, openings, mullions, furniture and planting. Defaults to dry run / mock (US$0.00); confirm before any paid shot.</p>
+    <div class="pf-row small"><label>Dispatch <select id="pfMode" aria-label="Dispatch mode"><option value="mock" selected>Dry run / Mock (US$0.00)</option><option value="live">Paid live shot (confirm first)</option></select></label>
+      <label>Still from shot <select id="pfShot" aria-label="Which shot the still is from"></select></label>
       <label>Film <select id="pfSize" aria-label="Film size">${FILM_SIZES.map((s) => `<option value="${s}">${s}${s === '1080p' ? ' (best)' : ''}</option>`).join('')}</select></label>
       <label>Light <select id="pfTime" aria-label="Light">${TIMES.map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label></div>
-    <div class="pf-row"><button class="pill solid" id="pfGo" type="button">Make photoreal still + film</button></div>
-    <p class="small mono" id="pfSays" role="status" aria-live="polite"></p>
+    <div class="pf-row"><button class="pill solid" id="pfGo" type="button"${AI_DISABLED ? ' disabled' : ''}>${AI_DISABLED ? 'AI look study disabled (?ai=0)' : 'Quote & run look study'}</button></div>
+    <p class="small mono" id="pfSays" role="status" aria-live="polite">${AI_DISABLED ? 'AI generation is disabled (?ai=0). Track A exact-model film export above remains fully available.' : ''}</p>
     <div id="pfOut"></div>`;
   host.el.append(box);
   const $ = <T extends HTMLElement>(s: string, root: ParentNode = box) => root.querySelector(s) as T;
@@ -319,22 +322,27 @@ export function mountFinish(app: App, host: FinishHost) {
     stills.querySelector('.row')?.append(stillBtn);
   }
 
-  // the confirm dialog: the estimate, then a click to spend
-  const dlg = document.createElement('div'); dlg.className = 'pf-dialog'; dlg.hidden = true; dlg.id = 'pfDialog';
-  dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-labelledby', 'pfDlgH');
-  dlg.innerHTML = `<div class="pf-card"><h4 id="pfDlgH">Before anything is spent</h4><p id="pfDlgWhat"></p><ul id="pfDlgLines"></ul><p class="pf-total" id="pfDlgTotal"></p>
-    <p class="pf-fine">Google’s published prices, read ${esc(PRICES.read)}; the bill is Google’s count and can differ a little. Nothing is sent until you confirm. The keys stay on the lab’s server. ${esc(FINISH_LABEL)}.</p>
-    <div class="pf-row"><button class="pill solid" id="pfYes" type="button">Confirm and spend</button><button class="pill" id="pfNo" type="button">Cancel</button></div></div>`;
+  // Native modal <dialog>: browser handles inert page, focus trap, Esc dismissal, and focus return.
+  const dlg = document.createElement('dialog'); dlg.className = 'pf-dialog'; dlg.id = 'pfDialog';
+  dlg.setAttribute('aria-labelledby', 'pfDlgH');
+  dlg.innerHTML = `<form method="dialog" class="pf-card"><h1 id="pfDlgH">Before anything is dispatched</h1><p id="pfDlgWhat"></p><ul id="pfDlgLines"></ul><p class="pf-total" id="pfDlgTotal"></p>
+    <p class="pf-fine">Published provider prices, read ${esc(PRICES.read)}; nothing is sent until you confirm. Keys stay server-side in Cloudflare. ${esc(FINISH_LABEL)}.</p>
+    <div class="pf-row"><button class="pill" id="pfNo" value="cancel" autofocus>Cancel</button><button class="pill solid" id="pfYes" value="confirm">Confirm and dispatch</button></div></form>`;
   document.body.append(dlg);
-  const ask = (what: string, est: ReturnType<typeof estimate>) => new Promise<boolean>((ok) => {
+  const ask = (what: string, est: ReturnType<typeof estimate>, mock = false) => new Promise<boolean>((ok) => {
     $('#pfDlgWhat', dlg).textContent = what;
     $('#pfDlgLines', dlg).innerHTML = est.lines.map((l) => `<li>${esc(l)}</li>`).join('');
-    $('#pfDlgTotal', dlg).textContent = `About US$${est.total.toFixed(2)} in all`;
-    $('#pfYes', dlg).textContent = `Confirm and spend about US$${est.total.toFixed(2)}`;
-    dlg.hidden = false; $<HTMLButtonElement>('#pfYes', dlg).focus();
-    const done = (v: boolean) => { dlg.hidden = true; $('#pfYes', dlg).onclick = null; $('#pfNo', dlg).onclick = null; ok(v); };
-    $('#pfYes', dlg).onclick = () => done(true); $('#pfNo', dlg).onclick = () => done(false);
-    dlg.onkeydown = (e) => { if (e.key === 'Escape') done(false); };
+    $('#pfDlgTotal', dlg).textContent = mock ? 'Dry run / Mock · US$0.00 (no provider spend)' : `About US$${est.total.toFixed(2)} in all`;
+    $('#pfYes', dlg).textContent = mock ? 'Run dry-run dispatch (US$0.00)' : `Confirm and spend about US$${est.total.toFixed(2)}`;
+    const onClose = () => {
+      const val = dlg.returnValue;
+      dlg.returnValue = '';
+      dlg.removeEventListener('close', onClose);
+      ok(val === 'confirm');
+    };
+    dlg.addEventListener('close', onClose);
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else { dlg.setAttribute('open', ''); }
   });
 
   // the server's own estimates and limits (free GETs); local prices until they answer
@@ -378,9 +386,11 @@ export function mountFinish(app: App, host: FinishHost) {
   }
 
   async function run(kind: 'both' | 'still') {
+    if (AI_DISABLED) return says('AI look study is disabled (?ai=0). Use Track A Render film above.');
     if (busy) { busy.abort(); return; }
     shotList();
     const tl = host.timeline, fp = host.path, size = ($('#pfSize') as HTMLSelectElement).value as FilmSize, look = ($('#pfTime') as HTMLSelectElement).value as Time;
+    const isMock = ($('#pfMode') as HTMLSelectElement | null)?.value !== 'live';
     let parts: Part[] = [];
     let mark = null as null | { id: string; arrive: number; leave: number };
     if (kind === 'both') {
@@ -390,10 +400,14 @@ export function mountFinish(app: App, host: FinishHost) {
       try { parts = planParts(dur, tl.marks.map((m) => ({ id: m.id, arrive: m.arrive })), partMax); } catch (e) { return says((e as Error).message); }
       const id = ($('#pfShot') as HTMLSelectElement).value; mark = tl.marks.find((m) => m.id === id) ?? tl.marks[0] ?? null;
     }
-    if (!configured.render || (kind === 'both' && !configured.film)) return says('Google is not switched on in this copy of the lab (no key on the server). Nothing was sent.');
+    if (!isMock && (!configured.render || (kind === 'both' && !configured.film))) return says('Google is not switched on in this copy of the lab (no key on the server). Nothing was sent. Switch Dispatch to Dry run / Mock to rehearse.');
     const est = estimate({ still: true, parts, size, judge: JUDGE, perSecond, stillUsd });
-    const what = kind === 'both' ? `A still from shot ${mark?.id ?? '01'} and the film of the confirmed path (v${fp.version}, ${parts.length} clip${parts.length === 1 ? '' : 's'}${parts.some((p) => p.shots.length) ? `: shots ${parts.map((p) => p.shots.join('+') || '·').join(' | ')}` : ''}).` : 'A still of this view.';
-    if (!(await ask(what, est))) return says('Cancelled. Nothing was sent.');
+    const what = kind === 'both' ? `${isMock ? '[DRY RUN / MOCK] ' : ''}A still from shot ${mark?.id ?? '01'} and the film of the confirmed path (v${fp.version}, ${parts.length} clip${parts.length === 1 ? '' : 's'}${parts.some((p) => p.shots.length) ? `: shots ${parts.map((p) => p.shots.join('+') || '·').join(' | ')}` : ''}).` : `${isMock ? '[DRY RUN / MOCK] ' : ''}A still of this view.`;
+    if (!(await ask(what, est, isMock))) return says('Cancelled. Nothing was sent.');
+    if (isMock) {
+      says(`Dry run complete (US$0.00): ${parts.length} clip(s) quoted at ${size} (${est.total.toFixed(2)} USD if live). No provider request was sent.`);
+      return;
+    }
     busy = new AbortController(); const signal = busy.signal;
     const go = $<HTMLButtonElement>('#pfGo'); go.textContent = 'Stop'; if (stillBtn) stillBtn.disabled = true;
     const t0 = performance.now(), b = await brand();
@@ -423,16 +437,29 @@ export function mountFinish(app: App, host: FinishHost) {
           says(`Clip ${p.index + 1} of ${parts.length}: Google is finishing it (Omni 1.2 Flash, ${size})…`);
           const res = await filmClip({ video: await toDataUrl(f.blob), still: lookStill, guide, resolution: size, mode: 'background', look: { time: look }, part: p.index, confirm: true }, signal, (w) => says(`Clip ${p.index + 1} of ${parts.length}: Google is finishing it… ${w}`));
           const ai = await (await fetch(res.video)).blob();
-          // gate on the clip's middle frame, against the model's own drawing of the same camera
-          const rd = await clipReader(ai), mid = p.seconds / 2, cam = tl.at(p.from + mid);
-          const v = await rd.at(mid), ref = modelFrame(app, cam, GATE_W, GATE_H);
+          // Compare first, middle and last frames against Track A for drift in rooflines, openings, mullions, furniture and planting
+          const rd = await clipReader(ai);
+          const sampleTimes = [
+            { slot: 'first', t: 0.05 },
+            { slot: 'middle', t: p.seconds / 2 },
+            { slot: 'last', t: Math.max(0.05, Math.min(rd.secs, p.seconds) - 0.08) },
+          ];
           const keep = { eye: app.camera.position.clone(), q: app.camera.quaternion.clone() };
-          app.camera.position.set(...cam.eye); app.camera.lookAt(cam.look[0], cam.look[1], cam.look[2]); app.camera.updateMatrixWorld();
-          const geo = await geometry(app, v, rd.w, rd.h, ref, { w: CLIP_W, h: CLIP_H, sx: 0, sy: 0, sw: CLIP_W, sh: CLIP_H, dw: GATE_W, dh: GATE_H });
+          let worstGeo: { verdict: 'holds' | 'drifts'; score: number } | null = null;
+          let midRefUrl = '';
+          for (const st of sampleTimes) {
+            const cam = tl.at(p.from + st.t);
+            const v = await rd.at(st.t);
+            const ref = modelFrame(app, cam, GATE_W, GATE_H);
+            if (st.slot === 'middle') midRefUrl = ref.toDataURL('image/jpeg', 0.85);
+            app.camera.position.set(...cam.eye); app.camera.lookAt(cam.look[0], cam.look[1], cam.look[2]); app.camera.updateMatrixWorld();
+            const gCheck = await geometry(app, v, rd.w, rd.h, ref, { w: CLIP_W, h: CLIP_H, sx: 0, sy: 0, sw: CLIP_W, sh: CLIP_H, dw: GATE_W, dh: GATE_H });
+            if (gCheck && (!worstGeo || gCheck.verdict === 'drifts' || gCheck.score < worstGeo.score)) worstGeo = gCheck;
+          }
           app.camera.position.copy(keep.eye); app.camera.quaternion.copy(keep.q); app.camera.updateMatrixWorld();
           const end = await rd.at(rd.secs - 0.05); guide = jpegOf(end, rd.w, rd.h, 1280, 0.85);
-          const aiMid = jpegOf(await rd.at(mid), rd.w, rd.h, 1280, 0.85); rd.close();
-          clips.push({ part: p, ai, browser: f.blob, gate: gateOf(geo, null), model: String(res.model ?? FILM_MODEL), mid: aiMid, ref: ref.toDataURL('image/jpeg', 0.85) });
+          const aiMid = jpegOf(await rd.at(p.seconds / 2), rd.w, rd.h, 1280, 0.85); rd.close();
+          clips.push({ part: p, ai, browser: f.blob, gate: gateOf(worstGeo, null), model: String(res.model ?? FILM_MODEL), mid: aiMid, ref: midRefUrl });
         }
       } finally { restore(); }
       // the look critique on the film: up to three browser frames against one finished frame
@@ -479,7 +506,7 @@ export function mountFinish(app: App, host: FinishHost) {
     } catch (e) {
       says((e as Error)?.name === 'AbortError' ? 'Stopped. Anything Google had already started is still billed by Google.' : (e as Error).message);
     } finally {
-      busy = null; go.textContent = 'Make photoreal still + film'; if (stillBtn) stillBtn.disabled = false;
+      busy = null; go.textContent = AI_DISABLED ? 'AI look study disabled (?ai=0)' : 'Quote & run look study'; if (stillBtn) stillBtn.disabled = false;
     }
   }
   $('#pfGo').addEventListener('click', () => void run('both'));

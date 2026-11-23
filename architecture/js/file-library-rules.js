@@ -32,15 +32,15 @@ export const MODEL = ['ifc', 'ifczip', 'glb', 'gltf', 'rvt', 'rfa', 'nwc', 'nwd'
 /** the model kinds the 3D page opens */
 export const OPENS_IN_3D = ['ifc', 'ifczip', 'glb'];
 export const SHEET = ['pdf', 'dwg', 'dxf'];
-const SITE_SLOTS = ['site_plan', 'survey', 'camera_sketch', 'flythrough'];
+const SITE_SLOTS = ['site_plan', 'survey', 'camera_sketch', 'flythrough', 'walk_review', 'design_interior', 'design_exterior'];
 
 /** what kind of tile a kept file is. doc is the document record that holds it, when it is a document's file. */
 export function kindOf(note, doc = null) {
   const e = ext(note?.name);
   const slot = note?.owner_kind === 'source' ? note?.extra?.source?.slot : '';
+  if (SITE_SLOTS.includes(slot)) return 'site';
   if (MODEL.includes(e)) return 'models';
   if (VIDEO.includes(e)) return 'films';
-  if (SITE_SLOTS.includes(slot)) return 'site';
   if (IMAGE.includes(e)) {
     if (doc?.kind === 'Photo' || /photo/i.test(doc?.kind ?? '')) return 'photos';
     if (slot === 'films' || note?.extra?.still || note?.extra?.from_3d) return 'stills';
@@ -128,7 +128,7 @@ export const ofKind = (items, kind) => (!kind || kind === 'all' ? items : items.
  */
 export function primaryModel(project, files = []) {
   const planFile = project?.model?.file?.id ?? '';
-  const all = (files ?? []).filter((f) => f?.id && f.id !== planFile && MODEL.includes(ext(f.name)) && (f.owner_kind === 'model' || f.owner_kind === 'source'));
+  const all = (files ?? []).filter((f) => f?.id && f.id !== planFile && !SITE_SLOTS.includes(f.extra?.source?.slot) && MODEL.includes(ext(f.name)) && (f.owner_kind === 'model' || f.owner_kind === 'source'));
   const originals = all.filter((f) => !f.extra?.browser_copy_of);
   const opens = originals.filter((f) => OPENS_IN_3D.includes(ext(f.name))).sort((a, b) => byKept(b, a));
   const pick = opens[0] ?? originals.sort((a, b) => byKept(b, a))[0] ?? all.sort((a, b) => byKept(b, a))[0] ?? null;

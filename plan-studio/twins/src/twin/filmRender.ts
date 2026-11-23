@@ -20,7 +20,38 @@ export interface FilmOpts {
   caption?: string;
   stop?: () => boolean;
 }
-export interface Film { blob: Blob; type: 'mp4' | 'webm'; frames: number; secs: number; ms: number }
+export interface FrameCameraMeta {
+  frame: number;
+  t: number;
+  shot: string;
+  phase: string;
+  eye: [number, number, number];
+  look: [number, number, number];
+  fov: number;
+  fade: number;
+  layout: string | null;
+}
+export interface PairedReviewFrame {
+  slot: 'first' | 'middle' | 'last';
+  frame: number;
+  t: number;
+  dataUrl: string;
+  camera: FrameCameraMeta;
+}
+export interface Film {
+  blob: Blob;
+  type: 'mp4' | 'webm';
+  frames: number;
+  secs: number;
+  ms: number;
+  width: number;
+  height: number;
+  fps: number;
+  /** paired first, middle and last frames from the exact-model render for QA and Track B drift comparison */
+  reviewFrames: PairedReviewFrame[];
+  /** per-frame camera timeline metadata */
+  cameraMeta: FrameCameraMeta[];
+}
 
 const CODECS = ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.42001f'];
 
@@ -36,7 +67,14 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
   // each frame is drawn, then laid on a 2D canvas with the fade and the caption: that canvas is what is encoded
   const comp = document.createElement('canvas'); comp.width = o.width; comp.height = o.height;
   const g2 = comp.getContext('2d')!;
-  const draw = (t: number) => {
+  const reviewFrames: PairedReviewFrame[] = [];
+  const cameraMeta: FrameCameraMeta[] = [];
+  const sampleIdx = new Map<number, 'first' | 'middle' | 'last'>([
+    [0, 'first'],
+    [Math.floor((total - 1) / 2), 'middle'],
+    [Math.max(0, total - 1), 'last'],
+  ]);
+  const draw = (i: number, t: number) => {
     const c = o.at(t);
     o.beforeFrame?.(t, c);
     cam.position.set(...c.eye); cam.lookAt(c.look[0], c.look[1], c.look[2]); cam.updateMatrixWorld();
@@ -47,6 +85,22 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
       const fs = Math.round(o.height / 46); g2.font = `500 ${fs}px "IBM Plex Mono", ui-monospace, monospace`; g2.textBaseline = 'bottom';
       const w = g2.measureText(o.caption).width; g2.fillStyle = 'rgba(20,14,18,0.55)'; g2.fillRect(fs * 0.8, o.height - fs * 2.6, w + fs * 1.2, fs * 1.8);
       g2.fillStyle = '#f5f1f2'; g2.fillText(o.caption, fs * 1.4, o.height - fs * 1.2);
+    }
+    const meta: FrameCameraMeta = {
+      frame: i,
+      t: Math.round(t * 1000) / 1000,
+      shot: c.shot,
+      phase: c.phase,
+      eye: [Number(c.eye[0].toFixed(4)), Number(c.eye[1].toFixed(4)), Number(c.eye[2].toFixed(4))],
+      look: [Number(c.look[0].toFixed(4)), Number(c.look[1].toFixed(4)), Number(c.look[2].toFixed(4))],
+      fov: cam.fov,
+      fade: c.fade ?? 0,
+      layout: c.layout?.name ?? null,
+    };
+    cameraMeta.push(meta);
+    const slot = sampleIdx.get(i);
+    if (slot) {
+      reviewFrames.push({ slot, frame: i, t: meta.t, dataUrl: comp.toDataURL('image/jpeg', 0.9), camera: meta });
     }
   };
   try {
@@ -72,7 +126,7 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
       for (let i = 0; i < total; i++) {
         if (o.stop?.()) throw new Error('stopped');
         if (failed) throw failed;
-        draw(i / o.fps);
+        draw(i, i / o.fps);
         const frame = new VideoFrame(comp, { timestamp: Math.round((i * 1e6) / o.fps), duration: Math.round(1e6 / o.fps) });
         enc.encode(frame, { keyFrame: i % (o.fps * 2) === 0 });
         frame.close();
@@ -84,7 +138,7 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
       if (failed) throw failed;
       if (!avcC) throw new Error('the encoder gave no decoder configuration');
       const mp4 = muxMp4({ width: o.width, height: o.height, timescale: TS, avcC, samples });
-      return { blob: new Blob([mp4], { type: 'video/mp4' }), type: 'mp4', frames: total, secs: total / o.fps, ms: Math.round(performance.now() - t0) };
+      return { blob: new Blob([mp4], { type: 'video/mp4' }), type: 'mp4', frames: total, secs: total / o.fps, ms: Math.round(performance.now() - t0), width: o.width, height: o.height, fps: o.fps, reviewFrames, cameraMeta };
     }
     // the fallback: MediaRecorder, one frame pushed at a time (its timing follows the clock, so frames are paced at fps)
     const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
@@ -97,12 +151,12 @@ export async function renderFilm(app: App, o: FilmOpts): Promise<Film> {
     let next = performance.now();
     for (let i = 0; i < total; i++) {
       if (o.stop?.()) break;
-      draw(i / o.fps); track.requestFrame?.();
+      draw(i, i / o.fps); track.requestFrame?.();
       o.onProgress?.(i + 1, total);
       next += 1000 / o.fps; const wait = next - performance.now(); await new Promise((res) => setTimeout(res, Math.max(0, wait)));
     }
     rec.stop(); await done;
-    return { blob: new Blob(chunks, { type: 'video/webm' }), type: 'webm', frames: total, secs: total / o.fps, ms: Math.round(performance.now() - t0) };
+    return { blob: new Blob(chunks, { type: 'video/webm' }), type: 'webm', frames: total, secs: total / o.fps, ms: Math.round(performance.now() - t0), width: o.width, height: o.height, fps: o.fps, reviewFrames, cameraMeta };
   } finally {
     app.pipeline = was.pipeline;
     r.setPixelRatio(was.pr); r.setSize(was.size.x, was.size.y, false);

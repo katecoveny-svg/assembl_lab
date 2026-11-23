@@ -22,7 +22,7 @@ try {
   walk(ROOT);
 }
 
-const FIXED = [/^api\//, /^functions\//, /^scripts\//, /^docs\//, /^node_modules\//, /^dist\//, /^\.git/, /^vercel\.json$/, /^package(-lock)?\.json$/, /^\.vercelignore$/, /^wrangler\.toml$/, /\.blend\d?$/];
+const FIXED = [/^api\//, /^functions\//, /^workers\//, /^supabase\//, /^scripts\//, /^docs\//, /^node_modules\//, /^dist\//, /^\.git/, /^vercel\.json$/, /^package(-lock)?\.json$/, /^\.vercelignore$/, /^wrangler\.toml$/, /\.blend\d?$/];
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 let n = 0, bytes = 0;

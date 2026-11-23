@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { IfcAPI } from 'web-ifc';
+import { isPresentationOnly } from './presentationDetail';
 
 // IFC in and out.
 //
@@ -136,7 +137,7 @@ export function exportIFC(root: THREE.Object3D, opts: IfcExportOptions) {
   const elements = new Map<THREE.Object3D, THREE.Mesh[]>();
   root.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (!m.isMesh || !m.visible) return;
+    if (!m.isMesh || !m.visible || isPresentationOnly(m)) return;
     let el: THREE.Object3D | null = m;
     while (el && el !== root && !el.userData?.ifcClass) el = el.parent;
     const key = el && el !== root ? el : m;

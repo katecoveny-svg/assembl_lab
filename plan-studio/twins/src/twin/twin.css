@@ -158,3 +158,9 @@ ul.small li { margin: 4px 0; }
 .pin-dot { position: absolute; left: 0; top: 0; width: 24px; height: 24px; display: grid; place-items: center; background: #654A4E; color: #FFFDFB; font: 500 12px/1 "IBM Plex Mono", monospace; box-shadow: 0 0 0 2px #FFFDFB; pointer-events: none; }
 .pin-dot.done { background: #FFFDFB; color: #654A4E; box-shadow: inset 0 0 0 1.5px #654A4E, 0 0 0 2px #FFFDFB; }
 .pin-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.model-review label,.model-review small{display:inline-block;margin:.22rem 0}
+.model-review .model-review-points{display:flex;flex-wrap:wrap;gap:.3rem}
+.model-review-markers{position:absolute;inset:0;pointer-events:none;z-index:6}
+.model-review-markers button{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;width:2.2rem;height:2.2rem;border:1px solid #fffdfb;border-radius:50%;color:#fffdfb;background:#654a4e;cursor:pointer;font-weight:650}
+.model-review-markers button:focus-visible{outline:3px solid #e3d0d2;outline-offset:2px}
