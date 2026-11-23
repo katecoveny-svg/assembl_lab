@@ -1,0 +1,40 @@
+{
+ "built": "2026-11-23T00:21:28.542Z",
+ "format": "int16 little-endian, decimetres above NZVD2016, rows north to south, columns west to east",
+ "width": 673,
+ "height": 597,
+ "stepMetres": 32,
+ "nztmBox": {
+  "minX": 1748544,
+  "maxX": 1770048,
+  "minY": 5911168,
+  "maxY": 5930240
+ },
+ "origin": {
+  "E": 1759296,
+  "N": 5920704
+ },
+ "buildings": {
+  "file": "buildings.bin",
+  "format": "int16 stream per outline: tier (0 taller than 5 m, 1 low building near the city centre), height dm, min height dm, ground dm, n, n × (x, z) half metres in the world frame",
+  "tall": 3972,
+  "lowNearCentre": 11779,
+  "heights": "OpenMapTiles render_height: OSM height or building:levels where mapped, otherwise a 5 m default; not measured",
+  "outlines": "exterior outlines only; courtyards are filled"
+ },
+ "minMetres": -14.6,
+ "maxMetres": 245.3,
+ "sources": [
+  {
+   "what": "ground heights",
+   "source": "AWS Terrain Tiles (Terrarium PNG, zoom 13, about 15 m), s3.amazonaws.com/elevation-tiles-prod; in New Zealand their source is the LINZ 8 m DEM",
+   "licence": "CC BY 4.0, Toitū Te Whenua Land Information New Zealand",
+   "note": "Copyright in the underlying dataset is owned by Regional Software Holdings Ltd (RSHL), as LINZ asks to be stated for the 8 m DEM. Heights over the sea are not used (the water mask decides land and sea)."
+  },
+  {
+   "what": "land cover, water, roads, rail and building footprints (ground colours)",
+   "source": "OpenFreeMap vector tiles, zoom 14, release 20261115_080022_pt",
+   "licence": "ODbL 1.0, © OpenStreetMap contributors; tiles © OpenMapTiles"
+  }
+ ]
+}
