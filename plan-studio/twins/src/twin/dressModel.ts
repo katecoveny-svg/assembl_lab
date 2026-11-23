@@ -145,13 +145,13 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
 }
 
 // --- photographed surfaces (Poly Haven, CC0; plan-studio/twins/tex): laid at their real size over the drawn ones, once loaded ----
-// brick (red_brick_03, 1 m), pale concrete pavers (concrete_pavers, 1.92 m), concrete (concrete_floor_02, 2 m), the box-profile
+// brick (red_brick_03, 1 m), herringbone clay pavers (herringbone_brick_02, 1.84 m, toned pale), concrete (concrete_floor_02, 2 m), the box-profile
 // steel roof scan and the timber board scan already used by the example homes. The drawn texture shows until the photo arrives.
 const SCANS: Partial<Record<Finish, { set: string; size: number }>> = {
-  brick: { set: 'brick', size: 1.0 }, paving: { set: 'pavers', size: 1.92 }, concrete: { set: 'concrete', size: 2.0 }, slab: { set: 'concrete', size: 2.0 },
+  brick: { set: 'brick', size: 1.0 }, paving: { set: 'pavers', size: 1.84 }, concrete: { set: 'concrete', size: 2.0 }, slab: { set: 'concrete', size: 2.0 },
   asphalt: { set: 'concrete', size: 2.0 }, roof: { set: 'roof', size: 2.0 }, timberCladding: { set: 'clad', size: 1.0 },
 };
-export const SCAN_CREDIT = 'Photographed surfaces: Poly Haven (CC0): red_brick_03, concrete_pavers, concrete_floor_02, and the roof and timber scans of the example homes.';
+export const SCAN_CREDIT = 'Photographed surfaces: Poly Haven (CC0): red_brick_03, herringbone_brick_02, concrete_floor_02, and the roof and timber scans of the example homes.';
 const scanned = new WeakSet<THREE.Material>();
 async function photoSurfaces(q: 'web' | 'hq') {
   for (const [key, m] of mats) {
@@ -277,15 +277,15 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
         pb.copy(g.boundingBox!).applyMatrix4(p.mesh.matrixWorld);
         nm.getNormalMatrix(p.mesh.matrixWorld);
         // area-weighted: how much of it slopes (0.25 < |ny| < 0.97) and how much faces up
-        let A = 0, slope = 0, up = 0;
+        let A = 0, slope = 0, up = 0, upA = 0;
         const idx = g.index, nt = (idx ? idx.count : pos.count) / 3, step = Math.max(1, Math.floor(nt / 400));
         for (let t = 0; t < nt; t += step) {
           const i0 = idx ? idx.getX(t * 3) : t * 3, i1 = idx ? idx.getX(t * 3 + 1) : t * 3 + 1, i2 = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
           a.fromBufferAttribute(pos, i0).applyMatrix4(p.mesh.matrixWorld); b.fromBufferAttribute(pos, i1).applyMatrix4(p.mesh.matrixWorld); c.fromBufferAttribute(pos, i2).applyMatrix4(p.mesh.matrixWorld);
           nv.subVectors(b, a).cross(c.sub(a)); const ar = nv.length(); if (ar < 1e-9) continue; nv.divideScalar(ar);
-          const ny = Math.abs(nv.y); A += ar; if (ny > 0.25 && ny < 0.97) slope += ar; if (ny >= 0.6) up += ar;
+          const ny = Math.abs(nv.y); A += ar; if (ny > 0.25 && ny < 0.97) slope += ar; if (ny >= 0.6) { up += ar; upA += (ar / 2) * step; }
         }
-        sh = { across: Math.max(pb.max.x - pb.min.x, pb.max.z - pb.min.z), span, slope: A ? slope / A : 0, up: A ? up / A : 0, high: ((pb.min.y + pb.max.y) / 2 - B.min.y) / H };
+        sh = { across: Math.max(pb.max.x - pb.min.x, pb.max.z - pb.min.z), span, slope: A ? slope / A : 0, up: A ? up / A : 0, high: ((pb.min.y + pb.max.y) / 2 - B.min.y) / H, fill: upA / Math.max(1, (pb.max.x - pb.min.x) * (pb.max.z - pb.min.z)) };
         shapeOf.set(p.mesh, sh);
       }
       p.c = refineByShape(p.c, p.info.cls, sh);
@@ -384,7 +384,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
 
   // --- planting, built in code (nativeTrees.ts, plants.ts) ---------------------------------------------------------------
   const plantRoot = new THREE.Group(); plantRoot.name = 'dress_planting';
-  const plantNote = `Proposed native planting, ${plan.said}: harakeke, tussock, carex, ponga, tī kōuka, with pōhutukawa and kānuka standing back. Placed by rule (never inside the footprint, on the model’s paving or paths, or in front of a door); not from the model or a planting plan. Modelled in code.`;
+  const plantNote = `Proposed native planting, ${plan.said}: harakeke, tussock (standing in for toetoe, which is not modelled yet), hebe, coprosma, carex, ponga, tī kōuka, with pōhutukawa and kānuka standing back. Placed by rule (never inside the footprint, on the model’s paving or paths, or in front of a door); not from the model or a planting plan. Modelled in code.`;
   plantRoot.userData = { kind: 'planting', name: 'Planting (proposed)', source: 'proposed', note: plantNote };
   let groundY: ((x: number, z: number) => number) | null = null;
   const yOf = (x: number, z: number, y0: number) => (groundY ? groundY(x, z) : y0);
@@ -413,7 +413,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
       bush.userData = { ...plantRoot.userData };
       plantRoot.add(bush);
     } catch (e) { console.warn('the proposed trees could not be grown', e); }
-    const tufts: TuftPlacement[] = [...by('tussock'), ...by('carex')].map((s) => ({ sp: s.sp as 'tussock' | 'carex', x: s.x, y: yOf(s.x, s.z, s.y) - 0.03, z: s.z, s: s.s }));
+    const tufts: TuftPlacement[] = [...by('tussock'), ...by('carex'), ...by('hebe'), ...by('coprosma')].map((s) => ({ sp: s.sp as 'tussock' | 'carex' | 'hebe' | 'coprosma', x: s.x, y: yOf(s.x, s.z, s.y) - 0.03, z: s.z, s: s.s }));
     if (tufts.length) { const tg = tuftPlanting(tufts, plantNote); tg.name = 'dress_grasses'; tg.userData = { ...plantRoot.userData }; plantRoot.add(tg); }
   };
   mark('planting planned');
