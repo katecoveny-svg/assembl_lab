@@ -297,7 +297,13 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
       dz = -dz;
     }
     const n = Math.hypot(dx, dz) || 1;
-    return look.set(head0.x + (dx / n) * 2.2, head0.y + 0.1, head0.z + (dz / n) * 2.2);
+    // turned a little toward the camera, so from a view well round the side the head still
+    // shows its profile and eye rather than the back of its crown
+    const vn = Math.hypot(vx, vz) || 1;
+    dx = dx / n - (vx / vn) * 0.35;
+    dz = dz / n - (vz / vn) * 0.35;
+    const m = Math.hypot(dx, dz) || 1;
+    return look.set(head0.x + (dx / m) * 2.2, head0.y + 0.1, head0.z + (dz / m) * 2.2);
   }
   function frame(now: number) {
     timer.update(now);
