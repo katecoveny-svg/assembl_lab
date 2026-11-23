@@ -1,4 +1,10 @@
 export const ROUTE='/api/render';
+const LIVE_RENDER='https://lab.assembl.co.nz/api/render';
+export function routesFor(origin){
+  let u;try{u=new URL(origin);}catch{return [ROUTE];}
+  return u.protocol==='https:'&&!u.port&&/^[a-z0-9-]+\.assembl-lab\.pages\.dev$/i.test(u.hostname)
+    ? [ROUTE,LIVE_RENDER] : [ROUTE];
+}
 const mime=/^image\/(?:png|jpeg|webp)$/u;
 const sources=/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/]+={0,2}$/u;
 const allowedTimes=new Set(['golden','morning','midday','overcast']);
@@ -32,26 +38,27 @@ async function label(src){
 }
 async function mount(){
   const q=id=>document.getElementById(id),f=q('frame'),guide=q('guide'),run=q('run'),agree=q('consent'),time=q('time');
-  let svc,frame='',line='',busy=false,resultVersion=0;
+  let svc,endpoint=ROUTE,frame='',line='',busy=false,resultVersion=0,frameSeq=0,guideSeq=0,guidePending=false;
   const stage=m=>q('status').textContent=m;
-  function update(){run.disabled=!(svc?.configured&&Number.isFinite(svc?.estimate?.best?.usd)&&frame&&agree.checked&&!busy);}
+  function update(){run.disabled=!(svc?.configured&&Number.isFinite(svc?.estimate?.best?.usd)&&frame&&agree.checked&&!busy&&!guidePending);}
   function reset(){resultVersion++;agree.checked=false;q('save').hidden=q('result').hidden=true;q('result').removeAttribute('src');q('save').removeAttribute('href');update();}
   f.addEventListener('change',async()=>{
-    reset();const v=resultVersion;frame='';q('original').hidden=true;update();
+    reset();const v=++frameSeq;frame='';q('original').hidden=true;update();
     try{
       const src=await readFile(f.files[0],3_500_000);
       const img=await decoded(src);
-      if(v!==resultVersion)return;
+      if(v!==frameSeq)return;
       if(img.width<256||img.height<256||img.width>4096||img.height>4096)throw new Error('Use an image between 256 and 4096 pixels on each side.');
       frame=src;q('original').src=src;q('original').hidden=false;stage('Original loaded on this device. It has not been sent.');
-    }catch(e){if(v===resultVersion)stage(e.message);}
+    }catch(e){if(v===frameSeq)stage(e.message);}
     update();
   });
   guide.addEventListener('change',async()=>{
-    reset();const v=resultVersion;line='';
-    if(!guide.files[0])return;
-    try{const src=await readFile(guide.files[0],1_450_000);if(v===resultVersion)line=src;}catch(e){if(v===resultVersion){guide.value='';stage(e.message);}}
-    update();
+    reset();const v=++guideSeq;line='';guidePending=!!guide.files[0];update();
+    if(!guidePending)return;
+    try{const src=await readFile(guide.files[0],1_450_000);if(v===guideSeq)line=src;}
+    catch(e){if(v===guideSeq){guide.value='';stage(e.message);}}
+    finally{if(v===guideSeq){guidePending=false;update();}}
   });
   time.addEventListener('change',reset);
   agree.addEventListener('change',update);
@@ -62,7 +69,7 @@ async function mount(){
     busy=true;agree.checked=false;update();[f,guide,time,agree].forEach(x=>x.disabled=true);
     stage('Rendering one frame with Gemini…');
     try{
-      const response=await fetch(ROUTE,{method:'POST',headers:{'content-type':'application/json'},body:bodyFor(payload)});
+      const response=await fetch(endpoint,{method:'POST',credentials:'omit',headers:{'content-type':'application/json'},body:bodyFor(payload)});
       const data=await response.json();
       if(!response.ok||!sources.test(data?.image))throw new Error(data?.message||'No render was returned. Check your project before retrying.');
       const jpg=await label(data.image);
@@ -73,10 +80,18 @@ async function mount(){
     finally{busy=false;[f,guide,time,agree].forEach(x=>x.disabled=false);update();}
   });
   try{
-    const res=await fetch(ROUTE,{cache:'no-store'});
-    if(!res.ok)throw new Error();
-    svc=await res.json();
-    q('service').textContent=svc.configured?'Cloudflare Gemini connection configured.':'This environment has no Gemini key configured; no job will be sent.';
+    for(const url of routesFor(location.origin)){
+      try {
+        const res=await fetch(url,{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(7000)});
+        if(!res.ok)continue;
+        svc=await res.json();endpoint=url;
+        if(svc.configured)break;
+      } catch { /* status reads only; never retry a paid POST */ }
+    }
+    if(!svc)throw new Error();
+    q('service').textContent=svc.configured ?
+      (endpoint===LIVE_RENDER ? 'Uses the existing production Lab Gemini connection. Only submit approved frames.' : 'Cloudflare Gemini connection configured.') :
+      'No Gemini key is configured on an accessible Lab connection; no job will be sent.';
     const b=svc.estimate?.best;
     q('quote').textContent=b?.text?'Best quality · '+(svc.sizes?.best??'')+' · '+b.text:'No price is available. Rendering disabled.';
   }catch{q('service').textContent='Could not check the Cloudflare render service. Nothing has been sent.';}

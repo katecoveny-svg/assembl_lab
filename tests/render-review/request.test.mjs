@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {ROUTE,bodyFor} from '../../render-review/review.mjs';
+import {ROUTE,bodyFor,routesFor} from '../../render-review/review.mjs';
 const frame='data:image/png;base64,AAAA';
 const service={configured:true,needs_confirm:true,estimate:{best:{usd:.15}}};
 const opts={frame,guide:'',time:'golden',consent:true,service};
@@ -16,4 +16,10 @@ test('unconfirmed or unconfigured never builds a paid request',()=>{
 test('rejects unexpected inputs, caps size and retains an optional guide',()=>{
   for(const delta of [{frame:'https://example.invalid'},{guide:'x'},{time:'x'},{service:{...service,limits:{max_body_bytes:10}}}])assert.throws(()=>bodyFor({...opts,...delta}));
   assert.equal(JSON.parse(bodyFor({...opts,guide:frame})).line,frame);
+});
+
+test('only the existing Lab preview host can fall back to the fixed production endpoint',()=>{
+  const live='https://lab.assembl.co.nz/api/render';
+  assert.deepEqual(routesFor('https://branch-a.assembl-lab.pages.dev'),[ROUTE,live]);
+  for(const bad of ['null','http://x.assembl-lab.pages.dev','https://x.assembl-lab.pages.dev.evil.invalid','https://x.assembl-lab.pages.dev:1234','https://lab.assembl.co.nz'])assert.deepEqual(routesFor(bad),[ROUTE]);
 });
