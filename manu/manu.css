@@ -100,6 +100,12 @@ body.mt { margin: 0; background: var(--ivory); color: var(--ink); font: 400 17px
 .mt-markers { position: absolute; inset: 0; pointer-events: none; }
 .mt-marker { position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; display: grid; place-items: center; background: var(--plum); color: var(--ivory); font: 500 12px/1 var(--mono); box-shadow: 0 0 0 2px var(--ivory), 0 4px 14px rgba(33, 18, 31, 0.28); transition: opacity 0.2s ease, box-shadow 0.2s ease; will-change: transform; }
 .mt-marker.behind { opacity: 0.32; }
+.mt-leader { position: absolute; left: 0; top: 0; height: 1.5px; margin-top: -0.75px; transform-origin: 0 50%; background: var(--plum); opacity: 0; pointer-events: none; will-change: transform; }
+.mt-leader::before { content: ""; position: absolute; left: -3px; top: -2.25px; width: 6px; height: 6px; border-radius: 50%; background: var(--plum); box-shadow: 0 0 0 1.5px var(--ivory); }
+.mt-leader.shown { opacity: 0.85; }
+.mt-leader.shown.behind { opacity: 0.25; }
+.mt-stage.labels-off .mt-leader { display: none; }
+@media (max-width: 600px) { .mt-marker { width: 20px; height: 20px; margin: -10px 0 0 -10px; font-size: 10.5px; } }
 .mt-stage.live .mt-marker:not(.placed) { visibility: hidden; }
 .mt-marker.hot { box-shadow: 0 0 0 2px var(--ivory), 0 0 0 6px var(--rose); }
 .mt-stage.labels-off .mt-marker { display: none; }

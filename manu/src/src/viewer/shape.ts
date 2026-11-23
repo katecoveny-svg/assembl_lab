@@ -20,9 +20,12 @@ const H = canvas.clientHeight;
 renderer.setSize(W, H, false);
 const scene = new THREE.Scene();
 scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2));
-const bird = createBird({ species: NZ_SPECIES[key] });
+const dens = q.get('density');
+const t0 = performance.now();
+const bird = createBird({ species: dens ? { ...NZ_SPECIES[key], plumage: { density: Number(dens), fuzzLayers: Number(q.get('fuzz') ?? 3) } } : NZ_SPECIES[key] });
 bird.mind.quiet = true;
 bird.mind.pinGaze = [0, 0, 0];
+const buildMs = performance.now() - t0;
 scene.add(bird.root);
 for (let i = 0; i < 30; i++) bird.update(1 / 30);
 
@@ -96,6 +99,7 @@ Object.assign(window, {
       tarsus: rig.tarsusLength,
       headEye: v('eye.L').distanceTo(v('bill')),
       boxSize: size.toArray(),
+      buildMs,
       verts: Object.fromEntries(Object.entries(bird.feathers).map(([n, m]) => [n, m.geometry.getAttribute('position').count])),
       measured: MEASURED[key] ?? null,
       eyeRadius: sp.eye.radius,

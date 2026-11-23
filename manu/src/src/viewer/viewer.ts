@@ -42,7 +42,8 @@ const ROOM: BackdropTheme = { deep: [0.62, 0.5, 0.56], mid: [0.82, 0.72, 0.74], 
 const TARGET = new THREE.Vector3(GRIP_X + 0.1, 0.55, 0);
 // azimuths about the target: three-quarter (the library's default), front, profile, back
 const VIEWS: Record<ViewName, { theta: number; phi: number; r: number }> = {
-  three: { theta: 0.47, phi: 1.43, r: 3.6 },
+  // (three-quarter from well round the side, so a bird that holds itself level shows its posture)
+  three: { theta: -0.95, phi: 1.43, r: 3.6 },
   front: { theta: 0.02, phi: 1.45, r: 3.3 },
   side: { theta: -1.4, phi: 1.43, r: 4.45 },
   back: { theta: Math.PI - 0.5, phi: 1.4, r: 3.4 },
@@ -135,8 +136,11 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
   scene.add(perch);
 
   // --- the bird -----------------------------------------------------------------------
-  const species = NZ_SPECIES[opts.bird];
-  if (!species) throw new Error(`no species ${opts.bird}`);
+  const base = NZ_SPECIES[opts.bird];
+  if (!base) throw new Error(`no species ${opts.bird}`);
+  // coat detail by device: phones get fewer, larger feathers and two fuzz shells; desktops the
+  // fine coat (about 2.5x the feathers) with four
+  const species = { ...base, plumage: phone ? { density: 0.85, fuzzLayers: 2 } : { density: 0.62, fuzzLayers: 4 } };
   const bird: BirdHandle = createBird({ species });
   bird.root.position.x = GRIP_X;
   bird.layer<HopLayer>('hop').home = GRIP_X;
@@ -145,7 +149,7 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
   if (opts.still) {
     bird.mind.quiet = true;
     // head turned toward profile from the three-quarter camera, so the bill reads
-    bird.mind.pinGaze = [-52, 8, 0];
+    bird.mind.pinGaze = [22, 8, 0];
   }
   scene.add(bird.root);
 
@@ -293,7 +297,13 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
       dz = -dz;
     }
     const n = Math.hypot(dx, dz) || 1;
-    return look.set(head0.x + (dx / n) * 2.2, head0.y + 0.1, head0.z + (dz / n) * 2.2);
+    // turned a little toward the camera, so from a view well round the side the head still
+    // shows its profile and eye rather than the back of its crown
+    const vn = Math.hypot(vx, vz) || 1;
+    dx = dx / n - (vx / vn) * 0.35;
+    dz = dz / n - (vz / vn) * 0.35;
+    const m = Math.hypot(dx, dz) || 1;
+    return look.set(head0.x + (dx / m) * 2.2, head0.y + 0.1, head0.z + (dz / m) * 2.2);
   }
   function frame(now: number) {
     timer.update(now);
