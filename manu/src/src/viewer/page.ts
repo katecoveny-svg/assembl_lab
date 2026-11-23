@@ -109,9 +109,15 @@ async function setupStage(el: HTMLElement) {
 
   // markers follow the bones
   const dots = new Map<AnchorId, HTMLElement>();
+  const leaders = new Map<AnchorId, HTMLElement>();
   if (markers) {
     markers.replaceChildren();
     ids.forEach((id, i) => {
+      // a thin leader from a marker nudged off a crowded spot back to its part
+      const l = document.createElement('span');
+      l.className = 'mt-leader';
+      markers.append(l);
+      leaders.set(id, l);
       const d = document.createElement('span');
       d.className = 'mt-marker';
       d.dataset.anchor = id;
@@ -120,15 +126,58 @@ async function setupStage(el: HTMLElement) {
       dots.set(id, d);
     });
   }
+  // markers are 26 px discs: where parts crowd (a small head, a phone screen) they are pushed
+  // apart until they no longer overlap, each keeping a leader to its own point
+  function spread(pts: { x: number; y: number }[]) {
+    // a little more than one marker apart (they are smaller on a phone)
+    const GAP = ((dots.values().next().value as HTMLElement | undefined)?.offsetWidth || 26) + 4;
+    const out = pts.map((p) => ({ x: p.x, y: p.y }));
+    for (let it = 0; it < 24; it++) {
+      let moved = false;
+      for (let i = 0; i < out.length; i++) {
+        for (let j = i + 1; j < out.length; j++) {
+          let dx = out[j].x - out[i].x;
+          let dy = out[j].y - out[i].y;
+          let d = Math.hypot(dx, dy);
+          if (d >= GAP) continue;
+          if (d < 0.01) {
+            // stacked exactly: part them along a fixed diagonal
+            dx = 0.7 + j * 0.1;
+            dy = -0.7;
+            d = Math.hypot(dx, dy);
+          }
+          const push = (GAP - d) / 2 + 0.5;
+          out[i].x -= (dx / d) * push;
+          out[i].y -= (dy / d) * push;
+          out[j].x += (dx / d) * push;
+          out[j].y += (dy / d) * push;
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
+    return out;
+  }
   function place() {
     if (!labelsOn) return;
-    for (const a of viewer!.anchors(ids)) {
+    const as = viewer!.anchors(ids);
+    const at = spread(as);
+    as.forEach((a, k) => {
       const d = dots.get(a.id);
-      if (!d) continue;
-      d.style.transform = `translate(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px)`;
+      const l = leaders.get(a.id);
+      if (!d) return;
+      const p = at[k];
+      d.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px)`;
       d.classList.toggle('behind', !a.front);
       d.classList.add('placed');
-    }
+      if (l) {
+        const len = Math.hypot(p.x - a.x, p.y - a.y);
+        l.style.transform = `translate(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px) rotate(${Math.atan2(p.y - a.y, p.x - a.x).toFixed(3)}rad)`;
+        l.style.width = `${len.toFixed(1)}px`;
+        l.classList.toggle('shown', len > 9);
+        l.classList.toggle('behind', !a.front);
+      }
+    });
   }
   viewer.onFrame(place);
   placeLater = place;

@@ -42,7 +42,8 @@ const ROOM: BackdropTheme = { deep: [0.62, 0.5, 0.56], mid: [0.82, 0.72, 0.74], 
 const TARGET = new THREE.Vector3(GRIP_X + 0.1, 0.55, 0);
 // azimuths about the target: three-quarter (the library's default), front, profile, back
 const VIEWS: Record<ViewName, { theta: number; phi: number; r: number }> = {
-  three: { theta: 0.47, phi: 1.43, r: 3.6 },
+  // (three-quarter from well round the side, so a bird that holds itself level shows its posture)
+  three: { theta: -0.95, phi: 1.43, r: 3.6 },
   front: { theta: 0.02, phi: 1.45, r: 3.3 },
   side: { theta: -1.4, phi: 1.43, r: 4.45 },
   back: { theta: Math.PI - 0.5, phi: 1.4, r: 3.4 },
@@ -148,7 +149,7 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
   if (opts.still) {
     bird.mind.quiet = true;
     // head turned toward profile from the three-quarter camera, so the bill reads
-    bird.mind.pinGaze = [-52, 8, 0];
+    bird.mind.pinGaze = [22, 8, 0];
   }
   scene.add(bird.root);
 
