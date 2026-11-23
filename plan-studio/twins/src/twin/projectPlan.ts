@@ -34,6 +34,7 @@ import type { App, Built, Key, Layer, Project } from './app';
 import { buildFreeform, isFreeform } from './freeform'; // free-form buildings (agent/freeform-walk-1122): tapered and curved plans, mezzanines, gable roofs over any footprint
 import { bbox as fpBox, inside as inPoly } from './freeformGeom';
 import { navFromPlan } from './walkNav';
+import { dressModel, type Dressed } from './dressModel'; // the finished look for an opened IFC or GLB (agent/model-dress-1123): this import and the lines marked model-dress
 
 // The tool's front door: drop a plan model (assembl.plan-model.v1, as Plan to 4D saves it) and
 // get a furnished, finished twin to render. An IFC or GLB (from Revit, ArchiCAD or Blender) is
@@ -600,6 +601,7 @@ export const projectPlan: Project = {
     let plantObj: THREE.Object3D | null = null;
     let landObj: THREE.Object3D | null = null;
     let lightObj: THREE.Object3D | null = null;
+    let dressed: Dressed | null = null;   // model-dress
     let sunFace: THREE.Vector3 | undefined;
     let siteNorth: [number, number] | undefined;
     let terrain: Terrain | null = null;
@@ -824,6 +826,7 @@ export const projectPlan: Project = {
       radius = Math.max(10, b2.getSize(new THREE.Vector3()).length() * 0.9);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
       keys.push({ label: 'Eye level', eye: centre.clone().add(new THREE.Vector3(0, 1.6 - centre.y, radius * 0.8)), look: centre.clone() });
+      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: keys[keys.length - 1] });   // model-dress: finishes, planting, light
     }
 
     // real ground where the model carries it: the survey grid with its aerial photo, a coarser far field, and the sea
@@ -902,6 +905,7 @@ export const projectPlan: Project = {
     // landscape: the layer now carries the proposed deck uplights as well as the soffit downlights
     if (lightObj) layers.push({ id: 'lights', label: 'Lights', note: 'proposed: soffit downlights over the glazed walls, deck uplights along the deck edges and up the cladding', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
+    if (dressed) layers.push(...dressed.layers);   // model-dress
     // a free-form building's furniture layouts (e.g. banquet and auditorium seating), one shown at a time
     for (const lg of layoutGroups) layers.push({ id: `layout-${lg.name}`, label: `Seating: ${lg.name} (${lg.seats})`, note: `${lg.building}: positions from the plan, furniture proposed`, visible: lg.group.visible, object: lg.group });
 
