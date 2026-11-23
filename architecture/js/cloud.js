@@ -992,3 +992,24 @@ export function createTeam(g) {
     },
   };
 }
+
+// ---- [workspace redesign] the client link (supabase/migrations/*_arch_project_share.sql, share-rules.js) ----------------------
+/**
+ * Whether a project of this practice is shared with its client, and turning it on or off. The table is read by members; only
+ * arch.set_project_share writes it, and it refuses anyone but an owner. Off is the default: no row means not shared.
+ *   get(pid) -> { on, token }      set(pid, on) -> { on, token }
+ */
+export function createSharePlace(gateway, practice) {
+  const g = gateway, pick = (r) => (r && r.shared === true && typeof r.token === 'string' ? { on: true, token: r.token } : { on: false, token: '' });
+  return {
+    practice: practice?.id ?? null,
+    async get(pid) {
+      try { return pick((await g.ask(() => g.from('project_share').select('shared,token').eq('project_id', dbId(pid)).limit(1)))?.[0]); }
+      catch (e) { throw explain(e); }
+    },
+    async set(pid, on) {
+      try { const rows = await g.rpc('set_project_share', { p_project: dbId(pid), p_on: !!on }); return pick(Array.isArray(rows) ? rows[0] : rows); }
+      catch (e) { throw explain(e); }
+    },
+  };
+}

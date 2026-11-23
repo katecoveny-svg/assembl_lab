@@ -19,6 +19,7 @@ import { planOutline, coverSvg, sketchSvg, outlineFor } from './cover.js';
 import { THEMES, pickTheme, applyTheme, lookChoiceHtml, isTheme, LOOK_SETTING } from './theme.js';
 import { icon, STAGE_ICON, NAV_ICON } from './icons.js';
 import { glance } from './glance.js';
+import { primaryModel } from './file-library-rules.js'; // [workspace redesign] one model: the uploaded IFC or GLB, else the plan model
 import { mountArtwork, syncArtwork, artCover, artHero, artSectionHtml, artAfterRender, FIRST_WAIT } from './artwork.js'; // the practice's own artwork
 const store = createSwitch(createStore(browserBackend()));
 const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me'), panelExtra: () => artSectionHtml('panel') });
@@ -26,6 +27,7 @@ const W = (project) => account.words(project); // [cloud] wording that depends o
 const $app = document.getElementById('app'), $me = document.getElementById('me'), $truth = document.getElementById('truth');
 const ui = { adding: null, editing: null, confirm: null, flash: '', busy: false, factsError: '', modelError: '', allActivity: false, focus: null, scrollTo: null, exporting: false, fileFor: null, tabs: {}, wallAt: 0, learn: [], addr: { chosen: null, change: false } };
 let me = '';
+let filesBy = new Map(); // [workspace redesign] the projects wall: each project's kept file notes, so a tile knows about an uploaded model
 let kept = new Map(); // the files kept for the project on screen (in this browser, or in the shared records), by file id
 let shown = null; // [cloud] the project on screen, for wording that depends on where it is kept
 const handoff = { fp: '', pid: '', ok: false, why: '', told: false }; // whether the model on screen is ready to pass to the 3D page
@@ -36,7 +38,9 @@ let browserLook = ''; // this browser's own choice of look (theme.js): used when
 let outlines = {}; // plan outlines this browser worked out from kept model files, by model fingerprint (a cache, kept as a setting)
 let storage = null; try { storage = window.localStorage; } catch { /* blocked: the look is not remembered between visits */ }
 /** the project page's tabs: [key, label, icon] */
-const TABS = [['site', 'Site', 'site'], ['model', 'Model', 'cube'], ['drawings', 'Drawings', 'drawings'], ['presentation', 'Presentation', 'presentation'], ['takeoff', 'Takeoff', 'takeoff'], ['deliverables', 'Deliverables', 'deliverables']];
+// [workspace redesign] Files first (one library of every file), then the model, the site, the client hand-off. Takeoff is left
+// out until it measures something (its tab only said "coming"); its keys stay so old links still open the page.
+const TABS = [['drawings', 'Files', 'drawings'], ['model', 'Model', 'cube'], ['site', 'Site', 'site'], ['presentation', 'Hand-off', 'presentation'], ['deliverables', 'Records', 'deliverables']];
 /** the page's six tabs, then any an add-on brings (modules.js registerProjectTab): [key, label, icon name or <svg>] */
 const allTabs = () => [...TABS, ...projectTabs().filter((t) => !TABS.some((c) => c[0] === t.id)).map((t) => [t.id, t.label, t.icon, true])];
 const tabKeys = () => allTabs().map((t) => t[0]);
@@ -173,12 +177,13 @@ function listHtml(b, kind, rows, ctx, { addLabel, emptyText, extra = '', head } 
 
 // ---- covers, stage bars and status: the visual parts every project shows ---------------------------------------------------
 /** the project's cover: its model's plan when there is one, otherwise a plain decorative sketch that says there is no model */
-function coverHtml(p, cls = '') {
+function coverHtml(p, cls = '', files = null) {
   const o = outlineFor(p.model, outlines);
   if (o) return `<div class="cover plan${cls ? ` ${cls}` : ''}">${coverSvg(o, { label: `${o.level || 'Ground floor'} plan of ${p.name}, drawn from its plan model${p.model.revision ? `, revision ${p.model.revision}` : ''}` })}</div>`;
   const art = artCover(p, cls); // the practice's own drawing, as decoration, when it has artwork
   if (art) return art;
-  return `<div class="cover deco${cls ? ` ${cls}` : ''}">${sketchSvg()}<span class="cover-note">${p.model?.fingerprint ? 'Model attached' : 'No model yet'}</span></div>`;
+  const pm = primaryModel(p, files ?? (shown?.id === p.id ? [...kept.values()] : (filesBy.get(p.id) ?? []))); // [workspace redesign] an uploaded model counts
+  return `<div class="cover deco${cls ? ` ${cls}` : ''}">${sketchSvg()}<span class="cover-note">${pm ? 'Model attached' : 'No model yet'}</span></div>`;
 }
 const coverCaption = (p) => { const o = outlineFor(p.model, outlines); return o ? `${o.level || 'Ground floor'} · from the model${p.model.revision ? `, revision ${p.model.revision}` : ''}` : ''; };
 /** seven segments, one a stage */
@@ -199,6 +204,8 @@ async function projectsView() {
   const projects = (await store.list('project')).sort((a, b) => (a.sample ? 1 : 0) - (b.sample ? 1 : 0) || String(b.updated_at).localeCompare(String(a.updated_at)));
   const [stages, tasks, rfis, approvals] = await Promise.all(['stage', 'task', 'rfi', 'approval'].map((k) => store.list(k)));
   wallData = { projects, stages, tasks };
+  filesBy = new Map();
+  try { for (const f of await store.listFiles()) { if (!filesBy.has(f.project_id)) filesBy.set(f.project_id, []); filesBy.get(f.project_id).push(f); } } catch { /* the tiles fall back to the plan model */ }
   const hasSample = projects.some((p) => p.sample);
   const seen = projects.map((p) => {
     const mine = (list) => list.filter((x) => x.project_id === p.id);
@@ -351,7 +358,7 @@ function dashView(b, r) {
   const waiting = b.stages.filter((s) => s.status === 'awaiting_approval');
   const rfis = openRfis(b), openDefects = b.defects.filter((d) => d.status !== 'closed').length;
   const tabs = allTabs(), keys = tabs.map((t) => t[0]);
-  const tab = [r.tab, ui.tabs[p.id]].find((k) => keys.includes(k)) ?? 'model';
+  const tab = [r.tab, ui.tabs[p.id]].find((k) => keys.includes(k)) ?? 'drawings';
   const cap = coverCaption(p);
   const num = (value, caption, to) => `<a class="num" href="${to}"><span class="big">${value}</span><span class="cap">${esc(caption)}</span></a>`;
   const panel = (key, body) => `<section class="tp" role="tabpanel" id="tp-${key}" aria-labelledby="tab-${key}" tabindex="0"${key === tab ? '' : ' hidden'}>${body}</section>`;
@@ -381,7 +388,6 @@ function dashView(b, r) {
     ${panel('model', modelTab(b))}
     ${panel('drawings', drawingsTab(b))}
     ${panel('presentation', presentationTab(b))}
-    ${panel('takeoff', takeoffTab(b))}
     ${panel('deliverables', deliverablesTab(b))}
     ${tabs.filter((t) => t[3]).map(([k]) => panel(k, `<div class="mod-tab" data-mod-tab="${esc(k)}"></div>`)).join('')}
     <details class="more log"${ui.allActivity ? ' open' : ''}><summary><span class="label">Activity</span><span class="st">${plural(b.activity.length, 'entry', 'entries')}</span></summary>
@@ -407,37 +413,28 @@ function siteTab(b) {
 /** Model: the kept plan model, then the add-on sections (Revit and IFC models) */
 function modelTab(b) {
   const p = b.project;
-  return `${tabHead('cube', 'Model', hasModel(b) ? `■ Revision ${esc(p.model.revision)} · version ${esc(p.model.fingerprint)}` : '□ Not attached')}
-    ${modelTool(b, stageDef('concept'))}
-    <div class="mod-host" data-mod-panels="model"></div>`;
+  const pm = primaryModel(p, [...kept.values()]); // [workspace redesign] the uploaded IFC or GLB is the model; the plan model is the 3D page's reading of the drawings
+  const head = pm?.kind === 'uploaded' ? `■ ${esc(pm.note.name)}` : hasModel(b) ? `■ Plan model · revision ${esc(p.model.revision)}` : '□ No model yet';
+  const plan = pm?.kind === 'uploaded'
+    ? `<details class="more plan-more"><summary><span class="label">Plan model</span><span class="st">${hasModel(b) ? `revision ${esc(p.model.revision)}` : 'none'} · read from the drawings</span></summary>${modelTool(b, stageDef('concept'))}</details>`
+    : modelTool(b, stageDef('concept'));
+  return `${tabHead('cube', 'Model', head)}
+    <div class="mod-host" data-mod-panels="model"></div>
+    ${plan}`;
 }
 
-/** Drawings: every document, each with its file */
-function drawingsTab(b) {
-  const p = b.project, cur = currentStage(b), order = (d) => STAGE_KEYS.indexOf(d.stage);
-  const docs = [...b.documents].sort((x, y) => order(x) - order(y)), files = docs.filter((d) => d.file?.id && kept.has(d.file.id)).length;
-  const tile = (d) => `<li class="doc">${icon(d.kind === 'Photo' ? 'photo' : 'drawings', 'doc-ic')}<div class="doc-main"><p class="doc-t">${esc(d.title)}</p>
-      <p class="doc-m">${esc([d.kind, d.version && `version ${d.version}`, d.date && day(d.date)].filter(Boolean).join(' · ') || 'No kind or date')}</p>
-      <p class="doc-m"><a href="${href(p.id, 's', d.stage, 'documents')}">${esc(stageDef(d.stage)?.label ?? 'Stage')}<span class="vh">: edit ${esc(d.title)}</span></a></p></div>${fileBar(d)}</li>`;
-  return `${tabHead('drawings', 'Drawings', `${plural(docs.length, 'document')} · ${plural(files, 'file')} kept`)}
-    ${docs.length ? `<ul class="docs">${docs.map(tile).join('')}</ul>` : emptyState('drawings', 'No documents yet.', 'Drawings, reports and consent documents you add appear here, each with its file.')}
-    <div class="acts"><button class="btn" data-act="pick" data-target="doc-new">${icon('plus')}<span>Add a file</span></button><span class="small">It goes in ${esc(stageDef(cur?.key ?? 'completion').label)}. To change a document’s details, open its stage.</span></div>
-    <input type="file" id="doc-file" data-file="doc" hidden /><input type="file" id="doc-new" data-file="doc-new" data-stage="${esc(cur?.key ?? 'completion')}" hidden />`;
+/** Files: one library of every file the project keeps (file-library.js draws it): drawings, models, site, photos, stills, films.
+ *  [workspace redesign] It replaces the list of documents, which showed only documents' files and said "No documents yet"
+ *  while Site and sources and Models held files. A document's details are still edited on its stage. */
+function drawingsTab() {
+  return `<div class="mod-host" data-mod-panels="drawings"></div>`;
 }
 
-/** Presentation: the model in 3D, the sample's rendering, and photos */
-function presentationTab(b) {
-  const p = b.project, link = twinLink(p.model), photos = b.documents.filter((d) => d.kind === 'Photo');
-  const three = link ? `<div class="pres-3d">${icon('cube', 'big')}<div><h3>${esc(p.model.file_name)}</h3><p class="st">■ Revision ${esc(p.model.revision)}</p>
-      <div class="acts">${open3dHtml(p, link)}</div>${link.direct ? `<p class="url">${esc(new URL(link.href, location.origin).href)}</p>` : '<p class="small">Opens in this browser. A link a client can open for a practice’s own model: Not built yet.</p>'}</div></div>`
-    : emptyState('cube', 'No model to show in 3D yet.', 'Attach the plan model in the Model tab.');
-  const pic = p.sample ? `<figure class="pres-pic"><img src="${HERO}" alt="A dark-clad house on timber piles among trees." loading="lazy" /><figcaption class="caption">A rendering of the sample plan model. Not a photograph.</figcaption></figure>` : '';
-  return `${tabHead('presentation', 'Presentation')}
-    ${three}${pic}
-    <div class="mod-host" data-mod-panels="presentation"></div>
-    <div class="sub-h"><h3>Photos</h3><span class="st">${plural(photos.length, 'photo')}</span></div>
-    ${photos.length ? `<ul class="docs">${photos.map((d) => `<li class="doc">${icon('photo', 'doc-ic')}<div class="doc-main"><p class="doc-t">${esc(d.title)}</p><p class="doc-m">${esc(d.date ? day(d.date) : 'No date')}</p></div>${fileBar(d)}</li>`).join('')}</ul>`
-      : emptyState('photo', 'Photos will appear here.', 'Add a document of kind Photo, with its file, in the Drawings tab or on a stage. Stills taken on the 3D page: Not built yet.')}`;
+/** Hand-off: the model, the stills and films, the client link and the download package (file-library.js draws it).
+ *  [workspace redesign] It replaces "No model to show in 3D yet" (which looked at the plan model only) and the furniture
+ *  library (now in the Model tab). */
+function presentationTab() {
+  return `<div class="mod-host" data-mod-panels="presentation"></div>`;
 }
 
 /** Takeoff: nothing is measured here yet */
@@ -696,7 +693,7 @@ async function render(fromLink = false) {
   const y = window.scrollY;
   $app.innerHTML = html;
   account.afterRender($app); // [cloud] for a viewer of shared records: take away what they cannot do
-  await drawAddons(r, onScreen);
+  await drawAddons(r, onScreen, () => mine === drawing);
   artAfterRender(document);
   if ($app.querySelector('[data-addr]')) cleanups.push(mountAddressBox($app, { onPick: (m) => { ui.addr.chosen = m; ui.factsError = ''; ui.focus = '[data-act="addr-use"]'; redraw(''); } })); // the Site tab's address box
   $truth.innerHTML = account.truthHtml(store.persistent); // [cloud] browser only / signed in and shared with a practice / not switched on yet
@@ -756,13 +753,15 @@ function selectTab(key, focus = false) {
 }
 
 /** the add-ons: the top-bar links, an add-on screen, and the add-on sections on a project page */
-async function drawAddons(r, project) {
+async function drawAddons(r, project, alive = () => true) {
+  // [workspace redesign] a newer draw may replace the page while an add-on is still drawing: stop then, so a section is
+  // never added twice (Site and sources showed twice after uploads)
   if ($mods) {
     const items = navItems();
     $mods.hidden = !items.length;
     $mods.innerHTML = items.map((n) => `<a href="${esc(n.hash)}" data-nav="${esc(n.id)}"${location.hash.startsWith(n.hash) ? ' aria-current="page"' : ''}>${n.icon ? `<span class="nav-ic" aria-hidden="true">${n.icon}</span>` : ''}<span>${esc(n.label)}</span></a>`).join('');
   }
-  const ctx = { store, account, me, project: project ?? null, practice: account.state?.practice ?? null, navigate: (h) => { location.hash = h; }, redraw, esc };
+  const ctx = { store, account, me, project: project ?? null, practice: account.state?.practice ?? null, navigate: (h) => { location.hash = h; }, redraw: (flash) => redraw(flash ?? ''), esc }; // an add-on's redraw clears the page's last message (it said "look saved" after money was saved)
   const mount = async (el, fn, ...args) => {
     try { const stop = await fn(el, ctx, ...args); if (typeof stop === 'function') cleanups.push(stop); }
     catch (err) { el.innerHTML = `<p class="small">□ This part could not open: ${esc(err.message)}</p>`; }
@@ -772,7 +771,7 @@ async function drawAddons(r, project) {
     if (mod && el) { document.title = `${mod.title} · assembl.`; await mount(el, mod.render, r.rest); }
     return;
   }
-  const part = async (host, id, fn, ...args) => { const el = document.createElement('div'); el.dataset.part = id; host.append(el); await mount(el, fn, ...args); };
+  const part = async (host, id, fn, ...args) => { if (!alive()) return; const el = document.createElement('div'); el.dataset.part = id; host.append(el); await mount(el, fn, ...args); };
   if (r.view === 'settings') { const host = $app.querySelector('[data-mod-settings]'); if (host) for (const s of settingsParts()) await part(host, s.id, s.render); return; }
   if (r.view === 'projects') {
     const top = $app.querySelector('[data-mod-wall]'), els = Object.fromEntries([...$app.querySelectorAll('[data-mod-tile]')].map((el) => [el.dataset.modTile, el]));
@@ -791,6 +790,7 @@ async function drawAddons(r, project) {
   const fallback = $app.querySelector('[data-mod-panels="model"]') ?? $app.querySelector('article') ?? $app.querySelector('.wrap') ?? $app;
   for (const pn of panels) {
     // each section sits in the tab it asked for (modules.js, tab), the Model tab when it asked for none
+    if (!alive()) return;
     const host = $app.querySelector(`[data-mod-panels="${pn.tab ?? 'model'}"]`) ?? fallback;
     const sec = document.createElement('section');
     sec.className = 'mod-panel'; sec.dataset.panel = pn.id; sec.setAttribute('aria-label', pn.title);
