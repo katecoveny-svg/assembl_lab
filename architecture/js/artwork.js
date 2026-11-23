@@ -83,6 +83,18 @@ export function syncArtwork() {
   return run;
 }
 
+/**
+ * One of the practice's line drawings for the 3D page's film title card (feat/photoreal-render-button): the first standalone
+ * drawing in the sketch look's ink (blue first), as { src, mode, colour }, or null. src is this visit's link to the file; the
+ * caller (handoff.js keepBrand) copies it into a small data URL. Read at run time from the practice's own artwork: nothing of
+ * any practice is kept in this code.
+ */
+export function brandDrawing() {
+  const d = st.record ? drawingFor(st.record, 'film-title', 'sketch') : null;
+  const src = d ? url(d.path) : '';
+  return src ? { src, mode: d.mode === 'image' ? 'image' : 'mask', colour: d.colour || '#8BA2FF' } : null;
+}
+
 /** what is on hand, for tests and for the Settings words */
 export const artworkState = () => ({ key: st.key, record: st.record, links: st.urls.size, practice: st.practice?.name ?? '', canChange: !!st.place?.canChange, shared: !!st.place?.shared });
 

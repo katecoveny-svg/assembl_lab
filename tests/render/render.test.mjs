@@ -63,8 +63,8 @@ test('GET answers status with no paid call: not configured', async () => {
   assert.equal(r.status, 200); assert.equal(r.calls.length, 0);
   assert.equal(r.json.type, 'assembl.planstudio.render.status');
   assert.equal(r.json.configured, false);
-  assert.deepEqual(r.json.models, { fast: 'gemini-nano-banana-2.1', best: 'gemini-3-pro-image' });
-  assert.equal(r.json.prompt_revision, RENDER_PROMPTS); assert.equal(RENDER_PROMPTS, '2026-11-23a');
+  assert.deepEqual(r.json.models, { fast: 'gemini-nano-banana-2.1', best: 'gemini-3-pro-image', finest: 'gemini-3-pro-image' });
+  assert.equal(r.json.prompt_revision, RENDER_PROMPTS); assert.equal(RENDER_PROMPTS, '2026-11-23b');
   assert.deepEqual({ ...r.json.limits }, { per_minute: 6, per_ip_day: 40, daily_cap: 100, max_body_bytes: 5_000_000, max_image_bytes: 4_000_000, max_line_bytes: 1_500_000, setting_chars: 120, counted_in: 'isolate' });
   assert.equal(r.json.stores_images, false); assert.equal(r.json.label, LABEL); assert.equal(r.json.api, 'interactions');
   assert.ok(!JSON.stringify(r.json).includes(KEY));
@@ -74,7 +74,7 @@ test('GET: configured with either key name, env overrides shown, the key never s
   for (const env of [{ GEMINI_API_KEY: KEY }, { GOOGLE_API_KEY: KEY }]) {
     const r = await call({ method: 'GET', env: { ...env, RENDER_GEMINI_FAST_MODEL: 'gemini-3.1-flash-lite-image', RENDER_GEMINI_BEST_MODEL: 'gemini-x-pro', RENDER_DAILY_CAP: '12', RENDER_IP_PER_MINUTE: '2', RENDER_IP_PER_DAY: '9', RENDER_GEMINI_API: 'generate-content' } });
     assert.equal(r.json.configured, true); assert.equal(r.calls.length, 0);
-    assert.deepEqual(r.json.models, { fast: 'gemini-3.1-flash-lite-image', best: 'gemini-x-pro' });
+    assert.deepEqual(r.json.models, { fast: 'gemini-3.1-flash-lite-image', best: 'gemini-x-pro', finest: 'gemini-3-pro-image' });
     assert.equal(r.json.limits.daily_cap, 12); assert.equal(r.json.limits.per_minute, 2); assert.equal(r.json.limits.per_ip_day, 9);
     assert.equal(r.json.api, 'generate_content');
     assert.ok(!JSON.stringify(r.json).includes(KEY));

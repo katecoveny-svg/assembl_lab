@@ -97,6 +97,29 @@ export async function keepBrand(name, { doc = globalThis.document, storage = glo
     }
   } catch { /* the name alone */ }
   const rec = brandRecord(name, logo);
+  // one of the practice's line drawings, for the film's title card on the 3D page (feat/photoreal-render-button); left out when
+  // there is none, or it cannot be made small enough to keep beside the logo
+  try { const d = await drawingForBrand(doc, fetcher); if (d) rec.drawing = d; } catch { /* the title card draws the model's own lines */ }
   try { storage?.setItem(BRAND_KEY, JSON.stringify(rec)); } catch { /* the 3D page shows assembl's word mark */ }
   return rec;
+}
+/** the drawing as { src: data URL (PNG, at most 1200 px wide), mode: 'mask' | 'image', colour }, or null */
+export const BRAND_DRAWING_MAX = 1_500_000;
+async function drawingForBrand(doc, fetcher) {
+  if (!doc?.createElement || !fetcher || typeof createImageBitmap !== 'function') return null;
+  const { brandDrawing } = await import('./artwork.js');
+  const d = brandDrawing?.();
+  if (!d?.src) return null;
+  const bmp = await createImageBitmap(await (await fetcher(d.src)).blob());
+  const k = Math.min(1, 1200 / bmp.width), c = doc.createElement('canvas');
+  c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const src = c.toDataURL('image/png');
+  return brandDrawingRecord({ src, mode: d.mode, colour: d.colour });
+}
+/** a drawing record, checked: a PNG/WebP/JPEG data URL under BRAND_DRAWING_MAX, a known mode and a #rrggbb colour; else null */
+export function brandDrawingRecord(d) {
+  const src = String(d?.src ?? '');
+  if (!/^data:image\/(png|webp|jpeg);base64,/.test(src) || src.length > BRAND_DRAWING_MAX) return null;
+  return { src, mode: d.mode === 'image' ? 'image' : 'mask', colour: /^#[0-9a-f]{6}$/i.test(String(d.colour ?? '')) ? d.colour : '#8BA2FF' };
 }

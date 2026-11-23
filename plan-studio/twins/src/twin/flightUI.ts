@@ -316,5 +316,8 @@ export function flightPanel(app: App, ctx: FlightCtx) {
     seek,
   };
   (window as unknown as { __flight?: unknown }).__flight = api;   // for checks from the console (this tab only)
+  // "Make photoreal still + film" (feat/photoreal-render-button): its own module, loaded on demand, below the film buttons
+  void import('./photoFinish').then((m) => m.mountFinish(app, { el, name: ctx.name, handoffId: ctx.handoffId, get path() { return fp; }, get timeline() { return tl; }, seek, hide: () => [group, ...(ctx.hideForFilm?.() ?? [])] }))
+    .catch((e) => console.warn('the photoreal finish could not be loaded', e));
   return api;
 }

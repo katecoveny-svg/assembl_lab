@@ -11,6 +11,17 @@ const looksLikeId = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 export function readBrand(raw: string | null): { name: string; logo: string } {
   try { const r = JSON.parse(raw ?? 'null') as { name?: unknown; logo?: unknown } | null; const name = String(r?.name ?? '').trim().slice(0, 60), logo = String(r?.logo ?? ''); return { name: name && !looksLikeId(name) ? name : '', logo: /^data:image\//.test(logo) ? logo : '' }; } catch { return { name: '', logo: '' }; }
 }
+/** the practice's line drawing the workspace kept beside its name and logo (architecture/js/handoff.js brandDrawingRecord), for
+ *  the film's title card (photoFinish.ts); null when there is none. mode 'mask': grey line work (white = line) drawn in colour;
+ *  'image': a drawing in its own colours on transparent */
+export function readBrandDrawing(raw: string | null): { src: string; mode: 'mask' | 'image'; colour: string } | null {
+  try {
+    const d = (JSON.parse(raw ?? 'null') as { drawing?: { src?: unknown; mode?: unknown; colour?: unknown } } | null)?.drawing;
+    const src = String(d?.src ?? '');
+    if (!/^data:image\/(png|webp|jpeg);base64,/.test(src) || src.length > 1_500_000) return null;
+    return { src, mode: d?.mode === 'image' ? 'image' : 'mask', colour: /^#[0-9a-f]{6}$/i.test(String(d?.colour ?? '')) ? String(d!.colour) : '#8BA2FF' };
+  } catch { return null; }
+}
 export type Look = (typeof LOOKS)[number];
 
 /** which look the page should wear: the workspace's, only when opened from it */
