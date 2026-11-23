@@ -48,7 +48,7 @@ export async function onRequestGet({ request, env }) {
       if (r.ok) for (const s of await r.json()) if (s?.path && s?.signedURL) signed.set(s.path, `${base}/storage/v1${s.signedURL}`);
     } catch { /* the page shows the items without pictures */ }
   }
-  const out = (n) => ({ name: n.name, type: n.type ?? "", size: Number(n.size) || 0, kept_at: n.kept_at ?? "", url: signed.get(n.path) ?? "" });
+  const out = (n) => ({ id: String(n.id ?? ""), name: n.name, type: n.type ?? "", size: Number(n.size) || 0, kept_at: n.kept_at ?? "", url: signed.get(n.path) ?? "" });
   const item = (i) => ({ title: i.title, kind: i.kind, media: i.media, versions: i.count, file: out(i.latest) });
   return json(200, {
     type: "assembl.arch.share.v1",

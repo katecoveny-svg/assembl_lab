@@ -1,0 +1,103 @@
+/* Comments and pins (js/comments.js, the client page's share/share.css wears the same marks). Tokens from ops.css only, so the
+   assembl look and the sketch look both work. A picture before a sentence: the pin mark and the thread, few words. */
+
+/* the large viewer with a rail beside it */
+.fl-view.has-rail { width: min(1240px, 96vw); }
+.fl-view.has-rail .fl-v { grid-template-columns: minmax(0, 1fr) 360px; }
+.fl-view.has-rail .fl-v-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; max-height: 92vh; }
+.fl-view.has-rail .fl-v-side h3 { font-size: 17px; padding-right: 36px; }
+.fl-view.has-rail .fl-v-side .acts { margin: 0; }
+.fl-view.has-rail .fl-v-side .acts .btn { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+.cm-rail { flex: 1; min-height: 0; display: flex; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 2px; }
+.cm-rail .cm { flex: 1; min-height: 0; }
+@media (max-width: 800px) {
+  .fl-view.has-rail .fl-v { grid-template-columns: 1fr; }
+  .fl-view.has-rail .fl-v-side { max-height: none; border-left: 0; border-top: 1px solid var(--line); }
+  .fl-view.has-rail .fl-v-pic { min-height: 200px; }
+  .cm-rail .cm-list { max-height: 36vh; }
+}
+.fl-cm { position: absolute; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1 var(--mono); background: var(--panel); color: var(--ink); border: 1px solid var(--line); padding: 5px 7px; }
+.fl-cm .ic { width: 13px; height: 13px; }
+
+/* the thread */
+.cm { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; align-content: start; overflow-y: auto; min-height: 0; flex: 1; }
+.cm-item { display: grid; grid-template-columns: 36px 1fr; gap: 10px; padding: 10px 6px 10px 0; border-bottom: 1px solid var(--hair); position: relative; }
+.cm-item.is-active { background: color-mix(in srgb, var(--rose) 60%, transparent); box-shadow: -3px 0 0 var(--blue-strong); padding-left: 6px; margin-left: -6px; }
+.cm-item.is-hidden { opacity: .55; }
+.cm-item.is-me .cm-head b::after { content: "@"; margin-left: 4px; font: 500 11px var(--mono); color: var(--blue-strong); }
+.cm-pick { all: unset; cursor: pointer; align-self: start; }
+.cm-pick:focus-visible, .cm-pinmark:focus-visible, .cm-tool:focus-visible, .cm-lk:focus-visible { outline: 2px solid var(--blue-strong); outline-offset: 2px; }
+.cm-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50% !important; border: 1px solid var(--edge); font: 500 11px/1 var(--mono); color: var(--ink); background: var(--field); }
+.cm-mark.is-pin { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-size: 14px; font-family: var(--sans); font-weight: 600; }
+.cm-main { min-width: 0; }
+.cm-head { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font: 14px/1.3 var(--sans); color: var(--ink); }
+.cm-head b { font-weight: 600; }
+.cm-when { font: 11px/1.3 var(--mono); color: var(--mute); margin-left: auto; }
+.cm-tag { font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; background: var(--rose); color: var(--ink); padding: 3px 6px; }
+.cm-tag.is-off { background: transparent; border: 1px solid var(--line); color: var(--mute); }
+.cm-seen { display: inline-flex; color: var(--blue); }
+.cm-seen .ic { width: 15px; height: 15px; }
+.cm-on { margin: 3px 0 0; font: 12px/1.3 var(--mono); color: var(--mute); }
+.cm-where { display: inline-flex; align-items: center; gap: 6px; }
+.cm-where .ic { width: 14px; height: 14px; color: var(--blue); }
+.cm-body { margin: 4px 0 0; font: 15px/1.45 var(--sans); color: var(--body); overflow-wrap: anywhere; white-space: normal; }
+.cm-at { font-weight: 600; color: var(--ink); background: color-mix(in srgb, var(--rose) 70%, transparent); padding: 0 3px; }
+.cm-url { text-decoration: underline dotted; text-underline-offset: 3px; overflow-wrap: anywhere; } /* a web address is text: never a link */
+.cm-mod { display: flex; gap: 14px; margin-top: 4px; }
+.cm-lk { all: unset; cursor: pointer; font: 12px/1.2 var(--mono); color: var(--mute); text-decoration: underline; text-underline-offset: 3px; min-height: 24px; display: inline-flex; align-items: center; }
+.cm-lk:hover { color: var(--ink); }
+.cm-lk.is-del { color: var(--needs); }
+.cm-empty { display: grid; justify-items: center; gap: 8px; padding: 26px 12px; text-align: center; color: var(--mute); font: 14px/1.4 var(--sans); border: 1px dashed var(--line); }
+.cm-empty .ic { width: 28px; height: 28px; color: var(--blue); }
+.cm-note { font: 12px var(--mono); color: var(--mute); margin: 0; }
+
+/* the composer */
+.cm-form { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.cm-box { position: relative; }
+.cm-box textarea { min-height: 64px; font-size: 15px; }
+.cm-name input { min-height: 40px; }
+.cm-err { margin: 0; font: 12px/1.4 var(--mono); color: var(--needs); }
+.cm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.cm-tool { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; background: var(--panel); border: 1px solid var(--edge); color: var(--ink); font: 500 14px var(--sans); cursor: pointer; }
+.cm-tool[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.cm-tool .ic { width: 18px; height: 18px; }
+.cm-client { text-transform: none; letter-spacing: 0; display: inline-flex; align-items: center; gap: 6px; font: 13px var(--sans); color: var(--body); cursor: pointer; min-height: 40px; }
+.cm-client input { width: 18px; min-height: 18px; height: 18px; padding: 0; accent-color: var(--accent); appearance: auto; -webkit-appearance: checkbox; }
+.cm-client .ic { width: 16px; height: 16px; color: var(--blue); }
+.cm-count { font: 11px var(--mono); color: var(--mute); margin-left: auto; }
+.cm-send { min-height: 40px; padding: 6px 14px; font-size: 14px; margin-left: auto; }
+.cm-count:not(:empty) + .cm-send { margin-left: 0; }
+.cm-send .ic { width: 16px; height: 16px; }
+.cm-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--edge); padding: 2px 4px 2px 8px; font: 500 12px var(--mono); color: var(--ink); }
+.cm-chip .ic { width: 15px; height: 15px; color: var(--blue); }
+.cm-chip .cm-lk { padding: 6px; }
+.cm-chip .cm-lk .ic { color: var(--mute); }
+.cm-ment { position: absolute; left: 0; right: 0; bottom: 100%; z-index: 5; background: var(--panel); border: 1px solid var(--edge); display: grid; box-shadow: 0 6px 20px rgba(0, 0, 0, .18); }
+.cm-opt { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; cursor: pointer; font: 14px var(--sans); color: var(--ink); min-height: 44px; align-items: center; }
+.cm-opt:hover, .cm-opt:focus-visible { background: var(--rose); }
+.cm-opt span { font: 12px var(--mono); color: var(--mute); }
+
+/* a still with its pins: the box shrinks to the picture, so a fraction of it is a fraction of the picture */
+.cm-stage { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.cm-stage > img { max-width: 100%; max-height: 82vh; display: block; }
+.cm-stage.is-pinning { cursor: crosshair; outline: 2px solid var(--blue-strong); outline-offset: -2px; }
+.cm-pins { position: absolute; inset: 0; pointer-events: none; }
+.cm-pinmark { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; min-width: 28px; height: 28px; padding: 0 6px; display: grid; place-items: center; border-radius: 14px 14px 14px 2px !important; background: var(--accent); color: var(--on-accent); border: 2px solid var(--paper); font: 600 13px/1 var(--sans); cursor: pointer; box-shadow: 0 1px 6px rgba(0, 0, 0, .45); }
+.cm-pinmark.is-active { background: var(--paper); color: var(--ink); border-color: var(--blue-strong); transform: translate(-50%, -100%) scale(1.18); z-index: 2; }
+.cm-pinmark.is-hidden { opacity: .5; }
+.cm-pinmark.is-draft { background: transparent; color: var(--ink); border: 2px dashed var(--paper); box-shadow: 0 0 0 2px var(--accent); pointer-events: none; }
+
+/* the Team tab */
+.tm { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.tm-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.tm-head h3, .tm-side h3 { margin: 0; font: 500 20px var(--sans); }
+.tm .cm-list { overflow: visible; }
+.tm-main .cm-form { order: -1; border-top: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
+.tm-main .cm-chips { order: 0; }
+.tm-log { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 12px; }
+.tm-log li { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; }
+.tm-log p { margin: 0; font: 14px/1.35 var(--sans); color: var(--body); }
+.tm-log p.small, .tm-log p.mono { font-size: 12px; color: var(--mute); }
+@media (max-width: 800px) { .tm { grid-template-columns: 1fr; gap: 20px; } }

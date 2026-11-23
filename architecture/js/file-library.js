@@ -13,6 +13,7 @@ import { thumbPlan, thumbKey, kindOf, libraryOf, docsWithoutFiles, counts, ofKin
 import { linkNote, shareOf, withShare, mayShare, shareUrl, clientParts, packageEntries, packageBytes, PACKAGE_LIMIT } from './share-rules.js';
 import { twinLink, activity } from './model.js';
 import { sizeText } from './store.js';
+import { mountRail, countsFor } from './comments.js';
 
 const CSS_VERSION = '1';
 let cssReady = null;
@@ -33,13 +34,14 @@ const IC = {
   down: SVG('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
   lock: SVG('<rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
   play: SVG('<path d="M8 5v14l11-7z"/>'),
+  say: SVG('<path d="M4 5h16v11H9l-5 4z"/>'),
   x: SVG('<path d="M6 6l12 12M18 6 6 18"/>'),
   link: SVG('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
 };
 const kindIcon = (k) => (k === 'films' ? IC.film : icon(KINDS.find((x) => x[0] === k)?.[2] ?? 'file'));
 
 /** what this part remembers between draws, by project id */
-const S = { filter: new Map(), thumbs: new Map(), jobs: new Map(), note: new Map(), zip: new Map(), copied: '' };
+const S = { filter: new Map(), thumbs: new Map(), jobs: new Map(), note: new Map(), zip: new Map(), copied: '', cc: new Map() };
 const THUMB_LIMIT = { image: 15 * 1024 * 1024, pdf: 25 * 1024 * 1024, model: 30 * 1024 * 1024, video: 80 * 1024 * 1024 };
 
 // ---- reading -----------------------------------------------------------------------------------------------------------
@@ -47,7 +49,9 @@ async function read(ctx) {
   const p = ctx.project;
   const [files, b] = await Promise.all([ctx.store.listFiles({ project_id: p.id }), ctx.store.loadProject(p.id)]);
   const documents = b?.documents ?? [];
-  return { p: b?.project ?? p, files, documents, items: libraryOf({ project: b?.project ?? p, files, documents }), bare: docsWithoutFiles(documents, files) };
+  const items = libraryOf({ project: b?.project ?? p, files, documents });
+  S.cc = await countsFor(ctx, items); // [workspace redesign p2] how many comments each tile has
+  return { p: b?.project ?? p, files, documents, items, bare: docsWithoutFiles(documents, files) };
 }
 
 /** a kept file's contents as a Blob (the shared records may hand back a Blob with its progress) */
@@ -164,7 +168,7 @@ function tileHtml(esc, it) {
   const inner = pic && pic !== 'none' ? `<img src="${pic}" alt="" decoding="async">` : `<span class="fl-ph">${kindIcon(it.kind)}<b>${esc(ext(it.name).toUpperCase() || 'FILE')}</b></span>`;
   return `<li class="fl-tile is-${it.media}"><button type="button" class="fl-open" data-fl="open" data-key="${esc(it.key)}" aria-label="${esc(`${it.title}, ${it.kind}${it.count > 1 ? `, ${it.count} versions` : ''}`)}">
     <span class="fl-thumb${pic && pic !== 'none' ? ' has-pic' : ''}" data-thumb="${esc(it.latest.id)}">${inner}</span>
-    ${it.media === 'video' ? `<span class="fl-play">${IC.play}</span>` : ''}${it.count > 1 ? `<span class="fl-ver">v${it.count}</span>` : ''}
+    ${it.media === 'video' ? `<span class="fl-play">${IC.play}</span>` : ''}${it.count > 1 ? `<span class="fl-ver">v${it.count}</span>` : ''}${S.cc.get(it.key) ? `<span class="fl-cm" title="Comments">${IC.say}${S.cc.get(it.key)}</span>` : ''}
     <span class="fl-cap"><span class="fl-name">${esc(it.title)}</span><span class="fl-meta">${esc(KINDS.find((k) => k[0] === it.kind)?.[1] ?? '')} · ${esc(shortDay(it.kept_at))}</span></span></button></li>`;
 }
 
@@ -221,13 +225,17 @@ function openView(el, ctx, d, key) {
       <div class="acts"><button class="btn solid" data-fl="get" data-id="${esc(n.id)}">${IC.down}<span>Download</span></button>
         ${it.media === 'model' && pm?.kind === 'uploaded' && pm.note.id === n.id && pm.open ? `<button class="btn" data-fl="open3d" data-id="${esc(pm.open.id)}">${icon('cube')}<span>Open in 3D</span></button>` : ''}</div>
       ${pm?.kind === 'uploaded' && pm.note.id === n.id ? '<p class="fl-tag">■ The project’s model</p>' : ''}
-      ${it.count > 1 ? `<p class="lab">Versions</p><ol class="fl-vers">${it.versions.map((v, i) => `<li><span>v${it.count - i}</span><span class="mono">${esc(shortDay(v.kept_at))}</span><button class="link" data-fl="get" data-id="${esc(v.id)}">Download</button></li>`).join('')}</ol>` : ''}</div></div>`;
+      ${it.count > 1 ? `<p class="lab">Versions</p><ol class="fl-vers">${it.versions.map((v, i) => `<li><span>v${it.count - i}</span><span class="mono">${esc(shortDay(v.kept_at))}</span><button class="link" data-fl="get" data-id="${esc(v.id)}">Download</button></li>`).join('')}</ol>` : ''}
+      <div class="cm-rail" data-cm-rail aria-label="Comments"></div></div></div>`;
+  dlg.classList.add('has-rail');
   dlg.showModal?.() ?? dlg.setAttribute('open', '');
+  // [workspace redesign p2] comments beside the file; a still also gets pins over the picture
+  const rail = mountRail(dlg.querySelector('[data-cm-rail]'), ctx, { item: it }).catch(() => null);
   if (it.media === 'model') return;
   blobOf(ctx, n).then(async (blob) => {
     const host = dlg.querySelector('[data-v-pic]');
     if (!host) return;
-    if (it.media === 'image') host.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="${esc(it.title)}">`;
+    if (it.media === 'image') { host.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="${esc(it.title)}">`; rail.then((r) => r?.stage(host)); }
     else if (it.media === 'video') host.innerHTML = `<video src="${URL.createObjectURL(blob)}" controls playsinline preload="metadata"></video>`;
     else if (it.media === 'pdf') { const url = await pdfThumb({ data: new Uint8Array(await blob.arrayBuffer()) }); host.innerHTML = `<img src="${url}" alt="First sheet of ${esc(it.title)}">`; }
     else host.innerHTML = `<span class="fl-ph big">${kindIcon(it.kind)}<b>${esc(ext(n.name).toUpperCase() || 'FILE')}</b></span>`;
