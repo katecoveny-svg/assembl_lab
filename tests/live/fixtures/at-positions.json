@@ -1,0 +1,271 @@
+{
+"_note": "Trimmed real answer from bus-positions (Auckland Transport vehicle locations via assembl's Supabase function), saved 23 Nov 2026. Contains Auckland Transport data, CC BY 4.0.",
+"vehicles": [
+{
+"vehicle_id": "512003329",
+"route_id": "",
+"trip_id": "",
+"latitude": -35.317051666666664,
+"longitude": 174.12009166666667,
+"bearing": "216",
+"speed": 0,
+"timestamp": 1795392495,
+"occupancy_status": null
+},
+{
+"vehicle_id": "512010040",
+"route_id": "",
+"trip_id": "",
+"latitude": -41.26551,
+"longitude": 174.03954666666667,
+"bearing": null,
+"speed": 0,
+"timestamp": 1795392570,
+"occupancy_status": null
+},
+{
+"vehicle_id": "503127340",
+"route_id": "",
+"trip_id": "",
+"latitude": -35.75167666666667,
+"longitude": 174.34835,
+"bearing": "150",
+"speed": 0,
+"timestamp": 1795392542,
+"occupancy_status": null
+},
+{
+"vehicle_id": "512216820",
+"route_id": "",
+"trip_id": "",
+"latitude": -36.84100166666666,
+"longitude": 174.76744166666666,
+"bearing": null,
+"speed": 0.0514444,
+"timestamp": 1795392652,
+"occupancy_status": null
+},
+{
+"vehicle_id": "512000741",
+"route_id": "PINE-210",
+"trip_id": "515-99011-46800-2-bf92e646",
+"latitude": -36.889718333333334,
+"longitude": 174.98969,
+"bearing": null,
+"speed": 0,
+"timestamp": 1795392644,
+"occupancy_status": null
+},
+{
+"vehicle_id": "512004511",
+"route_id": "MTIA-209",
+"trip_id": "902-98014-46800-1-2c3cb812",
+"latitude": -36.83447,
+"longitude": 174.78928833333333,
+"bearing": "83.9",
+"speed": 5.14444,
+"timestamp": 1795392646,
+"occupancy_status": null
+},
+{
+"vehicle_id": "512005706",
+"route_id": "MTIA-209",
+"trip_id": "902-98011-46800-1-cdd3d9f0",
+"latitude": -36.79046,
+"longitude": 174.92915833333333,
+"bearing": "234.6",
+"speed": 14.147210000000001,
+"timestamp": 1795392651,
+"occupancy_status": null
+},
+{
+"vehicle_id": "59116",
+"route_id": "S-C-201",
+"trip_id": "257-870005-46260-2-A106B117190-c52b53a2",
+"latitude": -37.0522722222222,
+"longitude": 174.935569444444,
+"bearing": "320.1",
+"speed": 28.583333333333332,
+"timestamp": 1795392644,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "59172",
+"route_id": "E-W-201",
+"trip_id": "258-880002-43680-2-W101560-8124df4e",
+"latitude": -36.8949,
+"longitude": 174.852169444444,
+"bearing": "207",
+"speed": 21.944444444444443,
+"timestamp": 1795392651,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "59005",
+"route_id": "E-W-201",
+"trip_id": "258-880002-45480-2-W105610-d91490a4",
+"latitude": -36.8750833333333,
+"longitude": 174.734816666667,
+"bearing": "59.6",
+"speed": 6.166666666666667,
+"timestamp": 1795392643,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "59415",
+"route_id": "E-W-201",
+"trip_id": "258-880002-42780-2-W073520-61dc138c",
+"latitude": -36.9773555555556,
+"longitude": 174.849302777778,
+"bearing": "147.7",
+"speed": 4.083333333333333,
+"timestamp": 1795392645,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "59714",
+"route_id": "O-W-201",
+"trip_id": "259-860001-45420-2-H102431-78c8b524",
+"latitude": -36.8846694444444,
+"longitude": 174.714305555556,
+"bearing": "218.5",
+"speed": 7.583333333333333,
+"timestamp": 1795392645,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "24163",
+"route_id": "35-205",
+"trip_id": "1175-03505-46500-2-ab0981ab",
+"latitude": -36.9685132,
+"longitude": 174.9054876,
+"bearing": "13",
+"speed": 51,
+"timestamp": 1795392648,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "26247",
+"route_id": "985-221",
+"trip_id": "1014-98503-47100-2-cf16ad07",
+"latitude": -36.5878874,
+"longitude": 174.6810894,
+"bearing": "224",
+"speed": 46,
+"timestamp": 1795392650,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "26207",
+"route_id": "981-221",
+"trip_id": "1010-98112-47100-2-16798dbe",
+"latitude": -36.6148429,
+"longitude": 174.6786688,
+"bearing": "23",
+"speed": 40,
+"timestamp": 1795392647,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "26262",
+"route_id": "983-221",
+"trip_id": "1012-98303-46200-2-126da864",
+"latitude": -36.627380599999995,
+"longitude": 174.734673,
+"bearing": "255",
+"speed": 43,
+"timestamp": 1795392649,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "26263",
+"route_id": "985-221",
+"trip_id": "1014-98503-30900-2-22c50c9b",
+"latitude": -36.6198183,
+"longitude": 174.68797279999998,
+"bearing": "165",
+"speed": 0,
+"timestamp": 1795392604,
+"occupancy_status": null
+},
+{
+"vehicle_id": "26189",
+"route_id": "986-221",
+"trip_id": "1015-98603-46200-2-f2c2196c",
+"latitude": -36.7334029,
+"longitude": 174.7027434,
+"bearing": "271",
+"speed": 9,
+"timestamp": 1795392647,
+"occupancy_status": 0
+},
+{
+"vehicle_id": "26244",
+"route_id": "988-221",
+"trip_id": "1017-98804-46500-2-8ca28183",
+"latitude": -36.6146312,
+"longitude": 174.80111409999998,
+"bearing": "220",
+"speed": 50,
+"timestamp": 1795392650,
+"occupancy_status": 0
+},
+{
+"vehicle_id": "26192",
+"route_id": "984-221",
+"trip_id": "1013-98404-47040-2-74ebe719",
+"latitude": -36.6130569,
+"longitude": 174.6917758,
+"bearing": "61",
+"speed": 50,
+"timestamp": 1795392648,
+"occupancy_status": 0
+},
+{
+"vehicle_id": "24171",
+"route_id": "35-205",
+"trip_id": "1175-03505-47400-2-ab0981ab",
+"latitude": -36.9942942,
+"longitude": 174.8778749,
+"bearing": "167",
+"speed": 7,
+"timestamp": 1795392648,
+"occupancy_status": 1
+},
+{
+"vehicle_id": "24165",
+"route_id": "355-205",
+"trip_id": "1176-35505-45000-2-ef954321",
+"latitude": -36.934427899999996,
+"longitude": 174.9111706,
+"bearing": "117",
+"speed": 17,
+"timestamp": 1795392647,
+"occupancy_status": 0
+},
+{
+"vehicle_id": "512001268",
+"route_id": "HOBS-209",
+"trip_id": "514-96011-46800-2-f29c59f3",
+"latitude": -36.787908333333334,
+"longitude": 174.67310166666667,
+"bearing": "119.5",
+"speed": 2.5207756000000003,
+"timestamp": 1795392634,
+"occupancy_status": null
+},
+{
+"vehicle_id": "512007873",
+"route_id": "MTID-241",
+"trip_id": "521-93021-44100-1-2bf4acc1",
+"latitude": -36.842355,
+"longitude": 174.76568333333333,
+"bearing": "198",
+"speed": 0,
+"timestamp": 1795392498,
+"occupancy_status": null
+}
+],
+"count": 24,
+"timestamp": 1795392657275
+}

@@ -111,3 +111,17 @@ The owner note for the page is `docs/architecture/site-ground.md`. The tests are
 - Answers are cached for the time suited to each feed (15 minutes for weather, a day or more for quarterly figures), so the publishers are not asked again and again. A page that asks for `site` next to `weather` gets the shorter time.
 - An answer in which any feed failed outright is sent with `Cache-Control: no-store` and is not kept in the edge cache, so the next ask tries the publisher again. (Before 22 November 2026 such an answer was cached for five minutes; on the preview the same failure came back as a cache hit.) An answer that is only partial or stale says so and may still be cached briefly.
 - The tests run offline: `node --test tests/live/live.test.mjs tests/live/site.test.mjs`. The live check is `node tests/live/smoke.mjs`; it uses the real internet and is not part of the tests.
+
+## Auckland transport, live (`/auckland/live/`), added 23 Nov 2026
+
+Not an `/api/live` feed: the page reads Auckland Transport through Supabase functions, so AT's key never reaches the browser. Full sources and limits: `auckland/live/SOURCE.md`.
+
+| Part | Source | Status |
+|---|---|---|
+| Vehicle positions (buses, trains, ferries) | `bus-positions` Supabase function (AT realtime vehicle locations) | Verified 23 Nov 2026: 1,716 fixes, 712 on a trip (683 buses, 26 trains, 14 ferries) |
+| Late or on time, service alerts | `supabase/functions/at-live` (AT `/realtime/legacy/tripupdates` and `/servicealerts`) | Written and tested offline, **not deployed**. Needs `AT_API_KEY` set as a Supabase secret and `supabase functions deploy at-live --no-verify-jwt`. The page switches it on by itself when it answers |
+| Next arrivals at a stop | `at-live?stop=` (AT GTFS API `/gtfs/v3/stops/{id}/stoptrips`) | Not deployed; the query form is from AT's portal and is **unverified** until a real answer is seen. The answer says `stopTripsVerified: false` |
+| Routes, stops, route lines | AT GTFS static (public download), baked into `auckland/live/data/` | Verified; timetable 12 Nov 2026 to 7 Feb 2027 |
+| Weather chip | existing `weather` feed | Verified (existing) |
+
+Licence: Auckland Transport open data is Creative Commons Attribution 4.0 International ("Contains Auckland Transport data, CC BY 4.0"), stated on AT's data sources page. The realtime API is also under the AT developer portal's API terms of use, which we could not read in full from here: **please check those terms before the at-live function goes live.** The credit line is shown on the page.
