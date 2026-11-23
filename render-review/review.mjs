@@ -8,13 +8,15 @@ export function routesFor(origin){
 const mime=/^image\/(?:png|jpeg|webp)$/u;
 const sources=/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/]+={0,2}$/u;
 const allowedTimes=new Set(['golden','morning','midday','overcast']);
-export function bodyFor({frame,guide,time,consent,service}) {
+export function bodyFor({frame,guide,time,setting='',consent,service}) {
   if(!consent)throw new Error('Approve this one render before submitting.');
   if(!service?.configured||service?.needs_confirm!==true||!Number.isFinite(service?.estimate?.best?.usd))
     throw new Error('The Cloudflare connection and a Best-quality estimate are required.');
   if(!sources.test(frame)|| typeof guide!=='string'|| (guide&&!sources.test(guide))|| !allowedTimes.has(time))
     throw new Error('Select a valid image and light.');
-  const payload={image:frame,quality:'best',look:{time},confirm:true};
+  if(typeof setting!=='string'||setting.length>120)throw new Error('Keep finish notes to 120 characters.');
+  const note=setting.trim();
+  const payload={image:frame,quality:'best',look:{time,...(note?{setting:note}:{})},confirm:true};
   if(guide)payload.line=guide;
   const text=JSON.stringify(payload);
   if(text.length>=Number(service.limits?.max_body_bytes??5000000))throw new Error('Image and guide exceed the service limit. Export a smaller frame.');
@@ -29,15 +31,20 @@ function readFile(file,cap){
 function decoded(src){
   return new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>no(new Error('The image could not be read.'));im.src=src;});
 }
-async function label(src){
-  const im=await decoded(src),c=document.createElement('canvas');c.width=im.width;c.height=im.height+Math.max(34,Math.round(im.height*.055));
-  const x=c.getContext('2d');x.fillStyle='#291f23';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0);
-  x.fillStyle='#fffdfb';x.textBaseline='middle';x.font=Math.max(13,Math.round(im.width*.014))+'px system-ui';
-  x.fillText('AI-enhanced look study · Not a checked render',14,im.height+(c.height-im.height)/2);
+async function label(src,original){
+  const [im,source]=await Promise.all([decoded(src),decoded(original)]),c=document.createElement('canvas');
+  c.width=source.width;c.height=source.height;
+  const scale=Math.min(c.width/im.width,c.height/im.height),w=im.width*scale,h=im.height*scale;
+  const x=c.getContext('2d');x.fillStyle='#291f23';x.fillRect(0,0,c.width,c.height);
+  x.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);
+  const band=Math.max(25,Math.round(c.height*.045));
+  x.fillStyle='rgba(41,31,35,.88)';x.fillRect(0,c.height-band,c.width,band);
+  x.fillStyle='#fffdfb';x.textBaseline='middle';x.font=Math.max(11,Math.round(c.width*.014))+'px system-ui';
+  x.fillText('AI-enhanced look study · Not a checked render',14,c.height-band/2);
   return c.toDataURL('image/jpeg',.91);
 }
 async function mount(){
-  const q=id=>document.getElementById(id),f=q('frame'),guide=q('guide'),run=q('run'),agree=q('consent'),time=q('time');
+  const q=id=>document.getElementById(id),f=q('frame'),guide=q('guide'),run=q('run'),agree=q('consent'),time=q('time'),setting=q('setting');
   let svc,endpoint=ROUTE,frame='',line='',busy=false,resultVersion=0,frameSeq=0,guideSeq=0,guidePending=false;
   const stage=m=>q('status').textContent=m;
   function update(){run.disabled=!(svc?.configured&&Number.isFinite(svc?.estimate?.best?.usd)&&frame&&agree.checked&&!busy&&!guidePending);}
@@ -61,23 +68,24 @@ async function mount(){
     finally{if(v===guideSeq){guidePending=false;update();}}
   });
   time.addEventListener('change',reset);
+  setting.addEventListener('input',reset);
   agree.addEventListener('change',update);
   run.addEventListener('click',async()=>{
     if(run.disabled||busy)return;
     const version=resultVersion;
-    const payload={frame,guide:line,time:time.value,consent:agree.checked,service:svc};
-    busy=true;agree.checked=false;update();[f,guide,time,agree].forEach(x=>x.disabled=true);
+    const payload={frame,guide:line,time:time.value,setting:setting.value,consent:agree.checked,service:svc};
+    busy=true;agree.checked=false;update();[f,guide,time,setting,agree].forEach(x=>x.disabled=true);
     stage('Rendering one frame with Gemini…');
     try{
       const response=await fetch(endpoint,{method:'POST',credentials:'omit',headers:{'content-type':'application/json'},body:bodyFor(payload)});
       const data=await response.json();
       if(!response.ok||!sources.test(data?.image))throw new Error(data?.message||'No render was returned. Check your project before retrying.');
-      const jpg=await label(data.image);
+      const jpg=await label(data.image,payload.frame);
       if(version!==resultVersion)return;
       q('result').src=jpg;q('result').hidden=false;q('save').download='assembl-ai-look-study.jpg';q('save').href=jpg;q('save').hidden=false;
       stage('Compare the result with the model. Keep it only as a look study.');
     }catch(e){stage(e.message);}
-    finally{busy=false;[f,guide,time,agree].forEach(x=>x.disabled=false);update();}
+    finally{busy=false;[f,guide,time,setting,agree].forEach(x=>x.disabled=false);update();}
   });
   try{
     for(const url of routesFor(location.origin)){

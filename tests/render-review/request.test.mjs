@@ -23,3 +23,9 @@ test('only the existing Lab preview host can fall back to the fixed production e
   assert.deepEqual(routesFor('https://branch-a.assembl-lab.pages.dev'),[ROUTE,live]);
   for(const bad of ['null','http://x.assembl-lab.pages.dev','https://x.assembl-lab.pages.dev.evil.invalid','https://x.assembl-lab.pages.dev:1234','https://lab.assembl.co.nz'])assert.deepEqual(routesFor(bad),[ROUTE]);
 });
+
+test('finish notes are optional, trimmed and constrained to the server limit',()=>{
+  assert.equal(JSON.parse(bodyFor({...opts,setting:'  dark roof, retain existing masonry  '})).look.setting,'dark roof, retain existing masonry');
+  assert.throws(()=>bodyFor({...opts,setting:'x'.repeat(121)}),/120/);
+  assert.throws(()=>bodyFor({...opts,setting:42}),/120/);
+});
