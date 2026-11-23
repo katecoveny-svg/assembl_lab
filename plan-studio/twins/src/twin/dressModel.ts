@@ -7,8 +7,8 @@ import { twinMats } from './mats';
 import { planting as tuftPlanting, type Placement as TuftPlacement } from './plants';
 import { nativeBush } from './nativeTrees';
 import {
-  classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, makeGrid, markDoor, markRect, markTriEdges,
-  meaningfulColour, needsFrame, normClass, planPlanting, refineByShape, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
+  classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, inferIfcClassFromName, makeGrid, markDoor, markRect, markTriEdges,
+  meaningfulColour, namedMaterial, needsFrame, normClass, planPlanting, refineByShape, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
 } from './dressRules';
 import { scanSet } from './scanned';
 import { anodised, brick, herringbone, mulch, powderCoat, render, satinSteel, standingSeam, stoneFlags, upholstery } from './dressTex';
@@ -226,7 +226,7 @@ function elementOf(o: THREE.Object3D, root: THREE.Object3D) {
   let t: THREE.Object3D | null = o;
   while (t && t !== root) {
     const u = t.userData ?? {};
-    if (u.ifcClass || u.ifc_class) return t;
+    if (u.ifcClass || u.ifc_class || inferIfcClassFromName(t.name)) return t;
     t = t.parent;
   }
   return o;
@@ -254,20 +254,31 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     const el = elementOf(mesh, obj), u = el.userData ?? {};
     // a GLB from IfcOpenShell carries ifc_class, ifc_name and ifc_guid: the inspector reads ifcClass, name and globalId
     if (u.ifc_class && !u.ifcClass) { u.ifcClass = normClass(u.ifc_class); if (u.ifc_name && !u.name) u.name = u.ifc_name; if (u.ifc_guid && !u.globalId) u.globalId = u.ifc_guid; el.userData = u; }
-    const cls = normClass(u.ifcClass ?? '');
+    // class-batched browser-copy GLBs often name each node/mesh after its IFC class without userData extras
+    let cls = normClass(u.ifcClass ?? '');
+    if (!cls) {
+      cls = inferIfcClassFromName(el.name) || inferIfcClassFromName(mesh.name);
+      if (cls) { u.ifcClass = cls; el.userData = u; }
+    }
     const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     const g = mesh.geometry, tri = (g.index ? g.index.count : g.getAttribute('position')?.count ?? 0) / 3;
     drawn += tri * ((mesh as THREE.InstancedMesh).isInstancedMesh ? (mesh as THREE.InstancedMesh).count : 1);
     if (SKIP.has(cls)) return;
     list.forEach((m, slot) => {
       if (!m) return;
-      const rgb = colourOf(m), opacity = m.transparent ? m.opacity : (m as THREE.MeshPhysicalMaterial).transmission ? 0.3 : 1;
+      const partCls = cls || inferIfcClassFromName(m.name);
+      const rgb = colourOf(m);
+      let opacity = m.transparent ? m.opacity : (m as THREE.MeshPhysicalMaterial).transmission ? 0.3 : 1;
       let material = m.name ?? '';
       if (ifcNames) {
         const named = ifcNames.names.get(Number(u.expressID));
         material = named?.length ? named.join(', ') : (rgb && styleFor(ifcNames.styles, rgb)) || '';
       }
-      const info: PartInfo = { cls, name: String(u.name ?? el.name ?? ''), material, rgb, opacity };
+      // Class-batched IfcWindow meshes exported opaque with a cool glass tint colour read as glazing, not solid dark plates
+      if (partCls === 'IfcWindow' && opacity >= 0.95 && !namedMaterial(material, partCls) && rgb && rgb[2] > rgb[1] && rgb[1] > rgb[0] && rgb[2] - rgb[0] > 0.08) {
+        opacity = 0.45;
+      }
+      const info: PartInfo = { cls: partCls, name: String(u.name ?? el.name ?? ''), material, rgb, opacity };
       const p: Part = { mesh, slot: Array.isArray(mesh.material) ? slot : -1, orig: m, info, c: classify(info), el };
       if ((m as THREE.MeshStandardMaterial).map && g.getAttribute('uv')) p.keep = 'its own texture, from the file';
       parts.push(p);

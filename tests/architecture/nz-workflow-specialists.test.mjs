@@ -209,3 +209,16 @@ test('Reversible presentation detail layer is strictly excluded from IFC geometr
   assert.match(presSrc, /presentationOnly:\s*true/);
   assert.match(presSrc, /excludeFromClash:\s*true/);
 });
+
+test('inferIfcClassFromName resolves class-batched GLB node names without false positives', async () => {
+  const { inferIfcClassFromName, classify } = await import('../../plan-studio/twins/src/twin/dressRules.ts');
+  assert.equal(inferIfcClassFromName('IfcPlate'), 'IfcPlate');
+  assert.equal(inferIfcClassFromName('IfcWallStandardCase_01'), 'IfcWallStandardCase');
+  assert.equal(inferIfcClassFromName('mesh/IfcMember.002'), 'IfcMember');
+  assert.equal(inferIfcClassFromName('IfcRoof'), 'IfcRoof');
+  assert.equal(inferIfcClassFromName('world'), '');
+  assert.equal(inferIfcClassFromName('IfcMadeUpThing'), '');
+  assert.equal(classify({ cls: inferIfcClassFromName('IfcPlate'), name: 'IfcPlate', material: 'IfcPlate' }).finish, 'glass');
+  assert.equal(classify({ cls: inferIfcClassFromName('IfcMember'), name: 'IfcMember', material: 'IfcMember' }).finish, 'mullion');
+  assert.equal(classify({ cls: inferIfcClassFromName('IfcRoof'), name: 'IfcRoof', material: 'IfcRoof' }).finish, 'roof');
+});
