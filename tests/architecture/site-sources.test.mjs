@@ -92,10 +92,10 @@ test('the one-line note is trimmed and kept to a line', () => {
 });
 
 test('site_sources: the contract keeps its shape, and anything that does not fit is dropped, never guessed at', () => {
-  assert.deepEqual(normalSiteSources(undefined), { point: null, camera_path: null });
+  assert.deepEqual(normalSiteSources(undefined), { point: null, camera_path: null, placement: null });
   const good = { point: { lat: -36.8, lng: 175.1, source: 'LINZ address, chosen on the Site tab' }, camera_path: { pts: [[0, 0, 1.6], [5, 2, 1.6]], sketch_file_id: 'f1', traced_by: 'person', confirmed_by: 'Aroha', confirmed_at: '2026-11-23T01:00:00Z' } };
-  assert.deepEqual(normalSiteSources(good), good);
-  assert.deepEqual(Object.keys(normalSiteSources(good)), ['point', 'camera_path']);
+  assert.deepEqual(normalSiteSources(good), { ...good, placement: null });
+  assert.deepEqual(Object.keys(normalSiteSources(good)), ['point', 'camera_path', 'placement']);
   assert.deepEqual(Object.keys(normalSiteSources(good).camera_path), ['pts', 'sketch_file_id', 'traced_by', 'confirmed_by', 'confirmed_at']);
   assert.equal(normalSiteSources({ point: { lat: 51.5, lng: -0.1, source: 'x' } }).point, null, 'a point outside New Zealand is not kept');
   assert.equal(normalSiteSources({ camera_path: { pts: [[0, 0]], traced_by: 'tool' } }).camera_path, null, 'a point needs u, v and h');
@@ -169,7 +169,7 @@ test('what the 3D page is told about the site: record, sources list; the point f
   const files = [note({ id: 'a', name: 'set.pdf', slot: 'drawing_set' }), note({ id: 'b', name: 'path.png', slot: 'camera_sketch' }), note({ id: 'c', name: 'x.csv', slot: 'survey' })];
   const project = { site: { lat: -36.8, lon: 175.1 }, site_sources: { camera_path: { pts: [[0, 0, 1.6]], traced_by: 'tool', sketch_file_id: 'b', confirmed_by: null, confirmed_at: null } } };
   const h = siteHandoff(project, files);
-  assert.deepEqual(Object.keys(h), ['point', 'camera_path', 'sources']);
+  assert.deepEqual(Object.keys(h), ['point', 'camera_path', 'placement', 'sources']);
   assert.deepEqual(h.point, { lat: -36.8, lng: 175.1, source: 'a point typed on the Site tab' });
   assert.equal(h.camera_path.confirmed_by, null, 'an unconfirmed path is handed across as unconfirmed');
   assert.deepEqual(h.sources, [{ kind: 'drawing_set', name: 'set.pdf', file_id: 'a' }, { kind: 'camera_sketch', name: 'path.png', file_id: 'b' }, { kind: 'survey', name: 'x.csv', file_id: 'c' }]);
@@ -183,7 +183,7 @@ test('the record saves on the project like any other field, in the browser store
   const path = { pts: [[0, 0, 1.6], [6, 4, 1.6]], sketch_file_id: 'f_sketch', traced_by: 'tool', confirmed_by: null, confirmed_at: null };
   await withSiteSources(s, pid, (ss) => ({ ...ss, camera_path: path }));
   let p = await s.get('project', pid);
-  assert.deepEqual(p.site_sources, { point: null, camera_path: path });
+  assert.deepEqual(p.site_sources, { point: null, camera_path: path, placement: null });
   await withSiteSources(s, pid, (ss) => ({ ...ss, camera_path: confirmPath(ss.camera_path, 'Aroha', '2026-11-23T03:00:00Z') }));
   p = await s.get('project', pid);
   assert.equal(p.site_sources.camera_path.confirmed_by, 'Aroha');
@@ -209,4 +209,27 @@ test('the section is an add-on of the Site tab, with its own stylesheet and noth
   assert.match(src, /site-sources\.css/);
   const css = readFileSync(new URL('../../architecture/site-sources.css', import.meta.url), 'utf8');
   assert.doesNotMatch(css, /#[0-9a-fA-F]{3,6}\b/, 'no colour of its own: it follows the look');
+});
+
+test('a placement passed back from the 3D page becomes the project\'s placement; a broken one is dropped', async () => {
+  const R = await import('../../architecture/js/site-sources-rules.js');
+  const pl = { east: 40.2, north: -88.5, turn_deg: 12.5, status: 'set by a person', method: 'matched', residual_m: 0.31, matched_to: 'LINZ outline of building 1 (400 m²)', site_point: { lat: -41, lng: 174 }, model: 'm.glb', confirmed_by: 'AB', confirmed_at: '2026-11-23T01:00:00Z' };
+  assert.deepEqual(R.backToSource({ kind: 'placement', name: 'placement.json', meta: { placement: pl } }), { placement: pl });
+  assert.equal(R.backToSource({ kind: 'placement', meta: { placement: { east: 'far' } } }), null);
+  assert.equal(R.normalSiteSources({ placement: { ...pl, confirmed_by: '' } }).placement.status, 'assumed', 'no name: not confirmed');
+  const h = R.siteHandoff({ site: { lat: -41, lon: 174 }, site_sources: { placement: pl } }, []);
+  assert.deepEqual(h.placement, pl, 'handed to the next Open in 3D');
+});
+
+test('Films and stills: every film and still is its own item, newest first, shown as a picture or a film', async () => {
+  const R = await import('../../architecture/js/site-sources-rules.js');
+  const f = (id, name, at, type = '') => ({ id, name, type, kept_at: at, owner_kind: 'source', extra: { source: { slot: 'films', version: 1 } } });
+  const files = [f('a', 'shot-01.png', '2026-11-23T01:00:00Z'), f('b', 'flythrough.webm', '2026-11-23T03:00:00Z', 'video/webm'), f('c', 'shot-01.png', '2026-11-23T02:00:00Z')];
+  const films = R.bySlot(files).find((s) => s.slot.id === 'films');
+  assert.deepEqual(films.stacks.map((s) => s.latest.id), ['b', 'c', 'a']);
+  assert.ok(films.stacks.every((s) => s.older.length === 0), 'no earlier versions: each its own item');
+  assert.equal(R.nextVersion(files, 'films', 'shot-02.png'), 1);
+  assert.equal(R.nextVersion([{ ...f('d', 'set.pdf', 'x'), extra: { source: { slot: 'drawing_set', version: 2 } } }], 'drawing_set', 'set.pdf'), 3, 'other slots still version');
+  assert.deepEqual(['a.png', 'b.JPG', 'c.mp4', 'd.webm', 'e.json'].map((n) => R.mediaOf({ name: n })), ['image', 'image', 'video', 'video', 'file']);
+  assert.ok(R.GALLERY.has('films'));
 });

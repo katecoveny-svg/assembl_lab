@@ -14,6 +14,8 @@ export type HandoffSite = {
   files?: Record<string, Blob>;
   /** the project's latest saved fly-through (assembl.flight-path.v1), to carry on editing */
   flight?: unknown;
+  /** where the building stands, as last kept with the project (placeFit.ts PlacementRecord); checked before it is used */
+  placement?: unknown;
 };
 type Kept = { id: string; name: string; type: string; blob: Blob; at: number; site?: HandoffSite };
 
@@ -59,9 +61,10 @@ export async function putPathBack(handoffId: string, name: string, path: unknown
 
 // ---- the way back, for everything else made here (agent/model-dress-1123): the fly-through, its film, shots and stills ---------
 // Each is left in the same store as `${handoffId}:${kind}` (or `${handoffId}:${kind}:${part}` when there are several, such as the
-// shots of a comparison), as { id, kind, handoff, name, type, data: Blob, meta, at }. The workspace takes them into the
+// shots of a comparison), as { id, kind, handoff, name, type, data: Blob, meta, at }. A confirmed placement ('placement') carries
+// its record in meta.placement as well as in data (JSON). The workspace takes them into the
 // project's records when it next looks (architecture/js/handoff.js takeBacks), so nothing has to be downloaded and uploaded.
-export type BackKind = 'flight' | 'film' | 'shot' | 'look';
+export type BackKind = 'flight' | 'film' | 'shot' | 'look' | 'placement';
 export const backKey = (handoffId: string, kind: BackKind, part = '') => `${handoffId}:${kind}${part ? `:${part}` : ''}`;
 export async function putBackRecord(handoffId: string, kind: BackKind, rec: { name: string; data: Blob; meta?: Record<string, unknown>; part?: string }, idb: IDBFactory | undefined = globalThis.indexedDB): Promise<string> {
   if (!handoffId) throw new Error('this page was not opened from a project, so there is nowhere to save it back to');

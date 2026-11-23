@@ -39,7 +39,11 @@
 /whaiao-story/
 
 # Plan to twin: editable source, not served
-/plan-studio/twins/src/
+/plan-studio/twins/src/*
+!/plan-studio/twins/src/twin/
+/plan-studio/twins/src/twin/*
+# the LINZ readers are plain browser modules the workspace's site agent loads (architecture/js/site-brief.js)
+!/plan-studio/twins/src/twin/linz/
 
 # Design inventory: editable source, not served
 /plan-studio/library/src/

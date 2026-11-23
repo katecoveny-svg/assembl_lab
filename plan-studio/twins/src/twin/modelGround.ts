@@ -12,6 +12,7 @@ import { fromNZTM } from './linz/nztm.js';
 import { parseWhere } from './siteFacts';
 import { floorFor, groundStorey, isNZTM, northFrom, pickSitePoint, type IfcSiteInfo, type SitePoint } from './modelSite';
 import type { HandoffSite } from './handoff';
+import { normalPlacement, placementFits, type PlacementRecord } from './placeFit';
 import { progressText, LIMIT_S } from './groundLook';
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -25,7 +26,7 @@ export interface ModelSiteCtx {
   site: HandoffSite | null;
   /** scene = model frame + shift (the model was moved to the origin and stood on y = 0 when it was opened) */
   shift: THREE.Vector3;
-  /** the model's box in the scene */
+  /** the building's own box in the scene (modelBounds.ts buildingBounds: strays and site surfaces left out) */
   box: THREE.Box3;
   /** where the ground layer's pieces go, and the flat ground shown until the real ground is read */
   holder: THREE.Group; flat: THREE.Object3D;
@@ -44,7 +45,19 @@ export interface ModelGround {
   point: SitePoint; applied: Applied; store: GroundStore; floorTag: string;
   /** a NZTM point (e, n) in the scene (x, z): for things LINZ gives in map coordinates, such as building outlines */
   toScene: (e: number, n: number) => [number, number];
+  /** the building's middle as placed, metres on the NZTM grid from the site point, and the turn (frameOf's turnDeg) */
+  offset: { east: number; north: number; turnDeg: number; moveTag: string; turnTag: string };
+  /** the site point on NZTM */
+  site: { e: number; n: number };
+  /** a scene point (x, z) on NZTM (e, n) */
+  world: (x: number, z: number) => [number, number];
+  /** the square of ground drawn round the model: its middle in the scene and its size in metres */
+  square: { cx: number; cz: number; size: number };
 }
+/** what the Place the building card asks of the ground: move the building to an offset from the site point and turn it */
+export interface PlaceRequest { east: number; north: number; turnDeg: number; moveTag: Tag; turnTag: Tag }
+/** the ground read is a square 110 m each way round its point; past this the building's 140 m square needs a new read */
+const REREAD = 36;
 
 export function modelGroundPanel(ctx: ModelSiteCtx) {
   const el = document.createElement('section');
@@ -73,17 +86,23 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     <style>#modelGround .sg-list{list-style:none;margin:8px 0;padding:0}#modelGround .sg-list li{padding:7px 0;border-top:1px solid var(--line)}#modelGround .sg-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}#modelGround label.sg-f{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:6px 0}#modelGround label.sg-f input{width:92px}</style>`;
   const $ = <T extends HTMLElement>(s: string) => el.querySelector(s) as T;
   const where = $<HTMLInputElement>('#mgWhere'), note = $<HTMLElement>('#mgNote'), out = $<HTMLElement>('#mgOut'), go = $<HTMLButtonElement>('#mgGo'), pt = $<HTMLElement>('#mgPoint');
+  // an IfcSite position far from the project's site point is the template's default, not the site: said, and not used
+  const ifcFar = (() => { const h = ctx.site?.point; if (!h || info?.lat == null || info?.lng == null) return ''; const a = toNZTM(h.lat, h.lng), b = Math.abs(info.lat) <= 90 ? toNZTM(info.lat, info.lng) : null; const d = b ? Math.hypot(a.e - b.e, a.n - b.n) : Infinity; return d > 2000 ? ` The IFC’s own IfcSite position is ${isFinite(d) ? `${Math.round(d / 1000)} km` : 'far'} from the site point (often the template’s default), so it is not used.` : ''; })();
+  if (ifcFar) $<HTMLElement>('#mgSaid').textContent += ifcFar;
   const showPoint = () => {
     const p = point();
     pt.innerHTML = p
-      ? `<ul class="sg-list"><li><div class="sg-top"><b>Site point</b>${tagMark(p.source)}</div><div class="mono">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</div><div class="small">${esc(p.note)}. Taken as ${p.source === 'from the IFC map conversion' ? 'the model’s own origin' : 'the middle of the model (assumed)'}.</div></li></ul>`
+      ? `<ul class="sg-list"><li><div class="sg-top"><b>Site point</b>${tagMark(p.source)}</div><div class="mono">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</div><div class="small">${esc(p.note)}. Taken as ${p.source === 'from the IFC map conversion' ? 'the model’s own origin' : 'the middle of the model until it is placed (Place the building)'}.</div></li></ul>`
       : `<p class="small">No site point yet: the workspace did not hand one across and the IFC has none. Type one, or look up an address in Site facts.</p>`;
     if (p && !where.value) where.value = `${p.lat}, ${p.lng}`;
   };
   showPoint();
 
+  // a placement a person (or the matcher) set before, kept with the project: used when it is for this site point and model
+  const kept: PlacementRecord | null = (() => { const r = normalPlacement((ctx.site as unknown as { placement?: unknown } | null)?.placement); const p0 = point(); return placementFits(r, p0 ? { lat: p0.lat, lng: p0.lng } : null, ctx.name) ? r : null; })();
   /** the placement the model starts with at a point, every part labelled */
   const startPlacement = (p: SitePoint): Placement => {
+    if (kept && p.source !== 'typed here') { const tag: Tag = kept.status === 'set by a person' ? 'set by hand' : 'assumed'; return { turnDeg: kept.turn_deg, turnTag: tag, east: kept.east, north: kept.north, moveTag: tag, floor: null, floorTag: 'assumed' }; }
     const gam = convergence(p.lat, p.lng), n = northFrom(info, gam);
     const pl: Placement = { turnDeg: n.deg, turnTag: n.tag as Tag, east: 0, north: 0, moveTag: 'assumed', floor: null, floorTag: 'assumed' };
     if (p.source === 'from the IFC map conversion') {
@@ -114,8 +133,9 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     if (ap.features.length) ctx.holder.add(ctx.boundary(ap.features, yAt));
     ctx.holder.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? '' };
     ctx.flat.visible = false;
-    const p = point()!;
-    current = { yAt, fromPoint: fr.fromPoint, toScene: fr.model, point: p, applied: ap, store: st, floorTag: last?.tag ?? 'assumed' };
+    const p = point()!, sp = toNZTM(p.lat, p.lng), P = st.placement;
+    const offset = { east: Math.round((st.point.e + P.east - sp.e) * 100) / 100, north: Math.round((st.point.n + P.north - sp.n) * 100) / 100, turnDeg: P.turnDeg, moveTag: P.moveTag, turnTag: P.turnTag };
+    current = { yAt, fromPoint: fr.fromPoint, toScene: fr.model, point: p, applied: ap, store: st, floorTag: last?.tag ?? 'assumed', offset, site: sp, world: fr.world, square: { cx: T.centre[0], cz: T.centre[1], size: T.size } };
     ctx.onGround(current);
     render(st, ap, p);
     return current;
@@ -133,8 +153,8 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     </ul>
     <label class="sg-f"><span>North, degrees clockwise from up the model’s plan ${tagMark(P.turnTag)}</span><input id="mgTurn" type="number" step="1" value="${P.turnDeg}"></label>
     <p class="small">${esc(turnSays)}${P.turnTag === 'proposed' ? ' <button class="pill" id="mgNorthOk">Confirm north</button>' : ''}</p>
-    <label class="sg-f"><span>Move east, m ${tagMark(P.moveTag)}</span><input id="mgE" type="number" step="0.5" value="${P.east}"></label>
-    <label class="sg-f"><span>Move north, m</span><input id="mgN" type="number" step="0.5" value="${P.north}"></label>
+    <label class="sg-f"><span>Building’s middle east of the site point, m ${tagMark(P.moveTag)}</span><input id="mgE" type="number" step="0.5" value="${current?.offset.east ?? P.east}"></label>
+    <label class="sg-f"><span>North of the site point, m</span><input id="mgN" type="number" step="0.5" value="${current?.offset.north ?? P.north}"></label>
     <label class="sg-f"><span>Ground storey level, m NZVD2016 ${tagMark(last?.tag ?? 'assumed')}</span><input id="mgF" type="number" step="0.05" value="${f2(ap.floor)}"></label>
     <p class="small" id="mgRule">${esc(ap.floorRule)}</p>
     ${stated != null ? `<label class="small"><input type="checkbox" id="mgKeep" ${keepStated ? 'checked' : ''}> Use the level the IFC states (${f2(stated)} m, ${esc(statedWhy)})</label>` : ''}
@@ -144,19 +164,20 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     $<HTMLButtonElement>('#mgApply').addEventListener('click', () => {
       const turn = num('#mgTurn'), e = num('#mgE'), nn = num('#mgN'), f = num('#mgF');
       if (![turn, e, nn, f].every(isFinite)) { note.textContent = 'Those need to be numbers.'; return; }
-      const next: Placement = { ...P };
-      if (turn !== P.turnDeg) { next.turnDeg = turn; next.turnTag = 'set by hand'; }
-      if (e !== P.east || nn !== P.north) { next.east = e; next.north = nn; next.moveTag = 'set by hand'; }
+      const o = current?.offset ?? { east: P.east, north: P.north };
+      const req: PlaceRequest = { east: o.east, north: o.north, turnDeg: P.turnDeg, moveTag: P.moveTag, turnTag: P.turnTag };
+      if (turn !== P.turnDeg) { req.turnDeg = turn; req.turnTag = 'set by hand'; }
+      if (e !== o.east || nn !== o.north) { req.east = e; req.north = nn; req.moveTag = 'set by hand'; }
       if (Math.abs(f - ap.floor) > 0.004) byHand = Math.round(f * 100) / 100;
       keepStated = !!$<HTMLInputElement>('#mgKeep')?.checked; if (keepStated && Math.abs(f - ap.floor) <= 0.004) byHand = null;
-      store = { ...st, placement: next }; void place(store).then(() => ctx.log('Placement applied.'));
+      void setPlacement(req).then(() => ctx.log('Placement applied.'));
     });
     el.querySelector('#mgNorthOk')?.addEventListener('click', () => { store = { ...st, placement: { ...P, turnTag: 'confirmed here' } }; void place(store); ctx.log('North confirmed as shown.'); });
     $<HTMLInputElement>('#mgKeep')?.addEventListener('change', (ev) => { keepStated = (ev.target as HTMLInputElement).checked; byHand = null; void place(st); });
     $<HTMLButtonElement>('#mgOff').addEventListener('click', () => { for (const c of [...ctx.holder.children]) ctx.holder.remove(c); ctx.flat.visible = true; current = null; store = null; out.innerHTML = ''; ctx.onGround(null); note.textContent = 'Back on flat ground, labelled as assumed.'; });
   };
 
-  const run = async () => {
+  const run = async (at?: { e: number; n: number }, plOverride?: Placement) => {
     if (busy) return;
     const p = point();
     if (!p) { note.textContent = 'That is not a point in New Zealand. Use decimal degrees, latitude first: -36.85, 174.76'; return; }
@@ -167,10 +188,13 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     const tick = setInterval(show, 500), cap = setTimeout(() => ac.abort(new Error(`it took longer than ${LIMIT_S} s`)), LIMIT_S * 1000);
     show();
     try {
-      const pl = startPlacement(p);
-      const res = await readGroundFor({ key: `model:${ctx.name}`, north: { deg: pl.turnDeg, tag: pl.turnTag }, apply: (st) => applyGroundAt(fp, { ...st, placement: pl }, rule()) }, { lat: p.lat, lon: p.lng }, { signal: ac.signal, onProgress: (r, b) => { seen.requests = r; seen.bytes = b; }, onPhase: (t) => { phase = t; show(); } });
+      // pl.east / north are from the site point; the ground is read round where the building's middle is
+      const pl = plOverride ?? startPlacement(p), sp = toNZTM(p.lat, p.lng), far = Math.hypot(pl.east, pl.north) > REREAD;
+      const centre = at ?? (far ? { e: sp.e + pl.east, n: sp.n + pl.north } : null), q = centre ? (fromNZTM(centre.e, centre.n) as { lat: number; lon: number }) : { lat: p.lat, lon: p.lng };
+      const rel = (st: GroundStore): Placement => ({ ...pl, east: Math.round((sp.e + pl.east - st.point.e) * 100) / 100, north: Math.round((sp.n + pl.north - st.point.n) * 100) / 100 });
+      const res = await readGroundFor({ key: `model:${ctx.name}`, north: { deg: pl.turnDeg, tag: pl.turnTag }, apply: (st) => applyGroundAt(fp, { ...st, placement: rel(st) }, rule()) }, q, { signal: ac.signal, onProgress: (r, b) => { seen.requests = r; seen.bytes = b; }, onPhase: (t) => { phase = t; show(); } });
       if (res.status === 'unavailable') { note.textContent = `No real ground here: ${res.reason} The model stays on flat ground, labelled as assumed.`; return; }
-      store = { ...res.store, placement: pl };
+      store = { ...res.store, placement: rel(res.store) };
       ctx.pause(false);
       await place(store);
       note.textContent = `Ground read in ${res.store.read?.seconds ?? 0} s, straight from LINZ. ${p.source === 'typed here' ? 'Point typed here.' : `Point ${p.source}.`}`;
@@ -179,6 +203,18 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
       note.textContent = `The ground could not be read (${(e as Error)?.message ?? e}). The model stays on ${current ? 'the ground read before' : 'flat ground, labelled as assumed'}; nothing is guessed.`;
     } finally { clearInterval(tick); clearTimeout(cap); busy = null; go.disabled = false; $<HTMLElement>('#mgBusy').style.display = 'none'; ctx.pause(false); }
   };
+  /** put the building's middle at an offset from the site point, turned; reads the ground again when it moves off the square read */
+  const setPlacement = async (r: PlaceRequest) => {
+    const p = point(); if (!p) throw new Error('there is no site point yet');
+    const pl: Placement = { turnDeg: r.turnDeg, turnTag: r.turnTag, east: r.east, north: r.north, moveTag: r.moveTag, floor: null, floorTag: 'assumed' };
+    const sp = toNZTM(p.lat, p.lng);
+    if (store && Math.hypot(sp.e + r.east - store.point.e, sp.n + r.north - store.point.n) <= REREAD) {
+      store = { ...store, placement: { ...pl, east: Math.round((sp.e + r.east - store.point.e) * 100) / 100, north: Math.round((sp.n + r.north - store.point.n) * 100) / 100 } };
+      return place(store);
+    }
+    await run(undefined, pl);
+    return current;
+  };
   go.addEventListener('click', () => { const q = parseWhere(where.value), p0 = point(); if (q && (!p0 || Math.abs(q.lat - p0.lat) > 1e-7 || Math.abs(q.lon - p0.lng) > 1e-7)) { typed = { lat: q.lat, lng: q.lon }; showPoint(); } void run(); });
   where.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); });
   $<HTMLButtonElement>('#mgStop').addEventListener('click', () => busy?.abort(new Error('stopped by hand')));
@@ -186,5 +222,5 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
   addEventListener('assembl:site-facts', ((ev: CustomEvent<{ lat: number; lon: number }>) => { typed = { lat: ev.detail.lat, lng: ev.detail.lon }; where.value = `${ev.detail.lat}, ${ev.detail.lon}`; showPoint(); void run(); }) as EventListener);
   // a point from the workspace or from the IFC: the ground follows without another click
   const auto = point();
-  return { el, start: () => { if (auto) void run(); }, current: () => current, fp, toNZTM };
+  return { el, start: () => { if (auto) void run(); }, current: () => current, fp, toNZTM, setPlacement, kept, busy: () => !!busy };
 }
