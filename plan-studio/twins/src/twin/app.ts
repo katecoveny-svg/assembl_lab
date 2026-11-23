@@ -51,6 +51,8 @@ export interface Built {
   skyPhoto?: { url: string; sunU: number };
   /** 'editorial': a brighter, warmer presentation: filmic tone curve, sky fill, soft haze, late-afternoon sun */
   look?: 'editorial';
+  /** with the editorial look, keep AgX tone mapping (an opened IFC or GLB: model-dress) instead of the filmic ACES curve */
+  agx?: boolean;
   /** the outward normal of the façade the opening view looks at: the opening hour is chosen so low sun falls on it */
   sunFace?: THREE.Vector3;
   siteChip?: { text: string; title?: string };
@@ -143,6 +145,12 @@ export class App {
   private windowLights: THREE.RectAreaLight[] = [];
   lastStill: Blob | null = null;
   lastVideo: Blob | null = null;
+  /** a flight that Play and Record follow in place of the preset views (a confirmed camera path: cameraPathUI.ts); t runs 0 to 1 */
+  flight: { dur: number; at: (t: number) => { eye: THREE.Vector3; look: THREE.Vector3 } } | null = null;
+  /** a click on the 3D view that a card wants for itself (picking points on the ground): return true to keep it from the inspector */
+  pickHook: ((ev: PointerEvent) => boolean) | null = null;
+  /** told when Play or Record starts (true) and stops (false): e.g. to keep path markers out of the film */
+  onPlay: ((on: boolean) => void)[] = [];
 
   constructor(project: Project, canvas: HTMLCanvasElement) {
     this.project = project;
@@ -204,7 +212,7 @@ export class App {
     this.log('Building the model…');
     this.built = await this.project.build(this);
     if (this.built.look === 'editorial') {
-      this.editorial = true; this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.exposureBase = 0.98;
+      this.editorial = true; this.renderer.toneMapping = this.built.agx ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping; this.exposureBase = 0.98;
       this.hemi.color.set(0xdce8f8); this.hemi.groundColor.set(0x4c443a);
       this.fill = new THREE.DirectionalLight(0xa4bede, 0.5); this.scene.add(this.fill, this.fill.target);
       // alive until touched: a slow turn about the building from outside, back after 25 s of stillness
@@ -447,14 +455,14 @@ export class App {
     this.scene.background = this.edSky; this.scene.environment = this.edEnv ?? this.edSky;
     this.scene.backgroundRotation.set(0, rot, 0); this.scene.environmentRotation.set(0, rot, 0);
     const L = LOOK[mood], sh = this.built.shade ?? 1;
-    this.envBase = L.env * sh; this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1;
+    this.envBase = L.env * sh * (this.built.agx ? 0.62 : 1); this.scene.environmentIntensity = this.envBase; this.scene.backgroundIntensity = 1;
     this.scene.fog = new THREE.FogExp2(L.fog, L.fogDensity * (this.built.fogScale ?? 1));
-    this.sun.color.setHex(L.sun); this.sun.intensity = alt > -2 ? L.sunI : 0;
-    this.hemiBase = L.hemi * sh; this.hemi.intensity = this.hemiBase;
+    this.sun.color.setHex(L.sun); this.sun.intensity = alt > -2 ? L.sunI * (this.built.agx ? 1.5 : 1) : 0;   // an opened model: more sun against sky light, so faces and cast shadows read
+    this.hemiBase = L.hemi * sh * (this.built.agx ? 0.7 : 1); this.hemi.intensity = this.hemiBase;
     if (sh > 1) { this.hemi.color.set(0xe6ebee); this.hemi.groundColor.set(0x5a5f48); }
     const f = this.built.focus, R = this.built.radius * 3;
     if (this.fill) { this.fill.position.copy(f).add(new THREE.Vector3(-dir.x, 0.7, -dir.z).multiplyScalar(R)); this.fill.target.position.copy(f); this.fill.intensity = L.fill; }
-    this.exposureBase = L.exposure * (1 + (sh - 1) * 0.22);
+    this.exposureBase = L.exposure * (1 + (sh - 1) * 0.22) * (this.built.agx ? 1.35 : 1);   // AgX sits darker than ACES at the same exposure
   }
   /** a test hook: extra turn of the photographed sky, radians */
   photoTurn = 0;
@@ -523,9 +531,12 @@ export class App {
     if (this.built.sunHour === undefined && this.built.look === 'editorial' && face) {
       // open at the golden hour that lights the face being looked at
       let best = -2;
-      for (const h of [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5]) {
+      // an opened model (agx): a daytime sun raking across the face, high enough for a clear cast shadow on the ground
+      const hours = this.built.agx ? [9, 9.5, 10, 10.5, 11, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5] : [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5];
+      const [lo, hi] = this.built.agx ? [22, 48] : [9, 27];
+      for (const h of hours) {
         const sd = this.sunDir(App.nzToUTC(y, 12, 21, h));
-        if (sd.alt < 9 || sd.alt > 27) continue;
+        if (sd.alt < lo || sd.alt > hi) continue;
         const d = sd.v.x * face.x + sd.v.z * face.z;
         if (d > best) { best = d; h0 = h; }
       }
@@ -735,6 +746,7 @@ export class App {
     this.canvas.addEventListener('pointerdown', (ev) => (down = [ev.clientX, ev.clientY]));
     this.canvas.addEventListener('pointerup', (ev) => {
       if (!down || Math.hypot(ev.clientX - down[0], ev.clientY - down[1]) > 4 || this.walk.on) return;
+      if (this.pickHook?.(ev)) { card.hidden = true; this.highlight.visible = false; return; }
       const h = pick(ev);
       if (!h) {
         card.hidden = true;
@@ -877,8 +889,9 @@ export class App {
       this.log('Reduced motion is on, so the path jumps to its last view instead of playing.');
       return;
     }
-    const dur = Math.max(8, this.built.path.length * 5) * 1000;
+    const dur = this.flight ? this.flight.dur : Math.max(8, this.built.path.length * 5) * 1000;
     this.playing = { t0: performance.now(), dur };
+    for (const cb of this.onPlay) cb(true);
     this.controls.enabled = false;
     if (record) {
       const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
@@ -909,6 +922,7 @@ export class App {
     if (!this.playing) return;
     this.playing.rec?.stop();
     this.playing = null;
+    for (const cb of this.onPlay) cb(false);
     this.controls.enabled = true;
     const d = new THREE.Vector3();
     this.camera.getWorldDirection(d);
@@ -919,6 +933,15 @@ export class App {
   private stepPlay() {
     const p = this.playing!;
     const t = Math.min(1, (performance.now() - p.t0) / p.dur);
+    if (this.flight) {
+      // a confirmed camera path: even speed along it, eased in and out over its first and last few percent
+      const a = 0.05, v = 1 / (1 - a), e = t < a ? (v * t * t) / (2 * a) : t > 1 - a ? 1 - (v * (1 - t) * (1 - t)) / (2 * a) : v * (t - a / 2);
+      const at = this.flight.at(Math.min(1, Math.max(0, e)));
+      this.camera.position.copy(at.eye);
+      this.camera.lookAt(at.look);
+      if (t >= 1) this.stopPlay();
+      return;
+    }
     const keys = this.built.path;
     const eyes = new THREE.CatmullRomCurve3(keys.map((k) => k.eye), false, 'centripetal');
     const looks = new THREE.CatmullRomCurve3(keys.map((k) => k.look), false, 'centripetal');

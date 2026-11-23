@@ -27,13 +27,17 @@ import { furnishDecks, type DeckRect as DeckPlan } from './outdoor'; // deck fur
 import { createArchedBladeGeometry } from './nzNativeFlora';
 import { createPongaFrondTexture } from './pbrTextures';
 import { exportIFC, loadIFC } from './ifc';
-import { HANDOFF_PARAM, takeHandoff } from './handoff';
+import { HANDOFF_PARAM, takeHandoff, type HandoffSite } from './handoff';
+import { readIfcSite, type IfcSiteInfo } from './modelSite';
+import { modelGroundPanel, type ModelGround } from './modelGround';
+import { cameraPathPanel } from './cameraPathUI';
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
 import { buildFreeform, isFreeform } from './freeform'; // free-form buildings (agent/freeform-walk-1122): tapered and curved plans, mezzanines, gable roofs over any footprint
 import { bbox as fpBox, inside as inPoly } from './freeformGeom';
 import { navFromPlan } from './walkNav';
+import { dressModel, type Dressed } from './dressModel'; // the finished look for an opened IFC or GLB (agent/model-dress-1123): this import and the lines marked model-dress
 
 // The tool's front door: drop a plan model (assembl.plan-model.v1, as Plan to 4D saves it) and
 // get a furnished, finished twin to render. An IFC or GLB (from Revit, ArchiCAD or Blender) is
@@ -210,6 +214,38 @@ async function asBuiltModel(a: NonNullable<PlanModel['asBuilt']>) {
   return root;
 }
 
+/** real ground where the model carries it: the survey grid with its picture (an aerial photo, or contours drawn from its own
+ *  heights), a coarser far field, and the sea. `yAt` is the ground level at a model point (x, z), pads and all; `editorial`
+ *  warms a photo and brightens the sea for a generated home. */
+export async function realGroundOf(T: Terrain, yAt: (x: number, z: number) => number, editorial: boolean): Promise<THREE.Group> {
+  const realGround = new THREE.Group(); realGround.name = 'ground';
+  // no photo with the ground: colour it from its own heights (slope tint and a line each metre) rather than leave it blank
+  const drawn = !T.photo || T.photoKind === 'contours';
+  const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: await photoTex(T.photo ?? contourPhoto(T.heights, T.n, T.datum ?? 0, T.size / (T.n - 1))) });
+  // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
+  if (editorial && !drawn) nearM.color.setRGB(1.3, 1.16, 0.82);
+  const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => yAt(x, z) - 0.01);
+  try {
+    // forest-floor relief at its real size, on a second set of coordinates measured in metres
+    const p = ng.getAttribute('position'), uv1 = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv1[i * 2] = p.getX(i) / 2.3; uv1[i * 2 + 1] = p.getZ(i) / 2.3; }
+    ng.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
+    const [, fn, fr] = await scanSet('floor', 2.3, 2.3); fn.channel = fr.channel = 1; nearM.normalMap = fn; nearM.roughnessMap = fr; nearM.normalScale.set(1.4, 1.4); nearM.roughness = 1;
+  } catch (e) { console.warn('forest floor relief unavailable', e); }
+  const near = new THREE.Mesh(ng, nearM);
+  near.receiveShadow = true; near.name = 'ground_survey'; realGround.add(near);
+  if (T.far) {
+    const F = T.far, farM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, map: F.photo ? await photoTex(F.photo) : null });
+    const far = new THREE.Mesh(sheet(T.centre, F.size, F.n - 1, (x, z) => gridAt(F, T.centre, x, z) - (inside(T, T.centre, x, z, 4) ? 8 : 0.5)), farM);
+    far.receiveShadow = true; far.name = 'ground_far'; realGround.add(far);
+  }
+  if (T.sea !== undefined) {
+    const sea = new THREE.Mesh(new THREE.CircleGeometry(9000, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: editorial ? 0x2c86a0 : 0x4a6a78, roughness: 0.14, metalness: 0 }));
+    sea.position.set(T.centre[0], T.sea + 0.35, T.centre[1]); sea.name = 'sea'; realGround.add(sea);
+  }
+  realGround.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? 'Ground from a survey grid.' };
+  return realGround;
+}
+
 /** timber stairs down a line, from one level to another */
 type StairBarrier = 'glass' | 'balusters';
 interface StairMats { timber: THREE.Material; glass: THREE.Material; metal: THREE.Material }
@@ -290,7 +326,7 @@ function deckSlabs(d: { u0: number; u1: number; v0: number; v1: number; drop?: n
 export interface SiteFeature { kind: 'path' | 'driveway' | 'steps' | 'landing' | 'parking' | 'patio' | 'pad' | 'retaining' | 'bed' | 'lawn' | 'tree' | 'boundary'; pts: [number, number][]; width?: number; height?: number; r?: number; levels?: [number, number]; source?: string; car?: boolean; staging?: string; barrier?: 'glass' | 'balusters'; /** a boundary run that is not a closed loop (a parcel edge clipped to the ground shown) */ open?: boolean }
 
 /** the site plan's paths, pads, walls, beds and trees on the ground */
-function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
+export function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number, q: App['quality']) {
   const land = new THREE.Group();
   land.name = 'site_from_plan';
   const en = (p: [number, number]): [number, number] => [p[0], -p[1]];
@@ -397,6 +433,8 @@ function siteLayer(F: SiteFeature[], groundAt: (e: number, n: number) => number,
 type Input = { kind: 'plan'; plan: PlanModel; name: string } | { kind: 'ifc' | 'glb'; bytes: ArrayBuffer; name: string };
 
 const KEEP = 'assembl-twin-dropped-plan';
+// what came across with a model handed over from the workspace: its id and the project's site (point, camera sketch, path)
+let handed: { id: string; site: HandoffSite | null } | null = null;
 
 async function fromShare(id: string): Promise<{ plan: PlanModel; name: string } | null> {
   try {
@@ -551,6 +589,7 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
         .then((got) => {
           if (!got) return missing('It was opened here once already, or it was handed across more than an hour ago.');
           app.log(`Opening ${got.name}…`);
+          handed = { id: hid, site: got.site ?? null };
           return read(new File([got.blob], got.name, { type: got.type || 'application/octet-stream' }));
         })
         .catch((e: unknown) => missing(`This browser could not pass it across (${(e as Error)?.message ?? 'no reason given'}).`));
@@ -600,11 +639,16 @@ export const projectPlan: Project = {
     let plantObj: THREE.Object3D | null = null;
     let landObj: THREE.Object3D | null = null;
     let lightObj: THREE.Object3D | null = null;
+    let dressed: Dressed | null = null;   // model-dress
     let sunFace: THREE.Vector3 | undefined;
     let siteNorth: [number, number] | undefined;
     let terrain: Terrain | null = null;
     let bushObj: THREE.Object3D | null = null;
     const keys: Key[] = [];
+    // an opened IFC or GLB: what its file says of its site, and how far it was moved to stand at the origin (scene = file + shift)
+    let ifcInfo: IfcSiteInfo | null = null;
+    const shift = new THREE.Vector3();
+    let onModelGround: ModelGround | null = null;
     const layoutGroups: { building: string; name: string; group: THREE.Object3D; seats: number }[] = [];
 
     if (input.kind === 'plan') {
@@ -802,12 +846,14 @@ export const projectPlan: Project = {
         keys.push({ label: `${b.name ?? b.id} inside`, eye: o.clone().add(new THREE.Vector3(5, 1.6, 4.9)), look: o.clone().add(new THREE.Vector3(5.3, 1.4, -1.5)) });
       }
     } else {
-      // IFC or GLB as it is
+      // IFC or GLB as it is, then on its site when there is a site point (modelGround.ts)
       let obj: THREE.Object3D;
       if (input.kind === 'ifc') {
         const res = await loadIFC(new Uint8Array(input.bytes), `${BASE}twin/web-ifc.wasm.b64.txt`, (d, t) => app.log(`Reading IFC… ${d} of ${t}`), true);
         obj = res.root;
         app.log(`IFC read: ${res.elements} elements, ${res.schema}.`);
+        try { ifcInfo = readIfcSite(new TextDecoder().decode(new Uint8Array(input.bytes))); } catch (e) { console.warn('the IFC’s site could not be read', e); }
+        shift.set(res.coordination[12] ?? 0, res.coordination[13] ?? 0, res.coordination[14] ?? 0);
       } else {
         // a browser copy of a big model is meshopt-compressed (docs/architecture/browser-copy.md)
         const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder);
@@ -818,43 +864,28 @@ export const projectPlan: Project = {
       });
       const b = new THREE.Box3().setFromObject(obj);
       obj.position.y -= b.min.y;
+      shift.y += -b.min.y;
       model.add(obj);
       const b2 = new THREE.Box3().setFromObject(model);
       centre = b2.getCenter(new THREE.Vector3());
       radius = Math.max(10, b2.getSize(new THREE.Vector3()).length() * 0.9);
+      // model-dress: it opens as a person would see it, from a few paces off at a three-quarter angle with the sky behind
+      // (the Waiheke example's habit), then the aerial and the eye-level views
+      const tall = b2.max.y - b2.min.y, three = { label: 'Three-quarter', eye: centre.clone().add(new THREE.Vector3(-radius * 0.95, 0, radius * 1.2)).setY(b2.min.y + Math.min(Math.max(1.7, tall * 0.42), 9)), look: centre.clone().setY(b2.min.y + tall * 0.4) };
+      keys.push(three);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
       keys.push({ label: 'Eye level', eye: centre.clone().add(new THREE.Vector3(0, 1.6 - centre.y, radius * 0.8)), look: centre.clone() });
+      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three });   // model-dress: finishes, planting, light
+      // the chips say what this is: an opened model, not one generated from a plan
+      const kindWord = input.kind.toUpperCase();
+      const relabel = () => { const gen = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent === 'Generated from your plan model') as HTMLElement | undefined; if (gen) { gen.textContent = `Opened from your model (${kindWord})`; gen.title = 'The model as the architect drew it; finishes interpreted from its classes and material names'; } return !!gen; };
+      const relabelSoon = () => { if (relabel()) app.onFrame.splice(app.onFrame.indexOf(relabelSoon), 1); };
+      app.onFrame.push(relabelSoon);
     }
 
     // real ground where the model carries it: the survey grid with its aerial photo, a coarser far field, and the sea
     let realGround: THREE.Group | null = null;
-    if (terrain) {
-      const T = terrain; realGround = new THREE.Group(); realGround.name = 'ground';
-      // no photo with the ground: colour it from its own heights (slope tint and a line each metre) rather than leave it blank
-      const drawn = !T.photo || T.photoKind === 'contours';
-      const nearM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0, map: await photoTex(T.photo ?? contourPhoto(T.heights, T.n, T.datum ?? 0, T.size / (T.n - 1))) });
-      // the photo's own shade is blue: warm it a little so open ground reads as grass and leaf litter
-      if (input.kind === 'plan' && !input.plan.asBuilt && !drawn) nearM.color.setRGB(1.3, 1.16, 0.82);
-      const ng = sheet(T.centre, T.size, Math.min(480, (T.n - 1) * 2), (x, z) => groundAt(x, -z) - 0.01);
-      try {
-        // forest-floor relief at its real size, on a second set of coordinates measured in metres
-        const p = ng.getAttribute('position'), uv1 = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv1[i * 2] = p.getX(i) / 2.3; uv1[i * 2 + 1] = p.getZ(i) / 2.3; }
-        ng.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
-        const [, fn, fr] = await scanSet('floor', 2.3, 2.3); fn.channel = fr.channel = 1; nearM.normalMap = fn; nearM.roughnessMap = fr; nearM.normalScale.set(1.4, 1.4); nearM.roughness = 1;
-      } catch (e) { console.warn('forest floor relief unavailable', e); }
-      const near = new THREE.Mesh(ng, nearM);
-      near.receiveShadow = true; near.name = 'ground_survey'; realGround.add(near);
-      if (T.far) {
-        const F = T.far, farM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, map: F.photo ? await photoTex(F.photo) : null });
-        const far = new THREE.Mesh(sheet(T.centre, F.size, F.n - 1, (x, z) => gridAt(F, T.centre, x, z) - (inside(T, T.centre, x, z, 4) ? 8 : 0.5)), farM);
-        far.receiveShadow = true; far.name = 'ground_far'; realGround.add(far);
-      }
-      if (T.sea !== undefined) {
-        const sea = new THREE.Mesh(new THREE.CircleGeometry(9000, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: input.kind === 'plan' && !input.plan.asBuilt ? 0x2c86a0 : 0x4a6a78, roughness: 0.14, metalness: 0 }));
-        sea.position.set(T.centre[0], T.sea + 0.35, T.centre[1]); sea.name = 'sea'; realGround.add(sea);
-      }
-      realGround.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? 'Ground from a survey grid.' };
-    }
+    if (terrain) realGround = await realGroundOf(terrain, (x, z) => groundAt(x, -z), input.kind === 'plan' && !input.plan.asBuilt);
     // whatever stands above the ground in the surface model, as plain blocks: trees and buildings are not told apart
     let topsObj: THREE.Object3D | null = null;
     if (terrain?.tops && input.kind === 'plan') {
@@ -873,7 +904,7 @@ export const projectPlan: Project = {
       }
     }
     // ground: a lawn following the model's fall, cut to pads, fading to context
-    const R = Math.max(40, radius * 2.2);
+    const R = input.kind === 'plan' ? Math.max(40, radius * 2.2) : Math.max(150, radius * 4);   // an IFC or GLB may go onto a 140 m square of LiDAR: the flat ground before it is as wide
     const N = 160;
     const g = new THREE.PlaneGeometry(R * 2, R * 2, N, N);
     g.rotateX(-Math.PI / 2);
@@ -887,6 +918,41 @@ export const projectPlan: Project = {
     ground.name = 'ground';
     ground.receiveShadow = true;
     ground.userData = { kind: 'terrain', name: 'Ground', source: 'assumed', note: 'From the plan model’s fall plane, or flat; not a survey.' };
+    // an IFC or GLB: the flat ground, and beside it the LiDAR ground once the site is read; the camera path drawn over both
+    const modelGround = new THREE.Group(); modelGround.name = 'ground_layer';
+    const lidarHolder = new THREE.Group(); lidarHolder.name = 'site_ground';
+    const pathRoot = new THREE.Group(); pathRoot.name = 'camera_path_layer';
+    let modelCards: HTMLElement[] = [], startSite: (() => void) | null = null;
+    if (input.kind !== 'plan') {
+      modelGround.add(ground, lidarHolder);
+      const box = new THREE.Box3().setFromObject(model), from = new URLSearchParams(location.search).get(HANDOFF_PARAM), site = handed && handed.id === from ? handed.site : null;
+      let refreshPath = () => {};
+      const mg = modelGroundPanel({
+        name: input.name, kind: input.kind, info: ifcInfo, site, shift, box, holder: lidarHolder, flat: ground,
+        build: (T, yAt) => realGroundOf(T as unknown as Terrain, yAt, false),
+        boundary: (features, yAt) => siteLayer(features as SiteFeature[], (e, n) => yAt(e, -n), q),
+        log: (m) => app.log(m), pause: (on) => groundPause(on),
+        onGround: (gr) => {
+          onModelGround = gr;
+          const chip = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent?.startsWith('Site:')) as HTMLElement | undefined;
+          if (chip) { chip.textContent = gr ? 'Site: LINZ LiDAR ground' : 'Site: flat, assumed'; chip.title = gr ? gr.applied.terrain.source : 'No site read: flat ground, assumed'; }
+          refreshPath();
+          // model-dress: the proposed planting follows the real ground (and the flat contact shade steps aside for it)
+          if (dressed) void dressed.replant(gr ? gr.yAt : null).catch((e) => console.warn('planting could not follow the ground', e));
+        },
+      });
+      const cp = cameraPathPanel(app, {
+        name: input.name, handoffId: from && handed?.id === from ? from : null, site, shift,
+        frame: input.kind === 'ifc' ? 'the IFC’s own coordinates in metres, y up (u = IFC x, v = −IFC y, as three.js x and z), before the page moved the model to stand at the origin' : 'the GLB’s own axes in metres (u = x, v = z, y up)',
+        yAt: () => (onModelGround ? onModelGround.yAt : () => 0),
+        fromPoint: () => onModelGround?.fromPoint ?? null,
+        sitePoint: () => (onModelGround ? { lat: onModelGround.point.lat, lng: onModelGround.point.lng, source: onModelGround.point.source } : null),
+        root: pathRoot, pickables: () => [lidarHolder.children.length ? lidarHolder : ground],
+      });
+      refreshPath = cp.refresh;
+      modelCards = [mg.el, cp.el]; startSite = mg.start;
+      (window as unknown as { __site?: unknown }).__site = { ground: () => onModelGround, path: cp.state, info: ifcInfo, shift };   // for checks from the console (this tab only)
+    }
 
     // the Real ground card rests the 3D view while LINZ's files arrive, and gives it back as it found it
     let pausedBefore = false;
@@ -894,14 +960,18 @@ export const projectPlan: Project = {
     if (input.kind === 'plan') void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
-      realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround } : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
+      realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround }
+        : input.kind !== 'plan' ? { id: 'ground', label: 'Ground', note: 'flat (assumed) until the site is read in On its site; then LINZ 1 m LiDAR, coloured by slope with a line each metre, with the LINZ parcel', visible: true, object: modelGround }
+        : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
+    if (input.kind !== 'plan') layers.push({ id: 'camera-path', label: 'Camera path', note: 'the sketch laid on the ground, and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
     if (topsObj) layers.push({ id: 'tops', label: 'Tree and building tops', note: 'from LINZ’s surface model less its ground model, as plain blocks; trees and buildings are not told apart. Off to start with, so they do not hide the house', visible: false, object: topsObj });
     if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: bushObj.userData.clearing ? 'tree tops from the LiDAR canopy; the clearing round the house, the kept specimens and the species are proposed, not surveyed' : 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
     if (plantObj) layers.push({ id: 'planting', label: 'Planting', note: plantObj.name === 'native_planting' ? 'proposed, to frame the building; not from the plan' : 'from the plan model', visible: true, object: plantObj });
     // landscape: the layer now carries the proposed deck uplights as well as the soffit downlights
     if (lightObj) layers.push({ id: 'lights', label: 'Lights', note: 'proposed: soffit downlights over the glazed walls, deck uplights along the deck edges and up the cladding', visible: true, object: lightObj });
     if (landObj) layers.push({ id: 'site', label: 'Site from the drawings', note: 'paths, pads, walls and beds as drawn; species proposed', visible: true, object: landObj });
+    if (dressed) layers.push(...dressed.layers);   // model-dress
     // a free-form building's furniture layouts (e.g. banquet and auditorium seating), one shown at a time
     for (const lg of layoutGroups) layers.push({ id: `layout-${lg.name}`, label: `Seating: ${lg.name} (${lg.seats})`, note: `${lg.building}: positions from the plan, furniture proposed`, visible: lg.group.visible, object: lg.group });
 
@@ -927,11 +997,12 @@ export const projectPlan: Project = {
       sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
       // the approval record and the pre-check name the version of the plan as dropped, the same code the run report and the
       // ops page use; the pre-check still measures falls on whatever ground is showing
-      panels: input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
+      panels: input.kind !== 'plan' ? (setTimeout(() => startSite?.(), 0), modelCards) : input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
       topPanels: input.kind === 'plan' ? [planRunPanel(app, { plan: asDropped ?? input.plan, shown: input.plan, onGround, pause: groundPause })] : [],
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
+      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600, look: 'editorial' as const, agx: true, sunFace: new THREE.Vector3(0.8, 0, -0.6), fogScale: 0.35 } : {}),   // model-dress: sky, sun and haze as the example house has them, AgX kept; the sun comes from behind the left of the opening view, so the cast shadow falls forward into it   // room for the LiDAR square round an IFC or GLB
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: terrain.chip ?? (terrain.photo && terrain.photoKind !== 'contours' ? 'Site: LINZ LiDAR and aerial photo' : 'Site: surveyed ground, no aerial photo'), title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,
@@ -939,7 +1010,7 @@ export const projectPlan: Project = {
       view: { eye: keys[0].eye, look: keys[0].look },
       path: keys,
       section: [centre.y - 3, centre.y + 6],
-      support: (pt) => groundAt(pt.x, -pt.z),
+      support: (pt) => (onModelGround ? onModelGround.yAt(pt.x, pt.z) : groundAt(pt.x, -pt.z)),
       // walk mode stops at the plan's walls and climbs its stairs (walkNav.ts)
       walkNav: input.kind === 'plan' ? (() => { const nv = navFromPlan(input.plan as never); const ws = (input.plan as PlanModel).walk; if (ws) nv.start = { at: ws.start, y: groundAt(ws.start[0], -ws.start[1]), look: ws.look }; return nv; })() : undefined,
       exports,
