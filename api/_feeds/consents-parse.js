@@ -45,8 +45,13 @@ export function parseDataflows(text, max = 2000) {
 const decodeXml = (s) => String(s).replace(/&(amp|lt|gt|quot|apos|#39);/g, (_, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'" })[e]);
 /** Only the tables whose names are about building consents. */
 export function consentFlows(all, max = LIMITS.discoverMax) {
-  const hit = all.filter((f) => /consent/i.test(f.name) && /build|dwelling|residential|construction/i.test(f.name));
-  return { flows: hit.slice(0, max), matched: hit.length, scanned: all.length, capped: hit.length > max };
+  // by name, or by Stats NZ's building table ids (BLD_…), in case a name came through empty
+  // Stats NZ's catalogue has no table named "building consents" (checked live, 23 Nov 2026: 913 tables), so match any table about
+  // consents, building, dwellings or construction, by name or id, and let a person pick the right ids from the list
+  const hit = all.filter((f) => !/census/i.test(f.name) && !/^CEN/i.test(f.id)).filter((f) => /building|dwelling|construct/i.test(f.name) || (/consent/i.test(f.name) && /resident|house|home/i.test(f.name)) || /^(BLD|BLC)/i.test(f.id));
+  // a few names from the whole list, so a filter that misses can be seen at once (names only: no data, no key)
+  const sample = all.slice(0, 6).map((f) => `${f.id}: ${f.name || '(no name)'}`);
+  return { flows: hit.slice(0, max), matched: hit.length, scanned: all.length, capped: hit.length > max, sample };
 }
 
 // ---- data ------------------------------------------------------------------------------------------------------------------------------------

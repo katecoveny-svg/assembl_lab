@@ -58,13 +58,14 @@ export function timeFromSun(hour: number): Time {
 
 export const cleanSetting = (s: string) => String(s ?? '').replace(/[\u0000-\u001f\u007f<>{}[\]`\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, SETTING_MAX);
 
-/** the request body /api/render takes: pressing the button beside the shown price is the confirmation */
-export function requestBody(image: string, quality: Quality, time: Time, season: Season, setting: string) {
+/** the request body /api/render takes: pressing the button beside the shown price is the confirmation. `line` is the line
+ *  drawing of the same view from the model's geometry (photoreal/lines.ts), sent as a second image when the page could draw it */
+export function requestBody(image: string, quality: Quality, time: Time, season: Season, setting: string, line?: string | null) {
   const look: { time: Time; season?: Season; setting?: string } = { time };
   if (season) look.season = season;
   const s = cleanSetting(setting);
   if (s) look.setting = s;
-  return { image, quality, look, confirm: true as const };
+  return { image, quality, look, ...(line ? { line } : {}), confirm: true as const };
 }
 
 /** plain words for a failed request: the server's own message when it sent one */

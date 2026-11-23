@@ -93,10 +93,20 @@ export function captureView(app: Host) {
       if (first < 0) first = v; else if (Math.abs(v - first) > 0) varied = true;
     }
     if (!lit || !varied) throw new Error('blank');
-    return { url: out.toDataURL('image/jpeg', 0.9), ratio: c.ratio, trimmed: c.trimmed, w: c.dw, h: c.dh };
+    return { url: out.toDataURL('image/jpeg', 0.9), ratio: c.ratio, trimmed: c.trimmed, w: c.dw, h: c.dh, crop: { w: src.width, h: src.height, sx: c.sx, sy: c.sy, sw: c.sw, sh: c.sh, dw: c.dw, dh: c.dh }, line: null as string | null };
   } finally {
     if (hl) hl.visible = was;
   }
+}
+
+/** the line drawing of the same view, cropped the same way, from the model's own geometry (photoreal/geoview.ts, loaded on
+ *  demand); null if the browser cannot draw it (the photo is then asked for without it, as before) */
+async function lineFor(app: Host, shot: ReturnType<typeof captureView>): Promise<string | null> {
+  try {
+    const { lineView } = await import('./photoreal/geoview.ts');
+    const u = await lineView(app, shot.crop);
+    return /^data:image\/png;base64,/.test(u) ? u : null;
+  } catch (e) { console.warn('photo: no line drawing', (e as Error)?.message ?? e); return null; }
 }
 
 /** the image with the label burned into a band along its foot, as a JPEG */
@@ -126,6 +136,8 @@ export function mountPhoto(app: Host): HTMLElement | null {
   if (document.getElementById('photoCard')) return document.getElementById('photoCard');
   const stage = document.querySelector('.stage') as HTMLElement | null;
   if (!stage) return null;
+  // ?geoview on the page's address puts the line drawing and part mask on window.__geoview for the free geometry check tool
+  if (new URLSearchParams(location.search).has('geoview')) void import('./photoreal/geoview.ts').then((m) => m.registerGeoview(app, () => captureView(app)));
   if (!document.getElementById('photoStyle')) {
     const st = document.createElement('style');
     st.id = 'photoStyle'; st.textContent = CSS;
@@ -273,9 +285,9 @@ export function mountPhoto(app: Host): HTMLElement | null {
   };
 
   // --- make one ---------------------------------------------------------------------------------------------------------------
-  let lastShot: ReturnType<typeof captureView> | null = null;
+  let lastShot: ReturnType<typeof captureView> | null = null, drawing = false;
   const make = async (from: HTMLElement, again = false) => {
-    if (busy) return;
+    if (busy || drawing) return;
     let shot = again ? lastShot : null;
     if (!shot) {
       try { shot = captureView(app); } catch (e) {
@@ -285,6 +297,7 @@ export function mountPhoto(app: Host): HTMLElement | null {
         return;
       }
     }
+    if (!again || !shot.line) { drawing = true; try { shot.line = await lineFor(app, shot); } finally { drawing = false; } }
     lastShot = shot;
     const t = time.value as Time, s = season.value as Season, set = setting.value;
     opener = from;
@@ -299,7 +312,7 @@ export function mountPhoto(app: Host): HTMLElement | null {
     app.log('Google Gemini is making a photo of this view…');
     let status = 0, body: unknown = null;
     try {
-      const res = await fetch('/api/render', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody(shot.url, quality, t, s, set)), signal: ac.signal });
+      const res = await fetch('/api/render', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody(shot.url, quality, t, s, set, shot.line)), signal: ac.signal });
       status = res.status;
       body = await res.json().catch(() => null);
       const b = body as { image?: string; model?: string; took_ms?: number; prompt_revision?: string } | null;

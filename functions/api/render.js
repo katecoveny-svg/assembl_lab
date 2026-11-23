@@ -28,10 +28,19 @@
 // RENDER_PROMPTS names the prompt revision. GET reports it, so a preview can be checked without a paid call.
 // Spending is explicit (the pattern of api/plan-render.js): GET and every refusal carry the estimate for each quality, the page
 // shows it beside the button, and a paid request must carry confirm: true or it is refused (402) before anything is counted.
+//
+// The line drawing (agent/photo-film-1123): the page may send, beside the view, a line drawing of exactly the same view, drawn
+// from the model's own geometry (plan-studio/twins/src/twin/photoreal/lines.ts): black where the building has an edge, grey for
+// furniture, planting and ground. It goes to Google Gemini as a second image, and the prompt asks for every building edge of
+// the photo to lie on its black lines. Google's image docs (read 22-23 Nov 2026) allow up to 14 reference images for both
+// models. Without the drawing the request is as before. The photo is then checked offline against the same drawing
+// (tools/film/geocheck.mjs): this endpoint makes no claim that the photo matches.
 
-export const RENDER_PROMPTS = "2026-11-22a";
+export const RENDER_PROMPTS = "2026-11-23a";
 export const MAX_BODY = 5_000_000;
 export const MAX_IMAGE = 4_000_000;
+/** the line drawing is a small PNG (black lines on white): 1.5 MB decoded at most */
+export const MAX_LINE = 1_500_000;
 export const SETTING_MAX = 120;
 export const TIMES = ["morning", "midday", "golden", "overcast"];
 export const SEASONS = ["summer", "winter"];
@@ -90,13 +99,21 @@ const SEASON = {
 export function cleanSetting(s) {
   return String(s ?? "").replace(/[\u0000-\u001f\u007f<>{}\[\]`\\]/g, " ").replace(/\s+/g, " ").trim();
 }
-export function buildPrompt(look, ratio) {
+export function buildPrompt(look, ratio, withLine = false) {
   const setting = cleanSetting(look?.setting);
   return [
-    "Make this exact 3D model view look like an architectural photograph of the same building.",
+    "Make this exact 3D model view look like a real architectural photograph of the same building, taken from the same spot.",
+    withLine
+      ? "The first image is the model view. The second image is a line drawing of exactly the same view, drawn from the model's geometry: every black line is an edge of the building (walls, window and door openings, roof, deck, balustrades, stair, poles); grey lines are furniture, planting and ground."
+      : "",
     "Keep the camera exactly as it is: the same position, lens, framing and horizon.",
-    "Keep every wall, opening, window, door, roof line, deck, balustrade, step and proportion exactly as drawn, in the same place and at the same size.",
-    "Do not add, remove, move or resize any building element. Only make the materials, light, sky and surroundings look real.",
+    withLine
+      ? "Keep the building's geometry exactly: every edge of the building in the photograph must lie on a black line of the drawing, and every black line must still be an edge in the photograph."
+      : "Keep every wall, opening, window, door, roof line, deck, balustrade, step and proportion exactly as drawn, in the same place and at the same size.",
+    "Keep every window and door opening, the stair's run, its turns, its landings and every step, every balustrade post and glass panel, the deck edges, the roof line and fascia, and every pole and pile exactly where they are, at the same size and in the same number.",
+    "Do not add, remove, move, resize, widen or straighten any building element; do not change the stair's shape or the balustrade's layout.",
+    "Only the materials, light, sky and planting may change: make the surfaces read as real materials, and the light and sky as real.",
+    withLine ? "Do not draw the lines: the drawing is a guide, not part of the picture." : "",
     `Light: ${LIGHT[look.time]}.`,
     look.season ? SEASON[look.season] : "",
     "Plant New Zealand native species only, and only on ground that can be seen in the view; keep the planting low so it hides no part of the building.",
@@ -202,15 +219,15 @@ async function takeSlot(env, base, ip, now = new Date()) {
 
 // --- the call ----------------------------------------------------------------------------------------------------------
 const BLOCKED = new Set(["safety", "recitation", "language", "prohibited_content", "spii", "blocklist", "image_safety", "image_prohibited_content", "image_recitation", "image_other", "content_blocked"]);
-/** the request Google's docs give for an image edit: text then the image in, one JPEG out */
-export function geminiRequest(env, quality, prompt, img, ratio) {
+/** the request Google's docs give for an image edit: text then the image (and the line drawing, if sent) in, one JPEG out */
+export function geminiRequest(env, quality, prompt, img, ratio, line = null) {
   const model = modelOf(env, quality), size = SIZES[quality], key = keyOf(env);
   const lowThink = quality === "fast" && !/pro/i.test(model); // the Flash family takes thinking_level; Pro's thinking is fixed
   if (apiOf(env) === "generate_content") {
     return {
       url: `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent`,
       headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: { contents: [{ role: "user", parts: [{ text: prompt }, { inline_data: { mime_type: img.type, data: img.data } }] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: ratio, imageSize: size } } },
+      body: { contents: [{ role: "user", parts: [{ text: prompt }, { inline_data: { mime_type: img.type, data: img.data } }, ...(line ? [{ inline_data: { mime_type: line.type, data: line.data } }] : [])] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: ratio, imageSize: size } } },
       model,
     };
   }
@@ -219,7 +236,7 @@ export function geminiRequest(env, quality, prompt, img, ratio) {
     headers: { "content-type": "application/json", "x-goog-api-key": key, "api-revision": API_REVISION },
     body: {
       model,
-      input: [{ type: "text", text: prompt }, { type: "image", mime_type: img.type, data: img.data }],
+      input: [{ type: "text", text: prompt }, { type: "image", mime_type: img.type, data: img.data }, ...(line ? [{ type: "image", mime_type: line.type, data: line.data }] : [])],
       response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: ratio, image_size: size },
       ...(lowThink ? { generation_config: { thinking_level: "minimal" } } : {}),
       store: false,
@@ -264,6 +281,9 @@ export const MESSAGES = {
   image_too_large: "That view is over 4 MB. Make the window smaller and try again.",
   image_size: "The view must be between 256 and 4096 pixels on each side.",
   bad_quality: "Choose Fast or Best.",
+  line_unreadable: "The line drawing of the view could not be read as a PNG, JPEG or WebP image. Reload the page and try again.",
+  line_too_large: "The line drawing of the view is over 1.5 MB. Make the window smaller and try again.",
+  line_shape: "The line drawing is not the same shape as the view. Reload the page and try again.",
   confirm_spend: "Each photo is paid for. Check the price shown beside the button, then press it again.",
   bad_time: "Choose a time of day: morning, midday, golden hour or overcast.",
   bad_season: "Choose summer or winter, or leave the season out.",
@@ -277,7 +297,7 @@ export const MESSAGES = {
   timeout: "Google Gemini took too long. Try again, or try Fast.",
   model_error: "Google Gemini could not make the photo. Nothing is shown rather than a guess.",
 };
-const STATUS = { confirm_spend: 402, not_configured: 503, origin: 403, method: 405, too_large: 413, image_too_large: 413, slow_down: 429, ip_daily: 429, daily_cap: 429, declined: 422, no_image: 502, busy: 503, timeout: 504, model_error: 502 };
+const STATUS = { confirm_spend: 402, not_configured: 503, origin: 403, method: 405, too_large: 413, image_too_large: 413, line_too_large: 413, slow_down: 429, ip_daily: 429, daily_cap: 429, declined: 422, no_image: 502, busy: 503, timeout: 504, model_error: 502 };
 
 /** everything about the request that can be checked before anything is counted or sent: { error } or the parts */
 export function checkInput(body) {
@@ -289,6 +309,17 @@ export function checkInput(body) {
   let dims; try { dims = imageSize(img.type, b64bytes(img.data, 65536)) || imageSize(img.type, b64bytes(img.data)); } catch { dims = null; }
   if (!dims || !dims.w || !dims.h) return { error: "image_unreadable" };
   if (dims.w < 256 || dims.h < 256 || dims.w > 4096 || dims.h > 4096) return { error: "image_size" };
+  // the line drawing of the same view: optional; if sent it must be readable and the view's shape (within 1.5%)
+  let line = null;
+  if (body.line != null && body.line !== "") {
+    const lm = typeof body.line === "string" && body.line.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
+    if (!lm) return { error: "line_unreadable" };
+    line = { type: lm[1], data: lm[2] };
+    if (Math.floor((line.data.length * 3) / 4) > MAX_LINE) return { error: "line_too_large" };
+    let ld; try { ld = imageSize(line.type, b64bytes(line.data, 65536)) || imageSize(line.type, b64bytes(line.data)); } catch { ld = null; }
+    if (!ld || !ld.w || !ld.h) return { error: "line_unreadable" };
+    if (Math.abs(Math.log((ld.w / ld.h) / (dims.w / dims.h))) > 0.015 || ld.w < 256 || ld.h < 256 || ld.w > 4096 || ld.h > 4096) return { error: "line_shape" };
+  }
   const quality = body.quality ?? "fast";
   if (!QUALITIES.includes(quality)) return { error: "bad_quality" };
   const look = body.look && typeof body.look === "object" ? body.look : {};
@@ -296,7 +327,7 @@ export function checkInput(body) {
   if (look.season != null && look.season !== "" && !SEASONS.includes(look.season)) return { error: "bad_season" };
   if (look.setting != null && typeof look.setting !== "string") return { error: "setting_too_long" };
   if (cleanSetting(look.setting).length > SETTING_MAX) return { error: "setting_too_long" };
-  return { img, dims, quality, look: { time: look.time, season: look.season || undefined, setting: cleanSetting(look.setting) || undefined } };
+  return { img, line, dims, quality, look: { time: look.time, season: look.season || undefined, setting: cleanSetting(look.setting) || undefined } };
 }
 
 async function readCapped(request, max) {
@@ -326,7 +357,8 @@ export async function onRequest({ request, env }) {
     return json(200, {
       type: "assembl.planstudio.render.status", configured: !!keyOf(env), host: "cloudflare", provider: "google-gemini", api: apiOf(env),
       models: { fast: modelOf(env, "fast"), best: modelOf(env, "best") }, sizes: SIZES, prompt_revision: RENDER_PROMPTS,
-      limits: { ...limitsOf(env), max_body_bytes: MAX_BODY, max_image_bytes: MAX_IMAGE, setting_chars: SETTING_MAX, counted_in: counterKind(env) },
+      limits: { ...limitsOf(env), max_body_bytes: MAX_BODY, max_image_bytes: MAX_IMAGE, max_line_bytes: MAX_LINE, setting_chars: SETTING_MAX, counted_in: counterKind(env) },
+      accepts_line: true,
       estimate: { fast: estimateOf(env, "fast"), best: estimateOf(env, "best") }, needs_confirm: true,
       times: TIMES, seasons: SEASONS, aspect_ratios: RATIOS, stores_images: false, label: LABEL,
     });
@@ -340,15 +372,15 @@ export async function onRequest({ request, env }) {
   let body; try { body = JSON.parse(raw.text); } catch { return fail("bad_json"); }
   const input = checkInput(body);
   if (input.error) return fail(input.error);
-  const { img, dims, quality, look } = input;
+  const { img, line, dims, quality, look } = input;
   if (body.confirm !== true) return fail("confirm_spend", { estimate: estimateOf(env, quality) });
 
   const hit = await takeSlot(env, request.url, request.headers.get("cf-connecting-ip") || "");
   if (hit) return fail(hit, hit === "slow_down" ? { retry_after: 60 } : {});
 
   const ratio = nearestRatio(dims.w, dims.h);
-  const prompt = buildPrompt(look, ratio);
-  const req = geminiRequest(env, quality, prompt, img, ratio);
+  const prompt = buildPrompt(look, ratio, !!line);
+  const req = geminiRequest(env, quality, prompt, img, ratio, line);
   const t0 = Date.now(), ac = new AbortController(), timer = setTimeout(() => ac.abort(), TIMEOUT_MS[quality]);
   try {
     const r = await fetch(req.url, { method: "POST", headers: req.headers, body: JSON.stringify(req.body), signal: ac.signal });
@@ -360,7 +392,7 @@ export async function onRequest({ request, env }) {
     }
     const a = j ? readAnswer(j) : { error: "model_error" };
     if (a.error) { console.warn("render: no image", a.error, String(j?.status ?? j?.candidates?.[0]?.finishReason ?? "").slice(0, 60)); return fail(a.error); }
-    return json(200, { type: "assembl.planstudio.render", image: a.image, model: (typeof j?.model === "string" && j.model) || j?.modelVersion || req.model, quality, aspect_ratio: ratio, prompt_revision: RENDER_PROMPTS, took_ms: Date.now() - t0, label: LABEL });
+    return json(200, { type: "assembl.planstudio.render", image: a.image, model: (typeof j?.model === "string" && j.model) || j?.modelVersion || req.model, quality, aspect_ratio: ratio, prompt_revision: RENDER_PROMPTS, line_used: !!line, took_ms: Date.now() - t0, label: LABEL });
   } catch (e) {
     const timeout = e?.name === "AbortError";
     console.warn("render: call failed", timeout ? "timeout" : String(e?.message || e).slice(0, 200));
