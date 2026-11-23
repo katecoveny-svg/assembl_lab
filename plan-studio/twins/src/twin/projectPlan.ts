@@ -1067,6 +1067,7 @@ export const projectPlan: Project = {
     const groundPause = (on: boolean) => { if (on) { pausedBefore = app.paused; app.paused = true; } else app.paused = pausedBefore; };
     if (input.kind === 'plan') void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
     void import('./agents/mount').then((m) => m.mountAgents(app as never, model, input.kind === 'plan' ? (input.plan as never) : undefined));   // the interior agent and the look expert (feat/agents-interior-1123): this line only
+    void import('./siteBrief').then((m) => m.mountSiteBrief(app as never, handed && handed.id === new URLSearchParams(location.search).get(HANDOFF_PARAM) ? (handed.site as never) : null, input.kind));   // the site agent's brief, site.brief (feat/site-agent): this line only
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround }
