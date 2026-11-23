@@ -60,3 +60,19 @@ export async function takeHandoff(id, { idb = globalThis.indexedDB, now = Date.n
     return { name: got.name, type: got.type, blob: got.blob, site: got.site ?? null };
   } finally { db.close(); }
 }
+
+/**
+ * Everything the 3D page passed back for a hand-over (records with ids `${handoffId}:…`: the camera path, the fly-through, films,
+ * shots, the look), taken out of the store: they are deleted as they are read, so each goes into the project once.
+ */
+export async function takeBacks(handoffId, { idb = globalThis.indexedDB } = {}) {
+  if (!handoffId || !idb) return [];
+  const db = await openDb(idb);
+  try {
+    const tx = db.transaction(HANDOFF_STORE, 'readwrite'), st = tx.objectStore(HANDOFF_STORE);
+    const all = (await req(st.getAll())) ?? [], mine = all.filter((x) => String(x?.id ?? '').startsWith(`${handoffId}:`));
+    for (const x of mine) st.delete(x.id);
+    await done(tx);
+    return mine.map((x) => (x.kind ? x : { ...x, kind: String(x.id).endsWith(':path') ? 'camera_path' : '' }));
+  } finally { db.close(); }
+}

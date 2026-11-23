@@ -26,6 +26,8 @@ export const SLOTS = [
   { id: 'site_plan', word: 'Site plan', tag: 'PDF · image', ext: ['pdf', ...IMG], to3d: true, icon: 'plan' },
   { id: 'camera_sketch', word: 'Camera path sketch', tag: 'PDF · image', ext: ['pdf', ...IMG], to3d: true, icon: 'path', hint: 'The site plan with the fly-through path drawn on it.' },
   { id: 'survey', word: 'Survey', tag: 'PDF · DWG · CSV · LandXML', ext: ['pdf', 'dwg', 'csv', 'xml', 'landxml'], to3d: false, icon: 'survey' },
+  { id: 'flythrough', word: 'Fly-through path', tag: 'JSON', ext: ['json'], to3d: false, icon: 'path', hint: 'Saved from the 3D page: the shots, versioned; proposed until a person confirms it.' },
+  { id: 'films', word: 'Films and stills', tag: 'MP4 · WebM · PNG · JPEG', ext: ['mp4', 'webm', 'png', 'jpg', 'jpeg'], to3d: false, icon: 'file', hint: 'Made on the 3D page and saved back here: fly-through films, comparison shots, the approved look.' },
   { id: 'other', word: 'Other', tag: 'any file', ext: null, to3d: false, icon: 'file' },
 ];
 export const slotOf = (id) => SLOTS.find((s) => s.id === id) ?? null;
@@ -216,3 +218,20 @@ export async function withSiteSources(store, projectId, change, now = new Date()
 }
 /** a camera path confirmed by a person: the tool (or the person) may have drawn it, but only a person's press makes it confirmed */
 export const confirmPath = (c, who, now = new Date().toISOString()) => (c ? { ...c, confirmed_by: String(who || '').trim() || 'Someone in this practice', confirmed_at: now } : null);
+
+// ---- what the 3D page passes back (plan-studio/twins/src/twin/handoff.ts putBackRecord, putPathBack) ----------------------------
+/**
+ * Where a record passed back from the 3D page goes in the project: { slot, name, note, path } for a file kept in Site and sources,
+ * or { path } for a camera path (it becomes the project's camera_path, proposed until confirmed). null for anything unknown.
+ */
+export function backToSource(rec) {
+  if (!rec || typeof rec !== 'object') return null;
+  if (rec.kind === 'camera_path' && rec.path) return { path: rec.path };
+  const m = rec.meta ?? {}, name = String(rec.name ?? 'from the 3D page').slice(0, 160);
+  const status = m.status === 'confirmed' ? `confirmed by ${String(m.confirmed_by ?? 'a person')}` : 'proposed';
+  if (rec.kind === 'flight') return { slot: 'flythrough', name, note: `From the 3D page: v${Number(m.version) || 1}, ${status}${m.shots ? `, ${m.shots} shots` : ''}` };
+  if (rec.kind === 'film') return { slot: 'films', name, note: `Film from the 3D page: ${m.secs ? `${m.secs} s, ` : ''}${m.size ?? ''}${m.quality === 'draft' ? ', draft' : ''}, path ${status}` };
+  if (rec.kind === 'shot') return { slot: 'films', name, note: `Comparison shot ${String(m.shot ?? '')} from the 3D page`.trim() };
+  if (rec.kind === 'look') return { slot: 'films', name, note: `Look from the 3D page: ${m.approved_by ? `approved by ${m.approved_by}` : 'proposed, waiting for a person'}` };
+  return null;
+}

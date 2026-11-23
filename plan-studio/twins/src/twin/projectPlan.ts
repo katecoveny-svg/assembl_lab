@@ -31,6 +31,8 @@ import { HANDOFF_PARAM, takeHandoff, type HandoffSite } from './handoff';
 import { readIfcSite, type IfcSiteInfo } from './modelSite';
 import { modelGroundPanel, type ModelGround } from './modelGround';
 import { cameraPathPanel } from './cameraPathUI';
+import { flightPanel } from './flightUI';
+import { readFlight } from './flightPath';   // the fly-through editor and film (agent/model-dress-1123)
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -950,7 +952,13 @@ export const projectPlan: Project = {
         root: pathRoot, pickables: () => [lidarHolder.children.length ? lidarHolder : ground],
       });
       refreshPath = cp.refresh;
-      modelCards = [mg.el, cp.el]; startSite = mg.start;
+      const fl = flightPanel(app, {
+        name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the scene: the model as opened, moved to stand at the origin (scene = file + shift)',
+        yAt: () => (onModelGround ? onModelGround.yAt : () => 0), pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
+        root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
+      });
+      if (site?.flight) { try { fl.path = readFlight(site.flight); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
+      modelCards = [mg.el, cp.el, fl.el]; startSite = mg.start;
       (window as unknown as { __site?: unknown }).__site = { ground: () => onModelGround, path: cp.state, info: ifcInfo, shift };   // for checks from the console (this tab only)
     }
 
@@ -964,6 +972,19 @@ export const projectPlan: Project = {
         : input.kind !== 'plan' ? { id: 'ground', label: 'Ground', note: 'flat (assumed) until the site is read in On its site; then LINZ 1 m LiDAR, coloured by slope with a line each metre, with the LINZ parcel', visible: true, object: modelGround }
         : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
+    // the generated homes get the fly-through editor too (shots on the plan's ground)
+    let planFlight: HTMLElement | null = null;
+    if (input.kind === 'plan') {
+      const from = new URLSearchParams(location.search).get(HANDOFF_PARAM);
+      const pf = flightPanel(app, {
+        name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the plan model’s scene (x = u, z = v, metres)',
+        yAt: () => (x, z) => groundAt(x, -z), pickables: () => [realGround ?? ground, model], root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
+      });
+      const sf = from && handed?.id === from ? handed.site?.flight : null;
+      if (sf) { try { pf.path = readFlight(sf); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
+      planFlight = pf.el;
+      layers.push({ id: 'camera-path', label: 'Fly-through', note: 'the shots and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
+    }
     if (input.kind !== 'plan') layers.push({ id: 'camera-path', label: 'Camera path', note: 'the sketch laid on the ground, and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
     if (topsObj) layers.push({ id: 'tops', label: 'Tree and building tops', note: 'from LINZ’s surface model less its ground model, as plain blocks; trees and buildings are not told apart. Off to start with, so they do not hide the house', visible: false, object: topsObj });
     if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: bushObj.userData.clearing ? 'tree tops from the LiDAR canopy; the clearing round the house, the kept specimens and the species are proposed, not surveyed' : 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
@@ -997,7 +1018,7 @@ export const projectPlan: Project = {
       sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
       // the approval record and the pre-check name the version of the plan as dropped, the same code the run report and the
       // ops page use; the pre-check still measures falls on whatever ground is showing
-      panels: input.kind !== 'plan' ? (setTimeout(() => startSite?.(), 0), modelCards) : input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
+      panels: input.kind !== 'plan' ? (setTimeout(() => startSite?.(), 0), modelCards) : input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause), ...(planFlight ? [planFlight] : [])] : [],
       topPanels: input.kind === 'plan' ? [planRunPanel(app, { plan: asDropped ?? input.plan, shown: input.plan, onGround, pause: groundPause })] : [],
       layers,
       focus: centre,

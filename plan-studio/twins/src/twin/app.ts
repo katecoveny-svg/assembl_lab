@@ -170,7 +170,13 @@ export class App {
     this.renderer = new THREE.WebGPURenderer({ canvas: this.canvas, antialias: true, forceWebGL: force });
     await this.renderer.init();
     this.webgpu = !!(this.renderer.backend as unknown as { isWebGPUBackend?: boolean }).isWebGPUBackend;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    // phones (agent/model-dress-1123): pixel ratio capped at 1.75 and lighter ambient occlusion; the low tier (a small phone,
+    // or ?tier=low) draws without the post-processing passes at all
+    const tierQ = new URLSearchParams(location.search).get('tier');
+    this.phone = tierQ === 'low' || tierQ === 'phone' || (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820);
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    this.lowTier = tierQ === 'low' || (this.phone && tierQ !== 'phone' && ((nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.phone ? 1.75 : 2));
     this.renderer.toneMapping = THREE.AgXToneMapping;
     this.renderer.toneMappingExposure = 0.62;
     this.renderer.shadowMap.enabled = true;
@@ -422,6 +428,10 @@ export class App {
   /** a photographed sky, when the project brings one: used as the backdrop and the fill light by day, turned so its sun sits where the sun is */
   photoSky: THREE.Texture | null = null;
   private editorial = false;
+  /** a phone: capped pixel ratio, lighter AO */
+  phone = false;
+  /** the low tier: no post-processing passes */
+  lowTier = false;
   private orbitOn = false;
   private fill: THREE.DirectionalLight | null = null;
   private photoOn = false;
@@ -496,6 +506,7 @@ export class App {
 
   /** scene pass with ground-truth ambient occlusion and bloom from emissive surfaces (lamps, LEDs) */
   setupPipeline() {
+    if (this.lowTier) { this.pipeline = null; const c = document.getElementById('renderer'); if (c) c.textContent += ' · low tier'; return; }
     try {
       const rp = new THREE.RenderPipeline(this.renderer);
       const pre = pass(this.scene, this.camera);
@@ -505,7 +516,7 @@ export class App {
       const scenePass = pass(this.scene, this.camera);
       scenePass.setMRT(mrt({ output, emissive }));
       const aoPass = ao(preD, preN, this.camera);
-      (aoPass as unknown as { resolutionScale: number }).resolutionScale = 0.5;
+      (aoPass as unknown as { resolutionScale: number }).resolutionScale = this.phone ? 0.35 : 0.5;
       (aoPass as unknown as { radius: { value: number } }).radius.value = 0.6;
       scenePass.contextNode = builtinAOContext(aoPass.getTextureNode().sample(screenUV).r);
       const col = scenePass.getTextureNode('output');
