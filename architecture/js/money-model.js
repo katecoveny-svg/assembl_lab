@@ -288,6 +288,11 @@ export function revenueState(total, mo) {
   if (mo.low != null && total >= mo.low) return mo.high != null && total > mo.high ? 'above' : 'target';
   return 'over';
 }
+/** [workspace redesign] true when nothing has been invoiced yet (void invoices aside): the month then has nothing to stand
+ *  against break-even, and the page asks for the first invoice instead of saying the practice is below break-even */
+export const noInvoicesYet = (invoices = []) => !(invoices ?? []).some((i) => !i.void && num(i.amount_nzd) != null);
+/** [workspace redesign] true when the pipeline has nothing in it (no won or likely work counted): no month is "short" yet */
+export const emptyPipeline = (fc) => !(fc?.counted?.length);
 export const REVENUE_WORD = { below: 'Below break-even', over: 'Above break-even', target: 'In the target band', above: 'Above the target' };
 
 // ---- the pipeline forecast (ported from forecast.ts: finIn, forecast, firstGap, gapLeads) -----------------------------

@@ -9,7 +9,7 @@ const canvas = document.getElementById("field");
 const windows = [...document.querySelectorAll("[data-scene]")];
 // the lab's pictures: each world as it really runs (captured from the live pages), shown in the three shades until you
 // point at it; Plan Studio's floor plan has its 3D model underneath
-const V = "?v=20261122a";   // pictures are versioned so a browser never mixes an old picture with a new page
+const V = "?v=20261123b";   // pictures are versioned so a browser never mixes an old picture with a new page
 const IMG = (n) => `/lab/v3/img/${n}.webp${V}`;
 // the lab's two worlds: the 16A floor plan drawn from its plan model, with the three.js model built from it underneath;
 // Manu's birds as they render on their own pages; assembl's own house sketches to close; and, to open, the plan drop
@@ -20,6 +20,8 @@ const UNDER = { plan16a: "model16a" };              // the plan, with the model 
 const FOCUS = { house: [0.2, 0], birds: [0.16, 0], plan16a: [0.3, 0], model16a: [0.1, 0], tui: [0.2, 0], sketches: [0.3, 0] };
 const MIST = { house: 1, birds: 1, plan16a: 1, tui: 1, sketches: 0.6 };
 const LIFT = {};
+// pictures that do not turn over under the pointer (a photo-real model reads as broken when patches of it change colour)
+const NOHOVER = new Set(["tui"]);
 
 function fallback() {
   document.documentElement.classList.add("no-field");
@@ -105,7 +107,7 @@ else {
     for (let k = 0; k < gridN; k++) {
       const cx = (k % gridCols + 0.5) * tile - px, cy = (Math.floor(k / gridCols) + 0.5) * tile - py;
       const passed = wave >= order[k], all = waveT0 ? (allOn ? passed : !passed) : false;
-      const want = (cx * cx + cy * cy < R2 || all) ? 1 : 0, v = flipV[k];
+      const want = ((!NOHOVER.has(current) && cx * cx + cy * cy < R2) || all) ? 1 : 0, v = flipV[k];
       if (v !== want) { flipV[k] = want > v ? Math.min(1, v + step) : Math.max(0, v - step); busy = true; }
     }
     if (wave > 0 && wave < 1.2) busy = true; else if (wave >= 1.2 && !allOn) waveT0 = 0;

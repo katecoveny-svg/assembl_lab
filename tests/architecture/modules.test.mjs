@@ -52,5 +52,6 @@ test('the project page puts each section in the tab it asked for', async () => {
   assert.match(app, /data-mod-panels="model"/);
   assert.match(app, /data-mod-panels="presentation"/);
   assert.match(app, /querySelector\(`\[data-mod-panels="\$\{pn\.tab \?\? 'model'\}"\]`\)/);
-  for (const t of PANEL_TABS) assert.match(app, new RegExp(`\\['${t}', '`), `app.js has a ${t} tab`);
+  // the workspace redesign leaves Takeoff off the page until it measures something; its key stays a valid place for a section
+  for (const t of PANEL_TABS.filter((k) => k !== 'takeoff')) assert.match(app, new RegExp(`\\['${t}', '`), `app.js has a ${t} tab`);
 });

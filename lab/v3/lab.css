@@ -164,7 +164,8 @@ main { position: relative; z-index: 1; }
 .twins li:nth-child(even) .peek { margin-left: 18%; }
 .twins .peek:nth-child(even) { margin-left: 0; }
 @media (max-width: 760px) {
-  .nav a:nth-child(-n+2) { display: none; }
+  .nav a:nth-child(-n+3) { display: none; }
+  .nav .nav-long { display: none; }
   .chip.city { grid-column: 1 / -1; grid-row: 6; align-self: start; justify-self: start; margin: 8px var(--gutter) 0; }
   .hero .cta { grid-row: 5; align-self: start; margin-top: 10px; }
   .k { grid-column: 1 / -1; }
