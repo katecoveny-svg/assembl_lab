@@ -52,19 +52,19 @@ function labelSprite(text: string, tag: string) {
   const t2 = tag === 'read' ? 'from the site plan' : tag === 'proposed' ? 'proposed' : tag === 'assumed' ? 'laid on, assumed' : 'LINZ';
   const w = Math.ceil(Math.max(g.measureText(text).width, (g.font = `500 20px "IBM Plex Mono", monospace`, g.measureText(t2).width)) + pad * 2);
   c.width = w; c.height = fs + 20 + pad * 2 + 4;
-  g.fillStyle = 'rgba(255,253,251,.94)'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#FFFDFB'; g.fillRect(0, 0, c.width, c.height);
   g.strokeStyle = '#654A4E'; g.lineWidth = 2; if (tag !== 'read' && tag !== 'measured') g.setLineDash([6, 4]); g.strokeRect(1, 1, c.width - 2, c.height - 2);
   g.fillStyle = '#240B21'; g.font = `600 ${fs}px "Instrument Sans", system-ui, sans-serif`; g.textBaseline = 'top'; g.fillText(text, pad, pad - 2);
   g.fillStyle = '#654A4E'; g.font = `500 20px "IBM Plex Mono", monospace`; g.fillText(t2, pad, pad + fs + 2);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true, sizeAttenuation: false }));
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true, sizeAttenuation: false, toneMapped: false, fog: false }));
   const k = 0.00038; s.scale.set(c.width * k, c.height * k, 1); s.center.set(0.5, 0); s.renderOrder = 20; s.name = `label_${text}`;
   return s;
 }
 const LINE = { parcel: 0xfffdfb, drawn: 0x916a70, future: 0x916a70 } as Record<string, number>;
 
 /** draw the brief's labels and boundaries: toScene maps lat/lng (or a plan-frame point) to scene x, z; y from the page's ground */
-export function sceneLayer(b: SiteBrief, toScene: ((lat: number, lng: number) => [number, number]) | null, groundY: (x: number, z: number) => number) {
+export function sceneLayer(b: SiteBrief, toScene: ((lat: number, lng: number) => [number, number]) | null, groundY: (x: number, z: number) => number, planFrame = false) {
   const g = new THREE.Group(); g.name = 'site_brief_layer';
   const at = (x: number, z: number, up: number) => new THREE.Vector3(x, (groundY(x, z) || 0) + up, z);
   let labels = 0, lines = 0;
@@ -76,12 +76,12 @@ export function sceneLayer(b: SiteBrief, toScene: ((lat: number, lng: number) =>
     for (const r of b.scene.boundary) {
       if (r.ring.length < 3) continue;
       const pts = r.ring.map(([la, ln]) => { const [x, z] = toScene(la, ln); return at(x, z, 0.35); }); pts.push(pts[0].clone());
-      const m = new THREE.LineDashedMaterial({ color: LINE[r.kind] ?? 0xfffdfb, dashSize: r.kind === 'parcel' ? 1.6 : 0.8, gapSize: r.kind === 'parcel' ? 0.8 : 0.6, depthTest: true });
+      const m = new THREE.LineDashedMaterial({ color: LINE[r.kind] ?? 0xfffdfb, dashSize: r.kind === 'parcel' ? 1.6 : 0.8, gapSize: r.kind === 'parcel' ? 0.8 : 0.6, depthTest: true, toneMapped: false, fog: false });
       const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m); line.computeLineDistances(); line.name = `boundary_${r.kind}`; g.add(line); lines++;
       const mid = pts[0].clone().lerp(pts[1], 0.5); const s = labelSprite(r.label, r.tag); s.position.copy(mid).add(new THREE.Vector3(0, 2.5, 0)); g.add(s); labels++;
     }
   }
-  for (const f of b.scene.features ?? []) {   // the sample's site plan features, in the plan model's frame (x = u, z = v)
+  for (const f of planFrame ? b.scene.features ?? [] : []) {   // the sample's site plan features, in the plan model's frame (x = u, z = v): plan pages only
     if (f.pts.length < 2) continue;
     const c = f.pts.reduce((a, p) => [a[0] + p[0] / f.pts.length, a[1] + p[1] / f.pts.length], [0, 0]);
     const s = labelSprite(f.label, f.tag); s.position.copy(at(f.kind === 'boundary' ? f.pts[0][0] : c[0], f.kind === 'boundary' ? f.pts[0][1] : c[1], f.kind === 'boundary' ? 3 : 2)); g.add(s); labels++;
@@ -151,7 +151,7 @@ export function mountSiteBrief(app: Host, site: { brief?: unknown } | null | und
   const groundY = (x: number, z: number) => app.built.support?.(new THREE.Vector3(x, 0, z)) ?? 0;
   const draw = (toScene: ((lat: number, lng: number) => [number, number]) | null) => {
     if (layer) app.scene.remove(layer);
-    const L = sceneLayer(b, toScene, groundY); layer = L.group; app.scene.add(layer);
+    const L = sceneLayer(b, toScene, groundY, kind === 'plan'); layer = L.group; app.scene.add(layer);
     say(`${L.labels} labels and ${L.lines} boundary lines from the site brief.`);
     app.log(`Site brief: ${L.labels} labels, ${L.lines} boundary lines.`);
   };
