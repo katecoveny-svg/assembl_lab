@@ -6,7 +6,7 @@
 // a courtesy. The database refuses the change regardless.
 
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SCHEMA, BUCKET, CLIENT_MODULE, AUTH_STORAGE_KEY } from './config.js';
-import { createGateway, createCloudStore, createTeam, createArtworkPlace, moveProjects, probeShared, NOT_ON } from './cloud.js';
+import { createGateway, createCloudStore, createTeam, createArtworkPlace, createSharePlace, moveProjects, probeShared, NOT_ON } from './cloud.js';
 import { createRadarClient } from './radar-client.js';
 import { SAMPLE_ID } from './model.js';
 import { lookChoiceHtml, isTheme, DEFAULT_THEME } from './theme.js';
@@ -385,6 +385,8 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
 
     /** the practice's own artwork place (cloud.js), or null when no practice is in use: artwork.js keeps the practice's artwork through it */
     artworkPlace: () => (st.practice && gateway && store.shared ? createArtworkPlace(gateway, st.practice) : null),
+    /** [workspace redesign] the client link of a project in the practice's records (file-library.js); null signed out */
+    sharePlace: () => (st.practice && gateway && store.shared ? createSharePlace(gateway, st.practice) : null),
     /** draw the header and the practice panel again (artwork.js, after its section changes) */
     redraw: () => draw(),
 
