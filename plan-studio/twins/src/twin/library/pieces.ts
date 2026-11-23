@@ -151,6 +151,32 @@ export function diningTable(o: { l?: number; w?: number; timber?: Timber } = {})
   return finish('LIB-TAB-01', 'Dining table, solid oak, 2000 × 950', 'oiled European oak', P);
 }
 
+/** round banquet table for ten: a 1660 mm oak top (1800 mm over the cloth and its folds) on a pedestal, under a washed linen cloth that falls in soft folds to just
+ *  above the floor (the folds are a height field round the hem, deeper toward it, as cloth hangs from a table edge) */
+export function banquetTable(o: { linen?: number } = {}) {
+  const P: THREE.Object3D[] = [], R = 0.83, H = 0.75, wood = timber('oak');
+  const linen = cloth('linen', o.linen ?? 0xf1ede5, { double: true });
+  // the cloth: across the top, over the edge with a small roll, then down to 30 mm off the floor, flaring a little toward the hem
+  const prof: [number, number][] = [[0.0005, H + 0.004], [R * 0.5, H + 0.004], [R - 0.02, H + 0.003], [R + 0.004, H - 0.012], [R + 0.012, H - 0.05]];
+  for (let k = 1; k <= 36; k++) { const f = k / 36; prof.push([R + 0.014 + 0.022 * f * f, H - 0.05 - (H - 0.08) * f]); }
+  const g = lathe(prof, 200), p = g.getAttribute('position');
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), r = Math.hypot(x, z);
+    if (r < R - 0.01 || y > H - 0.02) continue;
+    // folds: deeper toward the hem, broad ones from the table's edge and finer ones between; the hem rises and falls with them
+    const a = Math.atan2(z, x), drop = clamp((H - 0.02 - y) / (H - 0.05));
+    const wave = Math.sin(a * 14) * 0.55 + Math.sin(a * 31 + 1.3) * 0.25 + Math.sin(a * 6 + 0.4) * 0.2;
+    const f = wave * 0.034 * Math.pow(drop, 0.7);
+    const k = (r + f) / r; p.setX(i, x * k); p.setZ(i, z * k);
+    if (y < 0.06) p.setY(i, y + Math.max(0, wave) * 0.012);
+  }
+  g.computeVertexNormals();
+  add(P, g, linen, 'cloth');
+  add(P, lathe([[0.0005, 0.02], [0.32, 0.02], [0.34, 0.0], [0.0005, 0.0]], 48), wood, 'pedestal_foot');
+  add(P, lathe([[0.06, 0.02], [0.05, H - 0.05], [0.0005, H - 0.05]], 32), wood, 'pedestal');
+  return finish('LIB-TAB-04', 'Round banquet table for ten, 1800 mm', 'washed linen cloth, oiled oak pedestal', P);
+}
+
 /** low coffee table: a travertine slab on an oak plinth */
 export function coffeeTable() {
   const P: THREE.Object3D[] = [], trav = stoneMat('travertine', 0xe7dccb, 0xc8b499, 0.7), wood = timber('oak'), wEnd = timber('oak', { end: true });
@@ -620,6 +646,7 @@ export const BUILDERS: Record<string, (finish?: string) => THREE.Group> = {
   'LIB-SEAT-03': (f) => diningChair({ timber: (f as Timber) ?? 'ash' }),
   'LIB-TAB-01': (f) => diningTable({ timber: (f as Timber) ?? 'oak' }),
   'LIB-TAB-02': () => coffeeTable(),
+  'LIB-TAB-04': (f) => banquetTable({ linen: ({ white: 0xf1ede5, oat: 0xe3dccf, clay: 0xb98b6e } as Record<string, number>)[f ?? 'white'] }),
   'LIB-BED-01': (f) => bed({ linen: ({ oat: 0xe3dccf, white: 0xf1ede5, clay: 0xb98b6e } as Record<string, number>)[f ?? 'oat'] }),
   'LIB-STO-01': () => sideboard(),
   'LIB-LGT-01': () => pendant(),

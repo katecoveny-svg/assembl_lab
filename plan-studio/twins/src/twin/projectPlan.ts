@@ -300,6 +300,30 @@ function clearView(obj: THREE.Object3D, centre: THREE.Vector3, sz: THREE.Vector3
   return first!;
 }
 
+/** the model's own walking surface under a scene point, for a camera path over a model that carries its site: the highest
+ *  upward-facing surface, unless something more than 2.2 m above it (a roof, a canopy) is on top, then the one under that.
+ *  Cached on a 1 m grid; 0 where the model has nothing there. */
+function surfaceSampler(obj: THREE.Object3D, building: THREE.Box3) {
+  const meshes: THREE.Mesh[] = []; obj.traverse((m) => { if ((m as THREE.Mesh).isMesh) meshes.push(m as THREE.Mesh); });
+  const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), cache = new Map<string, number>(), top = new THREE.Box3().setFromObject(obj).max.y + 50;
+  const nm = new THREE.Vector3();
+  const at = (x: number, z: number) => {
+    const k = `${Math.round(x)},${Math.round(z)}`;
+    let y = cache.get(k);
+    if (y === undefined) {
+      ray.set(new THREE.Vector3(Math.round(x), top, Math.round(z)), down); ray.far = top + 200;
+      const ups = ray.intersectObjects(meshes, false).filter((h) => { if (!h.face) return false; nm.copy(h.face.normal).transformDirection(h.object.matrixWorld); return Math.abs(nm.y) > 0.6; }).map((h) => h.point.y);
+      // a roof over the point only inside the building's own bounds; outside, the highest surface is the ground
+      const inside = x > building.min.x && x < building.max.x && z > building.min.z && z < building.max.z;
+      const below = ups.find((v, i) => i > 0 && ups[0] - v > 2.2 && ups[0] - v < 12);   // a floor under a roof, not the underside of a thick site slab
+      y = inside && below !== undefined ? below : ups[0] ?? 0;
+      cache.set(k, y);
+    }
+    return y;
+  };
+  return at;
+}
+
 /** timber stairs down a line, from one level to another */
 type StairBarrier = 'glass' | 'balusters';
 interface StairMats { timber: THREE.Material; glass: THREE.Material; metal: THREE.Material }
@@ -694,6 +718,7 @@ export const projectPlan: Project = {
     let landObj: THREE.Object3D | null = null;
     let lightObj: THREE.Object3D | null = null;
     let dressed: Dressed | null = null;   // model-dress
+    const b2Size = new THREE.Vector3();   // the building's own size (an opened model), for the camera path's surface sampler
     let sunFace: THREE.Vector3 | undefined;
     let siteNorth: [number, number] | undefined;
     let terrain: Terrain | null = null;
@@ -933,6 +958,7 @@ export const projectPlan: Project = {
       // model-dress: it opens as a person would see it, from a few paces off at a three-quarter angle with the sky behind
       // (the Waiheke example's habit), at the distance that has the building about 60% across the frame; then the aerial
       // and the eye-level views
+      b2Size.copy(b2.getSize(new THREE.Vector3())).setY(1e4);
       const tall = b2.max.y - b2.min.y, sz = b2.getSize(new THREE.Vector3()), { vd, dist, y: eyeY } = clearView(obj, centre, sz, b2.min.y + Math.min(Math.max(1.7, (b2.max.y - b2.min.y) * 0.42), 9)), three = { label: 'Three-quarter', eye: centre.clone().add(new THREE.Vector3(vd.x * dist, 0, vd.z * dist)).setY(eyeY), look: centre.clone().setY(b2.min.y + tall * 0.4) };
       keys.push(three);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
@@ -985,6 +1011,7 @@ export const projectPlan: Project = {
     const lidarHolder = new THREE.Group(); lidarHolder.name = 'site_ground';
     const pathRoot = new THREE.Group(); pathRoot.name = 'camera_path_layer';
     const contextRoot = new THREE.Group(); contextRoot.name = 'context_layer';
+    let modelSurface: ((x: number, z: number) => number) | null = null;
     let modelCards: HTMLElement[] = [], startSite: (() => void) | null = null;
     if (input.kind !== 'plan') {
       modelGround.add(ground, lidarHolder);
@@ -1027,7 +1054,7 @@ export const projectPlan: Project = {
       refreshPath = cp.refresh;
       const fl = flightPanel(app, {
         name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the scene: the model as opened, moved to stand at the origin (scene = file + shift)',
-        yAt: () => (onModelGround ? onModelGround.yAt : () => 0), pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
+        yAt: () => (onModelGround ? onModelGround.yAt : (modelSurface ??= ((window as unknown as { __surface?: unknown }).__surface = surfaceSampler(model, new THREE.Box3().setFromCenterAndSize(centre.clone(), b2Size.clone()))) as (x: number, z: number) => number)), pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
         root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
       });
       if (site?.flight) { try { fl.path = readFlight(site.flight); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
@@ -1039,6 +1066,7 @@ export const projectPlan: Project = {
     let pausedBefore = false;
     const groundPause = (on: boolean) => { if (on) { pausedBefore = app.paused; app.paused = true; } else app.paused = pausedBefore; };
     if (input.kind === 'plan') void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
+    void import('./agents/mount').then((m) => m.mountAgents(app as never, model, input.kind === 'plan' ? (input.plan as never) : undefined));   // the interior agent and the look expert (feat/agents-interior-1123): this line only
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround }
