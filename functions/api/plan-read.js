@@ -87,7 +87,30 @@ For each elevation view on the sheet, in image pixel coordinates (origin top-lef
 - ffl_y: the ground floor level. wall_left_x / wall_right_x: the outside faces of the building's end walls.
 - ground_left / ground_right: the natural ground line at the left and right outside walls (below the floor if the house is on piles or poles).
 Measure from the drawing; do not invent anything you cannot see. Give a confidence from 0 to 1.`;
-const MODES = { plan: { schema: SCHEMA, system: () => SYSTEM, ask: "Read this floor plan." }, site: { schema: SITE_SCHEMA, system: () => SITE_SYSTEM, ask: "Read this site plan." }, elevation: { schema: ELEV_SCHEMA, system: () => ELEV_SYSTEM, ask: "Read these elevations." } };
+// A third kind of read for the intake agent (architecture/js/intake.js): one sheet of a drawing set that has no text of its own (a scan or a
+// plotted picture). The title block is read by a model only because the sheet's own text could not be. Every field comes back as printed,
+// or null; a person checks it. Asked for only after a person has approved the paid read (the conductor never asks twice by itself).
+export const SHEET_PROMPTS = "2026-11-23a";
+const sstr = { type: ["string", "null"] };
+export const SHEET_SCHEMA = obj({
+  is_drawing_sheet: { type: "boolean", description: "true when this is a drawing sheet with a title block; false for a photo, a letter, a blank page" },
+  number: { ...sstr, description: "The drawing or sheet number exactly as printed in the title block (e.g. 'A-101'), or null" },
+  title: { ...sstr, description: "The drawing or sheet title as printed, or null" },
+  scale: { ...sstr, description: "The scale as printed (e.g. '1:100 @ A1', 'NTS'), or null" },
+  rev: { ...sstr, description: "The current revision letter or number as printed, or null" },
+  date: { ...sstr, description: "The date of the current revision or issue as printed, or null" },
+  register: arr(obj({ number: str, title: sstr, rev: sstr })),
+  confidence: num,
+  notes: str,
+});
+export const SHEET_SYSTEM = `You read the title block of one architectural drawing sheet for assembl, a New Zealand tool.
+Return only what is printed on the sheet. Copy text exactly as printed; never correct, complete or guess it.
+- number: the drawing or sheet number from the title block. title: the drawing or sheet title. scale: the scale as printed. rev: the current revision. date: the date printed for the current revision or issue.
+- Use null for anything not printed or not legible. A null is better than a guess.
+- is_drawing_sheet: false for a photograph, a letter, a blank page or anything that is not a drawing sheet.
+- register: only when this sheet prints a drawing register, drawing list or sheet index, one entry per row (number, title, revision). Otherwise an empty list.
+- confidence from 0 to 1 for how clearly the title block could be read. In notes, say what was hard to read.`;
+const MODES = { sheet: { schema: SHEET_SCHEMA, system: () => SHEET_SYSTEM, ask: "Read this sheet's title block.", prompts: SHEET_PROMPTS }, plan: { schema: SCHEMA, system: () => SYSTEM, ask: "Read this floor plan." }, site: { schema: SITE_SCHEMA, system: () => SITE_SYSTEM, ask: "Read this site plan." }, elevation: { schema: ELEV_SCHEMA, system: () => ELEV_SYSTEM, ask: "Read these elevations." } };
 
 const TIMEOUT_MS = 60_000;
 const NAMES = ["openai", "gemini", "anthropic"];
@@ -208,7 +231,7 @@ export async function onRequest({ request, env }) {
       let plan; try { plan = JSON.parse(r.text); } catch { console.warn(`plan-read: ${p.name} output not JSON`); continue; }
       const bad = validate(plan, mode.schema);
       if (bad) { console.warn(`plan-read: ${p.name} output failed validation`, bad.slice(0, 300)); continue; }
-      return json(200, { type: "assembl.planstudio.read", mode: body?.mode || "plan", model: r.model, provider: p.name, src: "ai", prompts: PROMPTS, plan });
+      return json(200, { type: "assembl.planstudio.read", mode: body?.mode || "plan", model: r.model, provider: p.name, src: "ai", prompts: mode.prompts || PROMPTS, plan });
     }
     if (r.reason === "too_much") tooMuch = true; else if (r.reason === "declined") declined = true;
   }
