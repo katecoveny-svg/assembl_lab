@@ -11,12 +11,19 @@
 //   - file links are signed for one hour; file names in them are ids only.
 import { SUPABASE_URL, SCHEMA, BUCKET } from "../../architecture/js/config.js";
 import { clientParts, TOKEN } from "../../architecture/js/share-rules.js";
+import { logoFor } from "../../architecture/js/artwork-kit.js";
 
 const json = (status, body, extra = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store", "x-robots-tag": "noindex", ...extra } });
 export const SIGN_SECONDS = 3600;
 
+/** the look's name from the practice record ("sketch", or { theme: "sketch" } as some records keep it) */
+export const lookOf = (t) => (typeof t === "string" ? t : typeof t?.theme === "string" ? t.theme : typeof t?.key === "string" ? t.key : "");
+
 export async function onRequestGet({ request, env }) {
-  const token = new URL(request.url).searchParams.get("t") ?? "";
+  const q = new URL(request.url).searchParams;
+  // ?status: whether client links can open at all (the workspace says plainly when only the server key is missing)
+  if (q.has("status")) return json(200, { type: "assembl.arch.share.status", configured: !!env?.ARCH_SHARE_SERVICE_KEY });
+  const token = q.get("t") ?? "";
   if (!TOKEN.test(token)) return json(404, { error: "not_shared" });
   const key = env?.ARCH_SHARE_SERVICE_KEY;
   if (!key) return json(503, { error: "not_configured" });
@@ -31,7 +38,9 @@ export async function onRequestGet({ request, env }) {
   if (!data || !data.project) return json(404, { error: "not_shared" });
   const view = clientParts({ project: data.project, files: data.files ?? [], documents: data.documents ?? [], practice: data.practice });
   const notes = [...view.stills, ...view.films, ...view.drawings].map((i) => i.latest).concat(view.model ? [view.model.note] : []);
-  const paths = [...new Set(notes.map((n) => n.path).filter(Boolean))];
+  const theme = lookOf(data.practice?.theme), logo = logoFor(data.practice?.artwork, theme === "sketch" ? "sketch" : "assembl");
+  const logoPath = typeof logo?.path === "string" && logo.path.startsWith(`${String(logo.path).split("/")[0]}/artwork/`) ? logo.path : "";
+  const paths = [...new Set(notes.map((n) => n.path).concat(logoPath ? [logoPath] : []).filter(Boolean))];
   const signed = new Map();
   if (paths.length) {
     try {
@@ -44,7 +53,7 @@ export async function onRequestGet({ request, env }) {
   return json(200, {
     type: "assembl.arch.share.v1",
     name: view.name,
-    practice: view.practice,
+    practice: data.practice ? { name: String(data.practice.name ?? ""), theme, logo: logoPath ? (signed.get(logoPath) ?? "") : "" } : null,
     stills: view.stills.map(item), films: view.films.map(item), drawings: view.drawings.map(item),
     model: view.model ? out(view.model.note) : null,
     expires_in: SIGN_SECONDS,

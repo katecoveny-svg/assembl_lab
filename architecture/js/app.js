@@ -19,7 +19,7 @@ import { planOutline, coverSvg, sketchSvg, outlineFor } from './cover.js';
 import { THEMES, pickTheme, applyTheme, lookChoiceHtml, isTheme, LOOK_SETTING } from './theme.js';
 import { icon, STAGE_ICON, NAV_ICON } from './icons.js';
 import { glance } from './glance.js';
-import { primaryModel } from './file-library-rules.js'; // [workspace redesign] one model: the uploaded IFC or GLB, else the plan model
+import { primaryModel, coverNote } from './file-library-rules.js'; // [workspace redesign] one model: the uploaded IFC or GLB, else the plan model
 import { mountArtwork, syncArtwork, artCover, artHero, artSectionHtml, artAfterRender, FIRST_WAIT } from './artwork.js'; // the practice's own artwork
 const store = createSwitch(createStore(browserBackend()));
 const account = mountAccount({ store, local: store.local, slot: document.getElementById('acct'), panel: document.getElementById('account-panel'), nameLabel: document.querySelector('label.me'), panelExtra: () => artSectionHtml('panel') });
@@ -180,10 +180,12 @@ function listHtml(b, kind, rows, ctx, { addLabel, emptyText, extra = '', head } 
 function coverHtml(p, cls = '', files = null) {
   const o = outlineFor(p.model, outlines);
   if (o) return `<div class="cover plan${cls ? ` ${cls}` : ''}">${coverSvg(o, { label: `${o.level || 'Ground floor'} plan of ${p.name}, drawn from its plan model${p.model.revision ? `, revision ${p.model.revision}` : ''}` })}</div>`;
-  const art = artCover(p, cls); // the practice's own drawing, as decoration, when it has artwork
+  // [workspace redesign] one note for every cover, worked out from the project's kept files (an uploaded IFC or GLB in the
+  // practice's records counts), including the practice-artwork cover, which used to look at the plan model only
+  const note = coverNote(p, files ?? (shown?.id === p.id ? [...kept.values()] : (filesBy.get(p.id) ?? [])));
+  const art = artCover(p, cls, note); // the practice's own drawing, as decoration, when it has artwork
   if (art) return art;
-  const pm = primaryModel(p, files ?? (shown?.id === p.id ? [...kept.values()] : (filesBy.get(p.id) ?? []))); // [workspace redesign] an uploaded model counts
-  return `<div class="cover deco${cls ? ` ${cls}` : ''}">${sketchSvg()}<span class="cover-note">${pm ? 'Model attached' : 'No model yet'}</span></div>`;
+  return `<div class="cover deco${cls ? ` ${cls}` : ''}">${sketchSvg()}<span class="cover-note">${note}</span></div>`;
 }
 const coverCaption = (p) => { const o = outlineFor(p.model, outlines); return o ? `${o.level || 'Ground floor'} · from the model${p.model.revision ? `, revision ${p.model.revision}` : ''}` : ''; };
 /** seven segments, one a stage */
@@ -359,30 +361,27 @@ function dashView(b, r) {
   const rfis = openRfis(b), openDefects = b.defects.filter((d) => d.status !== 'closed').length;
   const tabs = allTabs(), keys = tabs.map((t) => t[0]);
   const tab = [r.tab, ui.tabs[p.id]].find((k) => keys.includes(k)) ?? 'drawings';
-  const cap = coverCaption(p);
-  const num = (value, caption, to) => `<a class="num" href="${to}"><span class="big">${value}</span><span class="cap">${esc(caption)}</span></a>`;
   const panel = (key, body) => `<section class="tp" role="tabpanel" id="tp-${key}" aria-labelledby="tab-${key}" tabindex="0"${key === tab ? '' : ' hidden'}>${body}</section>`;
   const acts = ui.allActivity ? b.activity : b.activity.slice(0, 8);
   return `<div class="wrap">
     <nav class="crumb" aria-label="Back"><a href="#/">${icon('back')}<span>All projects</span></a></nav>
-    <header class="phead pvis">
-      <figure class="pfig">${coverHtml(p, 'big')}${cap ? `<figcaption class="caption">${esc(cap)}</figcaption>` : ''}</figure>
-      <div class="who">${who(p)}<h1>${esc(p.name)}</h1><p class="small">${clientLine(p)}</p>
-        <div class="pstate">${stateHtml(g)}${segsHtml(g)}<span class="st">${esc(stageLine(g))}</span></div>
-        <div class="mod-head" data-mod-heads></div>
-        ${n ? `<section class="next" aria-labelledby="nx"><p class="label" id="nx">Next</p><p class="say">${esc(g.next)}</p><a class="btn solid" href="${nextHref}">${esc(n.button)}</a></section>` : ''}
-        ${projectNav(p, r)}</div>
+    <header class="phead pcomp"><!-- [workspace redesign p1b] one compact header: the work (Files) shows without scrolling -->
+      <figure class="pcomp-fig">${coverHtml(p, 'thumb')}</figure>
+      <div class="pcomp-who">${who(p)}<h1>${esc(p.name)}</h1>
+        <div class="pstate">${stateHtml(g)}<span class="st">${esc(clientLine(p))}</span></div></div>
+      <div class="mod-head pcomp-mod" data-mod-heads></div>
+      <div class="pcomp-act">${n ? `<a class="btn solid" href="${nextHref}" title="${esc(g.next)}">${esc(n.button)}</a>` : ''}${projectNav(p, r)}</div>
     </header>
     ${ui.exporting ? exportHtml(p) : ''}
-    ${stripHtml(b, r)}
-    <p class="rail-now">${esc(railNow(b))}</p>
+    <nav class="pslim" aria-label="Stages and open items">
+      <ol class="pslim-st">${STAGES.map((sd, i) => { const st = b.stages.find((x) => x.key === sd.key), c = st.status === 'done' ? 'done' : st.status === 'awaiting_approval' ? 'wait' : st.status === 'in_progress' ? 'now' : ''; return `<li><a class="${c}" href="${href(p.id, 's', sd.key)}" title="${esc(`${i + 1}. ${sd.label}: ${statusWord('stage', st.status)}`)}"><span class="n">${i + 1}</span><span class="name">${esc(sd.label)}</span></a></li>`; }).join('')}</ol>
+      <ul class="pslim-n">
+        <li><a href="${cur ? href(p.id, 's', cur.key, 'tasks') : href(p.id, 's', 'completion', 'tasks')}"><b>${tasks.length}</b> task${tasks.length === 1 ? '' : 's'}</a></li>
+        <li><a href="${waiting.length ? href(p.id, 's', waiting[0].key, 'approval') : cur ? href(p.id, 's', cur.key, 'approval') : href(p.id, 't', 'deliverables')}"><b>${waiting.length}</b> to approve</a></li>
+        <li><a href="${href(p.id, 's', 'detailed', 'tool')}"><b>${rfis.length}</b> RFI${rfis.length === 1 ? '' : 's'}</a></li>
+        <li><a href="${href(p.id, 's', 'completion', 'tool')}"><b>${openDefects}</b> defect${openDefects === 1 ? '' : 's'}</a></li></ul>
+    </nav>
     ${flashHtml()}
-    <div class="nums">
-      ${num(tasks.length, `open task${tasks.length === 1 ? '' : 's'}${cur ? ` · ${stageDef(cur.key).label}` : ''}`, cur ? href(p.id, 's', cur.key, 'tasks') : href(p.id, 's', 'completion', 'tasks'))}
-      ${num(waiting.length, `waiting for approval`, waiting.length ? href(p.id, 's', waiting[0].key, 'approval') : cur ? href(p.id, 's', cur.key, 'approval') : href(p.id, 't', 'deliverables'))}
-      ${num(rfis.length, `open request${rfis.length === 1 ? '' : 's'}`, href(p.id, 's', 'detailed', 'tool'))}
-      ${num(openDefects, `open defect${openDefects === 1 ? '' : 's'}`, href(p.id, 's', 'completion', 'tool'))}
-    </div>
     <div class="tabs${tabs.length > 6 ? ' many' : ''}" role="tablist" aria-label="Project work" style="--tabs:${tabs.length}">${tabs.map(([k, label, ic]) => `<button type="button" role="tab" id="tab-${k}" aria-controls="tp-${k}" aria-selected="${k === tab}" tabindex="${k === tab ? 0 : -1}" data-tab="${k}">${String(ic).startsWith('<') ? ic : icon(ic)}<span>${esc(label)}</span></button>`).join('')}</div>
     ${panel('site', siteTab(b))}
     ${panel('model', modelTab(b))}

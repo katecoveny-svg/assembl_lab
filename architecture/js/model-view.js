@@ -10,6 +10,8 @@
 //
 // Nothing is sent anywhere. The web-ifc reader is kept for the next model once loaded; each model is closed after reading.
 
+import { buildingBounds, warmColour } from './model-bounds.js';
+
 const THREE_URL = new URL('../../assets/vendor/three/three.module.min.js', import.meta.url).href;
 const IFC_URL = new URL('../vendor/web-ifc/web-ifc-api.mjs', import.meta.url).href;
 const WASM_URL = new URL('../vendor/web-ifc/web-ifc.wasm', import.meta.url).href;
@@ -40,13 +42,18 @@ async function loadIfc() {
 // ---- triangles ---------------------------------------------------------------------------------------------------------
 /** collect triangles by colour, so a whole model draws in a handful of calls */
 function collector(max) {
-  const groups = new Map();
+  const groups = new Map(), boxes = []; // boxes: one per element added, for framing the building (model-bounds.js)
   let triangles = 0, cut = false;
   return {
     add(positions, indices, color) {
       if (cut) return;
       if (triangles + indices.length / 3 > max) { cut = true; return; }
       triangles += indices.length / 3;
+      if (boxes.length < 60000 && positions.length >= 3) {
+        const b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+        for (let k = 0; k < positions.length; k += 3) { const x = positions[k], y = positions[k + 1], z = positions[k + 2]; if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (z < b[2]) b[2] = z; if (x > b[3]) b[3] = x; if (y > b[4]) b[4] = y; if (z > b[5]) b[5] = z; }
+        boxes.push(b);
+      }
       const key = color.map((v) => Math.round(v * 255)).join(',');
       const g = groups.get(key) ?? { color, pos: [], idx: [], verts: 0 };
       g.pos.push(positions);
@@ -56,7 +63,7 @@ function collector(max) {
     },
     done() {
       const join = (list, T) => { const out = new T(list.reduce((n, a) => n + a.length, 0)); let at = 0; for (const a of list) { out.set(a, at); at += a.length; } return out; };
-      return { parts: [...groups.values()].map((g) => ({ positions: join(g.pos, Float32Array), indices: join(g.idx, Uint32Array), color: g.color })), triangles, cut };
+      return { parts: [...groups.values()].map((g) => ({ positions: join(g.pos, Float32Array), indices: join(g.idx, Uint32Array), color: g.color })), triangles, cut, boxes };
     },
   };
 }
@@ -172,38 +179,48 @@ export async function meshesOf(kind, bytes, { max = MAX_TRIANGLES } = {}) {
 // ---- drawing ------------------------------------------------------------------------------------------------------------
 const cssColour = (el, name, fallback) => { const v = getComputedStyle(el).getPropertyValue(name).trim(); return v || fallback; };
 
-async function scene(meshes, inkFrom) {
+async function scene(meshes, inkFrom, { frame = 'all', look = 'plain' } = {}) {
   const T = await loadThree();
   const s = new T.Scene();
   const paper = cssColour(inkFrom, '--paper', '#FFFDFB'), line = cssColour(inkFrom, '--plum', '#654A4E');
-  s.background = new T.Color(paper);
+  const warm = look === 'warm';
+  s.background = new T.Color(warm ? '#EFE6DA' : paper);
   const group = new T.Group(), owned = [];
   for (const p of meshes.parts) {
     const g = new T.BufferGeometry();
     g.setAttribute('position', new T.BufferAttribute(p.positions, 3));
     g.setIndex(new T.BufferAttribute(p.indices, 1));
     g.computeVertexNormals();
-    const [r, gg, b, a] = p.color;
+    const [r, gg, b, a] = warm ? warmColour(p.color) : p.color;
     const m = new T.MeshLambertMaterial({ color: new T.Color(r, gg, b), transparent: a < 0.99, opacity: Math.max(0.25, a), side: T.DoubleSide, depthWrite: a >= 0.99 });
     owned.push(g, m);
     group.add(new T.Mesh(g, m));
   }
   s.add(group);
-  const box = new T.Box3().setFromObject(group), size = box.getSize(new T.Vector3()), centre = box.getCenter(new T.Vector3());
-  const radius = Math.max(size.length() / 2, 0.5);
+  let box = new T.Box3().setFromObject(group);
+  // [workspace redesign] frame the building, not the site: the same rule as the 3D page (model-bounds.js)
+  if (frame === 'building' && meshes.boxes?.length) { const bb = buildingBounds(meshes.boxes).box; if (bb.every(Number.isFinite)) box = new T.Box3(new T.Vector3(bb[0], bb[1], bb[2]), new T.Vector3(bb[3], bb[4], bb[5])); }
+  const size = box.getSize(new T.Vector3()), centre = box.getCenter(new T.Vector3());
+  const radius = Math.max(size.length() / 2, 0.5) * (frame === 'building' ? 1.18 : 1); // a little air round the building
   // a faint grid under the model, in the page's own line colour
   const grid = new T.GridHelper(Math.ceil(radius * 3), 12, new T.Color(line), new T.Color(line));
   grid.material.transparent = true; grid.material.opacity = 0.16; grid.position.set(centre.x, box.min.y - 0.01, centre.z);
   owned.push(grid.geometry, grid.material);
   s.add(grid);
-  s.add(new T.HemisphereLight(0xffffff, 0x9a8f90, 2.2));
-  const sun = new T.DirectionalLight(0xffffff, 1.6); sun.position.set(radius * 2, radius * 3, radius * 1.5); s.add(sun);
+  if (warm) { // late-afternoon light: a warm sky, warm ground bounce, a low golden sun from the north-west
+    grid.visible = false;
+    s.add(new T.HemisphereLight(0xfff0dc, 0x8a6f58, 1.9));
+    const sun = new T.DirectionalLight(0xffcf9a, 2.1); sun.position.set(centre.x - radius * 2.2, centre.y + radius * 1.6, centre.z + radius * 1.4); s.add(sun);
+  } else {
+    s.add(new T.HemisphereLight(0xffffff, 0x9a8f90, 2.2));
+    const sun = new T.DirectionalLight(0xffffff, 1.6); sun.position.set(radius * 2, radius * 3, radius * 1.5); s.add(sun);
+  }
   return { T, s, centre, radius, owned };
 }
 
 /** a live view in host: it turns once, then on drag. stop() releases the 3D context and everything it holds. */
-export async function mountView(host, { meshes, spin = true } = {}) {
-  const { T, s, centre, radius, owned } = await scene(meshes, host);
+export async function mountView(host, { meshes, spin = true, framing = 'all', look = 'plain' } = {}) {
+  const { T, s, centre, radius, owned } = await scene(meshes, host, { frame: framing, look });
   const canvas = document.createElement('canvas');
   canvas.className = 'mv-canvas';
   canvas.setAttribute('aria-label', 'The model in 3D. Drag to turn it.');
@@ -239,13 +256,13 @@ export async function mountView(host, { meshes, spin = true } = {}) {
 const dataUrl = (canvas) => { const w = canvas.toDataURL('image/webp', 0.8); return w.startsWith('data:image/webp') ? w : canvas.toDataURL('image/jpeg', 0.82); };
 
 /** a still for the card, drawn off-screen and released at once; null when it cannot be drawn here */
-export async function thumbnail(kind, bytes, { width = 640, height = 400 } = {}) {
+export async function thumbnail(kind, bytes, { width = 640, height = 400, frame = 'all', look = 'plain' } = {}) {
   if (!webglOk()) return null;
   const meshes = await meshesOf(kind, bytes);
   if (!meshes.parts.length) return null;
   const host = document.createElement('div');
   host.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}px;height:${height}px`;
   document.body.append(host);
-  try { const v = await mountView(host, { meshes, spin: false }); const url = v.still(width, height); v.stop(); return url; }
+  try { const v = await mountView(host, { meshes, spin: false, framing: frame, look }); const url = v.still(width, height); v.stop(); return url; }
   finally { host.remove(); }
 }

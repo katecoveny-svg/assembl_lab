@@ -136,6 +136,8 @@ export function fakeSupabase({ userId = '00000000-0000-4000-8000-00000000a11c', 
         return { data: { path }, error: null };
       }),
       download: (path) => done({ table: `storage/${bucket}`, action: 'download', path }, () => (files.has(key(path)) ? { data: files.get(key(path)), error: null } : { data: null, error: { message: 'Object not found', statusCode: '404' } })),
+      /** one link that lasts a while (a big model for the 3D page; a thumbnail drawn from part of a file) */
+      createSignedUrl: (path, expiresIn) => done({ table: `storage/${bucket}`, action: 'sign1', path, expiresIn }, () => (files.has(key(path)) ? { data: { signedUrl: `https://storage.example.test/sign/${bucket}/${path}?token=t${expiresIn}` }, error: null } : { data: null, error: { message: 'Object not found', statusCode: '404' } })),
       /** links that last a while, for files that are there (the page's practice artwork) */
       createSignedUrls: (paths, expiresIn) => done({ table: `storage/${bucket}`, action: 'sign', paths, expiresIn }, () => ({
         data: paths.map((p) => (files.has(key(p)) ? { path: p, signedUrl: `https://storage.example.test/sign/${bucket}/${p}?token=t${expiresIn}`, error: null } : { path: p, signedUrl: null, error: 'Object not found' })), error: null,

@@ -141,6 +141,29 @@ export function primaryModel(project, files = []) {
   return null;
 }
 
+/**
+ * How a tile's thumbnail is made, or 'skip'. remote: a short-lived link to the file can be had (a practice's shared records),
+ * so a PDF's first sheet is read by range and a film streams, without downloading the whole file.
+ *   { how: 'url' | 'bytes' | 'skip', media }
+ */
+export const THUMB_LIMITS = {
+  remote: { image: 80 * 1024 * 1024, pdf: 600 * 1024 * 1024, video: 4 * 1024 * 1024 * 1024, model: 60 * 1024 * 1024 },
+  local: { image: 40 * 1024 * 1024, pdf: 80 * 1024 * 1024, video: 300 * 1024 * 1024, model: 60 * 1024 * 1024 },
+};
+export function thumbPlan(note, { remote = false } = {}) {
+  const media = mediaOf(note?.name), size = Number(note?.size) || 0, lim = THUMB_LIMITS[remote ? 'remote' : 'local'];
+  if (!lim[media]) return { how: 'skip', media };
+  if (media === 'model' && !['glb', 'ifc'].includes(ext(note.name))) return { how: 'skip', media };
+  if (size > lim[media]) return { how: 'skip', media };
+  return { how: remote && media !== 'model' ? 'url' : 'bytes', media };
+}
+/** the key a drawn thumbnail is kept under in this browser: a new version of the file, or a new way of drawing, draws again */
+export const THUMB_STYLE = 2;
+export const thumbKey = (note) => `${note.id}:${Number(note.size) || 0}:${THUMB_STYLE}`;
+
+/** the words on a project's cover: one model concept everywhere (the header, the wall tile, the practice-artwork cover) */
+export const coverNote = (project, files) => (primaryModel(project, files) ? 'Model attached' : 'No model yet');
+
 /** true when the project has any model (uploaded or the plan model) */
 export const hasAnyModel = (project, files) => !!primaryModel(project, files);
 

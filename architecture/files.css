@@ -95,3 +95,4 @@
   .ho-pack .btn { grid-column: 1 / -1; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .fl-open, .ho-switch span { transition: none; } .fl-spin { animation: none; } }
+.ho-warn { color: var(--needs); }
