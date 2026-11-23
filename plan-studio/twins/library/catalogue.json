@@ -1,6 +1,6 @@
 {
  "schema": "assembl.library.v1",
- "built": "2026-11-22T08:08:40Z",
+ "built": "2026-11-23T01:52:10Z",
  "note": "Written by tools/library-shots.py from plan-studio/twins/src/twin/library/catalogue.ts. Pictures: studio renders of the models themselves, not photographs. Dimensions: the model bounds, checked against the built model (measured).",
  "base": "/plan-studio/twins/library/",
  "categories": [
@@ -972,6 +972,56 @@
    "picBytes": 9616,
    "picQuality": 88,
    "renderMs": 16464
+  },
+  {
+   "id": "LIB-TAB-04",
+   "category": "tables",
+   "title": "Round banquet table for ten, linen cloth",
+   "role": "banquet_table",
+   "dims": {
+    "w": 1800,
+    "d": 1800,
+    "h": 750
+   },
+   "material": "washed linen cloth to the floor, oak pedestal",
+   "licence": "assembl’s own: built in code for this library (procedural geometry and textures, no image files)",
+   "credit": "assembl library, procedural",
+   "source": "procedural",
+   "fit": "floor",
+   "rooms": [
+    "Dining"
+   ],
+   "pic": "pics/LIB-TAB-04.webp",
+   "finishes": [
+    {
+     "id": "white",
+     "label": "White linen",
+     "swatch": "#f1ede5"
+    },
+    {
+     "id": "oat",
+     "label": "Oat linen",
+     "swatch": "#e3dccf"
+    },
+    {
+     "id": "clay",
+     "label": "Clay linen",
+     "swatch": "#b98b6e"
+    }
+   ],
+   "view": {
+    "az": 24,
+    "el": 22
+   },
+   "measured": {
+    "w": 1777,
+    "d": 1772,
+    "h": 754
+   },
+   "tris": 16416,
+   "picBytes": 6072,
+   "picQuality": 88,
+   "renderMs": 18835
   },
   {
    "id": "LIB-NAT-04",

@@ -218,6 +218,7 @@ export const project16a: Project = {
 
     // 7. panels
     void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
+    void import('./agents/mount').then((m) => m.mountAgents(app as never, homes, planJson as never));   // the interior agent and the look expert (feat/agents-interior-1123): this line only
     const checks = document.createElement('section');
     checks.className = 'card';
     const margin = check.margin;
