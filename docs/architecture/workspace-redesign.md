@@ -119,7 +119,7 @@ For a practice's records the page asks `/api/arch-share`, which reads `arch.shar
 one-hour file links. That needs the migration `20261123200000_arch_project_share.sql` and the Cloudflare secret
 `ARCH_SHARE_SERVICE_KEY` (Kate's decision; until then the page says client links are not switched on).
 
-### Team (phase 2, proposed)
+### Team (phase 2, comments and pins built on `feat/workspace-comments`; approvals and the notifications tray still proposed)
 
 ![Team](workspace-redesign/mock-team.png)
 
@@ -174,7 +174,16 @@ Still to do in phase 1 (small, next):
 
 ### Phase 2: collaboration
 
-Comments and pins on files, stills, drawing sheets and model views; @mentions and a notifications tray; client comments from the
+Built (comments, pins, @mentions, client comments; the migration `20261123220000_arch_comments.sql` is not applied):
+- A comments rail beside the large file viewer in Files and Hand-off; on a still, numbered pins at a point (x, y as 0 to 1 fractions).
+- A Team tab per project: the project's comments (filters: project, files, pins, client, mentions me) and its activity.
+- The client page: a comment button under the hero, each still and each film, and a "Say something" note for the project. A name and
+  a comment; no email. Comments stop working when the link is turned off, and a new link does not open the old client comments.
+- Plain text, 2,000 characters; links are shown as text, never clickable. Owners alone hide or delete. Rate limited by link and by
+  address (8 in 10 minutes for one address, 40 an hour for a link), counted in the database; `functions/api/arch-comments.js`.
+- The Sample project, and anyone signed out, keep comments in this browser.
+
+Original scope: comments and pins on files, stills, drawing sheets and model views; @mentions and a notifications tray; client comments from the
 client page; approvals per file; activity per person. Needs: a `comment` table with row level security (members write; the client
 page writes through the server with the share token, rate-limited), a decision on client identity (name only, or email link).
 
@@ -187,6 +196,6 @@ read-only, Drive), fee stages, timers, a real twelve-week capacity view. Needs K
 
 1. Apply the migration `20261123200000_arch_project_share.sql` and add the Cloudflare secret `ARCH_SHARE_SERVICE_KEY` (the
    Supabase service key, kept in Cloudflare only) so client links work for practices. Until then they work as a browser preview.
-2. Phase 2: may a client comment with a name only, or must they confirm an email address first?
+2. Phase 2: may a client comment with a name only, or must they confirm an email address first? Decided: a name only.
 3. Phase 3: which connections (Xero, Google Drive, others), and whether any paid service is wanted.
 4. Whether the Takeoff tab comes back only once quantities are measured from the model (proposed), or as a placeholder.

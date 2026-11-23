@@ -6,6 +6,7 @@
 // a courtesy. The database refuses the change regardless.
 
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SCHEMA, BUCKET, CLIENT_MODULE, AUTH_STORAGE_KEY } from './config.js';
+import { createSharedComments } from './comments-store.js';
 import { createGateway, createCloudStore, createTeam, createArtworkPlace, createSharePlace, moveProjects, probeShared, NOT_ON } from './cloud.js';
 import { createRadarClient } from './radar-client.js';
 import { SAMPLE_ID } from './model.js';
@@ -387,6 +388,8 @@ export function mountAccount({ store, local, slot, panel, nameLabel, win = globa
     artworkPlace: () => (st.practice && gateway && store.shared ? createArtworkPlace(gateway, st.practice) : null),
     /** [workspace redesign] the client link of a project in the practice's records (file-library.js); null signed out */
     sharePlace: () => (st.practice && gateway && store.shared ? createSharePlace(gateway, st.practice) : null),
+    /** [workspace redesign p2] the practice's comments and pins (comments-store.js); null signed out. The Sample project's stay in this browser. */
+    commentsPlace: () => (st.practice && gateway && store.shared && st.user?.id ? createSharedComments(gateway, st.practice, st.user, team) : null),
     /** draw the header and the practice panel again (artwork.js, after its section changes) */
     redraw: () => draw(),
 

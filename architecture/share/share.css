@@ -50,3 +50,35 @@ body.sh { margin: 0; background: var(--paper); color: var(--body); font-family: 
 .sh-view::backdrop { background: rgba(0, 0, 0, .86); }
 .sh-view img { max-width: 96vw; max-height: 92vh; display: block; }
 .sh-x { position: fixed; top: 12px; right: 16px; width: 48px; height: 48px; font: 300 32px/1 var(--sans); color: #fff; background: transparent; border: 0; cursor: pointer; }
+
+/* comments (share-comments.js; the thread's own marks are in ../comments.css) */
+.sh-cmb { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px 6px 0; font: 500 13px var(--mono); color: var(--ink); }
+.sh-cmb .ic { width: 18px; height: 18px; color: var(--blue); }
+.sh-cmb:hover { text-decoration: underline; text-underline-offset: 4px; }
+.sh-cmb:focus-visible { outline: 2px solid var(--blue-strong); outline-offset: 2px; }
+.sh-cmb.is-hero { position: absolute; right: 16px; bottom: 28px; z-index: 3; background: var(--panel); border: 1px solid var(--line); padding: 8px 12px; }
+.sh-gal li { display: grid; align-content: start; }
+.sh-films figure .sh-cm { margin-top: 2px; }
+.sh-cm-panel { border-top: 1px solid var(--line); padding: 12px 0 8px; }
+.sh-cm-panel[hidden] { display: none; }
+.sh-cm-model { margin-top: 14px; max-width: 640px; }
+.sh-cmw .cm-list { max-height: 360px; }
+.sh-cm-fine { margin: 0; font: 11px/1.4 var(--mono); color: var(--mute); }
+#sh-say { max-width: 640px; }
+.sh-view.has-cm { width: min(1240px, 96vw); background: var(--panel); color: var(--body); border: 1px solid var(--frame); overflow: hidden; }
+.sh-vw { display: grid; grid-template-columns: minmax(0, 1fr); }
+.sh-view.has-cm .sh-vw { grid-template-columns: minmax(0, 1fr) 350px; max-height: 94vh; }
+.sh-vpic { display: grid; place-items: center; background: var(--field); min-height: 240px; }
+.sh-vpic img { max-width: 100%; }
+.sh-vside { display: none; }
+.sh-view.has-cm .sh-vside { display: flex; flex-direction: column; min-height: 0; padding: 52px 16px 16px; border-left: 1px solid var(--line); max-height: 94vh; overflow-y: auto; }
+.sh-view.has-cm .sh-vside .cm { flex: 1; min-height: 0; }
+.sh-view.has-cm .sh-vside .cm-list { max-height: none; }
+.sh-view.has-cm .sh-x { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; font-size: 26px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); z-index: 3; }
+@media (max-width: 800px) {
+  .sh-view.has-cm { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; }
+  .sh-view.has-cm .sh-vw { grid-template-columns: 1fr; max-height: none; overflow-y: auto; height: 100%; align-content: start; }
+  .sh-view.has-cm .sh-vside { border-left: 0; border-top: 1px solid var(--line); padding-top: 14px; max-height: none; overflow: visible; }
+  .sh-vpic .cm-stage > img { max-height: 52vh; }
+  .sh-cmb.is-hero { right: 10px; bottom: 16px; }
+}
