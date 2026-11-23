@@ -178,10 +178,12 @@ async function renderHead(el, ctx) {
 
 // ---- the practice: this month, and the pipeline month by month ----------------------------------------------------------------
 function practicePanel(d, ctx, { full = false } = {}) {
-  const s = d.settings, mo = M.monthly(s), ym = M.ymOf(today()), rev = M.revenueIn(d.invoices, ym, s.counts), st = M.revenueState(rev.total, mo);
-  const from = M.ymAdd(ym, 1), fc = M.forecast(d.enquiries, s.chances, from, 6), short = M.shortMonths(fc.rows, mo.breakEven);
-  const owner = mayPractice(ctx), typed = mo.breakEven != null;
-  const word = st ? M.REVENUE_WORD[st] : typed ? '' : 'No break-even typed yet';
+  const s = d.settings, mo0 = M.monthly(s), ym = M.ymOf(today()), rev = M.revenueIn(d.invoices, ym, s.counts);
+  const noInv = M.noInvoicesYet(d.invoices), mo = noInv ? { ...mo0, breakEven: null, low: null, high: null } : mo0; // [workspace redesign] empty data is not a bad result
+  const st = M.revenueState(rev.total, mo);
+  const from = M.ymAdd(ym, 1), fc = M.forecast(d.enquiries, s.chances, from, 6);
+  const owner = mayPractice(ctx), typed = mo0.breakEven != null;
+  const word = st ? M.REVENUE_WORD[st] : noInv ? 'Nothing invoiced yet' : typed ? '' : 'No break-even typed yet';
   const wordIcon = st === 'below' ? stateIcon('below') : st === 'target' || st === 'above' ? stateIcon('target') : st === 'over' ? stateIcon('up') : stateIcon('none');
   const counts = s.counts === 'paid' ? 'invoices paid this month' : 'invoices issued this month';
   const dialLabel = `This month: ${word || 'revenue'}. ${rev.rows.length ? `${plural(rev.rows.length, 'invoice')} counted.` : 'No invoices counted yet.'}`;
@@ -190,18 +192,18 @@ function practicePanel(d, ctx, { full = false } = {}) {
       <dt>Break-even</dt><dd>${typed ? `${nzd(mo.breakEven)} a month${mo.perYear ? ' (the year’s figure ÷ 12)' : ''}` : 'Not typed'}</dd>
       <dt>Target</dt><dd>${mo.low != null ? `${nzd(mo.low)}${mo.high != null ? ` to ${nzd(mo.high)}` : ''} a month` : 'Not typed'}</dd></dl>
       <p class="small">Break-even and targets are the practice’s own, typed in Settings. Revenue is added up from the invoices typed on each project. Nothing here is estimated, and it is not advice on fees or tax.</p></details>`;
-  const setLine = typed ? '' : `<p class="small">${owner ? '<a href="#/settings">Type the practice’s break-even and target</a> to put the bands on the dial.' : 'An owner of the practice types its break-even and target in Settings.'}</p>`;
+  const setLine = noInv ? `<p class="small">Add an invoice on a project’s Money tab and this month shows${typed ? ' against break-even' : ''}.</p>${typed ? '' : `<p class="small">${owner ? '<a href="#/settings">Type the practice’s break-even and target</a> too.' : ''}</p>`}` : typed ? '' : `<p class="small">${owner ? '<a href="#/settings">Type the practice’s break-even and target</a> to put the bands on the dial.' : 'An owner of the practice types its break-even and target in Settings.'}</p>`;
   return `<section class="pm${full ? ' pm-full' : ''}" aria-labelledby="pm-h">
     <div class="pm-head"><h2 id="pm-h" class="m-h">${icon('speedo')}<span>Practice money</span></h2>${full ? '' : '<a class="link" href="#/money">Money and people</a>'}</div>
     ${d.problem ? `<p class="flash">□ ${esc(d.problem)}</p>` : ''}
     <div class="pm-grid">
       <figure class="pm-dial is-${st ?? 'none'}"><p class="lab">This month</p>${practiceDial({ total: rev.total, mo, key: `month:${ym}:${Math.round(rev.total)}`, label: dialLabel })}
         <figcaption><p class="hd-word">${wordIcon}<span>${esc(word || 'This month')}</span></p><p class="hd-from">Counts ${esc(counts)}.</p>${setLine}${figures}</figcaption></figure>
-      ${forecastChart(fc, mo, d, { full })}
+      ${forecastChart(fc, M.emptyPipeline(fc) ? { ...mo0, breakEven: null } : mo0, d, { full, quiet: M.emptyPipeline(fc) })}
     </div></section>`;
 }
 
-function forecastChart(fc, mo, d, { full = false } = {}) {
+function forecastChart(fc, mo, d, { full = false, quiet = false } = {}) {
   const n = narrow(), vw = globalThis.innerWidth ?? 1200, rows = fc.rows, be = mo.breakEven, W = n ? 360 : vw < 1100 ? 440 : 600, H = 230, top = 18, base = 186, left = 4, right = n ? 66 : 78; // the labels sit in the right margin
   const max = Math.max(1, ...rows.map((r) => r.total), be ?? 0, mo.high ?? 0, mo.low ?? 0) * 1.12;
   const y = (v) => base - (v / max) * (base - top), slot = (W - left - right) / rows.length, bw = Math.min(64, slot * 0.56);
@@ -225,6 +227,7 @@ function forecastChart(fc, mo, d, { full = false } = {}) {
   const shortList = rows.filter((r) => shortSet.has(r.ym));
   const unsched = fc.unscheduled.filter((u) => M.OPEN.includes(u.enquiry.stage) || u.enquiry.stage === 'won');
   const desc = `The next six months of the pipeline: won work in full, open work weighted by each stage’s chance${be != null ? `. ${shortList.length ? `${plural(shortList.length, 'month')} below break-even: ${shortList.map((r) => M.ymLabel(r.ym, { long: true })).join(', ')}` : 'No month below break-even'}` : ''}.`;
+  if (quiet) return `<div class="fc"><p class="lab">The next six months</p><p class="m-empty">${icon('dash')}<span>No won or likely work in the pipeline yet.</span></p><p class="small"><a href="#/crm">Add enquiries in Clients</a> with a value, a start month and a length, and the months fill in.</p></div>`; // [workspace redesign] an empty pipeline is not six "short" months
   return `<div class="fc"><p class="lab">The next six months</p>
     <svg class="fc-svg" viewBox="0 0 ${W} ${H}" role="group" aria-label="${esc(desc)}"><defs><pattern id="fc-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" class="fc-hatch-bg"/><line x1="0" y1="0" x2="0" y2="6" class="fc-hatch-ln"/></pattern></defs>
       ${band}<line class="fc-base" x1="${left}" x2="${W - right}" y1="${base}" y2="${base}"/>${bars}${beLine}</svg>
@@ -273,9 +276,9 @@ async function renderTab(el, ctx) {
         <dt>Work done</dt><dd>${M.pct(bud.progress)}: ${esc(bud.progressHow)}</dd></dl></details>`;
   const pr = M.profit(bud);
   const feeLeft = `<details class="m-tap mc"><summary><p class="lab">Fee left after the time so far</p>
-      ${feeGauge(pr, { key: `fee:${p.id}:${pr ? Math.round(pr.share * 100) : 'none'}`, label: pr ? `${M.pct(Math.max(0, pr.share))} of the fee left after the time so far${pr.left < 0 ? ': the time so far is more than the fee' : ''}` : 'Not enough to tell: needs a fee and an hourly rate' })}
+      ${!pr ? '' : feeGauge(pr, { key: `fee:${p.id}:${pr ? Math.round(pr.share * 100) : 'none'}`, label: pr ? `${M.pct(Math.max(0, pr.share))} of the fee left after the time so far${pr.left < 0 ? ': the time so far is more than the fee' : ''}` : 'Not enough to tell: needs a fee and an hourly rate' })}
       <p class="hd-word">${pr ? (pr.left < 0 ? `${stateIcon('below')}<span>Past the fee</span>` : pr.share >= 0.5 ? `${stateIcon('tick')}<span>Most of the fee left</span>` : `${stateIcon('dot')}<span>${pr.share >= 0.25 ? 'Some' : 'Little'} of the fee left</span>`) : `${stateIcon('none')}<span>Needs a fee and a rate</span>`}</p>
-      <span class="m-more">Figures</span></summary>
+      <span class="m-more">Figures</span></summary><!-- [workspace redesign] with no fee and rate the gauge is not drawn: an empty dial read as a bad one -->
       ${pr ? `<dl class="m-kv"><dt>Fee</dt><dd>${nzd(pr.fee)}</dd><dt>Time × rate</dt><dd>${nzd(pr.cost)}</dd><dt>Left</dt><dd>${nzd(pr.left)}</dd></dl><p class="small">The fee less the time logged at the hourly rate. It is not a profit forecast.</p>` : `<p class="small">${any('fee') ? 'Type a fee, and an hourly rate here or in Settings.' : 'No fee and hourly rate typed yet.'}</p>`}</details>`;
   const bh = m.hours, logged = bud.hours, hoursW = bh ? Math.min(1, logged / bh) : 0;
   const hoursCard = `<details class="m-tap mc"><summary><p class="lab">Hours</p>

@@ -660,4 +660,4 @@ async function renderProjectPanel(el, ctx) {
 
 registerRoute('crm', { title: 'Clients', render: renderScreen });
 registerNav({ id: 'crm', label: 'Clients', hash: '#/crm', order: 20, icon: NAV_ICON });
-registerProjectPanel({ id: 'client', title: 'Client', order: 5, render: renderProjectPanel });
+registerProjectPanel({ id: 'client', title: 'Client', order: 5, tab: 'deliverables', render: renderProjectPanel }); // [workspace redesign] with the hand-over records, not the model
