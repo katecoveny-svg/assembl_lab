@@ -107,7 +107,7 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
   m = heavy
     // see-through without refraction: a model this size stays smooth; still reflects the sky and carries the tint
     ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.42), metalness: 0, roughness: 0.03, transmission: 1, thickness: 0.012, ior: 1.52, attenuationColor: tint, attenuationDistance: 0.05, specularIntensity: 1, envMapIntensity: 2, side: THREE.DoubleSide });
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.55), metalness: 0, roughness: 0.02, transmission: 1, thickness: 0.012, ior: 1.52, attenuationColor: tint, attenuationDistance: 0.25, specularIntensity: 1, envMapIntensity: 2.2, transparent: true, side: THREE.DoubleSide });   // as the example house's glass: see-through to the rooms, darker from outside as daylit glass reads, the tint carried by attenuation
   mats.set(key, m);
   return m;
 }

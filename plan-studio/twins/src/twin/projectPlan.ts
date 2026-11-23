@@ -869,9 +869,18 @@ export const projectPlan: Project = {
       const b2 = new THREE.Box3().setFromObject(model);
       centre = b2.getCenter(new THREE.Vector3());
       radius = Math.max(10, b2.getSize(new THREE.Vector3()).length() * 0.9);
+      // model-dress: it opens as a person would see it, from a few paces off at a three-quarter angle with the sky behind
+      // (the Waiheke example's habit), then the aerial and the eye-level views
+      const tall = b2.max.y - b2.min.y, three = { label: 'Three-quarter', eye: centre.clone().add(new THREE.Vector3(-radius * 0.95, 0, radius * 1.2)).setY(b2.min.y + Math.min(Math.max(1.7, tall * 0.42), 9)), look: centre.clone().setY(b2.min.y + tall * 0.4) };
+      keys.push(three);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
       keys.push({ label: 'Eye level', eye: centre.clone().add(new THREE.Vector3(0, 1.6 - centre.y, radius * 0.8)), look: centre.clone() });
-      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: keys[keys.length - 1] });   // model-dress: finishes, planting, light
+      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three });   // model-dress: finishes, planting, light
+      // the chips say what this is: an opened model, not one generated from a plan
+      const kindWord = input.kind.toUpperCase();
+      const relabel = () => { const gen = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent === 'Generated from your plan model') as HTMLElement | undefined; if (gen) { gen.textContent = `Opened from your model (${kindWord})`; gen.title = 'The model as the architect drew it; finishes interpreted from its classes and material names'; } return !!gen; };
+      const relabelSoon = () => { if (relabel()) app.onFrame.splice(app.onFrame.indexOf(relabelSoon), 1); };
+      app.onFrame.push(relabelSoon);
     }
 
     // real ground where the model carries it: the survey grid with its aerial photo, a coarser far field, and the sea
@@ -928,6 +937,8 @@ export const projectPlan: Project = {
           const chip = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent?.startsWith('Site:')) as HTMLElement | undefined;
           if (chip) { chip.textContent = gr ? 'Site: LINZ LiDAR ground' : 'Site: flat, assumed'; chip.title = gr ? gr.applied.terrain.source : 'No site read: flat ground, assumed'; }
           refreshPath();
+          // model-dress: the proposed planting follows the real ground (and the flat contact shade steps aside for it)
+          if (dressed) void dressed.replant(gr ? gr.yAt : null).catch((e) => console.warn('planting could not follow the ground', e));
         },
       });
       const cp = cameraPathPanel(app, {
@@ -991,7 +1002,7 @@ export const projectPlan: Project = {
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
-      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600 } : {}),   // room for the LiDAR square round an IFC or GLB
+      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600, look: 'editorial' as const, agx: true, sunHour: 15.5, fogScale: 0.35 } : {}),   // model-dress: sky, sun and haze as the example house has them, AgX kept   // room for the LiDAR square round an IFC or GLB
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: terrain.chip ?? (terrain.photo && terrain.photoKind !== 'contours' ? 'Site: LINZ LiDAR and aerial photo' : 'Site: surveyed ground, no aerial photo'), title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,

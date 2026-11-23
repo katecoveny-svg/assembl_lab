@@ -401,6 +401,14 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
   const SPACE: Record<Shrub, number> = { harakeke: 1.5, tussock: 0.75, carex: 0.6, ponga: 3.2, tikouka: 4.5 };
   const near = (x: number, z: number, d: number, list: { x: number; z: number }[]) => list.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < d * d);
   const maxS = o.maxShrubs ?? 900, maxT = o.maxTrees ?? 14;
+  // the opening view's wedge: no trees there, and no tall shrubs (ponga, tī kōuka) to stand in front of the camera
+  const vw = o.view, half = vw?.half ?? 0.7;
+  const inView = (x: number, z: number) => {
+    if (!vw) return false;
+    const fx = vw.from[0] - vw.at[0], fz = vw.from[1] - vw.at[1], px = x - vw.at[0], pz = z - vw.at[1];
+    const a = Math.acos(Math.max(-1, Math.min(1, (fx * px + fz * pz) / ((Math.hypot(fx, fz) || 1) * (Math.hypot(px, pz) || 1)))));
+    return a < half;
+  };
   // shrubs
   for (const k of order) {
     if (shrubs.length >= maxS) break;
@@ -417,18 +425,11 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
     // ponga and tī kōuka are the accents: a few, for height, never a hedge of them
     const tall = shrubs.filter((s) => s.sp === 'ponga' || s.sp === 'tikouka').length < Math.max(2, Math.round(maxS / 60));
     const sp: Shrub = tall && d > 3.4 && R() < 0.03 ? 'tikouka' : tall && d > 2.4 && R() < 0.03 ? 'ponga' : pick < 0.38 ? 'harakeke' : pick < 0.72 ? 'tussock' : 'carex';
-    if (sp === 'ponga' || sp === 'tikouka') { if (!allowed(g, x, z, 1.2)) continue; }
+    if (sp === 'ponga' || sp === 'tikouka') { if (!allowed(g, x, z, 1.2) || inView(x, z)) continue; }
     if (near(x, z, SPACE[sp], shrubs.filter((s) => s.sp === sp)) || near(x, z, 0.55, shrubs)) continue;
     shrubs.push({ x, z, y: yAt(k), sp, s: sp === 'harakeke' ? 0.85 + R() * 0.4 : sp === 'ponga' ? 2.4 + R() * 1.4 : sp === 'tikouka' ? 4 + R() * 1.5 : 0.85 + R() * 0.35 });
   }
   // trees, standing back: 6 to 22 m out on open ground (or on the model's lawn and ground)
-  const vw = o.view, half = vw?.half ?? 0.7;
-  const inView = (x: number, z: number) => {
-    if (!vw) return false;
-    const fx = vw.from[0] - vw.at[0], fz = vw.from[1] - vw.at[1], px = x - vw.at[0], pz = z - vw.at[1];
-    const a = Math.acos(Math.max(-1, Math.min(1, (fx * px + fz * pz) / ((Math.hypot(fx, fz) || 1) * (Math.hypot(px, pz) || 1)))));
-    return a < half;
-  };
   for (const k of order) {
     if (trees.length >= maxT) break;
     const d = D[k];

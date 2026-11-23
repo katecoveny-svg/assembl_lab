@@ -51,6 +51,8 @@ export interface Built {
   skyPhoto?: { url: string; sunU: number };
   /** 'editorial': a brighter, warmer presentation: filmic tone curve, sky fill, soft haze, late-afternoon sun */
   look?: 'editorial';
+  /** with the editorial look, keep AgX tone mapping (an opened IFC or GLB: model-dress) instead of the filmic ACES curve */
+  agx?: boolean;
   /** the outward normal of the façade the opening view looks at: the opening hour is chosen so low sun falls on it */
   sunFace?: THREE.Vector3;
   siteChip?: { text: string; title?: string };
@@ -210,7 +212,7 @@ export class App {
     this.log('Building the model…');
     this.built = await this.project.build(this);
     if (this.built.look === 'editorial') {
-      this.editorial = true; this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.exposureBase = 0.98;
+      this.editorial = true; this.renderer.toneMapping = this.built.agx ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping; this.exposureBase = 0.98;
       this.hemi.color.set(0xdce8f8); this.hemi.groundColor.set(0x4c443a);
       this.fill = new THREE.DirectionalLight(0xa4bede, 0.5); this.scene.add(this.fill, this.fill.target);
       // alive until touched: a slow turn about the building from outside, back after 25 s of stillness
@@ -460,7 +462,7 @@ export class App {
     if (sh > 1) { this.hemi.color.set(0xe6ebee); this.hemi.groundColor.set(0x5a5f48); }
     const f = this.built.focus, R = this.built.radius * 3;
     if (this.fill) { this.fill.position.copy(f).add(new THREE.Vector3(-dir.x, 0.7, -dir.z).multiplyScalar(R)); this.fill.target.position.copy(f); this.fill.intensity = L.fill; }
-    this.exposureBase = L.exposure * (1 + (sh - 1) * 0.22);
+    this.exposureBase = L.exposure * (1 + (sh - 1) * 0.22) * (this.built.agx ? 1.35 : 1);   // AgX sits darker than ACES at the same exposure
   }
   /** a test hook: extra turn of the photographed sky, radians */
   photoTurn = 0;
