@@ -113,10 +113,10 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
   const tint = new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
   m = heavy
     // see-through without refraction: a model this size stays smooth; still reflects the sky and carries the tint
-    ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
-    // daylit glass seen from outside: dark, with the sky in it and a bright fresnel edge (clearcoat), the rooms faint behind it.
-    // No transmission pass: it costs a second render of the scene, too much on a phone
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.42), metalness: 0, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, ior: 1.52, specularIntensity: 1, envMapIntensity: 3.2, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });   // warm bronze-tinted glass: the lit rooms behind it, the sky in it at a glancing angle (fresnel, clearcoat)
+    ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.48), metalness: 0, roughness: 0.035, transparent: true, opacity: 0.34, specularIntensity: 1, envMapIntensity: 1.6, side: THREE.DoubleSide, depthWrite: false })
+    // architectural bronze/clear glazing: transparent enough for warm timber interiors and signage to read through,
+    // with crisp Fresnel sky reflection (clearcoat, IOR 1.52) at glancing angles. No transmission pass so phones stay smooth.
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.55), metalness: 0, roughness: 0.025, clearcoat: 1, clearcoatRoughness: 0.015, ior: 1.52, reflectivity: 0.95, specularIntensity: 1, envMapIntensity: 2.3, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false });
   mats.set(key, m);
   return m;
 }
