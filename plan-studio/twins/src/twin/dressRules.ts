@@ -6,13 +6,13 @@
 
 export type Finish =
   | 'glass' | 'mullion' | 'roof' | 'brick' | 'timberCladding' | 'concrete' | 'render' | 'plaster' | 'slab' | 'paving'
-  | 'decking' | 'frameMetal' | 'frameTimber' | 'door' | 'asphalt' | 'timber' | 'fabric' | 'metal' | 'stone' | 'tile' | 'lawn' | 'bed' | 'neutral';
+  | 'decking' | 'frameMetal' | 'frameTimber' | 'door' | 'asphalt' | 'darkMetal' | 'timber' | 'fabric' | 'metal' | 'stone' | 'tile' | 'lawn' | 'bed' | 'neutral';
 
 /** what a finish is called on the page, and its colour in the finished look (sRGB hex) */
 export const FINISHES: Record<Finish, { label: string; colour: number }> = {
   glass: { label: 'tinted glass', colour: 0xffffff },
-  mullion: { label: 'dark anodised aluminium', colour: 0x2b2b2d },
-  roof: { label: 'standing-seam metal roofing', colour: 0x34373a },
+  mullion: { label: 'dark bronze anodised aluminium', colour: 0x2e2a26 },
+  roof: { label: 'standing-seam metal roofing, charcoal, timber soffit beneath', colour: 0x2f2c29 },
   brick: { label: 'clay brick', colour: 0x9a5a44 },
   timberCladding: { label: 'vertical timber cladding, oiled', colour: 0x8a6a4e },
   concrete: { label: 'board-smooth concrete', colour: 0xb0aca4 },
@@ -25,6 +25,7 @@ export const FINISHES: Record<Finish, { label: string; colour: number }> = {
   frameTimber: { label: 'stained timber frame', colour: 0x7a5a40 },
   door: { label: 'stained timber door', colour: 0x6b4a33 },
   asphalt: { label: 'asphalt', colour: 0x56575a },
+  darkMetal: { label: 'charcoal-bronze powder-coated metal', colour: 0x302b26 },
   timber: { label: 'oiled oak', colour: 0xb08d64 },
   fabric: { label: 'woven upholstery', colour: 0x8f8a80 },
   metal: { label: 'satin steel', colour: 0x8e9093 },
@@ -97,8 +98,12 @@ const PAVING = /pav(er|ing|ers)|terrace|patio|courtyard|foot ?path|\bpath|drivew
 const LAWN = /lawn|grass|turf/i;
 const BED = /plant(ing|ed|s)?\b|garden|\bbed\b|mulch|soil|vegetat|shrub|landscap/i;
 const GROUND = /topo|terrain|ground|site|earth|existing ground/i;
+const DK = '(black|charcoal|graphite|ironsand|bronze|dark ?gr[ae]y)', FIN = '(paint|metal|coat|steel|alum|pc\\d|powder|colorsteel|finish)';
+const DARK_PAINT = new RegExp(`${DK}.*${FIN}|${FIN}.*${DK}`, 'i');
 
 export const RULES: Rule[] = [
+  // a dark paint or powder coat on anything (a gateway frame, a fascia, a screen): charcoal-bronze metal, never white plaster
+  { id: 'dark-paint', words: DARK_PAINT, clear: false, finish: 'darkMetal', why: 'its material is named as a dark paint or metal' },
   // glazing, wherever it sits
   { id: 'glass-by-name', words: GLASSY, finish: 'glass', why: 'its material is named as glass' },
   { id: 'curtain-panel-clear', cls: ['IfcCurtainWall', 'IfcPlate'], clear: true, finish: 'glass', why: 'a see-through curtain-wall panel' },
@@ -232,7 +237,7 @@ export function meaningfulColour(p: PartInfo) {
   if (!namedMaterial(p.material, p.cls)) return false;
   return chroma(p.rgb) > 0.06;
 }
-export const BRONZE_GREY: [number, number, number] = [0.62, 0.6, 0.55];
+export const BRONZE_GREY: [number, number, number] = [0.66, 0.5, 0.34];   // warm bronze-tinted glass, as architects' renders usually show it
 /** the glass tint: the model's own colour when its material is named and the colour is not grey, else a neutral bronze-grey */
 export function glassTint(p: PartInfo): { rgb: [number, number, number]; from: 'model' | 'default' } {
   if (p.rgb && namedMaterial(p.material, p.cls) && chroma(p.rgb) > 0.04) {
@@ -464,6 +469,8 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
     const tall = shrubs.filter((s) => s.sp === 'ponga' || s.sp === 'tikouka').length < Math.max(2, Math.round(maxS / 60));
     const sp: Shrub = tall && d > 3.4 && R() < 0.03 ? 'tikouka' : tall && d > 2.4 && R() < 0.03 ? 'ponga' : pick < 0.38 ? 'harakeke' : pick < 0.72 ? 'tussock' : 'carex';
     if (sp === 'ponga' || sp === 'tikouka') { if (!allowed(g, x, z, 1.2) || inView(x, z)) continue; }
+    // nothing at all in the near half of the opening view: the camera looks over open ground at the building
+    if (vw && inView(x, z) && Math.hypot(x - vw.from[0], z - vw.from[1]) < Math.hypot(vw.at[0] - vw.from[0], vw.at[1] - vw.from[1]) * 0.6) continue;
     if (near(x, z, SPACE[sp], shrubs.filter((s) => s.sp === sp)) || near(x, z, 0.55, shrubs)) continue;
     shrubs.push({ x, z, y: yAt(k), sp, s: sp === 'harakeke' ? 1.1 + R() * 0.5 : sp === 'ponga' ? 2.4 + R() * 1.4 : sp === 'tikouka' ? 4 + R() * 1.5 : 1.0 + R() * 0.4 });
   }

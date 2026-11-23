@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { luminance, materialColor, mix, mx_noise_float, positionWorld, smoothstep, vec3, vec4 } from 'three/tsl';
+import { luminance, materialColor, mix, mx_noise_float, normalWorld, positionWorld, smoothstep, vec3, vec4 } from 'three/tsl';
 import { pbr, type PBRSet } from '../objects/tex';
 import type { App, Layer } from './app';
 import { twinMats } from './mats';
@@ -72,7 +72,7 @@ function setFor(f: Finish, q: 'web' | 'hq'): PBRSet | null {
   const M = twinMats(q), big = q === 'hq' ? 1024 : 512;
   const s: PBRSet | null =
     f === 'roof' ? standingSeam(big) : f === 'brick' ? brick(big) : f === 'paving' ? herringbone(big) : f === 'render' || f === 'neutral' ? render(big)
-    : f === 'bed' ? mulch(big) : f === 'stone' ? stoneFlags(big) : f === 'fabric' ? upholstery(big) : f === 'mullion' ? anodised(big / 2) : f === 'metal' ? satinSteel(big / 2)
+    : f === 'bed' ? mulch(big) : f === 'stone' ? stoneFlags(big) : f === 'fabric' ? upholstery(big) : f === 'mullion' || f === 'darkMetal' ? anodised(big / 2) : f === 'metal' ? satinSteel(big / 2)
     : f === 'timberCladding' ? M.sets.cedar : f === 'concrete' || f === 'slab' || f === 'asphalt' ? M.sets.concrete : f === 'plaster' ? M.sets.lining : f === 'decking' || f === 'frameTimber' ? M.sets.decking
     : f === 'frameMetal' ? powderCoat(big / 2) : f === 'timber' || f === 'door' ? M.sets.oak : f === 'tile' ? M.sets.tile : f === 'lawn' ? M.sets.lawn : null;
   sets.set(k, s!);
@@ -112,7 +112,7 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
     ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
     // daylit glass seen from outside: dark, with the sky in it and a bright fresnel edge (clearcoat), the rooms faint behind it.
     // No transmission pass: it costs a second render of the scene, too much on a phone
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.5), metalness: 0, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, ior: 1.52, specularIntensity: 1, envMapIntensity: 3.2, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false });   // see into the lit rooms; the sky in it, strongest at a glancing angle (fresnel, clearcoat)
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.42), metalness: 0, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, ior: 1.52, specularIntensity: 1, envMapIntensity: 3.2, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });   // warm bronze-tinted glass: the lit rooms behind it, the sky in it at a glancing angle (fresnel, clearcoat)
   mats.set(key, m);
   return m;
 }
@@ -133,6 +133,12 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
   const mean = meanOf(s);
   const want = colour ?? (f === 'lawn' ? LAWN_TONE.clone().multiply(mean) : COLOURED.has(f) ? null : new THREE.Color().setHex(FINISHES[f].colour, THREE.SRGBColorSpace));
   if (want) pm.color.setRGB(Math.min(4, want.r / Math.max(0.02, mean.r)), Math.min(4, want.g / Math.max(0.02, mean.g)), Math.min(4, want.b / Math.max(0.02, mean.b)));
+  if (f === 'roof') {
+    // the underside of a roof (eaves, a gateway's canopy) is a warm timber soffit, as architects' renders show it: chosen per
+    // fragment by which way the surface faces, so no face of the model is split or moved
+    const under = smoothstep(-0.25, -0.6, normalWorld.y);
+    pm.colorNode = mix(materialColor.rgb, vec3(0.5, 0.33, 0.19).mul(luminance(materialColor.rgb).mul(1.6).add(0.55)), under);
+  }
   pm.userData.dress = f;
   mats.set(key, pm);
   return pm;
@@ -490,7 +496,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     const B = bbox, W = B.max.x - B.min.x, D = B.max.z - B.min.z, H = Math.max(2.4, B.max.y - B.min.y);
     const nx = Math.max(1, Math.min(3, Math.round(W / 18))), nz = Math.max(1, Math.min(2, Math.round(D / 18)));
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
-      const l = new THREE.PointLight(0xffc98a, 45, Math.max(14, Math.min(W, D) * 0.8), 2);
+      const l = new THREE.PointLight(0xffc07a, 80, Math.max(14, Math.min(W, D) * 0.8), 2);
       l.position.set(B.min.x + ((i + 0.5) / nx) * W, B.min.y + Math.min(3, H * 0.45), B.min.z + ((j + 0.5) / nz) * D); l.castShadow = false;
       roomLights.add(l);
     }

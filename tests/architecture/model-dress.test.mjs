@@ -282,3 +282,11 @@ test('a model with no classes is read by shape: a surface far wider than the bui
   assert.equal(refineByShape(classify({ cls: 'IfcWall', material: '' }), 'IfcWall', { across: 900, span: 90, slope: 0, up: 1, high: 0 }).finish, 'render', 'a class decides');
   assert.equal(classify({ cls: '', material: 'ASPHALT - ROAD' }).finish, 'asphalt');
 });
+
+test('a dark paint or powder coat is charcoal-bronze metal, never white plaster; glass defaults to warm bronze', () => {
+  assert.equal(classify({ cls: '', material: '!_Black_Paint(1)' }).finish, 'darkMetal');
+  assert.equal(classify({ cls: 'IfcMember', material: 'Metal - Black - PC1' }).finish, 'darkMetal');
+  assert.equal(classify({ cls: '', material: 'Paint - White' }).finish, 'plaster');
+  assert.equal(classify({ cls: 'IfcWall', material: 'Brick - Black' }).finish, 'brick', 'a dark brick is still brick');
+  assert.ok(BRONZE_GREY[0] > BRONZE_GREY[2] + 0.2, 'the default glass tint is warm');
+});

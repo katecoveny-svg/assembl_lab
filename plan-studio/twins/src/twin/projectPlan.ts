@@ -285,7 +285,7 @@ function clearView(obj: THREE.Object3D, centre: THREE.Vector3, sz: THREE.Vector3
     for (const deg of [0, -70, 180, 110, 90, -90]) {
       const vd = base.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), (deg * Math.PI) / 180);
       const across = Math.abs(sz.x * vd.z) + Math.abs(sz.z * vd.x), deep = Math.abs(sz.x * vd.x) + Math.abs(sz.z * vd.z);
-      const dist = Math.max(14, (0.5 * across) / (0.8 * 0.58), deep * 0.5 + 8);
+      const dist = Math.max(20, (0.5 * across) / (0.8 * 0.58), deep * 0.5 + 10, sz.y * 2.6);   // a small house is seen whole, from a few paces off, not a wall filling the frame
       // stand on whatever the model has there (its own site surface may rise round the building), eye height above it
       const ex = centre.x + vd.x * dist, ez = centre.z + vd.z * dist;
       ray.set(new THREE.Vector3(ex, centre.y + 500, ez), new THREE.Vector3(0, -1, 0)); ray.far = 1000;

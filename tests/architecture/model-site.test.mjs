@@ -86,3 +86,16 @@ test('the 3D page wears the practice’s look only when opened from its workspac
   assert.equal(pageLook('?from=ops', () => { throw new Error('closed'); }), 'assembl');
   assert.equal(LOOK_CACHE, readFileSync(new URL('../../architecture/js/theme.js', import.meta.url), 'utf8').match(/LOOK_CACHE = '([^']+)'/)[1], 'the same key the workspace keeps its look under');
 });
+
+test('the 3D page shows the practice’s display name or logo from the workspace, never an id', async () => {
+  const { readBrand } = await import('../../plan-studio/twins/src/twin/practiceLook.ts');
+  const { brandRecord, BRAND_KEY } = await import('../../architecture/js/handoff.js');
+  assert.notEqual(BRAND_KEY, 'assembl.architecture.practice', 'not the key the workspace keeps its chosen practice id under');
+  assert.deepEqual(readBrand(JSON.stringify({ name: 'Sample Practice', logo: '' })), { name: 'Sample Practice', logo: '' });
+  assert.equal(readBrand(JSON.stringify({ name: 'beaff40a-daea-4502-a36c-9649c3bdaf12' })).name, '', 'an id is never shown');
+  assert.equal(readBrand('beaff40a-daea-4502-a36c-9649c3bdaf12').name, '', 'an old raw id under any key is not shown');
+  assert.equal(readBrand(null).name, '');
+  assert.equal(brandRecord('beaff40a-daea-4502-a36c-9649c3bdaf12').name, '');
+  assert.equal(brandRecord('Sample Practice', 'data:image/png;base64,AAAA').logo, 'data:image/png;base64,AAAA');
+  assert.equal(brandRecord('Sample Practice', 'javascript:alert(1)').logo, '');
+});

@@ -362,11 +362,11 @@ function walk(ctx, p) {
       if (f) site.files[id] = await blobOf(ctx, f);
     }
     r.state = 'keeping'; ctx.redraw();
-    const { putHandoff, HANDOFF_PARAM } = await import('./handoff.js');
+    const { putHandoff, HANDOFF_PARAM, keepBrand } = await import('./handoff.js');
     // the latest saved fly-through goes across too, so the 3D page opens with it to carry on editing
     const fl = slots.find((s) => s.slot.id === 'flythrough')?.stacks[0]?.latest;
     if (fl) { try { site.flight = JSON.parse(await (await blobOf(ctx, fl)).text()); } catch { /* opens without it */ } }
-    try { localStorage.setItem('assembl.architecture.practice', ctx.practice?.name ?? ''); } catch { /* the 3D page shows no practice name */ }   // the 3D page wears the practice's name (practiceLook.ts)
+    await keepBrand(ctx.practice?.name).catch(() => void 0);   // the 3D page wears the practice's name and logo (practiceLook.ts)
     const hid = await putHandoff(blob, name, { site });
     rememberHandoff(p.id, hid);
     r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
