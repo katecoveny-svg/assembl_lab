@@ -532,7 +532,7 @@ export const KERERU: Species = measured('kereru', SHELL.kereru, {
   seed: 2208,
   eye: { s: 7.85, phi: 0.56, inset: 0.84, iris: 0xc0281e },
   bill: { color: 0xb02a20 },
-  skin: 0xa0382a,
+  skin: 0x2a1e1e,
   shading: { flank: 0.85, under: 0.92, patch: 0.2, gold: 0x7a5a20, goldAmount: 0.35 },
   looks: {
     body: look({ width: 0.0252, base: 0x16220f, tip: 0x2c4018, iri: 0x3a9a3a, iriGraze: 0x9a6a1a, iriStrength: 0.55, iriPower: 6, sparkle: 0.4 }),
