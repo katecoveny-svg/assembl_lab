@@ -12,6 +12,8 @@ export type HandoffSite = {
   camera_path: { pts: number[][]; sketch_file_id: string | null; traced_by: 'tool' | 'person'; confirmed_by: string | null; confirmed_at: string | null } | null;
   sources: { kind: string; name: string; file_id: string }[];
   files?: Record<string, Blob>;
+  /** the project's latest saved fly-through (assembl.flight-path.v1), to carry on editing */
+  flight?: unknown;
 };
 type Kept = { id: string; name: string; type: string; blob: Blob; at: number; site?: HandoffSite };
 
@@ -51,6 +53,27 @@ export async function putPathBack(handoffId: string, name: string, path: unknown
     tx.objectStore(HANDOFF_STORE).put({ id, kind: 'camera_path', handoff: handoffId, name, path, at: Date.now() });
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); });
     try { (globalThis as unknown as { opener?: Window | null }).opener?.postMessage({ type: 'assembl:camera-path', handoff: handoffId, path }, location.origin); } catch { /* no workspace window: the store has it */ }
+    return id;
+  } finally { db.close(); }
+}
+
+// ---- the way back, for everything else made here (agent/model-dress-1123): the fly-through, its film, shots and stills ---------
+// Each is left in the same store as `${handoffId}:${kind}` (or `${handoffId}:${kind}:${part}` when there are several, such as the
+// shots of a comparison), as { id, kind, handoff, name, type, data: Blob, meta, at }. The workspace takes them into the
+// project's records when it next looks (architecture/js/handoff.js takeBacks), so nothing has to be downloaded and uploaded.
+export type BackKind = 'flight' | 'film' | 'shot' | 'look';
+export const backKey = (handoffId: string, kind: BackKind, part = '') => `${handoffId}:${kind}${part ? `:${part}` : ''}`;
+export async function putBackRecord(handoffId: string, kind: BackKind, rec: { name: string; data: Blob; meta?: Record<string, unknown>; part?: string }, idb: IDBFactory | undefined = globalThis.indexedDB): Promise<string> {
+  if (!handoffId) throw new Error('this page was not opened from a project, so there is nowhere to save it back to');
+  if (!idb) throw new Error('this browser has no storage to pass it back in');
+  const open = idb.open(HANDOFF_DB, 1);
+  open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains(HANDOFF_STORE)) open.result.createObjectStore(HANDOFF_STORE, { keyPath: 'id' }); };
+  const db = await req(open);
+  try {
+    const id = backKey(handoffId, kind, rec.part), tx = db.transaction(HANDOFF_STORE, 'readwrite');
+    tx.objectStore(HANDOFF_STORE).put({ id, kind, handoff: handoffId, name: rec.name, type: rec.data.type, data: rec.data, meta: rec.meta ?? {}, at: Date.now() });
+    await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); });
+    try { (globalThis as unknown as { opener?: Window | null }).opener?.postMessage({ type: 'assembl:back', handoff: handoffId, kind, id }, location.origin); } catch { /* no workspace window: the store has it */ }
     return id;
   } finally { db.close(); }
 }

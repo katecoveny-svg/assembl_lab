@@ -6,7 +6,7 @@
 
 export type Finish =
   | 'glass' | 'mullion' | 'roof' | 'brick' | 'timberCladding' | 'concrete' | 'render' | 'plaster' | 'slab' | 'paving'
-  | 'decking' | 'frameMetal' | 'frameTimber' | 'door' | 'timber' | 'fabric' | 'metal' | 'stone' | 'tile' | 'lawn' | 'bed' | 'neutral';
+  | 'decking' | 'frameMetal' | 'frameTimber' | 'door' | 'asphalt' | 'timber' | 'fabric' | 'metal' | 'stone' | 'tile' | 'lawn' | 'bed' | 'neutral';
 
 /** what a finish is called on the page, and its colour in the finished look (sRGB hex) */
 export const FINISHES: Record<Finish, { label: string; colour: number }> = {
@@ -19,11 +19,12 @@ export const FINISHES: Record<Finish, { label: string; colour: number }> = {
   render: { label: 'fine sand-finish render', colour: 0xd9d1c4 },
   plaster: { label: 'painted plaster', colour: 0xece7de },
   slab: { label: 'honed concrete', colour: 0xb9b4ab },
-  paving: { label: 'herringbone clay pavers', colour: 0xa58e78 },
+  paving: { label: 'pale grey concrete pavers', colour: 0xbab5ad },
   decking: { label: 'hardwood decking', colour: 0x8c6447 },
   frameMetal: { label: 'powder-coated aluminium frame', colour: 0x2e2f31 },
   frameTimber: { label: 'stained timber frame', colour: 0x7a5a40 },
   door: { label: 'stained timber door', colour: 0x6b4a33 },
+  asphalt: { label: 'asphalt', colour: 0x56575a },
   timber: { label: 'oiled oak', colour: 0xb08d64 },
   fabric: { label: 'woven upholstery', colour: 0x8f8a80 },
   metal: { label: 'satin steel', colour: 0x8e9093 },
@@ -148,6 +149,8 @@ export const RULES: Rule[] = [
   { id: 'shading', cls: ['IfcShadingDevice'], words: TIMBER, finish: 'timber', why: 'timber shading' },
   { id: 'shading', cls: ['IfcShadingDevice'], finish: 'mullion', why: 'shading devices are taken as dark aluminium' },
   // by material name alone (a GLB with no classes, or a class the table does not list)
+  { id: 'mat-asphalt', words: /asphalt|tarmac|bitumen|\broad\b|carpark|car park/i, finish: 'asphalt', why: 'its material is named as asphalt or road' },
+  { id: 'mat-alum', words: /\balum/i, finish: 'mullion', why: 'its material is named as aluminium: taken as the dark anodised frames and fins the architect’s renders show' },
   { id: 'mat-brick', words: BRICK, finish: 'brick', why: 'its material is named as brick' },
   { id: 'mat-paving', words: PAVING, finish: 'paving', why: 'its material is named as paving' },
   { id: 'mat-lawn', words: LAWN, finish: 'lawn', why: 'its material is named as grass' },
@@ -204,6 +207,21 @@ export function needsFrame(cls: string, finishes: Finish[]) {
   if (c !== 'IfcWindow' && c !== 'IfcDoor') return false;
   const hasFrame = finishes.some((f) => f === 'frameMetal' || f === 'frameTimber');
   return !hasFrame && finishes.some((f) => f === 'glass' || f === 'door');
+}
+
+/**
+ * A part read by its shape, for a model whose parts carry no IFC class (a GLB from a browser copy): a surface far wider than
+ * the building is the site's ground (grass); a large sloping surface high on the building is roof. Only parts whose finish came
+ * from a material name alone or the catch-all are re-read; anything the class or a specific name decided stays.
+ */
+export function refineByShape(c: Classified, cls: string, shape: { across: number; span: number; slope: number; up: number; high: number }): Classified {
+  if (normClass(cls) && normClass(cls) !== 'IfcBuildingElementProxy') return c;
+  if (c.finish === 'glass') return c;
+  const loose = /^(mat-|default|proxy)/.test(c.rule);
+  if (c.finish !== 'asphalt' && c.finish !== 'roof' && shape.across > Math.max(40, shape.span * 1.2) && shape.up > 0.6 && shape.high < 0.5) return { finish: 'lawn', rule: 'site-by-size', why: 'a surface far wider than the building: the site’s ground, taken as grass' };
+  if (c.finish === 'brick' && shape.up > 0.8 && shape.high < 0.2) return { finish: 'paving', rule: 'paving-by-shape', why: 'a flat surface at ground level named as brick: taken as pale pavers, as the renders show the forecourt' };
+  if (loose && shape.across > 6 && shape.slope > 0.5 && shape.high > 0.45 && c.finish !== 'brick' && c.finish !== 'asphalt') return { finish: 'roof', rule: 'roof-by-shape', why: 'a large sloping surface high on the building: taken as roof' + (c.why.includes('(“') ? c.why.slice(c.why.indexOf(' (“')) : '') };
+  return c;
 }
 
 // --- colour ------------------------------------------------------------------------------------------------------------

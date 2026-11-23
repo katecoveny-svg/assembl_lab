@@ -42,6 +42,8 @@ export interface ModelGround {
   /** metres true north and true east of the site point, from a scene point */
   fromPoint: (x: number, z: number) => [number, number];
   point: SitePoint; applied: Applied; store: GroundStore; floorTag: string;
+  /** a NZTM point (e, n) in the scene (x, z): for things LINZ gives in map coordinates, such as building outlines */
+  toScene: (e: number, n: number) => [number, number];
 }
 
 export function modelGroundPanel(ctx: ModelSiteCtx) {
@@ -113,7 +115,7 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     ctx.holder.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? '' };
     ctx.flat.visible = false;
     const p = point()!;
-    current = { yAt, fromPoint: fr.fromPoint, point: p, applied: ap, store: st, floorTag: last?.tag ?? 'assumed' };
+    current = { yAt, fromPoint: fr.fromPoint, toScene: fr.model, point: p, applied: ap, store: st, floorTag: last?.tag ?? 'assumed' };
     ctx.onGround(current);
     render(st, ap, p);
     return current;
