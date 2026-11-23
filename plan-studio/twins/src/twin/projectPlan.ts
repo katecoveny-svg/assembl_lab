@@ -31,6 +31,10 @@ import { HANDOFF_PARAM, takeHandoff, type HandoffSite } from './handoff';
 import { readIfcSite, type IfcSiteInfo } from './modelSite';
 import { modelGroundPanel, type ModelGround } from './modelGround';
 import { cameraPathPanel } from './cameraPathUI';
+import { flightPanel } from './flightUI';
+import { buildingBounds, type Box6 } from './modelBounds';
+import { contextGroup, outlinesUrl, parseOutlines, toSceneRings, OUTLINE_CREDIT } from './contextBuildings';
+import { readFlight } from './flightPath';   // the fly-through editor and film (agent/model-dress-1123)
 import { traceDrawing } from './traceUI';
 import { applyGround, contourPhoto, groundPanel, loadGround, type Applied, type GroundStore } from './siteGround';
 import type { App, Built, Key, Layer, Project } from './app';
@@ -244,6 +248,56 @@ export async function realGroundOf(T: Terrain, yAt: (x: number, z: number) => nu
   }
   realGround.userData = { kind: 'terrain', name: 'Ground', source: 'survey', note: T.source ?? 'Ground from a survey grid.' };
   return realGround;
+}
+
+/** where an opened model is looked at from: its glazed side (the main façade, as the architect's renders show it), at a
+ *  three-quarter angle. The direction from the building's middle toward the weight of its glass, turned 35°; with no glass,
+ *  the usual south-west three-quarter. Returns a unit vector on the ground (x, z). */
+function viewDir(obj: THREE.Object3D, centre: THREE.Vector3) {
+  const acc = new THREE.Vector3(), pb = new THREE.Box3(), c = new THREE.Vector3();
+  let n = 0;
+  obj.traverse((m) => {
+    const me = m as THREE.Mesh; if (!me.isMesh) return;
+    const mats = Array.isArray(me.material) ? me.material : [me.material];
+    if (!mats.some((x) => x && (/glass|glaz/i.test(x.name ?? '') || (x.transparent && x.opacity < 0.95)))) return;
+    if (!me.geometry.boundingBox) me.geometry.computeBoundingBox();
+    pb.copy(me.geometry.boundingBox!).applyMatrix4(me.matrixWorld); pb.getCenter(c);
+    const w = Math.max(0.5, (pb.max.x - pb.min.x) * (pb.max.y - pb.min.y) + (pb.max.z - pb.min.z) * (pb.max.y - pb.min.y));
+    acc.x += (c.x - centre.x) * w; acc.z += (c.z - centre.z) * w; n += w;
+  });
+  const d = new THREE.Vector2(acc.x, acc.z);
+  if (!n || d.length() < 1e-3) return new THREE.Vector3(-0.62, 0, 0.78);
+  d.normalize().rotateAround(new THREE.Vector2(), (35 * Math.PI) / 180);
+  return new THREE.Vector3(d.x, 0, d.y);
+}
+
+/** the opening view's direction and distance: the glazed side first (viewDir), else the other three-quarters round, the first
+ *  from which nothing of the model stands between the eye and the building's middle; the distance has the building about 60%
+ *  across the frame */
+function clearView(obj: THREE.Object3D, centre: THREE.Vector3, sz: THREE.Vector3, eyeY: number) {
+  const base = viewDir(obj, centre), ray = new THREE.Raycaster(), meshes: THREE.Mesh[] = [];
+  obj.traverse((m) => { if ((m as THREE.Mesh).isMesh) meshes.push(m as THREE.Mesh); });
+  // both faces count while looking: an open site surface seen from below is still in the way
+  const sides = new Map<THREE.Material, THREE.Side>();
+  for (const m of meshes) for (const mt of Array.isArray(m.material) ? m.material : [m.material]) if (mt && !sides.has(mt)) { sides.set(mt, mt.side); mt.side = THREE.DoubleSide; }
+  let first: { vd: THREE.Vector3; dist: number; y: number } | null = null;
+  try {
+    for (const deg of [0, -70, 180, 110, 90, -90]) {
+      const vd = base.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), (deg * Math.PI) / 180);
+      const across = Math.abs(sz.x * vd.z) + Math.abs(sz.z * vd.x), deep = Math.abs(sz.x * vd.x) + Math.abs(sz.z * vd.z);
+      const dist = Math.max(14, (0.5 * across) / (0.8 * 0.58), deep * 0.5 + 8);
+      // stand on whatever the model has there (its own site surface may rise round the building), eye height above it
+      const ex = centre.x + vd.x * dist, ez = centre.z + vd.z * dist;
+      ray.set(new THREE.Vector3(ex, centre.y + 500, ez), new THREE.Vector3(0, -1, 0)); ray.far = 1000;
+      const under = ray.intersectObjects(meshes, false)[0];
+      const y = Math.max(eyeY, under ? under.point.y + 1.7 : eyeY);
+      first ??= { vd, dist, y };
+      const eye = new THREE.Vector3(ex, y, ez), to = new THREE.Vector3(centre.x, Math.max(eyeY * 0.8, centre.y), centre.z);
+      ray.set(eye, to.clone().sub(eye).normalize()); ray.far = Math.max(1, eye.distanceTo(to) - deep * 0.5);
+      if (!ray.intersectObjects(meshes, false).length) return { vd, dist, y };
+    }
+  } finally { for (const [mt, sd] of sides) mt.side = sd; }
+  return first!;
 }
 
 /** timber stairs down a line, from one level to another */
@@ -862,20 +916,28 @@ export const projectPlan: Project = {
       obj.traverse((m) => {
         if ((m as THREE.Mesh).isMesh) m.castShadow = m.receiveShadow = true;
       });
-      const b = new THREE.Box3().setFromObject(obj);
-      obj.position.y -= b.min.y;
-      shift.y += -b.min.y;
+      // the building's own bounds (modelBounds.ts): strays far off and site surfaces are left out, so the camera frames the
+      // building and the haze is set to its size; the model is moved so the building's middle stands at the origin
+      obj.updateMatrixWorld(true);
+      const parts: Box6[] = [], pb = new THREE.Box3();
+      obj.traverse((m) => { const me = m as THREE.Mesh; if (!me.isMesh || !me.geometry) return; if (!me.geometry.boundingBox) me.geometry.computeBoundingBox(); pb.copy(me.geometry.boundingBox!).applyMatrix4(me.matrixWorld); if (!pb.isEmpty()) parts.push([pb.min.x, pb.min.y, pb.min.z, pb.max.x, pb.max.y, pb.max.z]); });
+      const bb = buildingBounds(parts), bcx = (bb.box[0] + bb.box[3]) / 2, bcz = (bb.box[2] + bb.box[5]) / 2;
+      (window as unknown as { __bounds?: unknown }).__bounds = { ...bb, centre: [bcx, bcz] };   // for checks from the console (this tab only)
+      if (bb.left) app.log(`${bb.left} part${bb.left > 1 ? 's' : ''} far from the building (or site surfaces) left out of the framing.`);
+      obj.position.x -= bcx; obj.position.z -= bcz; obj.position.y -= bb.box[1];
+      shift.x -= bcx; shift.z -= bcz; shift.y += -bb.box[1];
       model.add(obj);
-      const b2 = new THREE.Box3().setFromObject(model);
+      const b2 = new THREE.Box3(new THREE.Vector3(bb.box[0] - bcx, 0, bb.box[2] - bcz), new THREE.Vector3(bb.box[3] - bcx, bb.box[4] - bb.box[1], bb.box[5] - bcz));
       centre = b2.getCenter(new THREE.Vector3());
       radius = Math.max(10, b2.getSize(new THREE.Vector3()).length() * 0.9);
       // model-dress: it opens as a person would see it, from a few paces off at a three-quarter angle with the sky behind
-      // (the Waiheke example's habit), then the aerial and the eye-level views
-      const tall = b2.max.y - b2.min.y, three = { label: 'Three-quarter', eye: centre.clone().add(new THREE.Vector3(-radius * 0.95, 0, radius * 1.2)).setY(b2.min.y + Math.min(Math.max(1.7, tall * 0.42), 9)), look: centre.clone().setY(b2.min.y + tall * 0.4) };
+      // (the Waiheke example's habit), at the distance that has the building about 60% across the frame; then the aerial
+      // and the eye-level views
+      const tall = b2.max.y - b2.min.y, sz = b2.getSize(new THREE.Vector3()), { vd, dist, y: eyeY } = clearView(obj, centre, sz, b2.min.y + Math.min(Math.max(1.7, (b2.max.y - b2.min.y) * 0.42), 9)), three = { label: 'Three-quarter', eye: centre.clone().add(new THREE.Vector3(vd.x * dist, 0, vd.z * dist)).setY(eyeY), look: centre.clone().setY(b2.min.y + tall * 0.4) };
       keys.push(three);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
       keys.push({ label: 'Eye level', eye: centre.clone().add(new THREE.Vector3(0, 1.6 - centre.y, radius * 0.8)), look: centre.clone() });
-      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three });   // model-dress: finishes, planting, light
+      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three, bounds: b2 });   // model-dress: finishes, planting, light
       // the chips say what this is: an opened model, not one generated from a plan
       const kindWord = input.kind.toUpperCase();
       const relabel = () => { const gen = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent === 'Generated from your plan model') as HTMLElement | undefined; if (gen) { gen.textContent = `Opened from your model (${kindWord})`; gen.title = 'The model as the architect drew it; finishes interpreted from its classes and material names'; } return !!gen; };
@@ -922,6 +984,7 @@ export const projectPlan: Project = {
     const modelGround = new THREE.Group(); modelGround.name = 'ground_layer';
     const lidarHolder = new THREE.Group(); lidarHolder.name = 'site_ground';
     const pathRoot = new THREE.Group(); pathRoot.name = 'camera_path_layer';
+    const contextRoot = new THREE.Group(); contextRoot.name = 'context_layer';
     let modelCards: HTMLElement[] = [], startSite: (() => void) | null = null;
     if (input.kind !== 'plan') {
       modelGround.add(ground, lidarHolder);
@@ -937,6 +1000,18 @@ export const projectPlan: Project = {
           const chip = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent?.startsWith('Site:')) as HTMLElement | undefined;
           if (chip) { chip.textContent = gr ? 'Site: LINZ LiDAR ground' : 'Site: flat, assumed'; chip.title = gr ? gr.applied.terrain.source : 'No site read: flat ground, assumed'; }
           refreshPath();
+          // the site as it is now: the existing buildings round it from LINZ outlines and LiDAR heights (contextBuildings.ts)
+          for (const c of [...contextRoot.children]) contextRoot.remove(c);
+          if (gr) {
+            const bx = new THREE.Box3().setFromObject(model);
+            fetch(outlinesUrl(gr.point.lat, gr.point.lng)).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((j) => {
+              const T = gr.applied.terrain.tops ? { centre: gr.applied.terrain.centre, size: gr.applied.terrain.tops.size, n: gr.applied.terrain.tops.n, heights: gr.applied.terrain.tops.heights } : null;
+              const items = toSceneRings(parseOutlines(j), gr.toScene, { x0: bx.min.x - 2, x1: bx.max.x + 2, z0: bx.min.z - 2, z1: bx.max.z + 2 });
+              const cg = contextGroup(items, T, gr.yAt);
+              contextRoot.add(cg.group);
+              app.log(`Existing buildings: ${cg.total} from LINZ outlines, ${cg.measured} with LiDAR heights. ${OUTLINE_CREDIT}`);
+            }).catch((e) => app.log(`The existing buildings could not be read from LINZ (${(e as Error).message}); the model stands on its ground without them.`));
+          }
           // model-dress: the proposed planting follows the real ground (and the flat contact shade steps aside for it)
           if (dressed) void dressed.replant(gr ? gr.yAt : null).catch((e) => console.warn('planting could not follow the ground', e));
         },
@@ -950,7 +1025,13 @@ export const projectPlan: Project = {
         root: pathRoot, pickables: () => [lidarHolder.children.length ? lidarHolder : ground],
       });
       refreshPath = cp.refresh;
-      modelCards = [mg.el, cp.el]; startSite = mg.start;
+      const fl = flightPanel(app, {
+        name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the scene: the model as opened, moved to stand at the origin (scene = file + shift)',
+        yAt: () => (onModelGround ? onModelGround.yAt : () => 0), pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
+        root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
+      });
+      if (site?.flight) { try { fl.path = readFlight(site.flight); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
+      modelCards = [mg.el, cp.el, fl.el]; startSite = mg.start;
       (window as unknown as { __site?: unknown }).__site = { ground: () => onModelGround, path: cp.state, info: ifcInfo, shift };   // for checks from the console (this tab only)
     }
 
@@ -965,6 +1046,20 @@ export const projectPlan: Project = {
         : input.kind !== 'plan' ? { id: 'ground', label: 'Ground', note: 'flat (assumed) until the site is read in On its site; then LINZ 1 m LiDAR, coloured by slope with a line each metre, with the LINZ parcel', visible: true, object: modelGround }
         : { id: 'ground', label: 'Ground', note: 'model fall or flat; not surveyed', visible: true, object: ground },
     ];
+    // the generated homes get the fly-through editor too (shots on the plan's ground)
+    let planFlight: HTMLElement | null = null;
+    if (input.kind === 'plan') {
+      const from = new URLSearchParams(location.search).get(HANDOFF_PARAM);
+      const pf = flightPanel(app, {
+        name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the plan model’s scene (x = u, z = v, metres)',
+        yAt: () => (x, z) => groundAt(x, -z), pickables: () => [realGround ?? ground, model], root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
+      });
+      const sf = from && handed?.id === from ? handed.site?.flight : null;
+      if (sf) { try { pf.path = readFlight(sf); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
+      planFlight = pf.el;
+      layers.push({ id: 'camera-path', label: 'Fly-through', note: 'the shots and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
+    }
+    if (input.kind !== 'plan') layers.push({ id: 'context', label: 'Existing buildings', note: 'the site as it is now: LINZ building outlines, heights from LiDAR (or assumed where it does not reach); plain blocks', visible: true, object: contextRoot });
     if (input.kind !== 'plan') layers.push({ id: 'camera-path', label: 'Camera path', note: 'the sketch laid on the ground, and the path: amber while proposed, white once a person confirms it', visible: true, object: pathRoot });
     if (topsObj) layers.push({ id: 'tops', label: 'Tree and building tops', note: 'from LINZ’s surface model less its ground model, as plain blocks; trees and buildings are not told apart. Off to start with, so they do not hide the house', visible: false, object: topsObj });
     if (bushObj) layers.push({ id: 'bush', label: 'Bush', note: bushObj.userData.clearing ? 'tree tops from the LiDAR canopy; the clearing round the house, the kept specimens and the species are proposed, not surveyed' : 'tree tops from the LiDAR canopy; native species shown are typical, not surveyed', visible: true, object: bushObj });
@@ -998,12 +1093,12 @@ export const projectPlan: Project = {
       sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
       // the approval record and the pre-check name the version of the plan as dropped, the same code the run report and the
       // ops page use; the pre-check still measures falls on whatever ground is showing
-      panels: input.kind !== 'plan' ? (setTimeout(() => startSite?.(), 0), modelCards) : input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause)] : [],
+      panels: input.kind !== 'plan' ? (setTimeout(() => startSite?.(), 0), modelCards) : input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause), ...(planFlight ? [planFlight] : [])] : [],
       topPanels: input.kind === 'plan' ? [planRunPanel(app, { plan: asDropped ?? input.plan, shown: input.plan, onGround, pause: groundPause })] : [],
       layers,
       focus: centre,
       ...(input.kind === 'plan' && !input.plan.asBuilt ? { look: 'editorial' as const, sunFace, sunHour: input.plan.site?.sunHour ?? terrain?.sunHour, fogScale: terrain ? 0.22 : 1, shade: terrain?.trees?.length ? ((terrain as unknown as { clearing?: unknown }).clearing ? 1.06 : 1.22) : 1 } : {}),
-      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600, look: 'editorial' as const, agx: true, sunFace: new THREE.Vector3(0.8, 0, -0.6), fogScale: 0.35 } : {}),   // model-dress: sky, sun and haze as the example house has them, AgX kept; the sun comes from behind the left of the opening view, so the cast shadow falls forward into it   // room for the LiDAR square round an IFC or GLB
+      ...(input.kind !== 'plan' ? { fog: [160, 1400] as [number, number], maxDistance: 600, look: 'editorial' as const, agx: true, sunFace: new THREE.Vector3(0.8, 0, -0.6), fogScale: Math.min(0.35, 12 / Math.max(12, radius)) } : {}),   // model-dress: sky, sun and haze as the example house has them, AgX kept; the sun comes from behind the left of the opening view, so the cast shadow falls forward into it   // room for the LiDAR square round an IFC or GLB
       ...(terrain ? { maxDistance: 600, shadowRadius: 42, siteChip: { text: terrain.chip ?? (terrain.photo && terrain.photoKind !== 'contours' ? 'Site: LINZ LiDAR and aerial photo' : 'Site: surveyed ground, no aerial photo'), title: terrain.source ?? '' } } : {}),
       ...(terrain && input.kind === 'plan' && input.plan.asBuilt ? { fog: [220, 2600] as [number, number], sunHour: terrain.sunHour ?? 10 } : {}),
       north: siteNorth ? new THREE.Vector2(siteNorth[0], siteNorth[1]) : undefined,

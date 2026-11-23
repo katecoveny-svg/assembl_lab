@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  refineElement, needsFrame,
+  refineElement, needsFrame, refineByShape,
   classify, normClass, namedMaterial, meaningfulColour, glassTint, BRONZE_GREY, RULES, FINISHES, ifcMaterialNames, styleFor,
   makeGrid, markRect, fillTri, fillFootprint, distanceToFootprint, markDoor, planPlanting, allowed, cellAt,
 } from '../../plan-studio/twins/src/twin/dressRules.ts';
@@ -269,4 +269,16 @@ test('ponga and tī kōuka stay out of the opening view’s wedge', () => {
     const p = planPlanting(houseGrid(), { seed, view, maxShrubs: 1400 });
     for (const s of p.shrubs.filter((x) => x.sp === 'ponga' || x.sp === 'tikouka')) assert.ok(Math.acos(s.z / Math.hypot(s.x, s.z)) >= 0.7);
   }
+});
+
+test('a model with no classes is read by shape: a surface far wider than the building is grass, a big sloping surface high up is roof', () => {
+  const brick = classify({ cls: '', material: 'Brick 01' });
+  assert.equal(refineByShape(brick, '', { across: 900, span: 90, slope: 0.1, up: 0.9, high: 0.1 }).finish, 'lawn', 'a topography mesh named brick is still the ground');
+  assert.equal(refineByShape(brick, '', { across: 20, span: 90, slope: 0.1, up: 0.1, high: 0.4 }).finish, 'brick', 'a brick wall stays brick');
+  const alum = classify({ cls: '', material: '!! ALUM' });
+  assert.equal(alum.finish, 'mullion', 'aluminium is the dark frames, not grey steel');
+  assert.equal(refineByShape(alum, '', { across: 40, span: 90, slope: 0.9, up: 0.9, high: 0.7 }).finish, 'roof');
+  assert.equal(refineByShape(alum, '', { across: 2, span: 90, slope: 0.9, up: 0.9, high: 0.7 }).finish, 'mullion', 'a small part is not a roof');
+  assert.equal(refineByShape(classify({ cls: 'IfcWall', material: '' }), 'IfcWall', { across: 900, span: 90, slope: 0, up: 1, high: 0 }).finish, 'render', 'a class decides');
+  assert.equal(classify({ cls: '', material: 'ASPHALT - ROAD' }).finish, 'asphalt');
 });

@@ -16,7 +16,7 @@ import { placeLine } from './facts.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 import {
   SLOTS, slotOf, acceptFor, checkSource, bySlot, nextVersion, sourceExtra, isSource, normalSiteSources, isConfirmed, pathPoints,
-  pointFromSite, pointDiffers, parcelStatus, GROUND, pickModel, hasModel, siteHandoff, blobSlots, withSiteSources, confirmPath, ext,
+  pointFromSite, pointDiffers, parcelStatus, GROUND, pickModel, hasModel, siteHandoff, blobSlots, withSiteSources, confirmPath, ext, backToSource,
 } from './site-sources-rules.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -72,6 +72,8 @@ async function renderPanel(el, ctx) {
   ensureCss();
   const p = ctx.project;
   if (!p) return undefined;
+  // anything the 3D page passed back since (camera path, fly-through, films, shots, the look) comes into the project first
+  if (!placeHere(ctx, p).viewer) { listenBacks(ctx, p); if (await collectBacks(ctx, p)) return ctx.redraw(); }
   const files = (await ctx.store.listFiles({ project_id: p.id })).filter(isSource);
   const place = placeHere(ctx, p);
   // the point is the Site tab's point: bring the record into step with it, once
@@ -361,13 +363,62 @@ function walk(ctx, p) {
     }
     r.state = 'keeping'; ctx.redraw();
     const { putHandoff, HANDOFF_PARAM } = await import('./handoff.js');
+    // the latest saved fly-through goes across too, so the 3D page opens with it to carry on editing
+    const fl = slots.find((s) => s.slot.id === 'flythrough')?.stacks[0]?.latest;
+    if (fl) { try { site.flight = JSON.parse(await (await blobOf(ctx, fl)).text()); } catch { /* opens without it */ } }
     const hid = await putHandoff(blob, name, { site });
+    rememberHandoff(p.id, hid);
     r.href = `${TWIN_DROP}&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`;
     r.state = 'ready'; ctx.redraw();
     const w = window.open(r.href, '_blank'); // may replace this page: the 3D page takes it from storage all the same
     if (w) { r.state = 'opened'; ctx.redraw(); }
   })().catch((err) => { S.walk.delete(p.id); say(p.id, '', `${err?.message ?? 'It could not be passed across.'}`); ctx.redraw(); });
   return undefined;
+}
+
+// ---- what comes back from the 3D page -------------------------------------------------------------------------------------------
+// The 3D page leaves what a person made there under the hand-over's id (handoff.ts putBackRecord, putPathBack). This page remembers
+// the ids it handed across for each project (this browser only) and takes those records into the project's own records: files in
+// Site and sources (Fly-through path, Films and stills), the camera path into the project's site sources. No download and upload.
+const HIDS = (pid) => `assembl-handoffs:${pid}`;
+function rememberHandoff(pid, hid) {
+  try { const list = JSON.parse(localStorage.getItem(HIDS(pid)) ?? '[]').filter((x) => x.id !== hid && Date.now() - x.at < 7 * 864e5); list.push({ id: hid, at: Date.now() }); localStorage.setItem(HIDS(pid), JSON.stringify(list.slice(-12))); } catch { /* private mode: the 3D page still has them for an hour */ }
+}
+const handedFor = (pid) => { try { return JSON.parse(localStorage.getItem(HIDS(pid)) ?? '[]').map((x) => x.id); } catch { return []; } };
+let collecting = false;
+async function collectBacks(ctx, p) {
+  if (collecting) return false;
+  collecting = true;
+  let n = 0;
+  try {
+    const { takeBacks } = await import('./handoff.js');
+    for (const hid of handedFor(p.id)) {
+      for (const rec of await takeBacks(hid)) {
+        const to = backToSource(rec);
+        if (!to) continue;
+        if (to.path) { await withSiteSources(ctx.store, p.id, (ss) => ({ ...ss, camera_path: to.path })); await log(ctx, p.id, 'Camera path from the 3D page', to.path.confirmed_by ? `confirmed by ${to.path.confirmed_by}` : 'proposed'); n++; continue; }
+        const mine = (await ctx.store.listFiles({ project_id: p.id })).filter(isSource);
+        const version = nextVersion(mine, to.slot, to.name);
+        const data = rec.data instanceof Blob ? await rec.data.arrayBuffer() : new TextEncoder().encode(JSON.stringify(rec.data ?? null)).buffer;
+        await ctx.store.putFile({ project_id: p.id, owner_kind: 'source', owner_id: p.id, name: to.name, type: rec.type || (rec.data?.type ?? ''), data, extra: sourceExtra({ slot: to.slot, version, by: ctx.me || '', note: to.note }) });
+        await log(ctx, p.id, `${slotOf(to.slot).word}: saved from the 3D page`, `${to.name} v${version}`);
+        n++;
+      }
+    }
+  } catch (err) { say(p.id, '', `What the 3D page passed back could not be kept: ${err?.message ?? 'no reason given'}`); }
+  finally { collecting = false; }
+  return n > 0;
+}
+let listening = null;
+function listenBacks(ctx, p) {
+  if (listening === p.id) return;
+  listening = p.id;
+  addEventListener('message', (e) => {
+    if (e.origin !== location.origin || listening !== p.id) return;
+    const t = e.data?.type;
+    if (t === 'assembl:back' || t === 'assembl:camera-path') void collectBacks(ctx, p).then((got) => got && ctx.redraw());
+  });
+  addEventListener('focus', () => { if (listening === p.id) void collectBacks(ctx, p).then((got) => got && ctx.redraw()); });
 }
 
 registerProjectPanel({ id: 'site-sources', title: 'Site and sources', tab: 'site', order: 20, render: renderPanel });
