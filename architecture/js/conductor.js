@@ -6,6 +6,8 @@
 //   - a step that throws is run once more (one retry), and its attempts and reason are kept; then it is "failed"
 //   - a step marked paid (it spends money at a provider) is never run again by the conductor. It waits as "needs a person" until a
 //     person approves it, and when it fails it stays "failed" until a person retries it. Every paid request is counted in step.calls
+//   - a step marked person (a gate: a person looks and says yes) waits as "needs a person" the same way, until approve(); it
+//     costs nothing and is never approved by the conductor itself
 //   - every change is written to the job's log (step, event, text, time), newest last, capped at LOG_LIMIT lines
 //
 // Where it runs, and what would move: this runs in the page (conductor.js), reads and writes through the project's records
@@ -22,7 +24,7 @@ export const LOG_LIMIT = 200;
 const iso = () => new Date().toISOString();
 const running = new WeakSet();
 
-/** a new job. steps: [{ id, label, paid? }] in the order they run. */
+/** a new job. steps: [{ id, label, paid?, person? }] in the order they run. */
 export function createJob({ id, kind, project_id, steps }, now = iso) {
   if (!id || !kind || !Array.isArray(steps) || !steps.length) throw new Error('A job needs an id, a kind and steps.');
   const ids = steps.map((s) => s.id);
@@ -30,7 +32,7 @@ export function createJob({ id, kind, project_id, steps }, now = iso) {
   const t = now();
   return {
     v: 1, id: String(id), kind: String(kind), project_id: project_id ?? null, status: STATUS.waiting, created_at: t, updated_at: t,
-    steps: steps.map((s) => ({ id: s.id, label: String(s.label ?? s.id), paid: !!s.paid, status: STATUS.waiting, attempts: 0, calls: 0, reason: '', note: '', approved_by: '', started_at: null, ended_at: null })),
+    steps: steps.map((s) => ({ id: s.id, label: String(s.label ?? s.id), paid: !!s.paid, ...(s.person ? { person: true } : {}), status: STATUS.waiting, attempts: 0, calls: 0, reason: '', note: '', approved_by: '', started_at: null, ended_at: null })),
     log: [],
   };
 }
@@ -69,8 +71,8 @@ export async function runJob(job, handlers, { now = iso, onChange = () => {} } =
       const h = typeof handlers[step.id] === 'function' ? { run: handlers[step.id] } : handlers[step.id];
       if (!h?.run) { step.status = STATUS.failed; step.reason = 'No one is set up to do this step.'; note(job, step, 'failed', step.reason, now); change(); break; }
       if (h.when && !h.when(job)) { step.status = STATUS.done; step.note = 'not needed'; step.ended_at = now(); note(job, step, 'skipped', 'Not needed.', now); change(); continue; }
-      if (step.paid && !step.approved_by) {
-        step.status = STATUS.person; step.reason = String(h.approval?.(job) ?? 'This step costs money. A person has to say go.');
+      if ((step.paid || step.person) && !step.approved_by) {
+        step.status = STATUS.person; step.reason = String(h.approval?.(job) ?? (step.paid ? 'This step costs money. A person has to say go.' : 'A person has to look at this and say yes.'));
         note(job, step, 'needs a person', step.reason, now); change(); break;
       }
       let ok = false;
