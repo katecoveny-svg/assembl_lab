@@ -129,7 +129,7 @@ export class App {
   pipeline: THREE.RenderPipeline | null = null;
   night = 0;
   private when = new Date();
-  private walk = { on: false, yaw: 0, pitch: 0, keys: new Set<string>(), stick: { x: 0, y: 0, on: false } as Stick, pad: null as { remove: () => void } | null };
+  private walk = { on: false, yaw: 0, pitch: 0, reviewEyeY: null as number | null, keys: new Set<string>(), stick: { x: 0, y: 0, on: false } as Stick, pad: null as { remove: () => void } | null };
   private playing: { t0: number; dur: number; rec?: MediaRecorder; chunks?: Blob[] } | null = null;
   private highlight = new THREE.Box3Helper(new THREE.Box3(), 0xd9bacb);
   private labelsEl: HTMLElement;
@@ -824,6 +824,7 @@ export class App {
 
   toggleWalk() {
     this.walk.on = !this.walk.on;
+    this.walk.reviewEyeY = null;
     this.controls.enabled = !this.walk.on;
     const b = document.getElementById('walk')!;
     b.classList.toggle('on', this.walk.on);
@@ -875,8 +876,12 @@ export class App {
       p.x = r.x; p.z = r.z; p.y += (r.y - p.y) * Math.min(1, dt * 10);
     } else {
       p.addScaledVector(fwd, f * speed).addScaledVector(right, s * speed);
-      const g = this.built.support?.(p);
-      if (g != null) p.y += (g + 1.6 - p.y) * Math.min(1, dt * 10);
+      // An opened file has no floor navigation mesh. Keep a chosen review point’s eye level
+      // rather than pulling it down to the site terrain (which may be below the actual room).
+      const y = this.walk.reviewEyeY;
+      const g = y === null ? this.built.support?.(p) : null;
+      if (y !== null) p.y = y;
+      else if (g != null) p.y += (g + 1.6 - p.y) * Math.min(1, dt * 10);
     }
     this.camera.rotation.set(this.walk.pitch, yaw, 0, 'YXZ');
   }
@@ -893,6 +898,7 @@ export class App {
       this.walk.yaw = Math.atan2(-d.x, -d.z);
       this.walk.pitch = Math.max(-1.2, Math.min(1.2, Math.asin(d.y)));
       this.walk.keys.clear();
+      this.walk.reviewEyeY = this.built.walkNav ? null : eye.y;
     } else this.controls.update();
   }
 
