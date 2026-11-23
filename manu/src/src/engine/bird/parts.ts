@@ -223,7 +223,7 @@ export function buildParts(rig: Rig): Parts {
     const sg = sideSign(side);
     const len = rig.tarsusLength;
     skinB.add(
-      tube([0, 0.25, 0.5, 0.75, 1, 1.15].map((t) => new THREE.Vector3(0, 0, t * len)), (t) => [lerp(0.011, 0.017, t), lerp(0.011, 0.017, t)], up, 8),
+      tube([0, 0.25, 0.5, 0.75, 1, 1.15].map((t) => new THREE.Vector3(0, 0, t * len)), (t) => { const r0 = sp.legs.thick ?? 0.011; const r = lerp(r0, r0 * 1.55, t); return [r, r]; }, up, 8),
       `tarsus.${side}`,
       legCol,
     );

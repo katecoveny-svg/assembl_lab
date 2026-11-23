@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { FeatherLook, Region, Species } from './species';
 import type { Rig, Side } from './rig';
-import { SIDES, sideSign } from './rig';
+import { SIDES, sideSign, wingCross } from './rig';
 import type { SurfacePoint } from './loft';
 import { clamp, DEG, lerp, mulberry32, noise1, type Rng, smoothstep } from './util';
 
@@ -349,6 +349,9 @@ function addContour(b: Builder, rig: Rig, rng: Rng) {
       const lb = lookAt(species, s + 0.45, phi);
       width = (width * 2 + (la.fine ? width : la.width) + (lb.fine ? width : lb.width)) / 4;
     }
+    // toward the bill the skin narrows to nothing: the feathers there (lores, chin, forehead)
+    // get smaller with it instead of standing round the bill like petals
+    width *= lerp(1, species.faceTaper ?? 1, smoothstep(loft.sMax - 1.8, loft.sMax - 0.15, s));
     return { look, width };
   };
 
@@ -406,13 +409,14 @@ function addContour(b: Builder, rig: Rig, rng: Rng) {
     // A gradient from front to back: flat and sleek on the forehead, rising steadily through
     // the crown, steepest and most ragged at the top-back, then lying down again on the nape.
     const rise = Math.pow(1 - smoothstep(7.1, 9.0, sj), 1.4);
-    const hair = smoothstep(0.56, 0.86, phi) * rise * smoothstep(6.25, 7.0, sj);
+    const scruff = species.scruff ?? 1;
+    const hair = smoothstep(0.56, 0.86, phi) * rise * smoothstep(6.25, 7.0, sj) * scruff;
     const sleek = smoothstep(0.5, 0.8, phi) * smoothstep(8.5, 9.2, sj);
     // so half of what would be crown scales up there are dark standing feathers instead
     const look = drape ? species.looks.flank : sized.look === species.looks.crown && sj < 8.5 && rng() < 0.5 * smoothstep(0.7, 0.9, phi) ? species.looks.head : sized.look;
     const standing = look.fine ? 0 : hair;
     // and nothing up there is regular: rows broken by gaps, clumps that lean together
-    const unruly = look.fine || look === species.looks.stripe ? 0 : smoothstep(6.0, 6.7, sj) * smoothstep(0.35, 0.6, phi) * (0.35 + 0.65 * rise);
+    const unruly = look.fine || look === species.looks.stripe ? 0 : smoothstep(6.0, 6.7, sj) * smoothstep(0.35, 0.6, phi) * (0.35 + 0.65 * rise) * scruff;
     const clump = noise1(sj * 11 + phi * 37, 51);
     if (unruly > 0 && clump > 0.45 && rng() < 0.4 * unruly) return;
     // the gorget is laid out on its own, in arcs around the chin (addGorget)
@@ -932,7 +936,7 @@ function addRestWing(b: Builder, rig: Rig, side: Side, rng: Rng) {
   const ta = T.droop * DEG;
   const tailDir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
   const tailUp = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
-  const meet = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(tailDir, T.length[1] * W.rest.cross[0]).addScaledVector(tailUp, 0.035);
+  const meet = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(tailDir, T.length[1] * wingCross(loft, species)).addScaledVector(tailUp, 0.035);
   // (the two wingtips cross over the tail: the left one lies on top)
   meet.x = W.rest.cross[1] * sg;
   if (sg > 0) meet.addScaledVector(tailUp, 0.014);

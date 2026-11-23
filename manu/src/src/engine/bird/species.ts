@@ -98,6 +98,12 @@ export interface WingDef {
   rest: { from: [number, number]; to: [number, number]; width: [number, number, number]; height: number; cross: [number, number] };
   color: number;
   sheen: number;
+  /**
+   * Folded wing chord, wrist to the tip of the longest primary (model units). When given, the
+   * point where the wingtips meet over the tail is placed from it (see wingCross in rig.ts)
+   * instead of from rest.cross[0].
+   */
+  chord?: number;
   /** a pale patch on the folded wing's coverts: rows as 0 (lesser, at the shoulder) … 1 (greater), v across the strip -1 … 1 */
   bar?: { rows: [number, number]; v: [number, number]; base: number; tip: number };
 }
@@ -155,8 +161,12 @@ export interface Species {
   shading: { flank: number; under: number; patch: number; /** bronze-gold wash that comes and goes over the plain feathers */ gold: number; goldAmount: number };
   wing: WingDef;
   tail: TailDef;
-  legs: { spread: number; hip: [number, number, number]; toe: number; perchRadius: number; color: number };
+  legs: { spread: number; hip: [number, number, number]; toe: number; perchRadius: number; color: number; /** tarsus radius (model units); default 0.011 at the foot to 0.017 at the top */ thick?: number };
   behaviour: BehaviourDef;
+  /** how ragged and standing the crown and nape feathers are (the hummingbird's haircut = 1, default) */
+  scruff?: number;
+  /** feather size at the bill base as a share of the tract's size (default 1: no taper) */
+  faceTaper?: number;
 }
 
 const scale = { round: 1, cup: 0.5, fine: true, spacing: 0.8, fuzz: 0 };

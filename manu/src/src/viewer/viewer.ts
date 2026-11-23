@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { createBackdrop, type BackdropTheme } from '../engine/env/backdrop';
+import type { BackdropTheme } from '../engine/env/backdrop';
 import { createBranch, GRIP_X, loadBranch, PERCH_RANGE, perchFrames } from '../engine/env/branch';
 import { createBird, type BirdHandle, type HopLayer } from '../engine/bird';
 import { NZ_SPECIES } from '../engine/nz/species';
@@ -71,18 +71,38 @@ export async function createViewer(canvas: HTMLCanvasElement, opts: ViewerOption
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, 1, 0.02, 120);
 
-  // reflections: the library's backdrop sphere, baked once in warm room light
+  // reflections: a softbox studio, baked once (assembl 3D standard): a dim warm room, one big
+  // panel overhead and three tall strip boxes round the set so a sheen reads from any side,
+  // and a faint dusty-rose bounce from below. The iridescent feathers pick their flash from it.
   {
     const envScene = new THREE.Scene();
-    const env = createBackdrop(ROOM);
-    env.material.uniforms.uEnv.value = 1;
-    envScene.add(env.mesh);
+    const room = new THREE.Mesh(new THREE.SphereGeometry(20, 32, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(ROOM.mid[0], ROOM.mid[1], ROOM.mid[2]).multiplyScalar(0.42), side: THREE.BackSide }));
+    envScene.add(room);
+    const panel = (w: number, h: number, c: THREE.Color, pos: THREE.Vector3) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+      m.position.copy(pos);
+      m.lookAt(0, 0.5, 0);
+      envScene.add(m);
+      return m;
+    };
+    panel(9, 9, new THREE.Color(1, 0.97, 0.94).multiplyScalar(3.2), new THREE.Vector3(0, 9, 0.5));
+    for (let i = 0; i < 3; i++) {
+      const a = 0.6 + (i * Math.PI * 2) / 3;
+      panel(2.2, 10, new THREE.Color(1, 0.96, 0.93).multiplyScalar(2.2), new THREE.Vector3(Math.sin(a) * 8, 1.5, Math.cos(a) * 8));
+    }
+    // dusty rose #D9BACB, faint
+    panel(16, 16, new THREE.Color(0xd9bacb).multiplyScalar(0.25), new THREE.Vector3(0, -6, 0));
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(envScene, 0.02).texture;
-    scene.environmentIntensity = 1.15;
+    scene.environmentIntensity = 1.0;
     pmrem.dispose();
-    env.material.dispose();
-    env.mesh.geometry.dispose();
+    envScene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) {
+        m.geometry.dispose();
+        (m.material as THREE.Material).dispose();
+      }
+    });
   }
 
   const hemi = new THREE.HemisphereLight(0xfff6f0, 0x5a4450, 0.75);
