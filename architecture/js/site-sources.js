@@ -356,6 +356,7 @@ function walk(ctx, p) {
     let name = main.name;
     if (kindOf(name) === 'ifczip' && KINDS.ifczip) { const z = await (await import('./ifc-summary.js')).unzipIfc(new Uint8Array(await blob.arrayBuffer())); blob = new Blob([z.bytes]); name = z.name; }
     const site = siteHandoff(pr, mine);
+    try { const sb = (await import('./agents/site-brief-rules.js')).briefForHandoff(pr.site_brief?.brief); if (sb) site.brief = sb; } catch { /* opens without it */ }   // site agent (feat/site-agent): site.brief, additive; this line only
     site.files = {};
     for (const id of blobSlots()) {
       const f = slots.find((s) => s.slot.id === id)?.stacks[0]?.latest;

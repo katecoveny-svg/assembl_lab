@@ -110,7 +110,31 @@ Return only what is printed on the sheet. Copy text exactly as printed; never co
 - is_drawing_sheet: false for a photograph, a letter, a blank page or anything that is not a drawing sheet.
 - register: only when this sheet prints a drawing register, drawing list or sheet index, one entry per row (number, title, revision). Otherwise an empty list.
 - confidence from 0 to 1 for how clearly the title block could be read. In notes, say what was hard to read.`;
-const MODES = { sheet: { schema: SHEET_SCHEMA, system: () => SHEET_SYSTEM, ask: "Read this sheet's title block.", prompts: SHEET_PROMPTS }, plan: { schema: SCHEMA, system: () => SYSTEM, ask: "Read this floor plan." }, site: { schema: SITE_SCHEMA, system: () => SITE_SYSTEM, ask: "Read this site plan." }, elevation: { schema: ELEV_SCHEMA, system: () => ELEV_SYSTEM, ask: "Read these elevations." } };
+// A fourth kind of read, for the site agent (architecture/js/site-brief.js): one site plan sheet, for what the site brief needs that
+// the sheet's own text cannot give: the north point, the labelled existing buildings and future stages as outlines, the boundary,
+// parking and the levels printed on it. Pixels like the others; the browser scales them from the printed scale and the paper size.
+export const SITEBRIEF_PROMPTS = "site-brief 2026-11-23a";
+const labelled = obj({ label: { ...str, description: "The label exactly as printed next to or inside it (e.g. 'EXISTING DWELLING', 'GARAGE'), or '' when none" }, points: { ...pts, description: "Its outline, corner points in order" }, confidence: num });
+export const SITEBRIEF_SCHEMA = obj({
+  scale_text: { type: ["string", "null"], description: "The drawing scale printed for the site plan view, or null" },
+  north_deg: { type: ["number", "null"], description: "Rotation of the north point from straight up, degrees clockwise, or null when no north point is drawn" },
+  boundary: { ...pts, description: "The property boundary, corner points in order, or [] when none is drawn" },
+  existing: arr(labelled),
+  future: arr(labelled),
+  parking: arr(obj({ points: pts, count: { type: ["number", "null"], description: "The number of spaces if printed or drawn as separate bays, else null" }, confidence: num })),
+  levels: arr(obj({ text: { ...str, description: "The level exactly as printed, e.g. 'FFL 12.50' or 'RL 8.25'" }, value: { type: ["number", "null"] }, x: num, y: num })),
+  notes: str,
+});
+export const SITEBRIEF_SYSTEM = `You read one site plan for assembl, a New Zealand architecture tool, so a site brief can say what the drawing shows.
+Return only what is drawn or printed, in image pixel coordinates (origin top-left, x right, y down). Copy labels exactly as printed.
+- north_deg: the north point's rotation from straight up, clockwise, in degrees; null if no north point is drawn.
+- boundary: the property boundary line as a polygon.
+- existing: each existing building or structure the drawing marks as existing, with its printed label (or '' if none) and its outline.
+- future: each future stage or future building, with its label and outline.
+- parking: each parking area or bay group, with the number of spaces only when printed or drawn as separate bays.
+- levels: every printed floor or ground level (FFL, RL, GL and the like) with its value in metres and where it is written.
+Leave out contours, hatching, dimensions and notes. Give each element a confidence from 0 to 1; never invent anything you cannot see.`;
+const MODES = { sheet: { schema: SHEET_SCHEMA, system: () => SHEET_SYSTEM, ask: "Read this sheet's title block.", prompts: SHEET_PROMPTS }, plan: { schema: SCHEMA, system: () => SYSTEM, ask: "Read this floor plan." }, site: { schema: SITE_SCHEMA, system: () => SITE_SYSTEM, ask: "Read this site plan." }, elevation: { schema: ELEV_SCHEMA, system: () => ELEV_SYSTEM, ask: "Read these elevations." }, sitebrief: { schema: SITEBRIEF_SCHEMA, system: () => SITEBRIEF_SYSTEM, ask: "Read this site plan for the site brief.", prompts: SITEBRIEF_PROMPTS } };
 
 const TIMEOUT_MS = 60_000;
 const NAMES = ["openai", "gemini", "anthropic"];
@@ -213,7 +237,7 @@ const json = (status, body) => new Response(JSON.stringify(body), { status, head
 export async function onRequest({ request, env }) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   const providers = chain(env), active = providers.filter((p) => p.configured);
-  if (request.method === "GET") return json(200, { type: "assembl.planstudio.read.status", configured: active.length > 0, model: (active[0] || providers[0]).model, host: "cloudflare", prompts: PROMPTS, providers });
+  if (request.method === "GET") return json(200, { type: "assembl.planstudio.read.status", configured: active.length > 0, model: (active[0] || providers[0]).model, host: "cloudflare", prompts: PROMPTS, modes: Object.fromEntries(Object.entries(MODES).map(([k, m]) => [k, m.prompts || PROMPTS])), providers });
   if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
   if (!active.length) return json(503, { error: "not_configured" });
   const today = new Date().toISOString().slice(0, 10); if (today !== day) { day = today; used = 0; }
