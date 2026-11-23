@@ -455,7 +455,7 @@ export class App {
     if (mood !== this.edMood) {
       this.edMood = mood;
       const old = [this.edSky, this.edEnv];
-      this.edSky = editorialSky(mood);
+      this.edSky = editorialSky(mood, !!this.built.agx);   // an opened model gets a sky with real cloud
       this.edEnv = null;
       if (this.pmrem) { try { this.edEnv = this.pmrem.fromEquirectangular(this.edSky).texture; } catch (e) { console.warn('sky light failed', e); } }
       setTimeout(() => old.forEach((t) => t?.dispose()), 500);
@@ -543,8 +543,9 @@ export class App {
       // open at the golden hour that lights the face being looked at
       let best = -2;
       // an opened model (agx): a daytime sun raking across the face, high enough for a clear cast shadow on the ground
-      const hours = this.built.agx ? [9, 9.5, 10, 10.5, 11, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5] : [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5];
-      const [lo, hi] = this.built.agx ? [22, 48] : [9, 27];
+      // an opened model opens at golden hour (warm, low sun, as architects' renders are lit), still high enough for a cast shadow
+      const hours = this.built.agx ? [7, 7.5, 8, 8.5, 9, 17, 17.5, 18, 18.5, 19] : [7, 7.5, 8, 8.5, 18, 18.5, 19, 19.5];
+      const [lo, hi] = this.built.agx ? [12, 25] : [9, 27];
       for (const h of hours) {
         const sd = this.sunDir(App.nzToUTC(y, 12, 21, h));
         if (sd.alt < lo || sd.alt > hi) continue;

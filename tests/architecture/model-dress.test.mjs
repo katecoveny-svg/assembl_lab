@@ -290,3 +290,18 @@ test('a dark paint or powder coat is charcoal-bronze metal, never white plaster;
   assert.equal(classify({ cls: 'IfcWall', material: 'Brick - Black' }).finish, 'brick', 'a dark brick is still brick');
   assert.ok(BRONZE_GREY[0] > BRONZE_GREY[2] + 0.2, 'the default glass tint is warm');
 });
+
+test('the model’s own paths and forecourt: pale clay pavers, with planting massed in beds along their edges, not dotted on grass', () => {
+  const brick = classify({ cls: '', material: 'DefaultMaterial' });
+  assert.equal(refineByShape(brick, '', { across: 140, span: 90, slope: 0, up: 0.95, high: 0.05, fill: 0.08 }).finish, 'paving', 'a sparse path network is paving');
+  assert.equal(refineByShape(brick, '', { across: 140, span: 90, slope: 0, up: 0.95, high: 0.05, fill: 0.9 }).finish, 'lawn', 'a solid site surface is still ground');
+  const g = houseGrid();
+  // a forecourt of paving in front of the house: z 6 to 14, x -8 to 8
+  markRect(g, g.hard, -8, 6, 8, 14);
+  const p = planPlanting(g, { seed: 4, baseY: 0 });
+  assert.match(p.said, /massed beds/);
+  assert.ok(p.shrubs.length > 20, `${p.shrubs.length} plants`);
+  const Dh = (x, z) => { let d = Infinity; for (let i = -8; i <= 8; i += 0.5) for (let j = 4; j <= 20.5; j += 0.5) if ((j >= 6 && j <= 14) || (i >= -1 && i <= 1.5 && j <= 20.5)) d = Math.min(d, Math.hypot(x - i, z - j)); return d; };   // the forecourt, and the fixture's own path
+  for (const s of p.shrubs) { assert.ok(Dh(s.x, s.z) < 3.8, `by the paving: ${s.x.toFixed(1)}, ${s.z.toFixed(1)}`); assert.ok(allowed(g, s.x, s.z), 'never on the paving or in a door strip'); }
+  assert.ok(p.shrubs.some((s) => s.sp === 'hebe' || s.sp === 'coprosma'), 'low shrubs among the grasses');
+});

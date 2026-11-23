@@ -24,8 +24,8 @@ export const LOOK: Record<Mood, { sun: number; sunI: number; hemi: number; fill:
 };
 
 /** an equirectangular sky gradient with the sun's glow at its centre column (u = 0.5) */
-export function editorialSky(mood: Mood): THREE.CanvasTexture {
-  const W = 1024, H = 512;
+export function editorialSky(mood: Mood, clouds = false): THREE.CanvasTexture {
+  const W = clouds ? 2048 : 1024, H = W / 2;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const g = c.getContext('2d')!;
@@ -40,20 +40,20 @@ export function editorialSky(mood: Mood): THREE.CanvasTexture {
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   // the sun's glow, low for golden hour and dusk
-  const sy = mood === 'day' ? 120 : mood === 'golden' ? 205 : 246;
+  const S = W / 1024, sy = (mood === 'day' ? 120 : mood === 'golden' ? 205 : 246) * S;
   for (const dx of [-W, 0, W]) {
-    const sg = g.createRadialGradient(W / 2 + dx, sy, 4, W / 2 + dx, sy, mood === 'day' ? 150 : 210);
+    const sg = g.createRadialGradient(W / 2 + dx, sy, 4 * S, W / 2 + dx, sy, (mood === 'day' ? 150 : 210) * S);
     sg.addColorStop(0, 'rgba(255,246,226,0.95)');
     sg.addColorStop(0.22, mood === 'dusk' ? 'rgba(255,180,128,0.5)' : 'rgba(255,236,202,0.42)');
     sg.addColorStop(1, 'rgba(255,205,160,0)');
     g.fillStyle = sg;
-    g.fillRect(0, 0, W, H / 2 + 14);
+    g.fillRect(0, 0, W, H / 2 + 14 * S);
   }
   // long, thin cloud bands near the horizon
   let s = 7;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
   for (let i = 0; i < 26; i++) {
-    const x = rnd() * W, y = H * (0.3 + rnd() * 0.17), w = 90 + rnd() * 240, h = 5 + rnd() * 10;
+    const x = rnd() * W, y = H * (0.3 + rnd() * 0.17), w = (90 + rnd() * 240) * S, h = (5 + rnd() * 10) * S;
     const cg = g.createRadialGradient(x, y, 0, x, y, w);
     cg.addColorStop(0, mood === 'dusk' ? 'rgba(240,170,150,0.16)' : 'rgba(255,250,244,0.2)');
     cg.addColorStop(1, 'rgba(255,250,244,0)');
@@ -62,6 +62,30 @@ export function editorialSky(mood: Mood): THREE.CanvasTexture {
     g.fillStyle = cg;
     for (const dx of [-W, 0, W]) { g.beginPath(); g.arc(x + dx, y, w, 0, Math.PI * 2); g.fill(); }
     g.restore();
+  }
+  // a sky with real cloud (an opened model, agent/model-dress-1123): soft cumulus with lit tops and shaded undersides, warm on
+  // the sun's side at golden hour. Drawn in code, seeded, so every visit has the same sky
+  if (clouds && mood !== 'dusk') {
+    let q = 19;
+    const r2 = () => ((q = (q * 48271) % 2147483647) / 2147483647);
+    const lit = mood === 'golden' ? [255, 232, 206] : [255, 255, 255], shade = mood === 'golden' ? [184, 172, 178] : [196, 206, 222], K = W / 1024;
+    for (let i = 0; i < 22; i++) {
+      const cx = r2() * W, cy = H * (0.27 + r2() * 0.18), size = (18 + r2() * 30) * (1.5 - (cy / H) * 1.6) * K;
+      const warm = mood === 'golden' ? Math.max(0, 1 - Math.min(Math.abs(cx - W / 2), W - Math.abs(cx - W / 2)) / (W * 0.35)) : 0;
+      for (let k = 0; k < 9; k++) {
+        const px = cx + (r2() - 0.5) * size * 3.2, py = cy + (r2() - 0.6) * size * 0.9, pr = size * (0.5 + r2() * 0.7);
+        for (const dx of [-W, 0, W]) {
+          // the shaded underside first, then the lit top over it
+          const sh = g.createRadialGradient(px + dx, py + pr * 0.25, 0, px + dx, py + pr * 0.25, pr);
+          sh.addColorStop(0, `rgba(${shade.join(',')},0.6)`); sh.addColorStop(0.7, `rgba(${shade.join(',')},0.35)`); sh.addColorStop(1, `rgba(${shade.join(',')},0)`);
+          g.fillStyle = sh; g.beginPath(); g.arc(px + dx, py + pr * 0.25, pr, 0, Math.PI * 2); g.fill();
+          const lc = lit.map((v, j) => Math.round(v * (1 - warm * 0.1) + (j === 0 ? 255 : j === 1 ? 200 : 150) * warm * 0.1));
+          const lt = g.createRadialGradient(px + dx, py - pr * 0.2, 0, px + dx, py - pr * 0.2, pr * 0.85);
+          lt.addColorStop(0, `rgba(${lc.join(',')},0.95)`); lt.addColorStop(0.7, `rgba(${lc.join(',')},0.7)`); lt.addColorStop(1, `rgba(${lc.join(',')},0)`);
+          g.fillStyle = lt; g.beginPath(); g.arc(px + dx, py - pr * 0.2, pr * 0.85, 0, Math.PI * 2); g.fill();
+        }
+      }
+    }
   }
   const t = new THREE.CanvasTexture(c);
   t.mapping = THREE.EquirectangularReflectionMapping;

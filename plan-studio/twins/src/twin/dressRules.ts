@@ -19,7 +19,7 @@ export const FINISHES: Record<Finish, { label: string; colour: number }> = {
   render: { label: 'fine sand-finish render', colour: 0xd9d1c4 },
   plaster: { label: 'painted plaster', colour: 0xece7de },
   slab: { label: 'honed concrete', colour: 0xb9b4ab },
-  paving: { label: 'pale grey concrete pavers', colour: 0xbab5ad },
+  paving: { label: 'pale clay pavers', colour: 0xd2c2a8 },
   decking: { label: 'hardwood decking', colour: 0x8c6447 },
   frameMetal: { label: 'powder-coated aluminium frame', colour: 0x2e2f31 },
   frameTimber: { label: 'stained timber frame', colour: 0x7a5a40 },
@@ -219,10 +219,12 @@ export function needsFrame(cls: string, finishes: Finish[]) {
  * the building is the site's ground (grass); a large sloping surface high on the building is roof. Only parts whose finish came
  * from a material name alone or the catch-all are re-read; anything the class or a specific name decided stays.
  */
-export function refineByShape(c: Classified, cls: string, shape: { across: number; span: number; slope: number; up: number; high: number }): Classified {
+export function refineByShape(c: Classified, cls: string, shape: { across: number; span: number; slope: number; up: number; high: number; fill?: number }): Classified {
   if (normClass(cls) && normClass(cls) !== 'IfcBuildingElementProxy') return c;
   if (c.finish === 'glass') return c;
   const loose = /^(mat-|default|proxy)/.test(c.rule);
+  // a wide but sparse flat surface at ground level (a network of paths and a forecourt drawn as one site element): pale pavers
+  if (c.finish !== 'asphalt' && c.finish !== 'roof' && shape.across > 20 && shape.up > 0.8 && shape.high < 0.5 && (shape.fill ?? 1) < 0.3) return { finish: 'paving', rule: 'paths-by-shape', why: 'a sparse flat surface at ground level, wider than a room: the site’s paths and forecourt, taken as pale clay pavers' };
   if (c.finish !== 'asphalt' && c.finish !== 'roof' && shape.across > Math.max(40, shape.span * 1.2) && shape.up > 0.6 && shape.high < 0.5) return { finish: 'lawn', rule: 'site-by-size', why: 'a surface far wider than the building: the site’s ground, taken as grass' };
   if (c.finish === 'brick' && shape.up > 0.8 && shape.high < 0.2) return { finish: 'paving', rule: 'paving-by-shape', why: 'a flat surface at ground level named as brick: taken as pale pavers, as the renders show the forecourt' };
   if (loose && shape.across > 6 && shape.slope > 0.5 && shape.high > 0.45 && c.finish !== 'brick' && c.finish !== 'asphalt') return { finish: 'roof', rule: 'roof-by-shape', why: 'a large sloping surface high on the building: taken as roof' + (c.why.includes('(“') ? c.why.slice(c.why.indexOf(' (“')) : '') };
@@ -364,9 +366,11 @@ export function fillFootprint(g: Grid) {
   for (let k = 0; k < out.length; k++) if (!out[k]) g.occ[k] = 1;
 }
 /** metres from each cell to the nearest footprint cell (two-pass chamfer) */
-export function distanceToFootprint(g: Grid) {
-  const D = new Float32Array(g.occ.length).fill(1e9), s = g.cell, dg = s * Math.SQRT2;
-  for (let k = 0; k < D.length; k++) if (g.occ[k]) D[k] = 0;
+export function distanceToFootprint(g: Grid) { return distanceTo(g, g.occ); }
+/** metres from each cell to the nearest marked cell of a layer (two-pass chamfer) */
+export function distanceTo(g: Grid, layer: Uint8Array) {
+  const D = new Float32Array(layer.length).fill(1e9), s = g.cell, dg = s * Math.SQRT2;
+  for (let k = 0; k < D.length; k++) if (layer[k]) D[k] = 0;
   for (let j = 0; j < g.nz; j++) for (let i = 0; i < g.nx; i++) {
     const k = j * g.nx + i; let d = D[k];
     if (i > 0) d = Math.min(d, D[k - 1] + s);
@@ -388,7 +392,7 @@ export function markDoor(g: Grid, box: { min: [number, number]; max: [number, nu
   else markRect(g, g.clear, cx - reach, cz - d / 2 - 1, cx + reach, cz + d / 2 + 1);
 }
 
-export type Shrub = 'harakeke' | 'tussock' | 'carex' | 'ponga' | 'tikouka';
+export type Shrub = 'harakeke' | 'tussock' | 'carex' | 'ponga' | 'tikouka' | 'hebe' | 'coprosma';
 export type TreeKind = 'pohutukawa' | 'kanuka';
 export interface Spot { x: number; z: number; y: number; sp: Shrub; s: number }
 export interface TreeSpot { x: number; z: number; y: number; h: number; r: number; kind: TreeKind }
@@ -441,7 +445,7 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
   const centre = (k: number): [number, number] => { const i = k % g.nx, j = (k - i) / g.nx; return [g.x0 + (i + 0.5) * g.cell + (R() - 0.5) * g.cell * 0.8, g.z0 + (j + 0.5) * g.cell + (R() - 0.5) * g.cell * 0.8]; };
   const yAt = (k: number) => (Number.isFinite(g.y[k]) ? g.y[k] : base);
   const shrubs: Spot[] = [], trees: TreeSpot[] = [];
-  const SPACE: Record<Shrub, number> = { harakeke: 1.5, tussock: 0.75, carex: 0.6, ponga: 3.2, tikouka: 4.5 };
+  const SPACE: Record<Shrub, number> = { harakeke: 1.3, tussock: 0.7, carex: 0.55, ponga: 3.2, tikouka: 4.5, hebe: 0.9, coprosma: 1.0 };
   const near = (x: number, z: number, d: number, list: { x: number; z: number }[]) => list.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < d * d);
   const maxS = o.maxShrubs ?? 900, maxT = o.maxTrees ?? 14;
   // the opening view's wedge: no trees there, and no tall shrubs (ponga, tī kōuka) to stand in front of the camera
@@ -452,11 +456,28 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
     const a = Math.acos(Math.max(-1, Math.min(1, (fx * px + fz * pz) / ((Math.hypot(fx, fz) || 1) * (Math.hypot(px, pz) || 1)))));
     return a < half;
   };
+  // the model's own paving (paths, a forecourt): planting goes in massed beds along its edges, not as single plants on grass
+  let hardN = 0; for (let k = 0; k < g.hard.length; k++) hardN += g.hard[k];
+  const edges = hardN * g.cell * g.cell > 60 && !beds,   // more than a garden path: a forecourt or a path network
+  Dh = edges ? distanceTo(g, g.hard) : null;
   // shrubs
   for (const k of order) {
     if (shrubs.length >= maxS) break;
     const d = D[k];
     const inBed = g.soft[k] === 2, inLawn = g.soft[k] === 1;
+    if (edges && Dh) {
+      if (!(Dh[k] > 0.3 && Dh[k] < 3.4 && d > 1.8)) continue;
+      const [x, z] = centre(k);
+      if (!allowed(g, x, z, 0.3)) continue;
+      if (vw && inView(x, z) && Math.hypot(x - vw.from[0], z - vw.from[1]) < Math.hypot(vw.at[0] - vw.from[0], vw.at[1] - vw.from[1]) * 0.45) continue;
+      // beds come and go along the paths, packed where they are: harakeke and tussock for height, hebe and coprosma low, carex at the edge
+      if (blob(x, z, 6) < 0.32) continue;
+      const pick = blob(x + 50, z - 30, 2.6), edge = Dh[k] < 0.9;
+      const sp: Shrub = edge ? (pick < 0.5 ? 'carex' : 'hebe') : pick < 0.3 ? 'harakeke' : pick < 0.55 ? 'tussock' : pick < 0.78 ? 'hebe' : 'coprosma';
+      if (near(x, z, SPACE[sp] * 0.85, shrubs.filter((q) => q.sp === sp)) || near(x, z, 0.45, shrubs)) continue;
+      shrubs.push({ x, z, y: yAt(k), sp, s: sp === 'harakeke' ? 1.1 + R() * 0.5 : sp === 'tussock' ? 1.0 + R() * 0.4 : sp === 'carex' ? 0.8 + R() * 0.3 : 0.9 + R() * 0.4 });
+      continue;
+    }
     if (where === 'model') { if (!(inBed || (!beds && inLawn && d > 1.8 && d < 4.5))) continue; }
     else if (!(d > 1.8 && d < 6.5)) continue;   // a clear band of 1.8 m round the footprint
     const [x, z] = centre(k);
@@ -486,7 +507,7 @@ export function planPlanting(g: Grid, o: PlanOpts = {}): PlantPlan {
     const kind: TreeKind = R() < 0.45 ? 'pohutukawa' : 'kanuka';
     trees.push(kind === 'pohutukawa' ? { x, z, y: yAt(k), kind, h: 7 + R() * 3, r: 4 + R() * 1.6 } : { x, z, y: yAt(k), kind, h: 6.5 + R() * 3, r: 2.2 + R() * 0.9 });
   }
-  const said = where === 'model'
+  const said = edges ? 'in massed beds along the model’s paths and forecourt, with trees on its ground' : where === 'model'
     ? (beds ? 'in the model’s own planting areas' : 'along the model’s lawn by the building') + ', with trees on its lawn and ground'
     : 'in a ring on open ground round the footprint, with trees standing back';
   return { shrubs, trees, where, said };
