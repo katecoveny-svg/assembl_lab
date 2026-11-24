@@ -1,107 +1,117 @@
 <!doctype html>
 <html lang="en-NZ">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>assembl lab · NZ architecture, assembled</title>
-<meta name="description" content="Drop a floor plan, JPEG, PDF, IFC or GLB and get a measured 3D twin on real LINZ ground, checked by five specialist agents and ready for photorealistic fly-throughs. Built by assembl in Tāmaki Makaurau Auckland.">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="assembl lab">
-<meta property="og:title" content="assembl lab · NZ architecture, assembled">
-<meta property="og:description" content="Measured 3D architectural twins on real LINZ LiDAR ground, five specialist review agents, and photorealistic fly-throughs. Built by assembl in Tāmaki Makaurau Auckland.">
-<meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/model16a.webp">
-<meta property="og:url" content="https://lab.assembl.co.nz/">
-<meta name="theme-color" content="#FFFDFB">
-<link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
-<link rel="canonical" href="https://lab.assembl.co.nz/">
-<link rel="preload" as="image" href="/lab/v3/img/house.webp?v=20261123b" fetchpriority="high">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/lab/v3/lab.css?v=20261123b">
-<script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js" } }</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assembl Lab | Interactive 3D tools for Aotearoa</title>
+  <meta name="description" content="Explore architecture, Auckland transport, roof solar potential and predicted Waitematā tides.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Assembl Lab | Interactive 3D tools for Aotearoa">
+  <meta property="og:description" content="Explore buildings, public transport, roof solar potential and Waitematā tide predictions.">
+  <meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/tiles/plan-drop.webp">
+  <meta property="og:url" content="https://lab.assembl.co.nz/">
+  <meta name="theme-color" content="#FFFDFB">
+  <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
+  <link rel="canonical" href="https://lab.assembl.co.nz/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/lab/v3/front-door.css?v=20261124t">
 </head>
 <body>
-<canvas id="field" aria-hidden="true"></canvas>
-<a class="skip" href="#hero-h">Skip to main content</a>
-
-<header class="top">
-  <a class="mark" href="#top" aria-label="assembl lab, back to top">assembl<span>.</span><em class="lab">lab</em></a>
-  <nav class="nav" aria-label="Primary"><a href="/plan-studio/twins/drop/">Drop a plan</a><a href="#workspace">Agents</a><a href="#more">More</a><a href="/architecture/">Architecture<span class="nav-long"> workspace</span></a><a href="https://www.assembl.co.nz/">assembl.co.nz&nbsp;↗</a></nav>
-</header>
-
-<main>
-
-<section class="window hero" id="top" data-scene="house" aria-labelledby="hero-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <h1 id="hero-h" tabindex="-1">Architecture, assembled.</h1>
-    <p class="sub">Drop a PDF, JPEG, IFC or GLB. Measured 3D twins on real LINZ ground, five specialist agents, and photorealistic fly-throughs — built in <span lang="mi">Tāmaki Makaurau</span> Auckland.</p>
-    <a class="cta" href="/plan-studio/twins/drop/">Drop a plan or model</a>
-  </div>
-  <p class="word" aria-hidden="true"><span class="ws"><span style="--k:0"><i>a</i></span><span style="--k:1"><i>s</i></span><span style="--k:2"><i>s</i></span><span style="--k:3"><i>e</i></span><span style="--k:4"><i>m</i></span><span style="--k:5"><i>b</i></span><span style="--k:6"><i>l</i></span><span class="dot" style="--k:7"><i>.</i></span></span></p>
-</section>
-
-<section class="window work house" id="house" data-scene="plan16a" aria-labelledby="house-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <p class="k mono">01 / Plan to 3D twin <span class="truth">Live</span></p>
-    <h2 id="house-h">From 2D plans, JPEGs or BIM to a walkable 3D model.</h2>
-    <p class="say">Drop a PDF, JPEG, IFC or GLB. Placed on real LINZ 1 m LiDAR ground with aerial imagery, reversible finishes, real Aotearoa sun angles, and services pre-checked in your browser.</p>
-    <button class="turn" type="button" aria-pressed="false" data-on="Back to the plan" data-off="See the model">See the model</button>
-    <div class="acts"><a class="open solid" href="/plan-studio/twins/drop/">Drop your plan / IFC / GLB&nbsp;↗</a><a class="open" href="/plan-studio/twins/16a/">Walk the 16A twin&nbsp;↗</a><a class="open" href="/plan-studio/twins/services/">See its services&nbsp;↗</a><a class="open" href="/architecture/">Open workspace&nbsp;↗</a></div>
-  </div>
-</section>
-
-<section class="window work2" id="workspace" data-scene="model16a" aria-labelledby="workspace-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <p class="k mono">02 / Specialist agents &amp; studio <span class="truth">Live</span></p>
-    <h2 id="workspace-h">Five specialist agents, one practice workspace.</h2>
-    <p class="say">Plan &amp; BIM intake, LINZ site context, materials &amp; interiors, camera sequences, and independent QA check every project revision — preparing measured reports and photorealistic fly-throughs while people stay in charge of approvals.</p>
-    <a class="open solid" href="/architecture/">Open architecture workspace&nbsp;↗</a>
-  </div>
-</section>
-
-<section class="more-band" id="more" aria-labelledby="more-h">
-  <div class="mb-in">
-    <p class="mb-k mono">03 / Assembl Lab suite</p>
-    <h2 id="more-h">One workflow, from intake to film.</h2>
-    <div class="tiles">
-      <a class="tile" href="/plan-studio/twins/drop/"><span class="pic"><img src="/lab/v3/img/tiles/plan-drop.webp" width="880" height="550" loading="lazy" alt="A 3D architectural model raised from a dropped floor plan at dusk."></span><span class="t-name">Drop a plan / IFC / GLB</span><span class="t-line">Drop a PDF, JPEG, IFC or GLB and inspect it in 3D on LINZ LiDAR ground and aerial photography.</span><span class="chip mono">Live · multi-format</span></a>
-      <a class="tile" href="/architecture/"><span class="pic"><img src="/lab/v3/img/tiles/architecture.webp" width="880" height="550" loading="lazy" alt="The assembl architecture workspace showing projects, specialist agents, files, models and approvals."></span><span class="t-name">Architecture workspace</span><span class="t-line">Projects, drawings, 3D models, 5 specialist agents, fly-throughs and client approvals in one place.</span><span class="chip mono">Live · 5 specialists</span></a>
-      <a class="tile" href="/plan-studio/twins/16a/"><span class="pic"><img src="/lab/v3/img/tiles/model-16a.webp" width="880" height="550" loading="lazy" alt="A dark timber home with two decks built in three.js from consent drawings."></span><span class="t-name">The 16A reference twin</span><span class="t-line">A measured timber home built from consent drawings, with full services coordination alongside.</span><span class="chip mono">Live · reference</span></a>
-      <a class="tile" href="/roof-solar/"><span class="pic"><img src="/lab/v3/img/tiles/roof-solar.webp" width="880" height="550" loading="lazy" alt="A roof in Wellington with solar panels, neighbours and trees drawn from LINZ LiDAR."></span><span class="t-name">Roof solar twin</span><span class="t-line">Any New Zealand roof from open LINZ LiDAR, real sun paths for a year, and likely solar output.</span><span class="chip mono">Measured roof · estimate</span></a>
-      <a class="tile" href="/auckland/live/" data-needs="/auckland/live/" data-needs-text="&lt;title&gt;Auckland live" hidden><span class="pic"><img src="/lab/v3/img/tiles/auckland-live.webp" width="880" height="550" loading="lazy" alt="The Auckland city centre and harbour in 3D with live public transport positions."></span><span class="t-name">Auckland live</span><span class="t-line">Buses, trains and ferries where they are now, on a 3D city.</span><span class="chip mono">Live positions</span></a>
-    </div>
-  </div>
-</section>
-
-<section class="window start" id="start" data-scene="sketches" aria-labelledby="start-h">
-  <div class="lines" aria-hidden="true"></div>
-  <div class="cells">
-    <h2 id="start-h">Bring a project to assembl.</h2>
-    <a class="btn" href="/architecture/">Open architecture workspace</a>
-    <p class="foot mono">assembl. lab · <span lang="mi">Tāmaki Makaurau</span> Auckland</p>
-  </div>
-</section>
-
-</main>
-
-<footer class="site-foot">
-  <div class="sf-in">
-    <p class="sf-mark"><a href="https://www.assembl.co.nz/" aria-label="assembl home">assembl<span>.</span></a></p>
-    <p class="sf-line">NZ architecture twins, specialist agents and visualisations from assembl. <span lang="mi">Tāmaki Makaurau</span> Auckland, <span lang="mi">Aotearoa</span> New Zealand.</p>
-    <nav class="sf-nav" aria-label="Footer">
-      <div><p class="mono">Architecture lab</p><a href="/plan-studio/twins/drop/">Drop a plan / IFC / GLB</a><a href="/architecture/">Architecture workspace</a><a href="/plan-studio/twins/16a/">16A reference twin</a><a href="/roof-solar/">Roof solar twin</a></div>
-      <div><p class="mono">assembl</p><a href="https://www.assembl.co.nz/">assembl.co.nz</a><a href="https://www.assembl.co.nz/#faq">FAQ</a><a href="https://www.assembl.co.nz/#start">Start a conversation</a></div>
-      <div><p class="mono">Legal</p><a href="https://www.assembl.co.nz/privacy/">Privacy policy</a><a href="https://www.assembl.co.nz/terms/">Terms and conditions</a></div>
+  <a class="skip" href="#main">Skip to main content</a>
+  <header class="shell site-header">
+    <a class="brand" href="/" aria-label="Assembl Lab home">assembl.<span>LAB</span></a>
+    <nav aria-label="Main navigation">
+      <a href="/architecture/">Architecture</a>
+      <a href="/auckland/live/">Auckland Live</a>
+      <a href="/roof-solar/">Roof solar</a>
+      <a href="https://assembl-waitemata-tides.pages.dev/">Tides</a>
     </nav>
-    <p class="sf-fine mono">© 2026 assembl. Models and AI studies in the lab are visualisations, not photographs or certified drawings.</p>
-  </div>
-</footer>
+  </header>
 
-<script type="module" src="/lab/v3/field.js?v=20261123b"></script>
-<script type="module" src="/lab/v3/motion.js?v=20261122a"></script>
-<script type="module" src="/lab/v3/more.js?v=20261123a"></script>
+  <main id="main" tabindex="-1" class="shell">
+    <section id="top" class="hero" aria-labelledby="intro">
+      <div class="hero-copy">
+        <p class="label">THE ASSEMBL LAB</p>
+        <h1 id="intro">Aotearoa,<br>in three dimensions.</h1>
+        <p class="intro">Walk through a building before it’s built. Follow Auckland’s public transport. See how much sun reaches a New Zealand roof.</p>
+        <div class="hero-actions">
+          <a class="button" href="/plan-studio/twins/drop/">Open Plan Studio</a>
+          <a class="jump" href="#tools">Explore the tools <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+      <figure class="hero-figure">
+        <img src="/lab/v3/img/tiles/plan-drop.webp" width="880" height="550" fetchpriority="high" alt="A 3D model of a timber pavilion, lit from inside at dusk.">
+        <figcaption><span>FROM PLAN STUDIO</span><span>3D MODEL PREVIEW</span></figcaption>
+      </figure>
+    </section>
+
+    <section id="tools" class="tool-section" aria-labelledby="tools-heading">
+      <div id="more" class="section-heading">
+        <p class="label">THE TOOLKIT</p>
+        <h2 id="tools-heading">Choose what to explore.</h2>
+      </div>
+      <div class="tool-grid">
+        <a id="workspace" class="tool" href="/architecture/">
+          <img src="/lab/v3/img/tiles/model-16a.webp" width="880" height="550" loading="lazy" decoding="async" alt="">
+          <div class="tool-copy">
+            <p class="label">01 / BUILDINGS</p>
+            <h3>Architecture workspace</h3>
+            <p>Bring drawings, 3D models, revisions and reviews together.</p>
+            <span class="tool-action">Open workspace <span aria-hidden="true">↗</span></span>
+          </div>
+        </a>
+        <a class="tool" href="/auckland/live/">
+          <img src="/lab/v3/img/tiles/auckland-live.webp" width="880" height="550" loading="lazy" decoding="async" alt="">
+          <div class="tool-copy">
+            <p class="label">02 / TRANSPORT</p>
+            <h3>Auckland Live</h3>
+            <p>Explore the city in 3D and see reported bus, train and ferry positions.</p>
+            <span class="tool-action">Open Auckland Live <span aria-hidden="true">↗</span></span>
+          </div>
+        </a>
+        <a class="tool" href="/roof-solar/">
+          <img src="/lab/v3/img/tiles/roof-solar.webp" width="880" height="550" loading="lazy" decoding="async" alt="">
+          <div class="tool-copy">
+            <p class="label">03 / ENERGY</p>
+            <h3>Roof solar twin</h3>
+            <p>Use LINZ LiDAR and modelled sunlight to estimate a roof’s solar potential.</p>
+            <span class="tool-action">Open Roof Solar <span aria-hidden="true">↗</span></span>
+          </div>
+        </a>
+        <a class="tool" href="https://assembl-waitemata-tides.pages.dev/">
+          <img src="/lab/v3/img/tiles/waitemata-tides.webp" width="880" height="550" loading="lazy" decoding="async" alt="">
+          <div class="tool-copy">
+            <p class="label">04 / HARBOUR</p>
+            <h3>Waitematā Tides</h3>
+            <p>Read predicted high and low tides at Auckland and see the selected tide against a harbour wharf.</p>
+            <span class="tool-action">Open Waitematā Tides <span aria-hidden="true">↗</span></span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section id="house" class="examples" aria-labelledby="examples-heading">
+      <div>
+        <p class="label">TRY A WORKED EXAMPLE</p>
+        <h2 id="examples-heading">Walk the 16A model.</h2>
+        <p>Explore two timber homes modelled from consent drawings, or inspect how their building services fit together.</p>
+      </div>
+      <div class="example-actions">
+        <a class="button" href="/plan-studio/twins/16a/">Walk the model</a>
+        <a class="jump" href="/plan-studio/twins/services/">See building services <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer id="start" class="shell site-footer">
+    <p>Built by <a href="https://www.assembl.co.nz/">assembl.</a> in <span lang="mi">Tāmaki Makaurau</span> Auckland.</p>
+    <nav aria-label="Footer navigation">
+      <a href="https://www.assembl.co.nz/privacy/">Privacy</a>
+      <a href="https://www.assembl.co.nz/terms/">Terms</a>
+    </nav>
+  </footer>
 </body>
 </html>
