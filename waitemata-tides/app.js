@@ -37,9 +37,11 @@ function drawGraph(records) {
 }
 function updateScene() {
   const event = days[selectedDate]?.[selectedIndex];
-  if (!event || !scene || !sceneOpen) return;
+  if (!event) return;
+  el('helperEvent').textContent = dateText(selectedDate)+' · '+event[4]+' tide at '+event[0]+' '+event[3]+' · '+event[1]+' m above Auckland chart datum.';
+  if (!scene || !sceneOpen) return;
   scene.setHeight(Number(event[1]));
-  el('sceneNote').textContent = event[4]+' tide · '+event[0]+' '+event[3]+' · '+event[1]+' m above Auckland chart datum. Illustrative wharf and shoreline.';
+  el('sceneNote').textContent = dateText(selectedDate)+' · Predicted '+event[4].toLowerCase()+' tide · '+event[0]+' '+event[3]+' · '+event[1]+' m above Auckland chart datum. LINZ station 070 · not an observation.';
 }
 function showDay(day) {
   if (!days[day]) {
@@ -72,17 +74,20 @@ function pick(day) {
 async function toggleScene() {
   sceneOpen = !sceneOpen;
   el('toggle').setAttribute('aria-expanded', String(sceneOpen));
-  el('toggle').textContent = sceneOpen ? 'Close harbour view' : 'Open harbour view ↗';
+  el('toggle').textContent = sceneOpen ? 'Use no-GPU view' : 'Open harbour view ↗';
   el('sceneBox').hidden = !sceneOpen;
-  if (!sceneOpen) return;
+  scene?.setActive(sceneOpen);
+  if (!sceneOpen) { const url=new URL(location.href);url.searchParams.set('view','table');history.replaceState(null,'',url);return; }
+  const viewUrl=new URL(location.href);viewUrl.searchParams.delete('view');history.replaceState(null,'',viewUrl);
   el('sceneNote').textContent = 'Opening harbour view…';
   try {
     sceneTask ??= import('./harbour.js').then(mod => mod.createHarbour(el('canvasHolder')));
     scene = await sceneTask;
+    scene.setActive(sceneOpen);
     updateScene();
   } catch {
     sceneTask = null;
-    el('sceneNote').textContent = '3D is unavailable in this browser. The selected tide is listed above.';
+    el('sceneNote').textContent = '3D is unavailable in this browser. The selected tide is listed in the table below.';
   }
 }
 try {
@@ -101,6 +106,13 @@ try {
   el('day').onchange = event=>pick(event.target.value);
   el('toggle').onclick = toggleScene;
   el('eventChoice').onchange = event=>{selectedIndex=Number(event.target.value);updateScene();};
+  let motionPaused=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el('motion').textContent=motionPaused?'Animate water':'Pause water';
+  el('motion').onclick=()=>{motionPaused=!motionPaused;scene?.pause(motionPaused);el('motion').textContent=motionPaused?'Animate water':'Pause water';};
+  el('zoomIn').onclick=()=>scene?.zoom(.85);
+  el('zoomOut').onclick=()=>scene?.zoom(1.15);
+  el('resetView').onclick=()=>scene?.reset();
+  if(new URL(location.href).searchParams.get('view')!=='table') toggleScene();
   function refresh() {
     const today = inAuckland();
     if (today !== settledDay && !new URL(location.href).searchParams.has('date') && days[today]) showDay(today);

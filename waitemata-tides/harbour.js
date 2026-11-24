@@ -1,4 +1,7 @@
 import * as T from './vendor/three.module.min.js';
+import { Water } from './vendor/Water.js';
+import { Sky } from './vendor/Sky.js';
+import { OrbitControls } from './vendor/OrbitControls.js';
 
 // Original illustrative harbour section. Vertical units at the wharf are metres.
 export function createHarbour(holder) {
@@ -24,19 +27,13 @@ export function createHarbour(holder) {
     const o=mesh(new T.CylinderGeometry(r,r,direction.length(),8),material,parent);
     o.position.copy(start).lerp(end,.5);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),direction.normalize());return o;
   }
-  const sky=mesh(new T.SphereGeometry(930,40,18),new T.ShaderMaterial({
-    side:T.BackSide,depthWrite:false,
-    vertexShader:'varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:`varying vec3 v;void main(){
-      vec3 d=normalize(v);float h=max(d.y,0.);
-      vec3 c=mix(vec3(.91,.75,.55),vec3(.28,.52,.69),smoothstep(-.04,.5,h));
-      float sun=max(dot(d,normalize(vec3(-.36,.14,-1.))),0.);
-      c+=vec3(.32,.22,.11)*pow(sun,24.)+vec3(.5,.46,.29)*smoothstep(.99977,.99993,sun);
-      gl_FragColor=vec4(c,1.);
-      #include <colorspace_fragment>
-    }`
-  }));
-  sky.renderOrder=-10;
+  renderer.toneMapping=T.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=.65;
+  const sky=new Sky();sky.scale.setScalar(900);scene.add(sky);
+  const sun=new T.Vector3(-.36,.14,-1).normalize();
+  Object.assign(sky.material.uniforms.turbidity,{value:5});
+  sky.material.uniforms.rayleigh.value=2;
+  sky.material.uniforms.sunPosition.value.copy(sun);
   scene.add(new T.HemisphereLight(0xffefe1,0x6c8890,2.1));
   const light=new T.DirectionalLight(0xffdda9,2.05);light.position.set(-50,35,-25);scene.add(light);
   function ridge(depth, width, base, amplitude, color, island=false) {
@@ -54,22 +51,14 @@ export function createHarbour(holder) {
     mesh(geo,new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide}));
   }
   ridge(310,2200,3,20,0x849492);ridge(185,520,1,18,0x476d69,true);
-  const water=mesh(new T.PlaneGeometry(1500,1500),new T.ShaderMaterial({
-    vertexShader:'varying vec3 p;void main(){vec4 w=modelMatrix*vec4(position,1.);p=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-    fragmentShader:`varying vec3 p;void main(){
-      vec2 q=p.xz;float d=length(cameraPosition-p);
-      float ripple=sin(q.y*7.8+1.5*sin(q.x*1.34+q.y*1.2)+sin(q.y*2.5+q.x*.74));
-      float fine=sin(q.y*15.4+2.2*sin(q.x*1.8+q.y*2.3)+sin(q.x*2.1));
-      float broad=sin(q.y*1.24+q.x*.19+.9*sin(q.x*.48));
-      float fres=pow(1.-abs(normalize(cameraPosition-p).y),3.);
-      vec3 c=mix(vec3(.032,.15,.16),vec3(.26,.43,.45),fres);
-      c+=vec3(.038,.062,.059)*(.45*broad+.32*ripple+.23*fine+.55)*(1.-smoothstep(25.,170.,d));
-      float shine=exp(-pow((q.x+(.29*abs(q.y))+2.)/(2.+.14*abs(q.y)),2.));
-      c+=vec3(.51,.37,.20)*shine*smoothstep(.36,.97,.45*ripple+.27*broad+.28*fine)*(1.-smoothstep(80.,200.,d));
-      c=mix(c,vec3(.58,.65,.60),smoothstep(70.,550.,d));gl_FragColor=vec4(c,1.);
-      #include <colorspace_fragment>
-    }`
-  }));water.rotation.x=-Math.PI/2;
+  const normals=new T.TextureLoader().load('./vendor/waternormals.jpg',()=>render());
+  normals.wrapS=normals.wrapT=T.RepeatWrapping;
+  const water=new Water(new T.PlaneGeometry(1500,1500),{
+    textureWidth:512,textureHeight:512,waterNormals:normals,
+    sunDirection:sun,sunColor:0xffead1,waterColor:0x124e53,
+    distortionScale:2.4,fog:true
+  });
+  scene.add(water);water.rotation.x=-Math.PI/2;
   const timbers=[0x866242,0x907153,0x7a5b44,0x80664d,0x9b7854].map(c=>mat(c));
   const pile=mat(0x54483a),wet=mat(0x35473e),iron=mat(0x384449),wood=mat(0xa36941);
   for(const x of [-7.3,-3.7]){
@@ -102,14 +91,40 @@ export function createHarbour(holder) {
   bar(0,.70,-.13,1.33,.14,1.25,iron,boat);
   rod([0,.5,.55],[0,7.7,.55],.048,cream,boat);rod([0,1.48,.55],[0,1.51,-2],.054,wood,boat);
   for(const [x,z] of [[0,3.18],[0,-2.9],[-1,0],[1,0]])rod([0,7.4,.55],[x,.52,z],.014,iron,boat);
+  camera.position.set(7.5,7.5,14);
+  const controls=new OrbitControls(camera,canvas);
+  controls.target.set(-1,2.65,-10);
+  controls.enablePan=false;controls.minDistance=12;controls.maxDistance=65;
+  controls.minPolarAngle=.65;controls.maxPolarAngle=1.42;
+  controls.minAzimuthAngle=-.65;controls.maxAzimuthAngle=.85;
+  controls.update();
+  canvas.setAttribute('aria-label','Illustrative harbour. Drag to look around; use zoom buttons. Water is not a measured level or flood extent.');
+  let paused=matchMedia('(prefers-reduced-motion: reduce)').matches,visible=true,active=true,last=0;
   function render() {
     const w=holder.clientWidth,h=canvas.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w,h,false);camera.aspect=w/h;
-    const compact=w/h<1.6;
-    camera.position.set(compact?5.5:7.5,compact?7.9:7.5,compact?17:14);
-    camera.lookAt(compact?-2.8:-1,2.65,-10);camera.updateProjectionMatrix();renderer.render(scene,camera);
+    camera.updateProjectionMatrix();renderer.render(scene,camera);
   }
+  controls.addEventListener('change',render);
   new ResizeObserver(render).observe(holder);
-  return {setHeight(height){water.position.y=height;boat.position.y=height;render();}};
+  new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;}).observe(holder);
+  canvas.addEventListener('webglcontextlost',event=>{
+    event.preventDefault();active=false;
+    holder.textContent='3D is unavailable. Use the tide table below; predictions remain available.';
+  });
+  renderer.setAnimationLoop(time=>{
+    const dt=Math.min((time-last)/1000,.05);last=time;
+    if(paused||!visible||!active||document.hidden)return;
+    water.material.uniforms.time.value+=dt*.4;
+    boat.rotation.z=Math.sin(time*.0007)*.012;
+    render();
+  });
+  return {
+    setHeight(height){water.position.y=height;boat.position.y=height;render();},
+    setActive(value){active=value;},
+    pause(value){paused=value;render();},
+    zoom(factor){camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);controls.update();render();},
+    reset(){camera.position.set(7.5,7.5,14);controls.target.set(-1,2.65,-10);controls.update();render();}
+  };
 }
