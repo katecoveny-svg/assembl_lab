@@ -548,9 +548,19 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
           const a = document.createElement('a');
           a.className = 'pill solid';
           a.href = '?drop=1';
-          a.textContent = 'Drop your own plan';
+          a.textContent = 'Drop your own plan / IFC / GLB';
           a.style.cssText = 'position:absolute;left:12px;top:12px;z-index:6;text-decoration:none;box-shadow:0 6px 24px rgba(51,33,47,.18)';
           app.canvas.parentElement!.append(a);
+          const hdr = document.querySelector('header');
+          if (hdr && !hdr.querySelector('#dropYourOwnHdr')) {
+            const b = document.createElement('a');
+            b.id = 'dropYourOwnHdr';
+            b.className = 'pill solid';
+            b.href = '?drop=1';
+            b.textContent = 'Drop plan / IFC / GLB';
+            b.style.cssText = 'text-decoration:none;display:inline-flex;align-items:center;white-space:nowrap';
+            hdr.insertBefore(b, hdr.querySelector('#panelToggle'));
+          }
         }
         return { input: { kind: 'plan', plan, name: plan.job?.title ?? 'Plan model' }, palette: 'cedar-charcoal' };
       }
