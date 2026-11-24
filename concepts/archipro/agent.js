@@ -1,4 +1,4 @@
-// The studio guide: a live agent (Claude Fable 5.2 through /api/archipro-agent) that answers questions and drives this
+// The studio guide: a live agent through /api/archipro-agent that answers questions and drives this
 // page with the same controls a person has: search the sample catalogue, specify, change the house, show and print the
 // drawing set, show products on the 16A twin. Replies are spoken through /api/archipro-voice (ElevenLabs, a New Zealand
 // voice) when that's configured, otherwise by the browser's own voice, and the label says which. Without the agent key
@@ -9,6 +9,7 @@ const panel = $("#guide"), log = $("#guide-log"), form = $("#guide-form"), input
 const status = $("#guide-status"), voiceBtn = $("#guide-voice"), voiceL = $("#guide-voice-l"), mic = $("#guide-mic");
 const small = () => matchMedia("(max-width: 600px)").matches;
 
+let voiceMessage = "";
 let down = false, live = null, route = "primary", modelName = "Claude Fable 5.2", busy = false, voiceOn = true, eleven = false;
 const history = [];
 const TRY = ["Fix the kitchen ventilation, then show me the schedule", "Make the living wing 11 metres and print the plans", "Which cladding suits a sea-spray site?",
@@ -34,7 +35,9 @@ function assemble() {
 const vv = window.visualViewport;
 function fitPanel() {
   if (panel.hidden || innerWidth > 600 || !vv) { panel.style.height = panel.style.top = panel.style.bottom = ""; return; }
-  const isLow = panel.classList.contains("low"), h = Math.round(isLow ? vv.height * (panel.classList.contains("touring") ? 0.3 : 0.42) : Math.min(780, vv.height - 20));
+  const isLow = panel.classList.contains("low");
+  const ratio = panel.classList.contains("voice-recovery") ? 0.46 : panel.classList.contains("touring") ? 0.3 : 0.42;
+  const h = Math.round(isLow ? vv.height * ratio : Math.min(780, vv.height - 20));
   panel.style.top = `${Math.round(isLow ? vv.offsetTop + vv.height - h - 8 : vv.offsetTop + 10)}px`; panel.style.bottom = "auto"; panel.style.height = `${h}px`;
 }
 vv?.addEventListener("resize", fitPanel); vv?.addEventListener("scroll", fitPanel); addEventListener("orientationchange", () => setTimeout(fitPanel, 300));
@@ -58,10 +61,12 @@ async function check() {
 }
 function label() {
   status.textContent = live ? `Live · ${modelName} · acts on this page only` : (down ? "Model unreachable · scripted replies, not AI · acts on this page only" : "Offline here · scripted replies, not AI · acts on this page only");
+  voiceBtn.setAttribute("aria-pressed", String(voiceOn));
+  voiceBtn.textContent = voiceOn ? "Voice on" : "Voice off";
   const bv = browserVoice();
-  voiceL.textContent = !voiceOn ? "Replies are text only" : eleven ? "New Zealand voice by ElevenLabs" : bv ? `Browser voice: ${bv.name}${/NZ/i.test(bv.lang) ? "" : " (not a New Zealand voice)"}` : "No voice in this browser";
+  voiceL.textContent = !voiceOn ? "Replies are text only" : voiceMessage || (eleven ? "ElevenLabs selected" : bv ? `Browser voice: ${bv.name}${/NZ/i.test(bv.lang) ? "" : " (not a New Zealand voice)"}` : "Device speech may be unavailable");
 }
-voiceBtn.addEventListener("click", () => { voiceOn = !voiceOn; voiceBtn.setAttribute("aria-pressed", String(voiceOn)); voiceBtn.textContent = voiceOn ? "Voice on" : "Voice off"; if (!voiceOn) stopVoice(); label(); });
+voiceBtn.addEventListener("click", () => { voiceOn = !voiceOn; voiceMessage = ""; if (!voiceOn) stopVoice(); label(); });
 check();
 
 // ---------------------------------------------------------------------------------------------- the conversation
@@ -178,48 +183,176 @@ function scripted(t) {
 }
 
 // ---------------------------------------------------------------------------------------------- voice out
-// one audio element for the ElevenLabs voice, unlocked by the first tap or key in the guide: phones (Safari above all)
-// only let a page play sound that starts inside a tap, and the voice arrives a moment after the tap
-const player = new Audio(); player.preload = "auto"; let audioUrl = "", unlocked = false;
-const SILENT = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAACAAAA/oAR0dHR0dHR0dHR0dHYmJiYmJiYmJiYmJifHx8fHx8fHx8fHx8fJaWlpaWlpaWlpaWlrGxsbGxsbGxsbGxsbHLy8vLy8vLy8vLy8vl5eXl5eXl5eXl5eXl////////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQC1AAAAAAAAAP6yysejgAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
-function unlock() {
-  if (unlocked) return; unlocked = true;
-  try { player.src = SILENT; const p = player.play(); if (p && p.then) p.then(() => player.pause()).catch(() => { unlocked = false; }); } catch { unlocked = false; }
-  if ("speechSynthesis" in window) { try { speechSynthesis.speak(new SpeechSynthesisUtterance("")); } catch {} }
-}
-for (const t of [panel, fab, ...document.querySelectorAll("[data-guide-open], #room-ask")]) { t.addEventListener("pointerdown", unlock, true); t.addEventListener("keydown", unlock, true); }
+// Keep the same media element across lines. A retry must call play() in the click
+// handler with the real clip already attached, before any fetch or await.
+const player = new Audio();
+player.preload = "auto";
+let activeLine = null, deviceVoiceChosen = false;
+const playLine = $("#guide-play-line"), captions = $("#guide-captions");
 function browserVoice() {
-  const vs = speechSynthesis?.getVoices?.() || [];
-  return vs.find((v) => /en[-_]NZ/i.test(v.lang)) || vs.find((v) => /en[-_]AU/i.test(v.lang)) || vs.find((v) => /en[-_]GB/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
+  const voices = window.speechSynthesis?.getVoices() || [];
+  return ["NZ", "AU", "GB"].map(region => voices.find(v => v.lang.replace("_", "-").toUpperCase() === "EN-" + region)).find(Boolean)
+    || voices.find(v => /^en/i.test(v.lang)) || null;
 }
-if ("speechSynthesis" in window) speechSynthesis.addEventListener?.("voiceschanged", label);
-function stopVoice() { player.pause(); if (audioUrl) { URL.revokeObjectURL(audioUrl); audioUrl = ""; } if ("speechSynthesis" in window) speechSynthesis.cancel(); }
-async function voice(text) {
-  if (!voiceOn) return;
-  const clean = text.replace(/[*_#`>]/g, "").replace(/\s+/g, " ").trim().slice(0, 680);
-  if (eleven) {
-    try {
-      const r = await fetch("/api/archipro-voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: clean }) });
-      if (r.ok) { const blob = await r.blob(); stopVoice(); audioUrl = URL.createObjectURL(blob); player.src = audioUrl; await player.play(); return; }
-      if (r.status === 503) { eleven = false; label(); }
-    } catch { /* fall through to the browser voice */ }
+window.speechSynthesis?.addEventListener("voiceschanged", label);
+function finishLine(line) {
+  if (activeLine !== line) return;
+  activeLine = null;
+  clearTimeout(line.timer);
+  line.controller.abort();
+  player.onended = player.onerror = null;
+  player.pause();
+  if (line.url) {
+    player.removeAttribute("src");
+    player.load();
+    URL.revokeObjectURL(line.url);
   }
-  if (!("speechSynthesis" in window)) return;
-  const u = new SpeechSynthesisUtterance(clean), v = browserVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-NZ";
-  u.rate = 1.02; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  window.speechSynthesis?.cancel();
+  panel.classList.remove("voice-recovery");
+  playLine.hidden = captions.hidden = true;
+  fitPanel();
+  line.resolve();
+}
+function stopVoice() {
+  if (activeLine) finishLine(activeLine);
+  voiceMessage = ""; label();
+}
+function schedule(line, fn, ms) {
+  clearTimeout(line.timer);
+  line.timer = setTimeout(() => { if (activeLine === line) fn(); }, ms);
+}
+function recovery(line, action, message) {
+  if (activeLine !== line) return;
+  clearTimeout(line.timer);
+  line.retry = action;
+  voiceMessage = message;
+  playLine.hidden = captions.hidden = false;
+  panel.classList.add("voice-recovery");
+  if (panel.classList.contains("tucked")) { panel.classList.remove("tucked"); pill.hidden = true; }
+  fitPanel(); label();
+}
+function playPending() {
+  const line = activeLine;
+  if (!line?.retry) return;
+  // User has taken control of an automatic tour. Scrolling to the controls
+  // must not cancel the line they just requested.
+  auto = false;
+  const retry = line.retry;
+  line.retry = null;
+  retry();
+}
+playLine.addEventListener("click", playPending);
+captions.addEventListener("click", () => {
+  voiceOn = false;
+  voiceMessage = "";
+  label();
+  stopVoice();
+});
+function playing(line, message) {
+  if (activeLine !== line) return;
+  line.retry = null;
+  panel.classList.remove("voice-recovery");
+  playLine.hidden = captions.hidden = true;
+  voiceMessage = message;
+  fitPanel(); label();
+  schedule(line, () => finishLine(line), Math.max(20000, line.text.length * 160 + 6000));
+}
+function useDevice(line, cause) {
+  if (activeLine !== line) return;
+  const synth = window.speechSynthesis;
+  const unavailable = () => {
+    voiceMessage = cause + " Device speech unavailable; captions are on.";
+    line.retry = null;
+    playLine.hidden = captions.hidden = true;
+    panel.classList.remove("voice-recovery");
+    if (touring) say(voiceMessage, { speak: false, note: true });
+    label();
+    schedule(line, () => finishLine(line), line.readTime);
+  };
+  if (!synth || !window.SpeechSynthesisUtterance) return unavailable();
+  const speak = () => {
+    if (activeLine !== line) return;
+    if (line.utterance) {
+      line.utterance.onstart = line.utterance.onend = line.utterance.onerror = null;
+      synth.cancel();
+    }
+    const utterance = new SpeechSynthesisUtterance(line.text);
+    const voice = browserVoice();
+    if (voice) utterance.voice = voice;
+    utterance.lang = voice?.lang || "en-NZ";
+    utterance.rate = 1.02;
+    line.utterance = utterance;
+    utterance.onstart = () => {
+      if (activeLine !== line) return;
+      deviceVoiceChosen = true;
+      playing(line, cause + " Using " + (voice?.name || "the device voice") + ".");
+    };
+    utterance.onend = () => finishLine(line);
+    utterance.onerror = e => {
+      if (activeLine !== line) return;
+      if (e.error === "not-allowed") recovery(line, speak, cause + " Tap Play narration for the device voice.");
+      else unavailable();
+    };
+    schedule(line, () => recovery(line, speak, cause + " Tap Play narration to start device speech."), 4500);
+    try { synth.speak(utterance); } catch { unavailable(); }
+  };
+  if (deviceVoiceChosen) speak();
+  else recovery(line, speak, cause + " Tap Play narration for the device voice.");
+}
+function playClip(line) {
+  if (activeLine !== line) return;
+  const prompt = () => recovery(line, () => playClip(line), "Audio is ready. Tap Play narration to hear this line.");
+  player.onended = () => finishLine(line);
+  player.onerror = () => useDevice(line, "The audio could not be decoded.");
+  schedule(line, prompt, 5000);
+  try {
+    player.play().then(() => playing(line, "Narration by ElevenLabs.")).catch(err => {
+      if (activeLine !== line) return;
+      if (err.name === "NotAllowedError" || err.name === "AbortError") prompt();
+      else useDevice(line, "The audio could not play.");
+    });
+  } catch { prompt(); }
+}
+function voice(text) {
+  stopVoice();
+  if (!voiceOn || panel.hidden) return Promise.resolve();
+  const clean = text.replace(/[*_#`>]/g, "").replace(/\s+/g, " ").trim().slice(0, 680);
+  return new Promise(resolve => {
+    const line = { text: clean, resolve, controller: new AbortController(), readTime: Math.max(2600, clean.length * 62) };
+    activeLine = line;
+    if (!eleven) { useDevice(line, "ElevenLabs is unavailable."); return; }
+    voiceMessage = "Preparing narration…"; label();
+    schedule(line, () => line.controller.abort(), 15000);
+    (async () => {
+      try {
+        const response = await fetch("/api/archipro-voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: clean }), signal: line.controller.signal });
+        if (!response.ok) throw new Error("TTS unavailable");
+        const blob = await response.blob();
+        if (activeLine !== line) return;
+        if (!blob.size || !blob.type.startsWith("audio/")) throw new Error("Invalid audio");
+        line.url = URL.createObjectURL(blob);
+        player.src = line.url;
+        if (touring && auto)
+          recovery(line, () => playClip(line), "Audio is ready. Tap Play narration to hear this line.");
+        else playClip(line);
+      } catch { useDevice(line, "ElevenLabs narration is unavailable."); }
+    })();
+  });
 }
 
 // ---------------------------------------------------------------------------------------------- voice in (where the browser supports it)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SR) {
+const micAllowed = (document.permissionsPolicy || document.featurePolicy)?.allowsFeature?.("microphone") !== false;
+if (SR && micAllowed) {
   mic.hidden = false; let rec = null;
   mic.addEventListener("click", () => {
     if (rec) { rec.stop(); return; }
     stopVoice(); rec = new SR(); rec.lang = "en-NZ"; rec.interimResults = true; rec.maxAlternatives = 1;
     mic.setAttribute("aria-pressed", "true"); input.placeholder = "Listening…";
     rec.onresult = (e) => { const r = e.results[e.results.length - 1]; input.value = r[0].transcript; if (r.isFinal && input.value.trim() && !busy) { const t = input.value.trim(); rec.stop(); send(t); } };
-    rec.onend = rec.onerror = () => { mic.setAttribute("aria-pressed", "false"); input.placeholder = "Ask, or tell it what to change"; rec = null; };
-    rec.start();
+    rec.onerror = e => { say(e.error === "not-allowed" ? "Microphone access is unavailable. You can type your question." : "Voice input stopped. You can type your question.", { speak: false, note: true }); };
+    rec.onend = () => { mic.setAttribute("aria-pressed", "false"); input.placeholder = "Ask, or tell it what to change"; rec = null; };
+    try { rec.start(); } catch { rec.onend(); say("Voice input is unavailable. You can type your question.", { speak: false, note: true }); }
   });
 }
 panel.addEventListener("pointerdown", () => { if (!touring && panel.classList.contains("low")) { panel.classList.remove("low"); fitPanel(); } });
@@ -258,46 +391,14 @@ function glide(el, ms, id) {
     scrollTo({ top: from + (to - from) * e, behavior: "instant" }); if (k < 1) requestAnimationFrame(frame); else gliding = 0;
   })(t0);
 }
-// The browser only allows sound after a tap. Until then the tour runs on captions; the first tap brings the voice in.
-let soundBlocked = false, auto = false;
-function blocked(then) {
-  if (!soundBlocked) { soundBlocked = true; say("Captions are on. Tap anywhere for the voice.", { speak: false, note: true }); }
-  then();
-}
-addEventListener("pointerdown", () => { if (soundBlocked) { soundBlocked = false; unlock(); } }, true);
-addEventListener("keydown", () => { if (soundBlocked) { soundBlocked = false; unlock(); } }, true);
-function speakWait(text, id) {
-  return new Promise((resolve) => {
-    let over = false; const done = () => { if (!over) { over = true; resolve(); } };
-    const quiet = () => setTimeout(done, Math.max(2600, text.length * 62));
-    if (!voiceOn || soundBlocked) return quiet();
-    const clean = text.replace(/\s+/g, " ").trim().slice(0, 680);
-    (async () => {
-      if (eleven) {
-        try {
-          const r = await fetch("/api/archipro-voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: clean }) });
-          if (r.ok) {
-            const blob = await r.blob(); if (id !== tourId) return done();
-            stopVoice(); audioUrl = URL.createObjectURL(blob); player.src = audioUrl; player.onended = () => { player.onended = null; done(); };
-            try { await player.play(); } catch { return blocked(quiet); }   // no sound without a tap: carry on with captions
-            setTimeout(done, clean.length * 120 + 6000); return;
-          }
-        } catch { /* fall back to the browser's voice */ }
-      }
-      if (!unlocked && !navigator.userActivation?.hasBeenActive) return blocked(quiet);
-      {
-      }
-      if ("speechSynthesis" in window && browserVoice()) {
-        const u = new SpeechSynthesisUtterance(clean), v = browserVoice(); u.voice = v; u.lang = v.lang;
-        u.onend = done; u.onerror = done; speechSynthesis.cancel(); speechSynthesis.speak(u); setTimeout(done, clean.length * 95 + 5000); return;
-      }
-      quiet();
-    })();
-  });
-}
-async function tour() {
-  if (touring) return; touring = true; const id = ++tourId; unlock();
-  if (live === null) await check();
+let auto = false;
+async function tour(automatic = false) {
+  if (touring) { if (!automatic) playPending(); return; }
+  auto = automatic;
+  if (!automatic) { voiceOn = true; voiceMessage = ""; label(); }
+  touring = true; const id = ++tourId;
+  if (live === null || !eleven) await check();
+  if (id !== tourId) return;
   open({ quiet: true }); panel.classList.add("asked", "touring"); low();
   for (const s of TOUR) {
     if (id !== tourId) break;
@@ -305,7 +406,8 @@ async function tour() {
     const m = say(s.line, { speak: false }); log.scrollTop = Math.max(0, m.offsetTop - 10);
     if (s.room) { const el = document.getElementById(s.to); goTo(s.to); setTimeout(() => { if (id === tourId && el) glide(el, Math.max(9000, s.line.length * 70), id); }, 900); }
     else goTo(s.to);
-    await speakWait(s.line, id);
+    if (voiceOn) await voice(s.line);
+    if (!voiceOn && id === tourId) await new Promise(resolve => setTimeout(resolve, Math.max(2600, s.line.length * 62)));
     if (id !== tourId) break; await new Promise((r) => setTimeout(r, s.room ? 1600 : 450));
   }
   if (id === tourId) { touring = false; gliding = 0; panel.classList.remove("touring", "tucked"); pill.hidden = true; }
@@ -313,8 +415,8 @@ async function tour() {
 function stopTour() { if (!touring) return; touring = false; tourId++; gliding = 0; player.onended = null; stopVoice(); panel.classList.remove("touring", "tucked"); pill.hidden = true; fitPanel(); }
 document.querySelectorAll("[data-tour]").forEach((b) => { if (!b.closest("#guide-try")) b.addEventListener("click", () => tour()); });
 $("#guide-stop")?.addEventListener("click", stopTour);
-// The walk-through starts by itself: with the voice where the browser allows it, with captions where it doesn't.
+// The automatic tour offers the prepared first line and waits for a playback or captions choice.
 // Scrolling the page yourself stops it. Add ?notour to the address to open the page quietly.
 const userStop = (e) => { if (auto && touring && e.isTrusted && !panel.contains(e.target)) stopTour(); };
 addEventListener("wheel", userStop, { passive: true }); addEventListener("touchmove", userStop, { passive: true });
-if (!/[?&]notour\b/.test(location.search) && !location.hash) setTimeout(() => { if (!touring && panel.hidden && scrollY < 60) { auto = true; tour(); } }, 2200);
+if (!/[?&]notour\b/.test(location.search) && !location.hash) setTimeout(() => { if (!touring && panel.hidden && scrollY < 60) { tour(true); } }, 2200);
