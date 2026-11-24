@@ -63,7 +63,13 @@ function crownGeometry(seed, detail, lobes) {
   const parts = [];
   for (let i = 0; i < lobes; i++) {
     const a = hash(seed * 13 + i) * Math.PI * 2, rr = i === 0 ? 0 : 0.35 + 0.3 * hash(seed * 7 + i * 3), y = i === 0 ? 0.55 : 0.3 + 0.5 * hash(seed * 5 + i * 11), s = i === 0 ? 0.62 : 0.34 + 0.18 * hash(seed * 3 + i * 17);
-    const g = new THREE.IcosahedronGeometry(s, detail); g.translate(Math.cos(a) * rr, y, Math.sin(a) * rr); parts.push(g);
+    const g = new THREE.IcosahedronGeometry(s, detail);
+    // Broad, uneven shelves of foliage, with daylight under the outer branches.
+    // The final bounds retain the measured canopy top and horizontal extent.
+    const tier = i === 0 ? 0 : (i % 3 - 1) * 0.09;
+    g.scale(1.08, i === 0 ? 0.84 : 0.57 + 0.16 * hash(i + seed), 0.94);
+    g.translate(Math.cos(a) * rr, y + tier, Math.sin(a) * rr);
+    parts.push(g);
   }
   const g = mergeVertices(mergeGeometries(parts.map((q) => { q.deleteAttribute("normal"); q.deleteAttribute("uv"); return q; }))), p = g.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const k = 1 + 0.12 * Math.sin(v.x * 9.1 + seed) * Math.sin(v.y * 7.3 + seed * 2) * Math.sin(v.z * 8.7 + seed * 3); p.setXYZ(i, v.x * k, v.y * k, v.z * k); }
@@ -330,7 +336,7 @@ export class RoofScene {
     panels.forEach((p, i) => {
       const az = (p.azimuth * Math.PI) / 180; X.set(Math.cos(az), 0, Math.sin(az)); Y.set(p.normal[0], p.normal[2], -p.normal[1]); Z.crossVectors(X, Y).normalize(); X.crossVectors(Y, Z).normalize();
       if (p.landscape) { const t = X.clone(); X.copy(Z); Z.copy(t).negate(); }
-      M4.makeBasis(X, Y, Z); M4.setPosition(this.toScene(p.e, p.n, p.z + T / 2)); for (const m of [this.panelMesh, this.frameMesh, this.heatMesh, this.railMesh]) m.setMatrixAt(i, M4);
+      M4.makeBasis(X, Y, Z); M4.setPosition(this.toScene(p.e, p.n, p.z).addScaledVector(Y, T / 2)); for (const m of [this.panelMesh, this.frameMesh, this.heatMesh, this.railMesh]) m.setMatrixAt(i, M4);
       this.heatMesh.setColorAt(i, rampColour(p.year ? p.year.share : 0.5));
     });
     for (const m of [this.panelMesh, this.frameMesh, this.heatMesh, this.railMesh]) { m.instanceMatrix.needsUpdate = true; m.castShadow = m !== this.heatMesh; m.receiveShadow = true; m.frustumCulled = false; this.root.add(m); }

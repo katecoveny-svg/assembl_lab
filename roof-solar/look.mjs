@@ -44,7 +44,12 @@ export function roofHeights(dsm, grid, planes, rings = null) {
   const sm = rings ? roofSurface(dsm, rings) : dsm;
   return (e, n, qe = e, qn = n) => {
     let ds = heightAt(sm, qe, qn); if (ds !== ds) ds = heightAt(sm, e, n); if (ds !== ds) ds = heightAt(dsm, e, n);
-    const ci = Math.round(qe - grid.originE), cj = Math.round(grid.originN - qn); let best = null, bd = Infinity;
+    const ci = Math.round(qe - grid.originE), cj = Math.round(grid.originN - qn);
+    if (ci >= 0 && cj >= 0 && ci < grid.n && cj < grid.n) {
+      const owner = planes[own[cj * grid.n + ci]];
+      if (owner && Math.abs(planeZ(owner, qe, qn) - ds) < 0.25) return { z: planeZ(owner, e, n), plane: owner };
+    }
+    let best = null, bd = Infinity;
     for (let w = 1; w <= 2 && !best; w++) for (let dj = -w; dj <= w; dj++) for (let di = -w; di <= w; di++) {
       const i = ci + di, j = cj + dj; if (i < 0 || j < 0 || i >= grid.n || j >= grid.n) continue; const id = own[j * grid.n + i]; if (id < 0) continue;
       const p = planes[id], d = Math.abs(planeZ(p, qe, qn) - (ds === ds ? ds : planeZ(p, qe, qn))); if (d < bd && d < (w === 1 ? 1.2 : 0.6)) { bd = d; best = p; }
