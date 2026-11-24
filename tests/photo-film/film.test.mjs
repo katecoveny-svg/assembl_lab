@@ -40,7 +40,7 @@ const done = (data = OUTV) => reply({ id: 'v1_job42', object: 'interaction', mod
   { type: 'model_output', content: [{ type: 'video', mime_type: 'video/mp4', data }] },
 ] });
 
-async function call({ method = 'POST', env = ENV, body, raw, origin = LAB, ip = '203.0.113.9', handler = () => running(), query = '', headers = {} } = {}) {
+async function call({ method = 'POST', env = ENV, body, raw, origin = LAB, ip = '203.0.113.9', handler = () => running(), query = '', base = LAB, headers = {} } = {}) {
   const calls = [], warns = [], real = globalThis.fetch, warn = console.warn;
   console.warn = (...a) => warns.push(a.map(String).join(' '));
   globalThis.fetch = async (u, init) => { calls.push({ url: String(u), method: init?.method ?? 'GET', headers: init?.headers, body: init?.body ? JSON.parse(init.body) : null }); return handler(calls.at(-1)); };
@@ -51,7 +51,7 @@ async function call({ method = 'POST', env = ENV, body, raw, origin = LAB, ip = 
     const init = { method, headers: h };
     const b = body ?? { video: CLIP };
     if (method === 'POST') init.body = raw ?? JSON.stringify('confirm' in b ? b : { ...b, confirm: true });
-    const res = await onRequest({ request: new Request(`https://lab.assembl.co.nz/api/film${query}`, init), env });
+    const res = await onRequest({ request: new Request(`${base}/api/film${query}`, init), env });
     const text = await res.text();
     let json = null; try { json = JSON.parse(text); } catch { /* 204 */ }
     return { status: res.status, headers: res.headers, json, text, calls, warns };
@@ -285,4 +285,39 @@ test('OPTIONS answers CORS for the lab only', async () => {
   const ok = await call({ method: 'OPTIONS' }); assert.equal(ok.status, 204); assert.equal(ok.headers.get('access-control-allow-origin'), LAB);
   const no = await call({ method: 'OPTIONS', origin: 'https://evil.example' }); assert.equal(no.headers.get('access-control-allow-origin'), null);
   const prev = await call({ method: 'OPTIONS', origin: 'https://agent-photo-film-1123.assembl-lab.pages.dev' }); assert.ok(prev.headers.get('access-control-allow-origin'));
+});
+
+const PROOF = 'https://branch-preview.assembl-lab.pages.dev';
+const camera = (o) => call({ base: PROOF, origin: PROOF, query: '?camera-proof=1', ...o, env: { CAMERA_PROOF_PREVIEW: '1', ...(o?.env ?? ENV) } });
+
+test('camera proof: a bound receipt without upstream calls, even with a configured provider key', async () => {
+  const bytes = mp4({ seconds: 4, pad: 30 });
+  const sha256 = Buffer.from(await crypto.subtle.digest('SHA-256', bytes)).toString('hex');
+  for (const env of [ENV, {}]) {
+    const r = await camera({ env, body: { dry: true, video: vurl(bytes) }, raw: JSON.stringify({ dry: true, video: vurl(bytes) }) });
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.json, { type: 'assembl.planstudio.film.camera-proof.v1', status: 'validated', provider: 'google-gemini',
+      model: DEFAULT_MODEL, seconds: 4, sha256, charged: false, provider_called: false, stored_by_server: false, configured: !!env.GEMINI_API_KEY });
+    assert.equal(r.calls.length, 0); noKey(r);
+  }
+  const r = await camera({ raw: JSON.stringify({ dry: true, video: vurl(mp4({ seconds: 4, pad: 31 })) }) });
+  assert.notEqual(r.json.sha256, sha256);
+});
+
+test('camera proof: malformed, cross-origin, large and paid requests cannot reach a provider', async () => {
+  const raw = (video, options = {}) => JSON.stringify({ dry: true, video, ...options });
+  for (const [params, status] of [
+    [{ raw: raw(CLIP, { confirm: true }) }, 400],
+    [{ raw: raw(CLIP, { dry: false, confirm: true }) }, 400],
+    [{ raw: raw(CLIP), origin: 'https://safe-preview.assembl-lab.pages.dev' }, 403],
+    [{ raw: raw(vurl(mp4({ seconds: 6 }))) }, 400],
+    [{ raw: raw(vurl(mp4({ seconds: 4, w: 1920, h: 1080 }))) }, 400],
+    [{ raw: raw(vurl(Buffer.from('fake MP4'))) }, 400],
+    [{ raw: raw(CLIP), headers: { 'content-length': '4000101' } }, 413],
+    [{ raw: raw(CLIP), base: LAB, origin: LAB }, 404],
+    [{ raw: raw(CLIP), env: { CAMERA_PROOF_PREVIEW: '0' } }, 404],
+  ]) {
+    const r = await camera(params);
+    assert.equal(r.status, status); assert.equal(r.calls.length, 0);
+  }
 });

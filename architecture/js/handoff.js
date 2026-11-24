@@ -63,7 +63,7 @@ export async function takeHandoff(id, { idb = globalThis.indexedDB, now = Date.n
 
 /**
  * Everything the 3D page passed back for a hand-over (records with ids `${handoffId}:…`: the camera path, the fly-through, films,
- * shots, the look), taken out of the store: they are deleted as they are read, so each goes into the project once.
+ * shots, the look). A camera proof is retained until the workspace confirms a successful write; old returns keep their original behaviour.
  */
 export async function takeBacks(handoffId, { idb = globalThis.indexedDB } = {}) {
   if (!handoffId || !idb) return [];
@@ -71,9 +71,22 @@ export async function takeBacks(handoffId, { idb = globalThis.indexedDB } = {}) 
   try {
     const tx = db.transaction(HANDOFF_STORE, 'readwrite'), st = tx.objectStore(HANDOFF_STORE);
     const all = (await req(st.getAll())) ?? [], mine = all.filter((x) => String(x?.id ?? '').startsWith(`${handoffId}:`));
-    for (const x of mine) st.delete(x.id);
+    for (const x of mine) if (x.kind !== 'film_proof') st.delete(x.id);
     await done(tx);
     return mine.map((x) => (x.kind ? x : { ...x, kind: String(x.id).endsWith(':path') ? 'camera_path' : '' }));
+  } finally { db.close(); }
+}
+
+/** Acknowledge a camera proof only after the project accepted the same bytes. */
+export async function acknowledgeCameraProof(handoffId, id, { idb = globalThis.indexedDB } = {}) {
+  if (!idb || !handoffId || typeof id !== 'string' || !id.startsWith(`${handoffId}:film_proof:`)) return false;
+  const db = await openDb(idb);
+  try {
+    const tx = db.transaction(HANDOFF_STORE, 'readwrite'), st = tx.objectStore(HANDOFF_STORE);
+    const found = await req(st.get(id));
+    if (found?.kind === 'film_proof' && found.handoff === handoffId) st.delete(id);
+    await done(tx);
+    return found?.kind === 'film_proof' && found.handoff === handoffId;
   } finally { db.close(); }
 }
 

@@ -19,7 +19,7 @@ const PDF = bytes('%PDF-1.4\n1 0 obj'), PNG = new Uint8Array([0x89, 0x50, 0x4e, 
 const note = (o) => ({ id: o.id, name: o.name, owner_kind: o.owner_kind ?? 'source', kept_at: o.kept_at ?? '2026-11-23T00:00:00Z', size: o.size ?? 10, extra: o.extra ?? sourceExtra({ slot: o.slot, version: o.version ?? 1, by: 'Aroha' }) });
 
 test('source slots and their exact 3D handoff membership', () => {
-  assert.deepEqual(SLOTS.map((s) => s.id), ['drawing_set', 'site_plan', 'camera_sketch', 'survey', 'flythrough', 'films', 'walk_review', 'design_interior', 'design_exterior', 'other']);
+  assert.deepEqual(SLOTS.map((s) => s.id), ['drawing_set', 'site_plan', 'camera_sketch', 'survey', 'flythrough', 'films', 'camera_proofs', 'walk_review', 'design_interior', 'design_exterior', 'other']);
   assert.deepEqual(blobSlots(), ['drawing_set', 'site_plan', 'camera_sketch', 'walk_review', 'design_interior', 'design_exterior']);
 });
 
