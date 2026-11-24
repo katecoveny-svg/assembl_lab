@@ -86,6 +86,7 @@ export function parseTripUpdates(feed) {
       vehicleId: tu.vehicle?.id ? String(tu.vehicle.id) : null, cancelled: Number(tu.trip.schedule_relationship) === 3,
       delay, event: ev, stopId: last?.stop_id ? String(last.stop_id) : null, stopSeq: num(last?.stop_sequence),
       time: ev ? num(last[ev].time) : null, ts: num(tu.timestamp),
+      startDate: tu.trip.start_date ? String(tu.trip.start_date).replaceAll("-", "") : null,
     });
   }
   return out;
@@ -93,12 +94,16 @@ export function parseTripUpdates(feed) {
 
 // On time is our display band, not AT's punctuality measure: up to 1 minute early or 5 minutes late. The page says so.
 export const ON_TIME = { earlySec: 60, lateSec: 300 };
-export const STALE_UPDATE_SEC = 15 * 60;
+// AT publishes roughly every 30 seconds. Never promote untimestamped or old data to live.
+export const STALE_UPDATE_SEC = 120;
+export function timestampFresh(ts, nowSec) {
+  return Number.isFinite(ts) && ts > 0 && ts <= nowSec + 30 && nowSec - ts <= STALE_UPDATE_SEC;
+}
 export function delayStatus(update, nowSec) {
   if (!update) return { status: "unknown", label: "Delay not known", minutes: null };
+  if (nowSec && !timestampFresh(update.ts, nowSec)) return { status: "unknown", label: "Delay not known (no recent update)", minutes: null };
   if (update.cancelled) return { status: "cancelled", label: "Cancelled", minutes: null };
   if (update.delay === null || update.delay === undefined) return { status: "unknown", label: "Delay not known", minutes: null };
-  if (nowSec && update.ts && nowSec - update.ts > STALE_UPDATE_SEC) return { status: "unknown", label: "Delay not known (update is old)", minutes: null };
   const d = update.delay, m = Math.round(d / 60);
   if (d < -ON_TIME.earlySec) return { status: "early", label: `${-m} min early`, minutes: m };
   if (d > ON_TIME.lateSec) return { status: "late", label: `${m} min late`, minutes: m };
@@ -147,25 +152,29 @@ export function nzServiceDate(ms) { const t = new Date(ms + nzOffsetMin(ms) * 60
 
 // ------------------------------------------------------------------------------------------------ next arrivals at a stop
 // stopTrips: AT GTFS API stop trips passed on by at-live ({trip_id, route_id, arrival_time, departure_time, stop_sequence,
-// trip_headsign, service_date}). A live prediction is the timetable time plus the trip's latest reported delay, and only when
-// the vehicle has not yet passed this stop. Otherwise the row is timetable only and says so.
+// trip_headsign, service_date}). An estimate is the timetable time plus the last reported delay,
+// not an official stop-specific prediction. Use the schedule when no current progress applies.
 export function arrivalsForStop(stopTrips, updates, nowSec, { limit = 8, routes = null } = {}) {
   const rows = [];
   for (const st of stopTrips || []) {
     const tripId = String(st.trip_id ?? ""), sched = gtfsTimeToEpoch(st.service_date, st.arrival_time || st.departure_time);
     if (!tripId || sched === null) continue;
-    const u = updates?.get(tripId), seq = num(st.stop_sequence);
+    const update = updates?.get(tripId), seq = num(st.stop_sequence);
+    const date = String(st.service_date || "").replaceAll("-", "");
+    const u = update && (!update.routeId || update.routeId === String(st.route_id))
+      && (!update.startDate || update.startDate === date) ? update : null;
+    const fresh = u && timestampFresh(u.ts, nowSec);
     let predicted = null, status = "scheduled", delay = null;
-    if (u?.cancelled) status = "cancelled";
-    else if (u && u.delay !== null && (!nowSec || !u.ts || nowSec - u.ts <= STALE_UPDATE_SEC)) {
-      if (seq !== null && u.stopSeq !== null && u.stopSeq > seq) status = "passed";
-      else { delay = u.delay; predicted = sched + u.delay; status = "live"; }
-    }
+    if (fresh && u.cancelled) status = "cancelled";
+    else if (fresh && seq !== null && Number.isFinite(u.stopSeq)) {
+      if (u.stopSeq > seq || (u.stopSeq === seq && u.event === "departure" && u.time && u.time <= nowSec)) status = "passed";
+      else if (Number.isFinite(u.delay)) { delay = u.delay; predicted = sched + u.delay; status = "estimated"; }
+    } else if (u && !fresh) status = "stale";
     const when = predicted ?? sched;
     if (status === "passed" || when < nowSec - 60) continue;
     const r = routes?.get(String(st.route_id));
     rows.push({ tripId, routeId: String(st.route_id ?? ""), route: r?.short || String(st.route_id ?? "").split("-")[0], mode: r?.mode || null,
-      headsign: st.trip_headsign || st.stop_headsign || "", scheduled: sched, predicted, delay, status, vehicleId: u?.vehicleId || null,
+      headsign: st.trip_headsign || st.stop_headsign || "", scheduled: sched, predicted, delay, status, vehicleId: fresh ? u.vehicleId : null,
       dueMin: Math.max(0, Math.round((when - nowSec) / 60)) });
   }
   return rows.sort((a, b) => (a.predicted ?? a.scheduled) - (b.predicted ?? b.scheduled)).slice(0, limit);

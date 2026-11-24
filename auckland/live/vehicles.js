@@ -5,8 +5,7 @@ import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-export const STATUS_COLOURS = { 'on-time': '#2fbf71', late: '#f2a33a', 'very-late': '#e5533d', early: '#3aa0e8', cancelled: '#55595e', unknown: '#c3c7cc' };
-export const statusColour = (s) => (s.status === 'late' && s.minutes >= 10 ? STATUS_COLOURS['very-late'] : STATUS_COLOURS[s.status] || STATUS_COLOURS.unknown);
+export { STATUS_COLOURS, statusColour } from './status.js';
 
 // part(geometry, colour, {band, rough}) → geometry with color, band and rough attributes, ready to merge
 function part(g, colour, { band = 0, rough = 0.42, at = [0, 0, 0] } = {}) {
@@ -51,11 +50,35 @@ export function trainGeometry() { // a three-car electric multiple unit, about 7
   P.push(part(box(0.1, 1.2, 0.1), '#2a2a2a', { at: [0, 4.75, 0.5], rough: 0.6 }), part(box(1.6, 0.06, 0.1), '#2a2a2a', { at: [0, 5.35, 0.5], rough: 0.6 })); // pantograph
   return mergeGeometries(P);
 }
+// Elliptical sections taper into the two fine bows; the stern stays broad at the waterline.
+function hull(width, height, length) {
+  const sections = [[-0.50, 0.035], [-0.43, 0.50], [-0.30, 0.92], [-0.14, 1], [0.42, 1], [0.50, 0.85]];
+  const points = [], indices = [];
+  for (const [z, beam] of sections) {
+    for (let side = 0; side < 8; side++) {
+      const angle = Math.PI * 2 * side / 8;
+      points.push(Math.cos(angle) * width * beam / 2, Math.sin(angle) * height / 2, length * z);
+    }
+  }
+  for (let row = 0; row < sections.length - 1; row++) {
+    for (let i = 0; i < 8; i++) {
+      const a = row * 8 + i, b = row * 8 + (i + 1) % 8;
+      indices.push(a, b, a + 8, b, b + 8, a + 8);
+    }
+  }
+  const end = (sections.length - 1) * 8;
+  for (let i = 1; i < 7; i++) indices.push(0, i + 1, i, end, end + i, end + i + 1);
+  const geometry = new T.BufferGeometry();
+  geometry.setAttribute('position', new T.Float32BufferAttribute(points, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
 export function ferryGeometry() { // a passenger catamaran, about 34 m
   const P = [];
   for (const x of [-3.5, 3.5]) {
-    P.push(part(rbox(2.6, 1.6, 33.5, 0.5), '#e9ecec', { at: [x, 0.9, 0], rough: 0.3 }));
-    P.push(part(rbox(2.62, 0.9, 33.0, 0.4), '#23292e', { at: [x, 0.05, 0], rough: 0.5 })); // below the boot line
+    P.push(part(hull(2.6, 1.6, 33.5), '#e9ecec', { at: [x, 0.9, 0], rough: 0.3 }));
+    P.push(part(hull(2.62, 0.9, 33.0), '#23292e', { at: [x, 0.05, 0], rough: 0.5 })); // below the boot line
   }
   P.push(part(box(9.8, 0.5, 31), '#dfe2e2', { at: [0, 1.95, 0.6], rough: 0.4 })); // deck
   P.push(part(rbox(9.2, 2.6, 21.5, 0.6), '#f1f3f2', { at: [0, 3.5, 1.5], rough: 0.3 })); // main cabin

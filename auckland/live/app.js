@@ -1,7 +1,7 @@
 // assembl lab · Auckland live: the page. Finds a route, stop or ferry terminal, shows where the vehicles are right now,
 // and (when the at-live function is switched on) whether they are late and what is coming next. Never invents a delay.
 import * as X from './transit.js';
-import { statusColour } from './vehicles.js';
+import { statusColour } from './status.js';
 
 const POSITIONS_URL = 'https://wurwcrgxjjwqdaxqceey.supabase.co/functions/v1/bus-positions';
 const AT_LIVE_URL = 'https://wurwcrgxjjwqdaxqceey.supabase.co/functions/v1/at-live';
@@ -28,11 +28,19 @@ const S = { index: null, shapes: null, positions: null, posSource: 'live', posEr
 const canvas = $('#scene');
 const [routesJson, stopsJson] = await Promise.all([fetch(DATA + 'routes.json').then((r) => r.json()), fetch(DATA + 'stops.json').then((r) => r.json())]);
 S.index = X.buildIndex(routesJson, stopsJson); S.gtfs = routesJson;
-try {
+const mode = qs.get('view');
+const listOnly = mode === 'list' || (mode !== '3d' && (phone || matchMedia('(prefers-reduced-motion: reduce)').matches));
+const switchView = $('#switch-view');
+const alternate = new URL(location.href);
+alternate.searchParams.set('view', listOnly ? '3d' : 'list');
+switchView.href = alternate.href;
+switchView.textContent = listOnly ? 'Open 3D city' : 'Use list view';
+document.body.classList.toggle('list-only', listOnly);
+if (!listOnly) try {
   const { createWorld } = await import('./scene.js');
   S.world = await createWorld(canvas, { phone, capture: qs.has('capture'), timeMs: skyMs });
   window.liveWorld = S.world;
-} catch (e) { console.error(e); $('#detail').innerHTML = `<p class="note warn">The 3D city could not start in this browser (${esc(e.message)}). The search and lists below still work.</p>`; }
+} catch (e) { console.error(e); document.body.classList.add('list-only'); switchView.textContent = 'Retry 3D city'; alternate.searchParams.set('view', '3d'); switchView.href = alternate.href; $('#detail').innerHTML = `<p class="note warn">The 3D city could not start in this browser (${esc(e.message)}). The search and lists below still work.</p>`; }
 wireUi(); render(); fitInset();
 function fitInset() { if (S.world) S.world.setInset(phone && innerWidth < 900 ? $('#panel').getBoundingClientRect().height : 0); }
 addEventListener('resize', fitInset); new ResizeObserver(fitInset).observe($('#panel'));
@@ -87,8 +95,10 @@ async function loadWeather() {
 
 // ------------------------------------------------------------------------------------------------ vehicles into the scene
 function vehicleInfo(v) {
-  const r = v.routeId ? S.index.routes.get(v.routeId) : null, u = v.tripId ? S.updates.get(v.tripId) : null;
-  const st = X.delayStatus(u, Math.round(Date.now() / 1000));
+  const candidate = v.tripId ? S.updates.get(v.tripId) : null;
+  const u = candidate && (!candidate.routeId || candidate.routeId === v.routeId) && (!candidate.vehicleId || candidate.vehicleId === v.id) ? candidate : null;
+  const r = v.routeId ? S.index.routes.get(v.routeId) : null;
+  const st = X.delayStatus(S.posSource === 'live' && !S.posError ? u : null, Math.round(Date.now() / 1000));
   return { r, u, st, mode: r?.mode || 'bus' };
 }
 function pushVehicles() {
@@ -116,7 +126,11 @@ async function select(sel, { fly = true } = {}) { // a later choice always wins 
     const s = S.index.stops.get(sel.id); w?.showRoute(null); const p = X.toWorld(s.lat, s.lon); w?.showStop(p.x, p.z); if (fly && X.inArea(s.lat, s.lon)) w?.flyTo([p.x, 0, p.z], 700, 0.55);
     render(); S.arrivals = { loading: true }; render();
     const ids = (s.children?.length ? s.children : [s.id]).slice(0, 6);
-    if (S.atLive.state === 'on') { const j = await loadAtLive(ids); if (S.sel?.id !== sel.id) return; S.arrivals = j?.stops ? { rows: X.arrivalsForStop(ids.flatMap((id) => j.stops[id]?.trips || []), S.updates, Math.round(Date.now() / 1000), { routes: S.index.routes, limit: 10 }), errors: ids.filter((id) => j.stops[id]?.error).length, verified: j.stopTripsVerified } : { failed: true }; }
+    if (S.atLive.state === 'on') {
+      const j = await loadAtLive(ids); if (S.sel !== sel) return;
+      const readable = ids.filter((id) => Array.isArray(j?.stops?.[id]?.trips) && !j.stops[id].error);
+      S.arrivals = readable.length ? { trips: readable.flatMap((id) => j.stops[id].trips), partial: readable.length < ids.length, verified: j.stopTripsVerified } : { failed: true };
+    }
     else S.arrivals = { off: true };
   } else if (sel?.kind === 'vehicle') {
     const v = S.positions?.vehicles.find((x) => x.id === sel.id);
@@ -127,6 +141,7 @@ async function select(sel, { fly = true } = {}) { // a later choice always wins 
   if (sel?.kind === 'route') u.searchParams.set('route', S.index.routes.get(sel.id)?.short || sel.id);
   if (sel?.kind === 'stop') u.searchParams.set('stop', S.index.stops.get(sel.id)?.code || sel.id);
   history.replaceState(null, '', u);
+  const other = new URL(u, location.href); other.searchParams.set('view', listOnly ? '3d' : 'list'); switchView.href = other.href;
   render();
 }
 async function ensureShapes() { if (!S.shapes) S.shapes = (await (await fetch(DATA + 'shapes.json')).json()).shapes; }
@@ -148,19 +163,29 @@ function delayNote() {
   if (S.atLive.state === 'on') return '';
   return `<p class="note">Late or on time, and live arrival times, switch on when Auckland Transport's trip-updates feed is connected to this page. Until then vehicles show grey: delay not known. Nothing here is guessed.</p>`;
 }
-function routeTitle(r) { const h = r.heads.map(cleanHead).filter(Boolean); return h.length > 1 ? `${esc(h[0])}` : esc(h[0] || ''); }
 function render() {
   const d = $('#detail'), sel = S.sel, now = Math.round(Date.now() / 1000);
   if (!S.positions && !sel) { d.innerHTML = '<p class="muted">Loading the live positions…</p>'; renderTruth(); return; }
   let html = '';
   if (!sel) {
     const c = S.counts || { bus: 0, train: 0, ferry: 0 };
-    html += `<h2>Where is my bus?</h2><p>${S.posSource === 'sample' ? 'In this saved sample' : 'Right now'}: <b>${c.bus}</b> buses, <b>${c.train}</b> trains and <b>${c.ferry}</b> ferries are out on trips across Auckland. Search a route, stop or ferry terminal, or tap a vehicle.</p>`;
+    html += `<h2>Where is my bus?</h2><p>${S.posSource === 'sample' ? 'In this saved sample' : (!S.posError && X.timestampFresh(S.positions?.newestFix, now)) ? 'Latest live snapshot' : 'In the last available snapshot (not current)'}: <b>${c.bus}</b> buses, <b>${c.train}</b> trains and <b>${c.ferry}</b> ferries are out on trips across Auckland. Search a route, stop or ferry terminal, or tap a vehicle.</p>`;
     if (S.atLive.state === 'on') {
       const tally = { 'on-time': 0, late: 0, early: 0, unknown: 0, cancelled: 0 };
       for (const v of S.positions.vehicles) if (v.routeId) tally[vehicleInfo(v).st.status]++;
       html += `<p class="mono">${tally['on-time']} on time · ${tally.late} late · ${tally.early} early · ${tally.unknown} not known</p>`;
       if (S.alerts.length) html += `<p class="muted">${S.alerts.length} service alerts are in force across the network. Choose a route or stop to see its own.</p>`;
+    }
+    if (listOnly && S.positions) {
+      const trips = new Map();
+      for (const vehicle of S.positions.vehicles) {
+        const route = S.index.routes.get(vehicle.routeId);
+        if (!route || (S.mode !== 'all' && route.mode !== S.mode)) continue;
+        const item = trips.get(route.id) || { route, count: 0 };
+        item.count++; trips.set(route.id, item);
+      }
+      const routes = [...trips.values()].sort((a,b) => b.count - a.count || a.route.short.localeCompare(b.route.short));
+      html += '<h3>Routes in this snapshot</h3>' + (routes.length ? '<ul class="rows">' + routes.slice(0,12).map(({route,count}) => `<li><button type="button" class="row" data-route="${esc(route.id)}"><span class="r">${esc(route.short)}</span><span class="h">${esc(cleanHead(route.heads[0] || MODE_WORD[route.mode]))}</span><span class="w">${count}<small>vehicles</small></span></button></li>`).join('') + '</ul>' : '<p>No vehicles reported for this filter.</p>');
     }
     html += delayNote();
     if (S.posSource === 'sample') html += `<p class="note warn">Live positions could not be reached (${esc(S.posError)}). Showing a saved sample of a real answer from ${esc(fmtTime(S.sampleAt))}. It is not live.</p>`;
@@ -170,13 +195,13 @@ function render() {
     if (!v) html += `<h2>Vehicle gone</h2><p class="muted">This vehicle is no longer in the live feed. It may have finished its trip.</p>`;
     else {
       const { r, u, st, mode } = vehicleInfo(v);
-      html += `<p class="muted">${MODE_WORD[mode]}</p><h2>${esc(r?.short || v.routeId)} <span class="muted" style="font-weight:400">${routeTitle(r || { heads: [] })}</span></h2>${statusPill(st)}`;
+      html += `<p class="muted">${MODE_WORD[mode]}</p><h2>${esc(r?.short || v.routeId)}</h2>${statusPill(st)}`;
       html += `<dl class="facts">`;
-      if (r?.heads?.length > 1) html += `<dt>Runs</dt><dd>${esc(cleanHead(r.heads[0]))} and back</dd>`;
+      if (r?.heads?.length) html += `<dt>Route destinations</dt><dd>${r.heads.map(cleanHead).filter(Boolean).map(esc).join(' · ')}<br><small>Direction of this vehicle not confirmed</small></dd>`;
       html += `<dt>Speed</dt><dd>${v.speedKmh == null ? 'not reported' : 'about ' + v.speedKmh + ' km/h'}</dd>`;
       if (v.occupancy != null) html += `<dt>Room</dt><dd>${esc(X.OCCUPANCY[v.occupancy] || 'not reported')}</dd>`;
       html += `<dt>Position</dt><dd>reported ${ago(v.ts)}</dd>`;
-      if (u?.stopId) { const s = S.index.stops.get(u.stopId); html += `<dt>Last stop event</dt><dd>${esc(s?.name || u.stopId)}, ${u.event === 'departure' ? 'left' : 'reached'} ${X.nzClock(u.time)}</dd>`; }
+      if (u?.stopId && X.timestampFresh(u.ts, now) && S.posSource === 'live' && !S.posError) { const s = S.index.stops.get(u.stopId); html += `<dt>Last stop event</dt><dd>${esc(s?.name || u.stopId)}, ${u.event === 'departure' ? 'left' : 'reached'} ${X.nzClock(u.time)}</dd>`; }
       html += `<dt>Vehicle</dt><dd class="mono">${esc(v.id)}</dd></dl>`;
       if (!X.inArea(v.lat, v.lon)) html += `<p class="note">This vehicle is outside the 3D area (the central isthmus, about 21 by 19 km). It is listed here but not drawn.</p>`;
       html += `<div class="actions"><button data-route="${esc(v.routeId)}">Whole route</button><button class="ghost" data-clear>Close</button></div>`;
@@ -186,8 +211,8 @@ function render() {
     const r = S.index.routes.get(sel.id), vs = S.positions?.vehicles.filter((v) => v.routeId === sel.id) || [];
     html += `<p class="muted">${MODE_WORD[r.mode]} route</p><h2>${esc(r.short)}</h2><p>${r.heads.map((h) => esc(cleanHead(h))).join('<br>')}</p>`;
     const al = X.alertsFor(S.alerts, { routeIds: [sel.id] }, now); html += al.map(alertHtml).join('');
-    html += `<h3>Out on this route now · ${vs.length}</h3>`;
-    html += vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
+    html += `<h3>Vehicles reported on this route · ${vs.length}</h3>`;
+    html += vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
     html += delayNote() + `<div class="actions"><button class="ghost" data-clear>Close</button></div>`;
   } else if (sel.kind === 'stop') {
     const s = S.index.stops.get(sel.id);
@@ -206,24 +231,28 @@ function arrivalsHtml(s) {
   if (a.off || a.failed) {
     const near = X.vehiclesForStop(s, S.positions?.vehicles || []);
     let h = `<p class="note">${a.failed ? 'The timetable for this stop could not be read just now.' : "Live arrival times need Auckland Transport's trip updates, which are not connected to this page yet."} Meanwhile, these vehicles are out on routes that stop here, nearest first. Distance is a straight line, not a time, and a vehicle may be heading away.</p>`;
-    h += near.length ? `<ul class="rows">${near.map((v) => { const r = S.index.routes.get(v.routeId); return `<li class="row" data-vehicle="${esc(v.id)}"><span class="r">${esc(r?.short || v.routeId)}</span><span class="h">${esc(cleanHead(r?.heads?.[0] || ''))}<small>reported ${ago(v.ts)}</small></span><span class="w">${v.metres < 1000 ? v.metres + ' m' : (v.metres / 1000).toFixed(1) + ' km'}<small>away</small></span></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on these routes is in the live feed right now.</p>`;
+    h += near.length ? `<ul class="rows">${near.map((v) => { const r = S.index.routes.get(v.routeId); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r">${esc(r?.short || v.routeId)}</span><span class="h">${'Direction not confirmed'}<small>reported ${ago(v.ts)}</small></span><span class="w">${v.metres < 1000 ? v.metres + ' m' : (v.metres / 1000).toFixed(1) + ' km'}<small>away</small></span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on these routes is in the live feed right now.</p>`;
     return h;
   }
-  if (!a.rows.length) return `<p class="muted">Nothing due here in the next two hours by the timetable.</p>`;
-  return `<ul class="rows">${a.rows.map((r) => { const st = r.status === 'live' ? X.delayStatus({ delay: r.delay }, 0) : r.status === 'cancelled' ? { status: 'cancelled', label: 'Cancelled' } : { status: 'unknown', label: 'Timetable only' };
-    return `<li class="row" data-route="${esc(r.routeId)}"><span class="r">${esc(r.route)}</span><span class="h">${esc(cleanHead(r.headsign))}<small><i style="--c:${statusColour(st)}"></i> ${esc(st.label)}${r.status === 'live' ? '' : ''}</small></span><span class="w">${r.status === 'cancelled' ? '–' : r.dueMin === 0 ? 'Due' : r.dueMin + ' min'}<small>${r.status === 'live' ? 'live ' + X.nzClock(r.predicted) : 'timetable ' + X.nzClock(r.scheduled)}</small></span></li>`; }).join('')}</ul>`
+  // Recompute when an update ages out or a subsequent poll fails. Never freeze a once-fresh ETA.
+  const rows = X.arrivalsForStop(a.trips, S.updates, Math.round(Date.now() / 1000), { routes: S.index.routes, limit: 10 });
+  if (!rows.length) return a.partial ? `<p class="note">The timetable was only available for some platforms. <a href="https://at.govt.nz/bus-train-ferry/service-announcements/check-before-you-travel">Check with AT.</a></p>` : `<p class="muted">Nothing due here in the next two hours by the timetable.</p>`;
+  return `<ul class="rows">${rows.map((r) => { const st = r.status === 'estimated' ? { status: 'unknown', label: 'Estimate from last reported delay' } : r.status === 'cancelled' ? { status: 'cancelled', label: 'Cancelled' } : { status: 'unknown', label: r.status === 'stale' ? 'Scheduled · update stale' : 'Scheduled' };
+    return `<li><button type="button" class="row" data-route="${esc(r.routeId)}"><span class="r">${esc(r.route)}</span><span class="h">${esc(cleanHead(r.headsign))}<small><i style="--c:${statusColour(st)}"></i> ${esc(st.label)}</small></span><span class="w">${r.status === 'cancelled' ? '–' : r.dueMin === 0 ? 'Due' : r.dueMin + ' min'}<small>${r.status === 'estimated' ? 'estimated ' + X.nzClock(r.predicted) : 'scheduled ' + X.nzClock(r.scheduled)}</small></span></button></li>`; }).join('')}</ul>`
+    + (a.partial ? `<p class="note">Some platform timetables were unavailable.</p>` : '')
     + (a.verified === false ? `<p class="muted mono">Timetable from AT's GTFS API through at-live; this link is new and still being checked.</p>` : '');
 }
-function alertHtml(a) { return `<div class="alert"><b>${esc(a.header || 'Service alert')}</b>${esc(a.description).slice(0, 400)}</div>`; }
+function alertHtml(a) { return `<div class="alert"><b>${esc(a.header || 'Service alert')}</b>${esc(a.description).slice(0, 400)} <a href="https://at.govt.nz/bus-train-ferry/service-announcements/check-before-you-travel">Check official AT travel updates</a></div>`; }
 function fmtTime(iso) { const t = Date.parse(iso); return Number.isFinite(t) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(t) : 'an earlier time'; }
 function renderTruth() {
   const p = S.positions, sun = S.world?.sun;
-  const pos = !p ? 'Positions: loading' : S.posSource === 'sample' ? `Positions: SAVED SAMPLE from ${fmtTime(S.sampleAt)}, not live` : `Positions: Auckland Transport, live, newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
+  const current = p && !S.posError && X.timestampFresh(p.newestFix, Math.round(Date.now() / 1000));
+  const pos = !p ? 'Positions: loading' : S.posSource === 'sample' ? `Positions: SAVED SAMPLE from ${fmtTime(S.sampleAt)}, not live` : `Positions: Auckland Transport, ${current ? 'live' : 'stale or unavailable'}, newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
   const del = S.atLive.state === 'on' ? `Delays and alerts: AT trip updates ${ago(S.atLive.at)}` : `Delays: not connected yet`;
   const sunTxt = sun ? (sun.elevation > 0 ? ` · sun ${Math.round(sun.elevation)}° up` : ' · sun down') : '';
-  const short = !p ? 'Loading' : S.posSource === 'sample' ? `SAVED SAMPLE ${fmtTime(S.sampleAt)}, not live` : `Live · newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
+  const short = !p ? 'Loading' : S.posSource === 'sample' ? `SAVED SAMPLE ${fmtTime(S.sampleAt)}, not live` : `${current ? 'Live' : 'Stale or unavailable'} · newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
   const src = document.querySelector('.sources'); if (src) src.innerHTML = sourcesHtml(pos, del);
-  $('#truth').innerHTML = `<span class="short">${esc(short)} · ${S.atLive.state === 'on' ? 'delays live' : 'delays not connected'} · AT data CC BY 4.0 · more in the panel</span><span class="long">${esc(pos)} · ${esc(del)} · Routes and stops: AT GTFS timetable ${esc(gtfsSpan())} · Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · Ground: LINZ CC BY 4.0, © OpenStreetMap contributors ODbL${esc(sunTxt + skyNote)}</span>`;
+  $('#truth').innerHTML = `<span class="short">${esc(short)} · ${S.atLive.state === 'on' ? 'trip updates connected' : 'delays not connected'} · AT data CC BY 4.0 · more in the panel</span><span class="long">${esc(pos)} · ${esc(del)} · Routes and stops: AT GTFS timetable ${esc(gtfsSpan())} · Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · Ground: LINZ CC BY 4.0, © OpenStreetMap contributors ODbL${esc(sunTxt + skyNote)}</span>`;
 }
 function gtfsSpan() { const f = (d) => d && /^\d{8}$/.test(d) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8))) : ''; return S.gtfs?.feedStart ? `${f(S.gtfs.feedStart)} to ${f(S.gtfs.feedEnd)}` : ''; }
 function sourcesHtml(pos, del) {
@@ -241,6 +270,7 @@ function wireUi() {
       : `<li role="option" data-i="${i}"><span class="k">${it.kind === 'ferry' ? 'Ferry' : it.kind === 'station' ? 'Station' : 'Stop'}</span><span><span class="t">${esc(it.stop.name)}</span><span class="s">${it.stop.code ? 'Stop ' + esc(it.stop.code) + ' · ' : ''}${it.stop.routes.length} routes</span></span></li>`).join('');
     list.hidden = !items.length; q.setAttribute('aria-expanded', String(!!items.length));
   };
+  if (q.value) show();
   const choose = (it) => { if (!it) return; list.hidden = true; q.blur(); q.value = it.kind === 'route' ? it.route.short : it.stop.name; select(it.kind === 'route' ? { kind: 'route', id: it.id } : { kind: 'stop', id: it.id }); };
   q.addEventListener('input', show); q.addEventListener('focus', () => q.value && show());
   q.addEventListener('keydown', (e) => {
@@ -249,7 +279,7 @@ function wireUi() {
   });
   list.addEventListener('pointerdown', (e) => { const li = e.target.closest('li'); if (li) { e.preventDefault(); choose(items[+li.dataset.i]); } });
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.search')) list.hidden = true; });
-  document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pushVehicles(); });
+  document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pushVehicles(); if (listOnly) render(); });
   document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { S.world?.unfollow(); const v = S.world?.views[b.dataset.view]; if (v) S.world.flyTo(v.t, Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]), Math.asin(v.p[1] / Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]))); });
   $('#grip').onclick = () => $('#panel').classList.toggle('small');
   $('#detail').addEventListener('click', (e) => {
