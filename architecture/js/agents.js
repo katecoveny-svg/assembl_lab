@@ -21,7 +21,7 @@ const TWIN = '/plan-studio/twins/drop/';
 const isSample = (p) => !!p && (p.sample === true || p.id === SAMPLE_ID);
 const MARK = { [STATUS.waiting]: '□', [STATUS.running]: '▶', [STATUS.person]: '!', [STATUS.done]: '■', [STATUS.failed]: '×' };
 const RES = { pass: '■', check: '◧', fail: '□', 'not measured': '·' };
-const S = { jobs: new Map(), say: new Map() }; // project id -> { job, busy }, last message
+const S = { jobs: new Map(), say: new Map(), autoRev: new Set() }; // project id -> { job, busy }, last message, auto-run keys
 
 let rulesP = null, lookP = null, catP = null, revP = null;
 const rules = () => (rulesP ??= import('./agents/interior-rules.js'));
@@ -216,41 +216,50 @@ async function renderPanel(el, ctx) {
     ${back && (back.proposal || back.look) && back.at !== kept.handback_at ? `<section><p class="agt-fine">From the 3D page, ${esc(new Date(back.at).toLocaleString('en-NZ'))}${back.key.endsWith(':latest') ? ' (a model opened from Models)' : ''}: ${back.proposal ? 'a placed proposal' : ''}${back.proposal && back.look ? ' and ' : ''}${back.look ? 'a look check' : ''}.</p><div class="agt-acts"><button class="btn solid" data-agt="keep">Keep with this project</button></div></section>` : ''}
     ${S.say.get(p.id) ? `<p class="agt-fine" role="status">${esc(S.say.get(p.id))}</p>` : ''}
   </div>`;
+  const autoKey = `${p.id}:${String(pr.model?.fingerprint || '').replace(/^sha256:/i, '') || '0'.repeat(64)}:${projectFiles.length}:${detectedInputs.hasSitePoint ? 1 : 0}`;
+  const runSpecialistCheck = async (silent = false) => {
+    const RV = await revRules();
+    const sha = String(pr.model?.fingerprint || '').replace(/^sha256:/i, '') || '0'.repeat(64);
+    const files = await ctx.store.listFiles({ project_id: p.id });
+    const ifcFile = files.find((f) => /\.ifc$/i.test(f.name || ''));
+    const glbFile = files.find((f) => /\.(glb|gltf)$/i.test(f.name || '') && !['design_interior', 'design_exterior'].includes(f.extra?.source?.slot));
+    const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name || '') || ['drawing_set', 'site_plan', 'floor_plan'].includes(f.extra?.source?.slot));
+    const renderFiles = files.filter((f) => /\.(png|jpe?g|webp)$/i.test(f.name || '') || f.extra?.source?.slot === 'render' || /render|p1-12[012]/i.test(f.name || ''));
+    const filmFiles = files.filter((f) => /\.(mp4|webm|mov)$/i.test(f.name || '') || f.extra?.source?.slot === 'films');
+    const rec = await RV.runSpecialistReview({
+      project_id: p.id,
+      revision_sha256: sha,
+      plan_bim: {
+        ifc: ifcFile ? { sha256: sha, length_unit: 'metre', element_count: ifcFile.extra?.ifc?.total || 1, has_global_ids: true, orientation_verified: !!pr.site_sources?.placement?.confirmed_by } : null,
+        pdf: pdfFiles.length ? { sheets: pdfFiles.map((f) => ({ ref: f.name, scale_checked: true })), scale_check: { ok: true, factor: 1 } } : null,
+        notes: glbFile && !ifcFile ? [`Opened GLB "${glbFile.name}"; upload IFC source of truth when available.`] : [],
+      },
+      site: { lat: pr.site?.lat ?? null, lng: pr.site?.lon ?? null, linz_terrain: !!pr.site?.lat, linz_outlines: !!pr.site?.lat, survey_verified: !!pr.site_sources?.placement?.confirmed_by, facades_verified: false },
+      materials: {
+        presentation_reversible: true,
+        textures: [
+          { id: 'polyhaven-cc0', licence: 'CC0', scale_m: 1.0 },
+          ...(renderFiles.length ? [{ id: `architect-renders-${renderFiles.length}`, licence: 'project-reference', scale_m: 1.0 }] : []),
+        ],
+        fitouts: prop ? [{ id: 'proposed-fitout', label: 'Proposed fit-out', reversible: true }] : [],
+      },
+      camera: { width: 1280, height: 720, fps: 24, fov: 42, stops: (pr.site_sources?.camera_path?.pts ?? []).map((pt, idx) => ({ id: `S${idx + 1}`, position: pt, target: [0, 1.6, 0], transition: 'cut' })) },
+      reviewer: { track_a: filmFiles.length ? { playable: true, camera_metadata: true, paired_frames: ['first', 'middle', 'last'] } : null },
+    });
+    await save(ctx, p, (a) => RV.storeRevisionReview(a, rec), 'Specialist revision review recorded', `${sha.slice(0, 12)} · ${rec.status}`);
+    if (!silent) S.say.set(p.id, `5-specialist check stored against revision ${sha.slice(0, 12)} (${rec.status}).`);
+    else S.say.set(p.id, `5 specialists ran automatically on ${projectFiles.length} project file(s) (${rec.status}). People approve changes and paid renders.`);
+  };
+  if (!latestRev && (projectFiles.length > 0 || detectedInputs.hasSitePoint) && !S.autoRev.has(autoKey)) {
+    S.autoRev.add(autoKey);
+    queueMicrotask(() => { void runSpecialistCheck(true).then(() => ctx.redraw()).catch(() => {}); });
+  }
   el.onclick = async (e) => {
     const b = e.target.closest('[data-agt]'); if (!b) return;
     const what = b.dataset.agt;
     try {
       if (what === 'rev-run') {
-        const RV = await revRules();
-        const sha = String(pr.model?.fingerprint || '').replace(/^sha256:/i, '') || '0'.repeat(64);
-        const files = await ctx.store.listFiles({ project_id: p.id });
-        const ifcFile = files.find((f) => /\.ifc$/i.test(f.name || ''));
-        const glbFile = files.find((f) => /\.glb$/i.test(f.name || '') && !['design_interior', 'design_exterior'].includes(f.extra?.source?.slot));
-        const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name || '') || ['drawing_set', 'site_plan', 'floor_plan'].includes(f.extra?.source?.slot));
-        const renderFiles = files.filter((f) => /\.(png|jpe?g|webp)$/i.test(f.name || '') || f.extra?.source?.slot === 'render' || /render|p1-12[012]/i.test(f.name || ''));
-        const filmFiles = files.filter((f) => /\.(mp4|webm|mov)$/i.test(f.name || '') || f.extra?.source?.slot === 'films');
-        const rec = await RV.runSpecialistReview({
-          project_id: p.id,
-          revision_sha256: sha,
-          plan_bim: {
-            ifc: ifcFile ? { sha256: sha, length_unit: 'metre', element_count: ifcFile.extra?.ifc?.total || 1, has_global_ids: true, orientation_verified: !!pr.site_sources?.placement?.confirmed_by } : null,
-            pdf: pdfFiles.length ? { sheets: pdfFiles.map((f) => ({ ref: f.name, scale_checked: true })), scale_check: { ok: true, factor: 1 } } : null,
-            notes: glbFile && !ifcFile ? [`Opened GLB "${glbFile.name}"; upload IFC source of truth when available.`] : [],
-          },
-          site: { lat: pr.site?.lat ?? null, lng: pr.site?.lon ?? null, linz_terrain: !!pr.site?.lat, linz_outlines: !!pr.site?.lat, survey_verified: !!pr.site_sources?.placement?.confirmed_by, facades_verified: false },
-          materials: {
-            presentation_reversible: true,
-            textures: [
-              { id: 'polyhaven-cc0', licence: 'CC0', scale_m: 1.0 },
-              ...(renderFiles.length ? [{ id: `architect-renders-${renderFiles.length}`, licence: 'project-reference', scale_m: 1.0 }] : []),
-            ],
-            fitouts: prop ? [{ id: 'proposed-fitout', label: 'Proposed fit-out', reversible: true }] : [],
-          },
-          camera: { width: 1280, height: 720, fps: 24, fov: 42, stops: (pr.site_sources?.camera_path?.pts ?? []).map((pt, idx) => ({ id: `S${idx + 1}`, position: pt, target: [0, 1.6, 0], transition: 'cut' })) },
-          reviewer: { track_a: filmFiles.length ? { playable: true, camera_metadata: true, paired_frames: ['first', 'middle', 'last'] } : null },
-        });
-        await save(ctx, p, (a) => RV.storeRevisionReview(a, rec), 'Specialist revision review recorded', `${sha.slice(0, 12)} · ${rec.status}`);
-        S.say.set(p.id, `5-specialist check stored against revision ${sha.slice(0, 12)} (${rec.status}).`);
+        await runSpecialistCheck(false);
       }
       if (what === 'rev-approve') {
         const RV = await revRules();

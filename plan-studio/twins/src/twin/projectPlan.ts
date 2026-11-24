@@ -535,8 +535,9 @@ const mb = (n: number) => `${Math.round(n / (1024 * 1024))} MB`;
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
   // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
   const qs = new URLSearchParams(location.search);
-  // the page opens on a finished example, with the drop a tap away, rather than on a card of text
-  const example = !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop') && !qs.has('ground');
+  // open straight onto the Drop chooser by default so users can drop a PDF, JPEG, IFC, GLB or GLTF immediately;
+  // pass ?example=1 (or ?plan=...) to open the Waiheke sample house instead
+  const example = qs.get('example') === '1' && !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop') && !qs.has('ground');
   const pu = qs.get('plan') ?? (example ? 'hero.plan.json' : null);
   if (pu && /^[\w./-]+\.json$/.test(pu) && !pu.includes('//')) {
     try {
@@ -593,15 +594,15 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     o.style.cssText = hid
       ? 'background:#21121f;place-items:end start;padding:clamp(12px,3vw,28px)'
       : "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
-    o.innerHTML = `<div class="card drop-card" style="max-width:440px;background:rgba(249,246,242,.94);backdrop-filter:blur(10px)">
-      <h2>Drop your plan</h2>
-      <p>A PDF, a picture of a plan, an IFC or a plan model. It comes back as a measured 3D home you can walk through, furnished and lit.</p>
-      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
+    o.innerHTML = `<div class="card drop-card" style="max-width:460px;background:rgba(249,246,242,.95);backdrop-filter:blur(10px)">
+      <h2>Drop a plan, photo or 3D model</h2>
+      <p>Drop a <b>PDF</b>, <b>JPEG / PNG</b> floor plan, <b>IFC</b>, <b>GLB / GLTF</b> or plan model. It opens as a measured 3D twin on real LINZ ground with specialist checks ready to run.</p>
+      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><a class="pill" href="?example=1" style="text-decoration:none;display:inline-flex;align-items:center">Try Waiheke sample</a><button class="pill" type="button" id="dropSample">Try 16A sample</button></div>
       <label class="slider">Finishes <select id="dropPalette">${Object.entries(PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name}</option>`)
         .join('')}</select></label>
-      <details class="small" style="margin-top:10px"><summary>How it reads a plan, and what leaves your browser</summary><p class="small">Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p><p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p></details>
-      <p class="small" style="margin:10px 0 0"><a href="./">Back to the example</a> · The picture behind is the example: a rendering of a plan model, not a photograph.</p>
+      <details class="small" style="margin-top:10px"><summary>How it reads each format, and what leaves your browser</summary><p class="small">Drop a <b>PDF</b> or <b>JPEG / PNG</b> of a floor plan and the AI plan reader traces walls, openings and rooms into 3D. Drop a <b>plan model</b> (.json) to skip tracing. Drop an <b>IFC</b>, <b>GLB</b> or <b>GLTF</b> from Revit, ArchiCAD or Blender to inspect it directly on LINZ 1 m LiDAR ground with aerial imagery.</p><p class="small">Plan models, IFC, GLB and GLTF files stay in your browser. Vector PDFs are measured locally; raster PDFs and JPEGs ask your confirmation before sending a crop to the lab’s AI plan reader, which does not store it.</p></details>
+      <p class="small" style="margin:10px 0 0"><a href="/architecture/">Open Architecture workspace</a> · <a href="/">assembl. lab</a></p>
     </div>`;
     stage.append(o);
     const pal = () => (o.querySelector('#dropPalette') as HTMLSelectElement).value;
@@ -635,6 +636,15 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
           return;
         }
         done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
+      } else if (ext === 'gltf') {
+        if (f.size > BROWSER_3D_LIMIT) {
+          const card = o.querySelector('.drop-card') as HTMLElement;
+          card.querySelector('h2')!.textContent = 'Too big to open in a browser';
+          card.querySelector('p')!.textContent = `${f.name} is ${mb(f.size)}. This page opens 3D model files up to ${mb(BROWSER_3D_LIMIT)}.`;
+          app.log('Waiting for a smaller file.');
+          return;
+        }
+        done({ kind: 'glb', bytes: await f.arrayBuffer(), name: f.name });
       }
       else if (ext === 'pdf' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp') {
         if (tracing) return;
