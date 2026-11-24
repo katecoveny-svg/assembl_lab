@@ -293,11 +293,33 @@ export function flightPanel(app: App, ctx: FlightCtx) {
           beforeFrame: (_t, c) => (ctx.layout ?? defaultLayout)(c.layout?.name ?? null, c.layout?.amount ?? 0), stop: () => stopFilm,
           onProgress: (d, n) => { if (d % 15 === 0 || d === n) fsays(`${lead}frame ${d} of ${n}…`); } });
         const name = `${slug(ctx.name)}-flythrough-v${fp.version}${mode ? `-${slug(mode)}` : ''}${vs.tag ? `-${vs.tag.toLowerCase()}` : ''}${fp.status === 'confirmed' ? '' : '-proposed'}.${out.type}`;
-        films.push({ name, blob: out.blob }); app.lastVideo = out.blob; showFilms();
-        fsays(`${lead}made: ${Math.round(out.secs)} s, ${w}×${h}, ${out.type.toUpperCase()}, ${(out.blob.size / 1e6).toFixed(1)} MB, in ${Math.round(out.ms / 1000)} s.${fp.status === 'confirmed' ? '' : ' The path is still a proposal: this is a draft.'}`);
+        const metaName = name.replace(/\.(mp4|webm)$/i, '-camera-metadata.json');
+        const metaBlob = new Blob([JSON.stringify({
+          schema: 'assembl.camera-metadata.v1',
+          track: 'A-exact-model',
+          project: ctx.name,
+          version: fp.version,
+          status: fp.status,
+          mode: mode || 'default',
+          variant: vs.tag || 'standard',
+          resolution: { width: w, height: h, aspect: `${w}:${h}` },
+          fps: out.fps,
+          duration_s: Math.round(out.secs * 1000) / 1000,
+          review_frames: out.reviewFrames.map((rf) => ({ slot: rf.slot, frame: rf.frame, t: rf.t, camera: rf.camera })),
+          frames: out.cameraMeta,
+        }, null, 2)], { type: 'application/json' });
+        films.push({ name, blob: out.blob }, { name: metaName, blob: metaBlob });
+        for (const rf of out.reviewFrames) {
+          const rfBlob = await (await fetch(rf.dataUrl)).blob();
+          films.push({ name: name.replace(/\.(mp4|webm)$/i, `-frame-${rf.slot}.jpg`), blob: rfBlob });
+        }
+        app.lastVideo = out.blob; showFilms();
+        fsays(`${lead}Track A exact-model master made: ${Math.round(out.secs)} s, ${w}×${h}, ${out.type.toUpperCase()}, ${(out.blob.size / 1e6).toFixed(1)} MB + camera metadata + ${out.reviewFrames.length} paired review frames, in ${Math.round(out.ms / 1000)} s.${fp.status === 'confirmed' ? '' : ' The path is still a proposal: this is a draft.'}`);
         if (ctx.handoffId) {
-          await putBackRecord(ctx.handoffId, 'film', { name, part: slug(name), data: out.blob, meta: { status: fp.status, version: fp.version, secs: Math.round(out.secs), size: `${w}x${h}`, quality: q, mode, variant: vs.tag || null } })
-            .then(() => fsays(`${$('#flFilmSays').textContent} A copy goes to the project.`)).catch((e) => fsays(`${$('#flFilmSays').textContent} The copy for the project did not go: ${(e as Error).message}`));
+          await putBackRecord(ctx.handoffId, 'film', { name, part: slug(name), data: out.blob, meta: { track: 'A-exact-model', status: fp.status, version: fp.version, secs: Math.round(out.secs), size: `${w}x${h}`, quality: q, mode, variant: vs.tag || null, review_frames: out.reviewFrames.length, has_camera_metadata: true } })
+            .then(() => fsays(`${$('#flFilmSays').textContent} A copy goes to the project.`))
+            .catch((e) => fsays(`${$('#flFilmSays').textContent} The copy for the project did not go: ${(e as Error).message}`));
+          await putBackRecord(ctx.handoffId, 'shot', { name: metaName, part: `${slug(name)}-meta`, data: metaBlob, meta: { track: 'A-exact-model', kind: 'camera-metadata', version: fp.version, mode } }).catch(() => void 0);
         }
       }
       await setMode(null);

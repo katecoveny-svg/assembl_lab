@@ -1,0 +1,39 @@
+# Cloudflare Worker + Cloudflare Workflow for persistent architecture render dispatch.
+# Runs dispatch, durable polling/webhooks and private storage orchestration only (NOT 3D GPU rendering).
+# Deploy preview/staging independently from the main Pages site:
+#   wrangler deploy --config workers/render-dispatch/wrangler.toml --env preview
+#
+# Required server-side secrets (set via `wrangler secret put <NAME>`, never committed):
+#   - GEMINI_API_KEY            (Google Gemini stills & Omni 1.2 Flash video editing)
+#   - FAL_KEY                   (optional: fal.ai queue API key)
+#   - FAL_VIDEO_ENDPOINT        (optional: verified fal 3D-to-video endpoint accepting source clip)
+#   - RENDER_WEBHOOK_SECRET     (HMAC-SHA256 webhook verification secret)
+#   - ARCH_SHARE_SERVICE_KEY    (optional: service role key for background workflow ledger updates)
+
+name = "assembl-render-dispatch"
+main = "src/index.js"
+compatibility_date = "2026-11-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[workflows]]
+name = "render-dispatch-workflow"
+binding = "RENDER_WORKFLOW"
+class_name = "RenderDispatchWorkflow"
+
+# Optional private R2 bucket (enable R2 in Cloudflare Dashboard first; otherwise reuses Supabase private arch-files bucket)
+# [[r2_buckets]]
+# binding = "RENDER_BUCKET"
+# bucket_name = "assembl-render-private"
+
+[vars]
+RENDER_AI_DISABLED = "false"
+FILM_GEMINI_MODEL = "gemini-omni-1.2-flash"
+FILM_SEGMENT_MAX_S = "10"
+
+[env.preview]
+name = "assembl-render-dispatch-preview"
+
+[env.preview.vars]
+RENDER_AI_DISABLED = "false"
+FILM_GEMINI_MODEL = "gemini-omni-1.2-flash"
+FILM_SEGMENT_MAX_S = "10"

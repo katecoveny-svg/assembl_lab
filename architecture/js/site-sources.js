@@ -16,7 +16,7 @@ import { placeLine } from './facts.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BUCKET } from './config.js';
 import {
   SLOTS, slotOf, acceptFor, checkSource, bySlot, nextVersion, sourceExtra, isSource, normalSiteSources, isConfirmed, pathPoints,
-  pointFromSite, pointDiffers, parcelStatus, GROUND, pickModel, hasModel, siteHandoff, blobSlots, withSiteSources, confirmPath, ext, backToSource, GALLERY, mediaOf,
+  pointFromSite, pointDiffers, parcelStatus, GROUND, pickModel, hasModel, readSiteHandoff, withSiteSources, confirmPath, ext, backToSource, GALLERY, mediaOf,
 } from './site-sources-rules.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -331,6 +331,8 @@ async function keepOne(file, slotId, ctx, p) {
     const head = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
     const wrong = checkSource(slotId, file.name, head);
     if (wrong) throw new Error(wrong);
+    if (slotId === 'walk_review' && file.size > 65536) throw new Error('A walkthrough setup must be smaller than 64 KB.');
+    if (slotId.startsWith('design_') && file.size > 24 * 1024 * 1024) throw new Error('A design layer must be smaller than 24 MB.');
     const tooBig = sizeProblem(file, place);
     if (tooBig) throw new Error(tooBig);
     const mine = (await ctx.store.listFiles({ project_id: p.id })).filter(isSource);
@@ -394,18 +396,10 @@ function walk(ctx, p) {
     let blob = await blobOf(ctx, main);
     let name = main.name;
     if (kindOf(name) === 'ifczip' && KINDS.ifczip) { const z = await (await import('./ifc-summary.js')).unzipIfc(new Uint8Array(await blob.arrayBuffer())); blob = new Blob([z.bytes]); name = z.name; }
-    const site = siteHandoff(pr, mine);
+    const site = await readSiteHandoff(pr, mine, (f) => blobOf(ctx, f), true);
     try { const sb = (await import('./agents/site-brief-rules.js')).briefForHandoff(pr.site_brief?.brief); if (sb) site.brief = sb; } catch { /* opens without it */ }   // site agent (feat/site-agent): site.brief, additive; this line only
-    site.files = {};
-    for (const id of blobSlots()) {
-      const f = slots.find((s) => s.slot.id === id)?.stacks[0]?.latest;
-      if (f) site.files[id] = await blobOf(ctx, f);
-    }
     r.state = 'keeping'; ctx.redraw();
     const { putHandoff, HANDOFF_PARAM, keepBrand } = await import('./handoff.js');
-    // the latest saved fly-through goes across too, so the 3D page opens with it to carry on editing
-    const fl = slots.find((s) => s.slot.id === 'flythrough')?.stacks[0]?.latest;
-    if (fl) { try { site.flight = JSON.parse(await (await blobOf(ctx, fl)).text()); } catch { /* opens without it */ } }
     await keepBrand(ctx.practice?.name).catch(() => void 0);   // the 3D page wears the practice's name and logo (practiceLook.ts)
     const hid = await putHandoff(blob, name, { site });
     rememberHandoff(p.id, hid);
@@ -422,7 +416,7 @@ function walk(ctx, p) {
 // the ids it handed across for each project (this browser only) and takes those records into the project's own records: files in
 // Site and sources (Fly-through path, Films and stills), the camera path into the project's site sources. No download and upload.
 const HIDS = (pid) => `assembl-handoffs:${pid}`;
-function rememberHandoff(pid, hid) {
+export function rememberHandoff(pid, hid) {
   try { const list = JSON.parse(localStorage.getItem(HIDS(pid)) ?? '[]').filter((x) => x.id !== hid && Date.now() - x.at < 7 * 864e5); list.push({ id: hid, at: Date.now() }); localStorage.setItem(HIDS(pid), JSON.stringify(list.slice(-12))); } catch { /* private mode: the 3D page still has them for an hour */ }
 }
 const handedFor = (pid) => { try { return JSON.parse(localStorage.getItem(HIDS(pid)) ?? '[]').map((x) => x.id); } catch { return []; } };

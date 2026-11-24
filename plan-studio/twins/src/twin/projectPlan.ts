@@ -535,8 +535,9 @@ const mb = (n: number) => `${Math.round(n / (1024 * 1024))} MB`;
 async function chooser(app: App): Promise<{ input: Input; palette: string }> {
   // a page that opens straight onto a plan model: ?plan=<a .json beside the lab's own pages>
   const qs = new URLSearchParams(location.search);
-  // the page opens on a finished example, with the drop a tap away, rather than on a card of text
-  const example = !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop') && !qs.has('ground');
+  // open straight onto the Drop chooser by default so users can drop a PDF, JPEG, IFC, GLB or GLTF immediately;
+  // pass ?example=1 (or ?plan=...) to open the Waiheke sample house instead
+  const example = qs.get('example') === '1' && !qs.has('plan') && !qs.has('share') && !qs.has('fin') && !qs.has('drop') && !qs.has('ground');
   const pu = qs.get('plan') ?? (example ? 'hero.plan.json' : null);
   if (pu && /^[\w./-]+\.json$/.test(pu) && !pu.includes('//')) {
     try {
@@ -548,9 +549,19 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
           const a = document.createElement('a');
           a.className = 'pill solid';
           a.href = '?drop=1';
-          a.textContent = 'Drop your own plan';
+          a.textContent = 'Drop your own plan / IFC / GLB';
           a.style.cssText = 'position:absolute;left:12px;top:12px;z-index:6;text-decoration:none;box-shadow:0 6px 24px rgba(51,33,47,.18)';
           app.canvas.parentElement!.append(a);
+          const hdr = document.querySelector('header');
+          if (hdr && !hdr.querySelector('#dropYourOwnHdr')) {
+            const b = document.createElement('a');
+            b.id = 'dropYourOwnHdr';
+            b.className = 'pill solid';
+            b.href = '?drop=1';
+            b.textContent = 'Drop plan / IFC / GLB';
+            b.style.cssText = 'text-decoration:none;display:inline-flex;align-items:center;white-space:nowrap';
+            hdr.insertBefore(b, hdr.querySelector('#panelToggle'));
+          }
         }
         return { input: { kind: 'plan', plan, name: plan.job?.title ?? 'Plan model' }, palette: 'cedar-charcoal' };
       }
@@ -583,15 +594,15 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
     o.style.cssText = hid
       ? 'background:#21121f;place-items:end start;padding:clamp(12px,3vw,28px)'
       : "background:linear-gradient(180deg,rgba(33,18,31,0) 35%,rgba(33,18,31,.5) 100%),url('hero.webp') center/cover no-repeat #21121f;place-items:end start;padding:clamp(12px,3vw,28px)";
-    o.innerHTML = `<div class="card drop-card" style="max-width:440px;background:rgba(249,246,242,.94);backdrop-filter:blur(10px)">
-      <h2>Drop your plan</h2>
-      <p>A PDF, a picture of a plan, an IFC or a plan model. It comes back as a measured 3D home you can walk through, furnished and lit.</p>
-      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><button class="pill" id="dropSample">Try the 16A plan model</button></div>
+    o.innerHTML = `<div class="card drop-card" style="max-width:460px;background:rgba(249,246,242,.95);backdrop-filter:blur(10px)">
+      <h2>Drop a plan, photo or 3D model</h2>
+      <p>Drop a <b>PDF</b>, <b>JPEG / PNG</b> floor plan, <b>IFC</b>, <b>GLB / GLTF</b> or plan model. It opens as a measured 3D twin on real LINZ ground with specialist checks ready to run.</p>
+      <div class="row wrap"><label class="pill solid" tabindex="0">Choose a file<input type="file" id="dropFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.json,.ifc,.glb,.gltf" hidden></label><a class="pill" href="?example=1" style="text-decoration:none;display:inline-flex;align-items:center">Try Waiheke sample</a><button class="pill" type="button" id="dropSample">Try 16A sample</button></div>
       <label class="slider">Finishes <select id="dropPalette">${Object.entries(PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name}</option>`)
         .join('')}</select></label>
-      <details class="small" style="margin-top:10px"><summary>How it reads a plan, and what leaves your browser</summary><p class="small">Drop a <b>PDF</b> of the plans (or a picture of a plan) and the tool finds the floor plan, reads its walls, openings and rooms, checks them against the written dimensions and builds the homes. Drop a <b>plan model</b> (.json from Plan to 4D) to skip the reading. Every room is furnished from its name and finished in the palette you pick. An <b>IFC</b> or <b>GLB</b> from Revit, ArchiCAD or Blender is shown as it is.</p><p class="small">Plan models, IFC and GLB files never leave your browser. A PDF with real linework is measured in your browser too; if its plan is a picture (many CAD exports, all scans), you are asked before a crop goes to the lab’s AI plan reader, which does not keep it.</p></details>
-      <p class="small" style="margin:10px 0 0"><a href="./">Back to the example</a> · The picture behind is the example: a rendering of a plan model, not a photograph.</p>
+      <details class="small" style="margin-top:10px"><summary>How it reads each format, and what leaves your browser</summary><p class="small">Drop a <b>PDF</b> or <b>JPEG / PNG</b> of a floor plan and the AI plan reader traces walls, openings and rooms into 3D. Drop a <b>plan model</b> (.json) to skip tracing. Drop an <b>IFC</b>, <b>GLB</b> or <b>GLTF</b> from Revit, ArchiCAD or Blender to inspect it directly on LINZ 1 m LiDAR ground with aerial imagery.</p><p class="small">Plan models, IFC, GLB and GLTF files stay in your browser. Vector PDFs are measured locally; raster PDFs and JPEGs ask your confirmation before sending a crop to the lab’s AI plan reader, which does not store it.</p></details>
+      <p class="small" style="margin:10px 0 0"><a href="/architecture/">Open Architecture workspace</a> · <a href="/">assembl. lab</a></p>
     </div>`;
     stage.append(o);
     const pal = () => (o.querySelector('#dropPalette') as HTMLSelectElement).value;
@@ -625,6 +636,15 @@ async function chooser(app: App): Promise<{ input: Input; palette: string }> {
           return;
         }
         done({ kind: ext, bytes: await f.arrayBuffer(), name: f.name });
+      } else if (ext === 'gltf') {
+        if (f.size > BROWSER_3D_LIMIT) {
+          const card = o.querySelector('.drop-card') as HTMLElement;
+          card.querySelector('h2')!.textContent = 'Too big to open in a browser';
+          card.querySelector('p')!.textContent = `${f.name} is ${mb(f.size)}. This page opens 3D model files up to ${mb(BROWSER_3D_LIMIT)}.`;
+          app.log('Waiting for a smaller file.');
+          return;
+        }
+        done({ kind: 'glb', bytes: await f.arrayBuffer(), name: f.name });
       }
       else if (ext === 'pdf' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp') {
         if (tracing) return;
@@ -720,7 +740,8 @@ export const projectPlan: Project = {
     let plantObj: THREE.Object3D | null = null;
     let landObj: THREE.Object3D | null = null;
     let lightObj: THREE.Object3D | null = null;
-    let dressed: Dressed | null = null;   // model-dress
+    let dressed: Dressed | null = null;
+    let openedModel: THREE.Object3D | null = null;   // model-dress
     const b2Size = new THREE.Vector3();   // the building's own size (an opened model), for the camera path's surface sampler
     let sunFace: THREE.Vector3 | undefined;
     let siteNorth: [number, number] | undefined;
@@ -955,6 +976,7 @@ export const projectPlan: Project = {
       obj.position.x -= bcx; obj.position.z -= bcz; obj.position.y -= bb.box[1];
       shift.x -= bcx; shift.z -= bcz; shift.y += -bb.box[1];
       model.add(obj);
+      openedModel = obj;
       const b2 = new THREE.Box3(new THREE.Vector3(bb.box[0] - bcx, 0, bb.box[2] - bcz), new THREE.Vector3(bb.box[3] - bcx, bb.box[4] - bb.box[1], bb.box[5] - bcz));
       ownBox = b2.clone();
       centre = b2.getCenter(new THREE.Vector3());
@@ -967,7 +989,17 @@ export const projectPlan: Project = {
       keys.push(three);
       keys.push({ label: 'Aerial', eye: centre.clone().add(new THREE.Vector3(-radius * 0.7, radius * 0.7, radius * 0.9)), look: centre.clone() });
       keys.push({ label: 'Eye level', eye: centre.clone().add(new THREE.Vector3(0, 1.6 - centre.y, radius * 0.8)), look: centre.clone() });
-      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three, bounds: b2 });   // model-dress: finishes, planting, light
+      const fromParam = new URLSearchParams(location.search).get(HANDOFF_PARAM);
+      const handoffSite = handed && handed.id === fromParam ? handed.site : null;
+      let preReview: { materialSpans?: Record<string, import('./modelReviewRules').MaterialSpanSpec>; sunHour?: number } | null = null;
+      if (handoffSite?.files?.walk_review && handoffSite.files.walk_review.size <= 128 * 1024) {
+        try {
+          const { readReview, sha256 } = await import('./modelReviewRules');
+          preReview = readReview(JSON.parse(await handoffSite.files.walk_review.text()), await sha256(input.bytes));
+          if (preReview.sunHour !== undefined) sunHour = preReview.sunHour;
+        } catch (e) { console.warn('private review material profile skipped:', (e as Error).message); }
+      }
+      dressed = await dressModel(app, obj, { kind: input.kind, bytes: input.kind === 'ifc' ? input.bytes : undefined, quality: q, view: three, bounds: b2, materialSpans: preReview?.materialSpans });   // model-dress: finishes, planting, light
       // the chips say what this is: an opened model, not one generated from a plan
       const kindWord = input.kind.toUpperCase();
       const relabel = () => { const gen = [...document.querySelectorAll('#chips .chip')].find((c) => c.textContent === 'Generated from your plan model') as HTMLElement | undefined; if (gen) { gen.textContent = `Opened from your model (${kindWord})`; gen.title = 'The model as the architect drew it; finishes interpreted from its classes and material names'; } return !!gen; };
@@ -1107,9 +1139,10 @@ export const projectPlan: Project = {
         root: pathRoot, pickables: () => [lidarHolder.children.length ? lidarHolder : ground],
       });
       refreshPath = cp.refresh;
+      const reviewGround = (x: number, z: number) => (onModelGround ? onModelGround.yAt : (modelSurface ??= ((window as unknown as { __surface?: unknown }).__surface = surfaceSampler(model, new THREE.Box3().setFromCenterAndSize(centre.clone(), b2Size.clone()))) as (x: number, z: number) => number))(x,z);
       const fl = flightPanel(app, {
         name: input.name, handoffId: from && handed?.id === from ? from : null, frame: 'the scene: the model as opened, moved to stand at the origin (scene = file + shift)',
-        yAt: () => (onModelGround ? onModelGround.yAt : (modelSurface ??= ((window as unknown as { __surface?: unknown }).__surface = surfaceSampler(model, new THREE.Box3().setFromCenterAndSize(centre.clone(), b2Size.clone()))) as (x: number, z: number) => number)), pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
+        yAt: () => reviewGround, pickables: () => [lidarHolder.children.length ? lidarHolder : ground, model],
         root: pathRoot, focus: centre, hideForFilm: () => [pathRoot],
       });
       if (site?.flight) { try { fl.path = readFlight(site.flight); } catch (e) { console.warn('the saved fly-through could not be read', e); } }
@@ -1123,6 +1156,11 @@ export const projectPlan: Project = {
         outlines: async () => { if (!onModelGround) throw new Error('no ground yet'); return (await outlinesFor(onModelGround)).list; },
       });
       modelCards = [mg.el, pb.el, cp.el, fl.el]; startSite = mg.start;
+      if(openedModel && dressed) {
+        const { reviewPanel } = await import('./modelReviewUI');
+        modelCards.unshift(await reviewPanel(app, {model:openedModel, bytes:input.bytes, site, dress:dressed,bounds:box,
+          fallback:()=>fl.path,ground:reviewGround}));
+      }
       (window as unknown as { __site?: unknown }).__site = { ground: () => onModelGround, path: cp.state, info: ifcInfo, shift };   // for checks from the console (this tab only)
     }
 

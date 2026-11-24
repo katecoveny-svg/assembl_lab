@@ -720,3 +720,10 @@ main > section.interior { position: relative; height: 380vh; padding: 0; backgro
   .guide.touring .guide-log { padding: 12px 16px; }
 }
 @media (max-width: 600px) { .tour-pill { top: 54px; right: 12px; left: auto; bottom: auto; min-height: 36px; padding: 8px 12px; font-size: 12.5px; } }
+
+.guide.voice-recovery .guide-foot { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.guide.voice-recovery #guide-voice { display: none; }
+.guide.voice-recovery .guide-foot .voice { min-height: 44px; }
+.guide.voice-recovery #guide-play-line { background: var(--ink); color: var(--ivory); }
+.guide.voice-recovery #guide-voice-l { flex-basis: 100%; }
+.guide-foot button[hidden] { display: none; }

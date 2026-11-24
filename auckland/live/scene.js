@@ -200,11 +200,15 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       .replace('#include <color_fragment>', `#include <color_fragment>
         float isWall = 1.0 - step(0.5, abs(vUp));
         float bH = floor(vFac.z), bSeed = fract(vFac.z);
-        float fl = vFac.y / 3.4, bay = vFac.x / (bH > 40.0 ? 2.0 : 3.1);
+        float ribbon = step(0.58, bSeed) * step(18.0, bH);
+        float warehouse = (1.0 - step(13.0, bH)) * step(0.46, bSeed);
+        float fl = vFac.y / mix(3.1, 4.3, bSeed), bay = vFac.x / mix(2.2, 5.6, bSeed);
         vec2 cell = vec2(floor(bay), floor(fl)); vec2 f = vec2(fract(bay), fract(fl));
         float win = isWall * step(0.9, vFac.y) * step(0.14, f.x) * step(f.x, 0.86) * step(0.3, f.y) * step(f.y, 0.86);
+        win = mix(win, isWall * step(1.2, vFac.y) * step(0.06, f.x) * step(0.25, f.y) * step(f.y, 0.89), ribbon);
+        float glazing = mix(1.0, step(bH * 0.56, vFac.y), warehouse);
         float aa = clamp(1.6 - max(fwidth(bay), fwidth(fl)) * 2.0, 0.0, 1.0); // windows smaller than a pixel average out, no shimmer
-        win = mix(isWall * step(0.9, vFac.y) * 0.4, win, aa);
+        win = mix(isWall * step(0.9, vFac.y) * 0.4, win, aa) * glazing;
         float grime = fbm(vec2(vFac.x * 0.4, vFac.y * 0.25) + bSeed * 31.0);
         diffuseColor.rgb *= mix(0.88 + 0.2 * grime, 0.9 + 0.18 * fbm(vFac.xy * 0.15), 1.0 - isWall);
         diffuseColor.rgb *= mix(1.0, 0.55 + 0.45 * smoothstep(0.0, 4.0, vFac.y), isWall); // contact shade at the foot of walls
@@ -260,11 +264,13 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     city: { t: [-2185, 0, 300], p: [-1500, 520, -650] },
     overview: { t: [-900, 0, 1500], p: [5200, 9000, -9500] },
   };
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let fly = null, follow = null;
   function setView(v) { controls.target.set(...v.t); camera.position.set(...v.p); controls.update(); }
   function flyTo(t, dist = 900, pitch = 0.5) {
     const to = new T.Vector3(t[0], t[1] ?? 0, t[2]), off = camera.position.clone().sub(controls.target); off.y = 0; if (off.lengthSq() < 1) off.set(0.6, 0, -1);
     off.normalize().multiplyScalar(Math.cos(pitch) * dist); off.y = Math.sin(pitch) * dist;
+    if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(to).add(off); controls.update(); return; }
     fly = { t0: performance.now(), dur: 1400, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: to, toP: to.clone().add(off) };
   }
   let inset = 0;
@@ -282,7 +288,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       const moved = Math.hypot(v.x - s.tx, v.z - s.tz);
       let heading = v.heading; if (heading == null && moved > 8) heading = Math.atan2(v.x - s.tx, -(v.z - s.tz)); if (heading == null) heading = s.h;
       Object.assign(s, v, { fx: s.x ?? v.x, fz: s.z ?? v.z, fy: s.y ?? y, tx: v.x, tz: v.z, ty: y, t0: now, h: heading });
-      if (moved > 3000) { s.fx = v.x; s.fz = v.z; s.fy = y; } // a jump: do not glide across the harbour
+      if (reducedMotion.matches || moved > 3000) { s.fx = v.x; s.fz = v.z; s.fy = y; } // a jump: do not glide across the harbour
     }
     for (const id of [...state.keys()]) if (!seen.has(id)) state.delete(id);
   }

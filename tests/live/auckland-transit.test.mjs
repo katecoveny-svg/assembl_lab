@@ -80,8 +80,8 @@ test('delay status: on time band, late, very late, early, cancelled, unknown, an
   assert.equal(X.delayStatus(u.get('T5'), NOW).status, 'early');
   assert.equal(X.delayStatus(undefined, NOW).status, 'unknown');
   assert.equal(X.delayStatus({ delay: 900, ts: NOW - 3600 }, NOW).status, 'unknown'); // an hour-old update is not used
-  assert.equal(X.delayStatus({ delay: 300 }, NOW).status, 'on-time'); assert.equal(X.delayStatus({ delay: 301 }, NOW).status, 'late');
-  assert.equal(X.delayStatus({ delay: -60 }, NOW).status, 'on-time'); assert.equal(X.delayStatus({ delay: -61 }, NOW).status, 'early');
+  assert.equal(X.delayStatus({ delay: 300, ts: NOW }, NOW).status, 'on-time'); assert.equal(X.delayStatus({ delay: 301, ts: NOW }, NOW).status, 'late');
+  assert.equal(X.delayStatus({ delay: -60, ts: NOW }, NOW).status, 'on-time'); assert.equal(X.delayStatus({ delay: -61, ts: NOW }, NOW).status, 'early');
 });
 
 test('alerts: text, routes, stops and active periods', () => {
@@ -103,7 +103,7 @@ test('GTFS times in Auckland: summer and winter offsets, and times past midnight
   assert.equal(X.nzServiceDate(Date.UTC(2026, 10, 22, 12, 30)), '2026-11-23'); // 1:30 am in Auckland
 });
 
-test('next arrivals: live when a fresh delay exists and the vehicle has not passed; timetable otherwise; never invented', () => {
+test('next arrivals: estimate when a fresh delay exists and the vehicle has not passed; timetable otherwise; never invented', () => {
   const u = X.parseTripUpdates(TU), base = X.gtfsTimeToEpoch('20261123', '13:30:00'); // 00:30 UTC; NOW is 00:10 UTC
   const trips = [
     { trip_id: 'T1', route_id: '70-205', arrival_time: '13:30:00', stop_sequence: 8, trip_headsign: 'Botany', service_date: '2026-11-23' }, // live: +7 min
@@ -113,10 +113,24 @@ test('next arrivals: live when a fresh delay exists and the vehicle has not pass
     { trip_id: 'T8', route_id: '70-205', arrival_time: '12:00:00', stop_sequence: 8, service_date: '2026-11-23' }, // gone
   ];
   const rows = X.arrivalsForStop(trips, u, NOW);
-  assert.deepEqual(rows.map((r) => [r.tripId, r.status]), [['T9', 'scheduled'], ['T1', 'live'], ['T3', 'cancelled']]);
+  assert.deepEqual(rows.map((r) => [r.tripId, r.status]), [['T9', 'scheduled'], ['T1', 'estimated'], ['T3', 'cancelled']]);
   const t1 = rows.find((r) => r.tripId === 'T1'); assert.equal(t1.predicted, base + 420); assert.equal(t1.delay, 420);
   const t9 = rows.find((r) => r.tripId === 'T9'); assert.equal(t9.predicted, null); assert.equal(t9.delay, null);
   assert.deepEqual(X.arrivalsForStop([], u, NOW), []); assert.deepEqual(X.arrivalsForStop(null, null, NOW), []);
+});
+
+test('boarding: missing or stale time, wrong service date or route cannot drive a prediction', () => {
+  const st = { trip_id: 'T1', route_id: 'R-1', arrival_time: '13:30:00', stop_sequence: 8, service_date: '2026-11-23' };
+  const fresh = { routeId: 'R-1', startDate: '20261123', delay: 300, stopSeq: 5, ts: NOW };
+  const rows = (update, now = NOW) => X.arrivalsForStop([st], new Map([['T1', update]]), now);
+  assert.equal(rows(fresh)[0].status, 'estimated');
+  assert.equal(rows(fresh, NOW + X.STALE_UPDATE_SEC + 1)[0].status, 'stale');
+  assert.equal(rows({ ...fresh, ts: null })[0].predicted, null);
+  assert.equal(rows({ ...fresh, ts: NOW + 120 })[0].predicted, null);
+  assert.equal(rows({ ...fresh, startDate: '20261124', cancelled: true })[0].status, 'scheduled');
+  assert.equal(rows({ ...fresh, routeId: 'R-2' })[0].predicted, null);
+  assert.equal(rows({ ...fresh, stopSeq: null })[0].status, 'scheduled');
+  assert.deepEqual(rows({ ...fresh, stopSeq: 8, event: 'departure', time: NOW }), []);
 });
 
 test('baked AT GTFS index: licence carried, search finds routes, stops, ferry terminals and stations', () => {

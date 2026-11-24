@@ -1,3 +1,4 @@
+import { GLASS, unalteredGlass, type GlassMode, type MaterialSpanSpec } from './modelReviewRules';
 import * as THREE from 'three/webgpu';
 import { luminance, materialColor, mix, mx_noise_float, normalWorld, positionWorld, smoothstep, vec3, vec4 } from 'three/tsl';
 import { pbr, type PBRSet } from '../objects/tex';
@@ -6,11 +7,12 @@ import { twinMats } from './mats';
 import { planting as tuftPlanting, type Placement as TuftPlacement } from './plants';
 import { nativeBush } from './nativeTrees';
 import {
-  classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, makeGrid, markDoor, markRect, markTriEdges,
-  meaningfulColour, needsFrame, normClass, planPlanting, refineByShape, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
+  classify, FINISHES, fillFootprint, fillTri, glassTint, hexOf, ifcMaterialNames, inferIfcClassFromName, makeGrid, markDoor, markRect, markTriEdges,
+  meaningfulColour, namedMaterial, needsFrame, normClass, planPlanting, refineByShape, refineElement, styleFor, type Classified, type Finish, type Grid, type PartInfo, type PlantPlan,
 } from './dressRules';
 import { scanSet } from './scanned';
 import { anodised, brick, herringbone, mulch, powderCoat, render, satinSteel, standingSeam, stoneFlags, upholstery } from './dressTex';
+import { buildPresentationDetail } from './presentationDetail';
 
 // The finished look for an opened IFC or GLB (agent/model-dress-1123).
 //
@@ -37,10 +39,14 @@ export interface DressOpts {
   view?: { eye: THREE.Vector3; look: THREE.Vector3 };
   /** the building's own bounds (modelBounds.ts), in the scene: planting and the shade go round this, not round far-off strays */
   bounds?: THREE.Box3;
+  /** optional private material-span mapping for class-batched GLBs (from fingerprinted walk_review JSON) */
+  materialSpans?: Record<string, MaterialSpanSpec>;
 }
 export interface Dressed {
   layers: Layer[];
   mode: DressMode;
+  glassCount: number;
+  setGlass(mode: GlassMode): void;
   set(mode: DressMode): void;
   /** put the planting on new ground (the site's LiDAR, when it is read): ground level at a scene point */
   replant(yAt: ((x: number, z: number) => number) | null): Promise<void>;
@@ -109,10 +115,10 @@ function glassMat(rgb: [number, number, number], heavy: boolean) {
   const tint = new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
   m = heavy
     // see-through without refraction: a model this size stays smooth; still reflects the sky and carries the tint
-    ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.55), metalness: 0, roughness: 0.04, transparent: true, opacity: 0.42, specularIntensity: 1, envMapIntensity: 1.4, side: THREE.DoubleSide, depthWrite: false })
-    // daylit glass seen from outside: dark, with the sky in it and a bright fresnel edge (clearcoat), the rooms faint behind it.
-    // No transmission pass: it costs a second render of the scene, too much on a phone
-    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.42), metalness: 0, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, ior: 1.52, specularIntensity: 1, envMapIntensity: 3.2, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });   // warm bronze-tinted glass: the lit rooms behind it, the sky in it at a glancing angle (fresnel, clearcoat)
+    ? new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().lerp(new THREE.Color(0, 0, 0), 0.48), metalness: 0, roughness: 0.035, transparent: true, opacity: 0.34, specularIntensity: 1, envMapIntensity: 1.6, side: THREE.DoubleSide, depthWrite: false })
+    // architectural bronze/clear glazing: transparent enough for warm timber interiors and signage to read through,
+    // with crisp Fresnel sky reflection (clearcoat, IOR 1.52) at glancing angles. No transmission pass so phones stay smooth.
+    : new THREE.MeshPhysicalMaterial({ name: 'dress_glass_tinted', color: tint.clone().multiplyScalar(0.55), metalness: 0, roughness: 0.025, clearcoat: 1, clearcoatRoughness: 0.015, ior: 1.52, reflectivity: 0.95, specularIntensity: 1, envMapIntensity: 2.3, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false });
   mats.set(key, m);
   return m;
 }
@@ -138,6 +144,16 @@ function finishMat(f: Finish, q: 'web' | 'hq', colour: THREE.Color | null) {
     // fragment by which way the surface faces, so no face of the model is split or moved
     const under = smoothstep(-0.25, -0.6, normalWorld.y);
     pm.colorNode = mix(materialColor.rgb, vec3(0.5, 0.33, 0.19).mul(luminance(materialColor.rgb).mul(1.6).add(0.55)), under);
+  } else if (f === 'timber' || f === 'timberCladding' || f === 'decking' || f === 'brick' || f === 'paving' || f === 'concrete') {
+    // subtle world-space colour micro-variation so large timber/brick/paving planes avoid uniform CG flatness
+    const macro = mx_noise_float(positionWorld.mul(0.28)).mul(0.06).add(1.0);
+    pm.colorNode = materialColor.rgb.mul(macro);
+  }
+  if (f === 'mullion' || f === 'darkMetal' || f === 'frameMetal') {
+    // lift pure-black joinery slightly so frames catch sky specular and edge depth reads instead of crushing to black
+    pm.color.r = Math.max(pm.color.r, 0.032);
+    pm.color.g = Math.max(pm.color.g, 0.034);
+    pm.color.b = Math.max(pm.color.b, 0.038);
   }
   pm.userData.dress = f;
   mats.set(key, pm);
@@ -212,7 +228,7 @@ function elementOf(o: THREE.Object3D, root: THREE.Object3D) {
   let t: THREE.Object3D | null = o;
   while (t && t !== root) {
     const u = t.userData ?? {};
-    if (u.ifcClass || u.ifc_class) return t;
+    if (u.ifcClass || u.ifc_class || inferIfcClassFromName(t.name)) return t;
     t = t.parent;
   }
   return o;
@@ -223,8 +239,121 @@ function colourOf(m: THREE.Material): [number, number, number] | null {
   return c ? [c.r, c.g, c.b] : null;
 }
 
+const SPAN_FINISH_MAP: Record<string, { finish: Finish; tint?: [number, number, number] }> = {
+  brick: { finish: 'brick' },
+  pavers: { finish: 'paving' },
+  paving: { finish: 'paving' },
+  road: { finish: 'asphalt' },
+  asphalt: { finish: 'asphalt' },
+  terrain: { finish: 'lawn' },
+  lawn: { finish: 'lawn' },
+  seamRoof: { finish: 'roof' },
+  chapelRoof: { finish: 'roof' },
+  roof: { finish: 'roof' },
+  timber: { finish: 'timberCladding' },
+  timberCladding: { finish: 'timberCladding' },
+  darkTimber: { finish: 'door' },
+  door: { finish: 'door' },
+  concrete: { finish: 'concrete' },
+  plaster: { finish: 'plaster' },
+  render: { finish: 'render' },
+  metal: { finish: 'mullion' },
+  mullion: { finish: 'mullion' },
+  campusA: { finish: 'brick' },
+  campusB: { finish: 'render' },
+  campusC: { finish: 'plaster' },
+  copper: { finish: 'glass', tint: [0.76, 0.50, 0.36] },
+  clear: { finish: 'glass', tint: [0.88, 0.93, 0.95] },
+  plum: { finish: 'glass', tint: [0.56, 0.44, 0.52] },
+  rose: { finish: 'glass', tint: [0.78, 0.58, 0.54] },
+  blue: { finish: 'glass', tint: [0.62, 0.72, 0.78] },
+  glass: { finish: 'glass' },
+};
+
+/** Split class-batched meshes into exact non-overlapping triangle slices when a fingerprinted review provides materialSpans. */
+function applyMaterialSpans(obj: THREE.Object3D, specs: Record<string, MaterialSpanSpec>) {
+  const targets: { mesh: THREE.Mesh; spec: MaterialSpanSpec }[] = [];
+  obj.traverse((n) => {
+    const m = n as THREE.Mesh;
+    if (!m.isMesh || !m.geometry) return;
+    const spec = specs[m.name] ?? specs[m.parent?.name ?? ''];
+    if (!spec) return;
+    const g = m.geometry;
+    const vertCount = g.index ? g.index.count : (g.getAttribute('position')?.count ?? 0);
+    if (vertCount !== spec.count) return;
+    targets.push({ mesh: m, spec });
+  });
+  for (const { mesh, spec } of targets) {
+    const parent = mesh.parent;
+    if (!parent) continue;
+    const g = mesh.geometry;
+    const totalTris = Math.floor((g.index ? g.index.count : g.getAttribute('position').count) / 3);
+    const covered = new Uint8Array(totalTris);
+    const holder = new THREE.Group();
+    holder.name = `${mesh.name}_spans`;
+    holder.position.copy(mesh.position);
+    holder.quaternion.copy(mesh.quaternion);
+    holder.scale.copy(mesh.scale);
+    holder.userData = { ...mesh.userData };
+
+    const sliceGeo = (triIndices: number[]) => {
+      const out = new THREE.BufferGeometry();
+      const idx = g.index;
+      const nVerts = triIndices.length * 3;
+      for (const attrName of Object.keys(g.attributes)) {
+        const src = g.getAttribute(attrName);
+        if (!src || !('array' in src)) continue;
+        const itemSize = src.itemSize;
+        const arr = new Float32Array(nVerts * itemSize);
+        let p = 0;
+        for (const t of triIndices) {
+          for (let k = 0; k < 3; k++) {
+            const vi = idx ? idx.getX(t * 3 + k) : t * 3 + k;
+            for (let c = 0; c < itemSize; c++) arr[p++] = src.array[vi * itemSize + c];
+          }
+        }
+        out.setAttribute(attrName, new THREE.BufferAttribute(arr, itemSize));
+      }
+      out.computeBoundingBox();
+      out.computeBoundingSphere();
+      return out;
+    };
+
+    const grouped = new Map<string, number[]>();
+    for (const [s, e, fin] of spec.spans) {
+      const a = Math.max(0, Math.min(totalTris, s)), b = Math.max(a, Math.min(totalTris, e));
+      let list = grouped.get(fin);
+      if (!list) { list = []; grouped.set(fin, list); }
+      for (let t = a; t < b; t++) {
+        if (!covered[t]) { covered[t] = 1; list.push(t); }
+      }
+    }
+    const rem: number[] = [];
+    for (let t = 0; t < totalTris; t++) if (!covered[t]) rem.push(t);
+    if (rem.length) grouped.set('__default__', rem);
+
+    for (const [fin, tris] of grouped) {
+      if (!tris.length) continue;
+      const sub = new THREE.Mesh(sliceGeo(tris), mesh.material);
+      sub.name = fin === '__default__' ? mesh.name : `${mesh.name}:${fin}`;
+      sub.castShadow = mesh.castShadow;
+      sub.receiveShadow = mesh.receiveShadow;
+      const mapped = SPAN_FINISH_MAP[fin];
+      sub.userData = {
+        ...mesh.userData,
+        ifcClass: normClass(mesh.userData?.ifcClass || inferIfcClassFromName(mesh.name)),
+        ...(mapped ? { spanFinish: mapped.finish, ...(mapped.tint ? { spanTint: mapped.tint } : {}) } : {}),
+      };
+      holder.add(sub);
+    }
+    parent.add(holder);
+    parent.remove(mesh);
+  }
+}
+
 export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): Promise<Dressed> {
   const t0 = performance.now();
+  if (o.materialSpans) applyMaterialSpans(obj, o.materialSpans);
   obj.updateMatrixWorld(true);
   const q = o.quality;
   // the IFC's own material and surface style names
@@ -240,21 +369,37 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     const el = elementOf(mesh, obj), u = el.userData ?? {};
     // a GLB from IfcOpenShell carries ifc_class, ifc_name and ifc_guid: the inspector reads ifcClass, name and globalId
     if (u.ifc_class && !u.ifcClass) { u.ifcClass = normClass(u.ifc_class); if (u.ifc_name && !u.name) u.name = u.ifc_name; if (u.ifc_guid && !u.globalId) u.globalId = u.ifc_guid; el.userData = u; }
-    const cls = normClass(u.ifcClass ?? '');
+    // class-batched browser-copy GLBs often name each node/mesh after its IFC class without userData extras
+    let cls = normClass(u.ifcClass ?? '');
+    if (!cls) {
+      cls = inferIfcClassFromName(el.name) || inferIfcClassFromName(mesh.name);
+      if (cls) { u.ifcClass = cls; el.userData = u; }
+    }
     const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     const g = mesh.geometry, tri = (g.index ? g.index.count : g.getAttribute('position')?.count ?? 0) / 3;
     drawn += tri * ((mesh as THREE.InstancedMesh).isInstancedMesh ? (mesh as THREE.InstancedMesh).count : 1);
     if (SKIP.has(cls)) return;
     list.forEach((m, slot) => {
       if (!m) return;
-      const rgb = colourOf(m), opacity = m.transparent ? m.opacity : (m as THREE.MeshPhysicalMaterial).transmission ? 0.3 : 1;
+      const partCls = cls || inferIfcClassFromName(m.name);
+      const rgb = colourOf(m);
+      let opacity = m.transparent ? m.opacity : (m as THREE.MeshPhysicalMaterial).transmission ? 0.3 : 1;
       let material = m.name ?? '';
       if (ifcNames) {
         const named = ifcNames.names.get(Number(u.expressID));
         material = named?.length ? named.join(', ') : (rgb && styleFor(ifcNames.styles, rgb)) || '';
       }
-      const info: PartInfo = { cls, name: String(u.name ?? el.name ?? ''), material, rgb, opacity };
-      const p: Part = { mesh, slot: Array.isArray(mesh.material) ? slot : -1, orig: m, info, c: classify(info), el };
+      // Class-batched IfcWindow meshes exported opaque with a cool glass tint colour read as glazing, not solid dark plates
+      if (partCls === 'IfcWindow' && opacity >= 0.95 && !namedMaterial(material, partCls) && rgb && rgb[2] > rgb[1] && rgb[1] > rgb[0] && rgb[2] - rgb[0] > 0.08) {
+        opacity = 0.45;
+      }
+      const spanFinish = mesh.userData?.spanFinish as Finish | undefined;
+      const spanTint = mesh.userData?.spanTint as [number, number, number] | undefined;
+      const info: PartInfo = { cls: partCls, name: String(u.name ?? el.name ?? ''), material, rgb: spanTint ?? rgb, opacity: spanFinish === 'glass' ? 0.38 : opacity };
+      const classified = spanFinish
+        ? { finish: spanFinish, rule: 'review-span', why: `private revision material profile (“${mesh.name}”)` }
+        : classify(info);
+      const p: Part = { mesh, slot: Array.isArray(mesh.material) ? slot : -1, orig: m, info, c: classified, el };
       if ((m as THREE.MeshStandardMaterial).map && g.getAttribute('uv')) p.keep = 'its own texture, from the file';
       parts.push(p);
       if (!elements.has(el)) elements.set(el, []);
@@ -267,7 +412,7 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
     const B = o.bounds && !o.bounds.isEmpty() ? o.bounds : new THREE.Box3().setFromObject(obj);
     const span = Math.max(B.max.x - B.min.x, B.max.z - B.min.z, 1), H = Math.max(1, B.max.y - B.min.y);
     const pb = new THREE.Box3(), nm = new THREE.Matrix3(), nv = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-    const shapeOf = new Map<THREE.Mesh, { across: number; span: number; slope: number; up: number; high: number }>();
+    const shapeOf = new Map<THREE.Mesh, { across: number; span: number; slope: number; up: number; high: number; fill?: number }>();
     for (const p of parts) {
       if (normClass(p.info.cls) && p.info.cls !== 'IfcBuildingElementProxy') continue;
       let sh = shapeOf.get(p.mesh);
@@ -318,18 +463,23 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   const origShadow = new Map<THREE.Mesh, boolean>();
   for (const p of parts) origShadow.set(p.mesh, p.mesh.castShadow);
 
+  let glassMode: GlassMode = 'studio';
+  const glassEligible = (p: Part) => p.c.finish === 'glass' && !p.keep && !unalteredGlass(p.info.material ?? '', p.info.name ?? '');
   const matFor = (p: Part, mode: DressMode): THREE.Material => {
     if (mode === 'asis' || p.keep) return p.orig;
+    if (p.c.finish === 'glass') {
+      const tint = glassMode === 'studio' ? glassTint(p.info).rgb : GLASS.find(k => k.id === glassMode)?.tint;
+      return glassEligible(p) && tint ? glassMat(tint, heavy) : p.orig;
+    }
     const f = p.c.finish, model = p.info.rgb ? new THREE.Color(p.info.rgb[0], p.info.rgb[1], p.info.rgb[2]) : null;   // as the model draws it
-    if (f === 'glass') return glassMat(glassTint(p.info).rgb, heavy);
     if (mode === 'model') return finishMat(f, q, model);
     return finishMat(f, q, KEEP_HUE.has(f) && meaningfulColour(p.info) ? model : null);
   };
   const say = (p: Part, mode: DressMode) => {
     if (p.keep) return `kept as the file has it (${p.keep})`;
     const f = p.c.finish;
-    const lab = f === 'glass' ? `${FINISHES.glass.label}, ${glassTint(p.info).from === 'model' ? 'tint from the model’s own colour' : 'neutral bronze-grey tint'}${heavy ? ', drawn see-through without refraction to keep a model this size smooth' : ''}`
-      : mode === 'model' ? `${FINISHES[f].label} surface in the model’s own colour` : `${FINISHES[f].label}${KEEP_HUE.has(f) && meaningfulColour(p.info) ? ' in the model’s own colour' : ''}`;
+    if (f === 'glass') return glassEligible(p) && glassMode !== 'authored' ? 'glass appearance preview; not a specification' : 'glass as supplied in the model';
+    const lab = mode === 'model' ? `${FINISHES[f].label} surface in the model’s own colour` : `${FINISHES[f].label}${KEEP_HUE.has(f) && meaningfulColour(p.info) ? ' in the model’s own colour' : ''}`;
     return `${lab}: ${p.c.why}`;
   };
 
@@ -501,10 +651,22 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
       roomLights.add(l);
     }
   }
+  const presentationDetail = buildPresentationDetail(
+    obj,
+    [...elements.entries()].map(([el, ps]) => ({
+      el,
+      cls: ps[0]?.info.cls ?? '',
+      meshes: ps.map((p) => ({ mesh: p.mesh, finish: p.c.finish })),
+    })),
+    { phone: !!(app as unknown as { phone?: boolean }).phone, lowTier: !!(app as unknown as { lowTier?: boolean }).lowTier },
+  );
+  if (presentationDetail.group.children.length) obj.add(presentationDetail.group);
+
   const layers: Layer[] = [
     { id: 'dress-planting', label: 'Planting (proposed)', note: `native planting ${plan.said}; proposed by rule, not from the model`, visible: true, object: plantRoot },
     { id: 'dress-rooms', label: 'Rooms lit (proposed)', note: 'warm light inside so the rooms read through the glass, as in the architect’s renders; not a lighting design', visible: true, object: roomLights },
     { id: 'dress-frames', label: 'Frames (drawn)', note: 'round glass and door leaves the model gives no frame; inferred from the opening', visible: true, object: frameRoot },
+    { id: 'dress-presentation-detail', label: 'Edge depth, reveals & cladding (presentation)', note: 'reversible 115 mm reveals and cladding depth ribs kept out of geometry, measurement and clash checks', visible: true, object: presentationDetail.group },
     { id: 'dress-shade', label: 'Contact shade', note: 'soft shade where the building meets the ground, from its footprint', visible: true, object: shade, traced: false },
   ];
 
@@ -526,12 +688,14 @@ export async function dressModel(app: App, obj: THREE.Object3D, o: DressOpts): P
   // --- modes -----------------------------------------------------------------------------------------------------------
   const D: Dressed = {
     layers, mode: 'finished', card: document.createElement('section'),
+    glassCount: parts.filter(glassEligible).length,
+    setGlass(mode) { glassMode = mode; D.set(D.mode === 'asis' && mode !== 'authored' ? 'model' : D.mode); },
     set(mode) {
       D.mode = mode;
       for (const p of parts) {
         const m = matFor(p, mode);
         if (p.slot < 0) p.mesh.material = m; else (p.mesh.material as THREE.Material[])[p.slot] = m;
-        p.mesh.castShadow = mode !== 'asis' && p.c.finish === 'glass' && !p.keep ? false : origShadow.get(p.mesh)!;
+        p.mesh.castShadow = mode !== 'asis' && glassMode !== 'authored' && glassEligible(p) ? false : origShadow.get(p.mesh)!;
       }
       for (const [el, ps] of elements) {
         const was = origNote.get(el)!;

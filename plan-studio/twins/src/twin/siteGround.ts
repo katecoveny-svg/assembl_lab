@@ -141,6 +141,76 @@ export function applyGroundAt(fp: Footprint, st: GroundStore, rule?: FloorRule):
   };
 }
 
+/**
+ * Fetch open-CORS high-resolution aerial orthophoto tiles (Esri World Imagery) over a `sizeM × sizeM`
+ * square centered at `(lat, lon)`, rotated by `turnDeg` to align with the 3D model's north axis.
+ * Returns a 1024×1024 JPEG data URL suitable for draping on the 1 m LINZ LiDAR DEM, or `null` if unavailable.
+ */
+export async function fetchAerialPhoto(lat: number, lon: number, sizeM = 140, turnDeg = 0): Promise<string | null> {
+  if (typeof document === 'undefined' || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const z = 18;
+  const n = 2 ** z;
+  const latRad = (lat * Math.PI) / 180;
+  const mPerTile = (156543.03392 * Math.cos(latRad) * 256) / n;
+  const cx = ((lon + 180) / 360) * n;
+  const cy = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+  // Fetch enough tiles around the centre to cover the rotated square (diagonal = sizeM * sqrt(2))
+  const halfTiles = Math.ceil(((sizeM * 1.45) / 2) / mPerTile);
+  const tx0 = Math.floor(cx) - halfTiles, tx1 = Math.floor(cx) + halfTiles;
+  const ty0 = Math.floor(cy) - halfTiles, ty1 = Math.floor(cy) + halfTiles;
+  const tileSize = 256;
+  const cols = tx1 - tx0 + 1, rows = ty1 - ty0 + 1;
+  if (cols > 9 || rows > 9) return null;
+
+  const stitch = document.createElement('canvas');
+  stitch.width = cols * tileSize;
+  stitch.height = rows * tileSize;
+  const sctx = stitch.getContext('2d');
+  if (!sctx) return null;
+
+  const loadTile = (tx: number, ty: number) =>
+    new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      const timer = setTimeout(() => resolve(null), 7000);
+      img.onload = () => { clearTimeout(timer); resolve(img); };
+      img.onerror = () => { clearTimeout(timer); resolve(null); };
+      img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`;
+    });
+
+  const jobs: Promise<void>[] = [];
+  let loaded = 0;
+  for (let ty = ty0; ty <= ty1; ty++) {
+    for (let tx = tx0; tx <= tx1; tx++) {
+      jobs.push(loadTile(tx, ty).then((img) => {
+        if (img) { sctx.drawImage(img, (tx - tx0) * tileSize, (ty - ty0) * tileSize); loaded++; }
+      }));
+    }
+  }
+  await Promise.all(jobs);
+  if (!loaded) return null;
+
+  const outPx = 1024;
+  const out = document.createElement('canvas');
+  out.width = out.height = outPx;
+  const octx = out.getContext('2d');
+  if (!octx) return null;
+
+  const pxPerM = tileSize / mPerTile;
+  const centerPxX = (cx - tx0) * tileSize;
+  const centerPxY = (cy - ty0) * tileSize;
+  const scale = outPx / (sizeM * pxPerM);
+  octx.translate(outPx / 2, outPx / 2);
+  octx.rotate((-turnDeg * Math.PI) / 180);
+  octx.scale(scale, scale);
+  octx.drawImage(stitch, -centerPxX, -centerPxY);
+  try {
+    return out.toDataURL('image/jpeg', 0.9);
+  } catch {
+    return null;
+  }
+}
+
 /** a picture of the ground made from its own heights (not a photograph): tinted by slope, with a line each metre, heavier
  *  each 5 m (NZVD2016). h is n × n levels relative to the model's datum, `cell` metres apart. */
 export function contourPhoto(h: number[], n: number, datum0: number, cell = 1): string {

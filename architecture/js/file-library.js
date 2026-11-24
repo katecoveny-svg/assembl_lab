@@ -296,7 +296,13 @@ async function open3d(ctx, note, btn) {
     if (ext(name) === 'ifczip') { const z = await (await import('./ifc-summary.js')).unzipIfc(new Uint8Array(await blob.arrayBuffer())); blob = new Blob([z.bytes]); name = z.name; }
     const { putHandoff, HANDOFF_PARAM, keepBrand } = await import('./handoff.js');
     await keepBrand(ctx.practice?.name).catch(() => undefined);
-    const hid = await putHandoff(blob, name);
+    const { readSiteHandoff } = await import('./site-sources-rules.js');
+    const { rememberHandoff } = await import('./site-sources.js');
+    const p = (await ctx.store.get('project', ctx.project.id)) ?? ctx.project;
+    const sources = await ctx.store.listFiles({ project_id: p.id });
+    const site = await readSiteHandoff(p, sources, (f) => blobOf(ctx, f));
+    const hid = await putHandoff(blob, name, { site });
+    rememberHandoff(p.id, hid);
     window.open(`/plan-studio/twins/drop/?drop=1&from=ops&${HANDOFF_PARAM}=${encodeURIComponent(hid)}`, '_blank');
   } catch (err) { S.note.set(ctx.project.id, { text: err?.message ?? 'It could not be passed to the 3D page.', error: true }); ctx.redraw(); }
   btn.disabled = false;

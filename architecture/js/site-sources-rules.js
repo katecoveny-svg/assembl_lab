@@ -19,6 +19,7 @@ import { AUTO_PREVIEW_LIMIT, isModel, kindOf, stacks as modelStacks } from './mo
 /** the contract's object, and what it is saved as on the project */
 export const EMPTY = Object.freeze({ point: null, camera_path: null, placement: null });
 
+export const REVIEW_SLOTS = ['walk_review', 'design_interior', 'design_exterior'];
 const IMG = ['png', 'jpg', 'jpeg', 'webp'];
 /**
  *   id      the slot (also the key under site.files in the hand-over)   tag   the short mark
@@ -33,6 +34,9 @@ export const SLOTS = [
   { id: 'flythrough', word: 'Fly-through path', tag: 'JSON', ext: ['json'], to3d: false, icon: 'path', hint: 'Saved from the 3D page: the shots, versioned; proposed until a person confirms it.' },
   { id: 'films', word: 'Films and stills', tag: 'MP4 · WebM · PNG · JPEG', ext: ['mp4', 'webm', 'png', 'jpg', 'jpeg'], to3d: false, icon: 'file', hint: 'Made on the 3D page and saved back here: fly-through films, comparison shots, the approved look.' },
   { id: 'camera_proofs', word: 'Private camera proofs', tag: 'MP4 · WebM', ext: ['mp4', 'webm'], to3d: false, icon: 'file', hint: 'Internal exact-model motion tests. Never included on the client link.' },
+  { id: 'walk_review', word: 'Walkthrough setup', tag: 'JSON', ext: ['json'], to3d: true, icon: 'path', hint: 'Private camera stops tied to the exact model file. Also records separate artwork file checksums, sources and approvals.' },
+  { id: 'design_interior', word: 'Māori design · interior', tag: 'GLB', ext: ['glb'], to3d: true, icon: 'file', hint: 'Only a registered, architect-supplied and authorised layer in the model’s own axes. It stays off until selected in 3D.' },
+  { id: 'design_exterior', word: 'Māori design · exterior', tag: 'GLB', ext: ['glb'], to3d: true, icon: 'file', hint: 'Only a registered, architect-supplied and authorised layer in the model’s own axes. It stays off until selected in 3D.' },
   { id: 'other', word: 'Other', tag: 'any file', ext: null, to3d: false, icon: 'file' },
 ];
 export const slotOf = (id) => SLOTS.find((s) => s.id === id) ?? null;
@@ -44,6 +48,8 @@ const norm = (s) => String(s ?? '').trim().normalize('NFC').toLowerCase();
 const ascii = (b, n = 1024) => String.fromCharCode(...b.subarray(0, Math.min(n, b.length)));
 const starts = (b, sig) => sig.every((x, i) => b[i] === x);
 const SNIFF = {
+  json: (b) => /^\s*\{/.test(new TextDecoder().decode(b)),
+  glb: (b) => starts(b, [0x67, 0x6c, 0x54, 0x46, 2, 0, 0, 0]),
   pdf: (b) => ascii(b).includes('%PDF-'),
   png: (b) => starts(b, [0x89, 0x50, 0x4e, 0x47]),
   jpg: (b) => starts(b, [0xff, 0xd8, 0xff]),
@@ -218,6 +224,37 @@ export function siteHandoff(project, files) {
   const ss = normalSiteSources(project?.site_sources);
   const point = ss.point ?? pointFromSite(project?.site);
   return { point, camera_path: ss.camera_path, placement: ss.placement, sources: sourceList(files) };
+}
+
+/** Collect project-authorised sources using the same resolved project record and authenticated storage.
+ * Ordinary model open avoids fetching the full drawings/sketch; the site action already expressly loads those. */
+export async function readSiteHandoff(project, files, read, full = false) {
+  const site = siteHandoff(project, files), slots = bySlot(files);
+  const latest = (id) => slots.find((s) => s.slot.id === id)?.stacks[0]?.latest;
+  site.files = {};
+  const allowed = (f) => !Number.isFinite(f?.size) || f.size <= (f.extra?.source?.slot === 'walk_review' ? 65536 : 24 * 1024 * 1024);
+  let recordedLayers = null;
+  for (const id of blobSlots()) {
+    if (!full && !REVIEW_SLOTS.includes(id)) continue;
+    const f = latest(id);
+    if (!f || (id.startsWith('design_') && !recordedLayers?.[id.slice('design_'.length)]) || (REVIEW_SLOTS.includes(id) && !allowed(f))) continue;
+    try {
+      const b = await read(f);
+      if (id === 'walk_review' && b.size <= 65536) {
+        site.files[id] = b;
+        const parsed = JSON.parse(await b.text());
+        if (parsed?.schema === 'assembl.model-review.v1') recordedLayers = parsed.layers;
+      } else if (id !== 'walk_review' && (!REVIEW_SLOTS.includes(id) || b.size <= 24 * 1024 * 1024)) site.files[id] = b;
+    } catch (e) { if (!REVIEW_SLOTS.includes(id)) throw e; }
+  }
+  const flight = latest('flythrough');
+  if (flight && (!Number.isFinite(flight.size) || flight.size <= 256 * 1024)) {
+    try {
+      const b = await read(flight);
+      if (b.size <= 256 * 1024) site.flight = JSON.parse(await b.text());
+    } catch { /* malformed or missing optional path does not block the model */ }
+  }
+  return site;
 }
 
 // ---- saving ---------------------------------------------------------------------------------------------------------------------

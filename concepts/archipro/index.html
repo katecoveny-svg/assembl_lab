@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="./concept.css?v=20261120c">
+<link rel="stylesheet" href="./concept.css?v=20261124voice">
 <script type="importmap">{ "imports": { "three": "/assets/vendor/three/three.module.min.js", "three/addons/": "/assets/vendor/three/addons/" } }</script>
 </head>
 <body>
@@ -336,7 +336,9 @@
   </form>
   <div class="guide-foot">
     <button class="voice" id="guide-voice" type="button" aria-pressed="true">Voice on</button>
-    <span class="mono" id="guide-voice-l"></span>
+    <button class="voice" id="guide-play-line" type="button" hidden>Play narration</button>
+    <button class="voice" id="guide-captions" type="button" hidden>Use captions</button>
+    <span class="mono" id="guide-voice-l" role="status"></span>
   </div>
 </aside>
 
@@ -345,7 +347,7 @@
 <script type="module" src="./drawset.js?v=20261120c"></script>
 <script type="module" src="./field.js?v=20261120c"></script>
 <script type="module" src="./interior.js?v=20261120c"></script>
-<script type="module" src="./agent.js?v=20261120c"></script>
+<script type="module" src="./agent.js?v=20261124voice"></script>
 <script type="module" src="./motion.js?v=20261120c"></script>
 </body>
 </html>

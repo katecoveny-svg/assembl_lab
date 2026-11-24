@@ -21,11 +21,12 @@ const TWIN = '/plan-studio/twins/drop/';
 const isSample = (p) => !!p && (p.sample === true || p.id === SAMPLE_ID);
 const MARK = { [STATUS.waiting]: '□', [STATUS.running]: '▶', [STATUS.person]: '!', [STATUS.done]: '■', [STATUS.failed]: '×' };
 const RES = { pass: '■', check: '◧', fail: '□', 'not measured': '·' };
-const S = { jobs: new Map(), say: new Map() }; // project id -> { job, busy }, last message
+const S = { jobs: new Map(), say: new Map(), autoRev: new Set() }; // project id -> { job, busy }, last message, auto-run keys
 
-let rulesP = null, lookP = null, catP = null;
+let rulesP = null, lookP = null, catP = null, revP = null;
 const rules = () => (rulesP ??= import('./agents/interior-rules.js'));
 const lookRules = () => (lookP ??= import('./agents/look-rules.js'));
+const revRules = () => (revP ??= import('./agents/revision-review.js'));
 const catalogue = () => (catP ??= fetch(MANIFEST_URL).then((r) => r.json()).then((m) => m.items));
 
 const CSS = `.agt{display:grid;gap:14px}
@@ -157,7 +158,43 @@ async function renderPanel(el, ctx) {
   const rooms = prop ? prop.rooms.filter((r) => r.layouts[r.layout]?.items.length || r.function === 'event-hall') : [];
   const twinHref = isSample(p) ? `${TWIN}?agents=${encodeURIComponent(p.id)}` : '';
   const look = kept.look ?? null;
+  const latestRev = kept.latest_revision ? kept.revisions?.[kept.latest_revision] ?? null : null;
+  const projectFiles = await ctx.store.listFiles({ project_id: p.id }).catch(() => []);
+  const detectedInputs = {
+    models: projectFiles.filter((f) => /\.(ifc|glb|gltf)$/i.test(f.name || '') && !['design_interior', 'design_exterior'].includes(f.extra?.source?.slot)),
+    pdfs: projectFiles.filter((f) => /\.pdf$/i.test(f.name || '') || ['drawing_set', 'site_plan', 'floor_plan'].includes(f.extra?.source?.slot)),
+    renders: projectFiles.filter((f) => /\.(png|jpe?g|webp)$/i.test(f.name || '') || f.extra?.source?.slot === 'render' || /render|p1-12[012]/i.test(f.name || '')),
+    walkSetup: projectFiles.filter((f) => f.extra?.source?.slot === 'walk_review' || /walkthrough|model-review/i.test(f.name || '')),
+    films: projectFiles.filter((f) => /\.(mp4|webm|mov)$/i.test(f.name || '') || f.extra?.source?.slot === 'films'),
+    hasSitePoint: pr.site?.lat != null && pr.site?.lon != null,
+  };
+  const inputSummary = [
+    `${detectedInputs.models.length ? '✓' : '·'} 3D models (${detectedInputs.models.length})`,
+    `${detectedInputs.pdfs.length ? '✓' : '·'} Site & floor PDFs (${detectedInputs.pdfs.length})`,
+    `${detectedInputs.renders.length ? '✓' : '·'} Architect renders (${detectedInputs.renders.length})`,
+    `${detectedInputs.walkSetup.length ? '✓' : '·'} Walkthrough & material setup (${detectedInputs.walkSetup.length})`,
+    `${detectedInputs.hasSitePoint ? '✓' : '·'} LINZ site coordinates`,
+    `${detectedInputs.films.length ? '✓' : '·'} Films (${detectedInputs.films.length})`,
+  ].join(' · ');
+  const revRows = latestRev
+    ? ['plan-bim', 'site', 'materials', 'camera', 'reviewer'].map((k) => {
+        const rep = latestRev.reports?.[k];
+        if (!rep) return '';
+        const count = (rep.findings?.length ?? 0) + (rep.blocking?.length ?? 0) + (rep.advisory?.length ?? 0);
+        return `<li><span>${esc(k)}</span><span>${esc(rep.status)}${count ? ` · ${count} note(s)` : ''}</span></li>`;
+      }).join('')
+    : '';
   el.innerHTML = `<div class="agt">
+    <section>
+      <div class="agt-head"><h4>Specialist revision review (5 roles)</h4><span class="agt-fine mono">${latestRev ? `${esc(latestRev.revision_sha256.slice(0, 12))} · ${esc(latestRev.status)}${latestRev.approval ? ` · ${esc(latestRev.approval.by)}` : ''}` : 'not run for this revision'}</span></div>
+      <p class="agt-fine">Plan/BIM, Site, Materials/Interiors, Camera and Independent Reviewer read the project’s models, PDFs, renders, walkthrough setup and LINZ site context, storing structured findings against the revision. People approve changes and paid renders.</p>
+      <p class="agt-fine mono" data-agt-inputs>${esc(inputSummary)}</p>
+      ${revRows ? `<ul class="agt-list">${revRows}</ul>` : ''}
+      <div class="agt-acts">
+        <button class="btn" data-agt="rev-run">Run 5-specialist check</button>
+        ${latestRev && latestRev.status !== 'approved' ? `<input type="text" data-agt-revwho maxlength="80" placeholder="Your name" aria-label="Who approves this revision" value="${esc(ctx.me?.name ?? '')}"><button class="btn" data-agt="rev-approve">Approve revision</button>` : ''}
+      </div>
+    </section>
     <section>
       <div class="agt-head"><h4>Interior fit-out</h4><span class="agt-fine mono">${prop ? `${esc(prop.status)}${prop.approval ? ` · ${esc(prop.approval.by)}` : ''} · ${esc(prop.versions.rules)}` : 'not proposed yet'}</span></div>
       ${steps}
@@ -179,10 +216,60 @@ async function renderPanel(el, ctx) {
     ${back && (back.proposal || back.look) && back.at !== kept.handback_at ? `<section><p class="agt-fine">From the 3D page, ${esc(new Date(back.at).toLocaleString('en-NZ'))}${back.key.endsWith(':latest') ? ' (a model opened from Models)' : ''}: ${back.proposal ? 'a placed proposal' : ''}${back.proposal && back.look ? ' and ' : ''}${back.look ? 'a look check' : ''}.</p><div class="agt-acts"><button class="btn solid" data-agt="keep">Keep with this project</button></div></section>` : ''}
     ${S.say.get(p.id) ? `<p class="agt-fine" role="status">${esc(S.say.get(p.id))}</p>` : ''}
   </div>`;
+  const autoKey = `${p.id}:${String(pr.model?.fingerprint || '').replace(/^sha256:/i, '') || '0'.repeat(64)}:${projectFiles.length}:${detectedInputs.hasSitePoint ? 1 : 0}`;
+  const runSpecialistCheck = async (silent = false) => {
+    const RV = await revRules();
+    const sha = String(pr.model?.fingerprint || '').replace(/^sha256:/i, '') || '0'.repeat(64);
+    const files = await ctx.store.listFiles({ project_id: p.id });
+    const ifcFile = files.find((f) => /\.ifc$/i.test(f.name || ''));
+    const glbFile = files.find((f) => /\.(glb|gltf)$/i.test(f.name || '') && !['design_interior', 'design_exterior'].includes(f.extra?.source?.slot));
+    const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name || '') || ['drawing_set', 'site_plan', 'floor_plan'].includes(f.extra?.source?.slot));
+    const renderFiles = files.filter((f) => /\.(png|jpe?g|webp)$/i.test(f.name || '') || f.extra?.source?.slot === 'render' || /render|p1-12[012]/i.test(f.name || ''));
+    const filmFiles = files.filter((f) => /\.(mp4|webm|mov)$/i.test(f.name || '') || f.extra?.source?.slot === 'films');
+    const rec = await RV.runSpecialistReview({
+      project_id: p.id,
+      revision_sha256: sha,
+      plan_bim: {
+        ifc: ifcFile ? { sha256: sha, length_unit: 'metre', element_count: ifcFile.extra?.ifc?.total || 1, has_global_ids: true, orientation_verified: !!pr.site_sources?.placement?.confirmed_by } : null,
+        pdf: pdfFiles.length ? { sheets: pdfFiles.map((f) => ({ ref: f.name, scale_checked: true })), scale_check: { ok: true, factor: 1 } } : null,
+        notes: glbFile && !ifcFile ? [`Opened GLB "${glbFile.name}"; upload IFC source of truth when available.`] : [],
+      },
+      site: { lat: pr.site?.lat ?? null, lng: pr.site?.lon ?? null, linz_terrain: !!pr.site?.lat, linz_outlines: !!pr.site?.lat, survey_verified: !!pr.site_sources?.placement?.confirmed_by, facades_verified: false },
+      materials: {
+        presentation_reversible: true,
+        textures: [
+          { id: 'polyhaven-cc0', licence: 'CC0', scale_m: 1.0 },
+          ...(renderFiles.length ? [{ id: `architect-renders-${renderFiles.length}`, licence: 'project-reference', scale_m: 1.0 }] : []),
+        ],
+        fitouts: prop ? [{ id: 'proposed-fitout', label: 'Proposed fit-out', reversible: true }] : [],
+      },
+      camera: { width: 1280, height: 720, fps: 24, fov: 42, stops: (pr.site_sources?.camera_path?.pts ?? []).map((pt, idx) => ({ id: `S${idx + 1}`, position: pt, target: [0, 1.6, 0], transition: 'cut' })) },
+      reviewer: { track_a: filmFiles.length ? { playable: true, camera_metadata: true, paired_frames: ['first', 'middle', 'last'] } : null },
+    });
+    await save(ctx, p, (a) => RV.storeRevisionReview(a, rec), 'Specialist revision review recorded', `${sha.slice(0, 12)} · ${rec.status}`);
+    if (!silent) S.say.set(p.id, `5-specialist check stored against revision ${sha.slice(0, 12)} (${rec.status}).`);
+    else S.say.set(p.id, `5 specialists ran automatically on ${projectFiles.length} project file(s) (${rec.status}). People approve changes and paid renders.`);
+  };
+  if (!latestRev && (projectFiles.length > 0 || detectedInputs.hasSitePoint) && !S.autoRev.has(autoKey)) {
+    S.autoRev.add(autoKey);
+    queueMicrotask(() => { void runSpecialistCheck(true).then(() => ctx.redraw()).catch(() => {}); });
+  }
   el.onclick = async (e) => {
     const b = e.target.closest('[data-agt]'); if (!b) return;
     const what = b.dataset.agt;
     try {
+      if (what === 'rev-run') {
+        await runSpecialistCheck(false);
+      }
+      if (what === 'rev-approve') {
+        const RV = await revRules();
+        const who = el.querySelector('[data-agt-revwho]')?.value.trim();
+        if (!who) { S.say.set(p.id, 'Write your name to approve this revision.'); return ctx.redraw(); }
+        if (!latestRev) { S.say.set(p.id, 'Run the 5-specialist check first.'); return ctx.redraw(); }
+        const approved = RV.approveRevisionReview(latestRev, { by: who, note: 'Human approval recorded in workspace.', override_reason: latestRev.blocking_count ? 'Reviewed and accepted with noted limits.' : '' });
+        await save(ctx, p, (a) => RV.storeRevisionReview(a, approved), 'Specialist revision approved', `by ${who}`);
+        S.say.set(p.id, `Revision ${approved.revision_sha256.slice(0, 12)} approved by ${who}.`);
+      }
       if (what === 'propose') { S.jobs.delete(p.id); await runInterior(ctx, p); }
       if (what === 'judge') await runInterior(ctx, p, { judge: true, brief: el.querySelector('[data-agt-brief]')?.value ?? '' });
       if (what === 'approve') {

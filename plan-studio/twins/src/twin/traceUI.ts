@@ -256,8 +256,25 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
         else got = useAi ? await readImage(file, progress) : null;
         if (my !== token) return;
         if (!got) {
-          status(isPdf ? `Sheet ${page} has no linework to measure: its plan is a picture inside the PDF.` : 'A picture of a plan has no linework to measure.');
-          { const n = 1 + extrasWanted().length; $('trAskText').textContent = `The AI plan reader can read it. ${n === 1 ? 'A crop of this sheet goes' : `Crops of ${n} sheets (this one and the ${n - 1} you picked as site plan or elevations) go`} to ${await readerName()} for this read. The lab does not store them. Plan models, IFC and GLB files never leave your browser.`; }
+          status(isPdf ? `Sheet ${page} is an image inside the PDF — ready for the AI plan reader.` : 'Image plan loaded — ready for the AI plan reader to trace into 3D.');
+          if (!isPdf) {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+              const t = $('trThumb') as HTMLCanvasElement;
+              const s = Math.min(1, 360 / Math.max(img.width, 1), 240 / Math.max(img.height, 1));
+              t.width = Math.max(1, Math.round(img.width * s));
+              t.height = Math.max(1, Math.round(img.height * s));
+              t.getContext('2d')?.drawImage(img, 0, 0, t.width, t.height);
+              $('trSheetRow').hidden = false;
+              ($('trSheetRow').querySelector('label') as HTMLElement | null)?.setAttribute('hidden', '');
+              URL.revokeObjectURL(url);
+            };
+            img.onerror = () => URL.revokeObjectURL(url);
+            img.src = url;
+          }
+          { const n = 1 + extrasWanted().length; $('trAskText').textContent = `${isPdf ? `Crops of ${n} sheet${n > 1 ? 's' : ''}` : 'A crop of this image'} will be read by ${await readerName()} to extract walls, doors, windows and rooms into 3D. The lab does not store your image. (IFC, GLB and plan models stay entirely in your browser.)`; }
+          ($('trAi') as HTMLButtonElement).textContent = isPdf ? 'Read sheet with AI plan reader' : 'Read image with AI plan reader → 3D';
           $('trAsk').hidden = false;
           return;
         }

@@ -79,6 +79,21 @@ export function normClass(s: string | undefined | null) {
   return /^ifc/i.test(t) ? 'Ifc' + t.slice(3, 4).toUpperCase() + t.slice(4).toLowerCase() : t;
 }
 
+/**
+ * Extract a canonical IFC class from a node, mesh, or material name when a class-batched GLB
+ * carries no `userData.ifcClass` / `userData.ifc_class` (e.g. `IfcPlate`, `IfcWallStandardCase_1`).
+ * Only returns known IFC classes so arbitrary names never misclassify.
+ */
+export function inferIfcClassFromName(s: string | undefined | null): string {
+  if (!s) return '';
+  const raw = String(s).trim();
+  const direct = BY_UPPER.get(raw.toUpperCase());
+  if (direct) return direct;
+  const m = /(?:^|[^A-Za-z])(Ifc[A-Za-z]+)(?:[^A-Za-z]|$)/i.exec(raw);
+  if (!m) return '';
+  return BY_UPPER.get(m[1].toUpperCase()) ?? '';
+}
+
 const WALLS = ['IfcWall', 'IfcWallStandardCase', 'IfcWallElementedCase', 'IfcChimney'];
 const SITE = ['IfcSite', 'IfcGeographicElement', 'IfcCivilElement', 'IfcBuildingElementProxy'];
 const FURN = ['IfcFurnishingElement', 'IfcFurniture', 'IfcSystemFurnitureElement'];

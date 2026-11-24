@@ -24,8 +24,8 @@ test('the hand-over uses the 3D page’s own key, shape and address', () => {
   assert.match(src, /if \(new URLSearchParams\(location\.search\)\.has\('fin'\)( \|\| new URLSearchParams\(location\.search\)\.has\('ground'\))?\) \{\s*try \{\s*const kept = JSON\.parse\(sessionStorage\.getItem\(KEEP\)/, 'the kept plan is read when the address has ?fin');
   assert.equal(TWIN_HANDOFF_HREF, `${TWIN_PAGE}?fin=`);
   assert.equal(new URLSearchParams(new URL(TWIN_HANDOFF_HREF, 'https://lab.assembl.co.nz').search).has('fin'), true);
-  // ?fin (and no ?plan, ?share or ?drop) also stops the page opening its example instead
-  assert.match(src, /const example = !qs\.has\('plan'\) && !qs\.has\('share'\) && !qs\.has\('fin'\) && !qs\.has\('drop'\)( && !qs\.has\('ground'\))?;/);
+  // ?fin (and no ?plan, ?share or ?drop) also stops the page opening its example instead (example now requires ?example=1)
+  assert.match(src, /const example = (qs\.get\('example'\) === '1' && )?!qs\.has\('plan'\) && !qs\.has\('share'\) && !qs\.has\('fin'\) && !qs\.has\('drop'\)( && !qs\.has\('ground'\))?;/);
   // an empty ?fin= is read as "no finishes chosen", so the default finishes are used
   assert.match(file('plan-studio/twins/src/twin/finishes.ts'), /export function decode\(txt: string \| null\): Schedule \| null \{\s*if \(!txt\) return null;/);
 });

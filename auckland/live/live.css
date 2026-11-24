@@ -86,3 +86,11 @@ button, input { font: inherit; color: inherit; }
   .panel.small ~ .views { bottom: 54px; }
 }
 @media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+
+.switch-view { grid-area: brand; justify-self: end; color: white; background: #273841; border-radius: 1rem; padding: 4px 12px; }
+.list-only { background: #e3e9e7; }
+.list-only #scene, .list-only .views, .list-only .grip, .list-only .weather { display: none; }
+.list-only .panel { top: 152px; bottom: 46px; max-height: none; height: auto; background: #fff; }
+@media (min-width: 900px) { .list-only .top, .list-only .panel { width: min(700px, 90vw); left: 50%; transform: translateX(-50%); } }
+
+button.row { width: 100%; background: transparent; text-align: left; border: 0; color: inherit; }

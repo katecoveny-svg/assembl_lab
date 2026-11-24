@@ -120,8 +120,9 @@ export function buildFilmPrompt(look = {}, o = {}) {
     o.guide ? "The guide image is the last frame of the previous part of this film: make this part continue from it seamlessly, in the same look and light." : "",
     look.time ? `Light: ${LIGHT[look.time]}.` : "",
     look.season ? SEASON[look.season] : "",
+    look.direction ? `Art direction (materials, reflections, atmosphere only — never alter geometry): ${look.direction}` : "",
     "Plant New Zealand native species only, and only on ground the video shows; keep the planting low so it hides no part of the building. Planting and trees move slightly in a light wind; nothing else moves.",
-    "No people, no text, no captions, no watermark, no logos.",
+    look.people ? `People: ${look.people}. No text, no captions, no watermark, no logos.` : "No people, no text, no captions, no watermark, no logos.",
     "Sound: quiet natural ambience only (light wind and native birdsong); no music, no voices.",
     "Keep everything else the same.",
   ].filter(Boolean).join("\n");
@@ -378,8 +379,17 @@ export function checkFilmInput(body, env = {}) {
   const look = body.look && typeof body.look === "object" ? body.look : {};
   if (look.time != null && look.time !== "" && !TIMES.includes(look.time)) return { error: "bad_time" };
   if (look.season != null && look.season !== "" && !SEASONS.includes(look.season)) return { error: "bad_season" };
+  const cleanText = (v, maxLen) => (typeof v === "string" && v.trim() ? v.replace(/[\r\n]+/g, " ").trim().slice(0, maxLen) : undefined);
   const seconds = Math.min(max, Math.max(MIN_SECONDS, Math.ceil(info.seconds - 0.05)));
-  return { video, info, seconds, aspect, still: still.value, guide: guide.value, resolution, mode: modeOf(env, body.mode), look: { time: look.time || undefined, season: look.season || undefined } };
+  return {
+    video, info, seconds, aspect, still: still.value, guide: guide.value, resolution, mode: modeOf(env, body.mode),
+    look: {
+      time: look.time || undefined,
+      season: look.season || undefined,
+      direction: cleanText(look.direction, 600),
+      people: cleanText(look.people, 240),
+    },
+  };
 }
 
 async function readCapped(request, max) {

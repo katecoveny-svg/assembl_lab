@@ -1,40 +1,47 @@
-// lab home (/index.html) · "More from the lab": every tile opens a page that is in the repo (or is guarded until it is), shows a still
-// that is in the repo, and carries a name, one line and a truth label.
+// Homepage review. These checks also run with no browser or network connection.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const band = html.slice(html.indexOf('id="more"'), html.indexOf('</section>', html.indexOf('id="more"')));
-const tiles = [...band.matchAll(/<a class="tile"([^>]*)>([\s\S]*?)<\/a>/g)].map((m) => ({ attrs: m[1], body: m[2], href: /href="([^"]+)"/.exec(m[1])[1] }));
-const served = (p) => fs.existsSync(path.join(ROOT, p, p.endsWith('/') ? 'index.html' : ''));
+const root = new URL('../../', import.meta.url);
+const html = fs.readFileSync(new URL('index.html', root), 'utf8');
+const tools = ['/architecture/', '/auckland/live/', '/roof-solar/', 'https://assembl-waitemata-tides.pages.dev/'];
+const hrefs = markup => [...markup.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map(match => match[1]);
 
-test('the band is on the page and linked from the nav', () => {
-  assert.ok(band.length > 100); assert.match(html, /<a href="#more">More<\/a>/);
-  assert.ok(tiles.length >= 5, `tiles: ${tiles.length}`);
-});
-
-test('each tile: page in the repo or guarded, a still in the repo, name, line and label', () => {
-  for (const t of tiles) {
-    const guarded = /data-needs="/.test(t.attrs);
-    if (guarded) { assert.match(t.attrs, /\shidden/, `${t.href} is guarded, so it starts hidden`); assert.match(t.attrs, /data-needs-text="&lt;title&gt;/, `${t.href} checks the page's own title`); }
-    else assert.ok(served(t.href), `${t.href} is not a page in the repo`);
-    const img = /<img src="([^"?]+)"[^>]*width="880" height="550"[^>]*alt="([^"]+)"/.exec(t.body);
-    assert.ok(img, `${t.href}: still with size and alt text`);
-    assert.ok(fs.statSync(path.join(ROOT, img[1])).size > 2000, `${img[1]} missing or empty`);
-    for (const c of ['t-name', 't-line', 'chip mono']) assert.match(t.body, new RegExp(`class="${c}">[^<]+<`), `${t.href}: ${c}`);
+test('the four destinations are real links in the primary navigation and toolkit', () => {
+  const nav = html.match(/<nav aria-label="Main navigation">([\s\S]*?)<\/nav>/)?.[1];
+  assert.deepEqual(hrefs(nav), tools);
+  assert.deepEqual([...html.matchAll(/<a\b[^>]*class="tool"[^>]*href="([^"]+)"/g)].map(match => match[1]), tools);
+  for (const href of hrefs(html).filter(url => url.startsWith('/'))) {
+    const pathname = new URL(href, 'http://localhost/').pathname;
+    assert.ok(fs.existsSync(new URL('.' + pathname + 'index.html', root)), pathname);
   }
 });
 
-test('the roof solar twin and the architecture pieces are reachable', () => {
-  const hrefs = new Set(tiles.map((t) => t.href));
-  for (const h of ['/roof-solar/', '/plan-studio/twins/drop/', '/plan-studio/twins/16a/', '/architecture/', '/auckland/live/']) assert.ok(hrefs.has(h), h);
+test('the skip target and architecture entries remain usable without JavaScript', () => {
+  assert.match(html, /class="skip" href="#main"/);
+  assert.match(html, /<main\b[^>]*id="main"[^>]*tabindex="-1"/);
+  for (const href of ['/plan-studio/twins/drop/', '#tools', '/plan-studio/twins/16a/', '/plan-studio/twins/services/']) {
+    assert.ok(hrefs(html).includes(href), href);
+  }
 });
 
-test('the guard script is loaded and reads the page before showing a tile', () => {
-  assert.match(html, /src="\/lab\/v3\/more\.js/);
-  const js = fs.readFileSync(path.join(ROOT, 'lab/v3/more.js'), 'utf8'); assert.match(js, /needsText/); assert.match(js, /a\.hidden = false/);
+test('the lead and cards use local images with intrinsic dimensions and an alternative', () => {
+  const images = html.match(/<img\b[^>]*>/g);
+  assert.equal(images.length, 5);
+  for (const image of images) {
+    const src = image.match(/src="(\/[^"]+)"/)?.[1];
+    assert.ok(src && fs.statSync(new URL('.' + src, root)).size > 2000);
+    assert.match(image, /width="\d+"/);
+    assert.match(image, /height="\d+"/);
+    assert.match(image, /alt="[^"]*"/);
+  }
+  assert.match(images[0], /alt="[^"]+"/);
+});
+
+test('the front page does not load the former bird gallery; Manu keeps its own entry point', () => {
+  const css = fs.readFileSync(new URL('lab/v3/front-door.css', root), 'utf8');
+  assert.doesNotMatch(html, /<script\b|<canvas\b/);
+  assert.doesNotMatch(html + css, /(?:birds|tui)\.webp|\/manu\/|three\.module/i);
+  assert.ok(fs.existsSync(new URL('manu/index.html', root)));
 });
