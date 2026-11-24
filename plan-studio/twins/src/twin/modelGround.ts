@@ -7,7 +7,7 @@
 // Under the model the ground is cut and filled to a level platform a metre wider than its box (assumed, and said so).
 // The LiDAR is read by this browser straight from LINZ (linz/ground.js); the lab's server never receives the point.
 import * as THREE from 'three/webgpu';
-import { applyGroundAt, convergence, frameOf, readGroundFor, toNZTM, PRIVACY, type Applied, type Footprint, type GroundStore, type Placement, type Tag } from './siteGround';
+import { applyGroundAt, convergence, fetchAerialPhoto, frameOf, readGroundFor, toNZTM, PRIVACY, type Applied, type Footprint, type GroundStore, type Placement, type Tag } from './siteGround';
 import { fromNZTM } from './linz/nztm.js';
 import { parseWhere } from './siteFacts';
 import { floorFor, groundStorey, isNZTM, northFrom, pickSitePoint, type IfcSiteInfo, type SitePoint } from './modelSite';
@@ -18,7 +18,7 @@ import { progressText, LIMIT_S } from './groundLook';
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const f2 = (v: number) => v.toFixed(2);
 
-export interface Terrainish { centre: [number, number]; size: number; n: number; heights: number[]; datum?: number; source?: string; chip?: string; layerNote?: string; photoKind?: 'contours'; north?: [number, number] }
+export interface Terrainish { centre: [number, number]; size: number; n: number; heights: number[]; datum?: number; source?: string; chip?: string; layerNote?: string; photo?: string; photoKind?: 'contours'; north?: [number, number] }
 export interface ModelSiteCtx {
   name: string; kind: 'ifc' | 'glb';
   /** what the IFC's own text says about its site (null for a GLB) */
@@ -127,6 +127,16 @@ export function modelGroundPanel(ctx: ModelSiteCtx) {
     // lowest part, so the model neither floats over a fall nor sinks into a rise; outside it the ground is as surveyed
     const bottom = ctx.box.min.y - 0.02, m = 1;
     const yAt = (x: number, z: number) => (x > fp.x0 - m && x < fp.x0 + fp.W + m && z > fp.z0 - m && z < fp.z0 + fp.D + m ? bottom : grid(x, z));
+    const p0 = point();
+    if (p0 && !T.photo) {
+      const photo = await fetchAerialPhoto(p0.lat, p0.lng, T.size, st.placement.turnDeg).catch(() => null);
+      if (photo) {
+        T.photo = photo;
+        T.photoKind = undefined;
+        T.chip = 'Site: LINZ LiDAR + aerial photo';
+        T.layerNote = 'Aerial orthophoto (Esri World Imagery) draped over LINZ 1 m LiDAR ground (connect LINZ_BASEMAPS_KEY for official LINZ aerial tiles).';
+      }
+    }
     const g = await ctx.build(T, yAt);
     for (const c of [...ctx.holder.children]) { ctx.holder.remove(c); c.traverse((o) => { const mm = o as THREE.Mesh; mm.geometry?.dispose?.(); }); }
     ctx.holder.add(g);
