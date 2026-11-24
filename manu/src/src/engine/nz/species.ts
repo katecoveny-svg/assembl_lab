@@ -301,9 +301,9 @@ export const TUI: Species = measured('tui', SHELL.tui, {
   },
   tracts: coat([
     { name: 'lace', look: 'lace', region: { kind: 'band', s: [5.5, 6.4], phi: [0.66, 0.97], soft: 0.9 } },
-    { name: 'poi', look: 'poi', region: { kind: 'blob', at: [6.85, 0.07], r: [0.36, 0.042], soft: 0.25 } },
+    { name: 'poi', look: 'poi', region: { kind: 'blob', at: [6.68, 0.112], r: [0.30, 0.059], soft: 0.25 } },
   ]),
-  wing: { ...base.wing, color: 0x151412, sheen: 0x3a3c52, bar: { rows: [0.66, 1], v: [-0.1, 0.7], base: 0xc8c8c2, tip: 0xf4f4ee } },
+  wing: { ...base.wing, rest: { ...base.wing.rest, from: [5.05, 96], to: [0.58, 146], width: [0.055, 0.116, 0.032], height: 0.029 }, color: 0x151412, sheen: 0x3a3c52, bar: { rows: [0.66, 1], v: [-0.1, 0.7], base: 0xc8c8c2, tip: 0xf4f4ee } },
   tail: { ...base.tail, rectrices: 6, color: 0x121418 },
   legs: { ...base.legs, color: 0x141110 },
   behaviour: { ...songbirdBehaviour, billUp: 8 },
