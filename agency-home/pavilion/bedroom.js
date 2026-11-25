@@ -3,7 +3,7 @@ import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {cushion} from './upholstery.js';
 
 // Layout inside the existing western bay. The opening beside the bed connects to the kitchen aisle.
-export function bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow}){
+export function bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow,basketWeave}){
  const material=(colour,rough=.8)=>new T.MeshStandardMaterial({color:colour,roughness:rough});
  const dyed=(m,c)=>{const a=m.clone();a.color.setHex(c);return a};
  const ivory=dyed(cloth,0xe5dccc),sheet=dyed(cloth,0xe9e4d7),clay=dyed(cloth,0x8a7061),walnut=dyed(oak,0x8b7260),chalk=material(0xbcae9f),brass=material(0x9a8262,.36);
@@ -30,7 +30,8 @@ export function bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow}){
  for(let i=0;i<25;i++)box(-7.004,.638,-1.97+(i+.5)*.155,.032,1.14,.153,walnutWall);
  box(-6.985,1.217,-.04,.076,.028,3.88,walnutWall);
  rounded(-6.954,.711,bedZ,.111,.89,2.31,.045,walnut);
- rounded(-6.900,.714,bedZ,.084,.817,2.24,.038,dyed(cloth,0xc5b9a5));
+ const padded=dyed(cloth,0xa99c82);padded.map=basketWeave.clone();padded.map.repeat.set(2.8,5);padded.map.needsUpdate=true;
+ for(let k=0;k<6;k++)rounded(-6.900,.714,bedZ+(k-2.5)*.365,.092,.802,.36,.043,padded);
  for(const z of [-.65,.07]){
   const inner=cushion(.696,.477,.185,11);
   for(const [g,m] of [[inner.geo,dyed(cloth,0xcfc5b4)],[inner.welt,sheet]]){const o=mesh(g,m,-6.81,.765,z);o.rotation.order='YXZ';o.rotation.y=Math.PI/2;o.rotation.x=-.42}
@@ -46,7 +47,9 @@ export function bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow}){
   for(let i=0;i<p.count;i++){
    const u=uv.getX(i),v=uv.getY(i)*2-1,side=Math.abs(v),over=Math.max(0,(side-.80)/.20),toe=Math.max(0,(u-.89)/.11);
    const f=.004*Math.sin(v*11+u*7+.65*Math.cos(u*6))+.003*Math.sin(v*19-u*8);
-   const ridges=.016*Math.exp(-((v-.33+.45*u)**2)/.009)+.021*Math.exp(-((v+.41-.24*u)**2)/.015);
+   const ridgeAxis=v+.17*Math.sin(u*5)-.04;
+   const loft=.016*Math.cos(v*9.0-u*3.6)*Math.sin(u*4+.8)+.014*Math.exp(-((ridgeAxis+.47)**2)/.004)-.012*Math.exp(-((ridgeAxis+.40)**2)/.006);
+   const ridges=loft+.016*Math.exp(-((v-.33+.45*u)**2)/.009)+.021*Math.exp(-((v+.41-.24*u)**2)/.015);
    const z=bedZ+Math.sign(v)*halfWidth*(Math.min(side,.80)/.80)+Math.sign(v)*(.057+.007*Math.sin(u*25))*Math.sin(over*Math.PI*.5);
    let x=x0+(x1-x0)*Math.min(u/.89,1)+.045*Math.sin(toe*Math.PI*.5);
    x+=.007*Math.sin(v*7.5+u*2);
@@ -56,7 +59,8 @@ export function bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow}){
   g.computeVertexNormals();m.side=T.DoubleSide;mesh(g,m);
  }
  textile(-6.44,-4.94,.775,.608,.215,ivory);
- textile(-5.27,-4.956,.786,.638,.173,clay,true);
+ const runner=clay.clone();runner.map=basketWeave.clone();runner.map.repeat.set(3.5,5);runner.map.needsUpdate=true;runner.color.setHex(0x887c68);
+ textile(-5.39,-4.956,.786,.642,.173,runner,true);
  // Tuck the turn-down over the head end instead of ending the top as a hard slab.
  textile(-6.48,-6.32,.742,.627,.078,dyed(cloth,0xdad1be),true);
  for(const z of [-1.43,.88]){

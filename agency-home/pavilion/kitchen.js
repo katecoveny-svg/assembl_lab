@@ -2,10 +2,10 @@ import * as T from './vendor/three.webgpu.min.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
 
-export function fitKitchen(scene,oak,stone){
+export function fitKitchen(scene,oak,stone,glazeNormal){
  const bins=new Map(),mat=(color,roughness,metalness=0)=>new T.MeshStandardMaterial({color,roughness,metalness});
  const hardware=mat(0x836b48,.35,.65),graphite=mat(0x282b2c,.48,.24),steel=mat(0xbec2c3,.31,.86),black=mat(0x111b1e,.14,.40),rubber=mat(0x161918,.84),milk=mat(0xe1ddd3,.46),glaze=mat(0xc3c1b7,.25),etch=mat(0x747e7c,.45,.53),timber=oak.clone();
- timber.color.setHex(0xa48b6e);const v=(x,y,z)=>new T.Vector3(x,y,z);
+ timber.color.setHex(0x99816b);const v=(x,y,z)=>new T.Vector3(x,y,z);
  function add(g,m,x,y,z,rot){if(rot)g.applyMatrix4(new T.Matrix4().makeRotationFromEuler(new T.Euler(...rot)));g.translate(x,y,z);
   if(m===timber&&g.attributes.uv){
     const p=g.attributes.position,uv=g.attributes.uv,offset=x*.573;
@@ -18,17 +18,46 @@ export function fitKitchen(scene,oak,stone){
  const y=.981,back=-1.969,front=-1.348,far=-3.165,end=-.80,sinkX=-1.52;
  box(-1.985,.131,-1.702,2.33,.126,.49,.003,graphite);box(-1.983,.444,-1.681,2.35,.515,.571,.006,timber);
  // Hand-finished ceramic courses. Each tile has a shallow crown and a glazed, slightly irregular face.
- const grout=mat(0xb9aaa0,.91);
+ const grout=mat(0xafa897,.89);
  box(-1.985,1.40,-1.966,2.365,.80,.018,.002,grout);
- const tileTones=[0xcab5a6,0xc3af9c,0xd2c0b0,0xc7afa0,0xdac7b5];
- const ceramics=tileTones.map(color=>new T.MeshPhysicalMaterial({color,roughness:.29,clearcoat:.59,clearcoatRoughness:.19}));
- for(let j=0;j<3;j++)for(let i=0;i<24;i++){
-   const w=.0984,h=.245,z=-1.949+.0019*Math.sin(i*4.7+j*2.7),cx=-3.165+(i+.5)*w,cy=1.014+(j+.5)*h;
-   const tile=new RoundedBoxGeometry(w-.0031,h-.0031,.018,2,.004);
-   const pos=tile.attributes.position;
-   for(let k=0;k<pos.count;k++){const x=pos.getX(k),y=pos.getY(k);if(pos.getZ(k)>.002)pos.setZ(k,pos.getZ(k)+.0041*Math.cos(x/w*Math.PI)*Math.cos(y/h*Math.PI)+.00065*Math.sin(x*43+j)*Math.cos(y*33+i))}
-   tile.computeVertexNormals();add(tile,ceramics[(i*7+j*13+i*j)%5],cx,cy,z);
+ const tileTones=[0x73877c,0x84968a,0x799387,0x8b9c8d,0x819484,0x889b8e];
+ const ceramics=tileTones.map((color,i)=>new T.MeshPhysicalMaterial({
+  color,roughness:.22+i*.008,clearcoat:.74,clearcoatRoughness:.14+i*.007,
+  normalMap:glazeNormal,normalScale:new T.Vector2(.37,.27),clearcoatNormalMap:glazeNormal,
+  clearcoatNormalScale:new T.Vector2(.40,.31)
+ }));
+ // Separate piled-glaze edges surround an undulating face. Each strip occupies its own mortar bed.
+ const cols=12,rows=12,pitchX=2.36/cols,pitchY=.747/rows;
+ function firedFace(w,h,seed){
+  const grid=new T.PlaneGeometry(w,h,8,4),position=grid.attributes.position,uv=grid.attributes.uv,colour=[];
+  for(let k=0;k<position.count;k++){
+   const u=uv.getX(k),v=uv.getY(k),edge=Math.min(u,1-u,v,1-v);
+   const dome=Math.sin(Math.PI*u)*Math.sin(Math.PI*v);
+   const warp=.0011*Math.sin(6.3*u+seed)*Math.sin(4*v+seed*.71);
+   position.setZ(k,.0034*dome+warp);
+   const tone=edge<.01?.81:1+.025*Math.sin(seed+u*2.7+v);
+   colour.push(tone,tone,tone);
+   uv.setXY(k,u*.64+(seed*.19)%1,v*.29+(seed*.36)%1);
+  }
+  grid.setAttribute('color',new T.Float32BufferAttribute(colour,3));
+  grid.computeVertexNormals();return grid;
  }
+ ceramics.forEach(m=>m.vertexColors=true);
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+  const seed=i*19+j*37,cx=far+(i+.5)*pitchX,cy=1.015+(j+.5)*pitchY;
+  add(firedFace(pitchX-.0025,pitchY-.0023,seed),ceramics[(seed+i*j)%ceramics.length],cx,cy,-1.946+Math.sin(seed)*.0012);
+ }
+ // Inset upper fronts and projecting underside give the shelf a soffit and the glaze a highlight.
+ const lacquer=mat(0xaaa797,.64),shadowLine=mat(0x484138,.76);
+ box(-1.985,2.21,-1.82,2.36,.86,.31,.008,shadowLine);
+ for(let i=0;i<4;i++){
+  const x=-3.165+(i+.5)*.59;
+  box(x,2.21,-1.647,.586,.85,.028,.005,lacquer);
+  box(x,1.803,-1.631,.545,.009,.006,.002,timber);
+ }
+ box(-1.985,1.781,-1.794,2.36,.022,.293,.003,timber);
+ const diffuser=new T.MeshStandardMaterial({color:0xf5dfbf,emissive:0xffdbaf,emissiveIntensity:.62,roughness:.52});
+ box(-1.985,1.767,-1.74,2.23,.005,.009,.002,diffuser);
  // A real aperture in the solid-surface bench, with four returns under an undermount bowl.
  const left=sinkX-.235,right=sinkX+.235,near=-1.442,deep=-1.824;
  function roundRect(path,x0,y0,x1,y1,r){
@@ -72,8 +101,8 @@ export function fitKitchen(scene,oak,stone){
  box(-3.486,2.139,-1.68,.688,.032,.624,.004,timber);
  const fridgeX=-3.486;
  box(fridgeX,1.109,-1.702,.625,2.06,.593,.012,graphite);
- for(const [h,cy] of [[1.267,1.505],[.726,.493]])box(fridgeX,cy,front+.038,.604,h,.050,.009,steel);
- for(const cy of [.676,1.166])box(fridgeX+.251,cy,front+.083,.014,.307,.039,.006,graphite);
+ for(const [h,cy] of [[1.267,1.505],[.726,.493]])box(fridgeX,cy,front+.038,.604,h,.050,.006,timber);
+ for(const cy of [.676,1.166])box(fridgeX+.251,cy,front+.083,.014,.307,.039,.006,hardware);
  // Black pump, crimp ring, pale paper on amber glass. No borrowed brand graphics.
  const amber=new T.MeshPhysicalMaterial({color:0x814520,roughness:.21,clearcoat:1,clearcoatRoughness:.10,metalness:.06});
  const bottleX=sinkX-.34,bottleZ=-1.795;
@@ -84,28 +113,41 @@ export function fitKitchen(scene,oak,stone){
  turn(bottleX,y+.122,bottleZ,[[.015,0],[.015,.019],[.009,.020],[.006,.025],[.006,.039],[.010,.041],[.010,.047]],rubber);
  box(bottleX+.014,y+.168,bottleZ,.048,.009,.016,.003,graphite);
  // Honed elliptical breakfast table with a recessed apron and two curved-back oak chairs.
- const oakSeat=oak.clone();oakSeat.color.setHex(0xb99a72);
+ const oakSeat=oak.clone();oakSeat.color.setHex(0x9b7956);
  const tableX=-2.12,tableZ=.49;
  const edge=new T.Shape();edge.absellipse(0,0,.635,.355,0,Math.PI*2,false,0);
  const slab=new T.ExtrudeGeometry(edge,{depth:.034,bevelEnabled:true,bevelSegments:3,bevelSize:.008,bevelThickness:.005,curveSegments:48});slab.rotateX(-Math.PI/2);add(slab,stone,tableX,.785,tableZ);
  for(const dx of [-.30,.30])box(tableX+dx,.426,tableZ,.071,.69,.351,.022,oakSeat);
+ const chairCord=mat(0xbbaa86,.98);
  function diningChair(x,z,rotation){
   const chair=new T.Group(), parts=[];
   function piece(g,m,px,py,pz){const o=new T.Mesh(g,m);o.position.set(px,py,pz);chair.add(o);parts.push(o)}
   function limb(a,b,r0,r1){const d=v(...b).sub(v(...a)),g=new T.CylinderGeometry(r1,r0,d.length(),16);g.applyQuaternion(new T.Quaternion().setFromUnitVectors(v(0,1,0),d.normalize()));piece(g,oakSeat,...a.map((n,i)=>(n+b[i])/2))}
-  const saddle=new T.SphereGeometry(1,32,16);saddle.scale(.218,.035,.187);piece(saddle,oakSeat,0,.467,0);
+  const saddle=new RoundedBoxGeometry(.421,.041,.366,3,.020);
+  piece(saddle,oakSeat,0,.463,0);
+  // Cords span the seat and turn on its curved rail. They share one batched material.
+  const rush=chairCord;
+  for(let j=0;j<34;j++){
+   const z=-.164+j*.0099,span=.385-.064*(Math.abs(z)/.169)**3;
+   const curve=new T.CatmullRomCurve3([v(-span/2,.472,z),v(-span*.43,.491,z),v(0,.481,z),v(span*.43,.491,z),v(span/2,.472,z)]);
+   piece(new T.TubeGeometry(curve,10,.0044,5),rush,0,0,0);
+  }
   for(const sx of [-1,1])for(const sz of [-1,1])limb([sx*.159,.069,sz*.145],[sx*.126,.452,sz*.107],.014,.022);
-  for(const sx of [-1,1])limb([sx*.136,.46,.108],[sx*.175,.748,.161],.016,.013);
-  const arc=new T.CatmullRomCurve3([v(-.208,.732,.088),v(-.17,.774,.155),v(0,.79,.197),v(.17,.774,.155),v(.208,.732,.088)]);
-  piece(new T.TubeGeometry(arc,36,.025,10),oakSeat,0,0,0);
+  for(const sx of [-1,1])limb([sx*.136,.46,.108],[sx*.175,.747,.097],.016,.013);
+  const back=new T.BoxGeometry(.451,.072,.032,30,3,1),bp=back.attributes.position;
+  for(let i=0;i<bp.count;i++){
+   const sx=bp.getX(i),u=sx/.2255,sy=bp.getY(i);
+   bp.setXYZ(i,sx,.772+sy*(1-.28*u*u)-.035*u*u,.172+bp.getZ(i)-.125*u*u);
+  }
+  back.computeVertexNormals();piece(back,oakSeat,0,0,0);
   chair.position.set(x,0,z);chair.rotation.y=rotation;chair.updateWorldMatrix(true,true);
   for(const o of parts)add(o.geometry.applyMatrix4(o.matrixWorld),o.material,0,0,0)
  }
  diningChair(-2.93,.48,-Math.PI/2);diningChair(-1.31,.49,Math.PI/2);
  // A narrow rail, hand-thrown bowls and upright cutting boards keep the worktop clear.
- box(-1.99,1.74,-1.823,2.32,.034,.29,.006,oak);
+ box(-2.855,1.544,-1.833,.57,.023,.23,.006,oak);
  for(const [ix,iz] of [[-2.83,-1.79],[-2.61,-1.81]])for(let i=0;i<2;i++)
-  turn(ix,1.76+i*.017,iz,[[.029,0],[.053,.004],[.079,.036],[.081,.054],[.077,.055],[.07,.037],[.039,.01],[0,.008]],glaze);
+  turn(ix,1.558+i*.017,iz,[[.029,0],[.053,.004],[.079,.036],[.081,.054],[.077,.055],[.07,.037],[.039,.01],[0,.008]],glaze);
  for(const [w,h,x] of [[.194,.309,-1.012],[.117,.217,-.955]])box(x,y+h/2,-1.924,w,h,.022,.011,timber);
  // A folded tea towel, two nesting cups and a thrown breakfast carafe establish human scale.
  const earthen=mat(0x67594b,.72),celadon=mat(0x899381,.39);
@@ -135,7 +177,7 @@ export function fitKitchen(scene,oak,stone){
  const sc=railShade.getContext('2d'),ramp=sc.createLinearGradient(0,0,0,64);
  ramp.addColorStop(0,'#36291d68');ramp.addColorStop(.29,'#36291d2d');ramp.addColorStop(1,'#36291d00');
  sc.fillStyle=ramp;sc.fillRect(0,0,2,64);
- const shade=new T.Mesh(new T.PlaneGeometry(2.32,.155),new T.MeshBasicMaterial({map:new T.CanvasTexture(railShade),transparent:true,depthWrite:false}));
- shade.position.set(-1.99,1.647,-1.929);scene.add(shade);
+ const shade=new T.Mesh(new T.PlaneGeometry(.57,.095),new T.MeshBasicMaterial({map:new T.CanvasTexture(railShade),transparent:true,depthWrite:false}));
+ shade.position.set(-2.855,1.485,-1.935);scene.add(shade);
  for(const [m,geos] of bins){const g=mergeGeometries(geos,false);const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;scene.add(o);for(const geo of geos)geo.dispose()}
 }
