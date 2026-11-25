@@ -137,3 +137,170 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
   .top-actions .btn.sm { padding: 6px 10px; font-size: 12.5px; white-space: nowrap; }
 }
 @media (max-width: 380px) { .top-actions a.btn { display: none; } }
+
+/* Register the sheet and solid in one viewport. Native range supports touch and arrow keys. */
+.build-menu {display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+#buildControls:not([hidden]) {display:grid;gap:8px;margin:0 0 18px;padding:14px 18px;border:1px solid var(--glass-line);border-radius:var(--r)}
+#buildControls .row {margin:0} #buildControls p {margin:2px 0}
+#buildScrub {width:100%;accent-color:#bc969b;min-height:32px;cursor:ew-resize}
+#buildDivider {position:absolute;inset:0;pointer-events:none}
+#buildDivider i {position:absolute;inset-block:0;left:var(--split,50%);border-left:2px solid #654a4e}
+#buildDivider i::after {content:"↔";position:absolute;top:45%;transform:translateX(-50%);border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;background:#fffdfb;color:#654a4e;box-shadow:0 0 0 1px #654a4e}
+.stagewrap.is-building .stagebar {display:none}
+#calibration {padding:12px 0} #calStatus {display:block;margin-top:6px}
+#buildControls button[aria-pressed="true"] {background:#e3d0d2;color:#382c30}
+
+.walk-handoff {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px} #modelFileLink[hidden],#walkLink[hidden],#playBuild[hidden]{display:none}
+.build-menu, #drawingFolio {scroll-margin-top:80px}
+
+/* Only the open inspection reads as a printed folio; the workspace stays unchanged. */
+#drawingFolio.is-building {
+  --folio-ink:#654a4e;--folio-rose:#e3d0d2;--folio-faint:#f7eff0;--folio-paper:#fffdfb;
+  background:var(--folio-faint);color:var(--folio-ink);border-radius:18px;
+  border:1px solid #9c7e82;overflow:hidden;margin-bottom:16px;color-scheme:light;
+}
+.folio-head:not([hidden]) {display:flex;justify-content:space-between;align-items:end;gap:10px 18px;padding:19px 23px 15px}
+.folio-eyebrow {font-size:10px;letter-spacing:.11em;margin:0 0 5px}
+.folio-head h2 {color:inherit;font-weight:500;letter-spacing:-.038em;line-height:1.05;font-size:clamp(22px,3vw,38px);margin:0}
+.folio-size {display:grid;gap:3px;text-align:right;flex:none}
+.folio-size b {font-size:clamp(16px,2.3vw,26px);line-height:1;font-weight:500;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.folio-size span {font-size:11px}
+#drawingFolio.is-building .stagewrap { border-radius:0;margin:0;border-block:1px solid #cdb6ba;box-shadow:none }
+#drawingFolio.is-building #buildControls:not([hidden]) {margin:0;padding:14px 23px 16px;border:0;border-radius:0;grid-template-columns:1fr auto;gap:7px 12px}
+#buildControls .row:first-child,#buildLabel,#buildScrub,.folio-steps,.folio-evidence {grid-column:1/-1}
+#drawingFolio .seg {background:var(--folio-paper);border:1px solid #d8c5c7;border-radius:50px}
+#drawingFolio #buildControls button {color:var(--folio-ink)}
+#drawingFolio #buildControls button[aria-pressed="true"] {background:var(--folio-ink);color:var(--folio-paper)}
+#drawingFolio #leaveBuild {margin-inline-start:auto;flex-direction:row;align-items:center;white-space:nowrap;border:1px solid #b79da1}
+#drawingFolio #leaveBuild span {margin-inline-start:4px}
+#drawingFolio #buildLabel {font-size:13px;margin-top:2px}
+#drawingFolio #buildScrub {margin:0;accent-color:var(--folio-ink);height:23px;min-height:24px}
+#drawingFolio #buildScrub:focus-visible,#drawingFolio button:focus-visible,#drawingFolio summary:focus-visible {outline:2px solid var(--folio-ink);outline-offset:3px}
+#drawingFolio #buildBeat {font-size:12px;min-width:12em;font-variant-numeric:tabular-nums}
+#drawingFolio #playBuild {margin-left:auto}
+.folio-evidence {font-size:12px;line-height:1.45;border-top:1px solid #dfcdcf;margin-top:5px;padding-top:9px}
+.folio-evidence summary {cursor:pointer;width:fit-content}
+#drawingFolio #buildEvidence {font-size:12px;line-height:1.5;color:inherit;max-width:80ch;margin-top:6px}
+#folioSides {position:absolute;inset:10px 12px auto;display:flex;justify-content:space-between;pointer-events:none}
+#folioSides[hidden],#folioSteps[hidden] {display:none}
+#folioSides span {border:1px solid #d2b8bc;border-radius:4px;color:var(--folio-ink);background:#fffdfb;letter-spacing:.07em;text-transform:uppercase;font:11px/1.2 var(--mono);padding:5px 7px}
+#folioSides.hide-left #folioLeft,#folioSides.hide-right #folioRight {visibility:hidden}
+#buildDivider i {border-left:1px solid #654a4e;box-shadow:3px 0 8px #654a4e46}
+#buildDivider i::after {border:1px solid #d2b8bc;box-shadow:0 2px 14px #654a4e60;width:36px;height:36px;line-height:36px}
+.folio-steps {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.folio-steps button {background:transparent;border:1px solid #d9c6c8;border-radius:4px;text-align:center;padding:7px 1px;font-size:11px}
+.folio-steps button[aria-current="step"] {background:#e3d0d2;border-color:#654a4e}
+@media(max-width:600px) {
+  .folio-head:not([hidden]) {padding:13px 11px 11px;align-items:center}
+  .folio-eyebrow {font-size:9px}
+  .folio-head h2 {font-size:21px;line-height:1.03}
+  .folio-size b{font-size:17px}
+  .folio-size span{font-size:9px}
+  #drawingFolio.is-building #buildControls:not([hidden]) {padding:10px 11px 12px}
+  #drawingFolio #leaveBuild {margin-inline-start:0}
+  #folioSides {inset:5px 5px auto} #folioSides span {font-size:9px;padding:3px 4px}
+  #buildDivider i::after {width:30px;height:30px;line-height:30px}
+  .folio-steps {grid-template-columns:repeat(3,minmax(0,1fr))}
+  .folio-steps button {min-height:32px}
+}
+
+/* Model first; dimensions and exact paper registration are kept for Compare. */
+#drawingFolio.is-showcase {
+  --folio-ink:#fffdfb;--folio-rose:#e3d0d2;--folio-faint:#352834;--folio-paper:#4e3a48;
+  border-color:#806772;
+}
+#drawingFolio.is-showcase .folio-head {padding-top:17px;padding-bottom:13px}
+#drawingFolio.is-showcase .folio-eyebrow {color:#e3d0d2}
+#drawingFolio.is-showcase .stagewrap {background:#614b58;border-block-color:#907883}
+#drawingFolio.is-showcase .seg {border-color:#846979}
+#drawingFolio.is-showcase #buildControls button[aria-pressed="true"] {background:#e3d0d2;color:#362733}
+#drawingFolio.is-showcase .folio-evidence {border-top-color:#7e6573;color:#e3d0d2}
+#drawingFolio #buildReadout[hidden],#drawingFolio #buildScrub[hidden] {display:none}
+#drawingFolio #buildControls .seg button {min-height:36px}
+@media(max-width:600px) {
+  #drawingFolio.is-showcase .stagewrap {aspect-ratio:5/4}
+  #drawingFolio #buildControls .seg button {font-size:12px;padding-inline:8px}
+}
+
+#folioExtent[hidden] {display:none}
+
+/* A local proposal is visually distinct from the committed model. */
+.edit-desk {margin:0 0 16px;scroll-margin-top:78px}
+.edit-desk header p:first-child,#doorDraftRev {color:#e3d0d2;font-size:10px;letter-spacing:.09em;margin:0 0 6px}
+.edit-desk header h2 {font-size:clamp(22px,3vw,31px);letter-spacing:-.03em;margin:0 0 5px}
+.edit-desk header .hint {margin:0 0 14px}
+#doorForm {display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(145px,1.1fr) auto auto;gap:9px;align-items:end}
+#doorForm label {display:grid;min-width:0;gap:5px;font-size:12px;color:var(--on)}
+#doorForm input,#doorForm select {height:40px;color:var(--paper);width:100%}
+#doorForm .btn {min-height:40px;justify-content:center;white-space:nowrap}
+#doorStatus:not(:empty){padding:8px 12px;background:#3a2737;color:#fffdfb;border-radius:5px;font-size:14px}
+#doorPreview:not([hidden]){border:1px solid #806772;padding:13px;border-radius:9px;background:#2a1c2a}
+#doorDiffTitle {margin:0 0 8px;font-size:17px;color:var(--paper)}
+#doorImpact {font-size:14px}
+#doorReceipt[hidden]{display:none}
+@media(max-width:650px){
+ #doorForm {grid-template-columns:minmax(0,1fr) auto}
+ #doorForm label:first-child {grid-column:1/-1}
+}
+/* Keep the neighbouring element table in its own scroller, not the page. */
+@media (max-width:1000px){.panel[data-panel=model] .cols{grid-template-columns:minmax(0,1fr)}}
+
+/* Position comes first; precise form inputs are available without crowding the drawing. */
+.edit-desk {background:linear-gradient(145deg,#332331,#241a26)}
+.edit-desk header {margin-bottom:12px}
+#doorBoard {background:#fffdfb;border:1px solid #ae909c;border-radius:10px;overflow:hidden;touch-action:pan-y;user-select:none}
+#doorBoard:empty {display:none}
+#doorBoard svg {display:block;width:100%;height:auto;max-height:300px;cursor:ew-resize}
+.door-at-a-glance {display:flex;gap:6px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:9px}
+.door-at-a-glance p{margin:0}
+#doorMotion {color:#f1dce1;font-size:clamp(15px,2vw,23px);font-weight:600;letter-spacing:-.024em}
+#doorDragHint {color:var(--on);font-size:13px}
+#doorDragHint[hidden] {display:none}
+.door-choices {border-top:1px solid #6b5361;padding-top:10px}
+.door-choices label {display:grid;gap:4px;font-size:12px;color:var(--on);min-width:0}
+.door-choices select {min-height:38px}
+.door-choices .door-slider{flex:1;min-width:150px}
+#doorRange{width:100%;accent-color:#e3d0d2;height:25px;margin:0;cursor:ew-resize}
+#doorExact {margin-top:8px;padding-block:5px;color:var(--on);font-size:13px}
+#doorExact summary {cursor:pointer;width:fit-content}
+#doorForm {margin-top:8px;grid-template-columns:minmax(145px,1fr) auto auto;max-width:535px}
+#doorChange :is(button,input,select,summary):focus-visible {outline:2px solid #e3d0d2;outline-offset:3px}
+#doorPreview p {margin:4px 0 8px}
+@media(max-width:650px){
+  #doorForm {grid-template-columns:minmax(0,1fr) auto}
+  #doorBoard{margin-inline:-5px}
+  #doorForm label:first-child {grid-column:auto}
+  .door-choices {align-items:stretch}
+  .door-choices label {min-width:min(140px,100%)}
+}
+
+/* The model is the review surface. Paper and dimensional input stay in Details. */
+.door-still {position:relative;margin:0;background:radial-gradient(at 50% 40%,#6d514f,#422e3d);aspect-ratio:16 / 9;
+  border:1px solid #967786;border-radius:13px;overflow:hidden;isolation:isolate;touch-action:pan-y}
+.door-still.is-comparing {cursor:ew-resize}
+.door-still canvas {display:block;width:100%;height:100%}
+.door-side-tag {position:absolute;top:12px;left:13px;font-size:12px;font-weight:600;color:#392934;background:#fffdfb;
+  border:1px solid #f0dcdf;border-radius:100px;padding:5px 10px;pointer-events:none}
+#reviewAfter {left:auto;right:13px;background:#e3d0d2}
+.door-wipe {position:absolute;inset-block:0;left:var(--wipe,50%);width:1px;background:#fffdfb;box-shadow:0 0 8px #301829;pointer-events:none}
+.door-wipe:after {content:"↔";position:absolute;top:45%;left:0;transform:translateX(-50%);display:grid;place-content:center;
+  width:40px;height:40px;border-radius:50%;background:#fffdfb;color:#654a4e;font-size:20px;box-shadow:0 1px 8px #30182988}
+.door-scene-message {position:absolute;bottom:12px;left:13px;right:13px;color:#fffdfb;font-size:12px;pointer-events:none}
+.door-review-controls {display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin:8px 0 0}
+.door-review-controls[hidden],.door-wipe[hidden],.door-side-tag[hidden],.door-scene-message[hidden] {display:none}
+.door-review-controls button {background:#453340;border:1px solid #7d6272;color:#fffdfb;border-radius:100px;padding:6px 12px;font-size:12px;min-height:35px}
+.door-review-controls button:hover {background:#654a4e}
+.review-slider {display:block;min-width:0}
+#doorReviewRange {width:100%;margin:0;height:24px;accent-color:#e3d0d2;cursor:ew-resize}
+#doorReviewHint {color:var(--on);font-size:12px}
+.sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+#doorExact #doorBoard {margin-top:10px}
+@media(max-width:650px){
+  .door-still{aspect-ratio:5/4;margin-inline:-5px}
+  .door-side-tag {top:6px;left:6px;font-size:11px;padding:3px 7px}
+  #reviewAfter {right:6px;left:auto}
+  .door-wipe:after{width:34px;height:34px}
+  #doorReviewControls {gap:7px}
+}
+.door-review-controls button[aria-pressed="true"]{background:#e3d0d2;color:#362733;border-color:#fffdfb}
+.review-slider span{display:block;text-align:center;color:var(--on);font-size:11px;margin-bottom:-2px}

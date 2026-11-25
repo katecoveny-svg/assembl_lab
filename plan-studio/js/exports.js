@@ -37,14 +37,16 @@ export function toIFC(P, now = new Date()) {
   add(`IFCRELAGGREGATES(${str(guid("agg3"))},${owner},$,$,${bld},(${storey}))`);
 
   const contained = [], spaces = [], matUse = new Map();
-  const rectSolid = (xd, w, h, depth, at = [0, 0, 0]) => {
+  const rectSolid = (xd, w, h, at = [0, 0, 0]) => {
     const prof = add(`IFCRECTANGLEPROFILEDEF(.AREA.,$,${add(`IFCAXIS2PLACEMENT2D(${pt(xd / 2, 0)},$)`)},${num(xd)},${num(w)})`);
     return add(`IFCEXTRUDEDAREASOLID(${prof},${ax3(pt(...at))},${Z},${num(h)})`);
   };
   const shape = (items) => add(`IFCPRODUCTDEFINITIONSHAPE($,$,(${add(`IFCSHAPEREPRESENTATION(${body},'Body','SweptSolid',(${items.join(",")}))`)}))`);
-  const evidence = (el, e) => {
-    if (!e) return;
+  const evidence = (el, e, position) => {
+    if (!e && !position) return;
+    e ??= {};
     const props = [add(`IFCPROPERTYSINGLEVALUE('Source',$,IFCLABEL(${str(e.src)}),$)`), add(`IFCPROPERTYSINGLEVALUE('Confidence',$,IFCREAL(${num(e.conf ?? 0)}),$)`), add(`IFCPROPERTYSINGLEVALUE('Note',$,IFCTEXT(${str(e.note || "")}),$)`)];
+    if (position) props.push(add(`IFCPROPERTYSINGLEVALUE('PositionSource',$,IFCLABEL(${str(position.src)}),$)`), add(`IFCPROPERTYSINGLEVALUE('PositionNote',$,IFCTEXT(${str(position.note)}),$)`));
     const ps = add(`IFCPROPERTYSET(${str(guid("ps" + el))},${owner},'Pset_assemblEvidence',$,(${props.join(",")}))`);
     add(`IFCRELDEFINESBYPROPERTIES(${str(guid("rdp" + el))},${owner},$,$,(${el}),${ps})`);
   };
@@ -67,7 +69,7 @@ export function toIFC(P, now = new Date()) {
         ? add(`IFCDOOR(${str(guid("door" + o.id))},${owner},${str(o.id)},${str(o.note || "Door")},$,${fp},${shape([rectSolid(m(o.w), 0.05, m(o.h))])},${str(o.id)},${num(m(o.h))},${num(m(o.w))},.${o.kind === "door-double" ? "DOOR" : "DOOR"}.,.${o.kind === "door-double" ? "DOUBLE_DOOR_SINGLE_SWING" : "SINGLE_SWING_LEFT"}.,$)`)
         : add(`IFCWINDOW(${str(guid("win" + o.id))},${owner},${str(o.id)},${str(o.note || "Window")},$,${fp},${shape([rectSolid(m(o.w), 0.05, m(o.h))])},${str(o.id)},${num(m(o.h))},${num(m(o.w))},.WINDOW.,.SINGLE_PANEL.,$)`);
       add(`IFCRELFILLSELEMENT(${str(guid("fill" + o.id))},${owner},$,$,${opening},${fill})`);
-      contained.push(fill); evidence(fill, o.ev); material(fill, o.mat);
+      contained.push(fill); evidence(fill, o.ev, o.position_ev); material(fill, o.mat);
     }
   }
   // slab under the whole footprint, from the rooms' extent

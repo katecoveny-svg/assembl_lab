@@ -5,6 +5,8 @@ import { sheetSet } from "./drawings.js";
 import { MATERIALS, byCategory, CATEGORY_LABEL } from "./materials.js";
 import { toIFC, toDXF, toJSON } from "./exports.js";
 import { readPdfPage, findScale, toReal, modelFromDrawing } from "./read.js";
+import { BEATS, calibration, toViewport, twinEvidence, wallSpan } from "./build-sequence.js";
+import { applyDoorMove, detailPosition, distanceMm, doorCompareSvg, doorDetail, doorModelStamp, proposeDoorMove, undoDoorMove } from "./door-proposal.js";
 import { buildDeck } from "./present.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -17,23 +19,27 @@ const state = { tab: "plans", sheet: "A101", el: "openings", shape: "reel", path
 
 // ------------------------------------------------------------------------------------------------ tabs
 function show(tab) {
+  if (tab !== "model" && inspection) leaveBuild();
   state.tab = tab;
   for (const b of $$(".steps button")) b.setAttribute("aria-selected", b.dataset.tab === tab);
   for (const p of $$(".panel")) p.hidden = p.dataset.panel !== tab;
   if ((tab === "model" || tab === "visuals") && !stage) boot3d();
   if (stage) { stage.resize(); stage.render(); }
   if (tab === "drawings") drawSheets();
+  if (tab === "model") scheduleDoorReview();
 }
 $$(".steps button").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
 
 // ------------------------------------------------------------------------------------------------ the model changed: refresh everything
 let t3d = 0;
 function changed(opts = {}) {
+  if(opts.geometry!==false){$("#walkLink").hidden=true;$("#walkStatus").textContent="";}
+  if (opts.geometry !== false && inspection) leaveBuild();
   results = runChecks(P);
-  renderCode(); renderTables(); renderInspector(); renderRevs();
+  renderCode(); renderTables(); renderInspector(); renderRevs(); renderDoorTools();
   $("#projName").textContent = P.meta.name; $("#truthChip").textContent = P.meta.status || "";
   if (state.tab === "drawings") drawSheets(); else sheets = [];
-  if (stage && opts.geometry !== false) { clearTimeout(t3d); t3d = setTimeout(() => { stage.rebuild(P); stage.render(); }, 120); }
+  if (stage && opts.geometry !== false) { clearTimeout(t3d); pendingGeometry=true; t3d = setTimeout(() => { pendingGeometry=false;stage.rebuild(P); stage.render(); }, 120); }
   if (cloud && opts.geometry !== false) { clearTimeout(tCloud); tCloud = setTimeout(() => cloud.rebuild(false), 500); }
 }
 
@@ -73,6 +79,7 @@ function renderInspector() {
   const el = (P[selected.kind] || []).find((x) => x.id === selected.id); if (!el) return;
   const ev = el.ev || {};
   box.innerHTML = `<p><b>${esc(el.name || el.note || el.id)}</b> <span class="mono hint">${esc(el.id)}</span></p><div class="inspect-ev"><span class="ev ${evTone(ev)}"></span><b>${esc(SRC[ev.src] || ev.src || "unknown")}</b> · ${Math.round((ev.conf ?? 0) * 100)}% confidence<br>${esc(ev.note || "")}</div>`
+    + (el.position_ev ? `<p class="hint"><b>Position:</b> ${esc(el.position_ev.note)}</p>` : "")
     + `<p class="hint">Checks that use it: ${results.filter((r) => (r.elements || []).includes(el.id)).map((r) => `<span class="pill ${r.status}" style="display:inline-block;margin:2px">${esc(r.clause)}</span>`).join("") || "none"}</p>`;
 }
 
@@ -97,6 +104,11 @@ function drawSheets() {
 }
 $("#sheetTabs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; state.sheet = b.dataset.sheet; drawSheets(); });
 const save = (blob, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+function downloadIFC() {
+  const last=P.revisions?.at(-1);
+  const rev=last&&JSON.stringify(last.model)===JSON.stringify(snapshot(P))?last.rev:"draft";
+  save(new Blob([toIFC(P)],{type:"application/x-step"}),`${P.meta.number}-${rev}.ifc`);
+}
 const fname = (ext) => `${P.meta.number}-${(P.revisions?.length ? P.revisions[P.revisions.length - 1].rev : "draft")}.${ext}`;
 $("#btnSvg").addEventListener("click", () => { const s = sheets.find((x) => x.id === state.sheet); save(new Blob([s.svg], { type: "image/svg+xml" }), `${P.meta.number}-${s.id}.svg`); });
 $("#btnDxf").addEventListener("click", () => save(new Blob([toDXF(P)], { type: "application/dxf" }), fname("dxf")));
@@ -105,8 +117,192 @@ $("#btnPdf").addEventListener("click", () => {
   w.document.write(`<!doctype html><title>${esc(P.meta.number)} drawing set</title><style>@page{size:420mm 297mm;margin:0}body{margin:0}svg{display:block;width:420mm;height:297mm;page-break-after:always}</style>${set.map((s) => s.svg).join("")}<script>onload=()=>setTimeout(()=>print(),300)<\/script>`); w.document.close();
 });
 
+// One explicit change request. Keep unapproved diffs outside P and its exports.
+let doorDraft=null, doorUndo=null, doorProject=null;
+const tellDoor=text=>($("#doorStatus").textContent=text);
+function clearDoorDraft() {doorDraft=null;$("#doorPreview").hidden=true;}
+const doorMm=n=>n.toLocaleString("en-NZ")+" mm";
+let wallCursor;
+function renderDoorBoard(keepRange=false){
+  const id=$("#doorPick").value,edit=doorDraft?.edit,d=doorDetail(P,id,edit?.to),range=$("#doorRange");
+  range.disabled=!d;wallCursor=null;
+  $("#doorDraftRev").textContent=doorDraft?("PROPOSAL ONLY / "+(doorDraft.revision==="Unissued"?"UNISSUED MODEL":"REV "+doorDraft.revision)):"MODEL STUDY / LOCAL EDIT";
+  if(!d){
+    scheduleDoorReview();$("#doorBoard").replaceChildren();$("#doorMotion").textContent="";$("#doorDragHint").hidden=true;return;
+  }
+  range.max=Math.ceil(d.total);
+  if(!keepRange)range.value=d.at;
+  range.setAttribute("aria-valuetext",doorMm(+range.value)+" from wall start");
+  $("#doorDragHint").hidden=false;
+  $("#doorBoard").innerHTML=doorCompareSvg(P,id,edit?.to);
+  $("#doorMotion").textContent=edit?(doorMm(Math.abs(edit.to-edit.from))+" toward the wall "+(edit.to>edit.from?"end":"start")):"Door "+id+" / wall "+d.w.id;
+  scheduleDoorReview();
+}
+// The first impression is two actual views of the doorway. Rendering reuses
+// Studio's single WebGL context, and a swipe just composites the cached frames.
+let reviewFrames=null, reviewKey=null, reviewTimer, reviewRun=0, reviewDrag=null, reviewModule;
+const theatre=$("#doorTheatre"), reviewCanvas=$("#doorScene"), reviewRange=$("#doorReviewRange");
+function paintDoorScene(){
+  const split=reviewFrames?.after?Number(reviewRange.value):100;
+  const g=reviewCanvas.getContext("2d"),original=reviewFrames?.before;
+  if(original){
+    const {width:w,height:h}=original;
+    if(reviewCanvas.width!==w||reviewCanvas.height!==h){reviewCanvas.width=w;reviewCanvas.height=h;}
+    g.drawImage(original,0,0);
+    if(reviewFrames.after && split<100){
+      const x=Math.round(split*.01*w);
+      g.drawImage(reviewFrames.after,x,0,w-x,h,x,0,w-x,h);
+    }
+  }else g.clearRect(0,0,reviewCanvas.width,reviewCanvas.height);
+  theatre.style.setProperty("--wipe",split+"%");
+  const comparing=Boolean(reviewFrames?.after);
+  theatre.classList.toggle("is-comparing",comparing);
+  $("#reviewDivider").hidden=!comparing||split===0||split===100;
+  $("#reviewBefore").hidden=!original||split<15;$("#reviewAfter").hidden=!comparing||split>85;
+  $("#doorReviewControls").hidden=!comparing;
+  $("#reviewAllBefore").setAttribute("aria-pressed",String(split===100));
+  $("#reviewAllAfter").setAttribute("aria-pressed",String(comparing&&split===0));
+  const text=comparing?split+" percent original and "+(100-split)+" percent proposed":"Original model";
+  reviewRange.setAttribute("aria-valuetext",text);
+  reviewCanvas.setAttribute("aria-label",(reviewFrames?.inside?"Interior":"Exterior")+" model view of door "+$("#doorPick").value+". "+text);
+}
+function scheduleDoorReview(){
+  clearTimeout(reviewTimer);const run=++reviewRun;
+  if(state.tab!=="model")return;
+  if(doorDraft&&reviewFrames?.forDraft!==doorDraft){
+    $("#applyDoor").disabled=true;$("#reviewMessage").textContent="Preparing the proposed view…";$("#reviewMessage").hidden=false;
+    // Never show another proposal with the current draft's approval controls.
+    if(reviewFrames?.after){reviewFrames={...reviewFrames,after:null};reviewKey=null;paintDoorScene();}
+  }
+  reviewTimer=setTimeout(async()=>{
+    if(run!==reviewRun||state.tab!=="model")return;
+    const id=$("#doorPick").value,draft=doorDraft;
+    if(!id){reviewFrames=reviewKey=null;paintDoorScene();$("#reviewMessage").textContent="No editable door in this model.";$("#reviewMessage").hidden=false;return;}
+    try{
+      if(!stage)await boot3d();
+      const mod=await (reviewModule??=import("./door-scene.js"));
+      if(run!==reviewRun||state.tab!=="model")return;
+      if(stage.recording||inspection)return;
+      const dims=theatre.getBoundingClientRect();
+      if(dims.width<1||dims.height<1)return;
+      const w=Math.max(520,Math.min(1280,Math.round(dims.width*Math.min(devicePixelRatio||1,1.6))));
+      const h=Math.round(w*dims.height/dims.width);
+      const k=w+"|"+h+"|"+id+"|"+(draft?.edit.to??"original")+"|"+doorModelStamp(P);
+      if(reviewKey!==k){
+        const t=performance.now();
+        reviewFrames=mod.captureDoorScene(stage,P,draft?.after,id,w,h);
+        if(reviewFrames)reviewFrames.forDraft=draft;
+        if(draft&&!reviewFrames?.after)throw Error("No scene for this proposal.");
+        theatre.dataset.captureMs=Math.round(performance.now()-t);
+        reviewRange.value=reviewFrames?.after?"0":"100";reviewKey=k;
+      }
+      if(!reviewFrames)throw Error("No door view available.");
+      $("#reviewMessage").hidden=true;$("#applyDoor").disabled=false;paintDoorScene();
+    }catch(e){
+      reviewFrames=reviewKey=null;paintDoorScene();$("#reviewMessage").textContent="3D review unavailable. You can still compare the drawing under Details.";
+      $("#reviewMessage").hidden=false;
+      if(doorDraft){$("#doorExact").open=true;$("#applyDoor").disabled=false;}
+      console.warn("Door review:",e.message);
+    }
+  },100);
+}
+reviewRange.addEventListener("input",paintDoorScene);
+$("#reviewAllBefore").onclick=()=>{reviewRange.value=100;paintDoorScene();};
+$("#reviewAllAfter").onclick=()=>{reviewRange.value=0;paintDoorScene();};
+function dragDoorReview(e){
+  const r=theatre.getBoundingClientRect();
+  reviewRange.value=Math.round(100*Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)));paintDoorScene();
+}
+theatre.addEventListener("pointerdown",e=>{
+  if(!reviewFrames?.after||!e.isPrimary||e.button!==0)return;
+  reviewDrag=e.pointerId;theatre.setPointerCapture(reviewDrag);dragDoorReview(e);
+});
+theatre.addEventListener("pointermove",e=>{if(e.pointerId===reviewDrag)dragDoorReview(e);});
+theatre.addEventListener("lostpointercapture",()=>reviewDrag=null);
+addEventListener("resize",scheduleDoorReview);
+function renderDoorReference(){
+  const o=P.openings.find(o=>o.id===$("#doorPick").value);
+  const w=o&&P.walls.find(w=>w.id===o.wall);
+  $("#doorReference").textContent=w?`Wall ${w.id} · current centre ${o.at} mm · width ${o.w} mm. All positions are measured from the wall start.`:"No editable door in this model.";
+}
+function renderDoorTools(){
+  const changedProject=doorProject!==P;
+  if(changedProject){
+    doorProject=P;clearDoorDraft();doorUndo=null;tellDoor("");$("#doorPosition").value="";
+  }else if(doorDraft && doorDraft.base!==doorModelStamp(P)){
+    clearDoorDraft();tellDoor("Model or revision changed. Preview a new move.");
+  }
+  const pick=$("#doorPick"), prev=changedProject?"":pick.value;
+  const doors=P.openings.filter(o=>["door","door-double"].includes(o.kind)&&P.walls.some(w=>w.id===o.wall));
+  pick.replaceChildren(...doors.map(o=>new Option(o.id+(o.note?" · "+o.note:"")+" / "+o.wall,o.id)));
+  pick.value=doors.some(o=>o.id===prev)?prev:doors.find(o=>o.id==="D4")?.id||doors[0]?.id||"";
+  renderDoorReference();renderDoorBoard();$("#proposeDoor").disabled=!doors.length;
+  const hasUndo=doorUndo && doorUndo.applied===doorModelStamp(P);
+  $("#undoDoor").disabled=!hasUndo;
+  $("#doorReceipt").hidden=!doorUndo;
+}
+["doorPick","doorPosition","doorUnit"].forEach((id)=>$("#"+id).addEventListener(id==="doorPosition"?"input":"change",()=>{
+  if(doorDraft){clearDoorDraft();tellDoor("Values changed. Preview again before applying.");}
+  renderDoorReference();renderDoorBoard();
+}));
+function showDoorProposal(next,{focus=false,keepRange=false}={}){
+  clearDoorDraft();
+  try{
+    if(next===null)throw Error("Enter a number in the selected unit, to the nearest millimetre.");
+    doorDraft=proposeDoorMove(P,$("#doorPick").value,next);
+    const {edit,roomsBefore,roomsAfter}=doorDraft;
+    $("#doorDiffTitle").textContent=`Door ${edit.door} on ${edit.wall} · ${edit.from} → ${edit.to} mm`;
+    $("#doorImpact").textContent=(roomsBefore===roomsAfter?"Plan adjacency unchanged: "+roomsAfter:"Plan adjacency changes: "+roomsBefore+" → "+roomsAfter)+". Same door, width, height and host wall.";
+    $("#doorPreview").hidden=false;tellDoor("Preview only. The model and downloads are unchanged.");if(focus)$("#doorDiffTitle").focus();
+  }catch(err){tellDoor(err.message);}
+  renderDoorBoard(keepRange);
+}
+$("#doorForm").addEventListener("submit", e=>{
+  e.preventDefault(); showDoorProposal(distanceMm($("#doorPosition").value,$("#doorUnit").value),{focus:true});
+});
+const doorRange=$("#doorRange"),wallBoard=$("#doorBoard");
+doorRange.addEventListener("input",()=>doorRange.setAttribute("aria-valuetext",doorMm(+doorRange.value)+" from wall start"));
+doorRange.addEventListener("change",()=>showDoorProposal(+doorRange.value,{keepRange:true}));
+// Drag keeps only a guide under the pointer. Releasing or tapping runs the same
+// immutable proposal as the range and exact input. Vertical swipes still scroll.
+function boardPoint(e){
+  const s=wallBoard.querySelector("svg"),matrix=s?.getScreenCTM();if(!matrix)return null;
+  return new DOMPoint(e.clientX,e.clientY).matrixTransform(matrix.inverse());
+}
+function boardGuide(point){
+  const g=wallBoard.querySelector(".door-guide");
+  g?.setAttribute("opacity","1");g?.setAttribute("transform",`translate(${Math.max(28,Math.min(612,point.x))} 0)`);
+}
+wallBoard.addEventListener("pointerdown",e=>{
+  const p=boardPoint(e);if(!e.isPrimary||e.button!==0||!p||p.y<115||p.y>175)return;
+  wallCursor={id:e.pointerId,detail:doorDetail(P,$("#doorPick").value,doorDraft?.edit.to)};
+  wallBoard.setPointerCapture(e.pointerId);boardGuide(p);
+});
+wallBoard.addEventListener("pointermove",e=>{if(wallCursor?.id===e.pointerId){const p=boardPoint(e);if(p)boardGuide(p);}});
+wallBoard.addEventListener("pointerup",e=>{
+  if(wallCursor?.id!==e.pointerId)return;const p=boardPoint(e),d=wallCursor.detail;wallCursor=null;
+  if(p&&d)showDoorProposal(detailPosition(d,p.x));
+});
+wallBoard.addEventListener("lostpointercapture",()=>{wallCursor=null;wallBoard.querySelector(".door-guide")?.setAttribute("opacity","0");});
+$("#cancelDoor").onclick=()=>{clearDoorDraft();renderDoorBoard();tellDoor("Proposal discarded. No model changes.");doorRange.focus();};
+$("#applyDoor").onclick=()=>{
+ try {
+  const edit=doorDraft?.edit;
+  doorUndo=applyDoorMove(P,doorDraft);
+  clearDoorDraft();selected={kind:"openings",id:edit.door};changed();
+  tellDoor(`Door ${edit.door} moved to ${edit.to} mm. The model, drawings and next IFC download reflect the change.`);$("#undoDoor").focus();
+ } catch(err){clearDoorDraft();renderDoorBoard();tellDoor(err.message);doorRange.focus();}
+};
+$("#undoDoor").onclick=()=>{
+ try{undoDoorMove(P,doorUndo);doorUndo=null;changed();tellDoor("Move undone. The original door position and evidence are restored.");doorRange.focus();}
+ catch(err){tellDoor(err.message);}
+};
+$("#doorIfc").onclick=downloadIFC;
+
 // ------------------------------------------------------------------------------------------------ 3D
-async function boot3d() {
+let booting, pendingGeometry=false;
+function boot3d() { return booting ??= setupStage().catch(e=>{booting=null;throw e;}); }
+async function setupStage() {
   const S = await import("./scene.js"); const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
   stage = S.createStage($("#stage3d"), P); stage.S = S; stage.resize(); stage.view("aerial");
   const ctl = new OrbitControls(stage.camera, stage.renderer.domElement); ctl.target.copy(stage.target); ctl.maxPolarAngle = Math.PI * 0.495; stage.ctl = ctl;
@@ -114,13 +310,16 @@ async function boot3d() {
   ctl.addEventListener("change", () => { if (!stage.recording) stage.render(); });
   const sync = () => { ctl.target.copy(stage.target); ctl.update(); stage.render(); }; stage.sync = sync; sync();
   addEventListener("resize", () => { stage.resize(); stage.render(); });
-  bootCloud().catch((e) => { console.warn("Point-cloud view unavailable:", e.message); setLook("solid"); $("#look").hidden = true; });
+  $("#showBuild").disabled = false;
+  setLook(cloudLook); if(cloudLook==="cloud") ensureCloud();
 }
 // the model as a point cloud (the default look): the shared engine (lab/pc/engine.js) draws points sampled from the same model,
 // through the same camera you orbit; an edit re-assembles the cloud. Solid is one tap away for materials and stills.
 let cloud = null, cloudLook = "cloud", tCloud;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const glassWeight = (m) => (m.material?.transparent && m.material.opacity < 1 ? 0.18 : m.name === "SLAB" ? 0.5 : 1);
+let cloudBoot;
+function ensureCloud(){return cloudBoot??=bootCloud().catch(e=>{console.warn("Point-cloud view unavailable:",e.message);setLook("solid");$("#look").hidden=true;});}
 async function bootCloud() {
   const { createEngine, objectForm } = await import("/lab/pc/engine.js");
   cloud = createEngine($("#cloud3d"), { budget: innerWidth < 760 ? 80000 : 220000, sway: false, reduceMotion }); cloud.setLift(0.5, 0.48);
@@ -140,12 +339,98 @@ async function bootCloud() {
   new IntersectionObserver(([x]) => { if (cloudLook === "cloud" && x.isIntersecting) cloud.start(); else cloud.stop(); }).observe($("#cloud3d"));
 }
 function setLook(look) {
+  if (inspection) look = "solid";
   cloudLook = look; $$("#look button").forEach((b) => { const on = b.dataset.look === look; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   $("#cloud3d").hidden = look !== "cloud"; if (!cloud) return; if (look === "cloud") cloud.start(); else { cloud.stop(); stage?.render(); }
 }
-$("#look").addEventListener("click", (e) => { const b = e.target.closest("button[data-look]"); if (b) setLook(b.dataset.look); });
+$("#look").addEventListener("click", (e) => { const b = e.target.closest("button[data-look]"); if (b) {setLook(b.dataset.look);if(b.dataset.look==="cloud" && stage)ensureCloud();} });
 $("#views").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#views button").forEach((x) => x.classList.toggle("on", x === b)); const cut = b.dataset.view === "plan"; stage.setCutaway(cut); stage.view(b.dataset.view); stage.sync(); });
 $("#lights").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#lights button").forEach((x) => x.classList.toggle("on", x === b)); stage.light(b.dataset.light); stage.render(); });
+
+// The original PDF is owned by this particular accepted project, never reused for another.
+let sourceSheet=null, inspection=null, tick=0, originalRender=null, compare=false, showcase=true, previousLook="solid", inspectToken=0;
+const stopBuild = () => { clearInterval(tick); tick=0; $("#playBuild").textContent="Play stages"; };
+function paintBuild() {
+  if (!inspection) return;
+  const slider=$("#buildScrub"), value=Number(slider.value);
+  inspection.draw({compare,showcase,split:value,beat:value});
+  if(showcase)return;
+  $("#buildDivider").style.setProperty("--split",value+"%");
+  $("#folioSides").classList.toggle("hide-left",value<22);
+  $("#folioSides").classList.toggle("hide-right",value>78);
+  if(!compare)$$("#folioSteps button").forEach((b,i)=>{b.setAttribute("aria-current",i===value?"step":"false");});
+  const label=compare ? value+"% drawing · "+(100-value)+"% model" : (value+1)+" / "+BEATS.length+" · "+BEATS[value];
+  $("#buildBeat").textContent=label;slider.setAttribute("aria-valuetext",label);
+}
+function selectBuildMode(mode) {
+  stopBuild();
+  compare=mode==="compare";showcase=mode==="showcase";
+  const folio=$("#drawingFolio");
+  folio.classList.toggle("is-showcase",showcase);
+  const slider=$("#buildScrub");slider.max=compare?"100":"5";slider.value=compare?"50":"0";slider.hidden=showcase;
+  $("#buildLabel").hidden=$("#buildReadout").hidden=showcase;
+  $("#buildLabel").textContent=compare?"Drawing on the left · model on the right":"Scrub from the drawing to the finished model";
+  $("#buildDivider").hidden=!compare;$("#playBuild").hidden=compare||showcase;$("#folioSides").hidden=!compare;$("#folioSteps").hidden=compare||showcase;
+  $("#folioExtent").hidden=!compare || !wallSpan(P.walls);
+  $("#folioSource").textContent=showcase?"01 / MODEL STUDY":compare?(sourceSheet?"01 / REGISTERED FLOOR PLAN":"01 / MODEL-DERIVED DRAWING"):"01 / BUILD SEQUENCE";
+  [[ "showcase", "#showcaseMode"], ["compare","#compareMode"], ["build","#assembleMode"]].forEach(([name,sel])=>$(sel).setAttribute("aria-pressed",String(name===mode)));
+  stage.resize();paintBuild();
+}
+function leaveBuild(explore=false) {
+  inspectToken++; if(!inspection)return;stopBuild();inspection.dispose();inspection=null;
+  stage.render=originalRender;stage.ctl.enabled=true;$("#buildControls").hidden=true;$("#buildDivider").hidden=true;
+  $(".stagewrap").classList.remove("is-building");$("#drawingFolio").classList.remove("is-building","is-showcase");stage.resize();
+  $("#folioHead").hidden=true;$("#folioSides").hidden=true;$("#showBuild").setAttribute("aria-expanded","false");
+  setLook(explore?"solid":previousLook);stage.render();scheduleDoorReview();
+}
+$("#showBuild").onclick=async()=>{
+  if (inspection) return leaveBuild(true);
+  const token=++inspectToken, {buildView}=await import("./build-view.js");
+  if(token!==inspectToken || state.tab!=="model")return;
+  clearTimeout(t3d); if(pendingGeometry||stage.P!==P)stage.rebuild(P);pendingGeometry=false;
+  // A cutaway omits the roof mesh, so return to a full stage before inspection.
+  if(!stage.model.getObjectByName("ROOF")){stage.setCutaway(false);stage.view("aerial");stage.sync();$$("#views button").forEach(b=>b.classList.toggle("on",b.dataset.view==="aerial"));}
+  previousLook=cloudLook;setLook("solid");stage.ctl.enabled=false;
+  inspection=buildView(stage,sourceSheet);originalRender=stage.render;stage.render=paintBuild;
+  $("#buildControls").hidden=false;$(".stagewrap").classList.add("is-building");$("#drawingFolio").classList.add("is-building");
+  $("#folioHead").hidden=false;$("#showBuild").setAttribute("aria-expanded","true");
+  const provenance=P.provenance?.scale_check, conflicts=P.provenance?.conflicts?.length||0;
+  $("#folioTitle").textContent=P.meta.name==="demo-plan"?"Tōtara Grove / sample hall":P.meta.name;
+  $("#folioLeft").textContent=sourceSheet?"Source PDF":"Model linework";
+  const span=wallSpan(P.walls);$("#folioExtent").hidden=!span;
+  if(span) $("#folioSpan").textContent=span.map(x=>x.toFixed(2)).join(" × ")+" m";
+  $("#folioBasis").textContent="Wall extent · "+(sourceSheet?(provenance?.status==="user-calibrated"?"written span set":"check scale"):"fictional sample");
+  $("#buildEvidence").textContent=(sourceSheet?"Original PDF, page 1. "+(provenance?.note||"Scale needs checking."):"Fictional sample. Lines are drawn from this model, not an original PDF.")+" "+P.walls.length+" walls · "+P.openings.length+" openings. "+(conflicts?conflicts+" dimension conflicts to review. ":"")+"Heights, roof and finishes need confirmation. The cutaway uses display finishes. Stage order illustrates the model, not a construction schedule.";
+  selectBuildMode("showcase");
+};
+BEATS.forEach((name,i)=>{
+ const b=document.createElement("button");b.type="button";b.textContent=name;b.onclick=()=>{stopBuild();$("#buildScrub").value=i;paintBuild();};$("#folioSteps").append(b);
+});
+$("#showcaseMode").onclick=()=>selectBuildMode("showcase");$("#compareMode").onclick=()=>selectBuildMode("compare");$("#assembleMode").onclick=()=>selectBuildMode("build");
+$("#leaveBuild").onclick=()=>{leaveBuild(true);$("#showBuild").focus();};
+$("#buildScrub").oninput=()=>{stopBuild();paintBuild();};
+$("#playBuild").onclick=()=>{if(tick)return stopBuild();const s=$("#buildScrub");if(+s.value>=5)s.value=0;paintBuild();$("#playBuild").textContent="Pause";
+  tick=setInterval(()=>{s.value=String(+s.value+1);paintBuild();if(+s.value>=5)stopBuild();},850);
+};
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopBuild();});
+async function localTwinLink(blob,name,link){
+  const {putHandoff}=await import("/architecture/js/handoff.js");const id=await putHandoff(blob,name);link.href="/plan-studio/twins/drop/?handoff="+encodeURIComponent(id);link.hidden=false;
+}
+$("#prepareWalk").onclick=async()=>{
+  const b=$("#prepareWalk"), status=$("#walkStatus"),link=$("#walkLink");b.disabled=true;link.hidden=true;status.textContent="Preparing this model…";
+  try{
+    if(inspection)leaveBuild(true);await boot3d();
+    clearTimeout(t3d);pendingGeometry=false;stage.setCutaway(false);stage.render();
+    const {GLTFExporter}=await import("three/addons/exporters/GLTFExporter.js");
+    const buf=await new GLTFExporter().parseAsync(stage.model,{binary:true});await localTwinLink(new Blob([buf],{type:"model/gltf-binary"}),fname("glb"),link);
+    status.textContent="Ready on this device. The 3D viewer opens this GLB, not a sample.";
+  }catch(e){status.textContent="Could not prepare the local walkthrough: "+e.message;}finally{b.disabled=false;}
+};
+const canvas=$("#stage3d");let dragging=null;
+function scrubAt(e){const r=canvas.getBoundingClientRect();$("#buildScrub").value=Math.round(100*(e.clientX-r.left)/r.width);paintBuild();}
+canvas.addEventListener("pointerdown",e=>{if(!inspection||!compare||!e.isPrimary)return;dragging=e.pointerId;canvas.setPointerCapture(e.pointerId);scrubAt(e);});
+canvas.addEventListener("pointermove",e=>{if(inspection&&compare&&dragging===e.pointerId)scrubAt(e);});
+canvas.addEventListener("lostpointercapture",()=>dragging=null);
 
 function renderMaterials() {
   const ext = P.walls.filter((w) => w.kind === "ext" && w.mat !== "glass-curtain"), cur = ext[0]?.mat;
@@ -292,7 +577,7 @@ $("#btnDeck").addEventListener("click", async () => {
 });
 $$(".files button").forEach((b) => b.addEventListener("click", async () => {
   const x = b.dataset.x;
-  if (x === "ifc") return save(new Blob([toIFC(P)], { type: "application/x-step" }), fname("ifc"));
+  if (x === "ifc") return downloadIFC();
   if (x === "dxf") return save(new Blob([toDXF(P)], { type: "application/dxf" }), fname("dxf"));
   if (x === "json") return save(new Blob([toJSON(P)], { type: "application/json" }), fname("json"));
   if (!stage) await boot3d();
@@ -305,49 +590,108 @@ $$(".files button").forEach((b) => b.addEventListener("click", async () => {
 const drop = $("#drop");
 ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) openFile(f); });
-$("#file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) openFile(f); });
-$("#btnDemo").addEventListener("click", () => { P = demoProject(); selected = null; renderMaterials(); changed(); show("model"); });
+drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) openChecked(f); });
+$("#file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) openChecked(f); });
+$("#btnDemo").addEventListener("click", () => { P = demoProject(); sourceSheet=null; selected = null; renderMaterials(); changed(); show("model"); });
 
+$("#btnDemoSheet").onclick=async()=>{
+  const b=$("#btnDemoSheet"); b.disabled=true;
+  try{const response=await fetch("../tests/fixtures/demo-plan.pdf"); if(!response.ok)throw Error("Sample unavailable");await openFile(new File([await response.blob()],"demo-plan.pdf",{type:"application/pdf"}));}
+  catch(e){$("#readCard").hidden=false;$("#scaleBox").textContent="Could not open the drawing: "+e.message;}finally{b.disabled=false;}
+};
+async function openChecked(f) {
+  try { await openFile(f); } catch(e) {$("#scaleBox").textContent="Could not open this file: "+e.message;$("#btnUseRead").disabled=true;}
+}
+let readToken=0;
 async function openFile(f) {
+  const token=++readToken;read=null;$("#calibration").hidden=true;$("#btnUseRead").disabled=true;$("#sheetView").hidden=true;$("#readLegend").hidden=true;$("#calStatus").textContent="";$("#modelFileLink").hidden=true;
   $("#readCard").hidden = false; $("#scaleBox").textContent = "Reading…"; $("#readStats").innerHTML = "";
-  if (f.type === "application/pdf") {
-    const pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+  if(f.name.toLowerCase().endsWith(".json")){
+    try{
+      if(f.size>10*1024*1024)throw Error("Open files over 10 MB straight in Drop a plan.");
+      const model=JSON.parse(await f.text()), e=twinEvidence(model);if(token!==readToken)return;
+      if(!e)throw Error("This entry expects an assembl.plan-model.v1 project with buildings.");
+      $("#scaleBox").textContent="Reviewed-model format · "+(model.job?.title||f.name);
+      $("#readStats").textContent=e.buildings+" buildings · "+e.walls+" walls/partitions · "+e.openings+" openings. Element source notes: "+e.written+" written, "+e.scaled+" scaled, "+e.other+" other or unlabelled. Original notes and dimensions travel unchanged. No source PDF was supplied with this file.";
+      await localTwinLink(f,f.name,$("#modelFileLink"));
+    }catch(e){$("#scaleBox").textContent=e.message;}return;
+  }
+  if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+    const pdfjsLib = await import("/architecture/vendor/pdfjs/pdf.min.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/architecture/vendor/pdfjs/pdf.worker.min.mjs";
     const data = new Uint8Array(await f.arrayBuffer()), raw = await readPdfPage(pdfjsLib, data.slice(0));
+    if(token!==readToken)return;
     const sc = findScale(raw.items);
     read = { raw, scale: sc?.scale || 100, name: f.name.replace(/\.pdf$/i, "") };
     $("#scaleBox").innerHTML = `${sc ? esc(sc.note) : "No scale printed on the sheet."}<div class="row"><label>Scale 1: <input type="number" id="scaleIn" value="${read.scale}" style="width:80px"></label><button class="btn ghost sm" id="btnRescale" type="button">Re-read at this scale</button></div>`;
-    $("#btnRescale").addEventListener("click", () => { read.scale = +$("#scaleIn").value || 100; doRead(); });
+    $("#btnRescale").addEventListener("click", () => { const n=+$("#scaleIn").value;if(!(n>0 && Number.isFinite(n)))return;read.scale=n; read.scaleCheck={status:"user-scale",printed_scale:n,note:"Scale 1:"+n+" entered by a person; verify against a written span."}; $("#calStatus").textContent="";doRead(); });
     // draw the page so the person can see what was found on it
-    const doc = await pdfjsLib.getDocument({ data }).promise, page = await doc.getPage(1), vp = page.getViewport({ scale: 2 }), cv = $("#pdfCanvas");
-    cv.width = vp.width; cv.height = vp.height; await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; read.vp = { w: raw.pageW, h: raw.pageH };
+    const doc = await pdfjsLib.getDocument({ data }).promise, page = await doc.getPage(1), vp = page.getViewport({ scale: 2 }), cv = document.createElement("canvas");
+    cv.width = vp.width; cv.height = vp.height; await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; if(token!==readToken)return;
+    const shown=$("#pdfCanvas");shown.width=cv.width;shown.height=cv.height;shown.getContext("2d").drawImage(cv,0,0);read.canvas=cv;
+    const pageView=page.getViewport({scale:1});
+    read.vp={w:pageView.width,h:pageView.height,transform:pageView.transform};
+    read.corners=[[0,0],[pageView.width,0],[0,pageView.height],[pageView.width,pageView.height]].map(([x,y])=>pageView.convertToPdfPoint(x,y));
+    read.scaleCheck={status:"unverified",printed_scale:sc?.scale??null,note:sc?"Printed scale 1:"+read.scale+"; check against a written span.":"No printed scale. Provisional 1:100; check a written span."};
     $("#sheetView").hidden = false; $("#readLegend").hidden = false;
     doRead();
   } else {
-    $("#scaleBox").textContent = "An image has no linework, so it is read by AI and every element is marked as inferred.";
+    $("#scaleBox").textContent="A photograph is not a measured plan. Nothing has been uploaded.";
+    const button=document.createElement("button");button.type="button";button.className="btn ghost sm";button.textContent="Send image for an illustrative AI reading";
+    $("#readStats").append(button);button.onclick=async()=>{button.disabled=true;
     const img = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
     const r = await fetch("/api/plan-read", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ image: img }) }).then((x) => x.json()).catch(() => null);
+    if(token!==readToken)return;
     if (!r?.plan) { $("#readStats").innerHTML = `<p class="hint">AI reading is not available right now (${esc(r?.error || "network")}). Export the drawing to PDF from the CAD tool for an exact read.</p>`; return; }
-    read = { ai: r.plan, name: f.name }; $("#readStats").innerHTML = `<div><b>${r.plan.walls.length}</b><span>walls (inferred)</span></div><div><b>${r.plan.openings.length}</b><span>openings (inferred)</span></div><div><b>${r.plan.rooms.length}</b><span>rooms (inferred)</span></div><p class="hint" style="grid-column:1/-1">${esc(r.plan.notes)} Set the scale from a known dimension before using this.</p>`;
+    read = { ai: r.plan, name: f.name }; $("#readStats").innerHTML = `<div><b>${r.plan.walls.length}</b><span>walls (inferred)</span></div><div><b>${r.plan.openings.length}</b><span>openings (inferred)</span></div><div><b>${r.plan.rooms.length}</b><span>rooms (inferred)</span></div><p class="hint" style="grid-column:1/-1">${esc(r.plan.notes)} Set the scale from a known dimension before using this.</p>`;};
   }
 }
 function doRead() {
   const real = toReal(read.raw, read.scale); read.model = modelFromDrawing(real, { name: read.name, number: "PS-" + read.name.slice(0, 12).toUpperCase().replace(/[^A-Z0-9]+/g, "-") });
+  if(read.scaleCheck)read.model.provenance.scale_check={...read.scaleCheck};
+  const valid=read.model.walls.length>0 && read.model.rooms.length>0;
+  $("#btnUseRead").disabled=!valid; $("#calibration").hidden=!read.model.walls.length;
+  $("#calWall").replaceChildren(...read.model.walls.map(w=>new Option(w.id+" · "+Math.round(Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]))+" mm",w.id)));
   const M = read.model, hi = (L) => L.filter((e) => e.ev.conf >= 0.8).length;
-  $("#readStats").innerHTML = `<div><b>${M.walls.length}</b><span>walls · ${hi(M.walls)} high confidence</span></div><div><b>${M.openings.length}</b><span>openings · ${hi(M.openings)} high</span></div><div><b>${M.rooms.length}</b><span>rooms from labels</span></div><p class="hint" style="grid-column:1/-1">Walls from ${esc(M.stats.walls)}. Heights, sills and the roof are assumptions until you set them from the elevations.</p>`;
+  $("#readStats").innerHTML = `<div><b>${M.walls.length}</b><span>walls · ${hi(M.walls)} high confidence</span></div><div><b>${M.openings.length}</b><span>openings · ${hi(M.openings)} high</span></div><div><b>${M.rooms.length}</b><span>rooms from labels</span></div><p class="hint" style="grid-column:1/-1">${valid?"Walls from "+esc(M.stats.walls)+".":"No usable wall-and-room layout found on page 1. Export a single-scale vector floor plan or open the original model in Drop a plan."} Heights, sills and the roof are assumptions until you set them from the elevations.</p>`;
   // overlay: model → pdf points → overlay svg (viewBox in pdf points, y down)
   const k = (25.4 / 72) * read.scale;   // real mm per pdf point; the model's origin was moved to the building's south-west corner (M.origin)
   const svg = $("#readOverlay"); svg.setAttribute("viewBox", `0 0 ${read.vp.w} ${read.vp.h}`); svg.setAttribute("preserveAspectRatio", "none");
-  const o = M.origin || [0, 0], X = (p) => ((p[0] + o[0]) / k), Y = (p) => read.vp.h - ((p[1] + o[1]) / k);
+  const px=p=>toViewport(p,M.origin,read.scale,read.vp.transform), X=p=>px(p)[0], Y=p=>px(p)[1];
   const col = (ev) => ({ hi: "#2f6b46", mid: "#c79a2c", lo: "#B0213A" }[evTone(ev)]);
   svg.innerHTML = M.walls.map((w) => `<line x1="${X(w.a)}" y1="${Y(w.a)}" x2="${X(w.b)}" y2="${Y(w.b)}" stroke="${col(w.ev)}" stroke-width="${Math.max(1.5, w.t / k)}" stroke-opacity=".55"/>`).join("")
     + M.rooms.map((r) => `<polygon points="${r.poly.map((p) => `${X(p)},${Y(p)}`).join(" ")}" fill="${col(r.ev)}" fill-opacity=".08" stroke="${col(r.ev)}" stroke-dasharray="4 3" stroke-width="1"/>`).join("");
 }
+$("#applyWritten").onclick=()=>{
+  if(!read?.model)return;
+  const w=read.model.walls.find(x=>x.id===$("#calWall").value),mm=Number($("#calLength").value),next=w&&calibration(read.scale,w,mm);
+  if(!next){$("#calStatus").textContent="Enter a positive written span in millimetres.";return;}
+  const previous=read.scale, id=w.id;
+  read.scale=next;read.scaleCheck={status:"user-calibrated",printed_scale:findScale(read.raw.items)?.scale??null,note:"Calibrated to a written "+mm+" mm along "+id+" by a person. Other dimensions are scaled, not individually verified."};
+  $("#scaleIn").value=Number(next.toFixed(4));doRead();$("#calStatus").textContent=read.scaleCheck.note+" Previous scale 1:"+Number(previous.toFixed(3))+".";
+};
 $("#btnUseRead").addEventListener("click", () => {
   if (!read?.model) { alert(read?.ai ? "Set the scale on a known dimension first (coming next for images). Export the drawing as a PDF for an exact read." : "Open a plan first."); return; }
-  P = read.model; P.meta.status = "Imported · check every element"; selected = null; renderMaterials(); changed(); show("model");
+  sourceSheet={canvas:read.canvas,corners:read.corners,scale:read.scale}; setLook("solid"); P = read.model; P.meta.status = "Imported · check every element"; selected = null; renderMaterials(); changed(); show("model");
 });
 
 // ------------------------------------------------------------------------------------------------ start
 renderMaterials(); changed({ geometry: false }); aiStatus();
+// A direct preview link with the same public drawing and the very same intake path.
+// No generated picture, autorun film, private project, or outbound AI request.
+if (new URLSearchParams(location.search).get("sample")==="drawing") {
+  (async()=>{await $("#btnDemoSheet").onclick();if(!read?.model||$("#btnUseRead").disabled)return;
+    $("#btnUseRead").click();await boot3d();await $("#showBuild").onclick();
+    $("#drawingFolio").scrollIntoView({block:"start",behavior:"instant"});
+  })().catch(e=>console.warn("Sample preview:",e.message));
+}
+
+if(new URLSearchParams(location.search).get("sample")==="door"){
+  setLook("solid");$("#btnDemo").click();
+  boot3d().then(()=>{
+    stage.setCutaway(true);stage.view("plan");stage.sync();
+    $$("#views button").forEach(b=>b.classList.toggle("on",b.dataset.view==="plan"));
+    if(new URLSearchParams(location.search).get("preview")==="1")showDoorProposal(8200);
+    $("#doorChange").scrollIntoView({block:"start",behavior:"instant"});
+  }).catch(e=>console.warn("Sample preview:",e.message));
+}

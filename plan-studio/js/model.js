@@ -146,7 +146,7 @@ export function diffModels(prev, next) {
     const A = new Map((prev[key] || []).map((e) => [e.id, e])), B = new Map((next[key] || []).map((e) => [e.id, e]));
     for (const [id, e] of B) {
       if (!A.has(id)) { out.push({ id, key, kind: "added" }); summary.push(`${label(key, e)} added`); continue; }
-      const a = A.get(id), fields = Object.keys({ ...a, ...e }).filter((f) => f !== "ev" && JSON.stringify(a[f]) !== JSON.stringify(e[f]));
+      const a = A.get(id), fields = Object.keys({ ...a, ...e }).filter((f) => f !== "ev" && f !== "position_ev" && JSON.stringify(a[f]) !== JSON.stringify(e[f]));
       if (fields.length) { out.push({ id, key, kind: "changed", fields }); summary.push(`${label(key, e)}: ${fields.map((f) => describe(f, a[f], e[f])).join(", ")}`); }
     }
     for (const [id, e] of A) if (!B.has(id)) { out.push({ id, key, kind: "removed", was: e }); summary.push(`${label(key, e)} removed`); }
