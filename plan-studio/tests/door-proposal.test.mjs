@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { demoProject, diffModels, snapshot } from "../js/model.js";
 import { toIFC } from "../js/exports.js";
-import { applyDoorMove, distanceMm, doorModelStamp, proposeDoorMove, undoDoorMove, wallPreviewSvg } from "../js/door-proposal.js";
+import { applyDoorMove, distanceMm, doorModelStamp, proposeDoorMove, undoDoorMove, doorCompareSvg, doorDetail, detailPosition } from "../js/door-proposal.js";
 
 const D=p=>p.openings.find(o=>o.id==="D4");
 const fixed=new Date("2026-11-25T00:00:00Z");
@@ -27,7 +27,7 @@ test("preview, approve, edit diff and undo affect just the chosen door position"
   const p=demoProject(), before=doorModelStamp(p), original=toIFC(p,fixed), draft=proposeDoorMove(p,"D4",7500);
   assert.equal(doorModelStamp(p),before);
   assert.equal(D(draft.before).at,7000);assert.equal(D(draft.after).at,7500);
-  assert.match(wallPreviewSvg(draft.after,draft.edit,"After"),/D4 · 7500 mm/);
+  assert.match(doorCompareSvg(p,"D4",7500),/proposed 7500 millimetres, move 500 millimetres toward wall end/);
   assert.equal(toIFC(p,fixed),original);
   const receipt=applyDoorMove(p,draft);
   assert.equal(D(p).at,7500);assert.equal(D(p).position_ev.src,"user");assert.deepEqual(D(p).ev,D(draft.before).ev);
@@ -54,4 +54,13 @@ test("approval is revision locked and revalidated; undo cannot overwrite a later
   const undo=applyDoorMove(p,fresh);D(p).w+=40;
   assert.throws(()=>undoDoorMove(p,undo),/cannot overwrite/);
   assert.equal(D(p).at,7500);
+});
+
+test("visual review uses one bounded view and maps input back to canonical wall units",()=>{
+  const p=demoProject(), d=doorDetail(p,"D4",8200);
+  assert.equal(d.total,24000);assert(d.start>0 && d.end<24000);
+  assert.equal(detailPosition(d,28+584*(8200-d.start)/(d.end-d.start)),8200);
+  assert.match(doorCompareSvg(p,"D4",8200),/original 7000 millimetres, proposed 8200 millimetres, move 1200 millimetres toward wall end/);
+  assert.match(doorCompareSvg(p,"D4",6000),/toward wall start/);
+  assert.equal(doorDetail(p,"not-a-door",0),null);
 });

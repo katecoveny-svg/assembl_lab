@@ -6,7 +6,7 @@ import { MATERIALS, byCategory, CATEGORY_LABEL } from "./materials.js";
 import { toIFC, toDXF, toJSON } from "./exports.js";
 import { readPdfPage, findScale, toReal, modelFromDrawing } from "./read.js";
 import { BEATS, calibration, toViewport, twinEvidence, wallSpan } from "./build-sequence.js";
-import { applyDoorMove, distanceMm, doorModelStamp, proposeDoorMove, undoDoorMove, wallPreviewSvg } from "./door-proposal.js";
+import { applyDoorMove, detailPosition, distanceMm, doorCompareSvg, doorDetail, doorModelStamp, proposeDoorMove, undoDoorMove } from "./door-proposal.js";
 import { buildDeck } from "./present.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -120,10 +120,26 @@ $("#btnPdf").addEventListener("click", () => {
 let doorDraft=null, doorUndo=null, doorProject=null;
 const tellDoor=text=>($("#doorStatus").textContent=text);
 function clearDoorDraft() {doorDraft=null;$("#doorPreview").hidden=true;}
+const doorMm=n=>n.toLocaleString("en-NZ")+" mm";
+let wallCursor;
+function renderDoorBoard(keepRange=false){
+  const id=$("#doorPick").value,edit=doorDraft?.edit,d=doorDetail(P,id,edit?.to),range=$("#doorRange");
+  range.disabled=!d;wallCursor=null;
+  $("#doorDraftRev").textContent=doorDraft?("PROPOSAL ONLY / "+(doorDraft.revision==="Unissued"?"UNISSUED MODEL":"REV "+doorDraft.revision)):"MODEL STUDY / LOCAL EDIT";
+  if(!d){
+    $("#doorBoard").replaceChildren();$("#doorMotion").textContent="";$("#doorDragHint").hidden=true;return;
+  }
+  range.max=Math.ceil(d.total);
+  if(!keepRange)range.value=d.at;
+  range.setAttribute("aria-valuetext",doorMm(+range.value)+" from wall start");
+  $("#doorDragHint").hidden=false;
+  $("#doorBoard").innerHTML=doorCompareSvg(P,id,edit?.to);
+  $("#doorMotion").textContent=edit?(doorMm(Math.abs(edit.to-edit.from))+" toward the wall "+(edit.to>edit.from?"end":"start")):"Door "+id+" / wall "+d.w.id;
+}
 function renderDoorReference(){
   const o=P.openings.find(o=>o.id===$("#doorPick").value);
   const w=o&&P.walls.find(w=>w.id===o.wall);
-  $("#doorReference").textContent=w?`Wall ${w.id} · current centre ${o.at} mm · width ${o.w} mm. The wall strip shows the start (0) and end.`:"No editable door in this model.";
+  $("#doorReference").textContent=w?`Wall ${w.id} · current centre ${o.at} mm · width ${o.w} mm. All positions are measured from the wall start.`:"No editable door in this model.";
 }
 function renderDoorTools(){
   const changedProject=doorProject!==P;
@@ -136,41 +152,65 @@ function renderDoorTools(){
   const doors=P.openings.filter(o=>["door","door-double"].includes(o.kind)&&P.walls.some(w=>w.id===o.wall));
   pick.replaceChildren(...doors.map(o=>new Option(o.id+(o.note?" · "+o.note:"")+" / "+o.wall,o.id)));
   pick.value=doors.some(o=>o.id===prev)?prev:doors.find(o=>o.id==="D4")?.id||doors[0]?.id||"";
-  renderDoorReference();$("#proposeDoor").disabled=!doors.length;
+  renderDoorReference();renderDoorBoard();$("#proposeDoor").disabled=!doors.length;
   const hasUndo=doorUndo && doorUndo.applied===doorModelStamp(P);
   $("#undoDoor").disabled=!hasUndo;
   $("#doorReceipt").hidden=!doorUndo;
 }
 ["doorPick","doorPosition","doorUnit"].forEach((id)=>$("#"+id).addEventListener(id==="doorPosition"?"input":"change",()=>{
   if(doorDraft){clearDoorDraft();tellDoor("Values changed. Preview again before applying.");}
-  renderDoorReference();
+  renderDoorReference();renderDoorBoard();
 }));
-$("#doorForm").addEventListener("submit", e=>{
-  e.preventDefault();clearDoorDraft();
+function showDoorProposal(next,{focus=false,keepRange=false}={}){
+  clearDoorDraft();
   try{
-    const next=distanceMm($("#doorPosition").value,$("#doorUnit").value);
     if(next===null)throw Error("Enter a number in the selected unit, to the nearest millimetre.");
     doorDraft=proposeDoorMove(P,$("#doorPick").value,next);
-    const {edit,revision,before,after,roomsBefore,roomsAfter}=doorDraft;
-    $("#doorDraftRev").textContent="PROPOSAL ONLY · "+(revision==="Unissued"?"UNISSUED MODEL":"BASED ON REV "+revision);
+    const {edit,roomsBefore,roomsAfter}=doorDraft;
     $("#doorDiffTitle").textContent=`Door ${edit.door} on ${edit.wall} · ${edit.from} → ${edit.to} mm`;
-    $("#doorBefore").innerHTML=wallPreviewSvg(before,edit,"Before");
-    $("#doorAfter").innerHTML=wallPreviewSvg(after,edit,"After");
     $("#doorImpact").textContent=(roomsBefore===roomsAfter?"Plan adjacency unchanged: "+roomsAfter:"Plan adjacency changes: "+roomsBefore+" → "+roomsAfter)+". Same door, width, height and host wall.";
-    $("#doorPreview").hidden=false;tellDoor("Preview only. The model and downloads are unchanged.");$("#doorDiffTitle").focus();
+    $("#doorPreview").hidden=false;tellDoor("Preview only. The model and downloads are unchanged.");if(focus)$("#doorDiffTitle").focus();
   }catch(err){tellDoor(err.message);}
+  renderDoorBoard(keepRange);
+}
+$("#doorForm").addEventListener("submit", e=>{
+  e.preventDefault(); showDoorProposal(distanceMm($("#doorPosition").value,$("#doorUnit").value),{focus:true});
 });
-$("#cancelDoor").onclick=()=>{clearDoorDraft();tellDoor("Proposal discarded. No model changes.");$("#proposeDoor").focus();};
+const doorRange=$("#doorRange"),wallBoard=$("#doorBoard");
+doorRange.addEventListener("input",()=>doorRange.setAttribute("aria-valuetext",doorMm(+doorRange.value)+" from wall start"));
+doorRange.addEventListener("change",()=>showDoorProposal(+doorRange.value,{keepRange:true}));
+// Drag keeps only a guide under the pointer. Releasing or tapping runs the same
+// immutable proposal as the range and exact input. Vertical swipes still scroll.
+function boardPoint(e){
+  const s=wallBoard.querySelector("svg"),matrix=s?.getScreenCTM();if(!matrix)return null;
+  return new DOMPoint(e.clientX,e.clientY).matrixTransform(matrix.inverse());
+}
+function boardGuide(point){
+  const g=wallBoard.querySelector(".door-guide");
+  g?.setAttribute("opacity","1");g?.setAttribute("transform",`translate(${Math.max(28,Math.min(612,point.x))} 0)`);
+}
+wallBoard.addEventListener("pointerdown",e=>{
+  const p=boardPoint(e);if(!e.isPrimary||e.button!==0||!p||p.y<115||p.y>175)return;
+  wallCursor={id:e.pointerId,detail:doorDetail(P,$("#doorPick").value,doorDraft?.edit.to)};
+  wallBoard.setPointerCapture(e.pointerId);boardGuide(p);
+});
+wallBoard.addEventListener("pointermove",e=>{if(wallCursor?.id===e.pointerId){const p=boardPoint(e);if(p)boardGuide(p);}});
+wallBoard.addEventListener("pointerup",e=>{
+  if(wallCursor?.id!==e.pointerId)return;const p=boardPoint(e),d=wallCursor.detail;wallCursor=null;
+  if(p&&d)showDoorProposal(detailPosition(d,p.x));
+});
+wallBoard.addEventListener("lostpointercapture",()=>{wallCursor=null;wallBoard.querySelector(".door-guide")?.setAttribute("opacity","0");});
+$("#cancelDoor").onclick=()=>{clearDoorDraft();renderDoorBoard();tellDoor("Proposal discarded. No model changes.");doorRange.focus();};
 $("#applyDoor").onclick=()=>{
  try {
   const edit=doorDraft?.edit;
   doorUndo=applyDoorMove(P,doorDraft);
   clearDoorDraft();selected={kind:"openings",id:edit.door};changed();
   tellDoor(`Door ${edit.door} moved to ${edit.to} mm. The model, drawings and next IFC download reflect the change.`);$("#undoDoor").focus();
- } catch(err){clearDoorDraft();tellDoor(err.message);$("#proposeDoor").focus();}
+ } catch(err){clearDoorDraft();renderDoorBoard();tellDoor(err.message);doorRange.focus();}
 };
 $("#undoDoor").onclick=()=>{
- try{undoDoorMove(P,doorUndo);doorUndo=null;changed();tellDoor("Move undone. The original door position and evidence are restored.");$("#proposeDoor").focus();}
+ try{undoDoorMove(P,doorUndo);doorUndo=null;changed();tellDoor("Move undone. The original door position and evidence are restored.");doorRange.focus();}
  catch(err){tellDoor(err.message);}
 };
 $("#doorIfc").onclick=downloadIFC;
@@ -567,6 +607,7 @@ if(new URLSearchParams(location.search).get("sample")==="door"){
   boot3d().then(()=>{
     stage.setCutaway(true);stage.view("plan");stage.sync();
     $$("#views button").forEach(b=>b.classList.toggle("on",b.dataset.view==="plan"));
+    if(new URLSearchParams(location.search).get("preview")==="1")showDoorProposal(8200);
     $("#doorChange").scrollIntoView({block:"start",behavior:"instant"});
   }).catch(e=>console.warn("Sample preview:",e.message));
 }

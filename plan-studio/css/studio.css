@@ -236,16 +236,40 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
 #doorStatus:not(:empty){padding:8px 12px;background:#3a2737;color:#fffdfb;border-radius:5px;font-size:14px}
 #doorPreview:not([hidden]){border:1px solid #806772;padding:13px;border-radius:9px;background:#2a1c2a}
 #doorDiffTitle {margin:0 0 8px;font-size:17px;color:var(--paper)}
-.door-drawings {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.door-drawings figure {margin:0;border-radius:7px;background:#fffdfb;color:#654a4e;overflow:hidden}
-.door-drawings figcaption {padding:6px 10px;background:#e3d0d2;font-size:12px;font-weight:600}
-.door-drawings svg {display:block;width:100%;height:auto}
 #doorImpact {font-size:14px}
 #doorReceipt[hidden]{display:none}
 @media(max-width:650px){
  #doorForm {grid-template-columns:minmax(0,1fr) auto}
  #doorForm label:first-child {grid-column:1/-1}
- .door-drawings {grid-template-columns:1fr}
 }
 /* Keep the neighbouring element table in its own scroller, not the page. */
 @media (max-width:1000px){.panel[data-panel=model] .cols{grid-template-columns:minmax(0,1fr)}}
+
+/* Position comes first; precise form inputs are available without crowding the drawing. */
+.edit-desk {background:linear-gradient(145deg,#332331,#241a26)}
+.edit-desk header {margin-bottom:12px}
+#doorBoard {background:#fffdfb;border:1px solid #ae909c;border-radius:10px;overflow:hidden;touch-action:pan-y;user-select:none}
+#doorBoard:empty {display:none}
+#doorBoard svg {display:block;width:100%;height:auto;max-height:300px;cursor:ew-resize}
+.door-at-a-glance {display:flex;gap:6px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:9px}
+.door-at-a-glance p{margin:0}
+#doorMotion {color:#f1dce1;font-size:clamp(15px,2vw,23px);font-weight:600;letter-spacing:-.024em}
+#doorDragHint {color:var(--on);font-size:13px}
+#doorDragHint[hidden] {display:none}
+.door-choices {border-top:1px solid #6b5361;padding-top:10px}
+.door-choices label {display:grid;gap:4px;font-size:12px;color:var(--on);min-width:0}
+.door-choices select {min-height:38px}
+.door-choices .door-slider{flex:1;min-width:150px}
+#doorRange{width:100%;accent-color:#e3d0d2;height:25px;margin:0;cursor:ew-resize}
+#doorExact {margin-top:8px;padding-block:5px;color:var(--on);font-size:13px}
+#doorExact summary {cursor:pointer;width:fit-content}
+#doorForm {margin-top:8px;grid-template-columns:minmax(145px,1fr) auto auto;max-width:535px}
+#doorChange :is(button,input,select,summary):focus-visible {outline:2px solid #e3d0d2;outline-offset:3px}
+#doorPreview p {margin:4px 0 8px}
+@media(max-width:650px){
+  #doorForm {grid-template-columns:minmax(0,1fr) auto}
+  #doorBoard{margin-inline:-5px}
+  #doorForm label:first-child {grid-column:auto}
+  .door-choices {align-items:stretch}
+  .door-choices label {min-width:min(140px,100%)}
+}

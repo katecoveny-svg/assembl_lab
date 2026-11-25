@@ -95,22 +95,28 @@
       </div>
       <div class="walk-handoff"><button id="prepareWalk" class="btn ghost sm" type="button">Prepare this model for a walkthrough</button> <a class="btn" id="walkLink" target="_blank" rel="noopener" hidden>Open walkthrough</a><span id="walkStatus" role="status" class="hint"></span></div>
       <section id="doorChange" class="card edit-desk" aria-labelledby="doorChangeTitle">
-        <header><p class="mono">01 / PROPOSE A CHANGE</p><h2 id="doorChangeTitle">Move a door</h2><p class="hint">Try a new position without editing the model. The local layout agent checks the available space on the same wall.</p></header>
-        <form id="doorForm" novalidate>
-          <label>Door <select id="doorPick"></select></label>
-          <label>New centre from wall start <input id="doorPosition" type="text" inputmode="decimal" placeholder="e.g. 7.5" autocomplete="off" required aria-describedby="doorReference"></label>
-          <label>Unit <select id="doorUnit"><option value="m">m</option><option value="mm">mm</option></select></label>
-          <button class="btn" id="proposeDoor" type="submit">Preview move</button>
-        </form>
-        <p class="hint" id="doorReference"></p>
+        <header><p class="mono" id="doorDraftRev">MODEL STUDY / LOCAL EDIT</p><h2 id="doorChangeTitle">Move a door</h2></header>
+        <div id="doorBoard" aria-describedby="doorReference doorDragHint"></div>
+        <div class="door-at-a-glance"><p id="doorMotion"></p><p id="doorDragHint">Drag or tap the lower wall to try a position.</p></div>
         <p id="doorStatus" role="status"></p>
         <section id="doorPreview" hidden aria-labelledby="doorDiffTitle">
-          <p class="mono" id="doorDraftRev"></p><h3 id="doorDiffTitle" tabindex="-1">Review door move</h3>
-          <div class="door-drawings"><figure><figcaption>Before</figcaption><div id="doorBefore"></div></figure><figure><figcaption>Proposed</figcaption><div id="doorAfter"></div></figure></div>
+          <h3 id="doorDiffTitle" tabindex="-1">Review door move</h3>
           <p id="doorImpact"></p>
           <p class="hint">Checks wall ends, other openings and modelled wall junctions. No structural, access, swing-clearance or compliance approval.</p>
           <div class="row"><button class="btn" id="applyDoor" type="button">Apply door move</button><button class="btn ghost sm" id="cancelDoor" type="button">Cancel proposal</button></div>
         </section>
+        <div class="row door-choices">
+          <label>Door <select id="doorPick"></select></label>
+          <label class="door-slider" for="doorRange">Proposed centre · whole wall<input id="doorRange" type="range" step="50" min="0" max="24000" value="7000"></label>
+        </div>
+        <details id="doorExact"><summary>Enter an exact position</summary>
+          <form id="doorForm" novalidate>
+            <label>New centre from wall start <input id="doorPosition" type="text" inputmode="decimal" placeholder="e.g. 8.2" autocomplete="off" required aria-describedby="doorReference"></label>
+            <label>Unit <select id="doorUnit"><option value="m">m</option><option value="mm">mm</option></select></label>
+            <button class="btn" id="proposeDoor" type="submit">Preview move</button>
+          </form>
+        </details>
+        <p class="hint" id="doorReference"></p>
         <div id="doorReceipt" class="row" hidden>
           <button class="btn ghost sm" id="undoDoor" type="button">Undo move</button><button class="btn ghost sm" id="doorIfc" type="button">Download IFC</button>
         </div>

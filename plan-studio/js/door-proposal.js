@@ -1,6 +1,6 @@
 // Narrow, deterministic commands over the canonical Plan Studio model. No agent scripts run,
 // no file leaves the browser, and preview operates only on a snapshot.
-import { openingRooms, openingSpan, snapshot } from "./model.js";
+import { openingRooms, snapshot } from "./model.js";
 
 const door = o => o && ["door","door-double"].includes(o.kind);
 const pos = o => [o.at-o.w/2,o.at+o.w/2];
@@ -75,27 +75,55 @@ export function undoDoorMove(P,receipt) {
 }
 
 const safe=s=>String(s).replace(/[<>"&]/g,c=>({"<":"&lt;",">":"&gt;",'"':"&quot;","&":"&amp;"})[c]);
-export function wallPreviewSvg(P,edit,label) {
-  const w=P.walls.find(w=>w.id===edit.wall),o=P.openings.find(o=>o.id===edit.door), span=openingSpan(P,o);
-  const L=length(w), px=mm=>+((mm/L)*430+25).toFixed(2);
-  const project=p=>(p[0]-w.a[0])*span.d[0]+(p[1]-w.a[1])*span.d[1];
-  const gaps=P.openings.filter(a=>a.wall===w.id).map(a=>[...pos(a),a.id]).sort((a,b)=>a[0]-b[0]);
-  let mat="",start=0;
-  for(const [a,b,id] of [...gaps,[L,L,undefined]]) {
-    if(a>start)mat+=`<rect x="${px(start)}" y="38" width="${px(a)-px(start)}" height="11" rx="1" fill="#a69195"/>`;
-    if(id && id!==o.id)mat+=`<line x1="${px(a)}" x2="${px(b)}" y1="44" y2="44" stroke="#785c64" stroke-dasharray="2 3"/>`;
-    start=Math.max(start,b);
-  }
-  return `<svg viewBox="0 0 480 106" role="img" aria-label="${safe(label)}, door ${safe(o.id)} on wall ${safe(w.id)}, centre ${o.at} millimetres from start">
-    <rect width="480" height="106" fill="#fffdfb"/>
-    <line x1="25" x2="455" y1="76" y2="76" stroke="#a69195"/>
-    <line x1="25" x2="25" y1="72" y2="81" stroke="#a69195"/><line x1="455" x2="455" y1="72" y2="81" stroke="#a69195"/>
-    ${mat}
-    <line x1="${px(project(span.a))}" x2="${px(project(span.b))}" y1="43.5" y2="43.5" stroke="#654a4e" stroke-width="6"/>
-    <circle cx="${px(o.at)}" cy="43.5" r="5" fill="#fffdfb" stroke="#654a4e" stroke-width="2"/>
-    <line x1="${px(o.at)}" x2="${px(o.at)}" y1="50" y2="79" stroke="#654a4e" stroke-dasharray="2 2"/>
-    <text x="25" y="94" fill="#654a4e" font-size="11" font-family="system-ui">START · 0</text>
-    <text x="455" y="94" text-anchor="end" fill="#654a4e" font-size="11" font-family="system-ui">END · ${Math.round(L)} mm</text>
-    <text x="${Math.max(61,Math.min(418,px(o.at)))}" y="25" text-anchor="middle" fill="#654a4e" font-size="13" font-family="system-ui" font-weight="600">${safe(o.id)} · ${o.at} mm</text>
+// Both lanes use the same local window, in canonical wall millimetres.
+// Keep the selected change large enough to see without implying it is the whole wall.
+export function doorDetail(P,id,nextAt) {
+  const o=P.openings.find(x=>x.id===id),w=o&&P.walls.find(x=>x.id===o.wall);
+  if(!o||!w)return null;
+  const total=length(w), at=Number.isFinite(nextAt)?nextAt:o.at;
+  if(!Number.isFinite(total)||total<=0)return null;
+  const size=Math.min(total,Math.max(2800,o.w*3.5,Math.abs(at-o.at)+o.w*2.25)),mid=(o.at+at)/2;
+  const start=Math.max(0,Math.min(total-size,mid-size/2)), end=start+size;
+  return {w,o,total,start,end,at};
+}
+
+export function doorCompareSvg(P,id,nextAt) {
+  const detail=doorDetail(P,id,nextAt);if(!detail)return "";
+  const {w,o,start,end,at}=detail,active=Number.isFinite(nextAt)&&nextAt!==o.at;
+  const x=d=>+(28+(d-start)/(end-start)*584).toFixed(2),from=x(o.at),to=x(at),direction=Math.sign(at-o.at),distance=Math.abs(at-o.at);
+  const lane=(y,where,proposed)=>{
+    const gaps=P.openings.filter(a=>a.wall===o.wall).map(a=>[...pos(a.id===id?{...a,at:where}:a),a.id]).sort((a,b)=>a[0]-b[0]);
+    let segments="",from=start;
+    const slab=(a,b)=>`<rect x="${x(a)}" y="${y-11}" width="${Math.max(0,x(b)-x(a))}" height="22" rx="2" fill="url(#doorWallFill)" />`;
+    for(const [a,b,who] of gaps){
+      if(b<=start||a>=end)continue;
+      const lo=Math.max(start,a),hi=Math.min(end,b);
+      if(lo>from)segments+=slab(from,lo);
+      if(who!==o.id)segments+=`<path d="M${x(lo)},${y}H${x(hi)}" stroke="#8b7079" stroke-width="2" stroke-dasharray="3 4"/>`;
+      from=Math.max(from,hi);
+    }
+    if(from<end)segments+=slab(from,end);
+    const [a,b]=pos({...o,at:where}),ink=proposed?"#654a4e":"#a87c89";
+    const outline=a<start||b>end?"":`<rect x="${x(a)}" y="${y-12}" width="${x(b)-x(a)}" height="24" rx="3" fill="${proposed?"#dcc2c7":"#f1e1e4"}" stroke="${ink}" stroke-width="2" ${proposed?"":'stroke-dasharray="4 3"'} />`;
+    return segments+outline+`<circle cx="${x(where)}" cy="${y}" r="7" fill="${ink}" stroke="#fffdfb" stroke-width="2"/>`;
+  };
+  const arrow=active?`<path d="M${from},74V100H${to}V126" stroke="#654a4e" fill="none" stroke-width="1.5" stroke-dasharray="3 3"/><path d="M${to-7*direction},96L${to},100L${to-7*direction},104" stroke="#654a4e" stroke-width="2" fill="none"/>`:"";
+  return `<svg viewBox="0 0 640 191" role="img" aria-label="Wall ${safe(w.id)} detail, door ${safe(id)}: original ${o.at} millimetres${active?", proposed "+at+" millimetres, move "+distance+" millimetres "+(direction>0?"toward wall end":"toward wall start"):""}.">
+    <defs><pattern id="doorWallFill" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#a48c97"/><path d="M0,7L7,0" stroke="#b49ca6" stroke-width="1.3"/></pattern></defs>
+    <rect width="640" height="191" fill="#fffdfb"/><path d="M28,61H612M28,141H612" stroke="#e6d3d7" stroke-dasharray="2 3"/>
+    <text x="28" y="30" fill="#654a4e" font-size="20" font-family="system-ui" font-weight="600">Original</text>
+    <text x="612" y="30" fill="#654a4e" text-anchor="end" font-size="20" font-family="system-ui">${o.at.toLocaleString("en-NZ")} mm</text>
+    ${lane(62,o.at,false)}
+    <text x="28" y="112" fill="#654a4e" font-size="20" font-family="system-ui" font-weight="600">${active?"Proposed":"Choose a position"}</text>
+    ${active?`<text x="612" y="112" fill="#654a4e" text-anchor="end" font-size="20" font-family="system-ui">${at.toLocaleString("en-NZ")} mm</text>`:""}
+    ${lane(142,at,true)}${arrow}
+    <path class="door-guide" d="M0,121V163" stroke="#654a4e" stroke-width="2" opacity="0" transform="translate(0 0)"/>
+    <text x="28" y="178" fill="#654a4e" font-size="15" font-family="system-ui">WALL DETAIL · ${Math.round(start).toLocaleString("en-NZ")}–${Math.round(end).toLocaleString("en-NZ")} mm</text>
   </svg>`;
+}
+
+export function detailPosition(detail,svgX) {
+  if(!detail||!Number.isFinite(svgX))return null;
+  const x=Math.max(0,Math.min(1,(svgX-28)/584));
+  return Math.round((detail.start+x*(detail.end-detail.start))/50)*50;
 }
