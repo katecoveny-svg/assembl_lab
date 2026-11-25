@@ -1,16 +1,57 @@
 export function tideCard(asset){
  const byId=id=>document.getElementById(id);
  let days=JSON.parse(byId('tide-data').textContent),keys=Object.keys(days);
- const host=byId('water-host'),poster=byId('water-still'),slider=byId('tide-event'),pause=byId('water-pause'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let day=1,index=0,visible=false,attempted=false,scene=null,paused=reduced.matches,selectedHeight=0;
- function fallback(){scene?.setActive(false);scene=null;host.replaceChildren();pause.hidden=true;byId('water-fallback').hidden=false;host.dataset.renderer='still'}
- function pauseLabel(){pause.textContent=paused?'Animate water':'Pause water';pause.setAttribute('aria-pressed',String(paused))}
+ const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const tool='https://assembl-waitemata-tides.pages.dev/';
+ let selectedSurface=false;
+ let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,selectedHeight=0;
+ function destination(embed){
+  const url=new URL(tool);if(embed)url.searchParams.set('view','harbour');
+  url.searchParams.set('date',keys[day]);
+  return url.href;
+ }
+ function conservative(){
+  return reduced.matches||navigator.connection?.saveData||['2g','3g','slow-2g'].includes(navigator.connection?.effectiveType)
+   ||!(navigator.gpu||window.WebGL2RenderingContext);
+ }
+ function mount(){
+  if(!visible||document.hidden)return;
+  if(new URLSearchParams(location.search).get('renderer')==='still'){
+   host.dataset.renderer='still';byId('water-fallback').hidden=false;return;
+  }
+  if(!explicit&&conservative()){open.hidden=false;return}
+  const src=selectedSurface?new URL('/pavilion/harbour-event.html',location.origin).href:destination(true);
+  if(frame?.src===src){sendSelection();return}
+  if(!frame){
+   frame=document.createElement('iframe');frame.title='Waitematā Harbour water and published Auckland tide prediction';
+   frame.referrerPolicy='strict-origin-when-cross-origin';frame.loading='lazy';
+   frame.addEventListener('load',()=>{if(frame&&!selectedSurface)host.dataset.renderer='harbour';sendSelection()});
+   host.append(frame);
+  }
+  if(selectedSurface)frame.setAttribute('sandbox','allow-scripts');else frame.removeAttribute('sandbox');
+  frame.src=src;open.hidden=true;
+ }
+ function sendSelection(){
+  if(!selectedSurface||!frame?.contentWindow)return;
+  frame.contentWindow.postMessage({type:'assembl:prediction',height:selectedHeight,label:byId('water-reading').textContent},'*');
+ }
+ addEventListener('message',e=>{
+  if(!frame||e.source!==frame.contentWindow||!selectedSurface||e.origin!=='null')return;
+  if(e.data?.type==='assembl:harbour-listening')sendSelection();
+  if(e.data?.type==='assembl:harbour-ready')host.dataset.renderer='harbour';
+  if(e.data?.type==='assembl:harbour-still')host.dataset.renderer='still';
+ });
+ function showSelection(){
+  byId('tide-link').href=destination(false);
+  clearTimeout(renderTimer);if(visible)renderTimer=setTimeout(mount,140);
+ }
+ open.onclick=()=>{explicit=true;mount()};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
+  if(index>0)selectedSurface=true;
   selectedHeight=Number(height);const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
   byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
-  poster.src=asset('tide-'+String(Math.round(10*selectedHeight)).padStart(2,'0')+'.webp');poster.alt='Wharf and tide staff at the predicted '+kind.toLowerCase()+' tide of '+height+' metres.';
-  scene?.setHeight(selectedHeight);byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));
+  showSelection();byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));
   const detail=byId('tide-date').textContent+' · '+label;byId('tides-context').textContent=detail;
   byId('brief-tides').querySelector('a[href^="mailto"]').href='mailto:assembl@assembl.co.nz?subject='+encodeURIComponent('A project like Waitematā Tides')+'&body='+encodeURIComponent('I was looking at the Auckland station 070 prediction for '+detail+'.')
  }
@@ -22,23 +63,14 @@ export function tideCard(asset){
  }
  slider.oninput=()=>setEvent(Number(slider.value));byId('prev-date').onclick=()=>{if(day>0){day--;renderDay()}};byId('next-date').onclick=()=>{if(day<keys.length-1){day++;renderDay()}};
  byId('date-controls').hidden=byId('event-controls').hidden=false;renderDay();
- pause.onclick=()=>{paused=!paused;scene?.pause(paused);pauseLabel()};
- reduced.addEventListener('change',()=>{paused=reduced.matches;scene?.pause(paused);pauseLabel()});
- async function start(){
-  let url;try{
-   if(new URLSearchParams(location.search).get('renderer')==='still'){fallback();return}
-   const embedded=byId('harbour-module');if(embedded)url=URL.createObjectURL(new Blob([embedded.textContent],{type:'text/javascript'}));
-   const {createHarbour}=await import(url||'/pavilion/harbour.js');scene=await createHarbour(host,asset,fallback);scene.pause(paused);scene.setHeight(selectedHeight);scene.setActive(visible);
-   host.dataset.renderer='WebGL';pause.hidden=false;pauseLabel();
-  }catch(error){console.warn("Harbour renderer unavailable",error);fallback()}finally{if(url)URL.revokeObjectURL(url)}
- }
  let dataStarted=false;
  async function loadPublishedDays(){
   if(dataStarted||location.protocol==='file:')return;
   dataStarted=true;
   const initial=keys[day],eventBefore=index;
   try{
-   const response=await fetch(asset('auckland-070.json'));
+   // Use the same published file as the harbour. Preserve the dated snapshot offline.
+   const response=await fetch(new URL('data/events.json',tool));
    if(!response.ok)return;
    const published=await response.json();
    if(!Object.hasOwn(published,initial))return;
@@ -53,13 +85,16 @@ export function tideCard(asset){
  }
  function checkVisible(){
   const rect=host.getBoundingClientRect(),inView=rect.height>0&&rect.bottom>0&&rect.top<innerHeight;
-  if(inView!==visible){visible=inView;scene?.setActive(visible)}
-  if(visible&&!attempted){attempted=true;loadPublishedDays();start()}
+  if(inView===visible)return;
+  visible=inView;
+  if(visible){loadPublishedDays();mount()}
+  else{clearTimeout(renderTimer);frame?.remove();frame=null;delete host.dataset.renderer}
  }
  new IntersectionObserver(checkVisible).observe(host);
  addEventListener('scroll',checkVisible,{passive:true});
  addEventListener('resize',checkVisible,{passive:true});
  addEventListener('pageshow',checkVisible);
  requestAnimationFrame(checkVisible);
- window.tideStudyStatus=()=>({date:keys[day],index,height:selectedHeight,visible,renderer:host.dataset.renderer||'poster',scene:scene?.state()||null})
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&visible)mount()});
+ window.tideStudyStatus=()=>({date:keys[day],index,height:selectedHeight,visible,renderer:host.dataset.renderer||'poster',frame:frame?.src})
 }
