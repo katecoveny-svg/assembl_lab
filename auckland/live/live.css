@@ -143,3 +143,5 @@ button.row { width: 100%; background: transparent; text-align: left; border: 0; 
 #fly-in { background: var(--ink); color: #fff; font-weight: 600; }
 #fly-in:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (max-width: 380px) { .views { gap: 4px; } .views button { padding-inline: 9px; } }
+
+@media (max-width: 550px) { .views { max-width: calc(100% - 20px); justify-content: flex-end; flex-wrap: wrap; } }
