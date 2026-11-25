@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Work: fly-throughs | assembl</title>
+<meta name="description" content="Fly-throughs by assembl of places before they&#x27;re built: a house on Waiheke Island and two timber homes in Auckland. Visualisations, not photographs.">
+<link rel="canonical" href="https://www.assembl.co.nz/work/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="assembl">
+<meta property="og:title" content="Work: fly-throughs | assembl"><meta property="og:url" content="https://www.assembl.co.nz/work/">
+<meta property="og:image" content="https://lab.assembl.co.nz/media/work/waiheke-poster.jpg"><meta property="og:locale" content="en_NZ">
+<meta name="theme-color" content="#FFFDFB">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/home.css?v=20261118f">
+</head>
+<body class="page">
+<a class="skip" href="#doc">Skip to the text</a>
+<header class="top">
+  <a class="mark" href="/" aria-label="assembl home">assembl<span>.</span></a>
+  <nav class="nav" aria-label="Main"><a class="wide" href="/#what">What we do</a><a href="/work/">Work</a><a href="https://lab.assembl.co.nz/">Lab</a><a href="/#faq">FAQ</a><a href="/#start">Contact</a></nav>
+</header>
+<main id="doc" class="wk">
+<header class="wk-head">
+  <p class="kick mono">Work</p>
+  <h1>Places seen before they're built.</h1>
+  <p class="lede">Fly-throughs of places before they're built, made from the design itself: its walls, rooms and light. Each one is a visualisation, not a photograph.</p>
+</header>
+
+<article class="film" aria-labelledby="f-16a-site">
+  <div class="frame"><video src="https://lab.assembl.co.nz/media/work/16a-model-to-site.mp4" poster="https://lab.assembl.co.nz/media/work/16a-model-to-site-poster.jpg" muted loop playsinline preload="metadata" aria-label="From above: a white model of two timber homes behind an existing house fills in with timber, planting and evening light"></video>
+    <button class="vp" type="button" aria-pressed="false">Pause</button></div>
+  <div class="cap-row">
+    <h2 id="f-16a-site">Two timber homes, 16A</h2>
+    <p>From above: the white model fills in with timber, planting and evening light.</p>
+    <p class="tag mono">Visualisation · not a photograph</p>
+  </div>
+</article>
+
+<article class="film" aria-labelledby="f-waiheke">
+  <div class="frame"><video src="https://lab.assembl.co.nz/media/work/waiheke-flythrough.mp4" poster="https://lab.assembl.co.nz/media/work/waiheke-poster.jpg" muted loop playsinline preload="metadata" aria-label="Fly-through of a concrete and timber house on a bush hillside on Waiheke Island, at dusk"></video>
+    <button class="vp" type="button" aria-pressed="false">Pause</button></div>
+  <div class="cap-row">
+    <h2 id="f-waiheke">A house on Waiheke Island</h2>
+    <p>Concrete and dark timber, set into a bush hillside, at dusk.</p>
+    <p class="tag mono">Visualisation · not a photograph</p>
+  </div>
+</article>
+
+<article class="film" aria-labelledby="f-16a">
+  <div class="frame"><video src="https://lab.assembl.co.nz/media/work/16a-flythrough.mp4" poster="https://lab.assembl.co.nz/media/work/16a-poster.jpg" muted loop playsinline preload="metadata" aria-label="Fly-through of two timber homes: outside by the fire pit at dusk, then into the lounge and kitchen"></video>
+    <button class="vp" type="button" aria-pressed="false">Pause</button></div>
+  <div class="cap-row">
+    <h2 id="f-16a">16A, inside</h2>
+    <p>From the consent drawings to a Blender render: outside by the fire, then into the lounge and kitchen.</p>
+    <p class="tag mono">Visualisation · not a photograph</p>
+    <a class="wk-link" href="https://lab.assembl.co.nz/plan-studio/twins/16a/">Walk the 3D model in your browser&nbsp;↗</a>
+  </div>
+</article>
+
+<section class="wk-end" aria-labelledby="wk-end-h">
+  <h2 id="wk-end-h">Assemble your next project here.</h2>
+  <a class="btn" href="/#start">Start a conversation</a>
+</section>
+
+<script>
+// play each fly-through while it's on screen, pause it when it isn't; respect reduced motion; a button pauses it for good
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for (const f of document.querySelectorAll(".film")) {
+    const v = f.querySelector("video"), b = f.querySelector(".vp"); let held = reduce;
+    const set = () => { b.setAttribute("aria-pressed", String(held)); b.textContent = held ? "Play" : "Pause"; };
+    b.addEventListener("click", () => { held = !held; set(); held ? v.pause() : v.play().catch(() => {}); });
+    new IntersectionObserver(([e]) => { if (e.isIntersecting && !held) v.play().catch(() => {}); else v.pause(); }, { threshold: 0.35 }).observe(v);
+    set();
+  }
+})();
+</script>
+</main>
+<footer class="site-foot">
+  <div class="sf-in">
+    <p class="sf-mark"><a href="/" aria-label="assembl home">assembl<span>.</span></a></p>
+    <p class="sf-line">Strategy, creative and digital for the agentic era. Tāmaki Makaurau Auckland, Aotearoa New Zealand.</p>
+    <nav class="sf-nav" aria-label="Footer">
+      <div><p class="mono">assembl</p><a href="/#what">What we do</a><a href="/work/">Work</a><a href="https://lab.assembl.co.nz/">Lab</a><a href="/#faq">FAQ</a></div>
+      <div><p class="mono">Contact</p><a href="/#start">Start a conversation</a><span>Tāmaki Makaurau Auckland</span></div>
+      <div><p class="mono">Legal</p><a href="/privacy/">Privacy policy</a><a href="/terms/">Terms and conditions</a></div>
+    </nav>
+    <p class="sf-fine mono">© 2026 assembl. Renders and fly-throughs on this site are visualisations, not photographs.</p>
+  </div>
+</footer>
+</body>
+</html>

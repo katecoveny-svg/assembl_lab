@@ -29,7 +29,12 @@ export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,ra
  const addGeoUV=(g,ox=0,oz=0)=>{const a=g.attributes.position,uv=new Float32Array(a.count*2);for(let i=0;i<a.count;i++){uv[2*i]=((a.getX(i)+ox)*17+9800)/27700;uv[2*i+1]=1-((a.getZ(i)+oz)*17+11500)/22100}g.setAttribute('uv',new T.BufferAttribute(uv,2))};
  const seaGeom=new T.PlaneGeometry(2900,2500);seaGeom.rotateX(-Math.PI/2);addGeoUV(seaGeom,75,0);
  const water=mesh(seaGeom,new T.MeshPhysicalMaterial({color:0xd4e0dc,map:seaPhoto,metalness:.01,roughness:.44,envMapIntensity:.29,specularIntensity:.27,normalMap:ripple,normalScale:new T.Vector2(.23,.19),clearcoat:.035,clearcoatRoughness:.45}),75,-4.97,0);water.castShadow=false;
- const land=terrain.scene.children[0];land.geometry.computeVertexNormals();addGeoUV(land.geometry);land.material=mat(0xe2e4dc,.99,landcover);land.castShadow=false;land.receiveShadow=false;scene.add(land);
+ const land=terrain.scene.children[0];land.geometry.computeVertexNormals();addGeoUV(land.geometry);const vegetation=new T.MeshStandardNodeMaterial({roughness:1});
+ const {positionWorld:W,texture,vec3}=T.TSL;
+ const cover=texture(landcover).rgb;
+ const crown=W.x.mul(.97).add(W.z.mul(.62)).sin().mul(W.z.mul(.77).sub(W.x.mul(.29)).sin()).mul(.052);
+ const patch=W.x.mul(.24).add(W.z.mul(.105).sin().mul(2.1)).sin().mul(W.z.mul(.43).sin()).mul(.079);
+ vegetation.colorNode=cover.mul(vec3(.85,.89,.81)).mul(crown.add(patch).add(1));land.material=vegetation;land.castShadow=false;land.receiveShadow=false;scene.add(land);
  scene.fog=new T.FogExp2(0xc3cfd0,.0015);
  return water;
 }
