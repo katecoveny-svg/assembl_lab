@@ -352,7 +352,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   // ---------------------------------------------------------------- camera
   const views = {
-    harbour: { t: [-2040, 55, -15], p: [-1520, 275, -1365] },
+    harbour: { t: [-1830, 12, -305], p: [-1515, 645, -736] },
     'ferry-building': { t: [-1755, 15.2, -382], p: [-1737, 43, -492] },
     waterfront: { t: [-1880, 71, -358], p: [-1540, 184, -869] },
     city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
@@ -367,7 +367,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   function flyCinematic(v, { fromHarbour = false } = {}) {
     stopFlight(); follow = null;
     if (reducedMotion.matches) { setView(v); return; }
-    if (fromHarbour) setView(phone ? { t: [-2020, 45, -20], p: [-1430, 550, -1780] } : views.harbour);
+    if (fromHarbour) setView(phone ? { t: [-1830, 12, -305], p: [-1520, 810, -775] } : views.harbour);
     cinematic = {
       started: performance.now(), duration: phone ? 2150 : 2600,
       from: cameraPose(controls.target.toArray(),camera.position.toArray(),camera.fov),
@@ -386,7 +386,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   }
   let inset = 0;
   function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (inset) camera.setViewOffset(w, h, 0, inset / 2, w, h); else camera.clearViewOffset(); camera.fov = w < h ? 55 : 42; camera.updateProjectionMatrix(); lineMat.resolution.set(w, h); beacons.material.uniforms.uPR.value = renderer.getPixelRatio(); }
-  new ResizeObserver(resize).observe(canvas); resize(); setView(phone ? { t: [-2020, 45, -20], p: [-1430, 550, -1780] } : views.harbour);
+  new ResizeObserver(resize).observe(canvas); resize(); setView(phone ? { t: [-1830, 12, -305], p: [-1520, 810, -775] } : views.harbour);
 
   // ---------------------------------------------------------------- live vehicle state with short tweens between real fixes
   const state = new Map(); let list = [], selectedId = null;
