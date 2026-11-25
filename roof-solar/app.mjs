@@ -93,6 +93,7 @@ async function show16a(){
 }
 $("#sampleStudy").addEventListener('click',()=>{if(!S.study||!S.ready)show16a();});
 $("#roofView").addEventListener("click",()=>S.twin?.reset());
+$("#siteView").addEventListener("click",()=>S.twin?.reset(true));
 $("#studySun").addEventListener("input",e=>{if(!S.twin)return;const hour=+e.target.value;
  const m=S.twin.app.when;
  const d=new Date(m); const dateParts=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",year:"numeric",month:"numeric",day:"numeric"}).formatToParts(d);
