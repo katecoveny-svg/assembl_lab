@@ -18,16 +18,16 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
  const y=.981,back=-1.969,front=-1.348,far=-3.165,end=-.80,sinkX=-1.52;
  box(-1.985,.131,-1.702,2.33,.126,.49,.003,graphite);box(-1.983,.444,-1.681,2.35,.515,.571,.006,timber);
  // Hand-finished ceramic courses. Each tile has a shallow crown and a glazed, slightly irregular face.
- const grout=mat(0xafa897,.89);
+ const grout=mat(0x989588,.89);
  box(-1.985,1.40,-1.966,2.365,.80,.018,.002,grout);
- const tileTones=[0x73877c,0x84968a,0x799387,0x8b9c8d,0x819484,0x889b8e];
+ const tileTones=[0x405e56,0x526c60,0x56796e,0x5d7265,0x48675b,0x6d8073];
  const ceramics=tileTones.map((color,i)=>new T.MeshPhysicalMaterial({
   color,roughness:.22+i*.008,clearcoat:.74,clearcoatRoughness:.14+i*.007,
-  normalMap:glazeNormal,normalScale:new T.Vector2(.37,.27),clearcoatNormalMap:glazeNormal,
+  normalMap:glazeNormal,normalScale:new T.Vector2(.52,.39),clearcoatNormalMap:glazeNormal,
   clearcoatNormalScale:new T.Vector2(.40,.31)
  }));
  // Separate piled-glaze edges surround an undulating face. Each strip occupies its own mortar bed.
- const cols=12,rows=12,pitchX=2.36/cols,pitchY=.747/rows;
+ const cols=27,rows=4,pitchX=2.36/cols,pitchY=.747/rows;
  function firedFace(w,h,seed){
   const grid=new T.PlaneGeometry(w,h,8,4),position=grid.attributes.position,uv=grid.attributes.uv,colour=[];
   for(let k=0;k<position.count;k++){
@@ -48,11 +48,13 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
   add(firedFace(pitchX-.0025,pitchY-.0023,seed),ceramics[(seed+i*j)%ceramics.length],cx,cy,-1.946+Math.sin(seed)*.0012);
  }
  // Inset upper fronts and projecting underside give the shelf a soffit and the glaze a highlight.
- const lacquer=mat(0xaaa797,.64),shadowLine=mat(0x484138,.76);
+ const shadowLine=mat(0x484138,.76);
  box(-1.985,2.21,-1.82,2.36,.86,.31,.008,shadowLine);
  for(let i=0;i<4;i++){
   const x=-3.165+(i+.5)*.59;
-  box(x,2.21,-1.647,.586,.85,.028,.005,lacquer);
+  box(x,2.21,-1.647,.586,.85,.028,.005,timber);
+  // Solid beaded fronts. The ridges make changing window light visible at room distance.
+  for(let k=0;k<15;k++){const u=x-.266+k*.038;box(u,2.21,-1.628,.018,.826,.014,.005,timber)}
   box(x,1.803,-1.631,.545,.009,.006,.002,timber);
  }
  box(-1.985,1.781,-1.794,2.36,.022,.293,.003,timber);

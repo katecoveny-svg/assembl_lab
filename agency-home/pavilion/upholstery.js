@@ -11,11 +11,12 @@ export function cushion(width,height,depth,seed){
   const edgeRoll=.10+.9*Math.sqrt(Math.max(0,1-r**3.7));
   const crease=Math.exp(-edge*6)*Math.sin(edge*29+.8*Math.sin(t*7+seed))*
     (.5+.5*Math.cos(t*14+seed))**7;
+  const dart=(Math.exp(-((Math.abs(x)-.75+.12*y)**2)/.007)*Math.sin(y*9+seed)*.014+Math.exp(-((Math.abs(y)-.76+.10*x)**2)/.009)*Math.cos(x*14+seed)*.009)*r;
   const full=depth*.5*edgeRoll*(1-.12*x*y+.06*Math.sin(t*3+seed)*r*r);
   const sag=.038*(1-x*x)*(y*.5+.5);
   const pinch=.019*Math.exp(-(((x+.23)*4)**2)-(((y-.79)*4)**2))+.014*Math.exp(-(((x-.61)*6)**2)-(((y+.74)*6)**2));
   return new T.Vector3(x*width*.5+.013*y*y*Math.sin(seed),y*height*.5-sag,
-    face*Math.max(.005,full-.017*crease*r-pinch)+.009*x*y-.004*Math.cos(t*3+seed)*r*r);
+    face*Math.max(.005,full-.027*crease*r-pinch-dart)+.009*x*y-.004*Math.cos(t*3+seed)*r*r);
  }
  for(const face of [1,-1]){
   const offset=vertices.length/3;
@@ -35,16 +36,7 @@ export function cushion(width,height,depth,seed){
  return {geo,welt:new T.TubeGeometry(new T.CatmullRomCurve3(seam,true),96,.0021,4,true)};
 }
 export function linenSofa({mesh,cylinder,cloth,oak}){
- const sx=3.42,sz=-1.32,cream=cloth.clone();cream.color.setHex(0xd4c8b5);cream.roughness=.99;cream.sheen=.38;cream.normalScale.set(.59,.59);
- // Resolve the slub of the reviewed linen scan at room scale and preserve its own normal field.
- const swatch=document.createElement('canvas');swatch.width=swatch.height=384;
- const paint=swatch.getContext('2d');paint.drawImage(cloth.map.image,0,0,384,384);
- const pixels=paint.getImageData(0,0,384,384),mean=[202,197,183];
- for(let i=0;i<pixels.data.length;i+=4)for(let c=0;c<3;c++){
-  pixels.data[i+c]=mean[c]+(pixels.data[i+c]-mean[c])*1.78;
- }
- paint.putImageData(pixels,0,0);cream.map=new T.CanvasTexture(swatch);cream.map.colorSpace=T.SRGBColorSpace;
- cream.map.wrapS=cream.map.wrapT=T.RepeatWrapping;cream.map.repeat.set(1.65,1.65);cream.map.anisotropy=6;
+ const sx=3.42,sz=-1.32,cream=cloth.clone();cream.color.setHex(0xf2e9d9);
  function rounded(x,y,z,w,h,d,r,m){return mesh(new RoundedBoxGeometry(w,h,d,4,r),m,x,y,z)}
  const welt=new T.MeshStandardMaterial({color:0xc3b9a5,roughness:.98});
  const timber=oak.clone();timber.color.setHex(0xbc9872);
@@ -65,12 +57,14 @@ export function linenSofa({mesh,cylinder,cloth,oak}){
   const mat=cream.clone();mat.color.setHex(color);const parts=cushion(w,h,d,seed);
   for(const [g,m] of [[parts.geo,mat],[parts.welt,welt]]){const o=mesh(g,m,x,y,z);o.rotation.set(...rot)}
  }
- pad(sx,.397,sz+.032,2.16,.77,.177,[-Math.PI/2,0,0],0xcfc4b4,8);
- for(const [offset,tilt,seed] of [[-.72,-.035,3],[-.01,.012,18],[.70,.048,12]]){
-  pad(sx+offset,.683,sz-.19,.742,.526,.225,[-.196,tilt*.45,tilt],0xc9bda9,seed);
+ for(const [i,dx] of [-.713,0,.713].entries()){
+  pad(sx+dx,.397,sz+.032,.72,.77,.18,[-Math.PI/2,0,(i-1)*.008],0xe0d3bc,8+i*11);
  }
- pad(sx+.83,.640,sz-.007,.408,.399,.172,[-.35,-.25,-.21],0x8a6751,22);
- pad(sx-.67,.572,sz+.026,.502,.257,.145,[-.37,.17,.05],0x747d68,11);
+ for(const [offset,tilt,seed] of [[-.72,-.035,3],[-.01,.012,18],[.70,.048,12]]){
+  pad(sx+offset,.683,sz-.19,.742,.526,.225,[-.196,tilt*.45,tilt],0xe2d4b9,seed);
+ }
+ pad(sx+.83,.640,sz-.007,.408,.399,.172,[-.35,-.25,-.21],0x96583d,22);
+ pad(sx-.67,.572,sz+.026,.502,.257,.145,[-.37,.17,.05],0x606a52,11);
  // A woven wool throw follows the upholstery down the seat and over its front edge.
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
  const c=canvas.getContext('2d');c.fillStyle='#85735f';c.fillRect(0,0,256,256);

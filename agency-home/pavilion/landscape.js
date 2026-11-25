@@ -19,8 +19,19 @@ export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,ra
   const a=.49+.29*smooth(0,1,grassField(x,z))+.15*d;colors.push(a*.96,a,a*.84)}
  geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));geo.computeVertexNormals();mesh(geo,mat(0xb4b59e,1,map,{normalMap:normal,normalScale:new T.Vector2(.25,.25),vertexColors:true}));
  const ribbon=new T.PlaneGeometry(1,1,11,80),rp=ribbon.attributes.position,ru=ribbon.attributes.uv,rc=[];
- for(let i=0;i<rp.count;i++){const u=ru.getX(i),t=ru.getY(i),z=2.54+t*21,x=pathX(z)+(u-.5)*(1.59+.18*Math.sin(z*.4))+.07*noise(z,0);rp.setXYZ(i,x,grade(x,z)+.025,z);ru.setXY(i,u*1.4,t*13);let a=.7+.3*Math.sin(Math.PI*u);rc.push(a,a*.99,a*.91)}
- ribbon.setAttribute('color',new T.Float32BufferAttribute(rc,3));ribbon.computeVertexNormals();mesh(ribbon,mat(0xc5c3ac,1,grit,{vertexColors:true,side:T.DoubleSide}));
+ for(let i=0;i<rp.count;i++){const u=ru.getX(i),t=ru.getY(i),z=2.54+t*21,x=pathX(z)+(u-.5)*(1.59+.18*Math.sin(z*.4))+.07*noise(z,0);rp.setXYZ(i,x,grade(x,z)+.025,z);ru.setXY(i,u*2.1,t*24);let a=.64+.27*Math.sin(Math.PI*u)+.09*noise(x*4.1,z*3.8);rc.push(a,a*.99,a*.91)}
+ ribbon.setAttribute('color',new T.Float32BufferAttribute(rc,3));ribbon.computeVertexNormals();mesh(ribbon,mat(0x9d9786,.93,grit,{vertexColors:true,side:T.DoubleSide}));
+ // A broken gravel shoulder helps the approach sit into the grass instead of drawing a ribbon over it.
+ const gravel=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),mat(0xc4b9a2,.91,grit),420),piece=new T.Object3D();
+ // Keep this local sequence independent from the tree and planting generators.
+ let gravelSeed=2701;const local=()=>((gravelSeed=Math.imul(1664525,gravelSeed)+1013904223>>>0)/4294967296);
+ for(let i=0;i<gravel.count;i++){
+  const z=3+local()*16,side=i%2?1:-1,x=pathX(z)+side*(.58+local()*.42);
+  piece.position.set(x,grade(x,z)+.025,z);const size=.015+local()*.035;
+  piece.scale.set(size*1.4,size*.48,size);piece.rotation.set(local()*.3,local()*6.28,local()*.5);piece.updateMatrix();gravel.setMatrixAt(i,piece.matrix);
+  const tone=.59+local()*.35;gravel.setColorAt(i,new T.Color(tone,tone*.98,tone*.91));
+ }
+ gravel.receiveShadow=true;scene.add(gravel);
  const rockMat=mat(0x94958a,.92,rockTex,{normalMap:rockN,normalScale:new T.Vector2(.48,.48)});
  // Cluster geological outcrops on one bank and partly bury each stone.
  const locations=[[-7.9,6.4,1.25],[-3.4,8,.73],[3.7,7.5,.73],[10.1,5.0,.51],[8.0,5.9,.64],[-8.4,-2.8,.8]];
@@ -28,14 +39,14 @@ export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,ra
  // The camera sees the bay to the east and north. Distinct low headlands leave uninterrupted water between them.
  const addGeoUV=(g,ox=0,oz=0)=>{const a=g.attributes.position,uv=new Float32Array(a.count*2);for(let i=0;i<a.count;i++){uv[2*i]=((a.getX(i)+ox)*17+9800)/27700;uv[2*i+1]=1-((a.getZ(i)+oz)*17+11500)/22100}g.setAttribute('uv',new T.BufferAttribute(uv,2))};
  const seaGeom=new T.PlaneGeometry(2900,2500);seaGeom.rotateX(-Math.PI/2);addGeoUV(seaGeom,75,0);
- const water=mesh(seaGeom,new T.MeshPhysicalMaterial({color:0xd4e0dc,map:seaPhoto,metalness:.01,roughness:.44,envMapIntensity:.29,specularIntensity:.27,normalMap:ripple,normalScale:new T.Vector2(.23,.19),clearcoat:.035,clearcoatRoughness:.45}),75,-4.97,0);water.castShadow=false;
+ const water=mesh(seaGeom,new T.MeshPhysicalMaterial({color:0xb7cacb,map:seaPhoto,metalness:.01,roughness:.44,envMapIntensity:.29,specularIntensity:.27,normalMap:ripple,normalScale:new T.Vector2(.23,.19),clearcoat:.035,clearcoatRoughness:.45}),75,-4.97,0);water.castShadow=false;
  const land=terrain.scene.children[0];land.geometry.computeVertexNormals();addGeoUV(land.geometry);const vegetation=new T.MeshStandardNodeMaterial({roughness:1});
  const {positionWorld:W,texture,vec3}=T.TSL;
  const cover=texture(landcover).rgb;
  const crown=W.x.mul(.97).add(W.z.mul(.62)).sin().mul(W.z.mul(.77).sub(W.x.mul(.29)).sin()).mul(.052);
  const patch=W.x.mul(.24).add(W.z.mul(.105).sin().mul(2.1)).sin().mul(W.z.mul(.43).sin()).mul(.079);
  vegetation.colorNode=cover.mul(vec3(.85,.89,.81)).mul(crown.add(patch).add(1));land.material=vegetation;land.castShadow=false;land.receiveShadow=false;scene.add(land);
- scene.fog=new T.FogExp2(0xc3cfd0,.0015);
+ scene.fog=new T.FogExp2(0xc4cdd0,.0024);
  return water;
 }
 export function addSedges({scene,range,rand,timeNode,gustNode}){

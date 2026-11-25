@@ -12,14 +12,14 @@ export function furnishRoom({scene,mesh,box,cylinder,chair,cloth,oak,plaster,met
  // A single low chair leaves a clear line from the entrance to the corner glazing.
  const o=chair.scene.clone(true);const bb=new T.Box3().setFromObject(o),sz3=bb.getSize(v()),factor=.83/sz3.y;
  o.traverse(n=>{if(!n.isMesh)return;n.material=n.material.clone();const m=n.material;
- if(m.metalness>.38){m.roughness=.32}else{m.roughness=.55;m.envMapIntensity=.85}n.castShadow=n.receiveShadow=true});
+ if(m.metalness>.38){m.roughness=.32}else{m.roughness=.49;m.envMapIntensity=.89}n.castShadow=n.receiveShadow=true});
  o.scale.setScalar(factor);o.rotation.y=-1.84;o.position.set(5.88,.070-bb.min.y*factor,.26);scene.add(o);
- const rugMaterial=new T.MeshStandardNodeMaterial({roughness:.98});
+ const rugMaterial=new T.MeshStandardNodeMaterial({roughness:.98,normalMap:cloth.normalMap,normalScale:new T.Vector2(.51,.51)});
  const uv=T.TSL.uv(), metres=T.TSL.positionWorld.xz;
  const border=uv.x.min(T.TSL.float(1).sub(uv.x)).mul(4.24).min(uv.y.min(T.TSL.float(1).sub(uv.y)).mul(2.36));
  const borderInk=border.greaterThan(.040).and(border.lessThan(.063)).or(border.greaterThan(.083).and(border.lessThan(.092)));
  const pile=T.TSL.texture(basketWeave,metres.mul(2.6)).rgb;
- rugMaterial.colorNode=pile.mul(T.TSL.color(0xb6b2a0)).mul(evalFloor.pow(1.25)).mul(borderInk.select(T.TSL.float(.61),T.TSL.float(1)));
+ rugMaterial.colorNode=pile.mul(T.TSL.color(0x8f8573)).mul(evalFloor.pow(1.25)).mul(borderInk.select(T.TSL.float(.61),T.TSL.float(1)));
  const rug=rounded(3.72,.078,.02,4.24,.017,2.36,.008,rugMaterial);rug.rotation.y=-.035;
  // A low stone table has a radiused racetrack edge and two broad quarried feet.
  const shape=new T.Shape(),w=.75,d=.36,r=.24;

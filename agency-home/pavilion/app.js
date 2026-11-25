@@ -16,6 +16,8 @@ for(const img of document.querySelectorAll('[data-image]'))pictures.observe(img)
 lab(asset);
 const vista=$('#vista'),journey=$('.journey'),settings=new URLSearchParams(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)');
 if(settings.has('match'))document.documentElement.classList.add('match-camera');
+const cinema=document.documentElement.classList.contains('agency-landing'),filmMotion=$('#film-motion');
+let syncMedium=()=>{},handover=()=>{};
 let room=null,roomMove=null,preferWebGL=false;
 let exploring=false,detail=null;
 let intervals=[],lastPaint=0;let world,p=0,paused=reduced.matches,visible=true,time=0,prev=0,id=0,gustAt=-10,manual=null,scrolled=window.scrollY,trace=false,lx=.5,ly=.49,dirty=true;
@@ -38,18 +40,23 @@ tourControl.onclick=stopTour;
 vista.addEventListener('pointerdown',stopTour,{passive:true,capture:true});
 vista.addEventListener('keydown',stopTour,{capture:true});
 window.addEventListener('wheel',stopTour,{passive:true});
-let furnishedWorld=null,landscapedWorld=null;
+let finishesWorld=null,furnishedWorld=null,landscapedWorld=null;
 function furnishExterior(){
  if(!world||!visible||document.hidden||landscapedWorld===world||p>.62&&!garden?.active&&!['deck','tree'].includes(detail))return;
  const current=world;landscapedWorld=current;
  current.refinePlanting().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
 }
 function furnishInterior(){
+ if(world&&finishesWorld!==world&&(p>.18||detail||room&&room!=='outside')){
+  const current=world;finishesWorld=current;
+  current.refineFinishes().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
+ }
+
  if(!world||detail||garden?.active||p<.61||furnishedWorld===world)return;
  const current=world;furnishedWorld=current;
  current.furnishLivingRoom().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
 }
-function sync(){if(!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<.13)));dirty=true;wake()}
+function sync(){if(!cinema&&!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<.13)));dirty=true;wake()}
 const titleLayer=$('.scene-titles'),chapterText=$('#journey-chapter');
 function easeBetween(value,low,high){
  const t=Math.min(1,Math.max(0,(value-low)/(high-low)));return t*t*(3-2*t);
@@ -73,7 +80,7 @@ function titleFrame(value,lift){
 const still=document.querySelector('#journey-still');
 let queuedShot='',stillRequest=0;
 journey.dataset.scrollStills='';
-function scrollStill(){
+function scrollStill(){if(cinema)return;
  if(world||room||reduced.matches){still.hidden=true;queuedShot='';stillRequest++;return}
  const value=scrollPosition();
  const which=value<.18?'':value<.52?'roof':value<.86?'living':'kitchen';
@@ -92,7 +99,16 @@ addEventListener('scroll',scrollStill,{passive:true});reduced.addEventListener('
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  furnishExterior();
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
- if(touring&&!paused){
+ if(cinema){
+  if(!paused)tourTime=(tourTime+delta)%43;
+  // Hold each composition long enough to read its materials. Cut back on the exterior still.
+  const beats=[[0,0],[3.6,.035],[9,.29],[12,.37],[18,.64],[22.5,.76],[25,.78],[32,1],[43,1]];
+  let k=1;while(k<beats.length-1&&tourTime>beats[k][0])k++;
+  const [from,to]=[beats[k-1],beats[k]],u=(tourTime-from[0])/(to[0]-from[0]);
+  p=from[1]+(to[1]-from[1])*(u*u*(3-2*u));
+  const dissolve=tourTime>41?1-easeBetween(tourTime,41,43):1;
+  $('#gpu').style.opacity=String(dissolve);
+ }else if(touring&&!paused){
   tourTime+=delta;
   const t=Math.min(1,tourTime/27);
   p=tourFrom+(1-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
@@ -106,7 +122,7 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  furnishInterior();
  const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
  const lift=liftAt(p);prev=now;
- try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided)}
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema?easeBetween(tourTime,32,39):0)}
  catch{staticMode('render failed');return}
  titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active||roomMove)id=requestAnimationFrame(frame)}
@@ -131,7 +147,7 @@ function staticMode(reason){
  if(failed?.backend==='WebGPU')preferWebGL=true;
  free.lost();if(failed){try{failed.renderer.dispose()}catch{}}
 
- titleFrame(0,0);vista.dataset.renderer='still';delete vista.dataset.ready;
+ titleFrame(0,0);vista.dataset.renderer='still';syncMedium();delete vista.dataset.ready;
  $('#gpu').replaceChildren();journey.classList.add('still');
  $('.scene-controls').hidden=true;enter.hidden=false;enter.disabled=false;
  note.textContent=reason==='slow'?'Still view · Open 3D when you’re ready.':'Still view · You can try 3D again.';
@@ -166,14 +182,14 @@ async function start(signal){
   candidate=await firstFrame(true);
  }
  const renderer=candidate.renderer;
- world=candidate;if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
+ world=candidate;handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
  const lost=()=>{if(world===candidate)staticMode('context lost')};
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost()},{once:true});
  renderer.backend.device?.lost.then(lost);
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({touring,exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({touring:cinema?!paused:touring,filmSeconds:cinema?tourTime:null,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
@@ -252,7 +268,7 @@ function loadWorld(automatic=false){
  pending=job;automaticTried=true;vista.toggleAttribute('data-warming',automatic);
  job.timeout=setTimeout(()=>expireLoad(job),automatic?12000:45000);
  if(!automatic){enter.disabled=true;note.textContent='Opening the pavilion…'}
- start(job.controller.signal).then(()=>{if(job.automatic&&eligible()&&!job.interacted)startTour()}).catch(()=>{
+ start(job.controller.signal).then(()=>{if(!cinema&&job.automatic&&eligible()&&!job.interacted)startTour()}).catch(()=>{
   staticMode(job.controller.signal.reason||'renderer unavailable');
  }).finally(()=>{
   clearTimeout(job.timeout);pending=null;vista.removeAttribute('data-warming');
@@ -260,7 +276,7 @@ function loadWorld(automatic=false){
  });
 }
 // Scroll or a deliberate gesture during first-frame compilation also hands the camera to the visitor.
-function claimCamera(){if(pending){pending.interacted=true;vista.removeAttribute('data-warming')}stopTour()}
+function claimCamera(){if(cinema)return;if(pending){pending.interacted=true;vista.removeAttribute('data-warming')}stopTour()}
 window.addEventListener('scroll',claimCamera,{passive:true});
 window.addEventListener('pointerdown',claimCamera,{passive:true,capture:true});
 window.addEventListener('keydown',claimCamera,{capture:true});
@@ -274,7 +290,7 @@ async function consider(){
  if(sample?.transferSize>20000&&sample.duration>1600&&sample.transferSize/sample.duration<160)return;
  // Let the loaded poster paint before downloading Three.js or compiling any shaders.
  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  if(!automaticTried&&!world&&!room&&eligible())loadWorld(true);
+  if(!automaticTried&&!world&&!room&&eligible()&&(!cinema||!paused))loadWorld(true);
  }));
 }
 function visibilityChange(){
@@ -311,3 +327,43 @@ async function firstGuideClick(){
  finally{guideButton.removeAttribute('aria-busy')}
 }
 guideButton.addEventListener('click',firstGuideClick);
+
+if(cinema){
+ vista.removeAttribute('tabindex');vista.removeAttribute('role');vista.setAttribute('aria-label','Animated architectural visualisation of the Waiheke Pavilion');
+ const video=$('#journey-film');
+ let fallbackTimer=0,visitorRequested=false,videoFailed=false;
+ const source=asset(matchMedia('(max-width:680px)').matches?'waiheke-journey-mobile.mp4':'waiheke-journey.mp4');
+ const constrained=()=>navigator.connection?.saveData||matchMedia('(prefers-reduced-data:reduce)').matches||
+  ['slow-2g','2g','3g'].includes(navigator.connection?.effectiveType);
+ function status(){
+  filmMotion.hidden=false;filmMotion.textContent=paused?'Play':'Pause';
+  filmMotion.setAttribute('aria-label',paused?'Play the architectural journey':'Pause the architectural journey');
+ }
+ function playBackup(){
+  if(world||paused||!visible||document.hidden||videoFailed||settings.get('renderer')==='still')return;
+  if(constrained()&&!visitorRequested)return;
+  if(!video.hasAttribute('src'))video.src=source;
+  video.play().catch(()=>{if(!world&&!document.hidden&&visible){paused=true;status()}});
+ }
+ syncMedium=()=>{
+  clearTimeout(fallbackTimer);
+  if(world||paused||!visible||document.hidden){video.pause();return}
+  // Prefer the live browser frame. A recorded pass of the very same model covers a slow or unavailable GPU.
+  fallbackTimer=setTimeout(playBackup,video.readyState>=2||visitorRequested?0:1800);
+ };
+ handover=()=>{
+  if(!video.hidden&&Number.isFinite(video.currentTime))tourTime=video.currentTime%43;
+  clearTimeout(fallbackTimer);video.pause();video.hidden=true;vista.dataset.medium='live';
+ };
+ video.addEventListener('playing',()=>{
+  if(world||paused||document.hidden||!visible){video.pause();return}
+  video.hidden=false;vista.dataset.medium='film';
+ });
+ video.addEventListener('error',()=>{videoFailed=true;video.hidden=true;vista.dataset.medium='still';if(!world){paused=true;status()}});
+ filmMotion.onclick=()=>{paused=!paused;visitorRequested=!paused;if(visitorRequested&&videoFailed){videoFailed=false;video.load()}prev=performance.now();status();
+  if(!paused&&!world&&!pending&&settings.get('renderer')!=='still')loadWorld();syncMedium();dirty=true;wake();
+ };
+ reduced.addEventListener('change',()=>{status();syncMedium()});
+ new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;syncMedium()}).observe(vista);
+ document.addEventListener('visibilitychange',syncMedium);status();syncMedium();
+}

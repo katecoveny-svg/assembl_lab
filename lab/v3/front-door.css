@@ -86,3 +86,6 @@ h3 { font: 500 clamp(1.26rem, 2.1vw, 2rem)/1.08 var(--sans); letter-spacing: -.0
 .tool,.examples,.button{border-radius:0}.tool{border:0;border-top:1px solid var(--plum)}.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:3.5rem var(--space)}.tool-copy{padding:1rem 0}.examples{background:var(--rose)}
 @media(max-width:700px){.opening{grid-template-columns:repeat(4,1fr)}.opening-title{grid-column:1/-1}.opening-note{grid-column:2/-1;margin-top:1.3rem;max-width:29ch}.opening h1{font-size:clamp(3rem,13vw,4.8rem)}.opening h1 i{padding-left:5vw}.passage{min-height:180svh}.rail{min-height:8rem;align-items:start;flex-direction:column;gap:0}.plate{bottom:8rem}.rail-links{gap:1.25rem}.tool-grid{grid-template-columns:1fr}.site-header nav{font-size:.92rem}.rail-links a,.rail-links button{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.surface{transition:none}.passage{min-height:145svh}}
+
+.passage .water .surface.ready,.passage .water .surface.ready iframe{pointer-events:auto}
+.passage .plate.roof{pointer-events:none}
