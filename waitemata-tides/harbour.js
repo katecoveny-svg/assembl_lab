@@ -39,9 +39,16 @@ function makeBoat(scene){
  segment([.35,1.28,-2.62],[.27,.51,-2.2],.018,rope);boat.rotation.y=-.99;return boat;
 }
 
-export function createHarbour(holder){
+export async function createHarbour(holder){
+ const loader=new T.TextureLoader();
+ let timeout;
+ const textures=await Promise.race([
+  Promise.all(['./media/skyline-and-bridge.webp','./media/queens-wharf.webp','./vendor/waternormals.jpg','./media/surface.webp'].map(url=>loader.loadAsync(url))),
+  new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('Harbour images timed out')),10000)})
+ ]).finally(()=>clearTimeout(timeout));
+ const [city,plate,normals,colourDetail]=textures;
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
- const canvas=renderer.domElement;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Waitematā Harbour, the Harbour Bridge and the Auckland skyline. A model sailing boat rides illustrative waves.');holder.replaceChildren(canvas);
+ const canvas=renderer.domElement;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Waitematā Harbour, the Harbour Bridge and the Auckland skyline. A model sailing boat rides illustrative waves.');
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.03;
  const scene=new T.Scene();scene.background=new T.Color(0xa1b2bb);
@@ -49,11 +56,10 @@ export function createHarbour(holder){
  const light=new T.HemisphereLight(0xf2f6fb,0x708b88,1.75);scene.add(light);
  const sun=xyz(-.61,.50,.61).normalize(),direct=new T.DirectionalLight(0xffead4,2.1);direct.position.copy(sun).multiplyScalar(100);scene.add(direct);
  let active=true,visible=true,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,clock=0,last=0,height=1.65,zoom=1,pan=0,tilt=0,width=0,hh=0;
- const loader=new T.TextureLoader();
- let reverse=false;const city=loader.load("./media/skyline-and-bridge.webp",()=>render());city.colorSpace=T.SRGBColorSpace;const plate=loader.load('./media/queens-wharf.webp',()=>render());plate.colorSpace=T.SRGBColorSpace;
+ let reverse=false;city.colorSpace=plate.colorSpace=T.SRGBColorSpace;
  // Photograph retains one perspective: our orbit is intentionally small, not a fabricated 360° view.
  const back=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:city,toneMapped:false}));back.position.set(0,125,-400);scene.add(back);
- const normals=loader.load('./vendor/waternormals.jpg',()=>render());normals.wrapS=normals.wrapT=T.RepeatWrapping;
+ normals.wrapS=normals.wrapT=T.RepeatWrapping;
  // Put fine tessellation by the lens and progressively coarsen it towards the horizon.
  const S=144,points=[],indices=[];for(let j=0;j<=S;j++){const u=j/S,depth=28-540*(.085*u+.915*u**3);for(let i=0;i<=S;i++){const x=(i/S-.5)*2;points.push(x*(31+Math.max(0,-depth)*1.18),-depth,0);if(i&&j){let k=j*(S+1)+i;indices.push(k-S-2,k-S-1,k,k-S-2,k,k-1);}}}
  const geom=new T.BufferGeometry();geom.setAttribute('position',new T.Float32BufferAttribute(points,3));geom.setIndex(indices);geom.computeVertexNormals();
@@ -62,7 +68,7 @@ export function createHarbour(holder){
  m.uniforms.size.value=3.4;
  m.vertexShader=m.vertexShader.replace('void main() {','float surface(vec2 p,float s){return '+waveGL+';}\nvoid main() { vec3 waved=position;waved.z+=surface(vec2(position.x,-position.y),time)* (1.0-smoothstep(50.,150.,abs(position.y)));').replaceAll('vec4( position, 1.0 )','vec4(waved,1.)');
  // Match small (centimetre) capillary ripples and broader swell; prevent a flat mirror band near the horizon.
- const colourDetail=loader.load('./media/surface.webp',()=>render());colourDetail.wrapS=colourDetail.wrapT=T.RepeatWrapping;colourDetail.colorSpace=T.SRGBColorSpace;
+ colourDetail.wrapS=colourDetail.wrapT=T.RepeatWrapping;colourDetail.colorSpace=T.SRGBColorSpace;
  m.uniforms.shore={value:city};m.uniforms.plateScale={value:new T.Vector2(800,539)};m.uniforms.plateOffset={value:new T.Vector2(0,0)};m.uniforms.surfaceDetail={value:colourDetail};m.uniforms.isReverse={value:0};
  m.fragmentShader='uniform sampler2D surfaceDetail;uniform sampler2D shore;uniform vec2 plateScale;uniform vec2 plateOffset;uniform float isReverse;\n'+m.fragmentShader.replace('float rf0 = 0.3;','float rf0 = 0.035;').replace('vec3 outgoingLight = albedo;',`
  vec2 pos=worldPosition.xz;
@@ -85,6 +91,7 @@ export function createHarbour(holder){
  vec3 outgoingLight = mix(realSea,reflected,reflectMix)+vec3(.013)*specularLight*sunColor;
  `).replace('#include <tonemapping_fragment>','');
  const boat=makeBoat(scene);boat.position.set(4.5,0,-16);
+ let ready=false;
  function render(){if(!active)return;const w=holder.clientWidth,h=holder.clientHeight;if(w<2||h<2)return;
  if(w!==width||h!==hh){width=w;hh=h;renderer.setSize(w,h,false)}
  camera.aspect=w/h;camera.fov=T.MathUtils.clamp(31/zoom,20,40);camera.updateProjectionMatrix();
@@ -99,13 +106,21 @@ export function createHarbour(holder){
  const pitch=(swell(x+Math.sin(yaw)*1.95,z+Math.cos(yaw)*1.95,clock)-swell(x-Math.sin(yaw)*1.95,z-Math.cos(yaw)*1.95,clock))/3.9;
  const roll=(swell(x+Math.cos(yaw)*.82,z-Math.sin(yaw)*.82,clock)-swell(x-Math.cos(yaw)*.82,z+Math.sin(yaw)*.82,clock))/1.64;
  boat.rotation.order='YXZ';boat.rotation.x=-Math.atan(pitch);boat.rotation.z=Math.atan(roll);
- m.uniforms.time.value=clock;renderer.render(scene,camera)}
+ m.uniforms.time.value=clock;renderer.render(scene,camera);
+ if(!ready){
+  const gl=renderer.getContext(), pixel=new Uint8Array(4);
+  for(const y of [.18,.82]){
+   gl.readPixels(Math.floor(gl.drawingBufferWidth*.26),Math.floor(gl.drawingBufferHeight*y),1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);
+   if(gl.isContextLost()||Math.max(...pixel.subarray(0,3))<25){renderer.dispose();throw new Error('Harbour first frame did not render');}
+  }
+  ready=true;holder.replaceChildren(canvas);
+ }}
  let drag;canvas.style.touchAction='pan-y';
  canvas.onpointerdown=e=>{drag=[e.pointerId,e.clientX,e.clientY,pan,tilt];canvas.setPointerCapture(e.pointerId)};
  canvas.onpointermove=e=>{if(!drag||e.pointerId!==drag[0])return;pan=T.MathUtils.clamp(drag[3]+(e.clientX-drag[1])/width*2,-1.2,1.2);if(e.pointerType!=='touch')tilt=T.MathUtils.clamp(drag[4]-(e.clientY-drag[2])/hh*2,-.9,.9);render()};
  canvas.onpointerup=canvas.onpointercancel=()=>{drag=null};
- new ResizeObserver(render).observe(holder);new IntersectionObserver(([e])=>{visible=e.isIntersecting;if(visible)render()}).observe(holder);
+ render();new ResizeObserver(render).observe(holder);new IntersectionObserver(([e])=>{visible=e.isIntersecting;if(visible)render()}).observe(holder);
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();active=false;holder.replaceChildren();holder.dataset.fallback='true';document.getElementById('sceneNote').textContent='Photo view. Interactive water is unavailable; the tide table is unchanged.'});
  renderer.setAnimationLoop(t=>{const dt=Math.max(0,Math.min(.065,(t-last)/1000));last=t;if(!active||!visible||paused||document.hidden)return;clock+=dt;render()});
- render();return{setHeight(v){height=v;render()},setActive(v){active=v;if(v)render()},pause(v){paused=v;render()},zoom(f){zoom=T.MathUtils.clamp(zoom/f,.86,1.43);render()},setView(v){reverse=v;canvas.setAttribute('aria-label',v?'Queens Wharf looking northeast to Devonport. Illustrative animated water and sailboat.':'The Auckland skyline and Harbour Bridge. Illustrative animated water and sailboat.');render()},reset(){zoom=1;pan=0;tilt=0;render()}}
+ return{setHeight(v){height=v;render()},setActive(v){active=v;if(v)render()},pause(v){paused=v;render()},zoom(f){zoom=T.MathUtils.clamp(zoom/f,.86,1.43);render()},setView(v){reverse=v;canvas.setAttribute('aria-label',v?'Queens Wharf looking northeast to Devonport. Illustrative animated water and sailboat.':'The Auckland skyline and Harbour Bridge. Illustrative animated water and sailboat.');render()},reset(){zoom=1;pan=0;tilt=0;render()}}
 }
