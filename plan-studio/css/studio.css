@@ -137,3 +137,18 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
   .top-actions .btn.sm { padding: 6px 10px; font-size: 12.5px; white-space: nowrap; }
 }
 @media (max-width: 380px) { .top-actions a.btn { display: none; } }
+
+/* Register the sheet and solid in one viewport. Native range supports touch and arrow keys. */
+.build-menu {display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+#buildControls:not([hidden]) {display:grid;gap:8px;margin:0 0 18px;padding:14px 18px;border:1px solid var(--glass-line);border-radius:var(--r)}
+#buildControls .row {margin:0} #buildControls p {margin:2px 0}
+#buildScrub {width:100%;accent-color:#bc969b;min-height:32px;cursor:ew-resize}
+#buildDivider {position:absolute;inset:0;pointer-events:none}
+#buildDivider i {position:absolute;inset-block:0;left:var(--split,50%);border-left:2px solid #654a4e}
+#buildDivider i::after {content:"↔";position:absolute;top:45%;transform:translateX(-50%);border-radius:50%;width:28px;height:28px;line-height:28px;text-align:center;background:#fffdfb;color:#654a4e;box-shadow:0 0 0 1px #654a4e}
+.stagewrap.is-building .stagebar {display:none}
+#calibration {padding:12px 0} #calStatus {display:block;margin-top:6px}
+#buildControls button[aria-pressed="true"] {background:#e3d0d2;color:#382c30}
+
+.walk-handoff {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px} #modelFileLink[hidden],#walkLink[hidden],#playBuild[hidden]{display:none}
+.build-menu {scroll-margin-top:80px}

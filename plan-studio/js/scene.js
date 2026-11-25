@@ -119,7 +119,7 @@ export function buildModel(P, opts = {}) {
   }
   // decks (with barriers where they stand high) and the piles under a raised floor
   const fag = P.site?.floorAboveGround || 0, deckMat = material("deck-timber"), post = new THREE.CylinderGeometry(0.09, 0.09, 1, 10), postMat = material("timber-pile");
-  const piles = (poly) => { if (fag < 300) return; const b = polyBox(poly); for (let x = b.x0 + 300; x <= b.x1; x += 1800) for (let y = b.y0 + 300; y <= b.y1; y += 1800) { const m = new THREE.Mesh(post, postMat); m.scale.y = M(fag); m.position.copy(V3(x, y, -fag / 2 - 150)); m.castShadow = true; root.add(m); } };
+  const piles = (poly) => { if (fag < 300) return; const b = polyBox(poly); for (let x = b.x0 + 300; x <= b.x1; x += 1800) for (let y = b.y0 + 300; y <= b.y1; y += 1800) { const m = new THREE.Mesh(post, postMat); m.userData.buildBeat=1; m.scale.y = M(fag); m.position.copy(V3(x, y, -fag / 2 - 150)); m.castShadow = true; root.add(m); } };
   piles(bx ? [[bx.x0, bx.y0], [bx.x1, bx.y1]] : []);
   for (const dk of P.decks || []) {
     const sh = new THREE.Shape(dk.poly.map(([x, y]) => new THREE.Vector2(M(x), M(y))));

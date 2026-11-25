@@ -46,15 +46,16 @@
       <div class="cols">
         <div class="card">
           <h2>Bring a plan</h2>
-          <label class="drop" id="drop"><input type="file" id="file" accept="application/pdf,image/png,image/jpeg,image/webp"><b>Drop a floor plan here</b><span>A CAD-exported PDF is measured exactly in your browser. A scan or photo is read by AI and marked "inferred".</span></label>
+          <label class="drop" id="drop"><input type="file" id="file" accept=".json,application/pdf,image/png,image/jpeg,image/webp"><b>Drop a floor plan here</b><span>A vector PDF is read in your browser. Check its scale against a written dimension. A reviewed Plan Twin JSON opens in its own 3D viewer. A photo is a separate, optional AI reading.</span></label>
           <p class="hint">Your file stays in this browser. Only an image you choose to have AI read is sent, and it is not stored.</p>
-          <div class="row"><button class="btn" id="btnDemo" type="button">Use the demo hall</button><a class="btn ghost" href="../tests/fixtures/demo-plan.pdf" download>Download the demo PDF to try the reader</a></div>
+          <div class="row"><button class="btn" id="btnDemo" type="button">Use the demo hall</button><button class="btn ghost" id="btnDemoSheet" type="button">Try a sample drawing</button><a class="btn ghost" href="../tests/fixtures/demo-plan.pdf" download>Download the demo PDF to try the reader</a></div>
         </div>
         <div class="card" id="readCard" hidden>
           <h2>What we read</h2>
           <div class="scale" id="scaleBox"></div>
+          <details id="calibration" hidden><summary>Set scale from a written dimension</summary><p class="hint">Choose a wall whose centreline endpoints match a labelled span. Enter that span in millimetres. It sets the whole sheet scale, not just that wall. Use only a single-scale plan.</p><label>Wall <select id="calWall"></select></label> <label>Written length (mm) <input type="number" min="1" id="calLength"></label> <button class="btn ghost sm" type="button" id="applyWritten">Use written length</button><output id="calStatus" role="status"></output></details>
           <div id="readStats" class="stats"></div>
-          <div class="row"><button class="btn" id="btnUseRead" type="button">Build the model from this</button></div>
+          <div class="row"><button class="btn" id="btnUseRead" type="button">Build the model from this</button><a id="modelFileLink" class="btn" hidden target="_blank" rel="noopener">Open original model in 3D</a></div>
         </div>
       </div>
       <div class="sheetview" id="sheetView" hidden><canvas id="pdfCanvas"></canvas><svg id="readOverlay" aria-label="What was detected"></svg></div>
@@ -63,15 +64,28 @@
 
     <!-- 2 · model -->
     <section class="panel" data-panel="model" aria-label="Model" hidden>
+      <div class="build-menu">
+        <button id="showBuild" disabled class="btn" type="button" aria-expanded="false" aria-controls="buildControls">Compare drawing &amp; model</button>
+        <span class="hint">Slide across the same footprint, then see how the model fits together.</span>
+      </div>
       <div class="stagewrap">
         <canvas id="stage3d" aria-label="3D model"></canvas>
         <canvas id="cloud3d" aria-hidden="true"></canvas>
+        <div id="buildDivider" hidden aria-hidden="true"><i></i></div>
         <div class="stagebar">
           <div class="seg" id="look" role="group" aria-label="Model look"><button type="button" data-look="cloud" class="on" aria-pressed="true">Point cloud</button><button type="button" data-look="solid" aria-pressed="false">Solid</button></div>
           <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="rear">Rear</button><button data-view="cornerA">Corner</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
           <div class="seg" id="lights"><button data-light="day" class="on">Day</button><button data-light="golden">Golden hour</button><button data-light="dusk">Dusk</button></div>
         </div>
       </div>
+      <div id="buildControls" hidden>
+        <div class="row"><div class="seg" aria-label="Drawing display"><button id="compareMode" aria-pressed="true" type="button">Compare</button><button id="assembleMode" aria-pressed="false" type="button">Build sequence</button></div><button class="btn ghost sm" id="leaveBuild" type="button">Explore the finished model</button></div>
+        <label for="buildScrub" id="buildLabel">Drawing on the left · model on the right</label>
+        <input id="buildScrub" type="range" min="0" max="100" value="50" step="1">
+        <div class="row"><output id="buildBeat" for="buildScrub"></output><button id="playBuild" hidden type="button" class="btn ghost sm">Play stages</button></div>
+        <p id="buildEvidence" class="hint"></p>
+      </div>
+      <div class="walk-handoff"><button id="prepareWalk" class="btn ghost sm" type="button">Prepare this model for a walkthrough</button> <a class="btn" id="walkLink" target="_blank" rel="noopener" hidden>Open walkthrough</a><span id="walkStatus" role="status" class="hint"></span></div>
       <div class="cols">
         <div class="card"><h2>Materials</h2><p class="hint">Start from a look, then change any product. Each look is real product selections, not a style prompt.</p><div class="seg" id="looks"></div><div id="matPick" class="matpick" style="margin-top:12px"></div><p class="hint">Screen colours are approximate. Choose from the maker's physical swatch: COLORSTEEL publishes reflectance, not RGB.</p></div>
         <div class="card"><h2>Elements</h2><div class="seg" id="elTabs"><button data-el="openings" class="on">Openings</button><button data-el="walls">Walls</button><button data-el="rooms">Rooms</button></div><div class="tablewrap"><table id="elTable"></table></div></div>

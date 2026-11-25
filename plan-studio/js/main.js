@@ -5,6 +5,7 @@ import { sheetSet } from "./drawings.js";
 import { MATERIALS, byCategory, CATEGORY_LABEL } from "./materials.js";
 import { toIFC, toDXF, toJSON } from "./exports.js";
 import { readPdfPage, findScale, toReal, modelFromDrawing } from "./read.js";
+import { BEATS, calibration, toViewport, twinEvidence } from "./build-sequence.js";
 import { buildDeck } from "./present.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -17,6 +18,7 @@ const state = { tab: "plans", sheet: "A101", el: "openings", shape: "reel", path
 
 // ------------------------------------------------------------------------------------------------ tabs
 function show(tab) {
+  if (tab !== "model" && inspection) leaveBuild();
   state.tab = tab;
   for (const b of $$(".steps button")) b.setAttribute("aria-selected", b.dataset.tab === tab);
   for (const p of $$(".panel")) p.hidden = p.dataset.panel !== tab;
@@ -29,11 +31,13 @@ $$(".steps button").forEach((b) => b.addEventListener("click", () => show(b.data
 // ------------------------------------------------------------------------------------------------ the model changed: refresh everything
 let t3d = 0;
 function changed(opts = {}) {
+  if(opts.geometry!==false){$("#walkLink").hidden=true;$("#walkStatus").textContent="";}
+  if (opts.geometry !== false && inspection) leaveBuild();
   results = runChecks(P);
   renderCode(); renderTables(); renderInspector(); renderRevs();
   $("#projName").textContent = P.meta.name; $("#truthChip").textContent = P.meta.status || "";
   if (state.tab === "drawings") drawSheets(); else sheets = [];
-  if (stage && opts.geometry !== false) { clearTimeout(t3d); t3d = setTimeout(() => { stage.rebuild(P); stage.render(); }, 120); }
+  if (stage && opts.geometry !== false) { clearTimeout(t3d); pendingGeometry=true; t3d = setTimeout(() => { pendingGeometry=false;stage.rebuild(P); stage.render(); }, 120); }
   if (cloud && opts.geometry !== false) { clearTimeout(tCloud); tCloud = setTimeout(() => cloud.rebuild(false), 500); }
 }
 
@@ -106,7 +110,9 @@ $("#btnPdf").addEventListener("click", () => {
 });
 
 // ------------------------------------------------------------------------------------------------ 3D
-async function boot3d() {
+let booting, pendingGeometry=false;
+function boot3d() { return booting ??= setupStage().catch(e=>{booting=null;throw e;}); }
+async function setupStage() {
   const S = await import("./scene.js"); const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
   stage = S.createStage($("#stage3d"), P); stage.S = S; stage.resize(); stage.view("aerial");
   const ctl = new OrbitControls(stage.camera, stage.renderer.domElement); ctl.target.copy(stage.target); ctl.maxPolarAngle = Math.PI * 0.495; stage.ctl = ctl;
@@ -114,13 +120,16 @@ async function boot3d() {
   ctl.addEventListener("change", () => { if (!stage.recording) stage.render(); });
   const sync = () => { ctl.target.copy(stage.target); ctl.update(); stage.render(); }; stage.sync = sync; sync();
   addEventListener("resize", () => { stage.resize(); stage.render(); });
-  bootCloud().catch((e) => { console.warn("Point-cloud view unavailable:", e.message); setLook("solid"); $("#look").hidden = true; });
+  $("#showBuild").disabled = false;
+  setLook(cloudLook); if(cloudLook==="cloud") ensureCloud();
 }
 // the model as a point cloud (the default look): the shared engine (lab/pc/engine.js) draws points sampled from the same model,
 // through the same camera you orbit; an edit re-assembles the cloud. Solid is one tap away for materials and stills.
 let cloud = null, cloudLook = "cloud", tCloud;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const glassWeight = (m) => (m.material?.transparent && m.material.opacity < 1 ? 0.18 : m.name === "SLAB" ? 0.5 : 1);
+let cloudBoot;
+function ensureCloud(){return cloudBoot??=bootCloud().catch(e=>{console.warn("Point-cloud view unavailable:",e.message);setLook("solid");$("#look").hidden=true;});}
 async function bootCloud() {
   const { createEngine, objectForm } = await import("/lab/pc/engine.js");
   cloud = createEngine($("#cloud3d"), { budget: innerWidth < 760 ? 80000 : 220000, sway: false, reduceMotion }); cloud.setLift(0.5, 0.48);
@@ -140,12 +149,77 @@ async function bootCloud() {
   new IntersectionObserver(([x]) => { if (cloudLook === "cloud" && x.isIntersecting) cloud.start(); else cloud.stop(); }).observe($("#cloud3d"));
 }
 function setLook(look) {
+  if (inspection) look = "solid";
   cloudLook = look; $$("#look button").forEach((b) => { const on = b.dataset.look === look; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   $("#cloud3d").hidden = look !== "cloud"; if (!cloud) return; if (look === "cloud") cloud.start(); else { cloud.stop(); stage?.render(); }
 }
-$("#look").addEventListener("click", (e) => { const b = e.target.closest("button[data-look]"); if (b) setLook(b.dataset.look); });
+$("#look").addEventListener("click", (e) => { const b = e.target.closest("button[data-look]"); if (b) {setLook(b.dataset.look);if(b.dataset.look==="cloud" && stage)ensureCloud();} });
 $("#views").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#views button").forEach((x) => x.classList.toggle("on", x === b)); const cut = b.dataset.view === "plan"; stage.setCutaway(cut); stage.view(b.dataset.view); stage.sync(); });
 $("#lights").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#lights button").forEach((x) => x.classList.toggle("on", x === b)); stage.light(b.dataset.light); stage.render(); });
+
+// The original PDF is owned by this particular accepted project, never reused for another.
+let sourceSheet=null, inspection=null, tick=0, originalRender=null, compare=true, previousLook="solid", inspectToken=0;
+const stopBuild = () => { clearInterval(tick); tick=0; $("#playBuild").textContent="Play stages"; };
+function paintBuild() {
+  if (!inspection) return;
+  const slider=$("#buildScrub"), value=Number(slider.value);
+  inspection.draw({compare,split:value,beat:value});
+  $("#buildDivider").style.setProperty("--split",value+"%");
+  const label=compare ? value+"% drawing · "+(100-value)+"% model" : (value+1)+" / "+BEATS.length+" · "+BEATS[value];
+  $("#buildBeat").textContent=label;slider.setAttribute("aria-valuetext",label);
+}
+function selectBuildMode(isCompare) {
+  stopBuild(); compare=isCompare;const slider=$("#buildScrub");slider.max=isCompare?"100":"5";slider.value=isCompare?"50":"0";
+  $("#buildLabel").textContent=isCompare?"Drawing on the left · model on the right":"Scrub from the drawing to the finished model";
+  $("#buildDivider").hidden=!isCompare;$("#playBuild").hidden=isCompare;
+  $("#compareMode").setAttribute("aria-pressed",String(isCompare));$("#assembleMode").setAttribute("aria-pressed",String(!isCompare));
+  paintBuild();
+}
+function leaveBuild(explore=false) {
+  inspectToken++; if(!inspection)return;stopBuild();inspection.dispose();inspection=null;
+  stage.render=originalRender;stage.ctl.enabled=true;$("#buildControls").hidden=true;$("#buildDivider").hidden=true;
+  $(".stagewrap").classList.remove("is-building");$("#showBuild").setAttribute("aria-expanded","false");
+  setLook(explore?"solid":previousLook);stage.render();
+}
+$("#showBuild").onclick=async()=>{
+  if (inspection) return leaveBuild(true);
+  const token=++inspectToken, {buildView}=await import("./build-view.js");
+  if(token!==inspectToken || state.tab!=="model")return;
+  clearTimeout(t3d); if(pendingGeometry||stage.P!==P)stage.rebuild(P);pendingGeometry=false;
+  // A cutaway omits the roof mesh, so return to a full stage before inspection.
+  if(!stage.model.getObjectByName("ROOF")){stage.setCutaway(false);stage.view("aerial");stage.sync();$$("#views button").forEach(b=>b.classList.toggle("on",b.dataset.view==="aerial"));}
+  previousLook=cloudLook;setLook("solid");stage.ctl.enabled=false;
+  inspection=buildView(stage,sourceSheet);originalRender=stage.render;stage.render=paintBuild;
+  $("#buildControls").hidden=false;$(".stagewrap").classList.add("is-building");$("#showBuild").setAttribute("aria-expanded","true");
+  const provenance=P.provenance?.scale_check, conflicts=P.provenance?.conflicts?.length||0;
+  $("#buildEvidence").textContent=(sourceSheet?"Original PDF, page 1. "+(provenance?.note||"Scale needs checking."):"Fictional sample. Lines are drawn from this model, not an original PDF.")+" "+P.walls.length+" walls · "+P.openings.length+" openings. "+(conflicts?conflicts+" dimension conflicts to review. ":"")+"Heights, roof and finishes need confirmation. Stage order illustrates the model, not a construction schedule.";
+  selectBuildMode(true);
+};
+$("#compareMode").onclick=()=>selectBuildMode(true);$("#assembleMode").onclick=()=>selectBuildMode(false);
+$("#leaveBuild").onclick=()=>{leaveBuild(true);$("#showBuild").focus();};
+$("#buildScrub").oninput=()=>{stopBuild();paintBuild();};
+$("#playBuild").onclick=()=>{if(tick)return stopBuild();const s=$("#buildScrub");if(+s.value>=5)s.value=0;paintBuild();$("#playBuild").textContent="Pause";
+  tick=setInterval(()=>{s.value=String(+s.value+1);paintBuild();if(+s.value>=5)stopBuild();},850);
+};
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopBuild();});
+async function localTwinLink(blob,name,link){
+  const {putHandoff}=await import("/architecture/js/handoff.js");const id=await putHandoff(blob,name);link.href="/plan-studio/twins/drop/?handoff="+encodeURIComponent(id);link.hidden=false;
+}
+$("#prepareWalk").onclick=async()=>{
+  const b=$("#prepareWalk"), status=$("#walkStatus"),link=$("#walkLink");b.disabled=true;link.hidden=true;status.textContent="Preparing this model…";
+  try{
+    if(inspection)leaveBuild(true);await boot3d();
+    clearTimeout(t3d);pendingGeometry=false;stage.setCutaway(false);stage.render();
+    const {GLTFExporter}=await import("three/addons/exporters/GLTFExporter.js");
+    const buf=await new GLTFExporter().parseAsync(stage.model,{binary:true});await localTwinLink(new Blob([buf],{type:"model/gltf-binary"}),fname("glb"),link);
+    status.textContent="Ready on this device. The 3D viewer opens this GLB, not a sample.";
+  }catch(e){status.textContent="Could not prepare the local walkthrough: "+e.message;}finally{b.disabled=false;}
+};
+const canvas=$("#stage3d");let dragging=null;
+function scrubAt(e){const r=canvas.getBoundingClientRect();$("#buildScrub").value=Math.round(100*(e.clientX-r.left)/r.width);paintBuild();}
+canvas.addEventListener("pointerdown",e=>{if(!inspection||!compare||!e.isPrimary)return;dragging=e.pointerId;canvas.setPointerCapture(e.pointerId);scrubAt(e);});
+canvas.addEventListener("pointermove",e=>{if(inspection&&compare&&dragging===e.pointerId)scrubAt(e);});
+canvas.addEventListener("lostpointercapture",()=>dragging=null);
 
 function renderMaterials() {
   const ext = P.walls.filter((w) => w.kind === "ext" && w.mat !== "glass-curtain"), cur = ext[0]?.mat;
@@ -305,49 +379,98 @@ $$(".files button").forEach((b) => b.addEventListener("click", async () => {
 const drop = $("#drop");
 ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) openFile(f); });
-$("#file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) openFile(f); });
-$("#btnDemo").addEventListener("click", () => { P = demoProject(); selected = null; renderMaterials(); changed(); show("model"); });
+drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) openChecked(f); });
+$("#file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) openChecked(f); });
+$("#btnDemo").addEventListener("click", () => { P = demoProject(); sourceSheet=null; selected = null; renderMaterials(); changed(); show("model"); });
 
+$("#btnDemoSheet").onclick=async()=>{
+  const b=$("#btnDemoSheet"); b.disabled=true;
+  try{const response=await fetch("../tests/fixtures/demo-plan.pdf"); if(!response.ok)throw Error("Sample unavailable");await openFile(new File([await response.blob()],"demo-plan.pdf",{type:"application/pdf"}));}
+  catch(e){$("#readCard").hidden=false;$("#scaleBox").textContent="Could not open the drawing: "+e.message;}finally{b.disabled=false;}
+};
+async function openChecked(f) {
+  try { await openFile(f); } catch(e) {$("#scaleBox").textContent="Could not open this file: "+e.message;$("#btnUseRead").disabled=true;}
+}
+let readToken=0;
 async function openFile(f) {
+  const token=++readToken;read=null;$("#calibration").hidden=true;$("#btnUseRead").disabled=true;$("#sheetView").hidden=true;$("#readLegend").hidden=true;$("#calStatus").textContent="";$("#modelFileLink").hidden=true;
   $("#readCard").hidden = false; $("#scaleBox").textContent = "Reading…"; $("#readStats").innerHTML = "";
-  if (f.type === "application/pdf") {
-    const pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+  if(f.name.toLowerCase().endsWith(".json")){
+    try{
+      if(f.size>10*1024*1024)throw Error("Open files over 10 MB straight in Drop a plan.");
+      const model=JSON.parse(await f.text()), e=twinEvidence(model);if(token!==readToken)return;
+      if(!e)throw Error("This entry expects an assembl.plan-model.v1 project with buildings.");
+      $("#scaleBox").textContent="Reviewed-model format · "+(model.job?.title||f.name);
+      $("#readStats").textContent=e.buildings+" buildings · "+e.walls+" walls/partitions · "+e.openings+" openings. Element source notes: "+e.written+" written, "+e.scaled+" scaled, "+e.other+" other or unlabelled. Original notes and dimensions travel unchanged. No source PDF was supplied with this file.";
+      await localTwinLink(f,f.name,$("#modelFileLink"));
+    }catch(e){$("#scaleBox").textContent=e.message;}return;
+  }
+  if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+    const pdfjsLib = await import("/architecture/vendor/pdfjs/pdf.min.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/architecture/vendor/pdfjs/pdf.worker.min.mjs";
     const data = new Uint8Array(await f.arrayBuffer()), raw = await readPdfPage(pdfjsLib, data.slice(0));
+    if(token!==readToken)return;
     const sc = findScale(raw.items);
     read = { raw, scale: sc?.scale || 100, name: f.name.replace(/\.pdf$/i, "") };
     $("#scaleBox").innerHTML = `${sc ? esc(sc.note) : "No scale printed on the sheet."}<div class="row"><label>Scale 1: <input type="number" id="scaleIn" value="${read.scale}" style="width:80px"></label><button class="btn ghost sm" id="btnRescale" type="button">Re-read at this scale</button></div>`;
-    $("#btnRescale").addEventListener("click", () => { read.scale = +$("#scaleIn").value || 100; doRead(); });
+    $("#btnRescale").addEventListener("click", () => { const n=+$("#scaleIn").value;if(!(n>0 && Number.isFinite(n)))return;read.scale=n; read.scaleCheck={status:"user-scale",printed_scale:n,note:"Scale 1:"+n+" entered by a person; verify against a written span."}; $("#calStatus").textContent="";doRead(); });
     // draw the page so the person can see what was found on it
-    const doc = await pdfjsLib.getDocument({ data }).promise, page = await doc.getPage(1), vp = page.getViewport({ scale: 2 }), cv = $("#pdfCanvas");
-    cv.width = vp.width; cv.height = vp.height; await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; read.vp = { w: raw.pageW, h: raw.pageH };
+    const doc = await pdfjsLib.getDocument({ data }).promise, page = await doc.getPage(1), vp = page.getViewport({ scale: 2 }), cv = document.createElement("canvas");
+    cv.width = vp.width; cv.height = vp.height; await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; if(token!==readToken)return;
+    const shown=$("#pdfCanvas");shown.width=cv.width;shown.height=cv.height;shown.getContext("2d").drawImage(cv,0,0);read.canvas=cv;
+    const pageView=page.getViewport({scale:1});
+    read.vp={w:pageView.width,h:pageView.height,transform:pageView.transform};
+    read.corners=[[0,0],[pageView.width,0],[0,pageView.height],[pageView.width,pageView.height]].map(([x,y])=>pageView.convertToPdfPoint(x,y));
+    read.scaleCheck={status:"unverified",printed_scale:sc?.scale??null,note:sc?"Printed scale 1:"+read.scale+"; check against a written span.":"No printed scale. Provisional 1:100; check a written span."};
     $("#sheetView").hidden = false; $("#readLegend").hidden = false;
     doRead();
   } else {
-    $("#scaleBox").textContent = "An image has no linework, so it is read by AI and every element is marked as inferred.";
+    $("#scaleBox").textContent="A photograph is not a measured plan. Nothing has been uploaded.";
+    const button=document.createElement("button");button.type="button";button.className="btn ghost sm";button.textContent="Send image for an illustrative AI reading";
+    $("#readStats").append(button);button.onclick=async()=>{button.disabled=true;
     const img = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
     const r = await fetch("/api/plan-read", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ image: img }) }).then((x) => x.json()).catch(() => null);
+    if(token!==readToken)return;
     if (!r?.plan) { $("#readStats").innerHTML = `<p class="hint">AI reading is not available right now (${esc(r?.error || "network")}). Export the drawing to PDF from the CAD tool for an exact read.</p>`; return; }
-    read = { ai: r.plan, name: f.name }; $("#readStats").innerHTML = `<div><b>${r.plan.walls.length}</b><span>walls (inferred)</span></div><div><b>${r.plan.openings.length}</b><span>openings (inferred)</span></div><div><b>${r.plan.rooms.length}</b><span>rooms (inferred)</span></div><p class="hint" style="grid-column:1/-1">${esc(r.plan.notes)} Set the scale from a known dimension before using this.</p>`;
+    read = { ai: r.plan, name: f.name }; $("#readStats").innerHTML = `<div><b>${r.plan.walls.length}</b><span>walls (inferred)</span></div><div><b>${r.plan.openings.length}</b><span>openings (inferred)</span></div><div><b>${r.plan.rooms.length}</b><span>rooms (inferred)</span></div><p class="hint" style="grid-column:1/-1">${esc(r.plan.notes)} Set the scale from a known dimension before using this.</p>`;};
   }
 }
 function doRead() {
   const real = toReal(read.raw, read.scale); read.model = modelFromDrawing(real, { name: read.name, number: "PS-" + read.name.slice(0, 12).toUpperCase().replace(/[^A-Z0-9]+/g, "-") });
+  if(read.scaleCheck)read.model.provenance.scale_check={...read.scaleCheck};
+  const valid=read.model.walls.length>0 && read.model.rooms.length>0;
+  $("#btnUseRead").disabled=!valid; $("#calibration").hidden=!read.model.walls.length;
+  $("#calWall").replaceChildren(...read.model.walls.map(w=>new Option(w.id+" · "+Math.round(Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]))+" mm",w.id)));
   const M = read.model, hi = (L) => L.filter((e) => e.ev.conf >= 0.8).length;
-  $("#readStats").innerHTML = `<div><b>${M.walls.length}</b><span>walls · ${hi(M.walls)} high confidence</span></div><div><b>${M.openings.length}</b><span>openings · ${hi(M.openings)} high</span></div><div><b>${M.rooms.length}</b><span>rooms from labels</span></div><p class="hint" style="grid-column:1/-1">Walls from ${esc(M.stats.walls)}. Heights, sills and the roof are assumptions until you set them from the elevations.</p>`;
+  $("#readStats").innerHTML = `<div><b>${M.walls.length}</b><span>walls · ${hi(M.walls)} high confidence</span></div><div><b>${M.openings.length}</b><span>openings · ${hi(M.openings)} high</span></div><div><b>${M.rooms.length}</b><span>rooms from labels</span></div><p class="hint" style="grid-column:1/-1">${valid?"Walls from "+esc(M.stats.walls)+".":"No usable wall-and-room layout found on page 1. Export a single-scale vector floor plan or open the original model in Drop a plan."} Heights, sills and the roof are assumptions until you set them from the elevations.</p>`;
   // overlay: model → pdf points → overlay svg (viewBox in pdf points, y down)
   const k = (25.4 / 72) * read.scale;   // real mm per pdf point; the model's origin was moved to the building's south-west corner (M.origin)
   const svg = $("#readOverlay"); svg.setAttribute("viewBox", `0 0 ${read.vp.w} ${read.vp.h}`); svg.setAttribute("preserveAspectRatio", "none");
-  const o = M.origin || [0, 0], X = (p) => ((p[0] + o[0]) / k), Y = (p) => read.vp.h - ((p[1] + o[1]) / k);
+  const px=p=>toViewport(p,M.origin,read.scale,read.vp.transform), X=p=>px(p)[0], Y=p=>px(p)[1];
   const col = (ev) => ({ hi: "#2f6b46", mid: "#c79a2c", lo: "#B0213A" }[evTone(ev)]);
   svg.innerHTML = M.walls.map((w) => `<line x1="${X(w.a)}" y1="${Y(w.a)}" x2="${X(w.b)}" y2="${Y(w.b)}" stroke="${col(w.ev)}" stroke-width="${Math.max(1.5, w.t / k)}" stroke-opacity=".55"/>`).join("")
     + M.rooms.map((r) => `<polygon points="${r.poly.map((p) => `${X(p)},${Y(p)}`).join(" ")}" fill="${col(r.ev)}" fill-opacity=".08" stroke="${col(r.ev)}" stroke-dasharray="4 3" stroke-width="1"/>`).join("");
 }
+$("#applyWritten").onclick=()=>{
+  if(!read?.model)return;
+  const w=read.model.walls.find(x=>x.id===$("#calWall").value),mm=Number($("#calLength").value),next=w&&calibration(read.scale,w,mm);
+  if(!next){$("#calStatus").textContent="Enter a positive written span in millimetres.";return;}
+  const previous=read.scale, id=w.id;
+  read.scale=next;read.scaleCheck={status:"user-calibrated",printed_scale:findScale(read.raw.items)?.scale??null,note:"Calibrated to a written "+mm+" mm along "+id+" by a person. Other dimensions are scaled, not individually verified."};
+  $("#scaleIn").value=Number(next.toFixed(4));doRead();$("#calStatus").textContent=read.scaleCheck.note+" Previous scale 1:"+Number(previous.toFixed(3))+".";
+};
 $("#btnUseRead").addEventListener("click", () => {
   if (!read?.model) { alert(read?.ai ? "Set the scale on a known dimension first (coming next for images). Export the drawing as a PDF for an exact read." : "Open a plan first."); return; }
-  P = read.model; P.meta.status = "Imported · check every element"; selected = null; renderMaterials(); changed(); show("model");
+  sourceSheet={canvas:read.canvas,corners:read.corners,scale:read.scale}; setLook("solid"); P = read.model; P.meta.status = "Imported · check every element"; selected = null; renderMaterials(); changed(); show("model");
 });
 
 // ------------------------------------------------------------------------------------------------ start
 renderMaterials(); changed({ geometry: false }); aiStatus();
+// A direct preview link with the same public drawing and the very same intake path.
+// No generated picture, autorun film, private project, or outbound AI request.
+if (new URLSearchParams(location.search).get("sample")==="drawing") {
+  (async()=>{await $("#btnDemoSheet").onclick();if(!read?.model||$("#btnUseRead").disabled)return;
+    $("#btnUseRead").click();await boot3d();await $("#showBuild").onclick();
+    $(".build-menu").scrollIntoView({block:"start",behavior:"instant"});
+  })().catch(e=>console.warn("Sample preview:",e.message));
+}

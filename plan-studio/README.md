@@ -1,7 +1,7 @@
 # assembl lab · Plan Studio (plans in, a model you can trust out)
 
 Public landing page at `/plan-studio/` (`index.html`, `css/landing.css`, images in `media/`); the working studio is at `/plan-studio/studio/`.
-Every picture on the landing page is output from the fictional demo hall. The architecture lab wears the assembl point-cloud look (`lab/pc/engine.js`): the landing hero is the demo hall as a live point cloud, the studio's model view defaults to a point cloud (Solid one tap away), and the point-cloud page draws through the shared light pipeline. Real artefacts (the PDF being read, the A3 sheets, the code list, the Blender render, the deck) stay framed as what they are. Static HTML, CSS and ES modules; three.js r170 from `/assets/vendor`, pdf.js 4.10.38 from cdnjs (pinned).
+Every picture on the landing page is output from the fictional demo hall. The architecture lab wears the assembl point-cloud look (`lab/pc/engine.js`): the landing hero is the demo hall as a live point cloud, the studio's model view defaults to a point cloud (Solid one tap away), and the point-cloud page draws through the shared light pipeline. Real artefacts (the PDF being read, the A3 sheets, the code list, the Blender render, the deck) stay framed as what they are. Static HTML, CSS and ES modules; three.js r170 from `/assets/vendor`, pdf.js 4.10.38 from the lab’s pinned, same-origin /architecture/vendor/pdfjs/ copy.
 One project model (`js/model.js`, JSON) is the source of truth; the 3D scene, the code pre-check, the working drawings, the exports and
 the client presentation are all derived from it and refresh on every edit.
 
@@ -33,3 +33,12 @@ Tests: `node --test plan-studio/tests/*.test.mjs` (the demo, the pre-check, the 
 
 Honesty rules: the pre-check never says "compliant" or "approved"; renders say which model revision they show; AI output says so on the
 image; screen colours are approximate. Client drawings uploaded for a pilot stay in the browser and are never committed to this public repo.
+
+
+## Compare a source drawing with its model
+1. Open **Plan Studio → Try a sample drawing**, or drop a vector floor-plan PDF. This reader uses the first page only, not a construction-document set. A sheet with no usable walls and rooms is not a buildable input. A photograph has a separate, explicitly opt-in AI reading and never starts this measured workflow.
+2. If a written dimension is available, open **Set scale from a written dimension**. Match its endpoints to the selected wall's centreline; enter the span in mm. This recalibrates the single-scale sheet. Do not use an external face, a partial dimension or a different-scale detail. Only the chosen span has been checked; the rest remains scaled. Calibration, wall/opening evidence and assumed verticals remain in the exported Studio JSON.
+3. **Build the model from this → Compare drawing & model**. Drag the divider or use the native slider/arrow keys. Both halves use one orthographic camera. The original PDF texture is positioned by PDF page corners, page transformation, the model origin and metres per point. No picture is stretched to match an attractive framing. With the fictional built-in hall only, the diagram is explicitly labelled as model-derived linework.
+4. **Build sequence** shows the drawing, floor, walls, openings, roof and selected finishes. Scrub or explicitly press Play. Each step reveals existing scene groups. The sequence illustrates the model; it does not certify construction methods, sills, height, roofing, structural sizing or consent compliance. No source texture or presentation-only mesh is exported.
+5. **Explore the finished model** restores regular orbit, interiors and material editing. **Prepare this model for a walkthrough → Open walkthrough** sends the complete GLB, including the roof and element extras, through the existing same-device IndexedDB handoff to the native Twin viewer. It is a one-time device-local link, not a client share URL.
+6. For a reviewed **assembl.plan-model.v1** JSON, choose the original file in Intake. Studio counts its existing wall/opening source notes and opens it unchanged in the native multi-building viewer. It does **not** flatten the reviewed twin into Studio’s distinct **assembl.planstudio.v1** geometry, claim it has the source PDF, or reconstruct a wall-by-wall sequence from an arbitrary GLB.
