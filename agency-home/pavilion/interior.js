@@ -1,43 +1,14 @@
+import {linenSofa} from './upholstery.js';
 import * as T from './vendor/three.webgpu.min.js';
-import {woolThrow} from './drape.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 
-export function furnishRoom({scene,mesh,box,cylinder,softgoods,chair,cloth,oak,plaster,metal,limestone,print,linenBump,evalFloor,pillows,pillowNormal}){
+export function furnishRoom({scene,mesh,box,cylinder,chair,cloth,oak,plaster,metal,limestone,print,linenBump,evalFloor}){
  const neutral=new T.MeshStandardMaterial({color:0x88857b,roughness:.94});
- const thread=new T.MeshStandardMaterial({color:0xbdb8a9,roughness:.95});
- const slip=cloth.clone();slip.color.set(0xf0eee6);
- const bolster=cloth.clone();bolster.color.set(0xb9b7aa);
  const v=(x,y,z)=>new T.Vector3(x,y,z);
  function rounded(x,y,z,w,h,d,r,m){return mesh(new RoundedBoxGeometry(w,h,d,4,r),m,x,y,z)}
- function pad(name,x,y,z,w,h,d,m,rot=0,tilt=0){
-  const src=softgoods.scene.getObjectByName(name),g=src.geometry.clone();g.computeBoundingBox();const size=g.boundingBox.getSize(v());
-  g.scale(w/size.x,h/size.y,d/size.z);const o=mesh(g,m,x,y,z);o.rotation.set(rot,0,tilt);return o
- }
- // The oak frame is separate from the upholstery. Each seat carries its own rolled edge.
  const sx=3.42,sz=-1.32;
- rounded(sx,.275,sz,2.91,.112,.865,.026,oak);rounded(sx,.34,sz-.012,2.78,.15,.827,.051,slip);rounded(sx,.643,sz-.404,2.78,.60,.107,.046,slip);
- for(const xx of [sx-1.31,sx+1.31])for(const zz of [sz-.309,sz+.309]){
-  const leg=cylinder(xx,.158,zz,.039,.033,.235,oak,18);leg.rotation.z=(xx>sx?-.05:.05)
- }
- for(const side of [-1,1]){
-  const xx=sx+side*.666,seat=pad('TailoredSeat',xx,.435,sz+.005,1.322,.235,.89,slip);
-  // The original seat mesh carries a compressed rim. Cord follows the piping return.
-  const points=[];for(let i=0;i<=88;i++){const th=i/88*Math.PI*2,a=Math.cos(th),b=Math.sin(th);
-   points.push(v(xx+.633*Math.sign(a)*Math.abs(a)**.22,.425+.007*Math.sin(th*2+.2),sz+.420*Math.sign(b)*Math.abs(b)**.24))}
-  const curve=new T.CatmullRomCurve3(points,true);mesh(new T.TubeGeometry(curve,90,.0038,5,true),thread);
-  rounded(sx+side*1.424,.529,sz-.023,.182,.407,.88,.077,slip);
- }
- // Two slouched backs are derived from different fabric scans, with their original creases and seam normal.
- const source=pillows.scene.children.filter(n=>n.isMesh);
- const softBack=(idx,x,y,z,size,rotation,m)=>{
-  const n=source[idx%source.length];const g=n.geometry.clone();g.applyMatrix4(n.matrix);g.computeBoundingBox();const bb=g.boundingBox;
-  const cent=bb.getCenter(v()),dim=bb.getSize(v());g.translate(-cent.x,-cent.y,-cent.z);g.scale(size[0]/dim.x,size[1]/dim.y,size[2]/dim.z);
-  const textile=m.clone();textile.normalMap=pillowNormal;textile.normalScale.set(.55,.55);const body=mesh(g,textile,x,y,z);body.rotation.set(...rotation);return body
- };
- softBack(0,sx-.66,.766,sz-.275,[1.28,.63,.30],[-.16,-.035,-.025],slip);
- softBack(1,sx+.60,.765,sz-.279,[1.26,.61,.32],[-.19,.029,.018],slip);
- softBack(1,sx+.96,.676,sz-.073,[.465,.45,.245],[-.19,-.24,-.19],bolster);
- woolThrow(mesh,cloth);
+ linenSofa({mesh,cylinder,cloth,oak});
+
  // A single low chair leaves a clear line from the entrance to the corner glazing.
  const o=chair.scene.clone(true);const bb=new T.Box3().setFromObject(o),sz3=bb.getSize(v()),factor=.83/sz3.y;
  o.traverse(n=>{if(!n.isMesh)return;n.material=n.material.clone();n.material.roughness=.84;n.material.envMapIntensity=.73;n.castShadow=n.receiveShadow=true});

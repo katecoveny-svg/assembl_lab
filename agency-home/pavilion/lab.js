@@ -1,10 +1,15 @@
+import {setupPlanReveal} from './plan-reveal.js';
 import {tideCard} from './tide-card.js';
 export function lab(asset){const $=s=>document.querySelector(s);
 const plates={drawing:['plan16a.webp','Floor plan','Floor plan of the two-bedroom timber home with a deck along the living area.'],model:['16a-model-to-site-poster.webp','Site model','Aerial visualisation of the two timber homes and the existing house.'],exterior:['16a-poster.webp','Evening exterior','Visualisation of the two timber homes at dusk.']};
 $('.arch-views').hidden=false;
-const activeMotion=matchMedia('(prefers-reduced-motion: reduce)'),prior=$('#prior-plate'),caseImage=$('#arch-img');let plate='exterior',manual=false,transition=0;
+const activeMotion=matchMedia('(prefers-reduced-motion: reduce)'),prior=$('#prior-plate'),caseImage=$('#arch-img');let plate='exterior',manual=true,transition=0;
+const sectionVisibility=setupPlanReveal(asset);
 function showPlate(key,action){
- if(action)manual=true;if(key===plate)return;
+ if(action)manual=true;sectionVisibility(key==='section');if(key===plate)return;
+ if(key==='section'){plate=key;++transition;prior.hidden=true;$('#arch-label').textContent='16C · Registered section';$('#arch-context').textContent='Selected view · Registered plan and model';
+ $('#brief-16a a[href^="mailto"]').href='mailto:assembl@assembl.co.nz?subject=A%20project%20like%2016A&body=I%20was%20looking%20at%20the%20registered%2016C%20plan%20and%20model.';
+ document.querySelectorAll('[data-plate]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.plate===key)));return}
  const [name,title,alt]=plates[key],oldKey=plate;plate=key;const token=++transition;
  if(!activeMotion.matches){prior.src=caseImage.src;prior.toggleAttribute('data-drawing',oldKey==='drawing');prior.hidden=false;prior.getAnimations().forEach(a=>a.cancel());prior.animate([{opacity:1},{opacity:0}],{duration:380,fill:'forwards'}).finished.then(()=>{if(token===transition)prior.hidden=true}).catch(()=>{})}
  delete caseImage.dataset.image;caseImage.src=asset(name);caseImage.alt=alt;caseImage.toggleAttribute('data-drawing',key==='drawing');$('#arch-label').textContent=title;
@@ -13,6 +18,7 @@ function showPlate(key,action){
  if(action)window.dispatchEvent(new CustomEvent('assembl:interaction',{detail:{name:'plate_selected',value:key}}));
 }
 document.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>showPlate(b.dataset.plate,true));
+showPlate('section',false);
 function editorialScroll(){const r=$('.film-wrap').getBoundingClientRect();if(!activeMotion.matches&&r.bottom>0&&r.top<innerHeight)$('.film-wrap').style.setProperty('--film-drift',((.5-(r.top+r.height/2)/innerHeight)*2.0).toFixed(2)+'%');
  if(manual||innerWidth<=680||activeMotion.matches)return;const run=$('.plate-run').getBoundingClientRect(),h=$('.plate').offsetHeight;
  if(run.top<innerHeight*.9&&run.bottom>0){const progress=Math.max(0,Math.min(1,(-run.top+innerHeight*.025)/Math.max(1,run.height-h)));showPlate(progress<.25?'drawing':progress<.66?'model':'exterior',false)}

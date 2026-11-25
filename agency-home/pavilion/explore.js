@@ -5,8 +5,11 @@ export function installExplore(vista,options) {
  const pointers=new Map();
  let active=false,anchorY=0,yaw=0,pitch=0,travel=0;
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ function turn(to){return options.inside()?Math.atan2(Math.sin(to),Math.cos(to)):clamp(to,-.68,.68)}
+ function takeStep(f,r){options.step(f,r);options.repaint()}
+ for(const b of bar.querySelectorAll('[data-step]'))b.onclick=()=>takeStep(Number(b.dataset.step),0);
  function update(){options.setCamera(active?{yaw,pitch,travel}:null);options.repaint()}
- function resetView(){yaw=0;pitch=0;travel=0;update()}
+ function resetView(){options.resetWalk();yaw=0;pitch=0;travel=0;update()}
  function windLabel(){pause.textContent=options.paused()?'Resume wind':'Pause wind';pause.setAttribute('aria-pressed',String(options.paused()))}
  function leave(focus=true){
   if(!active)return;active=false;pointers.clear();vista.classList.remove('free-camera');bar.hidden=true;entry.hidden=false;entry.setAttribute('aria-expanded','false');options.lock(false);resetView();
@@ -14,7 +17,7 @@ export function installExplore(vista,options) {
  }
  entry.onclick=()=>{
   if(!options.available())return;
-  options.lock(true);active=true;anchorY=scrollY;entry.hidden=true;bar.hidden=false;entry.setAttribute('aria-expanded','true');vista.classList.add('free-camera');windLabel();resetView();vista.focus({preventScroll:true})
+  options.lock(true);active=true;anchorY=scrollY;entry.hidden=true;bar.hidden=false;entry.setAttribute('aria-expanded','true');vista.classList.add('free-camera');bar.querySelector("[data-walk]").hidden=!options.inside();windLabel();resetView();vista.focus({preventScroll:true})
  };
  exit.onclick=()=>leave();reset.onclick=resetView;
  pause.onclick=()=>{options.togglePause();windLabel()};
@@ -30,7 +33,7 @@ export function installExplore(vista,options) {
   const oldSpan=pointers.size===2?separation():0;
   const x=e.clientX,y=e.clientY;pointers.set(e.pointerId,{x,y});
   if(pointers.size===2){const span=separation();if(oldSpan>8&&span>8)travel=clamp(travel+Math.log(span/oldSpan)*.98,-.35,.35)}
-  else{yaw=clamp(yaw-(x-previous.x)*.0032,-.68,.68);pitch=clamp(pitch+(y-previous.y)*.0019,-.18,.22)}
+  else{yaw=turn(yaw-(x-previous.x)*.0032);pitch=clamp(pitch+(y-previous.y)*.0019,-.18,.22)}
   update()
  });
  for(const type of ['pointerup','pointercancel','lostpointercapture'])surface.addEventListener(type,e=>pointers.delete(e.pointerId));
@@ -42,8 +45,9 @@ export function installExplore(vista,options) {
   if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();leave();return}
   if(e.target!==vista||e.metaKey||e.ctrlKey||e.altKey)return;
   switch(e.key){
-   case 'ArrowLeft':yaw=clamp(yaw-.073,-.68,.68);break;
-   case 'ArrowRight':yaw=clamp(yaw+.073,-.68,.68);break;
+   case 'w':case 'W':takeStep(1,0);break;case 's':case 'S':takeStep(-1,0);break;case 'a':case 'A':takeStep(0,-1);break;case 'd':case 'D':takeStep(0,1);break;
+   case 'ArrowLeft':yaw=turn(yaw-.073);break;
+   case 'ArrowRight':yaw=turn(yaw+.073);break;
    case 'ArrowUp':pitch=clamp(pitch+.025,-.18,.22);break;
    case 'ArrowDown':pitch=clamp(pitch-.025,-.18,.22);break;
    case '+':case '=':travel=clamp(travel+.052,-.35,.35);break;

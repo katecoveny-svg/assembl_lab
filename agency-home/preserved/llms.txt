@@ -1,0 +1,53 @@
+# assembl
+
+> assembl is a full-service marketing agency in Tāmaki Makaurau Auckland, New Zealand: strategy, creative and digital for the agentic era. Brand and websites, getting found in Google and AI search, campaigns (ads, social, film and voice), and 3D renders and fly-throughs of buildings from architects' plans.
+
+- Founder: Kate Hudson
+- Location: Tāmaki Makaurau Auckland, Aotearoa New Zealand; works with clients throughout New Zealand
+- Contact: the Contact section of https://www.assembl.co.nz/ ("Start a conversation")
+- Sectors: property and architecture, hospitality, retail, schools, automotive
+- The name is written in lower case: assembl
+- Pricing is quoted per project in a written proposal; there are no published prices
+- Renders and fly-throughs are labelled as visualisations, not photographs
+
+## Pages
+
+- [Home](https://www.assembl.co.nz/): what assembl does, work, and how to start
+- [FAQ](https://www.assembl.co.nz/#faq): common questions, answered
+- [assembl lab](https://lab.assembl.co.nz/): small browser worlds and experiments, including Plan Studio (plans to a 3D model)
+- [Privacy policy](https://www.assembl.co.nz/privacy/)
+- [Terms and conditions](https://www.assembl.co.nz/terms/)
+
+## FAQ
+
+### What does assembl do?
+
+assembl is a full-service marketing agency in Tāmaki Makaurau Auckland. We do strategy, creative and digital for the agentic era: brand and websites, getting found in Google and AI search, campaigns across ads, social, film and voice, and 3D renders and fly-throughs of places before they're built.
+
+### What is AI search optimisation?
+
+It's making your business easy for AI assistants such as ChatGPT, Google's AI Overviews, Perplexity and Claude to find, understand and recommend. We make sure your website states the facts plainly, add structured data that search engines can read, keep your listings consistent and answer the questions your customers actually ask. No one can promise a ranking or a mention, and we won't.
+
+### Can you turn a 2D plan into a 3D model or a fly-through?
+
+Yes. We take an architect's plans, as PDF drawings or an IFC or 3D model exported from Revit or ArchiCAD, and build a model to the drawn dimensions. Then we render stills and fly-throughs you can share or put online. Every render is labelled as a visualisation, not a photograph.
+
+### Who do you work with?
+
+Businesses across Aotearoa New Zealand, from small local teams to larger brands, in property and architecture, hospitality, retail, schools and automotive.
+
+### How much does a project cost?
+
+It depends on the work. After a short conversation we send a written proposal that sets out the scope, price and timing before any work starts.
+
+### Do you use AI in your work?
+
+Yes, as a tool. We use AI for research, drafting, design and voice, and a person checks everything before it goes to you or your customers. The guide on this site runs on Claude, made by Anthropic, and its voice is by ElevenLabs.
+
+### Where are you based?
+
+Tāmaki Makaurau Auckland. We work with clients throughout New Zealand, in person or online.
+
+### How do I start?
+
+Use Start a conversation in the Contact section of this page. Send a line about your business and what you'd like to do, and we'll reply to set up a conversation.

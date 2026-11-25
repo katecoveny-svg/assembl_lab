@@ -1,10 +1,13 @@
+import {bedroom} from './bedroom.js';
+import {deckGarden} from './deck-garden.js';
+import {dressedDeck,deckFixings} from './coastal-finish.js';
+import {fitKitchen} from './kitchen.js';
 import {plantPohutukawa} from './pohutukawa.js';
 import * as T from './vendor/three.webgpu.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {RectAreaLightTexturesLib} from './vendor/RectAreaLightTexturesLib.js';
-import {ao} from './vendor/GTAONode.js';
 import {finePanicles} from './panicles.js';
 import {furnishRoom} from './interior.js';
 import {buildCoast,addSedges,grade,plantable,pathX} from './landscape.js';
@@ -20,22 +23,27 @@ export async function openPavilion(host,asset,forceGL=false){
  let seed=92731;const rand=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296),range=(a,b)=>a+(b-a)*rand();
  const texLoader=new T.TextureLoader(),glLoader=new GLTFLoader();
  const refinements=[];
- const unit=document.createElement('canvas');unit.width=unit.height=1;
- const brush=unit.getContext('2d');brush.fillStyle='#8080ff';brush.fillRect(0,0,1,1);
+ const flatNormals=new Map();
  function surface(name){
-   if(!/(?:-normal|-n)\.webp$/.test(name))return texLoader.loadAsync(asset(name));
-   const texture=new T.CanvasTexture(unit);
-   refinements.push(async()=>{const detail=await texLoader.loadAsync(asset(name));texture.image=detail.image;texture.needsUpdate=true});
-   return Promise.resolve(texture);
+  if(!/(?:-normal|-n)\.webp$/.test(name))return texLoader.loadAsync(asset(name));
+  // Immutable WebGL texture storage must already match the deferred image's dimensions.
+  const width=name==='rough_linen-n.webp'?639:640,height=640;
+  if(!flatNormals.has(width)){
+   const flat=document.createElement('canvas');flat.width=width;flat.height=height;
+   const paint=flat.getContext('2d');paint.fillStyle='#8080ff';paint.fillRect(0,0,width,height);flatNormals.set(width,flat);
+  }
+  const texture=new T.CanvasTexture(flatNormals.get(width));
+  refinements.push(async()=>{const detail=await texLoader.loadAsync(asset(name));texture.image=detail.image;texture.needsUpdate=true});
+  return Promise.resolve(texture);
  }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
- const [sky,wood,blackwood,grit,chair,fern,shrub,grass,softgoods,terrain,pillows]=await Promise.all([
+ const [sky,wood,blackwood,grit,chair,fern,shrub,grass,terrain]=await Promise.all([
    new HDRLoader().loadAsync(asset('kloofendal_38d_partly_cloudy_puresky.hdr')),
    ...['cedar','charred','sandy_gravel'].map(n=>surface(n+'.webp')),
-   ...['mid_century_lounge_chair','fern_02','shrub_03','grass_medium_01','softgoods','gulf-terrain','linen-pillows'].map(n=>glLoader.loadAsync(asset(n+'.glb')))
+   ...['mid_century_lounge_chair','fern_02','shrub_03','grass_medium_01','gulf-terrain'].map(n=>glLoader.loadAsync(asset(n+'.glb')))
  ]);
  sky.mapping=T.EquirectangularReflectionMapping;scene.environment=sky;scene.background=sky;scene.backgroundRotation.y=scene.environmentRotation.y=0;
  scene.backgroundIntensity=1.22;scene.environmentIntensity=1.15;
@@ -50,7 +58,7 @@ export async function openPavilion(host,asset,forceGL=false){
    t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;if(!newNames[i].endsWith('-n'))t.colorSpace=T.SRGBColorSpace
  }
  fabric.repeat.set(5,5);fabricN.repeat.set(5,5);
- const [floorAO,wallAO,ripple,pillowNormal,landcover,seaPhoto]=await Promise.all(['floor-ao.png','wall-ao.png','bay-ripple.png','pillow-weave-n.webp','gulf-landcover.webp','gulf-water.webp'].map(n=>surface(n)));
+ const [floorAO,wallAO,ripple,landcover,seaPhoto]=await Promise.all(['floor-ao.png','wall-ao.png','bay-ripple.png','gulf-landcover.webp','gulf-water.webp'].map(n=>surface(n)));
  landcover.colorSpace=seaPhoto.colorSpace=T.SRGBColorSpace;landcover.anisotropy=seaPhoto.anisotropy=8;
  ripple.wrapS=ripple.wrapT=T.RepeatWrapping;ripple.repeat.set(205,205);ripple.anisotropy=8;
  const litFloor=new T.MeshStandardNodeMaterial({roughness:.76,map:oakMap,normalMap:oakN,normalScale:new T.Vector2(.14,.14)});
@@ -63,13 +71,13 @@ export async function openPavilion(host,asset,forceGL=false){
  const nearRear=T.TSL.positionWorld.z.add(2.04).abs().lessThan(.16);
  lime.colorNode=T.TSL.texture(plaster).rgb.mul(nearRear.select(rearFactor.pow(1.12),T.TSL.float(1)));
  const stoneCast=mat(0xd0d0c4,.91,concrete,{normalMap:concreteN,normalScale:new T.Vector2(.22,.22)});stoneCast.userData.repeatMetres=2.7;
- const pine=mat(0xaaa087,.88,deckMap),cedar=mat(0xf2e1c4,.7,wood),dark=mat(0x98978d,.79,blackwood),edge=mat(0x252522,.43),metal=mat(0x252828,.3,null,{metalness:.55});
- const deck=mat(0xc7c3ae,.89,deckMap),wall=lime,stone=mat(0x625f54,.77,grit),warmwhite=mat(0xebe1cb),linen=mat(0xb6a592),glow=mat(0xffecc5,.4,null,{emissive:0xffbd67,emissiveIntensity:2.6});
+ const pine=mat(0x817a74,.79,dressedDeck()),cedar=mat(0xf2e1c4,.7,wood),dark=mat(0x98978d,.79,blackwood),edge=mat(0x252522,.43),metal=mat(0x252828,.3,null,{metalness:.55});
+ const deck=mat(0xf1e7d9,.61,dressedDeck()),wall=lime,stone=mat(0x625f54,.77,grit),warmwhite=mat(0xebe1cb),linen=mat(0xb6a592),glow=mat(0xffecc5,.4,null,{emissive:0xffbd67,emissiveIntensity:2.6});
  for(const m of [pine,cedar,dark,deck]){m.userData.grain=true;m.userData.repeatMetres=m===dark?1.75:2.8}
  const glass=new T.MeshPhysicalNodeMaterial({color:0xeaf0ed,roughness:.047,metalness:0,ior:1.5,clearcoat:1,clearcoatRoughness:.045,transparent:true,depthWrite:false});
  const {normalView,positionViewDirection,float}=T.TSL;
  const grazing=float(1).sub(normalView.dot(positionViewDirection).abs().clamp()).pow(4);
- glass.opacityNode=float(.037).add(grazing.mul(.46));
+ glass.opacityNode=float(.012).add(grazing.mul(.21));
  const boxes=new Map();
  function register(m,transform){if(!boxes.has(m))boxes.set(m,[]);boxes.get(m).push(transform.clone())}
  function box(x,y,z,w,h,d,m,rx=0,ry=0,rz=0){q.setFromEuler(new T.Euler(rx,ry,rz));register(m,matrix.compose(v(x,y,z),q,v(w,h,d)))}
@@ -119,8 +127,8 @@ export async function openPavilion(host,asset,forceGL=false){
  
  box(-2.65,1.31,-2.08,8.98,2.62,.13,wall);box(6.32,1.31,-2.08,1.64,2.62,.13,wall);
  box(3.65,.46,-2.08,3.7,.92,.13,wall);box(3.65,2.52,-2.08,3.7,.28,.13,wall);
- for(const x of [1.84,4.41,5.48])box(x,1.65,-2.06,.044,1.48,.15,metal);
- for(const y of [.926,2.37])box(3.65,y,-2.06,3.72,.058,.17,metal);
+ for(const x of [1.84,4.41,5.48])box(x,1.65,-2.06,.029,1.48,.073,metal);
+ for(const y of [.926,2.37])box(3.65,y,-2.06,3.72,.030,.077,metal);
  box(3.65,1.64,-2.08,3.55,1.41,.012,glass);
  for(let i=0;i<46;i++){let x=-7.05+i*.165;box(x,1.31,-1.997,.161,2.62,.032,cedar)}
 const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
@@ -137,22 +145,16 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  for(const x of [-7.11,-.05,7.11])box(x,roof(3.1)*.5,3.12,.087,roof(3.1),.087,metal);
  for(let i=0;i<23;i++)box(-7.04+i*.09,1.48,2.025,.049,2.97,.09,dark);
  // Purpose-made cabinetry, recessed lights, curtain folds and furniture establish scale.
- box(-3.55,.48,-1.57,5.6,.87,.78,cedar);box(-3.55,.947,-1.55,5.72,.065,.88,stone);
- for(let i=0;i<8;i++){let x=-6.01+i*.7;box(x,.48,-1.164,.681,.80,.035,dark);box(x,.81,-1.136,.21,.018,.026,metal)}
- box(-3.62,1.81,-1.79,5.47,.043,.41,cedar);box(-3.62,1.777,-1.72,5.30,.012,.055,glow);
- box(-2.9,.92,.26,3.02,.105,.85,stone);box(-2.9,.46,.26,2.6,.85,.64,cedar);
- for(const x of [-3.73,-2.83,-1.93]){cylinder(x,.65,.99,.2,.185,.065,cedar);for(const dx of [-.13,.13])for(const dz of [-.10,.10])box(x+dx,.33,.99+dz,.032,.64,.032,metal)}
- for(let i=0;i<3;i++){let x=-3.93+i*.97;box(x,2.56,.23,.009,.73,.009,metal);cylinder(x,2.12,.23,.085,.145,.11,metal);cylinder(x,2.06,.23,.125,.125,.01,glow)}
+ // One softly lit pendant over the breakfast table leaves the view from the new doorway clear.
+ box(-2.12,2.67,.49,.01,.58,.01,metal);cylinder(-2.12,2.32,.49,.053,.178,.135,cedar);cylinder(-2.12,2.249,.49,.155,.155,.010,glow);
  const limestone=mat(0xc6c4b6,.74,plaster,{normalMap:concreteN,normalScale:new T.Vector2(.11,.11)});
- furnishRoom({scene,mesh,box,cylinder,softgoods,chair,cloth,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor,pillows,pillowNormal});
- const vase=mesh(new T.LatheGeometry([[.12,0],[.22,.09],[.25,.24],[.2,.39],[.099,.48],[.094,.50]].map(([a,b])=>new T.Vector2(a,b)),32),stone,-5.75,.978,-1.44);
+ furnishRoom({scene,mesh,box,cylinder,chair,cloth,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor});
+ bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow});
+ const stoneCanvas=document.createElement('canvas');stoneCanvas.width=stoneCanvas.height=256;const sc=stoneCanvas.getContext('2d');sc.fillStyle='#cfc4b1';sc.fillRect(0,0,256,256);
+ for(let i=0;i<8000;i++){const x=(i*71.737)%256,y=(i*43.195+7*Math.sin(i*6.17))%256,g=130+(i%62);sc.fillStyle='rgba('+g+','+(g-4)+','+(g-14)+',.25)';sc.fillRect(x,y,.5+i%3,.6)}
+ const stoneMap=new T.CanvasTexture(stoneCanvas);stoneMap.colorSpace=T.SRGBColorSpace;stoneMap.wrapS=stoneMap.wrapT=T.RepeatWrapping;
+ const honedStone=mat(0xf1e6d4,.52,stoneMap,{normalMap:concreteN,normalScale:new T.Vector2(.024,.024)});fitKitchen(scene,oak,honedStone);
  {
- const [floorAO,wallAO,ripple,pillowNormal,landcover,seaPhoto]=await Promise.all(['floor-ao.png','wall-ao.png','bay-ripple.png','pillow-weave-n.webp','gulf-landcover.webp','gulf-water.webp'].map(n=>surface(n)));
- landcover.colorSpace=seaPhoto.colorSpace=T.SRGBColorSpace;landcover.anisotropy=seaPhoto.anisotropy=8;
- ripple.wrapS=ripple.wrapT=T.RepeatWrapping;ripple.repeat.set(205,205);ripple.anisotropy=8;
- const litFloor=new T.MeshStandardNodeMaterial({roughness:.76,map:oakMap,normalMap:oakN,normalScale:new T.Vector2(.14,.14)});
- const evalFloor=T.TSL.texture(floorAO,T.TSL.vec2(T.TSL.positionWorld.x.div(14.4).add(.5),T.TSL.positionWorld.z.div(4.24).add(.5))).r;
- litFloor.colorNode=T.TSL.texture(oakMap).rgb.mul(evalFloor.pow(1.25));litFloor.userData={grain:true,repeatMetres:2.8};
  const cloth=new T.PlaneGeometry(.63,2.78,100,18),pos=cloth.attributes.position;
  for(let i=0;i<pos.count;i++){const xx=pos.getX(i),yy=pos.getY(i),t=(yy+1.39)/2.78;pos.setXYZ(i,xx*(1-.12*t),yy+.014*Math.sin(xx*18)*(1-t),Math.sin(xx*61+t*.9)*(.029+.017*(1-t))+.018*Math.sin(xx*17-t*1.4))}
  cloth.computeVertexNormals();const drape=mat(0xd6d2c3,.97,fabric,{side:T.DoubleSide});const curtain=mesh(cloth,drape,6.86,1.47,1.28);curtain.rotation.y=-Math.PI/2;
@@ -176,10 +178,11 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  for(const z of [1.91,1.953,2.014])box(0,.080,z,14.16,.014,.014,metal);
  for(let i=0;i<3;i++)box(0,roof(3.60)+.10-i*.033,3.636,15.46,.014,.02,edge);
  box(0,-.137,4.499,14.41,.116,.028,deck);box(0,-.204,4.49,14.36,.012,.018,metal);
+ deckFixings(scene);deckGarden({scene,mesh,box,grade,trim:deck,grit});
  buildBoards(boxes,scene,glass);
 
  const contactCanvas=document.createElement('canvas');contactCanvas.width=contactCanvas.height=128;const cc=contactCanvas.getContext('2d'),gradient=cc.createRadialGradient(64,64,1,64,64,64);gradient.addColorStop(0,'rgba(28,25,20,.67)');gradient.addColorStop(.55,'rgba(28,25,20,.36)');gradient.addColorStop(1,'rgba(28,25,20,0)');cc.fillStyle=gradient;cc.fillRect(0,0,128,128);const contactMap=new T.CanvasTexture(contactCanvas);
- for(const [x,z,w,d,yy] of [[3.42,-1.34,3.35,1.16,.069],[3.64,.19,1.83,.99,.094],[5.88,.26,1.09,1.04,.092]]){
+ for(const [x,z,w,d,yy] of [[3.42,-1.34,2.65,1.02,.069],[3.64,.19,1.83,.99,.094],[5.88,.26,1.09,1.04,.092]]){
  const sh=mesh(new T.PlaneGeometry(w,d),new T.MeshBasicMaterial({map:contactMap,transparent:true,depthWrite:false}),x,yy,z);sh.rotation.x=-Math.PI/2;sh.castShadow=false}
  const ground=grade;
  buildCoast({scene,mesh,mat,map:pasture,normal:pastureN,grit,rockTex,rockN,rand,range,terrain,ripple,landcover,seaPhoto});
@@ -211,6 +214,12 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const around=()=>{let x,z;do{x=range(-17,16);z=range(-8,16)}while(!plantable(x,z));return [x,z]};
  const fernHollow=()=>{let x,z;do{x=range(-13,8);z=range(2,11)}while(!plantable(x,z));return [x,z]};
  scanPlant(fern,77,[.91,1.36],fernHollow,.02);scanPlant(shrub,88,[1.21,2.37],around,.016);scanPlant(grass,450,[1.9,3.3],around,.024);
+ // Shade-tolerant fronds emerge between the open eastern bays, with the central pile faces still visible.
+ const shadeFernPositions=[[-5.61,4.62],[-5.29,4.46],[-.84,4.48],[-.55,4.58],[3.23,4.47],[3.50,4.60],[5.84,3.99]];
+ let fernIndex=0;fern.scene.traverse(o=>{if(!o.isMesh)return;
+  const material=o.material.clone();material.side=T.DoubleSide;material.alphaTest=.43;material.transparent=false;material.roughness=.88;
+  const spots=shadeFernPositions.filter((_,i)=>i%3===fernIndex%3).map(([x,z],i)=>[x,ground(x,z)+.023,z,1.03+(i%2)*.19,x*.61]);
+  instantiate(o.geometry,material,spots,.019);fernIndex++});
  // Rooted harakeke fans: folded longitudinal ridges catch different amounts of sun on each face.
  function flax(seedIdx){const verts=[],col=[],faces=[];for(let i=0;i<32;i++){const angle=(i%2?0:Math.PI)+range(-.62,.62)+Math.floor(i/11)*1.02,L=range(.53,1.5),W=range(.029,.066),curl=range(.32,1.2),off=range(-.066,.066),base=verts.length/3;
   const tone=new T.Color().setRGB(range(.039,.09),range(.075,.135),range(.018,.045));for(let k=0;k<=10;k++){const t=k/10,dist=L*(.07*t+curl*t*t*.78),h=L*(1.65*t-.94*t*t-(curl*.28)*t*t*t),wx=Math.cos(angle),wz=-Math.sin(angle),width=W*(1-t**1.8)*(.67+.34*Math.sin(t*Math.PI)),cx=Math.sin(angle)*dist+off,cz=Math.cos(angle)*dist;
@@ -218,7 +227,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(k<10){const a=base+k*3;faces.push(a,a+3,a+1,a+1,a+3,a+4,a+1,a+4,a+2,a+2,a+4,a+5)}
   }}let geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(verts,3));geo.setAttribute('color',new T.Float32BufferAttribute(col,3));geo.setIndex(faces);geo.computeVertexNormals();return geo}
  const bladeMat=mat(0xffffff,.66,null,{vertexColors:true,side:T.DoubleSide});
- for(let j=0;j<3;j++){let spots=[];for(let i=0;i<12;i++){let [x,z]=around();spots.push([x,ground(x,z),z,range(.61,1.37),range(0,6.28)])}instantiate(flax(j),bladeMat,spots,.054)}
+ for(let j=0;j<3;j++){let spots=[];for(let i=0;i<12;i++){let [x,z]=around();spots.push([x,ground(x,z),z,range(.61,1.37),range(0,6.28)])}for(const [x,z] of [[-.25,-3.82],[3.6,-4.9],[6.3,-5.38],[8.85,-3.34],[-4.5,5.9],[-5.46,4.97],[.87,5.13],[5.6,5.15]]){const a=x+j*.31,b=z+j*.18;spots.push([a,ground(a,b),b,.71+.14*j,j*.88])}instantiate(flax(j),bladeMat,spots,.054)}
  // Arching culms and drooping spikelets share the depth buffer and light of the garden.
  const plumes=[],bladeColours=[],plumeIndex=[];
  function ribbon(a,b,w,col){let j=plumes.length/3;const across=v(.78,.04,-.44).multiplyScalar(w);for(const pt of [a.clone().sub(across),a.clone().add(across),b]){plumes.push(pt.x,pt.y,pt.z);bladeColours.push(col.r,col.g,col.b)}plumeIndex.push(j,j+1,j+2)}
@@ -231,32 +240,55 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const plants=[[8.5,11.85,1.17],[8.92,12.18,1.13],[6.65,10.67,1],[10.63,8.91,1.12],[-4.5,6.8,.91],[-5.8,7.9,1.03],[3.5,6.7,.94],[-7.5,7.2,1.09]];
  instantiate(flower,mat(0xf6ebce,.88,null,{vertexColors:true,side:T.DoubleSide}),plants.map(([x,z,k])=>[x,ground(x,z),z,k,range(0,6)]),.11);
  await plantPohutukawa(scene,ground,name=>texLoader.loadAsync(asset(name)),host.clientWidth<=680);
- let triangleCount=0;scene.traverse(o=>{if(o.isMesh)triangleCount+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3*(o.isInstancedMesh?o.count:1)});
- const optical=renderer.backend.isWebGPUBackend&&host.clientWidth>680;
- let post,focusDistance,focusWidth;
- if(optical){
-   const {pass,uniform,vec2,vec4,uv}=T.TSL,scenePass=pass(scene,camera),image=scenePass.getTextureNode(),depth=scenePass.getTextureNode('depth');
-   const distance=scenePass.getViewZNode().negate();focusDistance=uniform(14);focusWidth=uniform(2.6);
-   const blur=distance.sub(focusDistance).abs().div(distance.max(.5)).mul(focusWidth).clamp(0,5.0);
-   const delta=vec2(1).div(T.TSL.screenSize).mul(blur);
-   let rgb=image.rgb.mul(.25);
-   for(let i=0;i<8;i++){let a=i*Math.PI/4;rgb=rgb.add(image.sample(uv().add(delta.mul(vec2(Math.cos(a),Math.sin(a))))).rgb.mul(.09375))}
-   const contact=ao(depth,null,camera);contact.resolutionScale=.5;contact.samples.value=9;contact.radius.value=.42;contact.thickness.value=.4;
-   post=new T.PostProcessing(renderer);post.outputNode=vec4(rgb.mul(contact.getTextureNode().r.mul(.38).add(.62)),1)
+ // This Three revision chooses a uniform block for up to 1,000 instances. Some WebGL 2 devices
+ // allow only 256 mat4 values. Give larger batches vertex-attribute storage while keeping the draw count.
+ if(!renderer.backend.isWebGPUBackend){
+  const gl=renderer.backend.gl,limit=Math.floor(gl.getParameter(gl.MAX_UNIFORM_BLOCK_SIZE)/64);
+  scene.traverse(o=>{
+   const matrices=o.instanceMatrix;
+   if(!o.isInstancedMesh||matrices.count<=limit||matrices.count>1000)return;
+   const storage=new Float32Array(1001*16);storage.set(matrices.array);
+   o.instanceMatrix=new T.InstancedBufferAttribute(storage,16).setUsage(matrices.usage);
+  });
  }
+ let triangleCount=0;scene.traverse(o=>{if(o.isMesh)triangleCount+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3*(o.isInstancedMesh?o.count:1)});
  const backend=renderer.backend.isWebGPUBackend?'WebGPU':'WebGL 2';
  host.replaceChildren(renderer.domElement);renderer.domElement.setAttribute('aria-hidden','true');
  const match=new URLSearchParams(location.search).has('match');
  const positions=[v(12.1,.67,13.8),v(5.8,.73,8.45),(match?v(1.55,1.40,1.48):v(.89,1.49,1.69))],targets=[v(.02,1.02,.65),v(.07,1.21,.12),(match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78))];
  const camPath=new T.CatmullRomCurve3(positions,false,'centripetal'),aimPath=new T.CatmullRomCurve3(targets,false,'centripetal');
- let explorePose=null;
+ let explorePose=null,detail=null,indoors=false;
+ const displacement=v(),direction=v(),stepRight=v(),next=v();
+ const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.66,4.64,-.41,.79],[5.26,6.48,-.35,.91]];
+ function canStand(x,z){return x> -6.87&&x<6.85&&z> -1.83&&z<1.81&&!obstacles.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1)}
+ function step(forward,right){if(!indoors||!explorePose)return;camera.getWorldDirection(direction);direction.y=0;direction.normalize();
+  stepRight.set(-direction.z,0,direction.x);next.copy(camera.position).addScaledVector(direction,forward*.16).addScaledVector(stepRight,right*.16);
+  if(canStand(next.x,camera.position.z))displacement.x+=next.x-camera.position.x;
+  if(canStand(camera.position.x,next.z))displacement.z+=next.z-camera.position.z;
+ }
+ async function furnishLivingRoom(){
+  const {scene:model}=await glLoader.loadAsync(asset('living-room-dog.glb'));
+  // The reviewed metre-scale model is centred in XZ, with its lowest paw at Y=0.
+  model.position.set(4.97,.0865,.84);
+  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+  const shade=new T.Mesh(new T.PlaneGeometry(.81,.35),new T.MeshBasicMaterial({map:contactMap,transparent:true,opacity:.72,depthWrite:false}));
+  shade.rotation.x=-Math.PI/2;shade.position.set(4.97,.0878,.84);
+  scene.add(shade,model);
+ }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
  function draw(progress,time,gust){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const cp=camPath.getPoint(p),aim=aimPath.getPoint(p);
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
    camera.fov=match?42-3*p:42+14*p*p;camera.updateProjectionMatrix();
+   if(detail==='kitchen'){cp.set(-.28,1.39,1.64);aim.set(-2.40,1.10,-.95);camera.fov=camera.aspect<1?69:51}
+   if(detail==='bedroom'){cp.set(-4.17,1.33,-1.24);aim.set(-6.22,.83,.18);camera.fov=camera.aspect<1?70:56}
+   if(detail==='basin'){cp.set(-1.10,1.37,-.77);aim.set(-1.74,1.12,-1.79);camera.fov=43}
+   if(detail==='tree'){cp.set(-7.35,2.40,7.37);aim.set(-12.17,3.68,1.94);camera.fov=48}
+   if(detail==='deck'){cp.set(6.75,1.41,4.0);aim.set(-1.10,1.04,2.61);camera.fov=57}
+   indoors=p>.63&&!['deck','tree'].includes(detail);
+   camera.updateProjectionMatrix();
    if(explorePose){
     const {yaw,pitch,travel}=explorePose;
-    if(p<.62){
+    if(!indoors){
      const offset=cp.clone().sub(aim),sphere=new T.Spherical().setFromVector3(offset);
      sphere.theta+=yaw*.69;sphere.phi=T.MathUtils.clamp(sphere.phi-pitch,.52,1.67);
      sphere.radius*=1-travel*.68;cp.copy(aim).add(offset.setFromSpherical(sphere));
@@ -264,13 +296,14 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
     }else{
      const dir=aim.clone().sub(cp).normalize(),sphere=new T.Spherical().setFromVector3(dir);
      sphere.theta+=yaw;sphere.phi=T.MathUtils.clamp(sphere.phi-pitch,.5,2.55);dir.setFromSpherical(sphere);
-     cp.addScaledVector(dir,travel*.7);aim.copy(cp).addScaledVector(dir,3.8);
+     cp.add(displacement);const dolly=cp.clone().addScaledVector(dir,travel*.45);if(canStand(dolly.x,dolly.z))cp.copy(dolly);aim.copy(cp).addScaledVector(dir,3.8);
     }
    }
+
    camera.position.copy(cp);camera.lookAt(aim);
    for(const {o,placements,windFactor} of wind){for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];const front=Math.exp(-Math.pow((time%6.8)*3.9-x*.52-z*.34-4.5,2)/13);const wave=.26*Math.sin(time*1.18+x*.51+z*.35)+.11*Math.sin(time*2.07-z*.19)+gust*(.22+1.1*front)*Math.sin(time*2.51-x*.33);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
-   if(post){const detail=match?0:Math.exp(-Math.pow((p-.17)/.073,2));focusDistance.value=T.MathUtils.lerp(cp.distanceTo(aim),4.15,detail*.88);focusWidth.value=2.18+detail*2.7;post.render()}else renderer.render(scene,camera)
+   renderer.render(scene,camera)
  }
- size();return {backend,draw,size,refine,setExplore(view){explorePose=view},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ size();return {backend,draw,size,refine,step,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
 }

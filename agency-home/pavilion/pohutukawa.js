@@ -1,3 +1,4 @@
+import {floweringSprays} from './coastal-finish.js';
 import * as T from './vendor/three.webgpu.min.js';
 
 const point=(x,y,z)=>new T.Vector3(x,y,z);
@@ -13,7 +14,7 @@ function specimen(seed,wood,leaves) {
  let state=seed;
  const random=()=>((state=Math.imul(1664525,state)+1013904223>>>0)/4294967296);
  const between=(a,b)=>a+(b-a)*random();
- const woodTones=[],trunk=[],woodUV=[],woodIndex=[],blades=[],leafUV=[],leafIndex=[],tones=[];
+ const terminals=[],woodTones=[],trunk=[],woodUV=[],woodIndex=[],blades=[],leafUV=[],leafIndex=[],tones=[];
  // Continuous taper, eccentric rings and grain measured along the limb. Ends meet inside their parent.
  function limb(points,r0,r1){
   const curve=new T.CatmullRomCurve3(points,false,'centripetal');
@@ -58,6 +59,7 @@ function specimen(seed,wood,leaves) {
    for(let j=0;j<13;j++){
     const t=between(.22,1),p=curve.getPoint(t),az=heading+between(-2.1,2.1);
     const shoot=point(Math.cos(az),between(.15,1.24),Math.sin(az)).normalize();
+    if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.90).toArray());
     spray(p,shoot,between(.65,1.14));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.60,.92));
    }
   }
@@ -75,7 +77,7 @@ function specimen(seed,wood,leaves) {
  for(const [geo,mat] of [[geometry(trunk,woodUV,woodIndex,woodTones),wood],[geometry(blades,leafUV,leafIndex,tones),leaves]]){
   const m=new T.Mesh(geo,mat);m.castShadow=m.receiveShadow=true;group.add(m)
  }
- return group;
+ group.add(floweringSprays(terminals));return group;
 }
 export async function plantPohutukawa(scene,ground,load,small){
  const [bark,bump,sprigs]=await Promise.all(['pohutukawa-bark.webp','pohutukawa-bark-n.webp','pohutukawa-sprays.webp'].map(load));
@@ -85,9 +87,9 @@ export async function plantPohutukawa(scene,ground,load,small){
  const wood=new T.MeshStandardMaterial({map:bark,vertexColors:true,normalMap:bump,normalScale:new T.Vector2(.85,.85),roughness:.94,side:T.DoubleSide});
  const leaf=new T.MeshStandardMaterial({map:sprigs,alphaTest:.37,side:T.DoubleSide,roughness:.76,vertexColors:true});
  const variants=[257,501,791].map(s=>specimen(s,wood,leaf));
- const sites=[[-12.4,1.85,1.12,-.48],[-23.5,6.0,.77,1.9],[-19.5,-4.8,.7,2.62],[15,-6,.69,2.03],[2.3,-18,.49,-.82],[-16,-11.4,.64,-1.2],[18,-3.3,.67,1.6],[-9,-19,.54,.73]];
+ const sites=[[-12.4,1.85,1.12,-.48],[-23.5,6.0,.77,1.9],[-19.5,-4.8,.7,2.62],[15,-6,.69,2.03],[9.1,-11.2,.61,-.82],[-16,-11.4,.64,-1.2],[18,-3.3,.67,1.6],[-9,-19,.54,.73],[-1.8,-11.4,.43,2.4]];
  for(const [i,[x,z,s,yaw]] of sites.entries()){
   if(small&&i>4)continue;
-  const o=variants[i%3].clone(true);o.position.set(x,ground(x,z),z);o.rotation.y=yaw;o.scale.set(s,s*(i===0?1.07:1),s);scene.add(o)
+  const o=variants[i%3].clone(true);if(i>1&&i!==4)o.remove(o.children.at(-1));o.position.set(x,ground(x,z),z);o.rotation.y=yaw;o.scale.set(s,s*(i===0?1.07:1),s);scene.add(o)
  }
 }
