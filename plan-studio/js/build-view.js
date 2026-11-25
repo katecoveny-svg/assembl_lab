@@ -2,6 +2,7 @@
 // and a sheet quad. All visibility/material state is restored before returning.
 import * as T from "three";
 import { BEATS, depthOf, fromPdf } from "./build-sequence.js";
+import { folioBoard } from "./folio-material.js";
 
 export function buildView(stage, source) {
   const model = stage.model, P = stage.P, renderer = stage.renderer, scene = stage.scene;
@@ -9,9 +10,15 @@ export function buildView(stage, source) {
   centre.y = 0;
   const extent = box.getSize(new T.Vector3());
   const camera = new T.OrthographicCamera(-1, 1, 1, -1, .01, 10000);
-  const clay = new T.MeshStandardMaterial({color: 0xc29b98, roughness: .86});
-  const original = [], ground = scene.children.filter(o => o.isMesh);
-  model.traverse(o => { if (o.isMesh) original.push([o, o.material]); });
+  const warm = (color) => new T.MeshStandardMaterial({color, roughness:.9});
+  const plaster = warm("#e3d0d2"), timber = warm("#aa858b"), wallInk = warm("#654a4e"), sill = warm("#b49ea4");
+  const crossMaterial = [null,plaster,wallInk,sill];
+  const buildMaterial = [null,plaster,timber,sill,wallInk];
+  const base = new T.Mesh(new T.PlaneGeometry(1,1),folioBoard());
+  base.rotation.x=-Math.PI/2;base.position.copy(centre);base.position.y=-Math.max(.3,-box.min.y+.025);
+  base.scale.setScalar((Math.max(16,extent.x,extent.z)*12));base.visible=false;scene.add(base);
+  const original = [], ground = scene.children.filter(o => o.isMesh && o!==base);
+  for (const part of model.children) part.traverse(o=>{if(o.isMesh)original.push([o,o.material,depthOf(part)]);});
   const plan = new T.Group(); let texture = null;
   if (source) {
     const corners = source.corners.map(p => fromPdf(p, P.origin, source.scale));
@@ -57,19 +64,23 @@ export function buildView(stage, source) {
     try {
       scene.background=ivory; ground.forEach(o=>o.visible=false); plan.visible=true; renderer.shadowMap.enabled=false;
       children.forEach(([o])=>o.visible=compare ? depthOf(o)<=3 : depthOf(o)<=beat);
-      if (!compare && beat < BEATS.length-1) original.forEach(([o])=>o.material=clay);
+      base.visible=!compare && beat>0;
+      if (compare || beat < BEATS.length-1) {
+        const palette=compare?crossMaterial:buildMaterial;
+        original.forEach(([o,old,phase])=>o.material=palette[phase]||old);
+      }
       if (compare) {
         const mid=Math.round(w*Math.max(0,Math.min(100,split))/100);
         renderer.setScissorTest(true); model.visible=false;
         if (mid>0) { renderer.setScissor(0,0,mid,h);renderer.render(scene,camera); }
-        model.visible=true; plan.visible=false;
+        model.visible=true; plan.visible=false; base.visible=true;
         if (mid<w) { renderer.setScissor(mid,0,w-mid,h);renderer.render(scene,camera); }
       } else renderer.render(scene,camera);
     } finally {
-      plan.visible=false; model.visible=true; scene.background=bg; renderer.shadowMap.enabled=shadows;
+      base.visible=false;plan.visible=false; model.visible=true; scene.background=bg; renderer.shadowMap.enabled=shadows;
       original.forEach(([o,m])=>o.material=m); children.concat(surroundings).forEach(([o,vis])=>o.visible=vis);
       renderer.setScissor(scissor); renderer.setScissorTest(wasScissor);
     }
   };
-  return {draw, dispose() {scene.remove(plan); plan.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});texture?.dispose();clay.dispose();}};
+  return {draw, dispose() {scene.remove(plan); plan.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});texture?.dispose(); scene.remove(base);base.geometry.dispose();base.material.dispose();[plaster,timber,wallInk,sill].forEach(m=>m.dispose());}};
 }

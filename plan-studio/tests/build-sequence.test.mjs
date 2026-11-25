@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import {calibration,depthOf,fromPdf,mmPerPoint,toViewport,twinEvidence} from "../js/build-sequence.js";
+import {calibration,depthOf,fromPdf,mmPerPoint,toViewport,twinEvidence,wallSpan} from "../js/build-sequence.js";
 import {modelFromDrawing,toReal} from "../js/read.js";
 const read = JSON.parse(fs.readFileSync(new URL("./fixtures/demo-plan.raw.json",import.meta.url)));
 const P=modelFromDrawing(toReal(read,100)), k=mmPerPoint(100);
@@ -30,4 +30,10 @@ test("reviewed twins keep their separate schema and source notes",()=>{
   const before=JSON.stringify(p), notes=twinEvidence(p);
   assert.equal(notes.buildings,2);assert(notes.written>0 && notes.scaled>0);assert(notes.openings>0);
   assert.equal(JSON.stringify(p),before);assert.equal(twinEvidence(P),null);
+});
+
+test("folio dimensions are actual wall centreline extents in metres",()=>{
+  assert.deepEqual(wallSpan(P.walls),[24,15]);
+  assert.deepEqual(wallSpan([{a:[-1000,-2000],b:[1000,5000]}]),[2,7]);
+  assert.equal(wallSpan([]),null);
 });

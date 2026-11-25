@@ -68,10 +68,16 @@
         <button id="showBuild" disabled class="btn" type="button" aria-expanded="false" aria-controls="buildControls">Compare drawing &amp; model</button>
         <span class="hint">Slide across the same footprint, then see how the model fits together.</span>
       </div>
+      <div id="drawingFolio">
+      <header class="folio-head" id="folioHead" hidden aria-label="Plan folio">
+        <div><p class="folio-eyebrow mono" id="folioSource">PLAN STUDY / 01</p><h2 id="folioTitle">Drawing to model</h2></div>
+        <div class="folio-size" id="folioExtent"><b id="folioSpan"></b><span id="folioBasis"></span></div>
+      </header>
       <div class="stagewrap">
         <canvas id="stage3d" aria-label="3D model"></canvas>
         <canvas id="cloud3d" aria-hidden="true"></canvas>
         <div id="buildDivider" hidden aria-hidden="true"><i></i></div>
+        <div id="folioSides" hidden aria-hidden="true"><span id="folioLeft">Source PDF</span><span id="folioRight">Model cutaway</span></div>
         <div class="stagebar">
           <div class="seg" id="look" role="group" aria-label="Model look"><button type="button" data-look="cloud" class="on" aria-pressed="true">Point cloud</button><button type="button" data-look="solid" aria-pressed="false">Solid</button></div>
           <div class="seg" id="views"><button data-view="aerial" class="on">Aerial</button><button data-view="street">Street</button><button data-view="rear">Rear</button><button data-view="cornerA">Corner</button><button data-view="interior">Interior</button><button data-view="plan">Plan cut</button></div>
@@ -79,11 +85,13 @@
         </div>
       </div>
       <div id="buildControls" hidden>
-        <div class="row"><div class="seg" aria-label="Drawing display"><button id="compareMode" aria-pressed="true" type="button">Compare</button><button id="assembleMode" aria-pressed="false" type="button">Build sequence</button></div><button class="btn ghost sm" id="leaveBuild" type="button">Explore the finished model</button></div>
+        <div class="row"><div class="seg" aria-label="Drawing display"><button id="compareMode" aria-pressed="true" type="button">Compare</button><button id="assembleMode" aria-pressed="false" type="button">Build sequence</button></div><button class="btn ghost sm" id="leaveBuild" type="button">Explore finished model <span aria-hidden="true">↗</span></button></div>
         <label for="buildScrub" id="buildLabel">Drawing on the left · model on the right</label>
         <input id="buildScrub" type="range" min="0" max="100" value="50" step="1">
         <div class="row"><output id="buildBeat" for="buildScrub"></output><button id="playBuild" hidden type="button" class="btn ghost sm">Play stages</button></div>
-        <p id="buildEvidence" class="hint"></p>
+        <div id="folioSteps" class="folio-steps" hidden aria-label="Build stages"></div>
+        <details class="folio-evidence"><summary>What’s measured and what’s assumed</summary><p id="buildEvidence" class="hint"></p></details>
+      </div>
       </div>
       <div class="walk-handoff"><button id="prepareWalk" class="btn ghost sm" type="button">Prepare this model for a walkthrough</button> <a class="btn" id="walkLink" target="_blank" rel="noopener" hidden>Open walkthrough</a><span id="walkStatus" role="status" class="hint"></span></div>
       <div class="cols">

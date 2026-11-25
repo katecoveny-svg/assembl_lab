@@ -5,7 +5,7 @@ import { sheetSet } from "./drawings.js";
 import { MATERIALS, byCategory, CATEGORY_LABEL } from "./materials.js";
 import { toIFC, toDXF, toJSON } from "./exports.js";
 import { readPdfPage, findScale, toReal, modelFromDrawing } from "./read.js";
-import { BEATS, calibration, toViewport, twinEvidence } from "./build-sequence.js";
+import { BEATS, calibration, toViewport, twinEvidence, wallSpan } from "./build-sequence.js";
 import { buildDeck } from "./present.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -165,20 +165,24 @@ function paintBuild() {
   const slider=$("#buildScrub"), value=Number(slider.value);
   inspection.draw({compare,split:value,beat:value});
   $("#buildDivider").style.setProperty("--split",value+"%");
+  $("#folioSides").classList.toggle("hide-left",value<22);
+  $("#folioSides").classList.toggle("hide-right",value>78);
+  if(!compare)$$("#folioSteps button").forEach((b,i)=>{b.setAttribute("aria-current",i===value?"step":"false");});
   const label=compare ? value+"% drawing · "+(100-value)+"% model" : (value+1)+" / "+BEATS.length+" · "+BEATS[value];
   $("#buildBeat").textContent=label;slider.setAttribute("aria-valuetext",label);
 }
 function selectBuildMode(isCompare) {
   stopBuild(); compare=isCompare;const slider=$("#buildScrub");slider.max=isCompare?"100":"5";slider.value=isCompare?"50":"0";
   $("#buildLabel").textContent=isCompare?"Drawing on the left · model on the right":"Scrub from the drawing to the finished model";
-  $("#buildDivider").hidden=!isCompare;$("#playBuild").hidden=isCompare;
+  $("#buildDivider").hidden=!isCompare;$("#playBuild").hidden=isCompare;$("#folioSides").hidden=!isCompare;$("#folioSteps").hidden=isCompare;
   $("#compareMode").setAttribute("aria-pressed",String(isCompare));$("#assembleMode").setAttribute("aria-pressed",String(!isCompare));
   paintBuild();
 }
 function leaveBuild(explore=false) {
   inspectToken++; if(!inspection)return;stopBuild();inspection.dispose();inspection=null;
   stage.render=originalRender;stage.ctl.enabled=true;$("#buildControls").hidden=true;$("#buildDivider").hidden=true;
-  $(".stagewrap").classList.remove("is-building");$("#showBuild").setAttribute("aria-expanded","false");
+  $(".stagewrap").classList.remove("is-building");$("#drawingFolio").classList.remove("is-building");
+  $("#folioHead").hidden=true;$("#folioSides").hidden=true;$("#showBuild").setAttribute("aria-expanded","false");
   setLook(explore?"solid":previousLook);stage.render();
 }
 $("#showBuild").onclick=async()=>{
@@ -190,11 +194,21 @@ $("#showBuild").onclick=async()=>{
   if(!stage.model.getObjectByName("ROOF")){stage.setCutaway(false);stage.view("aerial");stage.sync();$$("#views button").forEach(b=>b.classList.toggle("on",b.dataset.view==="aerial"));}
   previousLook=cloudLook;setLook("solid");stage.ctl.enabled=false;
   inspection=buildView(stage,sourceSheet);originalRender=stage.render;stage.render=paintBuild;
-  $("#buildControls").hidden=false;$(".stagewrap").classList.add("is-building");$("#showBuild").setAttribute("aria-expanded","true");
+  $("#buildControls").hidden=false;$(".stagewrap").classList.add("is-building");$("#drawingFolio").classList.add("is-building");
+  $("#folioHead").hidden=false;$("#showBuild").setAttribute("aria-expanded","true");
   const provenance=P.provenance?.scale_check, conflicts=P.provenance?.conflicts?.length||0;
+  $("#folioSource").textContent=(sourceSheet?"01 / REGISTERED FLOOR PLAN":"01 / MODEL-DERIVED DRAWING");
+  $("#folioTitle").textContent=P.meta.name==="demo-plan"?"Tōtara Grove / sample hall":P.meta.name;
+  $("#folioLeft").textContent=sourceSheet?"Source PDF":"Model linework";
+  const span=wallSpan(P.walls);$("#folioExtent").hidden=!span;
+  if(span) $("#folioSpan").textContent=span.map(x=>x.toFixed(2)).join(" × ")+" m";
+  $("#folioBasis").textContent="Wall extent · "+(sourceSheet?(provenance?.status==="user-calibrated"?"written span set":"check scale"):"fictional sample");
   $("#buildEvidence").textContent=(sourceSheet?"Original PDF, page 1. "+(provenance?.note||"Scale needs checking."):"Fictional sample. Lines are drawn from this model, not an original PDF.")+" "+P.walls.length+" walls · "+P.openings.length+" openings. "+(conflicts?conflicts+" dimension conflicts to review. ":"")+"Heights, roof and finishes need confirmation. Stage order illustrates the model, not a construction schedule.";
   selectBuildMode(true);
 };
+BEATS.forEach((name,i)=>{
+ const b=document.createElement("button");b.type="button";b.textContent=name;b.onclick=()=>{stopBuild();$("#buildScrub").value=i;paintBuild();};$("#folioSteps").append(b);
+});
 $("#compareMode").onclick=()=>selectBuildMode(true);$("#assembleMode").onclick=()=>selectBuildMode(false);
 $("#leaveBuild").onclick=()=>{leaveBuild(true);$("#showBuild").focus();};
 $("#buildScrub").oninput=()=>{stopBuild();paintBuild();};
@@ -471,6 +485,6 @@ renderMaterials(); changed({ geometry: false }); aiStatus();
 if (new URLSearchParams(location.search).get("sample")==="drawing") {
   (async()=>{await $("#btnDemoSheet").onclick();if(!read?.model||$("#btnUseRead").disabled)return;
     $("#btnUseRead").click();await boot3d();await $("#showBuild").onclick();
-    $(".build-menu").scrollIntoView({block:"start",behavior:"instant"});
+    $("#drawingFolio").scrollIntoView({block:"start",behavior:"instant"});
   })().catch(e=>console.warn("Sample preview:",e.message));
 }

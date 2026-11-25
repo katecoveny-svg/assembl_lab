@@ -32,3 +32,14 @@ export function twinEvidence(plan) {
   }
   return counts;
 }
+
+// This is the range of the centreline endpoints, not cladding, roof, land area,
+// measured floor area, or a licensed survey. Formatting never changes geometry.
+export function wallSpan(walls) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const wall of walls) for (const [x,y] of [wall.a,wall.b]) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x); maxY=Math.max(maxY,y);
+  }
+  return Number.isFinite(minX) ? [(maxX-minX)/1000,(maxY-minY)/1000] : null;
+}
