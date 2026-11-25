@@ -258,9 +258,9 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   const bMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, side: T.FrontSide });
   bMat.userData.uNight = { value: 0 };
   bMat.onBeforeCompile = (s) => {
-    s.uniforms.uNight = bMat.userData.uNight;
-    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 facade;\nvarying vec3 vFac;\nvarying float vUp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvFac = facade; vUp = normal.y;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vFac;\nvarying float vUp;\nuniform float uNight;' + NOISE)
+    s.uniforms.roofPhoto = aerial; s.uniforms.roofReady = hasAerial; s.uniforms.uNight = bMat.userData.uNight;
+    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 roofXZ; attribute vec3 facade;\nvarying vec3 vFac;\nvarying float vUp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nroofXZ = position.xz; vFac = facade; vUp = normal.y;');
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vFac;\nvarying float vUp;\nvarying vec2 roofXZ; uniform sampler2D roofPhoto; uniform float roofReady; uniform float uNight;' + NOISE)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float isWall = 1.0 - step(0.5, abs(vUp));
         float isFerry = step(300.0,vFac.z);
@@ -286,6 +286,12 @@ export async function createWorld(canvas, { phone = false, capture = false, time
         diffuseColor.rgb *= mix(0.88 + 0.2 * grime, 0.9 + 0.18 * fbm(vFac.xy * 0.15), 1.0 - isWall);
         diffuseColor.rgb *= mix(1.0, 0.55 + 0.45 * smoothstep(0.0, 4.0, vFac.y), isWall); // contact shade at the foot of walls
         diffuseColor.rgb = mix(diffuseColor.rgb, paneColor + diffuseColor.rgb * 0.08, win * 0.92);
+        vec2 roofUV = (roofXZ + vec2(2336.,816.))/1440.;
+        vec2 edge = min(roofUV,1.-roofUV);
+        if(vUp>.5 && roofReady>.5 && min(edge.x,edge.y)>0.){
+          vec3 sampleRoof=texture2D(roofPhoto,vec2(roofUV.x,1.-roofUV.y)).rgb;
+          diffuseColor.rgb=mix(diffuseColor.rgb,sampleRoof,smoothstep(0.,.05,min(edge.x,edge.y)));
+        }
         // The listed Edwardian terminal has sandstone columns and arch-headed recesses over a granite base.
         if (isFerry > 0.5 && isWall > 0.5) {
           float hx = fract(vFac.x / 5.25);
@@ -346,7 +352,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   // ---------------------------------------------------------------- camera
   const views = {
-    harbour: { t: [-2040, 55, -15], p: [-1520, 275, -1365] },
+    harbour: { t: [-1830, 12, -305], p: [-1515, 645, -736] },
     'ferry-building': { t: [-1755, 15.2, -382], p: [-1737, 43, -492] },
     waterfront: { t: [-1880, 71, -358], p: [-1540, 184, -869] },
     city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
@@ -361,7 +367,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   function flyCinematic(v, { fromHarbour = false } = {}) {
     stopFlight(); follow = null;
     if (reducedMotion.matches) { setView(v); return; }
-    if (fromHarbour) setView(phone ? { t: [-2020, 45, -20], p: [-1430, 550, -1780] } : views.harbour);
+    if (fromHarbour) setView(phone ? { t: [-1830, 12, -305], p: [-1520, 810, -775] } : views.harbour);
     cinematic = {
       started: performance.now(), duration: phone ? 2150 : 2600,
       from: cameraPose(controls.target.toArray(),camera.position.toArray(),camera.fov),
@@ -380,7 +386,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   }
   let inset = 0;
   function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (inset) camera.setViewOffset(w, h, 0, inset / 2, w, h); else camera.clearViewOffset(); camera.fov = w < h ? 55 : 42; camera.updateProjectionMatrix(); lineMat.resolution.set(w, h); beacons.material.uniforms.uPR.value = renderer.getPixelRatio(); }
-  new ResizeObserver(resize).observe(canvas); resize(); setView(phone ? { t: [-2020, 45, -20], p: [-1430, 550, -1780] } : views.harbour);
+  new ResizeObserver(resize).observe(canvas); resize(); setView(phone ? { t: [-1830, 12, -305], p: [-1520, 810, -775] } : views.harbour);
 
   // ---------------------------------------------------------------- live vehicle state with short tweens between real fixes
   const state = new Map(); let list = [], selectedId = null;

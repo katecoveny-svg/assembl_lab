@@ -23,6 +23,6 @@ export function finePanicles(scene,time,gust){
  }}
  const g=new T.BufferGeometry();for(const [name,arr,item] of [['position',pos,3],['color',color,3],['driftPhase',rootPhase,1],['rootWeight',bend,1]])g.setAttribute(name,new T.Float32BufferAttribute(arr,item));g.setIndex(indices);g.computeVertexNormals();
  const material=new T.MeshStandardNodeMaterial({color:0xfff6df,roughness:.65,vertexColors:true,side:T.DoubleSide});
- const {attribute,positionLocal,vec3}=T.TSL,w=attribute('rootWeight','float'),ph=attribute('driftPhase','float');const wave=ph.add(time.mul(1.61)).sin().mul(.047).add(ph.mul(.43).sub(time.mul(.91)).sin().mul(.026)).add(gust.mul(ph.mul(.62).add(time.mul(2.6)).sin()).mul(.145)).mul(w);
+ const {attribute,positionLocal,vec3}=T.TSL,w=attribute('rootWeight','float'),ph=attribute('driftPhase','float');const front=ph.mul(.84).sub(time.mul(1.13)).add(ph.mul(.29).add(time.mul(.42)).sin()).sin().mul(.5).add(.5);const wave=front.mul(front).mul(.105).add(ph.add(time.mul(1.61)).sin().mul(.047).add(ph.mul(.43).sub(time.mul(.91)).sin().mul(.026)).add(gust.mul(ph.mul(.62).add(time.mul(2.6)).sin()).mul(.145))).mul(w);
  material.positionNode=positionLocal.add(vec3(wave,wave.abs().mul(-.13),wave.mul(.35)));const o=new T.Mesh(g,material);o.castShadow=o.receiveShadow=true;scene.add(o)
 }
