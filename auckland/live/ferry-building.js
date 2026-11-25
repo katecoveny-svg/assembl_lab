@@ -9,10 +9,10 @@ export function createFerryBuilding(data) {
   group.position.set(-1755.75,3.2,-383.5);
   group.rotation.y = -Math.atan2(20.5,60);
   const mat = (color,roughness=.86,metalness=0) => new T.MeshStandardMaterial({color,roughness,metalness});
-  const stone=mat('#bd955a'), ledge=mat('#aa7e49'), brick=mat('#8e4c39'), roof=mat('#754733'), granite=mat('#686258'),
+  const stone=mat('#d3ad74'), ledge=mat('#ba915a'), brick=mat('#8d5e49'), roof=mat('#754733'), granite=mat('#686258'),
     panes=mat('#2b4149',.28,.25), sash=mat('#d3c6ae'), recess=mat('#293031'), iron=mat('#363f3e',.43,.35), dial=mat('#eee6c9');
   new T.TextureLoader().load(data + 'ferry-masonry.webp', t => {
-    t.colorSpace=T.SRGBColorSpace; t.wrapS=t.wrapT=T.RepeatWrapping; t.anisotropy=4; brick.color.set('#d2b8a9'); brick.map=t; brick.needsUpdate=true;
+    t.colorSpace=T.SRGBColorSpace; t.wrapS=t.wrapT=T.RepeatWrapping; t.anisotropy=4; brick.color.set('#f5eddf'); brick.map=t; brick.needsUpdate=true;
   },undefined,()=>{});
   new T.TextureLoader().load(data + 'ferry-terracotta.webp', t => {
     t.colorSpace=T.SRGBColorSpace; t.wrapS=t.wrapT=T.RepeatWrapping; t.anisotropy=4; roof.color.set('#ccb6a4'); roof.map=t; roof.needsUpdate=true;
@@ -54,7 +54,7 @@ export function createFerryBuilding(data) {
   box(brick,0,10.0,0,63.4,10.8,14.2);box(recess,0,15.76,0,62.8,1.3,13.8);
   hip(roof,0,16.42,0,64.2,14.8,53,1.2,2.58);box(ledge,0,16.47,0,64.1,.25,14.9);
   for(const yy of [4.75,10.63,11.01,14.22,15.12]){
-    box(stone,0,yy,-7.12,64,.29,.72);box(stone,0,yy,7.12,64,.29,.72);
+    box(stone,0,yy,-7.12,64, yy===11.01 ? .62 : .33,.72);box(stone,0,yy,7.12,64,.29,.72);
     box(stone,-31.65,yy,0,.58,.29,14.4);box(stone,31.65,yy,0,.58,.29,14.4);
   }
   // North elevations: recessed arcade behind sandstone arches; photos show terrace and repeated bays.
@@ -72,9 +72,10 @@ export function createFerryBuilding(data) {
   }
   for(let i=-5;i<=5;i++){
     const x=i*5.60+2.8;
-    column(stone,x,7.75,-7.55,.37,5.4);
+    box(stone,x,7.75,-7.20, .75,5.4,.34);
+    column(stone,x,7.75,-7.55,.42,5.4);
     box(ledge,x,5.04,-7.57,1.04,.32,.92);box(stone,x,10.42,-7.60,1.09,.42,1.04);
-    box(stone,x,12.54,-7.22,.55,3.13,.42);
+    box(stone,x,12.54,-7.22,.76,3.13,.42);
   }
   for(let i=-14;i<=14;i++){const x=i*2.08; box(panes,x,15.77,-6.97,1.97,.96,.08);box(ledge,x-1.04,15.77,-7.03,.10,1.05,.10);}
   for(const xx of [-30.95,30.95]){
