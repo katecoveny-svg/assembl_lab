@@ -37,3 +37,7 @@ curl -sSL -o /tmp/gtfs.zip https://gtfs.at.govt.nz/gtfs.zip && unzip -o /tmp/gtf
 node tools/transit/bake-at.mjs /tmp/at-gtfs
 node tools/transit/bake-ground.mjs /tmp/assembl-tiles && python3 tools/transit/paint-ground.py /tmp/assembl-tiles/ground-draw.json
 ```
+
+## Optional camera flight
+
+“Fly in” is an optional, cancellable camera move from the current map angle to a composed waterfront view. After choosing a mapped stop or ferry terminal, “Fly to stop” starts at the Waitematā Harbour view and moves to that target. When directly selecting a ferry with a fresh live fix inside the map, “Fly to ferry” aims at the position AT reported when you start the flight. Saved or stale ferry positions never offer this live-ferry flight. It does not move a vehicle marker, change the transit selection, simulate data or change the time of day. Chrome’s mobile view uses the same approach with a shorter duration; reduce-motion moves straight to the destination. The separate camera channels and log-distance approach were inspired by [Makio64’s Cinematic Zoom](https://github.com/Makio64/threejs-cinematic-world-zoom); the local implementation uses a minimal MIT-licensed easing extract from upstream commit [3db19b7](https://github.com/Makio64/threejs-cinematic-world-zoom/blob/3db19b77933ead8241b1fcaf31a5576670f631f3/src/camera/easing.js) (David Ronai, 2026; [full MIT notice](licenses/cinematic-world-zoom-MIT.txt)). It does not import Google tiles, Cesium or the token workflow. The closer view retains approximate building façades and terrain, not a textured scan.

@@ -118,6 +118,7 @@ function pushVehicles() {
 
 // ------------------------------------------------------------------------------------------------ selection
 async function select(sel, { fly = true } = {}) { // a later choice always wins over a slower earlier one (S.sel !== sel checks)
+  S.world?.stopFlight();
   S.sel = sel; S.arrivals = null; setPanelSmall(false);
   const w = S.world;
   if (w) { w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
@@ -290,7 +291,36 @@ function wireUi() {
   list.addEventListener('pointerdown', (e) => { const li = e.target.closest('li'); if (li) { e.preventDefault(); choose(items[+li.dataset.i]); } });
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.search')) { list.hidden = true; q.setAttribute('aria-expanded', 'false'); } });
   document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pushVehicles(); if (listOnly) render(); });
-  document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { S.world?.unfollow(); const v = S.world?.views[b.dataset.view]; if (v) S.world.flyTo(v.t, Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]), Math.asin(v.p[1] / Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]))); });
+  const flyIn = $('#fly-in');
+  function flightSubject() {
+    if (S.sel?.kind === 'stop') {
+      const stop = S.index.stops.get(S.sel.id);
+      if (stop && X.inArea(stop.lat, stop.lon)) return {kind:'stop', lat:stop.lat, lon:stop.lon};
+    }
+    if (S.sel?.kind === 'vehicle' && S.posSource === 'live' && !S.posError) {
+      const v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
+      if (v && S.index.routes.get(v.routeId)?.mode === 'ferry' && X.inArea(v.lat, v.lon) && X.timestampFresh(v.ts, Math.round(Date.now()/1000))) {
+        return {kind:'ferry', lat:v.lat, lon:v.lon};
+      }
+    }
+    return null;
+  }
+  flyIn.onclick = () => {
+    const w = S.world; if (!w) return;
+    if (w.flying) { w.stopFlight(); return; }
+    let dest = w.views.waterfront;
+    const subject = flightSubject();
+    if (subject) {
+      const {x,z} = X.toWorld(subject.lat,subject.lon), y = subject.kind === 'ferry' ? 0 : w.heightAt(x,z);
+      dest = {t:[x,y+5,z],p:[x+125,y+140,z-320]};
+    }
+    w.flyCinematic(dest, { fromHarbour: !!subject });
+  };
+  document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
+    const w = S.world, view = w?.views[b.dataset.view]; if (!view) return; w.unfollow(); w.setView(view);
+  });
+  canvas.addEventListener('keydown', () => S.world?.stopFlight());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') S.world?.stopFlight(); });
   $('#grip').onclick = () => setPanelSmall(!$('#panel').classList.contains('small'));
   $('#detail').addEventListener('click', (e) => {
     const t = e.target.closest('[data-vehicle],[data-route],[data-clear],[data-try]'); if (!t) return;
@@ -310,6 +340,12 @@ function wireUi() {
   // label over the chosen vehicle
   const label = $('#label');
   if (S.world) S.world.onFrame = () => {
+    const subject = flightSubject();
+    const cameraLabel = S.world.flying ? 'Stop flight' : subject?.kind === 'ferry' ? 'Fly to ferry' : subject ? 'Fly to stop' : 'Fly in';
+    if (flyIn.textContent !== cameraLabel) {
+      flyIn.textContent = cameraLabel;
+      flyIn.title = subject?.kind === 'ferry' ? 'Fly from Waitematā Harbour to the ferry’s latest reported position' : subject ? 'Fly from Waitematā Harbour to the selected stop or ferry terminal' : 'Fly closer to the Auckland waterfront';
+    }
     if (S.sel?.kind !== 'vehicle') { label.hidden = true; return; }
     const p = S.world.screenOf(S.sel.id), v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
     if (!p || !v) { label.hidden = true; return; }
