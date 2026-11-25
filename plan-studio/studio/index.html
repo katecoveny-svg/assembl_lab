@@ -124,6 +124,22 @@
         </div>
         <p id="plantStatus" role="status"></p>
       </section>
+      <details class="card" id="linzSitePreview">
+        <summary>LINZ site context</summary>
+        <p class="hint">See the mapped parcel and nearby roof outlines before tying the plan to survey control.</p>
+        <form class="row"><label>Site coordinates (latitude, longitude) <input name="point" type="text" placeholder="-36.84355, 174.75741" required></label>
+          <button class="btn ghost sm" type="submit">Load site map</button></form>
+        <output role="status" class="hint"></output>
+        <svg hidden role="img" aria-label="North-up site map showing LINZ parcel and nearby roof outlines" viewBox="-65 -50 130 100" width="100%" style="display:block;max-height:380px;margin-top:1rem;background:#fffdfb">
+          <style>#linzSitePreview svg[hidden]{display:none!important}</style>
+          <g fill="none" stroke="#654a4e" stroke-opacity=".13" stroke-width=".18"><path d="M-60 0H60M0 -50V50M-60 -20H60M-60 20H60M-20 -50V50M20 -50V50M-40 -50V50M40 -50V50"/></g>
+          <g data-geometry="parcels" fill="#e3d0d2" fill-opacity=".52" fill-rule="evenodd" stroke="#654a4e" stroke-width=".45"></g>
+          <g data-geometry="buildings" fill="#654a4e" fill-opacity=".72" fill-rule="evenodd" stroke="#fffdfb" stroke-width=".15"></g>
+          <circle r="1.1" fill="#654a4e" stroke="#fffdfb" stroke-width=".4"/>
+          <g fill="#654a4e" font-size="3.6"><text x="54" y="-41">↑ N</text><text x="-57" y="44">20 m</text><path d="M-57 46h20" stroke="#654a4e" stroke-width=".55"/></g>
+        </svg>
+        <p class="hint">Rose: primary parcel. Plum: mapped roofs. Sourced from the LINZ Data Service, CC BY 4.0. Not a survey, measured building heights or a registered overlay on your model.</p>
+      </details>
       <div class="walk-handoff"><button id="prepareWalk" class="btn ghost sm" type="button">Prepare this model for a walkthrough</button> <a class="btn" id="walkLink" target="_blank" rel="noopener" hidden>Open walkthrough</a><span id="walkStatus" role="status" class="hint"></span></div>
       <section id="doorChange" class="card edit-desk" aria-labelledby="doorChangeTitle">
         <header><p class="mono" id="doorDraftRev">MODEL STUDY / LOCAL EDIT</p><h2 id="doorChangeTitle">Move a door</h2></header>
@@ -228,5 +244,6 @@
 
 <footer class="foot"><p>Plan Studio is an assembl lab build. The Building Code pre-check is advisory: the Acceptable Solutions are one way to comply and only a building consent authority grants consent. The demo building is fictional. Screen colours are approximate.</p></footer>
 <script type="module" src="../js/main.js"></script>
+<script type="module" src="../js/linz-map.js"></script>
 </body>
 </html>

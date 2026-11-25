@@ -2,6 +2,7 @@
 // NZPCN species records, not a claim of cultivar, nursery grade or site suitability.
 const nzpcn=s=>"https://www.nzpcn.org.nz/flora/species/"+s+"/";
 export const PLANTS=Object.freeze({
+  nikau:{label:"Nīkau palm",botanical:"Rhopalostylis sapida",layer:"Canopy",spacing:5.4,clear:2.65,source:nzpcn("rhopalostylis-sapida")},
   harakeke:{label:"Harakeke · flax",botanical:"Phormium tenax",layer:"Structure",spacing:1.05,clear:.27,source:nzpcn("phormium-tenax"),bloom:[10,11],seed:[12]},
   toetoe:{label:"Toetoe (species not specified)",botanical:"",layer:"Ground layer",spacing:1.25,clear:.32,source:""},
   "ti-kouka":{label:"Tī kōuka · cabbage tree",botanical:"Cordyline australis",layer:"Canopy",spacing:2.8,clear:.45,source:nzpcn("cordyline-australis")},

@@ -64,11 +64,15 @@ function prototypes(species,month){
   const phase=displayPhase(species,month),k=species+"|"+phase;
   if(!geometry.has(k))geometry.set(k,source(species,phase));return geometry.get(k);
 }
-export function layer(y,records,month=0) {
+export function layer(y,records,month=0,onReady) {
   const o=new T.Group();o.name="Proposed planting";
   const dot=new T.Object3D();let i=0;
   for(const species of Object.keys(PLANTS)){
     const rows=records.filter(p=>p.species===species);if(!rows.length)continue;
+    if(species==="nikau"){
+      import("./nikau.js").then(v=>v.placeNikau(o,rows,y,onReady)).catch(()=>{o.userData.nikauUnavailable=true;onReady?.();});
+      continue;
+    }
     const m=new T.InstancedMesh(prototypes(species,month), material,rows.length);
     m.castShadow=m.receiveShadow=true;
     m.name=species;m.userData={phase:displayPhase(species,month),proposed:true};
@@ -78,7 +82,7 @@ export function layer(y,records,month=0) {
     });
     o.add(m);
   }
-  o.userData.dispose=()=>o.traverse(p=>{if(p.isInstancedMesh)p.dispose();});
+  o.userData.dispose=()=>{o.userData.disposed=true;o.traverse(p=>{if(p.isInstancedMesh)p.dispose();});};
   return o;
 }
 const LINEMAT={bed:new T.LineBasicMaterial({color:"#d6a9ad",depthTest:false}),exclusion:new T.LineBasicMaterial({color:"#ffd6d0",depthTest:false}),hard:new T.LineBasicMaterial({color:"#6f5967",transparent:true,opacity:.32,depthTest:false}),draft:new T.LineBasicMaterial({color:"#f8f2e9",depthTest:false})};
