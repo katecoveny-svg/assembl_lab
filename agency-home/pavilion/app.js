@@ -190,11 +190,11 @@ function loadWorld(automatic=false){
  if(pending){
   if(automatic)return;
   if(pending.controller.signal.aborted){pending.retry=true;return}
-  if(pending.automatic){pending.automatic=false;clearTimeout(pending.timeout);const job=pending;job.timeout=setTimeout(()=>expireLoad(job),12000)}enter.disabled=true;note.textContent='Opening the pavilion…';return;
+  if(pending.automatic){pending.automatic=false;clearTimeout(pending.timeout);const job=pending;job.timeout=setTimeout(()=>expireLoad(job),35000)}enter.disabled=true;note.textContent='Opening the pavilion…';return;
  }
  const job={controller:new AbortController(),automatic,retry:false};
  pending=job;automaticTried=true;vista.toggleAttribute('data-warming',automatic);
- job.timeout=setTimeout(()=>expireLoad(job),automatic?7000:12000);
+ job.timeout=setTimeout(()=>expireLoad(job),automatic?7000:35000);
  if(!automatic){enter.disabled=true;note.textContent='Opening the pavilion…'}
  start(job.controller.signal).then(()=>{if(job.automatic&&eligible()&&!job.interacted)startTour()}).catch(()=>{
   staticMode(job.controller.signal.reason||'renderer unavailable');

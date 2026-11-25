@@ -15,7 +15,7 @@ export function cushion(width,height,depth,seed){
   const sag=.038*(1-x*x)*(y*.5+.5);
   const pinch=.019*Math.exp(-(((x+.23)*4)**2)-(((y-.79)*4)**2))+.014*Math.exp(-(((x-.61)*6)**2)-(((y+.74)*6)**2));
   return new T.Vector3(x*width*.5+.013*y*y*Math.sin(seed),y*height*.5-sag,
-    face*(full-.022*crease*r-pinch)+.009*x*y-.004*Math.cos(t*3+seed)*r*r);
+    face*Math.max(.005,full-.017*crease*r-pinch)+.009*x*y-.004*Math.cos(t*3+seed)*r*r);
  }
  for(const face of [1,-1]){
   const offset=vertices.length/3;
@@ -36,6 +36,15 @@ export function cushion(width,height,depth,seed){
 }
 export function linenSofa({mesh,cylinder,cloth,oak}){
  const sx=3.42,sz=-1.32,cream=cloth.clone();cream.color.setHex(0xd0c3ae);cream.roughness=.99;cream.sheen=.38;cream.normalScale.set(.59,.59);
+ // Resolve the slub of the reviewed linen scan at room scale and preserve its own normal field.
+ const swatch=document.createElement('canvas');swatch.width=swatch.height=384;
+ const paint=swatch.getContext('2d');paint.drawImage(cloth.map.image,0,0,384,384);
+ const pixels=paint.getImageData(0,0,384,384),mean=[202,197,183];
+ for(let i=0;i<pixels.data.length;i+=4)for(let c=0;c<3;c++){
+  pixels.data[i+c]=mean[c]+(pixels.data[i+c]-mean[c])*1.78;
+ }
+ paint.putImageData(pixels,0,0);cream.map=new T.CanvasTexture(swatch);cream.map.colorSpace=T.SRGBColorSpace;
+ cream.map.wrapS=cream.map.wrapT=T.RepeatWrapping;cream.map.repeat.set(2.8,2.8);cream.map.anisotropy=6;
  function rounded(x,y,z,w,h,d,r,m){return mesh(new RoundedBoxGeometry(w,h,d,4,r),m,x,y,z)}
  const welt=new T.MeshStandardMaterial({color:0xc3b9a5,roughness:.98});
  const timber=oak.clone();timber.color.setHex(0xbc9872);
@@ -63,12 +72,12 @@ export function linenSofa({mesh,cylinder,cloth,oak}){
  for(const j of [16,22,31,209,218,224]){c.fillStyle='#4a4a3f';c.fillRect(j,0,j%2?5:2,256)}
  const weave=new T.CanvasTexture(canvas);weave.colorSpace=T.SRGBColorSpace;
  const throwMat=new T.MeshStandardMaterial({map:weave,normalMap:cream.normalMap,normalScale:new T.Vector2(.53,.53),side:T.DoubleSide,roughness:.99});
- const profile=new T.CatmullRomCurve3([[.719,-.17],[.602,-.096],[.502,-.014],[.502,.16],[.499,.348],[.473,.411],[.336,.447],[.254,.457]].map(([y,z])=>new T.Vector3(0,y,z)));
+ const profile=new T.CatmullRomCurve3([[.842,-.34],[.926,-.266],[.915,-.203],[.855,-.136],[.709,-.091],[.593,-.057],[.505,.008],[.502,.16],[.499,.348],[.473,.411],[.336,.447],[.254,.457]].map(([y,z])=>new T.Vector3(0,y,z)));
  const textile=new T.PlaneGeometry(1,1,38,42),pos=textile.attributes.position,uv=textile.attributes.uv;
  for(let k=0;k<pos.count;k++){
   const u=uv.getX(k),v=1-uv.getY(k),d=profile.getPoint(v);
-  const folds=Math.sin(u*27+v*3+.64*Math.sin(v*6))*.017+Math.sin(u*11-v)*.009,front=Math.max(0,(v-.63)/.37);
-  pos.setXYZ(k,-.77+(u-.5)*.60+v*.092+.012*Math.sin(v*8+u*4),d.y+(folds+.018)*(1-front)+.015*Math.sin(u*8)*front,d.z+folds*(.47+front*.45));
+  const folds=Math.sin(u*16+v*2.1+.83*Math.sin(v*5))*.012+Math.sin(u*7-v)*.009,front=Math.max(0,(v-.63)/.37);
+  pos.setXYZ(k,-.77+(u-.5)*.60+v*.092+.012*Math.sin(v*8+u*4),d.y+(folds+.018)*(1-front)+.015*Math.sin(u*8)*front,d.z+folds*(.47+front*.45)+.012*(1-front));
  }
  textile.computeVertexNormals();mesh(textile,throwMat,sx,0,sz);
 }
