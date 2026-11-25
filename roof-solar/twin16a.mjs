@@ -51,10 +51,28 @@ export async function mountTwin16a(host,active){
    for(let f=3;f<h-2;f+=4)ink.fillRect(x+2,y+f,w-4,.6);
  }
  const map=new T.CanvasTexture(face);map.colorSpace='srgb';map.anisotropy=4;
- const frameMat=new T.MeshPhysicalMaterial({color:0x676d6c,metalness:.78,roughness:.29});
- const cellsMat=new T.MeshPhysicalMaterial({map,color:0xffffff,metalness:.13,roughness:.34,clearcoat:.83,clearcoatRoughness:.12});
+ // A procedurally lit environment for the laminate only. The real modelled sun still sets the shadows.
+ const sky=d.createElement('canvas');sky.width=512;sky.height=256;
+ const skyInk=sky.getContext('2d'),pixels=skyInk.createImageData(512,256);
+ for(let y=0;y<256;y++)for(let x=0;x<512;x++){
+   const az=x/512*Math.PI*2,alt=Math.PI*(.5-y/255),h=Math.max(0,Math.sin(alt));
+   const cloud=.5+.5*Math.sin(az*3+alt*12+1.2*Math.sin(az*2-alt*7));
+   const band=Math.max(0,1-Math.abs(alt-.28)*2.1)*cloud**3;
+   const light=alt<0?35+18*Math.cos(alt):194-100*h+42*band;
+   const offset=(y*512+x)*4;
+   pixels.data.set([light*.92,light*1.02,light*1.12,255],offset);
+ }
+ skyInk.putImageData(pixels,0,0);
+ const skyMap=new T.CanvasTexture(sky);skyMap.colorSpace='srgb';
+ skyMap.mapping=303; // THREE.EquirectangularReflectionMapping in the pinned twin build
+ const frameMat=new T.MeshPhysicalMaterial({color:0x899093,metalness:.72,roughness:.33,envMap:skyMap});
+ const cellsMat=new T.MeshPhysicalMaterial({map,color:0xc8d7dc,envMap:skyMap,envMapIntensity:.83,
+   metalness:.13,roughness:.23,clearcoat:.97,clearcoatRoughness:.065});
  const footMat=new T.MeshStandardMaterial({color:0x353b3d,metalness:.26,roughness:.61});
  const WB=1.72, LB=1.13;
+ const chassis=new T.BoxGeometry(WB,.034,LB),glass=new T.BoxGeometry(WB-.032,.009,LB-.032);
+ const mountingRail=new T.BoxGeometry(WB*.96,.043,.042);
+ const clip=new T.BoxGeometry(.047,.018,.045);
  const ray=new T.Raycaster();
  const units={}; const systems=[]; const roofCenters={};
  for(const key of ['16C','16D']){
@@ -73,10 +91,13 @@ export async function mountTwin16a(host,active){
    const x=locate(uu,vv);
    if(!x||![-.83,.83].every(du=>[-.54,.54].every(dv=>locate(uu+du,vv+dv))))continue;
    const g=new T.Group();g.name=key+' solar design module';g.position.copy(x).addScaledVector(n,.065);g.quaternion.setFromRotationMatrix(matrix);
-   const m=new T.Mesh(new T.BoxGeometry(WB,.034,LB),frameMat);
-   const pane=new T.Mesh(new T.BoxGeometry(WB-.036,.012,LB-.036),cellsMat);pane.position.y=.022;
-   const rail=new T.Mesh(new T.BoxGeometry(WB*.96,.043,.12),footMat);rail.position.y=-.03;
-   m.castShadow=pane.castShadow=true;m.receiveShadow=pane.receiveShadow=true;g.add(m,pane,rail);roofPoints.add(g);roofCenters[key].add(g.position);units[key]++;
+   const m=new T.Mesh(chassis,frameMat);
+   const pane=new T.Mesh(glass,cellsMat);pane.position.y=.019;
+   for(const side of [-1,1]){
+    const rail=new T.Mesh(mountingRail,footMat);rail.position.set(0,-.035,side*.34);g.add(rail);
+    const clamp=new T.Mesh(clip,frameMat);clamp.position.set(side*(WB/2-.012),.028,side*.34);g.add(clamp);
+   }
+   m.castShadow=pane.castShadow=true;m.receiveShadow=pane.receiveShadow=true;g.add(m,pane);roofPoints.add(g);roofCenters[key].add(g.position);units[key]++;
   }
  }
  if(units['16C']!==10||units['16D']!==10)throw Error('Not all 20 panels landed on the actual sheets.');
@@ -87,17 +108,32 @@ export async function mountTwin16a(host,active){
  const eyeOffset=new T.Vector3(-19,31,-17);
  const priorFog=a.scene.fog;
  const haze={isFog:true,color:a.sun.color.clone().setHex(0xabb7b2),near:22,far:90};
+ let travel=0,placed=false;
+ d.addEventListener('pointerdown',()=>travel++,{capture:true});
+ d.addEventListener('wheel',()=>travel++,{capture:true,passive:true});
  function reset(view='detail'){
   const aspect=host.clientWidth/Math.max(1,host.clientHeight);
   const overview=view==='overview', house=view==='home';
   const target=overview?look:house?close.clone().add(new T.Vector3(-.28,-1.1,-.8)):close;
-  const offset=overview?eyeOffset:house?new T.Vector3(.55,7.4,-12.8):new T.Vector3(2.6,2.7,-4.35);
+  const offset=overview?eyeOffset:house?new T.Vector3(.55,7.4,-12.8):new T.Vector3(3.65,1.94,-4.9);
   // Photographic depth only for the ground-oriented shot. The survey overview
   // stays clear, with its original surroundings and subject extents visible.
   a.scene.fog=house?haze:priorFog;
-  a.controls.target.copy(target);
-  a.camera.position.copy(target).addScaledVector(offset,aspect<1 ? (overview?1.36:house?1.28:1.20) : 1);
-  a.controls.update();
+  const destination=target.clone().addScaledVector(offset,aspect<1?(overview?1.36:house?1.28:1.31):1);
+  const ticket=++travel;
+  if(!placed||matchMedia('(prefers-reduced-motion:reduce)').matches){
+   placed=true;a.controls.target.copy(target);a.camera.position.copy(destination);a.controls.update();return;
+  }
+  const start=a.camera.position.clone(),pivot=a.controls.target.clone(),since=performance.now();
+  const arc=Math.min(3,start.distanceTo(destination)*.14);
+  function drift(now){
+   if(ticket!==travel||!active()||!frame.isConnected)return;
+   const u=Math.min(1,(now-since)/1900),f=u*u*(3-2*u);
+   a.camera.position.copy(start).lerp(destination,f);a.camera.position.y+=Math.sin(Math.PI*f)*arc;
+   a.controls.target.copy(pivot).lerp(target,f);a.controls.update();
+   if(u<1)requestAnimationFrame(drift);
+  }
+  requestAnimationFrame(drift);
  }
  // Use the twin’s own summer design-study date, never a live observation.
  const date=new Intl.DateTimeFormat('en-NZ',{timeZone:'Pacific/Auckland',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(a.when);

@@ -14,15 +14,12 @@
   <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
   <link rel="canonical" href="https://lab.assembl.co.nz/">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="/lab/v3/front-door.css?v=20261125harbour">
+  <link rel="stylesheet" href="/lab/v3/front-door.css?v=coastal-passage">
 </head>
 <body>
   <a class="skip" href="#main">Skip to main content</a>
   <header class="shell site-header">
-    <a class="brand" href="/" aria-label="Assembl Lab home">assembl.<span>LAB</span></a>
+    <a class="brand" href="/" aria-label="Assembl Lab home"><img src="/lab/v3/wordmark.png" alt="assembl."><span>Lab</span></a>
     <nav aria-label="Main navigation">
       <a href="/plan-studio/twins/16a/">Architecture</a>
       <a href="/auckland/live/">Auckland Live</a>
@@ -32,26 +29,23 @@
   </header>
 
   <main id="main" tabindex="-1" class="shell">
-    <section id="top" class="hero" aria-labelledby="intro">
-      <div class="hero-copy">
-        <p class="label">THE ASSEMBL LAB</p>
-        <h1 id="intro">Aotearoa,<br>in three dimensions.</h1>
-        <p class="intro">Walk through a building before it’s built. Follow Auckland’s public transport. See how much sun reaches a New Zealand roof.</p>
-        <div class="hero-actions">
-          <a class="button" href="/plan-studio/twins/16a/">Explore the 16A homes</a>
-          <a class="jump" href="#tools">Explore the tools <span aria-hidden="true">↓</span></a>
-        </div>
-      </div>
-      <figure class="hero-figure">
-        <img src="/lab/v3/img/tiles/16a-cutaway-r2.webp" width="960" height="600" fetchpriority="high" alt="Furnished 3D cutaway of 16C, showing its timber deck and rooms.">
-        <figcaption><span>PLAN STUDIO / 16C</span><span>FURNISHED CUTAWAY</span></figcaption>
-      </figure>
+    <section class="opening" id="top">
+      <div class="opening-title"><p class="label">Assembl Lab · Tāmaki Makaurau</p><h1>Follow the tide.<br><i>Catch the light.</i></h1></div>
+      <p class="opening-note">Explore the Waitematā at water level, then cross the roof of a proposed Auckland home.</p>
     </section>
-
+    <section class="passage" aria-label="From the harbour to the roof">
+      <div class="passage-frame">
+        <div class="plate water"><img src="/lab/v3/img/tiles/water-plate.webp" alt="Illustrative water and sailing boat below the Auckland skyline."><div class="surface"></div></div>
+        <div class="plate roof"><img src="/lab/v3/img/tiles/solar-plate.webp" alt="Glass and aluminium panels above the ridged metal roof of 16D."><div class="surface"></div></div>
+        <div class="rail"><div class="rail-title"><span class="label" id="plate-kicker">Waitematā Harbour</span><h2 id="plate-title">At water level.</h2></div>
+        <div class="rail-links"><a id="open-plate" href="https://assembl-waitemata-tides.pages.dev/">Explore the tide ↗</a><a href="#tools">All tools ↓</a><button hidden id="still-plate" aria-pressed="false">Pause motion</button></div></div>
+      </div>
+    </section>
+    <p class="scene-source">Illustrative harbour water. Auckland skyline photograph by <a href="https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_harbour.png">WBPchur</a>, cropped and composited under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. The 16D roof is a modelled design study.</p>
     <section id="tools" class="tool-section" aria-labelledby="tools-heading">
       <div id="more" class="section-heading">
-        <p class="label">THE TOOLKIT</p>
-        <h2 id="tools-heading">Choose what to explore.</h2>
+        <p class="label">Public tools</p>
+        <h2 id="tools-heading">Keep exploring.</h2>
       </div>
       <div class="tool-grid">
         <a class="tool" href="/plan-studio/twins/16a/">
@@ -73,16 +67,16 @@
           </div>
         </a>
         <a class="tool" href="/roof-solar/">
-          <img src="/lab/v3/img/tiles/roof-solar-16d-glass.webp" width="960" height="600" loading="lazy" decoding="async" alt="Glass solar modules on the corrugated 16D roof, part of the 16A design study.">
+          <img src="/lab/v3/img/tiles/solar-plate.webp" width="960" height="600" loading="lazy" decoding="async" alt="Glass solar modules on the corrugated 16D roof, part of the 16A design study.">
           <div class="tool-copy">
             <p class="label">03 / ENERGY</p>
             <h3>Roof solar twin</h3>
-            <p>Use LINZ LiDAR and modelled sunlight to estimate a roof’s solar potential.</p>
+            <p>Study the panels on 16D. Choose a mapped New Zealand roof for a separate LiDAR-based solar estimate.</p>
             <span class="tool-action">Open Roof Solar <span aria-hidden="true">↗</span></span>
           </div>
         </a>
         <a class="tool" href="https://assembl-waitemata-tides.pages.dev/">
-          <img src="/lab/v3/img/tiles/waitemata-procedural-water.webp" width="800" height="500" loading="lazy" decoding="async" alt="">
+          <img src="/lab/v3/img/tiles/water-plate.webp" width="800" height="500" loading="lazy" decoding="async" alt="">
           <div class="tool-copy">
             <p class="label">04 / HARBOUR</p>
             <h3>Waitematā Tides</h3>
@@ -115,5 +109,5 @@
       <a href="https://www.assembl.co.nz/terms/">Terms</a>
     </nav>
   </footer>
-</body>
+<script type="module" src="/lab/v3/passage.js"></script></body>
 </html>
