@@ -2,6 +2,7 @@
 // set by the real time in Auckland, a moving harbour, and the live vehicles (vehicles.js). Natural colours only.
 import * as T from 'three';
 import { cameraPose, flightPose } from './camera-flight.mjs';
+import { createFerryBuilding } from './ferry-building.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -209,6 +210,11 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   // far land beyond the data box: a flat, hazy ring so the horizon is not an edge (not data; hidden by fog at distance)
 
   // ---------------------------------------------------------------- buildings (OSM heights via OpenMapTiles)
+  let detailedFerry = null;
+  if (new URLSearchParams(location.search).get('landmark') !== 'off') {
+    try { detailedFerry = createFerryBuilding(DATA); } catch (e) { console.warn('Ferry Building detail unavailable', e); }
+    if (detailedFerry) scene.add(detailedFerry);
+  }
   const words = new Int16Array(bBuf), allowTier1 = !phone;
   const WALLS = ['#a29989', '#a78e6b', '#865c4a', '#c2bbb1', '#858e91', '#8f8674', '#afa497', '#697176'].map((c) => new T.Color(c));
   const TOWERS = ['#556775', '#6d8792', '#a49b8b', '#414f59', '#808d87', '#ada799'].map((c) => new T.Color(c));
@@ -223,6 +229,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     // Ferry Building: OSM's footprint and tower are each mapped here (cross-checked in the orthophoto).
     const bx = pts.reduce((a,q) => a+q[0],0)/n, bz = pts.reduce((a,q) => a+q[1],0)/n;
     const ferry = Math.abs(bx+1756) < 2 && Math.abs(bz+382) < 3 && (h === 19 || h === 26);
+    if (ferry && detailedFerry) continue; // replace only the mapped shell and tower
     const facadeWall = ferry ? new T.Color('#b9935d') : wall;
     const facadeRoof = ferry ? new T.Color('#434039') : roof;
     const y0 = g + mh - (mh > 0 ? 0 : 2), y1 = g + h; // walls start 2 m below the grid ground so slopes do not show gaps
@@ -340,6 +347,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   // ---------------------------------------------------------------- camera
   const views = {
     harbour: { t: [-2040, 55, -15], p: [-1520, 275, -1365] },
+    'ferry-building': { t: [-1755, 15.2, -382], p: [-1737, 43, -492] },
     waterfront: { t: [-1880, 71, -358], p: [-1540, 184, -869] },
     city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
     overview: { t: [-900, 0, 1500], p: [5200, 9000, -9500] },
@@ -457,6 +465,6 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     select(id) { selectedId = id; follow = id; },
     unfollow() { follow = null; },
     setInset(px) { inset = Math.max(0, Math.round(px)); resize(); }, // keep the middle of the view above a bottom sheet
-    stats: () => ({ aerial: !!hasAerial.value, reflecting: reflected.value > 0, buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
+    stats: () => ({ landmarkTris: detailedFerry?.userData.triangles || 0, landmarkBatches: detailedFerry?.children.length || 0, aerial: !!hasAerial.value, reflecting: reflected.value > 0, buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
   };
 }
