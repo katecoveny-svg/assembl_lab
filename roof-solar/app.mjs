@@ -85,7 +85,7 @@ async function show16a(){
   $("#twinControls").hidden=false; $("#showSolar").checked=true;
   $("#studySun").value=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",hour:"numeric",hourCycle:"h23"}).format(S.twin.app.when); $("#studySunTime").textContent=$("#studySun").value.padStart(2,"0")+":00";
   badge("16A · roof design study");
-  $("#result").innerHTML='<h2>16A · roof design study</h2><p><strong>'+panels+' illustrative panels</strong> on 16C and 16D, the proposed roofs.</p><p class="rs-msg">Roof shapes and true-north orientation follow the consent drawings and traced survey. The original interactive 16A model keeps its materials and landscaping. The drawing has no verified geographic anchor in this tool; no yield or measured shade is calculated.</p><p><a href="/plan-studio/twins/16a/">Open the full 16A twin</a></p><p class="rs-msg">For measured roof data and a generation estimate, choose a New Zealand address, map point or the public landmark.</p>';
+  $("#result").innerHTML='<h2>16A · roof design study</h2><p><strong>'+panels+' illustrative panels</strong> on 16C and 16D, the proposed roofs.</p><p class="rs-msg">Roof shapes and true-north orientation follow the consent drawings and traced survey. The original interactive 16A model keeps its building form, terrain and plant placements. The roof, decking and landscape finishes are illustrative. The drawing has no verified geographic anchor in this tool; no yield or measured shade is calculated.</p><p><a href="/plan-studio/twins/16a/">Open the full 16A twin</a></p><p class="rs-msg">For measured roof data and a generation estimate, choose a New Zealand address, map point or the public landmark.</p>';
   $("#methodBody").textContent="Design view only: illustrative panels on the north-facing slope of each roof; local geometry on traced survey terrain. Visual shade includes the geometry shown, not measured surroundings.";
   $("#sourcesBody").textContent="16A draft resource-consent set, issue A, 12 May 2025; RC-02 survey, RC-05 area plan, RC-06 plans, RC-07 sections. Survey traced, not survey-grade. Approximate Auckland-region sun; no new address or parcel location is included.";
   S.ready=true;document.documentElement.dataset.ready="1";
@@ -93,7 +93,8 @@ async function show16a(){
 }
 $("#sampleStudy").addEventListener('click',()=>{if(!S.study||!S.ready)show16a();});
 $("#roofView").addEventListener("click",()=>S.twin?.reset());
-$("#siteView").addEventListener("click",()=>S.twin?.reset(true));
+$("#siteView").addEventListener("click",()=>S.twin?.reset('overview'));
+$("#houseView").addEventListener("click",()=>S.twin?.reset('home'));
 $("#studySun").addEventListener("input",e=>{if(!S.twin)return;const hour=+e.target.value;
  const m=S.twin.app.when;
  const d=new Date(m); const dateParts=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",year:"numeric",month:"numeric",day:"numeric"}).formatToParts(d);

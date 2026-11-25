@@ -1,3 +1,4 @@
+import {applyStudyFinish} from './study-finish.mjs';
 // Mount the existing published 16A viewer, not a second model. Roof positions are
 // raycast onto the real corrugated sheets before the removable overlay is added.
 const url='/plan-studio/twins/16a/?still=1';
@@ -32,6 +33,7 @@ export async function mountTwin16a(host,active){
  const homes=a.scene.getObjectByName('proposed_homes');
  if(!homes)throw Error('The twin does not identify its proposed homes.');
  a.scene.updateMatrixWorld(true);
+ const siteFinish=applyStudyFinish({app:a,T,doc:d});
  const roofPoints=new T.Group();roofPoints.name='solar_design_study_overlay';
  // One shared, original monocrystalline laminate. Main busbars and clipped
  // cell corners remain visible at roof distance; mipmaps suppress finger-grid shimmer.
@@ -83,11 +85,18 @@ export async function mountTwin16a(host,active){
  const look=new T.Vector3().addVectors(...systems).multiplyScalar(.5);
  const close=roofCenters['16D'].multiplyScalar(1/units['16D']);
  const eyeOffset=new T.Vector3(-19,31,-17);
- function reset(overview=false){
+ const priorFog=a.scene.fog;
+ const haze={isFog:true,color:a.sun.color.clone().setHex(0xabb7b2),near:22,far:90};
+ function reset(view='detail'){
   const aspect=host.clientWidth/Math.max(1,host.clientHeight);
-  const target=overview?look:close;
+  const overview=view==='overview', house=view==='home';
+  const target=overview?look:house?close.clone().add(new T.Vector3(-.28,-1.1,-.8)):close;
+  const offset=overview?eyeOffset:house?new T.Vector3(.55,7.4,-12.8):new T.Vector3(2.6,2.7,-4.35);
+  // Photographic depth only for the ground-oriented shot. The survey overview
+  // stays clear, with its original surroundings and subject extents visible.
+  a.scene.fog=house?haze:priorFog;
   a.controls.target.copy(target);
-  a.camera.position.copy(target).addScaledVector(overview?eyeOffset:new T.Vector3(2.6,2.7,-4.35),aspect<1 ? (overview?1.36:1.20) : 1);
+  a.camera.position.copy(target).addScaledVector(offset,aspect<1 ? (overview?1.36:house?1.28:1.20) : 1);
   a.controls.update();
  }
  // Use the twin’s own summer design-study date, never a live observation.
@@ -95,5 +104,5 @@ export async function mountTwin16a(host,active){
  const part=k=>+date.find(i=>i.type===k).value;
  a.setSun(a.constructor.nzToUTC(part('year'),part('month'),part('day'),17));
  reset();frame.style.visibility='visible';
- return {app:a,frame,overlay:roofPoints,units,reset};
+ return {app:a,frame,overlay:roofPoints,units,reset,siteFinish};
 }
