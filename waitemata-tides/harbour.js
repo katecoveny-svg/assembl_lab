@@ -92,6 +92,31 @@ export async function createHarbour(holder){
    vec3 outgoingLight=mix(body,reflected,reflectance*.65)+specularLight*.27;
   `);
  const boat=makeBoat(scene);boat.position.set(6,0,-47);
+ const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
+ grip.textContent='Drag boat';grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
+ const pin=new T.Vector3(),pointer=new T.Vector2(),ray=new T.Raycaster(),plane=new T.Plane(xyz(0,1,0)),hit=new T.Vector3();
+ let taking=null;
+ function waterPick(e){
+  const box=canvas.getBoundingClientRect();
+  pointer.set((e.clientX-box.left)/box.width*2-1,1-(e.clientY-box.top)/box.height*2);
+  ray.setFromCamera(pointer,camera);plane.constant=-water.position.y;
+  return ray.ray.intersectPlane(plane,hit);
+ }
+ function moveBoat(x,z){boat.position.x=T.MathUtils.clamp(x,-13,16);boat.position.z=T.MathUtils.clamp(z,-64,-30);render()}
+ grip.onpointerdown=e=>{
+  if(!e.isPrimary||e.button!==0)return;
+  e.stopPropagation();const p=waterPick(e);if(!p)return;
+  taking=[e.pointerId,boat.position.x-p.x,boat.position.z-p.z];grip.setPointerCapture(e.pointerId);grip.dataset.grabbing='true';
+ };
+ grip.onpointermove=e=>{
+  if(taking?.[0]!==e.pointerId)return;const p=waterPick(e);if(p)moveBoat(p.x+taking[1],p.z+taking[2]);
+ };
+ grip.onlostpointercapture=()=>{taking=null;delete grip.dataset.grabbing};
+ grip.onkeydown=e=>{
+  const offset={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-3],ArrowDown:[0,3]}[e.key];
+  if(e.key==='Home'){e.preventDefault();moveBoat(6,-47)}
+  if(offset){e.preventDefault();moveBoat(boat.position.x+offset[0],boat.position.z+offset[1])}
+ };
  let ready=false;
  function render(){if(!active)return;const w=holder.clientWidth,h=holder.clientHeight;if(w<2||h<2)return;
  if(w!==width||h!==hh){width=w;hh=h;renderer.setSize(w,h,false)}
@@ -114,8 +139,12 @@ export async function createHarbour(holder){
    gl.readPixels(Math.floor(gl.drawingBufferWidth*.26),Math.floor(gl.drawingBufferHeight*y),1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);
    if(gl.isContextLost()||Math.max(...pixel.subarray(0,3))<25){renderer.dispose();throw new Error('Harbour first frame did not render');}
   }
-  ready=true;holder.replaceChildren(canvas);
- }}
+  ready=true;holder.replaceChildren(canvas,grip);
+ }
+ pin.set(boat.position.x,boat.position.y+.22,boat.position.z).project(camera);
+ grip.style.left=T.MathUtils.clamp((1+pin.x)*.5*w,56,w-56)+'px';
+ grip.style.top=T.MathUtils.clamp((1-pin.y)*.5*h+13,8,h-49)+'px';
+ }
  let drag;canvas.style.touchAction='pan-y';
  canvas.onpointerdown=e=>{drag=[e.pointerId,e.clientX,e.clientY,pan,tilt];canvas.setPointerCapture(e.pointerId)};
  canvas.onpointermove=e=>{if(!drag||e.pointerId!==drag[0])return;pan=T.MathUtils.clamp(drag[3]+(e.clientX-drag[1])/width*2,-1.2,1.2);if(e.pointerType!=='touch')tilt=T.MathUtils.clamp(drag[4]-(e.clientY-drag[2])/hh*2,-.9,.9);render()};

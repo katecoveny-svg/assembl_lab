@@ -34,3 +34,9 @@ body{overflow-x:clip}header,footer{background:#463b3d}.brand{height:48px}
 @media(max-width:720px){.harbour-title{padding:12px 16px}.harbour-title .eyebrow{max-width:55%;font-size:9px}.harbour>button{right:12px;top:14px}.harbour-title h2{font-size:22px}#canvasHolder{height:clamp(340px,48svh,470px)}.scene-actions span{width:auto}.scene-actions button{padding:6px 9px}.scene-toolbar label{width:auto}.intro h1{font-size:46px}.harbour-embed .scene-disclosure{font-size:10px!important}}
 
 #canvasHolder{background: url(media/skyline-and-bridge.webp) center 74% /cover no-repeat,url(media/queens-wharf.webp) center 61% /cover no-repeat,linear-gradient(#a2b5bc 42%,#35616d 43%,#2e5966)}
+
+/* Only the boat's own 44px control captures touch; vertical drags elsewhere still scroll. */
+#canvasHolder{position:relative}
+.boat-grip{position:absolute;z-index:1;min-height:44px;min-width:90px;transform:translateX(-50%);touch-action:none;cursor:grab;user-select:none;background:#fffdfaee!important;font-size:12px}
+.boat-grip[data-grabbing=true]{cursor:grabbing}
+@media(min-width:900px){.boat-grip:not(:focus):not(:hover):not([data-grabbing]){opacity:.82}}
