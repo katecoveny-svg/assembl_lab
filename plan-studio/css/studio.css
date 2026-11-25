@@ -223,3 +223,29 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
 }
 
 #folioExtent[hidden] {display:none}
+
+/* A local proposal is visually distinct from the committed model. */
+.edit-desk {margin:0 0 16px;scroll-margin-top:78px}
+.edit-desk header p:first-child,#doorDraftRev {color:#e3d0d2;font-size:10px;letter-spacing:.09em;margin:0 0 6px}
+.edit-desk header h2 {font-size:clamp(22px,3vw,31px);letter-spacing:-.03em;margin:0 0 5px}
+.edit-desk header .hint {margin:0 0 14px}
+#doorForm {display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(145px,1.1fr) auto auto;gap:9px;align-items:end}
+#doorForm label {display:grid;min-width:0;gap:5px;font-size:12px;color:var(--on)}
+#doorForm input,#doorForm select {height:40px;color:var(--paper);width:100%}
+#doorForm .btn {min-height:40px;justify-content:center;white-space:nowrap}
+#doorStatus:not(:empty){padding:8px 12px;background:#3a2737;color:#fffdfb;border-radius:5px;font-size:14px}
+#doorPreview:not([hidden]){border:1px solid #806772;padding:13px;border-radius:9px;background:#2a1c2a}
+#doorDiffTitle {margin:0 0 8px;font-size:17px;color:var(--paper)}
+.door-drawings {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.door-drawings figure {margin:0;border-radius:7px;background:#fffdfb;color:#654a4e;overflow:hidden}
+.door-drawings figcaption {padding:6px 10px;background:#e3d0d2;font-size:12px;font-weight:600}
+.door-drawings svg {display:block;width:100%;height:auto}
+#doorImpact {font-size:14px}
+#doorReceipt[hidden]{display:none}
+@media(max-width:650px){
+ #doorForm {grid-template-columns:minmax(0,1fr) auto}
+ #doorForm label:first-child {grid-column:1/-1}
+ .door-drawings {grid-template-columns:1fr}
+}
+/* Keep the neighbouring element table in its own scroller, not the page. */
+@media (max-width:1000px){.panel[data-panel=model] .cols{grid-template-columns:minmax(0,1fr)}}

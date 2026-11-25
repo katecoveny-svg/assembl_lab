@@ -94,6 +94,27 @@
       </div>
       </div>
       <div class="walk-handoff"><button id="prepareWalk" class="btn ghost sm" type="button">Prepare this model for a walkthrough</button> <a class="btn" id="walkLink" target="_blank" rel="noopener" hidden>Open walkthrough</a><span id="walkStatus" role="status" class="hint"></span></div>
+      <section id="doorChange" class="card edit-desk" aria-labelledby="doorChangeTitle">
+        <header><p class="mono">01 / PROPOSE A CHANGE</p><h2 id="doorChangeTitle">Move a door</h2><p class="hint">Try a new position without editing the model. The local layout agent checks the available space on the same wall.</p></header>
+        <form id="doorForm" novalidate>
+          <label>Door <select id="doorPick"></select></label>
+          <label>New centre from wall start <input id="doorPosition" type="text" inputmode="decimal" placeholder="e.g. 7.5" autocomplete="off" required aria-describedby="doorReference"></label>
+          <label>Unit <select id="doorUnit"><option value="m">m</option><option value="mm">mm</option></select></label>
+          <button class="btn" id="proposeDoor" type="submit">Preview move</button>
+        </form>
+        <p class="hint" id="doorReference"></p>
+        <p id="doorStatus" role="status"></p>
+        <section id="doorPreview" hidden aria-labelledby="doorDiffTitle">
+          <p class="mono" id="doorDraftRev"></p><h3 id="doorDiffTitle" tabindex="-1">Review door move</h3>
+          <div class="door-drawings"><figure><figcaption>Before</figcaption><div id="doorBefore"></div></figure><figure><figcaption>Proposed</figcaption><div id="doorAfter"></div></figure></div>
+          <p id="doorImpact"></p>
+          <p class="hint">Checks wall ends, other openings and modelled wall junctions. No structural, access, swing-clearance or compliance approval.</p>
+          <div class="row"><button class="btn" id="applyDoor" type="button">Apply door move</button><button class="btn ghost sm" id="cancelDoor" type="button">Cancel proposal</button></div>
+        </section>
+        <div id="doorReceipt" class="row" hidden>
+          <button class="btn ghost sm" id="undoDoor" type="button">Undo move</button><button class="btn ghost sm" id="doorIfc" type="button">Download IFC</button>
+        </div>
+      </section>
       <div class="cols">
         <div class="card"><h2>Materials</h2><p class="hint">Start from a look, then change any product. Each look is real product selections, not a style prompt.</p><div class="seg" id="looks"></div><div id="matPick" class="matpick" style="margin-top:12px"></div><p class="hint">Screen colours are approximate. Choose from the maker's physical swatch: COLORSTEEL publishes reflectance, not RGB.</p></div>
         <div class="card"><h2>Elements</h2><div class="seg" id="elTabs"><button data-el="openings" class="on">Openings</button><button data-el="walls">Walls</button><button data-el="rooms">Rooms</button></div><div class="tablewrap"><table id="elTable"></table></div></div>

@@ -6,6 +6,7 @@ import { MATERIALS, byCategory, CATEGORY_LABEL } from "./materials.js";
 import { toIFC, toDXF, toJSON } from "./exports.js";
 import { readPdfPage, findScale, toReal, modelFromDrawing } from "./read.js";
 import { BEATS, calibration, toViewport, twinEvidence, wallSpan } from "./build-sequence.js";
+import { applyDoorMove, distanceMm, doorModelStamp, proposeDoorMove, undoDoorMove, wallPreviewSvg } from "./door-proposal.js";
 import { buildDeck } from "./present.js";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -34,7 +35,7 @@ function changed(opts = {}) {
   if(opts.geometry!==false){$("#walkLink").hidden=true;$("#walkStatus").textContent="";}
   if (opts.geometry !== false && inspection) leaveBuild();
   results = runChecks(P);
-  renderCode(); renderTables(); renderInspector(); renderRevs();
+  renderCode(); renderTables(); renderInspector(); renderRevs(); renderDoorTools();
   $("#projName").textContent = P.meta.name; $("#truthChip").textContent = P.meta.status || "";
   if (state.tab === "drawings") drawSheets(); else sheets = [];
   if (stage && opts.geometry !== false) { clearTimeout(t3d); pendingGeometry=true; t3d = setTimeout(() => { pendingGeometry=false;stage.rebuild(P); stage.render(); }, 120); }
@@ -77,6 +78,7 @@ function renderInspector() {
   const el = (P[selected.kind] || []).find((x) => x.id === selected.id); if (!el) return;
   const ev = el.ev || {};
   box.innerHTML = `<p><b>${esc(el.name || el.note || el.id)}</b> <span class="mono hint">${esc(el.id)}</span></p><div class="inspect-ev"><span class="ev ${evTone(ev)}"></span><b>${esc(SRC[ev.src] || ev.src || "unknown")}</b> · ${Math.round((ev.conf ?? 0) * 100)}% confidence<br>${esc(ev.note || "")}</div>`
+    + (el.position_ev ? `<p class="hint"><b>Position:</b> ${esc(el.position_ev.note)}</p>` : "")
     + `<p class="hint">Checks that use it: ${results.filter((r) => (r.elements || []).includes(el.id)).map((r) => `<span class="pill ${r.status}" style="display:inline-block;margin:2px">${esc(r.clause)}</span>`).join("") || "none"}</p>`;
 }
 
@@ -101,6 +103,11 @@ function drawSheets() {
 }
 $("#sheetTabs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; state.sheet = b.dataset.sheet; drawSheets(); });
 const save = (blob, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+function downloadIFC() {
+  const last=P.revisions?.at(-1);
+  const rev=last&&JSON.stringify(last.model)===JSON.stringify(snapshot(P))?last.rev:"draft";
+  save(new Blob([toIFC(P)],{type:"application/x-step"}),`${P.meta.number}-${rev}.ifc`);
+}
 const fname = (ext) => `${P.meta.number}-${(P.revisions?.length ? P.revisions[P.revisions.length - 1].rev : "draft")}.${ext}`;
 $("#btnSvg").addEventListener("click", () => { const s = sheets.find((x) => x.id === state.sheet); save(new Blob([s.svg], { type: "image/svg+xml" }), `${P.meta.number}-${s.id}.svg`); });
 $("#btnDxf").addEventListener("click", () => save(new Blob([toDXF(P)], { type: "application/dxf" }), fname("dxf")));
@@ -108,6 +115,65 @@ $("#btnPdf").addEventListener("click", () => {
   const set = sheetSet(P, results), w = window.open("", "_blank"); if (!w) return alert("Allow pop-ups to print the set.");
   w.document.write(`<!doctype html><title>${esc(P.meta.number)} drawing set</title><style>@page{size:420mm 297mm;margin:0}body{margin:0}svg{display:block;width:420mm;height:297mm;page-break-after:always}</style>${set.map((s) => s.svg).join("")}<script>onload=()=>setTimeout(()=>print(),300)<\/script>`); w.document.close();
 });
+
+// One explicit change request. Keep unapproved diffs outside P and its exports.
+let doorDraft=null, doorUndo=null, doorProject=null;
+const tellDoor=text=>($("#doorStatus").textContent=text);
+function clearDoorDraft() {doorDraft=null;$("#doorPreview").hidden=true;}
+function renderDoorReference(){
+  const o=P.openings.find(o=>o.id===$("#doorPick").value);
+  const w=o&&P.walls.find(w=>w.id===o.wall);
+  $("#doorReference").textContent=w?`Wall ${w.id} · current centre ${o.at} mm · width ${o.w} mm. The wall strip shows the start (0) and end.`:"No editable door in this model.";
+}
+function renderDoorTools(){
+  const changedProject=doorProject!==P;
+  if(changedProject){
+    doorProject=P;clearDoorDraft();doorUndo=null;tellDoor("");$("#doorPosition").value="";
+  }else if(doorDraft && doorDraft.base!==doorModelStamp(P)){
+    clearDoorDraft();tellDoor("Model or revision changed. Preview a new move.");
+  }
+  const pick=$("#doorPick"), prev=changedProject?"":pick.value;
+  const doors=P.openings.filter(o=>["door","door-double"].includes(o.kind)&&P.walls.some(w=>w.id===o.wall));
+  pick.replaceChildren(...doors.map(o=>new Option(o.id+(o.note?" · "+o.note:"")+" / "+o.wall,o.id)));
+  pick.value=doors.some(o=>o.id===prev)?prev:doors.find(o=>o.id==="D4")?.id||doors[0]?.id||"";
+  renderDoorReference();$("#proposeDoor").disabled=!doors.length;
+  const hasUndo=doorUndo && doorUndo.applied===doorModelStamp(P);
+  $("#undoDoor").disabled=!hasUndo;
+  $("#doorReceipt").hidden=!doorUndo;
+}
+["doorPick","doorPosition","doorUnit"].forEach((id)=>$("#"+id).addEventListener(id==="doorPosition"?"input":"change",()=>{
+  if(doorDraft){clearDoorDraft();tellDoor("Values changed. Preview again before applying.");}
+  renderDoorReference();
+}));
+$("#doorForm").addEventListener("submit", e=>{
+  e.preventDefault();clearDoorDraft();
+  try{
+    const next=distanceMm($("#doorPosition").value,$("#doorUnit").value);
+    if(next===null)throw Error("Enter a number in the selected unit, to the nearest millimetre.");
+    doorDraft=proposeDoorMove(P,$("#doorPick").value,next);
+    const {edit,revision,before,after,roomsBefore,roomsAfter}=doorDraft;
+    $("#doorDraftRev").textContent="PROPOSAL ONLY · "+(revision==="Unissued"?"UNISSUED MODEL":"BASED ON REV "+revision);
+    $("#doorDiffTitle").textContent=`Door ${edit.door} on ${edit.wall} · ${edit.from} → ${edit.to} mm`;
+    $("#doorBefore").innerHTML=wallPreviewSvg(before,edit,"Before");
+    $("#doorAfter").innerHTML=wallPreviewSvg(after,edit,"After");
+    $("#doorImpact").textContent=(roomsBefore===roomsAfter?"Plan adjacency unchanged: "+roomsAfter:"Plan adjacency changes: "+roomsBefore+" → "+roomsAfter)+". Same door, width, height and host wall.";
+    $("#doorPreview").hidden=false;tellDoor("Preview only. The model and downloads are unchanged.");$("#doorDiffTitle").focus();
+  }catch(err){tellDoor(err.message);}
+});
+$("#cancelDoor").onclick=()=>{clearDoorDraft();tellDoor("Proposal discarded. No model changes.");$("#proposeDoor").focus();};
+$("#applyDoor").onclick=()=>{
+ try {
+  const edit=doorDraft?.edit;
+  doorUndo=applyDoorMove(P,doorDraft);
+  clearDoorDraft();selected={kind:"openings",id:edit.door};changed();
+  tellDoor(`Door ${edit.door} moved to ${edit.to} mm. The model, drawings and next IFC download reflect the change.`);$("#undoDoor").focus();
+ } catch(err){clearDoorDraft();tellDoor(err.message);$("#proposeDoor").focus();}
+};
+$("#undoDoor").onclick=()=>{
+ try{undoDoorMove(P,doorUndo);doorUndo=null;changed();tellDoor("Move undone. The original door position and evidence are restored.");$("#proposeDoor").focus();}
+ catch(err){tellDoor(err.message);}
+};
+$("#doorIfc").onclick=downloadIFC;
 
 // ------------------------------------------------------------------------------------------------ 3D
 let booting, pendingGeometry=false;
@@ -387,7 +453,7 @@ $("#btnDeck").addEventListener("click", async () => {
 });
 $$(".files button").forEach((b) => b.addEventListener("click", async () => {
   const x = b.dataset.x;
-  if (x === "ifc") return save(new Blob([toIFC(P)], { type: "application/x-step" }), fname("ifc"));
+  if (x === "ifc") return downloadIFC();
   if (x === "dxf") return save(new Blob([toDXF(P)], { type: "application/dxf" }), fname("dxf"));
   if (x === "json") return save(new Blob([toJSON(P)], { type: "application/json" }), fname("json"));
   if (!stage) await boot3d();
@@ -494,4 +560,13 @@ if (new URLSearchParams(location.search).get("sample")==="drawing") {
     $("#btnUseRead").click();await boot3d();await $("#showBuild").onclick();
     $("#drawingFolio").scrollIntoView({block:"start",behavior:"instant"});
   })().catch(e=>console.warn("Sample preview:",e.message));
+}
+
+if(new URLSearchParams(location.search).get("sample")==="door"){
+  setLook("solid");$("#btnDemo").click();
+  boot3d().then(()=>{
+    stage.setCutaway(true);stage.view("plan");stage.sync();
+    $$("#views button").forEach(b=>b.classList.toggle("on",b.dataset.view==="plan"));
+    $("#doorChange").scrollIntoView({block:"start",behavior:"instant"});
+  }).catch(e=>console.warn("Sample preview:",e.message));
 }
